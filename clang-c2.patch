@@ -1,13 +1,14 @@
 diff --git a/include/clang/Basic/DiagnosticParseKinds.td b/include/clang/Basic/DiagnosticParseKinds.td
-index 21eeccb..3c7bbeb 100644
+index 21eeccb..f860dbf 100644
 --- a/include/clang/Basic/DiagnosticParseKinds.td
 +++ b/include/clang/Basic/DiagnosticParseKinds.td
-@@ -683,6 +683,12 @@ def warn_cxx98_compat_lambda : Warning<
+@@ -683,6 +683,13 @@ def warn_cxx98_compat_lambda : Warning<
  def err_lambda_missing_parens : Error<
    "lambda requires '()' before %select{'mutable'|return type}0">;
  
 +// C2 generic
 +def err_expected_package : Error<"expected 'package' keyword">;
++def err_using_not_use : Error<"keyword 'using' not allowed. Did you mean 'use'?">;
 +def err_expected_type_spec : Error<"expected type specifier">;
 +def err_invalid_label : Error<"labels cannot have a package specifier">;
 +
@@ -28,7 +29,7 @@ index dbc08c7..28c7de8 100644
  LANGOPT(ObjC2             , 1, 0, "Objective-C 2")
  BENIGN_LANGOPT(ObjCDefaultSynthProperties , 1, 0, 
 diff --git a/include/clang/Basic/TokenKinds.def b/include/clang/Basic/TokenKinds.def
-index 25e8d5a..ae2d1c3 100644
+index 25e8d5a..0805374 100644
 --- a/include/clang/Basic/TokenKinds.def
 +++ b/include/clang/Basic/TokenKinds.def
 @@ -220,39 +220,39 @@ PUNCTUATOR(greatergreatergreater, ">>>")
@@ -127,6 +128,15 @@ index 25e8d5a..ae2d1c3 100644
  KEYWORD(reinterpret_cast            , KEYCXX)
  KEYWORD(static_cast                 , KEYCXX)
  KEYWORD(template                    , KEYCXX)
+@@ -294,7 +311,7 @@ KEYWORD(true                        , BOOLSUPPORT|KEYALTIVEC)
+ KEYWORD(try                         , KEYCXX)
+ KEYWORD(typename                    , KEYCXX)
+ KEYWORD(typeid                      , KEYCXX)
+-KEYWORD(using                       , KEYCXX)
++KEYWORD(using                       , KEYCXX|KEYC2)
+ KEYWORD(virtual                     , KEYCXX)
+ KEYWORD(wchar_t                     , WCHARSUPPORT)
+ 
 diff --git a/include/clang/Frontend/LangStandard.h b/include/clang/Frontend/LangStandard.h
 index f07cb02..039030c 100644
 --- a/include/clang/Frontend/LangStandard.h
