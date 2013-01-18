@@ -1,0 +1,176 @@
+diff --git a/include/clang/Basic/DiagnosticParseKinds.td b/include/clang/Basic/DiagnosticParseKinds.td
+index 21eeccb..3c7bbeb 100644
+--- a/include/clang/Basic/DiagnosticParseKinds.td
++++ b/include/clang/Basic/DiagnosticParseKinds.td
+@@ -683,6 +683,12 @@ def warn_cxx98_compat_lambda : Warning<
+ def err_lambda_missing_parens : Error<
+   "lambda requires '()' before %select{'mutable'|return type}0">;
+ 
++// C2 generic
++def err_expected_package : Error<"expected 'package' keyword">;
++def err_expected_type_spec : Error<"expected type specifier">;
++def err_invalid_label : Error<"labels cannot have a package specifier">;
++
++
+ // Availability attribute
+ def err_expected_version : Error<
+   "expected a version of the form 'major[.minor[.subminor]]'">;
+diff --git a/include/clang/Basic/LangOptions.def b/include/clang/Basic/LangOptions.def
+index dbc08c7..28c7de8 100644
+--- a/include/clang/Basic/LangOptions.def
++++ b/include/clang/Basic/LangOptions.def
+@@ -49,6 +49,7 @@ LANGOPT(Borland           , 1, 0, "Borland extensions")
+ LANGOPT(CPlusPlus         , 1, 0, "C++")
+ LANGOPT(CPlusPlus0x       , 1, 0, "C++0x")
+ LANGOPT(CPlusPlus1y       , 1, 0, "C++1y")
++LANGOPT(C2                , 1, 0, "C2")
+ LANGOPT(ObjC1             , 1, 0, "Objective-C 1")
+ LANGOPT(ObjC2             , 1, 0, "Objective-C 2")
+ BENIGN_LANGOPT(ObjCDefaultSynthProperties , 1, 0, 
+diff --git a/include/clang/Basic/TokenKinds.def b/include/clang/Basic/TokenKinds.def
+index 25e8d5a..ae2d1c3 100644
+--- a/include/clang/Basic/TokenKinds.def
++++ b/include/clang/Basic/TokenKinds.def
+@@ -220,39 +220,39 @@ PUNCTUATOR(greatergreatergreater, ">>>")
+ //   WCHARSUPPORT - This is a keyword if 'wchar_t' is a built-in type
+ //
+ KEYWORD(auto                        , KEYALL)
+-KEYWORD(break                       , KEYALL)
+-KEYWORD(case                        , KEYALL)
+-KEYWORD(char                        , KEYALL)
+-KEYWORD(const                       , KEYALL)
+-KEYWORD(continue                    , KEYALL)
+-KEYWORD(default                     , KEYALL)
+-KEYWORD(do                          , KEYALL)
+-KEYWORD(double                      , KEYALL)
+-KEYWORD(else                        , KEYALL)
+-KEYWORD(enum                        , KEYALL)
++KEYWORD(break                       , KEYALL|KEYC2)
++KEYWORD(case                        , KEYALL|KEYC2)
++KEYWORD(char                        , KEYALL|KEYC2)
++KEYWORD(const                       , KEYALL|KEYC2)
++KEYWORD(continue                    , KEYALL|KEYC2)
++KEYWORD(default                     , KEYALL|KEYC2)
++KEYWORD(do                          , KEYALL|KEYC2)
++KEYWORD(double                      , KEYALL|KEYC2)
++KEYWORD(else                        , KEYALL|KEYC2)
++KEYWORD(enum                        , KEYALL|KEYC2)
+ KEYWORD(extern                      , KEYALL)
+-KEYWORD(float                       , KEYALL)
+-KEYWORD(for                         , KEYALL)
+-KEYWORD(goto                        , KEYALL)
+-KEYWORD(if                          , KEYALL)
++KEYWORD(float                       , KEYALL|KEYC2)
++KEYWORD(for                         , KEYALL|KEYC2)
++KEYWORD(goto                        , KEYALL|KEYC2)
++KEYWORD(if                          , KEYALL|KEYC2)
+ KEYWORD(inline                      , KEYC99|KEYCXX|KEYGNU)
+-KEYWORD(int                         , KEYALL)
++KEYWORD(int                         , KEYALL|KEYC2)
+ KEYWORD(long                        , KEYALL)
+ KEYWORD(register                    , KEYALL)
+ KEYWORD(restrict                    , KEYC99)
+-KEYWORD(return                      , KEYALL)
++KEYWORD(return                      , KEYALL|KEYC2)
+ KEYWORD(short                       , KEYALL)
+ KEYWORD(signed                      , KEYALL)
+-KEYWORD(sizeof                      , KEYALL)
++KEYWORD(sizeof                      , KEYALL|KEYC2)
+ KEYWORD(static                      , KEYALL)
+-KEYWORD(struct                      , KEYALL)
+-KEYWORD(switch                      , KEYALL)
++KEYWORD(struct                      , KEYALL|KEYC2)
++KEYWORD(switch                      , KEYALL|KEYC2)
+ KEYWORD(typedef                     , KEYALL)
+-KEYWORD(union                       , KEYALL)
++KEYWORD(union                       , KEYALL|KEYC2)
+ KEYWORD(unsigned                    , KEYALL)
+-KEYWORD(void                        , KEYALL)
+-KEYWORD(volatile                    , KEYALL)
+-KEYWORD(while                       , KEYALL)
++KEYWORD(void                        , KEYALL|KEYC2)
++KEYWORD(volatile                    , KEYALL|KEYC2)
++KEYWORD(while                       , KEYALL|KEYC2)
+ KEYWORD(_Alignas                    , KEYALL)
+ KEYWORD(_Alignof                    , KEYALL)
+ KEYWORD(_Atomic                     , KEYALL)
+@@ -265,6 +265,23 @@ KEYWORD(__func__                    , KEYALL)
+ KEYWORD(__objc_yes                  , KEYALL)
+ KEYWORD(__objc_no                   , KEYALL)
+ 
++// C2 Keywords.
++KEYWORD(package                     , KEYC2)
++KEYWORD(use                         , KEYC2)
++KEYWORD(type                        , KEYC2)
++KEYWORD(func                        , KEYC2)
++KEYWORD(local                       , KEYC2)
++KEYWORD(fallthrough                 , KEYC2)
++KEYWORD(uint                        , KEYC2)
++KEYWORD(uchar                       , KEYC2)
++KEYWORD(u8                          , KEYC2)
++KEYWORD(u16                         , KEYC2)
++KEYWORD(u32                         , KEYC2)
++KEYWORD(s8                          , KEYC2)
++KEYWORD(s16                         , KEYC2)
++KEYWORD(s32                         , KEYC2)
++KEYWORD(string                      , KEYC2)
++KEYWORD(NULL                        , KEYC2)
+ 
+ // C++ 2.11p1: Keywords.
+ KEYWORD(asm                         , KEYCXX|KEYGNU)
+@@ -284,7 +301,7 @@ KEYWORD(new                         , KEYCXX)
+ KEYWORD(operator                    , KEYCXX)
+ KEYWORD(private                     , KEYCXX|KEYOPENCL)
+ KEYWORD(protected                   , KEYCXX)
+-KEYWORD(public                      , KEYCXX)
++KEYWORD(public                      , KEYCXX|KEYC2)
+ KEYWORD(reinterpret_cast            , KEYCXX)
+ KEYWORD(static_cast                 , KEYCXX)
+ KEYWORD(template                    , KEYCXX)
+diff --git a/include/clang/Frontend/LangStandard.h b/include/clang/Frontend/LangStandard.h
+index f07cb02..039030c 100644
+--- a/include/clang/Frontend/LangStandard.h
++++ b/include/clang/Frontend/LangStandard.h
+@@ -28,7 +28,8 @@ enum LangFeatures {
+   Digraphs = (1 << 7),
+   GNUMode = (1 << 8),
+   HexFloat = (1 << 9),
+-  ImplicitInt = (1 << 10)
++  ImplicitInt = (1 << 10),
++  C2 = (1 << 11)
+ };
+ 
+ }
+diff --git a/lib/Basic/IdentifierTable.cpp b/lib/Basic/IdentifierTable.cpp
+index 1965bf9..5ec5b1e 100644
+--- a/lib/Basic/IdentifierTable.cpp
++++ b/lib/Basic/IdentifierTable.cpp
+@@ -106,6 +106,7 @@ namespace {
+     KEYARC = 0x800,
+     KEYNOMS = 0x01000,
+     WCHARSUPPORT = 0x02000,
++    KEYC2 = 0x04000,
+     KEYALL = (0xffff & ~KEYNOMS) // Because KEYNOMS is used to exclude.
+   };
+ }
+@@ -126,6 +127,7 @@ static void AddKeyword(StringRef Keyword,
+   else if (LangOpts.CPlusPlus && (Flags & KEYCXX)) AddResult = 2;
+   else if (LangOpts.CPlusPlus0x && (Flags & KEYCXX0X)) AddResult = 2;
+   else if (LangOpts.C99 && (Flags & KEYC99)) AddResult = 2;
++  else if (LangOpts.C2 && (Flags & KEYC2)) AddResult = 2;
+   else if (LangOpts.GNUKeywords && (Flags & KEYGNU)) AddResult = 1;
+   else if (LangOpts.MicrosoftExt && (Flags & KEYMS)) AddResult = 1;
+   else if (LangOpts.Borland && (Flags & KEYBORLAND)) AddResult = 1;
+diff --git a/lib/Lex/Lexer.cpp b/lib/Lex/Lexer.cpp
+index a5ba7db..1bc541e 100644
+--- a/lib/Lex/Lexer.cpp
++++ b/lib/Lex/Lexer.cpp
+@@ -3163,7 +3163,7 @@ LexNextToken:
+     if (LangOpts.Digraphs && Char == '>') {
+       Kind = tok::r_square; // ':>' -> ']'
+       CurPtr = ConsumeChar(CurPtr, SizeTmp, Result);
+-    } else if (LangOpts.CPlusPlus && Char == ':') {
++    } else if ((LangOpts.CPlusPlus || LangOpts.C2) && Char == ':') {
+       Kind = tok::coloncolon;
+       CurPtr = ConsumeChar(CurPtr, SizeTmp, Result);
+     } else {
