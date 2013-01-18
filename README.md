@@ -10,6 +10,8 @@ how to install in t$HOME/llvm-c2, but any other dir should work.
 * download LLVM sources (http://llvm.org/releases/3.2/llvm-3.2.src.tar.gz)
 * download Clang sources (http://llvm.org/releases/3.2/clang-3.2.src.tar.gz)
 * download Compiler RT sources (http://llvm.org/releases/3.2/compiler-rt-3.2.src.tar.gz)
+* take clang-c2.patch from this archive
+
 To build:
 ```
 tar -xf <path>/llvm-3.2.src.tar.gz
