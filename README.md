@@ -8,9 +8,7 @@ To install C2, follow the steps below. The example shows
 how to install in t$HOME/llvm-c2, but any other dir should work.
 
 * download LLVM sources (http://llvm.org/releases/3.2/llvm-3.2.src.tar.gz)
-* download Clang sources (http://llvm.org/releases/3.2/clang-3.2.src.tar.gz)
 * download Compiler RT sources (http://llvm.org/releases/3.2/compiler-rt-3.2.src.tar.gz)
-* take clang-c2.patch from this archive
 
 To build:
 ```
@@ -20,10 +18,9 @@ cd llvm/projects
 tar -xf <path>/compiler-rt-3.2.src.tar.gz
 mv compiler-rt-3.2.src compiler-rt
 cd ../tools
-tar -xf <path>/clang-3.2.src.tar.gz
-mv clang-3.2.src clang
+git clone git://github.com/c2lang/clang.git
 cd clang
-patch -p1 < <path>/clang-c2.patch
+git co -b c2master
 cd ../../..
 mkdir llvm_build
 ../llvm/configure --enable-optimized --prefix=$HOME/llvm-c2/
@@ -36,7 +33,6 @@ to build C2.
 ```
 export PATH=$HOME/llvm-c2/bin:$PATH
 ```
-
 
 ## Building C2
 **NOTE** This part will be up real soon..
