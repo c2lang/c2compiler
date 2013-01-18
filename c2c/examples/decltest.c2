@@ -1,0 +1,15 @@
+package test;
+
+func void main() {
+    const char[12] buffer;
+    local char[10] buffer2;
+    int a;
+    int b = 10;
+    string name = "bas";
+    a = 10;
+    buffer[0] = 0;
+
+    const int a = 20;
+    volatile int* b = 0x2000;
+}
+

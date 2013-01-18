@@ -1,0 +1,33 @@
+package array_test;
+
+#define TEST(x,y) \
+elements += { #x, y} \
+func int test_##x()
+
+type TestFunc func int ();
+
+type Element struct {
+    const char[16] name;
+    int value;
+}
+
+const Element[] elements;
+
+elements += { "test1", 10 }
+elements += { "test2", 20 }
+elements += { "test3", 30 }
+
+TEST(foo, 10) {
+    printf("%s()\n", __func__);
+}
+
+func void main() {
+    abc->foo = 10;
+    zzz.big.small = 1;
+
+    int count = sizeof(elements) / sizeof(Element);
+    for (int i=0; i<count; i++) {
+        printf("[%2d] %16s\n", i, elements[i].name);
+    }
+}
+

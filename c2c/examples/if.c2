@@ -1,0 +1,54 @@
+package test;
+
+func void test0() {
+    if (10) c();
+}
+
+func void test1() {
+    if (2) c();
+    else d();
+}
+
+func void test2() {
+    if (haveMore())
+        c();
+}
+
+func void test3() {
+    // HMM semicolon is inserted after next line
+    if (2) c();
+    else d();
+}
+
+func void test4() {
+    if (2) {
+        first();
+    } else {
+        second();
+    }
+}
+
+func void test5() {
+    if (3) {
+        third();
+    } else {
+        fourth();
+    }
+
+    if (1) if (2) foo();
+        else bar();
+
+    if (1) {
+        if (2) blop();
+        else bliep();
+    } else {
+
+    }
+}
+
+func void test6() {
+    if (1) if (2) foo();
+        else bar();
+    else bliep();
+}
+

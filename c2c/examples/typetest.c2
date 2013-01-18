@@ -1,0 +1,81 @@
+package type_test;
+
+// -- Base types --
+public type Number int;
+public type String const u8*;
+
+// -- pointer types --
+type PNum int*;
+type PPNum int**;
+type Pnum2 volatile Number*;
+
+// -- array types --
+type IntArr int[20];
+type IntArr int[5][5];
+type PArr int*[10];
+type Coor Utils::Point[2];
+type MyType Gui::Buffer*[2];
+
+// -- struct types --
+type Struct struct {
+}
+
+type S3 struct {
+    int[100] data;
+    int[12][12] board;
+    int count;
+}
+
+type S4 struct {
+    // anonymous struct
+    struct {
+        int a;
+        int b;
+    }
+    struct {
+        int c;
+        int d;
+    } named
+}
+
+type S2 struct {
+    int n;
+    union {
+        int b;
+    } choice;
+    volatile u32 count;
+    const int d;
+}
+
+type Data union {
+    int bla;
+    string text;
+    u64 number;
+}
+
+// -- ENUMS --
+type Enum1 enum {
+    VAR1, VAR2, VAR3,
+}
+
+type Enum2 enum {
+    VAR1 = 1, VAR2 = 5, VAR3 = 10
+}
+
+type Enum3 enum {
+    VAR1 = 1, VAR2 = 5,
+}
+
+type Enum4 enum {
+    VAR1
+    , VAR2 = 10
+    , VAR3,
+    VAR4
+}
+
+// -- Function --
+type CallBack func int(int a, Utils::Point*p);
+type CBFunc func void (MyType* mt, ...);
+type CBFunc func void (const char* buffer, u8 t2, ...);
+
+

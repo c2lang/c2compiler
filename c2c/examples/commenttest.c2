@@ -1,0 +1,15 @@
+/*
+    bla
+    bliep
+    func
+*/
+
+// one-liner
+package comments;    // after
+
+// another one
+func int main(int argc /*first arg*/, char*[] argv) {
+    // in body
+    return 0;
+}
+

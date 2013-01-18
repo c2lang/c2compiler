@@ -1,0 +1,23 @@
+package func_test;
+
+public func int getMax() {
+}
+
+func int add(int a, int b) {
+}
+
+func void doThing() {}
+
+func void printf(int argc, const string* text, ...) {}
+
+func Utils::Coor getCoor(int argc, char*[] argv) {}
+
+func void needed(char[][] data) {}
+
+func void doThing2(int* result = 0) {}
+
+func void doThing3(int number = 2, int* result = 0) {}
+
+func void testFunc(const char c, volatile int* reg) {}
+
+func const char* getToken() {}

@@ -1,0 +1,59 @@
+package body_test;
+
+public func void getMax() {
+    int a;
+    {
+        int b;
+        {
+            int c;
+        }
+    }
+}
+
+int number = 10;
+
+public func void MyFunc() {
+    Utils::convert(1, 2, "Hallo");
+    if (3) goto end;
+    convert(3, 4, number);
+    callback(MyFunc);
+end:
+    return;
+}
+
+func void test() {
+    int a;
+    int[10] a;
+    int[5][5] buffer;
+    char* text;
+    u32*[10] pointers;
+    //const char* text2;
+}
+
+func void test2() {
+    return;
+}
+
+func void test3() {
+label1: int a;
+    call2();
+label2:
+    call3();
+    call4();
+}
+
+func void test4() {
+    int a = 10;
+}
+
+func void test5() {
+    if (1) {
+
+    } else {
+        goto error;
+    }
+    return 10;
+error:
+    return 13;
+}
+

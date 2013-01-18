@@ -1,0 +1,29 @@
+package var_test;
+
+type Struct struct {
+    int a;
+    int b;
+    string text;
+}
+
+int n = 10;
+string hallo = "goodbye";
+s8* text2 = NULL;
+u16 halfword;
+
+// aggregate
+u32 n1 = { 10 }
+int n2 = { 10, 20 }
+int n3 = { 10, 30, }
+Struct s = { 10, 20, "hallo" }
+Struct s2 = { 10, { 20, "hallo" }}
+
+// arrays
+int[10] buffer;
+int[][] multi_var;
+int[2][3] multi_fix;
+int[] buf = { 1, 2, 3, 4 }
+int[3] buf2 = { 1, 2, 3, 4 }
+Struct[3] structs = { {1,2,"A"}, {3,4,"B"} }
+
+const char*[] names = { "ali", "baba", "chrono", }

@@ -1,0 +1,67 @@
+# an example recipe with multiple targets
+
+target multi
+    examples/file1.c2
+    examples/file2.c2
+end
+
+target comment
+    examples/commenttest.c2
+end
+
+target hello
+    examples/helloworld.c2
+end
+
+target iter
+    examples/itertest.c2
+end
+
+target switch
+    examples/switchtest.c2
+end
+
+target type
+    examples/typetest.c2
+end
+
+target working_ir
+    examples/working_ir.cp
+end
+
+target array
+    examples/arraytest.c2
+end
+
+target body
+    examples/bodytest.c2
+end
+
+target decl
+    examples/decltest.c2
+end
+
+target expr
+    examples/expressiontest.c2
+end
+
+target func
+    examples/functest.c2
+end
+
+target if
+    examples/if.c2
+end
+
+target test
+    examples/test.c2
+end
+
+target var
+    examples/vartest.c2
+end
+
+target working
+    examples/working.cp
+end
+

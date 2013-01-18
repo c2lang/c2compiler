@@ -1,0 +1,6 @@
+package multi;
+
+func int main() {
+    int a = getNumber();
+    return 10;
+}
