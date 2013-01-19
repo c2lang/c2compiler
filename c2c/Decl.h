@@ -39,8 +39,8 @@ class CodeGenContext;
 enum DeclType {
     DECL_FUNC = 0,
     DECL_VAR,
-    DECL_TYPE
-    //DECL_USING,
+    DECL_TYPE,
+    DECL_USE
 };
 
 typedef std::vector<C2::Expr*> ExprList;
@@ -131,6 +131,23 @@ private:
 };
 
 
+class UseDecl : public Decl {
+public:
+    UseDecl(const std::string& name_, SourceLocation loc_);
+    virtual DeclType dtype() { return DECL_USE; }
+    virtual void acceptD(DeclVisitor& v);
+    virtual void print(StringBuilder& buffer);
+    virtual void generateC(StringBuilder& buffer);
+    virtual llvm::Value* codeGen(CodeGenContext& context);
+
+    virtual const std::string& getName() const { return name; }
+    virtual clang::SourceLocation getLocation() const { return loc; }
+private:
+    std::string name;
+    SourceLocation loc;
+};
+
+
 class DeclVisitor {
 public:
     virtual ~DeclVisitor() {}
@@ -138,6 +155,7 @@ public:
     virtual void visit(FunctionDecl&) {}
     virtual void visit(VarDecl&) {}
     virtual void visit(TypeDecl&) {}
+    virtual void visit(UseDecl&) {}
     // add more sub-classes here
 };
 

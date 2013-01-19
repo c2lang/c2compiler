@@ -161,3 +161,23 @@ void TypeDecl::generateC(StringBuilder& buffer) {
     buffer << ";\n";
 }
 
+
+UseDecl::UseDecl(const std::string& name_, SourceLocation loc_)
+    : name(name_)
+    , loc(loc_)
+{}
+
+DECL_VISITOR_ACCEPT(UseDecl);
+
+void UseDecl::print(StringBuilder& buffer) {
+    buffer << "[use " << name << "]\n";
+}
+
+void UseDecl::generateC(StringBuilder& buffer) {
+    // Temp hardcoded for stdio
+    if (name == "stdio") {
+        buffer << "#include <stdio.h>\n";
+    }
+}
+
+

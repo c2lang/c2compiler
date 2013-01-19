@@ -67,16 +67,14 @@ void C2Sema::ActOnUse(const char* name, SourceLocation loc) {
         return;
     }
     // check for duplicate use
-    const UseInfo* old = findUse(name);
+    const Decl* old = findUse(name);
     if (old) {
         Diag(loc, diag::err_duplicate_use) << name;
-        // TODO add package name that's used twice
-        Diag(old->loc, diag::note_previous_use);
+        Diag(old->getLocation(), diag::note_previous_use);
         return;
     }
 
-    UseInfo info = { name, loc };
-    uses.push_back(info);
+    decls.push_back(new UseDecl(name, loc));
 }
 
 void C2Sema::ActOnTypeDef(const char* name, SourceLocation loc, Expr* type, bool is_public) {
@@ -360,9 +358,11 @@ C2::Type* C2Sema::getBuiltinType(C2Type t) const {
     }
 }
 
-const C2Sema::UseInfo* C2Sema::findUse(const char* name) const {
-    for (unsigned int i=0; i<uses.size(); i++) {
-        if (uses[i].name == name) return &uses[i];
+const C2::Decl* C2Sema::findUse(const char* name) const {
+    for (unsigned int i=0; i<decls.size(); i++) {
+        Decl* d = decls[i];
+        if (d->dtype() != DECL_USE) break;
+        if (d->getName() == name) return d;
     }
     return 0;
 }
@@ -412,14 +412,6 @@ void C2Sema::generateC() const {
     printf("---- C-code %s.c ----\n", pkgName.c_str());
 
     StringBuilder buffer;
-    // generate include statements <only stdio for now>
-    for (UsesConstIter iter = uses.begin(); iter != uses.end(); ++iter) {
-        if ((*iter).name == "stdio") {
-            buffer << "#include <stdio.h>\n";
-        }
-    }
-
-    buffer << '\n';
 
     // top levels
     for (DeclListConstIter iter = decls.begin(); iter != decls.end(); ++iter) {

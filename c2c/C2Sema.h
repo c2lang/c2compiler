@@ -116,15 +116,7 @@ private:
     std::string pkgName;
     SourceLocation pkgLoc;
 
-    struct UseInfo {
-        std::string name;
-        SourceLocation loc;
-    };
-    const UseInfo* findUse(const char* name) const;
-
-    typedef std::vector<UseInfo> Uses;
-    typedef Uses::const_iterator UsesConstIter;
-    Uses uses;
+    const Decl* findUse(const char* name) const;
 
     typedef std::vector<Decl*> DeclList;
     typedef DeclList::const_iterator DeclListConstIter;
