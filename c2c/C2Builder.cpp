@@ -278,6 +278,7 @@ bool C2Builder::createPkgs() {
         // pkg->addSymbol()
         for (unsigned int i=0; i<info->sema.decls.size(); i++) {
             Decl* New = info->sema.decls[i];
+            if (New->dtype() == DECL_USE) continue;
             Decl* Old = pkg->findSymbol(New->getName());
             if (Old) {
                 fprintf(stderr, "MULTI_FILE: duplicate symbol %s\n", New->getName().c_str());
