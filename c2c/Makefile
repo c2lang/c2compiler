@@ -10,7 +10,6 @@ OBJS = \
     DeclCodeGen.o \
     Expr.o \
     ExprCodeGen.o \
-    FileAnalyser.o \
     FileMap.o \
     Recipe.o \
     RecipeReader.o \

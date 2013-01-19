@@ -74,7 +74,7 @@ void C2Sema::ActOnUse(const char* name, SourceLocation loc) {
         return;
     }
 
-    decls.push_back(new UseDecl(name, loc));
+    addDecl(new UseDecl(name, loc));
 }
 
 void C2Sema::ActOnTypeDef(const char* name, SourceLocation loc, Expr* type, bool is_public) {
@@ -89,7 +89,7 @@ void C2Sema::ActOnTypeDef(const char* name, SourceLocation loc, Expr* type, bool
     TypeExpr* typeExpr = ExprCaster<TypeExpr>::getType(type);
     assert(typeExpr);
     TypeDecl* decl = new TypeDecl(name, loc, typeExpr->takeType(), is_public);
-    decls.push_back(decl);
+    addDecl(decl);
     delete type;
 }
 
@@ -106,7 +106,7 @@ void C2Sema::ActOnVarDef(const char* name, SourceLocation loc,
     assert(typeExpr);
     DeclExpr* declExpr = new DeclExpr(name, loc, typeExpr->takeType(), InitValue);
     VarDecl* decl = new VarDecl(declExpr, is_public, false);
-    decls.push_back(decl);
+    addDecl(decl);
     delete type;
 }
 
@@ -121,7 +121,7 @@ C2::FunctionDecl* C2Sema::ActOnFuncDef(const char* name, SourceLocation loc, boo
     TypeExpr* typeExpr = ExprCaster<TypeExpr>::getType(rtype);
     assert(typeExpr);
     FunctionDecl* decl = new FunctionDecl(name, loc, is_public, typeExpr->takeType());
-    decls.push_back(decl); 
+    addDecl(decl); 
     delete rtype;
     return decl;
 }
@@ -358,16 +358,6 @@ C2::Type* C2Sema::getBuiltinType(C2Type t) const {
     }
 }
 
-const C2::Decl* C2Sema::findUse(const char* name) const {
-    for (unsigned int i=0; i<decls.size(); i++) {
-        Decl* d = decls[i];
-        if (d->dtype() != DECL_USE) break;
-        if (d->getName() == name) return d;
-    }
-    return 0;
-}
-
-
 C2::ExprResult C2Sema::ActOnNumericConstant(const Token& Tok) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: numeric constant"ANSI_NORMAL"\n";
@@ -423,5 +413,36 @@ void C2Sema::generateC() const {
 
 DiagnosticBuilder C2Sema::Diag(SourceLocation Loc, unsigned DiagID) {
     return Diags.Report(Loc, DiagID);
+}
+
+void C2Sema::addDecl(Decl* d) {
+    decls.push_back(d);
+
+    // UseDecl's dont define a symbol
+    if (d->dtype() != DECL_USE) {
+        Decl* Old = getSymbol(d->getName());
+        if (Old) {
+            Diag(d->getLocation(), diag::err_redefinition)
+            << d->getName();
+            Diag(Old->getLocation(), diag::note_previous_definition);
+        } else {
+            symbols[d->getName()] = d;
+        }
+    }
+}
+
+const C2::Decl* C2Sema::findUse(const char* name) const {
+    for (unsigned int i=0; i<decls.size(); i++) {
+        Decl* d = decls[i];
+        if (d->dtype() != DECL_USE) break;
+        if (d->getName() == name) return d;
+    }
+    return 0;
+}
+
+C2::Decl* C2Sema::getSymbol(const std::string& name) const {
+    SymbolsConstIter iter = symbols.find(name);
+    if (iter == symbols.end()) return 0;
+    else return iter->second;
 }
 

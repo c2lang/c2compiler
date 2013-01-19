@@ -69,7 +69,6 @@ llvm::Value* TypeDecl::codeGen(CodeGenContext& context) {
 }
 
 llvm::Value* UseDecl::codeGen(CodeGenContext& context) {
-    assert(0);
     return 0;
 }
 

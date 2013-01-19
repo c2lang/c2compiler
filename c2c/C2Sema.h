@@ -106,6 +106,9 @@ public:
 private:
     C2::Type* getBuiltinType(C2Type t) const;
     DiagnosticBuilder Diag(SourceLocation Loc, unsigned DiagID);
+    void addDecl(Decl* d);
+    const Decl* findUse(const char* name) const;
+    Decl* getSymbol(const std::string& name) const;
 
     SourceManager& SourceMgr;
     DiagnosticsEngine& Diags;
@@ -116,12 +119,16 @@ private:
     std::string pkgName;
     SourceLocation pkgLoc;
 
-    const Decl* findUse(const char* name) const;
-
     typedef std::vector<Decl*> DeclList;
     typedef DeclList::const_iterator DeclListConstIter;
     typedef DeclList::iterator DeclListIter;
     DeclList decls;
+
+    // TODO move to some Package class
+    // This map is just for lookups, no ownership. UseDecls are not added here
+    typedef std::map<std::string, Decl*> Symbols;
+    typedef Symbols::const_iterator SymbolsConstIter;
+    Symbols symbols;
 
     C2Sema(const C2Sema&);
     C2Sema& operator= (const C2Sema&);

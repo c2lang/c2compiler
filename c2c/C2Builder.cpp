@@ -40,7 +40,6 @@
 #include "C2Sema.h"
 #include "CodeGenerator.h"
 #include "color.h"
-#include "FileAnalyser.h"
 #include "Recipe.h"
 #include "Utils.h"
 
@@ -116,11 +115,6 @@ public:
         if (options.printTiming) printf(COL_TIME"parsing took %lld usec"ANSI_NORMAL"\n", t2 - t1);
         if (!ok) return;
         if (options.printAST) sema.printAST();
-
-        // initial per-file analysis
-        FileAnalyser analyser(Diags);
-        sema.visitAST(analyser);
-        if (analyser.hasErrors()) return;
     }
 
     void generate_c() {
