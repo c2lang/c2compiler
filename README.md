@@ -27,6 +27,7 @@ their priority:
 * [medium] c2c: tab completion on targets in recipe / cmdline args
 * [medium] tool: c2grep - grep only files in recipe
 * [medium] tool: create c-parser for parsing C headers.
+* [medium] tool: create c2style - astyle for C2.
 * [low] c2tags/c2scope - only add files in recipe
 
 
