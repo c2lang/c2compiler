@@ -42,6 +42,7 @@
 #include "color.h"
 #include "Recipe.h"
 #include "Utils.h"
+#include "Decl.h"
 
 #define COL_TIME ANSI_CYAN
 
@@ -82,7 +83,6 @@ private:
     C2ModuleLoader& operator= (const C2ModuleLoader& rhs);
 };
 
-#if 1
 class FileInfo {
 public:
     FileInfo(DiagnosticsEngine& Diags_, LangOptions& LangOpts_, TargetInfo* pti, const std::string& filename_)
@@ -161,7 +161,33 @@ public:
     C2Sema sema;
     C2Parser parser;
 };
-#endif
+
+class Package {
+public:
+    Package(const std::string& name_) : name(name_) {}
+
+    // returs true if ok, false if it exists already
+    void addSymbol(Decl* decl) {
+        symbols[decl->getName()] = decl;
+    }
+    Decl* findSymbol(const std::string& name) {
+        SymbolsIter iter = symbols.find(name);
+        if (iter == symbols.end()) return 0;
+        else return iter->second;
+    }
+    void dump() {
+        printf("Package %s\n", name.c_str());
+        for (SymbolsIter iter = symbols.begin(); iter != symbols.end(); ++iter) {
+            printf("  %s\n", iter->second->getName().c_str());
+        }
+    }
+
+    std::string name;
+
+    typedef std::map<std::string, Decl*> Symbols;
+    typedef Symbols::iterator SymbolsIter;
+    Symbols symbols;
+};
 
 }
 
@@ -205,14 +231,15 @@ void C2Builder::build() {
         bool ok = info->parse(options);
         errors += !ok;
     }
+    if (errors) return;
 
+    // phase 1b: merge file's symbol tables to package symbols tables
+    errors = !createPkgs();
+    dumpPkgs();
     if (errors) return;
 
     // phase 2: run analysing on all files
-    for (int i=0; i<files.size(); i++) {
-        FileInfo* info = files[i];
-        // TODO do analysis pass 1
-    }
+    // TODO do analysis pass 1
 
     if (errors) return;
 
@@ -232,12 +259,43 @@ void C2Builder::build() {
     }
 }
 
-bool C2Builder::hasPackage(const std::string& name) {
-    // for now, just look in every file
+Package* C2Builder::getPackage(const std::string& name) {
+    PkgsIter iter = pkgs.find(name);
+    if (iter == pkgs.end()) {
+        Package* P = new Package(name);
+        pkgs[name] = P;
+        return P;
+    } else {
+        return iter->second;
+    }
+}
+
+// merges symbols of all files of each package
+bool C2Builder::createPkgs() {
     for (int i=0; i<files.size(); i++) {
         FileInfo* info = files[i];
-        if (info->sema.getPkgName() == name) return true;
+        Package* pkg = getPackage(info->sema.getPkgName());
+        // pkg->addSymbol()
+        for (unsigned int i=0; i<info->sema.decls.size(); i++) {
+            Decl* New = info->sema.decls[i];
+            Decl* Old = pkg->findSymbol(New->getName());
+            if (Old) {
+                fprintf(stderr, "MULTI_FILE: duplicate symbol %s\n", New->getName().c_str());
+                fprintf(stderr, "TODO NASTY: locs have to be resolved in different SourceManagers..\n");
+                // TODO: continue/return?
+                return false;
+            } else {
+                pkg->addSymbol(New);
+            }
+        }
     }
-    return false;
+    return true;
+}
+
+void C2Builder::dumpPkgs() {
+    for (PkgsIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
+        Package* P = iter->second;
+        P->dump();
+    }
 }
 

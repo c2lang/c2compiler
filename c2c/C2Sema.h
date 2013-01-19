@@ -115,6 +115,7 @@ private:
 
     // TEMP
     friend class CodeGenerator;
+    friend class C2Builder;
 
     std::string pkgName;
     SourceLocation pkgLoc;
@@ -124,7 +125,6 @@ private:
     typedef DeclList::iterator DeclListIter;
     DeclList decls;
 
-    // TODO move to some Package class
     // This map is just for lookups, no ownership. UseDecls are not added here
     typedef std::map<std::string, Decl*> Symbols;
     typedef Symbols::const_iterator SymbolsConstIter;
