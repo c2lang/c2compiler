@@ -106,15 +106,15 @@ public:
         parser.Initialize();
     }
 
-    void parse(BuildOptions& options) {
+    bool parse(BuildOptions& options) {
         printf("------ parsing %s ------\n", filename.c_str());
         u_int64_t t1 = Utils::getCurrentTime();
         // parse the file into AST
         bool ok = parser.Parse();
         u_int64_t t2 = Utils::getCurrentTime();
         if (options.printTiming) printf(COL_TIME"parsing took %lld usec"ANSI_NORMAL"\n", t2 - t1);
-        if (!ok) return;
         if (options.printAST) sema.printAST();
+        return ok;
     }
 
     void generate_c() {
@@ -198,16 +198,23 @@ void C2Builder::build() {
     IntrusiveRefCntPtr<TargetInfo> Target(pti);
 
     // phase 1: parse and local analyse
+    int errors = 0;
     for (int i=0; i<recipe.size(); i++) {
         FileInfo* info = new FileInfo(Diags, LangOpts, pti, recipe.get(i));
         files.push_back(info);
-        info->parse(options);
+        bool ok = info->parse(options);
+        errors += !ok;
     }
+
+    if (errors) return;
+
     // phase 2: run analysing on all files
     for (int i=0; i<files.size(); i++) {
         FileInfo* info = files[i];
-        
+        // TODO do analysis pass 1
     }
+
+    if (errors) return;
 
     // phase 3: (C) code generation
     for (int i=0; i<files.size(); i++) {
