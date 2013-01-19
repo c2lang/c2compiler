@@ -47,7 +47,7 @@ public:
 
     void build();
 private:
-    void buildFile(const char* filename);
+    bool hasPackage(const std::string& name);
 
     const Recipe&  recipe;
     BuildOptions options;

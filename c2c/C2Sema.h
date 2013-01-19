@@ -101,6 +101,8 @@ public:
     // debugging
     void printAST() const;
     void generateC() const;
+
+    const std::string& getPkgName() const { return pkgName; }
 private:
     C2::Type* getBuiltinType(C2Type t) const;
     DiagnosticBuilder Diag(SourceLocation Loc, unsigned DiagID);

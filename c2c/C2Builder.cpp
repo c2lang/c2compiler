@@ -108,46 +108,34 @@ public:
 
     void parse(BuildOptions& options) {
         printf("------ parsing %s ------\n", filename.c_str());
-        u_int64_t totalStart = Utils::getCurrentTime();
+        u_int64_t t1 = Utils::getCurrentTime();
         // parse the file into AST
-        u_int64_t tt = Utils::getCurrentTime();
-        if (options.printTiming) printf(COL_TIME"setup took %lld usec"ANSI_NORMAL"\n", tt - totalStart);
-        {
-            u_int64_t t1 = Utils::getCurrentTime();
-            bool ok = parser.Parse();
-            u_int64_t t2 = Utils::getCurrentTime();
-            if (options.printTiming) printf(COL_TIME"parsing took %lld usec"ANSI_NORMAL"\n", t2 - t1);
-            if (!ok) return;
-        }
+        bool ok = parser.Parse();
+        u_int64_t t2 = Utils::getCurrentTime();
+        if (options.printTiming) printf(COL_TIME"parsing took %lld usec"ANSI_NORMAL"\n", t2 - t1);
+        if (!ok) return;
         if (options.printAST) sema.printAST();
 
         // initial per-file analysis
         FileAnalyser analyser(Diags);
         sema.visitAST(analyser);
         if (analyser.hasErrors()) return;
-
-        switch (options.mode) {
-        case BuildOptions::NORMAL:
-            {
-                printf("------ generating code for %s ------\n", filename.c_str());
-                CodeGenerator codegen(sema);
-                u_int64_t t1 = Utils::getCurrentTime();
-                codegen.generate();
-                u_int64_t t2 = Utils::getCurrentTime();
-                codegen.dump();
-                if (options.printTiming) printf(COL_TIME"generation took %lld usec"ANSI_NORMAL"\n", t2 - t1);
-            }
-            break;
-        case BuildOptions::GENERATE_C:
-            sema.generateC();
-            break;
-        case BuildOptions::SYNTAX_ONLY:
-            break;
-        }
-        u_int64_t totalEnd = Utils::getCurrentTime();
-        if (options.printTiming) printf(COL_TIME"total took %lld usec"ANSI_NORMAL"\n", totalEnd - totalStart);
     }
-private:
+
+    void generate_c() {
+        sema.generateC();
+    }
+
+    void codegen(BuildOptions& options) {
+        printf("------ generating code for %s ------\n", filename.c_str());
+        u_int64_t t1 = Utils::getCurrentTime();
+        CodeGenerator codegen(sema);
+        codegen.generate();
+        u_int64_t t2 = Utils::getCurrentTime();
+        if (options.printTiming) printf(COL_TIME"generation took %lld usec"ANSI_NORMAL"\n", t2 - t1);
+        codegen.dump();
+    }
+
     std::string filename;
 
     // Diagnostics
@@ -189,7 +177,9 @@ C2Builder::C2Builder(const Recipe& recipe_, const BuildOptions& opts)
 {}
 
 C2Builder::~C2Builder()
-{}
+{
+    // TODO delete members
+}
 
 void C2Builder::build() {
     printf("------ Building target %s ------\n", recipe.name.c_str());
@@ -199,27 +189,53 @@ void C2Builder::build() {
     LangOpts.C2 = 1;
     LangOpts.Bool = 1;
 
+    // Diagnostics
+    DiagnosticOptions DiagOpts;
+    IntrusiveRefCntPtr<DiagnosticIDs> DiagID(new DiagnosticIDs());
+    DiagnosticsEngine Diags(DiagID, &DiagOpts,
+            // NOTE: setting ShouldOwnClient to true causes crash??
+            new TextDiagnosticPrinter(llvm::errs(), &DiagOpts), false);
+
+    // TargetInfo
+    TargetOptions* to = new TargetOptions();
+    to->Triple = llvm::sys::getDefaultTargetTriple();
+    TargetInfo *pti = TargetInfo::CreateTargetInfo(Diags, *to);
+    IntrusiveRefCntPtr<TargetInfo> Target(pti);
+
+    // phase 1: parse and local analyse
     for (int i=0; i<recipe.size(); i++) {
-        const char* filename = recipe.get(i).c_str();
-
-        // Diagnostics
-        DiagnosticOptions DiagOpts;
-        IntrusiveRefCntPtr<DiagnosticIDs> DiagID(new DiagnosticIDs());
-        DiagnosticsEngine Diags(DiagID, &DiagOpts, 
-                // NOTE: setting ShouldOwnClient to true causes crash??
-                new TextDiagnosticPrinter(llvm::errs(), &DiagOpts), false);
-
-        // TargetInfo
-        TargetOptions* to = new TargetOptions();
-        to->Triple = llvm::sys::getDefaultTargetTriple();
-        TargetInfo *pti = TargetInfo::CreateTargetInfo(Diags, *to);
-        IntrusiveRefCntPtr<TargetInfo> Target(pti);
+        FileInfo* info = new FileInfo(Diags, LangOpts, pti, recipe.get(i));
+        files.push_back(info);
+        info->parse(options);
+    }
+    // phase 2: run analysing on all files
+    for (int i=0; i<files.size(); i++) {
+        FileInfo* info = files[i];
         
-        FileInfo info(Diags, LangOpts, pti, filename);
-        info.parse(options);
+    }
+
+    // phase 3: (C) code generation
+    for (int i=0; i<files.size(); i++) {
+        FileInfo* info = files[i];
+        switch (options.mode) {
+        case BuildOptions::NORMAL:
+            info->codegen(options);
+            break;
+        case BuildOptions::GENERATE_C:
+            info->generate_c();
+            break;
+        case BuildOptions::SYNTAX_ONLY:
+            break;
+        }
     }
 }
 
-void C2Builder::buildFile(const char* filename) {
+bool C2Builder::hasPackage(const std::string& name) {
+    // for now, just look in every file
+    for (int i=0; i<files.size(); i++) {
+        FileInfo* info = files[i];
+        if (info->sema.getPkgName() == name) return true;
+    }
+    return false;
 }
 
