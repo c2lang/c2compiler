@@ -72,6 +72,8 @@ make -j4
 ```
 If all goes well, the **c2c** executable should appear.
 
+If you get an error with some Clang/C2 errors, try updating your clang C2 archive.
+
 
 ## Using the C2 compiler
 Not all examples (in the examples/ dir) work yet. Some still hit an assert.
