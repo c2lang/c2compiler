@@ -14,16 +14,16 @@
  */
 
 #include <llvm/Module.h>
-#include "llvm/ADT/ArrayRef.h"
-#include "llvm/LLVMContext.h"
-#include "llvm/Function.h"
-#include "llvm/BasicBlock.h"
-#include "llvm/IRBuilder.h"
+#include <llvm/ADT/ArrayRef.h>
+#include <llvm/LLVMContext.h>
+#include <llvm/Function.h>
+#include <llvm/BasicBlock.h>
+#include <llvm/IRBuilder.h>
 #include <vector>
 #include <string>
 // for SmallString
-#include "llvm/ADT/SmallString.h"
-#include "llvm/Support/FileSystem.h"
+#include <llvm/ADT/SmallString.h>
+#include <llvm/Support/FileSystem.h>
 // for tool_output_file
 #include <llvm/Support/ToolOutputFile.h>
 // for WriteBitcodeToFile

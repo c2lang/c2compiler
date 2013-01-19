@@ -13,26 +13,26 @@
  * limitations under the License.
  */
 
-#include "clang/Basic/Diagnostic.h"
-#include "clang/Basic/DiagnosticOptions.h"
-#include "clang/Basic/FileManager.h"
-#include "clang/Basic/FileSystemOptions.h"
-#include "clang/Basic/LangOptions.h"
-#include "clang/Basic/SourceManager.h"
-#include "clang/Basic/TargetInfo.h"
-#include "clang/Basic/TargetOptions.h"
-#include "clang/Frontend/TextDiagnosticPrinter.h"
-#include "clang/Lex/HeaderSearch.h"
-#include "clang/Lex/HeaderSearchOptions.h"
-#include "clang/Lex/ModuleLoader.h"
-#include "clang/Lex/Preprocessor.h"
-#include "clang/Lex/PreprocessorOptions.h"
-#include "llvm/ADT/ArrayRef.h"
-#include "llvm/ADT/DenseMap.h"
-#include "llvm/ADT/IntrusiveRefCntPtr.h"
-#include "llvm/ADT/OwningPtr.h"
-#include "llvm/ADT/StringRef.h"
-#include "llvm/Support/Host.h"
+#include <clang/Basic/Diagnostic.h>
+#include <clang/Basic/DiagnosticOptions.h>
+#include <clang/Basic/FileManager.h>
+#include <clang/Basic/FileSystemOptions.h>
+#include <clang/Basic/LangOptions.h>
+#include <clang/Basic/SourceManager.h>
+#include <clang/Basic/TargetInfo.h>
+#include <clang/Basic/TargetOptions.h>
+#include <clang/Frontend/TextDiagnosticPrinter.h>
+#include <clang/Lex/HeaderSearch.h>
+#include <clang/Lex/HeaderSearchOptions.h>
+#include <clang/Lex/ModuleLoader.h>
+#include <clang/Lex/Preprocessor.h>
+#include <clang/Lex/PreprocessorOptions.h>
+#include <llvm/ADT/ArrayRef.h>
+#include <llvm/ADT/DenseMap.h>
+#include <llvm/ADT/IntrusiveRefCntPtr.h>
+#include <llvm/ADT/OwningPtr.h>
+#include <llvm/ADT/StringRef.h>
+#include <llvm/Support/Host.h>
 
 #include "C2Builder.h"
 #include "C2Parser.h"
@@ -94,7 +94,7 @@ public:
         , Headers(HSOpts, FileMgr, Diags, LangOpts_, pti)
         , PPOpts(new PreprocessorOptions())
         , PP(PPOpts, Diags, LangOpts_, pti, SM, Headers, loader)
-        , sema(SM)
+        , sema(SM, Diags)
         , parser(PP, sema)
     {
         // File stuff

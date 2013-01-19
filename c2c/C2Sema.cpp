@@ -16,6 +16,8 @@
 #include <iostream>
 #include <stdlib.h>
 #include <string>
+#include <clang/Parse/ParseDiagnostic.h>
+#include <clang/Sema/SemaDiagnostic.h>
 
 #include "C2Sema.h"
 #include "Decl.h"
@@ -33,8 +35,9 @@
 using namespace C2;
 using namespace clang;
 
-C2Sema::C2Sema(SourceManager& sm_)
+C2Sema::C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_)
     : SourceMgr(sm_)
+    , Diags(Diags_)
 {
 }
 
@@ -60,15 +63,15 @@ void C2Sema::ActOnUse(const char* name, SourceLocation loc) {
 #endif
     // check if use-ing own package
     if (pkgName == name) {
-        fprintf(stderr, "Sema: error: cannot use own package\n");
-        // TODO use Diag
+        Diag(loc, diag::err_use_own_package) << name;
         return;
     }
     // check for duplicate use
     const UseInfo* old = findUse(name);
     if (old) {
-        fprintf(stderr, "Sema: error: duplicate use statement\n");
-        // TODO Use Diag
+        Diag(loc, diag::err_duplicate_use) << name;
+        // TODO add package name that's used twice
+        Diag(old->loc, diag::note_previous_use);
         return;
     }
 
@@ -424,5 +427,9 @@ void C2Sema::generateC() const {
         buffer << '\n';
     }
     printf("%s", (const char*)buffer);
+}
+
+DiagnosticBuilder C2Sema::Diag(SourceLocation Loc, unsigned DiagID) {
+    return Diags.Report(Loc, DiagID);
 }
 

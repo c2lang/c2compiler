@@ -14,12 +14,12 @@
  */
 
 #include <llvm/Module.h>
-#include "llvm/ADT/ArrayRef.h"
-#include "llvm/LLVMContext.h"
-#include "llvm/Module.h"
-#include "llvm/Function.h"
-#include "llvm/BasicBlock.h"
-#include "llvm/IRBuilder.h"
+#include <llvm/ADT/ArrayRef.h>
+#include <llvm/LLVMContext.h>
+#include <llvm/Module.h>
+#include <llvm/Function.h>
+#include <llvm/BasicBlock.h>
+#include <llvm/IRBuilder.h>
 
 #include "Decl.h"
 #include "Stmt.h"

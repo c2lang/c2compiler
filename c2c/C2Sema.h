@@ -28,6 +28,7 @@
 namespace clang {
 class SourceManager;
 class Token;
+class DiagnosticsEngine;
 }
 
 using clang::SourceLocation;
@@ -59,7 +60,7 @@ enum C2Type {
 
 class C2Sema {
 public:
-    C2Sema(SourceManager& sm_);
+    C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_);
     ~C2Sema();
 
     // file level actions
@@ -102,8 +103,10 @@ public:
     void generateC() const;
 private:
     C2::Type* getBuiltinType(C2Type t) const;
+    DiagnosticBuilder Diag(SourceLocation Loc, unsigned DiagID);
 
     SourceManager& SourceMgr;
+    DiagnosticsEngine& Diags;
 
     // TEMP
     friend class CodeGenerator;
