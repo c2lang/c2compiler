@@ -42,7 +42,9 @@ C2Sema::C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_)
 }
 
 C2Sema::~C2Sema() {
-    // TODO delete all decls
+    for (unsigned int i=0; i<decls.size(); i++) {
+        delete decls[i];
+    }
 }
 
 void C2Sema::ActOnPackage(const char* name, SourceLocation loc) {

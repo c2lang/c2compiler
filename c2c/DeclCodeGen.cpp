@@ -20,6 +20,7 @@
 #include <llvm/Function.h>
 #include <llvm/BasicBlock.h>
 #include <llvm/IRBuilder.h>
+#include <stdio.h>
 
 #include "Decl.h"
 #include "Stmt.h"
@@ -59,12 +60,12 @@ llvm::Value* FunctionDecl::codeGen(CodeGenContext& C) {
 }
 
 llvm::Value* VarDecl::codeGen(CodeGenContext& context) {
-    assert(0);
+    fprintf(stderr, "TODO VarDecl::codeGen()\n");
     return 0;
 }
 
 llvm::Value* TypeDecl::codeGen(CodeGenContext& context) {
-    assert(0);
+    fprintf(stderr, "TODO TypeDecl::codeGen()\n");
     return 0;
 }
 
