@@ -22,7 +22,6 @@
 #include <clang/Basic/SourceLocation.h>
 
 #include "Stmt.h"
-#include "myassert.h"
 
 namespace C2 {
 
@@ -217,7 +216,7 @@ private:
 class ExprVisitor {
 public:
     virtual ~ExprVisitor() {}
-    virtual void visit(Expr&) { ASSERT_FAIL(); }    // add ExprClass below
+    virtual void visit(Expr&) { assert(0); }    // add ExprClass below
     virtual void visit(NumberExpr&) {}
     virtual void visit(StringExpr&) {}
     virtual void visit(CallExpr&) {}

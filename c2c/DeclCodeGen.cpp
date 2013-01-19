@@ -25,7 +25,6 @@
 #include "Stmt.h"
 #include "Expr.h"
 #include "StringBuilder.h"
-#include "myassert.h"
 #include "Type.h"
 #include "Utils.h"
 #include "CodeGenerator.h"

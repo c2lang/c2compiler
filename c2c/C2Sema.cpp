@@ -15,6 +15,7 @@
 
 #include <iostream>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string>
 #include <clang/Parse/ParseDiagnostic.h>
 #include <clang/Sema/SemaDiagnostic.h>
@@ -23,7 +24,6 @@
 #include "Decl.h"
 #include "Type.h"
 #include "StringBuilder.h"
-#include "myassert.h"
 #include "Type.h"
 #include "color.h"
 #include "ASTVisitor.h"
@@ -89,7 +89,7 @@ void C2Sema::ActOnTypeDef(const char* name, SourceLocation loc, Expr* type, bool
 #endif
     // TEMP extract here to Type and delete rtype Expr
     TypeExpr* typeExpr = ExprCaster<TypeExpr>::getType(type);
-    ASSERT_NOT_NULL(typeExpr);
+    assert(typeExpr);
     TypeDecl* decl = new TypeDecl(name, loc, typeExpr->takeType(), is_public);
     decls.push_back(decl);
     delete type;
@@ -105,7 +105,7 @@ void C2Sema::ActOnVarDef(const char* name, SourceLocation loc,
 #endif
     // TEMP extract here to Type and delete rtype Expr
     TypeExpr* typeExpr = ExprCaster<TypeExpr>::getType(type);
-    ASSERT_NOT_NULL(typeExpr);
+    assert(typeExpr);
     DeclExpr* declExpr = new DeclExpr(name, loc, typeExpr->takeType(), InitValue);
     VarDecl* decl = new VarDecl(declExpr, is_public, false);
     decls.push_back(decl);
@@ -119,9 +119,9 @@ C2::FunctionDecl* C2Sema::ActOnFuncDef(const char* name, SourceLocation loc, boo
     std::cerr << ANSI_NORMAL"\n";
 #endif
     // TEMP extract here to Type and delete rtype Expr
-    ASSERT_NOT_NULL(rtype);
+    assert(rtype);
     TypeExpr* typeExpr = ExprCaster<TypeExpr>::getType(rtype);
-    ASSERT_NOT_NULL(typeExpr);
+    assert(typeExpr);
     FunctionDecl* decl = new FunctionDecl(name, loc, is_public, typeExpr->takeType());
     decls.push_back(decl); 
     delete rtype;
@@ -130,7 +130,7 @@ C2::FunctionDecl* C2Sema::ActOnFuncDef(const char* name, SourceLocation loc, boo
 
 void C2Sema::ActOnFinishFunctionBody(Decl* decl, Stmt* body) {
     FunctionDecl* func = DeclCaster<FunctionDecl>::getType(decl);
-    ASSERT_NOT_NULL(func);
+    assert(func);
     func->setBody(body);
 }
 
@@ -187,7 +187,7 @@ C2::ExprResult C2Sema::ActOnCallExpr(Expr* id, Expr** args, unsigned numArgs, So
     std::cerr << ANSI_NORMAL"\n";
 #endif
     CallExpr* call = new CallExpr(Fn);
-    ASSERT_NOT_NULL(call);
+    assert(call);
     for (int i=0; i<numArgs; i++) call->addArg(args[i]);
     return ExprResult(call);
 }
@@ -218,9 +218,9 @@ C2::ExprResult C2Sema::ActOnArrayType(Expr* base, Expr* size) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: Array Type"ANSI_NORMAL"\n";
 #endif
-    ASSERT_NOT_NULL(base);
+    assert(base);
     TypeExpr* typeExpr = ExprCaster<TypeExpr>::getType(base);
-    ASSERT_NOT_NULL(typeExpr);
+    assert(typeExpr);
     typeExpr->addArray(size);
     return ExprResult(base);
 }
@@ -297,7 +297,7 @@ C2::ExprResult C2Sema::ActOnVarExpr(const char* name, SourceLocation loc, Expr* 
 #endif
     // TEMP extract here to Type and delete rtype Expr
     TypeExpr* typeExpr = ExprCaster<TypeExpr>::getType(type);
-    ASSERT_NOT_NULL(typeExpr);
+    assert(typeExpr);
     DeclExpr* declExpr = new DeclExpr(name, loc, typeExpr->takeType(), InitValue);
     delete type;
     return ExprResult(declExpr);
@@ -390,7 +390,7 @@ C2::ExprResult C2Sema::ActOnStringLiteral(const Token* StringToks, unsigned int 
     std::cerr << COL_SEMA"SEMA: string literal"ANSI_NORMAL"\n";
 #endif
     // TEMP
-    ASSERT_TRUE(NumStringToks == 1);
+    assert(NumStringToks == 1 && "only 1 string supported for now");
 
     // Strip off double-quotes here
     std::string text(StringToks[0].getLiteralData()+1, StringToks[0].getLength()-2);

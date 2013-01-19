@@ -17,7 +17,6 @@
 #include "Stmt.h"
 #include "Expr.h"
 #include "StringBuilder.h"
-#include "myassert.h"
 #include "Type.h"
 #include "Utils.h"
 
@@ -73,7 +72,7 @@ void FunctionDecl::print(StringBuilder& buffer) {
     for (int i=0; i<args.size(); i++) {
         args[i]->print(INDENT, buffer);
     }
-    ASSERT_NOT_NULL(body);
+    assert(body);
     body->print(INDENT, buffer);
 }
 
@@ -89,7 +88,7 @@ void FunctionDecl::generateC(StringBuilder& buffer) {
         count--;
     }
     buffer << ")\n";
-    ASSERT_NOT_NULL(body);
+    assert(body);
     body->generateC(0, buffer);
     buffer << '\n';
 }

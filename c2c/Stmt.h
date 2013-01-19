@@ -18,7 +18,6 @@
 
 #include <string>
 #include <vector>
-#include "myassert.h"
 
 #include <clang/Basic/SourceLocation.h>
 
@@ -120,7 +119,7 @@ private:
 class StmtVisitor {
 public:
     virtual ~StmtVisitor() {}
-    virtual void visit(C2::Stmt&) { ASSERT_FAIL(); }    // add subclass below
+    virtual void visit(C2::Stmt&) { assert(0); }    // add subclass below
     virtual void visit(ReturnStmt&) {}
     virtual void visit(IfStmt&) {}
     virtual void visit(CompoundStmt&) {}

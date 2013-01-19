@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include <stdio.h>
+
 #include "Expr.h"
 #include "StringBuilder.h"
 #include "Utils.h"
@@ -38,7 +40,7 @@ static const char* bin_names[] = {
 };
 
 static const char* binop2str(BinOp op) {
-    ASSERT_TRUE(op < BOP_MAX);
+    assert(op < BOP_MAX);
     return bin_names[op];
 }
 
@@ -46,7 +48,7 @@ static const char* unary_names[] = {
 };
 
 static const char* unary2str(UnaryOp op) {
-    ASSERT_TRUE(op < OP_MAX);
+    assert(op < OP_MAX);
     return unary_names[op];
 }
 

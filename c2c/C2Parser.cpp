@@ -14,6 +14,7 @@
  */
 
 #include <iostream>
+#include <stdio.h>
 #include <string.h>
 #include <clang/Parse/ParseDiagnostic.h>
 #include <clang/Sema/SemaDiagnostic.h>

@@ -12,7 +12,6 @@ OBJS = \
     ExprCodeGen.o \
     FileAnalyser.o \
     FileMap.o \
-    myassert.o \
     Recipe.o \
     RecipeReader.o \
     Stmt.o \
@@ -37,8 +36,6 @@ CLANGLIBS = \
 .PHONY : clean
 clean:
 	@rm -rf c2c $(OBJS)
-
-remake: clean c2c
 
 %.o: %.cpp
 	@echo building $@

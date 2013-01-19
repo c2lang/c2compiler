@@ -18,7 +18,6 @@
 
 #include <string>
 #include <vector>
-#include "myassert.h"
 
 #include <clang/Basic/SourceLocation.h>
 
@@ -135,7 +134,7 @@ private:
 class DeclVisitor {
 public:
     virtual ~DeclVisitor() {}
-    virtual void visit(C2::Decl&) { ASSERT_FAIL(); }    // add subclass below
+    virtual void visit(C2::Decl&) { assert(0); }    // add subclass below
     virtual void visit(FunctionDecl&) {}
     virtual void visit(VarDecl&) {}
     virtual void visit(TypeDecl&) {}

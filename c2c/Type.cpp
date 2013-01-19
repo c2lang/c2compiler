@@ -396,7 +396,7 @@ void Type::print(int indent, StringBuilder& buffer) const {
         break;
     case USER:
         buffer << "(user)\n";
-        ASSERT_NOT_NULL(userType);
+        assert(userType);
         userType->print(indent + INDENT, buffer);
         break;
     case UNION:
@@ -515,7 +515,7 @@ void Type::generateC_PreName(StringBuilder& buffer) const {
 
 void Type::generateC_PostName(StringBuilder& buffer) const {
     if (kind == ARRAY) {
-        ASSERT_NOT_NULL(refType);
+        assert(refType);
         refType->generateC_PostName(buffer);
         buffer << '[';
         if (arrayExpr) arrayExpr->generateC(0, buffer);
