@@ -178,6 +178,7 @@ public:
     virtual void visit(FunctionDecl&) {}
     virtual void visit(VarDecl&) {}
     virtual void visit(TypeDecl&) {}
+    virtual void visit(ArrayValueDecl&) {}
     virtual void visit(UseDecl&) {}
     // add more sub-classes here
 };

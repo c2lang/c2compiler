@@ -38,6 +38,7 @@ enum StmtType {
     STMT_RETURN = 0,
     STMT_EXPR,
     STMT_IF,
+    STMT_WHILE,
     STMT_COMPOUND,
 };
 
@@ -79,9 +80,9 @@ private:
 
 class IfStmt : public Stmt {
 public:
-    IfStmt(const SourceLocation& ifLoc,
+    IfStmt(SourceLocation ifLoc,
            Expr* condition, Stmt* thenStmt,
-           const SourceLocation& elseLoc, Stmt* elseStmt);
+           SourceLocation elseLoc, Stmt* elseStmt);
     virtual ~IfStmt();
     virtual StmtType stype() { return STMT_IF; }
     virtual void acceptS(StmtVisitor& v);
@@ -95,6 +96,23 @@ private:
 
     SourceLocation IfLoc;
     SourceLocation ElseLoc;
+};
+
+
+class WhileStmt : public Stmt {
+public:
+    WhileStmt(SourceLocation Loc_, Expr* Cond_, Stmt* Then_);
+    virtual ~WhileStmt();
+    virtual StmtType stype() { return STMT_WHILE; }
+    virtual void acceptS(StmtVisitor& v);
+
+    virtual void print(int indent, StringBuilder& buffer);
+    virtual void generateC(int indent, StringBuilder& buffer);
+    virtual llvm::Value* codeGen(CodeGenContext& context);
+private:
+    SourceLocation Loc;
+    Stmt* Cond;
+    Stmt* Then;
 };
 
 
@@ -122,6 +140,7 @@ public:
     virtual void visit(C2::Stmt&) { assert(0); }    // add subclass below
     virtual void visit(ReturnStmt&) {}
     virtual void visit(IfStmt&) {}
+    virtual void visit(WhileStmt&) {}
     virtual void visit(CompoundStmt&) {}
 };
 

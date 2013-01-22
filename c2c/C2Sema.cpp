@@ -48,7 +48,7 @@ C2Sema::~C2Sema() {
 }
 
 void C2Sema::ActOnPackage(const char* name, SourceLocation loc) {
-#ifdef SEMA_DEBUG    
+#ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: package " << name << " at ";
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
@@ -58,7 +58,7 @@ void C2Sema::ActOnPackage(const char* name, SourceLocation loc) {
 }
 
 void C2Sema::ActOnUse(const char* name, SourceLocation loc) {
-#ifdef SEMA_DEBUG    
+#ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: use " << name << " at ";
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
@@ -82,7 +82,7 @@ void C2Sema::ActOnUse(const char* name, SourceLocation loc) {
 void C2Sema::ActOnTypeDef(const char* name, SourceLocation loc, Expr* type, bool is_public) {
     assert(name);
     assert(type);
-#ifdef SEMA_DEBUG    
+#ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: type def " << name << " at ";
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
@@ -98,7 +98,7 @@ void C2Sema::ActOnTypeDef(const char* name, SourceLocation loc, Expr* type, bool
 void C2Sema::ActOnVarDef(const char* name, SourceLocation loc,
                         bool is_public, Expr* type, Expr* InitValue) {
     assert(type);
-#ifdef SEMA_DEBUG    
+#ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: var def " << name << " at ";
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
@@ -113,7 +113,7 @@ void C2Sema::ActOnVarDef(const char* name, SourceLocation loc,
 }
 
 C2::FunctionDecl* C2Sema::ActOnFuncDef(const char* name, SourceLocation loc, bool is_public, Expr* rtype) {
-#ifdef SEMA_DEBUG    
+#ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: func def " << name << " at ";
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
@@ -123,7 +123,7 @@ C2::FunctionDecl* C2Sema::ActOnFuncDef(const char* name, SourceLocation loc, boo
     TypeExpr* typeExpr = ExprCaster<TypeExpr>::getType(rtype);
     assert(typeExpr);
     FunctionDecl* decl = new FunctionDecl(name, loc, is_public, typeExpr->takeType());
-    addDecl(decl); 
+    addDecl(decl);
     delete rtype;
     return decl;
 }
@@ -135,7 +135,7 @@ void C2Sema::ActOnFinishFunctionBody(Decl* decl, Stmt* body) {
 }
 
 void C2Sema::ActOnArrayValue(const char* name, SourceLocation loc, Expr* Value) {
-#ifdef SEMA_DEBUG    
+#ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: arrayvalue at ";
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
@@ -145,7 +145,7 @@ void C2Sema::ActOnArrayValue(const char* name, SourceLocation loc, Expr* Value) 
 }
 
 C2::StmtResult C2Sema::ActOnReturnStmt(SourceLocation loc, Expr* value) {
-#ifdef SEMA_DEBUG    
+#ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: return at ";
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
@@ -156,7 +156,7 @@ C2::StmtResult C2Sema::ActOnReturnStmt(SourceLocation loc, Expr* value) {
 C2::StmtResult C2Sema::ActOnIfStmt(SourceLocation ifLoc,
                                    ExprResult condition, StmtResult thenStmt,
                                    SourceLocation elseLoc, StmtResult elseStmt) {
-#ifdef SEMA_DEBUG    
+#ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: if statement at ";
     ifLoc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
@@ -164,8 +164,17 @@ C2::StmtResult C2Sema::ActOnIfStmt(SourceLocation ifLoc,
     return StmtResult(new IfStmt(ifLoc, condition.release(), thenStmt.release(), elseLoc, elseStmt.release()));
 }
 
+C2::StmtResult C2Sema::ActOnWhileStmt(SourceLocation loc, ExprResult Cond, StmtResult Then) {
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: while statement at ";
+    loc.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    return StmtResult(new WhileStmt(loc, Cond.release(), Then.release()));
+}
+
 C2::StmtResult C2Sema::ActOnCompoundStmt(SourceLocation L, SourceLocation R, StmtList& stmts) {
-#ifdef SEMA_DEBUG    
+#ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: compound statement at ";
     L.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
@@ -175,7 +184,7 @@ C2::StmtResult C2Sema::ActOnCompoundStmt(SourceLocation L, SourceLocation R, Stm
 
 C2::StmtResult C2Sema::ActOnDeclaration(const char* name, SourceLocation loc, Expr* type, Expr* InitValue) {
     assert(type);
-#ifdef SEMA_DEBUG    
+#ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: decl at ";
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
@@ -191,7 +200,7 @@ C2::StmtResult C2Sema::ActOnDeclaration(const char* name, SourceLocation loc, Ex
 
 C2::ExprResult C2Sema::ActOnCallExpr(Expr* id, Expr** args, unsigned numArgs, SourceLocation RParenLoc) {
     IdentifierExpr* Fn = ExprCaster<IdentifierExpr>::getType(id);
-#ifdef SEMA_DEBUG    
+#ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: call to " << Fn->getName() << " at ";
     Fn->getLocation().dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
@@ -205,7 +214,7 @@ C2::ExprResult C2Sema::ActOnCallExpr(Expr* id, Expr** args, unsigned numArgs, So
 C2::ExprResult C2Sema::ActOnIdExpression(IdentifierInfo* pkgII, SourceLocation pkgLoc,
                                          IdentifierInfo& symII, SourceLocation symLoc) {
     std::string id(symII.getNameStart(), symII.getLength());
-#ifdef SEMA_DEBUG    
+#ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: identifier " << id << " at ";
     symLoc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
@@ -216,7 +225,7 @@ C2::ExprResult C2Sema::ActOnIdExpression(IdentifierInfo* pkgII, SourceLocation p
 }
 
 C2::ExprResult C2Sema::ActOnInitList(SourceLocation left_, SourceLocation right_, ExprList& vals) {
-#ifdef SEMA_DEBUG    
+#ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: initlist at ";
     left_.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
@@ -225,7 +234,7 @@ C2::ExprResult C2Sema::ActOnInitList(SourceLocation left_, SourceLocation right_
 }
 
 C2::ExprResult C2Sema::ActOnArrayType(Expr* base, Expr* size) {
-#ifdef SEMA_DEBUG
+#ifdef SEMA_DEBUGG
     std::cerr << COL_SEMA"SEMA: Array Type"ANSI_NORMAL"\n";
 #endif
     assert(base);
@@ -253,7 +262,7 @@ C2::ExprResult C2Sema::ActOnUserType(Expr* expr) {
     assert(expr);
     IdentifierExpr* idExpr = ExprCaster<IdentifierExpr>::getType(expr);
     assert(idExpr && "invalid expr type");
-    
+
     Type* type = new Type(Type::USER, 0);
     type->setUserType(idExpr);
     return ExprResult(new TypeExpr(type));
@@ -300,7 +309,7 @@ C2::ExprResult C2Sema::ActOnTypeQualifier(ExprResult R, unsigned int qualifier) 
 
 C2::ExprResult C2Sema::ActOnVarExpr(const char* name, SourceLocation loc, Expr* type, Expr* InitValue) {
     assert(type);
-#ifdef SEMA_DEBUG    
+#ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: var expr " << name << " at ";
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
@@ -381,7 +390,7 @@ C2::ExprResult C2Sema::ActOnNumericConstant(const Token& Tok) {
     strncpy(buffer, Tok.getLiteralData(), Tok.getLength());
 
     unsigned int size = 4;  // size of int
-    //return Owned(IntegerLiteral::Create(Context, :e 
+    //return Owned(IntegerLiteral::Create(Context, :e
     // (see ActOnIntegerConstant)
     return ExprResult(new NumberExpr(Tok.getLocation(), atoi(buffer)));
 }

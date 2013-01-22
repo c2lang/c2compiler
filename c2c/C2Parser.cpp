@@ -598,7 +598,7 @@ C2::ExprResult C2Parser::ParseRHSOfBinaryExpression(ExprResult LHS, prec::Level 
             }
           }
         }
-        
+
         Diag(Tok, diag::err_expected_colon)
           << FixItHint::CreateInsertion(FILoc, FIText);
         Diag(OpToken, diag::note_matching) << "?";
@@ -606,7 +606,7 @@ C2::ExprResult C2Parser::ParseRHSOfBinaryExpression(ExprResult LHS, prec::Level 
       }
     }
 #endif
-    
+
 #if 0
     // Code completion for the right-hand side of an assignment expression
     // goes through a special hook that takes the left-hand side into account.
@@ -616,7 +616,7 @@ C2::ExprResult C2Parser::ParseRHSOfBinaryExpression(ExprResult LHS, prec::Level 
       return ExprError();
     }
 #endif
-    
+
     // Parse another leaf here for the RHS of the operator.
     // ParseCastExpression works here because all RHS expressions in C have it
     // as a prefix, at least. However, in C++, an assignment-expression could
@@ -641,7 +641,7 @@ C2::ExprResult C2Parser::ParseRHSOfBinaryExpression(ExprResult LHS, prec::Level 
 
     if (RHS.isInvalid())
       LHS = ExprError();
-    
+
     // Remember the precedence of this operator and get the precedence of the
     // operator immediately to the right of the RHS.
     prec::Level ThisPrec = NextTokPrec;
@@ -665,7 +665,7 @@ C2::ExprResult C2Parser::ParseRHSOfBinaryExpression(ExprResult LHS, prec::Level 
       // is okay, to bind exactly as tightly.  For example, compile A=B=C=D as
       // A=(B=(C=D)), where each paren is a level of recursion here.
       // The function takes ownership of the RHS.
-      RHS = ParseRHSOfBinaryExpression(RHS, 
+      RHS = ParseRHSOfBinaryExpression(RHS,
                             static_cast<prec::Level>(ThisPrec + !isRightAssoc));
       RHSIsInitList = false;
 
@@ -867,7 +867,7 @@ C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
 #if 0
       if (InMessageExpression)
         return LHS;
-        
+
       Actions.CodeCompletePostfixExpression(getCurScope(), LHS);
       cutOffParsing();
       return ExprError();
@@ -918,7 +918,7 @@ C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
     {
       tok::TokenKind OpKind = Tok.getKind();
       //InMessageExpressionRAIIObject InMessage(*this, false);
-      
+
         // TODO ParseExpr.cpp:2562
       //BalancedDelimiterTracker PT(*this, tok::l_paren);
       //PT.consumeOpen();
@@ -927,7 +927,7 @@ C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
 
       ExprVector ArgExprs;
       CommaLocsTy CommaLocs;
-      
+
       if (OpKind == tok::l_paren || !LHS.isInvalid()) {
         if (Tok.isNot(tok::r_paren)) {
           if (ParseExpressionList(ArgExprs, CommaLocs)) {
@@ -943,7 +943,7 @@ C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
         //PT.consumeClose();
         LHS = ExprError();
       } else {
-        assert((ArgExprs.size() == 0 || 
+        assert((ArgExprs.size() == 0 ||
                 ArgExprs.size()-1 == CommaLocs.size())&&
                "Unexpected number of commas!");
         if (ArgExprs.size() == 0)
@@ -976,7 +976,7 @@ C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
         //cutOffParsing();
         return ExprError();
       }
-      
+
       // Either the action has told is that this cannot be a
       // pseudo-destructor expression (based on the type of base
       // expression), or we didn't see a '~' in the right place. We
@@ -992,10 +992,10 @@ C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
                             /*AllowConstructorName=*/false,
                             ObjectType, TemplateKWLoc, Name);
         LHS = ExprError();
-      
+
 #if 0
       if (!LHS.isInvalid())
-        LHS = Actions.ActOnMemberAccessExpr(getCurScope(), LHS.take(), OpLoc, 
+        LHS = Actions.ActOnMemberAccessExpr(getCurScope(), LHS.take(), OpLoc,
                                             OpKind, SS, TemplateKWLoc, Name,
                                  CurParsedObjCImpl ? CurParsedObjCImpl->Dcl : 0,
                                             Tok.is(tok::l_paren));
@@ -1140,7 +1140,7 @@ C2Parser::ParseParenExpression(ParenParseOption &ExprType, bool stopIfCastExpr,
 
         RParenLoc = Tok.getLocation();
         if (ExpectAndConsume(tok::r_paren, diag::err_expected_rparen)) return ExprError();
-        
+
         if (Tok.is(tok::l_brace)) {
             assert(0 && "TODO");
         }
@@ -1233,7 +1233,7 @@ bool C2Parser::isTypeSpec() {
                 Diag(t2, diag::err_expected_expression);
                 return false;            // 'foo*' -> error
             }
-            if (state == 2) return false;            // 'foo[..] =' -> assignment 
+            if (state == 2) return false;            // 'foo[..] =' -> assignment
         default:
             return false;
         }
@@ -1466,8 +1466,7 @@ C2::StmtResult C2Parser::ParseStatement() {
         ParseSwitchStatement();
         return StmtError(); // TODO
     case tok::kw_while:
-        ParseWhileStatement();
-        return StmtError(); // TODO
+        return ParseWhileStatement();
     case tok::kw_do:
         ParseDoStatement();
         return StmtError(); // TODO
@@ -1640,21 +1639,22 @@ void C2Parser::ParseSwitchStatement() {
 /// ParseWhileStatement
 ///       while-statement: [C99 6.8.5.1]
 ///         'while' '(' expression ')' statement
-void C2Parser::ParseWhileStatement() {
+C2::StmtResult C2Parser::ParseWhileStatement() {
     LOG_FUNC
     assert(Tok.is(tok::kw_while) && "Not a while stmt!");
-    ConsumeToken();
+    SourceLocation Loc = ConsumeToken();
 
-    if (ExpectAndConsume(tok::l_paren, diag::err_expected_lparen)) return;
+    if (ExpectAndConsume(tok::l_paren, diag::err_expected_lparen)) return StmtError();
 
-    ParseExpression();
-    if (Diags.hasErrorOccurred()) return;
+    ExprResult Cond = ParseExpression();
+    if (Cond.isInvalid()) return StmtError();
 
-    if (ExpectAndConsume(tok::r_paren, diag::err_expected_rparen)) return;
-    if (Diags.hasErrorOccurred()) return;
+    if (ExpectAndConsume(tok::r_paren, diag::err_expected_rparen)) return StmtError();
 
-    ParseStatement();
-    if (Diags.hasErrorOccurred()) return;
+    StmtResult Then = ParseStatement();
+    if (Then.isInvalid()) return StmtError();
+
+    return Actions.ActOnWhileStmt(Loc, Cond, Then);
 }
 
 /// ParseDoStatement
@@ -1724,7 +1724,7 @@ void C2Parser::ParseForStatement() {
         if (Diags.hasErrorOccurred()) return;
     }
     if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "statement")) return;
-     
+
     // third substmt
     if (Tok.isNot(tok::r_paren)) {
         ParseExpression();

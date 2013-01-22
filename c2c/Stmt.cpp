@@ -79,9 +79,9 @@ void ReturnStmt::generateC(int indent, StringBuilder& buffer) {
 }
 
 
-IfStmt::IfStmt(const SourceLocation& ifLoc,
+IfStmt::IfStmt(SourceLocation ifLoc,
                Expr* condition, Stmt* thenStmt,
-               const SourceLocation& elseLoc, Stmt* elseStmt)
+               SourceLocation elseLoc, Stmt* elseStmt)
     : IfLoc(ifLoc)
     , ElseLoc(elseLoc)
 {
@@ -122,6 +122,37 @@ void IfStmt::generateC(int indent, StringBuilder& buffer) {
 }
 
 
+WhileStmt::WhileStmt(SourceLocation Loc_, Expr* Cond_, Stmt* Then_)
+    : Loc(Loc_)
+    , Cond(Cond_)
+    , Then(Then_)
+{}
+
+WhileStmt::~WhileStmt() {
+    delete Cond;
+    delete Then;
+}
+
+STMT_VISITOR_ACCEPT(WhileStmt);
+
+
+void WhileStmt::print(int indent, StringBuilder& buffer) {
+    buffer.indent(indent);
+    buffer << "[while]\n";
+    Cond->print(indent + INDENT, buffer);
+    Then->print(indent + INDENT, buffer);
+}
+
+void WhileStmt::generateC(int indent, StringBuilder& buffer) {
+    // TODO
+}
+
+llvm::Value* WhileStmt::codeGen(CodeGenContext& context) {
+    // TODO
+    return 0;
+}
+
+
 CompoundStmt::CompoundStmt(SourceLocation l, SourceLocation r, StmtList& stmts)
     : NumStmts(stmts.size())
     , Body(0)
@@ -134,6 +165,7 @@ CompoundStmt::CompoundStmt(SourceLocation l, SourceLocation r, StmtList& stmts)
         for (int i=0; i<NumStmts; i++) Body[i] = stmts[i];
     }
 }
+
 
 CompoundStmt::~CompoundStmt() {
     for (int i=0; i<NumStmts; i++) delete Body[i];
