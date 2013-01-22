@@ -3,7 +3,7 @@ package hello_world;
 use stdio;
 
 func int main(int argc, char*[] argv) {
-    puts("Hello World!\n");
+    printf("Hello World!\n");
     return 0;
 }
 

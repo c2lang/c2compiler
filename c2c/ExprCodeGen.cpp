@@ -36,19 +36,11 @@ llvm::Value* StringExpr::codeGen(CodeGenContext& C) {
 }
 
 llvm::Value* CallExpr::codeGen(CodeGenContext& C) {
-    // TODO No return type yet
-/*
-    ExprList args;
-*/
     llvm::Function* function = C.module.getFunction(Fn->getName());
-    assert(function);
-    // TODO only have 1 args for now
-#if 0
-    std::vector<llvm::Value*> args_;
-    for (unsigned int i=0; i<args.size(); i++) {
-        args_.push_back(args[i].codeGen(C));
-    }
-#endif
+    assert(function && "CANNOT FIND FUNCTION");
+
+    // NOTE: see CodeGenerator insertion of puts() and printf()
+    // TODO elipsis (see CodeGenerator)
     switch (args.size()) {
     case 0:
         C.builder.CreateCall(function);
@@ -57,9 +49,17 @@ llvm::Value* CallExpr::codeGen(CodeGenContext& C) {
         C.builder.CreateCall(function, args[0]->codeGen(C));
         break;
     default:
-        assert(0);
+        {
+            std::vector<llvm::Value *> Args;
+            for (unsigned int i=0; i<args.size(); i++) {
+                Args.push_back(args[i]->codeGen(C));
+            }
+            llvm::ArrayRef<llvm::Value*> argsRef(Args);
+            C.builder.CreateCall(function, argsRef);
+        }
         break;
     }
+    // TODO return something??
     return 0;
 }
 
