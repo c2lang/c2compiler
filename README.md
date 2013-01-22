@@ -18,7 +18,7 @@ Have fun! (and code..)
 ## Generic
 C2 is based on LLVM 3.2 and some parts of Clang 3.2. The design of C2C's
 C2Parser and C2Sema class are heavily based on clang's Parser and Sema class,
-so hereby my thanks the the Clang folks!
+so hereby my thanks to the Clang folks!
 
 
 ## What needs to be done
