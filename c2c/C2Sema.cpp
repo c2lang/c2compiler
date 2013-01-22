@@ -432,7 +432,6 @@ void C2Sema::addDecl(Decl* d) {
 
     // UseDecl's dont define a symbol
     if (Decl::isSymbol(d->dtype())) {
-        fprintf(stderr, "ADDING SYMBOL %s\n", d->getName().c_str());
         Decl* Old = getSymbol(d->getName());
         if (Old) {
             Diag(d->getLocation(), diag::err_redefinition)

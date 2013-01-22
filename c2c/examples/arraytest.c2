@@ -18,7 +18,7 @@ elements += { "test2", 20 }
 elements += { "test3", 30 }
 
 TEST(foo, 10) {
-    printf("%s()\n", __func__);
+    printf("here!\n");
 }
 
 func void main() {
