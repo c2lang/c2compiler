@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <clang/Basic/Version.h>
 #include <iostream>
 #include <stdlib.h>
 #include <string.h>
@@ -88,6 +89,8 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
 
 int main(int argc, const char *argv[])
 {
+    assert(CLANG_C2_VERSION >= 3 && "Please update your clang c2 version");
+
     BuildOptions opts;
     parse_arguments(argc, argv, opts);
 
