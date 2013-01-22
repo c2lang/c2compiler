@@ -70,6 +70,7 @@ public:
     void ActOnVarDef(const char* name, SourceLocation loc, bool is_public, Expr* type, Expr* InitValue);
     FunctionDecl* ActOnFuncDef(const char* name, SourceLocation loc, bool is_public, Expr* rtype);
     void ActOnFinishFunctionBody(Decl* func, Stmt* body);
+    void ActOnArrayValue(const char* name, SourceLocation loc, Expr* Value);
 
     // statements
     StmtResult ActOnReturnStmt(SourceLocation loc, Expr* value);

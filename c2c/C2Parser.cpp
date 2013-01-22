@@ -187,7 +187,6 @@ bool C2Parser::ParseTopLevel() {
     LOG_FUNC
 
     if (Tok.getKind() == tok::identifier && NextToken().getKind() == tok::plusequal) {
-        // identifier += init_value
         ParseArrayEntry();
         return false;
     }
@@ -2028,8 +2027,11 @@ void C2Parser::ParseArrayEntry() {
     ConsumeToken();
 
     bool need_semi = true;
-    ParseInitValue(&need_semi);
-    if (Diags.hasErrorOccurred()) return;
+    ExprResult Value = ParseInitValue(&need_semi);
+    if (Value.isInvalid()) return;
+
+    Actions.ActOnArrayValue(id->getNameStart(), idLoc, Value.release());
+
     if (need_semi) {
         if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "array entry")) return;
     }

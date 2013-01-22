@@ -134,6 +134,16 @@ void C2Sema::ActOnFinishFunctionBody(Decl* decl, Stmt* body) {
     func->setBody(body);
 }
 
+void C2Sema::ActOnArrayValue(const char* name, SourceLocation loc, Expr* Value) {
+#ifdef SEMA_DEBUG    
+    std::cerr << COL_SEMA"SEMA: arrayvalue at ";
+    loc.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    ArrayValueDecl* decl = new ArrayValueDecl(name, loc, Value);
+    addDecl(decl);
+}
+
 C2::StmtResult C2Sema::ActOnReturnStmt(SourceLocation loc, Expr* value) {
 #ifdef SEMA_DEBUG    
     std::cerr << COL_SEMA"SEMA: return at ";
@@ -421,7 +431,8 @@ void C2Sema::addDecl(Decl* d) {
     decls.push_back(d);
 
     // UseDecl's dont define a symbol
-    if (d->dtype() != DECL_USE) {
+    if (Decl::isSymbol(d->dtype())) {
+        fprintf(stderr, "ADDING SYMBOL %s\n", d->getName().c_str());
         Decl* Old = getSymbol(d->getName());
         if (Old) {
             Diag(d->getLocation(), diag::err_redefinition)

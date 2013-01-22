@@ -176,7 +176,7 @@ public:
         else return iter->second;
     }
     void dump() {
-        printf("Package %s\n", name.c_str());
+        printf("Symbols: Package %s\n", name.c_str());
         for (SymbolsIter iter = symbols.begin(); iter != symbols.end(); ++iter) {
             printf("  %s\n", iter->second->getName().c_str());
         }
@@ -275,10 +275,9 @@ bool C2Builder::createPkgs() {
     for (int i=0; i<files.size(); i++) {
         FileInfo* info = files[i];
         Package* pkg = getPackage(info->sema.getPkgName());
-        // pkg->addSymbol()
         for (unsigned int i=0; i<info->sema.decls.size(); i++) {
             Decl* New = info->sema.decls[i];
-            if (New->dtype() == DECL_USE) continue;
+            if (!Decl::isSymbol(New->dtype())) continue;
             Decl* Old = pkg->findSymbol(New->getName());
             if (Old) {
                 fprintf(stderr, "MULTI_FILE: duplicate symbol %s\n", New->getName().c_str());

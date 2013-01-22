@@ -69,6 +69,11 @@ llvm::Value* TypeDecl::codeGen(CodeGenContext& context) {
     return 0;
 }
 
+llvm::Value* ArrayValueDecl::codeGen(CodeGenContext& context) {
+    fprintf(stderr, "TODO ArrayValueDecl::codeGen()\n");
+    return 0;
+}
+
 llvm::Value* UseDecl::codeGen(CodeGenContext& context) {
     return 0;
 }

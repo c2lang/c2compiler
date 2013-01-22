@@ -40,10 +40,12 @@ enum DeclType {
     DECL_FUNC = 0,
     DECL_VAR,
     DECL_TYPE,
+    DECL_ARRAYVALUE,
     DECL_USE
 };
 
 typedef std::vector<C2::Expr*> ExprList;
+
 
 class Decl {
 public:
@@ -57,6 +59,8 @@ public:
 
     virtual const std::string& getName() const = 0;
     virtual clang::SourceLocation getLocation() const = 0;
+
+    static bool isSymbol(DeclType d);
 private:
     Decl(const Decl&);
     Decl& operator= (const Decl&);
@@ -128,6 +132,25 @@ private:
     SourceLocation loc;
     Type* type;
     bool is_public;
+};
+
+
+class ArrayValueDecl : public Decl {
+public:
+    ArrayValueDecl(const std::string& name_, SourceLocation loc_, Expr* value_);
+    virtual ~ArrayValueDecl();
+    virtual DeclType dtype() { return DECL_ARRAYVALUE; }
+    virtual void acceptD(DeclVisitor& v);
+    virtual void print(StringBuilder& buffer);
+    virtual void generateC(StringBuilder& buffer);
+    virtual llvm::Value* codeGen(CodeGenContext& context);
+
+    virtual const std::string& getName() const { return name; }
+    virtual clang::SourceLocation getLocation() const { return loc; }
+private:
+    std::string name;
+    SourceLocation loc;
+    Expr* value;
 };
 
 

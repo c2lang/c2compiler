@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include <stdio.h>
+
 #include "Decl.h"
 #include "Stmt.h"
 #include "Expr.h"
@@ -24,11 +26,22 @@ using namespace C2;
 using namespace std;
 
 //#define DECL_DEBUG
+
 #ifdef DECL_DEBUG
 static int creationCount;
 static int deleteCount;
 #endif
 
+bool Decl::isSymbol(DeclType d) {
+    switch (d) {
+    case DECL_FUNC:
+    case DECL_VAR:
+    case DECL_TYPE:
+        return true;
+    default:
+        return false;
+    }
+}
 
 Decl::Decl() {
 #ifdef DECL_DEBUG
@@ -159,6 +172,28 @@ void TypeDecl::generateC(StringBuilder& buffer) {
     buffer << ' ' << name;
     type->generateC_PostName(buffer);
     buffer << ";\n";
+}
+
+
+ArrayValueDecl::ArrayValueDecl(const std::string& name_, SourceLocation loc_, Expr* value_)
+    : name(name_)
+    , loc(loc_)
+    , value(value_)
+{}
+
+ArrayValueDecl::~ArrayValueDecl() {
+    delete value;
+}
+
+DECL_VISITOR_ACCEPT(ArrayValueDecl);
+
+void ArrayValueDecl::print(StringBuilder& buffer) {
+    buffer << "[+= " << name << "]\n";
+    value->print(INDENT, buffer);
+}
+
+void ArrayValueDecl::generateC(StringBuilder& buffer) {
+    fprintf(stderr, "TODO SHOULD NOT BE CALLED\n");
 }
 
 
