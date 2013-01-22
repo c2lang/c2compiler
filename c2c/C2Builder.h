@@ -54,7 +54,7 @@ private:
     bool createPkgs();
     void dumpPkgs();
 
-    const Recipe&  recipe;
+    const Recipe& recipe;
     BuildOptions options;
 
     typedef std::vector<FileInfo*> Files;

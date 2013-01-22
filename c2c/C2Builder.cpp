@@ -105,6 +105,9 @@ public:
 
         parser.Initialize();
     }
+    ~FileInfo() {
+        // TODO delete members
+    }
 
     bool parse(BuildOptions& options) {
         printf("------ parsing %s ------\n", filename.c_str());
@@ -182,7 +185,7 @@ public:
         }
     }
 
-    std::string name;
+    const std::string name;
 
     typedef std::map<std::string, Decl*> Symbols;
     typedef Symbols::iterator SymbolsIter;
@@ -199,7 +202,13 @@ C2Builder::C2Builder(const Recipe& recipe_, const BuildOptions& opts)
 
 C2Builder::~C2Builder()
 {
-    // TODO delete members
+    for (PkgsIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
+        //delete iter->second;
+        // TODO delete CAUSES crash
+    }
+    for (int i=0; i<files.size(); i++) {
+        delete files[i];
+    }
 }
 
 void C2Builder::build() {
