@@ -155,7 +155,7 @@ private:
     StmtResult ParseIfStatement();
     void ParseSwitchStatement();
     StmtResult ParseWhileStatement();
-    void ParseDoStatement();
+    StmtResult ParseDoStatement();
     void ParseForStatement();
     void ParseGotoStatement();
     void ParseContinueStatement();

@@ -135,7 +135,6 @@ WhileStmt::~WhileStmt() {
 
 STMT_VISITOR_ACCEPT(WhileStmt);
 
-
 void WhileStmt::print(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
     buffer << "[while]\n";
@@ -147,9 +146,28 @@ void WhileStmt::generateC(int indent, StringBuilder& buffer) {
     // TODO
 }
 
-llvm::Value* WhileStmt::codeGen(CodeGenContext& context) {
+DoStmt::DoStmt(SourceLocation Loc_, Expr* Cond_, Stmt* Then_)
+    : Loc(Loc_)
+    , Cond(Cond_)
+    , Then(Then_)
+{}
+
+DoStmt::~DoStmt() {
+    delete Cond;
+    delete Then;
+}
+
+STMT_VISITOR_ACCEPT(DoStmt);
+
+void DoStmt::print(int indent, StringBuilder& buffer) {
+    buffer.indent(indent);
+    buffer << "[do]\n";
+    Cond->print(indent + INDENT, buffer);
+    Then->print(indent + INDENT, buffer);
+}
+
+void DoStmt::generateC(int indent, StringBuilder& buffer) {
     // TODO
-    return 0;
 }
 
 

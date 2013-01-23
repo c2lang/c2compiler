@@ -39,6 +39,7 @@ enum StmtType {
     STMT_EXPR,
     STMT_IF,
     STMT_WHILE,
+    STMT_DO,
     STMT_COMPOUND,
 };
 
@@ -116,6 +117,23 @@ private:
 };
 
 
+class DoStmt : public Stmt {
+public:
+    DoStmt(SourceLocation Loc_, Expr* Cond_, Stmt* Then_);
+    virtual ~DoStmt();
+    virtual StmtType stype() { return STMT_DO; }
+    virtual void acceptS(StmtVisitor& v);
+
+    virtual void print(int indent, StringBuilder& buffer);
+    virtual void generateC(int indent, StringBuilder& buffer);
+    virtual llvm::Value* codeGen(CodeGenContext& context);
+private:
+    SourceLocation Loc;
+    Stmt* Cond;
+    Stmt* Then;
+};
+
+
 class CompoundStmt : public Stmt {
 public:
     CompoundStmt(SourceLocation l, SourceLocation r, StmtList& stmts);
@@ -141,6 +159,7 @@ public:
     virtual void visit(ReturnStmt&) {}
     virtual void visit(IfStmt&) {}
     virtual void visit(WhileStmt&) {}
+    virtual void visit(DoStmt&) {}
     virtual void visit(CompoundStmt&) {}
 };
 

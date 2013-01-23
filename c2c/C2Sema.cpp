@@ -173,6 +173,15 @@ C2::StmtResult C2Sema::ActOnWhileStmt(SourceLocation loc, ExprResult Cond, StmtR
     return StmtResult(new WhileStmt(loc, Cond.release(), Then.release()));
 }
 
+C2::StmtResult C2Sema::ActOnDoStmt(SourceLocation loc, ExprResult Cond, StmtResult Then) {
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: do statement at ";
+    loc.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    return StmtResult(new DoStmt(loc, Cond.release(), Then.release()));
+}
+
 C2::StmtResult C2Sema::ActOnCompoundStmt(SourceLocation L, SourceLocation R, StmtList& stmts) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: compound statement at ";

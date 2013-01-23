@@ -10,7 +10,6 @@ AST Generation for:
 * substructs
 * ellipsis (...) arguments
 * For loops
-* Do While
 * label/goto
 * switch/case/default
 * break

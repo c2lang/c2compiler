@@ -1468,8 +1468,7 @@ C2::StmtResult C2Parser::ParseStatement() {
     case tok::kw_while:
         return ParseWhileStatement();
     case tok::kw_do:
-        ParseDoStatement();
-        return StmtError(); // TODO
+        return ParseDoStatement();
     case tok::kw_for:
         ParseForStatement();
         return StmtError(); // TODO
@@ -1661,23 +1660,25 @@ C2::StmtResult C2Parser::ParseWhileStatement() {
 ///       do-statement: [C99 6.8.5.2]
 ///         'do' statement 'while' '(' expression ')' ';'
 /// Note: this lets the caller parse the end ';'.
-void C2Parser::ParseDoStatement() {
+C2::StmtResult C2Parser::ParseDoStatement() {
     LOG_FUNC
     assert(Tok.is(tok::kw_do) && "Not a do stmt!");
-    ConsumeToken();
+    SourceLocation Loc = ConsumeToken();
 
-    ParseStatement();
-    if (Diags.hasErrorOccurred()) return;
+    StmtResult Then = ParseStatement();
+    if (Then.isInvalid()) return StmtError();
 
-    if (ExpectAndConsume(tok::kw_while, diag::err_expected_while)) return;
+    if (ExpectAndConsume(tok::kw_while, diag::err_expected_while)) return StmtError();
 
-    if (ExpectAndConsume(tok::l_paren, diag::err_expected_lparen)) return;
+    if (ExpectAndConsume(tok::l_paren, diag::err_expected_lparen)) return StmtError();
 
-    ParseExpression();
-    if (Diags.hasErrorOccurred()) return;
+    ExprResult Cond = ParseExpression();
+    if (Cond.isInvalid()) return StmtError();
 
-    if (ExpectAndConsume(tok::r_paren, diag::err_expected_rparen)) return;
-    if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "while")) return;
+    if (ExpectAndConsume(tok::r_paren, diag::err_expected_rparen)) return StmtError();
+    StmtResult Res = Actions.ActOnDoStmt(Loc, Cond, Then);
+    if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "while")) return StmtError();
+    return Res;
 }
 
 /// ParseForStatement
