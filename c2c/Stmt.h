@@ -42,6 +42,7 @@ enum StmtType {
     STMT_DO,
     STMT_BREAK,
     STMT_CONTINUE,
+    STMT_LABEL,
     STMT_COMPOUND,
 };
 
@@ -166,6 +167,23 @@ private:
 };
 
 
+class LabelStmt : public Stmt {
+public:
+    LabelStmt(const char* name_, SourceLocation Loc_, Stmt* subStmt_);
+    virtual ~LabelStmt();
+    virtual StmtType stype() { return STMT_LABEL; }
+    virtual void acceptS(StmtVisitor& v);
+
+    virtual void print(int indent, StringBuilder& buffer);
+    virtual void generateC(int indent, StringBuilder& buffer);
+    virtual llvm::Value* codeGen(CodeGenContext& context);
+private:
+    std::string name;
+    SourceLocation Loc;
+    Stmt* subStmt;
+};
+
+
 class CompoundStmt : public Stmt {
 public:
     CompoundStmt(SourceLocation l, SourceLocation r, StmtList& stmts);
@@ -194,6 +212,7 @@ public:
     virtual void visit(DoStmt&) {}
     virtual void visit(BreakStmt&) {}
     virtual void visit(ContinueStmt&) {}
+    virtual void visit(LabelStmt&) {}
     virtual void visit(CompoundStmt&) {}
 };
 

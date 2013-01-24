@@ -164,7 +164,7 @@ private:
     StmtResult ParseDeclaration();
     void ParseCaseStatement();
     void ParseDefaultStatement();
-    void ParseLabeledStatement();
+    StmtResult ParseLabeledStatement();
     StmtResult ParseExprStatement();
 
     // expressions

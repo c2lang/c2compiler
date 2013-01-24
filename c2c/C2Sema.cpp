@@ -200,6 +200,16 @@ C2::StmtResult C2Sema::ActOnContinueStmt(SourceLocation loc) {
     return StmtResult(new ContinueStmt(loc));
 }
 
+C2::StmtResult C2Sema::ActOnLabelStmt(const char* name, SourceLocation loc, Stmt* subStmt) {
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: label statement at ";
+    loc.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    return StmtResult(new LabelStmt(name, loc, subStmt));
+}
+
+
 C2::StmtResult C2Sema::ActOnCompoundStmt(SourceLocation L, SourceLocation R, StmtList& stmts) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: compound statement at ";

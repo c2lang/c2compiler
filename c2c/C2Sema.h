@@ -81,6 +81,7 @@ public:
     StmtResult ActOnDoStmt(SourceLocation loc, ExprResult condition, StmtResult thenStmt);
     StmtResult ActOnBreakStmt(SourceLocation loc);
     StmtResult ActOnContinueStmt(SourceLocation loc);
+    StmtResult ActOnLabelStmt(const char* name, SourceLocation loc, Stmt* subStmt);
     StmtResult ActOnCompoundStmt(SourceLocation L, SourceLocation R, StmtList& stmts);
     StmtResult ActOnDeclaration(const char* name, SourceLocation loc, Expr* type, Expr* InitValue);
 

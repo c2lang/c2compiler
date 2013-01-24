@@ -1820,12 +1820,12 @@ C2::StmtResult C2Parser::ParseDeclOrStatement() {
         assert(0 && "double package id");
         return StmtError();
     case tok::colon:
+        // TODO move this to ParseLabeledStatement
         if (is_fullname) {
             Diag(afterIdent, diag::err_invalid_label);
             return StmtError();
         }
-        ParseLabeledStatement();
-        break;
+        return ParseLabeledStatement();
 /*
     case tok::l_paren:
         Res = ParseFunctionCall();
@@ -1906,19 +1906,28 @@ void C2Parser::ParseDefaultStatement() {
 ///
 ///       labeled-statement:
 ///         identifier ':' statement
-void C2Parser::ParseLabeledStatement() {
+C2::StmtResult C2Parser::ParseLabeledStatement() {
     LOG_FUNC
     assert(Tok.is(tok::identifier) && Tok.getIdentifierInfo() && "Not an identifier!");
 
-    Token IdentTok = Tok;  // Save the whole token.
-    ConsumeToken();  // eat the identifier.
+    IdentifierInfo* id = Tok.getIdentifierInfo();
+    SourceLocation LabelLoc = ConsumeToken();
 
     assert(Tok.is(tok::colon) && "Not a label!");
 
     // identifier ':' statement
     SourceLocation ColonLoc = ConsumeToken();
 
-    ParseStatement();
+    StmtResult SubStmt(ParseStatement());
+/*
+    // TODO
+ // Broken substmt shouldn't prevent the label from being added to the AST.
+  if (SubStmt.isInvalid())
+    SubStmt = Actions.ActOnNullStmt(ColonLoc);
+*/
+
+    //LabelDecl *LD = Actions.LookupOrCreateLabel(id, LabelLoc);
+    return Actions.ActOnLabelStmt(id->getNameStart(), LabelLoc, SubStmt.get());
 }
 
 C2::StmtResult C2Parser::ParseExprStatement() {

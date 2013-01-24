@@ -205,9 +205,29 @@ void ContinueStmt::print(int indent, StringBuilder& buffer) {
 }
 
 void ContinueStmt::generateC(int indent, StringBuilder& buffer) {
-    fprintf(stderr, "HEREHER\n");
     buffer.indent(indent);
     buffer << "continue;\n";
+}
+
+
+LabelStmt::LabelStmt(const char* name_, SourceLocation Loc_, Stmt* subStmt_)
+    : name(name_), Loc(Loc_), subStmt(subStmt_) {}
+
+LabelStmt::~LabelStmt()
+{
+    delete subStmt;
+}
+
+STMT_VISITOR_ACCEPT(LabelStmt);
+
+void LabelStmt::print(int indent, StringBuilder& buffer) {
+    buffer.indent(indent);
+    buffer << "[label]\n";
+}
+
+void LabelStmt::generateC(int indent, StringBuilder& buffer) {
+    buffer << name << ":\n";
+    subStmt->generateC(indent, buffer);
 }
 
 

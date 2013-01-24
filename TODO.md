@@ -10,7 +10,7 @@ AST Generation for:
 * substructs
 * ellipsis (...) arguments
 * For loops
-* label/goto
+* goto
 * switch/case/default
 * Binary Expressions
 * Unary Expressions
@@ -24,6 +24,7 @@ Analysis of:
 * symbol usages (Types, Vars, Functions)
 * Type comparisons
 * string parsing (\n\0 etc)
+* labels (redefinition)
 * ...
 
 IR generation of:
