@@ -157,7 +157,7 @@ private:
     StmtResult ParseWhileStatement();
     StmtResult ParseDoStatement();
     void ParseForStatement();
-    void ParseGotoStatement();
+    StmtResult ParseGotoStatement();
     StmtResult ParseBreakStatement();
     StmtResult ParseContinueStatement();
     StmtResult ParseDeclOrStatement();

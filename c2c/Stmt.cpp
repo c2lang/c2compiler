@@ -231,6 +231,24 @@ void LabelStmt::generateC(int indent, StringBuilder& buffer) {
 }
 
 
+GotoStmt::GotoStmt(const char* name_, SourceLocation GotoLoc_, SourceLocation LabelLoc_)
+    : name(name_), GotoLoc(GotoLoc_), LabelLoc(LabelLoc_) {}
+
+GotoStmt::~GotoStmt() {}
+
+STMT_VISITOR_ACCEPT(GotoStmt);
+
+void GotoStmt::print(int indent, StringBuilder& buffer) {
+    buffer.indent(indent);
+    buffer << "[goto]\n";
+}
+
+void GotoStmt::generateC(int indent, StringBuilder& buffer) {
+    buffer.indent(indent);
+    buffer << "goto " << name << ";\n";
+}
+
+
 CompoundStmt::CompoundStmt(SourceLocation l, SourceLocation r, StmtList& stmts)
     : NumStmts(stmts.size())
     , Body(0)

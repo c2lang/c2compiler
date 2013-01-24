@@ -1473,8 +1473,7 @@ C2::StmtResult C2Parser::ParseStatement() {
         ParseForStatement();
         return StmtError(); // TODO
     case tok::kw_goto:
-        ParseGotoStatement();
-        return StmtError(); // TODO
+        return ParseGotoStatement();
     case tok::kw_continue:
         return ParseContinueStatement();
     case tok::kw_break:
@@ -1741,16 +1740,22 @@ void C2Parser::ParseForStatement() {
 /// ParseGotoStatement
 ///       jump-statement:
 ///         'goto' identifier ';'
-/// [GNU]   'goto' '*' expression ';'
-void C2Parser::ParseGotoStatement() {
+C2::StmtResult C2Parser::ParseGotoStatement() {
     LOG_FUNC
     assert(Tok.is(tok::kw_goto) && "Not a goto stmt!");
-    ConsumeToken();
+    SourceLocation GotoLoc = ConsumeToken();  // eat the 'goto'.
 
-    if (ExpectIdentifier()) return;
+    if (Tok.isNot(tok::identifier)) {
+        Diag(Tok, diag::err_expected_ident);
+        return StmtError();
+    }
     IdentifierInfo* id = Tok.getIdentifierInfo();
-    SourceLocation idLoc = ConsumeToken();
-    if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "goto")) return;
+    SourceLocation LabelLoc = ConsumeToken();
+
+    StmtResult Res = Actions.ActOnGotoStmt(id->getNameStart(), GotoLoc, LabelLoc);
+
+    if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "goto")) return StmtError();
+    return Res;
 }
 
 /// ParseContinueStatement

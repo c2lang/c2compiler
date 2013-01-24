@@ -10,7 +10,6 @@ AST Generation for:
 * substructs
 * ellipsis (...) arguments
 * For loops
-* goto
 * switch/case/default
 * Binary Expressions
 * Unary Expressions

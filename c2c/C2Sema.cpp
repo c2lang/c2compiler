@@ -209,6 +209,14 @@ C2::StmtResult C2Sema::ActOnLabelStmt(const char* name, SourceLocation loc, Stmt
     return StmtResult(new LabelStmt(name, loc, subStmt));
 }
 
+C2::StmtResult C2Sema::ActOnGotoStmt(const char* name, SourceLocation GotoLoc, SourceLocation LabelLoc) {
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: goto statement at ";
+    GotoLoc.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    return StmtResult(new GotoStmt(name, GotoLoc, LabelLoc));
+}
 
 C2::StmtResult C2Sema::ActOnCompoundStmt(SourceLocation L, SourceLocation R, StmtList& stmts) {
 #ifdef SEMA_DEBUG
