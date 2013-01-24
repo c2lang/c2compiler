@@ -191,6 +191,14 @@ C2::StmtResult C2Sema::ActOnBreakStmt(SourceLocation loc) {
     return StmtResult(new BreakStmt(loc));
 }
 
+C2::StmtResult C2Sema::ActOnContinueStmt(SourceLocation loc) {
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: continue statement at ";
+    loc.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    return StmtResult(new ContinueStmt(loc));
+}
 
 C2::StmtResult C2Sema::ActOnCompoundStmt(SourceLocation L, SourceLocation R, StmtList& stmts) {
 #ifdef SEMA_DEBUG

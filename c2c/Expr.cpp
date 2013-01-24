@@ -165,7 +165,7 @@ void TypeExpr::print(int indent, StringBuilder& buffer) {
 }
 
 void TypeExpr::generateC(int indent, StringBuilder& buffer) {
-    assert(0 && "TODO");
+    printf("%s() TODO\n", __PRETTY_FUNCTION__);
 }
 
 void TypeExpr::addArray(Expr* sizeExpr) {

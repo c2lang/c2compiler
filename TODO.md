@@ -12,8 +12,6 @@ AST Generation for:
 * For loops
 * label/goto
 * switch/case/default
-* break
-* continue
 * Binary Expressions
 * Unary Expressions
 * (proper) numeric values 

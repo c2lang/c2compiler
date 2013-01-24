@@ -143,7 +143,7 @@ void WhileStmt::print(int indent, StringBuilder& buffer) {
 }
 
 void WhileStmt::generateC(int indent, StringBuilder& buffer) {
-    // TODO
+    printf("%s() TODO\n", __PRETTY_FUNCTION__);
 }
 
 DoStmt::DoStmt(SourceLocation Loc_, Expr* Cond_, Stmt* Then_)
@@ -167,7 +167,7 @@ void DoStmt::print(int indent, StringBuilder& buffer) {
 }
 
 void DoStmt::generateC(int indent, StringBuilder& buffer) {
-    // TODO
+    printf("%s() TODO\n", __PRETTY_FUNCTION__);
 }
 
 
@@ -185,6 +185,24 @@ void BreakStmt::print(int indent, StringBuilder& buffer) {
 void BreakStmt::generateC(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
     buffer << "break;\n";
+}
+
+
+ContinueStmt::ContinueStmt(SourceLocation Loc_) : Loc(Loc_) {}
+
+ContinueStmt::~ContinueStmt() {}
+
+STMT_VISITOR_ACCEPT(ContinueStmt);
+
+void ContinueStmt::print(int indent, StringBuilder& buffer) {
+    buffer.indent(indent);
+    buffer << "[continue]\n";
+}
+
+void ContinueStmt::generateC(int indent, StringBuilder& buffer) {
+    fprintf(stderr, "HEREHER\n");
+    buffer.indent(indent);
+    buffer << "continue;\n";
 }
 
 
