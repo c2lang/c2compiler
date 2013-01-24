@@ -32,6 +32,7 @@ IR generation of:
 * almost everything...
 
 Generic:
+* improve Makefile for header dependencies and .o location in subdir
 * saving package info to cache
 * saving recipe info to cache
 * passing defines from recipe to Preprocessor
