@@ -1513,6 +1513,10 @@ C2::StmtResult C2Parser::ParseStatement() {
         ParseExprStatement();
         return StmtError(); // TODO
     default:
+        if (Tok.is(tok::r_brace)) {
+            Diag(Tok, diag::err_expected_statement);
+            return StmtError();
+        }
         // TEMP
         std::cerr << "UNHANDLED TOKEN: ";
         PP.DumpToken(Tok);
