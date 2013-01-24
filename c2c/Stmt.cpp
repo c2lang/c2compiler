@@ -144,6 +144,11 @@ void WhileStmt::print(int indent, StringBuilder& buffer) {
 
 void WhileStmt::generateC(int indent, StringBuilder& buffer) {
     printf("%s() TODO\n", __PRETTY_FUNCTION__);
+    buffer.indent(indent);
+    buffer << "while(";
+    Cond->generateC(0, buffer);
+    buffer << ")\n";
+    Then->generateC(indent, buffer);
 }
 
 DoStmt::DoStmt(SourceLocation Loc_, Expr* Cond_, Stmt* Then_)
