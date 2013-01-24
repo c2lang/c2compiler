@@ -171,6 +171,23 @@ void DoStmt::generateC(int indent, StringBuilder& buffer) {
 }
 
 
+BreakStmt::BreakStmt(SourceLocation Loc_) : Loc(Loc_) {}
+
+BreakStmt::~BreakStmt() {}
+
+STMT_VISITOR_ACCEPT(BreakStmt);
+
+void BreakStmt::print(int indent, StringBuilder& buffer) {
+    buffer.indent(indent);
+    buffer << "[break]\n";
+}
+
+void BreakStmt::generateC(int indent, StringBuilder& buffer) {
+    buffer.indent(indent);
+    buffer << "break;\n";
+}
+
+
 CompoundStmt::CompoundStmt(SourceLocation l, SourceLocation r, StmtList& stmts)
     : NumStmts(stmts.size())
     , Body(0)
@@ -183,7 +200,6 @@ CompoundStmt::CompoundStmt(SourceLocation l, SourceLocation r, StmtList& stmts)
         for (int i=0; i<NumStmts; i++) Body[i] = stmts[i];
     }
 }
-
 
 CompoundStmt::~CompoundStmt() {
     for (int i=0; i<NumStmts; i++) delete Body[i];

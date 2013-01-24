@@ -182,6 +182,16 @@ C2::StmtResult C2Sema::ActOnDoStmt(SourceLocation loc, ExprResult Cond, StmtResu
     return StmtResult(new DoStmt(loc, Cond.release(), Then.release()));
 }
 
+C2::StmtResult C2Sema::ActOnBreakStmt(SourceLocation loc) {
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: break statement at ";
+    loc.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    return StmtResult(new BreakStmt(loc));
+}
+
+
 C2::StmtResult C2Sema::ActOnCompoundStmt(SourceLocation L, SourceLocation R, StmtList& stmts) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: compound statement at ";

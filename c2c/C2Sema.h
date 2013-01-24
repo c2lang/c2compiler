@@ -79,6 +79,7 @@ public:
                            SourceLocation elseLoc, StmtResult elseStmt);
     StmtResult ActOnWhileStmt(SourceLocation loc, ExprResult condition, StmtResult thenStmt);
     StmtResult ActOnDoStmt(SourceLocation loc, ExprResult condition, StmtResult thenStmt);
+    StmtResult ActOnBreakStmt(SourceLocation loc);
     StmtResult ActOnCompoundStmt(SourceLocation L, SourceLocation R, StmtList& stmts);
     StmtResult ActOnDeclaration(const char* name, SourceLocation loc, Expr* type, Expr* InitValue);
 

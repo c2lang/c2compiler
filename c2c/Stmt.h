@@ -40,6 +40,7 @@ enum StmtType {
     STMT_IF,
     STMT_WHILE,
     STMT_DO,
+    STMT_BREAK,
     STMT_COMPOUND,
 };
 
@@ -134,6 +135,21 @@ private:
 };
 
 
+class BreakStmt : public Stmt {
+public:
+    BreakStmt(SourceLocation Loc_);
+    virtual ~BreakStmt();
+    virtual StmtType stype() { return STMT_BREAK; }
+    virtual void acceptS(StmtVisitor& v);
+
+    virtual void print(int indent, StringBuilder& buffer);
+    virtual void generateC(int indent, StringBuilder& buffer);
+    virtual llvm::Value* codeGen(CodeGenContext& context);
+private:
+    SourceLocation Loc;
+};
+
+
 class CompoundStmt : public Stmt {
 public:
     CompoundStmt(SourceLocation l, SourceLocation r, StmtList& stmts);
@@ -160,6 +176,7 @@ public:
     virtual void visit(IfStmt&) {}
     virtual void visit(WhileStmt&) {}
     virtual void visit(DoStmt&) {}
+    virtual void visit(BreakStmt&) {}
     virtual void visit(CompoundStmt&) {}
 };
 

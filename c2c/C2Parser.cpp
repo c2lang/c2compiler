@@ -1479,8 +1479,7 @@ C2::StmtResult C2Parser::ParseStatement() {
         ParseContinueStatement();
         return StmtError(); // TODO
     case tok::kw_break:
-        ParseBreakStatement();
-        return StmtError(); // TODO
+        return ParseBreakStatement();
     case tok::kw_return:
         return ParseReturnStatement();
     case tok::l_brace:
@@ -1764,11 +1763,16 @@ void C2Parser::ParseContinueStatement() {
 /// ParseBreakStatement
 ///       jump-statement:
 ///         'break' ';'
-void C2Parser::ParseBreakStatement() {
+C2::StmtResult C2Parser::ParseBreakStatement() {
     LOG_FUNC
     assert(Tok.is(tok::kw_break) && "Not a break stmt!");
-    ConsumeToken();
-    if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "break")) return;
+    SourceLocation Loc = ConsumeToken();
+
+    StmtResult Res = Actions.ActOnBreakStmt(Loc);
+
+    if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "break")) return StmtError();
+
+    return Res;
 }
 
 /*

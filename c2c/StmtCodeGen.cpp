@@ -49,6 +49,10 @@ llvm::Value* DoStmt::codeGen(CodeGenContext& context) {
     return 0;
 }
 
+llvm::Value* BreakStmt::codeGen(CodeGenContext& context) {
+    return 0;
+}
+
 llvm::Value* CompoundStmt::codeGen(CodeGenContext& C) {
     // TODO create BasicBlock here
     for (unsigned int i=0; i<NumStmts; i++) {

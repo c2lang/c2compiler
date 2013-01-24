@@ -159,7 +159,7 @@ private:
     void ParseForStatement();
     void ParseGotoStatement();
     void ParseContinueStatement();
-    void ParseBreakStatement();
+    StmtResult ParseBreakStatement();
     StmtResult ParseDeclOrStatement();
     StmtResult ParseDeclaration();
     void ParseCaseStatement();
