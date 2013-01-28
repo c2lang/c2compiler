@@ -1,0 +1,4 @@
+#ifdef FOOBAR
+package deftest;
+#endif
+

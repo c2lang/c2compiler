@@ -127,6 +127,13 @@ void RecipeReader::handleLine(char* line) {
             if (strcmp(tok, "end") == 0) {
                 state = START;
                 current = 0;
+           } else if (strcmp(tok, "config") == 0) {
+                while (1) {
+                    const char* tok2 = get_token();
+                    if (!tok2) break;
+                    // TODO check duplicate configs
+                    current->addConfig(tok2);
+                }
             } else {
                 struct stat buf;
                 int err = stat(tok, &buf);

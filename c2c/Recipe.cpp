@@ -21,6 +21,10 @@ void Recipe::addFile(const std::string& name_) {
     files.push_back(name_);
 } 
 
+void Recipe::addConfig(const std::string& config_) {
+    configs.push_back(config_);
+}
+
 const std::string& Recipe::get(int i) const {
     return files[i];
 }

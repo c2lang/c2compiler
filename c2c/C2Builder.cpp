@@ -17,6 +17,7 @@
 #include <clang/Basic/DiagnosticOptions.h>
 #include <clang/Basic/FileManager.h>
 #include <clang/Basic/FileSystemOptions.h>
+#include <clang/Basic/MacroBuilder.h>
 #include <clang/Basic/LangOptions.h>
 #include <clang/Basic/SourceManager.h>
 #include <clang/Basic/TargetInfo.h>
@@ -91,7 +92,8 @@ public:
              LangOptions& LangOpts_,
              TargetInfo* pti,
              HeaderSearchOptions* HSOpts,
-             const std::string& filename_)
+             const std::string& filename_,
+             const std::string& configs)
         : filename(filename_)
         , Diags(Diags_)
         , FileMgr(FileSystemOpts)
@@ -103,6 +105,8 @@ public:
         , parser(PP, sema)
     {
         ApplyHeaderSearchOptions(PP.getHeaderSearchInfo(), *HSOpts, LangOpts_, pti->getTriple());
+
+        PP.setPredefines(configs);
 
         // File stuff
         const FileEntry *pFile = FileMgr.getFile(filename);
@@ -221,6 +225,7 @@ C2Builder::~C2Builder()
 void C2Builder::build() {
     printf("------ Building target %s ------\n", recipe.name.c_str());
 
+    // TODO save these common objects in Builder class?
     // LangOptions
     LangOptions LangOpts;
     LangOpts.C2 = 1;
@@ -246,10 +251,20 @@ void C2Builder::build() {
     }
     HSOpts->AddPath(pwd, clang::frontend::Quoted, false, false, false);
 
+    std::string PredefineBuffer;
+    if (!recipe.configs.empty()) {
+        PredefineBuffer.reserve(4080);
+        llvm::raw_string_ostream Predefines(PredefineBuffer);
+        MacroBuilder mbuilder(Predefines);
+        for (unsigned int i=0; i<recipe.configs.size(); i++) {
+            mbuilder.defineMacro(recipe.configs[i]);
+        }
+    }
+
     // phase 1: parse and local analyse
     int errors = 0;
     for (int i=0; i<recipe.size(); i++) {
-        FileInfo* info = new FileInfo(Diags, LangOpts, pti, HSOpts, recipe.get(i));
+        FileInfo* info = new FileInfo(Diags, LangOpts, pti, HSOpts, recipe.get(i), PredefineBuffer);
         files.push_back(info);
         bool ok = info->parse(options);
         errors += !ok;

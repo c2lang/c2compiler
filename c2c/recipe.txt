@@ -61,6 +61,11 @@ target inctest
     examples/inctest.c2
 end
 
+target deftest
+    config FOOBAR
+    examples/deftest.c2
+end
+
 target var
     examples/vartest.c2
 end
