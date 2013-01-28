@@ -445,13 +445,15 @@ C2::ExprResult C2Sema::ActOnStringLiteral(const Token* StringToks, unsigned int 
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: string literal"ANSI_NORMAL"\n";
 #endif
-    // TEMP
-    assert(NumStringToks == 1 && "only 1 string supported for now");
+    // TEMP just add all the strings together
+    std::string result;
+    for (int i=0; i<NumStringToks; i++) {
+        // Strip off double-quotes here
+        std::string text(StringToks[0].getLiteralData()+1, StringToks[0].getLength()-2);
+        result += text;
+    }
 
-    // Strip off double-quotes here
-    std::string text(StringToks[0].getLiteralData()+1, StringToks[0].getLength()-2);
-
-    return ExprResult(new StringExpr(StringToks[0].getLocation(), text));
+    return ExprResult(new StringExpr(StringToks[0].getLocation(), result));
 }
 
 void C2Sema::printAST() const {
