@@ -22,6 +22,7 @@
 #include <clang/Basic/TargetInfo.h>
 #include <clang/Basic/TargetOptions.h>
 #include <clang/Frontend/TextDiagnosticPrinter.h>
+#include <clang/Frontend/Utils.h>
 #include <clang/Lex/HeaderSearch.h>
 #include <clang/Lex/HeaderSearchOptions.h>
 #include <clang/Lex/ModuleLoader.h>
@@ -34,6 +35,7 @@
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/Host.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include "C2Builder.h"
 #include "C2Parser.h"
@@ -85,18 +87,23 @@ private:
 
 class FileInfo {
 public:
-    FileInfo(DiagnosticsEngine& Diags_, LangOptions& LangOpts_, TargetInfo* pti, const std::string& filename_)
+    FileInfo(DiagnosticsEngine& Diags_,
+             LangOptions& LangOpts_,
+             TargetInfo* pti,
+             HeaderSearchOptions* HSOpts,
+             const std::string& filename_)
         : filename(filename_)
         , Diags(Diags_)
         , FileMgr(FileSystemOpts)
         , SM(Diags, FileMgr)
-        , HSOpts(new HeaderSearchOptions())
         , Headers(HSOpts, FileMgr, Diags, LangOpts_, pti)
         , PPOpts(new PreprocessorOptions())
         , PP(PPOpts, Diags, LangOpts_, pti, SM, Headers, loader)
         , sema(SM, Diags)
         , parser(PP, sema)
     {
+        ApplyHeaderSearchOptions(PP.getHeaderSearchInfo(), *HSOpts, LangOpts_, pti->getTriple());
+
         // File stuff
         const FileEntry *pFile = FileMgr.getFile(filename);
         SM.createMainFileID(pFile);
@@ -232,10 +239,17 @@ void C2Builder::build() {
     TargetInfo *pti = TargetInfo::CreateTargetInfo(Diags, *to);
     IntrusiveRefCntPtr<TargetInfo> Target(pti);
 
+    HeaderSearchOptions* HSOpts = new HeaderSearchOptions();
+    char pwd[512];
+    if (getcwd(pwd, 512) == NULL) {
+        assert(0);
+    }
+    HSOpts->AddPath(pwd, clang::frontend::Quoted, false, false, false);
+
     // phase 1: parse and local analyse
     int errors = 0;
     for (int i=0; i<recipe.size(); i++) {
-        FileInfo* info = new FileInfo(Diags, LangOpts, pti, recipe.get(i));
+        FileInfo* info = new FileInfo(Diags, LangOpts, pti, HSOpts, recipe.get(i));
         files.push_back(info);
         bool ok = info->parse(options);
         errors += !ok;
