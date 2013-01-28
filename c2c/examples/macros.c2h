@@ -1,0 +1,4 @@
+
+#define PACKAGE package
+#define FUNC func
+

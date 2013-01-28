@@ -1,0 +1,4 @@
+#include "examples/macros.c2h"
+
+PACKAGE inctest;
+

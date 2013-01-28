@@ -57,6 +57,10 @@ target test
     examples/test.c2
 end
 
+target inctest
+    examples/inctest.c2
+end
+
 target var
     examples/vartest.c2
 end
