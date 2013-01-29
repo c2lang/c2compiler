@@ -285,7 +285,7 @@ void C2Builder::build() {
     for (int i=0; i<files.size(); i++) {
         FileInfo* info = files[i];
         switch (options.mode) {
-        case BuildOptions::NORMAL:
+        case BuildOptions::GENERATE_IR:
             info->codegen(options);
             break;
         case BuildOptions::GENERATE_C:

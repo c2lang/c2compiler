@@ -46,12 +46,12 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
     for (int i=1; i<argc; i++) {
         const char* arg = argv[i];
         if (strcmp("-fsyntax-only", arg) == 0) {
-            if (opts.mode != BuildOptions::NORMAL) usage(argv[0]);
+            if (opts.mode != BuildOptions::GENERATE_IR) usage(argv[0]);
             opts.mode = BuildOptions::SYNTAX_ONLY;
             continue;
         }
         if (strcmp("-fgenerate-c", arg) == 0) {
-            if (opts.mode != BuildOptions::NORMAL) usage(argv[0]);
+            if (opts.mode != BuildOptions::GENERATE_IR) usage(argv[0]);
             opts.mode = BuildOptions::GENERATE_C;
             continue;
         }
