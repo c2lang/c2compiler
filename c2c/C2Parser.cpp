@@ -1433,7 +1433,6 @@ C2::StmtResult C2Parser::ParseCompoundStatement() {
 
         StmtResult R = ParseStatement();
         if (R.isUsable()) Stmts.push_back(R.release());
-        else return StmtError();
     }
 
     if (Tok.isNot(tok::r_brace)) {
