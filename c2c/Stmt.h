@@ -258,7 +258,7 @@ private:
 
 class CompoundStmt : public Stmt {
 public:
-    CompoundStmt(SourceLocation l, SourceLocation r, StmtList& stmts);
+    CompoundStmt(SourceLocation l, SourceLocation r, StmtList2& stmts_);
     virtual ~CompoundStmt();
     virtual StmtType stype() { return STMT_COMPOUND; }
     virtual void acceptS(StmtVisitor& v);
@@ -267,10 +267,9 @@ public:
     virtual void generateC(int indent, StringBuilder& buffer);
     virtual llvm::Value* codeGen(CodeGenContext& context);
 private:
-    unsigned NumStmts;
-    Stmt** Body;
     SourceLocation Left;
     SourceLocation Right;
+    StmtList2 Stmts;
 };
 
 

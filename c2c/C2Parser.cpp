@@ -1427,18 +1427,13 @@ C2::StmtResult C2Parser::ParseCompoundStatement() {
     }
     SourceLocation OpenLoc = ConsumeToken();
 
-    StmtVector Stmts;
-
+    StmtList2 Stmts;
     while (1) {
         if (Tok.is(tok::r_brace)) break;
 
         StmtResult R = ParseStatement();
-        if (R.isUsable()) {
-            Stmts.push_back(R.release());
-        } else {
-            return StmtError();
-        }
-        // TODO memleak on Stmts?
+        if (R.isUsable()) Stmts.push_back(R.release());
+        else return StmtError();
     }
 
     if (Tok.isNot(tok::r_brace)) {
@@ -1447,10 +1442,7 @@ C2::StmtResult C2Parser::ParseCompoundStatement() {
     }
 
     SourceLocation CloseLoc = ConsumeToken();
-    // TODO better way of passing list (pass new'ed std::vector?)
-    StmtList stmts(Stmts.size());
-    for (unsigned int i=0; i<Stmts.size(); i++) stmts[i] = Stmts[i];
-    return Actions.ActOnCompoundStmt(OpenLoc, CloseLoc, stmts);
+    return Actions.ActOnCompoundStmt(OpenLoc, CloseLoc, Stmts);
 }
 
 // TODO see Parser::ParseStatementOrDeclaration

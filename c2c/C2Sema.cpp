@@ -245,7 +245,7 @@ C2::StmtResult C2Sema::ActOnGotoStmt(const char* name, SourceLocation GotoLoc, S
     return StmtResult(new GotoStmt(name, GotoLoc, LabelLoc));
 }
 
-C2::StmtResult C2Sema::ActOnCompoundStmt(SourceLocation L, SourceLocation R, StmtList& stmts) {
+C2::StmtResult C2Sema::ActOnCompoundStmt(SourceLocation L, SourceLocation R, StmtList2& stmts) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: compound statement at ";
     L.dump(SourceMgr);

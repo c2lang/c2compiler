@@ -82,8 +82,8 @@ llvm::Value* GotoStmt::codeGen(CodeGenContext& context) {
 
 llvm::Value* CompoundStmt::codeGen(CodeGenContext& C) {
     // TODO create BasicBlock here
-    for (unsigned int i=0; i<NumStmts; i++) {
-        Body[i]->codeGen(C);
+    for (unsigned int i=0; i<Stmts.size(); i++) {
+        Stmts[i]->codeGen(C);
     }
     return 0;
 }

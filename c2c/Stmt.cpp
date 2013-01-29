@@ -341,42 +341,29 @@ void GotoStmt::generateC(int indent, StringBuilder& buffer) {
 }
 
 
-CompoundStmt::CompoundStmt(SourceLocation l, SourceLocation r, StmtList& stmts)
-    : NumStmts(stmts.size())
-    , Body(0)
-    , Left(l)
+CompoundStmt::CompoundStmt(SourceLocation l, SourceLocation r, StmtList2& stmts_)
+    : Left(l)
     , Right(r)
-{
-    if (NumStmts != 0) {
-        Body = new Stmt*[NumStmts];
-        // TODO improve
-        for (int i=0; i<NumStmts; i++) Body[i] = stmts[i];
-    }
-}
+    , Stmts(stmts_)
+{}
 
-CompoundStmt::~CompoundStmt() {
-    for (int i=0; i<NumStmts; i++) delete Body[i];
-    delete[] Body;
-}
+CompoundStmt::~CompoundStmt() {}
 
 STMT_VISITOR_ACCEPT(CompoundStmt);
 
 void CompoundStmt::print(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
     buffer << "[compound]\n";
-    for (int i=0; i<NumStmts; i++) {
-#ifdef STMT_DEBUG
-        fprintf(stderr, "[STMT] CompoundStmt::print() child=%p\n", Body[i]);
-#endif
-        Body[i]->print(indent + INDENT, buffer);
+    for (int i=0; i<Stmts.size(); i++) {
+        Stmts[i]->print(indent + INDENT, buffer);
     }
 }
 
 void CompoundStmt::generateC(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
     buffer << "{\n";
-    for (int i=0; i<NumStmts; i++) {
-        Body[i]->generateC(indent + INDENT, buffer);
+    for (int i=0; i<Stmts.size(); i++) {
+        Stmts[i]->generateC(indent + INDENT, buffer);
     }
     buffer.indent(indent);
     buffer << "}\n";
