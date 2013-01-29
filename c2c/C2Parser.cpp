@@ -1427,7 +1427,7 @@ C2::StmtResult C2Parser::ParseCompoundStatement() {
     }
     SourceLocation OpenLoc = ConsumeToken();
 
-    StmtList2 Stmts;
+    StmtList Stmts;
     while (1) {
         if (Tok.is(tok::r_brace)) break;
 
@@ -1620,7 +1620,7 @@ C2::StmtResult C2Parser::ParseSwitchStatement() {
     if (ExpectAndConsume(tok::r_paren, diag::err_expected_rparen)) return StmtError();
     if (ExpectAndConsume(tok::l_brace, diag::err_expected_lbrace)) return StmtError();
 
-    StmtList2 Cases;
+    StmtList Cases;
     bool done = false;
     while (!done) {
         StmtResult Res;
@@ -1907,7 +1907,7 @@ C2::StmtResult C2Parser::ParseCaseStatement() {
 
     if (ExpectAndConsume(tok::colon, diag::err_expected_colon_after, "case")) return StmtError();
 
-    StmtList2 Stmts;
+    StmtList Stmts;
     bool done = false;
     while (!done) {
         switch (Tok.getKind()) {
@@ -1939,7 +1939,7 @@ C2::StmtResult C2Parser::ParseDefaultStatement() {
 
     if (ExpectAndConsume(tok::colon, diag::err_expected_colon_after, "default")) return StmtError();
 
-    StmtList2 Stmts;
+    StmtList Stmts;
     bool done = false;
     while (!done) {
         switch (Tok.getKind()) {

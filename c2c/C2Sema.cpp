@@ -182,7 +182,7 @@ C2::StmtResult C2Sema::ActOnDoStmt(SourceLocation loc, ExprResult Cond, StmtResu
     return StmtResult(new DoStmt(loc, Cond.release(), Then.release()));
 }
 
-C2::StmtResult C2Sema::ActOnSwitchStmt(SourceLocation loc, Expr* Cond, StmtList2& cases) {
+C2::StmtResult C2Sema::ActOnSwitchStmt(SourceLocation loc, Expr* Cond, StmtList& cases) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: switch statement at ";
     loc.dump(SourceMgr);
@@ -191,7 +191,7 @@ C2::StmtResult C2Sema::ActOnSwitchStmt(SourceLocation loc, Expr* Cond, StmtList2
     return StmtResult(new SwitchStmt(loc, Cond, cases));
 }
 
-C2::StmtResult C2Sema::ActOnCaseStmt(SourceLocation loc, Expr* Cond, StmtList2& stmts) {
+C2::StmtResult C2Sema::ActOnCaseStmt(SourceLocation loc, Expr* Cond, StmtList& stmts) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: case statement at ";
     loc.dump(SourceMgr);
@@ -200,7 +200,7 @@ C2::StmtResult C2Sema::ActOnCaseStmt(SourceLocation loc, Expr* Cond, StmtList2& 
     return StmtResult(new CaseStmt(loc, Cond, stmts));
 }
 
-C2::StmtResult C2Sema::ActOnDefaultStmt(SourceLocation loc, StmtList2& stmts) {
+C2::StmtResult C2Sema::ActOnDefaultStmt(SourceLocation loc, StmtList& stmts) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: default statement at ";
     loc.dump(SourceMgr);
@@ -245,7 +245,7 @@ C2::StmtResult C2Sema::ActOnGotoStmt(const char* name, SourceLocation GotoLoc, S
     return StmtResult(new GotoStmt(name, GotoLoc, LabelLoc));
 }
 
-C2::StmtResult C2Sema::ActOnCompoundStmt(SourceLocation L, SourceLocation R, StmtList2& stmts) {
+C2::StmtResult C2Sema::ActOnCompoundStmt(SourceLocation L, SourceLocation R, StmtList& stmts) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: compound statement at ";
     L.dump(SourceMgr);

@@ -79,14 +79,14 @@ public:
                            SourceLocation elseLoc, StmtResult elseStmt);
     StmtResult ActOnWhileStmt(SourceLocation loc, ExprResult condition, StmtResult thenStmt);
     StmtResult ActOnDoStmt(SourceLocation loc, ExprResult condition, StmtResult thenStmt);
-    StmtResult ActOnSwitchStmt(SourceLocation loc, Expr* condition, StmtList2& cases);
-    StmtResult ActOnCaseStmt(SourceLocation loc, Expr* condition, StmtList2& stmts);
-    StmtResult ActOnDefaultStmt(SourceLocation loc, StmtList2& stmts);
+    StmtResult ActOnSwitchStmt(SourceLocation loc, Expr* condition, StmtList& cases);
+    StmtResult ActOnCaseStmt(SourceLocation loc, Expr* condition, StmtList& stmts);
+    StmtResult ActOnDefaultStmt(SourceLocation loc, StmtList& stmts);
     StmtResult ActOnBreakStmt(SourceLocation loc);
     StmtResult ActOnContinueStmt(SourceLocation loc);
     StmtResult ActOnLabelStmt(const char* name, SourceLocation loc, Stmt* subStmt);
     StmtResult ActOnGotoStmt(const char* name, SourceLocation GotoLoc, SourceLocation LabelLoc);
-    StmtResult ActOnCompoundStmt(SourceLocation L, SourceLocation R, StmtList2& stmts);
+    StmtResult ActOnCompoundStmt(SourceLocation L, SourceLocation R, StmtList& stmts);
     StmtResult ActOnDeclaration(const char* name, SourceLocation loc, Expr* type, Expr* InitValue);
 
     // expressions

@@ -68,8 +68,7 @@ private:
 };
 
 
-typedef std::vector<Stmt*> StmtList;
-typedef OwningVector<Stmt> StmtList2;
+typedef OwningVector<Stmt> StmtList;
 
 class ReturnStmt : public Stmt {
 public:
@@ -144,7 +143,7 @@ private:
 
 class SwitchStmt : public Stmt {
 public:
-    SwitchStmt(SourceLocation Loc_, Expr* Cond_, StmtList2& Cases_);
+    SwitchStmt(SourceLocation Loc_, Expr* Cond_, StmtList& Cases_);
     virtual ~SwitchStmt();
     virtual StmtType stype() { return STMT_SWITCH; }
     virtual void acceptS(StmtVisitor& v);
@@ -155,13 +154,13 @@ public:
 private:
     SourceLocation Loc;
     Expr* Cond;
-    StmtList2 Cases;
+    StmtList Cases;
 };
 
 
 class CaseStmt : public Stmt {
 public:
-    CaseStmt(SourceLocation Loc_, Expr* Cond_, StmtList2& Stmts_);
+    CaseStmt(SourceLocation Loc_, Expr* Cond_, StmtList& Stmts_);
     virtual ~CaseStmt();
     virtual StmtType stype() { return STMT_CASE; }
     virtual void acceptS(StmtVisitor& v);
@@ -172,13 +171,13 @@ public:
 private:
     SourceLocation Loc;
     Expr* Cond;
-    StmtList2 Stmts;
+    StmtList Stmts;
 };
 
 
 class DefaultStmt : public Stmt {
 public:
-    DefaultStmt(SourceLocation Loc_, StmtList2& Stmts_);
+    DefaultStmt(SourceLocation Loc_, StmtList& Stmts_);
     virtual ~DefaultStmt();
     virtual StmtType stype() { return STMT_DEFAULT; }
     virtual void acceptS(StmtVisitor& v);
@@ -188,7 +187,7 @@ public:
     virtual llvm::Value* codeGen(CodeGenContext& context);
 private:
     SourceLocation Loc;
-    StmtList2 Stmts;
+    StmtList Stmts;
 };
 
 
@@ -258,7 +257,7 @@ private:
 
 class CompoundStmt : public Stmt {
 public:
-    CompoundStmt(SourceLocation l, SourceLocation r, StmtList2& stmts_);
+    CompoundStmt(SourceLocation l, SourceLocation r, StmtList& stmts_);
     virtual ~CompoundStmt();
     virtual StmtType stype() { return STMT_COMPOUND; }
     virtual void acceptS(StmtVisitor& v);
@@ -269,7 +268,7 @@ public:
 private:
     SourceLocation Left;
     SourceLocation Right;
-    StmtList2 Stmts;
+    StmtList Stmts;
 };
 
 

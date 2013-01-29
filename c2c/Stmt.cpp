@@ -176,7 +176,7 @@ void DoStmt::generateC(int indent, StringBuilder& buffer) {
     printf("%s() TODO\n", __PRETTY_FUNCTION__);
 }
 
-SwitchStmt::SwitchStmt(SourceLocation Loc_, Expr* Cond_, StmtList2& Cases_)
+SwitchStmt::SwitchStmt(SourceLocation Loc_, Expr* Cond_, StmtList& Cases_)
     : Loc(Loc_)
     , Cond(Cond_)
     , Cases(Cases_)
@@ -210,7 +210,7 @@ void SwitchStmt::generateC(int indent, StringBuilder& buffer) {
 }
 
 
-CaseStmt::CaseStmt(SourceLocation Loc_, Expr* Cond_, StmtList2& Stmts_)
+CaseStmt::CaseStmt(SourceLocation Loc_, Expr* Cond_, StmtList& Stmts_)
     : Loc(Loc_)
     , Cond(Cond_)
     , Stmts(Stmts_)
@@ -242,7 +242,7 @@ void CaseStmt::generateC(int indent, StringBuilder& buffer) {
 }
 
 
-DefaultStmt::DefaultStmt(SourceLocation Loc_, StmtList2& Stmts_)
+DefaultStmt::DefaultStmt(SourceLocation Loc_, StmtList& Stmts_)
     : Loc(Loc_)
     , Stmts(Stmts_)
 {}
@@ -341,7 +341,7 @@ void GotoStmt::generateC(int indent, StringBuilder& buffer) {
 }
 
 
-CompoundStmt::CompoundStmt(SourceLocation l, SourceLocation r, StmtList2& stmts_)
+CompoundStmt::CompoundStmt(SourceLocation l, SourceLocation r, StmtList& stmts_)
     : Left(l)
     , Right(r)
     , Stmts(stmts_)
