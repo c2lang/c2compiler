@@ -35,11 +35,11 @@ static void usage(const char* name) {
     fprintf(stderr, "  -h               - show this help\n");
     fprintf(stderr, "  -fsyntax-only    - only check syntax\n");
     fprintf(stderr, "  -fgenerate-c     - generate C (no IR)\n");
-    fprintf(stderr, "  -print-ast       - print AST\n");
     fprintf(stderr, "  -single          - compile single file without recipe\n");
+    fprintf(stderr, "  -a               - print AST\n");
     fprintf(stderr, "  -l               - list targets\n");
-    fprintf(stderr, "  -t               - print timing\n");
     fprintf(stderr, "  -s               - print symbols\n");
+    fprintf(stderr, "  -t               - print timing\n");
     exit(-1);
 }
 
@@ -59,25 +59,28 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
         if (strcmp("-h", arg) == 0) {
             usage(argv[0]);
         }
-        if (strcmp("-l", arg) == 0) {
-            print_targets = true;
+        if (strcmp("-a", arg) == 0) {
+            opts.printAST = true;
             continue;
         }
-        if (strcmp("-t", arg) == 0) {
-            opts.printTiming = true;
+        if (strcmp("-l", arg) == 0) {
+            print_targets = true;
             continue;
         }
         if (strcmp("-s", arg) == 0) {
             opts.printSymbols = true;
             continue;
         }
-        if (strcmp("-print-ast", arg) == 0) {
-            opts.printAST = true;
+        if (strcmp("-t", arg) == 0) {
+            opts.printTiming = true;
             continue;
         }
         if (strcmp("-single", arg) == 0) {
             use_recipe = false;
             continue;
+        }
+        if (arg[0] == '-') {
+            usage(argv[0]);
         }
         if (targetFilter) usage(argv[0]);
         targetFilter = arg;
