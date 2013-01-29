@@ -20,9 +20,9 @@
 #include <vector>
 
 #include <clang/Basic/SourceLocation.h>
+#include <clang/AST/OperationKinds.h>
 
 #include "Stmt.h"
-#include "OperationKinds.h"
 
 namespace C2 {
 
@@ -202,7 +202,7 @@ private:
 
 class BinOpExpr : public Expr {
 public:
-    typedef BinaryOperatorKind Opcode;
+    typedef clang::BinaryOperatorKind Opcode;
 
     BinOpExpr(Expr* lhs, Expr* rhs, Opcode opc, SourceLocation opLoc);
     virtual ~BinOpExpr();

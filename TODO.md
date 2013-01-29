@@ -7,10 +7,10 @@ Parsing of:
 * ...
 
 AST Generation for:
+* sizeof()
 * type definitions
 * substructs
 * ellipsis (...) arguments
-* Binary Expressions
 * Unary Expressions
 * (proper) numeric values 
 * (proper) Identifiers (with package qualifier)

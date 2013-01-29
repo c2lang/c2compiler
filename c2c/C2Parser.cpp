@@ -513,7 +513,6 @@ C2::ExprResult C2Parser::ParseExpression(TypeCastState isTypeCast) {
 
 C2::ExprResult C2Parser::ParseAssignmentExpression(TypeCastState isTypeCast) {
     LOG_FUNC
-
     ExprResult LHS = ParseCastExpression(/*isUnaryExpression=*/false,
                                          /*isAddressOfOperand=*/false,
                                          isTypeCast);
@@ -688,6 +687,9 @@ C2::ExprResult C2Parser::ParseRHSOfBinaryExpression(ExprResult LHS, prec::Level 
       }
     }
 
+    if (!LHS.isInvalid()) {
+        LHS = Actions.ActOnBinOp(OpToken.getLocation(), OpToken.getKind(), LHS.take(), RHS.take());
+    }
 #if 0
     if (!LHS.isInvalid()) {
       // Combine the LHS and RHS into the LHS (e.g. build AST).
@@ -701,7 +703,7 @@ C2::ExprResult C2Parser::ParseRHSOfBinaryExpression(ExprResult LHS, prec::Level 
     }
 #endif
   }
-  // TODO add return value
+  // TODO add return value?
 }
 
 C2::ExprResult C2Parser::ParseCastExpression(bool isUnaryExpression,
@@ -1859,10 +1861,6 @@ C2::StmtResult C2Parser::ParseDeclOrStatement() {
         if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "function call")) return StmtError();
         break;
 */
-    case tok::equal:
-        ParseAssignmentExpression();
-        if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "assignment")) return StmtError();
-        break;
     default:
         Res = ParseExprStatement();
         break;

@@ -96,6 +96,9 @@ public:
     ExprResult ActOnCallExpr(Expr* id, Expr** args, unsigned num, SourceLocation RParenLoc);
     ExprResult ActOnIdExpression(IdentifierInfo* pkgII, SourceLocation pkgLoc,
                                  IdentifierInfo& symII, SourceLocation symLoc);
+
+    ExprResult ActOnBinOp(SourceLocation opLoc, tok::TokenKind Kind, Expr* LHS, Expr* RHS);
+
     ExprResult ActOnInitList(SourceLocation left_, SourceLocation right_, ExprList& vals);
     ExprResult ActOnArrayType(Expr* base, Expr* size);
     ExprResult ActOnPointerType(Expr* base);
