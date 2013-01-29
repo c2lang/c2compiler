@@ -10,13 +10,11 @@ AST Generation for:
 * substructs
 * ellipsis (...) arguments
 * For loops
-* switch/case/default
 * Binary Expressions
 * Unary Expressions
 * (proper) numeric values 
 * (proper) Identifiers (with package qualifier)
 * cast expression
-* multi-string constants ("foo" "bar" "faa")
 * ...
 
 Analysis of:
