@@ -1433,6 +1433,7 @@ C2::StmtResult C2Parser::ParseCompoundStatement() {
 
         StmtResult R = ParseStatement();
         if (R.isUsable()) Stmts.push_back(R.release());
+        else fprintf(stderr, "COMPOUND: skipping invalid statement\n");
     }
 
     if (Tok.isNot(tok::r_brace)) {
