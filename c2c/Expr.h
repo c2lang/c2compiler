@@ -22,27 +22,13 @@
 #include <clang/Basic/SourceLocation.h>
 
 #include "Stmt.h"
+#include "OperationKinds.h"
 
 namespace C2 {
 
 class StringBuilder;
 class ExprVisitor;
 class Type;
-
-enum BinOp {
-    BOP_PLUS=0,
-    BOP_MIN,
-    BOP_MULT,
-    BOP_DIV,
-    BOP_ASSIGN,
-    BOP_LEE,
-    BOP_GRE,
-    BOP_MAX
-};
-enum UnaryOp {
-    OP_MAX
-};
-
 
 enum ExprType {
     EXPR_NUMBER=0,
@@ -52,6 +38,7 @@ enum ExprType {
     EXPR_INITLIST,
     EXPR_TYPE,
     EXPR_DECL,
+    EXPR_BINOP
 };
 
 
@@ -213,6 +200,25 @@ private:
 };
 
 
+class BinOpExpr : public Expr {
+public:
+    typedef BinaryOperatorKind Opcode;
+
+    BinOpExpr(Expr* lhs, Expr* rhs, Opcode opc, SourceLocation opLoc);
+    virtual ~BinOpExpr();
+    virtual ExprType ntype() { return EXPR_BINOP; }
+    virtual void acceptE(ExprVisitor& v);
+    virtual void print(int indent, StringBuilder& buffer);
+    virtual void generateC(int indent, StringBuilder& buffer);
+    virtual llvm::Value* codeGen(CodeGenContext& context);
+private:
+    SourceLocation opLoc;
+    Opcode opc;
+    Expr* lhs;
+    Expr* rhs;
+};
+
+
 class ExprVisitor {
 public:
     virtual ~ExprVisitor() {}
@@ -224,6 +230,7 @@ public:
     virtual void visit(InitListExpr&) {}
     virtual void visit(TypeExpr&) {}
     virtual void visit(DeclExpr&) {}
+    virtual void visit(BinOpExpr&) {}
 };
 
 #define EXPR_VISITOR_ACCEPT(a) void a::acceptE(ExprVisitor& v) { v.visit(*this); }

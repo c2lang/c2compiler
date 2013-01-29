@@ -30,28 +30,6 @@ static int creationCount;
 static int deleteCount;
 #endif
 
-static const char* bin_names[] = {
-    "+",
-    "-",
-    "*",
-    "/",
-    "=",
-    "<",
-};
-
-static const char* binop2str(BinOp op) {
-    assert(op < BOP_MAX);
-    return bin_names[op];
-}
-
-static const char* unary_names[] = {
-};
-
-static const char* unary2str(UnaryOp op) {
-    assert(op < OP_MAX);
-    return unary_names[op];
-}
-
 Expr::Expr()
     : isStatement(false)
 {
@@ -252,5 +230,30 @@ void DeclExpr::generateC(int indent, StringBuilder& buffer) {
         initValue->generateC(0, buffer);
     }
     if (isStmt()) buffer << ";\n";
+}
+
+
+BinOpExpr::BinOpExpr(Expr* lhs_, Expr* rhs_, Opcode opc_, SourceLocation opLoc_)
+    : opLoc(opLoc_)
+    , opc(opc_)
+    , lhs(lhs_)
+    , rhs(rhs_)
+{}
+
+BinOpExpr::~BinOpExpr() {
+    delete lhs;
+    delete rhs;
+}
+
+EXPR_VISITOR_ACCEPT(BinOpExpr);
+
+void BinOpExpr::print(int indent, StringBuilder& buffer) {
+    buffer.indent(indent);
+    buffer << "[binop " << "TODO" << "]\n";
+    // TODO
+}
+
+void BinOpExpr::generateC(int indent, StringBuilder& buffer) {
+    // TODO
 }
 

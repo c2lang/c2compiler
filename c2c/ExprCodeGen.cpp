@@ -87,3 +87,8 @@ llvm::Value* DeclExpr::codeGen(CodeGenContext& C) {
     return inst;
 }
 
+llvm::Value* BinOpExpr::codeGen(CodeGenContext& context) {
+    assert(0 && "TODO");
+    return 0;
+}
+
