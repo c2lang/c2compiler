@@ -1458,8 +1458,7 @@ C2::StmtResult C2Parser::ParseStatement() {
     case tok::kw_do:
         return ParseDoStatement();
     case tok::kw_for:
-        ParseForStatement();
-        return StmtError(); // TODO
+        return ParseForStatement();
     case tok::kw_goto:
         return ParseGotoStatement();
     case tok::kw_continue:
@@ -1710,44 +1709,50 @@ C2::StmtResult C2Parser::ParseDoStatement() {
 /// [C++]   simple-declaration
 //statement ::= FOR LPAREN expression_statement expression_statement RPAREN statement.
 //statement ::= FOR LPAREN expression_statement expression_statement expression RPAREN statement.
-void C2Parser::ParseForStatement() {
+C2::StmtResult C2Parser::ParseForStatement() {
     LOG_FUNC
     assert(Tok.is(tok::kw_for) && "Not a for stmt!");
-    ConsumeToken();
+    SourceLocation Loc = ConsumeToken();
 
-    if (ExpectAndConsume(tok::l_paren, diag::err_expected_lparen_after, "for")) return;
+    if (ExpectAndConsume(tok::l_paren, diag::err_expected_lparen_after, "for")) return StmtError();
 
     // first substmt
+    StmtResult Init;
     if (Tok.is(tok::semi)) {    // for (;
         ConsumeToken();
     } else {
         bool isDecl = isDeclaration();
-        if (Diags.hasErrorOccurred()) return;
+        if (Diags.hasErrorOccurred()) return StmtError();
         if (isDecl) {
-            ParseDeclaration();
+            Init = ParseDeclaration();
         } else {
-            ParseExprStatement();
+            Init = ParseExprStatement();
         }
-        if (Diags.hasErrorOccurred()) return;
+        if (Init.isInvalid()) return StmtError();
 
         //if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "statement")) return;
     }
 
     // second substmt
+    ExprResult Cond;
     if (Tok.isNot(tok::semi)) {
-        ParseExpression();
-        if (Diags.hasErrorOccurred()) return;
+        Cond = ParseExpression();
+        if (Cond.isInvalid()) return StmtError();
     }
-    if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "statement")) return;
+    if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "statement")) return StmtError();
 
     // third substmt
+    ExprResult Incr;
     if (Tok.isNot(tok::r_paren)) {
-        ParseExpression();
-        if (Diags.hasErrorOccurred()) return;
+        Incr = ParseExpression();
+        if (Incr.isInvalid()) return StmtError();
     }
-    if (ExpectAndConsume(tok::r_paren, diag::err_expected_rparen)) return;
+    if (ExpectAndConsume(tok::r_paren, diag::err_expected_rparen)) return StmtError();
 
-    ParseStatement();
+    StmtResult Body = ParseStatement();
+    if (Body.isInvalid()) return StmtError();
+
+    return Actions.ActOnForStmt(Loc, Init.release(), Cond.release(), Incr.release(), Body.release());
 }
 
 /// ParseGotoStatement

@@ -182,6 +182,15 @@ C2::StmtResult C2Sema::ActOnDoStmt(SourceLocation loc, ExprResult Cond, StmtResu
     return StmtResult(new DoStmt(loc, Cond.release(), Then.release()));
 }
 
+C2::StmtResult C2Sema::ActOnForStmt(SourceLocation loc, Stmt* Init, Expr* Cond, Expr* Incr, Stmt* Body) {
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: for statement at ";
+    loc.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    return StmtResult(new ForStmt(loc, Init, Cond, Incr, Body));
+}
+
 C2::StmtResult C2Sema::ActOnSwitchStmt(SourceLocation loc, Expr* Cond, StmtList& cases) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: switch statement at ";

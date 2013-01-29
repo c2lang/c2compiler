@@ -49,6 +49,11 @@ llvm::Value* DoStmt::codeGen(CodeGenContext& context) {
     return 0;
 }
 
+llvm::Value* ForStmt::codeGen(CodeGenContext& context) {
+    // TODO
+    return 0;
+}
+
 llvm::Value* SwitchStmt::codeGen(CodeGenContext& context) {
     // TODO
     return 0;

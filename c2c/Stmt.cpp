@@ -143,9 +143,8 @@ void WhileStmt::print(int indent, StringBuilder& buffer) {
 }
 
 void WhileStmt::generateC(int indent, StringBuilder& buffer) {
-    printf("%s() TODO\n", __PRETTY_FUNCTION__);
     buffer.indent(indent);
-    buffer << "while(";
+    buffer << "while (";
     Cond->generateC(0, buffer);
     buffer << ")\n";
     Then->generateC(indent, buffer);
@@ -173,8 +172,62 @@ void DoStmt::print(int indent, StringBuilder& buffer) {
 }
 
 void DoStmt::generateC(int indent, StringBuilder& buffer) {
-    printf("%s() TODO\n", __PRETTY_FUNCTION__);
+    buffer.indent(indent);
+    buffer << "do\n";
+    Then->generateC(indent, buffer);
+    buffer.indent(indent);
+    buffer << "while (";
+    Cond->generateC(0, buffer);
+    buffer << ");\n";
 }
+
+
+ForStmt::ForStmt(SourceLocation Loc_, Stmt* Init_, Expr* Cond_, Expr* Incr_, Stmt* Body_)
+    : Loc(Loc_)
+    , Init(Init_)
+    , Cond(Cond_)
+    , Incr(Incr_)
+    , Body(Body_)
+{}
+
+ForStmt::~ForStmt() {
+    delete Body;
+    delete Incr;
+    delete Cond;
+    delete Init;
+}
+
+STMT_VISITOR_ACCEPT(ForStmt);
+
+void ForStmt::print(int indent, StringBuilder& buffer) {
+    buffer.indent(indent);
+    buffer << "[for]\n";
+    if (Init) Init->print(indent + INDENT, buffer);
+    if (Cond) Cond->print(indent + INDENT, buffer);
+    if (Incr) Incr->print(indent + INDENT, buffer);
+    Body->print(indent + INDENT, buffer);
+}
+
+void ForStmt::generateC(int indent, StringBuilder& buffer) {
+    buffer.indent(indent);
+    buffer << "for (";
+    // TODO dont generate ';\n' for Init statement
+    if (Init) Init->generateC(0, buffer);
+    buffer << ';';
+    if (Cond) {
+        buffer << ' ';
+        Cond->generateC(0, buffer);
+    }
+    buffer << ';';
+    if (Incr) {
+        buffer << ' ';
+        Incr->generateC(0, buffer);
+    }
+    buffer << ")\n";
+    // TODO fix indentation
+    Body->generateC(indent, buffer);
+}
+
 
 SwitchStmt::SwitchStmt(SourceLocation Loc_, Expr* Cond_, StmtList& Cases_)
     : Loc(Loc_)

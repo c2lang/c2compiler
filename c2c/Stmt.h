@@ -41,6 +41,7 @@ enum StmtType {
     STMT_IF,
     STMT_WHILE,
     STMT_DO,
+    STMT_FOR,
     STMT_SWITCH,
     STMT_CASE,
     STMT_DEFAULT,
@@ -138,6 +139,25 @@ private:
     SourceLocation Loc;
     Stmt* Cond;
     Stmt* Then;
+};
+
+
+class ForStmt : public Stmt {
+public:
+    ForStmt(SourceLocation Loc_, Stmt* Init_, Expr* Cond_, Expr* Incr_, Stmt* Body_);
+    virtual ~ForStmt();
+    virtual StmtType stype() { return STMT_FOR; }
+    virtual void acceptS(StmtVisitor& v);
+
+    virtual void print(int indent, StringBuilder& buffer);
+    virtual void generateC(int indent, StringBuilder& buffer);
+    virtual llvm::Value* codeGen(CodeGenContext& context);
+private:
+    SourceLocation Loc;
+    Stmt* Init;
+    Expr* Cond;
+    Expr* Incr;
+    Stmt* Body;
 };
 
 
@@ -280,6 +300,7 @@ public:
     virtual void visit(IfStmt&) {}
     virtual void visit(WhileStmt&) {}
     virtual void visit(DoStmt&) {}
+    virtual void visit(ForStmt&) {}
     virtual void visit(SwitchStmt&) {}
     virtual void visit(CaseStmt&) {}
     virtual void visit(DefaultStmt&) {}

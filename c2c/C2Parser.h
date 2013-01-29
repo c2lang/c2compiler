@@ -141,13 +141,8 @@ private:
   //===--------------------------------------------------------------------===//
   // C99 6.8: Statements and Blocks.
             
-  /// A SmallVector of statements, with stack size 32 (as that is the only one
-  /// used.) 
-  typedef SmallVector<C2::Stmt*, 32> StmtVector;
   /// A SmallVector of expressions, with stack size 12 (the maximum used.)
   typedef SmallVector<Expr*, 12> ExprVector;
-  /// A SmallVector of types.
-  typedef SmallVector<ParsedType, 12> TypeVector;
 
     StmtResult ParseCompoundStatement();
     StmtResult ParseStatement();
@@ -156,7 +151,7 @@ private:
     StmtResult ParseSwitchStatement();
     StmtResult ParseWhileStatement();
     StmtResult ParseDoStatement();
-    void ParseForStatement();
+    StmtResult ParseForStatement();
     StmtResult ParseGotoStatement();
     StmtResult ParseBreakStatement();
     StmtResult ParseContinueStatement();
