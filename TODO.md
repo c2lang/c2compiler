@@ -10,7 +10,6 @@ AST Generation for:
 * type definitions
 * substructs
 * ellipsis (...) arguments
-* For loops
 * Binary Expressions
 * Unary Expressions
 * (proper) numeric values 
