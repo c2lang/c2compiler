@@ -273,7 +273,7 @@ void C2Builder::build() {
 
     // phase 1b: merge file's symbol tables to package symbols tables
     errors = !createPkgs();
-    dumpPkgs();
+    if (options.printSymbols) dumpPkgs();
     if (errors) return;
 
     // phase 2: run analysing on all files

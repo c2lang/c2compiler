@@ -30,10 +30,12 @@ struct BuildOptions {
     BuildOptions()
         : printAST(false)
         , printTiming(false)
+        , printSymbols(false)
         , mode(GENERATE_IR)
     {}
     bool printAST;
     bool printTiming;
+    bool printSymbols;
     enum Mode {
         GENERATE_IR,
         GENERATE_C,

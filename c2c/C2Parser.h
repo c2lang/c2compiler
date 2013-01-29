@@ -230,9 +230,11 @@ private:
     SourceLocation ConsumeToken() {
         PrevTokLocation = Tok.getLocation();
 #ifdef PARSER_DEBUG
+        if (Tok.isNot(tok::eof)) {
         std::cerr << ANSI_MAGENTA;
         PP.DumpToken(Tok);
         std::cerr << ANSI_NORMAL << std::endl;
+        }
 #endif
         PP.Lex(Tok);
         return PrevTokLocation;
