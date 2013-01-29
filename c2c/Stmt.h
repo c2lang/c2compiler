@@ -20,6 +20,7 @@
 #include <vector>
 
 #include <clang/Basic/SourceLocation.h>
+#include "OwningVector.h"
 
 using clang::SourceLocation;
 
@@ -40,6 +41,9 @@ enum StmtType {
     STMT_IF,
     STMT_WHILE,
     STMT_DO,
+    STMT_SWITCH,
+    STMT_CASE,
+    STMT_DEFAULT,
     STMT_BREAK,
     STMT_CONTINUE,
     STMT_LABEL,
@@ -65,7 +69,7 @@ private:
 
 
 typedef std::vector<Stmt*> StmtList;
-
+typedef OwningVector<Stmt> StmtList2;
 
 class ReturnStmt : public Stmt {
 public:
@@ -135,6 +139,56 @@ private:
     SourceLocation Loc;
     Stmt* Cond;
     Stmt* Then;
+};
+
+
+class SwitchStmt : public Stmt {
+public:
+    SwitchStmt(SourceLocation Loc_, Expr* Cond_, StmtList2& Cases_);
+    virtual ~SwitchStmt();
+    virtual StmtType stype() { return STMT_SWITCH; }
+    virtual void acceptS(StmtVisitor& v);
+
+    virtual void print(int indent, StringBuilder& buffer);
+    virtual void generateC(int indent, StringBuilder& buffer);
+    virtual llvm::Value* codeGen(CodeGenContext& context);
+private:
+    SourceLocation Loc;
+    Expr* Cond;
+    StmtList2 Cases;
+};
+
+
+class CaseStmt : public Stmt {
+public:
+    CaseStmt(SourceLocation Loc_, Expr* Cond_, StmtList2& Stmts_);
+    virtual ~CaseStmt();
+    virtual StmtType stype() { return STMT_CASE; }
+    virtual void acceptS(StmtVisitor& v);
+
+    virtual void print(int indent, StringBuilder& buffer);
+    virtual void generateC(int indent, StringBuilder& buffer);
+    virtual llvm::Value* codeGen(CodeGenContext& context);
+private:
+    SourceLocation Loc;
+    Expr* Cond;
+    StmtList2 Stmts;
+};
+
+
+class DefaultStmt : public Stmt {
+public:
+    DefaultStmt(SourceLocation Loc_, StmtList2& Stmts_);
+    virtual ~DefaultStmt();
+    virtual StmtType stype() { return STMT_DEFAULT; }
+    virtual void acceptS(StmtVisitor& v);
+
+    virtual void print(int indent, StringBuilder& buffer);
+    virtual void generateC(int indent, StringBuilder& buffer);
+    virtual llvm::Value* codeGen(CodeGenContext& context);
+private:
+    SourceLocation Loc;
+    StmtList2 Stmts;
 };
 
 
@@ -228,6 +282,9 @@ public:
     virtual void visit(IfStmt&) {}
     virtual void visit(WhileStmt&) {}
     virtual void visit(DoStmt&) {}
+    virtual void visit(SwitchStmt&) {}
+    virtual void visit(CaseStmt&) {}
+    virtual void visit(DefaultStmt&) {}
     virtual void visit(BreakStmt&) {}
     virtual void visit(ContinueStmt&) {}
     virtual void visit(LabelStmt&) {}

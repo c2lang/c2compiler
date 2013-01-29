@@ -1434,12 +1434,9 @@ C2::StmtResult C2Parser::ParseCompoundStatement() {
 
         StmtResult R = ParseStatement();
         if (R.isUsable()) {
-            //fprintf(stderr, "COMPOUND ADDING %p : ", R.get());
-            //R.get()->dump();
             Stmts.push_back(R.release());
         } else {
-            // TODO TEMP
-            fprintf(stderr, "STATEMENT NOT USABLE\n");
+            return StmtError();
         }
         // TODO memleak on Stmts?
     }
@@ -1463,8 +1460,7 @@ C2::StmtResult C2Parser::ParseStatement() {
     case tok::kw_if:
         return ParseIfStatement();
     case tok::kw_switch:
-        ParseSwitchStatement();
-        return StmtError(); // TODO
+        return ParseSwitchStatement();
     case tok::kw_while:
         return ParseWhileStatement();
     case tok::kw_do:
@@ -1485,11 +1481,11 @@ C2::StmtResult C2Parser::ParseStatement() {
     case tok::identifier:
         return ParseDeclOrStatement();
     case tok::kw_case:
-        ParseCaseStatement();
-        return StmtError(); // TODO
+        Diag(Tok, diag::err_case_not_in_switch);
+        return StmtError();
     case tok::kw_default:
-        ParseDefaultStatement();
-        return StmtError(); // TODO
+        Diag(Tok, diag::err_default_not_in_switch);
+        return StmtError();
     // all basic types
     case tok::kw_u8:
     case tok::kw_u16:
@@ -1619,21 +1615,46 @@ C2::StmtResult C2Parser::ParseIfStatement() {
 /// ParseSwitchStatement
 ///       switch-statement:
 ///         'switch' '(' expression ')' statement
-void C2Parser::ParseSwitchStatement() {
+C2::StmtResult C2Parser::ParseSwitchStatement() {
     LOG_FUNC
     assert(Tok.is(tok::kw_switch) && "Not a switch stmt!");
-    ConsumeToken();
+    SourceLocation Loc = ConsumeToken();
 
-    if (ExpectAndConsume(tok::l_paren, diag::err_expected_lparen)) return;
+    if (ExpectAndConsume(tok::l_paren, diag::err_expected_lparen)) return StmtError();
 
-    ParseExpression();
-    if (Diags.hasErrorOccurred()) return;
+    ExprResult Cond = ParseExpression();
+    if (Cond.isInvalid()) return StmtError();
 
-    if (ExpectAndConsume(tok::r_paren, diag::err_expected_rparen)) return;
-    if (Diags.hasErrorOccurred()) return;
+    if (ExpectAndConsume(tok::r_paren, diag::err_expected_rparen)) return StmtError();
+    if (ExpectAndConsume(tok::l_brace, diag::err_expected_lbrace)) return StmtError();
 
-    ParseStatement();
-    if (Diags.hasErrorOccurred()) return;
+    StmtList2 Cases;
+    bool done = false;
+    while (!done) {
+        StmtResult Res;
+        switch (Tok.getKind()) {
+        case tok::kw_case:
+            Res = ParseCaseStatement();
+            break;
+        case tok::kw_default:
+            Res = ParseDefaultStatement();
+            break;
+        case tok::r_brace:
+            done = true;
+            continue;
+        default:
+            // TODO Diag expected case/default statement
+            fprintf(stderr, "UNEXPECTED TOKEN IN SWITCH\n");
+            return StmtError();
+        }
+        if (Res.isUsable()) Cases.push_back(Res.release());
+        else return StmtError();
+        // TODO check for multiple default statements here?
+    }
+
+    if (ExpectAndConsume(tok::r_brace, diag::err_expected_rbrace)) return StmtError();
+
+    return Actions.ActOnSwitchStmt(Loc, Cond.release(), Cases);
 }
 
 /// ParseWhileStatement
@@ -1884,31 +1905,66 @@ C2::StmtResult C2Parser::ParseDeclaration() {
 ///       labeled-statement:
 ///         'case' constant-expression ':' statement
 /// [GNU]   'case' constant-expression '...' constant-expression ':' statement
-void C2Parser::ParseCaseStatement() {
+C2::StmtResult C2Parser::ParseCaseStatement() {
     LOG_FUNC
     assert(Tok.is(tok::kw_case) && "Not a case stmt!");
-    ConsumeToken();
+    SourceLocation Loc = ConsumeToken();
 
-    ParseConstantExpression();
-    if (Diags.hasErrorOccurred()) return;
+    ExprResult Cond = ParseConstantExpression();
+    if (Cond.isInvalid()) return StmtError();
 
-    if (ExpectAndConsume(tok::colon, diag::err_expected_colon_after, "case")) return;
+    if (ExpectAndConsume(tok::colon, diag::err_expected_colon_after, "case")) return StmtError();
 
-    ParseStatement();
+    StmtList2 Stmts;
+    bool done = false;
+    while (!done) {
+        switch (Tok.getKind()) {
+        case tok::kw_case:
+        case tok::kw_default:
+        case tok::r_brace:
+            done = true;
+             break;
+        default:
+            {
+                StmtResult Res = ParseStatement();
+                if (Res.isUsable()) Stmts.push_back(Res.release());
+                else return StmtError();
+            }
+        }
+    }
+
+    return Actions.ActOnCaseStmt(Loc, Cond.release(), Stmts);
 }
 
 /// ParseDefaultStatement
 ///       labeled-statement:
 ///         'default' ':' statement
 /// Note that this does not parse the 'statement' at the end.
-void C2Parser::ParseDefaultStatement() {
+C2::StmtResult C2Parser::ParseDefaultStatement() {
     LOG_FUNC
     assert(Tok.is(tok::kw_default) && "Not a default stmt!");
-    ConsumeToken();
+    SourceLocation Loc = ConsumeToken();
 
-    if (ExpectAndConsume(tok::colon, diag::err_expected_colon_after, "default")) return;
+    if (ExpectAndConsume(tok::colon, diag::err_expected_colon_after, "default")) return StmtError();
 
-    ParseStatement();
+    StmtList2 Stmts;
+    bool done = false;
+    while (!done) {
+        switch (Tok.getKind()) {
+        case tok::kw_case:
+        case tok::kw_default:
+        case tok::r_brace:
+            done = true;
+             break;
+        default:
+            {
+                StmtResult Res = ParseStatement();
+                if (Res.isUsable()) Stmts.push_back(Res.release());
+                else return StmtError();
+            }
+        }
+    }
+    return Actions.ActOnDefaultStmt(Loc, Stmts);
 }
 
 /// ParseLabeledStatement - We have an identifier and a ':' after it.

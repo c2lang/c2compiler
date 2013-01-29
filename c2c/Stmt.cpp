@@ -151,6 +151,7 @@ void WhileStmt::generateC(int indent, StringBuilder& buffer) {
     Then->generateC(indent, buffer);
 }
 
+
 DoStmt::DoStmt(SourceLocation Loc_, Expr* Cond_, Stmt* Then_)
     : Loc(Loc_)
     , Cond(Cond_)
@@ -173,6 +174,97 @@ void DoStmt::print(int indent, StringBuilder& buffer) {
 
 void DoStmt::generateC(int indent, StringBuilder& buffer) {
     printf("%s() TODO\n", __PRETTY_FUNCTION__);
+}
+
+SwitchStmt::SwitchStmt(SourceLocation Loc_, Expr* Cond_, StmtList2& Cases_)
+    : Loc(Loc_)
+    , Cond(Cond_)
+    , Cases(Cases_)
+{}
+
+SwitchStmt::~SwitchStmt() {
+    delete Cond;
+}
+
+STMT_VISITOR_ACCEPT(SwitchStmt);
+
+void SwitchStmt::print(int indent, StringBuilder& buffer) {
+    buffer.indent(indent);
+    buffer << "[switch]\n";
+    Cond->print(indent + INDENT, buffer);
+    for (int i=0; i<Cases.size(); i++) {
+        Cases[i]->print(indent + INDENT, buffer);
+    }
+}
+
+void SwitchStmt::generateC(int indent, StringBuilder& buffer) {
+    buffer.indent(indent);
+    buffer << "switch(";
+    Cond->generateC(0, buffer);
+    buffer << ") {\n";
+    for (int i=0; i<Cases.size(); i++) {
+        Cases[i]->generateC(indent + INDENT, buffer);
+    }
+    buffer.indent(indent);
+    buffer << "}\n";
+}
+
+
+CaseStmt::CaseStmt(SourceLocation Loc_, Expr* Cond_, StmtList2& Stmts_)
+    : Loc(Loc_)
+    , Cond(Cond_)
+    , Stmts(Stmts_)
+{}
+
+CaseStmt::~CaseStmt() {
+    delete Cond;
+}
+
+STMT_VISITOR_ACCEPT(CaseStmt);
+
+void CaseStmt::print(int indent, StringBuilder& buffer) {
+    buffer.indent(indent);
+    buffer << "[case]\n";
+    Cond->print(indent + INDENT, buffer);
+    for (int i=0; i<Stmts.size(); i++) {
+        Stmts[i]->print(indent + INDENT, buffer);
+    }
+}
+
+void CaseStmt::generateC(int indent, StringBuilder& buffer) {
+    buffer.indent(indent);
+    buffer << "case ";
+    Cond->generateC(0, buffer);
+    buffer << ":\n";
+    for (int i=0; i<Stmts.size(); i++) {
+        Stmts[i]->generateC(indent + INDENT, buffer);
+    }
+}
+
+
+DefaultStmt::DefaultStmt(SourceLocation Loc_, StmtList2& Stmts_)
+    : Loc(Loc_)
+    , Stmts(Stmts_)
+{}
+
+DefaultStmt::~DefaultStmt() {}
+
+STMT_VISITOR_ACCEPT(DefaultStmt);
+
+void DefaultStmt::print(int indent, StringBuilder& buffer) {
+    buffer.indent(indent);
+    buffer << "[default]\n";
+    for (int i=0; i<Stmts.size(); i++) {
+        Stmts[i]->print(indent + INDENT, buffer);
+    }
+}
+
+void DefaultStmt::generateC(int indent, StringBuilder& buffer) {
+    buffer.indent(indent);
+    buffer << "default:\n";
+    for (int i=0; i<Stmts.size(); i++) {
+        Stmts[i]->generateC(indent + INDENT, buffer);
+    }
 }
 
 

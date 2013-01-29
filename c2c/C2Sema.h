@@ -79,6 +79,9 @@ public:
                            SourceLocation elseLoc, StmtResult elseStmt);
     StmtResult ActOnWhileStmt(SourceLocation loc, ExprResult condition, StmtResult thenStmt);
     StmtResult ActOnDoStmt(SourceLocation loc, ExprResult condition, StmtResult thenStmt);
+    StmtResult ActOnSwitchStmt(SourceLocation loc, Expr* condition, StmtList2& cases);
+    StmtResult ActOnCaseStmt(SourceLocation loc, Expr* condition, StmtList2& stmts);
+    StmtResult ActOnDefaultStmt(SourceLocation loc, StmtList2& stmts);
     StmtResult ActOnBreakStmt(SourceLocation loc);
     StmtResult ActOnContinueStmt(SourceLocation loc);
     StmtResult ActOnLabelStmt(const char* name, SourceLocation loc, Stmt* subStmt);

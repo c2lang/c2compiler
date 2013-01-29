@@ -182,6 +182,33 @@ C2::StmtResult C2Sema::ActOnDoStmt(SourceLocation loc, ExprResult Cond, StmtResu
     return StmtResult(new DoStmt(loc, Cond.release(), Then.release()));
 }
 
+C2::StmtResult C2Sema::ActOnSwitchStmt(SourceLocation loc, Expr* Cond, StmtList2& cases) {
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: switch statement at ";
+    loc.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    return StmtResult(new SwitchStmt(loc, Cond, cases));
+}
+
+C2::StmtResult C2Sema::ActOnCaseStmt(SourceLocation loc, Expr* Cond, StmtList2& stmts) {
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: case statement at ";
+    loc.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    return StmtResult(new CaseStmt(loc, Cond, stmts));
+}
+
+C2::StmtResult C2Sema::ActOnDefaultStmt(SourceLocation loc, StmtList2& stmts) {
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: default statement at ";
+    loc.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    return StmtResult(new DefaultStmt(loc, stmts));
+}
+
 C2::StmtResult C2Sema::ActOnBreakStmt(SourceLocation loc) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: break statement at ";

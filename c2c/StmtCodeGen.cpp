@@ -49,6 +49,21 @@ llvm::Value* DoStmt::codeGen(CodeGenContext& context) {
     return 0;
 }
 
+llvm::Value* SwitchStmt::codeGen(CodeGenContext& context) {
+    // TODO
+    return 0;
+}
+
+llvm::Value* CaseStmt::codeGen(CodeGenContext& context) {
+    // TODO
+    return 0;
+}
+
+llvm::Value* DefaultStmt::codeGen(CodeGenContext& context) {
+    // TODO
+    return 0;
+}
+
 llvm::Value* BreakStmt::codeGen(CodeGenContext& context) {
     return 0;
 }

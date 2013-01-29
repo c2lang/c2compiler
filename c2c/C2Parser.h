@@ -153,7 +153,7 @@ private:
     StmtResult ParseStatement();
     StmtResult ParseReturnStatement();
     StmtResult ParseIfStatement();
-    void ParseSwitchStatement();
+    StmtResult ParseSwitchStatement();
     StmtResult ParseWhileStatement();
     StmtResult ParseDoStatement();
     void ParseForStatement();
@@ -162,8 +162,8 @@ private:
     StmtResult ParseContinueStatement();
     StmtResult ParseDeclOrStatement();
     StmtResult ParseDeclaration();
-    void ParseCaseStatement();
-    void ParseDefaultStatement();
+    StmtResult ParseCaseStatement();
+    StmtResult ParseDefaultStatement();
     StmtResult ParseLabeledStatement();
     StmtResult ParseExprStatement();
 
