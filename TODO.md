@@ -7,6 +7,7 @@ Parsing of:
 * ...
 
 AST Generation for:
+* type definitions
 * substructs
 * ellipsis (...) arguments
 * For loops
