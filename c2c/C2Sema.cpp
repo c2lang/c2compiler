@@ -480,6 +480,16 @@ C2::ExprResult C2Sema::ActOnVarExpr(const char* name, SourceLocation loc, Expr* 
     return ExprResult(declExpr);
 }
 
+C2::ExprResult C2Sema::ActOnSizeofExpression(SourceLocation Loc, Expr* expr) {
+    assert(expr);
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: sizeof at ";
+    Loc.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    return ExprResult(new SizeofExpr(Loc, expr));
+}
+
 void C2Sema::visitAST(ASTVisitor& visitor) {
     for (unsigned int i=0; i<decls.size(); i++) {
         bool stop = visitor.handle(decls[i]);

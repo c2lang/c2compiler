@@ -300,3 +300,29 @@ void BinOpExpr::generateC(int indent, StringBuilder& buffer) {
     if (isStmt()) buffer << ";\n";
 }
 
+
+SizeofExpr::SizeofExpr(SourceLocation Loc_, Expr* expr_)
+    : Loc(Loc_)
+    , expr(expr_)
+{}
+
+SizeofExpr::~SizeofExpr() {
+    delete expr;
+}
+
+EXPR_VISITOR_ACCEPT(SizeofExpr);
+
+void SizeofExpr::print(int indent, StringBuilder& buffer) {
+    buffer.indent(indent);
+    buffer << "[sizeof]\n";
+    expr->print(indent + INDENT, buffer);
+}
+
+void SizeofExpr::generateC(int indent, StringBuilder& buffer) {
+    buffer.indent(indent);
+    buffer << "sizeof(";
+    expr->generateC(0, buffer);
+    buffer << ")";
+    if (isStmt()) buffer << ";\n";
+}
+

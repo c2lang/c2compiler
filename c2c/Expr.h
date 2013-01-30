@@ -38,7 +38,8 @@ enum ExprType {
     EXPR_INITLIST,
     EXPR_TYPE,
     EXPR_DECL,
-    EXPR_BINOP
+    EXPR_BINOP,
+    EXPR_SIZEOF,
 };
 
 
@@ -219,6 +220,21 @@ private:
 };
 
 
+class SizeofExpr : public Expr {
+public:
+    SizeofExpr(SourceLocation Loc, Expr* expr_);
+    virtual ~SizeofExpr();
+    virtual ExprType ntype() { return EXPR_SIZEOF; }
+    virtual void acceptE(ExprVisitor& v);
+    virtual void print(int indent, StringBuilder& buffer);
+    virtual void generateC(int indent, StringBuilder& buffer);
+    virtual llvm::Value* codeGen(CodeGenContext& context);
+private:
+    SourceLocation Loc;
+    Expr* expr;
+};
+
+
 class ExprVisitor {
 public:
     virtual ~ExprVisitor() {}
@@ -231,6 +247,7 @@ public:
     virtual void visit(TypeExpr&) {}
     virtual void visit(DeclExpr&) {}
     virtual void visit(BinOpExpr&) {}
+    virtual void visit(SizeofExpr&) {}
 };
 
 #define EXPR_VISITOR_ACCEPT(a) void a::acceptE(ExprVisitor& v) { v.visit(*this); }

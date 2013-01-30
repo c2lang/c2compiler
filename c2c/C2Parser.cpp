@@ -776,8 +776,7 @@ C2::ExprResult C2Parser::ParseCastExpression(bool isUnaryExpression,
         ConsumeToken();
         break;
     case tok::kw_sizeof:
-        ParseSizeof();
-        break;
+        return ParseSizeof();
     case tok::star:          // unary-expression: '*' cast-expression
     case tok::plus:          // unary-expression: '+' cast-expression
     case tok::minus:         // unary-expression: '-' cast-expression
@@ -1347,16 +1346,50 @@ C2::ExprResult C2Parser::ParseArray(ExprResult base) {
 /// Syntax:
 ///  'sizeof' '(' var-name ')'
 ///  'sizeof' '(' type-name ')'
-void C2Parser::ParseSizeof()
+C2::ExprResult C2Parser::ParseSizeof()
 {
     LOG_FUNC
     assert(Tok.is(tok::kw_sizeof) && "Not sizeof keyword!");
-    ConsumeToken();
+    SourceLocation Loc = ConsumeToken();
 
-    if (ExpectAndConsume(tok::l_paren, diag::err_expected_lparen)) return;
-    // TEMP
-    while (Tok.isNot(tok::r_paren)) ConsumeToken();
-    if (ExpectAndConsume(tok::r_paren, diag::err_expected_rparen)) return;
+    if (ExpectAndConsume(tok::l_paren, diag::err_expected_lparen)) return ExprError();
+    ExprResult Res;
+    // TEMP only support base types and identifier (no struct members etc)
+    switch (Tok.getKind()) {
+    case tok::identifier:
+        Res = ParseIdentifier(true);
+        break;
+    // all basic types
+    case tok::kw_u8:
+    case tok::kw_u16:
+    case tok::kw_u32:
+    case tok::kw_s8:
+    case tok::kw_s16:
+    case tok::kw_s32:
+    case tok::kw_int:
+    case tok::kw_uint:
+    case tok::kw_string:
+    case tok::kw_float:
+    case tok::kw_void:
+    case tok::kw_char:
+    case tok::kw_uchar:
+        Res = ParseTypeSpecifier(false);
+        break;
+    case tok::kw_const:
+    case tok::kw_volatile:
+    case tok::kw_local:
+        //Diag(Tok, diag::err_no_qualifier_allowed_here);
+        fprintf(stderr, "Not type qualifier allowed here\n");
+        return ExprError();
+    default:
+        //Diag(Tok, diag::err_expected type or symbol name);
+        fprintf(stderr, "Expected Type or Symbol name\n");
+        return ExprError();
+    }
+    if (Res.isInvalid()) return ExprError();
+
+    if (ExpectAndConsume(tok::r_paren, diag::err_expected_rparen)) return ExprError();
+    return Actions.ActOnSizeofExpression(Loc, Res.release());
 }
 
 // Syntax:

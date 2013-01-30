@@ -108,6 +108,7 @@ public:
                                ExprList& members, bool isStruct);
     ExprResult ActOnTypeQualifier(ExprResult R, unsigned int qualifier);
     ExprResult ActOnVarExpr(const char* name, SourceLocation loc, Expr* type, Expr* InitValue);
+    ExprResult ActOnSizeofExpression(SourceLocation Loc, Expr* expr);
 
     // analysis
     void visitAST(ASTVisitor& visitor);
