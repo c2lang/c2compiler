@@ -882,7 +882,6 @@ C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
         ConsumeToken();
         ExprResult Idx = ParseExpression();
         if (Idx.isInvalid()) return ExprError();
-        fprintf(stderr, "FOO: "); Idx.get()->dump();
         if (Tok.isNot(tok::r_square)) {
             Diag(Tok, diag::err_expected_rsquare);
             return ExprError();
