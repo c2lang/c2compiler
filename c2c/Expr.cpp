@@ -326,3 +326,31 @@ void SizeofExpr::generateC(int indent, StringBuilder& buffer) {
     if (isStmt()) buffer << ";\n";
 }
 
+
+ArraySubscriptExpr::ArraySubscriptExpr(SourceLocation RLoc_, Expr* Base_, Expr* Idx_)
+    : RLoc(RLoc_)
+    , base(Base_)
+    , idx(Idx_)
+{}
+
+ArraySubscriptExpr::~ArraySubscriptExpr() {
+    delete base;
+    delete idx;
+}
+
+EXPR_VISITOR_ACCEPT(ArraySubscriptExpr);
+
+void ArraySubscriptExpr::print(int indent, StringBuilder& buffer) {
+    buffer.indent(indent);
+    buffer << "[arraysubscript]\n";
+    base->print(indent + INDENT, buffer);
+    idx->print(indent + INDENT, buffer);
+}
+
+void ArraySubscriptExpr::generateC(int indent, StringBuilder& buffer) {
+    base->generateC(indent, buffer);
+    buffer << '[';
+    idx->generateC(0, buffer);
+    buffer << ']';
+}
+

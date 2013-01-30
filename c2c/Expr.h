@@ -40,6 +40,7 @@ enum ExprType {
     EXPR_DECL,
     EXPR_BINOP,
     EXPR_SIZEOF,
+    EXPR_ARRAYSUBSCRIPT,
 };
 
 
@@ -235,6 +236,22 @@ private:
 };
 
 
+class ArraySubscriptExpr : public Expr {
+public:
+    ArraySubscriptExpr(SourceLocation RLoc_, Expr* Base_, Expr* Idx_);
+    virtual ~ArraySubscriptExpr();
+    virtual ExprType ntype() { return EXPR_ARRAYSUBSCRIPT; }
+    virtual void acceptE(ExprVisitor& v);
+    virtual void print(int indent, StringBuilder& buffer);
+    virtual void generateC(int indent, StringBuilder& buffer);
+    virtual llvm::Value* codeGen(CodeGenContext& context);
+private:
+    SourceLocation RLoc;
+    Expr* base;
+    Expr* idx;
+};
+
+
 class ExprVisitor {
 public:
     virtual ~ExprVisitor() {}
@@ -248,6 +265,7 @@ public:
     virtual void visit(DeclExpr&) {}
     virtual void visit(BinOpExpr&) {}
     virtual void visit(SizeofExpr&) {}
+    virtual void visit(ArraySubscriptExpr&) {}
 };
 
 #define EXPR_VISITOR_ACCEPT(a) void a::acceptE(ExprVisitor& v) { v.visit(*this); }

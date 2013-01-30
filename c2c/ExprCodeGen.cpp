@@ -97,3 +97,8 @@ llvm::Value* SizeofExpr::codeGen(CodeGenContext& context) {
     return 0;
 }
 
+llvm::Value* ArraySubscriptExpr::codeGen(CodeGenContext& context) {
+    assert(0 && "TODO");
+    return 0;
+}
+

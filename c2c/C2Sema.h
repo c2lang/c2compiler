@@ -109,6 +109,7 @@ public:
     ExprResult ActOnTypeQualifier(ExprResult R, unsigned int qualifier);
     ExprResult ActOnVarExpr(const char* name, SourceLocation loc, Expr* type, Expr* InitValue);
     ExprResult ActOnSizeofExpression(SourceLocation Loc, Expr* expr);
+    ExprResult ActOnArraySubScriptExpr(SourceLocation RLoc, Expr* Base, Expr* Idx);
 
     // analysis
     void visitAST(ASTVisitor& visitor);

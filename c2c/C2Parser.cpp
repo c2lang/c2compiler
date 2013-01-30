@@ -882,8 +882,13 @@ C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
         ConsumeToken();
         ExprResult Idx = ParseExpression();
         if (Idx.isInvalid()) return ExprError();
-        if (ExpectAndConsume(tok::r_square, diag::err_expected_rsquare)) return ExprError();
-        // TODO add Idx to LHS?
+        fprintf(stderr, "FOO: "); Idx.get()->dump();
+        if (Tok.isNot(tok::r_square)) {
+            Diag(Tok, diag::err_expected_rsquare);
+            return ExprError();
+        }
+        SourceLocation RLoc = ConsumeToken();
+        return Actions.ActOnArraySubScriptExpr(RLoc, LHS.release(), Idx.release());
 #if 0
       // Reject array indices starting with a lambda-expression. '[[' is
       // reserved for attributes.
