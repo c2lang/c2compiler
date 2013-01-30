@@ -113,6 +113,21 @@ void StringExpr::generateC(int indent, StringBuilder& buffer) {
 }
 
 
+EXPR_VISITOR_ACCEPT(CharLiteralExpr);
+
+void CharLiteralExpr::print(int indent, StringBuilder& buffer) {
+    buffer.indent(indent);
+    buffer << "[char '" << (char)value << "']\n";
+}
+
+void CharLiteralExpr::generateC(int indent, StringBuilder& buffer) {
+    buffer.indent(indent);
+    buffer << '\'';
+    buffer << (char)value;
+    buffer << '\'';
+}
+
+
 CallExpr::~CallExpr() {
     // TODO delete args
 }

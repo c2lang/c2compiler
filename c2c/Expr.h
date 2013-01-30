@@ -33,6 +33,7 @@ class Type;
 enum ExprType {
     EXPR_NUMBER=0,
     EXPR_STRING,
+    EXPR_CHARLITERAL,
     EXPR_CALL,
     EXPR_IDENTIFIER,
     EXPR_INITLIST,
@@ -95,6 +96,21 @@ public:
     virtual llvm::Value* codeGen(CodeGenContext& context);
 
     std::string value;
+    clang::SourceLocation loc;
+};
+
+
+class CharLiteralExpr : public Expr {
+public:
+    CharLiteralExpr(SourceLocation loc_, unsigned val)
+        : value(val), loc(loc_) {}
+    virtual ExprType ntype() { return EXPR_CHARLITERAL; }
+    virtual void acceptE(ExprVisitor& v);
+    virtual void print(int indent, StringBuilder& buffer);
+    virtual void generateC(int indent, StringBuilder& buffer);
+    virtual llvm::Value* codeGen(CodeGenContext& context);
+
+    unsigned value;
     clang::SourceLocation loc;
 };
 
@@ -258,6 +274,7 @@ public:
     virtual void visit(Expr&) { assert(0); }    // add ExprClass below
     virtual void visit(NumberExpr&) {}
     virtual void visit(StringExpr&) {}
+    virtual void visit(CharLiteralExpr&) {}
     virtual void visit(CallExpr&) {}
     virtual void visit(IdentifierExpr&) {}
     virtual void visit(InitListExpr&) {}

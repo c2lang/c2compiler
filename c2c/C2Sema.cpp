@@ -590,6 +590,19 @@ C2::ExprResult C2Sema::ActOnStringLiteral(const Token* StringToks, unsigned int 
     return ExprResult(new StringExpr(StringToks[0].getLocation(), result));
 }
 
+C2::ExprResult C2Sema::ActOnCharacterConstant(SourceLocation Loc, const std::string& value) {
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: char constant at ";
+    Loc.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    // TODO parse value (\0, octal, \0x, etc) (see clang::CharLiteralParser)
+    const char* str = value.c_str();
+    assert(str[0] == '\'' && str[2] == '\'' && "char constant parsing not supported yet");
+    unsigned cvalue = str[1];
+    return ExprResult(new CharLiteralExpr(Loc, cvalue));
+}
+
 void C2Sema::printAST() const {
     StringBuilder buffer;
     buffer << "---- AST " << "TODO FILE.c2" << " ----\n";

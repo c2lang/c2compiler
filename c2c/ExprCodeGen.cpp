@@ -35,6 +35,11 @@ llvm::Value* StringExpr::codeGen(CodeGenContext& C) {
     return C.builder.CreateGlobalStringPtr(value);
 }
 
+llvm::Value* CharLiteralExpr::codeGen(CodeGenContext& context) {
+    assert(0 && "TODO");
+    return 0;
+}
+
 llvm::Value* CallExpr::codeGen(CodeGenContext& C) {
     llvm::Function* function = C.module.getFunction(Fn->getName());
     assert(function && "CANNOT FIND FUNCTION");

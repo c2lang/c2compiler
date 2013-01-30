@@ -93,6 +93,7 @@ public:
     // expressions
     ExprResult ActOnNumericConstant(const Token& Tok);
     ExprResult ActOnStringLiteral(const clang::Token* StringToks, unsigned int NumStringToks);
+    ExprResult ActOnCharacterConstant(SourceLocation Loc, const std::string& value);
     ExprResult ActOnCallExpr(Expr* id, Expr** args, unsigned num, SourceLocation RParenLoc);
     ExprResult ActOnIdExpression(IdentifierInfo* pkgII, SourceLocation pkgLoc,
                                  IdentifierInfo& symII, SourceLocation symLoc);
