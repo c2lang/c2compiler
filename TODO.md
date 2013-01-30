@@ -7,7 +7,6 @@ Parsing of:
 * ...
 
 AST Generation for:
-* sizeof()
 * type definitions
 * substructs
 * ellipsis (...) arguments
