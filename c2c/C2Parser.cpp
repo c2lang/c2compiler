@@ -881,8 +881,9 @@ C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
         // Basic version
         ConsumeToken();
         ExprResult Idx = ParseExpression();
-        if (Diags.hasErrorOccurred()) return ExprError();
+        if (Idx.isInvalid()) return ExprError();
         if (ExpectAndConsume(tok::r_square, diag::err_expected_rsquare)) return ExprError();
+        // TODO add Idx to LHS?
 #if 0
       // Reject array indices starting with a lambda-expression. '[[' is
       // reserved for attributes.
