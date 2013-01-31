@@ -196,8 +196,7 @@ void ArrayValueDecl::print(StringBuilder& buffer) {
 }
 
 void ArrayValueDecl::generateC(StringBuilder& buffer, const std::string& pkgName) {
-    // NOTE can be called, but should only generate code for 1 entry
-    fprintf(stderr, "TODO SHOULD NOT BE CALLED\n");
+    value->generateC(INDENT, buffer);
 }
 
 
