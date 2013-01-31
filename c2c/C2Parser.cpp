@@ -858,23 +858,15 @@ C2::ExprResult C2Parser::ParseStringLiteralExpression(bool AllowUserDefinedLiter
 /// \endverbatim
 C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
     LOG_FUNC
-  // Now that the primary-expression piece of the postfix-expression has been
-  // parsed, see if there are any postfix-expression pieces here.
-  SourceLocation Loc;
-  while (1) {
+    // Now that the primary-expression piece of the postfix-expression has been
+    // parsed, see if there are any postfix-expression pieces here.
+    SourceLocation Loc;
+    while (1) {
     switch (Tok.getKind()) {
     case tok::code_completion:
         assert(0);
-#if 0
-      if (InMessageExpression)
-        return LHS;
-
-      Actions.CodeCompletePostfixExpression(getCurScope(), LHS);
-      cutOffParsing();
-      return ExprError();
-#endif
     case tok::identifier:
-      // Fall through; this isn't a message send.
+    // Fall through; this isn't a message send.
     default:  // Not a postfix-expression suffix.
       return LHS;
     case tok::l_square: {  // postfix-expression: p-e '[' expression ']'
@@ -887,35 +879,8 @@ C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
             return ExprError();
         }
         SourceLocation RLoc = ConsumeToken();
-        return Actions.ActOnArraySubScriptExpr(RLoc, LHS.release(), Idx.release());
-#if 0
-      // Reject array indices starting with a lambda-expression. '[[' is
-      // reserved for attributes.
-      if (CheckProhibitedCXX11Attribute())
-        return ExprError();
-
-      BalancedDelimiterTracker T(*this, tok::l_square);
-      T.consumeOpen();
-      Loc = T.getOpenLocation();
-      ExprResult Idx;
-      if (getLangOpts().CPlusPlus0x && Tok.is(tok::l_brace)) {
-        Diag(Tok, diag::warn_cxx98_compat_generalized_initializer_lists);
-        Idx = ParseBraceInitializer();
-      } else
-        Idx = ParseExpression();
-
-      SourceLocation RLoc = Tok.getLocation();
-
-      if (!LHS.isInvalid() && !Idx.isInvalid() && Tok.is(tok::r_square)) {
-        LHS = Actions.ActOnArraySubscriptExpr(getCurScope(), LHS.take(), Loc,
-                                              Idx.take(), RLoc);
-      } else
-        LHS = ExprError();
-
-      // Match the ']'.
-      T.consumeClose();
-#endif
-      break;
+        LHS = Actions.ActOnArraySubScriptExpr(RLoc, LHS.release(), Idx.release());
+        break;
     }
 
     case tok::l_paren:         // p-e: p-e '(' argument-expression-list[opt] ')'
@@ -967,46 +932,16 @@ C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
     }
     case tok::arrow:
     case tok::period: {
-      // postfix-expression: p-e '->' template[opt] id-expression
-      // postfix-expression: p-e '.' template[opt] id-expression
-      tok::TokenKind OpKind = Tok.getKind();
-      SourceLocation OpLoc = ConsumeToken();  // Eat the "." or "->" token.
+        // postfix-expression: p-e '->' template[opt] id-expression
+        // postfix-expression: p-e '.' template[opt] id-expression
+        tok::TokenKind OpKind = Tok.getKind();
+        ConsumeToken();  // Eat the "." or "->" token.
 
-      CXXScopeSpec SS;
-      ParsedType ObjectType;
-
-      if (Tok.is(tok::code_completion)) {
-        // Code completion for a member access expression.
-        //Actions.CodeCompleteMemberReferenceExpr(getCurScope(), LHS.get(),
-        //                                        OpLoc, OpKind == tok::arrow);
-        //cutOffParsing();
-        return ExprError();
-      }
-
-      // Either the action has told is that this cannot be a
-      // pseudo-destructor expression (based on the type of base
-      // expression), or we didn't see a '~' in the right place. We
-      // can still parse a destructor name here, but in that case it
-      // names a real destructor.
-      // Allow explicit constructor calls in Microsoft mode.
-      SourceLocation TemplateKWLoc;
-      UnqualifiedId Name;
-      // TODO handle return value
-      ParseUnqualifiedId(SS,
-                            /*EnteringContext=*/false,
-                            /*AllowDestructorName=*/true,
-                            /*AllowConstructorName=*/false,
-                            ObjectType, TemplateKWLoc, Name);
-        LHS = ExprError();
-
-#if 0
-      if (!LHS.isInvalid())
-        LHS = Actions.ActOnMemberAccessExpr(getCurScope(), LHS.take(), OpLoc,
-                                            OpKind, SS, TemplateKWLoc, Name,
-                                 CurParsedObjCImpl ? CurParsedObjCImpl->Dcl : 0,
-                                            Tok.is(tok::l_paren));
-#endif
-      break;
+        if (ExpectIdentifier()) return ExprError();
+        ExprResult Res = ParseIdentifier(false);
+        if (Res.isInvalid()) return ExprError();
+        LHS = Actions.ActOnMemberExpr(LHS.release(), OpKind == tok::arrow, Res.release());
+        break;
     }
     case tok::plusplus:    // postfix-expression: postfix-expression '++'
     case tok::minusminus:  // postfix-expression: postfix-expression '--'
@@ -1017,6 +952,7 @@ C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
       }
 #endif
       ConsumeToken();
+      return ExprError(); // TEMP
       break;
     }
   }
@@ -1024,29 +960,21 @@ C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
 
 /// For C2, only identifiers are allowed
 /// \returns true if parsing fails, false otherwise.
-bool C2Parser::ParseUnqualifiedId(CXXScopeSpec &SS, bool EnteringContext,
-                                bool AllowDestructorName,
-                                bool AllowConstructorName,
-                                ParsedType ObjectType,
-                                SourceLocation& TemplateKWLoc,
-                                UnqualifiedId &Result) {
+C2::ExprResult C2Parser::ParseUnqualifiedId() {
     LOG_FUNC
-
-  // unqualified-id:
-  //   identifier
-  //   template-id (when it hasn't already been annotated)
-  if (Tok.is(tok::identifier)) {
-    // Consume the identifier.
-    IdentifierInfo *Id = Tok.getIdentifierInfo();
-    SourceLocation IdLoc = ConsumeToken();
-
-    // Only allow identifier
-      Result.setIdentifier(Id, IdLoc);
-      return false;
-  }
+/*
+    if (ExpectIdentifier()) return ExprError();
+    IdentifierInfo* id = Tok.getIdentifierInfo();
+    SourceLocation idLoc = ConsumeToken();
+    
+    return 
+  // TODO use ParsePostFix again?
+    //C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
 
   Diag(Tok, diag::err_expected_unqualified_id);
   return true;
+  */
+  return ExprError();
 }
 
 
@@ -2370,12 +2298,12 @@ bool C2Parser::SkipUntil(ArrayRef<tok::TokenKind> Toks, bool StopAtSemi,
 }
 
 C2::ExprResult C2Parser::ExprError() {
-    fprintf(stderr, ANSI_RED"EXPR_ERROR()"ANSI_NORMAL"\n");
+    fprintf(stderr, ANSI_BRED"EXPR_ERROR()"ANSI_NORMAL"\n");
     return C2::ExprResult(true);
 }
 
 C2::StmtResult C2Parser::StmtError() {
-    fprintf(stderr, ANSI_RED"STMT_ERROR()"ANSI_NORMAL"\n");
+    fprintf(stderr, ANSI_BRED"STMT_ERROR()"ANSI_NORMAL"\n");
     return C2::StmtResult(true);
 }
 

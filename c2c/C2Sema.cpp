@@ -28,7 +28,7 @@
 #include "color.h"
 #include "ASTVisitor.h"
 
-//#define SEMA_DEBUG
+#define SEMA_DEBUG
 
 #define COL_SEMA ANSI_RED
 
@@ -499,6 +499,16 @@ C2::ExprResult C2Sema::ActOnArraySubScriptExpr(SourceLocation RLoc, Expr* Base, 
     std::cerr << ANSI_NORMAL"\n";
 #endif
     return ExprResult(new ArraySubscriptExpr(RLoc, Base, Idx));
+}
+
+C2::ExprResult C2Sema::ActOnMemberExpr(Expr* Base, bool isArrow, Expr* Member) {
+    assert(Base);
+    assert(Member);
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: member acces";
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    return ExprResult(new MemberExpr(Base, isArrow, Member));
 }
 
 void C2Sema::visitAST(ASTVisitor& visitor) {

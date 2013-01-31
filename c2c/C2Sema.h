@@ -111,6 +111,7 @@ public:
     ExprResult ActOnVarExpr(const char* name, SourceLocation loc, Expr* type, Expr* InitValue);
     ExprResult ActOnSizeofExpression(SourceLocation Loc, Expr* expr);
     ExprResult ActOnArraySubScriptExpr(SourceLocation RLoc, Expr* Base, Expr* Idx);
+    ExprResult ActOnMemberExpr(Expr* Base, bool isArrow, Expr* Member);
 
     // analysis
     void visitAST(ASTVisitor& visitor);

@@ -21,7 +21,7 @@
 #include <clang/Sema/Sema.h>
 #include <clang/Sema/Ownership.h>
 
-//#define PARSER_DEBUG
+#define PARSER_DEBUG
 
 #ifdef PARSER_DEBUG
 #include <iostream>
@@ -196,12 +196,7 @@ private:
       typedef SmallVector<Expr*, 20> ExprListTy;
       typedef SmallVector<SourceLocation, 20> CommaLocsTy;
 
-    bool ParseUnqualifiedId(CXXScopeSpec &SS, bool EnteringContext,
-                            bool AllowDestructorName,
-                            bool AllowConstructorName,
-                            ParsedType ObjectType,
-                            SourceLocation& TemplateKWLoc,
-                            UnqualifiedId &Result);
+    ExprResult ParseUnqualifiedId();
 
     /// ParseExpressionList - Used for C/C++ (argument-)expression-list.
     bool ParseExpressionList(SmallVectorImpl<Expr*> &Exprs,

@@ -42,6 +42,7 @@ enum ExprType {
     EXPR_BINOP,
     EXPR_SIZEOF,
     EXPR_ARRAYSUBSCRIPT,
+    EXPR_MEMBER,
 };
 
 
@@ -270,6 +271,26 @@ private:
 };
 
 
+class MemberExpr : public Expr {
+public:
+    MemberExpr(Expr* Base_, bool isArrow_, Expr* Member_)
+        : Base(Base_)
+        , Member(Member_)
+        , isArrow(isArrow_)
+    {}
+    virtual ~MemberExpr();
+    virtual ExprType ntype() { return EXPR_MEMBER; }
+    virtual void acceptE(ExprVisitor& v);
+    virtual void print(int indent, StringBuilder& buffer);
+    virtual void generateC(int indent, StringBuilder& buffer);
+    virtual llvm::Value* codeGen(CodeGenContext& context);
+private:
+    Expr* Base;
+    Expr* Member;
+    bool isArrow;
+};
+
+
 class ExprVisitor {
 public:
     virtual ~ExprVisitor() {}
@@ -285,6 +306,7 @@ public:
     virtual void visit(BinOpExpr&) {}
     virtual void visit(SizeofExpr&) {}
     virtual void visit(ArraySubscriptExpr&) {}
+    virtual void visit(MemberExpr&) {}
 };
 
 #define EXPR_VISITOR_ACCEPT(a) void a::acceptE(ExprVisitor& v) { v.visit(*this); }

@@ -380,3 +380,25 @@ void ArraySubscriptExpr::generateC(int indent, StringBuilder& buffer) {
     buffer << ']';
 }
 
+
+MemberExpr::~MemberExpr() {
+    delete Base;
+    delete Member;
+}
+
+EXPR_VISITOR_ACCEPT(MemberExpr);
+
+void MemberExpr::print(int indent, StringBuilder& buffer) {
+    buffer.indent(indent);
+    buffer << "[member expr]\n";
+    Base->print(indent + INDENT, buffer);
+    Member->print(indent + INDENT, buffer);
+}
+
+void MemberExpr::generateC(int indent, StringBuilder& buffer) {
+    Base->generateC(indent, buffer);
+    if (isArrow) buffer << "->";
+    else buffer << '.';
+    Member->generateC(0, buffer);
+}
+

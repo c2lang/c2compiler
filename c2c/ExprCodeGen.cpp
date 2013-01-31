@@ -107,3 +107,7 @@ llvm::Value* ArraySubscriptExpr::codeGen(CodeGenContext& context) {
     return 0;
 }
 
+llvm::Value* MemberExpr::codeGen(CodeGenContext& context) {
+    return 0;
+}
+
