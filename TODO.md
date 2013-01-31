@@ -10,7 +10,6 @@ AST Generation for:
 * type definitions
 * substructs
 * ellipsis (...) arguments
-* Unary Expressions
 * (proper) numeric values 
 * (proper) Identifiers (with package qualifier)
 * cast expression
