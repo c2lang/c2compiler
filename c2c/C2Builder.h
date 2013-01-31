@@ -31,17 +31,14 @@ struct BuildOptions {
         : printAST(false)
         , printTiming(false)
         , printSymbols(false)
-        , mode(GENERATE_IR)
+        , generateIR(false)
+        , generateC(false)
     {}
     bool printAST;
     bool printTiming;
     bool printSymbols;
-    enum Mode {
-        GENERATE_IR,
-        GENERATE_C,
-        SYNTAX_ONLY,
-    };
-    Mode mode;
+    bool generateIR;
+    bool generateC;
 };
 
 

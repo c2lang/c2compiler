@@ -32,11 +32,11 @@ static bool use_recipe = true;
 static void usage(const char* name) {
     fprintf(stderr, "Usage: %s <options> [target]\n", name);
     fprintf(stderr, "Options:\n");
-    fprintf(stderr, "  -h               - show this help\n");
-    fprintf(stderr, "  -fsyntax-only    - only check syntax\n");
-    fprintf(stderr, "  -fgenerate-c     - generate C (no IR)\n");
-    fprintf(stderr, "  -single          - compile single file without recipe\n");
     fprintf(stderr, "  -a               - print AST\n");
+    fprintf(stderr, "  -c               - generate C code\n");
+    fprintf(stderr, "  -f <file>        - compile single file without recipe\n");
+    fprintf(stderr, "  -h               - show this help\n");
+    fprintf(stderr, "  -i               - generate LLVM IR code\n");
     fprintf(stderr, "  -l               - list targets\n");
     fprintf(stderr, "  -s               - print symbols\n");
     fprintf(stderr, "  -t               - print timing\n");
@@ -46,21 +46,23 @@ static void usage(const char* name) {
 static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
     for (int i=1; i<argc; i++) {
         const char* arg = argv[i];
-        if (strcmp("-fsyntax-only", arg) == 0) {
-            if (opts.mode != BuildOptions::GENERATE_IR) usage(argv[0]);
-            opts.mode = BuildOptions::SYNTAX_ONLY;
+        if (strcmp("-a", arg) == 0) {
+            opts.printAST = true;
             continue;
         }
-        if (strcmp("-fgenerate-c", arg) == 0) {
-            if (opts.mode != BuildOptions::GENERATE_IR) usage(argv[0]);
-            opts.mode = BuildOptions::GENERATE_C;
+        if (strcmp("-c", arg) == 0) {
+            opts.generateC = true;
+            continue;
+        }
+        if (strcmp("-f", arg) == 0) {
+            use_recipe = false;
             continue;
         }
         if (strcmp("-h", arg) == 0) {
             usage(argv[0]);
         }
-        if (strcmp("-a", arg) == 0) {
-            opts.printAST = true;
+        if (strcmp("-i", arg) == 0) {
+            opts.generateIR = true;
             continue;
         }
         if (strcmp("-l", arg) == 0) {
@@ -75,10 +77,6 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
             opts.printTiming = true;
             continue;
         }
-        if (strcmp("-single", arg) == 0) {
-            use_recipe = false;
-            continue;
-        }
         if (arg[0] == '-') {
             usage(argv[0]);
         }
@@ -86,11 +84,11 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
         targetFilter = arg;
     }
     if (!use_recipe && !targetFilter) {
-        fprintf(stderr, "error: argument -single needs filename\n");
+        fprintf(stderr, "error: argument -f needs filename\n");
         exit(-1);
     }
     if (!use_recipe && print_targets) {
-        fprintf(stderr, "error: -single cannot be used together with -l\n");
+        fprintf(stderr, "error: -f cannot be used together with -l\n");
         exit(-1);
     }
 }

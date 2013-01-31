@@ -281,18 +281,19 @@ void C2Builder::build() {
 
     if (errors) return;
 
-    // phase 3: (C) code generation
-    for (int i=0; i<files.size(); i++) {
-        FileInfo* info = files[i];
-        switch (options.mode) {
-        case BuildOptions::GENERATE_IR:
-            info->codegen(options);
-            break;
-        case BuildOptions::GENERATE_C:
+    // (optional) phase 3a: C code generation
+    if (options.generateC) {
+        for (int i=0; i<files.size(); i++) {
+            FileInfo* info = files[i];
             info->generate_c();
-            break;
-        case BuildOptions::SYNTAX_ONLY:
-            break;
+        }
+    }
+
+    // (optional) phase 3b: IR code generation
+    if (options.generateIR) {
+        for (int i=0; i<files.size(); i++) {
+            FileInfo* info = files[i];
+            info->codegen(options);
         }
     }
 }
