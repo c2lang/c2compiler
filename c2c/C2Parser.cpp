@@ -2370,12 +2370,12 @@ bool C2Parser::SkipUntil(ArrayRef<tok::TokenKind> Toks, bool StopAtSemi,
 }
 
 C2::ExprResult C2Parser::ExprError() {
-    fprintf(stderr, "EXPR_ERROR()\n");
+    fprintf(stderr, ANSI_RED"EXPR_ERROR()"ANSI_NORMAL"\n");
     return C2::ExprResult(true);
 }
 
 C2::StmtResult C2Parser::StmtError() {
-    fprintf(stderr, "STMT_ERROR()\n");
+    fprintf(stderr, ANSI_RED"STMT_ERROR()"ANSI_NORMAL"\n");
     return C2::StmtResult(true);
 }
 
