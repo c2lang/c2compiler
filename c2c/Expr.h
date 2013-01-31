@@ -40,6 +40,7 @@ enum ExprType {
     EXPR_TYPE,
     EXPR_DECL,
     EXPR_BINOP,
+    EXPR_UNARYOP,
     EXPR_SIZEOF,
     EXPR_ARRAYSUBSCRIPT,
     EXPR_MEMBER,
@@ -237,6 +238,24 @@ private:
     Opcode opc;
     Expr* lhs;
     Expr* rhs;
+};
+
+
+class UnaryOpExpr : public Expr {
+public:
+    typedef clang::UnaryOperatorKind Opcode;
+
+    UnaryOpExpr(SourceLocation opLoc_, Opcode opc, Expr* val_);
+    virtual ~UnaryOpExpr();
+    virtual ExprType ntype() { return EXPR_UNARYOP; }
+    virtual void acceptE(ExprVisitor& v);
+    virtual void print(int indent, StringBuilder& buffer);
+    virtual void generateC(int indent, StringBuilder& buffer);
+    virtual llvm::Value* codeGen(CodeGenContext& context);
+private:
+    SourceLocation opLoc;
+    Opcode opc;
+    Expr* val;
 };
 
 

@@ -511,6 +511,28 @@ C2::ExprResult C2Sema::ActOnMemberExpr(Expr* Base, bool isArrow, Expr* Member) {
     return ExprResult(new MemberExpr(Base, isArrow, Member));
 }
 
+C2::ExprResult C2Sema::ActOnPostfixUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Expr* Input) {
+    assert(Input);
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: postop at ";
+    OpLoc.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    UnaryOperatorKind Opc;
+    switch (Kind) {
+    default: llvm_unreachable("Unknown unary op!");
+    case tok::plusplus:   Opc = UO_PostInc; break;
+    case tok::minusminus: Opc = UO_PostDec; break;
+    }
+#if 0
+    // Since this might is a postfix expression, get rid of ParenListExprs.
+    ExprResult Result = MaybeConvertParenListExprToParenExpr(S, Input);
+    if (Result.isInvalid()) return ExprError();
+    Input = Result.take();
+#endif
+    return ExprResult(new UnaryOpExpr(OpLoc, Opc, Input));
+}
+
 void C2Sema::visitAST(ASTVisitor& visitor) {
     for (unsigned int i=0; i<decls.size(); i++) {
         bool stop = visitor.handle(decls[i]);

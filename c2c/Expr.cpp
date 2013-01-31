@@ -32,7 +32,7 @@ static int deleteCount;
 #endif
 
 // TODO doesn't clang have a function for this?
-static const char* OpCode2str(clang::BinaryOperatorKind opc) {
+static const char* BinOpCode2str(clang::BinaryOperatorKind opc) {
     switch (opc) {
         case BO_PtrMemD: return ".";
         case BO_PtrMemI: return "->";
@@ -68,6 +68,24 @@ static const char* OpCode2str(clang::BinaryOperatorKind opc) {
         case BO_Comma: return ",";
     }
 }
+
+static const char* UnaryOpCode2str(clang::UnaryOperatorKind opc) {
+    switch (opc) {
+    case UO_PostInc:    return "++";
+    case UO_PostDec:    return "--";
+    case UO_PreInc:
+    case UO_PreDec:
+    case UO_AddrOf:
+    case UO_Deref:
+    case UO_Plus:
+    case UO_Minus:
+    case UO_Not:
+    case UO_LNot:
+    default:
+        assert(0);
+    }
+}
+
 
 Expr::Expr()
     : isStatement(false)
@@ -314,16 +332,55 @@ EXPR_VISITOR_ACCEPT(BinOpExpr);
 
 void BinOpExpr::print(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
-    buffer << "[binop " << OpCode2str(opc) << "]\n";
+    buffer << "[binop " << BinOpCode2str(opc) << "]\n";
     lhs->print(indent + INDENT, buffer);
     rhs->print(indent + INDENT, buffer);
 }
 
 void BinOpExpr::generateC(int indent, StringBuilder& buffer) {
     lhs->generateC(indent, buffer);
-    buffer << ' ' << OpCode2str(opc) << ' ';
+    buffer << ' ' << BinOpCode2str(opc) << ' ';
     rhs->generateC(0, buffer);
     if (isStmt()) buffer << ";\n";
+}
+
+
+UnaryOpExpr::UnaryOpExpr(SourceLocation opLoc_, Opcode opc_, Expr* val_)
+    : opLoc(opLoc_)
+    , opc(opc_)
+    , val(val_)
+{}
+
+UnaryOpExpr::~UnaryOpExpr() {
+    delete val;
+}
+
+EXPR_VISITOR_ACCEPT(UnaryOpExpr);
+
+void UnaryOpExpr::print(int indent, StringBuilder& buffer) {
+    buffer.indent(indent);
+    buffer << "[unaryop " << UnaryOpCode2str(opc) << "]\n";
+    val->print(indent + INDENT, buffer);
+}
+
+void UnaryOpExpr::generateC(int indent, StringBuilder& buffer) {
+    switch (opc) {
+    case UO_PostInc:
+    case UO_PostDec:
+        val->generateC(indent, buffer);
+        buffer << UnaryOpCode2str(opc);
+        break;
+    case UO_PreInc:
+    case UO_PreDec:
+    case UO_AddrOf:
+    case UO_Deref:
+    case UO_Plus:
+    case UO_Minus:
+    case UO_Not:
+    case UO_LNot:
+    default:
+        assert(0);
+    }
 }
 
 

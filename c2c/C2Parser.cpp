@@ -945,15 +945,11 @@ C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
     }
     case tok::plusplus:    // postfix-expression: postfix-expression '++'
     case tok::minusminus:  // postfix-expression: postfix-expression '--'
-#if 0
-      if (!LHS.isInvalid()) {
-        LHS = Actions.ActOnPostfixUnaryOp(getCurScope(), Tok.getLocation(),
-                                          Tok.getKind(), LHS.take());
-      }
-#endif
-      ConsumeToken();
-      return ExprError(); // TEMP
-      break;
+        if (!LHS.isInvalid()) {
+            LHS = Actions.ActOnPostfixUnaryOp(Tok.getLocation(), Tok.getKind(), LHS.take());
+        }
+        ConsumeToken();
+        break;
     }
   }
 }

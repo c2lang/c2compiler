@@ -97,6 +97,10 @@ llvm::Value* BinOpExpr::codeGen(CodeGenContext& context) {
     return 0;
 }
 
+llvm::Value* UnaryOpExpr::codeGen(CodeGenContext& context) {
+    return 0;
+}
+
 llvm::Value* SizeofExpr::codeGen(CodeGenContext& context) {
     assert(0 && "TODO");
     return 0;
