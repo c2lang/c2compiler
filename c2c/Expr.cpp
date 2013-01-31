@@ -286,6 +286,17 @@ void DeclExpr::generateC(int indent, StringBuilder& buffer) {
     if (isStmt()) buffer << ";\n";
 }
 
+void DeclExpr::generateC(StringBuilder& buffer, const std::string& pkgName) {
+    type->generateC_PreName(buffer);
+    buffer << ' ';
+    Utils::addName(pkgName, name, buffer);
+    type->generateC_PostName(buffer);
+    if (initValue) {
+        buffer << " = ";
+        initValue->generateC(0, buffer);
+    }
+    if (isStmt()) buffer << ";\n";
+}
 
 BinOpExpr::BinOpExpr(Expr* lhs_, Expr* rhs_, Opcode opc_, SourceLocation opLoc_)
     : opLoc(opLoc_)

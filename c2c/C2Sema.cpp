@@ -28,7 +28,7 @@
 #include "color.h"
 #include "ASTVisitor.h"
 
-#define SEMA_DEBUG
+//#define SEMA_DEBUG
 
 #define COL_SEMA ANSI_RED
 
@@ -620,7 +620,7 @@ void C2Sema::generateC() const {
 
     // top levels
     for (DeclListConstIter iter = decls.begin(); iter != decls.end(); ++iter) {
-        (*iter)->generateC(buffer);
+        (*iter)->generateC(buffer, pkgName);
         buffer << '\n';
     }
     printf("%s", (const char*)buffer);

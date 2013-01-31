@@ -17,14 +17,18 @@
 #define UTILS_H
 
 #include <sys/types.h>
+#include <string>
 
 #define INDENT 2
 
 namespace C2 {
 
+class StringBuilder;
+
 class Utils {
 public:
     static u_int64_t getCurrentTime();
+    static void addName(const std::string& pkgName, const std::string& name, StringBuilder& buffer);
 };
 
 }

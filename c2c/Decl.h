@@ -54,7 +54,7 @@ public:
     virtual DeclType dtype() = 0;
     virtual void acceptD(DeclVisitor& v) = 0;
     virtual void print(StringBuilder& buffer) = 0;
-    virtual void generateC(StringBuilder& buffer) = 0;
+    virtual void generateC(StringBuilder& buffer, const std::string& pkgName) = 0;
     virtual llvm::Value* codeGen(CodeGenContext& context) = 0;
 
     virtual const std::string& getName() const = 0;
@@ -74,7 +74,7 @@ public:
     virtual DeclType dtype() { return DECL_FUNC; }
     virtual void acceptD(DeclVisitor& v);
     virtual void print(StringBuilder& buffer);
-    virtual void generateC(StringBuilder& buffer);
+    virtual void generateC(StringBuilder& buffer, const std::string& pkgName);
     virtual llvm::Value* codeGen(CodeGenContext& context);
 
     void setBody(Stmt* body_) {
@@ -102,7 +102,7 @@ public:
     virtual DeclType dtype() { return DECL_VAR; }
     virtual void acceptD(DeclVisitor& v);
     virtual void print(StringBuilder& buffer);
-    virtual void generateC(StringBuilder& buffer);
+    virtual void generateC(StringBuilder& buffer, const std::string& pkgName);
     virtual llvm::Value* codeGen(CodeGenContext& context);
 
     bool isPublic() const;
@@ -122,7 +122,7 @@ public:
     virtual DeclType dtype() { return DECL_TYPE; }
     virtual void acceptD(DeclVisitor& v);
     virtual void print(StringBuilder& buffer);
-    virtual void generateC(StringBuilder& buffer);
+    virtual void generateC(StringBuilder& buffer, const std::string& pkgName);
     virtual llvm::Value* codeGen(CodeGenContext& context);
 
     virtual const std::string& getName() const { return name; }
@@ -142,7 +142,7 @@ public:
     virtual DeclType dtype() { return DECL_ARRAYVALUE; }
     virtual void acceptD(DeclVisitor& v);
     virtual void print(StringBuilder& buffer);
-    virtual void generateC(StringBuilder& buffer);
+    virtual void generateC(StringBuilder& buffer, const std::string& pkgName);
     virtual llvm::Value* codeGen(CodeGenContext& context);
 
     virtual const std::string& getName() const { return name; }
@@ -160,7 +160,7 @@ public:
     virtual DeclType dtype() { return DECL_USE; }
     virtual void acceptD(DeclVisitor& v);
     virtual void print(StringBuilder& buffer);
-    virtual void generateC(StringBuilder& buffer);
+    virtual void generateC(StringBuilder& buffer, const std::string& pkgName);
     virtual llvm::Value* codeGen(CodeGenContext& context);
 
     virtual const std::string& getName() const { return name; }

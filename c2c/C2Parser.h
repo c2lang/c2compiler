@@ -21,7 +21,7 @@
 #include <clang/Sema/Sema.h>
 #include <clang/Sema/Ownership.h>
 
-#define PARSER_DEBUG
+//#define PARSER_DEBUG
 
 #ifdef PARSER_DEBUG
 #include <iostream>

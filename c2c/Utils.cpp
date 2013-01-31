@@ -15,6 +15,7 @@
 
 #include <time.h>
 #include "Utils.h"
+#include "StringBuilder.h"
 
 using namespace C2;
 
@@ -27,4 +28,14 @@ u_int64_t Utils::getCurrentTime()
     now64 += (now.tv_nsec/1000);
     return now64;
 }
+
+
+void Utils::addName(const std::string& pkgName, const std::string& name, StringBuilder& buffer) {
+    if (name == "main") {
+        buffer << name;
+    } else {
+        buffer << "__" << pkgName << '_' << name;
+    }
+}
+
 

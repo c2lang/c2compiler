@@ -89,11 +89,13 @@ void FunctionDecl::print(StringBuilder& buffer) {
     body->print(INDENT, buffer);
 }
 
-void FunctionDecl::generateC(StringBuilder& buffer) {
+void FunctionDecl::generateC(StringBuilder& buffer, const std::string& pkgName) {
     if (!is_public) buffer << "static ";
     rtype->generateC_PreName(buffer);
     rtype->generateC_PostName(buffer);
-    buffer << ' ' << name << '(';
+    buffer << ' ';
+    Utils::addName(pkgName, name, buffer);
+    buffer << '(';
     int count = args.size();
     for (int i=0; i<args.size(); i++) {
         args[i]->generateC(0, buffer);
@@ -130,9 +132,9 @@ void VarDecl::print(StringBuilder& buffer) {
     decl->print(INDENT, buffer);
 }
 
-void VarDecl::generateC(StringBuilder& buffer) {
+void VarDecl::generateC(StringBuilder& buffer, const std::string& pkgName) {
     if (isPublic()) buffer << "static ";
-    decl->generateC(0, buffer);
+    decl->generateC(buffer, pkgName);
     // TODO semicolon not needed when ending initlist with '}'
     // Q: add bool return value to Expr.generateC()?
     buffer << ";\n";
@@ -166,10 +168,11 @@ void TypeDecl::print(StringBuilder& buffer) {
     type->print(INDENT, buffer);
 }
 
-void TypeDecl::generateC(StringBuilder& buffer) {
+void TypeDecl::generateC(StringBuilder& buffer, const std::string& pkgName) {
     buffer << "typedef ";
     type->generateC_PreName(buffer);
-    buffer << ' ' << name;
+    buffer << ' ';
+    Utils::addName(pkgName, name, buffer);
     type->generateC_PostName(buffer);
     buffer << ";\n";
 }
@@ -192,7 +195,8 @@ void ArrayValueDecl::print(StringBuilder& buffer) {
     value->print(INDENT, buffer);
 }
 
-void ArrayValueDecl::generateC(StringBuilder& buffer) {
+void ArrayValueDecl::generateC(StringBuilder& buffer, const std::string& pkgName) {
+    // NOTE can be called, but should only generate code for 1 entry
     fprintf(stderr, "TODO SHOULD NOT BE CALLED\n");
 }
 
@@ -208,7 +212,7 @@ void UseDecl::print(StringBuilder& buffer) {
     buffer << "[use " << name << "]\n";
 }
 
-void UseDecl::generateC(StringBuilder& buffer) {
+void UseDecl::generateC(StringBuilder& buffer, const std::string& pkgName) {
     // Temp hardcoded for stdio
     if (name == "stdio") {
         buffer << "#include <stdio.h>\n";

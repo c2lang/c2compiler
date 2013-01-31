@@ -205,6 +205,8 @@ public:
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer);
     virtual void generateC(int indent, StringBuilder& buffer);
+    // used by VarDecls only to add pkgName
+    virtual void generateC(StringBuilder& buffer, const std::string& pkgName);
     virtual llvm::Value* codeGen(CodeGenContext& context);
 
     Type* getType() const { return type; }
