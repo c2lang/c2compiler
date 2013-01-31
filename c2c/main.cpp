@@ -30,16 +30,16 @@ static bool print_targets = false;
 static bool use_recipe = true;
 
 static void usage(const char* name) {
-    fprintf(stderr, "Usage: %s <options> [target]\n", name);
+    fprintf(stderr, "Usage: %s <options> <target>\n", name);
     fprintf(stderr, "Options:\n");
-    fprintf(stderr, "  -a               - print AST\n");
-    fprintf(stderr, "  -c               - generate C code\n");
-    fprintf(stderr, "  -f <file>        - compile single file without recipe\n");
-    fprintf(stderr, "  -h               - show this help\n");
-    fprintf(stderr, "  -i               - generate LLVM IR code\n");
-    fprintf(stderr, "  -l               - list targets\n");
-    fprintf(stderr, "  -s               - print symbols\n");
-    fprintf(stderr, "  -t               - print timing\n");
+    fprintf(stderr, "   -a            - print AST\n");
+    fprintf(stderr, "   -c            - generate C code\n");
+    fprintf(stderr, "   -f <file>     - compile single file without recipe\n");
+    fprintf(stderr, "   -h            - show this help\n");
+    fprintf(stderr, "   -i            - generate LLVM IR code\n");
+    fprintf(stderr, "   -l            - list targets\n");
+    fprintf(stderr, "   -s            - print symbols\n");
+    fprintf(stderr, "   -t            - print timing\n");
     exit(-1);
 }
 
