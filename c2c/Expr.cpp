@@ -73,16 +73,17 @@ static const char* UnaryOpCode2str(clang::UnaryOperatorKind opc) {
     switch (opc) {
     case UO_PostInc:    return "++";
     case UO_PostDec:    return "--";
-    case UO_PreInc:
-    case UO_PreDec:
-    case UO_AddrOf:
-    case UO_Deref:
-    case UO_Plus:
-    case UO_Minus:
+    case UO_PreInc:     return "++";
+    case UO_PreDec:     return "--";
+    case UO_AddrOf:     return "&";
+    case UO_Deref:      return "*";
+    case UO_Plus:       return "+";
+    case UO_Minus:      return "-";
     case UO_Not:
     case UO_LNot:
     default:
         assert(0);
+        break;
     }
 }
 
@@ -378,6 +379,10 @@ void UnaryOpExpr::generateC(int indent, StringBuilder& buffer) {
     case UO_Minus:
     case UO_Not:
     case UO_LNot:
+        buffer.indent(indent);
+        buffer << UnaryOpCode2str(opc);
+        val->generateC(0, buffer);
+        break;
     default:
         assert(0);
     }

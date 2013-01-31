@@ -533,6 +533,17 @@ C2::ExprResult C2Sema::ActOnPostfixUnaryOp(SourceLocation OpLoc, tok::TokenKind 
     return ExprResult(new UnaryOpExpr(OpLoc, Opc, Input));
 }
 
+C2::ExprResult C2Sema::ActOnUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Expr* Input) {
+    assert(Input);
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: unary op at ";
+    OpLoc.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    UnaryOperatorKind Opc = ConvertTokenKindToUnaryOpcode(Kind);
+    return ExprResult(new UnaryOpExpr(OpLoc, Opc, Input));
+}
+
 void C2Sema::visitAST(ASTVisitor& visitor) {
     for (unsigned int i=0; i<decls.size(); i++) {
         bool stop = visitor.handle(decls[i]);

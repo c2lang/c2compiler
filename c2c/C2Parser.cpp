@@ -785,8 +785,8 @@ C2::ExprResult C2Parser::ParseCastExpression(bool isUnaryExpression,
     {
         SourceLocation SavedLoc = ConsumeToken();
         Res = ParseCastExpression(false);
-        //if (!Res.isInvalid())
-        //    Res = Actions.ActOnUnaryOp(getCurScope(), SavedLoc, SavedKind, Res.get());
+        if (!Res.isInvalid())
+            Res = Actions.ActOnUnaryOp(SavedLoc, SavedKind, Res.get());
         return Res;
     }
     default:
@@ -1460,8 +1460,7 @@ C2::StmtResult C2Parser::ParseStatement() {
     case tok::kw_local:
         return ParseDeclaration();
     case tok::star:
-        ParseExprStatement();
-        return StmtError(); // TODO
+        return ParseExprStatement();
     default:
         if (Tok.is(tok::r_brace)) {
             Diag(Tok, diag::err_expected_statement);
