@@ -211,8 +211,11 @@ void ForStmt::print(int indent, StringBuilder& buffer) {
 void ForStmt::generateC(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
     buffer << "for (";
-    // TODO dont generate ';\n' for Init statement
-    if (Init) Init->generateC(0, buffer);
+    if (Init) {
+        Init->generateC(0, buffer);
+        buffer.strip('\n');
+        buffer.strip(';');
+    }
     buffer << ';';
     if (Cond) {
         buffer << ' ';

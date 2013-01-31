@@ -36,7 +36,7 @@ public:
     void clear();
     unsigned int size() const;
     bool isEmpty() const;
-    void stripNewline();
+    void strip(char c);
     void indent(int num);
 private:
     static const unsigned int SESSION_BUFSIZE = 8192;

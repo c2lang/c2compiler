@@ -79,8 +79,8 @@ StringBuilder::operator const char*() const { return buffer; }
 
 bool StringBuilder::isEmpty() const { return (size() == 0); }
 
-void StringBuilder::stripNewline() {
-    if (size() > 0 && *(ptr-1) == '\n') {
+void StringBuilder::strip(char c) {
+    if (size() > 0 && *(ptr-1) == c) {
         --ptr;
         *ptr = 0;
     }
