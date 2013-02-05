@@ -27,7 +27,8 @@ using namespace C2;
 
 namespace C2 {
 
-struct StructMember {
+class StructMember {
+public:
     StructMember(const char* name_, Type* type_)
         : name(name_)
         , type(type_)
@@ -41,7 +42,8 @@ struct StructMember {
     StructMember* next;
 };
 
-struct EnumValue {
+class EnumValue {
+public:
     EnumValue(const char* name_, int value_)
         : name(name_)
         , value(value_)
@@ -52,7 +54,8 @@ struct EnumValue {
     EnumValue* next;
 };
 
-struct Argument {
+class Argument {
+public:
     Argument(Type* type_) : type(type_), next(0) {}
     ~Argument() {
         if (type->own()) delete type;
@@ -520,6 +523,41 @@ void Type::generateC_PostName(StringBuilder& buffer) const {
         buffer << '[';
         if (arrayExpr) arrayExpr->generateC(0, buffer);
         buffer << ']';
+    }
+}
+
+bool Type::hasBuiltinBase() const {
+    switch (kind) {
+    case BUILTIN:
+        return true;
+    case STRUCT:
+    case UNION:
+    case ENUM:
+    case FUNC:
+    case USER:
+        return false;
+    case POINTER:
+    case ARRAY:
+    case QUALIFIER:
+        return refType->hasBuiltinBase();
+    }
+}
+
+IdentifierExpr* Type::getBaseUserType() const {
+    switch (kind) {
+    case BUILTIN:
+    case STRUCT:
+    case UNION:
+    case ENUM:
+    case FUNC:
+        assert(0);
+        return 0;
+    case USER:
+        return userType;
+    case POINTER:
+    case ARRAY:
+    case QUALIFIER:
+        return refType->getBaseUserType();
     }
 }
 

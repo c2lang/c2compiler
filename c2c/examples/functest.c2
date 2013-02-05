@@ -10,6 +10,8 @@ func void doThing() {}
 
 func void printf(int argc, const string* text, ...) {}
 
+type Coor int;  // temp until we support multi-package
+
 func Utils::Coor getCoor(int argc, char*[] argv) {}
 
 func void needed(char[][] data) {}

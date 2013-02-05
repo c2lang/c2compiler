@@ -248,7 +248,7 @@ void SwitchStmt::print(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
     buffer << "[switch]\n";
     Cond->print(indent + INDENT, buffer);
-    for (int i=0; i<Cases.size(); i++) {
+    for (unsigned int i=0; i<Cases.size(); i++) {
         Cases[i]->print(indent + INDENT, buffer);
     }
 }
@@ -258,7 +258,7 @@ void SwitchStmt::generateC(int indent, StringBuilder& buffer) {
     buffer << "switch(";
     Cond->generateC(0, buffer);
     buffer << ") {\n";
-    for (int i=0; i<Cases.size(); i++) {
+    for (unsigned int i=0; i<Cases.size(); i++) {
         Cases[i]->generateC(indent + INDENT, buffer);
     }
     buffer.indent(indent);
@@ -282,7 +282,7 @@ void CaseStmt::print(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
     buffer << "[case]\n";
     Cond->print(indent + INDENT, buffer);
-    for (int i=0; i<Stmts.size(); i++) {
+    for (unsigned int i=0; i<Stmts.size(); i++) {
         Stmts[i]->print(indent + INDENT, buffer);
     }
 }
@@ -292,7 +292,7 @@ void CaseStmt::generateC(int indent, StringBuilder& buffer) {
     buffer << "case ";
     Cond->generateC(0, buffer);
     buffer << ":\n";
-    for (int i=0; i<Stmts.size(); i++) {
+    for (unsigned int i=0; i<Stmts.size(); i++) {
         Stmts[i]->generateC(indent + INDENT, buffer);
     }
 }
@@ -310,7 +310,7 @@ STMT_VISITOR_ACCEPT(DefaultStmt);
 void DefaultStmt::print(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
     buffer << "[default]\n";
-    for (int i=0; i<Stmts.size(); i++) {
+    for (unsigned int i=0; i<Stmts.size(); i++) {
         Stmts[i]->print(indent + INDENT, buffer);
     }
 }
@@ -318,7 +318,7 @@ void DefaultStmt::print(int indent, StringBuilder& buffer) {
 void DefaultStmt::generateC(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
     buffer << "default:\n";
-    for (int i=0; i<Stmts.size(); i++) {
+    for (unsigned int i=0; i<Stmts.size(); i++) {
         Stmts[i]->generateC(indent + INDENT, buffer);
     }
 }
@@ -410,7 +410,7 @@ STMT_VISITOR_ACCEPT(CompoundStmt);
 void CompoundStmt::print(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
     buffer << "[compound]\n";
-    for (int i=0; i<Stmts.size(); i++) {
+    for (unsigned int i=0; i<Stmts.size(); i++) {
         Stmts[i]->print(indent + INDENT, buffer);
     }
 }
@@ -418,7 +418,7 @@ void CompoundStmt::print(int indent, StringBuilder& buffer) {
 void CompoundStmt::generateC(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
     buffer << "{\n";
-    for (int i=0; i<Stmts.size(); i++) {
+    for (unsigned int i=0; i<Stmts.size(); i++) {
         Stmts[i]->generateC(indent + INDENT, buffer);
     }
     buffer.indent(indent);

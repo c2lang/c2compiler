@@ -28,7 +28,7 @@
 #include "color.h"
 #include "ASTVisitor.h"
 
-#define SEMA_DEBUG
+//#define SEMA_DEBUG
 
 #define COL_SEMA ANSI_RED
 
@@ -349,7 +349,7 @@ C2::ExprResult C2Sema::ActOnCallExpr(Expr* id, Expr** args, unsigned numArgs, So
 #endif
     CallExpr* call = new CallExpr(Fn);
     assert(call);
-    for (int i=0; i<numArgs; i++) call->addArg(args[i]);
+    for (unsigned int i=0; i<numArgs; i++) call->addArg(args[i]);
     return ExprResult(call);
 }
 
@@ -440,8 +440,8 @@ C2::ExprResult C2Sema::ActOnStructType(SourceLocation leftBrace, SourceLocation 
 #endif
     Type* type = new Type(isStruct ? Type::STRUCT : Type::UNION);
     // TODO use left/rightBrace
-    for (int i=0; i<members.size(); i++) {
-        fprintf(stderr, "FIX ADDSTRUCTMEMBER()\n");
+    for (unsigned int i=0; i<members.size(); i++) {
+        fprintf(stderr, ANSI_DARKGREY"FIX ADDSTRUCTMEMBER()"ANSI_NORMAL"\n");
         DeclExpr* member = ExprCaster<DeclExpr>::getType(members[i]);
         assert(member);
         // NOTE: memleak on members (but we get type from it.. HACK HACK!)
@@ -624,7 +624,7 @@ C2::ExprResult C2Sema::ActOnStringLiteral(const Token* StringToks, unsigned int 
 #endif
     // TEMP just add all the strings together
     std::string result;
-    for (int i=0; i<NumStringToks; i++) {
+    for (unsigned int i=0; i<NumStringToks; i++) {
         // Strip off double-quotes here
         std::string text(StringToks[0].getLiteralData()+1, StringToks[0].getLength()-2);
         result += text;
@@ -656,17 +656,12 @@ void C2Sema::printAST() const {
     printf("%s", (const char*)buffer);
 }
 
-void C2Sema::generateC() const {
-    printf("---- C-code %s.c ----\n", pkgName.c_str());
-
-    StringBuilder buffer;
-
+void C2Sema::generateC(StringBuilder& buffer) const {
     // top levels
     for (DeclListConstIter iter = decls.begin(); iter != decls.end(); ++iter) {
         (*iter)->generateC(buffer, pkgName);
         buffer << '\n';
     }
-    printf("%s", (const char*)buffer);
 }
 
 DiagnosticBuilder C2Sema::Diag(SourceLocation Loc, unsigned DiagID) {

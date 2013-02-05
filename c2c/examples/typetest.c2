@@ -11,8 +11,12 @@ type Pnum2 volatile Number*;
 
 // -- array types --
 type IntArr int[20];
-type IntArr int[5][5];
+type IntArrArr int[5][5];
 type PArr int*[10];
+
+type Point int; // TEMP
+type Buffer int; // TEMP
+
 type Coor Utils::Point[2];
 type MyType Gui::Buffer*[2];
 
@@ -26,6 +30,7 @@ type S3 struct {
     int count;
 }
 
+/*
 type S4 struct {
     // anonymous struct
     struct {
@@ -46,6 +51,7 @@ type S2 struct {
     volatile u32 count;
     const int d;
 }
+*/
 
 type Data union {
     int bla;

@@ -57,6 +57,12 @@ Decl::~Decl() {
 #endif
 }
 
+void Decl::dump() {
+    StringBuilder buffer;
+    print(buffer);
+    printf("%s\n", (const char*) buffer);
+}
+
 
 FunctionDecl::FunctionDecl(const std::string& name_,
                                  SourceLocation loc_,
@@ -71,7 +77,7 @@ FunctionDecl::FunctionDecl(const std::string& name_,
 
 FunctionDecl::~FunctionDecl() {
     if (rtype->own()) delete rtype;
-    for (int i=0; i<args.size(); i++) {
+    for (unsigned int i=0; i<args.size(); i++) {
         delete args[i];
     }
     delete body;
@@ -82,7 +88,7 @@ DECL_VISITOR_ACCEPT(FunctionDecl);
 void FunctionDecl::print(StringBuilder& buffer) {
     buffer << "[function " << name << "]\n";
     rtype->print(INDENT, buffer);
-    for (int i=0; i<args.size(); i++) {
+    for (unsigned int i=0; i<args.size(); i++) {
         args[i]->print(INDENT, buffer);
     }
     assert(body);
@@ -97,7 +103,7 @@ void FunctionDecl::generateC(StringBuilder& buffer, const std::string& pkgName) 
     Utils::addName(pkgName, name, buffer);
     buffer << '(';
     int count = args.size();
-    for (int i=0; i<args.size(); i++) {
+    for (unsigned int i=0; i<args.size(); i++) {
         args[i]->generateC(0, buffer);
         if (count != 1) buffer << ", ";
         count--;
@@ -149,6 +155,9 @@ const std::string& VarDecl::getName() const { return decl->getName(); }
 clang::SourceLocation VarDecl::getLocation() const {
     return decl->getLocation();
 }
+
+Type* VarDecl::getType() const { return decl->getType(); }
+
 
 TypeDecl::TypeDecl(const std::string& name_, SourceLocation loc_, Type* type_, bool is_public_)
     : name(name_)

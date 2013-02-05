@@ -45,7 +45,10 @@
 #include "color.h"
 #include "Recipe.h"
 #include "Utils.h"
+#include "Package.h"
 #include "Decl.h"
+#include "TypeAnalyseVisitor.h"
+#include "StringBuilder.h"
 
 #define COL_TIME ANSI_CYAN
 
@@ -120,7 +123,7 @@ public:
         // TODO delete members
     }
 
-    bool parse(BuildOptions& options) {
+    bool parse(const BuildOptions& options) {
         printf("------ parsing %s ------\n", filename.c_str());
         u_int64_t t1 = Utils::getCurrentTime();
         // parse the file into AST
@@ -131,17 +134,34 @@ public:
         return ok;
     }
 
-    void generate_c() {
-        sema.generateC();
+    // TODO pass Scope with used packages
+    int analyse(const BuildOptions& options, const Package& pkg) {
+        u_int64_t t1 = Utils::getCurrentTime();
+        // step 1: do type analysis
+        TypeAnalyseVisitor visitor(pkg, Diags);
+        sema.visitAST(visitor);
+        u_int64_t t2 = Utils::getCurrentTime();
+        if (options.printTiming) printf(COL_TIME"analysis took %lld usec"ANSI_NORMAL"\n", t2 - t1);
+        return visitor.getErrors();
     }
 
-    void codegen(BuildOptions& options) {
+    void generate_c(const BuildOptions& options) {
+        printf("---- C-code %s.c ----\n", sema.getPkgName().c_str());
+        u_int64_t t1 = Utils::getCurrentTime();
+        StringBuilder buffer;
+        sema.generateC(buffer);
+        u_int64_t t2 = Utils::getCurrentTime();
+        if (options.printTiming) printf(COL_TIME"C generation took %lld usec"ANSI_NORMAL"\n", t2 - t1);
+        printf("%s", (const char*)buffer);
+    }
+
+    void codegen(const BuildOptions& options) {
         printf("------ generating code for %s ------\n", filename.c_str());
         u_int64_t t1 = Utils::getCurrentTime();
         CodeGenerator codegen(sema);
         codegen.generate();
         u_int64_t t2 = Utils::getCurrentTime();
-        if (options.printTiming) printf(COL_TIME"generation took %lld usec"ANSI_NORMAL"\n", t2 - t1);
+        if (options.printTiming) printf(COL_TIME"IR generation took %lld usec"ANSI_NORMAL"\n", t2 - t1);
         codegen.dump();
     }
 
@@ -176,33 +196,6 @@ public:
     C2Parser parser;
 };
 
-class Package {
-public:
-    Package(const std::string& name_) : name(name_) {}
-
-    // returs true if ok, false if it exists already
-    void addSymbol(Decl* decl) {
-        symbols[decl->getName()] = decl;
-    }
-    Decl* findSymbol(const std::string& name) {
-        SymbolsIter iter = symbols.find(name);
-        if (iter == symbols.end()) return 0;
-        else return iter->second;
-    }
-    void dump() {
-        printf("Symbols: Package %s\n", name.c_str());
-        for (SymbolsIter iter = symbols.begin(); iter != symbols.end(); ++iter) {
-            printf("  %s\n", iter->second->getName().c_str());
-        }
-    }
-
-    const std::string name;
-
-    typedef std::map<std::string, Decl*> Symbols;
-    typedef Symbols::iterator SymbolsIter;
-    Symbols symbols;
-};
-
 }
 
 
@@ -217,7 +210,7 @@ C2Builder::~C2Builder()
         //delete iter->second;
         // TODO delete CAUSES crash
     }
-    for (int i=0; i<files.size(); i++) {
+    for (unsigned int i=0; i<files.size(); i++) {
         delete files[i];
     }
 }
@@ -277,21 +270,25 @@ void C2Builder::build() {
     if (errors) return;
 
     // phase 2: run analysing on all files
-    // TODO do analysis pass 1
-
+    for (unsigned int i=0; i<files.size(); i++) {
+        FileInfo* info = files[i];
+        Package* pkg = getPackage(info->sema.getPkgName());
+        assert(pkg);
+        errors += info->analyse(options, *pkg);
+    }
     if (errors) return;
 
     // (optional) phase 3a: C code generation
     if (options.generateC) {
-        for (int i=0; i<files.size(); i++) {
+        for (unsigned int i=0; i<files.size(); i++) {
             FileInfo* info = files[i];
-            info->generate_c();
+            info->generate_c(options);
         }
     }
 
     // (optional) phase 3b: IR code generation
     if (options.generateIR) {
-        for (int i=0; i<files.size(); i++) {
+        for (unsigned int i=0; i<files.size(); i++) {
             FileInfo* info = files[i];
             info->codegen(options);
         }
@@ -311,7 +308,7 @@ Package* C2Builder::getPackage(const std::string& name) {
 
 // merges symbols of all files of each package
 bool C2Builder::createPkgs() {
-    for (int i=0; i<files.size(); i++) {
+    for (unsigned int i=0; i<files.size(); i++) {
         FileInfo* info = files[i];
         Package* pkg = getPackage(info->sema.getPkgName());
         for (unsigned int i=0; i<info->sema.decls.size(); i++) {

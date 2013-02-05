@@ -160,7 +160,7 @@ void CallExpr::addArg(Expr* arg) {
 void CallExpr::print(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
     buffer << "[call " << Fn->getName() << "]\n";
-    for (int i=0; i<args.size(); i++) {
+    for (unsigned int i=0; i<args.size(); i++) {
         args[i]->print(indent + INDENT, buffer);
     }
 }
@@ -168,7 +168,7 @@ void CallExpr::print(int indent, StringBuilder& buffer) {
 void CallExpr::generateC(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
     buffer << Fn->getName() << '(';
-    for (int i=0; i<args.size(); i++) {
+    for (unsigned int i=0; i<args.size(); i++) {
         if (i != 0) buffer << ", ";
         args[i]->generateC(0, buffer);
     }
@@ -240,7 +240,7 @@ InitListExpr::InitListExpr(SourceLocation left, SourceLocation right, ExprList& 
 {}
 
 InitListExpr::~InitListExpr() {
-    for (int i=0; i<values.size(); i++) {
+    for (unsigned int i=0; i<values.size(); i++) {
         delete values[i];
     }
 }
@@ -250,7 +250,7 @@ EXPR_VISITOR_ACCEPT(InitListExpr);
 void InitListExpr::print(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
     buffer << "[initlist]\n";
-    for (int i=0; i<values.size(); i++) {
+    for (unsigned int i=0; i<values.size(); i++) {
         values[i]->print(indent + INDENT, buffer);
     }
     
@@ -259,7 +259,7 @@ void InitListExpr::print(int indent, StringBuilder& buffer) {
 void InitListExpr::generateC(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
     buffer << "{ ";
-    for (int i=0; i<values.size(); i++) {
+    for (unsigned int i=0; i<values.size(); i++) {
         if (i != 0) buffer << ", ";
         values[i]->generateC(0, buffer);
     }

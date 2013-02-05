@@ -61,6 +61,9 @@ public:
     virtual clang::SourceLocation getLocation() const = 0;
 
     static bool isSymbol(DeclType d);
+
+    // for debugging
+    void dump();
 private:
     Decl(const Decl&);
     Decl& operator= (const Decl&);
@@ -84,6 +87,7 @@ public:
     ExprList& getArgs() { return args; }
     virtual const std::string& getName() const { return name; }
     virtual clang::SourceLocation getLocation() const { return loc; }
+    Type* getReturnType() const { return rtype; }
 private:
     std::string name;
     clang::SourceLocation loc;
@@ -109,6 +113,7 @@ public:
     bool isInExpr() const;
     virtual const std::string& getName() const;
     virtual clang::SourceLocation getLocation() const;
+    Type* getType() const;
 private:
     DeclExpr* decl;
     unsigned int flags;    // is_public and inExpr;
@@ -127,6 +132,7 @@ public:
 
     virtual const std::string& getName() const { return name; }
     virtual clang::SourceLocation getLocation() const { return loc; }
+    Type* getType() const { return type; }
 private:
     std::string name;
     SourceLocation loc;

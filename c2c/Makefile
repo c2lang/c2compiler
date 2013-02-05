@@ -1,5 +1,7 @@
 all: c2c
-CXX := clang++
+# using clang causes segfault somewhere. Bug in clang since g++ works fine
+#CXX := clang++
+CXX := g++
 
 OBJS = \
     C2Builder.o \
@@ -11,17 +13,18 @@ OBJS = \
     Expr.o \
     ExprCodeGen.o \
     FileMap.o \
+    Package.o \
     Recipe.o \
     RecipeReader.o \
     Stmt.o \
     StmtCodeGen.o \
     StringBuilder.o \
     Type.o \
+    TypeAnalyseVisitor.o \
     Utils.o \
     main.o
 
-#use warning flags now and then. They give a lot of LLVM/CLANG warnings
-#CPPFLAGS = `llvm-config --cxxflags` -Wno-overloaded-virtual -Wall -Wextra
+#CPPFLAGS = `llvm-config --cxxflags` -Wno-overloaded-virtual -Wall -Wextra -Wno-unused -Wno-unused-parameter
 CPPFLAGS = `llvm-config --cxxflags` -Wno-overloaded-virtual
 LDFLAGS = `llvm-config --ldflags`
 LIBS = `llvm-config --libs`

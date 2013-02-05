@@ -1,3 +1,18 @@
+/* Copyright 2013 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #ifndef OWNING_VECTOR_H
 #define OWNING_VECTOR_H
 
@@ -23,11 +38,11 @@ public:
     }
     ~OwningVector () {
         if (m_data) {
-            for (int i=0; i<m_size; i++) delete m_data[i];
+            for (unsigned int i=0; i<m_size; i++) delete m_data[i];
             free(m_data);
         }
     }
-    T* operator[] (int index) {
+    T* operator[] (unsigned int index) {
         assert(index < m_size);
         return m_data[index];
     }
@@ -43,10 +58,10 @@ public:
         m_size++;
     }
     bool empty() const { return m_size == 0; }
-    int size() const { return m_size; }
+    unsigned int size() const { return m_size; }
 private:
-    int m_capacity;
-    int m_size;
+    unsigned int m_capacity;
+    unsigned int m_size;
     T** m_data;
 };
 

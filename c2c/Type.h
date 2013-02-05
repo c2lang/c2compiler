@@ -33,6 +33,7 @@ class EnumValue;
 class Argument;
 class CodeGenContext;
 class Expr;
+class IdentifierExpr;
 
 class Type {
 public:
@@ -64,7 +65,7 @@ public:
     }
 
     // user type
-    void setUserType(Expr* expr) { userType = expr; }
+    void setUserType(IdentifierExpr* expr) { userType = expr; }
 
     // ARRAY
     void setArrayExpr(Expr* expr) { arrayExpr = expr; }
@@ -92,6 +93,10 @@ public:
     void generateC_PreName(StringBuilder& buffer) const;
     void generateC_PostName(StringBuilder& buffer) const;
 
+    // for analysis
+    bool hasBuiltinBase() const;
+    IdentifierExpr* getBaseUserType() const;
+
     llvm::Type* convert(CodeGenContext& C);
 private:
     // TODO remove printName
@@ -110,7 +115,7 @@ private:
         };
 
         // user types
-        Expr* userType;
+        IdentifierExpr* userType;
 
         // struct | union specific
         StructMember* members;
