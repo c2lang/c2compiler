@@ -33,7 +33,7 @@ Decl* Package::findSymbol(const std::string& name) const {
 }
 
 void Package::dump() {
-    printf("Symbols: Package %s\n", name.c_str());
+    printf("symbols of package %s:\n", name.c_str());
     for (SymbolsIter iter = symbols.begin(); iter != symbols.end(); ++iter) {
         printf("  %s\n", iter->second->getName().c_str());
     }
