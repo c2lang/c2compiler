@@ -47,6 +47,7 @@
 #include "Utils.h"
 #include "Package.h"
 #include "Decl.h"
+#include "Scope.h"
 #include "TypeAnalyseVisitor.h"
 #include "StringBuilder.h"
 
@@ -134,15 +135,18 @@ public:
         return ok;
     }
 
-    // TODO pass Scope with used packages
-    int analyse(const BuildOptions& options, const Package& pkg) {
+    int analyse(const BuildOptions& options, const Pkgs& pkgs) {
         u_int64_t t1 = Utils::getCurrentTime();
-        // step 1: do type analysis
-        TypeAnalyseVisitor visitor(pkg, Diags);
+        // step 1: do use analysis and build global scope
+        Scope scope(sema.getPkgName());
+
+        // step 2: do type analysis (combined with step1)
+        TypeAnalyseVisitor visitor(scope, pkgs, Diags);
         sema.visitAST(visitor);
         u_int64_t t2 = Utils::getCurrentTime();
         if (options.printTiming) printf(COL_TIME"analysis took %lld usec"ANSI_NORMAL"\n", t2 - t1);
-        return visitor.getErrors();
+        //return visitor.getErrors();
+        return 0;
     }
 
     void generate_c(const BuildOptions& options) {
@@ -269,12 +273,12 @@ void C2Builder::build() {
     if (options.printSymbols) dumpPkgs();
     if (errors) return;
 
+    addDummyPackages();
+
     // phase 2: run analysing on all files
     for (unsigned int i=0; i<files.size(); i++) {
         FileInfo* info = files[i];
-        Package* pkg = getPackage(info->sema.getPkgName());
-        assert(pkg);
-        errors += info->analyse(options, *pkg);
+        errors += info->analyse(options, pkgs);
     }
     if (errors) return;
 
@@ -326,6 +330,13 @@ bool C2Builder::createPkgs() {
         }
     }
     return true;
+}
+
+void C2Builder::addDummyPackages() {
+    Package* c2Pkg = getPackage("c2");
+    // TODO add dummy decls;
+    Package* stdioPkg = getPackage("stdio");
+    // TODO add dummy decls;
 }
 
 void C2Builder::dumpPkgs() {

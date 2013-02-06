@@ -1,5 +1,7 @@
 package type_test;
 
+use utils;
+
 // -- Base types --
 public type Number int;
 public type String const u8*;
@@ -17,8 +19,8 @@ type PArr int*[10];
 type Point int; // TEMP
 type Buffer int; // TEMP
 
-type Coor Utils::Point[2];
-type MyType Gui::Buffer*[2];
+type Coor utils::Point[2];
+type MyType utils::Buffer*[2];
 
 // -- struct types --
 type Struct struct {

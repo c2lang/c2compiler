@@ -23,6 +23,7 @@ end
 
 target type
     examples/typetest.c2
+    examples/utils.c2
 end
 
 target working_ir
@@ -47,6 +48,7 @@ end
 
 target func
     examples/functest.c2
+    examples/utils.c2
 end
 
 target if

@@ -22,13 +22,15 @@
 #include "Expr.h"
 #include "Type.h"
 #include "Package.h"
+#include "Scope.h"
 #include "color.h"
 
 using namespace C2;
 using namespace clang;
 
-TypeAnalyseVisitor::TypeAnalyseVisitor(const Package& pkg_, clang::DiagnosticsEngine& Diags_)
-    : package(pkg_)
+TypeAnalyseVisitor::TypeAnalyseVisitor(Scope& scope_, const Pkgs& pkgs_, clang::DiagnosticsEngine& Diags_)
+    : scope(scope_)
+    , pkgs(pkgs_)
     , Diags(Diags_)
     , errors(0)
 {}
@@ -69,8 +71,10 @@ bool TypeAnalyseVisitor::handle(Decl* decl) {
         // TODO analyse members in structs/unions
         break;
     case DECL_ARRAYVALUE:
-    case DECL_USE:
         // nothing to do
+        break;
+    case DECL_USE:
+        checkUse(decl);
         break;
     }
     return false;
@@ -103,17 +107,65 @@ void TypeAnalyseVisitor::checkType(Type* type) {
 
 void TypeAnalyseVisitor::checkUserType(IdentifierExpr* id) {
     // NOTE dont support fully qualified name (package::name) yet
-    Decl* symbol = package.findSymbol(id->name);
-    if (!symbol) {
-        Diags.Report(id->getLocation(), diag::err_unknown_typename) << id->name;
+    if (id->pname != "") {
+        // TODO check if own package?
+        // check package
+        const Package* pkg = scope.findPackage(id->pname);
+        if (!pkg) {
+            PkgsConstIter iter = pkgs.find(id->pname);
+            if (iter == pkgs.end()) {
+                Diags.Report(id->ploc, diag::err_unknown_package) << id->pname;
+            } else {
+                Diags.Report(id->ploc, diag::err_package_not_used) << id->pname;
+            }
+            errors++;
+            return;
+        }
+
+        // check Type
+        Decl* symbol = pkg->findSymbol(id->name);
+        if (!symbol) {
+            Diags.Report(id->getLocation(), diag::err_unknown_typename) << id->getName();
+            errors++;
+            return;
+        }
+        TypeDecl* td = DeclCaster<TypeDecl>::getType(symbol);
+        if (!td) {
+            Diags.Report(id->getLocation(), diag::err_not_a_typename) << id->getName();
+            errors++;
+            return;
+        }
+        // TEMP assume not own package (forbidden?)
+        if (!td->isPublic()) {
+            Diags.Report(id->getLocation(), diag::err_not_public) << id->getName();
+            errors++;
+            return;
+        }
+    } else {
+        // Q: always require full spec?
+        // TODO
+    }
+    // (optional) check if specified package is used (or exists)
+    // check if symbol exists
+    // check if symbol is public
+    // TODO check if name is ambiguous
+}
+
+void TypeAnalyseVisitor::checkUse(Decl* decl) {
+    const std::string& pkgName = decl->getName();
+
+    // check for own package is already done by Sema.
+    // check for duplicate uses is already done by Sema.
+
+    // check if it exists
+    PkgsConstIter iter = pkgs.find(pkgName);
+    if (iter == pkgs.end()) {
+        Diags.Report(decl->getLocation(), diag::err_unknown_package) << pkgName;
         errors++;
         return;
     }
-    if (symbol->dtype() != DECL_TYPE) {
-        Diags.Report(id->getLocation(), diag::err_not_a_typename) << id->name;
-        errors++;
-        return;
-    }
-    // TODO for external packages, check visibility
+
+    // add to Scope
+    scope.addPackage(pkgName, iter->second);
 }
 

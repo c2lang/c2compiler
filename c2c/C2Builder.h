@@ -17,14 +17,14 @@
 #define C2BUILDER_H
 
 #include <vector>
-#include <map>
 #include <string>
+
+#include "Package.h"
 
 namespace C2 {
 
 class Recipe;
 class FileInfo;
-class Package;
 
 struct BuildOptions {
     BuildOptions()
@@ -51,6 +51,7 @@ public:
 private:
     Package* getPackage(const std::string& name);
     bool createPkgs();
+    void addDummyPackages();
     void dumpPkgs();
 
     const Recipe& recipe;
@@ -59,8 +60,6 @@ private:
     typedef std::vector<FileInfo*> Files;
     Files files;
 
-    typedef std::map<std::string, Package*> Pkgs;
-    typedef Pkgs::iterator PkgsIter;
     Pkgs pkgs;
 
     C2Builder(const C2Builder&);

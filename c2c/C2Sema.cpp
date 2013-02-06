@@ -114,6 +114,10 @@ void C2Sema::ActOnPackage(const char* name, SourceLocation loc) {
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
+    if (strcmp(name, "c2") == 0) {
+        Diag(loc, diag::err_package_c2);
+        return;
+    }
     pkgName = name;
     pkgLoc = loc;
 }

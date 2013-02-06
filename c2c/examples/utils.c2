@@ -1,0 +1,14 @@
+package utils;
+
+public type Buffer struct {
+    int count;
+    char[10] buffer;
+}
+
+public type Coor int;
+
+public type Point struct {
+    int x;
+    int y;
+}
+

@@ -16,6 +16,7 @@ OBJS = \
     Package.o \
     Recipe.o \
     RecipeReader.o \
+    Scope.o \
     Stmt.o \
     StmtCodeGen.o \
     StringBuilder.o \

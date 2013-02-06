@@ -133,6 +133,7 @@ public:
     virtual const std::string& getName() const { return name; }
     virtual clang::SourceLocation getLocation() const { return loc; }
     Type* getType() const { return type; }
+    bool isPublic() const { return is_public; }
 private:
     std::string name;
     SourceLocation loc;

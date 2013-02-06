@@ -17,6 +17,7 @@
 #define TYPE_ANALYSE_VISITOR_H
 
 #include "ASTVisitor.h"
+#include "Package.h"
 
 namespace clang {
 class DiagnosticsEngine;
@@ -24,13 +25,14 @@ class DiagnosticsEngine;
 
 namespace C2 {
 
-class Package;
 class Type;
 class IdentifierExpr;
+class Scope;
+class Decl;
 
 class TypeAnalyseVisitor : public ASTVisitor {
 public:
-    TypeAnalyseVisitor(const Package& package_, clang::DiagnosticsEngine& Diags_);
+    TypeAnalyseVisitor(Scope& scope_, const Pkgs& pkgs_, clang::DiagnosticsEngine& Diags_);
     virtual ~TypeAnalyseVisitor();
 
     virtual bool handle(Decl* decl);
@@ -38,8 +40,10 @@ public:
 private:
     void checkType(Type* type);
     void checkUserType(IdentifierExpr* id);
+    void checkUse(Decl* decl);
 
-    const Package& package;
+    Scope& scope;
+    const Pkgs& pkgs;
     clang::DiagnosticsEngine& Diags;
     unsigned int errors;
 

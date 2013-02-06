@@ -1,5 +1,8 @@
 package func_test;
 
+use utils;
+use c2;
+
 public func int getMax() {
 }
 
@@ -12,7 +15,7 @@ func void printf(int argc, const string* text, ...) {}
 
 type Coor int;  // temp until we support multi-package
 
-func Utils::Coor getCoor(int argc, char*[] argv) {}
+func utils::Coor getCoor(int argc, char*[] argv) {}
 
 func void needed(char[][] data) {}
 
