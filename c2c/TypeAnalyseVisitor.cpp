@@ -33,7 +33,12 @@ TypeAnalyseVisitor::TypeAnalyseVisitor(Scope& scope_, const Pkgs& pkgs_, clang::
     , pkgs(pkgs_)
     , Diags(Diags_)
     , errors(0)
-{}
+{
+    // add own package to scope
+    PkgsConstIter iter = pkgs.find(scope.getName());
+    assert (iter != pkgs.end());
+    scope.addPackage(scope.getName(), iter->second);
+}
 
 TypeAnalyseVisitor::~TypeAnalyseVisitor() {}
 
@@ -143,12 +148,22 @@ void TypeAnalyseVisitor::checkUserType(IdentifierExpr* id) {
         }
     } else {
         // Q: always require full spec?
-        // TODO
+        // TEMP for now only search own package
+        const Package* pkg = scope.findPackage(scope.getName());
+        assert(pkg);
+        Decl* symbol = pkg->findSymbol(id->name);
+        if (!symbol) {
+            Diags.Report(id->getLocation(), diag::err_unknown_typename) << id->getName();
+            errors++;
+            return;
+        }
+        TypeDecl* td = DeclCaster<TypeDecl>::getType(symbol);
+        if (!td) {
+            Diags.Report(id->getLocation(), diag::err_not_a_typename) << id->getName();
+            errors++;
+            return;
+        }
     }
-    // (optional) check if specified package is used (or exists)
-    // check if symbol exists
-    // check if symbol is public
-    // TODO check if name is ambiguous
 }
 
 void TypeAnalyseVisitor::checkUse(Decl* decl) {

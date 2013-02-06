@@ -14,6 +14,7 @@
  */
 
 #include <stdio.h>
+#include <assert.h>
 
 #include "Scope.h"
 #include "Package.h"
@@ -23,6 +24,7 @@ using namespace C2;
 Scope::Scope(const std::string& name_) : name(name_) {}
 
 void Scope::addPackage(const std::string& name_, const Package* pkg) {
+    assert(pkg);
     packages[name_] = pkg;
 }
 
@@ -51,7 +53,10 @@ const Package* Scope::findPackage(const std::string& pkgName) const {
 void Scope::dump() {
     printf("Scoped packages:\n");
     for (PackagesIter iter = packages.begin(); iter != packages.end(); ++iter) {
-        printf("  %s\n", iter->first.c_str());
+        if (iter->first == name)
+            printf("  *%s\n", iter->first.c_str());
+        else
+            printf("   %s\n", iter->first.c_str());
     }
 }
 

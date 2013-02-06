@@ -29,6 +29,7 @@ public:
 
     void addSymbol(Decl* decl);
     Decl* findSymbol(const std::string& name) const;
+    const std::string& getName() const { return name; }
 
     void dump();
 private:

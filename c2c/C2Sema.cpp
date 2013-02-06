@@ -171,6 +171,7 @@ void C2Sema::ActOnVarDef(const char* name, SourceLocation loc,
     // TEMP extract here to Type and delete rtype Expr
     TypeExpr* typeExpr = ExprCaster<TypeExpr>::getType(type);
     assert(typeExpr);
+    // TODO check that type is not pre-fixed with own package
     DeclExpr* declExpr = new DeclExpr(name, loc, typeExpr->takeType(), InitValue);
     VarDecl* decl = new VarDecl(declExpr, is_public, false);
     addDecl(decl);
