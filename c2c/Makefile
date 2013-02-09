@@ -1,7 +1,7 @@
 all: c2c
 # using clang causes segfault somewhere. Bug in clang since g++ works fine
-#CXX := clang++
-CXX := g++
+CXX := clang++
+#CXX := g++
 
 OBJS = \
     C2Builder.o \
