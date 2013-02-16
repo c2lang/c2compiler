@@ -1,7 +1,9 @@
-package type_wanings;
+package type_warnings;
 
+// error: unknown package
 utils::foo[] bla;
 
+// errro: main is not a type
 main bliep;
 
 type Number int;
@@ -12,13 +14,32 @@ func void test1() { }
 
 func int test2(int a, int b) { }
 
+// error: Foo and Bar are unknown symbols
 func Bar test3(Foo bar, int* intp) {}
 
 func Number test4(Number* n) {}
 
+// error: main and bla are not types
 func void test5(main* a, bla b) {}
 
 func void main() {
     int a = (int) 10;
 }
+
+// error: cannot have public function with non-public return type
+public func Number func1() {}
+
+// error: cannot have public function with non-public argument type
+public func void func2(Number n) {}
+
+// error: cannot have public var with non-public type
+public Number number;
+public type_warnings::Number number2;
+
+// error cannot have non-public base type in public var
+public type PubNumber Number*;
+
+// ok
+public type Faa int;
+public func Faa func3(Faa f1) {}
 

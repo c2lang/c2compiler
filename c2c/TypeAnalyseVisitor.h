@@ -38,8 +38,8 @@ public:
     virtual bool handle(Decl* decl);
     unsigned int getErrors() const { return errors; }
 private:
-    void checkType(Type* type);
-    void checkUserType(IdentifierExpr* id);
+    void checkType(Type* type, bool used_public = false);
+    void checkUserType(IdentifierExpr* id, bool used_public);
     void checkUse(Decl* decl);
 
     Scope& scope;

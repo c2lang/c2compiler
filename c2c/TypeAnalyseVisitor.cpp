@@ -43,20 +43,21 @@ TypeAnalyseVisitor::TypeAnalyseVisitor(Scope& scope_, const Pkgs& pkgs_, clang::
 TypeAnalyseVisitor::~TypeAnalyseVisitor() {}
 
 bool TypeAnalyseVisitor::handle(Decl* decl) {
+    bool is_public = decl->isPublic();
     switch (decl->dtype()) {
     case DECL_FUNC:
         {
             FunctionDecl* func = DeclCaster<FunctionDecl>::getType(decl);
             assert(func);
             // check return type
-            checkType(func->getReturnType());
+            checkType(func->getReturnType(), is_public);
             // check argument types
             ExprList& args = func->getArgs();
             for (unsigned i=0; i<args.size(); i++) {
                 // NOTE arguments are DeclExpressios
                 DeclExpr* de = ExprCaster<DeclExpr>::getType(args[i]);
                 assert(de);
-                checkType(de->getType());
+                checkType(de->getType(), is_public);
             }
         }
         break;
@@ -64,14 +65,14 @@ bool TypeAnalyseVisitor::handle(Decl* decl) {
         {
             VarDecl* vd = DeclCaster<VarDecl>::getType(decl);
             assert(vd);
-            checkType(vd->getType());
+            checkType(vd->getType(), is_public);
         }
         break;
     case DECL_TYPE:
         {
             TypeDecl* td = DeclCaster<TypeDecl>::getType(decl);
             assert(td);
-            checkType(td->getType());
+            checkType(td->getType(), is_public);
         }
         // TODO analyse members in structs/unions
         break;
@@ -85,7 +86,7 @@ bool TypeAnalyseVisitor::handle(Decl* decl) {
     return false;
 }
 
-void TypeAnalyseVisitor::checkType(Type* type) {
+void TypeAnalyseVisitor::checkType(Type* type, bool used_public) {
     if (type->hasBuiltinBase()) return; // always ok
 
     switch (type->getKind()) {
@@ -105,12 +106,12 @@ void TypeAnalyseVisitor::checkType(Type* type) {
     case Type::POINTER:
     case Type::ARRAY:
     case Type::QUALIFIER:
-        checkUserType(type->getBaseUserType());
+        checkUserType(type->getBaseUserType(), used_public);
         break;
     }
 }
 
-void TypeAnalyseVisitor::checkUserType(IdentifierExpr* id) {
+void TypeAnalyseVisitor::checkUserType(IdentifierExpr* id, bool used_public) {
     if (id->pname != "") {
         // check if package exists
         const Package* pkg = scope.findPackage(id->pname);
@@ -144,6 +145,11 @@ void TypeAnalyseVisitor::checkUserType(IdentifierExpr* id) {
             errors++;
             return;
         }
+        if (used_public && !scope.isExternal(pkg) && !td->isPublic()) {
+            Diags.Report(id->getLocation(), diag::err_non_public_type) << id->getName();
+            errors++;
+            return;
+        }
     } else {
         ScopeResult res = scope.findSymbol(id->name);
         if (!res.decl) {
@@ -162,10 +168,14 @@ void TypeAnalyseVisitor::checkUserType(IdentifierExpr* id) {
             errors++;
             return;
         }
-
         TypeDecl* td = DeclCaster<TypeDecl>::getType(res.decl);
         if (!td) {
             Diags.Report(id->getLocation(), diag::err_not_a_typename) << id->getName();
+            errors++;
+            return;
+        }
+        if (used_public && !res.external && !td->isPublic()) {
+            Diags.Report(id->getLocation(), diag::err_non_public_type) << id->getName();
             errors++;
             return;
         }
