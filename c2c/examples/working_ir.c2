@@ -2,6 +2,9 @@ package working_ir;
 
 use stdio;
 
+int foo;
+public int bar;
+
 func int main(int argc, char*[] argv) {
     int a;
     int b;

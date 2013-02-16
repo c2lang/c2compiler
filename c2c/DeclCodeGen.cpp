@@ -20,6 +20,7 @@
 #include <llvm/Function.h>
 #include <llvm/BasicBlock.h>
 #include <llvm/IRBuilder.h>
+#include <llvm/GlobalValue.h>
 #include <stdio.h>
 
 #include "Decl.h"
@@ -59,22 +60,28 @@ llvm::Value* FunctionDecl::codeGen(CodeGenContext& C) {
     return func;
 }
 
-llvm::Value* VarDecl::codeGen(CodeGenContext& context) {
-    fprintf(stderr, "TODO VarDecl::codeGen()\n");
+llvm::Value* VarDecl::codeGen(CodeGenContext& C) {
+    llvm::Type* type = getType()->convert(C);
+    bool constant = false;
+    llvm::GlobalValue::LinkageTypes ltype = llvm::GlobalValue::InternalLinkage;
+    if (is_public) ltype = llvm::GlobalValue::ExternalLinkage;
+    // TODO use correct arguments for constant and Initializer
+    llvm::GlobalVariable* global =
+        new llvm::GlobalVariable(C.module, type, constant, ltype, 0, getName()); 
     return 0;
 }
 
-llvm::Value* TypeDecl::codeGen(CodeGenContext& context) {
+llvm::Value* TypeDecl::codeGen(CodeGenContext& C) {
     fprintf(stderr, "TODO TypeDecl::codeGen()\n");
     return 0;
 }
 
-llvm::Value* ArrayValueDecl::codeGen(CodeGenContext& context) {
+llvm::Value* ArrayValueDecl::codeGen(CodeGenContext& C) {
     fprintf(stderr, "TODO ArrayValueDecl::codeGen()\n");
     return 0;
 }
 
-llvm::Value* UseDecl::codeGen(CodeGenContext& context) {
+llvm::Value* UseDecl::codeGen(CodeGenContext& C) {
     return 0;
 }
 
