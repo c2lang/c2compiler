@@ -49,7 +49,7 @@ typedef std::vector<C2::Expr*> ExprList;
 
 class Decl {
 public:
-    Decl();
+    Decl(bool is_public_);
     virtual ~Decl();
     virtual DeclType dtype() = 0;
     virtual void acceptD(DeclVisitor& v) = 0;
@@ -60,10 +60,13 @@ public:
     virtual const std::string& getName() const = 0;
     virtual clang::SourceLocation getLocation() const = 0;
 
+    bool isPublic() const { return is_public; }
     static bool isSymbol(DeclType d);
 
     // for debugging
     void dump();
+protected:
+    bool is_public;
 private:
     Decl(const Decl&);
     Decl& operator= (const Decl&);
@@ -91,7 +94,6 @@ public:
 private:
     std::string name;
     clang::SourceLocation loc;
-    bool is_public;
     Type* rtype;
 
     ExprList args;
@@ -109,14 +111,13 @@ public:
     virtual void generateC(StringBuilder& buffer, const std::string& pkgName);
     virtual llvm::Value* codeGen(CodeGenContext& context);
 
-    bool isPublic() const;
     bool isInExpr() const;
     virtual const std::string& getName() const;
     virtual clang::SourceLocation getLocation() const;
     Type* getType() const;
 private:
     DeclExpr* decl;
-    unsigned int flags;    // is_public and inExpr;
+    unsigned int flags;    // inExpr;
 };
 
 
@@ -133,12 +134,10 @@ public:
     virtual const std::string& getName() const { return name; }
     virtual clang::SourceLocation getLocation() const { return loc; }
     Type* getType() const { return type; }
-    bool isPublic() const { return is_public; }
 private:
     std::string name;
     SourceLocation loc;
     Type* type;
-    bool is_public;
 };
 
 
@@ -163,7 +162,7 @@ private:
 
 class UseDecl : public Decl {
 public:
-    UseDecl(const std::string& name_, SourceLocation loc_);
+    UseDecl(const std::string& name_, SourceLocation loc_, bool isLocal_, const char* alias_, SourceLocation aliasLoc_);
     virtual DeclType dtype() { return DECL_USE; }
     virtual void acceptD(DeclVisitor& v);
     virtual void print(StringBuilder& buffer);
@@ -171,10 +170,16 @@ public:
     virtual llvm::Value* codeGen(CodeGenContext& context);
 
     virtual const std::string& getName() const { return name; }
+    const std::string& getAlias() const { return alias; }
     virtual clang::SourceLocation getLocation() const { return loc; }
+    virtual clang::SourceLocation getAliasLocation() const { return aliasLoc; }
+    bool isLocal() const { return is_local; }
 private:
     std::string name;
+    std::string alias;
     SourceLocation loc;
+    SourceLocation aliasLoc;
+    bool is_local;
 };
 
 

@@ -43,7 +43,9 @@ bool Decl::isSymbol(DeclType d) {
     }
 }
 
-Decl::Decl() {
+Decl::Decl(bool is_public_)
+    : is_public(is_public_)
+{
 #ifdef DECL_DEBUG
     creationCount++;
     fprintf(stderr, "[DECL] create %p  created %d deleted %d\n", this, creationCount, deleteCount);
@@ -67,9 +69,9 @@ void Decl::dump() {
 FunctionDecl::FunctionDecl(const std::string& name_,
                                  SourceLocation loc_,
                                  bool is_public_, Type* rtype_)
-    : name(name_)
+    : Decl(is_public_)
+    , name(name_)
     , loc(loc_)
-    , is_public(is_public_)
     , rtype(rtype_)
     , body(0)
 {
@@ -116,14 +118,13 @@ void FunctionDecl::generateC(StringBuilder& buffer, const std::string& pkgName) 
 
 
 
-#define VARDECL_ISPUBLIC 0x1
-#define VARDECL_INEXPR   0x2
+#define VARDECL_INEXPR   0x1
 
-VarDecl::VarDecl(DeclExpr* decl_, bool is_public, bool inExpr)
-    : decl(decl_)
+VarDecl::VarDecl(DeclExpr* decl_, bool is_public_, bool inExpr)
+    : Decl(is_public_)
+    , decl(decl_)
     , flags(0)
 {
-    if (is_public) flags |= VARDECL_ISPUBLIC;
     if (inExpr) flags |= VARDECL_INEXPR;
 }
 
@@ -146,8 +147,6 @@ void VarDecl::generateC(StringBuilder& buffer, const std::string& pkgName) {
     buffer << ";\n";
 }
 
-bool VarDecl::isPublic() const { return ((flags & VARDECL_ISPUBLIC) != 0); }
-
 bool VarDecl::isInExpr() const { return ((flags & VARDECL_INEXPR) != 0); }
 
 const std::string& VarDecl::getName() const { return decl->getName(); }
@@ -160,10 +159,10 @@ Type* VarDecl::getType() const { return decl->getType(); }
 
 
 TypeDecl::TypeDecl(const std::string& name_, SourceLocation loc_, Type* type_, bool is_public_)
-    : name(name_)
+    : Decl(is_public_)
+    , name(name_)
     , loc(loc_)
     , type(type_)
-    , is_public(is_public_)
 {}
 
 TypeDecl::~TypeDecl() {
@@ -188,7 +187,8 @@ void TypeDecl::generateC(StringBuilder& buffer, const std::string& pkgName) {
 
 
 ArrayValueDecl::ArrayValueDecl(const std::string& name_, SourceLocation loc_, Expr* value_)
-    : name(name_)
+    : Decl(false)
+    , name(name_)
     , loc(loc_)
     , value(value_)
 {}
@@ -209,15 +209,23 @@ void ArrayValueDecl::generateC(StringBuilder& buffer, const std::string& pkgName
 }
 
 
-UseDecl::UseDecl(const std::string& name_, SourceLocation loc_)
-    : name(name_)
+UseDecl::UseDecl(const std::string& name_, SourceLocation loc_, bool isLocal_,
+                 const char* alias_, SourceLocation aliasLoc_)
+    : Decl(false)
+    , name(name_)
+    , alias(alias_)
     , loc(loc_)
+    , aliasLoc(aliasLoc_)
+    , is_local(isLocal_)
 {}
 
 DECL_VISITOR_ACCEPT(UseDecl);
 
 void UseDecl::print(StringBuilder& buffer) {
-    buffer << "[use " << name << "]\n";
+    buffer << "[use " << name;
+    if (alias != "") buffer << " as " << alias;
+    if (is_local) buffer << " local";
+    buffer << "]\n";
 }
 
 void UseDecl::generateC(StringBuilder& buffer, const std::string& pkgName) {
@@ -226,5 +234,4 @@ void UseDecl::generateC(StringBuilder& buffer, const std::string& pkgName) {
         buffer << "#include <stdio.h>\n";
     }
 }
-
 

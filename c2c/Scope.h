@@ -18,25 +18,50 @@
 
 #include <string>
 #include <map>
+#include <vector>
 
 namespace C2 {
 
 class Package;
 class Decl;
 
+class ScopeResult {
+public:
+    ScopeResult()
+        : pkg(0)
+        , decl(0)
+        , ambiguous(false)
+        , external(true)
+        , visible(true)
+    {}
+
+    const Package* pkg;
+    Decl* decl;
+    bool ambiguous;     // ambiguous lookup (returns first result)
+    bool external;      // package is external
+    bool visible;       // symbol is non-public and used externally
+};
+
 class Scope {
 public:
     Scope(const std::string& name_);
 
-    void addPackage(const std::string& name_, const Package* pkg);
-    Decl* findSymbol(const char* pkgName, const char* symbolName) const;
+    void addPackage(bool isLocal, const std::string& name_, const Package* pkg);
     const Package* findPackage(const std::string& pkgName) const;
+    bool isExternal(const Package* pkg) const;
+    ScopeResult findSymbol(const std::string& name) const;
 
     const std::string& getName() const { return name; }
     void dump();
 private:
     const std::string name;
 
+    // locals (or used as local)
+    typedef std::vector<const Package*> Locals;
+    typedef Locals::const_iterator LocalsConstIter;
+    Locals locals;
+
+    // externals
     typedef std::map<std::string, const Package*> Packages;
     typedef Packages::const_iterator PackagesConstIter;
     typedef Packages::iterator PackagesIter;

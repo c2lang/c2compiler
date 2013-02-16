@@ -37,7 +37,7 @@ TypeAnalyseVisitor::TypeAnalyseVisitor(Scope& scope_, const Pkgs& pkgs_, clang::
     // add own package to scope
     PkgsConstIter iter = pkgs.find(scope.getName());
     assert (iter != pkgs.end());
-    scope.addPackage(scope.getName(), iter->second);
+    scope.addPackage(true, scope.getName(), iter->second);
 }
 
 TypeAnalyseVisitor::~TypeAnalyseVisitor() {}
@@ -111,10 +111,8 @@ void TypeAnalyseVisitor::checkType(Type* type) {
 }
 
 void TypeAnalyseVisitor::checkUserType(IdentifierExpr* id) {
-    // NOTE dont support fully qualified name (package::name) yet
     if (id->pname != "") {
-        // TODO check if own package?
-        // check package
+        // check if package exists
         const Package* pkg = scope.findPackage(id->pname);
         if (!pkg) {
             PkgsConstIter iter = pkgs.find(id->pname);
@@ -140,39 +138,47 @@ void TypeAnalyseVisitor::checkUserType(IdentifierExpr* id) {
             errors++;
             return;
         }
-        // TEMP assume not own package (forbidden?)
-        if (!td->isPublic()) {
+        // if external package, check visibility
+        if (scope.isExternal(pkg) && !td->isPublic()) {
             Diags.Report(id->getLocation(), diag::err_not_public) << id->getName();
             errors++;
             return;
         }
     } else {
-        // Q: always require full spec?
-        // TEMP for now only search own package
-        const Package* pkg = scope.findPackage(scope.getName());
-        assert(pkg);
-        Decl* symbol = pkg->findSymbol(id->name);
-        if (!symbol) {
+        ScopeResult res = scope.findSymbol(id->name);
+        if (!res.decl) {
             Diags.Report(id->getLocation(), diag::err_unknown_typename) << id->getName();
             errors++;
             return;
         }
-        TypeDecl* td = DeclCaster<TypeDecl>::getType(symbol);
+        if (res.ambiguous) {
+            Diags.Report(id->getLocation(), diag::err_ambiguous_symbol) << id->getName();
+            // TODO show alternatives
+            errors++;
+            return;
+        }
+        if (res.external && !res.decl->isPublic()) {
+            Diags.Report(id->getLocation(), diag::err_not_public) << id->getName();
+            errors++;
+            return;
+        }
+
+        TypeDecl* td = DeclCaster<TypeDecl>::getType(res.decl);
         if (!td) {
             Diags.Report(id->getLocation(), diag::err_not_a_typename) << id->getName();
             errors++;
             return;
         }
+        // ok
     }
 }
 
 void TypeAnalyseVisitor::checkUse(Decl* decl) {
-    const std::string& pkgName = decl->getName();
+    std::string pkgName = decl->getName();
+    UseDecl* useDecl = DeclCaster<UseDecl>::getType(decl);
+    assert(useDecl);
 
-    // check for own package is already done by Sema.
-    // check for duplicate uses is already done by Sema.
-
-    // check if it exists
+    // check if package exists
     PkgsConstIter iter = pkgs.find(pkgName);
     if (iter == pkgs.end()) {
         Diags.Report(decl->getLocation(), diag::err_unknown_package) << pkgName;
@@ -180,7 +186,19 @@ void TypeAnalyseVisitor::checkUse(Decl* decl) {
         return;
     }
 
+    // check if aliasname is not a package
+    const std::string& aliasName = useDecl->getAlias();
+    if (aliasName != "") {
+        PkgsConstIter iter2 = pkgs.find(aliasName);
+        if (iter2 != pkgs.end()) {
+            Diags.Report(useDecl->getAliasLocation(), diag::err_alias_is_package) << aliasName;
+            errors++;
+            return;
+        }
+        pkgName = aliasName;
+    }
+
     // add to Scope
-    scope.addPackage(pkgName, iter->second);
+    scope.addPackage(useDecl->isLocal(), pkgName, iter->second);
 }
 

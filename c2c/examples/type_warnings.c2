@@ -1,0 +1,24 @@
+package type_wanings;
+
+utils::foo[] bla;
+
+main bliep;
+
+type Number int;
+
+Number b;
+
+func void test1() { }
+
+func int test2(int a, int b) { }
+
+func Bar test3(Foo bar, int* intp) {}
+
+func Number test4(Number* n) {}
+
+func void test5(main* a, bla b) {}
+
+func void main() {
+    int a = (int) 10;
+}
+

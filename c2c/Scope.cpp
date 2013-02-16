@@ -18,36 +18,62 @@
 
 #include "Scope.h"
 #include "Package.h"
+#include "Decl.h"
 
 using namespace C2;
 
 Scope::Scope(const std::string& name_) : name(name_) {}
 
-void Scope::addPackage(const std::string& name_, const Package* pkg) {
+void Scope::addPackage(bool isLocal, const std::string& name_, const Package* pkg) {
     assert(pkg);
-    packages[name_] = pkg;
-}
-
-Decl* Scope::findSymbol(const char* pkgName, const char* symbolName) const {
-    if (pkgName) {
-        const Package* pkg = findPackage(pkgName);
-        if (!pkg) return 0;
-        return pkg->findSymbol(symbolName);
-    } else {
-        // TODO check for duplicates
-        for (PackagesConstIter iter = packages.begin(); iter != packages.end(); ++iter) {
-            const Package* pkg = iter->second;
-            Decl* decl = pkg->findSymbol(symbolName);
-            if (decl) return decl;
-        }
-        return 0;
+    if (isLocal) {
+        locals.push_back(pkg);
     }
+    packages[name_] = pkg;
 }
 
 const Package* Scope::findPackage(const std::string& pkgName) const {
     PackagesConstIter iter = packages.find(pkgName);
     if (iter == packages.end()) return 0;
     return iter->second;
+}
+
+bool Scope::isExternal(const Package* pkg) const {
+    return (pkg->getName() != name);
+}
+
+ScopeResult Scope::findSymbol(const std::string& symbol) const {
+    ScopeResult result;
+    // return private symbol only if no public symbol is found
+    // ambiguous may also be set with visible = false
+    for (LocalsConstIter iter = locals.begin(); iter != locals.end(); ++iter) {
+        const Package* pkg = *iter;
+        Decl* decl = pkg->findSymbol(symbol);
+        if (!decl) continue;
+
+        bool external = isExternal(pkg);
+        bool visible = !(external && !decl->isPublic());
+        if (result.decl) {  // already found
+            if (result.visible == visible) {
+                result.ambiguous = true;
+                if (result.visible) break;
+                continue;
+            }
+            if (!result.visible) { // replace with visible symbol
+                result.decl = decl;
+                result.pkg = pkg;
+                result.external = external;
+                result.ambiguous = false;
+                result.visible = visible;
+            }
+        } else {
+            result.decl = decl;
+            result.pkg = pkg;
+            result.external = external;
+            result.visible = visible;
+        }
+    }
+    return result;
 }
 
 void Scope::dump() {

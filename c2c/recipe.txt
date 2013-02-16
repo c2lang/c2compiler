@@ -5,6 +5,12 @@ target multi
     examples/file2.c2
 end
 
+target layer
+    examples/layer1.c2
+    examples/layer2.c2
+    examples/layer3.c2
+end
+
 target comment
     examples/commenttest.c2
 end
@@ -74,5 +80,15 @@ end
 
 target working
     examples/working.c2
+end
+
+target type_warning
+    examples/type_warnings.c2
+end
+
+target use_as
+    examples/use1.c2
+    examples/use2.c2
+    examples/use3.c2
 end
 

@@ -1,0 +1,11 @@
+package use2;
+
+use use1 as U1;
+
+public U1::Number number;
+
+public type Coor struct {
+    int x;
+    int y;
+}
+

@@ -38,6 +38,7 @@ namespace C2 {
 
 class CodeGenerator;
 class FunctionDecl;
+class UseDecl;
 class Decl;
 class Stmt;
 class Expr;
@@ -65,7 +66,7 @@ public:
 
     // file level actions
     void ActOnPackage(const char* name, SourceLocation loc);
-    void ActOnUse(const char* name, SourceLocation loc);
+    void ActOnUse(const char* name, SourceLocation loc, Token& aliasTok, bool isLocal);
     void ActOnTypeDef(const char* name, SourceLocation loc, Expr* typeExpr, bool is_public);
     void ActOnVarDef(const char* name, SourceLocation loc, bool is_public, Expr* type, Expr* InitValue);
     FunctionDecl* ActOnFuncDef(const char* name, SourceLocation loc, bool is_public, Expr* rtype);
@@ -128,6 +129,7 @@ private:
     DiagnosticBuilder Diag(SourceLocation Loc, unsigned DiagID);
     void addDecl(Decl* d);
     const Decl* findUse(const char* name) const;
+    const UseDecl* findAlias(const char* name) const;
     Decl* getSymbol(const std::string& name) const;
 
     SourceManager& SourceMgr;

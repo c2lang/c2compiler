@@ -1,0 +1,13 @@
+package use3;
+
+use use1 as U1 local;
+use use2 as U2 local;
+
+Coor c1;
+
+func void main() {
+    U1::Number num = 10;
+    Coor coor;
+    use2::Coor c2;
+}
+

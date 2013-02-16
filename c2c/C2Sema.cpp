@@ -16,7 +16,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <stdio.h>
-#include <string>
+#include <string.h>
 #include <clang/Parse/ParseDiagnostic.h>
 #include <clang/Sema/SemaDiagnostic.h>
 
@@ -122,7 +122,7 @@ void C2Sema::ActOnPackage(const char* name, SourceLocation loc) {
     pkgLoc = loc;
 }
 
-void C2Sema::ActOnUse(const char* name, SourceLocation loc) {
+void C2Sema::ActOnUse(const char* name, SourceLocation loc, Token& aliasTok, bool isLocal) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: use " << name << " at ";
     loc.dump(SourceMgr);
@@ -140,8 +140,22 @@ void C2Sema::ActOnUse(const char* name, SourceLocation loc) {
         Diag(old->getLocation(), diag::note_previous_use);
         return;
     }
-
-    addDecl(new UseDecl(name, loc));
+    const char* aliasName = "";
+    if (aliasTok.is(tok::identifier)) {
+        aliasName = aliasTok.getIdentifierInfo()->getNameStart();
+        // check if same as normal package name
+        if (strcmp(name, aliasName) == 0) {
+            Diag(aliasTok.getLocation(), diag::err_alias_same_as_package);
+            return;
+        }
+        const UseDecl* old = findAlias(aliasName);
+        if (old) {
+            Diag(aliasTok.getLocation(), diag::err_duplicate_use) << aliasName;
+            Diag(old->getAliasLocation(), diag::note_previous_use);
+            return;
+        }
+    }
+    addDecl(new UseDecl(name, loc, isLocal, aliasName, aliasTok.getLocation()));
 }
 
 void C2Sema::ActOnTypeDef(const char* name, SourceLocation loc, Expr* type, bool is_public) {
@@ -694,6 +708,17 @@ const C2::Decl* C2Sema::findUse(const char* name) const {
         Decl* d = decls[i];
         if (d->dtype() != DECL_USE) break;
         if (d->getName() == name) return d;
+    }
+    return 0;
+}
+
+const C2::UseDecl* C2Sema::findAlias(const char* name) const {
+    for (unsigned int i=0; i<decls.size(); i++) {
+        Decl* d = decls[i];
+        if (d->dtype() != DECL_USE) break;
+        UseDecl* useDecl = DeclCaster<UseDecl>::getType(d);
+        assert(useDecl);
+        if (useDecl->getAlias() == name) return useDecl;
     }
     return 0;
 }

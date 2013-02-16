@@ -136,6 +136,7 @@ bool C2Parser::Parse() {
     bool done = false;
     while (!done) {
         done = ParseTopLevel();
+        // TODO dont check if error occured
         if (Diags.hasErrorOccurred()) return false;
     }
     return true;
@@ -159,14 +160,32 @@ void C2Parser::ParseUses() {
     LOG_FUNC
     while (1) {
         if (Tok.isNot(tok::kw_use)) break;
-        // Syntax: use <identifier>
+        // Syntax: use [identifier] <as identifier> <local>
         ConsumeToken();
         if (ExpectIdentifier()) return;
         IdentifierInfo* Pkg = Tok.getIdentifierInfo();
         SourceLocation PkgLoc = ConsumeToken();
-        if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "package name")) return;
+        IdentifierInfo* AliasInfo = 0;
+        SourceLocation AliasLoc;
+        Token AliasToken;
+        AliasToken.startToken();
+        if (Tok.is(tok::kw_as)) {
+            ConsumeToken();
+            if (ExpectIdentifier()) {
+                SkipUntil(tok::semi);
+                return;
+            }
+            AliasToken = Tok;
+            ConsumeToken();
+        }
+        bool isLocal = false;
+        if (Tok.is(tok::kw_local)) {
+            isLocal = true;
+            ConsumeToken();
+        }
+        if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "use statement")) return;
 
-        Actions.ActOnUse(Pkg->getNameStart(), PkgLoc);
+        Actions.ActOnUse(Pkg->getNameStart(), PkgLoc, AliasToken, isLocal);
     }
     // check for 'using' instead of 'use' mistake
     if (Tok.is(tok::kw_using)) {
@@ -238,6 +257,10 @@ void C2Parser::ParseTypeDef(bool is_public) {
         break;
     case tok::kw_enum:
         ParseEnumType(id, idLoc, is_public);
+        break;
+    case tok::coloncolon:
+        Diag(Tok, diag::err_qualified_typedef);
+        SkipUntil(tok::semi);
         break;
     default:
         type = ParseTypeSpecifier(true);
@@ -1381,7 +1404,6 @@ void C2Parser::ParseFuncDef(bool is_public) {
 
     statement_list ::= statement.
     statement_list ::= statement_list statement.
-}
 */
 C2::StmtResult C2Parser::ParseCompoundStatement() {
     LOG_FUNC
@@ -1396,8 +1418,12 @@ C2::StmtResult C2Parser::ParseCompoundStatement() {
         if (Tok.is(tok::r_brace)) break;
 
         StmtResult R = ParseStatement();
-        if (R.isUsable()) Stmts.push_back(R.release());
-        else fprintf(stderr, "COMPOUND: skipping invalid statement\n");
+        if (R.isUsable()) {
+            Stmts.push_back(R.release());
+        } else {
+            fprintf(stderr, "COMPOUND: skipping invalid statement\n");
+            SkipUntil(tok::semi);
+        }
     }
 
     if (Tok.isNot(tok::r_brace)) {

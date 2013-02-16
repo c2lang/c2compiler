@@ -1,0 +1,4 @@
+package layer1;
+
+public type Layer1 int;
+
