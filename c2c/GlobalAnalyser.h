@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef TYPE_ANALYSE_VISITOR_H
-#define TYPE_ANALYSE_VISITOR_H
+#ifndef GLOBAL_ANALYSER_H
+#define GLOBAL_ANALYSER_H
 
 #include "ASTVisitor.h"
 #include "Package.h"
@@ -27,28 +27,26 @@ namespace C2 {
 
 class Type;
 class IdentifierExpr;
-class Scope;
+class GlobalScope;
 class Decl;
 
-class TypeAnalyseVisitor : public ASTVisitor {
+class GlobalAnalyser : public ASTVisitor {
 public:
-    TypeAnalyseVisitor(Scope& scope_, const Pkgs& pkgs_, clang::DiagnosticsEngine& Diags_);
-    virtual ~TypeAnalyseVisitor();
+    GlobalAnalyser(GlobalScope& scope_, clang::DiagnosticsEngine& Diags_);
+    virtual ~GlobalAnalyser();
 
     virtual bool handle(Decl* decl);
     unsigned int getErrors() const { return errors; }
 private:
     void checkType(Type* type, bool used_public = false);
-    void checkUserType(IdentifierExpr* id, bool used_public);
     void checkUse(Decl* decl);
 
-    Scope& scope;
-    const Pkgs& pkgs;
+    GlobalScope& globalScope;
     clang::DiagnosticsEngine& Diags;
     unsigned int errors;
 
-    TypeAnalyseVisitor(const TypeAnalyseVisitor&);
-    TypeAnalyseVisitor& operator= (const TypeAnalyseVisitor&);
+    GlobalAnalyser(const GlobalAnalyser&);
+    GlobalAnalyser& operator= (const GlobalAnalyser&);
 };
 
 }

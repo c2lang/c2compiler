@@ -1,34 +1,36 @@
 package test;
 
+type Number int;
+
 func void main() {
     // --- var decls, OK ---
     const char[12] buffer;
     int a;
     Number num;
     int* ptr;
-    Number** ptr;
+    Number** ptr2;
     int*[5][] bla;
-    a b;
+    a b;    // error a is not a type
 
     // --- var decls with init, OK ---
-    int a = 10;
-    int[] a = { 10, 20 }
-    Number[] num = { 10, 20 }
-    int a = calc();
-    int b = 10 / 2;
-    int[][] b = a;
-    Number a = bliep();
-    int* ptr = NULL;
-    Number** ptr = NULL;
-    int*[10] bla;
+    int a2 = 10;
+    int[] a3 = { 10, 20 }
+    Number[] num2 = { 10, 20 }
+    int a4 = calc();
+    int b2 = 10 / 2;
+    int[][] b3 = a;
+    Number a5 = bliep();
+    int* ptr3 = NULL;
+    Number** ptr4 = NULL;
+    int*[10] bla2;
     int[2] nums = { calc(), calc() }
-    int b = 4/2;
-    int b = Utils::max + Utils::Min;
-    int x = Utils::getMax();
+    int b4 = 4/2;
+    int b5 = Utils::max + Utils::Min;
+    int x1 = Utils::getMax();
 
 
     // ERROR on STAR
-    int b = 2*2;
+    int b6 = 2*2;
 
     // --- assignment expression ---
     a = 10;

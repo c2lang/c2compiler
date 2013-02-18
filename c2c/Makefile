@@ -13,6 +13,8 @@ OBJS = \
     Expr.o \
     ExprCodeGen.o \
     FileMap.o \
+    FunctionBodyAnalyser.o \
+    GlobalAnalyser.o \
     Package.o \
     Recipe.o \
     RecipeReader.o \
@@ -21,7 +23,6 @@ OBJS = \
     StmtCodeGen.o \
     StringBuilder.o \
     Type.o \
-    TypeAnalyseVisitor.o \
     Utils.o \
     main.o
 

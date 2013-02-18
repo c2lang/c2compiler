@@ -48,7 +48,8 @@
 #include "Package.h"
 #include "Decl.h"
 #include "Scope.h"
-#include "TypeAnalyseVisitor.h"
+#include "GlobalAnalyser.h"
+#include "FunctionBodyAnalyser.h"
 #include "StringBuilder.h"
 
 #define COL_TIME ANSI_CYAN
@@ -139,9 +140,14 @@ public:
         u_int64_t t1 = Utils::getCurrentTime();
 
         // step 1: do use and type analysis and build global scope
-        Scope scope(sema.getPkgName());
-        TypeAnalyseVisitor visitor(scope, pkgs, Diags);
+        GlobalScope globals(sema.getPkgName(), pkgs, Diags);
+        GlobalAnalyser visitor(globals, Diags);
         sema.visitAST(visitor);
+
+        if (!visitor.getErrors()) {
+            FunctionBodyAnalyser visitor2(globals, Diags);
+            sema.visitAST(visitor2);
+        }
 
         u_int64_t t2 = Utils::getCurrentTime();
         if (options.printTiming) printf(COL_TIME"analysis took %lld usec"ANSI_NORMAL"\n", t2 - t1);

@@ -1,0 +1,24 @@
+package scopetest;
+
+int a = 10;
+
+func void func1(int a) {}   // error overriding global
+
+// TODO package prefixes in names
+
+func void main(int argc, char*[] argv) {
+    int b;
+    int b;      // redefinition
+    int c;
+    int argc;   // error overriding
+    argc = 2;
+    {
+        b = 3;
+        int d;
+        int c;  // error overriding
+    }
+    d = 4;  // error unknown
+    c = 2;
+    int e;
+}
+

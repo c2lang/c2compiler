@@ -81,6 +81,8 @@ public:
     virtual void print(int indent, StringBuilder& buffer);
     virtual void generateC(int indent, StringBuilder& buffer);
     virtual llvm::Value* codeGen(CodeGenContext& context);
+
+    Expr* getExpr() const { return value; }
 private:
     Expr* value;
     // TODO clang::SourceLocation
@@ -285,6 +287,7 @@ public:
     virtual void print(int indent, StringBuilder& buffer);
     virtual void generateC(int indent, StringBuilder& buffer);
     virtual llvm::Value* codeGen(CodeGenContext& context);
+    const StmtList& getStmts() const { return Stmts; }
 private:
     SourceLocation Left;
     SourceLocation Right;
@@ -309,21 +312,26 @@ public:
     virtual void visit(LabelStmt&) {}
     virtual void visit(GotoStmt&) {}
     virtual void visit(CompoundStmt&) {}
+    virtual void visit(Expr&) {}
 };
 
 #define STMT_VISITOR_ACCEPT(a) void a::acceptS(StmtVisitor& v) { v.visit(*this); }
 
-template <class T> class StmtTypeCaster : public StmtVisitor {
+template <class T> class StmtCaster : public StmtVisitor {
 public:
     virtual void visit(T& node_) {
         node = &node_;
     }
     static T* getType(C2::Stmt& node_) {
-        StmtTypeCaster<T> visitor(node_);
+        StmtCaster<T> visitor(node_);
+        return visitor.node;
+    }
+    static T* getType(C2::Stmt* node_) {
+        StmtCaster<T> visitor(*node_);
         return visitor.node;
     }
 private:
-    StmtTypeCaster(C2::Stmt& n) : node(0) {
+    StmtCaster(C2::Stmt& n) : node(0) {
         n.acceptS(*this);
     }
     T* node;

@@ -9,7 +9,7 @@ func void main() {
     a = 10;
     buffer[0] = 0;
 
-    const int a = 20;
-    volatile int* b = 0x2000;
+    const int a2 = 20;
+    volatile int* b2 = 0x2000;
 }
 

@@ -17,9 +17,9 @@
 #define DECL_H
 
 #include <string>
-#include <vector>
 
 #include <clang/Basic/SourceLocation.h>
+#include "OwningVector.h"
 
 using clang::SourceLocation;
 
@@ -43,9 +43,6 @@ enum DeclType {
     DECL_ARRAYVALUE,
     DECL_USE
 };
-
-typedef std::vector<C2::Expr*> ExprList;
-
 
 class Decl {
 public:
@@ -87,7 +84,11 @@ public:
         // TODO assert body is null
         body = body_;
     }
-    ExprList& getArgs() { return args; }
+    Stmt* getBody() const { return body; }
+    DeclExpr* findArg(const std::string& name) const;
+    DeclExpr* getArg(unsigned int i) const { return args[i]; }
+    void addArg(DeclExpr* arg);
+    unsigned int numArgs() const { return args.size(); }
     virtual const std::string& getName() const { return name; }
     virtual clang::SourceLocation getLocation() const { return loc; }
     Type* getReturnType() const { return rtype; }
@@ -96,7 +97,8 @@ private:
     clang::SourceLocation loc;
     Type* rtype;
 
-    ExprList args;
+    typedef OwningVector<DeclExpr> Args;
+    Args args;
     Stmt* body;
 };
 

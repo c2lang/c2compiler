@@ -17,6 +17,7 @@
 #define OWNING_VECTOR_H
 
 #include <stdlib.h>
+#include <string.h>
 
 template <typename T>
 class OwningVector {
@@ -42,7 +43,7 @@ public:
             free(m_data);
         }
     }
-    T* operator[] (unsigned int index) {
+    T* operator[] (unsigned int index) const {
         assert(index < m_size);
         return m_data[index];
     }

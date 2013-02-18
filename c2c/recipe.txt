@@ -92,3 +92,6 @@ target use_as
     examples/use3.c2
 end
 
+target scopetest
+    examples/scopetest.c2
+end

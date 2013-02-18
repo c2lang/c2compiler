@@ -208,6 +208,23 @@ C2::FunctionDecl* C2Sema::ActOnFuncDef(const char* name, SourceLocation loc, boo
     return decl;
 }
 
+void C2Sema::ActOnFunctionArgs(Decl* decl, ExprList params) {
+    FunctionDecl* func = DeclCaster<FunctionDecl>::getType(decl);
+    assert(func);
+    for (unsigned int i=0; i<params.size(); i++) {
+        DeclExpr* de = ExprCaster<DeclExpr>::getType(params[i]);
+        assert(de);
+        // check args for duplicates
+        DeclExpr* existing = func->findArg(de->getName());
+        if (existing) {
+            Diag(de->getLocation(), diag::err_param_redefinition) << de->getName();
+            Diag(existing->getLocation(), diag::note_previous_declaration);
+            continue;
+        }
+        func->addArg(de);
+    }
+}
+
 void C2Sema::ActOnFinishFunctionBody(Decl* decl, Stmt* body) {
     FunctionDecl* func = DeclCaster<FunctionDecl>::getType(decl);
     assert(func);

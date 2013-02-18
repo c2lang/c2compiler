@@ -1390,8 +1390,11 @@ void C2Parser::ParseFuncDef(bool is_public) {
     // TODO use ParseIdentifier(false)
     FunctionDecl* func = Actions.ActOnFuncDef(id->getNameStart(), idLoc, is_public, rtype.release());
 
-    ParseFullParamList(func->getArgs(), true);
-    if (Diags.hasErrorOccurred()) return;
+    ExprList params;
+    // NOTE: memleak on params
+    if (!ParseFullParamList(params, true)) return;
+
+    Actions.ActOnFunctionArgs(func, params);
 
     StmtResult FnBody = ParseCompoundStatement();
     Actions.ActOnFinishFunctionBody(func, FnBody.release());

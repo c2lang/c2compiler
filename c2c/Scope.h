@@ -20,10 +20,17 @@
 #include <map>
 #include <vector>
 
+#include "Package.h"
+
+namespace clang {
+class DiagnosticsEngine;
+}
+
 namespace C2 {
 
-class Package;
 class Decl;
+class Type;
+class IdentifierExpr;
 
 class ScopeResult {
 public:
@@ -42,30 +49,59 @@ public:
     bool visible;       // symbol is non-public and used externally
 };
 
-class Scope {
-public:
-    Scope(const std::string& name_);
 
+class GlobalScope {
+public:
+    GlobalScope(const std::string& name_, const Pkgs& pkgs_, clang::DiagnosticsEngine& Diags_);
+
+    // TODO rename to findUsedPackade
+    const Package* findPackage(const std::string& name) const;
+    const Package* findAnyPackage(const std::string& name) const;
     void addPackage(bool isLocal, const std::string& name_, const Package* pkg);
-    const Package* findPackage(const std::string& pkgName) const;
-    bool isExternal(const Package* pkg) const;
+
     ScopeResult findSymbol(const std::string& name) const;
 
-    const std::string& getName() const { return name; }
-    void dump();
+    int checkType(Type* type, bool used_public = false);
 private:
-    const std::string name;
+    bool isExternal(const Package* pkg) const;
+    int checkUserType(IdentifierExpr* id, bool used_public);
 
-    // locals (or used as local)
+    const std::string pkgName;
+
+    // locals (or used local)
     typedef std::vector<const Package*> Locals;
     typedef Locals::const_iterator LocalsConstIter;
     Locals locals;
 
-    // externals
+    // used packages (use <as>)
     typedef std::map<std::string, const Package*> Packages;
     typedef Packages::const_iterator PackagesConstIter;
     typedef Packages::iterator PackagesIter;
     Packages packages;
+
+    // all packages
+    const Pkgs& allPackages;
+
+    clang::DiagnosticsEngine& Diags;
+};
+
+
+class Scope {
+public:
+    Scope(GlobalScope& globals_, Scope* parent_);
+
+    ScopeResult findSymbol(const std::string& name) const;
+    void addDecl(Decl* d);
+
+    Scope* getParent() const { return parent; }
+private:
+    GlobalScope& globals;
+    Scope* parent;
+
+    // local decls (in scope)
+    typedef std::vector<Decl*> Decls;
+    typedef Decls::const_iterator DeclsConstIter;
+    Decls decls;
 };
 
 }
