@@ -15,17 +15,16 @@ type Buffer struct {
 }
 
 public func void foo(int a, const char* text) {
-// char[16] buffer;  doesn't work yet
-    sprintf(buffer, "foo %d %s\n", a, text);
+    stdio::printf("foo %d %s\n", a, text);
 }
 
 func int main(int argc, char*[] argv) {
     Buffer buf;
 
     if (argc == 1) {
-        printf("Hello World!\n");
+        stdio::printf("Hello World!\n");
     } else {
-        printf("Goodbye!\n");
+        stdio::printf("Goodbye!\n");
     }
     return 0;
 }

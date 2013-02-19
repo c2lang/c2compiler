@@ -140,8 +140,13 @@ void FunctionBodyAnalyser::analyseExpr(Expr* expr) {
     case EXPR_NUMBER:
     case EXPR_STRING:
     case EXPR_CHARLITERAL:
+        break;
     case EXPR_CALL:
+        analyseCall(expr);
+        break;
     case EXPR_IDENTIFIER:
+        analyseIdentifier(expr);
+        break;
     case EXPR_INITLIST:
     case EXPR_TYPE:
         // dont handle here
@@ -150,9 +155,17 @@ void FunctionBodyAnalyser::analyseExpr(Expr* expr) {
         analyseDeclExpr(expr);
         break;
     case EXPR_BINOP:
+        analyseBinOpExpr(expr);
+        break;
     case EXPR_UNARYOP:
+        analyseUnaryOpExpr(expr);
+        break;
     case EXPR_SIZEOF:
+        analyseSizeofExpr(expr);
+        break;
     case EXPR_ARRAYSUBSCRIPT:
+        analyseArraySubscript(expr);
+        break;
     case EXPR_MEMBER:
         // dont handle here
         break;
@@ -178,5 +191,87 @@ void FunctionBodyAnalyser::analyseDeclExpr(Expr* expr) {
         return;
     }
     curScope->addDecl(new VarDecl(decl, false, true));
+}
+
+void FunctionBodyAnalyser::analyseBinOpExpr(Expr* expr) {
+    BinOpExpr* binop = ExprCaster<BinOpExpr>::getType(expr);
+    assert(binop);
+    analyseExpr(binop->getLeft());
+    analyseExpr(binop->getRight());
+}
+
+void FunctionBodyAnalyser::analyseUnaryOpExpr(Expr* expr) {
+    UnaryOpExpr* unaryop = ExprCaster<UnaryOpExpr>::getType(expr);
+    assert(unaryop);
+    analyseExpr(unaryop->getExpr());
+}
+
+void FunctionBodyAnalyser::analyseSizeofExpr(Expr* expr) {
+    SizeofExpr* size = ExprCaster<SizeofExpr>::getType(expr);
+    assert(size);
+    // TODO can also be type
+    analyseExpr(size->getExpr());
+}
+
+void FunctionBodyAnalyser::analyseArraySubscript(Expr* expr) {
+    ArraySubscriptExpr* sub = ExprCaster<ArraySubscriptExpr>::getType(expr);
+    assert(sub);
+    analyseExpr(sub->getBase());
+    analyseExpr(sub->getIndex());
+}
+
+void FunctionBodyAnalyser::analyseCall(Expr* expr) {
+    CallExpr* call = ExprCaster<CallExpr>::getType(expr);
+    assert(call);
+    // analyse function name
+    analyseIdentifier(call->getId());
+    // analyse arguments
+    for (unsigned i=0; i<call->numArgs(); i++) {
+        Expr* arg = call->getArg(i);
+        analyseExpr(arg);
+    }
+}
+
+void FunctionBodyAnalyser::analyseIdentifier(Expr* expr) {
+    IdentifierExpr* id = ExprCaster<IdentifierExpr>::getType(expr);
+    assert(id);
+    ScopeResult res = curScope->findSymbol(id->pname, id->name);
+    if (id->pname != "" && !res.pkg) {
+        // TODO try to fix error (search all packages -> global->fixPackage(id->pname)
+        return;
+    }
+    if (res.decl) {
+        if (res.ambiguous) {
+            fprintf(stderr, "TODO ambiguous variable\n");
+            // TODO show alternatives
+            return;
+        }
+        if (!res.visible) {
+            Diags.Report(id->getLocation(), diag::err_not_public) << id->getName();
+            return;
+        }
+    } else {
+        if (res.pkg) {
+            Diags.Report(id->getLocation(), diag::err_unknown_package_symbol)
+                << res.pkg->getName() << id->name;
+        } else {
+            Diags.Report(id->getLocation(), diag::err_undeclared_var_use)
+                << id->getName();
+        }
+        return;
+
+    }
+    // TODO we dont know which type of symbol is allowed here, for now only allow vars
+    switch (res.decl->dtype()) {
+    case DECL_FUNC:
+    case DECL_VAR:
+        break;
+    case DECL_TYPE:
+    case DECL_ARRAYVALUE:
+    case DECL_USE:
+        fprintf(stderr, "TODO WRONG SYMBOL TYPE\n");
+        return;
+    }
+    // ok
 }
 

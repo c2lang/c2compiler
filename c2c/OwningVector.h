@@ -18,15 +18,17 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 template <typename T>
 class OwningVector {
 public:
-    OwningVector(int initial = 32)
+    OwningVector(int initial = 4)
         : m_capacity(initial)
         , m_size(0)
+        , m_data(0)
     {
-        m_data = (T**)malloc(sizeof(T*)*m_capacity);
+        if (m_capacity) m_data = (T**)malloc(sizeof(T*)*m_capacity);
     }
     OwningVector(OwningVector& rhs)
         : m_capacity(rhs.m_capacity)
@@ -52,8 +54,11 @@ public:
             if (m_capacity == 0) m_capacity = 4;
             else m_capacity *= 2;
             T** data2 = (T**)malloc(sizeof(T*)*m_capacity);
-            memcpy(data2, m_data, m_size*sizeof(T*));
-            // data = data2
+            if (m_data) {
+                memcpy(data2, m_data, m_size*sizeof(T*));
+                free(m_data);
+            }
+            m_data = data2;
         }
         m_data[m_size] = s;
         m_size++;

@@ -140,6 +140,28 @@ private:
     };
 };
 
+
+enum C2Type {
+    TYPE_U8 = 0,
+    TYPE_U16,
+    TYPE_U32,
+    TYPE_S8,
+    TYPE_S16,
+    TYPE_S32,
+    TYPE_INT,
+    TYPE_STRING,
+    TYPE_FLOAT,
+    TYPE_CHAR,
+    TYPE_VOID,
+};
+
+class BuiltinType {
+public:
+    static C2::Type* get(C2Type t);
+private:
+    BuiltinType();
+};
+
 }
 
 #endif

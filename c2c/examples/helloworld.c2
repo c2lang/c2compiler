@@ -1,6 +1,6 @@
 package hello_world;
 
-use stdio;
+use stdio local;
 
 func int main(int argc, char*[] argv) {
     printf("Hello World!\n");

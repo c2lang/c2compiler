@@ -92,6 +92,8 @@ public:
     virtual const std::string& getName() const { return name; }
     virtual clang::SourceLocation getLocation() const { return loc; }
     Type* getReturnType() const { return rtype; }
+    void setVariadic() { m_isVariadic = true; }
+    bool isVariadic() const { return m_isVariadic; }
 private:
     std::string name;
     clang::SourceLocation loc;
@@ -100,6 +102,8 @@ private:
     typedef OwningVector<DeclExpr> Args;
     Args args;
     Stmt* body;
+    bool m_isVariadic;
+    // TODO EllipsisLoc
 };
 
 

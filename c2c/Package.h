@@ -31,7 +31,7 @@ public:
     Decl* findSymbol(const std::string& name) const;
     const std::string& getName() const { return name; }
 
-    void dump();
+    void dump() const;
 private:
     const std::string name;
 

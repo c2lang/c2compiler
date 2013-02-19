@@ -341,8 +341,25 @@ bool C2Builder::createPkgs() {
 void C2Builder::addDummyPackages() {
     Package* c2Pkg = getPackage("c2");
     // TODO add dummy decls;
+
     Package* stdioPkg = getPackage("stdio");
-    // TODO add dummy decls;
+    SourceLocation loc;
+    // int puts(const char* s);
+    {
+        FunctionDecl* func = new FunctionDecl("puts", loc, true, BuiltinType::get(TYPE_INT));
+        // TODO correct arg
+        func->addArg(new DeclExpr("s", loc, BuiltinType::get(TYPE_INT), 0));
+        stdioPkg->addSymbol(func);
+    }
+    //int printf(const char *format, ...);
+    {
+        FunctionDecl* func = new FunctionDecl("printf", loc, true, BuiltinType::get(TYPE_INT));
+        Type* ptype = new Type(Type::POINTER, BuiltinType::get(TYPE_CHAR));
+        Type* ctype = new Type(Type::QUALIFIER, ptype);
+        func->addArg(new DeclExpr("format", loc, ctype, 0));
+        func->setVariadic();
+        stdioPkg->addSymbol(func);
+    }
 }
 
 void C2Builder::dumpPkgs() {

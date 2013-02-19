@@ -1,0 +1,6 @@
+package otherscope;
+
+public int value = 123;
+
+int count = 2;
+

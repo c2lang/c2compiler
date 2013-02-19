@@ -1,5 +1,7 @@
 package scopetest;
 
+use otherscope as other;
+
 int a = 10;
 
 func void func1(int a) {}   // error overriding global
@@ -20,5 +22,7 @@ func void main(int argc, char*[] argv) {
     d = 4;  // error unknown
     c = 2;
     int e;
+    return other::value;     // ok
+    return other::count; // not visible
 }
 

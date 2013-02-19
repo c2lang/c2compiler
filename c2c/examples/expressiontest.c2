@@ -7,11 +7,14 @@ func void test1() {
     int a = 10;
     Number num = 1234;
     b = 20;
+    char* c;
     c = "hallo";
+    int[10] buf;
+    int i;
     buf[2+i] = 'c';
 
     // cast expressions
     char* p = (char*)"blabla";
-    p = (const char*) p2;
+    p = (const char*) c;
 }
 

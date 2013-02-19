@@ -94,4 +94,5 @@ end
 
 target scopetest
     examples/scopetest.c2
+    examples/scopetest2.c2
 end

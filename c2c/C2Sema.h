@@ -23,6 +23,7 @@
 #include <clang/Basic/SourceLocation.h>
 #include "C2Parser.h" // TODO only needed for ExprResult/StmtResult
 #include "Stmt.h"
+#include "Type.h"
 #include "Expr.h"
 
 namespace clang {
@@ -44,20 +45,6 @@ class Stmt;
 class Expr;
 class Type;
 class ASTVisitor;
-
-enum C2Type {
-    TYPE_U8 = 0,
-    TYPE_U16,
-    TYPE_U32,
-    TYPE_S8,
-    TYPE_S16,
-    TYPE_S32,
-    TYPE_INT,
-    TYPE_STRING,
-    TYPE_FLOAT,
-    TYPE_CHAR,
-    TYPE_VOID,
-};
 
 class C2Sema {
 public:
@@ -126,7 +113,6 @@ public:
 
     const std::string& getPkgName() const { return pkgName; }
 private:
-    C2::Type* getBuiltinType(C2Type t) const;
     DiagnosticBuilder Diag(SourceLocation Loc, unsigned DiagID);
     void addDecl(Decl* d);
     const Decl* findUse(const char* name) const;

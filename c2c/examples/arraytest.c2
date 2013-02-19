@@ -1,5 +1,7 @@
 package array_test;
 
+use stdio as IO;
+
 #define TEST(x,y) \
 elements += { #x, y} \
 func int test_##x()
@@ -18,7 +20,7 @@ elements += { "test2", 20 }
 elements += { "test3", 30 }
 
 TEST(foo, 10) {
-    printf("here!\n");
+    IO::printf("here!\n");
 }
 
 func void main() {
@@ -27,7 +29,7 @@ func void main() {
 
     int count = sizeof(elements) / sizeof(Element);
     for (int i=0; i<count; i++) {
-        printf("[%2d] %16s\n", i, elements[i].name);
+        IO::printf("[%2d] %16s\n", i, elements[i].name);
     }
 }
 

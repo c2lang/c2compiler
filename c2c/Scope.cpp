@@ -59,6 +59,13 @@ const Package* GlobalScope::findAnyPackage(const std::string& name) const {
     return iter->second;
 }
 
+void GlobalScope::dump() const {
+    fprintf(stderr, "used packages:\n");
+    for (PackagesConstIter iter = packages.begin(); iter != packages.end(); ++iter) {
+        fprintf(stderr, "  %s (as %s)\n", iter->second->getName().c_str(), iter->first.c_str());
+    }
+}
+
 int GlobalScope::checkType(Type* type, bool used_public) {
     if (type->hasBuiltinBase()) return 0; // always ok
 
@@ -208,6 +215,32 @@ ScopeResult Scope::findSymbol(const std::string& symbol) const {
     // search parent or globals
     if (parent) return parent->findSymbol(symbol);
     else return globals.findSymbol(symbol);
+}
+
+ScopeResult Scope::findSymbol(const std::string& pkgname, const std::string& name) const {
+    if (pkgname == "") return findSymbol(name);
+
+    // check if package exists
+    ScopeResult result;
+    const Package* pkg = globals.findPackage(pkgname);
+    if (!pkg) {
+        // return and let caller decice (globalscope.fixPackage() ?)
+        return result;
+    }
+    result.pkg = pkg;
+
+    // check Type
+    Decl* symbol = pkg->findSymbol(name);
+    if (!symbol) {
+        // return and let caller decide
+        return result;
+    }
+    result.decl = symbol;
+
+    // TODO check ambiguous (search other local stuff)
+    result.external = globals.isExternal(pkg);
+    result.visible = !(result.external && !symbol->isPublic());
+    return result;
 }
 
 void Scope::addDecl(Decl* d) {

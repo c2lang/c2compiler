@@ -613,3 +613,50 @@ llvm::Type* Type::convert(CodeGenContext& C) {
     return 0;
 }
 
+
+
+static C2::Type type_u8(Type::BUILTIN);
+static C2::Type type_u16(Type::BUILTIN);
+static C2::Type type_u32(Type::BUILTIN);
+static C2::Type type_s8(Type::BUILTIN);
+static C2::Type type_s16(Type::BUILTIN);
+static C2::Type type_s32(Type::BUILTIN);
+static C2::Type type_int(Type::BUILTIN);
+static C2::Type type_char(Type::BUILTIN);
+static C2::Type type_string(Type::BUILTIN);
+static C2::Type type_float(Type::BUILTIN);
+static C2::Type type_void(Type::BUILTIN);
+
+BuiltinType::BuiltinType() {
+    type_u8.setBuiltinName("u8", "unsigned char");
+    type_u16.setBuiltinName("u16", "unsigned short");
+    type_u32.setBuiltinName("u32", "unsigned int");
+    type_s8.setBuiltinName("s8", "char");
+    type_s16.setBuiltinName("s16", "short");
+    type_s32.setBuiltinName("s32", "int");
+    type_int.setBuiltinName("int", "int");
+    type_char.setBuiltinName("char", "char");
+    type_string.setBuiltinName("string", "const char*");
+    type_float.setBuiltinName("float", "float");
+    type_void.setBuiltinName("void", "void");
+}
+
+C2::Type* BuiltinType::get(C2Type t) {
+    static BuiltinType types;
+
+    switch (t) {
+    case TYPE_U8:     return &type_u8;
+    case TYPE_U16:    return &type_u16;
+    case TYPE_U32:    return &type_u32;
+    case TYPE_S8:     return &type_s8;
+    case TYPE_S16:    return &type_s16;
+    case TYPE_S32:    return &type_s32;
+    case TYPE_INT:    return &type_int;
+    case TYPE_STRING: return &type_string;
+    case TYPE_FLOAT:  return &type_float;
+    case TYPE_CHAR:   return &type_char;
+    case TYPE_VOID:   return &type_void;
+    }
+    return 0;
+}
+

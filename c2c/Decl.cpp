@@ -74,6 +74,7 @@ FunctionDecl::FunctionDecl(const std::string& name_,
     , loc(loc_)
     , rtype(rtype_)
     , body(0)
+    , m_isVariadic(false)
 {
 }
 
@@ -107,6 +108,7 @@ void FunctionDecl::generateC(StringBuilder& buffer, const std::string& pkgName) 
         if (count != 1) buffer << ", ";
         count--;
     }
+    if (m_isVariadic) buffer << "...";
     buffer << ")\n";
     assert(body);
     body->generateC(0, buffer);

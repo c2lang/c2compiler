@@ -42,7 +42,7 @@ public:
         , visible(true)
     {}
 
-    const Package* pkg;
+    const Package* pkg; // pkg is only set if Symbol is a global (not stack)
     Decl* decl;
     bool ambiguous;     // ambiguous lookup (returns first result)
     bool external;      // package is external
@@ -62,8 +62,10 @@ public:
     ScopeResult findSymbol(const std::string& name) const;
 
     int checkType(Type* type, bool used_public = false);
-private:
     bool isExternal(const Package* pkg) const;
+
+    void dump() const;
+private:
     int checkUserType(IdentifierExpr* id, bool used_public);
 
     const std::string pkgName;
@@ -91,6 +93,7 @@ public:
     Scope(GlobalScope& globals_, Scope* parent_);
 
     ScopeResult findSymbol(const std::string& name) const;
+    ScopeResult findSymbol(const std::string& pkgname, const std::string& name) const;
     void addDecl(Decl* d);
 
     Scope* getParent() const { return parent; }

@@ -48,6 +48,12 @@ private:
     void analyseStmtExpr(Stmt* stmt);
     void analyseExpr(Expr* expr);
     void analyseDeclExpr(Expr* expr);
+    void analyseBinOpExpr(Expr* expr);
+    void analyseUnaryOpExpr(Expr* expr);
+    void analyseSizeofExpr(Expr* expr);
+    void analyseArraySubscript(Expr* expr);
+    void analyseCall(Expr* expr);
+    void analyseIdentifier(Expr* expr);
 
     GlobalScope& globalScope;
     Scope* curScope;

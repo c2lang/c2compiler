@@ -12,6 +12,14 @@ public func void getMax() {
 
 int number = 10;
 
+//type CB func void();  // doesn't work yet
+type CB int;
+
+func void callback(CB cb) {}
+
+func void convert(int a, int b, int c) {
+}
+
 public func void MyFunc() {
     Utils::convert(1, 2, "Hallo");
     if (3) goto end;
@@ -36,10 +44,9 @@ func void test2() {
 
 func void test3() {
 label1: int a;
-    call2();
+    test2();
 label2:
-    call3();
-    call4();
+    test2();
 }
 
 func void test4() {

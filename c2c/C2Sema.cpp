@@ -22,9 +22,7 @@
 
 #include "C2Sema.h"
 #include "Decl.h"
-#include "Type.h"
 #include "StringBuilder.h"
-#include "Type.h"
 #include "color.h"
 #include "ASTVisitor.h"
 
@@ -466,7 +464,7 @@ C2::ExprResult C2Sema::ActOnBuiltinType(C2Type t) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: Builtin Type"ANSI_NORMAL"\n";
 #endif
-    Type* type = getBuiltinType(t);
+    Type* type = BuiltinType::get(t);
     return ExprResult(new TypeExpr(type));
 }
 
@@ -584,56 +582,6 @@ void C2Sema::visitAST(ASTVisitor& visitor) {
     for (unsigned int i=0; i<decls.size(); i++) {
         bool stop = visitor.handle(decls[i]);
         if (stop) break;
-    }
-}
-
-C2::Type* C2Sema::getBuiltinType(C2Type t) const {
-    static Type type_u8(Type::BUILTIN);
-    type_u8.setBuiltinName("u8", "unsigned char");
-    static Type type_u16(Type::BUILTIN);
-    type_u16.setBuiltinName("u16", "unsigned short");
-    static Type type_u32(Type::BUILTIN);
-    type_u32.setBuiltinName("u32", "unsigned int");
-    static Type type_s8(Type::BUILTIN);
-    type_s8.setBuiltinName("s8", "char");
-    static Type type_s16(Type::BUILTIN);
-    type_s16.setBuiltinName("s16", "short");
-    static Type type_s32(Type::BUILTIN);
-    type_s32.setBuiltinName("s32", "int");
-    static Type type_int(Type::BUILTIN);
-    type_int.setBuiltinName("int", "int");
-    static Type type_char(Type::BUILTIN);
-    type_char.setBuiltinName("char", "char");
-    static Type type_string(Type::BUILTIN);
-    type_string.setBuiltinName("string", "const char*");
-    static Type type_float(Type::BUILTIN);
-    type_float.setBuiltinName("float", "float");
-    static Type type_void(Type::BUILTIN);
-    type_void.setBuiltinName("void", "void");
-
-    switch (t) {
-    case TYPE_U8:
-        return &type_u8;
-    case TYPE_U16:
-        return &type_u16;
-    case TYPE_U32:
-        return &type_u32;
-    case TYPE_S8:
-        return &type_s8;
-    case TYPE_S16:
-        return &type_s16;
-    case TYPE_S32:
-        return &type_s32;
-    case TYPE_INT:
-        return &type_int;
-    case TYPE_STRING:
-        return &type_string;
-    case TYPE_FLOAT:
-        return &type_float;
-    case TYPE_CHAR:
-        return &type_char;
-    case TYPE_VOID:
-        return &type_void;
     }
 }
 

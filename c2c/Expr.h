@@ -22,6 +22,7 @@
 #include <clang/Basic/SourceLocation.h>
 #include <clang/AST/OperationKinds.h>
 
+#include "OwningVector.h"
 #include "Stmt.h"
 
 namespace C2 {
@@ -175,10 +176,15 @@ public:
     virtual llvm::Value* codeGen(CodeGenContext& context);
 
     void addArg(Expr* arg);
+
+    IdentifierExpr* getId() const { return Fn; }
+    Expr* getArg(unsigned int i) const { return args[i]; }
+    unsigned int numArgs() const { return args.size(); }
 private:
     // TODO add R/LParen
     IdentifierExpr* Fn;
-    ExprList args;
+    typedef OwningVector<Expr> Args;
+    Args args;
 };
 
 
@@ -233,6 +239,9 @@ public:
     virtual void print(int indent, StringBuilder& buffer);
     virtual void generateC(int indent, StringBuilder& buffer);
     virtual llvm::Value* codeGen(CodeGenContext& context);
+
+    Expr* getLeft() const { return lhs; }
+    Expr* getRight() const { return rhs; }
 private:
     SourceLocation opLoc;
     Opcode opc;
@@ -252,6 +261,8 @@ public:
     virtual void print(int indent, StringBuilder& buffer);
     virtual void generateC(int indent, StringBuilder& buffer);
     virtual llvm::Value* codeGen(CodeGenContext& context);
+
+    Expr* getExpr() const { return val; }
 private:
     SourceLocation opLoc;
     Opcode opc;
@@ -268,6 +279,8 @@ public:
     virtual void print(int indent, StringBuilder& buffer);
     virtual void generateC(int indent, StringBuilder& buffer);
     virtual llvm::Value* codeGen(CodeGenContext& context);
+
+    Expr* getExpr() const { return expr; }
 private:
     SourceLocation Loc;
     Expr* expr;
@@ -283,6 +296,9 @@ public:
     virtual void print(int indent, StringBuilder& buffer);
     virtual void generateC(int indent, StringBuilder& buffer);
     virtual llvm::Value* codeGen(CodeGenContext& context);
+
+    Expr* getBase() const { return base; }
+    Expr* getIndex() const { return idx; }
 private:
     SourceLocation RLoc;
     Expr* base;
@@ -313,7 +329,7 @@ private:
 class ExprVisitor {
 public:
     virtual ~ExprVisitor() {}
-    virtual void visit(Expr&) { assert(0); }    // add ExprClass below
+    virtual void visit(Expr&) { assert(0 && "unknown Expr type"); }    // add ExprClass below
     virtual void visit(NumberExpr&) {}
     virtual void visit(StringExpr&) {}
     virtual void visit(CharLiteralExpr&) {}
@@ -323,6 +339,7 @@ public:
     virtual void visit(TypeExpr&) {}
     virtual void visit(DeclExpr&) {}
     virtual void visit(BinOpExpr&) {}
+    virtual void visit(UnaryOpExpr&) {}
     virtual void visit(SizeofExpr&) {}
     virtual void visit(ArraySubscriptExpr&) {}
     virtual void visit(MemberExpr&) {}

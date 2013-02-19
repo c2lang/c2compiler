@@ -10,7 +10,6 @@ func void main() {
     int* ptr;
     Number** ptr2;
     int*[5][] bla;
-    a b;    // error a is not a type
 
     // --- var decls with init, OK ---
     int a2 = 10;
@@ -28,25 +27,25 @@ func void main() {
     int b5 = Utils::max + Utils::Min;
     int x1 = Utils::getMax();
 
-
-    // ERROR on STAR
     int b6 = 2*2;
 
     // --- assignment expression ---
     a = 10;
-    res = calc();
-    *bliep  = 0;       // ok, bliep -> primary_expression
-    b *= 2;        // ok -> primary_expression
+    int res;
+    res = main();
+    *res  = 0;       // ok, bliep -> primary_expression
+    a *= 2;        // ok -> primary_expression
+    string text;
     text = "hallo" "dit" "is" "een" "test";
 
-    // error on LSQUARE
+    int array;
     *array[2] = 'b';
 
-    // error on STAR
-    b = 2 * 20;
+    a = 2 * 20;
 
     // ERROR, b -> type_specifier WRONG, [2] -> array_specifier, ok
-    b[2] = 0;
-    b->foo = 10;
+    int[2] bb;
+    bb[2] = 0;
+    bb->foo = 10;
 }
 

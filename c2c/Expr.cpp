@@ -147,9 +147,7 @@ void CharLiteralExpr::generateC(int indent, StringBuilder& buffer) {
 }
 
 
-CallExpr::~CallExpr() {
-    // TODO delete args
-}
+CallExpr::~CallExpr() {}
 
 EXPR_VISITOR_ACCEPT(CallExpr);
 
