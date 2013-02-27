@@ -35,6 +35,10 @@ llvm::Value* StringExpr::codeGen(CodeGenContext& C) {
     return C.builder.CreateGlobalStringPtr(value);
 }
 
+llvm::Value* BoolLiteralExpr::codeGen(CodeGenContext& C) {
+    return llvm::ConstantInt::get(llvm::Type::getInt1Ty(C.context), value, true);
+}
+
 llvm::Value* CharLiteralExpr::codeGen(CodeGenContext& context) {
     assert(0 && "TODO");
     return 0;

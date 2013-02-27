@@ -1,46 +1,52 @@
 package test;
 
+func void foo() {}
+func void bar() {}
+func void faa() {}
+
+func int haveMorfaa() {}
+
 func void test0() {
-    if (10) c();
+    if (10) foo();
 }
 
 func void test1() {
-    if (2) c();
-    else d();
+    if (2) foo();
+    else bar();
 }
 
 func void test2() {
-    if (haveMore())
-        c();
+    if (haveMorfaa())
+        foo();
 }
 
 func void test3() {
     // HMM semicolon is inserted after next line
-    if (2) c();
-    else d();
+    if (2) foo();
+    else bar();
 }
 
 func void test4() {
     if (2) {
-        first();
+        foo();
     } else {
-        second();
+        bar();
     }
 }
 
 func void test5() {
     if (3) {
-        third();
+        foo();
     } else {
-        fourth();
+        bar();
     }
 
     if (1) if (2) foo();
         else bar();
 
     if (1) {
-        if (2) blop();
-        else bliep();
+        if (2) foo();
+        else bar();
     } else {
 
     }
@@ -48,7 +54,7 @@ func void test5() {
 
 func void test6() {
     if (1) if (2) foo();
-        else bar();
-    else bliep();
+        else foo();
+    else faa();
 }
 

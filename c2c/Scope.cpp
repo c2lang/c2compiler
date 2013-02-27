@@ -75,9 +75,7 @@ int GlobalScope::checkType(Type* type, bool used_public) {
         return 1;
     case Type::STRUCT:
     case Type::UNION:
-        // TODO check members,
-        fprintf(stderr, ANSI_BLUE"TODO check struct/union members"ANSI_NORMAL"\n");
-        break;
+        return checkStructType(type, used_public);
     case Type::ENUM:
         // has no subtypes
         break;
@@ -87,6 +85,15 @@ int GlobalScope::checkType(Type* type, bool used_public) {
     case Type::ARRAY:
     case Type::QUALIFIER:
         return checkUserType(type->getBaseUserType(), used_public);
+    }
+    return 0;
+}
+
+int GlobalScope::checkStructType(Type* type, bool used_public) {
+    MemberList* members = type->getMembers();
+    for (unsigned i=0; i<members->size(); i++) {
+        DeclExpr* M = (*members)[i];
+        checkType(M->getType(), used_public);
     }
     return 0;
 }

@@ -80,6 +80,7 @@ public:
     StmtResult ActOnDeclaration(const char* name, SourceLocation loc, Expr* type, Expr* InitValue);
 
     // expressions
+    ExprResult ActOnBooleanConstant(const Token& Tok);
     ExprResult ActOnNumericConstant(const Token& Tok);
     ExprResult ActOnStringLiteral(const clang::Token* StringToks, unsigned int NumStringToks);
     ExprResult ActOnCharacterConstant(SourceLocation Loc, const std::string& value);

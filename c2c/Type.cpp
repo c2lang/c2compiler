@@ -27,21 +27,6 @@ using namespace C2;
 
 namespace C2 {
 
-class StructMember {
-public:
-    StructMember(const char* name_, Type* type_)
-        : name(name_)
-        , type(type_)
-        , next(0)
-    {}
-    ~StructMember() {
-        if (type->own()) delete type;
-    }
-    std::string name;
-    Type* type;
-    StructMember* next;
-};
-
 class EnumValue {
 public:
     EnumValue(const char* name_, int value_)
@@ -115,11 +100,7 @@ Type::~Type() {
         delete userType;
         break;
     case STRUCT:
-        while (members) {
-            StructMember* next = members->next;
-            delete members;
-            members = next;
-        }
+        delete members;
         break;
     case UNION:
         break;
@@ -148,16 +129,15 @@ Type::~Type() {
     }
 }
 
-void Type::addStructMember(const char* name_, Type* type_) {
+void Type::setMembers(MemberList& members_) {
     assert(kind == STRUCT || kind == UNION);
-    StructMember* newm = new StructMember(name_, type_);
-    if (members == 0) {
-        members = newm;
-    } else {
-        StructMember* last = members;
-        while (last->next) last = last->next;
-        last->next = newm;
-    }
+    assert(members == 0);
+    members = new MemberList(members_);
+}
+
+MemberList* Type::getMembers() const {
+    assert(kind == STRUCT || kind == UNION);
+    return members;
 }
 
 void Type::addEnumValue(const char* name_, int value_) {
@@ -233,35 +213,33 @@ void Type::printFull(StringBuilder& buffer, int indent) const {
         buffer << name;
         break;
     case STRUCT:
-    {
         buffer.indent(indent);
         buffer << "struct " << " {\n";
-        StructMember* mem = members;
-        while (mem) {
-            buffer.indent(2*(indent+1));
-            mem->type->printFull(buffer, indent+1);
-            buffer << ' ' << mem->name << ";\n";
-            mem = mem->next;
+        if (members) {
+            for (unsigned i=0; i<members->size(); i++) {
+                buffer.indent(2*(indent+1));
+                DeclExpr* mem = (*members)[i];
+                mem->getType()->printFull(buffer, indent+1);
+                buffer << ' ' << mem->getName() << ";\n";
+            }
         }
         buffer.indent(indent);
         buffer << '}';
         break;
-    }
     case UNION:
-    {
         buffer.indent(indent);
         buffer << "union " << " {\n";
-        StructMember* mem = members;
-        while (mem) {
-            buffer.indent(2*(indent+1));
-            mem->type->printName(buffer);
-            buffer << ' ' << mem->name << ";\n";
-            mem = mem->next;
+        if (members) {
+            for (unsigned i=0; i<members->size(); i++) {
+                buffer.indent(2*(indent+1));
+                DeclExpr* mem = (*members)[i];
+                mem->getType()->printFull(buffer, indent+1);
+                buffer << ' ' << mem->getName() << ";\n";
+            }
         }
         buffer.indent(indent);
         buffer << '}';
         break;
-    }
     case ENUM:
     { 
         buffer.indent(indent);
@@ -404,11 +382,11 @@ void Type::print(int indent, StringBuilder& buffer) const {
         break;
     case UNION:
         buffer << "(union)\n";
-        {
-            StructMember* member = members;
-            while (member) {
-                member->type->print(indent + INDENT, buffer);
-                member = member->next;
+        if (members) {
+            for (unsigned i=0; i<members->size(); i++) {
+                buffer.indent(2*(indent+1));
+                DeclExpr* mem = (*members)[i];
+                mem->getType()->print(indent + INDENT, buffer);
             }
         }
         break;
@@ -417,11 +395,10 @@ void Type::print(int indent, StringBuilder& buffer) const {
         break;
     case STRUCT:
         buffer << "(struct)\n";
-        {
-            StructMember* member = members;
-            while (member) {
-                member->type->print(indent + INDENT, buffer);
-                member = member->next;
+        if (members) {
+            for (unsigned i=0; i<members->size(); i++) {
+                DeclExpr* mem = (*members)[i];
+                mem->getType()->print(indent + INDENT, buffer);
             }
         }
         break;
@@ -469,28 +446,28 @@ void Type::generateC_PreName(StringBuilder& buffer) const {
         break;
     case STRUCT:
         buffer << "struct {\n";
-        {
-            StructMember* member = members;
-            while (member) {
-                member->type->generateC_PreName(buffer);
-                buffer << ' ' << member->name;
-                member->type->generateC_PostName(buffer);
+        if (members) {
+            for (unsigned i=0; i<members->size(); i++) {
+                DeclExpr* mem = (*members)[i];
+                buffer.indent(INDENT);
+                mem->getType()->generateC_PreName(buffer);
+                buffer << ' ' << mem->getName();
+                mem->getType()->generateC_PostName(buffer);
                 buffer << ";\n";
-                member = member->next;
             }
         }
         buffer << "}";
         break;
     case UNION:
         buffer << "union {\n";
-        {
-            StructMember* member = members;
-            while (member) {
-                member->type->generateC_PreName(buffer);
-                buffer << ' ' << member->name;
-                member->type->generateC_PostName(buffer);
+        if (members) {
+            for (unsigned i=0; i<members->size(); i++) {
+                DeclExpr* mem = (*members)[i];
+                buffer.indent(INDENT);
+                mem->getType()->generateC_PreName(buffer);
+                buffer << ' ' << mem->getName();
+                mem->getType()->generateC_PostName(buffer);
                 buffer << ";\n";
-                member = member->next;
             }
         }
         buffer << "}";
@@ -578,8 +555,9 @@ llvm::Type* Type::convert(CodeGenContext& C) {
             if (strcmp(name, "s8") == 0) return C.builder.getInt8Ty();
             if (strcmp(name, "s16") == 0) return C.builder.getInt16Ty();
             if (strcmp(name, "s32") == 0) return C.builder.getInt32Ty();
+            if (strcmp(name, "bool") == 0) return C.builder.getInt1Ty();
             // TODO 'string' type
-            assert(0 && "TODO");
+            assert(0 && "Unknown type");
         }
         break;
     case USER:
@@ -625,6 +603,7 @@ static C2::Type type_int(Type::BUILTIN);
 static C2::Type type_char(Type::BUILTIN);
 static C2::Type type_string(Type::BUILTIN);
 static C2::Type type_float(Type::BUILTIN);
+static C2::Type type_bool(Type::BUILTIN);
 static C2::Type type_void(Type::BUILTIN);
 
 BuiltinType::BuiltinType() {
@@ -638,6 +617,7 @@ BuiltinType::BuiltinType() {
     type_char.setBuiltinName("char", "char");
     type_string.setBuiltinName("string", "const char*");
     type_float.setBuiltinName("float", "float");
+    type_bool.setBuiltinName("bool", "int");
     type_void.setBuiltinName("void", "void");
 }
 
@@ -655,6 +635,7 @@ C2::Type* BuiltinType::get(C2Type t) {
     case TYPE_STRING: return &type_string;
     case TYPE_FLOAT:  return &type_float;
     case TYPE_CHAR:   return &type_char;
+    case TYPE_BOOL:   return &type_bool;
     case TYPE_VOID:   return &type_void;
     }
     return 0;

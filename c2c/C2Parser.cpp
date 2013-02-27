@@ -92,6 +92,7 @@ static C2Type kw2type(tok::TokenKind Kind) {
     case tok::kw_string: return TYPE_STRING;
     case tok::kw_float: return TYPE_FLOAT;
     case tok::kw_char:  return TYPE_CHAR;
+    case tok::kw_bool:  return TYPE_BOOL;
     case tok::kw_void:  return TYPE_VOID;
     case tok::kw_uchar: return TYPE_U8;
     default:
@@ -490,6 +491,7 @@ C2::ExprResult C2Parser::ParseSingleTypeSpecifier(bool allow_qualifier) {
     case tok::kw_char:
     case tok::kw_void:
     case tok::kw_uchar:
+    case tok::kw_bool:
         base = Actions.ActOnBuiltinType(kw2type(Tok.getKind()));
         ConsumeToken();
         break;
@@ -772,6 +774,11 @@ C2::ExprResult C2Parser::ParseCastExpression(bool isUnaryExpression,
         }
     case tok::numeric_constant:
         Res = Actions.ActOnNumericConstant(Tok);
+        ConsumeToken();
+        break;
+    case tok::kw_true:
+    case tok::kw_false:
+        Res = Actions.ActOnBooleanConstant(Tok);
         ConsumeToken();
         break;
     case tok::identifier:
@@ -1484,6 +1491,7 @@ C2::StmtResult C2Parser::ParseStatement() {
     case tok::kw_void:
     case tok::kw_char:
     case tok::kw_uchar:
+    case tok::kw_bool:
     case tok::kw_const:
     case tok::kw_volatile:
     case tok::kw_local:

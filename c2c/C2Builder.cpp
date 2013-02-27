@@ -126,7 +126,6 @@ public:
     }
 
     bool parse(const BuildOptions& options) {
-        printf("------ parsing %s ------\n", filename.c_str());
         u_int64_t t1 = Utils::getCurrentTime();
         // parse the file into AST
         bool ok = parser.Parse();
@@ -226,7 +225,7 @@ C2Builder::~C2Builder()
 }
 
 void C2Builder::build() {
-    printf("------ Building target %s ------\n", recipe.name.c_str());
+    printf(ANSI_GREEN"building target %s"ANSI_NORMAL"\n", recipe.name.c_str());
 
     // TODO save these common objects in Builder class?
     // LangOptions

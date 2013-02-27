@@ -30,8 +30,7 @@ type S3 struct {
     int[100] data;
     int[12][12] board;
     int count;
-    utils::Bla bb;
-    foo::Bar cc;
+    utils::Buffer bb;
 }
 
 /*
@@ -60,7 +59,7 @@ type S2 struct {
 type Data union {
     int bla;
     string text;
-    u64 number;
+    u32 number;
 }
 
 // -- ENUMS --

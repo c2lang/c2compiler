@@ -132,6 +132,19 @@ void StringExpr::generateC(int indent, StringBuilder& buffer) {
 }
 
 
+EXPR_VISITOR_ACCEPT(BoolLiteralExpr);
+
+void BoolLiteralExpr::print(int indent, StringBuilder& buffer) {
+    buffer.indent(indent);
+    buffer << "[bool " << value << "]\n";
+}
+
+void BoolLiteralExpr::generateC(int indent, StringBuilder& buffer) {
+    buffer.indent(indent);
+    buffer << (int)value;
+}
+
+
 EXPR_VISITOR_ACCEPT(CharLiteralExpr);
 
 void CharLiteralExpr::print(int indent, StringBuilder& buffer) {

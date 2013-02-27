@@ -43,8 +43,18 @@ public:
 private:
     void EnterScope();
     void ExitScope();
-    void analyseCompound(Stmt* stmt);
+
+    void analyseStmt(Stmt* stmt);
+    void analyseCompoundStmt(Stmt* stmt);
+    void analyseIfStmt(Stmt* stmt);
+    void analyseWhileStmt(Stmt* stmt);
+    void analyseDoStmt(Stmt* stmt);
+    void analyseForStmt(Stmt* stmt);
+    void analyseSwitchStmt(Stmt* stmt);
+    void analyseCaseStmt(Stmt* stmt);
+    void analyseDefaultStmt(Stmt* stmt);
     void analyseReturnStmt(Stmt* stmt);
+
     void analyseStmtExpr(Stmt* stmt);
     void analyseExpr(Expr* expr);
     void analyseDeclExpr(Expr* expr);

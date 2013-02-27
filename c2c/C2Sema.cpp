@@ -468,21 +468,20 @@ C2::ExprResult C2Sema::ActOnBuiltinType(C2Type t) {
     return ExprResult(new TypeExpr(type));
 }
 
-C2::ExprResult C2Sema::ActOnStructType(SourceLocation leftBrace, SourceLocation rightBrace, ExprList& members, bool isStruct) {
+C2::ExprResult C2Sema::ActOnStructType(SourceLocation leftBrace, SourceLocation rightBrace,
+                                       ExprList& members, bool isStruct) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: Struct/Union Type"ANSI_NORMAL"\n";
 #endif
     Type* type = new Type(isStruct ? Type::STRUCT : Type::UNION);
     // TODO use left/rightBrace
+    MemberList members2;
     for (unsigned int i=0; i<members.size(); i++) {
-        fprintf(stderr, ANSI_DARKGREY"FIX ADDSTRUCTMEMBER()"ANSI_NORMAL"\n");
         DeclExpr* member = ExprCaster<DeclExpr>::getType(members[i]);
         assert(member);
-        // NOTE: memleak on members (but we get type from it.. HACK HACK!)
-        // HACK: type ownership transfers..
-        // TODO Type should use Expr
-        type->addStructMember(member->getName().c_str(), member->getType());
+        members2.push_back(member);
     }
+    type->setMembers(members2);
     return ExprResult(new TypeExpr(type));
 }
 
@@ -583,6 +582,13 @@ void C2Sema::visitAST(ASTVisitor& visitor) {
         bool stop = visitor.handle(decls[i]);
         if (stop) break;
     }
+}
+
+C2::ExprResult C2Sema::ActOnBooleanConstant(const Token& Tok) {
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: boolean constant"ANSI_NORMAL"\n";
+#endif
+    return ExprResult(new BoolLiteralExpr(Tok.getLocation(), Tok.is(tok::kw_true)));
 }
 
 C2::ExprResult C2Sema::ActOnNumericConstant(const Token& Tok) {

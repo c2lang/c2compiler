@@ -17,6 +17,7 @@
 #define C2TYPE_H
 
 #include <string>
+#include "OwningVector.h"
 
 #define TYPE_CONST      (1<<1) 
 #define TYPE_VOLATILE   (1<<2)
@@ -28,12 +29,14 @@ class Type;
 
 namespace C2 {
 class StringBuilder;
-class StructMember;
 class EnumValue;
 class Argument;
 class CodeGenContext;
 class Expr;
 class IdentifierExpr;
+class DeclExpr;
+
+typedef OwningVector<C2::DeclExpr> MemberList;
 
 class Type {
 public:
@@ -71,7 +74,8 @@ public:
     void setArrayExpr(Expr* expr) { arrayExpr = expr; }
 
     // STRUCT/UNION
-    void addStructMember(const char* name_, Type* type_);
+    void setMembers(MemberList& members_);
+    MemberList* getMembers() const;
 
     // ENUM
     void addEnumValue(const char* name_, int value_);
@@ -118,7 +122,7 @@ private:
         IdentifierExpr* userType;
 
         // struct | union specific
-        StructMember* members;
+        MemberList* members;
 
         // enum
         EnumValue* enumValues;
@@ -152,6 +156,7 @@ enum C2Type {
     TYPE_STRING,
     TYPE_FLOAT,
     TYPE_CHAR,
+    TYPE_BOOL,
     TYPE_VOID,
 };
 

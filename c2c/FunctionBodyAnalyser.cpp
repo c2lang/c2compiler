@@ -64,7 +64,7 @@ bool FunctionBodyAnalyser::handle(Decl* decl) {
                 // TODO MEMLEAK in VarDecl -> or throw away in ~Scope() ?
                 curScope->addDecl(new VarDecl(de, false, true));
             }
-            analyseCompound(func->getBody());
+            analyseCompoundStmt(func->getBody());
             ExitScope();
         }
         break;
@@ -88,37 +88,137 @@ void FunctionBodyAnalyser::ExitScope() {
     curScope = parent;
 }
 
-void FunctionBodyAnalyser::analyseCompound(Stmt* stmt) {
+void FunctionBodyAnalyser::analyseStmt(Stmt* S) {
+    switch (S->stype()) {
+    case STMT_RETURN:
+        analyseReturnStmt(S);
+        break;
+    case STMT_EXPR:
+        analyseStmtExpr(S);
+        break;
+    case STMT_IF:
+        analyseIfStmt(S);
+        break;
+    case STMT_WHILE:
+        analyseWhileStmt(S);
+        break;
+    case STMT_DO:
+        analyseDoStmt(S);
+        break;
+    case STMT_FOR:
+        analyseForStmt(S);
+        break;
+    case STMT_SWITCH:
+        analyseSwitchStmt(S);
+        break;
+    case STMT_CASE:
+    case STMT_DEFAULT:
+        assert(0 && "not done here");
+        break;
+    case STMT_BREAK:
+    case STMT_CONTINUE:
+    case STMT_LABEL:
+    case STMT_GOTO:
+        break;
+    case STMT_COMPOUND:
+        EnterScope();
+        analyseCompoundStmt(S);
+        ExitScope();
+        break;
+    }
+}
+
+void FunctionBodyAnalyser::analyseCompoundStmt(Stmt* stmt) {
     CompoundStmt* compound = StmtCaster<CompoundStmt>::getType(stmt);
     assert(compound);
     const StmtList& stmts = compound->getStmts();
     for (unsigned int i=0; i<stmts.size(); i++) {
-        Stmt* S = stmts[i];
-        switch (S->stype()) {
-        case STMT_RETURN:
-            analyseReturnStmt(S);
-            break;
-        case STMT_EXPR:
-            analyseStmtExpr(S);
-            break;
-        case STMT_IF:
-        case STMT_WHILE:
-        case STMT_DO:
-        case STMT_FOR:
-        case STMT_SWITCH:
+        analyseStmt(stmts[i]);
+    }
+}
+
+void FunctionBodyAnalyser::analyseIfStmt(Stmt* stmt) {
+    // NOTE: if does not have separate Scope yet
+    IfStmt* I = StmtCaster<IfStmt>::getType(stmt);
+    assert(I);
+    Stmt* condSt = I->getCond();
+    Expr* cond = StmtCaster<Expr>::getType(condSt);
+    assert(cond);
+    analyseExpr(cond);
+    analyseStmt(I->getThen());
+    Stmt* elseSt = I->getElse();
+    if (elseSt) analyseStmt(elseSt);
+}
+
+void FunctionBodyAnalyser::analyseWhileStmt(Stmt* stmt) {
+    // NOTE: if does not have separate Scope yet
+    WhileStmt* W = StmtCaster<WhileStmt>::getType(stmt);
+    assert(W);
+    analyseStmt(W->getCond());
+    analyseStmt(W->getBody());
+}
+
+void FunctionBodyAnalyser::analyseDoStmt(Stmt* stmt) {
+    DoStmt* D = StmtCaster<DoStmt>::getType(stmt);
+    assert(D);
+    analyseStmt(D->getCond());
+    analyseStmt(D->getBody());
+}
+
+void FunctionBodyAnalyser::analyseForStmt(Stmt* stmt) {
+    ForStmt* F = StmtCaster<ForStmt>::getType(stmt);
+    assert(F);
+    if (F->getInit()) analyseStmt(F->getInit());
+    if (F->getCond()) analyseExpr(F->getCond());
+    if (F->getIncr()) analyseExpr(F->getIncr());
+    analyseStmt(F->getBody());
+}
+
+void FunctionBodyAnalyser::analyseSwitchStmt(Stmt* stmt) {
+    SwitchStmt* S = StmtCaster<SwitchStmt>::getType(stmt);
+    assert(S);
+    analyseExpr(S->getCond());
+    const StmtList& Cases = S->getCases();
+    Stmt* defaultStmt = 0;
+    for (unsigned i=0; i<Cases.size(); i++) {
+        Stmt* C = Cases[i];
+        switch (C->stype()) {
         case STMT_CASE:
+            analyseCaseStmt(C);
+            break;
         case STMT_DEFAULT:
-        case STMT_BREAK:
-        case STMT_CONTINUE:
-        case STMT_LABEL:
-        case STMT_GOTO:
+            if (defaultStmt) {
+                fprintf(stderr, "multiple defaults TODO\n");
+                // TODO need location
+                //diag::err_multiple_default_labels_defined
+                //diag::note_duplicate_case_prev
+            } else {
+                defaultStmt = C;
+            }
+            analyseDefaultStmt(C);
             break;
-        case STMT_COMPOUND:
-            EnterScope();
-            analyseCompound(S);
-            ExitScope();
-            break;
+        default:
+            assert(0);
         }
+    }
+}
+
+void FunctionBodyAnalyser::analyseCaseStmt(Stmt* stmt) {
+    CaseStmt* C = StmtCaster<CaseStmt>::getType(stmt);
+    assert(C);
+    analyseExpr(C->getCond());
+    const StmtList& stmts = C->getStmts();
+    for (unsigned int i=0; i<stmts.size(); i++) {
+        analyseStmt(stmts[i]);
+    }
+}
+
+void FunctionBodyAnalyser::analyseDefaultStmt(Stmt* stmt) {
+    DefaultStmt* D = StmtCaster<DefaultStmt>::getType(stmt);
+    assert(D);
+    const StmtList& stmts = D->getStmts();
+    for (unsigned int i=0; i<stmts.size(); i++) {
+        analyseStmt(stmts[i]);
     }
 }
 
@@ -139,6 +239,7 @@ void FunctionBodyAnalyser::analyseExpr(Expr* expr) {
     switch (expr->ntype()) {
     case EXPR_NUMBER:
     case EXPR_STRING:
+    case EXPR_BOOL:
     case EXPR_CHARLITERAL:
         break;
     case EXPR_CALL:

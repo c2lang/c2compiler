@@ -101,6 +101,10 @@ public:
     virtual void print(int indent, StringBuilder& buffer);
     virtual void generateC(int indent, StringBuilder& buffer);
     virtual llvm::Value* codeGen(CodeGenContext& context);
+
+    Stmt* getCond() const { return SubExprs[COND]; }
+    Stmt* getThen() const { return SubExprs[THEN]; }
+    Stmt* getElse() const { return SubExprs[ELSE]; }
 private:
     enum { VAR, COND, THEN, ELSE, END_EXPR };
     Stmt* SubExprs[END_EXPR];
@@ -120,6 +124,9 @@ public:
     virtual void print(int indent, StringBuilder& buffer);
     virtual void generateC(int indent, StringBuilder& buffer);
     virtual llvm::Value* codeGen(CodeGenContext& context);
+
+    Stmt* getCond() const { return Cond; }
+    Stmt* getBody() const { return Then; }
 private:
     SourceLocation Loc;
     Stmt* Cond;
@@ -137,6 +144,9 @@ public:
     virtual void print(int indent, StringBuilder& buffer);
     virtual void generateC(int indent, StringBuilder& buffer);
     virtual llvm::Value* codeGen(CodeGenContext& context);
+
+    Stmt* getCond() const { return Cond; }
+    Stmt* getBody() const { return Then; }
 private:
     SourceLocation Loc;
     Stmt* Cond;
@@ -154,6 +164,11 @@ public:
     virtual void print(int indent, StringBuilder& buffer);
     virtual void generateC(int indent, StringBuilder& buffer);
     virtual llvm::Value* codeGen(CodeGenContext& context);
+
+    Stmt* getInit() const { return Init; }
+    Expr* getCond() const { return Cond; }
+    Expr* getIncr() const { return Incr; }
+    Stmt* getBody() const { return Body; }
 private:
     SourceLocation Loc;
     Stmt* Init;
@@ -173,6 +188,9 @@ public:
     virtual void print(int indent, StringBuilder& buffer);
     virtual void generateC(int indent, StringBuilder& buffer);
     virtual llvm::Value* codeGen(CodeGenContext& context);
+
+    Expr* getCond() const { return Cond; }
+    const StmtList& getCases() const { return Cases; }
 private:
     SourceLocation Loc;
     Expr* Cond;
@@ -190,6 +208,10 @@ public:
     virtual void print(int indent, StringBuilder& buffer);
     virtual void generateC(int indent, StringBuilder& buffer);
     virtual llvm::Value* codeGen(CodeGenContext& context);
+
+    SourceLocation getLocation() const { return Loc; }
+    Expr* getCond() const { return Cond; }
+    const StmtList& getStmts() const { return Stmts; }
 private:
     SourceLocation Loc;
     Expr* Cond;
@@ -207,6 +229,9 @@ public:
     virtual void print(int indent, StringBuilder& buffer);
     virtual void generateC(int indent, StringBuilder& buffer);
     virtual llvm::Value* codeGen(CodeGenContext& context);
+
+    SourceLocation getLocation() const { return Loc; }
+    const StmtList& getStmts() const { return Stmts; }
 private:
     SourceLocation Loc;
     StmtList Stmts;
@@ -287,6 +312,7 @@ public:
     virtual void print(int indent, StringBuilder& buffer);
     virtual void generateC(int indent, StringBuilder& buffer);
     virtual llvm::Value* codeGen(CodeGenContext& context);
+
     const StmtList& getStmts() const { return Stmts; }
 private:
     SourceLocation Left;

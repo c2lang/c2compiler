@@ -1,5 +1,8 @@
 package iter_test;
 
+func void a() {}
+func void b() {}
+
 func void test1() {
     while (1) {
     }
@@ -7,15 +10,13 @@ func void test1() {
 
 func void test2() {
     while (1) {
-        test2();
         break;
-        bliep();
     }
 }
 
 func void test3() {
     do {
-        test();
+        test1();
     } while (0);
 }
 
@@ -25,7 +26,7 @@ func void test4() {
 
 func void test5() {
     for (10; 20; 30) {
-        call();
+        a();
     }
 
     for (;;) {

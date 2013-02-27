@@ -66,6 +66,7 @@ public:
 
     void dump() const;
 private:
+    int checkStructType(Type* type, bool used_public);
     int checkUserType(IdentifierExpr* id, bool used_public);
 
     const std::string pkgName;
