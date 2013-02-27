@@ -24,5 +24,7 @@ func void main(int argc, char*[] argv) {
     int e;
     return other::value;     // ok
     return other::count; // not visible
+
+    break;  // error, not in loop
 }
 

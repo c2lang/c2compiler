@@ -248,6 +248,8 @@ public:
     virtual void print(int indent, StringBuilder& buffer);
     virtual void generateC(int indent, StringBuilder& buffer);
     virtual llvm::Value* codeGen(CodeGenContext& context);
+
+    SourceLocation getLocation() const { return Loc; }
 private:
     SourceLocation Loc;
 };
@@ -263,6 +265,8 @@ public:
     virtual void print(int indent, StringBuilder& buffer);
     virtual void generateC(int indent, StringBuilder& buffer);
     virtual llvm::Value* codeGen(CodeGenContext& context);
+
+    SourceLocation getLocation() const { return Loc; }
 private:
     SourceLocation Loc;
 };

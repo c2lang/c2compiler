@@ -41,16 +41,18 @@ public:
     virtual bool handle(Decl* decl);
     unsigned int getErrors() const { return errors; }
 private:
-    void EnterScope();
+    void EnterScope(unsigned int flags);
     void ExitScope();
 
-    void analyseStmt(Stmt* stmt);
+    void analyseStmt(Stmt* stmt, bool haveScope = false);
     void analyseCompoundStmt(Stmt* stmt);
     void analyseIfStmt(Stmt* stmt);
     void analyseWhileStmt(Stmt* stmt);
     void analyseDoStmt(Stmt* stmt);
     void analyseForStmt(Stmt* stmt);
     void analyseSwitchStmt(Stmt* stmt);
+    void analyseBreakStmt(Stmt* S);
+    void analyseContinueStmt(Stmt* S);
     void analyseCaseStmt(Stmt* stmt);
     void analyseDefaultStmt(Stmt* stmt);
     void analyseReturnStmt(Stmt* stmt);

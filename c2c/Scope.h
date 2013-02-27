@@ -91,16 +91,50 @@ private:
 
 class Scope {
 public:
-    Scope(GlobalScope& globals_, Scope* parent_);
+    /// ScopeFlags - These are bitfields that are or'd together when creating a
+    /// scope, which defines the sorts of things the scope contains.
+    enum ScopeFlags {
+        /// FnScope - This indicates that the scope corresponds to a function, which
+        /// means that labels are set here.
+        FnScope       = 0x01,
+
+        /// BreakScope - This is a while,do,switch,for, etc that can have break
+        /// stmts embedded into it.
+        BreakScope    = 0x02,
+
+        /// ContinueScope - This is a while,do,for, which can have continue
+        /// stmt embedded into it.
+        ContinueScope = 0x04,
+
+        /// DeclScope - This is a scope that can contain a declaration.  Some scopes
+        /// just contain loop constructs but don't contain decls.
+        DeclScope = 0x08,
+
+        /// ControlScope - The controlling scope in a if/switch/while/for statement.
+        ControlScope = 0x10,
+
+        /// BlockScope - This is a scope that corresponds to a block/closure object.
+        /// Blocks serve as top-level scopes for some objects like labels, they
+        /// also prevent things like break and continue.  BlockScopes always have
+        /// the FnScope and DeclScope flags set as well.
+        BlockScope = 0x40,
+
+        /// SwitchScope - This is a scope that corresponds to a switch statement.
+        SwitchScope = 0x800,
+    };
+    Scope(GlobalScope& globals_, Scope* parent_, unsigned int flags_);
 
     ScopeResult findSymbol(const std::string& name) const;
     ScopeResult findSymbol(const std::string& pkgname, const std::string& name) const;
     void addDecl(Decl* d);
 
     Scope* getParent() const { return parent; }
+    bool allowBreak() const { return Flags & BreakScope; }
+    bool allowContinue() const { return Flags & ContinueScope; }
 private:
     GlobalScope& globals;
     Scope* parent;
+    unsigned int Flags;
 
     // local decls (in scope)
     typedef std::vector<Decl*> Decls;

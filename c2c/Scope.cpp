@@ -202,10 +202,16 @@ ScopeResult GlobalScope::findSymbol(const std::string& symbol) const {
 
 
 
-Scope::Scope(GlobalScope& globals_, Scope* parent_)
+Scope::Scope(GlobalScope& globals_, Scope* parent_, unsigned int flags_)
     : globals(globals_)
     , parent(parent_)
-{}
+    , Flags(flags_)
+{
+    if (parent) {
+        if (parent->allowBreak()) Flags |= BreakScope;
+        if (parent->allowContinue()) Flags |= ContinueScope;
+    }
+}
 
 ScopeResult Scope::findSymbol(const std::string& symbol) const {
     // search this scope

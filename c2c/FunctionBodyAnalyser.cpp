@@ -45,7 +45,7 @@ bool FunctionBodyAnalyser::handle(Decl* decl) {
         {
             FunctionDecl* func = DeclCaster<FunctionDecl>::getType(decl);
             assert(func);
-            EnterScope();
+            EnterScope(Scope::FnScope | Scope::DeclScope);
             // add arguments to new scope
             // Note: duplicate argument names are already checked by Sema
             for (unsigned i=0; i<func->numArgs(); i++) {
@@ -78,8 +78,8 @@ bool FunctionBodyAnalyser::handle(Decl* decl) {
     return false;
 }
 
-void FunctionBodyAnalyser::EnterScope() {
-    curScope = new Scope(globalScope, curScope);
+void FunctionBodyAnalyser::EnterScope(unsigned int flags) {
+    curScope = new Scope(globalScope, curScope, flags);
 }
 
 void FunctionBodyAnalyser::ExitScope() {
@@ -88,7 +88,7 @@ void FunctionBodyAnalyser::ExitScope() {
     curScope = parent;
 }
 
-void FunctionBodyAnalyser::analyseStmt(Stmt* S) {
+void FunctionBodyAnalyser::analyseStmt(Stmt* S, bool haveScope) {
     switch (S->stype()) {
     case STMT_RETURN:
         analyseReturnStmt(S);
@@ -116,14 +116,18 @@ void FunctionBodyAnalyser::analyseStmt(Stmt* S) {
         assert(0 && "not done here");
         break;
     case STMT_BREAK:
+        analyseBreakStmt(S);
+        break;
     case STMT_CONTINUE:
+        analyseContinueStmt(S);
+        break;
     case STMT_LABEL:
     case STMT_GOTO:
         break;
     case STMT_COMPOUND:
-        EnterScope();
+        if (!haveScope) EnterScope(Scope::DeclScope);
         analyseCompoundStmt(S);
-        ExitScope();
+        if (!haveScope) ExitScope();
         break;
     }
 }
@@ -138,40 +142,52 @@ void FunctionBodyAnalyser::analyseCompoundStmt(Stmt* stmt) {
 }
 
 void FunctionBodyAnalyser::analyseIfStmt(Stmt* stmt) {
-    // NOTE: if does not have separate Scope yet
     IfStmt* I = StmtCaster<IfStmt>::getType(stmt);
     assert(I);
     Stmt* condSt = I->getCond();
     Expr* cond = StmtCaster<Expr>::getType(condSt);
     assert(cond);
     analyseExpr(cond);
-    analyseStmt(I->getThen());
+    EnterScope(Scope::DeclScope);
+    analyseStmt(I->getThen(), true);
+    ExitScope();
+
     Stmt* elseSt = I->getElse();
-    if (elseSt) analyseStmt(elseSt);
+    if (elseSt) {
+        EnterScope(Scope::DeclScope);
+        analyseStmt(elseSt, true);
+        ExitScope();
+    }
 }
 
 void FunctionBodyAnalyser::analyseWhileStmt(Stmt* stmt) {
-    // NOTE: if does not have separate Scope yet
     WhileStmt* W = StmtCaster<WhileStmt>::getType(stmt);
     assert(W);
     analyseStmt(W->getCond());
-    analyseStmt(W->getBody());
+    EnterScope(Scope::BreakScope | Scope::ContinueScope | Scope::DeclScope | Scope::ControlScope);
+    analyseStmt(W->getBody(), true);
+    ExitScope();
+
 }
 
 void FunctionBodyAnalyser::analyseDoStmt(Stmt* stmt) {
     DoStmt* D = StmtCaster<DoStmt>::getType(stmt);
     assert(D);
-    analyseStmt(D->getCond());
+    EnterScope(Scope::BreakScope | Scope::ContinueScope | Scope::DeclScope);
     analyseStmt(D->getBody());
+    ExitScope();
+    analyseStmt(D->getCond());
 }
 
 void FunctionBodyAnalyser::analyseForStmt(Stmt* stmt) {
     ForStmt* F = StmtCaster<ForStmt>::getType(stmt);
     assert(F);
+    EnterScope(Scope::BreakScope | Scope::ContinueScope | Scope::DeclScope | Scope::ControlScope);
     if (F->getInit()) analyseStmt(F->getInit());
     if (F->getCond()) analyseExpr(F->getCond());
     if (F->getIncr()) analyseExpr(F->getIncr());
-    analyseStmt(F->getBody());
+    analyseStmt(F->getBody(), true);
+    ExitScope();
 }
 
 void FunctionBodyAnalyser::analyseSwitchStmt(Stmt* stmt) {
@@ -180,6 +196,7 @@ void FunctionBodyAnalyser::analyseSwitchStmt(Stmt* stmt) {
     analyseExpr(S->getCond());
     const StmtList& Cases = S->getCases();
     Stmt* defaultStmt = 0;
+    EnterScope(Scope::BreakScope | Scope::SwitchScope);
     for (unsigned i=0; i<Cases.size(); i++) {
         Stmt* C = Cases[i];
         switch (C->stype()) {
@@ -200,6 +217,23 @@ void FunctionBodyAnalyser::analyseSwitchStmt(Stmt* stmt) {
         default:
             assert(0);
         }
+    }
+    ExitScope();
+}
+
+void FunctionBodyAnalyser::analyseBreakStmt(Stmt* stmt) {
+    if (!curScope->allowBreak()) {
+        BreakStmt* B = StmtCaster<BreakStmt>::getType(stmt);
+        assert(B);
+        Diags.Report(B->getLocation(), diag::err_break_not_in_loop_or_switch);
+    }
+}
+
+void FunctionBodyAnalyser::analyseContinueStmt(Stmt* stmt) {
+    if (!curScope->allowContinue()) {
+        ContinueStmt* C = StmtCaster<ContinueStmt>::getType(stmt);
+        assert(C);
+        Diags.Report(C->getLocation(), diag::err_continue_not_in_loop);
     }
 }
 
