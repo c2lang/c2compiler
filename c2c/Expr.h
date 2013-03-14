@@ -46,6 +46,7 @@ enum ExprType {
     EXPR_SIZEOF,
     EXPR_ARRAYSUBSCRIPT,
     EXPR_MEMBER,
+    EXPR_PAREN,
 };
 
 
@@ -54,15 +55,17 @@ public:
     Expr();
     virtual ~Expr();
     // from Stmt
-    virtual StmtType stype() { return STMT_EXPR; }
+    virtual StmtType stype() const { return STMT_EXPR; }
     virtual void acceptS(StmtVisitor& v);
 
-    virtual ExprType ntype() = 0;
+    virtual ExprType etype() const = 0;
     virtual void acceptE(ExprVisitor& v) = 0;
 
     virtual clang::SourceRange getSourceRange() {
         return clang::SourceRange();
     }
+    virtual SourceLocation getExprLoc() const = 0;
+
     void setStatementFlag() { isStatement = true; }
     bool isStmt() const { return isStatement; }
 private:
@@ -78,11 +81,12 @@ class NumberExpr : public Expr {
 public:
     NumberExpr(SourceLocation loc_, double val)
         : value(val), loc(loc_) {}
-    virtual ExprType ntype() { return EXPR_NUMBER; }
+    virtual ExprType etype() const { return EXPR_NUMBER; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer);
     virtual void generateC(int indent, StringBuilder& buffer);
     virtual llvm::Value* codeGen(CodeGenContext& context);
+    virtual SourceLocation getExprLoc() const { return loc; }
 
     double value;
     clang::SourceLocation loc;
@@ -93,11 +97,12 @@ class StringExpr : public Expr {
 public:
     StringExpr(SourceLocation loc_, const std::string& val)
         : value(val), loc(loc_) {}
-    virtual ExprType ntype() { return EXPR_STRING; }
+    virtual ExprType etype() const { return EXPR_STRING; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer);
     virtual void generateC(int indent, StringBuilder& buffer);
     virtual llvm::Value* codeGen(CodeGenContext& context);
+    virtual SourceLocation getExprLoc() const { return loc; }
 
     std::string value;
     clang::SourceLocation loc;
@@ -108,11 +113,12 @@ class BoolLiteralExpr : public Expr {
 public:
     BoolLiteralExpr(SourceLocation loc_, bool val)
         : value(val), loc(loc_) {}
-    virtual ExprType ntype() { return EXPR_BOOL; }
+    virtual ExprType etype() const { return EXPR_BOOL; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer);
     virtual void generateC(int indent, StringBuilder& buffer);
     virtual llvm::Value* codeGen(CodeGenContext& context);
+    virtual SourceLocation getExprLoc() const { return loc; }
 
     bool value;
     clang::SourceLocation loc;
@@ -123,11 +129,12 @@ class CharLiteralExpr : public Expr {
 public:
     CharLiteralExpr(SourceLocation loc_, unsigned val)
         : value(val), loc(loc_) {}
-    virtual ExprType ntype() { return EXPR_CHARLITERAL; }
+    virtual ExprType etype() const { return EXPR_CHARLITERAL; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer);
     virtual void generateC(int indent, StringBuilder& buffer);
     virtual llvm::Value* codeGen(CodeGenContext& context);
+    virtual SourceLocation getExprLoc() const { return loc; }
 
     unsigned value;
     clang::SourceLocation loc;
@@ -136,21 +143,18 @@ public:
 
 class IdentifierExpr : public Expr {
 public:
-    IdentifierExpr(SourceLocation ploc_, const std::string& pname_,
-                   SourceLocation loc_, const std::string& name_)
-        : pname(pname_), ploc(ploc_), name(name_), loc(loc_) {}
-    virtual ExprType ntype() { return EXPR_IDENTIFIER; }
+    IdentifierExpr(SourceLocation loc_, const std::string& name_)
+        : name(name_), loc(loc_) {}
+    virtual ExprType etype() const { return EXPR_IDENTIFIER; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer);
     virtual void generateC(int indent, StringBuilder& buffer);
     virtual llvm::Value* codeGen(CodeGenContext& context);
+    virtual SourceLocation getExprLoc() const { return loc; }
 
-    // NOTE uses static var
-    const char* getName() const;
+    const std::string& getName() const { return name; }
     SourceLocation getLocation() const { return loc; }
-
-    std::string pname;
-    clang::SourceLocation ploc;
+private:
     std::string name;
     clang::SourceLocation loc;
 };
@@ -160,12 +164,16 @@ class TypeExpr : public Expr {
 public:
     TypeExpr(Type* type_) : type(type_) {}
     virtual ~TypeExpr();
-    virtual ExprType ntype() { return EXPR_TYPE; }
+    virtual ExprType etype() const { return EXPR_TYPE; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer);
     virtual void generateC(int indent, StringBuilder& buffer);
     virtual llvm::Value* codeGen(CodeGenContext& context);
-
+    virtual SourceLocation getExprLoc() const {
+        // TODO
+        SourceLocation loc;
+        return loc;
+    }
     void addArray(Expr* sizeExpr);
     void addPointer();
     void addQualifier(unsigned int qualifier);
@@ -181,24 +189,25 @@ private:
 
 class CallExpr : public Expr {
 public:
-    CallExpr(IdentifierExpr* Fn_)
+    CallExpr(Expr* Fn_)
         : Fn(Fn_)
     {}
     virtual ~CallExpr();
-    virtual ExprType ntype() { return EXPR_CALL; }
+    virtual ExprType etype() const { return EXPR_CALL; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer);
     virtual void generateC(int indent, StringBuilder& buffer);
     virtual llvm::Value* codeGen(CodeGenContext& context);
 
     void addArg(Expr* arg);
+    virtual SourceLocation getExprLoc() const { return Fn->getExprLoc(); }
 
-    IdentifierExpr* getId() const { return Fn; }
+    Expr* getFn() const { return Fn; }
     Expr* getArg(unsigned int i) const { return args[i]; }
     unsigned int numArgs() const { return args.size(); }
 private:
     // TODO add R/LParen
-    IdentifierExpr* Fn;
+    Expr* Fn;
     typedef OwningVector<Expr> Args;
     Args args;
 };
@@ -208,11 +217,12 @@ class InitListExpr : public Expr {
 public:
     InitListExpr(SourceLocation lbraceLoc, SourceLocation rbraceLoc, ExprList& values_);
     virtual ~InitListExpr();
-    virtual ExprType ntype() { return EXPR_INITLIST; }
+    virtual ExprType etype() const { return EXPR_INITLIST; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer);
     virtual void generateC(int indent, StringBuilder& buffer);
     virtual llvm::Value* codeGen(CodeGenContext& context);
+    virtual SourceLocation getExprLoc() const { return leftBrace; }
 private:
     SourceLocation leftBrace;
     SourceLocation rightBrace;
@@ -225,13 +235,14 @@ public:
     DeclExpr(const std::string& name_, SourceLocation& loc_,
             Type* type_, Expr* initValue_);
     virtual ~DeclExpr();
-    virtual ExprType ntype() { return EXPR_DECL; }
+    virtual ExprType etype() const { return EXPR_DECL; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer);
     virtual void generateC(int indent, StringBuilder& buffer);
     // used by VarDecls only to add pkgName
     virtual void generateC(StringBuilder& buffer, const std::string& pkgName);
     virtual llvm::Value* codeGen(CodeGenContext& context);
+    virtual SourceLocation getExprLoc() const { return loc; }
 
     Type* getType() const { return type; }
     const std::string& getName() const { return name; }
@@ -250,11 +261,12 @@ public:
 
     BinOpExpr(Expr* lhs, Expr* rhs, Opcode opc, SourceLocation opLoc);
     virtual ~BinOpExpr();
-    virtual ExprType ntype() { return EXPR_BINOP; }
+    virtual ExprType etype() const { return EXPR_BINOP; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer);
     virtual void generateC(int indent, StringBuilder& buffer);
     virtual llvm::Value* codeGen(CodeGenContext& context);
+    virtual SourceLocation getExprLoc() const { return lhs->getExprLoc(); }
 
     Expr* getLeft() const { return lhs; }
     Expr* getRight() const { return rhs; }
@@ -272,13 +284,16 @@ public:
 
     UnaryOpExpr(SourceLocation opLoc_, Opcode opc, Expr* val_);
     virtual ~UnaryOpExpr();
-    virtual ExprType ntype() { return EXPR_UNARYOP; }
+    virtual ExprType etype() const { return EXPR_UNARYOP; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer);
     virtual void generateC(int indent, StringBuilder& buffer);
     virtual llvm::Value* codeGen(CodeGenContext& context);
+    virtual SourceLocation getExprLoc() const { return opLoc; }
 
     Expr* getExpr() const { return val; }
+    Opcode getOpcode() const { return opc; }
+    SourceLocation getOpLoc() const { return opLoc; }
 private:
     SourceLocation opLoc;
     Opcode opc;
@@ -290,11 +305,12 @@ class SizeofExpr : public Expr {
 public:
     SizeofExpr(SourceLocation Loc, Expr* expr_);
     virtual ~SizeofExpr();
-    virtual ExprType ntype() { return EXPR_SIZEOF; }
+    virtual ExprType etype() const { return EXPR_SIZEOF; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer);
     virtual void generateC(int indent, StringBuilder& buffer);
     virtual llvm::Value* codeGen(CodeGenContext& context);
+    virtual SourceLocation getExprLoc() const { return Loc; }
 
     Expr* getExpr() const { return expr; }
 private:
@@ -307,11 +323,12 @@ class ArraySubscriptExpr : public Expr {
 public:
     ArraySubscriptExpr(SourceLocation RLoc_, Expr* Base_, Expr* Idx_);
     virtual ~ArraySubscriptExpr();
-    virtual ExprType ntype() { return EXPR_ARRAYSUBSCRIPT; }
+    virtual ExprType etype() const { return EXPR_ARRAYSUBSCRIPT; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer);
     virtual void generateC(int indent, StringBuilder& buffer);
     virtual llvm::Value* codeGen(CodeGenContext& context);
+    virtual SourceLocation getExprLoc() const { return base->getExprLoc(); }
 
     Expr* getBase() const { return base; }
     Expr* getIndex() const { return idx; }
@@ -324,21 +341,51 @@ private:
 
 class MemberExpr : public Expr {
 public:
-    MemberExpr(Expr* Base_, bool isArrow_, Expr* Member_)
+    MemberExpr(Expr* Base_, bool isArrow_, IdentifierExpr* Member_)
         : Base(Base_)
         , Member(Member_)
         , isArrow(isArrow_)
     {}
     virtual ~MemberExpr();
-    virtual ExprType ntype() { return EXPR_MEMBER; }
+    virtual ExprType etype() const { return EXPR_MEMBER; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer);
     virtual void generateC(int indent, StringBuilder& buffer);
     virtual llvm::Value* codeGen(CodeGenContext& context);
+    virtual SourceLocation getExprLoc() const { return Base->getExprLoc(); }
+
+    Expr* getBase() const { return Base; }
+    IdentifierExpr* getMember() const { return Member; }
+    bool isArrowOp() const { return isArrow; }
+    // NOTE: uses static var
+    const char* getFullName() const;
 private:
     Expr* Base;
-    Expr* Member;
+    IdentifierExpr* Member;
     bool isArrow;
+};
+
+
+class ParenExpr : public Expr {
+public:
+    ParenExpr(SourceLocation l, SourceLocation r, Expr* val)
+        : L(l), R(r), Val(val)
+    {}
+    virtual ~ParenExpr();
+    virtual ExprType etype() const { return EXPR_PAREN; }
+    virtual void acceptE(ExprVisitor& v);
+    virtual void print(int indent, StringBuilder& buffer);
+    virtual void generateC(int indent, StringBuilder& buffer);
+    virtual llvm::Value* codeGen(CodeGenContext& context);
+    virtual SourceLocation getExprLoc() const { return L; }
+
+    Expr* getExpr() const { return Val; }
+    clang::SourceRange getSourceRange() const { return clang::SourceRange(L, R); }
+    SourceLocation getLParen() const { return L; }
+    SourceLocation getRParen() const { return R; }
+private:
+    SourceLocation L, R;
+    Expr* Val;
 };
 
 
@@ -360,6 +407,7 @@ public:
     virtual void visit(SizeofExpr&) {}
     virtual void visit(ArraySubscriptExpr&) {}
     virtual void visit(MemberExpr&) {}
+    virtual void visit(ParenExpr&) {}
 };
 
 #define EXPR_VISITOR_ACCEPT(a) void a::acceptE(ExprVisitor& v) { v.visit(*this); }

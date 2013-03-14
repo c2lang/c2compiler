@@ -33,7 +33,6 @@ class EnumValue;
 class Argument;
 class CodeGenContext;
 class Expr;
-class IdentifierExpr;
 class DeclExpr;
 
 typedef OwningVector<C2::DeclExpr> MemberList;
@@ -42,7 +41,7 @@ class Type {
 public:
     enum Kind {
         BUILTIN = 0,
-        USER,       // used when parsing (underlying type is unknown yet)
+        USER,       // used when parsing (underlying type is set in refType during analysis)
         STRUCT,
         UNION,
         ENUM,
@@ -59,7 +58,13 @@ public:
 
     // generic
     Kind getKind() const { return kind; }
-    void setRefTyp(Type* refType_) { refType = refType_; }
+    Type* getRefType() const { return refType; }
+    void setRefType(Type* t);
+    bool isUserType() const { return kind == USER; }
+    bool isFuncType() const { return kind == FUNC; }
+    bool isStructOrUnionType() const { return kind == STRUCT || kind == UNION; }
+    bool isSubscriptable() const { return kind == ARRAY || kind == POINTER; }
+    bool isPointerType() const { return kind == POINTER; }
 
     // Builtin type
     void setBuiltinName(const char* name_, const char* cname_) {
@@ -68,7 +73,8 @@ public:
     }
 
     // user type
-    void setUserType(IdentifierExpr* expr) { userType = expr; }
+    void setUserType(Expr* expr) { userType = expr; }
+    Expr* getUserType() const { return userType; }
 
     // ARRAY
     void setArrayExpr(Expr* expr) { arrayExpr = expr; }
@@ -83,6 +89,7 @@ public:
     // FUNC
     void setReturnType(Type* type);
     void addArgument(Type* type);
+    Type* getReturnType() const { return returnType; }
 
     // QUALIFIER
     void setQualifier(unsigned int flags);
@@ -99,7 +106,7 @@ public:
 
     // for analysis
     bool hasBuiltinBase() const;
-    IdentifierExpr* getBaseUserType() const;
+    Expr* getBaseUserType() const;
 
     llvm::Type* convert(CodeGenContext& C);
 private:
@@ -118,8 +125,8 @@ private:
             const char* cname;
         };
 
-        // user types
-        IdentifierExpr* userType;
+        // user types, can be IdentifierExpr or MemberExpr
+        Expr* userType;
 
         // struct | union specific
         MemberList* members;

@@ -22,6 +22,7 @@
 
 #include "C2Sema.h"
 #include "Decl.h"
+#include "Expr.h"
 #include "StringBuilder.h"
 #include "color.h"
 #include "ASTVisitor.h"
@@ -245,7 +246,7 @@ C2::StmtResult C2Sema::ActOnReturnStmt(SourceLocation loc, Expr* value) {
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    return StmtResult(new ReturnStmt(value));
+    return StmtResult(new ReturnStmt(loc, value));
 }
 
 C2::StmtResult C2Sema::ActOnIfStmt(SourceLocation ifLoc,
@@ -374,11 +375,10 @@ C2::StmtResult C2Sema::ActOnDeclaration(const char* name, SourceLocation loc, Ex
     return StmtResult(declExpr);
 }
 
-C2::ExprResult C2Sema::ActOnCallExpr(Expr* id, Expr** args, unsigned numArgs, SourceLocation RParenLoc) {
-    IdentifierExpr* Fn = ExprCaster<IdentifierExpr>::getType(id);
+C2::ExprResult C2Sema::ActOnCallExpr(Expr* Fn, Expr** args, unsigned numArgs, SourceLocation RParenLoc) {
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: call to " << Fn->getName() << " at ";
-    Fn->getLocation().dump(SourceMgr);
+    std::cerr << COL_SEMA"SEMA: call to " << "TODO Fn" << " at " << "TODO Fn";
+    //expr2loc(Fn).dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
     CallExpr* call = new CallExpr(Fn);
@@ -387,17 +387,24 @@ C2::ExprResult C2Sema::ActOnCallExpr(Expr* id, Expr** args, unsigned numArgs, So
     return ExprResult(call);
 }
 
-C2::ExprResult C2Sema::ActOnIdExpression(IdentifierInfo* pkgII, SourceLocation pkgLoc,
-                                         IdentifierInfo& symII, SourceLocation symLoc) {
+C2::ExprResult C2Sema::ActOnIdExpression(IdentifierInfo& symII, SourceLocation symLoc) {
     std::string id(symII.getNameStart(), symII.getLength());
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: identifier " << id << " at ";
     symLoc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    std::string pkg;
-    if (pkgII) pkg = std::string(pkgII->getNameStart(), pkgII->getLength());
-    return ExprResult(new IdentifierExpr(pkgLoc, pkg, symLoc, id));
+    return ExprResult(new IdentifierExpr(symLoc, id));
+}
+
+C2::ExprResult C2Sema::ActOnParenExpr(SourceLocation L, SourceLocation R, Expr* E) {
+    assert(E && "missing expr");
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: paren expr at ";
+    L.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    return ExprResult(new ParenExpr(L, R, E));
 }
 
 C2::ExprResult C2Sema::ActOnBinOp(SourceLocation opLoc, tok::TokenKind Kind, Expr* LHS, Expr* RHS) {
@@ -448,15 +455,12 @@ C2::ExprResult C2Sema::ActOnPointerType(Expr* base) {
 }
 
 C2::ExprResult C2Sema::ActOnUserType(Expr* expr) {
+    assert(expr);
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: User Type"ANSI_NORMAL"\n";
 #endif
-    assert(expr);
-    IdentifierExpr* idExpr = ExprCaster<IdentifierExpr>::getType(expr);
-    assert(idExpr && "invalid expr type");
-
     Type* type = new Type(Type::USER, 0);
-    type->setUserType(idExpr);
+    type->setUserType(expr);
     return ExprResult(new TypeExpr(type));
 }
 
@@ -537,11 +541,13 @@ C2::ExprResult C2Sema::ActOnArraySubScriptExpr(SourceLocation RLoc, Expr* Base, 
 C2::ExprResult C2Sema::ActOnMemberExpr(Expr* Base, bool isArrow, Expr* Member) {
     assert(Base);
     assert(Member);
+    IdentifierExpr* Id = ExprCaster<IdentifierExpr>::getType(Member);
+    assert(Id);
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: member acces";
+    std::cerr << COL_SEMA"SEMA: member access";
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    return ExprResult(new MemberExpr(Base, isArrow, Member));
+    return ExprResult(new MemberExpr(Base, isArrow, Id));
 }
 
 C2::ExprResult C2Sema::ActOnPostfixUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Expr* Input) {

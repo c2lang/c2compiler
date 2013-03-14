@@ -60,14 +60,18 @@ private:
     void analyseReturnStmt(Stmt* stmt);
 
     void analyseStmtExpr(Stmt* stmt);
-    void analyseExpr(Expr* expr);
+    Type* analyseExpr(Expr* expr);
     void analyseDeclExpr(Expr* expr);
-    void analyseBinOpExpr(Expr* expr);
-    void analyseUnaryOpExpr(Expr* expr);
+    Type* analyseBinOpExpr(Expr* expr);
+    Type* analyseUnaryOpExpr(Expr* expr);
     void analyseSizeofExpr(Expr* expr);
-    void analyseArraySubscript(Expr* expr);
-    void analyseCall(Expr* expr);
-    void analyseIdentifier(Expr* expr);
+    Type* analyseArraySubscript(Expr* expr);
+    Type* analyseMemberExpr(Expr* expr);
+    Type* analyseParenExpr(Expr* expr);
+    Type* analyseCall(Expr* expr);
+    ScopeResult analyseIdentifier(Expr* expr);
+
+    static Type* resolveUserType(Type* T);
 
     GlobalScope& globalScope;
     Scope scopes[MAX_SCOPE_DEPTH];

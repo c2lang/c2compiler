@@ -309,7 +309,6 @@ C2::ExprResult C2Parser::ParseStructMember() {
         SourceLocation idLoc = ConsumeToken();
 
         if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "member")) return ExprError();
-        // TODO
         assert(0 && "TODO");
     } else {
         ExprResult type = ParseTypeSpecifier(true);
@@ -497,9 +496,7 @@ C2::ExprResult C2Parser::ParseSingleTypeSpecifier(bool allow_qualifier) {
         break;
     case tok::identifier:
         {
-            ExprResult Res = ParseIdentifier(true);
-            //base = new Type(0, Type::USER);
-            //base->setUserType(Res.release());
+            ExprResult Res = ParseFullIdentifier();
             base = Actions.ActOnUserType(Res.release());
         }
         break;
@@ -807,6 +804,14 @@ C2::ExprResult C2Parser::ParseCastExpression(bool isUnaryExpression,
         break;
     case tok::kw_sizeof:
         return ParseSizeof();
+    case tok::amp:
+    {
+        SourceLocation SavedLoc = ConsumeToken();
+        Res = ParseCastExpression(false, true);
+        if (!Res.isInvalid())
+            Res = Actions.ActOnUnaryOp(SavedLoc, SavedKind, Res.get());
+        return Res;
+    }
     case tok::star:          // unary-expression: '*' cast-expression
     case tok::plus:          // unary-expression: '+' cast-expression
     case tok::minus:         // unary-expression: '-' cast-expression
@@ -1070,8 +1075,9 @@ C2Parser::ParseParenExpression(ParenParseOption &ExprType, bool stopIfCastExpr,
                              bool isTypeCast, SourceLocation &RParenLoc)
 {
     LOG_FUNC
+
     assert(Tok.is(tok::l_paren) && "Not a paren expr!");
-    ConsumeToken();
+    SourceLocation OpenLoc = ConsumeToken();
 
     ExprResult Result(true);
 
@@ -1123,7 +1129,11 @@ C2Parser::ParseParenExpression(ParenParseOption &ExprType, bool stopIfCastExpr,
     } else if (isTypeCast) {
         assert(0 && "TODO");
     } else {
-        assert(0 && "TODO");
+        Result = ParseExpression();
+        ExprType = SimpleExpr;
+        if (!Result.isInvalid() && Tok.is(tok::r_paren)) {
+            Result = Actions.ActOnParenExpr(OpenLoc, Tok.getLocation(), Result.take());
+        }
     }
 
     // Match the ')'.
@@ -1140,65 +1150,64 @@ C2Parser::ParseParenExpression(ParenParseOption &ExprType, bool stopIfCastExpr,
 
 /*
     Declarations (type + name)
-        bla* bliep <init> -> yes
-        bla[] bliep <init> -> yes
-        bla*[] bliep <init> -> yes
-        bla bliep <init> -> yes
+        a* b <init> -> yes
+        a[] b <init> -> yes
+        a[10] b -> yes
+        a*[] b <init> -> yes
+        a b <init> -> yes
+        a.b c -> yes
     Assignments/Function calls
-        bla = ..     -> no
-        bla *= .. etc -> no
-        bla() -> no
-        bla[10] = .. -> no
+        a = ..     -> no
+        a *= .. etc -> no
+        a() -> no
+        a[10] = .. -> no
+        a.b.c .. -> no
+        a->b -> no
+        a.b->.. -> no
     // NOTE: Tok is first identifier
 */
-
 bool C2Parser::isTypeSpec() {
     assert(Tok.is(tok::identifier) && "Not an identifier!");
 
-    int lookahead = 1;  // skip first identifier
-    const Token& tok2 = GetLookAheadToken(lookahead);
-    if (tok2.is(tok::coloncolon)) {
-        lookahead++;
-        const Token& tok3 = GetLookAheadToken(lookahead);
-        if (tok3.isNot(tok::identifier)) {
-            // syntax error
-            assert(0 && "TODO handle syntax error");
-            return false;
-        }
-        lookahead++;
-    }
-
-    int state = 0;  // 0 = Number, 1 = pointers, 2 = arrays
+    int lookahead = 1;
+    // 0 = ID1, 1 = ID2, 2 = pointers, 3 = arrays
+    int state = 0;
     while (1) {
         const Token& t2 = GetLookAheadToken(lookahead);
         switch (t2.getKind()) {
+        case tok::period:
+            // expect: period + identifier
+            if (state == 0) {
+                const Token& t3 = GetLookAheadToken(lookahead+1);
+                if (t3.isNot(tok::identifier)) {
+                    // syntax error
+                    return false;
+                }
+                state = 2;
+                lookahead += 2;
+            } else {
+                return false;   // a.b.c
+            }
+            break;
         case tok::identifier:
-            if (state == 0) return true;    // Number num
-            return true;        // Number num
-        case tok::star:     // Number* num
-            if (state == 2) return false; // syntax error?
-            state = 1;
+            goto type_done;
+        case tok::star:
+            if (state == 3) return false; // a[1] * ..
+            state = 2;
             lookahead++;
             break;
         case tok::l_square:     // Number[] num
-        {
             lookahead = SkipArray(lookahead);
-            if (Diags.hasErrorOccurred()) return false;
-            state = 2;
+            state = 3;
             break;
-        }
-        case tok::equal:
-            if (state == 0) return false;     // 'foo =' -> assignment
-            if (state == 1) {
-                Diag(t2, diag::err_expected_expression);
-                return false;            // 'foo*' -> error
-            }
-            if (state == 2) return false;            // 'foo[..] =' -> assignment
         default:
-            return false;
+            goto type_done;
         }
     }
-    return false;
+type_done:
+    // if token after type is identifier, it's a decl, otherwise it's not
+    const Token& t2 = GetLookAheadToken(lookahead);
+    return (t2.is(tok::identifier));
 }
 
 bool C2Parser::isDeclaration() {
@@ -1353,29 +1362,33 @@ C2::ExprResult C2Parser::ParseSizeof()
 
 // Syntax:
 // identifier
-// identifier :: identifier
 C2::ExprResult C2Parser::ParseIdentifier(bool allow_package) {
     LOG_FUNC
     assert(Tok.is(tok::identifier) && "Not an identifier!");
 
-    IdentifierInfo* pkgII = 0;
-    SourceLocation pkgLoc;
     IdentifierInfo* symII = Tok.getIdentifierInfo();
     SourceLocation symLoc = ConsumeToken();
-    if (Tok.is(tok::coloncolon)) {
-        ConsumeToken();
-        if (ExpectIdentifier()) return ExprError();
-        pkgLoc = symLoc;
-        pkgII = symII;
-        symII = Tok.getIdentifierInfo();
-        symLoc = ConsumeToken();
-        if (!allow_package) {
-            // TODO add error msg, no package specifier is allowed here
-            fprintf(stderr, "NOT PACKAGE SPECIFIER ALLOWED HERE\n");
-            return ExprError();
-        }
-    }
-    return Actions.ActOnIdExpression(pkgII, pkgLoc, *symII, symLoc);
+    return Actions.ActOnIdExpression(*symII, symLoc);
+}
+
+// identifier
+// identifier.identifier
+C2::ExprResult C2Parser::ParseFullIdentifier() {
+    LOG_FUNC
+    assert(Tok.is(tok::identifier) && "Not an identifier!");
+    IdentifierInfo* symII = Tok.getIdentifierInfo();
+    SourceLocation symLoc = ConsumeToken();
+    ExprResult LHS = Actions.ActOnIdExpression(*symII, symLoc);
+
+    if (Tok.isNot(tok::period)) return LHS;
+    ConsumeToken(); // consume the '.'
+
+    if (ExpectIdentifier()) return ExprError();
+    IdentifierInfo* symII2 = Tok.getIdentifierInfo();
+    SourceLocation symLoc2 = ConsumeToken();
+    ExprResult RHS = Actions.ActOnIdExpression(*symII2, symLoc2);
+
+    return Actions.ActOnMemberExpr(LHS.release(), false, RHS.release());
 }
 
 /*
@@ -1503,12 +1516,7 @@ C2::StmtResult C2Parser::ParseStatement() {
             Diag(Tok, diag::err_expected_statement);
             return StmtError();
         }
-        // TEMP
-        std::cerr << "UNHANDLED TOKEN: ";
-        PP.DumpToken(Tok);
-        std::cerr << std::endl;
-        assert(0 && "unhandled token");
-        return StmtError(); // TODO
+        return ParseExprStatement();
     }
 }
 
@@ -1805,11 +1813,11 @@ C2::StmtResult C2Parser::ParseBreakStatement() {
 /*
   Syntax:
     Number num = .     // id = type
-    Utils::Type t = .  // id = pkg::type
+    Utils.Type t = .  // id = pkg.type
     myfunc()        // id = func
-    Pkg::func()     // id = pkg::func
+    Pkg.func()     // id = pkg.func
     count =         // id = var
-    Pkg::var =      // id = pkg::var
+    Pkg.var =      // id = pkg.var
     id:             // id = label
 */
 // TODO see Parser::ParseStatementOrDeclarationAfterAttributes()

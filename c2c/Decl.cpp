@@ -130,6 +130,16 @@ void FunctionDecl::addArg(DeclExpr* arg) {
     args.push_back(arg);
 }
 
+Type* FunctionDecl::getProto() const {
+    Type* proto = new Type(Type::FUNC);
+    // TODO return Type + arguments (both curretly take ownership)
+    //proto->setReturnType(rtype);
+    //proto->addArgument(Type*)
+    return proto;
+}
+
+
+
 #define VARDECL_INEXPR   0x1
 
 VarDecl::VarDecl(DeclExpr* decl_, bool is_public_, bool inExpr)

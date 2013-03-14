@@ -131,12 +131,12 @@ private:
     ExprResult ParseConstantExpression();
 
     // generic
-    // TODO remove Type* here (use ExprResult)
     ExprResult ParseSingleTypeSpecifier(bool allow_qualifier);
     ExprResult ParseTypeSpecifier(bool allow_qualifier);
     ExprResult ParseArray(ExprResult base);
     ExprResult ParseSizeof();
     ExprResult ParseIdentifier(bool allow_package);
+    ExprResult ParseFullIdentifier();
 
   //===--------------------------------------------------------------------===//
   // C99 6.8: Statements and Blocks.

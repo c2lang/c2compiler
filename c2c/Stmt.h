@@ -57,7 +57,7 @@ class Stmt {
 public:
     Stmt();
     virtual ~Stmt();
-    virtual StmtType stype() = 0;
+    virtual StmtType stype() const = 0;
     virtual void acceptS(StmtVisitor& v) = 0;
     virtual void print(int indent, StringBuilder& buffer) = 0;
     virtual void generateC(int indent, StringBuilder& buffer) = 0;
@@ -73,9 +73,9 @@ typedef OwningVector<Stmt> StmtList;
 
 class ReturnStmt : public Stmt {
 public:
-    ReturnStmt(Expr* value_);
+    ReturnStmt(SourceLocation loc,Expr* value_);
     virtual ~ReturnStmt();
-    virtual StmtType stype() { return STMT_RETURN; }
+    virtual StmtType stype() const { return STMT_RETURN; }
     virtual void acceptS(StmtVisitor& v);
 
     virtual void print(int indent, StringBuilder& buffer);
@@ -83,9 +83,10 @@ public:
     virtual llvm::Value* codeGen(CodeGenContext& context);
 
     Expr* getExpr() const { return value; }
+    SourceLocation getLocation() const { return RetLoc; }
 private:
     Expr* value;
-    // TODO clang::SourceLocation
+    SourceLocation RetLoc;
 };
 
 
@@ -95,7 +96,7 @@ public:
            Expr* condition, Stmt* thenStmt,
            SourceLocation elseLoc, Stmt* elseStmt);
     virtual ~IfStmt();
-    virtual StmtType stype() { return STMT_IF; }
+    virtual StmtType stype() const { return STMT_IF; }
     virtual void acceptS(StmtVisitor& v);
 
     virtual void print(int indent, StringBuilder& buffer);
@@ -118,7 +119,7 @@ class WhileStmt : public Stmt {
 public:
     WhileStmt(SourceLocation Loc_, Expr* Cond_, Stmt* Then_);
     virtual ~WhileStmt();
-    virtual StmtType stype() { return STMT_WHILE; }
+    virtual StmtType stype() const { return STMT_WHILE; }
     virtual void acceptS(StmtVisitor& v);
 
     virtual void print(int indent, StringBuilder& buffer);
@@ -138,7 +139,7 @@ class DoStmt : public Stmt {
 public:
     DoStmt(SourceLocation Loc_, Expr* Cond_, Stmt* Then_);
     virtual ~DoStmt();
-    virtual StmtType stype() { return STMT_DO; }
+    virtual StmtType stype() const { return STMT_DO; }
     virtual void acceptS(StmtVisitor& v);
 
     virtual void print(int indent, StringBuilder& buffer);
@@ -158,7 +159,7 @@ class ForStmt : public Stmt {
 public:
     ForStmt(SourceLocation Loc_, Stmt* Init_, Expr* Cond_, Expr* Incr_, Stmt* Body_);
     virtual ~ForStmt();
-    virtual StmtType stype() { return STMT_FOR; }
+    virtual StmtType stype() const { return STMT_FOR; }
     virtual void acceptS(StmtVisitor& v);
 
     virtual void print(int indent, StringBuilder& buffer);
@@ -182,7 +183,7 @@ class SwitchStmt : public Stmt {
 public:
     SwitchStmt(SourceLocation Loc_, Expr* Cond_, StmtList& Cases_);
     virtual ~SwitchStmt();
-    virtual StmtType stype() { return STMT_SWITCH; }
+    virtual StmtType stype() const { return STMT_SWITCH; }
     virtual void acceptS(StmtVisitor& v);
 
     virtual void print(int indent, StringBuilder& buffer);
@@ -202,7 +203,7 @@ class CaseStmt : public Stmt {
 public:
     CaseStmt(SourceLocation Loc_, Expr* Cond_, StmtList& Stmts_);
     virtual ~CaseStmt();
-    virtual StmtType stype() { return STMT_CASE; }
+    virtual StmtType stype() const { return STMT_CASE; }
     virtual void acceptS(StmtVisitor& v);
 
     virtual void print(int indent, StringBuilder& buffer);
@@ -223,7 +224,7 @@ class DefaultStmt : public Stmt {
 public:
     DefaultStmt(SourceLocation Loc_, StmtList& Stmts_);
     virtual ~DefaultStmt();
-    virtual StmtType stype() { return STMT_DEFAULT; }
+    virtual StmtType stype() const { return STMT_DEFAULT; }
     virtual void acceptS(StmtVisitor& v);
 
     virtual void print(int indent, StringBuilder& buffer);
@@ -242,7 +243,7 @@ class BreakStmt : public Stmt {
 public:
     BreakStmt(SourceLocation Loc_);
     virtual ~BreakStmt();
-    virtual StmtType stype() { return STMT_BREAK; }
+    virtual StmtType stype() const { return STMT_BREAK; }
     virtual void acceptS(StmtVisitor& v);
 
     virtual void print(int indent, StringBuilder& buffer);
@@ -259,7 +260,7 @@ class ContinueStmt : public Stmt {
 public:
     ContinueStmt(SourceLocation Loc_);
     virtual ~ContinueStmt();
-    virtual StmtType stype() { return STMT_CONTINUE; }
+    virtual StmtType stype() const { return STMT_CONTINUE; }
     virtual void acceptS(StmtVisitor& v);
 
     virtual void print(int indent, StringBuilder& buffer);
@@ -276,7 +277,7 @@ class LabelStmt : public Stmt {
 public:
     LabelStmt(const char* name_, SourceLocation Loc_, Stmt* subStmt_);
     virtual ~LabelStmt();
-    virtual StmtType stype() { return STMT_LABEL; }
+    virtual StmtType stype() const { return STMT_LABEL; }
     virtual void acceptS(StmtVisitor& v);
 
     virtual void print(int indent, StringBuilder& buffer);
@@ -293,7 +294,7 @@ class GotoStmt : public Stmt {
 public:
     GotoStmt(const char* name_, SourceLocation GotoLoc_, SourceLocation LabelLoc_);
     virtual ~GotoStmt();
-    virtual StmtType stype() { return STMT_GOTO; }
+    virtual StmtType stype() const { return STMT_GOTO; }
     virtual void acceptS(StmtVisitor& v);
 
     virtual void print(int indent, StringBuilder& buffer);
@@ -310,7 +311,7 @@ class CompoundStmt : public Stmt {
 public:
     CompoundStmt(SourceLocation l, SourceLocation r, StmtList& stmts_);
     virtual ~CompoundStmt();
-    virtual StmtType stype() { return STMT_COMPOUND; }
+    virtual StmtType stype() const { return STMT_COMPOUND; }
     virtual void acceptS(StmtVisitor& v);
 
     virtual void print(int indent, StringBuilder& buffer);

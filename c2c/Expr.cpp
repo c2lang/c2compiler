@@ -79,8 +79,8 @@ static const char* UnaryOpCode2str(clang::UnaryOperatorKind opc) {
     case UO_Deref:      return "*";
     case UO_Plus:       return "+";
     case UO_Minus:      return "-";
-    case UO_Not:
-    case UO_LNot:
+    case UO_Not:        return "~";
+    case UO_LNot:       return "!";
     default:
         assert(0);
         break;
@@ -170,7 +170,8 @@ void CallExpr::addArg(Expr* arg) {
 
 void CallExpr::print(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
-    buffer << "[call " << Fn->getName() << "]\n";
+    //buffer << "[call " << expr2name(Fn) << "]\n";
+    buffer << "[call " << "TODO" << "]\n";
     for (unsigned int i=0; i<args.size(); i++) {
         args[i]->print(indent + INDENT, buffer);
     }
@@ -178,7 +179,8 @@ void CallExpr::print(int indent, StringBuilder& buffer) {
 
 void CallExpr::generateC(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
-    buffer << Fn->getName() << '(';
+    Fn->generateC(0, buffer);
+    buffer << '(';
     for (unsigned int i=0; i<args.size(); i++) {
         if (i != 0) buffer << ", ";
         args[i]->generateC(0, buffer);
@@ -197,24 +199,8 @@ void IdentifierExpr::print(int indent, StringBuilder& buffer) {
 
 void IdentifierExpr::generateC(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
-    if (pname.empty()) {
-        buffer << name;
-    } else {
-        buffer << pname << '_' << name;
-    }
+    buffer << name;
 }
-
-const char* IdentifierExpr::getName() const {
-    // TODO use several buffers
-    static char buffer[128];
-    if (!pname.empty()) {
-        snprintf(buffer, 127, "%s::%s", pname.c_str(), name.c_str());
-        return buffer;
-    } else {
-        return name.c_str();
-    }
-}
-
 
 TypeExpr::~TypeExpr() {
     if (type && type->own()) delete type;
@@ -473,5 +459,30 @@ void MemberExpr::generateC(int indent, StringBuilder& buffer) {
     if (isArrow) buffer << "->";
     else buffer << '.';
     Member->generateC(0, buffer);
+}
+
+const char* MemberExpr::getFullName() const {
+    // TODO use recursion;
+    return "TODO";
+}
+
+
+ParenExpr::~ParenExpr() {
+    delete Val;
+}
+
+EXPR_VISITOR_ACCEPT(ParenExpr);
+
+void ParenExpr::print(int indent, StringBuilder& buffer) {
+    buffer.indent(indent);
+    buffer << "[paren expr]\n";
+    Val->print(indent + INDENT, buffer);
+}
+
+void ParenExpr::generateC(int indent, StringBuilder& buffer) {
+    buffer.indent(indent);
+    buffer << '(';
+    Val->generateC(0, buffer);
+    buffer << ')';
 }
 

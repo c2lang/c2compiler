@@ -50,8 +50,9 @@ void Stmt::dump() {
 }
 
 
-ReturnStmt::ReturnStmt(Expr* value_)
+ReturnStmt::ReturnStmt(SourceLocation loc, Expr* value_)
     : value(value_)
+    , RetLoc(loc)
 {}
 
 ReturnStmt::~ReturnStmt() {

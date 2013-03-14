@@ -1,7 +1,7 @@
 package type_warnings;
 
 // error: unknown package
-utils::foo[] bla;
+utils.foo[] bla;
 
 // errro: main is not a type
 main bliep;
@@ -34,7 +34,7 @@ public func void func2(Number n) {}
 
 // error: cannot have public var with non-public type
 public Number number;
-public type_warnings::Number number2;
+public type_warnings.Number number2;
 
 // error cannot have non-public base type in public var
 public type PubNumber Number*;

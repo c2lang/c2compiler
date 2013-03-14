@@ -96,3 +96,8 @@ target scopetest
     examples/scopetest.c2
     examples/scopetest2.c2
 end
+
+target unarytest
+    examples/unaryTest.c2
+end
+

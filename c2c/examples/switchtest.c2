@@ -5,7 +5,7 @@ use stdio;
 func void call() {
     switch (1) {
     case 0:
-        stdio::printf("hallo");
+        stdio.printf("hallo");
     }
 }
 

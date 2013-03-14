@@ -121,9 +121,7 @@ public:
 
         parser.Initialize();
     }
-    ~FileInfo() {
-        // TODO delete members
-    }
+    ~FileInfo() {}
 
     bool parse(const BuildOptions& options) {
         u_int64_t t1 = Utils::getCurrentTime();
@@ -188,8 +186,6 @@ public:
     // SourceManager
     SourceManager SM;
 
-    TargetOptions* to;
-
     // HeaderSearch
     IntrusiveRefCntPtr<HeaderSearchOptions> HSOpts;
     HeaderSearch Headers;
@@ -217,7 +213,7 @@ C2Builder::~C2Builder()
 {
     for (PkgsIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
         //delete iter->second;
-        // TODO delete CAUSES crash
+        // TODO delete CAUSES crash (caused by delete of FileInfo below)
     }
     for (unsigned int i=0; i<files.size(); i++) {
         delete files[i];

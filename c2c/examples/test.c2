@@ -24,8 +24,8 @@ func void main() {
     int*[10] bla2;
     int[2] nums = { calc(), calc() }
     int b4 = 4/2;
-    int b5 = Utils::max + Utils::Min;
-    int x1 = Utils::getMax();
+    int b5 = Utils.max + Utils.Min;
+    int x1 = Utils.getMax();
 
     int b6 = 2*2;
 
@@ -33,13 +33,14 @@ func void main() {
     a = 10;
     int res;
     res = main();
-    *res  = 0;       // ok, bliep -> primary_expression
+    int* rp;
+    *rp  = 0;       // ok, bliep -> primary_expression
     a *= 2;        // ok -> primary_expression
     string text;
     text = "hallo" "dit" "is" "een" "test";
 
-    int array;
-    *array[2] = 'b';
+    int[2] array;
+    array[2] = 'b';
 
     a = 2 * 20;
 

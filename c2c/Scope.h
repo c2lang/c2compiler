@@ -30,7 +30,7 @@ namespace C2 {
 
 class Decl;
 class Type;
-class IdentifierExpr;
+class Expr;
 
 class ScopeResult {
 public:
@@ -40,13 +40,15 @@ public:
         , ambiguous(false)
         , external(true)
         , visible(true)
+        , ok(true)
     {}
 
-    const Package* pkg; // pkg is only set if Symbol is a global (not stack)
-    Decl* decl;
+    const Package* pkg; // pkg is only set if Symbol is a global or if symbol is a package
+    Decl* decl;         // if symbol is not a package
     bool ambiguous;     // ambiguous lookup (returns first result)
     bool external;      // package is external
     bool visible;       // symbol is non-public and used externally
+    bool ok;            // checks are ok
 };
 
 
@@ -54,7 +56,6 @@ class GlobalScope {
 public:
     GlobalScope(const std::string& name_, const Pkgs& pkgs_, clang::DiagnosticsEngine& Diags_);
 
-    // TODO rename to findUsedPackade
     const Package* findPackage(const std::string& name) const;
     const Package* findAnyPackage(const std::string& name) const;
     void addPackage(bool isLocal, const std::string& name_, const Package* pkg);
@@ -67,7 +68,7 @@ public:
     void dump() const;
 private:
     int checkStructType(Type* type, bool used_public);
-    int checkUserType(IdentifierExpr* id, bool used_public);
+    int checkUserType(Type* type, Expr* id, bool used_public);
 
     const std::string pkgName;
 
@@ -127,7 +128,6 @@ public:
     void Init(unsigned int flags_);
 
     ScopeResult findSymbol(const std::string& name) const;
-    ScopeResult findSymbol(const std::string& pkgname, const std::string& name) const;
     void addDecl(Decl* d);
 
     Scope* getParent() const { return parent; }

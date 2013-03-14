@@ -17,6 +17,7 @@
 #define DECL_H
 
 #include <string>
+#include <assert.h>
 
 #include <clang/Basic/SourceLocation.h>
 #include "OwningVector.h"
@@ -48,7 +49,7 @@ class Decl {
 public:
     Decl(bool is_public_);
     virtual ~Decl();
-    virtual DeclType dtype() = 0;
+    virtual DeclType dtype() const = 0;
     virtual void acceptD(DeclVisitor& v) = 0;
     virtual void print(StringBuilder& buffer) = 0;
     virtual void generateC(StringBuilder& buffer, const std::string& pkgName) = 0;
@@ -74,14 +75,14 @@ class FunctionDecl : public Decl {
 public:
     FunctionDecl(const std::string& name_, SourceLocation loc_, bool is_public_, Type* rtype_);
     virtual ~FunctionDecl();
-    virtual DeclType dtype() { return DECL_FUNC; }
+    virtual DeclType dtype() const { return DECL_FUNC; }
     virtual void acceptD(DeclVisitor& v);
     virtual void print(StringBuilder& buffer);
     virtual void generateC(StringBuilder& buffer, const std::string& pkgName);
     virtual llvm::Value* codeGen(CodeGenContext& context);
 
     void setBody(Stmt* body_) {
-        // TODO assert body is null
+        assert(body == 0);
         body = body_;
     }
     Stmt* getBody() const { return body; }
@@ -94,6 +95,7 @@ public:
     Type* getReturnType() const { return rtype; }
     void setVariadic() { m_isVariadic = true; }
     bool isVariadic() const { return m_isVariadic; }
+    Type* getProto() const;
 private:
     std::string name;
     clang::SourceLocation loc;
@@ -111,7 +113,7 @@ class VarDecl : public Decl {
 public:
     VarDecl(DeclExpr* decl_, bool is_public, bool inExpr);
     virtual ~VarDecl();
-    virtual DeclType dtype() { return DECL_VAR; }
+    virtual DeclType dtype() const { return DECL_VAR; }
     virtual void acceptD(DeclVisitor& v);
     virtual void print(StringBuilder& buffer);
     virtual void generateC(StringBuilder& buffer, const std::string& pkgName);
@@ -131,7 +133,7 @@ class TypeDecl : public Decl {
 public:
     TypeDecl(const std::string& name_, SourceLocation loc_, Type* type_, bool is_public_);
     virtual ~TypeDecl();
-    virtual DeclType dtype() { return DECL_TYPE; }
+    virtual DeclType dtype() const { return DECL_TYPE; }
     virtual void acceptD(DeclVisitor& v);
     virtual void print(StringBuilder& buffer);
     virtual void generateC(StringBuilder& buffer, const std::string& pkgName);
@@ -151,7 +153,7 @@ class ArrayValueDecl : public Decl {
 public:
     ArrayValueDecl(const std::string& name_, SourceLocation loc_, Expr* value_);
     virtual ~ArrayValueDecl();
-    virtual DeclType dtype() { return DECL_ARRAYVALUE; }
+    virtual DeclType dtype() const { return DECL_ARRAYVALUE; }
     virtual void acceptD(DeclVisitor& v);
     virtual void print(StringBuilder& buffer);
     virtual void generateC(StringBuilder& buffer, const std::string& pkgName);
@@ -169,7 +171,7 @@ private:
 class UseDecl : public Decl {
 public:
     UseDecl(const std::string& name_, SourceLocation loc_, bool isLocal_, const char* alias_, SourceLocation aliasLoc_);
-    virtual DeclType dtype() { return DECL_USE; }
+    virtual DeclType dtype() const { return DECL_USE; }
     virtual void acceptD(DeclVisitor& v);
     virtual void print(StringBuilder& buffer);
     virtual void generateC(StringBuilder& buffer, const std::string& pkgName);

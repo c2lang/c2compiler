@@ -19,8 +19,8 @@ type PArr int*[10];
 type Point int; // TEMP
 type Buffer int; // TEMP
 
-type Coor utils::Point[2];
-type MyType utils::Buffer*[2];
+type Coor utils.Point[2];
+type MyType utils.Buffer*[2];
 
 // -- struct types --
 type Struct struct {
@@ -30,7 +30,7 @@ type S3 struct {
     int[100] data;
     int[12][12] board;
     int count;
-    utils::Buffer bb;
+    utils.Buffer bb;
 }
 
 /*
@@ -83,7 +83,7 @@ type Enum4 enum {
 }
 
 // -- Function --
-type CallBack func int(int a, Utils::Point*p);
+type CallBack func int(int a, Utils.Point*p);
 type CBFunc func void (MyType* mt, ...);
 type CBFunc func void (const char* buffer, u8 t2, ...);
 

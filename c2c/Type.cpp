@@ -91,7 +91,7 @@ Type::Type(Type::Kind kind_, Type* refType_)
 Type::~Type() {
     if (refType) {
         assert(kind != BUILTIN);
-        if (refType->own()) delete refType;
+        if (kind != USER && refType->own()) delete refType;
     }
     switch (kind) {
     case BUILTIN:
@@ -127,6 +127,11 @@ Type::~Type() {
     case QUALIFIER:
         break;
     }
+}
+
+void Type::setRefType(Type* t) {
+    assert(kind == USER);
+    refType = t;
 }
 
 void Type::setMembers(MemberList& members_) {
@@ -256,6 +261,7 @@ void Type::printFull(StringBuilder& buffer, int indent) const {
     }
     case FUNC:
     {
+        assert(returnType);
         buffer.indent(indent);
         buffer << "func " << ' ';
         returnType->printName(buffer);
@@ -520,7 +526,7 @@ bool Type::hasBuiltinBase() const {
     }
 }
 
-IdentifierExpr* Type::getBaseUserType() const {
+Expr* Type::getBaseUserType() const {
     switch (kind) {
     case BUILTIN:
     case STRUCT:

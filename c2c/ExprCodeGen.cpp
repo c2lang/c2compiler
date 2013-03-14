@@ -45,7 +45,13 @@ llvm::Value* CharLiteralExpr::codeGen(CodeGenContext& context) {
 }
 
 llvm::Value* CallExpr::codeGen(CodeGenContext& C) {
-    llvm::Function* function = C.module.getFunction(Fn->getName());
+    // Doesn't have to be a function, can also be funcptr symbol
+    // Analyser should set whether direct call or not?
+    // TODO only do below if direct call?
+    // TODO for now assert IdentifierExpr;
+    IdentifierExpr* FuncName = ExprCaster<IdentifierExpr>::getType(Fn);
+    assert(FuncName);
+    llvm::Function* function = C.module.getFunction(FuncName->getName());
     assert(function && "CANNOT FIND FUNCTION");
 
     // NOTE: see CodeGenerator insertion of puts() and printf()
@@ -96,26 +102,30 @@ llvm::Value* DeclExpr::codeGen(CodeGenContext& C) {
     return inst;
 }
 
-llvm::Value* BinOpExpr::codeGen(CodeGenContext& context) {
+llvm::Value* BinOpExpr::codeGen(CodeGenContext& C) {
     assert(0 && "TODO");
     return 0;
 }
 
-llvm::Value* UnaryOpExpr::codeGen(CodeGenContext& context) {
+llvm::Value* UnaryOpExpr::codeGen(CodeGenContext& C) {
     return 0;
 }
 
-llvm::Value* SizeofExpr::codeGen(CodeGenContext& context) {
+llvm::Value* SizeofExpr::codeGen(CodeGenContext& C) {
     assert(0 && "TODO");
     return 0;
 }
 
-llvm::Value* ArraySubscriptExpr::codeGen(CodeGenContext& context) {
+llvm::Value* ArraySubscriptExpr::codeGen(CodeGenContext& C) {
     assert(0 && "TODO");
     return 0;
 }
 
-llvm::Value* MemberExpr::codeGen(CodeGenContext& context) {
+llvm::Value* MemberExpr::codeGen(CodeGenContext& C) {
+    return 0;
+}
+
+llvm::Value* ParenExpr::codeGen(CodeGenContext& C) {
     return 0;
 }
 

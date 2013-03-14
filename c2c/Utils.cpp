@@ -14,6 +14,7 @@
  */
 
 #include <time.h>
+#include <stdio.h>
 #include "Utils.h"
 #include "StringBuilder.h"
 
@@ -38,4 +39,10 @@ void Utils::addName(const std::string& pkgName, const std::string& name, StringB
     }
 }
 
+
+const char* Utils::fullName(const std::string& pkgname, const std::string& symname) {
+    static char buffer[128];
+    sprintf(buffer, "%s.%s", pkgname.c_str(), symname.c_str());
+    return buffer;
+}
 

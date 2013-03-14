@@ -80,11 +80,15 @@ int GlobalScope::checkType(Type* type, bool used_public) {
         // has no subtypes
         break;
     case Type::USER:
+        return checkUserType(type, type->getBaseUserType(), used_public);
     case Type::FUNC:
+        // TODO
+        assert(0 && "TODO");
+        break;
     case Type::POINTER:
     case Type::ARRAY:
     case Type::QUALIFIER:
-        return checkUserType(type->getBaseUserType(), used_public);
+        return checkType(type->getRefType(), used_public);
     }
     return 0;
 }
@@ -98,66 +102,89 @@ int GlobalScope::checkStructType(Type* type, bool used_public) {
     return 0;
 }
 
-int GlobalScope::checkUserType(IdentifierExpr* id, bool used_public) {
-    if (id->pname != "") {
-        // check if package exists
-        const Package* pkg = findPackage(id->pname);
-        if (!pkg) {
-            // TODO use function
-            PkgsConstIter iter = allPackages.find(id->pname);
-            if (iter == allPackages.end()) {
-                Diags.Report(id->ploc, diag::err_unknown_package) << id->pname;
-            } else {
-                Diags.Report(id->ploc, diag::err_package_not_used) << id->pname;
+int GlobalScope::checkUserType(Type* type, Expr* id, bool used_public) {
+    // TODO refactor
+    const Package* pkg = 0;
+    switch (id->etype()) {
+    case EXPR_IDENTIFIER:   // unqualified
+        {
+            IdentifierExpr* I = ExprCaster<IdentifierExpr>::getType(id);
+            assert(I);
+            ScopeResult res = findSymbol(I->getName());
+            if (!res.decl) {
+                Diags.Report(I->getLocation(), diag::err_unknown_typename) << I->getName();
+                return 1;
             }
-            return 1;
+            if (res.ambiguous) {
+                Diags.Report(I->getLocation(), diag::err_ambiguous_symbol) << I->getName();
+                // TODO show alternatives
+                return 1;
+            }
+            if (res.external && !res.decl->isPublic()) {
+                Diags.Report(I->getLocation(), diag::err_not_public) << I->getName();
+                return 1;
+            }
+            TypeDecl* td = DeclCaster<TypeDecl>::getType(res.decl);
+            if (!td) {
+                Diags.Report(I->getLocation(), diag::err_not_a_typename) << I->getName();
+                return 1;
+            }
+            if (used_public && !res.external && !td->isPublic()) {
+                Diags.Report(I->getLocation(), diag::err_non_public_type) << I->getName();
+                return 1;
+            }
+            // ok
+            type->setRefType(td->getType());
         }
-
-        // check Type
-        Decl* symbol = pkg->findSymbol(id->name);
-        if (!symbol) {
-            Diags.Report(id->getLocation(), diag::err_unknown_typename) << id->getName();
-            return 1;
+        break;
+    case EXPR_MEMBER:   // fully qualified
+        {
+            MemberExpr* M = ExprCaster<MemberExpr>::getType(id);
+            assert(M);
+            Expr* base = M->getBase();
+            IdentifierExpr* pkg_id = ExprCaster<IdentifierExpr>::getType(base);
+            assert(pkg_id);
+            const std::string& pkgName = pkg_id->getName();
+            // check if package exists
+            pkg = findPackage(pkgName);
+            if (!pkg) {
+                // TODO use function
+                PkgsConstIter iter = allPackages.find(pkgName);
+                if (iter == allPackages.end()) {
+                    Diags.Report(pkg_id->getLocation(), diag::err_unknown_package) << pkgName;
+                } else {
+                    Diags.Report(pkg_id->getLocation(), diag::err_package_not_used) << pkgName;
+                }
+                return 1;
+            }
+            // check member
+            Expr* member = M->getMember();
+            IdentifierExpr* member_id = ExprCaster<IdentifierExpr>::getType(member);
+            assert(member_id);
+            // check Type
+            Decl* symbol = pkg->findSymbol(member_id->getName());
+            if (!symbol) {
+                Diags.Report(member_id->getLocation(), diag::err_unknown_typename) << M->getFullName();
+                return 1;
+            }
+            TypeDecl* td = DeclCaster<TypeDecl>::getType(symbol);
+            if (!td) {
+                Diags.Report(member_id->getLocation(), diag::err_not_a_typename) << M->getFullName();
+                return 1;
+            }
+            // if external package, check visibility
+            if (isExternal(pkg) && !td->isPublic()) {
+                Diags.Report(member_id->getLocation(), diag::err_not_public) << M->getFullName();
+                return 1;
+            }
+            if (used_public && !isExternal(pkg) && !td->isPublic()) {
+                Diags.Report(member_id->getLocation(), diag::err_non_public_type) << M->getFullName();
+                return 1;
+            }
         }
-        TypeDecl* td = DeclCaster<TypeDecl>::getType(symbol);
-        if (!td) {
-            Diags.Report(id->getLocation(), diag::err_not_a_typename) << id->getName();
-            return 1;
-        }
-        // if external package, check visibility
-        if (isExternal(pkg) && !td->isPublic()) {
-            Diags.Report(id->getLocation(), diag::err_not_public) << id->getName();
-            return 1;
-        }
-        if (used_public && !isExternal(pkg) && !td->isPublic()) {
-            Diags.Report(id->getLocation(), diag::err_non_public_type) << id->getName();
-            return 1;
-        }
-    } else {
-        ScopeResult res = findSymbol(id->name);
-        if (!res.decl) {
-            Diags.Report(id->getLocation(), diag::err_unknown_typename) << id->getName();
-            return 1;
-        }
-        if (res.ambiguous) {
-            Diags.Report(id->getLocation(), diag::err_ambiguous_symbol) << id->getName();
-            // TODO show alternatives
-            return 1;
-        }
-        if (res.external && !res.decl->isPublic()) {
-            Diags.Report(id->getLocation(), diag::err_not_public) << id->getName();
-            return 1;
-        }
-        TypeDecl* td = DeclCaster<TypeDecl>::getType(res.decl);
-        if (!td) {
-            Diags.Report(id->getLocation(), diag::err_not_a_typename) << id->getName();
-            return 1;
-        }
-        if (used_public && !res.external && !td->isPublic()) {
-            Diags.Report(id->getLocation(), diag::err_non_public_type) << id->getName();
-            return 1;
-        }
-        // ok
+        break;
+    default:
+        assert(0);
     }
     return 0;
 }
@@ -168,6 +195,14 @@ bool GlobalScope::isExternal(const Package* pkg) const {
 
 ScopeResult GlobalScope::findSymbol(const std::string& symbol) const {
     ScopeResult result;
+    // symbol can be package name or symbol within package
+    const Package* pkg = findPackage(symbol);
+    if (pkg) {
+        result.pkg = pkg;
+        result.external = isExternal(pkg);
+        return result;
+    }
+
     // return private symbol only if no public symbol is found
     // ambiguous may also be set with visible = false
     for (LocalsConstIter iter = locals.begin(); iter != locals.end(); ++iter) {
@@ -238,32 +273,6 @@ ScopeResult Scope::findSymbol(const std::string& symbol) const {
     // search parent or globals
     if (parent) return parent->findSymbol(symbol);
     else return globals->findSymbol(symbol);
-}
-
-ScopeResult Scope::findSymbol(const std::string& pkgname, const std::string& name) const {
-    if (pkgname == "") return findSymbol(name);
-
-    // check if package exists
-    ScopeResult result;
-    const Package* pkg = globals->findPackage(pkgname);
-    if (!pkg) {
-        // return and let caller decice (globalscope.fixPackage() ?)
-        return result;
-    }
-    result.pkg = pkg;
-
-    // check Type
-    Decl* symbol = pkg->findSymbol(name);
-    if (!symbol) {
-        // return and let caller decide
-        return result;
-    }
-    result.decl = symbol;
-
-    // TODO check ambiguous (search other local stuff)
-    result.external = globals->isExternal(pkg);
-    result.visible = !(result.external && !symbol->isPublic());
-    return result;
 }
 
 void Scope::addDecl(Decl* d) {

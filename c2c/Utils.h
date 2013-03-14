@@ -29,6 +29,7 @@ class Utils {
 public:
     static u_int64_t getCurrentTime();
     static void addName(const std::string& pkgName, const std::string& name, StringBuilder& buffer);
+    static const char* fullName(const std::string& pkgname, const std::string& symname);
 };
 
 }

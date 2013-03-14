@@ -22,8 +22,8 @@ func void main(int argc, char*[] argv) {
     d = 4;  // error unknown
     c = 2;
     int e;
-    return other::value;     // ok
-    return other::count; // not visible
+    return other.value;     // ok
+    return other.count; // not visible
 
     break;  // error, not in loop
 }

@@ -21,7 +21,6 @@ func void convert(int a, int b, int c) {
 }
 
 public func void MyFunc() {
-    Utils::convert(1, 2, "Hallo");
     if (3) goto end;
     convert(3, 4, number);
     callback(MyFunc);

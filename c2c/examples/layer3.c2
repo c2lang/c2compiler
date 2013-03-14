@@ -3,7 +3,7 @@ package layer3;
 use layer2;
 
 public type Layer3 struct {
-    layer2::Layer2 l2;
+    layer2.Layer2 l2;
 }
 
 func void main(int argc, char*[] argv) {

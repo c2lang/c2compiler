@@ -3,6 +3,6 @@ package layer2;
 use layer1;
 
 public type Layer2 struct {
-    layer1::Layer1 l1;
+    layer1.Layer1 l1;
 }
 
