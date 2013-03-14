@@ -18,6 +18,9 @@
 
 #include "ASTVisitor.h"
 #include "Package.h"
+#include "Scope.h"
+
+#define MAX_SCOPE_DEPTH 15
 
 namespace clang {
 class DiagnosticsEngine;
@@ -27,7 +30,6 @@ namespace C2 {
 
 class Type;
 class GlobalScope;
-class Scope;
 class Decl;
 class Stmt;
 class Expr;
@@ -68,6 +70,8 @@ private:
     void analyseIdentifier(Expr* expr);
 
     GlobalScope& globalScope;
+    Scope scopes[MAX_SCOPE_DEPTH];
+    unsigned scopeIndex;    // first free scope (= count of scopes)
     Scope* curScope;
     //const Pkgs& pkgs;
     clang::DiagnosticsEngine& Diags;

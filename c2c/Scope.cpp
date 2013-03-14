@@ -202,15 +202,25 @@ ScopeResult GlobalScope::findSymbol(const std::string& symbol) const {
 
 
 
-Scope::Scope(GlobalScope& globals_, Scope* parent_, unsigned int flags_)
-    : globals(globals_)
-    , parent(parent_)
-    , Flags(flags_)
-{
+Scope::Scope()
+    : globals(0)
+    , parent(0)
+    , Flags(0)
+{}
+
+void Scope::InitOnce(GlobalScope& globals_, Scope* parent_) {
+    globals = &globals_;
+    parent = parent_;
+}
+
+void Scope::Init(unsigned int flags_) {
+    Flags = flags_;
+
     if (parent) {
         if (parent->allowBreak()) Flags |= BreakScope;
         if (parent->allowContinue()) Flags |= ContinueScope;
     }
+    decls.clear();
 }
 
 ScopeResult Scope::findSymbol(const std::string& symbol) const {
@@ -227,7 +237,7 @@ ScopeResult Scope::findSymbol(const std::string& symbol) const {
 
     // search parent or globals
     if (parent) return parent->findSymbol(symbol);
-    else return globals.findSymbol(symbol);
+    else return globals->findSymbol(symbol);
 }
 
 ScopeResult Scope::findSymbol(const std::string& pkgname, const std::string& name) const {
@@ -235,7 +245,7 @@ ScopeResult Scope::findSymbol(const std::string& pkgname, const std::string& nam
 
     // check if package exists
     ScopeResult result;
-    const Package* pkg = globals.findPackage(pkgname);
+    const Package* pkg = globals->findPackage(pkgname);
     if (!pkg) {
         // return and let caller decice (globalscope.fixPackage() ?)
         return result;
@@ -251,7 +261,7 @@ ScopeResult Scope::findSymbol(const std::string& pkgname, const std::string& nam
     result.decl = symbol;
 
     // TODO check ambiguous (search other local stuff)
-    result.external = globals.isExternal(pkg);
+    result.external = globals->isExternal(pkg);
     result.visible = !(result.external && !symbol->isPublic());
     return result;
 }

@@ -19,11 +19,17 @@
 
 #include "StringBuilder.h"
 
+#define SIZE_DEBUG
+
+#ifdef SIZE_DEBUG
+#include <assert.h>
+#endif
+
 using namespace C2;
 using namespace std;
 
 StringBuilder::StringBuilder()
-    : buffer((char*)malloc(8192))
+    : buffer((char*)malloc(BUFSIZE))
 {
     clear();
 }
@@ -33,18 +39,32 @@ StringBuilder::~StringBuilder() {
 }
 
 StringBuilder& StringBuilder::operator<<(const char* input) {
+    int len = strlen(input);
+#ifdef SIZE_DEBUG
+    int cap = BUFSIZE - (ptr-buffer);
+    assert(len < cap && "buffer overflow");
+#endif
     strcpy(ptr, input);
-    ptr += strlen(input);
+    ptr += len;
     return *this;
 }
 
 StringBuilder& StringBuilder::operator<<(const string& input) {
+    int len = input.size();
+#ifdef SIZE_DEBUG
+    int cap = BUFSIZE - (ptr-buffer);
+    assert(len < cap && "buffer overflow");
+#endif
     strcpy(ptr, input.c_str());
-    ptr += input.size();
+    ptr += len;
     return *this;
 }
 
 StringBuilder& StringBuilder::operator<<(char input) {
+#ifdef SIZE_DEBUG
+    int cap = BUFSIZE - (ptr-buffer);
+    assert(1 < cap && "buffer overflow");
+#endif
     *ptr = input;
     ++ptr;
     *ptr = 0;
@@ -52,18 +72,31 @@ StringBuilder& StringBuilder::operator<<(char input) {
 }
 
 StringBuilder& StringBuilder::operator<<(int input) {
+#ifdef SIZE_DEBUG
+    int cap = BUFSIZE - (ptr-buffer);
+    assert(10 < cap && "buffer overflow");
+#endif
     ptr += sprintf(ptr, "%d", input);
     return *this;
 }
 
 StringBuilder& StringBuilder::operator<<(unsigned int input) {
+#ifdef SIZE_DEBUG
+    int cap = BUFSIZE - (ptr-buffer);
+    assert(10 < cap && "buffer overflow");
+#endif
     ptr += sprintf(ptr, "%u", input);
     return *this;
 }
 
 StringBuilder& StringBuilder::operator<<(const StringBuilder& input) {
-    memcpy(ptr, input.buffer, input.size());
-    ptr += input.size(); 
+    int len = input.size();
+#ifdef SIZE_DEBUG
+    int cap = BUFSIZE - (ptr-buffer);
+    assert(len < cap && "buffer overflow");
+#endif
+    memcpy(ptr, input.buffer, len);
+    ptr += len;
     *ptr = 0;
     return *this;
 }

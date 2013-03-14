@@ -31,10 +31,17 @@ using namespace clang;
 
 FunctionBodyAnalyser::FunctionBodyAnalyser(GlobalScope& scope_, clang::DiagnosticsEngine& Diags_)
     : globalScope(scope_)
+    , scopeIndex(0)
     , curScope(0)
     , Diags(Diags_)
     , errors(0)
-{}
+{
+    Scope* parent = 0;
+    for (int i=0; i<MAX_SCOPE_DEPTH; i++) {
+        scopes[i].InitOnce(globalScope, parent);
+        parent = &scopes[i];
+    }
+}
 
 FunctionBodyAnalyser::~FunctionBodyAnalyser() {
 }
@@ -79,12 +86,15 @@ bool FunctionBodyAnalyser::handle(Decl* decl) {
 }
 
 void FunctionBodyAnalyser::EnterScope(unsigned int flags) {
-    curScope = new Scope(globalScope, curScope, flags);
+    assert (scopeIndex < MAX_SCOPE_DEPTH && "out of scopes");
+    scopes[scopeIndex].Init(flags);
+    curScope = &scopes[scopeIndex];
+    scopeIndex++;
 }
 
 void FunctionBodyAnalyser::ExitScope() {
+    scopeIndex--;
     Scope* parent = curScope->getParent();
-    delete curScope;
     curScope = parent;
 }
 

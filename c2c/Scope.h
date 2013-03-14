@@ -122,21 +122,25 @@ public:
         /// SwitchScope - This is a scope that corresponds to a switch statement.
         SwitchScope = 0x800,
     };
-    Scope(GlobalScope& globals_, Scope* parent_, unsigned int flags_);
+    Scope();
+    void InitOnce(GlobalScope& globals_, Scope* parent_);
+    void Init(unsigned int flags_);
 
     ScopeResult findSymbol(const std::string& name) const;
     ScopeResult findSymbol(const std::string& pkgname, const std::string& name) const;
     void addDecl(Decl* d);
 
     Scope* getParent() const { return parent; }
+    void setParent(Scope* parent_) { parent = parent_; }
     bool allowBreak() const { return Flags & BreakScope; }
     bool allowContinue() const { return Flags & ContinueScope; }
 private:
-    GlobalScope& globals;
+    // set once
+    GlobalScope* globals;
     Scope* parent;
     unsigned int Flags;
 
-    // local decls (in scope)
+    // local decls (in scope), no ownership
     typedef std::vector<Decl*> Decls;
     typedef Decls::const_iterator DeclsConstIter;
     Decls decls;

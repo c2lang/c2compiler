@@ -39,7 +39,7 @@ public:
     void strip(char c);
     void indent(int num);
 private:
-    static const unsigned int SESSION_BUFSIZE = 8192;
+    static const unsigned int BUFSIZE = 1024*1024;
     char* buffer;
     char* ptr;
     StringBuilder(const StringBuilder&);
