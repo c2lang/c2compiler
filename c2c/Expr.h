@@ -174,14 +174,8 @@ public:
         SourceLocation loc;
         return loc;
     }
-    void addArray(Expr* sizeExpr);
-    void addPointer();
-    void addQualifier(unsigned int qualifier);
-    Type* takeType() {
-        Type* tmp = type;
-        type = 0;
-        return tmp;
-    }
+    Type* getType() const { return type; }
+    void setType(Type* t) { type = t; }
 private:
     Type* type;
 };

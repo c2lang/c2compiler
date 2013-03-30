@@ -203,7 +203,6 @@ void IdentifierExpr::generateC(int indent, StringBuilder& buffer) {
 }
 
 TypeExpr::~TypeExpr() {
-    if (type && type->own()) delete type;
 }
 
 EXPR_VISITOR_ACCEPT(TypeExpr);
@@ -216,19 +215,7 @@ void TypeExpr::generateC(int indent, StringBuilder& buffer) {
     printf("%s() TODO\n", __PRETTY_FUNCTION__);
 }
 
-void TypeExpr::addArray(Expr* sizeExpr) {
-    type = new Type(Type::ARRAY, type);
-    type->setArrayExpr(sizeExpr);
-}
 
-void TypeExpr::addPointer() {
-    type = new Type(Type::POINTER, type);
-}
-
-void TypeExpr::addQualifier(unsigned int qualifier) {
-    type = new Type(Type::QUALIFIER, type);
-    type->setQualifier(qualifier);
-}
 
 InitListExpr::InitListExpr(SourceLocation left, SourceLocation right, ExprList& values_)
     : leftBrace(left)
@@ -272,9 +259,7 @@ DeclExpr::DeclExpr(const std::string& name_, SourceLocation& loc_,
     , initValue(initValue_)
 {}
 
-DeclExpr::~DeclExpr() {
-    if (type->own()) delete type;
-}
+DeclExpr::~DeclExpr() {}
 
 EXPR_VISITOR_ACCEPT(DeclExpr);
 

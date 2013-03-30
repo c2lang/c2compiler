@@ -48,7 +48,7 @@ class ASTVisitor;
 
 class C2Sema {
 public:
-    C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_);
+    C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, TypeContext& tc);
     ~C2Sema();
 
     // file level actions
@@ -139,6 +139,8 @@ private:
     typedef std::map<std::string, Decl*> Symbols;
     typedef Symbols::const_iterator SymbolsConstIter;
     Symbols symbols;
+
+    TypeContext& typeContext;
 
     C2Sema(const C2Sema&);
     C2Sema& operator= (const C2Sema&);

@@ -79,7 +79,6 @@ FunctionDecl::FunctionDecl(const std::string& name_,
 }
 
 FunctionDecl::~FunctionDecl() {
-    if (rtype->own()) delete rtype;
     delete body;
 }
 
@@ -132,7 +131,7 @@ void FunctionDecl::addArg(DeclExpr* arg) {
 
 Type* FunctionDecl::getProto() const {
     Type* proto = new Type(Type::FUNC);
-    // TODO return Type + arguments (both curretly take ownership)
+    // TODO use TypeContext
     //proto->setReturnType(rtype);
     //proto->addArgument(Type*)
     return proto;
@@ -188,7 +187,6 @@ TypeDecl::TypeDecl(const std::string& name_, SourceLocation loc_, Type* type_, b
 {}
 
 TypeDecl::~TypeDecl() {
-    if (type->own()) delete type;
 }
 
 DECL_VISITOR_ACCEPT(TypeDecl);

@@ -31,8 +31,11 @@
 using namespace C2;
 using namespace clang;
 
-FunctionBodyAnalyser::FunctionBodyAnalyser(GlobalScope& scope_, clang::DiagnosticsEngine& Diags_)
+FunctionBodyAnalyser::FunctionBodyAnalyser(GlobalScope& scope_,
+                                           TypeContext& tc,
+                                           clang::DiagnosticsEngine& Diags_)
     : globalScope(scope_)
+    , typeContext(tc)
     , scopeIndex(0)
     , curScope(0)
     , Diags(Diags_)
@@ -388,14 +391,7 @@ Type* FunctionBodyAnalyser::analyseUnaryOpExpr(Expr* expr) {
     if (!LType) return 0;
     switch (unaryop->getOpcode()) {
     case UO_AddrOf:
-        {
-            fprintf(stderr, "TODO convert type to pointer type (&X)\n");
-            // TODO Hmm create new Pointer type, who owns?
-            // NOTE: refType should not have ownership here!!!
-            //Type* T = new Type(Type::POINTER, LType);
-            //return T;
-        }
-        break;
+        return typeContext.getPointer(LType);
     case UO_Deref:
         // TODO handle user types
         if (!LType->isPointerType()) {

@@ -17,6 +17,7 @@
 #define C2TYPE_H
 
 #include <string>
+#include <vector>
 #include "OwningVector.h"
 
 #define TYPE_CONST      (1<<1) 
@@ -53,8 +54,6 @@ public:
 
     Type(Type::Kind kind_, Type* refType_ = 0);
     ~Type();
-
-    bool own() const { return kind != BUILTIN; }
 
     // generic
     Kind getKind() const { return kind; }
@@ -117,7 +116,7 @@ private:
     Type* refType;
 
     union {
-        unsigned int initializer[2];
+        unsigned int initializer[4];    // TODO determine
 
         // builtin
         struct {
@@ -129,15 +128,22 @@ private:
         Expr* userType;
 
         // struct | union specific
-        MemberList* members;
+        struct {
+            MemberList* members;
+            const char* sname; // no ownership?
+        };
 
         // enum
-        EnumValue* enumValues;
+        struct {
+            EnumValue* enumValues;
+            const char* ename; // no ownership?
+        };
 
         // func specific
         struct {
             Type* returnType;
             Argument* arguments;
+            const char* fname;   // can be 0 for function proto's.
         };
 
         // pointer
@@ -173,6 +179,23 @@ public:
 private:
     BuiltinType();
 };
+
+
+class TypeContext {
+public:
+    TypeContext();
+    ~TypeContext();
+
+    Type* getUser();
+    Type* getPointer(Type* ref);
+    Type* getStruct(bool isStruct);
+    Type* getArray(Type* ref, Expr* sizeExpr);
+    Type* getQualifier(Type* ref, unsigned int qualifier);
+private:
+    typedef std::vector<Type*> Types;
+    Types types;
+};
+
 
 }
 

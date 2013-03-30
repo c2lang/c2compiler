@@ -95,9 +95,10 @@ static inline UnaryOperatorKind ConvertTokenKindToUnaryOpcode(
 }
 
 
-C2Sema::C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_)
+C2Sema::C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, TypeContext& tc)
     : SourceMgr(sm_)
     , Diags(Diags_)
+    , typeContext(tc)
 {
 }
 
@@ -168,7 +169,7 @@ void C2Sema::ActOnTypeDef(const char* name, SourceLocation loc, Expr* type, bool
     // TEMP extract here to Type and delete rtype Expr
     TypeExpr* typeExpr = ExprCaster<TypeExpr>::getType(type);
     assert(typeExpr);
-    TypeDecl* decl = new TypeDecl(name, loc, typeExpr->takeType(), is_public);
+    TypeDecl* decl = new TypeDecl(name, loc, typeExpr->getType(), is_public);
     addDecl(decl);
     delete type;
 }
@@ -185,7 +186,7 @@ void C2Sema::ActOnVarDef(const char* name, SourceLocation loc,
     TypeExpr* typeExpr = ExprCaster<TypeExpr>::getType(type);
     assert(typeExpr);
     // TODO check that type is not pre-fixed with own package
-    DeclExpr* declExpr = new DeclExpr(name, loc, typeExpr->takeType(), InitValue);
+    DeclExpr* declExpr = new DeclExpr(name, loc, typeExpr->getType(), InitValue);
     VarDecl* decl = new VarDecl(declExpr, is_public, false);
     addDecl(decl);
     delete type;
@@ -201,7 +202,7 @@ C2::FunctionDecl* C2Sema::ActOnFuncDef(const char* name, SourceLocation loc, boo
     assert(rtype);
     TypeExpr* typeExpr = ExprCaster<TypeExpr>::getType(rtype);
     assert(typeExpr);
-    FunctionDecl* decl = new FunctionDecl(name, loc, is_public, typeExpr->takeType());
+    FunctionDecl* decl = new FunctionDecl(name, loc, is_public, typeExpr->getType());
     addDecl(decl);
     delete rtype;
     return decl;
@@ -369,7 +370,7 @@ C2::StmtResult C2Sema::ActOnDeclaration(const char* name, SourceLocation loc, Ex
     // TEMP extract here to Type and delete rtype Expr
     TypeExpr* typeExpr = ExprCaster<TypeExpr>::getType(type);
     assert(typeExpr);
-    DeclExpr* declExpr = new DeclExpr(name, loc, typeExpr->takeType(), InitValue);
+    DeclExpr* declExpr = new DeclExpr(name, loc, typeExpr->getType(), InitValue);
     declExpr->setStatementFlag();
     delete type;
     return StmtResult(declExpr);
@@ -439,7 +440,8 @@ C2::ExprResult C2Sema::ActOnArrayType(Expr* base, Expr* size) {
     assert(base);
     TypeExpr* typeExpr = ExprCaster<TypeExpr>::getType(base);
     assert(typeExpr);
-    typeExpr->addArray(size);
+    Type* arr = typeContext.getArray(typeExpr->getType(), size);
+    typeExpr->setType(arr);
     return ExprResult(base);
 }
 
@@ -450,7 +452,8 @@ C2::ExprResult C2Sema::ActOnPointerType(Expr* base) {
     assert(base);
     TypeExpr* typeExpr = ExprCaster<TypeExpr>::getType(base);
     assert(typeExpr);
-    typeExpr->addPointer();
+    Type* ptr = typeContext.getPointer(typeExpr->getType());
+    typeExpr->setType(ptr);
     return ExprResult(base);
 }
 
@@ -459,7 +462,7 @@ C2::ExprResult C2Sema::ActOnUserType(Expr* expr) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: User Type"ANSI_NORMAL"\n";
 #endif
-    Type* type = new Type(Type::USER, 0);
+    Type* type = typeContext.getUser();
     type->setUserType(expr);
     return ExprResult(new TypeExpr(type));
 }
@@ -477,7 +480,7 @@ C2::ExprResult C2Sema::ActOnStructType(SourceLocation leftBrace, SourceLocation 
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: Struct/Union Type"ANSI_NORMAL"\n";
 #endif
-    Type* type = new Type(isStruct ? Type::STRUCT : Type::UNION);
+    Type* type = typeContext.getStruct(isStruct);
     // TODO use left/rightBrace
     MemberList members2;
     for (unsigned int i=0; i<members.size(); i++) {
@@ -497,7 +500,8 @@ C2::ExprResult C2Sema::ActOnTypeQualifier(ExprResult R, unsigned int qualifier) 
         assert(R.get());
         TypeExpr* typeExpr = ExprCaster<TypeExpr>::getType(R.get());
         assert(typeExpr);
-        typeExpr->addQualifier(qualifier);
+        Type* qual = typeContext.getQualifier(typeExpr->getType(), qualifier);
+        typeExpr->setType(qual);
     }
     return R;
 }
@@ -512,7 +516,7 @@ C2::ExprResult C2Sema::ActOnVarExpr(const char* name, SourceLocation loc, Expr* 
     // TEMP extract here to Type and delete rtype Expr
     TypeExpr* typeExpr = ExprCaster<TypeExpr>::getType(type);
     assert(typeExpr);
-    DeclExpr* declExpr = new DeclExpr(name, loc, typeExpr->takeType(), InitValue);
+    DeclExpr* declExpr = new DeclExpr(name, loc, typeExpr->getType(), InitValue);
     delete type;
     return ExprResult(declExpr);
 }

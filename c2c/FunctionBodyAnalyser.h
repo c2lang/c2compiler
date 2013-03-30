@@ -34,10 +34,13 @@ class Decl;
 class Stmt;
 class Expr;
 class IdentifierExpr;
+class TypeContext;
 
 class FunctionBodyAnalyser : public ASTVisitor {
 public:
-    FunctionBodyAnalyser(GlobalScope& scope_, clang::DiagnosticsEngine& Diags_);
+    FunctionBodyAnalyser(GlobalScope& scope_,
+                         TypeContext& tc,
+                         clang::DiagnosticsEngine& Diags_);
     virtual ~FunctionBodyAnalyser();
 
     virtual bool handle(Decl* decl);
@@ -74,6 +77,7 @@ private:
     static Type* resolveUserType(Type* T);
 
     GlobalScope& globalScope;
+    TypeContext& typeContext;
     Scope scopes[MAX_SCOPE_DEPTH];
     unsigned scopeIndex;    // first free scope (= count of scopes)
     Scope* curScope;

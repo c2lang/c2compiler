@@ -106,7 +106,7 @@ public:
         , Headers(HSOpts, FileMgr, Diags, LangOpts_, pti)
         , PPOpts(new PreprocessorOptions())
         , PP(PPOpts, Diags, LangOpts_, pti, SM, Headers, loader)
-        , sema(SM, Diags)
+        , sema(SM, Diags, typeContext)
         , parser(PP, sema)
     {
         ApplyHeaderSearchOptions(PP.getHeaderSearchInfo(), *HSOpts, LangOpts_, pti->getTriple());
@@ -142,7 +142,7 @@ public:
         sema.visitAST(visitor);
 
         if (!visitor.getErrors()) {
-            FunctionBodyAnalyser visitor2(globals, Diags);
+            FunctionBodyAnalyser visitor2(globals, typeContext, Diags);
             sema.visitAST(visitor2);
         }
 
@@ -173,6 +173,8 @@ public:
     }
 
     std::string filename;
+
+    TypeContext typeContext;
 
     // Diagnostics
     DiagnosticOptions DiagOpts;
@@ -349,6 +351,7 @@ void C2Builder::addDummyPackages() {
     //int printf(const char *format, ...);
     {
         FunctionDecl* func = new FunctionDecl("printf", loc, true, BuiltinType::get(TYPE_INT));
+        // NOTE: MEMLEAK ON TYPE, this will go away when we remove these dummy protos
         Type* ptype = new Type(Type::POINTER, BuiltinType::get(TYPE_CHAR));
         Type* ctype = new Type(Type::QUALIFIER, ptype);
         func->addArg(new DeclExpr("format", loc, ctype, 0));

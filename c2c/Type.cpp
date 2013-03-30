@@ -23,6 +23,8 @@
 #include "Utils.h"
 #include "CodeGenerator.h"
 
+//#define TYPE_DEBUG
+
 using namespace C2;
 
 namespace C2 {
@@ -42,9 +44,7 @@ public:
 class Argument {
 public:
     Argument(Type* type_) : type(type_), next(0) {}
-    ~Argument() {
-        if (type->own()) delete type;
-    }
+    ~Argument() {}
     Type* type;
     Argument* next;
 };
@@ -65,11 +65,37 @@ static void printQualifier(StringBuilder& buffer, unsigned int flags) {
 }
 
 
+#ifdef TYPE_DEBUG
+static unsigned tcount = 0;
+
+static const char* kind2name(Type::Kind k) {
+    switch (k) {
+    case Type::BUILTIN: return "builtin";
+    case Type::USER: return "user";
+    case Type::STRUCT: return "struct";
+    case Type::UNION: return "union";
+    case Type::ENUM: return "enum";
+    case Type::FUNC: return "func";
+    case Type::POINTER: return "pointer";
+    case Type::ARRAY: return "array";
+    case Type::QUALIFIER: return "qualifier";
+    }
+    return "UNKNOWN";
+}
+#endif
+
 Type::Type(Type::Kind kind_, Type* refType_)
     : kind(kind_)
     , refType(refType_)
 {
     memset(initializer, 0, sizeof(initializer));
+
+#ifdef TYPE_DEBUG
+    if (kind != BUILTIN) {
+        tcount++;
+        printf("tcount=%d  %s\n", tcount, kind2name(kind));
+    }
+#endif
 
     switch (kind) {
     case BUILTIN:
@@ -89,15 +115,10 @@ Type::Type(Type::Kind kind_, Type* refType_)
 }
 
 Type::~Type() {
-    if (refType) {
-        assert(kind != BUILTIN);
-        if (kind != USER && refType->own()) delete refType;
-    }
     switch (kind) {
     case BUILTIN:
         break;
     case USER:
-        delete userType;
         break;
     case STRUCT:
         delete members;
@@ -112,7 +133,6 @@ Type::~Type() {
         }
         break;
     case FUNC:
-        if (returnType && returnType->own()) delete returnType;
         while (arguments) {
             Argument* next = arguments->next;
             delete arguments;
@@ -645,5 +665,54 @@ C2::Type* BuiltinType::get(C2Type t) {
     case TYPE_VOID:   return &type_void;
     }
     return 0;
+}
+
+
+
+TypeContext::TypeContext() {}
+
+TypeContext::~TypeContext() {
+    for (unsigned i=0; i<types.size(); i++) delete types[i];
+}
+
+Type* TypeContext::getUser() {
+    Type* T = new Type(Type::USER, 0);
+    types.push_back(T);
+    return T;
+}
+
+Type* TypeContext::getPointer(Type* ref) {
+    // just search all pointer types with refType = ref
+    for (unsigned i=0; i<types.size(); i++) {
+        Type* t = types[i];
+        if (t->getKind() == Type::POINTER && t->getRefType() == ref) {
+            return t;
+        }
+    }
+    // create new
+    Type* N = new Type(Type::POINTER, ref);
+    types.push_back(N);
+    return N;
+}
+
+Type* TypeContext::getStruct(bool isStruct) {
+    Type* T = new Type(isStruct ? Type::STRUCT : Type::UNION);
+    types.push_back(T);
+    return T;
+}
+
+Type* TypeContext::getArray(Type* ref, Expr* sizeExpr) {
+    Type* T = new Type(Type::ARRAY, ref);
+    T->setArrayExpr(sizeExpr);
+    types.push_back(T);
+    return T;
+}
+
+Type* TypeContext::getQualifier(Type* ref, unsigned int qualifier) {
+    // TODO lookup same qualifiers with same ref type
+    Type* T = new Type(Type::QUALIFIER, ref);
+    T->setQualifier(qualifier);
+    types.push_back(T);
+    return T;
 }
 
