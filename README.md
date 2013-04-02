@@ -95,7 +95,11 @@ Some examples that work better than others:
 It's also possible to manually compile a single .c2 file without a recipe
 file with:
 ```
-./c2c -single <file.c2>
+./c2c -f <file.c2>
 ```
 
+To see all available options, run:
+```
+./c2c -h
+```
 
