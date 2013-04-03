@@ -9,6 +9,7 @@ In a nutshell, the main differences with C are:
 * packages (needed if we can't have includes)
 * compiled per target (not per file)
 * more logical keywords (public/local replaces static)
+* integrated build system
 
 Below are the instructions for building and using the C2Compiler.
 
