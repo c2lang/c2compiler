@@ -91,6 +91,8 @@ static C2Type kw2type(tok::TokenKind Kind) {
     case tok::kw_uint:  return TYPE_U32;
     case tok::kw_string: return TYPE_STRING;
     case tok::kw_float: return TYPE_FLOAT;
+    case tok::kw_f32:   return TYPE_F32;
+    case tok::kw_f64:   return TYPE_F64;
     case tok::kw_char:  return TYPE_CHAR;
     case tok::kw_bool:  return TYPE_BOOL;
     case tok::kw_void:  return TYPE_VOID;
@@ -487,6 +489,8 @@ C2::ExprResult C2Parser::ParseSingleTypeSpecifier(bool allow_qualifier) {
     case tok::kw_uint:
     case tok::kw_string:
     case tok::kw_float:
+    case tok::kw_f32:
+    case tok::kw_f64:
     case tok::kw_char:
     case tok::kw_void:
     case tok::kw_uchar:
@@ -1225,6 +1229,8 @@ bool C2Parser::isDeclaration() {
     case tok::kw_uint:
     case tok::kw_string:
     case tok::kw_float:
+    case tok::kw_f32:
+    case tok::kw_f64:
     case tok::kw_void:
     case tok::kw_char:
     case tok::kw_uchar:
@@ -1338,6 +1344,8 @@ C2::ExprResult C2Parser::ParseSizeof()
     case tok::kw_uint:
     case tok::kw_string:
     case tok::kw_float:
+    case tok::kw_f32:
+    case tok::kw_f64:
     case tok::kw_void:
     case tok::kw_char:
     case tok::kw_uchar:
@@ -1501,6 +1509,8 @@ C2::StmtResult C2Parser::ParseStatement() {
     case tok::kw_uint:
     case tok::kw_string:
     case tok::kw_float:
+    case tok::kw_f32:
+    case tok::kw_f64:
     case tok::kw_void:
     case tok::kw_char:
     case tok::kw_uchar:

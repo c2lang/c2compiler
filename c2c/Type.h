@@ -168,6 +168,8 @@ enum C2Type {
     TYPE_INT,
     TYPE_STRING,
     TYPE_FLOAT,
+    TYPE_F32,
+    TYPE_F64,
     TYPE_CHAR,
     TYPE_BOOL,
     TYPE_VOID,
