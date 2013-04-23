@@ -372,6 +372,7 @@ STMT_VISITOR_ACCEPT(LabelStmt);
 void LabelStmt::print(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
     buffer << "[label]\n";
+    subStmt->print(indent + INDENT, buffer);
 }
 
 void LabelStmt::generateC(int indent, StringBuilder& buffer) {
@@ -428,6 +429,26 @@ void CompoundStmt::generateC(int indent, StringBuilder& buffer) {
 
 Stmt* CompoundStmt::getLastStmt() const {
     if (Stmts.size() == 0) return 0;
-    else return Stmts[Stmts.size() -1];
+    else {
+        // NOTE: if last is compound, get last from that one
+        // NOTE: if last is label, get label.subStmt
+        // TODO handle goto statement as last statement
+        Stmt* last = Stmts[Stmts.size() -1];
+        switch (last->stype()) {
+        case STMT_LABEL:
+        {
+            LabelStmt* label = StmtCaster<LabelStmt>::getType(last);
+            // TODO handle compound substatements
+            return label->getSubStmt();
+        }
+        case STMT_COMPOUND:
+        {
+            CompoundStmt* compound = StmtCaster<CompoundStmt>::getType(last);
+            return compound->getLastStmt();
+        }
+        default:
+            return last;
+        }
+    }
 }
 

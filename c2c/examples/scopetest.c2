@@ -26,5 +26,6 @@ func int main(int argc, char*[] argv) {
     return other.count; // not visible
 
     break;  // error, not in loop
+    return 0;
 }
 

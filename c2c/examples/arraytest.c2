@@ -21,6 +21,7 @@ elements += { "test3", 30 }
 
 TEST(foo, 10) {
     IO.printf("here!\n");
+    return 0;
 }
 
 func void main() {

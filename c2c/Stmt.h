@@ -283,6 +283,7 @@ public:
     virtual void print(int indent, StringBuilder& buffer);
     virtual void generateC(int indent, StringBuilder& buffer);
     virtual llvm::Value* codeGen(CodeGenContext& context);
+    Stmt* getSubStmt() const { return subStmt; }
 private:
     std::string name;
     SourceLocation Loc;
