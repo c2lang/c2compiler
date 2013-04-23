@@ -31,6 +31,7 @@ namespace C2 {
 class Type;
 class GlobalScope;
 class Decl;
+class FunctionDecl;
 class Stmt;
 class Expr;
 class IdentifierExpr;
@@ -84,6 +85,9 @@ private:
     //const Pkgs& pkgs;
     clang::DiagnosticsEngine& Diags;
     unsigned int errors;
+
+    // current function
+    FunctionDecl* func;
 
     FunctionBodyAnalyser(const FunctionBodyAnalyser&);
     FunctionBodyAnalyser& operator= (const FunctionBodyAnalyser&);

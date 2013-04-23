@@ -56,7 +56,7 @@ bool FunctionBodyAnalyser::handle(Decl* decl) {
     switch (decl->dtype()) {
     case DECL_FUNC:
         {
-            FunctionDecl* func = DeclCaster<FunctionDecl>::getType(decl);
+            func = DeclCaster<FunctionDecl>::getType(decl);
             assert(func);
             EnterScope(Scope::FnScope | Scope::DeclScope);
             // add arguments to new scope
@@ -79,6 +79,7 @@ bool FunctionBodyAnalyser::handle(Decl* decl) {
             }
             analyseCompoundStmt(func->getBody());
             ExitScope();
+            func = 0;
         }
         break;
     case DECL_VAR:
@@ -276,7 +277,21 @@ void FunctionBodyAnalyser::analyseReturnStmt(Stmt* stmt) {
     ReturnStmt* ret = StmtCaster<ReturnStmt>::getType(stmt);
     assert(ret);
     Expr* value = ret->getExpr();
-    if (value) analyseExpr(value);
+    Type* rtype = func->getReturnType();
+    bool no_rvalue = (rtype == BuiltinType::get(TYPE_VOID));
+    if (value) {
+        Type* type = analyseExpr(value);
+        if (no_rvalue) {
+            Diags.Report(ret->getLocation(), diag::ext_return_has_expr) << func->getName() << 0;
+            // TODO value->getSourceRange()
+        } else {
+            // TODO check if type and rtype are compatible
+        }
+    } else {
+        if (!no_rvalue) {
+            Diags.Report(ret->getLocation(), diag::ext_return_missing_expr) << func->getName() << 0;
+        }
+    }
 }
 
 void FunctionBodyAnalyser::analyseStmtExpr(Stmt* stmt) {
@@ -317,9 +332,12 @@ static C2::Type* Decl2Type(Decl* decl) {
 C2::Type* FunctionBodyAnalyser::analyseExpr(Expr* expr) {
     switch (expr->etype()) {
     case EXPR_NUMBER:
+        // TEMP for now always return type int
+        return BuiltinType::get(TYPE_INT);
     case EXPR_STRING:
     case EXPR_BOOL:
     case EXPR_CHARLITERAL:
+        // TODO return type
         break;
     case EXPR_CALL:
         return analyseCall(expr);
