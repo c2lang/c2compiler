@@ -78,6 +78,22 @@ bool FunctionBodyAnalyser::handle(Decl* decl) {
                 curScope->addDecl(new VarDecl(de, false, true));
             }
             analyseCompoundStmt(func->getBody());
+
+            // check for return statement of return value is required
+            Type* rtype = func->getReturnType();
+            bool need_rvalue = (rtype != BuiltinType::get(TYPE_VOID));
+            if (need_rvalue) {
+                // check last statement in body
+                CompoundStmt* compound = StmtCaster<CompoundStmt>::getType(func->getBody());
+                assert(compound);
+                Stmt* lastStmt = compound->getLastStmt();
+                // TODO or if lastStmt is no return stmt
+                if (!lastStmt) {
+                    // control reaches end of non-void function
+                    Diags.Report(compound->getRight(), diag::warn_falloff_nonvoid_function);
+                }
+            }
+
             ExitScope();
             func = 0;
         }

@@ -4,9 +4,11 @@ use utils;
 use c2;
 
 public func int getMax() {
+    return 1;
 }
 
 func int add(int a, int b) {
+    return 2;
 }
 
 func void doThing() {}
@@ -15,7 +17,9 @@ func void printf(int argc, const string* text, ...) {}
 
 type Coor int;  // temp until we support multi-package
 
-func utils.Coor getCoor(int argc, char*[] argv) {}
+func utils.Coor getCoor(int argc, char*[] argv) {
+    return 0;
+}
 
 func void needed(char[][] data) {}
 
@@ -25,4 +29,4 @@ func void doThing3(int number = 2, int* result = 0) {}
 
 func void testFunc(const char c, volatile int* reg) {}
 
-func const char* getToken() {}
+func const char* getToken() { return 0; }

@@ -426,3 +426,8 @@ void CompoundStmt::generateC(int indent, StringBuilder& buffer) {
     buffer << "}\n";
 }
 
+Stmt* CompoundStmt::getLastStmt() const {
+    if (Stmts.size() == 0) return 0;
+    else return Stmts[Stmts.size() -1];
+}
+

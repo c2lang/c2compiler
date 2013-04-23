@@ -319,6 +319,8 @@ public:
     virtual llvm::Value* codeGen(CodeGenContext& context);
 
     const StmtList& getStmts() const { return Stmts; }
+    Stmt* getLastStmt() const;
+    SourceLocation getRight() const { return Right; }
 private:
     SourceLocation Left;
     SourceLocation Right;
