@@ -86,8 +86,7 @@ private:
     clang::DiagnosticsEngine& Diags;
     unsigned int errors;
 
-    // current function
-    FunctionDecl* func;
+    FunctionDecl* func;     // current function
 
     FunctionBodyAnalyser(const FunctionBodyAnalyser&);
     FunctionBodyAnalyser& operator= (const FunctionBodyAnalyser&);
