@@ -6,7 +6,7 @@ public type Layer3 struct {
     layer2.Layer2 l2;
 }
 
-func void main(int argc, char*[] argv) {
+func int main(int argc, char*[] argv) {
     return 0;
 }
 
