@@ -109,7 +109,7 @@ public:
     void visitAST(ASTVisitor& visitor);
 
     // debugging
-    void printAST() const;
+    void printAST(const std::string& filename) const;
     void generateC(StringBuilder& buffer) const;
 
     const std::string& getPkgName() const { return pkgName; }

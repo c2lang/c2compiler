@@ -1,0 +1,7 @@
+package issue;
+
+use type2 local;
+
+type Range Long;
+
+

@@ -101,3 +101,10 @@ target unarytest
     examples/unaryTest.c2
 end
 
+target issue
+    examples/issue1.c2
+    examples/issue2.c2
+    examples/issue_type1.c2
+    examples/issue_type2.c2
+end
+

@@ -129,7 +129,7 @@ public:
         bool ok = parser.Parse();
         u_int64_t t2 = Utils::getCurrentTime();
         if (options.printTiming) printf(COL_TIME"parsing took %lld usec"ANSI_NORMAL"\n", t2 - t1);
-        if (options.printAST) sema.printAST();
+        if (options.printAST) sema.printAST(filename);
         return ok;
     }
 

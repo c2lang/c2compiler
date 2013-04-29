@@ -646,9 +646,9 @@ C2::ExprResult C2Sema::ActOnCharacterConstant(SourceLocation Loc, const std::str
     return ExprResult(new CharLiteralExpr(Loc, cvalue));
 }
 
-void C2Sema::printAST() const {
+void C2Sema::printAST(const std::string& filename) const {
     StringBuilder buffer;
-    buffer << "---- AST " << "TODO FILE.c2" << " ----\n";
+    buffer << "---- AST " << "(pkg=" << pkgName << ") " << filename << " ----\n";
     for (DeclListConstIter iter = decls.begin(); iter != decls.end(); ++iter) {
         (*iter)->print(buffer);
         buffer << '\n';
