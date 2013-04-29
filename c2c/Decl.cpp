@@ -192,7 +192,7 @@ TypeDecl::~TypeDecl() {
 DECL_VISITOR_ACCEPT(TypeDecl);
 
 void TypeDecl::print(StringBuilder& buffer) {
-    buffer << "[type " << name << "]\n";
+    buffer << "[typedef " << name << "]\n";
     type->print(INDENT, buffer);
 }
 
