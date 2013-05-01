@@ -414,7 +414,7 @@ void FunctionBodyAnalyser::analyseDeclExpr(Expr* expr) {
 Type* FunctionBodyAnalyser::analyseBinOpExpr(Expr* expr) {
     BinOpExpr* binop = ExprCaster<BinOpExpr>::getType(expr);
     assert(binop);
-    analyseExpr(binop->getLeft());
+    Type* TLeft = analyseExpr(binop->getLeft());
     analyseExpr(binop->getRight());
     return 0;
 }

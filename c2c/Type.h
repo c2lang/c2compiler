@@ -101,7 +101,8 @@ public:
 
     void printFull(StringBuilder& buffer, int indent = 0) const;
     void printEffective(StringBuilder& buffer, int indent = 0) const;
-    void print(int indent, StringBuilder& buffer, bool recursive) const;
+    enum RecursionType { RECURSE_NONE=0, RECURSE_ONCE, RECURSE_ALL };
+    void print(int indent, StringBuilder& buffer, RecursionType recursive) const;
     void dump() const;
 
     void generateC_PreName(StringBuilder& buffer) const;

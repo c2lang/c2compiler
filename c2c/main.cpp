@@ -33,6 +33,7 @@ static void usage(const char* name) {
     fprintf(stderr, "Usage: %s <options> <target>\n", name);
     fprintf(stderr, "Options:\n");
     fprintf(stderr, "   -a            - print AST\n");
+    fprintf(stderr, "   -aa           - print AST (after analysis)\n");
     fprintf(stderr, "   -c            - generate C code\n");
     fprintf(stderr, "   -f <file>     - compile single file without recipe\n");
     fprintf(stderr, "   -h            - show this help\n");

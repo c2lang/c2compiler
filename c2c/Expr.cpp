@@ -209,7 +209,7 @@ TypeExpr::~TypeExpr() {
 EXPR_VISITOR_ACCEPT(TypeExpr);
 
 void TypeExpr::print(int indent, StringBuilder& buffer) {
-    if (type) type->print(indent, buffer, false);
+    if (type) type->print(indent, buffer, Type::RECURSE_NONE);
 }
 
 void TypeExpr::generateC(int indent, StringBuilder& buffer) {
@@ -274,11 +274,11 @@ void DeclExpr::print(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
     buffer << "[decl " << name << "]\n";
     indent += INDENT;
-    type->print(indent, buffer, false);
+    type->print(indent, buffer, Type::RECURSE_ONCE);
     if (canonicalType) {
         buffer.indent(indent);
         buffer << ANSI_CYAN << "canonical:" << ANSI_NORMAL << '\n';
-        canonicalType->print(indent+INDENT, buffer, false);
+        canonicalType->print(indent+INDENT, buffer, Type::RECURSE_NONE);
     }
     if (initValue) {
         buffer.indent(indent);

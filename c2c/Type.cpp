@@ -440,7 +440,7 @@ void Type::printName(StringBuilder& buffer) const {
     }
 }
 
-void Type::print(int indent, StringBuilder& buffer, bool recursive) const {
+void Type::print(int indent, StringBuilder& buffer, RecursionType recursive) const {
     buffer.indent(indent);
     buffer << "[type] ";
     switch (kind) {
@@ -451,10 +451,10 @@ void Type::print(int indent, StringBuilder& buffer, bool recursive) const {
         buffer << "(user)\n";
         assert(userType);
         userType->print(indent + INDENT, buffer);
-        if (refType && recursive) {
+        if (refType && recursive != RECURSE_NONE) {
             buffer.indent(indent + INDENT);
             buffer << ANSI_CYAN << "resolved to:" << ANSI_NORMAL << '\n'; 
-            refType->print(indent + INDENT, buffer, recursive);
+            refType->print(indent + INDENT, buffer, recursive==RECURSE_ONCE ? RECURSE_NONE : recursive);
         }
         break;
     case UNION:
@@ -511,7 +511,7 @@ void Type::print(int indent, StringBuilder& buffer, bool recursive) const {
 void Type::dump() const {
     StringBuilder buffer;
     //printEffective(buffer, 0);
-    print(0, buffer, true);
+    print(0, buffer, RECURSE_ALL);
     fprintf(stderr, "[TYPE] %s\n", (const char*)buffer);
 }
 
