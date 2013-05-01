@@ -116,6 +116,12 @@ Type::Type(Type::Kind kind_, Type* refType_)
 }
 
 Type::~Type() {
+#ifdef TYPE_DEBUG
+    if (kind != BUILTIN) {
+        tcount--;
+        printf("tcount=%d  %s\n", tcount, kind2name(kind));
+    }
+#endif
     switch (kind) {
     case BUILTIN:
         break;
