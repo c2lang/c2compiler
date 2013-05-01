@@ -141,6 +141,7 @@ public:
         GlobalAnalyser visitor(globals, Diags);
         sema.visitAST(visitor);
 
+        // step 2: analyse function bodies
         if (!visitor.getErrors()) {
             FunctionBodyAnalyser visitor2(globals, typeContext, Diags);
             sema.visitAST(visitor2);
