@@ -2,9 +2,9 @@ package issue;
 
 use type1 local;
 
-type Number Range;
-
 func void main() {
     Number n = 300;
 }
+
+type Number Range;
 

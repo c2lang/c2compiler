@@ -88,7 +88,6 @@ static const char* kind2name(Type::Kind k) {
 Type::Type(Type::Kind kind_, Type* refType_)
     : kind(kind_)
     , refType(refType_)
-    , canonicalType(0)
 {
     memset(initializer, 0, sizeof(initializer));
 
@@ -396,7 +395,7 @@ void Type::printName(StringBuilder& buffer) const {
     }
 }
 
-void Type::print(int indent, StringBuilder& buffer) const {
+void Type::print(int indent, StringBuilder& buffer, bool recursive) const {
     buffer.indent(indent);
     buffer << "[type] ";
     switch (kind) {
@@ -411,11 +410,6 @@ void Type::print(int indent, StringBuilder& buffer) const {
             buffer.indent(indent + INDENT);
             buffer << ANSI_CYAN << "resolved to:" << ANSI_NORMAL << '\n'; 
             refType->print(indent + INDENT, buffer);
-        }
-        if (canonicalType) {
-            buffer.indent(indent + INDENT);
-            buffer << ANSI_CYAN << "canonical:" << ANSI_NORMAL << '\n'; 
-            canonicalType->print(indent + INDENT, buffer);
         }
         break;
     case UNION:

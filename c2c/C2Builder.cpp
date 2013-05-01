@@ -121,7 +121,9 @@ public:
 
         parser.Initialize();
     }
-    ~FileInfo() {}
+    ~FileInfo() {
+        delete globals;
+    }
 
     bool parse(const BuildOptions& options) {
         u_int64_t t1 = Utils::getCurrentTime();
@@ -133,19 +135,21 @@ public:
         return ok;
     }
 
-    int analyse(const BuildOptions& options, const Pkgs& pkgs) {
-        u_int64_t t1 = Utils::getCurrentTime();
-
+    // analyse FileScope and Types
+    int analyse1(const BuildOptions& options, const Pkgs& pkgs) {
+        // TODO measure this analysis time as well
         // step 1: do use and type analysis and build global scope
-        GlobalScope globals(sema.getPkgName(), pkgs, Diags);
-        GlobalAnalyser visitor(globals, Diags);
+        globals = new GlobalScope(sema.getPkgName(), pkgs, Diags);
+        GlobalAnalyser visitor(*globals, Diags);
         sema.visitAST(visitor);
+        return !visitor.getErrors();
+    }
 
+    int analyse2(const BuildOptions& options) {
+        u_int64_t t1 = Utils::getCurrentTime();
         // step 2: analyse function bodies
-        if (!visitor.getErrors()) {
-            FunctionBodyAnalyser visitor2(globals, typeContext, Diags);
-            sema.visitAST(visitor2);
-        }
+        FunctionBodyAnalyser visitor(*globals, typeContext, Diags);
+        sema.visitAST(visitor);
 
         u_int64_t t2 = Utils::getCurrentTime();
         if (options.printTiming) printf(COL_TIME"analysis took %lld usec"ANSI_NORMAL"\n", t2 - t1);
@@ -202,6 +206,7 @@ public:
     // C2 Parser + Sema
     C2Sema sema;
     C2Parser parser;
+    GlobalScope* globals;
 };
 
 }
@@ -282,7 +287,11 @@ void C2Builder::build() {
     // phase 2: run analysing on all files
     for (unsigned int i=0; i<files.size(); i++) {
         FileInfo* info = files[i];
-        errors += info->analyse(options, pkgs);
+        errors += info->analyse1(options, pkgs);
+    }
+    for (unsigned int i=0; i<files.size(); i++) {
+        FileInfo* info = files[i];
+        errors += info->analyse2(options);
     }
     if (options.printASTAfter) {
         for (unsigned int i=0; i<files.size(); i++) {

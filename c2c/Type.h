@@ -59,8 +59,6 @@ public:
     Kind getKind() const { return kind; }
     Type* getRefType() const { return refType; }
     void setRefType(Type* t);
-    Type* getCanonicalType() const { return canonicalType; }
-    void setCanonicalType(Type* t) { canonicalType = t; }
     bool isUserType() const { return kind == USER; }
     bool isFuncType() const { return kind == FUNC; }
     bool isStructOrUnionType() const { return kind == STRUCT || kind == UNION; }
@@ -99,7 +97,7 @@ public:
 
     void printFull(StringBuilder& buffer, int indent = 0) const;
     void printEffective(StringBuilder& buffer, int indent = 0) const;
-    void print(int indent, StringBuilder& buffer) const;
+    void print(int indent, StringBuilder& buffer, bool recursive=true) const;
     void dump() const;
 
     void generateC_PreName(StringBuilder& buffer) const;
@@ -116,7 +114,6 @@ private:
 
     Kind kind;
     Type* refType;
-    Type* canonicalType;
 
     union {
         unsigned int initializer[4];    // TODO determine
