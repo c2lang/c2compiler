@@ -391,9 +391,16 @@ void FunctionBodyAnalyser::analyseDeclExpr(Expr* expr) {
     DeclExpr* decl = ExprCaster<DeclExpr>::getType(expr);
     assert(decl);
 
-    // check type
+    // check type and convert User types
     Type* type = decl->getType();
+    fprintf(stderr, "BEFORE\n");
+    type->dump();
     errors += globalScope.checkType(type, false);
+
+    Type* canonicalType = type->getCanonical(typeContext);
+    decl->setCanonicalType(canonicalType);
+    fprintf(stderr, "AFTER\n");
+    canonicalType->dump();
 
     // check name
     // TODO pkg prefixes

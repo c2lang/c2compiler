@@ -76,6 +76,7 @@ private:
     ScopeResult analyseIdentifier(Expr* expr);
 
     static Type* resolveUserType(Type* T);
+    Type* resolveCanonicalType(Type* T);
 
     GlobalScope& globalScope;
     TypeContext& typeContext;

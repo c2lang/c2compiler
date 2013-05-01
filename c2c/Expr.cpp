@@ -19,6 +19,7 @@
 #include "StringBuilder.h"
 #include "Utils.h"
 #include "Type.h"
+#include "color.h"
 
 using namespace C2;
 using namespace std;
@@ -256,6 +257,7 @@ DeclExpr::DeclExpr(const std::string& name_, SourceLocation& loc_,
     : name(name_)
     , loc(loc_)
     , type(type_)
+    , canonicalType(0)
     , initValue(initValue_)
 {}
 
@@ -263,11 +265,21 @@ DeclExpr::~DeclExpr() {}
 
 EXPR_VISITOR_ACCEPT(DeclExpr);
 
+void DeclExpr::setCanonicalType(Type* t) {
+    assert(canonicalType == 0);
+    canonicalType = t;
+}
+
 void DeclExpr::print(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
     buffer << "[decl " << name << "]\n";
     indent += INDENT;
-    type->print(indent, buffer);
+    type->print(indent, buffer, false);
+    if (canonicalType) {
+        buffer.indent(indent);
+        buffer << ANSI_CYAN << "canonical:" << ANSI_NORMAL << '\n';
+        canonicalType->print(indent+INDENT, buffer, false);
+    }
     if (initValue) {
         buffer.indent(indent);
         buffer << "initial:\n";

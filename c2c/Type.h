@@ -35,6 +35,7 @@ class Argument;
 class CodeGenContext;
 class Expr;
 class DeclExpr;
+class TypeContext;
 
 typedef OwningVector<C2::DeclExpr> MemberList;
 
@@ -64,6 +65,9 @@ public:
     bool isStructOrUnionType() const { return kind == STRUCT || kind == UNION; }
     bool isSubscriptable() const { return kind == ARRAY || kind == POINTER; }
     bool isPointerType() const { return kind == POINTER; }
+
+    // for resolving canonical type
+    Type* getCanonical(TypeContext& context);
 
     // Builtin type
     void setBuiltinName(const char* name_, const char* cname_) {

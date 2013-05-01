@@ -239,12 +239,15 @@ public:
     virtual SourceLocation getExprLoc() const { return loc; }
 
     Type* getType() const { return type; }
+    Type* getCanonicalType() const { return canonicalType; }
+    void setCanonicalType(Type* t);
     const std::string& getName() const { return name; }
     SourceLocation getLocation() const { return loc; }
 private:
     std::string name;
     SourceLocation loc;
     Type* type;
+    Type* canonicalType;
     Expr* initValue;
 };
 

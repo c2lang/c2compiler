@@ -155,6 +155,31 @@ void Type::setRefType(Type* t) {
     refType = t;
 }
 
+Type* Type::getCanonical(TypeContext& context) {
+    switch (kind) {
+    case BUILTIN:
+        return this;
+    case USER:
+        assert(refType);
+        return refType->getCanonical(context);
+    case STRUCT:
+    case UNION:
+    case ENUM:
+    case FUNC:
+        return this;
+    case POINTER:
+        // TODO
+        break;
+    case ARRAY:
+        // TODO
+        break;
+    case QUALIFIER:
+        // TODO
+        break;
+    }
+    return this;
+}
+
 void Type::setMembers(MemberList& members_) {
     assert(kind == STRUCT || kind == UNION);
     assert(members == 0);
@@ -406,7 +431,7 @@ void Type::print(int indent, StringBuilder& buffer, bool recursive) const {
         buffer << "(user)\n";
         assert(userType);
         userType->print(indent + INDENT, buffer);
-        if (refType) {
+        if (refType && recursive) {
             buffer.indent(indent + INDENT);
             buffer << ANSI_CYAN << "resolved to:" << ANSI_NORMAL << '\n'; 
             refType->print(indent + INDENT, buffer);
