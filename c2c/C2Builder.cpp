@@ -139,7 +139,7 @@ public:
     int analyse1(const BuildOptions& options, const Pkgs& pkgs) {
         // TODO measure this analysis time as well
         // step 1: do use and type analysis and build global scope
-        globals = new GlobalScope(sema.getPkgName(), pkgs, Diags);
+        globals = new FileScope(sema.getPkgName(), pkgs, Diags);
         GlobalAnalyser visitor(*globals, Diags);
         sema.visitAST(visitor);
         return !visitor.getErrors();
@@ -206,7 +206,7 @@ public:
     // C2 Parser + Sema
     C2Sema sema;
     C2Parser parser;
-    GlobalScope* globals;
+    FileScope* globals;
 };
 
 }

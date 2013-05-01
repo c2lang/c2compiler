@@ -52,9 +52,9 @@ public:
 };
 
 
-class GlobalScope {
+class FileScope {
 public:
-    GlobalScope(const std::string& name_, const Pkgs& pkgs_, clang::DiagnosticsEngine& Diags_);
+    FileScope(const std::string& name_, const Pkgs& pkgs_, clang::DiagnosticsEngine& Diags_);
 
     const Package* findPackage(const std::string& name) const;
     const Package* findAnyPackage(const std::string& name) const;
@@ -124,7 +124,7 @@ public:
         SwitchScope = 0x800,
     };
     Scope();
-    void InitOnce(GlobalScope& globals_, Scope* parent_);
+    void InitOnce(FileScope& globals_, Scope* parent_);
     void Init(unsigned int flags_);
 
     ScopeResult findSymbol(const std::string& name) const;
@@ -136,7 +136,7 @@ public:
     bool allowContinue() const { return Flags & ContinueScope; }
 private:
     // set once
-    GlobalScope* globals;
+    FileScope* globals;
     Scope* parent;
     unsigned int Flags;
 

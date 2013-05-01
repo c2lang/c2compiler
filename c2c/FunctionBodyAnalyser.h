@@ -29,7 +29,7 @@ class DiagnosticsEngine;
 namespace C2 {
 
 class Type;
-class GlobalScope;
+class FileScope;
 class Decl;
 class FunctionDecl;
 class Stmt;
@@ -39,7 +39,7 @@ class TypeContext;
 
 class FunctionBodyAnalyser : public ASTVisitor {
 public:
-    FunctionBodyAnalyser(GlobalScope& scope_,
+    FunctionBodyAnalyser(FileScope& scope_,
                          TypeContext& tc,
                          clang::DiagnosticsEngine& Diags_);
     virtual ~FunctionBodyAnalyser();
@@ -79,7 +79,7 @@ private:
     Type* resolveCanonicalType(Type* T);
     Type* Decl2Type(Decl* decl);
 
-    GlobalScope& globalScope;
+    FileScope& globalScope;
     TypeContext& typeContext;
     Scope scopes[MAX_SCOPE_DEPTH];
     unsigned scopeIndex;    // first free scope (= count of scopes)

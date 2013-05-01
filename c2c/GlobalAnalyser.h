@@ -27,12 +27,12 @@ namespace C2 {
 
 class Type;
 class IdentifierExpr;
-class GlobalScope;
+class FileScope;
 class Decl;
 
 class GlobalAnalyser : public ASTVisitor {
 public:
-    GlobalAnalyser(GlobalScope& scope_, clang::DiagnosticsEngine& Diags_);
+    GlobalAnalyser(FileScope& scope_, clang::DiagnosticsEngine& Diags_);
     virtual ~GlobalAnalyser();
 
     virtual bool handle(Decl* decl);
@@ -41,7 +41,7 @@ private:
     void checkType(Type* type, bool used_public = false);
     void checkUse(Decl* decl);
 
-    GlobalScope& globalScope;
+    FileScope& globalScope;
     clang::DiagnosticsEngine& Diags;
     unsigned int errors;
 

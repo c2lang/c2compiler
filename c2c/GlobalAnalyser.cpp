@@ -28,7 +28,7 @@
 using namespace C2;
 using namespace clang;
 
-GlobalAnalyser::GlobalAnalyser(GlobalScope& scope_, clang::DiagnosticsEngine& Diags_)
+GlobalAnalyser::GlobalAnalyser(FileScope& scope_, clang::DiagnosticsEngine& Diags_)
     : globalScope(scope_)
     , Diags(Diags_)
     , errors(0)

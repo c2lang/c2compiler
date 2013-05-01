@@ -32,7 +32,7 @@
 using namespace C2;
 using namespace clang;
 
-FunctionBodyAnalyser::FunctionBodyAnalyser(GlobalScope& scope_,
+FunctionBodyAnalyser::FunctionBodyAnalyser(FileScope& scope_,
                                            TypeContext& tc,
                                            clang::DiagnosticsEngine& Diags_)
     : globalScope(scope_)
@@ -330,6 +330,8 @@ C2::Type* FunctionBodyAnalyser::Decl2Type(Decl* decl) {
         {
             VarDecl* VD = DeclCaster<VarDecl>::getType(decl);
             Type* canonical = VD->getCanonicalType();
+            // TODO assert canonical and return it.
+            // Don't set here, because VD can be in different file!
             if (!canonical) {
                 canonical = VD->getType()->getCanonical(typeContext);
                 VD->setCanonicalType(canonical);

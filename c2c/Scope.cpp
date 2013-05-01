@@ -29,7 +29,7 @@
 using namespace C2;
 using namespace clang;
 
-GlobalScope::GlobalScope(const std::string& name_, const Pkgs& pkgs_, clang::DiagnosticsEngine& Diags_)
+FileScope::FileScope(const std::string& name_, const Pkgs& pkgs_, clang::DiagnosticsEngine& Diags_)
     : pkgName(name_)
     , allPackages(pkgs_)
     , Diags(Diags_)
@@ -39,7 +39,7 @@ GlobalScope::GlobalScope(const std::string& name_, const Pkgs& pkgs_, clang::Dia
     addPackage(true, pkgName, myPackage);
 }
 
-void GlobalScope::addPackage(bool isLocal, const std::string& name_, const Package* pkg) {
+void FileScope::addPackage(bool isLocal, const std::string& name_, const Package* pkg) {
     assert(pkg);
     if (isLocal) {
         locals.push_back(pkg);
@@ -47,26 +47,26 @@ void GlobalScope::addPackage(bool isLocal, const std::string& name_, const Packa
     packages[name_] = pkg;
 }
 
-const Package* GlobalScope::findPackage(const std::string& name) const {
+const Package* FileScope::findPackage(const std::string& name) const {
     PackagesConstIter iter = packages.find(name);
     if (iter == packages.end()) return 0;
     return iter->second;
 }
 
-const Package* GlobalScope::findAnyPackage(const std::string& name) const {
+const Package* FileScope::findAnyPackage(const std::string& name) const {
     PkgsConstIter iter = allPackages.find(name);
     if (iter == allPackages.end()) return 0;
     return iter->second;
 }
 
-void GlobalScope::dump() const {
+void FileScope::dump() const {
     fprintf(stderr, "used packages:\n");
     for (PackagesConstIter iter = packages.begin(); iter != packages.end(); ++iter) {
         fprintf(stderr, "  %s (as %s)\n", iter->second->getName().c_str(), iter->first.c_str());
     }
 }
 
-int GlobalScope::checkType(Type* type, bool used_public) {
+int FileScope::checkType(Type* type, bool used_public) {
     if (type->hasBuiltinBase()) return 0; // always ok
 
     switch (type->getKind()) {
@@ -93,7 +93,7 @@ int GlobalScope::checkType(Type* type, bool used_public) {
     return 0;
 }
 
-int GlobalScope::checkStructType(Type* type, bool used_public) {
+int FileScope::checkStructType(Type* type, bool used_public) {
     MemberList* members = type->getMembers();
     for (unsigned i=0; i<members->size(); i++) {
         DeclExpr* M = (*members)[i];
@@ -102,7 +102,7 @@ int GlobalScope::checkStructType(Type* type, bool used_public) {
     return 0;
 }
 
-int GlobalScope::checkUserType(Type* type, Expr* id, bool used_public) {
+int FileScope::checkUserType(Type* type, Expr* id, bool used_public) {
     // TODO refactor
     const Package* pkg = 0;
     switch (id->etype()) {
@@ -191,11 +191,11 @@ int GlobalScope::checkUserType(Type* type, Expr* id, bool used_public) {
     return 0;
 }
 
-bool GlobalScope::isExternal(const Package* pkg) const {
+bool FileScope::isExternal(const Package* pkg) const {
     return (pkg->getName() != pkgName);
 }
 
-ScopeResult GlobalScope::findSymbol(const std::string& symbol) const {
+ScopeResult FileScope::findSymbol(const std::string& symbol) const {
     ScopeResult result;
     // symbol can be package name or symbol within package
     const Package* pkg = findPackage(symbol);
@@ -245,7 +245,7 @@ Scope::Scope()
     , Flags(0)
 {}
 
-void Scope::InitOnce(GlobalScope& globals_, Scope* parent_) {
+void Scope::InitOnce(FileScope& globals_, Scope* parent_) {
     globals = &globals_;
     parent = parent_;
 }
