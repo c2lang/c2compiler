@@ -29,12 +29,14 @@ class FileInfo;
 struct BuildOptions {
     BuildOptions()
         : printAST(false)
+        , printASTAfter(false)
         , printTiming(false)
         , printSymbols(false)
         , generateIR(false)
         , generateC(false)
     {}
     bool printAST;
+    bool printASTAfter;
     bool printTiming;
     bool printSymbols;
     bool generateIR;

@@ -59,6 +59,8 @@ public:
     Kind getKind() const { return kind; }
     Type* getRefType() const { return refType; }
     void setRefType(Type* t);
+    Type* getCanonicalType() const { return canonicalType; }
+    void setCanonicalType(Type* t) { canonicalType = t; }
     bool isUserType() const { return kind == USER; }
     bool isFuncType() const { return kind == FUNC; }
     bool isStructOrUnionType() const { return kind == STRUCT || kind == UNION; }
@@ -114,6 +116,7 @@ private:
 
     Kind kind;
     Type* refType;
+    Type* canonicalType;
 
     union {
         unsigned int initializer[4];    // TODO determine

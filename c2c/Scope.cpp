@@ -181,6 +181,8 @@ int GlobalScope::checkUserType(Type* type, Expr* id, bool used_public) {
                 Diags.Report(member_id->getLocation(), diag::err_non_public_type) << M->getFullName();
                 return 1;
             }
+            // ok
+            type->setRefType(td->getType());
         }
         break;
     default:

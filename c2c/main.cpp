@@ -50,6 +50,10 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
             opts.printAST = true;
             continue;
         }
+        if (strcmp("-aa", arg) == 0) {
+            opts.printASTAfter = true;
+            continue;
+        }
         if (strcmp("-c", arg) == 0) {
             opts.generateC = true;
             continue;

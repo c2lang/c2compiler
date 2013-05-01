@@ -284,6 +284,12 @@ void C2Builder::build() {
         FileInfo* info = files[i];
         errors += info->analyse(options, pkgs);
     }
+    if (options.printASTAfter) {
+        for (unsigned int i=0; i<files.size(); i++) {
+            FileInfo* info = files[i];
+            info->sema.printAST(info->filename);
+        }
+    }
     if (errors) return;
 
     // (optional) phase 3a: C code generation
