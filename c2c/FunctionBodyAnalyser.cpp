@@ -96,6 +96,10 @@ bool FunctionBodyAnalyser::handle(Decl* decl) {
         }
         break;
     case DECL_VAR:
+        {
+            // TODO analyse Decl, set CanonicalType, check initialization
+        }
+        break;
     case DECL_TYPE:
     case DECL_ARRAYVALUE:
     case DECL_USE:
@@ -313,7 +317,7 @@ void FunctionBodyAnalyser::analyseStmtExpr(Stmt* stmt) {
     analyseExpr(expr);
 }
 
-static C2::Type* Decl2Type(Decl* decl) {
+C2::Type* FunctionBodyAnalyser::Decl2Type(Decl* decl) {
     assert(decl);
     switch (decl->dtype()) {
     case DECL_FUNC:
@@ -325,7 +329,12 @@ static C2::Type* Decl2Type(Decl* decl) {
     case DECL_VAR:
         {
             VarDecl* VD = DeclCaster<VarDecl>::getType(decl);
-            return VD->getType();
+            Type* canonical = VD->getCanonicalType();
+            if (!canonical) {
+                canonical = VD->getType()->getCanonical(typeContext);
+                VD->setCanonicalType(canonical);
+            }
+            return canonical;
         }
         break;
     case DECL_TYPE:

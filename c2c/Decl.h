@@ -123,6 +123,8 @@ public:
     virtual const std::string& getName() const;
     virtual clang::SourceLocation getLocation() const;
     Type* getType() const;
+    Type* getCanonicalType() const;
+    void setCanonicalType(Type* t);
 private:
     DeclExpr* decl;
     unsigned int flags;    // inExpr;

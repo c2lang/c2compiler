@@ -178,6 +178,10 @@ clang::SourceLocation VarDecl::getLocation() const {
 
 Type* VarDecl::getType() const { return decl->getType(); }
 
+Type* VarDecl::getCanonicalType() const { return decl->getCanonicalType(); }
+
+void VarDecl::setCanonicalType(Type* t) { decl->setCanonicalType(t); }
+
 
 TypeDecl::TypeDecl(const std::string& name_, SourceLocation loc_, Type* type_, bool is_public_)
     : Decl(is_public_)

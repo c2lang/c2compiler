@@ -77,6 +77,7 @@ private:
 
     static Type* resolveUserType(Type* T);
     Type* resolveCanonicalType(Type* T);
+    Type* Decl2Type(Decl* decl);
 
     GlobalScope& globalScope;
     TypeContext& typeContext;
