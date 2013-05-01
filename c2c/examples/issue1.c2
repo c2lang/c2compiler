@@ -8,3 +8,5 @@ func void main() {
 
 type Number Range;
 
+Range range;
+
