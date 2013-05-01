@@ -393,14 +393,10 @@ void FunctionBodyAnalyser::analyseDeclExpr(Expr* expr) {
 
     // check type and convert User types
     Type* type = decl->getType();
-    fprintf(stderr, "BEFORE\n");
-    type->dump();
     errors += globalScope.checkType(type, false);
 
     Type* canonicalType = type->getCanonical(typeContext);
     decl->setCanonicalType(canonicalType);
-    fprintf(stderr, "AFTER\n");
-    canonicalType->dump();
 
     // check name
     // TODO pkg prefixes

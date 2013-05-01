@@ -168,11 +168,25 @@ Type* Type::getCanonical(TypeContext& context) {
     case FUNC:
         return this;
     case POINTER:
-        // TODO
-        break;
+        {
+            assert(refType);
+            Type* CT = refType->getCanonical(context);
+            if (CT == refType) return this;
+            return context.getPointer(CT);
+        }
     case ARRAY:
-        // TODO
-        break;
+        {
+            assert(refType);
+            Type* CT = refType->getCanonical(context);
+            if (CT == refType) return this;
+            if (arrayExpr) {
+                // TODO: HMM how to handle arrayExpr ownership?
+                assert(0 && "TODO");
+                return this;
+            } else {
+                return context.getArray(CT, 0);
+            }
+        }
     case QUALIFIER:
         // TODO
         break;
