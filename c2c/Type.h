@@ -101,7 +101,7 @@ public:
 
     void printFull(StringBuilder& buffer, int indent = 0) const;
     void printEffective(StringBuilder& buffer, int indent = 0) const;
-    void print(int indent, StringBuilder& buffer, bool recursive=true) const;
+    void print(int indent, StringBuilder& buffer, bool recursive) const;
     void dump() const;
 
     void generateC_PreName(StringBuilder& buffer) const;

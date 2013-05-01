@@ -209,7 +209,7 @@ TypeExpr::~TypeExpr() {
 EXPR_VISITOR_ACCEPT(TypeExpr);
 
 void TypeExpr::print(int indent, StringBuilder& buffer) {
-    if (type) type->print(indent, buffer);
+    if (type) type->print(indent, buffer, false);
 }
 
 void TypeExpr::generateC(int indent, StringBuilder& buffer) {

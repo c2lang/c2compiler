@@ -86,7 +86,7 @@ DECL_VISITOR_ACCEPT(FunctionDecl);
 
 void FunctionDecl::print(StringBuilder& buffer) {
     buffer << "[function " << name << "]\n";
-    rtype->print(INDENT, buffer);
+    rtype->print(INDENT, buffer, false);
     for (unsigned int i=0; i<args.size(); i++) {
         args[i]->print(INDENT, buffer);
     }
@@ -193,7 +193,7 @@ DECL_VISITOR_ACCEPT(TypeDecl);
 
 void TypeDecl::print(StringBuilder& buffer) {
     buffer << "[typedef " << name << "]\n";
-    type->print(INDENT, buffer);
+    type->print(INDENT, buffer, true);
 }
 
 void TypeDecl::generateC(StringBuilder& buffer, const std::string& pkgName) {

@@ -454,7 +454,7 @@ void Type::print(int indent, StringBuilder& buffer, bool recursive) const {
         if (refType && recursive) {
             buffer.indent(indent + INDENT);
             buffer << ANSI_CYAN << "resolved to:" << ANSI_NORMAL << '\n'; 
-            refType->print(indent + INDENT, buffer);
+            refType->print(indent + INDENT, buffer, recursive);
         }
         break;
     case UNION:
@@ -463,7 +463,7 @@ void Type::print(int indent, StringBuilder& buffer, bool recursive) const {
             for (unsigned i=0; i<members->size(); i++) {
                 buffer.indent(2*(indent+1));
                 DeclExpr* mem = (*members)[i];
-                mem->getType()->print(indent + INDENT, buffer);
+                mem->getType()->print(indent + INDENT, buffer, recursive);
             }
         }
         break;
@@ -475,7 +475,7 @@ void Type::print(int indent, StringBuilder& buffer, bool recursive) const {
         if (members) {
             for (unsigned i=0; i<members->size(); i++) {
                 DeclExpr* mem = (*members)[i];
-                mem->getType()->print(indent + INDENT, buffer);
+                mem->getType()->print(indent + INDENT, buffer, recursive);
             }
         }
         break;
@@ -495,15 +495,15 @@ void Type::print(int indent, StringBuilder& buffer, bool recursive) const {
     }
     case POINTER:
         buffer << "(pointer)\n";
-        refType->print(indent + INDENT, buffer);
+        refType->print(indent + INDENT, buffer, recursive);
         break;
     case ARRAY:
         buffer << "(array)\n";
-        refType->print(indent + INDENT, buffer);
+        refType->print(indent + INDENT, buffer, recursive);
         break;
     case QUALIFIER:
         buffer << "(qualifier)\n";
-        refType->print(indent + INDENT, buffer);
+        refType->print(indent + INDENT, buffer, recursive);
         break;
     }
 }
@@ -511,7 +511,7 @@ void Type::print(int indent, StringBuilder& buffer, bool recursive) const {
 void Type::dump() const {
     StringBuilder buffer;
     //printEffective(buffer, 0);
-    print(0, buffer);
+    print(0, buffer, true);
     fprintf(stderr, "[TYPE] %s\n", (const char*)buffer);
 }
 
