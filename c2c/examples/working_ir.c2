@@ -5,6 +5,10 @@ use stdio local;
 int foo;
 public int bar;
 
+public func void myfunction() {
+    puts("voila");
+}
+
 func int main(int argc, char*[] argv) {
     int a;
     int b;
