@@ -169,10 +169,50 @@ void CallExpr::addArg(Expr* arg) {
     args.push_back(arg);
 }
 
+
+static void expr2name(Expr* expr, StringBuilder& buffer) {
+    switch (expr->etype()) {
+    case EXPR_NUMBER:
+    case EXPR_STRING:
+    case EXPR_BOOL:
+    case EXPR_CHARLITERAL:
+    case EXPR_CALL:
+        break;
+    case EXPR_IDENTIFIER:
+        {
+            IdentifierExpr* id = ExprCaster<IdentifierExpr>::getType(expr);
+            buffer << id->getName();
+            return;
+        }
+    case EXPR_INITLIST:
+    case EXPR_TYPE:
+    case EXPR_DECL:
+    case EXPR_BINOP:
+    case EXPR_UNARYOP:
+    case EXPR_SIZEOF:
+    case EXPR_ARRAYSUBSCRIPT:
+        break;
+    case EXPR_MEMBER:
+        {
+            MemberExpr* member = ExprCaster<MemberExpr>::getType(expr);
+            expr2name(member->getBase(), buffer);
+            buffer << '.';
+            buffer << member->getMember()->getName();
+            return;
+        }
+    case EXPR_PAREN:
+        break;
+    };
+    buffer << "?";
+}
+
+
 void CallExpr::print(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
-    //buffer << "[call " << expr2name(Fn) << "]\n";
-    buffer << "[call " << "TODO" << "]\n";
+    buffer << "[call ";
+    expr2name(Fn, buffer);
+    buffer << "]\n";
+    Fn->print(indent + INDENT, buffer);
     for (unsigned int i=0; i<args.size(); i++) {
         args[i]->print(indent + INDENT, buffer);
     }
