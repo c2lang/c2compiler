@@ -426,7 +426,14 @@ Type* FunctionAnalyser::analyseBinOpExpr(Expr* expr) {
     BinOpExpr* binop = ExprCaster<BinOpExpr>::getType(expr);
     assert(binop);
     Type* TLeft = analyseExpr(binop->getLeft());
-    analyseExpr(binop->getRight());
+    Type* TRight = analyseExpr(binop->getRight());
+    // assigning to 'A' from incompatible type 'B'
+    // diag::err_typecheck_convert_incompatible
+    
+    // NOTE: only handle 'a = b' now, not other binary operations
+    if (binop->getOpcode() == BO_Assign) {
+        return checkAssignmentOperands(TLeft, TRight);
+    }
     return 0;
 }
 
@@ -668,6 +675,34 @@ ScopeResult FunctionAnalyser::analyseIdentifier(Expr* expr) {
         }
     }
     return res;
+}
+
+C2::Type* FunctionAnalyser::checkAssignmentOperands(Type* left, Type* right) {
+
+    // TEMP only check for (int) = (float) for now
+    if (right == BuiltinType::get(TYPE_F32) &&
+        left == BuiltinType::get(TYPE_U32))
+    {
+        // implicit conversion turns floating-point number into integer: 'float' to 'Number' (aka 'int')
+/*
+        SourceLocation loc;
+        SourceRange r1;
+        SourceRange r2;
+
+        Diags.Report(loc, diag::warn_impcast_float_integer) << "A" << "B" << r1 << r2;
+*/
+        fprintf(stderr, "ERROR: implicit conversion of floating-point number to integer\n");
+        return left;
+    }
+/*
+    SourceLocation loc;
+    Diags.Report(loc, diag::err_typecheck_convert_incompatible) << "left" << "right" << "action";
+    fprintf(stderr, "LEFT\n");
+    left->dump();
+    fprintf(stderr, "RIGHT\n");
+    right->dump();
+*/
+    return 0;
 }
 
 C2::Type* FunctionAnalyser::resolveUserType(Type* T) {

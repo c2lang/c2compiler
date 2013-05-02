@@ -75,6 +75,8 @@ private:
     Type* analyseCall(Expr* expr);
     ScopeResult analyseIdentifier(Expr* expr);
 
+    Type* checkAssignmentOperands(Type* left, Type* right);
+
     static Type* resolveUserType(Type* T);
     Type* resolveCanonicalType(Type* T);
     Type* Decl2Type(Decl* decl);

@@ -268,6 +268,7 @@ public:
 
     Expr* getLeft() const { return lhs; }
     Expr* getRight() const { return rhs; }
+    Opcode getOpcode() const { return opc; }
 private:
     SourceLocation opLoc;
     Opcode opc;
