@@ -72,6 +72,8 @@ bool FunctionBodyAnalyser::handle(Decl* decl) {
                     Diags.Report(res.decl->getLocation(), diag::note_previous_definition);
                     continue;
                 }
+                Type* canonicalType = de->getType()->getCanonical(typeContext);
+                de->setCanonicalType(canonicalType);
 
                 // wrap in VarDecl
                 // TODO MEMLEAK in VarDecl -> or throw away in ~Scope() ?
@@ -96,10 +98,6 @@ bool FunctionBodyAnalyser::handle(Decl* decl) {
         }
         break;
     case DECL_VAR:
-        {
-            // TODO analyse Decl, set CanonicalType, check initialization
-        }
-        break;
     case DECL_TYPE:
     case DECL_ARRAYVALUE:
     case DECL_USE:
@@ -330,12 +328,7 @@ C2::Type* FunctionBodyAnalyser::Decl2Type(Decl* decl) {
         {
             VarDecl* VD = DeclCaster<VarDecl>::getType(decl);
             Type* canonical = VD->getCanonicalType();
-            // TODO assert canonical and return it.
-            // Don't set here, because VD can be in different file!
-            if (!canonical) {
-                canonical = VD->getType()->getCanonical(typeContext);
-                VD->setCanonicalType(canonical);
-            }
+            assert(canonical && "need canonical type");
             return canonical;
         }
         break;

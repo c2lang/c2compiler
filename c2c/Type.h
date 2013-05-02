@@ -80,7 +80,10 @@ public:
     Expr* getUserType() const { return userType; }
 
     // ARRAY
-    void setArrayExpr(Expr* expr) { arrayExpr = expr; }
+    void setArrayExpr(Expr* expr, bool ownExpr = true) {
+        arrayExpr = expr;
+        ownArrayExpr = ownExpr;
+    }
 
     // STRUCT/UNION
     void setMembers(MemberList& members_);
@@ -155,7 +158,10 @@ private:
         // nothing needed
 
         // array specific
-        Expr* arrayExpr;
+        struct {
+            Expr* arrayExpr;
+            bool ownArrayExpr;
+        };
 
         // qualifier specific
         unsigned int qualifiers;
@@ -196,7 +202,7 @@ public:
     Type* getUser();
     Type* getPointer(Type* ref);
     Type* getStruct(bool isStruct);
-    Type* getArray(Type* ref, Expr* sizeExpr);
+    Type* getArray(Type* ref, Expr* sizeExpr, bool ownSize = true);
     Type* getQualifier(Type* ref, unsigned int qualifier);
 private:
     typedef std::vector<Type*> Types;

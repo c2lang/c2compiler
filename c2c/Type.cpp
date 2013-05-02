@@ -149,7 +149,7 @@ Type::~Type() {
     case POINTER:
         break;
     case ARRAY:
-        delete arrayExpr;
+        if (ownArrayExpr) delete arrayExpr;
         break;
     case QUALIFIER:
         break;
@@ -185,13 +185,7 @@ Type* Type::getCanonical(TypeContext& context) {
             assert(refType);
             Type* CT = refType->getCanonical(context);
             if (CT == refType) return this;
-            if (arrayExpr) {
-                // TODO: HMM how to handle arrayExpr ownership?
-                assert(0 && "TODO");
-                return this;
-            } else {
-                return context.getArray(CT, 0);
-            }
+            return context.getArray(CT, arrayExpr, false);
         }
     case QUALIFIER:
         // TODO
@@ -756,9 +750,9 @@ Type* TypeContext::getStruct(bool isStruct) {
     return T;
 }
 
-Type* TypeContext::getArray(Type* ref, Expr* sizeExpr) {
+Type* TypeContext::getArray(Type* ref, Expr* sizeExpr, bool ownSize) {
     Type* T = new Type(Type::ARRAY, ref);
-    T->setArrayExpr(sizeExpr);
+    T->setArrayExpr(sizeExpr, ownSize);
     types.push_back(T);
     return T;
 }

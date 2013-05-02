@@ -440,7 +440,7 @@ C2::ExprResult C2Sema::ActOnArrayType(Expr* base, Expr* size) {
     assert(base);
     TypeExpr* typeExpr = ExprCaster<TypeExpr>::getType(base);
     assert(typeExpr);
-    Type* arr = typeContext.getArray(typeExpr->getType(), size);
+    Type* arr = typeContext.getArray(typeExpr->getType(), size, true);
     typeExpr->setType(arr);
     return ExprResult(base);
 }

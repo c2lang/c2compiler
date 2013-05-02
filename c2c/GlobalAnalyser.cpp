@@ -29,7 +29,7 @@ using namespace C2;
 using namespace clang;
 
 GlobalAnalyser::GlobalAnalyser(FileScope& scope_, clang::DiagnosticsEngine& Diags_)
-    : globalScope(scope_)
+    : globals(scope_)
     , Diags(Diags_)
     , errors(0)
 {}
@@ -78,7 +78,7 @@ bool GlobalAnalyser::handle(Decl* decl) {
 }
 
 void GlobalAnalyser::checkType(Type* type, bool used_public) {
-    errors += globalScope.checkType(type, used_public);
+    errors += globals.checkType(type, used_public);
 }
 
 void GlobalAnalyser::checkUse(Decl* decl) {
@@ -87,7 +87,7 @@ void GlobalAnalyser::checkUse(Decl* decl) {
     assert(useDecl);
 
     // check if package exists
-    const Package* pkg = globalScope.findAnyPackage(pkgName);
+    const Package* pkg = globals.findAnyPackage(pkgName);
     if (pkg == 0) {
         Diags.Report(decl->getLocation(), diag::err_unknown_package) << pkgName;
         errors++;
@@ -97,7 +97,7 @@ void GlobalAnalyser::checkUse(Decl* decl) {
     // check if aliasname is not a package
     const std::string& aliasName = useDecl->getAlias();
     if (aliasName != "") {
-        const Package* pkg2 = globalScope.findAnyPackage(aliasName);
+        const Package* pkg2 = globals.findAnyPackage(aliasName);
         if (pkg2) {
             Diags.Report(useDecl->getAliasLocation(), diag::err_alias_is_package) << aliasName;
             errors++;
@@ -107,6 +107,6 @@ void GlobalAnalyser::checkUse(Decl* decl) {
     }
 
     // add to Scope
-    globalScope.addPackage(useDecl->isLocal(), pkgName, pkg);
+    globals.addPackage(useDecl->isLocal(), pkgName, pkg);
 }
 

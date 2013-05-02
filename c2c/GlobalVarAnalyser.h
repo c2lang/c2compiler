@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef GLOBAL_ANALYSER_H
-#define GLOBAL_ANALYSER_H
+#ifndef GLOBAL_VAR_ANALYSER_H
+#define GLOBAL_VAR_ANALYSER_H
 
 #include "ASTVisitor.h"
 #include "Package.h"
@@ -29,24 +29,23 @@ class Type;
 class IdentifierExpr;
 class FileScope;
 class Decl;
+class TypeContext;
 
-class GlobalAnalyser : public ASTVisitor {
+class GlobalVarAnalyser : public ASTVisitor {
 public:
-    GlobalAnalyser(FileScope& scope_, clang::DiagnosticsEngine& Diags_);
-    virtual ~GlobalAnalyser();
+    GlobalVarAnalyser(FileScope& scope_, TypeContext& tc, clang::DiagnosticsEngine& Diags_);
+    virtual ~GlobalVarAnalyser();
 
     virtual bool handle(Decl* decl);
     unsigned int getErrors() const { return errors; }
 private:
-    void checkType(Type* type, bool used_public = false);
-    void checkUse(Decl* decl);
-
     FileScope& globals;
+    TypeContext& typeContext;
     clang::DiagnosticsEngine& Diags;
     unsigned int errors;
 
-    GlobalAnalyser(const GlobalAnalyser&);
-    GlobalAnalyser& operator= (const GlobalAnalyser&);
+    GlobalVarAnalyser(const GlobalVarAnalyser&);
+    GlobalVarAnalyser& operator= (const GlobalVarAnalyser&);
 };
 
 }

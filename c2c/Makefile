@@ -15,6 +15,7 @@ OBJS = \
     FileMap.o \
     FunctionBodyAnalyser.o \
     GlobalAnalyser.o \
+    GlobalVarAnalyser.o \
     Package.o \
     Recipe.o \
     RecipeReader.o \

@@ -49,6 +49,7 @@
 #include "Decl.h"
 #include "Scope.h"
 #include "GlobalAnalyser.h"
+#include "GlobalVarAnalyser.h"
 #include "FunctionBodyAnalyser.h"
 #include "StringBuilder.h"
 
@@ -142,19 +143,28 @@ public:
         globals = new FileScope(sema.getPkgName(), pkgs, Diags);
         GlobalAnalyser visitor(*globals, Diags);
         sema.visitAST(visitor);
-        return !visitor.getErrors();
+        return visitor.getErrors();
     }
 
+
+    // analyse Global var types + initialization
     int analyse2(const BuildOptions& options) {
+        GlobalVarAnalyser visitor(*globals, typeContext, Diags);
+        sema.visitAST(visitor);
+        return visitor.getErrors();
+    }
+
+    // analyse Function bodies
+    int analyse3(const BuildOptions& options) {
         u_int64_t t1 = Utils::getCurrentTime();
-        // step 2: analyse function bodies
+
+        // analyse function bodies
         FunctionBodyAnalyser visitor(*globals, typeContext, Diags);
         sema.visitAST(visitor);
 
         u_int64_t t2 = Utils::getCurrentTime();
         if (options.printTiming) printf(COL_TIME"analysis took %lld usec"ANSI_NORMAL"\n", t2 - t1);
-        //return visitor.getErrors();
-        return 0;
+        return visitor.getErrors();
     }
 
     void generate_c(const BuildOptions& options) {
@@ -289,9 +299,15 @@ void C2Builder::build() {
         FileInfo* info = files[i];
         errors += info->analyse1(options, pkgs);
     }
+    if (errors) return;
     for (unsigned int i=0; i<files.size(); i++) {
         FileInfo* info = files[i];
         errors += info->analyse2(options);
+    }
+    if (errors) return;
+    for (unsigned int i=0; i<files.size(); i++) {
+        FileInfo* info = files[i];
+        errors += info->analyse3(options);
     }
     if (options.printASTAfter) {
         for (unsigned int i=0; i<files.size(); i++) {
