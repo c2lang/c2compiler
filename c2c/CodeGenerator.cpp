@@ -64,7 +64,7 @@ CodeGenerator::~CodeGenerator() {
 }
 
 void CodeGenerator::generate() {
-    CodeGenContext mycontext(context, *module, builder);
+    CodeGenContext mycontext(context, *module, builder, sema.pkgName);
     for (unsigned int i=0; i<sema.decls.size(); i++) {
         Decl* decl = sema.decls[i];
         decl->codeGen(mycontext);

@@ -14,6 +14,7 @@ func int main(int argc, char*[] argv) {
     int b;
     u16 c;
     puts("Hello World!\n");
+    myfunction();
     return 0;
 }
 

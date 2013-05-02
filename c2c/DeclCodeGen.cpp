@@ -52,8 +52,10 @@ llvm::Value* FunctionDecl::codeGen(CodeGenContext& C) {
         funcType = llvm::FunctionType::get(rtype->convert(C), argsRef, false);
     }
     //TODO linkage type (is_public)
+    StringBuilder buffer;
+    Utils::addName(C.pkgName, name, buffer);
     llvm::Function *func =
-        llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, name, &C.module);
+        llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, (const char*)buffer, &C.module);
     llvm::BasicBlock *entry = llvm::BasicBlock::Create(C.context, "entry", func);
     C.builder.SetInsertPoint(entry);
     body->codeGen(C);

@@ -29,14 +29,17 @@ class C2Sema;
 
 class CodeGenContext {
 public:
-    CodeGenContext(llvm::LLVMContext& context_, llvm::Module& module_, llvm::IRBuilder<>& builder_)
+    CodeGenContext(llvm::LLVMContext& context_, llvm::Module& module_,
+                   llvm::IRBuilder<>& builder_, const std::string& pkgName_)
         : context(context_)
         , module(module_)
         , builder(builder_)
+        , pkgName(pkgName_)
     {}
     llvm::LLVMContext& context;
     llvm::Module& module;
     llvm::IRBuilder<> &builder;
+    const std::string& pkgName;
 };
 
 class CodeGenerator {
