@@ -53,8 +53,6 @@
 #include "FunctionAnalyser.h"
 #include "StringBuilder.h"
 
-#define COL_TIME ANSI_CYAN
-
 using clang::DiagnosticOptions;
 using clang::DiagnosticsEngine;
 using clang::FileEntry;

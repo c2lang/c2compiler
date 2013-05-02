@@ -53,5 +53,7 @@
 \0338       restore cursor position and text attributes 
 */
 
+#define COL_TIME ANSI_CYAN
+
 #endif
 

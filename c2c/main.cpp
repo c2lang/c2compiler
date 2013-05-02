@@ -22,6 +22,8 @@
 #include "C2Builder.h"
 #include "RecipeReader.h"
 #include "Recipe.h"
+#include "Utils.h"
+#include "color.h"
 
 using namespace C2;
 
@@ -102,6 +104,7 @@ int main(int argc, const char *argv[])
 {
     assert(CLANG_C2_VERSION >= 4 && "Please update your clang c2 version");
 
+    u_int64_t t1 = Utils::getCurrentTime();
     BuildOptions opts;
     parse_arguments(argc, argv, opts);
 
@@ -129,6 +132,11 @@ int main(int argc, const char *argv[])
     if (targetFilter && count == 0) {
         fprintf(stderr, "error: unknown target '%s'\n", targetFilter);
         return -1;
+    }
+    if (opts.printTiming) {
+        u_int64_t t2 = Utils::getCurrentTime();
+        printf(COL_TIME"total building time: %lld usec"ANSI_NORMAL"\n", t2 - t1);
+
     }
 
     return 0;
