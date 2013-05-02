@@ -13,7 +13,7 @@ OBJS = \
     Expr.o \
     ExprCodeGen.o \
     FileMap.o \
-    FunctionBodyAnalyser.o \
+    FunctionAnalyser.o \
     GlobalAnalyser.o \
     GlobalVarAnalyser.o \
     Package.o \

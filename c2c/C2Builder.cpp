@@ -50,7 +50,7 @@
 #include "Scope.h"
 #include "GlobalAnalyser.h"
 #include "GlobalVarAnalyser.h"
-#include "FunctionBodyAnalyser.h"
+#include "FunctionAnalyser.h"
 #include "StringBuilder.h"
 
 #define COL_TIME ANSI_CYAN
@@ -159,7 +159,7 @@ public:
         u_int64_t t1 = Utils::getCurrentTime();
 
         // analyse function bodies
-        FunctionBodyAnalyser visitor(*globals, typeContext, Diags);
+        FunctionAnalyser visitor(*globals, typeContext, Diags);
         sema.visitAST(visitor);
 
         u_int64_t t2 = Utils::getCurrentTime();

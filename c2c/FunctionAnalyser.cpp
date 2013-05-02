@@ -18,7 +18,7 @@
 #include <clang/Parse/ParseDiagnostic.h>
 #include <clang/Sema/SemaDiagnostic.h>
 
-#include "FunctionBodyAnalyser.h"
+#include "FunctionAnalyser.h"
 #include "Decl.h"
 #include "Expr.h"
 #include "Type.h"
@@ -32,7 +32,7 @@
 using namespace C2;
 using namespace clang;
 
-FunctionBodyAnalyser::FunctionBodyAnalyser(FileScope& scope_,
+FunctionAnalyser::FunctionAnalyser(FileScope& scope_,
                                            TypeContext& tc,
                                            clang::DiagnosticsEngine& Diags_)
     : globalScope(scope_)
@@ -49,10 +49,10 @@ FunctionBodyAnalyser::FunctionBodyAnalyser(FileScope& scope_,
     }
 }
 
-FunctionBodyAnalyser::~FunctionBodyAnalyser() {
+FunctionAnalyser::~FunctionAnalyser() {
 }
 
-bool FunctionBodyAnalyser::handle(Decl* decl) {
+bool FunctionAnalyser::handle(Decl* decl) {
     switch (decl->dtype()) {
     case DECL_FUNC:
         {
@@ -107,20 +107,20 @@ bool FunctionBodyAnalyser::handle(Decl* decl) {
     return false;
 }
 
-void FunctionBodyAnalyser::EnterScope(unsigned int flags) {
+void FunctionAnalyser::EnterScope(unsigned int flags) {
     assert (scopeIndex < MAX_SCOPE_DEPTH && "out of scopes");
     scopes[scopeIndex].Init(flags);
     curScope = &scopes[scopeIndex];
     scopeIndex++;
 }
 
-void FunctionBodyAnalyser::ExitScope() {
+void FunctionAnalyser::ExitScope() {
     scopeIndex--;
     Scope* parent = curScope->getParent();
     curScope = parent;
 }
 
-void FunctionBodyAnalyser::analyseStmt(Stmt* S, bool haveScope) {
+void FunctionAnalyser::analyseStmt(Stmt* S, bool haveScope) {
     switch (S->stype()) {
     case STMT_RETURN:
         analyseReturnStmt(S);
@@ -164,7 +164,7 @@ void FunctionBodyAnalyser::analyseStmt(Stmt* S, bool haveScope) {
     }
 }
 
-void FunctionBodyAnalyser::analyseCompoundStmt(Stmt* stmt) {
+void FunctionAnalyser::analyseCompoundStmt(Stmt* stmt) {
     CompoundStmt* compound = StmtCaster<CompoundStmt>::getType(stmt);
     assert(compound);
     const StmtList& stmts = compound->getStmts();
@@ -173,7 +173,7 @@ void FunctionBodyAnalyser::analyseCompoundStmt(Stmt* stmt) {
     }
 }
 
-void FunctionBodyAnalyser::analyseIfStmt(Stmt* stmt) {
+void FunctionAnalyser::analyseIfStmt(Stmt* stmt) {
     IfStmt* I = StmtCaster<IfStmt>::getType(stmt);
     assert(I);
     Stmt* condSt = I->getCond();
@@ -192,7 +192,7 @@ void FunctionBodyAnalyser::analyseIfStmt(Stmt* stmt) {
     }
 }
 
-void FunctionBodyAnalyser::analyseWhileStmt(Stmt* stmt) {
+void FunctionAnalyser::analyseWhileStmt(Stmt* stmt) {
     WhileStmt* W = StmtCaster<WhileStmt>::getType(stmt);
     assert(W);
     analyseStmt(W->getCond());
@@ -202,7 +202,7 @@ void FunctionBodyAnalyser::analyseWhileStmt(Stmt* stmt) {
 
 }
 
-void FunctionBodyAnalyser::analyseDoStmt(Stmt* stmt) {
+void FunctionAnalyser::analyseDoStmt(Stmt* stmt) {
     DoStmt* D = StmtCaster<DoStmt>::getType(stmt);
     assert(D);
     EnterScope(Scope::BreakScope | Scope::ContinueScope | Scope::DeclScope);
@@ -211,7 +211,7 @@ void FunctionBodyAnalyser::analyseDoStmt(Stmt* stmt) {
     analyseStmt(D->getCond());
 }
 
-void FunctionBodyAnalyser::analyseForStmt(Stmt* stmt) {
+void FunctionAnalyser::analyseForStmt(Stmt* stmt) {
     ForStmt* F = StmtCaster<ForStmt>::getType(stmt);
     assert(F);
     EnterScope(Scope::BreakScope | Scope::ContinueScope | Scope::DeclScope | Scope::ControlScope);
@@ -222,7 +222,7 @@ void FunctionBodyAnalyser::analyseForStmt(Stmt* stmt) {
     ExitScope();
 }
 
-void FunctionBodyAnalyser::analyseSwitchStmt(Stmt* stmt) {
+void FunctionAnalyser::analyseSwitchStmt(Stmt* stmt) {
     SwitchStmt* S = StmtCaster<SwitchStmt>::getType(stmt);
     assert(S);
     analyseExpr(S->getCond());
@@ -253,7 +253,7 @@ void FunctionBodyAnalyser::analyseSwitchStmt(Stmt* stmt) {
     ExitScope();
 }
 
-void FunctionBodyAnalyser::analyseBreakStmt(Stmt* stmt) {
+void FunctionAnalyser::analyseBreakStmt(Stmt* stmt) {
     if (!curScope->allowBreak()) {
         BreakStmt* B = StmtCaster<BreakStmt>::getType(stmt);
         assert(B);
@@ -261,7 +261,7 @@ void FunctionBodyAnalyser::analyseBreakStmt(Stmt* stmt) {
     }
 }
 
-void FunctionBodyAnalyser::analyseContinueStmt(Stmt* stmt) {
+void FunctionAnalyser::analyseContinueStmt(Stmt* stmt) {
     if (!curScope->allowContinue()) {
         ContinueStmt* C = StmtCaster<ContinueStmt>::getType(stmt);
         assert(C);
@@ -269,7 +269,7 @@ void FunctionBodyAnalyser::analyseContinueStmt(Stmt* stmt) {
     }
 }
 
-void FunctionBodyAnalyser::analyseCaseStmt(Stmt* stmt) {
+void FunctionAnalyser::analyseCaseStmt(Stmt* stmt) {
     CaseStmt* C = StmtCaster<CaseStmt>::getType(stmt);
     assert(C);
     analyseExpr(C->getCond());
@@ -279,7 +279,7 @@ void FunctionBodyAnalyser::analyseCaseStmt(Stmt* stmt) {
     }
 }
 
-void FunctionBodyAnalyser::analyseDefaultStmt(Stmt* stmt) {
+void FunctionAnalyser::analyseDefaultStmt(Stmt* stmt) {
     DefaultStmt* D = StmtCaster<DefaultStmt>::getType(stmt);
     assert(D);
     const StmtList& stmts = D->getStmts();
@@ -288,7 +288,7 @@ void FunctionBodyAnalyser::analyseDefaultStmt(Stmt* stmt) {
     }
 }
 
-void FunctionBodyAnalyser::analyseReturnStmt(Stmt* stmt) {
+void FunctionAnalyser::analyseReturnStmt(Stmt* stmt) {
     ReturnStmt* ret = StmtCaster<ReturnStmt>::getType(stmt);
     assert(ret);
     Expr* value = ret->getExpr();
@@ -309,13 +309,13 @@ void FunctionBodyAnalyser::analyseReturnStmt(Stmt* stmt) {
     }
 }
 
-void FunctionBodyAnalyser::analyseStmtExpr(Stmt* stmt) {
+void FunctionAnalyser::analyseStmtExpr(Stmt* stmt) {
     Expr* expr = StmtCaster<Expr>::getType(stmt);
     assert(expr);
     analyseExpr(expr);
 }
 
-C2::Type* FunctionBodyAnalyser::Decl2Type(Decl* decl) {
+C2::Type* FunctionAnalyser::Decl2Type(Decl* decl) {
     assert(decl);
     switch (decl->dtype()) {
     case DECL_FUNC:
@@ -346,7 +346,7 @@ C2::Type* FunctionBodyAnalyser::Decl2Type(Decl* decl) {
     return 0;
 }
 
-C2::Type* FunctionBodyAnalyser::analyseExpr(Expr* expr) {
+C2::Type* FunctionAnalyser::analyseExpr(Expr* expr) {
     switch (expr->etype()) {
     case EXPR_NUMBER:
         // TEMP for now always return type int
@@ -391,7 +391,7 @@ C2::Type* FunctionBodyAnalyser::analyseExpr(Expr* expr) {
     return 0;
 }
 
-void FunctionBodyAnalyser::analyseDeclExpr(Expr* expr) {
+void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     DeclExpr* decl = ExprCaster<DeclExpr>::getType(expr);
     assert(decl);
 
@@ -415,7 +415,7 @@ void FunctionBodyAnalyser::analyseDeclExpr(Expr* expr) {
     curScope->addDecl(new VarDecl(decl, false, true));
 }
 
-Type* FunctionBodyAnalyser::analyseBinOpExpr(Expr* expr) {
+Type* FunctionAnalyser::analyseBinOpExpr(Expr* expr) {
     BinOpExpr* binop = ExprCaster<BinOpExpr>::getType(expr);
     assert(binop);
     Type* TLeft = analyseExpr(binop->getLeft());
@@ -423,7 +423,7 @@ Type* FunctionBodyAnalyser::analyseBinOpExpr(Expr* expr) {
     return 0;
 }
 
-Type* FunctionBodyAnalyser::analyseUnaryOpExpr(Expr* expr) {
+Type* FunctionAnalyser::analyseUnaryOpExpr(Expr* expr) {
     UnaryOpExpr* unaryop = ExprCaster<UnaryOpExpr>::getType(expr);
     assert(unaryop);
     Type* LType = analyseExpr(unaryop->getExpr());
@@ -450,14 +450,14 @@ Type* FunctionBodyAnalyser::analyseUnaryOpExpr(Expr* expr) {
     return LType;
 }
 
-void FunctionBodyAnalyser::analyseSizeofExpr(Expr* expr) {
+void FunctionAnalyser::analyseSizeofExpr(Expr* expr) {
     SizeofExpr* size = ExprCaster<SizeofExpr>::getType(expr);
     assert(size);
     // TODO can also be type
     analyseExpr(size->getExpr());
 }
 
-Type* FunctionBodyAnalyser::analyseArraySubscript(Expr* expr) {
+Type* FunctionAnalyser::analyseArraySubscript(Expr* expr) {
     ArraySubscriptExpr* sub = ExprCaster<ArraySubscriptExpr>::getType(expr);
     assert(sub);
     Type* LType = analyseExpr(sub->getBase());
@@ -473,7 +473,7 @@ Type* FunctionBodyAnalyser::analyseArraySubscript(Expr* expr) {
     return LType2->getRefType();
 }
 
-Type* FunctionBodyAnalyser::analyseMemberExpr(Expr* expr) {
+Type* FunctionAnalyser::analyseMemberExpr(Expr* expr) {
     MemberExpr* M = ExprCaster<MemberExpr>::getType(expr);
     assert(M);
     IdentifierExpr* member = M->getMember();
@@ -599,13 +599,13 @@ Type* FunctionBodyAnalyser::analyseMemberExpr(Expr* expr) {
     return 0;
 }
 
-Type* FunctionBodyAnalyser::analyseParenExpr(Expr* expr) {
+Type* FunctionAnalyser::analyseParenExpr(Expr* expr) {
     ParenExpr* P = ExprCaster<ParenExpr>::getType(expr);
     assert(P);
     return analyseExpr(P->getExpr());
 }
 
-C2::Type* FunctionBodyAnalyser::analyseCall(Expr* expr) {
+C2::Type* FunctionAnalyser::analyseCall(Expr* expr) {
     CallExpr* call = ExprCaster<CallExpr>::getType(expr);
     assert(call);
     // analyse function
@@ -634,7 +634,7 @@ C2::Type* FunctionBodyAnalyser::analyseCall(Expr* expr) {
     return LType2->getReturnType();
 }
 
-ScopeResult FunctionBodyAnalyser::analyseIdentifier(Expr* expr) {
+ScopeResult FunctionAnalyser::analyseIdentifier(Expr* expr) {
     IdentifierExpr* id = ExprCaster<IdentifierExpr>::getType(expr);
     assert(id);
     ScopeResult res = curScope->findSymbol(id->getName());
@@ -663,7 +663,7 @@ ScopeResult FunctionBodyAnalyser::analyseIdentifier(Expr* expr) {
     return res;
 }
 
-C2::Type* FunctionBodyAnalyser::resolveUserType(Type* T) {
+C2::Type* FunctionAnalyser::resolveUserType(Type* T) {
     if (T->isUserType()) {
         Type* t2 = T->getRefType();
         assert(t2);

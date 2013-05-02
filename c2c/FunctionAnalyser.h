@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef FUNCTION_BODY_ANALYSER_H
-#define FUNCTION_BODY_ANALYSER_H
+#ifndef FUNCTION_ANALYSER_H
+#define FUNCTION_ANALYSER_H
 
 #include "ASTVisitor.h"
 #include "Package.h"
@@ -37,12 +37,12 @@ class Expr;
 class IdentifierExpr;
 class TypeContext;
 
-class FunctionBodyAnalyser : public ASTVisitor {
+class FunctionAnalyser : public ASTVisitor {
 public:
-    FunctionBodyAnalyser(FileScope& scope_,
+    FunctionAnalyser(FileScope& scope_,
                          TypeContext& tc,
                          clang::DiagnosticsEngine& Diags_);
-    virtual ~FunctionBodyAnalyser();
+    virtual ~FunctionAnalyser();
 
     virtual bool handle(Decl* decl);
     unsigned int getErrors() const { return errors; }
@@ -90,8 +90,8 @@ private:
 
     FunctionDecl* func;     // current function
 
-    FunctionBodyAnalyser(const FunctionBodyAnalyser&);
-    FunctionBodyAnalyser& operator= (const FunctionBodyAnalyser&);
+    FunctionAnalyser(const FunctionAnalyser&);
+    FunctionAnalyser& operator= (const FunctionAnalyser&);
 };
 
 }
