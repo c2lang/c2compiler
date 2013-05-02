@@ -14,7 +14,7 @@ OBJS = \
     ExprCodeGen.o \
     FileMap.o \
     FunctionAnalyser.o \
-    GlobalAnalyser.o \
+    ScopeAnalyser.o \
     GlobalVarAnalyser.o \
     Package.o \
     Recipe.o \

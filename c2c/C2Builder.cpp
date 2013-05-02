@@ -48,7 +48,7 @@
 #include "Package.h"
 #include "Decl.h"
 #include "Scope.h"
-#include "GlobalAnalyser.h"
+#include "ScopeAnalyser.h"
 #include "GlobalVarAnalyser.h"
 #include "FunctionAnalyser.h"
 #include "StringBuilder.h"
@@ -141,7 +141,7 @@ public:
         // TODO measure this analysis time as well
         // step 1: do use and type analysis and build global scope
         globals = new FileScope(sema.getPkgName(), pkgs, Diags);
-        GlobalAnalyser visitor(*globals, Diags);
+        ScopeAnalyser visitor(*globals, Diags);
         sema.visitAST(visitor);
         return visitor.getErrors();
     }

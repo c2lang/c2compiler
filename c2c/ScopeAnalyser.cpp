@@ -17,7 +17,7 @@
 #include <clang/Parse/ParseDiagnostic.h>
 #include <clang/Sema/SemaDiagnostic.h>
 
-#include "GlobalAnalyser.h"
+#include "ScopeAnalyser.h"
 #include "Decl.h"
 #include "Expr.h"
 #include "Type.h"
@@ -28,15 +28,15 @@
 using namespace C2;
 using namespace clang;
 
-GlobalAnalyser::GlobalAnalyser(FileScope& scope_, clang::DiagnosticsEngine& Diags_)
+ScopeAnalyser::ScopeAnalyser(FileScope& scope_, clang::DiagnosticsEngine& Diags_)
     : globals(scope_)
     , Diags(Diags_)
     , errors(0)
 {}
 
-GlobalAnalyser::~GlobalAnalyser() {}
+ScopeAnalyser::~ScopeAnalyser() {}
 
-bool GlobalAnalyser::handle(Decl* decl) {
+bool ScopeAnalyser::handle(Decl* decl) {
     bool is_public = decl->isPublic();
     switch (decl->dtype()) {
     case DECL_FUNC:
@@ -77,11 +77,11 @@ bool GlobalAnalyser::handle(Decl* decl) {
     return false;
 }
 
-void GlobalAnalyser::checkType(Type* type, bool used_public) {
+void ScopeAnalyser::checkType(Type* type, bool used_public) {
     errors += globals.checkType(type, used_public);
 }
 
-void GlobalAnalyser::checkUse(Decl* decl) {
+void ScopeAnalyser::checkUse(Decl* decl) {
     std::string pkgName = decl->getName();
     UseDecl* useDecl = DeclCaster<UseDecl>::getType(decl);
     assert(useDecl);

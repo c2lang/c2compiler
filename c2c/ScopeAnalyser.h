@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef GLOBAL_ANALYSER_H
-#define GLOBAL_ANALYSER_H
+#ifndef SCOPE_ANALYSER_H
+#define SCOPE_ANALYSER_H
 
 #include "ASTVisitor.h"
 #include "Package.h"
@@ -30,10 +30,10 @@ class IdentifierExpr;
 class FileScope;
 class Decl;
 
-class GlobalAnalyser : public ASTVisitor {
+class ScopeAnalyser : public ASTVisitor {
 public:
-    GlobalAnalyser(FileScope& scope_, clang::DiagnosticsEngine& Diags_);
-    virtual ~GlobalAnalyser();
+    ScopeAnalyser(FileScope& scope_, clang::DiagnosticsEngine& Diags_);
+    virtual ~ScopeAnalyser();
 
     virtual bool handle(Decl* decl);
     unsigned int getErrors() const { return errors; }
@@ -45,8 +45,8 @@ private:
     clang::DiagnosticsEngine& Diags;
     unsigned int errors;
 
-    GlobalAnalyser(const GlobalAnalyser&);
-    GlobalAnalyser& operator= (const GlobalAnalyser&);
+    ScopeAnalyser(const ScopeAnalyser&);
+    ScopeAnalyser& operator= (const ScopeAnalyser&);
 };
 
 }
