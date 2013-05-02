@@ -243,6 +243,7 @@ public:
     void setCanonicalType(Type* t);
     const std::string& getName() const { return name; }
     SourceLocation getLocation() const { return loc; }
+    Expr* getInitValue() const { return initValue; }
 private:
     std::string name;
     SourceLocation loc;

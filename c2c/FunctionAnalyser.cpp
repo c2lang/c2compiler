@@ -413,6 +413,13 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
         return;
     }
     curScope->addDecl(new VarDecl(decl, false, true));
+
+    // check initial value
+    Expr* initialValue = decl->getInitValue();
+    if (initialValue) {
+        // TODO check initial value type
+        analyseExpr(initialValue);
+    }
 }
 
 Type* FunctionAnalyser::analyseBinOpExpr(Expr* expr) {
