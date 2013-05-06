@@ -22,6 +22,7 @@
 #include "Utils.h"
 #include "Type.h"
 #include "CodeGenerator.h"
+#include "Package.h"
 
 using namespace C2;
 using namespace std;
@@ -51,7 +52,10 @@ llvm::Value* CallExpr::codeGen(CodeGenContext& C) {
     // TODO for now assert IdentifierExpr;
     IdentifierExpr* FuncName = ExprCaster<IdentifierExpr>::getType(Fn);
     assert(FuncName);
-    llvm::Function* function = C.module.getFunction(FuncName->getName());
+    // TODO optimize buffer below (lots of copying)
+    StringBuilder fullname;
+    Utils::addName(FuncName->getPackage()->getCName(), FuncName->getName(), fullname);
+    llvm::Function* function = C.module.getFunction((const char*)fullname);
     assert(function && "CANNOT FIND FUNCTION");
 
     // NOTE: see CodeGenerator insertion of puts() and printf()
