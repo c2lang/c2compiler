@@ -198,6 +198,7 @@ int FileScope::checkUserType(Type* type, Expr* id, bool used_public) {
                 return 1;
             }
             // ok
+            member_id->setPackage(pkg);
             type->setRefType(td->getType());
         }
         break;
