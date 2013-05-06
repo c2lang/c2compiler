@@ -51,11 +51,14 @@ llvm::Value* FunctionDecl::codeGen(CodeGenContext& C) {
         // TODO handle ellipsis
         funcType = llvm::FunctionType::get(rtype->convert(C), argsRef, false);
     }
-    //TODO linkage type (is_public)
     StringBuilder buffer;
     Utils::addName(C.pkgName, name, buffer);
+
+    llvm::GlobalValue::LinkageTypes ltype = llvm::GlobalValue::InternalLinkage;
+    if (is_public) ltype = llvm::GlobalValue::ExternalLinkage;
+
     llvm::Function *func =
-        llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, (const char*)buffer, &C.module);
+        llvm::Function::Create(funcType, ltype, (const char*)buffer, &C.module);
     llvm::BasicBlock *entry = llvm::BasicBlock::Create(C.context, "entry", func);
     C.builder.SetInsertPoint(entry);
     body->codeGen(C);
