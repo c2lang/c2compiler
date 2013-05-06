@@ -58,3 +58,5 @@ func void test6() {
     else faa();
 }
 
+public func int main() { return 0; }
+

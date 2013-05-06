@@ -87,4 +87,5 @@ type CallBack func int(int a, Utils.Point*p);
 type CBFunc func void (MyType* mt, ...);
 type CBFunc func void (const char* buffer, u8 t2, ...);
 
+public func int main() { return 0; }
 

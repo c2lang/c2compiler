@@ -34,3 +34,5 @@ func void test5() {
     }
 }
 
+public func int main() { return 0; }
+

@@ -18,3 +18,5 @@ func void test1() {
     p = (const char*) c;
 }
 
+public func int main() { return 0; }
+

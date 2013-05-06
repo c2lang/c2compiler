@@ -2,3 +2,5 @@
 package deftest;
 #endif
 
+public func int main() { return 0; }
+

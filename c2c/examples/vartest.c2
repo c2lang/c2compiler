@@ -27,3 +27,6 @@ int[3] buf2 = { 1, 2, 3, 4 }
 Struct[3] structs = { {1,2,"A"}, {3,4,"B"} }
 
 const char*[] names = { "ali", "baba", "chrono", }
+
+public func int main() { return 0; }
+

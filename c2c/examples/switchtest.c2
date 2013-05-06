@@ -20,3 +20,5 @@ func void test2() {
     }
 }
 
+public func int main() { return 0; }
+

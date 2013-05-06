@@ -29,6 +29,7 @@
 #include <clang/Lex/ModuleLoader.h>
 #include <clang/Lex/Preprocessor.h>
 #include <clang/Lex/PreprocessorOptions.h>
+#include <clang/Sema/SemaDiagnostic.h>
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/IntrusiveRefCntPtr.h>
@@ -311,6 +312,24 @@ void C2Builder::build() {
         }
     }
     if (errors) return;
+
+    // check that main() function is present
+    Decl* mainDecl = 0;
+    for (PkgsIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
+        Package* P = iter->second;
+        Decl* decl = P->findSymbol("main");
+        if (decl) {
+            if (mainDecl) {
+                // TODO duplicate main functions
+            } else {
+                mainDecl = decl;
+            }
+        }
+    }
+    if (!mainDecl) {
+        Diags.Report(diag::err_main_missing);
+        return;
+    }
 
     // (optional) phase 3a: C code generation
     if (options.generateC) {
