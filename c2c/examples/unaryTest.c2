@@ -1,6 +1,6 @@
 package unary_test;
 
-func void main() {
+public func void main() {
     int a;
     a = !a;
     (&a)[2] = 3;    // ok

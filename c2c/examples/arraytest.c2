@@ -24,7 +24,7 @@ TEST(foo, 10) {
     return 0;
 }
 
-func void main() {
+public func void main() {
     int count = sizeof(elements) / sizeof(Element);
     for (int i=0; i<count; i++) {
         IO.printf("[%2d] %16s\n", i, elements[i].name);

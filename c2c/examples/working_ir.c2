@@ -9,7 +9,7 @@ public func void myfunction() {
     puts("voila");
 }
 
-func int main(int argc, char*[] argv) {
+public func int main(int argc, char*[] argv) {
     int a;
     int b;
     u16 c;

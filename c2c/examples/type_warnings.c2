@@ -22,7 +22,7 @@ func Number test4(Number* n) {}
 // error: main and bla are not types
 func void test5(main* a, bla b) {}
 
-func void main() {
+public func void main() {
     int a = (int) 10;
 }
 

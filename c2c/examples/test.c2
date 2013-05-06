@@ -2,7 +2,7 @@ package test;
 
 type Number int;
 
-func void main() {
+public func void main() {
     // --- var decls, OK ---
     const char[12] buffer;
     int a;

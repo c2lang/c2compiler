@@ -2,7 +2,7 @@ package issue;
 
 use type1 local;
 
-func void main() {
+public func void main() {
     Number n = 300;
 }
 

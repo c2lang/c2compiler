@@ -8,7 +8,7 @@ func void func1(int a) {}   // error overriding global
 
 // TODO package prefixes in names
 
-func int main(int argc, char*[] argv) {
+public func int main(int argc, char*[] argv) {
     int b;
     int b;      // redefinition
     int c;

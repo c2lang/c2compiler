@@ -1,6 +1,6 @@
 package test;
 
-func void main() {
+public func void main() {
     const char[12] buffer;
     local char[10] buffer2;
     int a;
