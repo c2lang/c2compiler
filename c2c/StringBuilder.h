@@ -26,6 +26,7 @@ public:
     ~StringBuilder();
 
     StringBuilder& operator<<(const char* input);
+    StringBuilder& operator<<(void* input);
     StringBuilder& operator<<(const std::string& input);
     StringBuilder& operator<<(char input);
     StringBuilder& operator<<(int input);

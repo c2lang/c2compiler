@@ -49,6 +49,16 @@ StringBuilder& StringBuilder::operator<<(const char* input) {
     return *this;
 }
 
+StringBuilder& StringBuilder::operator<<(void* input) {
+    int len = 10;   // 0x12345678
+#ifdef SIZE_DEBUG
+    int cap = BUFSIZE - (ptr-buffer);
+    assert(len < cap && "buffer overflow");
+#endif
+    ptr += sprintf(ptr, "0x%x", (unsigned int)input);
+    return *this;
+}
+
 StringBuilder& StringBuilder::operator<<(const string& input) {
     int len = input.size();
 #ifdef SIZE_DEBUG
