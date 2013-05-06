@@ -164,6 +164,14 @@ int FileScope::checkUserType(Type* type, Expr* id, bool used_public) {
             // check if package exists
             pkg = findPackage(pkgName);
             if (!pkg) {
+                // check if used with alias (then fullname is forbidden)
+                for (PackagesConstIter iter = packages.begin(); iter != packages.end(); ++iter) {
+                    const Package* p = iter->second;
+                    if (p->getName() == pkgName) {
+                        Diags.Report(pkg_id->getLocation(), diag::err_package_has_alias) << pkgName << iter->first;
+                        return 1;
+                    }
+                }
                 // TODO use function
                 PkgsConstIter iter = allPackages.find(pkgName);
                 if (iter == allPackages.end()) {

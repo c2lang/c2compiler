@@ -134,16 +134,13 @@ public:
         return ok;
     }
 
-    // analyse FileScope and Types
+    // analyse use statements, Types and build file scope
     int analyse1(const BuildOptions& options, const Pkgs& pkgs) {
-        // TODO measure this analysis time as well
-        // step 1: do use and type analysis and build global scope
         globals = new FileScope(sema.getPkgName(), pkgs, Diags);
         ScopeAnalyser visitor(*globals, Diags);
         sema.visitAST(visitor);
         return visitor.getErrors();
     }
-
 
     // analyse Global var types + initialization
     int analyse2(const BuildOptions& options) {
