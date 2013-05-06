@@ -2045,6 +2045,10 @@ void C2Parser::ParseVarDef(bool is_public) {
         InitValue = ParseInitValue(&need_semi);
         if (InitValue.isInvalid()) return;
     }
+    if (Tok.is(tok::l_paren)) {
+        Diag(Tok, diag::err_invalid_token_after_declaration_suggest_func) << PP.getSpelling(Tok);
+        return;
+    }
     // TODO use ParseIdentifier(false)
     Actions.ActOnVarDef(id->getNameStart(), idLoc, is_public, type.release(), InitValue.release());
 
