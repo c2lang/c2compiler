@@ -25,15 +25,17 @@ class Decl;
 
 class Package {
 public:
-    Package(const std::string& name_);
+    Package(const std::string& name_, bool isCLib_);
 
     void addSymbol(Decl* decl);
     Decl* findSymbol(const std::string& name) const;
     const std::string& getName() const { return name; }
+    const std::string& getCName() const;
 
     void dump() const;
 private:
     const std::string name;
+    bool isCLib;    // not a C2 package, but used C library
 
     typedef std::map<std::string, Decl*> Symbols;
     typedef Symbols::const_iterator SymbolsConstIter;

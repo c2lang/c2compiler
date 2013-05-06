@@ -32,7 +32,7 @@ u_int64_t Utils::getCurrentTime()
 
 
 void Utils::addName(const std::string& pkgName, const std::string& name, StringBuilder& buffer) {
-    if (name == "main") {
+    if (name == "main" || pkgName == "") {
         buffer << name;
     } else {
         buffer << "__" << pkgName << '_' << name;

@@ -51,7 +51,7 @@ public:
 
     void build();
 private:
-    Package* getPackage(const std::string& name);
+    Package* getPackage(const std::string& name, bool isCLib);
     bool createPkgs();
     void addDummyPackages();
     void dumpPkgs();

@@ -25,9 +25,23 @@
 #include "Type.h"
 #include "Expr.h"
 #include "color.h"
+#include "StringBuilder.h"
 
 using namespace C2;
 using namespace clang;
+
+void ScopeResult::dump() const {
+   StringBuilder buffer;
+   buffer << "ScopeResult:\n";
+   buffer << "  pkg=" << (void*)pkg << '\n';
+   buffer << "  decl=" << (void*)decl << '\n';
+   buffer << "  ambiguous=" << ambiguous << '\n';
+   buffer << "  external=" << external << '\n';
+   buffer << "  visible=" << visible << '\n';
+   buffer << "  ok=" << ok << '\n';
+   fprintf(stderr, "%s", (const char*)buffer);
+}
+
 
 FileScope::FileScope(const std::string& name_, const Pkgs& pkgs_, clang::DiagnosticsEngine& Diags_)
     : pkgName(name_)

@@ -332,13 +332,14 @@ void C2Builder::build() {
     }
 }
 
-Package* C2Builder::getPackage(const std::string& name) {
+Package* C2Builder::getPackage(const std::string& name, bool isCLib) {
     PkgsIter iter = pkgs.find(name);
     if (iter == pkgs.end()) {
-        Package* P = new Package(name);
+        Package* P = new Package(name, isCLib);
         pkgs[name] = P;
         return P;
     } else {
+        // TODO check that isCLib matches returned package?
         return iter->second;
     }
 }
@@ -347,7 +348,7 @@ Package* C2Builder::getPackage(const std::string& name) {
 bool C2Builder::createPkgs() {
     for (unsigned int i=0; i<files.size(); i++) {
         FileInfo* info = files[i];
-        Package* pkg = getPackage(info->sema.getPkgName());
+        Package* pkg = getPackage(info->sema.getPkgName(), false);
         for (unsigned int i=0; i<info->sema.decls.size(); i++) {
             Decl* New = info->sema.decls[i];
             if (!Decl::isSymbol(New->dtype())) continue;
@@ -366,10 +367,10 @@ bool C2Builder::createPkgs() {
 }
 
 void C2Builder::addDummyPackages() {
-    Package* c2Pkg = getPackage("c2");
+    Package* c2Pkg = getPackage("c2", false);
     // TODO add dummy decls;
 
-    Package* stdioPkg = getPackage("stdio");
+    Package* stdioPkg = getPackage("stdio", true);
     SourceLocation loc;
     // int puts(const char* s);
     {

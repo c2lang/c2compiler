@@ -363,6 +363,10 @@ C2::Type* FunctionAnalyser::analyseExpr(Expr* expr) {
             ScopeResult Res = analyseIdentifier(expr);
             if (!Res.ok) return 0;
             if (!Res.decl) return 0;
+            if (Res.pkg) {
+                IdentifierExpr* id = ExprCaster<IdentifierExpr>::getType(expr);
+                id->setPackage(Res.pkg);
+            }
             // NOTE: expr should not be package name (handled above)
             return Decl2Type(Res.decl);
         }
@@ -585,6 +589,7 @@ Type* FunctionAnalyser::analyseMemberExpr(Expr* expr) {
                     << Utils::fullName(SR.pkg->getName(), D->getName());
                 return 0;
             }
+            member->setPackage(SR.pkg);
             return Decl2Type(D);
         }
     } else {

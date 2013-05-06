@@ -19,6 +19,7 @@
 #include "StringBuilder.h"
 #include "Utils.h"
 #include "Type.h"
+#include "Package.h"
 #include "color.h"
 
 using namespace C2;
@@ -235,12 +236,20 @@ EXPR_VISITOR_ACCEPT(IdentifierExpr);
 
 void IdentifierExpr::print(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
-    buffer << "[identifier " << getName() << "]\n";
+    buffer << "[identifier ";
+    if (pkg) {
+        buffer << ANSI_CYAN << pkg->getName() << '.' << ANSI_NORMAL;
+    }
+     buffer << getName() << "]\n";
 }
 
 void IdentifierExpr::generateC(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
-    buffer << name;
+    if (pkg) {
+        Utils::addName(pkg->getCName(), name, buffer);
+    } else {
+        buffer << name;
+    }
 }
 
 TypeExpr::~TypeExpr() {
@@ -492,10 +501,16 @@ void MemberExpr::print(int indent, StringBuilder& buffer) {
 }
 
 void MemberExpr::generateC(int indent, StringBuilder& buffer) {
-    Base->generateC(indent, buffer);
-    if (isArrow) buffer << "->";
-    else buffer << '.';
-    Member->generateC(0, buffer);
+    if (Member->getPackage()) {
+        // A.B where A is a package
+        Member->generateC(indent, buffer);
+    } else {
+        // A.B where A is decl of struct/union type
+        Base->generateC(indent, buffer);
+        if (isArrow) buffer << "->";
+        else buffer << '.';
+        Member->generateC(0, buffer);
+    }
 }
 
 const char* MemberExpr::getFullName() const {

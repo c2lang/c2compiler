@@ -30,6 +30,7 @@ namespace C2 {
 class StringBuilder;
 class ExprVisitor;
 class Type;
+class Package;
 
 enum ExprType {
     EXPR_NUMBER=0,
@@ -144,7 +145,7 @@ public:
 class IdentifierExpr : public Expr {
 public:
     IdentifierExpr(SourceLocation loc_, const std::string& name_)
-        : name(name_), loc(loc_) {}
+        : name(name_), pkg(0), loc(loc_) {}
     virtual ExprType etype() const { return EXPR_IDENTIFIER; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer);
@@ -154,8 +155,11 @@ public:
 
     const std::string& getName() const { return name; }
     SourceLocation getLocation() const { return loc; }
+    void setPackage(const Package* pkg_) { pkg = pkg_; }
+    const Package* getPackage() const { return pkg; }
 private:
     std::string name;
+    const Package* pkg;
     clang::SourceLocation loc;
 };
 

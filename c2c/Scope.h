@@ -42,6 +42,7 @@ public:
         , visible(true)
         , ok(true)
     {}
+    void dump() const;
 
     const Package* pkg; // pkg is only set if Symbol is a global or if symbol is a package
     Decl* decl;         // if symbol is not a package

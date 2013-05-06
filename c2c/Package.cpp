@@ -20,7 +20,17 @@
 
 using namespace C2;
 
-Package::Package(const std::string& name_) : name(name_) {}
+static std::string empty = "";
+
+Package::Package(const std::string& name_, bool isCLib_)
+    : name(name_)
+    , isCLib(isCLib_)
+{}
+
+const std::string& Package::getCName() const {
+    if (isCLib) return empty;
+    return name;
+}
 
 void Package::addSymbol(Decl* decl) {
     symbols[decl->getName()] = decl;
