@@ -136,7 +136,6 @@ int main(int argc, const char *argv[])
     if (opts.printTiming) {
         u_int64_t t2 = Utils::getCurrentTime();
         printf(COL_TIME"total building time: %lld usec"ANSI_NORMAL"\n", t2 - t1);
-
     }
 
     return 0;

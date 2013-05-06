@@ -50,6 +50,10 @@ bool ScopeAnalyser::handle(Decl* decl) {
                 DeclExpr* de = func->getArg(i);
                 checkType(de->getType(), is_public);
             }
+            // TEMP (do elsewhere?)
+            if (!is_public && func->getName() == "main") {
+                Diags.Report(decl->getLocation(), diag::err_main_non_public);
+            }
         }
         break;
     case DECL_VAR:
