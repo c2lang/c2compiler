@@ -110,7 +110,7 @@ STMT_VISITOR_ACCEPT(Expr);
 
 EXPR_VISITOR_ACCEPT(NumberExpr);
 
-void NumberExpr::print(int indent, StringBuilder& buffer) {
+void NumberExpr::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[number " << (int)value << "]\n";
 }
@@ -123,7 +123,7 @@ void NumberExpr::generateC(int indent, StringBuilder& buffer) {
 
 EXPR_VISITOR_ACCEPT(StringExpr);
 
-void StringExpr::print(int indent, StringBuilder& buffer) {
+void StringExpr::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[text '" << value << "']\n";
 }
@@ -136,7 +136,7 @@ void StringExpr::generateC(int indent, StringBuilder& buffer) {
 
 EXPR_VISITOR_ACCEPT(BoolLiteralExpr);
 
-void BoolLiteralExpr::print(int indent, StringBuilder& buffer) {
+void BoolLiteralExpr::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[bool " << value << "]\n";
 }
@@ -149,7 +149,7 @@ void BoolLiteralExpr::generateC(int indent, StringBuilder& buffer) {
 
 EXPR_VISITOR_ACCEPT(CharLiteralExpr);
 
-void CharLiteralExpr::print(int indent, StringBuilder& buffer) {
+void CharLiteralExpr::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[char '" << (char)value << "']\n";
 }
@@ -208,7 +208,7 @@ static void expr2name(Expr* expr, StringBuilder& buffer) {
 }
 
 
-void CallExpr::print(int indent, StringBuilder& buffer) {
+void CallExpr::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[call ";
     expr2name(Fn, buffer);
@@ -234,7 +234,7 @@ void CallExpr::generateC(int indent, StringBuilder& buffer) {
 
 EXPR_VISITOR_ACCEPT(IdentifierExpr);
 
-void IdentifierExpr::print(int indent, StringBuilder& buffer) {
+void IdentifierExpr::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[identifier ";
     if (pkg) {
@@ -257,7 +257,7 @@ TypeExpr::~TypeExpr() {
 
 EXPR_VISITOR_ACCEPT(TypeExpr);
 
-void TypeExpr::print(int indent, StringBuilder& buffer) {
+void TypeExpr::print(int indent, StringBuilder& buffer) const {
     if (type) type->print(indent, buffer, Type::RECURSE_NONE);
 }
 
@@ -281,7 +281,7 @@ InitListExpr::~InitListExpr() {
 
 EXPR_VISITOR_ACCEPT(InitListExpr);
 
-void InitListExpr::print(int indent, StringBuilder& buffer) {
+void InitListExpr::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[initlist]\n";
     for (unsigned int i=0; i<values.size(); i++) {
@@ -319,7 +319,7 @@ void DeclExpr::setCanonicalType(Type* t) {
     canonicalType = t;
 }
 
-void DeclExpr::print(int indent, StringBuilder& buffer) {
+void DeclExpr::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[decl " << name << "]\n";
     indent += INDENT;
@@ -374,7 +374,7 @@ BinOpExpr::~BinOpExpr() {
 
 EXPR_VISITOR_ACCEPT(BinOpExpr);
 
-void BinOpExpr::print(int indent, StringBuilder& buffer) {
+void BinOpExpr::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[binop " << BinOpCode2str(opc) << "]\n";
     lhs->print(indent + INDENT, buffer);
@@ -401,7 +401,7 @@ UnaryOpExpr::~UnaryOpExpr() {
 
 EXPR_VISITOR_ACCEPT(UnaryOpExpr);
 
-void UnaryOpExpr::print(int indent, StringBuilder& buffer) {
+void UnaryOpExpr::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[unaryop " << UnaryOpCode2str(opc) << "]\n";
     val->print(indent + INDENT, buffer);
@@ -443,7 +443,7 @@ SizeofExpr::~SizeofExpr() {
 
 EXPR_VISITOR_ACCEPT(SizeofExpr);
 
-void SizeofExpr::print(int indent, StringBuilder& buffer) {
+void SizeofExpr::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[sizeof]\n";
     expr->print(indent + INDENT, buffer);
@@ -471,7 +471,7 @@ ArraySubscriptExpr::~ArraySubscriptExpr() {
 
 EXPR_VISITOR_ACCEPT(ArraySubscriptExpr);
 
-void ArraySubscriptExpr::print(int indent, StringBuilder& buffer) {
+void ArraySubscriptExpr::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[arraysubscript]\n";
     base->print(indent + INDENT, buffer);
@@ -493,7 +493,7 @@ MemberExpr::~MemberExpr() {
 
 EXPR_VISITOR_ACCEPT(MemberExpr);
 
-void MemberExpr::print(int indent, StringBuilder& buffer) {
+void MemberExpr::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[member expr]\n";
     Base->print(indent + INDENT, buffer);
@@ -525,7 +525,7 @@ ParenExpr::~ParenExpr() {
 
 EXPR_VISITOR_ACCEPT(ParenExpr);
 
-void ParenExpr::print(int indent, StringBuilder& buffer) {
+void ParenExpr::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[paren expr]\n";
     Val->print(indent + INDENT, buffer);

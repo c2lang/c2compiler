@@ -108,6 +108,10 @@ public:
     // analysis
     void visitAST(ASTVisitor& visitor);
 
+    // codegen
+    unsigned getNumDecls() const { return decls.size(); }
+    Decl* getDecl(unsigned index) const { return decls[index]; }
+
     // debugging
     void printAST(const std::string& filename) const;
     void generateC(StringBuilder& buffer) const;

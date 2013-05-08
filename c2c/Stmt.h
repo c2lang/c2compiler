@@ -33,7 +33,6 @@ namespace C2 {
 class StringBuilder;
 class StmtVisitor;
 class Expr;
-class CodeGenContext;
 
 enum StmtType {
     STMT_RETURN = 0,
@@ -58,11 +57,10 @@ public:
     Stmt();
     virtual ~Stmt();
     virtual StmtType stype() const = 0;
-    virtual void acceptS(StmtVisitor& v) = 0;
-    virtual void print(int indent, StringBuilder& buffer) = 0;
+    virtual void acceptS(StmtVisitor& v) const = 0;
+    virtual void print(int indent, StringBuilder& buffer) const = 0;
     virtual void generateC(int indent, StringBuilder& buffer) = 0;
-    virtual llvm::Value* codeGen(CodeGenContext& context) = 0;
-    void dump();
+    void dump() const;
 private:
     Stmt(const Stmt&);
     Stmt& operator= (const Stmt&);
@@ -76,11 +74,10 @@ public:
     ReturnStmt(SourceLocation loc,Expr* value_);
     virtual ~ReturnStmt();
     virtual StmtType stype() const { return STMT_RETURN; }
-    virtual void acceptS(StmtVisitor& v);
+    virtual void acceptS(StmtVisitor& v) const;
 
-    virtual void print(int indent, StringBuilder& buffer);
+    virtual void print(int indent, StringBuilder& buffer) const;
     virtual void generateC(int indent, StringBuilder& buffer);
-    virtual llvm::Value* codeGen(CodeGenContext& context);
 
     Expr* getExpr() const { return value; }
     SourceLocation getLocation() const { return RetLoc; }
@@ -97,11 +94,10 @@ public:
            SourceLocation elseLoc, Stmt* elseStmt);
     virtual ~IfStmt();
     virtual StmtType stype() const { return STMT_IF; }
-    virtual void acceptS(StmtVisitor& v);
+    virtual void acceptS(StmtVisitor& v) const;
 
-    virtual void print(int indent, StringBuilder& buffer);
+    virtual void print(int indent, StringBuilder& buffer) const;
     virtual void generateC(int indent, StringBuilder& buffer);
-    virtual llvm::Value* codeGen(CodeGenContext& context);
 
     Stmt* getCond() const { return SubExprs[COND]; }
     Stmt* getThen() const { return SubExprs[THEN]; }
@@ -120,11 +116,10 @@ public:
     WhileStmt(SourceLocation Loc_, Expr* Cond_, Stmt* Then_);
     virtual ~WhileStmt();
     virtual StmtType stype() const { return STMT_WHILE; }
-    virtual void acceptS(StmtVisitor& v);
+    virtual void acceptS(StmtVisitor& v) const;
 
-    virtual void print(int indent, StringBuilder& buffer);
+    virtual void print(int indent, StringBuilder& buffer) const;
     virtual void generateC(int indent, StringBuilder& buffer);
-    virtual llvm::Value* codeGen(CodeGenContext& context);
 
     Stmt* getCond() const { return Cond; }
     Stmt* getBody() const { return Then; }
@@ -140,11 +135,10 @@ public:
     DoStmt(SourceLocation Loc_, Expr* Cond_, Stmt* Then_);
     virtual ~DoStmt();
     virtual StmtType stype() const { return STMT_DO; }
-    virtual void acceptS(StmtVisitor& v);
+    virtual void acceptS(StmtVisitor& v) const;
 
-    virtual void print(int indent, StringBuilder& buffer);
+    virtual void print(int indent, StringBuilder& buffer) const;
     virtual void generateC(int indent, StringBuilder& buffer);
-    virtual llvm::Value* codeGen(CodeGenContext& context);
 
     Stmt* getCond() const { return Cond; }
     Stmt* getBody() const { return Then; }
@@ -160,11 +154,10 @@ public:
     ForStmt(SourceLocation Loc_, Stmt* Init_, Expr* Cond_, Expr* Incr_, Stmt* Body_);
     virtual ~ForStmt();
     virtual StmtType stype() const { return STMT_FOR; }
-    virtual void acceptS(StmtVisitor& v);
+    virtual void acceptS(StmtVisitor& v) const;
 
-    virtual void print(int indent, StringBuilder& buffer);
+    virtual void print(int indent, StringBuilder& buffer) const;
     virtual void generateC(int indent, StringBuilder& buffer);
-    virtual llvm::Value* codeGen(CodeGenContext& context);
 
     Stmt* getInit() const { return Init; }
     Expr* getCond() const { return Cond; }
@@ -184,11 +177,10 @@ public:
     SwitchStmt(SourceLocation Loc_, Expr* Cond_, StmtList& Cases_);
     virtual ~SwitchStmt();
     virtual StmtType stype() const { return STMT_SWITCH; }
-    virtual void acceptS(StmtVisitor& v);
+    virtual void acceptS(StmtVisitor& v) const;
 
-    virtual void print(int indent, StringBuilder& buffer);
+    virtual void print(int indent, StringBuilder& buffer) const;
     virtual void generateC(int indent, StringBuilder& buffer);
-    virtual llvm::Value* codeGen(CodeGenContext& context);
 
     Expr* getCond() const { return Cond; }
     const StmtList& getCases() const { return Cases; }
@@ -204,11 +196,10 @@ public:
     CaseStmt(SourceLocation Loc_, Expr* Cond_, StmtList& Stmts_);
     virtual ~CaseStmt();
     virtual StmtType stype() const { return STMT_CASE; }
-    virtual void acceptS(StmtVisitor& v);
+    virtual void acceptS(StmtVisitor& v) const;
 
-    virtual void print(int indent, StringBuilder& buffer);
+    virtual void print(int indent, StringBuilder& buffer) const;
     virtual void generateC(int indent, StringBuilder& buffer);
-    virtual llvm::Value* codeGen(CodeGenContext& context);
 
     SourceLocation getLocation() const { return Loc; }
     Expr* getCond() const { return Cond; }
@@ -225,11 +216,10 @@ public:
     DefaultStmt(SourceLocation Loc_, StmtList& Stmts_);
     virtual ~DefaultStmt();
     virtual StmtType stype() const { return STMT_DEFAULT; }
-    virtual void acceptS(StmtVisitor& v);
+    virtual void acceptS(StmtVisitor& v) const;
 
-    virtual void print(int indent, StringBuilder& buffer);
+    virtual void print(int indent, StringBuilder& buffer) const;
     virtual void generateC(int indent, StringBuilder& buffer);
-    virtual llvm::Value* codeGen(CodeGenContext& context);
 
     SourceLocation getLocation() const { return Loc; }
     const StmtList& getStmts() const { return Stmts; }
@@ -244,11 +234,10 @@ public:
     BreakStmt(SourceLocation Loc_);
     virtual ~BreakStmt();
     virtual StmtType stype() const { return STMT_BREAK; }
-    virtual void acceptS(StmtVisitor& v);
+    virtual void acceptS(StmtVisitor& v) const;
 
-    virtual void print(int indent, StringBuilder& buffer);
+    virtual void print(int indent, StringBuilder& buffer) const;
     virtual void generateC(int indent, StringBuilder& buffer);
-    virtual llvm::Value* codeGen(CodeGenContext& context);
 
     SourceLocation getLocation() const { return Loc; }
 private:
@@ -261,11 +250,10 @@ public:
     ContinueStmt(SourceLocation Loc_);
     virtual ~ContinueStmt();
     virtual StmtType stype() const { return STMT_CONTINUE; }
-    virtual void acceptS(StmtVisitor& v);
+    virtual void acceptS(StmtVisitor& v) const;
 
-    virtual void print(int indent, StringBuilder& buffer);
+    virtual void print(int indent, StringBuilder& buffer) const;
     virtual void generateC(int indent, StringBuilder& buffer);
-    virtual llvm::Value* codeGen(CodeGenContext& context);
 
     SourceLocation getLocation() const { return Loc; }
 private:
@@ -278,11 +266,10 @@ public:
     LabelStmt(const char* name_, SourceLocation Loc_, Stmt* subStmt_);
     virtual ~LabelStmt();
     virtual StmtType stype() const { return STMT_LABEL; }
-    virtual void acceptS(StmtVisitor& v);
+    virtual void acceptS(StmtVisitor& v) const;
 
-    virtual void print(int indent, StringBuilder& buffer);
+    virtual void print(int indent, StringBuilder& buffer) const;
     virtual void generateC(int indent, StringBuilder& buffer);
-    virtual llvm::Value* codeGen(CodeGenContext& context);
     Stmt* getSubStmt() const { return subStmt; }
 private:
     std::string name;
@@ -296,11 +283,10 @@ public:
     GotoStmt(const char* name_, SourceLocation GotoLoc_, SourceLocation LabelLoc_);
     virtual ~GotoStmt();
     virtual StmtType stype() const { return STMT_GOTO; }
-    virtual void acceptS(StmtVisitor& v);
+    virtual void acceptS(StmtVisitor& v) const;
 
-    virtual void print(int indent, StringBuilder& buffer);
+    virtual void print(int indent, StringBuilder& buffer) const;
     virtual void generateC(int indent, StringBuilder& buffer);
-    virtual llvm::Value* codeGen(CodeGenContext& context);
 private:
     std::string name;
     SourceLocation GotoLoc;
@@ -313,11 +299,10 @@ public:
     CompoundStmt(SourceLocation l, SourceLocation r, StmtList& stmts_);
     virtual ~CompoundStmt();
     virtual StmtType stype() const { return STMT_COMPOUND; }
-    virtual void acceptS(StmtVisitor& v);
+    virtual void acceptS(StmtVisitor& v) const;
 
-    virtual void print(int indent, StringBuilder& buffer);
+    virtual void print(int indent, StringBuilder& buffer) const;
     virtual void generateC(int indent, StringBuilder& buffer);
-    virtual llvm::Value* codeGen(CodeGenContext& context);
 
     const StmtList& getStmts() const { return Stmts; }
     Stmt* getLastStmt() const;
@@ -332,40 +317,40 @@ private:
 class StmtVisitor {
 public:
     virtual ~StmtVisitor() {}
-    virtual void visit(C2::Stmt&) { assert(0); }    // add subclass below
-    virtual void visit(ReturnStmt&) {}
-    virtual void visit(IfStmt&) {}
-    virtual void visit(WhileStmt&) {}
-    virtual void visit(DoStmt&) {}
-    virtual void visit(ForStmt&) {}
-    virtual void visit(SwitchStmt&) {}
-    virtual void visit(CaseStmt&) {}
-    virtual void visit(DefaultStmt&) {}
-    virtual void visit(BreakStmt&) {}
-    virtual void visit(ContinueStmt&) {}
-    virtual void visit(LabelStmt&) {}
-    virtual void visit(GotoStmt&) {}
-    virtual void visit(CompoundStmt&) {}
-    virtual void visit(Expr&) {}
+    virtual void visit(const C2::Stmt&) { assert(0); }    // add subclass below
+    virtual void visit(const ReturnStmt&) {}
+    virtual void visit(const IfStmt&) {}
+    virtual void visit(const WhileStmt&) {}
+    virtual void visit(const DoStmt&) {}
+    virtual void visit(const ForStmt&) {}
+    virtual void visit(const SwitchStmt&) {}
+    virtual void visit(const CaseStmt&) {}
+    virtual void visit(const DefaultStmt&) {}
+    virtual void visit(const BreakStmt&) {}
+    virtual void visit(const ContinueStmt&) {}
+    virtual void visit(const LabelStmt&) {}
+    virtual void visit(const GotoStmt&) {}
+    virtual void visit(const CompoundStmt&) {}
+    virtual void visit(const Expr&) {}
 };
 
-#define STMT_VISITOR_ACCEPT(a) void a::acceptS(StmtVisitor& v) { v.visit(*this); }
+#define STMT_VISITOR_ACCEPT(a) void a::acceptS(StmtVisitor& v) const { v.visit(*this); }
 
 template <class T> class StmtCaster : public StmtVisitor {
 public:
-    virtual void visit(T& node_) {
-        node = &node_;
+    virtual void visit(const T& node_) {
+        node = (T*)&node_;  // TEMP dirty const-cast
     }
-    static T* getType(C2::Stmt& node_) {
+    static T* getType(const C2::Stmt& node_) {
         StmtCaster<T> visitor(node_);
         return visitor.node;
     }
-    static T* getType(C2::Stmt* node_) {
+    static T* getType(const C2::Stmt* node_) {
         StmtCaster<T> visitor(*node_);
         return visitor.node;
     }
 private:
-    StmtCaster(C2::Stmt& n) : node(0) {
+    StmtCaster(const C2::Stmt& n) : node(0) {
         n.acceptS(*this);
     }
     T* node;

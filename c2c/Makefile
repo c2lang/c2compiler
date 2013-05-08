@@ -7,11 +7,10 @@ OBJS = \
     C2Builder.o \
     C2Parser.o \
     C2Sema.o \
-    CodeGenerator.o \
+    CodeGenFunction.o \
+    CodeGenModule.o \
     Decl.o \
-    DeclCodeGen.o \
     Expr.o \
-    ExprCodeGen.o \
     FileMap.o \
     FunctionAnalyser.o \
     ScopeAnalyser.o \
@@ -21,7 +20,6 @@ OBJS = \
     RecipeReader.o \
     Scope.o \
     Stmt.o \
-    StmtCodeGen.o \
     StringBuilder.o \
     Type.o \
     Utils.o \

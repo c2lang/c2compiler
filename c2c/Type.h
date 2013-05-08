@@ -24,20 +24,32 @@
 #define TYPE_VOLATILE   (1<<2)
 #define TYPE_LOCAL      (1<<3)
 
-namespace llvm {
-class Type;
-}
-
 namespace C2 {
 class StringBuilder;
 class EnumValue;
 class Argument;
-class CodeGenContext;
 class Expr;
 class DeclExpr;
 class TypeContext;
 
 typedef OwningVector<C2::DeclExpr> MemberList;
+
+enum C2Type {
+    TYPE_U8 = 0,
+    TYPE_U16,
+    TYPE_U32,
+    TYPE_S8,
+    TYPE_S16,
+    TYPE_S32,
+    TYPE_INT,
+    TYPE_STRING,
+    TYPE_FLOAT,
+    TYPE_F32,
+    TYPE_F64,
+    TYPE_CHAR,
+    TYPE_BOOL,
+    TYPE_VOID,
+};
 
 class Type {
 public:
@@ -70,10 +82,12 @@ public:
     Type* getCanonical(TypeContext& context);
 
     // Builtin type
-    void setBuiltinName(const char* name_, const char* cname_) {
+    void setBuiltinName(C2Type ct, const char* name_, const char* cname_) {
         name = name_;
         cname = cname_;
+        c2type = ct;
     }
+    C2Type getBuiltinType() const { return c2type; }
 
     // user type
     void setUserType(Expr* expr) { userType = expr; }
@@ -114,8 +128,6 @@ public:
     // for analysis
     bool hasBuiltinBase() const;
     Expr* getBaseUserType() const;
-
-    llvm::Type* convert(CodeGenContext& C);
 private:
     // TODO remove printName
     void printName(StringBuilder& buffer) const;
@@ -130,6 +142,7 @@ private:
         struct {
             const char* name;
             const char* cname;
+            C2Type c2type;
         };
 
         // user types, can be IdentifierExpr or MemberExpr
@@ -168,23 +181,6 @@ private:
     };
 };
 
-
-enum C2Type {
-    TYPE_U8 = 0,
-    TYPE_U16,
-    TYPE_U32,
-    TYPE_S8,
-    TYPE_S16,
-    TYPE_S32,
-    TYPE_INT,
-    TYPE_STRING,
-    TYPE_FLOAT,
-    TYPE_F32,
-    TYPE_F64,
-    TYPE_CHAR,
-    TYPE_BOOL,
-    TYPE_VOID,
-};
 
 class BuiltinType {
 public:

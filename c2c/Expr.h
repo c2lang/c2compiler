@@ -57,7 +57,7 @@ public:
     virtual ~Expr();
     // from Stmt
     virtual StmtType stype() const { return STMT_EXPR; }
-    virtual void acceptS(StmtVisitor& v);
+    virtual void acceptS(StmtVisitor& v) const;
 
     virtual ExprType etype() const = 0;
     virtual void acceptE(ExprVisitor& v) = 0;
@@ -84,9 +84,8 @@ public:
         : value(val), loc(loc_) {}
     virtual ExprType etype() const { return EXPR_NUMBER; }
     virtual void acceptE(ExprVisitor& v);
-    virtual void print(int indent, StringBuilder& buffer);
+    virtual void print(int indent, StringBuilder& buffer) const;
     virtual void generateC(int indent, StringBuilder& buffer);
-    virtual llvm::Value* codeGen(CodeGenContext& context);
     virtual SourceLocation getExprLoc() const { return loc; }
 
     double value;
@@ -100,9 +99,8 @@ public:
         : value(val), loc(loc_) {}
     virtual ExprType etype() const { return EXPR_STRING; }
     virtual void acceptE(ExprVisitor& v);
-    virtual void print(int indent, StringBuilder& buffer);
+    virtual void print(int indent, StringBuilder& buffer) const;
     virtual void generateC(int indent, StringBuilder& buffer);
-    virtual llvm::Value* codeGen(CodeGenContext& context);
     virtual SourceLocation getExprLoc() const { return loc; }
 
     std::string value;
@@ -116,9 +114,8 @@ public:
         : value(val), loc(loc_) {}
     virtual ExprType etype() const { return EXPR_BOOL; }
     virtual void acceptE(ExprVisitor& v);
-    virtual void print(int indent, StringBuilder& buffer);
+    virtual void print(int indent, StringBuilder& buffer) const;
     virtual void generateC(int indent, StringBuilder& buffer);
-    virtual llvm::Value* codeGen(CodeGenContext& context);
     virtual SourceLocation getExprLoc() const { return loc; }
 
     bool value;
@@ -132,9 +129,8 @@ public:
         : value(val), loc(loc_) {}
     virtual ExprType etype() const { return EXPR_CHARLITERAL; }
     virtual void acceptE(ExprVisitor& v);
-    virtual void print(int indent, StringBuilder& buffer);
+    virtual void print(int indent, StringBuilder& buffer) const;
     virtual void generateC(int indent, StringBuilder& buffer);
-    virtual llvm::Value* codeGen(CodeGenContext& context);
     virtual SourceLocation getExprLoc() const { return loc; }
 
     unsigned value;
@@ -148,9 +144,8 @@ public:
         : name(name_), pkg(0), loc(loc_) {}
     virtual ExprType etype() const { return EXPR_IDENTIFIER; }
     virtual void acceptE(ExprVisitor& v);
-    virtual void print(int indent, StringBuilder& buffer);
+    virtual void print(int indent, StringBuilder& buffer) const;
     virtual void generateC(int indent, StringBuilder& buffer);
-    virtual llvm::Value* codeGen(CodeGenContext& context);
     virtual SourceLocation getExprLoc() const { return loc; }
 
     const std::string& getName() const { return name; }
@@ -170,9 +165,8 @@ public:
     virtual ~TypeExpr();
     virtual ExprType etype() const { return EXPR_TYPE; }
     virtual void acceptE(ExprVisitor& v);
-    virtual void print(int indent, StringBuilder& buffer);
+    virtual void print(int indent, StringBuilder& buffer) const;
     virtual void generateC(int indent, StringBuilder& buffer);
-    virtual llvm::Value* codeGen(CodeGenContext& context);
     virtual SourceLocation getExprLoc() const {
         // TODO
         SourceLocation loc;
@@ -193,9 +187,8 @@ public:
     virtual ~CallExpr();
     virtual ExprType etype() const { return EXPR_CALL; }
     virtual void acceptE(ExprVisitor& v);
-    virtual void print(int indent, StringBuilder& buffer);
+    virtual void print(int indent, StringBuilder& buffer) const;
     virtual void generateC(int indent, StringBuilder& buffer);
-    virtual llvm::Value* codeGen(CodeGenContext& context);
 
     void addArg(Expr* arg);
     virtual SourceLocation getExprLoc() const { return Fn->getExprLoc(); }
@@ -217,9 +210,8 @@ public:
     virtual ~InitListExpr();
     virtual ExprType etype() const { return EXPR_INITLIST; }
     virtual void acceptE(ExprVisitor& v);
-    virtual void print(int indent, StringBuilder& buffer);
+    virtual void print(int indent, StringBuilder& buffer) const;
     virtual void generateC(int indent, StringBuilder& buffer);
-    virtual llvm::Value* codeGen(CodeGenContext& context);
     virtual SourceLocation getExprLoc() const { return leftBrace; }
 private:
     SourceLocation leftBrace;
@@ -235,11 +227,10 @@ public:
     virtual ~DeclExpr();
     virtual ExprType etype() const { return EXPR_DECL; }
     virtual void acceptE(ExprVisitor& v);
-    virtual void print(int indent, StringBuilder& buffer);
+    virtual void print(int indent, StringBuilder& buffer) const;
     virtual void generateC(int indent, StringBuilder& buffer);
     // used by VarDecls only to add pkgName
     virtual void generateC(StringBuilder& buffer, const std::string& pkgName);
-    virtual llvm::Value* codeGen(CodeGenContext& context);
     virtual SourceLocation getExprLoc() const { return loc; }
 
     Type* getType() const { return type; }
@@ -265,9 +256,8 @@ public:
     virtual ~BinOpExpr();
     virtual ExprType etype() const { return EXPR_BINOP; }
     virtual void acceptE(ExprVisitor& v);
-    virtual void print(int indent, StringBuilder& buffer);
+    virtual void print(int indent, StringBuilder& buffer) const;
     virtual void generateC(int indent, StringBuilder& buffer);
-    virtual llvm::Value* codeGen(CodeGenContext& context);
     virtual SourceLocation getExprLoc() const { return lhs->getExprLoc(); }
 
     Expr* getLeft() const { return lhs; }
@@ -289,9 +279,8 @@ public:
     virtual ~UnaryOpExpr();
     virtual ExprType etype() const { return EXPR_UNARYOP; }
     virtual void acceptE(ExprVisitor& v);
-    virtual void print(int indent, StringBuilder& buffer);
+    virtual void print(int indent, StringBuilder& buffer) const;
     virtual void generateC(int indent, StringBuilder& buffer);
-    virtual llvm::Value* codeGen(CodeGenContext& context);
     virtual SourceLocation getExprLoc() const { return opLoc; }
 
     Expr* getExpr() const { return val; }
@@ -310,9 +299,8 @@ public:
     virtual ~SizeofExpr();
     virtual ExprType etype() const { return EXPR_SIZEOF; }
     virtual void acceptE(ExprVisitor& v);
-    virtual void print(int indent, StringBuilder& buffer);
+    virtual void print(int indent, StringBuilder& buffer) const;
     virtual void generateC(int indent, StringBuilder& buffer);
-    virtual llvm::Value* codeGen(CodeGenContext& context);
     virtual SourceLocation getExprLoc() const { return Loc; }
 
     Expr* getExpr() const { return expr; }
@@ -328,9 +316,8 @@ public:
     virtual ~ArraySubscriptExpr();
     virtual ExprType etype() const { return EXPR_ARRAYSUBSCRIPT; }
     virtual void acceptE(ExprVisitor& v);
-    virtual void print(int indent, StringBuilder& buffer);
+    virtual void print(int indent, StringBuilder& buffer) const;
     virtual void generateC(int indent, StringBuilder& buffer);
-    virtual llvm::Value* codeGen(CodeGenContext& context);
     virtual SourceLocation getExprLoc() const { return base->getExprLoc(); }
 
     Expr* getBase() const { return base; }
@@ -352,9 +339,8 @@ public:
     virtual ~MemberExpr();
     virtual ExprType etype() const { return EXPR_MEMBER; }
     virtual void acceptE(ExprVisitor& v);
-    virtual void print(int indent, StringBuilder& buffer);
+    virtual void print(int indent, StringBuilder& buffer) const;
     virtual void generateC(int indent, StringBuilder& buffer);
-    virtual llvm::Value* codeGen(CodeGenContext& context);
     virtual SourceLocation getExprLoc() const { return Base->getExprLoc(); }
 
     Expr* getBase() const { return Base; }
@@ -377,9 +363,8 @@ public:
     virtual ~ParenExpr();
     virtual ExprType etype() const { return EXPR_PAREN; }
     virtual void acceptE(ExprVisitor& v);
-    virtual void print(int indent, StringBuilder& buffer);
+    virtual void print(int indent, StringBuilder& buffer) const;
     virtual void generateC(int indent, StringBuilder& buffer);
-    virtual llvm::Value* codeGen(CodeGenContext& context);
     virtual SourceLocation getExprLoc() const { return L; }
 
     Expr* getExpr() const { return Val; }
@@ -420,12 +405,14 @@ public:
     virtual void visit(T& node_) {
         node = &node_;
     }
-    static T* getType(Expr& node_) {
-        ExprCaster<T> visitor(node_);
+    static T* getType(const Expr& node_) {
+        // TEMP dirty temp cast
+        ExprCaster<T> visitor((Expr&)node_);
         return visitor.node;
     }
-    static T* getType(Expr* node_) {
-        ExprCaster<T> visitor(*node_);
+    static T* getType(const Expr* node_) {
+        // TEMP dirty temp cast
+        ExprCaster<T> visitor((Expr&)*node_);
         return visitor.node;
     }
 private:

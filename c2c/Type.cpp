@@ -22,7 +22,6 @@
 #include "Expr.h"
 #include "Utils.h"
 #include "color.h"
-#include "CodeGenerator.h"
 
 //#define TYPE_DEBUG
 
@@ -609,60 +608,6 @@ Expr* Type::getBaseUserType() const {
     }
 }
 
-llvm::Type* Type::convert(CodeGenContext& C) {
-    llvm::Type* tt = 0;
-    switch (kind) {
-    case BUILTIN:
-        {
-            // TEMP, use C2Type enum
-            // TODO make u8/16/32 unsigned
-            if (strcmp(name, "u8") == 0) return C.builder.getInt8Ty();
-            if (strcmp(name, "u16") == 0) return C.builder.getInt16Ty();
-            if (strcmp(name, "u32") == 0) return C.builder.getInt32Ty();
-            if (strcmp(name, "int") == 0) return C.builder.getInt32Ty();
-            if (strcmp(name, "char") == 0) return C.builder.getInt8Ty();
-            if (strcmp(name, "float") == 0) return C.builder.getFloatTy();
-            if (strcmp(name, "void") == 0) return C.builder.getVoidTy();
-            if (strcmp(name, "s8") == 0) return C.builder.getInt8Ty();
-            if (strcmp(name, "s16") == 0) return C.builder.getInt16Ty();
-            if (strcmp(name, "s32") == 0) return C.builder.getInt32Ty();
-            if (strcmp(name, "bool") == 0) return C.builder.getInt1Ty();
-            // TODO 'string' type
-            assert(0 && "Unknown type");
-        }
-        break;
-    case USER:
-        assert(0 && "TODO");
-        break;
-    case STRUCT:
-        assert(0 && "TODO");
-        break;
-    case UNION:
-        assert(0 && "TODO");
-        break;
-    case ENUM:
-        assert(0 && "TODO");
-        break;
-    case FUNC:
-        assert(0 && "TODO");
-        break;
-    case POINTER:
-        tt = refType->convert(C);
-        return tt->getPointerTo();
-    case ARRAY:
-        // Hmm for function args, array are simply converted to pointers, do that for now
-        // array: use type = ArrayType::get(elementType, numElements)
-        tt = refType->convert(C);
-        return tt->getPointerTo();
-    case QUALIFIER:
-        assert(0 && "TODO");
-        break;
-    }
-
-    return 0;
-}
-
-
 
 static C2::Type type_u8(Type::BUILTIN);
 static C2::Type type_u16(Type::BUILTIN);
@@ -679,19 +624,19 @@ static C2::Type type_bool(Type::BUILTIN);
 static C2::Type type_void(Type::BUILTIN);
 
 BuiltinType::BuiltinType() {
-    type_u8.setBuiltinName("u8", "unsigned char");
-    type_u16.setBuiltinName("u16", "unsigned short");
-    type_u32.setBuiltinName("u32", "unsigned int");
-    type_s8.setBuiltinName("s8", "char");
-    type_s16.setBuiltinName("s16", "short");
-    type_s32.setBuiltinName("s32", "int");
-    type_int.setBuiltinName("int", "int");
-    type_char.setBuiltinName("char", "char");
-    type_string.setBuiltinName("string", "const char*");
-    type_f32.setBuiltinName("f32", "float");
-    type_f64.setBuiltinName("f64", "double");
-    type_bool.setBuiltinName("bool", "int");
-    type_void.setBuiltinName("void", "void");
+    type_u8.setBuiltinName(TYPE_U8, "u8", "unsigned char");
+    type_u16.setBuiltinName(TYPE_U16, "u16", "unsigned short");
+    type_u32.setBuiltinName(TYPE_U32,"u32", "unsigned int");
+    type_s8.setBuiltinName(TYPE_S8,"s8", "char");
+    type_s16.setBuiltinName(TYPE_S16,"s16", "short");
+    type_s32.setBuiltinName(TYPE_S32, "s32", "int");
+    type_int.setBuiltinName(TYPE_INT,"int", "int");
+    type_char.setBuiltinName(TYPE_CHAR, "char", "char");
+    type_string.setBuiltinName(TYPE_STRING, "string", "const char*");
+    type_f32.setBuiltinName(TYPE_F32,"f32", "float");
+    type_f64.setBuiltinName(TYPE_F64, "f64", "double");
+    type_bool.setBuiltinName(TYPE_BOOL, "bool", "int");
+    type_void.setBuiltinName(TYPE_VOID, "void", "void");
 }
 
 C2::Type* BuiltinType::get(C2Type t) {

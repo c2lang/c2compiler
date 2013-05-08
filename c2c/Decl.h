@@ -35,7 +35,6 @@ class Stmt;
 class Expr;
 class DeclExpr;
 class DeclVisitor;
-class CodeGenContext;
 
 enum DeclType {
     DECL_FUNC = 0,
@@ -53,7 +52,6 @@ public:
     virtual void acceptD(DeclVisitor& v) = 0;
     virtual void print(StringBuilder& buffer) = 0;
     virtual void generateC(StringBuilder& buffer, const std::string& pkgName) = 0;
-    virtual llvm::Value* codeGen(CodeGenContext& context) = 0;
 
     virtual const std::string& getName() const = 0;
     virtual clang::SourceLocation getLocation() const = 0;
@@ -79,7 +77,6 @@ public:
     virtual void acceptD(DeclVisitor& v);
     virtual void print(StringBuilder& buffer);
     virtual void generateC(StringBuilder& buffer, const std::string& pkgName);
-    virtual llvm::Value* codeGen(CodeGenContext& context);
 
     void setBody(Stmt* body_) {
         assert(body == 0);
@@ -97,6 +94,8 @@ public:
     bool isVariadic() const { return m_isVariadic; }
     Type* getProto() const;
 private:
+    friend class CodeGenFunction;
+
     std::string name;
     clang::SourceLocation loc;
     Type* rtype;
@@ -117,7 +116,6 @@ public:
     virtual void acceptD(DeclVisitor& v);
     virtual void print(StringBuilder& buffer);
     virtual void generateC(StringBuilder& buffer, const std::string& pkgName);
-    virtual llvm::Value* codeGen(CodeGenContext& context);
 
     bool isInExpr() const;
     virtual const std::string& getName() const;
@@ -139,7 +137,6 @@ public:
     virtual void acceptD(DeclVisitor& v);
     virtual void print(StringBuilder& buffer);
     virtual void generateC(StringBuilder& buffer, const std::string& pkgName);
-    virtual llvm::Value* codeGen(CodeGenContext& context);
 
     virtual const std::string& getName() const { return name; }
     virtual clang::SourceLocation getLocation() const { return loc; }
@@ -159,7 +156,6 @@ public:
     virtual void acceptD(DeclVisitor& v);
     virtual void print(StringBuilder& buffer);
     virtual void generateC(StringBuilder& buffer, const std::string& pkgName);
-    virtual llvm::Value* codeGen(CodeGenContext& context);
 
     virtual const std::string& getName() const { return name; }
     virtual clang::SourceLocation getLocation() const { return loc; }
@@ -177,7 +173,6 @@ public:
     virtual void acceptD(DeclVisitor& v);
     virtual void print(StringBuilder& buffer);
     virtual void generateC(StringBuilder& buffer, const std::string& pkgName);
-    virtual llvm::Value* codeGen(CodeGenContext& context);
 
     virtual const std::string& getName() const { return name; }
     const std::string& getAlias() const { return alias; }

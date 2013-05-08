@@ -43,7 +43,7 @@ Stmt::~Stmt() {
 #endif
 }
 
-void Stmt::dump() {
+void Stmt::dump() const {
     StringBuilder buffer;
     print(0, buffer);
     fprintf(stderr, "%s\n", (const char*)buffer);
@@ -61,7 +61,7 @@ ReturnStmt::~ReturnStmt() {
 
 STMT_VISITOR_ACCEPT(ReturnStmt);
 
-void ReturnStmt::print(int indent, StringBuilder& buffer) {
+void ReturnStmt::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[return]\n";
     if (value) {
@@ -101,7 +101,7 @@ IfStmt::~IfStmt() {
 
 STMT_VISITOR_ACCEPT(IfStmt);
 
-void IfStmt::print(int indent, StringBuilder& buffer) {
+void IfStmt::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[if]\n";
     SubExprs[COND]->print(indent + INDENT, buffer);
@@ -136,7 +136,7 @@ WhileStmt::~WhileStmt() {
 
 STMT_VISITOR_ACCEPT(WhileStmt);
 
-void WhileStmt::print(int indent, StringBuilder& buffer) {
+void WhileStmt::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[while]\n";
     Cond->print(indent + INDENT, buffer);
@@ -165,7 +165,7 @@ DoStmt::~DoStmt() {
 
 STMT_VISITOR_ACCEPT(DoStmt);
 
-void DoStmt::print(int indent, StringBuilder& buffer) {
+void DoStmt::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[do]\n";
     Cond->print(indent + INDENT, buffer);
@@ -200,7 +200,7 @@ ForStmt::~ForStmt() {
 
 STMT_VISITOR_ACCEPT(ForStmt);
 
-void ForStmt::print(int indent, StringBuilder& buffer) {
+void ForStmt::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[for]\n";
     if (Init) Init->print(indent + INDENT, buffer);
@@ -245,7 +245,7 @@ SwitchStmt::~SwitchStmt() {
 
 STMT_VISITOR_ACCEPT(SwitchStmt);
 
-void SwitchStmt::print(int indent, StringBuilder& buffer) {
+void SwitchStmt::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[switch]\n";
     Cond->print(indent + INDENT, buffer);
@@ -279,7 +279,7 @@ CaseStmt::~CaseStmt() {
 
 STMT_VISITOR_ACCEPT(CaseStmt);
 
-void CaseStmt::print(int indent, StringBuilder& buffer) {
+void CaseStmt::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[case]\n";
     Cond->print(indent + INDENT, buffer);
@@ -308,7 +308,7 @@ DefaultStmt::~DefaultStmt() {}
 
 STMT_VISITOR_ACCEPT(DefaultStmt);
 
-void DefaultStmt::print(int indent, StringBuilder& buffer) {
+void DefaultStmt::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[default]\n";
     for (unsigned int i=0; i<Stmts.size(); i++) {
@@ -331,7 +331,7 @@ BreakStmt::~BreakStmt() {}
 
 STMT_VISITOR_ACCEPT(BreakStmt);
 
-void BreakStmt::print(int indent, StringBuilder& buffer) {
+void BreakStmt::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[break]\n";
 }
@@ -348,7 +348,7 @@ ContinueStmt::~ContinueStmt() {}
 
 STMT_VISITOR_ACCEPT(ContinueStmt);
 
-void ContinueStmt::print(int indent, StringBuilder& buffer) {
+void ContinueStmt::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[continue]\n";
 }
@@ -369,7 +369,7 @@ LabelStmt::~LabelStmt()
 
 STMT_VISITOR_ACCEPT(LabelStmt);
 
-void LabelStmt::print(int indent, StringBuilder& buffer) {
+void LabelStmt::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[label]\n";
     subStmt->print(indent + INDENT, buffer);
@@ -388,7 +388,7 @@ GotoStmt::~GotoStmt() {}
 
 STMT_VISITOR_ACCEPT(GotoStmt);
 
-void GotoStmt::print(int indent, StringBuilder& buffer) {
+void GotoStmt::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[goto]\n";
 }
@@ -409,7 +409,7 @@ CompoundStmt::~CompoundStmt() {}
 
 STMT_VISITOR_ACCEPT(CompoundStmt);
 
-void CompoundStmt::print(int indent, StringBuilder& buffer) {
+void CompoundStmt::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[compound]\n";
     for (unsigned int i=0; i<Stmts.size(); i++) {

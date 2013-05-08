@@ -42,7 +42,7 @@
 #include "C2Builder.h"
 #include "C2Parser.h"
 #include "C2Sema.h"
-#include "CodeGenerator.h"
+#include "CodeGenModule.h"
 #include "color.h"
 #include "Recipe.h"
 #include "Utils.h"
@@ -171,16 +171,6 @@ public:
         u_int64_t t2 = Utils::getCurrentTime();
         if (options.printTiming) printf(COL_TIME"C generation took %lld usec"ANSI_NORMAL"\n", t2 - t1);
         printf("%s", (const char*)buffer);
-    }
-
-    void codegen(const BuildOptions& options) {
-        printf("------ generating code for %s ------\n", filename.c_str());
-        u_int64_t t1 = Utils::getCurrentTime();
-        CodeGenerator codegen(sema);
-        codegen.generate();
-        u_int64_t t2 = Utils::getCurrentTime();
-        if (options.printTiming) printf(COL_TIME"IR generation took %lld usec"ANSI_NORMAL"\n", t2 - t1);
-        codegen.dump();
     }
 
     std::string filename;
@@ -341,9 +331,26 @@ void C2Builder::build() {
 
     // (optional) phase 3b: IR code generation
     if (options.generateIR) {
-        for (unsigned int i=0; i<files.size(); i++) {
-            FileInfo* info = files[i];
-            info->codegen(options);
+        for (PkgsIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
+            Package* P = iter->second;
+            u_int64_t t1 = Utils::getCurrentTime();
+            // TEMP for now just filter out stdio (as only external package)
+            if (P->getName() == "stdio") continue;
+            // TEMP for now filter out 'c2' as well
+            if (P->getName() == "c2") continue;
+            printf("------ generating code for %s ------\n", P->getName().c_str());
+            CodeGenModule cgm(P->getName());
+            for (unsigned int i=0; i<files.size(); i++) {
+                FileInfo* info = files[i];
+                if (info->sema.pkgName == P->getName()) {
+                    cgm.addEntry(info->filename, info->sema);
+                }
+            }
+            cgm.generate();
+            u_int64_t t2 = Utils::getCurrentTime();
+            if (options.printTiming) printf(COL_TIME"IR generation took %lld usec"ANSI_NORMAL"\n", t2 - t1);
+            cgm.dump();
+            cgm.verify();
         }
     }
 }
