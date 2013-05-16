@@ -1,0 +1,12 @@
+package multi;
+
+public func int main() {
+    int a = getNumber2();
+    return 10;
+}
+
+func void getNumber1() {
+    return;
+}
+
+

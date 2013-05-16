@@ -24,6 +24,7 @@ namespace llvm {
 class Module;
 class LLVMContext;
 class Type;
+class Function;
 }
 
 namespace C2 {
@@ -31,27 +32,32 @@ namespace C2 {
 class C2Sema;
 class Decl;
 class Type;
+class Package;
 
 // generates LLVM Module from (multiple) ASTs
 class CodeGenModule {
 public:
-    CodeGenModule(const std::string& pkgName_);
+    CodeGenModule(const Package* pkg_);
     ~CodeGenModule();
     void addEntry(const std::string& filename, C2Sema& sema);
 
     void generate();
     void verify();
+    void write(const std::string& target, const std::string& name);
     void dump();
 
     llvm::Type* ConvertType(C2::Type* type);
-    const std::string& getPkgName() const { return pkgName; }
+    llvm::Function* createExternal(const Package* P, const std::string& name);
+
+    const Package* getPackage() const { return pkg; }
     llvm::Module* getModule() const { return module; }
     llvm::LLVMContext& getContext() const { return context; }
     llvm::IRBuilder<> getBuilder() const { return builder; }
 private:
+    void EmitFunctionProto(Decl* D);
     void EmitTopLevelDecl(Decl* D);
 
-    const std::string& pkgName;
+    const Package* pkg;
 
     struct Entry {
         Entry(const std::string& f, C2Sema& s)

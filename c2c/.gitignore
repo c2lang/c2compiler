@@ -1,3 +1,4 @@
 *.o
 c2c
 tags
+output/

@@ -28,20 +28,26 @@
 #include <llvm/Bitcode/ReaderWriter.h>
 // For verifyModule()
 #include <llvm/Analysis/Verifier.h>
-//#include <stdio.h>
+// TODO REMOVE
+#include <stdio.h>
+
 
 #include "CodeGenModule.h"
 #include "CodeGenFunction.h"
+#include "Package.h"
 #include "C2Sema.h"
 #include "Decl.h"
+#include "StringBuilder.h"
+
+//#define DEBUG_CODEGEN
 
 using namespace C2;
 using namespace llvm;
 
-CodeGenModule::CodeGenModule(const std::string& pkgName_)
-    : pkgName(pkgName_)
+CodeGenModule::CodeGenModule(const Package* pkg_)
+    : pkg(pkg_)
     , context(llvm::getGlobalContext())
-    , module(new llvm::Module(pkgName, context))
+    , module(new llvm::Module(pkg->getName(), context))
     , builder(context)
 {
     // TEMP hardcode puts function
@@ -71,37 +77,69 @@ void CodeGenModule::addEntry(const std::string& filename, C2Sema& sema) {
 
 void CodeGenModule::generate() {
     // TODO use ASTVisitor for this?
+
+    // pass 1: generate all function proto's
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
-        //printf("GENERATING CODE FOR %s\n", iter->filename->c_str());
-        for (unsigned int i=0; i<iter->sema->getNumDecls(); i++) {
-            Decl* decl = iter->sema->getDecl(i);
-            EmitTopLevelDecl(iter->sema->getDecl(i));
-        }
-    }
-#if 0
-    // print to ascii file (/tmp/temp-%%%%%%.bc)
-    {
-        StringRef name("temp");
-        int FD;
-        SmallString<128> TempPath = name;
-        TempPath += "-%%%%%%%%";
-        TempPath += ".ll";
-        if (llvm::sys::fs::unique_file(TempPath.str(), FD, TempPath, /*makeAbsolute=*/true) != llvm::errc::success) {
-            //ImportingInstance.getDiagnostics().Report(diag::err_module_map_temp_file)
-            //<< TempModuleMapFileName;
-            fprintf(stderr, "NO SUCCESS\n");
-            return;
-        }
-        llvm::raw_fd_ostream OS(FD, /*shouldClose=*/true);
-        module->print(OS, 0);
-        fprintf(stderr, "RESULTNAME=%s\n", TempPath.str().str().c_str());
-    }
+#ifdef DEBUG_CODEGEN
+        printf("CodeGen for %s - pass 1\n", iter->filename->c_str());
 #endif
+        C2Sema* sema = iter->sema;
+        for (unsigned int i=0; i<sema->getNumDecls(); i++) {
+            Decl* decl = sema->getDecl(i);
+            if (decl->dtype() == DECL_FUNC) EmitFunctionProto(decl);
+        }
+    }
+
+    // pass 2: generate all function bodies (and possibly external function decls)
+    for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
+#ifdef DEBUG_CODEGEN
+        printf("CodeGen for %s - pass 2\n", iter->filename->c_str());
+#endif
+        C2Sema* sema = iter->sema;
+        for (unsigned int i=0; i<sema->getNumDecls(); i++) {
+            Decl* decl = sema->getDecl(i);
+            EmitTopLevelDecl(decl);
+        }
+    }
+}
+
+void CodeGenModule::verify() {
+    if (verifyModule(*module)) {
+        errs() << "Error in Module!\n";
+    }
+}
+
+void CodeGenModule::dump() {
+    module->dump();
+}
+
+void CodeGenModule::write(const std::string& target, const std::string& name) {
+    // write IR Module to output/<target>/<package>.ll
+    StringBuilder filename;
+    filename << "output/" << target << '/';
+    bool existed;
+    llvm::Twine path(filename);
+    if (llvm::sys::fs::create_directories(path, existed) != llvm::errc::success) {
+        fprintf(stderr, "Could not create directory: %s\n", (const char*)filename);
+        return;
+    }
+
+    filename << name << ".ll";
+    std::string ErrorInfo;
+    llvm::raw_fd_ostream OS((const char*)filename, ErrorInfo);
+    if (!ErrorInfo.empty()) {
+        fprintf(stderr, "%s\n", ErrorInfo.c_str());
+        return;
+    }
+    module->print(OS, 0);
+    fprintf(stderr, "written %s\n", (const char*)filename);
 #if 0
     // print to binary file
     {
         std::string ErrInfo;
-        const char* outfile = "./out.bc";
+        StringBuilder filename;
+        filename << "output/" << target << '/' << name;
+        const char* outfile = (const char*)filename;
         tool_output_file Out(outfile, ErrInfo, raw_fd_ostream::F_Binary);
         if (!ErrInfo.empty()) {
             fprintf(stderr, "Could not open file %s\n", outfile);
@@ -116,54 +154,14 @@ void CodeGenModule::generate() {
         printf("written %s\n", outfile);
     }
 #endif
-#if 0
-    llvm::FunctionType *funcType = llvm::FunctionType::get(builder.getVoidTy(), false);
-    llvm::Function *mainFunc = 
-    llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, "main", module);
-    llvm::BasicBlock *entry = llvm::BasicBlock::Create(context, "entrypoint", mainFunc);
-    builder.SetInsertPoint(entry);
-
-    llvm::Value *helloWorld = builder.CreateGlobalStringPtr("hello world!\n");
-
-    std::vector<llvm::Type *> putsArgs;
-    putsArgs.push_back(builder.getInt8Ty()->getPointerTo());
-    llvm::ArrayRef<llvm::Type*>  argsRef(putsArgs);
-
-    llvm::FunctionType *putsType = 
-    llvm::FunctionType::get(builder.getInt32Ty(), argsRef, false);
-    llvm::Constant *putsFunc = module->getOrInsertFunction("puts", putsType);
-
-    builder.CreateCall(putsFunc, helloWorld);
-    builder.CreateRetVoid();
-    module->dump();
-    // print to file (/tmp/temp.bc)
-    {
-        StringRef name("temp");
-        int FD;
-        SmallString<128> TempPath = name;
-        TempPath += "-%%%%%%%%";
-        TempPath += ".ll";
-        if (llvm::sys::fs::unique_file(TempPath.str(), FD, TempPath, /*makeAbsolute=*/true) != llvm::errc::success) {
-            //ImportingInstance.getDiagnostics().Report(diag::err_module_map_temp_file)
-            //<< TempModuleMapFileName;
-            fprintf(stderr, "NO SUCCESS\n");
-            return;
-        }
-        llvm::raw_fd_ostream OS(FD, /*shouldClose=*/true);
-        module->print(OS, 0);
-        fprintf(stderr, "RESULTNAME=%s\n", TempPath.str().str().c_str());
-    }
-#endif
 }
 
-void CodeGenModule::verify() {
-    if (verifyModule(*module)) {
-        errs() << "Error in Module!\n";
-    }
-}
-
-void CodeGenModule::dump() {
-    module->dump();
+void CodeGenModule::EmitFunctionProto(Decl* D) {
+    FunctionDecl* F = DeclCaster<FunctionDecl>::getType(D);
+    assert(F);
+    CodeGenFunction cgf(*this, F);
+    llvm::Function* proto = cgf.generateProto(pkg->getName());
+    F->setIRProto(proto);
 }
 
 void CodeGenModule::EmitTopLevelDecl(Decl* D) {
@@ -172,7 +170,7 @@ void CodeGenModule::EmitTopLevelDecl(Decl* D) {
         {
             FunctionDecl* F = DeclCaster<FunctionDecl>::getType(D);
             CodeGenFunction cgf(*this, F);
-            cgf.generate();
+            cgf.generateBody(F->getIRProto());
         }
         break;
     case DECL_VAR:
@@ -251,5 +249,16 @@ llvm::Type* CodeGenModule::ConvertType(C2::Type* type) {
     }
 
     return 0;
+}
+
+llvm::Function* CodeGenModule::createExternal(const Package* P, const std::string& name) {
+    Decl* D = P->findSymbol(name);
+    assert(D);
+    FunctionDecl* F = DeclCaster<FunctionDecl>::getType(D);
+    assert(F);
+    // NOTE: use getCanonicalType()? and generate function for that?
+    CodeGenFunction cgf(*this, F);
+    llvm::Function* proto = cgf.generateProto(P->getCName());
+    return proto;
 }
 

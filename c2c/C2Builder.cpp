@@ -338,8 +338,7 @@ void C2Builder::build() {
             if (P->getName() == "stdio") continue;
             // TEMP for now filter out 'c2' as well
             if (P->getName() == "c2") continue;
-            printf("------ generating code for %s ------\n", P->getName().c_str());
-            CodeGenModule cgm(P->getName());
+            CodeGenModule cgm(P);
             for (unsigned int i=0; i<files.size(); i++) {
                 FileInfo* info = files[i];
                 if (info->sema.pkgName == P->getName()) {
@@ -349,8 +348,9 @@ void C2Builder::build() {
             cgm.generate();
             u_int64_t t2 = Utils::getCurrentTime();
             if (options.printTiming) printf(COL_TIME"IR generation took %lld usec"ANSI_NORMAL"\n", t2 - t1);
-            cgm.dump();
+            if (options.printIR) cgm.dump();
             cgm.verify();
+            cgm.write(recipe.name, P->getName());
         }
     }
 }
@@ -392,6 +392,7 @@ bool C2Builder::createPkgs() {
 void C2Builder::addDummyPackages() {
     Package* c2Pkg = getPackage("c2", false);
     // TODO add dummy decls;
+    // NOTE: MEMLEAK on Types
 
     Package* stdioPkg = getPackage("stdio", true);
     SourceLocation loc;
@@ -401,6 +402,11 @@ void C2Builder::addDummyPackages() {
         // TODO correct arg
         func->addArg(new DeclExpr("s", loc, BuiltinType::get(TYPE_INT), 0));
         stdioPkg->addSymbol(func);
+        // canonical type
+        Type* proto = new Type(Type::FUNC);
+        proto->setReturnType(BuiltinType::get(TYPE_INT));
+        proto->addArgument(BuiltinType::get(TYPE_INT));
+        func->setCanonicalType(proto);
     }
     //int printf(const char *format, ...);
     {
@@ -411,6 +417,11 @@ void C2Builder::addDummyPackages() {
         func->addArg(new DeclExpr("format", loc, ctype, 0));
         func->setVariadic();
         stdioPkg->addSymbol(func);
+        // canonical type
+        Type* proto = new Type(Type::FUNC);
+        proto->setReturnType(BuiltinType::get(TYPE_INT));
+        proto->addArgument(ctype);
+        func->setCanonicalType(proto);
     }
 }
 

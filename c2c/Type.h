@@ -200,6 +200,7 @@ public:
     Type* getStruct(bool isStruct);
     Type* getArray(Type* ref, Expr* sizeExpr, bool ownSize = true);
     Type* getQualifier(Type* ref, unsigned int qualifier);
+    Type* getFunction(Type* rtype);
 private:
     typedef std::vector<Type*> Types;
     Types types;

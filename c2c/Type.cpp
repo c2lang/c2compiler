@@ -475,15 +475,24 @@ void Type::print(int indent, StringBuilder& buffer, RecursionType recursive) con
     case FUNC:
     {
         buffer << "(func)\n";
+        buffer.indent(indent + INDENT);
+        buffer << COL_ATTR << "returnType:" << ANSI_NORMAL << '\n';
+        buffer.indent(indent + INDENT);
         returnType->printName(buffer);
         buffer << '(';
         Argument* arg = arguments;
+        if (arg) {
+            buffer.indent(indent + INDENT);
+            buffer << COL_ATTR << "args:" << ANSI_NORMAL << '\n';
+        }
         while (arg) {
+            buffer.indent(indent + INDENT);
             arg->type->printName(buffer);
-            if (arg->next != 0) buffer << ", ";
+            buffer << '\n';
             arg = arg->next;
         }
         buffer << ')';
+        buffer << '\n';
         break;
     }
     case POINTER:
@@ -708,5 +717,12 @@ Type* TypeContext::getQualifier(Type* ref, unsigned int qualifier) {
     T->setQualifier(qualifier);
     types.push_back(T);
     return T;
+}
+
+Type* TypeContext::getFunction(Type* rtype) {
+    Type* proto = new Type(Type::FUNC);
+    proto->setReturnType(rtype);
+    types.push_back(proto);
+    return proto;
 }
 

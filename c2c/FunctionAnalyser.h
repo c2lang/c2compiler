@@ -86,7 +86,6 @@ private:
     Scope scopes[MAX_SCOPE_DEPTH];
     unsigned scopeIndex;    // first free scope (= count of scopes)
     Scope* curScope;
-    //const Pkgs& pkgs;
     clang::DiagnosticsEngine& Diags;
     unsigned int errors;
 

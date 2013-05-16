@@ -25,7 +25,7 @@
 using clang::SourceLocation;
 
 namespace llvm {
-class Value;
+class Function;
 }
 
 namespace C2 {
@@ -85,14 +85,20 @@ public:
     Stmt* getBody() const { return body; }
     DeclExpr* findArg(const std::string& name) const;
     DeclExpr* getArg(unsigned int i) const { return args[i]; }
-    void addArg(DeclExpr* arg);
     unsigned int numArgs() const { return args.size(); }
+    void addArg(DeclExpr* arg);
     virtual const std::string& getName() const { return name; }
     virtual clang::SourceLocation getLocation() const { return loc; }
     Type* getReturnType() const { return rtype; }
     void setVariadic() { m_isVariadic = true; }
     bool isVariadic() const { return m_isVariadic; }
-    Type* getProto() const;
+
+    Type* getCanonicalType() const { return canonicalType; }
+    void setCanonicalType(Type* t) { canonicalType = t; }
+
+    // for codegen
+    llvm::Function* getIRProto() const { return IRProto; }
+    void setIRProto(llvm::Function* f) { IRProto = f; }
 private:
     friend class CodeGenFunction;
 
@@ -105,6 +111,8 @@ private:
     Stmt* body;
     bool m_isVariadic;
     // TODO EllipsisLoc
+    Type* canonicalType;
+    llvm::Function* IRProto;
 };
 
 

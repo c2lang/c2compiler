@@ -54,6 +54,7 @@
 */
 
 #define COL_TIME ANSI_CYAN
+#define COL_ATTR ANSI_MAGENTA
 
 #endif
 

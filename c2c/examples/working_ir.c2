@@ -7,6 +7,7 @@ public int bar;
 
 public func void myfunction() {
     puts("voila");
+    return;
 }
 
 public func int main(int argc, char*[] argv) {

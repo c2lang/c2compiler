@@ -72,9 +72,6 @@ bool FunctionAnalyser::handle(Decl* decl) {
                     Diags.Report(res.decl->getLocation(), diag::note_previous_definition);
                     continue;
                 }
-                Type* canonicalType = de->getType()->getCanonical(typeContext);
-                de->setCanonicalType(canonicalType);
-
                 // wrap in VarDecl
                 // TODO MEMLEAK in VarDecl -> or throw away in ~Scope() ?
                 curScope->addDecl(new VarDecl(de, false, true));
@@ -321,14 +318,16 @@ C2::Type* FunctionAnalyser::Decl2Type(Decl* decl) {
     case DECL_FUNC:
         {
             FunctionDecl* FD = DeclCaster<FunctionDecl>::getType(decl);
-            return FD->getProto();
+            Type* canonical = FD->getCanonicalType();
+            assert(canonical && "need function's canonical type");
+            return canonical;
         }
         break;
     case DECL_VAR:
         {
             VarDecl* VD = DeclCaster<VarDecl>::getType(decl);
             Type* canonical = VD->getCanonicalType();
-            assert(canonical && "need canonical type");
+            assert(canonical && "need variable's canonical type");
             return canonical;
         }
         break;

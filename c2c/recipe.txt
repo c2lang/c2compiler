@@ -1,8 +1,13 @@
 # an example recipe with multiple targets
 
-target multi
-    examples/file1.c2
-    examples/file2.c2
+target multi_file
+    examples/multi_file1.c2
+    examples/multi_file2.c2
+end
+
+target multi_pkg
+    examples/multi_pkg1.c2
+    examples/multi_pkg2.c2
 end
 
 target layer

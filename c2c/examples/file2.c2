@@ -1,6 +1,0 @@
-package multi;
-
-func int getNumber() {
-    return 20;
-}
-

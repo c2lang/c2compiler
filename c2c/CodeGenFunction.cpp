@@ -44,7 +44,7 @@ CodeGenFunction::CodeGenFunction(CodeGenModule& CGM_, FunctionDecl* Func_)
     , builder(context)
 {}
 
-void CodeGenFunction::generate() {
+llvm::Function* CodeGenFunction::generateProto(const std::string& pkgname) {
     // function part
     // arguments + return type
     llvm::FunctionType *funcType;
@@ -64,14 +64,17 @@ void CodeGenFunction::generate() {
         funcType = llvm::FunctionType::get(RT, argsRef, false);
     }
     StringBuilder buffer;
-    Utils::addName(CGM.getPkgName(), Func->name, buffer);
+    Utils::addName(pkgname, Func->name, buffer);
 
     llvm::GlobalValue::LinkageTypes ltype = llvm::GlobalValue::InternalLinkage;
     if (Func->isPublic()) ltype = llvm::GlobalValue::ExternalLinkage;
 
     llvm::Function *func =
         llvm::Function::Create(funcType, ltype, (const char*)buffer, module);
+    return func;
+}
 
+void CodeGenFunction::generateBody(llvm::Function* func) {
     // body part
     llvm::BasicBlock *entry = llvm::BasicBlock::Create(context, "entry", func);
     builder.SetInsertPoint(entry);
@@ -199,9 +202,17 @@ llvm::Value* CodeGenFunction::EmitCallExpr(const CallExpr* E) {
         break;
     };
     // TODO optimize buffer below (lots of copying)
+    llvm::Function* function;
     StringBuilder fullname;
     Utils::addName(FuncName->getPackage()->getCName(), FuncName->getName(), fullname);
-    llvm::Function* function = module->getFunction((const char*)fullname);
+    if (FuncName->getPackage() == CGM.getPackage()) {       // same-package (find func)
+        function = module->getFunction((const char*)fullname);
+    } else {    // other package (find or generate decl)
+        function = module->getFunction((const char*)fullname);
+        if (!function) {
+            function = CGM.createExternal(FuncName->getPackage(), FuncName->getName());
+        }
+    }
     assert(function && "CANNOT FIND FUNCTION");
 
     // NOTE: see CodeGenerator insertion of puts() and printf()

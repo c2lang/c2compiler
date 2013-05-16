@@ -33,6 +33,7 @@ struct BuildOptions {
         , printTiming(false)
         , printSymbols(false)
         , generateIR(false)
+        , printIR(false)
         , generateC(false)
     {}
     bool printAST;
@@ -40,6 +41,7 @@ struct BuildOptions {
     bool printTiming;
     bool printSymbols;
     bool generateIR;
+    bool printIR;
     bool generateC;
 };
 

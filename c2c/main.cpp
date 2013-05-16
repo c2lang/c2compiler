@@ -40,6 +40,7 @@ static void usage(const char* name) {
     fprintf(stderr, "   -f <file>     - compile single file without recipe\n");
     fprintf(stderr, "   -h            - show this help\n");
     fprintf(stderr, "   -i            - generate LLVM IR code\n");
+    fprintf(stderr, "   -ii           - generate + print LLVM IR code\n");
     fprintf(stderr, "   -l            - list targets\n");
     fprintf(stderr, "   -s            - print symbols\n");
     fprintf(stderr, "   -t            - print timing\n");
@@ -70,6 +71,11 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
         }
         if (strcmp("-i", arg) == 0) {
             opts.generateIR = true;
+            continue;
+        }
+        if (strcmp("-ii", arg) == 0) {
+            opts.generateIR = true;
+            opts.printIR = true;
             continue;
         }
         if (strcmp("-l", arg) == 0) {

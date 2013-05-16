@@ -21,6 +21,7 @@
 #include "StringBuilder.h"
 #include "Type.h"
 #include "Utils.h"
+#include "color.h"
 
 using namespace C2;
 using namespace std;
@@ -75,6 +76,8 @@ FunctionDecl::FunctionDecl(const std::string& name_,
     , rtype(rtype_)
     , body(0)
     , m_isVariadic(false)
+    , canonicalType(0)
+    , IRProto(0)
 {
 }
 
@@ -86,12 +89,26 @@ DECL_VISITOR_ACCEPT(FunctionDecl);
 
 void FunctionDecl::print(StringBuilder& buffer) {
     buffer << "[function " << name << "]\n";
+    buffer.indent(INDENT);
+    buffer << COL_ATTR << "returntype:" << ANSI_NORMAL << '\n';
     rtype->print(INDENT, buffer, Type::RECURSE_NONE);
+    if (args.size()) {
+        buffer.indent(INDENT);
+        buffer << COL_ATTR << "args:" << ANSI_NORMAL << '\n';
+    }
     for (unsigned int i=0; i<args.size(); i++) {
         args[i]->print(INDENT, buffer);
     }
-    assert(body);
-    body->print(INDENT, buffer);
+    if (canonicalType) {
+        buffer.indent(INDENT);
+        buffer << ANSI_CYAN << "canonical:" << ANSI_NORMAL << '\n';
+        canonicalType->print(INDENT, buffer, Type::RECURSE_NONE);
+    }
+    if (body) {
+        buffer.indent(INDENT);
+        buffer << COL_ATTR << "body:" << ANSI_NORMAL << '\n';
+        body->print(INDENT, buffer);
+    }
 }
 
 void FunctionDecl::generateC(StringBuilder& buffer, const std::string& pkgName) {
@@ -128,15 +145,6 @@ DeclExpr* FunctionDecl::findArg(const std::string& name) const {
 void FunctionDecl::addArg(DeclExpr* arg) {
     args.push_back(arg);
 }
-
-Type* FunctionDecl::getProto() const {
-    Type* proto = new Type(Type::FUNC);
-    // TODO use TypeContext
-    //proto->setReturnType(rtype);
-    //proto->addArgument(Type*)
-    return proto;
-}
-
 
 
 #define VARDECL_INEXPR   0x1

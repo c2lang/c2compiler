@@ -22,6 +22,7 @@ namespace llvm {
 class Module;
 class LLVMContext;
 class Value;
+class Function;
 }
 
 namespace C2 {
@@ -40,7 +41,9 @@ class CodeGenFunction {
 public:
     CodeGenFunction(CodeGenModule& CGM_, FunctionDecl* Func_);
     ~CodeGenFunction() {}
-    void generate();
+
+    llvm::Function* generateProto(const std::string& pkgname);
+    void generateBody(llvm::Function* func);
 private:
     void EmitStmt(const Stmt& S);
     void EmitCompoundStmt(const CompoundStmt* S);

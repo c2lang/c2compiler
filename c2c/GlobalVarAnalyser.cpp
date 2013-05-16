@@ -41,12 +41,23 @@ bool GlobalVarAnalyser::handle(Decl* decl) {
     bool is_public = decl->isPublic();
     switch (decl->dtype()) {
     case DECL_FUNC:
-        // nothing to do
-        break;
+        {
+            // TODO extract to function to create CanonicalType for FunctionDecl
+            FunctionDecl* FD = DeclCaster<FunctionDecl>::getType(decl);
+            Type* rtypeCanon = FD->getReturnType()->getCanonical(typeContext);
+            Type* proto = typeContext.getFunction(rtypeCanon);
+            for (unsigned i=0; i<FD->numArgs(); i++) {
+                DeclExpr* arg = FD->getArg(i);
+                Type* canonicalType = arg->getType()->getCanonical(typeContext);
+                arg->setCanonicalType(canonicalType);
+                //proto->addArgument(canonicalType);
+            }
+            FD->setCanonicalType(proto);
+            break;
+        }
     case DECL_VAR:
         {
             VarDecl* VD = DeclCaster<VarDecl>::getType(decl);
-            assert(VD);
             Type* canonical = VD->getCanonicalType();
             // TODO assert canonical and return it.
             // Don't set here, because VD can be in different file!
