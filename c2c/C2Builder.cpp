@@ -43,6 +43,7 @@
 #include "C2Parser.h"
 #include "C2Sema.h"
 #include "CodeGenModule.h"
+#include "CCodeGenerator.h"
 #include "color.h"
 #include "Recipe.h"
 #include "Utils.h"
@@ -100,6 +101,7 @@ public:
              const std::string& filename_,
              const std::string& configs)
         : filename(filename_)
+    // TODO note: Diags makes copy constr, pass DiagnosticIDs?
         , Diags(Diags_)
         , FileMgr(FileSystemOpts)
         , SM(Diags, FileMgr)
@@ -163,23 +165,11 @@ public:
         return visitor.getErrors();
     }
 
-    void generate_c(const BuildOptions& options) {
-        printf("---- C-code %s.c ----\n", sema.getPkgName().c_str());
-        u_int64_t t1 = Utils::getCurrentTime();
-        StringBuilder buffer;
-        sema.generateC(buffer);
-        u_int64_t t2 = Utils::getCurrentTime();
-        if (options.printTiming) printf(COL_TIME"C generation took %lld usec"ANSI_NORMAL"\n", t2 - t1);
-        printf("%s", (const char*)buffer);
-    }
-
     std::string filename;
 
     TypeContext typeContext;
 
     // Diagnostics
-    DiagnosticOptions DiagOpts;
-    IntrusiveRefCntPtr<DiagnosticIDs> DiagID;
     DiagnosticsEngine Diags;
 
     // FileManager
@@ -239,6 +229,7 @@ void C2Builder::build() {
     DiagnosticsEngine Diags(DiagID, &DiagOpts,
             // NOTE: setting ShouldOwnClient to true causes crash??
             new TextDiagnosticPrinter(llvm::errs(), &DiagOpts), false);
+    DiagnosticConsumer* client = Diags.getClient();
 
     // TargetInfo
     TargetOptions* to = new TargetOptions();
@@ -271,12 +262,12 @@ void C2Builder::build() {
         bool ok = info->parse(options);
         errors += !ok;
     }
-    if (errors) return;
+    if (client->getNumErrors()) goto out;
 
     // phase 1b: merge file's symbol tables to package symbols tables
     errors = !createPkgs();
     if (options.printSymbols) dumpPkgs();
-    if (errors) return;
+    if (client->getNumErrors()) goto out;
 
     addDummyPackages();
 
@@ -285,47 +276,69 @@ void C2Builder::build() {
         FileInfo* info = files[i];
         errors += info->analyse1(options, pkgs);
     }
-    if (errors) return;
+    if (client->getNumErrors()) goto out;
+
     for (unsigned int i=0; i<files.size(); i++) {
         FileInfo* info = files[i];
         errors += info->analyse2(options);
     }
-    if (errors) return;
+    if (client->getNumErrors()) goto out;
+
     for (unsigned int i=0; i<files.size(); i++) {
         FileInfo* info = files[i];
         errors += info->analyse3(options);
     }
+
     if (options.printASTAfter) {
         for (unsigned int i=0; i<files.size(); i++) {
             FileInfo* info = files[i];
             info->sema.printAST(info->filename);
         }
     }
-    if (errors) return;
 
+    if (client->getNumErrors()) goto out;
     // check that main() function is present
-    Decl* mainDecl = 0;
-    for (PkgsIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
-        Package* P = iter->second;
-        Decl* decl = P->findSymbol("main");
-        if (decl) {
-            if (mainDecl) {
-                // TODO duplicate main functions
-            } else {
-                mainDecl = decl;
+    {
+        Decl* mainDecl = 0;
+        for (PkgsIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
+            Package* P = iter->second;
+            Decl* decl = P->findSymbol("main");
+            if (decl) {
+                if (mainDecl) {
+                    // TODO duplicate main functions
+                } else {
+                    mainDecl = decl;
+                }
             }
         }
-    }
-    if (!mainDecl) {
-        Diags.Report(diag::err_main_missing);
-        return;
+        if (!mainDecl) {
+            Diags.Report(diag::err_main_missing);
+            goto out;
+        }
     }
 
     // (optional) phase 3a: C code generation
     if (options.generateC) {
-        for (unsigned int i=0; i<files.size(); i++) {
-            FileInfo* info = files[i];
-            info->generate_c(options);
+        for (PkgsIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
+            Package* P = iter->second;
+            u_int64_t t1 = Utils::getCurrentTime();
+            // TODO add flag internal/external and filter that
+            // TEMP for now just filter out stdio (as only external package)
+            if (P->getName() == "stdio") continue;
+            // TEMP for now filter out 'c2' as well
+            if (P->getName() == "c2") continue;
+            CCodeGenerator gen(P);
+            for (unsigned int i=0; i<files.size(); i++) {
+                FileInfo* info = files[i];
+                if (info->sema.pkgName == P->getName()) {
+                    gen.addEntry(info->filename, info->sema);
+                }
+            }
+            gen.generate();
+            u_int64_t t2 = Utils::getCurrentTime();
+            if (options.printTiming) printf(COL_TIME"C code generation took %lld usec"ANSI_NORMAL"\n", t2 - t1);
+            //if (options.printIR) cgm.dump();
+            //cgm.write(recipe.name, P->getName());
         }
     }
 
@@ -349,10 +362,23 @@ void C2Builder::build() {
             u_int64_t t2 = Utils::getCurrentTime();
             if (options.printTiming) printf(COL_TIME"IR generation took %lld usec"ANSI_NORMAL"\n", t2 - t1);
             if (options.printIR) cgm.dump();
-            cgm.verify();
-            cgm.write(recipe.name, P->getName());
+            bool ok = cgm.verify();
+            if (ok) cgm.write(recipe.name, P->getName());
         }
     }
+
+out:
+    raw_ostream &OS = llvm::errs();
+    unsigned NumWarnings = client->getNumWarnings();
+    unsigned NumErrors = client->getNumErrors();
+    if (NumWarnings)
+      OS << NumWarnings << " warning" << (NumWarnings == 1 ? "" : "s");
+    if (NumWarnings && NumErrors)
+      OS << " and ";
+    if (NumErrors)
+      OS << NumErrors << " error" << (NumErrors == 1 ? "" : "s");
+    if (NumWarnings || NumErrors)
+      OS << " generated.\n";
 }
 
 Package* C2Builder::getPackage(const std::string& name, bool isCLib) {

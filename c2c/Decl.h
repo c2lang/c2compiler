@@ -51,7 +51,6 @@ public:
     virtual DeclType dtype() const = 0;
     virtual void acceptD(DeclVisitor& v) = 0;
     virtual void print(StringBuilder& buffer) = 0;
-    virtual void generateC(StringBuilder& buffer, const std::string& pkgName) = 0;
 
     virtual const std::string& getName() const = 0;
     virtual clang::SourceLocation getLocation() const = 0;
@@ -76,7 +75,6 @@ public:
     virtual DeclType dtype() const { return DECL_FUNC; }
     virtual void acceptD(DeclVisitor& v);
     virtual void print(StringBuilder& buffer);
-    virtual void generateC(StringBuilder& buffer, const std::string& pkgName);
 
     void setBody(Stmt* body_) {
         assert(body == 0);
@@ -123,7 +121,6 @@ public:
     virtual DeclType dtype() const { return DECL_VAR; }
     virtual void acceptD(DeclVisitor& v);
     virtual void print(StringBuilder& buffer);
-    virtual void generateC(StringBuilder& buffer, const std::string& pkgName);
 
     bool isInExpr() const;
     virtual const std::string& getName() const;
@@ -144,7 +141,6 @@ public:
     virtual DeclType dtype() const { return DECL_TYPE; }
     virtual void acceptD(DeclVisitor& v);
     virtual void print(StringBuilder& buffer);
-    virtual void generateC(StringBuilder& buffer, const std::string& pkgName);
 
     virtual const std::string& getName() const { return name; }
     virtual clang::SourceLocation getLocation() const { return loc; }
@@ -163,7 +159,6 @@ public:
     virtual DeclType dtype() const { return DECL_ARRAYVALUE; }
     virtual void acceptD(DeclVisitor& v);
     virtual void print(StringBuilder& buffer);
-    virtual void generateC(StringBuilder& buffer, const std::string& pkgName);
 
     virtual const std::string& getName() const { return name; }
     virtual clang::SourceLocation getLocation() const { return loc; }
@@ -180,7 +175,6 @@ public:
     virtual DeclType dtype() const { return DECL_USE; }
     virtual void acceptD(DeclVisitor& v);
     virtual void print(StringBuilder& buffer);
-    virtual void generateC(StringBuilder& buffer, const std::string& pkgName);
 
     virtual const std::string& getName() const { return name; }
     const std::string& getAlias() const { return alias; }

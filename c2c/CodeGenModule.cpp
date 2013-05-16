@@ -103,10 +103,12 @@ void CodeGenModule::generate() {
     }
 }
 
-void CodeGenModule::verify() {
+bool CodeGenModule::verify() {
     if (verifyModule(*module)) {
         errs() << "Error in Module!\n";
+        return false;
     }
+    return true;
 }
 
 void CodeGenModule::dump() {

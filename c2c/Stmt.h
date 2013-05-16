@@ -59,7 +59,6 @@ public:
     virtual StmtType stype() const = 0;
     virtual void acceptS(StmtVisitor& v) const = 0;
     virtual void print(int indent, StringBuilder& buffer) const = 0;
-    virtual void generateC(int indent, StringBuilder& buffer) = 0;
     void dump() const;
 private:
     Stmt(const Stmt&);
@@ -77,7 +76,6 @@ public:
     virtual void acceptS(StmtVisitor& v) const;
 
     virtual void print(int indent, StringBuilder& buffer) const;
-    virtual void generateC(int indent, StringBuilder& buffer);
 
     Expr* getExpr() const { return value; }
     SourceLocation getLocation() const { return RetLoc; }
@@ -97,7 +95,6 @@ public:
     virtual void acceptS(StmtVisitor& v) const;
 
     virtual void print(int indent, StringBuilder& buffer) const;
-    virtual void generateC(int indent, StringBuilder& buffer);
 
     Stmt* getCond() const { return SubExprs[COND]; }
     Stmt* getThen() const { return SubExprs[THEN]; }
@@ -119,7 +116,6 @@ public:
     virtual void acceptS(StmtVisitor& v) const;
 
     virtual void print(int indent, StringBuilder& buffer) const;
-    virtual void generateC(int indent, StringBuilder& buffer);
 
     Stmt* getCond() const { return Cond; }
     Stmt* getBody() const { return Then; }
@@ -138,7 +134,6 @@ public:
     virtual void acceptS(StmtVisitor& v) const;
 
     virtual void print(int indent, StringBuilder& buffer) const;
-    virtual void generateC(int indent, StringBuilder& buffer);
 
     Stmt* getCond() const { return Cond; }
     Stmt* getBody() const { return Then; }
@@ -157,7 +152,6 @@ public:
     virtual void acceptS(StmtVisitor& v) const;
 
     virtual void print(int indent, StringBuilder& buffer) const;
-    virtual void generateC(int indent, StringBuilder& buffer);
 
     Stmt* getInit() const { return Init; }
     Expr* getCond() const { return Cond; }
@@ -180,7 +174,6 @@ public:
     virtual void acceptS(StmtVisitor& v) const;
 
     virtual void print(int indent, StringBuilder& buffer) const;
-    virtual void generateC(int indent, StringBuilder& buffer);
 
     Expr* getCond() const { return Cond; }
     const StmtList& getCases() const { return Cases; }
@@ -199,7 +192,6 @@ public:
     virtual void acceptS(StmtVisitor& v) const;
 
     virtual void print(int indent, StringBuilder& buffer) const;
-    virtual void generateC(int indent, StringBuilder& buffer);
 
     SourceLocation getLocation() const { return Loc; }
     Expr* getCond() const { return Cond; }
@@ -219,7 +211,6 @@ public:
     virtual void acceptS(StmtVisitor& v) const;
 
     virtual void print(int indent, StringBuilder& buffer) const;
-    virtual void generateC(int indent, StringBuilder& buffer);
 
     SourceLocation getLocation() const { return Loc; }
     const StmtList& getStmts() const { return Stmts; }
@@ -237,7 +228,6 @@ public:
     virtual void acceptS(StmtVisitor& v) const;
 
     virtual void print(int indent, StringBuilder& buffer) const;
-    virtual void generateC(int indent, StringBuilder& buffer);
 
     SourceLocation getLocation() const { return Loc; }
 private:
@@ -253,7 +243,6 @@ public:
     virtual void acceptS(StmtVisitor& v) const;
 
     virtual void print(int indent, StringBuilder& buffer) const;
-    virtual void generateC(int indent, StringBuilder& buffer);
 
     SourceLocation getLocation() const { return Loc; }
 private:
@@ -269,7 +258,6 @@ public:
     virtual void acceptS(StmtVisitor& v) const;
 
     virtual void print(int indent, StringBuilder& buffer) const;
-    virtual void generateC(int indent, StringBuilder& buffer);
     Stmt* getSubStmt() const { return subStmt; }
 private:
     std::string name;
@@ -286,7 +274,6 @@ public:
     virtual void acceptS(StmtVisitor& v) const;
 
     virtual void print(int indent, StringBuilder& buffer) const;
-    virtual void generateC(int indent, StringBuilder& buffer);
 private:
     std::string name;
     SourceLocation GotoLoc;
@@ -302,7 +289,6 @@ public:
     virtual void acceptS(StmtVisitor& v) const;
 
     virtual void print(int indent, StringBuilder& buffer) const;
-    virtual void generateC(int indent, StringBuilder& buffer);
 
     const StmtList& getStmts() const { return Stmts; }
     Stmt* getLastStmt() const;

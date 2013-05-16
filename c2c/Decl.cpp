@@ -111,27 +111,6 @@ void FunctionDecl::print(StringBuilder& buffer) {
     }
 }
 
-void FunctionDecl::generateC(StringBuilder& buffer, const std::string& pkgName) {
-    if (!is_public) buffer << "static ";
-    rtype->generateC_PreName(buffer);
-    rtype->generateC_PostName(buffer);
-    buffer << ' ';
-    Utils::addName(pkgName, name, buffer);
-    buffer << '(';
-    int count = args.size();
-    for (unsigned int i=0; i<args.size(); i++) {
-        args[i]->generateC(0, buffer);
-        if (count != 1) buffer << ", ";
-        count--;
-    }
-    if (m_isVariadic) buffer << "...";
-    buffer << ")\n";
-    assert(body);
-    body->generateC(0, buffer);
-    buffer << '\n';
-}
-
-
 DeclExpr* FunctionDecl::findArg(const std::string& name) const {
     for (unsigned i=0; i<args.size(); i++) {
         // TEMP
@@ -168,14 +147,6 @@ void VarDecl::print(StringBuilder& buffer) {
     decl->print(INDENT, buffer);
 }
 
-void VarDecl::generateC(StringBuilder& buffer, const std::string& pkgName) {
-    if (isPublic()) buffer << "static ";
-    decl->generateC(buffer, pkgName);
-    // TODO semicolon not needed when ending initlist with '}'
-    // Q: add bool return value to Expr.generateC()?
-    buffer << ";\n";
-}
-
 bool VarDecl::isInExpr() const { return ((flags & VARDECL_INEXPR) != 0); }
 
 const std::string& VarDecl::getName() const { return decl->getName(); }
@@ -208,15 +179,6 @@ void TypeDecl::print(StringBuilder& buffer) {
     type->print(INDENT, buffer, Type::RECURSE_ONCE);
 }
 
-void TypeDecl::generateC(StringBuilder& buffer, const std::string& pkgName) {
-    buffer << "typedef ";
-    type->generateC_PreName(buffer);
-    buffer << ' ';
-    Utils::addName(pkgName, name, buffer);
-    type->generateC_PostName(buffer);
-    buffer << ";\n";
-}
-
 
 ArrayValueDecl::ArrayValueDecl(const std::string& name_, SourceLocation loc_, Expr* value_)
     : Decl(false)
@@ -236,11 +198,6 @@ void ArrayValueDecl::print(StringBuilder& buffer) {
     value->print(INDENT, buffer);
 }
 
-void ArrayValueDecl::generateC(StringBuilder& buffer, const std::string& pkgName) {
-    value->generateC(INDENT, buffer);
-}
-
-
 UseDecl::UseDecl(const std::string& name_, SourceLocation loc_, bool isLocal_,
                  const char* alias_, SourceLocation aliasLoc_)
     : Decl(false)
@@ -258,12 +215,5 @@ void UseDecl::print(StringBuilder& buffer) {
     if (alias != "") buffer << " as " << alias;
     if (is_local) buffer << " local";
     buffer << "]\n";
-}
-
-void UseDecl::generateC(StringBuilder& buffer, const std::string& pkgName) {
-    // Temp hardcoded for stdio
-    if (name == "stdio") {
-        buffer << "#include <stdio.h>\n";
-    }
 }
 

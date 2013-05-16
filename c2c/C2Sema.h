@@ -114,7 +114,6 @@ public:
 
     // debugging
     void printAST(const std::string& filename) const;
-    void generateC(StringBuilder& buffer) const;
 
     const std::string& getPkgName() const { return pkgName; }
 private:

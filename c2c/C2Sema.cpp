@@ -656,14 +656,6 @@ void C2Sema::printAST(const std::string& filename) const {
     printf("%s", (const char*)buffer);
 }
 
-void C2Sema::generateC(StringBuilder& buffer) const {
-    // top levels
-    for (DeclListConstIter iter = decls.begin(); iter != decls.end(); ++iter) {
-        (*iter)->generateC(buffer, pkgName);
-        buffer << '\n';
-    }
-}
-
 DiagnosticBuilder C2Sema::Diag(SourceLocation Loc, unsigned DiagID) {
     return Diags.Report(Loc, DiagID);
 }

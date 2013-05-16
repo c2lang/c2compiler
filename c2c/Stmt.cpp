@@ -69,16 +69,6 @@ void ReturnStmt::print(int indent, StringBuilder& buffer) const {
     }
 }
 
-void ReturnStmt::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << "return";
-    if (value) {
-        buffer << ' ';
-        value->generateC(0, buffer);
-    }
-    buffer << ";\n";
-}
-
 
 IfStmt::IfStmt(SourceLocation ifLoc,
                Expr* condition, Stmt* thenStmt,
@@ -109,19 +99,6 @@ void IfStmt::print(int indent, StringBuilder& buffer) const {
     if (SubExprs[ELSE]) SubExprs[ELSE]->print(indent + INDENT, buffer);
 }
 
-void IfStmt::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << "if (";
-    SubExprs[COND]->generateC(0, buffer);
-    buffer << ")\n";
-    SubExprs[THEN]->generateC(indent, buffer);
-    if (SubExprs[ELSE]) {
-        buffer.indent(indent);
-        buffer << "else\n";
-        SubExprs[ELSE]->generateC(indent, buffer);
-    }
-}
-
 
 WhileStmt::WhileStmt(SourceLocation Loc_, Expr* Cond_, Stmt* Then_)
     : Loc(Loc_)
@@ -143,14 +120,6 @@ void WhileStmt::print(int indent, StringBuilder& buffer) const {
     Then->print(indent + INDENT, buffer);
 }
 
-void WhileStmt::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << "while (";
-    Cond->generateC(0, buffer);
-    buffer << ")\n";
-    Then->generateC(indent, buffer);
-}
-
 
 DoStmt::DoStmt(SourceLocation Loc_, Expr* Cond_, Stmt* Then_)
     : Loc(Loc_)
@@ -170,16 +139,6 @@ void DoStmt::print(int indent, StringBuilder& buffer) const {
     buffer << "[do]\n";
     Cond->print(indent + INDENT, buffer);
     Then->print(indent + INDENT, buffer);
-}
-
-void DoStmt::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << "do\n";
-    Then->generateC(indent, buffer);
-    buffer.indent(indent);
-    buffer << "while (";
-    Cond->generateC(0, buffer);
-    buffer << ");\n";
 }
 
 
@@ -209,29 +168,6 @@ void ForStmt::print(int indent, StringBuilder& buffer) const {
     Body->print(indent + INDENT, buffer);
 }
 
-void ForStmt::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << "for (";
-    if (Init) {
-        Init->generateC(0, buffer);
-        buffer.strip('\n');
-        buffer.strip(';');
-    }
-    buffer << ';';
-    if (Cond) {
-        buffer << ' ';
-        Cond->generateC(0, buffer);
-    }
-    buffer << ';';
-    if (Incr) {
-        buffer << ' ';
-        Incr->generateC(0, buffer);
-    }
-    buffer << ")\n";
-    // TODO fix indentation
-    Body->generateC(indent, buffer);
-}
-
 
 SwitchStmt::SwitchStmt(SourceLocation Loc_, Expr* Cond_, StmtList& Cases_)
     : Loc(Loc_)
@@ -252,18 +188,6 @@ void SwitchStmt::print(int indent, StringBuilder& buffer) const {
     for (unsigned int i=0; i<Cases.size(); i++) {
         Cases[i]->print(indent + INDENT, buffer);
     }
-}
-
-void SwitchStmt::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << "switch(";
-    Cond->generateC(0, buffer);
-    buffer << ") {\n";
-    for (unsigned int i=0; i<Cases.size(); i++) {
-        Cases[i]->generateC(indent + INDENT, buffer);
-    }
-    buffer.indent(indent);
-    buffer << "}\n";
 }
 
 
@@ -288,16 +212,6 @@ void CaseStmt::print(int indent, StringBuilder& buffer) const {
     }
 }
 
-void CaseStmt::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << "case ";
-    Cond->generateC(0, buffer);
-    buffer << ":\n";
-    for (unsigned int i=0; i<Stmts.size(); i++) {
-        Stmts[i]->generateC(indent + INDENT, buffer);
-    }
-}
-
 
 DefaultStmt::DefaultStmt(SourceLocation Loc_, StmtList& Stmts_)
     : Loc(Loc_)
@@ -316,14 +230,6 @@ void DefaultStmt::print(int indent, StringBuilder& buffer) const {
     }
 }
 
-void DefaultStmt::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << "default:\n";
-    for (unsigned int i=0; i<Stmts.size(); i++) {
-        Stmts[i]->generateC(indent + INDENT, buffer);
-    }
-}
-
 
 BreakStmt::BreakStmt(SourceLocation Loc_) : Loc(Loc_) {}
 
@@ -336,11 +242,6 @@ void BreakStmt::print(int indent, StringBuilder& buffer) const {
     buffer << "[break]\n";
 }
 
-void BreakStmt::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << "break;\n";
-}
-
 
 ContinueStmt::ContinueStmt(SourceLocation Loc_) : Loc(Loc_) {}
 
@@ -351,11 +252,6 @@ STMT_VISITOR_ACCEPT(ContinueStmt);
 void ContinueStmt::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[continue]\n";
-}
-
-void ContinueStmt::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << "continue;\n";
 }
 
 
@@ -375,11 +271,6 @@ void LabelStmt::print(int indent, StringBuilder& buffer) const {
     subStmt->print(indent + INDENT, buffer);
 }
 
-void LabelStmt::generateC(int indent, StringBuilder& buffer) {
-    buffer << name << ":\n";
-    subStmt->generateC(indent, buffer);
-}
-
 
 GotoStmt::GotoStmt(const char* name_, SourceLocation GotoLoc_, SourceLocation LabelLoc_)
     : name(name_), GotoLoc(GotoLoc_), LabelLoc(LabelLoc_) {}
@@ -391,11 +282,6 @@ STMT_VISITOR_ACCEPT(GotoStmt);
 void GotoStmt::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[goto]\n";
-}
-
-void GotoStmt::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << "goto " << name << ";\n";
 }
 
 
@@ -415,16 +301,6 @@ void CompoundStmt::print(int indent, StringBuilder& buffer) const {
     for (unsigned int i=0; i<Stmts.size(); i++) {
         Stmts[i]->print(indent + INDENT, buffer);
     }
-}
-
-void CompoundStmt::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << "{\n";
-    for (unsigned int i=0; i<Stmts.size(); i++) {
-        Stmts[i]->generateC(indent + INDENT, buffer);
-    }
-    buffer.indent(indent);
-    buffer << "}\n";
 }
 
 Stmt* CompoundStmt::getLastStmt() const {

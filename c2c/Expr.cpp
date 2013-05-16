@@ -115,22 +115,12 @@ void NumberExpr::print(int indent, StringBuilder& buffer) const {
     buffer << "[number " << (int)value << "]\n";
 }
 
-void NumberExpr::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << (int)value;
-}
-
 
 EXPR_VISITOR_ACCEPT(StringExpr);
 
 void StringExpr::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[text '" << value << "']\n";
-}
-
-void StringExpr::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << '"' << value << '"';
 }
 
 
@@ -141,24 +131,12 @@ void BoolLiteralExpr::print(int indent, StringBuilder& buffer) const {
     buffer << "[bool " << value << "]\n";
 }
 
-void BoolLiteralExpr::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << (int)value;
-}
-
 
 EXPR_VISITOR_ACCEPT(CharLiteralExpr);
 
 void CharLiteralExpr::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[char '" << (char)value << "']\n";
-}
-
-void CharLiteralExpr::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << '\'';
-    buffer << (char)value;
-    buffer << '\'';
 }
 
 
@@ -219,18 +197,6 @@ void CallExpr::print(int indent, StringBuilder& buffer) const {
     }
 }
 
-void CallExpr::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    Fn->generateC(0, buffer);
-    buffer << '(';
-    for (unsigned int i=0; i<args.size(); i++) {
-        if (i != 0) buffer << ", ";
-        args[i]->generateC(0, buffer);
-    }
-    buffer << ')';
-    if (isStmt()) buffer << ";\n";
-}
-
 
 EXPR_VISITOR_ACCEPT(IdentifierExpr);
 
@@ -243,14 +209,6 @@ void IdentifierExpr::print(int indent, StringBuilder& buffer) const {
      buffer << getName() << "]\n";
 }
 
-void IdentifierExpr::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    if (pkg) {
-        Utils::addName(pkg->getCName(), name, buffer);
-    } else {
-        buffer << name;
-    }
-}
 
 TypeExpr::~TypeExpr() {
 }
@@ -260,11 +218,6 @@ EXPR_VISITOR_ACCEPT(TypeExpr);
 void TypeExpr::print(int indent, StringBuilder& buffer) const {
     if (type) type->print(indent, buffer, Type::RECURSE_NONE);
 }
-
-void TypeExpr::generateC(int indent, StringBuilder& buffer) {
-    printf("%s() TODO\n", __PRETTY_FUNCTION__);
-}
-
 
 
 InitListExpr::InitListExpr(SourceLocation left, SourceLocation right, ExprList& values_)
@@ -288,16 +241,6 @@ void InitListExpr::print(int indent, StringBuilder& buffer) const {
         values[i]->print(indent + INDENT, buffer);
     }
     
-}
-
-void InitListExpr::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << "{ ";
-    for (unsigned int i=0; i<values.size(); i++) {
-        if (i != 0) buffer << ", ";
-        values[i]->generateC(0, buffer);
-    }
-    buffer << " }";
 }
 
 
@@ -336,29 +279,6 @@ void DeclExpr::print(int indent, StringBuilder& buffer) const {
     }
 }
 
-void DeclExpr::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    type->generateC_PreName(buffer);
-    buffer << ' ' << name;
-    type->generateC_PostName(buffer);
-    if (initValue) {
-        buffer << " = ";
-        initValue->generateC(0, buffer);
-    }
-    if (isStmt()) buffer << ";\n";
-}
-
-void DeclExpr::generateC(StringBuilder& buffer, const std::string& pkgName) {
-    type->generateC_PreName(buffer);
-    buffer << ' ';
-    Utils::addName(pkgName, name, buffer);
-    type->generateC_PostName(buffer);
-    if (initValue) {
-        buffer << " = ";
-        initValue->generateC(0, buffer);
-    }
-    if (isStmt()) buffer << ";\n";
-}
 
 BinOpExpr::BinOpExpr(Expr* lhs_, Expr* rhs_, Opcode opc_, SourceLocation opLoc_)
     : opLoc(opLoc_)
@@ -381,13 +301,6 @@ void BinOpExpr::print(int indent, StringBuilder& buffer) const {
     rhs->print(indent + INDENT, buffer);
 }
 
-void BinOpExpr::generateC(int indent, StringBuilder& buffer) {
-    lhs->generateC(indent, buffer);
-    buffer << ' ' << BinOpCode2str(opc) << ' ';
-    rhs->generateC(0, buffer);
-    if (isStmt()) buffer << ";\n";
-}
-
 
 UnaryOpExpr::UnaryOpExpr(SourceLocation opLoc_, Opcode opc_, Expr* val_)
     : opLoc(opLoc_)
@@ -407,30 +320,6 @@ void UnaryOpExpr::print(int indent, StringBuilder& buffer) const {
     val->print(indent + INDENT, buffer);
 }
 
-void UnaryOpExpr::generateC(int indent, StringBuilder& buffer) {
-    switch (opc) {
-    case UO_PostInc:
-    case UO_PostDec:
-        val->generateC(indent, buffer);
-        buffer << UnaryOpCode2str(opc);
-        break;
-    case UO_PreInc:
-    case UO_PreDec:
-    case UO_AddrOf:
-    case UO_Deref:
-    case UO_Plus:
-    case UO_Minus:
-    case UO_Not:
-    case UO_LNot:
-        buffer.indent(indent);
-        buffer << UnaryOpCode2str(opc);
-        val->generateC(0, buffer);
-        break;
-    default:
-        assert(0);
-    }
-}
-
 
 SizeofExpr::SizeofExpr(SourceLocation Loc_, Expr* expr_)
     : Loc(Loc_)
@@ -447,14 +336,6 @@ void SizeofExpr::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[sizeof]\n";
     expr->print(indent + INDENT, buffer);
-}
-
-void SizeofExpr::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << "sizeof(";
-    expr->generateC(0, buffer);
-    buffer << ")";
-    if (isStmt()) buffer << ";\n";
 }
 
 
@@ -478,13 +359,6 @@ void ArraySubscriptExpr::print(int indent, StringBuilder& buffer) const {
     idx->print(indent + INDENT, buffer);
 }
 
-void ArraySubscriptExpr::generateC(int indent, StringBuilder& buffer) {
-    base->generateC(indent, buffer);
-    buffer << '[';
-    idx->generateC(0, buffer);
-    buffer << ']';
-}
-
 
 MemberExpr::~MemberExpr() {
     delete Base;
@@ -498,19 +372,6 @@ void MemberExpr::print(int indent, StringBuilder& buffer) const {
     buffer << "[member expr]\n";
     Base->print(indent + INDENT, buffer);
     Member->print(indent + INDENT, buffer);
-}
-
-void MemberExpr::generateC(int indent, StringBuilder& buffer) {
-    if (Member->getPackage()) {
-        // A.B where A is a package
-        Member->generateC(indent, buffer);
-    } else {
-        // A.B where A is decl of struct/union type
-        Base->generateC(indent, buffer);
-        if (isArrow) buffer << "->";
-        else buffer << '.';
-        Member->generateC(0, buffer);
-    }
 }
 
 const char* MemberExpr::getFullName() const {
@@ -529,12 +390,5 @@ void ParenExpr::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[paren expr]\n";
     Val->print(indent + INDENT, buffer);
-}
-
-void ParenExpr::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << '(';
-    Val->generateC(0, buffer);
-    buffer << ')';
 }
 

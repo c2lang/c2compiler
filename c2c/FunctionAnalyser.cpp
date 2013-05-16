@@ -642,10 +642,20 @@ C2::Type* FunctionAnalyser::analyseCall(Expr* expr) {
         return 0;
     }
 
-    // TODO check LType of expr, should be Function (Function Type)
+    // TODO check if Ellipsoid otherwise compare num args with num params
     for (unsigned i=0; i<call->numArgs(); i++) {
         Expr* arg = call->getArg(i);
-        analyseExpr(arg);
+        Type* ArgGot = analyseExpr(arg);
+        Type* ArgNeed = LType2->getArgument(i);
+/*
+        fprintf(stderr, "ARG %d:\n", i);
+        fprintf(stderr, "  got: ");
+        ArgGot->dump();
+        fprintf(stderr, "  need: ");
+        if (ArgNeed) ArgNeed->dump();
+        else fprintf(stderr, "-\n");
+*/
+        // ..
         // TODO match number + types with proto
     }
     // return function's return type

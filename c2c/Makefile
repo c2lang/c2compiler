@@ -7,6 +7,7 @@ OBJS = \
     C2Builder.o \
     C2Parser.o \
     C2Sema.o \
+    CCodeGenerator.o \
     CodeGenFunction.o \
     CodeGenModule.o \
     Decl.o \

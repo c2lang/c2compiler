@@ -50,7 +50,7 @@ bool GlobalVarAnalyser::handle(Decl* decl) {
                 DeclExpr* arg = FD->getArg(i);
                 Type* canonicalType = arg->getType()->getCanonical(typeContext);
                 arg->setCanonicalType(canonicalType);
-                //proto->addArgument(canonicalType);
+                proto->addArgument(canonicalType);
             }
             FD->setCanonicalType(proto);
             break;

@@ -108,8 +108,9 @@ public:
 
     // FUNC
     void setReturnType(Type* type);
-    void addArgument(Type* type);
     Type* getReturnType() const { return returnType; }
+    void addArgument(Type* type);
+    Type* getArgument(unsigned i) const;
 
     // QUALIFIER
     void setQualifier(unsigned int flags);
@@ -121,9 +122,6 @@ public:
     enum RecursionType { RECURSE_NONE=0, RECURSE_ONCE, RECURSE_ALL };
     void print(int indent, StringBuilder& buffer, RecursionType recursive) const;
     void dump() const;
-
-    void generateC_PreName(StringBuilder& buffer) const;
-    void generateC_PostName(StringBuilder& buffer) const;
 
     // for analysis
     bool hasBuiltinBase() const;

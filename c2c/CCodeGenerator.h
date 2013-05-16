@@ -13,49 +13,41 @@
  * limitations under the License.
  */
 
-#ifndef CODEGEN_MODULE_H
-#define CODEGEN_MODULE_H
+#ifndef CCODE_GENERATOR_H
+#define CCODE_GENERATOR_H
 
-#include <llvm/IRBuilder.h>
 #include <string>
 #include <vector>
-
-namespace llvm {
-class Module;
-class LLVMContext;
-class Type;
-class Function;
-}
+#include "StringBuilder.h"
 
 namespace C2 {
 
 class C2Sema;
 class Decl;
+class Expr;
 class Type;
 class Package;
 
 // generates LLVM Module from (multiple) ASTs
-class CodeGenModule {
+class CCodeGenerator {
 public:
-    CodeGenModule(const Package* pkg_);
-    ~CodeGenModule();
+    CCodeGenerator(const Package* pkg_);
+    ~CCodeGenerator();
     void addEntry(const std::string& filename, C2Sema& sema);
 
     void generate();
-    bool verify();
     void write(const std::string& target, const std::string& name);
     void dump();
 
-    llvm::Type* ConvertType(C2::Type* type);
-    llvm::Function* createExternal(const Package* P, const std::string& name);
-
-    const Package* getPackage() const { return pkg; }
-    llvm::Module* getModule() const { return module; }
-    llvm::LLVMContext& getContext() const { return context; }
-    llvm::IRBuilder<> getBuilder() const { return builder; }
 private:
-    void EmitFunctionProto(Decl* D);
-    void EmitTopLevelDecl(Decl* D);
+    const char* ConvertType(C2::Type* type);
+
+    void EmitFunction(Decl* D);
+    void EmitVariable(Decl* D);
+    void EmitType(Decl* D);
+    void EmitUse(Decl* D);
+
+    void EmitExpr(Expr* E);
 
     const Package* pkg;
 
@@ -69,12 +61,11 @@ private:
     typedef Entries::iterator EntriesIter;
     Entries entries;
 
-    llvm::LLVMContext& context;
-    llvm::Module* module;
-    llvm::IRBuilder<> builder;
+    StringBuilder cbuf;
+    StringBuilder hbuf;
 
-    CodeGenModule(const CodeGenModule&);
-    CodeGenModule& operator= (const CodeGenModule&);
+    CCodeGenerator(const CCodeGenerator&);
+    CCodeGenerator& operator= (const CCodeGenerator&);
 };
 
 }

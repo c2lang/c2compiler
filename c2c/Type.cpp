@@ -52,10 +52,13 @@ public:
 }
 
 static void printArray(StringBuilder& buffer, Expr* expr) {
-    if (expr == 0) buffer << "[]";
-    else buffer << '[';
-    expr->print(0, buffer);
-     buffer << ']';
+    if (expr == 0) {
+        buffer << "[]";
+    } else {
+        buffer << '[';
+        expr->print(0, buffer);
+        buffer << ']';
+    }
 }
 
 static void printQualifier(StringBuilder& buffer, unsigned int flags) {
@@ -233,6 +236,16 @@ void Type::addArgument(Type* type_) {
     }
 }
 
+Type* Type::getArgument(unsigned i) const {
+    Argument* arg = arguments;
+    while (arg && i) {
+        arg = arg->next;
+        i--;
+    }
+    if (arg) return arg->type;
+    else return 0;
+}
+
 bool Type::isCompatible(const Type& t2) const {
     switch (kind) {
     case BUILTIN:
@@ -408,7 +421,7 @@ void Type::printName(StringBuilder& buffer) const {
     case BUILTIN:
         assert(name);
         buffer << name;
-        return;
+        break;
     case STRUCT:
     case UNION:
     case ENUM:
@@ -416,7 +429,8 @@ void Type::printName(StringBuilder& buffer) const {
         assert(0);
         break;
     case USER:
-        userType->generateC(0, buffer);
+        assert(0);
+        //userType->generateC(0, buffer);
         break;
     case POINTER:
         refType->printName(buffer);
@@ -479,7 +493,7 @@ void Type::print(int indent, StringBuilder& buffer, RecursionType recursive) con
         buffer << COL_ATTR << "returnType:" << ANSI_NORMAL << '\n';
         buffer.indent(indent + INDENT);
         returnType->printName(buffer);
-        buffer << '(';
+        buffer << '\n';
         Argument* arg = arguments;
         if (arg) {
             buffer.indent(indent + INDENT);
@@ -491,8 +505,6 @@ void Type::print(int indent, StringBuilder& buffer, RecursionType recursive) con
             buffer << '\n';
             arg = arg->next;
         }
-        buffer << ')';
-        buffer << '\n';
         break;
     }
     case POINTER:
@@ -515,71 +527,6 @@ void Type::dump() const {
     //printEffective(buffer, 0);
     print(0, buffer, RECURSE_ALL);
     fprintf(stderr, "[TYPE] %s\n", (const char*)buffer);
-}
-
-void Type::generateC_PreName(StringBuilder& buffer) const {
-    switch (kind) {
-    case BUILTIN:
-        assert(cname);
-        buffer << cname;
-        break;
-    case STRUCT:
-        buffer << "struct {\n";
-        if (members) {
-            for (unsigned i=0; i<members->size(); i++) {
-                DeclExpr* mem = (*members)[i];
-                buffer.indent(INDENT);
-                mem->getType()->generateC_PreName(buffer);
-                buffer << ' ' << mem->getName();
-                mem->getType()->generateC_PostName(buffer);
-                buffer << ";\n";
-            }
-        }
-        buffer << "}";
-        break;
-    case UNION:
-        buffer << "union {\n";
-        if (members) {
-            for (unsigned i=0; i<members->size(); i++) {
-                DeclExpr* mem = (*members)[i];
-                buffer.indent(INDENT);
-                mem->getType()->generateC_PreName(buffer);
-                buffer << ' ' << mem->getName();
-                mem->getType()->generateC_PostName(buffer);
-                buffer << ";\n";
-            }
-        }
-        buffer << "}";
-        break;
-    case ENUM:
-    case FUNC:
-        assert(0 && "TODO");
-        break;
-    case USER:
-        userType->generateC(0, buffer);
-        break;
-    case POINTER:
-        refType->generateC_PreName(buffer);
-        buffer << '*';
-        break;
-    case ARRAY:
-        refType->generateC_PreName(buffer);
-        break;
-    case QUALIFIER:
-        printQualifier(buffer, qualifiers);
-        refType->generateC_PreName(buffer);
-        break;
-    }
-}
-
-void Type::generateC_PostName(StringBuilder& buffer) const {
-    if (kind == ARRAY) {
-        assert(refType);
-        refType->generateC_PostName(buffer);
-        buffer << '[';
-        if (arrayExpr) arrayExpr->generateC(0, buffer);
-        buffer << ']';
-    }
 }
 
 bool Type::hasBuiltinBase() const {

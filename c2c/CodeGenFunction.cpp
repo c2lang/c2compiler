@@ -229,6 +229,7 @@ llvm::Value* CodeGenFunction::EmitCallExpr(const CallExpr* E) {
         {
             std::vector<llvm::Value *> Args;
             for (unsigned int i=0; i<E->numArgs(); i++) {
+                // TODO match argument to callee's arg type
                 Args.push_back(EmitExpr(E->getArg(i)));
             }
             llvm::ArrayRef<llvm::Value*> argsRef(Args);
