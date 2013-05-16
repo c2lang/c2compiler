@@ -28,7 +28,7 @@
 #include "color.h"
 #endif
 
-#define TYPE_CONST      (1<<1) 
+#define TYPE_CONST      (1<<1)
 #define TYPE_VOLATILE   (1<<2)
 #define TYPE_LOCAL      (1<<3)
 
@@ -52,14 +52,14 @@ typedef std::vector<C2::Expr*> ExprList;
 /// more weakly than high numbers.
 namespace prec {
   enum Level {
-    Unknown         = 0,    // Not binary operator. 
+    Unknown         = 0,    // Not binary operator.
     Comma           = 1,    // ,
     Assignment      = 2,    // =, *=, /=, %=, +=, -=, <<=, >>=, &=, ^=, |=
-    Conditional     = 3,    // ? 
+    Conditional     = 3,    // ?
     LogicalOr       = 4,    // ||
     LogicalAnd      = 5,    // &&
-    InclusiveOr     = 6,    // | 
-    ExclusiveOr     = 7,    // ^ 
+    InclusiveOr     = 6,    // |
+    ExclusiveOr     = 7,    // ^
     And             = 8,    // &
     Equality        = 9,    // ==, !=
     Relational      = 10,   //  >=, <=, >, <
@@ -140,7 +140,7 @@ private:
 
   //===--------------------------------------------------------------------===//
   // C99 6.8: Statements and Blocks.
-            
+
   /// A SmallVector of expressions, with stack size 12 (the maximum used.)
   typedef SmallVector<Expr*, 12> ExprVector;
 
@@ -191,7 +191,7 @@ private:
         return (K == tok::l_square || K == tok::l_paren ||
                 K == tok::period || K == tok::arrow ||
                 K == tok::plusplus || K == tok::minusminus);
-    } 
+    }
 
       typedef SmallVector<Expr*, 20> ExprListTy;
       typedef SmallVector<SourceLocation, 20> CommaLocsTy;
@@ -221,7 +221,7 @@ private:
     bool ParseOptionalAccessSpecifier();
 
     const Token& getCurToken() const { return Tok; }
-    
+
     SourceLocation ConsumeToken() {
         PrevTokLocation = Tok.getLocation();
 #ifdef PARSER_DEBUG
@@ -254,7 +254,7 @@ private:
   /// ConsumeAnyToken - Dispatch to the right Consume* method based on the
   /// current token type.  This should only be used in cases where the type of
   /// the token really isn't known, e.g. in error recovery.
-  SourceLocation ConsumeAnyToken() {  
+  SourceLocation ConsumeAnyToken() {
     if (isTokenParen())
       return ConsumeParen();
     else if (isTokenBracket())
@@ -276,7 +276,7 @@ private:
     else if (ParenCount)
       --ParenCount;       // Don't let unbalanced )'s drive the count negative.
     return ConsumeToken();
-  } 
+  }
 
   /// ConsumeBracket - This consume method keeps the bracket count up-to-date.
   ///
@@ -360,19 +360,19 @@ public:
   /// token will ever occur, this skips to the next token, or to some likely
   /// good stopping point.  If StopAtSemi is true, skipping will stop at a ';'
   /// character.
-  ///   
+  ///
   /// If SkipUntil finds the specified token, it returns true, otherwise it
   /// returns false.
   bool SkipUntil(tok::TokenKind T, bool StopAtSemi = true,
                  bool DontConsume = false, bool StopAtCodeCompletion = false) {
     return SkipUntil(llvm::makeArrayRef(T), StopAtSemi, DontConsume,
                      StopAtCodeCompletion);
-  }       
+  }
   bool SkipUntil(tok::TokenKind T1, tok::TokenKind T2, bool StopAtSemi = true,
                  bool DontConsume = false, bool StopAtCodeCompletion = false) {
     tok::TokenKind TokArray[] = {T1, T2};
     return SkipUntil(TokArray, StopAtSemi, DontConsume,StopAtCodeCompletion);
-  }     
+  }
   bool SkipUntil(tok::TokenKind T1, tok::TokenKind T2, tok::TokenKind T3,
                  bool StopAtSemi = true, bool DontConsume = false,
                  bool StopAtCodeCompletion = false) {

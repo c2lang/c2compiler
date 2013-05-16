@@ -111,7 +111,7 @@ StringBuilder& StringBuilder::operator<<(const StringBuilder& input) {
     return *this;
 }
 
-void StringBuilder::clear() { 
+void StringBuilder::clear() {
     ptr = buffer;
     buffer[0] = 0;
 }

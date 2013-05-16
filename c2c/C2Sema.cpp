@@ -421,7 +421,7 @@ C2::ExprResult C2Sema::ActOnBinOp(SourceLocation opLoc, tok::TokenKind Kind, Exp
     // Emit warnings for tricky precedence issues, e.g. "bitfield & 0x4 == 0"
     //DiagnoseBinOpPrecedence(*this, Opc, TokLoc, LHSExpr, RHSExpr);
 
-    return ExprResult(new BinOpExpr(LHS, RHS, Opc, opLoc));
+    return ExprResult(new BinaryOperator(LHS, RHS, Opc, opLoc));
 }
 
 C2::ExprResult C2Sema::ActOnInitList(SourceLocation left_, SourceLocation right_, ExprList& vals) {

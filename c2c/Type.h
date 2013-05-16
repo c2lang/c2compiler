@@ -20,7 +20,7 @@
 #include <vector>
 #include "OwningVector.h"
 
-#define TYPE_CONST      (1<<1) 
+#define TYPE_CONST      (1<<1)
 #define TYPE_VOLATILE   (1<<2)
 #define TYPE_LOCAL      (1<<3)
 
@@ -77,17 +77,22 @@ public:
     bool isStructOrUnionType() const { return kind == STRUCT || kind == UNION; }
     bool isSubscriptable() const { return kind == ARRAY || kind == POINTER; }
     bool isPointerType() const { return kind == POINTER; }
+    bool isArrayType() const { return kind == ARRAY; }
+
+    unsigned getWidth() const;
 
     // for resolving canonical type
     Type* getCanonical(TypeContext& context);
 
     // Builtin type
-    void setBuiltinName(C2Type ct, const char* name_, const char* cname_) {
+    void setBuiltinName(C2Type ct, const char* name_, const char* cname_, unsigned width_) {
         name = name_;
         cname = cname_;
         c2type = ct;
+        width = width_;
     }
     C2Type getBuiltinType() const { return c2type; }
+    const char* getCName() const { return cname; }
 
     // user type
     void setUserType(Expr* expr) { userType = expr; }
@@ -98,6 +103,7 @@ public:
         arrayExpr = expr;
         ownArrayExpr = ownExpr;
     }
+    Expr* getArrayExpr() const { return arrayExpr; }
 
     // STRUCT/UNION
     void setMembers(MemberList& members_);
@@ -114,6 +120,7 @@ public:
 
     // QUALIFIER
     void setQualifier(unsigned int flags);
+    unsigned getQualifier() const { return qualifiers; }
 
     bool isCompatible(const Type& t2) const;
 
@@ -126,6 +133,8 @@ public:
     // for analysis
     bool hasBuiltinBase() const;
     Expr* getBaseUserType() const;
+
+    static void printQualifier(StringBuilder& buffer, unsigned int flags);
 private:
     // TODO remove printName
     void printName(StringBuilder& buffer) const;
@@ -141,6 +150,7 @@ private:
             const char* name;
             const char* cname;
             C2Type c2type;
+            unsigned width;
         };
 
         // user types, can be IdentifierExpr or MemberExpr

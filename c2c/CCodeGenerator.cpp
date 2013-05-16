@@ -30,6 +30,7 @@
 #include "Decl.h"
 #include "Expr.h"
 #include "StringBuilder.h"
+#include "Utils.h"
 
 //#define DEBUG_CODEGEN
 
@@ -39,6 +40,8 @@ using namespace llvm;
 CCodeGenerator::CCodeGenerator(const Package* pkg_)
     : pkg(pkg_)
 {
+    hfilename = pkg->getName() + ".h";
+    cfilename = pkg->getName() + ".c";
 }
 
 CCodeGenerator::~CCodeGenerator() {
@@ -49,11 +52,15 @@ void CCodeGenerator::addEntry(const std::string& filename, C2Sema& sema) {
 }
 
 void CCodeGenerator::generate() {
-    hbuf << "#ifndef TODO_H\n";
-    hbuf << "#define TODO_H\n";
+    hbuf << "#ifndef ";
+    Utils::toCapital(pkg->getName(), hbuf);
+    hbuf << "_H\n";
+    hbuf << "#define ";
+    Utils::toCapital(pkg->getName(), hbuf);
+    hbuf << "_H\n";
     hbuf << '\n';
 
-    cbuf << "#include \"todo.h\"\n";
+    cbuf << "#include \"" << hfilename << "\"\n";
     cbuf << '\n';
 
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
@@ -132,13 +139,117 @@ const char* CCodeGenerator::ConvertType(C2::Type* type) {
     return 0;
 }
 
-void CCodeGenerator::EmitExpr(Expr* E) {
+void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
+    switch (E->etype()) {
+    case EXPR_NUMBER:
+        {
+            NumberExpr* N = ExprCaster<NumberExpr>::getType(E);
+            output << (int) N->value;
+            return;
+        }
+    case EXPR_STRING:
+        {
+            StringExpr* S = ExprCaster<StringExpr>::getType(E);
+            output << '"' << S->value << '"';
+            return;
+        }
+    case EXPR_BOOL:
+    case EXPR_CHARLITERAL:
+        assert(0 && "TODO");
+        return;
+    case EXPR_CALL:
+        EmitCallExpr(E, output);
+        return;
+    case EXPR_IDENTIFIER:
+        EmitIdentifierExpr(E, output);
+        return;
+    case EXPR_INITLIST:
+        {
+            InitListExpr* I = ExprCaster<InitListExpr>::getType(E);
+            output << "{ ";
+            ExprList& values = I->getValues();
+            for (unsigned int i=0; i<values.size(); i++) {
+                if (i != 0) output << ", ";
+                EmitExpr(values[i], output);
+            }
+            output << " }";
+            return;
+        }
+    case EXPR_TYPE:
+        break;
+    case EXPR_DECL:
+        {
+            DeclExpr* D = ExprCaster<DeclExpr>::getType(E);
+            EmitDeclExpr(D, output, 0);
+            return;
+        }
+    case EXPR_BINOP:
+    case EXPR_UNARYOP:
+    case EXPR_SIZEOF:
+    case EXPR_ARRAYSUBSCRIPT:
+        assert(0 && "TODO");
+        break;
+    case EXPR_MEMBER:
+        EmitMemberExpr(E, output);
+        return;
+    case EXPR_PAREN:
+        assert(0 && "TODO");
+        break;
+    }
+}
 
+void CCodeGenerator::EmitMemberExpr(Expr* E, StringBuilder& output) {
+    MemberExpr* M = ExprCaster<MemberExpr>::getType(E);
+    IdentifierExpr* RHS = M->getMember();
+    if (RHS->getPackage()) {
+        // A.B where A is a package
+        EmitIdentifierExpr(RHS, output);
+    } else {
+        // A.B where A is decl of struct/union type
+#if 0
+        Base->generateC(indent, buffer);
+        if (isArrow) buffer << "->";
+        else buffer << '.';
+        Member->generateC(0, buffer);
+#endif
+    }
+}
+
+void CCodeGenerator::EmitDeclExpr(DeclExpr* E, StringBuilder& output, unsigned indent) {
+    EmitTypePreName(E->getType(), output);
+    output << ' ';
+    output << E->getName();
+    EmitTypePostName(E->getType(), output);
+    if (E->getInitValue()) {
+        output << " = ";
+        EmitExpr(E->getInitValue(), output);
+    }
+    if (E->isStmt()) output << ";\n";
+}
+
+void CCodeGenerator::EmitCallExpr(Expr* E, StringBuilder& output) {
+    CallExpr* C = ExprCaster<CallExpr>::getType(E);
+    EmitExpr(C->getFn(), output);
+    output << '(';
+    for (unsigned int i=0; i<C->numArgs(); i++) {
+        if (i != 0) output << ", ";
+        EmitExpr(C->getArg(i), output);
+    }
+    output << ')';
+}
+
+void CCodeGenerator::EmitIdentifierExpr(Expr* E, StringBuilder& output) {
+    IdentifierExpr* I = ExprCaster<IdentifierExpr>::getType(E);
+    if (I->getPackage()) {
+        Utils::addName(I->getPackage()->getCName(), I->getName(), output);
+    } else {
+        output << I->getName();
+    }
 }
 
 void CCodeGenerator::dump() {
-    printf("C-code for TODO.h\n%s\n", (const char*)hbuf);
-    printf("C-code for TODO.c\n%s\n", (const char*)cbuf);
+    printf("---- code for %s ----\n%s\n", hfilename.c_str(), (const char*)hbuf);
+    printf("---- code for %s ----\n%s\n", cfilename.c_str(), (const char*)cbuf);
 }
 
 void CCodeGenerator::write(const std::string& target, const std::string& name) {
@@ -148,39 +259,42 @@ void CCodeGenerator::write(const std::string& target, const std::string& name) {
 void CCodeGenerator::EmitFunction(Decl* D) {
     FunctionDecl* F = DeclCaster<FunctionDecl>::getType(D);
     if (F->isPublic()) {
-        // TODO add proto to header
+        EmitFunctionProto(F, hbuf);
+        hbuf << ";\n";
     } else {
         cbuf << "static ";
     }
-#if 0
-    rtype->generateC_PreName(buffer);
-    rtype->generateC_PostName(buffer);
-    buffer << ' ';
-    Utils::addName(pkgName, name, buffer);
-    buffer << '(';
-    int count = args.size();
-    for (unsigned int i=0; i<args.size(); i++) {
-        args[i]->generateC(0, buffer);
-        if (count != 1) buffer << ", ";
-        count--;
-    }
-    if (m_isVariadic) buffer << "...";
-    buffer << ")\n";
-    assert(body);
-    body->generateC(0, buffer);
-#endif
+    EmitFunctionProto(F, cbuf);
+    cbuf << "\n";
+    EmitStmt(F->getBody(), 0);
     cbuf << '\n';
 }
 
 void CCodeGenerator::EmitVariable(Decl* D) {
     VarDecl* V = DeclCaster<VarDecl>::getType(D);
-#if 0
-    if (isPublic()) buffer << "static ";
-    decl->generateC(buffer, pkgName);
-    // TODO semicolon not needed when ending initlist with '}'
-    // Q: add bool return value to Expr.generateC()?
-    buffer << ";\n";
-#endif
+    if (V->isPublic()) {
+        // TODO type
+        hbuf << "extern ";
+        EmitTypePreName(V->getType(), hbuf);
+        hbuf << ' ';
+        Utils::addName(pkg->getName(), V->getName(), hbuf);
+        EmitTypePostName(V->getType(), hbuf);
+        // TODO add space if needed (on StringBuilder)
+        hbuf << ";\n";
+        hbuf << '\n';
+    } else {
+        cbuf << "static ";
+    }
+    EmitTypePreName(V->getType(), cbuf);
+    cbuf << ' ';
+    Utils::addName(pkg->getName(), V->getName(), cbuf);
+    EmitTypePostName(V->getType(), cbuf);
+    if (V->getInitValue()) {
+        cbuf << " = ";
+        EmitExpr(V->getInitValue(), cbuf);
+    }
+    cbuf << ";\n";
+    cbuf << '\n';
 }
 
 void CCodeGenerator::EmitType(Decl* D) {
@@ -203,18 +317,163 @@ void CCodeGenerator::EmitUse(Decl* D) {
 #endif
 }
 
+void CCodeGenerator::EmitStmt(Stmt* S, unsigned indent) {
+    switch (S->stype()) {
+    case STMT_RETURN:
+        {
+            ReturnStmt* R = StmtCaster<ReturnStmt>::getType(S);
+            cbuf.indent(indent);
+            cbuf << "return";
+            if (R->getExpr()) {
+                cbuf << ' ';
+                EmitExpr(R->getExpr(), cbuf);
+            }
+            cbuf << ";\n";
+            return;
+        }
+    case STMT_EXPR:
+        {
+            Expr* E = StmtCaster<Expr>::getType(S);
+            cbuf.indent(indent);
+            EmitExpr(E, cbuf);
+            cbuf << ";\n";
+            return;
+        }
+    case STMT_IF:
+        EmitIfStmt(S, indent);
+        return;
+    case STMT_WHILE:
+    case STMT_DO:
+    case STMT_FOR:
+    case STMT_SWITCH:
+    case STMT_CASE:
+    case STMT_DEFAULT:
+    case STMT_BREAK:
+    case STMT_CONTINUE:
+    case STMT_LABEL:
+    case STMT_GOTO:
+        break;
+    case STMT_COMPOUND:
+        EmitCompoundStmt(S, indent);
+        return;
+    }
+}
+
+void CCodeGenerator::EmitCompoundStmt(Stmt* S, unsigned indent) {
+    CompoundStmt* C = StmtCaster<CompoundStmt>::getType(S);
+    cbuf.indent(indent);
+    cbuf << "{\n";
+    const StmtList& Stmts = C->getStmts();
+    for (unsigned int i=0; i<Stmts.size(); i++) {
+        EmitStmt(Stmts[i], indent + INDENT);
+    }
+    cbuf.indent(indent);
+    cbuf << "}\n";
+}
+
+void CCodeGenerator::EmitIfStmt(Stmt* S, unsigned indent) {
+    IfStmt* I = StmtCaster<IfStmt>::getType(S);
+    cbuf.indent(indent);
+    cbuf << "if (";
+    EmitExpr(I->getCond(), cbuf);
+    cbuf << ")\n";
+    EmitStmt(I->getThen(), indent);
+    if (I->getElse()) {
+        cbuf.indent(indent);
+        cbuf << "else\n";
+        EmitStmt(I->getElse(), indent);
+    }
+}
+
+void CCodeGenerator::EmitFunctionProto(FunctionDecl* F, StringBuilder& output) {
+    EmitTypePreName(F->getReturnType(), output);
+    EmitTypePostName(F->getReturnType(), output);
+    output << ' ';
+    Utils::addName(pkg->getName(), F->getName(), output);
+    output << '(';
+    int count = F->numArgs();
+    if (F->isVariadic()) count++;
+    for (unsigned int i=0; i<F->numArgs(); i++) {
+        DeclExpr* A = F->getArg(i);
+        EmitDeclExpr(A, output, 0);
+        if (count != 1) output << ", ";
+        count--;
+    }
+    if (F->isVariadic()) output << "...";
+    output << ')';
+}
+
+void CCodeGenerator::EmitTypePreName(Type* T, StringBuilder& output) {
+    switch (T->getKind()) {
+    case Type::BUILTIN:
+        output << T->getCName();
+        break;
+    case Type::STRUCT:
+#if 0
+        buffer << "struct {\n";
+        if (members) {
+            for (unsigned i=0; i<members->size(); i++) {
+                DeclExpr* mem = (*members)[i];
+                buffer.indent(INDENT);
+                mem->getType()->generateC_PreName(buffer);
+                buffer << ' ' << mem->getName();
+                mem->getType()->generateC_PostName(buffer);
+                buffer << ";\n";
+            }
+        }
+        buffer << "}";
+#endif
+        break;
+    case Type::UNION:
+#if 0
+        buffer << "union {\n";
+        if (members) {
+            for (unsigned i=0; i<members->size(); i++) {
+                DeclExpr* mem = (*members)[i];
+                buffer.indent(INDENT);
+                mem->getType()->generateC_PreName(buffer);
+                buffer << ' ' << mem->getName();
+                mem->getType()->generateC_PostName(buffer);
+                buffer << ";\n";
+            }
+        }
+        buffer << "}";
+#endif
+        break;
+    case Type::ENUM:
+    case Type::FUNC:
+        assert(0 && "TODO");
+        break;
+    case Type::USER:
+        assert(0 && "TODO");
+        //userType->generateC(0, buffer);
+        break;
+    case Type::POINTER:
+        EmitTypePreName(T->getRefType(), output);
+        output << '*';
+        break;
+    case Type::ARRAY:
+        EmitTypePreName(T->getRefType(), output);
+        break;
+    case Type::QUALIFIER:
+        Type::printQualifier(output, T->getQualifier());
+        EmitTypePreName(T->getRefType(), output);
+        break;
+    }
+}
+
+void CCodeGenerator::EmitTypePostName(Type* T, StringBuilder& output) {
+    if (T->isArrayType()) {
+        EmitTypePostName(T->getRefType(), output);
+        output << '[';
+        if (T->getArrayExpr()) {
+            EmitExpr(T->getArrayExpr(), output);
+        }
+        output << ']';
+    }
+}
 
 #if 0
-void NumberExpr::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << (int)value;
-}
-
-void StringExpr::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << '"' << value << '"';
-}
-
 void BoolLiteralExpr::generateC(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
     buffer << (int)value;
@@ -227,18 +486,6 @@ void CharLiteralExpr::generateC(int indent, StringBuilder& buffer) {
     buffer << '\'';
 }
 
-void CallExpr::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    Fn->generateC(0, buffer);
-    buffer << '(';
-    for (unsigned int i=0; i<args.size(); i++) {
-        if (i != 0) buffer << ", ";
-        args[i]->generateC(0, buffer);
-    }
-    buffer << ')';
-    if (isStmt()) buffer << ";\n";
-}
-
 void IdentifierExpr::generateC(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
     if (pkg) {
@@ -246,16 +493,6 @@ void IdentifierExpr::generateC(int indent, StringBuilder& buffer) {
     } else {
         buffer << name;
     }
-}
-
-void InitListExpr::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << "{ ";
-    for (unsigned int i=0; i<values.size(); i++) {
-        if (i != 0) buffer << ", ";
-        values[i]->generateC(0, buffer);
-    }
-    buffer << " }";
 }
 
 void DeclExpr::generateC(int indent, StringBuilder& buffer) {
@@ -282,7 +519,7 @@ void DeclExpr::generateC(StringBuilder& buffer, const std::string& pkgName) {
     if (isStmt()) buffer << ";\n";
 }
 
-void BinOpExpr::generateC(int indent, StringBuilder& buffer) {
+void BinaryOperator::generateC(int indent, StringBuilder& buffer) {
     lhs->generateC(indent, buffer);
     buffer << ' ' << BinOpCode2str(opc) << ' ';
     rhs->generateC(0, buffer);
@@ -328,19 +565,6 @@ void ArraySubscriptExpr::generateC(int indent, StringBuilder& buffer) {
     buffer << ']';
 }
 
-void MemberExpr::generateC(int indent, StringBuilder& buffer) {
-    if (Member->getPackage()) {
-        // A.B where A is a package
-        Member->generateC(indent, buffer);
-    } else {
-        // A.B where A is decl of struct/union type
-        Base->generateC(indent, buffer);
-        if (isArrow) buffer << "->";
-        else buffer << '.';
-        Member->generateC(0, buffer);
-    }
-}
-
 void ParenExpr::generateC(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
     buffer << '(';
@@ -351,30 +575,6 @@ void ParenExpr::generateC(int indent, StringBuilder& buffer) {
 
 
 #if 0
-
-void ReturnStmt::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << "return";
-    if (value) {
-        buffer << ' ';
-        value->generateC(0, buffer);
-    }
-    buffer << ";\n";
-}
-
-void IfStmt::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << "if (";
-    SubExprs[COND]->generateC(0, buffer);
-    buffer << ")\n";
-    SubExprs[THEN]->generateC(indent, buffer);
-    if (SubExprs[ELSE]) {
-        buffer.indent(indent);
-        buffer << "else\n";
-        SubExprs[ELSE]->generateC(indent, buffer);
-    }
-}
-
 void WhileStmt::generateC(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
     buffer << "while (";
@@ -465,84 +665,5 @@ void GotoStmt::generateC(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
     buffer << "goto " << name << ";\n";
 }
-
-void CompoundStmt::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << "{\n";
-    for (unsigned int i=0; i<Stmts.size(); i++) {
-        Stmts[i]->generateC(indent + INDENT, buffer);
-    }
-    buffer.indent(indent);
-    buffer << "}\n";
-}
-
-#endif
-
-#if 0
-void Type::generateC_PreName(StringBuilder& buffer) const {
-    switch (kind) {
-    case BUILTIN:
-        assert(cname);
-        buffer << cname;
-        break;
-    case STRUCT:
-        buffer << "struct {\n";
-        if (members) {
-            for (unsigned i=0; i<members->size(); i++) {
-                DeclExpr* mem = (*members)[i];
-                buffer.indent(INDENT);
-                mem->getType()->generateC_PreName(buffer);
-                buffer << ' ' << mem->getName();
-                mem->getType()->generateC_PostName(buffer);
-                buffer << ";\n";
-            }
-        }
-        buffer << "}";
-        break;
-    case UNION:
-        buffer << "union {\n";
-        if (members) {
-            for (unsigned i=0; i<members->size(); i++) {
-                DeclExpr* mem = (*members)[i];
-                buffer.indent(INDENT);
-                mem->getType()->generateC_PreName(buffer);
-                buffer << ' ' << mem->getName();
-                mem->getType()->generateC_PostName(buffer);
-                buffer << ";\n";
-            }
-        }
-        buffer << "}";
-        break;
-    case ENUM:
-    case FUNC:
-        assert(0 && "TODO");
-        break;
-    case USER:
-        userType->generateC(0, buffer);
-        break;
-    case POINTER:
-        refType->generateC_PreName(buffer);
-        buffer << '*';
-        break;
-    case ARRAY:
-        refType->generateC_PreName(buffer);
-        break;
-    case QUALIFIER:
-        printQualifier(buffer, qualifiers);
-        refType->generateC_PreName(buffer);
-        break;
-    }
-}
-
-void Type::generateC_PostName(StringBuilder& buffer) const {
-    if (kind == ARRAY) {
-        assert(refType);
-        refType->generateC_PostName(buffer);
-        buffer << '[';
-        if (arrayExpr) arrayExpr->generateC(0, buffer);
-        buffer << ']';
-    }
-}
-
 #endif
 

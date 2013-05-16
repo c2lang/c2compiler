@@ -50,7 +50,7 @@
 \033[s      save cursor position
 \033[u      restore cursor position
 \0337       save cursor position and text attributes
-\0338       restore cursor position and text attributes 
+\0338       restore cursor position and text attributes
 */
 
 #define COL_TIME ANSI_CYAN

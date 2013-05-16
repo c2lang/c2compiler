@@ -96,7 +96,7 @@ public:
 
     virtual void print(int indent, StringBuilder& buffer) const;
 
-    Stmt* getCond() const { return SubExprs[COND]; }
+    Expr* getCond() const { return reinterpret_cast<Expr*>(SubExprs[COND]); }
     Stmt* getThen() const { return SubExprs[THEN]; }
     Stmt* getElse() const { return SubExprs[ELSE]; }
 private:

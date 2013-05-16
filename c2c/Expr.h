@@ -205,6 +205,8 @@ public:
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getExprLoc() const { return leftBrace; }
+
+    ExprList& getValues() { return values; }
 private:
     SourceLocation leftBrace;
     SourceLocation rightBrace;
@@ -238,19 +240,19 @@ private:
 };
 
 
-class BinOpExpr : public Expr {
+class BinaryOperator : public Expr {
 public:
     typedef clang::BinaryOperatorKind Opcode;
 
-    BinOpExpr(Expr* lhs, Expr* rhs, Opcode opc, SourceLocation opLoc);
-    virtual ~BinOpExpr();
+    BinaryOperator(Expr* lhs, Expr* rhs, Opcode opc, SourceLocation opLoc);
+    virtual ~BinaryOperator();
     virtual ExprType etype() const { return EXPR_BINOP; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getExprLoc() const { return lhs->getExprLoc(); }
 
-    Expr* getLeft() const { return lhs; }
-    Expr* getRight() const { return rhs; }
+    Expr* getLHS() const { return lhs; }
+    Expr* getRHS() const { return rhs; }
     Opcode getOpcode() const { return opc; }
 private:
     SourceLocation opLoc;
@@ -374,7 +376,7 @@ public:
     virtual void visit(InitListExpr&) {}
     virtual void visit(TypeExpr&) {}
     virtual void visit(DeclExpr&) {}
-    virtual void visit(BinOpExpr&) {}
+    virtual void visit(BinaryOperator&) {}
     virtual void visit(UnaryOpExpr&) {}
     virtual void visit(SizeofExpr&) {}
     virtual void visit(ArraySubscriptExpr&) {}

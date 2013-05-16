@@ -66,7 +66,7 @@ private:
     void analyseStmtExpr(Stmt* stmt);
     Type* analyseExpr(Expr* expr);
     void analyseDeclExpr(Expr* expr);
-    Type* analyseBinOpExpr(Expr* expr);
+    Type* analyseBinaryOperator(Expr* expr);
     Type* analyseUnaryOpExpr(Expr* expr);
     void analyseSizeofExpr(Expr* expr);
     Type* analyseArraySubscript(Expr* expr);

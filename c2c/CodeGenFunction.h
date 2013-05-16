@@ -17,12 +17,14 @@
 #define CODEGEN_FUNCTION_H
 
 #include <llvm/IRBuilder.h>
+#include <llvm/ADT/Twine.h>
 
 namespace llvm {
 class Module;
 class LLVMContext;
 class Value;
 class Function;
+class Twine;
 }
 
 namespace C2 {
@@ -32,8 +34,10 @@ class FunctionDecl;
 class Stmt;
 class CompoundStmt;
 class ReturnStmt;
+class IfStmt;
 class Expr;
 class CallExpr;
+class DeclExpr;
 
 // This class organizes the per-function state that is used
 // while generating LLVM code.
@@ -45,19 +49,98 @@ public:
     llvm::Function* generateProto(const std::string& pkgname);
     void generateBody(llvm::Function* func);
 private:
-    void EmitStmt(const Stmt& S);
+    void EmitStmt(const Stmt* S);
     void EmitCompoundStmt(const CompoundStmt* S);
     void EmitReturnStmt(const ReturnStmt* S);
+    void EmitIfStmt(const IfStmt* S);
 
     llvm::Value* EmitExpr(const Expr* E);
     llvm::Value* EmitCallExpr(const CallExpr* E);
+    void EmitVarDecl(const DeclExpr* E);
+
+    /// EvaluateExprAsBool - Perform the usual unary conversions on the specified
+    /// expression and compare the result against zero, returning an Int1Ty value.
+    llvm::Value *EvaluateExprAsBool(const Expr *E);
+
+    llvm::BasicBlock* createBasicBlock(const llvm::Twine &name = "",
+                                      llvm::Function* parent = 0,
+                                      llvm::BasicBlock* before = 0) {
+#ifdef NDEBUG
+    return llvm::BasicBlock::Create(context, "", parent, before);
+#else
+    return llvm::BasicBlock::Create(context, name, parent, before);
+#endif
+    }
+
+    /// EmitBlock - Emit the given block \arg BB and set it as the insert point,
+    /// adding a fall-through branch from the current insert block if
+    /// necessary. It is legal to call this function even if there is no current
+    /// insertion point.
+    ///
+    /// IsFinished - If true, indicates that the caller has finished emitting
+    /// branches to the given block and does not expect to emit code into it. This
+    /// means the block can be ignored if it is unreachable.
+    void EmitBlock(llvm::BasicBlock *BB, bool IsFinished=false);
+
+    /// EmitBranch - Emit a branch to the specified basic block from the current
+    /// insert block, taking care to avoid creation of branches from dummy
+    /// blocks. It is legal to call this function even if there is no current
+    /// insertion point.
+    ///
+    /// This function clears the current insertion point. The caller should follow
+    /// calls to this function with calls to Emit*Block prior to generation new
+    /// code.
+    void EmitBranch(llvm::BasicBlock *Block);
+
+    /// EmitBranchOnBoolExpr - Emit a branch on a boolean condition (e.g. for an
+    /// if statement) to the specified blocks.  Based on the condition, this might
+    /// try to simplify the codegen of the conditional based on the branch.
+    void EmitBranchOnBoolExpr(const Expr *Cond, llvm::BasicBlock *TrueBlock,
+                            llvm::BasicBlock *FalseBlock);
+
+
+
+  /// An object to manage conditionally-evaluated expressions.
+  class ConditionalEvaluation {
+    llvm::BasicBlock *StartBB;
+
+  public:
+    ConditionalEvaluation(CodeGenFunction &CGF)
+      : StartBB(CGF.Builder.GetInsertBlock()) {}
+
+    void begin(CodeGenFunction &CGF) {
+      assert(CGF.OutermostConditional != this);
+      if (!CGF.OutermostConditional)
+        CGF.OutermostConditional = this;
+    }
+
+    void end(CodeGenFunction &CGF) {
+      assert(CGF.OutermostConditional != 0);
+      if (CGF.OutermostConditional == this)
+        CGF.OutermostConditional = 0;
+    }
+
+    /// Returns a block which will be executed prior to each
+    /// evaluation of the conditional code.
+    llvm::BasicBlock *getStartingBlock() const {
+      return StartBB;
+    }
+  };
+
+
 
     CodeGenModule& CGM;
-    FunctionDecl* Func;
+    FunctionDecl* FuncDecl;
+    llvm::Function* CurFn;      // only set for generateBody() not generateProto()
 
     llvm::LLVMContext& context;
     llvm::Module* module;
-    llvm::IRBuilder<> builder;  // NOTE: do we really need to create a new builder?
+    llvm::IRBuilder<> Builder;  // NOTE: do we really need to create a new builder?
+
+  /// OutermostConditional - Points to the outermost active
+  /// conditional control.  This is used so that we know if a
+  /// temporary should be destroyed conditionally.
+  ConditionalEvaluation *OutermostConditional;
 
     CodeGenFunction(const CodeGenFunction&);
     CodeGenFunction& operator= (const CodeGenFunction&);

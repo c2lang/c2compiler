@@ -240,7 +240,6 @@ void InitListExpr::print(int indent, StringBuilder& buffer) const {
     for (unsigned int i=0; i<values.size(); i++) {
         values[i]->print(indent + INDENT, buffer);
     }
-    
 }
 
 
@@ -280,21 +279,21 @@ void DeclExpr::print(int indent, StringBuilder& buffer) const {
 }
 
 
-BinOpExpr::BinOpExpr(Expr* lhs_, Expr* rhs_, Opcode opc_, SourceLocation opLoc_)
+BinaryOperator::BinaryOperator(Expr* lhs_, Expr* rhs_, Opcode opc_, SourceLocation opLoc_)
     : opLoc(opLoc_)
     , opc(opc_)
     , lhs(lhs_)
     , rhs(rhs_)
 {}
 
-BinOpExpr::~BinOpExpr() {
+BinaryOperator::~BinaryOperator() {
     delete lhs;
     delete rhs;
 }
 
-EXPR_VISITOR_ACCEPT(BinOpExpr);
+EXPR_VISITOR_ACCEPT(BinaryOperator);
 
-void BinOpExpr::print(int indent, StringBuilder& buffer) const {
+void BinaryOperator::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[binop " << BinOpCode2str(opc) << "]\n";
     lhs->print(indent + INDENT, buffer);

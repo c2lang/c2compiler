@@ -25,8 +25,11 @@ namespace C2 {
 class C2Sema;
 class Decl;
 class Expr;
+class DeclExpr;
 class Type;
 class Package;
+class FunctionDecl;
+class Stmt;
 
 // generates LLVM Module from (multiple) ASTs
 class CCodeGenerator {
@@ -47,7 +50,20 @@ private:
     void EmitType(Decl* D);
     void EmitUse(Decl* D);
 
-    void EmitExpr(Expr* E);
+    void EmitStmt(Stmt* S, unsigned indent);
+    void EmitCompoundStmt(Stmt* S, unsigned indent);
+    void EmitIfStmt(Stmt* S, unsigned indent);
+
+    void EmitExpr(Expr* E, StringBuilder& output);
+    void EmitMemberExpr(Expr* E, StringBuilder& output);
+    void EmitDeclExpr(DeclExpr* D, StringBuilder& output, unsigned indent);
+    void EmitCallExpr(Expr* E, StringBuilder& output);
+    void EmitIdentifierExpr(Expr* E, StringBuilder& output);
+
+    // Helpers
+    void EmitFunctionProto(FunctionDecl* F, StringBuilder& output);
+    void EmitTypePreName(Type* T, StringBuilder& output);
+    void EmitTypePostName(Type* T, StringBuilder& output);
 
     const Package* pkg;
 
@@ -63,6 +79,8 @@ private:
 
     StringBuilder cbuf;
     StringBuilder hbuf;
+    std::string cfilename;
+    std::string hfilename;
 
     CCodeGenerator(const CCodeGenerator&);
     CCodeGenerator& operator= (const CCodeGenerator&);

@@ -19,7 +19,7 @@ using namespace C2;
 
 void Recipe::addFile(const std::string& name_) {
     files.push_back(name_);
-} 
+}
 
 void Recipe::addConfig(const std::string& config_) {
     configs.push_back(config_);

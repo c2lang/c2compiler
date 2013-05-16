@@ -46,3 +46,11 @@ const char* Utils::fullName(const std::string& pkgname, const std::string& symna
     return buffer;
 }
 
+void Utils::toCapital(const std::string& input, StringBuilder& output) {
+    for (unsigned i=0; i<input.size(); i++) {
+        char c = input[i];
+        if (c >= 'a' && c <= 'z') c &= ~0x20;   // in ascii a and A differ only 1 bit, etc
+        output << c;
+    }
+}
+

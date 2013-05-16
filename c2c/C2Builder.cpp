@@ -337,7 +337,7 @@ void C2Builder::build() {
             gen.generate();
             u_int64_t t2 = Utils::getCurrentTime();
             if (options.printTiming) printf(COL_TIME"C code generation took %lld usec"ANSI_NORMAL"\n", t2 - t1);
-            //if (options.printIR) cgm.dump();
+            if (options.printC) gen.dump();
             //cgm.write(recipe.name, P->getName());
         }
     }

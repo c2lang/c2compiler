@@ -161,6 +161,8 @@ Type* VarDecl::getCanonicalType() const { return decl->getCanonicalType(); }
 
 void VarDecl::setCanonicalType(Type* t) { decl->setCanonicalType(t); }
 
+Expr* VarDecl::getInitValue() const { return decl->getInitValue(); }
+
 
 TypeDecl::TypeDecl(const std::string& name_, SourceLocation loc_, Type* type_, bool is_public_)
     : Decl(is_public_)

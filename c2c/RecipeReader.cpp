@@ -32,7 +32,7 @@ using namespace C2;
 const char* RECIPE_FILE = "recipe.txt";
 
 RecipeReader::RecipeReader()
-    : current(0) 
+    : current(0)
     , line_nr(1)
     , state(START)
     , token_ptr(0)
@@ -59,7 +59,7 @@ void RecipeReader::findTopDir() {
         int error = stat(RECIPE_FILE, &buf);
         if (error) {
             if (buffer[0] == '/' && buffer[1] == 0) {
-                fprintf(stderr, "cannot find recipe file\n");    
+                fprintf(stderr, "cannot find recipe file\n");
                 exit(-1);
             }
             if (errno != ENOENT) {
@@ -88,7 +88,7 @@ void RecipeReader::readRecipeFile() {
     while (cp < end) {
         char* op = buffer;
         while (*cp != '\n' && cp < end) {
-            *op++ = *cp++; 
+            *op++ = *cp++;
         }
         cp++;
         *op = 0;
@@ -122,7 +122,7 @@ void RecipeReader::handleLine(char* line) {
         break;
     case INSIDE_TARGET:
         {
-            // line should be '<filename>' or 'end' 
+            // line should be '<filename>' or 'end'
             const char* tok = get_token();
             if (strcmp(tok, "end") == 0) {
                 state = START;

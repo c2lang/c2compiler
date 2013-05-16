@@ -8,6 +8,7 @@ public func void getMax() {
             int c;
         }
     }
+    int d = d;  // error
 }
 
 int number = 10;

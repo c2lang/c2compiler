@@ -173,9 +173,7 @@ void FunctionAnalyser::analyseCompoundStmt(Stmt* stmt) {
 void FunctionAnalyser::analyseIfStmt(Stmt* stmt) {
     IfStmt* I = StmtCaster<IfStmt>::getType(stmt);
     assert(I);
-    Stmt* condSt = I->getCond();
-    Expr* cond = StmtCaster<Expr>::getType(condSt);
-    assert(cond);
+    Expr* cond = I->getCond();
     analyseExpr(cond);
     EnterScope(Scope::DeclScope);
     analyseStmt(I->getThen(), true);
@@ -378,7 +376,7 @@ C2::Type* FunctionAnalyser::analyseExpr(Expr* expr) {
         analyseDeclExpr(expr);
         break;
     case EXPR_BINOP:
-        return analyseBinOpExpr(expr);
+        return analyseBinaryOperator(expr);
     case EXPR_UNARYOP:
         return analyseUnaryOpExpr(expr);
     case EXPR_SIZEOF:
@@ -406,7 +404,6 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     decl->setCanonicalType(canonicalType);
 
     // check name
-    // TODO pkg prefixes
     ScopeResult res = curScope->findSymbol(decl->getName());
     if (res.decl) {
         // TODO check other attributes?
@@ -415,24 +412,23 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
         Diags.Report(res.decl->getLocation(), diag::note_previous_definition);
         return;
     }
-    curScope->addDecl(new VarDecl(decl, false, true));
-
     // check initial value
     Expr* initialValue = decl->getInitValue();
     if (initialValue) {
         // TODO check initial value type
         analyseExpr(initialValue);
     }
+    curScope->addDecl(new VarDecl(decl, false, true));
 }
 
-Type* FunctionAnalyser::analyseBinOpExpr(Expr* expr) {
-    BinOpExpr* binop = ExprCaster<BinOpExpr>::getType(expr);
+Type* FunctionAnalyser::analyseBinaryOperator(Expr* expr) {
+    BinaryOperator* binop = ExprCaster<BinaryOperator>::getType(expr);
     assert(binop);
-    Type* TLeft = analyseExpr(binop->getLeft());
-    Type* TRight = analyseExpr(binop->getRight());
+    Type* TLeft = analyseExpr(binop->getLHS());
+    Type* TRight = analyseExpr(binop->getRHS());
     // assigning to 'A' from incompatible type 'B'
     // diag::err_typecheck_convert_incompatible
-    
+
     // NOTE: only handle 'a = b' now, not other binary operations
     if (binop->getOpcode() == BO_Assign) {
         return checkAssignmentOperands(TLeft, TRight);

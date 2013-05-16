@@ -61,7 +61,7 @@ static void printArray(StringBuilder& buffer, Expr* expr) {
     }
 }
 
-static void printQualifier(StringBuilder& buffer, unsigned int flags) {
+void Type::printQualifier(StringBuilder& buffer, unsigned int flags) {
     if (flags & TYPE_LOCAL) buffer << "local ";
     if (flags & TYPE_VOLATILE) buffer << "volatile ";
     if (flags & TYPE_CONST) buffer << "const ";
@@ -156,6 +156,29 @@ Type::~Type() {
     case QUALIFIER:
         break;
     }
+}
+
+unsigned Type::getWidth() const {
+    switch (kind) {
+    case BUILTIN:
+        return width;
+    case USER:
+        assert(0 && "Should not happen");
+        break;
+    case STRUCT:
+    case UNION:
+    case ENUM:
+        assert(0 && "TODO");
+        break;
+    case FUNC:
+        return 4;
+    case POINTER:
+        return 4;
+    case ARRAY:
+    case QUALIFIER:
+        return refType->getWidth();
+    }
+    return 0;
 }
 
 void Type::setRefType(Type* t) {
@@ -318,7 +341,7 @@ void Type::printFull(StringBuilder& buffer, int indent) const {
         buffer << '}';
         break;
     case ENUM:
-    { 
+    {
         buffer.indent(indent);
         buffer << "enum " << " {\n";
         EnumValue* val = enumValues;
@@ -460,7 +483,7 @@ void Type::print(int indent, StringBuilder& buffer, RecursionType recursive) con
         userType->print(indent + INDENT, buffer);
         if (refType && recursive != RECURSE_NONE) {
             buffer.indent(indent + INDENT);
-            buffer << ANSI_CYAN << "resolved to:" << ANSI_NORMAL << '\n'; 
+            buffer << ANSI_CYAN << "resolved to:" << ANSI_NORMAL << '\n';
             refType->print(indent + INDENT, buffer, recursive==RECURSE_ONCE ? RECURSE_NONE : recursive);
         }
         break;
@@ -580,19 +603,19 @@ static C2::Type type_bool(Type::BUILTIN);
 static C2::Type type_void(Type::BUILTIN);
 
 BuiltinType::BuiltinType() {
-    type_u8.setBuiltinName(TYPE_U8, "u8", "unsigned char");
-    type_u16.setBuiltinName(TYPE_U16, "u16", "unsigned short");
-    type_u32.setBuiltinName(TYPE_U32,"u32", "unsigned int");
-    type_s8.setBuiltinName(TYPE_S8,"s8", "char");
-    type_s16.setBuiltinName(TYPE_S16,"s16", "short");
-    type_s32.setBuiltinName(TYPE_S32, "s32", "int");
-    type_int.setBuiltinName(TYPE_INT,"int", "int");
-    type_char.setBuiltinName(TYPE_CHAR, "char", "char");
-    type_string.setBuiltinName(TYPE_STRING, "string", "const char*");
-    type_f32.setBuiltinName(TYPE_F32,"f32", "float");
-    type_f64.setBuiltinName(TYPE_F64, "f64", "double");
-    type_bool.setBuiltinName(TYPE_BOOL, "bool", "int");
-    type_void.setBuiltinName(TYPE_VOID, "void", "void");
+    type_u8.setBuiltinName(TYPE_U8, "u8", "unsigned char", 1);
+    type_u16.setBuiltinName(TYPE_U16, "u16", "unsigned short", 2);
+    type_u32.setBuiltinName(TYPE_U32,"u32", "unsigned int", 4);
+    type_s8.setBuiltinName(TYPE_S8,"s8", "char", 1);
+    type_s16.setBuiltinName(TYPE_S16,"s16", "short", 2);
+    type_s32.setBuiltinName(TYPE_S32, "s32", "int", 4);
+    type_int.setBuiltinName(TYPE_INT,"int", "int", 4);
+    type_char.setBuiltinName(TYPE_CHAR, "char", "char", 1);
+    type_string.setBuiltinName(TYPE_STRING, "string", "const char*", 4);
+    type_f32.setBuiltinName(TYPE_F32,"f32", "float", 4);
+    type_f64.setBuiltinName(TYPE_F64, "f64", "double", 8);
+    type_bool.setBuiltinName(TYPE_BOOL, "bool", "int", 1);
+    type_void.setBuiltinName(TYPE_VOID, "void", "void", 0);
 }
 
 C2::Type* BuiltinType::get(C2Type t) {

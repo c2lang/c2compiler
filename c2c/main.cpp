@@ -35,12 +35,13 @@ static void usage(const char* name) {
     fprintf(stderr, "Usage: %s <options> <target>\n", name);
     fprintf(stderr, "Options:\n");
     fprintf(stderr, "   -a            - print AST\n");
-    fprintf(stderr, "   -aa           - print AST (after analysis)\n");
+    fprintf(stderr, "   -A            - print AST (after analysis)\n");
     fprintf(stderr, "   -c            - generate C code\n");
+    fprintf(stderr, "   -C            - generate + print C-code\n");
     fprintf(stderr, "   -f <file>     - compile single file without recipe\n");
     fprintf(stderr, "   -h            - show this help\n");
     fprintf(stderr, "   -i            - generate LLVM IR code\n");
-    fprintf(stderr, "   -ii           - generate + print LLVM IR code\n");
+    fprintf(stderr, "   -I            - generate + print LLVM IR code\n");
     fprintf(stderr, "   -l            - list targets\n");
     fprintf(stderr, "   -s            - print symbols\n");
     fprintf(stderr, "   -t            - print timing\n");
@@ -54,12 +55,17 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
             opts.printAST = true;
             continue;
         }
-        if (strcmp("-aa", arg) == 0) {
+        if (strcmp("-A", arg) == 0) {
             opts.printASTAfter = true;
             continue;
         }
         if (strcmp("-c", arg) == 0) {
             opts.generateC = true;
+            continue;
+        }
+        if (strcmp("-C", arg) == 0) {
+            opts.generateC = true;
+            opts.printC = true;
             continue;
         }
         if (strcmp("-f", arg) == 0) {
@@ -73,7 +79,7 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
             opts.generateIR = true;
             continue;
         }
-        if (strcmp("-ii", arg) == 0) {
+        if (strcmp("-I", arg) == 0) {
             opts.generateIR = true;
             opts.printIR = true;
             continue;

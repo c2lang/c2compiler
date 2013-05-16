@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#ifndef STRINGBUILDER_H 
+#ifndef STRINGBUILDER_H
 #define STRINGBUILDER_H
 
 #include <string>
