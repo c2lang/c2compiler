@@ -224,7 +224,6 @@ void CCodeGenerator::EmitDeclExpr(DeclExpr* E, StringBuilder& output, unsigned i
         output << " = ";
         EmitExpr(E->getInitValue(), output);
     }
-    if (E->isStmt()) output << ";\n";
 }
 
 void CCodeGenerator::EmitCallExpr(Expr* E, StringBuilder& output) {
