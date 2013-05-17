@@ -221,6 +221,7 @@ void CCodeGenerator::EmitMemberExpr(Expr* E, StringBuilder& output) {
 }
 
 void CCodeGenerator::EmitDeclExpr(DeclExpr* E, StringBuilder& output, unsigned indent) {
+    output.indent(indent);
     EmitTypePreName(E->getType(), output);
     output << ' ';
     output << E->getName();
@@ -302,14 +303,16 @@ void CCodeGenerator::EmitVariable(Decl* D) {
 }
 
 void CCodeGenerator::EmitType(Decl* D) {
-#if 0
-    buffer << "typedef ";
-    type->generateC_PreName(buffer);
-    buffer << ' ';
-    Utils::addName(pkgName, name, buffer);
-    type->generateC_PostName(buffer);
-    buffer << ";\n";
-#endif
+    TypeDecl* T = DeclCaster<TypeDecl>::getType(D);
+    StringBuilder* out = &cbuf;
+    if (D->isPublic()) out = &hbuf;
+    *out << "typedef ";
+    EmitTypePreName(T->getType(), *out);
+    EmitTypePostName(T->getType(), *out);
+    *out << ' ';
+    Utils::addName(pkg->getName(), T->getName(), *out);
+    *out << ";\n";
+    *out << '\n';
 }
 
 void CCodeGenerator::EmitUse(Decl* D) {
@@ -415,21 +418,18 @@ void CCodeGenerator::EmitTypePreName(Type* T, StringBuilder& output) {
         output << T->getCName();
         break;
     case Type::STRUCT:
-#if 0
-        buffer << "struct {\n";
-        if (members) {
+        output << "struct {\n";
+        if (T->getMembers()) {
+            MemberList* members = T->getMembers();
             for (unsigned i=0; i<members->size(); i++) {
                 DeclExpr* mem = (*members)[i];
-                buffer.indent(INDENT);
-                mem->getType()->generateC_PreName(buffer);
-                buffer << ' ' << mem->getName();
-                mem->getType()->generateC_PostName(buffer);
-                buffer << ";\n";
+                EmitDeclExpr(mem, output, INDENT);
+                output << ";\n";
             }
         }
-        buffer << "}";
-#endif
-        break;
+
+        output << "}";
+        return;
     case Type::UNION:
 #if 0
         buffer << "union {\n";

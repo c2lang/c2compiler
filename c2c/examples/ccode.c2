@@ -1,0 +1,17 @@
+package test;
+
+public func void main() {
+    func1();
+    return;
+}
+
+func void func1() {
+    int a = 'a';
+    int[2] aa = { 1, 2}
+    u16 b;
+    {
+        int c;
+    }
+    return;
+}
+

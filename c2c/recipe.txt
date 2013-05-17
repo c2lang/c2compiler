@@ -113,3 +113,6 @@ target issue
     examples/issue_type2.c2
 end
 
+target ccode
+    examples/ccode.c2
+end
