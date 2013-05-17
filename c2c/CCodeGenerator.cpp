@@ -387,12 +387,17 @@ void CCodeGenerator::EmitStmt(Stmt* S, unsigned indent) {
         EmitIfStmt(S, indent);
         return;
     case STMT_WHILE:
+        EmitWhileStmt(S, indent);
+        return;
     case STMT_DO:
     case STMT_FOR:
     case STMT_SWITCH:
     case STMT_CASE:
     case STMT_DEFAULT:
     case STMT_BREAK:
+        cbuf.indent(indent);
+        cbuf << "break;\n";
+        return;
     case STMT_CONTINUE:
     case STMT_LABEL:
     case STMT_GOTO:
@@ -428,6 +433,24 @@ void CCodeGenerator::EmitIfStmt(Stmt* S, unsigned indent) {
         cbuf.indent(indent);
         cbuf << "else\n";
         EmitStmt(I->getElse(), indent);
+    }
+}
+
+void CCodeGenerator::EmitWhileStmt(Stmt* S, unsigned indent) {
+    WhileStmt* W = StmtCaster<WhileStmt>::getType(S);
+    cbuf.indent(indent);
+    cbuf << "while (";
+    // TEMP, assume Expr
+    Expr* E = StmtCaster<Expr>::getType(W->getCond());
+    assert(E);
+    EmitExpr(E, cbuf);
+    cbuf << ") ";
+    Stmt* Body = W->getBody();
+    if (Body->stype() == STMT_COMPOUND) {
+        CompoundStmt* C = StmtCaster<CompoundStmt>::getType(Body);
+        EmitCompoundStmt(C, indent, false);
+    } else {
+        EmitStmt(W->getBody(), 0);
     }
 }
 
@@ -587,14 +610,6 @@ void ParenExpr::generateC(int indent, StringBuilder& buffer) {
 
 
 #if 0
-void WhileStmt::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << "while (";
-    Cond->generateC(0, buffer);
-    buffer << ")\n";
-    Then->generateC(indent, buffer);
-}
-
 void DoStmt::generateC(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
     buffer << "do\n";
@@ -656,11 +671,6 @@ void DefaultStmt::generateC(int indent, StringBuilder& buffer) {
     for (unsigned int i=0; i<Stmts.size(); i++) {
         Stmts[i]->generateC(indent + INDENT, buffer);
     }
-}
-
-void BreakStmt::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << "break;\n";
 }
 
 void ContinueStmt::generateC(int indent, StringBuilder& buffer) {

@@ -22,6 +22,10 @@ func void func1() {
     if (a++ == 10 + 2 * 8) {
         stdio.printf("hello world\n");
     }
+    while (a >= 0) {
+        break;
+    }
+    while (a--) a += 10;
     return;
 }
 

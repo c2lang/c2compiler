@@ -54,6 +54,7 @@ private:
     void EmitStmt(Stmt* S, unsigned indent);
     void EmitCompoundStmt(CompoundStmt* C, unsigned indent, bool startOnNewLine);
     void EmitIfStmt(Stmt* S, unsigned indent);
+    void EmitWhileStmt(Stmt* S, unsigned indent);
 
     void EmitExpr(Expr* E, StringBuilder& output);
     void EmitBinaryOperator(Expr* E, StringBuilder& output);
