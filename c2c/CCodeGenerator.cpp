@@ -390,10 +390,13 @@ void CCodeGenerator::EmitStmt(Stmt* S, unsigned indent) {
         EmitWhileStmt(S, indent);
         return;
     case STMT_DO:
+        EmitDoStmt(S, indent);
+        return;
     case STMT_FOR:
     case STMT_SWITCH:
     case STMT_CASE:
     case STMT_DEFAULT:
+        break;
     case STMT_BREAK:
         cbuf.indent(indent);
         cbuf << "break;\n";
@@ -465,8 +468,29 @@ void CCodeGenerator::EmitWhileStmt(Stmt* S, unsigned indent) {
         CompoundStmt* C = StmtCaster<CompoundStmt>::getType(Body);
         EmitCompoundStmt(C, indent, false);
     } else {
-        EmitStmt(W->getBody(), 0);
+        EmitStmt(Body, 0);
     }
+}
+
+void CCodeGenerator::EmitDoStmt(Stmt* S, unsigned indent) {
+    DoStmt* D = StmtCaster<DoStmt>::getType(S);
+    cbuf.indent(indent);
+    cbuf << "do ";
+    Stmt* Body = D->getBody();
+    if (Body->stype() == STMT_COMPOUND) {
+        CompoundStmt* C = StmtCaster<CompoundStmt>::getType(Body);
+        EmitCompoundStmt(C, indent, false);
+    } else {
+        EmitStmt(Body, 0);
+    }
+    cbuf.indent(indent);
+    // TODO add after '}'
+    cbuf << "while (";
+    // TEMP, assume Expr
+    Expr* E = StmtCaster<Expr>::getType(D->getCond());
+    assert(E);
+    EmitExpr(E, cbuf);
+    cbuf << ");\n";
 }
 
 void CCodeGenerator::EmitFunctionProto(FunctionDecl* F, StringBuilder& output) {
@@ -560,13 +584,6 @@ void BoolLiteralExpr::generateC(int indent, StringBuilder& buffer) {
     buffer << (int)value;
 }
 
-void CharLiteralExpr::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << '\'';
-    buffer << (char)value;
-    buffer << '\'';
-}
-
 void IdentifierExpr::generateC(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
     if (pkg) {
@@ -574,30 +591,6 @@ void IdentifierExpr::generateC(int indent, StringBuilder& buffer) {
     } else {
         buffer << name;
     }
-}
-
-void DeclExpr::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    type->generateC_PreName(buffer);
-    buffer << ' ' << name;
-    type->generateC_PostName(buffer);
-    if (initValue) {
-        buffer << " = ";
-        initValue->generateC(0, buffer);
-    }
-    if (isStmt()) buffer << ";\n";
-}
-
-void DeclExpr::generateC(StringBuilder& buffer, const std::string& pkgName) {
-    type->generateC_PreName(buffer);
-    buffer << ' ';
-    Utils::addName(pkgName, name, buffer);
-    type->generateC_PostName(buffer);
-    if (initValue) {
-        buffer << " = ";
-        initValue->generateC(0, buffer);
-    }
-    if (isStmt()) buffer << ";\n";
 }
 
 void SizeofExpr::generateC(int indent, StringBuilder& buffer) {
@@ -625,16 +618,6 @@ void ParenExpr::generateC(int indent, StringBuilder& buffer) {
 
 
 #if 0
-void DoStmt::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << "do\n";
-    Then->generateC(indent, buffer);
-    buffer.indent(indent);
-    buffer << "while (";
-    Cond->generateC(0, buffer);
-    buffer << ");\n";
-}
-
 void ForStmt::generateC(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
     buffer << "for (";

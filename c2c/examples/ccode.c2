@@ -12,6 +12,13 @@ public func void main(int argc, char*[] argv) {
     return;
 }
 
+public func int func2() {
+    do {
+        stdio.puts("voila");
+    } while(1);
+    return 0;
+}
+
 func void func1() {
     int a = 'a';
     int[2] aa = { 1, 2}
