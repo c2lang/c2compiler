@@ -378,7 +378,7 @@ C2::Type* FunctionAnalyser::analyseExpr(Expr* expr) {
     case EXPR_BINOP:
         return analyseBinaryOperator(expr);
     case EXPR_UNARYOP:
-        return analyseUnaryOpExpr(expr);
+        return analyseUnaryOperator(expr);
     case EXPR_SIZEOF:
         analyseSizeofExpr(expr);
         break;
@@ -436,8 +436,8 @@ Type* FunctionAnalyser::analyseBinaryOperator(Expr* expr) {
     return 0;
 }
 
-Type* FunctionAnalyser::analyseUnaryOpExpr(Expr* expr) {
-    UnaryOpExpr* unaryop = ExprCaster<UnaryOpExpr>::getType(expr);
+Type* FunctionAnalyser::analyseUnaryOperator(Expr* expr) {
+    UnaryOperator* unaryop = ExprCaster<UnaryOperator>::getType(expr);
     assert(unaryop);
     Type* LType = analyseExpr(unaryop->getExpr());
     if (!LType) return 0;

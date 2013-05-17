@@ -19,7 +19,7 @@ func void func1() {
     {
         int c;
     }
-    if (a == 10) {
+    if (a++ == 10 + 2 * 8) {
         stdio.printf("hello world\n");
     }
     return;

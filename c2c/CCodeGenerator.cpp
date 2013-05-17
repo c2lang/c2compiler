@@ -192,6 +192,8 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
         EmitBinaryOperator(E, output);
         return;
     case EXPR_UNARYOP:
+        EmitUnaryOperator(E, output);
+        return;
     case EXPR_SIZEOF:
     case EXPR_ARRAYSUBSCRIPT:
         assert(0 && "TODO");
@@ -210,6 +212,32 @@ void CCodeGenerator::EmitBinaryOperator(Expr* E, StringBuilder& output) {
     EmitExpr(B->getLHS(), output);
     output << ' ' << BinaryOperator::OpCode2str(B->getOpcode()) << ' ';
     EmitExpr(B->getRHS(), output);
+}
+
+void CCodeGenerator::EmitUnaryOperator(Expr* E, StringBuilder& output) {
+    UnaryOperator* U = ExprCaster<UnaryOperator>::getType(E);
+
+    switch (U->getOpcode()) {
+    case UO_PostInc:
+    case UO_PostDec:
+        EmitExpr(U->getExpr(), output);
+        output << UnaryOperator::OpCode2str(U->getOpcode());
+        break;
+    case UO_PreInc:
+    case UO_PreDec:
+    case UO_AddrOf:
+    case UO_Deref:
+    case UO_Plus:
+    case UO_Minus:
+    case UO_Not:
+    case UO_LNot:
+        //output.indent(indent);
+        output << UnaryOperator::OpCode2str(U->getOpcode());
+        EmitExpr(U->getExpr(), output);
+        break;
+    default:
+        assert(0);
+    }
 }
 
 void CCodeGenerator::EmitMemberExpr(Expr* E, StringBuilder& output) {
@@ -532,30 +560,6 @@ void DeclExpr::generateC(StringBuilder& buffer, const std::string& pkgName) {
         initValue->generateC(0, buffer);
     }
     if (isStmt()) buffer << ";\n";
-}
-
-void UnaryOpExpr::generateC(int indent, StringBuilder& buffer) {
-    switch (opc) {
-    case UO_PostInc:
-    case UO_PostDec:
-        val->generateC(indent, buffer);
-        buffer << UnaryOpCode2str(opc);
-        break;
-    case UO_PreInc:
-    case UO_PreDec:
-    case UO_AddrOf:
-    case UO_Deref:
-    case UO_Plus:
-    case UO_Minus:
-    case UO_Not:
-    case UO_LNot:
-        buffer.indent(indent);
-        buffer << UnaryOpCode2str(opc);
-        val->generateC(0, buffer);
-        break;
-    default:
-        assert(0);
-    }
 }
 
 void SizeofExpr::generateC(int indent, StringBuilder& buffer) {

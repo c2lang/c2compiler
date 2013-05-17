@@ -263,12 +263,13 @@ private:
 };
 
 
-class UnaryOpExpr : public Expr {
+class UnaryOperator : public Expr {
 public:
     typedef clang::UnaryOperatorKind Opcode;
+    static const char* OpCode2str(clang::UnaryOperatorKind opc);
 
-    UnaryOpExpr(SourceLocation opLoc_, Opcode opc, Expr* val_);
-    virtual ~UnaryOpExpr();
+    UnaryOperator(SourceLocation opLoc_, Opcode opc, Expr* val_);
+    virtual ~UnaryOperator();
     virtual ExprType etype() const { return EXPR_UNARYOP; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer) const;
@@ -378,7 +379,7 @@ public:
     virtual void visit(TypeExpr&) {}
     virtual void visit(DeclExpr&) {}
     virtual void visit(BinaryOperator&) {}
-    virtual void visit(UnaryOpExpr&) {}
+    virtual void visit(UnaryOperator&) {}
     virtual void visit(SizeofExpr&) {}
     virtual void visit(ArraySubscriptExpr&) {}
     virtual void visit(MemberExpr&) {}

@@ -34,25 +34,6 @@ static int deleteCount;
 #endif
 
 
-static const char* UnaryOpCode2str(clang::UnaryOperatorKind opc) {
-    switch (opc) {
-    case UO_PostInc:    return "++";
-    case UO_PostDec:    return "--";
-    case UO_PreInc:     return "++";
-    case UO_PreDec:     return "--";
-    case UO_AddrOf:     return "&";
-    case UO_Deref:      return "*";
-    case UO_Plus:       return "+";
-    case UO_Minus:      return "-";
-    case UO_Not:        return "~";
-    case UO_LNot:       return "!";
-    default:
-        assert(0);
-        break;
-    }
-}
-
-
 Expr::Expr()
     : isStatement(false)
 {
@@ -301,21 +282,39 @@ void BinaryOperator::print(int indent, StringBuilder& buffer) const {
 }
 
 
-UnaryOpExpr::UnaryOpExpr(SourceLocation opLoc_, Opcode opc_, Expr* val_)
+UnaryOperator::UnaryOperator(SourceLocation opLoc_, Opcode opc_, Expr* val_)
     : opLoc(opLoc_)
     , opc(opc_)
     , val(val_)
 {}
 
-UnaryOpExpr::~UnaryOpExpr() {
+UnaryOperator::~UnaryOperator() {
     delete val;
 }
 
-EXPR_VISITOR_ACCEPT(UnaryOpExpr);
+EXPR_VISITOR_ACCEPT(UnaryOperator);
 
-void UnaryOpExpr::print(int indent, StringBuilder& buffer) const {
+const char* UnaryOperator::OpCode2str(clang::UnaryOperatorKind opc) {
+    switch (opc) {
+    case UO_PostInc:    return "++";
+    case UO_PostDec:    return "--";
+    case UO_PreInc:     return "++";
+    case UO_PreDec:     return "--";
+    case UO_AddrOf:     return "&";
+    case UO_Deref:      return "*";
+    case UO_Plus:       return "+";
+    case UO_Minus:      return "-";
+    case UO_Not:        return "~";
+    case UO_LNot:       return "!";
+    default:
+        assert(0);
+        break;
+    }
+}
+
+void UnaryOperator::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
-    buffer << "[unaryop " << UnaryOpCode2str(opc) << "]\n";
+    buffer << "[unaryop " << OpCode2str(opc) << "]\n";
     val->print(indent + INDENT, buffer);
 }
 

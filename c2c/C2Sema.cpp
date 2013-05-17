@@ -573,7 +573,7 @@ C2::ExprResult C2Sema::ActOnPostfixUnaryOp(SourceLocation OpLoc, tok::TokenKind 
     if (Result.isInvalid()) return ExprError();
     Input = Result.take();
 #endif
-    return ExprResult(new UnaryOpExpr(OpLoc, Opc, Input));
+    return ExprResult(new UnaryOperator(OpLoc, Opc, Input));
 }
 
 C2::ExprResult C2Sema::ActOnUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Expr* Input) {
@@ -584,7 +584,7 @@ C2::ExprResult C2Sema::ActOnUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, E
     std::cerr << ANSI_NORMAL"\n";
 #endif
     UnaryOperatorKind Opc = ConvertTokenKindToUnaryOpcode(Kind);
-    return ExprResult(new UnaryOpExpr(OpLoc, Opc, Input));
+    return ExprResult(new UnaryOperator(OpLoc, Opc, Input));
 }
 
 void C2Sema::visitAST(ASTVisitor& visitor) {
