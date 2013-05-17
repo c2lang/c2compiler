@@ -243,6 +243,7 @@ private:
 class BinaryOperator : public Expr {
 public:
     typedef clang::BinaryOperatorKind Opcode;
+    static const char* OpCode2str(clang::BinaryOperatorKind opc);
 
     BinaryOperator(Expr* lhs, Expr* rhs, Opcode opc, SourceLocation opLoc);
     virtual ~BinaryOperator();

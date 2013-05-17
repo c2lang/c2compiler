@@ -189,6 +189,8 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
             return;
         }
     case EXPR_BINOP:
+        EmitBinaryOperator(E, output);
+        return;
     case EXPR_UNARYOP:
     case EXPR_SIZEOF:
     case EXPR_ARRAYSUBSCRIPT:
@@ -201,6 +203,13 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
         assert(0 && "TODO");
         break;
     }
+}
+
+void CCodeGenerator::EmitBinaryOperator(Expr* E, StringBuilder& output) {
+    BinaryOperator* B = ExprCaster<BinaryOperator>::getType(E);
+    EmitExpr(B->getLHS(), output);
+    output << ' ' << BinaryOperator::OpCode2str(B->getOpcode()) << ' ';
+    EmitExpr(B->getRHS(), output);
 }
 
 void CCodeGenerator::EmitMemberExpr(Expr* E, StringBuilder& output) {
@@ -522,13 +531,6 @@ void DeclExpr::generateC(StringBuilder& buffer, const std::string& pkgName) {
         buffer << " = ";
         initValue->generateC(0, buffer);
     }
-    if (isStmt()) buffer << ";\n";
-}
-
-void BinaryOperator::generateC(int indent, StringBuilder& buffer) {
-    lhs->generateC(indent, buffer);
-    buffer << ' ' << BinOpCode2str(opc) << ' ';
-    rhs->generateC(0, buffer);
     if (isStmt()) buffer << ";\n";
 }
 

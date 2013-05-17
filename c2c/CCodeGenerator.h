@@ -56,6 +56,7 @@ private:
     void EmitIfStmt(Stmt* S, unsigned indent);
 
     void EmitExpr(Expr* E, StringBuilder& output);
+    void EmitBinaryOperator(Expr* E, StringBuilder& output);
     void EmitMemberExpr(Expr* E, StringBuilder& output);
     void EmitDeclExpr(DeclExpr* D, StringBuilder& output, unsigned indent);
     void EmitCallExpr(Expr* E, StringBuilder& output);

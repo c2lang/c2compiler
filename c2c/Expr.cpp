@@ -33,43 +33,6 @@ static int creationCount;
 static int deleteCount;
 #endif
 
-// TODO doesn't clang have a function for this?
-static const char* BinOpCode2str(clang::BinaryOperatorKind opc) {
-    switch (opc) {
-        case BO_PtrMemD: return ".";
-        case BO_PtrMemI: return "->";
-        case BO_Mul: return "*";
-        case BO_Div: return "/";
-        case BO_Rem: return "%";
-        case BO_Add: return "+";
-        case BO_Sub: return "-";
-        case BO_Shl: return "<<";
-        case BO_Shr: return ">>";
-        case BO_LT: return "<";
-        case BO_GT: return ">";
-        case BO_LE: return "<=";
-        case BO_GE: return ">=";
-        case BO_EQ: return "==";
-        case BO_NE: return "!=";
-        case BO_And: return "&";
-        case BO_Xor: return "^";
-        case BO_Or: return "|";
-        case BO_LAnd: return "&&";
-        case BO_LOr: return "||";
-        case BO_Assign: return "=";
-        case BO_MulAssign: return "*=";
-        case BO_DivAssign: return "/=";
-        case BO_RemAssign: return "%=";
-        case BO_AddAssign: return "+=";
-        case BO_SubAssign: return "-+";
-        case BO_ShlAssign: return "<<=";
-        case BO_ShrAssign: return ">>=";
-        case BO_AndAssign: return "&=";
-        case BO_XorAssign: return "^=";
-        case BO_OrAssign: return "|=";
-        case BO_Comma: return ",";
-    }
-}
 
 static const char* UnaryOpCode2str(clang::UnaryOperatorKind opc) {
     switch (opc) {
@@ -293,9 +256,46 @@ BinaryOperator::~BinaryOperator() {
 
 EXPR_VISITOR_ACCEPT(BinaryOperator);
 
+const char* BinaryOperator::OpCode2str(clang::BinaryOperatorKind opc) {
+    switch (opc) {
+        case BO_PtrMemD: return ".";
+        case BO_PtrMemI: return "->";
+        case BO_Mul: return "*";
+        case BO_Div: return "/";
+        case BO_Rem: return "%";
+        case BO_Add: return "+";
+        case BO_Sub: return "-";
+        case BO_Shl: return "<<";
+        case BO_Shr: return ">>";
+        case BO_LT: return "<";
+        case BO_GT: return ">";
+        case BO_LE: return "<=";
+        case BO_GE: return ">=";
+        case BO_EQ: return "==";
+        case BO_NE: return "!=";
+        case BO_And: return "&";
+        case BO_Xor: return "^";
+        case BO_Or: return "|";
+        case BO_LAnd: return "&&";
+        case BO_LOr: return "||";
+        case BO_Assign: return "=";
+        case BO_MulAssign: return "*=";
+        case BO_DivAssign: return "/=";
+        case BO_RemAssign: return "%=";
+        case BO_AddAssign: return "+=";
+        case BO_SubAssign: return "-+";
+        case BO_ShlAssign: return "<<=";
+        case BO_ShrAssign: return ">>=";
+        case BO_AndAssign: return "&=";
+        case BO_XorAssign: return "^=";
+        case BO_OrAssign: return "|=";
+        case BO_Comma: return ",";
+    }
+}
+
 void BinaryOperator::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
-    buffer << "[binop " << BinOpCode2str(opc) << "]\n";
+    buffer << "[binop " << OpCode2str(opc) << "]\n";
     lhs->print(indent + INDENT, buffer);
     rhs->print(indent + INDENT, buffer);
 }

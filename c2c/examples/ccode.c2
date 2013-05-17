@@ -1,6 +1,13 @@
 package test;
 
-public func void main() {
+use stdio;
+
+type Point struct {
+    int x;
+    u16 y;
+}
+
+public func void main(int argc, char*[] argv) {
     func1();
     return;
 }
@@ -11,6 +18,9 @@ func void func1() {
     u16 b;
     {
         int c;
+    }
+    if (a == 10) {
+        stdio.printf("hello world\n");
     }
     return;
 }
