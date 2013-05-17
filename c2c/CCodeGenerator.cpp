@@ -399,9 +399,24 @@ void CCodeGenerator::EmitStmt(Stmt* S, unsigned indent) {
         cbuf << "break;\n";
         return;
     case STMT_CONTINUE:
+        cbuf.indent(indent);
+        cbuf << "continue;\n";
+        return;
     case STMT_LABEL:
+        {
+            LabelStmt* L = StmtCaster<LabelStmt>::getType(S);
+            cbuf << L->getName();
+            cbuf << ":\n";
+            EmitStmt(L->getSubStmt(), indent);
+            return;
+        }
     case STMT_GOTO:
-        break;
+        {
+            GotoStmt* G = StmtCaster<GotoStmt>::getType(S);
+            cbuf.indent(indent);
+            cbuf << "goto " << G->getName() << ";\n";
+            return;
+        }
     case STMT_COMPOUND:
         {
             CompoundStmt* C = StmtCaster<CompoundStmt>::getType(S);
@@ -671,21 +686,6 @@ void DefaultStmt::generateC(int indent, StringBuilder& buffer) {
     for (unsigned int i=0; i<Stmts.size(); i++) {
         Stmts[i]->generateC(indent + INDENT, buffer);
     }
-}
-
-void ContinueStmt::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << "continue;\n";
-}
-
-void LabelStmt::generateC(int indent, StringBuilder& buffer) {
-    buffer << name << ":\n";
-    subStmt->generateC(indent, buffer);
-}
-
-void GotoStmt::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << "goto " << name << ";\n";
 }
 #endif
 

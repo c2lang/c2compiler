@@ -21,10 +21,13 @@ func void func1() {
     }
     if (a++ == 10 + 2 * 8) {
         stdio.printf("hello world\n");
+        goto out;
     }
     while (a >= 0) {
+        continue;
         break;
     }
+out:
     while (a--) a += 10;
     return;
 }

@@ -259,6 +259,7 @@ public:
 
     virtual void print(int indent, StringBuilder& buffer) const;
     Stmt* getSubStmt() const { return subStmt; }
+    const std::string& getName() const { return name; }
 private:
     std::string name;
     SourceLocation Loc;
@@ -274,6 +275,7 @@ public:
     virtual void acceptS(StmtVisitor& v) const;
 
     virtual void print(int indent, StringBuilder& buffer) const;
+    const std::string& getName() const { return name; }
 private:
     std::string name;
     SourceLocation GotoLoc;
