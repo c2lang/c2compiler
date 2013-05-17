@@ -154,9 +154,14 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
             return;
         }
     case EXPR_BOOL:
-    case EXPR_CHARLITERAL:
         assert(0 && "TODO");
         return;
+    case EXPR_CHARLITERAL:
+        {
+            CharLiteralExpr* C = ExprCaster<CharLiteralExpr>::getType(E);
+            output << '\'' << (char)C->value << '\'';
+            return;
+        }
     case EXPR_CALL:
         EmitCallExpr(E, output);
         return;
@@ -264,8 +269,8 @@ void CCodeGenerator::EmitFunction(Decl* D) {
         cbuf << "static ";
     }
     EmitFunctionProto(F, cbuf);
-    cbuf << "\n";
-    EmitStmt(F->getBody(), 0);
+    cbuf << ' ';
+    EmitCompoundStmt(StmtCaster<CompoundStmt>::getType(F->getBody()), 0, false);
     cbuf << '\n';
 }
 
@@ -353,14 +358,16 @@ void CCodeGenerator::EmitStmt(Stmt* S, unsigned indent) {
     case STMT_GOTO:
         break;
     case STMT_COMPOUND:
-        EmitCompoundStmt(S, indent);
-        return;
+        {
+            CompoundStmt* C = StmtCaster<CompoundStmt>::getType(S);
+            EmitCompoundStmt(C, indent, true);
+            return;
+        }
     }
 }
 
-void CCodeGenerator::EmitCompoundStmt(Stmt* S, unsigned indent) {
-    CompoundStmt* C = StmtCaster<CompoundStmt>::getType(S);
-    cbuf.indent(indent);
+void CCodeGenerator::EmitCompoundStmt(CompoundStmt* C, unsigned indent, bool startOnNewLine) {
+    if (startOnNewLine) cbuf.indent(indent);
     cbuf << "{\n";
     const StmtList& Stmts = C->getStmts();
     for (unsigned int i=0; i<Stmts.size(); i++) {

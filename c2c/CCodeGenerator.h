@@ -30,6 +30,7 @@ class Type;
 class Package;
 class FunctionDecl;
 class Stmt;
+class CompoundStmt;
 
 // generates LLVM Module from (multiple) ASTs
 class CCodeGenerator {
@@ -51,7 +52,7 @@ private:
     void EmitUse(Decl* D);
 
     void EmitStmt(Stmt* S, unsigned indent);
-    void EmitCompoundStmt(Stmt* S, unsigned indent);
+    void EmitCompoundStmt(CompoundStmt* C, unsigned indent, bool startOnNewLine);
     void EmitIfStmt(Stmt* S, unsigned indent);
 
     void EmitExpr(Expr* E, StringBuilder& output);
