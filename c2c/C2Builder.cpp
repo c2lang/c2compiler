@@ -319,6 +319,7 @@ void C2Builder::build() {
 
     // (optional) phase 3a: C code generation
     if (options.generateC) {
+//BB: add different loop over all files and addEntry() on single CCodeGenerator
         for (PkgsIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
             Package* P = iter->second;
             u_int64_t t1 = Utils::getCurrentTime();
@@ -327,7 +328,7 @@ void C2Builder::build() {
             if (P->getName() == "stdio") continue;
             // TEMP for now filter out 'c2' as well
             if (P->getName() == "c2") continue;
-            CCodeGenerator gen(P);
+            CCodeGenerator gen(P->getName());
             for (unsigned int i=0; i<files.size(); i++) {
                 FileInfo* info = files[i];
                 if (info->sema.pkgName == P->getName()) {

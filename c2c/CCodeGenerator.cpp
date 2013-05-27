@@ -37,11 +37,12 @@
 using namespace C2;
 using namespace llvm;
 
-CCodeGenerator::CCodeGenerator(const Package* pkg_)
-    : pkg(pkg_)
+CCodeGenerator::CCodeGenerator(const std::string& filename_)
+    : filename(filename_)
+    , curpkg(0)
 {
-    hfilename = pkg->getName() + ".h";
-    cfilename = pkg->getName() + ".c";
+    hfilename = filename + ".h";
+    cfilename = filename + ".c";
 }
 
 CCodeGenerator::~CCodeGenerator() {
@@ -53,10 +54,10 @@ void CCodeGenerator::addEntry(const std::string& filename, C2Sema& sema) {
 
 void CCodeGenerator::generate() {
     hbuf << "#ifndef ";
-    Utils::toCapital(pkg->getName(), hbuf);
+    Utils::toCapital(filename, hbuf);
     hbuf << "_H\n";
     hbuf << "#define ";
-    Utils::toCapital(pkg->getName(), hbuf);
+    Utils::toCapital(filename, hbuf);
     hbuf << "_H\n";
     hbuf << '\n';
 
@@ -65,6 +66,7 @@ void CCodeGenerator::generate() {
 
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
         C2Sema* sema = iter->sema;
+        curpkg = &sema->getPkgName();
         for (unsigned int i=0; i<sema->getNumDecls(); i++) {
             Decl* D = sema->getDecl(i);
             switch (D->dtype()) {
@@ -85,6 +87,7 @@ void CCodeGenerator::generate() {
                 break;
             }
         }
+        curpkg = 0;
     }
 }
 
@@ -319,7 +322,7 @@ void CCodeGenerator::EmitVariable(Decl* D) {
         hbuf << "extern ";
         EmitTypePreName(V->getType(), hbuf);
         hbuf << ' ';
-        Utils::addName(pkg->getName(), V->getName(), hbuf);
+        Utils::addName(*curpkg, V->getName(), hbuf);
         EmitTypePostName(V->getType(), hbuf);
         // TODO add space if needed (on StringBuilder)
         hbuf << ";\n";
@@ -329,7 +332,7 @@ void CCodeGenerator::EmitVariable(Decl* D) {
     }
     EmitTypePreName(V->getType(), cbuf);
     cbuf << ' ';
-    Utils::addName(pkg->getName(), V->getName(), cbuf);
+    Utils::addName(*curpkg, V->getName(), cbuf);
     EmitTypePostName(V->getType(), cbuf);
     if (V->getInitValue()) {
         cbuf << " = ";
@@ -347,7 +350,7 @@ void CCodeGenerator::EmitType(Decl* D) {
     EmitTypePreName(T->getType(), *out);
     EmitTypePostName(T->getType(), *out);
     *out << ' ';
-    Utils::addName(pkg->getName(), T->getName(), *out);
+    Utils::addName(*curpkg, T->getName(), *out);
     *out << ";\n";
     *out << '\n';
 }
@@ -497,7 +500,7 @@ void CCodeGenerator::EmitFunctionProto(FunctionDecl* F, StringBuilder& output) {
     EmitTypePreName(F->getReturnType(), output);
     EmitTypePostName(F->getReturnType(), output);
     output << ' ';
-    Utils::addName(pkg->getName(), F->getName(), output);
+    Utils::addName(*curpkg, F->getName(), output);
     output << '(';
     int count = F->numArgs();
     if (F->isVariadic()) count++;
