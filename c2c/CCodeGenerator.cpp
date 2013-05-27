@@ -202,7 +202,12 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
             return;
         }
     case EXPR_TYPE:
-        break;
+        {
+            TypeExpr* T = ExprCaster<TypeExpr>::getType(E);
+            EmitTypePreName(T->getType(), output);
+            EmitTypePostName(T->getType(), output);
+            return;
+        }
     case EXPR_DECL:
         {
             DeclExpr* D = ExprCaster<DeclExpr>::getType(E);
@@ -216,9 +221,22 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
         EmitUnaryOperator(E, output);
         return;
     case EXPR_SIZEOF:
+        {
+            SizeofExpr* S = ExprCaster<SizeofExpr>::getType(E);
+            output << "sizeof(";
+            EmitExpr(S->getExpr(), output);
+            output << ')';
+            return;
+        }
     case EXPR_ARRAYSUBSCRIPT:
-        assert(0 && "TODO");
-        break;
+        {
+            ArraySubscriptExpr* A = ExprCaster<ArraySubscriptExpr>::getType(E);
+            EmitExpr(A->getBase(), output);
+            output << '[';
+            EmitExpr(A->getIndex(), output);
+            output << ']';
+            return;
+        }
     case EXPR_MEMBER:
         EmitMemberExpr(E, output);
         return;
@@ -587,7 +605,9 @@ void CCodeGenerator::EmitTypePreName(Type* T, StringBuilder& output) {
         assert(0 && "TODO");
         break;
     case Type::USER:
-        assert(0 && "TODO");
+        EmitExpr(T->getUserType(), output);
+        return;
+        //assert(0 && "TODO");
         //userType->generateC(0, buffer);
         break;
     case Type::POINTER:
@@ -630,31 +650,13 @@ void IdentifierExpr::generateC(int indent, StringBuilder& buffer) {
     }
 }
 
-void SizeofExpr::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << "sizeof(";
-    expr->generateC(0, buffer);
-    buffer << ")";
-    if (isStmt()) buffer << ";\n";
-}
-
-void ArraySubscriptExpr::generateC(int indent, StringBuilder& buffer) {
-    base->generateC(indent, buffer);
-    buffer << '[';
-    idx->generateC(0, buffer);
-    buffer << ']';
-}
-
 void ParenExpr::generateC(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
     buffer << '(';
     Val->generateC(0, buffer);
     buffer << ')';
 }
-#endif
 
-
-#if 0
 void ForStmt::generateC(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
     buffer << "for (";
