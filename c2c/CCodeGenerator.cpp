@@ -62,6 +62,22 @@ void CCodeGenerator::generate() {
     hbuf << "_H\n";
     hbuf << '\n';
 
+    // generate all includes
+    for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
+        C2Sema* sema = iter->sema;
+        curpkg = &sema->getPkgName();
+        for (unsigned int i=0; i<sema->getNumDecls(); i++) {
+            Decl* D = sema->getDecl(i);
+            switch (D->dtype()) {
+            case DECL_USE:
+                EmitUse(D);
+                break;
+            default:
+                break;
+            }
+        }
+        curpkg = 0;
+    }
     cbuf << "#include \"" << hfilename << "\"\n";
     cbuf << '\n';
 
@@ -84,7 +100,6 @@ void CCodeGenerator::generate() {
                 // TODO
                 break;
             case DECL_USE:
-                EmitUse(D);
                 break;
             }
         }
@@ -368,7 +383,10 @@ void CCodeGenerator::EmitUse(Decl* D) {
     // Temp hardcoded for stdio
     if (D->getName() == "stdio") {
         cbuf << "#include <stdio.h>\n";
-    } else {
+        return;
+    }
+
+    if (mode == MULTI_FILE) {
         cbuf << "#include \"" << D->getName() << ".h\"\n";
     }
 }

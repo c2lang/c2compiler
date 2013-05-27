@@ -1,0 +1,6 @@
+package ccode3;
+
+public func int myfunction() {
+    return 20;
+}
+

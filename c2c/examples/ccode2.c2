@@ -1,5 +1,7 @@
 package ccode2;
 
+use ccode3;
+
 public func int myfunction() {
     return 10;
 }
