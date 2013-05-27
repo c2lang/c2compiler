@@ -450,6 +450,7 @@ void CCodeGenerator::EmitStmt(Stmt* S, unsigned indent) {
     case STMT_SWITCH:
     case STMT_CASE:
     case STMT_DEFAULT:
+        assert(0 && "TODO");
         break;
     case STMT_BREAK:
         cbuf.indent(indent);
