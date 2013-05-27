@@ -37,10 +37,11 @@
 using namespace C2;
 using namespace llvm;
 
-CCodeGenerator::CCodeGenerator(const std::string& filename_, Mode mode_)
+CCodeGenerator::CCodeGenerator(const std::string& filename_, Mode mode_, const Pkgs& pkgs_)
     : filename(filename_)
     , curpkg(0)
     , mode(mode_)
+    , pkgs(pkgs_)
 {
     hfilename = filename + ".h";
     cfilename = filename + ".c";
@@ -380,14 +381,19 @@ void CCodeGenerator::EmitType(Decl* D) {
 }
 
 void CCodeGenerator::EmitUse(Decl* D) {
-    // Temp hardcoded for stdio
-    if (D->getName() == "stdio") {
-        cbuf << "#include <stdio.h>\n";
-        return;
-    }
+    typedef Pkgs::const_iterator PkgsConstIter;
+    PkgsConstIter iter = pkgs.find(D->getName());
+    assert(iter != pkgs.end());
+    const Package* P = iter->second;
 
-    if (mode == MULTI_FILE) {
-        cbuf << "#include \"" << D->getName() << ".h\"\n";
+    if (mode == MULTI_FILE || P->isPlainC()) {
+        cbuf << "#include ";
+        if (P->isPlainC()) cbuf << '<';
+        else cbuf << '"';
+        cbuf << D->getName() << ".h";
+        if (P->isPlainC()) cbuf << '>';
+        else cbuf << '\'';
+        cbuf << '\n';
     }
 }
 

@@ -31,6 +31,7 @@ public:
     Decl* findSymbol(const std::string& name) const;
     const std::string& getName() const { return name; }
     const std::string& getCName() const;
+    bool isPlainC() const { return isCLib; }
 
     void dump() const;
 private:

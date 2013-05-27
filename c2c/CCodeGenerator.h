@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 #include "StringBuilder.h"
+#include "Package.h"
 
 namespace C2 {
 
@@ -27,7 +28,6 @@ class Decl;
 class Expr;
 class DeclExpr;
 class Type;
-class Package;
 class FunctionDecl;
 class Stmt;
 class CompoundStmt;
@@ -36,7 +36,7 @@ class CompoundStmt;
 class CCodeGenerator {
 public:
     enum Mode { MULTI_FILE, SINGLE_FILE };
-    CCodeGenerator(const std::string& filename_, Mode mode_);
+    CCodeGenerator(const std::string& filename_, Mode mode_, const Pkgs& pkgs_);
     ~CCodeGenerator();
     void addEntry(const std::string& filename, C2Sema& sema);
 
@@ -74,6 +74,8 @@ private:
     const std::string& filename;
     const std::string* curpkg;
     Mode mode;
+
+    const Pkgs& pkgs;
 
     struct Entry {
         Entry(const std::string& f, C2Sema& s)
