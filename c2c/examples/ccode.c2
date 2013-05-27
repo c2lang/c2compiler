@@ -1,21 +1,25 @@
 package ccode1;
 
 use stdio;
+use ccode2;
 
 type Point struct {
     int x;
     u16 y;
 }
 
-public func void main(int argc, char*[] argv) {
+public func int main(int argc, char*[] argv) {
     func1();
-    return;
+    func2();
+    return ccode2.myfunction();
 }
 
 public func int func2() {
+    int a = 3;
     do {
+        a--;
         stdio.puts("voila");
-    } while(1);
+    } while(a > 0);
     return 0;
 }
 
@@ -29,13 +33,13 @@ func void func1() {
     if (a++ == 10 + 2 * 8) {
         stdio.printf("hello world\n");
         goto out;
+    } else {
+        stdio.printf("FooBarFaa!\n");
     }
     while (a >= 0) {
-        continue;
         break;
     }
 out:
-    while (a--) a += 10;
     return;
 }
 

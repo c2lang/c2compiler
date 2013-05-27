@@ -365,12 +365,12 @@ void CCodeGenerator::EmitType(Decl* D) {
 }
 
 void CCodeGenerator::EmitUse(Decl* D) {
-#if 0
     // Temp hardcoded for stdio
-    if (name == "stdio") {
-        buffer << "#include <stdio.h>\n";
+    if (D->getName() == "stdio") {
+        cbuf << "#include <stdio.h>\n";
+    } else {
+        cbuf << "#include \"" << D->getName() << ".h\"\n";
     }
-#endif
 }
 
 void CCodeGenerator::EmitStmt(Stmt* S, unsigned indent) {
@@ -506,7 +506,7 @@ void CCodeGenerator::EmitDoStmt(Stmt* S, unsigned indent) {
 }
 
 void CCodeGenerator::EmitFunctionProto(FunctionDecl* F, StringBuilder& output) {
-    if (mode == SINGLE_FILE) output << "static ";
+    if (mode == SINGLE_FILE && F->getName() != "main") output << "static ";
     EmitTypePreName(F->getReturnType(), output);
     EmitTypePostName(F->getReturnType(), output);
     output << ' ';
