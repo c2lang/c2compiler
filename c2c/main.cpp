@@ -43,6 +43,7 @@ static void usage(const char* name) {
     fprintf(stderr, "   -i            - generate LLVM IR code\n");
     fprintf(stderr, "   -I            - generate + print LLVM IR code\n");
     fprintf(stderr, "   -l            - list targets\n");
+    fprintf(stderr, "   -M            - generate monolithic module (either IR or C-code)\n");
     fprintf(stderr, "   -s            - print symbols\n");
     fprintf(stderr, "   -t            - print timing\n");
     exit(-1);
@@ -86,6 +87,10 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
         }
         if (strcmp("-l", arg) == 0) {
             print_targets = true;
+            continue;
+        }
+        if (strcmp("-M", arg) == 0) {
+            opts.single_module = true;
             continue;
         }
         if (strcmp("-s", arg) == 0) {

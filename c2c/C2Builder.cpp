@@ -319,27 +319,40 @@ void C2Builder::build() {
 
     // (optional) phase 3a: C code generation
     if (options.generateC) {
-//BB: add different loop over all files and addEntry() on single CCodeGenerator
-        for (PkgsIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
-            Package* P = iter->second;
+        if (options.single_module) {
             u_int64_t t1 = Utils::getCurrentTime();
-            // TODO add flag internal/external and filter that
-            // TEMP for now just filter out stdio (as only external package)
-            if (P->getName() == "stdio") continue;
-            // TEMP for now filter out 'c2' as well
-            if (P->getName() == "c2") continue;
-            CCodeGenerator gen(P->getName());
+            std::string filename = "test";
+            CCodeGenerator gen(filename, CCodeGenerator::SINGLE_FILE);
             for (unsigned int i=0; i<files.size(); i++) {
                 FileInfo* info = files[i];
-                if (info->sema.pkgName == P->getName()) {
-                    gen.addEntry(info->filename, info->sema);
-                }
+                gen.addEntry(info->filename, info->sema);
             }
             gen.generate();
             u_int64_t t2 = Utils::getCurrentTime();
             if (options.printTiming) printf(COL_TIME"C code generation took %lld usec"ANSI_NORMAL"\n", t2 - t1);
             if (options.printC) gen.dump();
-            //cgm.write(recipe.name, P->getName());
+        } else {
+            for (PkgsIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
+                Package* P = iter->second;
+                u_int64_t t1 = Utils::getCurrentTime();
+                // TODO add flag internal/external and filter that
+                // TEMP for now just filter out stdio (as only external package)
+                if (P->getName() == "stdio") continue;
+                // TEMP for now filter out 'c2' as well
+                if (P->getName() == "c2") continue;
+                CCodeGenerator gen(P->getName(), CCodeGenerator::MULTI_FILE);
+                for (unsigned int i=0; i<files.size(); i++) {
+                    FileInfo* info = files[i];
+                    if (info->sema.pkgName == P->getName()) {
+                        gen.addEntry(info->filename, info->sema);
+                    }
+                }
+                gen.generate();
+                u_int64_t t2 = Utils::getCurrentTime();
+                if (options.printTiming) printf(COL_TIME"C code generation took %lld usec"ANSI_NORMAL"\n", t2 - t1);
+                if (options.printC) gen.dump();
+                //cgm.write(recipe.name, P->getName());
+            }
         }
     }
 

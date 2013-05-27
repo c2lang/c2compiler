@@ -35,8 +35,8 @@ class CompoundStmt;
 // generates LLVM Module from (multiple) ASTs
 class CCodeGenerator {
 public:
-    //BB: add argument to choose type: file_per_package or single_file
-    CCodeGenerator(const std::string& filename_);
+    enum Mode { MULTI_FILE, SINGLE_FILE };
+    CCodeGenerator(const std::string& filename_, Mode mode_);
     ~CCodeGenerator();
     void addEntry(const std::string& filename, C2Sema& sema);
 
@@ -73,6 +73,7 @@ private:
 
     const std::string& filename;
     const std::string* curpkg;
+    Mode mode;
 
     struct Entry {
         Entry(const std::string& f, C2Sema& s)

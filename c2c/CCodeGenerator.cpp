@@ -37,9 +37,10 @@
 using namespace C2;
 using namespace llvm;
 
-CCodeGenerator::CCodeGenerator(const std::string& filename_)
+CCodeGenerator::CCodeGenerator(const std::string& filename_, Mode mode_)
     : filename(filename_)
     , curpkg(0)
+    , mode(mode_)
 {
     hfilename = filename + ".h";
     cfilename = filename + ".c";
@@ -89,6 +90,7 @@ void CCodeGenerator::generate() {
         }
         curpkg = 0;
     }
+    hbuf << "#endif\n";
 }
 
 const char* CCodeGenerator::ConvertType(C2::Type* type) {
@@ -303,12 +305,19 @@ void CCodeGenerator::write(const std::string& target, const std::string& name) {
 
 void CCodeGenerator::EmitFunction(Decl* D) {
     FunctionDecl* F = DeclCaster<FunctionDecl>::getType(D);
-    if (F->isPublic()) {
+    if (mode == SINGLE_FILE) {
+        // emit all function protos as forward declarations in header
         EmitFunctionProto(F, hbuf);
         hbuf << ";\n";
     } else {
-        cbuf << "static ";
+        if (F->isPublic()) {
+            EmitFunctionProto(F, hbuf);
+            hbuf << ";\n";
+        } else {
+            cbuf << "static ";
+        }
     }
+
     EmitFunctionProto(F, cbuf);
     cbuf << ' ';
     EmitCompoundStmt(StmtCaster<CompoundStmt>::getType(F->getBody()), 0, false);
@@ -497,6 +506,7 @@ void CCodeGenerator::EmitDoStmt(Stmt* S, unsigned indent) {
 }
 
 void CCodeGenerator::EmitFunctionProto(FunctionDecl* F, StringBuilder& output) {
+    if (mode == SINGLE_FILE) output << "static ";
     EmitTypePreName(F->getReturnType(), output);
     EmitTypePostName(F->getReturnType(), output);
     output << ' ';

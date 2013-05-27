@@ -1,0 +1,6 @@
+package ccode2;
+
+public func int myfunction() {
+    return 10;
+}
+
