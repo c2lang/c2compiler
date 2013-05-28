@@ -672,25 +672,20 @@ void CCodeGenerator::EmitTypePreName(Type* T, StringBuilder& output) {
                 output << ";\n";
             }
         }
-
-        output << "}";
+        output << '}';
         return;
     case Type::UNION:
-#if 0
-        buffer << "union {\n";
-        if (members) {
+        output << "union {\n";
+        if (T->getMembers()) {
+            MemberList* members = T->getMembers();
             for (unsigned i=0; i<members->size(); i++) {
                 DeclExpr* mem = (*members)[i];
-                buffer.indent(INDENT);
-                mem->getType()->generateC_PreName(buffer);
-                buffer << ' ' << mem->getName();
-                mem->getType()->generateC_PostName(buffer);
-                buffer << ";\n";
+                EmitDeclExpr(mem, output, INDENT);
+                output << ";\n";
             }
         }
-        buffer << "}";
-#endif
-        break;
+        output << '}';
+        return;
     case Type::ENUM:
     case Type::FUNC:
         assert(0 && "TODO");
