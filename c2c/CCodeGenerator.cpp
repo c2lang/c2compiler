@@ -241,8 +241,13 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
         EmitMemberExpr(E, output);
         return;
     case EXPR_PAREN:
-        assert(0 && "TODO");
-        break;
+        {
+            ParenExpr* P = ExprCaster<ParenExpr>::getType(E);
+            cbuf << '(';
+            EmitExpr(P->getExpr(), cbuf);
+            cbuf << ')';
+            return;
+        }
     }
 }
 
@@ -735,11 +740,5 @@ void IdentifierExpr::generateC(int indent, StringBuilder& buffer) {
     }
 }
 
-void ParenExpr::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << '(';
-    Val->generateC(0, buffer);
-    buffer << ')';
-}
 #endif
 
