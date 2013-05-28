@@ -292,12 +292,10 @@ void CCodeGenerator::EmitMemberExpr(Expr* E, StringBuilder& output) {
         EmitIdentifierExpr(RHS, output);
     } else {
         // A.B where A is decl of struct/union type
-#if 0
-        Base->generateC(indent, buffer);
-        if (isArrow) buffer << "->";
-        else buffer << '.';
-        Member->generateC(0, buffer);
-#endif
+        EmitExpr(M->getBase(), cbuf);
+        if (M->isArrowOp()) cbuf << "->";
+        else cbuf << '.';
+        cbuf << M->getMember()->getName();
     }
 }
 
@@ -730,15 +728,5 @@ void BoolLiteralExpr::generateC(int indent, StringBuilder& buffer) {
     buffer.indent(indent);
     buffer << (int)value;
 }
-
-void IdentifierExpr::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    if (pkg) {
-        Utils::addName(pkg->getCName(), name, buffer);
-    } else {
-        buffer << name;
-    }
-}
-
 #endif
 
