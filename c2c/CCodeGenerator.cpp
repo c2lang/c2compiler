@@ -342,11 +342,11 @@ void CCodeGenerator::EmitFunction(Decl* D) {
     if (mode == SINGLE_FILE) {
         // emit all function protos as forward declarations in header
         EmitFunctionProto(F, hbuf);
-        hbuf << ";\n";
+        hbuf << ";\n\n";
     } else {
         if (F->isPublic()) {
             EmitFunctionProto(F, hbuf);
-            hbuf << ";\n";
+            hbuf << ";\n\n";
         } else {
             cbuf << "static ";
         }
@@ -360,7 +360,7 @@ void CCodeGenerator::EmitFunction(Decl* D) {
 
 void CCodeGenerator::EmitVariable(Decl* D) {
     VarDecl* V = DeclCaster<VarDecl>::getType(D);
-    if (V->isPublic()) {
+    if (V->isPublic() && mode != SINGLE_FILE) {
         // TODO type
         hbuf << "extern ";
         EmitTypePreName(V->getType(), hbuf);

@@ -1,5 +1,8 @@
 package ccode3;
 
+public int MAX_COUNT = 3;
+int PRIV_COUNT = 4;
+
 public func int myfunction() {
     return sizeof(int);
 }
