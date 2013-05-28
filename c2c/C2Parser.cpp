@@ -344,37 +344,35 @@ void C2Parser::ParseEnumType(IdentifierInfo* id, SourceLocation& idLoc, bool is_
     if (ExpectAndConsume(tok::l_brace, diag::err_expected_lbrace)) return;
 
     // Syntax: enum_block
-    while (1) {
-        // Q: handle eof here?
-        if (Tok.is(tok::r_brace)) break;
+    while (Tok.is(tok::identifier)) {
+        IdentifierInfo* Ident = Tok.getIdentifierInfo();
+        SourceLocation IdentLoc = ConsumeToken();
 
-        ParseEnumMember();
-        if (Diags.hasErrorOccurred()) return;
-        if (Tok.is(tok::comma)) {
+        ExprResult Value;
+        if (Tok.is(tok::equal)) {
             ConsumeToken();
-        } else {
-            break;
+            Value = ParseConstantExpression();
+            if (Value.isInvalid()) {
+                SkipUntil(tok::comma, tok::r_brace, true, true);
+            }
         }
+
+#if 0
+    // Add value to EnumDecl
+        Decl* EnumValue = Actions.ActOnEnumConstant(EnumDecl,
+            IdentLoc, Ident, attrs.getList(), AssignedVal.release());
+#endif
+        if (Tok.isNot(tok::comma)) break;
+        ConsumeToken();
     }
     if (ExpectAndConsume(tok::r_brace, diag::err_expected_rbrace)) return;
-    //ConsumeOptionalSemi();
-}
 
-/*
-   Syntax:
-    enum_member ::= IDENTIFIER.
-    enum_member ::= IDENTIFIER EQUALS constant_expression.
-*/
-void C2Parser::ParseEnumMember() {
-    LOG_FUNC
-    if (ExpectIdentifier()) return;
-    IdentifierInfo* id = Tok.getIdentifierInfo();
-    SourceLocation idLoc = ConsumeToken();
-    if (Tok.is(tok::equal)) {
-        ConsumeToken();
-        ParseConstantExpression();
-        if (Diags.hasErrorOccurred()) return;
-    }
+#if 0
+  Actions.ActOnEnumBody(StartLoc, T.getOpenLocation(), T.getCloseLocation(),
+                        EnumDecl, EnumConstantDecls.data(),
+                        EnumConstantDecls.size(), getCurScope(),
+                        attrs.getList());
+#endif
 }
 
 /*
