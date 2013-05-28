@@ -175,8 +175,11 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
             return;
         }
     case EXPR_BOOL:
-        assert(0 && "TODO");
-        return;
+        {
+            BoolLiteralExpr* B = ExprCaster<BoolLiteralExpr>::getType(E);
+            cbuf << (int)B->value;
+            return;
+        }
     case EXPR_CHARLITERAL:
         {
             CharLiteralExpr* C = ExprCaster<CharLiteralExpr>::getType(E);
@@ -722,11 +725,4 @@ void CCodeGenerator::EmitTypePostName(Type* T, StringBuilder& output) {
         output << ']';
     }
 }
-
-#if 0
-void BoolLiteralExpr::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << (int)value;
-}
-#endif
 

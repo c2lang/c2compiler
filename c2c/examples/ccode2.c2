@@ -3,6 +3,8 @@ package ccode2;
 use ccode3;
 
 public func int myfunction() {
+    bool test = false;
+    test = true;
     return ((10));
 }
 
