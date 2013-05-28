@@ -29,5 +29,10 @@ public func void main() {
     for (int i=0; i<count; i++) {
         IO.printf("[%2d] %16s\n", i, elements[i].name);
     }
+    Element e;
+    e.name;
+    Element* pe;
+    pe->name;
+
 }
 
