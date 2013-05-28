@@ -602,27 +602,25 @@ void CCodeGenerator::EmitSwitchStmt(Stmt* S, unsigned indent) {
         case STMT_CASE:
             {
                 CaseStmt* C = StmtCaster<CaseStmt>::getType(Case);
-#if 0
-    buffer.indent(indent);
-    buffer << "case ";
-    Cond->generateC(0, buffer);
-    buffer << ":\n";
-    for (unsigned int i=0; i<Stmts.size(); i++) {
-        Stmts[i]->generateC(indent + INDENT, buffer);
-    }
-#endif
+                cbuf.indent(indent + INDENT);
+                cbuf << "case ";
+                EmitExpr(C->getCond(), cbuf);
+                cbuf << ":\n";
+                const StmtList& Stmts = C->getStmts();
+                for (unsigned int i=0; i<Stmts.size(); i++) {
+                    EmitStmt(Stmts[i], indent + INDENT + INDENT);
+                }
                 break;
             }
         case STMT_DEFAULT:
             {
                 DefaultStmt* D = StmtCaster<DefaultStmt>::getType(Case);
-#if 0
-    buffer.indent(indent);
-    buffer << "default:\n";
-    for (unsigned int i=0; i<Stmts.size(); i++) {
-        Stmts[i]->generateC(indent + INDENT, buffer);
-    }
-#endif
+                cbuf.indent(indent + INDENT);
+                cbuf << "default:\n";
+                const StmtList& Stmts = D->getStmts();
+                for (unsigned int i=0; i<Stmts.size(); i++) {
+                    EmitStmt(Stmts[i], indent + INDENT + INDENT);
+                }
                 break;
             }
         default:
@@ -743,6 +741,5 @@ void ParenExpr::generateC(int indent, StringBuilder& buffer) {
     Val->generateC(0, buffer);
     buffer << ')';
 }
-
 #endif
 
