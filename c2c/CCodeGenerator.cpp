@@ -450,9 +450,11 @@ void CCodeGenerator::EmitStmt(Stmt* S, unsigned indent) {
         EmitForStmt(S, indent);
         return;
     case STMT_SWITCH:
+        EmitSwitchStmt(S, indent);
+        return;
     case STMT_CASE:
     case STMT_DEFAULT:
-        assert(0 && "TODO");
+        assert(0 && "Should already be generated");
         break;
     case STMT_BREAK:
         cbuf.indent(indent);
@@ -586,6 +588,52 @@ void CCodeGenerator::EmitForStmt(Stmt* S, unsigned indent) {
     }
 }
 
+void CCodeGenerator::EmitSwitchStmt(Stmt* S, unsigned indent) {
+    SwitchStmt* SW = StmtCaster<SwitchStmt>::getType(S);
+    cbuf.indent(indent);
+    cbuf << "switch (";
+    EmitExpr(SW->getCond(), cbuf);
+    cbuf << ") {\n";
+
+    const StmtList& Cases = SW->getCases();
+    for (unsigned int i=0; i<Cases.size(); i++) {
+        Stmt* Case = Cases[i];
+        switch (Case->stype()) {
+        case STMT_CASE:
+            {
+                CaseStmt* C = StmtCaster<CaseStmt>::getType(Case);
+#if 0
+    buffer.indent(indent);
+    buffer << "case ";
+    Cond->generateC(0, buffer);
+    buffer << ":\n";
+    for (unsigned int i=0; i<Stmts.size(); i++) {
+        Stmts[i]->generateC(indent + INDENT, buffer);
+    }
+#endif
+                break;
+            }
+        case STMT_DEFAULT:
+            {
+                DefaultStmt* D = StmtCaster<DefaultStmt>::getType(Case);
+#if 0
+    buffer.indent(indent);
+    buffer << "default:\n";
+    for (unsigned int i=0; i<Stmts.size(); i++) {
+        Stmts[i]->generateC(indent + INDENT, buffer);
+    }
+#endif
+                break;
+            }
+        default:
+            assert(0);
+        }
+    }
+
+    cbuf.indent(indent);
+    cbuf << "}\n";
+}
+
 void CCodeGenerator::EmitFunctionProto(FunctionDecl* F, StringBuilder& output) {
     if (mode == SINGLE_FILE && F->getName() != "main") output << "static ";
     EmitTypePreName(F->getReturnType(), output);
@@ -696,34 +744,5 @@ void ParenExpr::generateC(int indent, StringBuilder& buffer) {
     buffer << ')';
 }
 
-void SwitchStmt::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << "switch(";
-    Cond->generateC(0, buffer);
-    buffer << ") {\n";
-    for (unsigned int i=0; i<Cases.size(); i++) {
-        Cases[i]->generateC(indent + INDENT, buffer);
-    }
-    buffer.indent(indent);
-    buffer << "}\n";
-}
-
-void CaseStmt::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << "case ";
-    Cond->generateC(0, buffer);
-    buffer << ":\n";
-    for (unsigned int i=0; i<Stmts.size(); i++) {
-        Stmts[i]->generateC(indent + INDENT, buffer);
-    }
-}
-
-void DefaultStmt::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << "default:\n";
-    for (unsigned int i=0; i<Stmts.size(); i++) {
-        Stmts[i]->generateC(indent + INDENT, buffer);
-    }
-}
 #endif
 

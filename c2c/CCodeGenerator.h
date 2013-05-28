@@ -58,6 +58,7 @@ private:
     void EmitWhileStmt(Stmt* S, unsigned indent);
     void EmitDoStmt(Stmt* S, unsigned indent);
     void EmitForStmt(Stmt* S, unsigned indent);
+    void EmitSwitchStmt(Stmt* S, unsigned indent);
 
     void EmitExpr(Expr* E, StringBuilder& output);
     void EmitBinaryOperator(Expr* E, StringBuilder& output);
