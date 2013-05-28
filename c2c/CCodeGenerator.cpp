@@ -447,6 +447,8 @@ void CCodeGenerator::EmitStmt(Stmt* S, unsigned indent) {
         EmitDoStmt(S, indent);
         return;
     case STMT_FOR:
+        EmitForStmt(S, indent);
+        return;
     case STMT_SWITCH:
     case STMT_CASE:
     case STMT_DEFAULT:
@@ -546,6 +548,42 @@ void CCodeGenerator::EmitDoStmt(Stmt* S, unsigned indent) {
     assert(E);
     EmitExpr(E, cbuf);
     cbuf << ");\n";
+}
+
+void CCodeGenerator::EmitForStmt(Stmt* S, unsigned indent) {
+    ForStmt* F = StmtCaster<ForStmt>::getType(S);
+    cbuf.indent(indent);
+    cbuf << "for (";
+    Stmt* Init = F->getInit();
+    if (Init) {
+        // assume Expr
+        Expr* E = StmtCaster<Expr>::getType(Init);
+        assert(E);
+        EmitExpr(E, cbuf);
+    }
+    cbuf << ';';
+
+    Expr* Cond = F->getCond();
+    if (Cond) {
+        cbuf << ' ';
+        EmitExpr(Cond, cbuf);
+    }
+    cbuf << ';';
+
+    Expr* Incr = F->getIncr();
+    if (Incr) {
+        cbuf << ' ';
+        EmitExpr(Incr, cbuf);
+    }
+
+    cbuf << ") ";
+    Stmt* Body = F->getBody();
+    if (Body->stype() == STMT_COMPOUND) {
+        CompoundStmt* C = StmtCaster<CompoundStmt>::getType(Body);
+        EmitCompoundStmt(C, indent, false);
+    } else {
+        EmitStmt(Body, 0);
+    }
 }
 
 void CCodeGenerator::EmitFunctionProto(FunctionDecl* F, StringBuilder& output) {
@@ -656,29 +694,6 @@ void ParenExpr::generateC(int indent, StringBuilder& buffer) {
     buffer << '(';
     Val->generateC(0, buffer);
     buffer << ')';
-}
-
-void ForStmt::generateC(int indent, StringBuilder& buffer) {
-    buffer.indent(indent);
-    buffer << "for (";
-    if (Init) {
-        Init->generateC(0, buffer);
-        buffer.strip('\n');
-        buffer.strip(';');
-    }
-    buffer << ';';
-    if (Cond) {
-        buffer << ' ';
-        Cond->generateC(0, buffer);
-    }
-    buffer << ';';
-    if (Incr) {
-        buffer << ' ';
-        Incr->generateC(0, buffer);
-    }
-    buffer << ")\n";
-    // TODO fix indentation
-    Body->generateC(indent, buffer);
 }
 
 void SwitchStmt::generateC(int indent, StringBuilder& buffer) {
