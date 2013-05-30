@@ -116,7 +116,7 @@ private:
     // type def
     ExprResult ParseStructBlock(bool is_struct);
     ExprResult ParseStructMember();
-    ExprResult ParseEnumType(IdentifierInfo* id, SourceLocation& idLoc, bool is_public);
+    ExprResult ParseEnumType();
     void ParseFuncType(IdentifierInfo* id, SourceLocation& idLoc, bool is_public);
 
     // function def

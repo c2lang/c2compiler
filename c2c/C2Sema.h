@@ -97,8 +97,10 @@ public:
     ExprResult ActOnBuiltinType(C2Type t);
     ExprResult ActOnStructType(SourceLocation leftBrace, SourceLocation rightBrace,
                                ExprList& members, bool isStruct);
-    ExprResult ActOnEnumType(SourceLocation leftBrace, SourceLocation rightBrace,
+    ExprResult ActOnEnumType();
+    ExprResult ActOnEnumTypeFinished(Expr* enumType, SourceLocation leftBrace, SourceLocation rightBrace,
                                ExprList& values);
+    ExprResult ActOnEnumConstant(Expr* enumType, IdentifierInfo* symII, SourceLocation symLoc, Expr* Value);
     ExprResult ActOnTypeQualifier(ExprResult R, unsigned int qualifier);
     ExprResult ActOnVarExpr(const char* name, SourceLocation loc, Expr* type, Expr* InitValue);
     ExprResult ActOnSizeofExpression(SourceLocation Loc, Expr* expr);

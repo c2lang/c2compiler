@@ -27,7 +27,7 @@
 #include "color.h"
 #include "ASTVisitor.h"
 
-//#define SEMA_DEBUG
+#define SEMA_DEBUG
 
 #define COL_SEMA ANSI_RED
 
@@ -492,23 +492,41 @@ C2::ExprResult C2Sema::ActOnStructType(SourceLocation leftBrace, SourceLocation 
     return ExprResult(new TypeExpr(type));
 }
 
-C2::ExprResult C2Sema::ActOnEnumType(SourceLocation leftBrace, SourceLocation rightBrace,
+C2::ExprResult C2Sema::ActOnEnumType() {
+    Type* type = typeContext.getEnum();
+    return ExprResult(new TypeExpr(type));
+}
+
+C2::ExprResult C2Sema::ActOnEnumTypeFinished(Expr* enumType,
+                            SourceLocation leftBrace, SourceLocation rightBrace,
                            ExprList& values) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: enum Type"ANSI_NORMAL"\n";
 #endif
-    Type* type = typeContext.getEnum();
-/*
+    TypeExpr* typeExpr = ExprCaster<TypeExpr>::getType(enumType);
+    assert(typeExpr);
     // TODO use left/rightBrace (add to TypeExpr, then pass to TypeDecl)
+/*
     MemberList members2;
     for (unsigned int i=0; i<members.size(); i++) {
         DeclExpr* member = ExprCaster<DeclExpr>::getType(members[i]);
         assert(member);
         members2.push_back(member);
     }
-    type->setMembers(members2);
+    enumType->setMembers(members2);
 */
-    return ExprResult(new TypeExpr(type));
+    values.clear();  // remove entries from original list
+    return ExprResult(enumType);
+}
+
+C2::ExprResult C2Sema::ActOnEnumConstant(Expr* enumType, IdentifierInfo* symII,
+                                SourceLocation symLoc, Expr* Value) {
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: enum constant"ANSI_NORMAL"\n";
+#endif
+    TypeExpr* typeExpr = ExprCaster<TypeExpr>::getType(enumType);
+    assert(typeExpr);
+    return ExprResult(new DeclExpr(symII->getNameStart(), symLoc, typeExpr->getType(), Value));
 }
 
 C2::ExprResult C2Sema::ActOnTypeQualifier(ExprResult R, unsigned int qualifier) {

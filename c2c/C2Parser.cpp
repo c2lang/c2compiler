@@ -259,7 +259,7 @@ void C2Parser::ParseTypeDef(bool is_public) {
         type = ParseStructBlock(false);
         break;
     case tok::kw_enum:
-        type = ParseEnumType(id, idLoc, is_public);
+        type = ParseEnumType();
         break;
     case tok::coloncolon:
         Diag(Tok, diag::err_qualified_typedef);
@@ -337,13 +337,14 @@ C2::ExprResult C2Parser::ParseStructMember() {
     enum_member ::= IDENTIFIER.
     enum_member ::= IDENTIFIER EQUALS constant_expression.
 */
-C2::ExprResult C2Parser::ParseEnumType(IdentifierInfo* id, SourceLocation& idLoc, bool is_public) {
+C2::ExprResult C2Parser::ParseEnumType() {
     LOG_FUNC
     assert(Tok.is(tok::kw_enum) && "Expected keyword 'enum'");
     ConsumeToken();
     SourceLocation LeftBrace = Tok.getLocation();
     if (ExpectAndConsume(tok::l_brace, diag::err_expected_lbrace)) return ExprError();
 
+    ExprResult TheEnum = Actions.ActOnEnumType();
     ExprList members;
 
     // Syntax: enum_block
@@ -357,9 +358,12 @@ C2::ExprResult C2Parser::ParseEnumType(IdentifierInfo* id, SourceLocation& idLoc
             Value = ParseConstantExpression();
             if (Value.isInvalid()) {
                 SkipUntil(tok::comma, tok::r_brace, true, true);
+                continue;
             }
         }
 
+        ExprResult Constant = Actions.ActOnEnumConstant(TheEnum.get(), Ident, IdentLoc, Value.release());
+        members.push_back(Constant.release());
 #if 0
     // Add value to EnumDecl
         Decl* EnumValue = Actions.ActOnEnumConstant(EnumDecl,
@@ -377,7 +381,7 @@ C2::ExprResult C2Parser::ParseEnumType(IdentifierInfo* id, SourceLocation& idLoc
                         EnumConstantDecls.size(), getCurScope(),
                         attrs.getList());
 #endif
-    return Actions.ActOnEnumType(LeftBrace, RightBrace, members);
+    return Actions.ActOnEnumTypeFinished(TheEnum.release(), LeftBrace, RightBrace, members);
 }
 
 /*
