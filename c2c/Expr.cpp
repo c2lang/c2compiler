@@ -209,11 +209,14 @@ void DeclExpr::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[decl " << name << "]\n";
     indent += INDENT;
-    type->print(indent, buffer, Type::RECURSE_ONCE);
-    if (canonicalType) {
-        buffer.indent(indent);
-        buffer << ANSI_CYAN << "canonical:" << ANSI_NORMAL << '\n';
-        canonicalType->print(indent+INDENT, buffer, Type::RECURSE_NONE);
+    // Dont print types for enums, otherwise we get a loop since Type have Decls etc
+    if (!type->isEnumType()) {
+        type->print(indent, buffer, Type::RECURSE_ONCE);
+        if (canonicalType) {
+            buffer.indent(indent);
+            buffer << ANSI_CYAN << "canonical:" << ANSI_NORMAL << '\n';
+            canonicalType->print(indent+INDENT, buffer, Type::RECURSE_NONE);
+        }
     }
     if (initValue) {
         buffer.indent(indent);

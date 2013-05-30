@@ -26,7 +26,6 @@
 
 namespace C2 {
 class StringBuilder;
-class EnumValue;
 class Argument;
 class Expr;
 class DeclExpr;
@@ -75,6 +74,7 @@ public:
     bool isUserType() const { return kind == USER; }
     bool isFuncType() const { return kind == FUNC; }
     bool isStructOrUnionType() const { return kind == STRUCT || kind == UNION; }
+    bool isEnumType() const { return kind == ENUM; }
     bool isSubscriptable() const { return kind == ARRAY || kind == POINTER; }
     bool isPointerType() const { return kind == POINTER; }
     bool isArrayType() const { return kind == ARRAY; }
@@ -105,12 +105,9 @@ public:
     }
     Expr* getArrayExpr() const { return arrayExpr; }
 
-    // STRUCT/UNION
-    void setMembers(MemberList& members_);
+    // STRUCT/UNION/ENUM
+    void setMembers(MemberList* members_);
     MemberList* getMembers() const;
-
-    // ENUM
-    void addEnumValue(const char* name_, int value_);
 
     // FUNC
     void setReturnType(Type* type);
@@ -156,16 +153,9 @@ private:
         // user types, can be IdentifierExpr or MemberExpr
         Expr* userType;
 
-        // struct | union specific
+        // struct | union | enum specific
         struct {
             MemberList* members;
-            const char* sname; // no ownership?
-        };
-
-        // enum
-        struct {
-            EnumValue* enumValues;
-            const char* ename; // no ownership?
         };
 
         // func specific

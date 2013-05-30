@@ -29,18 +29,6 @@ using namespace C2;
 
 namespace C2 {
 
-class EnumValue {
-public:
-    EnumValue(const char* name_, int value_)
-        : name(name_)
-        , value(value_)
-        , next(0)
-    {}
-    std::string name;
-    int value;
-    EnumValue* next;
-};
-
 class Argument {
 public:
     Argument(Type* type_) : type(type_), next(0) {}
@@ -130,16 +118,9 @@ Type::~Type() {
     case USER:
         break;
     case STRUCT:
-        delete members;
-        break;
     case UNION:
-        break;
     case ENUM:
-        while (enumValues) {
-            EnumValue* next = enumValues->next;
-            delete enumValues;
-            enumValues = next;
-        }
+        delete members;
         break;
     case FUNC:
         while (arguments) {
@@ -219,27 +200,15 @@ Type* Type::getCanonical(TypeContext& context) {
     return this;
 }
 
-void Type::setMembers(MemberList& members_) {
-    assert(kind == STRUCT || kind == UNION);
+void Type::setMembers(MemberList* members_) {
+    assert(kind == STRUCT || kind == UNION || kind == ENUM);
     assert(members == 0);
-    members = new MemberList(members_);
+    members = members_;
 }
 
 MemberList* Type::getMembers() const {
-    assert(kind == STRUCT || kind == UNION);
+    assert(kind == STRUCT || kind == UNION || kind == ENUM);
     return members;
-}
-
-void Type::addEnumValue(const char* name_, int value_) {
-    assert(kind == ENUM);
-    EnumValue* newv = new EnumValue(name_, value_);
-    if (enumValues == 0) {
-        enumValues = newv;
-    } else {
-        EnumValue* last = enumValues;
-        while (last->next) last = last->next;
-        last->next = newv;
-    }
 }
 
 void Type::setReturnType(Type* type) {
@@ -344,12 +313,6 @@ void Type::printFull(StringBuilder& buffer, int indent) const {
     {
         buffer.indent(indent);
         buffer << "enum " << " {\n";
-        EnumValue* val = enumValues;
-        while (val) {
-            buffer.indent(2*(indent+1));
-            buffer << val->name << " = " << val->value << ",\n";
-            val = val->next;
-        }
         buffer.indent(indent);
         buffer << '}';
         break;
@@ -499,6 +462,12 @@ void Type::print(int indent, StringBuilder& buffer, RecursionType recursive) con
         break;
     case ENUM:
         buffer << "(enum)\n";
+        if (members) {
+            for (unsigned i=0; i<members->size(); i++) {
+                DeclExpr* mem = (*members)[i];
+                mem->print(indent + INDENT, buffer);
+            }
+        }
         break;
     case STRUCT:
         buffer << "(struct)\n";

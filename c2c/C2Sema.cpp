@@ -27,7 +27,7 @@
 #include "color.h"
 #include "ASTVisitor.h"
 
-#define SEMA_DEBUG
+//#define SEMA_DEBUG
 
 #define COL_SEMA ANSI_RED
 
@@ -482,11 +482,11 @@ C2::ExprResult C2Sema::ActOnStructType(SourceLocation leftBrace, SourceLocation 
 #endif
     Type* type = typeContext.getStruct(isStruct);
     // TODO use left/rightBrace (add to TypeExpr, then pass to TypeDecl)
-    MemberList members2;
+    MemberList* members2 = new MemberList;
     for (unsigned int i=0; i<members.size(); i++) {
         DeclExpr* member = ExprCaster<DeclExpr>::getType(members[i]);
         assert(member);
-        members2.push_back(member);
+        members2->push_back(member);
     }
     type->setMembers(members2);
     return ExprResult(new TypeExpr(type));
@@ -506,15 +506,14 @@ C2::ExprResult C2Sema::ActOnEnumTypeFinished(Expr* enumType,
     TypeExpr* typeExpr = ExprCaster<TypeExpr>::getType(enumType);
     assert(typeExpr);
     // TODO use left/rightBrace (add to TypeExpr, then pass to TypeDecl)
-/*
-    MemberList members2;
-    for (unsigned int i=0; i<members.size(); i++) {
-        DeclExpr* member = ExprCaster<DeclExpr>::getType(members[i]);
+    // TODO share code with ActOnStructType()
+    MemberList* members2 = new MemberList;
+    for (unsigned int i=0; i<values.size(); i++) {
+        DeclExpr* member = ExprCaster<DeclExpr>::getType(values[i]);
         assert(member);
-        members2.push_back(member);
+        members2->push_back(member);
     }
-    enumType->setMembers(members2);
-*/
+    typeExpr->getType()->setMembers(members2);
     values.clear();  // remove entries from original list
     return ExprResult(enumType);
 }
