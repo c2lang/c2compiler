@@ -687,6 +687,22 @@ void CCodeGenerator::EmitTypePreName(Type* T, StringBuilder& output) {
         output << '}';
         return;
     case Type::ENUM:
+        output << "enum {\n";
+        if (T->getMembers()) {
+            MemberList* members = T->getMembers();
+            for (unsigned i=0; i<members->size(); i++) {
+                DeclExpr* mem = (*members)[i];
+                output.indent(INDENT);
+                output << mem->getName();
+                if (mem->getInitValue()) {
+                    output << " = ";
+                    EmitExpr(mem->getInitValue(), output);
+                }
+                output << ",\n";
+            }
+        }
+        output << '}';
+        return;
     case Type::FUNC:
         assert(0 && "TODO");
         break;
