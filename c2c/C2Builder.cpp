@@ -429,6 +429,20 @@ bool C2Builder::createPkgs() {
             } else {
                 pkg->addSymbol(New);
             }
+            // also add enum constant names to symbol list, Bit nasty to do here
+            if (New->dtype() == DECL_TYPE) {
+                TypeDecl* T = DeclCaster<TypeDecl>::getType(New);
+                const Type* type = T->getType();
+                if (type->isEnumType()) {
+                    const MemberList* members = type->getMembers();
+                    for (unsigned i=0; i<members->size(); i++) {
+                        DeclExpr* de = (*members)[i];
+                        // wrap in VarDecl
+                        // TODO MEMLEAK in VarDecl -> or throw away in ~Scope() ?
+                        pkg->addSymbol(new VarDecl(de, New->isPublic(), true));
+                    }
+                }
+            }
         }
     }
     return true;
