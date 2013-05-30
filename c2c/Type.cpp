@@ -462,7 +462,7 @@ void Type::print(int indent, StringBuilder& buffer, RecursionType recursive) con
         break;
     case ENUM:
         buffer << "(enum)\n";
-        if (members) {
+        if (members && recursive != RECURSE_NONE) {
             for (unsigned i=0; i<members->size(); i++) {
                 DeclExpr* mem = (*members)[i];
                 mem->print(indent + INDENT, buffer);
