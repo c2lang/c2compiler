@@ -206,6 +206,7 @@ public:
     Type* getUser();
     Type* getPointer(Type* ref);
     Type* getStruct(bool isStruct);
+    Type* getEnum();
     Type* getArray(Type* ref, Expr* sizeExpr, bool ownSize = true);
     Type* getQualifier(Type* ref, unsigned int qualifier);
     Type* getFunction(Type* rtype);

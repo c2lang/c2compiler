@@ -674,6 +674,12 @@ Type* TypeContext::getStruct(bool isStruct) {
     return T;
 }
 
+Type* TypeContext::getEnum() {
+    Type* T = new Type(Type::ENUM);
+    types.push_back(T);
+    return T;
+}
+
 Type* TypeContext::getArray(Type* ref, Expr* sizeExpr, bool ownSize) {
     Type* T = new Type(Type::ARRAY, ref);
     T->setArrayExpr(sizeExpr, ownSize);

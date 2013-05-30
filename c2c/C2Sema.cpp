@@ -481,7 +481,7 @@ C2::ExprResult C2Sema::ActOnStructType(SourceLocation leftBrace, SourceLocation 
     std::cerr << COL_SEMA"SEMA: Struct/Union Type"ANSI_NORMAL"\n";
 #endif
     Type* type = typeContext.getStruct(isStruct);
-    // TODO use left/rightBrace
+    // TODO use left/rightBrace (add to TypeExpr, then pass to TypeDecl)
     MemberList members2;
     for (unsigned int i=0; i<members.size(); i++) {
         DeclExpr* member = ExprCaster<DeclExpr>::getType(members[i]);
@@ -489,6 +489,25 @@ C2::ExprResult C2Sema::ActOnStructType(SourceLocation leftBrace, SourceLocation 
         members2.push_back(member);
     }
     type->setMembers(members2);
+    return ExprResult(new TypeExpr(type));
+}
+
+C2::ExprResult C2Sema::ActOnEnumType(SourceLocation leftBrace, SourceLocation rightBrace,
+                           ExprList& values) {
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: enum Type"ANSI_NORMAL"\n";
+#endif
+    Type* type = typeContext.getEnum();
+/*
+    // TODO use left/rightBrace (add to TypeExpr, then pass to TypeDecl)
+    MemberList members2;
+    for (unsigned int i=0; i<members.size(); i++) {
+        DeclExpr* member = ExprCaster<DeclExpr>::getType(members[i]);
+        assert(member);
+        members2.push_back(member);
+    }
+    type->setMembers(members2);
+*/
     return ExprResult(new TypeExpr(type));
 }
 

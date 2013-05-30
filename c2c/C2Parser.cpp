@@ -259,7 +259,7 @@ void C2Parser::ParseTypeDef(bool is_public) {
         type = ParseStructBlock(false);
         break;
     case tok::kw_enum:
-        ParseEnumType(id, idLoc, is_public);
+        type = ParseEnumType(id, idLoc, is_public);
         break;
     case tok::coloncolon:
         Diag(Tok, diag::err_qualified_typedef);
@@ -337,11 +337,14 @@ C2::ExprResult C2Parser::ParseStructMember() {
     enum_member ::= IDENTIFIER.
     enum_member ::= IDENTIFIER EQUALS constant_expression.
 */
-void C2Parser::ParseEnumType(IdentifierInfo* id, SourceLocation& idLoc, bool is_public) {
+C2::ExprResult C2Parser::ParseEnumType(IdentifierInfo* id, SourceLocation& idLoc, bool is_public) {
     LOG_FUNC
     assert(Tok.is(tok::kw_enum) && "Expected keyword 'enum'");
     ConsumeToken();
-    if (ExpectAndConsume(tok::l_brace, diag::err_expected_lbrace)) return;
+    SourceLocation LeftBrace = Tok.getLocation();
+    if (ExpectAndConsume(tok::l_brace, diag::err_expected_lbrace)) return ExprError();
+
+    ExprList members;
 
     // Syntax: enum_block
     while (Tok.is(tok::identifier)) {
@@ -365,7 +368,8 @@ void C2Parser::ParseEnumType(IdentifierInfo* id, SourceLocation& idLoc, bool is_
         if (Tok.isNot(tok::comma)) break;
         ConsumeToken();
     }
-    if (ExpectAndConsume(tok::r_brace, diag::err_expected_rbrace)) return;
+    SourceLocation RightBrace = Tok.getLocation();
+    if (ExpectAndConsume(tok::r_brace, diag::err_expected_rbrace)) return ExprError();
 
 #if 0
   Actions.ActOnEnumBody(StartLoc, T.getOpenLocation(), T.getCloseLocation(),
@@ -373,6 +377,7 @@ void C2Parser::ParseEnumType(IdentifierInfo* id, SourceLocation& idLoc, bool is_
                         EnumConstantDecls.size(), getCurScope(),
                         attrs.getList());
 #endif
+    return Actions.ActOnEnumType(LeftBrace, RightBrace, members);
 }
 
 /*
