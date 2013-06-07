@@ -72,7 +72,33 @@ bool ScopeAnalyser::handle(Decl* decl) {
         // TODO analyse members in structs/unions
         break;
     case DECL_ARRAYVALUE:
-        // nothing to do
+        {
+            ArrayValueDecl* A = DeclCaster<ArrayValueDecl>::getType(decl);
+            ScopeResult SR = globals.findSymbol(A->getName());
+            if (!SR.ok) break;
+            if (!SR.decl) {
+                Diags.Report(A->getLocation(), diag::err_undeclared_var_use)
+                << A->getName();
+                break;
+            }
+            if (SR.external) {
+                // TODO proper error
+                fprintf(stderr, "Incremental Array Value for %s cannot be for external symbol\n", A->getName().c_str());
+                break;
+            }
+            if (SR.decl->dtype() != DECL_VAR) {
+                fprintf(stderr, "TODO symbol '%s' is not a variable\n", A->getName().c_str());
+                break;
+            }
+            VarDecl* VD = DeclCaster<VarDecl>::getType(SR.decl);
+            Type* T = VD->getType();
+            if (!T->isArrayType()) {
+                Diags.Report(A->getLocation(), diag::err_typecheck_subscript);
+                break;
+            }
+            // TODO add to VarDecl
+            VD->addInitValue(A);
+        }
         break;
     case DECL_USE:
         checkUse(decl);

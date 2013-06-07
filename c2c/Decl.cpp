@@ -145,6 +145,13 @@ DECL_VISITOR_ACCEPT(VarDecl);
 void VarDecl::print(StringBuilder& buffer) {
     buffer << "[var]\n";
     decl->print(INDENT, buffer);
+    if (initValues.size()) {
+        buffer.indent(INDENT);
+        buffer << ANSI_CYAN << "initvalues:" << ANSI_NORMAL << '\n';
+        for (InitValuesConstIter iter=initValues.begin(); iter != initValues.end(); ++iter) {
+            (*iter)->getExpr()->print(INDENT, buffer);
+        }
+    }
 }
 
 bool VarDecl::isInExpr() const { return ((flags & VARDECL_INEXPR) != 0); }
@@ -162,6 +169,10 @@ Type* VarDecl::getCanonicalType() const { return decl->getCanonicalType(); }
 void VarDecl::setCanonicalType(Type* t) { decl->setCanonicalType(t); }
 
 Expr* VarDecl::getInitValue() const { return decl->getInitValue(); }
+
+void VarDecl::addInitValue(ArrayValueDecl* value) {
+    initValues.push_back(value);
+}
 
 
 TypeDecl::TypeDecl(const std::string& name_, SourceLocation loc_, Type* type_, bool is_public_)

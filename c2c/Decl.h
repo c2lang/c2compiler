@@ -17,6 +17,7 @@
 #define DECL_H
 
 #include <string>
+#include <vector>
 #include <assert.h>
 
 #include <clang/Basic/SourceLocation.h>
@@ -35,6 +36,7 @@ class Stmt;
 class Expr;
 class DeclExpr;
 class DeclVisitor;
+class ArrayValueDecl;
 
 enum DeclType {
     DECL_FUNC = 0,
@@ -128,10 +130,16 @@ public:
     Type* getType() const;
     Type* getCanonicalType() const;
     void setCanonicalType(Type* t);
-    Expr* getInitValue() const;
+
+    Expr* getInitValue() const; // static value, NOT incremental values
+    typedef std::vector<ArrayValueDecl*> InitValues;
+    typedef InitValues::const_iterator InitValuesConstIter;
+    const InitValues& getIncrValues() const { return initValues; }
+    void addInitValue(ArrayValueDecl* value);
 private:
     DeclExpr* decl;
     unsigned int flags;    // inExpr;
+    InitValues initValues;
 };
 
 
@@ -163,6 +171,7 @@ public:
 
     virtual const std::string& getName() const { return name; }
     virtual clang::SourceLocation getLocation() const { return loc; }
+    Expr* getExpr() const { return value; }
 private:
     std::string name;
     SourceLocation loc;
