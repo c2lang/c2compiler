@@ -387,6 +387,19 @@ void CCodeGenerator::EmitVariable(Decl* D) {
         cbuf << " = ";
         EmitExpr(V->getInitValue(), cbuf);
     }
+    const VarDecl::InitValues& inits = V->getIncrValues();
+    if (inits.size()) {
+        cbuf << " = {\n";
+        VarDecl::InitValuesConstIter iter=inits.begin();
+        while (iter != inits.end()) {
+            const ArrayValueDecl* E = (*iter);
+            cbuf.indent(INDENT);
+            EmitExpr(E->getExpr(), cbuf);
+            cbuf << ",\n";
+            ++iter;
+        }
+        cbuf << '}';
+    }
     cbuf << ";\n";
     cbuf << '\n';
 }
