@@ -1295,6 +1295,9 @@ C2::ExprResult C2Parser::ParseConstantExpression() {
         ConsumeToken();
         return ExprError();
     }
+    if (Tok.is(tok::identifier)) {
+        return ParseIdentifier(false);
+    }
     std::cerr << "UNHANDLED TOKEN: ";
     PP.DumpToken(Tok);
     std::cerr << std::endl;
