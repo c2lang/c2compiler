@@ -286,7 +286,7 @@ void BinaryOperator::print(int indent, StringBuilder& buffer) const {
 }
 
 
-BinaryCondOperator::BinaryCondOperator(SourceLocation questionLoc, SourceLocation colonLoc,
+ConditionalOperator::ConditionalOperator(SourceLocation questionLoc, SourceLocation colonLoc,
                 Expr* cond_, Expr* lhs_, Expr* rhs_)
     : QuestionLoc(questionLoc)
     , ColonLoc(colonLoc)
@@ -295,15 +295,15 @@ BinaryCondOperator::BinaryCondOperator(SourceLocation questionLoc, SourceLocatio
     , rhs(rhs_)
 {}
 
-BinaryCondOperator::~BinaryCondOperator() {
+ConditionalOperator::~ConditionalOperator() {
     delete cond;
     delete lhs;
     delete rhs;
 }
 
-EXPR_VISITOR_ACCEPT(BinaryCondOperator);
+EXPR_VISITOR_ACCEPT(ConditionalOperator);
 
-void BinaryCondOperator::print(int indent, StringBuilder& buffer) const {
+void ConditionalOperator::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[condop]\n";
     cond->print(indent + INDENT, buffer);

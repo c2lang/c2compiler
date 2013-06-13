@@ -221,8 +221,8 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
         EmitBinaryOperator(E, output);
         return;
     case EXPR_CONDOP:
-        assert(0 && "TODO");
-        break;
+        EmitConditionalOperator(E, output);
+        return;
     case EXPR_UNARYOP:
         EmitUnaryOperator(E, output);
         return;
@@ -262,6 +262,16 @@ void CCodeGenerator::EmitBinaryOperator(Expr* E, StringBuilder& output) {
     EmitExpr(B->getLHS(), output);
     output << ' ' << BinaryOperator::OpCode2str(B->getOpcode()) << ' ';
     EmitExpr(B->getRHS(), output);
+}
+
+void CCodeGenerator::EmitConditionalOperator(Expr* E, StringBuilder& output) {
+    ConditionalOperator* C = ExprCaster<ConditionalOperator>::getType(E);
+    EmitExpr(C->getCond(), output);
+    output << " ? ";
+    EmitExpr(C->getLHS(), output);
+    output << " : ";
+    EmitExpr(C->getRHS(), output);
+
 }
 
 void CCodeGenerator::EmitUnaryOperator(Expr* E, StringBuilder& output) {

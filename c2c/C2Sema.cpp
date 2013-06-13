@@ -432,7 +432,7 @@ C2::ExprResult C2Sema::ActOnConditionalOp(SourceLocation QuestionLoc, SourceLoca
     opLoc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    return ExprResult(new BinaryCondOperator(QuestionLoc, ColonLoc, CondExpr, LHSExpr, RHSExpr));
+    return ExprResult(new ConditionalOperator(QuestionLoc, ColonLoc, CondExpr, LHSExpr, RHSExpr));
 }
 
 C2::ExprResult C2Sema::ActOnInitList(SourceLocation left_, SourceLocation right_, ExprList& vals) {

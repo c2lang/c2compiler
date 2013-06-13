@@ -378,9 +378,7 @@ C2::Type* FunctionAnalyser::analyseExpr(Expr* expr) {
     case EXPR_BINOP:
         return analyseBinaryOperator(expr);
     case EXPR_CONDOP:
-        // TODO
-        assert(0 && "TODO");
-        break;
+        return analyseConditionalOperator(expr);
     case EXPR_UNARYOP:
         return analyseUnaryOperator(expr);
     case EXPR_SIZEOF:
@@ -438,6 +436,16 @@ Type* FunctionAnalyser::analyseBinaryOperator(Expr* expr) {
         return checkAssignmentOperands(TLeft, TRight);
     }
     return 0;
+}
+
+Type* FunctionAnalyser::analyseConditionalOperator(Expr* expr) {
+    ConditionalOperator* condop = ExprCaster<ConditionalOperator>::getType(expr);
+    assert(condop);
+    analyseExpr(condop->getCond());
+    Type* TLeft = analyseExpr(condop->getLHS());
+    analyseExpr(condop->getRHS());
+    // TODO also check type of RHS
+    return TLeft;
 }
 
 Type* FunctionAnalyser::analyseUnaryOperator(Expr* expr) {

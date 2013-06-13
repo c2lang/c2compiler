@@ -264,11 +264,11 @@ private:
 };
 
 
-class BinaryCondOperator : public Expr {
+class ConditionalOperator : public Expr {
 public:
-    BinaryCondOperator(SourceLocation questionLoc, SourceLocation colonLoc,
+    ConditionalOperator(SourceLocation questionLoc, SourceLocation colonLoc,
                     Expr* cond_, Expr* lhs_, Expr* rhs_);
-    virtual ~BinaryCondOperator();
+    virtual ~ConditionalOperator();
     virtual ExprType etype() const { return EXPR_CONDOP; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer) const;
@@ -402,7 +402,7 @@ public:
     virtual void visit(TypeExpr&) {}
     virtual void visit(DeclExpr&) {}
     virtual void visit(BinaryOperator&) {}
-    virtual void visit(BinaryCondOperator&) {}
+    virtual void visit(ConditionalOperator&) {}
     virtual void visit(UnaryOperator&) {}
     virtual void visit(SizeofExpr&) {}
     virtual void visit(ArraySubscriptExpr&) {}
