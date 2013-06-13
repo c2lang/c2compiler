@@ -5,6 +5,7 @@ use ccode3;
 public func int myfunction() {
     bool test = false;
     test = true;
+    int a = (test ? 20 : 30);
     return ((10));
 }
 
