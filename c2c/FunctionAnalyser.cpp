@@ -377,6 +377,10 @@ C2::Type* FunctionAnalyser::analyseExpr(Expr* expr) {
         break;
     case EXPR_BINOP:
         return analyseBinaryOperator(expr);
+    case EXPR_CONDOP:
+        // TODO
+        assert(0 && "TODO");
+        break;
     case EXPR_UNARYOP:
         return analyseUnaryOperator(expr);
     case EXPR_SIZEOF:

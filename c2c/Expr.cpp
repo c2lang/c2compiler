@@ -111,6 +111,7 @@ static void expr2name(Expr* expr, StringBuilder& buffer) {
     case EXPR_TYPE:
     case EXPR_DECL:
     case EXPR_BINOP:
+    case EXPR_CONDOP:
     case EXPR_UNARYOP:
     case EXPR_SIZEOF:
     case EXPR_ARRAYSUBSCRIPT:
@@ -280,6 +281,32 @@ const char* BinaryOperator::OpCode2str(clang::BinaryOperatorKind opc) {
 void BinaryOperator::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[binop " << OpCode2str(opc) << "]\n";
+    lhs->print(indent + INDENT, buffer);
+    rhs->print(indent + INDENT, buffer);
+}
+
+
+BinaryCondOperator::BinaryCondOperator(SourceLocation questionLoc, SourceLocation colonLoc,
+                Expr* cond_, Expr* lhs_, Expr* rhs_)
+    : QuestionLoc(questionLoc)
+    , ColonLoc(colonLoc)
+    , cond(cond_)
+    , lhs(lhs_)
+    , rhs(rhs_)
+{}
+
+BinaryCondOperator::~BinaryCondOperator() {
+    delete cond;
+    delete lhs;
+    delete rhs;
+}
+
+EXPR_VISITOR_ACCEPT(BinaryCondOperator);
+
+void BinaryCondOperator::print(int indent, StringBuilder& buffer) const {
+    buffer.indent(indent);
+    buffer << "[condop]\n";
+    cond->print(indent + INDENT, buffer);
     lhs->print(indent + INDENT, buffer);
     rhs->print(indent + INDENT, buffer);
 }

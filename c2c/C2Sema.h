@@ -89,6 +89,8 @@ public:
     ExprResult ActOnParenExpr(SourceLocation L, SourceLocation R, Expr* E);
 
     ExprResult ActOnBinOp(SourceLocation opLoc, tok::TokenKind Kind, Expr* LHS, Expr* RHS);
+    ExprResult ActOnConditionalOp(SourceLocation QuestionLoc, SourceLocation ColonLoc,
+                                 Expr* CondExpr, Expr* LHSExpr, Expr* RHSExpr);
 
     ExprResult ActOnInitList(SourceLocation left_, SourceLocation right_, ExprList& vals);
     ExprResult ActOnArrayType(Expr* base, Expr* size);

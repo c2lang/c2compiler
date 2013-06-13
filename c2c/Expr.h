@@ -43,6 +43,7 @@ enum ExprType {
     EXPR_TYPE,
     EXPR_DECL,
     EXPR_BINOP,
+    EXPR_CONDOP,
     EXPR_UNARYOP,
     EXPR_SIZEOF,
     EXPR_ARRAYSUBSCRIPT,
@@ -263,6 +264,28 @@ private:
 };
 
 
+class BinaryCondOperator : public Expr {
+public:
+    BinaryCondOperator(SourceLocation questionLoc, SourceLocation colonLoc,
+                    Expr* cond_, Expr* lhs_, Expr* rhs_);
+    virtual ~BinaryCondOperator();
+    virtual ExprType etype() const { return EXPR_CONDOP; }
+    virtual void acceptE(ExprVisitor& v);
+    virtual void print(int indent, StringBuilder& buffer) const;
+    virtual SourceLocation getExprLoc() const { return cond->getExprLoc(); }
+
+    Expr* getCond() const { return cond; }
+    Expr* getLHS() const { return lhs; }
+    Expr* getRHS() const { return rhs; }
+private:
+    SourceLocation QuestionLoc;
+    SourceLocation ColonLoc;
+    Expr* cond;
+    Expr* lhs;
+    Expr* rhs;
+};
+
+
 class UnaryOperator : public Expr {
 public:
     typedef clang::UnaryOperatorKind Opcode;
@@ -379,6 +402,7 @@ public:
     virtual void visit(TypeExpr&) {}
     virtual void visit(DeclExpr&) {}
     virtual void visit(BinaryOperator&) {}
+    virtual void visit(BinaryCondOperator&) {}
     virtual void visit(UnaryOperator&) {}
     virtual void visit(SizeofExpr&) {}
     virtual void visit(ArraySubscriptExpr&) {}

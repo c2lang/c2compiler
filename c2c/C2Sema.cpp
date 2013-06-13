@@ -424,6 +424,17 @@ C2::ExprResult C2Sema::ActOnBinOp(SourceLocation opLoc, tok::TokenKind Kind, Exp
     return ExprResult(new BinaryOperator(LHS, RHS, Opc, opLoc));
 }
 
+// see clang, some GCC extension allows LHS to be null (C2 doesn't?)
+C2::ExprResult C2Sema::ActOnConditionalOp(SourceLocation QuestionLoc, SourceLocation ColonLoc,
+                             Expr* CondExpr, Expr* LHSExpr, Expr* RHSExpr) {
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: CondOp at ";
+    opLoc.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    return ExprResult(new BinaryCondOperator(QuestionLoc, ColonLoc, CondExpr, LHSExpr, RHSExpr));
+}
+
 C2::ExprResult C2Sema::ActOnInitList(SourceLocation left_, SourceLocation right_, ExprList& vals) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: initlist at ";

@@ -220,6 +220,9 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
     case EXPR_BINOP:
         EmitBinaryOperator(E, output);
         return;
+    case EXPR_CONDOP:
+        assert(0 && "TODO");
+        break;
     case EXPR_UNARYOP:
         EmitUnaryOperator(E, output);
         return;

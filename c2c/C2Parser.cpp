@@ -581,13 +581,13 @@ C2::ExprResult C2Parser::ParseRHSOfBinaryExpression(ExprResult LHS, prec::Level 
       return LHS;
     }
 #endif
-#if 0
+#if 1
     // Special case handling for the ternary operator.
     ExprResult TernaryMiddle(true);
     if (NextTokPrec == prec::Conditional) {
       if (Tok.isNot(tok::colon)) {
         // Don't parse FOO:BAR as if it were a typo for FOO::BAR.
-        ColonProtectionRAIIObject X(*this);
+        //ColonProtectionRAIIObject X(*this);
 
         // Handle this production specially:
         //   logical-OR-expression '?' expression ':' conditional-expression
@@ -721,20 +721,28 @@ C2::ExprResult C2Parser::ParseRHSOfBinaryExpression(ExprResult LHS, prec::Level 
     }
 
     if (!LHS.isInvalid()) {
-        LHS = Actions.ActOnBinOp(OpToken.getLocation(), OpToken.getKind(), LHS.take(), RHS.take());
-    }
-#if 0
-    if (!LHS.isInvalid()) {
       // Combine the LHS and RHS into the LHS (e.g. build AST).
       if (TernaryMiddle.isInvalid()) {
-        LHS = Actions.ActOnBinOp(getCurScope(), OpToken.getLocation(),
+#if 0
+        // If we're using '>>' as an operator within a template
+        // argument list (in C++98), suggest the addition of
+        // parentheses so that the code remains well-formed in C++0x.
+        if (!GreaterThanIsOperator && OpToken.is(tok::greatergreater))
+          SuggestParentheses(OpToken.getLocation(),
+                             diag::warn_cxx0x_right_shift_in_template_arg,
+                         SourceRange(Actions.getExprRange(LHS.get()).getBegin(),
+                                     Actions.getExprRange(RHS.get()).getEnd()));
+#endif
+
+        LHS = Actions.ActOnBinOp(OpToken.getLocation(),
                                  OpToken.getKind(), LHS.take(), RHS.take());
-      } else
+      } else {
         LHS = Actions.ActOnConditionalOp(OpToken.getLocation(), ColonLoc,
                                          LHS.take(), TernaryMiddle.take(),
                                          RHS.take());
+      }
     }
-#endif
+
   }
   // TODO add return value?
 }
