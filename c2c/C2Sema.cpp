@@ -114,6 +114,10 @@ void C2Sema::ActOnPackage(const char* name, SourceLocation loc) {
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
+    if (name[0] == '_' && name[1] == '_') {
+        Diag(loc, diag::err_invalid_symbol_name) << name;
+        return;
+    }
     if (strcmp(name, "c2") == 0) {
         Diag(loc, diag::err_package_c2);
         return;
@@ -367,6 +371,12 @@ C2::StmtResult C2Sema::ActOnDeclaration(const char* name, SourceLocation loc, Ex
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
+    if (name[0] == '_' && name[1] == '_') {
+        Diag(loc, diag::err_invalid_symbol_name) << name;
+        delete type;
+        delete InitValue;
+        return StmtResult(true);
+    }
     // TEMP extract here to Type and delete rtype Expr
     TypeExpr* typeExpr = ExprCaster<TypeExpr>::getType(type);
     assert(typeExpr);
