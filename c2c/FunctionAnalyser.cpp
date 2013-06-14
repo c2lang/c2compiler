@@ -249,10 +249,8 @@ void FunctionAnalyser::analyseSwitchStmt(Stmt* stmt) {
             break;
         case STMT_DEFAULT:
             if (defaultStmt) {
-                fprintf(stderr, "multiple defaults TODO\n");
-                // TODO need location
-                //diag::err_multiple_default_labels_defined
-                //diag::note_duplicate_case_prev
+                Diags.Report(C->getLocation(), diag::err_multiple_default_labels_defined);
+                Diags.Report(defaultStmt->getLocation(), diag::note_duplicate_case_prev);
             } else {
                 defaultStmt = C;
             }
@@ -514,7 +512,7 @@ void FunctionAnalyser::analyseInitList(Expr* expr, Type* type) {
         {
             StringBuilder temp(128);
             type->DiagName(temp);
-        Diags.Report(expr->getExprLoc(), diag::err_invalid_type_initializer_list) << temp;
+        Diags.Report(expr->getLocation(), diag::err_invalid_type_initializer_list) << temp;
         }
         break;
     }
@@ -617,7 +615,7 @@ Type* FunctionAnalyser::analyseArraySubscript(Expr* expr) {
     Type* LType2 = resolveUserType(LType);
     if (!LType2) return 0;
     if (!LType2->isSubscriptable()) {
-        Diags.Report(expr->getExprLoc(), diag::err_typecheck_subscript);
+        Diags.Report(expr->getLocation(), diag::err_typecheck_subscript);
         return 0;
     }
     analyseExpr(sub->getIndex());
@@ -700,7 +698,7 @@ Type* FunctionAnalyser::analyseMemberExpr(Expr* expr) {
                     T->DiagName(temp);
                     StringBuilder temp2(128);
                     temp2 << '\'' << member->getName() << '\'';
-                    Diags.Report(member->getExprLoc(), diag::err_no_member) << temp2 << temp;
+                    Diags.Report(member->getLocation(), diag::err_no_member) << temp2 << temp;
                     return 0;
                 }
                 break;

@@ -1659,7 +1659,6 @@ C2::StmtResult C2Parser::ParseSwitchStatement() {
         }
         if (Res.isUsable()) Cases.push_back(Res.release());
         else return StmtError();
-        // TODO check for multiple default statements here?
     }
 
     if (ExpectAndConsume(tok::r_brace, diag::err_expected_rbrace)) return StmtError();

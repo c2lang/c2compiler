@@ -66,7 +66,6 @@ public:
     virtual clang::SourceRange getSourceRange() {
         return clang::SourceRange();
     }
-    virtual SourceLocation getExprLoc() const = 0;
 
     void setStatementFlag() { isStatement = true; }
     bool isStmt() const { return isStatement; }
@@ -86,7 +85,7 @@ public:
     virtual ExprType etype() const { return EXPR_NUMBER; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer) const;
-    virtual SourceLocation getExprLoc() const { return loc; }
+    virtual SourceLocation getLocation() const { return loc; }
 
     double value;
     clang::SourceLocation loc;
@@ -100,7 +99,7 @@ public:
     virtual ExprType etype() const { return EXPR_STRING; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer) const;
-    virtual SourceLocation getExprLoc() const { return loc; }
+    virtual SourceLocation getLocation() const { return loc; }
 
     std::string value;
     clang::SourceLocation loc;
@@ -114,7 +113,7 @@ public:
     virtual ExprType etype() const { return EXPR_BOOL; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer) const;
-    virtual SourceLocation getExprLoc() const { return loc; }
+    virtual SourceLocation getLocation() const { return loc; }
 
     bool value;
     clang::SourceLocation loc;
@@ -128,7 +127,7 @@ public:
     virtual ExprType etype() const { return EXPR_CHARLITERAL; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer) const;
-    virtual SourceLocation getExprLoc() const { return loc; }
+    virtual SourceLocation getLocation() const { return loc; }
 
     unsigned value;
     clang::SourceLocation loc;
@@ -142,10 +141,9 @@ public:
     virtual ExprType etype() const { return EXPR_IDENTIFIER; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer) const;
-    virtual SourceLocation getExprLoc() const { return loc; }
+    virtual SourceLocation getLocation() const { return loc; }
 
     const std::string& getName() const { return name; }
-    SourceLocation getLocation() const { return loc; }
     void setPackage(const Package* pkg_) { pkg = pkg_; }
     const Package* getPackage() const { return pkg; }
 private:
@@ -162,8 +160,7 @@ public:
     virtual ExprType etype() const { return EXPR_TYPE; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer) const;
-    virtual SourceLocation getExprLoc() const {
-        // TODO
+    virtual SourceLocation getLocation() const {
         SourceLocation loc;
         return loc;
     }
@@ -183,9 +180,9 @@ public:
     virtual ExprType etype() const { return EXPR_CALL; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer) const;
+    virtual SourceLocation getLocation() const { return Fn->getLocation(); }
 
     void addArg(Expr* arg);
-    virtual SourceLocation getExprLoc() const { return Fn->getExprLoc(); }
 
     Expr* getFn() const { return Fn; }
     Expr* getArg(unsigned int i) const { return args[i]; }
@@ -205,7 +202,7 @@ public:
     virtual ExprType etype() const { return EXPR_INITLIST; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer) const;
-    virtual SourceLocation getExprLoc() const { return leftBrace; }
+    virtual SourceLocation getLocation() const { return leftBrace; }
 
     ExprList& getValues() { return values; }
 private:
@@ -224,13 +221,12 @@ public:
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer) const;
     // used by VarDecls only to add pkgName
-    virtual SourceLocation getExprLoc() const { return loc; }
+    virtual SourceLocation getLocation() const { return loc; }
 
     Type* getType() const { return type; }
     Type* getCanonicalType() const { return canonicalType; }
     void setCanonicalType(Type* t);
     const std::string& getName() const { return name; }
-    SourceLocation getLocation() const { return loc; }
     Expr* getInitValue() const { return initValue; }
 private:
     std::string name;
@@ -251,7 +247,7 @@ public:
     virtual ExprType etype() const { return EXPR_BINOP; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer) const;
-    virtual SourceLocation getExprLoc() const { return lhs->getExprLoc(); }
+    virtual SourceLocation getLocation() const { return lhs->getLocation(); }
 
     Expr* getLHS() const { return lhs; }
     Expr* getRHS() const { return rhs; }
@@ -272,7 +268,7 @@ public:
     virtual ExprType etype() const { return EXPR_CONDOP; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer) const;
-    virtual SourceLocation getExprLoc() const { return cond->getExprLoc(); }
+    virtual SourceLocation getLocation() const { return cond->getLocation(); }
 
     Expr* getCond() const { return cond; }
     Expr* getLHS() const { return lhs; }
@@ -296,7 +292,7 @@ public:
     virtual ExprType etype() const { return EXPR_UNARYOP; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer) const;
-    virtual SourceLocation getExprLoc() const { return opLoc; }
+    virtual SourceLocation getLocation() const { return opLoc; }
 
     Expr* getExpr() const { return val; }
     Opcode getOpcode() const { return opc; }
@@ -315,7 +311,7 @@ public:
     virtual ExprType etype() const { return EXPR_SIZEOF; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer) const;
-    virtual SourceLocation getExprLoc() const { return Loc; }
+    virtual SourceLocation getLocation() const { return Loc; }
 
     Expr* getExpr() const { return expr; }
 private:
@@ -331,7 +327,7 @@ public:
     virtual ExprType etype() const { return EXPR_ARRAYSUBSCRIPT; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer) const;
-    virtual SourceLocation getExprLoc() const { return base->getExprLoc(); }
+    virtual SourceLocation getLocation() const { return base->getLocation(); }
 
     Expr* getBase() const { return base; }
     Expr* getIndex() const { return idx; }
@@ -353,7 +349,7 @@ public:
     virtual ExprType etype() const { return EXPR_MEMBER; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer) const;
-    virtual SourceLocation getExprLoc() const { return Base->getExprLoc(); }
+    virtual SourceLocation getLocation() const { return Base->getLocation(); }
 
     Expr* getBase() const { return Base; }
     IdentifierExpr* getMember() const { return Member; }
@@ -376,7 +372,7 @@ public:
     virtual ExprType etype() const { return EXPR_PAREN; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer) const;
-    virtual SourceLocation getExprLoc() const { return L; }
+    virtual SourceLocation getLocation() const { return L; }
 
     Expr* getExpr() const { return Val; }
     clang::SourceRange getSourceRange() const { return clang::SourceRange(L, R); }

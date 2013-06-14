@@ -60,6 +60,7 @@ public:
     virtual void acceptS(StmtVisitor& v) const = 0;
     virtual void print(int indent, StringBuilder& buffer) const = 0;
     void dump() const;
+    virtual SourceLocation getLocation() const = 0;
 private:
     Stmt(const Stmt&);
     Stmt& operator= (const Stmt&);
@@ -76,9 +77,9 @@ public:
     virtual void acceptS(StmtVisitor& v) const;
 
     virtual void print(int indent, StringBuilder& buffer) const;
+    virtual SourceLocation getLocation() const { return RetLoc; }
 
     Expr* getExpr() const { return value; }
-    SourceLocation getLocation() const { return RetLoc; }
 private:
     Expr* value;
     SourceLocation RetLoc;
@@ -95,6 +96,7 @@ public:
     virtual void acceptS(StmtVisitor& v) const;
 
     virtual void print(int indent, StringBuilder& buffer) const;
+    virtual SourceLocation getLocation() const { return IfLoc; }
 
     Expr* getCond() const { return reinterpret_cast<Expr*>(SubExprs[COND]); }
     Stmt* getThen() const { return SubExprs[THEN]; }
@@ -116,6 +118,7 @@ public:
     virtual void acceptS(StmtVisitor& v) const;
 
     virtual void print(int indent, StringBuilder& buffer) const;
+    virtual SourceLocation getLocation() const { return Loc; }
 
     Stmt* getCond() const { return Cond; }
     Stmt* getBody() const { return Then; }
@@ -134,6 +137,7 @@ public:
     virtual void acceptS(StmtVisitor& v) const;
 
     virtual void print(int indent, StringBuilder& buffer) const;
+    virtual SourceLocation getLocation() const { return Loc; }
 
     Stmt* getCond() const { return Cond; }
     Stmt* getBody() const { return Then; }
@@ -152,6 +156,7 @@ public:
     virtual void acceptS(StmtVisitor& v) const;
 
     virtual void print(int indent, StringBuilder& buffer) const;
+    virtual SourceLocation getLocation() const { return Loc; }
 
     Stmt* getInit() const { return Init; }
     Expr* getCond() const { return Cond; }
@@ -174,6 +179,7 @@ public:
     virtual void acceptS(StmtVisitor& v) const;
 
     virtual void print(int indent, StringBuilder& buffer) const;
+    virtual SourceLocation getLocation() const { return Loc; }
 
     Expr* getCond() const { return Cond; }
     const StmtList& getCases() const { return Cases; }
@@ -192,8 +198,8 @@ public:
     virtual void acceptS(StmtVisitor& v) const;
 
     virtual void print(int indent, StringBuilder& buffer) const;
+    virtual SourceLocation getLocation() const { return Loc; }
 
-    SourceLocation getLocation() const { return Loc; }
     Expr* getCond() const { return Cond; }
     const StmtList& getStmts() const { return Stmts; }
 private:
@@ -211,8 +217,8 @@ public:
     virtual void acceptS(StmtVisitor& v) const;
 
     virtual void print(int indent, StringBuilder& buffer) const;
+    virtual SourceLocation getLocation() const { return Loc; }
 
-    SourceLocation getLocation() const { return Loc; }
     const StmtList& getStmts() const { return Stmts; }
 private:
     SourceLocation Loc;
@@ -228,8 +234,7 @@ public:
     virtual void acceptS(StmtVisitor& v) const;
 
     virtual void print(int indent, StringBuilder& buffer) const;
-
-    SourceLocation getLocation() const { return Loc; }
+    virtual SourceLocation getLocation() const { return Loc; }
 private:
     SourceLocation Loc;
 };
@@ -243,8 +248,7 @@ public:
     virtual void acceptS(StmtVisitor& v) const;
 
     virtual void print(int indent, StringBuilder& buffer) const;
-
-    SourceLocation getLocation() const { return Loc; }
+    virtual SourceLocation getLocation() const { return Loc; }
 private:
     SourceLocation Loc;
 };
@@ -258,6 +262,7 @@ public:
     virtual void acceptS(StmtVisitor& v) const;
 
     virtual void print(int indent, StringBuilder& buffer) const;
+    virtual SourceLocation getLocation() const { return Loc; }
     Stmt* getSubStmt() const { return subStmt; }
     const std::string& getName() const { return name; }
 private:
@@ -275,6 +280,7 @@ public:
     virtual void acceptS(StmtVisitor& v) const;
 
     virtual void print(int indent, StringBuilder& buffer) const;
+    virtual SourceLocation getLocation() const { return GotoLoc; }
     const std::string& getName() const { return name; }
 private:
     std::string name;
@@ -291,6 +297,7 @@ public:
     virtual void acceptS(StmtVisitor& v) const;
 
     virtual void print(int indent, StringBuilder& buffer) const;
+    virtual SourceLocation getLocation() const { return Left; }
 
     const StmtList& getStmts() const { return Stmts; }
     Stmt* getLastStmt() const;
