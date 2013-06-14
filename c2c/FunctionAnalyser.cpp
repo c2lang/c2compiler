@@ -98,6 +98,12 @@ bool FunctionAnalyser::handle(Decl* decl) {
         {
             // Bit nasty to analyse Initialization values, but we need a lot of shared code
             VarDecl* VD = DeclCaster<VarDecl>::getType(decl);
+            Type* T = VD->getType();
+            if (T->isArrayType() && T->getArrayExpr()) {
+                EnterScope(0);
+                analyseInitExpr(T->getArrayExpr(),  BuiltinType::get(TYPE_INT));
+                ExitScope();
+            }
             Expr* Init = VD->getInitValue();
             if (Init) {
                 EnterScope(0);
