@@ -484,6 +484,22 @@ void C2Builder::addDummyPackages() {
         proto->addArgument(ctype);
         func->setCanonicalType(proto);
     }
+    //int sprintf(char *str, const char *format, ...);
+    {
+        FunctionDecl* func = new FunctionDecl("sprintf", loc, true, BuiltinType::get(TYPE_INT));
+        // NOTE: MEMLEAK ON TYPE, this will go away when we remove these dummy protos
+        Type* ptype = new Type(Type::POINTER, BuiltinType::get(TYPE_CHAR));
+        Type* ctype = new Type(Type::QUALIFIER, ptype);
+        func->addArg(new DeclExpr("str", loc, ptype, 0));
+        func->addArg(new DeclExpr("format", loc, ctype, 0));
+        func->setVariadic();
+        stdioPkg->addSymbol(func);
+        // canonical type
+        Type* proto = new Type(Type::FUNC);
+        proto->setReturnType(BuiltinType::get(TYPE_INT));
+        proto->addArgument(ctype);
+        func->setCanonicalType(proto);
+    }
 }
 
 void C2Builder::dumpPkgs() {
