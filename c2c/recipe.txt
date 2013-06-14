@@ -118,3 +118,8 @@ target ccode
     examples/ccode2.c2
     examples/ccode3.c2
 end
+
+target puzzle
+    examples/puzzle.c2
+end
+
