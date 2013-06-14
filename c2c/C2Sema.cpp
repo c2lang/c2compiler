@@ -487,11 +487,12 @@ C2::ExprResult C2Sema::ActOnBuiltinType(C2Type t) {
 }
 
 C2::ExprResult C2Sema::ActOnStructType(SourceLocation leftBrace, SourceLocation rightBrace,
-                                       ExprList& members, bool isStruct) {
+                                       ExprList& members, bool isStruct, const char* id) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: Struct/Union Type"ANSI_NORMAL"\n";
 #endif
     Type* type = typeContext.getStruct(isStruct);
+    type->setStructName(id);
     // TODO use left/rightBrace (add to TypeExpr, then pass to TypeDecl)
     MemberList* members2 = new MemberList;
     for (unsigned int i=0; i<members.size(); i++) {
@@ -503,8 +504,9 @@ C2::ExprResult C2Sema::ActOnStructType(SourceLocation leftBrace, SourceLocation 
     return ExprResult(new TypeExpr(type));
 }
 
-C2::ExprResult C2Sema::ActOnEnumType() {
+C2::ExprResult C2Sema::ActOnEnumType(const char* id) {
     Type* type = typeContext.getEnum();
+    type->setStructName(id);
     return ExprResult(new TypeExpr(type));
 }
 

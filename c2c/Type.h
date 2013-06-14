@@ -108,6 +108,9 @@ public:
     // STRUCT/UNION/ENUM
     void setMembers(MemberList* members_);
     MemberList* getMembers() const;
+    void setStructName(const char* name_) {
+        sname = name_;
+    }
 
     // FUNC
     void setReturnType(Type* type);
@@ -155,6 +158,7 @@ private:
 
         // struct | union | enum specific
         struct {
+            const char* sname;  // no ownership
             MemberList* members;
         };
 

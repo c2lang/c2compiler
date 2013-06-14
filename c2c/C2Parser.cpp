@@ -252,14 +252,14 @@ void C2Parser::ParseTypeDef(bool is_public) {
         break;
     case tok::kw_struct:
         ConsumeToken();
-        type = ParseStructBlock(true);
+        type = ParseStructBlock(true, id->getNameStart());
         break;
     case tok::kw_union:
         ConsumeToken();
-        type = ParseStructBlock(false);
+        type = ParseStructBlock(false, id->getNameStart());
         break;
     case tok::kw_enum:
-        type = ParseEnumType();
+        type = ParseEnumType(id->getNameStart());
         break;
     case tok::coloncolon:
         Diag(Tok, diag::err_qualified_typedef);
@@ -275,7 +275,7 @@ void C2Parser::ParseTypeDef(bool is_public) {
 }
 
 // Syntax: { <struct_block> } etc
-C2::ExprResult C2Parser::ParseStructBlock(bool is_struct) {
+C2::ExprResult C2Parser::ParseStructBlock(bool is_struct, const char* id) {
     LOG_FUNC
     SourceLocation LeftBrace = Tok.getLocation();
     if (ExpectAndConsume(tok::l_brace, diag::err_expected_lbrace)) return ExprError();
@@ -291,7 +291,7 @@ C2::ExprResult C2Parser::ParseStructBlock(bool is_struct) {
     SourceLocation RightBrace = Tok.getLocation();
     if (ExpectAndConsume(tok::r_brace, diag::err_expected_rbrace)) return ExprError();
 
-    return Actions.ActOnStructType(LeftBrace, RightBrace, members, is_struct);
+    return Actions.ActOnStructType(LeftBrace, RightBrace, members, is_struct, id);
 }
 
 /*
@@ -303,7 +303,7 @@ C2::ExprResult C2Parser::ParseStructMember() {
     LOG_FUNC
     if (Tok.is(tok::kw_union)) {
         ConsumeToken();
-        ParseStructBlock(false);
+        ParseStructBlock(false, "");
         if (Diags.hasErrorOccurred()) return ExprError();
 
         if (ExpectIdentifier()) return ExprError();
@@ -337,14 +337,14 @@ C2::ExprResult C2Parser::ParseStructMember() {
     enum_member ::= IDENTIFIER.
     enum_member ::= IDENTIFIER EQUALS constant_expression.
 */
-C2::ExprResult C2Parser::ParseEnumType() {
+C2::ExprResult C2Parser::ParseEnumType(const char* id) {
     LOG_FUNC
     assert(Tok.is(tok::kw_enum) && "Expected keyword 'enum'");
     ConsumeToken();
     SourceLocation LeftBrace = Tok.getLocation();
     if (ExpectAndConsume(tok::l_brace, diag::err_expected_lbrace)) return ExprError();
 
-    ExprResult TheEnum = Actions.ActOnEnumType();
+    ExprResult TheEnum = Actions.ActOnEnumType(id);
     ExprList members;
 
     // Syntax: enum_block

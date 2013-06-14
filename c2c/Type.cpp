@@ -409,8 +409,14 @@ void Type::printName(StringBuilder& buffer) const {
         buffer << name;
         break;
     case STRUCT:
+        buffer << "(struct)" << sname;
+        break;
     case UNION:
+        buffer << "(union)" << sname;
+        break;
     case ENUM:
+        buffer << "(enum)" << sname;
+        break;
     case FUNC:
         assert(0);
         break;

@@ -98,8 +98,8 @@ public:
     ExprResult ActOnUserType(Expr* id);
     ExprResult ActOnBuiltinType(C2Type t);
     ExprResult ActOnStructType(SourceLocation leftBrace, SourceLocation rightBrace,
-                               ExprList& members, bool isStruct);
-    ExprResult ActOnEnumType();
+                               ExprList& members, bool isStruct, const char* id);
+    ExprResult ActOnEnumType(const char* id);
     ExprResult ActOnEnumTypeFinished(Expr* enumType, SourceLocation leftBrace, SourceLocation rightBrace,
                                ExprList& values);
     ExprResult ActOnEnumConstant(Expr* enumType, IdentifierInfo* symII, SourceLocation symLoc, Expr* Value);

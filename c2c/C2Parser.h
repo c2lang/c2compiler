@@ -114,9 +114,9 @@ private:
     void ParseFuncDef(bool is_public);
 
     // type def
-    ExprResult ParseStructBlock(bool is_struct);
+    ExprResult ParseStructBlock(bool is_struct, const char* id);
     ExprResult ParseStructMember();
-    ExprResult ParseEnumType();
+    ExprResult ParseEnumType(const char* id);
     void ParseFuncType(IdentifierInfo* id, SourceLocation& idLoc, bool is_public);
 
     // function def
