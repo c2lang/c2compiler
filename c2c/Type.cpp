@@ -513,6 +513,11 @@ void Type::print(int indent, StringBuilder& buffer, RecursionType recursive) con
     case ARRAY:
         buffer << "(array)\n";
         refType->print(indent + INDENT, buffer, recursive);
+        if (arrayExpr) {
+            buffer.indent(indent);
+            buffer << COL_ATTR << "size:" << ANSI_NORMAL << '\n';
+            arrayExpr->print(indent + INDENT, buffer);
+        }
         break;
     case QUALIFIER:
         buffer << "(qualifier)\n";

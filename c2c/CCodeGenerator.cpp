@@ -198,8 +198,10 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
             output << "{ ";
             ExprList& values = I->getValues();
             for (unsigned int i=0; i<values.size(); i++) {
-                if (i != 0) output << ", ";
+                if (i == 0 && values[0]->etype() == EXPR_INITLIST) output << '\n';
                 EmitExpr(values[i], output);
+                if (i != values.size() -1) output << ',';
+                if (values[i]->etype() == EXPR_INITLIST) output << '\n';
             }
             output << " }";
             return;
