@@ -507,12 +507,15 @@ void FunctionAnalyser::analyseInitList(Expr* expr, Type* type) {
         }
         break;
     case Type::QUALIFIER:
-        assert(0 && "can happen?");
         // TODO
+        assert(0 && "can happen?");
         break;
     default:
-        // TODO
-        fprintf(stderr, "ERROR: cannot use initializer list on non-struct/union/array type\n");
+        {
+            StringBuilder temp;
+            type->DiagName(temp);
+        Diags.Report(expr->getExprLoc(), diag::err_invalid_type_initializer_list) << temp;
+        }
         break;
     }
 }

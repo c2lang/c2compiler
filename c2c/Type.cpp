@@ -526,6 +526,12 @@ void Type::print(int indent, StringBuilder& buffer, RecursionType recursive) con
     }
 }
 
+void Type::DiagName(StringBuilder& buffer) const {
+    buffer << '\'';
+    printName(buffer);
+    buffer << '\'';
+}
+
 void Type::dump() const {
     StringBuilder buffer;
     //printEffective(buffer, 0);

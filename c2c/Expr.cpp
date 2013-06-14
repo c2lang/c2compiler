@@ -340,6 +340,7 @@ const char* UnaryOperator::OpCode2str(clang::UnaryOperatorKind opc) {
         assert(0);
         break;
     }
+    return "";
 }
 
 void UnaryOperator::print(int indent, StringBuilder& buffer) const {

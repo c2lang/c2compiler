@@ -2,6 +2,8 @@ package test;
 
 type Number int;
 
+func int calc() { return 2; }
+
 public func void main() {
     // --- var decls, OK ---
     const char[12] buffer;
@@ -18,14 +20,12 @@ public func void main() {
     int a4 = calc();
     int b2 = 10 / 2;
     int[][] b3 = a;
-    Number a5 = bliep();
+    Number a5 = calc();
     int* ptr3 = NULL;
     Number** ptr4 = NULL;
     int*[10] bla2;
     int[2] nums = { calc(), calc() }
     int b4 = 4/2;
-    int b5 = Utils.max + Utils.Min;
-    int x1 = Utils.getMax();
 
     int b6 = 2*2;
 

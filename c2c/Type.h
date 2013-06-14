@@ -128,6 +128,7 @@ public:
     void printEffective(StringBuilder& buffer, int indent = 0) const;
     enum RecursionType { RECURSE_NONE=0, RECURSE_ONCE, RECURSE_ALL };
     void print(int indent, StringBuilder& buffer, RecursionType recursive) const;
+    void DiagName(StringBuilder& buffer) const;
     void dump() const;
 
     // for analysis
@@ -136,7 +137,6 @@ public:
 
     static void printQualifier(StringBuilder& buffer, unsigned int flags);
 private:
-    // TODO remove printName
     void printName(StringBuilder& buffer) const;
 
     Kind kind;

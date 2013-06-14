@@ -12,11 +12,9 @@ s8* text2 = NULL;
 u16 halfword;
 
 // aggregate
-u32 n1 = { 10 }
-int n2 = { 10, 20 }
-int n3 = { 10, 30, }
+u32 n1 = 10;
+int n2 = 10;
 Struct s = { 10, 20, "hallo" }
-Struct s2 = { 10, { 20, "hallo" }}
 
 // arrays
 int[10] buffer;

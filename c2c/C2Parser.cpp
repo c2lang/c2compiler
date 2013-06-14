@@ -324,6 +324,7 @@ C2::ExprResult C2Parser::ParseStructMember() {
         return Actions.ActOnVarExpr(id->getNameStart(), idLoc, type.release(), 0);
     }
     // TODO handle (anonymous) sub-structs
+    return ExprError();
 }
 
 /*
