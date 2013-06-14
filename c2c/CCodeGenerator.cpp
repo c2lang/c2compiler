@@ -748,7 +748,7 @@ void CCodeGenerator::EmitTypePreName(Type* T, StringBuilder& output) {
         EmitTypePreName(T->getRefType(), output);
         break;
     case Type::QUALIFIER:
-        Type::printQualifier(output, T->getQualifier());
+        Type::printCQualifier(output, T->getQualifier());
         EmitTypePreName(T->getRefType(), output);
         break;
     }

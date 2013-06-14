@@ -55,6 +55,11 @@ void Type::printQualifier(StringBuilder& buffer, unsigned int flags) {
     if (flags & TYPE_CONST) buffer << "const ";
 }
 
+void Type::printCQualifier(StringBuilder& buffer, unsigned int flags) {
+    if (flags & TYPE_LOCAL) buffer << "static ";
+    if (flags & TYPE_VOLATILE) buffer << "volatile ";
+    if (flags & TYPE_CONST) buffer << "const ";
+}
 
 #ifdef TYPE_DEBUG
 static unsigned tcount = 0;

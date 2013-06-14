@@ -136,6 +136,7 @@ public:
     Expr* getBaseUserType() const;
 
     static void printQualifier(StringBuilder& buffer, unsigned int flags);
+    static void printCQualifier(StringBuilder& buffer, unsigned int flags);
 private:
     void printName(StringBuilder& buffer) const;
 
