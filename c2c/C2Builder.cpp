@@ -461,7 +461,9 @@ void C2Builder::addDummyPackages() {
     {
         FunctionDecl* func = new FunctionDecl("puts", loc, true, BuiltinType::get(TYPE_INT));
         // TODO correct arg
-        func->addArg(new DeclExpr("s", loc, BuiltinType::get(TYPE_INT), 0));
+        Type* ptype = new Type(Type::POINTER, BuiltinType::get(TYPE_CHAR));
+        Type* ctype = new Type(Type::QUALIFIER, ptype);
+        func->addArg(new DeclExpr("s", loc, ctype, 0));
         stdioPkg->addSymbol(func);
         // canonical type
         Type* proto = new Type(Type::FUNC);
@@ -497,7 +499,22 @@ void C2Builder::addDummyPackages() {
         // canonical type
         Type* proto = new Type(Type::FUNC);
         proto->setReturnType(BuiltinType::get(TYPE_INT));
+        proto->addArgument(ptype);
         proto->addArgument(ctype);
+        func->setCanonicalType(proto);
+    }
+
+    Package* stdlibPkg = getPackage("stdlib", true);
+    //void exit(int status);
+    {
+        FunctionDecl* func = new FunctionDecl("exit", loc, true, BuiltinType::get(TYPE_VOID));
+        // TODO correct arg
+        func->addArg(new DeclExpr("status", loc, BuiltinType::get(TYPE_INT), 0));
+        stdlibPkg->addSymbol(func);
+        // canonical type
+        Type* proto = new Type(Type::FUNC);
+        proto->setReturnType(BuiltinType::get(TYPE_INT));
+        proto->addArgument(BuiltinType::get(TYPE_INT));
         func->setCanonicalType(proto);
     }
 }
