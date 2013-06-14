@@ -566,6 +566,8 @@ C2::ExprResult C2Parser::ParseRHSOfBinaryExpression(ExprResult LHS, prec::Level 
 
     // Consume the operator, saving the operator token for error reporting.
     Token OpToken = Tok;
+    // C2 doesn't currently allow this. Check for comma, because used to ParseConstantExpr
+    if (OpToken.is(tok::comma)) return LHS;
     ConsumeToken();
 
     // Bail out when encountering a comma followed by a token which can't
@@ -1288,28 +1290,8 @@ int C2Parser::SkipArray(int lookahead) {
 // Syntax: TODO
 C2::ExprResult C2Parser::ParseConstantExpression() {
     LOG_FUNC
-    // TODO implement properly
-    if (Tok.is(tok::numeric_constant)) {
-        ExprResult E = Actions.ActOnNumericConstant(Tok);
-        ConsumeToken();
-        return E;
-    }
-    if (Tok.is(tok::string_literal)) {
-        ExprResult Res = ParseStringLiteralExpression(true);
-        ConsumeStringToken();
-        return Res;
-    }
-    if (Tok.is(tok::kw_NULL)) {
-        ConsumeToken();
-        return ExprError();
-    }
-    if (Tok.is(tok::identifier)) {
-        return ParseIdentifier(false);
-    }
-    std::cerr << "UNHANDLED TOKEN: ";
-    PP.DumpToken(Tok);
-    std::cerr << std::endl;
-    assert(0 && "unhandled token type");
+    // we cannot evaluate here, so treat as normal expr and check constness later
+    return ParseExpression();
 }
 
 // Syntax: [],  [<numeric_constant>]
