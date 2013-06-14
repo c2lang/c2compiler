@@ -1,10 +1,8 @@
 package type_warnings;
 
-// error: unknown package
-utils.foo[] bla;
+utils.foo[] bla; // error: unknown package
 
-// errro: main is not a type
-main bliep;
+main bliep; // error: main is not a type
 
 type Number int;
 
@@ -14,30 +12,24 @@ func void test1() { }
 
 func int test2(int a, int b) { }
 
-// error: Foo and Bar are unknown symbols
-func Bar test3(Foo bar, int* intp) {}
+func Bar test3(Foo bar, int* intp) {} // error: Foo and Bar are unknown symbols
 
 func Number test4(Number* n) {}
 
-// error: main and bla are not types
-func void test5(main* a, bla b) {}
+func void test5(main* a, bla b) {} // error: main and bla are not types
 
 public func void main() {
     int a = (int) 10;
 }
 
-// error: cannot have public function with non-public return type
-public func Number func1() {}
+public func Number func1() {} // error: cannot have public function with non-public return type
 
-// error: cannot have public function with non-public argument type
-public func void func2(Number n) {}
+public func void func2(Number n) {} // error: cannot have public function with non-public argument type
 
-// error: cannot have public var with non-public type
 public Number number;
-public type_warnings.Number number2;
+public type_warnings.Number number2; // error: cannot have public var with non-public type
 
-// error cannot have non-public base type in public var
-public type PubNumber Number*;
+public type PubNumber Number*; // error cannot have non-public base type in public var
 
 // ok
 public type Faa int;
