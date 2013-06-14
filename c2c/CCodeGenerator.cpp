@@ -720,7 +720,6 @@ void CCodeGenerator::EmitTypePreName(Type* T, StringBuilder& output) {
                 DeclExpr* mem = (*members)[i];
                 output.indent(INDENT);
                 Utils::addName(*curpkg, mem->getName(), output);
-                output << mem->getName();
                 if (mem->getInitValue()) {
                     output << " = ";
                     EmitExpr(mem->getInitValue(), output);
