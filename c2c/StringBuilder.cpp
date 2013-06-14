@@ -28,8 +28,9 @@
 using namespace C2;
 using namespace std;
 
-StringBuilder::StringBuilder()
-    : buffer((char*)malloc(BUFSIZE))
+StringBuilder::StringBuilder(unsigned int cap)
+    : capacity(cap)
+    , buffer((char*)malloc(capacity))
 {
     clear();
 }
@@ -41,7 +42,7 @@ StringBuilder::~StringBuilder() {
 StringBuilder& StringBuilder::operator<<(const char* input) {
     int len = strlen(input);
 #ifdef SIZE_DEBUG
-    int cap = BUFSIZE - (ptr-buffer);
+    int cap = capacity - (ptr-buffer);
     assert(len < cap && "buffer overflow");
 #endif
     strcpy(ptr, input);
@@ -52,7 +53,7 @@ StringBuilder& StringBuilder::operator<<(const char* input) {
 StringBuilder& StringBuilder::operator<<(void* input) {
     int len = 10;   // 0x12345678
 #ifdef SIZE_DEBUG
-    int cap = BUFSIZE - (ptr-buffer);
+    int cap = capacity - (ptr-buffer);
     assert(len < cap && "buffer overflow");
 #endif
     ptr += sprintf(ptr, "0x%x", (unsigned int)input);
@@ -62,7 +63,7 @@ StringBuilder& StringBuilder::operator<<(void* input) {
 StringBuilder& StringBuilder::operator<<(const string& input) {
     int len = input.size();
 #ifdef SIZE_DEBUG
-    int cap = BUFSIZE - (ptr-buffer);
+    int cap = capacity - (ptr-buffer);
     assert(len < cap && "buffer overflow");
 #endif
     strcpy(ptr, input.c_str());
@@ -72,7 +73,7 @@ StringBuilder& StringBuilder::operator<<(const string& input) {
 
 StringBuilder& StringBuilder::operator<<(char input) {
 #ifdef SIZE_DEBUG
-    int cap = BUFSIZE - (ptr-buffer);
+    int cap = capacity - (ptr-buffer);
     assert(1 < cap && "buffer overflow");
 #endif
     *ptr = input;
@@ -83,7 +84,7 @@ StringBuilder& StringBuilder::operator<<(char input) {
 
 StringBuilder& StringBuilder::operator<<(int input) {
 #ifdef SIZE_DEBUG
-    int cap = BUFSIZE - (ptr-buffer);
+    int cap = capacity - (ptr-buffer);
     assert(10 < cap && "buffer overflow");
 #endif
     ptr += sprintf(ptr, "%d", input);
@@ -92,7 +93,7 @@ StringBuilder& StringBuilder::operator<<(int input) {
 
 StringBuilder& StringBuilder::operator<<(unsigned int input) {
 #ifdef SIZE_DEBUG
-    int cap = BUFSIZE - (ptr-buffer);
+    int cap = capacity - (ptr-buffer);
     assert(10 < cap && "buffer overflow");
 #endif
     ptr += sprintf(ptr, "%u", input);
@@ -102,7 +103,7 @@ StringBuilder& StringBuilder::operator<<(unsigned int input) {
 StringBuilder& StringBuilder::operator<<(const StringBuilder& input) {
     int len = input.size();
 #ifdef SIZE_DEBUG
-    int cap = BUFSIZE - (ptr-buffer);
+    int cap = capacity - (ptr-buffer);
     assert(len < cap && "buffer overflow");
 #endif
     memcpy(ptr, input.buffer, len);

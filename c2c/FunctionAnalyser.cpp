@@ -512,7 +512,7 @@ void FunctionAnalyser::analyseInitList(Expr* expr, Type* type) {
         break;
     default:
         {
-            StringBuilder temp;
+            StringBuilder temp(128);
             type->DiagName(temp);
         Diags.Report(expr->getExprLoc(), diag::err_invalid_type_initializer_list) << temp;
         }
@@ -586,7 +586,7 @@ Type* FunctionAnalyser::analyseUnaryOperator(Expr* expr) {
         // TODO handle user types
         if (!LType->isPointerType()) {
             // TODO use function to get name
-            StringBuilder buf;
+            StringBuilder buf(256);
             buf << '\'';
             LType->printEffective(buf, 0);
             buf << '\'';
@@ -696,7 +696,11 @@ Type* FunctionAnalyser::analyseMemberExpr(Expr* expr) {
                             return de->getType();
                         }
                     }
-                    fprintf(stderr, "error: Type 'todo' has no member '%s'\n", member->getName().c_str());
+                    StringBuilder temp(128);
+                    T->DiagName(temp);
+                    StringBuilder temp2(128);
+                    temp2 << '\'' << member->getName() << '\'';
+                    Diags.Report(member->getExprLoc(), diag::err_no_member) << temp2 << temp;
                     return 0;
                 }
                 break;
@@ -745,7 +749,7 @@ Type* FunctionAnalyser::analyseMemberExpr(Expr* expr) {
                 return de->getType();
             }
         }
-        fprintf(stderr, "error: Type 'todo' has no member '%s'\n", member->getName().c_str());
+        fprintf(stderr, "error: (1) Type 'todo' has no member '%s'\n", member->getName().c_str());
         return 0;
     }
     return 0;

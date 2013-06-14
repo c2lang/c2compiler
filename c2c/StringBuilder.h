@@ -22,7 +22,7 @@ namespace C2 {
 
 class StringBuilder {
 public:
-    StringBuilder();
+    StringBuilder(unsigned int cap = CAPACITY);
     ~StringBuilder();
 
     StringBuilder& operator<<(const char* input);
@@ -40,7 +40,8 @@ public:
     void strip(char c);
     void indent(int num);
 private:
-    static const unsigned int BUFSIZE = 1024*1024;
+    static const unsigned int CAPACITY = 1024*1024;
+    unsigned int capacity;
     char* buffer;
     char* ptr;
     StringBuilder(const StringBuilder&);
