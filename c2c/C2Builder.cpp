@@ -366,9 +366,8 @@ void C2Builder::build() {
         for (PkgsIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
             Package* P = iter->second;
             u_int64_t t1 = Utils::getCurrentTime();
-            // TEMP for now just filter out stdio (as only external package)
-            if (P->getName() == "stdio") continue;
-            // TEMP for now filter out 'c2' as well
+            if (P->isPlainC()) continue;
+            // for now filter out 'c2' as well
             if (P->getName() == "c2") continue;
             CodeGenModule cgm(P);
             for (unsigned int i=0; i<files.size(); i++) {
