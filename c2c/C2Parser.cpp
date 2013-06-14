@@ -804,7 +804,7 @@ C2::ExprResult C2Parser::ParseCastExpression(bool isUnaryExpression,
         {                      // primary-expression: identifier
                                // unqualified-id: identifier
                                // constant: enumeration-constant
-            Res = ParseIdentifier(true);
+            Res = ParseIdentifier();
 
             // Make sure to pass down the right value for isAddressOfOperand.
             if (isAddressOfOperand && isPostfixExpressionSuffixStart())
@@ -995,7 +995,7 @@ C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
         ConsumeToken();  // Eat the "." or "->" token.
 
         if (ExpectIdentifier()) return ExprError();
-        ExprResult Res = ParseIdentifier(false);
+        ExprResult Res = ParseIdentifier();
         if (Res.isInvalid()) return ExprError();
         LHS = Actions.ActOnMemberExpr(LHS.release(), OpKind == tok::arrow, Res.release());
         break;
@@ -1332,7 +1332,7 @@ C2::ExprResult C2Parser::ParseSizeof()
     // TEMP only support base types and identifier (no struct members etc)
     switch (Tok.getKind()) {
     case tok::identifier:
-        Res = ParseIdentifier(true);
+        Res = ParseIdentifier();
         break;
     // all basic types
     case tok::kw_u8:
@@ -1371,7 +1371,7 @@ C2::ExprResult C2Parser::ParseSizeof()
 
 // Syntax:
 // identifier
-C2::ExprResult C2Parser::ParseIdentifier(bool allow_package) {
+C2::ExprResult C2Parser::ParseIdentifier() {
     LOG_FUNC
     assert(Tok.is(tok::identifier) && "Not an identifier!");
 
@@ -1416,7 +1416,7 @@ void C2Parser::ParseFuncDef(bool is_public) {
     IdentifierInfo* id = Tok.getIdentifierInfo();
     SourceLocation idLoc = ConsumeToken();
 
-    // TODO use ParseIdentifier(false)
+    // TODO use ParseIdentifier()
     FunctionDecl* func = Actions.ActOnFuncDef(id->getNameStart(), idLoc, is_public, rtype.release());
 
     ExprList params;
@@ -1892,7 +1892,7 @@ C2::StmtResult C2Parser::ParseDeclaration() {
     ExprResult type = ParseTypeSpecifier(true);
     if (type.isInvalid()) return StmtError();
 
-    // TODO use ParseIdentifier(false)
+    // TODO use ParseIdentifier()
     if (ExpectIdentifier()) return StmtError();
     IdentifierInfo* id = Tok.getIdentifierInfo();
     SourceLocation idLoc = ConsumeToken();
@@ -2050,7 +2050,7 @@ void C2Parser::ParseVarDef(bool is_public) {
         Diag(Tok, diag::err_invalid_token_after_declaration_suggest_func) << PP.getSpelling(Tok);
         return;
     }
-    // TODO use ParseIdentifier(false)
+    // TODO use ParseIdentifier()
     Actions.ActOnVarDef(id->getNameStart(), idLoc, is_public, type.release(), InitValue.release());
 
     if (need_semi) {

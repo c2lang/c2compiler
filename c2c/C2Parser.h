@@ -134,7 +134,7 @@ private:
     ExprResult ParseTypeSpecifier(bool allow_qualifier);
     ExprResult ParseArray(ExprResult base);
     ExprResult ParseSizeof();
-    ExprResult ParseIdentifier(bool allow_package);
+    ExprResult ParseIdentifier();
     ExprResult ParseFullIdentifier();
 
   //===--------------------------------------------------------------------===//
