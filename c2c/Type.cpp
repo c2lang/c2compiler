@@ -421,8 +421,8 @@ void Type::printName(StringBuilder& buffer) const {
         assert(0);
         break;
     case USER:
-        assert(0);
-        //userType->generateC(0, buffer);
+        assert(refType);
+        refType->printName(buffer);
         break;
     case POINTER:
         refType->printName(buffer);
@@ -452,8 +452,9 @@ void Type::print(int indent, StringBuilder& buffer, RecursionType recursive) con
         userType->print(indent + INDENT, buffer);
         if (refType && recursive != RECURSE_NONE) {
             buffer.indent(indent + INDENT);
-            buffer << ANSI_CYAN << "resolved to:" << ANSI_NORMAL << '\n';
-            refType->print(indent + INDENT, buffer, recursive==RECURSE_ONCE ? RECURSE_NONE : recursive);
+            buffer << ANSI_CYAN << "resolved to:" << ANSI_NORMAL << ' ';
+            refType->printName(buffer);
+            buffer << '\n';
         }
         break;
     case UNION:

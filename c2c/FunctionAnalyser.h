@@ -82,6 +82,9 @@ private:
     Type* resolveCanonicalType(Type* T);
     Type* Decl2Type(Decl* decl);
 
+    void analyseInitExpr(Expr* expr, Type* canonical);
+    void analyseInitList(Expr* expr, Type* canonical);
+
     FileScope& globalScope;
     TypeContext& typeContext;
     Scope scopes[MAX_SCOPE_DEPTH];

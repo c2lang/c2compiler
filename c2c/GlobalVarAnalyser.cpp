@@ -68,6 +68,20 @@ bool GlobalVarAnalyser::handle(Decl* decl) {
             break;
         }
     case DECL_TYPE:
+        {
+            // set canonical type for struct members
+            TypeDecl* TD = DeclCaster<TypeDecl>::getType(decl);
+            Type* T = TD->getType();
+            if (T->isStructOrUnionType()) {
+                MemberList* members = T->getMembers();
+                for (unsigned i=0; i<members->size(); i++) {
+                    DeclExpr* mem = (*members)[i];
+                    Type* canonicalType = mem->getType()->getCanonical(typeContext);
+                    mem->setCanonicalType(canonicalType);
+                }
+            }
+        }
+        break;
     case DECL_ARRAYVALUE:
     case DECL_USE:
         // nothing to do

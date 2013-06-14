@@ -95,6 +95,17 @@ bool FunctionAnalyser::handle(Decl* decl) {
         }
         break;
     case DECL_VAR:
+        {
+            // Bit nasty to analyse Initialization values, but we need a lot of shared code
+            VarDecl* VD = DeclCaster<VarDecl>::getType(decl);
+            Expr* Init = VD->getInitValue();
+            if (Init) {
+                EnterScope(0);
+                analyseInitExpr(Init, VD->getCanonicalType());
+                ExitScope();
+            }
+        }
+        break;
     case DECL_TYPE:
     case DECL_ARRAYVALUE:
     case DECL_USE:
@@ -392,6 +403,112 @@ C2::Type* FunctionAnalyser::analyseExpr(Expr* expr) {
         return analyseParenExpr(expr);
     }
     return 0;
+}
+
+void FunctionAnalyser::analyseInitExpr(Expr* expr, Type* canonical) {
+    // TODO compare RHS type with canonical
+
+    switch (expr->etype()) {
+    case EXPR_NUMBER:
+    case EXPR_STRING:
+    case EXPR_BOOL:
+    case EXPR_CHARLITERAL:
+        // TODO check if compatible
+        break;
+    case EXPR_CALL:
+        // TODO not allowed, give error
+        assert(0 && "TODO ERROR");
+        break;
+    case EXPR_IDENTIFIER:
+        {
+            ScopeResult Res = analyseIdentifier(expr);
+            if (!Res.ok) return;
+            if (!Res.decl) return;
+            if (Res.pkg) {
+                IdentifierExpr* id = ExprCaster<IdentifierExpr>::getType(expr);
+                id->setPackage(Res.pkg);
+            }
+        }
+        break;
+    case EXPR_INITLIST:
+        analyseInitList(expr, canonical);
+        break;
+    case EXPR_TYPE:
+        assert(0 && "??");
+        break;
+    case EXPR_DECL:
+        assert(0 && "TODO ERROR");
+        break;
+    case EXPR_BINOP:
+        analyseBinaryOperator(expr);
+        break;
+    case EXPR_CONDOP:
+        analyseConditionalOperator(expr);
+        break;
+    case EXPR_UNARYOP:
+        analyseUnaryOperator(expr);
+        break;
+    case EXPR_SIZEOF:
+        analyseSizeofExpr(expr);
+        break;
+    case EXPR_ARRAYSUBSCRIPT:
+        analyseArraySubscript(expr);
+        break;
+    case EXPR_MEMBER:
+        // TODO dont allow struct.member, only pkg.constant
+        analyseMemberExpr(expr);
+        break;
+    case EXPR_PAREN:
+        analyseParenExpr(expr);
+        break;
+    }
+}
+
+void FunctionAnalyser::analyseInitList(Expr* expr, Type* type) {
+    InitListExpr* I = ExprCaster<InitListExpr>::getType(expr);
+    assert(I);
+
+    switch (type->getKind()) {
+    case Type::USER:
+        assert(0 && "should not happen");
+        break;
+    case Type::STRUCT:
+    case Type::UNION:
+        {
+            MemberList* members = type->getMembers();
+            assert(members);
+            // check array member type with each value in initlist
+            ExprList& values = I->getValues();
+            for (unsigned int i=0; i<values.size(); i++) {
+                if (i >= members->size()) {
+                    // TODO error: 'excess elements in array initializer'
+                    return;
+                }
+                DeclExpr* member = (*members)[i];
+                Type* mtype = member->getCanonicalType();
+                assert(mtype);
+                analyseInitExpr(values[i], mtype);
+            }
+        }
+        break;
+    case Type::ARRAY:
+        {
+            // check array member type with each value in initlist
+            ExprList& values = I->getValues();
+            for (unsigned int i=0; i<values.size(); i++) {
+                analyseInitExpr(values[i], type->getRefType());
+            }
+        }
+        break;
+    case Type::QUALIFIER:
+        assert(0 && "can happen?");
+        // TODO
+        break;
+    default:
+        // TODO
+        fprintf(stderr, "ERROR: cannot use initializer list on non-struct/union/array type\n");
+        break;
+    }
 }
 
 void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
