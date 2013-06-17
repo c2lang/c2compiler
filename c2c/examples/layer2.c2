@@ -6,3 +6,5 @@ public type Layer2 struct {
     layer1.Layer1 l1;
 }
 
+public layer1.Layer1 count = 0;
+
