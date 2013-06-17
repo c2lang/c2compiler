@@ -375,7 +375,7 @@ void CCodeGenerator::EmitFunction(Decl* D) {
 
     EmitFunctionProto(F, cbuf);
     cbuf << ' ';
-    EmitCompoundStmt(StmtCaster<CompoundStmt>::getType(F->getBody()), 0, false);
+    EmitCompoundStmt(F->getBody(), 0, false);
     cbuf << '\n';
 }
 

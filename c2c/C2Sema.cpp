@@ -232,7 +232,9 @@ void C2Sema::ActOnFunctionArgs(Decl* decl, ExprList params) {
 void C2Sema::ActOnFinishFunctionBody(Decl* decl, Stmt* body) {
     FunctionDecl* func = DeclCaster<FunctionDecl>::getType(decl);
     assert(func);
-    func->setBody(body);
+    CompoundStmt* C = StmtCaster<CompoundStmt>::getType(body);
+    assert(C);
+    func->setBody(C);
 }
 
 void C2Sema::ActOnArrayValue(const char* name, SourceLocation loc, Expr* Value) {

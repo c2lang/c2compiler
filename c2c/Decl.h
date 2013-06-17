@@ -37,6 +37,7 @@ class Expr;
 class DeclExpr;
 class DeclVisitor;
 class ArrayValueDecl;
+class CompoundStmt;
 
 enum DeclType {
     DECL_FUNC = 0,
@@ -78,11 +79,11 @@ public:
     virtual void acceptD(DeclVisitor& v);
     virtual void print(StringBuilder& buffer);
 
-    void setBody(Stmt* body_) {
+    void setBody(CompoundStmt* body_) {
         assert(body == 0);
         body = body_;
     }
-    Stmt* getBody() const { return body; }
+    CompoundStmt* getBody() const { return body; }
     DeclExpr* findArg(const std::string& name) const;
     DeclExpr* getArg(unsigned int i) const { return args[i]; }
     unsigned int numArgs() const { return args.size(); }
@@ -108,7 +109,7 @@ private:
 
     typedef OwningVector<DeclExpr> Args;
     Args args;
-    Stmt* body;
+    CompoundStmt* body;
     bool m_isVariadic;
     // TODO EllipsisLoc
     Type* canonicalType;

@@ -82,8 +82,7 @@ bool FunctionAnalyser::handle(Decl* decl) {
             Type* rtype = func->getReturnType();
             bool need_rvalue = (rtype != BuiltinType::get(TYPE_VOID));
             if (need_rvalue) {
-                CompoundStmt* compound = StmtCaster<CompoundStmt>::getType(func->getBody());
-                assert(compound);
+                CompoundStmt* compound = func->getBody();
                 Stmt* lastStmt = compound->getLastStmt();
                 if (!lastStmt || lastStmt->stype() != STMT_RETURN) {
                     Diags.Report(compound->getRight(), diag::warn_falloff_nonvoid_function);
