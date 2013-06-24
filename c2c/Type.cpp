@@ -167,6 +167,12 @@ unsigned Type::getWidth() const {
     return 0;
 }
 
+bool Type::isConst() const {
+    // TODO recursively?
+    if (kind == QUALIFIER) return (qualifiers & TYPE_CONST);
+    else return false;
+}
+
 void Type::setRefType(Type* t) {
     assert(kind == USER);
     refType = t;

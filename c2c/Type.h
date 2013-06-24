@@ -78,6 +78,7 @@ public:
     bool isSubscriptable() const { return kind == ARRAY || kind == POINTER; }
     bool isPointerType() const { return kind == POINTER; }
     bool isArrayType() const { return kind == ARRAY; }
+    bool isConst() const;
 
     unsigned getWidth() const;
 

@@ -62,8 +62,8 @@ private:
     void analyseCaseStmt(Stmt* stmt);
     void analyseDefaultStmt(Stmt* stmt);
     void analyseReturnStmt(Stmt* stmt);
-
     void analyseStmtExpr(Stmt* stmt);
+
     Type* analyseExpr(Expr* expr);
     void analyseDeclExpr(Expr* expr);
     Type* analyseBinaryOperator(Expr* expr);
@@ -76,14 +76,14 @@ private:
     Type* analyseCall(Expr* expr);
     ScopeResult analyseIdentifier(Expr* expr);
 
+    void analyseInitExpr(Expr* expr, Type* canonical);
+    void analyseInitList(Expr* expr, Type* canonical);
+
     Type* checkAssignmentOperands(Type* left, Type* right);
 
     static Type* resolveUserType(Type* T);
     Type* resolveCanonicalType(Type* T);
     Type* Decl2Type(Decl* decl);
-
-    void analyseInitExpr(Expr* expr, Type* canonical);
-    void analyseInitList(Expr* expr, Type* canonical);
 
     FileScope& globalScope;
     TypeContext& typeContext;

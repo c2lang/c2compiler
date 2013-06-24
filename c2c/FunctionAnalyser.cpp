@@ -419,17 +419,39 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, Type* canonical) {
         // TODO check if compatible
         break;
     case EXPR_CALL:
-        // TODO not allowed, give error
-        assert(0 && "TODO ERROR");
-        break;
+        // TODO check return type (if void -> size of array has non-integer type 'void')
+        Diags.Report(expr->getLocation(), diag::err_vla_decl_in_file_scope);
+        return;
     case EXPR_IDENTIFIER:
         {
             ScopeResult Res = analyseIdentifier(expr);
+            IdentifierExpr* id = ExprCaster<IdentifierExpr>::getType(expr);
             if (!Res.ok) return;
             if (!Res.decl) return;
             if (Res.pkg) {
-                IdentifierExpr* id = ExprCaster<IdentifierExpr>::getType(expr);
                 id->setPackage(Res.pkg);
+            }
+            switch (Res.decl->dtype()) {
+            case DECL_FUNC:
+                assert(0 && "TODO");
+                break;
+            case DECL_VAR:
+                {
+                    VarDecl* VD = DeclCaster<VarDecl>::getType(Res.decl);
+                    Type* T = VD->getType();
+                    if (!T->isConst()) {
+                        Diags.Report(expr->getLocation(), diag::err_vla_decl_in_file_scope);
+                        return;
+                    }
+                    T->dump();
+                }
+                break;
+            case DECL_TYPE:
+                assert(0 && "TODO");
+                break;
+            default:
+                assert(0 && "shouldn't come here");
+                return;
             }
         }
         break;
