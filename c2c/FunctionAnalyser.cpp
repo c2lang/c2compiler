@@ -103,12 +103,14 @@ bool FunctionAnalyser::handle(Decl* decl) {
             Type* T = VD->getType();
             if (T->isArrayType() && T->getArrayExpr()) {
                 EnterScope(0);
+                ConstModeSetter(*this, diag::err_vla_decl_in_file_scope);
                 analyseInitExpr(T->getArrayExpr(),  BuiltinType::get(TYPE_INT));
                 ExitScope();
             }
             Expr* Init = VD->getInitValue();
             if (Init) {
                 EnterScope(0);
+                ConstModeSetter(*this, diag::err_init_element_not_constant);
                 analyseInitExpr(Init, VD->getCanonicalType());
                 ExitScope();
             }
@@ -423,7 +425,8 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, Type* canonical) {
         break;
     case EXPR_CALL:
         // TODO check return type (if void -> size of array has non-integer type 'void')
-        Diags.Report(expr->getLocation(), diag::err_vla_decl_in_file_scope);
+        assert(constDiagID);
+        Diags.Report(expr->getLocation(), constDiagID);
         return;
     case EXPR_IDENTIFIER:
         {
