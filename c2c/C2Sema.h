@@ -46,9 +46,30 @@ class Expr;
 class Type;
 class ASTVisitor;
 
+
+class AST {
+public:
+    AST() {}
+    ~AST();
+
+    // analysis
+    void visitAST(ASTVisitor& visitor);
+
+    // debugging
+    void print(const std::string& filename) const;
+
+    std::string pkgName;
+    SourceLocation pkgLoc;
+
+    typedef std::vector<Decl*> DeclList;
+    typedef DeclList::const_iterator DeclListConstIter;
+    typedef DeclList::iterator DeclListIter;
+    DeclList decls;
+};
+
 class C2Sema {
 public:
-    C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, TypeContext& tc);
+    C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, TypeContext& tc, AST& ast_);
     ~C2Sema();
 
     // file level actions
@@ -111,17 +132,11 @@ public:
     ExprResult ActOnPostfixUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Expr* Input);
     ExprResult ActOnUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Expr* Input);
 
-    // analysis
-    void visitAST(ASTVisitor& visitor);
-
     // codegen
-    unsigned getNumDecls() const { return decls.size(); }
-    Decl* getDecl(unsigned index) const { return decls[index]; }
+    unsigned getNumDecls() const { return ast.decls.size(); }
+    Decl* getDecl(unsigned index) const { return ast.decls[index]; }
 
-    // debugging
-    void printAST(const std::string& filename) const;
-
-    const std::string& getPkgName() const { return pkgName; }
+    const std::string& getPkgName() const { return ast.pkgName; }
 private:
     DiagnosticBuilder Diag(SourceLocation Loc, unsigned DiagID);
     void addDecl(Decl* d);
@@ -129,20 +144,12 @@ private:
     const UseDecl* findAlias(const char* name) const;
     Decl* getSymbol(const std::string& name) const;
 
-    SourceManager& SourceMgr;
-    DiagnosticsEngine& Diags;
-
     // TEMP
     friend class CodeGenerator;
     friend class C2Builder;
 
-    std::string pkgName;
-    SourceLocation pkgLoc;
-
-    typedef std::vector<Decl*> DeclList;
-    typedef DeclList::const_iterator DeclListConstIter;
-    typedef DeclList::iterator DeclListIter;
-    DeclList decls;
+    SourceManager& SourceMgr;
+    DiagnosticsEngine& Diags;
 
     // This map is just for lookups, no ownership. UseDecls are not added here
     typedef std::map<std::string, Decl*> Symbols;
@@ -150,6 +157,7 @@ private:
     Symbols symbols;
 
     TypeContext& typeContext;
+    AST& ast;
 
     C2Sema(const C2Sema&);
     C2Sema& operator= (const C2Sema&);

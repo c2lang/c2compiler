@@ -95,17 +95,39 @@ static inline UnaryOperatorKind ConvertTokenKindToUnaryOpcode(
 }
 
 
-C2Sema::C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, TypeContext& tc)
+AST::~AST() {
+    for (unsigned int i=0; i<decls.size(); i++) {
+        delete decls[i];
+    }
+}
+
+void AST::visitAST(ASTVisitor& visitor) {
+    for (unsigned int i=0; i<decls.size(); i++) {
+        bool stop = visitor.handle(decls[i]);
+        if (stop) break;
+    }
+}
+
+void AST::print(const std::string& filename) const {
+    StringBuilder buffer;
+    buffer << "---- AST " << "(pkg=" << pkgName << ") " << filename << " ----\n";
+    for (DeclListConstIter iter = decls.begin(); iter != decls.end(); ++iter) {
+        (*iter)->print(buffer);
+        buffer << '\n';
+    }
+    printf("%s", (const char*)buffer);
+}
+
+
+C2Sema::C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, TypeContext& tc, AST& ast_)
     : SourceMgr(sm_)
     , Diags(Diags_)
     , typeContext(tc)
+    , ast(ast_)
 {
 }
 
 C2Sema::~C2Sema() {
-    for (unsigned int i=0; i<decls.size(); i++) {
-        delete decls[i];
-    }
 }
 
 void C2Sema::ActOnPackage(const char* name, SourceLocation loc) {
@@ -122,8 +144,8 @@ void C2Sema::ActOnPackage(const char* name, SourceLocation loc) {
         Diag(loc, diag::err_package_c2);
         return;
     }
-    pkgName = name;
-    pkgLoc = loc;
+    ast.pkgName = name;
+    ast.pkgLoc = loc;
 }
 
 void C2Sema::ActOnUse(const char* name, SourceLocation loc, Token& aliasTok, bool isLocal) {
@@ -133,7 +155,7 @@ void C2Sema::ActOnUse(const char* name, SourceLocation loc, Token& aliasTok, boo
     std::cerr << ANSI_NORMAL"\n";
 #endif
     // check if use-ing own package
-    if (pkgName == name) {
+    if (ast.pkgName == name) {
         Diag(loc, diag::err_use_own_package) << name;
         return;
     }
@@ -648,13 +670,6 @@ C2::ExprResult C2Sema::ActOnUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, E
     return ExprResult(new UnaryOperator(OpLoc, Opc, Input));
 }
 
-void C2Sema::visitAST(ASTVisitor& visitor) {
-    for (unsigned int i=0; i<decls.size(); i++) {
-        bool stop = visitor.handle(decls[i]);
-        if (stop) break;
-    }
-}
-
 C2::ExprResult C2Sema::ActOnBooleanConstant(const Token& Tok) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: boolean constant"ANSI_NORMAL"\n";
@@ -707,22 +722,12 @@ C2::ExprResult C2Sema::ActOnCharacterConstant(SourceLocation Loc, const std::str
     return ExprResult(new CharLiteralExpr(Loc, cvalue));
 }
 
-void C2Sema::printAST(const std::string& filename) const {
-    StringBuilder buffer;
-    buffer << "---- AST " << "(pkg=" << pkgName << ") " << filename << " ----\n";
-    for (DeclListConstIter iter = decls.begin(); iter != decls.end(); ++iter) {
-        (*iter)->print(buffer);
-        buffer << '\n';
-    }
-    printf("%s", (const char*)buffer);
-}
-
 DiagnosticBuilder C2Sema::Diag(SourceLocation Loc, unsigned DiagID) {
     return Diags.Report(Loc, DiagID);
 }
 
 void C2Sema::addDecl(Decl* d) {
-    decls.push_back(d);
+    ast.decls.push_back(d);
 
     // UseDecl's dont define a symbol
     if (Decl::isSymbol(d->dtype())) {
@@ -738,8 +743,8 @@ void C2Sema::addDecl(Decl* d) {
 }
 
 const C2::Decl* C2Sema::findUse(const char* name) const {
-    for (unsigned int i=0; i<decls.size(); i++) {
-        Decl* d = decls[i];
+    for (unsigned int i=0; i<ast.decls.size(); i++) {
+        Decl* d = ast.decls[i];
         if (d->dtype() != DECL_USE) break;
         if (d->getName() == name) return d;
     }
@@ -747,8 +752,8 @@ const C2::Decl* C2Sema::findUse(const char* name) const {
 }
 
 const C2::UseDecl* C2Sema::findAlias(const char* name) const {
-    for (unsigned int i=0; i<decls.size(); i++) {
-        Decl* d = decls[i];
+    for (unsigned int i=0; i<ast.decls.size(); i++) {
+        Decl* d = ast.decls[i];
         if (d->dtype() != DECL_USE) break;
         UseDecl* useDecl = DeclCaster<UseDecl>::getType(d);
         assert(useDecl);

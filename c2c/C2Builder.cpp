@@ -108,8 +108,7 @@ public:
         , Headers(HSOpts, FileMgr, Diags, LangOpts_, pti)
         , PPOpts(new PreprocessorOptions())
         , PP(PPOpts, Diags, LangOpts_, pti, SM, Headers, loader)
-        , sema(SM, Diags, typeContext)
-        , parser(PP, sema)
+        , sema(SM, Diags, typeContext, ast)
     {
         ApplyHeaderSearchOptions(PP.getHeaderSearchInfo(), *HSOpts, LangOpts_, pti->getTriple());
 
@@ -121,7 +120,6 @@ public:
         PP.EnterMainSourceFile();
         Diags.getClient()->BeginSourceFile(LangOpts_, &PP);
 
-        parser.Initialize();
     }
     ~FileInfo() {
         delete globals;
@@ -129,26 +127,28 @@ public:
 
     bool parse(const BuildOptions& options) {
         u_int64_t t1 = Utils::getCurrentTime();
+        C2Parser parser(PP, sema);
+        parser.Initialize();
         // parse the file into AST
         bool ok = parser.Parse();
         u_int64_t t2 = Utils::getCurrentTime();
         if (options.printTiming) printf(COL_TIME"parsing took %lld usec"ANSI_NORMAL"\n", t2 - t1);
-        if (options.printAST) sema.printAST(filename);
+        if (options.printAST) ast.print(filename);
         return ok;
     }
 
     // analyse use statements, Types and build file scope
     int analyse1(const BuildOptions& options, const Pkgs& pkgs) {
-        globals = new FileScope(sema.getPkgName(), pkgs, Diags);
+        globals = new FileScope(ast.pkgName, pkgs, Diags);
         ScopeAnalyser visitor(*globals, Diags);
-        sema.visitAST(visitor);
+        ast.visitAST(visitor);
         return visitor.getErrors();
     }
 
     // analyse Global var types + initialization
     int analyse2(const BuildOptions& options) {
         GlobalVarAnalyser visitor(*globals, typeContext, Diags);
-        sema.visitAST(visitor);
+        ast.visitAST(visitor);
         return visitor.getErrors();
     }
 
@@ -158,7 +158,7 @@ public:
 
         // analyse function bodies
         FunctionAnalyser visitor(*globals, typeContext, Diags);
-        sema.visitAST(visitor);
+        ast.visitAST(visitor);
 
         u_int64_t t2 = Utils::getCurrentTime();
         if (options.printTiming) printf(COL_TIME"analysis took %lld usec"ANSI_NORMAL"\n", t2 - t1);
@@ -190,8 +190,8 @@ public:
     Preprocessor PP;
 
     // C2 Parser + Sema
+    AST ast;
     C2Sema sema;
-    C2Parser parser;
     FileScope* globals;
 };
 
@@ -299,7 +299,7 @@ void C2Builder::build() {
     if (options.printASTAfter) {
         for (unsigned int i=0; i<files.size(); i++) {
             FileInfo* info = files[i];
-            info->sema.printAST(info->filename);
+            info->ast.print(info->filename);
         }
     }
 
@@ -348,7 +348,7 @@ void C2Builder::build() {
                 CCodeGenerator gen(P->getName(), CCodeGenerator::MULTI_FILE, pkgs);
                 for (unsigned int i=0; i<files.size(); i++) {
                     FileInfo* info = files[i];
-                    if (info->sema.pkgName == P->getName()) {
+                    if (info->ast.pkgName == P->getName()) {
                         gen.addEntry(info->filename, info->sema);
                     }
                 }
@@ -372,7 +372,7 @@ void C2Builder::build() {
             CodeGenModule cgm(P);
             for (unsigned int i=0; i<files.size(); i++) {
                 FileInfo* info = files[i];
-                if (info->sema.pkgName == P->getName()) {
+                if (info->ast.pkgName == P->getName()) {
                     cgm.addEntry(info->filename, info->sema);
                 }
             }
@@ -415,9 +415,9 @@ Package* C2Builder::getPackage(const std::string& name, bool isCLib) {
 bool C2Builder::createPkgs() {
     for (unsigned int i=0; i<files.size(); i++) {
         FileInfo* info = files[i];
-        Package* pkg = getPackage(info->sema.getPkgName(), false);
-        for (unsigned int i=0; i<info->sema.decls.size(); i++) {
-            Decl* New = info->sema.decls[i];
+        Package* pkg = getPackage(info->ast.pkgName, false);
+        for (unsigned int i=0; i<info->ast.decls.size(); i++) {
+            Decl* New = info->ast.decls[i];
             if (!Decl::isSymbol(New->dtype())) continue;
             Decl* Old = pkg->findSymbol(New->getName());
             if (Old) {
