@@ -167,10 +167,26 @@ unsigned Type::getWidth() const {
     return 0;
 }
 
-bool Type::isConst() const {
-    // TODO recursively?
-    if (kind == QUALIFIER) return (qualifiers & TYPE_CONST);
-    else return false;
+bool Type::isConstant() const {
+    // TODO we'll move the const part to a QualType. Use this to check compile time stuff
+    switch (kind) {
+    case BUILTIN:
+    case USER:
+    case STRUCT:
+    case UNION:
+        assert(0 && "TODO");
+        break;
+    case ENUM:
+        return true;
+    case FUNC:
+    case POINTER:
+    case ARRAY:
+        assert(0 && "TODO");
+        break;
+    case QUALIFIER:
+        return (qualifiers & TYPE_CONST);
+    }
+    return false;
 }
 
 void Type::setRefType(Type* t) {

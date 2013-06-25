@@ -467,19 +467,21 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, Type* canonical) {
             }
             switch (Res.decl->dtype()) {
             case DECL_FUNC:
+                // can be ok for const
                 assert(0 && "TODO");
                 break;
             case DECL_VAR:
                 {
                     VarDecl* VD = DeclCaster<VarDecl>::getType(Res.decl);
-                    Type* T = VD->getType();
-                    // TODO check inConstExpr
-                    assert(inConstExpr);
-                    if (!T->isConst()) {
-                        Diags.Report(expr->getLocation(), constDiagID);
-                        return;
+                    if (inConstExpr) {
+                        Type* T = VD->getType();
+                        if (!T->isConstant()) {
+                            T->dump();
+                            fprintf(stderr, "HER\n");
+                            Diags.Report(expr->getLocation(), constDiagID);
+                            return;
+                        }
                     }
-                    T->dump();
                 }
                 break;
             case DECL_TYPE:
