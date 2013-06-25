@@ -111,8 +111,9 @@ private:
 
     FunctionDecl* func;     // current function
 
-    bool inConstExpr;
     unsigned constDiagID;
+    bool inConstExpr;
+    unsigned CRASH_AVOIDER[4];    // NEEDED, OTHERWISE CLANG CAUSES SEGFAULT IN COMPILED CODE!
 
     FunctionAnalyser(const FunctionAnalyser&);
     FunctionAnalyser& operator= (const FunctionAnalyser&);
