@@ -79,6 +79,22 @@ private:
     void analyseInitExpr(Expr* expr, Type* canonical);
     void analyseInitList(Expr* expr, Type* canonical);
 
+    class ConstModeSetter {
+    public:
+        ConstModeSetter (FunctionAnalyser& analyser_, unsigned DiagID)
+            : analyser(analyser_)
+        {
+            analyser.inConstExpr = true;
+            analyser.constDiagID = DiagID;
+        }
+        ~ConstModeSetter() {
+            analyser.inConstExpr = false;
+            analyser.constDiagID = 0;
+        }
+    private:
+        FunctionAnalyser& analyser;
+    };
+
     Type* checkAssignmentOperands(Type* left, Type* right);
 
     static Type* resolveUserType(Type* T);
@@ -94,6 +110,9 @@ private:
     unsigned int errors;
 
     FunctionDecl* func;     // current function
+
+    bool inConstExpr;
+    unsigned constDiagID;
 
     FunctionAnalyser(const FunctionAnalyser&);
     FunctionAnalyser& operator= (const FunctionAnalyser&);

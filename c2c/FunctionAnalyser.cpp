@@ -41,6 +41,9 @@ FunctionAnalyser::FunctionAnalyser(FileScope& scope_,
     , curScope(0)
     , Diags(Diags_)
     , errors(0)
+    , func(0)
+    , inConstExpr(false)
+    , constDiagID(0)
 {
     Scope* parent = 0;
     for (int i=0; i<MAX_SCOPE_DEPTH; i++) {
