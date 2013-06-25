@@ -476,8 +476,6 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, Type* canonical) {
                     if (inConstExpr) {
                         Type* T = VD->getType();
                         if (!T->isConstant()) {
-                            T->dump();
-                            fprintf(stderr, "HER\n");
                             Diags.Report(expr->getLocation(), constDiagID);
                             return;
                         }

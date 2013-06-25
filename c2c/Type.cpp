@@ -171,7 +171,10 @@ bool Type::isConstant() const {
     // TODO we'll move the const part to a QualType. Use this to check compile time stuff
     switch (kind) {
     case BUILTIN:
+        break;
     case USER:
+        // TODO not ok, since (enum)State a cannot be used as init expr (State b = a)
+        return refType->isConstant();
     case STRUCT:
     case UNION:
         assert(0 && "TODO");
