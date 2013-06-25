@@ -79,17 +79,19 @@ private:
     void analyseInitExpr(Expr* expr, Type* canonical);
     void analyseInitList(Expr* expr, Type* canonical);
 
+    void pushMode(unsigned DiagID);
+    void popMode();
+
     class ConstModeSetter {
     public:
         ConstModeSetter (FunctionAnalyser& analyser_, unsigned DiagID)
             : analyser(analyser_)
         {
-            analyser.inConstExpr = true;
-            analyser.constDiagID = DiagID;
+            analyser.pushMode(DiagID);
         }
-        ~ConstModeSetter() {
-            analyser.inConstExpr = false;
-            analyser.constDiagID = 0;
+        ~ConstModeSetter()
+        {
+            analyser.popMode();
         }
     private:
         FunctionAnalyser& analyser;

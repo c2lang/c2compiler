@@ -32,6 +32,15 @@
 using namespace C2;
 using namespace clang;
 
+//#define ANALYSER_DEBUG
+
+#ifdef ANALYSER_DEBUG
+#include <iostream>
+#define LOG_FUNC std::cerr << ANSI_MAGENTA << __func__ << "()" << ANSI_NORMAL << "\n";
+#else
+#define LOG_FUNC
+#endif
+
 FunctionAnalyser::FunctionAnalyser(FileScope& scope_,
                                            TypeContext& tc,
                                            clang::DiagnosticsEngine& Diags_)
@@ -56,6 +65,7 @@ FunctionAnalyser::~FunctionAnalyser() {
 }
 
 bool FunctionAnalyser::handle(Decl* decl) {
+    LOG_FUNC
     switch (decl->dtype()) {
     case DECL_FUNC:
         {
@@ -102,15 +112,15 @@ bool FunctionAnalyser::handle(Decl* decl) {
             VarDecl* VD = DeclCaster<VarDecl>::getType(decl);
             Type* T = VD->getType();
             if (T->isArrayType() && T->getArrayExpr()) {
+                ConstModeSetter setter(*this, diag::err_vla_decl_in_file_scope);
                 EnterScope(0);
-                ConstModeSetter(*this, diag::err_vla_decl_in_file_scope);
                 analyseInitExpr(T->getArrayExpr(),  BuiltinType::get(TYPE_INT));
                 ExitScope();
             }
             Expr* Init = VD->getInitValue();
             if (Init) {
+                ConstModeSetter setter(*this, diag::err_init_element_not_constant);
                 EnterScope(0);
-                ConstModeSetter(*this, diag::err_init_element_not_constant);
                 analyseInitExpr(Init, VD->getCanonicalType());
                 ExitScope();
             }
@@ -126,6 +136,7 @@ bool FunctionAnalyser::handle(Decl* decl) {
 }
 
 void FunctionAnalyser::EnterScope(unsigned int flags) {
+    LOG_FUNC
     assert (scopeIndex < MAX_SCOPE_DEPTH && "out of scopes");
     scopes[scopeIndex].Init(flags);
     curScope = &scopes[scopeIndex];
@@ -133,12 +144,14 @@ void FunctionAnalyser::EnterScope(unsigned int flags) {
 }
 
 void FunctionAnalyser::ExitScope() {
+    LOG_FUNC
     scopeIndex--;
     Scope* parent = curScope->getParent();
     curScope = parent;
 }
 
 void FunctionAnalyser::analyseStmt(Stmt* S, bool haveScope) {
+    LOG_FUNC
     switch (S->stype()) {
     case STMT_RETURN:
         analyseReturnStmt(S);
@@ -183,6 +196,7 @@ void FunctionAnalyser::analyseStmt(Stmt* S, bool haveScope) {
 }
 
 void FunctionAnalyser::analyseCompoundStmt(Stmt* stmt) {
+    LOG_FUNC
     CompoundStmt* compound = StmtCaster<CompoundStmt>::getType(stmt);
     assert(compound);
     const StmtList& stmts = compound->getStmts();
@@ -192,6 +206,7 @@ void FunctionAnalyser::analyseCompoundStmt(Stmt* stmt) {
 }
 
 void FunctionAnalyser::analyseIfStmt(Stmt* stmt) {
+    LOG_FUNC
     IfStmt* I = StmtCaster<IfStmt>::getType(stmt);
     assert(I);
     Expr* cond = I->getCond();
@@ -209,6 +224,7 @@ void FunctionAnalyser::analyseIfStmt(Stmt* stmt) {
 }
 
 void FunctionAnalyser::analyseWhileStmt(Stmt* stmt) {
+    LOG_FUNC
     WhileStmt* W = StmtCaster<WhileStmt>::getType(stmt);
     assert(W);
     analyseStmt(W->getCond());
@@ -219,6 +235,7 @@ void FunctionAnalyser::analyseWhileStmt(Stmt* stmt) {
 }
 
 void FunctionAnalyser::analyseDoStmt(Stmt* stmt) {
+    LOG_FUNC
     DoStmt* D = StmtCaster<DoStmt>::getType(stmt);
     assert(D);
     EnterScope(Scope::BreakScope | Scope::ContinueScope | Scope::DeclScope);
@@ -228,6 +245,7 @@ void FunctionAnalyser::analyseDoStmt(Stmt* stmt) {
 }
 
 void FunctionAnalyser::analyseForStmt(Stmt* stmt) {
+    LOG_FUNC
     ForStmt* F = StmtCaster<ForStmt>::getType(stmt);
     assert(F);
     EnterScope(Scope::BreakScope | Scope::ContinueScope | Scope::DeclScope | Scope::ControlScope);
@@ -239,6 +257,7 @@ void FunctionAnalyser::analyseForStmt(Stmt* stmt) {
 }
 
 void FunctionAnalyser::analyseSwitchStmt(Stmt* stmt) {
+    LOG_FUNC
     SwitchStmt* S = StmtCaster<SwitchStmt>::getType(stmt);
     assert(S);
     analyseExpr(S->getCond());
@@ -268,6 +287,7 @@ void FunctionAnalyser::analyseSwitchStmt(Stmt* stmt) {
 }
 
 void FunctionAnalyser::analyseBreakStmt(Stmt* stmt) {
+    LOG_FUNC
     if (!curScope->allowBreak()) {
         BreakStmt* B = StmtCaster<BreakStmt>::getType(stmt);
         assert(B);
@@ -276,6 +296,7 @@ void FunctionAnalyser::analyseBreakStmt(Stmt* stmt) {
 }
 
 void FunctionAnalyser::analyseContinueStmt(Stmt* stmt) {
+    LOG_FUNC
     if (!curScope->allowContinue()) {
         ContinueStmt* C = StmtCaster<ContinueStmt>::getType(stmt);
         assert(C);
@@ -284,6 +305,7 @@ void FunctionAnalyser::analyseContinueStmt(Stmt* stmt) {
 }
 
 void FunctionAnalyser::analyseCaseStmt(Stmt* stmt) {
+    LOG_FUNC
     CaseStmt* C = StmtCaster<CaseStmt>::getType(stmt);
     assert(C);
     analyseExpr(C->getCond());
@@ -294,6 +316,7 @@ void FunctionAnalyser::analyseCaseStmt(Stmt* stmt) {
 }
 
 void FunctionAnalyser::analyseDefaultStmt(Stmt* stmt) {
+    LOG_FUNC
     DefaultStmt* D = StmtCaster<DefaultStmt>::getType(stmt);
     assert(D);
     const StmtList& stmts = D->getStmts();
@@ -303,6 +326,7 @@ void FunctionAnalyser::analyseDefaultStmt(Stmt* stmt) {
 }
 
 void FunctionAnalyser::analyseReturnStmt(Stmt* stmt) {
+    LOG_FUNC
     ReturnStmt* ret = StmtCaster<ReturnStmt>::getType(stmt);
     assert(ret);
     Expr* value = ret->getExpr();
@@ -324,12 +348,14 @@ void FunctionAnalyser::analyseReturnStmt(Stmt* stmt) {
 }
 
 void FunctionAnalyser::analyseStmtExpr(Stmt* stmt) {
+    LOG_FUNC
     Expr* expr = StmtCaster<Expr>::getType(stmt);
     assert(expr);
     analyseExpr(expr);
 }
 
 C2::Type* FunctionAnalyser::Decl2Type(Decl* decl) {
+    LOG_FUNC
     assert(decl);
     switch (decl->dtype()) {
     case DECL_FUNC:
@@ -363,6 +389,7 @@ C2::Type* FunctionAnalyser::Decl2Type(Decl* decl) {
 }
 
 C2::Type* FunctionAnalyser::analyseExpr(Expr* expr) {
+    LOG_FUNC
     switch (expr->etype()) {
     case EXPR_NUMBER:
         // TEMP for now always return type int
@@ -414,6 +441,7 @@ C2::Type* FunctionAnalyser::analyseExpr(Expr* expr) {
 }
 
 void FunctionAnalyser::analyseInitExpr(Expr* expr, Type* canonical) {
+    LOG_FUNC
     // TODO compare RHS type with canonical
 
     switch (expr->etype()) {
@@ -445,8 +473,10 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, Type* canonical) {
                 {
                     VarDecl* VD = DeclCaster<VarDecl>::getType(Res.decl);
                     Type* T = VD->getType();
+                    // TODO check inConstExpr
+                    assert(inConstExpr);
                     if (!T->isConst()) {
-                        Diags.Report(expr->getLocation(), diag::err_vla_decl_in_file_scope);
+                        Diags.Report(expr->getLocation(), constDiagID);
                         return;
                     }
                     T->dump();
@@ -496,6 +526,7 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, Type* canonical) {
 }
 
 void FunctionAnalyser::analyseInitList(Expr* expr, Type* type) {
+    LOG_FUNC
     InitListExpr* I = ExprCaster<InitListExpr>::getType(expr);
     assert(I);
 
@@ -546,6 +577,7 @@ void FunctionAnalyser::analyseInitList(Expr* expr, Type* type) {
 }
 
 void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
+    LOG_FUNC
     DeclExpr* decl = ExprCaster<DeclExpr>::getType(expr);
     assert(decl);
 
@@ -575,6 +607,7 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
 }
 
 Type* FunctionAnalyser::analyseBinaryOperator(Expr* expr) {
+    LOG_FUNC
     BinaryOperator* binop = ExprCaster<BinaryOperator>::getType(expr);
     assert(binop);
     Type* TLeft = analyseExpr(binop->getLHS());
@@ -590,6 +623,7 @@ Type* FunctionAnalyser::analyseBinaryOperator(Expr* expr) {
 }
 
 Type* FunctionAnalyser::analyseConditionalOperator(Expr* expr) {
+    LOG_FUNC
     ConditionalOperator* condop = ExprCaster<ConditionalOperator>::getType(expr);
     assert(condop);
     analyseExpr(condop->getCond());
@@ -600,6 +634,7 @@ Type* FunctionAnalyser::analyseConditionalOperator(Expr* expr) {
 }
 
 Type* FunctionAnalyser::analyseUnaryOperator(Expr* expr) {
+    LOG_FUNC
     UnaryOperator* unaryop = ExprCaster<UnaryOperator>::getType(expr);
     assert(unaryop);
     Type* LType = analyseExpr(unaryop->getExpr());
@@ -627,6 +662,7 @@ Type* FunctionAnalyser::analyseUnaryOperator(Expr* expr) {
 }
 
 void FunctionAnalyser::analyseSizeofExpr(Expr* expr) {
+    LOG_FUNC
     SizeofExpr* size = ExprCaster<SizeofExpr>::getType(expr);
     assert(size);
     // TODO can also be type
@@ -634,6 +670,7 @@ void FunctionAnalyser::analyseSizeofExpr(Expr* expr) {
 }
 
 Type* FunctionAnalyser::analyseArraySubscript(Expr* expr) {
+    LOG_FUNC
     ArraySubscriptExpr* sub = ExprCaster<ArraySubscriptExpr>::getType(expr);
     assert(sub);
     Type* LType = analyseExpr(sub->getBase());
@@ -650,6 +687,7 @@ Type* FunctionAnalyser::analyseArraySubscript(Expr* expr) {
 }
 
 Type* FunctionAnalyser::analyseMemberExpr(Expr* expr) {
+    LOG_FUNC
     MemberExpr* M = ExprCaster<MemberExpr>::getType(expr);
     assert(M);
     IdentifierExpr* member = M->getMember();
@@ -781,12 +819,14 @@ Type* FunctionAnalyser::analyseMemberExpr(Expr* expr) {
 }
 
 Type* FunctionAnalyser::analyseParenExpr(Expr* expr) {
+    LOG_FUNC
     ParenExpr* P = ExprCaster<ParenExpr>::getType(expr);
     assert(P);
     return analyseExpr(P->getExpr());
 }
 
 C2::Type* FunctionAnalyser::analyseCall(Expr* expr) {
+    LOG_FUNC
     CallExpr* call = ExprCaster<CallExpr>::getType(expr);
     assert(call);
     // analyse function
@@ -826,6 +866,7 @@ C2::Type* FunctionAnalyser::analyseCall(Expr* expr) {
 }
 
 ScopeResult FunctionAnalyser::analyseIdentifier(Expr* expr) {
+    LOG_FUNC
     IdentifierExpr* id = ExprCaster<IdentifierExpr>::getType(expr);
     assert(id);
     ScopeResult res = curScope->findSymbol(id->getName());
@@ -889,5 +930,19 @@ C2::Type* FunctionAnalyser::resolveUserType(Type* T) {
         return t2;
     }
     return T;
+}
+
+void FunctionAnalyser::pushMode(unsigned DiagID) {
+    LOG_FUNC
+    assert(inConstExpr == false);
+    inConstExpr = true;
+    constDiagID = DiagID;
+}
+
+void FunctionAnalyser::popMode() {
+    LOG_FUNC
+    assert(inConstExpr == true);
+    inConstExpr = false;
+    constDiagID = 0;
 }
 
