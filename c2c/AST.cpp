@@ -20,7 +20,6 @@
 #include <clang/Parse/ParseDiagnostic.h>
 #include <clang/Sema/SemaDiagnostic.h>
 
-#include "C2Sema.h"
 #include "Decl.h"
 #include "Expr.h"
 #include "StringBuilder.h"

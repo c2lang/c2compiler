@@ -26,15 +26,17 @@
 
 #include "CodeGenFunction.h"
 #include "CodeGenModule.h"
-#include "C2Sema.h"
 #include "Decl.h"
+#include "Expr.h"
 #include "Stmt.h"
+#include "Type.h"
 #include "StringBuilder.h"
 #include "Utils.h"
 #include "Package.h"
 
 using namespace C2;
 using namespace llvm;
+using namespace clang;
 
 CodeGenFunction::CodeGenFunction(CodeGenModule& CGM_, FunctionDecl* Func_)
     : CGM(CGM_)
