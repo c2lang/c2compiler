@@ -35,7 +35,8 @@
 #include "CodeGenModule.h"
 #include "CodeGenFunction.h"
 #include "Package.h"
-#include "C2Sema.h"
+#include "AST.h"
+#include "Type.h"
 #include "Decl.h"
 #include "StringBuilder.h"
 
@@ -71,8 +72,8 @@ CodeGenModule::~CodeGenModule() {
     delete module;
 }
 
-void CodeGenModule::addEntry(const std::string& filename, C2Sema& sema) {
-    entries.push_back(Entry(filename, sema));
+void CodeGenModule::addEntry(const std::string& filename, AST& ast) {
+    entries.push_back(Entry(filename, ast));
 }
 
 void CodeGenModule::generate() {
@@ -83,9 +84,9 @@ void CodeGenModule::generate() {
 #ifdef DEBUG_CODEGEN
         printf("CodeGen for %s - pass 1\n", iter->filename->c_str());
 #endif
-        C2Sema* sema = iter->sema;
-        for (unsigned int i=0; i<sema->getNumDecls(); i++) {
-            Decl* decl = sema->getDecl(i);
+        AST* ast = iter->ast;
+        for (unsigned int i=0; i<ast->getNumDecls(); i++) {
+            Decl* decl = ast->getDecl(i);
             if (decl->dtype() == DECL_FUNC) EmitFunctionProto(decl);
         }
     }
@@ -95,9 +96,9 @@ void CodeGenModule::generate() {
 #ifdef DEBUG_CODEGEN
         printf("CodeGen for %s - pass 2\n", iter->filename->c_str());
 #endif
-        C2Sema* sema = iter->sema;
-        for (unsigned int i=0; i<sema->getNumDecls(); i++) {
-            Decl* decl = sema->getDecl(i);
+        AST* ast = iter->ast;
+        for (unsigned int i=0; i<ast->getNumDecls(); i++) {
+            Decl* decl = ast->getDecl(i);
             EmitTopLevelDecl(decl);
         }
     }

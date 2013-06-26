@@ -26,7 +26,8 @@
 #include "CCodeGenerator.h"
 #include "CodeGenFunction.h"
 #include "Package.h"
-#include "C2Sema.h"
+#include "AST.h"
+#include "Type.h"
 #include "Decl.h"
 #include "Expr.h"
 #include "StringBuilder.h"
@@ -36,6 +37,7 @@
 
 using namespace C2;
 using namespace llvm;
+using namespace clang;
 
 CCodeGenerator::CCodeGenerator(const std::string& filename_, Mode mode_, const Pkgs& pkgs_)
     : filename(filename_)
@@ -50,8 +52,8 @@ CCodeGenerator::CCodeGenerator(const std::string& filename_, Mode mode_, const P
 CCodeGenerator::~CCodeGenerator() {
 }
 
-void CCodeGenerator::addEntry(const std::string& filename, C2Sema& sema) {
-    entries.push_back(Entry(filename, sema));
+void CCodeGenerator::addEntry(const std::string& filename, AST& ast) {
+    entries.push_back(Entry(filename, ast));
 }
 
 void CCodeGenerator::generate() {
@@ -65,10 +67,10 @@ void CCodeGenerator::generate() {
 
     // generate all includes
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
-        C2Sema* sema = iter->sema;
-        curpkg = &sema->getPkgName();
-        for (unsigned int i=0; i<sema->getNumDecls(); i++) {
-            Decl* D = sema->getDecl(i);
+        AST* ast = iter->ast;
+        curpkg = &ast->getPkgName();
+        for (unsigned int i=0; i<ast->getNumDecls(); i++) {
+            Decl* D = ast->getDecl(i);
             switch (D->dtype()) {
             case DECL_USE:
                 EmitUse(D);
@@ -83,10 +85,10 @@ void CCodeGenerator::generate() {
     cbuf << '\n';
 
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
-        C2Sema* sema = iter->sema;
-        curpkg = &sema->getPkgName();
-        for (unsigned int i=0; i<sema->getNumDecls(); i++) {
-            Decl* D = sema->getDecl(i);
+        AST* ast = iter->ast;
+        curpkg = &ast->getPkgName();
+        for (unsigned int i=0; i<ast->getNumDecls(); i++) {
+            Decl* D = ast->getDecl(i);
             switch (D->dtype()) {
             case DECL_FUNC:
                 EmitFunction(D);

@@ -25,7 +25,7 @@
 #include "Expr.h"
 #include "StringBuilder.h"
 #include "color.h"
-#include "ASTVisitor.h"
+#include "AST.h"
 
 //#define SEMA_DEBUG
 
@@ -92,30 +92,6 @@ static inline UnaryOperatorKind ConvertTokenKindToUnaryOpcode(
   case tok::kw___extension__: Opc = UO_Extension; break;
   }
   return Opc;
-}
-
-
-AST::~AST() {
-    for (unsigned int i=0; i<decls.size(); i++) {
-        delete decls[i];
-    }
-}
-
-void AST::visitAST(ASTVisitor& visitor) {
-    for (unsigned int i=0; i<decls.size(); i++) {
-        bool stop = visitor.handle(decls[i]);
-        if (stop) break;
-    }
-}
-
-void AST::print(const std::string& filename) const {
-    StringBuilder buffer;
-    buffer << "---- AST " << "(pkg=" << pkgName << ") " << filename << " ----\n";
-    for (DeclListConstIter iter = decls.begin(); iter != decls.end(); ++iter) {
-        (*iter)->print(buffer);
-        buffer << '\n';
-    }
-    printf("%s", (const char*)buffer);
 }
 
 

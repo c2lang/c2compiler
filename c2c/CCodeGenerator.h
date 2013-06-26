@@ -23,7 +23,7 @@
 
 namespace C2 {
 
-class C2Sema;
+class AST;
 class Decl;
 class Expr;
 class DeclExpr;
@@ -38,7 +38,7 @@ public:
     enum Mode { MULTI_FILE, SINGLE_FILE };
     CCodeGenerator(const std::string& filename_, Mode mode_, const Pkgs& pkgs_);
     ~CCodeGenerator();
-    void addEntry(const std::string& filename, C2Sema& sema);
+    void addEntry(const std::string& filename, AST& ast);
 
     void generate();
     void write(const std::string& target, const std::string& name);
@@ -81,10 +81,10 @@ private:
     const Pkgs& pkgs;
 
     struct Entry {
-        Entry(const std::string& f, C2Sema& s)
-            : filename(&f), sema(&s) {}
+        Entry(const std::string& f, AST& s)
+            : filename(&f), ast(&s) {}
         const std::string* filename;
-        C2Sema* sema;
+        AST* ast;
     };
     typedef std::vector<Entry> Entries;
     typedef Entries::iterator EntriesIter;

@@ -44,6 +44,7 @@
 #include "C2Sema.h"
 #include "CodeGenModule.h"
 #include "CCodeGenerator.h"
+#include "AST.h"
 #include "color.h"
 #include "Recipe.h"
 #include "Utils.h"
@@ -332,7 +333,7 @@ void C2Builder::build() {
             CCodeGenerator gen(filename, CCodeGenerator::SINGLE_FILE, pkgs);
             for (unsigned int i=0; i<files.size(); i++) {
                 FileInfo* info = files[i];
-                gen.addEntry(info->filename, info->sema);
+                gen.addEntry(info->filename, info->ast);
             }
             gen.generate();
             u_int64_t t2 = Utils::getCurrentTime();
@@ -349,7 +350,7 @@ void C2Builder::build() {
                 for (unsigned int i=0; i<files.size(); i++) {
                     FileInfo* info = files[i];
                     if (info->ast.pkgName == P->getName()) {
-                        gen.addEntry(info->filename, info->sema);
+                        gen.addEntry(info->filename, info->ast);
                     }
                 }
                 gen.generate();
@@ -373,7 +374,7 @@ void C2Builder::build() {
             for (unsigned int i=0; i<files.size(); i++) {
                 FileInfo* info = files[i];
                 if (info->ast.pkgName == P->getName()) {
-                    cgm.addEntry(info->filename, info->sema);
+                    cgm.addEntry(info->filename, info->ast);
                 }
             }
             cgm.generate();

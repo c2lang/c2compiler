@@ -4,6 +4,7 @@ CXX := clang++
 #CXX := g++
 
 OBJS = \
+    AST.o \
     C2Builder.o \
     C2Parser.o \
     C2Sema.o \

@@ -29,7 +29,7 @@ class Function;
 
 namespace C2 {
 
-class C2Sema;
+class AST;
 class Decl;
 class Type;
 class Package;
@@ -39,7 +39,7 @@ class CodeGenModule {
 public:
     CodeGenModule(const Package* pkg_);
     ~CodeGenModule();
-    void addEntry(const std::string& filename, C2Sema& sema);
+    void addEntry(const std::string& filename, AST& ast);
 
     void generate();
     bool verify();
@@ -60,10 +60,10 @@ private:
     const Package* pkg;
 
     struct Entry {
-        Entry(const std::string& f, C2Sema& s)
-            : filename(&f), sema(&s) {}
+        Entry(const std::string& f, AST& s)
+            : filename(&f), ast(&s) {}
         const std::string* filename;
-        C2Sema* sema;
+        AST* ast;
     };
     typedef std::vector<Entry> Entries;
     typedef Entries::iterator EntriesIter;

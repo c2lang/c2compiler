@@ -23,8 +23,8 @@
 #include <clang/Basic/SourceLocation.h>
 #include "C2Parser.h" // TODO only needed for ExprResult/StmtResult
 #include "Stmt.h"
-#include "Type.h"
 #include "Expr.h"
+#include "Type.h"
 
 namespace clang {
 class SourceManager;
@@ -37,35 +37,12 @@ using clang::SourceManager;
 
 namespace C2 {
 
-class CodeGenerator;
 class FunctionDecl;
 class UseDecl;
 class Decl;
 class Stmt;
 class Expr;
-class Type;
-class ASTVisitor;
-
-
-class AST {
-public:
-    AST() {}
-    ~AST();
-
-    // analysis
-    void visitAST(ASTVisitor& visitor);
-
-    // debugging
-    void print(const std::string& filename) const;
-
-    std::string pkgName;
-    SourceLocation pkgLoc;
-
-    typedef std::vector<Decl*> DeclList;
-    typedef DeclList::const_iterator DeclListConstIter;
-    typedef DeclList::iterator DeclListIter;
-    DeclList decls;
-};
+class AST;
 
 class C2Sema {
 public:
@@ -132,21 +109,12 @@ public:
     ExprResult ActOnPostfixUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Expr* Input);
     ExprResult ActOnUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Expr* Input);
 
-    // codegen
-    unsigned getNumDecls() const { return ast.decls.size(); }
-    Decl* getDecl(unsigned index) const { return ast.decls[index]; }
-
-    const std::string& getPkgName() const { return ast.pkgName; }
 private:
     DiagnosticBuilder Diag(SourceLocation Loc, unsigned DiagID);
     void addDecl(Decl* d);
     const Decl* findUse(const char* name) const;
     const UseDecl* findAlias(const char* name) const;
     Decl* getSymbol(const std::string& name) const;
-
-    // TEMP
-    friend class CodeGenerator;
-    friend class C2Builder;
 
     SourceManager& SourceMgr;
     DiagnosticsEngine& Diags;
