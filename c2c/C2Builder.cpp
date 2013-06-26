@@ -109,7 +109,6 @@ public:
         , Headers(HSOpts, FileMgr, Diags, LangOpts_, pti)
         , PPOpts(new PreprocessorOptions())
         , PP(PPOpts, Diags, LangOpts_, pti, SM, Headers, loader)
-        , sema(SM, Diags, typeContext, ast)
     {
         ApplyHeaderSearchOptions(PP.getHeaderSearchInfo(), *HSOpts, LangOpts_, pti->getTriple());
 
@@ -128,6 +127,7 @@ public:
 
     bool parse(const BuildOptions& options) {
         u_int64_t t1 = Utils::getCurrentTime();
+        C2Sema sema(SM, Diags, typeContext, ast);
         C2Parser parser(PP, sema);
         parser.Initialize();
         // parse the file into AST
@@ -192,7 +192,6 @@ public:
 
     // C2 Parser + Sema
     AST ast;
-    C2Sema sema;
     FileScope* globals;
 };
 
