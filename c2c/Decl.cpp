@@ -38,6 +38,7 @@ bool Decl::isSymbol(DeclType d) {
     case DECL_FUNC:
     case DECL_VAR:
     case DECL_TYPE:
+    case DECL_ENUMVALUE:
         return true;
     default:
         return false;
