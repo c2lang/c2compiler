@@ -169,8 +169,8 @@ void VarDecl::addInitValue(ArrayValueDecl* value) {
 }
 
 
-EnumConstantDecl::EnumConstantDecl(DeclExpr* decl_)
-    : Decl(true)    // TODO get from decl->type or pass?
+EnumConstantDecl::EnumConstantDecl(DeclExpr* decl_, bool is_public)
+    : Decl(is_public)
     , decl(decl_)
 {
 }

@@ -368,7 +368,6 @@ C2::Type* FunctionAnalyser::Decl2Type(Decl* decl) {
             assert(canonical && "need function's canonical type");
             return canonical;
         }
-        break;
     case DECL_VAR:
         {
             VarDecl* VD = DeclCaster<VarDecl>::getType(decl);
@@ -376,16 +375,18 @@ C2::Type* FunctionAnalyser::Decl2Type(Decl* decl) {
             assert(canonical && "need variable's canonical type");
             return canonical;
         }
-        break;
     case DECL_ENUMVALUE:
-        assert(0 && "TODO");
-        break;
+        {
+            EnumConstantDecl* EC = DeclCaster<EnumConstantDecl>::getType(decl);
+            Type* canonical = EC->getCanonicalType();
+            assert(canonical && "need variable's canonical type");
+            return canonical;
+        }
     case DECL_TYPE:
         {
             TypeDecl* TD = DeclCaster<TypeDecl>::getType(decl);
             return TD->getType();
         }
-        break;
     case DECL_ARRAYVALUE:
     case DECL_USE:
         assert(0);
@@ -489,7 +490,7 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, Type* canonical) {
                 }
                 break;
             case DECL_ENUMVALUE:
-                assert(0 && "TODO");
+                // TODO check type compatibility
                 break;
             case DECL_TYPE:
                 assert(0 && "TODO");

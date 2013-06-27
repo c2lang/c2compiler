@@ -177,10 +177,8 @@ bool Type::isConstant() const {
         return refType->isConstant();
     case STRUCT:
     case UNION:
-        assert(0 && "TODO");
-        break;
     case ENUM:
-        return true;
+        break;
     case FUNC:
     case POINTER:
     case ARRAY:

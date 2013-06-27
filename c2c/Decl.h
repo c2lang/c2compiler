@@ -146,7 +146,7 @@ private:
 
 class EnumConstantDecl : public Decl {
 public:
-    EnumConstantDecl(DeclExpr* decl_);
+    EnumConstantDecl(DeclExpr* decl_, bool is_public);
     virtual ~EnumConstantDecl();
     virtual DeclType dtype() const { return DECL_ENUMVALUE; }
     virtual void acceptD(DeclVisitor& v);

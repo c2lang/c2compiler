@@ -431,6 +431,7 @@ bool C2Builder::createPkgs() {
                 pkg->addSymbol(New);
             }
             // also add enum constant names to symbol list, Bit nasty to do here
+            // This should be done in C2Sema!!
             if (New->dtype() == DECL_TYPE) {
                 TypeDecl* T = DeclCaster<TypeDecl>::getType(New);
                 Type* type = T->getType();
@@ -438,11 +439,11 @@ bool C2Builder::createPkgs() {
                     const MemberList* members = type->getMembers();
                     for (unsigned i=0; i<members->size(); i++) {
                         DeclExpr* de = (*members)[i];
-                        // wrap in VarDecl
-                        // TODO MEMLEAK in VarDecl -> or throw away in ~Scope() ?
-                        VarDecl* vd = new VarDecl(de, New->isPublic(), true);
-                        vd->setCanonicalType(type);
-                        pkg->addSymbol(vd);
+                        // wrap in EnumConstantDecl
+                        // TODO MEMLEAK or throw away in ~Scope() ?
+                        EnumConstantDecl* ecd = new EnumConstantDecl(de, New->isPublic());
+                        ecd->setCanonicalType(type);
+                        pkg->addSymbol(ecd);
                     }
                 }
             }
