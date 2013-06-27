@@ -118,7 +118,9 @@ public:
         const FileEntry *pFile = FileMgr.getFile(filename);
         SM.createMainFileID(pFile);
         PP.EnterMainSourceFile();
-        Diags.getClient()->BeginSourceFile(LangOpts_, &PP);
+        // NOTE: filling zero instead of PP works
+        //Diags.getClient()->BeginSourceFile(LangOpts_, &PP);
+        Diags.getClient()->BeginSourceFile(LangOpts_, 0);
 
     }
     ~FileInfo() {
