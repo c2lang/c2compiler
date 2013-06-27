@@ -96,6 +96,9 @@ void CCodeGenerator::generate() {
             case DECL_VAR:
                 EmitVariable(D);
                 break;
+            case DECL_ENUMVALUE:
+                assert(0 && "TODO");
+                break;
             case DECL_TYPE:
                 EmitType(D);
                 break;

@@ -67,6 +67,9 @@ bool GlobalVarAnalyser::handle(Decl* decl) {
             }
             break;
         }
+    case DECL_ENUMVALUE:
+        assert(0 && "TODO");
+        break;
     case DECL_TYPE:
         {
             // set canonical type for struct members

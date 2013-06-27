@@ -63,6 +63,9 @@ bool ScopeAnalyser::handle(Decl* decl) {
             checkType(vd->getType(), is_public);
         }
         break;
+    case DECL_ENUMVALUE:
+        assert(0 && "TODO");
+        break;
     case DECL_TYPE:
         {
             TypeDecl* td = DeclCaster<TypeDecl>::getType(decl);

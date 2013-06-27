@@ -126,6 +126,9 @@ bool FunctionAnalyser::handle(Decl* decl) {
             }
         }
         break;
+    case DECL_ENUMVALUE:
+        assert(0 && "TODO");
+        break;
     case DECL_TYPE:
     case DECL_ARRAYVALUE:
     case DECL_USE:
@@ -374,6 +377,9 @@ C2::Type* FunctionAnalyser::Decl2Type(Decl* decl) {
             return canonical;
         }
         break;
+    case DECL_ENUMVALUE:
+        assert(0 && "TODO");
+        break;
     case DECL_TYPE:
         {
             TypeDecl* TD = DeclCaster<TypeDecl>::getType(decl);
@@ -481,6 +487,9 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, Type* canonical) {
                         }
                     }
                 }
+                break;
+            case DECL_ENUMVALUE:
+                assert(0 && "TODO");
                 break;
             case DECL_TYPE:
                 assert(0 && "TODO");
@@ -766,6 +775,9 @@ Type* FunctionAnalyser::analyseMemberExpr(Expr* expr) {
                     Diags.Report(member->getLocation(), diag::err_no_member) << temp2 << temp;
                     return 0;
                 }
+                break;
+            case DECL_ENUMVALUE:
+                assert(0 && "TODO");
                 break;
             case DECL_ARRAYVALUE:
             case DECL_USE:

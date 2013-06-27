@@ -126,14 +126,10 @@ void FunctionDecl::addArg(DeclExpr* arg) {
 }
 
 
-#define VARDECL_INEXPR   0x1
-
 VarDecl::VarDecl(DeclExpr* decl_, bool is_public_, bool inExpr)
     : Decl(is_public_)
     , decl(decl_)
-    , flags(0)
 {
-    if (inExpr) flags |= VARDECL_INEXPR;
 }
 
 VarDecl::~VarDecl() {
@@ -154,8 +150,6 @@ void VarDecl::print(StringBuilder& buffer) {
     }
 }
 
-bool VarDecl::isInExpr() const { return ((flags & VARDECL_INEXPR) != 0); }
-
 const std::string& VarDecl::getName() const { return decl->getName(); }
 
 clang::SourceLocation VarDecl::getLocation() const {
@@ -173,6 +167,38 @@ Expr* VarDecl::getInitValue() const { return decl->getInitValue(); }
 void VarDecl::addInitValue(ArrayValueDecl* value) {
     initValues.push_back(value);
 }
+
+
+EnumConstantDecl::EnumConstantDecl(DeclExpr* decl_)
+    : Decl(true)    // TODO get from decl->type or pass?
+    , decl(decl_)
+{
+}
+
+EnumConstantDecl::~EnumConstantDecl() {
+    delete decl;
+}
+
+DECL_VISITOR_ACCEPT(EnumConstantDecl);
+
+void EnumConstantDecl::print(StringBuilder& buffer) {
+    buffer << "[enum constant]\n";
+    decl->print(INDENT, buffer);
+}
+
+const std::string& EnumConstantDecl::getName() const { return decl->getName(); }
+
+clang::SourceLocation EnumConstantDecl::getLocation() const {
+    return decl->getLocation();
+}
+
+Type* EnumConstantDecl::getType() const { return decl->getType(); }
+
+Type* EnumConstantDecl::getCanonicalType() const { return decl->getCanonicalType(); }
+
+void EnumConstantDecl::setCanonicalType(Type* t) { decl->setCanonicalType(t); }
+
+Expr* EnumConstantDecl::getInitValue() const { return decl->getInitValue(); }
 
 
 TypeDecl::TypeDecl(const std::string& name_, SourceLocation loc_, Type* type_, bool is_public_)

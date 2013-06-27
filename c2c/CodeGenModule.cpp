@@ -191,6 +191,9 @@ void CodeGenModule::EmitTopLevelDecl(Decl* D) {
             */
         }
         break;
+    case DECL_ENUMVALUE:
+        assert(0 && "TODO");
+        break;
     case DECL_TYPE:
         assert(0 && "TODO type");
         break;

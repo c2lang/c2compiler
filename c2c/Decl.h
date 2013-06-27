@@ -42,6 +42,7 @@ class CompoundStmt;
 enum DeclType {
     DECL_FUNC = 0,
     DECL_VAR,
+    DECL_ENUMVALUE,
     DECL_TYPE,
     DECL_ARRAYVALUE,
     DECL_USE
@@ -125,7 +126,6 @@ public:
     virtual void acceptD(DeclVisitor& v);
     virtual void print(StringBuilder& buffer);
 
-    bool isInExpr() const;
     virtual const std::string& getName() const;
     virtual clang::SourceLocation getLocation() const;
     Type* getType() const;
@@ -141,6 +141,26 @@ private:
     DeclExpr* decl;
     unsigned int flags;    // inExpr;
     InitValues initValues;
+};
+
+
+class EnumConstantDecl : public Decl {
+public:
+    EnumConstantDecl(DeclExpr* decl_);
+    virtual ~EnumConstantDecl();
+    virtual DeclType dtype() const { return DECL_ENUMVALUE; }
+    virtual void acceptD(DeclVisitor& v);
+    virtual void print(StringBuilder& buffer);
+
+    virtual const std::string& getName() const;
+    virtual clang::SourceLocation getLocation() const;
+    Type* getType() const;
+    Type* getCanonicalType() const;
+    void setCanonicalType(Type* t);
+
+    Expr* getInitValue() const; // static value, NOT incremental values
+private:
+    DeclExpr* decl;
 };
 
 
@@ -207,6 +227,7 @@ public:
     virtual void visit(C2::Decl&) { assert(0); }    // add subclass below
     virtual void visit(FunctionDecl&) {}
     virtual void visit(VarDecl&) {}
+    virtual void visit(EnumConstantDecl&) {}
     virtual void visit(TypeDecl&) {}
     virtual void visit(ArrayValueDecl&) {}
     virtual void visit(UseDecl&) {}
