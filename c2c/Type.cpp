@@ -173,7 +173,6 @@ bool Type::isConstant() const {
     case BUILTIN:
         break;
     case USER:
-        // TODO not ok, since (enum)State a cannot be used as init expr (State b = a)
         return refType->isConstant();
     case STRUCT:
     case UNION:
