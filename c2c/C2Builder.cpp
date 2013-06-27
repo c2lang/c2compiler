@@ -420,6 +420,11 @@ bool C2Builder::createPkgs() {
         Package* pkg = getPackage(info->ast.pkgName, false);
         for (unsigned int i=0; i<info->ast.decls.size(); i++) {
             Decl* New = info->ast.decls[i];
+            // TODO refactor this whole part. Merge AST's symboltable (currently in C2Sema)
+            // here. C2Sema decides when it's a symbol (like enum)
+            // After merge, clear AST symbolTable
+            // remove isSymbol() function
+            // ALSO solve memleak below (EnumConstDecl) -> store EnumConstDecl in EnumType?
             if (!Decl::isSymbol(New->dtype())) continue;
             Decl* Old = pkg->findSymbol(New->getName());
             if (Old) {
