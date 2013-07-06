@@ -84,9 +84,11 @@ static C2Type kw2type(tok::TokenKind Kind) {
     case tok::kw_u8:    return TYPE_U8;
     case tok::kw_u16:   return TYPE_U16;
     case tok::kw_u32:   return TYPE_U32;
-    case tok::kw_s8:    return TYPE_S8;
-    case tok::kw_s16:   return TYPE_S16;
-    case tok::kw_s32:   return TYPE_S32;
+    case tok::kw_u64:   return TYPE_U64;
+    case tok::kw_i8:    return TYPE_I8;
+    case tok::kw_i16:   return TYPE_I16;
+    case tok::kw_i32:   return TYPE_I32;
+    case tok::kw_i64:   return TYPE_I64;
     case tok::kw_int:   return TYPE_INT;
     case tok::kw_uint:  return TYPE_U32;
     case tok::kw_string: return TYPE_STRING;
@@ -490,9 +492,11 @@ C2::ExprResult C2Parser::ParseSingleTypeSpecifier(bool allow_qualifier) {
     case tok::kw_u8:
     case tok::kw_u16:
     case tok::kw_u32:
-    case tok::kw_s8:
-    case tok::kw_s16:
-    case tok::kw_s32:
+    case tok::kw_u64:
+    case tok::kw_i8:
+    case tok::kw_i16:
+    case tok::kw_i32:
+    case tok::kw_i64:
     case tok::kw_int:
     case tok::kw_uint:
     case tok::kw_string:
@@ -821,7 +825,7 @@ C2::ExprResult C2Parser::ParseCastExpression(bool isUnaryExpression,
     case tok::kw___func__:
         ConsumeToken();
         break;
-    case tok::kw_NULL:
+    case tok::kw_nil:
         ConsumeToken();
         break;
     case tok::kw_sizeof:
@@ -1240,9 +1244,11 @@ bool C2Parser::isDeclaration() {
     case tok::kw_u8:
     case tok::kw_u16:
     case tok::kw_u32:
-    case tok::kw_s8:
-    case tok::kw_s16:
-    case tok::kw_s32:
+    case tok::kw_u64:
+    case tok::kw_i8:
+    case tok::kw_i16:
+    case tok::kw_i32:
+    case tok::kw_i64:
     case tok::kw_int:
     case tok::kw_uint:
     case tok::kw_string:
@@ -1338,9 +1344,11 @@ C2::ExprResult C2Parser::ParseSizeof()
     case tok::kw_u8:
     case tok::kw_u16:
     case tok::kw_u32:
-    case tok::kw_s8:
-    case tok::kw_s16:
-    case tok::kw_s32:
+    case tok::kw_u64:
+    case tok::kw_i8:
+    case tok::kw_i16:
+    case tok::kw_i32:
+    case tok::kw_i64:
     case tok::kw_int:
     case tok::kw_uint:
     case tok::kw_string:
@@ -1503,9 +1511,11 @@ C2::StmtResult C2Parser::ParseStatement() {
     case tok::kw_u8:
     case tok::kw_u16:
     case tok::kw_u32:
-    case tok::kw_s8:
-    case tok::kw_s16:
-    case tok::kw_s32:
+    case tok::kw_u64:
+    case tok::kw_i8:
+    case tok::kw_i16:
+    case tok::kw_i32:
+    case tok::kw_i64:
     case tok::kw_int:
     case tok::kw_uint:
     case tok::kw_string:

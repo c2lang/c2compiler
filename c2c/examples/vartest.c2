@@ -8,8 +8,9 @@ type Struct struct {
 
 int n = 10;
 string hallo = "goodbye";
-s8* text2 = NULL;
+i8* text2 = nil;
 u16 halfword;
+i32 number;
 
 // aggregate
 u32 n1 = 10;

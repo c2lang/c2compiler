@@ -215,9 +215,11 @@ llvm::Type* CodeGenModule::ConvertType(C2::Type* type) {
             case TYPE_U8:       return builder.getInt8Ty();
             case TYPE_U16:      return builder.getInt16Ty();
             case TYPE_U32:      return builder.getInt32Ty();
-            case TYPE_S8:       return builder.getInt32Ty();
-            case TYPE_S16:      return builder.getInt16Ty();
-            case TYPE_S32:      return builder.getInt32Ty();
+            case TYPE_U64:      return builder.getInt64Ty();
+            case TYPE_I8:       return builder.getInt32Ty();
+            case TYPE_I16:      return builder.getInt16Ty();
+            case TYPE_I32:      return builder.getInt32Ty();
+            case TYPE_I64:      return builder.getInt64Ty();
             case TYPE_INT:      return builder.getInt32Ty();
             case TYPE_STRING:
                 return 0;  // TODO remove this type?

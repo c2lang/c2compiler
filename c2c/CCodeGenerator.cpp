@@ -123,9 +123,11 @@ const char* CCodeGenerator::ConvertType(C2::Type* type) {
             case TYPE_U8:       return "unsigned char";
             case TYPE_U16:      return "unsigned short";
             case TYPE_U32:      return "unsigned int";
-            case TYPE_S8:       return "char";
-            case TYPE_S16:      return "short";
-            case TYPE_S32:      return "int";
+            case TYPE_U64:      return "unsigned long long";
+            case TYPE_I8:       return "char";
+            case TYPE_I16:      return "short";
+            case TYPE_I32:      return "int";
+            case TYPE_I64:      return "long long";
             case TYPE_INT:      return "const char*";
             case TYPE_STRING:
                 return 0;  // TODO remove this type?

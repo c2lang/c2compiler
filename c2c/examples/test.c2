@@ -21,8 +21,8 @@ public func void main() {
     int b2 = 10 / 2;
     int[][] b3 = a;
     Number a5 = calc();
-    int* ptr3 = NULL;
-    Number** ptr4 = NULL;
+    int* ptr3 = nil;
+    Number** ptr4 = nil;
     int*[10] bla2;
     int[2] nums = { calc(), calc() }
     int b4 = 4/2;
