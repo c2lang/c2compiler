@@ -22,6 +22,7 @@
 
 #include <clang/Basic/SourceLocation.h>
 #include "OwningVector.h"
+#include "Type.h"
 
 using clang::SourceLocation;
 
@@ -30,7 +31,6 @@ class Function;
 }
 
 namespace C2 {
-class Type;
 class StringBuilder;
 class Stmt;
 class Expr;
@@ -74,7 +74,7 @@ private:
 
 class FunctionDecl : public Decl {
 public:
-    FunctionDecl(const std::string& name_, SourceLocation loc_, bool is_public_, Type* rtype_);
+    FunctionDecl(const std::string& name_, SourceLocation loc_, bool is_public_, QualType rtype_);
     virtual ~FunctionDecl();
     virtual DeclType dtype() const { return DECL_FUNC; }
     virtual void acceptD(DeclVisitor& v);
@@ -91,29 +91,31 @@ public:
     void addArg(DeclExpr* arg);
     virtual const std::string& getName() const { return name; }
     virtual clang::SourceLocation getLocation() const { return loc; }
-    Type* getReturnType() const { return rtype; }
+    QualType getReturnType() const { return rtype; }
     void setVariadic() { m_isVariadic = true; }
     bool isVariadic() const { return m_isVariadic; }
 
-    Type* getCanonicalType() const { return canonicalType; }
-    void setCanonicalType(Type* t) { canonicalType = t; }
+    void setFunctionType(QualType qt) { functionType = qt; }
+    QualType getType() const { return functionType; }
 
     // for codegen
     llvm::Function* getIRProto() const { return IRProto; }
     void setIRProto(llvm::Function* f) { IRProto = f; }
 private:
+    // TODO remove
     friend class CodeGenFunction;
 
     std::string name;
     clang::SourceLocation loc;
-    Type* rtype;
+    QualType rtype;
+    QualType functionType;
 
     typedef OwningVector<DeclExpr> Args;
     Args args;
     CompoundStmt* body;
     bool m_isVariadic;
     // TODO EllipsisLoc
-    Type* canonicalType;
+    //Type* canonicalType;
     llvm::Function* IRProto;
 };
 
@@ -128,9 +130,7 @@ public:
 
     virtual const std::string& getName() const;
     virtual clang::SourceLocation getLocation() const;
-    Type* getType() const;
-    Type* getCanonicalType() const;
-    void setCanonicalType(Type* t);
+    QualType getType() const;
 
     Expr* getInitValue() const; // static value, NOT incremental values
     typedef std::vector<ArrayValueDecl*> InitValues;
@@ -154,9 +154,7 @@ public:
 
     virtual const std::string& getName() const;
     virtual clang::SourceLocation getLocation() const;
-    Type* getType() const;
-    Type* getCanonicalType() const;
-    void setCanonicalType(Type* t);
+    QualType getType() const;
 
     Expr* getInitValue() const; // static value, NOT incremental values
 private:
@@ -166,7 +164,7 @@ private:
 
 class TypeDecl : public Decl {
 public:
-    TypeDecl(const std::string& name_, SourceLocation loc_, Type* type_, bool is_public_);
+    TypeDecl(const std::string& name_, SourceLocation loc_, QualType type_, bool is_public_);
     virtual ~TypeDecl();
     virtual DeclType dtype() const { return DECL_TYPE; }
     virtual void acceptD(DeclVisitor& v);
@@ -174,11 +172,11 @@ public:
 
     virtual const std::string& getName() const { return name; }
     virtual clang::SourceLocation getLocation() const { return loc; }
-    Type* getType() const { return type; }
+    QualType& getType() { return type; }
 private:
     std::string name;
     SourceLocation loc;
-    Type* type;
+    QualType type;
 };
 
 

@@ -24,12 +24,12 @@
 
 #include "OwningVector.h"
 #include "Stmt.h"
+#include "Type.h"
 
 namespace C2 {
 
 class StringBuilder;
 class ExprVisitor;
-class Type;
 class Package;
 
 enum ExprType {
@@ -155,7 +155,7 @@ private:
 
 class TypeExpr : public Expr {
 public:
-    TypeExpr(Type* type_) : type(type_) {}
+    TypeExpr(QualType& QT_) : QT(QT_), isLocal(false) {}
     virtual ~TypeExpr();
     virtual ExprType etype() const { return EXPR_TYPE; }
     virtual void acceptE(ExprVisitor& v);
@@ -164,10 +164,14 @@ public:
         SourceLocation loc;
         return loc;
     }
-    Type* getType() const { return type; }
-    void setType(Type* t) { type = t; }
+    QualType& getType() { return QT; }
+    void setType(QualType& QT_) { QT = QT_; }
+
+    void setLocalQualifier() { isLocal = true; }
+    bool hasLocalQualifier() const { return isLocal; }
 private:
-    Type* type;
+    QualType QT;
+    bool isLocal;
 };
 
 
@@ -215,7 +219,7 @@ private:
 class DeclExpr : public Expr {
 public:
     DeclExpr(const std::string& name_, SourceLocation& loc_,
-            Type* type_, Expr* initValue_);
+            QualType type_, Expr* initValue_);
     virtual ~DeclExpr();
     virtual ExprType etype() const { return EXPR_DECL; }
     virtual void acceptE(ExprVisitor& v);
@@ -223,17 +227,19 @@ public:
     // used by VarDecls only to add pkgName
     virtual SourceLocation getLocation() const { return loc; }
 
-    Type* getType() const { return type; }
-    Type* getCanonicalType() const { return canonicalType; }
-    void setCanonicalType(Type* t);
+    QualType getType() const { return type; }
     const std::string& getName() const { return name; }
     Expr* getInitValue() const { return initValue; }
+
+    void setLocalQualifier() { localQualifier = true; }
+    bool hasLocalQualifier() const { return localQualifier; }
 private:
     std::string name;
     SourceLocation loc;
-    Type* type;
+    QualType type;
     Type* canonicalType;
     Expr* initValue;
+    bool localQualifier;
 };
 
 

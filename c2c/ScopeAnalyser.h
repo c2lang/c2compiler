@@ -18,6 +18,7 @@
 
 #include "ASTVisitor.h"
 #include "Package.h"
+#include "Type.h"
 
 namespace clang {
 class DiagnosticsEngine;
@@ -25,7 +26,6 @@ class DiagnosticsEngine;
 
 namespace C2 {
 
-class Type;
 class IdentifierExpr;
 class FileScope;
 class Decl;
@@ -38,7 +38,7 @@ public:
     virtual bool handle(Decl* decl);
     unsigned int getErrors() const { return errors; }
 private:
-    void checkType(Type* type, bool used_public = false);
+    void checkType(QualType type, bool used_public = false);
     void checkUse(Decl* decl);
 
     FileScope& globals;

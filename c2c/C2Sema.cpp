@@ -168,12 +168,15 @@ void C2Sema::ActOnTypeDef(const char* name, SourceLocation loc, Expr* type, bool
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    // TEMP extract here to Type and delete rtype Expr
+    // extract here to Type and delete rtype Expr
     TypeExpr* typeExpr = ExprCaster<TypeExpr>::getType(type);
     assert(typeExpr);
+    if (typeExpr->hasLocalQualifier()) {
+        Diag(loc, diag::err_invalid_local_typedef);
+    }
     TypeDecl* decl = new TypeDecl(name, loc, typeExpr->getType(), is_public);
     addDecl(decl);
-    delete type;
+    delete typeExpr;
 }
 
 void C2Sema::ActOnVarDef(const char* name, SourceLocation loc,
@@ -184,14 +187,17 @@ void C2Sema::ActOnVarDef(const char* name, SourceLocation loc,
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    // TEMP extract here to Type and delete rtype Expr
+    // extract here to Type and delete rtype Expr
     TypeExpr* typeExpr = ExprCaster<TypeExpr>::getType(type);
     assert(typeExpr);
+    if (typeExpr->hasLocalQualifier()) {
+        Diag(loc, diag::err_invalid_local_globalvar);
+    }
     // TODO check that type is not pre-fixed with own package
     DeclExpr* declExpr = new DeclExpr(name, loc, typeExpr->getType(), InitValue);
     VarDecl* decl = new VarDecl(declExpr, is_public, false);
     addDecl(decl);
-    delete type;
+    delete typeExpr;
 }
 
 C2::FunctionDecl* C2Sema::ActOnFuncDef(const char* name, SourceLocation loc, bool is_public, Expr* rtype) {
@@ -204,9 +210,14 @@ C2::FunctionDecl* C2Sema::ActOnFuncDef(const char* name, SourceLocation loc, boo
     assert(rtype);
     TypeExpr* typeExpr = ExprCaster<TypeExpr>::getType(rtype);
     assert(typeExpr);
+    if (typeExpr->hasLocalQualifier()) {
+        // TODO let Parser check this (need extra arg for ParseSingleTypeSpecifier())
+        // TODO need local's location
+        Diag(loc, diag::err_invalid_local_returntype);
+    }
     FunctionDecl* decl = new FunctionDecl(name, loc, is_public, typeExpr->getType());
     addDecl(decl);
-    delete rtype;
+    delete typeExpr;
     return decl;
 }
 
@@ -382,7 +393,8 @@ C2::StmtResult C2Sema::ActOnDeclaration(const char* name, SourceLocation loc, Ex
     assert(typeExpr);
     DeclExpr* declExpr = new DeclExpr(name, loc, typeExpr->getType(), InitValue);
     declExpr->setStatementFlag();
-    delete type;
+    if (typeExpr->hasLocalQualifier()) declExpr->setLocalQualifier();
+    delete typeExpr;
     return StmtResult(declExpr);
 }
 
@@ -461,8 +473,8 @@ C2::ExprResult C2Sema::ActOnArrayType(Expr* base, Expr* size) {
     assert(base);
     TypeExpr* typeExpr = ExprCaster<TypeExpr>::getType(base);
     assert(typeExpr);
-    Type* arr = typeContext.getArray(typeExpr->getType(), size, true);
-    typeExpr->setType(arr);
+    QualType QT = typeContext.getArray(typeExpr->getType(), size, true);
+    typeExpr->setType(QT);
     return ExprResult(base);
 }
 
@@ -473,8 +485,8 @@ C2::ExprResult C2Sema::ActOnPointerType(Expr* base) {
     assert(base);
     TypeExpr* typeExpr = ExprCaster<TypeExpr>::getType(base);
     assert(typeExpr);
-    Type* ptr = typeContext.getPointer(typeExpr->getType());
-    typeExpr->setType(ptr);
+    QualType qt = typeContext.getPointer(typeExpr->getType());
+    typeExpr->setType(qt);
     return ExprResult(base);
 }
 
@@ -485,7 +497,8 @@ C2::ExprResult C2Sema::ActOnUserType(Expr* expr) {
 #endif
     Type* type = typeContext.getUser();
     type->setUserType(expr);
-    return ExprResult(new TypeExpr(type));
+    QualType qt(type);
+    return ExprResult(new TypeExpr(qt));
 }
 
 C2::ExprResult C2Sema::ActOnBuiltinType(C2Type t) {
@@ -493,7 +506,8 @@ C2::ExprResult C2Sema::ActOnBuiltinType(C2Type t) {
     std::cerr << COL_SEMA"SEMA: Builtin Type"ANSI_NORMAL"\n";
 #endif
     Type* type = BuiltinType::get(t);
-    return ExprResult(new TypeExpr(type));
+    QualType qt(type);
+    return ExprResult(new TypeExpr(qt));
 }
 
 C2::ExprResult C2Sema::ActOnStructType(SourceLocation leftBrace, SourceLocation rightBrace,
@@ -511,13 +525,15 @@ C2::ExprResult C2Sema::ActOnStructType(SourceLocation leftBrace, SourceLocation 
         members2->push_back(member);
     }
     type->setMembers(members2);
-    return ExprResult(new TypeExpr(type));
+    QualType qt(type);
+    return ExprResult(new TypeExpr(qt));
 }
 
 C2::ExprResult C2Sema::ActOnEnumType(const char* id) {
     Type* type = typeContext.getEnum();
     type->setStructName(id);
-    return ExprResult(new TypeExpr(type));
+    QualType qt(type);
+    return ExprResult(new TypeExpr(qt));
 }
 
 C2::ExprResult C2Sema::ActOnEnumTypeFinished(Expr* enumType,
@@ -536,7 +552,9 @@ C2::ExprResult C2Sema::ActOnEnumTypeFinished(Expr* enumType,
         assert(member);
         members2->push_back(member);
     }
-    typeExpr->getType()->setMembers(members2);
+    QualType qt = typeExpr->getType();
+    Type* t = (Type*)qt.getTypePtr();
+    t->setMembers(members2);
     values.clear();  // remove entries from original list
     return ExprResult(enumType);
 }
@@ -552,15 +570,18 @@ C2::ExprResult C2Sema::ActOnEnumConstant(Expr* enumType, IdentifierInfo* symII,
 }
 
 C2::ExprResult C2Sema::ActOnTypeQualifier(ExprResult R, unsigned int qualifier) {
+    assert(R.get());
     if (qualifier) {
 #ifdef SEMA_DEBUG
         std::cerr << COL_SEMA"SEMA: Qualifier Type"ANSI_NORMAL"\n";
 #endif
-        assert(R.get());
         TypeExpr* typeExpr = ExprCaster<TypeExpr>::getType(R.get());
         assert(typeExpr);
-        Type* qual = typeContext.getQualifier(typeExpr->getType(), qualifier);
-        typeExpr->setType(qual);
+        // TODO use typeExpr.addConst() and just return QualType (not ref) in getType()
+        QualType& qt = typeExpr->getType();
+        if (qualifier & TYPE_CONST) qt.addConst();
+        if (qualifier & TYPE_VOLATILE) qt.addVolatile();
+        if (qualifier & TYPE_LOCAL) typeExpr->setLocalQualifier();
     }
     return R;
 }
@@ -575,8 +596,11 @@ C2::ExprResult C2Sema::ActOnVarExpr(const char* name, SourceLocation loc, Expr* 
     // TEMP extract here to Type and delete rtype Expr
     TypeExpr* typeExpr = ExprCaster<TypeExpr>::getType(type);
     assert(typeExpr);
+    if (typeExpr->hasLocalQualifier()) {
+        Diag(loc, diag::err_invalid_local_functionargument);
+    }
     DeclExpr* declExpr = new DeclExpr(name, loc, typeExpr->getType(), InitValue);
-    delete type;
+    delete typeExpr;
     return ExprResult(declExpr);
 }
 

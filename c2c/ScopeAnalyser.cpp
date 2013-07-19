@@ -20,7 +20,6 @@
 #include "ScopeAnalyser.h"
 #include "Decl.h"
 #include "Expr.h"
-#include "Type.h"
 #include "Package.h"
 #include "Scope.h"
 #include "color.h"
@@ -94,8 +93,8 @@ bool ScopeAnalyser::handle(Decl* decl) {
                 break;
             }
             VarDecl* VD = DeclCaster<VarDecl>::getType(SR.decl);
-            Type* T = VD->getType();
-            if (!T->isArrayType()) {
+            QualType T = VD->getType();
+            if (!T.isArrayType()) {
                 Diags.Report(A->getLocation(), diag::err_typecheck_subscript);
                 break;
             }
@@ -110,7 +109,7 @@ bool ScopeAnalyser::handle(Decl* decl) {
     return false;
 }
 
-void ScopeAnalyser::checkType(Type* type, bool used_public) {
+void ScopeAnalyser::checkType(QualType type, bool used_public) {
     errors += globals.checkType(type, used_public);
 }
 

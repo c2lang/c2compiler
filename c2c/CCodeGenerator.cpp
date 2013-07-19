@@ -27,7 +27,6 @@
 #include "CodeGenFunction.h"
 #include "Package.h"
 #include "AST.h"
-#include "Type.h"
 #include "Decl.h"
 #include "Expr.h"
 #include "StringBuilder.h"
@@ -114,7 +113,7 @@ void CCodeGenerator::generate() {
     hbuf << "#endif\n";
 }
 
-const char* CCodeGenerator::ConvertType(C2::Type* type) {
+const char* CCodeGenerator::ConvertType(const C2::Type* type) {
     switch (type->getKind()) {
     case Type::BUILTIN:
         {
@@ -159,9 +158,6 @@ const char* CCodeGenerator::ConvertType(C2::Type* type) {
             //return tt->getPointerTo();
             break;
         }
-    case Type::QUALIFIER:
-        assert(0 && "TODO");
-        break;
     }
 
     return 0;
@@ -326,6 +322,7 @@ void CCodeGenerator::EmitMemberExpr(Expr* E, StringBuilder& output) {
 
 void CCodeGenerator::EmitDeclExpr(DeclExpr* E, StringBuilder& output, unsigned indent) {
     output.indent(indent);
+    if (E->hasLocalQualifier()) output << "static ";
     EmitTypePreName(E->getType(), output);
     output << ' ';
     output << E->getName();
@@ -692,7 +689,8 @@ void CCodeGenerator::EmitFunctionProto(FunctionDecl* F, StringBuilder& output) {
     output << ')';
 }
 
-void CCodeGenerator::EmitTypePreName(Type* T, StringBuilder& output) {
+void CCodeGenerator::EmitTypePreName(QualType type, StringBuilder& output) {
+    const Type* T = type.getTypePtr();
     switch (T->getKind()) {
     case Type::BUILTIN:
         output << T->getCName();
@@ -748,21 +746,20 @@ void CCodeGenerator::EmitTypePreName(Type* T, StringBuilder& output) {
         //userType->generateC(0, buffer);
         break;
     case Type::POINTER:
+        // TODO handle Qualifiers
         EmitTypePreName(T->getRefType(), output);
         output << '*';
         break;
     case Type::ARRAY:
-        EmitTypePreName(T->getRefType(), output);
-        break;
-    case Type::QUALIFIER:
-        Type::printCQualifier(output, T->getQualifier());
+        // TODO handle Qualifiers
         EmitTypePreName(T->getRefType(), output);
         break;
     }
 }
 
-void CCodeGenerator::EmitTypePostName(Type* T, StringBuilder& output) {
-    if (T->isArrayType()) {
+void CCodeGenerator::EmitTypePostName(QualType type, StringBuilder& output) {
+    if (type.isArrayType()) {
+        const Type* T = type.getTypePtr();
         EmitTypePostName(T->getRefType(), output);
         output << '[';
         if (T->getArrayExpr()) {

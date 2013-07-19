@@ -50,7 +50,8 @@ llvm::Function* CodeGenFunction::generateProto(const std::string& pkgname) {
     // function part
     // arguments + return type
     llvm::FunctionType *funcType;
-    llvm::Type* RT = CGM.ConvertType(FuncDecl->rtype);
+    QualType rt = FuncDecl->getReturnType();
+    llvm::Type* RT = CGM.ConvertType(rt.getTypePtr());
     if (FuncDecl->args.size() == 0) {
         funcType = llvm::FunctionType::get(RT, false);
     } else {
@@ -59,7 +60,8 @@ llvm::Function* CodeGenFunction::generateProto(const std::string& pkgname) {
             // TODO already store as DeclExpr?
             DeclExpr* de = ExprCaster<DeclExpr>::getType(FuncDecl->args[i]);
             assert(de);
-            Args.push_back(CGM.ConvertType(de->getType()));
+            QualType qt = de->getType();
+            Args.push_back(CGM.ConvertType(qt.getTypePtr()));
         }
         llvm::ArrayRef<llvm::Type*> argsRef(Args);
         // TODO handle ellipsis
@@ -468,7 +470,8 @@ llvm::Value* CodeGenFunction::EmitCallExpr(const CallExpr* E) {
 
 void CodeGenFunction::EmitVarDecl(const DeclExpr* D) {
     // TODO arrays types?
-    llvm::AllocaInst* inst = Builder.CreateAlloca(CGM.ConvertType(D->getType()), 0, D->getName());
+    QualType qt = D->getType();
+    llvm::AllocaInst* inst = Builder.CreateAlloca(CGM.ConvertType(qt.getTypePtr()), 0, D->getName());
     // TODO smart alignment
     inst->setAlignment(D->getType()->getWidth());
     // TODO initValue

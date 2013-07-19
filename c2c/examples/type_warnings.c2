@@ -35,3 +35,14 @@ public type PubNumber Number*; // error cannot have non-public base type in publ
 public type Faa int;
 public func Faa func3(Faa f1) {}
 
+// -- local qualifier ---
+/*
+local int var1; // error
+
+func local int func4() { return 0; }    // error
+
+func void func5(local int a) {}     // error
+
+type Local local int;   // error
+*/
+

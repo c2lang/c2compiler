@@ -46,7 +46,7 @@ public:
     void write(const std::string& target, const std::string& name);
     void dump();
 
-    llvm::Type* ConvertType(C2::Type* type);
+    llvm::Type* ConvertType(const C2::Type* type);
     llvm::Function* createExternal(const Package* P, const std::string& name);
 
     const Package* getPackage() const { return pkg; }

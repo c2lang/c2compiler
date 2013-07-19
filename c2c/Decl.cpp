@@ -19,7 +19,6 @@
 #include "Stmt.h"
 #include "Expr.h"
 #include "StringBuilder.h"
-#include "Type.h"
 #include "Utils.h"
 #include "color.h"
 
@@ -70,14 +69,13 @@ void Decl::dump() {
 
 FunctionDecl::FunctionDecl(const std::string& name_,
                                  SourceLocation loc_,
-                                 bool is_public_, Type* rtype_)
+                                 bool is_public_, QualType rtype_)
     : Decl(is_public_)
     , name(name_)
     , loc(loc_)
     , rtype(rtype_)
     , body(0)
     , m_isVariadic(false)
-    , canonicalType(0)
     , IRProto(0)
 {
 }
@@ -92,7 +90,7 @@ void FunctionDecl::print(StringBuilder& buffer) {
     buffer << "[function " << name << "]\n";
     buffer.indent(INDENT);
     buffer << COL_ATTR << "returntype:" << ANSI_NORMAL << '\n';
-    rtype->print(INDENT, buffer, Type::RECURSE_NONE);
+    rtype.print(INDENT, buffer, QualType::RECURSE_NONE);
     if (args.size()) {
         buffer.indent(INDENT);
         buffer << COL_ATTR << "args:" << ANSI_NORMAL << '\n';
@@ -100,11 +98,11 @@ void FunctionDecl::print(StringBuilder& buffer) {
     for (unsigned int i=0; i<args.size(); i++) {
         args[i]->print(INDENT, buffer);
     }
-    if (canonicalType) {
-        buffer.indent(INDENT);
-        buffer << ANSI_CYAN << "canonical:" << ANSI_NORMAL << '\n';
-        canonicalType->print(INDENT, buffer, Type::RECURSE_NONE);
-    }
+//    if (canonicalType) {
+//        buffer.indent(INDENT);
+//        buffer << ANSI_CYAN << "canonical:" << ANSI_NORMAL << '\n';
+//        canonicalType->print(INDENT, buffer, QualType::RECURSE_NONE);
+//    }
     if (body) {
         buffer.indent(INDENT);
         buffer << COL_ATTR << "body:" << ANSI_NORMAL << '\n';
@@ -157,11 +155,7 @@ clang::SourceLocation VarDecl::getLocation() const {
     return decl->getLocation();
 }
 
-Type* VarDecl::getType() const { return decl->getType(); }
-
-Type* VarDecl::getCanonicalType() const { return decl->getCanonicalType(); }
-
-void VarDecl::setCanonicalType(Type* t) { decl->setCanonicalType(t); }
+QualType VarDecl::getType() const { return decl->getType(); }
 
 Expr* VarDecl::getInitValue() const { return decl->getInitValue(); }
 
@@ -193,16 +187,12 @@ clang::SourceLocation EnumConstantDecl::getLocation() const {
     return decl->getLocation();
 }
 
-Type* EnumConstantDecl::getType() const { return decl->getType(); }
-
-Type* EnumConstantDecl::getCanonicalType() const { return decl->getCanonicalType(); }
-
-void EnumConstantDecl::setCanonicalType(Type* t) { decl->setCanonicalType(t); }
+QualType EnumConstantDecl::getType() const { return decl->getType(); }
 
 Expr* EnumConstantDecl::getInitValue() const { return decl->getInitValue(); }
 
 
-TypeDecl::TypeDecl(const std::string& name_, SourceLocation loc_, Type* type_, bool is_public_)
+TypeDecl::TypeDecl(const std::string& name_, SourceLocation loc_, QualType type_, bool is_public_)
     : Decl(is_public_)
     , name(name_)
     , loc(loc_)
@@ -216,7 +206,7 @@ DECL_VISITOR_ACCEPT(TypeDecl);
 
 void TypeDecl::print(StringBuilder& buffer) {
     buffer << "[typedef " << name << "]\n";
-    type->print(INDENT, buffer, Type::RECURSE_ONCE);
+    type.print(INDENT, buffer, QualType::RECURSE_ONCE);
 }
 
 

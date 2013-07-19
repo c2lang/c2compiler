@@ -21,7 +21,6 @@
 #include "FunctionAnalyser.h"
 #include "Decl.h"
 #include "Expr.h"
-#include "Type.h"
 #include "Stmt.h"
 #include "Package.h"
 #include "Scope.h"
@@ -92,8 +91,8 @@ bool FunctionAnalyser::handle(Decl* decl) {
             analyseCompoundStmt(func->getBody());
 
             // check for return statement of return value is required
-            Type* rtype = func->getReturnType();
-            bool need_rvalue = (rtype != BuiltinType::get(TYPE_VOID));
+            QualType rtype = func->getReturnType();
+            bool need_rvalue = (rtype.getTypePtr() != BuiltinType::get(TYPE_VOID));
             if (need_rvalue) {
                 CompoundStmt* compound = func->getBody();
                 Stmt* lastStmt = compound->getLastStmt();
@@ -110,7 +109,8 @@ bool FunctionAnalyser::handle(Decl* decl) {
         {
             // Bit nasty to analyse Initialization values, but we need a lot of shared code
             VarDecl* VD = DeclCaster<VarDecl>::getType(decl);
-            Type* T = VD->getType();
+            QualType QT = VD->getType();
+            const Type* T = QT.getTypePtr();
             if (T->isArrayType() && T->getArrayExpr()) {
                 ConstModeSetter setter(*this, diag::err_vla_decl_in_file_scope);
                 EnterScope(0);
@@ -121,7 +121,8 @@ bool FunctionAnalyser::handle(Decl* decl) {
             if (Init) {
                 ConstModeSetter setter(*this, diag::err_init_element_not_constant);
                 EnterScope(0);
-                analyseInitExpr(Init, VD->getCanonicalType());
+                // TEMP CONST CAST
+                analyseInitExpr(Init, (Type*)VD->getType().getTypePtr());
                 ExitScope();
             }
         }
@@ -333,10 +334,10 @@ void FunctionAnalyser::analyseReturnStmt(Stmt* stmt) {
     ReturnStmt* ret = StmtCaster<ReturnStmt>::getType(stmt);
     assert(ret);
     Expr* value = ret->getExpr();
-    Type* rtype = func->getReturnType();
-    bool no_rvalue = (rtype == BuiltinType::get(TYPE_VOID));
+    QualType rtype = func->getReturnType();
+    bool no_rvalue = (rtype.getTypePtr() == BuiltinType::get(TYPE_VOID));
     if (value) {
-        Type* type = analyseExpr(value);
+        QualType type = analyseExpr(value);
         if (no_rvalue) {
             Diags.Report(ret->getLocation(), diag::ext_return_has_expr) << func->getName() << 0;
             // TODO value->getSourceRange()
@@ -357,30 +358,24 @@ void FunctionAnalyser::analyseStmtExpr(Stmt* stmt) {
     analyseExpr(expr);
 }
 
-C2::Type* FunctionAnalyser::Decl2Type(Decl* decl) {
+C2::QualType FunctionAnalyser::Decl2Type(Decl* decl) {
     LOG_FUNC
     assert(decl);
     switch (decl->dtype()) {
     case DECL_FUNC:
         {
             FunctionDecl* FD = DeclCaster<FunctionDecl>::getType(decl);
-            Type* canonical = FD->getCanonicalType();
-            assert(canonical && "need function's canonical type");
-            return canonical;
+            return FD->getType();
         }
     case DECL_VAR:
         {
             VarDecl* VD = DeclCaster<VarDecl>::getType(decl);
-            Type* canonical = VD->getCanonicalType();
-            assert(canonical && "need variable's canonical type");
-            return canonical;
+            return VD->getType();
         }
     case DECL_ENUMVALUE:
         {
             EnumConstantDecl* EC = DeclCaster<EnumConstantDecl>::getType(decl);
-            Type* canonical = EC->getCanonicalType();
-            assert(canonical && "need variable's canonical type");
-            return canonical;
+            return EC->getType();
         }
     case DECL_TYPE:
         {
@@ -392,27 +387,34 @@ C2::Type* FunctionAnalyser::Decl2Type(Decl* decl) {
         assert(0);
         break;
     }
-    return 0;
+    QualType qt;
+    return qt;
 }
 
-C2::Type* FunctionAnalyser::analyseExpr(Expr* expr) {
+C2::QualType FunctionAnalyser::analyseExpr(Expr* expr) {
     LOG_FUNC
     switch (expr->etype()) {
     case EXPR_NUMBER:
         // TEMP for now always return type int
-        return BuiltinType::get(TYPE_INT);
+        return QualType(BuiltinType::get(TYPE_INT));
     case EXPR_STRING:
+        {
+            // return type: 'const char*'
+            QualType stype = typeContext.getPointer(BuiltinType::get(TYPE_CHAR));
+            stype.addConst();
+            return stype;
+        }
     case EXPR_BOOL:
+        return QualType(BuiltinType::get(TYPE_BOOL));
     case EXPR_CHARLITERAL:
-        // TODO return type
-        break;
+        return QualType(BuiltinType::get(TYPE_I8));
     case EXPR_CALL:
         return analyseCall(expr);
     case EXPR_IDENTIFIER:
         {
             ScopeResult Res = analyseIdentifier(expr);
-            if (!Res.ok) return 0;
-            if (!Res.decl) return 0;
+            if (!Res.ok) break;
+            if (!Res.decl) break;
             if (Res.pkg) {
                 IdentifierExpr* id = ExprCaster<IdentifierExpr>::getType(expr);
                 id->setPackage(Res.pkg);
@@ -444,12 +446,11 @@ C2::Type* FunctionAnalyser::analyseExpr(Expr* expr) {
     case EXPR_PAREN:
         return analyseParenExpr(expr);
     }
-    return 0;
+    return QualType();
 }
 
-void FunctionAnalyser::analyseInitExpr(Expr* expr, Type* canonical) {
+void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
     LOG_FUNC
-    // TODO compare RHS type with canonical
 
     switch (expr->etype()) {
     case EXPR_NUMBER:
@@ -481,7 +482,7 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, Type* canonical) {
                 {
                     VarDecl* VD = DeclCaster<VarDecl>::getType(Res.decl);
                     if (inConstExpr) {
-                        Type* T = VD->getType();
+                        QualType T = VD->getType();
                         if (!T->isConstant()) {
                             Diags.Report(expr->getLocation(), constDiagID);
                             return;
@@ -502,7 +503,7 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, Type* canonical) {
         }
         break;
     case EXPR_INITLIST:
-        analyseInitList(expr, canonical);
+        analyseInitList(expr, expectedType);
         break;
     case EXPR_TYPE:
         assert(0 && "??");
@@ -535,15 +536,19 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, Type* canonical) {
     }
 }
 
-void FunctionAnalyser::analyseInitList(Expr* expr, Type* type) {
+void FunctionAnalyser::analyseInitList(Expr* expr, QualType expectedType) {
     LOG_FUNC
     InitListExpr* I = ExprCaster<InitListExpr>::getType(expr);
     assert(I);
+    assert(expectedType.isValid());
 
+    const Type* type = expectedType.getTypePtr();
     switch (type->getKind()) {
     case Type::USER:
-        assert(0 && "should not happen");
-        break;
+        {
+            analyseInitList(expr, type->getRefType());
+            return;
+        }
     case Type::STRUCT:
     case Type::UNION:
         {
@@ -557,9 +562,7 @@ void FunctionAnalyser::analyseInitList(Expr* expr, Type* type) {
                     return;
                 }
                 DeclExpr* member = (*members)[i];
-                Type* mtype = member->getCanonicalType();
-                assert(mtype);
-                analyseInitExpr(values[i], mtype);
+                analyseInitExpr(values[i], member->getType());
             }
         }
         break;
@@ -568,13 +571,11 @@ void FunctionAnalyser::analyseInitList(Expr* expr, Type* type) {
             // check array member type with each value in initlist
             ExprList& values = I->getValues();
             for (unsigned int i=0; i<values.size(); i++) {
-                analyseInitExpr(values[i], type->getRefType());
+                QualType ref = type->getRefType();
+                // TEMP CONST CAST
+                analyseInitExpr(values[i], (Type*)ref.getTypePtr());
             }
         }
-        break;
-    case Type::QUALIFIER:
-        // TODO
-        assert(0 && "can happen?");
         break;
     default:
         {
@@ -592,11 +593,9 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     assert(decl);
 
     // check type and convert User types
-    Type* type = decl->getType();
-    errors += globalScope.checkType(type, false);
-
-    Type* canonicalType = type->getCanonical(typeContext);
-    decl->setCanonicalType(canonicalType);
+    QualType type = decl->getType();
+    // TODO CONST CAST
+    errors += globalScope.checkType((Type*)type.getTypePtr(), false);
 
     // check name
     ScopeResult res = curScope->findSymbol(decl->getName());
@@ -616,49 +615,94 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     curScope->addDecl(new VarDecl(decl, false, true));
 }
 
-Type* FunctionAnalyser::analyseBinaryOperator(Expr* expr) {
+QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr) {
     LOG_FUNC
     BinaryOperator* binop = ExprCaster<BinaryOperator>::getType(expr);
     assert(binop);
-    Type* TLeft = analyseExpr(binop->getLHS());
-    Type* TRight = analyseExpr(binop->getRHS());
+    QualType TLeft = analyseExpr(binop->getLHS());
+    QualType TRight = analyseExpr(binop->getRHS());
     // assigning to 'A' from incompatible type 'B'
     // diag::err_typecheck_convert_incompatible
+    if (TLeft.isNull() || TRight.isNull()) return QualType();
 
-    // NOTE: only handle 'a = b' now, not other binary operations
-    if (binop->getOpcode() == BO_Assign) {
+    switch (binop->getOpcode()) {
+    case BO_PtrMemD:
+    case BO_PtrMemI:
+        assert(0 && "unhandled binary operator type");
+        break;
+    case BO_Mul:
+    case BO_Div:
+    case BO_Rem:
+    case BO_Add:
+    case BO_Sub:
+        // TODO return largetst witdth of left/right (long*short -> long)
+        // TEMP just return INT
+        return QualType(BuiltinType::get(TYPE_INT));
+    case BO_Shl:
+    case BO_Shr:
+        return TLeft;
+    case BO_LE:
+    case BO_LT:
+    case BO_GE:
+    case BO_GT:
+    case BO_NE:
+    case BO_EQ:
+        return QualType(BuiltinType::get(TYPE_BOOL));
+    case BO_And:
+    case BO_Xor:
+    case BO_Or:
+        return TLeft;
+    case BO_LAnd:
+    case BO_LOr:
+        return QualType(BuiltinType::get(TYPE_BOOL));
+    case BO_Assign:
         return checkAssignmentOperands(TLeft, TRight);
+    case BO_MulAssign:
+    case BO_DivAssign:
+    case BO_RemAssign:
+    case BO_AddAssign:
+    case BO_SubAssign:
+    case BO_ShlAssign:
+    case BO_ShrAssign:
+    case BO_AndAssign:
+    case BO_XorAssign:
+    case BO_OrAssign:
+        return TLeft;
+    case BO_Comma:
+        assert(0 && "unhandled binary operator type");
+        break;
     }
-    return 0;
+    return QualType();
 }
 
-Type* FunctionAnalyser::analyseConditionalOperator(Expr* expr) {
+QualType FunctionAnalyser::analyseConditionalOperator(Expr* expr) {
     LOG_FUNC
     ConditionalOperator* condop = ExprCaster<ConditionalOperator>::getType(expr);
     assert(condop);
     analyseExpr(condop->getCond());
-    Type* TLeft = analyseExpr(condop->getLHS());
+    QualType TLeft = analyseExpr(condop->getLHS());
     analyseExpr(condop->getRHS());
     // TODO also check type of RHS
     return TLeft;
 }
 
-Type* FunctionAnalyser::analyseUnaryOperator(Expr* expr) {
+QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr) {
     LOG_FUNC
     UnaryOperator* unaryop = ExprCaster<UnaryOperator>::getType(expr);
     assert(unaryop);
-    Type* LType = analyseExpr(unaryop->getExpr());
-    if (!LType) return 0;
+    QualType LType = analyseExpr(unaryop->getExpr());
+    if (LType.isNull()) return 0;
     switch (unaryop->getOpcode()) {
     case UO_AddrOf:
         return typeContext.getPointer(LType);
     case UO_Deref:
         // TODO handle user types
-        if (!LType->isPointerType()) {
+        if (!LType.isPointerType()) {
             // TODO use function to get name
             StringBuilder buf(256);
             buf << '\'';
-            LType->printEffective(buf, 0);
+            // TODO qualifiers?
+            LType.getTypePtr()->printEffective(buf, 0);
             buf << '\'';
             Diags.Report(unaryop->getOpLoc(), diag::err_typecheck_indirection_requires_pointer)
                 << buf;
@@ -679,24 +723,24 @@ void FunctionAnalyser::analyseSizeofExpr(Expr* expr) {
     analyseExpr(size->getExpr());
 }
 
-Type* FunctionAnalyser::analyseArraySubscript(Expr* expr) {
+QualType FunctionAnalyser::analyseArraySubscript(Expr* expr) {
     LOG_FUNC
     ArraySubscriptExpr* sub = ExprCaster<ArraySubscriptExpr>::getType(expr);
     assert(sub);
-    Type* LType = analyseExpr(sub->getBase());
-    if (!LType) return 0;
+    QualType LType = analyseExpr(sub->getBase());
+    if (LType.isNull()) return 0;
     // TODO this should be done in analyseExpr()
-    Type* LType2 = resolveUserType(LType);
-    if (!LType2) return 0;
-    if (!LType2->isSubscriptable()) {
+    QualType LType2 = resolveUserType(LType);
+    if (LType2.isNull()) return 0;
+    if (!LType2.isSubscriptable()) {
         Diags.Report(expr->getLocation(), diag::err_typecheck_subscript);
         return 0;
     }
     analyseExpr(sub->getIndex());
-    return LType2->getRefType();
+    return LType2.getTypePtr()->getRefType();
 }
 
-Type* FunctionAnalyser::analyseMemberExpr(Expr* expr) {
+QualType FunctionAnalyser::analyseMemberExpr(Expr* expr) {
     LOG_FUNC
     MemberExpr* M = ExprCaster<MemberExpr>::getType(expr);
     assert(M);
@@ -714,23 +758,23 @@ Type* FunctionAnalyser::analyseMemberExpr(Expr* expr) {
     Expr* base = M->getBase();
     if (base->etype() == EXPR_IDENTIFIER) {
         ScopeResult SR = analyseIdentifier(base);
-        if (!SR.ok) return 0;
+        if (!SR.ok) return QualType();
         if (SR.decl) {
             IdentifierExpr* base_id = ExprCaster<IdentifierExpr>::getType(base);
             switch (SR.decl->dtype()) {
             case DECL_FUNC:
             case DECL_TYPE:
                 fprintf(stderr, "error: member reference base 'type' is not a structure, union or package\n");
-                return 0;
+                return QualType();
             case DECL_VAR:
                 {
                     // TODO extract to function?
                     VarDecl* VD = DeclCaster<VarDecl>::getType(SR.decl);
-                    Type* T = VD->getType();
-                    assert(T);  // analyser should set
+                    QualType T = VD->getType();
+                    assert(T.isValid());  // analyser should set
 
                     if (isArrow) {
-                        if (T->getKind() != Type::POINTER) {
+                        if (!T.isPointerType()) {
                             fprintf(stderr, "TODO using -> with non-pointer type\n");
                             // continue analysing
                         } else {
@@ -738,15 +782,17 @@ Type* FunctionAnalyser::analyseMemberExpr(Expr* expr) {
                             T = T->getRefType();
                         }
                     } else {
-                        if (T->getKind() == Type::POINTER) {
+                        if (T.isPointerType()) {
                             fprintf(stderr, "TODO using . with pointer type\n");
                             // just deref and continue for now
-                            T = T->getRefType();
+                            T = T.getTypePtr()->getRefType();
+                            // TODO qualifiers?
                         }
                     }
-                    if (T->getKind() == Type::USER) {
-                        T = T->getRefType();
-                        assert(T && "analyser should set refType");
+                    if (T.isUserType()) {
+                        T = T.getTypePtr()->getRefType();
+                        // TODO qualifiers?
+                        assert(T.isValid() && "analyser should set refType");
                     }
                     // check if struct/union type
                     // TODO do the lookup once during declaration. Just have pointer to real Type here.
@@ -759,7 +805,7 @@ Type* FunctionAnalyser::analyseMemberExpr(Expr* expr) {
 */
                         fprintf(stderr, "error: type of symbol '%s' is not a struct or union\n",
                             base_id->getName().c_str());
-                        return 0;
+                        return QualType();
                     }
                     // find member in struct
                     MemberList* members = T->getMembers();
@@ -774,7 +820,7 @@ Type* FunctionAnalyser::analyseMemberExpr(Expr* expr) {
                     StringBuilder temp2(128);
                     temp2 << '\'' << member->getName() << '\'';
                     Diags.Report(member->getLocation(), diag::err_no_member) << temp2 << temp;
-                    return 0;
+                    return QualType();
                 }
                 break;
             case DECL_ENUMVALUE:
@@ -795,26 +841,26 @@ Type* FunctionAnalyser::analyseMemberExpr(Expr* expr) {
             if (!D) {
                 Diags.Report(member->getLocation(), diag::err_unknown_package_symbol)
                     << SR.pkg->getName() << member->getName();
-                return 0;
+                return QualType();
             }
             if (SR.external && !D->isPublic()) {
                 Diags.Report(member->getLocation(), diag::err_not_public)
                     << Utils::fullName(SR.pkg->getName(), D->getName());
-                return 0;
+                return QualType();
             }
             member->setPackage(SR.pkg);
             return Decl2Type(D);
         }
     } else {
-        Type* LType = analyseExpr(base);
-        if (!LType) return 0;
+        QualType LType = analyseExpr(base);
+        if (LType.isNull()) return QualType();
         // TODO this should be done in analyseExpr()
-        Type* LType2 = resolveUserType(LType);
-        if (!LType2) return 0;
-        if (!LType2->isStructOrUnionType()) {
+        QualType LType2 = resolveUserType(LType);
+        if (LType2.isNull()) return QualType();
+        if (!LType2.isStructOrUnionType()) {
             fprintf(stderr, "error: not a struct or union type\n");
             LType2->dump();
-            return 0;
+            return QualType();
         }
         // TODO refactor, code below is copied from above
         // find member in struct
@@ -826,43 +872,46 @@ Type* FunctionAnalyser::analyseMemberExpr(Expr* expr) {
             }
         }
         fprintf(stderr, "error: (1) Type 'todo' has no member '%s'\n", member->getName().c_str());
-        return 0;
+        return QualType();
     }
-    return 0;
+    return QualType();
 }
 
-Type* FunctionAnalyser::analyseParenExpr(Expr* expr) {
+QualType FunctionAnalyser::analyseParenExpr(Expr* expr) {
     LOG_FUNC
     ParenExpr* P = ExprCaster<ParenExpr>::getType(expr);
     assert(P);
     return analyseExpr(P->getExpr());
 }
 
-C2::Type* FunctionAnalyser::analyseCall(Expr* expr) {
+QualType FunctionAnalyser::analyseCall(Expr* expr) {
     LOG_FUNC
     CallExpr* call = ExprCaster<CallExpr>::getType(expr);
     assert(call);
     // analyse function
-    Type* LType = analyseExpr(call->getFn());
-    if (!LType) {
+    QualType LType = analyseExpr(call->getFn());
+    if (LType.isNull()) {
         fprintf(stderr, "CALL unknown function (already error)\n");
         call->getFn()->dump();
-        return 0;
+        return QualType();
     }
     // TODO this should be done in analyseExpr()
-    Type* LType2 = resolveUserType(LType);
-    if (!LType2) return 0;
-    if (!LType2->isFuncType()) {
+    QualType LType2 = resolveUserType(LType);
+    if (LType2.isNull()) return QualType();
+    if (!LType2.isFuncType()) {
         fprintf(stderr, "error: NOT a function type TODO\n");
-        LType->dump();
+        StringBuilder typeName;
+        LType2.printName(typeName);
+        Diags.Report(call->getLocation(), diag::err_typecheck_call_not_function) << typeName;
         return 0;
     }
 
     // TODO check if Ellipsoid otherwise compare num args with num params
+    const Type* T = LType2.getTypePtr();
     for (unsigned i=0; i<call->numArgs(); i++) {
         Expr* arg = call->getArg(i);
-        Type* ArgGot = analyseExpr(arg);
-        Type* ArgNeed = LType2->getArgument(i);
+        QualType ArgGot = analyseExpr(arg);
+        QualType ArgNeed = T->getArgument(i);
 /*
         fprintf(stderr, "ARG %d:\n", i);
         fprintf(stderr, "  got: ");
@@ -875,7 +924,7 @@ C2::Type* FunctionAnalyser::analyseCall(Expr* expr) {
         // TODO match number + types with proto
     }
     // return function's return type
-    return LType2->getReturnType();
+    return T->getReturnType();
 }
 
 ScopeResult FunctionAnalyser::analyseIdentifier(Expr* expr) {
@@ -908,11 +957,14 @@ ScopeResult FunctionAnalyser::analyseIdentifier(Expr* expr) {
     return res;
 }
 
-C2::Type* FunctionAnalyser::checkAssignmentOperands(Type* left, Type* right) {
+C2::QualType FunctionAnalyser::checkAssignmentOperands(QualType left, QualType right) {
+    LOG_FUNC
+    assert(left.isValid());
+    assert(right.isValid());
 
     // TEMP only check for (int) = (float) for now
-    if (right == BuiltinType::get(TYPE_F32) &&
-        left == BuiltinType::get(TYPE_U32))
+    if (right.getTypePtr() == BuiltinType::get(TYPE_F32) &&
+        left.getTypePtr() == BuiltinType::get(TYPE_U32))
     {
         // implicit conversion turns floating-point number into integer: 'float' to 'Number' (aka 'int')
 /*
@@ -933,13 +985,15 @@ C2::Type* FunctionAnalyser::checkAssignmentOperands(Type* left, Type* right) {
     fprintf(stderr, "RIGHT\n");
     right->dump();
 */
-    return 0;
+    QualType qt;
+    return qt;
 }
 
-C2::Type* FunctionAnalyser::resolveUserType(Type* T) {
+C2::QualType FunctionAnalyser::resolveUserType(QualType T) {
     if (T->isUserType()) {
-        Type* t2 = T->getRefType();
-        assert(t2);
+        QualType t2 = T.getTypePtr()->getRefType();
+        assert(t2.isValid());
+        // TODO Qualifiers correct?
         return t2;
     }
     return T;

@@ -38,6 +38,7 @@ struct BuildOptions {
         , generateC(false)
         , printC(false)
         , printPackages(false)
+        , verbose(false)
     {}
     bool printAST;
     bool printASTAfter;
@@ -49,6 +50,7 @@ struct BuildOptions {
     bool generateC;
     bool printC;
     bool printPackages;
+    bool verbose;
 };
 
 

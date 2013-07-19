@@ -19,6 +19,7 @@
 #include "ASTVisitor.h"
 #include "Package.h"
 #include "Scope.h"
+#include "Type.h"
 
 #define MAX_SCOPE_DEPTH 15
 
@@ -64,20 +65,20 @@ private:
     void analyseReturnStmt(Stmt* stmt);
     void analyseStmtExpr(Stmt* stmt);
 
-    Type* analyseExpr(Expr* expr);
+    QualType analyseExpr(Expr* expr);
     void analyseDeclExpr(Expr* expr);
-    Type* analyseBinaryOperator(Expr* expr);
-    Type* analyseConditionalOperator(Expr* expr);
-    Type* analyseUnaryOperator(Expr* expr);
+    QualType analyseBinaryOperator(Expr* expr);
+    QualType analyseConditionalOperator(Expr* expr);
+    QualType analyseUnaryOperator(Expr* expr);
     void analyseSizeofExpr(Expr* expr);
-    Type* analyseArraySubscript(Expr* expr);
-    Type* analyseMemberExpr(Expr* expr);
-    Type* analyseParenExpr(Expr* expr);
-    Type* analyseCall(Expr* expr);
+    QualType analyseArraySubscript(Expr* expr);
+    QualType analyseMemberExpr(Expr* expr);
+    QualType analyseParenExpr(Expr* expr);
+    QualType analyseCall(Expr* expr);
     ScopeResult analyseIdentifier(Expr* expr);
 
-    void analyseInitExpr(Expr* expr, Type* canonical);
-    void analyseInitList(Expr* expr, Type* canonical);
+    void analyseInitExpr(Expr* expr, QualType expectedType);
+    void analyseInitList(Expr* expr, QualType expectedType);
 
     void pushMode(unsigned DiagID);
     void popMode();
@@ -97,11 +98,11 @@ private:
         FunctionAnalyser& analyser;
     };
 
-    Type* checkAssignmentOperands(Type* left, Type* right);
+    QualType checkAssignmentOperands(QualType left, QualType right);
 
-    static Type* resolveUserType(Type* T);
+    static QualType resolveUserType(QualType T);
     Type* resolveCanonicalType(Type* T);
-    Type* Decl2Type(Decl* decl);
+    QualType Decl2Type(Decl* decl);
 
     FileScope& globalScope;
     TypeContext& typeContext;

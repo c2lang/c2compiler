@@ -20,9 +20,9 @@
 #include <vector>
 #include "OwningVector.h"
 
-#define TYPE_CONST      (1<<1)
-#define TYPE_VOLATILE   (1<<2)
-#define TYPE_LOCAL      (1<<3)
+#define QUAL_CONST      (0x1)
+#define QUAL_VOLATILE   (0x2)
+#define QUAL_RESTRICT   (0x4)
 
 namespace C2 {
 class StringBuilder;
@@ -30,6 +30,7 @@ class Argument;
 class Expr;
 class DeclExpr;
 class TypeContext;
+class Type;
 
 typedef OwningVector<C2::DeclExpr> MemberList;
 
@@ -52,6 +53,59 @@ enum C2Type {
     TYPE_VOID,
 };
 
+
+class QualType {
+public:
+    QualType()
+        : type(0), qualifiers(0) {}
+    QualType(Type* Ptr, unsigned Quals = 0)
+        : type(Ptr), qualifiers(Quals) {}
+
+    const Type* getTypePtr() const;
+    const Type* getTypePtrOrNull() const { return type; }
+    unsigned getQualifiers() const { return qualifiers; }
+
+    const Type& operator*() const { return *getTypePtr(); }
+    const Type* operator->() const { return getTypePtr(); }
+    bool operator==(const QualType& rhs) {
+        return (type == rhs.type) && (qualifiers = rhs.qualifiers);
+    }
+    bool isNull() const { return type == NULL; }
+    bool isValid() const { return type != NULL; }
+    bool isConstQualified() const { return (qualifiers & QUAL_CONST); }
+    bool isVolatileQualified() const { return (qualifiers & QUAL_VOLATILE); }
+    bool isRestrictQualified() const { return (qualifiers & QUAL_RESTRICT); }
+    bool hasQualifiers() const { return qualifiers != 0; }
+    QualType getCanonicalType() const;
+
+    void addConst() { qualifiers |= QUAL_CONST; }
+    void addVolatile() { qualifiers |= QUAL_VOLATILE; }
+    void addRestrict() { qualifiers |= QUAL_RESTRICT; }
+    void setQualifiers(unsigned quals) { qualifiers = quals; }
+
+    // Helper functions
+    bool isPointerType() const;
+    bool isUserType() const;
+    bool isSubscriptable() const;
+    bool isStructOrUnionType() const;
+    bool isArrayType() const;
+    bool isFuncType() const;
+    bool isEnumType() const;
+
+    // for error messages
+    void printName(StringBuilder& buffer) const;
+
+    // Debug functions
+    enum RecursionType { RECURSE_NONE=0, RECURSE_ONCE, RECURSE_ALL };
+    void print(int indent, StringBuilder& buffer, RecursionType recursive) const;
+    void dump() const;
+    //static void printCQualifier(StringBuilder& buffer, unsigned int flags);
+private:
+    Type* type;
+    unsigned qualifiers;
+};
+
+
 class Type {
 public:
     enum Kind {
@@ -60,19 +114,18 @@ public:
         STRUCT,
         UNION,
         ENUM,
-        FUNC,
+        FUNC,       // abuses refType for its returntype (QualType cannot be in union)
         POINTER,    // has refType
         ARRAY,      // has refType
-        QUALIFIER   // has refType
     };
 
-    Type(Type::Kind kind_, Type* refType_ = 0);
+    Type(Type::Kind kind_, QualType refType_ = 0);
     ~Type();
 
     // generic
     Kind getKind() const { return kind; }
-    Type* getRefType() const { return refType; }
-    void setRefType(Type* t);
+    QualType getRefType() const { return refType; }
+    void setRefType(QualType t);
     bool isUserType() const { return kind == USER; }
     bool isFuncType() const { return kind == FUNC; }
     bool isStructOrUnionType() const { return kind == STRUCT || kind == UNION; }
@@ -85,7 +138,7 @@ public:
     unsigned getWidth() const;
 
     // for resolving canonical type
-    Type* getCanonical(TypeContext& context);
+    //Type* getCanonical(TypeContext& context);
 
     // Builtin type
     void setBuiltinName(C2Type ct, const char* name_, const char* cname_, unsigned width_) {
@@ -116,35 +169,29 @@ public:
     }
 
     // FUNC
-    void setReturnType(Type* type);
-    Type* getReturnType() const { return returnType; }
-    void addArgument(Type* type);
-    Type* getArgument(unsigned i) const;
-
-    // QUALIFIER
-    void setQualifier(unsigned int flags);
-    unsigned getQualifier() const { return qualifiers; }
+    void setReturnType(QualType type);
+    QualType getReturnType() const { return refType; }
+    void addArgument(QualType type);
+    QualType getArgument(unsigned i) const;
 
     bool isCompatible(const Type& t2) const;
 
     void printFull(StringBuilder& buffer, int indent = 0) const;
     void printEffective(StringBuilder& buffer, int indent = 0) const;
-    enum RecursionType { RECURSE_NONE=0, RECURSE_ONCE, RECURSE_ALL };
-    void print(int indent, StringBuilder& buffer, RecursionType recursive) const;
+    void print(int indent, StringBuilder& buffer, QualType::RecursionType recursive) const;
     void DiagName(StringBuilder& buffer) const;
     void dump() const;
 
     // for analysis
-    bool hasBuiltinBase() const;
     Expr* getBaseUserType() const;
-
-    static void printQualifier(StringBuilder& buffer, unsigned int flags);
-    static void printCQualifier(StringBuilder& buffer, unsigned int flags);
 private:
+    friend class QualType;
+
     void printName(StringBuilder& buffer) const;
 
     Kind kind;
-    Type* refType;
+    QualType refType;
+    QualType CanonicalType;
 
     union {
         unsigned int initializer[4];    // TODO determine
@@ -168,7 +215,6 @@ private:
 
         // func specific
         struct {
-            Type* returnType;
             Argument* arguments;
             const char* fname;   // can be 0 for function proto's.
         };
@@ -181,9 +227,6 @@ private:
             Expr* arrayExpr;
             bool ownArrayExpr;
         };
-
-        // qualifier specific
-        unsigned int qualifiers;
     };
 };
 
@@ -202,12 +245,11 @@ public:
     ~TypeContext();
 
     Type* getUser();
-    Type* getPointer(Type* ref);
+    QualType getPointer(QualType ref);
     Type* getStruct(bool isStruct);
     Type* getEnum();
-    Type* getArray(Type* ref, Expr* sizeExpr, bool ownSize = true);
-    Type* getQualifier(Type* ref, unsigned int qualifier);
-    Type* getFunction(Type* rtype);
+    QualType getArray(QualType ref, Expr* sizeExpr, bool ownSize = true);
+    Type* getFunction(QualType rtype);
 private:
     typedef std::vector<Type*> Types;
     Types types;

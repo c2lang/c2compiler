@@ -128,6 +128,7 @@ public:
     }
 
     bool parse(const BuildOptions& options) {
+        if (options.verbose) printf(COL_VERBOSE"running %s %s()"ANSI_NORMAL"\n", filename.c_str(), __func__);
         u_int64_t t1 = Utils::getCurrentTime();
         C2Sema sema(SM, Diags, typeContext, ast);
         C2Parser parser(PP, sema);
@@ -142,6 +143,7 @@ public:
 
     // analyse use statements, Types and build file scope
     int analyse1(const BuildOptions& options, const Pkgs& pkgs) {
+        if (options.verbose) printf(COL_VERBOSE"running %s %s()"ANSI_NORMAL"\n", filename.c_str(), __func__);
         globals = new FileScope(ast.pkgName, pkgs, Diags);
         ScopeAnalyser visitor(*globals, Diags);
         ast.visitAST(visitor);
@@ -150,6 +152,7 @@ public:
 
     // analyse Global var types + initialization
     int analyse2(const BuildOptions& options) {
+        if (options.verbose) printf(COL_VERBOSE"running %s %s()"ANSI_NORMAL"\n", filename.c_str(), __func__);
         GlobalVarAnalyser visitor(*globals, typeContext, Diags);
         ast.visitAST(visitor);
         return visitor.getErrors();
@@ -157,6 +160,7 @@ public:
 
     // analyse Function bodies
     int analyse3(const BuildOptions& options) {
+        if (options.verbose) printf(COL_VERBOSE"running %s %s()"ANSI_NORMAL"\n", filename.c_str(), __func__);
         u_int64_t t1 = Utils::getCurrentTime();
 
         // analyse function bodies
@@ -226,11 +230,12 @@ void C2Builder::build() {
     LangOpts.Bool = 1;
 
     // Diagnostics
-    DiagnosticOptions DiagOpts;
+    // NOTE: DiagOpts is somehow deleted by Diags/TextDiagnosticPrinter below?
+    DiagnosticOptions* DiagOpts = new DiagnosticOptions();
     IntrusiveRefCntPtr<DiagnosticIDs> DiagID(new DiagnosticIDs());
-    DiagnosticsEngine Diags(DiagID, &DiagOpts,
+    DiagnosticsEngine Diags(DiagID, DiagOpts,
             // NOTE: setting ShouldOwnClient to true causes crash??
-            new TextDiagnosticPrinter(llvm::errs(), &DiagOpts), false);
+            new TextDiagnosticPrinter(llvm::errs(), DiagOpts), false);
     DiagnosticConsumer* client = Diags.getClient();
 
     // TargetInfo
@@ -336,6 +341,7 @@ void C2Builder::build() {
                 FileInfo* info = files[i];
                 gen.addEntry(info->filename, info->ast);
             }
+            if (options.verbose) printf(COL_VERBOSE"generating C (single module)"ANSI_NORMAL"\n");
             gen.generate();
             u_int64_t t2 = Utils::getCurrentTime();
             if (options.printTiming) printf(COL_TIME"C code generation took %lld usec"ANSI_NORMAL"\n", t2 - t1);
@@ -347,6 +353,7 @@ void C2Builder::build() {
                 if (P->isPlainC()) continue;
                 // for now filter out 'c2' as well
                 if (P->getName() == "c2") continue;
+                if (options.verbose) printf(COL_VERBOSE"generating C for package %s"ANSI_NORMAL"\n", P->getName().c_str());
                 CCodeGenerator gen(P->getName(), CCodeGenerator::MULTI_FILE, pkgs);
                 for (unsigned int i=0; i<files.size(); i++) {
                     FileInfo* info = files[i];
@@ -371,6 +378,7 @@ void C2Builder::build() {
             if (P->isPlainC()) continue;
             // for now filter out 'c2' as well
             if (P->getName() == "c2") continue;
+            if (options.verbose) printf(COL_VERBOSE"generating IR for package %s"ANSI_NORMAL"\n", P->getName().c_str());
             CodeGenModule cgm(P);
             for (unsigned int i=0; i<files.size(); i++) {
                 FileInfo* info = files[i];
@@ -387,6 +395,7 @@ void C2Builder::build() {
         }
     }
 
+    if (options.verbose) printf(COL_VERBOSE"done"ANSI_NORMAL"\n");
 out:
     raw_ostream &OS = llvm::errs();
     unsigned NumWarnings = client->getNumWarnings();
@@ -439,15 +448,15 @@ bool C2Builder::createPkgs() {
             // This should be done in C2Sema!!
             if (New->dtype() == DECL_TYPE) {
                 TypeDecl* T = DeclCaster<TypeDecl>::getType(New);
-                Type* type = T->getType();
-                if (type->isEnumType()) {
+                QualType QT = T->getType();
+                if (QT.isEnumType()) {
+                    const Type* type = QT.getTypePtr();
                     const MemberList* members = type->getMembers();
                     for (unsigned i=0; i<members->size(); i++) {
                         DeclExpr* de = (*members)[i];
                         // wrap in EnumConstantDecl
                         // TODO MEMLEAK or throw away in ~Scope() ?
                         EnumConstantDecl* ecd = new EnumConstantDecl(de, New->isPublic());
-                        ecd->setCanonicalType(type);
                         pkg->addSymbol(ecd);
                     }
                 }
@@ -469,46 +478,46 @@ void C2Builder::addDummyPackages() {
         FunctionDecl* func = new FunctionDecl("puts", loc, true, BuiltinType::get(TYPE_INT));
         // TODO correct arg
         Type* ptype = new Type(Type::POINTER, BuiltinType::get(TYPE_CHAR));
-        Type* ctype = new Type(Type::QUALIFIER, ptype);
-        func->addArg(new DeclExpr("s", loc, ctype, 0));
+        QualType QT(ptype, QUAL_CONST);
+        func->addArg(new DeclExpr("s", loc, QT, 0));
         stdioPkg->addSymbol(func);
-        // canonical type
+        // function type
         Type* proto = new Type(Type::FUNC);
         proto->setReturnType(BuiltinType::get(TYPE_INT));
-        proto->addArgument(BuiltinType::get(TYPE_INT));
-        func->setCanonicalType(proto);
+        proto->addArgument(QualType(BuiltinType::get(TYPE_INT)));
+        func->setFunctionType(QualType(proto));
     }
     //int printf(const char *format, ...);
     {
         FunctionDecl* func = new FunctionDecl("printf", loc, true, BuiltinType::get(TYPE_INT));
         // NOTE: MEMLEAK ON TYPE, this will go away when we remove these dummy protos
         Type* ptype = new Type(Type::POINTER, BuiltinType::get(TYPE_CHAR));
-        Type* ctype = new Type(Type::QUALIFIER, ptype);
-        func->addArg(new DeclExpr("format", loc, ctype, 0));
+        QualType QT(ptype, QUAL_CONST);
+        func->addArg(new DeclExpr("format", loc, QT, 0));
         func->setVariadic();
         stdioPkg->addSymbol(func);
-        // canonical type
+        // function type
         Type* proto = new Type(Type::FUNC);
         proto->setReturnType(BuiltinType::get(TYPE_INT));
-        proto->addArgument(ctype);
-        func->setCanonicalType(proto);
+        proto->addArgument(QT);
+        func->setFunctionType(QualType(proto));
     }
     //int sprintf(char *str, const char *format, ...);
     {
         FunctionDecl* func = new FunctionDecl("sprintf", loc, true, BuiltinType::get(TYPE_INT));
         // NOTE: MEMLEAK ON TYPE, this will go away when we remove these dummy protos
         Type* ptype = new Type(Type::POINTER, BuiltinType::get(TYPE_CHAR));
-        Type* ctype = new Type(Type::QUALIFIER, ptype);
-        func->addArg(new DeclExpr("str", loc, ptype, 0));
-        func->addArg(new DeclExpr("format", loc, ctype, 0));
+        QualType QT(ptype, QUAL_CONST);
+        func->addArg(new DeclExpr("str", loc, QT, 0));
+        func->addArg(new DeclExpr("format", loc, QT, 0));
         func->setVariadic();
         stdioPkg->addSymbol(func);
-        // canonical type
+        // function type
         Type* proto = new Type(Type::FUNC);
         proto->setReturnType(BuiltinType::get(TYPE_INT));
-        proto->addArgument(ptype);
-        proto->addArgument(ctype);
-        func->setCanonicalType(proto);
+        proto->addArgument(QualType(ptype));
+        proto->addArgument(QT);
+        func->setFunctionType(QualType(proto));
     }
 
     Package* stdlibPkg = getPackage("stdlib", true);
@@ -516,13 +525,14 @@ void C2Builder::addDummyPackages() {
     {
         FunctionDecl* func = new FunctionDecl("exit", loc, true, BuiltinType::get(TYPE_VOID));
         // TODO correct arg
-        func->addArg(new DeclExpr("status", loc, BuiltinType::get(TYPE_INT), 0));
+        QualType QT(BuiltinType::get(TYPE_INT));
+        func->addArg(new DeclExpr("status", loc, QT, 0));
         stdlibPkg->addSymbol(func);
-        // canonical type
+        // function type
         Type* proto = new Type(Type::FUNC);
         proto->setReturnType(BuiltinType::get(TYPE_INT));
         proto->addArgument(BuiltinType::get(TYPE_INT));
-        func->setCanonicalType(proto);
+        func->setFunctionType(QualType(proto));
     }
 }
 

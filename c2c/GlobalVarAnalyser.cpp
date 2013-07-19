@@ -42,38 +42,29 @@ bool GlobalVarAnalyser::handle(Decl* decl) {
     switch (decl->dtype()) {
     case DECL_FUNC:
         {
-            // TODO extract to function to create CanonicalType for FunctionDecl
             FunctionDecl* FD = DeclCaster<FunctionDecl>::getType(decl);
-            Type* rtypeCanon = FD->getReturnType()->getCanonical(typeContext);
-            Type* proto = typeContext.getFunction(rtypeCanon);
+            QualType rtype = FD->getReturnType();
+            Type* proto = typeContext.getFunction(rtype);
             for (unsigned i=0; i<FD->numArgs(); i++) {
                 DeclExpr* arg = FD->getArg(i);
-                Type* canonicalType = arg->getType()->getCanonical(typeContext);
-                arg->setCanonicalType(canonicalType);
-                proto->addArgument(canonicalType);
+                QualType argType = arg->getType();
+                proto->addArgument(argType);
             }
-            FD->setCanonicalType(proto);
+            FD->setFunctionType(QualType(proto));
             break;
         }
     case DECL_VAR:
-        {
-            VarDecl* VD = DeclCaster<VarDecl>::getType(decl);
-            Type* canonical = VD->getCanonicalType();
-            // TODO assert canonical and return it.
-            // Don't set here, because VD can be in different file!
-            if (!canonical) {
-                canonical = VD->getType()->getCanonical(typeContext);
-                VD->setCanonicalType(canonical);
-            }
-            break;
-        }
+        // nothing to do
+        break;
     case DECL_ENUMVALUE:
         assert(0 && "TODO");
         break;
     case DECL_TYPE:
         {
-            // set canonical type for struct members
             TypeDecl* TD = DeclCaster<TypeDecl>::getType(decl);
+            // TODO set CanonicalType here?
+#if 0
+            // not needed anymore?
             Type* T = TD->getType();
             if (T->isStructOrUnionType()) {
                 MemberList* members = T->getMembers();
@@ -83,6 +74,7 @@ bool GlobalVarAnalyser::handle(Decl* decl) {
                     mem->setCanonicalType(canonicalType);
                 }
             }
+#endif
         }
         break;
     case DECL_ARRAYVALUE:

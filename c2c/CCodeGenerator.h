@@ -20,6 +20,7 @@
 #include <vector>
 #include "StringBuilder.h"
 #include "Package.h"
+#include "Type.h"
 
 namespace C2 {
 
@@ -45,7 +46,7 @@ public:
     void dump();
 
 private:
-    const char* ConvertType(C2::Type* type);
+    const char* ConvertType(const C2::Type* type);
 
     void EmitFunction(Decl* D);
     void EmitVariable(Decl* D);
@@ -71,8 +72,8 @@ private:
 
     // Helpers
     void EmitFunctionProto(FunctionDecl* F, StringBuilder& output);
-    void EmitTypePreName(Type* T, StringBuilder& output);
-    void EmitTypePostName(Type* T, StringBuilder& output);
+    void EmitTypePreName(QualType type, StringBuilder& output);
+    void EmitTypePostName(QualType type, StringBuilder& output);
 
     const std::string& filename;
     const std::string* curpkg;

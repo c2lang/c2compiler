@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "Package.h"
+#include "Type.h"
 
 namespace clang {
 class DiagnosticsEngine;
@@ -29,7 +30,6 @@ class DiagnosticsEngine;
 namespace C2 {
 
 class Decl;
-class Type;
 class Expr;
 
 class ScopeResult {
@@ -63,12 +63,12 @@ public:
 
     ScopeResult findSymbol(const std::string& name) const;
 
-    int checkType(Type* type, bool used_public = false);
+    int checkType(QualType type, bool used_public = false);
     bool isExternal(const Package* pkg) const;
 
     void dump() const;
 private:
-    int checkStructType(Type* type, bool used_public);
+    int checkStructType(const Type* type, bool used_public);
     int checkUserType(Type* type, Expr* id, bool used_public);
 
     const std::string pkgName;

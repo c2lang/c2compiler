@@ -22,7 +22,6 @@
 #include "Scope.h"
 #include "Package.h"
 #include "Decl.h"
-#include "Type.h"
 #include "Expr.h"
 #include "color.h"
 #include "StringBuilder.h"
@@ -80,34 +79,33 @@ void FileScope::dump() const {
     }
 }
 
-int FileScope::checkType(Type* type, bool used_public) {
-    if (type->hasBuiltinBase()) return 0; // always ok
+int FileScope::checkType(QualType type, bool used_public) {
+    assert(type.isValid());
 
-    switch (type->getKind()) {
+    const Type* T = type.getTypePtr();
+    switch (T->getKind()) {
     case Type::BUILTIN:
-        assert(0);
         return 1;
     case Type::STRUCT:
     case Type::UNION:
-        return checkStructType(type, used_public);
+        return checkStructType(T, used_public);
     case Type::ENUM:
         // has no subtypes
-        break;
+        return 1;
     case Type::USER:
-        return checkUserType(type, type->getBaseUserType(), used_public);
+        // TEMP CONST CAST
+        return checkUserType((Type*)T, type->getBaseUserType(), used_public);
     case Type::FUNC:
         // TODO
         assert(0 && "TODO");
         break;
     case Type::POINTER:
     case Type::ARRAY:
-    case Type::QUALIFIER:
-        return checkType(type->getRefType(), used_public);
+        return checkType(T->getRefType(), used_public);
     }
-    return 0;
 }
 
-int FileScope::checkStructType(Type* type, bool used_public) {
+int FileScope::checkStructType(const Type* type, bool used_public) {
     MemberList* members = type->getMembers();
     for (unsigned i=0; i<members->size(); i++) {
         DeclExpr* M = (*members)[i];

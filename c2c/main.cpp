@@ -47,6 +47,7 @@ static void usage(const char* name) {
     fprintf(stderr, "   -p            - print all packages\n");
     fprintf(stderr, "   -s            - print symbols\n");
     fprintf(stderr, "   -t            - print timing\n");
+    fprintf(stderr, "   -v            - verbose logging\n");
     exit(-1);
 }
 
@@ -104,6 +105,10 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
         }
         if (strcmp("-t", arg) == 0) {
             opts.printTiming = true;
+            continue;
+        }
+        if (strcmp("-v", arg) == 0) {
+            opts.verbose = true;
             continue;
         }
         if (arg[0] == '-') {

@@ -179,7 +179,7 @@ void CodeGenModule::EmitTopLevelDecl(Decl* D) {
     case DECL_VAR:
         {
             VarDecl* Var = DeclCaster<VarDecl>::getType(D);
-            llvm::Type* type = ConvertType(Var->getType());
+            llvm::Type* type = ConvertType(Var->getType().getTypePtr());
             bool constant = false;
             llvm::GlobalValue::LinkageTypes ltype = llvm::GlobalValue::InternalLinkage;
             if (Var->isPublic()) ltype = llvm::GlobalValue::ExternalLinkage;
@@ -187,7 +187,7 @@ void CodeGenModule::EmitTopLevelDecl(Decl* D) {
             // TODO use correct arguments for constant and Initializer
             // NOTE: getName() doesn't have to be virtual here
             llvm::GlobalVariable* global =
-                new llvm::GlobalVariable(module, type, constant, ltype, 0, Var->getName()); 
+                new llvm::GlobalVariable(module, type, constant, ltype, 0, Var->getName());
             */
         }
         break;
@@ -206,7 +206,7 @@ void CodeGenModule::EmitTopLevelDecl(Decl* D) {
     }
 }
 
-llvm::Type* CodeGenModule::ConvertType(C2::Type* type) {
+llvm::Type* CodeGenModule::ConvertType(const C2::Type* type) {
     switch (type->getKind()) {
     case Type::BUILTIN:
         {
@@ -233,6 +233,7 @@ llvm::Type* CodeGenModule::ConvertType(C2::Type* type) {
         }
         break;
     case Type::USER:
+        return ConvertType(type->getRefType().getTypePtr());
     case Type::STRUCT:
     case Type::UNION:
     case Type::ENUM:
@@ -241,19 +242,16 @@ llvm::Type* CodeGenModule::ConvertType(C2::Type* type) {
         break;
     case Type::POINTER:
         {
-            llvm::Type* tt = ConvertType(type->getRefType());
+            llvm::Type* tt = ConvertType(type->getRefType().getTypePtr());
             return tt->getPointerTo();
         }
     case Type::ARRAY:
         {
             // Hmm for function args, array are simply converted to pointers, do that for now
             // array: use type = ArrayType::get(elementType, numElements)
-            llvm::Type* tt = ConvertType(type->getRefType());
+            llvm::Type* tt = ConvertType(type->getRefType().getTypePtr());
             return tt->getPointerTo();
         }
-    case Type::QUALIFIER:
-        assert(0 && "TODO");
-        break;
     }
 
     return 0;
@@ -264,7 +262,6 @@ llvm::Function* CodeGenModule::createExternal(const Package* P, const std::strin
     assert(D);
     FunctionDecl* F = DeclCaster<FunctionDecl>::getType(D);
     assert(F);
-    // NOTE: use getCanonicalType()? and generate function for that?
     CodeGenFunction cgf(*this, F);
     llvm::Function* proto = cgf.generateProto(P->getCName());
     return proto;
