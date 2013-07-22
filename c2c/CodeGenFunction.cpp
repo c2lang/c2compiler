@@ -477,8 +477,7 @@ void CodeGenFunction::EmitVarDecl(const DeclExpr* D) {
     const Expr* I = D->getInitValue();
     if (I) {
         llvm::Value* val = EmitExpr(I);
-        llvm::Constant* Init = CGM.EvaluateExprAsConstant(I);
-        Builder.CreateStore(Init, inst, qt.isVolatileQualified());
+        Builder.CreateStore(val, inst, qt.isVolatileQualified());
     }
 }
 
