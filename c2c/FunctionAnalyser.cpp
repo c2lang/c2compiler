@@ -612,6 +612,9 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
         // TODO check initial value type
         analyseExpr(initialValue);
     }
+    if (type.isConstQualified() && !initialValue) {
+        Diags.Report(decl->getLocation(), diag::err_uninitialized_const_var) << decl->getName();
+    }
     curScope->addDecl(new VarDecl(decl, false, true));
 }
 
