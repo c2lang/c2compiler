@@ -4,6 +4,7 @@ use stdio local;
 
 int foo;
 public int bar;
+int faa = 246;
 
 public func void myfunction() {
     puts("voila");
