@@ -46,3 +46,8 @@ func void func5(local int a) {}     // error
 type Local local int;   // error
 */
 
+public func void func6() {
+    int a;
+    int num = elemsof(a);   // error
+}
+

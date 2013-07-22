@@ -103,7 +103,7 @@ public:
     ExprResult ActOnEnumConstant(Expr* enumType, IdentifierInfo* symII, SourceLocation symLoc, Expr* Value);
     ExprResult ActOnTypeQualifier(ExprResult R, unsigned int qualifier);
     ExprResult ActOnVarExpr(const char* name, SourceLocation loc, Expr* type, Expr* InitValue);
-    ExprResult ActOnSizeofExpression(SourceLocation Loc, Expr* expr);
+    ExprResult ActOnBuiltinExpression(SourceLocation Loc, Expr* expr, bool isSizeof);
     ExprResult ActOnArraySubScriptExpr(SourceLocation RLoc, Expr* Base, Expr* Idx);
     ExprResult ActOnMemberExpr(Expr* Base, bool isArrow, Expr* Member);
     ExprResult ActOnPostfixUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Expr* Input);

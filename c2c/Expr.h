@@ -46,7 +46,7 @@ enum ExprType {
     EXPR_BINOP,
     EXPR_CONDOP,
     EXPR_UNARYOP,
-    EXPR_SIZEOF,
+    EXPR_BUILTIN,
     EXPR_ARRAYSUBSCRIPT,
     EXPR_MEMBER,
     EXPR_PAREN,
@@ -314,19 +314,21 @@ private:
 };
 
 
-class SizeofExpr : public Expr {
+class BuiltinExpr : public Expr {
 public:
-    SizeofExpr(SourceLocation Loc, Expr* expr_);
-    virtual ~SizeofExpr();
-    virtual ExprType etype() const { return EXPR_SIZEOF; }
+    BuiltinExpr(SourceLocation Loc, Expr* expr_, bool isSizeof_);
+    virtual ~BuiltinExpr();
+    virtual ExprType etype() const { return EXPR_BUILTIN; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return Loc; }
 
     Expr* getExpr() const { return expr; }
+    bool isSizeFunc() const { return isSizeof; }
 private:
     SourceLocation Loc;
     Expr* expr;
+    bool isSizeof;
 };
 
 
@@ -410,7 +412,7 @@ public:
     virtual void visit(BinaryOperator&) {}
     virtual void visit(ConditionalOperator&) {}
     virtual void visit(UnaryOperator&) {}
-    virtual void visit(SizeofExpr&) {}
+    virtual void visit(BuiltinExpr&) {}
     virtual void visit(ArraySubscriptExpr&) {}
     virtual void visit(MemberExpr&) {}
     virtual void visit(ParenExpr&) {}

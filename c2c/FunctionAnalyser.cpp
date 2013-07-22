@@ -440,8 +440,8 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr) {
         return analyseConditionalOperator(expr);
     case EXPR_UNARYOP:
         return analyseUnaryOperator(expr);
-    case EXPR_SIZEOF:
-        analyseSizeofExpr(expr);
+    case EXPR_BUILTIN:
+        analyseBuiltinExpr(expr);
         break;
     case EXPR_ARRAYSUBSCRIPT:
         return analyseArraySubscript(expr);
@@ -525,8 +525,8 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
     case EXPR_UNARYOP:
         analyseUnaryOperator(expr);
         break;
-    case EXPR_SIZEOF:
-        analyseSizeofExpr(expr);
+    case EXPR_BUILTIN:
+        analyseBuiltinExpr(expr);
         break;
     case EXPR_ARRAYSUBSCRIPT:
         analyseArraySubscript(expr);
@@ -723,12 +723,51 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr) {
     return LType;
 }
 
-void FunctionAnalyser::analyseSizeofExpr(Expr* expr) {
+void FunctionAnalyser::analyseBuiltinExpr(Expr* expr) {
     LOG_FUNC
-    SizeofExpr* size = ExprCaster<SizeofExpr>::getType(expr);
-    assert(size);
-    // TODO can also be type
-    analyseExpr(size->getExpr());
+    BuiltinExpr* func = ExprCaster<BuiltinExpr>::getType(expr);
+    assert(func);
+    analyseExpr(func->getExpr());
+    if (func->isSizeFunc()) { // sizeof()
+        // TODO can also be type (for sizeof)
+    } else { // elemsof()
+        Expr* E = func->getExpr();
+        IdentifierExpr* I = ExprCaster<IdentifierExpr>::getType(E);
+        assert(I && "expr should be IdentifierExpr");
+        Decl* D = I->getDecl();
+        // should be VarDecl(for array/enum) or TypeDecl(array/enum)
+        switch (D->dtype()) {
+        case DECL_FUNC:
+            // ERROR
+            break;
+        case DECL_VAR:
+            {
+                VarDecl* VD = DeclCaster<VarDecl>::getType(D);
+                QualType Q = VD->getType();
+                if (!Q.isArrayType() && !Q.isEnumType()) {
+                    StringBuilder msg;
+                    msg << '\'';
+                    Q.getTypePtr()->printEffective(msg, 0);
+                    msg << '\'';
+                    Diags.Report(I->getLocation(), diag::err_invalid_elemsof_type)
+                        << msg;
+                }
+                return;
+            }
+        case DECL_ENUMVALUE:
+            // ERROR
+            break;
+        case DECL_TYPE:
+            {
+                assert(0 && "TODO");
+                return;
+            }
+        case DECL_ARRAYVALUE:
+        case DECL_USE:
+            assert(0);
+            break;
+        }
+    }
 }
 
 QualType FunctionAnalyser::analyseArraySubscript(Expr* expr) {

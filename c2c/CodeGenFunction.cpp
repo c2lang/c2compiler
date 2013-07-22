@@ -396,7 +396,7 @@ llvm::Value* CodeGenFunction::EmitExpr(const Expr* E) {
     case EXPR_BINOP:
     case EXPR_CONDOP:
     case EXPR_UNARYOP:
-    case EXPR_SIZEOF:
+    case EXPR_BUILTIN:
     case EXPR_ARRAYSUBSCRIPT:
     case EXPR_MEMBER:
     case EXPR_PAREN:

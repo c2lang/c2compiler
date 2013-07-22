@@ -114,7 +114,7 @@ static void expr2name(Expr* expr, StringBuilder& buffer) {
     case EXPR_BINOP:
     case EXPR_CONDOP:
     case EXPR_UNARYOP:
-    case EXPR_SIZEOF:
+    case EXPR_BUILTIN:
     case EXPR_ARRAYSUBSCRIPT:
         break;
     case EXPR_MEMBER:
@@ -351,20 +351,22 @@ void UnaryOperator::print(int indent, StringBuilder& buffer) const {
 }
 
 
-SizeofExpr::SizeofExpr(SourceLocation Loc_, Expr* expr_)
+BuiltinExpr::BuiltinExpr(SourceLocation Loc_, Expr* expr_, bool isSizeof_)
     : Loc(Loc_)
     , expr(expr_)
+    , isSizeof(isSizeof_)
 {}
 
-SizeofExpr::~SizeofExpr() {
+BuiltinExpr::~BuiltinExpr() {
     delete expr;
 }
 
-EXPR_VISITOR_ACCEPT(SizeofExpr);
+EXPR_VISITOR_ACCEPT(BuiltinExpr);
 
-void SizeofExpr::print(int indent, StringBuilder& buffer) const {
+void BuiltinExpr::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
-    buffer << "[sizeof]\n";
+    if (isSizeof) buffer << "[sizeof]\n";
+    else buffer << "[elemsof]\n";
     expr->print(indent + INDENT, buffer);
 }
 

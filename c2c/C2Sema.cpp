@@ -604,14 +604,15 @@ C2::ExprResult C2Sema::ActOnVarExpr(const char* name, SourceLocation loc, Expr* 
     return ExprResult(declExpr);
 }
 
-C2::ExprResult C2Sema::ActOnSizeofExpression(SourceLocation Loc, Expr* expr) {
+C2::ExprResult C2Sema::ActOnBuiltinExpression(SourceLocation Loc, Expr* expr, bool isSizeof) {
     assert(expr);
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: sizeof at ";
+    const char* fname = (isSizeof ? "sizeof" : "elemsof");
+    std::cerr << COL_SEMA"SEMA: " << fname << " at ";
     Loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    return ExprResult(new SizeofExpr(Loc, expr));
+    return ExprResult(new BuiltinExpr(Loc, expr, isSizeof));
 }
 
 C2::ExprResult C2Sema::ActOnArraySubScriptExpr(SourceLocation RLoc, Expr* Base, Expr* Idx) {

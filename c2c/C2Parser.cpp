@@ -830,6 +830,8 @@ C2::ExprResult C2Parser::ParseCastExpression(bool isUnaryExpression,
         break;
     case tok::kw_sizeof:
         return ParseSizeof();
+    case tok::kw_elemsof:
+        return ParseElemsof();
     case tok::amp:
     {
         SourceLocation SavedLoc = ConsumeToken();
@@ -1374,7 +1376,27 @@ C2::ExprResult C2Parser::ParseSizeof()
     if (Res.isInvalid()) return ExprError();
 
     if (ExpectAndConsume(tok::r_paren, diag::err_expected_rparen)) return ExprError();
-    return Actions.ActOnSizeofExpression(Loc, Res.release());
+    return Actions.ActOnBuiltinExpression(Loc, Res.release(), true);
+}
+
+/// Syntax:
+///  'sizeof' '(' var-name ')'
+///  'sizeof' '(' type-name ')'
+C2::ExprResult C2Parser::ParseElemsof()
+{
+    LOG_FUNC
+    assert(Tok.is(tok::kw_elemsof) && "Not elemsof keyword!");
+    SourceLocation Loc = ConsumeToken();
+
+    if (ExpectAndConsume(tok::l_paren, diag::err_expected_lparen)) return ExprError();
+
+    if (Tok.isNot(tok::identifier)) {
+        Diag(Tok, diag::err_expected_ident);
+        return ExprError();
+    }
+    ExprResult Res = ParseIdentifier();
+    if (ExpectAndConsume(tok::r_paren, diag::err_expected_rparen)) return ExprError();
+    return Actions.ActOnBuiltinExpression(Loc, Res.release(), false);
 }
 
 // Syntax:

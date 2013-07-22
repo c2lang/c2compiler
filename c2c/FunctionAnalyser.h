@@ -70,7 +70,7 @@ private:
     QualType analyseBinaryOperator(Expr* expr);
     QualType analyseConditionalOperator(Expr* expr);
     QualType analyseUnaryOperator(Expr* expr);
-    void analyseSizeofExpr(Expr* expr);
+    void analyseBuiltinExpr(Expr* expr);
     QualType analyseArraySubscript(Expr* expr);
     QualType analyseMemberExpr(Expr* expr);
     QualType analyseParenExpr(Expr* expr);

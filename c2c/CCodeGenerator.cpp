@@ -231,12 +231,18 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
     case EXPR_UNARYOP:
         EmitUnaryOperator(E, output);
         return;
-    case EXPR_SIZEOF:
+    case EXPR_BUILTIN:
         {
-            SizeofExpr* S = ExprCaster<SizeofExpr>::getType(E);
-            output << "sizeof(";
-            EmitExpr(S->getExpr(), output);
-            output << ')';
+            BuiltinExpr* S = ExprCaster<BuiltinExpr>::getType(E);
+            if (S->isSizeFunc()) {
+                output << "sizeof(";
+                EmitExpr(S->getExpr(), output);
+                output << ')';
+            } else {
+                assert(0 && "TODO");
+                // TODO  sizeof(array) / sizeof(array[0]);
+                // NOTE cannot be converted to C if used with enums
+            }
             return;
         }
     case EXPR_ARRAYSUBSCRIPT:
