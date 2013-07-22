@@ -192,8 +192,7 @@ unsigned Type::getWidth() const {
     case BUILTIN:
         return width;
     case USER:
-        assert(0 && "Should not happen");
-        break;
+        return refType->getWidth();
     case STRUCT:
     case UNION:
     case ENUM:

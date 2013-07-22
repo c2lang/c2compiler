@@ -195,7 +195,21 @@ void CodeGenModule::EmitTopLevelDecl(Decl* D) {
         assert(0 && "TODO");
         break;
     case DECL_TYPE:
-        assert(0 && "TODO type");
+        {
+            TypeDecl* TD = DeclCaster<TypeDecl>::getType(D);
+            QualType QT = TD->getType();
+            // NOTE: only generate code for struct/union types (even this is optional)
+            if (QT.isStructOrUnionType()) {
+#if 0
+                // TEMP try some ints
+                std::vector<llvm::Type *> putsArgs;
+                putsArgs.push_back(builder.getInt32Ty());
+                llvm::ArrayRef<llvm::Type*>  argsRef(putsArgs);
+                llvm::StructType* s = llvm::StructType::create(getContext(), putsArgs, TD->getName());
+                //const Type* T = QT.getTypePtr();
+#endif
+            }
+        }
         break;
     case DECL_ARRAYVALUE:
         assert(0 && "TODO arrayvalue");
