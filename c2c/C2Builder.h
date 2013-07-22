@@ -59,6 +59,7 @@ public:
     C2Builder(const Recipe& recipe_, const BuildOptions& opts);
     ~C2Builder();
 
+    int checkFiles();
     void build();
 private:
     Package* getPackage(const std::string& name, bool isCLib);

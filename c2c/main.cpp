@@ -139,7 +139,8 @@ int main(int argc, const char *argv[])
         Recipe dummy("dummy");
         dummy.addFile(targetFilter);
         C2Builder builder(dummy, opts);
-        builder.build();
+        int errors = builder.checkFiles();
+        if (!errors) builder.build();
         return 0;
     }
 
@@ -153,7 +154,8 @@ int main(int argc, const char *argv[])
         const Recipe& recipe = reader.get(i);
         if (targetFilter && recipe.name != targetFilter) continue;
         C2Builder builder(recipe, opts);
-        builder.build();
+        int errors = builder.checkFiles();
+        if (!errors) builder.build();
         count++;
     }
     if (targetFilter && count == 0) {

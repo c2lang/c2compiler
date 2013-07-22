@@ -38,6 +38,10 @@
 #include <llvm/Support/Host.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <errno.h>
 
 #include "C2Builder.h"
 #include "C2Parser.h"
@@ -218,6 +222,19 @@ C2Builder::~C2Builder()
     for (unsigned int i=0; i<files.size(); i++) {
         delete files[i];
     }
+}
+
+int C2Builder::checkFiles() {
+    int errors = 0;
+    for (int i=0; i<recipe.size(); i++) {
+        const std::string& filename = recipe.get(i);
+        struct stat buf;
+        if (stat(filename.c_str(), &buf)) {
+            fprintf(stderr, "c2c: error: %s: '%s'\n", strerror(errno), filename.c_str());
+            errors++;
+        }
+    }
+    return errors;
 }
 
 void C2Builder::build() {
