@@ -236,9 +236,12 @@ llvm::Type* CodeGenModule::ConvertType(const C2::Type* type) {
         return ConvertType(type->getRefType().getTypePtr());
     case Type::STRUCT:
     case Type::UNION:
+        assert(0 && "TODO union/struct type");
     case Type::ENUM:
+        // TODO use canonical type, for now use Int32()
+        return builder.getInt32Ty();
     case Type::FUNC:
-        assert(0 && "TODO");
+        assert(0 && "TODO func type");
         break;
     case Type::POINTER:
         {
