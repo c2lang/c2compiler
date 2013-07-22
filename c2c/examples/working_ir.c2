@@ -10,10 +10,13 @@ public func void myfunction() {
     return;
 }
 
+type Number i32;
+
 public func int main(int argc, char*[] argv) {
-    int a;
-    int b;
+    int a = 123;
+    int b = 456;
     u16 c;
+    Number n;
     puts("Hello World!\n");
     myfunction();
     return 0;

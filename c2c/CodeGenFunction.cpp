@@ -474,13 +474,11 @@ void CodeGenFunction::EmitVarDecl(const DeclExpr* D) {
     llvm::AllocaInst* inst = Builder.CreateAlloca(CGM.ConvertType(qt.getTypePtr()), 0, D->getName());
     // TODO smart alignment
     inst->setAlignment(D->getType()->getWidth());
-    // TODO initValue
     const Expr* I = D->getInitValue();
     if (I) {
-        //llvm::Value* val = EmitExpr(I);
-        //llvm::Constant* Init= CGM.EmitConstantValueFor(I, D->getType(), this);
-        //llvm::Value* Loc;
-        //Builder.createStore(Init, Loc, false);
+        llvm::Value* val = EmitExpr(I);
+        llvm::Constant* Init = EvaluateExprAsConstant(I);
+        Builder.CreateStore(Init, inst, qt.isVolatileQualified());
     }
 }
 
@@ -504,5 +502,13 @@ llvm::Value *CodeGenFunction::EvaluateExprAsBool(const Expr *E) {
 
   return EmitComplexToScalarConversion(EmitComplexExpr(E), E->getType(),BoolTy);
 #endif
+}
+
+llvm::Constant* CodeGenFunction::EvaluateExprAsConstant(const Expr *E) {
+    // NOTE: for now only support numbers and convert those to bools
+    NumberExpr* N = ExprCaster<NumberExpr>::getType(E);
+    assert(N && "Only support constants for now");
+    // Get Width/signed from CanonicalType?
+    return llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), N->value, true);
 }
 
