@@ -738,8 +738,9 @@ void FunctionAnalyser::analyseBuiltinExpr(Expr* expr) {
         // should be VarDecl(for array/enum) or TypeDecl(array/enum)
         switch (D->dtype()) {
         case DECL_FUNC:
+             fprintf(stderr, "TODO Function err\n");
             // ERROR
-            break;
+            return;
         case DECL_VAR:
             {
                 VarDecl* VD = DeclCaster<VarDecl>::getType(D);
