@@ -125,6 +125,9 @@ bool FunctionAnalyser::handle(Decl* decl) {
                 analyseInitExpr(Init, (Type*)VD->getType().getTypePtr());
                 ExitScope();
             }
+            if (QT.isConstQualified() && !Init) {
+                Diags.Report(VD->getLocation(), diag::err_uninitialized_const_var) << VD->getName();
+            }
         }
         break;
     case DECL_ENUMVALUE:
