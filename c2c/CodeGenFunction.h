@@ -58,10 +58,7 @@ private:
     llvm::Value* EmitCallExpr(const CallExpr* E);
     void EmitVarDecl(const DeclExpr* E);
 
-    /// EvaluateExprAsBool - Perform the usual unary conversions on the specified
-    /// expression and compare the result against zero, returning an Int1Ty value.
     llvm::Value *EvaluateExprAsBool(const Expr *E);
-    llvm::Constant* EvaluateExprAsConstant(const Expr *E);
 
     llvm::BasicBlock* createBasicBlock(const llvm::Twine &name = "",
                                       llvm::Function* parent = 0,

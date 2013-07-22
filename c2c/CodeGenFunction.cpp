@@ -354,7 +354,7 @@ void CodeGenFunction::EmitBranchOnBoolExpr(const Expr *Cond,
 #endif
 
   // Emit the code with the fully general case.
-  llvm::Value *CondV = EvaluateExprAsBool(Cond);
+  llvm::Value *CondV = CGM.EvaluateExprAsBool(Cond);
   Builder.CreateCondBr(CondV, TrueBlock, FalseBlock);
 }
 
@@ -477,38 +477,8 @@ void CodeGenFunction::EmitVarDecl(const DeclExpr* D) {
     const Expr* I = D->getInitValue();
     if (I) {
         llvm::Value* val = EmitExpr(I);
-        llvm::Constant* Init = EvaluateExprAsConstant(I);
+        llvm::Constant* Init = CGM.EvaluateExprAsConstant(I);
         Builder.CreateStore(Init, inst, qt.isVolatileQualified());
     }
-}
-
-/// EvaluateExprAsBool - Perform the usual unary conversions on the specified
-/// expression and compare the result against zero, returning an Int1Ty value.
-llvm::Value *CodeGenFunction::EvaluateExprAsBool(const Expr *E) {
-    // NOTE: for now only support numbers and convert those to bools
-    NumberExpr* N = ExprCaster<NumberExpr>::getType(E);
-    assert(N && "Only support constants for now");
-    return llvm::ConstantInt::get(llvm::Type::getInt1Ty(context), N->value, true);
-
-#if 0
-  if (const MemberPointerType *MPT = E->getType()->getAs<MemberPointerType>()) {
-    llvm::Value *MemPtr = EmitScalarExpr(E);
-    return CGM.getCXXABI().EmitMemberPointerIsNotNull(*this, MemPtr, MPT);
-  }
-
-  QualType BoolTy = getContext().BoolTy;
-  if (!E->getType()->isAnyComplexType())
-    return EmitScalarConversion(EmitScalarExpr(E), E->getType(), BoolTy);
-
-  return EmitComplexToScalarConversion(EmitComplexExpr(E), E->getType(),BoolTy);
-#endif
-}
-
-llvm::Constant* CodeGenFunction::EvaluateExprAsConstant(const Expr *E) {
-    // NOTE: for now only support numbers and convert those to bools
-    NumberExpr* N = ExprCaster<NumberExpr>::getType(E);
-    assert(N && "Only support constants for now");
-    // Get Width/signed from CanonicalType?
-    return llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), N->value, true);
 }
 

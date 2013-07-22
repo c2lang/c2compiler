@@ -38,6 +38,7 @@
 #include "AST.h"
 #include "Type.h"
 #include "Decl.h"
+#include "Expr.h"
 #include "StringBuilder.h"
 
 //#define DEBUG_CODEGEN
@@ -59,7 +60,7 @@ CodeGenModule::CodeGenModule(const Package* pkg_)
         llvm::FunctionType::get(builder.getInt32Ty(), argsRef, false);
     llvm::Constant *putsFunc = module->getOrInsertFunction("puts", putsType);
 
-    // TEMP hardcode puts function
+    // TEMP hardcode printf function
     std::vector<llvm::Type *> printfArgs;
     printfArgs.push_back(builder.getInt8Ty()->getPointerTo());
     llvm::ArrayRef<llvm::Type*>  argsRef2(printfArgs);
@@ -179,16 +180,27 @@ void CodeGenModule::EmitTopLevelDecl(Decl* D) {
     case DECL_VAR:
         {
             VarDecl* Var = DeclCaster<VarDecl>::getType(D);
-            llvm::Type* type = ConvertType(Var->getType().getTypePtr());
+            QualType qt = Var->getType();
+            llvm::Type* type = ConvertType(qt.getTypePtr());
             bool constant = false;
             llvm::GlobalValue::LinkageTypes ltype = llvm::GlobalValue::InternalLinkage;
             if (Var->isPublic()) ltype = llvm::GlobalValue::ExternalLinkage;
-            /*
             // TODO use correct arguments for constant and Initializer
             // NOTE: getName() doesn't have to be virtual here
-            llvm::GlobalVariable* global =
-                new llvm::GlobalVariable(module, type, constant, ltype, 0, Var->getName());
-            */
+
+            const Expr* I = Var->getInitValue();
+            llvm::Constant* init;
+            if (I) {
+                init = EvaluateExprAsConstant(I);
+            } else {
+                // ALWAYS initialize globals
+                // TODO dynamic width
+                init = llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), 0, true);
+            }
+            //new llvm::GlobalVariable(type, constant, ltype, 0, Var->getName());
+            new llvm::GlobalVariable(*module, type, constant, ltype, init, Var->getName());
+            //llvm::GlobalVariable* global =
+            //    new llvm::GlobalVariable(module, type, constant, ltype, 0, Var->getName());
         }
         break;
     case DECL_ENUMVALUE:
@@ -282,5 +294,35 @@ llvm::Function* CodeGenModule::createExternal(const Package* P, const std::strin
     CodeGenFunction cgf(*this, F);
     llvm::Function* proto = cgf.generateProto(P->getCName());
     return proto;
+}
+
+llvm::Constant* CodeGenModule::EvaluateExprAsConstant(const Expr *E) {
+    // NOTE: for now only support numbers and convert those to bools
+    NumberExpr* N = ExprCaster<NumberExpr>::getType(E);
+    assert(N && "Only support constants for now");
+    // Get Width/signed from CanonicalType?
+    return llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), N->value, true);
+}
+
+/// EvaluateExprAsBool - Perform the usual unary conversions on the specified
+/// expression and compare the result against zero, returning an Int1Ty value.
+llvm::Value *CodeGenModule::EvaluateExprAsBool(const Expr *E) {
+    // NOTE: for now only support numbers and convert those to bools
+    NumberExpr* N = ExprCaster<NumberExpr>::getType(E);
+    assert(N && "Only support constants for now");
+    return llvm::ConstantInt::get(llvm::Type::getInt1Ty(context), N->value, true);
+
+#if 0
+  if (const MemberPointerType *MPT = E->getType()->getAs<MemberPointerType>()) {
+    llvm::Value *MemPtr = EmitScalarExpr(E);
+    return CGM.getCXXABI().EmitMemberPointerIsNotNull(*this, MemPtr, MPT);
+  }
+
+  QualType BoolTy = getContext().BoolTy;
+  if (!E->getType()->isAnyComplexType())
+    return EmitScalarConversion(EmitScalarExpr(E), E->getType(), BoolTy);
+
+  return EmitComplexToScalarConversion(EmitComplexExpr(E), E->getType(),BoolTy);
+#endif
 }
 

@@ -31,6 +31,7 @@ namespace C2 {
 
 class AST;
 class Decl;
+class Expr;
 class Type;
 class Package;
 
@@ -53,6 +54,9 @@ public:
     llvm::Module* getModule() const { return module; }
     llvm::LLVMContext& getContext() const { return context; }
     llvm::IRBuilder<> getBuilder() const { return builder; }
+
+    llvm::Constant* EvaluateExprAsConstant(const Expr *E);
+    llvm::Value* EvaluateExprAsBool(const Expr *E);
 private:
     void EmitFunctionProto(Decl* D);
     void EmitTopLevelDecl(Decl* D);
