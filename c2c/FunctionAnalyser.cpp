@@ -486,7 +486,7 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
                     VarDecl* VD = DeclCaster<VarDecl>::getType(Res.decl);
                     if (inConstExpr) {
                         QualType T = VD->getType();
-                        if (!T->isConstant()) {
+                        if (!T.isConstQualified()) {
                             Diags.Report(expr->getLocation(), constDiagID);
                             return;
                         }
