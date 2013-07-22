@@ -19,6 +19,7 @@
 #include "StringBuilder.h"
 #include "Utils.h"
 #include "Type.h"
+#include "Decl.h"
 #include "Package.h"
 #include "color.h"
 
@@ -151,7 +152,9 @@ void IdentifierExpr::print(int indent, StringBuilder& buffer) const {
     if (pkg) {
         buffer << ANSI_CYAN << pkg->getName() << '.' << ANSI_NORMAL;
     }
-     buffer << getName() << "]\n";
+     buffer << getName() << "]";
+    if (decl) buffer << " <RESOLVED>";
+    buffer << '\n';
 }
 
 

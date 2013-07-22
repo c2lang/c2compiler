@@ -421,6 +421,7 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr) {
             if (Res.pkg) {
                 IdentifierExpr* id = ExprCaster<IdentifierExpr>::getType(expr);
                 id->setPackage(Res.pkg);
+                id->setDecl(Res.decl);
             }
             // NOTE: expr should not be package name (handled above)
             return Decl2Type(Res.decl);
@@ -475,6 +476,7 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
             if (!Res.decl) return;
             if (Res.pkg) {
                 id->setPackage(Res.pkg);
+                id->setDecl(Res.decl);
             }
             switch (Res.decl->dtype()) {
             case DECL_FUNC:

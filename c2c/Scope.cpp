@@ -148,6 +148,7 @@ int FileScope::checkUserType(Type* type, Expr* id, bool used_public) {
             // ok
             assert(res.pkg && "pkg should be set");
             I->setPackage(res.pkg);
+            I->setDecl(res.decl);
             type->setRefType(td->getType());
         }
         break;

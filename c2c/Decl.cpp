@@ -177,7 +177,7 @@ EnumConstantDecl::~EnumConstantDecl() {
 DECL_VISITOR_ACCEPT(EnumConstantDecl);
 
 void EnumConstantDecl::print(StringBuilder& buffer) {
-    buffer << "[enum constant]\n";
+    buffer << "[enum constant] value " << value << '\n';
     decl->print(INDENT, buffer);
 }
 

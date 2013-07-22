@@ -195,8 +195,10 @@ unsigned Type::getWidth() const {
         return refType->getWidth();
     case STRUCT:
     case UNION:
-    case ENUM:
         assert(0 && "TODO");
+    case ENUM:
+        // TEMP
+        return 4;
         break;
     case FUNC:
         return 4;

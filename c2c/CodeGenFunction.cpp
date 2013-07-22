@@ -383,6 +383,7 @@ llvm::Value* CodeGenFunction::EmitExpr(const Expr* E) {
     case EXPR_CALL:
         return EmitCallExpr(ExprCaster<CallExpr>::getType(E));
     case EXPR_IDENTIFIER:
+        return EmitIdentifierExpr(ExprCaster<IdentifierExpr>::getType(E));
     case EXPR_INITLIST:
     case EXPR_TYPE:
         break;
@@ -401,6 +402,7 @@ llvm::Value* CodeGenFunction::EmitExpr(const Expr* E) {
     case EXPR_PAREN:
         break;
     }
+    E->dump();
     assert(0 && "TODO");
     return 0;
 }
@@ -466,6 +468,26 @@ llvm::Value* CodeGenFunction::EmitCallExpr(const CallExpr* E) {
         break;
     }
     return call;
+}
+
+llvm::Value* CodeGenFunction::EmitIdentifierExpr(const IdentifierExpr* E) {
+    Decl* D = E->getDecl();
+    assert(D);
+    switch (D->dtype()) {
+    case DECL_FUNC:
+    case DECL_VAR:
+        break;
+    case DECL_ENUMVALUE:
+        {
+            EnumConstantDecl* ECD = DeclCaster<EnumConstantDecl>::getType(D);
+        }
+    case DECL_TYPE:
+    case DECL_ARRAYVALUE:
+    case DECL_USE:
+        break;
+    }
+    assert(0 && "TODO?");
+    return 0;
 }
 
 void CodeGenFunction::EmitVarDecl(const DeclExpr* D) {

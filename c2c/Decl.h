@@ -157,8 +157,10 @@ public:
     QualType getType() const;
 
     Expr* getInitValue() const; // static value, NOT incremental values
+    int getValue() const { return value; }
 private:
     DeclExpr* decl;
+    int value;      // set during analysis
 };
 
 
