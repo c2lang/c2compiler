@@ -44,6 +44,31 @@ using namespace clang;
 const unsigned MAX_TYPENAME = 128;
 const unsigned MAX_VARNAME = 64;
 
+// 0 = ok, 1 = illegal
+static int type_conversions[14][14] = {
+    // TYPE_U8 ->
+    //U8,  U16, U32, U64, I8, I16, I32, I64, F32, F64, INT, CHAR, BOOL, STRING, VOID,
+    {  0,    1},
+    //U8,  U16, U32, U64, I8, I16, I32, I64, F32, F64, INT, CHAR, BOOL, STRING, VOID,
+};
+/*
+    TYPE_U8,
+    TYPE_U16,
+    TYPE_U32,
+    TYPE_U64,
+    TYPE_I8,
+    TYPE_I16,   // 5
+    TYPE_I32,
+    TYPE_I64,
+    TYPE_F32,
+    TYPE_F64,
+    TYPE_INT,   // 10
+    TYPE_CHAR,
+    TYPE_BOOL,
+    TYPE_STRING,
+    TYPE_VOID,
+*/
+
 FunctionAnalyser::FunctionAnalyser(FileScope& scope_,
                                            TypeContext& tc,
                                            clang::DiagnosticsEngine& Diags_)

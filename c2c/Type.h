@@ -43,12 +43,12 @@ enum C2Type {
     TYPE_I16,
     TYPE_I32,
     TYPE_I64,
-    TYPE_INT,
-    TYPE_STRING,
     TYPE_F32,
     TYPE_F64,
+    TYPE_INT,
     TYPE_CHAR,
     TYPE_BOOL,
+    TYPE_STRING,
     TYPE_VOID,
 };
 
