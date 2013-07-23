@@ -51,23 +51,7 @@ CodeGenModule::CodeGenModule(const Package* pkg_)
     , context(llvm::getGlobalContext())
     , module(new llvm::Module(pkg->getName(), context))
     , builder(context)
-{
-    // TEMP hardcode puts function
-    std::vector<llvm::Type *> putsArgs;
-    putsArgs.push_back(builder.getInt8Ty()->getPointerTo());
-    llvm::ArrayRef<llvm::Type*>  argsRef(putsArgs);
-    llvm::FunctionType *putsType =
-        llvm::FunctionType::get(builder.getInt32Ty(), argsRef, false);
-    llvm::Constant *putsFunc = module->getOrInsertFunction("puts", putsType);
-
-    // TEMP hardcode printf function
-    std::vector<llvm::Type *> printfArgs;
-    printfArgs.push_back(builder.getInt8Ty()->getPointerTo());
-    llvm::ArrayRef<llvm::Type*>  argsRef2(printfArgs);
-    llvm::FunctionType *printfType =
-        llvm::FunctionType::get(builder.getInt32Ty(), argsRef2, true);
-    llvm::Constant *printfFunc = module->getOrInsertFunction("printf", printfType);
-}
+{}
 
 CodeGenModule::~CodeGenModule() {
     delete module;
