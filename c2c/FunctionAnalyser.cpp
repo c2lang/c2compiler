@@ -674,7 +674,9 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr) {
     case BO_LOr:
         return QualType(BuiltinType::get(TYPE_BOOL));
     case BO_Assign:
-        return checkAssignmentOperands(TLeft, TRight);
+        //checkAssignmentOperands(TLeft, TRight);
+        checkConversion(binop->getLocation(), TRight, TLeft);
+        return TLeft;
     case BO_MulAssign:
     case BO_DivAssign:
     case BO_RemAssign:
@@ -1051,7 +1053,7 @@ C2::QualType FunctionAnalyser::checkAssignmentOperands(QualType left, QualType r
 }
 
 void FunctionAnalyser::checkConversion(SourceLocation Loc, QualType from, QualType to) {
-#ifdef ANALYSER_DEBUG
+#if 1
     StringBuilder buf;
     buf <<ANSI_MAGENTA << __func__ << "() converversion ";
     from.DiagName(buf);

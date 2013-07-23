@@ -394,7 +394,7 @@ void Type::printEffective(StringBuilder& buffer, int indent) const {
         buffer << name;
         break;
     case USER:
-        assert(0 && "TODO");
+        refType.getTypePtr()->printEffective(buffer, indent);
         break;
     case UNION:
         buffer.indent(indent);

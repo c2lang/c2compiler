@@ -274,7 +274,7 @@ public:
     virtual ExprType etype() const { return EXPR_BINOP; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer) const;
-    virtual SourceLocation getLocation() const { return lhs->getLocation(); }
+    virtual SourceLocation getLocation() const { return opLoc; }
 
     Expr* getLHS() const { return lhs; }
     Expr* getRHS() const { return rhs; }
