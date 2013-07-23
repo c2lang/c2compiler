@@ -22,7 +22,7 @@ namespace C2 {
 
 class StringBuilder {
 public:
-    StringBuilder(unsigned int cap = CAPACITY);
+    StringBuilder(unsigned int cap = CAPACITY, char* buf = 0);
     ~StringBuilder();
 
     StringBuilder& operator<<(const char* input);
@@ -44,6 +44,8 @@ private:
     unsigned int capacity;
     char* buffer;
     char* ptr;
+    bool ownBuf;
+
     StringBuilder(const StringBuilder&);
     StringBuilder& operator= (const StringBuilder&);
 };

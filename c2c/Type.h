@@ -93,7 +93,7 @@ public:
     bool isEnumType() const;
 
     // for error messages
-    void printName(StringBuilder& buffer) const;
+    void DiagName(StringBuilder& buffer) const;
 
     // Debug functions
     enum RecursionType { RECURSE_NONE=0, RECURSE_ONCE, RECURSE_ALL };

@@ -28,15 +28,17 @@
 using namespace C2;
 using namespace std;
 
-StringBuilder::StringBuilder(unsigned int cap)
+StringBuilder::StringBuilder(unsigned int cap, char* buf)
     : capacity(cap)
-    , buffer((char*)malloc(capacity))
+    , buffer(buf)
+    , ownBuf(buf == 0)
 {
+    if (!buf) buffer = (char*)malloc(capacity);
     clear();
 }
 
 StringBuilder::~StringBuilder() {
-    free(buffer);
+    if (ownBuf) free(buffer);
 }
 
 StringBuilder& StringBuilder::operator<<(const char* input) {

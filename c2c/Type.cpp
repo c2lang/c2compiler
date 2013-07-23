@@ -100,8 +100,8 @@ bool QualType::isArrayType() const { return getTypePtr()->isArrayType(); }
 bool QualType::isFuncType() const { return getTypePtr()->isFuncType(); }
 bool QualType::isEnumType() const { return getTypePtr()->isEnumType(); }
 
-void QualType::printName(StringBuilder& buffer) const {
-    getTypePtr()->printName(buffer);
+void QualType::DiagName(StringBuilder& buffer) const {
+    getTypePtr()->DiagName(buffer);
 }
 
 void QualType::print(int indent, StringBuilder& buffer, RecursionType recursive) const {
@@ -554,7 +554,7 @@ void Type::print(int indent, StringBuilder& buffer, QualType::RecursionType recu
 
 void Type::DiagName(StringBuilder& buffer) const {
     buffer << '\'';
-    printName(buffer);
+    printEffective(buffer);
     buffer << '\'';
 }
 

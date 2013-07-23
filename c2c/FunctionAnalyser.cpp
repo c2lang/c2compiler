@@ -40,6 +40,10 @@ using namespace clang;
 #define LOG_FUNC
 #endif
 
+// TODO extract to constants.h
+const unsigned MAX_TYPENAME = 128;
+const unsigned MAX_VARNAME = 64;
+
 FunctionAnalyser::FunctionAnalyser(FileScope& scope_,
                                            TypeContext& tc,
                                            clang::DiagnosticsEngine& Diags_)
@@ -584,9 +588,10 @@ void FunctionAnalyser::analyseInitList(Expr* expr, QualType expectedType) {
         break;
     default:
         {
-            StringBuilder temp(128);
-            type->DiagName(temp);
-        Diags.Report(expr->getLocation(), diag::err_invalid_type_initializer_list) << temp;
+        char typeName[MAX_TYPENAME];
+        StringBuilder buf(MAX_TYPENAME, typeName);
+        type->DiagName(buf);
+        Diags.Report(expr->getLocation(), diag::err_invalid_type_initializer_list) << typeName;
         }
         break;
     }
@@ -706,12 +711,9 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr) {
     case UO_Deref:
         // TODO handle user types
         if (!LType.isPointerType()) {
-            // TODO use function to get name
-            StringBuilder buf(256);
-            buf << '\'';
-            // TODO qualifiers?
-            LType.getTypePtr()->printEffective(buf, 0);
-            buf << '\'';
+            char typeName[MAX_TYPENAME];
+            StringBuilder buf(MAX_TYPENAME, typeName);
+            LType.DiagName(buf);
             Diags.Report(unaryop->getOpLoc(), diag::err_typecheck_indirection_requires_pointer)
                 << buf;
             return 0;
@@ -747,9 +749,7 @@ void FunctionAnalyser::analyseBuiltinExpr(Expr* expr) {
                 QualType Q = VD->getType();
                 if (!Q.isArrayType() && !Q.isEnumType()) {
                     StringBuilder msg;
-                    msg << '\'';
-                    Q.getTypePtr()->printEffective(msg, 0);
-                    msg << '\'';
+                    Q.DiagName(msg);
                     Diags.Report(I->getLocation(), diag::err_invalid_elemsof_type)
                         << msg;
                 }
@@ -863,11 +863,14 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr) {
                             return de->getType();
                         }
                     }
-                    StringBuilder temp(128);
-                    T->DiagName(temp);
-                    StringBuilder temp2(128);
-                    temp2 << '\'' << member->getName() << '\'';
-                    Diags.Report(member->getLocation(), diag::err_no_member) << temp2 << temp;
+                    char temp1[MAX_TYPENAME];
+                    StringBuilder buf1(MAX_TYPENAME, temp1);
+                    T->DiagName(buf1);
+
+                    char temp2[MAX_VARNAME];
+                    StringBuilder buf2(MAX_VARNAME, temp2);
+                    buf2 << '\'' << member->getName() << '\'';
+                    Diags.Report(member->getLocation(), diag::err_no_member) << temp2 << temp1;
                     return QualType();
                 }
                 break;
@@ -948,8 +951,9 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
     if (LType2.isNull()) return QualType();
     if (!LType2.isFuncType()) {
         fprintf(stderr, "error: NOT a function type TODO\n");
-        StringBuilder typeName;
-        LType2.printName(typeName);
+        char typeName[MAX_TYPENAME];
+        StringBuilder buf(MAX_TYPENAME, typeName);
+        LType2.DiagName(buf);
         Diags.Report(call->getLocation(), diag::err_typecheck_call_not_function) << typeName;
         return 0;
     }
