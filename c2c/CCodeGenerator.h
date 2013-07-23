@@ -37,7 +37,7 @@ class CompoundStmt;
 class CCodeGenerator {
 public:
     enum Mode { MULTI_FILE, SINGLE_FILE };
-    CCodeGenerator(const std::string& filename_, Mode mode_, const Pkgs& pkgs_);
+    CCodeGenerator(const std::string& filename_, Mode mode_, const Pkgs& pkgs_, bool prefix);
     ~CCodeGenerator();
     void addEntry(const std::string& filename, AST& ast);
 
@@ -75,10 +75,12 @@ private:
     void EmitTypePreName(QualType type, StringBuilder& output);
     void EmitTypePostName(QualType type, StringBuilder& output);
     void EmitStringLiteral(const std::string& input, StringBuilder& output);
+    void addPrefix(const std::string& pkgName, const std::string& name, StringBuilder& buffer) const;
 
     const std::string& filename;
     const std::string* curpkg;
     Mode mode;
+    bool no_local_prefix;
 
     const Pkgs& pkgs;
 

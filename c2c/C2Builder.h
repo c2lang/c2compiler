@@ -37,7 +37,6 @@ struct BuildOptions {
         , printTiming(false)
         , printSymbols(false)
         , generateIR(false)
-        , single_module(false)
         , printIR(false)
         , generateC(false)
         , printC(false)
@@ -49,7 +48,6 @@ struct BuildOptions {
     bool printTiming;
     bool printSymbols;
     bool generateIR;
-    bool single_module;
     bool printIR;
     bool generateC;
     bool printC;

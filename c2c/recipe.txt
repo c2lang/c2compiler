@@ -120,7 +120,7 @@ target ccode
 end
 
 target puzzle
-    $ansi-c no_local_prefix
+    $ansi-c no_local_prefix single_module
     examples/puzzle.c2
 end
 

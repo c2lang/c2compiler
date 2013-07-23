@@ -38,10 +38,11 @@ using namespace C2;
 using namespace llvm;
 using namespace clang;
 
-CCodeGenerator::CCodeGenerator(const std::string& filename_, Mode mode_, const Pkgs& pkgs_)
+CCodeGenerator::CCodeGenerator(const std::string& filename_, Mode mode_, const Pkgs& pkgs_, bool prefix)
     : filename(filename_)
     , curpkg(0)
     , mode(mode_)
+    , no_local_prefix(prefix)
     , pkgs(pkgs_)
 {
     hfilename = filename + ".h";
@@ -353,7 +354,7 @@ void CCodeGenerator::EmitCallExpr(Expr* E, StringBuilder& output) {
 void CCodeGenerator::EmitIdentifierExpr(Expr* E, StringBuilder& output) {
     IdentifierExpr* I = ExprCaster<IdentifierExpr>::getType(E);
     if (I->getPackage()) {
-        Utils::addName(I->getPackage()->getCName(), I->getName(), output);
+        addPrefix(I->getPackage()->getCName(), I->getName(), output);
     } else {
         output << I->getName();
     }
@@ -396,7 +397,7 @@ void CCodeGenerator::EmitVariable(Decl* D) {
         hbuf << "extern ";
         EmitTypePreName(V->getType(), hbuf);
         hbuf << ' ';
-        Utils::addName(*curpkg, V->getName(), hbuf);
+        addPrefix(*curpkg, V->getName(), hbuf);
         EmitTypePostName(V->getType(), hbuf);
         // TODO add space if needed (on StringBuilder)
         hbuf << ";\n";
@@ -406,7 +407,7 @@ void CCodeGenerator::EmitVariable(Decl* D) {
     }
     EmitTypePreName(V->getType(), cbuf);
     cbuf << ' ';
-    Utils::addName(*curpkg, V->getName(), cbuf);
+    addPrefix(*curpkg, V->getName(), cbuf);
     EmitTypePostName(V->getType(), cbuf);
     if (V->getInitValue()) {
         cbuf << " = ";
@@ -437,7 +438,7 @@ void CCodeGenerator::EmitType(Decl* D) {
     EmitTypePreName(T->getType(), *out);
     EmitTypePostName(T->getType(), *out);
     *out << ' ';
-    Utils::addName(*curpkg, T->getName(), *out);
+    addPrefix(*curpkg, T->getName(), *out);
     *out << ";\n";
     *out << '\n';
 }
@@ -681,7 +682,7 @@ void CCodeGenerator::EmitFunctionProto(FunctionDecl* F, StringBuilder& output) {
     EmitTypePreName(F->getReturnType(), output);
     EmitTypePostName(F->getReturnType(), output);
     output << ' ';
-    Utils::addName(*curpkg, F->getName(), output);
+    addPrefix(*curpkg, F->getName(), output);
     output << '(';
     int count = F->numArgs();
     if (F->isVariadic()) count++;
@@ -732,7 +733,7 @@ void CCodeGenerator::EmitTypePreName(QualType type, StringBuilder& output) {
             for (unsigned i=0; i<members->size(); i++) {
                 DeclExpr* mem = (*members)[i];
                 output.indent(INDENT);
-                Utils::addName(*curpkg, mem->getName(), output);
+                addPrefix(*curpkg, mem->getName(), output);
                 if (mem->getInitValue()) {
                     output << " = ";
                     EmitExpr(mem->getInitValue(), output);
@@ -800,5 +801,17 @@ void CCodeGenerator::EmitStringLiteral(const std::string& input, StringBuilder& 
         cp++;
     }
     output << '"';
+}
+
+void CCodeGenerator::addPrefix(const std::string& pkgName, const std::string& name, StringBuilder& buffer) const {
+    if (pkgName.empty()) {
+        buffer << name;
+        return;
+    }
+    if (no_local_prefix && pkgName == *curpkg) {
+        buffer << name;
+        return;
+    }
+    Utils::addName(pkgName, name, buffer);
 }
 

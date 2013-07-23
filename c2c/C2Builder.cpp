@@ -328,13 +328,10 @@ void C2Builder::build() {
     }
     if (client->getNumErrors()) goto out;
 
-    // check that main() function is present
     if (!checkMainFunction(Diags)) goto out;
 
-    // (optional) phase 3a: C code generation
     generateOptionalC();
 
-    // (optional) phase 3b: IR code generation
     generateOptionalIR();
 
     if (options.verbose) printf(COL_VERBOSE"done"ANSI_NORMAL"\n");
@@ -508,10 +505,19 @@ bool C2Builder::checkMainFunction(DiagnosticsEngine& Diags) {
 void C2Builder::generateOptionalC() {
     if (!options.generateC) return;
 
-    if (options.single_module) {
+    bool single_module = false;
+    bool no_local_prefix = false;
+    for (unsigned int i=0; i<recipe.cConfigs.size(); i++) {
+        const std::string& conf = recipe.cConfigs[i];
+        // TODO just pass struct with bools?
+        if (conf == "single_module") single_module = true;
+        if (conf == "no_local_prefix") no_local_prefix = true;
+    }
+
+    if (single_module) {
         u_int64_t t1 = Utils::getCurrentTime();
         std::string filename = "test";
-        CCodeGenerator gen(filename, CCodeGenerator::SINGLE_FILE, pkgs);
+        CCodeGenerator gen(filename, CCodeGenerator::SINGLE_FILE, pkgs, no_local_prefix);
         for (unsigned int i=0; i<files.size(); i++) {
             FileInfo* info = files[i];
             gen.addEntry(info->filename, info->ast);
@@ -529,7 +535,7 @@ void C2Builder::generateOptionalC() {
             // for now filter out 'c2' as well
             if (P->getName() == "c2") continue;
             if (options.verbose) printf(COL_VERBOSE"generating C for package %s"ANSI_NORMAL"\n", P->getName().c_str());
-            CCodeGenerator gen(P->getName(), CCodeGenerator::MULTI_FILE, pkgs);
+            CCodeGenerator gen(P->getName(), CCodeGenerator::MULTI_FILE, pkgs, no_local_prefix);
             for (unsigned int i=0; i<files.size(); i++) {
                 FileInfo* info = files[i];
                 if (info->ast.pkgName == P->getName()) {

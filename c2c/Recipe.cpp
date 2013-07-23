@@ -26,7 +26,7 @@ void Recipe::addConfig(const std::string& config_) {
 }
 
 void Recipe::addAnsiCConfig(const std::string& config_) {
-    configs.push_back(config_);
+    cConfigs.push_back(config_);
 }
 const std::string& Recipe::get(int i) const {
     return files[i];
