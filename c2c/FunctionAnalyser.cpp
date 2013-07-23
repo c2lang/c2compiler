@@ -1067,6 +1067,7 @@ void FunctionAnalyser::checkConversion(SourceLocation Loc, QualType from, QualTy
     if (t1->isBuiltinType() && t2->isBuiltinType()) {
         C2Type tt1 = t1->getBuiltinType();
         C2Type tt2 = t2->getBuiltinType();
+        // TODO use matrix with allowed conversions: 3 options: ok, error, warn
         if ((tt1 == TYPE_FLOAT || tt1 == TYPE_F32) && tt2 == TYPE_BOOL) {
             StringBuilder buf1(MAX_TYPENAME);
             StringBuilder buf2(MAX_TYPENAME);
