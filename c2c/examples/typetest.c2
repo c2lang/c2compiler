@@ -82,6 +82,8 @@ type Enum4 enum {
     VAR4
 }
 
+float f = 3.1415926;
+
 // -- Function --
 type CallBack func int(int a, Utils.Point*p);
 type CBFunc func void (MyType* mt, ...);
