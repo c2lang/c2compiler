@@ -415,6 +415,9 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr) {
         return QualType(BuiltinType::get(TYPE_BOOL));
     case EXPR_CHARLITERAL:
         return QualType(BuiltinType::get(TYPE_I8));
+    case EXPR_FLOAT_LITERAL:
+        // For now always return type float
+        return QualType(BuiltinType::get(TYPE_FLOAT));
     case EXPR_CALL:
         return analyseCall(expr);
     case EXPR_IDENTIFIER:
@@ -465,6 +468,7 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
     case EXPR_STRING:
     case EXPR_BOOL:
     case EXPR_CHARLITERAL:
+    case EXPR_FLOAT_LITERAL:
         // TODO check if compatible
         break;
     case EXPR_CALL:

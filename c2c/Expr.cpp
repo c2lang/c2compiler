@@ -57,7 +57,15 @@ EXPR_VISITOR_ACCEPT(NumberExpr);
 
 void NumberExpr::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
-    buffer << "[number " << (int)value << "]\n";
+    buffer << "[integer " << (int)value << "]\n";
+}
+
+
+EXPR_VISITOR_ACCEPT(FloatingLiteral);
+
+void FloatingLiteral::print(int indent, StringBuilder& buffer) const {
+    buffer.indent(indent);
+    buffer << "[float ??]\n";
 }
 
 
@@ -100,6 +108,7 @@ static void expr2name(Expr* expr, StringBuilder& buffer) {
     case EXPR_STRING:
     case EXPR_BOOL:
     case EXPR_CHARLITERAL:
+    case EXPR_FLOAT_LITERAL:
     case EXPR_CALL:
         break;
     case EXPR_IDENTIFIER:

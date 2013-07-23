@@ -20,6 +20,7 @@
 #include <clang/Parse/ParseDiagnostic.h>
 #include <clang/Sema/SemaDiagnostic.h>
 #include <clang/Lex/LiteralSupport.h>
+#include <llvm/ADT/APFloat.h>
 
 #include "C2Sema.h"
 #include "Decl.h"
@@ -34,6 +35,7 @@
 
 using namespace C2;
 using namespace clang;
+using llvm::APFloat;
 
 static inline clang::BinaryOperatorKind ConvertTokenKindToBinaryOpcode(tok::TokenKind Kind) {
   clang::BinaryOperatorKind Opc;
@@ -673,6 +675,16 @@ C2::ExprResult C2Sema::ActOnUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, E
     return ExprResult(new UnaryOperator(OpLoc, Opc, Input));
 }
 
+C2::ExprResult C2Sema::ActOnIntegerConstant(SourceLocation Loc, uint64_t Val) {
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: integer constant"ANSI_NORMAL"\n";
+#endif
+    //unsigned IntSize = Context.getTargetInfo().getIntWidth();
+    //return Owned(IntegerLiteral::Create(Context, llvm::APInt(IntSize, Val),
+    //                          Context.IntTy, Loc));
+    return ExprResult(new NumberExpr(Loc, Val));
+}
+
 C2::ExprResult C2Sema::ActOnBooleanConstant(const Token& Tok) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: boolean constant"ANSI_NORMAL"\n";
@@ -684,16 +696,82 @@ C2::ExprResult C2Sema::ActOnNumericConstant(const Token& Tok) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: numeric constant"ANSI_NORMAL"\n";
 #endif
-    // TEMP, only support integers
-    const char* D = Tok.getLiteralData();
-    char buffer[30];
-    memset(buffer, 0, sizeof(buffer));
-    strncpy(buffer, Tok.getLiteralData(), Tok.getLength());
+    // Fast path for a single digit (which is quite common).  A single digit
+    // cannot have a trigraph, escaped newline, radix prefix, or suffix.
+    if (Tok.getLength() == 1) {
+        const char Val = PP.getSpellingOfSingleCharacterNumericConstant(Tok);
+        return ActOnIntegerConstant(Tok.getLocation(), Val-'0');
+    }
+  SmallString<128> SpellingBuffer;
+  // NumericLiteralParser wants to overread by one character.  Add padding to
+  // the buffer in case the token is copied to the buffer.  If getSpelling()
+  // returns a StringRef to the memory buffer, it should have a null char at
+  // the EOF, so it is also safe.
+  SpellingBuffer.resize(Tok.getLength() + 1);
 
-    unsigned int size = 4;  // size of int
-    //return Owned(IntegerLiteral::Create(Context, :e
-    // (see ActOnIntegerConstant)
-    return ExprResult(new NumberExpr(Tok.getLocation(), atoi(buffer)));
+  // Get the spelling of the token, which eliminates trigraphs, etc.
+  bool Invalid = false;
+  StringRef TokSpelling = PP.getSpelling(Tok, SpellingBuffer, &Invalid);
+  if (Invalid)
+    return ExprError();
+
+  NumericLiteralParser Literal(TokSpelling, Tok.getLocation(), PP);
+  if (Literal.hadError)
+    return ExprError();
+
+    if (Literal.hasUDSuffix()) {
+        assert(0 && "HUH?");
+    }
+
+    Expr* Res;
+
+    if (Literal.isFloatingLiteral()) {
+        // clang::Sema::BuildFloatingLiteral()
+        // TEMP Hardcoded
+        const llvm::fltSemantics& Format = llvm::APFloat::IEEEsingle;
+        APFloat Val(Format);
+
+        APFloat::opStatus result = Literal.GetFloatValue(Val);
+      // Overflow is always an error, but underflow is only an error if
+      // we underflowed to zero (APFloat reports denormals as underflow).
+      if ((result & APFloat::opOverflow) ||
+          ((result & APFloat::opUnderflow) && Val.isZero())) {
+        assert(0 && "TODO");
+#if 0
+        unsigned diagnostic;
+        SmallString<20> buffer;
+        if (result & APFloat::opOverflow) {
+          diagnostic = diag::warn_float_overflow;
+          APFloat::getLargest(Format).toString(buffer);
+        } else {
+          diagnostic = diag::warn_float_underflow;
+          APFloat::getSmallest(Format).toString(buffer);
+        }
+
+        Diag(Tok.getLocation(), diagnostic)
+          << Ty
+          << StringRef(buffer.data(), buffer.size());
+#endif
+      }
+
+      //bool isExact = (result == APFloat::opOK);
+      //return FloatingLiteral::Create(S.Context, Val, isExact, Ty, Loc);
+        Res = new FloatingLiteral(Tok.getLocation(), Val);
+
+    } else if (!Literal.isIntegerLiteral()) {
+        return ExprError();
+    } else {
+        const char* D = Tok.getLiteralData();
+        char buffer[30];
+        memset(buffer, 0, sizeof(buffer));
+        strncpy(buffer, Tok.getLiteralData(), Tok.getLength());
+
+        // TODO check clang (lib/Sema/SemaExpr.cpp)
+        //return Owned(IntegerLiteral::Create(Context, :e
+        // (see ActOnIntegerConstant)
+        Res = new NumberExpr(Tok.getLocation(), atoi(buffer));
+    }
+    return ExprResult(Res);
 }
 
 
@@ -702,7 +780,7 @@ C2::ExprResult C2Sema::ActOnStringLiteral(const Token* StringToks, unsigned int 
     std::cerr << COL_SEMA"SEMA: string literal"ANSI_NORMAL"\n";
 #endif
     StringLiteralParser Literal(StringToks, NumStringToks, PP);
-    if (Literal.hadError) return C2::ExprResult(true);
+    if (Literal.hadError) return ExprError();
 
     llvm::StringRef ref = Literal.GetString();
     return ExprResult(new StringExpr(StringToks[0].getLocation(), ref.data()));
@@ -765,5 +843,9 @@ C2::Decl* C2Sema::getSymbol(const std::string& name) const {
     SymbolsConstIter iter = symbols.find(name);
     if (iter == symbols.end()) return 0;
     else return iter->second;
+}
+
+C2::ExprResult C2Sema::ExprError() {
+    return C2::ExprResult(true);
 }
 

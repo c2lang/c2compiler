@@ -190,6 +190,11 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
             output << '\'' << (char)C->value << '\'';
             return;
         }
+    case EXPR_FLOAT_LITERAL:
+        {
+            assert(0 && "TODO");
+            return;
+        }
     case EXPR_CALL:
         EmitCallExpr(E, output);
         return;

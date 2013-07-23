@@ -378,6 +378,8 @@ llvm::Value* CodeGenFunction::EmitExpr(const Expr* E) {
             return llvm::ConstantInt::get(llvm::Type::getInt1Ty(context), B->value, true);
         }
     case EXPR_CHARLITERAL:
+    case EXPR_FLOAT_LITERAL:
+        assert(0 && "TODO");
         break;
     case EXPR_CALL:
         return EmitCallExpr(ExprCaster<CallExpr>::getType(E));

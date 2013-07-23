@@ -21,6 +21,8 @@
 
 #include <clang/Basic/SourceLocation.h>
 #include <clang/AST/OperationKinds.h>
+#include <llvm/ADT/APSInt.h>
+#include <llvm/ADT/APFloat.h>
 
 #include "OwningVector.h"
 #include "Stmt.h"
@@ -38,6 +40,7 @@ enum ExprType {
     EXPR_STRING,
     EXPR_BOOL,
     EXPR_CHARLITERAL,
+    EXPR_FLOAT_LITERAL,
     EXPR_CALL,
     EXPR_IDENTIFIER,
     EXPR_INITLIST,
@@ -89,6 +92,20 @@ public:
     virtual SourceLocation getLocation() const { return loc; }
 
     double value;
+    clang::SourceLocation loc;
+};
+
+
+class FloatingLiteral : public Expr {
+public:
+    FloatingLiteral(SourceLocation loc_, const llvm::APFloat& V)
+        : Value(V), loc(loc_) {}
+    virtual ExprType etype() const { return EXPR_FLOAT_LITERAL; }
+    virtual void acceptE(ExprVisitor& v);
+    virtual void print(int indent, StringBuilder& buffer) const;
+    virtual SourceLocation getLocation() const { return loc; }
+
+    llvm::APFloat Value;
     clang::SourceLocation loc;
 };
 

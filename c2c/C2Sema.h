@@ -111,6 +111,9 @@ public:
     ExprResult ActOnUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Expr* Input);
 
 private:
+    ExprResult ActOnIntegerConstant(SourceLocation Loc, uint64_t Val);
+    C2::ExprResult ExprError();
+
     DiagnosticBuilder Diag(SourceLocation Loc, unsigned DiagID);
     void addDecl(Decl* d);
     const Decl* findUse(const char* name) const;
