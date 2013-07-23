@@ -418,6 +418,7 @@ public:
     virtual ~ExprVisitor() {}
     virtual void visit(Expr&) { assert(0 && "unknown Expr type"); }    // add ExprClass below
     virtual void visit(NumberExpr&) {}
+    virtual void visit(FloatingLiteral&) {}
     virtual void visit(StringExpr&) {}
     virtual void visit(BoolLiteralExpr&) {}
     virtual void visit(CharLiteralExpr&) {}

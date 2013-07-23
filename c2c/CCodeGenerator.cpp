@@ -192,7 +192,10 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
         }
     case EXPR_FLOAT_LITERAL:
         {
-            assert(0 && "TODO");
+            FloatingLiteral* F = ExprCaster<FloatingLiteral>::getType(E);
+            char temp[20];
+            sprintf(temp, "%f", F->Value.convertToFloat());
+            output << temp;
             return;
         }
     case EXPR_CALL:

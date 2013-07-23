@@ -65,7 +65,9 @@ EXPR_VISITOR_ACCEPT(FloatingLiteral);
 
 void FloatingLiteral::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
-    buffer << "[float ??]\n";
+    char temp[20];
+    sprintf(temp, "%f", Value.convertToFloat());
+    buffer << "[float " << temp << "]\n";
 }
 
 
