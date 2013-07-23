@@ -30,6 +30,7 @@ namespace clang {
 class SourceManager;
 class Token;
 class DiagnosticsEngine;
+class Preprocessor;
 }
 
 using clang::SourceLocation;
@@ -46,7 +47,7 @@ class AST;
 
 class C2Sema {
 public:
-    C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, TypeContext& tc, AST& ast_);
+    C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, TypeContext& tc, AST& ast_, clang::Preprocessor& PP_);
     ~C2Sema();
 
     // file level actions
@@ -126,6 +127,7 @@ private:
 
     TypeContext& typeContext;
     AST& ast;
+    clang::Preprocessor& PP;
 
     C2Sema(const C2Sema&);
     C2Sema& operator= (const C2Sema&);

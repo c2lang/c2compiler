@@ -34,7 +34,6 @@
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/IntrusiveRefCntPtr.h>
 #include <llvm/ADT/OwningPtr.h>
-#include <llvm/ADT/StringRef.h>
 #include <llvm/Support/Host.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -134,7 +133,7 @@ public:
     bool parse(const BuildOptions& options) {
         if (options.verbose) printf(COL_VERBOSE"running %s %s()"ANSI_NORMAL"\n", filename.c_str(), __func__);
         u_int64_t t1 = Utils::getCurrentTime();
-        C2Sema sema(SM, Diags, typeContext, ast);
+        C2Sema sema(SM, Diags, typeContext, ast, PP);
         C2Parser parser(PP, sema);
         parser.Initialize();
         // parse the file into AST

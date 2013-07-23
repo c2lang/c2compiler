@@ -19,6 +19,7 @@
 #include <string.h>
 #include <clang/Parse/ParseDiagnostic.h>
 #include <clang/Sema/SemaDiagnostic.h>
+#include <clang/Lex/LiteralSupport.h>
 
 #include "C2Sema.h"
 #include "Decl.h"
@@ -95,11 +96,12 @@ static inline UnaryOperatorKind ConvertTokenKindToUnaryOpcode(
 }
 
 
-C2Sema::C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, TypeContext& tc, AST& ast_)
+C2Sema::C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, TypeContext& tc, AST& ast_, clang::Preprocessor& PP_)
     : SourceMgr(sm_)
     , Diags(Diags_)
     , typeContext(tc)
     , ast(ast_)
+    , PP(PP_)
 {
 }
 
@@ -699,15 +701,11 @@ C2::ExprResult C2Sema::ActOnStringLiteral(const Token* StringToks, unsigned int 
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: string literal"ANSI_NORMAL"\n";
 #endif
-    // TEMP just add all the strings together
-    std::string result;
-    for (unsigned int i=0; i<NumStringToks; i++) {
-        // Strip off double-quotes here
-        std::string text(StringToks[0].getLiteralData()+1, StringToks[0].getLength()-2);
-        result += text;
-    }
+    StringLiteralParser Literal(StringToks, NumStringToks, PP);
+    if (Literal.hadError) return C2::ExprResult(true);
 
-    return ExprResult(new StringExpr(StringToks[0].getLocation(), result));
+    llvm::StringRef ref = Literal.GetString();
+    return ExprResult(new StringExpr(StringToks[0].getLocation(), ref.data()));
 }
 
 C2::ExprResult C2Sema::ActOnCharacterConstant(SourceLocation Loc, const std::string& value) {
