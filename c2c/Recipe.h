@@ -28,6 +28,7 @@ public:
 
     void addFile(const std::string& name_);
     void addConfig(const std::string& config_);
+    void addAnsiCConfig(const std::string& config_);
     int size() const { return files.size(); }
     const std::string& get(int i) const;
 
@@ -38,6 +39,8 @@ public:
 
     typedef std::vector<std::string> Configs;
     Configs configs;
+
+    Configs cConfigs;
 private:
     Recipe(const Recipe&);
     Recipe& operator= (const Recipe&);

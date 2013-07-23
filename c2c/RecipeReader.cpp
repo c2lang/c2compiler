@@ -56,8 +56,8 @@ void RecipeReader::findTopDir() {
             exit(-1);
         }
         struct stat buf;
-        int error = stat(RECIPE_FILE, &buf);
-        if (error) {
+        int err = stat(RECIPE_FILE, &buf);
+        if (err) {
             if (buffer[0] == '/' && buffer[1] == 0) {
                 fprintf(stderr, "cannot find recipe file\n");
                 exit(-1);
@@ -69,8 +69,8 @@ void RecipeReader::findTopDir() {
         } else {
             return;
         }
-        error = chdir("..");
-        if (error) {
+        err = chdir("..");
+        if (err) {
             perror("chdir");
             exit(-1);
         }
@@ -124,24 +124,34 @@ void RecipeReader::handleLine(char* line) {
         {
             // line should be '<filename>' or 'end'
             const char* tok = get_token();
-            if (strcmp(tok, "end") == 0) {
+            if (tok[0] == '$') {
+                tok++;
+                if (strcmp(tok, "config") == 0) {
+                    while (1) {
+                        const char* tok2 = get_token();
+                        if (!tok2) break;
+                        // TODO check duplicate configs
+                        current->addConfig(tok2);
+                    }
+                } else if (strcmp(tok, "ansi-c") == 0) {
+                    while (1) {
+                        const char* tok2 = get_token();
+                        if (!tok2) break;
+                        // TODO check duplicate configs
+                        current->addAnsiCConfig(tok2);
+                    }
+                } else {
+                    error("unknown option '%s'", tok);
+                }
+            } else if (strcmp(tok, "end") == 0) {
                 state = START;
                 current = 0;
-           } else if (strcmp(tok, "config") == 0) {
-                while (1) {
-                    const char* tok2 = get_token();
-                    if (!tok2) break;
-                    // TODO check duplicate configs
-                    current->addConfig(tok2);
-                }
             } else {
                 struct stat buf;
                 int err = stat(tok, &buf);
                 if (err) {
-                    // TODO also check read rights
-                    fprintf(stderr, "Error: %s:%d: file %s does not exist\n",
-                        RECIPE_FILE, line_nr, tok);
-                    exit(-1);
+                    // TODO also check read rights (access() )
+                    error("file '%s' does not exist", tok);
                 }
                 current->addFile(tok);
             }

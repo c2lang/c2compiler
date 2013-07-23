@@ -67,6 +67,9 @@ private:
     void addDummyPackages();
     void dumpPkgs();
 
+    void generateOptionalC();
+    void generateOptionalIR();
+
     const Recipe& recipe;
     BuildOptions options;
 

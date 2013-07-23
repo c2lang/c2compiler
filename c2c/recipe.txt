@@ -75,7 +75,7 @@ target inctest
 end
 
 target deftest
-    config FOOBAR
+    $config FOOBAR
     examples/deftest.c2
 end
 
@@ -120,6 +120,7 @@ target ccode
 end
 
 target puzzle
+    $ansi-c no_local_prefix
     examples/puzzle.c2
 end
 

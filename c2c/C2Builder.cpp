@@ -267,6 +267,7 @@ void C2Builder::build() {
     }
     HSOpts->AddPath(pwd, clang::frontend::Quoted, false, false, false);
 
+    // set definitions from recipe
     std::string PredefineBuffer;
     if (!recipe.configs.empty()) {
         PredefineBuffer.reserve(4080);
@@ -348,68 +349,10 @@ void C2Builder::build() {
     }
 
     // (optional) phase 3a: C code generation
-    if (options.generateC) {
-        if (options.single_module) {
-            u_int64_t t1 = Utils::getCurrentTime();
-            std::string filename = "test";
-            CCodeGenerator gen(filename, CCodeGenerator::SINGLE_FILE, pkgs);
-            for (unsigned int i=0; i<files.size(); i++) {
-                FileInfo* info = files[i];
-                gen.addEntry(info->filename, info->ast);
-            }
-            if (options.verbose) printf(COL_VERBOSE"generating C (single module)"ANSI_NORMAL"\n");
-            gen.generate();
-            u_int64_t t2 = Utils::getCurrentTime();
-            if (options.printTiming) printf(COL_TIME"C code generation took %lld usec"ANSI_NORMAL"\n", t2 - t1);
-            if (options.printC) gen.dump();
-        } else {
-            for (PkgsIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
-                Package* P = iter->second;
-                u_int64_t t1 = Utils::getCurrentTime();
-                if (P->isPlainC()) continue;
-                // for now filter out 'c2' as well
-                if (P->getName() == "c2") continue;
-                if (options.verbose) printf(COL_VERBOSE"generating C for package %s"ANSI_NORMAL"\n", P->getName().c_str());
-                CCodeGenerator gen(P->getName(), CCodeGenerator::MULTI_FILE, pkgs);
-                for (unsigned int i=0; i<files.size(); i++) {
-                    FileInfo* info = files[i];
-                    if (info->ast.pkgName == P->getName()) {
-                        gen.addEntry(info->filename, info->ast);
-                    }
-                }
-                gen.generate();
-                u_int64_t t2 = Utils::getCurrentTime();
-                if (options.printTiming) printf(COL_TIME"C code generation took %lld usec"ANSI_NORMAL"\n", t2 - t1);
-                if (options.printC) gen.dump();
-                //cgm.write(recipe.name, P->getName());
-            }
-        }
-    }
+    generateOptionalC();
 
     // (optional) phase 3b: IR code generation
-    if (options.generateIR) {
-        for (PkgsIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
-            Package* P = iter->second;
-            u_int64_t t1 = Utils::getCurrentTime();
-            if (P->isPlainC()) continue;
-            // for now filter out 'c2' as well
-            if (P->getName() == "c2") continue;
-            if (options.verbose) printf(COL_VERBOSE"generating IR for package %s"ANSI_NORMAL"\n", P->getName().c_str());
-            CodeGenModule cgm(P);
-            for (unsigned int i=0; i<files.size(); i++) {
-                FileInfo* info = files[i];
-                if (info->ast.pkgName == P->getName()) {
-                    cgm.addEntry(info->filename, info->ast);
-                }
-            }
-            cgm.generate();
-            u_int64_t t2 = Utils::getCurrentTime();
-            if (options.printTiming) printf(COL_TIME"IR generation took %lld usec"ANSI_NORMAL"\n", t2 - t1);
-            if (options.printIR) cgm.dump();
-            bool ok = cgm.verify();
-            if (ok) cgm.write(recipe.name, P->getName());
-        }
-    }
+    generateOptionalIR();
 
     if (options.verbose) printf(COL_VERBOSE"done"ANSI_NORMAL"\n");
 out:
@@ -559,3 +502,68 @@ void C2Builder::dumpPkgs() {
     }
 }
 
+void C2Builder::generateOptionalC() {
+    if (!options.generateC) return;
+
+    if (options.single_module) {
+        u_int64_t t1 = Utils::getCurrentTime();
+        std::string filename = "test";
+        CCodeGenerator gen(filename, CCodeGenerator::SINGLE_FILE, pkgs);
+        for (unsigned int i=0; i<files.size(); i++) {
+            FileInfo* info = files[i];
+            gen.addEntry(info->filename, info->ast);
+        }
+        if (options.verbose) printf(COL_VERBOSE"generating C (single module)"ANSI_NORMAL"\n");
+        gen.generate();
+        u_int64_t t2 = Utils::getCurrentTime();
+        if (options.printTiming) printf(COL_TIME"C code generation took %lld usec"ANSI_NORMAL"\n", t2 - t1);
+        if (options.printC) gen.dump();
+    } else {
+        for (PkgsIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
+            Package* P = iter->second;
+            u_int64_t t1 = Utils::getCurrentTime();
+            if (P->isPlainC()) continue;
+            // for now filter out 'c2' as well
+            if (P->getName() == "c2") continue;
+            if (options.verbose) printf(COL_VERBOSE"generating C for package %s"ANSI_NORMAL"\n", P->getName().c_str());
+            CCodeGenerator gen(P->getName(), CCodeGenerator::MULTI_FILE, pkgs);
+            for (unsigned int i=0; i<files.size(); i++) {
+                FileInfo* info = files[i];
+                if (info->ast.pkgName == P->getName()) {
+                    gen.addEntry(info->filename, info->ast);
+                }
+            }
+            gen.generate();
+            u_int64_t t2 = Utils::getCurrentTime();
+            if (options.printTiming) printf(COL_TIME"C code generation took %lld usec"ANSI_NORMAL"\n", t2 - t1);
+            if (options.printC) gen.dump();
+            //cgm.write(recipe.name, P->getName());
+        }
+    }
+}
+
+void C2Builder::generateOptionalIR() {
+    if (!options.generateIR) return;
+
+    for (PkgsIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
+        Package* P = iter->second;
+        u_int64_t t1 = Utils::getCurrentTime();
+        if (P->isPlainC()) continue;
+        // for now filter out 'c2' as well
+        if (P->getName() == "c2") continue;
+        if (options.verbose) printf(COL_VERBOSE"generating IR for package %s"ANSI_NORMAL"\n", P->getName().c_str());
+        CodeGenModule cgm(P);
+        for (unsigned int i=0; i<files.size(); i++) {
+            FileInfo* info = files[i];
+            if (info->ast.pkgName == P->getName()) {
+                cgm.addEntry(info->filename, info->ast);
+            }
+        }
+        cgm.generate();
+        u_int64_t t2 = Utils::getCurrentTime();
+        if (options.printTiming) printf(COL_TIME"IR generation took %lld usec"ANSI_NORMAL"\n", t2 - t1);
+        if (options.printIR) cgm.dump();
+        bool ok = cgm.verify();
+        if (ok) cgm.write(recipe.name, P->getName());
+    }
+}
