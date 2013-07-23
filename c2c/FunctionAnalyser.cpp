@@ -1053,7 +1053,7 @@ C2::QualType FunctionAnalyser::checkAssignmentOperands(QualType left, QualType r
 }
 
 void FunctionAnalyser::checkConversion(SourceLocation Loc, QualType from, QualType to) {
-#if 1
+#ifdef ANALYSER_DEBUG
     StringBuilder buf;
     buf <<ANSI_MAGENTA << __func__ << "() converversion ";
     from.DiagName(buf);
