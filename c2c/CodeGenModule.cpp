@@ -137,7 +137,7 @@ void CodeGenModule::write(const std::string& target, const std::string& name) {
         return;
     }
     module->print(OS, 0);
-    fprintf(stderr, "written %s\n", (const char*)filename);
+    printf("written %s\n", (const char*)filename);
 #if 0
     // print to binary file
     {
