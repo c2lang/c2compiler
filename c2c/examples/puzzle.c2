@@ -3,9 +3,9 @@ package puzzle;
 use stdio as io;
 use stdlib;
 
-#define ANSI_BRED "\033[01;31m"
-#define ANSI_BGREEN "\033[01;32m"
-#define ANSI_NORMAL "\033[0m"
+const char* ANSI_BRED   = "\033[01;31m";
+const char* ANSI_BGREEN = "\033[01;32m";
+const char* ANSI_NORMAL = "\033[0m";
 
 type Point enum {
     POINT_A=0, POINT_B, POINT_C, POINT_D, POINT_E, POINT_F,
@@ -39,7 +39,7 @@ Connection[] connections = {
     { POINT_R, POINT_B, true },
 }
 
-#define LIST_SIZE 100
+const u32 LIST_SIZE = 100;
 int[LIST_SIZE] activeList;
 int readIndex = 0;
 int writeIndex = 0;

@@ -603,7 +603,7 @@ BuiltinType::BuiltinType() {
     type_u8.setBuiltinName(TYPE_U8, "u8", "unsigned char", 1);
     type_u16.setBuiltinName(TYPE_U16, "u16", "unsigned short", 2);
     type_u32.setBuiltinName(TYPE_U32,"u32", "unsigned int", 4);
-    type_u32.setBuiltinName(TYPE_U64,"u64", "unsigned long long", 4);
+    type_u64.setBuiltinName(TYPE_U64,"u64", "unsigned long long", 4);
     type_i8.setBuiltinName(TYPE_I8,"i8", "char", 1);
     type_i16.setBuiltinName(TYPE_I16,"i16", "short", 2);
     type_i32.setBuiltinName(TYPE_I32, "i32", "int", 4);
