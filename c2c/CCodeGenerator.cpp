@@ -131,7 +131,6 @@ const char* CCodeGenerator::ConvertType(const C2::Type* type) {
             case TYPE_INT:      return "const char*";
             case TYPE_STRING:
                 return 0;  // TODO remove this type?
-            case TYPE_FLOAT:    return "float";
             case TYPE_F32:      return "float";
             case TYPE_F64:      return "double";
             case TYPE_CHAR:     return "char";

@@ -234,7 +234,6 @@ llvm::Type* CodeGenModule::ConvertType(const C2::Type* type) {
             case TYPE_INT:      return builder.getInt32Ty();
             case TYPE_STRING:
                 return 0;  // TODO remove this type?
-            case TYPE_FLOAT:    return builder.getFloatTy();
             case TYPE_F32:      return builder.getFloatTy();
             case TYPE_F64:      return builder.getFloatTy(); // TODO find correct type (double?)
             case TYPE_CHAR:     return builder.getInt8Ty();

@@ -418,7 +418,7 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr) {
         return QualType(BuiltinType::get(TYPE_I8));
     case EXPR_FLOAT_LITERAL:
         // For now always return type float
-        return QualType(BuiltinType::get(TYPE_FLOAT));
+        return QualType(BuiltinType::get(TYPE_F32));
     case EXPR_CALL:
         return analyseCall(expr);
     case EXPR_IDENTIFIER:
@@ -1070,7 +1070,7 @@ void FunctionAnalyser::checkConversion(SourceLocation Loc, QualType from, QualTy
         C2Type tt1 = t1->getBuiltinType();
         C2Type tt2 = t2->getBuiltinType();
         // TODO use matrix with allowed conversions: 3 options: ok, error, warn
-        if ((tt1 == TYPE_FLOAT || tt1 == TYPE_F32) && tt2 == TYPE_BOOL) {
+        if (tt1 == TYPE_F32 && tt2 == TYPE_BOOL) {
             StringBuilder buf1(MAX_TYPENAME);
             StringBuilder buf2(MAX_TYPENAME);
             from.DiagName(buf1);

@@ -631,7 +631,6 @@ C2::Type* BuiltinType::get(C2Type t) {
     case TYPE_I64:    return &type_i64;
     case TYPE_INT:    return &type_int;
     case TYPE_STRING: return &type_string;
-    case TYPE_FLOAT:  return &type_f32;
     case TYPE_F32:    return &type_f32;
     case TYPE_F64:    return &type_f64;
     case TYPE_CHAR:   return &type_char;

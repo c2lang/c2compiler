@@ -45,7 +45,6 @@ enum C2Type {
     TYPE_I64,
     TYPE_INT,
     TYPE_STRING,
-    TYPE_FLOAT,
     TYPE_F32,
     TYPE_F64,
     TYPE_CHAR,
