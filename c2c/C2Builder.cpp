@@ -326,27 +326,10 @@ void C2Builder::build() {
             info->ast.print(info->filename);
         }
     }
-
     if (client->getNumErrors()) goto out;
+
     // check that main() function is present
-    {
-        Decl* mainDecl = 0;
-        for (PkgsIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
-            Package* P = iter->second;
-            Decl* decl = P->findSymbol("main");
-            if (decl) {
-                if (mainDecl) {
-                    // TODO duplicate main functions
-                } else {
-                    mainDecl = decl;
-                }
-            }
-        }
-        if (!mainDecl) {
-            Diags.Report(diag::err_main_missing);
-            goto out;
-        }
-    }
+    if (!checkMainFunction(Diags)) goto out;
 
     // (optional) phase 3a: C code generation
     generateOptionalC();
@@ -500,6 +483,26 @@ void C2Builder::dumpPkgs() {
         Package* P = iter->second;
         P->dump();
     }
+}
+
+bool C2Builder::checkMainFunction(DiagnosticsEngine& Diags) {
+    Decl* mainDecl = 0;
+    for (PkgsIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
+        Package* P = iter->second;
+        Decl* decl = P->findSymbol("main");
+        if (decl) {
+            if (mainDecl) {
+                // TODO multiple main functions
+            } else {
+                mainDecl = decl;
+            }
+        }
+    }
+    if (!mainDecl) {
+        Diags.Report(diag::err_main_missing);
+        return false;
+    }
+    return true;
 }
 
 void C2Builder::generateOptionalC() {

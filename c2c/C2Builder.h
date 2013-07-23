@@ -21,6 +21,10 @@
 
 #include "Package.h"
 
+namespace clang {
+class DiagnosticsEngine;
+}
+
 namespace C2 {
 
 class Recipe;
@@ -67,6 +71,7 @@ private:
     void addDummyPackages();
     void dumpPkgs();
 
+    bool checkMainFunction(clang::DiagnosticsEngine& Diags);
     void generateOptionalC();
     void generateOptionalIR();
 
