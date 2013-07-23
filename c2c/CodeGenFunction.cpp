@@ -53,7 +53,7 @@ llvm::Function* CodeGenFunction::generateProto(const std::string& pkgname) {
     QualType rt = FuncDecl->getReturnType();
     llvm::Type* RT = CGM.ConvertType(rt.getTypePtr());
     if (FuncDecl->args.size() == 0) {
-        funcType = llvm::FunctionType::get(RT, false);
+        funcType = llvm::FunctionType::get(RT, FuncDecl->isVariadic());
     } else {
         std::vector<llvm::Type*> Args;
         for (unsigned int i=0; i<FuncDecl->args.size(); i++) {
@@ -64,8 +64,7 @@ llvm::Function* CodeGenFunction::generateProto(const std::string& pkgname) {
             Args.push_back(CGM.ConvertType(qt.getTypePtr()));
         }
         llvm::ArrayRef<llvm::Type*> argsRef(Args);
-        // TODO handle ellipsis
-        funcType = llvm::FunctionType::get(RT, argsRef, false);
+        funcType = llvm::FunctionType::get(RT, argsRef, FuncDecl->isVariadic());
     }
     StringBuilder buffer;
     Utils::addName(pkgname, FuncDecl->name, buffer);
