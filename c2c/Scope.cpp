@@ -261,6 +261,32 @@ ScopeResult FileScope::findSymbol(const std::string& symbol) const {
     return result;
 }
 
+ScopeResult FileScope::findSymbolInUsed(const std::string& symbol) const {
+    ScopeResult result;
+    // symbol can be package name or symbol within package
+    const Package* pkg = findPackage(symbol);
+    if (pkg) {
+        result.pkg = pkg;
+        result.external = isExternal(pkg);
+        return result;
+    }
+
+    // search in all used packages
+    for (PackagesConstIter iter = packages.begin(); iter != packages.end(); ++iter) {
+        const Package* pkg = iter->second;
+        Decl* decl = pkg->findSymbol(symbol);
+        if (!decl) continue;
+
+        bool external = isExternal(pkg);
+        bool visible = !(external && !decl->isPublic());
+        // NOTE: dont check ambiguity here (just return first match)
+        result.decl = decl;
+        result.pkg = pkg;
+        result.external = external;
+        result.visible = visible;
+    }
+    return result;
+}
 
 
 Scope::Scope()

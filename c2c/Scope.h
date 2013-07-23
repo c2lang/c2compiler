@@ -62,6 +62,7 @@ public:
     void addPackage(bool isLocal, const std::string& name_, const Package* pkg);
 
     ScopeResult findSymbol(const std::string& name) const;
+    ScopeResult findSymbolInUsed(const std::string& name) const;
 
     int checkType(QualType type, bool used_public = false);
     bool isExternal(const Package* pkg) const;

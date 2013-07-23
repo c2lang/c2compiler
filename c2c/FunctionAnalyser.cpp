@@ -997,9 +997,13 @@ ScopeResult FunctionAnalyser::analyseIdentifier(Expr* expr) {
             // symbol is package
         } else {
             res.ok = false;
-            // TODO search all packages?
             Diags.Report(id->getLocation(), diag::err_undeclared_var_use)
                 << id->getName();
+            ScopeResult res2 = globalScope.findSymbolInUsed(id->getName());
+            if (res2.decl) {
+                Diags.Report(res2.decl->getLocation(), diag::note_function_suggestion)
+                    << Utils::fullName(res2.pkg->getName(), id->getName());
+            }
         }
     }
     return res;
