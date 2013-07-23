@@ -221,7 +221,8 @@ void FunctionAnalyser::analyseIfStmt(Stmt* stmt) {
     IfStmt* I = StmtCaster<IfStmt>::getType(stmt);
     assert(I);
     Expr* cond = I->getCond();
-    analyseExpr(cond);
+    QualType Q1 = analyseExpr(cond);
+    checkConversion(cond->getLocation(), Q1, QualType(BuiltinType::get(TYPE_BOOL)));
     EnterScope(Scope::DeclScope);
     analyseStmt(I->getThen(), true);
     ExitScope();
@@ -1047,6 +1048,34 @@ C2::QualType FunctionAnalyser::checkAssignmentOperands(QualType left, QualType r
 */
     QualType qt;
     return qt;
+}
+
+void FunctionAnalyser::checkConversion(SourceLocation Loc, QualType from, QualType to) {
+#ifdef ANALYSER_DEBUG
+    StringBuilder buf;
+    buf <<ANSI_MAGENTA << __func__ << "() converversion ";
+    from.DiagName(buf);
+    buf << " to ";
+    to.DiagName(buf);
+    buf << ANSI_NORMAL;
+    fprintf(stderr, "%s\n", (const char*)buf);
+#endif
+    // TEMP only check float -> bool
+    const Type* t1 = from.getTypePtr();
+    const Type* t2 = to.getTypePtr();
+    // TODO use getCanonicalType()
+    if (t1->isBuiltinType() && t2->isBuiltinType()) {
+        C2Type tt1 = t1->getBuiltinType();
+        C2Type tt2 = t2->getBuiltinType();
+        if ((tt1 == TYPE_FLOAT || tt1 == TYPE_F32) && tt2 == TYPE_BOOL) {
+            StringBuilder buf1(MAX_TYPENAME);
+            StringBuilder buf2(MAX_TYPENAME);
+            from.DiagName(buf1);
+            to.DiagName(buf2);
+            Diags.Report(Loc, diag::err_illegal_type_conversion)
+                << buf1 << buf2;
+        }
+    }
 }
 
 C2::QualType FunctionAnalyser::resolveUserType(QualType T) {

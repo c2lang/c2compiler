@@ -16,10 +16,13 @@
 #ifndef FUNCTION_ANALYSER_H
 #define FUNCTION_ANALYSER_H
 
+#include <clang/Basic/SourceLocation.h>
 #include "ASTVisitor.h"
 #include "Package.h"
 #include "Scope.h"
 #include "Type.h"
+
+using clang::SourceLocation;
 
 #define MAX_SCOPE_DEPTH 15
 
@@ -99,6 +102,7 @@ private:
     };
 
     QualType checkAssignmentOperands(QualType left, QualType right);
+    void checkConversion(SourceLocation Loc, QualType from, QualType to);
 
     static QualType resolveUserType(QualType T);
     Type* resolveCanonicalType(Type* T);

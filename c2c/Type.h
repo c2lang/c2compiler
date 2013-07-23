@@ -126,6 +126,8 @@ public:
     Kind getKind() const { return kind; }
     QualType getRefType() const { return refType; }
     void setRefType(QualType t);
+
+    bool isBuiltinType() const { return kind == BUILTIN; }
     bool isUserType() const { return kind == USER; }
     bool isFuncType() const { return kind == FUNC; }
     bool isStructOrUnionType() const { return kind == STRUCT || kind == UNION; }

@@ -49,5 +49,8 @@ type Local local int;   // error
 public func void func6() {
     int a;
     int num = elemsof(a);   // error
+    float f = 2.123455;
+    if (f) {    // error
+    }
 }
 
