@@ -74,6 +74,7 @@ private:
     void EmitFunctionProto(FunctionDecl* F, StringBuilder& output);
     void EmitTypePreName(QualType type, StringBuilder& output);
     void EmitTypePostName(QualType type, StringBuilder& output);
+    void EmitStringLiteral(const std::string& input, StringBuilder& output);
 
     const std::string& filename;
     const std::string* curpkg;

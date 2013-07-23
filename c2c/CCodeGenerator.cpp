@@ -174,7 +174,7 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
     case EXPR_STRING:
         {
             StringExpr* S = ExprCaster<StringExpr>::getType(E);
-            output << '"' << S->value << '"';
+            EmitStringLiteral(S->value, output);
             return;
         }
     case EXPR_BOOL:
@@ -773,5 +773,29 @@ void CCodeGenerator::EmitTypePostName(QualType type, StringBuilder& output) {
         }
         output << ']';
     }
+}
+
+void CCodeGenerator::EmitStringLiteral(const std::string& input, StringBuilder& output) {
+    output << '"';
+    const char* cp = input.c_str();
+    for (unsigned i=0; i<input.size(); i++) {
+        switch (*cp) {
+        case '\n':
+            output << "\\n";
+            break;
+        case '\r':
+            output << "\\r";
+            break;
+        case '\t':
+            output << "\\t";
+            break;
+        // TODO other escaped chars
+        default:
+            output << *cp;
+            break;
+        }
+        cp++;
+    }
+    output << '"';
 }
 
