@@ -114,6 +114,7 @@ bool CodeGenModule::verify() {
 }
 
 void CodeGenModule::dump() {
+    fprintf(stderr, "-----------------------------------------------------------------------\n");
     module->dump();
 }
 
