@@ -789,6 +789,9 @@ void CCodeGenerator::EmitStringLiteral(const std::string& input, StringBuilder& 
         case '\t':
             output << "\\t";
             break;
+        case '\033':
+            output << "\\033";
+            break;
         // TODO other escaped chars
         default:
             output << *cp;
