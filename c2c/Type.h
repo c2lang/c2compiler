@@ -175,7 +175,6 @@ public:
 
     bool isCompatible(const Type& t2) const;
 
-    void printFull(StringBuilder& buffer, int indent = 0) const;
     void print(int indent, StringBuilder& buffer, QualType::RecursionType recursive) const;
     void DiagName(StringBuilder& buffer) const;
     void dump() const;
@@ -185,6 +184,7 @@ public:
 private:
     friend class QualType;
 
+    void printFull(StringBuilder& buffer, int indent = 0) const;
     void printEffective(StringBuilder& buffer, int indent = 0) const;
     void printName(StringBuilder& buffer) const;
 
