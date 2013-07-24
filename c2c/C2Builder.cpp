@@ -244,6 +244,7 @@ void C2Builder::build() {
     LangOptions LangOpts;
     LangOpts.C2 = 1;
     LangOpts.Bool = 1;
+    LangOpts.LineComment = 1;
 
     // Diagnostics
     // NOTE: DiagOpts is somehow deleted by Diags/TextDiagnosticPrinter below?
@@ -253,6 +254,11 @@ void C2Builder::build() {
             // NOTE: setting ShouldOwnClient to true causes crash??
             new TextDiagnosticPrinter(llvm::errs(), DiagOpts), false);
     DiagnosticConsumer* client = Diags.getClient();
+
+    // add these diagnostic groups by default
+    Diags.setDiagnosticGroupMapping("conversion", diag::MAP_WARNING);
+    Diags.setDiagnosticGroupMapping("all", diag::MAP_WARNING);
+    Diags.setDiagnosticGroupMapping("extra", diag::MAP_WARNING);
 
     // TargetInfo
     TargetOptions* to = new TargetOptions();
