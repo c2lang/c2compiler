@@ -61,7 +61,7 @@ void FileMap::open() {
         exit(-1);
     }
 
-    region = mmap(0, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_POPULATE, fd, 0);
+    region = mmap(0, size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
     if (region == MAP_FAILED) {
         perror("mmap");
         exit(-1);
