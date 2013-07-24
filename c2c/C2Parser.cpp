@@ -95,7 +95,7 @@ static C2Type kw2type(tok::TokenKind Kind) {
     case tok::kw_float: return TYPE_F32;
     case tok::kw_f32:   return TYPE_F32;
     case tok::kw_f64:   return TYPE_F64;
-    case tok::kw_char:  return TYPE_CHAR;
+    case tok::kw_char:  return TYPE_I8;
     case tok::kw_bool:  return TYPE_BOOL;
     case tok::kw_void:  return TYPE_VOID;
     case tok::kw_uchar: return TYPE_U8;

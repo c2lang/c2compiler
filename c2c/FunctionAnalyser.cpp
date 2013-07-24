@@ -44,12 +44,12 @@ using namespace clang;
 const unsigned MAX_TYPENAME = 128;
 const unsigned MAX_VARNAME = 64;
 
-// 0 = ok, 1 = illegal
-static int type_conversions[14][14] = {
+// 0 = ok, 1 = illegal, 2 sign-conversion
+static int type_conversions[13][13] = {
     // TYPE_U8 ->
-    //U8,  U16, U32, U64, I8, I16, I32, I64, F32, F64, INT, CHAR, BOOL, STRING, VOID,
-    {  0,    1},
-    //U8,  U16, U32, U64, I8, I16, I32, I64, F32, F64, INT, CHAR, BOOL, STRING, VOID,
+    //U8,  U16, U32, U64, I8, I16, I32, I64, F32, F64, INT, BOOL, STRING, VOID,
+    {  0,    0,   0,   0,  2,   0,   0,   0,   0,   0,   0,    1},
+    //U8,  U16, U32, U64, I8, I16, I32, I64, F32, F64, INT, BOOL, STRING, VOID,
 };
 /*
     TYPE_U8,
@@ -63,7 +63,6 @@ static int type_conversions[14][14] = {
     TYPE_F32,
     TYPE_F64,
     TYPE_INT,   // 10
-    TYPE_CHAR,
     TYPE_BOOL,
     TYPE_STRING,
     TYPE_VOID,
@@ -433,7 +432,7 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr) {
     case EXPR_STRING:
         {
             // return type: 'const char*'
-            QualType stype = typeContext.getPointer(BuiltinType::get(TYPE_CHAR));
+            QualType stype = typeContext.getPointer(BuiltinType::get(TYPE_I8));
             stype.addConst();
             return stype;
         }

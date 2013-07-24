@@ -416,7 +416,7 @@ void C2Builder::addDummyPackages() {
     {
         FunctionDecl* func = new FunctionDecl("puts", loc, true, BuiltinType::get(TYPE_INT));
         // TODO correct arg
-        Type* ptype = new Type(Type::POINTER, BuiltinType::get(TYPE_CHAR));
+        Type* ptype = new Type(Type::POINTER, BuiltinType::get(TYPE_I8));
         QualType QT(ptype, QUAL_CONST);
         func->addArg(new DeclExpr("s", loc, QT, 0));
         stdioPkg->addSymbol(func);
@@ -430,7 +430,7 @@ void C2Builder::addDummyPackages() {
     {
         FunctionDecl* func = new FunctionDecl("printf", loc, true, BuiltinType::get(TYPE_INT));
         // NOTE: MEMLEAK ON TYPE, this will go away when we remove these dummy protos
-        Type* ptype = new Type(Type::POINTER, BuiltinType::get(TYPE_CHAR));
+        Type* ptype = new Type(Type::POINTER, BuiltinType::get(TYPE_I8));
         QualType QT(ptype, QUAL_CONST);
         func->addArg(new DeclExpr("format", loc, QT, 0));
         func->setVariadic();
@@ -445,7 +445,7 @@ void C2Builder::addDummyPackages() {
     {
         FunctionDecl* func = new FunctionDecl("sprintf", loc, true, BuiltinType::get(TYPE_INT));
         // NOTE: MEMLEAK ON TYPE, this will go away when we remove these dummy protos
-        Type* ptype = new Type(Type::POINTER, BuiltinType::get(TYPE_CHAR));
+        Type* ptype = new Type(Type::POINTER, BuiltinType::get(TYPE_I8));
         QualType QT(ptype, QUAL_CONST);
         func->addArg(new DeclExpr("str", loc, QT, 0));
         func->addArg(new DeclExpr("format", loc, QT, 0));

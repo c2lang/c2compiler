@@ -592,7 +592,6 @@ static C2::Type type_i16(Type::BUILTIN);
 static C2::Type type_i32(Type::BUILTIN);
 static C2::Type type_i64(Type::BUILTIN);
 static C2::Type type_int(Type::BUILTIN);
-static C2::Type type_char(Type::BUILTIN);
 static C2::Type type_string(Type::BUILTIN);
 static C2::Type type_f32(Type::BUILTIN);
 static C2::Type type_f64(Type::BUILTIN);
@@ -609,7 +608,6 @@ BuiltinType::BuiltinType() {
     type_i32.setBuiltinName(TYPE_I32, "i32", "int", 4);
     type_i64.setBuiltinName(TYPE_I64, "i64", "long long", 4);
     type_int.setBuiltinName(TYPE_INT,"int", "int", 4);
-    type_char.setBuiltinName(TYPE_CHAR, "char", "char", 1);
     type_string.setBuiltinName(TYPE_STRING, "string", "const char*", 4);
     type_f32.setBuiltinName(TYPE_F32,"f32", "float", 4);
     type_f64.setBuiltinName(TYPE_F64, "f64", "double", 8);
@@ -633,7 +631,6 @@ C2::Type* BuiltinType::get(C2Type t) {
     case TYPE_STRING: return &type_string;
     case TYPE_F32:    return &type_f32;
     case TYPE_F64:    return &type_f64;
-    case TYPE_CHAR:   return &type_char;
     case TYPE_BOOL:   return &type_bool;
     case TYPE_VOID:   return &type_void;
     }

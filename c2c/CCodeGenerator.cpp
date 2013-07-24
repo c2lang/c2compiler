@@ -133,7 +133,7 @@ const char* CCodeGenerator::ConvertType(const C2::Type* type) {
                 return 0;  // TODO remove this type?
             case TYPE_F32:      return "float";
             case TYPE_F64:      return "double";
-            case TYPE_CHAR:     return "char";
+            case TYPE_I8:       return "char";
             case TYPE_BOOL:     return "int";
             case TYPE_VOID:     return "void";
             }
