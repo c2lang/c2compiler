@@ -227,7 +227,7 @@ llvm::Type* CodeGenModule::ConvertType(const C2::Type* type) {
             case TYPE_U16:      return builder.getInt16Ty();
             case TYPE_U32:      return builder.getInt32Ty();
             case TYPE_U64:      return builder.getInt64Ty();
-            case TYPE_I8:       return builder.getInt32Ty();
+            case TYPE_I8:       return builder.getInt8Ty();
             case TYPE_I16:      return builder.getInt16Ty();
             case TYPE_I32:      return builder.getInt32Ty();
             case TYPE_I64:      return builder.getInt64Ty();
@@ -236,7 +236,6 @@ llvm::Type* CodeGenModule::ConvertType(const C2::Type* type) {
                 return 0;  // TODO remove this type?
             case TYPE_F32:      return builder.getFloatTy();
             case TYPE_F64:      return builder.getFloatTy(); // TODO find correct type (double?)
-            case TYPE_I8:       return builder.getInt8Ty();
             case TYPE_BOOL:     return builder.getInt1Ty();
             case TYPE_VOID:     return builder.getVoidTy();
             }

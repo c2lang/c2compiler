@@ -44,29 +44,40 @@ using namespace clang;
 const unsigned MAX_TYPENAME = 128;
 const unsigned MAX_VARNAME = 64;
 
-// 0 = ok, 1 = illegal, 2 sign-conversion
-static int type_conversions[13][13] = {
-    // TYPE_U8 ->
+// 0 = ok, 1 = loss of precision, 2 sign-conversion, 3=float->integer, 4 incompatible
+static int type_conversions[14][14] = {
     //U8,  U16, U32, U64, I8, I16, I32, I64, F32, F64, INT, BOOL, STRING, VOID,
-    {  0,    0,   0,   0,  2,   0,   0,   0,   0,   0,   0,    1},
+    // U8 ->
+    {  0,    0,   0,   0,  2,   0,   0,   0,   0,   0,   0,    0,      4,    4},
+    // U16 ->
+    {  1,    0,   0,   0,  1,   2,   0,   0,   0,   0,   0,    0,      4,    4},
+    // U32 ->
+    {  1,    1,   0,   0,  1,   1,   2,   0,   0,   0,   2,    0,      4,    4},
+    // U64 ->
+    {  1,    1,   1,   0,  1,   1,   1,   2,   0,   0,   1,    0,      4,    4},
     //U8,  U16, U32, U64, I8, I16, I32, I64, F32, F64, INT, BOOL, STRING, VOID,
+    // I8 ->
+    {  2,    2,   2,   2,  0,   0,   0,   0,   0,   0,   0,    0,      4,    4},
+    // I16 ->
+    {  2,    2,   2,   2,  1,   0,   0,   0,   0,   0,   0,    0,      4,    4},
+    // I32 ->
+    {  2,    2,   2,   2,  1,   1,   0,   0,   0,   0,   0,    0,      4,    4},
+    // I64 ->
+    {  2,    2,   2,   2,  1,   1,   1,   0,   0,   0,   1,    0,      4,    4},
+    //U8,  U16, U32, U64, I8, I16, I32, I64, F32, F64, INT, BOOL, STRING, VOID,
+    // F32 ->
+    {  3,    3,   3,   3,  3,   3,   3,   3,   0,   1,   3,    4,      4,    4},
+    // F64 ->
+    {  3,    3,   3,   3,  3,   3,   3,   3,   0,   0,   3,    4,      4,    4},
+    // INT -> (depends on target, for now take I32
+    {  2,    2,   2,   2,  1,   1,   0,   0,   0,   0,   0,    0,      4,    4},
+    // BOOL ->
+    {  0,    0,   0,   0,  2,   0,   0,   0,   0,   0,   0,    0,      4,    4},
+    // STRING -> (remove?)
+    {  4,    4,   4,   4,  4,   4,   4,   4,   4,   4,   4,    4,      0,    4},
+    // VOID ->
+    {  4,    4,   4,   4,  4,   4,   4,   4,   4,   4,   4,    4,      4,    0},
 };
-/*
-    TYPE_U8,
-    TYPE_U16,
-    TYPE_U32,
-    TYPE_U64,
-    TYPE_I8,
-    TYPE_I16,   // 5
-    TYPE_I32,
-    TYPE_I64,
-    TYPE_F32,
-    TYPE_F64,
-    TYPE_INT,   // 10
-    TYPE_BOOL,
-    TYPE_STRING,
-    TYPE_VOID,
-*/
 
 FunctionAnalyser::FunctionAnalyser(FileScope& scope_,
                                            TypeContext& tc,
