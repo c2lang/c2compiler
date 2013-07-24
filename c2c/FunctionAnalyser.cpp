@@ -44,7 +44,7 @@ using namespace clang;
 const unsigned MAX_TYPENAME = 128;
 const unsigned MAX_VARNAME = 64;
 
-// 0 = ok, 1 = loss of precision, 2 sign-conversion, 3=float->integer, 4 incompatible
+// 0 = ok, 1 = loss of precision, 2 sign-conversion, 3=float->integer, 4 incompatible, 5=loss of FP precision
 static int type_conversions[14][14] = {
     //U8,  U16, U32, U64, I8, I16, I32, I64, F32, F64, INT, BOOL, STRING, VOID,
     // U8 ->
@@ -68,7 +68,7 @@ static int type_conversions[14][14] = {
     // F32 ->
     {  3,    3,   3,   3,  3,   3,   3,   3,   0,   1,   3,    4,      4,    4},
     // F64 ->
-    {  3,    3,   3,   3,  3,   3,   3,   3,   0,   0,   3,    4,      4,    4},
+    {  3,    3,   3,   3,  3,   3,   3,   3,   5,   0,   3,    4,      4,    4},
     // INT -> (depends on target, for now take I32
     {  2,    2,   2,   2,  1,   1,   0,   0,   0,   0,   0,    0,      4,    4},
     // BOOL ->
@@ -1098,21 +1098,42 @@ void FunctionAnalyser::checkConversion(SourceLocation Loc, QualType from, QualTy
     fprintf(stderr, "%s\n", (const char*)buf);
 #endif
     // TEMP only check float -> bool
-    const Type* t1 = from.getTypePtr();
-    const Type* t2 = to.getTypePtr();
+    const Type* tfrom = from.getTypePtr();
+    const Type* tto = to.getTypePtr();
     // TODO use getCanonicalType()
-    if (t1->isBuiltinType() && t2->isBuiltinType()) {
-        C2Type tt1 = t1->getBuiltinType();
-        C2Type tt2 = t2->getBuiltinType();
+    if (tfrom->isBuiltinType() && tto->isBuiltinType()) {
+        C2Type bi_from = tfrom->getBuiltinType();
+        C2Type bi_to = tto->getBuiltinType();
+        int rule = type_conversions[bi_from][bi_to];
+        // 0 = ok, 1 = loss of precision, 2 sign-conversion, 3=float->integer, 4 incompatible, 5 loss of FP prec.
+        fprintf(stderr, "->%d\n", rule);
         // TODO use matrix with allowed conversions: 3 options: ok, error, warn
-        if (tt1 == TYPE_F32 && tt2 == TYPE_BOOL) {
-            StringBuilder buf1(MAX_TYPENAME);
-            StringBuilder buf2(MAX_TYPENAME);
-            from.DiagName(buf1);
-            to.DiagName(buf2);
-            Diags.Report(Loc, diag::err_illegal_type_conversion)
-                << buf1 << buf2;
+        if (rule == 0) return;
+
+        int errorMsg = 0;
+        switch (rule) {
+        case 1: // loss of precision
+            errorMsg = diag::warn_impcast_integer_precision;
+            break;
+        case 2: // sign-conversion
+            errorMsg = diag::warn_impcast_integer_sign;
+        case 3: // float->integer
+            errorMsg = diag::warn_impcast_float_integer;
+            break;
+        case 4: // incompatible
+            errorMsg = diag::err_illegal_type_conversion;
+            break;
+        case 5: // loss of fp-precision
+            errorMsg = diag::warn_impcast_float_precision;
+            break;
+        default:
+            assert(0 && "should not come here");
         }
+        StringBuilder buf1(MAX_TYPENAME);
+        StringBuilder buf2(MAX_TYPENAME);
+        from.DiagName(buf1);
+        to.DiagName(buf2);
+        Diags.Report(Loc, errorMsg) << buf1 << buf2;
     }
 }
 
