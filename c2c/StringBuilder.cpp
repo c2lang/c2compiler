@@ -58,7 +58,7 @@ StringBuilder& StringBuilder::operator<<(void* input) {
     int cap = capacity - (ptr-buffer);
     assert(len < cap && "buffer overflow");
 #endif
-    ptr += sprintf(ptr, "0x%x", (unsigned int)input);
+    ptr += sprintf(ptr, "0x%p", input);
     return *this;
 }
 
