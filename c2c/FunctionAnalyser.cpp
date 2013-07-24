@@ -1106,7 +1106,6 @@ void FunctionAnalyser::checkConversion(SourceLocation Loc, QualType from, QualTy
         C2Type bi_to = tto->getBuiltinType();
         int rule = type_conversions[bi_from][bi_to];
         // 0 = ok, 1 = loss of precision, 2 sign-conversion, 3=float->integer, 4 incompatible, 5 loss of FP prec.
-        fprintf(stderr, "->%d\n", rule);
         // TODO use matrix with allowed conversions: 3 options: ok, error, warn
         if (rule == 0) return;
 
