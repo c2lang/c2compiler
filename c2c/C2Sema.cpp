@@ -679,12 +679,9 @@ C2::ExprResult C2Sema::ActOnIntegerConstant(SourceLocation Loc, uint64_t Val) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: integer constant"ANSI_NORMAL"\n";
 #endif
-    //unsigned IntSize = Context.getTargetInfo().getIntWidth();
-    //return Owned(IntegerLiteral::Create(Context, llvm::APInt(IntSize, Val),
-    //                          Context.IntTy, Loc));
+    // TEMP always 32 bits for now
     llvm::APInt ResultValue(32, Val);
-    fprintf(stderr, "Value %lld -> APINT %lld\n", Val, ResultValue.getSExtValue());
-    return ExprResult(new IntegerLiteral(Loc, Val));
+    return ExprResult(new IntegerLiteral(Loc, ResultValue));
 }
 
 C2::ExprResult C2Sema::ActOnBooleanConstant(const Token& Tok) {
@@ -763,18 +760,12 @@ C2::ExprResult C2Sema::ActOnNumericConstant(const Token& Tok) {
     } else if (!Literal.isIntegerLiteral()) {
         return ExprError();
     } else {
-        const char* D = Tok.getLiteralData();
-        char buffer[30];
-        memset(buffer, 0, sizeof(buffer));
-        strncpy(buffer, Tok.getLiteralData(), Tok.getLength());
-
         llvm::APInt ResultVal(64, 0);
         if (Literal.GetIntegerValue(ResultVal)) {
-            fprintf(stderr, "ERROR\n");
+            fprintf(stderr, "ERROR overflow\n");
         }
-        fprintf(stderr, "NUM='%s' -> apint %lld\n", buffer, ResultVal.getSExtValue());
 
-        Res = new IntegerLiteral(Tok.getLocation(), atoi(buffer));
+        Res = new IntegerLiteral(Tok.getLocation(), ResultVal);
     }
     return ExprResult(Res);
 }

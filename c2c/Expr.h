@@ -84,14 +84,14 @@ typedef std::vector<C2::Expr*> ExprList;
 
 class IntegerLiteral : public Expr {
 public:
-    IntegerLiteral(SourceLocation loc_, double val)
-        : value(val), loc(loc_) {}
+    IntegerLiteral(SourceLocation loc_, const llvm::APInt& V)
+        : Value(V), loc(loc_) {}
     virtual ExprType etype() const { return EXPR_INTEGER_LITERAL; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return loc; }
 
-    double value;
+    llvm::APInt Value;
     clang::SourceLocation loc;
 };
 

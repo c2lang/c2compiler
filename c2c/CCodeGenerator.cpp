@@ -167,7 +167,7 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
     case EXPR_INTEGER_LITERAL:
         {
             IntegerLiteral* N = ExprCaster<IntegerLiteral>::getType(E);
-            output << (int) N->value;
+            output << (int) N->Value.getSExtValue();
             return;
         }
     case EXPR_STRING:

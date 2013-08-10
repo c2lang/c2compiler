@@ -284,7 +284,7 @@ llvm::Constant* CodeGenModule::EvaluateExprAsConstant(const Expr *E) {
     IntegerLiteral* N = ExprCaster<IntegerLiteral>::getType(E);
     assert(N && "Only support constants for now");
     // Get Width/signed from CanonicalType?
-    return llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), N->value, true);
+    return llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), N->Value.getSExtValue(), true);
 }
 
 /// EvaluateExprAsBool - Perform the usual unary conversions on the specified
@@ -293,7 +293,7 @@ llvm::Value *CodeGenModule::EvaluateExprAsBool(const Expr *E) {
     // NOTE: for now only support numbers and convert those to bools
     IntegerLiteral* N = ExprCaster<IntegerLiteral>::getType(E);
     assert(N && "Only support constants for now");
-    return llvm::ConstantInt::get(llvm::Type::getInt1Ty(context), N->value, true);
+    return llvm::ConstantInt::get(llvm::Type::getInt1Ty(context), N->Value.getSExtValue(), true);
 
 #if 0
   if (const MemberPointerType *MPT = E->getType()->getAs<MemberPointerType>()) {
