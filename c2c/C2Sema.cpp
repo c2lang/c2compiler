@@ -682,6 +682,8 @@ C2::ExprResult C2Sema::ActOnIntegerConstant(SourceLocation Loc, uint64_t Val) {
     //unsigned IntSize = Context.getTargetInfo().getIntWidth();
     //return Owned(IntegerLiteral::Create(Context, llvm::APInt(IntSize, Val),
     //                          Context.IntTy, Loc));
+    llvm::APInt ResultValue(32, Val);
+    fprintf(stderr, "Value %lld -> APINT %lld\n", Val, ResultValue.getSExtValue());
     return ExprResult(new IntegerLiteral(Loc, Val));
 }
 
@@ -766,9 +768,12 @@ C2::ExprResult C2Sema::ActOnNumericConstant(const Token& Tok) {
         memset(buffer, 0, sizeof(buffer));
         strncpy(buffer, Tok.getLiteralData(), Tok.getLength());
 
-        // TODO check clang (lib/Sema/SemaExpr.cpp)
-        //return Owned(IntegerLiteral::Create(Context, :e
-        // (see ActOnIntegerConstant)
+        llvm::APInt ResultVal(64, 0);
+        if (Literal.GetIntegerValue(ResultVal)) {
+            fprintf(stderr, "ERROR\n");
+        }
+        fprintf(stderr, "NUM='%s' -> apint %lld\n", buffer, ResultVal.getSExtValue());
+
         Res = new IntegerLiteral(Tok.getLocation(), atoi(buffer));
     }
     return ExprResult(Res);
