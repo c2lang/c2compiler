@@ -760,7 +760,8 @@ C2::ExprResult C2Sema::ActOnNumericConstant(const Token& Tok) {
     } else if (!Literal.isIntegerLiteral()) {
         return ExprError();
     } else {
-        llvm::APInt ResultVal(64, 0);
+        // TODO set size dynamically
+        llvm::APInt ResultVal(32, 0);
         if (Literal.GetIntegerValue(ResultVal)) {
             fprintf(stderr, "ERROR overflow\n");
         }
