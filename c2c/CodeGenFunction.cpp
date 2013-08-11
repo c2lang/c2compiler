@@ -361,7 +361,7 @@ void CodeGenFunction::EmitBranchOnBoolExpr(const Expr *Cond,
 
 llvm::Value* CodeGenFunction::EmitExpr(const Expr* E) {
     switch (E->etype()) {
-    case EXPR_NUMBER:
+    case EXPR_INTEGER_LITERAL:
         {
             IntegerLiteral* N = ExprCaster<IntegerLiteral>::getType(E);
             // TODO number is always int32 (signed is true)

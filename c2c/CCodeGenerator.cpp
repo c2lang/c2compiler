@@ -164,7 +164,7 @@ const char* CCodeGenerator::ConvertType(const C2::Type* type) {
 
 void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
     switch (E->etype()) {
-    case EXPR_NUMBER:
+    case EXPR_INTEGER_LITERAL:
         {
             IntegerLiteral* N = ExprCaster<IntegerLiteral>::getType(E);
             output << (int) N->value;

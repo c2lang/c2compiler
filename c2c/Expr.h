@@ -36,7 +36,7 @@ class Package;
 class Decl;
 
 enum ExprType {
-    EXPR_NUMBER=0,
+    EXPR_INTEGER_LITERAL=0,
     EXPR_STRING,
     EXPR_BOOL,
     EXPR_CHARLITERAL,
@@ -86,7 +86,7 @@ class IntegerLiteral : public Expr {
 public:
     IntegerLiteral(SourceLocation loc_, double val)
         : value(val), loc(loc_) {}
-    virtual ExprType etype() const { return EXPR_NUMBER; }
+    virtual ExprType etype() const { return EXPR_INTEGER_LITERAL; }
     virtual void acceptE(ExprVisitor& v);
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return loc; }

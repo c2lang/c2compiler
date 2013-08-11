@@ -106,7 +106,7 @@ void CallExpr::addArg(Expr* arg) {
 
 static void expr2name(Expr* expr, StringBuilder& buffer) {
     switch (expr->etype()) {
-    case EXPR_NUMBER:
+    case EXPR_INTEGER_LITERAL:
     case EXPR_STRING:
     case EXPR_BOOL:
     case EXPR_CHARLITERAL:

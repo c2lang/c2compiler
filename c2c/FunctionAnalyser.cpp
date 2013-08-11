@@ -437,7 +437,7 @@ C2::QualType FunctionAnalyser::Decl2Type(Decl* decl) {
 C2::QualType FunctionAnalyser::analyseExpr(Expr* expr) {
     LOG_FUNC
     switch (expr->etype()) {
-    case EXPR_NUMBER:
+    case EXPR_INTEGER_LITERAL:
         // TEMP for now always return type int
         return QualType(BuiltinType::get(TYPE_INT));
     case EXPR_STRING:
@@ -500,7 +500,7 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
     LOG_FUNC
 
     switch (expr->etype()) {
-    case EXPR_NUMBER:
+    case EXPR_INTEGER_LITERAL:
     case EXPR_STRING:
     case EXPR_BOOL:
     case EXPR_CHARLITERAL:
