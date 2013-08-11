@@ -363,7 +363,7 @@ llvm::Value* CodeGenFunction::EmitExpr(const Expr* E) {
     switch (E->etype()) {
     case EXPR_NUMBER:
         {
-            NumberExpr* N = ExprCaster<NumberExpr>::getType(E);
+            IntegerLiteral* N = ExprCaster<IntegerLiteral>::getType(E);
             // TODO number is always int32 (signed is true)
             return llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), N->value, true);
         }

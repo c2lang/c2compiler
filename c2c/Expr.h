@@ -82,9 +82,9 @@ private:
 
 typedef std::vector<C2::Expr*> ExprList;
 
-class NumberExpr : public Expr {
+class IntegerLiteral : public Expr {
 public:
-    NumberExpr(SourceLocation loc_, double val)
+    IntegerLiteral(SourceLocation loc_, double val)
         : value(val), loc(loc_) {}
     virtual ExprType etype() const { return EXPR_NUMBER; }
     virtual void acceptE(ExprVisitor& v);
@@ -417,7 +417,7 @@ class ExprVisitor {
 public:
     virtual ~ExprVisitor() {}
     virtual void visit(Expr&) { assert(0 && "unknown Expr type"); }    // add ExprClass below
-    virtual void visit(NumberExpr&) {}
+    virtual void visit(IntegerLiteral&) {}
     virtual void visit(FloatingLiteral&) {}
     virtual void visit(StringExpr&) {}
     virtual void visit(BoolLiteralExpr&) {}

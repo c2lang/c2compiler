@@ -166,7 +166,7 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
     switch (E->etype()) {
     case EXPR_NUMBER:
         {
-            NumberExpr* N = ExprCaster<NumberExpr>::getType(E);
+            IntegerLiteral* N = ExprCaster<IntegerLiteral>::getType(E);
             output << (int) N->value;
             return;
         }

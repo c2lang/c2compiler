@@ -682,7 +682,7 @@ C2::ExprResult C2Sema::ActOnIntegerConstant(SourceLocation Loc, uint64_t Val) {
     //unsigned IntSize = Context.getTargetInfo().getIntWidth();
     //return Owned(IntegerLiteral::Create(Context, llvm::APInt(IntSize, Val),
     //                          Context.IntTy, Loc));
-    return ExprResult(new NumberExpr(Loc, Val));
+    return ExprResult(new IntegerLiteral(Loc, Val));
 }
 
 C2::ExprResult C2Sema::ActOnBooleanConstant(const Token& Tok) {
@@ -769,7 +769,7 @@ C2::ExprResult C2Sema::ActOnNumericConstant(const Token& Tok) {
         // TODO check clang (lib/Sema/SemaExpr.cpp)
         //return Owned(IntegerLiteral::Create(Context, :e
         // (see ActOnIntegerConstant)
-        Res = new NumberExpr(Tok.getLocation(), atoi(buffer));
+        Res = new IntegerLiteral(Tok.getLocation(), atoi(buffer));
     }
     return ExprResult(Res);
 }

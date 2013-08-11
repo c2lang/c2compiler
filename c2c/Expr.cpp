@@ -53,9 +53,9 @@ Expr::~Expr() {
 
 STMT_VISITOR_ACCEPT(Expr);
 
-EXPR_VISITOR_ACCEPT(NumberExpr);
+EXPR_VISITOR_ACCEPT(IntegerLiteral);
 
-void NumberExpr::print(int indent, StringBuilder& buffer) const {
+void IntegerLiteral::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[integer " << (int)value << "]\n";
 }

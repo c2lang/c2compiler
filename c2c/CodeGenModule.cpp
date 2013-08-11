@@ -281,7 +281,7 @@ llvm::Function* CodeGenModule::createExternal(const Package* P, const std::strin
 
 llvm::Constant* CodeGenModule::EvaluateExprAsConstant(const Expr *E) {
     // NOTE: for now only support numbers and convert those to bools
-    NumberExpr* N = ExprCaster<NumberExpr>::getType(E);
+    IntegerLiteral* N = ExprCaster<IntegerLiteral>::getType(E);
     assert(N && "Only support constants for now");
     // Get Width/signed from CanonicalType?
     return llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), N->value, true);
@@ -291,7 +291,7 @@ llvm::Constant* CodeGenModule::EvaluateExprAsConstant(const Expr *E) {
 /// expression and compare the result against zero, returning an Int1Ty value.
 llvm::Value *CodeGenModule::EvaluateExprAsBool(const Expr *E) {
     // NOTE: for now only support numbers and convert those to bools
-    NumberExpr* N = ExprCaster<NumberExpr>::getType(E);
+    IntegerLiteral* N = ExprCaster<IntegerLiteral>::getType(E);
     assert(N && "Only support constants for now");
     return llvm::ConstantInt::get(llvm::Type::getInt1Ty(context), N->value, true);
 
