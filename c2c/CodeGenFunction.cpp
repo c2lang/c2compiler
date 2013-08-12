@@ -403,7 +403,12 @@ llvm::Value* CodeGenFunction::EmitExpr(const Expr* E) {
     case EXPR_BUILTIN:
     case EXPR_ARRAYSUBSCRIPT:
     case EXPR_MEMBER:
+        break;
     case EXPR_PAREN:
+        {
+            const ParenExpr* P = cast<ParenExpr>(E);
+            return EmitExpr(P->getExpr());
+        }
         break;
     }
     E->dump();
@@ -513,7 +518,42 @@ void CodeGenFunction::EmitVarDecl(const DeclExpr* D) {
 }
 
 llvm::Value* CodeGenFunction::EmitBinaryOperator(const BinaryOperator* B) {
-    assert(0 && "TODO");
+    // assume '>'
+    Value* L = EmitExpr(B->getLHS());
+    Value* R = EmitExpr(B->getRHS());
+    if (L == 0 || R == 0) return 0;
+
+    // TEMP only handle Integer values for now
+
+    switch (B->getOpcode()) {
+    case BO_Mul:
+        return Builder.CreateMul(L, R, "mul");
+        //return Builder.CreateFMul(L, R, "multmp");
+    case BO_Add:
+        return Builder.CreateAdd(L, R, "add");
+        //return Builder.CreateFAdd(L, R, "addtmp");    // for Floating point
+    case BO_Sub:
+        return Builder.CreateSub(L, R, "sub");
+        //return Builder.CreateFSub(L, R, "subtmp");    // for Floating point
+    case BO_LT:
+        return Builder.CreateICmpULT(L, R, "cmp");;
+        //L = Builder.CreateFCmpULT(L, R, "cmptmp");
+        // convert bool 0/1 to double 0.0 or 1.0
+        //return Builder.CreateUIToFP(L, llvm::Type::getDoubleTy(context), "booltmp");
+    case BO_GT:
+        return Builder.CreateICmpUGT(L, R, "cmp");;
+    case BO_LE:
+        return Builder.CreateICmpULE(L, R, "cmp");;
+    case BO_GE:
+        return Builder.CreateICmpUGE(L, R, "cmp");;
+    case BO_EQ:
+        return Builder.CreateICmpEQ(L, R, "eq");;
+    case BO_NE:
+        return Builder.CreateICmpNE(L, R, "neq");;
+    default:
+        assert(0 && "TODO");
+        break;
+    }
     return 0;
 }
 

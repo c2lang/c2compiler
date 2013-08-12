@@ -21,6 +21,10 @@ public func int main(int argc, char*[] argv) {
     Number n;
     puts("Hello World!\n");
     myfunction();
+    int aa = 20 + 30;
+    bool bb = 20 < 30;
+    int cc = 12 * 10;
+    bool dd = (13 == 13);
     return 0;
 }
 
