@@ -394,12 +394,10 @@ llvm::Value* CodeGenFunction::EmitExpr(const Expr* E) {
     case EXPR_TYPE:
         break;
     case EXPR_DECL:
-        {
-            const DeclExpr* D = cast<DeclExpr>(E);
-            EmitVarDecl(D);
-            return 0;
-        }
+        EmitVarDecl(cast<DeclExpr>(E));
+        return 0;
     case EXPR_BINOP:
+        return EmitBinaryOperator(cast<BinaryOperator>(E));
     case EXPR_CONDOP:
     case EXPR_UNARYOP:
     case EXPR_BUILTIN:
@@ -512,5 +510,10 @@ void CodeGenFunction::EmitVarDecl(const DeclExpr* D) {
         llvm::Value* val = EmitExpr(I);
         Builder.CreateStore(val, inst, qt.isVolatileQualified());
     }
+}
+
+llvm::Value* CodeGenFunction::EmitBinaryOperator(const BinaryOperator* B) {
+    assert(0 && "TODO");
+    return 0;
 }
 
