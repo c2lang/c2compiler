@@ -102,6 +102,24 @@ StringBuilder& StringBuilder::operator<<(unsigned int input) {
     return *this;
 }
 
+StringBuilder& StringBuilder::operator<<(long long input) {
+#ifdef SIZE_DEBUG
+    int cap = capacity - (ptr-buffer);
+    assert(10 < cap && "buffer overflow");
+#endif
+    ptr += sprintf(ptr, "%lld", input);
+    return *this;
+}
+
+StringBuilder& StringBuilder::operator<<(unsigned long long input) {
+#ifdef SIZE_DEBUG
+    int cap = capacity - (ptr-buffer);
+    assert(10 < cap && "buffer overflow");
+#endif
+    ptr += sprintf(ptr, "%llu", input);
+    return *this;
+}
+
 StringBuilder& StringBuilder::operator<<(const StringBuilder& input) {
     int len = input.size();
 #ifdef SIZE_DEBUG
