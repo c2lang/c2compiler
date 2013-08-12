@@ -29,7 +29,7 @@ static int creationCount;
 static int deleteCount;
 #endif
 
-Stmt::Stmt() {
+Stmt::Stmt(StmtKind k) : kind(k) {
 #ifdef STMT_DEBUG
     creationCount++;
     fprintf(stderr, "[STMT] create %p  created %d deleted %d\n", this, creationCount, deleteCount);
@@ -51,15 +51,14 @@ void Stmt::dump() const {
 
 
 ReturnStmt::ReturnStmt(SourceLocation loc, Expr* value_)
-    : value(value_)
+    : Stmt(STMT_RETURN)
+    , value(value_)
     , RetLoc(loc)
 {}
 
 ReturnStmt::~ReturnStmt() {
     delete value;
 }
-
-STMT_VISITOR_ACCEPT(ReturnStmt);
 
 void ReturnStmt::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
@@ -73,7 +72,8 @@ void ReturnStmt::print(int indent, StringBuilder& buffer) const {
 IfStmt::IfStmt(SourceLocation ifLoc,
                Expr* condition, Stmt* thenStmt,
                SourceLocation elseLoc, Stmt* elseStmt)
-    : IfLoc(ifLoc)
+    : Stmt(STMT_IF)
+    , IfLoc(ifLoc)
     , ElseLoc(elseLoc)
 {
     SubExprs[VAR] = 0;  // unused?
@@ -89,8 +89,6 @@ IfStmt::~IfStmt() {
     delete SubExprs[ELSE];
 }
 
-STMT_VISITOR_ACCEPT(IfStmt);
-
 void IfStmt::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[if]\n";
@@ -101,7 +99,8 @@ void IfStmt::print(int indent, StringBuilder& buffer) const {
 
 
 WhileStmt::WhileStmt(SourceLocation Loc_, Expr* Cond_, Stmt* Then_)
-    : Loc(Loc_)
+    : Stmt(STMT_WHILE)
+    , Loc(Loc_)
     , Cond(Cond_)
     , Then(Then_)
 {}
@@ -110,8 +109,6 @@ WhileStmt::~WhileStmt() {
     delete Cond;
     delete Then;
 }
-
-STMT_VISITOR_ACCEPT(WhileStmt);
 
 void WhileStmt::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
@@ -122,7 +119,8 @@ void WhileStmt::print(int indent, StringBuilder& buffer) const {
 
 
 DoStmt::DoStmt(SourceLocation Loc_, Expr* Cond_, Stmt* Then_)
-    : Loc(Loc_)
+    : Stmt(STMT_DO)
+    , Loc(Loc_)
     , Cond(Cond_)
     , Then(Then_)
 {}
@@ -131,8 +129,6 @@ DoStmt::~DoStmt() {
     delete Cond;
     delete Then;
 }
-
-STMT_VISITOR_ACCEPT(DoStmt);
 
 void DoStmt::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
@@ -143,7 +139,8 @@ void DoStmt::print(int indent, StringBuilder& buffer) const {
 
 
 ForStmt::ForStmt(SourceLocation Loc_, Stmt* Init_, Expr* Cond_, Expr* Incr_, Stmt* Body_)
-    : Loc(Loc_)
+    : Stmt(STMT_FOR)
+    , Loc(Loc_)
     , Init(Init_)
     , Cond(Cond_)
     , Incr(Incr_)
@@ -157,8 +154,6 @@ ForStmt::~ForStmt() {
     delete Init;
 }
 
-STMT_VISITOR_ACCEPT(ForStmt);
-
 void ForStmt::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[for]\n";
@@ -170,7 +165,8 @@ void ForStmt::print(int indent, StringBuilder& buffer) const {
 
 
 SwitchStmt::SwitchStmt(SourceLocation Loc_, Expr* Cond_, StmtList& Cases_)
-    : Loc(Loc_)
+    : Stmt(STMT_SWITCH)
+    , Loc(Loc_)
     , Cond(Cond_)
     , Cases(Cases_)
 {}
@@ -178,8 +174,6 @@ SwitchStmt::SwitchStmt(SourceLocation Loc_, Expr* Cond_, StmtList& Cases_)
 SwitchStmt::~SwitchStmt() {
     delete Cond;
 }
-
-STMT_VISITOR_ACCEPT(SwitchStmt);
 
 void SwitchStmt::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
@@ -192,7 +186,8 @@ void SwitchStmt::print(int indent, StringBuilder& buffer) const {
 
 
 CaseStmt::CaseStmt(SourceLocation Loc_, Expr* Cond_, StmtList& Stmts_)
-    : Loc(Loc_)
+    : Stmt(STMT_CASE)
+    , Loc(Loc_)
     , Cond(Cond_)
     , Stmts(Stmts_)
 {}
@@ -200,8 +195,6 @@ CaseStmt::CaseStmt(SourceLocation Loc_, Expr* Cond_, StmtList& Stmts_)
 CaseStmt::~CaseStmt() {
     delete Cond;
 }
-
-STMT_VISITOR_ACCEPT(CaseStmt);
 
 void CaseStmt::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
@@ -214,13 +207,12 @@ void CaseStmt::print(int indent, StringBuilder& buffer) const {
 
 
 DefaultStmt::DefaultStmt(SourceLocation Loc_, StmtList& Stmts_)
-    : Loc(Loc_)
+    : Stmt(STMT_DEFAULT)
+    , Loc(Loc_)
     , Stmts(Stmts_)
 {}
 
 DefaultStmt::~DefaultStmt() {}
-
-STMT_VISITOR_ACCEPT(DefaultStmt);
 
 void DefaultStmt::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
@@ -231,11 +223,12 @@ void DefaultStmt::print(int indent, StringBuilder& buffer) const {
 }
 
 
-BreakStmt::BreakStmt(SourceLocation Loc_) : Loc(Loc_) {}
+BreakStmt::BreakStmt(SourceLocation Loc_)
+    : Stmt(STMT_BREAK)
+    , Loc(Loc_)
+{}
 
 BreakStmt::~BreakStmt() {}
-
-STMT_VISITOR_ACCEPT(BreakStmt);
 
 void BreakStmt::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
@@ -243,11 +236,12 @@ void BreakStmt::print(int indent, StringBuilder& buffer) const {
 }
 
 
-ContinueStmt::ContinueStmt(SourceLocation Loc_) : Loc(Loc_) {}
+ContinueStmt::ContinueStmt(SourceLocation Loc_)
+    : Stmt(STMT_BREAK)
+    , Loc(Loc_)
+{}
 
 ContinueStmt::~ContinueStmt() {}
-
-STMT_VISITOR_ACCEPT(ContinueStmt);
 
 void ContinueStmt::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
@@ -256,14 +250,14 @@ void ContinueStmt::print(int indent, StringBuilder& buffer) const {
 
 
 LabelStmt::LabelStmt(const char* name_, SourceLocation Loc_, Stmt* subStmt_)
-    : name(name_), Loc(Loc_), subStmt(subStmt_) {}
+    : Stmt(STMT_LABEL)
+    , name(name_), Loc(Loc_), subStmt(subStmt_)
+{}
 
 LabelStmt::~LabelStmt()
 {
     delete subStmt;
 }
-
-STMT_VISITOR_ACCEPT(LabelStmt);
 
 void LabelStmt::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
@@ -273,11 +267,11 @@ void LabelStmt::print(int indent, StringBuilder& buffer) const {
 
 
 GotoStmt::GotoStmt(const char* name_, SourceLocation GotoLoc_, SourceLocation LabelLoc_)
-    : name(name_), GotoLoc(GotoLoc_), LabelLoc(LabelLoc_) {}
+    : Stmt(STMT_GOTO)
+    , name(name_), GotoLoc(GotoLoc_), LabelLoc(LabelLoc_)
+{}
 
 GotoStmt::~GotoStmt() {}
-
-STMT_VISITOR_ACCEPT(GotoStmt);
 
 void GotoStmt::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
@@ -286,14 +280,13 @@ void GotoStmt::print(int indent, StringBuilder& buffer) const {
 
 
 CompoundStmt::CompoundStmt(SourceLocation l, SourceLocation r, StmtList& stmts_)
-    : Left(l)
+    : Stmt(STMT_COMPOUND)
+    , Left(l)
     , Right(r)
     , Stmts(stmts_)
 {}
 
 CompoundStmt::~CompoundStmt() {}
-
-STMT_VISITOR_ACCEPT(CompoundStmt);
 
 void CompoundStmt::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
@@ -310,16 +303,16 @@ Stmt* CompoundStmt::getLastStmt() const {
         // NOTE: if last is label, get label.subStmt
         // TODO handle goto statement as last statement
         Stmt* last = Stmts[Stmts.size() -1];
-        switch (last->stype()) {
+        switch (last->getKind()) {
         case STMT_LABEL:
         {
-            LabelStmt* label = StmtCaster<LabelStmt>::getType(last);
+            LabelStmt* label = cast<LabelStmt>(last);
             // TODO handle compound substatements
             return label->getSubStmt();
         }
         case STMT_COMPOUND:
         {
-            CompoundStmt* compound = StmtCaster<CompoundStmt>::getType(last);
+            CompoundStmt* compound = cast<CompoundStmt>(last);
             return compound->getLastStmt();
         }
         default:

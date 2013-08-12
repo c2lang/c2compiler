@@ -467,10 +467,10 @@ void CCodeGenerator::EmitUse(Decl* D) {
 }
 
 void CCodeGenerator::EmitStmt(Stmt* S, unsigned indent) {
-    switch (S->stype()) {
+    switch (S->getKind()) {
     case STMT_RETURN:
         {
-            ReturnStmt* R = StmtCaster<ReturnStmt>::getType(S);
+            ReturnStmt* R = cast<ReturnStmt>(S);
             cbuf.indent(indent);
             cbuf << "return";
             if (R->getExpr()) {
@@ -482,7 +482,7 @@ void CCodeGenerator::EmitStmt(Stmt* S, unsigned indent) {
         }
     case STMT_EXPR:
         {
-            Expr* E = StmtCaster<Expr>::getType(S);
+            Expr* E = cast<Expr>(S);
             cbuf.indent(indent);
             EmitExpr(E, cbuf);
             cbuf << ";\n";
@@ -517,7 +517,7 @@ void CCodeGenerator::EmitStmt(Stmt* S, unsigned indent) {
         return;
     case STMT_LABEL:
         {
-            LabelStmt* L = StmtCaster<LabelStmt>::getType(S);
+            LabelStmt* L = cast<LabelStmt>(S);
             cbuf << L->getName();
             cbuf << ":\n";
             EmitStmt(L->getSubStmt(), indent);
@@ -525,14 +525,14 @@ void CCodeGenerator::EmitStmt(Stmt* S, unsigned indent) {
         }
     case STMT_GOTO:
         {
-            GotoStmt* G = StmtCaster<GotoStmt>::getType(S);
+            GotoStmt* G = cast<GotoStmt>(S);
             cbuf.indent(indent);
             cbuf << "goto " << G->getName() << ";\n";
             return;
         }
     case STMT_COMPOUND:
         {
-            CompoundStmt* C = StmtCaster<CompoundStmt>::getType(S);
+            CompoundStmt* C = cast<CompoundStmt>(S);
             EmitCompoundStmt(C, indent, true);
             return;
         }
@@ -551,7 +551,7 @@ void CCodeGenerator::EmitCompoundStmt(CompoundStmt* C, unsigned indent, bool sta
 }
 
 void CCodeGenerator::EmitIfStmt(Stmt* S, unsigned indent) {
-    IfStmt* I = StmtCaster<IfStmt>::getType(S);
+    IfStmt* I = cast<IfStmt>(S);
     cbuf.indent(indent);
     cbuf << "if (";
     EmitExpr(I->getCond(), cbuf);
@@ -565,17 +565,17 @@ void CCodeGenerator::EmitIfStmt(Stmt* S, unsigned indent) {
 }
 
 void CCodeGenerator::EmitWhileStmt(Stmt* S, unsigned indent) {
-    WhileStmt* W = StmtCaster<WhileStmt>::getType(S);
+    WhileStmt* W = cast<WhileStmt>(S);
     cbuf.indent(indent);
     cbuf << "while (";
     // TEMP, assume Expr
-    Expr* E = StmtCaster<Expr>::getType(W->getCond());
+    Expr* E = cast<Expr>(W->getCond());
     assert(E);
     EmitExpr(E, cbuf);
     cbuf << ") ";
     Stmt* Body = W->getBody();
-    if (Body->stype() == STMT_COMPOUND) {
-        CompoundStmt* C = StmtCaster<CompoundStmt>::getType(Body);
+    if (Body->getKind() == STMT_COMPOUND) {
+        CompoundStmt* C = cast<CompoundStmt>(Body);
         EmitCompoundStmt(C, indent, false);
     } else {
         EmitStmt(Body, 0);
@@ -583,12 +583,12 @@ void CCodeGenerator::EmitWhileStmt(Stmt* S, unsigned indent) {
 }
 
 void CCodeGenerator::EmitDoStmt(Stmt* S, unsigned indent) {
-    DoStmt* D = StmtCaster<DoStmt>::getType(S);
+    DoStmt* D = cast<DoStmt>(S);
     cbuf.indent(indent);
     cbuf << "do ";
     Stmt* Body = D->getBody();
-    if (Body->stype() == STMT_COMPOUND) {
-        CompoundStmt* C = StmtCaster<CompoundStmt>::getType(Body);
+    if (Body->getKind() == STMT_COMPOUND) {
+        CompoundStmt* C = cast<CompoundStmt>(Body);
         EmitCompoundStmt(C, indent, false);
     } else {
         EmitStmt(Body, 0);
@@ -597,20 +597,20 @@ void CCodeGenerator::EmitDoStmt(Stmt* S, unsigned indent) {
     // TODO add after '}'
     cbuf << "while (";
     // TEMP, assume Expr
-    Expr* E = StmtCaster<Expr>::getType(D->getCond());
+    Expr* E = cast<Expr>(D->getCond());
     assert(E);
     EmitExpr(E, cbuf);
     cbuf << ");\n";
 }
 
 void CCodeGenerator::EmitForStmt(Stmt* S, unsigned indent) {
-    ForStmt* F = StmtCaster<ForStmt>::getType(S);
+    ForStmt* F = cast<ForStmt>(S);
     cbuf.indent(indent);
     cbuf << "for (";
     Stmt* Init = F->getInit();
     if (Init) {
         // assume Expr
-        Expr* E = StmtCaster<Expr>::getType(Init);
+        Expr* E = cast<Expr>(Init);
         assert(E);
         EmitExpr(E, cbuf);
     }
@@ -631,8 +631,8 @@ void CCodeGenerator::EmitForStmt(Stmt* S, unsigned indent) {
 
     cbuf << ") ";
     Stmt* Body = F->getBody();
-    if (Body->stype() == STMT_COMPOUND) {
-        CompoundStmt* C = StmtCaster<CompoundStmt>::getType(Body);
+    if (Body->getKind() == STMT_COMPOUND) {
+        CompoundStmt* C = cast<CompoundStmt>(Body);
         EmitCompoundStmt(C, indent, false);
     } else {
         EmitStmt(Body, 0);
@@ -640,7 +640,7 @@ void CCodeGenerator::EmitForStmt(Stmt* S, unsigned indent) {
 }
 
 void CCodeGenerator::EmitSwitchStmt(Stmt* S, unsigned indent) {
-    SwitchStmt* SW = StmtCaster<SwitchStmt>::getType(S);
+    SwitchStmt* SW = cast<SwitchStmt>(S);
     cbuf.indent(indent);
     cbuf << "switch (";
     EmitExpr(SW->getCond(), cbuf);
@@ -649,10 +649,10 @@ void CCodeGenerator::EmitSwitchStmt(Stmt* S, unsigned indent) {
     const StmtList& Cases = SW->getCases();
     for (unsigned int i=0; i<Cases.size(); i++) {
         Stmt* Case = Cases[i];
-        switch (Case->stype()) {
+        switch (Case->getKind()) {
         case STMT_CASE:
             {
-                CaseStmt* C = StmtCaster<CaseStmt>::getType(Case);
+                CaseStmt* C = cast<CaseStmt>(Case);
                 cbuf.indent(indent + INDENT);
                 cbuf << "case ";
                 EmitExpr(C->getCond(), cbuf);
@@ -665,7 +665,7 @@ void CCodeGenerator::EmitSwitchStmt(Stmt* S, unsigned indent) {
             }
         case STMT_DEFAULT:
             {
-                DefaultStmt* D = StmtCaster<DefaultStmt>::getType(Case);
+                DefaultStmt* D = cast<DefaultStmt>(Case);
                 cbuf.indent(indent + INDENT);
                 cbuf << "default:\n";
                 const StmtList& Stmts = D->getStmts();

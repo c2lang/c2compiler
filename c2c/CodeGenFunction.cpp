@@ -87,15 +87,15 @@ void CodeGenFunction::generateBody(llvm::Function* func) {
 }
 
 void CodeGenFunction::EmitStmt(const Stmt* S) {
-    switch (S->stype()) {
+    switch (S->getKind()) {
     case STMT_RETURN:
-        EmitReturnStmt(StmtCaster<ReturnStmt>::getType(S));
+        EmitReturnStmt(cast<ReturnStmt>(S));
         break;
     case STMT_EXPR:
-        EmitExpr(StmtCaster<Expr>::getType(S));
+        EmitExpr(cast<Expr>(S));
         break;
     case STMT_IF:
-        EmitIfStmt(StmtCaster<IfStmt>::getType(S));
+        EmitIfStmt(cast<IfStmt>(S));
         break;
     case STMT_WHILE:
     case STMT_DO:
@@ -111,7 +111,7 @@ void CodeGenFunction::EmitStmt(const Stmt* S) {
         S->dump();
         break;
     case STMT_COMPOUND:
-        EmitCompoundStmt(StmtCaster<CompoundStmt>::getType(S));
+        EmitCompoundStmt(cast<CompoundStmt>(S));
         break;
     }
 }

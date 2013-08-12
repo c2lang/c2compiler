@@ -135,7 +135,7 @@ bool FunctionAnalyser::handle(Decl* decl) {
             if (need_rvalue) {
                 CompoundStmt* compound = func->getBody();
                 Stmt* lastStmt = compound->getLastStmt();
-                if (!lastStmt || lastStmt->stype() != STMT_RETURN) {
+                if (!lastStmt || lastStmt->getKind() != STMT_RETURN) {
                     Diags.Report(compound->getRight(), diag::warn_falloff_nonvoid_function);
                 }
             }
@@ -198,7 +198,7 @@ void FunctionAnalyser::ExitScope() {
 
 void FunctionAnalyser::analyseStmt(Stmt* S, bool haveScope) {
     LOG_FUNC
-    switch (S->stype()) {
+    switch (S->getKind()) {
     case STMT_RETURN:
         analyseReturnStmt(S);
         break;
@@ -243,7 +243,7 @@ void FunctionAnalyser::analyseStmt(Stmt* S, bool haveScope) {
 
 void FunctionAnalyser::analyseCompoundStmt(Stmt* stmt) {
     LOG_FUNC
-    CompoundStmt* compound = StmtCaster<CompoundStmt>::getType(stmt);
+    CompoundStmt* compound = cast<CompoundStmt>(stmt);
     assert(compound);
     const StmtList& stmts = compound->getStmts();
     for (unsigned int i=0; i<stmts.size(); i++) {
@@ -253,7 +253,7 @@ void FunctionAnalyser::analyseCompoundStmt(Stmt* stmt) {
 
 void FunctionAnalyser::analyseIfStmt(Stmt* stmt) {
     LOG_FUNC
-    IfStmt* I = StmtCaster<IfStmt>::getType(stmt);
+    IfStmt* I = cast<IfStmt>(stmt);
     assert(I);
     Expr* cond = I->getCond();
     QualType Q1 = analyseExpr(cond);
@@ -272,7 +272,7 @@ void FunctionAnalyser::analyseIfStmt(Stmt* stmt) {
 
 void FunctionAnalyser::analyseWhileStmt(Stmt* stmt) {
     LOG_FUNC
-    WhileStmt* W = StmtCaster<WhileStmt>::getType(stmt);
+    WhileStmt* W = cast<WhileStmt>(stmt);
     assert(W);
     analyseStmt(W->getCond());
     EnterScope(Scope::BreakScope | Scope::ContinueScope | Scope::DeclScope | Scope::ControlScope);
@@ -283,7 +283,7 @@ void FunctionAnalyser::analyseWhileStmt(Stmt* stmt) {
 
 void FunctionAnalyser::analyseDoStmt(Stmt* stmt) {
     LOG_FUNC
-    DoStmt* D = StmtCaster<DoStmt>::getType(stmt);
+    DoStmt* D = cast<DoStmt>(stmt);
     assert(D);
     EnterScope(Scope::BreakScope | Scope::ContinueScope | Scope::DeclScope);
     analyseStmt(D->getBody());
@@ -293,7 +293,7 @@ void FunctionAnalyser::analyseDoStmt(Stmt* stmt) {
 
 void FunctionAnalyser::analyseForStmt(Stmt* stmt) {
     LOG_FUNC
-    ForStmt* F = StmtCaster<ForStmt>::getType(stmt);
+    ForStmt* F = cast<ForStmt>(stmt);
     assert(F);
     EnterScope(Scope::BreakScope | Scope::ContinueScope | Scope::DeclScope | Scope::ControlScope);
     if (F->getInit()) analyseStmt(F->getInit());
@@ -305,7 +305,7 @@ void FunctionAnalyser::analyseForStmt(Stmt* stmt) {
 
 void FunctionAnalyser::analyseSwitchStmt(Stmt* stmt) {
     LOG_FUNC
-    SwitchStmt* S = StmtCaster<SwitchStmt>::getType(stmt);
+    SwitchStmt* S = cast<SwitchStmt>(stmt);
     assert(S);
     analyseExpr(S->getCond());
     const StmtList& Cases = S->getCases();
@@ -313,7 +313,7 @@ void FunctionAnalyser::analyseSwitchStmt(Stmt* stmt) {
     EnterScope(Scope::BreakScope | Scope::SwitchScope);
     for (unsigned i=0; i<Cases.size(); i++) {
         Stmt* C = Cases[i];
-        switch (C->stype()) {
+        switch (C->getKind()) {
         case STMT_CASE:
             analyseCaseStmt(C);
             break;
@@ -336,7 +336,7 @@ void FunctionAnalyser::analyseSwitchStmt(Stmt* stmt) {
 void FunctionAnalyser::analyseBreakStmt(Stmt* stmt) {
     LOG_FUNC
     if (!curScope->allowBreak()) {
-        BreakStmt* B = StmtCaster<BreakStmt>::getType(stmt);
+        BreakStmt* B = cast<BreakStmt>(stmt);
         assert(B);
         Diags.Report(B->getLocation(), diag::err_break_not_in_loop_or_switch);
     }
@@ -345,7 +345,7 @@ void FunctionAnalyser::analyseBreakStmt(Stmt* stmt) {
 void FunctionAnalyser::analyseContinueStmt(Stmt* stmt) {
     LOG_FUNC
     if (!curScope->allowContinue()) {
-        ContinueStmt* C = StmtCaster<ContinueStmt>::getType(stmt);
+        ContinueStmt* C = cast<ContinueStmt>(stmt);
         assert(C);
         Diags.Report(C->getLocation(), diag::err_continue_not_in_loop);
     }
@@ -353,7 +353,7 @@ void FunctionAnalyser::analyseContinueStmt(Stmt* stmt) {
 
 void FunctionAnalyser::analyseCaseStmt(Stmt* stmt) {
     LOG_FUNC
-    CaseStmt* C = StmtCaster<CaseStmt>::getType(stmt);
+    CaseStmt* C = cast<CaseStmt>(stmt);
     assert(C);
     analyseExpr(C->getCond());
     const StmtList& stmts = C->getStmts();
@@ -364,7 +364,7 @@ void FunctionAnalyser::analyseCaseStmt(Stmt* stmt) {
 
 void FunctionAnalyser::analyseDefaultStmt(Stmt* stmt) {
     LOG_FUNC
-    DefaultStmt* D = StmtCaster<DefaultStmt>::getType(stmt);
+    DefaultStmt* D = cast<DefaultStmt>(stmt);
     assert(D);
     const StmtList& stmts = D->getStmts();
     for (unsigned int i=0; i<stmts.size(); i++) {
@@ -374,7 +374,7 @@ void FunctionAnalyser::analyseDefaultStmt(Stmt* stmt) {
 
 void FunctionAnalyser::analyseReturnStmt(Stmt* stmt) {
     LOG_FUNC
-    ReturnStmt* ret = StmtCaster<ReturnStmt>::getType(stmt);
+    ReturnStmt* ret = cast<ReturnStmt>(stmt);
     assert(ret);
     Expr* value = ret->getExpr();
     QualType rtype = func->getReturnType();
@@ -396,7 +396,7 @@ void FunctionAnalyser::analyseReturnStmt(Stmt* stmt) {
 
 void FunctionAnalyser::analyseStmtExpr(Stmt* stmt) {
     LOG_FUNC
-    Expr* expr = StmtCaster<Expr>::getType(stmt);
+    Expr* expr = cast<Expr>(stmt);
     assert(expr);
     analyseExpr(expr);
 }
@@ -443,9 +443,9 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr) {
     case EXPR_STRING:
         {
             // return type: 'const char*'
-            QualType stype = typeContext.getPointer(BuiltinType::get(TYPE_I8));
-            stype.addConst();
-            return stype;
+            QualType getKind = typeContext.getPointer(BuiltinType::get(TYPE_I8));
+            getKind.addConst();
+            return getKind;
         }
     case EXPR_BOOL:
         return QualType(BuiltinType::get(TYPE_BOOL));

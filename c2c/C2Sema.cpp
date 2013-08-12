@@ -245,7 +245,7 @@ void C2Sema::ActOnFunctionArgs(Decl* decl, ExprList params) {
 void C2Sema::ActOnFinishFunctionBody(Decl* decl, Stmt* body) {
     FunctionDecl* func = cast<FunctionDecl>(decl);
     assert(func);
-    CompoundStmt* C = StmtCaster<CompoundStmt>::getType(body);
+    CompoundStmt* C = cast<CompoundStmt>(body);
     assert(C);
     func->setBody(C);
 }

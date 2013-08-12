@@ -36,7 +36,8 @@ static int deleteCount;
 
 
 Expr::Expr(ExprKind k)
-    : kind(k)
+    : Stmt(STMT_EXPR)
+    , kind(k)
     , isStatement(false)
 {
 #ifdef EXPR_DEBUG
@@ -52,7 +53,6 @@ Expr::~Expr() {
 #endif
 }
 
-STMT_VISITOR_ACCEPT(Expr);
 
 void IntegerLiteral::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);

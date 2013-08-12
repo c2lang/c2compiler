@@ -61,8 +61,9 @@ public:
     Expr(ExprKind k);
     virtual ~Expr();
     // from Stmt
-    virtual StmtType stype() const { return STMT_EXPR; }
-    virtual void acceptS(StmtVisitor& v) const;
+    static bool classof(const Stmt* S) {
+        return S->getKind() == STMT_EXPR;
+    }
 
     ExprKind getKind() const { return kind; }
 

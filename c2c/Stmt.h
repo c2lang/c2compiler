@@ -34,7 +34,7 @@ class StringBuilder;
 class StmtVisitor;
 class Expr;
 
-enum StmtType {
+enum StmtKind {
     STMT_RETURN = 0,
     STMT_EXPR,
     STMT_IF,
@@ -54,14 +54,15 @@ enum StmtType {
 
 class Stmt {
 public:
-    Stmt();
+    Stmt(StmtKind k);
     virtual ~Stmt();
-    virtual StmtType stype() const = 0;
-    virtual void acceptS(StmtVisitor& v) const = 0;
+    StmtKind getKind() const { return kind; }
     virtual void print(int indent, StringBuilder& buffer) const = 0;
     void dump() const;
     virtual SourceLocation getLocation() const = 0;
 private:
+    StmtKind kind;
+
     Stmt(const Stmt&);
     Stmt& operator= (const Stmt&);
 };
@@ -73,8 +74,9 @@ class ReturnStmt : public Stmt {
 public:
     ReturnStmt(SourceLocation loc,Expr* value_);
     virtual ~ReturnStmt();
-    virtual StmtType stype() const { return STMT_RETURN; }
-    virtual void acceptS(StmtVisitor& v) const;
+    static bool classof(const Stmt* S) {
+        return S->getKind() == STMT_RETURN;
+    }
 
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return RetLoc; }
@@ -92,8 +94,9 @@ public:
            Expr* condition, Stmt* thenStmt,
            SourceLocation elseLoc, Stmt* elseStmt);
     virtual ~IfStmt();
-    virtual StmtType stype() const { return STMT_IF; }
-    virtual void acceptS(StmtVisitor& v) const;
+    static bool classof(const Stmt* S) {
+        return S->getKind() == STMT_IF;
+    }
 
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return IfLoc; }
@@ -114,8 +117,9 @@ class WhileStmt : public Stmt {
 public:
     WhileStmt(SourceLocation Loc_, Expr* Cond_, Stmt* Then_);
     virtual ~WhileStmt();
-    virtual StmtType stype() const { return STMT_WHILE; }
-    virtual void acceptS(StmtVisitor& v) const;
+    static bool classof(const Stmt* S) {
+        return S->getKind() == STMT_WHILE;
+    }
 
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return Loc; }
@@ -133,8 +137,9 @@ class DoStmt : public Stmt {
 public:
     DoStmt(SourceLocation Loc_, Expr* Cond_, Stmt* Then_);
     virtual ~DoStmt();
-    virtual StmtType stype() const { return STMT_DO; }
-    virtual void acceptS(StmtVisitor& v) const;
+    static bool classof(const Stmt* S) {
+        return S->getKind() == STMT_DO;
+    }
 
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return Loc; }
@@ -152,8 +157,9 @@ class ForStmt : public Stmt {
 public:
     ForStmt(SourceLocation Loc_, Stmt* Init_, Expr* Cond_, Expr* Incr_, Stmt* Body_);
     virtual ~ForStmt();
-    virtual StmtType stype() const { return STMT_FOR; }
-    virtual void acceptS(StmtVisitor& v) const;
+    static bool classof(const Stmt* S) {
+        return S->getKind() == STMT_FOR;
+    }
 
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return Loc; }
@@ -175,8 +181,9 @@ class SwitchStmt : public Stmt {
 public:
     SwitchStmt(SourceLocation Loc_, Expr* Cond_, StmtList& Cases_);
     virtual ~SwitchStmt();
-    virtual StmtType stype() const { return STMT_SWITCH; }
-    virtual void acceptS(StmtVisitor& v) const;
+    static bool classof(const Stmt* S) {
+        return S->getKind() == STMT_SWITCH;
+    }
 
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return Loc; }
@@ -194,8 +201,9 @@ class CaseStmt : public Stmt {
 public:
     CaseStmt(SourceLocation Loc_, Expr* Cond_, StmtList& Stmts_);
     virtual ~CaseStmt();
-    virtual StmtType stype() const { return STMT_CASE; }
-    virtual void acceptS(StmtVisitor& v) const;
+    static bool classof(const Stmt* S) {
+        return S->getKind() == STMT_CASE;
+    }
 
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return Loc; }
@@ -213,8 +221,9 @@ class DefaultStmt : public Stmt {
 public:
     DefaultStmt(SourceLocation Loc_, StmtList& Stmts_);
     virtual ~DefaultStmt();
-    virtual StmtType stype() const { return STMT_DEFAULT; }
-    virtual void acceptS(StmtVisitor& v) const;
+    static bool classof(const Stmt* S) {
+        return S->getKind() == STMT_DEFAULT;
+    }
 
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return Loc; }
@@ -230,8 +239,9 @@ class BreakStmt : public Stmt {
 public:
     BreakStmt(SourceLocation Loc_);
     virtual ~BreakStmt();
-    virtual StmtType stype() const { return STMT_BREAK; }
-    virtual void acceptS(StmtVisitor& v) const;
+    static bool classof(const Stmt* S) {
+        return S->getKind() == STMT_BREAK;
+    }
 
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return Loc; }
@@ -244,8 +254,9 @@ class ContinueStmt : public Stmt {
 public:
     ContinueStmt(SourceLocation Loc_);
     virtual ~ContinueStmt();
-    virtual StmtType stype() const { return STMT_CONTINUE; }
-    virtual void acceptS(StmtVisitor& v) const;
+    static bool classof(const Stmt* S) {
+        return S->getKind() == STMT_CONTINUE;
+    }
 
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return Loc; }
@@ -258,8 +269,9 @@ class LabelStmt : public Stmt {
 public:
     LabelStmt(const char* name_, SourceLocation Loc_, Stmt* subStmt_);
     virtual ~LabelStmt();
-    virtual StmtType stype() const { return STMT_LABEL; }
-    virtual void acceptS(StmtVisitor& v) const;
+    static bool classof(const Stmt* S) {
+        return S->getKind() == STMT_LABEL;
+    }
 
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return Loc; }
@@ -276,8 +288,9 @@ class GotoStmt : public Stmt {
 public:
     GotoStmt(const char* name_, SourceLocation GotoLoc_, SourceLocation LabelLoc_);
     virtual ~GotoStmt();
-    virtual StmtType stype() const { return STMT_GOTO; }
-    virtual void acceptS(StmtVisitor& v) const;
+    static bool classof(const Stmt* S) {
+        return S->getKind() == STMT_GOTO;
+    }
 
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return GotoLoc; }
@@ -293,8 +306,9 @@ class CompoundStmt : public Stmt {
 public:
     CompoundStmt(SourceLocation l, SourceLocation r, StmtList& stmts_);
     virtual ~CompoundStmt();
-    virtual StmtType stype() const { return STMT_COMPOUND; }
-    virtual void acceptS(StmtVisitor& v) const;
+    static bool classof(const Stmt* S) {
+        return S->getKind() == STMT_COMPOUND;
+    }
 
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return Left; }
@@ -309,47 +323,19 @@ private:
 };
 
 
-class StmtVisitor {
-public:
-    virtual ~StmtVisitor() {}
-    virtual void visit(const C2::Stmt&) { assert(0); }    // add subclass below
-    virtual void visit(const ReturnStmt&) {}
-    virtual void visit(const IfStmt&) {}
-    virtual void visit(const WhileStmt&) {}
-    virtual void visit(const DoStmt&) {}
-    virtual void visit(const ForStmt&) {}
-    virtual void visit(const SwitchStmt&) {}
-    virtual void visit(const CaseStmt&) {}
-    virtual void visit(const DefaultStmt&) {}
-    virtual void visit(const BreakStmt&) {}
-    virtual void visit(const ContinueStmt&) {}
-    virtual void visit(const LabelStmt&) {}
-    virtual void visit(const GotoStmt&) {}
-    virtual void visit(const CompoundStmt&) {}
-    virtual void visit(const Expr&) {}
-};
+template <class T> static inline bool isa(const Stmt* S) {
+    return T::classof(S);
+}
 
-#define STMT_VISITOR_ACCEPT(a) void a::acceptS(StmtVisitor& v) const { v.visit(*this); }
+template <class T> static inline T* cast(Stmt* S) {
+    if (isa<T>(S)) return static_cast<T*>(S);
+    return 0;
+}
 
-template <class T> class StmtCaster : public StmtVisitor {
-public:
-    virtual void visit(const T& node_) {
-        node = (T*)&node_;  // TEMP dirty const-cast
-    }
-    static T* getType(const C2::Stmt& node_) {
-        StmtCaster<T> visitor(node_);
-        return visitor.node;
-    }
-    static T* getType(const C2::Stmt* node_) {
-        StmtCaster<T> visitor(*node_);
-        return visitor.node;
-    }
-private:
-    StmtCaster(const C2::Stmt& n) : node(0) {
-        n.acceptS(*this);
-    }
-    T* node;
-};
+template <class T> static inline const T* cast(const Stmt* S) {
+    if (isa<T>(S)) return static_cast<const T*>(S);
+    return 0;
+}
 
 }
 
