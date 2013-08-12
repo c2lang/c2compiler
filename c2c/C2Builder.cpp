@@ -259,6 +259,10 @@ void C2Builder::build() {
     Diags.setDiagnosticGroupMapping("conversion", diag::MAP_WARNING);
     Diags.setDiagnosticGroupMapping("all", diag::MAP_WARNING);
     Diags.setDiagnosticGroupMapping("extra", diag::MAP_WARNING);
+    Diags.setDiagnosticWarningAsError(diag::warn_integer_too_large, true);
+    // Workaround
+    Diags.setDiagnosticErrorAsFatal(diag::warn_integer_too_large, true);
+    Diags.setDiagnosticErrorAsFatal(diag::warn_integer_too_large, false);
 
     // TargetInfo
     TargetOptions* to = new TargetOptions();
