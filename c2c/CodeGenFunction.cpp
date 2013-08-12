@@ -409,7 +409,6 @@ llvm::Value* CodeGenFunction::EmitExpr(const Expr* E) {
             const ParenExpr* P = cast<ParenExpr>(E);
             return EmitExpr(P->getExpr());
         }
-        break;
     }
     E->dump();
     assert(0 && "TODO");

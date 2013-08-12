@@ -224,11 +224,8 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
             return;
         }
     case EXPR_DECL:
-        {
-            DeclExpr* D = cast<DeclExpr>(E);
-            EmitDeclExpr(D, output, 0);
-            return;
-        }
+        EmitDeclExpr(cast<DeclExpr>(E), output, 0);
+        return;
     case EXPR_BINOP:
         EmitBinaryOperator(E, output);
         return;
