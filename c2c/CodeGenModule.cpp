@@ -280,11 +280,24 @@ llvm::Function* CodeGenModule::createExternal(const Package* P, const std::strin
 }
 
 llvm::Constant* CodeGenModule::EvaluateExprAsConstant(const Expr *E) {
-    // NOTE: for now only support numbers and convert those to bools
-    const IntegerLiteral* N = cast<IntegerLiteral>(E);
-    assert(N && "Only support constants for now");
-    // Get Width/signed from CanonicalType?
-    return llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), N->Value.getSExtValue(), true);
+    switch (E->getKind()) {
+    case EXPR_STRING:
+        {
+            const StringExpr* S = cast<StringExpr>(E);
+            assert(0 && "TODO");
+            return 0;
+            // TODO check clang: CodeGenModule::GetConstantArrayFromStringLiteral()
+        }
+    case EXPR_INTEGER_LITERAL:
+        {
+            const IntegerLiteral* N = cast<IntegerLiteral>(E);
+            // Get Width/signed from CanonicalType?
+            return llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), N->Value.getSExtValue(), true);
+        }
+    default:
+        assert(0 && "TODO");
+        return 0;
+    }
 }
 
 /// EvaluateExprAsBool - Perform the usual unary conversions on the specified
