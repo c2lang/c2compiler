@@ -163,34 +163,34 @@ const char* CCodeGenerator::ConvertType(const C2::Type* type) {
 }
 
 void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
-    switch (E->etype()) {
+    switch (E->getKind()) {
     case EXPR_INTEGER_LITERAL:
         {
-            IntegerLiteral* N = ExprCaster<IntegerLiteral>::getType(E);
+            IntegerLiteral* N = cast<IntegerLiteral>(E);
             output << (int) N->Value.getSExtValue();
             return;
         }
     case EXPR_STRING:
         {
-            StringExpr* S = ExprCaster<StringExpr>::getType(E);
+            StringExpr* S = cast<StringExpr>(E);
             EmitStringLiteral(S->value, output);
             return;
         }
     case EXPR_BOOL:
         {
-            BoolLiteralExpr* B = ExprCaster<BoolLiteralExpr>::getType(E);
+            BoolLiteralExpr* B = cast<BoolLiteralExpr>(E);
             cbuf << (int)B->value;
             return;
         }
     case EXPR_CHARLITERAL:
         {
-            CharLiteralExpr* C = ExprCaster<CharLiteralExpr>::getType(E);
+            CharLiteralExpr* C = cast<CharLiteralExpr>(E);
             output << '\'' << (char)C->value << '\'';
             return;
         }
     case EXPR_FLOAT_LITERAL:
         {
-            FloatingLiteral* F = ExprCaster<FloatingLiteral>::getType(E);
+            FloatingLiteral* F = cast<FloatingLiteral>(E);
             char temp[20];
             sprintf(temp, "%f", F->Value.convertToFloat());
             output << temp;
@@ -204,28 +204,28 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
         return;
     case EXPR_INITLIST:
         {
-            InitListExpr* I = ExprCaster<InitListExpr>::getType(E);
+            InitListExpr* I = cast<InitListExpr>(E);
             output << "{ ";
             ExprList& values = I->getValues();
             for (unsigned int i=0; i<values.size(); i++) {
-                if (i == 0 && values[0]->etype() == EXPR_INITLIST) output << '\n';
+                if (i == 0 && values[0]->getKind() == EXPR_INITLIST) output << '\n';
                 EmitExpr(values[i], output);
                 if (i != values.size() -1) output << ',';
-                if (values[i]->etype() == EXPR_INITLIST) output << '\n';
+                if (values[i]->getKind() == EXPR_INITLIST) output << '\n';
             }
             output << " }";
             return;
         }
     case EXPR_TYPE:
         {
-            TypeExpr* T = ExprCaster<TypeExpr>::getType(E);
+            TypeExpr* T = cast<TypeExpr>(E);
             EmitTypePreName(T->getType(), output);
             EmitTypePostName(T->getType(), output);
             return;
         }
     case EXPR_DECL:
         {
-            DeclExpr* D = ExprCaster<DeclExpr>::getType(E);
+            DeclExpr* D = cast<DeclExpr>(E);
             EmitDeclExpr(D, output, 0);
             return;
         }
@@ -240,7 +240,7 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
         return;
     case EXPR_BUILTIN:
         {
-            BuiltinExpr* S = ExprCaster<BuiltinExpr>::getType(E);
+            BuiltinExpr* S = cast<BuiltinExpr>(E);
             if (S->isSizeFunc()) {
                 output << "sizeof(";
                 EmitExpr(S->getExpr(), output);
@@ -254,7 +254,7 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
         }
     case EXPR_ARRAYSUBSCRIPT:
         {
-            ArraySubscriptExpr* A = ExprCaster<ArraySubscriptExpr>::getType(E);
+            ArraySubscriptExpr* A = cast<ArraySubscriptExpr>(E);
             EmitExpr(A->getBase(), output);
             output << '[';
             EmitExpr(A->getIndex(), output);
@@ -266,7 +266,7 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
         return;
     case EXPR_PAREN:
         {
-            ParenExpr* P = ExprCaster<ParenExpr>::getType(E);
+            ParenExpr* P = cast<ParenExpr>(E);
             cbuf << '(';
             EmitExpr(P->getExpr(), cbuf);
             cbuf << ')';
@@ -276,14 +276,14 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
 }
 
 void CCodeGenerator::EmitBinaryOperator(Expr* E, StringBuilder& output) {
-    BinaryOperator* B = ExprCaster<BinaryOperator>::getType(E);
+    BinaryOperator* B = cast<BinaryOperator>(E);
     EmitExpr(B->getLHS(), output);
     output << ' ' << BinaryOperator::OpCode2str(B->getOpcode()) << ' ';
     EmitExpr(B->getRHS(), output);
 }
 
 void CCodeGenerator::EmitConditionalOperator(Expr* E, StringBuilder& output) {
-    ConditionalOperator* C = ExprCaster<ConditionalOperator>::getType(E);
+    ConditionalOperator* C = cast<ConditionalOperator>(E);
     EmitExpr(C->getCond(), output);
     output << " ? ";
     EmitExpr(C->getLHS(), output);
@@ -293,7 +293,7 @@ void CCodeGenerator::EmitConditionalOperator(Expr* E, StringBuilder& output) {
 }
 
 void CCodeGenerator::EmitUnaryOperator(Expr* E, StringBuilder& output) {
-    UnaryOperator* U = ExprCaster<UnaryOperator>::getType(E);
+    UnaryOperator* U = cast<UnaryOperator>(E);
 
     switch (U->getOpcode()) {
     case UO_PostInc:
@@ -319,7 +319,7 @@ void CCodeGenerator::EmitUnaryOperator(Expr* E, StringBuilder& output) {
 }
 
 void CCodeGenerator::EmitMemberExpr(Expr* E, StringBuilder& output) {
-    MemberExpr* M = ExprCaster<MemberExpr>::getType(E);
+    MemberExpr* M = cast<MemberExpr>(E);
     IdentifierExpr* RHS = M->getMember();
     if (RHS->getPackage()) {
         // A.B where A is a package
@@ -347,7 +347,7 @@ void CCodeGenerator::EmitDeclExpr(DeclExpr* E, StringBuilder& output, unsigned i
 }
 
 void CCodeGenerator::EmitCallExpr(Expr* E, StringBuilder& output) {
-    CallExpr* C = ExprCaster<CallExpr>::getType(E);
+    CallExpr* C = cast<CallExpr>(E);
     EmitExpr(C->getFn(), output);
     output << '(';
     for (unsigned int i=0; i<C->numArgs(); i++) {
@@ -358,7 +358,7 @@ void CCodeGenerator::EmitCallExpr(Expr* E, StringBuilder& output) {
 }
 
 void CCodeGenerator::EmitIdentifierExpr(Expr* E, StringBuilder& output) {
-    IdentifierExpr* I = ExprCaster<IdentifierExpr>::getType(E);
+    IdentifierExpr* I = cast<IdentifierExpr>(E);
     if (I->getPackage()) {
         addPrefix(I->getPackage()->getCName(), I->getName(), output);
     } else {

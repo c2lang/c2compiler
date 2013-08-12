@@ -35,7 +35,7 @@ class ExprVisitor;
 class Package;
 class Decl;
 
-enum ExprType {
+enum ExprKind {
     EXPR_INTEGER_LITERAL=0,
     EXPR_STRING,
     EXPR_BOOL,
@@ -58,14 +58,13 @@ enum ExprType {
 
 class Expr : public Stmt {
 public:
-    Expr();
+    Expr(ExprKind k);
     virtual ~Expr();
     // from Stmt
     virtual StmtType stype() const { return STMT_EXPR; }
     virtual void acceptS(StmtVisitor& v) const;
 
-    virtual ExprType etype() const = 0;
-    virtual void acceptE(ExprVisitor& v) = 0;
+    ExprKind getKind() const { return kind; }
 
     virtual clang::SourceRange getSourceRange() {
         return clang::SourceRange();
@@ -75,6 +74,8 @@ public:
     bool isStmt() const { return isStatement; }
 private:
     bool isStatement;
+    ExprKind kind;
+
     Expr(const Expr&);
     Expr& operator= (const Expr&);
 };
@@ -85,9 +86,11 @@ typedef std::vector<C2::Expr*> ExprList;
 class IntegerLiteral : public Expr {
 public:
     IntegerLiteral(SourceLocation loc_, const llvm::APInt& V)
-        : Value(V), loc(loc_) {}
-    virtual ExprType etype() const { return EXPR_INTEGER_LITERAL; }
-    virtual void acceptE(ExprVisitor& v);
+        : Expr(EXPR_INTEGER_LITERAL)
+        , Value(V), loc(loc_) {}
+    static bool classof(const Expr* E) {
+        return E->getKind() == EXPR_INTEGER_LITERAL;
+    }
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return loc; }
 
@@ -99,9 +102,11 @@ public:
 class FloatingLiteral : public Expr {
 public:
     FloatingLiteral(SourceLocation loc_, const llvm::APFloat& V)
-        : Value(V), loc(loc_) {}
-    virtual ExprType etype() const { return EXPR_FLOAT_LITERAL; }
-    virtual void acceptE(ExprVisitor& v);
+        : Expr(EXPR_FLOAT_LITERAL)
+        , Value(V), loc(loc_) {}
+    static bool classof(const Expr* E) {
+        return E->getKind() == EXPR_FLOAT_LITERAL;
+    }
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return loc; }
 
@@ -113,9 +118,11 @@ public:
 class StringExpr : public Expr {
 public:
     StringExpr(SourceLocation loc_, const std::string& val)
-        : value(val), loc(loc_) {}
-    virtual ExprType etype() const { return EXPR_STRING; }
-    virtual void acceptE(ExprVisitor& v);
+        : Expr(EXPR_STRING)
+        , value(val), loc(loc_) {}
+    static bool classof(const Expr* E) {
+        return E->getKind() == EXPR_STRING;
+    }
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return loc; }
 
@@ -127,9 +134,11 @@ public:
 class BoolLiteralExpr : public Expr {
 public:
     BoolLiteralExpr(SourceLocation loc_, bool val)
-        : value(val), loc(loc_) {}
-    virtual ExprType etype() const { return EXPR_BOOL; }
-    virtual void acceptE(ExprVisitor& v);
+        : Expr(EXPR_BOOL)
+        , value(val), loc(loc_) {}
+    static bool classof(const Expr* E) {
+        return E->getKind() == EXPR_BOOL;
+    }
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return loc; }
 
@@ -141,9 +150,11 @@ public:
 class CharLiteralExpr : public Expr {
 public:
     CharLiteralExpr(SourceLocation loc_, unsigned val)
-        : value(val), loc(loc_) {}
-    virtual ExprType etype() const { return EXPR_CHARLITERAL; }
-    virtual void acceptE(ExprVisitor& v);
+        : Expr(EXPR_CHARLITERAL)
+        , value(val), loc(loc_) {}
+    static bool classof(const Expr* E) {
+        return E->getKind() == EXPR_CHARLITERAL;
+    }
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return loc; }
 
@@ -155,9 +166,11 @@ public:
 class IdentifierExpr : public Expr {
 public:
     IdentifierExpr(SourceLocation loc_, const std::string& name_)
-        : name(name_), pkg(0), decl(0), loc(loc_) {}
-    virtual ExprType etype() const { return EXPR_IDENTIFIER; }
-    virtual void acceptE(ExprVisitor& v);
+        : Expr(EXPR_IDENTIFIER)
+        , name(name_), pkg(0), decl(0), loc(loc_) {}
+    static bool classof(const Expr* E) {
+        return E->getKind() == EXPR_IDENTIFIER;
+    }
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return loc; }
 
@@ -176,10 +189,14 @@ private:
 
 class TypeExpr : public Expr {
 public:
-    TypeExpr(QualType& QT_) : QT(QT_), isLocal(false) {}
+    TypeExpr(QualType& QT_)
+        : Expr(EXPR_TYPE)
+        , QT(QT_)
+        , isLocal(false) {}
     virtual ~TypeExpr();
-    virtual ExprType etype() const { return EXPR_TYPE; }
-    virtual void acceptE(ExprVisitor& v);
+    static bool classof(const Expr* E) {
+        return E->getKind() == EXPR_TYPE;
+    }
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const {
         SourceLocation loc;
@@ -199,11 +216,13 @@ private:
 class CallExpr : public Expr {
 public:
     CallExpr(Expr* Fn_)
-        : Fn(Fn_)
+        : Expr(EXPR_CALL)
+        , Fn(Fn_)
     {}
     virtual ~CallExpr();
-    virtual ExprType etype() const { return EXPR_CALL; }
-    virtual void acceptE(ExprVisitor& v);
+    static bool classof(const Expr* E) {
+        return E->getKind() == EXPR_CALL;
+    }
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return Fn->getLocation(); }
 
@@ -224,8 +243,9 @@ class InitListExpr : public Expr {
 public:
     InitListExpr(SourceLocation lbraceLoc, SourceLocation rbraceLoc, ExprList& values_);
     virtual ~InitListExpr();
-    virtual ExprType etype() const { return EXPR_INITLIST; }
-    virtual void acceptE(ExprVisitor& v);
+    static bool classof(const Expr* E) {
+        return E->getKind() == EXPR_INITLIST;
+    }
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return leftBrace; }
 
@@ -242,8 +262,9 @@ public:
     DeclExpr(const std::string& name_, SourceLocation& loc_,
             QualType type_, Expr* initValue_);
     virtual ~DeclExpr();
-    virtual ExprType etype() const { return EXPR_DECL; }
-    virtual void acceptE(ExprVisitor& v);
+    static bool classof(const Expr* E) {
+        return E->getKind() == EXPR_DECL;
+    }
     virtual void print(int indent, StringBuilder& buffer) const;
     // used by VarDecls only to add pkgName
     virtual SourceLocation getLocation() const { return loc; }
@@ -271,8 +292,9 @@ public:
 
     BinaryOperator(Expr* lhs, Expr* rhs, Opcode opc, SourceLocation opLoc);
     virtual ~BinaryOperator();
-    virtual ExprType etype() const { return EXPR_BINOP; }
-    virtual void acceptE(ExprVisitor& v);
+    static bool classof(const Expr* E) {
+        return E->getKind() == EXPR_BINOP;
+    }
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return opLoc; }
 
@@ -292,8 +314,9 @@ public:
     ConditionalOperator(SourceLocation questionLoc, SourceLocation colonLoc,
                     Expr* cond_, Expr* lhs_, Expr* rhs_);
     virtual ~ConditionalOperator();
-    virtual ExprType etype() const { return EXPR_CONDOP; }
-    virtual void acceptE(ExprVisitor& v);
+    static bool classof(const Expr* E) {
+        return E->getKind() == EXPR_CONDOP;
+    }
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return cond->getLocation(); }
 
@@ -316,8 +339,9 @@ public:
 
     UnaryOperator(SourceLocation opLoc_, Opcode opc, Expr* val_);
     virtual ~UnaryOperator();
-    virtual ExprType etype() const { return EXPR_UNARYOP; }
-    virtual void acceptE(ExprVisitor& v);
+    static bool classof(const Expr* E) {
+        return E->getKind() == EXPR_UNARYOP;
+    }
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return opLoc; }
 
@@ -333,10 +357,16 @@ private:
 
 class BuiltinExpr : public Expr {
 public:
-    BuiltinExpr(SourceLocation Loc, Expr* expr_, bool isSizeof_);
+    BuiltinExpr(SourceLocation Loc_, Expr* expr_, bool isSizeof_)
+        : Expr(EXPR_BUILTIN)
+        , Loc(Loc_)
+        , expr(expr_)
+        , isSizeof(isSizeof_)
+    {}
     virtual ~BuiltinExpr();
-    virtual ExprType etype() const { return EXPR_BUILTIN; }
-    virtual void acceptE(ExprVisitor& v);
+    static bool classof(const Expr* E) {
+        return E->getKind() == EXPR_BUILTIN;
+    }
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return Loc; }
 
@@ -353,8 +383,9 @@ class ArraySubscriptExpr : public Expr {
 public:
     ArraySubscriptExpr(SourceLocation RLoc_, Expr* Base_, Expr* Idx_);
     virtual ~ArraySubscriptExpr();
-    virtual ExprType etype() const { return EXPR_ARRAYSUBSCRIPT; }
-    virtual void acceptE(ExprVisitor& v);
+    static bool classof(const Expr* E) {
+        return E->getKind() == EXPR_ARRAYSUBSCRIPT;
+    }
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return base->getLocation(); }
 
@@ -370,13 +401,15 @@ private:
 class MemberExpr : public Expr {
 public:
     MemberExpr(Expr* Base_, bool isArrow_, IdentifierExpr* Member_)
-        : Base(Base_)
+        : Expr(EXPR_MEMBER)
+        , Base(Base_)
         , Member(Member_)
         , isArrow(isArrow_)
     {}
     virtual ~MemberExpr();
-    virtual ExprType etype() const { return EXPR_MEMBER; }
-    virtual void acceptE(ExprVisitor& v);
+    static bool classof(const Expr* E) {
+        return E->getKind() == EXPR_MEMBER;
+    }
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return Base->getLocation(); }
 
@@ -395,11 +428,13 @@ private:
 class ParenExpr : public Expr {
 public:
     ParenExpr(SourceLocation l, SourceLocation r, Expr* val)
-        : L(l), R(r), Val(val)
+        : Expr(EXPR_PAREN)
+        , L(l), R(r), Val(val)
     {}
     virtual ~ParenExpr();
-    virtual ExprType etype() const { return EXPR_PAREN; }
-    virtual void acceptE(ExprVisitor& v);
+    static bool classof(const Expr* E) {
+        return E->getKind() == EXPR_PAREN;
+    }
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return L; }
 
@@ -413,52 +448,19 @@ private:
 };
 
 
-class ExprVisitor {
-public:
-    virtual ~ExprVisitor() {}
-    virtual void visit(Expr&) { assert(0 && "unknown Expr type"); }    // add ExprClass below
-    virtual void visit(IntegerLiteral&) {}
-    virtual void visit(FloatingLiteral&) {}
-    virtual void visit(StringExpr&) {}
-    virtual void visit(BoolLiteralExpr&) {}
-    virtual void visit(CharLiteralExpr&) {}
-    virtual void visit(CallExpr&) {}
-    virtual void visit(IdentifierExpr&) {}
-    virtual void visit(InitListExpr&) {}
-    virtual void visit(TypeExpr&) {}
-    virtual void visit(DeclExpr&) {}
-    virtual void visit(BinaryOperator&) {}
-    virtual void visit(ConditionalOperator&) {}
-    virtual void visit(UnaryOperator&) {}
-    virtual void visit(BuiltinExpr&) {}
-    virtual void visit(ArraySubscriptExpr&) {}
-    virtual void visit(MemberExpr&) {}
-    virtual void visit(ParenExpr&) {}
-};
+template <class T> static inline bool isa(const Expr* E) {
+    return T::classof(E);
+}
 
-#define EXPR_VISITOR_ACCEPT(a) void a::acceptE(ExprVisitor& v) { v.visit(*this); }
+template <class T> static inline T* cast(Expr* E) {
+    if (isa<T>(E)) return static_cast<T*>(E);
+    return 0;
+}
 
-template <class T> class ExprCaster : public ExprVisitor {
-public:
-    virtual void visit(T& node_) {
-        node = &node_;
-    }
-    static T* getType(const Expr& node_) {
-        // TEMP dirty temp cast
-        ExprCaster<T> visitor((Expr&)node_);
-        return visitor.node;
-    }
-    static T* getType(const Expr* node_) {
-        // TEMP dirty temp cast
-        ExprCaster<T> visitor((Expr&)*node_);
-        return visitor.node;
-    }
-private:
-    ExprCaster(Expr& n) : node(0) {
-        n.acceptE(*this);
-    }
-    T* node;
-};
+template <class T> static inline const T* cast(const Expr* E) {
+    if (isa<T>(E)) return static_cast<const T*>(E);
+    return 0;
+}
 
 }
 

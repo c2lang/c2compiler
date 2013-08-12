@@ -436,7 +436,7 @@ C2::QualType FunctionAnalyser::Decl2Type(Decl* decl) {
 
 C2::QualType FunctionAnalyser::analyseExpr(Expr* expr) {
     LOG_FUNC
-    switch (expr->etype()) {
+    switch (expr->getKind()) {
     case EXPR_INTEGER_LITERAL:
         // TEMP for now always return type int
         return QualType(BuiltinType::get(TYPE_INT));
@@ -462,7 +462,7 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr) {
             if (!Res.ok) break;
             if (!Res.decl) break;
             if (Res.pkg) {
-                IdentifierExpr* id = ExprCaster<IdentifierExpr>::getType(expr);
+                IdentifierExpr* id = cast<IdentifierExpr>(expr);
                 id->setPackage(Res.pkg);
                 id->setDecl(Res.decl);
             }
@@ -499,7 +499,7 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr) {
 void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
     LOG_FUNC
 
-    switch (expr->etype()) {
+    switch (expr->getKind()) {
     case EXPR_INTEGER_LITERAL:
     case EXPR_STRING:
     case EXPR_BOOL:
@@ -515,7 +515,7 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
     case EXPR_IDENTIFIER:
         {
             ScopeResult Res = analyseIdentifier(expr);
-            IdentifierExpr* id = ExprCaster<IdentifierExpr>::getType(expr);
+            IdentifierExpr* id = cast<IdentifierExpr>(expr);
             if (!Res.ok) return;
             if (!Res.decl) return;
             if (Res.pkg) {
@@ -587,7 +587,7 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
 
 void FunctionAnalyser::analyseInitList(Expr* expr, QualType expectedType) {
     LOG_FUNC
-    InitListExpr* I = ExprCaster<InitListExpr>::getType(expr);
+    InitListExpr* I = cast<InitListExpr>(expr);
     assert(I);
     assert(expectedType.isValid());
 
@@ -639,7 +639,7 @@ void FunctionAnalyser::analyseInitList(Expr* expr, QualType expectedType) {
 
 void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     LOG_FUNC
-    DeclExpr* decl = ExprCaster<DeclExpr>::getType(expr);
+    DeclExpr* decl = cast<DeclExpr>(expr);
     assert(decl);
 
     // check type and convert User types
@@ -670,7 +670,7 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
 
 QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr) {
     LOG_FUNC
-    BinaryOperator* binop = ExprCaster<BinaryOperator>::getType(expr);
+    BinaryOperator* binop = cast<BinaryOperator>(expr);
     assert(binop);
     QualType TLeft = analyseExpr(binop->getLHS());
     QualType TRight = analyseExpr(binop->getRHS());
@@ -732,7 +732,7 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr) {
 
 QualType FunctionAnalyser::analyseConditionalOperator(Expr* expr) {
     LOG_FUNC
-    ConditionalOperator* condop = ExprCaster<ConditionalOperator>::getType(expr);
+    ConditionalOperator* condop = cast<ConditionalOperator>(expr);
     assert(condop);
     analyseExpr(condop->getCond());
     QualType TLeft = analyseExpr(condop->getLHS());
@@ -743,7 +743,7 @@ QualType FunctionAnalyser::analyseConditionalOperator(Expr* expr) {
 
 QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr) {
     LOG_FUNC
-    UnaryOperator* unaryop = ExprCaster<UnaryOperator>::getType(expr);
+    UnaryOperator* unaryop = cast<UnaryOperator>(expr);
     assert(unaryop);
     QualType LType = analyseExpr(unaryop->getExpr());
     if (LType.isNull()) return 0;
@@ -769,14 +769,14 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr) {
 
 void FunctionAnalyser::analyseBuiltinExpr(Expr* expr) {
     LOG_FUNC
-    BuiltinExpr* func = ExprCaster<BuiltinExpr>::getType(expr);
+    BuiltinExpr* func = cast<BuiltinExpr>(expr);
     assert(func);
     analyseExpr(func->getExpr());
     if (func->isSizeFunc()) { // sizeof()
         // TODO can also be type (for sizeof)
     } else { // elemsof()
         Expr* E = func->getExpr();
-        IdentifierExpr* I = ExprCaster<IdentifierExpr>::getType(E);
+        IdentifierExpr* I = cast<IdentifierExpr>(E);
         assert(I && "expr should be IdentifierExpr");
         Decl* D = I->getDecl();
         // should be VarDecl(for array/enum) or TypeDecl(array/enum)
@@ -815,7 +815,7 @@ void FunctionAnalyser::analyseBuiltinExpr(Expr* expr) {
 
 QualType FunctionAnalyser::analyseArraySubscript(Expr* expr) {
     LOG_FUNC
-    ArraySubscriptExpr* sub = ExprCaster<ArraySubscriptExpr>::getType(expr);
+    ArraySubscriptExpr* sub = cast<ArraySubscriptExpr>(expr);
     assert(sub);
     QualType LType = analyseExpr(sub->getBase());
     if (LType.isNull()) return 0;
@@ -832,7 +832,7 @@ QualType FunctionAnalyser::analyseArraySubscript(Expr* expr) {
 
 QualType FunctionAnalyser::analyseMemberExpr(Expr* expr) {
     LOG_FUNC
-    MemberExpr* M = ExprCaster<MemberExpr>::getType(expr);
+    MemberExpr* M = cast<MemberExpr>(expr);
     assert(M);
     IdentifierExpr* member = M->getMember();
 
@@ -846,11 +846,11 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr) {
     // var->member
     // At least check if it exists for now
     Expr* base = M->getBase();
-    if (base->etype() == EXPR_IDENTIFIER) {
+    if (base->getKind() == EXPR_IDENTIFIER) {
         ScopeResult SR = analyseIdentifier(base);
         if (!SR.ok) return QualType();
         if (SR.decl) {
-            IdentifierExpr* base_id = ExprCaster<IdentifierExpr>::getType(base);
+            IdentifierExpr* base_id = cast<IdentifierExpr>(base);
             switch (SR.decl->getKind()) {
             case DECL_FUNC:
             case DECL_TYPE:
@@ -972,14 +972,14 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr) {
 
 QualType FunctionAnalyser::analyseParenExpr(Expr* expr) {
     LOG_FUNC
-    ParenExpr* P = ExprCaster<ParenExpr>::getType(expr);
+    ParenExpr* P = cast<ParenExpr>(expr);
     assert(P);
     return analyseExpr(P->getExpr());
 }
 
 QualType FunctionAnalyser::analyseCall(Expr* expr) {
     LOG_FUNC
-    CallExpr* call = ExprCaster<CallExpr>::getType(expr);
+    CallExpr* call = cast<CallExpr>(expr);
     assert(call);
     // analyse function
     QualType LType = analyseExpr(call->getFn());
@@ -1023,7 +1023,7 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
 
 ScopeResult FunctionAnalyser::analyseIdentifier(Expr* expr) {
     LOG_FUNC
-    IdentifierExpr* id = ExprCaster<IdentifierExpr>::getType(expr);
+    IdentifierExpr* id = cast<IdentifierExpr>(expr);
     assert(id);
     ScopeResult res = curScope->findSymbol(id->getName());
     if (res.decl) {

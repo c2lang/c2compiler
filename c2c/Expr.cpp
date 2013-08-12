@@ -35,8 +35,9 @@ static int deleteCount;
 #endif
 
 
-Expr::Expr()
-    : isStatement(false)
+Expr::Expr(ExprKind k)
+    : kind(k)
+    , isStatement(false)
 {
 #ifdef EXPR_DEBUG
     creationCount++;
@@ -53,15 +54,11 @@ Expr::~Expr() {
 
 STMT_VISITOR_ACCEPT(Expr);
 
-EXPR_VISITOR_ACCEPT(IntegerLiteral);
-
 void IntegerLiteral::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[integer " << Value.getSExtValue() << "]\n";
 }
 
-
-EXPR_VISITOR_ACCEPT(FloatingLiteral);
 
 void FloatingLiteral::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
@@ -71,23 +68,17 @@ void FloatingLiteral::print(int indent, StringBuilder& buffer) const {
 }
 
 
-EXPR_VISITOR_ACCEPT(StringExpr);
-
 void StringExpr::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[text '" << value << "']\n";
 }
 
 
-EXPR_VISITOR_ACCEPT(BoolLiteralExpr);
-
 void BoolLiteralExpr::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[bool " << value << "]\n";
 }
 
-
-EXPR_VISITOR_ACCEPT(CharLiteralExpr);
 
 void CharLiteralExpr::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
@@ -97,15 +88,13 @@ void CharLiteralExpr::print(int indent, StringBuilder& buffer) const {
 
 CallExpr::~CallExpr() {}
 
-EXPR_VISITOR_ACCEPT(CallExpr);
-
 void CallExpr::addArg(Expr* arg) {
     args.push_back(arg);
 }
 
 
 static void expr2name(Expr* expr, StringBuilder& buffer) {
-    switch (expr->etype()) {
+    switch (expr->getKind()) {
     case EXPR_INTEGER_LITERAL:
     case EXPR_STRING:
     case EXPR_BOOL:
@@ -115,7 +104,7 @@ static void expr2name(Expr* expr, StringBuilder& buffer) {
         break;
     case EXPR_IDENTIFIER:
         {
-            IdentifierExpr* id = ExprCaster<IdentifierExpr>::getType(expr);
+            IdentifierExpr* id = cast<IdentifierExpr>(expr);
             buffer << id->getName();
             return;
         }
@@ -130,7 +119,7 @@ static void expr2name(Expr* expr, StringBuilder& buffer) {
         break;
     case EXPR_MEMBER:
         {
-            MemberExpr* member = ExprCaster<MemberExpr>::getType(expr);
+            MemberExpr* member = cast<MemberExpr>(expr);
             expr2name(member->getBase(), buffer);
             buffer << '.';
             buffer << member->getMember()->getName();
@@ -155,8 +144,6 @@ void CallExpr::print(int indent, StringBuilder& buffer) const {
 }
 
 
-EXPR_VISITOR_ACCEPT(IdentifierExpr);
-
 void IdentifierExpr::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[identifier ";
@@ -172,15 +159,14 @@ void IdentifierExpr::print(int indent, StringBuilder& buffer) const {
 TypeExpr::~TypeExpr() {
 }
 
-EXPR_VISITOR_ACCEPT(TypeExpr);
-
 void TypeExpr::print(int indent, StringBuilder& buffer) const {
     QT.print(indent, buffer, QualType::RECURSE_NONE);
 }
 
 
 InitListExpr::InitListExpr(SourceLocation left, SourceLocation right, ExprList& values_)
-    : leftBrace(left)
+    : Expr(EXPR_INITLIST)
+    , leftBrace(left)
     , rightBrace(right)
     , values(values_)
 {}
@@ -190,8 +176,6 @@ InitListExpr::~InitListExpr() {
         delete values[i];
     }
 }
-
-EXPR_VISITOR_ACCEPT(InitListExpr);
 
 void InitListExpr::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
@@ -204,7 +188,8 @@ void InitListExpr::print(int indent, StringBuilder& buffer) const {
 
 DeclExpr::DeclExpr(const std::string& name_, SourceLocation& loc_,
             QualType type_, Expr* initValue_)
-    : name(name_)
+    : Expr(EXPR_DECL)
+    , name(name_)
     , loc(loc_)
     , type(type_)
     , canonicalType(0)
@@ -213,8 +198,6 @@ DeclExpr::DeclExpr(const std::string& name_, SourceLocation& loc_,
 {}
 
 DeclExpr::~DeclExpr() {}
-
-EXPR_VISITOR_ACCEPT(DeclExpr);
 
 void DeclExpr::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
@@ -240,7 +223,8 @@ void DeclExpr::print(int indent, StringBuilder& buffer) const {
 
 
 BinaryOperator::BinaryOperator(Expr* lhs_, Expr* rhs_, Opcode opc_, SourceLocation opLoc_)
-    : opLoc(opLoc_)
+    : Expr(EXPR_BINOP)
+    , opLoc(opLoc_)
     , opc(opc_)
     , lhs(lhs_)
     , rhs(rhs_)
@@ -250,8 +234,6 @@ BinaryOperator::~BinaryOperator() {
     delete lhs;
     delete rhs;
 }
-
-EXPR_VISITOR_ACCEPT(BinaryOperator);
 
 const char* BinaryOperator::OpCode2str(clang::BinaryOperatorKind opc) {
     switch (opc) {
@@ -300,7 +282,8 @@ void BinaryOperator::print(int indent, StringBuilder& buffer) const {
 
 ConditionalOperator::ConditionalOperator(SourceLocation questionLoc, SourceLocation colonLoc,
                 Expr* cond_, Expr* lhs_, Expr* rhs_)
-    : QuestionLoc(questionLoc)
+    : Expr(EXPR_CONDOP)
+    , QuestionLoc(questionLoc)
     , ColonLoc(colonLoc)
     , cond(cond_)
     , lhs(lhs_)
@@ -313,8 +296,6 @@ ConditionalOperator::~ConditionalOperator() {
     delete rhs;
 }
 
-EXPR_VISITOR_ACCEPT(ConditionalOperator);
-
 void ConditionalOperator::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[condop]\n";
@@ -325,7 +306,8 @@ void ConditionalOperator::print(int indent, StringBuilder& buffer) const {
 
 
 UnaryOperator::UnaryOperator(SourceLocation opLoc_, Opcode opc_, Expr* val_)
-    : opLoc(opLoc_)
+    : Expr(EXPR_UNARYOP)
+    , opLoc(opLoc_)
     , opc(opc_)
     , val(val_)
 {}
@@ -333,8 +315,6 @@ UnaryOperator::UnaryOperator(SourceLocation opLoc_, Opcode opc_, Expr* val_)
 UnaryOperator::~UnaryOperator() {
     delete val;
 }
-
-EXPR_VISITOR_ACCEPT(UnaryOperator);
 
 const char* UnaryOperator::OpCode2str(clang::UnaryOperatorKind opc) {
     switch (opc) {
@@ -362,17 +342,9 @@ void UnaryOperator::print(int indent, StringBuilder& buffer) const {
 }
 
 
-BuiltinExpr::BuiltinExpr(SourceLocation Loc_, Expr* expr_, bool isSizeof_)
-    : Loc(Loc_)
-    , expr(expr_)
-    , isSizeof(isSizeof_)
-{}
-
 BuiltinExpr::~BuiltinExpr() {
     delete expr;
 }
-
-EXPR_VISITOR_ACCEPT(BuiltinExpr);
 
 void BuiltinExpr::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
@@ -383,7 +355,8 @@ void BuiltinExpr::print(int indent, StringBuilder& buffer) const {
 
 
 ArraySubscriptExpr::ArraySubscriptExpr(SourceLocation RLoc_, Expr* Base_, Expr* Idx_)
-    : RLoc(RLoc_)
+    : Expr(EXPR_ARRAYSUBSCRIPT)
+    , RLoc(RLoc_)
     , base(Base_)
     , idx(Idx_)
 {}
@@ -392,8 +365,6 @@ ArraySubscriptExpr::~ArraySubscriptExpr() {
     delete base;
     delete idx;
 }
-
-EXPR_VISITOR_ACCEPT(ArraySubscriptExpr);
 
 void ArraySubscriptExpr::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
@@ -407,8 +378,6 @@ MemberExpr::~MemberExpr() {
     delete Base;
     delete Member;
 }
-
-EXPR_VISITOR_ACCEPT(MemberExpr);
 
 void MemberExpr::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
@@ -426,8 +395,6 @@ const char* MemberExpr::getFullName() const {
 ParenExpr::~ParenExpr() {
     delete Val;
 }
-
-EXPR_VISITOR_ACCEPT(ParenExpr);
 
 void ParenExpr::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);

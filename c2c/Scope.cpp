@@ -117,10 +117,10 @@ int FileScope::checkStructType(const Type* type, bool used_public) {
 int FileScope::checkUserType(Type* type, Expr* id, bool used_public) {
     // TODO refactor
     const Package* pkg = 0;
-    switch (id->etype()) {
+    switch (id->getKind()) {
     case EXPR_IDENTIFIER:   // unqualified
         {
-            IdentifierExpr* I = ExprCaster<IdentifierExpr>::getType(id);
+            IdentifierExpr* I = cast<IdentifierExpr>(id);
             assert(I);
             ScopeResult res = findSymbol(I->getName());
             if (!res.decl) {
@@ -154,10 +154,10 @@ int FileScope::checkUserType(Type* type, Expr* id, bool used_public) {
         break;
     case EXPR_MEMBER:   // fully qualified
         {
-            MemberExpr* M = ExprCaster<MemberExpr>::getType(id);
+            MemberExpr* M = cast<MemberExpr>(id);
             assert(M);
             Expr* base = M->getBase();
-            IdentifierExpr* pkg_id = ExprCaster<IdentifierExpr>::getType(base);
+            IdentifierExpr* pkg_id = cast<IdentifierExpr>(base);
             assert(pkg_id);
             const std::string& pkgName = pkg_id->getName();
             // check if package exists
@@ -182,7 +182,7 @@ int FileScope::checkUserType(Type* type, Expr* id, bool used_public) {
             }
             // check member
             Expr* member = M->getMember();
-            IdentifierExpr* member_id = ExprCaster<IdentifierExpr>::getType(member);
+            IdentifierExpr* member_id = cast<IdentifierExpr>(member);
             assert(member_id);
             // check Type
             Decl* symbol = pkg->findSymbol(member_id->getName());

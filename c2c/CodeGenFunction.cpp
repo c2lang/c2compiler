@@ -58,7 +58,7 @@ llvm::Function* CodeGenFunction::generateProto(const std::string& pkgname) {
         std::vector<llvm::Type*> Args;
         for (unsigned int i=0; i<FuncDecl->args.size(); i++) {
             // TODO already store as DeclExpr?
-            DeclExpr* de = ExprCaster<DeclExpr>::getType(FuncDecl->args[i]);
+            DeclExpr* de = cast<DeclExpr>(FuncDecl->args[i]);
             assert(de);
             QualType qt = de->getType();
             Args.push_back(CGM.ConvertType(qt.getTypePtr()));
@@ -248,7 +248,7 @@ void CodeGenFunction::EmitBranchOnBoolExpr(const Expr *Cond,
                                            llvm::BasicBlock *TrueBlock,
                                            llvm::BasicBlock *FalseBlock) {
   //Cond = Cond->IgnoreParens();
-  if (const BinaryOperator *CondBOp = ExprCaster<BinaryOperator>::getType(Cond)) {
+  if (const BinaryOperator *CondBOp = cast<BinaryOperator>(Cond)) {
     // Handle X && Y in a condition.
     if (CondBOp->getOpcode() == BO_LAnd) {
 #if 0
@@ -360,22 +360,22 @@ void CodeGenFunction::EmitBranchOnBoolExpr(const Expr *Cond,
 
 
 llvm::Value* CodeGenFunction::EmitExpr(const Expr* E) {
-    switch (E->etype()) {
+    switch (E->getKind()) {
     case EXPR_INTEGER_LITERAL:
         {
-            IntegerLiteral* N = ExprCaster<IntegerLiteral>::getType(E);
+            const IntegerLiteral* N = cast<IntegerLiteral>(E);
             // TODO number is always int32 (signed is true)
             return Builder.getInt(N->Value);
             //return llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), N->value, true);
         }
     case EXPR_STRING:
         {
-            StringExpr* S = ExprCaster<StringExpr>::getType(E);
+            const StringExpr* S = cast<StringExpr>(E);
             return Builder.CreateGlobalStringPtr(S->value);
         }
     case EXPR_BOOL:
         {
-            BoolLiteralExpr* B = ExprCaster<BoolLiteralExpr>::getType(E);
+            const BoolLiteralExpr* B = cast<BoolLiteralExpr>(E);
             return llvm::ConstantInt::get(llvm::Type::getInt1Ty(context), B->value, true);
         }
     case EXPR_CHARLITERAL:
@@ -383,19 +383,19 @@ llvm::Value* CodeGenFunction::EmitExpr(const Expr* E) {
         break;
     case EXPR_FLOAT_LITERAL:
         {
-            FloatingLiteral* F = ExprCaster<FloatingLiteral>::getType(E);
+            const FloatingLiteral* F = cast<FloatingLiteral>(E);
             return llvm::ConstantFP::get(context, F->Value);
         }
     case EXPR_CALL:
-        return EmitCallExpr(ExprCaster<CallExpr>::getType(E));
+        return EmitCallExpr(cast<CallExpr>(E));
     case EXPR_IDENTIFIER:
-        return EmitIdentifierExpr(ExprCaster<IdentifierExpr>::getType(E));
+        return EmitIdentifierExpr(cast<IdentifierExpr>(E));
     case EXPR_INITLIST:
     case EXPR_TYPE:
         break;
     case EXPR_DECL:
         {
-            DeclExpr* D = ExprCaster<DeclExpr>::getType(E);
+            const DeclExpr* D = cast<DeclExpr>(E);
             EmitVarDecl(D);
             return 0;
         }
@@ -420,18 +420,18 @@ llvm::Value* CodeGenFunction::EmitCallExpr(const CallExpr* E) {
     // TODO for now assert IdentifierExpr;
 
     const Expr* Fn = E->getFn();
-    IdentifierExpr* FuncName = 0;
-    switch (Fn->etype()) {
+    const IdentifierExpr* FuncName = 0;
+    switch (Fn->getKind()) {
     default:
         assert(0 && "TODO unsupported call type");
         return 0;
     case EXPR_IDENTIFIER:
-        FuncName = ExprCaster<IdentifierExpr>::getType(Fn);
+        FuncName = cast<IdentifierExpr>(Fn);
         break;
     case EXPR_MEMBER:
         {
             // NOTE: we only support pkg.symbol now (not struct.member)
-            MemberExpr* M = ExprCaster<MemberExpr>::getType(Fn);
+            const MemberExpr* M = cast<MemberExpr>(Fn);
             FuncName = M->getMember();
             assert(FuncName->getPackage() && "Only support pkg.symbol for now");
         }
