@@ -485,7 +485,7 @@ llvm::Value* CodeGenFunction::EmitIdentifierExpr(const IdentifierExpr* E) {
         break;
     case DECL_ENUMVALUE:
         {
-            EnumConstantDecl* ECD = DeclCaster<EnumConstantDecl>::getType(D);
+            EnumConstantDecl* ECD = cast<EnumConstantDecl>(D);
             // Nasty, we need the value of the constant, but we have no place to store it.
             // We need to change the AST structure for this.
             // TODO correct width + value

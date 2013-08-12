@@ -40,7 +40,7 @@ bool ScopeAnalyser::handle(Decl* decl) {
     switch (decl->dtype()) {
     case DECL_FUNC:
         {
-            FunctionDecl* func = DeclCaster<FunctionDecl>::getType(decl);
+            FunctionDecl* func = cast<FunctionDecl>(decl);
             assert(func);
             // check return type
             checkType(func->getReturnType(), is_public);
@@ -57,7 +57,7 @@ bool ScopeAnalyser::handle(Decl* decl) {
         break;
     case DECL_VAR:
         {
-            VarDecl* vd = DeclCaster<VarDecl>::getType(decl);
+            VarDecl* vd = cast<VarDecl>(decl);
             assert(vd);
             checkType(vd->getType(), is_public);
         }
@@ -67,7 +67,7 @@ bool ScopeAnalyser::handle(Decl* decl) {
         break;
     case DECL_TYPE:
         {
-            TypeDecl* td = DeclCaster<TypeDecl>::getType(decl);
+            TypeDecl* td = cast<TypeDecl>(decl);
             assert(td);
             checkType(td->getType(), is_public);
         }
@@ -75,7 +75,7 @@ bool ScopeAnalyser::handle(Decl* decl) {
         break;
     case DECL_ARRAYVALUE:
         {
-            ArrayValueDecl* A = DeclCaster<ArrayValueDecl>::getType(decl);
+            ArrayValueDecl* A = cast<ArrayValueDecl>(decl);
             ScopeResult SR = globals.findSymbol(A->getName());
             if (!SR.ok) break;
             if (!SR.decl) {
@@ -92,7 +92,7 @@ bool ScopeAnalyser::handle(Decl* decl) {
                 fprintf(stderr, "TODO symbol '%s' is not a variable\n", A->getName().c_str());
                 break;
             }
-            VarDecl* VD = DeclCaster<VarDecl>::getType(SR.decl);
+            VarDecl* VD = cast<VarDecl>(SR.decl);
             QualType T = VD->getType();
             if (!T.isArrayType()) {
                 Diags.Report(A->getLocation(), diag::err_typecheck_subscript);
@@ -115,7 +115,7 @@ void ScopeAnalyser::checkType(QualType type, bool used_public) {
 
 void ScopeAnalyser::checkUse(Decl* decl) {
     std::string pkgName = decl->getName();
-    UseDecl* useDecl = DeclCaster<UseDecl>::getType(decl);
+    UseDecl* useDecl = cast<UseDecl>(decl);
     assert(useDecl);
 
     // check if package exists

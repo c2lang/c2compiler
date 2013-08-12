@@ -39,6 +39,7 @@ class DeclVisitor;
 class ArrayValueDecl;
 class CompoundStmt;
 
+// TODO rename to DeclKind
 enum DeclType {
     DECL_FUNC = 0,
     DECL_VAR,
@@ -50,10 +51,10 @@ enum DeclType {
 
 class Decl {
 public:
-    Decl(bool is_public_);
+    Decl(DeclType k, bool is_public_);
     virtual ~Decl();
-    virtual DeclType dtype() const = 0;
-    virtual void acceptD(DeclVisitor& v) = 0;
+    // TODO rename getKind()
+    DeclType dtype() const { return kind; }
     virtual void print(StringBuilder& buffer) = 0;
 
     virtual const std::string& getName() const = 0;
@@ -67,6 +68,8 @@ public:
 protected:
     bool is_public;
 private:
+    DeclType kind;
+
     Decl(const Decl&);
     Decl& operator= (const Decl&);
 };
@@ -76,8 +79,9 @@ class FunctionDecl : public Decl {
 public:
     FunctionDecl(const std::string& name_, SourceLocation loc_, bool is_public_, QualType rtype_);
     virtual ~FunctionDecl();
-    virtual DeclType dtype() const { return DECL_FUNC; }
-    virtual void acceptD(DeclVisitor& v);
+    static bool classof(const Decl* D) {
+        return D->dtype() == DECL_FUNC;
+    }
     virtual void print(StringBuilder& buffer);
 
     void setBody(CompoundStmt* body_) {
@@ -124,8 +128,9 @@ class VarDecl : public Decl {
 public:
     VarDecl(DeclExpr* decl_, bool is_public, bool inExpr);
     virtual ~VarDecl();
-    virtual DeclType dtype() const { return DECL_VAR; }
-    virtual void acceptD(DeclVisitor& v);
+    static bool classof(const Decl* D) {
+        return D->dtype() == DECL_VAR;
+    }
     virtual void print(StringBuilder& buffer);
 
     virtual const std::string& getName() const;
@@ -148,8 +153,9 @@ class EnumConstantDecl : public Decl {
 public:
     EnumConstantDecl(DeclExpr* decl_, bool is_public);
     virtual ~EnumConstantDecl();
-    virtual DeclType dtype() const { return DECL_ENUMVALUE; }
-    virtual void acceptD(DeclVisitor& v);
+    static bool classof(const Decl* D) {
+        return D->dtype() == DECL_ENUMVALUE;
+    }
     virtual void print(StringBuilder& buffer);
 
     virtual const std::string& getName() const;
@@ -168,8 +174,9 @@ class TypeDecl : public Decl {
 public:
     TypeDecl(const std::string& name_, SourceLocation loc_, QualType type_, bool is_public_);
     virtual ~TypeDecl();
-    virtual DeclType dtype() const { return DECL_TYPE; }
-    virtual void acceptD(DeclVisitor& v);
+    static bool classof(const Decl* D) {
+        return D->dtype() == DECL_TYPE;
+    }
     virtual void print(StringBuilder& buffer);
 
     virtual const std::string& getName() const { return name; }
@@ -186,8 +193,9 @@ class ArrayValueDecl : public Decl {
 public:
     ArrayValueDecl(const std::string& name_, SourceLocation loc_, Expr* value_);
     virtual ~ArrayValueDecl();
-    virtual DeclType dtype() const { return DECL_ARRAYVALUE; }
-    virtual void acceptD(DeclVisitor& v);
+    static bool classof(const Decl* D) {
+        return D->dtype() == DECL_ARRAYVALUE;
+    }
     virtual void print(StringBuilder& buffer);
 
     virtual const std::string& getName() const { return name; }
@@ -203,8 +211,9 @@ private:
 class UseDecl : public Decl {
 public:
     UseDecl(const std::string& name_, SourceLocation loc_, bool isLocal_, const char* alias_, SourceLocation aliasLoc_);
-    virtual DeclType dtype() const { return DECL_USE; }
-    virtual void acceptD(DeclVisitor& v);
+    static bool classof(const Decl* D) {
+        return D->dtype() == DECL_USE;
+    }
     virtual void print(StringBuilder& buffer);
 
     virtual const std::string& getName() const { return name; }
@@ -220,41 +229,19 @@ private:
     bool is_local;
 };
 
+template <class T> static inline bool isa(const Decl* D) {
+    return T::classof(D);
+}
 
-class DeclVisitor {
-public:
-    virtual ~DeclVisitor() {}
-    virtual void visit(C2::Decl&) { assert(0); }    // add subclass below
-    virtual void visit(FunctionDecl&) {}
-    virtual void visit(VarDecl&) {}
-    virtual void visit(EnumConstantDecl&) {}
-    virtual void visit(TypeDecl&) {}
-    virtual void visit(ArrayValueDecl&) {}
-    virtual void visit(UseDecl&) {}
-    // add more sub-classes here
-};
+template <class T> static inline T* cast(Decl* D) {
+    if (isa<T>(D)) return static_cast<T*>(D);
+    return 0;
+}
 
-#define DECL_VISITOR_ACCEPT(a) void a::acceptD(DeclVisitor& v) { v.visit(*this); }
-
-template <class T> class DeclCaster : public DeclVisitor {
-public:
-    virtual void visit(T& node_) {
-        node = &node_;
-    }
-    static T* getType(C2::Decl& node_) {
-        DeclCaster<T> visitor(node_);
-        return visitor.node;
-    }
-    static T* getType(C2::Decl* node_) {
-        DeclCaster<T> visitor(*node_);
-        return visitor.node;
-    }
-private:
-    DeclCaster(C2::Decl& n) : node(0) {
-        n.acceptD(*this);
-    }
-    T* node;
-};
+template <class T> static inline const T* cast(const Decl* D) {
+    if (isa<T>(D)) return static_cast<const T*>(D);
+    return 0;
+}
 
 }
 

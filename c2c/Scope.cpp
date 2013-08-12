@@ -136,7 +136,7 @@ int FileScope::checkUserType(Type* type, Expr* id, bool used_public) {
                 Diags.Report(I->getLocation(), diag::err_not_public) << I->getName();
                 return 1;
             }
-            TypeDecl* td = DeclCaster<TypeDecl>::getType(res.decl);
+            TypeDecl* td = cast<TypeDecl>(res.decl);
             if (!td) {
                 Diags.Report(I->getLocation(), diag::err_not_a_typename) << I->getName();
                 return 1;
@@ -190,7 +190,7 @@ int FileScope::checkUserType(Type* type, Expr* id, bool used_public) {
                 Diags.Report(member_id->getLocation(), diag::err_unknown_typename) << M->getFullName();
                 return 1;
             }
-            TypeDecl* td = DeclCaster<TypeDecl>::getType(symbol);
+            TypeDecl* td = cast<TypeDecl>(symbol);
             if (!td) {
                 Diags.Report(member_id->getLocation(), diag::err_not_a_typename) << M->getFullName();
                 return 1;

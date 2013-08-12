@@ -146,7 +146,7 @@ void CodeGenModule::write(const std::string& target, const std::string& name) {
 }
 
 void CodeGenModule::EmitFunctionProto(Decl* D) {
-    FunctionDecl* F = DeclCaster<FunctionDecl>::getType(D);
+    FunctionDecl* F = cast<FunctionDecl>(D);
     assert(F);
     CodeGenFunction cgf(*this, F);
     llvm::Function* proto = cgf.generateProto(pkg->getName());
@@ -157,14 +157,14 @@ void CodeGenModule::EmitTopLevelDecl(Decl* D) {
     switch (D->dtype()) {
     case DECL_FUNC:
         {
-            FunctionDecl* F = DeclCaster<FunctionDecl>::getType(D);
+            FunctionDecl* F = cast<FunctionDecl>(D);
             CodeGenFunction cgf(*this, F);
             cgf.generateBody(F->getIRProto());
         }
         break;
     case DECL_VAR:
         {
-            VarDecl* Var = DeclCaster<VarDecl>::getType(D);
+            VarDecl* Var = cast<VarDecl>(D);
             QualType qt = Var->getType();
             llvm::Type* type = ConvertType(qt.getTypePtr());
             bool constant = false;
@@ -193,7 +193,7 @@ void CodeGenModule::EmitTopLevelDecl(Decl* D) {
         break;
     case DECL_TYPE:
         {
-            TypeDecl* TD = DeclCaster<TypeDecl>::getType(D);
+            TypeDecl* TD = cast<TypeDecl>(D);
             QualType QT = TD->getType();
             // NOTE: only generate code for struct/union types (even this is optional)
             if (QT.isStructOrUnionType()) {
@@ -272,7 +272,7 @@ llvm::Type* CodeGenModule::ConvertType(const C2::Type* type) {
 llvm::Function* CodeGenModule::createExternal(const Package* P, const std::string& name) {
     Decl* D = P->findSymbol(name);
     assert(D);
-    FunctionDecl* F = DeclCaster<FunctionDecl>::getType(D);
+    FunctionDecl* F = cast<FunctionDecl>(D);
     assert(F);
     CodeGenFunction cgf(*this, F);
     llvm::Function* proto = cgf.generateProto(P->getCName());

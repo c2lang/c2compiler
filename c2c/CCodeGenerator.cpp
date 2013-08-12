@@ -376,7 +376,7 @@ void CCodeGenerator::write(const std::string& target, const std::string& name) {
 }
 
 void CCodeGenerator::EmitFunction(Decl* D) {
-    FunctionDecl* F = DeclCaster<FunctionDecl>::getType(D);
+    FunctionDecl* F = cast<FunctionDecl>(D);
     if (mode == SINGLE_FILE) {
         // emit all function protos as forward declarations in header
         EmitFunctionProto(F, hbuf);
@@ -397,7 +397,7 @@ void CCodeGenerator::EmitFunction(Decl* D) {
 }
 
 void CCodeGenerator::EmitVariable(Decl* D) {
-    VarDecl* V = DeclCaster<VarDecl>::getType(D);
+    VarDecl* V = cast<VarDecl>(D);
     if (V->isPublic() && mode != SINGLE_FILE) {
         // TODO type
         hbuf << "extern ";
@@ -437,7 +437,7 @@ void CCodeGenerator::EmitVariable(Decl* D) {
 }
 
 void CCodeGenerator::EmitType(Decl* D) {
-    TypeDecl* T = DeclCaster<TypeDecl>::getType(D);
+    TypeDecl* T = cast<TypeDecl>(D);
     StringBuilder* out = &cbuf;
     if (D->isPublic()) out = &hbuf;
     *out << "typedef ";

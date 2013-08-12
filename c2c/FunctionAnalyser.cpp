@@ -107,7 +107,7 @@ bool FunctionAnalyser::handle(Decl* decl) {
     switch (decl->dtype()) {
     case DECL_FUNC:
         {
-            func = DeclCaster<FunctionDecl>::getType(decl);
+            func = cast<FunctionDecl>(decl);
             assert(func);
             EnterScope(Scope::FnScope | Scope::DeclScope);
             // add arguments to new scope
@@ -147,7 +147,7 @@ bool FunctionAnalyser::handle(Decl* decl) {
     case DECL_VAR:
         {
             // Bit nasty to analyse Initialization values, but we need a lot of shared code
-            VarDecl* VD = DeclCaster<VarDecl>::getType(decl);
+            VarDecl* VD = cast<VarDecl>(decl);
             QualType QT = VD->getType();
             const Type* T = QT.getTypePtr();
             if (T->isArrayType() && T->getArrayExpr()) {
@@ -407,22 +407,22 @@ C2::QualType FunctionAnalyser::Decl2Type(Decl* decl) {
     switch (decl->dtype()) {
     case DECL_FUNC:
         {
-            FunctionDecl* FD = DeclCaster<FunctionDecl>::getType(decl);
+            FunctionDecl* FD = cast<FunctionDecl>(decl);
             return FD->getType();
         }
     case DECL_VAR:
         {
-            VarDecl* VD = DeclCaster<VarDecl>::getType(decl);
+            VarDecl* VD = cast<VarDecl>(decl);
             return VD->getType();
         }
     case DECL_ENUMVALUE:
         {
-            EnumConstantDecl* EC = DeclCaster<EnumConstantDecl>::getType(decl);
+            EnumConstantDecl* EC = cast<EnumConstantDecl>(decl);
             return EC->getType();
         }
     case DECL_TYPE:
         {
-            TypeDecl* TD = DeclCaster<TypeDecl>::getType(decl);
+            TypeDecl* TD = cast<TypeDecl>(decl);
             return TD->getType();
         }
     case DECL_ARRAYVALUE:
@@ -529,7 +529,7 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
                 break;
             case DECL_VAR:
                 {
-                    VarDecl* VD = DeclCaster<VarDecl>::getType(Res.decl);
+                    VarDecl* VD = cast<VarDecl>(Res.decl);
                     if (inConstExpr) {
                         QualType T = VD->getType();
                         if (!T.isConstQualified()) {
@@ -787,7 +787,7 @@ void FunctionAnalyser::analyseBuiltinExpr(Expr* expr) {
             return;
         case DECL_VAR:
             {
-                VarDecl* VD = DeclCaster<VarDecl>::getType(D);
+                VarDecl* VD = cast<VarDecl>(D);
                 QualType Q = VD->getType();
                 if (!Q.isArrayType() && !Q.isEnumType()) {
                     StringBuilder msg;
@@ -859,7 +859,7 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr) {
             case DECL_VAR:
                 {
                     // TODO extract to function?
-                    VarDecl* VD = DeclCaster<VarDecl>::getType(SR.decl);
+                    VarDecl* VD = cast<VarDecl>(SR.decl);
                     QualType T = VD->getType();
                     assert(T.isValid());  // analyser should set
 

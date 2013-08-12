@@ -42,7 +42,7 @@ bool GlobalVarAnalyser::handle(Decl* decl) {
     switch (decl->dtype()) {
     case DECL_FUNC:
         {
-            FunctionDecl* FD = DeclCaster<FunctionDecl>::getType(decl);
+            FunctionDecl* FD = cast<FunctionDecl>(decl);
             QualType rtype = FD->getReturnType();
             Type* proto = typeContext.getFunction(rtype);
             for (unsigned i=0; i<FD->numArgs(); i++) {
@@ -61,7 +61,7 @@ bool GlobalVarAnalyser::handle(Decl* decl) {
         break;
     case DECL_TYPE:
         {
-            TypeDecl* TD = DeclCaster<TypeDecl>::getType(decl);
+            TypeDecl* TD = cast<TypeDecl>(decl);
             // TODO set CanonicalType here?
 #if 0
             // not needed anymore?

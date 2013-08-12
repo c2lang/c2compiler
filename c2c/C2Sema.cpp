@@ -226,7 +226,7 @@ C2::FunctionDecl* C2Sema::ActOnFuncDef(const char* name, SourceLocation loc, boo
 }
 
 void C2Sema::ActOnFunctionArgs(Decl* decl, ExprList params) {
-    FunctionDecl* func = DeclCaster<FunctionDecl>::getType(decl);
+    FunctionDecl* func = cast<FunctionDecl>(decl);
     assert(func);
     for (unsigned int i=0; i<params.size(); i++) {
         DeclExpr* de = ExprCaster<DeclExpr>::getType(params[i]);
@@ -243,7 +243,7 @@ void C2Sema::ActOnFunctionArgs(Decl* decl, ExprList params) {
 }
 
 void C2Sema::ActOnFinishFunctionBody(Decl* decl, Stmt* body) {
-    FunctionDecl* func = DeclCaster<FunctionDecl>::getType(decl);
+    FunctionDecl* func = cast<FunctionDecl>(decl);
     assert(func);
     CompoundStmt* C = StmtCaster<CompoundStmt>::getType(body);
     assert(C);
@@ -877,7 +877,7 @@ const C2::UseDecl* C2Sema::findAlias(const char* name) const {
     for (unsigned int i=0; i<ast.decls.size(); i++) {
         Decl* d = ast.decls[i];
         if (d->dtype() != DECL_USE) break;
-        UseDecl* useDecl = DeclCaster<UseDecl>::getType(d);
+        UseDecl* useDecl = cast<UseDecl>(d);
         assert(useDecl);
         if (useDecl->getAlias() == name) return useDecl;
     }

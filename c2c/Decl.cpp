@@ -44,8 +44,9 @@ bool Decl::isSymbol(DeclType d) {
     }
 }
 
-Decl::Decl(bool is_public_)
-    : is_public(is_public_)
+Decl::Decl(DeclType k, bool is_public_)
+    : kind(k)
+    , is_public(is_public_)
 {
 #ifdef DECL_DEBUG
     creationCount++;
@@ -70,7 +71,7 @@ void Decl::dump() {
 FunctionDecl::FunctionDecl(const std::string& name_,
                                  SourceLocation loc_,
                                  bool is_public_, QualType rtype_)
-    : Decl(is_public_)
+    : Decl(DECL_FUNC, is_public_)
     , name(name_)
     , loc(loc_)
     , rtype(rtype_)
@@ -83,8 +84,6 @@ FunctionDecl::FunctionDecl(const std::string& name_,
 FunctionDecl::~FunctionDecl() {
     delete body;
 }
-
-DECL_VISITOR_ACCEPT(FunctionDecl);
 
 void FunctionDecl::print(StringBuilder& buffer) {
     buffer << "[function " << name << "]\n";
@@ -126,7 +125,7 @@ void FunctionDecl::addArg(DeclExpr* arg) {
 
 
 VarDecl::VarDecl(DeclExpr* decl_, bool is_public_, bool inExpr)
-    : Decl(is_public_)
+    : Decl(DECL_VAR, is_public_)
     , decl(decl_)
 {
 }
@@ -134,8 +133,6 @@ VarDecl::VarDecl(DeclExpr* decl_, bool is_public_, bool inExpr)
 VarDecl::~VarDecl() {
     delete decl;
 }
-
-DECL_VISITOR_ACCEPT(VarDecl);
 
 void VarDecl::print(StringBuilder& buffer) {
     buffer << "[var]\n";
@@ -165,7 +162,7 @@ void VarDecl::addInitValue(ArrayValueDecl* value) {
 
 
 EnumConstantDecl::EnumConstantDecl(DeclExpr* decl_, bool is_public)
-    : Decl(is_public)
+    : Decl(DECL_ENUMVALUE, is_public)
     , decl(decl_)
 {
 }
@@ -173,8 +170,6 @@ EnumConstantDecl::EnumConstantDecl(DeclExpr* decl_, bool is_public)
 EnumConstantDecl::~EnumConstantDecl() {
     delete decl;
 }
-
-DECL_VISITOR_ACCEPT(EnumConstantDecl);
 
 void EnumConstantDecl::print(StringBuilder& buffer) {
     buffer << "[enum constant] value " << value << '\n';
@@ -193,7 +188,7 @@ Expr* EnumConstantDecl::getInitValue() const { return decl->getInitValue(); }
 
 
 TypeDecl::TypeDecl(const std::string& name_, SourceLocation loc_, QualType type_, bool is_public_)
-    : Decl(is_public_)
+    : Decl(DECL_TYPE, is_public_)
     , name(name_)
     , loc(loc_)
     , type(type_)
@@ -202,8 +197,6 @@ TypeDecl::TypeDecl(const std::string& name_, SourceLocation loc_, QualType type_
 TypeDecl::~TypeDecl() {
 }
 
-DECL_VISITOR_ACCEPT(TypeDecl);
-
 void TypeDecl::print(StringBuilder& buffer) {
     buffer << "[typedef " << name << "]\n";
     type.print(INDENT, buffer, QualType::RECURSE_ONCE);
@@ -211,7 +204,7 @@ void TypeDecl::print(StringBuilder& buffer) {
 
 
 ArrayValueDecl::ArrayValueDecl(const std::string& name_, SourceLocation loc_, Expr* value_)
-    : Decl(false)
+    : Decl(DECL_ARRAYVALUE, false)
     , name(name_)
     , loc(loc_)
     , value(value_)
@@ -221,8 +214,6 @@ ArrayValueDecl::~ArrayValueDecl() {
     delete value;
 }
 
-DECL_VISITOR_ACCEPT(ArrayValueDecl);
-
 void ArrayValueDecl::print(StringBuilder& buffer) {
     buffer << "[+= " << name << "]\n";
     value->print(INDENT, buffer);
@@ -230,15 +221,13 @@ void ArrayValueDecl::print(StringBuilder& buffer) {
 
 UseDecl::UseDecl(const std::string& name_, SourceLocation loc_, bool isLocal_,
                  const char* alias_, SourceLocation aliasLoc_)
-    : Decl(false)
+    : Decl(DECL_USE, false)
     , name(name_)
     , alias(alias_)
     , loc(loc_)
     , aliasLoc(aliasLoc_)
     , is_local(isLocal_)
 {}
-
-DECL_VISITOR_ACCEPT(UseDecl);
 
 void UseDecl::print(StringBuilder& buffer) {
     buffer << "[use " << name;

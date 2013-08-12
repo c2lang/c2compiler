@@ -396,7 +396,7 @@ bool C2Builder::createPkgs() {
             // also add enum constant names to symbol list, Bit nasty to do here
             // This should be done in C2Sema!!
             if (New->dtype() == DECL_TYPE) {
-                TypeDecl* T = DeclCaster<TypeDecl>::getType(New);
+                TypeDecl* T = cast<TypeDecl>(New);
                 QualType QT = T->getType();
                 if (QT.isEnumType()) {
                     const Type* type = QT.getTypePtr();
