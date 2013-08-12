@@ -479,7 +479,7 @@ llvm::Value* CodeGenFunction::EmitCallExpr(const CallExpr* E) {
 llvm::Value* CodeGenFunction::EmitIdentifierExpr(const IdentifierExpr* E) {
     Decl* D = E->getDecl();
     assert(D);
-    switch (D->dtype()) {
+    switch (D->getKind()) {
     case DECL_FUNC:
     case DECL_VAR:
         break;

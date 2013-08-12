@@ -104,7 +104,7 @@ FunctionAnalyser::~FunctionAnalyser() {
 
 bool FunctionAnalyser::handle(Decl* decl) {
     LOG_FUNC
-    switch (decl->dtype()) {
+    switch (decl->getKind()) {
     case DECL_FUNC:
         {
             func = cast<FunctionDecl>(decl);
@@ -404,7 +404,7 @@ void FunctionAnalyser::analyseStmtExpr(Stmt* stmt) {
 C2::QualType FunctionAnalyser::Decl2Type(Decl* decl) {
     LOG_FUNC
     assert(decl);
-    switch (decl->dtype()) {
+    switch (decl->getKind()) {
     case DECL_FUNC:
         {
             FunctionDecl* FD = cast<FunctionDecl>(decl);
@@ -522,7 +522,7 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
                 id->setPackage(Res.pkg);
                 id->setDecl(Res.decl);
             }
-            switch (Res.decl->dtype()) {
+            switch (Res.decl->getKind()) {
             case DECL_FUNC:
                 // can be ok for const
                 assert(0 && "TODO");
@@ -780,7 +780,7 @@ void FunctionAnalyser::analyseBuiltinExpr(Expr* expr) {
         assert(I && "expr should be IdentifierExpr");
         Decl* D = I->getDecl();
         // should be VarDecl(for array/enum) or TypeDecl(array/enum)
-        switch (D->dtype()) {
+        switch (D->getKind()) {
         case DECL_FUNC:
              fprintf(stderr, "TODO Function err\n");
             // ERROR
@@ -851,7 +851,7 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr) {
         if (!SR.ok) return QualType();
         if (SR.decl) {
             IdentifierExpr* base_id = ExprCaster<IdentifierExpr>::getType(base);
-            switch (SR.decl->dtype()) {
+            switch (SR.decl->getKind()) {
             case DECL_FUNC:
             case DECL_TYPE:
                 fprintf(stderr, "error: member reference base 'type' is not a structure, union or package\n");

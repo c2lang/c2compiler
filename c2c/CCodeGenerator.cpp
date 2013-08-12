@@ -71,7 +71,7 @@ void CCodeGenerator::generate() {
         curpkg = &ast->getPkgName();
         for (unsigned int i=0; i<ast->getNumDecls(); i++) {
             Decl* D = ast->getDecl(i);
-            switch (D->dtype()) {
+            switch (D->getKind()) {
             case DECL_USE:
                 EmitUse(D);
                 break;
@@ -89,7 +89,7 @@ void CCodeGenerator::generate() {
         curpkg = &ast->getPkgName();
         for (unsigned int i=0; i<ast->getNumDecls(); i++) {
             Decl* D = ast->getDecl(i);
-            switch (D->dtype()) {
+            switch (D->getKind()) {
             case DECL_FUNC:
                 EmitFunction(D);
                 break;

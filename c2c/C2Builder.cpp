@@ -383,7 +383,7 @@ bool C2Builder::createPkgs() {
             // After merge, clear AST symbolTable
             // remove isSymbol() function
             // ALSO solve memleak below (EnumConstDecl) -> store EnumConstDecl in EnumType?
-            if (!Decl::isSymbol(New->dtype())) continue;
+            if (!Decl::isSymbol(New->getKind())) continue;
             Decl* Old = pkg->findSymbol(New->getName());
             if (Old) {
                 fprintf(stderr, "MULTI_FILE: duplicate symbol %s\n", New->getName().c_str());
@@ -395,7 +395,7 @@ bool C2Builder::createPkgs() {
             }
             // also add enum constant names to symbol list, Bit nasty to do here
             // This should be done in C2Sema!!
-            if (New->dtype() == DECL_TYPE) {
+            if (isa<TypeDecl>(New)) {
                 TypeDecl* T = cast<TypeDecl>(New);
                 QualType QT = T->getType();
                 if (QT.isEnumType()) {

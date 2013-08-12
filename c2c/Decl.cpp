@@ -32,7 +32,7 @@ static int creationCount;
 static int deleteCount;
 #endif
 
-bool Decl::isSymbol(DeclType d) {
+bool Decl::isSymbol(DeclKind d) {
     switch (d) {
     case DECL_FUNC:
     case DECL_VAR:
@@ -44,7 +44,7 @@ bool Decl::isSymbol(DeclType d) {
     }
 }
 
-Decl::Decl(DeclType k, bool is_public_)
+Decl::Decl(DeclKind k, bool is_public_)
     : kind(k)
     , is_public(is_public_)
 {

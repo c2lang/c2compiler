@@ -37,7 +37,7 @@ ScopeAnalyser::~ScopeAnalyser() {}
 
 bool ScopeAnalyser::handle(Decl* decl) {
     bool is_public = decl->isPublic();
-    switch (decl->dtype()) {
+    switch (decl->getKind()) {
     case DECL_FUNC:
         {
             FunctionDecl* func = cast<FunctionDecl>(decl);
@@ -88,7 +88,7 @@ bool ScopeAnalyser::handle(Decl* decl) {
                 fprintf(stderr, "Incremental Array Value for %s cannot be for external symbol\n", A->getName().c_str());
                 break;
             }
-            if (SR.decl->dtype() != DECL_VAR) {
+            if (!isa<VarDecl>(SR.decl)) {
                 fprintf(stderr, "TODO symbol '%s' is not a variable\n", A->getName().c_str());
                 break;
             }

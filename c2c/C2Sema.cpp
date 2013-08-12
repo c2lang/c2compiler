@@ -852,7 +852,7 @@ void C2Sema::addDecl(Decl* d) {
     ast.decls.push_back(d);
 
     // UseDecl's dont define a symbol
-    if (Decl::isSymbol(d->dtype())) {
+    if (Decl::isSymbol(d->getKind())) {
         Decl* Old = getSymbol(d->getName());
         if (Old) {
             Diag(d->getLocation(), diag::err_redefinition)
@@ -867,7 +867,7 @@ void C2Sema::addDecl(Decl* d) {
 const C2::Decl* C2Sema::findUse(const char* name) const {
     for (unsigned int i=0; i<ast.decls.size(); i++) {
         Decl* d = ast.decls[i];
-        if (d->dtype() != DECL_USE) break;
+        if (!isa<UseDecl>(d)) break;
         if (d->getName() == name) return d;
     }
     return 0;
@@ -876,7 +876,7 @@ const C2::Decl* C2Sema::findUse(const char* name) const {
 const C2::UseDecl* C2Sema::findAlias(const char* name) const {
     for (unsigned int i=0; i<ast.decls.size(); i++) {
         Decl* d = ast.decls[i];
-        if (d->dtype() != DECL_USE) break;
+        if (!isa<UseDecl>(d)) break;
         UseDecl* useDecl = cast<UseDecl>(d);
         assert(useDecl);
         if (useDecl->getAlias() == name) return useDecl;

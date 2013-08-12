@@ -39,7 +39,7 @@ GlobalVarAnalyser::~GlobalVarAnalyser() {}
 
 bool GlobalVarAnalyser::handle(Decl* decl) {
     bool is_public = decl->isPublic();
-    switch (decl->dtype()) {
+    switch (decl->getKind()) {
     case DECL_FUNC:
         {
             FunctionDecl* FD = cast<FunctionDecl>(decl);

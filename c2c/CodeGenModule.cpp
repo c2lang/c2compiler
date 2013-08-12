@@ -72,7 +72,7 @@ void CodeGenModule::generate() {
         AST* ast = iter->ast;
         for (unsigned int i=0; i<ast->getNumDecls(); i++) {
             Decl* decl = ast->getDecl(i);
-            if (decl->dtype() == DECL_FUNC) EmitFunctionProto(decl);
+            if (isa<FunctionDecl>(decl)) EmitFunctionProto(decl);
         }
     }
 
@@ -154,7 +154,7 @@ void CodeGenModule::EmitFunctionProto(Decl* D) {
 }
 
 void CodeGenModule::EmitTopLevelDecl(Decl* D) {
-    switch (D->dtype()) {
+    switch (D->getKind()) {
     case DECL_FUNC:
         {
             FunctionDecl* F = cast<FunctionDecl>(D);

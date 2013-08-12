@@ -39,8 +39,7 @@ class DeclVisitor;
 class ArrayValueDecl;
 class CompoundStmt;
 
-// TODO rename to DeclKind
-enum DeclType {
+enum DeclKind {
     DECL_FUNC = 0,
     DECL_VAR,
     DECL_ENUMVALUE,
@@ -51,24 +50,24 @@ enum DeclType {
 
 class Decl {
 public:
-    Decl(DeclType k, bool is_public_);
+    Decl(DeclKind k, bool is_public_);
     virtual ~Decl();
     // TODO rename getKind()
-    DeclType dtype() const { return kind; }
+    DeclKind getKind() const { return kind; }
     virtual void print(StringBuilder& buffer) = 0;
 
     virtual const std::string& getName() const = 0;
     virtual clang::SourceLocation getLocation() const = 0;
 
     bool isPublic() const { return is_public; }
-    static bool isSymbol(DeclType d);
+    static bool isSymbol(DeclKind d);
 
     // for debugging
     void dump();
 protected:
     bool is_public;
 private:
-    DeclType kind;
+    DeclKind kind;
 
     Decl(const Decl&);
     Decl& operator= (const Decl&);
@@ -80,7 +79,7 @@ public:
     FunctionDecl(const std::string& name_, SourceLocation loc_, bool is_public_, QualType rtype_);
     virtual ~FunctionDecl();
     static bool classof(const Decl* D) {
-        return D->dtype() == DECL_FUNC;
+        return D->getKind() == DECL_FUNC;
     }
     virtual void print(StringBuilder& buffer);
 
@@ -129,7 +128,7 @@ public:
     VarDecl(DeclExpr* decl_, bool is_public, bool inExpr);
     virtual ~VarDecl();
     static bool classof(const Decl* D) {
-        return D->dtype() == DECL_VAR;
+        return D->getKind() == DECL_VAR;
     }
     virtual void print(StringBuilder& buffer);
 
@@ -154,7 +153,7 @@ public:
     EnumConstantDecl(DeclExpr* decl_, bool is_public);
     virtual ~EnumConstantDecl();
     static bool classof(const Decl* D) {
-        return D->dtype() == DECL_ENUMVALUE;
+        return D->getKind() == DECL_ENUMVALUE;
     }
     virtual void print(StringBuilder& buffer);
 
@@ -175,7 +174,7 @@ public:
     TypeDecl(const std::string& name_, SourceLocation loc_, QualType type_, bool is_public_);
     virtual ~TypeDecl();
     static bool classof(const Decl* D) {
-        return D->dtype() == DECL_TYPE;
+        return D->getKind() == DECL_TYPE;
     }
     virtual void print(StringBuilder& buffer);
 
@@ -194,7 +193,7 @@ public:
     ArrayValueDecl(const std::string& name_, SourceLocation loc_, Expr* value_);
     virtual ~ArrayValueDecl();
     static bool classof(const Decl* D) {
-        return D->dtype() == DECL_ARRAYVALUE;
+        return D->getKind() == DECL_ARRAYVALUE;
     }
     virtual void print(StringBuilder& buffer);
 
@@ -212,7 +211,7 @@ class UseDecl : public Decl {
 public:
     UseDecl(const std::string& name_, SourceLocation loc_, bool isLocal_, const char* alias_, SourceLocation aliasLoc_);
     static bool classof(const Decl* D) {
-        return D->dtype() == DECL_USE;
+        return D->getKind() == DECL_USE;
     }
     virtual void print(StringBuilder& buffer);
 
