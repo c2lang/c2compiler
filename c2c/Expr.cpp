@@ -57,7 +57,7 @@ EXPR_VISITOR_ACCEPT(IntegerLiteral);
 
 void IntegerLiteral::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
-    buffer << "[integer " << (int)Value.getSExtValue() << "]\n";
+    buffer << "[integer " << Value.getSExtValue() << "]\n";
 }
 
 

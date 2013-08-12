@@ -679,7 +679,7 @@ C2::ExprResult C2Sema::ActOnIntegerConstant(SourceLocation Loc, uint64_t Val) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: integer constant"ANSI_NORMAL"\n";
 #endif
-    // TEMP always 32 bits for now
+    // NOTE: always 32 bits
     llvm::APInt ResultValue(32, Val);
     return ExprResult(new IntegerLiteral(Loc, ResultValue));
 }
@@ -760,10 +760,58 @@ C2::ExprResult C2Sema::ActOnNumericConstant(const Token& Tok) {
     } else if (!Literal.isIntegerLiteral()) {
         return ExprError();
     } else {
-        // TODO set size dynamically
-        llvm::APInt ResultVal(32, 0);
+        QualType ty;
+
+        const unsigned MaxWidth = 64; // for now limit to 64 bits
+        llvm::APInt ResultVal(MaxWidth, 0);
         if (Literal.GetIntegerValue(ResultVal)) {
-            fprintf(stderr, "ERROR overflow\n");
+            Diag(Tok.getLocation(), diag::warn_integer_too_large);
+        } else {
+            // Octal, Hexadecimal, and integers with a U suffix are allowed to
+            // be an unsigned int.
+            bool AllowUnsigned = Literal.isUnsigned || Literal.getRadix() != 10;
+
+            // Check from smallest to largest, picking the smallest type we can.
+            unsigned Width = 0;
+          if (!Literal.isLong && !Literal.isLongLong) {
+            // Are int/unsigned possibilities?
+            unsigned IntSize = 32;
+
+            // Does it fit in a unsigned int?
+            if (ResultVal.isIntN(IntSize)) {
+              // Does it fit in a signed int?
+#if 0
+              if (!Literal.isUnsigned && ResultVal[IntSize-1] == 0)
+                Ty = Context.IntTy;
+              else if (AllowUnsigned)
+                Ty = Context.UnsignedIntTy;
+#endif
+              Width = IntSize;
+            }
+          }
+
+          // Check long long if needed.
+          if (Width == 0) {
+              if (ResultVal.isIntN(64)) {
+#if 0
+                  if (!Literal.isUnsigned && (ResultVal[LongLongSize-1] == 0 ||
+                      (getLangOpts().MicrosoftExt && Literal.isLongLong)))
+                    Ty = Context.LongLongTy;
+                  else if (AllowUnsigned)
+                    Ty = Context.UnsignedLongLongTy;
+#endif
+                  Width = 64;
+              }
+          }
+
+            if (Width == 0) {
+                fprintf(stderr, "TOO LARGE\n");
+                assert(0 && "TODO");
+            }
+            // set correct width
+            if (ResultVal.getBitWidth() != Width) {
+                ResultVal = ResultVal.trunc(Width);
+            }
         }
 
         Res = new IntegerLiteral(Tok.getLocation(), ResultVal);
