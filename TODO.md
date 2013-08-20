@@ -2,28 +2,30 @@
 ## TODO list
 
 Parsing of:
-* (anonymous) sub structs
 * Balanced brackets/braces (Convert clang::BalancedDelimiterTracker)
-* ...
+* cast expression
+* array inits via  .member = value,
 
 AST Generation for:
-* type definitions
-* substructs
-* ellipsis (...) arguments
-* (proper) numeric values 
-* (proper) Identifiers (with package qualifier)
 * cast expression
 * ...
 
 Analysis of:
 * symbol usages (Types, Vars, Functions)
+* un-initialized variables
 * Type comparisons
 * string parsing (\n\0 etc)
 * labels (redefinition)
+* package+file dependencies
 * ...
 
 IR generation of:
-* almost everything...
+* control flow statements (if, while, for, etc)
+* global strings
+
+C-code generation:
+* saving to files
+* creating build-script/Makefile
 
 Generic:
 * improve Makefile for header dependencies and .o location in subdir
