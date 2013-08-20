@@ -309,7 +309,8 @@ void C2Builder::build() {
     }
     if (client->getNumErrors()) goto out;
 
-    addDummyPackages();
+    // phase 1c: load required external packages
+    if (!loadExternalPackages()) goto out;
 
     // phase 2: run analysing on all files
     t1_analyse = Utils::getCurrentTime();
@@ -363,6 +364,11 @@ out:
       OS << " generated.\n";
 }
 
+bool C2Builder::havePackage(const std::string& name) const {
+    PkgsConstIter iter = pkgs.find(name);
+    return iter != pkgs.end();
+}
+
 Package* C2Builder::getPackage(const std::string& name, bool isCLib) {
     PkgsIter iter = pkgs.find(name);
     if (iter == pkgs.end()) {
@@ -397,70 +403,101 @@ bool C2Builder::createPkgs() {
     return true;
 }
 
-void C2Builder::addDummyPackages() {
-    Package* c2Pkg = getPackage("c2", false);
-    // TODO add dummy decls;
+bool C2Builder::loadExternalPackages() {
+    // collect all external packages
+    for (unsigned i=0; i<files.size(); i++) {
+        FileInfo* info = files[i];
+        unsigned count = info->ast.getNumDecls();
+        for (unsigned i=0; i<count; i++) {
+            Decl* D = info->ast.getDecl(i);
+            if (!isa<UseDecl>(D)) break;
+            const std::string& name = D->getName();
+            if (havePackage(name)) continue;
+            if (!loadPackage(name)) return false;
+        }
+    }
+    return true;
+}
+
+bool C2Builder::loadPackage(const std::string& name) {
+    if (options.verbose) printf(COL_VERBOSE"loading external package %s"ANSI_NORMAL"\n", name.c_str());
+
+    assert(!havePackage(name));
     // NOTE: MEMLEAK on Types
 
-    Package* stdioPkg = getPackage("stdio", true);
+    // TEMP use dummy packages
+    if (name == "c2") {
+        getPackage("c2", false);
+        return true;
+    }
     SourceLocation loc;
-    // int puts(const char* s);
-    {
-        FunctionDecl* func = new FunctionDecl("puts", loc, true, BuiltinType::get(TYPE_INT));
-        // TODO correct arg
-        Type* ptype = new Type(Type::POINTER, BuiltinType::get(TYPE_I8));
-        QualType QT(ptype, QUAL_CONST);
-        func->addArg(new VarDecl("s", loc, QT, 0));
-        stdioPkg->addSymbol(func);
-        // function type
-        Type* proto = new Type(Type::FUNC);
-        proto->setFunc(func);
-        func->setFunctionType(QualType(proto));
 
-    }
-    //int printf(const char *format, ...);
-    {
-        FunctionDecl* func = new FunctionDecl("printf", loc, true, BuiltinType::get(TYPE_INT));
-        // NOTE: MEMLEAK ON TYPE, this will go away when we remove these dummy protos
-        Type* ptype = new Type(Type::POINTER, BuiltinType::get(TYPE_I8));
-        QualType QT(ptype, QUAL_CONST);
-        func->addArg(new VarDecl("format", loc, QT, 0));
-        func->setVariadic();
-        stdioPkg->addSymbol(func);
-        // function type
-        Type* proto = new Type(Type::FUNC);
-        proto->setFunc(func);
-        func->setFunctionType(QualType(proto));
-    }
-    //int sprintf(char *str, const char *format, ...);
-    {
-        FunctionDecl* func = new FunctionDecl("sprintf", loc, true, BuiltinType::get(TYPE_INT));
-        // NOTE: MEMLEAK ON TYPE, this will go away when we remove these dummy protos
-        Type* ptype = new Type(Type::POINTER, BuiltinType::get(TYPE_I8));
-        QualType QT(ptype, QUAL_CONST);
-        func->addArg(new VarDecl("str", loc, QT, 0));
-        func->addArg(new VarDecl("format", loc, QT, 0));
-        func->setVariadic();
-        stdioPkg->addSymbol(func);
-        // function type
-        Type* proto = new Type(Type::FUNC);
-        proto->setFunc(func);
-        func->setFunctionType(QualType(proto));
+    if (name == "stdio") {
+        Package* stdioPkg = getPackage("stdio", true);
+        // int puts(const char* s);
+        {
+            FunctionDecl* func = new FunctionDecl("puts", loc, true, BuiltinType::get(TYPE_INT));
+            // TODO correct arg
+            Type* ptype = new Type(Type::POINTER, BuiltinType::get(TYPE_I8));
+            QualType QT(ptype, QUAL_CONST);
+            func->addArg(new VarDecl("s", loc, QT, 0));
+            stdioPkg->addSymbol(func);
+            // function type
+            Type* proto = new Type(Type::FUNC);
+            proto->setFunc(func);
+            func->setFunctionType(QualType(proto));
+
+        }
+        //int printf(const char *format, ...);
+        {
+            FunctionDecl* func = new FunctionDecl("printf", loc, true, BuiltinType::get(TYPE_INT));
+            // NOTE: MEMLEAK ON TYPE, this will go away when we remove these dummy protos
+            Type* ptype = new Type(Type::POINTER, BuiltinType::get(TYPE_I8));
+            QualType QT(ptype, QUAL_CONST);
+            func->addArg(new VarDecl("format", loc, QT, 0));
+            func->setVariadic();
+            stdioPkg->addSymbol(func);
+            // function type
+            Type* proto = new Type(Type::FUNC);
+            proto->setFunc(func);
+            func->setFunctionType(QualType(proto));
+        }
+        //int sprintf(char *str, const char *format, ...);
+        {
+            FunctionDecl* func = new FunctionDecl("sprintf", loc, true, BuiltinType::get(TYPE_INT));
+            // NOTE: MEMLEAK ON TYPE, this will go away when we remove these dummy protos
+            Type* ptype = new Type(Type::POINTER, BuiltinType::get(TYPE_I8));
+            QualType QT(ptype, QUAL_CONST);
+            func->addArg(new VarDecl("str", loc, QT, 0));
+            func->addArg(new VarDecl("format", loc, QT, 0));
+            func->setVariadic();
+            stdioPkg->addSymbol(func);
+            // function type
+            Type* proto = new Type(Type::FUNC);
+            proto->setFunc(func);
+            func->setFunctionType(QualType(proto));
+        }
+        return true;
     }
 
-    Package* stdlibPkg = getPackage("stdlib", true);
-    //void exit(int status);
-    {
-        FunctionDecl* func = new FunctionDecl("exit", loc, true, BuiltinType::get(TYPE_VOID));
-        // TODO correct arg
-        QualType QT(BuiltinType::get(TYPE_INT));
-        func->addArg(new VarDecl("status", loc, QT, 0));
-        stdlibPkg->addSymbol(func);
-        // function type
-        Type* proto = new Type(Type::FUNC);
-        proto->setFunc(func);
-        func->setFunctionType(QualType(proto));
+    if (name == "stdlib") {
+        Package* stdlibPkg = getPackage("stdlib", true);
+        //void exit(int status);
+        {
+            FunctionDecl* func = new FunctionDecl("exit", loc, true, BuiltinType::get(TYPE_VOID));
+            // TODO correct arg
+            QualType QT(BuiltinType::get(TYPE_INT));
+            func->addArg(new VarDecl("status", loc, QT, 0));
+            stdlibPkg->addSymbol(func);
+            // function type
+            Type* proto = new Type(Type::FUNC);
+            proto->setFunc(func);
+            func->setFunctionType(QualType(proto));
+        }
+        return true;
     }
+    fprintf(stderr, "Error loading package %s\n", name.c_str());
+    return false;
 }
 
 void C2Builder::dumpPkgs() {
@@ -534,7 +571,7 @@ void C2Builder::generateOptionalC() {
             u_int64_t t2 = Utils::getCurrentTime();
             if (options.printTiming) printf(COL_TIME"C code generation took %lld usec"ANSI_NORMAL"\n", t2 - t1);
             if (options.printC) gen.dump();
-            //cgm.write(recipe.name, P->getName());
+            gen.write(recipe.name, P->getName());
         }
     }
 }

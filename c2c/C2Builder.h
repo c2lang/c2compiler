@@ -64,9 +64,11 @@ public:
     int checkFiles();
     void build();
 private:
+    bool havePackage(const std::string& name) const;
     Package* getPackage(const std::string& name, bool isCLib);
     bool createPkgs();
-    void addDummyPackages();
+    bool loadExternalPackages();
+    bool loadPackage(const std::string& name);
     void dumpPkgs();
 
     bool checkMainFunction(clang::DiagnosticsEngine& Diags);

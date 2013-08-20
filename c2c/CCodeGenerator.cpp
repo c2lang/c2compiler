@@ -391,7 +391,6 @@ void CCodeGenerator::dump() {
 }
 
 void CCodeGenerator::write(const std::string& target, const std::string& name) {
-    // TODO
 }
 
 void CCodeGenerator::EmitFunction(FunctionDecl* F) {
