@@ -29,10 +29,12 @@ class StringBuilder;
 class Argument;
 class Expr;
 class DeclExpr;
+class EnumConstantDecl;
 class TypeContext;
 class Type;
 
 typedef OwningVector<C2::DeclExpr> MemberList;
+typedef OwningVector<C2::EnumConstantDecl> ConstantList;
 
 enum C2Type {
     TYPE_U8 = 0,
@@ -59,7 +61,7 @@ public:
     QualType(Type* Ptr, unsigned Quals = 0)
         : type(Ptr), qualifiers(Quals) {}
 
-    const Type* getTypePtr() const;
+    Type* getTypePtr() const;
     const Type* getTypePtrOrNull() const { return type; }
     unsigned getQualifiers() const { return qualifiers; }
 
@@ -160,9 +162,15 @@ public:
     }
     Expr* getArrayExpr() const { return arrayExpr; }
 
-    // STRUCT/UNION/ENUM
+    // STRUCT/UNION
     void setMembers(MemberList* members_);
+    void addMember(DeclExpr* D);
     MemberList* getMembers() const;
+
+    // ENUM
+    void addEnumMember(EnumConstantDecl* C);
+    ConstantList* getConstants() const { return constants; }
+
     void setStructName(const char* name_) {
         sname = name_;
     }
@@ -210,6 +218,7 @@ private:
         struct {
             const char* sname;  // no ownership
             MemberList* members;
+            ConstantList* constants; // temp for enums
         };
 
         // func specific

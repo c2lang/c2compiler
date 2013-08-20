@@ -279,7 +279,6 @@ private:
     std::string name;
     SourceLocation loc;
     QualType type;
-    Type* canonicalType;
     Expr* initValue;
 };
 

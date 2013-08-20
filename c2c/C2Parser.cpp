@@ -331,7 +331,7 @@ C2::ExprResult C2Parser::ParseStructMember() {
 
 /*
    Syntax:
-    type_def ::= access_specifier TYPE IDENTIFIER ENUM LBRACE enum_block RBRACE SEMICOLON.
+    type_def ::= access_specifier TYPE IDENTIFIER ENUM <type> LBRACE enum_block RBRACE SEMICOLON.
 
     enum_block   ::= enum_block COMMA enum_member.
     enum_block   ::= enum_block COMMA.
@@ -344,11 +344,19 @@ C2::ExprResult C2Parser::ParseEnumType(const char* id) {
     LOG_FUNC
     assert(Tok.is(tok::kw_enum) && "Expected keyword 'enum'");
     ConsumeToken();
+
+    // parse optional implementation type
+    ExprResult destType;
+    if (Tok.isNot(tok::l_brace)) {
+        // TODO not completely correct, since this also parses pointer types
+        destType = ParseSingleTypeSpecifier(false);
+        if (destType.isInvalid()) return ExprError();
+    }
+
     SourceLocation LeftBrace = Tok.getLocation();
     if (ExpectAndConsume(tok::l_brace, diag::err_expected_lbrace)) return ExprError();
 
-    ExprResult TheEnum = Actions.ActOnEnumType(id);
-    ExprList members;
+    ExprResult TheEnum = Actions.ActOnEnumType(id, destType.release());
 
     // Syntax: enum_block
     while (Tok.is(tok::identifier)) {
@@ -365,13 +373,7 @@ C2::ExprResult C2Parser::ParseEnumType(const char* id) {
             }
         }
 
-        ExprResult Constant = Actions.ActOnEnumConstant(TheEnum.get(), Ident, IdentLoc, Value.release());
-        members.push_back(Constant.release());
-#if 0
-    // Add value to EnumDecl
-        Decl* EnumValue = Actions.ActOnEnumConstant(EnumDecl,
-            IdentLoc, Ident, attrs.getList(), AssignedVal.release());
-#endif
+        Actions.ActOnEnumConstant(TheEnum.get(), Ident, IdentLoc, Value.release());
         if (Tok.isNot(tok::comma)) break;
         ConsumeToken();
     }
@@ -384,7 +386,8 @@ C2::ExprResult C2Parser::ParseEnumType(const char* id) {
                         EnumConstantDecls.size(), getCurScope(),
                         attrs.getList());
 #endif
-    return Actions.ActOnEnumTypeFinished(TheEnum.release(), LeftBrace, RightBrace, members);
+    //return Actions.ActOnEnumTypeFinished(TheEnum.release(), LeftBrace, RightBrace);
+    return TheEnum;
 }
 
 /*

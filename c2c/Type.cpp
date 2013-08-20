@@ -20,6 +20,7 @@
 #include "Type.h"
 #include "StringBuilder.h"
 #include "Expr.h"
+#include "Decl.h"
 #include "Utils.h"
 #include "color.h"
 
@@ -87,7 +88,7 @@ inline QualType QualType::getCanonicalType() const {
     return canon;
 }
 
-const C2::Type* QualType::getTypePtr() const {
+C2::Type* QualType::getTypePtr() const {
     assert(!isNull() && "Cannot retrieve a NULL type pointer");
     return type;
 }
@@ -253,6 +254,16 @@ void Type::setMembers(MemberList* members_) {
     assert(kind == STRUCT || kind == UNION || kind == ENUM);
     assert(members == 0);
     members = members_;
+}
+
+void Type::addMember(DeclExpr* D) {
+   if (members == 0) members = new MemberList();
+   members->push_back(D);
+}
+
+void Type::addEnumMember(EnumConstantDecl* C) {
+    if (constants == 0) constants = new ConstantList();
+    constants->push_back(C);
 }
 
 MemberList* Type::getMembers() const {
@@ -498,10 +509,10 @@ void Type::print(int indent, StringBuilder& buffer, QualType::RecursionType recu
         break;
     case ENUM:
         buffer << "(enum)\n";
-        if (members && recursive != QualType::RECURSE_NONE) {
-            for (unsigned i=0; i<members->size(); i++) {
-                DeclExpr* mem = (*members)[i];
-                mem->print(indent + INDENT, buffer);
+        if (constants && recursive != QualType::RECURSE_NONE) {
+            for (unsigned i=0; i<constants->size(); i++) {
+                EnumConstantDecl* C = (*constants)[i];
+                C->print(buffer);
             }
         }
         break;

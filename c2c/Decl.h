@@ -50,25 +50,31 @@ enum DeclKind {
 
 class Decl {
 public:
-    Decl(DeclKind k, bool is_public_);
+    Decl(DeclKind k, bool is_public);
     virtual ~Decl();
-    // TODO rename getKind()
-    DeclKind getKind() const { return kind; }
-    virtual void print(StringBuilder& buffer) = 0;
 
+    virtual void print(StringBuilder& buffer) = 0;
     virtual const std::string& getName() const = 0;
     virtual clang::SourceLocation getLocation() const = 0;
 
-    bool isPublic() const { return is_public; }
-    static bool isSymbol(DeclKind d);
+    DeclKind getKind() const { return static_cast<DeclKind>(DeclBits.dKind); }
+    bool isPublic() const { return DeclBits.DeclIsPublic; }
 
     // for debugging
     void dump();
 protected:
-    bool is_public;
+    class DeclBitfields {
+    public:
+        unsigned dKind : 8;
+        unsigned DeclIsPublic : 1;
+        unsigned FuncIsVariadic : 1;
+        unsigned UseIsLocal : 1;
+    };
+    union {
+        DeclBitfields DeclBits;
+        unsigned BitsInit;      // to initialize all bits
+    };
 private:
-    DeclKind kind;
-
     Decl(const Decl&);
     Decl& operator= (const Decl&);
 };
@@ -76,7 +82,7 @@ private:
 
 class FunctionDecl : public Decl {
 public:
-    FunctionDecl(const std::string& name_, SourceLocation loc_, bool is_public_, QualType rtype_);
+    FunctionDecl(const std::string& name_, SourceLocation loc_, bool is_public, QualType rtype_);
     virtual ~FunctionDecl();
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_FUNC;
@@ -95,8 +101,8 @@ public:
     virtual const std::string& getName() const { return name; }
     virtual clang::SourceLocation getLocation() const { return loc; }
     QualType getReturnType() const { return rtype; }
-    void setVariadic() { m_isVariadic = true; }
-    bool isVariadic() const { return m_isVariadic; }
+    void setVariadic() { DeclBits.FuncIsVariadic = true; }
+    bool isVariadic() const { return DeclBits.FuncIsVariadic; }
 
     void setFunctionType(QualType qt) { functionType = qt; }
     QualType getType() const { return functionType; }
@@ -116,9 +122,6 @@ private:
     typedef OwningVector<DeclExpr> Args;
     Args args;
     CompoundStmt* body;
-    bool m_isVariadic;
-    // TODO EllipsisLoc
-    //Type* canonicalType;
     llvm::Function* IRProto;
 };
 
@@ -149,28 +152,30 @@ private:
 
 class EnumConstantDecl : public Decl {
 public:
-    EnumConstantDecl(DeclExpr* decl_, bool is_public);
+    EnumConstantDecl(const std::string& name_, SourceLocation loc_, QualType type_, Expr* Init, bool is_public);
     virtual ~EnumConstantDecl();
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_ENUMVALUE;
     }
     virtual void print(StringBuilder& buffer);
 
-    virtual const std::string& getName() const;
-    virtual clang::SourceLocation getLocation() const;
-    QualType getType() const;
-
-    Expr* getInitValue() const; // static value, NOT incremental values
+    virtual const std::string& getName() const { return name; }
+    virtual clang::SourceLocation getLocation() const { return loc; }
+    QualType getType() const { return type; }
+    Expr* getInitValue() const { return InitVal; } // static value, NOT incremental values
     int getValue() const { return value; }
 private:
-    DeclExpr* decl;
-    int value;      // set during analysis
+    std::string name;
+    SourceLocation loc;
+    QualType type;
+    Expr* InitVal;
+    int value;      // set during analysis, TODO use APInt
 };
 
 
 class TypeDecl : public Decl {
 public:
-    TypeDecl(const std::string& name_, SourceLocation loc_, QualType type_, bool is_public_);
+    TypeDecl(const std::string& name_, SourceLocation loc_, QualType type_, bool is_public);
     virtual ~TypeDecl();
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_TYPE;
@@ -218,13 +223,12 @@ public:
     const std::string& getAlias() const { return alias; }
     virtual clang::SourceLocation getLocation() const { return loc; }
     virtual clang::SourceLocation getAliasLocation() const { return aliasLoc; }
-    bool isLocal() const { return is_local; }
+    bool isLocal() const { return DeclBits.UseIsLocal; }
 private:
     std::string name;
     std::string alias;
     SourceLocation loc;
     SourceLocation aliasLoc;
-    bool is_local;
 };
 
 template <class T> static inline bool isa(const Decl* D) {

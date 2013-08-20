@@ -191,7 +191,6 @@ DeclExpr::DeclExpr(const std::string& name_, SourceLocation& loc_,
     , name(name_)
     , loc(loc_)
     , type(type_)
-    , canonicalType(0)
     , initValue(initValue_)
 {}
 
@@ -206,11 +205,6 @@ void DeclExpr::print(int indent, StringBuilder& buffer) const {
     // Dont print types for enums, otherwise we get a loop since Type have Decls etc
     if (!type->isEnumType()) {
         type->print(indent, buffer, QualType::RECURSE_ONCE);
-        if (canonicalType) {
-            buffer.indent(indent);
-            buffer << ANSI_CYAN << "canonical:" << ANSI_NORMAL << '\n';
-            canonicalType->print(indent+INDENT, buffer, QualType::RECURSE_NONE);
-        }
     }
     if (initValue) {
         buffer.indent(indent);

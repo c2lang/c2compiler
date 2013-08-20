@@ -144,7 +144,7 @@ public:
     // analyse use statements, Types and build file scope
     int analyse1(const BuildOptions& options, const Pkgs& pkgs) {
         if (options.verbose) printf(COL_VERBOSE"running %s %s()"ANSI_NORMAL"\n", filename.c_str(), __func__);
-        globals = new FileScope(ast.pkgName, pkgs, Diags);
+        globals = new FileScope(ast.getPkgName(), pkgs, Diags);
         ScopeAnalyser visitor(*globals, Diags);
         ast.visitAST(visitor);
         return visitor.getErrors();
@@ -212,7 +212,7 @@ C2Builder::~C2Builder()
         //delete iter->second;
         // TODO delete CAUSES crash (caused by delete of FileInfo below)
     }
-    for (unsigned int i=0; i<files.size(); i++) {
+    for (unsigned i=0; i<files.size(); i++) {
         delete files[i];
     }
 }
@@ -278,7 +278,7 @@ void C2Builder::build() {
         PredefineBuffer.reserve(4080);
         llvm::raw_string_ostream Predefines(PredefineBuffer);
         MacroBuilder mbuilder(Predefines);
-        for (unsigned int i=0; i<recipe.configs.size(); i++) {
+        for (unsigned i=0; i<recipe.configs.size(); i++) {
             mbuilder.defineMacro(recipe.configs[i]);
         }
     }
@@ -313,19 +313,19 @@ void C2Builder::build() {
 
     // phase 2: run analysing on all files
     t1_analyse = Utils::getCurrentTime();
-    for (unsigned int i=0; i<files.size(); i++) {
+    for (unsigned i=0; i<files.size(); i++) {
         FileInfo* info = files[i];
         errors += info->analyse1(options, pkgs);
     }
     if (client->getNumErrors()) goto out;
 
-    for (unsigned int i=0; i<files.size(); i++) {
+    for (unsigned i=0; i<files.size(); i++) {
         FileInfo* info = files[i];
         errors += info->analyse2(options);
     }
     if (client->getNumErrors()) goto out;
 
-    for (unsigned int i=0; i<files.size(); i++) {
+    for (unsigned i=0; i<files.size(); i++) {
         FileInfo* info = files[i];
         errors += info->analyse3(options);
     }
@@ -333,7 +333,7 @@ void C2Builder::build() {
     if (options.printTiming) printf(COL_TIME"analysis took %lld usec"ANSI_NORMAL"\n", t2_analyse - t1_analyse);
 
     if (options.printASTAfter) {
-        for (unsigned int i=0; i<files.size(); i++) {
+        for (unsigned i=0; i<files.size(); i++) {
             FileInfo* info = files[i];
             info->ast.print(info->filename);
         }
@@ -377,18 +377,13 @@ Package* C2Builder::getPackage(const std::string& name, bool isCLib) {
 
 // merges symbols of all files of each package
 bool C2Builder::createPkgs() {
-    for (unsigned int i=0; i<files.size(); i++) {
+    for (unsigned i=0; i<files.size(); i++) {
         FileInfo* info = files[i];
-        Package* pkg = getPackage(info->ast.pkgName, false);
-        for (unsigned int i=0; i<info->ast.decls.size(); i++) {
-            Decl* New = info->ast.decls[i];
-            // TODO refactor this whole part. Merge AST's symboltable (currently in C2Sema)
-            // here. C2Sema decides when it's a symbol (like enum)
-            // After merge, clear AST symbolTable
-            // remove isSymbol() function
-            // ALSO solve memleak below (EnumConstDecl) -> store EnumConstDecl in EnumType?
-            if (!Decl::isSymbol(New->getKind())) continue;
-            Decl* Old = pkg->findSymbol(New->getName());
+        Package* pkg = getPackage(info->ast.getPkgName(), false);
+        const AST::Symbols& symbols = info->ast.getSymbols();
+        for (AST::SymbolsConstIter iter = symbols.begin(); iter != symbols.end(); ++iter) {
+            Decl* New = iter->second;
+            Decl* Old = pkg->findSymbol(iter->first);
             if (Old) {
                 fprintf(stderr, "MULTI_FILE: duplicate symbol %s\n", New->getName().c_str());
                 fprintf(stderr, "TODO NASTY: locs have to be resolved in different SourceManagers..\n");
@@ -396,23 +391,6 @@ bool C2Builder::createPkgs() {
                 return false;
             } else {
                 pkg->addSymbol(New);
-            }
-            // also add enum constant names to symbol list, Bit nasty to do here
-            // This should be done in C2Sema!!
-            if (isa<TypeDecl>(New)) {
-                TypeDecl* T = cast<TypeDecl>(New);
-                QualType QT = T->getType();
-                if (QT.isEnumType()) {
-                    const Type* type = QT.getTypePtr();
-                    const MemberList* members = type->getMembers();
-                    for (unsigned i=0; i<members->size(); i++) {
-                        DeclExpr* de = (*members)[i];
-                        // wrap in EnumConstantDecl
-                        // TODO MEMLEAK or throw away in ~Scope() ?
-                        EnumConstantDecl* ecd = new EnumConstantDecl(de, New->isPublic());
-                        pkg->addSymbol(ecd);
-                    }
-                }
             }
         }
     }
@@ -521,7 +499,7 @@ void C2Builder::generateOptionalC() {
 
     bool single_module = false;
     bool no_local_prefix = false;
-    for (unsigned int i=0; i<recipe.cConfigs.size(); i++) {
+    for (unsigned i=0; i<recipe.cConfigs.size(); i++) {
         const std::string& conf = recipe.cConfigs[i];
         // TODO just pass struct with bools?
         if (conf == "single_module") single_module = true;
@@ -532,7 +510,7 @@ void C2Builder::generateOptionalC() {
         u_int64_t t1 = Utils::getCurrentTime();
         std::string filename = "test";
         CCodeGenerator gen(filename, CCodeGenerator::SINGLE_FILE, pkgs, no_local_prefix);
-        for (unsigned int i=0; i<files.size(); i++) {
+        for (unsigned i=0; i<files.size(); i++) {
             FileInfo* info = files[i];
             gen.addEntry(info->filename, info->ast);
         }
@@ -550,9 +528,9 @@ void C2Builder::generateOptionalC() {
             if (P->getName() == "c2") continue;
             if (options.verbose) printf(COL_VERBOSE"generating C for package %s"ANSI_NORMAL"\n", P->getName().c_str());
             CCodeGenerator gen(P->getName(), CCodeGenerator::MULTI_FILE, pkgs, no_local_prefix);
-            for (unsigned int i=0; i<files.size(); i++) {
+            for (unsigned i=0; i<files.size(); i++) {
                 FileInfo* info = files[i];
-                if (info->ast.pkgName == P->getName()) {
+                if (info->ast.getPkgName() == P->getName()) {
                     gen.addEntry(info->filename, info->ast);
                 }
             }
@@ -576,9 +554,9 @@ void C2Builder::generateOptionalIR() {
         if (P->getName() == "c2") continue;
         if (options.verbose) printf(COL_VERBOSE"generating IR for package %s"ANSI_NORMAL"\n", P->getName().c_str());
         CodeGenModule cgm(P);
-        for (unsigned int i=0; i<files.size(); i++) {
+        for (unsigned i=0; i<files.size(); i++) {
             FileInfo* info = files[i];
-            if (info->ast.pkgName == P->getName()) {
+            if (info->ast.getPkgName() == P->getName()) {
                 cgm.addEntry(info->filename, info->ast);
             }
         }

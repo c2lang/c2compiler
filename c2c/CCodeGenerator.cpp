@@ -726,15 +726,15 @@ void CCodeGenerator::EmitTypePreName(QualType type, StringBuilder& output) {
         return;
     case Type::ENUM:
         output << "enum {\n";
-        if (T->getMembers()) {
-            MemberList* members = T->getMembers();
-            for (unsigned i=0; i<members->size(); i++) {
-                DeclExpr* mem = (*members)[i];
+        if (T->getConstants()) {
+            ConstantList* clist = T->getConstants();
+            for (unsigned i=0; i<clist->size(); i++) {
+                EnumConstantDecl* C = (*clist)[i];
                 output.indent(INDENT);
-                addPrefix(*curpkg, mem->getName(), output);
-                if (mem->getInitValue()) {
+                addPrefix(*curpkg, C->getName(), output);
+                if (C->getInitValue()) {
                     output << " = ";
-                    EmitExpr(mem->getInitValue(), output);
+                    EmitExpr(C->getInitValue(), output);
                 }
                 output << ",\n";
             }

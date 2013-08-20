@@ -124,8 +124,7 @@ void C2Sema::ActOnPackage(const char* name, SourceLocation loc) {
         Diag(loc, diag::err_package_c2);
         return;
     }
-    ast.pkgName = name;
-    ast.pkgLoc = loc;
+    ast.setName(name, loc);
 }
 
 void C2Sema::ActOnUse(const char* name, SourceLocation loc, Token& aliasTok, bool isLocal) {
@@ -135,7 +134,7 @@ void C2Sema::ActOnUse(const char* name, SourceLocation loc, Token& aliasTok, boo
     std::cerr << ANSI_NORMAL"\n";
 #endif
     // check if use-ing own package
-    if (ast.pkgName == name) {
+    if (ast.getPkgName() == name) {
         Diag(loc, diag::err_use_own_package) << name;
         return;
     }
@@ -161,7 +160,7 @@ void C2Sema::ActOnUse(const char* name, SourceLocation loc, Token& aliasTok, boo
             return;
         }
     }
-    addDecl(new UseDecl(name, loc, isLocal, aliasName, aliasTok.getLocation()));
+    ast.addDecl(new UseDecl(name, loc, isLocal, aliasName, aliasTok.getLocation()));
 }
 
 void C2Sema::ActOnTypeDef(const char* name, SourceLocation loc, Expr* type, bool is_public) {
@@ -177,8 +176,9 @@ void C2Sema::ActOnTypeDef(const char* name, SourceLocation loc, Expr* type, bool
     if (typeExpr->hasLocalQualifier()) {
         Diag(loc, diag::err_invalid_local_typedef);
     }
-    TypeDecl* decl = new TypeDecl(name, loc, typeExpr->getType(), is_public);
-    addDecl(decl);
+    Decl* T = new TypeDecl(name, loc, typeExpr->getType(), is_public);
+    ast.addDecl(T);
+    addSymbol(T);
     delete typeExpr;
 }
 
@@ -197,8 +197,9 @@ void C2Sema::ActOnVarDef(const char* name, SourceLocation loc,
     }
     // TODO check that type is not pre-fixed with own package
     DeclExpr* declExpr = new DeclExpr(name, loc, typeExpr->getType(), InitValue);
-    VarDecl* decl = new VarDecl(declExpr, is_public, false);
-    addDecl(decl);
+    Decl* V = new VarDecl(declExpr, is_public, false);;
+    ast.addDecl(V);
+    addSymbol(V);
     delete typeExpr;
 }
 
@@ -216,10 +217,11 @@ C2::FunctionDecl* C2Sema::ActOnFuncDef(const char* name, SourceLocation loc, boo
         // TODO need local's location
         Diag(loc, diag::err_invalid_local_returntype);
     }
-    FunctionDecl* decl = new FunctionDecl(name, loc, is_public, typeExpr->getType());
-    addDecl(decl);
+    FunctionDecl* D = new FunctionDecl(name, loc, is_public, typeExpr->getType());
+    ast.addDecl(D);
+    addSymbol(D);
     delete typeExpr;
-    return decl;
+    return D;
 }
 
 void C2Sema::ActOnFunctionArgs(Decl* decl, ExprList params) {
@@ -249,8 +251,7 @@ void C2Sema::ActOnArrayValue(const char* name, SourceLocation loc, Expr* Value) 
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    ArrayValueDecl* decl = new ArrayValueDecl(name, loc, Value);
-    addDecl(decl);
+    ast.addDecl(new ArrayValueDecl(name, loc, Value));
 }
 
 C2::StmtResult C2Sema::ActOnReturnStmt(SourceLocation loc, Expr* value) {
@@ -521,41 +522,33 @@ C2::ExprResult C2Sema::ActOnStructType(SourceLocation leftBrace, SourceLocation 
     return ExprResult(new TypeExpr(qt));
 }
 
-C2::ExprResult C2Sema::ActOnEnumType(const char* id) {
+C2::ExprResult C2Sema::ActOnEnumType(const char* id, Expr* implType) {
     Type* type = typeContext.getEnum();
     type->setStructName(id);
     QualType qt(type);
     return ExprResult(new TypeExpr(qt));
 }
 
-C2::ExprResult C2Sema::ActOnEnumTypeFinished(Expr* enumType,
-                            SourceLocation leftBrace, SourceLocation rightBrace,
-                           ExprList& values) {
-#ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: enum Type"ANSI_NORMAL"\n";
-#endif
-    TypeExpr* typeExpr = cast<TypeExpr>(enumType);
-    // TODO use left/rightBrace (add to TypeExpr, then pass to TypeDecl)
-    // TODO share code with ActOnStructType()
-    MemberList* members2 = new MemberList;
-    for (unsigned int i=0; i<values.size(); i++) {
-        DeclExpr* member = cast<DeclExpr>(values[i]);
-        members2->push_back(member);
-    }
-    QualType qt = typeExpr->getType();
-    Type* t = (Type*)qt.getTypePtr();
-    t->setMembers(members2);
-    values.clear();  // remove entries from original list
-    return ExprResult(enumType);
-}
-
-C2::ExprResult C2Sema::ActOnEnumConstant(Expr* enumType, IdentifierInfo* symII,
+void C2Sema::ActOnEnumConstant(Expr* enumType, IdentifierInfo* symII,
                                 SourceLocation symLoc, Expr* Value) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: enum constant"ANSI_NORMAL"\n";
 #endif
     TypeExpr* typeExpr = cast<TypeExpr>(enumType);
-    return ExprResult(new DeclExpr(symII->getNameStart(), symLoc, typeExpr->getType(), Value));
+    bool is_public = true;
+    QualType T = typeExpr->getType();
+    EnumConstantDecl* D = new EnumConstantDecl(symII->getNameStart(), symLoc, T, Value, is_public);
+    T.getTypePtr()->addEnumMember(D);
+    addSymbol(D);
+}
+
+C2::ExprResult C2Sema::ActOnEnumTypeFinished(Expr* enumType,
+                            SourceLocation leftBrace, SourceLocation rightBrace) {
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: enum Type"ANSI_NORMAL"\n";
+#endif
+    // TODO use left/rightBrace (add to TypeExpr, then pass to TypeDecl)
+    return ExprResult(enumType);
 }
 
 C2::ExprResult C2Sema::ActOnTypeQualifier(ExprResult R, unsigned int qualifier) {
@@ -830,45 +823,33 @@ DiagnosticBuilder C2Sema::Diag(SourceLocation Loc, unsigned DiagID) {
     return Diags.Report(Loc, DiagID);
 }
 
-void C2Sema::addDecl(Decl* d) {
-    ast.decls.push_back(d);
-
-    // UseDecl's dont define a symbol
-    if (Decl::isSymbol(d->getKind())) {
-        Decl* Old = getSymbol(d->getName());
-        if (Old) {
-            Diag(d->getLocation(), diag::err_redefinition)
-            << d->getName();
-            Diag(Old->getLocation(), diag::note_previous_definition);
-        } else {
-            symbols[d->getName()] = d;
-        }
+void C2Sema::addSymbol(Decl* d) {
+    Decl* Old = ast.findSymbol(d->getName());
+    if (Old) {
+        Diag(d->getLocation(), diag::err_redefinition)
+        << d->getName();
+        Diag(Old->getLocation(), diag::note_previous_definition);
+    } else {
+        ast.addSymbol(d);
     }
 }
 
 const C2::Decl* C2Sema::findUse(const char* name) const {
-    for (unsigned int i=0; i<ast.decls.size(); i++) {
-        Decl* d = ast.decls[i];
-        if (!isa<UseDecl>(d)) break;
+    for (unsigned int i=0; i<ast.getNumDecls(); i++) {
+        Decl* d = ast.getDecl(i);
         if (d->getName() == name) return d;
     }
     return 0;
 }
 
 const C2::UseDecl* C2Sema::findAlias(const char* name) const {
-    for (unsigned int i=0; i<ast.decls.size(); i++) {
-        Decl* d = ast.decls[i];
+    for (unsigned int i=0; i<ast.getNumDecls(); i++) {
+        Decl* d = ast.getDecl(i);
         if (!isa<UseDecl>(d)) break;
         UseDecl* useDecl = cast<UseDecl>(d);
         if (useDecl->getAlias() == name) return useDecl;
     }
     return 0;
-}
-
-C2::Decl* C2Sema::getSymbol(const std::string& name) const {
-    SymbolsConstIter iter = symbols.find(name);
-    if (iter == symbols.end()) return 0;
-    else return iter->second;
 }
 
 C2::ExprResult C2Sema::ExprError() {

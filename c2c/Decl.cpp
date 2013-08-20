@@ -32,22 +32,11 @@ static int creationCount;
 static int deleteCount;
 #endif
 
-bool Decl::isSymbol(DeclKind d) {
-    switch (d) {
-    case DECL_FUNC:
-    case DECL_VAR:
-    case DECL_TYPE:
-    case DECL_ENUMVALUE:
-        return true;
-    default:
-        return false;
-    }
-}
-
-Decl::Decl(DeclKind k, bool is_public_)
-    : kind(k)
-    , is_public(is_public_)
+Decl::Decl(DeclKind k, bool is_public)
+    : BitsInit(0)
 {
+    DeclBits.dKind = k;
+    DeclBits.DeclIsPublic = is_public;
 #ifdef DECL_DEBUG
     creationCount++;
     fprintf(stderr, "[DECL] create %p  created %d deleted %d\n", this, creationCount, deleteCount);
@@ -70,16 +59,14 @@ void Decl::dump() {
 
 FunctionDecl::FunctionDecl(const std::string& name_,
                                  SourceLocation loc_,
-                                 bool is_public_, QualType rtype_)
-    : Decl(DECL_FUNC, is_public_)
+                                 bool is_public, QualType rtype_)
+    : Decl(DECL_FUNC, is_public)
     , name(name_)
     , loc(loc_)
     , rtype(rtype_)
     , body(0)
-    , m_isVariadic(false)
     , IRProto(0)
-{
-}
+{}
 
 FunctionDecl::~FunctionDecl() {
     delete body;
@@ -123,8 +110,8 @@ void FunctionDecl::addArg(DeclExpr* arg) {
 }
 
 
-VarDecl::VarDecl(DeclExpr* decl_, bool is_public_, bool inExpr)
-    : Decl(DECL_VAR, is_public_)
+VarDecl::VarDecl(DeclExpr* decl_, bool is_public, bool inExpr)
+    : Decl(DECL_VAR, is_public)
     , decl(decl_)
 {
 }
@@ -160,34 +147,28 @@ void VarDecl::addInitValue(ArrayValueDecl* value) {
 }
 
 
-EnumConstantDecl::EnumConstantDecl(DeclExpr* decl_, bool is_public)
+EnumConstantDecl::EnumConstantDecl(const std::string& name_, SourceLocation loc_, QualType type_, Expr* Init, bool is_public)
     : Decl(DECL_ENUMVALUE, is_public)
-    , decl(decl_)
+    , name(name_)
+    , loc(loc_)
+    , type(type_)
+    , InitVal(Init)
+    , value(0)
 {
 }
 
 EnumConstantDecl::~EnumConstantDecl() {
-    delete decl;
+    delete InitVal;
 }
 
 void EnumConstantDecl::print(StringBuilder& buffer) {
-    buffer << "[enum constant] value " << value << '\n';
-    decl->print(INDENT, buffer);
+    buffer.indent(INDENT);
+    buffer << "[enum constant] '" << name << "' value=" << value << '\n';
+    if (InitVal) InitVal->print(INDENT*2, buffer);
 }
 
-const std::string& EnumConstantDecl::getName() const { return decl->getName(); }
-
-clang::SourceLocation EnumConstantDecl::getLocation() const {
-    return decl->getLocation();
-}
-
-QualType EnumConstantDecl::getType() const { return decl->getType(); }
-
-Expr* EnumConstantDecl::getInitValue() const { return decl->getInitValue(); }
-
-
-TypeDecl::TypeDecl(const std::string& name_, SourceLocation loc_, QualType type_, bool is_public_)
-    : Decl(DECL_TYPE, is_public_)
+TypeDecl::TypeDecl(const std::string& name_, SourceLocation loc_, QualType type_, bool is_public)
+    : Decl(DECL_TYPE, is_public)
     , name(name_)
     , loc(loc_)
     , type(type_)
@@ -225,13 +206,14 @@ UseDecl::UseDecl(const std::string& name_, SourceLocation loc_, bool isLocal_,
     , alias(alias_)
     , loc(loc_)
     , aliasLoc(aliasLoc_)
-    , is_local(isLocal_)
-{}
+{
+    DeclBits.UseIsLocal = isLocal_;
+}
 
 void UseDecl::print(StringBuilder& buffer) {
     buffer << "[use " << name;
     if (alias != "") buffer << " as " << alias;
-    if (is_local) buffer << " local";
+    if (isLocal()) buffer << " local";
     buffer << "]\n";
 }
 

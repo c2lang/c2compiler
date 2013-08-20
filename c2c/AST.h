@@ -18,6 +18,7 @@
 
 #include <string>
 #include <vector>
+#include <map>
 #include <clang/Basic/SourceLocation.h>
 
 namespace C2 {
@@ -30,19 +31,35 @@ public:
     AST() {}
     ~AST();
 
-    // analysis
-    void visitAST(ASTVisitor& visitor);
-
     // debugging
     void print(const std::string& filename) const;
 
-    // codegen
-    // TODO use functions of direct member access?
+    // parsing
+    void addDecl(Decl* d) { decls.push_back(d); }
+    void addSymbol(Decl* d);
+
+    // analysis
+    void visitAST(ASTVisitor& visitor);
+
     unsigned getNumDecls() const { return decls.size(); }
     Decl* getDecl(unsigned index) const { return decls[index]; }
 
+    typedef std::map<std::string, Decl*> Symbols;
+    typedef Symbols::const_iterator SymbolsConstIter;
+    const Symbols& getSymbols() const { return symbols; }
+    Decl* findSymbol(const std::string& name) const {
+        SymbolsConstIter iter = symbols.find(name);
+        if (iter != symbols.end()) return iter->second;
+        return 0;
+    }
+
+    void setName(const std::string& name, clang::SourceLocation loc) {
+        pkgName = name;
+        pkgLoc = loc;
+    }
     const std::string& getPkgName() const { return pkgName; }
 
+private:
     std::string pkgName;
     clang::SourceLocation pkgLoc;
 
@@ -50,6 +67,8 @@ public:
     typedef DeclList::const_iterator DeclListConstIter;
     typedef DeclList::iterator DeclListIter;
     DeclList decls;
+
+    Symbols symbols;
 };
 
 }

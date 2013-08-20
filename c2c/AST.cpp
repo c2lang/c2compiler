@@ -56,3 +56,8 @@ void AST::print(const std::string& filename) const {
     printf("%s", (const char*)buffer);
 }
 
+void AST::addSymbol(Decl* d) {
+    symbols[d->getName()] = d;
+}
+
+

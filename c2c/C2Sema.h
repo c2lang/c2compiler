@@ -17,8 +17,6 @@
 #define C2SEMA_H
 
 #include <string>
-#include <map>
-#include <vector>
 
 #include <clang/Basic/SourceLocation.h>
 #include "C2Parser.h" // TODO only needed for ExprResult/StmtResult
@@ -98,10 +96,9 @@ public:
     ExprResult ActOnBuiltinType(C2Type t);
     ExprResult ActOnStructType(SourceLocation leftBrace, SourceLocation rightBrace,
                                ExprList& members, bool isStruct, const char* id);
-    ExprResult ActOnEnumType(const char* id);
-    ExprResult ActOnEnumTypeFinished(Expr* enumType, SourceLocation leftBrace, SourceLocation rightBrace,
-                               ExprList& values);
-    ExprResult ActOnEnumConstant(Expr* enumType, IdentifierInfo* symII, SourceLocation symLoc, Expr* Value);
+    ExprResult ActOnEnumType(const char* id, Expr* implType);
+    ExprResult ActOnEnumTypeFinished(Expr* enumType, SourceLocation leftBrace, SourceLocation rightBrace);
+    void ActOnEnumConstant(Expr* enumType, IdentifierInfo* symII, SourceLocation symLoc, Expr* Value);
     ExprResult ActOnTypeQualifier(ExprResult R, unsigned int qualifier);
     ExprResult ActOnVarExpr(const char* name, SourceLocation loc, Expr* type, Expr* InitValue);
     ExprResult ActOnBuiltinExpression(SourceLocation Loc, Expr* expr, bool isSizeof);
@@ -115,18 +112,12 @@ private:
     C2::ExprResult ExprError();
 
     DiagnosticBuilder Diag(SourceLocation Loc, unsigned DiagID);
-    void addDecl(Decl* d);
+    void addSymbol(Decl* d);
     const Decl* findUse(const char* name) const;
     const UseDecl* findAlias(const char* name) const;
-    Decl* getSymbol(const std::string& name) const;
 
     SourceManager& SourceMgr;
     DiagnosticsEngine& Diags;
-
-    // This map is just for lookups, no ownership. UseDecls are not added here
-    typedef std::map<std::string, Decl*> Symbols;
-    typedef Symbols::const_iterator SymbolsConstIter;
-    Symbols symbols;
 
     TypeContext& typeContext;
     AST& ast;
