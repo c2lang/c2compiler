@@ -41,7 +41,6 @@ bool ScopeAnalyser::handle(Decl* decl) {
     case DECL_FUNC:
         {
             FunctionDecl* func = cast<FunctionDecl>(decl);
-            assert(func);
             // check return type
             checkType(func->getReturnType(), is_public);
             // check argument types
@@ -58,7 +57,6 @@ bool ScopeAnalyser::handle(Decl* decl) {
     case DECL_VAR:
         {
             VarDecl* vd = cast<VarDecl>(decl);
-            assert(vd);
             checkType(vd->getType(), is_public);
         }
         break;
@@ -68,7 +66,6 @@ bool ScopeAnalyser::handle(Decl* decl) {
     case DECL_TYPE:
         {
             TypeDecl* td = cast<TypeDecl>(decl);
-            assert(td);
             checkType(td->getType(), is_public);
         }
         // TODO analyse members in structs/unions
@@ -116,7 +113,6 @@ void ScopeAnalyser::checkType(QualType type, bool used_public) {
 void ScopeAnalyser::checkUse(Decl* decl) {
     std::string pkgName = decl->getName();
     UseDecl* useDecl = cast<UseDecl>(decl);
-    assert(useDecl);
 
     // check if package exists
     const Package* pkg = globals.findAnyPackage(pkgName);

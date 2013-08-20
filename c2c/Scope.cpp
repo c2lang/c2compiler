@@ -121,7 +121,6 @@ int FileScope::checkUserType(Type* type, Expr* id, bool used_public) {
     case EXPR_IDENTIFIER:   // unqualified
         {
             IdentifierExpr* I = cast<IdentifierExpr>(id);
-            assert(I);
             ScopeResult res = findSymbol(I->getName());
             if (!res.decl) {
                 Diags.Report(I->getLocation(), diag::err_unknown_typename) << I->getName();
@@ -136,7 +135,7 @@ int FileScope::checkUserType(Type* type, Expr* id, bool used_public) {
                 Diags.Report(I->getLocation(), diag::err_not_public) << I->getName();
                 return 1;
             }
-            TypeDecl* td = cast<TypeDecl>(res.decl);
+            TypeDecl* td = dyncast<TypeDecl>(res.decl);
             if (!td) {
                 Diags.Report(I->getLocation(), diag::err_not_a_typename) << I->getName();
                 return 1;
@@ -155,10 +154,8 @@ int FileScope::checkUserType(Type* type, Expr* id, bool used_public) {
     case EXPR_MEMBER:   // fully qualified
         {
             MemberExpr* M = cast<MemberExpr>(id);
-            assert(M);
             Expr* base = M->getBase();
             IdentifierExpr* pkg_id = cast<IdentifierExpr>(base);
-            assert(pkg_id);
             const std::string& pkgName = pkg_id->getName();
             // check if package exists
             pkg = findPackage(pkgName);
@@ -183,14 +180,13 @@ int FileScope::checkUserType(Type* type, Expr* id, bool used_public) {
             // check member
             Expr* member = M->getMember();
             IdentifierExpr* member_id = cast<IdentifierExpr>(member);
-            assert(member_id);
             // check Type
             Decl* symbol = pkg->findSymbol(member_id->getName());
             if (!symbol) {
                 Diags.Report(member_id->getLocation(), diag::err_unknown_typename) << M->getFullName();
                 return 1;
             }
-            TypeDecl* td = cast<TypeDecl>(symbol);
+            TypeDecl* td = dyncast<TypeDecl>(symbol);
             if (!td) {
                 Diags.Report(member_id->getLocation(), diag::err_not_a_typename) << M->getFullName();
                 return 1;

@@ -179,7 +179,7 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
     case EXPR_BOOL_LITERAL:
         {
             BooleanLiteral* B = cast<BooleanLiteral>(E);
-            cbuf << (int)B->value;
+            cbuf << (int)B->getValue();
             return;
         }
     case EXPR_CHAR_LITERAL:
@@ -238,7 +238,7 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
     case EXPR_BUILTIN:
         {
             BuiltinExpr* S = cast<BuiltinExpr>(E);
-            if (S->isSizeFunc()) {
+            if (S->isSizeof()) {
                 output << "sizeof(";
                 EmitExpr(S->getExpr(), output);
                 output << ')';
@@ -324,7 +324,7 @@ void CCodeGenerator::EmitMemberExpr(Expr* E, StringBuilder& output) {
     } else {
         // A.B where A is decl of struct/union type
         EmitExpr(M->getBase(), cbuf);
-        if (M->isArrowOp()) cbuf << "->";
+        if (M->isArrow()) cbuf << "->";
         else cbuf << '.';
         cbuf << M->getMember()->getName();
     }
@@ -567,7 +567,6 @@ void CCodeGenerator::EmitWhileStmt(Stmt* S, unsigned indent) {
     cbuf << "while (";
     // TEMP, assume Expr
     Expr* E = cast<Expr>(W->getCond());
-    assert(E);
     EmitExpr(E, cbuf);
     cbuf << ") ";
     Stmt* Body = W->getBody();
@@ -595,7 +594,6 @@ void CCodeGenerator::EmitDoStmt(Stmt* S, unsigned indent) {
     cbuf << "while (";
     // TEMP, assume Expr
     Expr* E = cast<Expr>(D->getCond());
-    assert(E);
     EmitExpr(E, cbuf);
     cbuf << ");\n";
 }
@@ -607,9 +605,7 @@ void CCodeGenerator::EmitForStmt(Stmt* S, unsigned indent) {
     Stmt* Init = F->getInit();
     if (Init) {
         // assume Expr
-        Expr* E = cast<Expr>(Init);
-        assert(E);
-        EmitExpr(E, cbuf);
+        EmitExpr(cast<Expr>(Init), cbuf);
     }
     cbuf << ';';
 
@@ -629,8 +625,7 @@ void CCodeGenerator::EmitForStmt(Stmt* S, unsigned indent) {
     cbuf << ") ";
     Stmt* Body = F->getBody();
     if (Body->getKind() == STMT_COMPOUND) {
-        CompoundStmt* C = cast<CompoundStmt>(Body);
-        EmitCompoundStmt(C, indent, false);
+        EmitCompoundStmt(cast<CompoundStmt>(Body), indent, false);
     } else {
         EmitStmt(Body, 0);
     }

@@ -37,9 +37,8 @@ static int deleteCount;
 
 Expr::Expr(ExprKind k)
     : Stmt(STMT_EXPR)
-    , kind(k)
-    , isStatement(false)
 {
+    StmtBits.eKind = k;
 #ifdef EXPR_DEBUG
     creationCount++;
     fprintf(stderr, "[EXPR] create %p  created %d deleted %d\n", this, creationCount, deleteCount);
@@ -76,7 +75,7 @@ void StringLiteral::print(int indent, StringBuilder& buffer) const {
 
 void BooleanLiteral::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
-    buffer << "[bool " << value << "]\n";
+    buffer << "[bool " << getValue() << "]\n";
 }
 
 
@@ -194,7 +193,6 @@ DeclExpr::DeclExpr(const std::string& name_, SourceLocation& loc_,
     , type(type_)
     , canonicalType(0)
     , initValue(initValue_)
-    , localQualifier(false)
 {}
 
 DeclExpr::~DeclExpr() {}
@@ -202,7 +200,7 @@ DeclExpr::~DeclExpr() {}
 void DeclExpr::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[decl " << name;
-    if (localQualifier) buffer << " LOCAL";
+    if (hasLocalQualifier()) buffer << " LOCAL";
     buffer << "]\n";
     indent += INDENT;
     // Dont print types for enums, otherwise we get a loop since Type have Decls etc
@@ -348,7 +346,7 @@ BuiltinExpr::~BuiltinExpr() {
 
 void BuiltinExpr::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
-    if (isSizeof) buffer << "[sizeof]\n";
+    if (isSizeof()) buffer << "[sizeof]\n";
     else buffer << "[elemsof]\n";
     expr->print(indent + INDENT, buffer);
 }

@@ -65,18 +65,14 @@ public:
         return S->getKind() == STMT_EXPR;
     }
 
-    ExprKind getKind() const { return kind; }
+    ExprKind getKind() const {
+        return static_cast<ExprKind>(StmtBits.eKind);
+    }
 
     virtual clang::SourceRange getSourceRange() {
         return clang::SourceRange();
     }
-
-    void setStatementFlag() { isStatement = true; }
-    bool isStmt() const { return isStatement; }
 private:
-    bool isStatement;
-    ExprKind kind;
-
     Expr(const Expr&);
     Expr& operator= (const Expr&);
 };
@@ -136,14 +132,17 @@ class BooleanLiteral : public Expr {
 public:
     BooleanLiteral(SourceLocation loc_, bool val)
         : Expr(EXPR_BOOL_LITERAL)
-        , value(val), loc(loc_) {}
+        , loc(loc_)
+    {
+        StmtBits.BoolLiteralValue = val;
+    }
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_BOOL_LITERAL;
     }
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return loc; }
+    bool getValue() const { return StmtBits.BoolLiteralValue; }
 
-    bool value;
     clang::SourceLocation loc;
 };
 
@@ -159,6 +158,7 @@ public:
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return loc; }
 
+    // TODO use StmtBits (need to use union then)
     unsigned value;
     clang::SourceLocation loc;
 };
@@ -193,7 +193,7 @@ public:
     TypeExpr(QualType& QT_)
         : Expr(EXPR_TYPE)
         , QT(QT_)
-        , isLocal(false) {}
+    {}
     virtual ~TypeExpr();
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_TYPE;
@@ -206,11 +206,10 @@ public:
     QualType& getType() { return QT; }
     void setType(QualType& QT_) { QT = QT_; }
 
-    void setLocalQualifier() { isLocal = true; }
-    bool hasLocalQualifier() const { return isLocal; }
+    void setLocalQualifier() { StmtBits.TypeExprIsLocal = true; }
+    bool hasLocalQualifier() const { return StmtBits.TypeExprIsLocal; }
 private:
     QualType QT;
-    bool isLocal;
 };
 
 
@@ -274,15 +273,14 @@ public:
     const std::string& getName() const { return name; }
     Expr* getInitValue() const { return initValue; }
 
-    void setLocalQualifier() { localQualifier = true; }
-    bool hasLocalQualifier() const { return localQualifier; }
+    void setLocalQualifier() { StmtBits.DeclExprLocalQualifier = true; }
+    bool hasLocalQualifier() const { return StmtBits.DeclExprLocalQualifier; }
 private:
     std::string name;
     SourceLocation loc;
     QualType type;
     Type* canonicalType;
     Expr* initValue;
-    bool localQualifier;
 };
 
 
@@ -362,8 +360,9 @@ public:
         : Expr(EXPR_BUILTIN)
         , Loc(Loc_)
         , expr(expr_)
-        , isSizeof(isSizeof_)
-    {}
+    {
+        StmtBits.BuiltInIsSizeOf = isSizeof_;
+    }
     virtual ~BuiltinExpr();
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_BUILTIN;
@@ -372,11 +371,10 @@ public:
     virtual SourceLocation getLocation() const { return Loc; }
 
     Expr* getExpr() const { return expr; }
-    bool isSizeFunc() const { return isSizeof; }
+    bool isSizeof() const { return StmtBits.BuiltInIsSizeOf; }
 private:
     SourceLocation Loc;
     Expr* expr;
-    bool isSizeof;
 };
 
 
@@ -405,8 +403,9 @@ public:
         : Expr(EXPR_MEMBER)
         , Base(Base_)
         , Member(Member_)
-        , isArrow(isArrow_)
-    {}
+    {
+        StmtBits.MemberExprIsArrow = isArrow_;
+    }
     virtual ~MemberExpr();
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_MEMBER;
@@ -416,13 +415,12 @@ public:
 
     Expr* getBase() const { return Base; }
     IdentifierExpr* getMember() const { return Member; }
-    bool isArrowOp() const { return isArrow; }
+    bool isArrow() const { return StmtBits.MemberExprIsArrow; }
     // NOTE: uses static var
     const char* getFullName() const;
 private:
     Expr* Base;
     IdentifierExpr* Member;
-    bool isArrow;
 };
 
 
@@ -453,14 +451,33 @@ template <class T> static inline bool isa(const Expr* E) {
     return T::classof(E);
 }
 
-template <class T> static inline T* cast(Expr* E) {
+template <class T> static inline T* dyncast(Expr* E) {
     if (isa<T>(E)) return static_cast<T*>(E);
     return 0;
 }
 
-template <class T> static inline const T* cast(const Expr* E) {
+template <class T> static inline const T* dyncast(const Expr* E) {
     if (isa<T>(E)) return static_cast<const T*>(E);
     return 0;
+}
+
+//#define CAST_DEBUG
+#ifdef CAST_DEBUG
+#include <assert.h>
+#endif
+
+template <class T> static inline T* cast(Expr* E) {
+#ifdef CAST_DEBUG
+    assert(isa<T>(E));
+#endif
+    return static_cast<T*>(E);
+}
+
+template <class T> static inline const T* cast(const Expr* E) {
+#ifdef CAST_DEBUG
+    assert(isa<T>(E));
+#endif
+    return static_cast<const T*>(E);
 }
 
 }

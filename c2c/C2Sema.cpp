@@ -174,7 +174,6 @@ void C2Sema::ActOnTypeDef(const char* name, SourceLocation loc, Expr* type, bool
 #endif
     // extract here to Type and delete rtype Expr
     TypeExpr* typeExpr = cast<TypeExpr>(type);
-    assert(typeExpr);
     if (typeExpr->hasLocalQualifier()) {
         Diag(loc, diag::err_invalid_local_typedef);
     }
@@ -193,7 +192,6 @@ void C2Sema::ActOnVarDef(const char* name, SourceLocation loc,
 #endif
     // extract here to Type and delete rtype Expr
     TypeExpr* typeExpr = cast<TypeExpr>(type);
-    assert(typeExpr);
     if (typeExpr->hasLocalQualifier()) {
         Diag(loc, diag::err_invalid_local_globalvar);
     }
@@ -213,7 +211,6 @@ C2::FunctionDecl* C2Sema::ActOnFuncDef(const char* name, SourceLocation loc, boo
     // TEMP extract here to Type and delete rtype Expr
     assert(rtype);
     TypeExpr* typeExpr = cast<TypeExpr>(rtype);
-    assert(typeExpr);
     if (typeExpr->hasLocalQualifier()) {
         // TODO let Parser check this (need extra arg for ParseSingleTypeSpecifier())
         // TODO need local's location
@@ -227,10 +224,8 @@ C2::FunctionDecl* C2Sema::ActOnFuncDef(const char* name, SourceLocation loc, boo
 
 void C2Sema::ActOnFunctionArgs(Decl* decl, ExprList params) {
     FunctionDecl* func = cast<FunctionDecl>(decl);
-    assert(func);
     for (unsigned int i=0; i<params.size(); i++) {
         DeclExpr* de = cast<DeclExpr>(params[i]);
-        assert(de);
         // check args for duplicates
         DeclExpr* existing = func->findArg(de->getName());
         if (existing) {
@@ -244,9 +239,7 @@ void C2Sema::ActOnFunctionArgs(Decl* decl, ExprList params) {
 
 void C2Sema::ActOnFinishFunctionBody(Decl* decl, Stmt* body) {
     FunctionDecl* func = cast<FunctionDecl>(decl);
-    assert(func);
     CompoundStmt* C = cast<CompoundStmt>(body);
-    assert(C);
     func->setBody(C);
 }
 
@@ -394,9 +387,7 @@ C2::StmtResult C2Sema::ActOnDeclaration(const char* name, SourceLocation loc, Ex
     }
     // TEMP extract here to Type and delete rtype Expr
     TypeExpr* typeExpr = cast<TypeExpr>(type);
-    assert(typeExpr);
     DeclExpr* declExpr = new DeclExpr(name, loc, typeExpr->getType(), InitValue);
-    declExpr->setStatementFlag();
     if (typeExpr->hasLocalQualifier()) declExpr->setLocalQualifier();
     delete typeExpr;
     return StmtResult(declExpr);
@@ -476,7 +467,6 @@ C2::ExprResult C2Sema::ActOnArrayType(Expr* base, Expr* size) {
 #endif
     assert(base);
     TypeExpr* typeExpr = cast<TypeExpr>(base);
-    assert(typeExpr);
     QualType QT = typeContext.getArray(typeExpr->getType(), size, true);
     typeExpr->setType(QT);
     return ExprResult(base);
@@ -488,7 +478,6 @@ C2::ExprResult C2Sema::ActOnPointerType(Expr* base) {
 #endif
     assert(base);
     TypeExpr* typeExpr = cast<TypeExpr>(base);
-    assert(typeExpr);
     QualType qt = typeContext.getPointer(typeExpr->getType());
     typeExpr->setType(qt);
     return ExprResult(base);
@@ -525,7 +514,6 @@ C2::ExprResult C2Sema::ActOnStructType(SourceLocation leftBrace, SourceLocation 
     MemberList* members2 = new MemberList;
     for (unsigned int i=0; i<members.size(); i++) {
         DeclExpr* member = cast<DeclExpr>(members[i]);
-        assert(member);
         members2->push_back(member);
     }
     type->setMembers(members2);
@@ -547,13 +535,11 @@ C2::ExprResult C2Sema::ActOnEnumTypeFinished(Expr* enumType,
     std::cerr << COL_SEMA"SEMA: enum Type"ANSI_NORMAL"\n";
 #endif
     TypeExpr* typeExpr = cast<TypeExpr>(enumType);
-    assert(typeExpr);
     // TODO use left/rightBrace (add to TypeExpr, then pass to TypeDecl)
     // TODO share code with ActOnStructType()
     MemberList* members2 = new MemberList;
     for (unsigned int i=0; i<values.size(); i++) {
         DeclExpr* member = cast<DeclExpr>(values[i]);
-        assert(member);
         members2->push_back(member);
     }
     QualType qt = typeExpr->getType();
@@ -569,7 +555,6 @@ C2::ExprResult C2Sema::ActOnEnumConstant(Expr* enumType, IdentifierInfo* symII,
     std::cerr << COL_SEMA"SEMA: enum constant"ANSI_NORMAL"\n";
 #endif
     TypeExpr* typeExpr = cast<TypeExpr>(enumType);
-    assert(typeExpr);
     return ExprResult(new DeclExpr(symII->getNameStart(), symLoc, typeExpr->getType(), Value));
 }
 
@@ -580,7 +565,6 @@ C2::ExprResult C2Sema::ActOnTypeQualifier(ExprResult R, unsigned int qualifier) 
         std::cerr << COL_SEMA"SEMA: Qualifier Type"ANSI_NORMAL"\n";
 #endif
         TypeExpr* typeExpr = cast<TypeExpr>(R.get());
-        assert(typeExpr);
         // TODO use typeExpr.addConst() and just return QualType (not ref) in getType()
         QualType& qt = typeExpr->getType();
         if (qualifier & TYPE_CONST) qt.addConst();
@@ -599,7 +583,6 @@ C2::ExprResult C2Sema::ActOnVarExpr(const char* name, SourceLocation loc, Expr* 
 #endif
     // TEMP extract here to Type and delete rtype Expr
     TypeExpr* typeExpr = cast<TypeExpr>(type);
-    assert(typeExpr);
     if (typeExpr->hasLocalQualifier()) {
         Diag(loc, diag::err_invalid_local_functionargument);
     }
@@ -634,7 +617,6 @@ C2::ExprResult C2Sema::ActOnMemberExpr(Expr* Base, bool isArrow, Expr* Member) {
     assert(Base);
     assert(Member);
     IdentifierExpr* Id = cast<IdentifierExpr>(Member);
-    assert(Id);
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: member access";
     std::cerr << ANSI_NORMAL"\n";
@@ -878,7 +860,6 @@ const C2::UseDecl* C2Sema::findAlias(const char* name) const {
         Decl* d = ast.decls[i];
         if (!isa<UseDecl>(d)) break;
         UseDecl* useDecl = cast<UseDecl>(d);
-        assert(useDecl);
         if (useDecl->getAlias() == name) return useDecl;
     }
     return 0;

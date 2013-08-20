@@ -56,13 +56,28 @@ class Stmt {
 public:
     Stmt(StmtKind k);
     virtual ~Stmt();
-    StmtKind getKind() const { return kind; }
+    StmtKind getKind() const { return static_cast<StmtKind>(StmtBits.sKind); }
     virtual void print(int indent, StringBuilder& buffer) const = 0;
     void dump() const;
     virtual SourceLocation getLocation() const = 0;
-private:
-    StmtKind kind;
 
+protected:
+    class StmtBitfields {
+    public:
+        unsigned sKind : 8;
+        unsigned eKind : 8;
+        unsigned BoolLiteralValue : 1;
+        unsigned TypeExprIsLocal : 1;
+        unsigned DeclExprLocalQualifier : 1;
+        unsigned BuiltInIsSizeOf: 1;
+        unsigned MemberExprIsArrow: 1;
+
+    };
+    union {
+        StmtBitfields StmtBits;
+        unsigned BitsInit;      // to initialize all bits
+    };
+private:
     Stmt(const Stmt&);
     Stmt& operator= (const Stmt&);
 };
@@ -327,14 +342,33 @@ template <class T> static inline bool isa(const Stmt* S) {
     return T::classof(S);
 }
 
-template <class T> static inline T* cast(Stmt* S) {
+template <class T> static inline T* dyncast(Stmt* S) {
     if (isa<T>(S)) return static_cast<T*>(S);
     return 0;
 }
 
-template <class T> static inline const T* cast(const Stmt* S) {
+template <class T> static inline const T* dyncast(const Stmt* S) {
     if (isa<T>(S)) return static_cast<const T*>(S);
     return 0;
+}
+
+//#define CAST_DEBUG
+#ifdef CAST_DEBUG
+#include <assert.h>
+#endif
+
+template <class T> static inline T* cast(Stmt* S) {
+#ifdef CAST_DEBUG
+    assert(isa<T>(S));
+#endif
+    return static_cast<T*>(S);
+}
+
+template <class T> static inline const T* cast(const Stmt* S) {
+#ifdef CAST_DEBUG
+    assert(isa<T>(S));
+#endif
+    return static_cast<const T*>(S);
 }
 
 }

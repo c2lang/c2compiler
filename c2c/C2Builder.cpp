@@ -132,14 +132,11 @@ public:
 
     bool parse(const BuildOptions& options) {
         if (options.verbose) printf(COL_VERBOSE"running %s %s()"ANSI_NORMAL"\n", filename.c_str(), __func__);
-        u_int64_t t1 = Utils::getCurrentTime();
         C2Sema sema(SM, Diags, typeContext, ast, PP);
         C2Parser parser(PP, sema);
         parser.Initialize();
         // parse the file into AST
         bool ok = parser.Parse();
-        u_int64_t t2 = Utils::getCurrentTime();
-        if (options.printTiming) printf(COL_TIME"parsing took %lld usec"ANSI_NORMAL"\n", t2 - t1);
         if (options.printAST) ast.print(filename);
         return ok;
     }
@@ -164,14 +161,11 @@ public:
     // analyse Function bodies
     int analyse3(const BuildOptions& options) {
         if (options.verbose) printf(COL_VERBOSE"running %s %s()"ANSI_NORMAL"\n", filename.c_str(), __func__);
-        u_int64_t t1 = Utils::getCurrentTime();
 
         // analyse function bodies
         FunctionAnalyser visitor(*globals, typeContext, Diags);
         ast.visitAST(visitor);
 
-        u_int64_t t2 = Utils::getCurrentTime();
-        if (options.printTiming) printf(COL_TIME"analysis took %lld usec"ANSI_NORMAL"\n", t2 - t1);
         return visitor.getErrors();
     }
 
@@ -239,6 +233,7 @@ int C2Builder::checkFiles() {
 void C2Builder::build() {
     printf(ANSI_GREEN"building target %s"ANSI_NORMAL"\n", recipe.name.c_str());
 
+    u_int64_t t1_build = Utils::getCurrentTime();
     // TODO save these common objects in Builder class?
     // LangOptions
     LangOptions LangOpts;
@@ -290,12 +285,16 @@ void C2Builder::build() {
 
     // phase 1: parse and local analyse
     int errors = 0;
+    u_int64_t t1_parse = Utils::getCurrentTime();
     for (int i=0; i<recipe.size(); i++) {
         FileInfo* info = new FileInfo(Diags, LangOpts, pti, HSOpts, recipe.get(i), PredefineBuffer);
         files.push_back(info);
         bool ok = info->parse(options);
         errors += !ok;
     }
+    u_int64_t t2_parse = Utils::getCurrentTime();
+    u_int64_t t1_analyse, t2_analyse;
+    if (options.printTiming) printf(COL_TIME"parsing took %lld usec"ANSI_NORMAL"\n", t2_parse - t1_parse);
     if (client->getNumErrors()) goto out;
 
     // phase 1b: merge file's symbol tables to package symbols tables
@@ -313,6 +312,7 @@ void C2Builder::build() {
     addDummyPackages();
 
     // phase 2: run analysing on all files
+    t1_analyse = Utils::getCurrentTime();
     for (unsigned int i=0; i<files.size(); i++) {
         FileInfo* info = files[i];
         errors += info->analyse1(options, pkgs);
@@ -329,6 +329,8 @@ void C2Builder::build() {
         FileInfo* info = files[i];
         errors += info->analyse3(options);
     }
+    t2_analyse = Utils::getCurrentTime();
+    if (options.printTiming) printf(COL_TIME"analysis took %lld usec"ANSI_NORMAL"\n", t2_analyse - t1_analyse);
 
     if (options.printASTAfter) {
         for (unsigned int i=0; i<files.size(); i++) {
@@ -346,6 +348,8 @@ void C2Builder::build() {
 
     if (options.verbose) printf(COL_VERBOSE"done"ANSI_NORMAL"\n");
 out:
+    u_int64_t t2_build = Utils::getCurrentTime();
+    if (options.printTiming) printf(COL_TIME"total build took %lld usec"ANSI_NORMAL"\n", t2_build - t1_build);
     raw_ostream &OS = llvm::errs();
     unsigned NumWarnings = client->getNumWarnings();
     unsigned NumErrors = client->getNumErrors();

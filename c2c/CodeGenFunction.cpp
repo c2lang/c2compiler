@@ -59,7 +59,6 @@ llvm::Function* CodeGenFunction::generateProto(const std::string& pkgname) {
         for (unsigned int i=0; i<FuncDecl->args.size(); i++) {
             // TODO already store as DeclExpr?
             DeclExpr* de = cast<DeclExpr>(FuncDecl->args[i]);
-            assert(de);
             QualType qt = de->getType();
             Args.push_back(CGM.ConvertType(qt.getTypePtr()));
         }
@@ -376,7 +375,7 @@ llvm::Value* CodeGenFunction::EmitExpr(const Expr* E) {
     case EXPR_BOOL_LITERAL:
         {
             const BooleanLiteral* B = cast<BooleanLiteral>(E);
-            return llvm::ConstantInt::get(llvm::Type::getInt1Ty(context), B->value, true);
+            return llvm::ConstantInt::get(llvm::Type::getInt1Ty(context), B->getValue(), true);
         }
     case EXPR_CHAR_LITERAL:
         assert(0 && "TODO");

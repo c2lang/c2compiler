@@ -147,7 +147,6 @@ void CodeGenModule::write(const std::string& target, const std::string& name) {
 
 void CodeGenModule::EmitFunctionProto(Decl* D) {
     FunctionDecl* F = cast<FunctionDecl>(D);
-    assert(F);
     CodeGenFunction cgf(*this, F);
     llvm::Function* proto = cgf.generateProto(pkg->getName());
     F->setIRProto(proto);
@@ -271,7 +270,6 @@ llvm::Function* CodeGenModule::createExternal(const Package* P, const std::strin
     Decl* D = P->findSymbol(name);
     assert(D);
     FunctionDecl* F = cast<FunctionDecl>(D);
-    assert(F);
     CodeGenFunction cgf(*this, F);
     llvm::Function* proto = cgf.generateProto(P->getCName());
     return proto;
@@ -297,8 +295,8 @@ llvm::Constant* CodeGenModule::EvaluateExprAsConstant(const Expr *E) {
 /// expression and compare the result against zero, returning an Int1Ty value.
 llvm::Value *CodeGenModule::EvaluateExprAsBool(const Expr *E) {
     // NOTE: for now only support numbers and convert those to bools
+    assert(isa<IntegerLiteral>(E) && "Only support constants for now");
     const IntegerLiteral* N = cast<IntegerLiteral>(E);
-    assert(N && "Only support constants for now");
     return llvm::ConstantInt::get(llvm::Type::getInt1Ty(context), N->Value.getSExtValue(), true);
 
 #if 0

@@ -113,7 +113,6 @@ DeclExpr* FunctionDecl::findArg(const std::string& name) const {
     for (unsigned i=0; i<args.size(); i++) {
         // TEMP
         DeclExpr* arg = cast<DeclExpr>(args[i]);
-        assert(arg);
         if (arg->getName() == name) return arg;
     }
     return 0;

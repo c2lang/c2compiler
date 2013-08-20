@@ -2051,7 +2051,6 @@ C2::StmtResult C2Parser::ParseExprStatement() {
     }
 
     ExpectAndConsumeSemi(diag::err_expected_semi_after_expr);
-    Expr.get()->setStatementFlag();
     return StmtResult(Expr.release());
 }
 

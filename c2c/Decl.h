@@ -143,7 +143,6 @@ public:
     void addInitValue(ArrayValueDecl* value);
 private:
     DeclExpr* decl;
-    unsigned int flags;    // inExpr;
     InitValues initValues;
 };
 
@@ -232,14 +231,33 @@ template <class T> static inline bool isa(const Decl* D) {
     return T::classof(D);
 }
 
-template <class T> static inline T* cast(Decl* D) {
+template <class T> static inline T* dyncast(Decl* D) {
     if (isa<T>(D)) return static_cast<T*>(D);
     return 0;
 }
 
-template <class T> static inline const T* cast(const Decl* D) {
+template <class T> static inline const T* dyncast(const Decl* D) {
     if (isa<T>(D)) return static_cast<const T*>(D);
     return 0;
+}
+
+//#define CAST_DEBUG
+#ifdef CAST_DEBUG
+#include <assert.h>
+#endif
+
+template <class T> static inline T* cast(Decl* D) {
+#ifdef CAST_DEBUG
+    assert(isa<T>(D));
+#endif
+    return static_cast<T*>(D);
+}
+
+template <class T> static inline const T* cast(const Decl* D) {
+#ifdef CAST_DEBUG
+    assert(isa<T>(D));
+#endif
+    return static_cast<const T*>(D);
 }
 
 }

@@ -108,7 +108,6 @@ bool FunctionAnalyser::handle(Decl* decl) {
     case DECL_FUNC:
         {
             func = cast<FunctionDecl>(decl);
-            assert(func);
             EnterScope(Scope::FnScope | Scope::DeclScope);
             // add arguments to new scope
             // Note: duplicate argument names are already checked by Sema
@@ -244,7 +243,6 @@ void FunctionAnalyser::analyseStmt(Stmt* S, bool haveScope) {
 void FunctionAnalyser::analyseCompoundStmt(Stmt* stmt) {
     LOG_FUNC
     CompoundStmt* compound = cast<CompoundStmt>(stmt);
-    assert(compound);
     const StmtList& stmts = compound->getStmts();
     for (unsigned int i=0; i<stmts.size(); i++) {
         analyseStmt(stmts[i]);
@@ -254,7 +252,6 @@ void FunctionAnalyser::analyseCompoundStmt(Stmt* stmt) {
 void FunctionAnalyser::analyseIfStmt(Stmt* stmt) {
     LOG_FUNC
     IfStmt* I = cast<IfStmt>(stmt);
-    assert(I);
     Expr* cond = I->getCond();
     QualType Q1 = analyseExpr(cond);
     checkConversion(cond->getLocation(), Q1, QualType(BuiltinType::get(TYPE_BOOL)));
@@ -273,7 +270,6 @@ void FunctionAnalyser::analyseIfStmt(Stmt* stmt) {
 void FunctionAnalyser::analyseWhileStmt(Stmt* stmt) {
     LOG_FUNC
     WhileStmt* W = cast<WhileStmt>(stmt);
-    assert(W);
     analyseStmt(W->getCond());
     EnterScope(Scope::BreakScope | Scope::ContinueScope | Scope::DeclScope | Scope::ControlScope);
     analyseStmt(W->getBody(), true);
@@ -284,7 +280,6 @@ void FunctionAnalyser::analyseWhileStmt(Stmt* stmt) {
 void FunctionAnalyser::analyseDoStmt(Stmt* stmt) {
     LOG_FUNC
     DoStmt* D = cast<DoStmt>(stmt);
-    assert(D);
     EnterScope(Scope::BreakScope | Scope::ContinueScope | Scope::DeclScope);
     analyseStmt(D->getBody());
     ExitScope();
@@ -294,7 +289,6 @@ void FunctionAnalyser::analyseDoStmt(Stmt* stmt) {
 void FunctionAnalyser::analyseForStmt(Stmt* stmt) {
     LOG_FUNC
     ForStmt* F = cast<ForStmt>(stmt);
-    assert(F);
     EnterScope(Scope::BreakScope | Scope::ContinueScope | Scope::DeclScope | Scope::ControlScope);
     if (F->getInit()) analyseStmt(F->getInit());
     if (F->getCond()) analyseExpr(F->getCond());
@@ -306,7 +300,6 @@ void FunctionAnalyser::analyseForStmt(Stmt* stmt) {
 void FunctionAnalyser::analyseSwitchStmt(Stmt* stmt) {
     LOG_FUNC
     SwitchStmt* S = cast<SwitchStmt>(stmt);
-    assert(S);
     analyseExpr(S->getCond());
     const StmtList& Cases = S->getCases();
     Stmt* defaultStmt = 0;
@@ -337,7 +330,6 @@ void FunctionAnalyser::analyseBreakStmt(Stmt* stmt) {
     LOG_FUNC
     if (!curScope->allowBreak()) {
         BreakStmt* B = cast<BreakStmt>(stmt);
-        assert(B);
         Diags.Report(B->getLocation(), diag::err_break_not_in_loop_or_switch);
     }
 }
@@ -346,7 +338,6 @@ void FunctionAnalyser::analyseContinueStmt(Stmt* stmt) {
     LOG_FUNC
     if (!curScope->allowContinue()) {
         ContinueStmt* C = cast<ContinueStmt>(stmt);
-        assert(C);
         Diags.Report(C->getLocation(), diag::err_continue_not_in_loop);
     }
 }
@@ -354,7 +345,6 @@ void FunctionAnalyser::analyseContinueStmt(Stmt* stmt) {
 void FunctionAnalyser::analyseCaseStmt(Stmt* stmt) {
     LOG_FUNC
     CaseStmt* C = cast<CaseStmt>(stmt);
-    assert(C);
     analyseExpr(C->getCond());
     const StmtList& stmts = C->getStmts();
     for (unsigned int i=0; i<stmts.size(); i++) {
@@ -365,7 +355,6 @@ void FunctionAnalyser::analyseCaseStmt(Stmt* stmt) {
 void FunctionAnalyser::analyseDefaultStmt(Stmt* stmt) {
     LOG_FUNC
     DefaultStmt* D = cast<DefaultStmt>(stmt);
-    assert(D);
     const StmtList& stmts = D->getStmts();
     for (unsigned int i=0; i<stmts.size(); i++) {
         analyseStmt(stmts[i]);
@@ -375,7 +364,6 @@ void FunctionAnalyser::analyseDefaultStmt(Stmt* stmt) {
 void FunctionAnalyser::analyseReturnStmt(Stmt* stmt) {
     LOG_FUNC
     ReturnStmt* ret = cast<ReturnStmt>(stmt);
-    assert(ret);
     Expr* value = ret->getExpr();
     QualType rtype = func->getReturnType();
     bool no_rvalue = (rtype.getTypePtr() == BuiltinType::get(TYPE_VOID));
@@ -397,7 +385,6 @@ void FunctionAnalyser::analyseReturnStmt(Stmt* stmt) {
 void FunctionAnalyser::analyseStmtExpr(Stmt* stmt) {
     LOG_FUNC
     Expr* expr = cast<Expr>(stmt);
-    assert(expr);
     analyseExpr(expr);
 }
 
@@ -584,7 +571,6 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
 void FunctionAnalyser::analyseInitList(Expr* expr, QualType expectedType) {
     LOG_FUNC
     InitListExpr* I = cast<InitListExpr>(expr);
-    assert(I);
     assert(expectedType.isValid());
 
     const Type* type = expectedType.getTypePtr();
@@ -636,7 +622,6 @@ void FunctionAnalyser::analyseInitList(Expr* expr, QualType expectedType) {
 void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     LOG_FUNC
     DeclExpr* decl = cast<DeclExpr>(expr);
-    assert(decl);
 
     // check type and convert User types
     QualType type = decl->getType();
@@ -667,7 +652,6 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
 QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr) {
     LOG_FUNC
     BinaryOperator* binop = cast<BinaryOperator>(expr);
-    assert(binop);
     QualType TLeft = analyseExpr(binop->getLHS());
     QualType TRight = analyseExpr(binop->getRHS());
     // assigning to 'A' from incompatible type 'B'
@@ -729,7 +713,6 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr) {
 QualType FunctionAnalyser::analyseConditionalOperator(Expr* expr) {
     LOG_FUNC
     ConditionalOperator* condop = cast<ConditionalOperator>(expr);
-    assert(condop);
     analyseExpr(condop->getCond());
     QualType TLeft = analyseExpr(condop->getLHS());
     analyseExpr(condop->getRHS());
@@ -740,7 +723,6 @@ QualType FunctionAnalyser::analyseConditionalOperator(Expr* expr) {
 QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr) {
     LOG_FUNC
     UnaryOperator* unaryop = cast<UnaryOperator>(expr);
-    assert(unaryop);
     QualType LType = analyseExpr(unaryop->getExpr());
     if (LType.isNull()) return 0;
     switch (unaryop->getOpcode()) {
@@ -766,14 +748,12 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr) {
 void FunctionAnalyser::analyseBuiltinExpr(Expr* expr) {
     LOG_FUNC
     BuiltinExpr* func = cast<BuiltinExpr>(expr);
-    assert(func);
     analyseExpr(func->getExpr());
-    if (func->isSizeFunc()) { // sizeof()
+    if (func->isSizeof()) { // sizeof()
         // TODO can also be type (for sizeof)
     } else { // elemsof()
         Expr* E = func->getExpr();
         IdentifierExpr* I = cast<IdentifierExpr>(E);
-        assert(I && "expr should be IdentifierExpr");
         Decl* D = I->getDecl();
         // should be VarDecl(for array/enum) or TypeDecl(array/enum)
         switch (D->getKind()) {
@@ -812,7 +792,6 @@ void FunctionAnalyser::analyseBuiltinExpr(Expr* expr) {
 QualType FunctionAnalyser::analyseArraySubscript(Expr* expr) {
     LOG_FUNC
     ArraySubscriptExpr* sub = cast<ArraySubscriptExpr>(expr);
-    assert(sub);
     QualType LType = analyseExpr(sub->getBase());
     if (LType.isNull()) return 0;
     // TODO this should be done in analyseExpr()
@@ -829,10 +808,9 @@ QualType FunctionAnalyser::analyseArraySubscript(Expr* expr) {
 QualType FunctionAnalyser::analyseMemberExpr(Expr* expr) {
     LOG_FUNC
     MemberExpr* M = cast<MemberExpr>(expr);
-    assert(M);
     IdentifierExpr* member = M->getMember();
 
-    bool isArrow = M->isArrowOp();
+    bool isArrow = M->isArrow();
     // Hmm we dont know what we're looking at here, can be:
     // pkg.type
     // pkg.var
@@ -969,14 +947,12 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr) {
 QualType FunctionAnalyser::analyseParenExpr(Expr* expr) {
     LOG_FUNC
     ParenExpr* P = cast<ParenExpr>(expr);
-    assert(P);
     return analyseExpr(P->getExpr());
 }
 
 QualType FunctionAnalyser::analyseCall(Expr* expr) {
     LOG_FUNC
     CallExpr* call = cast<CallExpr>(expr);
-    assert(call);
     // analyse function
     QualType LType = analyseExpr(call->getFn());
     if (LType.isNull()) {
@@ -1020,7 +996,6 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
 ScopeResult FunctionAnalyser::analyseIdentifier(Expr* expr) {
     LOG_FUNC
     IdentifierExpr* id = cast<IdentifierExpr>(expr);
-    assert(id);
     ScopeResult res = curScope->findSymbol(id->getName());
     if (res.decl) {
         if (res.ambiguous) {
