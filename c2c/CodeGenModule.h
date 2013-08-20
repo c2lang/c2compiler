@@ -34,6 +34,7 @@ class Decl;
 class Expr;
 class Type;
 class Package;
+class StringLiteral;
 
 // generates LLVM Module from (multiple) ASTs
 class CodeGenModule {
@@ -55,11 +56,13 @@ public:
     llvm::LLVMContext& getContext() const { return context; }
     llvm::IRBuilder<> getBuilder() const { return builder; }
 
-    llvm::Constant* EvaluateExprAsConstant(const Expr *E);
     llvm::Value* EvaluateExprAsBool(const Expr *E);
 private:
     void EmitFunctionProto(Decl* D);
     void EmitTopLevelDecl(Decl* D);
+
+    llvm::Constant* EvaluateExprAsConstant(const Expr *E);
+    llvm::Constant* GetConstantArrayFromStringLiteral(const StringLiteral* E);
 
     const Package* pkg;
 

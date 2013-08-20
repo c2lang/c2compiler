@@ -37,9 +37,9 @@ class Decl;
 
 enum ExprKind {
     EXPR_INTEGER_LITERAL=0,
-    EXPR_STRING,
-    EXPR_BOOL,
-    EXPR_CHARLITERAL,
+    EXPR_STRING_LITERAL,
+    EXPR_BOOL_LITERAL,
+    EXPR_CHAR_LITERAL,
     EXPR_FLOAT_LITERAL,
     EXPR_CALL,
     EXPR_IDENTIFIER,
@@ -116,13 +116,13 @@ public:
 };
 
 
-class StringExpr : public Expr {
+class StringLiteral : public Expr {
 public:
-    StringExpr(SourceLocation loc_, const std::string& val)
-        : Expr(EXPR_STRING)
+    StringLiteral(SourceLocation loc_, const std::string& val)
+        : Expr(EXPR_STRING_LITERAL)
         , value(val), loc(loc_) {}
     static bool classof(const Expr* E) {
-        return E->getKind() == EXPR_STRING;
+        return E->getKind() == EXPR_STRING_LITERAL;
     }
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return loc; }
@@ -132,13 +132,13 @@ public:
 };
 
 
-class BoolLiteralExpr : public Expr {
+class BooleanLiteral : public Expr {
 public:
-    BoolLiteralExpr(SourceLocation loc_, bool val)
-        : Expr(EXPR_BOOL)
+    BooleanLiteral(SourceLocation loc_, bool val)
+        : Expr(EXPR_BOOL_LITERAL)
         , value(val), loc(loc_) {}
     static bool classof(const Expr* E) {
-        return E->getKind() == EXPR_BOOL;
+        return E->getKind() == EXPR_BOOL_LITERAL;
     }
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return loc; }
@@ -148,13 +148,13 @@ public:
 };
 
 
-class CharLiteralExpr : public Expr {
+class CharacterLiteral : public Expr {
 public:
-    CharLiteralExpr(SourceLocation loc_, unsigned val)
-        : Expr(EXPR_CHARLITERAL)
+    CharacterLiteral(SourceLocation loc_, unsigned val)
+        : Expr(EXPR_CHAR_LITERAL)
         , value(val), loc(loc_) {}
     static bool classof(const Expr* E) {
-        return E->getKind() == EXPR_CHARLITERAL;
+        return E->getKind() == EXPR_CHAR_LITERAL;
     }
     virtual void print(int indent, StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return loc; }

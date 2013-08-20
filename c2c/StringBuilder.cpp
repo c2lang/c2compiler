@@ -42,10 +42,9 @@ StringBuilder::~StringBuilder() {
 }
 
 StringBuilder& StringBuilder::operator<<(const char* input) {
-    int len = strlen(input);
+    unsigned len = strlen(input);
 #ifdef SIZE_DEBUG
-    int cap = capacity - (ptr-buffer);
-    assert(len < cap && "buffer overflow");
+    assert(len < space_left() && "buffer overflow");
 #endif
     strcpy(ptr, input);
     ptr += len;
@@ -53,20 +52,17 @@ StringBuilder& StringBuilder::operator<<(const char* input) {
 }
 
 StringBuilder& StringBuilder::operator<<(void* input) {
-    int len = 10;   // 0x12345678
 #ifdef SIZE_DEBUG
-    int cap = capacity - (ptr-buffer);
-    assert(len < cap && "buffer overflow");
+    assert(10 < space_left() && "buffer overflow");
 #endif
     ptr += sprintf(ptr, "0x%p", input);
     return *this;
 }
 
 StringBuilder& StringBuilder::operator<<(const string& input) {
-    int len = input.size();
+    unsigned len = input.size();
 #ifdef SIZE_DEBUG
-    int cap = capacity - (ptr-buffer);
-    assert(len < cap && "buffer overflow");
+    assert(len < space_left() && "buffer overflow");
 #endif
     strcpy(ptr, input.c_str());
     ptr += len;
@@ -75,8 +71,7 @@ StringBuilder& StringBuilder::operator<<(const string& input) {
 
 StringBuilder& StringBuilder::operator<<(char input) {
 #ifdef SIZE_DEBUG
-    int cap = capacity - (ptr-buffer);
-    assert(1 < cap && "buffer overflow");
+    assert(1 < space_left() && "buffer overflow");
 #endif
     *ptr = input;
     ++ptr;
@@ -86,8 +81,7 @@ StringBuilder& StringBuilder::operator<<(char input) {
 
 StringBuilder& StringBuilder::operator<<(int input) {
 #ifdef SIZE_DEBUG
-    int cap = capacity - (ptr-buffer);
-    assert(10 < cap && "buffer overflow");
+    assert(10 < space_left() && "buffer overflow");
 #endif
     ptr += sprintf(ptr, "%d", input);
     return *this;
@@ -95,8 +89,7 @@ StringBuilder& StringBuilder::operator<<(int input) {
 
 StringBuilder& StringBuilder::operator<<(unsigned int input) {
 #ifdef SIZE_DEBUG
-    int cap = capacity - (ptr-buffer);
-    assert(10 < cap && "buffer overflow");
+    assert(10 < space_left() && "buffer overflow");
 #endif
     ptr += sprintf(ptr, "%u", input);
     return *this;
@@ -104,8 +97,7 @@ StringBuilder& StringBuilder::operator<<(unsigned int input) {
 
 StringBuilder& StringBuilder::operator<<(long long input) {
 #ifdef SIZE_DEBUG
-    int cap = capacity - (ptr-buffer);
-    assert(10 < cap && "buffer overflow");
+    assert(10 < space_left() && "buffer overflow");
 #endif
     ptr += sprintf(ptr, "%lld", input);
     return *this;
@@ -113,18 +105,16 @@ StringBuilder& StringBuilder::operator<<(long long input) {
 
 StringBuilder& StringBuilder::operator<<(unsigned long long input) {
 #ifdef SIZE_DEBUG
-    int cap = capacity - (ptr-buffer);
-    assert(10 < cap && "buffer overflow");
+    assert(10 < space_left() && "buffer overflow");
 #endif
     ptr += sprintf(ptr, "%llu", input);
     return *this;
 }
 
 StringBuilder& StringBuilder::operator<<(const StringBuilder& input) {
-    int len = input.size();
+    unsigned len = input.size();
 #ifdef SIZE_DEBUG
-    int cap = capacity - (ptr-buffer);
-    assert(len < cap && "buffer overflow");
+    assert(len < space_left() && "buffer overflow");
 #endif
     memcpy(ptr, input.buffer, len);
     ptr += len;
@@ -137,7 +127,9 @@ void StringBuilder::clear() {
     buffer[0] = 0;
 }
 
-unsigned int StringBuilder::size() const { return ptr - buffer; }
+unsigned StringBuilder::size() const { return (unsigned)(ptr - buffer); }
+
+unsigned StringBuilder::space_left() const { return capacity - size(); }
 
 StringBuilder::operator const char*() const { return buffer; }
 
@@ -150,8 +142,8 @@ void StringBuilder::strip(char c) {
     }
 }
 
-void StringBuilder::indent(int num) {
-    for (int i=0; i<num; i++) {
+void StringBuilder::indent(unsigned num) {
+    for (unsigned i=0; i<num; i++) {
         *ptr = ' ';
         ++ptr;
     }

@@ -170,21 +170,21 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
             output << (int) N->Value.getSExtValue();
             return;
         }
-    case EXPR_STRING:
+    case EXPR_STRING_LITERAL:
         {
-            StringExpr* S = cast<StringExpr>(E);
+            StringLiteral* S = cast<StringLiteral>(E);
             EmitStringLiteral(S->value, output);
             return;
         }
-    case EXPR_BOOL:
+    case EXPR_BOOL_LITERAL:
         {
-            BoolLiteralExpr* B = cast<BoolLiteralExpr>(E);
+            BooleanLiteral* B = cast<BooleanLiteral>(E);
             cbuf << (int)B->value;
             return;
         }
-    case EXPR_CHARLITERAL:
+    case EXPR_CHAR_LITERAL:
         {
-            CharLiteralExpr* C = cast<CharLiteralExpr>(E);
+            CharacterLiteral* C = cast<CharacterLiteral>(E);
             output << '\'' << (char)C->value << '\'';
             return;
         }

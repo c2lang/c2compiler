@@ -440,16 +440,16 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr) {
     case EXPR_INTEGER_LITERAL:
         // TEMP for now always return type int
         return QualType(BuiltinType::get(TYPE_INT));
-    case EXPR_STRING:
+    case EXPR_STRING_LITERAL:
         {
             // return type: 'const char*'
             QualType getKind = typeContext.getPointer(BuiltinType::get(TYPE_I8));
             getKind.addConst();
             return getKind;
         }
-    case EXPR_BOOL:
+    case EXPR_BOOL_LITERAL:
         return QualType(BuiltinType::get(TYPE_BOOL));
-    case EXPR_CHARLITERAL:
+    case EXPR_CHAR_LITERAL:
         return QualType(BuiltinType::get(TYPE_I8));
     case EXPR_FLOAT_LITERAL:
         // For now always return type float
@@ -458,14 +458,12 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr) {
         return analyseCall(expr);
     case EXPR_IDENTIFIER:
         {
-            ScopeResult Res = analyseIdentifier(expr);
+            IdentifierExpr* id = cast<IdentifierExpr>(expr);
+            ScopeResult Res = analyseIdentifier(id);
             if (!Res.ok) break;
             if (!Res.decl) break;
-            if (Res.pkg) {
-                IdentifierExpr* id = cast<IdentifierExpr>(expr);
-                id->setPackage(Res.pkg);
-                id->setDecl(Res.decl);
-            }
+            id->setDecl(Res.decl);
+            if (Res.pkg) id->setPackage(Res.pkg);
             // NOTE: expr should not be package name (handled above)
             return Decl2Type(Res.decl);
         }
@@ -501,9 +499,9 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
 
     switch (expr->getKind()) {
     case EXPR_INTEGER_LITERAL:
-    case EXPR_STRING:
-    case EXPR_BOOL:
-    case EXPR_CHARLITERAL:
+    case EXPR_STRING_LITERAL:
+    case EXPR_BOOL_LITERAL:
+    case EXPR_CHAR_LITERAL:
     case EXPR_FLOAT_LITERAL:
         // TODO check if compatible
         break;
@@ -518,10 +516,8 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
             IdentifierExpr* id = cast<IdentifierExpr>(expr);
             if (!Res.ok) return;
             if (!Res.decl) return;
-            if (Res.pkg) {
-                id->setPackage(Res.pkg);
-                id->setDecl(Res.decl);
-            }
+            id->setDecl(Res.decl);
+            if (Res.pkg) id->setPackage(Res.pkg);
             switch (Res.decl->getKind()) {
             case DECL_FUNC:
                 // can be ok for const

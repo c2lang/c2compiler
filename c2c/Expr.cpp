@@ -68,19 +68,19 @@ void FloatingLiteral::print(int indent, StringBuilder& buffer) const {
 }
 
 
-void StringExpr::print(int indent, StringBuilder& buffer) const {
+void StringLiteral::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[text '" << value << "']\n";
 }
 
 
-void BoolLiteralExpr::print(int indent, StringBuilder& buffer) const {
+void BooleanLiteral::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[bool " << value << "]\n";
 }
 
 
-void CharLiteralExpr::print(int indent, StringBuilder& buffer) const {
+void CharacterLiteral::print(int indent, StringBuilder& buffer) const {
     buffer.indent(indent);
     buffer << "[char '" << (char)value << "']\n";
 }
@@ -96,9 +96,9 @@ void CallExpr::addArg(Expr* arg) {
 static void expr2name(Expr* expr, StringBuilder& buffer) {
     switch (expr->getKind()) {
     case EXPR_INTEGER_LITERAL:
-    case EXPR_STRING:
-    case EXPR_BOOL:
-    case EXPR_CHARLITERAL:
+    case EXPR_STRING_LITERAL:
+    case EXPR_BOOL_LITERAL:
+    case EXPR_CHAR_LITERAL:
     case EXPR_FLOAT_LITERAL:
     case EXPR_CALL:
         break;

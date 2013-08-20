@@ -37,13 +37,14 @@ public:
 
     operator const char*() const;
     void clear();
-    unsigned int size() const;
+    unsigned size() const;
+    unsigned space_left() const;
     bool isEmpty() const;
     void strip(char c);
-    void indent(int num);
+    void indent(unsigned num);
 private:
-    static const unsigned int CAPACITY = 1024*1024;
-    unsigned int capacity;
+    static const unsigned CAPACITY = 1024*1024;
+    unsigned capacity;
     char* buffer;
     char* ptr;
     bool ownBuf;

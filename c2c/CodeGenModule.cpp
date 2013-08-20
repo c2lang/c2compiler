@@ -182,10 +182,8 @@ void CodeGenModule::EmitTopLevelDecl(Decl* D) {
                 // TODO dynamic width
                 init = llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), 0, true);
             }
-            //new llvm::GlobalVariable(type, constant, ltype, 0, Var->getName());
-            new llvm::GlobalVariable(*module, type, constant, ltype, init, Var->getName());
-            //llvm::GlobalVariable* global =
-            //    new llvm::GlobalVariable(module, type, constant, ltype, 0, Var->getName());
+            //new llvm::GlobalVariable(*module, type, constant, ltype, init, Var->getName());
+            new llvm::GlobalVariable(*module, init->getType(), constant, ltype, init, Var->getName());
         }
         break;
     case DECL_ENUMVALUE:
@@ -281,13 +279,8 @@ llvm::Function* CodeGenModule::createExternal(const Package* P, const std::strin
 
 llvm::Constant* CodeGenModule::EvaluateExprAsConstant(const Expr *E) {
     switch (E->getKind()) {
-    case EXPR_STRING:
-        {
-            const StringExpr* S = cast<StringExpr>(E);
-            assert(0 && "TODO");
-            return 0;
-            // TODO check clang: CodeGenModule::GetConstantArrayFromStringLiteral()
-        }
+    case EXPR_STRING_LITERAL:
+        return GetConstantArrayFromStringLiteral(cast<StringLiteral>(E));
     case EXPR_INTEGER_LITERAL:
         {
             const IntegerLiteral* N = cast<IntegerLiteral>(E);
@@ -319,6 +312,54 @@ llvm::Value *CodeGenModule::EvaluateExprAsBool(const Expr *E) {
     return EmitScalarConversion(EmitScalarExpr(E), E->getType(), BoolTy);
 
   return EmitComplexToScalarConversion(EmitComplexExpr(E), E->getType(),BoolTy);
+#endif
+}
+
+llvm::Constant* CodeGenModule::GetConstantArrayFromStringLiteral(const StringLiteral* E) {
+  //assert(!E->getType()->isPointerType() && "Strings are always arrays");
+
+    // TEMP only handle 1 byte per char
+    SmallString<64> Str(E->value);
+    Str.resize(E->value.size());
+    //return llvm::ConstantDataArray::getString(context, Str, false);
+    return llvm::ConstantDataArray::getString(context, Str, true); // add 0
+
+#if 0
+  // Don't emit it as the address of the string, emit the string data itself
+  // as an inline array.
+  if (E->getCharByteWidth() == 1) {
+    SmallString<64> Str(E->getString());
+
+    // Resize the string to the right size, which is indicated by its type.
+    const ConstantArrayType *CAT = Context.getAsConstantArrayType(E->getType());
+    Str.resize(CAT->getSize().getZExtValue());
+    return llvm::ConstantDataArray::getString(VMContext, Str, false);
+  }
+
+  llvm::ArrayType *AType =
+    cast<llvm::ArrayType>(getTypes().ConvertType(E->getType()));
+  llvm::Type *ElemTy = AType->getElementType();
+  unsigned NumElements = AType->getNumElements();
+
+  // Wide strings have either 2-byte or 4-byte elements.
+  if (ElemTy->getPrimitiveSizeInBits() == 16) {
+    SmallVector<uint16_t, 32> Elements;
+    Elements.reserve(NumElements);
+
+    for(unsigned i = 0, e = E->getLength(); i != e; ++i)
+      Elements.push_back(E->getCodeUnit(i));
+    Elements.resize(NumElements);
+    return llvm::ConstantDataArray::get(VMContext, Elements);
+  }
+
+  assert(ElemTy->getPrimitiveSizeInBits() == 32);
+  SmallVector<uint32_t, 32> Elements;
+  Elements.reserve(NumElements);
+
+  for(unsigned i = 0, e = E->getLength(); i != e; ++i)
+    Elements.push_back(E->getCodeUnit(i));
+  Elements.resize(NumElements);
+  return llvm::ConstantDataArray::get(VMContext, Elements);
 #endif
 }
 

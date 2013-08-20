@@ -688,7 +688,7 @@ C2::ExprResult C2Sema::ActOnBooleanConstant(const Token& Tok) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: boolean constant"ANSI_NORMAL"\n";
 #endif
-    return ExprResult(new BoolLiteralExpr(Tok.getLocation(), Tok.is(tok::kw_true)));
+    return ExprResult(new BooleanLiteral(Tok.getLocation(), Tok.is(tok::kw_true)));
 }
 
 C2::ExprResult C2Sema::ActOnNumericConstant(const Token& Tok) {
@@ -828,7 +828,7 @@ C2::ExprResult C2Sema::ActOnStringLiteral(const Token* StringToks, unsigned int 
     if (Literal.hadError) return ExprError();
 
     llvm::StringRef ref = Literal.GetString();
-    return ExprResult(new StringExpr(StringToks[0].getLocation(), ref.data()));
+    return ExprResult(new StringLiteral(StringToks[0].getLocation(), ref.data()));
 }
 
 C2::ExprResult C2Sema::ActOnCharacterConstant(SourceLocation Loc, const std::string& value) {
@@ -841,7 +841,7 @@ C2::ExprResult C2Sema::ActOnCharacterConstant(SourceLocation Loc, const std::str
     const char* str = value.c_str();
     assert(str[0] == '\'' && str[2] == '\'' && "char constant parsing not supported yet");
     unsigned cvalue = str[1];
-    return ExprResult(new CharLiteralExpr(Loc, cvalue));
+    return ExprResult(new CharacterLiteral(Loc, cvalue));
 }
 
 DiagnosticBuilder C2Sema::Diag(SourceLocation Loc, unsigned DiagID) {
