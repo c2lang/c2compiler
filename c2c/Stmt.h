@@ -31,7 +31,6 @@ class Value;
 namespace C2 {
 
 class StringBuilder;
-class StmtVisitor;
 class Expr;
 
 enum StmtKind {
@@ -57,7 +56,7 @@ public:
     Stmt(StmtKind k);
     virtual ~Stmt();
     StmtKind getKind() const { return static_cast<StmtKind>(StmtBits.sKind); }
-    virtual void print(int indent, StringBuilder& buffer) const = 0;
+    virtual void print(StringBuilder& buffer, unsigned indent) const = 0;
     void dump() const;
     virtual SourceLocation getLocation() const = 0;
 
@@ -68,7 +67,6 @@ protected:
         unsigned eKind : 8;
         unsigned BoolLiteralValue : 1;
         unsigned TypeExprIsLocal : 1;
-        unsigned DeclExprLocalQualifier : 1;
         unsigned BuiltInIsSizeOf: 1;
         unsigned MemberExprIsArrow: 1;
 
@@ -93,7 +91,7 @@ public:
         return S->getKind() == STMT_RETURN;
     }
 
-    virtual void print(int indent, StringBuilder& buffer) const;
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return RetLoc; }
 
     Expr* getExpr() const { return value; }
@@ -113,7 +111,7 @@ public:
         return S->getKind() == STMT_IF;
     }
 
-    virtual void print(int indent, StringBuilder& buffer) const;
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return IfLoc; }
 
     Expr* getCond() const { return reinterpret_cast<Expr*>(SubExprs[COND]); }
@@ -136,7 +134,7 @@ public:
         return S->getKind() == STMT_WHILE;
     }
 
-    virtual void print(int indent, StringBuilder& buffer) const;
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return Loc; }
 
     Stmt* getCond() const { return Cond; }
@@ -156,7 +154,7 @@ public:
         return S->getKind() == STMT_DO;
     }
 
-    virtual void print(int indent, StringBuilder& buffer) const;
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return Loc; }
 
     Stmt* getCond() const { return Cond; }
@@ -176,7 +174,7 @@ public:
         return S->getKind() == STMT_FOR;
     }
 
-    virtual void print(int indent, StringBuilder& buffer) const;
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return Loc; }
 
     Stmt* getInit() const { return Init; }
@@ -200,7 +198,7 @@ public:
         return S->getKind() == STMT_SWITCH;
     }
 
-    virtual void print(int indent, StringBuilder& buffer) const;
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return Loc; }
 
     Expr* getCond() const { return Cond; }
@@ -220,7 +218,7 @@ public:
         return S->getKind() == STMT_CASE;
     }
 
-    virtual void print(int indent, StringBuilder& buffer) const;
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return Loc; }
 
     Expr* getCond() const { return Cond; }
@@ -240,7 +238,7 @@ public:
         return S->getKind() == STMT_DEFAULT;
     }
 
-    virtual void print(int indent, StringBuilder& buffer) const;
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return Loc; }
 
     const StmtList& getStmts() const { return Stmts; }
@@ -258,7 +256,7 @@ public:
         return S->getKind() == STMT_BREAK;
     }
 
-    virtual void print(int indent, StringBuilder& buffer) const;
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return Loc; }
 private:
     SourceLocation Loc;
@@ -273,7 +271,7 @@ public:
         return S->getKind() == STMT_CONTINUE;
     }
 
-    virtual void print(int indent, StringBuilder& buffer) const;
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return Loc; }
 private:
     SourceLocation Loc;
@@ -288,7 +286,7 @@ public:
         return S->getKind() == STMT_LABEL;
     }
 
-    virtual void print(int indent, StringBuilder& buffer) const;
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return Loc; }
     Stmt* getSubStmt() const { return subStmt; }
     const std::string& getName() const { return name; }
@@ -307,7 +305,7 @@ public:
         return S->getKind() == STMT_GOTO;
     }
 
-    virtual void print(int indent, StringBuilder& buffer) const;
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return GotoLoc; }
     const std::string& getName() const { return name; }
 private:
@@ -325,7 +323,7 @@ public:
         return S->getKind() == STMT_COMPOUND;
     }
 
-    virtual void print(int indent, StringBuilder& buffer) const;
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return Left; }
 
     const StmtList& getStmts() const { return Stmts; }

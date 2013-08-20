@@ -40,6 +40,8 @@ using namespace clang;
 #define LOG_FUNC
 #endif
 
+#define MIN(a, b) ((a < b) ? a : b)
+
 // TODO extract to constants.h
 const unsigned MAX_TYPENAME = 128;
 const unsigned MAX_VARNAME = 64;
@@ -112,19 +114,19 @@ bool FunctionAnalyser::handle(Decl* decl) {
             // add arguments to new scope
             // Note: duplicate argument names are already checked by Sema
             for (unsigned i=0; i<func->numArgs(); i++) {
-                DeclExpr* de = func->getArg(i);
-                // check that argument names dont clash with globals
-                ScopeResult res = globalScope.findSymbol(de->getName());
-                if (res.decl) {
-                    // TODO check other attributes?
-                    Diags.Report(de->getLocation(), diag::err_redefinition)
-                        << de->getName();
-                    Diags.Report(res.decl->getLocation(), diag::note_previous_definition);
-                    continue;
+                VarDecl* arg = func->getArg(i);
+                if (arg->getName() != "") {
+                    // check that argument names dont clash with globals
+                    ScopeResult res = globalScope.findSymbol(arg->getName());
+                    if (res.decl) {
+                        // TODO check other attributes?
+                        Diags.Report(arg->getLocation(), diag::err_redefinition)
+                            << arg->getName();
+                        Diags.Report(res.decl->getLocation(), diag::note_previous_definition);
+                        continue;
+                    }
+                    curScope->addDecl(arg);
                 }
-                // wrap in VarDecl
-                // TODO MEMLEAK in VarDecl -> or throw away in ~Scope() ?
-                curScope->addDecl(new VarDecl(de, false, true));
             }
             analyseCompoundStmt(func->getBody());
 
@@ -172,6 +174,8 @@ bool FunctionAnalyser::handle(Decl* decl) {
         assert(0 && "TODO");
         break;
     case DECL_TYPE:
+    case DECL_STRUCTTYPE:
+    case DECL_FUNCTIONTYPE:
     case DECL_ARRAYVALUE:
     case DECL_USE:
         // nothing to do
@@ -408,6 +412,8 @@ C2::QualType FunctionAnalyser::Decl2Type(Decl* decl) {
             return EC->getType();
         }
     case DECL_TYPE:
+    case DECL_STRUCTTYPE:
+    case DECL_FUNCTIONTYPE:
         {
             TypeDecl* TD = cast<TypeDecl>(decl);
             return TD->getType();
@@ -499,8 +505,8 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
         return;
     case EXPR_IDENTIFIER:
         {
-            ScopeResult Res = analyseIdentifier(expr);
             IdentifierExpr* id = cast<IdentifierExpr>(expr);
+            ScopeResult Res = analyseIdentifier(id);
             if (!Res.ok) return;
             if (!Res.decl) return;
             id->setDecl(Res.decl);
@@ -526,6 +532,7 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
                 // TODO check type compatibility
                 break;
             case DECL_TYPE:
+            case DECL_STRUCTTYPE:
                 assert(0 && "TODO");
                 break;
             default:
@@ -583,6 +590,7 @@ void FunctionAnalyser::analyseInitList(Expr* expr, QualType expectedType) {
     case Type::STRUCT:
     case Type::UNION:
         {
+#if 0
             MemberList* members = type->getMembers();
             assert(members);
             // check array member type with each value in initlist
@@ -595,6 +603,7 @@ void FunctionAnalyser::analyseInitList(Expr* expr, QualType expectedType) {
                 DeclExpr* member = (*members)[i];
                 analyseInitExpr(values[i], member->getType());
             }
+#endif
         }
         break;
     case Type::ARRAY:
@@ -621,7 +630,8 @@ void FunctionAnalyser::analyseInitList(Expr* expr, QualType expectedType) {
 
 void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     LOG_FUNC
-    DeclExpr* decl = cast<DeclExpr>(expr);
+    DeclExpr* DE = cast<DeclExpr>(expr);
+    VarDecl* decl = DE->getDecl();
 
     // check type and convert User types
     QualType type = decl->getType();
@@ -646,7 +656,7 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     if (type.isConstQualified() && !initialValue) {
         Diags.Report(decl->getLocation(), diag::err_uninitialized_const_var) << decl->getName();
     }
-    curScope->addDecl(new VarDecl(decl, false, true));
+    curScope->addDecl(decl);
 }
 
 QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr) {
@@ -689,8 +699,8 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr) {
     case BO_LOr:
         return QualType(BuiltinType::get(TYPE_BOOL));
     case BO_Assign:
-        //checkAssignmentOperands(TLeft, TRight);
         checkConversion(binop->getLocation(), TRight, TLeft);
+        checkAssignment(binop->getLHS(), TLeft);
         return TLeft;
     case BO_MulAssign:
     case BO_DivAssign:
@@ -702,6 +712,7 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr) {
     case BO_AndAssign:
     case BO_XorAssign:
     case BO_OrAssign:
+        checkAssignment(binop->getLHS(), TLeft);
         return TLeft;
     case BO_Comma:
         assert(0 && "unhandled binary operator type");
@@ -777,10 +788,10 @@ void FunctionAnalyser::analyseBuiltinExpr(Expr* expr) {
             // ERROR
             break;
         case DECL_TYPE:
-            {
-                assert(0 && "TODO");
-                return;
-            }
+        case DECL_STRUCTTYPE:
+        case DECL_FUNCTIONTYPE:
+            assert(0 && "TODO");
+            break;
         case DECL_ARRAYVALUE:
         case DECL_USE:
             assert(0);
@@ -811,7 +822,7 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr) {
     IdentifierExpr* member = M->getMember();
 
     bool isArrow = M->isArrow();
-    // Hmm we dont know what we're looking at here, can be:
+    // we dont know what we're looking at here, can be:
     // pkg.type
     // pkg.var
     // pkg.func
@@ -821,15 +832,19 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr) {
     // At least check if it exists for now
     Expr* base = M->getBase();
     if (base->getKind() == EXPR_IDENTIFIER) {
-        ScopeResult SR = analyseIdentifier(base);
+        IdentifierExpr* base_id = cast<IdentifierExpr>(base);
+        ScopeResult SR = analyseIdentifier(base_id);
         if (!SR.ok) return QualType();
         if (SR.decl) {
-            IdentifierExpr* base_id = cast<IdentifierExpr>(base);
             switch (SR.decl->getKind()) {
             case DECL_FUNC:
             case DECL_TYPE:
+            case DECL_FUNCTIONTYPE:
                 fprintf(stderr, "error: member reference base 'type' is not a structure, union or package\n");
                 return QualType();
+            case DECL_STRUCTTYPE:
+                assert(0);  // will always be UnresolvedType
+                break;
             case DECL_VAR:
                 {
                     // TODO extract to function?
@@ -871,23 +886,7 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr) {
                             base_id->getName().c_str());
                         return QualType();
                     }
-                    // find member in struct
-                    MemberList* members = T->getMembers();
-                    for (unsigned i=0; i<members->size(); i++) {
-                        DeclExpr* de = (*members)[i];
-                        if (de->getName() == member->getName()) { // found
-                            return de->getType();
-                        }
-                    }
-                    char temp1[MAX_TYPENAME];
-                    StringBuilder buf1(MAX_TYPENAME, temp1);
-                    T->DiagName(buf1);
-
-                    char temp2[MAX_VARNAME];
-                    StringBuilder buf2(MAX_VARNAME, temp2);
-                    buf2 << '\'' << member->getName() << '\'';
-                    Diags.Report(member->getLocation(), diag::err_no_member) << temp2 << temp1;
-                    return QualType();
+                    return analyseMember(T, member);
                 }
                 break;
             case DECL_ENUMVALUE:
@@ -929,18 +928,34 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr) {
             LType2->dump();
             return QualType();
         }
-        // TODO refactor, code below is copied from above
-        // find member in struct
-        MemberList* members = LType2->getMembers();
-        for (unsigned i=0; i<members->size(); i++) {
-            DeclExpr* de = (*members)[i];
-            if (de->getName() == member->getName()) { // found
-                return de->getType();
-            }
+        return analyseMember(LType2, member);
+    }
+    return QualType();
+}
+
+QualType FunctionAnalyser::analyseMember(QualType T, IdentifierExpr* member) {
+    LOG_FUNC
+    StructTypeDecl* S = T->getStructDecl();
+    Decl* match = S->find(member->getName());
+    if (match) {
+        // NOT very nice, structs can have VarDecls or StructTypeDecls
+        if (isa<VarDecl>(match)) {
+            return cast<VarDecl>(match)->getType();
         }
-        fprintf(stderr, "error: (1) Type 'todo' has no member '%s'\n", member->getName().c_str());
+        if (isa<StructTypeDecl>(match)) {
+            return cast<StructTypeDecl>(match)->getType();
+        }
+        assert(0);
         return QualType();
     }
+    char temp1[MAX_TYPENAME];
+    StringBuilder buf1(MAX_TYPENAME, temp1);
+    T->DiagName(buf1);
+
+    char temp2[MAX_VARNAME];
+    StringBuilder buf2(MAX_VARNAME, temp2);
+    buf2 << '\'' << member->getName() << '\'';
+    Diags.Report(member->getLocation(), diag::err_no_member) << temp2 << temp1;
     return QualType();
 }
 
@@ -969,33 +984,62 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
         StringBuilder buf(MAX_TYPENAME, typeName);
         LType2.DiagName(buf);
         Diags.Report(call->getLocation(), diag::err_typecheck_call_not_function) << typeName;
-        return 0;
+        return QualType();
     }
 
-    // TODO check if Ellipsoid otherwise compare num args with num params
-    const Type* T = LType2.getTypePtr();
-    for (unsigned i=0; i<call->numArgs(); i++) {
-        Expr* arg = call->getArg(i);
-        QualType ArgGot = analyseExpr(arg);
-        QualType ArgNeed = T->getArgument(i);
-/*
-        fprintf(stderr, "ARG %d:\n", i);
-        fprintf(stderr, "  got: ");
-        ArgGot->dump();
-        fprintf(stderr, "  need: ");
-        if (ArgNeed) ArgNeed->dump();
-        else fprintf(stderr, "-\n");
-*/
-        // ..
-        // TODO match number + types with proto
+    FunctionDecl* func = LType2->getDecl();
+    unsigned protoArgs = func->numArgs();
+    unsigned callArgs = call->numArgs();
+    unsigned minArgs = MIN(protoArgs, callArgs);
+    for (unsigned i=0; i<minArgs; i++) {
+        Expr* argGiven = call->getArg(i);
+        QualType typeGiven = analyseExpr(argGiven);
+        VarDecl* argFunc = func->getArg(i);
+        QualType argType = argFunc->getType();
+        // TODO match types
     }
-    // return function's return type
-    return T->getReturnType();
+    if (callArgs > protoArgs) {
+        // more args given, check if function is variadic
+        if (!func->isVariadic()) {
+            Expr* arg = call->getArg(minArgs);
+            unsigned msg = diag::err_typecheck_call_too_many_args;
+            if (func->hasDefaultArgs()) msg = diag::err_typecheck_call_too_many_args_at_most;
+            Diags.Report(arg->getLocation(), msg)
+                << 0 << protoArgs << callArgs;
+            return QualType();
+        }
+        for (unsigned i=minArgs; i<callArgs; i++) {
+            Expr* argGiven = call->getArg(i);
+            QualType typeGiven = analyseExpr(argGiven);
+            if (typeGiven->isVoid()) {
+                fprintf(stderr, "ERROR: (TODO) passing 'void' to parameter of incompatible type '...'\n");
+                //Diags.Report(argGiven->getLocation(), diag::err_typecheck_convert_incompatible)
+                //    << "from" << "to" << 1;// << argGiven->getLocation();
+#warning "TODO check if not void"
+            }
+        }
+    } else if (callArgs < protoArgs) {
+        // less args given, check for default argument values
+        for (unsigned i=minArgs; i<protoArgs; i++) {
+            VarDecl* arg = func->getArg(i);
+            if (!arg->getInitValue()) {
+                if (func->hasDefaultArgs()) {
+                    protoArgs = func->minArgs();
+                    Diags.Report(arg->getLocation(), diag::err_typecheck_call_too_few_args_at_least)
+                        << 0 << protoArgs << callArgs;
+                } else {
+                    Diags.Report(arg->getLocation(), diag::err_typecheck_call_too_few_args)
+                        << 0 << protoArgs << callArgs;
+                }
+                return QualType();
+            }
+        }
+    }
+    return func->getReturnType();
 }
 
-ScopeResult FunctionAnalyser::analyseIdentifier(Expr* expr) {
+ScopeResult FunctionAnalyser::analyseIdentifier(IdentifierExpr* id) {
     LOG_FUNC
-    IdentifierExpr* id = cast<IdentifierExpr>(expr);
     ScopeResult res = curScope->findSymbol(id->getName());
     if (res.decl) {
         if (res.ambiguous) {
@@ -1024,38 +1068,6 @@ ScopeResult FunctionAnalyser::analyseIdentifier(Expr* expr) {
         }
     }
     return res;
-}
-
-C2::QualType FunctionAnalyser::checkAssignmentOperands(QualType left, QualType right) {
-    LOG_FUNC
-    assert(left.isValid());
-    assert(right.isValid());
-
-    // TEMP only check for (int) = (float) for now
-    if (right.getTypePtr() == BuiltinType::get(TYPE_F32) &&
-        left.getTypePtr() == BuiltinType::get(TYPE_U32))
-    {
-        // implicit conversion turns floating-point number into integer: 'float' to 'Number' (aka 'int')
-/*
-        SourceLocation loc;
-        SourceRange r1;
-        SourceRange r2;
-
-        Diags.Report(loc, diag::warn_impcast_float_integer) << "A" << "B" << r1 << r2;
-*/
-        fprintf(stderr, "ERROR: implicit conversion of floating-point number to integer\n");
-        return left;
-    }
-/*
-    SourceLocation loc;
-    Diags.Report(loc, diag::err_typecheck_convert_incompatible) << "left" << "right" << "action";
-    fprintf(stderr, "LEFT\n");
-    left->dump();
-    fprintf(stderr, "RIGHT\n");
-    right->dump();
-*/
-    QualType qt;
-    return qt;
 }
 
 void FunctionAnalyser::checkConversion(SourceLocation Loc, QualType from, QualType to) {
@@ -1104,6 +1116,12 @@ void FunctionAnalyser::checkConversion(SourceLocation Loc, QualType from, QualTy
         from.DiagName(buf1);
         to.DiagName(buf2);
         Diags.Report(Loc, errorMsg) << buf1 << buf2;
+    }
+}
+
+void FunctionAnalyser::checkAssignment(Expr* assignee, QualType TLeft) {
+    if (TLeft.isConstQualified()) {
+        Diags.Report(assignee->getLocation(), diag::err_typecheck_assign_const);
     }
 }
 

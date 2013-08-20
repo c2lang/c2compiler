@@ -38,12 +38,16 @@ using namespace clang;
 namespace C2 {
 
 class C2Sema;
+class Decl;
 class Expr;
 class Stmt;
 class CallExpr;
+class FunctionDecl;
+class StructTypeDecl;
 
-typedef clang::ActionResult<Expr*> ExprResult;
-typedef clang::ActionResult<Stmt*> StmtResult;
+typedef clang::ActionResult<C2::Expr*> ExprResult;
+typedef clang::ActionResult<C2::Stmt*> StmtResult;
+typedef clang::ActionResult<C2::Decl*> DeclResult;
 typedef std::vector<C2::Expr*> ExprList;
 
 /// PrecedenceLevels - These are precedences for the binary/ternary
@@ -104,6 +108,7 @@ private:
 
     ExprResult ExprError();
     StmtResult StmtError();
+    DeclResult DeclError();
 
     // top level
     void ParsePackage();
@@ -113,15 +118,15 @@ private:
     void ParseVarDef(bool is_public);
     void ParseFuncDef(bool is_public);
 
-    // type def
-    ExprResult ParseStructBlock(bool is_struct, const char* id);
-    ExprResult ParseStructMember();
+    // Type def
+    void ParseStructType(bool is_struct, const char* id, SourceLocation idLoc, bool is_public);
+    void ParseStructBlock(StructTypeDecl* S);
     ExprResult ParseEnumType(const char* id);
     void ParseFuncType(IdentifierInfo* id, SourceLocation& idLoc, bool is_public);
 
     // function def
-    bool ParseFullParamList(ExprList& results, bool allow_defaults);
-    ExprResult ParseParamDecl(bool allow_defaults);
+    bool ParseFunctionParams(FunctionDecl* func, bool allow_defaults);
+    bool ParseParamDecl(FunctionDecl* func, bool allow_defaults);
 
     // var def
     ExprResult ParseInitValue(bool* need_semi);

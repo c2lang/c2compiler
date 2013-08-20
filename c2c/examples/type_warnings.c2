@@ -1,5 +1,13 @@
 package type_warnings;
 
+type Inner struct {
+    int a;
+}
+
+public type Outer struct {
+    Inner i;    // error: using non-public type for member of public struct
+}
+
 utils.foo[] bla; // error: unknown package
 
 main bliep; // error: main is not a type

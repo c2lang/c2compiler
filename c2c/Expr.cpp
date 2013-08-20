@@ -53,35 +53,35 @@ Expr::~Expr() {
 }
 
 
-void IntegerLiteral::print(int indent, StringBuilder& buffer) const {
+void IntegerLiteral::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[integer " << Value.getSExtValue() << "]\n";
+    buffer << "[IntegerLiteral " << Value.getSExtValue() << "]\n";
 }
 
 
-void FloatingLiteral::print(int indent, StringBuilder& buffer) const {
+void FloatingLiteral::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     char temp[20];
     sprintf(temp, "%f", Value.convertToFloat());
-    buffer << "[float " << temp << "]\n";
+    buffer << "[FloatingLiteral " << temp << "]\n";
 }
 
 
-void StringLiteral::print(int indent, StringBuilder& buffer) const {
+void StringLiteral::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[text '" << value << "']\n";
+    buffer << "[StringLiteral '" << value << "']\n";
 }
 
 
-void BooleanLiteral::print(int indent, StringBuilder& buffer) const {
+void BooleanLiteral::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[bool " << getValue() << "]\n";
+    buffer << "[BooleanLiteral " << getValue() << "]\n";
 }
 
 
-void CharacterLiteral::print(int indent, StringBuilder& buffer) const {
+void CharacterLiteral::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[char '" << (char)value << "']\n";
+    buffer << "[CharacterLiteral '" << (char)value << "']\n";
 }
 
 
@@ -131,21 +131,21 @@ static void expr2name(Expr* expr, StringBuilder& buffer) {
 }
 
 
-void CallExpr::print(int indent, StringBuilder& buffer) const {
+void CallExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[call ";
+    buffer << "[CallExpr ";
     expr2name(Fn, buffer);
     buffer << "]\n";
-    Fn->print(indent + INDENT, buffer);
+    Fn->print(buffer, indent + INDENT);
     for (unsigned int i=0; i<args.size(); i++) {
-        args[i]->print(indent + INDENT, buffer);
+        args[i]->print(buffer, indent + INDENT);
     }
 }
 
 
-void IdentifierExpr::print(int indent, StringBuilder& buffer) const {
+void IdentifierExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[identifier ";
+    buffer << "[IdentifierExpr ";
     if (pkg) {
         buffer << ANSI_CYAN << pkg->getName() << '.' << ANSI_NORMAL;
     }
@@ -158,8 +158,8 @@ void IdentifierExpr::print(int indent, StringBuilder& buffer) const {
 TypeExpr::~TypeExpr() {
 }
 
-void TypeExpr::print(int indent, StringBuilder& buffer) const {
-    QT.print(indent, buffer, QualType::RECURSE_NONE);
+void TypeExpr::print(StringBuilder& buffer, unsigned indent) const {
+    QT.print(buffer, indent, QualType::RECURSE_NONE);
 }
 
 
@@ -176,42 +176,39 @@ InitListExpr::~InitListExpr() {
     }
 }
 
-void InitListExpr::print(int indent, StringBuilder& buffer) const {
+void InitListExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[initlist]\n";
+    buffer << "[InitListExpr]\n";
     for (unsigned int i=0; i<values.size(); i++) {
-        values[i]->print(indent + INDENT, buffer);
+        values[i]->print(buffer, indent + INDENT);
     }
 }
 
 
-DeclExpr::DeclExpr(const std::string& name_, SourceLocation& loc_,
-            QualType type_, Expr* initValue_)
+DeclExpr::DeclExpr(VarDecl* decl_)
     : Expr(EXPR_DECL)
-    , name(name_)
-    , loc(loc_)
-    , type(type_)
-    , initValue(initValue_)
+    , decl(decl_)
 {}
 
-DeclExpr::~DeclExpr() {}
-
-void DeclExpr::print(int indent, StringBuilder& buffer) const {
-    buffer.indent(indent);
-    buffer << "[decl " << name;
-    if (hasLocalQualifier()) buffer << " LOCAL";
-    buffer << "]\n";
-    indent += INDENT;
-    // Dont print types for enums, otherwise we get a loop since Type have Decls etc
-    if (!type->isEnumType()) {
-        type->print(indent, buffer, QualType::RECURSE_ONCE);
-    }
-    if (initValue) {
-        buffer.indent(indent);
-        buffer << "initial:\n";
-        initValue->print(indent+INDENT, buffer);
-    }
+DeclExpr::~DeclExpr() {
+    delete decl;
 }
+
+void DeclExpr::print(StringBuilder& buffer, unsigned indent) const {
+    decl->print(buffer, indent);
+}
+
+const std::string& DeclExpr::getName() const { return decl->getName(); }
+
+clang::SourceLocation DeclExpr::getLocation() const {
+    return decl->getLocation();
+}
+
+QualType DeclExpr::getType() const { return decl->getType(); }
+
+Expr* DeclExpr::getInitValue() const { return decl->getInitValue(); }
+
+bool DeclExpr::hasLocalQualifier() const { return decl->hasLocalQualifier(); }
 
 
 BinaryOperator::BinaryOperator(Expr* lhs_, Expr* rhs_, Opcode opc_, SourceLocation opLoc_)
@@ -264,11 +261,11 @@ const char* BinaryOperator::OpCode2str(clang::BinaryOperatorKind opc) {
     }
 }
 
-void BinaryOperator::print(int indent, StringBuilder& buffer) const {
+void BinaryOperator::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[binop " << OpCode2str(opc) << "]\n";
-    lhs->print(indent + INDENT, buffer);
-    rhs->print(indent + INDENT, buffer);
+    buffer << "[BinaryOperator " << OpCode2str(opc) << "]\n";
+    lhs->print(buffer, indent + INDENT);
+    rhs->print(buffer, indent + INDENT);
 }
 
 
@@ -288,12 +285,12 @@ ConditionalOperator::~ConditionalOperator() {
     delete rhs;
 }
 
-void ConditionalOperator::print(int indent, StringBuilder& buffer) const {
+void ConditionalOperator::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[condop]\n";
-    cond->print(indent + INDENT, buffer);
-    lhs->print(indent + INDENT, buffer);
-    rhs->print(indent + INDENT, buffer);
+    buffer << "[ConditionalOperator]\n";
+    cond->print(buffer, indent + INDENT);
+    lhs->print(buffer, indent + INDENT);
+    rhs->print(buffer, indent + INDENT);
 }
 
 
@@ -327,10 +324,10 @@ const char* UnaryOperator::OpCode2str(clang::UnaryOperatorKind opc) {
     return "";
 }
 
-void UnaryOperator::print(int indent, StringBuilder& buffer) const {
+void UnaryOperator::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[unaryop " << OpCode2str(opc) << "]\n";
-    val->print(indent + INDENT, buffer);
+    buffer << "[UnaryOperator " << OpCode2str(opc) << "]\n";
+    val->print(buffer, indent + INDENT);
 }
 
 
@@ -338,11 +335,12 @@ BuiltinExpr::~BuiltinExpr() {
     delete expr;
 }
 
-void BuiltinExpr::print(int indent, StringBuilder& buffer) const {
+void BuiltinExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    if (isSizeof()) buffer << "[sizeof]\n";
-    else buffer << "[elemsof]\n";
-    expr->print(indent + INDENT, buffer);
+    buffer << "[BuiltinExpr ";
+    if (isSizeof()) buffer << "sizeof]\n";
+    else buffer << "elemsof]\n";
+    expr->print(buffer, indent + INDENT);
 }
 
 
@@ -358,11 +356,11 @@ ArraySubscriptExpr::~ArraySubscriptExpr() {
     delete idx;
 }
 
-void ArraySubscriptExpr::print(int indent, StringBuilder& buffer) const {
+void ArraySubscriptExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[arraysubscript]\n";
-    base->print(indent + INDENT, buffer);
-    idx->print(indent + INDENT, buffer);
+    buffer << "[ArraySubscriptExpr]\n";
+    base->print(buffer, indent + INDENT);
+    idx->print(buffer, indent + INDENT);
 }
 
 
@@ -371,11 +369,11 @@ MemberExpr::~MemberExpr() {
     delete Member;
 }
 
-void MemberExpr::print(int indent, StringBuilder& buffer) const {
+void MemberExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[member expr]\n";
-    Base->print(indent + INDENT, buffer);
-    Member->print(indent + INDENT, buffer);
+    buffer << "[MemberExpr]\n";
+    Base->print(buffer, indent + INDENT);
+    Member->print(buffer, indent + INDENT);
 }
 
 const char* MemberExpr::getFullName() const {
@@ -388,9 +386,9 @@ ParenExpr::~ParenExpr() {
     delete Val;
 }
 
-void ParenExpr::print(int indent, StringBuilder& buffer) const {
+void ParenExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[paren expr]\n";
-    Val->print(indent + INDENT, buffer);
+    buffer << "[ParenExpr]\n";
+    Val->print(buffer, indent + INDENT);
 }
 

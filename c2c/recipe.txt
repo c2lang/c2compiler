@@ -32,7 +32,7 @@ target switch
     examples/switchtest.c2
 end
 
-target type
+target typetest
     examples/typetest.c2
     examples/utils.c2
 end

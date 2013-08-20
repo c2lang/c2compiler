@@ -50,7 +50,7 @@ void AST::print(const std::string& filename) const {
     StringBuilder buffer;
     buffer << "---- AST " << "(pkg=" << pkgName << ") " << filename << " ----\n";
     for (DeclListConstIter iter = decls.begin(); iter != decls.end(); ++iter) {
-        (*iter)->print(buffer);
+        (*iter)->print(buffer, 0);
         buffer << '\n';
     }
     printf("%s", (const char*)buffer);

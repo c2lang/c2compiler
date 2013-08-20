@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-#include <iostream>
 #include <stdio.h>
 #include <string.h>
 #include <clang/Parse/ParseDiagnostic.h>
@@ -251,15 +250,15 @@ void C2Parser::ParseTypeDef(bool is_public) {
     switch (Tok.getKind()) {
     case tok::kw_func:
         ParseFuncType(id, idLoc, is_public);
-        break;
+        return;
     case tok::kw_struct:
         ConsumeToken();
-        type = ParseStructBlock(true, id->getNameStart());
-        break;
+        ParseStructType(true, id->getNameStart(), idLoc, is_public);
+        return;
     case tok::kw_union:
         ConsumeToken();
-        type = ParseStructBlock(false, id->getNameStart());
-        break;
+        ParseStructType(false, id->getNameStart(), idLoc, is_public);
+        return;
     case tok::kw_enum:
         type = ParseEnumType(id->getNameStart());
         break;
@@ -276,57 +275,61 @@ void C2Parser::ParseTypeDef(bool is_public) {
     Actions.ActOnTypeDef(id->getNameStart(), idLoc, type.release(), is_public);
 }
 
-// Syntax: { <struct_block> } etc
-C2::ExprResult C2Parser::ParseStructBlock(bool is_struct, const char* id) {
+// syntax: { <struct_block> }
+void C2Parser::ParseStructType(bool is_struct, const char* id, SourceLocation idLoc, bool is_public) {
     LOG_FUNC
-    SourceLocation LeftBrace = Tok.getLocation();
-    if (ExpectAndConsume(tok::l_brace, diag::err_expected_lbrace)) return ExprError();
-
-    ExprList members;
-    // NOTE: memleak on members
-    while (1) {
-        if (Tok.is(tok::r_brace)) break;
-        ExprResult Member = ParseStructMember();
-        if (Member.isInvalid()) return ExprError();
-        members.push_back(Member.release());
-    }
-    SourceLocation RightBrace = Tok.getLocation();
-    if (ExpectAndConsume(tok::r_brace, diag::err_expected_rbrace)) return ExprError();
-
-    return Actions.ActOnStructType(LeftBrace, RightBrace, members, is_struct, id);
+    StructTypeDecl* S = Actions.ActOnStructType(id, idLoc, is_struct, is_public, true);
+    ParseStructBlock(S);
 }
 
-/*
-   Syntax:
-    struct_member ::= type_qualifier type_specifier IDENTIFIER SEMICOLON.
-    struct_member ::= UNION LBRACE struct_block RBRACE IDENTIFIER SEMICOLON.
-*/
-C2::ExprResult C2Parser::ParseStructMember() {
+// Syntax: { <struct_block> } etc
+void C2Parser::ParseStructBlock(StructTypeDecl* S) {
     LOG_FUNC
-    if (Tok.is(tok::kw_union)) {
-        ConsumeToken();
-        ParseStructBlock(false, "");
-        if (Diags.hasErrorOccurred()) return ExprError();
+    SourceLocation LeftBrace = Tok.getLocation();
+    if (ExpectAndConsume(tok::l_brace, diag::err_expected_lbrace)) return;
 
-        if (ExpectIdentifier()) return ExprError();
-        IdentifierInfo* id = Tok.getIdentifierInfo();
-        SourceLocation idLoc = ConsumeToken();
+    while (1) {
+        //Syntax:
+        // struct_member ::= type_qualifier type_specifier.
+        // struct_member ::= STRUCT <IDENTIFIER> LBRACE struct_block RBRACE.
+        // struct_member ::= UNION <IDENTIFIER> LBRACE struct_block RBRACE.
+        if (Tok.is(tok::r_brace)) break;
+        if (Tok.is(tok::kw_union) || Tok.is(tok::kw_struct)) {
+            // syntax: struct <name> { ..
+            bool is_struct = Tok.is(tok::kw_struct);
+            ConsumeToken();
+            // name is optional
+            const char* name = "";
+            SourceLocation idLoc;
+            if (Tok.is(tok::identifier)) {
+                IdentifierInfo* id = Tok.getIdentifierInfo();
+                name = id->getNameStart();
+                idLoc = ConsumeToken();
+            } else {
+                idLoc = Tok.getLocation();
+            }
+            StructTypeDecl* member = Actions.ActOnStructType(name, idLoc, is_struct, S->isPublic(), false);
+            Actions.ActOnStructMember(S, member);
+            ParseStructBlock(member);
+            // TODO remove, use other way and use skipto '}' ? (in ParseStructBlock
+            if (Diags.hasErrorOccurred()) return;
+        } else {
+            ExprResult type = ParseTypeSpecifier(true);
+            if (type.isInvalid()) return;
 
-        if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "member")) return ExprError();
-        assert(0 && "TODO");
-    } else {
-        ExprResult type = ParseTypeSpecifier(true);
-        if (type.isInvalid()) return ExprError();
+            if (ExpectIdentifier()) return;
+            IdentifierInfo* id = Tok.getIdentifierInfo();
+            SourceLocation idLoc = ConsumeToken();
 
-        if (ExpectIdentifier()) return ExprError();
-        IdentifierInfo* id = Tok.getIdentifierInfo();
-        SourceLocation idLoc = ConsumeToken();
-
-        if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "member")) return ExprError();
-        return Actions.ActOnVarExpr(id->getNameStart(), idLoc, type.release(), 0);
+            if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "member")) return;
+            DeclResult member = Actions.ActOnStructVar(id->getNameStart(), idLoc, type.release(), 0, S->isPublic());
+            Actions.ActOnStructMember(S, member.release());
+        }
     }
-    // TODO handle (anonymous) sub-structs
-    return ExprError();
+    SourceLocation RightBrace = Tok.getLocation();
+    if (ExpectAndConsume(tok::r_brace, diag::err_expected_rbrace)) return;
+
+    Actions.ActOnStructTypeFinish(S, LeftBrace, RightBrace);
 }
 
 /*
@@ -399,12 +402,13 @@ void C2Parser::ParseFuncType(IdentifierInfo* id, SourceLocation& idLoc, bool is_
     assert(Tok.is(tok::kw_func) && "Expected keyword 'func'");
     ConsumeToken();
 
-    ParseSingleTypeSpecifier(true);
-    if (Diags.hasErrorOccurred()) return;
+    ExprResult rtype = ParseSingleTypeSpecifier(true);
+    if (rtype.isInvalid()) return;
 
-    ExprList params;
-    // NOTE: memleak on params
-    if (!ParseFullParamList(params, false)) return;
+    FunctionDecl* func = Actions.ActOnFuncTypeDecl(id->getNameStart(), idLoc, is_public, rtype.release());
+
+    if (!ParseFunctionParams(func, false)) return;
+
     if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "type definition")) return;
 }
 
@@ -417,7 +421,7 @@ void C2Parser::ParseFuncType(IdentifierInfo* id, SourceLocation& idLoc, bool is_
     param_list ::= param_declaration.
     param_list ::= param_list COMMA param_declaration.
 */
-bool C2Parser::ParseFullParamList(ExprList& results, bool allow_defaults) {
+bool C2Parser::ParseFunctionParams(FunctionDecl* func, bool allow_defaults) {
     LOG_FUNC
     if (ExpectAndConsume(tok::l_paren, diag::err_expected_lparen)) return false;
     // fast path for "()"
@@ -427,20 +431,16 @@ bool C2Parser::ParseFullParamList(ExprList& results, bool allow_defaults) {
     }
 
     while (1) {
-        ExprResult Param = ParseParamDecl(allow_defaults);
-        if (Param.isInvalid()) return false;
-        results.push_back(Param.release());
+        if (!ParseParamDecl(func, allow_defaults)) return false;
 
         // Syntax: param_decl, param_decl
-        if (Tok.is(tok::comma)) {
-            ConsumeToken();
-        } else {
-            break;
-        }
+        if (Tok.isNot(tok::comma)) break;
+        ConsumeToken();
+
         // Syntax:: param_decl, ...
         if (Tok.is(tok::ellipsis)) {
+            func->setVariadic();
             ConsumeToken();
-            // TODO add Expr
             break;
         }
     }
@@ -454,27 +454,33 @@ bool C2Parser::ParseFullParamList(ExprList& results, bool allow_defaults) {
     param_declaration ::= type_qualifier type_specifier IDENTIFIER param_default.
     param_default ::= EQUALS constant_expression.
 */
-C2::ExprResult C2Parser::ParseParamDecl(bool allow_defaults) {
+bool C2Parser::ParseParamDecl(FunctionDecl* func, bool allow_defaults) {
     LOG_FUNC
 
     ExprResult type = ParseTypeSpecifier(true);
-    if (Diags.hasErrorOccurred()) return ExprError();
+    if (type.isInvalid()) return false;
 
-    if (ExpectIdentifier()) return ExprError();
-    IdentifierInfo* id = Tok.getIdentifierInfo();
-    SourceLocation idLoc = ConsumeToken();
+    const char* name = "";
+    SourceLocation idLoc;
+    if (Tok.is(tok::identifier)) {
+        IdentifierInfo* id = Tok.getIdentifierInfo();
+        name = id->getNameStart();
+        idLoc = ConsumeToken();
+    } else
+        idLoc = Tok.getLocation();
 
     ExprResult InitValue;
     if (Tok.is(tok::equal)) {
         if (!allow_defaults) {
             Diag(Tok, diag::err_param_default_argument_nonfunc);
-            return ExprError();
+            return false;
         }
         ConsumeToken();
         InitValue = ParseConstantExpression();
-        if (InitValue.isInvalid()) return ExprError();
+        if (InitValue.isInvalid()) return false;
     }
-    return Actions.ActOnVarExpr(id->getNameStart(), idLoc, type.release(), InitValue.release());
+    Actions.ActOnFunctionArg(func, name, idLoc, type.release(), InitValue.release());
+    return true;
 }
 
 /*
@@ -856,9 +862,9 @@ C2::ExprResult C2Parser::ParseCastExpression(bool isUnaryExpression,
         return Res;
     }
     default:
-        std::cerr << "UNHANDLED TOKEN: ";
+        fprintf(stderr, "UNHANDLED TOKEN: ");
         PP.DumpToken(Tok);
-        std::cerr << std::endl;
+        fprintf(stderr, "\n");
         assert(0 && "TODO");
     }
 
@@ -1132,8 +1138,8 @@ C2Parser::ParseParenExpression(ParenParseOption &ExprType, bool stopIfCastExpr,
 #endif
     } else if (ExprType >= CompoundLiteral && isDeclaration()) {
         // Otherwise, this is a compound literal expression or cast expression.
-        ParseTypeSpecifier(true);
-        if (Diags.hasErrorOccurred()) return ExprError();
+        ExprResult type = ParseTypeSpecifier(true);
+        if (type.isInvalid()) return ExprError();
 
         RParenLoc = Tok.getLocation();
         if (ExpectAndConsume(tok::r_paren, diag::err_expected_rparen)) return ExprError();
@@ -1450,13 +1456,9 @@ void C2Parser::ParseFuncDef(bool is_public) {
     SourceLocation idLoc = ConsumeToken();
 
     // TODO use ParseIdentifier()
-    FunctionDecl* func = Actions.ActOnFuncDef(id->getNameStart(), idLoc, is_public, rtype.release());
+    FunctionDecl* func = Actions.ActOnFuncDecl(id->getNameStart(), idLoc, is_public, rtype.release());
 
-    ExprList params;
-    // NOTE: memleak on params
-    if (!ParseFullParamList(params, true)) return;
-
-    Actions.ActOnFunctionArgs(func, params);
+    if (!ParseFunctionParams(func, true)) return;
 
     StmtResult FnBody = ParseCompoundStatement();
     Actions.ActOnFinishFunctionBody(func, FnBody.release());
@@ -2095,7 +2097,7 @@ void C2Parser::ParseVarDef(bool is_public) {
    Syntax:
     init_value ::= constant_expression.
     init_value ::= LBRACE init_values RBRACE.
-    Return value semi-colon needed
+    init_value ::= DOT identifier = init_value.
 */
 C2::ExprResult C2Parser::ParseInitValue(bool* need_semi) {
     LOG_FUNC
@@ -2103,11 +2105,15 @@ C2::ExprResult C2Parser::ParseInitValue(bool* need_semi) {
         // Syntax: { <init_values> }
         *need_semi = false;
         return ParseInitValues();
+    } else if (Tok.is(tok::period)) {
+        // Syntax: .identifier = <init_value>
+        ConsumeToken();
+        // NOTE: cannot use ParseAssignmentExpression since .id = { 10 } cannot be parsed then
+        return ParseAssignmentExpression();
     } else {
         // Syntax: <constant expr>
         *need_semi = true;
-        ExprResult Res = ParseAssignmentExpression();
-        return Res;
+        return ParseAssignmentExpression();
     }
 }
 
@@ -2385,11 +2391,9 @@ bool C2Parser::SkipUntil(ArrayRef<tok::TokenKind> Toks, bool StopAtSemi,
   }
 }
 
-C2::ExprResult C2Parser::ExprError() {
-    return C2::ExprResult(true);
-}
+C2::ExprResult C2Parser::ExprError() { return C2::ExprResult(true); }
 
-C2::StmtResult C2Parser::StmtError() {
-    return C2::StmtResult(true);
-}
+C2::StmtResult C2Parser::StmtError() { return C2::StmtResult(true); }
+
+C2::DeclResult C2Parser::DeclError() { return C2::DeclResult(true); }
 

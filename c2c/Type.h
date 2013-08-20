@@ -26,14 +26,13 @@
 
 namespace C2 {
 class StringBuilder;
-class Argument;
 class Expr;
-class DeclExpr;
 class EnumConstantDecl;
+class StructTypeDecl;
+class FunctionDecl;
 class TypeContext;
 class Type;
 
-typedef OwningVector<C2::DeclExpr> MemberList;
 typedef OwningVector<C2::EnumConstantDecl> ConstantList;
 
 enum C2Type {
@@ -70,8 +69,8 @@ public:
     bool operator==(const QualType& rhs) {
         return (type == rhs.type) && (qualifiers = rhs.qualifiers);
     }
-    bool isNull() const { return type == NULL; }
-    bool isValid() const { return type != NULL; }
+    bool isNull() const { return type == 0; }
+    bool isValid() const { return type != 0; }
     bool isConstQualified() const { return (qualifiers & QUAL_CONST); }
     bool isVolatileQualified() const { return (qualifiers & QUAL_VOLATILE); }
     bool isRestrictQualified() const { return (qualifiers & QUAL_RESTRICT); }
@@ -97,9 +96,9 @@ public:
 
     // Debug functions
     enum RecursionType { RECURSE_NONE=0, RECURSE_ONCE, RECURSE_ALL };
-    void print(int indent, StringBuilder& buffer, RecursionType recursive) const;
+    void print(StringBuilder& buffer, unsigned indent, RecursionType recursive) const;
     void dump() const;
-    //static void printCQualifier(StringBuilder& buffer, unsigned int flags);
+    //static void printCQualifier(StringBuilder& buffer, unsigned flags);
 private:
     Type* type;
     unsigned qualifiers;
@@ -135,6 +134,7 @@ public:
     bool isSubscriptable() const { return kind == ARRAY || kind == POINTER; }
     bool isPointerType() const { return kind == POINTER; }
     bool isArrayType() const { return kind == ARRAY; }
+    bool isVoid() const { return kind == BUILTIN && c2type == TYPE_VOID; }
 
     unsigned getWidth() const;
 
@@ -163,9 +163,12 @@ public:
     Expr* getArrayExpr() const { return arrayExpr; }
 
     // STRUCT/UNION
-    void setMembers(MemberList* members_);
-    void addMember(DeclExpr* D);
-    MemberList* getMembers() const;
+    unsigned getNumMembers() const;
+    QualType getMember(unsigned index) const;
+    void setStructDecl(StructTypeDecl* decl) {
+        structDecl = decl;
+    }
+    StructTypeDecl* getStructDecl() const { return structDecl; }
 
     // ENUM
     void addEnumMember(EnumConstantDecl* C);
@@ -176,14 +179,12 @@ public:
     }
 
     // FUNC
-    void setReturnType(QualType type);
-    QualType getReturnType() const { return refType; }
-    void addArgument(QualType type);
-    QualType getArgument(unsigned i) const;
+    void setFunc(FunctionDecl* func_) { func = func_; }
+    FunctionDecl* getDecl() const { return func; }
 
     bool isCompatible(const Type& t2) const;
 
-    void print(int indent, StringBuilder& buffer, QualType::RecursionType recursive) const;
+    void print(StringBuilder& buffer, unsigned indent, QualType::RecursionType recursive) const;
     void DiagName(StringBuilder& buffer) const;
     void dump() const;
 
@@ -192,8 +193,8 @@ public:
 private:
     friend class QualType;
 
-    void printFull(StringBuilder& buffer, int indent = 0) const;
-    void printEffective(StringBuilder& buffer, int indent = 0) const;
+    void printFull(StringBuilder& buffer, unsigned indent = 0) const;
+    void printEffective(StringBuilder& buffer, unsigned indent = 0) const;
     void printName(StringBuilder& buffer) const;
 
     Kind kind;
@@ -201,7 +202,7 @@ private:
     QualType CanonicalType;
 
     union {
-        unsigned int initializer[4];    // TODO determine
+        unsigned initializer[4];    // TODO determine
 
         // builtin
         struct {
@@ -217,15 +218,12 @@ private:
         // struct | union | enum specific
         struct {
             const char* sname;  // no ownership
-            MemberList* members;
+            StructTypeDecl* structDecl;
             ConstantList* constants; // temp for enums
         };
 
         // func specific
-        struct {
-            Argument* arguments;
-            const char* fname;   // can be 0 for function proto's.
-        };
+        FunctionDecl* func;
 
         // pointer
         // nothing needed
@@ -254,10 +252,10 @@ public:
 
     Type* getUser();
     QualType getPointer(QualType ref);
-    Type* getStruct(bool isStruct);
+    Type* getStruct(bool isStruct, const char* id);
     Type* getEnum();
     QualType getArray(QualType ref, Expr* sizeExpr, bool ownSize = true);
-    Type* getFunction(QualType rtype);
+    Type* getFunction(FunctionDecl* func);
 private:
     typedef std::vector<Type*> Types;
     Types types;

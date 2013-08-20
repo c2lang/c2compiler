@@ -17,6 +17,7 @@
 #define C2SEMA_H
 
 #include <string>
+#include <map>
 
 #include <clang/Basic/SourceLocation.h>
 #include "C2Parser.h" // TODO only needed for ExprResult/StmtResult
@@ -53,10 +54,21 @@ public:
     void ActOnUse(const char* name, SourceLocation loc, Token& aliasTok, bool isLocal);
     void ActOnTypeDef(const char* name, SourceLocation loc, Expr* typeExpr, bool is_public);
     void ActOnVarDef(const char* name, SourceLocation loc, bool is_public, Expr* type, Expr* InitValue);
-    FunctionDecl* ActOnFuncDef(const char* name, SourceLocation loc, bool is_public, Expr* rtype);
-    void ActOnFunctionArgs(Decl* func, ExprList params);
+
+    // function decls
+    FunctionDecl* ActOnFuncDecl(const char* name, SourceLocation loc, bool is_public, Expr* rtype);
+    FunctionDecl* ActOnFuncTypeDecl(const char* name, SourceLocation loc, bool is_public, Expr* rtype);
+    void ActOnFunctionArg(FunctionDecl* func, const char* name, SourceLocation loc, Expr* type, Expr* InitValue);
     void ActOnFinishFunctionBody(Decl* func, Stmt* body);
+
     void ActOnArrayValue(const char* name, SourceLocation loc, Expr* Value);
+
+    // struct decls
+    // NOTE: call ActOnStructType instead of ActOnTypeDef
+    StructTypeDecl* ActOnStructType(const char* name, SourceLocation loc, bool isStruct, bool is_public, bool is_global);
+    DeclResult ActOnStructVar(const char* name, SourceLocation loc, Expr* type, Expr* InitValue, bool is_public);
+    void ActOnStructMember(StructTypeDecl* S, Decl* member);
+    void ActOnStructTypeFinish(StructTypeDecl* S, SourceLocation left, SourceLocation right);
 
     // statements
     StmtResult ActOnReturnStmt(SourceLocation loc, Expr* value);
@@ -94,13 +106,10 @@ public:
     ExprResult ActOnPointerType(Expr* base);
     ExprResult ActOnUserType(Expr* id);
     ExprResult ActOnBuiltinType(C2Type t);
-    ExprResult ActOnStructType(SourceLocation leftBrace, SourceLocation rightBrace,
-                               ExprList& members, bool isStruct, const char* id);
     ExprResult ActOnEnumType(const char* id, Expr* implType);
     ExprResult ActOnEnumTypeFinished(Expr* enumType, SourceLocation leftBrace, SourceLocation rightBrace);
     void ActOnEnumConstant(Expr* enumType, IdentifierInfo* symII, SourceLocation symLoc, Expr* Value);
     ExprResult ActOnTypeQualifier(ExprResult R, unsigned int qualifier);
-    ExprResult ActOnVarExpr(const char* name, SourceLocation loc, Expr* type, Expr* InitValue);
     ExprResult ActOnBuiltinExpression(SourceLocation Loc, Expr* expr, bool isSizeof);
     ExprResult ActOnArraySubScriptExpr(SourceLocation RLoc, Expr* Base, Expr* Idx);
     ExprResult ActOnMemberExpr(Expr* Base, bool isArrow, Expr* Member);
@@ -109,6 +118,12 @@ public:
 
 private:
     ExprResult ActOnIntegerConstant(SourceLocation Loc, uint64_t Val);
+    typedef std::map<const std::string, const Decl*> Names;
+    void analyseStructNames(const StructTypeDecl* S, Names& names);
+    FunctionDecl* createFuncDecl(const char* name, SourceLocation loc, bool is_public, Expr* rtype);
+    VarDecl* createVarDecl(const char* name, SourceLocation loc, TypeExpr* typeExpr,
+                                    Expr* InitValue, bool is_public);
+
     C2::ExprResult ExprError();
 
     DiagnosticBuilder Diag(SourceLocation Loc, unsigned DiagID);

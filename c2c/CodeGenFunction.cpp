@@ -52,21 +52,20 @@ llvm::Function* CodeGenFunction::generateProto(const std::string& pkgname) {
     llvm::FunctionType *funcType;
     QualType rt = FuncDecl->getReturnType();
     llvm::Type* RT = CGM.ConvertType(rt.getTypePtr());
-    if (FuncDecl->args.size() == 0) {
+    if (FuncDecl->numArgs() == 0) {
         funcType = llvm::FunctionType::get(RT, FuncDecl->isVariadic());
     } else {
         std::vector<llvm::Type*> Args;
-        for (unsigned int i=0; i<FuncDecl->args.size(); i++) {
-            // TODO already store as DeclExpr?
-            DeclExpr* de = cast<DeclExpr>(FuncDecl->args[i]);
-            QualType qt = de->getType();
-            Args.push_back(CGM.ConvertType(qt.getTypePtr()));
+        for (unsigned int i=0; i<FuncDecl->numArgs(); i++) {
+            VarDecl* arg = FuncDecl->getArg(i);
+            QualType qt = arg->getType();
+            //Args.push_back(CGM.ConvertType(qt.getTypePtr()));
         }
         llvm::ArrayRef<llvm::Type*> argsRef(Args);
         funcType = llvm::FunctionType::get(RT, argsRef, FuncDecl->isVariadic());
     }
     StringBuilder buffer;
-    Utils::addName(pkgname, FuncDecl->name, buffer);
+    Utils::addName(pkgname, FuncDecl->getName(), buffer);
 
     llvm::GlobalValue::LinkageTypes ltype = llvm::GlobalValue::InternalLinkage;
     if (FuncDecl->isPublic()) ltype = llvm::GlobalValue::ExternalLinkage;
@@ -82,7 +81,7 @@ void CodeGenFunction::generateBody(llvm::Function* func) {
     llvm::BasicBlock *entry = llvm::BasicBlock::Create(context, "entry", func);
     Builder.SetInsertPoint(entry);
 
-    EmitStmt(FuncDecl->body);
+    EmitStmt(FuncDecl->getBody());
 }
 
 void CodeGenFunction::EmitStmt(const Stmt* S) {
@@ -495,6 +494,8 @@ llvm::Value* CodeGenFunction::EmitIdentifierExpr(const IdentifierExpr* E) {
             return llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), value, true);
         }
     case DECL_TYPE:
+    case DECL_STRUCTTYPE:
+    case DECL_FUNCTIONTYPE:
     case DECL_ARRAYVALUE:
     case DECL_USE:
         break;

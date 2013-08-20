@@ -410,13 +410,13 @@ void C2Builder::addDummyPackages() {
         // TODO correct arg
         Type* ptype = new Type(Type::POINTER, BuiltinType::get(TYPE_I8));
         QualType QT(ptype, QUAL_CONST);
-        func->addArg(new DeclExpr("s", loc, QT, 0));
+        func->addArg(new VarDecl("s", loc, QT, 0));
         stdioPkg->addSymbol(func);
         // function type
         Type* proto = new Type(Type::FUNC);
-        proto->setReturnType(BuiltinType::get(TYPE_INT));
-        proto->addArgument(QualType(BuiltinType::get(TYPE_INT)));
+        proto->setFunc(func);
         func->setFunctionType(QualType(proto));
+
     }
     //int printf(const char *format, ...);
     {
@@ -424,13 +424,12 @@ void C2Builder::addDummyPackages() {
         // NOTE: MEMLEAK ON TYPE, this will go away when we remove these dummy protos
         Type* ptype = new Type(Type::POINTER, BuiltinType::get(TYPE_I8));
         QualType QT(ptype, QUAL_CONST);
-        func->addArg(new DeclExpr("format", loc, QT, 0));
+        func->addArg(new VarDecl("format", loc, QT, 0));
         func->setVariadic();
         stdioPkg->addSymbol(func);
         // function type
         Type* proto = new Type(Type::FUNC);
-        proto->setReturnType(BuiltinType::get(TYPE_INT));
-        proto->addArgument(QT);
+        proto->setFunc(func);
         func->setFunctionType(QualType(proto));
     }
     //int sprintf(char *str, const char *format, ...);
@@ -439,15 +438,13 @@ void C2Builder::addDummyPackages() {
         // NOTE: MEMLEAK ON TYPE, this will go away when we remove these dummy protos
         Type* ptype = new Type(Type::POINTER, BuiltinType::get(TYPE_I8));
         QualType QT(ptype, QUAL_CONST);
-        func->addArg(new DeclExpr("str", loc, QT, 0));
-        func->addArg(new DeclExpr("format", loc, QT, 0));
+        func->addArg(new VarDecl("str", loc, QT, 0));
+        func->addArg(new VarDecl("format", loc, QT, 0));
         func->setVariadic();
         stdioPkg->addSymbol(func);
         // function type
         Type* proto = new Type(Type::FUNC);
-        proto->setReturnType(BuiltinType::get(TYPE_INT));
-        proto->addArgument(QualType(ptype));
-        proto->addArgument(QT);
+        proto->setFunc(func);
         func->setFunctionType(QualType(proto));
     }
 
@@ -457,12 +454,11 @@ void C2Builder::addDummyPackages() {
         FunctionDecl* func = new FunctionDecl("exit", loc, true, BuiltinType::get(TYPE_VOID));
         // TODO correct arg
         QualType QT(BuiltinType::get(TYPE_INT));
-        func->addArg(new DeclExpr("status", loc, QT, 0));
+        func->addArg(new VarDecl("status", loc, QT, 0));
         stdlibPkg->addSymbol(func);
         // function type
         Type* proto = new Type(Type::FUNC);
-        proto->setReturnType(BuiltinType::get(TYPE_INT));
-        proto->addArgument(BuiltinType::get(TYPE_INT));
+        proto->setFunc(func);
         func->setFunctionType(QualType(proto));
     }
 }

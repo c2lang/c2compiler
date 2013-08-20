@@ -28,35 +28,24 @@
 
 using namespace C2;
 
-namespace C2 {
-
-class Argument {
-public:
-    Argument(QualType& type_) : type(type_), next(0) {}
-    ~Argument() {}
-    QualType type;
-    Argument* next;
-};
-
-}
 
 static void printArray(StringBuilder& buffer, Expr* expr) {
     if (expr == 0) {
         buffer << "[]";
     } else {
         buffer << '[';
-        expr->print(0, buffer);
+        expr->print(buffer, 0);
         buffer << ']';
     }
 }
 
-static void printQualifiers(StringBuilder& buffer, unsigned int flags) {
+static void printQualifiers(StringBuilder& buffer, unsigned flags) {
     if (flags & QUAL_VOLATILE) buffer << "volatile ";
     if (flags & QUAL_CONST) buffer << "const ";
 }
 
 #if 0
-void Type::printCQualifier(StringBuilder& buffer, unsigned int flags) {
+void Type::printCQualifier(StringBuilder& buffer, unsigned flags) {
     if (flags & QUAL_LOCAL) buffer << "static ";
     if (flags & QUAL_VOLATILE) buffer << "volatile ";
     if (flags & QUAL_CONST) buffer << "const ";
@@ -105,12 +94,12 @@ void QualType::DiagName(StringBuilder& buffer) const {
     getTypePtr()->DiagName(buffer);
 }
 
-void QualType::print(int indent, StringBuilder& buffer, RecursionType recursive) const {
+void QualType::print(StringBuilder& buffer, unsigned indent, RecursionType recursive) const {
     if (isNull()) {
         buffer.indent(indent);
         buffer << "NULL";
     } else {
-        type->print(indent, buffer, RECURSE_ALL);
+        getTypePtr()->print(buffer, indent, RECURSE_ALL);
         if (qualifiers) {
             buffer.indent(indent);
             buffer << "qualifiers=";
@@ -122,7 +111,7 @@ void QualType::print(int indent, StringBuilder& buffer, RecursionType recursive)
 
 void QualType::dump() const {
     StringBuilder buffer;
-    print(0, buffer, RECURSE_ALL);
+    print(buffer, 0, RECURSE_ALL);
     fprintf(stderr, "[QUALTYPE] %s\n", (const char*)buffer);
 }
 
@@ -171,14 +160,9 @@ Type::~Type() {
     case STRUCT:
     case UNION:
     case ENUM:
-        delete members;
+        delete constants;
         break;
     case FUNC:
-        while (arguments) {
-            Argument* next = arguments->next;
-            delete arguments;
-            arguments = next;
-        }
         break;
     case POINTER:
         break;
@@ -212,7 +196,6 @@ unsigned Type::getWidth() const {
 }
 
 void Type::setRefType(QualType t) {
-    assert(kind == USER);
     refType = t;
 }
 
@@ -250,52 +233,29 @@ Type* Type::getCanonical(TypeContext& context) {
 }
 #endif
 
-void Type::setMembers(MemberList* members_) {
-    assert(kind == STRUCT || kind == UNION || kind == ENUM);
-    assert(members == 0);
-    members = members_;
-}
-
-void Type::addMember(DeclExpr* D) {
-   if (members == 0) members = new MemberList();
-   members->push_back(D);
-}
-
 void Type::addEnumMember(EnumConstantDecl* C) {
     if (constants == 0) constants = new ConstantList();
     constants->push_back(C);
 }
 
-MemberList* Type::getMembers() const {
-    assert(kind == STRUCT || kind == UNION || kind == ENUM);
-    return members;
+unsigned Type::getNumMembers() const {
+    assert(structDecl);
+    return structDecl->getNumMembers();
 }
 
-void Type::setReturnType(QualType type) {
-    assert(kind == FUNC);
-    refType = type;
-}
-
-void Type::addArgument(QualType type_) {
-    assert(kind == FUNC);
-    Argument* arg = new Argument(type_);
-    if (arguments == 0) {
-        arguments = arg;
-    } else {
-        Argument* last = arguments;
-        while (last->next) last = last->next;
-        last->next = arg;
+QualType Type::getMember(unsigned index) const {
+    assert(structDecl);
+    Decl* D = structDecl->getMember(index);
+    // TODO use TypedDecl.getType()
+    if (isa<VarDecl>(D)) {
+        const VarDecl* V = cast<VarDecl>(D);
+        return V->getType();
     }
-}
-
-QualType Type::getArgument(unsigned i) const {
-    Argument* arg = arguments;
-    while (arg && i) {
-        arg = arg->next;
-        i--;
+    if (isa<StructTypeDecl>(D)) {
+        return cast<StructTypeDecl>(D)->getType();
     }
-    if (arg) return arg->type;
-    else return QualType();
+    assert(0);
+    return QualType();
 }
 
 bool Type::isCompatible(const Type& t2) const {
@@ -325,7 +285,7 @@ bool Type::isCompatible(const Type& t2) const {
     return true;
 }
 
-void Type::printFull(StringBuilder& buffer, int indent) const {
+void Type::printFull(StringBuilder& buffer, unsigned indent) const {
     switch (kind) {
     case USER:
         assert(0 && "TODO");
@@ -335,29 +295,13 @@ void Type::printFull(StringBuilder& buffer, int indent) const {
         break;
     case STRUCT:
         buffer.indent(indent);
-        buffer << "struct " << " {\n";
-        if (members) {
-            for (unsigned i=0; i<members->size(); i++) {
-                buffer.indent(2*(indent+1));
-                DeclExpr* mem = (*members)[i];
-                mem->getType()->printFull(buffer, indent+1);
-                buffer << ' ' << mem->getName() << ";\n";
-            }
-        }
+        buffer << "struct " << sname << " {\n";
         buffer.indent(indent);
         buffer << '}';
         break;
     case UNION:
         buffer.indent(indent);
-        buffer << "union " << " {\n";
-        if (members) {
-            for (unsigned i=0; i<members->size(); i++) {
-                buffer.indent(2*(indent+1));
-                DeclExpr* mem = (*members)[i];
-                mem->getType()->printFull(buffer, indent+1);
-                buffer << ' ' << mem->getName() << ";\n";
-            }
-        }
+        buffer << "union " << sname << " {\n";
         buffer.indent(indent);
         buffer << '}';
         break;
@@ -373,17 +317,7 @@ void Type::printFull(StringBuilder& buffer, int indent) const {
     {
         assert(refType.isValid());
         buffer.indent(indent);
-        buffer << "func " << ' ';
-        // TODO qualifiers
-        refType.getTypePtr()->printName(buffer);
-        buffer << '(';
-        Argument* arg = arguments;
-        while (arg) {
-            arg->type->printName(buffer);
-            if (arg->next != 0) buffer << ", ";
-            arg = arg->next;
-        }
-        buffer << ')';
+        buffer << "func type";
         break;
     }
     case POINTER:
@@ -397,7 +331,7 @@ void Type::printFull(StringBuilder& buffer, int indent) const {
     }
 }
 
-void Type::printEffective(StringBuilder& buffer, int indent) const {
+void Type::printEffective(StringBuilder& buffer, unsigned indent) const {
     switch (kind) {
     case BUILTIN:
         assert(name);
@@ -417,22 +351,12 @@ void Type::printEffective(StringBuilder& buffer, int indent) const {
         break;
     case STRUCT:
         buffer.indent(indent);
-        buffer << "(struct)";
+        buffer << "(struct)" << sname;
         break;
     case FUNC:
     {
         buffer.indent(indent);
         buffer << "(func)";
-        // TODO qualifiers
-        refType.getTypePtr()->printName(buffer);
-        buffer << '(';
-        Argument* arg = arguments;
-        while (arg) {
-            arg->type->printName(buffer);
-            if (arg->next != 0) buffer << ", ";
-            arg = arg->next;
-        }
-        buffer << ')';
         break;
     }
     case POINTER:
@@ -462,7 +386,7 @@ void Type::printName(StringBuilder& buffer) const {
         buffer << "(enum)" << sname;
         break;
     case FUNC:
-        assert(0);
+        buffer << "(function)" << func->getName();
         break;
     case USER:
         assert(refType.isValid());
@@ -479,7 +403,7 @@ void Type::printName(StringBuilder& buffer) const {
     }
 }
 
-void Type::print(int indent, StringBuilder& buffer, QualType::RecursionType recursive) const {
+void Type::print(StringBuilder& buffer, unsigned indent, QualType::RecursionType recursive) const {
     buffer.indent(indent);
     buffer << "[type] ";
     switch (kind) {
@@ -489,7 +413,7 @@ void Type::print(int indent, StringBuilder& buffer, QualType::RecursionType recu
     case USER:
         buffer << "(user)\n";
         assert(userType);
-        userType->print(indent + INDENT, buffer);
+        userType->print(buffer, indent + INDENT);
         if (refType.isValid() && recursive != QualType::RECURSE_NONE) {
             buffer.indent(indent + INDENT);
             buffer << ANSI_CYAN << "resolved to:" << ANSI_NORMAL << ' ';
@@ -498,66 +422,39 @@ void Type::print(int indent, StringBuilder& buffer, QualType::RecursionType recu
         }
         break;
     case UNION:
-        buffer << "(union)\n";
-        if (members) {
-            for (unsigned i=0; i<members->size(); i++) {
-                buffer.indent(2*(indent+1));
-                DeclExpr* mem = (*members)[i];
-                mem->getType()->print(indent + INDENT, buffer, recursive);
-            }
-        }
+        buffer << "(union)" << sname << "\n";
         break;
     case ENUM:
-        buffer << "(enum)\n";
+        buffer << "(enum) " << sname << "\n";
+        if (refType.isValid()) {
+            buffer.indent(indent + INDENT);
+            buffer << "implType=";
+            refType.print(buffer, 0, QualType::RECURSE_NONE);
+        }
         if (constants && recursive != QualType::RECURSE_NONE) {
             for (unsigned i=0; i<constants->size(); i++) {
                 EnumConstantDecl* C = (*constants)[i];
-                C->print(buffer);
+                C->print(buffer, indent + INDENT);
             }
         }
         break;
     case STRUCT:
-        buffer << "(struct)\n";
-        if (members) {
-            for (unsigned i=0; i<members->size(); i++) {
-                DeclExpr* mem = (*members)[i];
-                mem->getType()->print(indent + INDENT, buffer, recursive);
-            }
-        }
+        buffer << "(struct) "<< sname << "\n";
         break;
     case FUNC:
-    {
         buffer << "(func)\n";
-        buffer.indent(indent + INDENT);
-        buffer << COL_ATTR << "returnType:" << ANSI_NORMAL << '\n';
-        buffer.indent(indent + INDENT);
-        // TODO qualifiers
-        refType.getTypePtr()->printName(buffer);
-        buffer << '\n';
-        Argument* arg = arguments;
-        if (arg) {
-            buffer.indent(indent + INDENT);
-            buffer << COL_ATTR << "args:" << ANSI_NORMAL << '\n';
-        }
-        while (arg) {
-            buffer.indent(indent + INDENT);
-            arg->type->printName(buffer);
-            buffer << '\n';
-            arg = arg->next;
-        }
         break;
-    }
     case POINTER:
         buffer << "(pointer)\n";
-        refType.print(indent + INDENT, buffer, recursive);
+        refType.print(buffer, indent + INDENT, recursive);
         break;
     case ARRAY:
         buffer << "(array)\n";
-        refType.print(indent + INDENT, buffer, recursive);
+        refType.print(buffer, indent + INDENT, recursive);
         if (arrayExpr) {
             buffer.indent(indent);
             buffer << COL_ATTR << "size:" << ANSI_NORMAL << '\n';
-            arrayExpr->print(indent + INDENT, buffer);
+            arrayExpr->print(buffer, indent + INDENT);
         }
         break;
     }
@@ -572,7 +469,7 @@ void Type::DiagName(StringBuilder& buffer) const {
 void Type::dump() const {
     StringBuilder buffer;
     //printEffective(buffer, 0);
-    print(0, buffer, QualType::RECURSE_ALL);
+    print(buffer, 0, QualType::RECURSE_ALL);
     fprintf(stderr, "[TYPE] %s\n", (const char*)buffer);
 }
 
@@ -612,7 +509,7 @@ static C2::Type type_void(Type::BUILTIN);
 BuiltinType::BuiltinType() {
     type_u8.setBuiltinName(TYPE_U8, "u8", "unsigned char", 1);
     type_u16.setBuiltinName(TYPE_U16, "u16", "unsigned short", 2);
-    type_u32.setBuiltinName(TYPE_U32,"u32", "unsigned int", 4);
+    type_u32.setBuiltinName(TYPE_U32,"u32", "unsigned", 4);
     type_u64.setBuiltinName(TYPE_U64,"u64", "unsigned long long", 4);
     type_i8.setBuiltinName(TYPE_I8,"i8", "char", 1);
     type_i16.setBuiltinName(TYPE_I16,"i16", "short", 2);
@@ -678,9 +575,10 @@ QualType TypeContext::getPointer(QualType ref) {
     return QualType(N);
 }
 
-Type* TypeContext::getStruct(bool isStruct) {
+Type* TypeContext::getStruct(bool isStruct, const char* id) {
     Type* T = new Type(isStruct ? Type::STRUCT : Type::UNION);
     types.push_back(T);
+    T->setStructName(id);
     return T;
 }
 
@@ -697,9 +595,9 @@ QualType TypeContext::getArray(QualType ref, Expr* sizeExpr, bool ownSize) {
     return QualType(T);
 }
 
-Type* TypeContext::getFunction(QualType rtype) {
+Type* TypeContext::getFunction(FunctionDecl* F) {
     Type* proto = new Type(Type::FUNC);
-    proto->setReturnType(rtype);
+    proto->setFunc(F);
     types.push_back(proto);
     return proto;
 }

@@ -171,7 +171,6 @@ void C2Sema::ActOnTypeDef(const char* name, SourceLocation loc, Expr* type, bool
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    // extract here to Type and delete rtype Expr
     TypeExpr* typeExpr = cast<TypeExpr>(type);
     if (typeExpr->hasLocalQualifier()) {
         Diag(loc, diag::err_invalid_local_typedef);
@@ -184,32 +183,17 @@ void C2Sema::ActOnTypeDef(const char* name, SourceLocation loc, Expr* type, bool
 
 void C2Sema::ActOnVarDef(const char* name, SourceLocation loc,
                         bool is_public, Expr* type, Expr* InitValue) {
-    assert(type);
-#ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: var def " << name << " at ";
-    loc.dump(SourceMgr);
-    std::cerr << ANSI_NORMAL"\n";
-#endif
-    // extract here to Type and delete rtype Expr
     TypeExpr* typeExpr = cast<TypeExpr>(type);
     if (typeExpr->hasLocalQualifier()) {
         Diag(loc, diag::err_invalid_local_globalvar);
     }
-    // TODO check that type is not pre-fixed with own package
-    DeclExpr* declExpr = new DeclExpr(name, loc, typeExpr->getType(), InitValue);
-    Decl* V = new VarDecl(declExpr, is_public, false);;
+    VarDecl* V =  createVarDecl(name, loc, typeExpr, InitValue, is_public);
     ast.addDecl(V);
     addSymbol(V);
-    delete typeExpr;
 }
 
-C2::FunctionDecl* C2Sema::ActOnFuncDef(const char* name, SourceLocation loc, bool is_public, Expr* rtype) {
-#ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: func def " << name << " at ";
-    loc.dump(SourceMgr);
-    std::cerr << ANSI_NORMAL"\n";
-#endif
-    // TEMP extract here to Type and delete rtype Expr
+C2::FunctionDecl* C2Sema::createFuncDecl(const char* name, SourceLocation loc,
+            bool is_public, Expr* rtype) {
     assert(rtype);
     TypeExpr* typeExpr = cast<TypeExpr>(rtype);
     if (typeExpr->hasLocalQualifier()) {
@@ -218,24 +202,84 @@ C2::FunctionDecl* C2Sema::ActOnFuncDef(const char* name, SourceLocation loc, boo
         Diag(loc, diag::err_invalid_local_returntype);
     }
     FunctionDecl* D = new FunctionDecl(name, loc, is_public, typeExpr->getType());
-    ast.addDecl(D);
-    addSymbol(D);
     delete typeExpr;
+    Type* type = typeContext.getFunction(D);
+    QualType qt(type, 0);
+    D->setFunctionType(qt);
     return D;
 }
 
-void C2Sema::ActOnFunctionArgs(Decl* decl, ExprList params) {
-    FunctionDecl* func = cast<FunctionDecl>(decl);
-    for (unsigned int i=0; i<params.size(); i++) {
-        DeclExpr* de = cast<DeclExpr>(params[i]);
-        // check args for duplicates
-        DeclExpr* existing = func->findArg(de->getName());
+// NOTE: takes Type* from typeExpr and deletes typeExpr;
+C2::VarDecl* C2Sema::createVarDecl(const char* name, SourceLocation loc, TypeExpr* typeExpr, Expr* InitValue, bool is_public) {
+    // TODO check that type is not pre-fixed with own package
+    // globals, function params, struct members
+    VarDecl* V = new VarDecl(name, loc, typeExpr->getType(), InitValue, is_public);
+    delete typeExpr;
+    return V;
+}
+
+C2::FunctionDecl* C2Sema::ActOnFuncDecl(const char* name, SourceLocation loc, bool is_public, Expr* rtype) {
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: func decl " << name << " at ";
+    loc.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    FunctionDecl* D = createFuncDecl(name, loc, is_public, rtype);
+    ast.addDecl(D);
+    addSymbol(D);
+    return D;
+}
+
+C2::FunctionDecl* C2Sema::ActOnFuncTypeDecl(const char* name, SourceLocation loc,
+            bool is_public, Expr* rtype) {
+#ifdef SEMA_DEBUG
+    assert(name);
+    std::cerr << COL_SEMA"SEMA: function type decl " << name << " at ";
+    loc.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    FunctionDecl* D = createFuncDecl(name, loc, is_public, rtype);
+    FunctionTypeDecl* TD = new FunctionTypeDecl(D);
+    ast.addDecl(TD);
+    addSymbol(TD);
+    return D;
+}
+
+void C2Sema::ActOnFunctionArg(FunctionDecl* func, const char* name, SourceLocation loc, Expr* type, Expr* InitValue) {
+    // First create VarDecl
+#ifdef SEMA_DEBUG
+    assert(name);
+    std::cerr << COL_SEMA"SEMA: function arg" << name << " at ";
+    loc.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    TypeExpr* typeExpr = cast<TypeExpr>(type);
+    if (typeExpr->hasLocalQualifier()) {
+        Diag(loc, diag::err_invalid_local_functionargument);
+    }
+    VarDecl* var = createVarDecl(name, loc, typeExpr, InitValue, false);
+
+    // check args for duplicates
+    if (var->getName() != "") {
+        VarDecl* existing = func->findArg(var->getName());
         if (existing) {
-            Diag(de->getLocation(), diag::err_param_redefinition) << de->getName();
+            Diag(var->getLocation(), diag::err_param_redefinition) << var->getName();
             Diag(existing->getLocation(), diag::note_previous_declaration);
-            continue;
         }
-        func->addArg(de);
+    }
+    func->addArg(var);
+    // check if already have default args
+    if (var->getInitValue()) {
+        func->setDefaultArgs();
+    } else {
+        if (func->hasDefaultArgs()) {
+            if (var->getName() == "") {
+                Diag(var->getLocation(), diag::err_param_default_argument_missing);
+            } else {
+                Diag(var->getLocation(), diag::err_param_default_argument_missing_name)
+                    << var->getName();
+            }
+        }
     }
 }
 
@@ -388,10 +432,10 @@ C2::StmtResult C2Sema::ActOnDeclaration(const char* name, SourceLocation loc, Ex
     }
     // TEMP extract here to Type and delete rtype Expr
     TypeExpr* typeExpr = cast<TypeExpr>(type);
-    DeclExpr* declExpr = new DeclExpr(name, loc, typeExpr->getType(), InitValue);
-    if (typeExpr->hasLocalQualifier()) declExpr->setLocalQualifier();
-    delete typeExpr;
-    return StmtResult(declExpr);
+    bool hasLocal = typeExpr->hasLocalQualifier();
+    VarDecl* V =  createVarDecl(name, loc, typeExpr, InitValue, false);
+    if (hasLocal) V->setLocalQualifier();
+    return StmtResult(new DeclExpr(V));
 }
 
 C2::ExprResult C2Sema::ActOnCallExpr(Expr* Fn, Expr** args, unsigned numArgs, SourceLocation RParenLoc) {
@@ -504,27 +548,64 @@ C2::ExprResult C2Sema::ActOnBuiltinType(C2Type t) {
     return ExprResult(new TypeExpr(qt));
 }
 
-C2::ExprResult C2Sema::ActOnStructType(SourceLocation leftBrace, SourceLocation rightBrace,
-                                       ExprList& members, bool isStruct, const char* id) {
+StructTypeDecl* C2Sema::ActOnStructType(const char* name, SourceLocation loc,
+            bool isStruct, bool is_public, bool is_global) {
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: Struct/Union Type"ANSI_NORMAL"\n";
+    std::cerr << COL_SEMA"SEMA: Struct/Union Type '" << name ? name : "<anonymous>" << ANSI_NORMAL"\n";
 #endif
-    Type* type = typeContext.getStruct(isStruct);
-    type->setStructName(id);
-    // TODO use left/rightBrace (add to TypeExpr, then pass to TypeDecl)
-    MemberList* members2 = new MemberList;
-    for (unsigned int i=0; i<members.size(); i++) {
-        DeclExpr* member = cast<DeclExpr>(members[i]);
-        members2->push_back(member);
-    }
-    type->setMembers(members2);
+    // add basic struct type, dont populate yet with member types
+    Type* type = typeContext.getStruct(isStruct, name);
     QualType qt(type);
-    return ExprResult(new TypeExpr(qt));
+    StructTypeDecl* S = new StructTypeDecl(name, loc, qt, isStruct, is_global, is_public);
+    type->setStructDecl(S);
+    if (is_global) {
+        ast.addDecl(S);
+        addSymbol(S);
+    }
+    return S;
+}
+
+C2::DeclResult C2Sema::ActOnStructVar(const char* name, SourceLocation loc, Expr* type, Expr* InitValue, bool is_public) {
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: struct var " << name << " at ";
+    loc.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    TypeExpr* typeExpr = cast<TypeExpr>(type);
+    if (typeExpr->hasLocalQualifier()) {
+        //Diag(loc, diag::err_invalid_local_structmember);
+#warning "TODO add diag msg to clang"
+    }
+    VarDecl* V =  createVarDecl(name, loc, typeExpr, InitValue, is_public);
+    return DeclResult(V);
+}
+
+void C2Sema::ActOnStructMember(StructTypeDecl* S, Decl* member) {
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: struct member at ";
+    loc.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    S->addMember(member);
+}
+
+void C2Sema::ActOnStructTypeFinish(StructTypeDecl* S, SourceLocation left, SourceLocation right) {
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: Struct finish"ANSI_NORMAL"\n";
+#endif
+    //S->setLocs(left, right);
+    Names names;
+    analyseStructNames(S, names);
 }
 
 C2::ExprResult C2Sema::ActOnEnumType(const char* id, Expr* implType) {
     Type* type = typeContext.getEnum();
     type->setStructName(id);
+    if (implType) {
+        TypeExpr* T = cast<TypeExpr>(implType);
+        type->setRefType(T->getType());
+        delete T;
+    }
     QualType qt(type);
     return ExprResult(new TypeExpr(qt));
 }
@@ -565,23 +646,6 @@ C2::ExprResult C2Sema::ActOnTypeQualifier(ExprResult R, unsigned int qualifier) 
         if (qualifier & TYPE_LOCAL) typeExpr->setLocalQualifier();
     }
     return R;
-}
-
-C2::ExprResult C2Sema::ActOnVarExpr(const char* name, SourceLocation loc, Expr* type, Expr* InitValue) {
-    assert(type);
-#ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: var expr " << name << " at ";
-    loc.dump(SourceMgr);
-    std::cerr << ANSI_NORMAL"\n";
-#endif
-    // TEMP extract here to Type and delete rtype Expr
-    TypeExpr* typeExpr = cast<TypeExpr>(type);
-    if (typeExpr->hasLocalQualifier()) {
-        Diag(loc, diag::err_invalid_local_functionargument);
-    }
-    DeclExpr* declExpr = new DeclExpr(name, loc, typeExpr->getType(), InitValue);
-    delete typeExpr;
-    return ExprResult(declExpr);
 }
 
 C2::ExprResult C2Sema::ActOnBuiltinExpression(SourceLocation Loc, Expr* expr, bool isSizeof) {
@@ -854,5 +918,26 @@ const C2::UseDecl* C2Sema::findAlias(const char* name) const {
 
 C2::ExprResult C2Sema::ExprError() {
     return C2::ExprResult(true);
+}
+
+void C2Sema::analyseStructNames(const StructTypeDecl* S, Names& names) {
+    typedef Names::iterator NamesIter;
+    for (unsigned i=0; i<S->getNumMembers(); i++) {
+        const Decl* member = S->getMember(i);
+        const std::string& name = member->getName();
+        if (name == "") {
+            assert(isa<StructTypeDecl>(member));
+            analyseStructNames(cast<StructTypeDecl>(member), names);
+        } else {
+            NamesIter iter = names.find(name);
+            if (iter != names.end()) {
+                const Decl* existing = iter->second;
+                Diag(member->getLocation(), diag::err_duplicate_member) << name;
+                Diag(existing->getLocation(), diag::note_previous_declaration);
+            } else {
+                names[name] = member;
+            }
+        }
+    }
 }
 

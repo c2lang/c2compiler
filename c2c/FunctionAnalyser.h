@@ -76,9 +76,10 @@ private:
     void analyseBuiltinExpr(Expr* expr);
     QualType analyseArraySubscript(Expr* expr);
     QualType analyseMemberExpr(Expr* expr);
+    QualType analyseMember(QualType T, IdentifierExpr* member);
     QualType analyseParenExpr(Expr* expr);
     QualType analyseCall(Expr* expr);
-    ScopeResult analyseIdentifier(Expr* expr);
+    ScopeResult analyseIdentifier(IdentifierExpr* expr);
 
     void analyseInitExpr(Expr* expr, QualType expectedType);
     void analyseInitList(Expr* expr, QualType expectedType);
@@ -101,8 +102,8 @@ private:
         FunctionAnalyser& analyser;
     };
 
-    QualType checkAssignmentOperands(QualType left, QualType right);
     void checkConversion(SourceLocation Loc, QualType from, QualType to);
+    void checkAssignment(Expr* assignee, QualType TLeft);
 
     static QualType resolveUserType(QualType T);
     Type* resolveCanonicalType(Type* T);

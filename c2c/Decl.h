@@ -34,8 +34,6 @@ namespace C2 {
 class StringBuilder;
 class Stmt;
 class Expr;
-class DeclExpr;
-class DeclVisitor;
 class ArrayValueDecl;
 class CompoundStmt;
 
@@ -44,18 +42,21 @@ enum DeclKind {
     DECL_VAR,
     DECL_ENUMVALUE,
     DECL_TYPE,
+    DECL_STRUCTTYPE,
+    DECL_FUNCTIONTYPE,
     DECL_ARRAYVALUE,
     DECL_USE
 };
 
 class Decl {
 public:
-    Decl(DeclKind k, bool is_public);
+    Decl(DeclKind k, const std::string& name_, SourceLocation loc_, bool is_public);
     virtual ~Decl();
 
-    virtual void print(StringBuilder& buffer) = 0;
-    virtual const std::string& getName() const = 0;
-    virtual clang::SourceLocation getLocation() const = 0;
+    virtual void print(StringBuilder& buffer, unsigned indent) = 0;
+
+    const std::string& getName() const { return name; }
+    SourceLocation getLocation() const { return loc; }
 
     DeclKind getKind() const { return static_cast<DeclKind>(DeclBits.dKind); }
     bool isPublic() const { return DeclBits.DeclIsPublic; }
@@ -63,11 +64,18 @@ public:
     // for debugging
     void dump();
 protected:
+    const std::string name;
+    SourceLocation loc;
+
     class DeclBitfields {
     public:
         unsigned dKind : 8;
         unsigned DeclIsPublic : 1;
+        unsigned VarDeclHasLocalQualifier : 1;
+        unsigned StructTypeIsStruct : 1;
+        unsigned StructTypeIsGlobal : 1;
         unsigned FuncIsVariadic : 1;
+        unsigned FuncHasDefaultArgs : 1;
         unsigned UseIsLocal : 1;
     };
     union {
@@ -80,6 +88,35 @@ private:
 };
 
 
+class VarDecl : public Decl {
+public:
+    VarDecl(const std::string& name_, SourceLocation loc_,
+            QualType type_, Expr* initValue_, bool is_public = false);
+    virtual ~VarDecl();
+    static bool classof(const Decl* D) {
+        return D->getKind() == DECL_VAR;
+    }
+    virtual void print(StringBuilder& buffer, unsigned indent);
+
+    QualType getType() const { return type; }
+    Expr* getInitValue() const { return initValue; }
+
+    void setLocalQualifier() { DeclBits.VarDeclHasLocalQualifier = true; }
+    bool hasLocalQualifier() const { return DeclBits.VarDeclHasLocalQualifier; }
+
+    // TODO move to GlobalVarDecl subclass
+    typedef std::vector<ArrayValueDecl*> InitValues;
+    typedef InitValues::const_iterator InitValuesConstIter;
+    const InitValues& getIncrValues() const { return initValues; }
+    void addInitValue(ArrayValueDecl* value);
+private:
+    QualType type;
+    Expr* initValue;
+    // TODO remove, since only for Incremental Arrays (subclass VarDecl -> GlobalVarDecl)
+    InitValues initValues;
+};
+
+
 class FunctionDecl : public Decl {
 public:
     FunctionDecl(const std::string& name_, SourceLocation loc_, bool is_public, QualType rtype_);
@@ -87,66 +124,41 @@ public:
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_FUNC;
     }
-    virtual void print(StringBuilder& buffer);
+    virtual void print(StringBuilder& buffer, unsigned indent);
 
     void setBody(CompoundStmt* body_) {
         assert(body == 0);
         body = body_;
     }
     CompoundStmt* getBody() const { return body; }
-    DeclExpr* findArg(const std::string& name) const;
-    DeclExpr* getArg(unsigned int i) const { return args[i]; }
-    unsigned int numArgs() const { return args.size(); }
-    void addArg(DeclExpr* arg);
-    virtual const std::string& getName() const { return name; }
-    virtual clang::SourceLocation getLocation() const { return loc; }
-    QualType getReturnType() const { return rtype; }
+
+    // args
+    void addArg(VarDecl* arg) { args.push_back(arg); }
+    VarDecl* findArg(const std::string& name) const;
+    VarDecl* getArg(unsigned i) const { return args[i]; }
+    unsigned numArgs() const { return args.size(); }
+    unsigned minArgs() const;
     void setVariadic() { DeclBits.FuncIsVariadic = true; }
     bool isVariadic() const { return DeclBits.FuncIsVariadic; }
+    void setDefaultArgs() { DeclBits.FuncHasDefaultArgs = true; }
+    bool hasDefaultArgs() const { return DeclBits.FuncHasDefaultArgs; }
+
+    QualType getReturnType() const { return rtype; }
 
     void setFunctionType(QualType qt) { functionType = qt; }
     QualType getType() const { return functionType; }
 
     // for codegen
     llvm::Function* getIRProto() const { return IRProto; }
-    void setIRProto(llvm::Function* f) { IRProto = f; }
+    void setIRProto(llvm::Function* f) const { IRProto = f; }
 private:
-    // TODO remove
-    friend class CodeGenFunction;
-
-    std::string name;
-    clang::SourceLocation loc;
     QualType rtype;
     QualType functionType;
 
-    typedef OwningVector<DeclExpr> Args;
+    typedef OwningVector<VarDecl> Args;
     Args args;
     CompoundStmt* body;
-    llvm::Function* IRProto;
-};
-
-
-class VarDecl : public Decl {
-public:
-    VarDecl(DeclExpr* decl_, bool is_public, bool inExpr);
-    virtual ~VarDecl();
-    static bool classof(const Decl* D) {
-        return D->getKind() == DECL_VAR;
-    }
-    virtual void print(StringBuilder& buffer);
-
-    virtual const std::string& getName() const;
-    virtual clang::SourceLocation getLocation() const;
-    QualType getType() const;
-
-    Expr* getInitValue() const; // static value, NOT incremental values
-    typedef std::vector<ArrayValueDecl*> InitValues;
-    typedef InitValues::const_iterator InitValuesConstIter;
-    const InitValues& getIncrValues() const { return initValues; }
-    void addInitValue(ArrayValueDecl* value);
-private:
-    DeclExpr* decl;
-    InitValues initValues;
+    mutable llvm::Function* IRProto;
 };
 
 
@@ -157,16 +169,13 @@ public:
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_ENUMVALUE;
     }
-    virtual void print(StringBuilder& buffer);
+    virtual void print(StringBuilder& buffer, unsigned indent);
 
-    virtual const std::string& getName() const { return name; }
-    virtual clang::SourceLocation getLocation() const { return loc; }
     QualType getType() const { return type; }
     Expr* getInitValue() const { return InitVal; } // static value, NOT incremental values
     int getValue() const { return value; }
+    void setValue(int value_) { value = value_; }
 private:
-    std::string name;
-    SourceLocation loc;
     QualType type;
     Expr* InitVal;
     int value;      // set during analysis, TODO use APInt
@@ -178,17 +187,61 @@ public:
     TypeDecl(const std::string& name_, SourceLocation loc_, QualType type_, bool is_public);
     virtual ~TypeDecl();
     static bool classof(const Decl* D) {
-        return D->getKind() == DECL_TYPE;
+        return (D->getKind() == DECL_TYPE ||
+                D->getKind() == DECL_STRUCTTYPE ||
+                D->getKind() == DECL_FUNCTIONTYPE);
     }
-    virtual void print(StringBuilder& buffer);
+    virtual void print(StringBuilder& buffer, unsigned indent);
 
-    virtual const std::string& getName() const { return name; }
-    virtual clang::SourceLocation getLocation() const { return loc; }
     QualType& getType() { return type; }
-private:
-    std::string name;
-    SourceLocation loc;
+protected:
+    // for subtypes
+    TypeDecl(DeclKind kind, const std::string& name_, SourceLocation loc_, QualType type_, bool is_public);
+
     QualType type;
+};
+
+
+class StructTypeDecl : public TypeDecl {
+public:
+    StructTypeDecl(const std::string& name_, SourceLocation loc_, QualType type_,
+            bool is_struct, bool is_global, bool is_public);
+    static bool classof(const Decl* D) {
+        return D->getKind() == DECL_STRUCTTYPE;
+    }
+    virtual void print(StringBuilder& buffer, unsigned indent);
+
+    void addMember(Decl* D);
+    unsigned getNumMembers() const { return members.size(); }
+    Decl* getMember(unsigned index) const { return members[index]; }
+    Decl* find(const std::string& name_) const {
+        for (unsigned i=0; i<members.size(); i++) {
+            Decl* D = members[i];
+            if (D->getName() == name_) return D;
+        }
+        return 0;
+    }
+
+    bool isStruct() const { return DeclBits.StructTypeIsStruct; }
+    bool isGlobal() const { return DeclBits.StructTypeIsGlobal; }
+private:
+    typedef OwningVector<Decl> Members;
+    Members members;
+};
+
+
+class FunctionTypeDecl : public TypeDecl {
+public:
+    FunctionTypeDecl(FunctionDecl* func_);
+    virtual ~FunctionTypeDecl();
+    static bool classof(const Decl* D) {
+        return D->getKind() == DECL_FUNCTIONTYPE;
+    }
+    virtual void print(StringBuilder& buffer, unsigned indent);
+
+    FunctionDecl* getDecl() const { return func; }
+private:
+    FunctionDecl* func;
 };
 
 
@@ -199,14 +252,10 @@ public:
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_ARRAYVALUE;
     }
-    virtual void print(StringBuilder& buffer);
+    virtual void print(StringBuilder& buffer, unsigned indent);
 
-    virtual const std::string& getName() const { return name; }
-    virtual clang::SourceLocation getLocation() const { return loc; }
     Expr* getExpr() const { return value; }
 private:
-    std::string name;
-    SourceLocation loc;
     Expr* value;
 };
 
@@ -217,17 +266,13 @@ public:
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_USE;
     }
-    virtual void print(StringBuilder& buffer);
+    virtual void print(StringBuilder& buffer, unsigned indent);
 
-    virtual const std::string& getName() const { return name; }
     const std::string& getAlias() const { return alias; }
-    virtual clang::SourceLocation getLocation() const { return loc; }
     virtual clang::SourceLocation getAliasLocation() const { return aliasLoc; }
     bool isLocal() const { return DeclBits.UseIsLocal; }
 private:
-    std::string name;
     std::string alias;
-    SourceLocation loc;
     SourceLocation aliasLoc;
 };
 

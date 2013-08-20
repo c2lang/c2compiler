@@ -2,7 +2,7 @@ package switch_test;
 
 use stdio;
 
-func void call() {
+func void call(int a) {
     switch (1) {
     case 0:
         stdio.printf("hallo");

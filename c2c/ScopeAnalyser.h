@@ -38,7 +38,9 @@ public:
     virtual bool handle(Decl* decl);
     unsigned int getErrors() const { return errors; }
 private:
+    void checkDecl(Decl* decl, bool used_public);
     void checkType(QualType type, bool used_public = false);
+    void checkStructType(StructTypeDecl* S, bool used_public);
     void checkUse(Decl* decl);
 
     FileScope& globals;

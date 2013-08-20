@@ -45,8 +45,8 @@ bool ScopeAnalyser::handle(Decl* decl) {
             checkType(func->getReturnType(), is_public);
             // check argument types
             for (unsigned i=0; i<func->numArgs(); i++) {
-                DeclExpr* de = func->getArg(i);
-                checkType(de->getType(), is_public);
+                VarDecl* V = func->getArg(i);
+                checkType(V->getType(), is_public);
             }
             // TEMP (do elsewhere?)
             if (!is_public && func->getName() == "main") {
@@ -68,7 +68,15 @@ bool ScopeAnalyser::handle(Decl* decl) {
             TypeDecl* td = cast<TypeDecl>(decl);
             checkType(td->getType(), is_public);
         }
-        // TODO analyse members in structs/unions
+        break;
+    case DECL_STRUCTTYPE:
+        checkStructType(cast<StructTypeDecl>(decl), is_public);
+        break;
+    case DECL_FUNCTIONTYPE:
+        {
+            FunctionTypeDecl* FTD = cast<FunctionTypeDecl>(decl);
+            handle(FTD->getDecl());
+        }
         break;
     case DECL_ARRAYVALUE:
         {
@@ -108,6 +116,13 @@ bool ScopeAnalyser::handle(Decl* decl) {
 
 void ScopeAnalyser::checkType(QualType type, bool used_public) {
     errors += globals.checkType(type, used_public);
+}
+
+void ScopeAnalyser::checkStructType(StructTypeDecl* S, bool used_public) {
+    for (unsigned i=0; i<S->getNumMembers(); i++) {
+        Decl* M = S->getMember(i);
+        handle(M);
+    }
 }
 
 void ScopeAnalyser::checkUse(Decl* decl) {

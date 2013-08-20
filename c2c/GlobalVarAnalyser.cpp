@@ -41,18 +41,6 @@ bool GlobalVarAnalyser::handle(Decl* decl) {
     bool is_public = decl->isPublic();
     switch (decl->getKind()) {
     case DECL_FUNC:
-        {
-            FunctionDecl* FD = cast<FunctionDecl>(decl);
-            QualType rtype = FD->getReturnType();
-            Type* proto = typeContext.getFunction(rtype);
-            for (unsigned i=0; i<FD->numArgs(); i++) {
-                DeclExpr* arg = FD->getArg(i);
-                QualType argType = arg->getType();
-                proto->addArgument(argType);
-            }
-            FD->setFunctionType(QualType(proto));
-            break;
-        }
     case DECL_VAR:
         // nothing to do
         break;
@@ -60,22 +48,36 @@ bool GlobalVarAnalyser::handle(Decl* decl) {
         assert(0 && "TODO");
         break;
     case DECL_TYPE:
+        // need to set CanonicalTypes?
         {
-            TypeDecl* TD = cast<TypeDecl>(decl);
-            // TODO set CanonicalType here?
-#if 0
-            // not needed anymore?
-            Type* T = TD->getType();
-            if (T->isStructOrUnionType()) {
-                MemberList* members = T->getMembers();
-                for (unsigned i=0; i<members->size(); i++) {
-                    DeclExpr* mem = (*members)[i];
-                    Type* canonicalType = mem->getType()->getCanonical(typeContext);
-                    mem->setCanonicalType(canonicalType);
+            TypeDecl* T = cast<TypeDecl>(decl);
+            QualType qt = T->getType();
+            if (qt->isEnumType()) {
+                if (!qt->getConstants()) break;
+                ConstantList* clist = qt->getConstants();
+                // TEMP use unsigned only
+                unsigned lastValue = 0;
+                for (unsigned i=0; i<clist->size(); i++) {
+                    EnumConstantDecl* C = (*clist)[i];
+                    if (C->getInitValue()) {
+#warning "TODO evaluate expr as number for enums"
+                        //C->setValue(lastValue);
+                        //lastValue = val;
+                        // TEMP just ignore
+                        C->setValue(lastValue);
+                        lastValue++;
+                    } else {
+                        C->setValue(lastValue);
+                        lastValue++;
+                    }
+                    // TODO check for duplicates
                 }
             }
-#endif
         }
+        break;
+    case DECL_STRUCTTYPE:
+    case DECL_FUNCTIONTYPE:
+        // nothing to do?
         break;
     case DECL_ARRAYVALUE:
     case DECL_USE:

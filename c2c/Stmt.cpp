@@ -46,7 +46,7 @@ Stmt::~Stmt() {
 
 void Stmt::dump() const {
     StringBuilder buffer;
-    print(0, buffer);
+    print(buffer, 0);
     fprintf(stderr, "%s\n", (const char*)buffer);
 }
 
@@ -61,11 +61,11 @@ ReturnStmt::~ReturnStmt() {
     delete value;
 }
 
-void ReturnStmt::print(int indent, StringBuilder& buffer) const {
+void ReturnStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[return]\n";
+    buffer << "[ReturnStmt]\n";
     if (value) {
-        value->print(indent + INDENT, buffer);
+        value->print(buffer, indent + INDENT);
     }
 }
 
@@ -90,12 +90,12 @@ IfStmt::~IfStmt() {
     delete SubExprs[ELSE];
 }
 
-void IfStmt::print(int indent, StringBuilder& buffer) const {
+void IfStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[if]\n";
-    SubExprs[COND]->print(indent + INDENT, buffer);
-    if (SubExprs[THEN]) SubExprs[THEN]->print(indent + INDENT, buffer);
-    if (SubExprs[ELSE]) SubExprs[ELSE]->print(indent + INDENT, buffer);
+    buffer << "[IfStmt]\n";
+    SubExprs[COND]->print(buffer, indent + INDENT);
+    if (SubExprs[THEN]) SubExprs[THEN]->print(buffer, indent + INDENT);
+    if (SubExprs[ELSE]) SubExprs[ELSE]->print(buffer, indent + INDENT);
 }
 
 
@@ -111,11 +111,11 @@ WhileStmt::~WhileStmt() {
     delete Then;
 }
 
-void WhileStmt::print(int indent, StringBuilder& buffer) const {
+void WhileStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[while]\n";
-    Cond->print(indent + INDENT, buffer);
-    Then->print(indent + INDENT, buffer);
+    buffer << "[WhileStmt]\n";
+    Cond->print(buffer, indent + INDENT);
+    Then->print(buffer, indent + INDENT);
 }
 
 
@@ -131,11 +131,11 @@ DoStmt::~DoStmt() {
     delete Then;
 }
 
-void DoStmt::print(int indent, StringBuilder& buffer) const {
+void DoStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[do]\n";
-    Cond->print(indent + INDENT, buffer);
-    Then->print(indent + INDENT, buffer);
+    buffer << "[DoStmt]\n";
+    Cond->print(buffer, indent + INDENT);
+    Then->print(buffer, indent + INDENT);
 }
 
 
@@ -155,13 +155,13 @@ ForStmt::~ForStmt() {
     delete Init;
 }
 
-void ForStmt::print(int indent, StringBuilder& buffer) const {
+void ForStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[for]\n";
-    if (Init) Init->print(indent + INDENT, buffer);
-    if (Cond) Cond->print(indent + INDENT, buffer);
-    if (Incr) Incr->print(indent + INDENT, buffer);
-    Body->print(indent + INDENT, buffer);
+    buffer << "[ForStmt]\n";
+    if (Init) Init->print(buffer, indent + INDENT);
+    if (Cond) Cond->print(buffer, indent + INDENT);
+    if (Incr) Incr->print(buffer, indent + INDENT);
+    Body->print(buffer, indent + INDENT);
 }
 
 
@@ -176,12 +176,12 @@ SwitchStmt::~SwitchStmt() {
     delete Cond;
 }
 
-void SwitchStmt::print(int indent, StringBuilder& buffer) const {
+void SwitchStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[switch]\n";
-    Cond->print(indent + INDENT, buffer);
+    buffer << "[SwitchStmt]\n";
+    Cond->print(buffer, indent + INDENT);
     for (unsigned int i=0; i<Cases.size(); i++) {
-        Cases[i]->print(indent + INDENT, buffer);
+        Cases[i]->print(buffer, indent + INDENT);
     }
 }
 
@@ -197,12 +197,12 @@ CaseStmt::~CaseStmt() {
     delete Cond;
 }
 
-void CaseStmt::print(int indent, StringBuilder& buffer) const {
+void CaseStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[case]\n";
-    Cond->print(indent + INDENT, buffer);
+    buffer << "[CaseStmt]\n";
+    Cond->print(buffer, indent + INDENT);
     for (unsigned int i=0; i<Stmts.size(); i++) {
-        Stmts[i]->print(indent + INDENT, buffer);
+        Stmts[i]->print(buffer, indent + INDENT);
     }
 }
 
@@ -215,11 +215,11 @@ DefaultStmt::DefaultStmt(SourceLocation Loc_, StmtList& Stmts_)
 
 DefaultStmt::~DefaultStmt() {}
 
-void DefaultStmt::print(int indent, StringBuilder& buffer) const {
+void DefaultStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[default]\n";
+    buffer << "[DefaultStmt]\n";
     for (unsigned int i=0; i<Stmts.size(); i++) {
-        Stmts[i]->print(indent + INDENT, buffer);
+        Stmts[i]->print(buffer, indent + INDENT);
     }
 }
 
@@ -231,9 +231,9 @@ BreakStmt::BreakStmt(SourceLocation Loc_)
 
 BreakStmt::~BreakStmt() {}
 
-void BreakStmt::print(int indent, StringBuilder& buffer) const {
+void BreakStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[break]\n";
+    buffer << "[BreakStmt]\n";
 }
 
 
@@ -244,9 +244,9 @@ ContinueStmt::ContinueStmt(SourceLocation Loc_)
 
 ContinueStmt::~ContinueStmt() {}
 
-void ContinueStmt::print(int indent, StringBuilder& buffer) const {
+void ContinueStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[continue]\n";
+    buffer << "[ContinueStmt]\n";
 }
 
 
@@ -260,10 +260,10 @@ LabelStmt::~LabelStmt()
     delete subStmt;
 }
 
-void LabelStmt::print(int indent, StringBuilder& buffer) const {
+void LabelStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[label]\n";
-    subStmt->print(indent + INDENT, buffer);
+    buffer << "[LabelStmt]\n";
+    subStmt->print(buffer, indent + INDENT);
 }
 
 
@@ -274,9 +274,9 @@ GotoStmt::GotoStmt(const char* name_, SourceLocation GotoLoc_, SourceLocation La
 
 GotoStmt::~GotoStmt() {}
 
-void GotoStmt::print(int indent, StringBuilder& buffer) const {
+void GotoStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[goto]\n";
+    buffer << "[GotoStmt]\n";
 }
 
 
@@ -289,11 +289,11 @@ CompoundStmt::CompoundStmt(SourceLocation l, SourceLocation r, StmtList& stmts_)
 
 CompoundStmt::~CompoundStmt() {}
 
-void CompoundStmt::print(int indent, StringBuilder& buffer) const {
+void CompoundStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[compound]\n";
+    buffer << "[CompoundStmt]\n";
     for (unsigned int i=0; i<Stmts.size(); i++) {
-        Stmts[i]->print(indent + INDENT, buffer);
+        Stmts[i]->print(buffer, indent + INDENT);
     }
 }
 

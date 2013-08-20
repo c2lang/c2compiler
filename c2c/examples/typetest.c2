@@ -33,28 +33,28 @@ type S3 struct {
     utils.Buffer bb;
 }
 
-/*
 type S4 struct {
-    // anonymous struct
     struct {
         int a;
         int b;
     }
-    struct {
+    struct named {
         int c;
         int d;
-    } named
+    }
 }
 
 type S2 struct {
     int n;
-    union {
+    union choice {
         int b;
-    } choice;
+    }
+    union ONeOf {
+        int a;
+    }
     volatile u32 count;
     const int d;
 }
-*/
 
 type Data union {
     int bla;
@@ -63,7 +63,7 @@ type Data union {
 }
 
 // -- ENUMS --
-type Enum1 enum {
+type Enum1 enum u8 {
     VAR1, VAR2, VAR3,
 }
 
@@ -82,12 +82,39 @@ type Enum4 enum {
     VARD4
 }
 
-float f = 3.1415926;
+float pi = 3.1415926;
 
 // -- Function --
-type CallBack func int(int a, Utils.Point*p);
+type CallBack func int(int a, utils.Point*p);
 type CBFunc func void (MyType* mt, ...);
-type CBFunc func void (const char* buffer, u8 t2, ...);
+type CBFunc2 func void (const char* buffer, u8 t2, ...);
 
-public func int main() { return 0; }
+func void test1(int n) {}
+func void test2(int n) {}
+
+type Func1 func void(int a);
+type Func2 func void(int a);
+
+type Callback struct {
+    Func1 cb;
+}
+
+func void myfunc(int a, ...) {}
+
+func void myfunc2(int a = 10, int b = 20) {}
+
+public func int main() {
+
+    Func1 f = test1;
+    Func2 g = test2;
+    f = g;  // ok
+
+    Func2 h = test2;
+    f = h;  // ok
+    f(20);
+
+    myfunc(10, 20, 30, 40);
+    myfunc2();
+    return 0;
+}
 

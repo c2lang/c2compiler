@@ -32,8 +32,10 @@ static int creationCount;
 static int deleteCount;
 #endif
 
-Decl::Decl(DeclKind k, bool is_public)
-    : BitsInit(0)
+Decl::Decl(DeclKind k, const std::string& name_, SourceLocation loc_, bool is_public)
+    : name(name_)
+    , loc(loc_)
+    , BitsInit(0)
 {
     DeclBits.dKind = k;
     DeclBits.DeclIsPublic = is_public;
@@ -52,7 +54,7 @@ Decl::~Decl() {
 
 void Decl::dump() {
     StringBuilder buffer;
-    print(buffer);
+    print(buffer, 0);
     printf("%s\n", (const char*) buffer);
 }
 
@@ -60,9 +62,7 @@ void Decl::dump() {
 FunctionDecl::FunctionDecl(const std::string& name_,
                                  SourceLocation loc_,
                                  bool is_public, QualType rtype_)
-    : Decl(DECL_FUNC, is_public)
-    , name(name_)
-    , loc(loc_)
+    : Decl(DECL_FUNC, name_, loc_, is_public)
     , rtype(rtype_)
     , body(0)
     , IRProto(0)
@@ -72,75 +72,83 @@ FunctionDecl::~FunctionDecl() {
     delete body;
 }
 
-void FunctionDecl::print(StringBuilder& buffer) {
-    buffer << "[function " << name << "]\n";
-    buffer.indent(INDENT);
+void FunctionDecl::print(StringBuilder& buffer, unsigned indent) {
+    buffer.indent(indent);
+    buffer << "[FunctionDecl " << name << "]\n";
+    buffer.indent(indent + INDENT);
     buffer << COL_ATTR << "returntype:" << ANSI_NORMAL << '\n';
-    rtype.print(INDENT, buffer, QualType::RECURSE_NONE);
+    rtype.print(buffer, indent+INDENT, QualType::RECURSE_NONE);
     if (args.size()) {
-        buffer.indent(INDENT);
-        buffer << COL_ATTR << "args:" << ANSI_NORMAL << '\n';
+        buffer.indent(indent + INDENT);
+        buffer << COL_ATTR << "args:" << ANSI_NORMAL;
+        if (isVariadic()) buffer << " <...>";
+        buffer << '\n';
+        for (unsigned int i=0; i<args.size(); i++) {
+            args[i]->print(buffer, indent + INDENT);
+        }
     }
-    for (unsigned int i=0; i<args.size(); i++) {
-        args[i]->print(INDENT, buffer);
-    }
-//    if (canonicalType) {
-//        buffer.indent(INDENT);
-//        buffer << ANSI_CYAN << "canonical:" << ANSI_NORMAL << '\n';
-//        canonicalType->print(INDENT, buffer, QualType::RECURSE_NONE);
-//    }
     if (body) {
         buffer.indent(INDENT);
         buffer << COL_ATTR << "body:" << ANSI_NORMAL << '\n';
-        body->print(INDENT, buffer);
+        body->print(buffer, INDENT);
     }
 }
 
-DeclExpr* FunctionDecl::findArg(const std::string& name) const {
+VarDecl* FunctionDecl::findArg(const std::string& name) const {
     for (unsigned i=0; i<args.size(); i++) {
-        // TEMP
-        DeclExpr* arg = cast<DeclExpr>(args[i]);
+        VarDecl* arg = args[i];
         if (arg->getName() == name) return arg;
     }
     return 0;
 }
 
-void FunctionDecl::addArg(DeclExpr* arg) {
-    args.push_back(arg);
+unsigned FunctionDecl::minArgs() const {
+    if (!hasDefaultArgs()) return args.size();
+
+    unsigned i;
+    for (i=0; i<args.size(); i++) {
+        VarDecl* arg = args[i];
+        if (arg->getInitValue()) break;
+    }
+    return i;
 }
 
 
-VarDecl::VarDecl(DeclExpr* decl_, bool is_public, bool inExpr)
-    : Decl(DECL_VAR, is_public)
-    , decl(decl_)
-{
-}
+VarDecl::VarDecl(const std::string& name_, SourceLocation loc_,
+            QualType type_, Expr* initValue_, bool is_public)
+    : Decl(DECL_VAR, name_, loc_, is_public)
+    , type(type_)
+    , initValue(initValue_)
+{}
 
 VarDecl::~VarDecl() {
-    delete decl;
+    delete initValue;
 }
 
-void VarDecl::print(StringBuilder& buffer) {
-    buffer << "[var]\n";
-    decl->print(INDENT, buffer);
+void VarDecl::print(StringBuilder& buffer, unsigned indent) {
+    buffer.indent(indent);
+    buffer << "[VarDecl " << name;
+    if (hasLocalQualifier()) buffer << " LOCAL";
+    buffer << "]\n";
+    indent += INDENT;
+    // Dont print types for enums, otherwise we get a loop since Type have Decls etc
+    if (!type->isEnumType()) {
+        type.print(buffer, indent, QualType::RECURSE_ONCE);
+    }
+    if (initValue) {
+        buffer.indent(indent);
+        buffer << "initial:\n";
+        initValue->print(buffer, indent+INDENT);
+    }
+    // TODO move
     if (initValues.size()) {
         buffer.indent(INDENT);
         buffer << ANSI_CYAN << "initvalues:" << ANSI_NORMAL << '\n';
         for (InitValuesConstIter iter=initValues.begin(); iter != initValues.end(); ++iter) {
-            (*iter)->getExpr()->print(INDENT, buffer);
+            (*iter)->getExpr()->print(buffer, INDENT);
         }
     }
 }
-
-const std::string& VarDecl::getName() const { return decl->getName(); }
-
-clang::SourceLocation VarDecl::getLocation() const {
-    return decl->getLocation();
-}
-
-QualType VarDecl::getType() const { return decl->getType(); }
-
-Expr* VarDecl::getInitValue() const { return decl->getInitValue(); }
 
 void VarDecl::addInitValue(ArrayValueDecl* value) {
     initValues.push_back(value);
@@ -148,9 +156,7 @@ void VarDecl::addInitValue(ArrayValueDecl* value) {
 
 
 EnumConstantDecl::EnumConstantDecl(const std::string& name_, SourceLocation loc_, QualType type_, Expr* Init, bool is_public)
-    : Decl(DECL_ENUMVALUE, is_public)
-    , name(name_)
-    , loc(loc_)
+    : Decl(DECL_ENUMVALUE, name_, loc_, is_public)
     , type(type_)
     , InitVal(Init)
     , value(0)
@@ -161,32 +167,76 @@ EnumConstantDecl::~EnumConstantDecl() {
     delete InitVal;
 }
 
-void EnumConstantDecl::print(StringBuilder& buffer) {
-    buffer.indent(INDENT);
-    buffer << "[enum constant] '" << name << "' value=" << value << '\n';
-    if (InitVal) InitVal->print(INDENT*2, buffer);
+void EnumConstantDecl::print(StringBuilder& buffer, unsigned indent) {
+    buffer.indent(indent);
+    buffer << "[EnumConstantDecl] '" << name << "' value=" << value << '\n';
+    if (InitVal) InitVal->print(buffer, indent+INDENT);
 }
 
 TypeDecl::TypeDecl(const std::string& name_, SourceLocation loc_, QualType type_, bool is_public)
-    : Decl(DECL_TYPE, is_public)
-    , name(name_)
-    , loc(loc_)
+    : Decl(DECL_TYPE, name_, loc_, is_public)
+    , type(type_)
+{}
+
+TypeDecl::TypeDecl(DeclKind k, const std::string& name_, SourceLocation loc_, QualType type_, bool is_public)
+    : Decl(k, name_, loc_, is_public)
     , type(type_)
 {}
 
 TypeDecl::~TypeDecl() {
 }
 
-void TypeDecl::print(StringBuilder& buffer) {
-    buffer << "[typedef " << name << "]\n";
-    type.print(INDENT, buffer, QualType::RECURSE_ONCE);
+void TypeDecl::print(StringBuilder& buffer, unsigned indent) {
+    buffer << "[TypeDecl " << name << "]\n";
+    type.print(buffer, INDENT, QualType::RECURSE_ONCE);
+}
+
+
+StructTypeDecl::StructTypeDecl(const std::string& name_, SourceLocation loc_,
+                             QualType type_, bool is_struct, bool is_global, bool is_public)
+    : TypeDecl(DECL_STRUCTTYPE, name_, loc_, type_, is_public)
+{
+    DeclBits.StructTypeIsStruct = is_struct;
+    DeclBits.StructTypeIsGlobal = is_global;
+}
+
+void StructTypeDecl::addMember(Decl* D) {
+    assert(isa<VarDecl>(D) || isa<StructTypeDecl>(D));
+    members.push_back(D);
+}
+
+void StructTypeDecl::print(StringBuilder& buffer, unsigned indent) {
+    buffer.indent(indent);
+    buffer << "[StructTypeDecl (";
+    if (isStruct()) buffer << "struct";
+    else buffer << "union";
+    buffer  << ") " << name << "]\n";
+    for (unsigned int i=0; i<members.size(); i++) {
+        members[i]->print(buffer, indent + INDENT);
+    }
+    type.print(buffer, indent+INDENT, QualType::RECURSE_ONCE);
+}
+
+
+FunctionTypeDecl::FunctionTypeDecl(FunctionDecl* F)
+    : TypeDecl(DECL_FUNCTIONTYPE, F->getName(), F->getLocation(), F->getType(), F->isPublic())
+    , func(F)
+{
+}
+
+FunctionTypeDecl::~FunctionTypeDecl() {
+    delete func;
+}
+
+void FunctionTypeDecl::print(StringBuilder& buffer, unsigned indent) {
+    buffer.indent(indent);
+    buffer << "[FunctionTypeDecl]\n";
+    func->print(buffer, indent + INDENT);
 }
 
 
 ArrayValueDecl::ArrayValueDecl(const std::string& name_, SourceLocation loc_, Expr* value_)
-    : Decl(DECL_ARRAYVALUE, false)
-    , name(name_)
-    , loc(loc_)
+    : Decl(DECL_ARRAYVALUE, name_, loc_, false)
     , value(value_)
 {}
 
@@ -194,24 +244,23 @@ ArrayValueDecl::~ArrayValueDecl() {
     delete value;
 }
 
-void ArrayValueDecl::print(StringBuilder& buffer) {
-    buffer << "[+= " << name << "]\n";
-    value->print(INDENT, buffer);
+void ArrayValueDecl::print(StringBuilder& buffer, unsigned indent) {
+    buffer.indent(indent);
+    buffer << "[ArrayValueDecl " << name << "]\n";
+    value->print(buffer, INDENT);
 }
 
 UseDecl::UseDecl(const std::string& name_, SourceLocation loc_, bool isLocal_,
                  const char* alias_, SourceLocation aliasLoc_)
-    : Decl(DECL_USE, false)
-    , name(name_)
+    : Decl(DECL_USE, name_, loc_, false)
     , alias(alias_)
-    , loc(loc_)
     , aliasLoc(aliasLoc_)
 {
     DeclBits.UseIsLocal = isLocal_;
 }
 
-void UseDecl::print(StringBuilder& buffer) {
-    buffer << "[use " << name;
+void UseDecl::print(StringBuilder& buffer, unsigned indent) {
+    buffer << "[UseDecl " << name;
     if (alias != "") buffer << " as " << alias;
     if (isLocal()) buffer << " local";
     buffer << "]\n";

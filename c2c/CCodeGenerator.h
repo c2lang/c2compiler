@@ -25,11 +25,15 @@
 namespace C2 {
 
 class AST;
+class Type;
 class Decl;
+class VarDecl;
+class FunctionDecl;
+class StructTypeDecl;
+class FunctionTypeDecl;
+class FunctionDecl;
 class Expr;
 class DeclExpr;
-class Type;
-class FunctionDecl;
 class Stmt;
 class CompoundStmt;
 
@@ -48,10 +52,14 @@ public:
 private:
     const char* ConvertType(const C2::Type* type);
 
-    void EmitFunction(Decl* D);
+    void EmitFunction(FunctionDecl* F);
+    void EmitFunctionArgs(FunctionDecl* F, StringBuilder& output);
     void EmitVariable(Decl* D);
     void EmitType(Decl* D);
     void EmitUse(Decl* D);
+    void EmitStructType(StructTypeDecl* S, StringBuilder& output, unsigned indent);
+    void EmitFunctionType(FunctionTypeDecl* F, StringBuilder& output);
+    void EmitVarDecl(VarDecl* D, StringBuilder& output, unsigned indent);
 
     void EmitStmt(Stmt* S, unsigned indent);
     void EmitCompoundStmt(CompoundStmt* C, unsigned indent, bool startOnNewLine);

@@ -31,9 +31,9 @@
 namespace C2 {
 
 class StringBuilder;
-class ExprVisitor;
 class Package;
 class Decl;
+class VarDecl;
 
 enum ExprKind {
     EXPR_INTEGER_LITERAL=0,
@@ -88,7 +88,7 @@ public:
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_INTEGER_LITERAL;
     }
-    virtual void print(int indent, StringBuilder& buffer) const;
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return loc; }
 
     llvm::APInt Value;
@@ -104,7 +104,7 @@ public:
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_FLOAT_LITERAL;
     }
-    virtual void print(int indent, StringBuilder& buffer) const;
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return loc; }
 
     llvm::APFloat Value;
@@ -120,7 +120,7 @@ public:
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_STRING_LITERAL;
     }
-    virtual void print(int indent, StringBuilder& buffer) const;
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return loc; }
 
     std::string value;
@@ -139,7 +139,7 @@ public:
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_BOOL_LITERAL;
     }
-    virtual void print(int indent, StringBuilder& buffer) const;
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return loc; }
     bool getValue() const { return StmtBits.BoolLiteralValue; }
 
@@ -155,7 +155,7 @@ public:
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_CHAR_LITERAL;
     }
-    virtual void print(int indent, StringBuilder& buffer) const;
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return loc; }
 
     // TODO use StmtBits (need to use union then)
@@ -172,7 +172,7 @@ public:
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_IDENTIFIER;
     }
-    virtual void print(int indent, StringBuilder& buffer) const;
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return loc; }
 
     const std::string& getName() const { return name; }
@@ -198,7 +198,7 @@ public:
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_TYPE;
     }
-    virtual void print(int indent, StringBuilder& buffer) const;
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const {
         SourceLocation loc;
         return loc;
@@ -223,7 +223,7 @@ public:
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_CALL;
     }
-    virtual void print(int indent, StringBuilder& buffer) const;
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return Fn->getLocation(); }
 
     void addArg(Expr* arg);
@@ -246,7 +246,7 @@ public:
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_INITLIST;
     }
-    virtual void print(int indent, StringBuilder& buffer) const;
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return leftBrace; }
 
     ExprList& getValues() { return values; }
@@ -259,27 +259,21 @@ private:
 
 class DeclExpr : public Expr {
 public:
-    DeclExpr(const std::string& name_, SourceLocation& loc_,
-            QualType type_, Expr* initValue_);
+    DeclExpr(VarDecl* decl_);
     virtual ~DeclExpr();
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_DECL;
     }
-    virtual void print(int indent, StringBuilder& buffer) const;
-    // used by VarDecls only to add pkgName
-    virtual SourceLocation getLocation() const { return loc; }
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
 
-    QualType getType() const { return type; }
-    const std::string& getName() const { return name; }
-    Expr* getInitValue() const { return initValue; }
-
-    void setLocalQualifier() { StmtBits.DeclExprLocalQualifier = true; }
-    bool hasLocalQualifier() const { return StmtBits.DeclExprLocalQualifier; }
+    const std::string& getName() const;
+    virtual SourceLocation getLocation() const;
+    QualType getType() const;
+    Expr* getInitValue() const;
+    bool hasLocalQualifier() const;
+    VarDecl* getDecl() const { return decl; }
 private:
-    std::string name;
-    SourceLocation loc;
-    QualType type;
-    Expr* initValue;
+    VarDecl* decl;
 };
 
 
@@ -293,7 +287,7 @@ public:
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_BINOP;
     }
-    virtual void print(int indent, StringBuilder& buffer) const;
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return opLoc; }
 
     Expr* getLHS() const { return lhs; }
@@ -315,7 +309,7 @@ public:
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_CONDOP;
     }
-    virtual void print(int indent, StringBuilder& buffer) const;
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return cond->getLocation(); }
 
     Expr* getCond() const { return cond; }
@@ -340,7 +334,7 @@ public:
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_UNARYOP;
     }
-    virtual void print(int indent, StringBuilder& buffer) const;
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return opLoc; }
 
     Expr* getExpr() const { return val; }
@@ -366,7 +360,7 @@ public:
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_BUILTIN;
     }
-    virtual void print(int indent, StringBuilder& buffer) const;
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return Loc; }
 
     Expr* getExpr() const { return expr; }
@@ -384,7 +378,7 @@ public:
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_ARRAYSUBSCRIPT;
     }
-    virtual void print(int indent, StringBuilder& buffer) const;
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return base->getLocation(); }
 
     Expr* getBase() const { return base; }
@@ -409,7 +403,7 @@ public:
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_MEMBER;
     }
-    virtual void print(int indent, StringBuilder& buffer) const;
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return Base->getLocation(); }
 
     Expr* getBase() const { return Base; }
@@ -433,7 +427,7 @@ public:
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_PAREN;
     }
-    virtual void print(int indent, StringBuilder& buffer) const;
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return L; }
 
     Expr* getExpr() const { return Val; }

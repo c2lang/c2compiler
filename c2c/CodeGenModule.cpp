@@ -191,6 +191,13 @@ void CodeGenModule::EmitTopLevelDecl(Decl* D) {
     case DECL_TYPE:
         {
             TypeDecl* TD = cast<TypeDecl>(D);
+            //QualType QT = TD->getType();
+            // TODO
+        }
+        break;
+    case DECL_STRUCTTYPE:
+        {
+            StructTypeDecl* TD = cast<StructTypeDecl>(D);
             QualType QT = TD->getType();
             // NOTE: only generate code for struct/union types (even this is optional)
             if (QT.isStructOrUnionType()) {
@@ -204,6 +211,10 @@ void CodeGenModule::EmitTopLevelDecl(Decl* D) {
 #endif
             }
         }
+        break;
+    case DECL_FUNCTIONTYPE:
+        assert(0 && "TODO?");
+#warning TODO?
         break;
     case DECL_ARRAYVALUE:
         assert(0 && "TODO arrayvalue");

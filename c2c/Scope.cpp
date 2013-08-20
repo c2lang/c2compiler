@@ -88,10 +88,14 @@ int FileScope::checkType(QualType type, bool used_public) {
         return 1;
     case Type::STRUCT:
     case Type::UNION:
-        return checkStructType(T, used_public);
+        assert(0);
+        break;
     case Type::ENUM:
-        // has no subtypes
-        return 1;
+        {
+            QualType qt = T->getRefType();
+            if (qt.isValid()) return checkType(qt, used_public);
+            return 1;
+        }
     case Type::USER:
         // TEMP CONST CAST
         return checkUserType((Type*)T, type->getBaseUserType(), used_public);
@@ -103,15 +107,6 @@ int FileScope::checkType(QualType type, bool used_public) {
     case Type::ARRAY:
         return checkType(T->getRefType(), used_public);
     }
-}
-
-int FileScope::checkStructType(const Type* type, bool used_public) {
-    MemberList* members = type->getMembers();
-    for (unsigned i=0; i<members->size(); i++) {
-        DeclExpr* M = (*members)[i];
-        checkType(M->getType(), used_public);
-    }
-    return 0;
 }
 
 int FileScope::checkUserType(Type* type, Expr* id, bool used_public) {
