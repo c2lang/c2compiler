@@ -339,7 +339,30 @@ void CCodeGenerator::dump() {
     printf("---- code for %s ----\n%s\n", cfilename.c_str(), (const char*)cbuf);
 }
 
+void CCodeGenerator::writeFile(const std::string& filename, const StringBuilder& content) {
+    std::string ErrorInfo;
+    llvm::raw_fd_ostream OS(filename.c_str(), ErrorInfo);
+    if (!ErrorInfo.empty()) {
+        fprintf(stderr, "%s\n", ErrorInfo.c_str());
+        return;
+    }
+    OS << content;
+    printf("written %s\n", (const char*)filename.c_str());
+}
+
 void CCodeGenerator::write(const std::string& target, const std::string& name) {
+    // write C files to output/<target>/<package>.{c,h}
+    StringBuilder filename;
+    filename << "output/" << target << '/';
+    bool existed;
+    llvm::Twine path(filename);
+    if (llvm::sys::fs::create_directories(path, existed) != llvm::errc::success) {
+        fprintf(stderr, "Could not create directory: %s\n", (const char*)filename);
+        return;
+    }
+
+    writeFile(std::string(filename) + cfilename, cbuf);
+    writeFile(std::string(filename) + hfilename, hbuf);
 }
 
 void CCodeGenerator::EmitFunction(FunctionDecl* F) {
