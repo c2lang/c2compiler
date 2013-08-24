@@ -458,7 +458,7 @@ void CCodeGenerator::EmitUse(Decl* D) {
         else cbuf << '"';
         cbuf << D->getName() << ".h";
         if (P->isPlainC()) cbuf << '>';
-        else cbuf << '\'';
+        else cbuf << '"';
         cbuf << '\n';
     }
 }
