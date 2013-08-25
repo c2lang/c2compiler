@@ -31,7 +31,7 @@ public:
 
     std::string filename;
     void* region;
-    unsigned int size;
+    unsigned size;
     time_t last_change;
     bool write_cache;   // whether compiler needs to write a cache for this file
 };

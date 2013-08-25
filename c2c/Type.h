@@ -13,44 +13,37 @@
  * limitations under the License.
  */
 
-#ifndef C2TYPE_H
-#define C2TYPE_H
+#ifndef TYPE_H
+#define TYPE_H
 
-#include <string>
+#include <assert.h>
 #include <vector>
-#include "OwningVector.h"
+#include <string>
+
+// NOTE: a canonical type will never have Unresolved types in it (fully resolved).
+
+// TODO: Use TypeBits bitfield
+
+// LATER: Merge Ptr and Qualtype bits? (so QualType is 4 bytes)
+
+// IDEA: match UnresolvedType on name in TypeContext? (same name re-uses UnresolvedType?)
+//      Number n1;
+//      Number n2; -> same UnresolvedType
 
 #define QUAL_CONST      (0x1)
 #define QUAL_VOLATILE   (0x2)
 #define QUAL_RESTRICT   (0x4)
 
 namespace C2 {
+
 class StringBuilder;
+class Type;
 class Expr;
 class EnumConstantDecl;
 class StructTypeDecl;
+class EnumTypeDecl;
 class FunctionDecl;
-class TypeContext;
-class Type;
-
-typedef OwningVector<C2::EnumConstantDecl> ConstantList;
-
-enum C2Type {
-    TYPE_U8 = 0,
-    TYPE_U16,
-    TYPE_U32,
-    TYPE_U64,
-    TYPE_I8,
-    TYPE_I16,
-    TYPE_I32,
-    TYPE_I64,
-    TYPE_F32,
-    TYPE_F64,
-    TYPE_INT,
-    TYPE_BOOL,
-    TYPE_STRING,
-    TYPE_VOID,
-};
+class TypeDecl;
 
 
 class QualType {
@@ -66,11 +59,12 @@ public:
 
     const Type& operator*() const { return *getTypePtr(); }
     const Type* operator->() const { return getTypePtr(); }
+    operator const Type*() const { return getTypePtr(); }
     bool operator==(const QualType& rhs) {
         return (type == rhs.type) && (qualifiers = rhs.qualifiers);
     }
-    bool isNull() const { return type == 0; }
-    bool isValid() const { return type != 0; }
+    bool isNull() const { return type == NULL; }
+    bool isValid() const { return type != NULL; }
     bool isConstQualified() const { return (qualifiers & QUAL_CONST); }
     bool isVolatileQualified() const { return (qualifiers & QUAL_VOLATILE); }
     bool isRestrictQualified() const { return (qualifiers & QUAL_RESTRICT); }
@@ -83,184 +77,366 @@ public:
     void setQualifiers(unsigned quals) { qualifiers = quals; }
 
     // Helper functions
+    bool isBuiltinType() const;
     bool isPointerType() const;
-    bool isUserType() const;
-    bool isSubscriptable() const;
-    bool isStructOrUnionType() const;
     bool isArrayType() const;
-    bool isFuncType() const;
+    bool isUnresolvedType() const;
+    bool isAliasType() const;
+    bool isStructType() const;
     bool isEnumType() const;
+    bool isFunctionType() const;
+    bool isSubscriptable() const;
 
-    // for error messages
+    // for Debug/Diagnostic messages
     void DiagName(StringBuilder& buffer) const;
+    void printName(StringBuilder& buffer) const;
+    void debugPrint(StringBuilder& buffer, unsigned indent) const;
 
     // Debug functions
-    enum RecursionType { RECURSE_NONE=0, RECURSE_ONCE, RECURSE_ALL };
-    void print(StringBuilder& buffer, unsigned indent, RecursionType recursive) const;
     void dump() const;
-    //static void printCQualifier(StringBuilder& buffer, unsigned flags);
 private:
+    void printQualifiers(StringBuilder& buffer, unsigned indent) const;
+
     Type* type;
     unsigned qualifiers;
 };
 
 
+enum TypeClass {
+    TC_BUILTIN = 0,
+    TC_POINTER,
+    TC_ARRAY,
+    TC_UNRESOLVED,
+    TC_ALIAS,
+    TC_STRUCT,
+    TC_ENUM,
+    TC_FUNCTION,
+};
+
+
 class Type {
+protected:
+    Type(TypeClass tc, QualType canon)
+        : typeClass(tc)
+        , canonicalType(canon)
+    {}
+    virtual void printName(StringBuilder& buffer) const = 0;
+    virtual void debugPrint(StringBuilder& buffer, unsigned indent) const = 0;
 public:
-    enum Kind {
-        BUILTIN = 0,
-        USER,       // used when parsing (underlying type is set in refType during analysis)
-        STRUCT,
-        UNION,
-        ENUM,
-        FUNC,       // abuses refType for its returntype (QualType cannot be in union)
-        POINTER,    // has refType
-        ARRAY,      // has refType
-    };
+    virtual ~Type() {}
 
-    Type(Type::Kind kind_, QualType refType_ = 0);
-    ~Type();
+    TypeClass getTypeClass() const { return typeClass; }
+    bool hasCanonicalType() const { return canonicalType.isValid(); }
+    QualType getCanonicalType() const { return canonicalType; }
+    void setCanonicalType(QualType qt) const;
 
-    // generic
-    Kind getKind() const { return kind; }
-    QualType getRefType() const { return refType; }
-    void setRefType(QualType t);
-
-    bool isBuiltinType() const { return kind == BUILTIN; }
-    bool isUserType() const { return kind == USER; }
-    bool isFuncType() const { return kind == FUNC; }
-    bool isStructOrUnionType() const { return kind == STRUCT || kind == UNION; }
-    bool isEnumType() const { return kind == ENUM; }
-    bool isSubscriptable() const { return kind == ARRAY || kind == POINTER; }
-    bool isPointerType() const { return kind == POINTER; }
-    bool isArrayType() const { return kind == ARRAY; }
-    bool isVoid() const { return kind == BUILTIN && c2type == TYPE_VOID; }
-
-    unsigned getWidth() const;
-
-    // for resolving canonical type
-    //Type* getCanonical(TypeContext& context);
-
-    // Builtin type
-    void setBuiltinName(C2Type ct, const char* name_, const char* cname_, unsigned width_) {
-        name = name_;
-        cname = cname_;
-        c2type = ct;
-        width = width_;
-    }
-    C2Type getBuiltinType() const { return c2type; }
-    const char* getCName() const { return cname; }
-
-    // user type
-    void setUserType(Expr* expr) { userType = expr; }
-    Expr* getUserType() const { return userType; }
-
-    // ARRAY
-    void setArrayExpr(Expr* expr, bool ownExpr = true) {
-        arrayExpr = expr;
-        ownArrayExpr = ownExpr;
-    }
-    Expr* getArrayExpr() const { return arrayExpr; }
-
-    // STRUCT/UNION
-    unsigned getNumMembers() const;
-    QualType getMember(unsigned index) const;
-    void setStructDecl(StructTypeDecl* decl) {
-        structDecl = decl;
-    }
-    StructTypeDecl* getStructDecl() const { return structDecl; }
-
-    // ENUM
-    void addEnumMember(EnumConstantDecl* C);
-    ConstantList* getConstants() const { return constants; }
-
-    void setStructName(const char* name_) {
-        sname = name_;
-    }
-
-    // FUNC
-    void setFunc(FunctionDecl* func_) { func = func_; }
-    FunctionDecl* getDecl() const { return func; }
-
-    bool isCompatible(const Type& t2) const;
-
-    void print(StringBuilder& buffer, unsigned indent, QualType::RecursionType recursive) const;
     void DiagName(StringBuilder& buffer) const;
     void dump() const;
 
-    // for analysis
-    Expr* getBaseUserType() const;
+    bool isBuiltinType() const;
+    bool isPointerType() const;
+    bool isArrayType() const;
+    bool isUnresolvedType() const;
+    bool isAliasType() const;
+    bool isStructType() const;
+    bool isEnumType() const;
+    bool isFunctionType() const;
+    bool isSubscriptable() const;
+
+    static QualType Int8();
+    static QualType Int16();
+    static QualType Int32();
+    static QualType Int64();
+    static QualType UInt8();
+    static QualType UInt16();
+    static QualType UInt32();
+    static QualType UInt64();
+    static QualType Float32();
+    static QualType Float64();
+    static QualType Bool();
+    static QualType Void();
 private:
     friend class QualType;
 
-    void printFull(StringBuilder& buffer, unsigned indent = 0) const;
-    void printEffective(StringBuilder& buffer, unsigned indent = 0) const;
-    void printName(StringBuilder& buffer) const;
+    TypeClass typeClass;
+    mutable QualType canonicalType; // can set during analysis/parsing
 
-    Kind kind;
-    QualType refType;
-    QualType CanonicalType;
-
-    union {
-        unsigned initializer[4];    // TODO determine
-
-        // builtin
-        struct {
-            const char* name;
-            const char* cname;
-            C2Type c2type;
-            unsigned width;
-        };
-
-        // user types, can be IdentifierExpr or MemberExpr
-        Expr* userType;
-
-        // struct | union | enum specific
-        struct {
-            const char* sname;  // no ownership
-            StructTypeDecl* structDecl;
-            ConstantList* constants; // temp for enums
-        };
-
-        // func specific
-        FunctionDecl* func;
-
-        // pointer
-        // nothing needed
-
-        // array specific
-        struct {
-            Expr* arrayExpr;
-            bool ownArrayExpr;
-        };
-    };
+    Type(const Type&);
+    void operator=(const Type&);
 };
 
 
-class BuiltinType {
+class BuiltinType : public Type {
 public:
-    static C2::Type* get(C2Type t);
+    enum Kind {
+        Int8,
+        Int16,
+        Int32,
+        Int64,
+        UInt8,
+        UInt16,
+        UInt32,
+        UInt64,
+        Float32,
+        Float64,
+        Bool,
+        Void,
+    };
+
+    BuiltinType(Kind k)
+        : Type(TC_BUILTIN, QualType(this))
+        , kind(k)
+    {}
+    static bool classof(const Type* T) { return T->getTypeClass() == TC_BUILTIN; }
+    static BuiltinType* get(Kind k);
+
+    Kind getKind() const { return kind; }
+    unsigned getWidth() const;
+    const char* getName() const;
+    const char* getCName() const;
+    bool isInteger() const;
+    bool isSignedInteger() const;
+    bool isUnsignedInteger() const;
+    bool isFloatingPoint() const;
+    bool isVoid() const { return kind == Void; }
+
+protected:
+    virtual void printName(StringBuilder& buffer) const;
+    virtual void debugPrint(StringBuilder& buffer, unsigned indent) const;
 private:
-    BuiltinType();
+    Kind kind;
 };
 
+
+class PointerType : public Type {
+public:
+    PointerType(QualType Pointee)
+        : Type(TC_POINTER, QualType())
+        , PointeeType(Pointee)
+    {}
+    static bool classof(const Type* T) { return T->getTypeClass() == TC_POINTER; }
+
+    QualType getPointeeType() const { return PointeeType; }
+
+protected:
+    virtual void printName(StringBuilder& buffer) const;
+    virtual void debugPrint(StringBuilder& buffer, unsigned indent) const;
+private:
+    QualType PointeeType;
+};
+
+
+class ArrayType : public Type {
+public:
+    ArrayType(QualType et, Expr* size, bool ownSize_)
+        : Type(TC_ARRAY, QualType())
+        , ElementType(et)
+        , sizeExpr(size)
+        , ownSize(ownSize_)
+    {}
+    virtual ~ArrayType();
+    static bool classof(const Type* T) { return T->getTypeClass() == TC_ARRAY; }
+
+    QualType getElementType() const { return ElementType; }
+    Expr* getSize() const { return sizeExpr; }
+
+protected:
+    virtual void printName(StringBuilder& buffer) const;
+    virtual void debugPrint(StringBuilder& buffer, unsigned indent) const;
+private:
+    QualType ElementType;
+    Expr* sizeExpr;
+    bool ownSize;
+};
+
+
+class UnresolvedType : public Type {
+public:
+    UnresolvedType(Expr* E)
+        : Type(TC_UNRESOLVED, QualType())
+        , expr(E)
+        , match(0)
+    {}
+    virtual ~UnresolvedType();
+    static bool classof(const Type* T) { return T->getTypeClass() == TC_UNRESOLVED; }
+
+    Expr* getExpr() const { return expr; }
+    void setMatch(TypeDecl* t) const { match = t; }
+    TypeDecl* getMatch() const { return match; }
+protected:
+    virtual void printName(StringBuilder& buffer) const;
+    virtual void debugPrint(StringBuilder& buffer, unsigned indent) const;
+private:
+    Expr* expr;         // can be IdentifierExpr (type) or MemberExpr (pkg.type)
+    mutable TypeDecl* match;
+};
+
+
+// AliasType are used whenever 'type A B' is used. B is the AliasType,
+// since we need a Type there.
+// UnresolvedTypeDecl? -> have string
+// TODO need SourceLocation -> so put in Decl
+class AliasType : public Type {
+public:
+    AliasType(QualType refType_, const std::string& name_)
+        : Type(TC_ALIAS, QualType())
+        , refType(refType_)
+        , name(name_)
+    {}
+    static bool classof(const Type* T) { return T->getTypeClass() == TC_ALIAS; }
+
+    QualType getRefType() const { return refType; }
+    const std::string&  getName() const { return name; }
+
+protected:
+    virtual void printName(StringBuilder& buffer) const;
+    virtual void debugPrint(StringBuilder& buffer, unsigned indent) const;
+private:
+    QualType refType;
+    std::string name;
+};
+
+
+class StructType : public Type {
+public:
+    StructType()
+        : Type(TC_STRUCT, QualType(this))
+        , decl(0)
+    {}
+    static bool classof(const Type* T) { return T->getTypeClass() == TC_STRUCT; }
+
+    void setDecl(StructTypeDecl* decl_) { decl = decl_; }
+    StructTypeDecl* getDecl() const { return decl; }
+protected:
+    virtual void printName(StringBuilder& buffer) const;
+    virtual void debugPrint(StringBuilder& buffer, unsigned indent) const;
+private:
+    StructTypeDecl* decl;
+};
+
+
+class EnumType : public Type {
+public:
+    EnumType()
+        : Type(TC_ENUM, QualType())
+        , decl(0)
+    {}
+    static bool classof(const Type* T) { return T->getTypeClass() == TC_ENUM; }
+
+    void setDecl(EnumTypeDecl* decl_) { decl = decl_; }
+    EnumTypeDecl* getDecl() const { return decl; }
+protected:
+    virtual void printName(StringBuilder& buffer) const;
+    virtual void debugPrint(StringBuilder& buffer, unsigned indent) const;
+private:
+    EnumTypeDecl* decl;
+};
+
+
+class FunctionType : public Type {
+public:
+    FunctionType(FunctionDecl* F)
+        : Type(TC_FUNCTION, QualType(this))
+        , func(F)
+    {}
+    static bool classof(const Type* T) { return T->getTypeClass() == TC_FUNCTION; }
+    FunctionDecl* getDecl() const { return func; }
+protected:
+    virtual void printName(StringBuilder& buffer) const;
+    virtual void debugPrint(StringBuilder& buffer, unsigned indent) const;
+private:
+    FunctionDecl* func;
+};
+
+
+template <class T> static inline bool isa(const Type* type) {
+    return T::classof(type);
+}
+
+template <class T> static inline T* dyncast(Type* type) {
+    if (isa<T>(type)) return static_cast<T*>(type);
+    return 0;
+}
+
+template <class T> static inline const T* dyncast(const Type* type) {
+    if (isa<T>(type)) return static_cast<const T*>(type);
+    return 0;
+}
+
+template <class T> static inline T* cast(Type* type) {
+    return static_cast<T*>(type);
+}
+
+template <class T> static inline const T* cast(const Type* type) {
+    return static_cast<const T*>(type);
+}
+
+
+
+inline bool Type::isBuiltinType() const {
+    assert(canonicalType.isValid());
+    return isa<BuiltinType>(canonicalType);
+}
+
+inline bool Type::isPointerType() const {
+    assert(canonicalType.isValid());
+    return isa<PointerType>(canonicalType);
+}
+
+inline bool Type::isArrayType() const {
+    assert(canonicalType.isValid());
+    return isa<ArrayType>(canonicalType);
+}
+
+inline bool Type::isUnresolvedType() const {
+    assert(canonicalType.isValid());
+    return isa<UnresolvedType>(canonicalType);
+}
+
+inline bool Type::isAliasType() const {
+    assert(canonicalType.isValid());
+    return isa<AliasType>(canonicalType);
+}
+
+inline bool Type::isStructType() const {
+    assert(canonicalType.isValid());
+    return isa<StructType>(canonicalType);
+}
+
+inline bool Type::isEnumType() const {
+    assert(canonicalType.isValid());
+    return isa<EnumType>(canonicalType);
+}
+
+inline bool Type::isFunctionType() const {
+    assert(canonicalType.isValid());
+    return isa<FunctionType>(canonicalType);
+}
+
+inline bool Type::isSubscriptable() const {
+    assert(canonicalType.isValid());
+    return isa<PointerType>(canonicalType) || isa<ArrayType>(canonicalType);
+}
 
 class TypeContext {
 public:
     TypeContext();
     ~TypeContext();
 
-    Type* getUser();
-    QualType getPointer(QualType ref);
-    Type* getStruct(bool isStruct, const char* id);
-    Type* getEnum();
-    QualType getArray(QualType ref, Expr* sizeExpr, bool ownSize = true);
-    Type* getFunction(FunctionDecl* func);
+    static QualType getBuiltinType(BuiltinType::Kind kind);
+    QualType getPointerType(QualType ref);
+    QualType getArrayType(QualType element, Expr* size, bool ownSize);
+    QualType getUnresolvedType(Expr* E);
+    QualType getAliasType(QualType refType, const std::string& name);
+    QualType getStructType();
+    QualType getEnumType();
+    QualType getFunctionType(FunctionDecl* F);
 private:
+    QualType add(Type* T);
+
     typedef std::vector<Type*> Types;
     Types types;
 };
-
 
 }
 

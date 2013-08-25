@@ -3,11 +3,11 @@ package var_test;
 type Struct struct {
     int a;
     int b;
-    string text;
+    const char* text;
 }
 
 int n = 10;
-string hallo = "goodbye";
+const char* hallo = "goodbye";
 i8* text2 = nil;
 u16 halfword;
 i32 number;

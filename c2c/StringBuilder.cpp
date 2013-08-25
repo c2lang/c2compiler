@@ -28,7 +28,7 @@
 using namespace C2;
 using namespace std;
 
-StringBuilder::StringBuilder(unsigned int cap, char* buf)
+StringBuilder::StringBuilder(unsigned cap, char* buf)
     : capacity(cap)
     , buffer(buf)
     , ownBuf(buf == 0)
@@ -87,7 +87,7 @@ StringBuilder& StringBuilder::operator<<(int input) {
     return *this;
 }
 
-StringBuilder& StringBuilder::operator<<(unsigned int input) {
+StringBuilder& StringBuilder::operator<<(unsigned input) {
 #ifdef SIZE_DEBUG
     assert(10 < space_left() && "buffer overflow");
 #endif

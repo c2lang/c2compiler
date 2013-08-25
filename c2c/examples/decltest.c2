@@ -5,7 +5,7 @@ public func void main() {
     local char[10] buffer2;
     int a;
     int b = 10;
-    string name = "bas";
+    const char* name = "bas";
     a = 10;
     buffer[0] = 0;
 

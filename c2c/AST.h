@@ -20,29 +20,51 @@
 #include <vector>
 #include <map>
 #include <clang/Basic/SourceLocation.h>
+#include "OwningVector.h"
 
 namespace C2 {
 
 class Decl;
-class ASTVisitor;
+class UseDecl;
+class TypeDecl;
+class VarDecl;
+class FunctionDecl;
+class ArrayValueDecl;
 
 class AST {
 public:
-    AST() {}
-    ~AST();
+    AST(const std::string& filename_)
+        : filename(filename_)
+    {}
 
-    // debugging
-    void print(const std::string& filename) const;
+    void print() const;
 
-    // parsing
-    void addDecl(Decl* d) { decls.push_back(d); }
+    // UseDecls
+    void addUse(UseDecl* d) { useList.push_back(d); }
+    unsigned numUses() const { return useList.size(); }
+    UseDecl* getUse(unsigned i) const { return useList[i]; }
+
+    // TypeDecls
+    void addType(TypeDecl* d);
+    unsigned numTypes() const { return typeList.size(); }
+    TypeDecl* getType(unsigned i) const { return typeList[i]; }
+
+    // VarDecls
+    void addVar(VarDecl* d);
+    unsigned numVars() const { return varList.size(); }
+    VarDecl* getVar(unsigned i) const { return varList[i]; }
+
+    // FunctionDecls
+    void addFunction(FunctionDecl* d);
+    unsigned numFunctions() const { return functionList.size(); }
+    FunctionDecl* getFunction(unsigned i) const { return functionList[i]; }
+
+    // ArrayValueDecls
+    void addArrayValue(ArrayValueDecl* d) { arrayValues.push_back(d); }
+    unsigned numArrayValues() const { return arrayValues.size(); }
+    ArrayValueDecl* getArrayValue(unsigned i) const { return arrayValues[i]; }
+
     void addSymbol(Decl* d);
-
-    // analysis
-    void visitAST(ASTVisitor& visitor);
-
-    unsigned getNumDecls() const { return decls.size(); }
-    Decl* getDecl(unsigned index) const { return decls[index]; }
 
     typedef std::map<std::string, Decl*> Symbols;
     typedef Symbols::const_iterator SymbolsConstIter;
@@ -58,15 +80,30 @@ public:
         pkgLoc = loc;
     }
     const std::string& getPkgName() const { return pkgName; }
+    const std::string& getFileName() const { return filename; }
 
 private:
+    AST(const AST&);
+    void operator=(const AST&);
+
+    const std::string filename;
     std::string pkgName;
     clang::SourceLocation pkgLoc;
 
-    typedef std::vector<Decl*> DeclList;
-    typedef DeclList::const_iterator DeclListConstIter;
-    typedef DeclList::iterator DeclListIter;
-    DeclList decls;
+    typedef OwningVector<UseDecl> UseList;
+    UseList useList;
+
+    typedef OwningVector<TypeDecl> TypeList;
+    TypeList typeList;
+
+    typedef OwningVector<VarDecl> VarList;
+    VarList varList;
+
+    typedef OwningVector<FunctionDecl> FunctionList;
+    FunctionList functionList;
+
+    typedef OwningVector<ArrayValueDecl> ArrayValues;
+    ArrayValues arrayValues;
 
     Symbols symbols;
 };

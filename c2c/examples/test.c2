@@ -36,7 +36,7 @@ public func void main() {
     int* rp;
     *rp  = 0;       // ok, bliep -> primary_expression
     a *= 2;        // ok -> primary_expression
-    string text;
+    const char* text;
     text = "hallo" "dit" "is" "een" "test";
 
     int[2] array;

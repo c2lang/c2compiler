@@ -34,8 +34,10 @@ static bool use_recipe = true;
 static void usage(const char* name) {
     fprintf(stderr, "Usage: %s <options> <target>\n", name);
     fprintf(stderr, "Options:\n");
-    fprintf(stderr, "   -a            - print AST\n");
-    fprintf(stderr, "   -A            - print AST (after analysis)\n");
+    fprintf(stderr, "   -a0           - print AST after parsing\n");
+    fprintf(stderr, "   -a1           - print AST after analysis 1\n");
+    fprintf(stderr, "   -a2           - print AST after analysis 2\n");
+    fprintf(stderr, "   -a3           - print AST after analysis 3 (final)\n");
     fprintf(stderr, "   -c            - generate C code\n");
     fprintf(stderr, "   -C            - generate + print C-code\n");
     fprintf(stderr, "   -f <file>     - compile single file without recipe\n");
@@ -53,12 +55,20 @@ static void usage(const char* name) {
 static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
     for (int i=1; i<argc; i++) {
         const char* arg = argv[i];
-        if (strcmp("-a", arg) == 0) {
-            opts.printAST = true;
+        if (strcmp("-a0", arg) == 0) {
+            opts.printAST0 = true;
             continue;
         }
-        if (strcmp("-A", arg) == 0) {
-            opts.printASTAfter = true;
+        if (strcmp("-a1", arg) == 0) {
+            opts.printAST1 = true;
+            continue;
+        }
+        if (strcmp("-a2", arg) == 0) {
+            opts.printAST2 = true;
+            continue;
+        }
+        if (strcmp("-a3", arg) == 0) {
+            opts.printAST3 = true;
             continue;
         }
         if (strcmp("-c", arg) == 0) {

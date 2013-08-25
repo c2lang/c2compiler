@@ -91,7 +91,7 @@ public:
     // expressions
     ExprResult ActOnBooleanConstant(const Token& Tok);
     ExprResult ActOnNumericConstant(const Token& Tok);
-    ExprResult ActOnStringLiteral(const clang::Token* StringToks, unsigned int NumStringToks);
+    ExprResult ActOnStringLiteral(const clang::Token* StringToks, unsigned NumStringToks);
     ExprResult ActOnCharacterConstant(SourceLocation Loc, const std::string& value);
     ExprResult ActOnCallExpr(Expr* id, Expr** args, unsigned num, SourceLocation RParenLoc);
     ExprResult ActOnIdExpression(IdentifierInfo& symII, SourceLocation symLoc);
@@ -105,11 +105,11 @@ public:
     ExprResult ActOnArrayType(Expr* base, Expr* size);
     ExprResult ActOnPointerType(Expr* base);
     ExprResult ActOnUserType(Expr* id);
-    ExprResult ActOnBuiltinType(C2Type t);
-    ExprResult ActOnEnumType(const char* id, Expr* implType);
+    ExprResult ActOnBuiltinType(tok::TokenKind k);
+    EnumTypeDecl* ActOnEnumType(const char* name, SourceLocation loc, Expr* implType, bool is_public);
     ExprResult ActOnEnumTypeFinished(Expr* enumType, SourceLocation leftBrace, SourceLocation rightBrace);
-    void ActOnEnumConstant(Expr* enumType, IdentifierInfo* symII, SourceLocation symLoc, Expr* Value);
-    ExprResult ActOnTypeQualifier(ExprResult R, unsigned int qualifier);
+    void ActOnEnumConstant(EnumTypeDecl* Enum, IdentifierInfo* symII, SourceLocation symLoc, Expr* Value);
+    ExprResult ActOnTypeQualifier(ExprResult R, unsigned qualifier);
     ExprResult ActOnBuiltinExpression(SourceLocation Loc, Expr* expr, bool isSizeof);
     ExprResult ActOnArraySubScriptExpr(SourceLocation RLoc, Expr* Base, Expr* Idx);
     ExprResult ActOnMemberExpr(Expr* Base, bool isArrow, Expr* Member);

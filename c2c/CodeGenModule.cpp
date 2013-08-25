@@ -62,18 +62,19 @@ void CodeGenModule::addEntry(const std::string& filename, AST& ast) {
 }
 
 void CodeGenModule::generate() {
-    // TODO use ASTVisitor for this?
-
     // pass 1: generate all function proto's
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
 #ifdef DEBUG_CODEGEN
         printf("CodeGen for %s - pass 1\n", iter->filename->c_str());
 #endif
+    assert(0 && "TODO");
+#if 0
         AST* ast = iter->ast;
-        for (unsigned int i=0; i<ast->getNumDecls(); i++) {
+        for (unsigned i=0; i<ast->getNumDecls(); i++) {
             Decl* decl = ast->getDecl(i);
             if (isa<FunctionDecl>(decl)) EmitFunctionProto(decl);
         }
+#endif
     }
 
     // pass 2: generate all function bodies (and possibly external function decls)
@@ -81,11 +82,13 @@ void CodeGenModule::generate() {
 #ifdef DEBUG_CODEGEN
         printf("CodeGen for %s - pass 2\n", iter->filename->c_str());
 #endif
+#if 0
         AST* ast = iter->ast;
-        for (unsigned int i=0; i<ast->getNumDecls(); i++) {
+        for (unsigned i=0; i<ast->getNumDecls(); i++) {
             Decl* decl = ast->getDecl(i);
             EmitTopLevelDecl(decl);
         }
+#endif
     }
 }
 
@@ -200,17 +203,21 @@ void CodeGenModule::EmitTopLevelDecl(Decl* D) {
             StructTypeDecl* TD = cast<StructTypeDecl>(D);
             QualType QT = TD->getType();
             // NOTE: only generate code for struct/union types (even this is optional)
-            if (QT.isStructOrUnionType()) {
+#warning "TODO remove"
 #if 0
+            if (QT.isStructOrUnionType()) {
                 // TEMP try some ints
                 std::vector<llvm::Type *> putsArgs;
                 putsArgs.push_back(builder.getInt32Ty());
                 llvm::ArrayRef<llvm::Type*>  argsRef(putsArgs);
                 llvm::StructType* s = llvm::StructType::create(getContext(), putsArgs, TD->getName());
                 //const Type* T = QT.getTypePtr();
-#endif
             }
+#endif
         }
+        break;
+    case DECL_ENUMTYPE:
+        assert(0 && "TODO?");
         break;
     case DECL_FUNCTIONTYPE:
         assert(0 && "TODO?");
@@ -226,54 +233,53 @@ void CodeGenModule::EmitTopLevelDecl(Decl* D) {
 }
 
 llvm::Type* CodeGenModule::ConvertType(const C2::Type* type) {
-    switch (type->getKind()) {
-    case Type::BUILTIN:
+    switch (type->getTypeClass()) {
+    case TC_BUILTIN:
         {
-            // TODO make u8/16/32 unsigned
-            switch (type->getBuiltinType()) {
-            case TYPE_U8:       return builder.getInt8Ty();
-            case TYPE_U16:      return builder.getInt16Ty();
-            case TYPE_U32:      return builder.getInt32Ty();
-            case TYPE_U64:      return builder.getInt64Ty();
-            case TYPE_I8:       return builder.getInt8Ty();
-            case TYPE_I16:      return builder.getInt16Ty();
-            case TYPE_I32:      return builder.getInt32Ty();
-            case TYPE_I64:      return builder.getInt64Ty();
-            case TYPE_INT:      return builder.getInt32Ty();
-            case TYPE_STRING:
-                return 0;  // TODO remove this type?
-            case TYPE_F32:      return builder.getFloatTy();
-            case TYPE_F64:      return builder.getFloatTy(); // TODO find correct type (double?)
-            case TYPE_BOOL:     return builder.getInt1Ty();
-            case TYPE_VOID:     return builder.getVoidTy();
+            switch (cast<BuiltinType>(type)->getKind()) {
+            // TODO make types signed or not
+            case BuiltinType::Int8:      return builder.getInt8Ty();
+            case BuiltinType::Int16:     return builder.getInt16Ty();
+            case BuiltinType::Int32:     return builder.getInt32Ty();
+            case BuiltinType::Int64:     return builder.getInt64Ty();
+            case BuiltinType::UInt8:     return builder.getInt8Ty();
+            case BuiltinType::UInt16:    return builder.getInt16Ty();
+            case BuiltinType::UInt32:    return builder.getInt32Ty();
+            case BuiltinType::UInt64:    return builder.getInt64Ty();
+            case BuiltinType::Float32:   return builder.getFloatTy();
+            case BuiltinType::Float64:   return builder.getFloatTy(); // TODO make double
+            case BuiltinType::Bool:      return builder.getInt1Ty();
+            case BuiltinType::Void:      return builder.getVoidTy();
             }
         }
-        break;
-    case Type::USER:
-        return ConvertType(type->getRefType().getTypePtr());
-    case Type::STRUCT:
-    case Type::UNION:
-        assert(0 && "TODO union/struct type");
-    case Type::ENUM:
-        // TODO use canonical type, for now use Int32()
-        return builder.getInt32Ty();
-    case Type::FUNC:
-        assert(0 && "TODO func type");
-        break;
-    case Type::POINTER:
+    case TC_POINTER:
         {
-            llvm::Type* tt = ConvertType(type->getRefType().getTypePtr());
+            llvm::Type* tt = ConvertType(cast<PointerType>(type)->getPointeeType().getTypePtr());
             return tt->getPointerTo();
         }
-    case Type::ARRAY:
+    case TC_ARRAY:
         {
             // Hmm for function args, array are simply converted to pointers, do that for now
             // array: use type = ArrayType::get(elementType, numElements)
-            llvm::Type* tt = ConvertType(type->getRefType().getTypePtr());
+            llvm::Type* tt = ConvertType(cast<ArrayType>(type)->getElementType().getTypePtr());
             return tt->getPointerTo();
         }
+    case TC_UNRESOLVED:
+        assert(0 && "should be resolved");
+        break;
+    case TC_ALIAS:
+        assert(0 && "should be resolved");
+        break;
+    case TC_STRUCT:
+        assert(0 && "TODO union/struct type");
+        break;
+    case TC_ENUM:
+        // TODO use canonical type, for now use Int32()
+        return builder.getInt32Ty();
+    case TC_FUNCTION:
+        assert(0 && "TODO func type");
+        break;
     }
-
     return 0;
 }
 

@@ -56,7 +56,7 @@ llvm::Function* CodeGenFunction::generateProto(const std::string& pkgname) {
         funcType = llvm::FunctionType::get(RT, FuncDecl->isVariadic());
     } else {
         std::vector<llvm::Type*> Args;
-        for (unsigned int i=0; i<FuncDecl->numArgs(); i++) {
+        for (unsigned i=0; i<FuncDecl->numArgs(); i++) {
             VarDecl* arg = FuncDecl->getArg(i);
             QualType qt = arg->getType();
             //Args.push_back(CGM.ConvertType(qt.getTypePtr()));
@@ -464,7 +464,7 @@ llvm::Value* CodeGenFunction::EmitCallExpr(const CallExpr* E) {
     default:
         {
             std::vector<llvm::Value *> Args;
-            for (unsigned int i=0; i<E->numArgs(); i++) {
+            for (unsigned i=0; i<E->numArgs(); i++) {
                 // TODO match argument to callee's arg type
                 Args.push_back(EmitExpr(E->getArg(i)));
             }
@@ -478,7 +478,6 @@ llvm::Value* CodeGenFunction::EmitCallExpr(const CallExpr* E) {
 
 llvm::Value* CodeGenFunction::EmitIdentifierExpr(const IdentifierExpr* E) {
     Decl* D = E->getDecl();
-    if (!D) E->dump();
     assert(D);
     switch (D->getKind()) {
     case DECL_FUNC:
@@ -495,6 +494,7 @@ llvm::Value* CodeGenFunction::EmitIdentifierExpr(const IdentifierExpr* E) {
         }
     case DECL_TYPE:
     case DECL_STRUCTTYPE:
+    case DECL_ENUMTYPE:
     case DECL_FUNCTIONTYPE:
     case DECL_ARRAYVALUE:
     case DECL_USE:
@@ -509,7 +509,8 @@ void CodeGenFunction::EmitVarDecl(const DeclExpr* D) {
     QualType qt = D->getType();
     llvm::AllocaInst* inst = Builder.CreateAlloca(CGM.ConvertType(qt.getTypePtr()), 0, D->getName());
     // TODO smart alignment
-    inst->setAlignment(D->getType()->getWidth());
+    assert(isa<BuiltinType>(qt.getTypePtr()));
+    inst->setAlignment(cast<BuiltinType>(qt.getTypePtr())->getWidth());
     const Expr* I = D->getInitValue();
     if (I) {
         llvm::Value* val = EmitExpr(I);

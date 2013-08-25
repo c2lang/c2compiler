@@ -53,10 +53,7 @@
 #include "Utils.h"
 #include "Package.h"
 #include "Decl.h"
-#include "Scope.h"
-#include "ScopeAnalyser.h"
-#include "GlobalVarAnalyser.h"
-#include "FunctionAnalyser.h"
+#include "FileAnalyser.h"
 #include "StringBuilder.h"
 
 using clang::DiagnosticOptions;
@@ -112,6 +109,8 @@ public:
         , Headers(HSOpts, FileMgr, Diags, LangOpts_, pti)
         , PPOpts(new PreprocessorOptions())
         , PP(PPOpts, Diags, LangOpts_, pti, SM, Headers, loader)
+        , ast(filename_)
+        , analyser(0)
     {
         ApplyHeaderSearchOptions(PP.getHeaderSearchInfo(), *HSOpts, LangOpts_, pti->getTriple());
 
@@ -127,46 +126,22 @@ public:
 
     }
     ~FileInfo() {
-        delete globals;
+        delete analyser;
     }
 
     bool parse(const BuildOptions& options) {
-        if (options.verbose) printf(COL_VERBOSE"running %s %s()"ANSI_NORMAL"\n", filename.c_str(), __func__);
+        if (options.verbose) printf(COL_VERBOSE"parsing %s"ANSI_NORMAL"\n", filename.c_str());
         C2Sema sema(SM, Diags, typeContext, ast, PP);
         C2Parser parser(PP, sema);
         parser.Initialize();
         // parse the file into AST
         bool ok = parser.Parse();
-        if (options.printAST) ast.print(filename);
+        if (options.printAST0) ast.print();
         return ok;
     }
 
-    // analyse use statements, Types and build file scope
-    int analyse1(const BuildOptions& options, const Pkgs& pkgs) {
-        if (options.verbose) printf(COL_VERBOSE"running %s %s()"ANSI_NORMAL"\n", filename.c_str(), __func__);
-        globals = new FileScope(ast.getPkgName(), pkgs, Diags);
-        ScopeAnalyser visitor(*globals, Diags);
-        ast.visitAST(visitor);
-        return visitor.getErrors();
-    }
-
-    // analyse Global var types + initialization
-    int analyse2(const BuildOptions& options) {
-        if (options.verbose) printf(COL_VERBOSE"running %s %s()"ANSI_NORMAL"\n", filename.c_str(), __func__);
-        GlobalVarAnalyser visitor(*globals, typeContext, Diags);
-        ast.visitAST(visitor);
-        return visitor.getErrors();
-    }
-
-    // analyse Function bodies
-    int analyse3(const BuildOptions& options) {
-        if (options.verbose) printf(COL_VERBOSE"running %s %s()"ANSI_NORMAL"\n", filename.c_str(), __func__);
-
-        // analyse function bodies
-        FunctionAnalyser visitor(*globals, typeContext, Diags);
-        ast.visitAST(visitor);
-
-        return visitor.getErrors();
+    void createAnalyser(const Pkgs& pkgs, bool verbose) {
+        analyser = new FileAnalyser(pkgs, Diags, ast, typeContext, verbose);
     }
 
     std::string filename;
@@ -195,7 +170,7 @@ public:
 
     // C2 Parser + Sema
     AST ast;
-    FileScope* globals;
+    FileAnalyser* analyser;
 };
 
 }
@@ -284,7 +259,7 @@ void C2Builder::build() {
     }
 
     // phase 1: parse and local analyse
-    int errors = 0;
+    unsigned errors = 0;
     u_int64_t t1_parse = Utils::getCurrentTime();
     for (int i=0; i<recipe.size(); i++) {
         FileInfo* info = new FileInfo(Diags, LangOpts, pti, HSOpts, recipe.get(i), PredefineBuffer);
@@ -296,49 +271,36 @@ void C2Builder::build() {
     u_int64_t t1_analyse, t2_analyse;
     if (options.printTiming) printf(COL_TIME"parsing took %lld usec"ANSI_NORMAL"\n", t2_parse - t1_parse);
     if (client->getNumErrors()) goto out;
+    t1_analyse = Utils::getCurrentTime();
 
     // phase 1b: merge file's symbol tables to package symbols tables
     errors = !createPkgs();
     if (options.printSymbols) dumpPkgs();
-    if (options.printPackages) {
-        printf("List of packages:\n");
-        for (PkgsIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
-            Package* P = iter->second;
-            printf("  %s\n", P->getName().c_str());
-        }
-    }
+
     if (client->getNumErrors()) goto out;
 
     // phase 1c: load required external packages
     if (!loadExternalPackages()) goto out;
 
-    // phase 2: run analysing on all files
-    t1_analyse = Utils::getCurrentTime();
-    for (unsigned i=0; i<files.size(); i++) {
-        FileInfo* info = files[i];
-        errors += info->analyse1(options, pkgs);
-    }
-    if (client->getNumErrors()) goto out;
-
-    for (unsigned i=0; i<files.size(); i++) {
-        FileInfo* info = files[i];
-        errors += info->analyse2(options);
-    }
-    if (client->getNumErrors()) goto out;
-
-    for (unsigned i=0; i<files.size(); i++) {
-        FileInfo* info = files[i];
-        errors += info->analyse3(options);
-    }
-    t2_analyse = Utils::getCurrentTime();
-    if (options.printTiming) printf(COL_TIME"analysis took %lld usec"ANSI_NORMAL"\n", t2_analyse - t1_analyse);
-
-    if (options.printASTAfter) {
-        for (unsigned i=0; i<files.size(); i++) {
-            FileInfo* info = files[i];
-            info->ast.print(info->filename);
+    if (options.printPackages) {
+        printf("List of packages:\n");
+        for (PkgsConstIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
+            const Package* P = iter->second;
+            printf("  %s %s\n", P->getName().c_str(), P->isExternal() ? "(external)" : "");
         }
     }
+
+    // create analysers/scopes
+    for (unsigned i=0; i<files.size(); i++) {
+        FileInfo* info = files[i];
+        info->createAnalyser(pkgs, options.verbose);
+    }
+
+    // phase 2: run analysing on all files
+    errors += analyse();
+
+    t2_analyse = Utils::getCurrentTime();
+    if (options.printTiming) printf(COL_TIME"analysis took %lld usec"ANSI_NORMAL"\n", t2_analyse - t1_analyse);
     if (client->getNumErrors()) goto out;
 
     if (!checkMainFunction(Diags)) goto out;
@@ -369,14 +331,14 @@ bool C2Builder::havePackage(const std::string& name) const {
     return iter != pkgs.end();
 }
 
-Package* C2Builder::getPackage(const std::string& name, bool isCLib) {
+Package* C2Builder::getPackage(const std::string& name, bool isExternal, bool isCLib) {
     PkgsIter iter = pkgs.find(name);
     if (iter == pkgs.end()) {
-        Package* P = new Package(name, isCLib);
+        Package* P = new Package(name, isExternal, isCLib);
         pkgs[name] = P;
         return P;
     } else {
-        // TODO check that isCLib matches returned package?
+        // TODO check that isCLib/isExternal matches returned package? otherwise give error
         return iter->second;
     }
 }
@@ -385,7 +347,7 @@ Package* C2Builder::getPackage(const std::string& name, bool isCLib) {
 bool C2Builder::createPkgs() {
     for (unsigned i=0; i<files.size(); i++) {
         FileInfo* info = files[i];
-        Package* pkg = getPackage(info->ast.getPkgName(), false);
+        Package* pkg = getPackage(info->ast.getPkgName(), false, false);
         const AST::Symbols& symbols = info->ast.getSymbols();
         for (AST::SymbolsConstIter iter = symbols.begin(); iter != symbols.end(); ++iter) {
             Decl* New = iter->second;
@@ -407,10 +369,8 @@ bool C2Builder::loadExternalPackages() {
     // collect all external packages
     for (unsigned i=0; i<files.size(); i++) {
         FileInfo* info = files[i];
-        unsigned count = info->ast.getNumDecls();
-        for (unsigned i=0; i<count; i++) {
-            Decl* D = info->ast.getDecl(i);
-            if (!isa<UseDecl>(D)) break;
+        for (unsigned i=0; i<info->ast.numUses(); i++) {
+            UseDecl* D = info->ast.getUse(i);
             const std::string& name = D->getName();
             if (havePackage(name)) continue;
             if (!loadPackage(name)) return false;
@@ -427,72 +387,59 @@ bool C2Builder::loadPackage(const std::string& name) {
 
     // TEMP use dummy packages
     if (name == "c2") {
-        getPackage("c2", false);
+        getPackage("c2", true, false);
         return true;
     }
     SourceLocation loc;
 
     if (name == "stdio") {
-        Package* stdioPkg = getPackage("stdio", true);
+        Package* stdioPkg = getPackage("stdio", true, true);
         // int puts(const char* s);
         {
-            FunctionDecl* func = new FunctionDecl("puts", loc, true, BuiltinType::get(TYPE_INT));
+            FunctionDecl* func = new FunctionDecl("puts", loc, true, Type::Int32());
             // TODO correct arg
-            Type* ptype = new Type(Type::POINTER, BuiltinType::get(TYPE_I8));
-            QualType QT(ptype, QUAL_CONST);
+            QualType QT(new PointerType(Type::Int8()), QUAL_CONST);
             func->addArg(new VarDecl("s", loc, QT, 0));
             stdioPkg->addSymbol(func);
             // function type
-            Type* proto = new Type(Type::FUNC);
-            proto->setFunc(func);
-            func->setFunctionType(QualType(proto));
-
+            func->setFunctionType(QualType(new FunctionType(func), 0));
         }
         //int printf(const char *format, ...);
         {
-            FunctionDecl* func = new FunctionDecl("printf", loc, true, BuiltinType::get(TYPE_INT));
+            FunctionDecl* func = new FunctionDecl("printf", loc, true, Type::Int32());
             // NOTE: MEMLEAK ON TYPE, this will go away when we remove these dummy protos
-            Type* ptype = new Type(Type::POINTER, BuiltinType::get(TYPE_I8));
-            QualType QT(ptype, QUAL_CONST);
+            QualType QT(new PointerType(Type::Int8()), QUAL_CONST);
             func->addArg(new VarDecl("format", loc, QT, 0));
             func->setVariadic();
             stdioPkg->addSymbol(func);
             // function type
-            Type* proto = new Type(Type::FUNC);
-            proto->setFunc(func);
-            func->setFunctionType(QualType(proto));
+            func->setFunctionType(QualType(new FunctionType(func), 0));
         }
         //int sprintf(char *str, const char *format, ...);
         {
-            FunctionDecl* func = new FunctionDecl("sprintf", loc, true, BuiltinType::get(TYPE_INT));
+            FunctionDecl* func = new FunctionDecl("sprintf", loc, true, Type::Int32());
             // NOTE: MEMLEAK ON TYPE, this will go away when we remove these dummy protos
-            Type* ptype = new Type(Type::POINTER, BuiltinType::get(TYPE_I8));
-            QualType QT(ptype, QUAL_CONST);
+            QualType QT(new PointerType(Type::Int8()), QUAL_CONST);
             func->addArg(new VarDecl("str", loc, QT, 0));
             func->addArg(new VarDecl("format", loc, QT, 0));
             func->setVariadic();
             stdioPkg->addSymbol(func);
             // function type
-            Type* proto = new Type(Type::FUNC);
-            proto->setFunc(func);
-            func->setFunctionType(QualType(proto));
+            func->setFunctionType(QualType(new FunctionType(func), 0));
         }
         return true;
     }
 
     if (name == "stdlib") {
-        Package* stdlibPkg = getPackage("stdlib", true);
+        Package* stdlibPkg = getPackage("stdlib", true, true);
         //void exit(int status);
         {
-            FunctionDecl* func = new FunctionDecl("exit", loc, true, BuiltinType::get(TYPE_VOID));
+            FunctionDecl* func = new FunctionDecl("exit", loc, true, Type::Void());
             // TODO correct arg
-            QualType QT(BuiltinType::get(TYPE_INT));
-            func->addArg(new VarDecl("status", loc, QT, 0));
+            func->addArg(new VarDecl("status", loc, Type::Int32(), 0));
             stdlibPkg->addSymbol(func);
             // function type
-            Type* proto = new Type(Type::FUNC);
-            proto->setFunc(func);
-            func->setFunctionType(QualType(proto));
+            func->setFunctionType(QualType(new FunctionType(func), 0));
         }
         return true;
     }
@@ -500,10 +447,69 @@ bool C2Builder::loadPackage(const std::string& name) {
     return false;
 }
 
-void C2Builder::dumpPkgs() {
-    for (PkgsIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
-        Package* P = iter->second;
+unsigned C2Builder::analyse() {
+    unsigned errors = 0;
+
+    for (unsigned i=0; i<files.size(); i++) {
+        errors += files[i]->analyser->checkUses();
+    }
+    if (errors) return errors;
+
+    for (unsigned i=0; i<files.size(); i++) {
+        errors += files[i]->analyser->resolveTypes();
+    }
+    if (errors) return errors;
+
+    for (unsigned i=0; i<files.size(); i++) {
+        errors += files[i]->analyser->resolveTypeCanonicals();
+    }
+    if (errors) return errors;
+
+    for (unsigned i=0; i<files.size(); i++) {
+        errors += files[i]->analyser->resolveStructMembers();
+    }
+    if (options.printAST1) printASTs();
+    if (errors) return errors;
+
+    for (unsigned i=0; i<files.size(); i++) {
+        errors += files[i]->analyser->resolveVars();
+    }
+    if (errors) return errors;
+
+    for (unsigned i=0; i<files.size(); i++) {
+        errors += files[i]->analyser->checkVarInits();
+    }
+    if (options.printAST2) printASTs();
+    if (errors) return errors;
+
+    for (unsigned i=0; i<files.size(); i++) {
+        errors += files[i]->analyser->resolveEnumConstants();
+    }
+    if (errors) return errors;
+
+    for (unsigned i=0; i<files.size(); i++) {
+        errors += files[i]->analyser->checkFunctionProtos();
+    }
+    if (errors) return errors;
+
+    for (unsigned i=0; i<files.size(); i++) {
+        errors += files[i]->analyser->checkFunctionBodies();
+    }
+    if (options.printAST3) printASTs();
+    return errors;
+}
+
+void C2Builder::dumpPkgs() const {
+    for (PkgsConstIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
+        const Package* P = iter->second;
         P->dump();
+    }
+}
+
+void C2Builder::printASTs() const {
+    for (unsigned i=0; i<files.size(); i++) {
+        FileInfo* info = files[i];
+        info->ast.print();
     }
 }
 

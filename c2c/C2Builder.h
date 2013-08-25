@@ -32,8 +32,10 @@ class FileInfo;
 
 struct BuildOptions {
     BuildOptions()
-        : printAST(false)
-        , printASTAfter(false)
+        : printAST0(false)
+        , printAST1(false)
+        , printAST2(false)
+        , printAST3(false)
         , printTiming(false)
         , printSymbols(false)
         , generateIR(false)
@@ -43,8 +45,10 @@ struct BuildOptions {
         , printPackages(false)
         , verbose(false)
     {}
-    bool printAST;
-    bool printASTAfter;
+    bool printAST0;
+    bool printAST1;
+    bool printAST2;
+    bool printAST3;
     bool printTiming;
     bool printSymbols;
     bool generateIR;
@@ -65,11 +69,13 @@ public:
     void build();
 private:
     bool havePackage(const std::string& name) const;
-    Package* getPackage(const std::string& name, bool isCLib);
+    Package* getPackage(const std::string& name, bool isExternal, bool isCLib);
     bool createPkgs();
     bool loadExternalPackages();
     bool loadPackage(const std::string& name);
-    void dumpPkgs();
+    unsigned analyse();
+    void dumpPkgs() const;
+    void printASTs() const;
 
     bool checkMainFunction(clang::DiagnosticsEngine& Diags);
     void generateOptionalC();

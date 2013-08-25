@@ -28,6 +28,7 @@ class AST;
 class Type;
 class Decl;
 class VarDecl;
+class UseDecl;
 class FunctionDecl;
 class StructTypeDecl;
 class FunctionTypeDecl;
@@ -50,14 +51,13 @@ public:
     void dump();
 
 private:
-    const char* ConvertType(const C2::Type* type);
-
     void EmitFunction(FunctionDecl* F);
     void EmitFunctionArgs(FunctionDecl* F, StringBuilder& output);
     void EmitVariable(Decl* D);
     void EmitType(Decl* D);
-    void EmitUse(Decl* D);
+    void EmitUse(UseDecl* D);
     void EmitStructType(StructTypeDecl* S, StringBuilder& output, unsigned indent);
+    void EmitEnumType(EnumTypeDecl* E, StringBuilder& output);
     void EmitFunctionType(FunctionTypeDecl* F, StringBuilder& output);
     void EmitVarDecl(VarDecl* D, StringBuilder& output, unsigned indent);
 

@@ -137,7 +137,7 @@ void CallExpr::print(StringBuilder& buffer, unsigned indent) const {
     expr2name(Fn, buffer);
     buffer << "]\n";
     Fn->print(buffer, indent + INDENT);
-    for (unsigned int i=0; i<args.size(); i++) {
+    for (unsigned i=0; i<args.size(); i++) {
         args[i]->print(buffer, indent + INDENT);
     }
 }
@@ -155,11 +155,9 @@ void IdentifierExpr::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 
-TypeExpr::~TypeExpr() {
-}
-
 void TypeExpr::print(StringBuilder& buffer, unsigned indent) const {
-    QT.print(buffer, indent, QualType::RECURSE_NONE);
+    //QT.print(buffer, indent, QualType::RECURSE_NONE);
+    QT.debugPrint(buffer, indent);
 }
 
 
@@ -171,7 +169,7 @@ InitListExpr::InitListExpr(SourceLocation left, SourceLocation right, ExprList& 
 {}
 
 InitListExpr::~InitListExpr() {
-    for (unsigned int i=0; i<values.size(); i++) {
+    for (unsigned i=0; i<values.size(); i++) {
         delete values[i];
     }
 }
@@ -179,7 +177,7 @@ InitListExpr::~InitListExpr() {
 void InitListExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer << "[InitListExpr]\n";
-    for (unsigned int i=0; i<values.size(); i++) {
+    for (unsigned i=0; i<values.size(); i++) {
         values[i]->print(buffer, indent + INDENT);
     }
 }

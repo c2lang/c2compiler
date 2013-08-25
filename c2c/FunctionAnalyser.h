@@ -17,8 +17,6 @@
 #define FUNCTION_ANALYSER_H
 
 #include <clang/Basic/SourceLocation.h>
-#include "ASTVisitor.h"
-#include "Package.h"
 #include "Scope.h"
 #include "Type.h"
 
@@ -33,25 +31,28 @@ class DiagnosticsEngine;
 namespace C2 {
 
 class Type;
+class TypeContext;
 class FileScope;
 class Decl;
+class VarDecl;
 class FunctionDecl;
 class Stmt;
 class Expr;
 class IdentifierExpr;
-class TypeContext;
 
-class FunctionAnalyser : public ASTVisitor {
+class FunctionAnalyser {
 public:
     FunctionAnalyser(FileScope& scope_,
                          TypeContext& tc,
                          clang::DiagnosticsEngine& Diags_);
-    virtual ~FunctionAnalyser();
 
-    virtual bool handle(Decl* decl);
-    unsigned int getErrors() const { return errors; }
+    void checkFunction(FunctionDecl* F);
+    void checkVarDecl(VarDecl* VD);
+
+    // TODO getErrors is weird with new API
+    unsigned getErrors() const { return errors; }
 private:
-    void EnterScope(unsigned int flags);
+    void EnterScope(unsigned flags);
     void ExitScope();
 
     void analyseStmt(Stmt* stmt, bool haveScope = false);
@@ -115,7 +116,7 @@ private:
     unsigned scopeIndex;    // first free scope (= count of scopes)
     Scope* curScope;
     clang::DiagnosticsEngine& Diags;
-    unsigned int errors;
+    unsigned errors;
 
     FunctionDecl* func;     // current function
 

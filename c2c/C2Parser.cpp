@@ -78,32 +78,6 @@ static prec::Level getBinOpPrecedence(tok::TokenKind Kind) {
 }
 
 
-static C2Type kw2type(tok::TokenKind Kind) {
-    switch (Kind) {
-    case tok::kw_u8:    return TYPE_U8;
-    case tok::kw_u16:   return TYPE_U16;
-    case tok::kw_u32:   return TYPE_U32;
-    case tok::kw_u64:   return TYPE_U64;
-    case tok::kw_i8:    return TYPE_I8;
-    case tok::kw_i16:   return TYPE_I16;
-    case tok::kw_i32:   return TYPE_I32;
-    case tok::kw_i64:   return TYPE_I64;
-    case tok::kw_int:   return TYPE_INT;
-    case tok::kw_uint:  return TYPE_U32;
-    case tok::kw_string: return TYPE_STRING;
-    case tok::kw_float: return TYPE_F32;
-    case tok::kw_f32:   return TYPE_F32;
-    case tok::kw_f64:   return TYPE_F64;
-    case tok::kw_char:  return TYPE_I8;
-    case tok::kw_bool:  return TYPE_BOOL;
-    case tok::kw_void:  return TYPE_VOID;
-    case tok::kw_uchar: return TYPE_U8;
-    default:
-        assert(0);
-        return TYPE_U8;
-    }
-}
-
 // TEMP
 static SourceRange getExprRange(C2::Expr *E) {
     return E ? E->getSourceRange() : SourceRange();
@@ -260,8 +234,8 @@ void C2Parser::ParseTypeDef(bool is_public) {
         ParseStructType(false, id->getNameStart(), idLoc, is_public);
         return;
     case tok::kw_enum:
-        type = ParseEnumType(id->getNameStart());
-        break;
+        ParseEnumType(id->getNameStart(), idLoc, is_public);
+        return;
     case tok::coloncolon:
         Diag(Tok, diag::err_qualified_typedef);
         SkipUntil(tok::semi);
@@ -343,23 +317,41 @@ void C2Parser::ParseStructBlock(StructTypeDecl* S) {
     enum_member ::= IDENTIFIER.
     enum_member ::= IDENTIFIER EQUALS constant_expression.
 */
-C2::ExprResult C2Parser::ParseEnumType(const char* id) {
+void C2Parser::ParseEnumType(const char* id, SourceLocation idLoc, bool is_public) {
     LOG_FUNC
     assert(Tok.is(tok::kw_enum) && "Expected keyword 'enum'");
     ConsumeToken();
 
-    // parse optional implementation type
-    ExprResult destType;
-    if (Tok.isNot(tok::l_brace)) {
-        // TODO not completely correct, since this also parses pointer types
-        destType = ParseSingleTypeSpecifier(false);
-        if (destType.isInvalid()) return ExprError();
+    // parse mandatory implementation type
+    ExprResult implType;
+    switch (Tok.getKind()) {
+    case tok::kw_u8:
+    case tok::kw_u16:
+    case tok::kw_u32:
+    case tok::kw_u64:
+    case tok::kw_i8:
+    case tok::kw_i16:
+    case tok::kw_i32:
+    case tok::kw_i64:
+    case tok::kw_int:
+    case tok::kw_uint:
+    case tok::kw_char:
+    case tok::kw_uchar:
+    case tok::kw_bool:
+        implType = Actions.ActOnBuiltinType(Tok.getKind());
+        ConsumeToken();
+        break;
+    default:
+        // TODO give error: expected builtin type
+        fprintf(stderr, "ERROR: expected built-in type specifier\n");
+        // TODO error handling?
+        break;
     }
 
     SourceLocation LeftBrace = Tok.getLocation();
-    if (ExpectAndConsume(tok::l_brace, diag::err_expected_lbrace)) return ExprError();
+    if (ExpectAndConsume(tok::l_brace, diag::err_expected_lbrace)) return;
 
-    ExprResult TheEnum = Actions.ActOnEnumType(id, destType.release());
+    EnumTypeDecl* TheEnum = Actions.ActOnEnumType(id, idLoc, implType.release(), is_public);
 
     // Syntax: enum_block
     while (Tok.is(tok::identifier)) {
@@ -376,21 +368,12 @@ C2::ExprResult C2Parser::ParseEnumType(const char* id) {
             }
         }
 
-        Actions.ActOnEnumConstant(TheEnum.get(), Ident, IdentLoc, Value.release());
+        Actions.ActOnEnumConstant(TheEnum, Ident, IdentLoc, Value.release());
         if (Tok.isNot(tok::comma)) break;
         ConsumeToken();
     }
     SourceLocation RightBrace = Tok.getLocation();
-    if (ExpectAndConsume(tok::r_brace, diag::err_expected_rbrace)) return ExprError();
-
-#if 0
-  Actions.ActOnEnumBody(StartLoc, T.getOpenLocation(), T.getCloseLocation(),
-                        EnumDecl, EnumConstantDecls.data(),
-                        EnumConstantDecls.size(), getCurScope(),
-                        attrs.getList());
-#endif
-    //return Actions.ActOnEnumTypeFinished(TheEnum.release(), LeftBrace, RightBrace);
-    return TheEnum;
+    ExpectAndConsume(tok::r_brace, diag::err_expected_rbrace);
 }
 
 /*
@@ -491,7 +474,7 @@ bool C2Parser::ParseParamDecl(FunctionDecl* func, bool allow_defaults) {
 C2::ExprResult C2Parser::ParseSingleTypeSpecifier(bool allow_qualifier) {
     LOG_FUNC
 
-    unsigned int type_qualifier = 0;
+    unsigned type_qualifier = 0;
     // TODO also parse if not allowed for error msg
     if (allow_qualifier) type_qualifier = ParseOptionalTypeQualifier();
 
@@ -516,7 +499,7 @@ C2::ExprResult C2Parser::ParseSingleTypeSpecifier(bool allow_qualifier) {
     case tok::kw_void:
     case tok::kw_uchar:
     case tok::kw_bool:
-        base = Actions.ActOnBuiltinType(kw2type(Tok.getKind()));
+        base = Actions.ActOnBuiltinType(Tok.getKind());
         ConsumeToken();
         break;
     case tok::identifier:
@@ -2172,7 +2155,7 @@ void C2Parser::ParseArrayEntry() {
 }
 
 // Syntax: const | volatile | local | local const
-unsigned int C2Parser::ParseOptionalTypeQualifier() {
+unsigned C2Parser::ParseOptionalTypeQualifier() {
     // TODO consume all const/volatile/local tokens (can give errors)
     LOG_FUNC
     switch (Tok.getKind()) {

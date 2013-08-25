@@ -22,7 +22,7 @@ namespace C2 {
 
 class StringBuilder {
 public:
-    StringBuilder(unsigned int cap = CAPACITY, char* buf = 0);
+    StringBuilder(unsigned cap = CAPACITY, char* buf = 0);
     ~StringBuilder();
 
     StringBuilder& operator<<(const char* input);
@@ -30,7 +30,7 @@ public:
     StringBuilder& operator<<(const std::string& input);
     StringBuilder& operator<<(char input);
     StringBuilder& operator<<(int input);
-    StringBuilder& operator<<(unsigned int input);
+    StringBuilder& operator<<(unsigned input);
     StringBuilder& operator<<(long long input);
     StringBuilder& operator<<(unsigned long long input);
     StringBuilder& operator<<(const StringBuilder& input);

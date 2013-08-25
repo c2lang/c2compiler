@@ -42,7 +42,7 @@ RecipeReader::RecipeReader()
 }
 
 RecipeReader::~RecipeReader() {
-    for (unsigned int i=0; i<recipes.size(); i++) {
+    for (unsigned i=0; i<recipes.size(); i++) {
         delete recipes[i];
     }
 }
@@ -201,7 +201,7 @@ const Recipe& RecipeReader::get(int i) const {
 
 void RecipeReader::print() const {
     printf("Targets:\n");
-    for (unsigned int i=0; i<recipes.size(); i++) {
+    for (unsigned i=0; i<recipes.size(); i++) {
         Recipe* R = recipes[i];
         printf("  %s\n", R->name.c_str());
     }

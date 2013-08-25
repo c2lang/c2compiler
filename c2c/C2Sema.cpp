@@ -160,7 +160,7 @@ void C2Sema::ActOnUse(const char* name, SourceLocation loc, Token& aliasTok, boo
             return;
         }
     }
-    ast.addDecl(new UseDecl(name, loc, isLocal, aliasName, aliasTok.getLocation()));
+    ast.addUse(new UseDecl(name, loc, isLocal, aliasName, aliasTok.getLocation()));
 }
 
 void C2Sema::ActOnTypeDef(const char* name, SourceLocation loc, Expr* type, bool is_public) {
@@ -175,9 +175,8 @@ void C2Sema::ActOnTypeDef(const char* name, SourceLocation loc, Expr* type, bool
     if (typeExpr->hasLocalQualifier()) {
         Diag(loc, diag::err_invalid_local_typedef);
     }
-    Decl* T = new TypeDecl(name, loc, typeExpr->getType(), is_public);
-    ast.addDecl(T);
-    addSymbol(T);
+    TypeDecl* T = new TypeDecl(name, loc, typeExpr->getType(), is_public);
+    ast.addType(T);
     delete typeExpr;
 }
 
@@ -188,8 +187,7 @@ void C2Sema::ActOnVarDef(const char* name, SourceLocation loc,
         Diag(loc, diag::err_invalid_local_globalvar);
     }
     VarDecl* V =  createVarDecl(name, loc, typeExpr, InitValue, is_public);
-    ast.addDecl(V);
-    addSymbol(V);
+    ast.addVar(V);
 }
 
 C2::FunctionDecl* C2Sema::createFuncDecl(const char* name, SourceLocation loc,
@@ -203,8 +201,7 @@ C2::FunctionDecl* C2Sema::createFuncDecl(const char* name, SourceLocation loc,
     }
     FunctionDecl* D = new FunctionDecl(name, loc, is_public, typeExpr->getType());
     delete typeExpr;
-    Type* type = typeContext.getFunction(D);
-    QualType qt(type, 0);
+    QualType qt =  typeContext.getFunctionType(D);
     D->setFunctionType(qt);
     return D;
 }
@@ -225,8 +222,7 @@ C2::FunctionDecl* C2Sema::ActOnFuncDecl(const char* name, SourceLocation loc, bo
     std::cerr << ANSI_NORMAL"\n";
 #endif
     FunctionDecl* D = createFuncDecl(name, loc, is_public, rtype);
-    ast.addDecl(D);
-    addSymbol(D);
+    ast.addFunction(D);
     return D;
 }
 
@@ -239,9 +235,7 @@ C2::FunctionDecl* C2Sema::ActOnFuncTypeDecl(const char* name, SourceLocation loc
     std::cerr << ANSI_NORMAL"\n";
 #endif
     FunctionDecl* D = createFuncDecl(name, loc, is_public, rtype);
-    FunctionTypeDecl* TD = new FunctionTypeDecl(D);
-    ast.addDecl(TD);
-    addSymbol(TD);
+    ast.addType(new FunctionTypeDecl(D));
     return D;
 }
 
@@ -257,7 +251,7 @@ void C2Sema::ActOnFunctionArg(FunctionDecl* func, const char* name, SourceLocati
     if (typeExpr->hasLocalQualifier()) {
         Diag(loc, diag::err_invalid_local_functionargument);
     }
-    VarDecl* var = createVarDecl(name, loc, typeExpr, InitValue, false);
+    VarDecl* var = createVarDecl(name, loc, typeExpr, InitValue, func->isPublic());
 
     // check args for duplicates
     if (var->getName() != "") {
@@ -295,7 +289,7 @@ void C2Sema::ActOnArrayValue(const char* name, SourceLocation loc, Expr* Value) 
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    ast.addDecl(new ArrayValueDecl(name, loc, Value));
+    ast.addArrayValue(new ArrayValueDecl(name, loc, Value));
 }
 
 C2::StmtResult C2Sema::ActOnReturnStmt(SourceLocation loc, Expr* value) {
@@ -446,7 +440,7 @@ C2::ExprResult C2Sema::ActOnCallExpr(Expr* Fn, Expr** args, unsigned numArgs, So
 #endif
     CallExpr* call = new CallExpr(Fn);
     assert(call);
-    for (unsigned int i=0; i<numArgs; i++) call->addArg(args[i]);
+    for (unsigned i=0; i<numArgs; i++) call->addArg(args[i]);
     return ExprResult(call);
 }
 
@@ -512,7 +506,7 @@ C2::ExprResult C2Sema::ActOnArrayType(Expr* base, Expr* size) {
 #endif
     assert(base);
     TypeExpr* typeExpr = cast<TypeExpr>(base);
-    QualType QT = typeContext.getArray(typeExpr->getType(), size, true);
+    QualType QT = typeContext.getArrayType(typeExpr->getType(), size, true);
     typeExpr->setType(QT);
     return ExprResult(base);
 }
@@ -523,7 +517,7 @@ C2::ExprResult C2Sema::ActOnPointerType(Expr* base) {
 #endif
     assert(base);
     TypeExpr* typeExpr = cast<TypeExpr>(base);
-    QualType qt = typeContext.getPointer(typeExpr->getType());
+    QualType qt = typeContext.getPointerType(typeExpr->getType());
     typeExpr->setType(qt);
     return ExprResult(base);
 }
@@ -533,18 +527,39 @@ C2::ExprResult C2Sema::ActOnUserType(Expr* expr) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: User Type"ANSI_NORMAL"\n";
 #endif
-    Type* type = typeContext.getUser();
-    type->setUserType(expr);
-    QualType qt(type);
+    QualType qt = typeContext.getUnresolvedType(expr);
     return ExprResult(new TypeExpr(qt));
 }
 
-C2::ExprResult C2Sema::ActOnBuiltinType(C2Type t) {
+C2::ExprResult C2Sema::ActOnBuiltinType(tok::TokenKind k) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: Builtin Type"ANSI_NORMAL"\n";
 #endif
-    Type* type = BuiltinType::get(t);
-    QualType qt(type);
+    QualType qt;
+    switch (k) {
+    case tok::kw_u8:    qt = Type::UInt8(); break;
+    case tok::kw_u16:   qt = Type::UInt16(); break;
+    case tok::kw_u32:   qt = Type::UInt32(); break;
+    case tok::kw_u64:   qt = Type::UInt64(); break;
+    case tok::kw_i8:    qt = Type::Int8(); break;
+    case tok::kw_i16:   qt = Type::Int16(); break;
+    case tok::kw_i32:   qt = Type::Int32(); break;
+    case tok::kw_i64:   qt = Type::Int64(); break;
+    case tok::kw_int:   qt = Type::Int32(); break;
+    case tok::kw_uint:  qt = Type::UInt32(); break;
+    case tok::kw_string: assert(0); break;
+    case tok::kw_float: qt = Type::Float32(); break;
+    case tok::kw_f32:   qt = Type::Float32(); break;
+    case tok::kw_f64:   qt = Type::Float64(); break;
+    case tok::kw_char:  qt = Type::Int8(); break;
+    case tok::kw_bool:  qt = Type::Bool(); break;
+    case tok::kw_void:  qt = Type::Void(); break;
+    case tok::kw_uchar: qt = Type::UInt8(); break;
+    default:
+        assert(0);
+        break;
+    }
+
     return ExprResult(new TypeExpr(qt));
 }
 
@@ -553,15 +568,11 @@ StructTypeDecl* C2Sema::ActOnStructType(const char* name, SourceLocation loc,
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: Struct/Union Type '" << name ? name : "<anonymous>" << ANSI_NORMAL"\n";
 #endif
-    // add basic struct type, dont populate yet with member types
-    Type* type = typeContext.getStruct(isStruct, name);
-    QualType qt(type);
+    QualType qt = typeContext.getStructType();
     StructTypeDecl* S = new StructTypeDecl(name, loc, qt, isStruct, is_global, is_public);
-    type->setStructDecl(S);
-    if (is_global) {
-        ast.addDecl(S);
-        addSymbol(S);
-    }
+    StructType* ST = cast<StructType>(qt.getTypePtr());
+    ST->setDecl(S);
+    if (is_global) ast.addType(S);
     return S;
 }
 
@@ -576,7 +587,7 @@ C2::DeclResult C2Sema::ActOnStructVar(const char* name, SourceLocation loc, Expr
         //Diag(loc, diag::err_invalid_local_structmember);
 #warning "TODO add diag msg to clang"
     }
-    VarDecl* V =  createVarDecl(name, loc, typeExpr, InitValue, is_public);
+    VarDecl* V = createVarDecl(name, loc, typeExpr, InitValue, is_public);
     return DeclResult(V);
 }
 
@@ -598,28 +609,29 @@ void C2Sema::ActOnStructTypeFinish(StructTypeDecl* S, SourceLocation left, Sourc
     analyseStructNames(S, names);
 }
 
-C2::ExprResult C2Sema::ActOnEnumType(const char* id, Expr* implType) {
-    Type* type = typeContext.getEnum();
-    type->setStructName(id);
-    if (implType) {
-        TypeExpr* T = cast<TypeExpr>(implType);
-        type->setRefType(T->getType());
-        delete T;
-    }
-    QualType qt(type);
-    return ExprResult(new TypeExpr(qt));
+EnumTypeDecl* C2Sema::ActOnEnumType(const char* name, SourceLocation loc, Expr* implType, bool is_public) {
+    assert(implType);
+    TypeExpr* T = cast<TypeExpr>(implType);
+    QualType impl = T->getType();
+    assert(impl->hasCanonicalType());
+    delete T;
+
+    QualType qt = typeContext.getEnumType();
+    EnumTypeDecl* E = new EnumTypeDecl(name, loc, impl, qt, is_public);
+    EnumType* ET = cast<EnumType>(qt.getTypePtr());
+    ET->setCanonicalType(impl);
+    ET->setDecl(E);
+    ast.addType(E);
+    return E;
 }
 
-void C2Sema::ActOnEnumConstant(Expr* enumType, IdentifierInfo* symII,
+void C2Sema::ActOnEnumConstant(EnumTypeDecl* Enum, IdentifierInfo* symII,
                                 SourceLocation symLoc, Expr* Value) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: enum constant"ANSI_NORMAL"\n";
 #endif
-    TypeExpr* typeExpr = cast<TypeExpr>(enumType);
-    bool is_public = true;
-    QualType T = typeExpr->getType();
-    EnumConstantDecl* D = new EnumConstantDecl(symII->getNameStart(), symLoc, T, Value, is_public);
-    T.getTypePtr()->addEnumMember(D);
+    EnumConstantDecl* D = new EnumConstantDecl(symII->getNameStart(), symLoc, Enum->getType(), Value, Enum->isPublic());
+    Enum->addConstant(D);
     addSymbol(D);
 }
 
@@ -632,7 +644,7 @@ C2::ExprResult C2Sema::ActOnEnumTypeFinished(Expr* enumType,
     return ExprResult(enumType);
 }
 
-C2::ExprResult C2Sema::ActOnTypeQualifier(ExprResult R, unsigned int qualifier) {
+C2::ExprResult C2Sema::ActOnTypeQualifier(ExprResult R, unsigned qualifier) {
     assert(R.get());
     if (qualifier) {
 #ifdef SEMA_DEBUG
@@ -807,7 +819,7 @@ C2::ExprResult C2Sema::ActOnNumericConstant(const Token& Tok) {
             Diag(Tok.getLocation(), diag::warn_integer_too_large);
         } else {
             // Octal, Hexadecimal, and integers with a U suffix are allowed to
-            // be an unsigned int.
+            // be an unsigned.
             bool AllowUnsigned = Literal.isUnsigned || Literal.getRadix() != 10;
 
             // Check from smallest to largest, picking the smallest type we can.
@@ -816,7 +828,7 @@ C2::ExprResult C2Sema::ActOnNumericConstant(const Token& Tok) {
             // Are int/unsigned possibilities?
             unsigned IntSize = 32;
 
-            // Does it fit in a unsigned int?
+            // Does it fit in a unsigned?
             if (ResultVal.isIntN(IntSize)) {
               // Does it fit in a signed int?
 #if 0
@@ -859,7 +871,7 @@ C2::ExprResult C2Sema::ActOnNumericConstant(const Token& Tok) {
 }
 
 
-C2::ExprResult C2Sema::ActOnStringLiteral(const Token* StringToks, unsigned int NumStringToks) {
+C2::ExprResult C2Sema::ActOnStringLiteral(const Token* StringToks, unsigned NumStringToks) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: string literal"ANSI_NORMAL"\n";
 #endif
@@ -899,18 +911,16 @@ void C2Sema::addSymbol(Decl* d) {
 }
 
 const C2::Decl* C2Sema::findUse(const char* name) const {
-    for (unsigned int i=0; i<ast.getNumDecls(); i++) {
-        Decl* d = ast.getDecl(i);
-        if (d->getName() == name) return d;
+    for (unsigned i=0; i<ast.numUses(); i++) {
+        UseDecl* D = ast.getUse(i);
+        if (D->getName() == name) return D;
     }
     return 0;
 }
 
 const C2::UseDecl* C2Sema::findAlias(const char* name) const {
-    for (unsigned int i=0; i<ast.getNumDecls(); i++) {
-        Decl* d = ast.getDecl(i);
-        if (!isa<UseDecl>(d)) break;
-        UseDecl* useDecl = cast<UseDecl>(d);
+    for (unsigned i=0; i<ast.numUses(); i++) {
+        UseDecl* useDecl = ast.getUse(i);
         if (useDecl->getAlias() == name) return useDecl;
     }
     return 0;
@@ -922,7 +932,7 @@ C2::ExprResult C2Sema::ExprError() {
 
 void C2Sema::analyseStructNames(const StructTypeDecl* S, Names& names) {
     typedef Names::iterator NamesIter;
-    for (unsigned i=0; i<S->getNumMembers(); i++) {
+    for (unsigned i=0; i<S->numMembers(); i++) {
         const Decl* member = S->getMember(i);
         const std::string& name = member->getName();
         if (name == "") {

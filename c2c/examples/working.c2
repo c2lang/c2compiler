@@ -4,7 +4,7 @@ use stdio;
 
 type Number int;
 
-public string name = "Hallo";
+public const char* name = "Hallo";
 
 int[] numbers = { 1, 1, 2, 3, 5, 8, 13 }
 

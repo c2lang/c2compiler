@@ -194,7 +194,6 @@ public:
         : Expr(EXPR_TYPE)
         , QT(QT_)
     {}
-    virtual ~TypeExpr();
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_TYPE;
     }
@@ -229,8 +228,8 @@ public:
     void addArg(Expr* arg);
 
     Expr* getFn() const { return Fn; }
-    Expr* getArg(unsigned int i) const { return args[i]; }
-    unsigned int numArgs() const { return args.size(); }
+    Expr* getArg(unsigned i) const { return args[i]; }
+    unsigned numArgs() const { return args.size(); }
 private:
     // TODO add R/LParen
     Expr* Fn;

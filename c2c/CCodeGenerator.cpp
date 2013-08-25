@@ -77,25 +77,20 @@ void CCodeGenerator::generate() {
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
         AST* ast = iter->ast;
         curpkg = &ast->getPkgName();
-        for (unsigned int i=0; i<ast->getNumDecls(); i++) {
-            Decl* D = ast->getDecl(i);
-            switch (D->getKind()) {
-            case DECL_USE:
-                EmitUse(D);
-                break;
-            default:
-                break;
-            }
+        for (unsigned i=0; i<ast->numUses(); i++) {
+            EmitUse(ast->getUse(i));
         }
         curpkg = 0;
     }
     cbuf << "#include \"" << hfilename << "\"\n";
     cbuf << '\n';
 
+    assert(0 && "TODO");
+#if 0
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
         AST* ast = iter->ast;
         curpkg = &ast->getPkgName();
-        for (unsigned int i=0; i<ast->getNumDecls(); i++) {
+        for (unsigned i=0; i<ast->getNumDecls(); i++) {
             Decl* D = ast->getDecl(i);
             switch (D->getKind()) {
             case DECL_FUNC:
@@ -113,67 +108,21 @@ void CCodeGenerator::generate() {
             case DECL_STRUCTTYPE:
                 EmitStructType(cast<StructTypeDecl>(D), D->isPublic() ? hbuf : cbuf, 0);
                 break;
+            case DECL_ENUMTYPE:
+                EmitEnumType(cast<EnumTypeDecl>(D), D->isPublic() ? hbuf : cbuf);
+                break;
             case DECL_FUNCTIONTYPE:
                 EmitFunctionType(cast<FunctionTypeDecl>(D), D->isPublic() ? hbuf : cbuf);
                 break;
             case DECL_ARRAYVALUE:
                 // TODO
                 break;
-            case DECL_USE:
-                break;
             }
         }
         curpkg = 0;
     }
+#endif
     hbuf << "#endif\n";
-}
-
-const char* CCodeGenerator::ConvertType(const C2::Type* type) {
-    switch (type->getKind()) {
-    case Type::BUILTIN:
-        {
-            // TODO make u8/16/32 unsigned
-            switch (type->getBuiltinType()) {
-            case TYPE_U8:       return "unsigned char";
-            case TYPE_U16:      return "unsigned short";
-            case TYPE_U32:      return "unsigned int";
-            case TYPE_U64:      return "unsigned long long";
-            case TYPE_I8:       return "char";
-            case TYPE_I16:      return "short";
-            case TYPE_I32:      return "int";
-            case TYPE_I64:      return "long long";
-            case TYPE_INT:      return "const char*";
-            case TYPE_STRING:
-                return 0;  // TODO remove this type?
-            case TYPE_F32:      return "float";
-            case TYPE_F64:      return "double";
-            case TYPE_BOOL:     return "int";
-            case TYPE_VOID:     return "void";
-            }
-        }
-        break;
-    case Type::USER:
-    case Type::STRUCT:
-    case Type::UNION:
-    case Type::ENUM:
-    case Type::FUNC:
-        assert(0 && "TODO");
-        break;
-    case Type::POINTER:
-        {
-            //llvm::Type* tt = ConvertType(type->getRefType());
-            //return tt->getPointerTo();
-            break;
-        }
-    case Type::ARRAY:
-        {
-            //llvm::Type* tt = ConvertType(type->getRefType());
-            //return tt->getPointerTo();
-            break;
-        }
-    }
-
-    return 0;
 }
 
 void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
@@ -222,7 +171,7 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
             InitListExpr* I = cast<InitListExpr>(E);
             output << "{ ";
             ExprList& values = I->getValues();
-            for (unsigned int i=0; i<values.size(); i++) {
+            for (unsigned i=0; i<values.size(); i++) {
                 if (i == 0 && values[0]->getKind() == EXPR_INITLIST) output << '\n';
                 EmitExpr(values[i], output);
                 if (i != values.size() -1) output << ", ";
@@ -368,7 +317,7 @@ void CCodeGenerator::EmitCallExpr(Expr* E, StringBuilder& output) {
     CallExpr* C = cast<CallExpr>(E);
     EmitExpr(C->getFn(), output);
     output << '(';
-    for (unsigned int i=0; i<C->numArgs(); i++) {
+    for (unsigned i=0; i<C->numArgs(); i++) {
         if (i != 0) output << ", ";
         EmitExpr(C->getArg(i), output);
     }
@@ -419,7 +368,7 @@ void CCodeGenerator::EmitFunctionArgs(FunctionDecl* F, StringBuilder& output) {
     output << '(';
     int count = F->numArgs();
     if (F->isVariadic()) count++;
-    for (unsigned int i=0; i<F->numArgs(); i++) {
+    for (unsigned i=0; i<F->numArgs(); i++) {
         VarDecl* A = F->getArg(i);
         EmitVarDecl(A, output, 0);
         if (count != 1) output << ", ";
@@ -491,7 +440,7 @@ void CCodeGenerator::EmitStructType(StructTypeDecl* S, StringBuilder& out, unsig
     if (S->isGlobal()) out << "typedef ";
     out << (S->isStruct() ? "struct " : "union ");
     out << "{\n";
-    for (unsigned i=0;i<S->getNumMembers(); i++) {
+    for (unsigned i=0;i<S->numMembers(); i++) {
         Decl* member = S->getMember(i);
         if (isa<VarDecl>(member)) {
             EmitVarDecl(cast<VarDecl>(member), out, indent + INDENT);
@@ -509,6 +458,22 @@ void CCodeGenerator::EmitStructType(StructTypeDecl* S, StringBuilder& out, unsig
     if (S->isGlobal()) out << '\n';
 }
 
+void CCodeGenerator::EmitEnumType(EnumTypeDecl* E, StringBuilder& output) {
+    LOG_FUNC
+    output << "typedef enum {\n";
+    for (unsigned i=0; i<E->numConstants(); i++) {
+        EnumConstantDecl* C = E->getConstant(i);
+        output.indent(INDENT);
+        addPrefix(*curpkg, C->getName(), output);
+        if (C->getInitValue()) {
+            output << " = ";
+            EmitExpr(C->getInitValue(), output);
+        }
+        output << ",\n";
+    }
+    output << "} " << E->getName() << ";\n\n";
+}
+
 // output: typedef void (*name)(args);
 void CCodeGenerator::EmitFunctionType(FunctionTypeDecl* FTD, StringBuilder& output) {
     LOG_FUNC
@@ -521,7 +486,7 @@ void CCodeGenerator::EmitFunctionType(FunctionTypeDecl* FTD, StringBuilder& outp
     output << ";\n\n";
 }
 
-void CCodeGenerator::EmitUse(Decl* D) {
+void CCodeGenerator::EmitUse(UseDecl* D) {
     LOG_FUNC
     typedef Pkgs::const_iterator PkgsConstIter;
     PkgsConstIter iter = pkgs.find(D->getName());
@@ -633,7 +598,7 @@ void CCodeGenerator::EmitCompoundStmt(CompoundStmt* C, unsigned indent, bool sta
     if (startOnNewLine) cbuf.indent(indent);
     cbuf << "{\n";
     const StmtList& Stmts = C->getStmts();
-    for (unsigned int i=0; i<Stmts.size(); i++) {
+    for (unsigned i=0; i<Stmts.size(); i++) {
         EmitStmt(Stmts[i], indent + INDENT);
     }
     cbuf.indent(indent);
@@ -737,7 +702,7 @@ void CCodeGenerator::EmitSwitchStmt(Stmt* S, unsigned indent) {
     cbuf << ") {\n";
 
     const StmtList& Cases = SW->getCases();
-    for (unsigned int i=0; i<Cases.size(); i++) {
+    for (unsigned i=0; i<Cases.size(); i++) {
         Stmt* Case = Cases[i];
         switch (Case->getKind()) {
         case STMT_CASE:
@@ -748,7 +713,7 @@ void CCodeGenerator::EmitSwitchStmt(Stmt* S, unsigned indent) {
                 EmitExpr(C->getCond(), cbuf);
                 cbuf << ":\n";
                 const StmtList& Stmts = C->getStmts();
-                for (unsigned int i=0; i<Stmts.size(); i++) {
+                for (unsigned i=0; i<Stmts.size(); i++) {
                     EmitStmt(Stmts[i], indent + INDENT + INDENT);
                 }
                 break;
@@ -759,7 +724,7 @@ void CCodeGenerator::EmitSwitchStmt(Stmt* S, unsigned indent) {
                 cbuf.indent(indent + INDENT);
                 cbuf << "default:\n";
                 const StmtList& Stmts = D->getStmts();
-                for (unsigned int i=0; i<Stmts.size(); i++) {
+                for (unsigned i=0; i<Stmts.size(); i++) {
                     EmitStmt(Stmts[i], indent + INDENT + INDENT);
                 }
                 break;
@@ -783,52 +748,66 @@ void CCodeGenerator::EmitFunctionProto(FunctionDecl* F, StringBuilder& output) {
     EmitFunctionArgs(F, output);
 }
 
+static const char* builtin2cname[] = {
+    "char",             // Int8
+    "short",            // Int16
+    "int",              // Int32
+    "long long",        // Int64
+    "unsigned char",    // UInt8
+    "unsigned short",   // UInt16
+    "unsigned int",     // UInt32
+    "unsigned long long",// UInt64
+    "float",            // Float32
+    "double",           // Float64
+    "int",              // Bool
+    "void",             // Void
+};
+
 void CCodeGenerator::EmitTypePreName(QualType type, StringBuilder& output) {
     LOG_FUNC
     if (type.isConstQualified()) output << "const ";
     const Type* T = type.getTypePtr();
-    switch (T->getKind()) {
-    case Type::BUILTIN:
-        output << T->getCName();
-        break;
-    case Type::STRUCT:
-    case Type::UNION:
-        assert(0);
-        break;
-    case Type::ENUM:
-        output << "enum {\n";
-        if (T->getConstants()) {
-            ConstantList* clist = T->getConstants();
-            for (unsigned i=0; i<clist->size(); i++) {
-                EnumConstantDecl* C = (*clist)[i];
-                output.indent(INDENT);
-                addPrefix(*curpkg, C->getName(), output);
-                if (C->getInitValue()) {
-                    output << " = ";
-                    EmitExpr(C->getInitValue(), output);
-                }
-                output << ",\n";
-            }
+    switch (T->getTypeClass()) {
+    case TC_BUILTIN:
+        {
+            // TODO handle Qualifiers
+            const BuiltinType* BI = cast<BuiltinType>(T);
+            output << builtin2cname[BI->getKind()];
+            break;
         }
-        output << '}';
-        return;
-    case Type::FUNC:
-        assert(0 && "TODO");
-        break;
-    case Type::USER:
-        EmitExpr(T->getUserType(), output);
-        return;
-        //assert(0 && "TODO");
-        //userType->generateC(0, buffer);
-        break;
-    case Type::POINTER:
+    case TC_POINTER:
         // TODO handle Qualifiers
-        EmitTypePreName(T->getRefType(), output);
+        EmitTypePreName(cast<PointerType>(T)->getPointeeType(), output);
         output << '*';
         break;
-    case Type::ARRAY:
+    case TC_ARRAY:
         // TODO handle Qualifiers
-        EmitTypePreName(T->getRefType(), output);
+        EmitTypePreName(cast<ArrayType>(T)->getElementType(), output);
+        break;
+    case TC_UNRESOLVED:
+        // TODO handle Qualifiers?
+        {
+            const UnresolvedType* U = cast<UnresolvedType>(T);
+            EmitExpr(U->getExpr(), output);
+        }
+        break;
+    case TC_ALIAS:
+        EmitTypePreName(cast<AliasType>(T)->getRefType(), output);
+        break;
+    case TC_STRUCT:
+        {
+            const StructType* ST = cast<StructType>(T);
+            output << ST->getDecl()->getName();
+            break;
+        }
+    case TC_ENUM:
+        {
+            const EnumType* ET = cast<EnumType>(T);
+            output << ET->getDecl()->getName();
+            break;
+        }
+    case TC_FUNCTION:
+        output << cast<FunctionType>(T)->getDecl()->getName();
         break;
     }
 }
@@ -836,11 +815,11 @@ void CCodeGenerator::EmitTypePreName(QualType type, StringBuilder& output) {
 void CCodeGenerator::EmitTypePostName(QualType type, StringBuilder& output) {
     LOG_FUNC
     if (type.isArrayType()) {
-        const Type* T = type.getTypePtr();
-        EmitTypePostName(T->getRefType(), output);
+        const ArrayType* A = cast<ArrayType>(type);
+        EmitTypePostName(A->getElementType(), output);
         output << '[';
-        if (T->getArrayExpr()) {
-            EmitExpr(T->getArrayExpr(), output);
+        if (A->getSize()) {
+            EmitExpr(A->getSize(), output);
         }
         output << ']';
     }

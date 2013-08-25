@@ -58,7 +58,7 @@ type S2 struct {
 
 type Data union {
     int bla;
-    string text;
+    const char* text;
     u32 number;
 }
 
@@ -67,15 +67,15 @@ type Enum1 enum u8 {
     VAR1, VAR2, VAR3,
 }
 
-type Enum2 enum {
+type Enum2 enum i32 {
     VARB1 = 1, VARB2 = 5, VARB3 = 10
 }
 
-type Enum3 enum {
+type Enum3 enum u32 {
     VARC1 = 1, VARC2 = 5,
 }
 
-type Enum4 enum {
+type Enum4 enum u32 {
     VAR1D
     , VARD2 = 10
     , VARD3,

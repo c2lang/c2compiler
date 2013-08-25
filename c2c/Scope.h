@@ -30,7 +30,6 @@ class DiagnosticsEngine;
 namespace C2 {
 
 class Decl;
-class Expr;
 
 class ScopeResult {
 public:
@@ -67,9 +66,12 @@ public:
     int checkType(QualType type, bool used_public = false);
     bool isExternal(const Package* pkg) const;
 
+    unsigned resolveType(const UnresolvedType* T, bool used_public = false);
+
     void dump() const;
 private:
-    int checkUserType(Type* type, Expr* id, bool used_public);
+    // TODO make unsigned
+    int checkUnresolvedType(const UnresolvedType* type, bool used_public);
 
     const std::string pkgName;
 
@@ -126,7 +128,7 @@ public:
     };
     Scope();
     void InitOnce(FileScope& globals_, Scope* parent_);
-    void Init(unsigned int flags_);
+    void Init(unsigned flags_);
 
     ScopeResult findSymbol(const std::string& name) const;
     void addDecl(Decl* d);
@@ -139,7 +141,7 @@ private:
     // set once
     FileScope* globals;
     Scope* parent;
-    unsigned int Flags;
+    unsigned Flags;
 
     // local decls (in scope), no ownership
     typedef std::vector<Decl*> Decls;

@@ -13,7 +13,7 @@ func int add(int a, int b) {
 
 func void doThing() {}
 
-func void printf(int argc, const string* text, ...) {}
+func void printf(int argc, const char* text, ...) {}
 
 type Coor int;  // temp until we support multi-package
 

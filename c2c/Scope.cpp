@@ -72,6 +72,10 @@ const Package* FileScope::findAnyPackage(const std::string& name) const {
     return iter->second;
 }
 
+unsigned FileScope::resolveType(const UnresolvedType* T, bool used_public) {
+    return checkUnresolvedType(T, used_public);
+}
+
 void FileScope::dump() const {
     fprintf(stderr, "used packages:\n");
     for (PackagesConstIter iter = packages.begin(); iter != packages.end(); ++iter) {
@@ -83,34 +87,30 @@ int FileScope::checkType(QualType type, bool used_public) {
     assert(type.isValid());
 
     const Type* T = type.getTypePtr();
-    switch (T->getKind()) {
-    case Type::BUILTIN:
+    switch (T->getTypeClass()) {
+    case TC_BUILTIN:
         return 1;
-    case Type::STRUCT:
-    case Type::UNION:
-        assert(0);
-        break;
-    case Type::ENUM:
-        {
-            QualType qt = T->getRefType();
-            if (qt.isValid()) return checkType(qt, used_public);
-            return 1;
-        }
-    case Type::USER:
-        // TEMP CONST CAST
-        return checkUserType((Type*)T, type->getBaseUserType(), used_public);
-    case Type::FUNC:
-        // TODO
+    case TC_POINTER:
+        return checkType(cast<PointerType>(T)->getPointeeType(), used_public);
+    case TC_ARRAY:
+        return checkType(cast<ArrayType>(T)->getElementType(), used_public);
+    case TC_UNRESOLVED:
+        return checkUnresolvedType(cast<UnresolvedType>(T), used_public);
+    case TC_ALIAS:
+        // NOTE: TC_Alias will be removed
         assert(0 && "TODO");
-        break;
-    case Type::POINTER:
-    case Type::ARRAY:
-        return checkType(T->getRefType(), used_public);
+        return 0;
+    case TC_STRUCT:
+    case TC_ENUM:
+    case TC_FUNCTION:
+        assert(0);  // cannot occur (wil be UnresolvedType)
+        return 0;
     }
 }
 
-int FileScope::checkUserType(Type* type, Expr* id, bool used_public) {
+int FileScope::checkUnresolvedType(const UnresolvedType* type, bool used_public) {
     // TODO refactor
+    Expr* id = type->getExpr();
     const Package* pkg = 0;
     switch (id->getKind()) {
     case EXPR_IDENTIFIER:   // unqualified
@@ -143,7 +143,7 @@ int FileScope::checkUserType(Type* type, Expr* id, bool used_public) {
             assert(res.pkg && "pkg should be set");
             I->setPackage(res.pkg);
             I->setDecl(res.decl);
-            type->setRefType(td->getType());
+            type->setMatch(td);
         }
         break;
     case EXPR_MEMBER:   // fully qualified
@@ -197,7 +197,7 @@ int FileScope::checkUserType(Type* type, Expr* id, bool used_public) {
             }
             // ok
             member_id->setPackage(pkg);
-            type->setRefType(td->getType());
+            type->setMatch(td);
         }
         break;
     default:
@@ -291,7 +291,7 @@ void Scope::InitOnce(FileScope& globals_, Scope* parent_) {
     parent = parent_;
 }
 
-void Scope::Init(unsigned int flags_) {
+void Scope::Init(unsigned flags_) {
     Flags = flags_;
 
     if (parent) {

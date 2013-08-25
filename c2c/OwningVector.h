@@ -41,11 +41,11 @@ public:
     }
     ~OwningVector () {
         if (m_data) {
-            for (unsigned int i=0; i<m_size; i++) delete m_data[i];
+            for (unsigned i=0; i<m_size; i++) delete m_data[i];
             free(m_data);
         }
     }
-    T* operator[] (unsigned int index) const {
+    T* operator[] (unsigned index) const {
         assert(index < m_size);
         return m_data[index];
     }
@@ -64,10 +64,10 @@ public:
         m_size++;
     }
     bool empty() const { return m_size == 0; }
-    unsigned int size() const { return m_size; }
+    unsigned size() const { return m_size; }
 private:
-    unsigned int m_capacity;
-    unsigned int m_size;
+    unsigned m_capacity;
+    unsigned m_size;
     T** m_data;
 };
 

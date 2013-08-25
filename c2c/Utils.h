@@ -19,7 +19,7 @@
 #include <sys/types.h>
 #include <string>
 
-#define INDENT 2
+#define INDENT 3
 
 namespace C2 {
 

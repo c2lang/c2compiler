@@ -44,6 +44,7 @@ class Stmt;
 class CallExpr;
 class FunctionDecl;
 class StructTypeDecl;
+class EnumTypeDecl;
 
 typedef clang::ActionResult<C2::Expr*> ExprResult;
 typedef clang::ActionResult<C2::Stmt*> StmtResult;
@@ -121,7 +122,7 @@ private:
     // Type def
     void ParseStructType(bool is_struct, const char* id, SourceLocation idLoc, bool is_public);
     void ParseStructBlock(StructTypeDecl* S);
-    ExprResult ParseEnumType(const char* id);
+    void ParseEnumType(const char* id, SourceLocation idLoc, bool is_public);
     void ParseFuncType(IdentifierInfo* id, SourceLocation& idLoc, bool is_public);
 
     // function def
@@ -222,7 +223,7 @@ private:
     bool isTypeSpec();
     bool isDeclaration();
     int SkipArray(int lookahead);
-    unsigned int ParseOptionalTypeQualifier();
+    unsigned ParseOptionalTypeQualifier();
     bool ParseOptionalAccessSpecifier();
 
     const Token& getCurToken() const { return Tok; }

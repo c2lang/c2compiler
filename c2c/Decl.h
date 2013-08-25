@@ -43,6 +43,7 @@ enum DeclKind {
     DECL_ENUMVALUE,
     DECL_TYPE,
     DECL_STRUCTTYPE,
+    DECL_ENUMTYPE,
     DECL_FUNCTIONTYPE,
     DECL_ARRAYVALUE,
     DECL_USE
@@ -53,7 +54,7 @@ public:
     Decl(DeclKind k, const std::string& name_, SourceLocation loc_, bool is_public);
     virtual ~Decl();
 
-    virtual void print(StringBuilder& buffer, unsigned indent) = 0;
+    virtual void print(StringBuilder& buffer, unsigned indent) const = 0;
 
     const std::string& getName() const { return name; }
     SourceLocation getLocation() const { return loc; }
@@ -62,7 +63,7 @@ public:
     bool isPublic() const { return DeclBits.DeclIsPublic; }
 
     // for debugging
-    void dump();
+    void dump() const;
 protected:
     const std::string name;
     SourceLocation loc;
@@ -96,7 +97,7 @@ public:
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_VAR;
     }
-    virtual void print(StringBuilder& buffer, unsigned indent);
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
 
     QualType getType() const { return type; }
     Expr* getInitValue() const { return initValue; }
@@ -124,7 +125,7 @@ public:
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_FUNC;
     }
-    virtual void print(StringBuilder& buffer, unsigned indent);
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
 
     void setBody(CompoundStmt* body_) {
         assert(body == 0);
@@ -169,7 +170,7 @@ public:
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_ENUMVALUE;
     }
-    virtual void print(StringBuilder& buffer, unsigned indent);
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
 
     QualType getType() const { return type; }
     Expr* getInitValue() const { return InitVal; } // static value, NOT incremental values
@@ -187,18 +188,26 @@ public:
     TypeDecl(const std::string& name_, SourceLocation loc_, QualType type_, bool is_public);
     virtual ~TypeDecl();
     static bool classof(const Decl* D) {
-        return (D->getKind() == DECL_TYPE ||
-                D->getKind() == DECL_STRUCTTYPE ||
-                D->getKind() == DECL_FUNCTIONTYPE);
+        switch (D->getKind()) {
+        case DECL_TYPE:
+        case DECL_STRUCTTYPE:
+        case DECL_ENUMTYPE:
+        case DECL_FUNCTIONTYPE:
+            return true;
+        default:
+            return false;
+        }
     }
-    virtual void print(StringBuilder& buffer, unsigned indent);
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
 
-    QualType& getType() { return type; }
+    QualType getType() const { return type; }
+    void setType(QualType qt) { type = qt; }
+    // TODO dont return QualType&, but have getType()/setType() function
 protected:
     // for subtypes
     TypeDecl(DeclKind kind, const std::string& name_, SourceLocation loc_, QualType type_, bool is_public);
 
-    QualType type;
+    mutable QualType type;
 };
 
 
@@ -209,10 +218,10 @@ public:
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_STRUCTTYPE;
     }
-    virtual void print(StringBuilder& buffer, unsigned indent);
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
 
     void addMember(Decl* D);
-    unsigned getNumMembers() const { return members.size(); }
+    unsigned numMembers() const { return members.size(); }
     Decl* getMember(unsigned index) const { return members[index]; }
     Decl* find(const std::string& name_) const {
         for (unsigned i=0; i<members.size(); i++) {
@@ -229,6 +238,30 @@ private:
     Members members;
 };
 
+class EnumTypeDecl : public TypeDecl {
+public:
+    EnumTypeDecl(const std::string& name_, SourceLocation loc_,
+            QualType implType_, QualType type_, bool is_public)
+        : TypeDecl(DECL_ENUMTYPE, name_, loc_, type_, is_public)
+        , implType(implType_)
+    {}
+    static bool classof(const Decl* D) {
+        return D->getKind() == DECL_ENUMTYPE;
+    }
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
+
+    void addConstant(EnumConstantDecl* c) { constants.push_back(c); }
+    unsigned numConstants() const { return constants.size(); }
+    EnumConstantDecl* getConstant(unsigned index) const { return constants[index]; }
+
+    QualType getImplType() const { return implType; }
+private:
+    typedef OwningVector<EnumConstantDecl> Constants;
+    Constants constants;
+
+    QualType implType;
+};
+
 
 class FunctionTypeDecl : public TypeDecl {
 public:
@@ -237,7 +270,7 @@ public:
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_FUNCTIONTYPE;
     }
-    virtual void print(StringBuilder& buffer, unsigned indent);
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
 
     FunctionDecl* getDecl() const { return func; }
 private:
@@ -252,7 +285,7 @@ public:
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_ARRAYVALUE;
     }
-    virtual void print(StringBuilder& buffer, unsigned indent);
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
 
     Expr* getExpr() const { return value; }
 private:
@@ -266,7 +299,7 @@ public:
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_USE;
     }
-    virtual void print(StringBuilder& buffer, unsigned indent);
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
 
     const std::string& getAlias() const { return alias; }
     virtual clang::SourceLocation getAliasLocation() const { return aliasLoc; }

@@ -22,8 +22,9 @@ using namespace C2;
 
 static std::string empty = "";
 
-Package::Package(const std::string& name_, bool isCLib_)
+Package::Package(const std::string& name_, bool isExternal_, bool isCLib_)
     : name(name_)
+    , is_External(isExternal_)
     , isCLib(isCLib_)
 {}
 

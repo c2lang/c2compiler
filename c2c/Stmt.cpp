@@ -180,7 +180,7 @@ void SwitchStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer << "[SwitchStmt]\n";
     Cond->print(buffer, indent + INDENT);
-    for (unsigned int i=0; i<Cases.size(); i++) {
+    for (unsigned i=0; i<Cases.size(); i++) {
         Cases[i]->print(buffer, indent + INDENT);
     }
 }
@@ -201,7 +201,7 @@ void CaseStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer << "[CaseStmt]\n";
     Cond->print(buffer, indent + INDENT);
-    for (unsigned int i=0; i<Stmts.size(); i++) {
+    for (unsigned i=0; i<Stmts.size(); i++) {
         Stmts[i]->print(buffer, indent + INDENT);
     }
 }
@@ -218,7 +218,7 @@ DefaultStmt::~DefaultStmt() {}
 void DefaultStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer << "[DefaultStmt]\n";
-    for (unsigned int i=0; i<Stmts.size(); i++) {
+    for (unsigned i=0; i<Stmts.size(); i++) {
         Stmts[i]->print(buffer, indent + INDENT);
     }
 }
@@ -292,7 +292,7 @@ CompoundStmt::~CompoundStmt() {}
 void CompoundStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer << "[CompoundStmt]\n";
-    for (unsigned int i=0; i<Stmts.size(); i++) {
+    for (unsigned i=0; i<Stmts.size(); i++) {
         Stmts[i]->print(buffer, indent + INDENT);
     }
 }

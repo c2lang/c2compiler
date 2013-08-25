@@ -13,10 +13,9 @@ OBJS = \
     CodeGenModule.o \
     Decl.o \
     Expr.o \
+    FileAnalyser.o \
     FileMap.o \
     FunctionAnalyser.o \
-    ScopeAnalyser.o \
-    GlobalVarAnalyser.o \
     Package.o \
     Recipe.o \
     RecipeReader.o \

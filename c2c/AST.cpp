@@ -24,7 +24,6 @@
 #include "Expr.h"
 #include "StringBuilder.h"
 #include "color.h"
-#include "ASTVisitor.h"
 #include "AST.h"
 
 //#define SEMA_DEBUG
@@ -33,27 +32,50 @@
 
 using namespace C2;
 
-AST::~AST() {
-    for (unsigned int i=0; i<decls.size(); i++) {
-        delete decls[i];
-    }
-}
-
-void AST::visitAST(ASTVisitor& visitor) {
-    for (unsigned int i=0; i<decls.size(); i++) {
-        bool stop = visitor.handle(decls[i]);
-        if (stop) break;
-    }
-}
-
-void AST::print(const std::string& filename) const {
+void AST::print() const {
     StringBuilder buffer;
     buffer << "---- AST " << "(pkg=" << pkgName << ") " << filename << " ----\n";
-    for (DeclListConstIter iter = decls.begin(); iter != decls.end(); ++iter) {
-        (*iter)->print(buffer, 0);
+    // UseDecls
+    for (unsigned i=0; i<useList.size(); i++) {
+        useList[i]->print(buffer, 0);
+        buffer << '\n';
+    }
+    // TypeDecls
+    for (unsigned i=0; i<typeList.size(); i++) {
+        typeList[i]->print(buffer, 0);
+        buffer << '\n';
+    }
+    // VarDecls
+    for (unsigned i=0; i<varList.size(); i++) {
+        varList[i]->print(buffer, 0);
+        buffer << '\n';
+    }
+    // ArrayValueDecls
+    for (unsigned i=0; i<arrayValues.size(); i++) {
+        arrayValues[i]->print(buffer, 0);
+        buffer << '\n';
+    }
+    // FunctionDecls
+    for (unsigned i=0; i<functionList.size(); i++) {
+        functionList[i]->print(buffer, 0);
         buffer << '\n';
     }
     printf("%s", (const char*)buffer);
+}
+
+void AST::addType(TypeDecl* d) {
+    typeList.push_back(d);
+    addSymbol(d);
+}
+
+void AST::addVar(VarDecl* d) {
+    varList.push_back(d);
+    addSymbol(d);
+}
+
+void AST::addFunction(FunctionDecl* d) {
+    functionList.push_back(d);
+    addSymbol(d);
 }
 
 void AST::addSymbol(Decl* d) {
