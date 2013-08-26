@@ -46,11 +46,7 @@ public:
                          TypeContext& tc,
                          clang::DiagnosticsEngine& Diags_);
 
-    void checkFunction(FunctionDecl* F);
-    void checkVarDecl(VarDecl* VD);
-
-    // TODO getErrors is weird with new API
-    unsigned getErrors() const { return errors; }
+    unsigned check(FunctionDecl* F);
 private:
     void EnterScope(unsigned flags);
     void ExitScope();
@@ -107,8 +103,9 @@ private:
     void checkAssignment(Expr* assignee, QualType TLeft);
 
     static QualType resolveUserType(QualType T);
-    Type* resolveCanonicalType(Type* T);
     QualType Decl2Type(Decl* decl);
+    unsigned checkType(QualType Q, bool used_public);
+    QualType resolveCanonical(QualType Q, bool set);
 
     FileScope& globalScope;
     TypeContext& typeContext;
@@ -118,7 +115,7 @@ private:
     clang::DiagnosticsEngine& Diags;
     unsigned errors;
 
-    FunctionDecl* func;     // current function
+    FunctionDecl* Function;     // current function
 
     unsigned constDiagID;
     bool inConstExpr;

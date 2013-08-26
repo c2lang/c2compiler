@@ -23,7 +23,6 @@
 #include "Scope.h"
 #include "color.h"
 #include "AST.h"
-#include "FunctionAnalyser.h"
 
 using namespace C2;
 using namespace clang;
@@ -43,6 +42,7 @@ FileAnalyser::FileAnalyser(const Pkgs& pkgs, clang::DiagnosticsEngine& Diags_,
     , typeContext(typeContext_)
     , globals(new FileScope(ast_.getPkgName(), pkgs, Diags_))
     , Diags(Diags_)
+    , functionAnalyser(*globals, typeContext_, Diags_)
     , verbose(verbose_)
 {}
 
@@ -198,7 +198,7 @@ unsigned FileAnalyser::checkFunctionBodies() {
     if (verbose) printf(COL_VERBOSE"%s %s"ANSI_NORMAL"\n", __func__, ast.getFileName().c_str());
     unsigned errors = 0;
     for (unsigned i=0; i<ast.numFunctions(); i++) {
-        errors += checkFunctionBody(ast.getFunction(i));
+        errors += functionAnalyser.check(ast.getFunction(i));
     }
     return errors;
 }
@@ -373,14 +373,6 @@ unsigned FileAnalyser::resolveFunctionDecl(FunctionDecl* D) {
     return errors;
 }
 
-unsigned FileAnalyser::checkFunctionBody(FunctionDecl* D) {
-    LOG_FUNC
-    // FunctionAnalyser functionAnalyser(*globals, typeContext, Diags);
-    // Q: keep FunctionAnalyser or make new one for every function?
-#warning "TODO"
-    return 0;
-}
-
 unsigned FileAnalyser::checkArrayValue(ArrayValueDecl* D) {
     LOG_FUNC
 #warning "TODO"
@@ -485,33 +477,6 @@ void FileAnalyser::handle(Decl* decl) {
             if (!is_public && func->getName() == "main") {
                 Diags.Report(decl->getLocation(), diag::err_main_non_public);
             }
-        }
-        break;
-    case DECL_VAR:
-        {
-            VarDecl* vd = cast<VarDecl>(decl);
-            checkType(vd->getType(), is_public);
-        }
-        break;
-    case DECL_ENUMVALUE:
-        assert(0 && "TODO");
-        break;
-    case DECL_TYPE:
-        {
-            TypeDecl* td = cast<TypeDecl>(decl);
-            checkType(td->getType(), is_public);
-        }
-        break;
-    case DECL_STRUCTTYPE:
-        checkStructType(cast<StructTypeDecl>(decl), is_public);
-        break;
-    case DECL_ENUMTYPE:
-        checkEnumType(cast<EnumTypeDecl>(decl));
-        break;
-    case DECL_FUNCTIONTYPE:
-        {
-            FunctionTypeDecl* FTD = cast<FunctionTypeDecl>(decl);
-            handle(FTD->getDecl());
         }
         break;
     case DECL_ARRAYVALUE:

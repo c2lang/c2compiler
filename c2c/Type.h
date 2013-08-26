@@ -388,11 +388,6 @@ inline bool Type::isArrayType() const {
     return isa<ArrayType>(canonicalType);
 }
 
-inline bool Type::isUnresolvedType() const {
-    assert(canonicalType.isValid());
-    return isa<UnresolvedType>(canonicalType);
-}
-
 inline bool Type::isAliasType() const {
     assert(canonicalType.isValid());
     return isa<AliasType>(canonicalType);

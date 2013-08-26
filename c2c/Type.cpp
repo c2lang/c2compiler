@@ -40,7 +40,6 @@ C2::Type* QualType::getTypePtr() const {
 bool QualType::isBuiltinType() const { return getTypePtr()->isBuiltinType(); }
 bool QualType::isPointerType() const { return getTypePtr()->isPointerType(); }
 bool QualType::isArrayType() const { return getTypePtr()->isArrayType(); }
-bool QualType::isUnresolvedType() const { return getTypePtr()->isUnresolvedType(); }
 bool QualType::isAliasType() const { return getTypePtr()->isAliasType(); }
 bool QualType::isStructType() const { return getTypePtr()->isStructType(); }
 bool QualType::isEnumType() const { return getTypePtr()->isEnumType(); }

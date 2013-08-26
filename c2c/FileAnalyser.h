@@ -18,6 +18,7 @@
 
 #include "Type.h"
 #include "Package.h"
+#include "FunctionAnalyser.h"
 
 namespace clang {
 class DiagnosticsEngine;
@@ -56,7 +57,6 @@ private:
     QualType resolveCanonical(QualType Q, bool set);
     unsigned resolveVarDecl(VarDecl* D);
     unsigned resolveFunctionDecl(FunctionDecl* D);
-    unsigned checkFunctionBody(FunctionDecl* D);
     unsigned checkArrayValue(ArrayValueDecl* D);
 
     unsigned checkInitValue(Expr* initVal, QualType expected);
@@ -66,6 +66,7 @@ private:
     TypeContext& typeContext;
     FileScope* globals;
     clang::DiagnosticsEngine& Diags;
+    FunctionAnalyser functionAnalyser;
     bool verbose;
 
     FileAnalyser(const FileAnalyser&);
