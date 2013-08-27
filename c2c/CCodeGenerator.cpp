@@ -85,43 +85,37 @@ void CCodeGenerator::generate() {
     cbuf << "#include \"" << hfilename << "\"\n";
     cbuf << '\n';
 
-    assert(0 && "TODO");
-#if 0
+    // generate types
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
         AST* ast = iter->ast;
         curpkg = &ast->getPkgName();
-        for (unsigned i=0; i<ast->getNumDecls(); i++) {
-            Decl* D = ast->getDecl(i);
-            switch (D->getKind()) {
-            case DECL_FUNC:
-                EmitFunction(cast<FunctionDecl>(D));
-                break;
-            case DECL_VAR:
-                EmitVariable(D);
-                break;
-            case DECL_ENUMVALUE:
-                assert(0 && "TODO");
-                break;
-            case DECL_TYPE:
-                EmitType(D);
-                break;
-            case DECL_STRUCTTYPE:
-                EmitStructType(cast<StructTypeDecl>(D), D->isPublic() ? hbuf : cbuf, 0);
-                break;
-            case DECL_ENUMTYPE:
-                EmitEnumType(cast<EnumTypeDecl>(D), D->isPublic() ? hbuf : cbuf);
-                break;
-            case DECL_FUNCTIONTYPE:
-                EmitFunctionType(cast<FunctionTypeDecl>(D), D->isPublic() ? hbuf : cbuf);
-                break;
-            case DECL_ARRAYVALUE:
-                // TODO
-                break;
-            }
+        for (unsigned i=0; i<ast->numTypes(); i++) {
+            EmitTypeDecl(ast->getType(i));
         }
         curpkg = 0;
     }
-#endif
+
+    // generate variables
+    for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
+        AST* ast = iter->ast;
+        curpkg = &ast->getPkgName();
+        for (unsigned i=0; i<ast->numVars(); i++) {
+            EmitVariable(ast->getVar(i));
+        }
+        curpkg = 0;
+    }
+    // TODO Arrayvalues
+
+    // generate functions
+    for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
+        AST* ast = iter->ast;
+        curpkg = &ast->getPkgName();
+        for (unsigned i=0; i<ast->numFunctions(); i++) {
+            EmitFunction(ast->getFunction(i));
+        }
+        curpkg = 0;
+    }
+
     hbuf << "#endif\n";
 }
 
@@ -401,9 +395,8 @@ void CCodeGenerator::EmitFunctionArgs(FunctionDecl* F, StringBuilder& output) {
     output << ')';
 }
 
-void CCodeGenerator::EmitVariable(Decl* D) {
+void CCodeGenerator::EmitVariable(VarDecl* V) {
     LOG_FUNC
-    VarDecl* V = cast<VarDecl>(D);
     if (V->isPublic() && mode != SINGLE_FILE) {
         // TODO type
         hbuf << "extern ";
@@ -442,19 +435,41 @@ void CCodeGenerator::EmitVariable(Decl* D) {
     cbuf << '\n';
 }
 
-void CCodeGenerator::EmitType(Decl* D) {
+void CCodeGenerator::EmitTypeDecl(TypeDecl* T) {
     LOG_FUNC
-    assert(!isa<StructTypeDecl>(D));
 
-    TypeDecl* T = cast<TypeDecl>(D);
     StringBuilder* out = &cbuf;
-    if (D->isPublic()) out = &hbuf;
-    *out << "typedef ";
-    EmitTypePreName(T->getType(), *out);
-    EmitTypePostName(T->getType(), *out);
-    *out << ' ';
-    addPrefix(*curpkg, T->getName(), *out);
-    *out << ";\n\n";
+    if (T->isPublic()) out = &hbuf;
+    switch (T->getKind()) {
+    case DECL_FUNC:
+    case DECL_VAR:
+    case DECL_ENUMVALUE:
+        assert(0);
+        break;
+    case DECL_TYPE:
+        // TODO
+        assert(0 && "TODO");
+        *out << "typedef ";
+        //EmitTypePreName(T->getType(), *out);
+        //EmitTypePostName(T->getType(), *out);
+        *out << ' ';
+        addPrefix(*curpkg, T->getName(), *out);
+        *out << ";\n\n";
+        break;
+    case DECL_STRUCTTYPE:
+        EmitStructType(cast<StructTypeDecl>(T), T->isPublic() ? hbuf : cbuf, 0);
+        return;
+    case DECL_ENUMTYPE:
+        EmitEnumType(cast<EnumTypeDecl>(T), T->isPublic() ? hbuf : cbuf);
+        return;
+    case DECL_FUNCTIONTYPE:
+        EmitFunctionType(cast<FunctionTypeDecl>(T), T->isPublic() ? hbuf : cbuf);
+        return;
+    case DECL_ARRAYVALUE:
+    case DECL_USE:
+        assert(0);
+        break;
+    }
 }
 
 void CCodeGenerator::EmitStructType(StructTypeDecl* S, StringBuilder& out, unsigned indent) {

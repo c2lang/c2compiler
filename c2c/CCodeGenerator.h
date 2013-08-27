@@ -29,6 +29,7 @@ class Type;
 class Decl;
 class VarDecl;
 class UseDecl;
+class TypeDecl;
 class FunctionDecl;
 class StructTypeDecl;
 class FunctionTypeDecl;
@@ -54,8 +55,8 @@ public:
 private:
     void EmitFunction(FunctionDecl* F);
     void EmitFunctionArgs(FunctionDecl* F, StringBuilder& output);
-    void EmitVariable(Decl* D);
-    void EmitType(Decl* D);
+    void EmitVariable(VarDecl* D);
+    void EmitTypeDecl(TypeDecl* D);
     void EmitUse(UseDecl* D);
     void EmitStructType(StructTypeDecl* S, StringBuilder& output, unsigned indent);
     void EmitEnumType(EnumTypeDecl* E, StringBuilder& output);

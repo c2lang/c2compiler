@@ -42,10 +42,11 @@ void ScopeResult::dump() const {
 }
 
 
-FileScope::FileScope(const std::string& name_, const Pkgs& pkgs_, clang::DiagnosticsEngine& Diags_)
+FileScope::FileScope(const std::string& name_, const Pkgs& pkgs_, clang::DiagnosticsEngine& Diags_, TypeContext& tc_)
     : pkgName(name_)
     , allPackages(pkgs_)
     , Diags(Diags_)
+    , typeContext(tc_)
 {
     // add own package to scope
     const Package* myPackage = findAnyPackage(pkgName);
@@ -72,8 +73,86 @@ const Package* FileScope::findAnyPackage(const std::string& name) const {
     return iter->second;
 }
 
-unsigned FileScope::resolveType(const UnresolvedType* T, bool used_public) {
-    return checkUnresolvedType(T, used_public);
+unsigned FileScope::checkType(QualType Q, bool used_public) {
+    const Type* T = Q.getTypePtr();
+    switch (T->getTypeClass()) {
+    case TC_BUILTIN:
+        // ok
+        return 0;
+    case TC_POINTER:
+        return checkType(cast<PointerType>(T)->getPointeeType(), used_public);
+    case TC_ARRAY:
+        return checkType(cast<ArrayType>(T)->getElementType(), used_public);
+    case TC_UNRESOLVED:
+        return checkUnresolvedType(cast<UnresolvedType>(T), used_public);
+    case TC_ALIAS:
+        // will be removed?
+        return 0;
+    case TC_STRUCT:
+    case TC_ENUM:
+    case TC_FUNCTION:
+        // ok (TypeDecl will be checked)
+        return 0;
+    }
+}
+
+QualType FileScope::resolveCanonical(QualType Q, bool set) const {
+    const Type* T = Q.getTypePtr();
+    if (T->hasCanonicalType()) return T->getCanonicalType();
+
+    switch (T->getTypeClass()) {
+    case TC_BUILTIN:
+        return T->getCanonicalType();
+    case TC_POINTER:
+        {
+            const PointerType* P = cast<PointerType>(T);
+            QualType t1 = P->getPointeeType();
+            // Pointee will always be in same TypeContext (file), since it's either built-in or UnresolvedType
+            QualType t2 = resolveCanonical(t1, true);
+            assert(t2.isValid());
+            QualType canonical;
+            // create new PointerType if PointeeType has different canonical than itself
+            if (t1 == t2) canonical = t2;
+            else canonical = typeContext.getPointerType(t2);
+
+            if (set) P->setCanonicalType(canonical);
+            return canonical;
+        }
+    case TC_ARRAY:
+        {
+            const ArrayType* A = cast<ArrayType>(T);
+            QualType t1 = A->getElementType();
+            QualType t2 = resolveCanonical(t1, true);
+            assert(t2.isValid());
+            QualType canonical;
+            if (t1 == t2) canonical = t2;
+            // NOTE need size Expr, but set ownership to none?
+            else canonical = typeContext.getArrayType(t2, A->getSize(), false);
+            if (set) A->setCanonicalType(canonical);
+            return canonical;
+        }
+    case TC_UNRESOLVED:
+        {
+            const UnresolvedType* U = cast<UnresolvedType>(T);
+            const TypeDecl* TD = U->getMatch();
+            assert(TD);
+            QualType canonical = resolveCanonical(TD->getType(), false);
+            if (set) U->setCanonicalType(canonical);
+            return canonical;
+        }
+    case TC_ALIAS:
+        // will be removed?
+        return 0;
+    case TC_STRUCT:
+        return T->getCanonicalType();
+    case TC_ENUM:
+        {
+            assert(0 && "TODO");
+            return 0;
+        }
+    case TC_FUNCTION:
+        return T->getCanonicalType();
+    }
 }
 
 void FileScope::dump() const {
@@ -83,32 +162,7 @@ void FileScope::dump() const {
     }
 }
 
-int FileScope::checkType(QualType type, bool used_public) {
-    assert(type.isValid());
-
-    const Type* T = type.getTypePtr();
-    switch (T->getTypeClass()) {
-    case TC_BUILTIN:
-        return 1;
-    case TC_POINTER:
-        return checkType(cast<PointerType>(T)->getPointeeType(), used_public);
-    case TC_ARRAY:
-        return checkType(cast<ArrayType>(T)->getElementType(), used_public);
-    case TC_UNRESOLVED:
-        return checkUnresolvedType(cast<UnresolvedType>(T), used_public);
-    case TC_ALIAS:
-        // NOTE: TC_Alias will be removed
-        assert(0 && "TODO");
-        return 0;
-    case TC_STRUCT:
-    case TC_ENUM:
-    case TC_FUNCTION:
-        assert(0);  // cannot occur (wil be UnresolvedType)
-        return 0;
-    }
-}
-
-int FileScope::checkUnresolvedType(const UnresolvedType* type, bool used_public) {
+unsigned FileScope::checkUnresolvedType(const UnresolvedType* type, bool used_public) {
     // TODO refactor
     Expr* id = type->getExpr();
     const Package* pkg = 0;

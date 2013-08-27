@@ -53,8 +53,6 @@ public:
 private:
     unsigned checkTypeDecl(TypeDecl* D);
     unsigned checkStructTypeDecl(StructTypeDecl* D);
-    unsigned checkType(QualType Q, bool used_public);
-    QualType resolveCanonical(QualType Q, bool set);
     unsigned resolveVarDecl(VarDecl* D);
     unsigned resolveFunctionDecl(FunctionDecl* D);
     unsigned checkArrayValue(ArrayValueDecl* D);

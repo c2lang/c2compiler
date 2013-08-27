@@ -40,7 +40,7 @@ FileAnalyser::FileAnalyser(const Pkgs& pkgs, clang::DiagnosticsEngine& Diags_,
                     AST& ast_, TypeContext& typeContext_, bool verbose_)
     : ast(ast_)
     , typeContext(typeContext_)
-    , globals(new FileScope(ast_.getPkgName(), pkgs, Diags_))
+    , globals(new FileScope(ast_.getPkgName(), pkgs, Diags_, typeContext_))
     , Diags(Diags_)
     , functionAnalyser(*globals, typeContext_, Diags_)
     , verbose(verbose_)
@@ -100,7 +100,7 @@ unsigned FileAnalyser::resolveTypeCanonicals() {
     for (unsigned i=0; i<ast.numTypes(); i++) {
         const TypeDecl* D = ast.getType(i);
         // check generic type
-        resolveCanonical(D->getType(), true);
+        globals->resolveCanonical(D->getType(), true);
 
         // NOTE dont check any subclass specific things yet
 
@@ -207,7 +207,7 @@ unsigned FileAnalyser::checkTypeDecl(TypeDecl* D) {
     LOG_FUNC
     // check generic type
     unsigned errors = 0;
-    errors += checkType(D->getType(), D->isPublic());
+    errors += globals->checkType(D->getType(), D->isPublic());
 
     // check extra stuff depending on subclass
     switch (D->getKind()) {
@@ -253,98 +253,14 @@ unsigned FileAnalyser::checkStructTypeDecl(StructTypeDecl* D) {
     return errors;
 }
 
-unsigned FileAnalyser::checkType(QualType Q, bool used_public) {
-    LOG_FUNC
-    const Type* T = Q.getTypePtr();
-    switch (T->getTypeClass()) {
-    case TC_BUILTIN:
-        // ok
-        return 0;
-    case TC_POINTER:
-        return checkType(cast<PointerType>(T)->getPointeeType(), used_public);
-    case TC_ARRAY:
-        return checkType(cast<ArrayType>(T)->getElementType(), used_public);
-    case TC_UNRESOLVED:
-        return globals->resolveType(cast<UnresolvedType>(T), used_public);
-    case TC_ALIAS:
-        // will be removed
-        return 0;
-    case TC_STRUCT:
-    case TC_ENUM:
-    case TC_FUNCTION:
-        // ok (TypeDecl will be checked)
-        return 0;
-    }
-}
-
-QualType FileAnalyser::resolveCanonical(QualType Q, bool set) {
-    LOG_FUNC
-    const Type* T = Q.getTypePtr();
-    if (T->hasCanonicalType()) return T->getCanonicalType();
-
-    switch (T->getTypeClass()) {
-    case TC_BUILTIN:
-        return T->getCanonicalType();
-    case TC_POINTER:
-        {
-            const PointerType* P = cast<PointerType>(T);
-            QualType t1 = P->getPointeeType();
-            // Pointee will always be in same TypeContext (file), since it's either built-in or UnresolvedType
-            QualType t2 = resolveCanonical(t1, true);
-            assert(t2.isValid());
-            QualType canonical;
-            // create new PointerType if PointeeType has different canonical than itself
-            if (t1 == t2) canonical = t2;
-            else canonical = typeContext.getPointerType(t2);
-
-            if (set) P->setCanonicalType(canonical);
-            return canonical;
-        }
-    case TC_ARRAY:
-        {
-            const ArrayType* A = cast<ArrayType>(T);
-            QualType t1 = A->getElementType();
-            QualType t2 = resolveCanonical(t1, true);
-            assert(t2.isValid());
-            QualType canonical;
-            if (t1 == t2) canonical = t2;
-            // NOTE need size Expr, but set ownership to none?
-            else canonical = typeContext.getArrayType(t2, A->getSize(), false);
-            if (set) A->setCanonicalType(canonical);
-            return canonical;
-        }
-    case TC_UNRESOLVED:
-        {
-            const UnresolvedType* U = cast<UnresolvedType>(T);
-            const TypeDecl* TD = U->getMatch();
-            assert(TD);
-            QualType canonical = resolveCanonical(TD->getType(), false);
-            if (set) U->setCanonicalType(canonical);
-            return canonical;
-        }
-    case TC_ALIAS:
-        // will be removed
-        return 0;
-    case TC_STRUCT:
-        return T->getCanonicalType();
-    case TC_ENUM:
-        {
-            assert(0 && "TODO");
-            return 0;
-        }
-    case TC_FUNCTION:
-        return T->getCanonicalType();
-    }
-}
-
 unsigned FileAnalyser::resolveVarDecl(VarDecl* D) {
     LOG_FUNC
     QualType Q = D->getType();
     if (Q->hasCanonicalType()) return 0;
 
-    unsigned errors = checkType(Q, D->isPublic());
+    unsigned errors = globals->checkType(Q, D->isPublic());
     if (!errors) {
-        resolveCanonical(Q, true);
+        globals->resolveCanonical(Q, true);
         // NOTE: dont check initValue here (doesn't have canonical type yet)
     }
     return errors;
@@ -356,9 +272,9 @@ unsigned FileAnalyser::resolveFunctionDecl(FunctionDecl* D) {
     // return type
     QualType RT = D->getReturnType();
     if (!RT->hasCanonicalType()) {
-        unsigned errs = checkType(RT, D->isPublic());
+        unsigned errs = globals->checkType(RT, D->isPublic());
         errors += errs;
-        if (!errs) resolveCanonical(RT, true);
+        if (!errs) globals->resolveCanonical(RT, true);
     }
 
     // args

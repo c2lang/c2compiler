@@ -104,8 +104,6 @@ private:
 
     static QualType resolveUserType(QualType T);
     QualType Decl2Type(Decl* decl);
-    unsigned checkType(QualType Q, bool used_public);
-    QualType resolveCanonical(QualType Q, bool set);
 
     FileScope& globalScope;
     TypeContext& typeContext;

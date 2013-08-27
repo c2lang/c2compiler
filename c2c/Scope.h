@@ -54,7 +54,7 @@ public:
 
 class FileScope {
 public:
-    FileScope(const std::string& name_, const Pkgs& pkgs_, clang::DiagnosticsEngine& Diags_);
+    FileScope(const std::string& name_, const Pkgs& pkgs_, clang::DiagnosticsEngine& Diags_, TypeContext& tc_);
 
     const Package* findPackage(const std::string& name) const;
     const Package* findAnyPackage(const std::string& name) const;
@@ -63,15 +63,13 @@ public:
     ScopeResult findSymbol(const std::string& name) const;
     ScopeResult findSymbolInUsed(const std::string& name) const;
 
-    int checkType(QualType type, bool used_public = false);
     bool isExternal(const Package* pkg) const;
-
-    unsigned resolveType(const UnresolvedType* T, bool used_public = false);
+    unsigned checkType(QualType Q, bool used_public);
+    QualType resolveCanonical(QualType Q, bool set) const;
 
     void dump() const;
 private:
-    // TODO make unsigned
-    int checkUnresolvedType(const UnresolvedType* type, bool used_public);
+    unsigned checkUnresolvedType(const UnresolvedType* type, bool used_public);
 
     const std::string pkgName;
 
@@ -90,6 +88,7 @@ private:
     const Pkgs& allPackages;
 
     clang::DiagnosticsEngine& Diags;
+    TypeContext& typeContext;
 };
 
 

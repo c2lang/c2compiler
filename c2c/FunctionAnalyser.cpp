@@ -638,93 +638,6 @@ void FunctionAnalyser::analyseInitList(Expr* expr, QualType expectedType) {
 #endif
 }
 
-// COPIED FROM FILE_ANALYSER
-#warning "TODO refactor (share with FileAnalyser). Also for resolveType"
-unsigned FunctionAnalyser::checkType(QualType Q, bool used_public) {
-    LOG_FUNC
-    const Type* T = Q.getTypePtr();
-    switch (T->getTypeClass()) {
-    case TC_BUILTIN:
-        // ok
-        return 0;
-    case TC_POINTER:
-        return checkType(cast<PointerType>(T)->getPointeeType(), used_public);
-    case TC_ARRAY:
-        return checkType(cast<ArrayType>(T)->getElementType(), used_public);
-    case TC_UNRESOLVED:
-        return globalScope.resolveType(cast<UnresolvedType>(T), used_public);
-    case TC_ALIAS:
-        // will be removed
-        return 0;
-    case TC_STRUCT:
-    case TC_ENUM:
-    case TC_FUNCTION:
-        // ok (TypeDecl will be checked)
-        return 0;
-    }
-}
-
-// COPIED FROM FILE_ANALYSER
-QualType FunctionAnalyser::resolveCanonical(QualType Q, bool set) {
-    LOG_FUNC
-    const Type* T = Q.getTypePtr();
-    if (T->hasCanonicalType()) return T->getCanonicalType();
-
-    switch (T->getTypeClass()) {
-    case TC_BUILTIN:
-        return T->getCanonicalType();
-    case TC_POINTER:
-        {
-            const PointerType* P = cast<PointerType>(T);
-            QualType t1 = P->getPointeeType();
-            // Pointee will always be in same TypeContext (file), since it's either built-in or UnresolvedType
-            QualType t2 = resolveCanonical(t1, true);
-            assert(t2.isValid());
-            QualType canonical;
-            // create new PointerType if PointeeType has different canonical than itself
-            if (t1 == t2) canonical = t2;
-            else canonical = typeContext.getPointerType(t2);
-
-            if (set) P->setCanonicalType(canonical);
-            return canonical;
-        }
-    case TC_ARRAY:
-        {
-            const ArrayType* A = cast<ArrayType>(T);
-            QualType t1 = A->getElementType();
-            QualType t2 = resolveCanonical(t1, true);
-            assert(t2.isValid());
-            QualType canonical;
-            if (t1 == t2) canonical = t2;
-            // NOTE need size Expr, but set ownership to none?
-            else canonical = typeContext.getArrayType(t2, A->getSize(), false);
-            if (set) A->setCanonicalType(canonical);
-            return canonical;
-        }
-    case TC_UNRESOLVED:
-        {
-            const UnresolvedType* U = cast<UnresolvedType>(T);
-            const TypeDecl* TD = U->getMatch();
-            assert(TD);
-            QualType canonical = resolveCanonical(TD->getType(), false);
-            if (set) U->setCanonicalType(canonical);
-            return canonical;
-        }
-    case TC_ALIAS:
-        // will be removed
-        return 0;
-    case TC_STRUCT:
-        return T->getCanonicalType();
-    case TC_ENUM:
-        {
-            assert(0 && "TODO");
-            return 0;
-        }
-    case TC_FUNCTION:
-        return T->getCanonicalType();
-    }
-}
-
 void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     LOG_FUNC
     DeclExpr* DE = cast<DeclExpr>(expr);
@@ -732,11 +645,10 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
 
     // check type and convert User types
     QualType type = decl->getType();
-    // COPIED FROM FILE_ANALYSER
-    unsigned errs = checkType(type, false);
+    unsigned errs = globalScope.checkType(type, false);
     errors += errs;
     if (!errs) {
-        resolveCanonical(type, true);
+        globalScope.resolveCanonical(type, true);
     }
 
     // check name
@@ -839,7 +751,11 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr) {
     if (LType.isNull()) return 0;
     switch (unaryop->getOpcode()) {
     case UO_AddrOf:
-        return typeContext.getPointerType(LType);
+        {
+            QualType Q = typeContext.getPointerType(LType);
+            globalScope.resolveCanonical(Q, true);
+            return Q;
+        }
     case UO_Deref:
         // TODO handle user types
         if (!LType.isPointerType()) {

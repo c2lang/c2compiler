@@ -547,7 +547,8 @@ void C2Builder::generateOptionalC() {
 
     if (single_module) {
         u_int64_t t1 = Utils::getCurrentTime();
-        std::string filename = "test";
+        // TODO
+        std::string filename = recipe.name;
         CCodeGenerator gen(filename, CCodeGenerator::SINGLE_FILE, pkgs, no_local_prefix);
         for (unsigned i=0; i<files.size(); i++) {
             FileInfo* info = files[i];
@@ -558,6 +559,7 @@ void C2Builder::generateOptionalC() {
         u_int64_t t2 = Utils::getCurrentTime();
         if (options.printTiming) printf(COL_TIME"C code generation took %lld usec"ANSI_NORMAL"\n", t2 - t1);
         if (options.printC) gen.dump();
+        gen.write(recipe.name, "");
     } else {
         for (PkgsIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
             Package* P = iter->second;
