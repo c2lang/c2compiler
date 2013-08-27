@@ -83,8 +83,9 @@ If you get an error with some Clang/C2 errors, try updating your clang C2 archiv
 
 
 ## Using the C2 compiler
-Not all examples (in the examples/ dir) work yet. Some still hit an assert.
-Some examples that work better than others:
+By default, c2c will only parse and analyse the targets. Generating C-code
+should work on all examples, but generating LLVM's IR code is work in
+progress.
 ```
 ./c2c multi
 ./c2c hello
