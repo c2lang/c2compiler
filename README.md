@@ -100,6 +100,11 @@ file with:
 ./c2c -f <file.c2>
 ```
 
+To generate ANSI-C code, use:
+```
+./c2c -C <target>
+```
+
 To see all available options, run:
 ```
 ./c2c -h
