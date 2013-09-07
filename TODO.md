@@ -24,7 +24,6 @@ IR generation of:
 * global strings
 
 C-code generation:
-* saving to files
 * creating build-script/Makefile
 
 Generic:
