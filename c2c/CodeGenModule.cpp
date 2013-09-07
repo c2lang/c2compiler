@@ -62,33 +62,41 @@ void CodeGenModule::addEntry(const std::string& filename, AST& ast) {
 }
 
 void CodeGenModule::generate() {
-    // pass 1: generate all function proto's
+    // step 1: generate all function proto's
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
 #ifdef DEBUG_CODEGEN
-        printf("CodeGen for %s - pass 1\n", iter->filename->c_str());
+        printf("CodeGen for %s - step 1\n", iter->filename->c_str());
 #endif
-    assert(0 && "TODO");
-#if 0
-        AST* ast = iter->ast;
-        for (unsigned i=0; i<ast->getNumDecls(); i++) {
-            Decl* decl = ast->getDecl(i);
-            if (isa<FunctionDecl>(decl)) EmitFunctionProto(decl);
+        const AST* ast = iter->ast;
+        for (unsigned i=0; i<ast->numFunctions(); i++) {
+            FunctionDecl* F = ast->getFunction(i);
+            CodeGenFunction cgf(*this, F);
+            llvm::Function* proto = cgf.generateProto(pkg->getName());
+            F->setIRProto(proto);
         }
+    }
+    // step 2: generate variables
+    for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
+#ifdef DEBUG_CODEGEN
+        printf("CodeGen for %s - step 1\n", iter->filename->c_str());
 #endif
+        const AST* ast = iter->ast;
+        for (unsigned i=0; i<ast->numVars(); i++) {
+            EmitGlobalVariable(ast->getVar(i));
+        }
     }
 
-    // pass 2: generate all function bodies (and possibly external function decls)
+    // step 3: generate all function bodies (and possibly external function decls)
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
 #ifdef DEBUG_CODEGEN
-        printf("CodeGen for %s - pass 2\n", iter->filename->c_str());
+        printf("CodeGen for %s - step 3\n", iter->filename->c_str());
 #endif
-#if 0
-        AST* ast = iter->ast;
-        for (unsigned i=0; i<ast->getNumDecls(); i++) {
-            Decl* decl = ast->getDecl(i);
-            EmitTopLevelDecl(decl);
+        const AST* ast = iter->ast;
+        for (unsigned i=0; i<ast->numFunctions(); i++) {
+            FunctionDecl* F = ast->getFunction(i);
+            CodeGenFunction cgf(*this, F);
+            cgf.generateBody(F->getIRProto());
         }
-#endif
     }
 }
 
@@ -148,54 +156,41 @@ void CodeGenModule::write(const std::string& target, const std::string& name) {
 #endif
 }
 
-void CodeGenModule::EmitFunctionProto(Decl* D) {
-    FunctionDecl* F = cast<FunctionDecl>(D);
-    CodeGenFunction cgf(*this, F);
-    llvm::Function* proto = cgf.generateProto(pkg->getName());
-    F->setIRProto(proto);
+void CodeGenModule::EmitGlobalVariable(VarDecl* Var) {
+    QualType qt = Var->getType();
+    llvm::Type* type = ConvertType(qt.getTypePtr());
+    bool constant = false;
+    llvm::GlobalValue::LinkageTypes ltype = llvm::GlobalValue::InternalLinkage;
+    if (Var->isPublic()) ltype = llvm::GlobalValue::ExternalLinkage;
+    // TODO use correct arguments for constant and Initializer
+    // NOTE: getName() doesn't have to be virtual here
+    // TODO is var is array and has bool isIncrementalArray also generate init code
+
+    const Expr* I = Var->getInitValue();
+    llvm::Constant* init;
+    if (I) {
+        init = EvaluateExprAsConstant(I);
+    } else {
+        // ALWAYS initialize globals
+        // TODO dynamic width
+        init = llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), 0, true);
+    }
+    //new llvm::GlobalVariable(*module, type, constant, ltype, init, Var->getName());
+    new llvm::GlobalVariable(*module, init->getType(), constant, ltype, init, Var->getName());
 }
 
+// TODO remove
 void CodeGenModule::EmitTopLevelDecl(Decl* D) {
     switch (D->getKind()) {
     case DECL_FUNC:
-        {
-            FunctionDecl* F = cast<FunctionDecl>(D);
-            CodeGenFunction cgf(*this, F);
-            cgf.generateBody(F->getIRProto());
-        }
-        break;
     case DECL_VAR:
-        {
-            VarDecl* Var = cast<VarDecl>(D);
-            QualType qt = Var->getType();
-            llvm::Type* type = ConvertType(qt.getTypePtr());
-            bool constant = false;
-            llvm::GlobalValue::LinkageTypes ltype = llvm::GlobalValue::InternalLinkage;
-            if (Var->isPublic()) ltype = llvm::GlobalValue::ExternalLinkage;
-            // TODO use correct arguments for constant and Initializer
-            // NOTE: getName() doesn't have to be virtual here
-
-            const Expr* I = Var->getInitValue();
-            llvm::Constant* init;
-            if (I) {
-                init = EvaluateExprAsConstant(I);
-            } else {
-                // ALWAYS initialize globals
-                // TODO dynamic width
-                init = llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), 0, true);
-            }
-            //new llvm::GlobalVariable(*module, type, constant, ltype, init, Var->getName());
-            new llvm::GlobalVariable(*module, init->getType(), constant, ltype, init, Var->getName());
-        }
-        break;
     case DECL_ENUMVALUE:
-        assert(0 && "TODO");
+        assert(0);
         break;
-    case DECL_TYPE:
+    case DECL_ALIASTYPE:
         {
-            TypeDecl* TD = cast<TypeDecl>(D);
-            //QualType QT = TD->getType();
-            // TODO
+            AliasTypeDecl* A = cast<AliasTypeDecl>(D);
+            //QualType QT = A->getType();
         }
         break;
     case DECL_STRUCTTYPE:
@@ -217,11 +212,8 @@ void CodeGenModule::EmitTopLevelDecl(Decl* D) {
         }
         break;
     case DECL_ENUMTYPE:
-        assert(0 && "TODO?");
-        break;
     case DECL_FUNCTIONTYPE:
-        assert(0 && "TODO?");
-#warning TODO?
+        assert(0);
         break;
     case DECL_ARRAYVALUE:
         assert(0 && "TODO arrayvalue");

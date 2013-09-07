@@ -1,0 +1,4 @@
+package test;
+
+const i32 n;        // @error{constant variable n must be initialized}
+

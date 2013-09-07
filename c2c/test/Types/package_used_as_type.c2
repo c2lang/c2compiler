@@ -1,0 +1,4 @@
+package test;
+
+test a;     // @error{test is not a type name}
+

@@ -28,7 +28,6 @@ their priority:
 * [high] c2c: parse full syntax into AST
 * [high] Makefile: fixed header dependencies and more .o files to .objs dir
 * [high] c2c: add proper analysis for AST
-* [high] c2c: unit test system
 * [high] c2c: generate IR code for more AST elements
 * [medium] c2c: improve C generation by generating forward declarations in C code.
 * [medium] c2c: tab completion on targets in recipe / cmdline args
@@ -81,6 +80,14 @@ If all goes well, the **c2c** executable should appear.
 
 If you get an error with some Clang/C2 errors, try updating your clang C2 archive.
 
+## Getting and Building C2C
+To run the unit tests:
+```
+cd tools/test
+make
+cd ../../c2c
+make test
+```
 
 ## Using the C2 compiler
 By default, c2c will only parse and analyse the targets. Generating C-code

@@ -446,7 +446,7 @@ void CCodeGenerator::EmitTypeDecl(TypeDecl* T) {
     case DECL_ENUMVALUE:
         assert(0);
         break;
-    case DECL_TYPE:
+    case DECL_ALIASTYPE:
         // TODO
         assert(0 && "TODO");
         *out << "typedef ";

@@ -52,7 +52,6 @@ public:
     // file level actions
     void ActOnPackage(const char* name, SourceLocation loc);
     void ActOnUse(const char* name, SourceLocation loc, Token& aliasTok, bool isLocal);
-    void ActOnTypeDef(const char* name, SourceLocation loc, Expr* typeExpr, bool is_public);
     void ActOnVarDef(const char* name, SourceLocation loc, bool is_public, Expr* type, Expr* InitValue);
 
     // function decls
@@ -64,7 +63,7 @@ public:
     void ActOnArrayValue(const char* name, SourceLocation loc, Expr* Value);
 
     // struct decls
-    // NOTE: call ActOnStructType instead of ActOnTypeDef
+    void ActOnAliasType(const char* name, SourceLocation loc, Expr* typeExpr, bool is_public);
     StructTypeDecl* ActOnStructType(const char* name, SourceLocation loc, bool isStruct, bool is_public, bool is_global);
     DeclResult ActOnStructVar(const char* name, SourceLocation loc, Expr* type, Expr* InitValue, bool is_public);
     void ActOnStructMember(StructTypeDecl* S, Decl* member);
@@ -128,8 +127,7 @@ private:
 
     DiagnosticBuilder Diag(SourceLocation Loc, unsigned DiagID);
     void addSymbol(Decl* d);
-    const Decl* findUse(const char* name) const;
-    const UseDecl* findAlias(const char* name) const;
+    const UseDecl* findUseOrAlias(const char* name) const;
 
     SourceManager& SourceMgr;
     DiagnosticsEngine& Diags;

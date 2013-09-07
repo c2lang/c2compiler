@@ -1,0 +1,3 @@
+
+int a;  // @error{expected 'package' keyword}
+

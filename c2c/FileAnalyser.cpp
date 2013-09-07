@@ -100,7 +100,7 @@ unsigned FileAnalyser::resolveTypeCanonicals() {
     for (unsigned i=0; i<ast.numTypes(); i++) {
         const TypeDecl* D = ast.getType(i);
         // check generic type
-        globals->resolveCanonical(D->getType(), true);
+        globals->checkTypeCanonicals(D, D->getType(), true);
 
         // NOTE dont check any subclass specific things yet
 
@@ -111,8 +111,8 @@ unsigned FileAnalyser::resolveTypeCanonicals() {
         case DECL_ENUMVALUE:
             assert(0);
             break;
-        case DECL_TYPE:
-            // nothing to do
+        case DECL_ALIASTYPE:
+            // nothing extra to do
             break;
         case DECL_STRUCTTYPE:
             //resolveStructType
@@ -167,8 +167,8 @@ unsigned FileAnalyser::checkVarInits() {
     for (unsigned i=0; i<ast.numVars(); i++) {
         VarDecl* V = ast.getVar(i);
         Expr* initVal = V->getInitValue();
-        if (V->getInitValue()) {
-            errors += checkInitValue(V->getInitValue(), V->getType());
+        if (initVal) {
+            errors += checkInitValue(V, initVal, V->getType());
         }
     }
     for (unsigned i=0; i<ast.numArrayValues(); i++) {
@@ -216,7 +216,7 @@ unsigned FileAnalyser::checkTypeDecl(TypeDecl* D) {
     case DECL_ENUMVALUE:
         assert(0);
         break;
-    case DECL_TYPE:
+    case DECL_ALIASTYPE:
         // nothing to do
         break;
     case DECL_STRUCTTYPE:
@@ -283,7 +283,7 @@ unsigned FileAnalyser::resolveFunctionDecl(FunctionDecl* D) {
         unsigned errs = resolveVarDecl(Arg);
         errors += errs;
         if (!errs && Arg->getInitValue()) {
-            errors += checkInitValue(Arg->getInitValue(), Arg->getType());
+            errors += checkInitValue(Arg, Arg->getInitValue(), Arg->getType());
         }
     }
     return errors;
@@ -291,7 +291,6 @@ unsigned FileAnalyser::resolveFunctionDecl(FunctionDecl* D) {
 
 unsigned FileAnalyser::checkArrayValue(ArrayValueDecl* D) {
     LOG_FUNC
-#warning "TODO"
 #if 0
     ScopeResult Result = globals->checkSymbol(D->getName(), D->getLocation(), IDENTIFIER);
     if (!Result.ok) return 1;
@@ -313,7 +312,7 @@ unsigned FileAnalyser::checkArrayValue(ArrayValueDecl* D) {
     return 0;
 }
 
-unsigned FileAnalyser::checkInitValue(Expr* expr, QualType expected) {
+unsigned FileAnalyser::checkInitValue(VarDecl* decl, Expr* expr, QualType expected) {
     LOG_FUNC
     // NOTE: expr must be compile-time constant
     // check return type from expressions? (pass expected along is not handy)
@@ -329,8 +328,20 @@ unsigned FileAnalyser::checkInitValue(Expr* expr, QualType expected) {
         assert(0);
         break;
     case EXPR_IDENTIFIER:
-        // TODO
-        break;
+        {
+            IdentifierExpr* I = cast<IdentifierExpr>(expr);
+            ScopeResult Res = globals->findSymbol(I->getName());
+            if (!Res.ok) return 1;
+            if (!Res.decl) {
+                Diags.Report(I->getLocation(), diag::err_undeclared_var_use) << I->getName();
+                return 1;
+            }
+            if (Res.decl == decl) {
+                Diags.Report(I->getLocation(), diag::err_var_self_init) << Res.decl->getName();
+                return 1;
+            }
+            break;
+        }
     case EXPR_INITLIST:
         // TODO
         break;

@@ -492,7 +492,7 @@ llvm::Value* CodeGenFunction::EmitIdentifierExpr(const IdentifierExpr* E) {
             int value = 5;
             return llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), value, true);
         }
-    case DECL_TYPE:
+    case DECL_ALIASTYPE:
     case DECL_STRUCTTYPE:
     case DECL_ENUMTYPE:
     case DECL_FUNCTIONTYPE:

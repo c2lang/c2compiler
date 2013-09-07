@@ -3,9 +3,8 @@ package unary_test;
 public func void main() {
     int a;
     a = !a;
-    (&a)[2] = 3;    // ok
+    (&a)[2] = 3;
     int* pa;
-    *pa = 10;   //ok
-    *a = 2; // error: cannot deference non-pointer type
+    *pa = 10;
 }
 

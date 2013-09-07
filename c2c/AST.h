@@ -45,17 +45,17 @@ public:
     UseDecl* getUse(unsigned i) const { return useList[i]; }
 
     // TypeDecls
-    void addType(TypeDecl* d);
+    void addType(TypeDecl* d) { typeList.push_back(d); }
     unsigned numTypes() const { return typeList.size(); }
     TypeDecl* getType(unsigned i) const { return typeList[i]; }
 
     // VarDecls
-    void addVar(VarDecl* d);
+    void addVar(VarDecl* d) { varList.push_back(d); }
     unsigned numVars() const { return varList.size(); }
     VarDecl* getVar(unsigned i) const { return varList[i]; }
 
     // FunctionDecls
-    void addFunction(FunctionDecl* d);
+    void addFunction(FunctionDecl* d) { functionList.push_back(d); }
     unsigned numFunctions() const { return functionList.size(); }
     FunctionDecl* getFunction(unsigned i) const { return functionList[i]; }
 

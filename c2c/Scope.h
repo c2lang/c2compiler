@@ -65,10 +65,15 @@ public:
 
     bool isExternal(const Package* pkg) const;
     unsigned checkType(QualType Q, bool used_public);
+    QualType checkTypeCanonicals(const Decl* D, QualType Q, bool set) const;
     QualType resolveCanonical(QualType Q, bool set) const;
 
     void dump() const;
 private:
+    typedef std::vector<const Decl*> Decls;
+    typedef Decls::iterator DeclsIter;
+    QualType checkCanonicals2(Decls& decls, QualType Q, bool set) const;
+    bool checkDecls(Decls& decls, const Decl* D) const;
     unsigned checkUnresolvedType(const UnresolvedType* type, bool used_public);
 
     const std::string pkgName;

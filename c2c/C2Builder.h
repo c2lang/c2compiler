@@ -44,6 +44,7 @@ struct BuildOptions {
         , printC(false)
         , printPackages(false)
         , verbose(false)
+        , testMode(false)
     {}
     bool printAST0;
     bool printAST1;
@@ -57,6 +58,7 @@ struct BuildOptions {
     bool printC;
     bool printPackages;
     bool verbose;
+    bool testMode;
 };
 
 
@@ -66,7 +68,7 @@ public:
     ~C2Builder();
 
     int checkFiles();
-    void build();
+    int build();
 private:
     bool havePackage(const std::string& name) const;
     Package* getPackage(const std::string& name, bool isExternal, bool isCLib);

@@ -1,0 +1,9 @@
+// @file{file1}
+package foo;
+
+// @file{file2}
+package bar;
+use foo;
+
+foo.Bla a;      // @error{package foo has no type Bla}
+

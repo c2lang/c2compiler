@@ -50,3 +50,8 @@ c2c: $(OBJS)
 	@$(CXX) -o $@ $(OBJS) $(LDFLAGS) $(CLANGLIBS) $(LIBS) -ldl -fno-rtti -lrt
 	@strip $@
 
+.PHONY : test
+test:
+	@echo running tests
+	@../tools/tester/tester test
+

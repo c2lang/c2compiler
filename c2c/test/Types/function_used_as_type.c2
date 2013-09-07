@@ -1,0 +1,7 @@
+package test;
+
+func1 a;    // @error{func1 is not a type name}
+
+func void func1() {}
+
+

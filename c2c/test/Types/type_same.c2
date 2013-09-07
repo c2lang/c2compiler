@@ -1,0 +1,4 @@
+package test;
+
+type Number Number;     // @error{circular type definition: Number -> Number}
+

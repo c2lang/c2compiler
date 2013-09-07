@@ -205,7 +205,7 @@ int C2Builder::checkFiles() {
     return errors;
 }
 
-void C2Builder::build() {
+int C2Builder::build() {
     printf(ANSI_GREEN"building target %s"ANSI_NORMAL"\n", recipe.name.c_str());
 
     u_int64_t t1_build = Utils::getCurrentTime();
@@ -303,7 +303,7 @@ void C2Builder::build() {
     if (options.printTiming) printf(COL_TIME"analysis took %lld usec"ANSI_NORMAL"\n", t2_analyse - t1_analyse);
     if (client->getNumErrors()) goto out;
 
-    if (!checkMainFunction(Diags)) goto out;
+    if (!options.testMode && !checkMainFunction(Diags)) goto out;
 
     generateOptionalC();
 
@@ -324,6 +324,7 @@ out:
       OS << NumErrors << " error" << (NumErrors == 1 ? "" : "s");
     if (NumWarnings || NumErrors)
       OS << " generated.\n";
+    return NumErrors;
 }
 
 bool C2Builder::havePackage(const std::string& name) const {

@@ -1,0 +1,5 @@
+package test;
+
+use other1;
+use other2 as other1;       // @error{duplicate use of package 'other1'}
+

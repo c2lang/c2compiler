@@ -1,0 +1,8 @@
+package test;
+
+type Number int;
+
+public func Number func1() {   // @error{public declaration using non-public type Number};
+    return 0;
+}
+

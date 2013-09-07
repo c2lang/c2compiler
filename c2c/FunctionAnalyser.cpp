@@ -46,39 +46,38 @@ using namespace clang;
 const unsigned MAX_TYPENAME = 128;
 const unsigned MAX_VARNAME = 64;
 
-// 0 = ok, 1 = loss of precision, 2 sign-conversion, 3=float->integer, 4 incompatible, 5=loss of FP precision
+// 0 = ok,
+// 1 = loss of integer precision,
+// 2 = sign-conversion,
+// 3 = float->integer,
+// 4 = incompatible,
+// 5 = loss of FP precision
 static int type_conversions[14][14] = {
-    //U8,  U16, U32, U64, I8, I16, I32, I64, F32, F64, INT, BOOL, STRING, VOID,
-    // U8 ->
-    {  0,    0,   0,   0,  2,   0,   0,   0,   0,   0,   0,    0,      4,    4},
-    // U16 ->
-    {  1,    0,   0,   0,  1,   2,   0,   0,   0,   0,   0,    0,      4,    4},
-    // U32 ->
-    {  1,    1,   0,   0,  1,   1,   2,   0,   0,   0,   2,    0,      4,    4},
-    // U64 ->
-    {  1,    1,   1,   0,  1,   1,   1,   2,   0,   0,   1,    0,      4,    4},
-    //U8,  U16, U32, U64, I8, I16, I32, I64, F32, F64, INT, BOOL, STRING, VOID,
+    // I8  I16  I32  I64   U8  U16  U32  U64  F32  F64  Bool  Void
     // I8 ->
-    {  2,    2,   2,   2,  0,   0,   0,   0,   0,   0,   0,    0,      4,    4},
+    {   0,   0,   0,   0,   2,   2,   2,   2,   0,   0,    0,   4},
     // I16 ->
-    {  2,    2,   2,   2,  1,   0,   0,   0,   0,   0,   0,    0,      4,    4},
+    {   1,   0,   0,   0,   2,   2,   2,   2,   0,   0,    0,   4},
     // I32 ->
-    {  2,    2,   2,   2,  1,   1,   0,   0,   0,   0,   0,    0,      4,    4},
+    {   1,   1,   0,   0,   2,   2,   2,   2,   0,   0,    0,   4},
     // I64 ->
-    {  2,    2,   2,   2,  1,   1,   1,   0,   0,   0,   1,    0,      4,    4},
-    //U8,  U16, U32, U64, I8, I16, I32, I64, F32, F64, INT, BOOL, STRING, VOID,
+    {   1,   1,   1,   0,   2,   2,   2,   2,   0,   0,    0,   4},
+    // U8 ->
+    {   2,   0,   0,   0,   0,   0,   0,   0,   0,   0,    0,   4},
+    // U16 ->
+    {   1,   2,   0,   0,   1,   0,   0,   0,   0,   0,    0,   4},
+    // U32 ->
+    {   1,   1,   2,   0,   1,   1,   0,   0,   0,   0,    0,   4},
+    // U64 ->
+    {   1,   1,   1,   2,   1,   1,   1,   0,   0,   0,    0,   4},
     // F32 ->
-    {  3,    3,   3,   3,  3,   3,   3,   3,   0,   1,   3,    4,      4,    4},
+    {   3,   3,   3,   3,   3,   3,   3,   3,   0,   0,    4,   4},
     // F64 ->
-    {  3,    3,   3,   3,  3,   3,   3,   3,   5,   0,   3,    4,      4,    4},
-    // INT -> (depends on target, for now take I32
-    {  2,    2,   2,   2,  1,   1,   0,   0,   0,   0,   0,    0,      4,    4},
+    {   3,   3,   3,   3,   3,   3,   3,   3,   5,   0,    4,   4},
     // BOOL ->
-    {  0,    0,   0,   0,  2,   0,   0,   0,   0,   0,   0,    0,      4,    4},
-    // STRING -> (remove?)
-    {  4,    4,   4,   4,  4,   4,   4,   4,   4,   4,   4,    4,      0,    4},
+    {   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,    0,   4},
     // VOID ->
-    {  4,    4,   4,   4,  4,   4,   4,   4,   4,   4,   4,    4,      4,    0},
+    {  4,    4,   4,   4,  4,   4,   4,   4,   4,   4,    4,    0},
 };
 
 FunctionAnalyser::FunctionAnalyser(FileScope& scope_,
@@ -403,7 +402,7 @@ C2::QualType FunctionAnalyser::Decl2Type(Decl* decl) {
             EnumConstantDecl* EC = cast<EnumConstantDecl>(decl);
             return EC->getType();
         }
-    case DECL_TYPE:
+    case DECL_ALIASTYPE:
     case DECL_STRUCTTYPE:
     case DECL_ENUMTYPE:
     case DECL_FUNCTIONTYPE:
@@ -525,7 +524,7 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
             case DECL_ENUMVALUE:
                 // TODO check type compatibility
                 break;
-            case DECL_TYPE:
+            case DECL_ALIASTYPE:
             case DECL_STRUCTTYPE:
             case DECL_ENUMTYPE:
                 assert(0 && "TODO");
@@ -804,7 +803,7 @@ void FunctionAnalyser::analyseBuiltinExpr(Expr* expr) {
         case DECL_ENUMVALUE:
             // ERROR
             break;
-        case DECL_TYPE:
+        case DECL_ALIASTYPE:
         case DECL_STRUCTTYPE:
         case DECL_ENUMTYPE:
         case DECL_FUNCTIONTYPE:
@@ -864,7 +863,11 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr) {
             if (SR.pkg) base_id->setPackage(SR.pkg);
             switch (SR.decl->getKind()) {
             case DECL_FUNC:
-            case DECL_TYPE:
+                fprintf(stderr, "error: member reference base 'type' is not a structure, union or package\n");
+                return QualType();
+            case DECL_ALIASTYPE:
+                assert(0 && "TODO");
+                break;
             case DECL_FUNCTIONTYPE:
             case DECL_ENUMTYPE:
                 fprintf(stderr, "error: member reference base 'type' is not a structure, union or package\n");

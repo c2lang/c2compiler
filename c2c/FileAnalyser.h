@@ -57,7 +57,7 @@ private:
     unsigned resolveFunctionDecl(FunctionDecl* D);
     unsigned checkArrayValue(ArrayValueDecl* D);
 
-    unsigned checkInitValue(Expr* initVal, QualType expected);
+    unsigned checkInitValue(VarDecl* decl, Expr* initVal, QualType expected);
 
     // TODO use auto_ptr on globals
     AST& ast;

@@ -1,0 +1,10 @@
+package test;
+
+func void test1() {
+    int a;
+    {
+        int a;      // @error{redefinition of a}
+    }
+}
+
+

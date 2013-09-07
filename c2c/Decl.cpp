@@ -175,21 +175,15 @@ void EnumConstantDecl::print(StringBuilder& buffer, unsigned indent) const {
     if (InitVal) InitVal->print(buffer, indent+INDENT);
 }
 
-TypeDecl::TypeDecl(const std::string& name_, SourceLocation loc_, QualType type_, bool is_public)
-    : Decl(DECL_TYPE, name_, loc_, is_public)
-    , type(type_)
-{}
 
 TypeDecl::TypeDecl(DeclKind k, const std::string& name_, SourceLocation loc_, QualType type_, bool is_public)
     : Decl(k, name_, loc_, is_public)
     , type(type_)
 {}
 
-TypeDecl::~TypeDecl() {
-}
 
-void TypeDecl::print(StringBuilder& buffer, unsigned indent) const {
-    buffer << "[TypeDecl " << name << "]\n";
+void AliasTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
+    buffer << "[AliasTypeDecl " << name << "]\n";
     type.debugPrint(buffer, indent+INDENT);
 }
 
@@ -233,8 +227,7 @@ void EnumTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
 FunctionTypeDecl::FunctionTypeDecl(FunctionDecl* F)
     : TypeDecl(DECL_FUNCTIONTYPE, F->getName(), F->getLocation(), F->getType(), F->isPublic())
     , func(F)
-{
-}
+{}
 
 FunctionTypeDecl::~FunctionTypeDecl() {
     delete func;

@@ -41,7 +41,7 @@ enum DeclKind {
     DECL_FUNC = 0,
     DECL_VAR,
     DECL_ENUMVALUE,
-    DECL_TYPE,
+    DECL_ALIASTYPE,
     DECL_STRUCTTYPE,
     DECL_ENUMTYPE,
     DECL_FUNCTIONTYPE,
@@ -184,12 +184,12 @@ private:
 
 
 class TypeDecl : public Decl {
+protected:
+    TypeDecl(DeclKind kind, const std::string& name_, SourceLocation loc_, QualType type_, bool is_public);
 public:
-    TypeDecl(const std::string& name_, SourceLocation loc_, QualType type_, bool is_public);
-    virtual ~TypeDecl();
     static bool classof(const Decl* D) {
         switch (D->getKind()) {
-        case DECL_TYPE:
+        case DECL_ALIASTYPE:
         case DECL_STRUCTTYPE:
         case DECL_ENUMTYPE:
         case DECL_FUNCTIONTYPE:
@@ -198,16 +198,23 @@ public:
             return false;
         }
     }
-    virtual void print(StringBuilder& buffer, unsigned indent) const;
 
     QualType getType() const { return type; }
     void setType(QualType qt) { type = qt; }
-    // TODO dont return QualType&, but have getType()/setType() function
 protected:
-    // for subtypes
-    TypeDecl(DeclKind kind, const std::string& name_, SourceLocation loc_, QualType type_, bool is_public);
-
     mutable QualType type;
+};
+
+
+class AliasTypeDecl : public TypeDecl {
+public:
+    AliasTypeDecl(const std::string& name_, SourceLocation loc_, QualType type_, bool is_public)
+        : TypeDecl(DECL_ALIASTYPE, name_, loc_, type_, is_public)
+    {}
+    static bool classof(const Decl* D) {
+        return D->getKind() == DECL_ALIASTYPE;
+    }
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
 };
 
 

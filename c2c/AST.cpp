@@ -17,8 +17,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <clang/Parse/ParseDiagnostic.h>
-#include <clang/Sema/SemaDiagnostic.h>
 
 #include "Decl.h"
 #include "Expr.h"
@@ -61,21 +59,6 @@ void AST::print() const {
         buffer << '\n';
     }
     printf("%s", (const char*)buffer);
-}
-
-void AST::addType(TypeDecl* d) {
-    typeList.push_back(d);
-    addSymbol(d);
-}
-
-void AST::addVar(VarDecl* d) {
-    varList.push_back(d);
-    addSymbol(d);
-}
-
-void AST::addFunction(FunctionDecl* d) {
-    functionList.push_back(d);
-    addSymbol(d);
 }
 
 void AST::addSymbol(Decl* d) {

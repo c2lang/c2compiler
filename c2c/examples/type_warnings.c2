@@ -4,14 +4,6 @@ type Inner struct {
     int a;
 }
 
-public type Outer struct {
-    Inner i;    // error: using non-public type for member of public struct
-}
-
-utils.foo[] bla; // error: unknown package
-
-main bliep; // error: main is not a type
-
 type Number int;
 
 Number b;
@@ -29,15 +21,6 @@ func void test5(main* a, bla b) {} // error: main and bla are not types
 public func void main() {
     int a = (int) 10;
 }
-
-public func Number func1() {} // error: cannot have public function with non-public return type
-
-public func void func2(Number n) {} // error: cannot have public function with non-public argument type
-
-public Number number;
-public type_warnings.Number number2; // error: cannot have public var with non-public type
-
-public type PubNumber Number*; // error cannot have non-public base type in public var
 
 // ok
 public type Faa int;

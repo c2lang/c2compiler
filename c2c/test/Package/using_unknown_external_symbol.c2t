@@ -1,0 +1,11 @@
+// @file{file1}
+package foo;
+
+// @file{file2}
+package bar;
+use foo;
+
+func void test1() {
+    foo.n = 10;         // @error{package foo has no symbol n}
+}
+

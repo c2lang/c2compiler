@@ -1,0 +1,2 @@
+package c2;     // @error{package-name c2 is reserved}
+

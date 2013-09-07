@@ -31,6 +31,7 @@ namespace C2 {
 
 class AST;
 class Decl;
+class VarDecl;
 class Expr;
 class Type;
 class Package;
@@ -58,7 +59,7 @@ public:
 
     llvm::Value* EvaluateExprAsBool(const Expr *E);
 private:
-    void EmitFunctionProto(Decl* D);
+    void EmitGlobalVariable(VarDecl* V);
     void EmitTopLevelDecl(Decl* D);
 
     llvm::Constant* EvaluateExprAsConstant(const Expr *E);

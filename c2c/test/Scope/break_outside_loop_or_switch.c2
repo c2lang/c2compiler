@@ -1,0 +1,15 @@
+package test;
+
+func void func1() {
+    break;  // @error{'break' statement not in loop or switch statement}
+
+    {
+        break;  // @error{'break' statement not in loop or switch statement}
+    }
+
+    if (true) {
+        break;  // @error{'break' statement not in loop or switch statement}
+    }
+}
+
+

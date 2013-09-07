@@ -1,0 +1,4 @@
+package test;
+
+utils.foo[] a;      // @error{unknown package: utils}
+

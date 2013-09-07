@@ -239,14 +239,14 @@ void C2Parser::ParseTypeDef(bool is_public) {
     case tok::coloncolon:
         Diag(Tok, diag::err_qualified_typedef);
         SkipUntil(tok::semi);
-        break;
+        return;
     default:
         type = ParseTypeSpecifier(true);
         if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "type definition")) return;
+        if (!type.isUsable()) return;
+        Actions.ActOnAliasType(id->getNameStart(), idLoc, type.release(), is_public);
         break;
     }
-    if (!type.isUsable()) return;
-    Actions.ActOnTypeDef(id->getNameStart(), idLoc, type.release(), is_public);
 }
 
 // syntax: { <struct_block> }

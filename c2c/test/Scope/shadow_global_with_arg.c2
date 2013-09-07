@@ -1,0 +1,6 @@
+package test;
+
+int a;
+
+func void test1(u8 a) {}        // @error{redefinition of a}
+

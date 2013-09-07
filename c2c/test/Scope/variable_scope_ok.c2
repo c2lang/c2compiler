@@ -1,0 +1,12 @@
+package test;
+
+func void func1() {
+    {
+        int a;
+    }
+    {
+        int b;
+    }
+}
+
+

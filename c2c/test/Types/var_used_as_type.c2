@@ -1,0 +1,5 @@
+package test;
+
+int Number;
+Number n;   // @error{Number is not a type name}
+

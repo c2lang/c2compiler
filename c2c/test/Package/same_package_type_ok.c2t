@@ -1,0 +1,10 @@
+// @file{file1}
+package test;
+
+type Number int;
+
+// @file{file2}
+package test;
+
+Number n;
+

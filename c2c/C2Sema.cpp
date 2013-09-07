@@ -139,10 +139,13 @@ void C2Sema::ActOnUse(const char* name, SourceLocation loc, Token& aliasTok, boo
         return;
     }
     // check for duplicate use
-    const Decl* old = findUse(name);
+    const UseDecl* old = findUseOrAlias(name);
     if (old) {
         Diag(loc, diag::err_duplicate_use) << name;
-        Diag(old->getLocation(), diag::note_previous_use);
+        if (name == old->getName())
+            Diag(old->getLocation(), diag::note_previous_use);
+        else
+            Diag(old->getAliasLocation(), diag::note_previous_use);
         return;
     }
     const char* aliasName = "";
@@ -153,21 +156,30 @@ void C2Sema::ActOnUse(const char* name, SourceLocation loc, Token& aliasTok, boo
             Diag(aliasTok.getLocation(), diag::err_alias_same_as_package);
             return;
         }
-        const UseDecl* old = findAlias(aliasName);
+        // check if same as own package
+        if (ast.getPkgName() == aliasName) {
+            Diag(aliasTok.getLocation(), diag::err_use_own_package) << aliasName;
+            return;
+        }
+        // check for duplicate use
+        const UseDecl* old = findUseOrAlias(aliasName);
         if (old) {
             Diag(aliasTok.getLocation(), diag::err_duplicate_use) << aliasName;
-            Diag(old->getAliasLocation(), diag::note_previous_use);
+            if (name == old->getName())
+                Diag(old->getLocation(), diag::note_previous_use);
+            else
+                Diag(old->getAliasLocation(), diag::note_previous_use);
             return;
         }
     }
     ast.addUse(new UseDecl(name, loc, isLocal, aliasName, aliasTok.getLocation()));
 }
 
-void C2Sema::ActOnTypeDef(const char* name, SourceLocation loc, Expr* type, bool is_public) {
+void C2Sema::ActOnAliasType(const char* name, SourceLocation loc, Expr* type, bool is_public) {
     assert(name);
     assert(type);
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: type def " << name << " at ";
+    std::cerr << COL_SEMA"SEMA: alias type def " << name << " at ";
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
@@ -175,8 +187,9 @@ void C2Sema::ActOnTypeDef(const char* name, SourceLocation loc, Expr* type, bool
     if (typeExpr->hasLocalQualifier()) {
         Diag(loc, diag::err_invalid_local_typedef);
     }
-    TypeDecl* T = new TypeDecl(name, loc, typeExpr->getType(), is_public);
+    TypeDecl* T = new AliasTypeDecl(name, loc, typeExpr->getType(), is_public);
     ast.addType(T);
+    addSymbol(T);
     delete typeExpr;
 }
 
@@ -188,6 +201,7 @@ void C2Sema::ActOnVarDef(const char* name, SourceLocation loc,
     }
     VarDecl* V =  createVarDecl(name, loc, typeExpr, InitValue, is_public);
     ast.addVar(V);
+    addSymbol(V);
 }
 
 C2::FunctionDecl* C2Sema::createFuncDecl(const char* name, SourceLocation loc,
@@ -223,6 +237,7 @@ C2::FunctionDecl* C2Sema::ActOnFuncDecl(const char* name, SourceLocation loc, bo
 #endif
     FunctionDecl* D = createFuncDecl(name, loc, is_public, rtype);
     ast.addFunction(D);
+    addSymbol(D);
     return D;
 }
 
@@ -235,7 +250,9 @@ C2::FunctionDecl* C2Sema::ActOnFuncTypeDecl(const char* name, SourceLocation loc
     std::cerr << ANSI_NORMAL"\n";
 #endif
     FunctionDecl* D = createFuncDecl(name, loc, is_public, rtype);
-    ast.addType(new FunctionTypeDecl(D));
+    FunctionTypeDecl* FTD = new FunctionTypeDecl(D);
+    ast.addType(FTD);
+    addSymbol(FTD);
     return D;
 }
 
@@ -572,7 +589,10 @@ StructTypeDecl* C2Sema::ActOnStructType(const char* name, SourceLocation loc,
     StructTypeDecl* S = new StructTypeDecl(name, loc, qt, isStruct, is_global, is_public);
     StructType* ST = cast<StructType>(qt.getTypePtr());
     ST->setDecl(S);
-    if (is_global) ast.addType(S);
+    if (is_global) {
+        ast.addType(S);
+        addSymbol(S);
+    }
     return S;
 }
 
@@ -622,6 +642,7 @@ EnumTypeDecl* C2Sema::ActOnEnumType(const char* name, SourceLocation loc, Expr* 
     ET->setCanonicalType(impl);
     ET->setDecl(E);
     ast.addType(E);
+    addSymbol(E);
     return E;
 }
 
@@ -910,18 +931,10 @@ void C2Sema::addSymbol(Decl* d) {
     }
 }
 
-const C2::Decl* C2Sema::findUse(const char* name) const {
+const C2::UseDecl* C2Sema::findUseOrAlias(const char* name) const {
     for (unsigned i=0; i<ast.numUses(); i++) {
         UseDecl* D = ast.getUse(i);
-        if (D->getName() == name) return D;
-    }
-    return 0;
-}
-
-const C2::UseDecl* C2Sema::findAlias(const char* name) const {
-    for (unsigned i=0; i<ast.numUses(); i++) {
-        UseDecl* useDecl = ast.getUse(i);
-        if (useDecl->getAlias() == name) return useDecl;
+        if (D->getName() == name || D->getAlias() == name) return D;
     }
     return 0;
 }
