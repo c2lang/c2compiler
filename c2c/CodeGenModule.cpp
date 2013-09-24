@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 
-#include <llvm/Module.h>
+#include <llvm/IR/Module.h>
 #include <llvm/ADT/ArrayRef.h>
-#include <llvm/LLVMContext.h>
-#include <llvm/Function.h>
-#include <llvm/BasicBlock.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Function.h>
+#include <llvm/IR/BasicBlock.h>
 #include <vector>
 // for SmallString
 #include <llvm/ADT/SmallString.h>

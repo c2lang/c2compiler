@@ -16,7 +16,7 @@
 #ifndef CODEGEN_FUNCTION_H
 #define CODEGEN_FUNCTION_H
 
-#include <llvm/IRBuilder.h>
+#include <llvm/IR/IRBuilder.h>
 #include <llvm/ADT/Twine.h>
 
 namespace llvm {

@@ -16,7 +16,7 @@
 #ifndef CODEGEN_MODULE_H
 #define CODEGEN_MODULE_H
 
-#include <llvm/IRBuilder.h>
+#include <llvm/IR/IRBuilder.h>
 #include <string>
 #include <vector>
 

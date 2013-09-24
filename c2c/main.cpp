@@ -151,7 +151,7 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
 
 int main(int argc, const char *argv[])
 {
-    assert(CLANG_C2_VERSION >= 4 && "Please update your clang c2 version");
+    assert(CLANG_C2_VERSION >= 5 && "Please update your clang c2 version");
 
     u_int64_t t1 = Utils::getCurrentTime();
     BuildOptions opts;

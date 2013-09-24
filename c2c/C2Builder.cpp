@@ -80,12 +80,20 @@ public:
     C2ModuleLoader() {}
     virtual ~C2ModuleLoader () {}
 
-    virtual Module *loadModule(SourceLocation ImportLoc, ModuleIdPath Path,
+    virtual ModuleLoadResult loadModule(SourceLocation ImportLoc, ModuleIdPath Path,
                                Module::NameVisibilityKind Visibility,
                                bool IsInclusionDirective)
     {
-        fprintf(stderr, "MODULE LOADER\n");
-        return 0;
+        fprintf(stderr, "MODULE LOADER: loadModule\n");
+        return ModuleLoadResult();
+    }
+
+    virtual void makeModuleVisible(Module *Mod,
+                                   Module::NameVisibilityKind Visibility,
+                                   SourceLocation ImportLoc,
+                                   bool Complain)
+    {
+        fprintf(stderr, "MODULE LOADER: make visible\n");
     }
 
 private:
@@ -240,7 +248,7 @@ int C2Builder::build() {
     // TargetInfo
     TargetOptions* to = new TargetOptions();
     to->Triple = llvm::sys::getDefaultTargetTriple();
-    TargetInfo *pti = TargetInfo::CreateTargetInfo(Diags, *to);
+    TargetInfo *pti = TargetInfo::CreateTargetInfo(Diags, to);
     IntrusiveRefCntPtr<TargetInfo> Target(pti);
 
     HeaderSearchOptions* HSOpts = new HeaderSearchOptions();
@@ -248,7 +256,7 @@ int C2Builder::build() {
     if (getcwd(pwd, 512) == NULL) {
         assert(0);
     }
-    HSOpts->AddPath(pwd, clang::frontend::Quoted, false, false, false);
+    HSOpts->AddPath(pwd, clang::frontend::Quoted, false, false);
 
     // set definitions from recipe
     std::string PredefineBuffer;
