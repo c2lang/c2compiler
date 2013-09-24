@@ -42,7 +42,6 @@ bool QualType::isPointerType() const { return getTypePtr()->isPointerType(); }
 bool QualType::isArrayType() const { return getTypePtr()->isArrayType(); }
 bool QualType::isAliasType() const { return getTypePtr()->isAliasType(); }
 bool QualType::isStructType() const { return getTypePtr()->isStructType(); }
-bool QualType::isEnumType() const { return getTypePtr()->isEnumType(); }
 bool QualType::isFunctionType() const { return getTypePtr()->isFunctionType(); }
 bool QualType::isSubscriptable() const { return getTypePtr()->isSubscriptable(); }
 

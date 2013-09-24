@@ -15,6 +15,7 @@ OBJS = \
     Expr.o \
     FileAnalyser.o \
     FileMap.o \
+    FileUtils.o \
     FunctionAnalyser.o \
     Package.o \
     Recipe.o \

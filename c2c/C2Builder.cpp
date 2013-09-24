@@ -51,6 +51,7 @@
 #include "color.h"
 #include "Recipe.h"
 #include "Utils.h"
+#include "FileUtils.h"
 #include "Package.h"
 #include "Decl.h"
 #include "FileAnalyser.h"
@@ -508,8 +509,9 @@ void C2Builder::printDependencies() const {
     free (deps);
     output << "}\n";
 
-    printf("Dependencies:\n%s", (const char*)output);
-    // TODO write to file
+    std::string path = "output/" + recipe.name;
+    std::string filename = path + '/' + "deps.dot";
+    FileUtils::writeFile(path.c_str(), filename, output);
 }
 
 unsigned C2Builder::analyse() {

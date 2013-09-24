@@ -80,10 +80,8 @@ public:
     bool isBuiltinType() const;
     bool isPointerType() const;
     bool isArrayType() const;
-    bool isUnresolvedType() const;
     bool isAliasType() const;
     bool isStructType() const;
-    bool isEnumType() const;
     bool isFunctionType() const;
     bool isSubscriptable() const;
 
@@ -136,10 +134,8 @@ public:
     bool isBuiltinType() const;
     bool isPointerType() const;
     bool isArrayType() const;
-    bool isUnresolvedType() const;
     bool isAliasType() const;
     bool isStructType() const;
-    bool isEnumType() const;
     bool isFunctionType() const;
     bool isSubscriptable() const;
 
@@ -396,11 +392,6 @@ inline bool Type::isAliasType() const {
 inline bool Type::isStructType() const {
     assert(canonicalType.isValid());
     return isa<StructType>(canonicalType);
-}
-
-inline bool Type::isEnumType() const {
-    assert(canonicalType.isValid());
-    return isa<EnumType>(canonicalType);
 }
 
 inline bool Type::isFunctionType() const {

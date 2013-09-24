@@ -47,15 +47,16 @@ how to install in **$HOME/llvm-c2**, but any other dir should work.
 
 To build:
 ```
-tar -xf <path>/llvm-3.2.src.tar.gz
-mv llvm-3.2.src llvm
-cd llvm/projects
-tar -xf <path>/compiler-rt-3.2.src.tar.gz
-mv compiler-rt-3.2.src compiler-rt
+git clone git://github.com/llvm-mirror/llvm.git
+cd llvm/
+git co -b release_33 origini/release_33
+cd projects
+tar -xf <path>/compiler-rt-3.3.src.tar.gz
+mv compiler-rt-3.3.src compiler-rt
 cd ../tools
 git clone git://github.com/c2lang/clang.git
 cd clang
-git co -b c2master origin/c2master
+git co -b c2master_33 origin/c2master_33
 cd ../../..
 mkdir llvm_build
 ../llvm/configure --enable-optimized --prefix=$HOME/llvm-c2/
@@ -110,6 +111,13 @@ file with:
 To generate ANSI-C code, use:
 ```
 ./c2c -C <target>
+```
+
+The C2 compiler is able to generate a package dependency file in dot format. This
+file can be converted into a png as follows:
+```
+./c2c --deps <target>
+dot -T png output/target/deps.dot > image.png
 ```
 
 To see all available options, run:

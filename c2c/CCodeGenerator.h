@@ -49,7 +49,6 @@ public:
 
     void generate();
     void write(const std::string& target, const std::string& name);
-    void writeFile(const std::string& filename, const StringBuilder& content);
     void dump();
 
 private:

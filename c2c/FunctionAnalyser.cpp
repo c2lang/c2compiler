@@ -777,7 +777,8 @@ void FunctionAnalyser::analyseBuiltinExpr(Expr* expr) {
             {
                 VarDecl* VD = cast<VarDecl>(D);
                 QualType Q = VD->getType();
-                if (!Q.isArrayType() && !Q.isEnumType()) {
+                // TODO also allow elemsof for EnumType
+                if (!Q.isArrayType()) {
                     StringBuilder msg;
                     Q.DiagName(msg);
                     Diags.Report(I->getLocation(), diag::err_invalid_elemsof_type)
