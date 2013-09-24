@@ -301,6 +301,8 @@ int C2Builder::build() {
         }
     }
 
+    if (options.printDependencies) printDependencies();
+
     // create analysers/scopes
     for (unsigned i=0; i<files.size(); i++) {
         FileInfo* info = files[i];
@@ -457,6 +459,57 @@ bool C2Builder::loadPackage(const std::string& name) {
     }
     fprintf(stderr, "Error loading package %s\n", name.c_str());
     return false;
+}
+
+void C2Builder::printDependencies() const {
+    StringBuilder output;
+    output << "digraph G {\n";
+    output << "node [shape=box]\n";
+
+    typedef std::map<std::string, unsigned> PkgIndex;
+    typedef PkgIndex::const_iterator PkgIndexConstIter;
+    PkgIndex pkgIndex;
+
+    unsigned index = 0;
+    // create package nodes
+    for (PkgsConstIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
+        const Package* P = iter->second;
+        output << index << "[label=\"" << P->getName() << '"';
+        if (P->isExternal()) output << " shape=oval";
+        output << "];\n";
+        pkgIndex[P->getName()] = index;
+        index++;
+    }
+
+    // calculate package deps
+    unsigned char* deps = (unsigned char*)calloc(1, index * index);
+    for (unsigned i=0; i<files.size(); i++) {
+        FileInfo* info = files[i];
+        for (unsigned i=0; i<info->ast.numUses(); i++) {
+            UseDecl* D = info->ast.getUse(i);
+            const std::string& name = D->getName();
+            PkgIndexConstIter iter1 = pkgIndex.find(info->ast.getPkgName());
+            PkgIndexConstIter iter2 = pkgIndex.find(D->getName());
+            assert(iter1 != pkgIndex.end());
+            assert(iter2 != pkgIndex.end());
+            deps[iter1->second * index + iter2->second]++;
+        }
+    }
+
+    // print package deps
+    for (unsigned i=0; i<index; i++) {
+        for (unsigned j=0; j<index; j++) {
+            unsigned ii = i*index + j;
+            if (deps[ii] != 0) {
+                output << i << " -> " << j << ";\n";
+            }
+        }
+    }
+    free (deps);
+    output << "}\n";
+
+    printf("Dependencies:\n%s", (const char*)output);
+    // TODO write to file
 }
 
 unsigned C2Builder::analyse() {

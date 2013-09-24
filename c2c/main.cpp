@@ -51,93 +51,98 @@ static void usage(const char* name) {
     fprintf(stderr, "   -p            - print all packages\n");
     fprintf(stderr, "   -s            - print symbols\n");
     fprintf(stderr, "   -t            - print timing\n");
-    fprintf(stderr, "   --test        - test mode (don't check for main())\n");
     fprintf(stderr, "   -v            - verbose logging\n");
+    fprintf(stderr, "   --test        - test mode (don't check for main())\n");
+    fprintf(stderr, "   --deps        - print package dependencies\n");
     exit(-1);
 }
 
 static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
     for (int i=1; i<argc; i++) {
         const char* arg = argv[i];
-        if (strcmp("-a0", arg) == 0) {
-            opts.printAST0 = true;
-            continue;
-        }
-        if (strcmp("-a1", arg) == 0) {
-            opts.printAST1 = true;
-            continue;
-        }
-        if (strcmp("-a2", arg) == 0) {
-            opts.printAST2 = true;
-            continue;
-        }
-        if (strcmp("-a3", arg) == 0) {
-            opts.printAST3 = true;
-            continue;
-        }
-        if (strcmp("-c", arg) == 0) {
-            opts.generateC = true;
-            continue;
-        }
-        if (strcmp("-C", arg) == 0) {
-            opts.generateC = true;
-            opts.printC = true;
-            continue;
-        }
-        if (strcmp("-d", arg) == 0) {
-            if (i==argc-1) {
-                fprintf(stderr, "error: -d needs an argument\n");
-                exit(-1);
-            }
-            i++;
-            other_dir = argv[i];
-            continue;
-        }
-        if (strcmp("-f", arg) == 0) {
-            use_recipe = false;
-            continue;
-        }
-        if (strcmp("-h", arg) == 0) {
-            usage(argv[0]);
-        }
-        if (strcmp("-i", arg) == 0) {
-            opts.generateIR = true;
-            continue;
-        }
-        if (strcmp("-I", arg) == 0) {
-            opts.generateIR = true;
-            opts.printIR = true;
-            continue;
-        }
-        if (strcmp("-l", arg) == 0) {
-            print_targets = true;
-            continue;
-        }
-        if (strcmp("-p", arg) == 0) {
-            opts.printPackages = true;
-            continue;
-        }
-        if (strcmp("-s", arg) == 0) {
-            opts.printSymbols = true;
-            continue;
-        }
-        if (strcmp("-t", arg) == 0) {
-            opts.printTiming = true;
-            continue;
-        }
-        if (strcmp("--test", arg) == 0) {
-            opts.testMode = true;
-            continue;
-        }
-        if (strcmp("-v", arg) == 0) {
-            opts.verbose = true;
-            continue;
-        }
         if (arg[0] == '-') {
-            usage(argv[0]);
+            switch (arg[1]) {
+            case 'a':
+                switch (arg[2]) {
+                case '0':
+                    opts.printAST0 = true;
+                    break;
+                case '1':
+                    opts.printAST1 = true;
+                    break;
+                case '2':
+                    opts.printAST2 = true;
+                    break;
+                case '3':
+                    opts.printAST3 = true;
+                    break;
+                default:
+                    usage(argv[0]);
+                    break;
+                }
+                break;
+            case 'c':
+                opts.generateC = true;
+                break;
+            case 'C':
+                opts.generateC = true;
+                opts.printC = true;
+                break;
+            case 'd':
+                if (i==argc-1) {
+                    fprintf(stderr, "error: -d needs an argument\n");
+                    exit(-1);
+                }
+                i++;
+                other_dir = argv[i];
+                break;
+            case 'f':
+                use_recipe = false;
+                break;
+            case 'h':
+                usage(argv[0]);
+                break;
+            case 'i':
+                opts.generateIR = true;
+                break;
+            case 'I':
+                opts.generateIR = true;
+                opts.printIR = true;
+                break;
+            case 'l':
+                print_targets = true;
+                break;
+            case 'p':
+                opts.printPackages = true;
+                break;
+            case 's':
+                opts.printSymbols = true;
+                break;
+            case 't':
+                opts.printTiming = true;
+                break;
+            case 'v':
+                opts.verbose = true;
+                break;
+            case '-':
+                if (strcmp(&arg[2], "test") == 0) {
+                    opts.testMode = true;
+                    continue;
+                }
+                if (strcmp(&arg[2], "deps") == 0) {
+                    opts.printDependencies = true;
+                    continue;
+                }
+                usage(argv[0]);
+                break;
+            default:
+                usage(argv[0]);
+                break;
+            }
+        } else {
+            if (targetFilter) usage(argv[0]);
+            targetFilter = arg;
         }
-        if (targetFilter) usage(argv[0]);
-        targetFilter = arg;
     }
     if (!use_recipe && !targetFilter) {
         fprintf(stderr, "error: argument -f needs filename\n");

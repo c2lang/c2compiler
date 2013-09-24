@@ -43,6 +43,7 @@ struct BuildOptions {
         , generateC(false)
         , printC(false)
         , printPackages(false)
+        , printDependencies(false)
         , verbose(false)
         , testMode(false)
     {}
@@ -57,6 +58,7 @@ struct BuildOptions {
     bool generateC;
     bool printC;
     bool printPackages;
+    bool printDependencies;
     bool verbose;
     bool testMode;
 };
@@ -75,6 +77,7 @@ private:
     bool createPkgs();
     bool loadExternalPackages();
     bool loadPackage(const std::string& name);
+    void printDependencies() const;
     unsigned analyse();
     void dumpPkgs() const;
     void printASTs() const;
