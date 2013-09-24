@@ -230,9 +230,12 @@ int C2Builder::build() {
     Diags.setDiagnosticGroupMapping("all", diag::MAP_WARNING);
     Diags.setDiagnosticGroupMapping("extra", diag::MAP_WARNING);
     Diags.setDiagnosticWarningAsError(diag::warn_integer_too_large, true);
+    Diags.setDiagnosticWarningAsError(diag::warn_falloff_nonvoid_function, true);
     // Workaround
     Diags.setDiagnosticErrorAsFatal(diag::warn_integer_too_large, true);
     Diags.setDiagnosticErrorAsFatal(diag::warn_integer_too_large, false);
+    Diags.setDiagnosticErrorAsFatal(diag::warn_falloff_nonvoid_function, true);
+    Diags.setDiagnosticErrorAsFatal(diag::warn_falloff_nonvoid_function, false);
 
     // TargetInfo
     TargetOptions* to = new TargetOptions();

@@ -167,8 +167,14 @@ unsigned FileAnalyser::checkVarInits() {
     for (unsigned i=0; i<ast.numVars(); i++) {
         VarDecl* V = ast.getVar(i);
         Expr* initVal = V->getInitValue();
+        QualType T = V->getType();
         if (initVal) {
-            errors += checkInitValue(V, initVal, V->getType());
+            errors += checkInitValue(V, initVal, T);
+        } else {
+            if (T.isConstQualified()) {
+                Diags.Report(V->getLocation(), diag::err_uninitialized_const_var) << V->getName();
+                errors++;
+            }
         }
     }
     for (unsigned i=0; i<ast.numArrayValues(); i++) {

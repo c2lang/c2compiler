@@ -5,5 +5,5 @@ package foo;
 package bar;
 use foo;
 
-foo.Bla a;      // @error{package foo has no type Bla}
+foo.Bla a;      // @error{package foo has no symbol Bla}
 

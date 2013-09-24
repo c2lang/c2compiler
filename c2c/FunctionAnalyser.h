@@ -99,8 +99,11 @@ private:
         FunctionAnalyser& analyser;
     };
 
-    void checkConversion(SourceLocation Loc, QualType from, QualType to);
     void checkAssignment(Expr* assignee, QualType TLeft);
+    enum ConvType { CONV_INIT, CONV_ASSIGN, CONV_CONV };
+    bool checkCompatible(QualType left, QualType right, SourceLocation Loc, ConvType conv) const;
+    bool checkBuiltin(QualType left, QualType right, SourceLocation Loc, ConvType conv) const;
+    bool checkPointer(QualType left, QualType right, SourceLocation Loc, ConvType conv) const;
 
     static QualType resolveUserType(QualType T);
     QualType Decl2Type(Decl* decl);

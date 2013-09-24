@@ -118,7 +118,7 @@ QualType FileScope::checkCanonicals2(Decls& decls, QualType Q, bool set) const {
             if (!t2.isValid()) return t2;
             QualType canonical;
             // create new PointerType if PointeeType has different canonical than itself
-            if (t1 == t2) canonical = t2;
+            if (t1 == t2) canonical = Q;
             else canonical = typeContext.getPointerType(t2);
 
             if (set) P->setCanonicalType(canonical);
@@ -131,8 +131,8 @@ QualType FileScope::checkCanonicals2(Decls& decls, QualType Q, bool set) const {
             QualType t2 = checkCanonicals2(decls, t1, true);
             if (!t2.isValid()) return t2;
             QualType canonical;
-            if (t1 == t2) canonical = t2;
-            // NOTE need size Expr, but set ownership to none?
+            if (t1 == t2) canonical = Q;
+            // NOTE: need size Expr, but set ownership to none
             else canonical = typeContext.getArrayType(t2, A->getSize(), false);
             if (set) A->setCanonicalType(canonical);
             return canonical;
@@ -201,7 +201,7 @@ QualType FileScope::resolveCanonical(QualType Q, bool set) const {
             assert(t2.isValid());
             QualType canonical;
             // create new PointerType if PointeeType has different canonical than itself
-            if (t1 == t2) canonical = t2;
+            if (t1 == t2) canonical = Q;
             else canonical = typeContext.getPointerType(t2);
 
             if (set) P->setCanonicalType(canonical);
@@ -214,8 +214,8 @@ QualType FileScope::resolveCanonical(QualType Q, bool set) const {
             QualType t2 = resolveCanonical(t1, true);
             assert(t2.isValid());
             QualType canonical;
-            if (t1 == t2) canonical = t2;
-            // NOTE need size Expr, but set ownership to none?
+            if (t1 == t2) canonical = Q;
+            // NOTE: need size Expr, but set ownership to none
             else canonical = typeContext.getArrayType(t2, A->getSize(), false);
             if (set) A->setCanonicalType(canonical);
             return canonical;
@@ -261,7 +261,10 @@ unsigned FileScope::checkUnresolvedType(const UnresolvedType* type, bool used_pu
             IdentifierExpr* I = cast<IdentifierExpr>(id);
             ScopeResult res = findSymbol(I->getName());
             if (!res.decl) {
-                Diags.Report(I->getLocation(), diag::err_unknown_typename) << I->getName();
+                if (res.pkg)
+                    Diags.Report(I->getLocation(), diag::err_not_a_typename) << I->getName();
+                else
+                    Diags.Report(I->getLocation(), diag::err_unknown_typename) << I->getName();
                 return 1;
             }
             if (res.ambiguous) {
@@ -321,7 +324,7 @@ unsigned FileScope::checkUnresolvedType(const UnresolvedType* type, bool used_pu
             // check Type
             Decl* symbol = pkg->findSymbol(member_id->getName());
             if (!symbol) {
-                Diags.Report(member_id->getLocation(), diag::err_unknown_typename) << M->getFullName();
+                Diags.Report(member_id->getLocation(), diag::err_unknown_package_symbol) << pkgName << member_id->getName();
                 return 1;
             }
             TypeDecl* td = dyncast<TypeDecl>(symbol);

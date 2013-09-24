@@ -424,7 +424,20 @@ void EnumType::debugPrint(StringBuilder& buffer, unsigned indent) const {
 
 
 void FunctionType::printName(StringBuilder& buffer) const {
-    buffer << "functiontype " << func->getName();
+    // print something like int (int, int)
+    QualType Q = func->getReturnType();
+    Q = Q->getCanonicalType();
+    Q.printName(buffer);
+    buffer << " (";
+    for (int i=0; i<func->numArgs(); i++) {
+        if (i != 0) buffer << ", ";
+        VarDecl* A = func->getArg(i);
+        Q = A->getType();
+        Q = Q->getCanonicalType();
+        Q.printName(buffer);
+    }
+    if (func->isVariadic()) buffer << ", ...";
+    buffer << ')';
 }
 
 void FunctionType::debugPrint(StringBuilder& buffer, unsigned indent) const {

@@ -61,7 +61,7 @@ public:
     const Type* operator->() const { return getTypePtr(); }
     operator const Type*() const { return getTypePtr(); }
     bool operator==(const QualType& rhs) {
-        return (type == rhs.type) && (qualifiers = rhs.qualifiers);
+        return (type == rhs.type) && (qualifiers == rhs.qualifiers);
     }
     bool isNull() const { return type == NULL; }
     bool isValid() const { return type != NULL; }
