@@ -9,6 +9,6 @@ public func void main() {
     a = 10;
 
     const int a2 = 20;
-    volatile int* b2 = 0x2000;
+    //volatile int* b2 = 0x2000;
 }
 

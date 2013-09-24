@@ -1,0 +1,13 @@
+package test;
+
+public func int main() {
+    i32 Int32 = 1;
+    u32 UInt32 = 1;
+
+    i32* p1 = Int32;        // @error{invalid type conversion from 'i32' to 'i32*'}
+    i32* p2 = UInt32;       // @error{invalid type conversion from 'u32' to 'i32*'}
+
+    return 0;
+}
+
+

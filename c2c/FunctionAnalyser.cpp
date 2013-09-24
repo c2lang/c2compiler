@@ -394,8 +394,17 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr) {
     LOG_FUNC
     switch (expr->getKind()) {
     case EXPR_INTEGER_LITERAL:
-        // TEMP for now always return type int
-        return Type::Int32();
+        {
+            IntegerLiteral* I = cast<IntegerLiteral>(expr);
+            //unsigned numbits = I->Value.getActiveBits();   // unsigned
+            // TEMP for now assume signed
+            // Q: we can determine size, but don't know if we need signed/unsigned
+            unsigned numbits = I->Value.getMinSignedBits();  // signed
+            if (numbits <= 8) return Type::Int8();
+            if (numbits <= 16) return Type::Int16();
+            if (numbits <= 32) return Type::Int32();
+            return Type::Int64();
+        }
     case EXPR_STRING_LITERAL:
         {
             // return type: 'const char*'
@@ -617,7 +626,7 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     unsigned errs = globalScope.checkType(type, false);
     errors += errs;
     if (!errs) {
-        globalScope.resolveCanonical(type, true);
+        globalScope.resolveCanonicals(decl, type, true);
     }
 
     // check name
@@ -724,7 +733,7 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr) {
     case UO_AddrOf:
         {
             QualType Q = typeContext.getPointerType(LType);
-            globalScope.resolveCanonical(Q, true);
+            globalScope.resolveCanonicals(0, Q, true);
             return Q;
         }
     case UO_Deref:

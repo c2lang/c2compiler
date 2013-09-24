@@ -447,13 +447,11 @@ void CCodeGenerator::EmitTypeDecl(TypeDecl* T) {
         assert(0);
         break;
     case DECL_ALIASTYPE:
-        // TODO
-        assert(0 && "TODO");
         *out << "typedef ";
-        //EmitTypePreName(T->getType(), *out);
-        //EmitTypePostName(T->getType(), *out);
+        EmitTypePreName(T->getType(), *out);
         *out << ' ';
         addPrefix(*curpkg, T->getName(), *out);
+        EmitTypePostName(T->getType(), *out);
         *out << ";\n\n";
         break;
     case DECL_STRUCTTYPE:

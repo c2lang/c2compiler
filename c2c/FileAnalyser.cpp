@@ -100,7 +100,7 @@ unsigned FileAnalyser::resolveTypeCanonicals() {
     for (unsigned i=0; i<ast.numTypes(); i++) {
         const TypeDecl* D = ast.getType(i);
         // check generic type
-        globals->checkTypeCanonicals(D, D->getType(), true);
+        globals->resolveCanonicals(D, D->getType(), true);
 
         // NOTE dont check any subclass specific things yet
 
@@ -266,7 +266,7 @@ unsigned FileAnalyser::resolveVarDecl(VarDecl* D) {
 
     unsigned errors = globals->checkType(Q, D->isPublic());
     if (!errors) {
-        globals->resolveCanonical(Q, true);
+        globals->resolveCanonicals(D, Q, true);
         // NOTE: dont check initValue here (doesn't have canonical type yet)
     }
     return errors;
@@ -280,7 +280,7 @@ unsigned FileAnalyser::resolveFunctionDecl(FunctionDecl* D) {
     if (!RT->hasCanonicalType()) {
         unsigned errs = globals->checkType(RT, D->isPublic());
         errors += errs;
-        if (!errs) globals->resolveCanonical(RT, true);
+        if (!errs) globals->resolveCanonicals(D, RT, true);
     }
 
     // args

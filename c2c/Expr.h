@@ -92,6 +92,7 @@ public:
     virtual SourceLocation getLocation() const { return loc; }
 
     llvm::APInt Value;
+private:
     clang::SourceLocation loc;
 };
 

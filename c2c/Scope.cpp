@@ -96,13 +96,13 @@ unsigned FileScope::checkType(QualType Q, bool used_public) {
     }
 }
 
-QualType FileScope::checkTypeCanonicals(const Decl* D, QualType Q, bool set) const {
+QualType FileScope::resolveCanonicals(const Decl* D, QualType Q, bool set) const {
     Decls decls;
-    decls.push_back(D);
-    return checkCanonicals2(decls, Q, set);
+    if (D != 0) decls.push_back(D);
+    return checkCanonicals(decls, Q, set);
 }
 
-QualType FileScope::checkCanonicals2(Decls& decls, QualType Q, bool set) const {
+QualType FileScope::checkCanonicals(Decls& decls, QualType Q, bool set) const {
     const Type* T = Q.getTypePtr();
     if (T->hasCanonicalType()) return T->getCanonicalType();
 
@@ -114,7 +114,7 @@ QualType FileScope::checkCanonicals2(Decls& decls, QualType Q, bool set) const {
             const PointerType* P = cast<PointerType>(T);
             QualType t1 = P->getPointeeType();
             // Pointee will always be in same TypeContext (file), since it's either built-in or UnresolvedType
-            QualType t2 = checkCanonicals2(decls, t1, true);
+            QualType t2 = checkCanonicals(decls, t1, true);
             if (!t2.isValid()) return t2;
             QualType canonical;
             // create new PointerType if PointeeType has different canonical than itself
@@ -128,7 +128,7 @@ QualType FileScope::checkCanonicals2(Decls& decls, QualType Q, bool set) const {
         {
             const ArrayType* A = cast<ArrayType>(T);
             QualType t1 = A->getElementType();
-            QualType t2 = checkCanonicals2(decls, t1, true);
+            QualType t2 = checkCanonicals(decls, t1, true);
             if (!t2.isValid()) return t2;
             QualType canonical;
             if (t1 == t2) canonical = Q;
@@ -146,7 +146,7 @@ QualType FileScope::checkCanonicals2(Decls& decls, QualType Q, bool set) const {
             if (!checkDecls(decls, TD)) {
                 return QualType();
             }
-            QualType canonical = checkCanonicals2(decls, TD->getType(), false);
+            QualType canonical = checkCanonicals(decls, TD->getType(), false);
             if (set) U->setCanonicalType(canonical);
             return canonical;
         }
@@ -183,65 +183,6 @@ bool FileScope::checkDecls(Decls& decls, const Decl* D) const {
     }
     decls.push_back(D);
     return true;
-}
-
-QualType FileScope::resolveCanonical(QualType Q, bool set) const {
-    const Type* T = Q.getTypePtr();
-    if (T->hasCanonicalType()) return T->getCanonicalType();
-
-    switch (T->getTypeClass()) {
-    case TC_BUILTIN:
-        return T->getCanonicalType();
-    case TC_POINTER:
-        {
-            const PointerType* P = cast<PointerType>(T);
-            QualType t1 = P->getPointeeType();
-            // Pointee will always be in same TypeContext (file), since it's either built-in or UnresolvedType
-            QualType t2 = resolveCanonical(t1, true);
-            assert(t2.isValid());
-            QualType canonical;
-            // create new PointerType if PointeeType has different canonical than itself
-            if (t1 == t2) canonical = Q;
-            else canonical = typeContext.getPointerType(t2);
-
-            if (set) P->setCanonicalType(canonical);
-            return canonical;
-        }
-    case TC_ARRAY:
-        {
-            const ArrayType* A = cast<ArrayType>(T);
-            QualType t1 = A->getElementType();
-            QualType t2 = resolveCanonical(t1, true);
-            assert(t2.isValid());
-            QualType canonical;
-            if (t1 == t2) canonical = Q;
-            // NOTE: need size Expr, but set ownership to none
-            else canonical = typeContext.getArrayType(t2, A->getSize(), false);
-            if (set) A->setCanonicalType(canonical);
-            return canonical;
-        }
-    case TC_UNRESOLVED:
-        {
-            const UnresolvedType* U = cast<UnresolvedType>(T);
-            const TypeDecl* TD = U->getMatch();
-            assert(TD);
-            QualType canonical = resolveCanonical(TD->getType(), false);
-            if (set) U->setCanonicalType(canonical);
-            return canonical;
-        }
-    case TC_ALIAS:
-        // will be removed?
-        return 0;
-    case TC_STRUCT:
-        return T->getCanonicalType();
-    case TC_ENUM:
-        {
-            assert(0 && "TODO");
-            return 0;
-        }
-    case TC_FUNCTION:
-        return T->getCanonicalType();
-    }
 }
 
 void FileScope::dump() const {
