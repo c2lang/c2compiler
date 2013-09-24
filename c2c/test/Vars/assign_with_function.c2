@@ -1,0 +1,8 @@
+package test;
+
+func void main() {
+    int b;
+    b = main;       // @error{invalid type conversion from 'void ()' to 'i32'}
+}
+
+

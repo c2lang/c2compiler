@@ -1,0 +1,5 @@
+package test;
+
+type Number int;
+type Number char;       // @error{redefinition of Number}
+

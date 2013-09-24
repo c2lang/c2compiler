@@ -1,0 +1,8 @@
+package test;
+
+func void main() {
+    i32* p;
+    p.x = 10;       // @error{member reference type 'i32*' is a pointer; maybe you meant to use '->'?}
+}
+
+

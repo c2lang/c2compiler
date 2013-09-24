@@ -1,0 +1,24 @@
+package test;
+
+type Point struct {
+    int x;
+}
+
+func void test1() {
+    int a;
+    a->b = 10;      // @error{member reference type 'i32' is not a pointer}
+
+    int[2] b;
+    b->a = 10;      // @error{member reference type 'i32[]' is not a pointer}
+
+    int* ip;
+    ip->x = 10;     // @error{member reference base type 'i32' is not a structure or union}
+
+    Point p;
+    p->x = 10;      // @error{member reference type '(struct)Point' is not a pointer}
+
+    Point* pp = &p;
+    pp->x = 10;
+}
+
+

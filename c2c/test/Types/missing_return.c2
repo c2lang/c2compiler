@@ -1,0 +1,5 @@
+package test;
+
+public func int test1() {
+} // @error{control reaches end of non-void function}
+

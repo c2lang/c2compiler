@@ -1,0 +1,6 @@
+package test;
+
+func Bar foo() {}        // @error{unknown type name Bar}
+
+public func Foo foo2() {}        // @error{unknown type name Foo}
+

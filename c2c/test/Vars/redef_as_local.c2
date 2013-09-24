@@ -1,0 +1,10 @@
+package test;
+
+int a;
+
+public func int main() {
+    int a;          // @error{redefinition of a}
+    return 0;
+}
+
+

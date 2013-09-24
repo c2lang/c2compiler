@@ -1,0 +1,7 @@
+package test;
+
+func void main(int, char*[]) {
+    int a = main;       // @error{invalid type conversion from 'void (i32, i8*[])' to 'i32'}
+}
+
+

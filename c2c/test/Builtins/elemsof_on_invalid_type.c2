@@ -1,0 +1,8 @@
+package test;
+
+func void test1() {
+    int a;
+    int b = elemsof(a); // @error{elemsof can only be used with array/enum type (not 'i32')}
+}
+
+
