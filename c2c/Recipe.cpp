@@ -28,6 +28,11 @@ void Recipe::addConfig(const std::string& config_) {
 void Recipe::addAnsiCConfig(const std::string& config_) {
     cConfigs.push_back(config_);
 }
+
+void Recipe::silenceWarning(const std::string& warn_) {
+    silentWarnings.push_back(warn_);
+}
+
 const std::string& Recipe::get(int i) const {
     return files[i];
 }

@@ -209,6 +209,44 @@ unsigned FileAnalyser::checkFunctionBodies() {
     return errors;
 }
 
+void FileAnalyser::checkDeclsForUsed() {
+    LOG_FUNC
+    if (verbose) printf(COL_VERBOSE"%s %s"ANSI_NORMAL"\n", __func__, ast.getFileName().c_str());
+
+    // NOTE: only check VarDecls for now (not funcs/types)
+
+    for (unsigned i=0; i<ast.numVars(); i++) {
+        VarDecl* V = ast.getVar(i);
+        if (!V->isUsed()) {
+            Diags.Report(V->getLocation(), diag::warn_unused_variable) << V->getName();
+        }
+    }
+    for (unsigned i=0; i<ast.numFunctions(); i++) {
+        FunctionDecl* F = ast.getFunction(i);
+        if (F->getName() == "main") continue;
+        if (!F->isUsed()) {
+            Diags.Report(F->getLocation(), diag::warn_unused_function) << F->getName();
+        }
+    }
+    for (unsigned i=0; i<ast.numTypes(); i++) {
+        TypeDecl* T = ast.getType(i);
+        if (!T->isUsed()) {
+            Diags.Report(T->getLocation(), diag::warn_unused_type) << T->getName();
+        } else {
+            // check if members are used
+            if (isa<StructTypeDecl>(T)) {
+                StructTypeDecl* S = cast<StructTypeDecl>(T);
+                for (unsigned i=0; i<S->numMembers(); i++) {
+                    Decl* M = S->getMember(i);
+                    if (!M->isUsed()) {
+                        Diags.Report(M->getLocation(), diag::warn_unused_struct_member) << M->getName();
+                    }
+                }
+            }
+        }
+    }
+}
+
 unsigned FileAnalyser::checkTypeDecl(TypeDecl* D) {
     LOG_FUNC
     // check generic type

@@ -1,0 +1,5 @@
+package test;
+
+func void test1() {     // @warning{unused function test1}
+}
+

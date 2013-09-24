@@ -1,3 +1,4 @@
+// @warnings{no-unused}
 // @file{file1}
 package foo;
 

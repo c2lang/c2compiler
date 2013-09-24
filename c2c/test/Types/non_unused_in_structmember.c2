@@ -1,0 +1,14 @@
+// @warnings{no-unused-variable}
+package test;
+
+type Number int;
+
+type Point struct {
+    Number n;
+}
+
+func void main() {
+    Point p;
+}
+
+

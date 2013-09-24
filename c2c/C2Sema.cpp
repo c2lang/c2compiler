@@ -257,18 +257,19 @@ C2::FunctionDecl* C2Sema::ActOnFuncTypeDecl(const char* name, SourceLocation loc
 }
 
 void C2Sema::ActOnFunctionArg(FunctionDecl* func, const char* name, SourceLocation loc, Expr* type, Expr* InitValue) {
-    // First create VarDecl
 #ifdef SEMA_DEBUG
     assert(name);
     std::cerr << COL_SEMA"SEMA: function arg" << name << " at ";
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
+    // first create VarDecl
     TypeExpr* typeExpr = cast<TypeExpr>(type);
     if (typeExpr->hasLocalQualifier()) {
         Diag(loc, diag::err_invalid_local_functionargument);
     }
     VarDecl* var = createVarDecl(name, loc, typeExpr, InitValue, func->isPublic());
+    var->setIsParameter();
 
     // check args for duplicates
     if (var->getName() != "") {

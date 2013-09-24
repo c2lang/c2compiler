@@ -140,8 +140,9 @@ QualType FileScope::checkCanonicals(Decls& decls, QualType Q, bool set) const {
     case TC_UNRESOLVED:
         {
             const UnresolvedType* U = cast<UnresolvedType>(T);
-            const TypeDecl* TD = U->getMatch();
+            TypeDecl* TD = U->getMatch();
             assert(TD);
+            TD->setUsed();
             // check if exists
             if (!checkDecls(decls, TD)) {
                 return QualType();
@@ -403,9 +404,5 @@ ScopeResult Scope::findSymbol(const std::string& symbol) const {
     // search parent or globals
     if (parent) return parent->findSymbol(symbol);
     else return globals->findSymbol(symbol);
-}
-
-void Scope::addDecl(Decl* d) {
-    decls.push_back(d);
 }
 

@@ -131,7 +131,7 @@ func int printPath(int idx) {
 
 }
 
-public func int main(int argc, const char*[] argv) {
+public func int main(int, const char*[]) {
     // initialize paths
     for (int p=0; p<POINT_MAX; p++) {
         for (int d=0; d<DEPTH_MAX; d++) {
@@ -157,7 +157,7 @@ public func int main(int argc, const char*[] argv) {
         int curDepth = toDepth(idx);
 
         // follow all connections, except incoming
-        for (u32 c = 0; c<sizeof(connections)/sizeof(Connection); c++) {
+        for (u32 c = 0; c<elemsof(connections); c++) {
             const Connection* C = &connections[c];
             int next = -1;
             if (C->src == curPoint) { // go down (or same)

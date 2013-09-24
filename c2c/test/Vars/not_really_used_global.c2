@@ -1,0 +1,9 @@
+package test;
+
+int a;  // @warning{unused variable a}
+
+func void main() {
+    a = 10;
+}
+
+

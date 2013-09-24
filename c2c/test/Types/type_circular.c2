@@ -1,3 +1,4 @@
+// @warnings{no-unused}
 package test;
 
 type Number1 Number2;       // @error{circular type definition: Number1 -> Number2 -> Number1}

@@ -1,3 +1,4 @@
+// @warnings{no-unused}
 package test;
 
 public func void test1() {

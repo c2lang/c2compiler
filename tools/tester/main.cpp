@@ -26,6 +26,7 @@ static unsigned numerrors;
 
 static const char* c2c_cmd = "./c2c";
 static const char* test_root = "/tmp/tester";
+static char* cwd;
 
 static u_int64_t getCurrentTime() {
     struct timespec now;
@@ -71,7 +72,10 @@ public:
         , line_offset(0)
         , hasErrors(false)
     {
-        if (single) current_file = file.filename;
+        if (single) {
+            current_file = cwd;
+            current_file  += '/' + file.filename;
+        }
     }
 
     void parseFile();
@@ -198,6 +202,21 @@ void IssueDb::parseLine(const char* start, const char* end) {
         line_offset = line_nr;
         return;
     }
+    // TEMP only support single argument for now
+    if (strncmp(cp, "// @warnings{", 13) == 0) {
+        cp += 13;
+        const char* name_start = cp;
+        while (*cp != '}') {
+            if (cp == end) {
+                error("missing '}'");
+                exit(-1);
+            }
+            cp++;
+        }
+        std::string name(name_start, cp-name_start);
+        recipe << "  $warnings " << name << '\n';
+        return;
+    }
     if (strncmp(cp, "//", 2) == 0) return;   // skip other comments
 
     // search for @
@@ -249,9 +268,7 @@ void IssueDb::parseFile() {
     const char* end = cp + file.size;
     line_nr = 1;
     const char* line_start = cp;
-    if (!single) {
-        recipe << "target test\n";
-    }
+    recipe << "target test\n";
     while (cp != end) {
         while (*cp != '\n' && cp != end) cp++;
         if (cp != line_start) parseLine(line_start, cp);
@@ -262,10 +279,10 @@ void IssueDb::parseFile() {
     if (!single) {
         const char* file_end = cp;
         writeFile(current_file.c_str(), file_start, file_end- file_start);
-        recipe << "  " << current_file << '\n';
-        recipe << "end\n";
-        writeFile("recipe.txt", recipe, recipe.size());
     }
+    recipe << "  " << current_file << '\n';
+    recipe << "end\n";
+    writeFile("recipe.txt", recipe, recipe.size());
 }
 
 void IssueDb::testFile() {
@@ -293,11 +310,7 @@ void IssueDb::testFile() {
         while ((dup2(pipe_stderr[1], STDERR_FILENO) == -1) && (errno == EINTR)) {}
         close(pipe_stderr[1]);
         close(pipe_stderr[0]);
-        if (single) {
-            execl(c2c_cmd, "c2c", "-f", current_file.c_str(), "--test", NULL);
-        } else {
-            execl(c2c_cmd, "c2c", "-d", test_root, "--test", NULL);
-        }
+        execl(c2c_cmd, "c2c", "-d", test_root, "--test", NULL);
         perror("execv");
         exit(127); /* only if execv fails */
     }
@@ -385,27 +398,26 @@ void IssueDb::checkErrors(const char* buffer, unsigned size) {
 static void handle_file(const char* filename) {
     bool single = true;
     if (endsWith(filename, ".c2")) {
-        printf("[single] %s\n", filename);
         single = true;
     } else if (endsWith(filename, ".c2t")) {
-        printf("[multi] %s\n", filename);
         single = false;
-
-        // setup dir
-        // temp, just delete this way
-        int err = system("rm -rf /tmp/tester/");
-        if (err != 0) {
-            perror("system");
-            exit(-1);
-        }
-        // create test dir
-        err = mkdir(test_root, 0777);
-        if (err) {
-            perror("mkdir");
-            exit(-1);
-        }
     } else {
         return;
+    }
+    printf("%s\n", filename);
+
+    // setup dir
+    // temp, just delete this way
+    int err = system("rm -rf /tmp/tester/");
+    if (err != 0) {
+        perror("system");
+        exit(-1);
+    }
+    // create test dir
+    err = mkdir(test_root, 0777);
+    if (err) {
+        perror("mkdir");
+        exit(-1);
     }
 
     numtests++;
@@ -465,6 +477,13 @@ int main(int argc, const char *argv[])
         perror("stat");
         return -1;
     }
+
+    cwd = get_current_dir_name();
+    if (cwd == 0) {
+        perror("get_current_dir_name");
+        exit(-1);
+    }
+
     u_int64_t t1 = getCurrentTime();
     if (S_ISREG(statbuf.st_mode)) {
         handle_file(target);

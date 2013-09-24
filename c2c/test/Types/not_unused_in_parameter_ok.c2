@@ -1,0 +1,7 @@
+// @warnings{no-unused-parameter}
+package test;
+
+type Number int;
+
+func void main(Number n) {}
+

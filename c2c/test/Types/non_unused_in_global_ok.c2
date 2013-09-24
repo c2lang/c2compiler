@@ -1,0 +1,6 @@
+// @warnings{no-unused-variable}
+package test;
+
+type Number int;
+Number n;
+

@@ -1,0 +1,13 @@
+// @warnings{no-unused}
+package test;
+
+type Func func void();
+
+func void test1() {}
+
+func void main() {
+    Func f = test1;
+    f();
+}
+
+

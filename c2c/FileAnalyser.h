@@ -50,6 +50,7 @@ public:
     unsigned resolveEnumConstants();
     unsigned checkFunctionProtos();
     unsigned checkFunctionBodies();
+    void checkDeclsForUsed();
 private:
     unsigned checkTypeDecl(TypeDecl* D);
     unsigned checkStructTypeDecl(StructTypeDecl* D);

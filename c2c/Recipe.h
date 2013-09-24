@@ -29,6 +29,7 @@ public:
     void addFile(const std::string& name_);
     void addConfig(const std::string& config_);
     void addAnsiCConfig(const std::string& config_);
+    void silenceWarning(const std::string& warn_);
     int size() const { return files.size(); }
     const std::string& get(int i) const;
 
@@ -41,6 +42,8 @@ public:
     Configs configs;
 
     Configs cConfigs;
+
+    Configs silentWarnings;
 private:
     Recipe(const Recipe&);
     Recipe& operator= (const Recipe&);

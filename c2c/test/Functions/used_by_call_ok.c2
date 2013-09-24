@@ -1,0 +1,8 @@
+package test;
+
+func void test1() {}
+
+func void main() {
+    test1();
+}
+

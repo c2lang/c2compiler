@@ -65,15 +65,15 @@ private:
     void analyseReturnStmt(Stmt* stmt);
     void analyseStmtExpr(Stmt* stmt);
 
-    QualType analyseExpr(Expr* expr);
+    QualType analyseExpr(Expr* expr, unsigned side);
     void analyseDeclExpr(Expr* expr);
-    QualType analyseBinaryOperator(Expr* expr);
+    QualType analyseBinaryOperator(Expr* expr, unsigned side);
     QualType analyseConditionalOperator(Expr* expr);
-    QualType analyseUnaryOperator(Expr* expr);
+    QualType analyseUnaryOperator(Expr* expr, unsigned side);
     void analyseBuiltinExpr(Expr* expr);
     QualType analyseArraySubscript(Expr* expr);
-    QualType analyseMemberExpr(Expr* expr);
-    QualType analyseMember(QualType T, IdentifierExpr* member);
+    QualType analyseMemberExpr(Expr* expr, unsigned side);
+    QualType analyseMember(QualType T, IdentifierExpr* member, unsigned side);
     QualType analyseParenExpr(Expr* expr);
     QualType analyseCall(Expr* expr);
     ScopeResult analyseIdentifier(IdentifierExpr* expr);
@@ -99,7 +99,9 @@ private:
         FunctionAnalyser& analyser;
     };
 
+    bool checkAssignee(Expr* expr) const;
     void checkAssignment(Expr* assignee, QualType TLeft);
+    void checkDeclAssignment(Decl* decl, Expr* expr);
     enum ConvType { CONV_INIT, CONV_ASSIGN, CONV_CONV };
     bool checkCompatible(QualType left, QualType right, SourceLocation Loc, ConvType conv) const;
     bool checkBuiltin(QualType left, QualType right, SourceLocation Loc, ConvType conv) const;

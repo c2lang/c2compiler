@@ -1,0 +1,9 @@
+package test;
+
+int a;
+
+func int main() {
+    int b = a;
+    return b;
+}
+

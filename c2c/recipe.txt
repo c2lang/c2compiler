@@ -1,103 +1,126 @@
 # an example recipe with multiple targets
 
 target multi_file
+    $warnings no-unused
     examples/multi_file1.c2
     examples/multi_file2.c2
 end
 
 target multi_pkg
+    $warnings no-unused
     examples/multi_pkg1.c2
     examples/multi_pkg2.c2
 end
 
 target layer
+    $warnings no-unused
     examples/layer1.c2
     examples/layer2.c2
     examples/layer3.c2
 end
 
 target comment
+    $warnings no-unused
     examples/commenttest.c2
 end
 
 target hello
+    $warnings no-unused
     examples/helloworld.c2
 end
 
 target iter
+    $warnings no-unused
     examples/itertest.c2
 end
 
 target switch
+    $warnings no-unused
     examples/switchtest.c2
 end
 
 target typetest
+    $warnings no-unused
     examples/typetest.c2
     examples/utils.c2
 end
 
 target working_ir
+    $warnings no-unused
     examples/working_ir.c2
 end
 
 target array
+    $warnings no-unused
     examples/arraytest.c2
 end
 
 target body
+    $warnings no-unused
     examples/bodytest.c2
 end
 
 target decl
+    $warnings no-unused
     examples/decltest.c2
 end
 
 target expr
+    $warnings no-unused
     examples/expressiontest.c2
 end
 
 target func
+    $warnings no-unused
     examples/functest.c2
     examples/utils.c2
 end
 
 target if
+    $warnings no-unused
     examples/if.c2
 end
 
 target test
+    $warnings no-unused
     examples/test.c2
 end
 
 target inctest
+    $warnings no-unused
     examples/inctest.c2
 end
 
 target deftest
+    $warnings no-unused
     $config FOOBAR
     examples/deftest.c2
 end
 
 target var
+    $warnings no-unused
     examples/vartest.c2
 end
 
 target working
+    $warnings no-unused
     examples/working.c2
 end
 
 target use_as
+    $warnings no-unused
     examples/use1.c2
     examples/use2.c2
     examples/use3.c2
 end
 
 target unarytest
+    $warnings no-unused
     examples/unaryTest.c2
 end
 
 target issue
+    $warnings no-unused
     examples/issue1.c2
     examples/issue2.c2
     examples/issue_type1.c2
@@ -105,6 +128,7 @@ target issue
 end
 
 target ccode
+    $warnings no-unused
     examples/ccode.c2
     examples/ccode2.c2
     examples/ccode3.c2

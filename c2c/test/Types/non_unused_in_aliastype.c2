@@ -1,0 +1,12 @@
+// @warnings{no-unused-variable}
+package test;
+
+type Number int;
+
+type Number2 Number;
+
+func void main() {
+    Number2 n;
+}
+
+

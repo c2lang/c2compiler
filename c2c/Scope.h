@@ -30,6 +30,7 @@ class DiagnosticsEngine;
 namespace C2 {
 
 class Decl;
+class VarDecl;
 
 class ScopeResult {
 public:
@@ -134,7 +135,9 @@ public:
     void Init(unsigned flags_);
 
     ScopeResult findSymbol(const std::string& name) const;
-    void addDecl(Decl* d);
+    void addDecl(VarDecl* d) { decls.push_back(d); }
+    unsigned numDecls() const { return decls.size(); }
+    VarDecl* getDecl(unsigned i) { return decls[i]; }
 
     Scope* getParent() const { return parent; }
     void setParent(Scope* parent_) { parent = parent_; }
@@ -147,7 +150,7 @@ private:
     unsigned Flags;
 
     // local decls (in scope), no ownership
-    typedef std::vector<Decl*> Decls;
+    typedef std::vector<VarDecl*> Decls;
     typedef Decls::const_iterator DeclsConstIter;
     Decls decls;
 };

@@ -1,0 +1,11 @@
+package test;
+
+type Point struct {
+    int x;
+}
+
+func int main() {
+    Point p = { 10 }
+    return p.x;
+}
+

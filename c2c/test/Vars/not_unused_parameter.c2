@@ -1,0 +1,6 @@
+package test;
+
+func int main(int arg) {
+    return arg;
+}
+

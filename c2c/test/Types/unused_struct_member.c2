@@ -1,0 +1,20 @@
+package test;
+
+type Point struct {
+    // used as LHS+RHS only
+    int x;
+    // not used
+    int y;          // @warning{unused struct member y}
+    // used as LHS only
+    int z;          // @warning{unused struct member z}
+}
+
+func int main() {
+    Point p;
+    p.x = 10;
+    p.x = 20;
+    p.z = 30;
+
+    return p.x;
+}
+

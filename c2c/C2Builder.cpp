@@ -246,6 +246,34 @@ int C2Builder::build() {
     Diags.setDiagnosticErrorAsFatal(diag::warn_falloff_nonvoid_function, true);
     Diags.setDiagnosticErrorAsFatal(diag::warn_falloff_nonvoid_function, false);
 
+    // set recipe warning options
+    for (unsigned i=0; i<recipe.silentWarnings.size(); i++) {
+        const std::string& conf = recipe.silentWarnings[i];
+
+        if (conf == "no-unused") {
+            Diags.setDiagnosticGroupMapping("unused", diag::MAP_IGNORE);
+            Diags.setDiagnosticGroupMapping("unused-parameter", diag::MAP_IGNORE);
+            continue;
+        }
+        if (conf == "no-unused-variable") {
+            Diags.setDiagnosticGroupMapping("unused-variable", diag::MAP_IGNORE);
+            continue;
+        }
+        if (conf == "no-unused-function") {
+            Diags.setDiagnosticGroupMapping("unused-function", diag::MAP_IGNORE);
+            continue;
+        }
+        if (conf == "no-unused-parameter") {
+            Diags.setDiagnosticGroupMapping("unused-parameter", diag::MAP_IGNORE);
+            continue;
+        }
+        if (conf == "no-unused-type") {
+            Diags.setDiagnosticGroupMapping("unused-type", diag::MAP_IGNORE);
+            continue;
+        }
+        fprintf(stderr, "recipe: unknown warning: '%s'\n", conf.c_str());
+    }
+
     // TargetInfo
     TargetOptions* to = new TargetOptions();
     to->Triple = llvm::sys::getDefaultTargetTriple();
@@ -563,6 +591,10 @@ unsigned C2Builder::analyse() {
         errors += files[i]->analyser->checkFunctionBodies();
     }
     if (options.printAST3) printASTs();
+
+    for (unsigned i=0; i<files.size(); i++) {
+        files[i]->analyser->checkDeclsForUsed();
+    }
     return errors;
 }
 

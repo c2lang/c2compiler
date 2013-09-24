@@ -61,6 +61,8 @@ public:
 
     DeclKind getKind() const { return static_cast<DeclKind>(DeclBits.dKind); }
     bool isPublic() const { return DeclBits.DeclIsPublic; }
+    bool isUsed() const { return DeclBits.DeclIsUsed; }
+    void setUsed() { DeclBits.DeclIsUsed = true; }
 
     // for debugging
     void dump() const;
@@ -72,7 +74,9 @@ protected:
     public:
         unsigned dKind : 8;
         unsigned DeclIsPublic : 1;
+        unsigned DeclIsUsed : 1;
         unsigned VarDeclHasLocalQualifier : 1;
+        unsigned VarDeclIsParameter: 1;
         unsigned StructTypeIsStruct : 1;
         unsigned StructTypeIsGlobal : 1;
         unsigned FuncIsVariadic : 1;
@@ -104,6 +108,8 @@ public:
 
     void setLocalQualifier() { DeclBits.VarDeclHasLocalQualifier = true; }
     bool hasLocalQualifier() const { return DeclBits.VarDeclHasLocalQualifier; }
+    void setIsParameter() { DeclBits.VarDeclIsParameter = true; }
+    bool isParameter() const { return DeclBits.VarDeclIsParameter; }
 
     // TODO move to GlobalVarDecl subclass
     typedef std::vector<ArrayValueDecl*> InitValues;

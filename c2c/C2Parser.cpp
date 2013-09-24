@@ -342,10 +342,9 @@ void C2Parser::ParseEnumType(const char* id, SourceLocation idLoc, bool is_publi
         ConsumeToken();
         break;
     default:
-        // TODO give error: expected builtin type
-        fprintf(stderr, "ERROR: expected built-in type specifier\n");
-        // TODO error handling?
-        break;
+        Diag(Tok, diag::err_expected_type_spec);
+        SkipUntil(tok::r_brace, /*StopAtSemi=*/false, /*DontConsume=*/false);
+        return;
     }
 
     SourceLocation LeftBrace = Tok.getLocation();
