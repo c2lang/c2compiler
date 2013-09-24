@@ -7,7 +7,6 @@ public func void main() {
     int b = 10;
     const char* name = "bas";
     a = 10;
-    buffer[0] = 0;
 
     const int a2 = 20;
     volatile int* b2 = 0x2000;

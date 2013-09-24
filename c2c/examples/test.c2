@@ -32,7 +32,6 @@ public func void main() {
     // --- assignment expression ---
     a = 10;
     int res;
-    res = main();
     int* rp;
     *rp  = 0;       // ok, bliep -> primary_expression
     a *= 2;        // ok -> primary_expression
@@ -44,9 +43,7 @@ public func void main() {
 
     a = 2 * 20;
 
-    // ERROR, b -> type_specifier WRONG, [2] -> array_specifier, ok
     int[2] bb;
     bb[2] = 0;
-    bb->foo = 10;
 }
 

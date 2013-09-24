@@ -87,10 +87,6 @@ target working
     examples/working.c2
 end
 
-target type_warning
-    examples/type_warnings.c2
-end
-
 target use_as
     examples/use1.c2
     examples/use2.c2
