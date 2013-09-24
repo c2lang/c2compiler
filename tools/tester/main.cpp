@@ -320,7 +320,7 @@ void IssueDb::testFile() {
         // check output
         char buffer[4096];
         while (1) {
-            ssize_t count = read(pipe_stderr[0], buffer, sizeof(buffer));
+            ssize_t count = read(pipe_stderr[0], buffer, sizeof(buffer)-1);
             if (count == -1) {
                 if (errno == EINTR) continue;
                 perror("read");
@@ -374,7 +374,10 @@ void IssueDb::checkErrors(const char* buffer, unsigned size) {
             }
         }
 
-        while (*cp != '\n') cp++;
+        while (*cp != '\n') {
+             cp++;
+             if (cp == end) return;
+        }
         cp++;
     }
 }
