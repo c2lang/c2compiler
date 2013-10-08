@@ -48,9 +48,9 @@ RecipeReader::~RecipeReader() {
 }
 
 void RecipeReader::findTopDir() {
-    char buffer[PATH_MAX];
+    char rpath[PATH_MAX];
     while (1) {
-        char* path = getcwd(buffer, PATH_MAX);
+        char* path = getcwd(rpath, PATH_MAX);
         if (path == NULL) {
             perror("getcwd");
             exit(-1);
@@ -58,7 +58,7 @@ void RecipeReader::findTopDir() {
         struct stat buf;
         int err = stat(RECIPE_FILE, &buf);
         if (err) {
-            if (buffer[0] == '/' && buffer[1] == 0) {
+            if (rpath[0] == '/' && rpath[1] == 0) {
                 fprintf(stderr, "cannot find recipe file\n");
                 exit(-1);
             }

@@ -69,7 +69,7 @@ public:
         return static_cast<ExprKind>(StmtBits.eKind);
     }
 
-    virtual clang::SourceRange getSourceRange() {
+    virtual clang::SourceRange getSourceRange() const {
         return clang::SourceRange();
     }
 private:
@@ -431,7 +431,7 @@ public:
     virtual SourceLocation getLocation() const { return L; }
 
     Expr* getExpr() const { return Val; }
-    clang::SourceRange getSourceRange() const { return clang::SourceRange(L, R); }
+    virtual clang::SourceRange getSourceRange() const { return clang::SourceRange(L, R); }
     SourceLocation getLParen() const { return L; }
     SourceLocation getRParen() const { return R; }
 private:

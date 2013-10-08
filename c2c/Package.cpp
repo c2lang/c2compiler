@@ -37,8 +37,8 @@ void Package::addSymbol(Decl* decl) {
     symbols[decl->getName()] = decl;
 }
 
-Decl* Package::findSymbol(const std::string& name) const {
-    SymbolsConstIter iter = symbols.find(name);
+Decl* Package::findSymbol(const std::string& name_) const {
+    SymbolsConstIter iter = symbols.find(name_);
     if (iter == symbols.end()) return 0;
     else return iter->second;
 }

@@ -236,8 +236,8 @@ void FileAnalyser::checkDeclsForUsed() {
             // check if members are used
             if (isa<StructTypeDecl>(T)) {
                 StructTypeDecl* S = cast<StructTypeDecl>(T);
-                for (unsigned i=0; i<S->numMembers(); i++) {
-                    Decl* M = S->getMember(i);
+                for (unsigned j=0; j<S->numMembers(); j++) {
+                    Decl* M = S->getMember(j);
                     if (!M->isUsed()) {
                         Diags.Report(M->getLocation(), diag::warn_unused_struct_member) << M->getName();
                     }
@@ -374,7 +374,7 @@ unsigned FileAnalyser::checkInitValue(VarDecl* decl, Expr* expr, QualType expect
     case EXPR_IDENTIFIER:
         {
             IdentifierExpr* I = cast<IdentifierExpr>(expr);
-            ScopeResult Res = globals->findSymbol(I->getName());
+            ScopeResult Res = globals->findSymbol(I->getName(), I->getLocation());
             if (!Res.ok) return 1;
             if (!Res.decl) {
                 Diags.Report(I->getLocation(), diag::err_undeclared_var_use) << I->getName();

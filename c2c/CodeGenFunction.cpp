@@ -57,8 +57,8 @@ llvm::Function* CodeGenFunction::generateProto(const std::string& pkgname) {
     } else {
         std::vector<llvm::Type*> Args;
         for (unsigned i=0; i<FuncDecl->numArgs(); i++) {
-            VarDecl* arg = FuncDecl->getArg(i);
-            QualType qt = arg->getType();
+            //VarDecl* arg = FuncDecl->getArg(i);
+            //QualType qt = arg->getType();
             //Args.push_back(CGM.ConvertType(qt.getTypePtr()));
         }
         llvm::ArrayRef<llvm::Type*> argsRef(Args);
@@ -143,8 +143,8 @@ void CodeGenFunction::EmitIfStmt(const IfStmt* S) {
 
   // If the condition constant folds and can be elided, try to avoid emitting
   // the condition and the dead arm of the if/else.
-  bool CondConstant;
 #if 0
+  bool CondConstant;
   if (ConstantFoldsToSimpleInteger(S.getCond(), CondConstant)) {
     // Figure out which block (then or else) is executed.
     const Stmt *Executed = S.getThen();
@@ -485,7 +485,7 @@ llvm::Value* CodeGenFunction::EmitIdentifierExpr(const IdentifierExpr* E) {
         break;
     case DECL_ENUMVALUE:
         {
-            EnumConstantDecl* ECD = cast<EnumConstantDecl>(D);
+            //EnumConstantDecl* ECD = cast<EnumConstantDecl>(D);
             // Nasty, we need the value of the constant, but we have no place to store it.
             // We need to change the AST structure for this.
             // TODO correct width + value

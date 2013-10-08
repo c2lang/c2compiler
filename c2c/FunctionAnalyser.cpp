@@ -93,8 +93,8 @@ FunctionAnalyser::FunctionAnalyser(FileScope& scope_,
     , Diags(Diags_)
     , errors(0)
     , Function(0)
-    , inConstExpr(false)
     , constDiagID(0)
+    , inConstExpr(false)
 {
     Scope* parent = 0;
     for (int i=0; i<MAX_SCOPE_DEPTH; i++) {
@@ -115,7 +115,7 @@ unsigned FunctionAnalyser::check(FunctionDecl* func) {
         VarDecl* arg = func->getArg(i);
         if (arg->getName() != "") {
             // check that argument names dont clash with globals
-            ScopeResult res = globalScope.findSymbol(arg->getName());
+            ScopeResult res = globalScope.findSymbol(arg->getName(), arg->getLocation());
             if (res.decl) {
                 // TODO check other attributes?
                 Diags.Report(arg->getLocation(), diag::err_redefinition)
@@ -231,7 +231,9 @@ void FunctionAnalyser::analyseIfStmt(Stmt* stmt) {
     IfStmt* I = cast<IfStmt>(stmt);
     Expr* cond = I->getCond();
     QualType Q1 = analyseExpr(cond, RHS);
-    checkCompatible(Type::Bool(), Q1, cond->getLocation(), CONV_CONV);
+    if (Q1.isValid()) {
+        checkCompatible(Type::Bool(), Q1, cond->getLocation(), CONV_CONV);
+    }
     EnterScope(Scope::DeclScope);
     analyseStmt(I->getThen(), true);
     ExitScope();
@@ -350,7 +352,9 @@ void FunctionAnalyser::analyseReturnStmt(Stmt* stmt) {
             Diags.Report(ret->getLocation(), diag::ext_return_has_expr) << Function->getName() << 0;
             // TODO value->getSourceRange()
         } else {
-            // TODO check if type and rtype are compatible
+            if (type.isValid()) {
+                checkCompatible(rtype, type, value->getLocation(), CONV_CONV);
+            }
         }
     } else {
         if (!no_rvalue) {
@@ -425,6 +429,7 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
             // return type: 'const char*'
             QualType Q = typeContext.getPointerType(Type::Int8());
             Q.addConst();
+            if (!Q->hasCanonicalType()) Q->setCanonicalType(Q);
             return Q;
         }
     case EXPR_BOOL_LITERAL:
@@ -569,10 +574,10 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
 
 void FunctionAnalyser::analyseInitList(Expr* expr, QualType expectedType) {
     LOG_FUNC
-    InitListExpr* I = cast<InitListExpr>(expr);
-    assert(expectedType.isValid());
 
 #if 0
+    InitListExpr* I = cast<InitListExpr>(expr);
+    assert(expectedType.isValid());
     const Type* type = expectedType.getTypePtr();
 
     // TODO use canonical type
@@ -649,7 +654,7 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     }
 
     // check name
-    ScopeResult res = curScope->findSymbol(decl->getName());
+    ScopeResult res = curScope->findSymbol(decl->getName(), decl->getLocation());
     if (res.decl) {
         // TODO check other attributes?
         Diags.Report(decl->getLocation(), diag::err_redefinition)
@@ -1103,7 +1108,10 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
         QualType typeGiven = analyseExpr(argGiven, RHS);
         VarDecl* argFunc = func->getArg(i);
         QualType argType = argFunc->getType();
-        // TODO match types
+        if (typeGiven.isValid()) {
+            assert(argType.isValid());
+            checkCompatible(argType, typeGiven, argGiven->getLocation(), CONV_CONV);
+        }
     }
     if (callArgs > protoArgs) {
         // more args given, check if function is variadic
@@ -1148,14 +1156,9 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
 
 ScopeResult FunctionAnalyser::analyseIdentifier(IdentifierExpr* id) {
     LOG_FUNC
-    ScopeResult res = curScope->findSymbol(id->getName());
+    ScopeResult res = curScope->findSymbol(id->getName(), id->getLocation());
+    if (!res.ok) return res;
     if (res.decl) {
-        if (res.ambiguous) {
-            res.ok = false;
-            fprintf(stderr, "TODO ambiguous variable\n");
-            // TODO show alternatives
-            return res;
-        }
         if (!res.visible) {
             res.ok = false;
             Diags.Report(id->getLocation(), diag::err_not_public) << id->getName();
@@ -1234,7 +1237,7 @@ void FunctionAnalyser::checkDeclAssignment(Decl* decl, Expr* expr) {
         break;
     case DECL_VAR:
         {
-            VarDecl* VD = cast<VarDecl>(decl);
+            //VarDecl* VD = cast<VarDecl>(decl);
             // ..
             //return resolveUserType(VD->getType());
             break;
@@ -1258,6 +1261,7 @@ void FunctionAnalyser::checkDeclAssignment(Decl* decl, Expr* expr) {
 
 bool FunctionAnalyser::checkCompatible(QualType left, QualType right, SourceLocation Loc, ConvType conv) const {
     LOG_FUNC
+    assert(left.isValid());
     const Type* canon = left.getTypePtr()->getCanonicalType();
     switch (canon->getTypeClass()) {
     case TC_BUILTIN:
@@ -1332,8 +1336,12 @@ bool FunctionAnalyser::checkBuiltin(QualType left, QualType right, SourceLocatio
 bool FunctionAnalyser::checkPointer(QualType left, QualType right, SourceLocation Loc, ConvType conv) const {
     LOG_FUNC
     if (right->isPointerType()) {
-#warning "TODO"
-        return false;
+#warning "TODO dereference types (can be Alias etc) and check those"
+        return true;
+    }
+    if (right->isArrayType()) {
+#warning "TODO dereference types (can be Alias etc) and check those"
+        return true;
     }
     StringBuilder buf1(MAX_TYPENAME);
     StringBuilder buf2(MAX_TYPENAME);

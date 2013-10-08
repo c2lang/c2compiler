@@ -28,7 +28,7 @@ OBJS = \
     main.o
 
 #CPPFLAGS = `llvm-config --cxxflags` -Wno-overloaded-virtual -Wall -Wextra -Wno-unused -Wno-unused-parameter
-CPPFLAGS = `llvm-config --cxxflags` -Wno-overloaded-virtual
+CPPFLAGS = `llvm-config --cxxflags` -Wno-overloaded-virtual -Wall
 LDFLAGS = `llvm-config --ldflags`
 LIBS = `llvm-config --libs`
 

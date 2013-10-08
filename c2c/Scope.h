@@ -37,7 +37,6 @@ public:
     ScopeResult()
         : pkg(0)
         , decl(0)
-        , ambiguous(false)
         , external(true)
         , visible(true)
         , ok(true)
@@ -46,7 +45,6 @@ public:
 
     const Package* pkg; // pkg is only set if Symbol is a global or if symbol is a package
     Decl* decl;         // if symbol is not a package
-    bool ambiguous;     // ambiguous lookup (returns first result)
     bool external;      // package is external
     bool visible;       // symbol is non-public and used externally
     bool ok;            // checks are ok
@@ -61,7 +59,7 @@ public:
     const Package* findAnyPackage(const std::string& name) const;
     void addPackage(bool isLocal, const std::string& name_, const Package* pkg);
 
-    ScopeResult findSymbol(const std::string& name) const;
+    ScopeResult findSymbol(const std::string& name, clang::SourceLocation loc) const;
     ScopeResult findSymbolInUsed(const std::string& name) const;
 
     bool isExternal(const Package* pkg) const;
@@ -134,7 +132,7 @@ public:
     void InitOnce(FileScope& globals_, Scope* parent_);
     void Init(unsigned flags_);
 
-    ScopeResult findSymbol(const std::string& name) const;
+    ScopeResult findSymbol(const std::string& name, clang::SourceLocation loc) const;
     void addDecl(VarDecl* d) { decls.push_back(d); }
     unsigned numDecls() const { return decls.size(); }
     VarDecl* getDecl(unsigned i) { return decls[i]; }

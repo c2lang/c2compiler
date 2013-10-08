@@ -358,7 +358,7 @@ private:
     bool ExpectAndConsumeSemi(unsigned DiagID);
 
     DiagnosticBuilder Diag(SourceLocation Loc, unsigned DiagID);
-    DiagnosticBuilder Diag(const Token &Tok, unsigned DiagID);
+    DiagnosticBuilder Diag(const Token &T, unsigned DiagID);
 
 public:
   /// SkipUntil - Read tokens until we get to the specified token, then consume

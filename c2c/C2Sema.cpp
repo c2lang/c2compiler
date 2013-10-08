@@ -162,13 +162,13 @@ void C2Sema::ActOnUse(const char* name, SourceLocation loc, Token& aliasTok, boo
             return;
         }
         // check for duplicate use
-        const UseDecl* old = findUseOrAlias(aliasName);
-        if (old) {
+        const UseDecl* oldUse = findUseOrAlias(aliasName);
+        if (oldUse) {
             Diag(aliasTok.getLocation(), diag::err_duplicate_use) << aliasName;
-            if (name == old->getName())
-                Diag(old->getLocation(), diag::note_previous_use);
+            if (name == oldUse->getName())
+                Diag(oldUse->getLocation(), diag::note_previous_use);
             else
-                Diag(old->getAliasLocation(), diag::note_previous_use);
+                Diag(oldUse->getAliasLocation(), diag::note_previous_use);
             return;
         }
     }
@@ -842,7 +842,9 @@ C2::ExprResult C2Sema::ActOnNumericConstant(const Token& Tok) {
         } else {
             // Octal, Hexadecimal, and integers with a U suffix are allowed to
             // be an unsigned.
+#if 0
             bool AllowUnsigned = Literal.isUnsigned || Literal.getRadix() != 10;
+#endif
 
             // Check from smallest to largest, picking the smallest type we can.
             unsigned Width = 0;

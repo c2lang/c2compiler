@@ -157,8 +157,8 @@ void CodeGenModule::write(const std::string& target, const std::string& name) {
 }
 
 void CodeGenModule::EmitGlobalVariable(VarDecl* Var) {
-    QualType qt = Var->getType();
-    llvm::Type* type = ConvertType(qt.getTypePtr());
+    //QualType qt = Var->getType();
+    //llvm::Type* type = ConvertType(qt.getTypePtr());
     bool constant = false;
     llvm::GlobalValue::LinkageTypes ltype = llvm::GlobalValue::InternalLinkage;
     if (Var->isPublic()) ltype = llvm::GlobalValue::ExternalLinkage;
@@ -189,14 +189,14 @@ void CodeGenModule::EmitTopLevelDecl(Decl* D) {
         break;
     case DECL_ALIASTYPE:
         {
-            AliasTypeDecl* A = cast<AliasTypeDecl>(D);
+            //AliasTypeDecl* A = cast<AliasTypeDecl>(D);
             //QualType QT = A->getType();
         }
         break;
     case DECL_STRUCTTYPE:
         {
-            StructTypeDecl* TD = cast<StructTypeDecl>(D);
-            QualType QT = TD->getType();
+            //StructTypeDecl* TD = cast<StructTypeDecl>(D);
+            //QualType QT = TD->getType();
             // NOTE: only generate code for struct/union types (even this is optional)
 #warning "TODO remove"
 #if 0

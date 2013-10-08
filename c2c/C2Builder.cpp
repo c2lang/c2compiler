@@ -14,6 +14,7 @@
  */
 
 #include <clang/Basic/Diagnostic.h>
+#include <clang/Parse/ParseDiagnostic.h>
 #include <clang/Basic/DiagnosticOptions.h>
 #include <clang/Basic/FileManager.h>
 #include <clang/Basic/FileSystemOptions.h>
@@ -168,7 +169,6 @@ public:
     SourceManager SM;
 
     // HeaderSearch
-    IntrusiveRefCntPtr<HeaderSearchOptions> HSOpts;
     HeaderSearch Headers;
 
     C2ModuleLoader loader;
@@ -412,11 +412,14 @@ bool C2Builder::loadExternalPackages() {
     // collect all external packages
     for (unsigned i=0; i<files.size(); i++) {
         FileInfo* info = files[i];
-        for (unsigned i=0; i<info->ast.numUses(); i++) {
-            UseDecl* D = info->ast.getUse(i);
+        for (unsigned u=0; u<info->ast.numUses(); u++) {
+            UseDecl* D = info->ast.getUse(u);
             const std::string& name = D->getName();
             if (havePackage(name)) continue;
-            if (!loadPackage(name)) return false;
+            if (!loadPackage(name)) {
+                info->Diags.Report(D->getLocation(), clang::diag::err_unknown_package) << name;
+                return false;
+            }
         }
     }
     return true;
@@ -442,6 +445,7 @@ bool C2Builder::loadPackage(const std::string& name) {
             FunctionDecl* func = new FunctionDecl("puts", loc, true, Type::Int32());
             // TODO correct arg
             QualType QT(new PointerType(Type::Int8()), QUAL_CONST);
+            QT->setCanonicalType(QT);
             func->addArg(new VarDecl("s", loc, QT, 0));
             stdioPkg->addSymbol(func);
             // function type
@@ -452,6 +456,7 @@ bool C2Builder::loadPackage(const std::string& name) {
             FunctionDecl* func = new FunctionDecl("printf", loc, true, Type::Int32());
             // NOTE: MEMLEAK ON TYPE, this will go away when we remove these dummy protos
             QualType QT(new PointerType(Type::Int8()), QUAL_CONST);
+            QT->setCanonicalType(QT);
             func->addArg(new VarDecl("format", loc, QT, 0));
             func->setVariadic();
             stdioPkg->addSymbol(func);
@@ -463,6 +468,7 @@ bool C2Builder::loadPackage(const std::string& name) {
             FunctionDecl* func = new FunctionDecl("sprintf", loc, true, Type::Int32());
             // NOTE: MEMLEAK ON TYPE, this will go away when we remove these dummy protos
             QualType QT(new PointerType(Type::Int8()), QUAL_CONST);
+            QT->setCanonicalType(QT);
             func->addArg(new VarDecl("str", loc, QT, 0));
             func->addArg(new VarDecl("format", loc, QT, 0));
             func->setVariadic();
@@ -486,7 +492,6 @@ bool C2Builder::loadPackage(const std::string& name) {
         }
         return true;
     }
-    fprintf(stderr, "Error loading package %s\n", name.c_str());
     return false;
 }
 
@@ -514,9 +519,8 @@ void C2Builder::printDependencies() const {
     unsigned char* deps = (unsigned char*)calloc(1, index * index);
     for (unsigned i=0; i<files.size(); i++) {
         FileInfo* info = files[i];
-        for (unsigned i=0; i<info->ast.numUses(); i++) {
-            UseDecl* D = info->ast.getUse(i);
-            const std::string& name = D->getName();
+        for (unsigned u=0; u<info->ast.numUses(); u++) {
+            UseDecl* D = info->ast.getUse(u);
             PkgIndexConstIter iter1 = pkgIndex.find(info->ast.getPkgName());
             PkgIndexConstIter iter2 = pkgIndex.find(D->getName());
             assert(iter1 != pkgIndex.end());

@@ -143,7 +143,6 @@ void C2Parser::ParseUses() {
         if (ExpectIdentifier()) return;
         IdentifierInfo* Pkg = Tok.getIdentifierInfo();
         SourceLocation PkgLoc = ConsumeToken();
-        IdentifierInfo* AliasInfo = 0;
         SourceLocation AliasLoc;
         Token AliasToken;
         AliasToken.startToken();
@@ -347,7 +346,8 @@ void C2Parser::ParseEnumType(const char* id, SourceLocation idLoc, bool is_publi
         return;
     }
 
-    SourceLocation LeftBrace = Tok.getLocation();
+    Tok.getLocation();
+    //SourceLocation LeftBrace = Tok.getLocation();
     if (ExpectAndConsume(tok::l_brace, diag::err_expected_lbrace)) return;
 
     EnumTypeDecl* TheEnum = Actions.ActOnEnumType(id, idLoc, implType.release(), is_public);
@@ -371,7 +371,8 @@ void C2Parser::ParseEnumType(const char* id, SourceLocation idLoc, bool is_publi
         if (Tok.isNot(tok::comma)) break;
         ConsumeToken();
     }
-    SourceLocation RightBrace = Tok.getLocation();
+    //SourceLocation RightBrace = Tok.getLocation();
+    Tok.getLocation();
     ExpectAndConsume(tok::r_brace, diag::err_expected_rbrace);
 }
 
@@ -1595,7 +1596,8 @@ C2::StmtResult C2Parser::ParseIfStatement() {
     if (ExpectAndConsume(tok::r_paren, diag::err_expected_rparen)) return StmtError();
 
     // Read the 'then' stmt.
-    SourceLocation ThenStmtLoc = Tok.getLocation();
+    //SourceLocation ThenStmtLoc = Tok.getLocation();
+    Tok.getLocation();
 
     StmtResult ThenStmt(ParseStatement());
 
@@ -2011,7 +2013,8 @@ C2::StmtResult C2Parser::ParseLabeledStatement() {
     assert(Tok.is(tok::colon) && "Not a label!");
 
     // identifier ':' statement
-    SourceLocation ColonLoc = ConsumeToken();
+    //SourceLocation ColonLoc = ConsumeToken();
+    ConsumeToken();
 
     StmtResult SubStmt(ParseStatement());
 /*
@@ -2271,8 +2274,8 @@ DiagnosticBuilder C2Parser::Diag(SourceLocation Loc, unsigned DiagID) {
     return Diags.Report(Loc, DiagID);
 }
 
-DiagnosticBuilder C2Parser::Diag(const Token &Tok, unsigned DiagID) {
-    return Diag(Tok.getLocation(), DiagID);
+DiagnosticBuilder C2Parser::Diag(const Token &T, unsigned DiagID) {
+    return Diag(T.getLocation(), DiagID);
 }
 
 //===----------------------------------------------------------------------===//

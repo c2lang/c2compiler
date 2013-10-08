@@ -12,8 +12,7 @@ public func void getMax() {
 
 int number = 10;
 
-//type CB func void();  // doesn't work yet
-type CB int;
+type CB func void();
 
 func void callback(CB cb) {}
 

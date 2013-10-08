@@ -61,8 +61,8 @@ CCodeGenerator::CCodeGenerator(const std::string& filename_, Mode mode_, const P
 CCodeGenerator::~CCodeGenerator() {
 }
 
-void CCodeGenerator::addEntry(const std::string& filename, AST& ast) {
-    entries.push_back(Entry(filename, ast));
+void CCodeGenerator::addEntry(const std::string& filename_, AST& ast) {
+    entries.push_back(Entry(filename_, ast));
 }
 
 void CCodeGenerator::generate() {
@@ -202,9 +202,38 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
                 EmitExpr(S->getExpr(), output);
                 output << ')';
             } else {
-                assert(0 && "TODO");
-                // TODO  sizeof(array) / sizeof(array[0]);
-                // NOTE cannot be converted to C if used with enums
+                IdentifierExpr* I = cast<IdentifierExpr>(S->getExpr());
+                Decl* D = I->getDecl();
+                // should be VarDecl(for array/enum) or TypeDecl(array/enum)
+                switch (D->getKind()) {
+                case DECL_FUNC:
+                    assert(0);
+                    break;
+                case DECL_VAR:
+                    {
+                        VarDecl* VD = cast<VarDecl>(D);
+                        QualType Q = VD->getType();
+                        if (Q.isArrayType()) {
+                            // generate: sizeof(array) / sizeof(array[0]);
+                            output << "sizeof(" << I->getName() << ")/sizeof(" << I->getName() << "[0])";
+                            return;
+                        }
+                        // TODO also allow elemsof for EnumType
+                        // NOTE cannot be converted to C if used with enums
+                        assert(0 && "TODO");
+                        return;
+                    }
+                case DECL_ENUMVALUE:
+                    break;
+                case DECL_ALIASTYPE:
+                case DECL_STRUCTTYPE:
+                case DECL_ENUMTYPE:
+                case DECL_FUNCTIONTYPE:
+                case DECL_ARRAYVALUE:
+                case DECL_USE:
+                    assert(0);
+                    break;
+                }
             }
             return;
         }
@@ -336,11 +365,11 @@ void CCodeGenerator::dump() {
 
 void CCodeGenerator::write(const std::string& target, const std::string& name) {
     // write C files to output/<target>/<package>.{c,h}
-    StringBuilder filename(128);
-    filename << "output/" << target << '/';
+    StringBuilder outname(128);
+    outname << "output/" << target << '/';
 
-    FileUtils::writeFile(filename, std::string(filename) + cfilename, cbuf);
-    FileUtils::writeFile(filename, std::string(filename) + hfilename, hbuf);
+    FileUtils::writeFile(outname, std::string(outname) + cfilename, cbuf);
+    FileUtils::writeFile(outname, std::string(outname) + hfilename, hbuf);
 }
 
 void CCodeGenerator::EmitFunction(FunctionDecl* F) {
@@ -733,8 +762,8 @@ void CCodeGenerator::EmitSwitchStmt(Stmt* S, unsigned indent) {
                 EmitExpr(C->getCond(), cbuf);
                 cbuf << ":\n";
                 const StmtList& Stmts = C->getStmts();
-                for (unsigned i=0; i<Stmts.size(); i++) {
-                    EmitStmt(Stmts[i], indent + INDENT + INDENT);
+                for (unsigned s=0; s<Stmts.size(); s++) {
+                    EmitStmt(Stmts[s], indent + INDENT + INDENT);
                 }
                 break;
             }
@@ -744,8 +773,8 @@ void CCodeGenerator::EmitSwitchStmt(Stmt* S, unsigned indent) {
                 cbuf.indent(indent + INDENT);
                 cbuf << "default:\n";
                 const StmtList& Stmts = D->getStmts();
-                for (unsigned i=0; i<Stmts.size(); i++) {
-                    EmitStmt(Stmts[i], indent + INDENT + INDENT);
+                for (unsigned s=0; s<Stmts.size(); s++) {
+                    EmitStmt(Stmts[s], indent + INDENT + INDENT);
                 }
                 break;
             }
