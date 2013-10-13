@@ -2,10 +2,10 @@
 package test;
 
 public func int main() {
-    const i32 a = 0;
+    const int32 a = 0;
     a = 1;          // @error{read-only variable is not assignable}
 
-    const i32[10] array = {0}
+    const int32[10] array = {0}
     array[0] = 1;   // @error{read-only variable is not assignable}
     return 0;
 }

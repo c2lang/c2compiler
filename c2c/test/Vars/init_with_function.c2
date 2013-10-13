@@ -2,7 +2,7 @@
 package test;
 
 func void main(int, char*[]) {
-    int a = main;       // @error{invalid type conversion from 'void (i32, i8*[])' to 'i32'}
+    int a = main;       // @error{invalid type conversion from 'void (int32, int8*[])' to 'int32'}
 }
 
 

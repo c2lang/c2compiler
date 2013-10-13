@@ -2,38 +2,38 @@
 package test;
 
 public func int main() {
-    i64 Int64 = 1;
-    i32 Int32 = 1;
-    i16 Int16 = 1;
-    i8 Int8 = 1;
-    u64 UInt64 = 1;
-    u32 UInt32 = 1;
-    u16 UInt16 = 1;
-    u8 UInt8 = 1;
-    f32 Float32 = 1;
-    f64 Float64 = 1;
+    int64 Int64 = 1;
+    int32 Int32 = 1;
+    int16 Int16 = 1;
+    int8 Int8 = 1;
+    uint64 UInt64 = 1;
+    uint32 UInt32 = 1;
+    uint16 UInt16 = 1;
+    uint8 UInt8 = 1;
+    float32 Float32 = 1;
+    float64 Float64 = 1;
     bool Bool = true;
 
-    Int32 = Int64;  // @warning{implicit conversion loses integer precision: 'i64' to 'i32'}
-    Int16 = Int32;  // @warning{implicit conversion loses integer precision: 'i32' to 'i16'}
-    Int8  = Int16;  // @warning{implicit conversion loses integer precision: 'i16' to 'i8'}
+    Int32 = Int64;  // @warning{implicit conversion loses integer precision: 'int64' to 'int32'}
+    Int16 = Int32;  // @warning{implicit conversion loses integer precision: 'int32' to 'int16'}
+    Int8  = Int16;  // @warning{implicit conversion loses integer precision: 'int16' to 'int8'}
     Bool  = Int64;
 
-    UInt32 = UInt64;    // @warning{implicit conversion loses integer precision: 'u64' to 'u32'}
-    UInt16 = UInt32;    // @warning{implicit conversion loses integer precision: 'u32' to 'u16'}
-    UInt8  = UInt16;    // @warning{implicit conversion loses integer precision: 'u16' to 'u8'}
+    UInt32 = UInt64;    // @warning{implicit conversion loses integer precision: 'uint64' to 'uint32'}
+    UInt16 = UInt32;    // @warning{implicit conversion loses integer precision: 'uint32' to 'uint16'}
+    UInt8  = UInt16;    // @warning{implicit conversion loses integer precision: 'uint16' to 'uint8'}
     Bool   = UInt64;
 
-    Int32  = UInt32;    // @warning{implicit conversion changes signedness: 'u32' to 'i32'}
+    Int32  = UInt32;    // @warning{implicit conversion changes signedness: 'uint32' to 'int32'}
     Int32  = UInt16;
-    UInt32 = Int16;     // @warning{implicit conversion changes signedness: 'i16' to 'u32'}
+    UInt32 = Int16;     // @warning{implicit conversion changes signedness: 'iint16' to 'uint32'}
 
-    Int64   = Float32;  // @warning{implicit conversion turns floating-point number into integer: 'f32' to 'i64'}
-    Int32   = Float32;  // @warning{implicit conversion turns floating-point number into integer: 'f32' to 'i32'}
-    Float32 = Float64;  // @warning{implicit conversion loses floating-point precision: 'f64' to 'f32'}
+    Int64   = Float32;  // @warning{implicit conversion turns floating-point number into integer: 'float32' to 'int64'}
+    Int32   = Float32;  // @warning{implicit conversion turns floating-point number into integer: 'float32' to 'int32'}
+    Float32 = Float64;  // @warning{implicit conversion loses floating-point precision: 'float64' to 'float32'}
 
-    Bool = Float32;     // @error{invalid type conversion from 'f32' to 'bool'}
-    Bool = Float64;     // @error{invalid type conversion from 'f64' to 'bool'}
+    Bool = Float32;     // @error{invalid type conversion from 'float32' to 'bool'}
+    Bool = Float64;     // @error{invalid type conversion from 'float64' to 'bool'}
 
     return 0;
 }

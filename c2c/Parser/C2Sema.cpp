@@ -556,24 +556,24 @@ C2::ExprResult C2Sema::ActOnBuiltinType(tok::TokenKind k) {
 #endif
     QualType qt;
     switch (k) {
-    case tok::kw_u8:    qt = Type::UInt8(); break;
-    case tok::kw_u16:   qt = Type::UInt16(); break;
-    case tok::kw_u32:   qt = Type::UInt32(); break;
-    case tok::kw_u64:   qt = Type::UInt64(); break;
-    case tok::kw_i8:    qt = Type::Int8(); break;
-    case tok::kw_i16:   qt = Type::Int16(); break;
-    case tok::kw_i32:   qt = Type::Int32(); break;
-    case tok::kw_i64:   qt = Type::Int64(); break;
-    case tok::kw_int:   qt = Type::Int32(); break;
-    case tok::kw_uint:  qt = Type::UInt32(); break;
+    case tok::kw_uint8:     qt = Type::UInt8(); break;
+    case tok::kw_uint16:    qt = Type::UInt16(); break;
+    case tok::kw_uint32:    qt = Type::UInt32(); break;
+    case tok::kw_uint64:    qt = Type::UInt64(); break;
+    case tok::kw_int8:      qt = Type::Int8(); break;
+    case tok::kw_int16:     qt = Type::Int16(); break;
+    case tok::kw_int32:     qt = Type::Int32(); break;
+    case tok::kw_int64:     qt = Type::Int64(); break;
+    case tok::kw_int:       qt = Type::Int32(); break;
+    case tok::kw_uint:      qt = Type::UInt32(); break;
     case tok::kw_string: assert(0); break;
     case tok::kw_float: qt = Type::Float32(); break;
-    case tok::kw_f32:   qt = Type::Float32(); break;
-    case tok::kw_f64:   qt = Type::Float64(); break;
-    case tok::kw_char:  qt = Type::Int8(); break;
-    case tok::kw_bool:  qt = Type::Bool(); break;
-    case tok::kw_void:  qt = Type::Void(); break;
-    case tok::kw_uchar: qt = Type::UInt8(); break;
+    case tok::kw_float32:   qt = Type::Float32(); break;
+    case tok::kw_float64:   qt = Type::Float64(); break;
+    case tok::kw_char:      qt = Type::Int8(); break;
+    case tok::kw_bool:      qt = Type::Bool(); break;
+    case tok::kw_void:      qt = Type::Void(); break;
+    case tok::kw_uchar:     qt = Type::UInt8(); break;
     default:
         assert(0);
         break;

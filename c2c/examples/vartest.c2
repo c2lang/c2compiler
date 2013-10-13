@@ -8,12 +8,12 @@ type Struct struct {
 
 int n = 10;
 const char* hallo = "goodbye";
-i8* text2 = nil;
-u16 halfword;
-i32 number;
+int8* text2 = nil;
+uint16 halfword;
+int32 number;
 
 // aggregate
-u32 n1 = 10;
+uint32 n1 = 10;
 int n2 = 10;
 Struct s = { 10, 20, "hallo" }
 

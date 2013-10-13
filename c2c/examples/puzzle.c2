@@ -7,7 +7,7 @@ const char* ANSI_BRED   = "\033[01;31m";
 const char* ANSI_BGREEN = "\033[01;32m";
 const char* ANSI_NORMAL = "\033[0m";
 
-type Point enum u32 {
+type Point enum uint32 {
     POINT_A=0, POINT_B, POINT_C, POINT_D, POINT_E, POINT_F,
     POINT_G, POINT_H, POINT_I, POINT_J, POINT_K, POINT_L,
     POINT_M, POINT_N, POINT_O, POINT_P, POINT_Q, POINT_R,
@@ -39,7 +39,7 @@ const Connection[] connections = {
     { POINT_R, POINT_B, true },
 }
 
-const u32 LIST_SIZE = 100;
+const uint32 LIST_SIZE = 100;
 int[LIST_SIZE] activeList;
 int readIndex = 0;
 int writeIndex = 0;
@@ -157,7 +157,7 @@ public func int main(int, const char*[]) {
         int curDepth = toDepth(idx);
 
         // follow all connections, except incoming
-        for (u32 c = 0; c<elemsof(connections); c++) {
+        for (uint32 c = 0; c<elemsof(connections); c++) {
             const Connection* C = &connections[c];
             int next = -1;
             if (C->src == curPoint) { // go down (or same)

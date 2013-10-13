@@ -4,7 +4,7 @@ use utils;
 
 // -- Base types --
 public type Number int;
-public type String const u8*;
+public type String const uint8*;
 
 // -- pointer types --
 type PNum int*;
@@ -52,30 +52,30 @@ type S2 struct {
     union ONeOf {
         int a;
     }
-    volatile u32 count;
+    volatile uint32 count;
     const int d;
 }
 
 type Data union {
     int bla;
     const char* text;
-    u32 number;
+    uint32 number;
 }
 
 // -- ENUMS --
-type Enum1 enum u8 {
+type Enum1 enum uint8 {
     VAR1, VAR2, VAR3,
 }
 
-type Enum2 enum i32 {
+type Enum2 enum int32 {
     VARB1 = 1, VARB2 = 5, VARB3 = 10
 }
 
-type Enum3 enum u32 {
+type Enum3 enum uint32 {
     VARC1 = 1, VARC2 = 5,
 }
 
-type Enum4 enum u32 {
+type Enum4 enum uint32 {
     VAR1D
     , VARD2 = 10
     , VARD3,
@@ -87,7 +87,7 @@ float pi = 3.1415926;
 // -- Function --
 type CallBack func int(int a, utils.Point*p);
 type CBFunc func void (MyType* mt, ...);
-type CBFunc2 func void (const char* buffer, u8 t2, ...);
+type CBFunc2 func void (const char* buffer, uint8 t2, ...);
 
 func void test1(int n) {}
 func void test2(int n) {}

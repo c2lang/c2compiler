@@ -1,5 +1,5 @@
 package test;
 
 type Number int;
-type Number u16;        // @error{redefinition of Number}
+type Number uint16;        // @error{redefinition of Number}
 

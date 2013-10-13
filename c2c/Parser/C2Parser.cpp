@@ -325,14 +325,14 @@ void C2Parser::ParseEnumType(const char* id, SourceLocation idLoc, bool is_publi
     // parse mandatory implementation type
     ExprResult implType;
     switch (Tok.getKind()) {
-    case tok::kw_u8:
-    case tok::kw_u16:
-    case tok::kw_u32:
-    case tok::kw_u64:
-    case tok::kw_i8:
-    case tok::kw_i16:
-    case tok::kw_i32:
-    case tok::kw_i64:
+    case tok::kw_uint8:
+    case tok::kw_uint16:
+    case tok::kw_uint32:
+    case tok::kw_uint64:
+    case tok::kw_int8:
+    case tok::kw_int16:
+    case tok::kw_int32:
+    case tok::kw_int64:
     case tok::kw_int:
     case tok::kw_uint:
     case tok::kw_char:
@@ -482,20 +482,20 @@ C2::ExprResult C2Parser::ParseSingleTypeSpecifier(bool allow_qualifier) {
     ExprResult base;
     // first part is always a base type or identifier(::identifier)
     switch (Tok.getKind()) {
-    case tok::kw_u8:
-    case tok::kw_u16:
-    case tok::kw_u32:
-    case tok::kw_u64:
-    case tok::kw_i8:
-    case tok::kw_i16:
-    case tok::kw_i32:
-    case tok::kw_i64:
+    case tok::kw_uint8:
+    case tok::kw_uint16:
+    case tok::kw_uint32:
+    case tok::kw_uint64:
+    case tok::kw_int8:
+    case tok::kw_int16:
+    case tok::kw_int32:
+    case tok::kw_int64:
     case tok::kw_int:
     case tok::kw_uint:
     case tok::kw_string:
     case tok::kw_float:
-    case tok::kw_f32:
-    case tok::kw_f64:
+    case tok::kw_float32:
+    case tok::kw_float64:
     case tok::kw_char:
     case tok::kw_void:
     case tok::kw_uchar:
@@ -1236,20 +1236,20 @@ bool C2Parser::isDeclaration() {
     case tok::identifier:
         return isTypeSpec();
     // all basic types
-    case tok::kw_u8:
-    case tok::kw_u16:
-    case tok::kw_u32:
-    case tok::kw_u64:
-    case tok::kw_i8:
-    case tok::kw_i16:
-    case tok::kw_i32:
-    case tok::kw_i64:
+    case tok::kw_uint8:
+    case tok::kw_uint16:
+    case tok::kw_uint32:
+    case tok::kw_uint64:
+    case tok::kw_int8:
+    case tok::kw_int16:
+    case tok::kw_int32:
+    case tok::kw_int64:
     case tok::kw_int:
     case tok::kw_uint:
     case tok::kw_string:
     case tok::kw_float:
-    case tok::kw_f32:
-    case tok::kw_f64:
+    case tok::kw_float32:
+    case tok::kw_float64:
     case tok::kw_void:
     case tok::kw_char:
     case tok::kw_uchar:
@@ -1336,20 +1336,20 @@ C2::ExprResult C2Parser::ParseSizeof()
         Res = ParseIdentifier();
         break;
     // all basic types
-    case tok::kw_u8:
-    case tok::kw_u16:
-    case tok::kw_u32:
-    case tok::kw_u64:
-    case tok::kw_i8:
-    case tok::kw_i16:
-    case tok::kw_i32:
-    case tok::kw_i64:
+    case tok::kw_uint8:
+    case tok::kw_uint16:
+    case tok::kw_uint32:
+    case tok::kw_uint64:
+    case tok::kw_int8:
+    case tok::kw_int16:
+    case tok::kw_int32:
+    case tok::kw_int64:
     case tok::kw_int:
     case tok::kw_uint:
     case tok::kw_string:
     case tok::kw_float:
-    case tok::kw_f32:
-    case tok::kw_f64:
+    case tok::kw_float32:
+    case tok::kw_float64:
     case tok::kw_void:
     case tok::kw_char:
     case tok::kw_uchar:
@@ -1519,20 +1519,20 @@ C2::StmtResult C2Parser::ParseStatement() {
         Diag(Tok, diag::err_default_not_in_switch);
         return StmtError();
     // all basic types
-    case tok::kw_u8:
-    case tok::kw_u16:
-    case tok::kw_u32:
-    case tok::kw_u64:
-    case tok::kw_i8:
-    case tok::kw_i16:
-    case tok::kw_i32:
-    case tok::kw_i64:
+    case tok::kw_uint8:
+    case tok::kw_uint16:
+    case tok::kw_uint32:
+    case tok::kw_uint64:
+    case tok::kw_int8:
+    case tok::kw_int16:
+    case tok::kw_int32:
+    case tok::kw_int64:
     case tok::kw_int:
     case tok::kw_uint:
     case tok::kw_string:
     case tok::kw_float:
-    case tok::kw_f32:
-    case tok::kw_f64:
+    case tok::kw_float32:
+    case tok::kw_float64:
     case tok::kw_void:
     case tok::kw_char:
     case tok::kw_uchar:

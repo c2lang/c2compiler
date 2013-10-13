@@ -3,7 +3,7 @@ package test;
 
 func void test1() {
     int a;
-    *a = 1;     //@error{indirection requires pointer operand ('i32' invalid)}
+    *a = 1;     //@error{indirection requires pointer operand ('int32' invalid)}
 }
 
 

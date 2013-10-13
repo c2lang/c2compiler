@@ -4,7 +4,7 @@ package test;
 func void foo() {}
 
 func void test1() {
-    int a = foo();      // @error{invalid type conversion from 'void' to 'i32'}
+    int a = foo();      // @error{invalid type conversion from 'void' to 'int32'}
 }
 
 

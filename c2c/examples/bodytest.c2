@@ -32,7 +32,7 @@ func void test() {
     int[10] a2;
     int[5][5] buffer;
     char* text;
-    u32*[10] pointers;
+    uint32*[10] pointers;
     //const char* text2;
 }
 

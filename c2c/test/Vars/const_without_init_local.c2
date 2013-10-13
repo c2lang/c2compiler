@@ -2,6 +2,6 @@
 package test;
 
 func void test1() {
-    const i32 n;        // @error{constant variable n must be initialized}
+    const int32 n;        // @error{constant variable n must be initialized}
 }
 
