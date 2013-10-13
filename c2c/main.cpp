@@ -13,18 +13,19 @@
  * limitations under the License.
  */
 
-#include <clang/Basic/Version.h>
 #include <iostream>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
 
-#include "C2Builder.h"
-#include "RecipeReader.h"
-#include "Recipe.h"
-#include "Utils.h"
-#include "color.h"
+#include <clang/Basic/Version.h>
+
+#include "Builder/C2Builder.h"
+#include "Builder/RecipeReader.h"
+#include "Builder/Recipe.h"
+#include "Utils/Utils.h"
+#include "Utils/color.h"
 
 using namespace C2;
 

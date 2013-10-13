@@ -4,27 +4,29 @@ CXX := clang++
 #CXX := g++
 
 OBJS = \
-    AST.o \
-    C2Builder.o \
-    C2Parser.o \
-    C2Sema.o \
-    CCodeGenerator.o \
-    CodeGenFunction.o \
-    CodeGenModule.o \
-    Decl.o \
-    Expr.o \
-    FileAnalyser.o \
-    FileMap.o \
-    FileUtils.o \
-    FunctionAnalyser.o \
-    Package.o \
-    Recipe.o \
-    RecipeReader.o \
-    Scope.o \
-    Stmt.o \
-    StringBuilder.o \
-    Type.o \
-    Utils.o \
+    Analyser/FileAnalyser.o \
+    Analyser/FunctionAnalyser.o \
+    Analyser/Scope.o \
+    Analyser/AnalyserUtils.o \
+    AST/AST.o \
+    AST/Decl.o \
+    AST/Expr.o \
+    AST/Package.o \
+    AST/Stmt.o \
+    AST/Type.o \
+    Builder/C2Builder.o \
+    Builder/Recipe.o \
+    Builder/RecipeReader.o \
+    FileUtils/FileMap.o \
+    FileUtils/FileUtils.o \
+    Generators/CCodeGenerator.o \
+    Generators/CodeGenFunction.o \
+    Generators/CodeGenModule.o \
+    Generators/GenUtils.o \
+    Parser/C2Parser.o \
+    Parser/C2Sema.o \
+    Utils/StringBuilder.o \
+    Utils/Utils.o \
     main.o
 
 #CPPFLAGS = `llvm-config --cxxflags` -Wno-overloaded-virtual -Wall -Wextra -Wno-unused -Wno-unused-parameter
@@ -44,7 +46,7 @@ clean:
 
 %.o: %.cpp
 	@echo building $@
-	@$(CXX) -c $(CPPFLAGS) -o $@ $<
+	@$(CXX) -c $(CPPFLAGS) -o $@ $< -I .
 
 c2c: $(OBJS)
 	@echo linking $@
