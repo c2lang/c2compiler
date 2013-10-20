@@ -27,13 +27,14 @@ class DiagnosticsEngine;
 namespace C2 {
 
 class IdentifierExpr;
-class FileScope;
+class Scope;
 class TypeDecl;
 class VarDecl;
 class FunctionDecl;
 class ArrayValueDecl;
 class AST;
 class InitListExpr;
+class TypeResolver;
 
 class FileAnalyser {
 public:
@@ -65,7 +66,8 @@ private:
     // TODO use auto_ptr on globals
     AST& ast;
     TypeContext& typeContext;
-    FileScope* globals;
+    Scope* globals;
+    TypeResolver* typeResolver;
     clang::DiagnosticsEngine& Diags;
     FunctionAnalyser functionAnalyser;
     bool verbose;

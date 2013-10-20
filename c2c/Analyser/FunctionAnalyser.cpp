@@ -20,6 +20,7 @@
 
 #include "Analyser/FunctionAnalyser.h"
 #include "Analyser/Scope.h"
+#include "Analyser/TypeResolver.h"
 #include "Analyser/AnalyserUtils.h"
 #include "AST/Decl.h"
 #include "AST/Expr.h"
@@ -83,34 +84,29 @@ static int type_conversions[14][14] = {
     {  4,    4,   4,   4,  4,   4,   4,   4,   4,   4,    4,    0},
 };
 
-FunctionAnalyser::FunctionAnalyser(FileScope& scope_,
+FunctionAnalyser::FunctionAnalyser(Scope& scope_,
+                                   TypeResolver& typeRes_,
                                    TypeContext& tc,
                                    clang::DiagnosticsEngine& Diags_)
-    : globalScope(scope_)
+    : scope(scope_)
+    , typeResolver(typeRes_)
     , typeContext(tc)
-    , scopeIndex(0)
-    , curScope(0)
     , Diags(Diags_)
     , errors(0)
     , Function(0)
     , constDiagID(0)
     , inConstExpr(false)
 {
-    Scope* parent = 0;
-    for (int i=0; i<MAX_SCOPE_DEPTH; i++) {
-        scopes[i].InitOnce(globalScope, parent);
-        parent = &scopes[i];
-    }
 }
 
 unsigned FunctionAnalyser::check(FunctionDecl* func) {
     Function = func;
     errors = 0;
-    EnterScope(Scope::FnScope | Scope::DeclScope);
+    scope.EnterScope(Scope::FnScope | Scope::DeclScope);
 
     checkFunction(func);
 
-    ExitScope();
+    scope.ExitScope();
     Function = 0;
     return errors;
 }
@@ -122,15 +118,11 @@ void FunctionAnalyser::checkFunction(FunctionDecl* func) {
         VarDecl* arg = func->getArg(i);
         if (arg->getName() != "") {
             // check that argument names dont clash with globals
-            ScopeResult res = globalScope.findSymbol(arg->getName(), arg->getLocation());
-            if (res.decl) {
-                Diags.Report(arg->getLocation(), diag::err_redefinition)
-                    << arg->getName();
-                Diags.Report(res.decl->getLocation(), diag::note_previous_definition);
+            if (!scope.checkSymbol(arg)) {
                 errors++;
                 continue;
             }
-            curScope->addDecl(arg);
+            scope.addSymbol(arg);
         }
     }
     if (errors) return;
@@ -188,9 +180,9 @@ void FunctionAnalyser::analyseStmt(Stmt* S, bool haveScope) {
     case STMT_GOTO:
         break;
     case STMT_COMPOUND:
-        if (!haveScope) EnterScope(Scope::DeclScope);
+        if (!haveScope) scope.EnterScope(Scope::DeclScope);
         analyseCompoundStmt(S);
-        if (!haveScope) ExitScope();
+        if (!haveScope) scope.ExitScope();
         break;
     }
 }
@@ -213,15 +205,15 @@ void FunctionAnalyser::analyseIfStmt(Stmt* stmt) {
     if (Q1.isValid()) {
         checkCompatible(Type::Bool(), Q1, cond->getLocation(), CONV_CONV);
     }
-    EnterScope(Scope::DeclScope);
+    scope.EnterScope(Scope::DeclScope);
     analyseStmt(I->getThen(), true);
-    ExitScope();
+    scope.ExitScope();
 
     Stmt* elseSt = I->getElse();
     if (elseSt) {
-        EnterScope(Scope::DeclScope);
+        scope.EnterScope(Scope::DeclScope);
         analyseStmt(elseSt, true);
-        ExitScope();
+        scope.ExitScope();
     }
 }
 
@@ -229,30 +221,30 @@ void FunctionAnalyser::analyseWhileStmt(Stmt* stmt) {
     LOG_FUNC
     WhileStmt* W = cast<WhileStmt>(stmt);
     analyseStmt(W->getCond());
-    EnterScope(Scope::BreakScope | Scope::ContinueScope | Scope::DeclScope | Scope::ControlScope);
+    scope.EnterScope(Scope::BreakScope | Scope::ContinueScope | Scope::DeclScope | Scope::ControlScope);
     analyseStmt(W->getBody(), true);
-    ExitScope();
+    scope.ExitScope();
 
 }
 
 void FunctionAnalyser::analyseDoStmt(Stmt* stmt) {
     LOG_FUNC
     DoStmt* D = cast<DoStmt>(stmt);
-    EnterScope(Scope::BreakScope | Scope::ContinueScope | Scope::DeclScope);
+    scope.EnterScope(Scope::BreakScope | Scope::ContinueScope | Scope::DeclScope);
     analyseStmt(D->getBody());
-    ExitScope();
+    scope.ExitScope();
     analyseStmt(D->getCond());
 }
 
 void FunctionAnalyser::analyseForStmt(Stmt* stmt) {
     LOG_FUNC
     ForStmt* F = cast<ForStmt>(stmt);
-    EnterScope(Scope::BreakScope | Scope::ContinueScope | Scope::DeclScope | Scope::ControlScope);
+    scope.EnterScope(Scope::BreakScope | Scope::ContinueScope | Scope::DeclScope | Scope::ControlScope);
     if (F->getInit()) analyseStmt(F->getInit());
     if (F->getCond()) analyseExpr(F->getCond(), RHS);
     if (F->getIncr()) analyseExpr(F->getIncr(), RHS);
     analyseStmt(F->getBody(), true);
-    ExitScope();
+    scope.ExitScope();
 }
 
 void FunctionAnalyser::analyseSwitchStmt(Stmt* stmt) {
@@ -261,7 +253,7 @@ void FunctionAnalyser::analyseSwitchStmt(Stmt* stmt) {
     analyseExpr(S->getCond(), RHS);
     const StmtList& Cases = S->getCases();
     Stmt* defaultStmt = 0;
-    EnterScope(Scope::BreakScope | Scope::SwitchScope);
+    scope.EnterScope(Scope::BreakScope | Scope::SwitchScope);
     for (unsigned i=0; i<Cases.size(); i++) {
         Stmt* C = Cases[i];
         switch (C->getKind()) {
@@ -281,12 +273,12 @@ void FunctionAnalyser::analyseSwitchStmt(Stmt* stmt) {
             assert(0);
         }
     }
-    ExitScope();
+    scope.ExitScope();
 }
 
 void FunctionAnalyser::analyseBreakStmt(Stmt* stmt) {
     LOG_FUNC
-    if (!curScope->allowBreak()) {
+    if (!scope.allowBreak()) {
         BreakStmt* B = cast<BreakStmt>(stmt);
         Diags.Report(B->getLocation(), diag::err_break_not_in_loop_or_switch);
     }
@@ -294,7 +286,7 @@ void FunctionAnalyser::analyseBreakStmt(Stmt* stmt) {
 
 void FunctionAnalyser::analyseContinueStmt(Stmt* stmt) {
     LOG_FUNC
-    if (!curScope->allowContinue()) {
+    if (!scope.allowContinue()) {
         ContinueStmt* C = cast<ContinueStmt>(stmt);
         Diags.Report(C->getLocation(), diag::err_continue_not_in_loop);
     }
@@ -431,7 +423,6 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
             IdentifierExpr* id = cast<IdentifierExpr>(expr);
             //fprintf(stderr, "%s  %s %s\n", id->getName().c_str(), side&LHS ? "LHS" : "", side&RHS ? "RHS": "");
             ScopeResult Res = analyseIdentifier(id);
-            if (!Res.ok) break;
             if (!Res.decl) break;
             // NOTE: expr should not be package name (handled above)
             // TODO LHS: check if VarDecl
@@ -486,7 +477,6 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
         {
             IdentifierExpr* id = cast<IdentifierExpr>(expr);
             ScopeResult Res = analyseIdentifier(id);
-            if (!Res.ok) return;
             if (!Res.decl) return;
             switch (Res.decl->getKind()) {
             case DECL_FUNC:
@@ -628,10 +618,10 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
 
     // check type and convert User types
     QualType type = decl->getType();
-    unsigned errs = globalScope.checkType(type, false);
+    unsigned errs = typeResolver.checkType(type, false);
     errors += errs;
     if (!errs) {
-        globalScope.resolveCanonicals(decl, type, true);
+        typeResolver.resolveCanonicals(decl, type, true);
         ArrayType* AT = dyncast<ArrayType>(type.getTypePtr());
         if (AT && AT->getSize()) {
             analyseExpr(AT->getSize(), RHS);
@@ -640,14 +630,7 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     }
 
     // check name
-    ScopeResult res = curScope->findSymbol(decl->getName(), decl->getLocation());
-    if (res.decl) {
-        // TODO check other attributes?
-        Diags.Report(decl->getLocation(), diag::err_redefinition)
-            << decl->getName();
-        Diags.Report(res.decl->getLocation(), diag::note_previous_definition);
-        return;
-    }
+    if (!scope.checkSymbol(decl)) return;
     // check initial value
     Expr* initialValue = decl->getInitValue();
     if (initialValue && !errs) {
@@ -659,7 +642,7 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     if (type.isConstQualified() && !initialValue) {
         Diags.Report(decl->getLocation(), diag::err_uninitialized_const_var) << decl->getName();
     }
-    curScope->addDecl(decl);
+    scope.addSymbol(decl);
 }
 
 QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
@@ -800,7 +783,7 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
             LType = analyseExpr(unaryop->getExpr(), side | RHS);
             if (LType.isNull()) return 0;
             QualType Q = typeContext.getPointerType(LType);
-            globalScope.resolveCanonicals(0, Q, true);
+            typeResolver.resolveCanonicals(0, Q, true);
             return Q;
         }
     case UO_Deref:
@@ -921,7 +904,6 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
     if (base->getKind() == EXPR_IDENTIFIER) {
         IdentifierExpr* base_id = cast<IdentifierExpr>(base);
         ScopeResult SR = analyseIdentifier(base_id);
-        if (!SR.ok) return QualType();
         if (SR.decl) {
             M->setPkgPrefix(false);
             switch (SR.decl->getKind()) {
@@ -997,21 +979,14 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
                 fprintf(stderr, "TODO ERROR: cannot use -> for package access\n");
                 // continue checking
             }
-            // TODO extract to Scope.cpp?
-            // lookup member in package
-            Decl* D = SR.pkg->findSymbol(member->getName());
-            if (!D) {
-                Diags.Report(member->getLocation(), diag::err_unknown_package_symbol)
-                    << SR.pkg->getName() << member->getName();
-                return QualType();
+            ScopeResult res = scope.findSymbolInPackage(member->getName(), member->getLocation(), SR.pkg);
+            if (res.decl) {
+                member->setDecl(res.decl);
+                return Decl2Type(res.decl);
             }
-            if (SR.external && !D->isPublic()) {
-                Diags.Report(member->getLocation(), diag::err_not_public)
-                    << AnalyserUtils::fullName(SR.pkg->getName(), D->getName());
-                return QualType();
-            }
-            member->setDecl(D);
-            return Decl2Type(D);
+            return QualType();
+        } else  {
+            return QualType();
         }
     } else {
         QualType LType = analyseExpr(base, RHS);
@@ -1144,27 +1119,20 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
 
 ScopeResult FunctionAnalyser::analyseIdentifier(IdentifierExpr* id) {
     LOG_FUNC
-    ScopeResult res = curScope->findSymbol(id->getName(), id->getLocation());
-    if (!res.ok) return res;
+    ScopeResult res = scope.findSymbol(id->getName(), id->getLocation());
     if (res.decl) {
-        if (!res.visible) {
-            res.ok = false;
-            Diags.Report(id->getLocation(), diag::err_not_public) << id->getName();
-        } else {
-            id->setDecl(res.decl);
-        }
+        id->setDecl(res.decl);
+    } else if (res.pkg) {
+        // symbol is package
     } else {
-        if (res.pkg) {
-            // symbol is package
-        } else {
-            res.ok = false;
-            Diags.Report(id->getLocation(), diag::err_undeclared_var_use)
-                << id->getName();
-            ScopeResult res2 = globalScope.findSymbolInUsed(id->getName());
-            if (res2.decl) {
-                Diags.Report(res2.decl->getLocation(), diag::note_function_suggestion)
-                    << AnalyserUtils::fullName(res2.pkg->getName(), id->getName());
-            }
+        // C
+        res.ok = false;
+        Diags.Report(id->getLocation(), diag::err_undeclared_var_use)
+            << id->getName();
+        ScopeResult res2 = scope.findSymbolInUsed(id->getName());
+        if (res2.decl) {
+            Diags.Report(res2.decl->getLocation(), diag::note_function_suggestion)
+                << AnalyserUtils::fullName(res2.pkg->getName(), id->getName());
         }
     }
     return res;
@@ -1352,29 +1320,7 @@ C2::QualType FunctionAnalyser::resolveUserType(QualType T) {
     return T;
 }
 
-void FunctionAnalyser::EnterScope(unsigned flags) {
-    LOG_FUNC
-    assert (scopeIndex < MAX_SCOPE_DEPTH && "out of scopes");
-    scopes[scopeIndex].Init(flags);
-    curScope = &scopes[scopeIndex];
-    scopeIndex++;
-}
-
-void FunctionAnalyser::ExitScope() {
-    LOG_FUNC
-    for (unsigned i=0; i<curScope->numDecls(); i++) {
-        VarDecl* D = curScope->getDecl(i);
-        if (!D->isUsed()) {
-            unsigned msg = diag::warn_unused_variable;
-            if (D->isParameter()) msg = diag::warn_unused_parameter;
-            Diags.Report(D->getLocation(), msg) << D->getName();
-        }
-    }
-    scopeIndex--;
-    Scope* parent = curScope->getParent();
-    curScope = parent;
-}
-
+#if 0
 void FunctionAnalyser::pushMode(unsigned DiagID) {
     LOG_FUNC
     assert(inConstExpr == false);
@@ -1388,4 +1334,4 @@ void FunctionAnalyser::popMode() {
     inConstExpr = false;
     constDiagID = 0;
 }
-
+#endif

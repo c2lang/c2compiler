@@ -23,8 +23,6 @@
 
 using clang::SourceLocation;
 
-#define MAX_SCOPE_DEPTH 15
-
 namespace clang {
 class DiagnosticsEngine;
 }
@@ -33,7 +31,8 @@ namespace C2 {
 
 class Type;
 class TypeContext;
-class FileScope;
+class Scope;
+class TypeResolver;
 class Decl;
 class VarDecl;
 class FunctionDecl;
@@ -43,9 +42,10 @@ class IdentifierExpr;
 
 class FunctionAnalyser {
 public:
-    FunctionAnalyser(FileScope& scope_,
-                         TypeContext& tc,
-                         clang::DiagnosticsEngine& Diags_);
+    FunctionAnalyser(Scope& scope_,
+                    TypeResolver& typeRes_,
+                    TypeContext& tc,
+                    clang::DiagnosticsEngine& Diags_);
 
     unsigned check(FunctionDecl* F);
 private:
@@ -81,9 +81,7 @@ private:
     void analyseInitExpr(Expr* expr, QualType expectedType);
     void analyseInitList(Expr* expr, QualType expectedType);
 
-    void EnterScope(unsigned flags);
-    void ExitScope();
-
+#if 0
     void pushMode(unsigned DiagID);
     void popMode();
 
@@ -101,6 +99,7 @@ private:
     private:
         FunctionAnalyser& analyser;
     };
+#endif
 
     bool checkAssignee(Expr* expr) const;
     void checkAssignment(Expr* assignee, QualType TLeft);
@@ -113,11 +112,10 @@ private:
     static QualType resolveUserType(QualType T);
     QualType Decl2Type(Decl* decl);
 
-    FileScope& globalScope;
+    Scope& scope;
+    TypeResolver& typeResolver;
     TypeContext& typeContext;
-    Scope scopes[MAX_SCOPE_DEPTH];
-    unsigned scopeIndex;    // first free scope (= count of scopes)
-    Scope* curScope;
+
     clang::DiagnosticsEngine& Diags;
     unsigned errors;
 

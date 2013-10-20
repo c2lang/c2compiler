@@ -21,7 +21,8 @@
 #include <vector>
 
 #include "AST/Package.h"
-#include "AST/Type.h"
+
+#define MAX_SCOPE_DEPTH 15
 
 namespace clang {
 class DiagnosticsEngine;
@@ -37,61 +38,25 @@ public:
     ScopeResult()
         : pkg(0)
         , decl(0)
-        , external(true)
-        , visible(true)
         , ok(true)
     {}
-    void dump() const;
 
     const Package* pkg; // pkg is only set if Symbol is a global or if symbol is a package
     Decl* decl;         // if symbol is not a package
-    bool external;      // package is external
-    bool visible;       // symbol is non-public and used externally
     bool ok;            // checks are ok
 };
 
 
-class FileScope {
-public:
-    FileScope(const std::string& name_, const Pkgs& pkgs_, clang::DiagnosticsEngine& Diags_, TypeContext& tc_);
+struct DynamicScope {
+    DynamicScope();
+    void Init(unsigned flags_);
 
-    const Package* findPackage(const std::string& name) const;
-    const Package* findAnyPackage(const std::string& name) const;
-    void addPackage(bool isLocal, const std::string& name_, const Package* pkg);
+    unsigned Flags;
 
-    ScopeResult findSymbol(const std::string& name, clang::SourceLocation loc) const;
-    ScopeResult findSymbolInUsed(const std::string& name) const;
-
-    bool isExternal(const Package* pkg) const;
-    unsigned checkType(QualType Q, bool used_public);
-    QualType resolveCanonicals(const Decl* D, QualType Q, bool set) const;
-
-    void dump() const;
-private:
-    typedef std::vector<const Decl*> Decls;
-    typedef Decls::iterator DeclsIter;
-    QualType checkCanonicals(Decls& decls, QualType Q, bool set) const;
-    bool checkDecls(Decls& decls, const Decl* D) const;
-    unsigned checkUnresolvedType(const UnresolvedType* type, bool used_public);
-
-    const std::string pkgName;
-
-    // locals (or used local)
-    typedef std::vector<const Package*> Locals;
-    typedef Locals::const_iterator LocalsConstIter;
-    Locals locals;
-
-    // used packages (use <as>)
-    typedef std::map<std::string, const Package*> Packages;
-    typedef Packages::const_iterator PackagesConstIter;
-    typedef Packages::iterator PackagesIter;
-    Packages packages;
-
-    // all packages
-    const Pkgs& allPackages;
-
-    clang::DiagnosticsEngine& Diags;
-    TypeContext& typeContext;
+    // local decls (in scope), no ownership
+    typedef std::vector<VarDecl*> Decls;
+    typedef Decls::const_iterator DeclsConstIter;
+    Decls decls;
 };
 
 
@@ -128,29 +93,69 @@ public:
         /// SwitchScope - This is a scope that corresponds to a switch statement.
         SwitchScope = 0x800,
     };
-    Scope();
-    void InitOnce(FileScope& globals_, Scope* parent_);
-    void Init(unsigned flags_);
 
+
+    Scope(const std::string& name_, const Pkgs& pkgs_, clang::DiagnosticsEngine& Diags_);
+
+    const Package* findPackage(const std::string& name) const;
+    const Package* usePackage(const std::string& name, clang::SourceLocation loc) const;
+    const Package* findAnyPackage(const std::string& name) const;
+    void addPackage(bool isLocal, const std::string& name_, const Package* pkg);
+
+    ScopeResult findGlobalSymbol(const std::string& name, clang::SourceLocation loc) const;
     ScopeResult findSymbol(const std::string& name, clang::SourceLocation loc) const;
-    void addDecl(VarDecl* d) { decls.push_back(d); }
-    unsigned numDecls() const { return decls.size(); }
-    VarDecl* getDecl(unsigned i) { return decls[i]; }
+    ScopeResult findSymbolInPackage(const std::string& name, clang::SourceLocation loc, const Package* pkg) const;
+    ScopeResult findSymbolInUsed(const std::string& name) const;
 
-    Scope* getParent() const { return parent; }
-    void setParent(Scope* parent_) { parent = parent_; }
-    bool allowBreak() const { return Flags & BreakScope; }
-    bool allowContinue() const { return Flags & ContinueScope; }
+    // NEW API
+    bool checkSymbol(const VarDecl* V) const;
+    void addSymbol(VarDecl* V);
+
+    // Scopes
+    void EnterScope(unsigned flags);
+    void ExitScope();
+
+    bool allowBreak()    const { return curScope->Flags & BreakScope; }
+    bool allowContinue() const { return curScope->Flags & ContinueScope; }
+
+    bool isExternal(const Package* pkg) const {
+        return (pkg && pkg != myPkg);
+    }
+
+    void dump() const;
 private:
-    // set once
-    FileScope* globals;
-    Scope* parent;
-    unsigned Flags;
+    // Scopes
+    DynamicScope scopes[MAX_SCOPE_DEPTH];
+    unsigned scopeIndex;    // first free scope (= count of scopes)
+    DynamicScope* curScope;
 
-    // local decls (in scope), no ownership
-    typedef std::vector<VarDecl*> Decls;
-    typedef Decls::const_iterator DeclsConstIter;
-    Decls decls;
+    // Packages
+    // locals (or used local)
+    typedef std::vector<const Package*> Locals;
+    typedef Locals::const_iterator LocalsConstIter;
+    Locals locals;
+    // used packages (use <as>)
+    typedef std::map<std::string, const Package*> Packages;
+    typedef Packages::const_iterator PackagesConstIter;
+    typedef Packages::iterator PackagesIter;
+    Packages packages;
+    // all packages
+    const Pkgs& allPackages;
+
+    const Package* myPkg;
+
+    // Symbol caches
+    typedef std::map<std::string, ScopeResult> Globals;
+    typedef Globals::const_iterator GlobalsConstIter;
+    typedef Globals::iterator GlobalsIter;
+    mutable Globals globalCache;
+
+    typedef std::map<const std::string, VarDecl*> LocalCache;
+    typedef LocalCache::const_iterator LocalCacheConstIter;
+    typedef LocalCache::iterator LocalCacheIter;
+    LocalCache localCache;
+
+    clang::DiagnosticsEngine& Diags;
 };
 
 }

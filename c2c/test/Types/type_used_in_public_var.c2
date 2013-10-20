@@ -1,3 +1,5 @@
+// @warnings{no-unused}
+
 package test;
 
 type Number int;

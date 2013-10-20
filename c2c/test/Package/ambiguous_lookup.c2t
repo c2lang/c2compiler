@@ -1,0 +1,18 @@
+// @warnings{no-unused}
+
+// @file{file1}
+package foo;
+
+public int a;
+
+// @file{file2}
+package bar;
+
+use foo local;
+
+public int a;
+
+func void test2() {
+    int b = a;  // @error{symbol a is ambiguous}
+}
+

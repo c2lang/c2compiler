@@ -35,6 +35,7 @@ const std::string& Package::getCName() const {
 
 void Package::addSymbol(Decl* decl) {
     symbols[decl->getName()] = decl;
+    decl->setPackage(this);
 }
 
 Decl* Package::findSymbol(const std::string& name_) const {

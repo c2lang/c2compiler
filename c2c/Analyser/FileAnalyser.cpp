@@ -19,6 +19,7 @@
 
 #include "Analyser/FileAnalyser.h"
 #include "Analyser/Scope.h"
+#include "Analyser/TypeResolver.h"
 #include "AST/Decl.h"
 #include "AST/Expr.h"
 #include "AST/AST.h"
@@ -40,13 +41,15 @@ FileAnalyser::FileAnalyser(const Pkgs& pkgs, clang::DiagnosticsEngine& Diags_,
                     AST& ast_, TypeContext& typeContext_, bool verbose_)
     : ast(ast_)
     , typeContext(typeContext_)
-    , globals(new FileScope(ast_.getPkgName(), pkgs, Diags_, typeContext_))
+    , globals(new Scope(ast_.getPkgName(), pkgs, Diags_))
+    , typeResolver(new TypeResolver(*globals, Diags_, typeContext_))
     , Diags(Diags_)
-    , functionAnalyser(*globals, typeContext_, Diags_)
+    , functionAnalyser(*globals, *typeResolver, typeContext_, Diags_)
     , verbose(verbose_)
 {}
 
 FileAnalyser::~FileAnalyser() {
+    delete typeResolver;
     delete globals;
 }
 
@@ -100,7 +103,7 @@ unsigned FileAnalyser::resolveTypeCanonicals() {
     for (unsigned i=0; i<ast.numTypes(); i++) {
         const TypeDecl* D = ast.getType(i);
         // check generic type
-        globals->resolveCanonicals(D, D->getType(), true);
+        typeResolver->resolveCanonicals(D, D->getType(), true);
 
         // NOTE dont check any subclass specific things yet
 
@@ -251,7 +254,7 @@ unsigned FileAnalyser::checkTypeDecl(TypeDecl* D) {
     LOG_FUNC
     // check generic type
     unsigned errors = 0;
-    errors += globals->checkType(D->getType(), D->isPublic());
+    errors += typeResolver->checkType(D->getType(), D->isPublic());
 
     // check extra stuff depending on subclass
     switch (D->getKind()) {
@@ -302,9 +305,9 @@ unsigned FileAnalyser::resolveVarDecl(VarDecl* D) {
     QualType Q = D->getType();
     if (Q->hasCanonicalType()) return 0;
 
-    unsigned errors = globals->checkType(Q, D->isPublic());
+    unsigned errors = typeResolver->checkType(Q, D->isPublic());
     if (!errors) {
-        globals->resolveCanonicals(D, Q, true);
+        typeResolver->resolveCanonicals(D, Q, true);
         // TODO same as FunctionAnalyser code!
         ArrayType* AT = dyncast<ArrayType>(Q.getTypePtr());
         if (AT && AT->getSize()) {
@@ -323,9 +326,9 @@ unsigned FileAnalyser::resolveFunctionDecl(FunctionDecl* D) {
     // return type
     QualType RT = D->getReturnType();
     if (!RT->hasCanonicalType()) {
-        unsigned errs = globals->checkType(RT, D->isPublic());
+        unsigned errs = typeResolver->checkType(RT, D->isPublic());
         errors += errs;
-        if (!errs) globals->resolveCanonicals(D, RT, true);
+        if (!errs) typeResolver->resolveCanonicals(D, RT, true);
     }
 
     // args
