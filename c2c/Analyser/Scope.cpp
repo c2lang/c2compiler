@@ -225,7 +225,6 @@ unsigned FileScope::checkUnresolvedType(const UnresolvedType* type, bool used_pu
             }
             // ok
             assert(res.pkg && "pkg should be set");
-            I->setPackage(res.pkg);
             I->setDecl(res.decl);
             type->setMatch(td);
         }
@@ -256,6 +255,7 @@ unsigned FileScope::checkUnresolvedType(const UnresolvedType* type, bool used_pu
                 }
                 return 1;
             }
+            M->setPkgPrefix(true);
             // check member
             Expr* member = M->getMember();
             IdentifierExpr* member_id = cast<IdentifierExpr>(member);
@@ -280,7 +280,7 @@ unsigned FileScope::checkUnresolvedType(const UnresolvedType* type, bool used_pu
                 return 1;
             }
             // ok
-            member_id->setPackage(pkg);
+            member_id->setDecl(symbol);
             type->setMatch(td);
         }
         break;

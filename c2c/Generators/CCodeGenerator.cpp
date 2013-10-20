@@ -314,7 +314,7 @@ void CCodeGenerator::EmitMemberExpr(Expr* E, StringBuilder& output) {
     LOG_FUNC
     MemberExpr* M = cast<MemberExpr>(E);
     IdentifierExpr* RHS = M->getMember();
-    if (RHS->getPackage()) {
+    if (M->isPkgPrefix()) {
         // A.B where A is a package
         EmitIdentifierExpr(RHS, output);
     } else {
@@ -322,7 +322,7 @@ void CCodeGenerator::EmitMemberExpr(Expr* E, StringBuilder& output) {
         EmitExpr(M->getBase(), cbuf);
         if (M->isArrow()) cbuf << "->";
         else cbuf << '.';
-        cbuf << M->getMember()->getName();
+        cbuf << RHS->getName();
     }
 }
 
@@ -355,8 +355,10 @@ void CCodeGenerator::EmitCallExpr(Expr* E, StringBuilder& output) {
 void CCodeGenerator::EmitIdentifierExpr(Expr* E, StringBuilder& output) {
     LOG_FUNC
     IdentifierExpr* I = cast<IdentifierExpr>(E);
-    if (I->getPackage()) {
-        addPrefix(I->getPackage()->getCName(), I->getName(), output);
+    Decl* D = I->getDecl();
+    assert(D);   // TODO valid?
+    if (D->getPackage()) {
+        addPrefix(D->getPackage()->getCName(), I->getName(), output);
     } else {
         output << I->getName();
     }

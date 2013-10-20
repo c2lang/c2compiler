@@ -4,27 +4,27 @@ CXX := clang++
 #CXX := g++
 
 OBJS = \
-    Analyser/FileAnalyser.o \
-    Analyser/FunctionAnalyser.o \
-    Analyser/Scope.o \
-    Analyser/AnalyserUtils.o \
     AST/AST.o \
     AST/Decl.o \
     AST/Expr.o \
     AST/Package.o \
     AST/Stmt.o \
     AST/Type.o \
+    Parser/C2Parser.o \
+    Parser/C2Sema.o \
+    Analyser/FileAnalyser.o \
+    Analyser/FunctionAnalyser.o \
+    Analyser/Scope.o \
+    Analyser/AnalyserUtils.o \
+    Generators/CCodeGenerator.o \
+    Generators/CodeGenFunction.o \
+    Generators/CodeGenModule.o \
+    Generators/GenUtils.o \
     Builder/C2Builder.o \
     Builder/Recipe.o \
     Builder/RecipeReader.o \
     FileUtils/FileMap.o \
     FileUtils/FileUtils.o \
-    Generators/CCodeGenerator.o \
-    Generators/CodeGenFunction.o \
-    Generators/CodeGenModule.o \
-    Generators/GenUtils.o \
-    Parser/C2Parser.o \
-    Parser/C2Sema.o \
     Utils/StringBuilder.o \
     Utils/Utils.o \
     main.o

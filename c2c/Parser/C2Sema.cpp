@@ -200,7 +200,7 @@ void C2Sema::ActOnVarDef(const char* name, SourceLocation loc,
     if (typeExpr->hasLocalQualifier()) {
         Diag(loc, diag::err_invalid_local_globalvar);
     }
-    VarDecl* V =  createVarDecl(name, loc, typeExpr, InitValue, is_public);
+    VarDecl* V =  createVarDecl(VARDECL_GLOBAL, name, loc, typeExpr, InitValue, is_public);
     ast.addVar(V);
     addSymbol(V);
 }
@@ -222,10 +222,10 @@ C2::FunctionDecl* C2Sema::createFuncDecl(const char* name, SourceLocation loc,
 }
 
 // NOTE: takes Type* from typeExpr and deletes typeExpr;
-C2::VarDecl* C2Sema::createVarDecl(const char* name, SourceLocation loc, TypeExpr* typeExpr, Expr* InitValue, bool is_public) {
+C2::VarDecl* C2Sema::createVarDecl(VarDeclKind k, const char* name, SourceLocation loc, TypeExpr* typeExpr, Expr* InitValue, bool is_public) {
     // TODO check that type is not pre-fixed with own package
     // globals, function params, struct members
-    VarDecl* V = new VarDecl(name, loc, typeExpr->getType(), InitValue, is_public);
+    VarDecl* V = new VarDecl(k, name, loc, typeExpr->getType(), InitValue, is_public);
     delete typeExpr;
     return V;
 }
@@ -269,8 +269,7 @@ void C2Sema::ActOnFunctionArg(FunctionDecl* func, const char* name, SourceLocati
     if (typeExpr->hasLocalQualifier()) {
         Diag(loc, diag::err_invalid_local_functionargument);
     }
-    VarDecl* var = createVarDecl(name, loc, typeExpr, InitValue, func->isPublic());
-    var->setIsParameter();
+    VarDecl* var = createVarDecl(VARDECL_PARAM, name, loc, typeExpr, InitValue, func->isPublic());
 
     // check args for duplicates
     if (var->getName() != "") {
@@ -446,7 +445,7 @@ C2::StmtResult C2Sema::ActOnDeclaration(const char* name, SourceLocation loc, Ex
     // TEMP extract here to Type and delete rtype Expr
     TypeExpr* typeExpr = cast<TypeExpr>(type);
     bool hasLocal = typeExpr->hasLocalQualifier();
-    VarDecl* V =  createVarDecl(name, loc, typeExpr, InitValue, false);
+    VarDecl* V =  createVarDecl(VARDECL_LOCAL, name, loc, typeExpr, InitValue, false);
     if (hasLocal) V->setLocalQualifier();
     return StmtResult(new DeclExpr(V));
 }
@@ -619,7 +618,7 @@ C2::DeclResult C2Sema::ActOnStructVar(const char* name, SourceLocation loc, Expr
         //Diag(loc, diag::err_invalid_local_structmember);
 #warning "TODO add diag msg to clang"
     }
-    VarDecl* V = createVarDecl(name, loc, typeExpr, InitValue, is_public);
+    VarDecl* V = createVarDecl(VARDECL_MEMBER, name, loc, typeExpr, InitValue, is_public);
     return DeclResult(V);
 }
 

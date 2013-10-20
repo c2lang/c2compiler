@@ -80,8 +80,8 @@ protected:
         unsigned dKind : 8;
         unsigned DeclIsPublic : 1;
         unsigned DeclIsUsed : 1;
+        unsigned varDeclKind: 2;
         unsigned VarDeclHasLocalQualifier : 1;
-        unsigned VarDeclIsParameter: 1;
         unsigned StructTypeIsStruct : 1;
         unsigned StructTypeIsGlobal : 1;
         unsigned FuncIsVariadic : 1;
@@ -93,16 +93,23 @@ protected:
         unsigned BitsInit;      // to initialize all bits
     };
 private:
-    Package* pkg;
+    const Package* pkg;
 
     Decl(const Decl&);
     Decl& operator= (const Decl&);
 };
 
 
+enum VarDeclKind {
+    VARDECL_GLOBAL = 0,
+    VARDECL_LOCAL,
+    VARDECL_PARAM,
+    VARDECL_MEMBER
+};
+
 class VarDecl : public Decl {
 public:
-    VarDecl(const std::string& name_, SourceLocation loc_,
+    VarDecl(VarDeclKind k_, const std::string& name_, SourceLocation loc_,
             QualType type_, Expr* initValue_, bool is_public = false);
     virtual ~VarDecl();
     static bool classof(const Decl* D) {
@@ -115,8 +122,9 @@ public:
 
     void setLocalQualifier() { DeclBits.VarDeclHasLocalQualifier = true; }
     bool hasLocalQualifier() const { return DeclBits.VarDeclHasLocalQualifier; }
-    void setIsParameter() { DeclBits.VarDeclIsParameter = true; }
-    bool isParameter() const { return DeclBits.VarDeclIsParameter; }
+    bool isParameter() const { return getVarKind() == VARDECL_PARAM; }
+    bool isGlobal() const { return getVarKind() == VARDECL_GLOBAL; }
+    VarDeclKind getVarKind() const { return static_cast<VarDeclKind>(DeclBits.varDeclKind); }
 
     // TODO move to GlobalVarDecl subclass
     typedef std::vector<ArrayValueDecl*> InitValues;

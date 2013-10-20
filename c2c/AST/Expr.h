@@ -185,7 +185,7 @@ class IdentifierExpr : public Expr {
 public:
     IdentifierExpr(SourceLocation loc_, const std::string& name_)
         : Expr(EXPR_IDENTIFIER)
-        , name(name_), pkg(0), decl(0), loc(loc_) {}
+        , name(name_), decl(0), loc(loc_) {}
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_IDENTIFIER;
     }
@@ -422,6 +422,9 @@ public:
     Expr* getBase() const { return Base; }
     IdentifierExpr* getMember() const { return Member; }
     bool isArrow() const { return StmtBits.MemberExprIsArrow; }
+    void setPkgPrefix(bool v) { StmtBits.MemberExprIsPkgPrefix = v; }
+    bool isPkgPrefix() const { return StmtBits.MemberExprIsPkgPrefix; }
+
     // NOTE: uses static var
     const char* getFullName() const;
 private:

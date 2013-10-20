@@ -135,10 +135,7 @@ void NilExpr::print(StringBuilder& buffer, unsigned indent) const {
 void IdentifierExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer << "[IdentifierExpr ";
-    if (pkg) {
-        buffer << ANSI_CYAN << pkg->getName() << '.' << ANSI_NORMAL;
-    }
-     buffer << getName() << "]";
+    buffer << getName() << "]";
     if (decl) buffer << " <RESOLVED>";
     buffer << '\n';
 }
@@ -376,7 +373,9 @@ MemberExpr::~MemberExpr() {
 
 void MemberExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[MemberExpr]\n";
+    buffer << "[MemberExpr]";
+    if (isPkgPrefix()) buffer << " (pkg-prefix)";
+    buffer << '\n';
     Base->print(buffer, indent + INDENT);
     Member->print(buffer, indent + INDENT);
 }

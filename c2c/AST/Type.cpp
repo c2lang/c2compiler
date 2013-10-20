@@ -351,7 +351,9 @@ void ArrayType::debugPrint(StringBuilder& buffer, unsigned indent) const {
     Type::debugPrint(buffer, 0);    // canonical
     ElementType.debugPrint(buffer, indent+INDENT);
     if (sizeExpr) {
-        // TODO
+        buffer.indent(indent + INDENT);
+        buffer << COL_ATTR << "size=\n" << ANSI_NORMAL;
+        sizeExpr->print(buffer, indent+INDENT);
     }
 }
 

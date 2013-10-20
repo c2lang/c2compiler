@@ -70,7 +70,7 @@ protected:
         unsigned TypeExprIsLocal : 1;
         unsigned BuiltInIsSizeOf: 1;
         unsigned MemberExprIsArrow: 1;
-
+        unsigned MemberExprIsPkgPrefix: 1;
     };
     union {
         StmtBitfields StmtBits;

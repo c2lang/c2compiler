@@ -22,8 +22,8 @@
 #include <clang/Basic/SourceLocation.h>
 
 #include "Parser/ParserTypes.h"
-#include "AST/Stmt.h"
 #include "AST/Expr.h"
+#include "AST/Decl.h"
 #include "AST/Type.h"
 
 namespace clang {
@@ -43,12 +43,8 @@ using namespace clang;
 
 namespace C2 {
 
-class FunctionDecl;
-class UseDecl;
-class Decl;
-class Stmt;
-class Expr;
 class AST;
+class Stmt;
 
 class C2Sema {
 public:
@@ -127,7 +123,7 @@ private:
     typedef std::map<const std::string, const Decl*> Names;
     void analyseStructNames(const StructTypeDecl* S, Names& names);
     FunctionDecl* createFuncDecl(const char* name, SourceLocation loc, bool is_public, Expr* rtype);
-    VarDecl* createVarDecl(const char* name, SourceLocation loc, TypeExpr* typeExpr,
+    VarDecl* createVarDecl(VarDeclKind k, const char* name, SourceLocation loc, TypeExpr* typeExpr,
                                     Expr* InitValue, bool is_public);
 
     C2::ExprResult ExprError();

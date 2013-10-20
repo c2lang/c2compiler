@@ -454,7 +454,6 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
             ScopeResult Res = analyseIdentifier(id);
             if (!Res.ok) break;
             if (!Res.decl) break;
-            if (Res.pkg) id->setPackage(Res.pkg);
             // NOTE: expr should not be package name (handled above)
             // TODO LHS: check if VarDecl
             if (side & LHS) checkDeclAssignment(Res.decl, expr);
@@ -510,7 +509,6 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
             ScopeResult Res = analyseIdentifier(id);
             if (!Res.ok) return;
             if (!Res.decl) return;
-            if (Res.pkg) id->setPackage(Res.pkg);
             switch (Res.decl->getKind()) {
             case DECL_FUNC:
                 // can be ok for const
@@ -941,7 +939,7 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
         ScopeResult SR = analyseIdentifier(base_id);
         if (!SR.ok) return QualType();
         if (SR.decl) {
-            if (SR.pkg) base_id->setPackage(SR.pkg);
+            M->setPkgPrefix(false);
             switch (SR.decl->getKind()) {
             case DECL_FUNC:
                 fprintf(stderr, "error: member reference base 'type' is not a structure, union or package\n");
@@ -1010,6 +1008,7 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
                 break;
             }
         } else if (SR.pkg) {
+            M->setPkgPrefix(true);
             if (isArrow) {
                 fprintf(stderr, "TODO ERROR: cannot use -> for package access\n");
                 // continue checking
@@ -1027,7 +1026,7 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
                     << AnalyserUtils::fullName(SR.pkg->getName(), D->getName());
                 return QualType();
             }
-            member->setPackage(SR.pkg);
+            member->setDecl(D);
             return Decl2Type(D);
         }
     } else {

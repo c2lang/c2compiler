@@ -447,7 +447,7 @@ bool C2Builder::loadPackage(const std::string& name) {
             // TODO correct arg
             QualType QT(new PointerType(Type::Int8()), QUAL_CONST);
             QT->setCanonicalType(QT);
-            func->addArg(new VarDecl("s", loc, QT, 0));
+            func->addArg(new VarDecl(VARDECL_PARAM, "s", loc, QT, 0));
             stdioPkg->addSymbol(func);
             // function type
             func->setFunctionType(QualType(new FunctionType(func), 0));
@@ -458,7 +458,7 @@ bool C2Builder::loadPackage(const std::string& name) {
             // NOTE: MEMLEAK ON TYPE, this will go away when we remove these dummy protos
             QualType QT(new PointerType(Type::Int8()), QUAL_CONST);
             QT->setCanonicalType(QT);
-            func->addArg(new VarDecl("format", loc, QT, 0));
+            func->addArg(new VarDecl(VARDECL_PARAM, "format", loc, QT, 0));
             func->setVariadic();
             stdioPkg->addSymbol(func);
             // function type
@@ -470,8 +470,8 @@ bool C2Builder::loadPackage(const std::string& name) {
             // NOTE: MEMLEAK ON TYPE, this will go away when we remove these dummy protos
             QualType QT(new PointerType(Type::Int8()), QUAL_CONST);
             QT->setCanonicalType(QT);
-            func->addArg(new VarDecl("str", loc, QT, 0));
-            func->addArg(new VarDecl("format", loc, QT, 0));
+            func->addArg(new VarDecl(VARDECL_PARAM, "str", loc, QT, 0));
+            func->addArg(new VarDecl(VARDECL_PARAM, "format", loc, QT, 0));
             func->setVariadic();
             stdioPkg->addSymbol(func);
             // function type
@@ -486,7 +486,7 @@ bool C2Builder::loadPackage(const std::string& name) {
         {
             FunctionDecl* func = new FunctionDecl("exit", loc, true, Type::Void());
             // TODO correct arg
-            func->addArg(new VarDecl("status", loc, Type::Int32(), 0));
+            func->addArg(new VarDecl(VARDECL_PARAM, "status", loc, Type::Int32(), 0));
             stdlibPkg->addSymbol(func);
             // function type
             func->setFunctionType(QualType(new FunctionType(func), 0));

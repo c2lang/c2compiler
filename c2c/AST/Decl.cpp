@@ -37,6 +37,7 @@ Decl::Decl(DeclKind k, const std::string& name_, SourceLocation loc_, bool is_pu
     : name(name_)
     , loc(loc_)
     , BitsInit(0)
+    , pkg(0)
 {
     DeclBits.dKind = k;
     DeclBits.DeclIsPublic = is_public;
@@ -115,12 +116,14 @@ unsigned FunctionDecl::minArgs() const {
 }
 
 
-VarDecl::VarDecl(const std::string& name_, SourceLocation loc_,
+VarDecl::VarDecl(VarDeclKind k_, const std::string& name_, SourceLocation loc_,
             QualType type_, Expr* initValue_, bool is_public)
     : Decl(DECL_VAR, name_, loc_, is_public)
     , type(type_)
     , initValue(initValue_)
-{}
+{
+    DeclBits.varDeclKind = k_;
+}
 
 VarDecl::~VarDecl() {
     delete initValue;

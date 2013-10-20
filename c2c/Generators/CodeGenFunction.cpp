@@ -424,32 +424,36 @@ llvm::Value* CodeGenFunction::EmitCallExpr(const CallExpr* E) {
 
     const Expr* Fn = E->getFn();
     const IdentifierExpr* FuncName = 0;
+    const Decl* FD = 0;
     switch (Fn->getKind()) {
-    default:
-        assert(0 && "TODO unsupported call type");
-        return 0;
     case EXPR_IDENTIFIER:
         FuncName = cast<IdentifierExpr>(Fn);
+        FD = FuncName->getDecl();
         break;
     case EXPR_MEMBER:
         {
             // NOTE: we only support pkg.symbol now (not struct.member)
+            // So only FunctionDecl
             const MemberExpr* M = cast<MemberExpr>(Fn);
             FuncName = M->getMember();
-            assert(FuncName->getPackage() && "Only support pkg.symbol for now");
+            FD = FuncName->getDecl();
+            assert(FD->getKind() == DECL_FUNC && "Only support pkg.symbol for now");
         }
         break;
+    default:
+        assert(0 && "TODO unsupported call type");
+        return 0;
     };
     // TODO optimize buffer below (lots of copying)
     llvm::Function* function;
     StringBuilder fullname;
-    GenUtils::addName(FuncName->getPackage()->getCName(), FuncName->getName(), fullname);
-    if (FuncName->getPackage() == CGM.getPackage()) {       // same-package (find func)
+    GenUtils::addName(FD->getPackage()->getCName(), FuncName->getName(), fullname);
+    if (FD->getPackage() == CGM.getPackage()) {       // same-package (find func)
         function = module->getFunction((const char*)fullname);
     } else {    // other package (find or generate decl)
         function = module->getFunction((const char*)fullname);
         if (!function) {
-            function = CGM.createExternal(FuncName->getPackage(), FuncName->getName());
+            function = CGM.createExternal(FD->getPackage(), FuncName->getName());
         }
     }
     assert(function && "CANNOT FIND FUNCTION");
