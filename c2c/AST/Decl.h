@@ -37,6 +37,7 @@ class Stmt;
 class Expr;
 class ArrayValueDecl;
 class CompoundStmt;
+class Package;
 
 enum DeclKind {
     DECL_FUNC = 0,
@@ -65,6 +66,9 @@ public:
     bool isUsed() const { return DeclBits.DeclIsUsed; }
     void setUsed() { DeclBits.DeclIsUsed = true; }
 
+    void setPackage(const Package* pkg_) { pkg = pkg_; }
+    const Package* getPackage() const { return pkg; }
+
     // for debugging
     void dump() const;
 protected:
@@ -89,6 +93,8 @@ protected:
         unsigned BitsInit;      // to initialize all bits
     };
 private:
+    Package* pkg;
+
     Decl(const Decl&);
     Decl& operator= (const Decl&);
 };

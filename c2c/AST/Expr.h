@@ -193,13 +193,10 @@ public:
     virtual SourceLocation getLocation() const { return loc; }
 
     const std::string& getName() const { return name; }
-    void setPackage(const Package* pkg_) { pkg = pkg_; }
-    const Package* getPackage() const { return pkg; }
     void setDecl(Decl* decl_) { decl = decl_; }
     Decl* getDecl() const { return decl; }
 private:
     std::string name;
-    const Package* pkg; // set during analysis
     Decl* decl;   // set during analysis
     clang::SourceLocation loc;
 };

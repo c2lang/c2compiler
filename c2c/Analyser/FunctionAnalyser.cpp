@@ -84,8 +84,8 @@ static int type_conversions[14][14] = {
 };
 
 FunctionAnalyser::FunctionAnalyser(FileScope& scope_,
-                                           TypeContext& tc,
-                                           clang::DiagnosticsEngine& Diags_)
+                                   TypeContext& tc,
+                                   clang::DiagnosticsEngine& Diags_)
     : globalScope(scope_)
     , typeContext(tc)
     , scopeIndex(0)
@@ -454,7 +454,6 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
             ScopeResult Res = analyseIdentifier(id);
             if (!Res.ok) break;
             if (!Res.decl) break;
-            id->setDecl(Res.decl);
             if (Res.pkg) id->setPackage(Res.pkg);
             // NOTE: expr should not be package name (handled above)
             // TODO LHS: check if VarDecl
@@ -511,7 +510,6 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
             ScopeResult Res = analyseIdentifier(id);
             if (!Res.ok) return;
             if (!Res.decl) return;
-            id->setDecl(Res.decl);
             if (Res.pkg) id->setPackage(Res.pkg);
             switch (Res.decl->getKind()) {
             case DECL_FUNC:
@@ -930,21 +928,19 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
     IdentifierExpr* member = M->getMember();
 
     bool isArrow = M->isArrow();
-    // we dont know what we're looking at here, can be:
+    // we dont know what we're looking at here, it could be:
     // pkg.type
     // pkg.var
     // pkg.func
     // var(Type=struct>.member
     // var[index].member
     // var->member
-    // At least check if it exists for now
     Expr* base = M->getBase();
     if (base->getKind() == EXPR_IDENTIFIER) {
         IdentifierExpr* base_id = cast<IdentifierExpr>(base);
         ScopeResult SR = analyseIdentifier(base_id);
         if (!SR.ok) return QualType();
         if (SR.decl) {
-            base_id->setDecl(SR.decl);
             if (SR.pkg) base_id->setPackage(SR.pkg);
             switch (SR.decl->getKind()) {
             case DECL_FUNC:
@@ -1018,6 +1014,7 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
                 fprintf(stderr, "TODO ERROR: cannot use -> for package access\n");
                 // continue checking
             }
+            // TODO extract to Scope.cpp?
             // lookup member in package
             Decl* D = SR.pkg->findSymbol(member->getName());
             if (!D) {
@@ -1170,7 +1167,8 @@ ScopeResult FunctionAnalyser::analyseIdentifier(IdentifierExpr* id) {
         if (!res.visible) {
             res.ok = false;
             Diags.Report(id->getLocation(), diag::err_not_public) << id->getName();
-            return res;
+        } else {
+            id->setDecl(res.decl);
         }
     } else {
         if (res.pkg) {
