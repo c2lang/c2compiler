@@ -104,20 +104,26 @@ FunctionAnalyser::FunctionAnalyser(FileScope& scope_,
 }
 
 unsigned FunctionAnalyser::check(FunctionDecl* func) {
-    LOG_FUNC
-    errors = 0;
     Function = func;
+    errors = 0;
     EnterScope(Scope::FnScope | Scope::DeclScope);
-    // add arguments to new scope
 
-    // NOTE: arguments have already been checked
+    checkFunction(func);
+
+    ExitScope();
+    Function = 0;
+    return errors;
+}
+
+void FunctionAnalyser::checkFunction(FunctionDecl* func) {
+    LOG_FUNC
+    // add arguments to new scope
     for (unsigned i=0; i<func->numArgs(); i++) {
         VarDecl* arg = func->getArg(i);
         if (arg->getName() != "") {
             // check that argument names dont clash with globals
             ScopeResult res = globalScope.findSymbol(arg->getName(), arg->getLocation());
             if (res.decl) {
-                // TODO check other attributes?
                 Diags.Report(arg->getLocation(), diag::err_redefinition)
                     << arg->getName();
                 Diags.Report(res.decl->getLocation(), diag::note_previous_definition);
@@ -127,10 +133,10 @@ unsigned FunctionAnalyser::check(FunctionDecl* func) {
             curScope->addDecl(arg);
         }
     }
-    if (errors) return errors;
+    if (errors) return;
 
     analyseCompoundStmt(func->getBody());
-    if (errors) return errors;
+    if (errors) return;
 
     // check for return statement of return value is required
     QualType rtype = func->getReturnType();
@@ -142,33 +148,6 @@ unsigned FunctionAnalyser::check(FunctionDecl* func) {
             Diags.Report(compound->getRight(), diag::warn_falloff_nonvoid_function);
         }
     }
-
-    ExitScope();
-    Function = 0;
-    return errors;
-}
-
-void FunctionAnalyser::EnterScope(unsigned flags) {
-    LOG_FUNC
-    assert (scopeIndex < MAX_SCOPE_DEPTH && "out of scopes");
-    scopes[scopeIndex].Init(flags);
-    curScope = &scopes[scopeIndex];
-    scopeIndex++;
-}
-
-void FunctionAnalyser::ExitScope() {
-    LOG_FUNC
-    for (unsigned i=0; i<curScope->numDecls(); i++) {
-        VarDecl* D = curScope->getDecl(i);
-        if (!D->isUsed()) {
-            unsigned msg = diag::warn_unused_variable;
-            if (D->isParameter()) msg = diag::warn_unused_parameter;
-            Diags.Report(D->getLocation(), msg) << D->getName();
-        }
-    }
-    scopeIndex--;
-    Scope* parent = curScope->getParent();
-    curScope = parent;
 }
 
 void FunctionAnalyser::analyseStmt(Stmt* S, bool haveScope) {
@@ -653,6 +632,11 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     errors += errs;
     if (!errs) {
         globalScope.resolveCanonicals(decl, type, true);
+        ArrayType* AT = dyncast<ArrayType>(type.getTypePtr());
+        if (AT && AT->getSize()) {
+            analyseExpr(AT->getSize(), RHS);
+            // TODO check type of size expr
+        }
     }
 
     // check name
@@ -1366,6 +1350,29 @@ C2::QualType FunctionAnalyser::resolveUserType(QualType T) {
         return D->getType();
     }
     return T;
+}
+
+void FunctionAnalyser::EnterScope(unsigned flags) {
+    LOG_FUNC
+    assert (scopeIndex < MAX_SCOPE_DEPTH && "out of scopes");
+    scopes[scopeIndex].Init(flags);
+    curScope = &scopes[scopeIndex];
+    scopeIndex++;
+}
+
+void FunctionAnalyser::ExitScope() {
+    LOG_FUNC
+    for (unsigned i=0; i<curScope->numDecls(); i++) {
+        VarDecl* D = curScope->getDecl(i);
+        if (!D->isUsed()) {
+            unsigned msg = diag::warn_unused_variable;
+            if (D->isParameter()) msg = diag::warn_unused_parameter;
+            Diags.Report(D->getLocation(), msg) << D->getName();
+        }
+    }
+    scopeIndex--;
+    Scope* parent = curScope->getParent();
+    curScope = parent;
 }
 
 void FunctionAnalyser::pushMode(unsigned DiagID) {

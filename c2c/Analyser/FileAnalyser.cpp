@@ -305,6 +305,13 @@ unsigned FileAnalyser::resolveVarDecl(VarDecl* D) {
     unsigned errors = globals->checkType(Q, D->isPublic());
     if (!errors) {
         globals->resolveCanonicals(D, Q, true);
+        // TODO same as FunctionAnalyser code!
+        ArrayType* AT = dyncast<ArrayType>(Q.getTypePtr());
+        if (AT && AT->getSize()) {
+            // TODO need analyseExpr(AT->getSize(), RHS);
+            // TODO check type of size expr
+        }
+
         // NOTE: dont check initValue here (doesn't have canonical type yet)
     }
     return errors;
@@ -385,11 +392,12 @@ unsigned FileAnalyser::checkInitValue(VarDecl* decl, Expr* expr, QualType expect
                 Diags.Report(I->getLocation(), diag::err_var_self_init) << Res.decl->getName();
                 return 1;
             }
+            I->setDecl(Res.decl);
+            // TODO check types (need code from FunctionAnalyser)
             break;
         }
     case EXPR_INITLIST:
-        // TODO
-        break;
+        return checkInitList(decl, cast<InitListExpr>(expr), expected);
     case EXPR_TYPE:
     case EXPR_DECL:
         assert(0);
@@ -408,79 +416,39 @@ unsigned FileAnalyser::checkInitValue(VarDecl* decl, Expr* expr, QualType expect
 }
 
 
-#if 0
-(FROM GlobalVarAnalyser)
-    if (qt->isEnumType()) {
-        const EnumType* ET = cast<EnumType>(qt);
-        // TEMP use unsigned only
-        unsigned lastValue = 0;
-        for (unsigned i=0; i<ET->numConstants(); i++) {
-            EnumConstantDecl* C = ET->getConstant(i);
-            if (C->getInitValue()) {
-                //C->setValue(lastValue);
-                //lastValue = val;
-                // TEMP just ignore
-                C->setValue(lastValue);
-                lastValue++;
-            } else {
-                C->setValue(lastValue);
-                lastValue++;
-            }
-            // TODO check for duplicates
+unsigned FileAnalyser::checkInitList(VarDecl* decl, InitListExpr* initVal, QualType expected) {
+    QualType Q = decl->getType();
+    ExprList& values = initVal->getValues();
+    unsigned errors = 0;
+    if (Q.isArrayType()) {
+        // TODO use helper function
+        ArrayType* AT = cast<ArrayType>(Q->getCanonicalType().getTypePtr());
+        QualType ET = AT->getElementType();
+        // TODO check if size is specifier in type
+        for (unsigned i=0; i<values.size(); i++) {
+            errors += checkInitValue(decl, values[i], ET);
         }
+    } else if (Q.isStructType()) {
+        // TODO use helper function
+        StructType* TT = cast<StructType>(Q->getCanonicalType().getTypePtr());
+        StructTypeDecl* STD = TT->getDecl();
+        assert(STD->isStruct() && "TEMP only support structs for now");
+        for (unsigned i=0; i<values.size(); i++) {
+            if (i >= STD->numMembers()) {
+                // note: 0 for array, 3 for union, 4 for structs
+                Diags.Report(values[STD->numMembers()]->getLocation(), diag::err_excess_initializers)
+                    << 4;
+                errors++;
+                return errors;
+            }
+            // NOTE: doesn't fit for sub-struct members! (need Decl in interface)
+            VarDecl* VD = dyncast<VarDecl>(STD->getMember(i));
+            assert(VD && "TEMP don't support sub-struct member inits");
+            errors += checkInitValue(VD, values[i], VD->getType());
+        }
+    } else {
+        // TODO error
     }
-#endif
-
-#if 0
-void FileAnalyser::handle(Decl* decl) {
-    bool is_public = decl->isPublic();
-    switch (decl->getKind()) {
-    case DECL_FUNC:
-        {
-            FunctionDecl* func = cast<FunctionDecl>(decl);
-            // check return type
-            checkType(func->getReturnType(), is_public);
-            // check argument types
-            for (unsigned i=0; i<func->numArgs(); i++) {
-                VarDecl* V = func->getArg(i);
-                checkType(V->getType(), is_public);
-            }
-            // TEMP (do elsewhere?)
-            if (!is_public && func->getName() == "main") {
-                Diags.Report(decl->getLocation(), diag::err_main_non_public);
-            }
-        }
-        break;
-    case DECL_ARRAYVALUE:
-        {
-            ArrayValueDecl* A = cast<ArrayValueDecl>(decl);
-            ScopeResult SR = globals.findSymbol(A->getName());
-            if (!SR.ok) break;
-            if (!SR.decl) {
-                Diags.Report(A->getLocation(), diag::err_undeclared_var_use)
-                << A->getName();
-                break;
-            }
-            if (SR.external) {
-                // TODO proper error
-                fprintf(stderr, "Incremental Array Value for %s cannot be for external symbol\n", A->getName().c_str());
-                break;
-            }
-            if (!isa<VarDecl>(SR.decl)) {
-                fprintf(stderr, "TODO symbol '%s' is not a variable\n", A->getName().c_str());
-                break;
-            }
-            VarDecl* VD = cast<VarDecl>(SR.decl);
-            QualType T = VD->getType();
-            if (!T.isArrayType()) {
-                Diags.Report(A->getLocation(), diag::err_typecheck_subscript);
-                break;
-            }
-            // TODO add to VarDecl
-            VD->addInitValue(A);
-        }
-        break;
-    }
+    return errors;
 }
 
-#endif

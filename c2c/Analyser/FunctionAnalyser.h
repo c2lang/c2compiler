@@ -49,8 +49,7 @@ public:
 
     unsigned check(FunctionDecl* F);
 private:
-    void EnterScope(unsigned flags);
-    void ExitScope();
+    void checkFunction(FunctionDecl* F);
 
     void analyseStmt(Stmt* stmt, bool haveScope = false);
     void analyseCompoundStmt(Stmt* stmt);
@@ -81,6 +80,9 @@ private:
 
     void analyseInitExpr(Expr* expr, QualType expectedType);
     void analyseInitList(Expr* expr, QualType expectedType);
+
+    void EnterScope(unsigned flags);
+    void ExitScope();
 
     void pushMode(unsigned DiagID);
     void popMode();
@@ -123,7 +125,6 @@ private:
 
     unsigned constDiagID;
     bool inConstExpr;
-    unsigned CRASH_AVOIDER[4];    // NEEDED, OTHERWISE CLANG CAUSES SEGFAULT IN COMPILED CODE!
 
     FunctionAnalyser(const FunctionAnalyser&);
     FunctionAnalyser& operator= (const FunctionAnalyser&);

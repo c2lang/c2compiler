@@ -356,7 +356,15 @@ void CCodeGenerator::EmitIdentifierExpr(Expr* E, StringBuilder& output) {
     LOG_FUNC
     IdentifierExpr* I = cast<IdentifierExpr>(E);
     Decl* D = I->getDecl();
-    assert(D);   // TODO valid?
+    // TEMP until we fix the analyser
+    if (!D) {
+        output << I->getName();
+        fprintf(stderr, "WARNING: no decl set (skipping for now)\n");
+        I->dump();
+        return;
+    }
+    assert(D);
+
     if (D->getPackage()) {
         addPrefix(D->getPackage()->getCName(), I->getName(), output);
     } else {

@@ -33,6 +33,7 @@ class VarDecl;
 class FunctionDecl;
 class ArrayValueDecl;
 class AST;
+class InitListExpr;
 
 class FileAnalyser {
 public:
@@ -59,6 +60,7 @@ private:
     unsigned checkArrayValue(ArrayValueDecl* D);
 
     unsigned checkInitValue(VarDecl* decl, Expr* initVal, QualType expected);
+    unsigned checkInitList(VarDecl* decl, InitListExpr* initVal, QualType expected);
 
     // TODO use auto_ptr on globals
     AST& ast;
