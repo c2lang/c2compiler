@@ -130,10 +130,12 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
             output << (int) N->Value.getSExtValue();
             return;
         }
-    case EXPR_STRING_LITERAL:
+    case EXPR_FLOAT_LITERAL:
         {
-            StringLiteral* S = cast<StringLiteral>(E);
-            EmitStringLiteral(S->value, output);
+            FloatingLiteral* F = cast<FloatingLiteral>(E);
+            char temp[20];
+            sprintf(temp, "%f", F->Value.convertToFloat());
+            output << temp;
             return;
         }
     case EXPR_BOOL_LITERAL:
@@ -148,14 +150,15 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
             output << '\'' << (char)C->value << '\'';
             return;
         }
-    case EXPR_FLOAT_LITERAL:
+    case EXPR_STRING_LITERAL:
         {
-            FloatingLiteral* F = cast<FloatingLiteral>(E);
-            char temp[20];
-            sprintf(temp, "%f", F->Value.convertToFloat());
-            output << temp;
+            StringLiteral* S = cast<StringLiteral>(E);
+            EmitStringLiteral(S->value, output);
             return;
         }
+    case EXPR_NIL:
+        output << "NULL";
+        return;
     case EXPR_CALL:
         EmitCallExpr(E, output);
         return;

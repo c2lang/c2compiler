@@ -424,6 +424,13 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
             if (numbits <= 32) return Type::Int32();
             return Type::Int64();
         }
+    case EXPR_FLOAT_LITERAL:
+        // For now always return type float
+        return Type::Float32();
+    case EXPR_BOOL_LITERAL:
+        return Type::Bool();
+    case EXPR_CHAR_LITERAL:
+        return Type::Int8();
     case EXPR_STRING_LITERAL:
         {
             // return type: 'const char*'
@@ -432,13 +439,12 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
             if (!Q->hasCanonicalType()) Q->setCanonicalType(Q);
             return Q;
         }
-    case EXPR_BOOL_LITERAL:
-        return Type::Bool();
-    case EXPR_CHAR_LITERAL:
-        return Type::Int8();
-    case EXPR_FLOAT_LITERAL:
-        // For now always return type float
-        return Type::Float32();
+    case EXPR_NIL:
+        {
+            QualType Q = typeContext.getPointerType(Type::Void());
+            if (!Q->hasCanonicalType()) Q->setCanonicalType(Q);
+            return Q;
+        }
     case EXPR_CALL:
         return analyseCall(expr);
     case EXPR_IDENTIFIER:
@@ -487,10 +493,11 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
 
     switch (expr->getKind()) {
     case EXPR_INTEGER_LITERAL:
-    case EXPR_STRING_LITERAL:
+    case EXPR_FLOAT_LITERAL:
     case EXPR_BOOL_LITERAL:
     case EXPR_CHAR_LITERAL:
-    case EXPR_FLOAT_LITERAL:
+    case EXPR_STRING_LITERAL:
+    case EXPR_NIL:
         // TODO check if compatible
         break;
     case EXPR_CALL:
@@ -1185,10 +1192,11 @@ ScopeResult FunctionAnalyser::analyseIdentifier(IdentifierExpr* id) {
 bool FunctionAnalyser::checkAssignee(Expr* expr) const {
     switch (expr->getKind()) {
     case EXPR_INTEGER_LITERAL:
-    case EXPR_STRING_LITERAL:
+    case EXPR_FLOAT_LITERAL:
     case EXPR_BOOL_LITERAL:
     case EXPR_CHAR_LITERAL:
-    case EXPR_FLOAT_LITERAL:
+    case EXPR_STRING_LITERAL:
+    case EXPR_NIL:
         break;
     case EXPR_CALL:
     case EXPR_IDENTIFIER:

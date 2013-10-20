@@ -483,6 +483,16 @@ C2::ExprResult C2Sema::ActOnParenExpr(SourceLocation L, SourceLocation R, Expr* 
     return ExprResult(new ParenExpr(L, R, E));
 }
 
+C2::ExprResult C2Sema::ActOnNil(SourceLocation L) {
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: nil expr at ";
+    L.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    return ExprResult(new NilExpr(L));
+}
+
+
 C2::ExprResult C2Sema::ActOnBinOp(SourceLocation opLoc, tok::TokenKind Kind, Expr* LHS, Expr* RHS) {
     assert(LHS);
     assert(RHS);

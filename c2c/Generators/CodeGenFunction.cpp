@@ -366,10 +366,10 @@ llvm::Value* CodeGenFunction::EmitExpr(const Expr* E) {
             return Builder.getInt(N->Value);
             //return llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), N->value, true);
         }
-    case EXPR_STRING_LITERAL:
+    case EXPR_FLOAT_LITERAL:
         {
-            const StringLiteral* S = cast<StringLiteral>(E);
-            return Builder.CreateGlobalStringPtr(S->value);
+            const FloatingLiteral* F = cast<FloatingLiteral>(E);
+            return llvm::ConstantFP::get(context, F->Value);
         }
     case EXPR_BOOL_LITERAL:
         {
@@ -379,11 +379,14 @@ llvm::Value* CodeGenFunction::EmitExpr(const Expr* E) {
     case EXPR_CHAR_LITERAL:
         assert(0 && "TODO");
         break;
-    case EXPR_FLOAT_LITERAL:
+    case EXPR_STRING_LITERAL:
         {
-            const FloatingLiteral* F = cast<FloatingLiteral>(E);
-            return llvm::ConstantFP::get(context, F->Value);
+            const StringLiteral* S = cast<StringLiteral>(E);
+            return Builder.CreateGlobalStringPtr(S->value);
         }
+    case EXPR_NIL:
+        assert(0 && "TODO");
+        break;
     case EXPR_CALL:
         return EmitCallExpr(cast<CallExpr>(E));
     case EXPR_IDENTIFIER:

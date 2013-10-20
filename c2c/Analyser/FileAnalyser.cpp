@@ -362,10 +362,11 @@ unsigned FileAnalyser::checkInitValue(VarDecl* decl, Expr* expr, QualType expect
     // check return type from expressions? (pass expected along is not handy)
     switch (expr->getKind()) {
     case EXPR_INTEGER_LITERAL:
-    case EXPR_STRING_LITERAL:
+    case EXPR_FLOAT_LITERAL:
     case EXPR_BOOL_LITERAL:
     case EXPR_CHAR_LITERAL:
-    case EXPR_FLOAT_LITERAL:
+    case EXPR_STRING_LITERAL:
+    case EXPR_NIL:
         // TODO
         break;
     case EXPR_CALL:

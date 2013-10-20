@@ -37,14 +37,15 @@ class VarDecl;
 
 enum ExprKind {
     EXPR_INTEGER_LITERAL=0,
-    EXPR_STRING_LITERAL,
+    EXPR_FLOAT_LITERAL,
     EXPR_BOOL_LITERAL,
     EXPR_CHAR_LITERAL,
-    EXPR_FLOAT_LITERAL,
-    EXPR_CALL,
+    EXPR_STRING_LITERAL,
+    EXPR_NIL,
     EXPR_IDENTIFIER,
-    EXPR_INITLIST,
     EXPR_TYPE,
+    EXPR_CALL,
+    EXPR_INITLIST,
     EXPR_DECL,
     EXPR_BINOP,
     EXPR_CONDOP,
@@ -113,22 +114,6 @@ public:
 };
 
 
-class StringLiteral : public Expr {
-public:
-    StringLiteral(SourceLocation loc_, const std::string& val)
-        : Expr(EXPR_STRING_LITERAL)
-        , value(val), loc(loc_) {}
-    static bool classof(const Expr* E) {
-        return E->getKind() == EXPR_STRING_LITERAL;
-    }
-    virtual void print(StringBuilder& buffer, unsigned indent) const;
-    virtual SourceLocation getLocation() const { return loc; }
-
-    std::string value;
-    clang::SourceLocation loc;
-};
-
-
 class BooleanLiteral : public Expr {
 public:
     BooleanLiteral(SourceLocation loc_, bool val)
@@ -161,6 +146,37 @@ public:
 
     // TODO use StmtBits (need to use union then)
     unsigned value;
+    clang::SourceLocation loc;
+};
+
+
+class StringLiteral : public Expr {
+public:
+    StringLiteral(SourceLocation loc_, const std::string& val)
+        : Expr(EXPR_STRING_LITERAL)
+        , value(val), loc(loc_) {}
+    static bool classof(const Expr* E) {
+        return E->getKind() == EXPR_STRING_LITERAL;
+    }
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
+    virtual SourceLocation getLocation() const { return loc; }
+
+    std::string value;
+    clang::SourceLocation loc;
+};
+
+
+class NilExpr : public Expr {
+public:
+    NilExpr(SourceLocation loc_)
+        : Expr(EXPR_NIL)
+        , loc(loc_) {}
+    static bool classof(const Expr* E) {
+        return E->getKind() == EXPR_NIL;
+    }
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
+    virtual SourceLocation getLocation() const { return loc; }
+
     clang::SourceLocation loc;
 };
 

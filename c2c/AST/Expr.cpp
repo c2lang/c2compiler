@@ -36,70 +36,14 @@ static int deleteCount;
 #endif
 
 
-Expr::Expr(ExprKind k)
-    : Stmt(STMT_EXPR)
-{
-    StmtBits.eKind = k;
-#ifdef EXPR_DEBUG
-    creationCount++;
-    fprintf(stderr, "[EXPR] create %p  created %d deleted %d\n", this, creationCount, deleteCount);
-#endif
-}
-
-Expr::~Expr() {
-#ifdef EXPR_DEBUG
-    deleteCount++;
-    fprintf(stderr, "[EXPR] delete %p  created %d deleted %d\n", this, creationCount, deleteCount);
-#endif
-}
-
-
-void IntegerLiteral::print(StringBuilder& buffer, unsigned indent) const {
-    buffer.indent(indent);
-    buffer << "[IntegerLiteral " << Value.getSExtValue() << "]\n";
-}
-
-
-void FloatingLiteral::print(StringBuilder& buffer, unsigned indent) const {
-    buffer.indent(indent);
-    char temp[20];
-    sprintf(temp, "%f", Value.convertToFloat());
-    buffer << "[FloatingLiteral " << temp << "]\n";
-}
-
-
-void StringLiteral::print(StringBuilder& buffer, unsigned indent) const {
-    buffer.indent(indent);
-    buffer << "[StringLiteral '" << value << "']\n";
-}
-
-
-void BooleanLiteral::print(StringBuilder& buffer, unsigned indent) const {
-    buffer.indent(indent);
-    buffer << "[BooleanLiteral " << getValue() << "]\n";
-}
-
-
-void CharacterLiteral::print(StringBuilder& buffer, unsigned indent) const {
-    buffer.indent(indent);
-    buffer << "[CharacterLiteral '" << (char)value << "']\n";
-}
-
-
-CallExpr::~CallExpr() {}
-
-void CallExpr::addArg(Expr* arg) {
-    args.push_back(arg);
-}
-
-
 static void expr2name(Expr* expr, StringBuilder& buffer) {
     switch (expr->getKind()) {
     case EXPR_INTEGER_LITERAL:
-    case EXPR_STRING_LITERAL:
+    case EXPR_FLOAT_LITERAL:
     case EXPR_BOOL_LITERAL:
     case EXPR_CHAR_LITERAL:
-    case EXPR_FLOAT_LITERAL:
+    case EXPR_STRING_LITERAL:
+    case EXPR_NIL:
     case EXPR_CALL:
         break;
     case EXPR_IDENTIFIER:
@@ -132,15 +76,59 @@ static void expr2name(Expr* expr, StringBuilder& buffer) {
 }
 
 
-void CallExpr::print(StringBuilder& buffer, unsigned indent) const {
+Expr::Expr(ExprKind k)
+    : Stmt(STMT_EXPR)
+{
+    StmtBits.eKind = k;
+#ifdef EXPR_DEBUG
+    creationCount++;
+    fprintf(stderr, "[EXPR] create %p  created %d deleted %d\n", this, creationCount, deleteCount);
+#endif
+}
+
+Expr::~Expr() {
+#ifdef EXPR_DEBUG
+    deleteCount++;
+    fprintf(stderr, "[EXPR] delete %p  created %d deleted %d\n", this, creationCount, deleteCount);
+#endif
+}
+
+
+void IntegerLiteral::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[CallExpr ";
-    expr2name(Fn, buffer);
-    buffer << "]\n";
-    Fn->print(buffer, indent + INDENT);
-    for (unsigned i=0; i<args.size(); i++) {
-        args[i]->print(buffer, indent + INDENT);
-    }
+    buffer << "[IntegerLiteral " << Value.getSExtValue() << "]\n";
+}
+
+
+void FloatingLiteral::print(StringBuilder& buffer, unsigned indent) const {
+    buffer.indent(indent);
+    char temp[20];
+    sprintf(temp, "%f", Value.convertToFloat());
+    buffer << "[FloatingLiteral " << temp << "]\n";
+}
+
+
+void BooleanLiteral::print(StringBuilder& buffer, unsigned indent) const {
+    buffer.indent(indent);
+    buffer << "[BooleanLiteral " << getValue() << "]\n";
+}
+
+
+void CharacterLiteral::print(StringBuilder& buffer, unsigned indent) const {
+    buffer.indent(indent);
+    buffer << "[CharacterLiteral '" << (char)value << "']\n";
+}
+
+
+void StringLiteral::print(StringBuilder& buffer, unsigned indent) const {
+    buffer.indent(indent);
+    buffer << "[StringLiteral '" << value << "']\n";
+}
+
+
+void NilExpr::print(StringBuilder& buffer, unsigned indent) const {
+    buffer.indent(indent);
+    buffer << "[NilExpr]\n";
 }
 
 
@@ -159,6 +147,24 @@ void IdentifierExpr::print(StringBuilder& buffer, unsigned indent) const {
 void TypeExpr::print(StringBuilder& buffer, unsigned indent) const {
     //QT.print(buffer, indent, QualType::RECURSE_NONE);
     QT.debugPrint(buffer, indent);
+}
+
+
+CallExpr::~CallExpr() {}
+
+void CallExpr::addArg(Expr* arg) {
+    args.push_back(arg);
+}
+
+void CallExpr::print(StringBuilder& buffer, unsigned indent) const {
+    buffer.indent(indent);
+    buffer << "[CallExpr ";
+    expr2name(Fn, buffer);
+    buffer << "]\n";
+    Fn->print(buffer, indent + INDENT);
+    for (unsigned i=0; i<args.size(); i++) {
+        args[i]->print(buffer, indent + INDENT);
+    }
 }
 
 

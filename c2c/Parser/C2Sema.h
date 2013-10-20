@@ -101,6 +101,7 @@ public:
     ExprResult ActOnCallExpr(Expr* id, Expr** args, unsigned num, SourceLocation RParenLoc);
     ExprResult ActOnIdExpression(IdentifierInfo& symII, SourceLocation symLoc);
     ExprResult ActOnParenExpr(SourceLocation L, SourceLocation R, Expr* E);
+    ExprResult ActOnNil(SourceLocation L);
 
     ExprResult ActOnBinOp(SourceLocation opLoc, tok::TokenKind Kind, Expr* LHS, Expr* RHS);
     ExprResult ActOnConditionalOp(SourceLocation QuestionLoc, SourceLocation ColonLoc,
