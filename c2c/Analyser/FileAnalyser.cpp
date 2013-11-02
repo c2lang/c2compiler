@@ -19,7 +19,7 @@
 
 #include "Analyser/FileAnalyser.h"
 #include "Analyser/Scope.h"
-#include "Analyser/TypeResolver.h"
+#include "Analyser/TypeChecker.h"
 #include "AST/Decl.h"
 #include "AST/Expr.h"
 #include "AST/AST.h"
@@ -42,7 +42,7 @@ FileAnalyser::FileAnalyser(const Pkgs& pkgs, clang::DiagnosticsEngine& Diags_,
     : ast(ast_)
     , typeContext(typeContext_)
     , globals(new Scope(ast_.getPkgName(), pkgs, Diags_))
-    , typeResolver(new TypeResolver(*globals, Diags_, typeContext_))
+    , typeResolver(new TypeChecker(*globals, Diags_, typeContext_))
     , Diags(Diags_)
     , functionAnalyser(*globals, *typeResolver, typeContext_, Diags_)
     , verbose(verbose_)

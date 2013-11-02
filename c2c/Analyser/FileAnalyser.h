@@ -34,7 +34,7 @@ class FunctionDecl;
 class ArrayValueDecl;
 class AST;
 class InitListExpr;
-class TypeResolver;
+class TypeChecker;
 
 class FileAnalyser {
 public:
@@ -67,7 +67,7 @@ private:
     AST& ast;
     TypeContext& typeContext;
     Scope* globals;
-    TypeResolver* typeResolver;
+    TypeChecker* typeResolver;
     clang::DiagnosticsEngine& Diags;
     FunctionAnalyser functionAnalyser;
     bool verbose;

@@ -12,11 +12,11 @@ OBJS = \
     AST/Type.o \
     Parser/C2Parser.o \
     Parser/C2Sema.o \
+    Analyser/AnalyserUtils.o \
+    Analyser/Scope.o \
+    Analyser/TypeChecker.o \
     Analyser/FileAnalyser.o \
     Analyser/FunctionAnalyser.o \
-    Analyser/Scope.o \
-    Analyser/TypeResolver.o \
-    Analyser/AnalyserUtils.o \
     Generators/CCodeGenerator.o \
     Generators/CodeGenFunction.o \
     Generators/CodeGenModule.o \

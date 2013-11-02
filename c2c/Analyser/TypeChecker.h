@@ -13,11 +13,12 @@
  * limitations under the License.
  */
 
-#ifndef TYPE_RESOLVER_H
-#define TYPE_RESOLVER_H
+#ifndef TYPE_CHECKER_H
+#define TYPE_CHECKER_H
 
-#include <string>
 #include <vector>
+
+#include <clang/Basic/SourceLocation.h>
 
 #include "AST/Type.h"
 
@@ -31,14 +32,22 @@ class Decl;
 class Scope;
 
 
-class TypeResolver {
+class TypeChecker {
 public:
-    TypeResolver(Scope& g, clang::DiagnosticsEngine& Diags_, TypeContext& tc_);
+    TypeChecker(Scope& g, clang::DiagnosticsEngine& Diags_, TypeContext& tc_);
 
+    // resolving
     unsigned checkType(QualType Q, bool used_public);
     QualType resolveCanonicals(const Decl* D, QualType Q, bool set) const;
+
+    // checking
+    enum ConvType { CONV_INIT, CONV_ASSIGN, CONV_CONV };
+    bool checkCompatible(QualType left, QualType right, clang::SourceLocation Loc, ConvType conv) const;
 private:
     unsigned checkUnresolvedType(const UnresolvedType* type, bool used_public);
+
+    bool checkBuiltin(QualType left, QualType right, clang::SourceLocation Loc, ConvType conv) const;
+    bool checkPointer(QualType left, QualType right, clang::SourceLocation Loc, ConvType conv) const;
 
     typedef std::vector<const Decl*> Decls;
     typedef Decls::iterator DeclsIter;

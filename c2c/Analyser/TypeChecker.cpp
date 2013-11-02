@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <string>
 #include <stdio.h>
 #include <assert.h>
 
@@ -20,22 +21,58 @@
 #include <clang/Sema/SemaDiagnostic.h>
 
 #include "Analyser/Scope.h"
-#include "Analyser/TypeResolver.h"
+#include "Analyser/TypeChecker.h"
 #include "AST/Package.h"
 #include "AST/Decl.h"
 #include "AST/Expr.h"
+#include "AST/constants.h"
 #include "Utils/StringBuilder.h"
 
 using namespace C2;
 using namespace clang;
 
-TypeResolver::TypeResolver(Scope& g, clang::DiagnosticsEngine& Diags_, TypeContext& tc_)
+// 0 = ok,
+// 1 = loss of integer precision,
+// 2 = sign-conversion,
+// 3 = float->integer,
+// 4 = incompatible,
+// 5 = loss of FP precision
+static int type_conversions[14][14] = {
+    // I8  I16  I32  I64   U8  U16  U32  U64  F32  F64  Bool  Void
+    // I8 ->
+    {   0,   0,   0,   0,   2,   2,   2,   2,   0,   0,    0,   4},
+    // I16 ->
+    {   1,   0,   0,   0,   2,   2,   2,   2,   0,   0,    0,   4},
+    // I32 ->
+    {   1,   1,   0,   0,   2,   2,   2,   2,   0,   0,    0,   4},
+    // I64 ->
+    {   1,   1,   1,   0,   2,   2,   2,   2,   0,   0,    0,   4},
+    // U8 ->
+    {   2,   0,   0,   0,   0,   0,   0,   0,   0,   0,    0,   4},
+    // U16 ->
+    {   1,   2,   0,   0,   1,   0,   0,   0,   0,   0,    0,   4},
+    // U32 ->
+    {   1,   1,   2,   0,   1,   1,   0,   0,   0,   0,    0,   4},
+    // U64 ->
+    {   1,   1,   1,   2,   1,   1,   1,   0,   0,   0,    0,   4},
+    // F32 ->
+    {   3,   3,   3,   3,   3,   3,   3,   3,   0,   0,    4,   4},
+    // F64 ->
+    {   3,   3,   3,   3,   3,   3,   3,   3,   5,   0,    4,   4},
+    // BOOL ->
+    {   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,    0,   4},
+    // VOID ->
+    {  4,    4,   4,   4,  4,   4,   4,   4,   4,   4,    4,    0},
+};
+
+
+TypeChecker::TypeChecker(Scope& g, clang::DiagnosticsEngine& Diags_, TypeContext& tc_)
     : globals(g)
     , Diags(Diags_)
     , typeContext(tc_)
 {}
 
-unsigned TypeResolver::checkType(QualType Q, bool used_public) {
+unsigned TypeChecker::checkType(QualType Q, bool used_public) {
     const Type* T = Q.getTypePtr();
     switch (T->getTypeClass()) {
     case TC_BUILTIN:
@@ -58,7 +95,7 @@ unsigned TypeResolver::checkType(QualType Q, bool used_public) {
     }
 }
 
-unsigned TypeResolver::checkUnresolvedType(const UnresolvedType* type, bool used_public) {
+unsigned TypeChecker::checkUnresolvedType(const UnresolvedType* type, bool used_public) {
     // TODO refactor
     Expr* id = type->getExpr();
     const Package* pkg = 0;
@@ -127,13 +164,13 @@ unsigned TypeResolver::checkUnresolvedType(const UnresolvedType* type, bool used
     return 0;
 }
 
-QualType TypeResolver::resolveCanonicals(const Decl* D, QualType Q, bool set) const {
+QualType TypeChecker::resolveCanonicals(const Decl* D, QualType Q, bool set) const {
     Decls decls;
     if (D != 0) decls.push_back(D);
     return checkCanonicals(decls, Q, set);
 }
 
-QualType TypeResolver::checkCanonicals(Decls& decls, QualType Q, bool set) const {
+QualType TypeChecker::checkCanonicals(Decls& decls, QualType Q, bool set) const {
     const Type* T = Q.getTypePtr();
     if (T->hasCanonicalType()) return T->getCanonicalType();
 
@@ -196,7 +233,7 @@ QualType TypeResolver::checkCanonicals(Decls& decls, QualType Q, bool set) const
     }
 }
 
-bool TypeResolver::checkDecls(Decls& decls, const Decl* D) const {
+bool TypeChecker::checkDecls(Decls& decls, const Decl* D) const {
     for (DeclsIter iter = decls.begin(); iter != decls.end(); ++iter) {
         if (*iter == D) {
             bool first = true;
@@ -215,5 +252,95 @@ bool TypeResolver::checkDecls(Decls& decls, const Decl* D) const {
     }
     decls.push_back(D);
     return true;
+}
+
+bool TypeChecker::checkCompatible(QualType left, QualType right, clang::SourceLocation Loc, ConvType conv) const {
+    assert(left.isValid());
+    const Type* canon = left.getTypePtr()->getCanonicalType();
+    switch (canon->getTypeClass()) {
+    case TC_BUILTIN:
+        return checkBuiltin(left, right, Loc, conv);
+    case TC_POINTER:
+        return checkPointer(left, right, Loc, conv);
+    case TC_ARRAY:
+        break;
+    case TC_UNRESOLVED:
+        break;
+    case TC_ALIAS:
+        break;
+    case TC_STRUCT:
+        break;
+    case TC_ENUM:
+        break;
+    case TC_FUNCTION:
+        break;
+    }
+    return false;
+}
+
+bool TypeChecker::checkBuiltin(QualType left, QualType right, clang::SourceLocation Loc, ConvType conv) const {
+    if (right->isBuiltinType()) {
+        // NOTE: canonical is builtin, var itself my be UnresolvedType etc
+        const BuiltinType* Right = cast<BuiltinType>(right->getCanonicalType());
+        const BuiltinType* Left = cast<BuiltinType>(left->getCanonicalType());
+        int rule = type_conversions[Right->getKind()][Left->getKind()];
+        // 0 = ok, 1 = loss of precision, 2 sign-conversion, 3=float->integer, 4 incompatible, 5 loss of FP prec.
+        // TODO use matrix with allowed conversions: 3 options: ok, error, warn
+        if (rule == 0) return true;
+
+        int errorMsg = 0;
+        switch (rule) {
+        case 1: // loss of precision
+            errorMsg = diag::warn_impcast_integer_precision;
+            break;
+        case 2: // sign-conversion
+            errorMsg = diag::warn_impcast_integer_sign;
+            break;
+        case 3: // float->integer
+            errorMsg = diag::warn_impcast_float_integer;
+            break;
+        case 4: // incompatible
+            errorMsg = diag::err_illegal_type_conversion;
+            break;
+        case 5: // loss of fp-precision
+            errorMsg = diag::warn_impcast_float_precision;
+            break;
+        default:
+            assert(0 && "should not come here");
+        }
+        StringBuilder buf1(MAX_LEN_TYPENAME);
+        StringBuilder buf2(MAX_LEN_TYPENAME);
+        right.DiagName(buf1);
+        left.DiagName(buf2);
+        // TODO error msg depends on conv type (see clang errors)
+        Diags.Report(Loc, errorMsg) << buf1 << buf2;
+        return false;
+    }
+
+    StringBuilder buf1(MAX_LEN_TYPENAME);
+    StringBuilder buf2(MAX_LEN_TYPENAME);
+    right.DiagName(buf1);
+    left.DiagName(buf2);
+    // TODO error msg depends on conv type (see clang errors)
+    Diags.Report(Loc, diag::err_illegal_type_conversion) << buf1 << buf2;
+    return false;
+}
+
+bool TypeChecker::checkPointer(QualType left, QualType right, clang::SourceLocation Loc, ConvType conv) const {
+    if (right->isPointerType()) {
+#warning "TODO dereference types (can be Alias etc) and check those"
+        return true;
+    }
+    if (right->isArrayType()) {
+#warning "TODO dereference types (can be Alias etc) and check those"
+        return true;
+    }
+    StringBuilder buf1(MAX_LEN_TYPENAME);
+    StringBuilder buf2(MAX_LEN_TYPENAME);
+    right.DiagName(buf1);
+    left.DiagName(buf2);
+    // TODO error msg depends on conv type (see clang errors)
+    Diags.Report(Loc, diag::err_illegal_type_conversion) << buf1 << buf2;
+    return false;
 }
 

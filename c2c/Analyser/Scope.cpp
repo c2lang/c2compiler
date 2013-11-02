@@ -91,7 +91,13 @@ void Scope::dump() const {
     }
     fprintf(stderr, "External symbol cache:\n");
     for (GlobalsConstIter iter = globalCache.begin(); iter != globalCache.end(); ++iter) {
-        fprintf(stderr, "  %s\n", iter->first.c_str());
+        const Decl* D = iter->second.decl;
+        if (!D) continue;
+        const Package* P = D->getPackage();
+        assert(P);
+        if (isExternal(P)) {
+            fprintf(stderr, "  %s.%s\n", P->getName().c_str(), iter->first.c_str());
+        }
     }
 }
 

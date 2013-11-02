@@ -29,7 +29,7 @@ func void doThing3(int number = 2, int* result = 0) {}
 
 func void testFunc(const char c, volatile int* reg) {}
 
-func const char* getToken() { return 0; }
+func const char* getToken() { return nil; }
 
 public func int main() { return 0; }
 

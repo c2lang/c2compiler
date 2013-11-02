@@ -16,12 +16,8 @@
 #ifndef FUNCTION_ANALYSER_H
 #define FUNCTION_ANALYSER_H
 
-#include <clang/Basic/SourceLocation.h>
-
 #include "Analyser/Scope.h"
 #include "AST/Type.h"
-
-using clang::SourceLocation;
 
 namespace clang {
 class DiagnosticsEngine;
@@ -29,10 +25,8 @@ class DiagnosticsEngine;
 
 namespace C2 {
 
-class Type;
-class TypeContext;
+class TypeChecker;
 class Scope;
-class TypeResolver;
 class Decl;
 class VarDecl;
 class FunctionDecl;
@@ -43,7 +37,7 @@ class IdentifierExpr;
 class FunctionAnalyser {
 public:
     FunctionAnalyser(Scope& scope_,
-                    TypeResolver& typeRes_,
+                    TypeChecker& typeRes_,
                     TypeContext& tc,
                     clang::DiagnosticsEngine& Diags_);
 
@@ -104,16 +98,12 @@ private:
     bool checkAssignee(Expr* expr) const;
     void checkAssignment(Expr* assignee, QualType TLeft);
     void checkDeclAssignment(Decl* decl, Expr* expr);
-    enum ConvType { CONV_INIT, CONV_ASSIGN, CONV_CONV };
-    bool checkCompatible(QualType left, QualType right, SourceLocation Loc, ConvType conv) const;
-    bool checkBuiltin(QualType left, QualType right, SourceLocation Loc, ConvType conv) const;
-    bool checkPointer(QualType left, QualType right, SourceLocation Loc, ConvType conv) const;
 
     static QualType resolveUserType(QualType T);
     QualType Decl2Type(Decl* decl);
 
     Scope& scope;
-    TypeResolver& typeResolver;
+    TypeChecker& typeResolver;
     TypeContext& typeContext;
 
     clang::DiagnosticsEngine& Diags;

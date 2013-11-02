@@ -19,13 +19,13 @@
 #include <clang/Sema/SemaDiagnostic.h>
 
 #include "Analyser/FunctionAnalyser.h"
-#include "Analyser/Scope.h"
-#include "Analyser/TypeResolver.h"
+#include "Analyser/TypeChecker.h"
 #include "Analyser/AnalyserUtils.h"
 #include "AST/Decl.h"
 #include "AST/Expr.h"
 #include "AST/Stmt.h"
 #include "AST/Package.h"
+#include "AST/constants.h"
 #include "Utils/color.h"
 #include "Utils/StringBuilder.h"
 
@@ -46,46 +46,8 @@ using namespace clang;
 #define LHS 0x01
 #define RHS 0x02
 
-// TODO extract to constants.h
-const unsigned MAX_TYPENAME = 128;
-const unsigned MAX_VARNAME = 64;
-
-// 0 = ok,
-// 1 = loss of integer precision,
-// 2 = sign-conversion,
-// 3 = float->integer,
-// 4 = incompatible,
-// 5 = loss of FP precision
-static int type_conversions[14][14] = {
-    // I8  I16  I32  I64   U8  U16  U32  U64  F32  F64  Bool  Void
-    // I8 ->
-    {   0,   0,   0,   0,   2,   2,   2,   2,   0,   0,    0,   4},
-    // I16 ->
-    {   1,   0,   0,   0,   2,   2,   2,   2,   0,   0,    0,   4},
-    // I32 ->
-    {   1,   1,   0,   0,   2,   2,   2,   2,   0,   0,    0,   4},
-    // I64 ->
-    {   1,   1,   1,   0,   2,   2,   2,   2,   0,   0,    0,   4},
-    // U8 ->
-    {   2,   0,   0,   0,   0,   0,   0,   0,   0,   0,    0,   4},
-    // U16 ->
-    {   1,   2,   0,   0,   1,   0,   0,   0,   0,   0,    0,   4},
-    // U32 ->
-    {   1,   1,   2,   0,   1,   1,   0,   0,   0,   0,    0,   4},
-    // U64 ->
-    {   1,   1,   1,   2,   1,   1,   1,   0,   0,   0,    0,   4},
-    // F32 ->
-    {   3,   3,   3,   3,   3,   3,   3,   3,   0,   0,    4,   4},
-    // F64 ->
-    {   3,   3,   3,   3,   3,   3,   3,   3,   5,   0,    4,   4},
-    // BOOL ->
-    {   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,    0,   4},
-    // VOID ->
-    {  4,    4,   4,   4,  4,   4,   4,   4,   4,   4,    4,    0},
-};
-
 FunctionAnalyser::FunctionAnalyser(Scope& scope_,
-                                   TypeResolver& typeRes_,
+                                   TypeChecker& typeRes_,
                                    TypeContext& tc,
                                    clang::DiagnosticsEngine& Diags_)
     : scope(scope_)
@@ -203,7 +165,7 @@ void FunctionAnalyser::analyseIfStmt(Stmt* stmt) {
     Expr* cond = I->getCond();
     QualType Q1 = analyseExpr(cond, RHS);
     if (Q1.isValid()) {
-        checkCompatible(Type::Bool(), Q1, cond->getLocation(), CONV_CONV);
+        typeResolver.checkCompatible(Type::Bool(), Q1, cond->getLocation(), TypeChecker::CONV_CONV);
     }
     scope.EnterScope(Scope::DeclScope);
     analyseStmt(I->getThen(), true);
@@ -324,7 +286,7 @@ void FunctionAnalyser::analyseReturnStmt(Stmt* stmt) {
             // TODO value->getSourceRange()
         } else {
             if (type.isValid()) {
-                checkCompatible(rtype, type, value->getLocation(), CONV_CONV);
+                typeResolver.checkCompatible(rtype, type, value->getLocation(), TypeChecker::CONV_CONV);
             }
         }
     } else {
@@ -601,8 +563,8 @@ void FunctionAnalyser::analyseInitList(Expr* expr, QualType expectedType) {
         break;
     default:
         {
-        char typeName[MAX_TYPENAME];
-        StringBuilder buf(MAX_TYPENAME, typeName);
+        char typeName[MAX_LEN_TYPENAME];
+        StringBuilder buf(MAX_LEN_TYPENAME, typeName);
         type->DiagName(buf);
         Diags.Report(expr->getLocation(), diag::err_invalid_type_initializer_list) << typeName;
         }
@@ -636,7 +598,7 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     if (initialValue && !errs) {
         QualType Q = analyseExpr(initialValue, RHS);
         if (Q.isValid()) {
-            checkCompatible(decl->getType(), Q, initialValue->getLocation(), CONV_INIT);
+            typeResolver.checkCompatible(decl->getType(), Q, initialValue->getLocation(), TypeChecker::CONV_INIT);
         }
     }
     if (type.isConstQualified() && !initialValue) {
@@ -733,7 +695,7 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     case BO_LOr:
         return Type::Bool();
     case BO_Assign:
-        checkCompatible(TLeft, TRight, binop->getLocation(), CONV_ASSIGN);
+        typeResolver.checkCompatible(TLeft, TRight, binop->getLocation(), TypeChecker::CONV_ASSIGN);
         checkAssignment(binop->getLHS(), TLeft);
         return TLeft;
     case BO_MulAssign:
@@ -790,8 +752,8 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
         LType = analyseExpr(unaryop->getExpr(), side | RHS);
         if (LType.isNull()) return 0;
         if (!LType.isPointerType()) {
-            char typeName[MAX_TYPENAME];
-            StringBuilder buf(MAX_TYPENAME, typeName);
+            char typeName[MAX_LEN_TYPENAME];
+            StringBuilder buf(MAX_LEN_TYPENAME, typeName);
             LType.DiagName(buf);
             Diags.Report(unaryop->getOpLoc(), diag::err_typecheck_indirection_requires_pointer)
                 << buf;
@@ -932,8 +894,8 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
                     if (isArrow) {
                         if (!T.isPointerType()) {
                             fprintf(stderr, "TODO using -> with non-pointer type\n");
-                            char typeName[MAX_TYPENAME];
-                            StringBuilder buf(MAX_TYPENAME, typeName);
+                            char typeName[MAX_LEN_TYPENAME];
+                            StringBuilder buf(MAX_LEN_TYPENAME, typeName);
                             T.DiagName(buf);
                             Diags.Report(M->getLocation(), diag::err_typecheck_member_reference_arrow)
                                 << buf;
@@ -945,7 +907,7 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
                         }
                     } else {
                         if (T.isPointerType()) {
-                            StringBuilder buf(MAX_TYPENAME);
+                            StringBuilder buf(MAX_LEN_TYPENAME);
                             T.DiagName(buf);
                             Diags.Report(M->getLocation(), diag::err_typecheck_member_reference_suggestion)
                                 << buf << 0 << 1;
@@ -956,7 +918,7 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
 
                     // check if struct/union type
                     if (!T->isStructType()) {
-                        StringBuilder buf(MAX_TYPENAME);
+                        StringBuilder buf(MAX_LEN_TYPENAME);
                         T.DiagName(buf);
                         Diags.Report(M->getLocation(), diag::err_typecheck_member_reference_struct_union)
                             << buf << M->getSourceRange() << member->getLocation();
@@ -1022,12 +984,12 @@ QualType FunctionAnalyser::analyseMember(QualType T, IdentifierExpr* member, uns
         assert(0);
         return QualType();
     }
-    char temp1[MAX_TYPENAME];
-    StringBuilder buf1(MAX_TYPENAME, temp1);
+    char temp1[MAX_LEN_TYPENAME];
+    StringBuilder buf1(MAX_LEN_TYPENAME, temp1);
     T->DiagName(buf1);
 
-    char temp2[MAX_VARNAME];
-    StringBuilder buf2(MAX_VARNAME, temp2);
+    char temp2[MAX_LEN_VARNAME];
+    StringBuilder buf2(MAX_LEN_VARNAME, temp2);
     buf2 << '\'' << member->getName() << '\'';
     Diags.Report(member->getLocation(), diag::err_no_member) << temp2 << temp1;
     return QualType();
@@ -1054,8 +1016,8 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
     if (LType2.isNull()) return QualType();
     if (!LType2.isFunctionType()) {
         fprintf(stderr, "error: NOT a function type TODO\n");
-        char typeName[MAX_TYPENAME];
-        StringBuilder buf(MAX_TYPENAME, typeName);
+        char typeName[MAX_LEN_TYPENAME];
+        StringBuilder buf(MAX_LEN_TYPENAME, typeName);
         LType2.DiagName(buf);
         Diags.Report(call->getLocation(), diag::err_typecheck_call_not_function) << typeName;
         return QualType();
@@ -1073,7 +1035,7 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
         QualType argType = argFunc->getType();
         if (typeGiven.isValid()) {
             assert(argType.isValid());
-            checkCompatible(argType, typeGiven, argGiven->getLocation(), CONV_CONV);
+            typeResolver.checkCompatible(argType, typeGiven, argGiven->getLocation(), TypeChecker::CONV_CONV);
         }
     }
     if (callArgs > protoArgs) {
@@ -1215,99 +1177,6 @@ void FunctionAnalyser::checkDeclAssignment(Decl* decl, Expr* expr) {
         assert(0);
         break;
     }
-}
-
-bool FunctionAnalyser::checkCompatible(QualType left, QualType right, SourceLocation Loc, ConvType conv) const {
-    LOG_FUNC
-    assert(left.isValid());
-    const Type* canon = left.getTypePtr()->getCanonicalType();
-    switch (canon->getTypeClass()) {
-    case TC_BUILTIN:
-        return checkBuiltin(left, right, Loc, conv);
-    case TC_POINTER:
-        return checkPointer(left, right, Loc, conv);
-    case TC_ARRAY:
-        break;
-    case TC_UNRESOLVED:
-        break;
-    case TC_ALIAS:
-        break;
-    case TC_STRUCT:
-        break;
-    case TC_ENUM:
-        break;
-    case TC_FUNCTION:
-        break;
-    }
-    return false;
-}
-
-bool FunctionAnalyser::checkBuiltin(QualType left, QualType right, SourceLocation Loc, ConvType conv) const {
-    LOG_FUNC
-    if (right->isBuiltinType()) {
-        // NOTE: canonical is builtin, var itself my be UnresolvedType etc
-        const BuiltinType* Right = cast<BuiltinType>(right->getCanonicalType());
-        const BuiltinType* Left = cast<BuiltinType>(left->getCanonicalType());
-        int rule = type_conversions[Right->getKind()][Left->getKind()];
-        // 0 = ok, 1 = loss of precision, 2 sign-conversion, 3=float->integer, 4 incompatible, 5 loss of FP prec.
-        // TODO use matrix with allowed conversions: 3 options: ok, error, warn
-        if (rule == 0) return true;
-
-        int errorMsg = 0;
-        switch (rule) {
-        case 1: // loss of precision
-            errorMsg = diag::warn_impcast_integer_precision;
-            break;
-        case 2: // sign-conversion
-            errorMsg = diag::warn_impcast_integer_sign;
-            break;
-        case 3: // float->integer
-            errorMsg = diag::warn_impcast_float_integer;
-            break;
-        case 4: // incompatible
-            errorMsg = diag::err_illegal_type_conversion;
-            break;
-        case 5: // loss of fp-precision
-            errorMsg = diag::warn_impcast_float_precision;
-            break;
-        default:
-            assert(0 && "should not come here");
-        }
-        StringBuilder buf1(MAX_TYPENAME);
-        StringBuilder buf2(MAX_TYPENAME);
-        right.DiagName(buf1);
-        left.DiagName(buf2);
-        // TODO error msg depends on conv type (see clang errors)
-        Diags.Report(Loc, errorMsg) << buf1 << buf2;
-        return false;
-    }
-
-    StringBuilder buf1(MAX_TYPENAME);
-    StringBuilder buf2(MAX_TYPENAME);
-    right.DiagName(buf1);
-    left.DiagName(buf2);
-    // TODO error msg depends on conv type (see clang errors)
-    Diags.Report(Loc, diag::err_illegal_type_conversion) << buf1 << buf2;
-    return false;
-}
-
-bool FunctionAnalyser::checkPointer(QualType left, QualType right, SourceLocation Loc, ConvType conv) const {
-    LOG_FUNC
-    if (right->isPointerType()) {
-#warning "TODO dereference types (can be Alias etc) and check those"
-        return true;
-    }
-    if (right->isArrayType()) {
-#warning "TODO dereference types (can be Alias etc) and check those"
-        return true;
-    }
-    StringBuilder buf1(MAX_TYPENAME);
-    StringBuilder buf2(MAX_TYPENAME);
-    right.DiagName(buf1);
-    left.DiagName(buf2);
-    // TODO error msg depends on conv type (see clang errors)
-    Diags.Report(Loc, diag::err_illegal_type_conversion) << buf1 << buf2;
-    return false;
 }
 
 C2::QualType FunctionAnalyser::resolveUserType(QualType T) {
