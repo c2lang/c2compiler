@@ -91,7 +91,7 @@ void Scope::dump() const {
     }
     fprintf(stderr, "External symbol cache:\n");
     for (GlobalsConstIter iter = globalCache.begin(); iter != globalCache.end(); ++iter) {
-        const Decl* D = iter->second.decl;
+        const Decl* D = iter->second.getDecl();
         if (!D) continue;
         const Package* P = D->getPackage();
         assert(P);
@@ -112,8 +112,8 @@ ScopeResult Scope::findGlobalSymbol(const std::string& symbol, clang::SourceLoca
     // lookup in used package list
     const Package* pkg = findPackage(symbol);
     if (pkg) {
-        result.ok = true;
-        result.pkg = pkg;
+        result.setOK(true);
+        result.setPackage(pkg);
         // add to cache
         globalCache[symbol] = result;
         return result;
@@ -123,6 +123,7 @@ ScopeResult Scope::findGlobalSymbol(const std::string& symbol, clang::SourceLoca
     bool ambiguous = false;
     bool visible_match = false;
     // return private symbol only if no public symbol is found
+    Decl* D = result.getDecl();
     for (LocalsConstIter iter = locals.begin(); iter != locals.end(); ++iter) {
         pkg = *iter;
         Decl* decl = pkg->findSymbol(symbol);
@@ -130,19 +131,19 @@ ScopeResult Scope::findGlobalSymbol(const std::string& symbol, clang::SourceLoca
 
         bool external = isExternal(pkg);
         bool visible = !(external && !decl->isPublic());
-        if (result.decl) {
+        if (D) {
             // if previous result was non-visible, replace with new one
             if (visible_match == visible) {
                 if (!ambiguous) {
                     Diags.Report(loc, diag::err_ambiguous_symbol) << symbol;
                     // NASTY: are different FileManagers!
                     // TEMP just use 0 location
-                    assert(result.decl->getPackage());
+                    assert(D->getPackage());
                     Diags.Report(SourceLocation(), diag::note_function_suggestion)
-                        << AnalyserUtils::fullName(result.decl->getPackage()->getName(), result.decl->getName());
+                        << AnalyserUtils::fullName(D->getPackage()->getName(), D->getName());
 
                     ambiguous = true;
-                    result.ok = false;
+                    result.setOK(false);
                 }
                 Diags.Report(SourceLocation(), diag::note_function_suggestion)
                     << AnalyserUtils::fullName(pkg->getName(), decl->getName());
@@ -150,21 +151,21 @@ ScopeResult Scope::findGlobalSymbol(const std::string& symbol, clang::SourceLoca
                 continue;
             }
             if (!visible_match) { // replace with visible symbol
-                result.decl = decl;
+                result.setDecl(decl);
                 visible_match = visible;
             }
         } else {
-            result.decl = decl;
+            result.setDecl(decl);
             visible_match = visible;
         }
     }
-    if (result.decl) {
+    if (D) {
         if (!visible_match) {
             Diags.Report(loc, diag::err_not_public) << symbol;
-            result.decl = 0;
-            result.ok = false;
+            result.setDecl(0);
+            result.setOK(false);
         }
-        if (result.ok) globalCache[symbol] = result;
+        if (result.isOK()) globalCache[symbol] = result;
     }
     return result;
 }
@@ -174,8 +175,8 @@ ScopeResult Scope::findSymbol(const std::string& symbol, clang::SourceLocation l
     LocalCacheConstIter iter = localCache.find(symbol);
     if (iter != localCache.end()) {
         ScopeResult result;
-        result.ok = true;
-        result.decl = iter->second;
+        result.setOK(true);
+        result.setDecl(iter->second);
         return result;
     }
 
@@ -185,16 +186,16 @@ ScopeResult Scope::findSymbol(const std::string& symbol, clang::SourceLocation l
 
 ScopeResult Scope::findSymbolInPackage(const std::string& name, clang::SourceLocation loc, const Package* pkg) const {
     ScopeResult res;
-    res.decl = pkg->findSymbol(name);
-    if (!res.decl) {
+    res.setDecl(pkg->findSymbol(name));
+    if (!res.getDecl()) {
         Diags.Report(loc, diag::err_unknown_package_symbol) << pkg->getName() << name;
-        res.ok = false;
+        res.setOK(false);
     } else {
         // if external package, check visibility
-        if (isExternal(pkg) && !res.decl->isPublic()) {
+        if (isExternal(pkg) && !res.getDecl()->isPublic()) {
             Diags.Report(loc, diag::err_not_public) << AnalyserUtils::fullName(pkg->getName(), name);
-            res.decl = 0;
-            res.ok = false;
+            res.setDecl(0);
+            res.setOK(false);
         }
     }
     return res;
@@ -205,7 +206,7 @@ ScopeResult Scope::findSymbolInUsed(const std::string& symbol) const {
     // symbol can be package name or symbol within package
     const Package* pkg = findPackage(symbol);
     if (pkg) {
-        result.pkg = pkg;
+        result.setPackage(pkg);
         return result;
     }
 
@@ -216,7 +217,7 @@ ScopeResult Scope::findSymbolInUsed(const std::string& symbol) const {
         if (!decl) continue;
 
         // NOTE: dont check ambiguity here (just return first match)
-        result.decl = decl;
+        result.setDecl(decl);
         //bool external = isExternal(pkg2);
         //bool visible = !(external && !decl->isPublic());
         // Q: check visibility and set ok?

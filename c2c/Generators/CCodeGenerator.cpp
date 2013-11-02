@@ -62,10 +62,6 @@ CCodeGenerator::CCodeGenerator(const std::string& filename_, Mode mode_, const P
 CCodeGenerator::~CCodeGenerator() {
 }
 
-void CCodeGenerator::addEntry(const std::string& filename_, AST& ast) {
-    entries.push_back(Entry(filename_, ast));
-}
-
 void CCodeGenerator::generate() {
     hbuf << "#ifndef ";
     GenUtils::toCapital(filename, hbuf);
@@ -77,7 +73,7 @@ void CCodeGenerator::generate() {
 
     // generate all includes
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
-        AST* ast = iter->ast;
+        AST* ast = *iter;
         curpkg = &ast->getPkgName();
         for (unsigned i=0; i<ast->numUses(); i++) {
             EmitUse(ast->getUse(i));
@@ -89,7 +85,7 @@ void CCodeGenerator::generate() {
 
     // generate types
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
-        AST* ast = iter->ast;
+        AST* ast = *iter;
         curpkg = &ast->getPkgName();
         for (unsigned i=0; i<ast->numTypes(); i++) {
             EmitTypeDecl(ast->getType(i));
@@ -99,7 +95,7 @@ void CCodeGenerator::generate() {
 
     // generate variables
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
-        AST* ast = iter->ast;
+        AST* ast = *iter;
         curpkg = &ast->getPkgName();
         for (unsigned i=0; i<ast->numVars(); i++) {
             EmitVariable(ast->getVar(i));
@@ -110,7 +106,7 @@ void CCodeGenerator::generate() {
 
     // generate functions
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
-        AST* ast = iter->ast;
+        AST* ast = *iter;
         curpkg = &ast->getPkgName();
         for (unsigned i=0; i<ast->numFunctions(); i++) {
             EmitFunction(ast->getFunction(i));

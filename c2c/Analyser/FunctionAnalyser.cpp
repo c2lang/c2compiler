@@ -385,12 +385,13 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
             IdentifierExpr* id = cast<IdentifierExpr>(expr);
             //fprintf(stderr, "%s  %s %s\n", id->getName().c_str(), side&LHS ? "LHS" : "", side&RHS ? "RHS": "");
             ScopeResult Res = analyseIdentifier(id);
-            if (!Res.decl) break;
+            Decl* D = Res.getDecl();
+            if (!D) break;
             // NOTE: expr should not be package name (handled above)
             // TODO LHS: check if VarDecl
-            if (side & LHS) checkDeclAssignment(Res.decl, expr);
-            if (side & RHS) Res.decl->setUsed();
-            return Decl2Type(Res.decl);
+            if (side & LHS) checkDeclAssignment(D, expr);
+            if (side & RHS) D->setUsed();
+            return Decl2Type(D);
         }
         break;
     case EXPR_INITLIST:
@@ -439,15 +440,16 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
         {
             IdentifierExpr* id = cast<IdentifierExpr>(expr);
             ScopeResult Res = analyseIdentifier(id);
-            if (!Res.decl) return;
-            switch (Res.decl->getKind()) {
+            Decl* D = Res.getDecl();
+            if (!D) return;
+            switch (D->getKind()) {
             case DECL_FUNC:
                 // can be ok for const
                 assert(0 && "TODO");
                 break;
             case DECL_VAR:
                 {
-                    VarDecl* VD = cast<VarDecl>(Res.decl);
+                    VarDecl* VD = cast<VarDecl>(D);
                     if (inConstExpr) {
                         QualType T = VD->getType();
                         if (!T.isConstQualified()) {
@@ -866,9 +868,10 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
     if (base->getKind() == EXPR_IDENTIFIER) {
         IdentifierExpr* base_id = cast<IdentifierExpr>(base);
         ScopeResult SR = analyseIdentifier(base_id);
-        if (SR.decl) {
+        Decl* SRD = SR.getDecl();
+        if (SRD) {
             M->setPkgPrefix(false);
-            switch (SR.decl->getKind()) {
+            switch (SRD->getKind()) {
             case DECL_FUNC:
                 fprintf(stderr, "error: member reference base 'type' is not a structure, union or package\n");
                 return QualType();
@@ -885,7 +888,7 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
             case DECL_VAR:
                 {
                     // TODO extract to function?
-                    VarDecl* VD = cast<VarDecl>(SR.decl);
+                    VarDecl* VD = cast<VarDecl>(SRD);
                     if (side & RHS) VD->setUsed();
                     QualType T = Decl2Type(VD);
                     assert(T.isValid());  // analyser should set
@@ -935,16 +938,17 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
                 assert(0);
                 break;
             }
-        } else if (SR.pkg) {
+        } else if (SR.getPackage()) {
             M->setPkgPrefix(true);
             if (isArrow) {
                 fprintf(stderr, "TODO ERROR: cannot use -> for package access\n");
                 // continue checking
             }
-            ScopeResult res = scope.findSymbolInPackage(member->getName(), member->getLocation(), SR.pkg);
-            if (res.decl) {
-                member->setDecl(res.decl);
-                return Decl2Type(res.decl);
+            ScopeResult res = scope.findSymbolInPackage(member->getName(), member->getLocation(), SR.getPackage());
+            Decl* D = res.getDecl();
+            if (D) {
+                member->setDecl(D);
+                return Decl2Type(D);
             }
             return QualType();
         } else  {
@@ -1082,19 +1086,21 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
 ScopeResult FunctionAnalyser::analyseIdentifier(IdentifierExpr* id) {
     LOG_FUNC
     ScopeResult res = scope.findSymbol(id->getName(), id->getLocation());
-    if (res.decl) {
-        id->setDecl(res.decl);
-    } else if (res.pkg) {
+    Decl* D = res.getDecl();
+    if (D) {
+        id->setDecl(D);
+    } else if (res.getPackage()) {
         // symbol is package
     } else {
         // C
-        res.ok = false;
+        res.setOK(false);
         Diags.Report(id->getLocation(), diag::err_undeclared_var_use)
             << id->getName();
         ScopeResult res2 = scope.findSymbolInUsed(id->getName());
-        if (res2.decl) {
-            Diags.Report(res2.decl->getLocation(), diag::note_function_suggestion)
-                << AnalyserUtils::fullName(res2.pkg->getName(), id->getName());
+        Decl* D2 = res2.getDecl();
+        if (D2) {
+            Diags.Report(D->getLocation(), diag::note_function_suggestion)
+                << AnalyserUtils::fullName(D2->getPackage()->getName(), id->getName());
         }
     }
     return res;

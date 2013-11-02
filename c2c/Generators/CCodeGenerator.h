@@ -46,8 +46,8 @@ public:
     enum Mode { MULTI_FILE, SINGLE_FILE };
     CCodeGenerator(const std::string& filename_, Mode mode_, const Pkgs& pkgs_, bool prefix);
     ~CCodeGenerator();
-    void addEntry(const std::string& filename, AST& ast);
 
+    void addEntry(AST& ast) { entries.push_back(&ast); }
     void generate();
     void write(const std::string& target, const std::string& name);
     void dump();
@@ -94,13 +94,7 @@ private:
 
     const Pkgs& pkgs;
 
-    struct Entry {
-        Entry(const std::string& f, AST& s)
-            : filename(&f), ast(&s) {}
-        const std::string* filename;
-        AST* ast;
-    };
-    typedef std::vector<Entry> Entries;
+    typedef std::vector<AST*> Entries;
     typedef Entries::iterator EntriesIter;
     Entries entries;
 

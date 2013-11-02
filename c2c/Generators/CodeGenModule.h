@@ -43,8 +43,8 @@ class CodeGenModule {
 public:
     CodeGenModule(const Package* pkg_);
     ~CodeGenModule();
-    void addEntry(const std::string& filename, AST& ast);
 
+    void addEntry(AST& ast) { entries.push_back(&ast); }
     void generate();
     bool verify();
     void write(const std::string& target, const std::string& name);
@@ -68,13 +68,7 @@ private:
 
     const Package* pkg;
 
-    struct Entry {
-        Entry(const std::string& f, AST& s)
-            : filename(&f), ast(&s) {}
-        const std::string* filename;
-        AST* ast;
-    };
-    typedef std::vector<Entry> Entries;
+    typedef std::vector<AST*> Entries;
     typedef Entries::iterator EntriesIter;
     Entries entries;
 

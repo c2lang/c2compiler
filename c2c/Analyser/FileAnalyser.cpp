@@ -386,16 +386,17 @@ unsigned FileAnalyser::checkInitValue(VarDecl* decl, Expr* expr, QualType expect
         {
             IdentifierExpr* I = cast<IdentifierExpr>(expr);
             ScopeResult Res = globals->findSymbol(I->getName(), I->getLocation());
-            if (!Res.ok) return 1;
-            if (!Res.decl) {
+            if (!Res.isOK()) return 1;
+            Decl* D = Res.getDecl();
+            if (!D) {
                 Diags.Report(I->getLocation(), diag::err_undeclared_var_use) << I->getName();
                 return 1;
             }
-            if (Res.decl == decl) {
-                Diags.Report(I->getLocation(), diag::err_var_self_init) << Res.decl->getName();
+            if (D == decl) {
+                Diags.Report(I->getLocation(), diag::err_var_self_init) << D->getName();
                 return 1;
             }
-            I->setDecl(Res.decl);
+            I->setDecl(D);
             // TODO check types (need code from FunctionAnalyser)
             break;
         }

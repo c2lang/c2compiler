@@ -17,7 +17,6 @@
 #define FILEMAP_H
 
 #include <string>
-#include <list>
 
 namespace C2 {
 

@@ -104,27 +104,28 @@ unsigned TypeChecker::checkUnresolvedType(const UnresolvedType* type, bool used_
         {
             IdentifierExpr* I = cast<IdentifierExpr>(id);
             ScopeResult res = globals.findSymbol(I->getName(), I->getLocation());
-            if (!res.ok) return 1;
-            if (res.pkg) {
+            if (!res.isOK()) return 1;
+            if (res.getPackage()) {
                 Diags.Report(I->getLocation(), diag::err_not_a_typename) << I->getName();
                 return 1;
             }
-            if (!res.decl) {
+            Decl* D = res.getDecl();
+            if (!D) {
                 Diags.Report(I->getLocation(), diag::err_unknown_typename) << I->getName();
                 return 1;
             }
-            TypeDecl* td = dyncast<TypeDecl>(res.decl);
+            TypeDecl* td = dyncast<TypeDecl>(D);
             if (!td) {
                 Diags.Report(I->getLocation(), diag::err_not_a_typename) << I->getName();
                 return 1;
             }
-            bool external = globals.isExternal(res.decl->getPackage());
+            bool external = globals.isExternal(D->getPackage());
             if (used_public && !external && !td->isPublic()) {
                 Diags.Report(I->getLocation(), diag::err_non_public_type) << I->getName();
                 return 1;
             }
             // ok
-            I->setDecl(res.decl);
+            I->setDecl(D);
             type->setMatch(td);
         }
         break;
@@ -142,19 +143,20 @@ unsigned TypeChecker::checkUnresolvedType(const UnresolvedType* type, bool used_
             IdentifierExpr* member_id = M->getMember();
             // check Type
             ScopeResult res = globals.findSymbolInPackage(member_id->getName(), member_id->getLocation(), pkg);
-            if (!res.ok) return 1;
-            TypeDecl* td = dyncast<TypeDecl>(res.decl);
+            if (!res.isOK()) return 1;
+            Decl* MD = res.getDecl();
+            TypeDecl* td = dyncast<TypeDecl>(MD);
             if (!td) {
                 Diags.Report(member_id->getLocation(), diag::err_not_a_typename) << M->getFullName();
                 return 1;
             }
-            bool external = globals.isExternal(res.decl->getPackage());
+            bool external = globals.isExternal(MD->getPackage());
             if (used_public && !external && !td->isPublic()) {
                 Diags.Report(member_id->getLocation(), diag::err_non_public_type) << M->getFullName();
                 return 1;
             }
             // ok
-            member_id->setDecl(res.decl);
+            member_id->setDecl(MD);
             type->setMatch(td);
         }
         break;

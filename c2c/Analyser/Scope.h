@@ -33,17 +33,42 @@ namespace C2 {
 class Decl;
 class VarDecl;
 
+// This class combines a Decl or Package* and bool into 1 word
 class ScopeResult {
 public:
-    ScopeResult()
-        : pkg(0)
-        , decl(0)
-        , ok(true)
-    {}
+    // TODO ok should be false by default
+    ScopeResult() : value(0x1) {}
 
-    const Package* pkg; // pkg is only set if Symbol is a global or if symbol is a package
-    Decl* decl;         // if symbol is not a package
-    bool ok;            // checks are ok
+    void setPackage(const Package* P) {
+        value &= 0x1;
+        value |= (unsigned int)P;
+    }
+    const Package* getPackage() const {
+        if (value & 0x2) {  // decl
+            return 0;
+        } else {
+            return reinterpret_cast<const Package*>(value & ~0x3);
+        }
+    }
+    void setDecl(Decl* D) {
+        value &= 0x1;
+        value |= (unsigned int)D;
+        value |= 0x2;
+    }
+    Decl* getDecl() const {
+        if (value & 0x2) {  // decl
+            return reinterpret_cast<Decl*>(value & ~0x3);
+        } else {
+            return 0;
+        }
+    }
+    void setOK(bool ok) {
+        value &= ~0x1;
+        value |= ok;
+    }
+    bool isOK() const { return value & 0x1; }
+private:
+    unsigned value;
 };
 
 

@@ -656,7 +656,7 @@ void C2Builder::generateOptionalC() {
         CCodeGenerator gen(filename, CCodeGenerator::SINGLE_FILE, pkgs, no_local_prefix);
         for (unsigned i=0; i<files.size(); i++) {
             FileInfo* info = files[i];
-            gen.addEntry(info->filename, info->ast);
+            gen.addEntry(info->ast);
         }
         if (options.verbose) printf(COL_VERBOSE"generating C (single module)"ANSI_NORMAL"\n");
         gen.generate();
@@ -676,7 +676,7 @@ void C2Builder::generateOptionalC() {
             for (unsigned i=0; i<files.size(); i++) {
                 FileInfo* info = files[i];
                 if (info->ast.getPkgName() == P->getName()) {
-                    gen.addEntry(info->filename, info->ast);
+                    gen.addEntry(info->ast);
                 }
             }
             gen.generate();
@@ -702,7 +702,7 @@ void C2Builder::generateOptionalIR() {
         for (unsigned i=0; i<files.size(); i++) {
             FileInfo* info = files[i];
             if (info->ast.getPkgName() == P->getName()) {
-                cgm.addEntry(info->filename, info->ast);
+                cgm.addEntry(info->ast);
             }
         }
         cgm.generate();

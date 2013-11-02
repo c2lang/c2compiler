@@ -58,17 +58,13 @@ CodeGenModule::~CodeGenModule() {
     delete module;
 }
 
-void CodeGenModule::addEntry(const std::string& filename, AST& ast) {
-    entries.push_back(Entry(filename, ast));
-}
-
 void CodeGenModule::generate() {
     // step 1: generate all function proto's
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
+        const AST* ast = *iter;
 #ifdef DEBUG_CODEGEN
-        printf("CodeGen for %s - step 1\n", iter->filename->c_str());
+        printf("CodeGen for %s - step 1\n", ast->getFileName().c_str());
 #endif
-        const AST* ast = iter->ast;
         for (unsigned i=0; i<ast->numFunctions(); i++) {
             FunctionDecl* F = ast->getFunction(i);
             CodeGenFunction cgf(*this, F);
@@ -78,10 +74,10 @@ void CodeGenModule::generate() {
     }
     // step 2: generate variables
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
+        const AST* ast = *iter;
 #ifdef DEBUG_CODEGEN
-        printf("CodeGen for %s - step 1\n", iter->filename->c_str());
+        printf("CodeGen for %s - step 1\n", ast->getFileName().c_str());
 #endif
-        const AST* ast = iter->ast;
         for (unsigned i=0; i<ast->numVars(); i++) {
             EmitGlobalVariable(ast->getVar(i));
         }
@@ -89,10 +85,10 @@ void CodeGenModule::generate() {
 
     // step 3: generate all function bodies (and possibly external function decls)
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
+        const AST* ast = *iter;
 #ifdef DEBUG_CODEGEN
-        printf("CodeGen for %s - step 3\n", iter->filename->c_str());
+        printf("CodeGen for %s - step 1\n", ast->getFileName().c_str());
 #endif
-        const AST* ast = iter->ast;
         for (unsigned i=0; i<ast->numFunctions(); i++) {
             FunctionDecl* F = ast->getFunction(i);
             CodeGenFunction cgf(*this, F);
