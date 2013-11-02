@@ -52,6 +52,7 @@
 #include "Parser/C2Parser.h"
 #include "Parser/C2Sema.h"
 #include "Analyser/FileAnalyser.h"
+#include "Analyser/DepGenerator.h"
 #include "Generators/CodeGenModule.h"
 #include "Generators/CCodeGenerator.h"
 #include "FileUtils/FileUtils.h"
@@ -111,6 +112,7 @@ public:
              TargetInfo* pti,
              HeaderSearchOptions* HSOpts,
              const std::string& filename_,
+             unsigned file_id,
              const std::string& configs)
         : filename(filename_)
     // TODO note: Diags makes copy constr, pass DiagnosticIDs?
@@ -120,7 +122,7 @@ public:
         , Headers(HSOpts, FileMgr, Diags, LangOpts_, pti)
         , PPOpts(new PreprocessorOptions())
         , PP(PPOpts, Diags, LangOpts_, pti, SM, Headers, loader)
-        , ast(filename_)
+        , ast(filename_, file_id)
         , analyser(0)
     {
         ApplyHeaderSearchOptions(PP.getHeaderSearchInfo(), *HSOpts, LangOpts_, pti->getTriple());
@@ -145,10 +147,7 @@ public:
         C2Sema sema(SM, Diags, typeContext, ast, PP);
         C2Parser parser(PP, sema);
         parser.Initialize();
-        // parse the file into AST
-        bool ok = parser.Parse();
-        if (options.printAST0) ast.print();
-        return ok;
+        return parser.Parse();
     }
 
     void createAnalyser(const Pkgs& pkgs, bool verbose) {
@@ -303,9 +302,12 @@ int C2Builder::build() {
     unsigned errors = 0;
     u_int64_t t1_parse = Utils::getCurrentTime();
     for (int i=0; i<recipe.size(); i++) {
-        FileInfo* info = new FileInfo(Diags, LangOpts, pti, HSOpts, recipe.get(i), PredefineBuffer);
+        const std::string& filename = recipe.get(i);
+        unsigned file_id = filenames.add(filename);
+        FileInfo* info = new FileInfo(Diags, LangOpts, pti, HSOpts, filename, file_id, PredefineBuffer);
         files.push_back(info);
         bool ok = info->parse(options);
+        if (options.printAST0) info->ast.print();
         errors += !ok;
     }
     u_int64_t t2_parse = Utils::getCurrentTime();
@@ -331,8 +333,6 @@ int C2Builder::build() {
         }
     }
 
-    if (options.printDependencies) printDependencies();
-
     // create analysers/scopes
     for (unsigned i=0; i<files.size(); i++) {
         FileInfo* info = files[i];
@@ -345,6 +345,10 @@ int C2Builder::build() {
     t2_analyse = Utils::getCurrentTime();
     if (options.printTiming) printf(COL_TIME"analysis took %lld usec"ANSI_NORMAL"\n", t2_analyse - t1_analyse);
     if (client->getNumErrors()) goto out;
+
+    if (options.printDependencies) {
+        printDependencies();
+    }
 
     if (!options.testMode && !checkMainFunction(Diags)) goto out;
 
@@ -440,25 +444,26 @@ bool C2Builder::loadPackage(const std::string& name) {
     SourceLocation loc;
 
     if (name == "stdio") {
+        unsigned file_id = filenames.add("(stdio)");
         Package* stdioPkg = getPackage("stdio", true, true);
         // int puts(const char* s);
         {
-            FunctionDecl* func = new FunctionDecl("puts", loc, true, Type::Int32());
+            FunctionDecl* func = new FunctionDecl("puts", loc, true, file_id, Type::Int32());
             // TODO correct arg
             QualType QT(new PointerType(Type::Int8()), QUAL_CONST);
             QT->setCanonicalType(QT);
-            func->addArg(new VarDecl(VARDECL_PARAM, "s", loc, QT, 0));
+            func->addArg(new VarDecl(VARDECL_PARAM, "s", loc, QT, 0, true, file_id));
             stdioPkg->addSymbol(func);
             // function type
             func->setFunctionType(QualType(new FunctionType(func), 0));
         }
         //int printf(const char *format, ...);
         {
-            FunctionDecl* func = new FunctionDecl("printf", loc, true, Type::Int32());
+            FunctionDecl* func = new FunctionDecl("printf", loc, true, file_id, Type::Int32());
             // NOTE: MEMLEAK ON TYPE, this will go away when we remove these dummy protos
             QualType QT(new PointerType(Type::Int8()), QUAL_CONST);
             QT->setCanonicalType(QT);
-            func->addArg(new VarDecl(VARDECL_PARAM, "format", loc, QT, 0));
+            func->addArg(new VarDecl(VARDECL_PARAM, "format", loc, QT, 0, true, file_id));
             func->setVariadic();
             stdioPkg->addSymbol(func);
             // function type
@@ -466,12 +471,12 @@ bool C2Builder::loadPackage(const std::string& name) {
         }
         //int sprintf(char *str, const char *format, ...);
         {
-            FunctionDecl* func = new FunctionDecl("sprintf", loc, true, Type::Int32());
+            FunctionDecl* func = new FunctionDecl("sprintf", loc, true, file_id, Type::Int32());
             // NOTE: MEMLEAK ON TYPE, this will go away when we remove these dummy protos
             QualType QT(new PointerType(Type::Int8()), QUAL_CONST);
             QT->setCanonicalType(QT);
-            func->addArg(new VarDecl(VARDECL_PARAM, "str", loc, QT, 0));
-            func->addArg(new VarDecl(VARDECL_PARAM, "format", loc, QT, 0));
+            func->addArg(new VarDecl(VARDECL_PARAM, "str", loc, QT, 0, true, file_id));
+            func->addArg(new VarDecl(VARDECL_PARAM, "format", loc, QT, 0, true, file_id));
             func->setVariadic();
             stdioPkg->addSymbol(func);
             // function type
@@ -481,12 +486,13 @@ bool C2Builder::loadPackage(const std::string& name) {
     }
 
     if (name == "stdlib") {
+        unsigned file_id = filenames.add("(stdlib)");
         Package* stdlibPkg = getPackage("stdlib", true, true);
         //void exit(int status);
         {
-            FunctionDecl* func = new FunctionDecl("exit", loc, true, Type::Void());
+            FunctionDecl* func = new FunctionDecl("exit", loc, true, file_id, Type::Void());
             // TODO correct arg
-            func->addArg(new VarDecl(VARDECL_PARAM, "status", loc, Type::Int32(), 0));
+            func->addArg(new VarDecl(VARDECL_PARAM, "status", loc, Type::Int32(), 0, true, file_id));
             stdlibPkg->addSymbol(func);
             // function type
             func->setFunctionType(QualType(new FunctionType(func), 0));
@@ -498,52 +504,14 @@ bool C2Builder::loadPackage(const std::string& name) {
 
 void C2Builder::printDependencies() const {
     StringBuilder output;
-    output << "digraph G {\n";
-    output << "node [shape=box]\n";
-
-    typedef std::map<std::string, unsigned> PkgIndex;
-    typedef PkgIndex::const_iterator PkgIndexConstIter;
-    PkgIndex pkgIndex;
-
-    unsigned index = 0;
-    // create package nodes
-    for (PkgsConstIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
-        const Package* P = iter->second;
-        output << index << "[label=\"" << P->getName() << '"';
-        if (P->isExternal()) output << " shape=oval";
-        output << "];\n";
-        pkgIndex[P->getName()] = index;
-        index++;
-    }
-
-    // calculate package deps
-    unsigned char* deps = (unsigned char*)calloc(1, index * index);
+    DepGenerator generator(output);
     for (unsigned i=0; i<files.size(); i++) {
-        FileInfo* info = files[i];
-        for (unsigned u=0; u<info->ast.numUses(); u++) {
-            UseDecl* D = info->ast.getUse(u);
-            PkgIndexConstIter iter1 = pkgIndex.find(info->ast.getPkgName());
-            PkgIndexConstIter iter2 = pkgIndex.find(D->getName());
-            assert(iter1 != pkgIndex.end());
-            assert(iter2 != pkgIndex.end());
-            deps[iter1->second * index + iter2->second]++;
-        }
+        files[i]->analyser->getExternals(generator);
     }
-
-    // print package deps
-    for (unsigned i=0; i<index; i++) {
-        for (unsigned j=0; j<index; j++) {
-            unsigned ii = i*index + j;
-            if (deps[ii] != 0) {
-                output << i << " -> " << j << ";\n";
-            }
-        }
-    }
-    free (deps);
-    output << "}\n";
+    generator.close();
 
     std::string path = "output/" + recipe.name;
-    std::string filename = path + '/' + "deps.dot";
+    std::string filename = path + '/' + "deps.xml";
     FileUtils::writeFile(path.c_str(), filename, output);
 }
 

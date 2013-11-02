@@ -20,12 +20,11 @@
 #include <clang/Sema/SemaDiagnostic.h>
 
 #include "Analyser/Scope.h"
+#include "Analyser/DepAnalyser.h"
 #include "Analyser/AnalyserUtils.h"
 #include "AST/Package.h"
 #include "AST/Decl.h"
 #include "AST/Expr.h"
-#include "Utils/color.h"
-#include "Utils/StringBuilder.h"
 
 using namespace C2;
 using namespace clang;
@@ -33,10 +32,11 @@ using namespace clang;
 DynamicScope::DynamicScope() : Flags(0) {}
 
 
-Scope::Scope(const std::string& name_, const Pkgs& pkgs_, clang::DiagnosticsEngine& Diags_)
+Scope::Scope(const std::string& name_, const Pkgs& pkgs_, clang::DiagnosticsEngine& Diags_, unsigned id)
     : scopeIndex(0)
     , curScope(0)
     , allPackages(pkgs_)
+    , file_id(id)
     , myPkg(0)
     , Diags(Diags_)
 {
@@ -89,16 +89,19 @@ void Scope::dump() const {
     for (PackagesConstIter iter = packages.begin(); iter != packages.end(); ++iter) {
         fprintf(stderr, "  %s (as %s)\n", iter->second->getName().c_str(), iter->first.c_str());
     }
-    fprintf(stderr, "External symbol cache:\n");
+}
+
+void Scope::getExternals(DepAnalyser& dep) const {
+    dep.startFile(myPkg, file_id);
+    for (unsigned i=0; i<externals.size(); i++) {
+        dep.add(file_id, externals[i]);
+    }
     for (GlobalsConstIter iter = globalCache.begin(); iter != globalCache.end(); ++iter) {
         const Decl* D = iter->second.getDecl();
         if (!D) continue;
-        const Package* P = D->getPackage();
-        assert(P);
-        if (isExternal(P)) {
-            fprintf(stderr, "  %s.%s\n", P->getName().c_str(), iter->first.c_str());
-        }
+        if (D->getFileID() != file_id) dep.add(file_id, D);
     }
+    dep.doneFile();
 }
 
 ScopeResult Scope::findGlobalSymbol(const std::string& symbol, clang::SourceLocation loc) const {
@@ -107,7 +110,6 @@ ScopeResult Scope::findGlobalSymbol(const std::string& symbol, clang::SourceLoca
     if (iter != globalCache.end()) {
         return iter->second;
     }
-
     ScopeResult result;
     // lookup in used package list
     const Package* pkg = findPackage(symbol);
@@ -119,11 +121,9 @@ ScopeResult Scope::findGlobalSymbol(const std::string& symbol, clang::SourceLoca
         return result;
     }
 
-    // TODO cleanup below
     bool ambiguous = false;
     bool visible_match = false;
-    // return private symbol only if no public symbol is found
-    Decl* D = result.getDecl();
+    Decl* D = 0;
     for (LocalsConstIter iter = locals.begin(); iter != locals.end(); ++iter) {
         pkg = *iter;
         Decl* decl = pkg->findSymbol(symbol);
@@ -138,7 +138,6 @@ ScopeResult Scope::findGlobalSymbol(const std::string& symbol, clang::SourceLoca
                     Diags.Report(loc, diag::err_ambiguous_symbol) << symbol;
                     // NASTY: are different FileManagers!
                     // TEMP just use 0 location
-                    assert(D->getPackage());
                     Diags.Report(SourceLocation(), diag::note_function_suggestion)
                         << AnalyserUtils::fullName(D->getPackage()->getName(), D->getName());
 
@@ -151,21 +150,23 @@ ScopeResult Scope::findGlobalSymbol(const std::string& symbol, clang::SourceLoca
                 continue;
             }
             if (!visible_match) { // replace with visible symbol
-                result.setDecl(decl);
+                D = decl;
                 visible_match = visible;
             }
         } else {
-            result.setDecl(decl);
+            D = decl;
             visible_match = visible;
         }
     }
     if (D) {
         if (!visible_match) {
             Diags.Report(loc, diag::err_not_public) << symbol;
-            result.setDecl(0);
             result.setOK(false);
         }
-        if (result.isOK()) globalCache[symbol] = result;
+        if (result.isOK()) {
+            result.setDecl(D);
+            globalCache[symbol] = result;
+        }
     }
     return result;
 }
@@ -186,16 +187,19 @@ ScopeResult Scope::findSymbol(const std::string& symbol, clang::SourceLocation l
 
 ScopeResult Scope::findSymbolInPackage(const std::string& name, clang::SourceLocation loc, const Package* pkg) const {
     ScopeResult res;
-    res.setDecl(pkg->findSymbol(name));
-    if (!res.getDecl()) {
+    Decl* D = pkg->findSymbol(name);
+    res.setDecl(D);
+    if (!D) {
         Diags.Report(loc, diag::err_unknown_package_symbol) << pkg->getName() << name;
         res.setOK(false);
     } else {
         // if external package, check visibility
-        if (isExternal(pkg) && !res.getDecl()->isPublic()) {
+        if (isExternal(pkg) && !D->isPublic()) {
             Diags.Report(loc, diag::err_not_public) << AnalyserUtils::fullName(pkg->getName(), name);
             res.setDecl(0);
             res.setOK(false);
+        } else {
+            if (D->getFileID() != file_id) addExternal(D);
         }
     }
     return res;
@@ -294,5 +298,12 @@ void Scope::ExitScope() {
     scopeIndex--;
     if (scopeIndex == 0) curScope = 0;
     else curScope = &scopes[scopeIndex-1];
+}
+
+void Scope::addExternal(const Decl* D) const {
+    for (unsigned i=0; i<externals.size(); i++) {
+        if (externals[i] == D) return;  // already in
+    }
+    externals.push_back(D);
 }
 

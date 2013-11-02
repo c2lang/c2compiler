@@ -32,6 +32,7 @@ namespace C2 {
 
 class Decl;
 class VarDecl;
+class DepAnalyser;
 
 // This class combines a Decl or Package* and bool into 1 word
 class ScopeResult {
@@ -120,7 +121,7 @@ public:
     };
 
 
-    Scope(const std::string& name_, const Pkgs& pkgs_, clang::DiagnosticsEngine& Diags_);
+    Scope(const std::string& name_, const Pkgs& pkgs_, clang::DiagnosticsEngine& Diags_, unsigned id);
 
     const Package* findPackage(const std::string& name) const;
     const Package* usePackage(const std::string& name, clang::SourceLocation loc) const;
@@ -148,7 +149,10 @@ public:
     }
 
     void dump() const;
+    void getExternals(DepAnalyser& dep) const;
 private:
+    void addExternal(const Decl* D) const;
+
     // Scopes
     DynamicScope scopes[MAX_SCOPE_DEPTH];
     unsigned scopeIndex;    // first free scope (= count of scopes)
@@ -167,6 +171,7 @@ private:
     // all packages
     const Pkgs& allPackages;
 
+    unsigned file_id;
     const Package* myPkg;
 
     // Symbol caches
@@ -174,6 +179,9 @@ private:
     typedef Globals::const_iterator GlobalsConstIter;
     typedef Globals::iterator GlobalsIter;
     mutable Globals globalCache;
+
+    typedef std::vector<const Decl*> Externals;
+    mutable Externals externals;
 
     typedef std::map<const std::string, VarDecl*> LocalCache;
     typedef LocalCache::const_iterator LocalCacheConstIter;

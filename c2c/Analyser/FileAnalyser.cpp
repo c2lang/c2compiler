@@ -41,7 +41,7 @@ FileAnalyser::FileAnalyser(const Pkgs& pkgs, clang::DiagnosticsEngine& Diags_,
                     AST& ast_, TypeContext& typeContext_, bool verbose_)
     : ast(ast_)
     , typeContext(typeContext_)
-    , globals(new Scope(ast_.getPkgName(), pkgs, Diags_))
+    , globals(new Scope(ast_.getPkgName(), pkgs, Diags_, ast.getFileID()))
     , typeResolver(new TypeChecker(*globals, Diags_, typeContext_))
     , Diags(Diags_)
     , functionAnalyser(*globals, *typeResolver, typeContext_, Diags_)
@@ -248,6 +248,10 @@ void FileAnalyser::checkDeclsForUsed() {
             }
         }
     }
+}
+
+void FileAnalyser::getExternals(DepAnalyser& dep) const {
+    globals->getExternals(dep);
 }
 
 unsigned FileAnalyser::checkTypeDecl(TypeDecl* D) {

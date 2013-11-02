@@ -1087,18 +1087,22 @@ ScopeResult FunctionAnalyser::analyseIdentifier(IdentifierExpr* id) {
     LOG_FUNC
     ScopeResult res = scope.findSymbol(id->getName(), id->getLocation());
     Decl* D = res.getDecl();
+    if (!res.isOK()) return res;
+
     if (D) {
         id->setDecl(D);
     } else if (res.getPackage()) {
         // symbol is package
     } else {
-        // C
+        // TODO remove
         res.setOK(false);
         Diags.Report(id->getLocation(), diag::err_undeclared_var_use)
             << id->getName();
         ScopeResult res2 = scope.findSymbolInUsed(id->getName());
         Decl* D2 = res2.getDecl();
         if (D2) {
+            assert(D2->getPackage());
+            // Crashes if ambiguous
             Diags.Report(D->getLocation(), diag::note_function_suggestion)
                 << AnalyserUtils::fullName(D2->getPackage()->getName(), id->getName());
         }

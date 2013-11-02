@@ -35,8 +35,9 @@ class ArrayValueDecl;
 
 class AST {
 public:
-    AST(const std::string& filename_)
+    AST(const std::string& filename_, unsigned id)
         : filename(filename_)
+        , file_id(id)
     {}
 
     void print() const;
@@ -83,12 +84,14 @@ public:
     }
     const std::string& getPkgName() const { return pkgName; }
     const std::string& getFileName() const { return filename; }
+    unsigned getFileID() const { return file_id; }
 
 private:
     AST(const AST&);
     void operator=(const AST&);
 
     const std::string filename;
+    unsigned file_id;
     std::string pkgName;
     clang::SourceLocation pkgLoc;
 

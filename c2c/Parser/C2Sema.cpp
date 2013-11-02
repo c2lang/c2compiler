@@ -105,11 +105,9 @@ C2Sema::C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, TypeContext& tc, A
     , typeContext(tc)
     , ast(ast_)
     , PP(PP_)
-{
-}
+{}
 
-C2Sema::~C2Sema() {
-}
+C2Sema::~C2Sema() {}
 
 void C2Sema::ActOnPackage(const char* name, SourceLocation loc) {
 #ifdef SEMA_DEBUG
@@ -188,7 +186,7 @@ void C2Sema::ActOnAliasType(const char* name, SourceLocation loc, Expr* type, bo
     if (typeExpr->hasLocalQualifier()) {
         Diag(loc, diag::err_invalid_local_typedef);
     }
-    TypeDecl* T = new AliasTypeDecl(name, loc, typeExpr->getType(), is_public);
+    TypeDecl* T = new AliasTypeDecl(name, loc, typeExpr->getType(), is_public, ast.getFileID());
     ast.addType(T);
     addSymbol(T);
     delete typeExpr;
@@ -214,7 +212,7 @@ C2::FunctionDecl* C2Sema::createFuncDecl(const char* name, SourceLocation loc,
         // TODO need local's location
         Diag(loc, diag::err_invalid_local_returntype);
     }
-    FunctionDecl* D = new FunctionDecl(name, loc, is_public, typeExpr->getType());
+    FunctionDecl* D = new FunctionDecl(name, loc, is_public, ast.getFileID(), typeExpr->getType());
     delete typeExpr;
     QualType qt =  typeContext.getFunctionType(D);
     D->setFunctionType(qt);
@@ -225,7 +223,7 @@ C2::FunctionDecl* C2Sema::createFuncDecl(const char* name, SourceLocation loc,
 C2::VarDecl* C2Sema::createVarDecl(VarDeclKind k, const char* name, SourceLocation loc, TypeExpr* typeExpr, Expr* InitValue, bool is_public) {
     // TODO check that type is not pre-fixed with own package
     // globals, function params, struct members
-    VarDecl* V = new VarDecl(k, name, loc, typeExpr->getType(), InitValue, is_public);
+    VarDecl* V = new VarDecl(k, name, loc, typeExpr->getType(), InitValue, is_public, ast.getFileID());
     delete typeExpr;
     return V;
 }
@@ -251,7 +249,7 @@ C2::FunctionDecl* C2Sema::ActOnFuncTypeDecl(const char* name, SourceLocation loc
     std::cerr << ANSI_NORMAL"\n";
 #endif
     FunctionDecl* D = createFuncDecl(name, loc, is_public, rtype);
-    FunctionTypeDecl* FTD = new FunctionTypeDecl(D);
+    FunctionTypeDecl* FTD = new FunctionTypeDecl(D, ast.getFileID());
     ast.addType(FTD);
     addSymbol(FTD);
     return D;
@@ -597,7 +595,7 @@ StructTypeDecl* C2Sema::ActOnStructType(const char* name, SourceLocation loc,
     std::cerr << COL_SEMA"SEMA: Struct/Union Type '" << name ? name : "<anonymous>" << ANSI_NORMAL"\n";
 #endif
     QualType qt = typeContext.getStructType();
-    StructTypeDecl* S = new StructTypeDecl(name, loc, qt, isStruct, is_global, is_public);
+    StructTypeDecl* S = new StructTypeDecl(name, loc, qt, isStruct, is_global, is_public, ast.getFileID());
     StructType* ST = cast<StructType>(qt.getTypePtr());
     ST->setDecl(S);
     if (is_global) {
@@ -648,7 +646,7 @@ EnumTypeDecl* C2Sema::ActOnEnumType(const char* name, SourceLocation loc, Expr* 
     delete T;
 
     QualType qt = typeContext.getEnumType();
-    EnumTypeDecl* E = new EnumTypeDecl(name, loc, impl, qt, is_public);
+    EnumTypeDecl* E = new EnumTypeDecl(name, loc, impl, qt, is_public, ast.getFileID());
     EnumType* ET = cast<EnumType>(qt.getTypePtr());
     ET->setCanonicalType(impl);
     ET->setDecl(E);
@@ -662,7 +660,8 @@ void C2Sema::ActOnEnumConstant(EnumTypeDecl* Enum, IdentifierInfo* symII,
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: enum constant"ANSI_NORMAL"\n";
 #endif
-    EnumConstantDecl* D = new EnumConstantDecl(symII->getNameStart(), symLoc, Enum->getType(), Value, Enum->isPublic());
+    EnumConstantDecl* D = new EnumConstantDecl(symII->getNameStart(), symLoc, Enum->getType(), Value,
+                                               Enum->isPublic(), ast.getFileID());
     Enum->addConstant(D);
     addSymbol(D);
 }

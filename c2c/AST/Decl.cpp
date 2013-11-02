@@ -33,7 +33,7 @@ static int creationCount;
 static int deleteCount;
 #endif
 
-Decl::Decl(DeclKind k, const std::string& name_, SourceLocation loc_, bool is_public)
+Decl::Decl(DeclKind k, const std::string& name_, SourceLocation loc_, bool is_public, unsigned file_id)
     : name(name_)
     , loc(loc_)
     , BitsInit(0)
@@ -41,6 +41,7 @@ Decl::Decl(DeclKind k, const std::string& name_, SourceLocation loc_, bool is_pu
 {
     DeclBits.dKind = k;
     DeclBits.DeclIsPublic = is_public;
+    DeclBits.DeclFileID = file_id;
 #ifdef DECL_DEBUG
     creationCount++;
     fprintf(stderr, "[DECL] create %p  created %d deleted %d\n", this, creationCount, deleteCount);
@@ -61,10 +62,9 @@ void Decl::dump() const {
 }
 
 
-FunctionDecl::FunctionDecl(const std::string& name_,
-                                 SourceLocation loc_,
-                                 bool is_public, QualType rtype_)
-    : Decl(DECL_FUNC, name_, loc_, is_public)
+FunctionDecl::FunctionDecl(const std::string& name_, SourceLocation loc_,
+                           bool is_public, unsigned file_id, QualType rtype_)
+    : Decl(DECL_FUNC, name_, loc_, is_public, file_id)
     , rtype(rtype_)
     , body(0)
     , IRProto(0)
@@ -117,8 +117,8 @@ unsigned FunctionDecl::minArgs() const {
 
 
 VarDecl::VarDecl(VarDeclKind k_, const std::string& name_, SourceLocation loc_,
-            QualType type_, Expr* initValue_, bool is_public)
-    : Decl(DECL_VAR, name_, loc_, is_public)
+            QualType type_, Expr* initValue_, bool is_public, unsigned file_id)
+    : Decl(DECL_VAR, name_, loc_, is_public, file_id)
     , type(type_)
     , initValue(initValue_)
 {
@@ -161,8 +161,10 @@ void VarDecl::addInitValue(ArrayValueDecl* value) {
 }
 
 
-EnumConstantDecl::EnumConstantDecl(const std::string& name_, SourceLocation loc_, QualType type_, Expr* Init, bool is_public)
-    : Decl(DECL_ENUMVALUE, name_, loc_, is_public)
+EnumConstantDecl::EnumConstantDecl(const std::string& name_, SourceLocation loc_,
+                                   QualType type_, Expr* Init,
+                                   bool is_public, unsigned file_id)
+    : Decl(DECL_ENUMVALUE, name_, loc_, is_public, file_id)
     , type(type_)
     , InitVal(Init)
     , value(0)
@@ -180,8 +182,9 @@ void EnumConstantDecl::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 
-TypeDecl::TypeDecl(DeclKind k, const std::string& name_, SourceLocation loc_, QualType type_, bool is_public)
-    : Decl(k, name_, loc_, is_public)
+TypeDecl::TypeDecl(DeclKind k, const std::string& name_, SourceLocation loc_, QualType type_,
+                   bool is_public, unsigned file_id)
+    : Decl(k, name_, loc_, is_public, file_id)
     , type(type_)
 {}
 
@@ -193,8 +196,9 @@ void AliasTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
 
 
 StructTypeDecl::StructTypeDecl(const std::string& name_, SourceLocation loc_,
-                             QualType type_, bool is_struct, bool is_global, bool is_public)
-    : TypeDecl(DECL_STRUCTTYPE, name_, loc_, type_, is_public)
+                             QualType type_, bool is_struct, bool is_global,
+                             bool is_public, unsigned file_id)
+    : TypeDecl(DECL_STRUCTTYPE, name_, loc_, type_, is_public, file_id)
 {
     DeclBits.StructTypeIsStruct = is_struct;
     DeclBits.StructTypeIsGlobal = is_global;
@@ -228,8 +232,8 @@ void EnumTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 
-FunctionTypeDecl::FunctionTypeDecl(FunctionDecl* F)
-    : TypeDecl(DECL_FUNCTIONTYPE, F->getName(), F->getLocation(), F->getType(), F->isPublic())
+FunctionTypeDecl::FunctionTypeDecl(FunctionDecl* F, unsigned file_id)
+    : TypeDecl(DECL_FUNCTIONTYPE, F->getName(), F->getLocation(), F->getType(), F->isPublic(), file_id)
     , func(F)
 {}
 
@@ -244,8 +248,9 @@ void FunctionTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 
-ArrayValueDecl::ArrayValueDecl(const std::string& name_, SourceLocation loc_, Expr* value_)
-    : Decl(DECL_ARRAYVALUE, name_, loc_, false)
+ArrayValueDecl::ArrayValueDecl(const std::string& name_, SourceLocation loc_,
+                               Expr* value_)
+    : Decl(DECL_ARRAYVALUE, name_, loc_, false, 0)
     , value(value_)
 {}
 
@@ -261,7 +266,7 @@ void ArrayValueDecl::print(StringBuilder& buffer, unsigned indent) const {
 
 UseDecl::UseDecl(const std::string& name_, SourceLocation loc_, bool isLocal_,
                  const char* alias_, SourceLocation aliasLoc_)
-    : Decl(DECL_USE, name_, loc_, false)
+    : Decl(DECL_USE, name_, loc_, false, 0)
     , alias(alias_)
     , aliasLoc(aliasLoc_)
 {

@@ -20,6 +20,7 @@
 #include <string>
 
 #include "AST/Package.h"
+#include "FileUtils/FileDb.h"
 
 namespace clang {
 class DiagnosticsEngine;
@@ -91,6 +92,7 @@ private:
 
     typedef std::vector<FileInfo*> Files;
     Files files;
+    FileDb filenames;
 
     Pkgs pkgs;
 
