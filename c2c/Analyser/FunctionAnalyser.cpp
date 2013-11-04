@@ -84,7 +84,7 @@ void FunctionAnalyser::checkFunction(FunctionDecl* func) {
                 errors++;
                 continue;
             }
-            scope.addSymbol(arg);
+            scope.addStackSymbol(arg);
         }
     }
     if (errors) return;
@@ -606,7 +606,7 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     if (type.isConstQualified() && !initialValue) {
         Diags.Report(decl->getLocation(), diag::err_uninitialized_const_var) << decl->getName();
     }
-    scope.addSymbol(decl);
+    scope.addStackSymbol(decl);
 }
 
 QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {

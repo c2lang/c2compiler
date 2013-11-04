@@ -253,7 +253,7 @@ bool Scope::checkSymbol(const VarDecl* V) const {
     return true;
 }
 
-void Scope::addSymbol(VarDecl* V) {
+void Scope::addStackSymbol(VarDecl* V) {
     // NOTE: must already be checked with checkSymbol
     assert(curScope);
     curScope->decls.push_back(V);

@@ -134,7 +134,7 @@ public:
 
     // NEW API
     bool checkSymbol(const VarDecl* V) const;
-    void addSymbol(VarDecl* V);
+    void addStackSymbol(VarDecl* V);
 
     // Scopes
     void EnterScope(unsigned flags);
