@@ -123,7 +123,6 @@ public:
 
     Scope(const std::string& name_, const Pkgs& pkgs_, clang::DiagnosticsEngine& Diags_, unsigned id);
 
-    const Package* findPackage(const std::string& name) const;
     const Package* usePackage(const std::string& name, clang::SourceLocation loc) const;
     const Package* findAnyPackage(const std::string& name) const;
     void addPackage(bool isLocal, const std::string& name_, const Package* pkg);
@@ -151,6 +150,7 @@ public:
     void dump() const;
     void getExternals(DepAnalyser& dep) const;
 private:
+    const Package* findPackage(const std::string& name) const;
     void addExternal(const Decl* D) const;
 
     // Scopes

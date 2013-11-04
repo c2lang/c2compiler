@@ -51,12 +51,6 @@ void Scope::addPackage(bool isLocal, const std::string& name_, const Package* pk
     packages[name_] = pkg;
 }
 
-const Package* Scope::findPackage(const std::string& name) const {
-    PackagesConstIter iter = packages.find(name);
-    if (iter == packages.end()) return 0;
-    return iter->second;
-}
-
 const Package* Scope::usePackage(const std::string& name, clang::SourceLocation loc) const {
     const Package* P = findPackage(name);
     if (!P) {
@@ -305,5 +299,11 @@ void Scope::addExternal(const Decl* D) const {
         if (externals[i] == D) return;  // already in
     }
     externals.push_back(D);
+}
+
+const Package* Scope::findPackage(const std::string& name) const {
+    PackagesConstIter iter = packages.find(name);
+    if (iter == packages.end()) return 0;
+    return iter->second;
 }
 
