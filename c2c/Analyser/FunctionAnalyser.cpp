@@ -80,11 +80,11 @@ void FunctionAnalyser::checkFunction(FunctionDecl* func) {
         VarDecl* arg = func->getArg(i);
         if (arg->getName() != "") {
             // check that argument names dont clash with globals
-            if (!scope.checkSymbol(arg)) {
+            if (!scope.checkScopedSymbol(arg)) {
                 errors++;
                 continue;
             }
-            scope.addStackSymbol(arg);
+            scope.addScopedSymbol(arg);
         }
     }
     if (errors) return;
@@ -594,7 +594,7 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     }
 
     // check name
-    if (!scope.checkSymbol(decl)) return;
+    if (!scope.checkScopedSymbol(decl)) return;
     // check initial value
     Expr* initialValue = decl->getInitValue();
     if (initialValue && !errs) {
@@ -606,7 +606,7 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     if (type.isConstQualified() && !initialValue) {
         Diags.Report(decl->getLocation(), diag::err_uninitialized_const_var) << decl->getName();
     }
-    scope.addStackSymbol(decl);
+    scope.addScopedSymbol(decl);
 }
 
 QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
@@ -948,6 +948,7 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
             Decl* D = res.getDecl();
             if (D) {
                 member->setDecl(D);
+                if (side & RHS) D->setUsed();
                 return Decl2Type(D);
             }
             return QualType();
@@ -1028,7 +1029,8 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
     }
 
     const FunctionType* FT = cast<FunctionType>(LType2);
-    const FunctionDecl* func = FT->getDecl();
+    FunctionDecl* func = FT->getDecl();
+    func->setUsed();
     unsigned protoArgs = func->numArgs();
     unsigned callArgs = call->numArgs();
     unsigned minArgs = MIN(protoArgs, callArgs);

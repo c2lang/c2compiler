@@ -1,0 +1,9 @@
+// @warnings{no-unused-function}
+package bar;
+
+int Num = 0;
+
+func int test() {
+    return bar.Num;
+}
+

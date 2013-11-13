@@ -271,6 +271,10 @@ int C2Builder::build() {
             Diags.setDiagnosticGroupMapping("unused-type", diag::MAP_IGNORE);
             continue;
         }
+        if (conf == "no-unused-package") {
+            Diags.setDiagnosticGroupMapping("unused-package", diag::MAP_IGNORE);
+            continue;
+        }
         fprintf(stderr, "recipe: unknown warning: '%s'\n", conf.c_str());
     }
 

@@ -42,21 +42,57 @@ Scope::Scope(const std::string& name_, const Pkgs& pkgs_, clang::DiagnosticsEngi
 {
     // add own package to scope
     myPkg = findAnyPackage(name_);
-    addPackage(true, name_, myPkg);
+    assert(myPkg);
+    locals.push_back(myPkg);
 }
 
-void Scope::addPackage(bool isLocal, const std::string& name_, const Package* pkg) {
+bool Scope::addUsedPackage(UseDecl* useDecl) {
+    // NOTE: dont change if Package exists, already done by Builder
+#if 0
+    // check if aliasname is not a package
+    // TODO still needed? Or just search filescope globals?
+    const std::string& aliasName = useDecl->getAlias();
+    if (aliasName != "") {
+        const Package* pkg2 = globals->findAnyPackage(aliasName);
+        if (pkg2) {
+            Diags.Report(useDecl->getAliasLocation(), diag::err_alias_is_package) << aliasName;
+            errors++;
+            continue;
+        }
+    }
+#endif
+
+    std::string pkgName = useDecl->getName();
+    clang::SourceLocation Loc = useDecl->getLocation();
+    if (useDecl->getAlias() != "") {
+        pkgName = useDecl->getAlias();
+        Loc = useDecl->getAliasLocation();
+    }
+    // TODO dont use findGlobalSymbol here, since it searches too much and add to cache
+    ScopeResult SR = findGlobalSymbol(pkgName, SourceLocation());
+    const Decl* Old = SR.getDecl();
+    if (Old != 0) {
+        Diags.Report(Loc, diag::err_redefinition)
+            << pkgName;
+        Diags.Report(Old->getLocation(), diag::note_previous_definition);
+        return false;
+    }
+    const Package* pkg = findAnyPackage(useDecl->getName());
     assert(pkg);
-    if (isLocal) locals.push_back(pkg);
-    packages[name_] = pkg;
+    useDecl->setPackage(pkg);
+    if (useDecl->isLocal()) locals.push_back(useDecl->getPackage());
+    usedPackages[pkgName] = useDecl;
+    return true;
 }
 
 const Package* Scope::usePackage(const std::string& name, clang::SourceLocation loc) const {
     const Package* P = findPackage(name);
     if (!P) {
         // check if used with alias (then fullname is forbidden)
-        for (PackagesConstIter iter = packages.begin(); iter != packages.end(); ++iter) {
-            const Package* p = iter->second;
+        for (PackagesConstIter iter = usedPackages.begin(); iter != usedPackages.end(); ++iter) {
+            UseDecl* U = iter->second;
+            U->setUsed();
+            const Package* p = U->getPackage();
             if (p->getName() == name) {
                 Diags.Report(loc, diag::err_package_has_alias) << name << iter->first;
                 return 0;
@@ -79,8 +115,8 @@ const Package* Scope::findAnyPackage(const std::string& name) const {
 }
 
 void Scope::dump() const {
-    fprintf(stderr, "used packages:\n");
-    for (PackagesConstIter iter = packages.begin(); iter != packages.end(); ++iter) {
+    fprintf(stderr, "used usedPackages:\n");
+    for (PackagesConstIter iter = usedPackages.begin(); iter != usedPackages.end(); ++iter) {
         fprintf(stderr, "  %s (as %s)\n", iter->second->getName().c_str(), iter->first.c_str());
     }
 }
@@ -152,7 +188,18 @@ ScopeResult Scope::findGlobalSymbol(const std::string& symbol, clang::SourceLoca
             visible_match = visible;
         }
     }
-    if (D) {
+    if (D && !ambiguous) {
+        // find useDecl and set it used
+        PackagesConstIter iter = usedPackages.begin();
+        while (iter != usedPackages.end()) {
+            UseDecl* Use = iter->second;
+            if (D->getPackage() == Use->getPackage()) {
+                Use->setUsed();
+                break;
+            }
+            ++iter;
+        }
+
         if (!visible_match) {
             Diags.Report(loc, diag::err_not_public) << symbol;
             result.setOK(false);
@@ -162,6 +209,7 @@ ScopeResult Scope::findGlobalSymbol(const std::string& symbol, clang::SourceLoca
             globalCache[symbol] = result;
         }
     }
+    // TODO make suggestion otherwise? (used Packages w/alias, other packages?)
     return result;
 }
 
@@ -208,9 +256,11 @@ ScopeResult Scope::findSymbolInUsed(const std::string& symbol) const {
         return result;
     }
 
-    // search in all used packages
-    for (PackagesConstIter iter = packages.begin(); iter != packages.end(); ++iter) {
-        const Package* pkg2 = iter->second;
+    // search in all used usedPackages
+    for (PackagesConstIter iter = usedPackages.begin(); iter != usedPackages.end(); ++iter) {
+        UseDecl* U = iter->second;
+        U->setUsed();
+        const Package* pkg2 = U->getPackage();
         Decl* decl = pkg2->findSymbol(symbol);
         if (!decl) continue;
 
@@ -223,7 +273,7 @@ ScopeResult Scope::findSymbolInUsed(const std::string& symbol) const {
     return result;
 }
 
-bool Scope::checkSymbol(const VarDecl* V) const {
+bool Scope::checkScopedSymbol(const VarDecl* V) const {
     // lookup in local scopes, error if found
     LocalCacheConstIter iter = localCache.find(V->getName());
     if (iter != localCache.end()) {
@@ -253,8 +303,8 @@ bool Scope::checkSymbol(const VarDecl* V) const {
     return true;
 }
 
-void Scope::addStackSymbol(VarDecl* V) {
-    // NOTE: must already be checked with checkSymbol
+void Scope::addScopedSymbol(VarDecl* V) {
+    // NOTE: must already be checked with checkScopedSymbol
     assert(curScope);
     curScope->decls.push_back(V);
     localCache[V->getName()] = V;
@@ -302,8 +352,12 @@ void Scope::addExternal(const Decl* D) const {
 }
 
 const Package* Scope::findPackage(const std::string& name) const {
-    PackagesConstIter iter = packages.find(name);
-    if (iter == packages.end()) return 0;
-    return iter->second;
+    if (name == myPkg->getName()) return myPkg;
+
+    PackagesConstIter iter = usedPackages.find(name);
+    if (iter == usedPackages.end()) return 0;
+    UseDecl* U = iter->second;
+    U->setUsed();
+    return U->getPackage();
 }
 

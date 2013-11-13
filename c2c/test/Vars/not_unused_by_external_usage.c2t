@@ -1,0 +1,17 @@
+// @warnings{no-unused-function}
+
+// @file{file1}
+package foo;
+
+public int Num = 0;
+
+// @file{file2}
+package bar;
+
+use foo;
+
+func int test() {
+    foo.Num = 1;
+    return foo.Num;
+}
+

@@ -1,0 +1,5 @@
+package test;
+
+use stdio;  // @warning{unused package stdio}
+use stdlib as std;  // @warning{unused package stdlib}
+

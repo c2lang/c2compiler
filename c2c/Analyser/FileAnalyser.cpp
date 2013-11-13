@@ -57,31 +57,7 @@ unsigned  FileAnalyser::checkUses() {
     LOG_FUNC
     unsigned errors = 0;
     for (unsigned i=0; i<ast.numUses(); i++) {
-        UseDecl* useDecl = ast.getUse(i);
-        std::string pkgName = useDecl->getName();
-
-        // check if package exists
-        const Package* pkg = globals->findAnyPackage(pkgName);
-        if (pkg == 0) {
-            Diags.Report(useDecl->getLocation(), diag::err_unknown_package) << pkgName;
-            errors++;
-            continue;
-        }
-
-        // check if aliasname is not a package
-        const std::string& aliasName = useDecl->getAlias();
-        if (aliasName != "") {
-            const Package* pkg2 = globals->findAnyPackage(aliasName);
-            if (pkg2) {
-                Diags.Report(useDecl->getAliasLocation(), diag::err_alias_is_package) << aliasName;
-                errors++;
-                continue;
-            }
-            pkgName = aliasName;
-        }
-
-        // add to Scope
-        globals->addPackage(useDecl->isLocal(), pkgName, pkg);
+        if (!globals->addUsedPackage(ast.getUse(i))) errors++;
     }
     return errors;
 }
@@ -216,8 +192,12 @@ void FileAnalyser::checkDeclsForUsed() {
     LOG_FUNC
     if (verbose) printf(COL_VERBOSE"%s %s"ANSI_NORMAL"\n", __func__, ast.getFileName().c_str());
 
-    // NOTE: only check VarDecls for now (not funcs/types)
-
+    for (unsigned i=0; i<ast.numUses(); i++) {
+        UseDecl* U = ast.getUse(i);
+        if (!U->isUsed()) {
+            Diags.Report(U->getLocation(), diag::warn_unused_package) << U->getName();
+        }
+    }
     for (unsigned i=0; i<ast.numVars(); i++) {
         VarDecl* V = ast.getVar(i);
         if (!V->isUsed()) {
@@ -350,7 +330,7 @@ unsigned FileAnalyser::resolveFunctionDecl(FunctionDecl* D) {
 unsigned FileAnalyser::checkArrayValue(ArrayValueDecl* D) {
     LOG_FUNC
 #if 0
-    ScopeResult Result = globals->checkSymbol(D->getName(), D->getLocation(), IDENTIFIER);
+    ScopeResult Result = globals->checkScopedSymbol(D->getName(), D->getLocation(), IDENTIFIER);
     if (!Result.ok) return 1;
     assert(Result.decl);
     VarDecl* V = dyncast<VarDecl>(Result.decl);
@@ -415,7 +395,11 @@ unsigned FileAnalyser::checkInitValue(VarDecl* decl, Expr* expr, QualType expect
     case EXPR_UNARYOP:
     case EXPR_BUILTIN:
     case EXPR_ARRAYSUBSCRIPT:
+        // TODO
+        break;
     case EXPR_MEMBER:
+        // TODO share code with FunctionAnalyser
+        break;
     case EXPR_PAREN:
         // TODO
         break;

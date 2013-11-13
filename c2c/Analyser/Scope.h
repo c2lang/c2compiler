@@ -32,6 +32,7 @@ namespace C2 {
 
 class Decl;
 class VarDecl;
+class UseDecl;
 class DepAnalyser;
 
 // This class combines a Decl or Package* and bool into 1 word
@@ -123,18 +124,18 @@ public:
 
     Scope(const std::string& name_, const Pkgs& pkgs_, clang::DiagnosticsEngine& Diags_, unsigned id);
 
+    // TODO remove usePackage, just use findSymbol?
     const Package* usePackage(const std::string& name, clang::SourceLocation loc) const;
     const Package* findAnyPackage(const std::string& name) const;
-    void addPackage(bool isLocal, const std::string& name_, const Package* pkg);
+    bool addUsedPackage(UseDecl* useDecl);
 
-    ScopeResult findGlobalSymbol(const std::string& name, clang::SourceLocation loc) const;
     ScopeResult findSymbol(const std::string& name, clang::SourceLocation loc) const;
     ScopeResult findSymbolInPackage(const std::string& name, clang::SourceLocation loc, const Package* pkg) const;
     ScopeResult findSymbolInUsed(const std::string& name) const;
 
     // NEW API
-    bool checkSymbol(const VarDecl* V) const;
-    void addStackSymbol(VarDecl* V);
+    bool checkScopedSymbol(const VarDecl* V) const;
+    void addScopedSymbol(VarDecl* V);
 
     // Scopes
     void EnterScope(unsigned flags);
@@ -150,6 +151,7 @@ public:
     void dump() const;
     void getExternals(DepAnalyser& dep) const;
 private:
+    ScopeResult findGlobalSymbol(const std::string& name, clang::SourceLocation loc) const;
     const Package* findPackage(const std::string& name) const;
     void addExternal(const Decl* D) const;
 
@@ -163,11 +165,11 @@ private:
     typedef std::vector<const Package*> Locals;
     typedef Locals::const_iterator LocalsConstIter;
     Locals locals;
-    // used packages (use <as>)
-    typedef std::map<std::string, const Package*> Packages;
+    // used Packages (use <as>)
+    typedef std::map<std::string, UseDecl*> Packages;
     typedef Packages::const_iterator PackagesConstIter;
     typedef Packages::iterator PackagesIter;
-    Packages packages;
+    Packages usedPackages;
     // all packages
     const Pkgs& allPackages;
 

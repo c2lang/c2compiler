@@ -1,0 +1,14 @@
+// @warnings{no-unused-type}
+
+// @file{file1}
+package foo;
+
+public type Number int;
+
+// @file{file2}
+package bar;
+
+use foo;
+
+type Point foo.Number;
+

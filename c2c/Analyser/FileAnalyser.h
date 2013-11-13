@@ -54,6 +54,7 @@ public:
     unsigned checkFunctionProtos();
     unsigned checkFunctionBodies();
     void checkDeclsForUsed();
+
     void getExternals(DepAnalyser& dep) const;
 private:
     unsigned checkTypeDecl(TypeDecl* D);
