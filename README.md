@@ -17,7 +17,7 @@ Have fun! (and code..)
 
 
 ## Generic
-C2 is based on LLVM 3.2 and some parts of Clang 3.2. The design of C2C's
+C2 is based on LLVM 3.3 and some parts of Clang 3.3. The design of C2C's
 C2Parser and C2Sema class are heavily based on clang's Parser and Sema class,
 so hereby my thanks to the Clang folks!
 
@@ -38,25 +38,24 @@ their priority:
 
 
 ## Installation of LLVM/Clang
-C2 is based on LLVM 3.2 and some parts of Clang 3.2.
+C2 is based on LLVM 3.3 and some parts of Clang 3.3.
 To install C2, follow the steps below. The example shows
 how to install in **$HOME/llvm-c2**, but any other dir should work.
 
-* download LLVM sources (http://llvm.org/releases/3.2/llvm-3.2.src.tar.gz)
-* download Compiler RT sources (http://llvm.org/releases/3.2/compiler-rt-3.2.src.tar.gz)
+* download Compiler RT sources (http://llvm.org/releases/3.3/compiler-rt-3.3.src.tar.gz)
 
 To build:
 ```
 git clone git://github.com/llvm-mirror/llvm.git
 cd llvm/
-git co -b release_33 origini/release_33
+git checkout -b release_33 origin/release_33
 cd projects
 tar -xf <path>/compiler-rt-3.3.src.tar.gz
 mv compiler-rt-3.3.src compiler-rt
 cd ../tools
 git clone git://github.com/c2lang/clang.git
 cd clang
-git co -b c2master_33 origin/c2master_33
+git checkout -b c2master_33 origin/c2master_33
 cd ../../..
 mkdir llvm_build
 ../llvm/configure --enable-optimized --prefix=$HOME/llvm-c2/
