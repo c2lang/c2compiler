@@ -387,6 +387,13 @@ void IssueDb::checkErrors(const char* buffer, unsigned size) {
             }
         }
 
+        if (res == 4) {
+            // match msg string and set cp to that to avoid duplicates on empty lines
+            const char* found = strstr(cp, msg);
+            assert(found);
+            cp = found;
+        }
+
         while (*cp != '\n') {
              cp++;
              if (cp == end) return;
