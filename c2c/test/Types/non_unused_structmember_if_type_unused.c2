@@ -1,0 +1,8 @@
+// @warnings{no-unused-type}
+package test;
+
+type Point struct {
+    int x;
+    int y;
+}
+
