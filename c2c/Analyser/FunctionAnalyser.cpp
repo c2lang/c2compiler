@@ -78,7 +78,7 @@ unsigned FunctionAnalyser::checkVarInit(VarDecl* V) {
     CurrentVarDecl = V;
     errors = 0;
 
-    checkInitValue(V, V->getInitValue(), V->getType());
+    analyseInitExpr(V->getInitValue(), V->getType());
 
     CurrentVarDecl = 0;
     return errors;
@@ -490,14 +490,17 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
             case DECL_ENUMTYPE:
                 assert(0 && "TODO");
                 break;
-            default:
+            case DECL_FUNCTIONTYPE:
+            case DECL_ARRAYVALUE:
+            case DECL_USE:
                 assert(0 && "shouldn't come here");
-                return;
+                break;
             }
         }
         break;
     case EXPR_INITLIST:
-        analyseInitList(expr, expectedType);
+        assert(CurrentVarDecl);
+        analyseInitList(cast<InitListExpr>(expr), expectedType);
         break;
     case EXPR_TYPE:
         assert(0 && "??");
@@ -530,9 +533,44 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
     }
 }
 
-void FunctionAnalyser::analyseInitList(Expr* expr, QualType expectedType) {
+void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType expectedType) {
     LOG_FUNC
 
+    // TODO for now don't support nested initLists, need stack of CurrentDecl for that
+    assert(CurrentVarDecl);
+    QualType Q = CurrentVarDecl->getType();
+    ExprList& values = expr->getValues();
+    if (Q.isArrayType()) {
+        // TODO use helper function
+        ArrayType* AT = cast<ArrayType>(Q->getCanonicalType().getTypePtr());
+        QualType ET = AT->getElementType();
+        // TODO check if size is specifier in type
+        for (unsigned i=0; i<values.size(); i++) {
+            analyseInitExpr(values[i], ET);
+        }
+    } else if (Q.isStructType()) {
+        // TODO use helper function
+        StructType* TT = cast<StructType>(Q->getCanonicalType().getTypePtr());
+        StructTypeDecl* STD = TT->getDecl();
+        assert(STD->isStruct() && "TEMP only support structs for now");
+        for (unsigned i=0; i<values.size(); i++) {
+            if (i >= STD->numMembers()) {
+                // note: 0 for array, 3 for union, 4 for structs
+                Diags.Report(values[STD->numMembers()]->getLocation(), diag::err_excess_initializers)
+                    << 4;
+                errors++;
+                return;
+            }
+            // NOTE: doesn't fit for sub-struct members! (need Decl in interface)
+            // TODO: add VD to CurrentVarDecl stack?
+            VarDecl* VD = dyncast<VarDecl>(STD->getMember(i));
+            assert(VD && "TEMP don't support sub-struct member inits");
+            //checkInitValue(VD, values[i], VD->getType());
+            analyseInitExpr(values[i], VD->getType());
+        }
+    } else {
+        // TODO error
+    }
 #if 0
     InitListExpr* I = cast<InitListExpr>(expr);
     assert(expectedType.isValid());
@@ -559,7 +597,6 @@ void FunctionAnalyser::analyseInitList(Expr* expr, QualType expectedType) {
     case Type::STRUCT:
     case Type::UNION:
         {
-#if 0
             MemberList* members = type->getMembers();
             assert(members);
             // check array member type with each value in initlist
@@ -572,7 +609,6 @@ void FunctionAnalyser::analyseInitList(Expr* expr, QualType expectedType) {
                 DeclExpr* member = (*members)[i];
                 analyseInitExpr(values[i], member->getType());
             }
-#endif
         }
         break;
     case Type::ARRAY:
@@ -1221,100 +1257,6 @@ C2::QualType FunctionAnalyser::resolveUserType(QualType T) {
         return D->getType();
     }
     return T;
-}
-
-unsigned FunctionAnalyser::checkInitValue(VarDecl* decl, Expr* expr, QualType expected) {
-    LOG_FUNC
-    // NOTE: expr must be compile-time constant
-    // check return type from expressions? (pass expected along is not handy)
-    switch (expr->getKind()) {
-    case EXPR_INTEGER_LITERAL:
-    case EXPR_FLOAT_LITERAL:
-    case EXPR_BOOL_LITERAL:
-    case EXPR_CHAR_LITERAL:
-    case EXPR_STRING_LITERAL:
-    case EXPR_NIL:
-        // TODO
-        break;
-    case EXPR_CALL:
-        assert(0);
-        break;
-    case EXPR_IDENTIFIER:
-        {
-            IdentifierExpr* id = cast<IdentifierExpr>(expr);
-            ScopeResult Res = analyseIdentifier(id);
-            if (Res.getPackage()) {
-                Diags.Report(id->getLocation(), diag::err_is_a_package) << id->getName();
-                return 1;
-            }
-            Decl* D = Res.getDecl();
-            if (!D) return 1;
-
-            // TODO check that D is const? (pointers?)
-            if (D == decl) {
-                Diags.Report(id->getLocation(), diag::err_var_self_init) << D->getName();
-                return 1;
-            }
-            // TODO check types (need code from FunctionAnalyser)
-            break;
-        }
-    case EXPR_INITLIST:
-        return checkInitList(decl, cast<InitListExpr>(expr), expected);
-    case EXPR_TYPE:
-    case EXPR_DECL:
-        assert(0);
-        break;
-    case EXPR_BINOP:
-    case EXPR_CONDOP:
-    case EXPR_UNARYOP:
-    case EXPR_BUILTIN:
-    case EXPR_ARRAYSUBSCRIPT:
-        // TODO
-        break;
-    case EXPR_MEMBER:
-        // TODO share code with FunctionAnalyser
-        break;
-    case EXPR_PAREN:
-        // TODO
-        break;
-    }
-    return 0;
-}
-
-unsigned FunctionAnalyser::checkInitList(VarDecl* decl, InitListExpr* initVal, QualType expected) {
-    QualType Q = decl->getType();
-    ExprList& values = initVal->getValues();
-    unsigned errors = 0;
-    if (Q.isArrayType()) {
-        // TODO use helper function
-        ArrayType* AT = cast<ArrayType>(Q->getCanonicalType().getTypePtr());
-        QualType ET = AT->getElementType();
-        // TODO check if size is specifier in type
-        for (unsigned i=0; i<values.size(); i++) {
-            errors += checkInitValue(decl, values[i], ET);
-        }
-    } else if (Q.isStructType()) {
-        // TODO use helper function
-        StructType* TT = cast<StructType>(Q->getCanonicalType().getTypePtr());
-        StructTypeDecl* STD = TT->getDecl();
-        assert(STD->isStruct() && "TEMP only support structs for now");
-        for (unsigned i=0; i<values.size(); i++) {
-            if (i >= STD->numMembers()) {
-                // note: 0 for array, 3 for union, 4 for structs
-                Diags.Report(values[STD->numMembers()]->getLocation(), diag::err_excess_initializers)
-                    << 4;
-                errors++;
-                return errors;
-            }
-            // NOTE: doesn't fit for sub-struct members! (need Decl in interface)
-            VarDecl* VD = dyncast<VarDecl>(STD->getMember(i));
-            assert(VD && "TEMP don't support sub-struct member inits");
-            errors += checkInitValue(VD, values[i], VD->getType());
-        }
-    } else {
-        // TODO error
-    }
-    return errors;
 }
 
 #if 0

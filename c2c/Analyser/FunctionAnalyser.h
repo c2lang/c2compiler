@@ -75,7 +75,7 @@ private:
     ScopeResult analyseIdentifier(IdentifierExpr* expr);
 
     void analyseInitExpr(Expr* expr, QualType expectedType);
-    void analyseInitList(Expr* expr, QualType expectedType);
+    void analyseInitList(InitListExpr* expr, QualType expectedType);
 
 #if 0
     void pushMode(unsigned DiagID);
@@ -103,9 +103,6 @@ private:
 
     static QualType resolveUserType(QualType T);
     QualType Decl2Type(Decl* decl);
-
-    unsigned checkInitValue(VarDecl* decl, Expr* initVal, QualType expected);
-    unsigned checkInitList(VarDecl* decl, InitListExpr* initVal, QualType expected);
 
     Scope& scope;
     TypeChecker& typeResolver;
