@@ -33,6 +33,7 @@ class FunctionDecl;
 class Stmt;
 class Expr;
 class IdentifierExpr;
+class InitListExpr;
 
 class FunctionAnalyser {
 public:
@@ -42,6 +43,7 @@ public:
                     clang::DiagnosticsEngine& Diags_);
 
     unsigned check(FunctionDecl* F);
+    unsigned checkVarInit(VarDecl* V);
 private:
     void checkFunction(FunctionDecl* F);
 
@@ -101,6 +103,9 @@ private:
 
     static QualType resolveUserType(QualType T);
     QualType Decl2Type(Decl* decl);
+
+    unsigned checkInitValue(VarDecl* decl, Expr* initVal, QualType expected);
+    unsigned checkInitList(VarDecl* decl, InitListExpr* initVal, QualType expected);
 
     Scope& scope;
     TypeChecker& typeResolver;

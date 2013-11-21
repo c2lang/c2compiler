@@ -33,7 +33,6 @@ class VarDecl;
 class FunctionDecl;
 class ArrayValueDecl;
 class AST;
-class InitListExpr;
 class TypeChecker;
 class DepAnalyser;
 
@@ -62,9 +61,6 @@ private:
     unsigned resolveVarDecl(VarDecl* D);
     unsigned resolveFunctionDecl(FunctionDecl* D);
     unsigned checkArrayValue(ArrayValueDecl* D);
-
-    unsigned checkInitValue(VarDecl* decl, Expr* initVal, QualType expected);
-    unsigned checkInitList(VarDecl* decl, InitListExpr* initVal, QualType expected);
 
     // TODO use auto_ptr on globals
     AST& ast;

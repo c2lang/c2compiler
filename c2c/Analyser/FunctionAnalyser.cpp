@@ -73,6 +73,13 @@ unsigned FunctionAnalyser::check(FunctionDecl* func) {
     return errors;
 }
 
+unsigned FunctionAnalyser::checkVarInit(VarDecl* V) {
+    errors = 0;
+    // Q: enterscope?
+    errors += checkInitValue(V, V->getInitValue(), V->getType());
+    return errors;
+}
+
 void FunctionAnalyser::checkFunction(FunctionDecl* func) {
     LOG_FUNC
     // add arguments to new scope
@@ -1199,6 +1206,99 @@ C2::QualType FunctionAnalyser::resolveUserType(QualType T) {
         return D->getType();
     }
     return T;
+}
+
+unsigned FunctionAnalyser::checkInitValue(VarDecl* decl, Expr* expr, QualType expected) {
+    LOG_FUNC
+    // NOTE: expr must be compile-time constant
+    // check return type from expressions? (pass expected along is not handy)
+    switch (expr->getKind()) {
+    case EXPR_INTEGER_LITERAL:
+    case EXPR_FLOAT_LITERAL:
+    case EXPR_BOOL_LITERAL:
+    case EXPR_CHAR_LITERAL:
+    case EXPR_STRING_LITERAL:
+    case EXPR_NIL:
+        // TODO
+        break;
+    case EXPR_CALL:
+        assert(0);
+        break;
+    case EXPR_IDENTIFIER:
+        {
+            IdentifierExpr* I = cast<IdentifierExpr>(expr);
+            ScopeResult Res = scope.findSymbol(I->getName(), I->getLocation());
+            if (!Res.isOK()) return 1;
+            Decl* D = Res.getDecl();
+            if (!D) {
+                Diags.Report(I->getLocation(), diag::err_undeclared_var_use) << I->getName();
+                return 1;
+            }
+            if (D == decl) {
+                Diags.Report(I->getLocation(), diag::err_var_self_init) << D->getName();
+                return 1;
+            }
+            I->setDecl(D);
+            // TODO check types (need code from FunctionAnalyser)
+            break;
+        }
+    case EXPR_INITLIST:
+        return checkInitList(decl, cast<InitListExpr>(expr), expected);
+    case EXPR_TYPE:
+    case EXPR_DECL:
+        assert(0);
+        break;
+    case EXPR_BINOP:
+    case EXPR_CONDOP:
+    case EXPR_UNARYOP:
+    case EXPR_BUILTIN:
+    case EXPR_ARRAYSUBSCRIPT:
+        // TODO
+        break;
+    case EXPR_MEMBER:
+        // TODO share code with FunctionAnalyser
+        break;
+    case EXPR_PAREN:
+        // TODO
+        break;
+    }
+    return 0;
+}
+
+unsigned FunctionAnalyser::checkInitList(VarDecl* decl, InitListExpr* initVal, QualType expected) {
+    QualType Q = decl->getType();
+    ExprList& values = initVal->getValues();
+    unsigned errors = 0;
+    if (Q.isArrayType()) {
+        // TODO use helper function
+        ArrayType* AT = cast<ArrayType>(Q->getCanonicalType().getTypePtr());
+        QualType ET = AT->getElementType();
+        // TODO check if size is specifier in type
+        for (unsigned i=0; i<values.size(); i++) {
+            errors += checkInitValue(decl, values[i], ET);
+        }
+    } else if (Q.isStructType()) {
+        // TODO use helper function
+        StructType* TT = cast<StructType>(Q->getCanonicalType().getTypePtr());
+        StructTypeDecl* STD = TT->getDecl();
+        assert(STD->isStruct() && "TEMP only support structs for now");
+        for (unsigned i=0; i<values.size(); i++) {
+            if (i >= STD->numMembers()) {
+                // note: 0 for array, 3 for union, 4 for structs
+                Diags.Report(values[STD->numMembers()]->getLocation(), diag::err_excess_initializers)
+                    << 4;
+                errors++;
+                return errors;
+            }
+            // NOTE: doesn't fit for sub-struct members! (need Decl in interface)
+            VarDecl* VD = dyncast<VarDecl>(STD->getMember(i));
+            assert(VD && "TEMP don't support sub-struct member inits");
+            errors += checkInitValue(VD, values[i], VD->getType());
+        }
+    } else {
+        // TODO error
+    }
+    return errors;
 }
 
 #if 0
