@@ -114,7 +114,8 @@ private:
     clang::DiagnosticsEngine& Diags;
     unsigned errors;
 
-    FunctionDecl* Function;     // current function
+    FunctionDecl* CurrentFunction;
+    VarDecl* CurrentVarDecl;
 
     unsigned constDiagID;
     bool inConstExpr;

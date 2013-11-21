@@ -353,7 +353,6 @@ void Scope::addExternal(const Decl* D) const {
 
 const Package* Scope::findPackage(const std::string& name) const {
     if (name == myPkg->getName()) return myPkg;
-
     PackagesConstIter iter = usedPackages.find(name);
     if (iter == usedPackages.end()) return 0;
     UseDecl* U = iter->second;

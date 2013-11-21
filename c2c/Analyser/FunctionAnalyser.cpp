@@ -55,28 +55,32 @@ FunctionAnalyser::FunctionAnalyser(Scope& scope_,
     , typeContext(tc)
     , Diags(Diags_)
     , errors(0)
-    , Function(0)
+    , CurrentFunction(0)
+    , CurrentVarDecl(0)
     , constDiagID(0)
     , inConstExpr(false)
 {
 }
 
 unsigned FunctionAnalyser::check(FunctionDecl* func) {
-    Function = func;
+    CurrentFunction = func;
     errors = 0;
     scope.EnterScope(Scope::FnScope | Scope::DeclScope);
 
     checkFunction(func);
 
     scope.ExitScope();
-    Function = 0;
+    CurrentFunction = 0;
     return errors;
 }
 
 unsigned FunctionAnalyser::checkVarInit(VarDecl* V) {
+    CurrentVarDecl = V;
     errors = 0;
-    // Q: enterscope?
-    errors += checkInitValue(V, V->getInitValue(), V->getType());
+
+    checkInitValue(V, V->getInitValue(), V->getType());
+
+    CurrentVarDecl = 0;
     return errors;
 }
 
@@ -158,7 +162,7 @@ void FunctionAnalyser::analyseStmt(Stmt* S, bool haveScope) {
 
 void FunctionAnalyser::analyseCompoundStmt(Stmt* stmt) {
     LOG_FUNC
-    assert(Function);
+    assert(CurrentFunction);
     CompoundStmt* compound = cast<CompoundStmt>(stmt);
     const StmtList& stmts = compound->getStmts();
     for (unsigned i=0; i<stmts.size(); i++) {
@@ -284,12 +288,12 @@ void FunctionAnalyser::analyseReturnStmt(Stmt* stmt) {
     LOG_FUNC
     ReturnStmt* ret = cast<ReturnStmt>(stmt);
     Expr* value = ret->getExpr();
-    QualType rtype = Function->getReturnType();
+    QualType rtype = CurrentFunction->getReturnType();
     bool no_rvalue = (rtype.getTypePtr() == Type::Void());
     if (value) {
         QualType type = analyseExpr(value, RHS);
         if (no_rvalue) {
-            Diags.Report(ret->getLocation(), diag::ext_return_has_expr) << Function->getName() << 0;
+            Diags.Report(ret->getLocation(), diag::ext_return_has_expr) << CurrentFunction->getName() << 0;
             // TODO value->getSourceRange()
         } else {
             if (type.isValid()) {
@@ -298,7 +302,7 @@ void FunctionAnalyser::analyseReturnStmt(Stmt* stmt) {
         }
     } else {
         if (!no_rvalue) {
-            Diags.Report(ret->getLocation(), diag::ext_return_missing_expr) << Function->getName() << 0;
+            Diags.Report(ret->getLocation(), diag::ext_return_missing_expr) << CurrentFunction->getName() << 0;
         }
     }
 }
@@ -450,8 +454,17 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
         {
             IdentifierExpr* id = cast<IdentifierExpr>(expr);
             ScopeResult Res = analyseIdentifier(id);
+            if (Res.getPackage()) {
+                Diags.Report(id->getLocation(), diag::err_is_a_package) << id->getName();
+                return;
+            }
             Decl* D = Res.getDecl();
             if (!D) return;
+            // TODO if in const mode, use ConstModeSetter?
+            if (D == CurrentVarDecl) {
+                Diags.Report(id->getLocation(), diag::err_var_self_init) << D->getName();
+                return;
+            }
             switch (D->getKind()) {
             case DECL_FUNC:
                 // can be ok for const
@@ -490,7 +503,7 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
         assert(0 && "??");
         break;
     case EXPR_DECL:
-        assert(0 && "TODO ERROR");
+        assert(0 && "TODO ERROR?");
         break;
     case EXPR_BINOP:
         analyseBinaryOperator(expr, RHS);
@@ -1230,8 +1243,7 @@ unsigned FunctionAnalyser::checkInitValue(VarDecl* decl, Expr* expr, QualType ex
         {
             IdentifierExpr* id = cast<IdentifierExpr>(expr);
             ScopeResult Res = analyseIdentifier(id);
-            const Package* P = Res.getPackage();
-            if (P) {
+            if (Res.getPackage()) {
                 Diags.Report(id->getLocation(), diag::err_is_a_package) << id->getName();
                 return 1;
             }
