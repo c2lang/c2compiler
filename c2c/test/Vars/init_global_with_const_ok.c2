@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+package test;
+
+const int b = 1;
+
+int a = b;
+

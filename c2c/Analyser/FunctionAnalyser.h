@@ -77,7 +77,6 @@ private:
     void analyseInitExpr(Expr* expr, QualType expectedType);
     void analyseInitList(InitListExpr* expr, QualType expectedType);
 
-#if 0
     void pushMode(unsigned DiagID);
     void popMode();
 
@@ -95,7 +94,6 @@ private:
     private:
         FunctionAnalyser& analyser;
     };
-#endif
 
     bool checkAssignee(Expr* expr) const;
     void checkAssignment(Expr* assignee, QualType TLeft);

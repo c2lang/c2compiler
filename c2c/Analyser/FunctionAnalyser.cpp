@@ -80,6 +80,7 @@ unsigned FunctionAnalyser::checkVarInit(VarDecl* V) {
     CurrentVarDecl = V;
     errors = 0;
 
+    ConstModeSetter cms(*this, diag::err_init_element_not_constant);
     analyseInitExpr(V->getInitValue(), V->getType());
 
     CurrentVarDecl = 0;
@@ -464,7 +465,6 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
             }
             Decl* D = Res.getDecl();
             if (!D) return;
-            // TODO if in const mode, use ConstModeSetter?
             if (D == CurrentVarDecl) {
                 Diags.Report(id->getLocation(), diag::err_var_self_init) << D->getName();
                 return;
@@ -483,6 +483,7 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
                     if (inConstExpr) {
                         QualType T = VD->getType();
                         if (!T.isConstQualified()) {
+                            assert(constDiagID);
                             Diags.Report(expr->getLocation(), constDiagID);
                             return;
                         }
@@ -1220,18 +1221,15 @@ C2::QualType FunctionAnalyser::resolveUserType(QualType T) {
     return T;
 }
 
-#if 0
 void FunctionAnalyser::pushMode(unsigned DiagID) {
     LOG_FUNC
-    assert(inConstExpr == false);
     inConstExpr = true;
     constDiagID = DiagID;
 }
 
 void FunctionAnalyser::popMode() {
     LOG_FUNC
-    assert(inConstExpr == true);
     inConstExpr = false;
     constDiagID = 0;
 }
-#endif
+
