@@ -469,8 +469,11 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
             }
             switch (D->getKind()) {
             case DECL_FUNC:
-                // can be ok for const
-                assert(0 && "TODO");
+                {
+                    // TODO check if void*
+                    FunctionDecl* FD = cast<FunctionDecl>(D);
+                    typeResolver.checkCompatible(expectedType, FD->getType(), id->getLocation(), TypeChecker::CONV_INIT);
+                }
                 break;
             case DECL_VAR:
                 {

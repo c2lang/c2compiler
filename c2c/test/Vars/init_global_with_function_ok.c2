@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+package test;
+
+type Func func void();
+
+Func a = function;
+
+func void function() {}
+
