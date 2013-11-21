@@ -493,9 +493,9 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
             case DECL_ALIASTYPE:
             case DECL_STRUCTTYPE:
             case DECL_ENUMTYPE:
-                assert(0 && "TODO");
-                break;
             case DECL_FUNCTIONTYPE:
+                Diags.Report(id->getLocation(), diag::err_type_in_initializer);
+                break;
             case DECL_ARRAYVALUE:
             case DECL_USE:
                 assert(0 && "shouldn't come here");
@@ -582,6 +582,7 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType expectedType
             break;
         case 1:
             // Q: allow initlist for single var?
+            //see clang: cannot initialize variable of type %0 with initializer list">
             break;
         default:
             Diags.Report(values[1]->getLocation(), diag::err_excess_initializers) << 2;

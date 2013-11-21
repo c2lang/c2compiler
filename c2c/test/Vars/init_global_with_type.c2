@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+package test;
+
+type Number int;
+
+int a = Number;       // @error{cannot use type in initializer}
+
