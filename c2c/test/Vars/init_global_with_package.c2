@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+package test;
+
+int a = test;       // @error{test is a package name}
+

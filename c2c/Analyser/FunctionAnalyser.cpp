@@ -390,8 +390,11 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
     case EXPR_IDENTIFIER:
         {
             IdentifierExpr* id = cast<IdentifierExpr>(expr);
-            //fprintf(stderr, "%s  %s %s\n", id->getName().c_str(), side&LHS ? "LHS" : "", side&RHS ? "RHS": "");
             ScopeResult Res = analyseIdentifier(id);
+            if (Res.getPackage()) {
+                Diags.Report(id->getLocation(), diag::err_is_a_package) << id->getName();
+                break;
+            }
             Decl* D = Res.getDecl();
             if (!D) break;
             // NOTE: expr should not be package name (handled above)
@@ -1103,7 +1106,6 @@ ScopeResult FunctionAnalyser::analyseIdentifier(IdentifierExpr* id) {
     } else if (res.getPackage()) {
         // symbol is package
     } else {
-        // TODO remove
         res.setOK(false);
         Diags.Report(id->getLocation(), diag::err_undeclared_var_use)
             << id->getName();
@@ -1226,19 +1228,21 @@ unsigned FunctionAnalyser::checkInitValue(VarDecl* decl, Expr* expr, QualType ex
         break;
     case EXPR_IDENTIFIER:
         {
-            IdentifierExpr* I = cast<IdentifierExpr>(expr);
-            ScopeResult Res = scope.findSymbol(I->getName(), I->getLocation());
-            if (!Res.isOK()) return 1;
+            IdentifierExpr* id = cast<IdentifierExpr>(expr);
+            ScopeResult Res = analyseIdentifier(id);
+            const Package* P = Res.getPackage();
+            if (P) {
+                Diags.Report(id->getLocation(), diag::err_is_a_package) << id->getName();
+                return 1;
+            }
             Decl* D = Res.getDecl();
-            if (!D) {
-                Diags.Report(I->getLocation(), diag::err_undeclared_var_use) << I->getName();
-                return 1;
-            }
+            if (!D) return 1;
+
+            // TODO check that D is const? (pointers?)
             if (D == decl) {
-                Diags.Report(I->getLocation(), diag::err_var_self_init) << D->getName();
+                Diags.Report(id->getLocation(), diag::err_var_self_init) << D->getName();
                 return 1;
             }
-            I->setDecl(D);
             // TODO check types (need code from FunctionAnalyser)
             break;
         }

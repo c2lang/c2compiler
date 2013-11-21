@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+package test;
+
+func void main() {
+    int b;
+    b = test;       // @error{test is a package name}
+}
+
+
