@@ -1,0 +1,5 @@
+// @warnings{no-unused-variable}
+package test;
+
+int a = {1, 2}  // @error{excess elements in scalar initializer}
+

@@ -75,6 +75,8 @@ unsigned FunctionAnalyser::check(FunctionDecl* func) {
 }
 
 unsigned FunctionAnalyser::checkVarInit(VarDecl* V) {
+    LOG_FUNC
+
     CurrentVarDecl = V;
     errors = 0;
 
@@ -555,7 +557,7 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType expectedType
         assert(STD->isStruct() && "TEMP only support structs for now");
         for (unsigned i=0; i<values.size(); i++) {
             if (i >= STD->numMembers()) {
-                // note: 0 for array, 3 for union, 4 for structs
+                // note: 0 for array, 2 for scalar, 3 for union, 4 for structs
                 Diags.Report(values[STD->numMembers()]->getLocation(), diag::err_excess_initializers)
                     << 4;
                 errors++;
@@ -569,7 +571,21 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType expectedType
             analyseInitExpr(values[i], VD->getType());
         }
     } else {
-        // TODO error
+        // only allow 1
+        switch (values.size()) {
+        case 0:
+            fprintf(stderr, "TODO ERROR: scalar initializer cannot be empty\n");
+            errors++;
+            break;
+        case 1:
+            // Q: allow initlist for single var?
+            break;
+        default:
+            Diags.Report(values[1]->getLocation(), diag::err_excess_initializers) << 2;
+            errors++;
+            break;
+        }
+        return;
     }
 #if 0
     InitListExpr* I = cast<InitListExpr>(expr);
