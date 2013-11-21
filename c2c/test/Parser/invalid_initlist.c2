@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+package test;
+
+public func int main() {
+    int a;
+    a += {1, 2, 3}      // @error{expected expression}
+    return 0;
+}
+

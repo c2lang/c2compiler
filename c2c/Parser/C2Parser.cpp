@@ -848,10 +848,14 @@ C2::ExprResult C2Parser::ParseCastExpression(bool isUnaryExpression,
         return Res;
     }
     default:
+        NotCastExpr = true;
+        return ExprError();
+#if 0
         fprintf(stderr, "UNHANDLED TOKEN: ");
         PP.DumpToken(Tok);
         fprintf(stderr, "\n");
         assert(0 && "TODO");
+#endif
     }
 
     return ParsePostfixExpressionSuffix(Res);
@@ -1474,8 +1478,8 @@ C2::StmtResult C2Parser::ParseCompoundStatement() {
         if (R.isUsable()) {
             Stmts.push_back(R.release());
         } else {
-            fprintf(stderr, "COMPOUND: skipping invalid statement\n");
-            SkipUntil(tok::semi);
+            bool found = SkipUntil(tok::semi);
+            if (!found) return StmtError();
         }
     }
 
