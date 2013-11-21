@@ -17,12 +17,17 @@
 #include "StringBuilder.h"
 #include "color.h"
 
+#define COL_ERROR ANSI_BRED
+#define COL_SKIP  ANSI_BCYAN
+#define COL_OK    ANSI_GREEN
+
 using namespace C2;
 
 //#define DEBUG
 
 static unsigned numtests;
 static unsigned numerrors;
+static unsigned numskipped;
 
 static const char* c2c_cmd = "./c2c";
 static const char* test_root = "/tmp/tester";
@@ -78,7 +83,7 @@ public:
         }
     }
 
-    void parseFile();
+    bool parseFile();
 
     void testFile();
 
@@ -86,14 +91,14 @@ public:
 
     void showWarnings() const {
         for (IssuesConstIter iter = warnings.begin(); iter != warnings.end(); ++iter) {
-            fprintf(stderr, ANSI_RED"  expected warning '%s' at %s:%d"ANSI_NORMAL"\n",
+            fprintf(stderr, COL_ERROR"  expected warning '%s' at %s:%d"ANSI_NORMAL"\n",
                     iter->msg.c_str(), iter->filename.c_str(), iter->line_nr);
         }
     }
 
     void showErrors() const {
         for (IssuesConstIter iter = errors.begin(); iter != errors.end(); ++iter) {
-            fprintf(stderr, ANSI_RED"  expected error '%s' at %s:%d"ANSI_NORMAL"\n",
+            fprintf(stderr, COL_ERROR"  expected error '%s' at %s:%d"ANSI_NORMAL"\n",
                     iter->msg.c_str(), iter->filename.c_str(), iter->line_nr);
         }
     }
@@ -111,7 +116,7 @@ private:
             if (iter->line_nr != linenr) continue;
             if (iter->filename == filename) {
                 if (iter->msg != msg) {
-                    fprintf(stderr, ANSI_RED"  wrong warning at %s:%d:\n", filename, linenr);
+                    fprintf(stderr, COL_ERROR"  wrong warning at %s:%d:\n", filename, linenr);
                     fprintf(stderr, "     expected: %s\n", iter->msg.c_str());
                     fprintf(stderr, "     got: %s"ANSI_NORMAL"\n", msg);
                     hasErrors = true;
@@ -121,7 +126,7 @@ private:
             }
         }
         // not expected
-        fprintf(stderr, ANSI_RED"unexpected warning on line %d: %s"ANSI_NORMAL"\n", linenr, msg);
+        fprintf(stderr, COL_ERROR"unexpected warning on line %d: %s"ANSI_NORMAL"\n", linenr, msg);
         hasErrors = true;
     }
 
@@ -130,7 +135,7 @@ private:
             if (iter->line_nr != linenr) continue;
             if (iter->filename == filename) {
                 if (iter->msg != msg) {
-                    fprintf(stderr, ANSI_RED"  wrong error at %s:%d:\n", filename, linenr);
+                    fprintf(stderr, COL_ERROR"  wrong error at %s:%d:\n", filename, linenr);
                     fprintf(stderr, "     expected: %s\n", iter->msg.c_str());
                     fprintf(stderr, "     got: %s"ANSI_NORMAL"\n", msg);
                     hasErrors = true;
@@ -140,7 +145,7 @@ private:
             }
         }
         // not expected
-        fprintf(stderr, ANSI_RED"unexpected error on line %d: %s"ANSI_NORMAL"\n", linenr, msg);
+        fprintf(stderr, COL_ERROR"unexpected error on line %d: %s"ANSI_NORMAL"\n", linenr, msg);
         hasErrors = true;
     }
 
@@ -263,12 +268,15 @@ parse_msg:
     }
 }
 
-void IssueDb::parseFile() {
+bool IssueDb::parseFile() {
     const char* cp = (const char*) file.region;
     const char* end = cp + file.size;
     line_nr = 1;
     const char* line_start = cp;
     recipe << "target test\n";
+    if (strncmp(cp, "// @skip", 8) == 0) {
+        return true;
+    }
     while (cp != end) {
         while (*cp != '\n' && cp != end) cp++;
         if (cp != line_start) parseLine(line_start, cp);
@@ -283,6 +291,7 @@ void IssueDb::parseFile() {
     recipe << "  " << current_file << '\n';
     recipe << "end\n";
     writeFile("recipe.txt", recipe, recipe.size());
+    return false;
 }
 
 void IssueDb::testFile() {
@@ -320,7 +329,7 @@ void IssueDb::testFile() {
         int status = 0;
         waitpid(pid, &status, 0);
         if (!WIFEXITED(status)) { // child exited abnormally
-            fprintf(stderr, ANSI_RED"c2c crashed!"ANSI_NORMAL"\n");
+            fprintf(stderr, COL_ERROR"c2c crashed!"ANSI_NORMAL"\n");
             numerrors++;
             return;
         }
@@ -411,7 +420,6 @@ static void handle_file(const char* filename) {
     } else {
         return;
     }
-    printf("%s\n", filename);
 
     // setup dir
     // temp, just delete this way
@@ -432,7 +440,14 @@ static void handle_file(const char* filename) {
     file.open();
     IssueDb db(file, single);
 
-    db.parseFile();
+    bool skip = db.parseFile();
+    if (skip) {
+        numskipped++;
+        printf(COL_SKIP"SKIPPED %s"ANSI_NORMAL"\n", filename);
+        return;
+    } else {
+        printf("%s\n", filename);
+    }
     if (db.haveErrors()) goto out;
 
     db.testFile();
@@ -500,9 +515,9 @@ int main(int argc, const char *argv[])
         usage(argv[0]);
     }
     u_int64_t t2 = getCurrentTime();
-    if (numerrors) printf(ANSI_RED);
-    else printf(ANSI_GREEN);
-    printf("RESULTS: %u test%s (%u ok, %u failed) ran in %llu ms", numtests, numtests == 1 ? "" : "s", numtests - numerrors, numerrors, (t2-t1)/1000);
+    if (numerrors) printf(COL_ERROR);
+    else printf(COL_OK);
+    printf("RESULTS: %u test%s (%u ok, %u failed, %u skipped) ran in %llu ms", numtests, numtests == 1 ? "" : "s", numtests - (numerrors+numskipped), numerrors, numskipped, (t2-t1)/1000);
     printf(ANSI_NORMAL"\n");
 
     return 0;
