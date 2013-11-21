@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+package test;
+
+func int function() {
+    int a = function();
+    return 0;
+}
+

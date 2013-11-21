@@ -449,8 +449,10 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
         break;
     case EXPR_CALL:
         // TODO check return type (if void -> size of array has non-integer type 'void')
-        assert(constDiagID);
-        Diags.Report(expr->getLocation(), constDiagID);
+        //assert(constDiagID);
+        //Diags.Report(expr->getLocation(), constDiagID);
+        // TEMP assume compile-time constant (CTC)
+        Diags.Report(expr->getLocation(), diag::err_init_element_not_constant);
         return;
     case EXPR_IDENTIFIER:
         {
@@ -591,67 +593,6 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType expectedType
         }
         return;
     }
-#if 0
-    InitListExpr* I = cast<InitListExpr>(expr);
-    assert(expectedType.isValid());
-    const Type* type = expectedType.getTypePtr();
-
-    // TODO use canonical type
-    switch (type->getTypeClass()) {
-    case TC_BUILTIN:
-    case TC_POINTER:
-    case TC_ARRAY:
-    case TC_UNRESOLVED:
-    case TC_ALIAS:
-    case TC_STRUCT:
-    case TC_ENUM:
-    case TC_FUNCTION:
-    }
-
-    switch (type->getKind()) {
-    case Type::USER:
-        {
-            analyseInitList(expr, type->getRefType());
-            return;
-        }
-    case Type::STRUCT:
-    case Type::UNION:
-        {
-            MemberList* members = type->getMembers();
-            assert(members);
-            // check array member type with each value in initlist
-            ExprList& values = I->getValues();
-            for (unsigned i=0; i<values.size(); i++) {
-                if (i >= members->size()) {
-                    // TODO error: 'excess elements in array initializer'
-                    return;
-                }
-                DeclExpr* member = (*members)[i];
-                analyseInitExpr(values[i], member->getType());
-            }
-        }
-        break;
-    case Type::ARRAY:
-        {
-            // check array member type with each value in initlist
-            ExprList& values = I->getValues();
-            for (unsigned i=0; i<values.size(); i++) {
-                QualType ref = type->getRefType();
-                // TEMP CONST CAST
-                analyseInitExpr(values[i], (Type*)ref.getTypePtr());
-            }
-        }
-        break;
-    default:
-        {
-        char typeName[MAX_LEN_TYPENAME];
-        StringBuilder buf(MAX_LEN_TYPENAME, typeName);
-        type->DiagName(buf);
-        Diags.Report(expr->getLocation(), diag::err_invalid_type_initializer_list) << typeName;
-        }
-        break;
-    }
-#endif
 }
 
 void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
