@@ -91,21 +91,21 @@ public:
 
     void showWarnings() const {
         for (IssuesConstIter iter = warnings.begin(); iter != warnings.end(); ++iter) {
-            fprintf(stderr, COL_ERROR"  expected warning '%s' at %s:%d"ANSI_NORMAL"\n",
+            fprintf(stdout, COL_ERROR"  expected warning '%s' at %s:%d"ANSI_NORMAL"\n",
                     iter->msg.c_str(), iter->filename.c_str(), iter->line_nr);
         }
     }
 
     void showErrors() const {
         for (IssuesConstIter iter = errors.begin(); iter != errors.end(); ++iter) {
-            fprintf(stderr, COL_ERROR"  expected error '%s' at %s:%d"ANSI_NORMAL"\n",
+            fprintf(stdout, COL_ERROR"  expected error '%s' at %s:%d"ANSI_NORMAL"\n",
                     iter->msg.c_str(), iter->filename.c_str(), iter->line_nr);
         }
     }
 private:
     void parseLine(const char* start, const char* end);
     void error(const char* msg) {
-        fprintf(stderr, "%s:%d: %s\n", file.filename.c_str(), line_nr, msg);
+        fprintf(stdout, "%s:%d: %s\n", file.filename.c_str(), line_nr, msg);
         hasErrors = true;
     }
 
@@ -116,9 +116,9 @@ private:
             if (iter->line_nr != linenr) continue;
             if (iter->filename == filename) {
                 if (iter->msg != msg) {
-                    fprintf(stderr, COL_ERROR"  wrong warning at %s:%d:\n", filename, linenr);
-                    fprintf(stderr, "     expected: %s\n", iter->msg.c_str());
-                    fprintf(stderr, "     got: %s"ANSI_NORMAL"\n", msg);
+                    fprintf(stdout, COL_ERROR"  wrong warning at %s:%d:\n", filename, linenr);
+                    fprintf(stdout, "     expected: %s\n", iter->msg.c_str());
+                    fprintf(stdout, "     got: %s"ANSI_NORMAL"\n", msg);
                     hasErrors = true;
                 }
                 warnings.erase(iter);
@@ -126,7 +126,7 @@ private:
             }
         }
         // not expected
-        fprintf(stderr, COL_ERROR"unexpected warning on line %d: %s"ANSI_NORMAL"\n", linenr, msg);
+        fprintf(stdout, COL_ERROR"unexpected warning on line %d: %s"ANSI_NORMAL"\n", linenr, msg);
         hasErrors = true;
     }
 
@@ -135,9 +135,9 @@ private:
             if (iter->line_nr != linenr) continue;
             if (iter->filename == filename) {
                 if (iter->msg != msg) {
-                    fprintf(stderr, COL_ERROR"  wrong error at %s:%d:\n", filename, linenr);
-                    fprintf(stderr, "     expected: %s\n", iter->msg.c_str());
-                    fprintf(stderr, "     got: %s"ANSI_NORMAL"\n", msg);
+                    fprintf(stdout, COL_ERROR"  wrong error at %s:%d:\n", filename, linenr);
+                    fprintf(stdout, "     expected: %s\n", iter->msg.c_str());
+                    fprintf(stdout, "     got: %s"ANSI_NORMAL"\n", msg);
                     hasErrors = true;
                 }
                 errors.erase(iter);
@@ -145,7 +145,7 @@ private:
             }
         }
         // not expected
-        fprintf(stderr, COL_ERROR"unexpected error on line %d: %s"ANSI_NORMAL"\n", linenr, msg);
+        fprintf(stdout, COL_ERROR"unexpected error on line %d: %s"ANSI_NORMAL"\n", linenr, msg);
         hasErrors = true;
     }
 
@@ -329,14 +329,14 @@ void IssueDb::testFile() {
         int status = 0;
         waitpid(pid, &status, 0);
         if (!WIFEXITED(status)) { // child exited abnormally
-            fprintf(stderr, COL_ERROR"c2c crashed!"ANSI_NORMAL"\n");
+            fprintf(stdout, COL_ERROR"c2c crashed!"ANSI_NORMAL"\n");
             numerrors++;
             return;
         }
         // check return code
         int retcode = WEXITSTATUS(status);
         if (retcode == 127) {
-            fprintf(stderr, "Error spawning compiler '%s'\n", c2c_cmd);
+            fprintf(stdout, "Error spawning compiler '%s'\n", c2c_cmd);
             exit(-1);
         }
         // check output
@@ -460,7 +460,7 @@ out:
 static void handle_dir(const char* path) {
     DIR* dir = opendir(path);
     if (dir == NULL) {
-        fprintf(stderr, "Cannot open dir '%s': %s\n", path, strerror(errno));
+        fprintf(stdout, "Cannot open dir '%s': %s\n", path, strerror(errno));
         return;
     }
     struct dirent* dir2 = readdir(dir);
