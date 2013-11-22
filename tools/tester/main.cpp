@@ -2,9 +2,11 @@
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -29,9 +31,21 @@ static unsigned numtests;
 static unsigned numerrors;
 static unsigned numskipped;
 
+static int color_output = 1;
 static const char* c2c_cmd = "./c2c";
 static const char* test_root = "/tmp/tester";
 static char* cwd;
+
+static void color_print(const char* color, const char* format, ...) {
+    char buffer[128];
+    va_list(Args);
+    va_start(Args, format);
+    int len = vsprintf(buffer, format, Args);
+    va_end(Args);
+
+    if (color_output) printf("%s%s"ANSI_NORMAL"\n", color, buffer);
+    else printf("%s\n", buffer);
+}
 
 static u_int64_t getCurrentTime() {
     struct timespec now;
@@ -91,21 +105,21 @@ public:
 
     void showWarnings() const {
         for (IssuesConstIter iter = warnings.begin(); iter != warnings.end(); ++iter) {
-            fprintf(stdout, COL_ERROR"  expected warning '%s' at %s:%d"ANSI_NORMAL"\n",
+            color_print(COL_ERROR, "  expected warning '%s' at %s:%d",
                     iter->msg.c_str(), iter->filename.c_str(), iter->line_nr);
         }
     }
 
     void showErrors() const {
         for (IssuesConstIter iter = errors.begin(); iter != errors.end(); ++iter) {
-            fprintf(stdout, COL_ERROR"  expected error '%s' at %s:%d"ANSI_NORMAL"\n",
+            color_print(COL_ERROR, "  expected error '%s' at %s:%d",
                     iter->msg.c_str(), iter->filename.c_str(), iter->line_nr);
         }
     }
 private:
     void parseLine(const char* start, const char* end);
     void error(const char* msg) {
-        fprintf(stdout, "%s:%d: %s\n", file.filename.c_str(), line_nr, msg);
+        color_print(ANSI_NORMAL, "%s:%d: %s", file.filename.c_str(), line_nr, msg);
         hasErrors = true;
     }
 
@@ -116,9 +130,9 @@ private:
             if (iter->line_nr != linenr) continue;
             if (iter->filename == filename) {
                 if (iter->msg != msg) {
-                    fprintf(stdout, COL_ERROR"  wrong warning at %s:%d:\n", filename, linenr);
-                    fprintf(stdout, "     expected: %s\n", iter->msg.c_str());
-                    fprintf(stdout, "     got: %s"ANSI_NORMAL"\n", msg);
+                    color_print(COL_ERROR, "  wrong warning at %s:%d:", filename, linenr);
+                    color_print(COL_ERROR, "     expected: %s", iter->msg.c_str());
+                    color_print(COL_ERROR, "     got: %s", msg);
                     hasErrors = true;
                 }
                 warnings.erase(iter);
@@ -126,7 +140,7 @@ private:
             }
         }
         // not expected
-        fprintf(stdout, COL_ERROR"unexpected warning on line %d: %s"ANSI_NORMAL"\n", linenr, msg);
+        color_print(COL_ERROR, "unexpected warning on line %d: %s", linenr, msg);
         hasErrors = true;
     }
 
@@ -135,9 +149,9 @@ private:
             if (iter->line_nr != linenr) continue;
             if (iter->filename == filename) {
                 if (iter->msg != msg) {
-                    fprintf(stdout, COL_ERROR"  wrong error at %s:%d:\n", filename, linenr);
-                    fprintf(stdout, "     expected: %s\n", iter->msg.c_str());
-                    fprintf(stdout, "     got: %s"ANSI_NORMAL"\n", msg);
+                    color_print(COL_ERROR, "  wrong error at %s:%d:", filename, linenr);
+                    color_print(COL_ERROR, "     expected: %s", iter->msg.c_str());
+                    color_print(COL_ERROR, "     got: %s", msg);
                     hasErrors = true;
                 }
                 errors.erase(iter);
@@ -145,7 +159,7 @@ private:
             }
         }
         // not expected
-        fprintf(stdout, COL_ERROR"unexpected error on line %d: %s"ANSI_NORMAL"\n", linenr, msg);
+        color_print(COL_ERROR, "unexpected error on line %d: %s", linenr, msg);
         hasErrors = true;
     }
 
@@ -329,14 +343,14 @@ void IssueDb::testFile() {
         int status = 0;
         waitpid(pid, &status, 0);
         if (!WIFEXITED(status)) { // child exited abnormally
-            fprintf(stdout, COL_ERROR"c2c crashed!"ANSI_NORMAL"\n");
+            color_print(COL_ERROR, "c2c crashed!");
             numerrors++;
             return;
         }
         // check return code
         int retcode = WEXITSTATUS(status);
         if (retcode == 127) {
-            fprintf(stdout, "Error spawning compiler '%s'\n", c2c_cmd);
+            color_print(COL_ERROR, "Error spawning compiler '%s'", c2c_cmd);
             exit(-1);
         }
         // check output
@@ -460,7 +474,7 @@ out:
 static void handle_dir(const char* path) {
     DIR* dir = opendir(path);
     if (dir == NULL) {
-        fprintf(stdout, "Cannot open dir '%s': %s\n", path, strerror(errno));
+        color_print(COL_ERROR, "Cannot open dir '%s': %s", path, strerror(errno));
         return;
     }
     struct dirent* dir2 = readdir(dir);
@@ -494,6 +508,8 @@ int main(int argc, const char *argv[])
     if (argc != 2) usage(argv[0]);
     const char* target = argv[1];
 
+    color_output = isatty(1);
+
     struct stat statbuf;
     if (stat(target, &statbuf)) {
         perror("stat");
@@ -515,10 +531,8 @@ int main(int argc, const char *argv[])
         usage(argv[0]);
     }
     u_int64_t t2 = getCurrentTime();
-    if (numerrors) printf(COL_ERROR);
-    else printf(COL_OK);
-    printf("RESULTS: %u test%s (%u ok, %u failed, %u skipped) ran in %llu ms", numtests, numtests == 1 ? "" : "s", numtests - (numerrors+numskipped), numerrors, numskipped, (t2-t1)/1000);
-    printf(ANSI_NORMAL"\n");
+    const char* color = (numerrors ? COL_ERROR : COL_OK);
+    color_print(color, "RESULTS: %u test%s (%u ok, %u failed, %u skipped) ran in %llu ms", numtests, numtests == 1 ? "" : "s", numtests - (numerrors+numskipped), numerrors, numskipped, (t2-t1)/1000);
 
     return 0;
 }
