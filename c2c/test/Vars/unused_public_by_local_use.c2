@@ -1,0 +1,7 @@
+// @warnings{no-unused-variable}
+package test;
+
+public const int n = 1; // @warning{variable 'n' is not used public}
+
+public int y = n;
+

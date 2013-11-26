@@ -192,18 +192,27 @@ void FileAnalyser::checkDeclsForUsed() {
     LOG_FUNC
     if (verbose) printf(COL_VERBOSE"%s %s"ANSI_NORMAL"\n", __func__, ast.getFileName().c_str());
 
+    // checkfor unused uses
     for (unsigned i=0; i<ast.numUses(); i++) {
         UseDecl* U = ast.getUse(i);
         if (!U->isUsed()) {
             Diags.Report(U->getLocation(), diag::warn_unused_package) << U->getName();
         }
     }
+
+    // check for unused variables
     for (unsigned i=0; i<ast.numVars(); i++) {
         VarDecl* V = ast.getVar(i);
         if (!V->isUsed()) {
             Diags.Report(V->getLocation(), diag::warn_unused_variable) << V->getName();
+        } else {
+            if (V->isPublic() && !V->isUsedPublic()) {
+                Diags.Report(V->getLocation(), diag::warn_unused_public) << 2 << V->getName();
+            }
         }
     }
+
+    // check for unused functions
     for (unsigned i=0; i<ast.numFunctions(); i++) {
         FunctionDecl* F = ast.getFunction(i);
         if (F->getName() == "main") continue;
@@ -215,6 +224,8 @@ void FileAnalyser::checkDeclsForUsed() {
             }
         }
     }
+
+    // check for unused types
     for (unsigned i=0; i<ast.numTypes(); i++) {
         TypeDecl* T = ast.getType(i);
         if (!T->isUsed()) {

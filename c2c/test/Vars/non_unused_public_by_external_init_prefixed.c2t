@@ -1,0 +1,12 @@
+// @warnings{no-unused-variable}
+// @file{file1}
+package foo;
+
+public const int n = 1;
+
+// @file{file2}
+package bar;
+use foo local;
+
+public int f1 = foo.n;
+

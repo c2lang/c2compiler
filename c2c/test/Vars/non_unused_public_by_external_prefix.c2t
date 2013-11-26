@@ -1,0 +1,15 @@
+// @warnings{no-unused-variable no-unused-function}
+// @file{file1}
+package foo;
+
+public int n;
+
+// @file{file2}
+package bar;
+
+use foo local;
+
+func int test2() {
+    return foo.n;
+}
+
