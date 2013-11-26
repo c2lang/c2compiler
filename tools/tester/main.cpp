@@ -14,7 +14,6 @@
 #include <list>
 #include <string>
 
-
 #include "FileMap.h"
 #include "StringBuilder.h"
 #include "color.h"
@@ -22,10 +21,11 @@
 #define COL_ERROR ANSI_BRED
 #define COL_SKIP  ANSI_BCYAN
 #define COL_OK    ANSI_GREEN
-
-using namespace C2;
+#define COL_DEBUG ANSI_BMAGENTA
 
 //#define DEBUG
+
+using namespace C2;
 
 static unsigned numtests;
 static unsigned numerrors;
@@ -36,8 +36,23 @@ static const char* c2c_cmd = "./c2c";
 static const char* test_root = "/tmp/tester";
 static char* cwd;
 
+#ifdef DEBUG
+static void debug(const char* format, ...) {
+    char buffer[1024];
+    va_list(Args);
+    va_start(Args, format);
+    int len = vsprintf(buffer, format, Args);
+    va_end(Args);
+    if (color_output) fprintf(stderr, COL_DEBUG"%s"ANSI_NORMAL"\n", buffer);
+    else printf("%s\n", buffer);
+}
+#else
+static void debug(const char* format, ...) {}
+#endif
+
+
 static void color_print(const char* color, const char* format, ...) {
-    char buffer[128];
+    char buffer[1024];
     va_list(Args);
     va_start(Args, format);
     int len = vsprintf(buffer, format, Args);
@@ -426,6 +441,7 @@ void IssueDb::checkErrors(const char* buffer, unsigned size) {
 }
 
 static void handle_file(const char* filename) {
+    debug("%s() %s", __func__, filename);
     bool single = true;
     if (endsWith(filename, ".c2")) {
         single = true;
@@ -472,6 +488,7 @@ out:
 }
 
 static void handle_dir(const char* path) {
+    debug("%s() %s", __func__, path);
     DIR* dir = opendir(path);
     if (dir == NULL) {
         color_print(COL_ERROR, "Cannot open dir '%s': %s", path, strerror(errno));
@@ -526,6 +543,7 @@ int main(int argc, const char *argv[])
     if (S_ISREG(statbuf.st_mode)) {
         handle_file(target);
     } else if (S_ISDIR(statbuf.st_mode)) {
+        // TODO strip off optional trailing '/'
         handle_dir(target);
     } else {
         usage(argv[0]);
