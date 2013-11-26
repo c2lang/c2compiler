@@ -216,6 +216,9 @@ void FileAnalyser::checkDeclsForUsed() {
         if (!T->isUsed()) {
             Diags.Report(T->getLocation(), diag::warn_unused_type) << T->getName();
         } else {
+            if (T->isPublic() && !T->isUsedPublic()) {
+                Diags.Report(T->getLocation(), diag::warn_unused_public) << 0 << T->getName();
+            }
             // check if members are used
             if (isa<StructTypeDecl>(T)) {
                 StructTypeDecl* S = cast<StructTypeDecl>(T);

@@ -1,0 +1,7 @@
+// @warnings{no-unused-variable}
+package test;
+
+public type Number int;
+
+public Number n;
+

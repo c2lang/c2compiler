@@ -120,9 +120,12 @@ unsigned TypeChecker::checkUnresolvedType(const UnresolvedType* type, bool used_
                 return 1;
             }
             bool external = globals.isExternal(D->getPackage());
-            if (used_public && !external && !td->isPublic()) {
-                Diags.Report(I->getLocation(), diag::err_non_public_type) << I->getName();
-                return 1;
+            if (used_public) {
+                if (!external && !td->isPublic()) {
+                    Diags.Report(I->getLocation(), diag::err_non_public_type) << I->getName();
+                    return 1;
+                }
+                td->setUsedPublic();
             }
             // ok
             I->setDecl(D);

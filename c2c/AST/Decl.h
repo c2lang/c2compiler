@@ -64,7 +64,9 @@ public:
     DeclKind getKind() const { return static_cast<DeclKind>(DeclBits.dKind); }
     bool isPublic() const { return DeclBits.DeclIsPublic; }
     bool isUsed() const { return DeclBits.DeclIsUsed; }
+    bool isUsedPublic() const { return DeclBits.DeclIsUsedPublic; }
     void setUsed() { DeclBits.DeclIsUsed = true; }
+    void setUsedPublic() { DeclBits.DeclIsUsedPublic = true; }
 
     void setPackage(const Package* pkg_) { pkg = pkg_; }
     const Package* getPackage() const { return pkg; }
@@ -82,6 +84,7 @@ protected:
         unsigned DeclFileID : 10;   // 10 bits for now
         unsigned DeclIsPublic : 1;
         unsigned DeclIsUsed : 1;
+        unsigned DeclIsUsedPublic : 1;
         unsigned varDeclKind: 2;
         unsigned VarDeclHasLocalQualifier : 1;
         unsigned StructTypeIsStruct : 1;
