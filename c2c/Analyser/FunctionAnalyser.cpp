@@ -1041,7 +1041,6 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
     QualType LType2 = resolveUserType(LType);
     if (LType2.isNull()) return QualType();
     if (!LType2.isFunctionType()) {
-        fprintf(stderr, "error: NOT a function type TODO\n");
         char typeName[MAX_LEN_TYPENAME];
         StringBuilder buf(MAX_LEN_TYPENAME, typeName);
         LType2.DiagName(buf);

@@ -209,6 +209,10 @@ void FileAnalyser::checkDeclsForUsed() {
         if (F->getName() == "main") continue;
         if (!F->isUsed()) {
             Diags.Report(F->getLocation(), diag::warn_unused_function) << F->getName();
+        } else {
+            if (F->isPublic() && !F->isUsedPublic()) {
+                Diags.Report(F->getLocation(), diag::warn_unused_public) << 1 << F->getName();
+            }
         }
     }
     for (unsigned i=0; i<ast.numTypes(); i++) {

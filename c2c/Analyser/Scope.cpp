@@ -205,6 +205,7 @@ ScopeResult Scope::findGlobalSymbol(const std::string& symbol, clang::SourceLoca
             result.setOK(false);
         }
         if (result.isOK()) {
+            if (isExternal(D->getPackage())) D->setUsedPublic();
             result.setDecl(D);
             globalCache[symbol] = result;
         }
@@ -241,6 +242,7 @@ ScopeResult Scope::findSymbolInPackage(const std::string& name, clang::SourceLoc
             res.setDecl(0);
             res.setOK(false);
         } else {
+            if (isExternal(pkg)) D->setUsedPublic();
             if (D->getFileID() != file_id) addExternal(D);
         }
     }
