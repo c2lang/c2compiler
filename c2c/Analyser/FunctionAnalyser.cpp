@@ -469,6 +469,7 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
                 Diags.Report(id->getLocation(), diag::err_var_self_init) << D->getName();
                 return;
             }
+            D->setUsed();       // always set used, even if causing error below
             switch (D->getKind()) {
             case DECL_FUNC:
                 {
