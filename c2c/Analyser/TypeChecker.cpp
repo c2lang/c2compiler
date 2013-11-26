@@ -120,14 +120,12 @@ unsigned TypeChecker::checkUnresolvedType(const UnresolvedType* type, bool used_
                 return 1;
             }
             bool external = globals.isExternal(D->getPackage());
-            if (used_public) {
-                if (!external && !td->isPublic()) {
-                    Diags.Report(I->getLocation(), diag::err_non_public_type) << I->getName();
-                    return 1;
-                }
-                td->setUsedPublic();
+            if (used_public && !external && !td->isPublic()) {
+                Diags.Report(I->getLocation(), diag::err_non_public_type) << I->getName();
+                return 1;
             }
             // ok
+            if (used_public || external) td->setUsedPublic();
             I->setDecl(D);
             type->setMatch(td);
         }
@@ -154,11 +152,12 @@ unsigned TypeChecker::checkUnresolvedType(const UnresolvedType* type, bool used_
                 return 1;
             }
             bool external = globals.isExternal(MD->getPackage());
-            if (used_public && !external && !td->isPublic()) {
+            if (used_public &&!external && !td->isPublic()) {
                 Diags.Report(member_id->getLocation(), diag::err_non_public_type) << M->getFullName();
                 return 1;
             }
             // ok
+            if (used_public || external) td->setUsedPublic();
             member_id->setDecl(MD);
             type->setMatch(td);
         }
