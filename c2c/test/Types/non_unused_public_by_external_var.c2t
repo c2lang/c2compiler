@@ -1,0 +1,15 @@
+// @warnings{no-unused-variable no-unused-function}
+// @file{file1}
+package foo;
+
+public type Number int;
+
+// @file{file2}
+package bar;
+
+use foo local;
+
+func void test1() {
+    Number n;
+}
+
