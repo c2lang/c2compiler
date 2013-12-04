@@ -384,17 +384,7 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
 
     switch (expr->getKind()) {
     case EXPR_INTEGER_LITERAL:
-        {
-            IntegerLiteral* I = cast<IntegerLiteral>(expr);
-            //unsigned numbits = I->Value.getActiveBits();   // unsigned
-            // TEMP for now assume signed
-            // Q: we can determine size, but don't know if we need signed/unsigned
-            unsigned numbits = I->Value.getMinSignedBits();  // signed
-            if (numbits <= 8) return Type::Int8();
-            if (numbits <= 16) return Type::Int16();
-            if (numbits <= 32) return Type::Int32();
-            return Type::Int64();
-        }
+        return analyseIntegerLiteral(expr);
     case EXPR_FLOAT_LITERAL:
         // For now always return type float
         return Type::Float32();
@@ -668,6 +658,18 @@ static ExprCTC combineCtc(ExprCTC left, ExprCTC right) {
     }
     assert(0 && "should not come here");
     return CTC_NONE;
+}
+
+QualType FunctionAnalyser::analyseIntegerLiteral(Expr* expr) {
+    IntegerLiteral* I = cast<IntegerLiteral>(expr);
+    //unsigned numbits = I->Value.getActiveBits();   // unsigned
+    // TEMP for now assume signed
+    // Q: we can determine size, but don't know if we need signed/unsigned
+    unsigned numbits = I->Value.getMinSignedBits();  // signed
+    if (numbits <= 8) return Type::Int8();
+    if (numbits <= 16) return Type::Int16();
+    if (numbits <= 32) return Type::Int32();
+    return Type::Int64();
 }
 
 QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {

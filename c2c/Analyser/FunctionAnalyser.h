@@ -63,6 +63,7 @@ private:
 
     QualType analyseExpr(Expr* expr, unsigned side);
     void analyseDeclExpr(Expr* expr);
+    QualType analyseIntegerLiteral(Expr* expr);
     QualType analyseBinaryOperator(Expr* expr, unsigned side);
     QualType analyseConditionalOperator(Expr* expr);
     QualType analyseUnaryOperator(Expr* expr, unsigned side);
