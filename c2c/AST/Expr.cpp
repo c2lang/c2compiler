@@ -387,9 +387,11 @@ MemberExpr::~MemberExpr() {
 
 void MemberExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[MemberExpr]";
+    buffer << "[MemberExpr";
     if (isPkgPrefix()) buffer << " (pkg-prefix)";
-    buffer << '\n';
+    buffer << ' ';
+    Expr::print(buffer, 0);
+    buffer << "]\n";
     Base->print(buffer, indent + INDENT);
     Member->print(buffer, indent + INDENT);
 }

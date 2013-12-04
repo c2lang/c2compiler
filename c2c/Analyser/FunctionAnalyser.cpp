@@ -46,6 +46,30 @@ using namespace clang;
 #define LHS 0x01
 #define RHS 0x02
 
+static ExprCTC decl2ctc(Decl* D) {
+    switch (D->getKind()) {
+    case DECL_FUNC:
+        break;
+    case DECL_VAR:
+        {
+            VarDecl* VD = cast<VarDecl>(D);
+            if (VD->getType().isConstQualified()) return CTC_FULL;
+            break;
+        }
+    case DECL_ENUMVALUE:
+        return CTC_FULL;
+    case DECL_ALIASTYPE:
+    case DECL_STRUCTTYPE:
+    case DECL_ENUMTYPE:
+    case DECL_FUNCTIONTYPE:
+    case DECL_ARRAYVALUE:
+    case DECL_USE:
+        break;
+    }
+    return CTC_NONE;
+}
+
+
 FunctionAnalyser::FunctionAnalyser(Scope& scope_,
                                    TypeChecker& typeRes_,
                                    TypeContext& tc,
@@ -988,6 +1012,9 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
             if (D) {
                 member->setDecl(D);
                 if (side & RHS) D->setUsed();
+                ExprCTC ctc = decl2ctc(D);
+                member->setCTC(ctc);
+                expr->setCTC(ctc);
                 return Decl2Type(D);
             }
             return QualType();
@@ -1133,13 +1160,7 @@ ScopeResult FunctionAnalyser::analyseIdentifier(IdentifierExpr* id) {
 
     if (D) {
         id->setDecl(D);
-        // TODO extract to function? ExprCTC decl2Ctc(Decl*)
-        if (VarDecl* VD = dyncast<VarDecl>(D)) {
-            if (VD->getType().isConstQualified()) id->setCTC(CTC_FULL);
-        }
-        if (dyncast<EnumConstantDecl>(D)) {
-            id->setCTC(CTC_FULL);
-        }
+        id->setCTC(decl2ctc(D));
     } else if (res.getPackage()) {
         // symbol is package
     } else {
