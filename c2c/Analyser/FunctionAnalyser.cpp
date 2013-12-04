@@ -631,6 +631,21 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     scope.addScopedSymbol(decl);
 }
 
+static ExprCTC combineCtc(ExprCTC left, ExprCTC right) {
+    switch (left + right) {
+    case 0:
+        return CTC_NONE;
+    case 1:
+    case 2:
+    case 3:
+        return CTC_PARTIAL;
+    case 4:
+        return CTC_FULL;
+    }
+    assert(0 && "should not come here");
+    return CTC_NONE;
+}
+
 QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     LOG_FUNC
     BinaryOperator* binop = cast<BinaryOperator>(expr);
@@ -662,6 +677,7 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
         // RHS, RHS
         TLeft = analyseExpr(binop->getLHS(), RHS);
         TRight = analyseExpr(binop->getRHS(), RHS);
+        expr->setCTC(combineCtc(binop->getLHS()->getCTC(), binop->getRHS()->getCTC()));
         break;
     case BO_Assign:
         // LHS, RHS
@@ -1025,7 +1041,9 @@ QualType FunctionAnalyser::analyseMember(QualType T, IdentifierExpr* member, uns
 QualType FunctionAnalyser::analyseParenExpr(Expr* expr) {
     LOG_FUNC
     ParenExpr* P = cast<ParenExpr>(expr);
-    return analyseExpr(P->getExpr(), RHS);
+    QualType Q = analyseExpr(P->getExpr(), RHS);
+    expr->setCTC(P->getExpr()->getCTC());
+    return Q;
 }
 
 QualType FunctionAnalyser::analyseCall(Expr* expr) {
@@ -1114,6 +1132,13 @@ ScopeResult FunctionAnalyser::analyseIdentifier(IdentifierExpr* id) {
 
     if (D) {
         id->setDecl(D);
+        // TODO extract to function? ExprCTC decl2Ctc(Decl*)
+        if (VarDecl* VD = dyncast<VarDecl>(D)) {
+            if (VD->getType().isConstQualified()) id->setCTC(CTC_FULL);
+        }
+        if (dyncast<EnumConstantDecl>(D)) {
+            id->setCTC(CTC_FULL);
+        }
     } else if (res.getPackage()) {
         // symbol is package
     } else {

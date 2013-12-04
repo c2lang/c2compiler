@@ -53,7 +53,13 @@ enum ExprKind {
     EXPR_BUILTIN,
     EXPR_ARRAYSUBSCRIPT,
     EXPR_MEMBER,
-    EXPR_PAREN,
+    EXPR_PAREN
+};
+
+enum ExprCTC {
+    CTC_NONE,
+    CTC_PARTIAL,
+    CTC_FULL,
 };
 
 
@@ -65,10 +71,15 @@ public:
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_EXPR;
     }
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
 
     ExprKind getKind() const {
         return static_cast<ExprKind>(StmtBits.eKind);
     }
+    ExprCTC getCTC() const {
+        return static_cast<ExprCTC>(StmtBits.ExprIsCTC);
+    }
+    void setCTC(ExprCTC ctc) { StmtBits.ExprIsCTC = ctc; }
 
     virtual clang::SourceRange getSourceRange() const {
         return clang::SourceRange();
@@ -85,7 +96,10 @@ class IntegerLiteral : public Expr {
 public:
     IntegerLiteral(SourceLocation loc_, const llvm::APInt& V)
         : Expr(EXPR_INTEGER_LITERAL)
-        , Value(V), loc(loc_) {}
+        , Value(V), loc(loc_)
+    {
+        setCTC(CTC_FULL);
+    }
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_INTEGER_LITERAL;
     }

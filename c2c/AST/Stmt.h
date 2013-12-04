@@ -66,6 +66,7 @@ protected:
     public:
         unsigned sKind : 8;
         unsigned eKind : 8;
+        unsigned ExprIsCTC: 2;
         unsigned BoolLiteralValue : 1;
         unsigned TypeExprIsLocal : 1;
         unsigned BuiltInIsSizeOf: 1;

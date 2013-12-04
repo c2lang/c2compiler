@@ -93,10 +93,17 @@ Expr::~Expr() {
 #endif
 }
 
+const char* ctc_strings[] = { "none", "partial", "full" };
+
+void Expr::print(StringBuilder& buffer, unsigned indent) const {
+    buffer << "<ctc=" << ctc_strings[StmtBits.ExprIsCTC] << '>';
+}
 
 void IntegerLiteral::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[IntegerLiteral " << Value.getSExtValue() << "]\n";
+    buffer << "[IntegerLiteral " << Value.getSExtValue() << ' ';
+    Expr::print(buffer, 0);
+    buffer << "]\n";
 }
 
 
@@ -137,6 +144,8 @@ void IdentifierExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer << "[IdentifierExpr ";
     buffer << getName() << "]";
     if (decl) buffer << " <RESOLVED>";
+    buffer << ' ';
+    Expr::print(buffer, 0);
     buffer << '\n';
 }
 
@@ -265,7 +274,10 @@ const char* BinaryOperator::OpCode2str(clang::BinaryOperatorKind opc) {
 
 void BinaryOperator::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[BinaryOperator " << OpCode2str(opc) << "]\n";
+    buffer << "[BinaryOperator " << OpCode2str(opc) << ' ';
+    Expr::print(buffer, 0);
+    buffer << "]\n";
+
     lhs->print(buffer, indent + INDENT);
     rhs->print(buffer, indent + INDENT);
 }
@@ -392,7 +404,9 @@ ParenExpr::~ParenExpr() {
 
 void ParenExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[ParenExpr]\n";
+    buffer << "[ParenExpr ";
+    Expr::print(buffer, 0);
+    buffer << "]\n";
     Val->print(buffer, indent + INDENT);
 }
 
