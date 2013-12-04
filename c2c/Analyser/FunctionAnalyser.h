@@ -96,6 +96,8 @@ private:
         FunctionAnalyser& analyser;
     };
 
+    QualType checkIntegerLiterals(QualType TLeft, QualType TRight, Expr* Right);
+    QualType checkUnaryLiterals(QualType TLeft, QualType TRight, Expr* Right);
     QualType checkLiterals(QualType TLeft, QualType TRight, Expr* Right);
     bool checkAssignee(Expr* expr) const;
     void checkAssignment(Expr* assignee, QualType TLeft);

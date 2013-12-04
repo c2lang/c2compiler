@@ -453,6 +453,8 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
 void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
     LOG_FUNC
 
+    QualType TRight;
+
     switch (expr->getKind()) {
     case EXPR_INTEGER_LITERAL:
     case EXPR_FLOAT_LITERAL:
@@ -460,6 +462,7 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
     case EXPR_CHAR_LITERAL:
     case EXPR_STRING_LITERAL:
     case EXPR_NIL:
+        TRight = analyseExpr(expr, RHS);
         // TODO check if compatible
         break;
     case EXPR_CALL:
@@ -532,27 +535,32 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
         assert(0 && "TODO ERROR?");
         break;
     case EXPR_BINOP:
-        analyseBinaryOperator(expr, RHS);
+        TRight = analyseBinaryOperator(expr, RHS);
         break;
     case EXPR_CONDOP:
-        analyseConditionalOperator(expr);
+        TRight = analyseConditionalOperator(expr);
         break;
     case EXPR_UNARYOP:
-        analyseUnaryOperator(expr, RHS);
+        TRight = analyseUnaryOperator(expr, RHS);
         break;
     case EXPR_BUILTIN:
-        analyseBuiltinExpr(expr);
+        TRight = analyseBuiltinExpr(expr);
         break;
     case EXPR_ARRAYSUBSCRIPT:
-        analyseArraySubscript(expr);
+        TRight =  analyseArraySubscript(expr);
         break;
     case EXPR_MEMBER:
         // TODO dont allow struct.member, only pkg.constant
-        analyseMemberExpr(expr, RHS);
+        TRight = analyseMemberExpr(expr, RHS);
         break;
     case EXPR_PAREN:
-        analyseParenExpr(expr);
+        TRight = analyseParenExpr(expr);
         break;
+    }
+
+    if (!TRight.isNull()) {
+        TRight = checkLiterals(expectedType, TRight, expr);
+        typeResolver.checkCompatible(expectedType, TRight, expr->getLocation(), TypeChecker::CONV_INIT);
     }
 }
 
@@ -636,6 +644,7 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     if (initialValue && !errs) {
         QualType Q = analyseExpr(initialValue, RHS);
         if (Q.isValid()) {
+            Q = checkLiterals(decl->getType(), Q, initialValue);
             typeResolver.checkCompatible(decl->getType(), Q, initialValue->getLocation(), TypeChecker::CONV_INIT);
         }
     }
@@ -764,10 +773,7 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
         return Type::Bool();
     case BO_Assign:
         // if sizes are not ok.
-        if (Right->getCTC() != CTC_NONE) {
-            // check literals
-            TRight = checkLiterals(TLeft, TRight, Right);
-        }
+        TRight = checkLiterals(TLeft, TRight, Right);
         typeResolver.checkCompatible(TLeft, TRight, binop->getLocation(), TypeChecker::CONV_ASSIGN);
         checkAssignment(Left, TLeft);
         return TLeft;
@@ -1117,6 +1123,7 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
         QualType argType = argFunc->getType();
         if (typeGiven.isValid()) {
             assert(argType.isValid());
+            typeGiven = checkLiterals(argType, typeGiven, argGiven);
             typeResolver.checkCompatible(argType, typeGiven, argGiven->getLocation(), TypeChecker::CONV_CONV);
         }
     }
@@ -1229,14 +1236,9 @@ bool FunctionAnalyser::checkAssignee(Expr* expr) const {
     return false;
 }
 
-QualType FunctionAnalyser::checkLiterals(QualType TLeft, QualType TRight, Expr* Right) {
-    // ONLY support IntegerLiterals for now
-    IntegerLiteral* I = dyncast<IntegerLiteral>(Right);
-    if (I == 0) {
-        fprintf(stderr, "%s(): Not integer literal\n", __func__);
-        Right->dump();
-        return TRight;
-    }
+// TODO return APSInt? or use output arg and return val for error?
+QualType FunctionAnalyser::checkIntegerLiterals(QualType TLeft, QualType TRight, Expr* Right) {
+    IntegerLiteral* I = cast<IntegerLiteral>(Right);
 
     // For only only support builtin on Left
     if (!TLeft.isBuiltinType()) return TRight;
@@ -1247,18 +1249,82 @@ QualType FunctionAnalyser::checkLiterals(QualType TLeft, QualType TRight, Expr* 
     if (needWidth <= availableWidth) {
         TLeft.clearQualifiers();
         I->setType(TLeft);
-#if 0
-            StringBuilder output;
-            output << "Changing type from: ";
-            TRight->DiagName(output);
-            output << " to: ";
-            TLeft->DiagName(output);
-            output << '\n';
-            fprintf(stderr, "%s", (const char*)output);
-#endif
         return TLeft;
     } else {
+        // give error and return QualType()?
         // error, will be handled later
+    }
+    return TRight;
+}
+
+QualType FunctionAnalyser::checkUnaryLiterals(QualType TLeft, QualType TRight, Expr* Right) {
+    UnaryOperator* unaryop = cast<UnaryOperator>(Right);
+    QualType LType;
+    switch (unaryop->getOpcode()) {
+    case UO_PostInc:
+    case UO_PostDec:
+    case UO_PreInc:
+    case UO_PreDec:
+        break;
+    case UO_AddrOf:
+    case UO_Deref:
+    case UO_Plus:
+        // TODO
+        break;
+    case UO_Minus:
+        {
+            QualType Q = checkLiterals(TLeft, TRight, unaryop->getExpr());
+            // TODO swap signedness
+            return Q;
+        }
+    case UO_Not:
+    case UO_LNot:
+        // TODO
+        break;
+    default:
+        assert(0 && "TODO");
+        break;
+    }
+    return TRight;
+}
+
+QualType FunctionAnalyser::checkLiterals(QualType TLeft, QualType TRight, Expr* Right) {
+    if (Right->getCTC() == CTC_NONE) return TRight;
+
+    // ONLY support IntegerLiterals for now
+    switch (Right->getKind()) {
+    case EXPR_INTEGER_LITERAL:
+        return checkIntegerLiterals(TLeft, TRight, Right);
+    case EXPR_FLOAT_LITERAL:
+    case EXPR_BOOL_LITERAL:
+    case EXPR_CHAR_LITERAL:
+    case EXPR_STRING_LITERAL:
+        break;
+    case EXPR_NIL:
+    case EXPR_IDENTIFIER:
+    case EXPR_TYPE:
+    case EXPR_CALL:
+    case EXPR_INITLIST:
+        break;
+    case EXPR_DECL:
+        break;
+    case EXPR_BINOP:
+    case EXPR_CONDOP:
+        // TODO
+        break;
+    case EXPR_UNARYOP:
+        return checkUnaryLiterals(TLeft, TRight, Right);
+    case EXPR_BUILTIN:
+    case EXPR_ARRAYSUBSCRIPT:
+    case EXPR_MEMBER:
+        break;
+    case EXPR_PAREN:
+        {
+            ParenExpr* P = cast<ParenExpr>(Right);
+            QualType Q = checkLiterals(TLeft, TRight, P->getExpr());
+            P->setType(Q);
+            return Q;
+        }
     }
     return TRight;
 }
