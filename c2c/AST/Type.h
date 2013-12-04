@@ -75,6 +75,7 @@ public:
     void addVolatile() { qualifiers |= QUAL_VOLATILE; }
     void addRestrict() { qualifiers |= QUAL_RESTRICT; }
     void setQualifiers(unsigned quals) { qualifiers = quals; }
+    void clearQualifiers() { qualifiers = 0; }
 
     // Helper functions
     bool isBuiltinType() const;
@@ -188,6 +189,7 @@ public:
 
     Kind getKind() const { return kind; }
     unsigned getWidth() const;
+    unsigned getIntegerWidth() const;
     const char* getName() const;
     const char* getCName() const;
     bool isInteger() const;

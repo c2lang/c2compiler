@@ -84,7 +84,12 @@ public:
     virtual clang::SourceRange getSourceRange() const {
         return clang::SourceRange();
     }
+    QualType getType() const { return QT; }
+    void setType(QualType t) { QT = t; }
+
 private:
+    QualType QT;
+
     Expr(const Expr&);
     Expr& operator= (const Expr&);
 };
@@ -218,10 +223,11 @@ private:
 
 class TypeExpr : public Expr {
 public:
-    TypeExpr(QualType& QT_)
+    TypeExpr(QualType QT_)
         : Expr(EXPR_TYPE)
-        , QT(QT_)
-    {}
+    {
+        setType(QT_);
+    }
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_TYPE;
     }
@@ -230,13 +236,8 @@ public:
         SourceLocation loc;
         return loc;
     }
-    QualType& getType() { return QT; }
-    void setType(QualType& QT_) { QT = QT_; }
-
     void setLocalQualifier() { StmtBits.TypeExprIsLocal = true; }
     bool hasLocalQualifier() const { return StmtBits.TypeExprIsLocal; }
-private:
-    QualType QT;
 };
 
 
@@ -295,7 +296,7 @@ public:
 
     const std::string& getName() const;
     virtual SourceLocation getLocation() const;
-    QualType getType() const;
+    QualType getDeclType() const;
     Expr* getInitValue() const;
     bool hasLocalQualifier() const;
     VarDecl* getDecl() const { return decl; }

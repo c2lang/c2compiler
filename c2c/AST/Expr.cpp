@@ -152,7 +152,7 @@ void IdentifierExpr::print(StringBuilder& buffer, unsigned indent) const {
 
 void TypeExpr::print(StringBuilder& buffer, unsigned indent) const {
     //QT.print(buffer, indent, QualType::RECURSE_NONE);
-    QT.debugPrint(buffer, indent);
+    getType().debugPrint(buffer, indent);
 }
 
 
@@ -215,7 +215,7 @@ clang::SourceLocation DeclExpr::getLocation() const {
     return decl->getLocation();
 }
 
-QualType DeclExpr::getType() const { return decl->getType(); }
+QualType DeclExpr::getDeclType() const { return decl->getType(); }
 
 Expr* DeclExpr::getInitValue() const { return decl->getInitValue(); }
 

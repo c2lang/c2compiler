@@ -326,10 +326,10 @@ void CCodeGenerator::EmitDeclExpr(DeclExpr* E, StringBuilder& output, unsigned i
     LOG_FUNC
     output.indent(indent);
     if (E->hasLocalQualifier()) output << "static ";
-    EmitTypePreName(E->getType(), output);
+    EmitTypePreName(E->getDeclType(), output);
     output << ' ';
     output << E->getName();
-    EmitTypePostName(E->getType(), output);
+    EmitTypePostName(E->getDeclType(), output);
     if (E->getInitValue()) {
         output << " = ";
         EmitExpr(E->getInitValue(), output);

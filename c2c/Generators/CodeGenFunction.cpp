@@ -513,7 +513,7 @@ llvm::Value* CodeGenFunction::EmitIdentifierExpr(const IdentifierExpr* E) {
 
 void CodeGenFunction::EmitVarDecl(const DeclExpr* D) {
     // TODO arrays types?
-    QualType qt = D->getType();
+    QualType qt = D->getDeclType();
     llvm::AllocaInst* inst = Builder.CreateAlloca(CGM.ConvertType(qt.getTypePtr()), 0, D->getName());
     // TODO smart alignment
     assert(isa<BuiltinType>(qt.getTypePtr()));

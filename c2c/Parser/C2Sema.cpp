@@ -683,10 +683,11 @@ C2::ExprResult C2Sema::ActOnTypeQualifier(ExprResult R, unsigned qualifier) {
 #endif
         TypeExpr* typeExpr = cast<TypeExpr>(R.get());
         // TODO use typeExpr.addConst() and just return QualType (not ref) in getType()
-        QualType& qt = typeExpr->getType();
+        QualType qt = typeExpr->getType();
         if (qualifier & TYPE_CONST) qt.addConst();
         if (qualifier & TYPE_VOLATILE) qt.addVolatile();
         if (qualifier & TYPE_LOCAL) typeExpr->setLocalQualifier();
+        typeExpr->setType(qt);
     }
     return R;
 }

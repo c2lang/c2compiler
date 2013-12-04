@@ -203,6 +203,24 @@ unsigned BuiltinType::getWidth() const {
     return 0;       // to satisfy compiler
 }
 
+unsigned BuiltinType::getIntegerWidth() const {
+    switch (kind) {
+        case Int8:      return 7;
+        case Int16:     return 15;
+        case Int32:     return 31;
+        case Int64:     return 63;
+        case UInt8:     return 8;
+        case UInt16:    return 16;
+        case UInt32:    return 32;
+        case UInt64:    return 64;
+        case Float32:   return 0;
+        case Float64:   return 0;
+        case Bool:      return 1;
+        case Void:      return 0;
+    }
+    return 0;       // to satisfy compiler
+}
+
 const char* BuiltinType::getName() const {
     switch (kind) {
         case Int8:      return "int8";

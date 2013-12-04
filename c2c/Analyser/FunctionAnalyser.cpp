@@ -662,20 +662,22 @@ static ExprCTC combineCtc(ExprCTC left, ExprCTC right) {
 
 QualType FunctionAnalyser::analyseIntegerLiteral(Expr* expr) {
     IntegerLiteral* I = cast<IntegerLiteral>(expr);
-    //unsigned numbits = I->Value.getActiveBits();   // unsigned
     // TEMP for now assume signed
     // Q: we can determine size, but don't know if we need signed/unsigned
-    unsigned numbits = I->Value.getMinSignedBits();  // signed
-    if (numbits <= 8) return Type::Int8();
-    if (numbits <= 16) return Type::Int16();
-    if (numbits <= 32) return Type::Int32();
-    return Type::Int64();
+    //unsigned numbits = I->Value.getMinSignedBits();  // signed
+    unsigned numbits = I->Value.getActiveBits();   // unsigned
+    //if (numbits <= 8) return Type::Int8();
+    //if (numbits <= 16) return Type::Int16();
+    if (numbits <= 32) return Type::UInt32();
+    return Type::UInt64();
 }
 
 QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     LOG_FUNC
     BinaryOperator* binop = cast<BinaryOperator>(expr);
     QualType TLeft, TRight;
+    Expr* Left = binop->getLHS();
+    Expr* Right = binop->getRHS();
 
     switch (binop->getOpcode()) {
     case BO_PtrMemD:
@@ -701,14 +703,14 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     case BO_LAnd:
     case BO_LOr:
         // RHS, RHS
-        TLeft = analyseExpr(binop->getLHS(), RHS);
-        TRight = analyseExpr(binop->getRHS(), RHS);
-        expr->setCTC(combineCtc(binop->getLHS()->getCTC(), binop->getRHS()->getCTC()));
+        TLeft = analyseExpr(Left, RHS);
+        TRight = analyseExpr(Right, RHS);
+        expr->setCTC(combineCtc(Left->getCTC(), Right->getCTC()));
         break;
     case BO_Assign:
         // LHS, RHS
-        TLeft = analyseExpr(binop->getLHS(), side | LHS);
-        TRight = analyseExpr(binop->getRHS(), RHS);
+        TLeft = analyseExpr(Left, side | LHS);
+        TRight = analyseExpr(Right, RHS);
         break;
     case BO_MulAssign:
     case BO_DivAssign:
@@ -721,8 +723,8 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     case BO_XorAssign:
     case BO_OrAssign:
         // LHS|RHS, RHS
-        TLeft = analyseExpr(binop->getLHS(), LHS | RHS);
-        TRight = analyseExpr(binop->getRHS(), RHS);
+        TLeft = analyseExpr(Left, LHS | RHS);
+        TRight = analyseExpr(Right, RHS);
         break;
     case BO_Comma:
         assert(0 && "unhandled binary operator type");
@@ -761,8 +763,13 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     case BO_LOr:
         return Type::Bool();
     case BO_Assign:
+        // if sizes are not ok.
+        if (Right->getCTC() != CTC_NONE) {
+            // check literals
+            TRight = checkLiterals(TLeft, TRight, Right);
+        }
         typeResolver.checkCompatible(TLeft, TRight, binop->getLocation(), TypeChecker::CONV_ASSIGN);
-        checkAssignment(binop->getLHS(), TLeft);
+        checkAssignment(Left, TLeft);
         return TLeft;
     case BO_MulAssign:
     case BO_DivAssign:
@@ -774,7 +781,7 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     case BO_AndAssign:
     case BO_XorAssign:
     case BO_OrAssign:
-        checkAssignment(binop->getLHS(), TLeft);
+        checkAssignment(Left, TLeft);
         return TLeft;
     case BO_Comma:
         assert(0 && "unhandled binary operator type");
@@ -1220,6 +1227,40 @@ bool FunctionAnalyser::checkAssignee(Expr* expr) const {
     // TODO test (also ternary)
     Diags.Report(expr->getLocation(), diag::err_typecheck_expression_not_modifiable_lvalue);
     return false;
+}
+
+QualType FunctionAnalyser::checkLiterals(QualType TLeft, QualType TRight, Expr* Right) {
+    // ONLY support IntegerLiterals for now
+    IntegerLiteral* I = dyncast<IntegerLiteral>(Right);
+    if (I == 0) {
+        fprintf(stderr, "%s(): Not integer literal\n", __func__);
+        Right->dump();
+        return TRight;
+    }
+
+    // For only only support builtin on Left
+    if (!TLeft.isBuiltinType()) return TRight;
+
+    const BuiltinType* TL = cast<BuiltinType>(TLeft->getCanonicalType());
+    int availableWidth = TL->getIntegerWidth();
+    unsigned needWidth = I->Value.getActiveBits();   // unsigned
+    if (needWidth <= availableWidth) {
+        TLeft.clearQualifiers();
+        I->setType(TLeft);
+#if 0
+            StringBuilder output;
+            output << "Changing type from: ";
+            TRight->DiagName(output);
+            output << " to: ";
+            TLeft->DiagName(output);
+            output << '\n';
+            fprintf(stderr, "%s", (const char*)output);
+#endif
+        return TLeft;
+    } else {
+        // error, will be handled later
+    }
+    return TRight;
 }
 
 void FunctionAnalyser::checkAssignment(Expr* assignee, QualType TLeft) {
