@@ -810,6 +810,7 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
     case UO_Not:
     case UO_LNot:
         LType = analyseExpr(unaryop->getExpr(), side | RHS);
+        unaryop->setCTC(unaryop->getExpr()->getCTC());
         if (LType.isNull()) return 0;
         break;
     default:
