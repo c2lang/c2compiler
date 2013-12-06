@@ -1251,6 +1251,12 @@ QualType FunctionAnalyser::checkIntegerLiterals(QualType TLeft, QualType TRight,
         I->setType(TLeft);
         return TLeft;
     } else {
+        StringBuilder buf1;
+        StringBuilder buf2;
+        TLeft->DiagName(buf1);
+        TRight->DiagName(buf2);
+        Diags.Report(Right->getLocation(), diag::warn_impcast_integer_precision_constant)
+            << "todo1" << "todo2" << buf2 << buf1 << Right->getLocation();
         // give error and return QualType()?
         // error, will be handled later
     }

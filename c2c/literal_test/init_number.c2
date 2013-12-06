@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+package test;
+
+func void test1() {
+    int8 a = 200;   // @error{literal value out-of-bounds for type 'int8' (range [-128,127])}
+    //int8 b = 127;
+    //int8 c = -128;
+    //int8 d = -129;   // error{literal value out-of-bounds for type 'int8' (range [-128,127])}
+}
+
