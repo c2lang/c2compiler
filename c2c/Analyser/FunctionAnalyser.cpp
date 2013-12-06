@@ -559,7 +559,7 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
     }
 
     if (!TRight.isNull()) {
-        TRight = checkLiterals(expectedType, TRight, expr);
+        TRight = checkLiteralsTop(expectedType, TRight, expr);
         typeResolver.checkCompatible(expectedType, TRight, expr->getLocation(), TypeChecker::CONV_INIT);
     }
 }
@@ -644,7 +644,7 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     if (initialValue && !errs) {
         QualType Q = analyseExpr(initialValue, RHS);
         if (Q.isValid()) {
-            Q = checkLiterals(decl->getType(), Q, initialValue);
+            Q = checkLiteralsTop(decl->getType(), Q, initialValue);
             //typeResolver.checkCompatible(decl->getType(), Q, initialValue->getLocation(), TypeChecker::CONV_INIT);
         }
     }
@@ -773,7 +773,7 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
         return Type::Bool();
     case BO_Assign:
         // if sizes are not ok.
-        TRight = checkLiterals(TLeft, TRight, Right);
+        TRight = checkLiteralsTop(TLeft, TRight, Right);
         typeResolver.checkCompatible(TLeft, TRight, binop->getLocation(), TypeChecker::CONV_ASSIGN);
         checkAssignment(Left, TLeft);
         return TLeft;
@@ -1123,7 +1123,7 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
         QualType argType = argFunc->getType();
         if (typeGiven.isValid()) {
             assert(argType.isValid());
-            typeGiven = checkLiterals(argType, typeGiven, argGiven);
+            typeGiven = checkLiteralsTop(argType, typeGiven, argGiven);
             typeResolver.checkCompatible(argType, typeGiven, argGiven->getLocation(), TypeChecker::CONV_CONV);
         }
     }
@@ -1243,38 +1243,37 @@ bool FunctionAnalyser::checkAssignee(Expr* expr) const {
     return false;
 }
 
-// TODO return APSInt? or use output arg and return val for error?
-QualType FunctionAnalyser::checkIntegerLiterals(QualType TLeft, QualType TRight, Expr* Right, bool isNegative) {
+// TODO rename to evaluateIntegerLiteral
+llvm::APSInt FunctionAnalyser::checkIntegerLiterals(QualType TLeft, QualType TRight, Expr* Right, llvm::APSInt& Result) {
     IntegerLiteral* I = cast<IntegerLiteral>(Right);
 
+    llvm::APSInt Result2;
+    Result2.setIsSigned(false);
+
     // For only only support builtin on Left
-    if (!TLeft.isBuiltinType()) return TRight;
+    if (!TLeft.isBuiltinType()) return Result2;
 
     const BuiltinType* TL = cast<BuiltinType>(TLeft->getCanonicalType());
     // check value itself?
     const int availableWidth = TL->getIntegerWidth();
     //unsigned needWidth = I->Value.getActiveBits();   // unsigned
     uint64_t v = I->Value.getSExtValue();
+    Result2 = I->Value;
 
     const int minValue = pow(availableWidth);
     const int maxValue = pow(availableWidth) -1;
-    int max = (isNegative ? minValue : maxValue);
-    if (v <= max) {
+    int max = (Result.isSigned() ? minValue : maxValue);
+    if (v <= max) {     // ok
         TLeft.clearQualifiers();
         I->setType(TLeft);
-        return TLeft;
+        return Result2;
     } else {
-        // TODO use static stuff (since only Basic types here?)
-        StringBuilder buf1;
-        TLeft->DiagName(buf1);
-        // TEMP int
-        Diags.Report(Right->getLocation(), diag::err_literal_outofbounds)
-            << buf1 << -minValue << maxValue << Right->getLocation();
+        // DONT give error here
     }
-    return TRight;
+    return Result2;
 }
 
-QualType FunctionAnalyser::checkUnaryLiterals(QualType TLeft, QualType TRight, Expr* Right, bool isNegative) {
+llvm::APSInt FunctionAnalyser::checkUnaryLiterals(QualType TLeft, QualType TRight, Expr* Right, llvm::APSInt& Result) {
     UnaryOperator* unaryop = cast<UnaryOperator>(Right);
     QualType LType;
     switch (unaryop->getOpcode()) {
@@ -1290,9 +1289,10 @@ QualType FunctionAnalyser::checkUnaryLiterals(QualType TLeft, QualType TRight, E
         break;
     case UO_Minus:
         {
-            QualType Q = checkLiterals(TLeft, TRight, unaryop->getExpr(), !isNegative);
+            llvm::APSInt Result2 = checkLiterals(TLeft, TRight, unaryop->getExpr(), Result);
+            Result2.setIsSigned(!Result.isSigned());
             // TODO swap signedness
-            return Q;
+            return Result2;
         }
     case UO_Not:
     case UO_LNot:
@@ -1302,16 +1302,15 @@ QualType FunctionAnalyser::checkUnaryLiterals(QualType TLeft, QualType TRight, E
         assert(0 && "TODO");
         break;
     }
-    return TRight;
+    return Result;
 }
 
-QualType FunctionAnalyser::checkLiterals(QualType TLeft, QualType TRight, Expr* Right, bool isNegative) {
-    if (Right->getCTC() == CTC_NONE) return TRight;
+llvm::APSInt FunctionAnalyser::checkLiterals(QualType TLeft, QualType TRight, Expr* Right, llvm::APSInt& Result) {
+    if (Right->getCTC() == CTC_NONE) return Result;
 
-    // ONLY support IntegerLiterals for now
     switch (Right->getKind()) {
     case EXPR_INTEGER_LITERAL:
-        return checkIntegerLiterals(TLeft, TRight, Right, isNegative);
+        return checkIntegerLiterals(TLeft, TRight, Right, Result);
     case EXPR_FLOAT_LITERAL:
     case EXPR_BOOL_LITERAL:
     case EXPR_CHAR_LITERAL:
@@ -1330,7 +1329,7 @@ QualType FunctionAnalyser::checkLiterals(QualType TLeft, QualType TRight, Expr* 
         // TODO
         break;
     case EXPR_UNARYOP:
-        return checkUnaryLiterals(TLeft, TRight, Right, isNegative);
+        return checkUnaryLiterals(TLeft, TRight, Right, Result);
     case EXPR_BUILTIN:
     case EXPR_ARRAYSUBSCRIPT:
     case EXPR_MEMBER:
@@ -1338,11 +1337,41 @@ QualType FunctionAnalyser::checkLiterals(QualType TLeft, QualType TRight, Expr* 
     case EXPR_PAREN:
         {
             ParenExpr* P = cast<ParenExpr>(Right);
-            QualType Q = checkLiterals(TLeft, TRight, P->getExpr(), isNegative);
-            P->setType(Q);
-            return Q;
+            llvm::APSInt Result2 = checkLiterals(TLeft, TRight, P->getExpr(), Result);
+            P->setType(TLeft);
+            return Result2;
         }
     }
+    return Result;
+}
+
+QualType FunctionAnalyser::checkLiteralsTop(QualType TLeft, QualType TRight, Expr* Right) {
+    if (Right->getCTC() == CTC_NONE) return TRight;
+
+    llvm::APSInt Input;
+    Input.setIsSigned(false);
+
+    llvm::APSInt Result = checkLiterals(TLeft, TRight, Right, Input);
+    uint64_t v = Result.getSExtValue();
+
+    const BuiltinType* TL = cast<BuiltinType>(TLeft->getCanonicalType());
+    const int availableWidth = TL->getIntegerWidth();
+    //unsigned needWidth = I->Value.getActiveBits();   // unsigned
+
+    // TODO use static stuff (since only Basic types here?)
+    const int minValue = pow(availableWidth);
+    const int maxValue = pow(availableWidth) -1;
+    int max = (Result.isSigned() ? minValue : maxValue);
+    if (v > max) {     // ok
+        StringBuilder buf1;
+        TLeft->DiagName(buf1);
+        // TEMP int
+        Diags.Report(Right->getLocation(), diag::err_literal_outofbounds)
+            << buf1 << -minValue << maxValue << Right->getLocation();
+            // TODO need range of Expr
+    }
+    // TODO need to return here?
+    // TODO
     return TRight;
 }
 

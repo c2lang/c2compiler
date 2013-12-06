@@ -16,6 +16,8 @@
 #ifndef FUNCTION_ANALYSER_H
 #define FUNCTION_ANALYSER_H
 
+#include <llvm/ADT/APSInt.h>
+
 #include "Analyser/Scope.h"
 #include "AST/Type.h"
 
@@ -96,9 +98,10 @@ private:
         FunctionAnalyser& analyser;
     };
 
-    QualType checkIntegerLiterals(QualType TLeft, QualType TRight, Expr* Right, bool isNegative);
-    QualType checkUnaryLiterals(QualType TLeft, QualType TRight, Expr* Right, bool isNegative);
-    QualType checkLiterals(QualType TLeft, QualType TRight, Expr* Right, bool isNegative = false);
+    llvm::APSInt checkIntegerLiterals(QualType TLeft, QualType TRight, Expr* Right, llvm::APSInt& Result);
+    llvm::APSInt checkUnaryLiterals(QualType TLeft, QualType TRight, Expr* Right, llvm::APSInt& Result);
+    llvm::APSInt checkLiterals(QualType TLeft, QualType TRight, Expr* Right, llvm::APSInt& Result);
+    QualType checkLiteralsTop(QualType TLeft, QualType TRight, Expr* Right);
     bool checkAssignee(Expr* expr) const;
     void checkAssignment(Expr* assignee, QualType TLeft);
     void checkDeclAssignment(Decl* decl, Expr* expr);
