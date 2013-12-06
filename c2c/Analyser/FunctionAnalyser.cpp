@@ -645,7 +645,7 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
         QualType Q = analyseExpr(initialValue, RHS);
         if (Q.isValid()) {
             Q = checkLiterals(decl->getType(), Q, initialValue);
-            typeResolver.checkCompatible(decl->getType(), Q, initialValue->getLocation(), TypeChecker::CONV_INIT);
+            //typeResolver.checkCompatible(decl->getType(), Q, initialValue->getLocation(), TypeChecker::CONV_INIT);
         }
     }
     if (type.isConstQualified() && !initialValue) {
@@ -1195,6 +1195,13 @@ ScopeResult FunctionAnalyser::analyseIdentifier(IdentifierExpr* id) {
     return res;
 }
 
+// TODO move to AST/Types.h
+static long pow(int s) {
+    long res = 2;
+    for (int i=1; i<s; i++) { res *= 2; }
+    return res;
+}
+
 bool FunctionAnalyser::checkAssignee(Expr* expr) const {
     switch (expr->getKind()) {
     case EXPR_INTEGER_LITERAL:
@@ -1251,14 +1258,14 @@ QualType FunctionAnalyser::checkIntegerLiterals(QualType TLeft, QualType TRight,
         I->setType(TLeft);
         return TLeft;
     } else {
+        // TODO use static stuff (since only Basic types here?)
         StringBuilder buf1;
-        StringBuilder buf2;
         TLeft->DiagName(buf1);
-        TRight->DiagName(buf2);
-        Diags.Report(Right->getLocation(), diag::warn_impcast_integer_precision_constant)
-            << "todo1" << "todo2" << buf2 << buf1 << Right->getLocation();
-        // give error and return QualType()?
-        // error, will be handled later
+        // TEMP int
+        int minValue = -pow(availableWidth);
+        int maxValue = pow(availableWidth) -1;
+        Diags.Report(Right->getLocation(), diag::err_literal_outofbounds)
+            << buf1 << minValue << maxValue << Right->getLocation();
     }
     return TRight;
 }
