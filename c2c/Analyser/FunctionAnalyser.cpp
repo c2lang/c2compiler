@@ -1244,16 +1244,22 @@ bool FunctionAnalyser::checkAssignee(Expr* expr) const {
 }
 
 // TODO return APSInt? or use output arg and return val for error?
-QualType FunctionAnalyser::checkIntegerLiterals(QualType TLeft, QualType TRight, Expr* Right) {
+QualType FunctionAnalyser::checkIntegerLiterals(QualType TLeft, QualType TRight, Expr* Right, bool isNegative) {
     IntegerLiteral* I = cast<IntegerLiteral>(Right);
 
     // For only only support builtin on Left
     if (!TLeft.isBuiltinType()) return TRight;
 
     const BuiltinType* TL = cast<BuiltinType>(TLeft->getCanonicalType());
-    int availableWidth = TL->getIntegerWidth();
-    unsigned needWidth = I->Value.getActiveBits();   // unsigned
-    if (needWidth <= availableWidth) {
+    // check value itself?
+    const int availableWidth = TL->getIntegerWidth();
+    //unsigned needWidth = I->Value.getActiveBits();   // unsigned
+    uint64_t v = I->Value.getSExtValue();
+
+    const int minValue = pow(availableWidth);
+    const int maxValue = pow(availableWidth) -1;
+    int max = (isNegative ? minValue : maxValue);
+    if (v <= max) {
         TLeft.clearQualifiers();
         I->setType(TLeft);
         return TLeft;
@@ -1262,15 +1268,13 @@ QualType FunctionAnalyser::checkIntegerLiterals(QualType TLeft, QualType TRight,
         StringBuilder buf1;
         TLeft->DiagName(buf1);
         // TEMP int
-        int minValue = -pow(availableWidth);
-        int maxValue = pow(availableWidth) -1;
         Diags.Report(Right->getLocation(), diag::err_literal_outofbounds)
-            << buf1 << minValue << maxValue << Right->getLocation();
+            << buf1 << -minValue << maxValue << Right->getLocation();
     }
     return TRight;
 }
 
-QualType FunctionAnalyser::checkUnaryLiterals(QualType TLeft, QualType TRight, Expr* Right) {
+QualType FunctionAnalyser::checkUnaryLiterals(QualType TLeft, QualType TRight, Expr* Right, bool isNegative) {
     UnaryOperator* unaryop = cast<UnaryOperator>(Right);
     QualType LType;
     switch (unaryop->getOpcode()) {
@@ -1286,7 +1290,7 @@ QualType FunctionAnalyser::checkUnaryLiterals(QualType TLeft, QualType TRight, E
         break;
     case UO_Minus:
         {
-            QualType Q = checkLiterals(TLeft, TRight, unaryop->getExpr());
+            QualType Q = checkLiterals(TLeft, TRight, unaryop->getExpr(), !isNegative);
             // TODO swap signedness
             return Q;
         }
@@ -1301,13 +1305,13 @@ QualType FunctionAnalyser::checkUnaryLiterals(QualType TLeft, QualType TRight, E
     return TRight;
 }
 
-QualType FunctionAnalyser::checkLiterals(QualType TLeft, QualType TRight, Expr* Right) {
+QualType FunctionAnalyser::checkLiterals(QualType TLeft, QualType TRight, Expr* Right, bool isNegative) {
     if (Right->getCTC() == CTC_NONE) return TRight;
 
     // ONLY support IntegerLiterals for now
     switch (Right->getKind()) {
     case EXPR_INTEGER_LITERAL:
-        return checkIntegerLiterals(TLeft, TRight, Right);
+        return checkIntegerLiterals(TLeft, TRight, Right, isNegative);
     case EXPR_FLOAT_LITERAL:
     case EXPR_BOOL_LITERAL:
     case EXPR_CHAR_LITERAL:
@@ -1326,7 +1330,7 @@ QualType FunctionAnalyser::checkLiterals(QualType TLeft, QualType TRight, Expr* 
         // TODO
         break;
     case EXPR_UNARYOP:
-        return checkUnaryLiterals(TLeft, TRight, Right);
+        return checkUnaryLiterals(TLeft, TRight, Right, isNegative);
     case EXPR_BUILTIN:
     case EXPR_ARRAYSUBSCRIPT:
     case EXPR_MEMBER:
@@ -1334,7 +1338,7 @@ QualType FunctionAnalyser::checkLiterals(QualType TLeft, QualType TRight, Expr* 
     case EXPR_PAREN:
         {
             ParenExpr* P = cast<ParenExpr>(Right);
-            QualType Q = checkLiterals(TLeft, TRight, P->getExpr());
+            QualType Q = checkLiterals(TLeft, TRight, P->getExpr(), isNegative);
             P->setType(Q);
             return Q;
         }
