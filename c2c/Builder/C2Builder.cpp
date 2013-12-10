@@ -228,7 +228,7 @@ int C2Builder::build() {
     // Diagnostics
     // NOTE: DiagOpts is somehow deleted by Diags/TextDiagnosticPrinter below?
     DiagnosticOptions* DiagOpts = new DiagnosticOptions();
-    //DiagOpts->ShowColors = true;
+    if (!options.testMode) DiagOpts->ShowColors = true;
     IntrusiveRefCntPtr<DiagnosticIDs> DiagID(new DiagnosticIDs());
     DiagnosticsEngine Diags(DiagID, DiagOpts,
             // NOTE: setting ShouldOwnClient to true causes crash??
