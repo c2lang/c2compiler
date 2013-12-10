@@ -1305,6 +1305,54 @@ llvm::APSInt FunctionAnalyser::checkUnaryLiterals(QualType TLeft, QualType TRigh
     return Result;
 }
 
+llvm::APSInt FunctionAnalyser::checkBinaryLiterals(QualType TLeft, QualType TRight, Expr* Right, llvm::APSInt& Result) {
+    BinaryOperator* binop = cast<BinaryOperator>(Right);
+    QualType LType;
+    switch (binop->getOpcode()) {
+    case BO_PtrMemD:
+    case BO_PtrMemI:
+        // TODO
+        break;
+    case BO_Mul:
+    case BO_Div:
+    case BO_Rem:
+        // TODO
+        break;
+    case BO_Add:
+        return checkLiterals(TLeft, TRight, binop->getLHS(), Result)
+             + checkLiterals(TLeft, TRight, binop->getRHS(), Result);
+    case BO_Sub:
+    case BO_Shl:
+    case BO_Shr:
+    case BO_LT:
+    case BO_GT:
+    case BO_LE:
+    case BO_GE:
+    case BO_EQ:
+    case BO_NE:
+    case BO_And:
+    case BO_Xor:
+    case BO_Or:
+    case BO_LAnd:
+    case BO_LOr:
+    case BO_Assign:
+    case BO_MulAssign:
+    case BO_DivAssign:
+    case BO_RemAssign:
+    case BO_AddAssign:
+    case BO_SubAssign:
+    case BO_ShlAssign:
+    case BO_ShrAssign:
+    case BO_AndAssign:
+    case BO_XorAssign:
+    case BO_OrAssign:
+    case BO_Comma:
+        // TODO
+        break;
+    }
+    return Result;
+}
+
 llvm::APSInt FunctionAnalyser::checkLiterals(QualType TLeft, QualType TRight, Expr* Right, llvm::APSInt& Result) {
     if (Right->getCTC() == CTC_NONE) return Result;
 
@@ -1326,8 +1374,7 @@ llvm::APSInt FunctionAnalyser::checkLiterals(QualType TLeft, QualType TRight, Ex
         break;
     case EXPR_BINOP:
     case EXPR_CONDOP:
-        // TODO
-        break;
+        return checkBinaryLiterals(TLeft, TRight, Right, Result);
     case EXPR_UNARYOP:
         return checkUnaryLiterals(TLeft, TRight, Right, Result);
     case EXPR_BUILTIN:
@@ -1361,8 +1408,12 @@ QualType FunctionAnalyser::checkLiteralsTop(QualType TLeft, QualType TRight, Exp
     // TODO use static stuff (since only Basic types here?)
     const int minValue = pow(availableWidth);
     const int maxValue = pow(availableWidth) -1;
-    int max = (Result.isSigned() ? minValue : maxValue);
-    if (v > max) {     // ok
+    int limit = (Result.isSigned() ? minValue : maxValue);
+    {
+        std::string str = Result.toString(10);
+        fprintf(stderr, "VALUE=%s  LIMIT %d\n", str.c_str(), limit);
+    }
+    if (v > limit) {     // ok
         StringBuilder buf1;
         TLeft->DiagName(buf1);
         // TEMP int

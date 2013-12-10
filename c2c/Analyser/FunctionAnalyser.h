@@ -100,6 +100,7 @@ private:
 
     llvm::APSInt checkIntegerLiterals(QualType TLeft, QualType TRight, Expr* Right, llvm::APSInt& Result);
     llvm::APSInt checkUnaryLiterals(QualType TLeft, QualType TRight, Expr* Right, llvm::APSInt& Result);
+    llvm::APSInt checkBinaryLiterals(QualType TLeft, QualType TRight, Expr* Right, llvm::APSInt& Result);
     llvm::APSInt checkLiterals(QualType TLeft, QualType TRight, Expr* Right, llvm::APSInt& Result);
     QualType checkLiteralsTop(QualType TLeft, QualType TRight, Expr* Right);
     bool checkAssignee(Expr* expr) const;
