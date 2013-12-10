@@ -1406,6 +1406,8 @@ QualType FunctionAnalyser::checkLiteralsTop(QualType TLeft, QualType TRight, Exp
     const int availableWidth = TL->getIntegerWidth();
     //unsigned needWidth = I->Value.getActiveBits();   // unsigned
 
+    // TODO unsigned
+
     // TODO use static stuff (since only Basic types here?)
     const int minValue = pow(availableWidth);
     const int maxValue = pow(availableWidth) -1;
