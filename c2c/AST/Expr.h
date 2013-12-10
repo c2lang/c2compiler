@@ -81,8 +81,15 @@ public:
     }
     void setCTC(ExprCTC ctc) { StmtBits.ExprIsCTC = ctc; }
 
+    // TODO: remove virtual and add virtual getLocEnd()
     virtual clang::SourceRange getSourceRange() const {
-        return clang::SourceRange();
+        return clang::SourceRange(getLocStart(), getLocEnd());
+    }
+    virtual SourceLocation getLocStart() const {
+        return SourceLocation();
+    }
+    virtual SourceLocation getLocEnd() const {
+        return SourceLocation();
     }
     QualType getType() const { return QT; }
     void setType(QualType t) { QT = t; }
@@ -110,6 +117,8 @@ public:
     }
     virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return loc; }
+    virtual SourceLocation getLocStart() const { return loc; }
+    virtual SourceLocation getLocEnd() const { return loc; }
 
     llvm::APInt Value;
 private:
@@ -276,6 +285,8 @@ public:
     }
     virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return leftBrace; }
+    virtual SourceLocation getLocStart() const { return leftBrace; }
+    virtual SourceLocation getLocEnd() const { return rightBrace; }
 
     ExprList& getValues() { return values; }
 private:
@@ -317,6 +328,9 @@ public:
     }
     virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return opLoc; }
+
+    virtual SourceLocation getLocStart() const { return lhs->getLocStart();  }
+    virtual SourceLocation getLocEnd() const { return rhs->getLocEnd(); }
 
     Expr* getLHS() const { return lhs; }
     Expr* getRHS() const { return rhs; }
@@ -364,6 +378,24 @@ public:
     }
     virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return opLoc; }
+    virtual SourceLocation getLocStart() const {
+        switch (opc) {
+        case clang::UO_PostInc:
+        case clang::UO_PostDec:
+            return val->getLocStart();
+        default:
+            return opLoc;
+        }
+    }
+    virtual SourceLocation getLocEnd() const {
+        switch (opc) {
+        case clang::UO_PostInc:
+        case clang::UO_PostDec:
+            return opLoc;
+        default:
+            return val->getLocEnd();
+        }
+    }
 
     Expr* getExpr() const { return val; }
     Opcode getOpcode() const { return opc; }
@@ -465,6 +497,8 @@ public:
     virtual clang::SourceRange getSourceRange() const { return clang::SourceRange(L, R); }
     SourceLocation getLParen() const { return L; }
     SourceLocation getRParen() const { return R; }
+    virtual SourceLocation getLocStart() const { return L; }
+    virtual SourceLocation getLocEnd() const { return R; }
 private:
     SourceLocation L, R;
     Expr* Val;

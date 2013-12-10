@@ -1366,12 +1366,10 @@ QualType FunctionAnalyser::checkLiteralsTop(QualType TLeft, QualType TRight, Exp
         StringBuilder buf1;
         TLeft->DiagName(buf1);
         // TEMP int
-        Diags.Report(Right->getLocation(), diag::err_literal_outofbounds)
-            << buf1 << -minValue << maxValue << Right->getLocation();
-            // TODO need range of Expr
+        Diags.Report(Right->getLocStart(), diag::err_literal_outofbounds)
+            << buf1 << -minValue << maxValue << Right->getSourceRange();
     }
     // TODO need to return here?
-    // TODO
     return TRight;
 }
 
