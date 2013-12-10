@@ -15,6 +15,7 @@
 
 #include <stdio.h>
 
+#include <llvm/ADT/SmallString.h>
 #include <clang/Parse/ParseDiagnostic.h>
 #include <clang/Sema/SemaDiagnostic.h>
 
@@ -1408,17 +1409,18 @@ QualType FunctionAnalyser::checkLiteralsTop(QualType TLeft, QualType TRight, Exp
     // TODO use static stuff (since only Basic types here?)
     const int minValue = pow(availableWidth);
     const int maxValue = pow(availableWidth) -1;
-    int limit = (Result.isSigned() ? minValue : maxValue);
-    {
-        std::string str = Result.toString(10);
-        fprintf(stderr, "VALUE=%s  LIMIT %d\n", str.c_str(), limit);
-    }
+    const int limit = (Result.isSigned() ? minValue : maxValue);
+    //std::string str = Result.toString(10);
+    //fprintf(stderr, "VALUE=%s  LIMIT %d\n", str.c_str(), limit);
     if (v > limit) {     // ok
+        SmallString<20> ss;
+        if (Result.isSigned()) ss += '-';
+        Result.toString(ss);
         StringBuilder buf1;
         TLeft->DiagName(buf1);
         // TEMP int
         Diags.Report(Right->getLocStart(), diag::err_literal_outofbounds)
-            << buf1 << -minValue << maxValue << Right->getSourceRange();
+            << buf1 << -minValue << maxValue << ss << Right->getSourceRange();
     }
     // TODO need to return here?
     return TRight;
