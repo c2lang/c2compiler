@@ -1406,15 +1406,14 @@ QualType FunctionAnalyser::checkLiteralsTop(QualType TLeft, QualType TRight, Exp
     const int availableWidth = TL->getIntegerWidth();
     //unsigned needWidth = I->Value.getActiveBits();   // unsigned
 
-    // TODO unsigned
-
     // TODO use static stuff (since only Basic types here?)
-    const int minValue = pow(availableWidth);
+    const int minValue = TL->isSignedInteger() ? pow(availableWidth) : 0;
     const int maxValue = pow(availableWidth) -1;
     const int limit = (Result.isSigned() ? minValue : maxValue);
+    //fprintf(stderr, "CHECKING width=%d  signed=%d  limit=%u\n", availableWidth, Result.isSigned(), limit);
     //std::string str = Result.toString(10);
     //fprintf(stderr, "VALUE=%s  LIMIT %d\n", str.c_str(), limit);
-    if (v > limit) {     // ok
+    if (v > limit || (Result.isSigned() && !TL->isSignedInteger())) {
         SmallString<20> ss;
         if (Result.isSigned()) ss += '-';
         Result.toString(ss);
