@@ -16,6 +16,7 @@
 #include <stdio.h>
 
 #include <llvm/ADT/SmallString.h>
+#include <llvm/ADT/APInt.h>
 #include <clang/Parse/ParseDiagnostic.h>
 #include <clang/Sema/SemaDiagnostic.h>
 
@@ -1393,6 +1394,43 @@ llvm::APSInt FunctionAnalyser::checkLiterals(QualType TLeft, QualType TRight, Ex
     return Result;
 }
 
+struct Limit {
+    int width;
+    uint64_t minVal;
+    uint64_t maxVal;
+    const char* minStr;
+    const char* maxStr;
+};
+
+static const Limit limits [] = {
+    // int8
+    {  7,        128,        127,        "-128",       "127" },
+    // uint8
+    {  8,          0,        255,           "0",        "255" },
+    // int16
+    { 15,      32768,      32767,      "-32768",      "32767" },
+    // uint16
+    { 16,          0,      65535,           "0",      "65535" },
+    // int32
+    { 31, 2147483648, 2147483647, "-2147483648", "2147483647" },
+    // uint32
+    { 32,          0, 4294967295,           "0", "4294967295" },
+};
+
+static const Limit* getLimit(int width) {
+    switch (width) {
+    case 7: return &limits[0];
+    case 8: return &limits[1];
+    case 15: return &limits[2];
+    case 16: return &limits[3];
+    case 31: return &limits[4];
+    case 32: return &limits[5];
+    default:
+        assert(0 && "todo");
+        return 0;
+    }
+}
+
 QualType FunctionAnalyser::checkLiteralsTop(QualType TLeft, QualType TRight, Expr* Right) {
     if (Right->getCTC() == CTC_NONE) return TRight;
 
@@ -1400,28 +1438,25 @@ QualType FunctionAnalyser::checkLiteralsTop(QualType TLeft, QualType TRight, Exp
     Input.setIsSigned(false);
 
     llvm::APSInt Result = checkLiterals(TLeft, TRight, Right, Input);
-    uint64_t v = Result.getSExtValue();
+    uint64_t v = Result.getZExtValue();
 
     const BuiltinType* TL = cast<BuiltinType>(TLeft->getCanonicalType());
     const int availableWidth = TL->getIntegerWidth();
-    //unsigned needWidth = I->Value.getActiveBits();   // unsigned
+    const bool isSigned = TL->isSignedInteger();
 
-    // TODO use static stuff (since only Basic types here?)
-    const int minValue = TL->isSignedInteger() ? pow(availableWidth) : 0;
-    const int maxValue = pow(availableWidth) -1;
-    const int limit = (Result.isSigned() ? minValue : maxValue);
-    //fprintf(stderr, "CHECKING width=%d  signed=%d  limit=%u\n", availableWidth, Result.isSigned(), limit);
-    //std::string str = Result.toString(10);
-    //fprintf(stderr, "VALUE=%s  LIMIT %d\n", str.c_str(), limit);
-    if (v > limit || (Result.isSigned() && !TL->isSignedInteger())) {
+    const Limit* L = getLimit(availableWidth);
+    const uint64_t limit = (Result.isSigned() ? L->minVal : L->maxVal);
+    if (v > limit || (Result.isSigned() && !isSigned)) {
+        fprintf(stderr, "VAL=%llu  LIMIT=%llu\n", v, limit);
         SmallString<20> ss;
         if (Result.isSigned()) ss += '-';
-        Result.toString(ss);
+        Result.toString(ss, 10, false);
+
         StringBuilder buf1;
         TLeft->DiagName(buf1);
-        // TEMP int
+
         Diags.Report(Right->getLocStart(), diag::err_literal_outofbounds)
-            << buf1 << -minValue << maxValue << ss << Right->getSourceRange();
+            << buf1 << L->minStr << L->maxStr << ss << Right->getSourceRange();
     }
     // TODO need to return here?
     return TRight;
