@@ -533,6 +533,12 @@ int main(int argc, const char *argv[])
         return -1;
     }
 
+    // strip off trailing '/'
+    if (target[strlen(target) -1] == '/') {
+        char* end = (char*) &target[strlen(target) -1];
+        *end = 0;
+    }
+
     cwd = get_current_dir_name();
     if (cwd == 0) {
         perror("get_current_dir_name");
