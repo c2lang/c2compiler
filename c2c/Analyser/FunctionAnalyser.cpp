@@ -1198,13 +1198,6 @@ ScopeResult FunctionAnalyser::analyseIdentifier(IdentifierExpr* id) {
     return res;
 }
 
-// TODO move to AST/Types.h
-static long pow(int s) {
-    long res = 2;
-    for (int i=1; i<s; i++) { res *= 2; }
-    return res;
-}
-
 bool FunctionAnalyser::checkAssignee(Expr* expr) const {
     switch (expr->getKind()) {
     case EXPR_INTEGER_LITERAL:
@@ -1253,24 +1246,9 @@ llvm::APSInt FunctionAnalyser::checkIntegerLiterals(QualType TLeft, QualType TRi
     Result2.setIsSigned(false);
 
     // TODO assert here? Only should get built-in types here?
-    if (!TLeft.isBuiltinType()) return Result2;
+    if (!TLeft.isBuiltinType()) I->setType(TLeft);
 
-    const BuiltinType* TL = cast<BuiltinType>(TLeft->getCanonicalType());
-    const int availableWidth = TL->getIntegerWidth();
-    uint64_t v = I->Value.getSExtValue();
     Result2 = I->Value;
-
-    // HMM is this needed here?
-    const int minValue = pow(availableWidth);
-    const int maxValue = pow(availableWidth) -1;
-    int max = (Result.isSigned() ? minValue : maxValue);
-    if (v <= max) {     // ok
-        TLeft.clearQualifiers();
-        I->setType(TLeft);
-        return Result2;
-    } else {
-        // DONT give error here
-    }
     return Result2;
 }
 
