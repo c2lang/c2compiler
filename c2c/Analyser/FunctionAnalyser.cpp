@@ -1126,7 +1126,7 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
         if (typeGiven.isValid()) {
             assert(argType.isValid());
             typeGiven = checkLiteralsTop(argType, typeGiven, argGiven);
-            typeResolver.checkCompatible(argType, typeGiven, argGiven->getLocation(), TypeChecker::CONV_CONV);
+            //typeResolver.checkCompatible(argType, typeGiven, argGiven->getLocation(), TypeChecker::CONV_CONV);
         }
     }
     if (callArgs > protoArgs) {
