@@ -326,7 +326,8 @@ void FunctionAnalyser::analyseReturnStmt(Stmt* stmt) {
             // TODO value->getSourceRange()
         } else {
             if (type.isValid()) {
-                typeResolver.checkCompatible(rtype, type, value->getLocation(), TypeChecker::CONV_CONV);
+                type = checkLiteralsTop(rtype, type, value);
+                //typeResolver.checkCompatible(rtype, type, value->getLocation(), TypeChecker::CONV_CONV);
             }
         }
     } else {
@@ -562,7 +563,7 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
 
     if (!TRight.isNull()) {
         TRight = checkLiteralsTop(expectedType, TRight, expr);
-        typeResolver.checkCompatible(expectedType, TRight, expr->getLocation(), TypeChecker::CONV_INIT);
+        //typeResolver.checkCompatible(expectedType, TRight, expr->getLocation(), TypeChecker::CONV_INIT);
     }
 }
 
@@ -776,7 +777,7 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     case BO_Assign:
         // if sizes are not ok.
         TRight = checkLiteralsTop(TLeft, TRight, Right);
-        typeResolver.checkCompatible(TLeft, TRight, binop->getLocation(), TypeChecker::CONV_ASSIGN);
+        //typeResolver.checkCompatible(TLeft, TRight, binop->getLocation(), TypeChecker::CONV_ASSIGN);
         checkAssignment(Left, TLeft);
         return TLeft;
     case BO_MulAssign:
@@ -1395,7 +1396,6 @@ llvm::APSInt FunctionAnalyser::checkLiterals(QualType TLeft, QualType TRight, Ex
 }
 
 struct Limit {
-    int width;
     uint64_t minVal;
     uint64_t maxVal;
     const char* minStr;
@@ -1403,29 +1403,33 @@ struct Limit {
 };
 
 static const Limit limits [] = {
+    // bool
+    {         0,          1,           "0",         "1" },
     // int8
-    {  7,        128,        127,        "-128",       "127" },
+    {       128,        127,        "-128",       "127" },
     // uint8
-    {  8,          0,        255,           "0",        "255" },
+    {          0,        255,           "0",        "255" },
     // int16
-    { 15,      32768,      32767,      "-32768",      "32767" },
+    {      32768,      32767,      "-32768",      "32767" },
     // uint16
-    { 16,          0,      65535,           "0",      "65535" },
+    {          0,      65535,           "0",      "65535" },
     // int32
-    { 31, 2147483648, 2147483647, "-2147483648", "2147483647" },
+    { 2147483648, 2147483647, "-2147483648", "2147483647" },
     // uint32
-    { 32,          0, 4294967295,           "0", "4294967295" },
+    {          0, 4294967295,           "0", "4294967295" },
 };
 
 static const Limit* getLimit(int width) {
     switch (width) {
-    case 7: return &limits[0];
-    case 8: return &limits[1];
-    case 15: return &limits[2];
-    case 16: return &limits[3];
-    case 31: return &limits[4];
-    case 32: return &limits[5];
+    case 1: return &limits[0];
+    case 7: return &limits[1];
+    case 8: return &limits[2];
+    case 15: return &limits[3];
+    case 16: return &limits[4];
+    case 31: return &limits[5];
+    case 32: return &limits[6];
     default:
+        fprintf(stderr, "UNHANDLED width %d\n", width);
         assert(0 && "todo");
         return 0;
     }
