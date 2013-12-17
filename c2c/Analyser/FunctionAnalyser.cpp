@@ -1246,23 +1246,21 @@ bool FunctionAnalyser::checkAssignee(Expr* expr) const {
     return false;
 }
 
-// TODO rename to evaluateIntegerLiteral
 llvm::APSInt FunctionAnalyser::checkIntegerLiterals(QualType TLeft, QualType TRight, Expr* Right, llvm::APSInt& Result) {
     IntegerLiteral* I = cast<IntegerLiteral>(Right);
 
     llvm::APSInt Result2;
     Result2.setIsSigned(false);
 
-    // For only only support builtin on Left
+    // TODO assert here? Only should get built-in types here?
     if (!TLeft.isBuiltinType()) return Result2;
 
     const BuiltinType* TL = cast<BuiltinType>(TLeft->getCanonicalType());
-    // check value itself?
     const int availableWidth = TL->getIntegerWidth();
-    //unsigned needWidth = I->Value.getActiveBits();   // unsigned
     uint64_t v = I->Value.getSExtValue();
     Result2 = I->Value;
 
+    // HMM is this needed here?
     const int minValue = pow(availableWidth);
     const int maxValue = pow(availableWidth) -1;
     int max = (Result.isSigned() ? minValue : maxValue);
@@ -1327,12 +1325,21 @@ llvm::APSInt FunctionAnalyser::checkBinaryLiterals(QualType TLeft, QualType TRig
     case BO_Sub:
     case BO_Shl:
     case BO_Shr:
+        break;
     case BO_LT:
     case BO_GT:
     case BO_LE:
     case BO_GE:
     case BO_EQ:
     case BO_NE:
+    {
+        // TODO check left/right values + set QualType
+        // TEMP always return 1
+        llvm::APSInt Result2;
+        Result2.setIsSigned(false);
+        Result2 = 1;
+        return Result2;
+    }
     case BO_And:
     case BO_Xor:
     case BO_Or:
