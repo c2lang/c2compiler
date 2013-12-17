@@ -1,0 +1,13 @@
+// @warnings{no-unused}
+package test;
+
+type Point struct {
+    uint8 x;
+    uint16 y;
+}
+
+func void test1() {
+    Point a = { 300, 0     }  // @error{constant value 300 out-of-bounds for type 'uint8', range [0, 255]}
+    Point b = {   0, 65536 }  // @error{constant value 65536 out-of-bounds for type 'uint16', range [0, 65535]}
+}
+
