@@ -1447,12 +1447,27 @@ QualType FunctionAnalyser::checkLiteralsTop(QualType TLeft, QualType TRight, Exp
     llvm::APSInt Input;
     Input.setIsSigned(false);
 
-    llvm::APSInt Result = checkLiterals(TLeft, TRight, Right, Input);
-    uint64_t v = Result.getZExtValue();
+    const QualType QT = TLeft->getCanonicalType();
+    int availableWidth = 0;
+    bool isSigned = false;
+    QualType wanted = TLeft;
+    if (QT.isBuiltinType()) {
+        const BuiltinType* TL = cast<BuiltinType>(QT);
+        availableWidth = TL->getIntegerWidth();
+        isSigned = TL->isSignedInteger();
+    } else if (QT.isPointerType()) {
+        availableWidth = 32;    // only 32-bit for now
+        isSigned = false;
+        // dont ask for pointer, replace with uint32 here.
+        wanted = BuiltinType::get(BuiltinType::UInt32);
+    } else {
+        QT.dump();
+        assert(0 && "todo");
+    }
 
-    const BuiltinType* TL = cast<BuiltinType>(TLeft->getCanonicalType());
-    const int availableWidth = TL->getIntegerWidth();
-    const bool isSigned = TL->isSignedInteger();
+    // TODO remove Input argument (not used) or return bool?
+    llvm::APSInt Result = checkLiterals(wanted, TRight, Right, Input);
+    uint64_t v = Result.getZExtValue();
 
     const Limit* L = getLimit(availableWidth);
     const uint64_t limit = (Result.isSigned() ? L->minVal : L->maxVal);
