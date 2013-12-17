@@ -1456,7 +1456,7 @@ QualType FunctionAnalyser::checkLiteralsTop(QualType TLeft, QualType TRight, Exp
 
     const Limit* L = getLimit(availableWidth);
     const uint64_t limit = (Result.isSigned() ? L->minVal : L->maxVal);
-    fprintf(stderr, "VAL=%llu  LIMIT=%llu  width=%d signed=%d\n", v, limit, availableWidth, Result.isSigned());
+    //fprintf(stderr, "VAL=%llu  LIMIT=%llu  width=%d signed=%d\n", v, limit, availableWidth, Result.isSigned());
     if (v > limit || (Result.isSigned() && !isSigned)) {
         //fprintf(stderr, "VAL=%llu  LIMIT=%llu\n", v, limit);
         SmallString<20> ss;
