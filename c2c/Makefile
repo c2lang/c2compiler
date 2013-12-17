@@ -15,6 +15,7 @@ OBJS = \
     Analyser/AnalyserUtils.o \
     Analyser/Scope.o \
     Analyser/TypeChecker.o \
+    Analyser/LiteralAnalyser.o \
     Analyser/FileAnalyser.o \
     Analyser/FunctionAnalyser.o \
     Analyser/DepGenerator.o \
