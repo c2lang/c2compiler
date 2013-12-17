@@ -102,6 +102,12 @@ void Expr::print(StringBuilder& buffer, unsigned indent) const {
 void IntegerLiteral::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer << "[IntegerLiteral " << Value.getSExtValue() << ' ';
+    QualType Q = getType();
+    if (Q.isValid()) {
+        buffer << " type=";
+        Q->DiagName(buffer);
+        buffer << ' ';
+    }
     Expr::print(buffer, 0);
     buffer << "]\n";
 }
