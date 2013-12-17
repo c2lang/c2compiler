@@ -22,6 +22,7 @@
 
 #include "Analyser/LiteralAnalyser.h"
 #include "AST/Expr.h"
+#include "AST/Decl.h"
 #include "Utils/StringBuilder.h"
 
 using namespace C2;
@@ -72,6 +73,94 @@ LiteralAnalyser::LiteralAnalyser(clang::DiagnosticsEngine& Diags_)
 {
 }
 
+QualType LiteralAnalyser::check(QualType TLeft, QualType TRight, Expr* Right) {
+    if (Right->getCTC() == CTC_NONE) return TRight;
+
+    llvm::APSInt Input;
+    Input.setIsSigned(false);
+
+    const QualType QT = TLeft->getCanonicalType();
+    int availableWidth = 0;
+    bool isSigned = false;
+    QualType wanted = TLeft;
+    if (QT.isBuiltinType()) {
+        const BuiltinType* TL = cast<BuiltinType>(QT);
+        availableWidth = TL->getIntegerWidth();
+        isSigned = TL->isSignedInteger();
+    } else if (QT.isPointerType()) {
+        availableWidth = 32;    // only 32-bit for now
+        isSigned = false;
+        // dont ask for pointer, replace with uint32 here.
+        wanted = BuiltinType::get(BuiltinType::UInt32);
+    } else {
+        QT.dump();
+        assert(0 && "todo");
+    }
+
+    // TODO remove Input argument (not used) or return bool?
+    llvm::APSInt Result = checkLiterals(wanted, TRight, Right, Input);
+    uint64_t v = Result.getZExtValue();
+
+    const Limit* L = getLimit(availableWidth);
+    const uint64_t limit = (Result.isSigned() ? L->minVal : L->maxVal);
+    //fprintf(stderr, "VAL=%llu  LIMIT=%llu  width=%d signed=%d\n", v, limit, availableWidth, Result.isSigned());
+    if (v > limit || (Result.isSigned() && !isSigned)) {
+        //fprintf(stderr, "VAL=%llu  LIMIT=%llu\n", v, limit);
+        SmallString<20> ss;
+        if (Result.isSigned()) ss += '-';
+        Result.toString(ss, 10, false);
+
+        StringBuilder buf1;
+        TLeft->DiagName(buf1);
+
+        Diags.Report(Right->getLocStart(), diag::err_literal_outofbounds)
+            << buf1 << L->minStr << L->maxStr << ss << Right->getSourceRange();
+    }
+    // TODO need to return here?
+    return TRight;
+}
+
+llvm::APSInt LiteralAnalyser::checkLiterals(QualType TLeft, QualType TRight, Expr* Right, llvm::APSInt& Result) {
+    if (Right->getCTC() == CTC_NONE) return Result;
+
+    switch (Right->getKind()) {
+    case EXPR_INTEGER_LITERAL:
+        return checkIntegerLiterals(TLeft, TRight, Right, Result);
+    case EXPR_FLOAT_LITERAL:
+    case EXPR_BOOL_LITERAL:
+    case EXPR_CHAR_LITERAL:
+    case EXPR_STRING_LITERAL:
+        break;
+    case EXPR_NIL:
+        break;
+    case EXPR_IDENTIFIER:
+        return checkIdentifier(TLeft, TRight, Right, Result);
+    case EXPR_TYPE:
+    case EXPR_CALL:
+    case EXPR_INITLIST:
+        break;
+    case EXPR_DECL:
+        break;
+    case EXPR_BINOP:
+    case EXPR_CONDOP:
+        return checkBinaryLiterals(TLeft, TRight, Right, Result);
+    case EXPR_UNARYOP:
+        return checkUnaryLiterals(TLeft, TRight, Right, Result);
+    case EXPR_BUILTIN:
+    case EXPR_ARRAYSUBSCRIPT:
+    case EXPR_MEMBER:
+        break;
+    case EXPR_PAREN:
+        {
+            ParenExpr* P = cast<ParenExpr>(Right);
+            llvm::APSInt Result2 = checkLiterals(TLeft, TRight, P->getExpr(), Result);
+            P->setType(TLeft);
+            return Result2;
+        }
+    }
+    return Result;
+}
+
 llvm::APSInt LiteralAnalyser::checkIntegerLiterals(QualType TLeft, QualType TRight, Expr* Right, llvm::APSInt& Result) {
     IntegerLiteral* I = cast<IntegerLiteral>(Right);
 
@@ -113,6 +202,7 @@ llvm::APSInt LiteralAnalyser::checkUnaryLiterals(QualType TLeft, QualType TRight
         assert(0 && "TODO");
         break;
     }
+    Result = 0;
     return Result;
 }
 
@@ -170,92 +260,22 @@ llvm::APSInt LiteralAnalyser::checkBinaryLiterals(QualType TLeft, QualType TRigh
         // TODO
         break;
     }
+    Result = 0;
     return Result;
 }
 
-llvm::APSInt LiteralAnalyser::checkLiterals(QualType TLeft, QualType TRight, Expr* Right, llvm::APSInt& Result) {
-    if (Right->getCTC() == CTC_NONE) return Result;
-
-    switch (Right->getKind()) {
-    case EXPR_INTEGER_LITERAL:
-        return checkIntegerLiterals(TLeft, TRight, Right, Result);
-    case EXPR_FLOAT_LITERAL:
-    case EXPR_BOOL_LITERAL:
-    case EXPR_CHAR_LITERAL:
-    case EXPR_STRING_LITERAL:
-        break;
-    case EXPR_NIL:
-    case EXPR_IDENTIFIER:
-    case EXPR_TYPE:
-    case EXPR_CALL:
-    case EXPR_INITLIST:
-        break;
-    case EXPR_DECL:
-        break;
-    case EXPR_BINOP:
-    case EXPR_CONDOP:
-        return checkBinaryLiterals(TLeft, TRight, Right, Result);
-    case EXPR_UNARYOP:
-        return checkUnaryLiterals(TLeft, TRight, Right, Result);
-    case EXPR_BUILTIN:
-    case EXPR_ARRAYSUBSCRIPT:
-    case EXPR_MEMBER:
-        break;
-    case EXPR_PAREN:
-        {
-            ParenExpr* P = cast<ParenExpr>(Right);
-            llvm::APSInt Result2 = checkLiterals(TLeft, TRight, P->getExpr(), Result);
-            P->setType(TLeft);
-            return Result2;
-        }
+llvm::APSInt LiteralAnalyser::checkIdentifier(QualType TLeft, QualType TRight, Expr* Right, llvm::APSInt& Result) {
+    IdentifierExpr* I = cast<IdentifierExpr>(Right);
+    const Decl* D = I->getDecl();
+    assert(D);
+    const EnumConstantDecl* ECD = dyncast<EnumConstantDecl>(D);
+    if (ECD) {
+        llvm::APSInt Result2;
+        Result2.setIsSigned(false);         // TODO set depending on enum type
+        Result2 = ECD->getValue();
+        return Result2;
     }
+    Result = 0;
     return Result;
-}
-
-QualType LiteralAnalyser::check(QualType TLeft, QualType TRight, Expr* Right) {
-    if (Right->getCTC() == CTC_NONE) return TRight;
-
-    llvm::APSInt Input;
-    Input.setIsSigned(false);
-
-    const QualType QT = TLeft->getCanonicalType();
-    int availableWidth = 0;
-    bool isSigned = false;
-    QualType wanted = TLeft;
-    if (QT.isBuiltinType()) {
-        const BuiltinType* TL = cast<BuiltinType>(QT);
-        availableWidth = TL->getIntegerWidth();
-        isSigned = TL->isSignedInteger();
-    } else if (QT.isPointerType()) {
-        availableWidth = 32;    // only 32-bit for now
-        isSigned = false;
-        // dont ask for pointer, replace with uint32 here.
-        wanted = BuiltinType::get(BuiltinType::UInt32);
-    } else {
-        QT.dump();
-        assert(0 && "todo");
-    }
-
-    // TODO remove Input argument (not used) or return bool?
-    llvm::APSInt Result = checkLiterals(wanted, TRight, Right, Input);
-    uint64_t v = Result.getZExtValue();
-
-    const Limit* L = getLimit(availableWidth);
-    const uint64_t limit = (Result.isSigned() ? L->minVal : L->maxVal);
-    //fprintf(stderr, "VAL=%llu  LIMIT=%llu  width=%d signed=%d\n", v, limit, availableWidth, Result.isSigned());
-    if (v > limit || (Result.isSigned() && !isSigned)) {
-        //fprintf(stderr, "VAL=%llu  LIMIT=%llu\n", v, limit);
-        SmallString<20> ss;
-        if (Result.isSigned()) ss += '-';
-        Result.toString(ss, 10, false);
-
-        StringBuilder buf1;
-        TLeft->DiagName(buf1);
-
-        Diags.Report(Right->getLocStart(), diag::err_literal_outofbounds)
-            << buf1 << L->minStr << L->maxStr << ss << Right->getSourceRange();
-    }
-    // TODO need to return here?
-    return TRight;
 }
 
