@@ -1291,8 +1291,7 @@ llvm::APSInt FunctionAnalyser::checkUnaryLiterals(QualType TLeft, QualType TRigh
     case UO_Minus:
         {
             llvm::APSInt Result2 = checkLiterals(TLeft, TRight, unaryop->getExpr(), Result);
-            Result2.setIsSigned(!Result.isSigned());
-            // TODO swap signedness
+            Result2.setIsSigned(!Result2.isSigned());
             return Result2;
         }
     case UO_Not:
@@ -1457,8 +1456,9 @@ QualType FunctionAnalyser::checkLiteralsTop(QualType TLeft, QualType TRight, Exp
 
     const Limit* L = getLimit(availableWidth);
     const uint64_t limit = (Result.isSigned() ? L->minVal : L->maxVal);
+    fprintf(stderr, "VAL=%llu  LIMIT=%llu  width=%d signed=%d\n", v, limit, availableWidth, Result.isSigned());
     if (v > limit || (Result.isSigned() && !isSigned)) {
-        fprintf(stderr, "VAL=%llu  LIMIT=%llu\n", v, limit);
+        //fprintf(stderr, "VAL=%llu  LIMIT=%llu\n", v, limit);
         SmallString<20> ss;
         if (Result.isSigned()) ss += '-';
         Result.toString(ss, 10, false);
