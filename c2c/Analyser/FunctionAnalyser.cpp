@@ -653,6 +653,11 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
             LiteralAnalyser LA(Diags);
             Q = LA.check(decl->getType(), Q, initialValue);
             //typeResolver.checkCompatible(decl->getType(), Q, initialValue->getLocation(), TypeChecker::CONV_INIT);
+        } else if (InitListExpr* IE = dyncast<InitListExpr>(initialValue)) {
+            // Not so nice, TODO refactor
+            CurrentVarDecl = decl;
+            analyseInitList(IE, type);
+            CurrentVarDecl = 0;
         }
     }
     if (type.isConstQualified() && !initialValue) {
