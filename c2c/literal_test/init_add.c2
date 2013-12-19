@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+package test;
+
+func void test() {
+    int a = -10 + 10;
+}
+

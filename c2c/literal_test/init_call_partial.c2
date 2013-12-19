@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+package test;
+
+func int test2() {
+    int step = test2() + 1;
+}
+
