@@ -530,7 +530,6 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
         }
         break;
     case EXPR_INITLIST:
-        assert(CurrentVarDecl);
         analyseInitList(cast<InitListExpr>(expr), expectedType);
         break;
     case EXPR_TYPE:
@@ -570,12 +569,9 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
     }
 }
 
-void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType expectedType) {
+void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
     LOG_FUNC
 
-    // TODO for now don't support nested initLists, need stack of CurrentDecl for that
-    assert(CurrentVarDecl);
-    QualType Q = CurrentVarDecl->getType();
     ExprList& values = expr->getValues();
     if (Q.isArrayType()) {
         // TODO use helper function
@@ -598,11 +594,8 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType expectedType
                 errors++;
                 return;
             }
-            // NOTE: doesn't fit for sub-struct members! (need Decl in interface)
-            // TODO: add VD to CurrentVarDecl stack?
             VarDecl* VD = dyncast<VarDecl>(STD->getMember(i));
             assert(VD && "TEMP don't support sub-struct member inits");
-            //checkInitValue(VD, values[i], VD->getType());
             analyseInitExpr(values[i], VD->getType());
         }
     } else {
