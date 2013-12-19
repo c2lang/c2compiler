@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+package test;
+
+func int calc() { return 2; }
+
+int[] g = { calc() }        // @error{initializer element is not a compile-time constant}
+
+func void test() {
+    int[2] nums = { calc() }
+}
+

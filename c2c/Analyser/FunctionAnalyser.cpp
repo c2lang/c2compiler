@@ -472,10 +472,10 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
         break;
     case EXPR_CALL:
         // TODO check return type (if void -> size of array has non-integer type 'void')
-        //assert(constDiagID);
-        //Diags.Report(expr->getLocation(), constDiagID);
-        // TEMP assume compile-time constant (CTC)
-        Diags.Report(expr->getLocation(), diag::err_init_element_not_constant);
+        if (inConstExpr) {
+            assert(constDiagID);
+            Diags.Report(expr->getLocation(), constDiagID);
+        }
         return;
     case EXPR_IDENTIFIER:
         {
