@@ -402,9 +402,11 @@ llvm::Value* CodeGenFunction::EmitExpr(const Expr* E) {
     case EXPR_INTEGER_LITERAL:
         {
             const IntegerLiteral* N = cast<IntegerLiteral>(E);
-            // TODO number is always int32 (signed is true)
-            return Builder.getInt(N->Value);
-            //return llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), N->value, true);
+            const Type* T = N->getType().getTypePtr();
+            assert(T->isBuiltinType());
+            const BuiltinType* BT = cast<BuiltinType>(T);
+            uint64_t v = N->Value.getZExtValue();
+            return llvm::ConstantInt::get(CGM.ConvertType(T), v, BT->isSignedInteger());
         }
     case EXPR_FLOAT_LITERAL:
         {
@@ -561,11 +563,13 @@ void CodeGenFunction::EmitVarDecl(const VarDecl* D) {
     addr << D->getName() << ".addr";
     llvm::AllocaInst *inst = new AllocaInst(CGM.ConvertType(qt.getTypePtr()), (const char*)addr, CGM.currentBlock());
     D->setIRValue(inst);
+
     // TODO smart alignment
     //assert(isa<BuiltinType>(qt.getTypePtr()));
     //inst->setAlignment(cast<BuiltinType>(qt.getTypePtr())->getWidth());
+
     const Expr* I = D->getInitValue();
-    // don't emit initial value for function args
+    // NOTE: for function params, we do this during Body generation
     if (I && !D->isParameter()) {
         llvm::Value* val = EmitExpr(I);
         Builder.CreateStore(val, inst, qt.isVolatileQualified());

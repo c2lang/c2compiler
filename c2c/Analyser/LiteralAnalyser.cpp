@@ -169,8 +169,7 @@ APSInt LiteralAnalyser::checkIntegerLiterals(QualType TLeft, QualType TRight, Ex
     APSInt Result2;
     Result2.setIsSigned(false);
 
-    // TODO assert here? Only should get built-in types here?
-    if (!TLeft.isBuiltinType()) I->setType(TLeft);
+    I->setType(TLeft);
 
     Result2 = I->Value;
     return Result2;
