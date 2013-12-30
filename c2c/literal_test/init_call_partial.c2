@@ -2,6 +2,6 @@
 package test;
 
 func int test2() {
-    int step = test2() + 1;
+    int a = test2() + 1;
 }
 

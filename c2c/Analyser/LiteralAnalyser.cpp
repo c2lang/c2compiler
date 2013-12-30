@@ -26,6 +26,7 @@
 #include "Utils/StringBuilder.h"
 
 using namespace C2;
+using namespace llvm;
 using namespace clang;
 
 struct Limit {
@@ -76,7 +77,7 @@ LiteralAnalyser::LiteralAnalyser(clang::DiagnosticsEngine& Diags_)
 QualType LiteralAnalyser::check(QualType TLeft, QualType TRight, Expr* Right) {
     if (Right->getCTC() == CTC_NONE) return TRight;
 
-    llvm::APSInt Input;
+    APSInt Input;
     Input.setIsSigned(false);
 
     const QualType QT = TLeft->getCanonicalType();
@@ -98,7 +99,7 @@ QualType LiteralAnalyser::check(QualType TLeft, QualType TRight, Expr* Right) {
     }
 
     // TODO remove Input argument (not used) or return bool?
-    llvm::APSInt Result = checkLiterals(wanted, TRight, Right, Input);
+    APSInt Result = checkLiterals(wanted, TRight, Right, Input);
     uint64_t v = Result.getZExtValue();
 
     const Limit* L = getLimit(availableWidth);
@@ -120,7 +121,7 @@ QualType LiteralAnalyser::check(QualType TLeft, QualType TRight, Expr* Right) {
     return TRight;
 }
 
-llvm::APSInt LiteralAnalyser::checkLiterals(QualType TLeft, QualType TRight, Expr* Right, llvm::APSInt& Result) {
+APSInt LiteralAnalyser::checkLiterals(QualType TLeft, QualType TRight, Expr* Right, APSInt& Result) {
     if (Right->getCTC() == CTC_NONE) return Result;
 
     switch (Right->getKind()) {
@@ -142,8 +143,9 @@ llvm::APSInt LiteralAnalyser::checkLiterals(QualType TLeft, QualType TRight, Exp
     case EXPR_DECL:
         break;
     case EXPR_BINOP:
-    case EXPR_CONDOP:
         return checkBinaryLiterals(TLeft, TRight, Right, Result);
+    case EXPR_CONDOP:
+        break;
     case EXPR_UNARYOP:
         return checkUnaryLiterals(TLeft, TRight, Right, Result);
     case EXPR_BUILTIN:
@@ -153,7 +155,7 @@ llvm::APSInt LiteralAnalyser::checkLiterals(QualType TLeft, QualType TRight, Exp
     case EXPR_PAREN:
         {
             ParenExpr* P = cast<ParenExpr>(Right);
-            llvm::APSInt Result2 = checkLiterals(TLeft, TRight, P->getExpr(), Result);
+            APSInt Result2 = checkLiterals(TLeft, TRight, P->getExpr(), Result);
             P->setType(TLeft);
             return Result2;
         }
@@ -161,10 +163,10 @@ llvm::APSInt LiteralAnalyser::checkLiterals(QualType TLeft, QualType TRight, Exp
     return Result;
 }
 
-llvm::APSInt LiteralAnalyser::checkIntegerLiterals(QualType TLeft, QualType TRight, Expr* Right, llvm::APSInt& Result) {
+APSInt LiteralAnalyser::checkIntegerLiterals(QualType TLeft, QualType TRight, Expr* Right, APSInt& Result) {
     IntegerLiteral* I = cast<IntegerLiteral>(Right);
 
-    llvm::APSInt Result2;
+    APSInt Result2;
     Result2.setIsSigned(false);
 
     // TODO assert here? Only should get built-in types here?
@@ -174,7 +176,7 @@ llvm::APSInt LiteralAnalyser::checkIntegerLiterals(QualType TLeft, QualType TRig
     return Result2;
 }
 
-llvm::APSInt LiteralAnalyser::checkUnaryLiterals(QualType TLeft, QualType TRight, Expr* Right, llvm::APSInt& Result) {
+APSInt LiteralAnalyser::checkUnaryLiterals(QualType TLeft, QualType TRight, Expr* Right, APSInt& Result) {
     UnaryOperator* unaryop = cast<UnaryOperator>(Right);
     QualType LType;
     switch (unaryop->getOpcode()) {
@@ -190,7 +192,7 @@ llvm::APSInt LiteralAnalyser::checkUnaryLiterals(QualType TLeft, QualType TRight
         break;
     case UO_Minus:
         {
-            llvm::APSInt Result2 = checkLiterals(TLeft, TRight, unaryop->getExpr(), Result);
+            APSInt Result2 = checkLiterals(TLeft, TRight, unaryop->getExpr(), Result);
             Result2.setIsSigned(!Result2.isSigned());
             return Result2;
         }
@@ -206,7 +208,7 @@ llvm::APSInt LiteralAnalyser::checkUnaryLiterals(QualType TLeft, QualType TRight
     return Result;
 }
 
-llvm::APSInt LiteralAnalyser::checkBinaryLiterals(QualType TLeft, QualType TRight, Expr* Right, llvm::APSInt& Result) {
+APSInt LiteralAnalyser::checkBinaryLiterals(QualType TLeft, QualType TRight, Expr* Right, APSInt& Result) {
     BinaryOperator* binop = cast<BinaryOperator>(Right);
     QualType LType;
     switch (binop->getOpcode()) {
@@ -235,7 +237,7 @@ llvm::APSInt LiteralAnalyser::checkBinaryLiterals(QualType TLeft, QualType TRigh
     {
         // TODO check left/right values + set QualType
         // TEMP always return 1
-        llvm::APSInt Result2;
+        APSInt Result2;
         Result2.setIsSigned(false);
         Result2 = 1;
         return Result2;
@@ -264,13 +266,13 @@ llvm::APSInt LiteralAnalyser::checkBinaryLiterals(QualType TLeft, QualType TRigh
     return Result;
 }
 
-llvm::APSInt LiteralAnalyser::checkIdentifier(QualType TLeft, QualType TRight, Expr* Right, llvm::APSInt& Result) {
+APSInt LiteralAnalyser::checkIdentifier(QualType TLeft, QualType TRight, Expr* Right, APSInt& Result) {
     IdentifierExpr* I = cast<IdentifierExpr>(Right);
     const Decl* D = I->getDecl();
     assert(D);
     const EnumConstantDecl* ECD = dyncast<EnumConstantDecl>(D);
     if (ECD) {
-        llvm::APSInt Result2;
+        APSInt Result2;
         Result2.setIsSigned(false);         // TODO set depending on enum type
         Result2 = ECD->getValue();
         return Result2;
