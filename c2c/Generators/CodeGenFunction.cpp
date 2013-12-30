@@ -34,6 +34,16 @@
 #include "AST/Package.h"
 #include "Utils/StringBuilder.h"
 
+#define GEN_DEBUG
+
+#ifdef GEN_DEBUG
+#include <iostream>
+#include "Utils/color.h"
+#define LOG_FUNC std::cerr << ANSI_MAGENTA << __func__ << "()" << ANSI_NORMAL << "\n";
+#else
+#define LOG_FUNC
+#endif
+
 using namespace C2;
 using namespace llvm;
 using namespace clang;
@@ -47,6 +57,7 @@ CodeGenFunction::CodeGenFunction(CodeGenModule& CGM_, FunctionDecl* Func_)
 {}
 
 llvm::Function* CodeGenFunction::generateProto(const std::string& pkgname) {
+    LOG_FUNC
     // function part
     // arguments + return type
     llvm::FunctionType *funcType;
@@ -76,15 +87,25 @@ llvm::Function* CodeGenFunction::generateProto(const std::string& pkgname) {
 }
 
 void CodeGenFunction::generateBody(llvm::Function* func) {
+    LOG_FUNC
     CurFn = func;
     // body part
     llvm::BasicBlock *entry = llvm::BasicBlock::Create(context, "entry", func);
     Builder.SetInsertPoint(entry);
 
-    EmitStmt(FuncDecl->getBody());
+    CompoundStmt* Body = FuncDecl->getBody();
+    EmitCompoundStmt(Body);
+    Stmt* last = Body->getLastStmt();
+    if (last) {
+        last->dump();
+
+    } else {
+        Builder.CreateRetVoid();
+    }
 }
 
 void CodeGenFunction::EmitStmt(const Stmt* S) {
+    LOG_FUNC
     switch (S->getKind()) {
     case STMT_RETURN:
         EmitReturnStmt(cast<ReturnStmt>(S));
@@ -115,6 +136,7 @@ void CodeGenFunction::EmitStmt(const Stmt* S) {
 }
 
 void CodeGenFunction::EmitCompoundStmt(const CompoundStmt* S) {
+    LOG_FUNC
     // TODO create BasicBlock here?
     const StmtList& stmts = S->getStmts();
     for (unsigned i=0; i<stmts.size(); ++i) {
@@ -123,6 +145,7 @@ void CodeGenFunction::EmitCompoundStmt(const CompoundStmt* S) {
 }
 
 void CodeGenFunction::EmitReturnStmt(const ReturnStmt* S) {
+    LOG_FUNC
     // TODO type
     // check IRBuilder::getCurrentFunctionReturnType()
     const Expr* RV = S->getExpr();
@@ -134,6 +157,7 @@ void CodeGenFunction::EmitReturnStmt(const ReturnStmt* S) {
 }
 
 void CodeGenFunction::EmitIfStmt(const IfStmt* S) {
+    LOG_FUNC
   // C99 6.8.4.1: The first substatement is executed if the expression compares
   // unequal to 0.  The condition must be a scalar type.
   //RunCleanupsScope ConditionScope(*this);
@@ -202,6 +226,7 @@ void CodeGenFunction::EmitIfStmt(const IfStmt* S) {
 }
 
 void CodeGenFunction::EmitBlock(llvm::BasicBlock *BB, bool IsFinished) {
+    LOG_FUNC
   llvm::BasicBlock *CurBB = Builder.GetInsertBlock();
 
   // Fall out of the current block (if necessary).
@@ -222,6 +247,7 @@ void CodeGenFunction::EmitBlock(llvm::BasicBlock *BB, bool IsFinished) {
 }
 
 void CodeGenFunction::EmitBranch(llvm::BasicBlock *Target) {
+    LOG_FUNC
   // Emit a branch from the current block to the target one if this
   // was a real block.  If this was just a fall-through block after a
   // terminator, don't emit it.
@@ -245,6 +271,7 @@ void CodeGenFunction::EmitBranch(llvm::BasicBlock *Target) {
 void CodeGenFunction::EmitBranchOnBoolExpr(const Expr *Cond,
                                            llvm::BasicBlock *TrueBlock,
                                            llvm::BasicBlock *FalseBlock) {
+    LOG_FUNC
   //Cond = Cond->IgnoreParens();
   if (const BinaryOperator *CondBOp = cast<BinaryOperator>(Cond)) {
     // Handle X && Y in a condition.
@@ -358,6 +385,7 @@ void CodeGenFunction::EmitBranchOnBoolExpr(const Expr *Cond,
 
 
 llvm::Value* CodeGenFunction::EmitExpr(const Expr* E) {
+    LOG_FUNC
     switch (E->getKind()) {
     case EXPR_INTEGER_LITERAL:
         {
@@ -417,6 +445,7 @@ llvm::Value* CodeGenFunction::EmitExpr(const Expr* E) {
 }
 
 llvm::Value* CodeGenFunction::EmitCallExpr(const CallExpr* E) {
+    LOG_FUNC
     // Doesn't have to be a function, can also be funcptr symbol
     // Analyser should set whether direct call or not?
     // TODO only do below if direct call?
@@ -484,6 +513,7 @@ llvm::Value* CodeGenFunction::EmitCallExpr(const CallExpr* E) {
 }
 
 llvm::Value* CodeGenFunction::EmitIdentifierExpr(const IdentifierExpr* E) {
+    LOG_FUNC
     Decl* D = E->getDecl();
     assert(D);
     switch (D->getKind()) {
@@ -512,6 +542,7 @@ llvm::Value* CodeGenFunction::EmitIdentifierExpr(const IdentifierExpr* E) {
 }
 
 void CodeGenFunction::EmitVarDecl(const DeclExpr* D) {
+    LOG_FUNC
     // TODO arrays types?
     QualType qt = D->getDeclType();
     llvm::AllocaInst* inst = Builder.CreateAlloca(CGM.ConvertType(qt.getTypePtr()), 0, D->getName());
@@ -526,6 +557,7 @@ void CodeGenFunction::EmitVarDecl(const DeclExpr* D) {
 }
 
 llvm::Value* CodeGenFunction::EmitBinaryOperator(const BinaryOperator* B) {
+    LOG_FUNC
     // assume '>'
     Value* L = EmitExpr(B->getLHS());
     Value* R = EmitExpr(B->getRHS());
