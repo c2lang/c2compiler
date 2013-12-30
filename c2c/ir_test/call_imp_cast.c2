@@ -1,0 +1,11 @@
+package test;
+
+func void test2(int32 a) {
+
+}
+
+func void test() {
+    int8 b = 10;
+    test2(b);
+}
+

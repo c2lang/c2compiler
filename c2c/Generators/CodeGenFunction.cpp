@@ -635,9 +635,9 @@ llvm::Value *CodeGenFunction::EvaluateExprAsBool(const Expr *E) {
         assert(D);
         assert(D->getKind() == DECL_VAR && "TODO only support ref to vardecl, need anything else?");
         VarDecl* VD = cast<VarDecl>(D);
-        // Add Load
 
-        return Builder.CreateIsNotNull(VD->getIRValue(), "tobool");
+        Value* load = new LoadInst(VD->getIRValue(), "", false, CGM.currentBlock());
+        return Builder.CreateIsNotNull(load, "tobool");
     }
     return NULL;
 }
