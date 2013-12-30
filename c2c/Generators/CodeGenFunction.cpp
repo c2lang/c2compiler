@@ -109,10 +109,7 @@ void CodeGenFunction::generateBody(llvm::Function* func) {
     CompoundStmt* Body = FuncDecl->getBody();
     EmitCompoundStmt(Body);
 
-    if (!CGM.getCurrentReturnValue()) {
-        // ReturnInst::Create(context, CGM.getCurrentReturnValue(), bblock);
-        Builder.CreateRetVoid();
-    }
+    if (!CGM.getCurrentReturnValue()) Builder.CreateRetVoid();
     CGM.popBlock();
 }
 
