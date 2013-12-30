@@ -121,6 +121,7 @@ VarDecl::VarDecl(VarDeclKind k_, const std::string& name_, SourceLocation loc_,
     : Decl(DECL_VAR, name_, loc_, is_public, file_id)
     , type(type_)
     , initValue(initValue_)
+    , IRValue(0)
 {
     DeclBits.varDeclKind = k_;
 }

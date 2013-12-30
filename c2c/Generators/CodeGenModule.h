@@ -18,6 +18,7 @@
 
 #include <string>
 #include <vector>
+#include <stack>
 
 #include <llvm/IR/IRBuilder.h>
 
@@ -26,6 +27,7 @@ class Module;
 class LLVMContext;
 class Type;
 class Function;
+class BasicBlock;
 }
 
 namespace C2 {
@@ -37,6 +39,16 @@ class Expr;
 class Type;
 class Package;
 class StringLiteral;
+
+class CodeGenBlock {
+public:
+    CodeGenBlock(llvm::BasicBlock* b)
+        : block(b)
+        , returnValue(0)
+    {}
+    llvm::BasicBlock *block;
+    llvm::Value *returnValue;
+};
 
 // generates LLVM Module from (multiple) ASTs
 class CodeGenModule {
@@ -59,6 +71,19 @@ public:
     llvm::IRBuilder<> getBuilder() const { return builder; }
 
     llvm::Value* EvaluateExprAsBool(const Expr *E);
+
+    // basic blocks
+    llvm::BasicBlock *currentBlock() {
+        return blocks.top()->block;
+    }
+    void pushBlock(llvm::BasicBlock *block) {
+        blocks.push(new CodeGenBlock(block));
+    }
+
+    void popBlock() { CodeGenBlock *top = blocks.top(); blocks.pop(); delete top; }
+    void setCurrentReturnValue(llvm::Value *value) { blocks.top()->returnValue = value; }
+    llvm::Value* getCurrentReturnValue() { return blocks.top()->returnValue; }
+
 private:
     void EmitGlobalVariable(VarDecl* V);
     void EmitTopLevelDecl(Decl* D);
@@ -75,6 +100,9 @@ private:
     llvm::LLVMContext& context;
     llvm::Module* module;
     llvm::IRBuilder<> builder;
+
+    typedef std::stack<CodeGenBlock*> Blocks;
+    Blocks blocks;
 
     CodeGenModule(const CodeGenModule&);
     CodeGenModule& operator= (const CodeGenModule&);

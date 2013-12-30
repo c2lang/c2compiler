@@ -83,25 +83,34 @@ llvm::Function* CodeGenFunction::generateProto(const std::string& pkgname) {
 
     llvm::Function *func =
         llvm::Function::Create(funcType, ltype, (const char*)buffer, module);
+
     return func;
 }
 
 void CodeGenFunction::generateBody(llvm::Function* func) {
     LOG_FUNC
     CurFn = func;
-    // body part
-    llvm::BasicBlock *entry = llvm::BasicBlock::Create(context, "entry", func);
-    Builder.SetInsertPoint(entry);
 
+    llvm::BasicBlock *bblock = llvm::BasicBlock::Create(context, "entry", func, 0);
+    CGM.pushBlock(bblock);
+    Builder.SetInsertPoint(bblock);
+
+    // arguments
+    Function::arg_iterator argsValues = func->arg_begin();
+    for (unsigned i=0; i<FuncDecl->numArgs(); i++) {
+        VarDecl* arg = FuncDecl->getArg(i);
+        EmitVarDecl(arg);
+        Value* argumentValue = argsValues++;
+        argumentValue->setName(arg->getName());
+        new StoreInst(argumentValue, arg->getIRValue(), false, bblock);
+    }
+
+    // body
     CompoundStmt* Body = FuncDecl->getBody();
     EmitCompoundStmt(Body);
-    Stmt* last = Body->getLastStmt();
-    if (last) {
-        last->dump();
 
-    } else {
-        Builder.CreateRetVoid();
-    }
+    ReturnInst::Create(context, CGM.getCurrentReturnValue(), bblock);
+    CGM.popBlock();
 }
 
 void CodeGenFunction::EmitStmt(const Stmt* S) {
@@ -148,12 +157,15 @@ void CodeGenFunction::EmitReturnStmt(const ReturnStmt* S) {
     LOG_FUNC
     // TODO type
     // check IRBuilder::getCurrentFunctionReturnType()
+
     const Expr* RV = S->getExpr();
+    ReturnInst* R;
     if (RV) {
-        Builder.CreateRet(EmitExpr(RV));
+        R = Builder.CreateRet(EmitExpr(RV));
     } else {
-        Builder.CreateRetVoid();
+        R = Builder.CreateRetVoid();
     }
+    CGM.setCurrentReturnValue(R);
 }
 
 void CodeGenFunction::EmitIfStmt(const IfStmt* S) {
@@ -423,7 +435,7 @@ llvm::Value* CodeGenFunction::EmitExpr(const Expr* E) {
     case EXPR_TYPE:
         break;
     case EXPR_DECL:
-        EmitVarDecl(cast<DeclExpr>(E));
+        EmitVarDecl(cast<DeclExpr>(E)->getDecl());
         return 0;
     case EXPR_BINOP:
         return EmitBinaryOperator(cast<BinaryOperator>(E));
@@ -541,16 +553,20 @@ llvm::Value* CodeGenFunction::EmitIdentifierExpr(const IdentifierExpr* E) {
     return 0;
 }
 
-void CodeGenFunction::EmitVarDecl(const DeclExpr* D) {
+void CodeGenFunction::EmitVarDecl(const VarDecl* D) {
     LOG_FUNC
     // TODO arrays types?
-    QualType qt = D->getDeclType();
-    llvm::AllocaInst* inst = Builder.CreateAlloca(CGM.ConvertType(qt.getTypePtr()), 0, D->getName());
+    QualType qt = D->getType();
+    StringBuilder addr(64);
+    addr << D->getName() << ".addr";
+    llvm::AllocaInst *inst = new AllocaInst(CGM.ConvertType(qt.getTypePtr()), (const char*)addr, CGM.currentBlock());
+    D->setIRValue(inst);
     // TODO smart alignment
     assert(isa<BuiltinType>(qt.getTypePtr()));
     inst->setAlignment(cast<BuiltinType>(qt.getTypePtr())->getWidth());
     const Expr* I = D->getInitValue();
-    if (I) {
+    // don't emit initial value for function args
+    if (I && !D->isParameter()) {
         llvm::Value* val = EmitExpr(I);
         Builder.CreateStore(val, inst, qt.isVolatileQualified());
     }

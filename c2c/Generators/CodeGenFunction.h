@@ -38,7 +38,7 @@ class IfStmt;
 class Expr;
 class CallExpr;
 class IdentifierExpr;
-class DeclExpr;
+class VarDecl;
 class BinaryOperator;
 
 // This class organizes the per-function state that is used
@@ -59,7 +59,7 @@ private:
     llvm::Value* EmitExpr(const Expr* E);
     llvm::Value* EmitCallExpr(const CallExpr* E);
     llvm::Value* EmitIdentifierExpr(const IdentifierExpr* E);
-    void EmitVarDecl(const DeclExpr* E);
+    void EmitVarDecl(const VarDecl* D);
     llvm::Value* EmitBinaryOperator(const BinaryOperator* E);
 
     llvm::Value *EvaluateExprAsBool(const Expr *E);

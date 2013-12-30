@@ -29,6 +29,7 @@ using clang::SourceLocation;
 
 namespace llvm {
 class Function;
+class Value;
 }
 
 namespace C2 {
@@ -136,11 +137,16 @@ public:
     typedef InitValues::const_iterator InitValuesConstIter;
     const InitValues& getIncrValues() const { return initValues; }
     void addInitValue(ArrayValueDecl* value);
+
+    // for codegen
+    llvm::Value* getIRValue() const { return IRValue; }
+    void setIRValue(llvm::Value* v) const { IRValue = v; }
 private:
     QualType type;
     Expr* initValue;
     // TODO remove, since only for Incremental Arrays (subclass VarDecl -> GlobalVarDecl)
     InitValues initValues;
+    mutable llvm::Value* IRValue;
 };
 
 
