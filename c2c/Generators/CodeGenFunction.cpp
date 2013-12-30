@@ -109,7 +109,7 @@ void CodeGenFunction::generateBody(llvm::Function* func) {
     CompoundStmt* Body = FuncDecl->getBody();
     EmitCompoundStmt(Body);
 
-    ReturnInst::Create(context, CGM.getCurrentReturnValue(), bblock);
+    if (!CGM.getCurrentReturnValue()) ReturnInst::Create(context, CGM.getCurrentReturnValue(), bblock);
     CGM.popBlock();
 }
 
@@ -562,8 +562,8 @@ void CodeGenFunction::EmitVarDecl(const VarDecl* D) {
     llvm::AllocaInst *inst = new AllocaInst(CGM.ConvertType(qt.getTypePtr()), (const char*)addr, CGM.currentBlock());
     D->setIRValue(inst);
     // TODO smart alignment
-    assert(isa<BuiltinType>(qt.getTypePtr()));
-    inst->setAlignment(cast<BuiltinType>(qt.getTypePtr())->getWidth());
+    //assert(isa<BuiltinType>(qt.getTypePtr()));
+    //inst->setAlignment(cast<BuiltinType>(qt.getTypePtr())->getWidth());
     const Expr* I = D->getInitValue();
     // don't emit initial value for function args
     if (I && !D->isParameter()) {
