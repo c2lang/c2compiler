@@ -1,0 +1,7 @@
+package test;
+
+func int32 test() {
+    int32 a = 1234;
+    return a;
+}
+
