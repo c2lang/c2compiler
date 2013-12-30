@@ -34,7 +34,7 @@
 #include "AST/Package.h"
 #include "Utils/StringBuilder.h"
 
-#define GEN_DEBUG
+//#define GEN_DEBUG
 
 #ifdef GEN_DEBUG
 #include <iostream>
