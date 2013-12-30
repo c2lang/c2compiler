@@ -109,6 +109,7 @@ void CodeGenFunction::generateBody(llvm::Function* func) {
     CompoundStmt* Body = FuncDecl->getBody();
     EmitCompoundStmt(Body);
 
+    // Try to get this from Builder, check how llvm does this
     if (!CGM.getCurrentReturnValue()) Builder.CreateRetVoid();
     CGM.popBlock();
 }
