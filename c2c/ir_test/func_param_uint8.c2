@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+package test;
+
+func void test1(int32 a) {
+}
+
+func void test2() {
+    //test1(10);
+}
+
+
