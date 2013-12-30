@@ -62,8 +62,6 @@ private:
     void EmitVarDecl(const VarDecl* D);
     llvm::Value* EmitBinaryOperator(const BinaryOperator* E);
 
-    llvm::Value *EvaluateExprAsBool(const Expr *E);
-
     llvm::BasicBlock* createBasicBlock(const llvm::Twine &name = "",
                                       llvm::Function* parent = 0,
                                       llvm::BasicBlock* before = 0) {
@@ -100,7 +98,7 @@ private:
     void EmitBranchOnBoolExpr(const Expr *Cond, llvm::BasicBlock *TrueBlock,
                             llvm::BasicBlock *FalseBlock);
 
-
+    llvm::Value* EvaluateExprAsBool(const Expr *E);
 
   /// An object to manage conditionally-evaluated expressions.
   class ConditionalEvaluation {

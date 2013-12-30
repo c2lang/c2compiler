@@ -297,28 +297,6 @@ llvm::Constant* CodeGenModule::EvaluateExprAsConstant(const Expr *E) {
     }
 }
 
-/// EvaluateExprAsBool - Perform the usual unary conversions on the specified
-/// expression and compare the result against zero, returning an Int1Ty value.
-llvm::Value *CodeGenModule::EvaluateExprAsBool(const Expr *E) {
-    // NOTE: for now only support numbers and convert those to bools
-    assert(isa<IntegerLiteral>(E) && "Only support constants for now");
-    const IntegerLiteral* N = cast<IntegerLiteral>(E);
-    return llvm::ConstantInt::get(llvm::Type::getInt1Ty(context), N->Value.getSExtValue(), true);
-
-#if 0
-  if (const MemberPointerType *MPT = E->getType()->getAs<MemberPointerType>()) {
-    llvm::Value *MemPtr = EmitScalarExpr(E);
-    return CGM.getCXXABI().EmitMemberPointerIsNotNull(*this, MemPtr, MPT);
-  }
-
-  QualType BoolTy = getContext().BoolTy;
-  if (!E->getType()->isAnyComplexType())
-    return EmitScalarConversion(EmitScalarExpr(E), E->getType(), BoolTy);
-
-  return EmitComplexToScalarConversion(EmitComplexExpr(E), E->getType(),BoolTy);
-#endif
-}
-
 llvm::Constant* CodeGenModule::GetConstantArrayFromStringLiteral(const StringLiteral* E) {
   //assert(!E->getType()->isPointerType() && "Strings are always arrays");
 

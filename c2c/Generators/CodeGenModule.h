@@ -70,8 +70,6 @@ public:
     llvm::LLVMContext& getContext() const { return context; }
     llvm::IRBuilder<> getBuilder() const { return builder; }
 
-    llvm::Value* EvaluateExprAsBool(const Expr *E);
-
     // basic blocks
     llvm::BasicBlock *currentBlock() {
         return blocks.top()->block;

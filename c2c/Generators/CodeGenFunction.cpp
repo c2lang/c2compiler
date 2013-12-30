@@ -109,7 +109,10 @@ void CodeGenFunction::generateBody(llvm::Function* func) {
     CompoundStmt* Body = FuncDecl->getBody();
     EmitCompoundStmt(Body);
 
-    if (!CGM.getCurrentReturnValue()) ReturnInst::Create(context, CGM.getCurrentReturnValue(), bblock);
+    if (!CGM.getCurrentReturnValue()) {
+        // ReturnInst::Create(context, CGM.getCurrentReturnValue(), bblock);
+        Builder.CreateRetVoid();
+    }
     CGM.popBlock();
 }
 
@@ -390,11 +393,9 @@ void CodeGenFunction::EmitBranchOnBoolExpr(const Expr *Cond,
 #endif
 
   // Emit the code with the fully general case.
-  llvm::Value *CondV = CGM.EvaluateExprAsBool(Cond);
+  llvm::Value *CondV = EvaluateExprAsBool(Cond);
   Builder.CreateCondBr(CondV, TrueBlock, FalseBlock);
 }
-
-
 
 llvm::Value* CodeGenFunction::EmitExpr(const Expr* E) {
     LOG_FUNC
@@ -623,3 +624,20 @@ llvm::Value* CodeGenFunction::EmitBinaryOperator(const BinaryOperator* B) {
     return 0;
 }
 
+llvm::Value *CodeGenFunction::EvaluateExprAsBool(const Expr *E) {
+    if (const IntegerLiteral* N = dyncast<IntegerLiteral>(E)) {
+        return llvm::ConstantInt::get(llvm::Type::getInt1Ty(context), N->Value.getSExtValue(), true);
+    }
+
+    if (const IdentifierExpr* I = dyncast<IdentifierExpr>(E)) {
+        // TODO for now only support identifier to base type
+        Decl* D = I->getDecl();
+        assert(D);
+        assert(D->getKind() == DECL_VAR && "TODO only support ref to vardecl, need anything else?");
+        VarDecl* VD = cast<VarDecl>(D);
+        // Add Load
+
+        return Builder.CreateIsNotNull(VD->getIRValue(), "tobool");
+    }
+    return NULL;
+}
