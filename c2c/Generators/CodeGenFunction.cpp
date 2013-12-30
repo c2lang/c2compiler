@@ -68,9 +68,9 @@ llvm::Function* CodeGenFunction::generateProto(const std::string& pkgname) {
     } else {
         std::vector<llvm::Type*> Args;
         for (unsigned i=0; i<FuncDecl->numArgs(); i++) {
-            //VarDecl* arg = FuncDecl->getArg(i);
-            //QualType qt = arg->getType();
-            //Args.push_back(CGM.ConvertType(qt.getTypePtr()));
+            VarDecl* arg = FuncDecl->getArg(i);
+            QualType qt = arg->getType();
+            Args.push_back(CGM.ConvertType(qt.getTypePtr()));
         }
         llvm::ArrayRef<llvm::Type*> argsRef(Args);
         funcType = llvm::FunctionType::get(RT, argsRef, FuncDecl->isVariadic());
