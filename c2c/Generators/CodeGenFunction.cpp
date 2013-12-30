@@ -532,8 +532,13 @@ llvm::Value* CodeGenFunction::EmitIdentifierExpr(const IdentifierExpr* E) {
     assert(D);
     switch (D->getKind()) {
     case DECL_FUNC:
-    case DECL_VAR:
+        assert(0);
         break;
+    case DECL_VAR:
+    {
+        VarDecl* VD = cast<VarDecl>(D);
+        return new LoadInst(VD->getIRValue(), "", false, CGM.currentBlock());
+    }
     case DECL_ENUMVALUE:
         {
             //EnumConstantDecl* ECD = cast<EnumConstantDecl>(D);
@@ -560,7 +565,8 @@ void CodeGenFunction::EmitVarDecl(const VarDecl* D) {
     // TODO arrays types?
     QualType qt = D->getType();
     StringBuilder addr(64);
-    addr << D->getName() << ".addr";
+    addr << D->getName();
+    if (D->isParameter()) addr << ".addr";
     llvm::AllocaInst *inst = new AllocaInst(CGM.ConvertType(qt.getTypePtr()), (const char*)addr, CGM.currentBlock());
     D->setIRValue(inst);
 
