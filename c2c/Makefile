@@ -19,10 +19,9 @@ OBJS = \
     Analyser/FileAnalyser.o \
     Analyser/FunctionAnalyser.o \
     Analyser/DepGenerator.o \
-    Generators/CCodeGenerator.o \
-    Generators/CodeGenFunction.o \
-    Generators/CodeGenModule.o \
-    Generators/GenUtils.o \
+    CodeGen/CodeGenFunction.o \
+    CodeGen/CodeGenModule.o \
+    CGenerator/CCodeGenerator.o \
     Builder/C2Builder.o \
     Builder/Recipe.o \
     Builder/RecipeReader.o \
@@ -30,6 +29,7 @@ OBJS = \
     FileUtils/FileUtils.o \
     Utils/StringBuilder.o \
     Utils/Utils.o \
+    Utils/GenUtils.o \
     main.o
 
 #CPPFLAGS = `llvm-config --cxxflags` -Wno-overloaded-virtual -Wall -Wextra -Wno-unused -Wno-unused-parameter

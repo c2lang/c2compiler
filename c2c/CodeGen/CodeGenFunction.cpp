@@ -24,15 +24,15 @@
 #include <llvm/IR/Function.h>
 #include <llvm/IR/BasicBlock.h>
 
-#include "Generators/CodeGenFunction.h"
-#include "Generators/CodeGenModule.h"
-#include "Generators/GenUtils.h"
+#include "CodeGen/CodeGenFunction.h"
+#include "CodeGen/CodeGenModule.h"
 #include "AST/Decl.h"
 #include "AST/Expr.h"
 #include "AST/Stmt.h"
 #include "AST/Type.h"
 #include "AST/Package.h"
 #include "Utils/StringBuilder.h"
+#include "Utils/GenUtils.h"
 
 //#define GEN_DEBUG
 

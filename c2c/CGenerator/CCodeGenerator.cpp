@@ -23,8 +23,7 @@
 // for tool_output_file
 //#include <llvm/Support/ToolOutputFile.h>
 
-#include "Generators/CCodeGenerator.h"
-#include "Generators/GenUtils.h"
+#include "CGenerator/CCodeGenerator.h"
 #include "AST/Package.h"
 #include "AST/AST.h"
 #include "AST/Decl.h"
@@ -33,6 +32,7 @@
 #include "Utils/StringBuilder.h"
 #include "Utils/color.h"
 #include "Utils/constants.h"
+#include "Utils/GenUtils.h"
 
 //#define CCODE_DEBUG
 #ifdef CCODE_DEBUG

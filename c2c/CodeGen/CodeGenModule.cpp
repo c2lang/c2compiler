@@ -32,15 +32,15 @@
 // For verifyModule()
 #include <llvm/Analysis/Verifier.h>
 
-#include "Generators/CodeGenModule.h"
-#include "Generators/CodeGenFunction.h"
-#include "Generators/GenUtils.h"
+#include "CodeGen/CodeGenModule.h"
+#include "CodeGen/CodeGenFunction.h"
 #include "AST/Package.h"
 #include "AST/AST.h"
 #include "AST/Type.h"
 #include "AST/Decl.h"
 #include "AST/Expr.h"
 #include "Utils/StringBuilder.h"
+#include "Utils/GenUtils.h"
 
 //#define DEBUG_CODEGEN
 
