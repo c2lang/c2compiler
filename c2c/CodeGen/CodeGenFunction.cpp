@@ -118,9 +118,8 @@ void CodeGenFunction::generateBody(llvm::Function* func) {
     CompoundStmt* Body = FuncDecl->getBody();
     EmitCompoundStmt(Body);
 
-    // Try to get this from Builder, check how llvm does this
-    // TODO if no other return
-    //Builder.CreateRetVoid();
+    llvm::BasicBlock *CurBB = Builder.GetInsertBlock();
+    if (!CurBB->getTerminator()) Builder.CreateRetVoid();
 
     // Remove the AllocaInsertPt instruction, which is just a convenience for us.
     llvm::Instruction *Ptr = AllocaInsertPt;
