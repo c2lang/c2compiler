@@ -80,6 +80,7 @@ Expr::Expr(ExprKind k)
     : Stmt(STMT_EXPR)
 {
     StmtBits.eKind = k;
+    StmtBits.ExprImpCast = BuiltinType::Void;
 #ifdef EXPR_DEBUG
     creationCount++;
     fprintf(stderr, "[EXPR] create %p  created %d deleted %d\n", this, creationCount, deleteCount);
@@ -96,7 +97,11 @@ Expr::~Expr() {
 const char* ctc_strings[] = { "none", "partial", "full" };
 
 void Expr::print(StringBuilder& buffer, unsigned indent) const {
-    buffer << "<ctc=" << ctc_strings[StmtBits.ExprIsCTC] << '>';
+    buffer << "<ctc=" << ctc_strings[StmtBits.ExprIsCTC];
+    if (getImpCast() != BuiltinType::Void) {
+            buffer << ", cast=" << BuiltinType::kind2name(getImpCast());
+    }
+    buffer << '>';
 }
 
 void IntegerLiteral::print(StringBuilder& buffer, unsigned indent) const {

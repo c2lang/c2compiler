@@ -190,6 +190,7 @@ public:
     Kind getKind() const { return kind; }
     unsigned getWidth() const;
     unsigned getIntegerWidth() const;
+    static const char* kind2name(Kind k);
     const char* getName() const;
     const char* getCName() const;
     bool isInteger() const;

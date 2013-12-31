@@ -94,6 +94,14 @@ public:
     QualType getType() const { return QT; }
     void setType(QualType t) { QT = t; }
 
+    void setImpCast(BuiltinType::Kind k) { StmtBits.ExprImpCast = k; }
+    bool hasImpCast() const {
+        return getImpCast() != BuiltinType::Void;
+    }
+    BuiltinType::Kind getImpCast() const {
+        return static_cast<BuiltinType::Kind>(StmtBits.ExprImpCast);
+    }
+
 private:
     QualType QT;
 

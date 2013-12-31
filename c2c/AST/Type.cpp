@@ -221,8 +221,8 @@ unsigned BuiltinType::getIntegerWidth() const {
     return 0;       // to satisfy compiler
 }
 
-const char* BuiltinType::getName() const {
-    switch (kind) {
+const char* BuiltinType::kind2name(Kind k) {
+    switch (k) {
         case Int8:      return "int8";
         case Int16:     return "int16";
         case Int32:     return "int32";
@@ -237,6 +237,10 @@ const char* BuiltinType::getName() const {
         case Void:      return "void";
     }
     return "";      // to satisfy compiler
+
+}
+const char* BuiltinType::getName() const {
+    return kind2name(kind);
 }
 
 const char* BuiltinType::getCName() const {

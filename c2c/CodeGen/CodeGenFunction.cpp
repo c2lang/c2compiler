@@ -521,8 +521,17 @@ llvm::Value* CodeGenFunction::EmitCallExpr(const CallExpr* E) {
         call = Builder.CreateCall(function);
         break;
     case 1:
-        call = Builder.CreateCall(function, EmitExpr(E->getArg(0)));
+    {
+        // TEMP only handle implicit casts in this case
+        const Expr* ArgExpr = E->getArg(0);
+        Value* arg = EmitExpr(ArgExpr);
+        if (ArgExpr->hasImpCast()) {
+            Type* DestTy = BuiltinType::get(ArgExpr->getImpCast());
+            arg = Builder.CreateBitCast(arg, CGM.ConvertType(DestTy));
+        }
+        call = Builder.CreateCall(function, arg);
         break;
+    }
     default:
         {
             std::vector<llvm::Value *> Args;

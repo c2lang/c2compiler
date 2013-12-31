@@ -206,7 +206,7 @@ void FunctionAnalyser::analyseIfStmt(Stmt* stmt) {
     Expr* cond = I->getCond();
     QualType Q1 = analyseExpr(cond, RHS);
     if (Q1.isValid()) {
-        typeResolver.checkCompatible(Type::Bool(), Q1, cond->getLocation(), TypeChecker::CONV_CONV);
+        typeResolver.checkCompatible(Type::Bool(), Q1, cond, TypeChecker::CONV_CONV);
     }
     scope.EnterScope(Scope::DeclScope);
     analyseStmt(I->getThen(), true);
@@ -497,7 +497,7 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
                 {
                     // TODO check if void*
                     FunctionDecl* FD = cast<FunctionDecl>(D);
-                    typeResolver.checkCompatible(expectedType, FD->getType(), id->getLocation(), TypeChecker::CONV_INIT);
+                    typeResolver.checkCompatible(expectedType, FD->getType(), id, TypeChecker::CONV_INIT);
                 }
                 break;
             case DECL_VAR:
@@ -1133,7 +1133,7 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
             assert(argType.isValid());
             LiteralAnalyser LA(Diags);
             typeGiven = LA.check(argType, typeGiven, argGiven);
-            //typeResolver.checkCompatible(argType, typeGiven, argGiven->getLocation(), TypeChecker::CONV_CONV);
+            typeResolver.checkCompatible(argType, typeGiven, argGiven, TypeChecker::CONV_CONV);
         }
     }
     if (callArgs > protoArgs) {

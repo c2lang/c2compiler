@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <assert.h>
 
+#include <clang/Basic/SourceLocation.h>
 #include <clang/Parse/ParseDiagnostic.h>
 #include <clang/Sema/SemaDiagnostic.h>
 
@@ -37,22 +38,23 @@ using namespace clang;
 // 3 = float->integer,
 // 4 = incompatible,
 // 5 = loss of FP precision
+// 6 = ok, implicit cast needed
 static int type_conversions[14][14] = {
     // I8  I16  I32  I64   U8  U16  U32  U64  F32  F64  Bool  Void
     // I8 ->
-    {   0,   0,   0,   0,   2,   2,   2,   2,   0,   0,    0,   4},
+    {   0,   6,   6,   6,   2,   2,   2,   2,   0,   0,    0,   4},
     // I16 ->
-    {   1,   0,   0,   0,   2,   2,   2,   2,   0,   0,    0,   4},
+    {   1,   0,   6,   6,   2,   2,   2,   2,   0,   0,    0,   4},
     // I32 ->
-    {   1,   1,   0,   0,   2,   2,   2,   2,   0,   0,    0,   4},
+    {   1,   1,   0,   6,   2,   2,   2,   2,   0,   0,    0,   4},
     // I64 ->
     {   1,   1,   1,   0,   2,   2,   2,   2,   0,   0,    0,   4},
     // U8 ->
-    {   2,   0,   0,   0,   0,   0,   0,   0,   0,   0,    0,   4},
+    {   2,   6,   6,   6,   0,   6,   6,   6,   0,   0,    0,   4},
     // U16 ->
-    {   1,   2,   0,   0,   1,   0,   0,   0,   0,   0,    0,   4},
+    {   1,   2,   6,   6,   1,   0,   6,   6,   0,   0,    0,   4},
     // U32 ->
-    {   1,   1,   2,   0,   1,   1,   0,   0,   0,   0,    0,   4},
+    {   1,   1,   2,   0,   1,   1,   0,   6,   0,   0,    0,   4},
     // U64 ->
     {   1,   1,   1,   2,   1,   1,   1,   0,   0,   0,    0,   4},
     // F32 ->
@@ -258,14 +260,14 @@ bool TypeChecker::checkDecls(Decls& decls, const Decl* D) const {
     return true;
 }
 
-bool TypeChecker::checkCompatible(QualType left, QualType right, clang::SourceLocation Loc, ConvType conv) const {
+bool TypeChecker::checkCompatible(QualType left, QualType right, Expr* expr, ConvType conv) const {
     assert(left.isValid());
     const Type* canon = left.getTypePtr()->getCanonicalType();
     switch (canon->getTypeClass()) {
     case TC_BUILTIN:
-        return checkBuiltin(left, right, Loc, conv);
+        return checkBuiltin(left, right, expr, conv);
     case TC_POINTER:
-        return checkPointer(left, right, Loc, conv);
+        return checkPointer(left, right, expr, conv);
     case TC_ARRAY:
         break;
     case TC_UNRESOLVED:
@@ -282,7 +284,7 @@ bool TypeChecker::checkCompatible(QualType left, QualType right, clang::SourceLo
     return false;
 }
 
-bool TypeChecker::checkBuiltin(QualType left, QualType right, clang::SourceLocation Loc, ConvType conv) const {
+bool TypeChecker::checkBuiltin(QualType left, QualType right, Expr* expr, ConvType conv) const {
     if (right->isBuiltinType()) {
         // NOTE: canonical is builtin, var itself my be UnresolvedType etc
         const BuiltinType* Right = cast<BuiltinType>(right->getCanonicalType());
@@ -290,10 +292,10 @@ bool TypeChecker::checkBuiltin(QualType left, QualType right, clang::SourceLocat
         int rule = type_conversions[Right->getKind()][Left->getKind()];
         // 0 = ok, 1 = loss of precision, 2 sign-conversion, 3=float->integer, 4 incompatible, 5 loss of FP prec.
         // TODO use matrix with allowed conversions: 3 options: ok, error, warn
-        if (rule == 0) return true;
-
         int errorMsg = 0;
         switch (rule) {
+        case 0:
+            return true;
         case 1: // loss of precision
             errorMsg = diag::warn_impcast_integer_precision;
             break;
@@ -309,6 +311,9 @@ bool TypeChecker::checkBuiltin(QualType left, QualType right, clang::SourceLocat
         case 5: // loss of fp-precision
             errorMsg = diag::warn_impcast_float_precision;
             break;
+        case 6: // implicit cast needed
+            expr->setImpCast(Left->getKind());
+            return true;
         default:
             assert(0 && "should not come here");
         }
@@ -317,7 +322,7 @@ bool TypeChecker::checkBuiltin(QualType left, QualType right, clang::SourceLocat
         right.DiagName(buf1);
         left.DiagName(buf2);
         // TODO error msg depends on conv type (see clang errors)
-        Diags.Report(Loc, errorMsg) << buf1 << buf2;
+        Diags.Report(expr->getLocation(), errorMsg) << buf1 << buf2;
         return false;
     }
 
@@ -326,11 +331,11 @@ bool TypeChecker::checkBuiltin(QualType left, QualType right, clang::SourceLocat
     right.DiagName(buf1);
     left.DiagName(buf2);
     // TODO error msg depends on conv type (see clang errors)
-    Diags.Report(Loc, diag::err_illegal_type_conversion) << buf1 << buf2;
+    Diags.Report(expr->getLocation(), diag::err_illegal_type_conversion) << buf1 << buf2;
     return false;
 }
 
-bool TypeChecker::checkPointer(QualType left, QualType right, clang::SourceLocation Loc, ConvType conv) const {
+bool TypeChecker::checkPointer(QualType left, QualType right, Expr* expr, ConvType conv) const {
     if (right->isPointerType()) {
 #warning "TODO dereference types (can be Alias etc) and check those"
         return true;
@@ -344,7 +349,7 @@ bool TypeChecker::checkPointer(QualType left, QualType right, clang::SourceLocat
     right.DiagName(buf1);
     left.DiagName(buf2);
     // TODO error msg depends on conv type (see clang errors)
-    Diags.Report(Loc, diag::err_illegal_type_conversion) << buf1 << buf2;
+    Diags.Report(expr->getLocation(), diag::err_illegal_type_conversion) << buf1 << buf2;
     return false;
 }
 
