@@ -18,6 +18,7 @@
 
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/ADT/Twine.h>
+#include "llvm/Support/ValueHandle.h"
 
 namespace llvm {
 class Module;
@@ -28,7 +29,6 @@ class Twine;
 }
 
 namespace C2 {
-
 class CodeGenModule;
 class FunctionDecl;
 class Stmt;
@@ -100,6 +100,8 @@ private:
 
     llvm::Value* EvaluateExprAsBool(const Expr *E);
 
+    llvm::AllocaInst* CreateTempAlloca(llvm::Type *Ty, const llvm::Twine &Name);
+
   /// An object to manage conditionally-evaluated expressions.
   class ConditionalEvaluation {
     llvm::BasicBlock *StartBB;
@@ -128,7 +130,6 @@ private:
   };
 
 
-
     CodeGenModule& CGM;
     FunctionDecl* FuncDecl;
     llvm::Function* CurFn;      // only set for generateBody() not generateProto()
@@ -136,6 +137,10 @@ private:
     llvm::LLVMContext& context;
     llvm::Module* module;
     llvm::IRBuilder<> Builder;  // NOTE: do we really need to create a new builder?
+
+    /// AllocaInsertPoint - This is an instruction in the entry block before which
+    /// we prefer to insert allocas.
+    llvm::AssertingVH<llvm::Instruction> AllocaInsertPt;
 
   /// OutermostConditional - Points to the outermost active
   /// conditional control.  This is used so that we know if a

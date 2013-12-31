@@ -92,6 +92,16 @@ void CodeGenFunction::generateBody(llvm::Function* func) {
     CurFn = func;
 
     llvm::BasicBlock *EntryBB = createBasicBlock("entry", func);
+
+    // Create a marker to make it easy to insert allocas into the entryblock
+    // later.  Don't create this with the builder, because we don't want it
+    // folded.
+    llvm::IntegerType* Int32Ty = llvm::Type::getInt32Ty(context);
+    llvm::Value *Undef = llvm::UndefValue::get(Int32Ty);
+    AllocaInsertPt = new llvm::BitCastInst(Undef, Int32Ty, "", EntryBB);
+    if (Builder.isNamePreserving())
+        AllocaInsertPt->setName("allocapt");
+
     Builder.SetInsertPoint(EntryBB);
 
     // arguments
@@ -111,6 +121,11 @@ void CodeGenFunction::generateBody(llvm::Function* func) {
     // Try to get this from Builder, check how llvm does this
     // TODO if no other return
     //Builder.CreateRetVoid();
+
+    // Remove the AllocaInsertPt instruction, which is just a convenience for us.
+    llvm::Instruction *Ptr = AllocaInsertPt;
+    AllocaInsertPt = 0;
+    Ptr->eraseFromParent();
 }
 
 void CodeGenFunction::EmitStmt(const Stmt* S) {
@@ -564,12 +579,10 @@ void CodeGenFunction::EmitVarDecl(const VarDecl* D) {
     LOG_FUNC
     // TODO arrays types?
     QualType qt = D->getType();
-    StringBuilder addr(64);
-    addr << D->getName();
-    if (D->isParameter()) addr << ".addr";
-    llvm::BasicBlock *CurBB = Builder.GetInsertBlock();
-    assert(CurBB);
-    llvm::AllocaInst *inst = new AllocaInst(CGM.ConvertType(qt.getTypePtr()), (const char*)addr, CurBB);
+    StringBuilder name(64);
+    name << D->getName();
+    if (D->isParameter()) name << ".addr";
+    llvm::AllocaInst *inst = CreateTempAlloca(CGM.ConvertType(qt.getTypePtr()), (const char*)name);
     D->setIRValue(inst);
 
     // TODO smart alignment
@@ -644,3 +657,14 @@ llvm::Value *CodeGenFunction::EvaluateExprAsBool(const Expr *E) {
     }
     return NULL;
 }
+
+/// CreateTempAlloca - This creates a alloca and inserts it into the entry
+/// block.
+llvm::AllocaInst *CodeGenFunction::CreateTempAlloca(llvm::Type *Ty,
+                                                    const Twine &Name) {
+  if (!Builder.isNamePreserving())
+    return new llvm::AllocaInst(Ty, 0, "", AllocaInsertPt);
+  return new llvm::AllocaInst(Ty, 0, Name, AllocaInsertPt);
+}
+
+
