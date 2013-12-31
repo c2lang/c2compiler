@@ -11,7 +11,6 @@ AST Generation for:
 * ...
 
 Analysis of:
-* symbol usages (Types, Vars, Functions)
 * un-initialized variables
 * Type comparisons
 * string parsing (\n\0 etc)
@@ -20,7 +19,7 @@ Analysis of:
 * ...
 
 IR generation of:
-* control flow statements (if, while, for, etc)
+* control flow statements (while, for, etc)
 * global strings
 
 C-code generation:
