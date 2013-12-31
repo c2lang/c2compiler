@@ -91,9 +91,8 @@ void CodeGenFunction::generateBody(llvm::Function* func) {
     LOG_FUNC
     CurFn = func;
 
-    llvm::BasicBlock *bblock = llvm::BasicBlock::Create(context, "entry", func, 0);
-    CGM.pushBlock(bblock);
-    Builder.SetInsertPoint(bblock);
+    llvm::BasicBlock *EntryBB = createBasicBlock("entry", func);
+    Builder.SetInsertPoint(EntryBB);
 
     // arguments
     Function::arg_iterator argsValues = func->arg_begin();
@@ -102,7 +101,7 @@ void CodeGenFunction::generateBody(llvm::Function* func) {
         EmitVarDecl(arg);
         Value* argumentValue = argsValues++;
         argumentValue->setName(arg->getName());
-        new StoreInst(argumentValue, arg->getIRValue(), false, bblock);
+        new StoreInst(argumentValue, arg->getIRValue(), false, EntryBB);
     }
 
     // body
@@ -110,8 +109,8 @@ void CodeGenFunction::generateBody(llvm::Function* func) {
     EmitCompoundStmt(Body);
 
     // Try to get this from Builder, check how llvm does this
-    if (!CGM.getCurrentReturnValue()) Builder.CreateRetVoid();
-    CGM.popBlock();
+    // TODO if no other return
+    //Builder.CreateRetVoid();
 }
 
 void CodeGenFunction::EmitStmt(const Stmt* S) {
@@ -166,7 +165,7 @@ void CodeGenFunction::EmitReturnStmt(const ReturnStmt* S) {
     } else {
         R = Builder.CreateRetVoid();
     }
-    CGM.setCurrentReturnValue(R);
+    //CGM.setCurrentReturnValue(R);
 }
 
 void CodeGenFunction::EmitIfStmt(const IfStmt* S) {
@@ -536,7 +535,9 @@ llvm::Value* CodeGenFunction::EmitIdentifierExpr(const IdentifierExpr* E) {
     case DECL_VAR:
     {
         VarDecl* VD = cast<VarDecl>(D);
-        return new LoadInst(VD->getIRValue(), "", false, CGM.currentBlock());
+        llvm::BasicBlock *CurBB = Builder.GetInsertBlock();
+        assert(CurBB);
+        return new LoadInst(VD->getIRValue(), "", false, CurBB);
     }
     case DECL_ENUMVALUE:
         {
@@ -566,7 +567,9 @@ void CodeGenFunction::EmitVarDecl(const VarDecl* D) {
     StringBuilder addr(64);
     addr << D->getName();
     if (D->isParameter()) addr << ".addr";
-    llvm::AllocaInst *inst = new AllocaInst(CGM.ConvertType(qt.getTypePtr()), (const char*)addr, CGM.currentBlock());
+    llvm::BasicBlock *CurBB = Builder.GetInsertBlock();
+    assert(CurBB);
+    llvm::AllocaInst *inst = new AllocaInst(CGM.ConvertType(qt.getTypePtr()), (const char*)addr, CurBB);
     D->setIRValue(inst);
 
     // TODO smart alignment
@@ -634,7 +637,9 @@ llvm::Value *CodeGenFunction::EvaluateExprAsBool(const Expr *E) {
         assert(D->getKind() == DECL_VAR && "TODO only support ref to vardecl, need anything else?");
         VarDecl* VD = cast<VarDecl>(D);
 
-        Value* load = new LoadInst(VD->getIRValue(), "", false, CGM.currentBlock());
+        llvm::BasicBlock *CurBB = Builder.GetInsertBlock();
+        assert(CurBB);
+        Value* load = new LoadInst(VD->getIRValue(), "", false, CurBB);
         return Builder.CreateIsNotNull(load, "tobool");
     }
     return NULL;
