@@ -24,7 +24,6 @@
 //#include <llvm/Support/ToolOutputFile.h>
 
 #include "Generators/CCodeGenerator.h"
-#include "Generators/CodeGenFunction.h"
 #include "Generators/GenUtils.h"
 #include "AST/Package.h"
 #include "AST/AST.h"
