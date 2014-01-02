@@ -108,11 +108,13 @@ void IntegerLiteral::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer << "[IntegerLiteral " << Value.getSExtValue() << ' ';
     QualType Q = getType();
+    buffer << " type=";
     if (Q.isValid()) {
-        buffer << " type=";
         Q->DiagName(buffer);
-        buffer << ' ';
+    } else {
+        buffer << ANSI_RED"<INVALID>"ANSI_NORMAL;
     }
+    buffer << ' ';
     Expr::print(buffer, 0);
     buffer << "]\n";
 }

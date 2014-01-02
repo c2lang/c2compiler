@@ -607,7 +607,6 @@ void CodeGenFunction::EmitVarDecl(const VarDecl* D) {
 
 llvm::Value* CodeGenFunction::EmitBinaryOperator(const BinaryOperator* B) {
     LOG_FUNC
-    // assume '>'
     Value* L = EmitExpr(B->getLHS());
     Value* R = EmitExpr(B->getRHS());
     if (L == 0 || R == 0) return 0;
@@ -630,7 +629,9 @@ llvm::Value* CodeGenFunction::EmitBinaryOperator(const BinaryOperator* B) {
         // convert bool 0/1 to double 0.0 or 1.0
         //return Builder.CreateUIToFP(L, llvm::Type::getDoubleTy(context), "booltmp");
     case BO_GT:
-        return Builder.CreateICmpUGT(L, R, "cmp");;
+        // TODO UGT for unsigned, SGT for signed?
+        return Builder.CreateICmpSGT(L, R, "cmp");;
+        //return Builder.CreateICmpUGT(L, R, "cmp");;
     case BO_LE:
         return Builder.CreateICmpULE(L, R, "cmp");;
     case BO_GE:
@@ -663,6 +664,11 @@ llvm::Value *CodeGenFunction::EvaluateExprAsBool(const Expr *E) {
         Value* load = new LoadInst(VD->getIRValue(), "", false, CurBB);
         return Builder.CreateIsNotNull(load, "tobool");
     }
+    if (const BinaryOperator* BinOp = dyncast<BinaryOperator>(E)) {
+        return EmitBinaryOperator(BinOp);
+        // TODO convert to Bool if not already
+    }
+    assert(0 && "TODO");
     return NULL;
 }
 
