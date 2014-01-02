@@ -173,7 +173,12 @@ unsigned FileAnalyser::checkFunctionProtos() {
     if (verbose) printf(COL_VERBOSE"%s %s"ANSI_NORMAL"\n", __func__, ast.getFileName().c_str());
     unsigned errors = 0;
     for (unsigned i=0; i<ast.numFunctions(); i++) {
-        errors += resolveFunctionDecl(ast.getFunction(i));
+        FunctionDecl* F = ast.getFunction(i);
+        errors += resolveFunctionDecl(F);
+        if (F->getName() == "main" && !F->isPublic()) {
+            Diags.Report(F->getLocation(), diag::err_main_non_public);
+            errors++;
+        }
     }
     return errors;
 }

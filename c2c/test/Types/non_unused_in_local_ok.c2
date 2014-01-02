@@ -1,9 +1,9 @@
-// @warnings{no-unused-variable}
+// @warnings{no-unused-variable no-unused-function}
 package test;
 
 type Number int;
 
-func void main() {
+func void test1() {
     Number n;
 }
 

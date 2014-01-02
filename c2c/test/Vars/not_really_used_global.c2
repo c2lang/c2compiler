@@ -1,8 +1,9 @@
+// @warnings{no-unused-function}
 package test;
 
 int a;  // @warning{unused variable a}
 
-func void main() {
+func void test1() {
     a = 10;
 }
 

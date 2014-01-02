@@ -1,6 +1,7 @@
+// @warnings{no-unused-function}
 package test;
 
-func void main(int* result) {
+func void test1(int* result) {
     *result = 10;
 }
 

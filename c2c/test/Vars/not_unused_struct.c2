@@ -1,10 +1,11 @@
+// @warnings{no-unused-function}
 package test;
 
 type Point struct {
     int x;
 }
 
-func int main() {
+func int test1() {
     Point p = { 10 }
     return p.x;
 }

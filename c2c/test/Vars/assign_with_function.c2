@@ -1,9 +1,9 @@
 // @warnings{no-unused}
 package test;
 
-func void main() {
+func void test1() {
     int b;
-    b = main;       // @error{invalid type conversion from 'void ()' to 'int32'}
+    b = test1;       // @error{invalid type conversion from 'void ()' to 'int32'}
 }
 
 

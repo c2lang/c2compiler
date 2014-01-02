@@ -5,7 +5,7 @@ type Func func void();
 
 func void test1() {}
 
-func void main() {
+func void test2() {
     Func f = test1;
     f();
 }

@@ -1,3 +1,4 @@
+// @warnings{no-unused-function}
 package test;
 
 type Point struct {
@@ -9,7 +10,7 @@ type Point struct {
     int z;          // @warning{unused struct member z}
 }
 
-func int main() {
+func int test1() {
     Point p;
     p.x = 10;
     p.x = 20;

@@ -1,6 +1,7 @@
+// @warnings{no-unused-function}
 package test;
 
-func void main(int a,   // @warning{unused parameter a}
+func void test1(int a,   // @warning{unused parameter a}
                int b)   // @warning{unused parameter b}
 {}
 
