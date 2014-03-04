@@ -18,7 +18,7 @@
 
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/ADT/Twine.h>
-#include "llvm/Support/ValueHandle.h"
+#include <llvm/Support/ValueHandle.h>
 
 namespace llvm {
 class Module;

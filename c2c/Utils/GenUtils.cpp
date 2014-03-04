@@ -15,7 +15,7 @@
 
 #include <stdio.h>
 
-#include "GenUtils.h"
+#include "Utils/GenUtils.h"
 #include "Utils/StringBuilder.h"
 
 using namespace C2;

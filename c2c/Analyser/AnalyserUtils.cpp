@@ -15,7 +15,7 @@
 
 #include <stdio.h>
 
-#include "AnalyserUtils.h"
+#include "Analyser/AnalyserUtils.h"
 #include "Utils/StringBuilder.h"
 
 using namespace C2;
