@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+package test;
+
+func void test() {
+    uint32 a = 1;
+    int32 b = 400 + a;  // @error{error?}
+}
+

@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+package test;
+
+func void test() {
+    char a = 1;
+    char b = 2;
+    char c = a + b;
+}
+

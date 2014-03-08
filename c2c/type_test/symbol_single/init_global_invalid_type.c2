@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+package test;
+
+
+func void test1() {
+    int a = "test";     // @error{invalid type conversion from 'int8*' to 'int32'}
+}
+

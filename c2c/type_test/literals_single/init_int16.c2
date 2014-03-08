@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+package test;
+
+func void test1() {
+    int16 a =  32767;
+    int16 b = -32768;
+    int16 c =  32768;  // @error{constant value 32768 out-of-bounds for type 'int16', range [-32768, 32767]}
+    int16 d = -32769;  // @error{constant value -32769 out-of-bounds for type 'int16', range [-32768, 32767]}
+}
+
