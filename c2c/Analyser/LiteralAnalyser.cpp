@@ -76,6 +76,7 @@ LiteralAnalyser::LiteralAnalyser(clang::DiagnosticsEngine& Diags_)
 
 void LiteralAnalyser::check(QualType TLeft, Expr* Right) {
     if (Right->getCTC() == CTC_NONE) return;
+    // TODO assert here instead of check?
 
     const QualType QT = TLeft->getCanonicalType();
     int availableWidth = 0;
