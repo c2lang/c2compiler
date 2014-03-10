@@ -163,6 +163,7 @@ void IdentifierExpr::print(StringBuilder& buffer, unsigned indent) const {
     Expr::print(buffer, 0);
     buffer << ' ' << getName();
     if (decl) buffer << " <RESOLVED>";
+    else buffer << " <UNRESOLVED>";
     buffer << '\n';
 }
 

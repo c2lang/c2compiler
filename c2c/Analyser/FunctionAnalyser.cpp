@@ -427,7 +427,9 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
             // TODO LHS: check if VarDecl
             if (side & LHS) checkDeclAssignment(D, expr);
             if (side & RHS) D->setUsed();
-            return Decl2Type(D);
+            QualType T = Decl2Type(D);
+            expr->setType(T);
+            return T;
         }
         break;
     case EXPR_INITLIST:
@@ -789,6 +791,7 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
         TRight = LA.check(TLeft, TRight, Right);
         //typeResolver.checkCompatible(TLeft, TRight, binop->getLocation(), TypeChecker::CONV_ASSIGN);
         checkAssignment(Left, TLeft);
+        expr->setType(TLeft);
         return TLeft;
     }
     case BO_MulAssign:
@@ -861,14 +864,23 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
     case UO_Plus:
     case UO_Minus:
     case UO_Not:
-    case UO_LNot:
         LType = analyseExpr(unaryop->getExpr(), side | RHS);
         unaryop->setCTC(unaryop->getExpr()->getCTC());
-        // ..
-        // Also set type?
         if (LType.isNull()) return 0;
         // TODO use return type
         typeResolver.UsualUnaryConversions(unaryop->getExpr());
+        break;
+    case UO_LNot:
+        // TODO first cast expr to bool, then invert here, return type bool
+        // TODO extract to function
+        LType = analyseExpr(unaryop->getExpr(), side | RHS);
+        // TODO check conversion to bool here!!
+        unaryop->setCTC(unaryop->getExpr()->getCTC());
+        // Also set type?
+        if (LType.isNull()) return 0;
+        //typeResolver.UsualUnaryConversions(unaryop->getExpr());
+        LType = TypeContext::getBuiltinType(BuiltinType::Bool);
+        expr->setType(LType);
         break;
     default:
         assert(0 && "TODO");
