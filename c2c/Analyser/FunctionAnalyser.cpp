@@ -425,6 +425,7 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
             if (!D) break;
             // NOTE: expr should not be package name (handled above)
             // TODO LHS: check if VarDecl
+            // TODO check Type of Decl here?
             if (side & LHS) checkDeclAssignment(D, expr);
             if (side & RHS) D->setUsed();
             QualType T = Decl2Type(D);
