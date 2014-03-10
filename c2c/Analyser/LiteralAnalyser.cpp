@@ -79,15 +79,15 @@ QualType LiteralAnalyser::check(QualType TLeft, QualType TRight, Expr* Right) {
 
     const QualType QT = TLeft->getCanonicalType();
     int availableWidth = 0;
-    bool isSigned = false;
+    //bool isSigned = false;
     QualType wanted = TLeft;
     if (QT.isBuiltinType()) {
         const BuiltinType* TL = cast<BuiltinType>(QT);
         availableWidth = TL->getIntegerWidth();
-        isSigned = TL->isSignedInteger();
+        //isSigned = TL->isSignedInteger();
     } else if (QT.isPointerType()) {
         availableWidth = 32;    // only 32-bit for now
-        isSigned = false;
+        //isSigned = false;
         // dont ask for pointer, replace with uint32 here.
         wanted = BuiltinType::get(BuiltinType::UInt32);
     } else {
@@ -241,8 +241,9 @@ APSInt LiteralAnalyser::checkBinaryLiterals(QualType TLeft, QualType TRight, Exp
     {
         // TODO check left/right values + set QualType
         // TEMP always return 1 (!false)
-        APSInt Result;
+        APSInt Result(64, false);
         Result = 1;
+
         return Result;
     }
     case BO_And:

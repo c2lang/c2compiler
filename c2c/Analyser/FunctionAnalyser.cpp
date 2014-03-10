@@ -773,6 +773,7 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     case BO_GT:
     case BO_NE:
     case BO_EQ:
+        expr->setType(TypeContext::getBuiltinType(BuiltinType::Bool));
         return Type::Bool();
     case BO_And:
     case BO_Xor:
