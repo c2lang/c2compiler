@@ -34,11 +34,11 @@ public:
 
     QualType check(QualType TLeft, QualType TRight, Expr* Right);
 private:
-    llvm::APSInt checkLiterals(QualType TLeft, QualType TRight, Expr* Right, llvm::APSInt& Result);
-    llvm::APSInt checkIntegerLiterals(QualType TLeft, QualType TRight, Expr* Right, llvm::APSInt& Result);
-    llvm::APSInt checkUnaryLiterals(QualType TLeft, QualType TRight, Expr* Right, llvm::APSInt& Result);
-    llvm::APSInt checkBinaryLiterals(QualType TLeft, QualType TRight, Expr* Right, llvm::APSInt& Result);
-    llvm::APSInt checkIdentifier(QualType TLeft, QualType TRight, Expr* Right, llvm::APSInt& Result);
+    llvm::APSInt checkLiterals(QualType TLeft, QualType TRight, Expr* Right);
+    llvm::APSInt checkIntegerLiterals(QualType TLeft, QualType TRight, Expr* Right);
+    llvm::APSInt checkUnaryLiterals(QualType TLeft, QualType TRight, Expr* Right);
+    llvm::APSInt checkBinaryLiterals(QualType TLeft, QualType TRight, Expr* Right);
+    llvm::APSInt checkIdentifier(QualType TLeft, QualType TRight, Expr* Right);
 
     clang::DiagnosticsEngine& Diags;
 

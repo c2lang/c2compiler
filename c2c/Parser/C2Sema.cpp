@@ -762,8 +762,8 @@ C2::ExprResult C2Sema::ActOnIntegerConstant(SourceLocation Loc, uint64_t Val) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: integer constant"ANSI_NORMAL"\n";
 #endif
-    // NOTE: always 32 bits
-    llvm::APInt ResultValue(32, Val);
+    // NOTE: always 64 bits?
+    llvm::APInt ResultValue(64, Val, true);
     return ExprResult(new IntegerLiteral(Loc, ResultValue));
 }
 
@@ -850,17 +850,16 @@ C2::ExprResult C2Sema::ActOnNumericConstant(const Token& Tok) {
         if (Literal.GetIntegerValue(ResultVal)) {
             Diag(Tok.getLocation(), diag::warn_integer_too_large);
         } else {
+#if 0
             // Octal, Hexadecimal, and integers with a U suffix are allowed to
             // be an unsigned.
-#if 0
             bool AllowUnsigned = Literal.isUnsigned || Literal.getRadix() != 10;
-#endif
 
             // Check from smallest to largest, picking the smallest type we can.
             unsigned Width = 0;
           if (!Literal.isLong && !Literal.isLongLong) {
             // Are int/unsigned possibilities?
-            unsigned IntSize = 32;
+            unsigned IntSize = 64;
 
             // Does it fit in a unsigned?
             if (ResultVal.isIntN(IntSize)) {
@@ -897,6 +896,7 @@ C2::ExprResult C2Sema::ActOnNumericConstant(const Token& Tok) {
             if (ResultVal.getBitWidth() != Width) {
                 ResultVal = ResultVal.trunc(Width);
             }
+#endif
         }
 
         Res = new IntegerLiteral(Tok.getLocation(), ResultVal);

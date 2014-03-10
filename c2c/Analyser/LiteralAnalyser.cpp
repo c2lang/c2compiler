@@ -30,7 +30,7 @@ using namespace llvm;
 using namespace clang;
 
 struct Limit {
-    uint64_t minVal;
+    int64_t minVal;
     uint64_t maxVal;
     const char* minStr;
     const char* maxStr;
@@ -40,15 +40,15 @@ static const Limit limits [] = {
     // bool
     {         0,          1,           "0",         "1" },
     // int8
-    {       128,        127,        "-128",       "127" },
+    {       -128,        127,        "-128",       "127" },
     // uint8
     {          0,        255,           "0",        "255" },
     // int16
-    {      32768,      32767,      "-32768",      "32767" },
+    {      -32768,      32767,      "-32768",      "32767" },
     // uint16
     {          0,      65535,           "0",      "65535" },
     // int32
-    { 2147483648, 2147483647, "-2147483648", "2147483647" },
+    { -2147483648, 2147483647, "-2147483648", "2147483647" },
     // uint32
     {          0, 4294967295,           "0", "4294967295" },
 };
@@ -77,9 +77,6 @@ LiteralAnalyser::LiteralAnalyser(clang::DiagnosticsEngine& Diags_)
 QualType LiteralAnalyser::check(QualType TLeft, QualType TRight, Expr* Right) {
     if (Right->getCTC() == CTC_NONE) return TRight;
 
-    APSInt Input;
-    Input.setIsSigned(false);
-
     const QualType QT = TLeft->getCanonicalType();
     int availableWidth = 0;
     bool isSigned = false;
@@ -98,18 +95,23 @@ QualType LiteralAnalyser::check(QualType TLeft, QualType TRight, Expr* Right) {
         assert(0 && "todo");
     }
 
-    // TODO remove Input argument (not used) or return bool?
-    APSInt Result = checkLiterals(wanted, TRight, Right, Input);
-    uint64_t v = Result.getZExtValue();
+    APSInt Result = checkLiterals(wanted, TRight, Right);
 
     const Limit* L = getLimit(availableWidth);
-    const uint64_t limit = (Result.isSigned() ? L->minVal : L->maxVal);
-    //fprintf(stderr, "VAL=%llu  LIMIT=%llu  width=%d signed=%d\n", v, limit, availableWidth, Result.isSigned());
-    if (v > limit || (Result.isSigned() && !isSigned)) {
-        //fprintf(stderr, "VAL=%llu  LIMIT=%llu\n", v, limit);
+    assert(Result.isSigned() && "TEMP FOR NOW");
+    int64_t value = Result.getSExtValue();
+    bool overflow = false;
+    if (Result.isNegative()) {
+        const int64_t limit = L->minVal;
+        if (value < limit) overflow = true;
+    } else {
+        const int64_t limit = (int64_t)L->maxVal;
+        if (value > limit) overflow = true;
+    }
+    //fprintf(stderr, "VAL=%lld  width=%d signed=%d\n", value, availableWidth, Result.isSigned());
+    if (overflow) {
         SmallString<20> ss;
-        if (Result.isSigned()) ss += '-';
-        Result.toString(ss, 10, false);
+        Result.toString(ss, 10, true);
 
         StringBuilder buf1;
         TLeft->DiagName(buf1);
@@ -121,12 +123,12 @@ QualType LiteralAnalyser::check(QualType TLeft, QualType TRight, Expr* Right) {
     return TRight;
 }
 
-APSInt LiteralAnalyser::checkLiterals(QualType TLeft, QualType TRight, Expr* Right, APSInt& Result) {
-    if (Right->getCTC() == CTC_NONE) return Result;
+APSInt LiteralAnalyser::checkLiterals(QualType TLeft, QualType TRight, Expr* Right) {
+    if (Right->getCTC() == CTC_NONE) return APSInt();
 
     switch (Right->getKind()) {
     case EXPR_INTEGER_LITERAL:
-        return checkIntegerLiterals(TLeft, TRight, Right, Result);
+        return checkIntegerLiterals(TLeft, TRight, Right);
     case EXPR_FLOAT_LITERAL:
     case EXPR_BOOL_LITERAL:
     case EXPR_CHAR_LITERAL:
@@ -135,7 +137,7 @@ APSInt LiteralAnalyser::checkLiterals(QualType TLeft, QualType TRight, Expr* Rig
     case EXPR_NIL:
         break;
     case EXPR_IDENTIFIER:
-        return checkIdentifier(TLeft, TRight, Right, Result);
+        return checkIdentifier(TLeft, TRight, Right);
     case EXPR_TYPE:
     case EXPR_CALL:
     case EXPR_INITLIST:
@@ -143,11 +145,11 @@ APSInt LiteralAnalyser::checkLiterals(QualType TLeft, QualType TRight, Expr* Rig
     case EXPR_DECL:
         break;
     case EXPR_BINOP:
-        return checkBinaryLiterals(TLeft, TRight, Right, Result);
+        return checkBinaryLiterals(TLeft, TRight, Right);
     case EXPR_CONDOP:
         break;
     case EXPR_UNARYOP:
-        return checkUnaryLiterals(TLeft, TRight, Right, Result);
+        return checkUnaryLiterals(TLeft, TRight, Right);
     case EXPR_BUILTIN:
     case EXPR_ARRAYSUBSCRIPT:
     case EXPR_MEMBER:
@@ -155,27 +157,21 @@ APSInt LiteralAnalyser::checkLiterals(QualType TLeft, QualType TRight, Expr* Rig
     case EXPR_PAREN:
         {
             ParenExpr* P = cast<ParenExpr>(Right);
-            APSInt Result2 = checkLiterals(TLeft, TRight, P->getExpr(), Result);
-            P->setType(TLeft);
-            return Result2;
+            return checkLiterals(TLeft, TRight, P->getExpr());
         }
     }
+    return APSInt();
+}
+
+APSInt LiteralAnalyser::checkIntegerLiterals(QualType TLeft, QualType TRight, Expr* Right) {
+    IntegerLiteral* I = cast<IntegerLiteral>(Right);
+
+    APSInt Result(64, false);      // always take signed 64 as base for checking
+    Result = I->Value;
     return Result;
 }
 
-APSInt LiteralAnalyser::checkIntegerLiterals(QualType TLeft, QualType TRight, Expr* Right, APSInt& Result) {
-    IntegerLiteral* I = cast<IntegerLiteral>(Right);
-
-    APSInt Result2;
-    Result2.setIsSigned(false);
-
-    I->setType(TLeft);
-
-    Result2 = I->Value;
-    return Result2;
-}
-
-APSInt LiteralAnalyser::checkUnaryLiterals(QualType TLeft, QualType TRight, Expr* Right, APSInt& Result) {
+APSInt LiteralAnalyser::checkUnaryLiterals(QualType TLeft, QualType TRight, Expr* Right) {
     UnaryOperator* unaryop = cast<UnaryOperator>(Right);
     QualType LType;
     switch (unaryop->getOpcode()) {
@@ -191,9 +187,11 @@ APSInt LiteralAnalyser::checkUnaryLiterals(QualType TLeft, QualType TRight, Expr
         break;
     case UO_Minus:
         {
-            APSInt Result2 = checkLiterals(TLeft, TRight, unaryop->getExpr(), Result);
-            Result2.setIsSigned(!Result2.isSigned());
-            return Result2;
+            APSInt Result = checkLiterals(TLeft, TRight, unaryop->getExpr());
+            APInt invert(64, -1, true);
+            APSInt I(invert, false);
+            Result *= I;
+            return Result;
         }
     case UO_Not:
     case UO_LNot:
@@ -203,11 +201,10 @@ APSInt LiteralAnalyser::checkUnaryLiterals(QualType TLeft, QualType TRight, Expr
         assert(0 && "TODO");
         break;
     }
-    Result = 0;
-    return Result;
+    return APSInt();
 }
 
-APSInt LiteralAnalyser::checkBinaryLiterals(QualType TLeft, QualType TRight, Expr* Right, APSInt& Result) {
+APSInt LiteralAnalyser::checkBinaryLiterals(QualType TLeft, QualType TRight, Expr* Right) {
     BinaryOperator* binop = cast<BinaryOperator>(Right);
     QualType LType;
     switch (binop->getOpcode()) {
@@ -221,9 +218,17 @@ APSInt LiteralAnalyser::checkBinaryLiterals(QualType TLeft, QualType TRight, Exp
         // TODO
         break;
     case BO_Add:
-        return checkLiterals(TLeft, TRight, binop->getLHS(), Result)
-             + checkLiterals(TLeft, TRight, binop->getRHS(), Result);
+        {
+            APSInt L = checkLiterals(TLeft, TRight, binop->getLHS());
+            APSInt R = checkLiterals(TLeft, TRight, binop->getRHS());
+            return L + R;
+        }
     case BO_Sub:
+        {
+            APSInt L = checkLiterals(TLeft, TRight, binop->getLHS());
+            APSInt R = checkLiterals(TLeft, TRight, binop->getRHS());
+            return L - R;
+        }
     case BO_Shl:
     case BO_Shr:
         break;
@@ -235,11 +240,10 @@ APSInt LiteralAnalyser::checkBinaryLiterals(QualType TLeft, QualType TRight, Exp
     case BO_NE:
     {
         // TODO check left/right values + set QualType
-        // TEMP always return 1
-        APSInt Result2;
-        Result2.setIsSigned(false);
-        Result2 = 1;
-        return Result2;
+        // TEMP always return 1 (!false)
+        APSInt Result;
+        Result = 1;
+        return Result;
     }
     case BO_And:
     case BO_Xor:
@@ -261,22 +265,20 @@ APSInt LiteralAnalyser::checkBinaryLiterals(QualType TLeft, QualType TRight, Exp
         // TODO
         break;
     }
-    Result = 0;
-    return Result;
+    return APSInt();
 }
 
-APSInt LiteralAnalyser::checkIdentifier(QualType TLeft, QualType TRight, Expr* Right, APSInt& Result) {
+APSInt LiteralAnalyser::checkIdentifier(QualType TLeft, QualType TRight, Expr* Right) {
     IdentifierExpr* I = cast<IdentifierExpr>(Right);
     const Decl* D = I->getDecl();
     assert(D);
     const EnumConstantDecl* ECD = dyncast<EnumConstantDecl>(D);
     if (ECD) {
-        APSInt Result2;
-        Result2.setIsSigned(false);         // TODO set depending on enum type
-        Result2 = ECD->getValue();
-        return Result2;
+        APSInt Result;
+        Result.setIsSigned(false);         // TODO set depending on enum type
+        Result = ECD->getValue();
+        return Result;
     }
-    Result = 0;
-    return Result;
+    return APSInt();
 }
 
