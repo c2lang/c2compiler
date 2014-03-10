@@ -1,0 +1,17 @@
+// @warnings{no-unused}
+package test;
+
+func void foo() {}
+
+func void test() {
+    int8  a = foo();     // @error{invalid type conversion from 'void' to 'int8'}
+    int16 b = foo();     // @error{invalid type conversion from 'void' to 'int16'}
+    int32 c = foo();     // @error{invalid type conversion from 'void' to 'int32'}
+    int64 d = foo();     // @error{invalid type conversion from 'void' to 'int64'}
+    uint8  e = foo();    // @error{invalid type conversion from 'void' to 'uint8'}
+    uint16 f = foo();    // @error{invalid type conversion from 'void' to 'uint16'}
+    uint32 g = foo();    // @error{invalid type conversion from 'void' to 'uint32'}
+    uint64 h = foo();    // @error{invalid type conversion from 'void' to 'uint64'}
+    bool   i = foo();    // @error{invalid type conversion from 'void' to 'bool'}
+}
+

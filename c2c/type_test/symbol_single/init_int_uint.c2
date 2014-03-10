@@ -3,6 +3,6 @@ package test;
 
 func void test() {
     uint32 a = 1;
-    int32 b = a;       // @error{implicit conversion changes signedness: 'uint32' to 'int32'}
+    int32 b = a;       // @warning{implicit conversion changes signedness: 'uint32' to 'int32'}
 }
 
