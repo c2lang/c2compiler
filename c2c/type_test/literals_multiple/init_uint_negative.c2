@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+package test;
+
+func void test1() {
+    uint32 a = 10 - 10;
+    uint32 b = 100 - 10;
+    uint32 c = 10 - 20; // @error{constant value -10 out-of-bounds for type 'uint32', range [0, 4294967295]}
+}
+

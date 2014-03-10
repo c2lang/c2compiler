@@ -97,68 +97,72 @@ Expr::~Expr() {
 const char* ctc_strings[] = { "none", "partial", "full" };
 
 void Expr::print(StringBuilder& buffer, unsigned indent) const {
-    buffer << "<ctc=" << ctc_strings[StmtBits.ExprIsCTC];
-    if (getImpCast() != BuiltinType::Void) {
-            buffer << ", cast=" << BuiltinType::kind2name(getImpCast());
-    }
-    buffer << '>';
-}
-
-void IntegerLiteral::print(StringBuilder& buffer, unsigned indent) const {
-    buffer.indent(indent);
-    buffer << "[IntegerLiteral " << Value.getSExtValue() << ' ';
     QualType Q = getType();
-    buffer << " type=";
     if (Q.isValid()) {
         Q->DiagName(buffer);
     } else {
         buffer << ANSI_RED"<INVALID>"ANSI_NORMAL;
     }
-    buffer << ' ';
+    buffer << " ctc=" << ctc_strings[StmtBits.ExprIsCTC];
+    if (getImpCast() != BuiltinType::Void) {
+        buffer << ", cast=" << BuiltinType::kind2name(getImpCast());
+    }
+}
+
+void IntegerLiteral::print(StringBuilder& buffer, unsigned indent) const {
+    buffer.indent(indent);
+    buffer << "IntegerLiteral ";
     Expr::print(buffer, 0);
-    buffer << "]\n";
+    buffer << ' ' << Value.getSExtValue() << '\n';
 }
 
 
 void FloatingLiteral::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
+    buffer << "FloatingLiteral ";
+    Expr::print(buffer, 0);
     char temp[20];
     sprintf(temp, "%f", Value.convertToFloat());
-    buffer << "[FloatingLiteral " << temp << "]\n";
+    buffer << ' ' << temp << '\n';
 }
 
 
 void BooleanLiteral::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[BooleanLiteral " << getValue() << "]\n";
+    buffer << "BooleanLiteral ";
+    Expr::print(buffer, 0);
+    buffer << ' ' << getValue() << '\n';
 }
 
 
 void CharacterLiteral::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[CharacterLiteral '" << (char)value << "']\n";
+    buffer << "CharacterLiteral ";
+    Expr::print(buffer, 0);
+    buffer << " '" << (char)value << "'\n";
 }
 
 
 void StringLiteral::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[StringLiteral '" << value << "']\n";
+    buffer << "StringLiteral ";
+    Expr::print(buffer, 0);
+    buffer << " '" << value << "'\n";
 }
 
 
 void NilExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[NilExpr]\n";
+    buffer << "NilExpr\n";
 }
 
 
 void IdentifierExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[IdentifierExpr ";
-    buffer << getName() << "]";
-    if (decl) buffer << " <RESOLVED>";
-    buffer << ' ';
+    buffer << "IdentifierExpr ";
     Expr::print(buffer, 0);
+    buffer << ' ' << getName();
+    if (decl) buffer << " <RESOLVED>";
     buffer << '\n';
 }
 
@@ -177,9 +181,11 @@ void CallExpr::addArg(Expr* arg) {
 
 void CallExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[CallExpr ";
+    buffer << "CallExpr ";
+    Expr::print(buffer, 0);
+    buffer << ' ';
     expr2name(Fn, buffer);
-    buffer << "]\n";
+    buffer << '\n';
     Fn->print(buffer, indent + INDENT);
     for (unsigned i=0; i<args.size(); i++) {
         args[i]->print(buffer, indent + INDENT);
@@ -202,7 +208,7 @@ InitListExpr::~InitListExpr() {
 
 void InitListExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[InitListExpr]\n";
+    buffer << "InitListExpr\n";
     for (unsigned i=0; i<values.size(); i++) {
         values[i]->print(buffer, indent + INDENT);
     }
@@ -287,9 +293,10 @@ const char* BinaryOperator::OpCode2str(clang::BinaryOperatorKind opc) {
 
 void BinaryOperator::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[BinaryOperator " << OpCode2str(opc) << ' ';
+    buffer << "BinaryOperator ";
     Expr::print(buffer, 0);
-    buffer << "]\n";
+    buffer << " '" << OpCode2str(opc) << '\'';
+    buffer << '\n';
 
     lhs->print(buffer, indent + INDENT);
     rhs->print(buffer, indent + INDENT);
@@ -314,7 +321,9 @@ ConditionalOperator::~ConditionalOperator() {
 
 void ConditionalOperator::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[ConditionalOperator]\n";
+    buffer << "ConditionalOperator ";
+    Expr::print(buffer, 0);
+    buffer << '\n';
     cond->print(buffer, indent + INDENT);
     lhs->print(buffer, indent + INDENT);
     rhs->print(buffer, indent + INDENT);
@@ -353,9 +362,9 @@ const char* UnaryOperator::OpCode2str(clang::UnaryOperatorKind opc) {
 
 void UnaryOperator::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[UnaryOperator " << OpCode2str(opc) << ' ';
+    buffer << "UnaryOperator " << OpCode2str(opc) << ' ';
     Expr::print(buffer, 0);
-    buffer << "]\n";
+    buffer << '\n';
     val->print(buffer, indent + INDENT);
 }
 
@@ -366,9 +375,11 @@ BuiltinExpr::~BuiltinExpr() {
 
 void BuiltinExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[BuiltinExpr ";
-    if (isSizeof()) buffer << "sizeof]\n";
-    else buffer << "elemsof]\n";
+    buffer << "BuiltinExpr ";
+    Expr::print(buffer, 0);
+    if (isSizeof()) buffer << " sizeof";
+    else buffer << " elemsof";
+    buffer << '\n';
     expr->print(buffer, indent + INDENT);
 }
 
@@ -387,7 +398,9 @@ ArraySubscriptExpr::~ArraySubscriptExpr() {
 
 void ArraySubscriptExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[ArraySubscriptExpr]\n";
+    buffer << "ArraySubscriptExpr ";
+    Expr::print(buffer, 0);
+    buffer << '\n';
     base->print(buffer, indent + INDENT);
     idx->print(buffer, indent + INDENT);
 }
@@ -400,11 +413,11 @@ MemberExpr::~MemberExpr() {
 
 void MemberExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[MemberExpr";
+    buffer << "MemberExpr";
     if (isPkgPrefix()) buffer << " (pkg-prefix)";
     buffer << ' ';
     Expr::print(buffer, 0);
-    buffer << "]\n";
+    buffer << '\n';
     Base->print(buffer, indent + INDENT);
     Member->print(buffer, indent + INDENT);
 }
@@ -421,9 +434,9 @@ ParenExpr::~ParenExpr() {
 
 void ParenExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[ParenExpr ";
+    buffer << "ParenExpr ";
     Expr::print(buffer, 0);
-    buffer << "]\n";
+    buffer << '\n';
     Val->print(buffer, indent + INDENT);
 }
 

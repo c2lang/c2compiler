@@ -1,7 +1,7 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
-#define INDENT 3
+#define INDENT 2
 
 #endif
 

@@ -1,6 +1,0 @@
-// @warnings{no-unused}
-package test;
-
-func void test() {
-}
-
