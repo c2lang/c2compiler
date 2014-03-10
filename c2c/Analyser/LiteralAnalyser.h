@@ -32,13 +32,13 @@ class LiteralAnalyser {
 public:
     LiteralAnalyser(clang::DiagnosticsEngine& Diags_);
 
-    QualType check(QualType TLeft, QualType TRight, Expr* Right);
+    void check(QualType TLeft, Expr* Right);
 private:
-    llvm::APSInt checkLiterals(QualType TLeft, QualType TRight, Expr* Right);
-    llvm::APSInt checkIntegerLiterals(QualType TLeft, QualType TRight, Expr* Right);
-    llvm::APSInt checkUnaryLiterals(QualType TLeft, QualType TRight, Expr* Right);
-    llvm::APSInt checkBinaryLiterals(QualType TLeft, QualType TRight, Expr* Right);
-    llvm::APSInt checkIdentifier(QualType TLeft, QualType TRight, Expr* Right);
+    llvm::APSInt checkLiterals(QualType TLeft, Expr* Right);
+    llvm::APSInt checkIntegerLiterals(QualType TLeft, Expr* Right);
+    llvm::APSInt checkUnaryLiterals(QualType TLeft, Expr* Right);
+    llvm::APSInt checkBinaryLiterals(QualType TLeft, Expr* Right);
+    llvm::APSInt checkIdentifier(QualType TLeft, Expr* Right);
 
     clang::DiagnosticsEngine& Diags;
 

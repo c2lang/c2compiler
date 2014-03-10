@@ -328,7 +328,7 @@ void FunctionAnalyser::analyseReturnStmt(Stmt* stmt) {
         } else {
             if (type.isValid()) {
                 LiteralAnalyser LA(Diags);
-                type = LA.check(rtype, type, value);
+                LA.check(rtype, value);
                 //typeResolver.checkCompatible(rtype, type, value->getLocation(), TypeChecker::CONV_CONV);
             }
         }
@@ -564,9 +564,10 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
         break;
     }
 
+    // TODO Do we need to check TRight?
     if (!TRight.isNull()) {
         LiteralAnalyser LA(Diags);
-        TRight = LA.check(expectedType, TRight, expr);
+        LA.check(expectedType, expr);
         //typeResolver.checkCompatible(expectedType, TRight, expr->getLocation(), TypeChecker::CONV_INIT);
     }
 }
@@ -646,7 +647,7 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
         QualType Q = analyseExpr(initialValue, RHS);
         if (Q.isValid()) {
             LiteralAnalyser LA(Diags);
-            Q = LA.check(decl->getType(), Q, initialValue);
+            LA.check(decl->getType(), initialValue);
             //typeResolver.checkCompatible(decl->getType(), Q, initialValue->getLocation(), TypeChecker::CONV_INIT);
         } else if (InitListExpr* IE = dyncast<InitListExpr>(initialValue)) {
             // Not so nice, TODO refactor
@@ -788,7 +789,7 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     {
         // if sizes are not ok.
         LiteralAnalyser LA(Diags);
-        TRight = LA.check(TLeft, TRight, Right);
+        LA.check(TLeft, Right);
         //typeResolver.checkCompatible(TLeft, TRight, binop->getLocation(), TypeChecker::CONV_ASSIGN);
         checkAssignment(Left, TLeft);
         expr->setType(TLeft);
@@ -1155,7 +1156,7 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
         if (typeGiven.isValid()) {
             assert(argType.isValid());
             LiteralAnalyser LA(Diags);
-            typeGiven = LA.check(argType, typeGiven, argGiven);
+            LA.check(argType, argGiven);
             typeResolver.checkCompatible(argType, typeGiven, argGiven, TypeChecker::CONV_CONV);
         }
     }
