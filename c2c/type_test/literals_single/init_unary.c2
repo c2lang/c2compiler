@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+package test;
+
+func void test1() {
+    int32 a = -(100);
+    int32 b = -(-(100));
+    int8 c = -(-128); // @error{constant value 128 out-of-bounds for type 'int8', range [-128, 127]}
+}
+

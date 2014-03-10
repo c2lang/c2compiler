@@ -362,9 +362,9 @@ const char* UnaryOperator::OpCode2str(clang::UnaryOperatorKind opc) {
 
 void UnaryOperator::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "UnaryOperator " << OpCode2str(opc) << ' ';
+    buffer << "UnaryOperator ";
     Expr::print(buffer, 0);
-    buffer << '\n';
+    buffer << " '" << OpCode2str(opc) << "'\n";
     val->print(buffer, indent + INDENT);
 }
 

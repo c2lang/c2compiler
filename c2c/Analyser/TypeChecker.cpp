@@ -42,19 +42,19 @@ using namespace clang;
 static int type_conversions[14][14] = {
     // I8  I16  I32  I64   U8  U16  U32  U64  F32  F64  Bool  Void
     // I8 ->
-    {   0,   6,   6,   6,   2,   2,   2,   2,   0,   0,    0,   4},
+    {   0,   0,   0,   0,   2,   2,   2,   2,   0,   0,    0,   4},
     // I16 ->
-    {   1,   0,   6,   6,   2,   2,   2,   2,   0,   0,    0,   4},
+    {   1,   0,   0,   0,   2,   2,   2,   2,   0,   0,    0,   4},
     // I32 ->
-    {   1,   1,   0,   6,   2,   2,   2,   2,   0,   0,    0,   4},
+    {   1,   1,   0,   0,   2,   2,   2,   2,   0,   0,    0,   4},
     // I64 ->
     {   1,   1,   1,   0,   2,   2,   2,   2,   0,   0,    0,   4},
     // U8 ->
-    {   2,   6,   6,   6,   0,   6,   6,   6,   0,   0,    0,   4},
+    {   2,   0,   0,   0,   0,   0,   0,   0,   0,   0,    0,   4},
     // U16 ->
-    {   1,   2,   6,   6,   1,   0,   6,   6,   0,   0,    0,   4},
+    {   1,   2,   0,   0,   1,   0,   0,   0,   0,   0,    0,   4},
     // U32 ->
-    {   1,   1,   2,   0,   1,   1,   0,   6,   0,   0,    0,   4},
+    {   1,   1,   2,   0,   1,   1,   0,   0,   0,   0,    0,   4},
     // U64 ->
     {   1,   1,   1,   2,   1,   1,   1,   0,   0,   0,    0,   4},
     // F32 ->
@@ -282,6 +282,20 @@ bool TypeChecker::checkCompatible(QualType left, QualType right, Expr* expr, Con
         break;
     }
     return false;
+}
+
+// Convert smaller types to int, others remain the same
+// This function should only be called if Expr's type is ok for unary operator
+QualType TypeChecker::UsualUnaryConversions(Expr* expr) const {
+    const Type* canon = expr->getType()->getCanonicalType();
+    assert(canon->isBuiltinType());
+    const BuiltinType* BI = cast<BuiltinType>(canon);
+    if (BI->isPromotableIntegerType()) {
+        // TODO keep flags (const, etc)?
+        expr->setImpCast(BuiltinType::Int32);
+        return TypeContext::getBuiltinType(BuiltinType::Int32);
+    }
+    return expr->getType();
 }
 
 bool TypeChecker::checkBuiltin(QualType left, QualType right, Expr* expr, ConvType conv) const {

@@ -198,6 +198,23 @@ public:
     bool isUnsignedInteger() const;
     bool isFloatingPoint() const;
     bool isVoid() const { return kind == Void; }
+    bool isPromotableIntegerType() const {
+        switch (kind) {
+            case Int8:      return true;
+            case Int16:     return true;
+            case Int32:     return false;
+            case Int64:     return false;
+            case UInt8:     return true;
+            case UInt16:    return true;
+            case UInt32:    return false;
+            case UInt64:    return false;
+            case Float32:   return false;
+            case Float64:   return false;
+            case Bool:      return true;
+            case Void:      return false;
+        }
+        return false;       // to satisfy compiler
+    }
 
 protected:
     virtual void printName(StringBuilder& buffer) const;

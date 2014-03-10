@@ -6,7 +6,7 @@ func void test1() {
     int8 b = 1000 - 900;
     int8 c = 900 - 1000;
     int8 d =  100 + 28;   // @error{constant value 128 out-of-bounds for type 'int8', range [-128, 127]}
-    int8 e = -100 -29;   // @error{constant value -129 out-of-bounds for type 'int8', range [-128, 127]}
+    int8 e = -100 - 29;   // @error{constant value -129 out-of-bounds for type 'int8', range [-128, 127]}
     int8 f = -100 + -29;   // @error{constant value -129 out-of-bounds for type 'int8', range [-128, 127]}
 }
 

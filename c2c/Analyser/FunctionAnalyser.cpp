@@ -676,14 +676,19 @@ static ExprCTC combineCtc(ExprCTC left, ExprCTC right) {
 
 QualType FunctionAnalyser::analyseIntegerLiteral(Expr* expr) {
     IntegerLiteral* I = cast<IntegerLiteral>(expr);
+    // Fit smallest Type: int32 > uint32 > int64 > uint64
+    // TODO unsigned types
+
     // TEMP for now assume signed
     // Q: we can determine size, but don't know if we need signed/unsigned
     //unsigned numbits = I->Value.getMinSignedBits();  // signed
     unsigned numbits = I->Value.getActiveBits();   // unsigned
     //if (numbits <= 8) return Type::Int8();
     //if (numbits <= 16) return Type::Int16();
-    if (numbits <= 32) return Type::UInt32();
-    return Type::UInt64();
+    expr->setType(TypeContext::getBuiltinType(BuiltinType::Int32));
+    if (numbits <= 32) return Type::Int32();
+    expr->setType(TypeContext::getBuiltinType(BuiltinType::Int64));
+    return Type::Int64();
 }
 
 QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
@@ -858,7 +863,11 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
     case UO_LNot:
         LType = analyseExpr(unaryop->getExpr(), side | RHS);
         unaryop->setCTC(unaryop->getExpr()->getCTC());
+        // ..
+        // Also set type?
         if (LType.isNull()) return 0;
+        // TODO use return type
+        typeResolver.UsualUnaryConversions(unaryop->getExpr());
         break;
     default:
         assert(0 && "TODO");
@@ -1094,6 +1103,7 @@ QualType FunctionAnalyser::analyseParenExpr(Expr* expr) {
     ParenExpr* P = cast<ParenExpr>(expr);
     QualType Q = analyseExpr(P->getExpr(), RHS);
     expr->setCTC(P->getExpr()->getCTC());
+    expr->setType(Q);
     return Q;
 }
 

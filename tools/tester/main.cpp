@@ -155,7 +155,7 @@ private:
             }
         }
         // not expected
-        color_print(COL_ERROR, "unexpected warning on line %d: %s", linenr, msg);
+        color_print(COL_ERROR, "  unexpected warning on line %d: %s", linenr, msg);
         hasErrors = true;
     }
 
@@ -174,7 +174,7 @@ private:
             }
         }
         // not expected
-        color_print(COL_ERROR, "unexpected error on line %d: %s", linenr, msg);
+        color_print(COL_ERROR, "  unexpected error on line %d: %s", linenr, msg);
         hasErrors = true;
     }
 
