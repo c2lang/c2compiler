@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 package test;
 
-func int test2() {
+func void test2() {
     int a = test2() + 1;
 }
 
