@@ -38,7 +38,6 @@ using namespace clang;
 // 3 = float->integer,
 // 4 = incompatible,
 // 5 = loss of FP precision
-// 6 = ok, implicit cast needed
 static int type_conversions[14][14] = {
     // I8  I16  I32  I64   U8  U16  U32  U64  F32  F64  Bool  Void
     // I8 ->
@@ -325,9 +324,6 @@ bool TypeChecker::checkBuiltin(QualType left, QualType right, Expr* expr, ConvTy
         case 5: // loss of fp-precision
             errorMsg = diag::warn_impcast_float_precision;
             break;
-        case 6: // implicit cast needed
-            expr->setImpCast(Left->getKind());
-            return true;
         default:
             assert(0 && "should not come here");
         }
@@ -336,7 +332,8 @@ bool TypeChecker::checkBuiltin(QualType left, QualType right, Expr* expr, ConvTy
         right.DiagName(buf1);
         left.DiagName(buf2);
         // TODO error msg depends on conv type (see clang errors)
-        Diags.Report(expr->getLocation(), errorMsg) << buf1 << buf2;
+        Diags.Report(expr->getLocation(), errorMsg) << buf1 << buf2
+            << expr->getSourceRange();
         return false;
     }
 
@@ -363,7 +360,8 @@ bool TypeChecker::checkPointer(QualType left, QualType right, Expr* expr, ConvTy
     right.DiagName(buf1);
     left.DiagName(buf2);
     // TODO error msg depends on conv type (see clang errors)
-    Diags.Report(expr->getLocation(), diag::err_illegal_type_conversion) << buf1 << buf2;
+    Diags.Report(expr->getLocation(), diag::err_illegal_type_conversion)
+            << buf1 << buf2;
     return false;
 }
 

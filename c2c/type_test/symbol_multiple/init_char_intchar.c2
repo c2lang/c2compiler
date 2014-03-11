@@ -4,6 +4,6 @@ package test;
 func void test() {
     char a = 1;
     int b = 2;
-    char c = a + b; // @error{invalid type conversion from 'int' to 'char'}
+    char c = a + b; // @warning{implicit conversion loses integer precision: 'int32' to 'int8'}
 }
 

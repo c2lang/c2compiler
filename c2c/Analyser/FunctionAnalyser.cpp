@@ -24,6 +24,7 @@
 #include "Analyser/TypeChecker.h"
 #include "Analyser/AnalyserUtils.h"
 #include "Analyser/LiteralAnalyser.h"
+#include "Analyser/TypeFinder.h"
 #include "AST/Decl.h"
 #include "AST/Expr.h"
 #include "AST/Stmt.h"
@@ -403,6 +404,7 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
             QualType Q = typeContext.getPointerType(Type::Int8());
             Q.addConst();
             if (!Q->hasCanonicalType()) Q->setCanonicalType(Q);
+            expr->setType(Q);
             return Q;
         }
     case EXPR_NIL:
@@ -651,6 +653,9 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
             case CTC_NONE:
             case CTC_PARTIAL:
                 // Q: use RangeChecker for Partial case?
+                // TEMP: try to use GetExprRange/Type() to get smaller type
+                // DON't always do this? (only on ImplicitCast)
+                Q = TypeFinder::findType(initialValue);
                 typeResolver.checkCompatible(decl->getType(), Q, initialValue, TypeChecker::CONV_INIT);
                 break;
             case CTC_FULL:
@@ -765,6 +770,7 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     }
     if (TLeft.isNull() || TRight.isNull()) return QualType();
 
+    QualType Result;
     switch (binop->getOpcode()) {
     case BO_PtrMemD:
     case BO_PtrMemI:
@@ -775,27 +781,32 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     case BO_Rem:
     case BO_Add:
     case BO_Sub:
-        // TODO return largetst witdth of left/right (long*short -> long)
-        // TEMP just return INT
-        return Type::Int32();
+        // TODO return largest witdth of left/right (long*short -> long)
+        // TODO apply UsualArithmeticConversions() to L + R
+        // TEMP for now just return int32
+        Result = Type::Int32();
+        break;
     case BO_Shl:
     case BO_Shr:
-        return TLeft;
+        Result = TLeft;
+        break;
     case BO_LE:
     case BO_LT:
     case BO_GE:
     case BO_GT:
     case BO_NE:
     case BO_EQ:
-        expr->setType(TypeContext::getBuiltinType(BuiltinType::Bool));
-        return Type::Bool();
+        Result = Type::Bool();
+        break;
     case BO_And:
     case BO_Xor:
     case BO_Or:
-        return TLeft;
+        Result = TLeft;
+        break;
     case BO_LAnd:
     case BO_LOr:
-        return Type::Bool();
+        Result = Type::Bool();
+        break;
     case BO_Assign:
     {
         // if sizes are not ok.
@@ -803,8 +814,8 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
         LA.check(TLeft, Right);
         //typeResolver.checkCompatible(TLeft, TRight, binop->getLocation(), TypeChecker::CONV_ASSIGN);
         checkAssignment(Left, TLeft);
-        expr->setType(TLeft);
-        return TLeft;
+        Result = TLeft;
+        break;
     }
     case BO_MulAssign:
     case BO_DivAssign:
@@ -817,12 +828,14 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     case BO_XorAssign:
     case BO_OrAssign:
         checkAssignment(Left, TLeft);
-        return TLeft;
+        Result = TLeft;
+        break;
     case BO_Comma:
         assert(0 && "unhandled binary operator type");
         break;
     }
-    return QualType();
+    expr->setType(Result);
+    return Result;
 }
 
 QualType FunctionAnalyser::analyseConditionalOperator(Expr* expr) {
@@ -1209,6 +1222,7 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
             }
         }
     }
+    call->setType(func->getReturnType());
     return func->getReturnType();
 }
 

@@ -19,6 +19,7 @@ OBJS = \
     Analyser/FileAnalyser.o \
     Analyser/FunctionAnalyser.o \
     Analyser/DepGenerator.o \
+    Analyser/TypeFinder.o \
     CodeGen/CodeGenFunction.o \
     CodeGen/CodeGenModule.o \
     CGenerator/CCodeGenerator.o \

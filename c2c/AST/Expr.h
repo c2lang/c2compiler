@@ -138,7 +138,10 @@ class FloatingLiteral : public Expr {
 public:
     FloatingLiteral(SourceLocation loc_, const llvm::APFloat& V)
         : Expr(EXPR_FLOAT_LITERAL)
-        , Value(V), loc(loc_) {}
+        , Value(V), loc(loc_)
+    {
+        setCTC(CTC_FULL);
+    }
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_FLOAT_LITERAL;
     }
@@ -157,6 +160,7 @@ public:
         , loc(loc_)
     {
         StmtBits.BoolLiteralValue = val;
+        setCTC(CTC_FULL);
     }
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_BOOL_LITERAL;
@@ -173,7 +177,10 @@ class CharacterLiteral : public Expr {
 public:
     CharacterLiteral(SourceLocation loc_, unsigned val)
         : Expr(EXPR_CHAR_LITERAL)
-        , value(val), loc(loc_) {}
+        , value(val), loc(loc_)
+    {
+        setCTC(CTC_FULL);
+    }
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_CHAR_LITERAL;
     }
@@ -190,7 +197,8 @@ class StringLiteral : public Expr {
 public:
     StringLiteral(SourceLocation loc_, const std::string& val)
         : Expr(EXPR_STRING_LITERAL)
-        , value(val), loc(loc_) {}
+        , value(val), loc(loc_)
+    {}
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_STRING_LITERAL;
     }
@@ -206,7 +214,10 @@ class NilExpr : public Expr {
 public:
     NilExpr(SourceLocation loc_)
         : Expr(EXPR_NIL)
-        , loc(loc_) {}
+        , loc(loc_)
+    {
+        setCTC(CTC_FULL);
+    }
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_NIL;
     }
@@ -336,9 +347,8 @@ public:
     }
     virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return opLoc; }
-
-    virtual SourceLocation getLocStart() const { return lhs->getLocStart();  }
-    virtual SourceLocation getLocEnd() const { return rhs->getLocEnd(); }
+    virtual SourceLocation getLocStart() const { return lhs->getLocation();  }
+    virtual SourceLocation getLocEnd() const { return rhs->getLocation(); }
 
     Expr* getLHS() const { return lhs; }
     Expr* getRHS() const { return rhs; }

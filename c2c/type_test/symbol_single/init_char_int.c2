@@ -4,7 +4,5 @@ package test;
 func void test1() {
     int32 a = 1;
     char b = a;         // @warning{implicit conversion loses integer precision: 'int32' to 'int8'}
-
-    char c = 'c';
 }
 
