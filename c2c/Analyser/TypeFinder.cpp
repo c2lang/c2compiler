@@ -35,11 +35,7 @@ QualType TypeFinder::findType(const Expr* expr) {
     case EXPR_BOOL_LITERAL:
     case EXPR_CHAR_LITERAL:
     case EXPR_STRING_LITERAL:
-        //assert(0 && "TODO");
-        break;
     case EXPR_NIL:
-        assert(0 && "should not come here");
-        break;
     case EXPR_IDENTIFIER:
         break;
     case EXPR_TYPE:

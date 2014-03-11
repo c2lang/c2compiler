@@ -215,9 +215,7 @@ public:
     NilExpr(SourceLocation loc_)
         : Expr(EXPR_NIL)
         , loc(loc_)
-    {
-        setCTC(CTC_FULL);
-    }
+    {}
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_NIL;
     }

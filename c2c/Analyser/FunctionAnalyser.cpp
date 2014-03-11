@@ -411,6 +411,7 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
         {
             QualType Q = typeContext.getPointerType(Type::Void());
             if (!Q->hasCanonicalType()) Q->setCanonicalType(Q);
+            expr->setType(Q);
             return Q;
         }
     case EXPR_CALL:
