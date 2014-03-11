@@ -84,6 +84,10 @@ void LiteralAnalyser::check(QualType TLeft, Expr* Right) {
     QualType wanted = TLeft;
     if (QT.isBuiltinType()) {
         const BuiltinType* TL = cast<BuiltinType>(QT);
+        if (!TL->isInteger()) {
+            // TODO floats
+            return;
+        }
         availableWidth = TL->getIntegerWidth();
         //isSigned = TL->isSignedInteger();
     } else if (QT.isPointerType()) {
