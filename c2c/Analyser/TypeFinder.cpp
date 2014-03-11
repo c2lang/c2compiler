@@ -59,6 +59,7 @@ QualType TypeFinder::findType(const Expr* expr) {
     case EXPR_UNARYOP:
         return getUnaryOpType(cast<UnaryOperator>(expr));
     case EXPR_BUILTIN:
+        // NOTE: sizeof() and elemsof() are CTC_FULL. The type depends on the actual value
         assert(0 && "TODO");
         break;
     case EXPR_ARRAYSUBSCRIPT:
@@ -77,11 +78,9 @@ QualType TypeFinder::getBinOpType(const BinaryOperator* binop) {
         assert(0 && "TODO?");
         break;
     case BO_Mul:
-        return LargestType(binop->getLHS(), binop->getRHS());
     case BO_Div:
     case BO_Rem:
-        assert(0 && "TODO");
-        break;
+        return LargestType(binop->getLHS(), binop->getRHS());
     case BO_Add:
     case BO_Sub:
         return LargestType(binop->getLHS(), binop->getRHS());

@@ -425,6 +425,7 @@ private:
 };
 
 
+// BuiltinExpr's are sizeof() and elemsof() expressions
 class BuiltinExpr : public Expr {
 public:
     BuiltinExpr(SourceLocation Loc_, Expr* expr_, bool isSizeof_)
@@ -433,6 +434,7 @@ public:
         , expr(expr_)
     {
         StmtBits.BuiltInIsSizeOf = isSizeof_;
+        setCTC(CTC_FULL);
     }
     virtual ~BuiltinExpr();
     static bool classof(const Expr* E) {
