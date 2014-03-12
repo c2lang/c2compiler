@@ -473,7 +473,7 @@ static void handle_file(const char* filename) {
     bool skip = db.parseFile();
     if (skip) {
         numskipped++;
-        printf(COL_SKIP"SKIPPED %s"ANSI_NORMAL"\n", filename);
+        printf(COL_SKIP"%s SKIPPED"ANSI_NORMAL"\n", filename);
         return;
     } else {
         printf("%s\n", filename);
