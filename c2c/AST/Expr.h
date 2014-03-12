@@ -81,15 +81,14 @@ public:
     }
     void setCTC(ExprCTC ctc) { StmtBits.ExprIsCTC = ctc; }
 
-    // TODO: remove virtual and add virtual getLocEnd()
-    virtual clang::SourceRange getSourceRange() const {
+    clang::SourceRange getSourceRange() const {
         return clang::SourceRange(getLocStart(), getLocEnd());
     }
     virtual SourceLocation getLocStart() const {
-        return SourceLocation();
+        return getLocation();
     }
     virtual SourceLocation getLocEnd() const {
-        return SourceLocation();
+        return getLocation();
     }
     QualType getType() const { return QT; }
     void setType(QualType t) { QT = t; }
@@ -125,8 +124,6 @@ public:
     }
     virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return loc; }
-    virtual SourceLocation getLocStart() const { return loc; }
-    virtual SourceLocation getLocEnd() const { return loc; }
 
     llvm::APInt Value;
 private:
@@ -345,8 +342,8 @@ public:
     }
     virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return opLoc; }
-    virtual SourceLocation getLocStart() const { return lhs->getLocation();  }
-    virtual SourceLocation getLocEnd() const { return rhs->getLocation(); }
+    virtual SourceLocation getLocStart() const { return lhs->getLocStart();  }
+    virtual SourceLocation getLocEnd() const { return rhs->getLocEnd(); }
 
     Expr* getLHS() const { return lhs; }
     Expr* getRHS() const { return rhs; }
@@ -512,7 +509,6 @@ public:
     virtual SourceLocation getLocation() const { return L; }
 
     Expr* getExpr() const { return Val; }
-    virtual clang::SourceRange getSourceRange() const { return clang::SourceRange(L, R); }
     SourceLocation getLParen() const { return L; }
     SourceLocation getRParen() const { return R; }
     virtual SourceLocation getLocStart() const { return L; }
