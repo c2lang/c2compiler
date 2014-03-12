@@ -51,6 +51,11 @@ static const Limit limits [] = {
     { -2147483648, 2147483647, "-2147483648", "2147483647" },
     // uint32
     {          0, 4294967295,           "0", "4294967295" },
+    // int64
+    // NOTE: minimum should be -..808, but clang complains about it..
+    {-9223372036854775807ll,  9223372036854775807llu, "-9223372036854775808", "9223372036854775807" },
+    // uint64
+    {                   0,  18446744073709551615llu, "0", "18446744073709551615" },
 };
 
 static const Limit* getLimit(int width) {
@@ -62,6 +67,8 @@ static const Limit* getLimit(int width) {
     case 16: return &limits[4];
     case 31: return &limits[5];
     case 32: return &limits[6];
+    case 63: return &limits[7];
+    case 64: return &limits[8];
     default:
         fprintf(stderr, "UNHANDLED width %d\n", width);
         assert(0 && "todo");
