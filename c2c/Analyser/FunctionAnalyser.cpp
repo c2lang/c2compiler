@@ -398,6 +398,7 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
         expr->setType(Type::Bool());
         return Type::Bool();
     case EXPR_CHAR_LITERAL:
+        expr->setType(Type::Int8());
         return Type::Int8();
     case EXPR_STRING_LITERAL:
         {
@@ -977,13 +978,14 @@ QualType FunctionAnalyser::analyseArraySubscript(Expr* expr) {
         return 0;
     }
     analyseExpr(sub->getIndex(), RHS);
+    QualType Result;
     if (isa<PointerType>(LType2)) {
-        return cast<PointerType>(LType2)->getPointeeType();
+        Result = cast<PointerType>(LType2)->getPointeeType();
+    } else if (isa<ArrayType>(LType2)) {
+        Result = cast<ArrayType>(LType2)->getElementType();
     }
-    if (isa<ArrayType>(LType2)) {
-        return cast<ArrayType>(LType2)->getElementType();
-    }
-    return 0;
+    expr->setType(Result);
+    return Result;
 }
 
 QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
