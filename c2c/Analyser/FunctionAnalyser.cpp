@@ -395,6 +395,7 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
         // For now always return type float
         return Type::Float32();
     case EXPR_BOOL_LITERAL:
+        expr->setType(Type::Bool());
         return Type::Bool();
     case EXPR_CHAR_LITERAL:
         return Type::Int8();
