@@ -23,6 +23,7 @@ namespace C2 {
 class Expr;
 class BinaryOperator;
 class UnaryOperator;
+class ConditionalOperator;
 
 /*
  *  TypeFinder tries to find the biggest type in the (sub)Expression,
@@ -33,7 +34,8 @@ public:
     static QualType findType(const Expr* expr);
 private:
     static QualType getBinOpType(const BinaryOperator* binop);
-    static QualType  getUnaryOpType(const UnaryOperator* unaryop);
+    static QualType getUnaryOpType(const UnaryOperator* unaryop);
+    static QualType getCondOpType(const ConditionalOperator* condop);
     static QualType LargestType(const Expr* Left, const Expr* Right);
 #if 0
     llvm::APSInt checkLiterals(QualType TLeft, Expr* Right);

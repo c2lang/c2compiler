@@ -50,8 +50,7 @@ QualType TypeFinder::findType(const Expr* expr) {
     case EXPR_BINOP:
         return getBinOpType(cast<BinaryOperator>(expr));
     case EXPR_CONDOP:
-        assert(0 && "TODO");
-        break;
+        return getCondOpType(cast<ConditionalOperator>(expr));
     case EXPR_UNARYOP:
         return getUnaryOpType(cast<UnaryOperator>(expr));
     case EXPR_BUILTIN:
@@ -142,7 +141,10 @@ QualType TypeFinder::getUnaryOpType(const UnaryOperator* unaryop) {
     return unaryop->getType();
 }
 
-#include <stdio.h>
+QualType TypeFinder::getCondOpType(const ConditionalOperator* condop) {
+    return LargestType(condop->getLHS(), condop->getRHS());
+}
+
 QualType TypeFinder::LargestType(const Expr* Left, const Expr* Right) {
     QualType TL = findType(Left);
     QualType TR = findType(Right);
