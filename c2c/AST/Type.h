@@ -429,7 +429,6 @@ public:
     TypeContext();
     ~TypeContext();
 
-    static QualType getBuiltinType(BuiltinType::Kind kind);
     QualType getPointerType(QualType ref);
     QualType getArrayType(QualType element, Expr* size, bool ownSize);
     QualType getUnresolvedType(Expr* E);

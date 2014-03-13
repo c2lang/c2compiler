@@ -292,7 +292,7 @@ QualType TypeChecker::UsualUnaryConversions(Expr* expr) const {
     if (BI->isPromotableIntegerType()) {
         // TODO keep flags (const, etc)?
         expr->setImpCast(BuiltinType::Int32);
-        return TypeContext::getBuiltinType(BuiltinType::Int32);
+        return Type::Int32();
     }
     return expr->getType();
 }

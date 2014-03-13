@@ -478,10 +478,6 @@ TypeContext::~TypeContext() {
     for (unsigned i=0; i<types.size(); i++) delete types[i];
 }
 
-QualType TypeContext::getBuiltinType(BuiltinType::Kind kind) {
-    return QualType(BuiltinType::get(kind));
-}
-
 QualType TypeContext::getPointerType(QualType ref) {
     assert(ref.isValid());
     for (unsigned i=0; i<types.size(); i++) {

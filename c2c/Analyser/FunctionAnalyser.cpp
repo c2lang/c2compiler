@@ -774,9 +774,9 @@ QualType FunctionAnalyser::analyseIntegerLiteral(Expr* expr) {
     unsigned numbits = I->Value.getActiveBits();   // unsigned
     //if (numbits <= 8) return Type::Int8();
     //if (numbits <= 16) return Type::Int16();
-    expr->setType(TypeContext::getBuiltinType(BuiltinType::Int32));
+    expr->setType(Type::Int32());
     if (numbits <= 32) return Type::Int32();
-    expr->setType(TypeContext::getBuiltinType(BuiltinType::Int64));
+    expr->setType(Type::Int64());
     return Type::Int64();
 }
 
@@ -977,7 +977,7 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
         // Also set type?
         if (LType.isNull()) return 0;
         //TC.UsualUnaryConversions(unaryop->getExpr());
-        LType = TypeContext::getBuiltinType(BuiltinType::Bool);
+        LType = Type::Bool();
         expr->setType(LType);
         break;
     default:
