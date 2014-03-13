@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+package test;
+
+type Number int;
+
+func void test() {
+    Number a = 10;
+    char c = a;     // @warning{implicit conversion loses integer precision: 'Number' (aka 'int32') to 'int8'}
+}
+
+
