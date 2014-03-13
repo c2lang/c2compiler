@@ -169,8 +169,9 @@ void IdentifierExpr::print(StringBuilder& buffer, unsigned indent) const {
 
 
 void TypeExpr::print(StringBuilder& buffer, unsigned indent) const {
-    //QT.print(buffer, indent, QualType::RECURSE_NONE);
-    getType().debugPrint(buffer, indent);
+    buffer.indent(indent);
+    buffer << "TypeExpr ";
+    getType().debugPrint(buffer, 0);
 }
 
 
