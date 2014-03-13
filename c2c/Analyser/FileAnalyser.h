@@ -64,7 +64,6 @@ private:
 
     // TODO use auto_ptr on globals
     AST& ast;
-    TypeContext& typeContext;
     Scope* globals;
     TypeChecker* typeResolver;
     clang::DiagnosticsEngine& Diags;

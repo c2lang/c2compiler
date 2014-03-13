@@ -40,7 +40,6 @@ using namespace clang;
 FileAnalyser::FileAnalyser(const Pkgs& pkgs, clang::DiagnosticsEngine& Diags_,
                     AST& ast_, TypeContext& typeContext_, bool verbose_)
     : ast(ast_)
-    , typeContext(typeContext_)
     , globals(new Scope(ast_.getPkgName(), pkgs, Diags_, ast.getFileID()))
     , typeResolver(new TypeChecker(*globals, Diags_, typeContext_))
     , Diags(Diags_)
