@@ -164,7 +164,7 @@ APSInt LiteralAnalyser::checkLiterals(QualType TLeft, const Expr* Right) {
         return checkUnaryLiterals(TLeft, Right);
     case EXPR_BUILTIN:
         // TODO return correct value, for now always return 4 for sizeof() and elemsof()
-        result  = APInt(4, 64);
+        result  = APInt(64, 4, true);
         break;
     case EXPR_ARRAYSUBSCRIPT:
     case EXPR_MEMBER:
@@ -290,8 +290,7 @@ APSInt LiteralAnalyser::checkIdentifier(QualType TLeft, const Expr* Right) {
     assert(D);
     const EnumConstantDecl* ECD = dyncast<EnumConstantDecl>(D);
     if (ECD) {
-        APSInt Result;
-        Result.setIsSigned(false);         // TODO set depending on enum type
+        APSInt Result(64, false);
         Result = ECD->getValue();
         return Result;
     }

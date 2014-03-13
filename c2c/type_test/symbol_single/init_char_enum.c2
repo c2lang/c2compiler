@@ -1,0 +1,13 @@
+// @warnings{no-unused}
+package test;
+
+type Enum enum int {
+    A = 127,
+    B,
+}
+
+func void test1() {
+    char a = A;
+    char b = B;     // @error{constant value 128 out-of-bounds for type 'int8', range [-128, 127]}
+}
+
