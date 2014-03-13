@@ -34,6 +34,8 @@ class TypeChecker;
  *  ExprAnalyser checks each sub-expression that is CTC_FULL or
  *  CTC_NONE with the other checkers separately.
  *  It checks Literals for Range and Symbols for Type
+ *  For CTC_PARTIAL expressions (eg. 10 + a), each sub-expression
+ *  should fit the LHS type.
 */
 class ExprAnalyser {
 public:
