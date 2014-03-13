@@ -81,7 +81,7 @@ LiteralAnalyser::LiteralAnalyser(clang::DiagnosticsEngine& Diags_)
 {
 }
 
-void LiteralAnalyser::check(QualType TLeft, Expr* Right) {
+void LiteralAnalyser::check(QualType TLeft, const Expr* Right) {
     if (Right->getCTC() == CTC_NONE) return;
     // TODO assert here instead of check?
 
@@ -133,7 +133,7 @@ void LiteralAnalyser::check(QualType TLeft, Expr* Right) {
     }
 }
 
-APSInt LiteralAnalyser::checkLiterals(QualType TLeft, Expr* Right) {
+APSInt LiteralAnalyser::checkLiterals(QualType TLeft, const Expr* Right) {
     if (Right->getCTC() == CTC_NONE) return APSInt();
 
     switch (Right->getKind()) {
@@ -166,23 +166,23 @@ APSInt LiteralAnalyser::checkLiterals(QualType TLeft, Expr* Right) {
         break;
     case EXPR_PAREN:
         {
-            ParenExpr* P = cast<ParenExpr>(Right);
+            const ParenExpr* P = cast<ParenExpr>(Right);
             return checkLiterals(TLeft, P->getExpr());
         }
     }
     return APSInt();
 }
 
-APSInt LiteralAnalyser::checkIntegerLiterals(QualType TLeft, Expr* Right) {
-    IntegerLiteral* I = cast<IntegerLiteral>(Right);
+APSInt LiteralAnalyser::checkIntegerLiterals(QualType TLeft, const Expr* Right) {
+    const IntegerLiteral* I = cast<IntegerLiteral>(Right);
 
     APSInt Result(64, false);      // always take signed 64 as base for checking
     Result = I->Value;
     return Result;
 }
 
-APSInt LiteralAnalyser::checkUnaryLiterals(QualType TLeft, Expr* Right) {
-    UnaryOperator* unaryop = cast<UnaryOperator>(Right);
+APSInt LiteralAnalyser::checkUnaryLiterals(QualType TLeft, const Expr* Right) {
+    const UnaryOperator* unaryop = cast<UnaryOperator>(Right);
     QualType LType;
     switch (unaryop->getOpcode()) {
     case UO_PostInc:
@@ -214,8 +214,8 @@ APSInt LiteralAnalyser::checkUnaryLiterals(QualType TLeft, Expr* Right) {
     return APSInt();
 }
 
-APSInt LiteralAnalyser::checkBinaryLiterals(QualType TLeft, Expr* Right) {
-    BinaryOperator* binop = cast<BinaryOperator>(Right);
+APSInt LiteralAnalyser::checkBinaryLiterals(QualType TLeft, const Expr* Right) {
+    const BinaryOperator* binop = cast<BinaryOperator>(Right);
     QualType LType;
     switch (binop->getOpcode()) {
     case BO_PtrMemD:
@@ -279,8 +279,8 @@ APSInt LiteralAnalyser::checkBinaryLiterals(QualType TLeft, Expr* Right) {
     return APSInt();
 }
 
-APSInt LiteralAnalyser::checkIdentifier(QualType TLeft, Expr* Right) {
-    IdentifierExpr* I = cast<IdentifierExpr>(Right);
+APSInt LiteralAnalyser::checkIdentifier(QualType TLeft, const Expr* Right) {
+    const IdentifierExpr* I = cast<IdentifierExpr>(Right);
     const Decl* D = I->getDecl();
     assert(D);
     const EnumConstantDecl* ECD = dyncast<EnumConstantDecl>(D);

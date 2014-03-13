@@ -36,9 +36,7 @@ void PartialAnalyser::check(QualType TLeft, const Expr* expr) {
         break;
     case CTC_FULL:
         LiteralAnalyser LA(Diags);
-#warning "TODO make LiteralAnalyser argument const"
-        //LA.check(TLeft, expr);
-        LA.check(TLeft, const_cast<Expr*>(expr));
+        LA.check(TLeft, expr);
         return;
     }
 

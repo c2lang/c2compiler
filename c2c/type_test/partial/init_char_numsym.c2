@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+package test;
+
+func void test() {
+    int a = 1;
+    char b = 100
+             + a;   // @warning{implicit conversion loses integer precision: 'int32' to 'int8'}
+    char c = 200    // @error{constant value 200 out-of-bounds for type 'int8', range [-128, 127]}
+             + a;   // @warning{implicit conversion loses integer precision: 'int32' to 'int8'}
+}
+

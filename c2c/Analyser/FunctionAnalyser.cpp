@@ -653,6 +653,7 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     if (initialValue && !errs) {
         QualType Q = analyseExpr(initialValue, RHS);
         if (Q.isValid()) {
+            // Q: just use PartialAnalyser here?
             switch (initialValue->getCTC()) {
             case CTC_NONE:
                 Q = TypeFinder::findType(initialValue);
