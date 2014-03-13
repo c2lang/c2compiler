@@ -210,7 +210,9 @@ InitListExpr::~InitListExpr() {
 
 void InitListExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "InitListExpr\n";
+    buffer << "InitListExpr ";
+    Expr::print(buffer, 0);
+    buffer << '\n';
     for (unsigned i=0; i<values.size(); i++) {
         values[i]->print(buffer, indent + INDENT);
     }
