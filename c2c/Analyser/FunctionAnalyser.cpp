@@ -79,7 +79,7 @@ FunctionAnalyser::FunctionAnalyser(Scope& scope_,
                                    TypeContext& tc,
                                    clang::DiagnosticsEngine& Diags_)
     : scope(scope_)
-    , typeResolver(typeRes_)
+    , TC(typeRes_)
     , typeContext(tc)
     , Diags(Diags_)
     , errors(0)
@@ -207,7 +207,7 @@ void FunctionAnalyser::analyseIfStmt(Stmt* stmt) {
     Expr* cond = I->getCond();
     QualType Q1 = analyseExpr(cond, RHS);
     if (Q1.isValid()) {
-        typeResolver.checkCompatible(Type::Bool(), Q1, cond, TypeChecker::CONV_CONV);
+        TC.checkCompatible(Type::Bool(), Q1, cond, TypeChecker::CONV_CONV);
     }
     scope.EnterScope(Scope::DeclScope);
     analyseStmt(I->getThen(), true);
@@ -330,7 +330,7 @@ void FunctionAnalyser::analyseReturnStmt(Stmt* stmt) {
             if (type.isValid()) {
                 LiteralAnalyser LA(Diags);
                 LA.check(rtype, value);
-                //typeResolver.checkCompatible(rtype, type, value->getLocation(), TypeChecker::CONV_CONV);
+                //TC.checkCompatible(rtype, type, value->getLocation(), TypeChecker::CONV_CONV);
             }
         }
     } else {
@@ -505,7 +505,7 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
                 {
                     // TODO check if void*
                     FunctionDecl* FD = cast<FunctionDecl>(D);
-                    typeResolver.checkCompatible(expectedType, FD->getType(), id, TypeChecker::CONV_INIT);
+                    TC.checkCompatible(expectedType, FD->getType(), id, TypeChecker::CONV_INIT);
                 }
                 break;
             case DECL_VAR:
@@ -574,7 +574,7 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
     if (!TRight.isNull()) {
         LiteralAnalyser LA(Diags);
         LA.check(expectedType, expr);
-        //typeResolver.checkCompatible(expectedType, TRight, expr->getLocation(), TypeChecker::CONV_INIT);
+        //TC.checkCompatible(expectedType, TRight, expr->getLocation(), TypeChecker::CONV_INIT);
     }
 }
 
@@ -634,10 +634,10 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
 
     // check type and convert User types
     QualType type = decl->getType();
-    unsigned errs = typeResolver.checkType(type, false);
+    unsigned errs = TC.checkType(type, false);
     errors += errs;
     if (!errs) {
-        typeResolver.resolveCanonicals(decl, type, true);
+        TC.resolveCanonicals(decl, type, true);
         ArrayType* AT = dyncast<ArrayType>(type.getTypePtr());
         if (AT && AT->getSize()) {
             analyseExpr(AT->getSize(), RHS);
@@ -654,13 +654,18 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
         if (Q.isValid()) {
             switch (initialValue->getCTC()) {
             case CTC_NONE:
-            case CTC_PARTIAL:
-                // Q: use RangeChecker for Partial case?
-                // TEMP: try to use GetExprRange/Type() to get smaller type
-                // DON't always do this? (only on ImplicitCast)
                 Q = TypeFinder::findType(initialValue);
-                typeResolver.checkCompatible(decl->getType(), Q, initialValue, TypeChecker::CONV_INIT);
+                TC.checkCompatible(decl->getType(), Q, initialValue, TypeChecker::CONV_INIT);
                 break;
+            case CTC_PARTIAL:
+                {
+                    //PartialAnalyser PA(Diags);
+                    //PA.check(decl->getType(), initialValue);
+                    // TODO DON't always do this? (only on ImplicitCast)
+                    Q = TypeFinder::findType(initialValue);
+                    TC.checkCompatible(decl->getType(), Q, initialValue, TypeChecker::CONV_INIT);
+                    break;
+                }
             case CTC_FULL:
                 {
                     LiteralAnalyser LA(Diags);
@@ -815,7 +820,7 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
         // if sizes are not ok.
         LiteralAnalyser LA(Diags);
         LA.check(TLeft, Right);
-        //typeResolver.checkCompatible(TLeft, TRight, binop->getLocation(), TypeChecker::CONV_ASSIGN);
+        //TC.checkCompatible(TLeft, TRight, binop->getLocation(), TypeChecker::CONV_ASSIGN);
         checkAssignment(Left, TLeft);
         Result = TLeft;
         break;
@@ -869,7 +874,7 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
             LType = analyseExpr(unaryop->getExpr(), side | RHS);
             if (LType.isNull()) return 0;
             QualType Q = typeContext.getPointerType(LType);
-            typeResolver.resolveCanonicals(0, Q, true);
+            TC.resolveCanonicals(0, Q, true);
             return Q;
         }
     case UO_Deref:
@@ -896,7 +901,7 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
         unaryop->setCTC(unaryop->getExpr()->getCTC());
         if (LType.isNull()) return 0;
         // TODO use return type
-        typeResolver.UsualUnaryConversions(unaryop->getExpr());
+        TC.UsualUnaryConversions(unaryop->getExpr());
         break;
     case UO_LNot:
         // TODO first cast expr to bool, then invert here, return type bool
@@ -906,7 +911,7 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
         unaryop->setCTC(unaryop->getExpr()->getCTC());
         // Also set type?
         if (LType.isNull()) return 0;
-        //typeResolver.UsualUnaryConversions(unaryop->getExpr());
+        //TC.UsualUnaryConversions(unaryop->getExpr());
         LType = TypeContext::getBuiltinType(BuiltinType::Bool);
         expr->setType(LType);
         break;
@@ -1185,7 +1190,7 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
             assert(argType.isValid());
             LiteralAnalyser LA(Diags);
             LA.check(argType, argGiven);
-            typeResolver.checkCompatible(argType, typeGiven, argGiven, TypeChecker::CONV_CONV);
+            TC.checkCompatible(argType, typeGiven, argGiven, TypeChecker::CONV_CONV);
         }
     }
     if (callArgs > protoArgs) {

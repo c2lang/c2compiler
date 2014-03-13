@@ -106,7 +106,7 @@ private:
     QualType Decl2Type(Decl* decl);
 
     Scope& scope;
-    TypeChecker& typeResolver;
+    TypeChecker& TC;
     TypeContext& typeContext;
 
     clang::DiagnosticsEngine& Diags;
