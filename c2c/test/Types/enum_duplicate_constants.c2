@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+package test;
+
+type Enum enum int {
+    A,
+    A,  // @error{redefinition of A}
+}
+
