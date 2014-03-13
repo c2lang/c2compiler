@@ -2,7 +2,7 @@
 package test;
 
 func void test() {
-    char a = 1;
-    char b = 200 + a;   //@error{Error?}
+    int8 a = 1;
+    int8 b = 200 + a;  // @error{constant value 200 out-of-bounds for type 'int8', range [-128, 127]}
 }
 

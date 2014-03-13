@@ -40,7 +40,7 @@ public:
 
     void check(QualType Tleft, const Expr* expr);
 private:
-    void checkBinOp(const BinaryOperator* binop);
+    void checkBinOp(QualType TLeft, const BinaryOperator* binop);
 
     TypeChecker& TC;
     clang::DiagnosticsEngine& Diags;

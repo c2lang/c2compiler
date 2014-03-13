@@ -14,6 +14,7 @@
  */
 
 #include "Analyser/PartialAnalyser.h"
+#include "Analyser/LiteralAnalyser.h"
 #include "AST/Expr.h"
 
 using namespace C2;
@@ -27,6 +28,20 @@ PartialAnalyser::PartialAnalyser(TypeChecker& TC_, DiagnosticsEngine& Diags_)
 {}
 
 void PartialAnalyser::check(QualType TLeft, const Expr* expr) {
+    switch (expr->getCTC()) {
+    case CTC_NONE:
+        // TODO handle
+        return;
+    case CTC_PARTIAL:
+        break;
+    case CTC_FULL:
+        LiteralAnalyser LA(Diags);
+#warning "TODO make LiteralAnalyser argument const"
+        //LA.check(TLeft, expr);
+        LA.check(TLeft, const_cast<Expr*>(expr));
+        return;
+    }
+
     switch (expr->getKind()) {
     case EXPR_INTEGER_LITERAL:
     case EXPR_FLOAT_LITERAL:
@@ -37,7 +52,7 @@ void PartialAnalyser::check(QualType TLeft, const Expr* expr) {
         // always CTC_FULL
         break;
     case EXPR_IDENTIFIER:
-        // always CTC_NONE? (can be constant-> value, CTC_FULL?)
+        // can be CTC_NONE or CTC_FULL
         break;
     case EXPR_TYPE:
         break;
@@ -49,18 +64,20 @@ void PartialAnalyser::check(QualType TLeft, const Expr* expr) {
         assert(0 && "should not come here");
         break;
     case EXPR_BINOP:
-        checkBinOp(cast<BinaryOperator>(expr));
+        checkBinOp(TLeft, cast<BinaryOperator>(expr));
         return;
     case EXPR_CONDOP:
+        assert(0 && "TODO");
         break;
     case EXPR_UNARYOP:
         break;
     case EXPR_BUILTIN:
-        // NOTE: sizeof() and elemsof() are CTC_FULL. The type depends on the actual value
+        // always CTC_FULL
         assert(0 && "TODO");
         break;
     case EXPR_ARRAYSUBSCRIPT:
     case EXPR_MEMBER:
+        // can be CTC_NONE or CTC_FULL
         break;
     case EXPR_PAREN:
         check(TLeft, cast<ParenExpr>(expr)->getExpr());
@@ -69,7 +86,8 @@ void PartialAnalyser::check(QualType TLeft, const Expr* expr) {
     assert(0 && "should not come here");
 }
 
-void PartialAnalyser::checkBinOp(const BinaryOperator* binop) {
+void PartialAnalyser::checkBinOp(QualType TLeft, const BinaryOperator* binop) {
+    // NOTE we check Left / Right separately if CTC's are not the same
     switch (binop->getOpcode()) {
     case BO_PtrMemD:
     case BO_PtrMemI:
@@ -80,6 +98,8 @@ void PartialAnalyser::checkBinOp(const BinaryOperator* binop) {
         break;
     case BO_Add:
     case BO_Sub:
+        check(TLeft, binop->getLHS());
+        check(TLeft, binop->getRHS());
         break;
     case BO_Shl:
     case BO_Shr:
