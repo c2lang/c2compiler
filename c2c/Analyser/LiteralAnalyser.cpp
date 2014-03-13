@@ -290,6 +290,14 @@ APSInt LiteralAnalyser::checkIdentifier(QualType TLeft, Expr* Right) {
         Result = ECD->getValue();
         return Result;
     }
+    const VarDecl* VD = dyncast<VarDecl>(D);
+    if (VD) {
+        // VarDecl should be CTC_FULL here!
+        // Only check value (=initial value)
+        assert(VD->getInitValue());
+        return checkLiterals(TLeft, VD->getInitValue());
+    }
+    assert(0 && "should not come here");
     return APSInt();
 }
 

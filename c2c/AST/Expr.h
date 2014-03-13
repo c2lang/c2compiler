@@ -57,7 +57,7 @@ enum ExprKind {
 };
 
 enum ExprCTC {
-    CTC_NONE,
+    CTC_NONE = 0,
     CTC_PARTIAL,
     CTC_FULL,
 };

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "Analyser/TypeFinder.h"
+#include "Analyser/PartialAnalyser.h"
 #include "AST/Expr.h"
 
 using namespace C2;
@@ -21,7 +21,12 @@ using namespace llvm;
 using namespace clang;
 
 
-QualType TypeFinder::findType(const Expr* expr) {
+PartialAnalyser::PartialAnalyser(TypeChecker& TC_, DiagnosticsEngine& Diags_)
+    : TC(TC_)
+    , Diags(Diags_)
+{}
+
+void PartialAnalyser::check(QualType TLeft, const Expr* expr) {
     switch (expr->getKind()) {
     case EXPR_INTEGER_LITERAL:
     case EXPR_FLOAT_LITERAL:
@@ -29,23 +34,27 @@ QualType TypeFinder::findType(const Expr* expr) {
     case EXPR_CHAR_LITERAL:
     case EXPR_STRING_LITERAL:
     case EXPR_NIL:
+        // always CTC_FULL
+        break;
     case EXPR_IDENTIFIER:
+        // always CTC_NONE? (can be constant-> value, CTC_FULL?)
         break;
     case EXPR_TYPE:
-        assert(0 && "should not come here");
         break;
     case EXPR_CALL:
+        // always CTC_NONE
         break;
     case EXPR_INITLIST:
     case EXPR_DECL:
         assert(0 && "should not come here");
         break;
     case EXPR_BINOP:
-        return getBinOpType(cast<BinaryOperator>(expr));
+        checkBinOp(cast<BinaryOperator>(expr));
+        return;
     case EXPR_CONDOP:
-        return getCondOpType(cast<ConditionalOperator>(expr));
+        break;
     case EXPR_UNARYOP:
-        return getUnaryOpType(cast<UnaryOperator>(expr));
+        break;
     case EXPR_BUILTIN:
         // NOTE: sizeof() and elemsof() are CTC_FULL. The type depends on the actual value
         assert(0 && "TODO");
@@ -54,24 +63,24 @@ QualType TypeFinder::findType(const Expr* expr) {
     case EXPR_MEMBER:
         break;
     case EXPR_PAREN:
-        return findType(cast<ParenExpr>(expr)->getExpr());
+        check(TLeft, cast<ParenExpr>(expr)->getExpr());
+        return;
     }
-    return expr->getType();
+    assert(0 && "should not come here");
 }
 
-QualType TypeFinder::getBinOpType(const BinaryOperator* binop) {
+void PartialAnalyser::checkBinOp(const BinaryOperator* binop) {
     switch (binop->getOpcode()) {
     case BO_PtrMemD:
     case BO_PtrMemI:
-        assert(0 && "TODO?");
-        break;
     case BO_Mul:
     case BO_Div:
     case BO_Rem:
-        return LargestType(binop->getLHS(), binop->getRHS());
+        assert(0 && "TODO");
+        break;
     case BO_Add:
     case BO_Sub:
-        return LargestType(binop->getLHS(), binop->getRHS());
+        break;
     case BO_Shl:
     case BO_Shr:
         assert(0 && "TODO");
@@ -87,7 +96,8 @@ QualType TypeFinder::getBinOpType(const BinaryOperator* binop) {
     case BO_Or:
     case BO_LAnd:
     case BO_LOr:
-        // should be bool
+        // Type always bool?
+        assert(0 && "TODO");
         break;
     case BO_Assign:
     case BO_MulAssign:
@@ -100,57 +110,11 @@ QualType TypeFinder::getBinOpType(const BinaryOperator* binop) {
     case BO_AndAssign:
     case BO_XorAssign:
     case BO_OrAssign:
-        // return LHS type
-        return findType(binop->getLHS());
+        assert(0 && "TODO");
+        break;
     case BO_Comma:
         assert(0 && "TODO?");
         break;
     }
-    return binop->getType();
-}
-
-QualType TypeFinder::getUnaryOpType(const UnaryOperator* unaryop) {
-    switch (unaryop->getOpcode()) {
-    case UO_PostInc:
-    case UO_PostDec:
-    case UO_PreInc:
-    case UO_PreDec:
-        return findType(unaryop->getExpr());
-    case UO_AddrOf:
-        assert(0 && "TODO");
-        break;
-    case UO_Deref:
-    case UO_Plus:
-    case UO_Minus:
-    case UO_Not:
-        return findType(unaryop->getExpr());
-    case UO_LNot:
-        // should be bool already
-        break;
-    default:
-        assert(0 && "TODO");
-        break;
-    }
-    return unaryop->getType();
-}
-
-QualType TypeFinder::getCondOpType(const ConditionalOperator* condop) {
-    return LargestType(condop->getLHS(), condop->getRHS());
-}
-
-QualType TypeFinder::LargestType(const Expr* Left, const Expr* Right) {
-    QualType TL = findType(Left);
-    QualType TR = findType(Right);
-    // TODO cleanup
-    QualType Lcanon = TL.getTypePtr()->getCanonicalType();
-    QualType Rcanon = TR.getTypePtr()->getCanonicalType();
-    assert(Lcanon.isBuiltinType());
-    assert(Rcanon.isBuiltinType());
-    const BuiltinType* Lbi = cast<BuiltinType>(Lcanon);
-    const BuiltinType* Rbi = cast<BuiltinType>(Rcanon);
-    if (Lbi->getWidth() > Rbi->getWidth()) {
-        return TL;
-    }
-    return TR;
 }
 

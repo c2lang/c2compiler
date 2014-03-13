@@ -13,10 +13,14 @@
  * limitations under the License.
  */
 
-#ifndef TYPE_FINDER_H
-#define TYPE_FINDER_H
+#ifndef PARTIAL_ANALYSER_H
+#define PARTIAL_ANALYSER_H
 
 #include "AST/Type.h"
+
+namespace clang {
+class DiagnosticsEngine;
+}
 
 namespace C2 {
 
@@ -24,22 +28,25 @@ class Expr;
 class BinaryOperator;
 class UnaryOperator;
 class ConditionalOperator;
+class TypeChecker;
 
 /*
- *  TypeFinder tries to find the biggest type in the (sub)Expression,
- *  without Integer Promotions or Usual Arithmetic Conversions
+ *  PartialAnalyser checks each sub-expression that is CTC_FULL or
+ *  CTC_NONE with the other checkers separately.
 */
-class TypeFinder {
+class PartialAnalyser {
 public:
-    static QualType findType(const Expr* expr);
-private:
-    static QualType getBinOpType(const BinaryOperator* binop);
-    static QualType getUnaryOpType(const UnaryOperator* unaryop);
-    static QualType getCondOpType(const ConditionalOperator* condop);
-    static QualType LargestType(const Expr* Left, const Expr* Right);
+    PartialAnalyser(TypeChecker& TC_, clang::DiagnosticsEngine& Diags_);
 
-    TypeFinder(const TypeFinder&);
-    TypeFinder& operator= (const TypeFinder&);
+    void check(QualType Tleft, const Expr* expr);
+private:
+    void checkBinOp(const BinaryOperator* binop);
+
+    TypeChecker& TC;
+    clang::DiagnosticsEngine& Diags;
+
+    PartialAnalyser(const PartialAnalyser&);
+    PartialAnalyser& operator= (const PartialAnalyser&);
 };
 
 }

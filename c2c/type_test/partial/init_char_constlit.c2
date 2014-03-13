@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+package test;
+
+func void test() {
+    const int NUM = 100;
+    const int NUM2 = 200;
+    char a = 1;
+    char b = a + NUM;
+    char c = a + NUM2;  // @error{constant value 200 out-of-bounds for type 'int8', range [-128, 127]}
+}
+

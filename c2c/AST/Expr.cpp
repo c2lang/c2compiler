@@ -94,7 +94,7 @@ Expr::~Expr() {
 #endif
 }
 
-const char* ctc_strings[] = { "none", "partial", "full" };
+static const char* ctc_strings[] = { "none", "partial", "full" };
 
 void Expr::print(StringBuilder& buffer, unsigned indent) const {
     QualType Q = getType();

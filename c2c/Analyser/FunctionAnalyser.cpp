@@ -23,6 +23,7 @@
 #include "Analyser/FunctionAnalyser.h"
 #include "Analyser/TypeChecker.h"
 #include "Analyser/AnalyserUtils.h"
+#include "Analyser/PartialAnalyser.h"
 #include "Analyser/LiteralAnalyser.h"
 #include "Analyser/TypeFinder.h"
 #include "AST/Decl.h"
@@ -659,11 +660,8 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
                 break;
             case CTC_PARTIAL:
                 {
-                    //PartialAnalyser PA(Diags);
-                    //PA.check(decl->getType(), initialValue);
-                    // TODO DON't always do this? (only on ImplicitCast)
-                    Q = TypeFinder::findType(initialValue);
-                    TC.checkCompatible(decl->getType(), Q, initialValue, TypeChecker::CONV_INIT);
+                    PartialAnalyser PA(TC, Diags);
+                    PA.check(decl->getType(), initialValue);
                     break;
                 }
             case CTC_FULL:
