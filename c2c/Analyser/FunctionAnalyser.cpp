@@ -653,25 +653,8 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     if (initialValue && !errs) {
         QualType Q = analyseExpr(initialValue, RHS);
         if (Q.isValid()) {
-            // Q: just use PartialAnalyser here?
-            switch (initialValue->getCTC()) {
-            case CTC_NONE:
-                Q = TypeFinder::findType(initialValue);
-                TC.checkCompatible(decl->getType(), Q, initialValue, TypeChecker::CONV_INIT);
-                break;
-            case CTC_PARTIAL:
-                {
-                    PartialAnalyser PA(TC, Diags);
-                    PA.check(decl->getType(), initialValue);
-                    break;
-                }
-            case CTC_FULL:
-                {
-                    LiteralAnalyser LA(Diags);
-                    LA.check(decl->getType(), initialValue);
-                    break;
-                }
-            }
+            PartialAnalyser PA(TC, Diags);
+            PA.check(decl->getType(), initialValue);
         } else if (InitListExpr* IE = dyncast<InitListExpr>(initialValue)) {
             // Not so nice, TODO refactor
             CurrentVarDecl = decl;

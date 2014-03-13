@@ -53,15 +53,11 @@ void PartialAnalyser::check(QualType TLeft, const Expr* expr) {
     case EXPR_STRING_LITERAL:
     case EXPR_NIL:
         // always CTC_FULL
-        break;
     case EXPR_IDENTIFIER:
         // can be CTC_NONE or CTC_FULL
-        break;
     case EXPR_TYPE:
-        break;
     case EXPR_CALL:
         // always CTC_NONE
-        break;
     case EXPR_INITLIST:
     case EXPR_DECL:
         assert(0 && "should not come here");
@@ -76,11 +72,10 @@ void PartialAnalyser::check(QualType TLeft, const Expr* expr) {
         break;
     case EXPR_BUILTIN:
         // always CTC_FULL
-        assert(0 && "TODO");
-        break;
     case EXPR_ARRAYSUBSCRIPT:
     case EXPR_MEMBER:
         // can be CTC_NONE or CTC_FULL
+        assert(0 && "should not come here");
         break;
     case EXPR_PAREN:
         check(TLeft, cast<ParenExpr>(expr)->getExpr());
