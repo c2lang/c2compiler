@@ -23,7 +23,7 @@
 #include "Analyser/FunctionAnalyser.h"
 #include "Analyser/TypeChecker.h"
 #include "Analyser/AnalyserUtils.h"
-#include "Analyser/PartialAnalyser.h"
+#include "Analyser/ExprAnalyser.h"
 #include "Analyser/LiteralAnalyser.h"
 #include "Analyser/TypeFinder.h"
 #include "AST/Decl.h"
@@ -653,8 +653,8 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     if (initialValue && !errs) {
         QualType Q = analyseExpr(initialValue, RHS);
         if (Q.isValid()) {
-            PartialAnalyser PA(TC, Diags);
-            PA.check(decl->getType(), initialValue);
+            ExprAnalyser EA(TC, Diags);
+            EA.check(decl->getType(), initialValue);
         } else if (InitListExpr* IE = dyncast<InitListExpr>(initialValue)) {
             // Not so nice, TODO refactor
             CurrentVarDecl = decl;

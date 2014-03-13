@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef PARTIAL_ANALYSER_H
-#define PARTIAL_ANALYSER_H
+#ifndef EXPR_ANALYSER_H
+#define EXPR_ANALYSER_H
 
 #include "AST/Type.h"
 
@@ -31,12 +31,13 @@ class ConditionalOperator;
 class TypeChecker;
 
 /*
- *  PartialAnalyser checks each sub-expression that is CTC_FULL or
+ *  ExprAnalyser checks each sub-expression that is CTC_FULL or
  *  CTC_NONE with the other checkers separately.
+ *  It checks Literals for Range and Symbols for Type
 */
-class PartialAnalyser {
+class ExprAnalyser {
 public:
-    PartialAnalyser(TypeChecker& TC_, clang::DiagnosticsEngine& Diags_);
+    ExprAnalyser(TypeChecker& TC_, clang::DiagnosticsEngine& Diags_);
 
     void check(QualType Tleft, const Expr* expr);
 private:
@@ -45,8 +46,8 @@ private:
     TypeChecker& TC;
     clang::DiagnosticsEngine& Diags;
 
-    PartialAnalyser(const PartialAnalyser&);
-    PartialAnalyser& operator= (const PartialAnalyser&);
+    ExprAnalyser(const ExprAnalyser&);
+    ExprAnalyser& operator= (const ExprAnalyser&);
 };
 
 }
