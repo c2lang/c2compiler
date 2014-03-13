@@ -1,8 +1,0 @@
-// @warnings{no-unused}
-package test;
-
-func void test() {
-    char a = 1;
-    char b = a + 100 + 100; // @error{error?}
-}
-

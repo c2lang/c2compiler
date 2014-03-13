@@ -15,6 +15,8 @@
 
 #include "Analyser/PartialAnalyser.h"
 #include "Analyser/LiteralAnalyser.h"
+#include "Analyser/TypeFinder.h"
+#include "Analyser/TypeChecker.h"
 #include "AST/Expr.h"
 
 using namespace C2;
@@ -30,8 +32,13 @@ PartialAnalyser::PartialAnalyser(TypeChecker& TC_, DiagnosticsEngine& Diags_)
 void PartialAnalyser::check(QualType TLeft, const Expr* expr) {
     switch (expr->getCTC()) {
     case CTC_NONE:
-        // TODO handle
+    {
+        QualType Q = TypeFinder::findType(expr);
+#warning "TODO: make expr argument const?"
+        TC.checkCompatible(TLeft, Q, const_cast<Expr*>(expr), TypeChecker::CONV_INIT);
+        //TC.checkCompatible(TLeft, Q, expr, TypeChecker::CONV_INIT);
         return;
+    }
     case CTC_PARTIAL:
         break;
     case CTC_FULL:

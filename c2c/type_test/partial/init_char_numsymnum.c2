@@ -3,6 +3,7 @@ package test;
 
 func void test() {
     char a = 1;
-    char b = 100 + a + 100; // @error{error?}
+    char b = 100 + a + 100;     // NOTE: ok since no single expr has overflow/error
+    char c = a + 100 + 100;     // idem
 }
 

@@ -3,6 +3,6 @@ package test;
 
 func void test() {
     char a = 1;
-    char b = 100 + 100 + a; // @error{error?}
+    char b = 100 + 100 + a; // @error{constant value 200 out-of-bounds for type 'int8', range [-128, 127]}
 }
 
