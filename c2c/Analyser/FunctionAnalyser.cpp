@@ -939,6 +939,7 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
             LType = analyseExpr(unaryop->getExpr(), side | RHS);
             if (LType.isNull()) return 0;
             QualType Q = typeContext.getPointerType(LType);
+            expr->setType(Q);
             TC.resolveCanonicals(0, Q, true);
             return Q;
         }

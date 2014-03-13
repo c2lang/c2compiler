@@ -117,7 +117,7 @@ QualType TypeFinder::getUnaryOpType(const UnaryOperator* unaryop) {
     case UO_PreDec:
         return findType(unaryop->getExpr());
     case UO_AddrOf:
-        assert(0 && "TODO");
+        // just return type
         break;
     case UO_Deref:
     case UO_Plus:
