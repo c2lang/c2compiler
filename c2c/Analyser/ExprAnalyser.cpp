@@ -33,6 +33,7 @@ void ExprAnalyser::check(QualType TLeft, const Expr* expr) {
     switch (expr->getCTC()) {
     case CTC_NONE:
     {
+        // TODO only do findType if doing actual Implicit Cast
         QualType Q = TypeFinder::findType(expr);
         TC.checkCompatible(TLeft, Q, expr, TypeChecker::CONV_INIT);
         return;
@@ -66,8 +67,13 @@ void ExprAnalyser::check(QualType TLeft, const Expr* expr) {
         checkBinOp(TLeft, cast<BinaryOperator>(expr));
         return;
     case EXPR_CONDOP:
-        assert(0 && "TODO");
-        break;
+        {
+            // NOTE: Cond -> Bool has already been checked
+            const ConditionalOperator* C = cast<ConditionalOperator>(expr);
+            check(TLeft, C->getLHS());
+            check(TLeft, C->getRHS());
+            return;
+        }
     case EXPR_UNARYOP:
         break;
     case EXPR_BUILTIN:

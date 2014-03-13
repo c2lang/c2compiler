@@ -22,6 +22,7 @@ using namespace clang;
 
 
 QualType TypeFinder::findType(const Expr* expr) {
+    assert(expr->getCTC() == CTC_NONE);
     switch (expr->getKind()) {
     case EXPR_INTEGER_LITERAL:
     case EXPR_FLOAT_LITERAL:
@@ -47,8 +48,7 @@ QualType TypeFinder::findType(const Expr* expr) {
     case EXPR_UNARYOP:
         return getUnaryOpType(cast<UnaryOperator>(expr));
     case EXPR_BUILTIN:
-        // NOTE: sizeof() and elemsof() are CTC_FULL. The type depends on the actual value
-        assert(0 && "TODO");
+        assert(0 && "should not come here");
         break;
     case EXPR_ARRAYSUBSCRIPT:
     case EXPR_MEMBER:

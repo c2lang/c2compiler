@@ -727,6 +727,7 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
 
     // check name
     if (!scope.checkScopedSymbol(decl)) return;
+
     // check initial value
     Expr* initialValue = decl->getInitValue();
     if (initialValue && !errs) {
@@ -911,9 +912,12 @@ QualType FunctionAnalyser::analyseConditionalOperator(Expr* expr) {
     LOG_FUNC
     ConditionalOperator* condop = cast<ConditionalOperator>(expr);
     analyseExpr(condop->getCond(), RHS);
+    // check if Condition can be casted to bool
+    ExprAnalyser EA(TC, Diags);
+    EA.check(Type::Bool(), condop->getCond());
     QualType TLeft = analyseExpr(condop->getLHS(), RHS);
     analyseExpr(condop->getRHS(), RHS);
-    // TODO also check type of RHS
+    expr->setCTC(CTC_PARTIAL);  // always set to Partial for ExprAnalyser
     return TLeft;
 }
 
