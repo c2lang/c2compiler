@@ -136,6 +136,8 @@ void LiteralAnalyser::check(QualType TLeft, const Expr* Right) {
 APSInt LiteralAnalyser::checkLiterals(QualType TLeft, const Expr* Right) {
     if (Right->getCTC() == CTC_NONE) return APSInt();
 
+    APSInt result(64, false);
+
     switch (Right->getKind()) {
     case EXPR_INTEGER_LITERAL:
         return checkIntegerLiterals(TLeft, Right);
@@ -161,6 +163,9 @@ APSInt LiteralAnalyser::checkLiterals(QualType TLeft, const Expr* Right) {
     case EXPR_UNARYOP:
         return checkUnaryLiterals(TLeft, Right);
     case EXPR_BUILTIN:
+        // TODO return correct value, for now always return 4 for sizeof() and elemsof()
+        result  = APInt(4, 64);
+        break;
     case EXPR_ARRAYSUBSCRIPT:
     case EXPR_MEMBER:
         break;
@@ -170,7 +175,7 @@ APSInt LiteralAnalyser::checkLiterals(QualType TLeft, const Expr* Right) {
             return checkLiterals(TLeft, P->getExpr());
         }
     }
-    return APSInt();
+    return result;
 }
 
 APSInt LiteralAnalyser::checkIntegerLiterals(QualType TLeft, const Expr* Right) {

@@ -4,6 +4,6 @@ package test;
 type Number int;
 
 func void function() {
-    int a = Number;       // @error{cannot use type in initializer}
+    int a = Number;       // @error{unexpected type name Number: expected expression}
 }
 

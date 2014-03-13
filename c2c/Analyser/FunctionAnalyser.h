@@ -79,6 +79,7 @@ private:
 
     void analyseInitExpr(Expr* expr, QualType expectedType);
     void analyseInitList(InitListExpr* expr, QualType expectedType);
+    void analyseSizeofExpr(Expr* expr);
 
     void pushMode(unsigned DiagID);
     void popMode();

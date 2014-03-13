@@ -431,8 +431,11 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
             if (!D) break;
             // NOTE: expr should not be package name (handled above)
             // TODO LHS: check if VarDecl
-            // TODO check Type of Decl here?
             if (side & LHS) checkDeclAssignment(D, expr);
+            if (dyncast<TypeDecl>(D)) {
+                Diags.Report(id->getLocation(), diag::err_unexpected_typedef) << id->getName();
+                break;
+            }
             if (side & RHS) D->setUsed();
             QualType T = Decl2Type(D);
             expr->setType(T);
@@ -626,6 +629,83 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
         }
         return;
     }
+}
+
+void FunctionAnalyser::analyseSizeofExpr(Expr* expr) {
+    switch (expr->getKind()) {
+    case EXPR_INTEGER_LITERAL:
+    case EXPR_FLOAT_LITERAL:
+    case EXPR_BOOL_LITERAL:
+    case EXPR_CHAR_LITERAL:
+    case EXPR_STRING_LITERAL:
+    case EXPR_NIL:
+        // ok
+        return;
+    case EXPR_CALL:
+        // not allowed
+        assert(0 && "TODO good error");
+        return;
+    case EXPR_IDENTIFIER:
+    {
+        // TODO extract to function (duplicated code)
+        IdentifierExpr* id = cast<IdentifierExpr>(expr);
+        ScopeResult Res = analyseIdentifier(id);
+        if (Res.getPackage()) {
+            Diags.Report(id->getLocation(), diag::err_is_a_package) << id->getName();
+            return;
+        }
+        Decl* D = Res.getDecl();
+        if (!D) return;
+        switch (D->getKind()) {
+        case DECL_FUNC:
+            // Q: allow?
+        case DECL_VAR:
+        case DECL_ENUMVALUE:
+        case DECL_ALIASTYPE:
+        case DECL_STRUCTTYPE:
+        case DECL_ENUMTYPE:
+        case DECL_FUNCTIONTYPE:
+            // ok
+            return;
+        case DECL_ARRAYVALUE:
+        case DECL_USE:
+            assert(0 && "should not happen");
+            break;
+        }
+        break;
+    }
+    case EXPR_INITLIST:
+        assert(0 && "TODO good error");
+        return;
+    case EXPR_TYPE:
+        // ok
+        return;
+    case EXPR_DECL:
+        assert(0 && "should not happen");
+        return;
+    case EXPR_BINOP:
+        // not allowed
+        assert(0 && "TODO good error");
+    case EXPR_CONDOP:
+        assert(0 && "TODO allow?");
+        return;
+    case EXPR_UNARYOP:
+        // some allowed (&)?
+        // TODO
+        return;
+    case EXPR_BUILTIN:
+        assert(0 && "should not happen");
+        return;
+    case EXPR_ARRAYSUBSCRIPT:
+    case EXPR_MEMBER:
+        // allowed
+        assert(0 && "TODO");
+        return;
+    case EXPR_PAREN:
+        analyseSizeofExpr(cast<ParenExpr>(expr)->getExpr());
+        return;
+    }
+
 }
 
 void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
@@ -907,11 +987,12 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
 QualType FunctionAnalyser::analyseBuiltinExpr(Expr* expr) {
     LOG_FUNC
     BuiltinExpr* func = cast<BuiltinExpr>(expr);
-    analyseExpr(func->getExpr(), RHS);
+    expr->setType(Type::UInt32());
     if (func->isSizeof()) { // sizeof()
-        // TODO can also be type (for sizeof)
-        return Type::UInt32();
+        analyseSizeofExpr(func->getExpr());
     } else { // elemsof()
+        // TODO proper checking
+        analyseExpr(func->getExpr(), RHS);
         Expr* E = func->getExpr();
         IdentifierExpr* I = cast<IdentifierExpr>(E);
         Decl* D = I->getDecl();
@@ -948,8 +1029,8 @@ QualType FunctionAnalyser::analyseBuiltinExpr(Expr* expr) {
             assert(0);
             break;
         }
-        return QualType();
     }
+    return Type::UInt32();
 }
 
 QualType FunctionAnalyser::analyseArraySubscript(Expr* expr) {
