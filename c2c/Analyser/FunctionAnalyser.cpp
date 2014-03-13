@@ -25,7 +25,6 @@
 #include "Analyser/AnalyserUtils.h"
 #include "Analyser/ExprAnalyser.h"
 #include "Analyser/LiteralAnalyser.h"
-#include "Analyser/TypeFinder.h"
 #include "AST/Decl.h"
 #include "AST/Expr.h"
 #include "AST/Stmt.h"
