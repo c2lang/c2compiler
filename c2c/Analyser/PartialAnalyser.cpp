@@ -34,9 +34,7 @@ void PartialAnalyser::check(QualType TLeft, const Expr* expr) {
     case CTC_NONE:
     {
         QualType Q = TypeFinder::findType(expr);
-#warning "TODO: make expr argument const?"
-        TC.checkCompatible(TLeft, Q, const_cast<Expr*>(expr), TypeChecker::CONV_INIT);
-        //TC.checkCompatible(TLeft, Q, expr, TypeChecker::CONV_INIT);
+        TC.checkCompatible(TLeft, Q, expr, TypeChecker::CONV_INIT);
         return;
     }
     case CTC_PARTIAL:

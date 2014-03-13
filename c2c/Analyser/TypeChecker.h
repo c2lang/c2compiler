@@ -41,15 +41,15 @@ public:
 
     // checking
     enum ConvType { CONV_INIT, CONV_ASSIGN, CONV_CONV };
-    bool checkCompatible(QualType left, QualType right, Expr* expr, ConvType conv) const;
+    bool checkCompatible(QualType left, QualType right, const Expr* expr, ConvType conv) const;
 
     // conversions
     QualType UsualUnaryConversions(Expr* expr) const;
 private:
     unsigned checkUnresolvedType(const UnresolvedType* type, bool used_public);
 
-    bool checkBuiltin(QualType left, QualType right, Expr* expr, ConvType conv) const;
-    bool checkPointer(QualType left, QualType right, Expr* expr, ConvType conv) const;
+    bool checkBuiltin(QualType left, QualType right, const Expr* expr, ConvType conv) const;
+    bool checkPointer(QualType left, QualType right, const Expr* expr, ConvType conv) const;
 
     typedef std::vector<const Decl*> Decls;
     typedef Decls::iterator DeclsIter;
