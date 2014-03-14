@@ -23,7 +23,7 @@
 #include "Analyser/FunctionAnalyser.h"
 #include "Analyser/TypeChecker.h"
 #include "Analyser/AnalyserUtils.h"
-#include "Analyser/ExprAnalyser.h"
+#include "Analyser/ExprTypeAnalyser.h"
 #include "Analyser/LiteralAnalyser.h"
 #include "AST/Decl.h"
 #include "AST/Expr.h"
@@ -508,7 +508,7 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
                 assert(constDiagID);
                 Diags.Report(expr->getLocation(), constDiagID) << expr->getSourceRange();
             } else {
-                ExprAnalyser EA(TC, Diags);
+                ExprTypeAnalyser EA(TC, Diags);
                 EA.check(expectedType, expr);
             }
         }
@@ -841,38 +841,41 @@ QualType FunctionAnalyser::analyseConditionalOperator(Expr* expr) {
     ConditionalOperator* condop = cast<ConditionalOperator>(expr);
     analyseExpr(condop->getCond(), RHS);
     // check if Condition can be casted to bool
-    ExprAnalyser EA(TC, Diags);
+    ExprTypeAnalyser EA(TC, Diags);
     EA.check(Type::Bool(), condop->getCond());
     QualType TLeft = analyseExpr(condop->getLHS(), RHS);
     analyseExpr(condop->getRHS(), RHS);
-    expr->setCTC(CTC_PARTIAL);  // always set to Partial for ExprAnalyser
+    expr->setCTC(CTC_PARTIAL);  // always set to Partial for ExprTypeAnalyser
     return TLeft;
 }
 
 QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
     LOG_FUNC
     UnaryOperator* unaryop = cast<UnaryOperator>(expr);
+    Expr* SubExpr = unaryop->getExpr();
     QualType LType;
+    // TODO cleanup, always break and do common stuff at end
     switch (unaryop->getOpcode()) {
     case UO_PostInc:
     case UO_PostDec:
     case UO_PreInc:
     case UO_PreDec:
-        LType = analyseExpr(unaryop->getExpr(), side | LHS);
+        LType = analyseExpr(SubExpr, side | LHS);
         if (LType.isNull()) return 0;
         // TODO check if type is Integer/Floating Point
         break;
     case UO_AddrOf:
         {
-            LType = analyseExpr(unaryop->getExpr(), side | RHS);
+            LType = analyseExpr(SubExpr, side | RHS);
             if (LType.isNull()) return 0;
             QualType Q = typeContext.getPointerType(LType);
             expr->setType(Q);
+            expr->setConstant();
             TC.resolveCanonicals(0, Q, true);
             return Q;
         }
     case UO_Deref:
-        LType = analyseExpr(unaryop->getExpr(), side | RHS);
+        LType = analyseExpr(SubExpr, side | RHS);
         if (LType.isNull()) return 0;
         if (!LType.isPointerType()) {
             char typeName[MAX_LEN_TYPENAME];
@@ -891,21 +894,22 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
     case UO_Plus:
     case UO_Minus:
     case UO_Not:
-        LType = analyseExpr(unaryop->getExpr(), side | RHS);
-        unaryop->setCTC(unaryop->getExpr()->getCTC());
+        LType = analyseExpr(SubExpr, side | RHS);
+        unaryop->setCTC(SubExpr->getCTC());
+        if (SubExpr->isConstant()) unaryop->setConstant();
         if (LType.isNull()) return 0;
         // TODO use return type
-        TC.UsualUnaryConversions(unaryop->getExpr());
+        TC.UsualUnaryConversions(SubExpr);
         break;
     case UO_LNot:
         // TODO first cast expr to bool, then invert here, return type bool
         // TODO extract to function
-        LType = analyseExpr(unaryop->getExpr(), side | RHS);
+        LType = analyseExpr(SubExpr, side | RHS);
         // TODO check conversion to bool here!!
-        unaryop->setCTC(unaryop->getExpr()->getCTC());
+        unaryop->setCTC(SubExpr->getCTC());
         // Also set type?
         if (LType.isNull()) return 0;
-        //TC.UsualUnaryConversions(unaryop->getExpr());
+        //TC.UsualUnaryConversions(SubExpr);
         LType = Type::Bool();
         expr->setType(LType);
         break;

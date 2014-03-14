@@ -20,7 +20,7 @@ OBJS = \
     Analyser/FunctionAnalyser.o \
     Analyser/DepGenerator.o \
     Analyser/TypeFinder.o \
-    Analyser/ExprAnalyser.o \
+    Analyser/ExprTypeAnalyser.o \
     CodeGen/CodeGenFunction.o \
     CodeGen/CodeGenModule.o \
     CGenerator/CCodeGenerator.o \

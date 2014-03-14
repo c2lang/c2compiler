@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "Analyser/ExprAnalyser.h"
+#include "Analyser/ExprTypeAnalyser.h"
 #include "Analyser/LiteralAnalyser.h"
 #include "Analyser/TypeFinder.h"
 #include "Analyser/TypeChecker.h"
@@ -24,12 +24,12 @@ using namespace llvm;
 using namespace clang;
 
 
-ExprAnalyser::ExprAnalyser(TypeChecker& TC_, DiagnosticsEngine& Diags_)
+ExprTypeAnalyser::ExprTypeAnalyser(TypeChecker& TC_, DiagnosticsEngine& Diags_)
     : TC(TC_)
     , Diags(Diags_)
 {}
 
-void ExprAnalyser::check(QualType TLeft, const Expr* expr) {
+void ExprTypeAnalyser::check(QualType TLeft, const Expr* expr) {
     switch (expr->getCTC()) {
     case CTC_NONE:
     {
@@ -90,7 +90,7 @@ void ExprAnalyser::check(QualType TLeft, const Expr* expr) {
     assert(0 && "should not come here");
 }
 
-void ExprAnalyser::checkBinOp(QualType TLeft, const BinaryOperator* binop) {
+void ExprTypeAnalyser::checkBinOp(QualType TLeft, const BinaryOperator* binop) {
     // NOTE we check Left / Right separately if CTC's are not the same
     switch (binop->getOpcode()) {
     case BO_PtrMemD:
