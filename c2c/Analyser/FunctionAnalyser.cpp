@@ -742,6 +742,7 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
         TLeft = analyseExpr(Left, RHS);
         TRight = analyseExpr(Right, RHS);
         expr->setCTC(combineCtc(Left->getCTC(), Right->getCTC()));
+        if (Left->isConstant() && Right->isConstant()) expr->setConstant();
         break;
     case BO_Assign:
         // LHS, RHS
@@ -768,6 +769,7 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     }
     if (TLeft.isNull() || TRight.isNull()) return QualType();
 
+    // determine Result type
     QualType Result;
     switch (binop->getOpcode()) {
     case BO_PtrMemD:
