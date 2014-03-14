@@ -493,6 +493,8 @@ public:
     }
     virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return Base->getLocation(); }
+    virtual SourceLocation getLocStart() const { return Base->getLocStart(); }
+    virtual SourceLocation getLocEnd() const { return Member->getLocEnd(); }
 
     Expr* getBase() const { return Base; }
     IdentifierExpr* getMember() const { return Member; }

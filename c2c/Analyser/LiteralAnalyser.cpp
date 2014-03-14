@@ -167,8 +167,14 @@ APSInt LiteralAnalyser::checkLiterals(QualType TLeft, const Expr* Right) {
         result  = APInt(64, 4, true);
         break;
     case EXPR_ARRAYSUBSCRIPT:
-    case EXPR_MEMBER:
+        assert(0 && "TODO");
         break;
+    case EXPR_MEMBER:
+        {
+            // Q: is this correct for Struct.Member?
+            const MemberExpr* M = cast<MemberExpr>(Right);
+            return checkLiterals(TLeft, M->getMember());
+        }
     case EXPR_PAREN:
         {
             const ParenExpr* P = cast<ParenExpr>(Right);

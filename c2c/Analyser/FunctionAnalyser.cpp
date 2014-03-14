@@ -684,6 +684,7 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
         analyseInitExpr(initialValue, decl->getType());
         CurrentVarDecl = 0;
     }
+
     if (type.isConstQualified() && !initialValue) {
         Diags.Report(decl->getLocation(), diag::err_uninitialized_const_var) << decl->getName();
     }

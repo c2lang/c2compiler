@@ -9,4 +9,3 @@ func void test1() {
     char c = test.Num; // @warning{implicit conversion loses integer precision: 'int32' to 'int8'}
 }
 
-
