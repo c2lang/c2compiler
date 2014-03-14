@@ -809,10 +809,9 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
         break;
     case BO_Assign:
     {
-        // if sizes are not ok.
-        LiteralAnalyser LA(Diags);
-        LA.check(TLeft, Right);
-        //TC.checkCompatible(TLeft, TRight, binop->getLocation(), TypeChecker::CONV_ASSIGN);
+        assert(TRight.isValid());
+        ExprTypeAnalyser EA(TC, Diags);
+        EA.check(TLeft, Right);
         checkAssignment(Left, TLeft);
         Result = TLeft;
         break;
