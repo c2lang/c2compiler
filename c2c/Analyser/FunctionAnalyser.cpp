@@ -468,19 +468,20 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
 
 void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
     LOG_FUNC
+    InitListExpr* IE = dyncast<InitListExpr>(expr);
+    if (IE) {
+        analyseInitList(IE, expectedType);
+    } else {
+        QualType Q = analyseExpr(expr, RHS);
+        if (Q.isValid()) {
+            ExprAnalyser EA(TC, Diags);
+            EA.check(expectedType, expr);
+        }
+    }
+}
 
-    QualType TRight;
-
-    switch (expr->getKind()) {
-    case EXPR_INTEGER_LITERAL:
-    case EXPR_FLOAT_LITERAL:
-    case EXPR_BOOL_LITERAL:
-    case EXPR_CHAR_LITERAL:
-    case EXPR_STRING_LITERAL:
-    case EXPR_NIL:
-        TRight = analyseExpr(expr, RHS);
-        // TODO check if compatible
-        break;
+#if 0
+void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
     case EXPR_CALL:
         // TODO check return type (if void -> size of array has non-integer type 'void')
         if (inConstExpr) {
@@ -489,97 +490,22 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
         }
         return;
     case EXPR_IDENTIFIER:
-        {
-            IdentifierExpr* id = cast<IdentifierExpr>(expr);
-            ScopeResult Res = analyseIdentifier(id);
-            if (Res.getPackage()) {
-                Diags.Report(id->getLocation(), diag::err_is_a_package) << id->getName();
-                return;
-            }
-            Decl* D = Res.getDecl();
-            if (!D) return;
             if (D == CurrentVarDecl) {
                 Diags.Report(id->getLocation(), diag::err_var_self_init) << D->getName();
                 return;
             }
-            D->setUsed();       // always set used, even if causing error below
-            switch (D->getKind()) {
-            case DECL_FUNC:
-                {
-                    // TODO check if void*
-                    FunctionDecl* FD = cast<FunctionDecl>(D);
-                    TC.checkCompatible(expectedType, FD->getType(), id, TypeChecker::CONV_INIT);
-                }
-                break;
             case DECL_VAR:
-                {
-                    VarDecl* VD = cast<VarDecl>(D);
-                    if (inConstExpr) {
-                        QualType T = VD->getType();
-                        if (!T.isConstQualified()) {
-                            assert(constDiagID);
-                            Diags.Report(expr->getLocation(), constDiagID);
-                            return;
-                        }
+                VarDecl* VD = cast<VarDecl>(D);
+                if (inConstExpr) {
+                    QualType T = VD->getType();
+                    if (!T.isConstQualified()) {
+                        assert(constDiagID);
+                        Diags.Report(expr->getLocation(), constDiagID);
+                        return;
                     }
                 }
-                break;
-            case DECL_ENUMVALUE:
-                // TODO check type compatibility
-                break;
-            case DECL_ALIASTYPE:
-            case DECL_STRUCTTYPE:
-            case DECL_ENUMTYPE:
-            case DECL_FUNCTIONTYPE:
-                Diags.Report(id->getLocation(), diag::err_type_in_initializer);
-                break;
-            case DECL_ARRAYVALUE:
-            case DECL_USE:
-                assert(0 && "shouldn't come here");
-                break;
-            }
-        }
-        break;
-    case EXPR_INITLIST:
-        analyseInitList(cast<InitListExpr>(expr), expectedType);
-        break;
-    case EXPR_TYPE:
-        assert(0 && "??");
-        break;
-    case EXPR_DECL:
-        assert(0 && "TODO ERROR?");
-        break;
-    case EXPR_BINOP:
-        TRight = analyseBinaryOperator(expr, RHS);
-        break;
-    case EXPR_CONDOP:
-        TRight = analyseConditionalOperator(expr);
-        break;
-    case EXPR_UNARYOP:
-        TRight = analyseUnaryOperator(expr, RHS);
-        break;
-    case EXPR_BUILTIN:
-        TRight = analyseBuiltinExpr(expr);
-        break;
-    case EXPR_ARRAYSUBSCRIPT:
-        TRight =  analyseArraySubscript(expr);
-        break;
-    case EXPR_MEMBER:
-        // TODO dont allow struct.member, only pkg.constant
-        TRight = analyseMemberExpr(expr, RHS);
-        break;
-    case EXPR_PAREN:
-        TRight = analyseParenExpr(expr);
-        break;
-    }
-
-    // TODO Do we need to check TRight?
-    if (!TRight.isNull()) {
-        LiteralAnalyser LA(Diags);
-        LA.check(expectedType, expr);
-        //TC.checkCompatible(expectedType, TRight, expr->getLocation(), TypeChecker::CONV_INIT);
-    }
 }
+#endif
 
 void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
     LOG_FUNC
@@ -731,16 +657,9 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     // check initial value
     Expr* initialValue = decl->getInitValue();
     if (initialValue && !errs) {
-        QualType Q = analyseExpr(initialValue, RHS);
-        if (Q.isValid()) {
-            ExprAnalyser EA(TC, Diags);
-            EA.check(decl->getType(), initialValue);
-        } else if (InitListExpr* IE = dyncast<InitListExpr>(initialValue)) {
-            // Not so nice, TODO refactor
-            CurrentVarDecl = decl;
-            analyseInitList(IE, type);
-            CurrentVarDecl = 0;
-        }
+        CurrentVarDecl = decl;
+        analyseInitExpr(initialValue, decl->getType());
+        CurrentVarDecl = 0;
     }
     if (type.isConstQualified() && !initialValue) {
         Diags.Report(decl->getLocation(), diag::err_uninitialized_const_var) << decl->getName();
