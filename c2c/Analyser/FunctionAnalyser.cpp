@@ -1020,7 +1020,7 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
         IdentifierExpr* base_id = cast<IdentifierExpr>(base);
         ScopeResult SR = analyseIdentifier(base_id);
         Decl* SRD = SR.getDecl();
-        if (SRD) {
+        if (SRD) {      // Struct.Member?
             M->setPkgPrefix(false);
             switch (SRD->getKind()) {
             case DECL_FUNC:
@@ -1090,7 +1090,7 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
                 assert(0);
                 break;
             }
-        } else if (SR.getPackage()) {
+        } else if (SR.getPackage()) {   // Pkg.Symbol
             M->setPkgPrefix(true);
             if (isArrow) {
                 fprintf(stderr, "TODO ERROR: cannot use -> for package access\n");
@@ -1099,12 +1099,15 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
             ScopeResult res = scope.findSymbolInPackage(member->getName(), member->getLocation(), SR.getPackage());
             Decl* D = res.getDecl();
             if (D) {
-                member->setDecl(D);
+                QualType Q = Decl2Type(D);
                 if (side & RHS) D->setUsed();
+                member->setDecl(D);
+                member->setType(Q);
                 SetConstantFlags(D, member);
                 expr->setCTC(member->getCTC());
                 if (member->isConstant()) expr->setConstant();
-                return Decl2Type(D);
+                expr->setType(Q);
+                return Q;
             }
             return QualType();
         } else  {
