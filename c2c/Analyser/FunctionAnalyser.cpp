@@ -438,6 +438,10 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
             }
             Decl* D = Res.getDecl();
             if (!D) break;
+            if (D == CurrentVarDecl) {
+                Diags.Report(id->getLocation(), diag::err_var_self_init) << D->getName();
+                return QualType();
+            }
             if (side & LHS) checkDeclAssignment(D, expr);
             // TODO move this to analyseIdentifier?
             switch (D->getKind()) {
@@ -509,26 +513,6 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
         }
     }
 }
-
-#if 0
-void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
-    case EXPR_IDENTIFIER:
-            if (D == CurrentVarDecl) {
-                Diags.Report(id->getLocation(), diag::err_var_self_init) << D->getName();
-                return;
-            }
-            case DECL_VAR:
-                VarDecl* VD = cast<VarDecl>(D);
-                if (inConstExpr) {
-                    QualType T = VD->getType();
-                    if (!T.isConstQualified()) {
-                        assert(constDiagID);
-                        Diags.Report(expr->getLocation(), constDiagID);
-                        return;
-                    }
-                }
-}
-#endif
 
 void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
     LOG_FUNC

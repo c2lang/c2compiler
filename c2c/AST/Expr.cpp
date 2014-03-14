@@ -105,7 +105,7 @@ void Expr::print(StringBuilder& buffer, unsigned indent) const {
         buffer << ANSI_RED"<INVALID>"ANSI_NORMAL;
     }
     buffer << " ctc=" << ctc_strings[StmtBits.ExprIsCTC];
-    buffer << ", Constant=" << isConstant();
+    buffer << ", constant=" << isConstant();
     if (getImpCast() != BuiltinType::Void) {
         buffer << ", cast=" << BuiltinType::kind2name(getImpCast());
     }
