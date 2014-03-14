@@ -507,9 +507,10 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
             if (inConstExpr && !expr->isConstant()) {
                 assert(constDiagID);
                 Diags.Report(expr->getLocation(), constDiagID) << expr->getSourceRange();
+            } else {
+                ExprAnalyser EA(TC, Diags);
+                EA.check(expectedType, expr);
             }
-            ExprAnalyser EA(TC, Diags);
-            EA.check(expectedType, expr);
         }
     }
 }
