@@ -1,5 +1,5 @@
 // @warnings{no-unused}
 package test;
 
-type A enum int { }   // @error {use of empty enum}
+type A enum int { }   // @error{use of empty enum}
 
