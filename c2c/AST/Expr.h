@@ -65,7 +65,7 @@ enum ExprCTC {
 
 class Expr : public Stmt {
 public:
-    Expr(ExprKind k);
+    Expr(ExprKind k, bool isConstant_);
     virtual ~Expr();
     // from Stmt
     static bool classof(const Stmt* S) {
@@ -80,6 +80,9 @@ public:
         return static_cast<ExprCTC>(StmtBits.ExprIsCTC);
     }
     void setCTC(ExprCTC ctc) { StmtBits.ExprIsCTC = ctc; }
+
+    bool isConstant() const { return StmtBits.ExprIsConstant; }
+    void setConstant() { StmtBits.ExprIsConstant = true; }
 
     clang::SourceRange getSourceRange() const {
         return clang::SourceRange(getLocStart(), getLocEnd());
@@ -114,7 +117,7 @@ typedef std::vector<C2::Expr*> ExprList;
 class IntegerLiteral : public Expr {
 public:
     IntegerLiteral(SourceLocation loc_, const llvm::APInt& V)
-        : Expr(EXPR_INTEGER_LITERAL)
+        : Expr(EXPR_INTEGER_LITERAL, true)
         , Value(V), loc(loc_)
     {
         setCTC(CTC_FULL);
@@ -134,7 +137,7 @@ private:
 class FloatingLiteral : public Expr {
 public:
     FloatingLiteral(SourceLocation loc_, const llvm::APFloat& V)
-        : Expr(EXPR_FLOAT_LITERAL)
+        : Expr(EXPR_FLOAT_LITERAL, true)
         , Value(V), loc(loc_)
     {
         setCTC(CTC_FULL);
@@ -153,7 +156,7 @@ public:
 class BooleanLiteral : public Expr {
 public:
     BooleanLiteral(SourceLocation loc_, bool val)
-        : Expr(EXPR_BOOL_LITERAL)
+        : Expr(EXPR_BOOL_LITERAL, true)
         , loc(loc_)
     {
         StmtBits.BoolLiteralValue = val;
@@ -173,7 +176,7 @@ public:
 class CharacterLiteral : public Expr {
 public:
     CharacterLiteral(SourceLocation loc_, unsigned val)
-        : Expr(EXPR_CHAR_LITERAL)
+        : Expr(EXPR_CHAR_LITERAL, true)
         , value(val), loc(loc_)
     {
         setCTC(CTC_FULL);
@@ -193,7 +196,7 @@ public:
 class StringLiteral : public Expr {
 public:
     StringLiteral(SourceLocation loc_, const std::string& val)
-        : Expr(EXPR_STRING_LITERAL)
+        : Expr(EXPR_STRING_LITERAL, true)
         , value(val), loc(loc_)
     {}
     static bool classof(const Expr* E) {
@@ -210,7 +213,7 @@ public:
 class NilExpr : public Expr {
 public:
     NilExpr(SourceLocation loc_)
-        : Expr(EXPR_NIL)
+        : Expr(EXPR_NIL, true)
         , loc(loc_)
     {}
     static bool classof(const Expr* E) {
@@ -226,7 +229,7 @@ public:
 class IdentifierExpr : public Expr {
 public:
     IdentifierExpr(SourceLocation loc_, const std::string& name_)
-        : Expr(EXPR_IDENTIFIER)
+        : Expr(EXPR_IDENTIFIER, false)
         , name(name_), decl(0), loc(loc_) {}
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_IDENTIFIER;
@@ -247,7 +250,7 @@ private:
 class TypeExpr : public Expr {
 public:
     TypeExpr(QualType QT_)
-        : Expr(EXPR_TYPE)
+        : Expr(EXPR_TYPE, true)
     {
         setType(QT_);
     }
@@ -267,7 +270,7 @@ public:
 class CallExpr : public Expr {
 public:
     CallExpr(Expr* Fn_)
-        : Expr(EXPR_CALL)
+        : Expr(EXPR_CALL, false)
         , Fn(Fn_)
     {}
     virtual ~CallExpr();
@@ -384,7 +387,12 @@ public:
     typedef clang::UnaryOperatorKind Opcode;
     static const char* OpCode2str(clang::UnaryOperatorKind opc);
 
-    UnaryOperator(SourceLocation opLoc_, Opcode opc, Expr* val_);
+    UnaryOperator(SourceLocation opLoc_, Opcode opc_, Expr* val_)
+        : Expr(EXPR_UNARYOP, false)
+        , opLoc(opLoc_)
+        , opc(opc_)
+        , val(val_)
+    {}
     virtual ~UnaryOperator();
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_UNARYOP;
@@ -424,7 +432,7 @@ private:
 class BuiltinExpr : public Expr {
 public:
     BuiltinExpr(SourceLocation Loc_, Expr* expr_, bool isSizeof_)
-        : Expr(EXPR_BUILTIN)
+        : Expr(EXPR_BUILTIN, true)
         , Loc(Loc_)
         , expr(expr_)
     {
@@ -448,7 +456,12 @@ private:
 
 class ArraySubscriptExpr : public Expr {
 public:
-    ArraySubscriptExpr(SourceLocation RLoc_, Expr* Base_, Expr* Idx_);
+    ArraySubscriptExpr(SourceLocation RLoc_, Expr* Base_, Expr* Idx_)
+        : Expr(EXPR_ARRAYSUBSCRIPT, false)
+        , RLoc(RLoc_)
+        , base(Base_)
+        , idx(Idx_)
+    {}
     virtual ~ArraySubscriptExpr();
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_ARRAYSUBSCRIPT;
@@ -468,7 +481,7 @@ private:
 class MemberExpr : public Expr {
 public:
     MemberExpr(Expr* Base_, bool isArrow_, IdentifierExpr* Member_)
-        : Expr(EXPR_MEMBER)
+        : Expr(EXPR_MEMBER, false)
         , Base(Base_)
         , Member(Member_)
     {
@@ -498,7 +511,7 @@ private:
 class ParenExpr : public Expr {
 public:
     ParenExpr(SourceLocation l, SourceLocation r, Expr* val)
-        : Expr(EXPR_PAREN)
+        : Expr(EXPR_PAREN, false)
         , L(l), R(r), Val(val)
     {}
     virtual ~ParenExpr();

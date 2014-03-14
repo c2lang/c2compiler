@@ -50,27 +50,37 @@ using namespace clang;
 #define LHS 0x01
 #define RHS 0x02
 
-static ExprCTC decl2ctc(Decl* D) {
+static void SetConstantFlags(Decl* D, Expr* expr) {
     switch (D->getKind()) {
     case DECL_FUNC:
+        expr->setConstant();
         break;
     case DECL_VAR:
         {
             VarDecl* VD = cast<VarDecl>(D);
-            if (VD->getType().isConstQualified()) return CTC_FULL;
+            if (VD->getType().isConstQualified()) {
+                expr->setCTC(CTC_FULL);
+                expr->setConstant();
+                return;
+            }
             break;
         }
     case DECL_ENUMVALUE:
-        return CTC_FULL;
+        expr->setCTC(CTC_FULL);
+        expr->setConstant();
+        return;
     case DECL_ALIASTYPE:
     case DECL_STRUCTTYPE:
     case DECL_ENUMTYPE:
     case DECL_FUNCTIONTYPE:
+        expr->setConstant();
+        break;
     case DECL_ARRAYVALUE:
     case DECL_USE:
         break;
     }
-    return CTC_NONE;
+    // TODO needed?
+    expr->setCTC(CTC_NONE);
 }
 
 
@@ -428,11 +438,27 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
             }
             Decl* D = Res.getDecl();
             if (!D) break;
-            // NOTE: expr should not be package name (handled above)
-            // TODO LHS: check if VarDecl
             if (side & LHS) checkDeclAssignment(D, expr);
-            if (dyncast<TypeDecl>(D)) {
+            // TODO move this to analyseIdentifier?
+            switch (D->getKind()) {
+            case DECL_FUNC:
+                expr->setConstant();
+                break;
+            case DECL_VAR:
+                break;
+            case DECL_ENUMVALUE:
+                expr->setCTC(CTC_FULL);
+                expr->setConstant();
+                break;
+            case DECL_ALIASTYPE:
+            case DECL_STRUCTTYPE:
+            case DECL_ENUMTYPE:
+            case DECL_FUNCTIONTYPE:
                 Diags.Report(id->getLocation(), diag::err_unexpected_typedef) << id->getName();
+                expr->setConstant();
+                break;
+            case DECL_ARRAYVALUE:
+            case DECL_USE:
                 break;
             }
             if (side & RHS) D->setUsed();
@@ -474,6 +500,10 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
     } else {
         QualType Q = analyseExpr(expr, RHS);
         if (Q.isValid()) {
+            if (inConstExpr && !expr->isConstant()) {
+                assert(constDiagID);
+                Diags.Report(expr->getLocation(), constDiagID) << expr->getSourceRange();
+            }
             ExprAnalyser EA(TC, Diags);
             EA.check(expectedType, expr);
         }
@@ -482,13 +512,6 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
 
 #if 0
 void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
-    case EXPR_CALL:
-        // TODO check return type (if void -> size of array has non-integer type 'void')
-        if (inConstExpr) {
-            assert(constDiagID);
-            Diags.Report(expr->getLocation(), constDiagID);
-        }
-        return;
     case EXPR_IDENTIFIER:
             if (D == CurrentVarDecl) {
                 Diags.Report(id->getLocation(), diag::err_var_self_init) << D->getName();
@@ -1059,6 +1082,7 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
                 }
                 break;
             case DECL_ENUMVALUE:
+                expr->setConstant();
                 assert(0 && "TODO");
                 break;
             case DECL_ARRAYVALUE:
@@ -1077,9 +1101,9 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
             if (D) {
                 member->setDecl(D);
                 if (side & RHS) D->setUsed();
-                ExprCTC ctc = decl2ctc(D);
-                member->setCTC(ctc);
-                expr->setCTC(ctc);
+                SetConstantFlags(D, member);
+                expr->setCTC(member->getCTC());
+                if (member->isConstant()) expr->setConstant();
                 return Decl2Type(D);
             }
             return QualType();
@@ -1229,7 +1253,7 @@ ScopeResult FunctionAnalyser::analyseIdentifier(IdentifierExpr* id) {
 
     if (D) {
         id->setDecl(D);
-        id->setCTC(decl2ctc(D));
+        SetConstantFlags(D, id);
     } else if (res.getPackage()) {
         // symbol is package
     } else {

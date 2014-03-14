@@ -76,10 +76,11 @@ static void expr2name(Expr* expr, StringBuilder& buffer) {
 }
 
 
-Expr::Expr(ExprKind k)
+Expr::Expr(ExprKind k, bool isConstant_)
     : Stmt(STMT_EXPR)
 {
     StmtBits.eKind = k;
+    StmtBits.ExprIsConstant = isConstant_;
     StmtBits.ExprImpCast = BuiltinType::Void;
 #ifdef EXPR_DEBUG
     creationCount++;
@@ -104,6 +105,7 @@ void Expr::print(StringBuilder& buffer, unsigned indent) const {
         buffer << ANSI_RED"<INVALID>"ANSI_NORMAL;
     }
     buffer << " ctc=" << ctc_strings[StmtBits.ExprIsCTC];
+    buffer << ", Constant=" << isConstant();
     if (getImpCast() != BuiltinType::Void) {
         buffer << ", cast=" << BuiltinType::kind2name(getImpCast());
     }
@@ -196,7 +198,7 @@ void CallExpr::print(StringBuilder& buffer, unsigned indent) const {
 
 
 InitListExpr::InitListExpr(SourceLocation left, SourceLocation right, ExprList& values_)
-    : Expr(EXPR_INITLIST)
+    : Expr(EXPR_INITLIST, false)
     , leftBrace(left)
     , rightBrace(right)
     , values(values_)
@@ -220,7 +222,7 @@ void InitListExpr::print(StringBuilder& buffer, unsigned indent) const {
 
 
 DeclExpr::DeclExpr(VarDecl* decl_)
-    : Expr(EXPR_DECL)
+    : Expr(EXPR_DECL, true)
     , decl(decl_)
 {}
 
@@ -246,7 +248,7 @@ bool DeclExpr::hasLocalQualifier() const { return decl->hasLocalQualifier(); }
 
 
 BinaryOperator::BinaryOperator(Expr* lhs_, Expr* rhs_, Opcode opc_, SourceLocation opLoc_)
-    : Expr(EXPR_BINOP)
+    : Expr(EXPR_BINOP, false)
     , opLoc(opLoc_)
     , opc(opc_)
     , lhs(lhs_)
@@ -309,7 +311,7 @@ void BinaryOperator::print(StringBuilder& buffer, unsigned indent) const {
 
 ConditionalOperator::ConditionalOperator(SourceLocation questionLoc, SourceLocation colonLoc,
                 Expr* cond_, Expr* lhs_, Expr* rhs_)
-    : Expr(EXPR_CONDOP)
+    : Expr(EXPR_CONDOP, false)
     , QuestionLoc(questionLoc)
     , ColonLoc(colonLoc)
     , cond(cond_)
@@ -333,13 +335,6 @@ void ConditionalOperator::print(StringBuilder& buffer, unsigned indent) const {
     rhs->print(buffer, indent + INDENT);
 }
 
-
-UnaryOperator::UnaryOperator(SourceLocation opLoc_, Opcode opc_, Expr* val_)
-    : Expr(EXPR_UNARYOP)
-    , opLoc(opLoc_)
-    , opc(opc_)
-    , val(val_)
-{}
 
 UnaryOperator::~UnaryOperator() {
     delete val;
@@ -387,13 +382,6 @@ void BuiltinExpr::print(StringBuilder& buffer, unsigned indent) const {
     expr->print(buffer, indent + INDENT);
 }
 
-
-ArraySubscriptExpr::ArraySubscriptExpr(SourceLocation RLoc_, Expr* Base_, Expr* Idx_)
-    : Expr(EXPR_ARRAYSUBSCRIPT)
-    , RLoc(RLoc_)
-    , base(Base_)
-    , idx(Idx_)
-{}
 
 ArraySubscriptExpr::~ArraySubscriptExpr() {
     delete base;

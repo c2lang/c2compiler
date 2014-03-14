@@ -9,7 +9,6 @@ func void test1() {
     true = false;   // @error{expression is not assignable}
     'c' = 'd';      // @error{expression is not assignable}
     3.14 = 2.14;    // @error{expression is not assignable}
-    Number = 10;    // @error{expression is not assignable}
 }
 
 
