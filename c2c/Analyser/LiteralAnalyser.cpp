@@ -234,10 +234,23 @@ APSInt LiteralAnalyser::checkBinaryLiterals(QualType TLeft, const Expr* Right) {
         // TODO
         break;
     case BO_Mul:
+        {
+            APSInt L = checkLiterals(TLeft, binop->getLHS());
+            APSInt R = checkLiterals(TLeft, binop->getRHS());
+            return L * R;
+        }
     case BO_Div:
+        {
+            APSInt L = checkLiterals(TLeft, binop->getLHS());
+            APSInt R = checkLiterals(TLeft, binop->getRHS());
+            return L / R;
+        }
     case BO_Rem:
-        // TODO
-        break;
+        {
+            APSInt L = checkLiterals(TLeft, binop->getLHS());
+            APSInt R = checkLiterals(TLeft, binop->getRHS());
+            return L % R;
+        }
     case BO_Add:
         {
             APSInt L = checkLiterals(TLeft, binop->getLHS());

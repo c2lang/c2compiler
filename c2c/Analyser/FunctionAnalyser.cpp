@@ -218,7 +218,7 @@ void FunctionAnalyser::analyseIfStmt(Stmt* stmt) {
     Expr* cond = I->getCond();
     QualType Q1 = analyseExpr(cond, RHS);
     if (Q1.isValid()) {
-        TC.checkCompatible(Type::Bool(), Q1, cond);
+        EA.check(Type::Bool(), cond);
     }
     scope.EnterScope(Scope::DeclScope);
     analyseStmt(I->getThen(), true);
@@ -235,6 +235,7 @@ void FunctionAnalyser::analyseIfStmt(Stmt* stmt) {
 void FunctionAnalyser::analyseWhileStmt(Stmt* stmt) {
     LOG_FUNC
     WhileStmt* W = cast<WhileStmt>(stmt);
+    // TODO check cast to Bool, but Stmts don't have LType!
     analyseStmt(W->getCond());
     scope.EnterScope(Scope::BreakScope | Scope::ContinueScope | Scope::DeclScope | Scope::ControlScope);
     analyseStmt(W->getBody(), true);
@@ -725,17 +726,30 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     case BO_Sub:
     case BO_Shl:
     case BO_Shr:
+        // RHS, RHS
+        TLeft = analyseExpr(Left, RHS);
+        TRight = analyseExpr(Right, RHS);
+        expr->setCTC(combineCtc(Left->getCTC(), Right->getCTC()));
+        if (Left->isConstant() && Right->isConstant()) expr->setConstant();
+        break;
     case BO_LE:
     case BO_LT:
     case BO_GE:
     case BO_GT:
     case BO_NE:
     case BO_EQ:
+        // RHS, RHS
+        TLeft = analyseExpr(Left, RHS);
+        TRight = analyseExpr(Right, RHS);
+        // NOTE: CTC is never full, because value is not interting, only type
+        if (Left->isConstant() && Right->isConstant()) expr->setConstant();
+        break;
     case BO_And:
     case BO_Xor:
     case BO_Or:
     case BO_LAnd:
     case BO_LOr:
+        // TODO check if cast of SubExpr is ok
         // RHS, RHS
         TLeft = analyseExpr(Left, RHS);
         TRight = analyseExpr(Right, RHS);
