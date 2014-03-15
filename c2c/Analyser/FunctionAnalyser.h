@@ -19,6 +19,7 @@
 #include <llvm/ADT/APSInt.h>
 
 #include "Analyser/Scope.h"
+#include "Analyser/ExprTypeAnalyser.h"
 #include "AST/Type.h"
 
 namespace clang {
@@ -109,6 +110,7 @@ private:
     Scope& scope;
     TypeChecker& TC;
     TypeContext& typeContext;
+    ExprTypeAnalyser EA;
 
     clang::DiagnosticsEngine& Diags;
     unsigned errors;

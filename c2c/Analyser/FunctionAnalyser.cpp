@@ -23,7 +23,6 @@
 #include "Analyser/FunctionAnalyser.h"
 #include "Analyser/TypeChecker.h"
 #include "Analyser/AnalyserUtils.h"
-#include "Analyser/ExprTypeAnalyser.h"
 #include "Analyser/LiteralAnalyser.h"
 #include "AST/Decl.h"
 #include "AST/Expr.h"
@@ -91,6 +90,7 @@ FunctionAnalyser::FunctionAnalyser(Scope& scope_,
     : scope(scope_)
     , TC(typeRes_)
     , typeContext(tc)
+    , EA(TC, Diags_)
     , Diags(Diags_)
     , errors(0)
     , CurrentFunction(0)
@@ -508,7 +508,6 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
                 assert(constDiagID);
                 Diags.Report(expr->getLocation(), constDiagID) << expr->getSourceRange();
             } else {
-                ExprTypeAnalyser EA(TC, Diags);
                 EA.check(expectedType, expr);
             }
         }
@@ -810,7 +809,6 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     case BO_Assign:
     {
         assert(TRight.isValid());
-        ExprTypeAnalyser EA(TC, Diags);
         EA.check(TLeft, Right);
         checkAssignment(Left, TLeft);
         Result = TLeft;
@@ -842,7 +840,6 @@ QualType FunctionAnalyser::analyseConditionalOperator(Expr* expr) {
     ConditionalOperator* condop = cast<ConditionalOperator>(expr);
     analyseExpr(condop->getCond(), RHS);
     // check if Condition can be casted to bool
-    ExprTypeAnalyser EA(TC, Diags);
     EA.check(Type::Bool(), condop->getCond());
     QualType TLeft = analyseExpr(condop->getLHS(), RHS);
     analyseExpr(condop->getRHS(), RHS);
@@ -1192,9 +1189,7 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
         QualType argType = argFunc->getType();
         if (typeGiven.isValid()) {
             assert(argType.isValid());
-            LiteralAnalyser LA(Diags);
-            LA.check(argType, argGiven);
-            TC.checkCompatible(argType, typeGiven, argGiven, TypeChecker::CONV_CONV);
+            EA.check(argType, argGiven);
         }
     }
     if (callArgs > protoArgs) {
