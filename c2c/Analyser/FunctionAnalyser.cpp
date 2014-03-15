@@ -57,7 +57,9 @@ static void SetConstantFlags(Decl* D, Expr* expr) {
         {
             VarDecl* VD = cast<VarDecl>(D);
             if (VD->getType().isConstQualified()) {
-                expr->setCTC(CTC_FULL);
+                const Expr* Init = VD->getInitValue();
+                assert(Init);
+                if (Init->getCTC() == CTC_FULL) expr->setCTC(CTC_FULL);
                 expr->setConstant();
                 return;
             }

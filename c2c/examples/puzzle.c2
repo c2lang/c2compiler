@@ -7,7 +7,7 @@ const char* ANSI_BRED   = "\033[01;31m";
 const char* ANSI_BGREEN = "\033[01;32m";
 const char* ANSI_NORMAL = "\033[0m";
 
-type Point enum uint32 {
+type Point enum int32 {
     POINT_A=0, POINT_B, POINT_C, POINT_D, POINT_E, POINT_F,
     POINT_G, POINT_H, POINT_I, POINT_J, POINT_K, POINT_L,
     POINT_M, POINT_N, POINT_O, POINT_P, POINT_Q, POINT_R,
