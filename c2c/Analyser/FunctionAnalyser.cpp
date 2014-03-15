@@ -23,7 +23,6 @@
 #include "Analyser/FunctionAnalyser.h"
 #include "Analyser/TypeChecker.h"
 #include "Analyser/AnalyserUtils.h"
-#include "Analyser/LiteralAnalyser.h"
 #include "AST/Decl.h"
 #include "AST/Expr.h"
 #include "AST/Stmt.h"
@@ -334,13 +333,11 @@ void FunctionAnalyser::analyseReturnStmt(Stmt* stmt) {
     if (value) {
         QualType type = analyseExpr(value, RHS);
         if (no_rvalue) {
-            Diags.Report(ret->getLocation(), diag::ext_return_has_expr) << CurrentFunction->getName() << 0;
-            // TODO value->getSourceRange()
+            Diags.Report(ret->getLocation(), diag::ext_return_has_expr) << CurrentFunction->getName() << 0
+                << value->getSourceRange();
         } else {
             if (type.isValid()) {
-                LiteralAnalyser LA(Diags);
-                LA.check(rtype, value);
-                //TC.checkCompatible(rtype, type, value->getLocation(), TypeChecker::CONV_CONV);
+                EA.check(rtype, value);
             }
         }
     } else {
@@ -1066,7 +1063,9 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
                             << buf << M->getSourceRange() << member->getLocation();
                         return QualType();
                     }
-                    return analyseMember(T, member, side);
+                    QualType Q = analyseMember(T, member, side);
+                    expr->setType(member->getType());
+                    // TODO setCTC/setConstant but cleanup code
                 }
                 break;
             case DECL_ENUMVALUE:
@@ -1123,10 +1122,12 @@ QualType FunctionAnalyser::analyseMember(QualType T, IdentifierExpr* member, uns
     const StructTypeDecl* S = ST->getDecl();
     Decl* match = S->find(member->getName());
     if (match) {
+        member->setDecl(match);
         // NOT very nice, structs can have VarDecls or StructTypeDecls
         if (isa<VarDecl>(match)) {
             VarDecl* V = cast<VarDecl>(match);
             if (side & RHS) V->setUsed();
+            member->setType(V->getType());
             return V->getType();
         }
         if (isa<StructTypeDecl>(match)) {

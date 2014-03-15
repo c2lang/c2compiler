@@ -1,0 +1,15 @@
+// @warnings{no-unused}
+package test;
+
+func char test1() { return 100; }
+
+char c = 10;
+func char test2() { return c; }
+
+func char test3() { return 150; }   // @error{constant value 150 out-of-bounds for type 'int8', range [-128, 127]}
+
+func char test4() {
+    int a = 1;
+    return a;   // @warning{implicit conversion loses integer precision: 'int32' to 'int8'}
+}
+
