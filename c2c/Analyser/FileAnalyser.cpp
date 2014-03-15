@@ -276,8 +276,13 @@ unsigned FileAnalyser::checkTypeDecl(TypeDecl* D) {
         // dont check struct members yet
         break;
     case DECL_ENUMTYPE:
-        // nothing to do
+    {
+        EnumTypeDecl* E = cast<EnumTypeDecl>(D);
+        if (E->numConstants() == 0) {
+            Diags.Report(D->getLocation(), diag::error_empty_enum) << D->getName();
+        }
         break;
+    }
     case DECL_FUNCTIONTYPE:
         // dont check return/argument types yet
         break;
