@@ -95,20 +95,15 @@ void ExprTypeAnalyser::checkBinOp(QualType TLeft, const BinaryOperator* binop) {
     switch (binop->getOpcode()) {
     case BO_PtrMemD:
     case BO_PtrMemI:
+        assert(0 && "TODO");
+        break;
     case BO_Mul:
     case BO_Div:
     case BO_Rem:
-        assert(0 && "TODO");
-        break;
     case BO_Add:
     case BO_Sub:
-        check(TLeft, binop->getLHS());
-        check(TLeft, binop->getRHS());
-        break;
     case BO_Shl:
     case BO_Shr:
-        assert(0 && "TODO");
-        break;
     case BO_LE:
     case BO_LT:
     case BO_GE:
@@ -120,8 +115,8 @@ void ExprTypeAnalyser::checkBinOp(QualType TLeft, const BinaryOperator* binop) {
     case BO_Or:
     case BO_LAnd:
     case BO_LOr:
-        // Type always bool?
-        assert(0 && "TODO");
+        check(TLeft, binop->getLHS());
+        check(TLeft, binop->getRHS());
         break;
     case BO_Assign:
     case BO_MulAssign:
