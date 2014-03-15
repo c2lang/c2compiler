@@ -259,14 +259,14 @@ bool TypeChecker::checkDecls(Decls& decls, const Decl* D) const {
     return true;
 }
 
-bool TypeChecker::checkCompatible(QualType left, QualType right, const Expr* expr, ConvType conv) const {
+bool TypeChecker::checkCompatible(QualType left, QualType right, const Expr* expr) const {
     assert(left.isValid());
     const Type* canon = left.getTypePtr()->getCanonicalType();
     switch (canon->getTypeClass()) {
     case TC_BUILTIN:
-        return checkBuiltin(left, right, expr, conv);
+        return checkBuiltin(left, right, expr);
     case TC_POINTER:
-        return checkPointer(left, right, expr, conv);
+        return checkPointer(left, right, expr);
     case TC_ARRAY:
         break;
     case TC_UNRESOLVED:
@@ -297,7 +297,7 @@ QualType TypeChecker::UsualUnaryConversions(Expr* expr) const {
     return expr->getType();
 }
 
-bool TypeChecker::checkBuiltin(QualType left, QualType right, const Expr* expr, ConvType conv) const {
+bool TypeChecker::checkBuiltin(QualType left, QualType right, const Expr* expr) const {
     if (right->isBuiltinType()) {
         // NOTE: canonical is builtin, var itself my be UnresolvedType etc
         const BuiltinType* Right = cast<BuiltinType>(right->getCanonicalType());
@@ -346,7 +346,7 @@ bool TypeChecker::checkBuiltin(QualType left, QualType right, const Expr* expr, 
     return false;
 }
 
-bool TypeChecker::checkPointer(QualType left, QualType right, const Expr* expr, ConvType conv) const {
+bool TypeChecker::checkPointer(QualType left, QualType right, const Expr* expr) const {
     if (right->isPointerType()) {
 #warning "TODO dereference types (can be Alias etc) and check those"
         return true;

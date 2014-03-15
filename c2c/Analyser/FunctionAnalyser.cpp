@@ -218,7 +218,7 @@ void FunctionAnalyser::analyseIfStmt(Stmt* stmt) {
     Expr* cond = I->getCond();
     QualType Q1 = analyseExpr(cond, RHS);
     if (Q1.isValid()) {
-        TC.checkCompatible(Type::Bool(), Q1, cond, TypeChecker::CONV_CONV);
+        TC.checkCompatible(Type::Bool(), Q1, cond);
     }
     scope.EnterScope(Scope::DeclScope);
     analyseStmt(I->getThen(), true);

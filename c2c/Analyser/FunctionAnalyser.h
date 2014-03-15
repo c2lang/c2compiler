@@ -113,11 +113,10 @@ private:
     ExprTypeAnalyser EA;
 
     clang::DiagnosticsEngine& Diags;
-    unsigned errors;
 
+    unsigned errors;
     FunctionDecl* CurrentFunction;
     VarDecl* CurrentVarDecl;
-
     unsigned constDiagID;
     bool inConstExpr;
 

@@ -35,7 +35,7 @@ void ExprTypeAnalyser::check(QualType TLeft, const Expr* expr) {
     {
         // TODO only do findType if doing actual Implicit Cast
         QualType Q = TypeFinder::findType(expr);
-        TC.checkCompatible(TLeft, Q, expr, TypeChecker::CONV_INIT);
+        TC.checkCompatible(TLeft, Q, expr);
         return;
     }
     case CTC_PARTIAL:
