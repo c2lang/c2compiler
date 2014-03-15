@@ -56,10 +56,10 @@ static void SetConstantFlags(Decl* D, Expr* expr) {
     case DECL_VAR:
         {
             VarDecl* VD = cast<VarDecl>(D);
-            if (VD->getType().isConstQualified()) {
-                const Expr* Init = VD->getInitValue();
-                assert(Init);
-                if (Init->getCTC() == CTC_FULL) expr->setCTC(CTC_FULL);
+            QualType T = VD->getType();
+            if (T.isConstQualified()) {
+                // NOTE: const char* etc should not be checked for value
+                if (!T.isPointerType()) expr->setCTC(CTC_FULL);
                 expr->setConstant();
                 return;
             }
@@ -1065,7 +1065,8 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
                             << buf << M->getSourceRange() << member->getLocation();
                         return QualType();
                     }
-                    QualType Q = analyseMember(T, member, side);
+                    // TODO use return value?
+                    analyseMember(T, member, side);
                     expr->setType(member->getType());
                     // TODO setCTC/setConstant but cleanup code
                 }
