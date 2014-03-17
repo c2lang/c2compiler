@@ -796,8 +796,10 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     case BO_Sub:
         // TODO return largest witdth of left/right (long*short -> long)
         // TODO apply UsualArithmeticConversions() to L + R
-        // TEMP for now just return int32
-        Result = Type::Int32();
+        // TEMP for now just return Right side
+        // TEMP use UnaryConversion
+        Result = TC.UsualUnaryConversions(Left);
+        TC.UsualUnaryConversions(Right);
         break;
     case BO_Shl:
     case BO_Shr:
