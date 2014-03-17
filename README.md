@@ -58,6 +58,8 @@ cd clang
 git checkout -b c2master_33 origin/c2master_33
 cd ../../..
 mkdir llvm_build
+export CC=gcc (optional)
+export CXX=g++ (optional)
 ../llvm/configure --enable-optimized --prefix=$HOME/llvm-c2/
 make -j4
 make install
