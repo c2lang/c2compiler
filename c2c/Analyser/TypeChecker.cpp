@@ -311,8 +311,12 @@ bool TypeChecker::checkBuiltin(QualType left, QualType right, const Expr* expr, 
         int errorMsg = 0;
 
         if (first && rule == 1) {
-            // check if implicit cast can be guaranteed
-            return checkBuiltin(left, TypeFinder::findType(expr), expr, false);
+            // add Implicit Cast
+            // TEMP const cast
+            Expr* E = const_cast<Expr*>(expr);
+            E->setImpCast(Left->getKind());
+            QualType Q = TypeFinder::findType(expr);
+            return checkBuiltin(left, Q, expr, false);
         }
 
         switch (rule) {
