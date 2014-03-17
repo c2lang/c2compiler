@@ -2,7 +2,7 @@ package test;
 
 use stdio as io;
 
-func void main(int a) {
+public func int main(int a) {
 //func void main() {
 //    int a = 10;
     if (a) {
@@ -10,6 +10,7 @@ func void main(int a) {
     } else {
         io.puts("goodbye\n");
     }
+    return 0;
 }
 
 
