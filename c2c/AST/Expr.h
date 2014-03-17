@@ -187,6 +187,8 @@ public:
     virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return loc; }
 
+    unsigned getValue() const { return value; }
+private:
     // TODO use StmtBits (need to use union then)
     unsigned value;
     clang::SourceLocation loc;

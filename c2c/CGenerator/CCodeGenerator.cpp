@@ -142,7 +142,7 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
     case EXPR_CHAR_LITERAL:
         {
             CharacterLiteral* C = cast<CharacterLiteral>(E);
-            output << '\'' << (char)C->value << '\'';
+            output << '\'' << (char)C->getValue() << '\'';
             return;
         }
     case EXPR_STRING_LITERAL:

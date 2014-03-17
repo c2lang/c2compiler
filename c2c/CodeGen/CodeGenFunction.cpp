@@ -431,8 +431,10 @@ llvm::Value* CodeGenFunction::EmitExpr(const Expr* E) {
             return llvm::ConstantInt::get(llvm::Type::getInt1Ty(context), B->getValue(), true);
         }
     case EXPR_CHAR_LITERAL:
-        assert(0 && "TODO");
-        break;
+        {
+            const CharacterLiteral* C = cast<CharacterLiteral>(E);
+            return llvm::ConstantInt::get(CGM.ConvertType(E->getType()), C->getValue());
+        }
     case EXPR_STRING_LITERAL:
         {
             const StringLiteral* S = cast<StringLiteral>(E);
