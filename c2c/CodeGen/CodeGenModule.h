@@ -20,6 +20,7 @@
 #include <vector>
 
 #include <llvm/IR/IRBuilder.h>
+#include "AST/Type.h"
 
 namespace llvm {
 class Module;
@@ -51,6 +52,7 @@ public:
     void write(const std::string& target, const std::string& name);
     void dump();
 
+    llvm::Type* ConvertType(BuiltinType::Kind K);
     llvm::Type* ConvertType(const C2::Type* type);
     llvm::Function* createExternal(const Package* P, const std::string& name);
 

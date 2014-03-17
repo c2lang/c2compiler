@@ -57,6 +57,7 @@ private:
     void EmitIfStmt(const IfStmt* S);
 
     llvm::Value* EmitExpr(const Expr* E);
+    llvm::Value* EmitExprNoImpCast(const Expr* E);
     llvm::Value* EmitCallExpr(const CallExpr* E);
     llvm::Value* EmitIdentifierExpr(const IdentifierExpr* E);
     void EmitVarDecl(const VarDecl* D);

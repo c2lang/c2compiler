@@ -410,6 +410,18 @@ void CodeGenFunction::EmitBranchOnBoolExpr(const Expr *Cond,
 
 llvm::Value* CodeGenFunction::EmitExpr(const Expr* E) {
     LOG_FUNC
+    llvm::Value* V = EmitExprNoImpCast(E);
+    if (E->hasImpCast()) {
+        // TODO correct InputSigned
+        bool InputSigned = true;
+        V = Builder.CreateIntCast(V, CGM.ConvertType(E->getImpCast()), InputSigned, "conv");
+    }
+    return V;
+}
+
+llvm::Value* CodeGenFunction::EmitExprNoImpCast(const Expr* E) {
+    LOG_FUNC
+
     switch (E->getKind()) {
     case EXPR_INTEGER_LITERAL:
         {
@@ -595,9 +607,9 @@ void CodeGenFunction::EmitVarDecl(const VarDecl* D) {
     llvm::AllocaInst *inst = CreateTempAlloca(CGM.ConvertType(qt.getTypePtr()), (const char*)name);
     D->setIRValue(inst);
 
-    // TODO smart alignment
-    //assert(isa<BuiltinType>(qt.getTypePtr()));
-    //inst->setAlignment(cast<BuiltinType>(qt.getTypePtr())->getWidth());
+    // set alignment
+    assert(isa<BuiltinType>(qt.getTypePtr()));
+    inst->setAlignment(cast<BuiltinType>(qt.getTypePtr())->getAlignment());
 
     const Expr* I = D->getInitValue();
     // NOTE: for function params, we do this during Body generation

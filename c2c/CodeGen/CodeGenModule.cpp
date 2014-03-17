@@ -36,7 +36,6 @@
 #include "CodeGen/CodeGenFunction.h"
 #include "AST/Package.h"
 #include "AST/AST.h"
-#include "AST/Type.h"
 #include "AST/Decl.h"
 #include "AST/Expr.h"
 #include "Utils/StringBuilder.h"
@@ -221,26 +220,29 @@ void CodeGenModule::EmitTopLevelDecl(Decl* D) {
     }
 }
 
+llvm::Type* CodeGenModule::ConvertType(BuiltinType::Kind K) {
+    switch (K) {
+    // TODO make types signed or not
+    case BuiltinType::Int8:      return builder.getInt8Ty();
+    case BuiltinType::Int16:     return builder.getInt16Ty();
+    case BuiltinType::Int32:     return builder.getInt32Ty();
+    case BuiltinType::Int64:     return builder.getInt64Ty();
+    case BuiltinType::UInt8:     return builder.getInt8Ty();
+    case BuiltinType::UInt16:    return builder.getInt16Ty();
+    case BuiltinType::UInt32:    return builder.getInt32Ty();
+    case BuiltinType::UInt64:    return builder.getInt64Ty();
+    case BuiltinType::Float32:   return builder.getFloatTy();
+    case BuiltinType::Float64:   return builder.getFloatTy(); // TODO make double
+    case BuiltinType::Bool:      return builder.getInt1Ty();
+    case BuiltinType::Void:      return builder.getVoidTy();
+    }
+    return 0;   // satisfy compiler
+}
+
 llvm::Type* CodeGenModule::ConvertType(const C2::Type* type) {
     switch (type->getTypeClass()) {
     case TC_BUILTIN:
-        {
-            switch (cast<BuiltinType>(type)->getKind()) {
-            // TODO make types signed or not
-            case BuiltinType::Int8:      return builder.getInt8Ty();
-            case BuiltinType::Int16:     return builder.getInt16Ty();
-            case BuiltinType::Int32:     return builder.getInt32Ty();
-            case BuiltinType::Int64:     return builder.getInt64Ty();
-            case BuiltinType::UInt8:     return builder.getInt8Ty();
-            case BuiltinType::UInt16:    return builder.getInt16Ty();
-            case BuiltinType::UInt32:    return builder.getInt32Ty();
-            case BuiltinType::UInt64:    return builder.getInt64Ty();
-            case BuiltinType::Float32:   return builder.getFloatTy();
-            case BuiltinType::Float64:   return builder.getFloatTy(); // TODO make double
-            case BuiltinType::Bool:      return builder.getInt1Ty();
-            case BuiltinType::Void:      return builder.getVoidTy();
-            }
-        }
+        return ConvertType(cast<BuiltinType>(type)->getKind());
     case TC_POINTER:
         {
             llvm::Type* tt = ConvertType(cast<PointerType>(type)->getPointeeType().getTypePtr());

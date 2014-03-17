@@ -190,6 +190,23 @@ public:
     Kind getKind() const { return kind; }
     unsigned getWidth() const;
     unsigned getIntegerWidth() const;
+    unsigned getAlignment() const {
+        switch (kind) {
+            case Int8:      return 1;
+            case Int16:     return 2;
+            case Int32:     return 4;
+            case Int64:     return 8;
+            case UInt8:     return 1;
+            case UInt16:    return 2;
+            case UInt32:    return 4;
+            case UInt64:    return 8;
+            case Float32:   return 4;
+            case Float64:   return 8;
+            case Bool:      return 1;
+            case Void:      return 0;
+        }
+        return 0;       // to satisfy compiler
+    }
     static const char* kind2name(Kind k);
     const char* getName() const;
     const char* getCName() const;
