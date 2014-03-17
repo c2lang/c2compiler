@@ -147,7 +147,13 @@ APSInt LiteralAnalyser::checkLiterals(QualType TLeft, const Expr* Right) {
         return checkIntegerLiterals(TLeft, Right);
     case EXPR_FLOAT_LITERAL:
     case EXPR_BOOL_LITERAL:
+        break;
     case EXPR_CHAR_LITERAL:
+        {
+            const CharacterLiteral* C = cast<CharacterLiteral>(Right);
+            result = APInt(64, C->getValue(), true);
+            break;
+        }
     case EXPR_STRING_LITERAL:
         break;
     case EXPR_NIL:
@@ -168,7 +174,7 @@ APSInt LiteralAnalyser::checkLiterals(QualType TLeft, const Expr* Right) {
         return checkUnaryLiterals(TLeft, Right);
     case EXPR_BUILTIN:
         // TODO return correct value, for now always return 4 for sizeof() and elemsof()
-        result  = APInt(64, 4, true);
+        result = APInt(64, 4, true);
         break;
     case EXPR_ARRAYSUBSCRIPT:
         assert(0 && "TODO");
