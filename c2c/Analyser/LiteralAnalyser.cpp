@@ -95,6 +95,10 @@ void LiteralAnalyser::check(QualType TLeft, const Expr* Right) {
             // TODO floats
             return;
         }
+        if (QT == Type::Bool()) {
+            // NOTE: any integer to bool is ok
+            return;
+        }
         availableWidth = TL->getIntegerWidth();
         //isSigned = TL->isSignedInteger();
     } else if (QT.isPointerType()) {
