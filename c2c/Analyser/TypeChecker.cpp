@@ -23,6 +23,7 @@
 
 #include "Analyser/Scope.h"
 #include "Analyser/TypeChecker.h"
+#include "Analyser/TypeFinder.h"
 #include "AST/Package.h"
 #include "AST/Decl.h"
 #include "AST/Expr.h"
@@ -259,12 +260,14 @@ bool TypeChecker::checkDecls(Decls& decls, const Decl* D) const {
     return true;
 }
 
-bool TypeChecker::checkCompatible(QualType left, QualType right, const Expr* expr) const {
+bool TypeChecker::checkCompatible(QualType left, const Expr* expr) const {
+    QualType right = expr->getType();
+    //right = TypeFinder::findType(expr);
     assert(left.isValid());
     const Type* canon = left.getTypePtr()->getCanonicalType();
     switch (canon->getTypeClass()) {
     case TC_BUILTIN:
-        return checkBuiltin(left, right, expr);
+        return checkBuiltin(left, right, expr, true);
     case TC_POINTER:
         return checkPointer(left, right, expr);
     case TC_ARRAY:
@@ -297,7 +300,7 @@ QualType TypeChecker::UsualUnaryConversions(Expr* expr) const {
     return expr->getType();
 }
 
-bool TypeChecker::checkBuiltin(QualType left, QualType right, const Expr* expr) const {
+bool TypeChecker::checkBuiltin(QualType left, QualType right, const Expr* expr, bool first) const {
     if (right->isBuiltinType()) {
         // NOTE: canonical is builtin, var itself my be UnresolvedType etc
         const BuiltinType* Right = cast<BuiltinType>(right->getCanonicalType());
@@ -306,6 +309,12 @@ bool TypeChecker::checkBuiltin(QualType left, QualType right, const Expr* expr) 
         // 0 = ok, 1 = loss of precision, 2 sign-conversion, 3=float->integer, 4 incompatible, 5 loss of FP prec.
         // TODO use matrix with allowed conversions: 3 options: ok, error, warn
         int errorMsg = 0;
+
+        if (first && rule == 1) {
+            // check if implicit cast can be guaranteed
+            return checkBuiltin(left, TypeFinder::findType(expr), expr, false);
+        }
+
         switch (rule) {
         case 0:
             return true;

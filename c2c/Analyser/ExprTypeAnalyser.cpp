@@ -15,7 +15,6 @@
 
 #include "Analyser/ExprTypeAnalyser.h"
 #include "Analyser/LiteralAnalyser.h"
-#include "Analyser/TypeFinder.h"
 #include "Analyser/TypeChecker.h"
 #include "AST/Expr.h"
 
@@ -32,12 +31,8 @@ ExprTypeAnalyser::ExprTypeAnalyser(TypeChecker& TC_, DiagnosticsEngine& Diags_)
 void ExprTypeAnalyser::check(QualType TLeft, const Expr* expr) {
     switch (expr->getCTC()) {
     case CTC_NONE:
-    {
-        // TODO only do findType if doing actual Implicit Cast
-        QualType Q = TypeFinder::findType(expr);
-        TC.checkCompatible(TLeft, Q, expr);
+        TC.checkCompatible(TLeft, expr);
         return;
-    }
     case CTC_PARTIAL:
         break;
     case CTC_FULL:

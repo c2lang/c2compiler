@@ -40,14 +40,14 @@ public:
     QualType resolveCanonicals(const Decl* D, QualType Q, bool set) const;
 
     // checking
-    bool checkCompatible(QualType left, QualType right, const Expr* expr) const;
+    bool checkCompatible(QualType left, const Expr* expr) const;
 
     // conversions
     QualType UsualUnaryConversions(Expr* expr) const;
 private:
     unsigned checkUnresolvedType(const UnresolvedType* type, bool used_public);
 
-    bool checkBuiltin(QualType left, QualType right, const Expr* expr) const;
+    bool checkBuiltin(QualType left, QualType right, const Expr* expr, bool first) const;
     bool checkPointer(QualType left, QualType right, const Expr* expr) const;
 
     typedef std::vector<const Decl*> Decls;
