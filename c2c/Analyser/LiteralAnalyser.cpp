@@ -97,10 +97,14 @@ void LiteralAnalyser::check(QualType TLeft, const Expr* Right) {
             // TODO floats
             return;
         }
+        // TODO remove const cast
+        Expr* EE = const_cast<Expr*>(Right);
+        EE->setImpCast(TL->getKind());
         if (QT == Type::Bool()) {
             // NOTE: any integer to bool is ok
             return;
         }
+
         availableWidth = TL->getIntegerWidth();
         //isSigned = TL->isSignedInteger();
     } else if (QT.isPointerType()) {
