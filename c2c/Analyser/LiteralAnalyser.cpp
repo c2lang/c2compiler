@@ -86,6 +86,8 @@ void LiteralAnalyser::check(QualType TLeft, const Expr* Right) {
     // TODO assert here instead of check?
 
     const QualType QT = TLeft->getCanonicalType();
+    // TODO check if type is already ok?, then skip check?
+    //if (QT == Right->getType()->getCanonicalType()) return;
     int availableWidth = 0;
     //bool isSigned = false;
     QualType wanted = TLeft;

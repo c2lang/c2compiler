@@ -403,6 +403,7 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
         return analyseIntegerLiteral(expr);
     case EXPR_FLOAT_LITERAL:
         // For now always return type float
+        expr->setType(Type::Float32());
         return Type::Float32();
     case EXPR_BOOL_LITERAL:
         expr->setType(Type::Bool());
@@ -909,8 +910,7 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
         unaryop->setCTC(SubExpr->getCTC());
         if (SubExpr->isConstant()) unaryop->setConstant();
         if (LType.isNull()) return 0;
-        // TODO use return type
-        TC.UsualUnaryConversions(SubExpr);
+        expr->setType(TC.UsualUnaryConversions(SubExpr));
         break;
     case UO_LNot:
         // TODO first cast expr to bool, then invert here, return type bool
