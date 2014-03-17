@@ -310,13 +310,17 @@ bool TypeChecker::checkBuiltin(QualType left, QualType right, const Expr* expr, 
         // TODO use matrix with allowed conversions: 3 options: ok, error, warn
         int errorMsg = 0;
 
-        if (first && rule == 1) {
-            // add Implicit Cast
-            // TEMP const cast
-            Expr* E = const_cast<Expr*>(expr);
-            E->setImpCast(Left->getKind());
-            QualType Q = TypeFinder::findType(expr);
-            return checkBuiltin(left, Q, expr, false);
+        if (first) {
+            if (Right->getKind() != Left->getKind()) {
+                // add Implicit Cast
+                // TODO remove const cast
+                Expr* E = const_cast<Expr*>(expr);
+                E->setImpCast(Left->getKind());
+            }
+            if (rule == 1) {
+                QualType Q = TypeFinder::findType(expr);
+                return checkBuiltin(left, Q, expr, false);
+            }
         }
 
         switch (rule) {
