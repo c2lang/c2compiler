@@ -574,6 +574,10 @@ llvm::Value* CodeGenFunction::EmitIdentifierExpr(const IdentifierExpr* E) {
         VarDecl* VD = cast<VarDecl>(D);
         llvm::BasicBlock *CurBB = Builder.GetInsertBlock();
         assert(CurBB);
+        // for RHS:
+        //assert(VD->getIRValue());
+        //return VD->getIRValue();
+        // for LHS:
         return new LoadInst(VD->getIRValue(), "", false, CurBB);
     }
     case DECL_ENUMVALUE:
@@ -631,15 +635,24 @@ llvm::Value* CodeGenFunction::EmitBinaryOperator(const BinaryOperator* B) {
     // TEMP only handle Integer values for now
 
     switch (B->getOpcode()) {
+    case BO_PtrMemD:
+    case BO_PtrMemI:
+        break;
     case BO_Mul:
         return Builder.CreateMul(L, R, "mul");
         //return Builder.CreateFMul(L, R, "multmp");
+    case BO_Div:
+    case BO_Rem:
+        break;
     case BO_Add:
         return Builder.CreateAdd(L, R, "add");
         //return Builder.CreateFAdd(L, R, "addtmp");    // for Floating point
     case BO_Sub:
         return Builder.CreateSub(L, R, "sub");
         //return Builder.CreateFSub(L, R, "subtmp");    // for Floating point
+    case BO_Shl:
+    case BO_Shr:
+        break;
     case BO_LT:
         return Builder.CreateICmpULT(L, R, "cmp");;
         //L = Builder.CreateFCmpULT(L, R, "cmptmp");
@@ -657,10 +670,32 @@ llvm::Value* CodeGenFunction::EmitBinaryOperator(const BinaryOperator* B) {
         return Builder.CreateICmpEQ(L, R, "eq");;
     case BO_NE:
         return Builder.CreateICmpNE(L, R, "neq");;
-    default:
-        assert(0 && "TODO");
+    case BO_And:
+    case BO_Xor:
+    case BO_Or:
+    case BO_LAnd:
+    case BO_LOr:
+        break;
+    case BO_Assign:
+    {
+        // TODO correct volatileQualified
+        return Builder.CreateStore(R, L, false);
+        //return Builder.CreateStore(R, L, qt.isVolatileQualified());
+    }
+    case BO_MulAssign:
+    case BO_DivAssign:
+    case BO_RemAssign:
+    case BO_AddAssign:
+    case BO_SubAssign:
+    case BO_ShlAssign:
+    case BO_ShrAssign:
+    case BO_AndAssign:
+    case BO_XorAssign:
+    case BO_OrAssign:
+    case BO_Comma:
         break;
     }
+    assert(0 && "TODO");
     return 0;
 }
 
