@@ -192,7 +192,10 @@ void FunctionAnalyser::analyseStmt(Stmt* S, bool haveScope) {
         analyseContinueStmt(S);
         break;
     case STMT_LABEL:
+        analyseLabelStmt(S);
+        break;
     case STMT_GOTO:
+        // TODO
         break;
     case STMT_COMPOUND:
         if (!haveScope) scope.EnterScope(Scope::DeclScope);
@@ -306,6 +309,13 @@ void FunctionAnalyser::analyseContinueStmt(Stmt* stmt) {
         ContinueStmt* C = cast<ContinueStmt>(stmt);
         Diags.Report(C->getLocation(), diag::err_continue_not_in_loop);
     }
+}
+
+void FunctionAnalyser::analyseLabelStmt(Stmt* S) {
+    LOG_FUNC
+    LabelStmt* L = cast<LabelStmt>(S);
+    // TODO check label itself
+    analyseStmt(L->getSubStmt());
 }
 
 void FunctionAnalyser::analyseCaseStmt(Stmt* stmt) {

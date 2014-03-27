@@ -59,6 +59,7 @@ private:
     void analyseSwitchStmt(Stmt* stmt);
     void analyseBreakStmt(Stmt* S);
     void analyseContinueStmt(Stmt* S);
+    void analyseLabelStmt(Stmt* S);
     void analyseCaseStmt(Stmt* stmt);
     void analyseDefaultStmt(Stmt* stmt);
     void analyseReturnStmt(Stmt* stmt);
