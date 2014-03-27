@@ -41,14 +41,14 @@ FileAnalyser::FileAnalyser(const Pkgs& pkgs, clang::DiagnosticsEngine& Diags_,
                     AST& ast_, TypeContext& typeContext_, bool verbose_)
     : ast(ast_)
     , globals(new Scope(ast_.getPkgName(), pkgs, Diags_, ast.getFileID()))
-    , typeResolver(new TypeChecker(*globals, Diags_, typeContext_))
+    , TC(new TypeChecker(*globals, Diags_, typeContext_))
     , Diags(Diags_)
-    , functionAnalyser(*globals, *typeResolver, typeContext_, Diags_)
+    , functionAnalyser(*globals, *TC, typeContext_, Diags_)
     , verbose(verbose_)
 {}
 
 FileAnalyser::~FileAnalyser() {
-    delete typeResolver;
+    delete TC;
     delete globals;
 }
 
@@ -78,7 +78,7 @@ unsigned FileAnalyser::resolveTypeCanonicals() {
     for (unsigned i=0; i<ast.numTypes(); i++) {
         const TypeDecl* D = ast.getType(i);
         // check generic type
-        typeResolver->resolveCanonicals(D, D->getType(), true);
+        TC->resolveCanonicals(D, D->getType(), true);
 
         // NOTE dont check any subclass specific things yet
 
@@ -260,7 +260,7 @@ unsigned FileAnalyser::checkTypeDecl(TypeDecl* D) {
     LOG_FUNC
     // check generic type
     unsigned errors = 0;
-    errors += typeResolver->checkType(D->getType(), D->isPublic());
+    errors += TC->checkType(D->getType(), D->isPublic());
 
     // check extra stuff depending on subclass
     switch (D->getKind()) {
@@ -316,9 +316,9 @@ unsigned FileAnalyser::resolveVarDecl(VarDecl* D) {
     QualType Q = D->getType();
     if (Q->hasCanonicalType()) return 0;
 
-    unsigned errors = typeResolver->checkType(Q, D->isPublic());
+    unsigned errors = TC->checkType(Q, D->isPublic());
     if (!errors) {
-        typeResolver->resolveCanonicals(D, Q, true);
+        TC->resolveCanonicals(D, Q, true);
         // TODO same as FunctionAnalyser code!
         ArrayType* AT = dyncast<ArrayType>(Q.getTypePtr());
         if (AT && AT->getSize()) {
@@ -337,9 +337,9 @@ unsigned FileAnalyser::resolveFunctionDecl(FunctionDecl* D) {
     // return type
     QualType RT = D->getReturnType();
     if (!RT->hasCanonicalType()) {
-        unsigned errs = typeResolver->checkType(RT, D->isPublic());
+        unsigned errs = TC->checkType(RT, D->isPublic());
         errors += errs;
-        if (!errs) typeResolver->resolveCanonicals(D, RT, true);
+        if (!errs) TC->resolveCanonicals(D, RT, true);
     }
 
     // args
