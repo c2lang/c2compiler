@@ -53,7 +53,7 @@ clean:
 	@echo building $@
 	@$(CXX) -c $(CPPFLAGS) -o $@ $< -I .
 #line below is needed for Ubuntu 13.04 32 bit
-	#@$(CXX) -c $(CPPFLAGS) -I /usr/include/i386-linux-gnu/c++/4.8/ -o $@ $< -I .
+#@$(CXX) -c $(CPPFLAGS) -I /usr/include/i386-linux-gnu/c++/4.8/ -o $@ $< -I .
 
 c2c: $(OBJS)
 	@echo linking $@
