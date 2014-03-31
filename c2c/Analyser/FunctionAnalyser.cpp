@@ -145,7 +145,9 @@ unsigned FunctionAnalyser::checkArrayExpr(Expr* E) {
         T.DiagName(buf);
         Diags.Report(E->getLocation(), diag::err_array_size_non_int) << buf << E->getSourceRange();
         errors++;
+        return errors;
     }
+    // TODO check if negative using LiteralAnalyser
 
     return errors;
 }
