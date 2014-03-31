@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+package test;
+
+const char* size1 = 10;
+int[size1] a;      // @error{size of array has non-integer type 'int8*'}
+
+const bool b = true;
+int[b] c;      // @error{size of array has non-integer type 'bool'}
+

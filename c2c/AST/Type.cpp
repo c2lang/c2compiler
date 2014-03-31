@@ -273,7 +273,7 @@ bool BuiltinType::isInteger() const {
         case UInt64:    return true;
         case Float32:   return false;
         case Float64:   return false;
-        case Bool:      return true;
+        case Bool:      return false;
         case Void:      return false;
     }
     return false;       // to satisfy compiler

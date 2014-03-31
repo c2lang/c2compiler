@@ -454,7 +454,7 @@ C2::ExprResult C2Sema::ActOnCallExpr(Expr* Fn, Expr** args, unsigned numArgs, So
     //expr2loc(Fn).dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    CallExpr* call = new CallExpr(Fn);
+    CallExpr* call = new CallExpr(Fn, RParenLoc);
     assert(call);
     for (unsigned i=0; i<numArgs; i++) call->addArg(args[i]);
     return ExprResult(call);

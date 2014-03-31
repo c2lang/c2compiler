@@ -133,8 +133,17 @@ unsigned FunctionAnalyser::checkArrayExpr(Expr* E) {
 
     ConstModeSetter cms(*this, diag::err_init_element_not_constant);
     QualType T = analyseExpr(E, RHS);
-    if (T.isValid() && !E->isConstant()) {
+    if (!T.isValid()) return errors;
+
+    if (!E->isConstant()) {
         Diags.Report(E->getLocation(), diag::err_vla_decl_in_file_scope) << E->getSourceRange();
+        errors++;
+        return errors;
+    }
+    if (!T.isBuiltinType() || !cast<BuiltinType>(T)->isInteger()) {
+        StringBuilder buf;
+        T.DiagName(buf);
+        Diags.Report(E->getLocation(), diag::err_array_size_non_int) << buf << E->getSourceRange();
         errors++;
     }
 

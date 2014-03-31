@@ -271,8 +271,9 @@ public:
 
 class CallExpr : public Expr {
 public:
-    CallExpr(Expr* Fn_)
+    CallExpr(Expr* Fn_, SourceLocation r)
         : Expr(EXPR_CALL, false)
+        , R(r)
         , Fn(Fn_)
     {}
     virtual ~CallExpr();
@@ -281,6 +282,12 @@ public:
     }
     virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return Fn->getLocation(); }
+    virtual SourceLocation getLocStart() const {
+        return Fn->getLocStart();
+    }
+    virtual SourceLocation getLocEnd() const {
+        return R;
+    }
 
     void addArg(Expr* arg);
 
@@ -288,7 +295,7 @@ public:
     Expr* getArg(unsigned i) const { return args[i]; }
     unsigned numArgs() const { return args.size(); }
 private:
-    // TODO add R/LParen
+    SourceLocation R;
     Expr* Fn;
     typedef OwningVector<Expr> Args;
     Args args;
