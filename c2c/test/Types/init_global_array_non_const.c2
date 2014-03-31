@@ -1,0 +1,12 @@
+// @warnings{no-unused}
+package test;
+
+const int constant = 1;
+int[constant] a;
+
+int non_constant = 10;
+int[non_constant] b;        // @error{variable length array declaration not allowed at file scope}
+
+func int foo() { return 10; }
+int[foo()] c;            // @error{variable length array declaration not allowed at file scope}
+

@@ -47,6 +47,7 @@ public:
 
     unsigned check(FunctionDecl* F);
     unsigned checkVarInit(VarDecl* V);
+    unsigned checkArrayExpr(Expr* E);
 private:
     void checkFunction(FunctionDecl* F);
 

@@ -321,9 +321,9 @@ unsigned FileAnalyser::resolveVarDecl(VarDecl* D) {
         TC->resolveCanonicals(D, Q, true);
         // TODO same as FunctionAnalyser code!
         ArrayType* AT = dyncast<ArrayType>(Q.getTypePtr());
-        if (AT && AT->getSize()) {
-            // TODO need analyseExpr(AT->getSize(), RHS);
-            // TODO check type of size expr
+        Expr* sizeExpr = AT->getSize();
+        if (AT && sizeExpr) {
+            functionAnalyser.checkArrayExpr(sizeExpr);
         }
 
         // NOTE: dont check initValue here (doesn't have canonical type yet)

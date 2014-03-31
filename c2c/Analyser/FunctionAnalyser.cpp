@@ -126,6 +126,21 @@ unsigned FunctionAnalyser::checkVarInit(VarDecl* V) {
     return errors;
 }
 
+unsigned FunctionAnalyser::checkArrayExpr(Expr* E) {
+    LOG_FUNC
+
+    errors = 0;
+
+    ConstModeSetter cms(*this, diag::err_init_element_not_constant);
+    QualType T = analyseExpr(E, RHS);
+    if (T.isValid() && !E->isConstant()) {
+        Diags.Report(E->getLocation(), diag::err_vla_decl_in_file_scope) << E->getSourceRange();
+        errors++;
+    }
+
+    return errors;
+}
+
 void FunctionAnalyser::checkFunction(FunctionDecl* func) {
     LOG_FUNC
     // add arguments to new scope

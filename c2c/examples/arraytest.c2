@@ -28,8 +28,6 @@ const int const_a = 10;
 int a = 20;
 func int myfunc(int val) { return 2 * val; }
 int[const_a] buf1;   // ok
-int[a] buf2;    // not ok
-int[myfunc(2)] buf3;    // not ok
 
 public func void main() {
     int count = sizeof(elements) / sizeof(Element);
