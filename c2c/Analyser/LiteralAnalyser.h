@@ -33,8 +33,8 @@ public:
     LiteralAnalyser(clang::DiagnosticsEngine& Diags_);
 
     void check(QualType TLeft, const Expr* Right);
-private:
     llvm::APSInt checkLiterals(const Expr* Right);
+private:
     llvm::APSInt checkIntegerLiterals(const Expr* Right);
     llvm::APSInt checkUnaryLiterals(const Expr* Right);
     llvm::APSInt checkBinaryLiterals(const Expr* Right);

@@ -1,0 +1,6 @@
+// @warnings{no-unused}
+package test;
+
+int[-1] a;      // @error{array size is negative}
+int[10-20] b;   // @error{array size is negative}
+

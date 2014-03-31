@@ -23,6 +23,7 @@
 #include "Analyser/FunctionAnalyser.h"
 #include "Analyser/TypeChecker.h"
 #include "Analyser/AnalyserUtils.h"
+#include "Analyser/LiteralAnalyser.h"
 #include "AST/Decl.h"
 #include "AST/Expr.h"
 #include "AST/Stmt.h"
@@ -149,7 +150,14 @@ unsigned FunctionAnalyser::checkArrayExpr(Expr* E) {
         errors++;
         return errors;
     }
-    // TODO check if negative using LiteralAnalyser
+    // check if negative
+    assert(E->getCTC() == CTC_FULL);
+    LiteralAnalyser LA(Diags);
+    llvm::APSInt Result = LA.checkLiterals(E);
+    if (Result.isSigned() && Result.isNegative()) {
+        Diags.Report(E->getLocation(), diag::err_typecheck_negative_array_size) << E->getSourceRange();
+        errors++;
+    }
 
     return errors;
 }
