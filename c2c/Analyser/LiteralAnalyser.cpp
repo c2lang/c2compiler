@@ -89,8 +89,6 @@ void LiteralAnalyser::check(QualType TLeft, const Expr* Right) {
     // TODO check if type is already ok?, then skip check?
     //if (QT == Right->getType()->getCanonicalType()) return;
     int availableWidth = 0;
-    //bool isSigned = false;
-    QualType wanted = TLeft;
     if (QT.isBuiltinType()) {
         const BuiltinType* TL = cast<BuiltinType>(QT);
         if (!TL->isInteger()) {
@@ -106,18 +104,15 @@ void LiteralAnalyser::check(QualType TLeft, const Expr* Right) {
         }
 
         availableWidth = TL->getIntegerWidth();
-        //isSigned = TL->isSignedInteger();
     } else if (QT.isPointerType()) {
         availableWidth = 32;    // only 32-bit for now
-        //isSigned = false;
         // dont ask for pointer, replace with uint32 here.
-        wanted = BuiltinType::get(BuiltinType::UInt32);
     } else {
         QT.dump();
         assert(0 && "todo");
     }
 
-    APSInt Result = checkLiterals(wanted, Right);
+    APSInt Result = checkLiterals(Right);
 
     const Limit* L = getLimit(availableWidth);
     assert(Result.isSigned() && "TEMP FOR NOW");
@@ -143,14 +138,14 @@ void LiteralAnalyser::check(QualType TLeft, const Expr* Right) {
     }
 }
 
-APSInt LiteralAnalyser::checkLiterals(QualType TLeft, const Expr* Right) {
+APSInt LiteralAnalyser::checkLiterals(const Expr* Right) {
     if (Right->getCTC() == CTC_NONE) return APSInt();
 
     APSInt result(64, false);
 
     switch (Right->getKind()) {
     case EXPR_INTEGER_LITERAL:
-        return checkIntegerLiterals(TLeft, Right);
+        return checkIntegerLiterals(Right);
     case EXPR_FLOAT_LITERAL:
     case EXPR_BOOL_LITERAL:
         break;
@@ -165,7 +160,7 @@ APSInt LiteralAnalyser::checkLiterals(QualType TLeft, const Expr* Right) {
     case EXPR_NIL:
         break;
     case EXPR_IDENTIFIER:
-        return checkIdentifier(TLeft, Right);
+        return checkIdentifier(Right);
     case EXPR_TYPE:
     case EXPR_CALL:
     case EXPR_INITLIST:
@@ -173,11 +168,11 @@ APSInt LiteralAnalyser::checkLiterals(QualType TLeft, const Expr* Right) {
     case EXPR_DECL:
         break;
     case EXPR_BINOP:
-        return checkBinaryLiterals(TLeft, Right);
+        return checkBinaryLiterals(Right);
     case EXPR_CONDOP:
         break;
     case EXPR_UNARYOP:
-        return checkUnaryLiterals(TLeft, Right);
+        return checkUnaryLiterals(Right);
     case EXPR_BUILTIN:
         // TODO return correct value, for now always return 4 for sizeof() and elemsof()
         result = APInt(64, 4, true);
@@ -189,18 +184,18 @@ APSInt LiteralAnalyser::checkLiterals(QualType TLeft, const Expr* Right) {
         {
             // Q: is this correct for Struct.Member?
             const MemberExpr* M = cast<MemberExpr>(Right);
-            return checkLiterals(TLeft, M->getMember());
+            return checkLiterals(M->getMember());
         }
     case EXPR_PAREN:
         {
             const ParenExpr* P = cast<ParenExpr>(Right);
-            return checkLiterals(TLeft, P->getExpr());
+            return checkLiterals(P->getExpr());
         }
     }
     return result;
 }
 
-APSInt LiteralAnalyser::checkIntegerLiterals(QualType TLeft, const Expr* Right) {
+APSInt LiteralAnalyser::checkIntegerLiterals(const Expr* Right) {
     const IntegerLiteral* I = cast<IntegerLiteral>(Right);
 
     APSInt Result(64, false);      // always take signed 64 as base for checking
@@ -208,7 +203,7 @@ APSInt LiteralAnalyser::checkIntegerLiterals(QualType TLeft, const Expr* Right) 
     return Result;
 }
 
-APSInt LiteralAnalyser::checkUnaryLiterals(QualType TLeft, const Expr* Right) {
+APSInt LiteralAnalyser::checkUnaryLiterals(const Expr* Right) {
     const UnaryOperator* unaryop = cast<UnaryOperator>(Right);
     QualType LType;
     switch (unaryop->getOpcode()) {
@@ -224,7 +219,7 @@ APSInt LiteralAnalyser::checkUnaryLiterals(QualType TLeft, const Expr* Right) {
         break;
     case UO_Minus:
         {
-            APSInt Result = checkLiterals(TLeft, unaryop->getExpr());
+            APSInt Result = checkLiterals(unaryop->getExpr());
             APInt invert(64, -1, true);
             APSInt I(invert, false);
             Result *= I;
@@ -241,7 +236,7 @@ APSInt LiteralAnalyser::checkUnaryLiterals(QualType TLeft, const Expr* Right) {
     return APSInt();
 }
 
-APSInt LiteralAnalyser::checkBinaryLiterals(QualType TLeft, const Expr* Right) {
+APSInt LiteralAnalyser::checkBinaryLiterals(const Expr* Right) {
     const BinaryOperator* binop = cast<BinaryOperator>(Right);
     QualType LType;
     switch (binop->getOpcode()) {
@@ -251,32 +246,32 @@ APSInt LiteralAnalyser::checkBinaryLiterals(QualType TLeft, const Expr* Right) {
         break;
     case BO_Mul:
         {
-            APSInt L = checkLiterals(TLeft, binop->getLHS());
-            APSInt R = checkLiterals(TLeft, binop->getRHS());
+            APSInt L = checkLiterals(binop->getLHS());
+            APSInt R = checkLiterals(binop->getRHS());
             return L * R;
         }
     case BO_Div:
         {
-            APSInt L = checkLiterals(TLeft, binop->getLHS());
-            APSInt R = checkLiterals(TLeft, binop->getRHS());
+            APSInt L = checkLiterals(binop->getLHS());
+            APSInt R = checkLiterals(binop->getRHS());
             return L / R;
         }
     case BO_Rem:
         {
-            APSInt L = checkLiterals(TLeft, binop->getLHS());
-            APSInt R = checkLiterals(TLeft, binop->getRHS());
+            APSInt L = checkLiterals(binop->getLHS());
+            APSInt R = checkLiterals(binop->getRHS());
             return L % R;
         }
     case BO_Add:
         {
-            APSInt L = checkLiterals(TLeft, binop->getLHS());
-            APSInt R = checkLiterals(TLeft, binop->getRHS());
+            APSInt L = checkLiterals(binop->getLHS());
+            APSInt R = checkLiterals(binop->getRHS());
             return L + R;
         }
     case BO_Sub:
         {
-            APSInt L = checkLiterals(TLeft, binop->getLHS());
-            APSInt R = checkLiterals(TLeft, binop->getRHS());
+            APSInt L = checkLiterals(binop->getLHS());
+            APSInt R = checkLiterals(binop->getRHS());
             return L - R;
         }
     case BO_Shl:
@@ -319,7 +314,7 @@ APSInt LiteralAnalyser::checkBinaryLiterals(QualType TLeft, const Expr* Right) {
     return APSInt();
 }
 
-APSInt LiteralAnalyser::checkIdentifier(QualType TLeft, const Expr* Right) {
+APSInt LiteralAnalyser::checkIdentifier(const Expr* Right) {
     const IdentifierExpr* I = cast<IdentifierExpr>(Right);
     const Decl* D = I->getDecl();
     assert(D);
@@ -334,7 +329,7 @@ APSInt LiteralAnalyser::checkIdentifier(QualType TLeft, const Expr* Right) {
         // VarDecl should be CTC_FULL here!
         // Only check value (=initial value)
         assert(VD->getInitValue());
-        return checkLiterals(TLeft, VD->getInitValue());
+        return checkLiterals(VD->getInitValue());
     }
     assert(0 && "should not come here");
     return APSInt();

@@ -140,7 +140,9 @@ unsigned FunctionAnalyser::checkArrayExpr(Expr* E) {
         errors++;
         return errors;
     }
-    if (!T.isBuiltinType() || !cast<BuiltinType>(T)->isInteger()) {
+    // check if type is integer
+    QualType CT = T.getCanonicalType();
+    if (!CT.isBuiltinType() || !cast<BuiltinType>(CT)->isInteger()) {
         StringBuilder buf;
         T.DiagName(buf);
         Diags.Report(E->getLocation(), diag::err_array_size_non_int) << buf << E->getSourceRange();

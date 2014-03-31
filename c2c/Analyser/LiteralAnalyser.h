@@ -34,11 +34,11 @@ public:
 
     void check(QualType TLeft, const Expr* Right);
 private:
-    llvm::APSInt checkLiterals(QualType TLeft, const Expr* Right);
-    llvm::APSInt checkIntegerLiterals(QualType TLeft, const Expr* Right);
-    llvm::APSInt checkUnaryLiterals(QualType TLeft, const Expr* Right);
-    llvm::APSInt checkBinaryLiterals(QualType TLeft, const Expr* Right);
-    llvm::APSInt checkIdentifier(QualType TLeft, const Expr* Right);
+    llvm::APSInt checkLiterals(const Expr* Right);
+    llvm::APSInt checkIntegerLiterals(const Expr* Right);
+    llvm::APSInt checkUnaryLiterals(const Expr* Right);
+    llvm::APSInt checkBinaryLiterals(const Expr* Right);
+    llvm::APSInt checkIdentifier(const Expr* Right);
 
     clang::DiagnosticsEngine& Diags;
 

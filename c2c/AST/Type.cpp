@@ -27,7 +27,7 @@
 using namespace C2;
 
 // TODO insert QualType function impls
-inline QualType QualType::getCanonicalType() const {
+QualType QualType::getCanonicalType() const {
     // TODO use getTypePtr
     QualType canon = type->canonicalType;
     canon.setQualifiers(qualifiers);
