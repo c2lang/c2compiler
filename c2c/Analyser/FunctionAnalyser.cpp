@@ -133,31 +133,7 @@ unsigned FunctionAnalyser::checkArrayExpr(Expr* E) {
     errors = 0;
 
     ConstModeSetter cms(*this, diag::err_init_element_not_constant);
-    QualType T = analyseExpr(E, RHS);
-    if (!T.isValid()) return errors;
-
-    if (!E->isConstant()) {
-        Diags.Report(E->getLocation(), diag::err_vla_decl_in_file_scope) << E->getSourceRange();
-        errors++;
-        return errors;
-    }
-    // check if type is integer
-    QualType CT = T.getCanonicalType();
-    if (!CT.isBuiltinType() || !cast<BuiltinType>(CT)->isInteger()) {
-        StringBuilder buf;
-        T.DiagName(buf);
-        Diags.Report(E->getLocation(), diag::err_array_size_non_int) << buf << E->getSourceRange();
-        errors++;
-        return errors;
-    }
-    // check if negative
-    assert(E->getCTC() == CTC_FULL);
-    LiteralAnalyser LA(Diags);
-    llvm::APSInt Result = LA.checkLiterals(E);
-    if (Result.isSigned() && Result.isNegative()) {
-        Diags.Report(E->getLocation(), diag::err_typecheck_negative_array_size) << E->getSourceRange();
-        errors++;
-    }
+    analyseArraySizeExpr(E);
 
     return errors;
 }
@@ -687,6 +663,36 @@ void FunctionAnalyser::analyseSizeofExpr(Expr* expr) {
 
 }
 
+void FunctionAnalyser::analyseArraySizeExpr(Expr* E) {
+    LOG_FUNC
+    QualType T = analyseExpr(E, RHS);
+    if (!T.isValid()) return;
+
+    if (inConstExpr && !E->isConstant()) {
+        Diags.Report(E->getLocation(), diag::err_vla_decl_in_file_scope) << E->getSourceRange();
+        errors++;
+        return;
+    }
+    // check if type is integer
+    QualType CT = T.getCanonicalType();
+    if (!CT.isBuiltinType() || !cast<BuiltinType>(CT)->isInteger()) {
+        StringBuilder buf;
+        T.DiagName(buf);
+        Diags.Report(E->getLocation(), diag::err_array_size_non_int) << buf << E->getSourceRange();
+        errors++;
+        return;
+    }
+    // check if negative
+    if (E->getCTC() == CTC_FULL) {
+        LiteralAnalyser LA(Diags);
+        llvm::APSInt Result = LA.checkLiterals(E);
+        if (Result.isSigned() && Result.isNegative()) {
+            Diags.Report(E->getLocation(), diag::err_typecheck_negative_array_size) << E->getSourceRange();
+            errors++;
+        }
+    }
+}
+
 void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     LOG_FUNC
     DeclExpr* DE = cast<DeclExpr>(expr);
@@ -699,9 +705,9 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     if (!errs) {
         TC.resolveCanonicals(decl, type, true);
         ArrayType* AT = dyncast<ArrayType>(type.getTypePtr());
-        if (AT && AT->getSize()) {
-            analyseExpr(AT->getSize(), RHS);
-            // TODO check type of size expr
+        Expr* sizeExpr = AT->getSize();
+        if (AT && sizeExpr) {
+            analyseArraySizeExpr(sizeExpr);
         }
     }
 
