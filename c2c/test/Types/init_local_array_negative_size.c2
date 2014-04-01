@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+package test;
+
+func void test() {
+    int[-1] a;      // @error{array size is negative}
+    int[10-20] b;   // @error{array size is negative}
+}
+

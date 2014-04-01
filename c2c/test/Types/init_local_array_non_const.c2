@@ -1,0 +1,15 @@
+// @warnings{no-unused}
+package test;
+
+func int foo() { return 10; }
+
+func void test() {
+    const int constant = 1;
+    int[constant] a;
+
+    int non_constant = 10;
+    int[non_constant] b;
+
+    int[foo()] c;
+}
+
