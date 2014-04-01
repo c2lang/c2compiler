@@ -363,6 +363,18 @@ void UnaryOperator::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer << "UnaryOperator ";
     Expr::print(buffer, 0);
+    switch (opc) {
+    case UO_PostInc:
+    case UO_PostDec:
+        buffer << " postfix";
+        break;
+    case UO_PreInc:
+    case UO_PreDec:
+        buffer << " prefix";
+        break;
+    default:
+        break;
+    }
     buffer << " '" << OpCode2str(opc) << "'\n";
     val->print(buffer, indent + INDENT);
 }
