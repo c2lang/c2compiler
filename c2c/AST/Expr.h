@@ -477,6 +477,8 @@ public:
     }
     virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return base->getLocation(); }
+    virtual SourceLocation getLocStart() const { return base->getLocStart(); }
+    virtual SourceLocation getLocEnd() const { return RLoc; }
 
     Expr* getBase() const { return base; }
     Expr* getIndex() const { return idx; }

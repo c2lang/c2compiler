@@ -928,7 +928,8 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
     case UO_PreDec:
         LType = analyseExpr(SubExpr, side | LHS);
         if (LType.isNull()) return 0;
-        // TODO check if type is Integer/Floating Point
+        checkAssignment(SubExpr, LType);
+        expr->setType(LType);
         break;
     case UO_AddrOf:
         {
@@ -1376,7 +1377,7 @@ bool FunctionAnalyser::checkAssignee(Expr* expr) const {
 
 void FunctionAnalyser::checkAssignment(Expr* assignee, QualType TLeft) {
     if (TLeft.isConstQualified()) {
-        Diags.Report(assignee->getLocation(), diag::err_typecheck_assign_const);
+        Diags.Report(assignee->getLocation(), diag::err_typecheck_assign_const) << assignee->getSourceRange();
     }
 }
 
@@ -1391,8 +1392,7 @@ void FunctionAnalyser::checkDeclAssignment(Decl* decl, Expr* expr) {
     case DECL_VAR:
         {
             //VarDecl* VD = cast<VarDecl>(decl);
-            // ..
-            //return resolveUserType(VD->getType());
+            //checkAssignment(expr, VD->getType());
             break;
         }
     case DECL_ENUMVALUE:
