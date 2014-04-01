@@ -2,8 +2,22 @@ package hello_world;
 
 use stdio local;
 
+// CHECK: @0 = private unnamed_addr constant [14 x i8] c"Hello World!\0A\00"
+
 public func int main(int argc, char*[] argv) {
+// CHECK: define i32 @main(i32 %argc, i8** %argv) {
+// CHECK: entry:
+// CHECK:   %argc.addr = alloca i32
+// CHECK:   %argv.addr = alloca i8**
+// CHECK:   store i32 %argc, i32* %argc.addr
+// CHECK:   store i8** %argv, i8*** %argv.addr
     printf("Hello World!\n");
+// CHECK:   %0 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @0, i32 0, i32 0))
     return 0;
+// CHECK:   ret i32 0
 }
+// CHECK: }
+
+
+// CHECK: declare i32 @printf(i8*, ...)
 

@@ -105,8 +105,8 @@ bool CodeGenModule::verify() {
 }
 
 void CodeGenModule::dump() {
-    fprintf(stderr, "-----------------------------------------------------------------------\n");
-    module->dump();
+    fprintf(stdout, "-----------------------------------------------------------------------\n");
+    module->print(llvm::outs(), 0);
 }
 
 void CodeGenModule::write(const std::string& target, const std::string& name) {
