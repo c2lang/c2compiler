@@ -4,6 +4,8 @@ package test;
 public func int main() {
     const int32 a = 0;
     a = 1;          // @error{read-only variable is not assignable}
+    a++;            // @error{read-only variable is not assignable}
+    a += 3;         // @error{read-only variable is not assignable}
 
     const int32[10] array = {0}
     array[0] = 1;   // @error{read-only variable is not assignable}
