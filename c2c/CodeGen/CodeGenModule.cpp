@@ -59,6 +59,23 @@ CodeGenModule::~CodeGenModule() {
 
 void CodeGenModule::generate() {
     // step 1: generate all function proto's
+#if 0
+    // TEMP hardcode type Point struct { int x, int y }
+    std::vector<llvm::Type *> elems;
+    elems.push_back(builder.getInt32Ty());
+    elems.push_back(builder.getInt32Ty());
+    llvm::ArrayRef<llvm::Type*>  Elements(elems);
+    llvm::StructType* ST = llvm::StructType::create(context, Elements, "struct.Point", false);
+
+    // TEMP Hardcode Point p = { 10, 20 }
+    llvm::GlobalValue::LinkageTypes ltype = llvm::GlobalValue::ExternalLinkage;
+    llvm::Constant* init = 0; //llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), 20, true);
+    // TODO generate { i32 10, i32 20 }
+    // see clang:: EmitRecordInitialization()
+
+    new llvm::GlobalVariable(*module, ST, false, ltype, init, "p");
+#endif
+
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
         const AST* ast = *iter;
 #ifdef DEBUG_CODEGEN
@@ -297,7 +314,10 @@ llvm::Constant* CodeGenModule::EvaluateExprAsConstant(const Expr *E) {
             // Get Width/signed from CanonicalType?
             return llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), N->Value.getSExtValue(), true);
         }
+    case EXPR_INITLIST:
+        // TODO
     default:
+        E->dump();
         assert(0 && "TODO");
         return 0;
     }
