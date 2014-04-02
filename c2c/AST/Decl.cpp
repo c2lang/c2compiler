@@ -168,6 +168,7 @@ EnumConstantDecl::EnumConstantDecl(const std::string& name_, SourceLocation loc_
     : Decl(DECL_ENUMVALUE, name_, loc_, is_public, file_id)
     , type(type_)
     , InitVal(Init)
+    , Val(64, false)
 {
 }
 

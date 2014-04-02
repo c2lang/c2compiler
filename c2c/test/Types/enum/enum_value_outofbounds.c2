@@ -8,3 +8,7 @@ type Enum enum char {
     D,      // @error{constant value 129 out-of-bounds for type '(enum)Enum' (aka 'int8'), range [-128, 127]}
 }
 
+type Enum2 enum uint8 {
+    E = -1, // @error{constant value -1 out-of-bounds for type '(enum)Enum2' (aka 'uint8'), range [0, 255]}
+}
+

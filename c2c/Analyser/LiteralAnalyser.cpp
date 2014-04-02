@@ -366,11 +366,8 @@ APSInt LiteralAnalyser::checkIdentifier(const Expr* Right) {
     const Decl* D = I->getDecl();
     assert(D);
     const EnumConstantDecl* ECD = dyncast<EnumConstantDecl>(D);
-    if (ECD) {
-        APSInt Result(64, false);
-        Result = ECD->getValue();
-        return Result;
-    }
+    if (ECD) return ECD->getValue();
+
     const VarDecl* VD = dyncast<VarDecl>(D);
     if (VD) {
         // VarDecl should be CTC_FULL here!
