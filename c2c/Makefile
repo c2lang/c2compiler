@@ -18,13 +18,13 @@ OBJS = \
     Analyser/LiteralAnalyser.o \
     Analyser/FileAnalyser.o \
     Analyser/FunctionAnalyser.o \
-    Analyser/DepGenerator.o \
     Analyser/TypeFinder.o \
     Analyser/ExprTypeAnalyser.o \
     CodeGen/CodeGenFunction.o \
     CodeGen/CodeGenModule.o \
     CGenerator/CCodeGenerator.o \
     Builder/C2Builder.o \
+    Builder/DepGenerator.o \
     Builder/Recipe.o \
     Builder/RecipeReader.o \
     FileUtils/FileMap.o \

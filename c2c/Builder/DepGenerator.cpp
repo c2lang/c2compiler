@@ -15,7 +15,7 @@
 
 #include <assert.h>
 
-#include "Analyser/DepGenerator.h"
+#include "Builder/DepGenerator.h"
 #include "AST/Decl.h"
 #include "AST/Package.h"
 #include "Utils/StringBuilder.h"
