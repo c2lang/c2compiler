@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+package test;
+
+func int foo() { return 10; }
+
+type State enum int8 {
+    A = foo(),      // @error{expression is not an integer constant expression}
+    B = "hello",    // @error{expression is not an integer constant expression}
+    C = true,       // @error{expression is not an integer constant expression}
+}
+

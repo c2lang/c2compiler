@@ -20,6 +20,7 @@
 #include <vector>
 #include <assert.h>
 
+#include <llvm/ADT/APSInt.h>
 #include <clang/Basic/SourceLocation.h>
 
 #include "AST/OwningVector.h"
@@ -208,12 +209,12 @@ public:
 
     QualType getType() const { return type; }
     Expr* getInitValue() const { return InitVal; } // static value, NOT incremental values
-    int getValue() const { return value; }
-    void setValue(int value_) { value = value_; }
+    llvm::APSInt getValue() const { return Val; }
+    void setValue(llvm::APSInt v) { Val = v; }
 private:
     QualType type;
     Expr* InitVal;
-    int value;      // set during analysis, TODO use APInt
+    llvm::APSInt Val;
 };
 
 

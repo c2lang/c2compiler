@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+package test;
+
+type A enum int {
+    B = 10,
+    C = 10,  // @error{duplicate enum value}
+    D,
+    E = 11,  // @error{duplicate enum value}
+}
+

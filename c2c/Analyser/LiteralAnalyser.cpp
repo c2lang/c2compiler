@@ -195,6 +195,53 @@ APSInt LiteralAnalyser::checkLiterals(const Expr* Right) {
     return result;
 }
 
+bool LiteralAnalyser::checkRange(QualType TLeft, const Expr* Right, clang::SourceLocation Loc, llvm::APSInt Result) {
+    // TODO refactor with check()
+    const QualType QT = TLeft->getCanonicalType();
+    int availableWidth = 0;
+    if (QT.isBuiltinType()) {
+        const BuiltinType* TL = cast<BuiltinType>(QT);
+        if (!TL->isInteger()) {
+            // TODO floats
+            return false;
+        }
+        availableWidth = TL->getIntegerWidth();
+    } else {
+        QT.dump();
+        assert(0 && "todo");
+    }
+
+    const Limit* L = getLimit(availableWidth);
+    assert(Result.isSigned() && "TEMP FOR NOW");
+    int64_t value = Result.getSExtValue();
+    bool overflow = false;
+    if (Result.isNegative()) {
+        const int64_t limit = L->minVal;
+        if (value < limit) overflow = true;
+    } else {
+        const int64_t limit = (int64_t)L->maxVal;
+        if (value > limit) overflow = true;
+    }
+    //fprintf(stderr, "VAL=%lld  width=%d signed=%d\n", value, availableWidth, Result.isSigned());
+    if (overflow) {
+        SmallString<20> ss;
+        Result.toString(ss, 10, true);
+
+        StringBuilder buf1;
+        TLeft->DiagName(buf1);
+
+        if (Right) {
+            Diags.Report(Right->getLocStart(), diag::err_literal_outofbounds)
+                << buf1 << L->minStr << L->maxStr << ss << Right->getSourceRange();
+        } else {
+            Diags.Report(Loc, diag::err_literal_outofbounds)
+                << buf1 << L->minStr << L->maxStr << ss;
+        }
+        return false;
+    }
+    return true;
+}
+
 APSInt LiteralAnalyser::checkIntegerLiterals(const Expr* Right) {
     const IntegerLiteral* I = cast<IntegerLiteral>(Right);
 

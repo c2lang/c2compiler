@@ -168,7 +168,6 @@ EnumConstantDecl::EnumConstantDecl(const std::string& name_, SourceLocation loc_
     : Decl(DECL_ENUMVALUE, name_, loc_, is_public, file_id)
     , type(type_)
     , InitVal(Init)
-    , value(0)
 {
 }
 
@@ -178,7 +177,7 @@ EnumConstantDecl::~EnumConstantDecl() {
 
 void EnumConstantDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[EnumConstantDecl] '" << name << "' value=" << value << '\n';
+    buffer << "[EnumConstantDecl] '" << name << "' value=" << Val.getSExtValue() << '\n';
     if (InitVal) InitVal->print(buffer, indent+INDENT);
 }
 

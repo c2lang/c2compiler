@@ -14,6 +14,7 @@
  */
 #include <stdio.h>
 
+#include <llvm/ADT/APInt.h>
 #include <clang/Parse/ParseDiagnostic.h>
 #include <clang/Sema/SemaDiagnostic.h>
 
@@ -27,6 +28,7 @@
 
 using namespace C2;
 using namespace clang;
+using namespace llvm;
 
 //#define ANALYSER_DEBUG
 
@@ -164,7 +166,40 @@ unsigned FileAnalyser::checkVarInits() {
 unsigned FileAnalyser::resolveEnumConstants() {
     LOG_FUNC
     if (verbose) printf(COL_VERBOSE"%s %s"ANSI_NORMAL"\n", __func__, ast.getFileName().c_str());
-    return 0;
+    unsigned errors = 0;
+    for (unsigned i=0; i<ast.numTypes(); i++) {
+        TypeDecl* TD = ast.getType(i);
+        EnumTypeDecl* ETD = dyncast<EnumTypeDecl>(TD);
+        if (ETD) {
+            APSInt value(64, false);
+            APInt I(64, 0, false);
+            value = I;
+            // check duplicate values
+            typedef std::map<int64_t, EnumConstantDecl*> Values;
+            typedef Values::iterator ValuesIter;
+            Values values;
+            for (unsigned i=0; i<ETD->numConstants(); i++) {
+                EnumConstantDecl* ECD = ETD->getConstant(i);
+                int errs = functionAnalyser.checkEnumValue(ECD, value);
+                errors += errs;
+                if (!errors) {
+                    // NOTE: once there are errors, checking for duplicate values is pointless
+                    APSInt newVal = ECD->getValue();
+                    // check for duplicates
+                    int64_t v = newVal.getSExtValue();
+                    ValuesIter iter = values.find(v);
+                    if (iter == values.end()) {
+                        values[v] = ECD;
+                    } else {
+                        Diags.Report(ECD->getLocation(), diag::err_duplicate_enum_value);
+                        EnumConstantDecl* Old = iter->second;
+                        Diags.Report(Old->getLocation(), diag::note_duplicate_element) << Old->getName() << newVal.toString(10);
+                    }
+                }
+            }
+        }
+    }
+    return errors;
 }
 
 unsigned FileAnalyser::checkFunctionProtos() {

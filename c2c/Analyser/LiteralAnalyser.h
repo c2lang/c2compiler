@@ -17,6 +17,7 @@
 #define LITERAL_ANALYSER_H
 
 #include <llvm/ADT/APSInt.h>
+#include <clang/Basic/SourceLocation.h>
 
 #include "AST/Type.h"
 
@@ -34,6 +35,7 @@ public:
 
     void check(QualType TLeft, const Expr* Right);
     llvm::APSInt checkLiterals(const Expr* Right);
+    bool checkRange(QualType T, const Expr* Right, clang::SourceLocation Loc, llvm::APSInt Result);
 private:
     llvm::APSInt checkIntegerLiterals(const Expr* Right);
     llvm::APSInt checkUnaryLiterals(const Expr* Right);

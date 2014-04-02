@@ -1,11 +1,10 @@
-// @skip
 // @warnings{no-unused}
 package test;
 
 type Enum enum char {
     A = 126,
     B,
-    C,      // @error{value 128 out of bounds for type ..}
-    D,      // @error{value 129 out of bounds for type ..}
+    C,      // @error{constant value 128 out-of-bounds for type '(enum)Enum' (aka 'int8'), range [-128, 127]}
+    D,      // @error{constant value 129 out-of-bounds for type '(enum)Enum' (aka 'int8'), range [-128, 127]}
 }
 

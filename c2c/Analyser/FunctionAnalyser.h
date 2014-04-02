@@ -33,6 +33,7 @@ class Scope;
 class Decl;
 class VarDecl;
 class FunctionDecl;
+class EnumConstantDecl;
 class Stmt;
 class Expr;
 class IdentifierExpr;
@@ -48,6 +49,7 @@ public:
     unsigned check(FunctionDecl* F);
     unsigned checkVarInit(VarDecl* V);
     unsigned checkArrayExpr(Expr* E);
+    unsigned checkEnumValue(EnumConstantDecl* E, llvm::APSInt& nextValue);
 private:
     void checkFunction(FunctionDecl* F);
 

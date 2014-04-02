@@ -116,7 +116,6 @@ unsigned FunctionAnalyser::check(FunctionDecl* func) {
 
 unsigned FunctionAnalyser::checkVarInit(VarDecl* V) {
     LOG_FUNC
-
     CurrentVarDecl = V;
     errors = 0;
 
@@ -129,13 +128,42 @@ unsigned FunctionAnalyser::checkVarInit(VarDecl* V) {
 
 unsigned FunctionAnalyser::checkArrayExpr(Expr* E) {
     LOG_FUNC
-
     errors = 0;
 
     ConstModeSetter cms(*this, diag::err_init_element_not_constant);
     analyseArraySizeExpr(E);
 
     return errors;
+}
+
+unsigned FunctionAnalyser::checkEnumValue(EnumConstantDecl* E, llvm::APSInt& nextValue) {
+    LOG_FUNC;
+
+    LiteralAnalyser LA(Diags);
+    Expr* Init = E->getInitValue();
+    if (Init) {
+        QualType T = analyseExpr(Init, RHS);
+        if (!T.isValid()) return 1;
+
+        if (!Init->isConstant()) {
+            Diags.Report(Init->getLocation(), diag::err_expr_not_ice) << 0 << Init->getSourceRange();
+            return 1;
+        }
+        // TODO refactor duplicate code with analyseArraySizeExpr()
+        QualType CT = T.getCanonicalType();
+        if (!CT.isBuiltinType() || !cast<BuiltinType>(CT)->isInteger()) {
+            Diags.Report(Init->getLocation(), diag::err_expr_not_ice) << 0 << Init->getSourceRange();
+            return 1;
+        }
+        assert(Init->getCTC() == CTC_FULL);
+        llvm::APSInt V = LA.checkLiterals(Init);
+        nextValue = V;
+    }
+    E->setValue(nextValue);
+    nextValue++;
+    if (!LA.checkRange(E->getType(), Init, E->getLocation(), E->getValue())) return 1;
+
+    return 0;
 }
 
 void FunctionAnalyser::checkFunction(FunctionDecl* func) {
