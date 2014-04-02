@@ -34,6 +34,7 @@
 
 //#define GEN_DEBUG
 
+#include <stdio.h>
 #ifdef GEN_DEBUG
 #include <iostream>
 #include "Utils/color.h"
@@ -640,8 +641,9 @@ llvm::Value* CodeGenFunction::EmitBinaryOperator(const BinaryOperator* B) {
         return Builder.CreateMul(L, R, "mul");
         //return Builder.CreateFMul(L, R, "multmp");
     case BO_Div:
-    case BO_Rem:
         break;
+    case BO_Rem:
+        return Builder.CreateSRem(L, R, "rem");
     case BO_Add:
         return Builder.CreateAdd(L, R, "add");
         //return Builder.CreateFAdd(L, R, "addtmp");    // for Floating point
@@ -693,6 +695,7 @@ llvm::Value* CodeGenFunction::EmitBinaryOperator(const BinaryOperator* B) {
     case BO_Comma:
         break;
     }
+    B->dump();
     assert(0 && "TODO");
     return 0;
 }
