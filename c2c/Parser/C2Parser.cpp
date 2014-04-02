@@ -827,6 +827,19 @@ C2::ExprResult C2Parser::ParseCastExpression(bool isUnaryExpression,
         return ParseSizeof();
     case tok::kw_elemsof:
         return ParseElemsof();
+    case tok::plusplus:      // unary-expression: '++' unary-expression [C99]
+    case tok::minusminus:    // unary-expression: '--' unary-expression [C99]
+    {
+        // C++ [expr.unary] has:
+        //   unary-expression:
+        //     ++ cast-expression
+        //     -- cast-expression
+        SourceLocation SavedLoc = ConsumeToken();
+        Res = ParseCastExpression(false, false);
+        if (!Res.isInvalid())
+            Res = Actions.ActOnUnaryOp(SavedLoc, SavedKind, Res.get());
+        return Res;
+    }
     case tok::amp:
     {
         SourceLocation SavedLoc = ConsumeToken();
