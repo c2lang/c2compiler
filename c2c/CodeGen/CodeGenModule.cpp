@@ -256,8 +256,12 @@ llvm::Type* CodeGenModule::ConvertType(const C2::Type* type) {
             return tt->getPointerTo();
         }
     case TC_UNRESOLVED:
-        assert(0 && "should be resolved");
-        break;
+        {
+            const UnresolvedType* U = cast<UnresolvedType>(type);
+            TypeDecl* TD = U->getMatch();
+            assert(TD);
+            return ConvertType(TD->getType());
+        }
     case TC_ALIAS:
         assert(0 && "should be resolved");
         break;

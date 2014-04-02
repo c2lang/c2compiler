@@ -15,8 +15,6 @@
 
 #include <vector>
 #include <string>
-// TEMP for debugging
-#include <stdio.h>
 
 #include <llvm/IR/Module.h>
 #include <llvm/ADT/ArrayRef.h>
@@ -149,7 +147,7 @@ void CodeGenFunction::EmitStmt(const Stmt* S) {
     case STMT_CONTINUE:
     case STMT_LABEL:
     case STMT_GOTO:
-        fprintf(stderr, "CODEGEN TODO:\n");
+        assert(0 && "TODO");
         S->dump();
         break;
     case STMT_COMPOUND:
