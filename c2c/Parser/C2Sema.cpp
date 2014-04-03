@@ -605,7 +605,7 @@ StructTypeDecl* C2Sema::ActOnStructType(const char* name, SourceLocation loc,
     return S;
 }
 
-C2::DeclResult C2Sema::ActOnStructVar(const char* name, SourceLocation loc, Expr* type, Expr* InitValue, bool is_public) {
+void C2Sema::ActOnStructVar(StructTypeDecl* S, const char* name, SourceLocation loc, Expr* type, Expr* InitValue, bool is_public) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: struct var " << name << " at ";
     loc.dump(SourceMgr);
@@ -613,11 +613,10 @@ C2::DeclResult C2Sema::ActOnStructVar(const char* name, SourceLocation loc, Expr
 #endif
     TypeExpr* typeExpr = cast<TypeExpr>(type);
     if (typeExpr->hasLocalQualifier()) {
-        //Diag(loc, diag::err_invalid_local_structmember);
-#warning "TODO add diag msg to clang"
+        Diag(loc, diag::err_invalid_local_structmember) << (S->isStruct() ? 0 : 1);
     }
     VarDecl* V = createVarDecl(VARDECL_MEMBER, name, loc, typeExpr, InitValue, is_public);
-    return DeclResult(V);
+    ActOnStructMember(S, V);
 }
 
 void C2Sema::ActOnStructMember(StructTypeDecl* S, Decl* member) {

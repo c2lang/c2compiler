@@ -1,0 +1,12 @@
+// @warnings{no-unused}
+package test;
+
+type Point struct {
+    int x;
+    local int y;        // @error{cannot use keyword local for struct members}
+    union {
+        int a;
+        local int b;        // @error{cannot use keyword local for union members}
+    }
+}
+

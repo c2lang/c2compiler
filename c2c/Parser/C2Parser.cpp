@@ -296,8 +296,7 @@ void C2Parser::ParseStructBlock(StructTypeDecl* S) {
             SourceLocation idLoc = ConsumeToken();
 
             if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "member")) return;
-            DeclResult member = Actions.ActOnStructVar(id->getNameStart(), idLoc, type.release(), 0, S->isPublic());
-            Actions.ActOnStructMember(S, member.release());
+            Actions.ActOnStructVar(S, id->getNameStart(), idLoc, type.release(), 0, S->isPublic());
         }
     }
     SourceLocation RightBrace = Tok.getLocation();
