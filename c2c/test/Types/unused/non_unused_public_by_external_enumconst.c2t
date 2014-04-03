@@ -1,0 +1,13 @@
+// @warnings{no-unused-variable}
+// @file{file1}
+package foo;
+
+public type State enum uint16 { STATE_A }
+
+// @file{file2}
+package bar;
+
+use foo local;
+
+int b = STATE_A;
+

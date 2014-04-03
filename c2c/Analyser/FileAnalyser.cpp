@@ -262,6 +262,17 @@ void FileAnalyser::checkDeclsForUsed() {
     // check for unused types
     for (unsigned i=0; i<ast.numTypes(); i++) {
         TypeDecl* T = ast.getType(i);
+
+        // mark Enum Types as used(public) if its constants are used(public)
+        if (EnumTypeDecl* ETD = dyncast<EnumTypeDecl>(T)) {
+            for (unsigned i=0; i<ETD->numConstants(); i++) {
+                EnumConstantDecl* C = ETD->getConstant(i);
+                if (C->isUsed()) ETD->setUsed();
+                if (C->isUsedPublic()) ETD->setUsedPublic();
+                if (C->isUsed() && C->isUsedPublic()) break;
+            }
+        }
+
         if (!T->isUsed()) {
             Diags.Report(T->getLocation(), diag::warn_unused_type) << T->getName();
         } else {
