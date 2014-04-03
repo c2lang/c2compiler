@@ -95,6 +95,14 @@ StringBuilder& StringBuilder::operator<<(unsigned input) {
     return *this;
 }
 
+StringBuilder& StringBuilder::operator<<(long input) {
+#ifdef SIZE_DEBUG
+    assert(10 < space_left() && "buffer overflow");
+#endif
+    ptr += sprintf(ptr, "%ld", input);
+    return *this;
+}
+
 StringBuilder& StringBuilder::operator<<(long long input) {
 #ifdef SIZE_DEBUG
     assert(10 < space_left() && "buffer overflow");

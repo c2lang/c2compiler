@@ -31,6 +31,7 @@ public:
     StringBuilder& operator<<(char input);
     StringBuilder& operator<<(int input);
     StringBuilder& operator<<(unsigned input);
+    StringBuilder& operator<<(long input);
     StringBuilder& operator<<(long long input);
     StringBuilder& operator<<(unsigned long long input);
     StringBuilder& operator<<(const StringBuilder& input);

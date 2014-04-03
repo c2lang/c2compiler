@@ -19,6 +19,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <stdint.h>
 
 #include "AST/Package.h"
 
@@ -43,7 +44,7 @@ public:
 
     void setPackage(const Package* P) {
         value &= 0x1;
-        value |= (unsigned int)P;
+        value |= (uintptr_t)P;
     }
     const Package* getPackage() const {
         if (value & 0x2) {  // decl
@@ -54,7 +55,7 @@ public:
     }
     void setDecl(Decl* D) {
         value &= 0x1;
-        value |= (unsigned int)D;
+        value |= (uintptr_t)D;
         value |= 0x2;
     }
     Decl* getDecl() const {
