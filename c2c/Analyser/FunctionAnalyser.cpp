@@ -121,6 +121,7 @@ unsigned FunctionAnalyser::checkVarInit(VarDecl* V) {
 
     ConstModeSetter cms(*this, diag::err_init_element_not_constant);
     analyseInitExpr(V->getInitValue(), V->getType());
+    // TODO if type is array, update type of VarDecl? (add size)
 
     CurrentVarDecl = 0;
     return errors;
@@ -733,7 +734,7 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     if (!errs) {
         TC.resolveCanonicals(decl, type, true);
         ArrayType* AT = dyncast<ArrayType>(type.getTypePtr());
-        Expr* sizeExpr = AT->getSize();
+        Expr* sizeExpr = AT->getSizeExpr();
         if (AT && sizeExpr) {
             analyseArraySizeExpr(sizeExpr);
         }

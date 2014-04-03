@@ -207,7 +207,7 @@ QualType TypeChecker::checkCanonicals(Decls& decls, QualType Q, bool set) const 
             QualType canonical;
             if (t1 == t2) canonical = Q;
             // NOTE: need size Expr, but set ownership to none
-            else canonical = typeContext.getArrayType(t2, A->getSize(), false);
+            else canonical = typeContext.getArrayType(t2, A->getSizeExpr(), false);
             if (set) A->setCanonicalType(canonical);
             return canonical;
         }

@@ -351,7 +351,7 @@ unsigned FileAnalyser::resolveVarDecl(VarDecl* D) {
         TC->resolveCanonicals(D, Q, true);
         // TODO same as FunctionAnalyser code!
         ArrayType* AT = dyncast<ArrayType>(Q.getTypePtr());
-        Expr* sizeExpr = AT->getSize();
+        Expr* sizeExpr = AT->getSizeExpr();
         if (AT && sizeExpr) {
             functionAnalyser.checkArrayExpr(sizeExpr);
         }

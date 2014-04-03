@@ -876,8 +876,8 @@ void CCodeGenerator::EmitTypePostName(QualType type, StringBuilder& output) {
         const ArrayType* A = cast<ArrayType>(type);
         EmitTypePostName(A->getElementType(), output);
         output << '[';
-        if (A->getSize()) {
-            EmitExpr(A->getSize(), output);
+        if (A->getSizeExpr()) {
+            EmitExpr(A->getSizeExpr(), output);
         }
         output << ']';
     }

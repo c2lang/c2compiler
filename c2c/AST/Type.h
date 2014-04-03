@@ -271,7 +271,7 @@ public:
     static bool classof(const Type* T) { return T->getTypeClass() == TC_ARRAY; }
 
     QualType getElementType() const { return ElementType; }
-    Expr* getSize() const { return sizeExpr; }
+    Expr* getSizeExpr() const { return sizeExpr; }
 
 protected:
     virtual void printName(StringBuilder& buffer) const;
