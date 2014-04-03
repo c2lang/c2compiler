@@ -1312,7 +1312,6 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
                 fprintf(stderr, "ERROR: (TODO) passing 'void' to parameter of incompatible type '...'\n");
                 //Diags.Report(argGiven->getLocation(), diag::err_typecheck_convert_incompatible)
                 //    << "from" << "to" << 1;// << argGiven->getLocation();
-#warning "TODO check if not void"
             }
         }
     } else if (callArgs < protoArgs) {

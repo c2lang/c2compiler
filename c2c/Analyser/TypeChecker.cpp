@@ -365,11 +365,11 @@ bool TypeChecker::checkBuiltin(QualType left, QualType right, const Expr* expr, 
 
 bool TypeChecker::checkPointer(QualType left, QualType right, const Expr* expr) const {
     if (right->isPointerType()) {
-#warning "TODO dereference types (can be Alias etc) and check those"
+        // TODO
         return true;
     }
     if (right->isArrayType()) {
-#warning "TODO dereference types (can be Alias etc) and check those"
+        // TODO
         return true;
     }
     StringBuilder buf1(MAX_LEN_TYPENAME);

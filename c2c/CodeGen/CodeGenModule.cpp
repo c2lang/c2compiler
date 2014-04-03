@@ -211,7 +211,6 @@ void CodeGenModule::EmitTopLevelDecl(Decl* D) {
             //StructTypeDecl* TD = cast<StructTypeDecl>(D);
             //QualType QT = TD->getType();
             // NOTE: only generate code for struct/union types (even this is optional)
-#warning "TODO remove"
 #if 0
             if (QT.isStructOrUnionType()) {
                 // TEMP try some ints
