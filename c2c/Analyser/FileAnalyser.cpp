@@ -49,11 +49,6 @@ FileAnalyser::FileAnalyser(const Pkgs& pkgs, clang::DiagnosticsEngine& Diags_,
     , verbose(verbose_)
 {}
 
-FileAnalyser::~FileAnalyser() {
-    delete TC;
-    delete globals;
-}
-
 unsigned  FileAnalyser::checkUses() {
     LOG_FUNC
     unsigned errors = 0;

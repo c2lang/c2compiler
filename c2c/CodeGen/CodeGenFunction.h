@@ -143,10 +143,10 @@ private:
     /// we prefer to insert allocas.
     llvm::AssertingVH<llvm::Instruction> AllocaInsertPt;
 
-  /// OutermostConditional - Points to the outermost active
-  /// conditional control.  This is used so that we know if a
-  /// temporary should be destroyed conditionally.
-  ConditionalEvaluation *OutermostConditional;
+    /// OutermostConditional - Points to the outermost active
+    /// conditional control.  This is used so that we know if a
+    /// temporary should be destroyed conditionally.
+    ConditionalEvaluation *OutermostConditional;
 
     CodeGenFunction(const CodeGenFunction&);
     CodeGenFunction& operator= (const CodeGenFunction&);

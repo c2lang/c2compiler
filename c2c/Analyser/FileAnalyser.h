@@ -16,6 +16,7 @@
 #ifndef FILE_ANALYSER_H
 #define FILE_ANALYSER_H
 
+#include <memory>
 #include "Analyser/FunctionAnalyser.h"
 #include "AST/Type.h"
 #include "AST/Package.h"
@@ -40,7 +41,7 @@ class FileAnalyser {
 public:
     FileAnalyser(const Pkgs& pkgs, clang::DiagnosticsEngine& Diags_,
                  AST& ast_, TypeContext& typeContext_, bool verbose);
-    ~FileAnalyser();
+    ~FileAnalyser() {}
 
     // call in this order
     unsigned checkUses();
@@ -62,10 +63,9 @@ private:
     unsigned resolveFunctionDecl(FunctionDecl* D);
     unsigned checkArrayValue(ArrayValueDecl* D);
 
-    // TODO use auto_ptr on globals
     AST& ast;
-    Scope* globals;
-    TypeChecker* TC;
+    std::auto_ptr<Scope> globals;
+    std::auto_ptr<TypeChecker> TC;
     clang::DiagnosticsEngine& Diags;
     FunctionAnalyser functionAnalyser;
     bool verbose;
