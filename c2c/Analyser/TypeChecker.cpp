@@ -24,10 +24,10 @@
 #include "Analyser/Scope.h"
 #include "Analyser/TypeChecker.h"
 #include "Analyser/TypeFinder.h"
+#include "Analyser/constants.h"
 #include "AST/Package.h"
 #include "AST/Decl.h"
 #include "AST/Expr.h"
-#include "AST/constants.h"
 #include "Utils/StringBuilder.h"
 
 using namespace C2;

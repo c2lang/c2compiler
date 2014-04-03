@@ -24,11 +24,11 @@
 #include "Analyser/TypeChecker.h"
 #include "Analyser/AnalyserUtils.h"
 #include "Analyser/LiteralAnalyser.h"
+#include "Analyser/constants.h"
 #include "AST/Decl.h"
 #include "AST/Expr.h"
 #include "AST/Stmt.h"
 #include "AST/Package.h"
-#include "AST/constants.h"
 #include "Utils/color.h"
 #include "Utils/StringBuilder.h"
 
