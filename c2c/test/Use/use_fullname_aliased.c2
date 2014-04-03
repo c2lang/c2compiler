@@ -1,0 +1,10 @@
+// @skip
+// @warnings{no-unused}
+package test;
+
+use stdio as io;
+
+func void test() {
+    stdio.puts("hello");  // @error{use of fullname 'stdio' of aliased package is forbidden (use 'io')}
+}
+
