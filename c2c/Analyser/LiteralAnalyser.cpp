@@ -122,11 +122,16 @@ void LiteralAnalyser::check(QualType TLeft, const Expr* Right) {
         const int64_t limit = L->minVal;
         if (value < limit) overflow = true;
     } else {
-        const int64_t limit = (int64_t)L->maxVal;
-        if (value > limit) overflow = true;
+        if (availableWidth == 64) {
+            // NOTE: assume for now value always fits in uint64
+        } else {
+            const int64_t limit = (int64_t)L->maxVal;
+            if (value > limit) overflow = true;
+        }
     }
     //fprintf(stderr, "VAL=%lld  width=%d signed=%d\n", value, availableWidth, Result.isSigned());
     if (overflow) {
+        fprintf(stderr, "OVERFLOW ON %lld\n", value);
         SmallString<20> ss;
         Result.toString(ss, 10, true);
 
