@@ -59,8 +59,11 @@ static void SetConstantFlags(Decl* D, Expr* expr) {
             VarDecl* VD = cast<VarDecl>(D);
             QualType T = VD->getType();
             if (T.isConstQualified()) {
-                // NOTE: const char* etc should not be checked for value
-                if (!T.isPointerType()) expr->setCTC(CTC_FULL);
+                Expr* Init = VD->getInitValue();
+                if (Init) {
+                    // Copy CTC status of Init Expr
+                    expr->setCTC(Init->getCTC());
+                }
                 expr->setConstant();
                 return;
             }

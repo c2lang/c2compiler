@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
@@ -50,6 +51,9 @@
 #include "AST/AST.h"
 #include "AST/Package.h"
 #include "AST/Decl.h"
+// only for Dummy Packages
+#include "AST/Expr.h"
+
 #include "Parser/C2Parser.h"
 #include "Parser/C2Sema.h"
 #include "Analyser/FileAnalyser.h"
@@ -446,11 +450,6 @@ bool C2Builder::loadPackage(const std::string& name) {
     assert(!havePackage(name));
     // NOTE: MEMLEAK on Types
 
-    // TEMP use dummy packages
-    if (name == "c2") {
-        getPackage("c2", true, false);
-        return true;
-    }
     SourceLocation loc;
 
     if (name == "stdio") {
@@ -506,6 +505,24 @@ bool C2Builder::loadPackage(const std::string& name) {
             stdlibPkg->addSymbol(func);
             // function type
             func->setFunctionType(QualType(new FunctionType(func), 0));
+        }
+        return true;
+    }
+    if (name == "c2") {
+        unsigned file_id = filenames.add("(c2)");
+        Package* c2Pkg = getPackage("c2", true, false);
+        {
+            // make constant, CTC_NONE
+            QualType QT = Type::UInt64();
+            QT.addConst();
+            uint64_t value = time(0);
+            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, value, false));
+            // TODO get error without value if CTC_NONE, CTC_FULL gives out-of-bounds for value 123?!!
+            init->setCTC(CTC_NONE); // Don't check range, only type
+            init->setConstant();
+            init->setType(QT);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "buildtime", loc, QT, init, true, file_id);
+            c2Pkg->addSymbol(var);
         }
         return true;
     }
