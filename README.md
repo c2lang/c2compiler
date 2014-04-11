@@ -26,8 +26,7 @@ so hereby my thanks to the Clang folks!
 A short list of open items (the full list would probably fill-up GitHub) with
 their priority:
 * [high] c2c: parse full syntax into AST
-* [high] Makefile: fixed header dependencies and more .o files to .objs dir
-* [high] c2c: add proper analysis for AST
+* [high] Makefile: fix header dependencies and move .o files to .objs dir
 * [high] c2c: generate IR code for more AST elements
 * [medium] c2c: improve C generation by generating forward declarations in C code.
 * [medium] c2c: tab completion on targets in recipe / cmdline args

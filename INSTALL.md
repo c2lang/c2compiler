@@ -21,6 +21,9 @@ $ makepkg -is
 ```$ packer -S c2c-git```
 
 
+
+For other Linux distro, a manual build is required. See below.
+
 ## Installation of LLVM/Clang (C2 version)
 C2 is based on LLVM 3.3 and some parts of Clang 3.3.
 To install C2, follow the steps below. The example shows
@@ -55,7 +58,7 @@ to build C2.
 export PATH=$HOME/llvm-c2/bin:$PATH
 ```
 
-## Installation of C2
+## Installation of C2C
 To build C2: (llvm-c2/bin must be in PATH)
 ```
 git clone git://github.com/c2lang/c2compiler.git
