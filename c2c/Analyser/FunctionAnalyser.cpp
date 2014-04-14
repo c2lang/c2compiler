@@ -1446,7 +1446,7 @@ void FunctionAnalyser::checkDeclAssignment(Decl* decl, Expr* expr) {
 C2::QualType FunctionAnalyser::resolveUserType(QualType T) {
     if (isa<UnresolvedType>(T)) {
         const UnresolvedType* U = cast<UnresolvedType>(T);
-        TypeDecl* D = U->getMatch();
+        TypeDecl* D = U->getDecl();
         assert(D);
         return D->getType();
     }

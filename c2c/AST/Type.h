@@ -288,20 +288,20 @@ public:
     UnresolvedType(Expr* E)
         : Type(TC_UNRESOLVED, QualType())
         , expr(E)
-        , match(0)
+        , decl(0)
     {}
     virtual ~UnresolvedType();
     static bool classof(const Type* T) { return T->getTypeClass() == TC_UNRESOLVED; }
 
     Expr* getExpr() const { return expr; }
-    void setMatch(TypeDecl* t) const { match = t; }
-    TypeDecl* getMatch() const { return match; }
+    void setDecl(TypeDecl* t) const { decl = t; }
+    TypeDecl* getDecl() const { return decl; }
 protected:
     virtual void printName(StringBuilder& buffer) const;
     virtual void debugPrint(StringBuilder& buffer, unsigned indent) const;
 private:
     Expr* expr;         // can be IdentifierExpr (type) or MemberExpr (pkg.type)
-    mutable TypeDecl* match;
+    mutable TypeDecl* decl;
 };
 
 

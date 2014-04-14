@@ -274,7 +274,7 @@ llvm::Type* CodeGenModule::ConvertType(const C2::Type* type) {
     case TC_UNRESOLVED:
         {
             const UnresolvedType* U = cast<UnresolvedType>(type);
-            TypeDecl* TD = U->getMatch();
+            TypeDecl* TD = U->getDecl();
             assert(TD);
             return ConvertType(TD->getType());
         }

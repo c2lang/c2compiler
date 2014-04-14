@@ -385,8 +385,8 @@ UnresolvedType::~UnresolvedType() {
 }
 
 void UnresolvedType::printName(StringBuilder& buffer) const {
-    if (match) {
-        buffer << match->getName();
+    if (decl) {
+        buffer << decl->getName();
     } else {
         // TODO print Expr's name (need function for that)
         buffer << "TODO_EXPR_NAME" << "(unresolved!)";
@@ -400,9 +400,9 @@ void UnresolvedType::debugPrint(StringBuilder& buffer, unsigned indent) const {
     expr->print(buffer, indent+INDENT);
     buffer.indent(indent+INDENT);
     buffer << COL_ATTR << "resolved to=" << ANSI_NORMAL;
-    if (match) {
+    if (decl) {
         buffer << ANSI_CYAN;
-        buffer << match->getName();
+        buffer << decl->getName();
     } else {
         buffer << ANSI_RED << "???";
     }

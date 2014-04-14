@@ -129,7 +129,7 @@ unsigned TypeChecker::checkUnresolvedType(const UnresolvedType* type, bool used_
             // ok
             if (used_public || external) td->setUsedPublic();
             I->setDecl(D);
-            type->setMatch(td);
+            type->setDecl(td);
         }
         break;
     case EXPR_MEMBER:   // fully qualified
@@ -161,7 +161,7 @@ unsigned TypeChecker::checkUnresolvedType(const UnresolvedType* type, bool used_
             // ok
             if (used_public || external) td->setUsedPublic();
             member_id->setDecl(MD);
-            type->setMatch(td);
+            type->setDecl(td);
         }
         break;
     default:
@@ -214,7 +214,7 @@ QualType TypeChecker::checkCanonicals(Decls& decls, QualType Q, bool set) const 
     case TC_UNRESOLVED:
         {
             const UnresolvedType* U = cast<UnresolvedType>(T);
-            TypeDecl* TD = U->getMatch();
+            TypeDecl* TD = U->getDecl();
             assert(TD);
             TD->setUsed();
             // check if exists
