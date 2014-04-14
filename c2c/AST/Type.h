@@ -283,6 +283,7 @@ private:
 };
 
 
+// Represents symbols that refer to user type (eg 'Point')
 class UnresolvedType : public Type {
 public:
     UnresolvedType(Expr* E)

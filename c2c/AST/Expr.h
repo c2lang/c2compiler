@@ -228,11 +228,12 @@ public:
 };
 
 
+// Represents a symbol reference (eg 'x' or 'counter')
 class IdentifierExpr : public Expr {
 public:
     IdentifierExpr(SourceLocation loc_, const std::string& name_)
         : Expr(EXPR_IDENTIFIER, false)
-        , name(name_), decl(0), loc(loc_) {}
+        , name(name_), loc(loc_), decl(0) {}
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_IDENTIFIER;
     }
@@ -244,8 +245,8 @@ public:
     Decl* getDecl() const { return decl; }
 private:
     std::string name;
-    Decl* decl;   // set during analysis
     clang::SourceLocation loc;
+    Decl* decl;   // set during analysis
 };
 
 
