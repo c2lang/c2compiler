@@ -429,6 +429,7 @@ bool C2Builder::createPkgs() {
 
 bool C2Builder::loadExternalPackages() {
     // collect all external packages
+    bool haveErrors = false;
     for (unsigned i=0; i<files.size(); i++) {
         FileInfo* info = files[i];
         for (unsigned u=0; u<info->ast.numUses(); u++) {
@@ -437,11 +438,11 @@ bool C2Builder::loadExternalPackages() {
             if (havePackage(name)) continue;
             if (!loadPackage(name)) {
                 info->Diags.Report(D->getLocation(), clang::diag::err_unknown_package) << name;
-                return false;
+                haveErrors = true;
             }
         }
     }
-    return true;
+    return !haveErrors;
 }
 
 bool C2Builder::loadPackage(const std::string& name) {

@@ -1,0 +1,5 @@
+package test;
+
+use foo;    // @error{unknown package: foo}
+use bar;    // @error{unknown package: bar}
+
