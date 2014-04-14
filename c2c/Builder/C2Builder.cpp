@@ -140,9 +140,9 @@ public:
         // NOTE: filling zero instead of PP works
         //Diags.getClient()->BeginSourceFile(LangOpts_, &PP);
         Diags.getClient()->BeginSourceFile(LangOpts_, 0);
-
     }
     ~FileInfo() {
+        //Diags.getClient()->EndSourceFile();
         delete analyser;
     }
 

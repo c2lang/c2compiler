@@ -16,6 +16,7 @@
 #ifndef C2PARSER_H
 #define C2PARSER_H
 
+#include <assert.h>
 #include <clang/Lex/Preprocessor.h>
 #include <clang/Sema/Ownership.h>
 
