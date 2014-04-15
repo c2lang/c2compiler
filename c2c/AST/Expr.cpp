@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include <stdio.h>
 
 #include "AST/Expr.h"
@@ -30,7 +29,6 @@ using namespace clang;
 
 //#define EXPR_DEBUG
 #ifdef EXPR_DEBUG
-#include <stdio.h>
 static int creationCount;
 static int deleteCount;
 #endif

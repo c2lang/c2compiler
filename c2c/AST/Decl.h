@@ -368,9 +368,6 @@ template <class T> static inline const T* dyncast(const Decl* D) {
 }
 
 //#define CAST_DEBUG
-#ifdef CAST_DEBUG
-#include <assert.h>
-#endif
 
 template <class T> static inline T* cast(Decl* D) {
 #ifdef CAST_DEBUG
