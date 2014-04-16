@@ -77,8 +77,9 @@ llvm::Function* CodeGenFunction::generateProto(const std::string& pkgname) {
     StringBuilder buffer;
     GenUtils::addName(pkgname, FuncDecl->getName(), buffer);
 
-    llvm::GlobalValue::LinkageTypes ltype = llvm::GlobalValue::InternalLinkage;
-    if (FuncDecl->isPublic()) ltype = llvm::GlobalValue::ExternalLinkage;
+    llvm::GlobalValue::LinkageTypes ltype = CGM.getLinkage(FuncDecl->isPublic());
+    // override for main
+    if (FuncDecl->getName() == "main") ltype = llvm::GlobalValue::ExternalLinkage;
 
     llvm::Function *func =
         llvm::Function::Create(funcType, ltype, (const char*)buffer, module);
@@ -516,7 +517,8 @@ llvm::Value* CodeGenFunction::EmitCallExpr(const CallExpr* E) {
     llvm::Function* function;
     StringBuilder fullname;
     GenUtils::addName(FD->getPackage()->getCName(), FuncName->getName(), fullname);
-    if (FD->getPackage() == CGM.getPackage()) {       // same-package (find func)
+    // TODO FIX THIS for single module!
+    if (FD->getPackage()->getName() == CGM.getName()) {       // same-package (find func)
         function = module->getFunction((const char*)fullname);
     } else {    // other package (find or generate decl)
         function = module->getFunction((const char*)fullname);

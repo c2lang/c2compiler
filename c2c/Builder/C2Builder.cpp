@@ -687,18 +687,29 @@ void C2Builder::generateOptionalC() {
 void C2Builder::generateOptionalIR() {
     if (!options.generateIR) return;
 
-    for (PkgsIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
-        Package* P = iter->second;
+    bool single_module = false;
+    for (unsigned i=0; i<recipe.genConfigs.size(); i++) {
+        const std::string& conf = recipe.genConfigs[i];
+        // TODO just pass struct with bools?
+        if (conf == "single_module") single_module = true;
+    }
+
+    if (single_module) {
         u_int64_t t1 = Utils::getCurrentTime();
-        if (P->isPlainC()) continue;
-        // for now filter out 'c2' as well
-        if (P->getName() == "c2") continue;
-        if (options.verbose) printf(COL_VERBOSE"generating IR for package %s"ANSI_NORMAL"\n", P->getName().c_str());
-        CodeGenModule cgm(P);
-        for (unsigned i=0; i<files.size(); i++) {
-            FileInfo* info = files[i];
-            if (info->ast.getPkgName() == P->getName()) {
-                cgm.addEntry(info->ast);
+        std::string filename = recipe.name;
+        //  HMM dont have Package P here, refactor
+        CodeGenModule cgm(filename, true);
+        if (options.verbose) printf(COL_VERBOSE"generating IR for single module %s"ANSI_NORMAL"\n", filename.c_str());
+        for (PkgsIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
+            Package* P = iter->second;
+            if (P->isPlainC()) continue;
+            if (P->getName() == "c2") continue;
+
+            for (unsigned i=0; i<files.size(); i++) {
+                FileInfo* info = files[i];
+                if (info->ast.getPkgName() == P->getName()) {
+                    cgm.addEntry(info->ast);
+                }
             }
         }
         cgm.generate();
@@ -706,6 +717,28 @@ void C2Builder::generateOptionalIR() {
         if (options.printTiming) printf(COL_TIME"IR generation took %lld usec"ANSI_NORMAL"\n", t2 - t1);
         if (options.printIR) cgm.dump();
         bool ok = cgm.verify();
-        if (ok) cgm.write(recipe.name, P->getName());
+        if (ok) cgm.write(recipe.name, filename);
+    } else {
+        for (PkgsIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
+            Package* P = iter->second;
+            u_int64_t t1 = Utils::getCurrentTime();
+            if (P->isPlainC()) continue;
+            if (P->getName() == "c2") continue;
+
+            if (options.verbose) printf(COL_VERBOSE"generating IR for package %s"ANSI_NORMAL"\n", P->getName().c_str());
+            CodeGenModule cgm(P->getName(), false);
+            for (unsigned i=0; i<files.size(); i++) {
+                FileInfo* info = files[i];
+                if (info->ast.getPkgName() == P->getName()) {
+                    cgm.addEntry(info->ast);
+                }
+            }
+            cgm.generate();
+            u_int64_t t2 = Utils::getCurrentTime();
+            if (options.printTiming) printf(COL_TIME"IR generation took %lld usec"ANSI_NORMAL"\n", t2 - t1);
+            if (options.printIR) cgm.dump();
+            bool ok = cgm.verify();
+            if (ok) cgm.write(recipe.name, P->getName());
+        }
     }
 }

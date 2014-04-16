@@ -140,6 +140,13 @@ void RecipeReader::handleLine(char* line) {
                         // TODO check duplicate configs
                         current->addAnsiCConfig(tok2);
                     }
+                } else if (strcmp(tok, "codegen") == 0) {
+                    while (1) {
+                        const char* tok2 = get_token();
+                        if (!tok2) break;
+                        // TODO check duplicate configs
+                        current->addCodeGenConfig(tok2);
+                    }
                 } else if (strcmp(tok, "warnings") == 0) {
                     while (1) {
                         const char* tok2 = get_token();

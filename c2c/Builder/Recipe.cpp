@@ -29,6 +29,10 @@ void Recipe::addAnsiCConfig(const std::string& config_) {
     cConfigs.push_back(config_);
 }
 
+void Recipe::addCodeGenConfig(const std::string& config_) {
+    genConfigs.push_back(config_);
+}
+
 void Recipe::silenceWarning(const std::string& warn_) {
     silentWarnings.push_back(warn_);
 }

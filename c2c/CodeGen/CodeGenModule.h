@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 
+#include <llvm/IR/GlobalValue.h>
 #include <llvm/IR/IRBuilder.h>
 #include "AST/Type.h"
 
@@ -43,7 +44,7 @@ class StringLiteral;
 // generates LLVM Module from (multiple) ASTs
 class CodeGenModule {
 public:
-    CodeGenModule(const Package* pkg_);
+    CodeGenModule(const std::string& name_, bool single);
     ~CodeGenModule();
 
     void addEntry(AST& ast) { entries.push_back(&ast); }
@@ -55,8 +56,9 @@ public:
     llvm::Type* ConvertType(BuiltinType::Kind K);
     llvm::Type* ConvertType(const C2::Type* type);
     llvm::Function* createExternal(const Package* P, const std::string& name);
+    llvm::GlobalValue::LinkageTypes getLinkage(bool isPublic);
 
-    const Package* getPackage() const { return pkg; }
+    const std::string& getName() const { return name; }
     llvm::Module* getModule() const { return module; }
     llvm::LLVMContext& getContext() const { return context; }
     llvm::IRBuilder<> getBuilder() const { return builder; }
@@ -68,7 +70,8 @@ private:
     llvm::Constant* EvaluateExprAsConstant(const Expr *E);
     llvm::Constant* GetConstantArrayFromStringLiteral(const StringLiteral* E);
 
-    const Package* pkg;
+    const std::string name;
+    bool single_module;     // multiple packages in single module
 
     typedef std::vector<AST*> Entries;
     typedef Entries::iterator EntriesIter;

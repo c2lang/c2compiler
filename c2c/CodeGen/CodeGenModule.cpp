@@ -39,17 +39,17 @@
 #include "AST/Decl.h"
 #include "AST/Expr.h"
 #include "Utils/StringBuilder.h"
-#include "Utils/GenUtils.h"
 
 //#define DEBUG_CODEGEN
 
 using namespace C2;
 using namespace llvm;
 
-CodeGenModule::CodeGenModule(const Package* pkg_)
-    : pkg(pkg_)
+CodeGenModule::CodeGenModule(const std::string& name_, bool single)
+    : name(name_)
+    , single_module(single)
     , context(llvm::getGlobalContext())
-    , module(new llvm::Module(pkg->getName(), context))
+    , module(new llvm::Module(name, context))
     , builder(context)
 {}
 
@@ -84,7 +84,7 @@ void CodeGenModule::generate() {
         for (unsigned i=0; i<ast->numFunctions(); i++) {
             FunctionDecl* F = ast->getFunction(i);
             CodeGenFunction cgf(*this, F);
-            llvm::Function* proto = cgf.generateProto(pkg->getName());
+            llvm::Function* proto = cgf.generateProto(F->getPackage()->getCName());
             F->setIRProto(proto);
         }
     }
@@ -173,8 +173,7 @@ void CodeGenModule::EmitGlobalVariable(VarDecl* Var) {
     //QualType qt = Var->getType();
     //llvm::Type* type = ConvertType(qt.getTypePtr());
     bool constant = false;
-    llvm::GlobalValue::LinkageTypes ltype = llvm::GlobalValue::InternalLinkage;
-    if (Var->isPublic()) ltype = llvm::GlobalValue::ExternalLinkage;
+    llvm::GlobalValue::LinkageTypes ltype = getLinkage(Var->isPublic());
     // TODO use correct arguments for constant and Initializer
     // NOTE: getName() doesn't have to be virtual here
     // TODO is var is array and has bool isIncrementalArray also generate init code
@@ -301,6 +300,11 @@ llvm::Function* CodeGenModule::createExternal(const Package* P, const std::strin
     CodeGenFunction cgf(*this, F);
     llvm::Function* proto = cgf.generateProto(P->getCName());
     return proto;
+}
+
+llvm::GlobalValue::LinkageTypes CodeGenModule::getLinkage(bool isPublic) {
+    if (isPublic && !single_module) return llvm::GlobalValue::ExternalLinkage;
+    else return llvm::GlobalValue::InternalLinkage;
 }
 
 llvm::Constant* CodeGenModule::EvaluateExprAsConstant(const Expr *E) {
