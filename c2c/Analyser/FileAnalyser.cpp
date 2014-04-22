@@ -141,8 +141,7 @@ unsigned FileAnalyser::checkVarInits() {
     unsigned errors = 0;
     for (unsigned i=0; i<ast.numVars(); i++) {
         VarDecl* V = ast.getVar(i);
-        Expr* initVal = V->getInitValue();
-        if (initVal) {
+        if (V->getInitValue()) {
             errors += functionAnalyser.checkVarInit(V);
         } else {
             QualType T = V->getType();

@@ -578,14 +578,18 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
         ArrayType* AT = cast<ArrayType>(Q->getCanonicalType().getTypePtr());
         QualType ET = AT->getElementType();
         // TODO check if size is specifier in type
+        bool constant = true;
         for (unsigned i=0; i<values.size(); i++) {
             analyseInitExpr(values[i], ET);
+            if (!values[i]->isConstant()) constant = false;
         }
+        if (constant) expr->setConstant();
     } else if (Q.isStructType()) {
         // TODO use helper function
         StructType* TT = cast<StructType>(Q->getCanonicalType().getTypePtr());
         StructTypeDecl* STD = TT->getDecl();
         assert(STD->isStruct() && "TEMP only support structs for now");
+        bool constant = true;
         for (unsigned i=0; i<values.size(); i++) {
             if (i >= STD->numMembers()) {
                 // note: 0 for array, 2 for scalar, 3 for union, 4 for structs
@@ -597,7 +601,9 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
             VarDecl* VD = dyncast<VarDecl>(STD->getMember(i));
             assert(VD && "TEMP don't support sub-struct member inits");
             analyseInitExpr(values[i], VD->getType());
+            if (!values[i]->isConstant()) constant = false;
         }
+        if (constant) expr->setConstant();
     } else {
         // only allow 1
         switch (values.size()) {
@@ -606,7 +612,7 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
             errors++;
             break;
         case 1:
-            // Q: allow initlist for single var?
+            // Q: allow initlist for single var?-> NO
             //see clang: cannot initialize variable of type %0 with initializer list">
             break;
         default:
