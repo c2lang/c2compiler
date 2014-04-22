@@ -13,7 +13,7 @@ type Element struct {
     int value;
 }
 
-const Element[] elements;
+const Element[+] elements;
 
 elements += { "test1", 10 }
 elements += { "test2", 20 }

@@ -1,0 +1,9 @@
+// @skip
+// @warnings{no-unused}
+package test;
+
+int[+] a;
+
+a += 10;
+a += 20;
+

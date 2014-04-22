@@ -11,7 +11,7 @@ public func void main() {
     Number num;
     int* ptr;
     Number** ptr2;
-    int*[5][] bla;
+    int*[5][2] bla;
 
     // --- var decls with init, OK ---
     int a2 = 10;

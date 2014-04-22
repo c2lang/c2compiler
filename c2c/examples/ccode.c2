@@ -8,7 +8,7 @@ type Point struct {
     uint16 y;
 }
 
-Point[] points;
+Point[+] points;
 
 points += { 1, 2 }
 points += { 2, 0 }

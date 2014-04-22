@@ -743,9 +743,14 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     if (!errs) {
         TC.resolveCanonicals(decl, type, true);
         ArrayType* AT = dyncast<ArrayType>(type.getTypePtr());
-        Expr* sizeExpr = AT->getSizeExpr();
-        if (AT && sizeExpr) {
-            analyseArraySizeExpr(sizeExpr);
+        if (AT) {
+            Expr* sizeExpr = AT->getSizeExpr();
+            if (sizeExpr) analyseArraySizeExpr(sizeExpr);
+            else {
+                if (!decl->getInitValue()) {
+                    Diags.Report(decl->getLocation(), diag::err_typecheck_incomplete_array_needs_initializer);
+                }
+            }
         }
     }
 
