@@ -773,8 +773,12 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
         ArrayType* AT = dyncast<ArrayType>(type.getTypePtr());
         if (AT) {
             Expr* sizeExpr = AT->getSizeExpr();
-            if (sizeExpr) analyseArraySizeExpr(AT, sizeExpr);
-            else {
+            if (sizeExpr) {
+                analyseArraySizeExpr(AT, sizeExpr);
+                if (sizeExpr->getCTC() != CTC_FULL && decl->getInitValue()) {
+                    Diags.Report(decl->getLocation(), diag::err_vla_with_init_value) << decl->getInitValue()->getLocation();
+                }
+            } else {
                 if (!decl->getInitValue()) {
                     Diags.Report(decl->getLocation(), diag::err_typecheck_incomplete_array_needs_initializer);
                 }
