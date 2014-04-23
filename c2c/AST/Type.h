@@ -20,6 +20,7 @@
 #include <vector>
 #include <string>
 
+#include <llvm/ADT/APInt.h>
 // NOTE: a canonical type will never have Unresolved types in it (fully resolved).
 
 // TODO: Use TypeBits bitfield
@@ -272,6 +273,8 @@ public:
 
     QualType getElementType() const { return ElementType; }
     Expr* getSizeExpr() const { return sizeExpr; }
+    const llvm::APInt &getSize() const { return Size; }
+    void setSize(const llvm::APInt& value) { Size = value; }
 
 protected:
     virtual void printName(StringBuilder& buffer) const;
@@ -279,6 +282,7 @@ protected:
 private:
     QualType ElementType;
     Expr* sizeExpr;
+    llvm::APInt Size;
     bool ownSize;
 };
 

@@ -369,7 +369,7 @@ unsigned FileAnalyser::resolveVarDecl(VarDecl* D) {
         ArrayType* AT = dyncast<ArrayType>(Q.getTypePtr());
         Expr* sizeExpr = AT->getSizeExpr();
         if (AT && sizeExpr) {
-            functionAnalyser.checkArrayExpr(sizeExpr);
+            functionAnalyser.checkArrayExpr(AT, sizeExpr);
         }
 
         // NOTE: dont check initValue here (doesn't have canonical type yet)

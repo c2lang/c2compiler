@@ -1,0 +1,14 @@
+// @warnings{no-unused}
+package test;
+
+type S struct {
+    char* cp;
+    int a;
+}
+
+S[] s = {
+    { "a", 1 },
+    { "b", 2 },
+    { "c", 3 }
+}
+

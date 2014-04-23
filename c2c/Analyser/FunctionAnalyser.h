@@ -48,7 +48,7 @@ public:
 
     unsigned check(FunctionDecl* F);
     unsigned checkVarInit(VarDecl* V);
-    unsigned checkArrayExpr(Expr* E);
+    unsigned checkArrayExpr(ArrayType* AT, Expr* E);
     unsigned checkEnumValue(EnumConstantDecl* E, llvm::APSInt& nextValue);
 private:
     void checkFunction(FunctionDecl* F);
@@ -85,7 +85,7 @@ private:
     void analyseInitExpr(Expr* expr, QualType expectedType);
     void analyseInitList(InitListExpr* expr, QualType expectedType);
     void analyseSizeofExpr(Expr* expr);
-    void analyseArraySizeExpr(Expr* expr);
+    void analyseArraySizeExpr(ArrayType* AT, Expr* expr);
 
     void pushMode(unsigned DiagID);
     void popMode();

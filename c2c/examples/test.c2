@@ -19,7 +19,6 @@ public func void main() {
     Number[] num2 = { 10, 20 }
     int a4 = calc();
     int b2 = 10 / 2;
-    int[][] b3 = a;
     Number a5 = calc();
     int* ptr3 = nil;
     Number** ptr4 = nil;

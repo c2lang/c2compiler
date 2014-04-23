@@ -130,12 +130,12 @@ unsigned FunctionAnalyser::checkVarInit(VarDecl* V) {
     return errors;
 }
 
-unsigned FunctionAnalyser::checkArrayExpr(Expr* E) {
+unsigned FunctionAnalyser::checkArrayExpr(ArrayType* AT, Expr* E) {
     LOG_FUNC
     errors = 0;
 
     ConstModeSetter cms(*this, diag::err_init_element_not_constant);
-    analyseArraySizeExpr(E);
+    analyseArraySizeExpr(AT, E);
 
     return errors;
 }
@@ -554,6 +554,23 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
 void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
     LOG_FUNC
     InitListExpr* IE = dyncast<InitListExpr>(expr);
+    const ArrayType* AT = dyncast<ArrayType>(expectedType->getCanonicalType());
+    if (AT) {
+        const QualType ET = AT->getElementType();
+        bool isCharArray = (ET == Type::Int8() || ET == Type::UInt8());
+
+        if (isCharArray) {
+            if (!IE && !isa<StringLiteral>(expr)) {
+                Diags.Report(expr->getLocation(), diag::err_array_init_not_init_list) << 1;
+                return;
+            }
+        } else {
+            if (!IE) {
+                Diags.Report(expr->getLocation(), diag::err_array_init_not_init_list) << 0;
+                return;
+            }
+        }
+    }
     if (IE) {
         analyseInitList(IE, expectedType);
     } else {
@@ -564,6 +581,15 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
                 Diags.Report(expr->getLocation(), constDiagID) << expr->getSourceRange();
             } else {
                 EA.check(expectedType, expr);
+            }
+            if (AT && AT->getSizeExpr()) {
+                // it should be char array type already and expr is string literal
+                assert(isa<StringLiteral>(expr));
+                const StringLiteral* S = cast<StringLiteral>(expr);
+                if (S->getByteLength() > AT->getSize().getZExtValue()) {
+                    Diags.Report(S->getLocation(), diag::err_initializer_string_for_char_array_too_long) << S->getSourceRange();
+                    return;
+                }
             }
         }
     }
@@ -701,7 +727,7 @@ void FunctionAnalyser::analyseSizeofExpr(Expr* expr) {
 
 }
 
-void FunctionAnalyser::analyseArraySizeExpr(Expr* E) {
+void FunctionAnalyser::analyseArraySizeExpr(ArrayType* AT, Expr* E) {
     LOG_FUNC
     QualType T = analyseExpr(E, RHS);
     if (!T.isValid()) return;
@@ -727,6 +753,8 @@ void FunctionAnalyser::analyseArraySizeExpr(Expr* E) {
         if (Result.isSigned() && Result.isNegative()) {
             Diags.Report(E->getLocation(), diag::err_typecheck_negative_array_size) << E->getSourceRange();
             errors++;
+        } else {
+            AT->setSize(Result);
         }
     }
 }
@@ -745,7 +773,7 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
         ArrayType* AT = dyncast<ArrayType>(type.getTypePtr());
         if (AT) {
             Expr* sizeExpr = AT->getSizeExpr();
-            if (sizeExpr) analyseArraySizeExpr(sizeExpr);
+            if (sizeExpr) analyseArraySizeExpr(AT, sizeExpr);
             else {
                 if (!decl->getInitValue()) {
                     Diags.Report(decl->getLocation(), diag::err_typecheck_incomplete_array_needs_initializer);
