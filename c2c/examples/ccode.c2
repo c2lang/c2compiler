@@ -8,6 +8,7 @@ type Point struct {
     uint16 y;
 }
 
+/*
 Point[+] points;
 
 points += { 1, 2 }
@@ -15,6 +16,7 @@ points += { 2, 0 }
 points += { 4, 3 }
 points += { 6, 4 }
 points += { 8, 1 }
+*/
 
 public func int main(int argc, char*[] argv) {
     func1();

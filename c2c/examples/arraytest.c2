@@ -13,15 +13,21 @@ type Element struct {
     int value;
 }
 
+/*
 const Element[+] elements;
-
 elements += { "test1", 10 }
 elements += { "test2", 20 }
 elements += { "test3", 30 }
+*/
 
 TEST(foo, 10) {
     IO.printf("here!\n");
     return 0;
+}
+
+Element[] elems = {
+    { "t1", 1 },
+    { "t2", 2 },
 }
 
 const int const_a = 10;
@@ -30,9 +36,9 @@ func int myfunc(int val) { return 2 * val; }
 int[const_a] buf1;   // ok
 
 public func void main() {
-    int count = sizeof(elements) / sizeof(Element);
+    int count = sizeof(elems) / sizeof(Element);
     for (int i=0; i<count; i++) {
-        IO.printf("[%2d] %16s\n", i, elements[i].name);
+        IO.printf("[%2d] %16s\n", i, elems[i].name);
     }
     Element e;
     e.name;

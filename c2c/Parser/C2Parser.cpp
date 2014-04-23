@@ -1332,6 +1332,12 @@ C2::ExprResult C2Parser::ParseArray(ExprResult base) {
         ConsumeToken(); // consume ']'
         return Actions.ActOnArrayType(base.release(), E.release());
     }
+    // incremental arrays "[+]"
+    if (Tok.is(tok::plus) && NextToken().is(tok::r_square)) {
+        ConsumeToken(); // consume '+'
+        ConsumeToken(); // consume ']'
+        return Actions.ActOnArrayType(base.release(), 0);
+    }
     ExprResult E = ParseConstantExpression();
     if (E.isInvalid()) return ExprError();
     ExpectAndConsume(tok::r_square, diag::err_expected_rsquare);
