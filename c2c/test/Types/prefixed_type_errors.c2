@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+package test;
+
+int a = 10;
+
+test.a b;   // @error{test.a is not a type name}
+
+type Number int;
+public test.Number bb; // @error{public declaration using non-public type test.Number}
+

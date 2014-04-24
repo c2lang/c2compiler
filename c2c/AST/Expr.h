@@ -522,8 +522,6 @@ public:
     bool isPkgPrefix() const { return StmtBits.MemberExprIsPkgPrefix; }
 
     // NOTE: uses static var
-#warning TODO replace getFullName with printLiteral
-    const char* getFullName() const;
     virtual void printLiteral(StringBuilder& buffer) const;
 private:
     Expr* Base;

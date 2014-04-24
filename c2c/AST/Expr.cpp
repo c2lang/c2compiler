@@ -432,11 +432,6 @@ void MemberExpr::print(StringBuilder& buffer, unsigned indent) const {
     Member->print(buffer, indent + INDENT);
 }
 
-const char* MemberExpr::getFullName() const {
-    // TODO use recursion;
-    return "TODO";
-}
-
 void MemberExpr::printLiteral(StringBuilder& buffer) const {
     Base->printLiteral(buffer);
     buffer << '.';

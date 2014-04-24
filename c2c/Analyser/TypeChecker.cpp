@@ -150,12 +150,16 @@ unsigned TypeChecker::checkUnresolvedType(const UnresolvedType* type, bool used_
             Decl* MD = res.getDecl();
             TypeDecl* td = dyncast<TypeDecl>(MD);
             if (!td) {
-                Diags.Report(member_id->getLocation(), diag::err_not_a_typename) << M->getFullName();
+                StringBuilder name;
+                M->printLiteral(name);
+                Diags.Report(member_id->getLocation(), diag::err_not_a_typename) << name;
                 return 1;
             }
             bool external = globals.isExternal(MD->getPackage());
             if (used_public &&!external && !td->isPublic()) {
-                Diags.Report(member_id->getLocation(), diag::err_non_public_type) << M->getFullName();
+                StringBuilder name;
+                M->printLiteral(name);
+                Diags.Report(member_id->getLocation(), diag::err_non_public_type) << name;
                 return 1;
             }
             // ok
