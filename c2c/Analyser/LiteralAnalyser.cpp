@@ -97,7 +97,10 @@ void LiteralAnalyser::check(QualType TLeft, const Expr* Right) {
         }
         // TODO remove const cast
         Expr* EE = const_cast<Expr*>(Right);
-        EE->setImpCast(TL->getKind());
+        QualType Canon = EE->getType().getCanonicalType();
+        assert(Canon->isBuiltinType());
+        const BuiltinType* BI = cast<BuiltinType>(Canon);
+        if (TL->getKind() != BI->getKind()) EE->setImpCast(TL->getKind());
         if (QT == Type::Bool()) {
             // NOTE: any integer to bool is ok
             return;
@@ -131,7 +134,6 @@ void LiteralAnalyser::check(QualType TLeft, const Expr* Right) {
     }
     //fprintf(stderr, "VAL=%lld  width=%d signed=%d\n", value, availableWidth, Result.isSigned());
     if (overflow) {
-        fprintf(stderr, "OVERFLOW ON %lld\n", value);
         SmallString<20> ss;
         Result.toString(ss, 10, true);
 
