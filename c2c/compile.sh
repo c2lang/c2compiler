@@ -1,4 +1,15 @@
-#!/bin/sh
+#!/bin/bash
+
+set -e
+
+function usage {
+    echo "Usage: $0 [file.ll]"
+    exit 1
+}
+
+[[ $# -ne 1 ]] && usage
+
+FILE=$1
 
 # script to compile .ll -> a.out using clang tooling
 echo "compiling $1"
