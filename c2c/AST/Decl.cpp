@@ -76,7 +76,7 @@ FunctionDecl::~FunctionDecl() {
 
 void FunctionDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[FunctionDecl] " << name << ' ';
+    buffer << "FunctionDecl " << name << ' ';
     functionType.print(buffer);
     buffer << '\n';
     for (unsigned i=0; i<args.size(); i++) {
@@ -131,7 +131,7 @@ VarDecl::~VarDecl() {
 
 void VarDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[VarDecl] " << name << ' ';
+    buffer << "VarDecl " << name << ' ';
     assert(type.isValid());
     //if (!isa<EnumType>(type)) type.print(buffer);
     type.print(buffer);
@@ -171,7 +171,7 @@ EnumConstantDecl::~EnumConstantDecl() {
 
 void EnumConstantDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[EnumConstantDecl] " << name << " value=" << Val.getSExtValue() << '\n';
+    buffer << "EnumConstantDecl " << name << " value=" << Val.getSExtValue() << '\n';
     if (InitVal) InitVal->print(buffer, indent+INDENT);
 }
 
@@ -184,7 +184,7 @@ TypeDecl::TypeDecl(DeclKind k, const std::string& name_, SourceLocation loc_, Qu
 
 
 void AliasTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
-    buffer << "[AliasTypeDecl] " << name << ' ';
+    buffer << "AliasTypeDecl " << name << ' ';
     type.print(buffer);
     buffer << '\n';
 }
@@ -206,7 +206,7 @@ void StructTypeDecl::addMember(Decl* D) {
 
 void StructTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[StructTypeDecl] (";
+    buffer << "StructTypeDecl (";
     if (isStruct()) buffer << "struct";
     else buffer << "union";
     buffer  << ") " << name << '\n';
@@ -218,7 +218,7 @@ void StructTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
 
 void EnumTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[EnumTypeDecl] " << name << ' ';
+    buffer << "EnumTypeDecl " << name << ' ';
     implType.print(buffer);
     buffer << '\n';
     for (unsigned i=0; i<constants.size(); i++) {
@@ -238,7 +238,7 @@ FunctionTypeDecl::~FunctionTypeDecl() {
 
 void FunctionTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[FunctionTypeDecl]\n";
+    buffer << "FunctionTypeDecl\n";
     func->print(buffer, indent + INDENT);
 }
 
@@ -255,7 +255,7 @@ ArrayValueDecl::~ArrayValueDecl() {
 
 void ArrayValueDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[ArrayValueDecl] " << name << '\n';
+    buffer << "ArrayValueDecl " << name << '\n';
     value->print(buffer, INDENT);
 }
 
@@ -269,7 +269,7 @@ UseDecl::UseDecl(const std::string& name_, SourceLocation loc_, bool isLocal_,
 }
 
 void UseDecl::print(StringBuilder& buffer, unsigned indent) const {
-    buffer << "[UseDecl] " << name;
+    buffer << "UseDecl " << name;
     if (alias != "") buffer << " as " << alias;
     if (isLocal()) buffer << " local";
     buffer << '\n';
