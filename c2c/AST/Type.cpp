@@ -63,6 +63,7 @@ void QualType::printName(StringBuilder& buffer) const {
 }
 
 void QualType::print(StringBuilder& buffer) const {
+    buffer.setColor(COL_TYPE);
     buffer << '\'';
     debugPrint(buffer);
     buffer << '\'';

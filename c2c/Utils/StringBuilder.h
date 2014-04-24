@@ -43,6 +43,7 @@ public:
     bool isEmpty() const;
     void strip(char c);
     void indent(unsigned num);
+    void setColor(const char* color);
 private:
     static const unsigned CAPACITY = 1024*1024;
     unsigned capacity;

@@ -158,3 +158,12 @@ void StringBuilder::indent(unsigned num) {
     *ptr = 0;
 }
 
+void StringBuilder::setColor(const char* color) {
+    unsigned len = strlen(color);
+#ifdef SIZE_DEBUG
+    assert(len < space_left() && "buffer overflow");
+#endif
+    strcpy(ptr, color);
+    ptr += len;
+}
+

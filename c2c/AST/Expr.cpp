@@ -34,46 +34,6 @@ static int deleteCount;
 #endif
 
 
-static void expr2name(Expr* expr, StringBuilder& buffer) {
-    switch (expr->getKind()) {
-    case EXPR_INTEGER_LITERAL:
-    case EXPR_FLOAT_LITERAL:
-    case EXPR_BOOL_LITERAL:
-    case EXPR_CHAR_LITERAL:
-    case EXPR_STRING_LITERAL:
-    case EXPR_NIL:
-    case EXPR_CALL:
-        break;
-    case EXPR_IDENTIFIER:
-        {
-            IdentifierExpr* id = cast<IdentifierExpr>(expr);
-            buffer << id->getName();
-            return;
-        }
-    case EXPR_INITLIST:
-    case EXPR_TYPE:
-    case EXPR_DECL:
-    case EXPR_BINOP:
-    case EXPR_CONDOP:
-    case EXPR_UNARYOP:
-    case EXPR_BUILTIN:
-    case EXPR_ARRAYSUBSCRIPT:
-        break;
-    case EXPR_MEMBER:
-        {
-            MemberExpr* member = cast<MemberExpr>(expr);
-            expr2name(member->getBase(), buffer);
-            buffer << '.';
-            buffer << member->getMember()->getName();
-            return;
-        }
-    case EXPR_PAREN:
-        break;
-    };
-    buffer << "?";
-}
-
-
 Expr::Expr(ExprKind k, bool isConstant_)
     : Stmt(STMT_EXPR)
 {
@@ -98,6 +58,7 @@ static const char* ctc_strings[] = { "none", "partial", "full" };
 void Expr::print(StringBuilder& buffer, unsigned indent) const {
     QualType Q = getType();
     Q.print(buffer);
+    buffer.setColor(COL_ATTR);
     buffer << " ctc=" << ctc_strings[StmtBits.ExprIsCTC];
     buffer << ", constant=" << isConstant();
     if (getImpCast() != BuiltinType::Void) {
@@ -107,8 +68,10 @@ void Expr::print(StringBuilder& buffer, unsigned indent) const {
 
 void IntegerLiteral::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
+    buffer.setColor(COL_EXPR);
     buffer << "IntegerLiteral ";
     Expr::print(buffer, 0);
+    buffer.setColor(COL_VALUE);
     buffer << ' ' << Value.getSExtValue() << '\n';
 }
 
@@ -119,26 +82,32 @@ void IntegerLiteral::printLiteral(StringBuilder& buffer) const {
 
 void FloatingLiteral::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
+    buffer.setColor(COL_EXPR);
     buffer << "FloatingLiteral ";
     Expr::print(buffer, 0);
     char temp[20];
     sprintf(temp, "%f", Value.convertToFloat());
+    buffer.setColor(COL_VALUE);
     buffer << ' ' << temp << '\n';
 }
 
 
 void BooleanLiteral::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
+    buffer.setColor(COL_EXPR);
     buffer << "BooleanLiteral ";
     Expr::print(buffer, 0);
+    buffer.setColor(COL_VALUE);
     buffer << ' ' << getValue() << '\n';
 }
 
 
 void CharacterLiteral::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
+    buffer.setColor(COL_EXPR);
     buffer << "CharacterLiteral ";
     Expr::print(buffer, 0);
+    buffer.setColor(COL_VALUE);
     buffer << " '" << (char)value << "'\n";
 }
 
@@ -149,23 +118,29 @@ void CharacterLiteral::printLiteral(StringBuilder& buffer) const {
 
 void StringLiteral::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
+    buffer.setColor(COL_EXPR);
     buffer << "StringLiteral ";
     Expr::print(buffer, 0);
+    buffer.setColor(COL_VALUE);
     buffer << " '" << value << "'\n";
 }
 
 
 void NilExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
+    buffer.setColor(COL_EXPR);
     buffer << "NilExpr\n";
 }
 
 
 void IdentifierExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
+    buffer.setColor(COL_EXPR);
     buffer << "IdentifierExpr ";
     Expr::print(buffer, 0);
+    buffer.setColor(COL_VALUE);
     buffer << ' ' << getName();
+    buffer.setColor(COL_ATTR);
     if (decl) buffer << " <RESOLVED>";
     else buffer << " <UNRESOLVED>";
     buffer << '\n';
@@ -178,6 +153,7 @@ void IdentifierExpr::printLiteral(StringBuilder& buffer) const {
 
 void TypeExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
+    buffer.setColor(COL_EXPR);
     buffer << "TypeExpr ";
     getType().print(buffer);
 }
@@ -191,10 +167,12 @@ void CallExpr::addArg(Expr* arg) {
 
 void CallExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
+    buffer.setColor(COL_EXPR);
     buffer << "CallExpr ";
     Expr::print(buffer, 0);
+    buffer.setColor(COL_VALUE);
     buffer << ' ';
-    expr2name(Fn, buffer);
+    Fn->printLiteral(buffer);
     buffer << '\n';
     Fn->print(buffer, indent + INDENT);
     for (unsigned i=0; i<args.size(); i++) {
@@ -218,6 +196,7 @@ InitListExpr::~InitListExpr() {
 
 void InitListExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
+    buffer.setColor(COL_EXPR);
     buffer << "InitListExpr ";
     Expr::print(buffer, 0);
     buffer << '\n';
@@ -305,8 +284,10 @@ const char* BinaryOperator::OpCode2str(clang::BinaryOperatorKind opc) {
 
 void BinaryOperator::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
+    buffer.setColor(COL_EXPR);
     buffer << "BinaryOperator ";
     Expr::print(buffer, 0);
+    buffer.setColor(COL_VALUE);
     buffer << " '" << OpCode2str(opc) << '\'';
     buffer << '\n';
 
@@ -333,6 +314,7 @@ ConditionalOperator::~ConditionalOperator() {
 
 void ConditionalOperator::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
+    buffer.setColor(COL_EXPR);
     buffer << "ConditionalOperator ";
     Expr::print(buffer, 0);
     buffer << '\n';
@@ -367,8 +349,10 @@ const char* UnaryOperator::OpCode2str(clang::UnaryOperatorKind opc) {
 
 void UnaryOperator::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
+    buffer.setColor(COL_EXPR);
     buffer << "UnaryOperator ";
     Expr::print(buffer, 0);
+    buffer.setColor(COL_ATTR);
     switch (opc) {
     case UO_PostInc:
     case UO_PostDec:
@@ -381,6 +365,7 @@ void UnaryOperator::print(StringBuilder& buffer, unsigned indent) const {
     default:
         break;
     }
+    buffer.setColor(COL_VALUE);
     buffer << " '" << OpCode2str(opc) << "'\n";
     val->print(buffer, indent + INDENT);
 }
@@ -392,8 +377,10 @@ BuiltinExpr::~BuiltinExpr() {
 
 void BuiltinExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
+    buffer.setColor(COL_EXPR);
     buffer << "BuiltinExpr ";
     Expr::print(buffer, 0);
+    buffer.setColor(COL_ATTR);
     if (isSizeof()) buffer << " sizeof";
     else buffer << " elemsof";
     buffer << '\n';
@@ -408,6 +395,7 @@ ArraySubscriptExpr::~ArraySubscriptExpr() {
 
 void ArraySubscriptExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
+    buffer.setColor(COL_EXPR);
     buffer << "ArraySubscriptExpr ";
     Expr::print(buffer, 0);
     buffer << '\n';
@@ -423,7 +411,9 @@ MemberExpr::~MemberExpr() {
 
 void MemberExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
+    buffer.setColor(COL_EXPR);
     buffer << "MemberExpr";
+    buffer.setColor(COL_ATTR);
     if (isPkgPrefix()) buffer << " (pkg-prefix)";
     buffer << ' ';
     Expr::print(buffer, 0);
@@ -445,6 +435,7 @@ ParenExpr::~ParenExpr() {
 
 void ParenExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
+    buffer.setColor(COL_EXPR);
     buffer << "ParenExpr ";
     Expr::print(buffer, 0);
     buffer << '\n';

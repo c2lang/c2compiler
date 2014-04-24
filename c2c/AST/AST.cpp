@@ -58,6 +58,7 @@ void AST::print() const {
         functionList[i]->print(buffer, 0);
         buffer << '\n';
     }
+    buffer.setColor(COL_NORM);
     printf("%s", (const char*)buffer);
 }
 

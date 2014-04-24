@@ -20,6 +20,7 @@
 #include "AST/Expr.h"
 #include "Utils/StringBuilder.h"
 #include "Utils/Utils.h"
+#include "Utils/color.h"
 #include "Utils/constants.h"
 
 using namespace C2;
@@ -65,6 +66,7 @@ ReturnStmt::~ReturnStmt() {
 
 void ReturnStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
+    buffer.setColor(COL_STMT);
     buffer << "ReturnStmt\n";
     if (value) {
         value->print(buffer, indent + INDENT);
@@ -94,6 +96,7 @@ IfStmt::~IfStmt() {
 
 void IfStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
+    buffer.setColor(COL_STMT);
     buffer << "IfStmt\n";
     SubExprs[COND]->print(buffer, indent + INDENT);
     if (SubExprs[THEN]) SubExprs[THEN]->print(buffer, indent + INDENT);
@@ -115,6 +118,7 @@ WhileStmt::~WhileStmt() {
 
 void WhileStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
+    buffer.setColor(COL_STMT);
     buffer << "WhileStmt\n";
     Cond->print(buffer, indent + INDENT);
     Then->print(buffer, indent + INDENT);
@@ -135,6 +139,7 @@ DoStmt::~DoStmt() {
 
 void DoStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
+    buffer.setColor(COL_STMT);
     buffer << "DoStmt\n";
     Cond->print(buffer, indent + INDENT);
     Then->print(buffer, indent + INDENT);
@@ -159,6 +164,7 @@ ForStmt::~ForStmt() {
 
 void ForStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
+    buffer.setColor(COL_STMT);
     buffer << "ForStmt\n";
     if (Init) Init->print(buffer, indent + INDENT);
     if (Cond) Cond->print(buffer, indent + INDENT);
@@ -180,6 +186,7 @@ SwitchStmt::~SwitchStmt() {
 
 void SwitchStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
+    buffer.setColor(COL_STMT);
     buffer << "SwitchStmt\n";
     Cond->print(buffer, indent + INDENT);
     for (unsigned i=0; i<Cases.size(); i++) {
@@ -201,6 +208,7 @@ CaseStmt::~CaseStmt() {
 
 void CaseStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
+    buffer.setColor(COL_STMT);
     buffer << "CaseStmt\n";
     Cond->print(buffer, indent + INDENT);
     for (unsigned i=0; i<Stmts.size(); i++) {
@@ -219,6 +227,7 @@ DefaultStmt::~DefaultStmt() {}
 
 void DefaultStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
+    buffer.setColor(COL_STMT);
     buffer << "DefaultStmt\n";
     for (unsigned i=0; i<Stmts.size(); i++) {
         Stmts[i]->print(buffer, indent + INDENT);
@@ -235,6 +244,7 @@ BreakStmt::~BreakStmt() {}
 
 void BreakStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
+    buffer.setColor(COL_STMT);
     buffer << "BreakStmt\n";
 }
 
@@ -248,6 +258,7 @@ ContinueStmt::~ContinueStmt() {}
 
 void ContinueStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
+    buffer.setColor(COL_STMT);
     buffer << "ContinueStmt\n";
 }
 
@@ -264,6 +275,7 @@ LabelStmt::~LabelStmt()
 
 void LabelStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
+    buffer.setColor(COL_STMT);
     buffer << "LabelStmt\n";
     subStmt->print(buffer, indent + INDENT);
 }
@@ -278,6 +290,7 @@ GotoStmt::~GotoStmt() {}
 
 void GotoStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
+    buffer.setColor(COL_STMT);
     buffer << "GotoStmt\n";
 }
 
@@ -293,6 +306,7 @@ CompoundStmt::~CompoundStmt() {}
 
 void CompoundStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
+    buffer.setColor(COL_STMT);
     buffer << "CompoundStmt\n";
     for (unsigned i=0; i<Stmts.size(); i++) {
         Stmts[i]->print(buffer, indent + INDENT);

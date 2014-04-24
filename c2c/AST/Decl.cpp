@@ -76,8 +76,11 @@ FunctionDecl::~FunctionDecl() {
 
 void FunctionDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "FunctionDecl " << name << ' ';
+    buffer.setColor(COL_DECL);
+    buffer << "FunctionDecl ";
     functionType.print(buffer);
+    buffer.setColor(COL_VALUE);
+    buffer << ' ' << name;
     buffer << '\n';
     for (unsigned i=0; i<args.size(); i++) {
         args[i]->print(buffer, indent + INDENT);
@@ -131,11 +134,14 @@ VarDecl::~VarDecl() {
 
 void VarDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "VarDecl " << name << ' ';
+    buffer.setColor(COL_DECL);
+    buffer << "VarDecl ";
     assert(type.isValid());
-    //if (!isa<EnumType>(type)) type.print(buffer);
     type.print(buffer);
-    buffer << " <" << VarDeclKind2Str(getVarKind()) << ">\n";
+    buffer.setColor(COL_ATTR);
+    buffer << ' ' << VarDeclKind2Str(getVarKind());
+    buffer.setColor(COL_VALUE);
+    buffer << ' ' << name << '\n';
 
     if (hasLocalQualifier()) buffer << " LOCAL";
     indent += INDENT;
@@ -171,7 +177,12 @@ EnumConstantDecl::~EnumConstantDecl() {
 
 void EnumConstantDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "EnumConstantDecl " << name << " value=" << Val.getSExtValue() << '\n';
+    buffer.setColor(COL_DECL);
+    buffer << "EnumConstantDecl ";
+    buffer.setColor(COL_VALUE);
+    buffer << name;
+    buffer.setColor(COL_ATTR);
+    buffer << ' ' << Val.getSExtValue() << '\n';
     if (InitVal) InitVal->print(buffer, indent+INDENT);
 }
 
@@ -184,8 +195,11 @@ TypeDecl::TypeDecl(DeclKind k, const std::string& name_, SourceLocation loc_, Qu
 
 
 void AliasTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
-    buffer << "AliasTypeDecl " << name << ' ';
+    buffer.setColor(COL_DECL);
+    buffer << "AliasTypeDecl ";
     type.print(buffer);
+    buffer.setColor(COL_VALUE);
+    buffer << ' ' << name;
     buffer << '\n';
 }
 
@@ -206,10 +220,13 @@ void StructTypeDecl::addMember(Decl* D) {
 
 void StructTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
+    buffer.setColor(COL_DECL);
     buffer << "StructTypeDecl (";
     if (isStruct()) buffer << "struct";
     else buffer << "union";
-    buffer  << ") " << name << '\n';
+    buffer << ") ";
+    buffer.setColor(COL_VALUE);
+    buffer << name << '\n';
     for (unsigned i=0; i<members.size(); i++) {
         members[i]->print(buffer, indent + INDENT);
     }
@@ -218,8 +235,11 @@ void StructTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
 
 void EnumTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "EnumTypeDecl " << name << ' ';
+    buffer.setColor(COL_DECL);
+    buffer << "EnumTypeDecl ";
     implType.print(buffer);
+    buffer.setColor(COL_VALUE);
+    buffer << ' ' << name;
     buffer << '\n';
     for (unsigned i=0; i<constants.size(); i++) {
         constants[i]->print(buffer, indent + INDENT);
@@ -238,6 +258,7 @@ FunctionTypeDecl::~FunctionTypeDecl() {
 
 void FunctionTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
+    buffer.setColor(COL_DECL);
     buffer << "FunctionTypeDecl\n";
     func->print(buffer, indent + INDENT);
 }
@@ -255,7 +276,10 @@ ArrayValueDecl::~ArrayValueDecl() {
 
 void ArrayValueDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "ArrayValueDecl " << name << '\n';
+    buffer.setColor(COL_DECL);
+    buffer << "ArrayValueDecl ";
+    buffer.setColor(COL_VALUE);
+    buffer << name << '\n';
     value->print(buffer, INDENT);
 }
 
@@ -269,7 +293,10 @@ UseDecl::UseDecl(const std::string& name_, SourceLocation loc_, bool isLocal_,
 }
 
 void UseDecl::print(StringBuilder& buffer, unsigned indent) const {
-    buffer << "UseDecl " << name;
+    buffer.setColor(COL_DECL);
+    buffer << "UseDecl ";
+    buffer.setColor(COL_VALUE);
+    buffer << name;
     if (alias != "") buffer << " as " << alias;
     if (isLocal()) buffer << " local";
     buffer << '\n';
