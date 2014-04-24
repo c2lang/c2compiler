@@ -21,15 +21,6 @@
 #include <string>
 
 #include <llvm/ADT/APInt.h>
-// NOTE: a canonical type will never have Unresolved types in it (fully resolved).
-
-// TODO: Use TypeBits bitfield
-
-// LATER: Merge Ptr and Qualtype bits? (so QualType is 4 bytes)
-
-// IDEA: match UnresolvedType on name in TypeContext? (same name re-uses UnresolvedType?)
-//      Number n1;
-//      Number n2; -> same UnresolvedType
 
 #define QUAL_CONST      (0x1)
 #define QUAL_VOLATILE   (0x2)
@@ -90,12 +81,13 @@ public:
     // for Debug/Diagnostic messages
     void DiagName(StringBuilder& buffer) const;
     void printName(StringBuilder& buffer) const;
-    void debugPrint(StringBuilder& buffer, unsigned indent) const;
+    void print(StringBuilder& buffer) const;   // with ''
+    void debugPrint(StringBuilder& buffer) const;   // no ''
 
     // Debug functions
     void dump() const;
 private:
-    void printQualifiers(StringBuilder& buffer, unsigned indent) const;
+    void printQualifiers(StringBuilder& buffer) const;
 
     Type* type;
     unsigned qualifiers;
@@ -121,13 +113,12 @@ protected:
         , canonicalType(canon)
     {}
     virtual void printName(StringBuilder& buffer) const = 0;
-    virtual void debugPrint(StringBuilder& buffer, unsigned indent) const = 0;
+    virtual void debugPrint(StringBuilder& buffer) const = 0;
 public:
     virtual ~Type() {}
 
     TypeClass getTypeClass() const { return typeClass; }
     bool hasCanonicalType() const { return canonicalType.isValid(); }
-    QualType getCanonicalType() const { return canonicalType; }
     void setCanonicalType(QualType qt) const;
 
     void DiagName(StringBuilder& buffer) const;
@@ -236,7 +227,7 @@ public:
 
 protected:
     virtual void printName(StringBuilder& buffer) const;
-    virtual void debugPrint(StringBuilder& buffer, unsigned indent) const;
+    virtual void debugPrint(StringBuilder& buffer) const;
 private:
     Kind kind;
 };
@@ -254,7 +245,7 @@ public:
 
 protected:
     virtual void printName(StringBuilder& buffer) const;
-    virtual void debugPrint(StringBuilder& buffer, unsigned indent) const;
+    virtual void debugPrint(StringBuilder& buffer) const;
 private:
     QualType PointeeType;
 };
@@ -266,6 +257,7 @@ public:
         : Type(TC_ARRAY, QualType())
         , ElementType(et)
         , sizeExpr(size)
+        , Size(32, 0, false)
         , ownSize(ownSize_)
     {}
     virtual ~ArrayType();
@@ -278,7 +270,7 @@ public:
 
 protected:
     virtual void printName(StringBuilder& buffer) const;
-    virtual void debugPrint(StringBuilder& buffer, unsigned indent) const;
+    virtual void debugPrint(StringBuilder& buffer) const;
 private:
     QualType ElementType;
     Expr* sizeExpr;
@@ -303,7 +295,7 @@ public:
     TypeDecl* getDecl() const { return decl; }
 protected:
     virtual void printName(StringBuilder& buffer) const;
-    virtual void debugPrint(StringBuilder& buffer, unsigned indent) const;
+    virtual void debugPrint(StringBuilder& buffer) const;
 private:
     Expr* expr;         // can be IdentifierExpr (type) or MemberExpr (pkg.type)
     mutable TypeDecl* decl;
@@ -328,7 +320,7 @@ public:
 
 protected:
     virtual void printName(StringBuilder& buffer) const;
-    virtual void debugPrint(StringBuilder& buffer, unsigned indent) const;
+    virtual void debugPrint(StringBuilder& buffer) const;
 private:
     QualType refType;
     std::string name;
@@ -347,7 +339,7 @@ public:
     StructTypeDecl* getDecl() const { return decl; }
 protected:
     virtual void printName(StringBuilder& buffer) const;
-    virtual void debugPrint(StringBuilder& buffer, unsigned indent) const;
+    virtual void debugPrint(StringBuilder& buffer) const;
 private:
     StructTypeDecl* decl;
 };
@@ -365,7 +357,7 @@ public:
     EnumTypeDecl* getDecl() const { return decl; }
 protected:
     virtual void printName(StringBuilder& buffer) const;
-    virtual void debugPrint(StringBuilder& buffer, unsigned indent) const;
+    virtual void debugPrint(StringBuilder& buffer) const;
 private:
     EnumTypeDecl* decl;
 };
@@ -381,7 +373,7 @@ public:
     FunctionDecl* getDecl() const { return func; }
 protected:
     virtual void printName(StringBuilder& buffer) const;
-    virtual void debugPrint(StringBuilder& buffer, unsigned indent) const;
+    virtual void debugPrint(StringBuilder& buffer) const;
 private:
     FunctionDecl* func;
 };

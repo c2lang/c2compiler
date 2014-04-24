@@ -85,9 +85,9 @@ void LiteralAnalyser::check(QualType TLeft, const Expr* Right) {
     if (Right->getCTC() == CTC_NONE) return;
     // TODO assert here instead of check?
 
-    const QualType QT = TLeft->getCanonicalType();
+    const QualType QT = TLeft.getCanonicalType();
     // TODO check if type is already ok?, then skip check?
-    //if (QT == Right->getType()->getCanonicalType()) return;
+    //if (QT == Right->getType().getCanonicalType()) return;
     int availableWidth = 0;
     if (QT.isBuiltinType()) {
         const BuiltinType* TL = cast<BuiltinType>(QT);
@@ -202,7 +202,7 @@ APSInt LiteralAnalyser::checkLiterals(const Expr* Right) {
 
 bool LiteralAnalyser::checkRange(QualType TLeft, const Expr* Right, clang::SourceLocation Loc, llvm::APSInt Result) {
     // TODO refactor with check()
-    const QualType QT = TLeft->getCanonicalType();
+    const QualType QT = TLeft.getCanonicalType();
     int availableWidth = 0;
     if (QT.isBuiltinType()) {
         const BuiltinType* TL = cast<BuiltinType>(QT);

@@ -177,12 +177,12 @@ QualType TypeChecker::resolveCanonicals(const Decl* D, QualType Q, bool set) con
 }
 
 QualType TypeChecker::checkCanonicals(Decls& decls, QualType Q, bool set) const {
-    const Type* T = Q.getTypePtr();
-    if (T->hasCanonicalType()) return T->getCanonicalType();
+    if (Q->hasCanonicalType()) return Q.getCanonicalType();
 
-    switch (T->getTypeClass()) {
+    const Type* T = Q.getTypePtr();
+    switch (Q->getTypeClass()) {
     case TC_BUILTIN:
-        return T->getCanonicalType();
+        return Q;
     case TC_POINTER:
         {
             const PointerType* P = cast<PointerType>(T);
@@ -202,12 +202,16 @@ QualType TypeChecker::checkCanonicals(Decls& decls, QualType Q, bool set) const 
         {
             const ArrayType* A = cast<ArrayType>(T);
             QualType t1 = A->getElementType();
+            // NOTE: qualifiers are lost here!
             QualType t2 = checkCanonicals(decls, t1, true);
             if (!t2.isValid()) return t2;
             QualType canonical;
             if (t1 == t2) canonical = Q;
             // NOTE: need size Expr, but set ownership to none
-            else canonical = typeContext.getArrayType(t2, A->getSizeExpr(), false);
+            else {
+                canonical = typeContext.getArrayType(t2, A->getSizeExpr(), false);
+            }
+
             if (set) A->setCanonicalType(canonical);
             return canonical;
         }
@@ -228,14 +232,14 @@ QualType TypeChecker::checkCanonicals(Decls& decls, QualType Q, bool set) const 
     case TC_ALIAS:
         return 0;
     case TC_STRUCT:
-        return T->getCanonicalType();
+        return Q.getCanonicalType();
     case TC_ENUM:
         {
             assert(0 && "TODO");
             return 0;
         }
     case TC_FUNCTION:
-        return T->getCanonicalType();
+        return Q.getCanonicalType();
     }
 }
 
@@ -264,7 +268,7 @@ bool TypeChecker::checkCompatible(QualType left, const Expr* expr) const {
     QualType right = expr->getType();
     //right = TypeFinder::findType(expr);
     assert(left.isValid());
-    const Type* canon = left.getTypePtr()->getCanonicalType();
+    const Type* canon = left.getCanonicalType();
     switch (canon->getTypeClass()) {
     case TC_BUILTIN:
         return checkBuiltin(left, right, expr, true);
@@ -289,7 +293,7 @@ bool TypeChecker::checkCompatible(QualType left, const Expr* expr) const {
 // Convert smaller types to int, others remain the same
 // This function should only be called if Expr's type is ok for unary operator
 QualType TypeChecker::UsualUnaryConversions(Expr* expr) const {
-    const Type* canon = expr->getType()->getCanonicalType();
+    const Type* canon = expr->getType().getCanonicalType();
     assert(canon->isBuiltinType());
     const BuiltinType* BI = cast<BuiltinType>(canon);
     if (BI->isPromotableIntegerType()) {
@@ -303,8 +307,8 @@ QualType TypeChecker::UsualUnaryConversions(Expr* expr) const {
 bool TypeChecker::checkBuiltin(QualType left, QualType right, const Expr* expr, bool first) const {
     if (right->isBuiltinType()) {
         // NOTE: canonical is builtin, var itself my be UnresolvedType etc
-        const BuiltinType* Right = cast<BuiltinType>(right->getCanonicalType());
-        const BuiltinType* Left = cast<BuiltinType>(left->getCanonicalType());
+        const BuiltinType* Right = cast<BuiltinType>(right.getCanonicalType());
+        const BuiltinType* Left = cast<BuiltinType>(left.getCanonicalType());
         int rule = type_conversions[Right->getKind()][Left->getKind()];
         // 0 = ok, 1 = loss of precision, 2 sign-conversion, 3=float->integer, 4 incompatible, 5 loss of FP prec.
         // TODO use matrix with allowed conversions: 3 options: ok, error, warn

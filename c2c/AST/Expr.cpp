@@ -97,11 +97,7 @@ static const char* ctc_strings[] = { "none", "partial", "full" };
 
 void Expr::print(StringBuilder& buffer, unsigned indent) const {
     QualType Q = getType();
-    if (Q.isValid()) {
-        Q->DiagName(buffer);
-    } else {
-        buffer << ANSI_RED"<INVALID>"ANSI_NORMAL;
-    }
+    Q.print(buffer);
     buffer << " ctc=" << ctc_strings[StmtBits.ExprIsCTC];
     buffer << ", constant=" << isConstant();
     if (getImpCast() != BuiltinType::Void) {
@@ -114,6 +110,10 @@ void IntegerLiteral::print(StringBuilder& buffer, unsigned indent) const {
     buffer << "IntegerLiteral ";
     Expr::print(buffer, 0);
     buffer << ' ' << Value.getSExtValue() << '\n';
+}
+
+void IntegerLiteral::printLiteral(StringBuilder& buffer) const {
+    buffer << Value.getSExtValue();
 }
 
 
@@ -142,6 +142,10 @@ void CharacterLiteral::print(StringBuilder& buffer, unsigned indent) const {
     buffer << " '" << (char)value << "'\n";
 }
 
+void CharacterLiteral::printLiteral(StringBuilder& buffer) const {
+    buffer << '\'' << (char)value << '\'';
+}
+
 
 void StringLiteral::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
@@ -167,11 +171,15 @@ void IdentifierExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer << '\n';
 }
 
+void IdentifierExpr::printLiteral(StringBuilder& buffer) const {
+    buffer << name;
+}
+
 
 void TypeExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer << "TypeExpr ";
-    getType().debugPrint(buffer, 0);
+    getType().print(buffer);
 }
 
 
@@ -427,6 +435,12 @@ void MemberExpr::print(StringBuilder& buffer, unsigned indent) const {
 const char* MemberExpr::getFullName() const {
     // TODO use recursion;
     return "TODO";
+}
+
+void MemberExpr::printLiteral(StringBuilder& buffer) const {
+    Base->printLiteral(buffer);
+    buffer << '.';
+    Member->printLiteral(buffer);
 }
 
 

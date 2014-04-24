@@ -149,7 +149,7 @@ unsigned FileAnalyser::checkVarInits() {
                 Diags.Report(V->getLocation(), diag::err_uninitialized_const_var) << V->getName();
                 errors++;
             } else if (T->isArrayType()) {
-                const ArrayType* AT = cast<ArrayType>(T->getCanonicalType());
+                const ArrayType* AT = cast<ArrayType>(T.getCanonicalType());
                 if (!AT->getSizeExpr()) {
                     Diags.Report(V->getLocation(), diag::err_typecheck_incomplete_array_needs_initializer);
                     errors++;

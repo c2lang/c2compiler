@@ -142,8 +142,8 @@ QualType TypeFinder::LargestType(const Expr* Left, const Expr* Right) {
     QualType TL = findType(Left);
     QualType TR = findType(Right);
     // TODO cleanup
-    QualType Lcanon = TL.getTypePtr()->getCanonicalType();
-    QualType Rcanon = TR.getTypePtr()->getCanonicalType();
+    QualType Lcanon = TL.getCanonicalType();
+    QualType Rcanon = TR.getCanonicalType();
     assert(Lcanon.isBuiltinType());
     assert(Rcanon.isBuiltinType());
     const BuiltinType* Lbi = cast<BuiltinType>(Lcanon);

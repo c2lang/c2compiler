@@ -553,26 +553,26 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
 
 void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
     LOG_FUNC
-    InitListExpr* IE = dyncast<InitListExpr>(expr);
-    const ArrayType* AT = dyncast<ArrayType>(expectedType->getCanonicalType());
+    InitListExpr* ILE = dyncast<InitListExpr>(expr);
+    const ArrayType* AT = dyncast<ArrayType>(expectedType.getCanonicalType());
     if (AT) {
         const QualType ET = AT->getElementType();
         bool isCharArray = (ET == Type::Int8() || ET == Type::UInt8());
 
         if (isCharArray) {
-            if (!IE && !isa<StringLiteral>(expr)) {
+            if (!ILE && !isa<StringLiteral>(expr)) {
                 Diags.Report(expr->getLocation(), diag::err_array_init_not_init_list) << 1;
                 return;
             }
         } else {
-            if (!IE) {
+            if (!ILE) {
                 Diags.Report(expr->getLocation(), diag::err_array_init_not_init_list) << 0;
                 return;
             }
         }
     }
-    if (IE) {
-        analyseInitList(IE, expectedType);
+    if (ILE) {
+        analyseInitList(ILE, expectedType);
     } else {
         QualType Q = analyseExpr(expr, RHS);
         if (Q.isValid()) {
@@ -597,11 +597,10 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
 
 void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
     LOG_FUNC
-
     ExprList& values = expr->getValues();
     if (Q.isArrayType()) {
         // TODO use helper function
-        ArrayType* AT = cast<ArrayType>(Q->getCanonicalType().getTypePtr());
+        ArrayType* AT = cast<ArrayType>(Q.getCanonicalType().getTypePtr());
         QualType ET = AT->getElementType();
         // TODO check if size is specifier in type
         bool constant = true;
@@ -612,7 +611,7 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
         if (constant) expr->setConstant();
     } else if (Q.isStructType()) {
         // TODO use helper function
-        StructType* TT = cast<StructType>(Q->getCanonicalType().getTypePtr());
+        StructType* TT = cast<StructType>(Q.getCanonicalType().getTypePtr());
         StructTypeDecl* STD = TT->getDecl();
         assert(STD->isStruct() && "TEMP only support structs for now");
         bool constant = true;
@@ -1028,7 +1027,7 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
             return 0;
         } else {
             // TEMP use CanonicalType to avoid Unresolved types etc
-            QualType Q = LType->getCanonicalType();
+            QualType Q = LType.getCanonicalType();
             const PointerType* P = cast<PointerType>(Q);
             return P->getPointeeType();
         }

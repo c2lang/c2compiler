@@ -76,24 +76,13 @@ FunctionDecl::~FunctionDecl() {
 
 void FunctionDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[FunctionDecl " << name << "]\n";
-    buffer.indent(indent + INDENT);
-    buffer << COL_ATTR << "returntype=" << ANSI_NORMAL;
-    rtype.debugPrint(buffer, 0);
-    if (args.size()) {
-        buffer.indent(indent + INDENT);
-        buffer << COL_ATTR << "args:" << ANSI_NORMAL;
-        if (isVariadic()) buffer << " <...>";
-        buffer << '\n';
-        for (unsigned i=0; i<args.size(); i++) {
-            args[i]->print(buffer, indent + INDENT);
-        }
+    buffer << "[FunctionDecl] " << name << ' ';
+    functionType.print(buffer);
+    buffer << '\n';
+    for (unsigned i=0; i<args.size(); i++) {
+        args[i]->print(buffer, indent + INDENT);
     }
-    if (body) {
-        buffer.indent(INDENT);
-        buffer << COL_ATTR << "body:" << ANSI_NORMAL << '\n';
-        body->print(buffer, INDENT);
-    }
+    if (body) body->print(buffer, INDENT);
 }
 
 VarDecl* FunctionDecl::findArg(const std::string& name) const {
@@ -116,6 +105,16 @@ unsigned FunctionDecl::minArgs() const {
 }
 
 
+static const char* VarDeclKind2Str(VarDeclKind k) {
+    switch (k) {
+    case VARDECL_GLOBAL: return "global";
+    case VARDECL_LOCAL:  return "local";
+    case VARDECL_PARAM:  return "param";
+    case VARDECL_MEMBER: return "member";
+    }
+}
+
+
 VarDecl::VarDecl(VarDeclKind k_, const std::string& name_, SourceLocation loc_,
             QualType type_, Expr* initValue_, bool is_public, unsigned file_id)
     : Decl(DECL_VAR, name_, loc_, is_public, file_id)
@@ -132,21 +131,15 @@ VarDecl::~VarDecl() {
 
 void VarDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[VarDecl " << name;
-    if (hasLocalQualifier()) buffer << " LOCAL";
-    buffer << "]\n";
-    indent += INDENT;
-    // Dont print types for enums, otherwise we get a loop since Type have Decls etc
+    buffer << "[VarDecl] " << name << ' ';
     assert(type.isValid());
-    if (!isa<EnumType>(type)) {
-        //type.print(buffer, indent, QualType::RECURSE_ONCE);
-        type.debugPrint(buffer, indent);
-    }
-    if (initValue) {
-        buffer.indent(indent);
-        buffer << "initial:\n";
-        initValue->print(buffer, indent+INDENT);
-    }
+    //if (!isa<EnumType>(type)) type.print(buffer);
+    type.print(buffer);
+    buffer << " <" << VarDeclKind2Str(getVarKind()) << ">\n";
+
+    if (hasLocalQualifier()) buffer << " LOCAL";
+    indent += INDENT;
+    if (initValue) initValue->print(buffer, indent);
     // TODO move
     if (initValues.size()) {
         buffer.indent(INDENT);
@@ -178,7 +171,7 @@ EnumConstantDecl::~EnumConstantDecl() {
 
 void EnumConstantDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[EnumConstantDecl] '" << name << "' value=" << Val.getSExtValue() << '\n';
+    buffer << "[EnumConstantDecl] " << name << " value=" << Val.getSExtValue() << '\n';
     if (InitVal) InitVal->print(buffer, indent+INDENT);
 }
 
@@ -191,8 +184,9 @@ TypeDecl::TypeDecl(DeclKind k, const std::string& name_, SourceLocation loc_, Qu
 
 
 void AliasTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
-    buffer << "[AliasTypeDecl " << name << "]\n";
-    type.debugPrint(buffer, indent+INDENT);
+    buffer << "[AliasTypeDecl] " << name << ' ';
+    type.print(buffer);
+    buffer << '\n';
 }
 
 
@@ -212,11 +206,10 @@ void StructTypeDecl::addMember(Decl* D) {
 
 void StructTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[StructTypeDecl (";
+    buffer << "[StructTypeDecl] (";
     if (isStruct()) buffer << "struct";
     else buffer << "union";
-    buffer  << ") " << name << "]\n";
-    type.debugPrint(buffer, indent+INDENT);
+    buffer  << ") " << name << '\n';
     for (unsigned i=0; i<members.size(); i++) {
         members[i]->print(buffer, indent + INDENT);
     }
@@ -225,8 +218,9 @@ void StructTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
 
 void EnumTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[EnumTypeDecl " << name << "]\n";;
-    type.debugPrint(buffer, indent+INDENT);
+    buffer << "[EnumTypeDecl] " << name << ' ';
+    implType.print(buffer);
+    buffer << '\n';
     for (unsigned i=0; i<constants.size(); i++) {
         constants[i]->print(buffer, indent + INDENT);
     }
@@ -261,7 +255,7 @@ ArrayValueDecl::~ArrayValueDecl() {
 
 void ArrayValueDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
-    buffer << "[ArrayValueDecl " << name << "]\n";
+    buffer << "[ArrayValueDecl] " << name << '\n';
     value->print(buffer, INDENT);
 }
 
@@ -275,9 +269,9 @@ UseDecl::UseDecl(const std::string& name_, SourceLocation loc_, bool isLocal_,
 }
 
 void UseDecl::print(StringBuilder& buffer, unsigned indent) const {
-    buffer << "[UseDecl " << name;
+    buffer << "[UseDecl] " << name;
     if (alias != "") buffer << " as " << alias;
     if (isLocal()) buffer << " local";
-    buffer << "]\n";
+    buffer << '\n';
 }
 

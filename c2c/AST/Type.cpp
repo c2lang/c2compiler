@@ -28,7 +28,6 @@ using namespace C2;
 
 // TODO insert QualType function impls
 QualType QualType::getCanonicalType() const {
-    // TODO use getTypePtr
     QualType canon = type->canonicalType;
     canon.setQualifiers(qualifiers);
     return canon;
@@ -63,13 +62,18 @@ void QualType::printName(StringBuilder& buffer) const {
     }
 }
 
-void QualType::debugPrint(StringBuilder& buffer, unsigned indent) const {
+void QualType::print(StringBuilder& buffer) const {
+    buffer << '\'';
+    debugPrint(buffer);
+    buffer << '\'';
+}
+
+void QualType::debugPrint(StringBuilder& buffer) const {
     if (isNull()) {
-        buffer.indent(indent);
-        buffer << ANSI_RED << "NULL" << ANSI_NORMAL << "\n";
+        buffer << ANSI_RED << "??" << ANSI_NORMAL;;
     } else {
-        printQualifiers(buffer, indent);
-        getTypePtr()->debugPrint(buffer, indent);
+        printQualifiers(buffer);
+        getTypePtr()->debugPrint(buffer);
     }
 }
 
@@ -77,18 +81,17 @@ void QualType::dump() const {
     if (isNull()) {
         fprintf(stderr, "NULL\n");
     } else {
-        getTypePtr()->dump();
+        StringBuilder output;
+        debugPrint(output);
+        fprintf(stderr, "[TYPE] '%s'\n", (const char*)output);
     }
 }
 
-void QualType::printQualifiers(StringBuilder& buffer, unsigned indent) const {
+void QualType::printQualifiers(StringBuilder& buffer) const {
     if (hasQualifiers()) {
-        buffer.indent(indent);
-        buffer << "qualifiers=";
         if (isConstQualified()) buffer << "const ";
         if (isVolatileQualified()) buffer << "volatile ";
-        if (isRestrictQualified()) buffer << "restrict";
-        buffer << '\n';
+        if (isRestrictQualified()) buffer << "restrict ";
     }
 }
 
@@ -116,9 +119,8 @@ void Type::DiagName(StringBuilder& buf) const {
 
 }
 
-void Type::debugPrint(StringBuilder& buffer, unsigned indent) const {
+void Type::debugPrint(StringBuilder& buffer) const {
     // only used to print canonical type (called by Sub-Class::debugPrint())
-    buffer.indent(indent);
     buffer << "  canonical=";
     if (canonicalType.isNull()) {
         buffer << ANSI_RED << "???";
@@ -136,8 +138,8 @@ void Type::debugPrint(StringBuilder& buffer, unsigned indent) const {
 
 void Type::dump() const {
     StringBuilder output;
-    debugPrint(output, 0);
-    fprintf(stderr, "[TYPE] %s", (const char*)output);
+    debugPrint(output);
+    fprintf(stderr, "[TYPE] '%s'\n", (const char*)output);
 }
 
 
@@ -337,10 +339,8 @@ void BuiltinType::printName(StringBuilder& buffer) const {
     buffer << getName();
 }
 
-void BuiltinType::debugPrint(StringBuilder& buffer, unsigned indent) const {
-    buffer.indent(indent);
-    buffer << "(builtin) " << getName();
-    Type::debugPrint(buffer, 0);    // canonical
+void BuiltinType::debugPrint(StringBuilder& buffer) const {
+    buffer << getName();
 }
 
 
@@ -349,11 +349,9 @@ void PointerType::printName(StringBuilder& buffer) const {
     buffer << '*';
 }
 
-void PointerType::debugPrint(StringBuilder& buffer, unsigned indent) const {
-    buffer.indent(indent);
-    buffer << "(pointer)";
-    Type::debugPrint(buffer, 0);    // canonical
-    PointeeType.debugPrint(buffer, indent+INDENT);
+void PointerType::debugPrint(StringBuilder& buffer) const {
+    PointeeType.debugPrint(buffer);
+    buffer << '*';
 }
 
 
@@ -367,15 +365,15 @@ void ArrayType::printName(StringBuilder& buffer) const {
     buffer << "[]";
 }
 
-void ArrayType::debugPrint(StringBuilder& buffer, unsigned indent) const {
-    buffer.indent(indent);
-    buffer << "(array)";
-    Type::debugPrint(buffer, 0);    // canonical
-    ElementType.debugPrint(buffer, indent+INDENT);
+void ArrayType::debugPrint(StringBuilder& buffer) const {
+    ElementType.debugPrint(buffer);
+    buffer << '[' << (unsigned)Size.getZExtValue() << ']';
+// TEMP
+    buffer << "OWN=" << ownSize;
+    // TODO size
     if (sizeExpr) {
-        buffer.indent(indent + INDENT);
         buffer << COL_ATTR << "size=\n" << ANSI_NORMAL;
-        sizeExpr->print(buffer, indent+INDENT);
+        sizeExpr->print(buffer, 0);
     }
 }
 
@@ -393,20 +391,14 @@ void UnresolvedType::printName(StringBuilder& buffer) const {
     }
 }
 
-void UnresolvedType::debugPrint(StringBuilder& buffer, unsigned indent) const {
-    buffer.indent(indent);
-    buffer << "(UnresolvedType)";
-    Type::debugPrint(buffer, 0);    // canonical
-    expr->print(buffer, indent+INDENT);
-    buffer.indent(indent+INDENT);
-    buffer << COL_ATTR << "resolved to=" << ANSI_NORMAL;
+void UnresolvedType::debugPrint(StringBuilder& buffer) const {
     if (decl) {
-        buffer << ANSI_CYAN;
         buffer << decl->getName();
     } else {
-        buffer << ANSI_RED << "???";
+        buffer << ANSI_RED;
+        expr->printLiteral(buffer);
+        buffer << ANSI_NORMAL;
     }
-    buffer << ANSI_NORMAL << '\n';
 }
 
 
@@ -414,11 +406,11 @@ void AliasType::printName(StringBuilder& buffer) const {
     buffer << name;
 }
 
-void AliasType::debugPrint(StringBuilder& buffer, unsigned indent) const {
-    buffer.indent(indent);
-    buffer << "(alias) '" << name << '\'';
-    Type::debugPrint(buffer, 0);    // canonical
-    refType.debugPrint(buffer, indent+INDENT);
+void AliasType::debugPrint(StringBuilder& buffer) const {
+    buffer << '\'' << name << '\'';
+    buffer << name << "(alias: ";
+    refType.debugPrint(buffer);
+    buffer << ')';
 }
 
 
@@ -426,14 +418,14 @@ void StructType::printName(StringBuilder& buffer) const {
     buffer << "(struct)" << decl->getName();
 }
 
-void StructType::debugPrint(StringBuilder& buffer, unsigned indent) const {
-    buffer.indent(indent);
-    buffer << "(struct)";
+void StructType::debugPrint(StringBuilder& buffer) const {
     const std::string& name = decl->getName();
-    if (!name.empty()) {
-        buffer << " '" << name << '\'';
+    if (name.empty()) {
+        buffer << "<anonymous>";
+    } else {
+        buffer << "'" << name << '\'';
     }
-    Type::debugPrint(buffer, 0);
+    buffer << "(struct)";
 }
 
 
@@ -441,34 +433,31 @@ void EnumType::printName(StringBuilder& buffer) const {
     buffer << "(enum)" << decl->getName();
 }
 
-void EnumType::debugPrint(StringBuilder& buffer, unsigned indent) const {
-    buffer.indent(indent);
-    buffer << "(enum) '" << decl->getName() << "'";
-    Type::debugPrint(buffer, 0);
+void EnumType::debugPrint(StringBuilder& buffer) const {
+    buffer << '\'' << decl->getName() << "'(enum)";
+    // TODO canonical?
 }
 
 
 void FunctionType::printName(StringBuilder& buffer) const {
     // print something like int (int, int)
     QualType Q = func->getReturnType();
-    Q = Q->getCanonicalType();
+    Q = Q.getCanonicalType();
     Q.printName(buffer);
     buffer << " (";
     for (int i=0; i<func->numArgs(); i++) {
         if (i != 0) buffer << ", ";
         VarDecl* A = func->getArg(i);
         Q = A->getType();
-        Q = Q->getCanonicalType();
+        Q = Q.getCanonicalType();
         Q.printName(buffer);
     }
     if (func->isVariadic()) buffer << ", ...";
     buffer << ')';
 }
 
-void FunctionType::debugPrint(StringBuilder& buffer, unsigned indent) const {
-    buffer.indent(indent);
-    buffer << "functiontype " << func->getName();
-    Type::debugPrint(buffer, 0);
+void FunctionType::debugPrint(StringBuilder& buffer) const {
+    printName(buffer);
 }
 
 

@@ -104,6 +104,7 @@ public:
         return static_cast<BuiltinType::Kind>(StmtBits.ExprImpCast);
     }
 
+    virtual void printLiteral(StringBuilder& buffer) const {};
 private:
     QualType QT;
 
@@ -127,6 +128,8 @@ public:
     }
     virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return loc; }
+
+    virtual void printLiteral(StringBuilder& buffer) const;
 
     llvm::APInt Value;
 private:
@@ -188,6 +191,7 @@ public:
     virtual SourceLocation getLocation() const { return loc; }
 
     unsigned getValue() const { return value; }
+    virtual void printLiteral(StringBuilder& buffer) const;
 private:
     // TODO use StmtBits (need to use union then)
     unsigned value;
@@ -244,6 +248,8 @@ public:
     const std::string& getName() const { return name; }
     void setDecl(Decl* decl_) { decl = decl_; }
     Decl* getDecl() const { return decl; }
+
+    virtual void printLiteral(StringBuilder& buffer) const;
 private:
     std::string name;
     clang::SourceLocation loc;
@@ -516,7 +522,9 @@ public:
     bool isPkgPrefix() const { return StmtBits.MemberExprIsPkgPrefix; }
 
     // NOTE: uses static var
+#warning TODO replace getFullName with printLiteral
     const char* getFullName() const;
+    virtual void printLiteral(StringBuilder& buffer) const;
 private:
     Expr* Base;
     IdentifierExpr* Member;
