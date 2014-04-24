@@ -368,8 +368,6 @@ void ArrayType::printName(StringBuilder& buffer) const {
 void ArrayType::debugPrint(StringBuilder& buffer) const {
     ElementType.debugPrint(buffer);
     buffer << '[' << (unsigned)Size.getZExtValue() << ']';
-// TEMP
-    buffer << "OWN=" << ownSize;
     // TODO size
     if (sizeExpr) {
         buffer << COL_ATTR << "size=\n" << ANSI_NORMAL;
