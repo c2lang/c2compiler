@@ -32,6 +32,7 @@ StringBuilder::StringBuilder(unsigned cap, char* buf)
     : capacity(cap)
     , buffer(buf)
     , ownBuf(buf == 0)
+    , colors(false)
 {
     if (!buf) buffer = (char*)malloc(capacity);
     clear();
@@ -159,11 +160,13 @@ void StringBuilder::indent(unsigned num) {
 }
 
 void StringBuilder::setColor(const char* color) {
-    unsigned len = strlen(color);
+    if (colors) {
+        unsigned len = strlen(color);
 #ifdef SIZE_DEBUG
-    assert(len < space_left() && "buffer overflow");
+        assert(len < space_left() && "buffer overflow");
 #endif
-    strcpy(ptr, color);
-    ptr += len;
+        strcpy(ptr, color);
+        ptr += len;
+    }
 }
 

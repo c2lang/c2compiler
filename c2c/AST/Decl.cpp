@@ -149,7 +149,6 @@ void VarDecl::print(StringBuilder& buffer, unsigned indent) const {
     // TODO move
     if (initValues.size()) {
         buffer.indent(INDENT);
-        buffer << ANSI_CYAN << "initvalues:" << ANSI_NORMAL << '\n';
         for (InitValuesConstIter iter=initValues.begin(); iter != initValues.end(); ++iter) {
             (*iter)->getExpr()->print(buffer, INDENT);
         }

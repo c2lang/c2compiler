@@ -40,7 +40,7 @@ public:
         , file_id(id)
     {}
 
-    void print() const;
+    void print(bool colors) const;
 
     // UseDecls
     void addUse(UseDecl* d) { useList.push_back(d); }

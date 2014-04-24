@@ -30,8 +30,9 @@
 
 using namespace C2;
 
-void AST::print() const {
+void AST::print(bool colors) const {
     StringBuilder buffer;
+    buffer.enableColor(colors);
     buffer << "---- AST " << "(pkg=" << pkgName << ") " << filename << " ----\n";
     // UseDecls
     for (unsigned i=0; i<useList.size(); i++) {

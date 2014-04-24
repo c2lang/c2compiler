@@ -44,12 +44,14 @@ public:
     void strip(char c);
     void indent(unsigned num);
     void setColor(const char* color);
+    void enableColor(bool enable) { colors = enable; }
 private:
     static const unsigned CAPACITY = 1024*1024;
     unsigned capacity;
     char* buffer;
     char* ptr;
     bool ownBuf;
+    bool colors;
 
     StringBuilder(const StringBuilder&);
     StringBuilder& operator= (const StringBuilder&);

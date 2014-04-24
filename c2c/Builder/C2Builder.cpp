@@ -321,7 +321,7 @@ int C2Builder::build() {
         FileInfo* info = new FileInfo(Diags, LangOpts, pti, HSOpts, filename, file_id, PredefineBuffer);
         files.push_back(info);
         bool ok = info->parse(options);
-        if (options.printAST0) info->ast.print();
+        if (options.printAST0) info->ast.print(true);
         errors += !ok;
     }
     u_int64_t t2_parse = Utils::getCurrentTime();
@@ -609,7 +609,7 @@ void C2Builder::dumpPkgs() const {
 void C2Builder::printASTs() const {
     for (unsigned i=0; i<files.size(); i++) {
         FileInfo* info = files[i];
-        info->ast.print();
+        info->ast.print(true);
     }
 }
 

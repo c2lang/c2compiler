@@ -71,7 +71,9 @@ void QualType::print(StringBuilder& buffer) const {
 
 void QualType::debugPrint(StringBuilder& buffer) const {
     if (isNull()) {
-        buffer << ANSI_RED << "??" << ANSI_NORMAL;;
+        buffer.setColor(ANSI_RED);
+        buffer << "??";
+        buffer.setColor(ANSI_NORMAL);
     } else {
         printQualifiers(buffer);
         getTypePtr()->debugPrint(buffer);
@@ -124,17 +126,18 @@ void Type::debugPrint(StringBuilder& buffer) const {
     // only used to print canonical type (called by Sub-Class::debugPrint())
     buffer << "  canonical=";
     if (canonicalType.isNull()) {
-        buffer << ANSI_RED << "???";
+        buffer.setColor(ANSI_RED);
+        buffer << "???";
     } else {
         const Type* Canon = canonicalType.getTypePtr();
-        buffer << ANSI_CYAN;
+        buffer.setColor(COL_ATTR);
         if (Canon == this) {
             buffer << "this";
         } else {
             Canon->printName(buffer);
         }
     }
-    buffer << ANSI_NORMAL << '\n';
+    buffer << '\n';
 }
 
 void Type::dump() const {
@@ -371,7 +374,8 @@ void ArrayType::debugPrint(StringBuilder& buffer) const {
     buffer << '[' << (unsigned)Size.getZExtValue() << ']';
     // TODO size
     if (sizeExpr) {
-        buffer << COL_ATTR << "size=\n" << ANSI_NORMAL;
+        buffer.setColor(COL_ATTR);
+        buffer << "size=\n";
         sizeExpr->print(buffer, 0);
     }
 }
@@ -394,9 +398,8 @@ void UnresolvedType::debugPrint(StringBuilder& buffer) const {
     if (decl) {
         buffer << decl->getName();
     } else {
-        buffer << ANSI_RED;
+        buffer.setColor(ANSI_RED);
         expr->printLiteral(buffer);
-        buffer << ANSI_NORMAL;
     }
 }
 
