@@ -39,6 +39,10 @@ public:
     unsigned checkType(QualType Q, bool used_public);
     QualType resolveCanonicals(const Decl* D, QualType Q, bool set) const;
     QualType resolveUnresolved(QualType Q) const;
+    // NEW
+    // resolves type (no UnresolvedTypes) and sets canonical
+    QualType resolveType(QualType Q, bool usedPublic);
+    QualType resolveCanonical(QualType Q) const;
 
     // checking
     bool checkCompatible(QualType left, const Expr* expr) const;

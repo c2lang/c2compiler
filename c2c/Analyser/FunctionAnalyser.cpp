@@ -774,15 +774,12 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     DeclExpr* DE = cast<DeclExpr>(expr);
     VarDecl* decl = DE->getDecl();
 
-    // check type and convert User types
-    QualType type = decl->getRefType();
-    unsigned errs = TC.checkType(type, false);
-    errors += errs;
-    if (!errs) {
-        QualType QQ = TC.resolveCanonicals(decl, type, true);
-        assert(QQ.isValid());
-        decl->setType(QQ);
-        ArrayType* AT = dyncast<ArrayType>(type.getTypePtr());
+    QualType Q = TC.resolveType(decl->getRefType(), decl->isPublic());
+    if (Q.isValid()) {
+        decl->setType(Q);
+
+        // TODO use Helper-function to get ArrayType (might be AliasType)
+        ArrayType* AT = dyncast<ArrayType>(Q.getTypePtr());
         if (AT) {
             Expr* sizeExpr = AT->getSizeExpr();
             if (sizeExpr) {
@@ -803,13 +800,13 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
 
     // check initial value
     Expr* initialValue = decl->getInitValue();
-    if (initialValue && !errs) {
+    if (initialValue && !Q.isValid()) {
         CurrentVarDecl = decl;
         analyseInitExpr(initialValue, decl->getBBType());
         CurrentVarDecl = 0;
     }
 
-    if (type.isConstQualified() && !initialValue) {
+    if (Q.isConstQualified() && !initialValue) {
         Diags.Report(decl->getLocation(), diag::err_uninitialized_const_var) << decl->getName();
     }
     scope.addScopedSymbol(decl);

@@ -362,19 +362,12 @@ unsigned FileAnalyser::checkStructTypeDecl(StructTypeDecl* D) {
 
 unsigned FileAnalyser::resolveVarDecl(VarDecl* D) {
     LOG_FUNC
-    QualType Q = D->getRefType();
-    if (Q->hasCanonicalType()) {
+    // TODO duplicate code with FileAnalyser::analyseDeclExpr()
+    QualType Q = TC->resolveType(D->getRefType(), D->isPublic());
+    if (Q.isValid()) {
         D->setType(Q);
-        return 0;
-    }
 
-    unsigned errors = TC->checkType(Q, D->isPublic());
-    if (!errors) {
-        QualType QQ = TC->resolveCanonicals(D, Q, true);
-        // TODO same as FunctionAnalyser code!
-        assert(QQ.isValid());
-        D->setType(QQ);
-
+        // TODO use Helper-function to get ArrayType (might be AliasType)
         ArrayType* AT = dyncast<ArrayType>(Q.getTypePtr());
         Expr* sizeExpr = AT->getSizeExpr();
         if (AT && sizeExpr) {
@@ -382,8 +375,9 @@ unsigned FileAnalyser::resolveVarDecl(VarDecl* D) {
         }
 
         // NOTE: dont check initValue here (doesn't have canonical type yet)
+        return 0;
     }
-    return errors;
+    return 1;
 }
 
 unsigned FileAnalyser::resolveFunctionDecl(FunctionDecl* D) {

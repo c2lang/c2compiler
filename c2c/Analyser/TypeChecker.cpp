@@ -221,6 +221,20 @@ QualType TypeChecker::resolveUnresolved(QualType Q) const {
     return Q;
 }
 
+QualType TypeChecker::resolveType(QualType Q, bool usedPublic) {
+    if (Q->hasCanonicalType()) return Q;    // should be ok already
+
+    // basic resolving
+    if (checkType(Q, usedPublic)) return QualType();
+
+    QualType resolved = resolveUnresolved(Q);
+    if (!resolved->hasCanonicalType()) {
+        QualType canonical = resolveCanonical(resolved);
+        resolved->setCanonicalType(canonical);
+    }
+    return resolved;
+}
+
 QualType TypeChecker::checkCanonicals(Decls& decls, QualType Q, bool set) const {
     if (Q->hasCanonicalType()) return Q.getCanonicalType();
 
@@ -293,6 +307,48 @@ QualType TypeChecker::checkCanonicals(Decls& decls, QualType Q, bool set) const 
     }
 }
 
+QualType TypeChecker::resolveCanonical(QualType Q) const {
+    // TODO needed? (might be slower)
+    if (Q->hasCanonicalType()) return Q.getCanonicalType();
+
+    const Type* T = Q.getTypePtr();
+    switch (Q->getTypeClass()) {
+    case TC_BUILTIN:
+        return Q;
+    case TC_POINTER:
+        {
+            const PointerType* P = cast<PointerType>(T);
+            QualType t1 = P->getPointeeType();
+            // Pointee will always be in same TypeContext (file), since it's either built-in or UnresolvedType
+            QualType t2 = resolveCanonical(t1);
+            assert(t2.isValid());
+            // create new PointerType if PointeeType has different canonical than itself
+            if (t1 == t2) return Q;
+            // TODO qualifiers
+            else return typeContext.getPointerType(t2);
+        }
+    case TC_ARRAY:
+        {
+            const ArrayType* A = cast<ArrayType>(T);
+            QualType t1 = A->getElementType();
+            // NOTE: qualifiers are lost here!
+            QualType t2 = resolveCanonical(t1);
+            if (t1 == t2) return Q;
+            else  {
+                // NOTE: need size Expr, but set ownership to none
+                return typeContext.getArrayType(t2, A->getSizeExpr(), false);
+            }
+        }
+    case TC_UNRESOLVED:
+        assert(0 && "should not get here");
+        return QualType();
+    case TC_ALIAS:
+    case TC_STRUCT:
+    case TC_ENUM:
+    case TC_FUNCTION:
+        return Q.getCanonicalType();
+    }
+}
 bool TypeChecker::checkDecls(Decls& decls, const Decl* D) const {
     for (DeclsIter iter = decls.begin(); iter != decls.end(); ++iter) {
         if (*iter == D) {
