@@ -405,14 +405,13 @@ void UnresolvedType::debugPrint(StringBuilder& buffer) const {
 
 
 void AliasType::printName(StringBuilder& buffer) const {
-    buffer << name;
+    buffer << "(alias)" << decl->getName();
 }
 
 void AliasType::debugPrint(StringBuilder& buffer) const {
-    buffer << '\'' << name << '\'';
-    buffer << name << "(alias: ";
+    buffer << "(alias)" << decl->getName();
+    buffer << '=';
     refType.debugPrint(buffer);
-    buffer << ')';
 }
 
 
@@ -426,7 +425,7 @@ void StructType::debugPrint(StringBuilder& buffer) const {
     if (name.empty()) {
         buffer << "<anonymous>";
     } else {
-        buffer << "'" << name << '\'';
+        buffer << name;
     }
 }
 
@@ -494,8 +493,8 @@ QualType TypeContext::getUnresolvedType(Expr* E) {
     return add(new UnresolvedType(E));
 }
 
-QualType TypeContext::getAliasType(QualType refType, const std::string& name) {
-    return add(new AliasType(refType, name));
+QualType TypeContext::getAliasType(AliasTypeDecl* A, QualType refType) {
+    return add(new AliasType(A, refType));
 }
 
 QualType TypeContext::getStructType() {

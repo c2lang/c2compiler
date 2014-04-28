@@ -46,6 +46,7 @@ FileAnalyser::FileAnalyser(const Pkgs& pkgs, clang::DiagnosticsEngine& Diags_,
     , TC(new TypeChecker(*globals, Diags_, typeContext_))
     , Diags(Diags_)
     , functionAnalyser(*globals, *TC, typeContext_, Diags_)
+    , typeContext(typeContext_)
     , verbose(verbose_)
 {}
 
@@ -305,8 +306,7 @@ void FileAnalyser::getExternals(DepAnalyser& dep) const {
 unsigned FileAnalyser::checkTypeDecl(TypeDecl* D) {
     LOG_FUNC
     // check generic type
-    unsigned errors = 0;
-    errors += TC->checkType(D->getType(), D->isPublic());
+    unsigned errors = TC->checkType(D->getType(), D->isPublic());
 
     // check extra stuff depending on subclass
     switch (D->getKind()) {
@@ -316,7 +316,10 @@ unsigned FileAnalyser::checkTypeDecl(TypeDecl* D) {
         assert(0);
         break;
     case DECL_ALIASTYPE:
-        // nothing to do
+        if (errors == 0) {
+            AliasTypeDecl* A = cast<AliasTypeDecl>(D);
+            D->setType(typeContext.getAliasType(A, TC->resolveUnresolved(A->getRefType())));
+        }
         break;
     case DECL_STRUCTTYPE:
         // dont check struct members yet

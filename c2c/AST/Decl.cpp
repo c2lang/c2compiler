@@ -199,6 +199,7 @@ void AliasTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
     type.print(buffer);
     buffer.setColor(COL_VALUE);
     buffer << ' ' << name;
+    buffer.setColor(COL_ATTR); buffer << " refType: "; refType.print(buffer);
     buffer << '\n';
 }
 

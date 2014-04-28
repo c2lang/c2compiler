@@ -180,6 +180,47 @@ QualType TypeChecker::resolveCanonicals(const Decl* D, QualType Q, bool set) con
     return checkCanonicals(decls, Q, set);
 }
 
+QualType TypeChecker::resolveUnresolved(QualType Q) const {
+    const Type* T = Q.getTypePtr();
+    switch (Q->getTypeClass()) {
+    case TC_BUILTIN:
+        return Q;
+    case TC_POINTER:
+        {
+            // Dont return new type if not needed
+            const PointerType* P = cast<PointerType>(T);
+            QualType t1 = P->getPointeeType();
+            QualType Result = resolveUnresolved(t1);
+            if (t1 == Result) return Q;
+            // TODO qualifiers
+            return typeContext.getPointerType(Result);
+        }
+    case TC_ARRAY:
+        {
+            const ArrayType* A = cast<ArrayType>(T);
+            QualType t1 = A->getElementType();
+            QualType Result = resolveUnresolved(t1);
+            if (t1 == Result) return Q;
+            // TODO qualifiers
+            return typeContext.getArrayType(Result, A->getSizeExpr(), false);
+
+        }
+    case TC_UNRESOLVED:
+        {
+            const UnresolvedType* U = cast<UnresolvedType>(T);
+            TypeDecl* TD = U->getDecl();
+            assert(TD);
+            return TD->getType();
+        }
+    case TC_ALIAS:
+    case TC_STRUCT:
+    case TC_ENUM:
+    case TC_FUNCTION:
+        return Q;
+    }
+    return Q;
+}
+
 QualType TypeChecker::checkCanonicals(Decls& decls, QualType Q, bool set) const {
     if (Q->hasCanonicalType()) return Q.getCanonicalType();
 
@@ -234,7 +275,12 @@ QualType TypeChecker::checkCanonicals(Decls& decls, QualType Q, bool set) const 
             return canonical;
         }
     case TC_ALIAS:
-        return 0;
+        {
+            const AliasType* A = cast<AliasType>(T);
+            QualType canonical = A->getRefType().getCanonicalType();
+            A->setCanonicalType(canonical);
+            return canonical;
+        }
     case TC_STRUCT:
         return Q.getCanonicalType();
     case TC_ENUM:

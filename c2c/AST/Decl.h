@@ -246,11 +246,15 @@ class AliasTypeDecl : public TypeDecl {
 public:
     AliasTypeDecl(const std::string& name_, SourceLocation loc_, QualType type_, bool is_public, unsigned file_id)
         : TypeDecl(DECL_ALIASTYPE, name_, loc_, type_, is_public, file_id)
+        , refType(type_)
     {}
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_ALIASTYPE;
     }
     virtual void print(StringBuilder& buffer, unsigned indent) const;
+    QualType getRefType() const { return refType; }
+private:
+    QualType refType;
 };
 
 

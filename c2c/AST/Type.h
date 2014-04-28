@@ -35,6 +35,7 @@ class EnumConstantDecl;
 class StructTypeDecl;
 class EnumTypeDecl;
 class FunctionDecl;
+class AliasTypeDecl;
 class TypeDecl;
 
 
@@ -304,26 +305,23 @@ private:
 
 // AliasType are used whenever 'type A B' is used. B is the AliasType,
 // since we need a Type there.
-// UnresolvedTypeDecl? -> have string
-// TODO need SourceLocation -> so put in Decl
 class AliasType : public Type {
 public:
-    AliasType(QualType refType_, const std::string& name_)
+    AliasType(AliasTypeDecl* d, QualType ref)
         : Type(TC_ALIAS, QualType())
-        , refType(refType_)
-        , name(name_)
+        , decl(d)
+        , refType(ref)
     {}
     static bool classof(const Type* T) { return T->getTypeClass() == TC_ALIAS; }
 
+    AliasTypeDecl* getDecl() const { return decl; }
     QualType getRefType() const { return refType; }
-    const std::string&  getName() const { return name; }
-
 protected:
     virtual void printName(StringBuilder& buffer) const;
     virtual void debugPrint(StringBuilder& buffer) const;
 private:
+    AliasTypeDecl* decl;
     QualType refType;
-    std::string name;
 };
 
 
@@ -446,7 +444,7 @@ public:
     QualType getPointerType(QualType ref);
     QualType getArrayType(QualType element, Expr* size, bool ownSize);
     QualType getUnresolvedType(Expr* E);
-    QualType getAliasType(QualType refType, const std::string& name);
+    QualType getAliasType(AliasTypeDecl* A, QualType ref);
     QualType getStructType();
     QualType getEnumType();
     QualType getFunctionType(FunctionDecl* F);

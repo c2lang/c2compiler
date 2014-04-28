@@ -68,6 +68,7 @@ private:
     std::auto_ptr<TypeChecker> TC;
     clang::DiagnosticsEngine& Diags;
     FunctionAnalyser functionAnalyser;
+    TypeContext& typeContext;
     bool verbose;
 
     FileAnalyser(const FileAnalyser&);
