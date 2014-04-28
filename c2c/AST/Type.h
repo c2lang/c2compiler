@@ -265,7 +265,7 @@ public:
 
     QualType getElementType() const { return ElementType; }
     Expr* getSizeExpr() const { return sizeExpr; }
-    const llvm::APInt &getSize() const { return Size; }
+    const llvm::APInt& getSize() const { return Size; }
     void setSize(const llvm::APInt& value) { Size = value; }
 
 protected:

@@ -602,14 +602,25 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
         // TODO use helper function
         ArrayType* AT = cast<ArrayType>(Q.getCanonicalType().getTypePtr());
         QualType ET = AT->getElementType();
-        // TODO check if size is specifier in type
         bool constant = true;
         for (unsigned i=0; i<values.size(); i++) {
             analyseInitExpr(values[i], ET);
             if (!values[i]->isConstant()) constant = false;
         }
         if (constant) expr->setConstant();
+        llvm::APInt initSize(64, (int)values.size(), false);
+        if (AT->getSizeExpr()) {    // size given
+            uint64_t arraySize = AT->getSize().getZExtValue();
+            if (values.size() > arraySize) {
+                int firstExceed = AT->getSize().getZExtValue();
+                Diags.Report(values[firstExceed]->getLocation(), diag::err_excess_initializers) << 0;
+            }
+        } else {    // size induced from initializer list
+            AT->setSize(initSize);
+        }
+        expr->setType(Q);
     } else if (Q.isStructType()) {
+        expr->setType(Q);
         // TODO use helper function
         StructType* TT = cast<StructType>(Q.getCanonicalType().getTypePtr());
         StructTypeDecl* STD = TT->getDecl();

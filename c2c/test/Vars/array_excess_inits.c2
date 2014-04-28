@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+package test;
+
+int[2] a = { 1, 2,
+             3, // @error{excess elements in array initializer}
+             4 }
+
