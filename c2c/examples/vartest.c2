@@ -19,7 +19,7 @@ Struct s = { 10, 20, "hallo" }
 
 // arrays
 int[10] buffer;
-int[][] multi_var = { {1}, {2}}
+int[2][] multi_var = { {1,2}, {3,4} }
 int[2][3] multi_fix;
 int[] buf = { 1, 2, 3, 4 }
 int[5] buf2 = { 1, 2, 3, 4 }

@@ -554,6 +554,7 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
 void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
     LOG_FUNC
     InitListExpr* ILE = dyncast<InitListExpr>(expr);
+    // FIXME: expectedType has no canonicalType yet!
     const ArrayType* AT = dyncast<ArrayType>(expectedType.getCanonicalType());
     if (AT) {
         const QualType ET = AT->getElementType();

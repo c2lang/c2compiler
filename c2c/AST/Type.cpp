@@ -24,6 +24,8 @@
 #include "Utils/color.h"
 #include "Utils/constants.h"
 
+#define TYPE_DEBUG
+
 using namespace C2;
 
 // TODO insert QualType function impls
@@ -90,7 +92,11 @@ void QualType::dump() const {
         fprintf(stderr, "NULL\n");
     } else {
         StringBuilder output;
+#ifdef TYPE_DEBUG
+        print(output);
+#else
         debugPrint(output);
+#endif
         fprintf(stderr, "[TYPE] '%s'\n", (const char*)output);
     }
 }
@@ -382,6 +388,18 @@ void ArrayType::debugPrint(StringBuilder& buffer) const {
         buffer.setColor(COL_ATTR);
         buffer << "size=\n";
         sizeExpr->print(buffer, 0);
+    }
+}
+
+void ArrayType::setSize(const llvm::APInt& value) {
+    Size = value;
+    // also set on Canonical
+    QualType canonical = getCanonicalType();
+    assert(canonical.isValid());
+    Type* T = canonical.getTypePtr();
+    if (T != this) {
+        ArrayType* AT = cast<ArrayType>(T);
+        AT->setSize(value);
     }
 }
 

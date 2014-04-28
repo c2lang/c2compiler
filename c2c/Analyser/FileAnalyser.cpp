@@ -88,7 +88,7 @@ unsigned FileAnalyser::resolveTypeCanonicals() {
             assert(0);
             break;
         case DECL_ALIASTYPE:
-            // nothing extra to do
+            // nothing to do
             break;
         case DECL_STRUCTTYPE:
             //resolveStructType

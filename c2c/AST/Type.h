@@ -115,6 +115,7 @@ protected:
     {}
     virtual void printName(StringBuilder& buffer) const = 0;
     virtual void debugPrint(StringBuilder& buffer) const = 0;
+    QualType getCanonicalType() const { return canonicalType; }
 public:
     virtual ~Type() {}
 
@@ -267,8 +268,7 @@ public:
     QualType getElementType() const { return ElementType; }
     Expr* getSizeExpr() const { return sizeExpr; }
     const llvm::APInt& getSize() const { return Size; }
-    void setSize(const llvm::APInt& value) { Size = value; }
-
+    void setSize(const llvm::APInt& value);
 protected:
     virtual void printName(StringBuilder& buffer) const;
     virtual void debugPrint(StringBuilder& buffer) const;

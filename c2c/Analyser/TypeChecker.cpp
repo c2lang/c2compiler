@@ -244,6 +244,7 @@ QualType TypeChecker::checkCanonicals(Decls& decls, QualType Q, bool set) const 
         return Q;
     case TC_POINTER:
         {
+            // TODO Helper to get PointerType (can be aliased?)
             const PointerType* P = cast<PointerType>(T);
             QualType t1 = P->getPointeeType();
             // Pointee will always be in same TypeContext (file), since it's either built-in or UnresolvedType
@@ -291,7 +292,7 @@ QualType TypeChecker::checkCanonicals(Decls& decls, QualType Q, bool set) const 
     case TC_ALIAS:
         {
             const AliasType* A = cast<AliasType>(T);
-            QualType canonical = A->getRefType().getCanonicalType();
+            QualType canonical = checkCanonicals(decls, A->getRefType(), set);
             A->setCanonicalType(canonical);
             return canonical;
         }
@@ -325,7 +326,11 @@ QualType TypeChecker::resolveCanonical(QualType Q) const {
             // create new PointerType if PointeeType has different canonical than itself
             if (t1 == t2) return Q;
             // TODO qualifiers
-            else return typeContext.getPointerType(t2);
+            else {
+                QualType Canon = typeContext.getPointerType(t2);
+                Canon->setCanonicalType(Canon);
+                return Canon;
+            }
         }
     case TC_ARRAY:
         {
@@ -336,7 +341,9 @@ QualType TypeChecker::resolveCanonical(QualType Q) const {
             if (t1 == t2) return Q;
             else  {
                 // NOTE: need size Expr, but set ownership to none
-                return typeContext.getArrayType(t2, A->getSizeExpr(), false);
+                QualType Canon = typeContext.getArrayType(t2, A->getSizeExpr(), false);
+                Canon->setCanonicalType(Canon);
+                return Canon;
             }
         }
     case TC_UNRESOLVED:
