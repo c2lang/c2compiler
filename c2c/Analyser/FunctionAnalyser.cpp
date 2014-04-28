@@ -1342,8 +1342,8 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
     for (unsigned i=0; i<minArgs; i++) {
         Expr* argGiven = call->getArg(i);
         QualType typeGiven = analyseExpr(argGiven, RHS);
-        VarDecl* argFunc = func->getArg(i);
-        QualType argType = argFunc->getBBType();
+        VarDecl* Arg = func->getArg(i);
+        QualType argType = Arg->getBBType();
         if (typeGiven.isValid()) {
             assert(argType.isValid());
             EA.check(argType, argGiven);
