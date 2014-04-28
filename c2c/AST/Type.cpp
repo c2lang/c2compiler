@@ -396,7 +396,7 @@ void UnresolvedType::printName(StringBuilder& buffer) const {
 
 void UnresolvedType::debugPrint(StringBuilder& buffer) const {
     if (decl) {
-        buffer << decl->getName();
+        buffer << "(Unresolved)" << decl->getName();
     } else {
         buffer.setColor(ANSI_RED);
         expr->printLiteral(buffer);
@@ -422,12 +422,12 @@ void StructType::printName(StringBuilder& buffer) const {
 
 void StructType::debugPrint(StringBuilder& buffer) const {
     const std::string& name = decl->getName();
+    buffer << "(struct)";
     if (name.empty()) {
         buffer << "<anonymous>";
     } else {
         buffer << "'" << name << '\'';
     }
-    buffer << "(struct)";
 }
 
 
