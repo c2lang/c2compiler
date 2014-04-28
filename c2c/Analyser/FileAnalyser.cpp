@@ -145,7 +145,7 @@ unsigned FileAnalyser::checkVarInits() {
         if (V->getInitValue()) {
             errors += functionAnalyser.checkVarInit(V);
         } else {
-            QualType T = V->getType();
+            QualType T = V->getBBType();
             if (T.isConstQualified()) {
                 Diags.Report(V->getLocation(), diag::err_uninitialized_const_var) << V->getName();
                 errors++;
@@ -362,13 +362,19 @@ unsigned FileAnalyser::checkStructTypeDecl(StructTypeDecl* D) {
 
 unsigned FileAnalyser::resolveVarDecl(VarDecl* D) {
     LOG_FUNC
-    QualType Q = D->getType();
-    if (Q->hasCanonicalType()) return 0;
+    QualType Q = D->getRefType();
+    if (Q->hasCanonicalType()) {
+        D->setType(Q);
+        return 0;
+    }
 
     unsigned errors = TC->checkType(Q, D->isPublic());
     if (!errors) {
-        TC->resolveCanonicals(D, Q, true);
+        QualType QQ = TC->resolveCanonicals(D, Q, true);
         // TODO same as FunctionAnalyser code!
+        assert(QQ.isValid());
+        D->setType(QQ);
+
         ArrayType* AT = dyncast<ArrayType>(Q.getTypePtr());
         Expr* sizeExpr = AT->getSizeExpr();
         if (AT && sizeExpr) {

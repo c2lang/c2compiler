@@ -57,7 +57,7 @@ static void SetConstantFlags(Decl* D, Expr* expr) {
     case DECL_VAR:
         {
             VarDecl* VD = cast<VarDecl>(D);
-            QualType T = VD->getType();
+            QualType T = VD->getBBType();
             if (T.isConstQualified()) {
                 Expr* Init = VD->getInitValue();
                 if (Init) {
@@ -123,7 +123,7 @@ unsigned FunctionAnalyser::checkVarInit(VarDecl* V) {
     errors = 0;
 
     ConstModeSetter cms(*this, diag::err_init_element_not_constant);
-    analyseInitExpr(V->getInitValue(), V->getType());
+    analyseInitExpr(V->getInitValue(), V->getBBType());
     // TODO if type is array, update type of VarDecl? (add size)
 
     CurrentVarDecl = 0;
@@ -422,7 +422,7 @@ C2::QualType FunctionAnalyser::Decl2Type(Decl* decl) {
     case DECL_VAR:
         {
             VarDecl* VD = cast<VarDecl>(decl);
-            return resolveUserType(VD->getType());
+            return resolveUserType(VD->getBBType());
         }
     case DECL_ENUMVALUE:
         {
@@ -636,7 +636,7 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
             }
             VarDecl* VD = dyncast<VarDecl>(STD->getMember(i));
             assert(VD && "TEMP don't support sub-struct member inits");
-            analyseInitExpr(values[i], VD->getType());
+            analyseInitExpr(values[i], VD->getBBType());
             if (!values[i]->isConstant()) constant = false;
         }
         if (constant) expr->setConstant();
@@ -775,11 +775,13 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     VarDecl* decl = DE->getDecl();
 
     // check type and convert User types
-    QualType type = decl->getType();
+    QualType type = decl->getRefType();
     unsigned errs = TC.checkType(type, false);
     errors += errs;
     if (!errs) {
-        TC.resolveCanonicals(decl, type, true);
+        QualType QQ = TC.resolveCanonicals(decl, type, true);
+        assert(QQ.isValid());
+        decl->setType(QQ);
         ArrayType* AT = dyncast<ArrayType>(type.getTypePtr());
         if (AT) {
             Expr* sizeExpr = AT->getSizeExpr();
@@ -803,7 +805,7 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     Expr* initialValue = decl->getInitValue();
     if (initialValue && !errs) {
         CurrentVarDecl = decl;
-        analyseInitExpr(initialValue, decl->getType());
+        analyseInitExpr(initialValue, decl->getBBType());
         CurrentVarDecl = 0;
     }
 
@@ -1092,7 +1094,7 @@ QualType FunctionAnalyser::analyseBuiltinExpr(Expr* expr) {
         case DECL_VAR:
             {
                 VarDecl* VD = cast<VarDecl>(D);
-                QualType Q = VD->getType();
+                QualType Q = VD->getBBType();
                 // TODO also allow elemsof for EnumType
                 if (!Q.isArrayType()) {
                     StringBuilder msg;
@@ -1284,8 +1286,8 @@ QualType FunctionAnalyser::analyseMember(QualType T, IdentifierExpr* member, uns
         if (isa<VarDecl>(match)) {
             VarDecl* V = cast<VarDecl>(match);
             if (side & RHS) V->setUsed();
-            member->setType(V->getType());
-            return V->getType();
+            member->setType(V->getBBType());
+            return V->getBBType();
         }
         if (isa<StructTypeDecl>(match)) {
             return cast<StructTypeDecl>(match)->getType();
@@ -1344,7 +1346,7 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
         Expr* argGiven = call->getArg(i);
         QualType typeGiven = analyseExpr(argGiven, RHS);
         VarDecl* argFunc = func->getArg(i);
-        QualType argType = argFunc->getType();
+        QualType argType = argFunc->getBBType();
         if (typeGiven.isValid()) {
             assert(argType.isValid());
             EA.check(argType, argGiven);

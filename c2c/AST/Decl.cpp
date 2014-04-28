@@ -121,7 +121,7 @@ static const char* VarDeclKind2Str(VarDeclKind k) {
 VarDecl::VarDecl(VarDeclKind k_, const std::string& name_, SourceLocation loc_,
             QualType type_, Expr* initValue_, bool is_public, unsigned file_id)
     : Decl(DECL_VAR, name_, loc_, is_public, file_id)
-    , type(type_)
+    , refType(type_)
     , initValue(initValue_)
     , IRValue(0)
 {
@@ -136,8 +136,13 @@ void VarDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_DECL);
     buffer << "VarDecl ";
-    assert(type.isValid());
-    type.print(buffer);
+    if (type.isValid()) {
+        type.print(buffer);
+    } else {
+        buffer.setColor(COL_ATTR);
+        buffer << "ref:";
+        refType.print(buffer);
+    }
     buffer.setColor(COL_ATTR);
     buffer << ' ' << VarDeclKind2Str(getVarKind());
     buffer.setColor(COL_VALUE);

@@ -58,7 +58,6 @@ clean:
 c2c: $(OBJS)
 	@echo linking $@
 	@$(CXX) -o $@ $(OBJS) $(LDFLAGS) $(CLANGLIBS) $(LIBS) -ldl -fno-rtti -lrt
-	@strip $@
 
 .PHONY : test
 test:

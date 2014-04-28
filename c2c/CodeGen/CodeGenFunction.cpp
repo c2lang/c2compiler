@@ -68,7 +68,7 @@ llvm::Function* CodeGenFunction::generateProto(const std::string& pkgname) {
         std::vector<llvm::Type*> Args;
         for (unsigned i=0; i<FuncDecl->numArgs(); i++) {
             VarDecl* arg = FuncDecl->getArg(i);
-            QualType qt = arg->getType();
+            QualType qt = arg->getBBType();
             Args.push_back(CGM.ConvertType(qt.getTypePtr()));
         }
         llvm::ArrayRef<llvm::Type*> argsRef(Args);
@@ -604,8 +604,7 @@ llvm::Value* CodeGenFunction::EmitIdentifierExpr(const IdentifierExpr* E) {
 
 void CodeGenFunction::EmitVarDecl(const VarDecl* D) {
     LOG_FUNC
-    // TODO arrays types?
-    QualType qt = D->getType();
+    QualType qt = D->getBBType();
     StringBuilder name(64);
     name << D->getName();
     if (D->isParameter()) name << ".addr";

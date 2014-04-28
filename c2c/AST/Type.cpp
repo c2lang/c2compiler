@@ -67,6 +67,11 @@ void QualType::print(StringBuilder& buffer) const {
     buffer << '\'';
     debugPrint(buffer);
     buffer << '\'';
+    if (!isNull() && type != type->canonicalType.type) {
+        buffer.setColor(COL_CANON);
+        buffer << "=>";
+        getCanonicalType().debugPrint(buffer);
+    }
 }
 
 void QualType::debugPrint(StringBuilder& buffer) const {
@@ -410,8 +415,6 @@ void AliasType::printName(StringBuilder& buffer) const {
 
 void AliasType::debugPrint(StringBuilder& buffer) const {
     buffer << "(alias)" << decl->getName();
-    buffer << '=';
-    refType.debugPrint(buffer);
 }
 
 
@@ -449,7 +452,7 @@ void FunctionType::printName(StringBuilder& buffer) const {
     for (int i=0; i<func->numArgs(); i++) {
         if (i != 0) buffer << ", ";
         VarDecl* A = func->getArg(i);
-        Q = A->getType();
+        Q = A->getRefType();
         Q = Q.getCanonicalType();
         Q.printName(buffer);
     }
