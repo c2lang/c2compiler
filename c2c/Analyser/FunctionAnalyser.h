@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef FUNCTION_ANALYSER_H
-#define FUNCTION_ANALYSER_H
+#ifndef ANALYSER_FUNCTION_ANALYSER_H
+#define ANALYSER_FUNCTION_ANALYSER_H
 
 #include <llvm/ADT/APSInt.h>
 

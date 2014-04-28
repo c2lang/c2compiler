@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef FILE_ANALYSER_H
-#define FILE_ANALYSER_H
+#ifndef ANALYSER_FILE_ANALYSER_H
+#define ANALYSER_FILE_ANALYSER_H
 
 #include <memory>
 #include "Analyser/FunctionAnalyser.h"

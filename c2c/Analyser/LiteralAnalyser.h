@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef LITERAL_ANALYSER_H
-#define LITERAL_ANALYSER_H
+#ifndef ANALYSER_LITERAL_ANALYSER_H
+#define ANALYSER_LITERAL_ANALYSER_H
 
 #include <llvm/ADT/APSInt.h>
 #include <clang/Basic/SourceLocation.h>

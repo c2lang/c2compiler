@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef AST_CONSTANTS_H
-#define AST_CONSTANTS_H
+#ifndef ANALYSER_CONSTANTS_H
+#define ANALYSER_CONSTANTS_H
 
 namespace C2 {
 

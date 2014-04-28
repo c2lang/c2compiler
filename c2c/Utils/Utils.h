@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef UTILS_UTILS_H
+#define UTILS_UTILS_H
 
 #include <sys/types.h>
 

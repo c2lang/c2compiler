@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef GEN_UTILS_H
-#define GEN_UTILS_H
+#ifndef UTILS_GEN_UTILS_H
+#define UTILS_GEN_UTILS_H
 
 #include <string>
 

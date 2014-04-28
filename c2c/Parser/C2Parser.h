@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef C2PARSER_H
-#define C2PARSER_H
+#ifndef PARSER_C2PARSER_H
+#define PARSER_C2PARSER_H
 
 #include <assert.h>
 #include <clang/Lex/Preprocessor.h>

@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef COLOR_H
-#define COLOR_H
+#ifndef UTILS_COLOR_H
+#define UTILS_COLOR_H
 
 #define ANSI_BLACK    "\033[0;30m"
 #define ANSI_RED      "\033[0;31m"

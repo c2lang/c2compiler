@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef CCODE_GENERATOR_H
-#define CCODE_GENERATOR_H
+#ifndef CGENERATOR_CCODE_GENERATOR_H
+#define CGENERATOR_CCODE_GENERATOR_H
 
 #include <string>
 #include <vector>

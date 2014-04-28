@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef FILEMAP_H
-#define FILEMAP_H
+#ifndef FILEUTILS_FILEMAP_H
+#define FILEUTILS_FILEMAP_H
 
 #include <string>
 

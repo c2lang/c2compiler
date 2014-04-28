@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef C2SEMA_H
-#define C2SEMA_H
+#ifndef PARSER_C2SEMA_H
+#define PARSER_C2SEMA_H
 
 #include <string>
 #include <map>

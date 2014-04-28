@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef SCOPE_H
-#define SCOPE_H
+#ifndef ANALYSER_SCOPE_H
+#define ANALYSER_SCOPE_H
 
 #include <string>
 #include <map>

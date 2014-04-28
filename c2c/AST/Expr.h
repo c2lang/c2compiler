@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef EXPR_H
-#define EXPR_H
+#ifndef AST_EXPR_H
+#define AST_EXPR_H
 
 #include <string>
 #include <vector>

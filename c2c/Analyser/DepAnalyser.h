@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef DEP_ANALYSER_H
-#define DEP_ANALYSER_H
+#ifndef ANALYSER_DEP_ANALYSER_H
+#define ANALYSER_DEP_ANALYSER_H
 
 #include <string>
 

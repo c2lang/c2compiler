@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef AST_H
-#define AST_H
+#ifndef AST_AST_H
+#define AST_AST_H
 
 #include <string>
 #include <vector>

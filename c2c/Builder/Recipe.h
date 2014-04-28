@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef RECIPE_H
-#define RECIPE_H
+#ifndef BUILDER_RECIPE_H
+#define BUILDER_RECIPE_H
 
 #include <string>
 #include <vector>

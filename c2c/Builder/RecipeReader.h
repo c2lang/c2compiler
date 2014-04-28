@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef RECIPE_READER_H
-#define RECIPE_READER_H
+#ifndef BUILDER_RECIPE_READER_H
+#define BUILDER_RECIPE_READER_H
 
 #include <stdarg.h>
 #include <string>

@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef EXPR_TYPE_ANALYSER_H
-#define EXPR_TYPE_ANALYSER_H
+#ifndef ANALYSER_EXPR_TYPE_ANALYSER_H
+#define ANALYSER_EXPR_TYPE_ANALYSER_H
 
 #include "AST/Type.h"
 

@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef PACKAGE_H
-#define PACKAGE_H
+#ifndef AST_PACKAGE_H
+#define AST_PACKAGE_H
 
 #include <string>
 #include <map>

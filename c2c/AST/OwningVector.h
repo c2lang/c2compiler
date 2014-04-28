@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef OWNING_VECTOR_H
-#define OWNING_VECTOR_H
+#ifndef AST_OWNING_VECTOR_H
+#define AST_OWNING_VECTOR_H
 
 #include <stdlib.h>
 #include <string.h>

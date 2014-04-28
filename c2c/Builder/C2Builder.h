@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef C2BUILDER_H
-#define C2BUILDER_H
+#ifndef BUILDER_C2BUILDER_H
+#define BUILDER_C2BUILDER_H
 
 #include <vector>
 #include <string>

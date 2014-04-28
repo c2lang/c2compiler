@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef STMT_H
-#define STMT_H
+#ifndef AST_STMT_H
+#define AST_STMT_H
 
 #include <string>
 #include <vector>

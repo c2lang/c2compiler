@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef FILE_DB_H
-#define FILE_DB_H
+#ifndef FILEUTILS_FILE_DB_H
+#define FILEUTILS_FILE_DB_H
 
 #include <string>
 #include <vector>

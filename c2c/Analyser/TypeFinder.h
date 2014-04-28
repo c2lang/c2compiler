@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef TYPE_FINDER_H
-#define TYPE_FINDER_H
+#ifndef ANALYSER_TYPE_FINDER_H
+#define ANALYSER_TYPE_FINDER_H
 
 #include "AST/Type.h"
 

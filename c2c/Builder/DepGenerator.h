@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef DEP_GENERATOR_H
-#define DEP_GENERATOR_H
+#ifndef BUILDER_DEP_GENERATOR_H
+#define BUILDER_DEP_GENERATOR_H
 
 #include <vector>
 #include <string>

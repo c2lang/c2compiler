@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef TYPE_CHECKER_H
-#define TYPE_CHECKER_H
+#ifndef ANALYSER_TYPE_CHECKER_H
+#define ANALYSER_TYPE_CHECKER_H
 
 #include <vector>
 
