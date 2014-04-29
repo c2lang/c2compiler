@@ -371,8 +371,7 @@ void PointerType::debugPrint(StringBuilder& buffer) const {
 
 
 ArrayType::~ArrayType() {
-    // TODO only if have ownership (Canonical Types may not have it)
-    if (ownSize) delete sizeExpr;
+    if (ownSizeExpr) delete sizeExpr;
 }
 
 void ArrayType::printName(StringBuilder& buffer) const {
@@ -382,9 +381,10 @@ void ArrayType::printName(StringBuilder& buffer) const {
 
 void ArrayType::debugPrint(StringBuilder& buffer) const {
     ElementType.debugPrint(buffer);
-    buffer << '[' << (unsigned)Size.getZExtValue() << ']';
-    // TODO size
-    if (sizeExpr) {
+    buffer << '[';
+    if (hasSize) buffer << (unsigned)Size.getZExtValue();
+    buffer << ']';
+    if (sizeExpr && !hasSize) {
         buffer.setColor(COL_ATTR);
         buffer << "size=\n";
         sizeExpr->print(buffer, 0);
@@ -393,6 +393,7 @@ void ArrayType::debugPrint(StringBuilder& buffer) const {
 
 void ArrayType::setSize(const llvm::APInt& value) {
     Size = value;
+    hasSize = true;
     // also set on Canonical
     QualType canonical = getCanonicalType();
     assert(canonical.isValid());

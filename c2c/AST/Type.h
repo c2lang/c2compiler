@@ -260,7 +260,8 @@ public:
         , ElementType(et)
         , sizeExpr(size)
         , Size(32, 0, false)
-        , ownSize(ownSize_)
+        , hasSize(false)
+        , ownSizeExpr(ownSize_)
     {}
     virtual ~ArrayType();
     static bool classof(const Type* T) { return T->getTypeClass() == TC_ARRAY; }
@@ -276,7 +277,8 @@ private:
     QualType ElementType;
     Expr* sizeExpr;
     llvm::APInt Size;
-    bool ownSize;
+    bool hasSize;
+    bool ownSizeExpr;
 };
 
 
