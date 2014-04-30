@@ -368,6 +368,8 @@ public:
     Expr* getLHS() const { return lhs; }
     Expr* getRHS() const { return rhs; }
     Opcode getOpcode() const { return opc; }
+
+    virtual void printLiteral(StringBuilder& buffer) const;
 private:
     SourceLocation opLoc;
     Opcode opc;

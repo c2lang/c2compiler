@@ -26,6 +26,8 @@
 #define QUAL_VOLATILE   (0x2)
 #define QUAL_RESTRICT   (0x4)
 
+//#define TYPE_DEBUG
+
 namespace C2 {
 
 class StringBuilder;
@@ -87,6 +89,9 @@ public:
 
     // Debug functions
     void dump() const;
+#ifdef TYPE_DEBUG
+    void fullDebug(StringBuilder& buffer, int indent) const;
+#endif
 private:
     void printQualifiers(StringBuilder& buffer) const;
 
@@ -115,6 +120,9 @@ protected:
     {}
     virtual void printName(StringBuilder& buffer) const = 0;
     virtual void debugPrint(StringBuilder& buffer) const = 0;
+#ifdef TYPE_DEBUG
+    virtual void fullDebug(StringBuilder& buffer, int indent) const = 0;
+#endif
     QualType getCanonicalType() const { return canonicalType; }
 public:
     virtual ~Type() {}
@@ -230,6 +238,9 @@ public:
 protected:
     virtual void printName(StringBuilder& buffer) const;
     virtual void debugPrint(StringBuilder& buffer) const;
+#ifdef TYPE_DEBUG
+    virtual void fullDebug(StringBuilder& buffer, int indent) const;
+#endif
 private:
     Kind kind;
 };
@@ -248,6 +259,9 @@ public:
 protected:
     virtual void printName(StringBuilder& buffer) const;
     virtual void debugPrint(StringBuilder& buffer) const;
+#ifdef TYPE_DEBUG
+    virtual void fullDebug(StringBuilder& buffer, int indent) const;
+#endif
 private:
     QualType PointeeType;
 };
@@ -273,6 +287,9 @@ public:
 protected:
     virtual void printName(StringBuilder& buffer) const;
     virtual void debugPrint(StringBuilder& buffer) const;
+#ifdef TYPE_DEBUG
+    virtual void fullDebug(StringBuilder& buffer, int indent) const;
+#endif
 private:
     QualType ElementType;
     Expr* sizeExpr;
@@ -299,6 +316,9 @@ public:
 protected:
     virtual void printName(StringBuilder& buffer) const;
     virtual void debugPrint(StringBuilder& buffer) const;
+#ifdef TYPE_DEBUG
+    virtual void fullDebug(StringBuilder& buffer, int indent) const;
+#endif
 private:
     Expr* expr;         // can be IdentifierExpr (type) or MemberExpr (pkg.type)
     mutable TypeDecl* decl;
@@ -321,6 +341,9 @@ public:
 protected:
     virtual void printName(StringBuilder& buffer) const;
     virtual void debugPrint(StringBuilder& buffer) const;
+#ifdef TYPE_DEBUG
+    virtual void fullDebug(StringBuilder& buffer, int indent) const;
+#endif
 private:
     AliasTypeDecl* decl;
     QualType refType;
@@ -340,6 +363,9 @@ public:
 protected:
     virtual void printName(StringBuilder& buffer) const;
     virtual void debugPrint(StringBuilder& buffer) const;
+#ifdef TYPE_DEBUG
+    virtual void fullDebug(StringBuilder& buffer, int indent) const;
+#endif
 private:
     StructTypeDecl* decl;
 };
@@ -358,6 +384,9 @@ public:
 protected:
     virtual void printName(StringBuilder& buffer) const;
     virtual void debugPrint(StringBuilder& buffer) const;
+#ifdef TYPE_DEBUG
+    virtual void fullDebug(StringBuilder& buffer, int indent) const;
+#endif
 private:
     EnumTypeDecl* decl;
 };
@@ -374,6 +403,9 @@ public:
 protected:
     virtual void printName(StringBuilder& buffer) const;
     virtual void debugPrint(StringBuilder& buffer) const;
+#ifdef TYPE_DEBUG
+    virtual void fullDebug(StringBuilder& buffer, int indent) const;
+#endif
 private:
     FunctionDecl* func;
 };

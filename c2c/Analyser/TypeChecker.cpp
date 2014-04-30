@@ -224,10 +224,11 @@ QualType TypeChecker::resolveUnresolved(QualType Q) const {
 QualType TypeChecker::resolveType(QualType Q, bool usedPublic) {
     if (Q->hasCanonicalType()) return Q;    // should be ok already
 
-    // basic resolving
+    // basic resolving of Unresolved
     if (checkType(Q, usedPublic)) return QualType();
-
     QualType resolved = resolveUnresolved(Q);
+
+    // set Canonical types
     if (!resolved->hasCanonicalType()) {
         QualType canonical = resolveCanonical(resolved);
         resolved->setCanonicalType(canonical);

@@ -295,6 +295,12 @@ void BinaryOperator::print(StringBuilder& buffer, unsigned indent) const {
     rhs->print(buffer, indent + INDENT);
 }
 
+void BinaryOperator::printLiteral(StringBuilder& buffer) const {
+    lhs->printLiteral(buffer);
+    buffer << OpCode2str(opc);
+    rhs->printLiteral(buffer);
+}
+
 
 ConditionalOperator::ConditionalOperator(SourceLocation questionLoc, SourceLocation colonLoc,
                 Expr* cond_, Expr* lhs_, Expr* rhs_)

@@ -152,6 +152,7 @@ unsigned FileAnalyser::checkVarInits() {
             } else if (T->isArrayType()) {
                 const ArrayType* AT = cast<ArrayType>(T.getCanonicalType());
                 if (!AT->getSizeExpr()) {
+                    // Move to checking of array type (same as in FunctionAnalyser::analyseDeclExpr())
                     Diags.Report(V->getLocation(), diag::err_typecheck_incomplete_array_needs_initializer);
                     errors++;
                 }
@@ -367,11 +368,18 @@ unsigned FileAnalyser::resolveVarDecl(VarDecl* D) {
     if (Q.isValid()) {
         D->setType(Q);
 
-        // TODO use Helper-function to get ArrayType (might be AliasType)
-        ArrayType* AT = dyncast<ArrayType>(Q.getTypePtr());
-        Expr* sizeExpr = AT->getSizeExpr();
-        if (AT && sizeExpr) {
-            functionAnalyser.checkArrayExpr(AT, sizeExpr);
+        // TODO move to after checkVarInits() (to allow constants in array size)
+        if (Q.isArrayType()) {
+            // NEW recursive version
+            functionAnalyser.checkArraySizeExpr(D);
+/*
+            // TODO use Helper-function to get ArrayType (might be AliasType)
+            ArrayType* AT = cast<ArrayType>(Q.getTypePtr());
+            Expr* sizeExpr = AT->getSizeExpr();
+            if (sizeExpr) {
+                functionAnalyser.checkArrayExpr(AT, sizeExpr);
+            }
+*/
         }
 
         // NOTE: dont check initValue here (doesn't have canonical type yet)

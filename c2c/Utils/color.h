@@ -56,6 +56,8 @@
 #define COL_TIME ANSI_CYAN
 #define COL_VERBOSE ANSI_BYELLOW
 
+#define COL_SEMA ANSI_RED
+
 // for AST printing
 #define COL_DECL  ANSI_BGREEN
 #define COL_STMT  ANSI_BMAGENTA

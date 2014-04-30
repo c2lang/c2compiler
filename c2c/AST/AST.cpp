@@ -26,8 +26,6 @@
 
 //#define SEMA_DEBUG
 
-#define COL_SEMA ANSI_RED
-
 using namespace C2;
 
 void AST::print(bool colors) const {

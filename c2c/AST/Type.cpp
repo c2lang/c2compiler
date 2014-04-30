@@ -24,8 +24,6 @@
 #include "Utils/color.h"
 #include "Utils/constants.h"
 
-#define TYPE_DEBUG
-
 using namespace C2;
 
 // TODO insert QualType function impls
@@ -93,13 +91,34 @@ void QualType::dump() const {
     } else {
         StringBuilder output;
 #ifdef TYPE_DEBUG
-        print(output);
+        output.enableColor(true);
+        output << "TYPE:\n";
+        fullDebug(output, INDENT);
 #else
         debugPrint(output);
 #endif
-        fprintf(stderr, "[TYPE] '%s'\n", (const char*)output);
+        fprintf(stderr, "%s\n", (const char*)output);
     }
 }
+
+#ifdef TYPE_DEBUG
+void QualType::fullDebug(StringBuilder& buffer, int indent) const {
+    buffer.indent(indent);
+    buffer.setColor(COL_EXPR);
+    buffer << "[QualType]";
+    buffer.setColor(COL_ATTR);
+    buffer << " qualifiers=";
+    printQualifiers(buffer);
+    buffer << '\n';
+    if (isNull()) {
+        buffer.indent(indent);
+        buffer.setColor(ANSI_RED);
+        buffer << "type=NULL\n";
+    } else {
+        getTypePtr()->fullDebug(buffer, indent);
+    }
+}
+#endif
 
 void QualType::printQualifiers(StringBuilder& buffer) const {
     if (hasQualifiers()) {
@@ -150,10 +169,34 @@ void Type::debugPrint(StringBuilder& buffer) const {
     }
     buffer << '\n';
 }
+#ifdef TYPE_DEBUG
+void Type::fullDebug(StringBuilder& buffer, int indent) const {
+    buffer.indent(indent);
+    buffer.setColor(COL_ATTR);
+    buffer << "canonical=";
+    if (canonicalType.isNull()) {
+        buffer.setColor(ANSI_RED);
+        buffer << "???\n";
+    } else {
+        const Type* Canon = canonicalType.getTypePtr();
+        buffer.setColor(COL_ATTR);
+        if (Canon == this) {
+            buffer << "this\n";
+        } else {
+            buffer << '\n';
+            Canon->fullDebug(buffer, indent+INDENT);
+        }
+    }
+}
+#endif
 
 void Type::dump() const {
     StringBuilder output;
+#ifdef TYPE_DEBUG
+    fullDebug(output, 0);
+#else
     debugPrint(output);
+#endif
     fprintf(stderr, "[TYPE] '%s'\n", (const char*)output);
 }
 
@@ -357,6 +400,14 @@ void BuiltinType::printName(StringBuilder& buffer) const {
 void BuiltinType::debugPrint(StringBuilder& buffer) const {
     buffer << getName();
 }
+#ifdef TYPE_DEBUG
+void BuiltinType::fullDebug(StringBuilder& buffer, int indent) const {
+    buffer.indent(indent);
+    buffer.setColor(COL_STMT);
+    buffer << "[BuiltinType] " << getName() << '\n';;
+    Type::fullDebug(buffer, indent);
+}
+#endif
 
 
 void PointerType::printName(StringBuilder& buffer) const {
@@ -368,6 +419,18 @@ void PointerType::debugPrint(StringBuilder& buffer) const {
     PointeeType.debugPrint(buffer);
     buffer << '*';
 }
+#ifdef TYPE_DEBUG
+void PointerType::fullDebug(StringBuilder& buffer, int indent) const {
+    buffer.indent(indent);
+    buffer.setColor(COL_STMT);
+    buffer << "[PointerType]\n";
+    buffer.indent(indent + INDENT);
+    buffer.setColor(COL_ATTR);
+    buffer << "pointee=\n";
+    PointeeType.fullDebug(buffer, indent+INDENT);
+    Type::fullDebug(buffer, indent);
+}
+#endif
 
 
 ArrayType::~ArrayType() {
@@ -382,14 +445,41 @@ void ArrayType::printName(StringBuilder& buffer) const {
 void ArrayType::debugPrint(StringBuilder& buffer) const {
     ElementType.debugPrint(buffer);
     buffer << '[';
-    if (hasSize) buffer << (unsigned)Size.getZExtValue();
-    buffer << ']';
-    if (sizeExpr && !hasSize) {
-        buffer.setColor(COL_ATTR);
-        buffer << "size=\n";
-        sizeExpr->print(buffer, 0);
+    if (hasSize) {
+        buffer << (unsigned)Size.getZExtValue();
+    } else {
+        if (sizeExpr) {
+            buffer.setColor(COL_ATTR);
+            buffer << "(expr)";
+            sizeExpr->printLiteral(buffer);
+        }
     }
+    buffer << ']';
 }
+#ifdef TYPE_DEBUG
+void ArrayType::fullDebug(StringBuilder& buffer, int indent) const {
+    buffer.indent(indent);
+    buffer.setColor(COL_STMT);
+    buffer << "[ArrayType]";
+    buffer.setColor(COL_ATTR);
+    buffer << " hasSize=" << hasSize;
+    buffer << " size=" << (int)Size.getZExtValue();
+    buffer << " ownSizeExpr=" << ownSizeExpr << '\n';
+    buffer.indent(indent + INDENT);
+    buffer << "sizeExpr=";
+    if (sizeExpr) {
+        buffer << '\n';
+        sizeExpr->print(buffer, indent+INDENT);
+    } else {
+        buffer << "NULL\n";
+    }
+    buffer.indent(indent);
+    buffer.setColor(COL_ATTR);
+    buffer << "element=\n";
+    ElementType.fullDebug(buffer, indent+INDENT);
+    Type::fullDebug(buffer, indent);
+}
+#endif
 
 void ArrayType::setSize(const llvm::APInt& value) {
     Size = value;
@@ -426,6 +516,26 @@ void UnresolvedType::debugPrint(StringBuilder& buffer) const {
         expr->printLiteral(buffer);
     }
 }
+#ifdef TYPE_DEBUG
+void UnresolvedType::fullDebug(StringBuilder& buffer, int indent) const {
+    buffer.indent(indent);
+    buffer.setColor(COL_STMT);
+    buffer << "[UnresolvedType]\n";
+    buffer.indent(indent+INDENT);
+    buffer.setColor(COL_ATTR);
+    buffer << "decl=";
+    if (decl) {
+        buffer << decl->getName() << '\n';
+    } else {
+        buffer << "NULL\n";
+    }
+    buffer.indent(indent+INDENT);
+    buffer.setColor(COL_ATTR);
+    buffer << "expr=";
+    expr->printLiteral(buffer);
+    buffer << '\n';
+}
+#endif
 
 
 void AliasType::printName(StringBuilder& buffer) const {
@@ -435,6 +545,26 @@ void AliasType::printName(StringBuilder& buffer) const {
 void AliasType::debugPrint(StringBuilder& buffer) const {
     buffer << "(alias)" << decl->getName();
 }
+#ifdef TYPE_DEBUG
+void AliasType::fullDebug(StringBuilder& buffer, int indent) const {
+    buffer.indent(indent);
+    buffer.setColor(COL_STMT);
+    buffer << "[AliasType]\n";
+    Type::fullDebug(buffer, indent);
+    buffer.indent(indent+INDENT);
+    buffer.setColor(COL_ATTR);
+    buffer << "decl=";
+    if (decl) {
+        buffer << decl->getName() << '\n';
+    } else {
+        buffer << "NULL\n";
+    }
+    buffer.indent(indent);
+    buffer.setColor(COL_ATTR);
+    buffer << "refType=\n";
+    refType.fullDebug(buffer, indent+INDENT);
+}
+#endif
 
 
 void StructType::printName(StringBuilder& buffer) const {
@@ -450,6 +580,15 @@ void StructType::debugPrint(StringBuilder& buffer) const {
         buffer << name;
     }
 }
+#ifdef TYPE_DEBUG
+void StructType::fullDebug(StringBuilder& buffer, int indent) const {
+    buffer.indent(indent);
+    buffer.setColor(COL_STMT);
+    buffer << "[StructType]\n";
+    buffer << "TODO\n";
+    Type::fullDebug(buffer, indent);
+}
+#endif
 
 
 void EnumType::printName(StringBuilder& buffer) const {
@@ -460,6 +599,15 @@ void EnumType::debugPrint(StringBuilder& buffer) const {
     buffer << '\'' << decl->getName() << "'(enum)";
     // TODO canonical?
 }
+#ifdef TYPE_DEBUG
+void EnumType::fullDebug(StringBuilder& buffer, int indent) const {
+    buffer.indent(indent);
+    buffer.setColor(COL_STMT);
+    buffer << "[EnumType]\n";
+    buffer << "TODO\n";
+    Type::fullDebug(buffer, indent);
+}
+#endif
 
 
 void FunctionType::printName(StringBuilder& buffer) const {
@@ -482,6 +630,15 @@ void FunctionType::printName(StringBuilder& buffer) const {
 void FunctionType::debugPrint(StringBuilder& buffer) const {
     printName(buffer);
 }
+#ifdef TYPE_DEBUG
+void FunctionType::fullDebug(StringBuilder& buffer, int indent) const {
+    buffer.indent(indent);
+    buffer.setColor(COL_STMT);
+    buffer << "[FunctionType]\n";
+    buffer << "TODO\n";
+    Type::fullDebug(buffer, indent);
+}
+#endif
 
 
 TypeContext::TypeContext() {}

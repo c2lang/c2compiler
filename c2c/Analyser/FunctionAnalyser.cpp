@@ -130,13 +130,15 @@ unsigned FunctionAnalyser::checkVarInit(VarDecl* V) {
     return errors;
 }
 
-unsigned FunctionAnalyser::checkArrayExpr(ArrayType* AT, Expr* E) {
+unsigned FunctionAnalyser::checkArraySizeExpr(VarDecl* V) {
     LOG_FUNC
+    CurrentVarDecl = V;
     errors = 0;
 
     ConstModeSetter cms(*this, diag::err_init_element_not_constant);
-    analyseArraySizeExpr(AT, E);
+    analyseArrayType(V, V->getBBType());
 
+    CurrentVarDecl = 0;
     return errors;
 }
 
@@ -738,8 +740,56 @@ void FunctionAnalyser::analyseSizeofExpr(Expr* expr) {
 
 }
 
-void FunctionAnalyser::analyseArraySizeExpr(ArrayType* AT, Expr* E) {
+// sets ArrayType sizes recursively if sizeExpr is constant
+// NOTE: doesn't check any initExpr itself
+void FunctionAnalyser::analyseArrayType(VarDecl* V, QualType T) {
     LOG_FUNC
+    // TODO V not needed? (or move more diags here from checkVarInits)
+    fprintf(stderr, "AA\n");
+    T.dump();
+    if (!T.isArrayType()) return;
+    fprintf(stderr, "BB\n");
+
+    switch (T->getTypeClass()) {
+    case TC_BUILTIN:
+        assert(0 && "should not happen");
+        break;
+    case TC_POINTER:
+        analyseArrayType(V, cast<PointerType>(T)->getPointeeType());
+        break;
+    case TC_ARRAY:
+        {
+            ArrayType* AT = cast<ArrayType>(T.getTypePtr());
+            analyseArraySizeExpr(AT);
+
+            // recurse further
+            analyseArrayType(V, AT->getElementType());
+            break;
+        }
+    case TC_UNRESOLVED:
+        assert(0 && "should not happen");
+        break;
+    case TC_ALIAS:
+        {
+            //AliasType* AT = cast<AliasType>(T.getTypePtr());
+            //AliasTypeDecl* ATD = AT->getDecl();
+            assert(0 && "TODO");
+            // TODO Q: get ATD->getType() or getRefType()?
+            break;
+        }
+    case TC_STRUCT:
+    case TC_ENUM:
+    case TC_FUNCTION:
+        assert(0 && "should not happen");
+        break;
+    }
+}
+
+void FunctionAnalyser::analyseArraySizeExpr(ArrayType* AT) {
+    LOG_FUNC
+    Expr* E = AT->getSizeExpr();
+    if (!E) return;
+
     QualType T = analyseExpr(E, RHS);
     if (!T.isValid()) return;
 
@@ -779,12 +829,12 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     if (Q.isValid()) {
         decl->setType(Q);
 
-        // TODO use Helper-function to get ArrayType (might be AliasType)
-        ArrayType* AT = dyncast<ArrayType>(Q.getTypePtr());
-        if (AT) {
+        if (Q.isArrayType()) {
+            // TODO use Helper-function to get ArrayType (might be AliasType)
+            ArrayType* AT = cast<ArrayType>(Q.getTypePtr());
             Expr* sizeExpr = AT->getSizeExpr();
             if (sizeExpr) {
-                analyseArraySizeExpr(AT, sizeExpr);
+                analyseArraySizeExpr(AT);
                 if (sizeExpr->getCTC() != CTC_FULL && decl->getInitValue()) {
                     Diags.Report(decl->getLocation(), diag::err_vla_with_init_value) << decl->getInitValue()->getLocation();
                 }
