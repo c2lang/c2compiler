@@ -1,4 +1,3 @@
-// @skip
 // @warnings{no-unused}
 package test;
 
@@ -27,7 +26,7 @@ public func int main() {
 
     Int32  = UInt32;    // @warning{implicit conversion changes signedness: 'uint32' to 'int32'}
     Int32  = UInt16;
-    UInt32 = Int16;     // @warning{implicit conversion changes signedness: 'iint16' to 'uint32'}
+    UInt32 = Int16;     // @warning{implicit conversion changes signedness: 'int16' to 'uint32'}
 
     Int64   = Float32;  // @warning{implicit conversion turns floating-point number into integer: 'float32' to 'int64'}
     Int32   = Float32;  // @warning{implicit conversion turns floating-point number into integer: 'float32' to 'int32'}

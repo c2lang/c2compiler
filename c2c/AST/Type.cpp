@@ -185,7 +185,7 @@ void Type::fullDebug(StringBuilder& buffer, int indent) const {
             buffer << "this\n";
         } else {
             buffer << '\n';
-            Canon->fullDebug(buffer, indent+INDENT);
+            canonicalType.fullDebug(buffer, indent+INDENT);
         }
     }
 }
@@ -428,7 +428,7 @@ void PointerType::fullDebug(StringBuilder& buffer, int indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
     buffer << "[PointerType] " << (void*)this << '\n';
-    buffer.indent(indent + INDENT);
+    buffer.indent(indent);
     buffer.setColor(COL_ATTR);
     buffer << "pointee=\n";
     PointeeType.fullDebug(buffer, indent+INDENT);
@@ -469,7 +469,7 @@ void ArrayType::fullDebug(StringBuilder& buffer, int indent) const {
     buffer << " hasSize=" << hasSize;
     buffer << " size=" << (int)Size.getZExtValue();
     buffer << " ownSizeExpr=" << ownSizeExpr << '\n';
-    buffer.indent(indent + INDENT);
+    buffer.indent(indent);
     buffer << "sizeExpr=";
     if (sizeExpr) {
         buffer << '\n';
@@ -525,7 +525,7 @@ void UnresolvedType::fullDebug(StringBuilder& buffer, int indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
     buffer << "[UnresolvedType] " << (void*)this << '\n';
-    buffer.indent(indent+INDENT);
+    buffer.indent(indent);
     buffer.setColor(COL_ATTR);
     buffer << "decl=";
     if (decl) {
@@ -533,7 +533,7 @@ void UnresolvedType::fullDebug(StringBuilder& buffer, int indent) const {
     } else {
         buffer << "NULL\n";
     }
-    buffer.indent(indent+INDENT);
+    buffer.indent(indent);
     buffer.setColor(COL_ATTR);
     buffer << "expr=";
     expr->printLiteral(buffer);
@@ -543,7 +543,7 @@ void UnresolvedType::fullDebug(StringBuilder& buffer, int indent) const {
 
 
 void AliasType::printName(StringBuilder& buffer) const {
-    buffer << "(alias)" << decl->getName();
+    buffer << decl->getName();
 }
 
 void AliasType::debugPrint(StringBuilder& buffer) const {
@@ -555,7 +555,7 @@ void AliasType::fullDebug(StringBuilder& buffer, int indent) const {
     buffer.setColor(COL_STMT);
     buffer << "[AliasType] " << (void*)this << '\n';
     Type::fullDebug(buffer, indent);
-    buffer.indent(indent+INDENT);
+    buffer.indent(indent);
     buffer.setColor(COL_ATTR);
     buffer << "decl=";
     if (decl) {
@@ -566,7 +566,10 @@ void AliasType::fullDebug(StringBuilder& buffer, int indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_ATTR);
     buffer << "refType=\n";
+    // Dont print fullDebug() to avoid possible circular deps
     refType.fullDebug(buffer, indent+INDENT);
+    //buffer.indent(indent+INDENT);
+    //refType.debugPrint(buffer);
 }
 #endif
 
@@ -588,8 +591,7 @@ void StructType::debugPrint(StringBuilder& buffer) const {
 void StructType::fullDebug(StringBuilder& buffer, int indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
-    buffer << "[StructType] " << (void*)this << '\n';
-    buffer << "TODO\n";
+    buffer << "[StructType] " << (void*)this << " TODO" << '\n';
     Type::fullDebug(buffer, indent);
 }
 #endif

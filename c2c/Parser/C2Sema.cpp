@@ -186,7 +186,9 @@ void C2Sema::ActOnAliasType(const char* name, SourceLocation loc, Expr* type, bo
     if (typeExpr->hasLocalQualifier()) {
         Diag(loc, diag::err_invalid_local_typedef);
     }
-    TypeDecl* T = new AliasTypeDecl(name, loc, typeExpr->getType(), is_public, ast.getFileID());
+    AliasTypeDecl* T = new AliasTypeDecl(name, loc, typeExpr->getType(), is_public, ast.getFileID());
+    QualType A = typeContext.getAliasType(T, typeExpr->getType());
+    T->setType(A);
     ast.addType(T);
     addSymbol(T);
     delete typeExpr;

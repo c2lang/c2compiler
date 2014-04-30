@@ -211,7 +211,7 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
                 case DECL_VAR:
                     {
                         VarDecl* VD = cast<VarDecl>(D);
-                        QualType Q = VD->getBBType();
+                        QualType Q = VD->getType();
                         if (Q.isArrayType()) {
                             // generate: sizeof(array) / sizeof(array[0]);
                             output << "sizeof(" << I->getName() << ")/sizeof(" << I->getName() << "[0])";
@@ -422,20 +422,20 @@ void CCodeGenerator::EmitVariable(VarDecl* V) {
     if (V->isPublic() && mode != SINGLE_FILE) {
         // TODO type
         hbuf << "extern ";
-        EmitTypePreName(V->getBBType(), hbuf);
+        EmitTypePreName(V->getType(), hbuf);
         hbuf << ' ';
         addPrefix(*curpkg, V->getName(), hbuf);
-        EmitTypePostName(V->getBBType(), hbuf);
+        EmitTypePostName(V->getType(), hbuf);
         // TODO add space if needed (on StringBuilder)
         hbuf << ";\n";
         hbuf << '\n';
     } else {
         cbuf << "static ";
     }
-    EmitTypePreName(V->getBBType(), cbuf);
+    EmitTypePreName(V->getType(), cbuf);
     cbuf << ' ';
     addPrefix(*curpkg, V->getName(), cbuf);
-    EmitTypePostName(V->getBBType(), cbuf);
+    EmitTypePostName(V->getType(), cbuf);
     if (V->getInitValue()) {
         cbuf << " = ";
         EmitExpr(V->getInitValue(), cbuf);
@@ -566,10 +566,10 @@ void CCodeGenerator::EmitVarDecl(VarDecl* D, StringBuilder& output, unsigned ind
     LOG_FUNC
     output.indent(indent);
     //if (D->hasLocalQualifier()) output << "static ";
-    EmitTypePreName(D->getBBType(), output);
+    EmitTypePreName(D->getType(), output);
     output << ' ';
     output << D->getName();
-    EmitTypePostName(D->getBBType(), output);
+    EmitTypePostName(D->getType(), output);
     if (D->getInitValue()) {
         output << " = ";
         EmitExpr(D->getInitValue(), output);

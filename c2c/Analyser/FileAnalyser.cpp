@@ -91,7 +91,6 @@ unsigned FileAnalyser::resolveTypeCanonicals() {
             // nothing to do
             break;
         case DECL_STRUCTTYPE:
-            //resolveStructType
             //dont check members yet
             break;
         case DECL_ENUMTYPE:
@@ -145,7 +144,7 @@ unsigned FileAnalyser::checkVarInits() {
         if (V->getInitValue()) {
             errors += functionAnalyser.checkVarInit(V);
         } else {
-            QualType T = V->getBBType();
+            QualType T = V->getType();
             if (T.isConstQualified()) {
                 Diags.Report(V->getLocation(), diag::err_uninitialized_const_var) << V->getName();
                 errors++;
@@ -317,9 +316,11 @@ unsigned FileAnalyser::checkTypeDecl(TypeDecl* D) {
         assert(0);
         break;
     case DECL_ALIASTYPE:
+        // Any UnresolvedType should point to decl that has type set
         if (errors == 0) {
-            AliasTypeDecl* A = cast<AliasTypeDecl>(D);
-            D->setType(typeContext.getAliasType(A, TC->resolveUnresolved(A->getRefType())));
+            AliasType* A = cast<AliasType>(D->getType().getTypePtr());
+            QualType Q = TC->resolveUnresolved(A->getRefType());
+            A->updateRefType(Q);
         }
         break;
     case DECL_STRUCTTYPE:
@@ -370,16 +371,7 @@ unsigned FileAnalyser::resolveVarDecl(VarDecl* D) {
 
         // TODO move to after checkVarInits() (to allow constants in array size)
         if (Q.isArrayType()) {
-            // NEW recursive version
             functionAnalyser.checkArraySizeExpr(D);
-/*
-            // TODO use Helper-function to get ArrayType (might be AliasType)
-            ArrayType* AT = cast<ArrayType>(Q.getTypePtr());
-            Expr* sizeExpr = AT->getSizeExpr();
-            if (sizeExpr) {
-                functionAnalyser.checkArrayExpr(AT, sizeExpr);
-            }
-*/
         }
 
         // NOTE: dont check initValue here (doesn't have canonical type yet)

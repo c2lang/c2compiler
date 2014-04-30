@@ -26,7 +26,7 @@
 #define QUAL_VOLATILE   (0x2)
 #define QUAL_RESTRICT   (0x4)
 
-#define TYPE_DEBUG
+//#define TYPE_DEBUG
 
 namespace C2 {
 
@@ -338,6 +338,7 @@ public:
 
     AliasTypeDecl* getDecl() const { return decl; }
     QualType getRefType() const { return refType; }
+    void updateRefType(QualType ref) { refType = ref; }
 protected:
     virtual void printName(StringBuilder& buffer) const;
     virtual void debugPrint(StringBuilder& buffer) const;

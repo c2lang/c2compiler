@@ -1,4 +1,3 @@
-// @skip
 // @warnings{no-unused}
 package test;
 
@@ -6,6 +5,6 @@ type PTR const char*;
 
 func void test() {
     const PTR size2 = 20;
-    int[size2] b;      // @error{size of array has non-integer type 'PTR' (aka 'char*')}
+    int[size2] b;      // @error{size of array has non-integer type 'PTR' (aka 'int8*')}
 }
 

@@ -225,7 +225,7 @@ clang::SourceLocation DeclExpr::getLocation() const {
     return decl->getLocation();
 }
 
-QualType DeclExpr::getDeclType() const { return decl->getBBType(); }
+QualType DeclExpr::getDeclType() const { return decl->getType(); }
 
 Expr* DeclExpr::getInitValue() const { return decl->getInitValue(); }
 

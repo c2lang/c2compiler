@@ -87,6 +87,7 @@ unsigned TypeChecker::checkType(QualType Q, bool used_public) {
     case TC_UNRESOLVED:
         return checkUnresolvedType(cast<UnresolvedType>(T), used_public);
     case TC_ALIAS:
+        return checkType(cast<AliasType>(T)->getRefType(), used_public);
         // will be removed?
         return 0;
     case TC_STRUCT:
@@ -127,6 +128,7 @@ unsigned TypeChecker::checkUnresolvedType(const UnresolvedType* type, bool used_
                 return 1;
             }
             // ok
+            td->setUsed();
             if (used_public || external) td->setUsedPublic();
             I->setDecl(D);
             type->setDecl(td);
@@ -163,6 +165,7 @@ unsigned TypeChecker::checkUnresolvedType(const UnresolvedType* type, bool used_
                 return 1;
             }
             // ok
+            td->setUsed();
             if (used_public || external) td->setUsedPublic();
             member_id->setDecl(MD);
             type->setDecl(td);
@@ -176,7 +179,7 @@ unsigned TypeChecker::checkUnresolvedType(const UnresolvedType* type, bool used_
 
 QualType TypeChecker::resolveCanonicals(const Decl* D, QualType Q, bool set) const {
     Decls decls;
-    if (D != 0) decls.push_back(D);
+    if (D != 0 && !isa<AliasTypeDecl>(D)) decls.push_back(D);
     return checkCanonicals(decls, Q, set);
 }
 
@@ -247,37 +250,39 @@ QualType TypeChecker::checkCanonicals(Decls& decls, QualType Q, bool set) const 
             // Pointee will always be in same TypeContext (file), since it's either built-in or UnresolvedType
             QualType t2 = checkCanonicals(decls, t1, set);
             if (!t2.isValid()) return t2;
-            QualType canonical;
-            // create new PointerType if PointeeType has different canonical than itself
-            if (t1 == t2) canonical = Q;
-            else canonical = typeContext.getPointerType(t2);
-
-            if (set) P->setCanonicalType(canonical);
-            return canonical;
+            QualType canon;
+            if (t1 == t2) canon = Q;
+            else {
+                canon = typeContext.getPointerType(t2);
+                if (!canon->hasCanonicalType()) canon->setCanonicalType(canon);
+            }
+            assert(Q.isValid());
+            if (set) P->setCanonicalType(canon);
+            return canon;
         }
     case TC_ARRAY:
         {
             const ArrayType* A = cast<ArrayType>(T);
             QualType t1 = A->getElementType();
             // NOTE: qualifiers are lost here!
-            QualType t2 = checkCanonicals(decls, t1, true);
+            QualType t2 = checkCanonicals(decls, t1, set);
             if (!t2.isValid()) return t2;
-            QualType canonical;
-            if (t1 == t2) canonical = Q;
+            QualType canon;
+            if (t1 == t2) canon = Q;
             // NOTE: need size Expr, but set ownership to none
             else {
-                canonical = typeContext.getArrayType(t2, A->getSizeExpr(), false);
+                canon = typeContext.getArrayType(t2, A->getSizeExpr(), false);
+                if (!canon->hasCanonicalType()) canon->setCanonicalType(canon);
             }
 
-            if (set) A->setCanonicalType(canonical);
-            return canonical;
+            if (set) A->setCanonicalType(canon);
+            return canon;
         }
     case TC_UNRESOLVED:
         {
             const UnresolvedType* U = cast<UnresolvedType>(T);
             TypeDecl* TD = U->getDecl();
             assert(TD);
-            TD->setUsed();
             // check if exists
             if (!checkDecls(decls, TD)) {
                 return QualType();
@@ -289,8 +294,12 @@ QualType TypeChecker::checkCanonicals(Decls& decls, QualType Q, bool set) const 
     case TC_ALIAS:
         {
             const AliasType* A = cast<AliasType>(T);
+            if (!checkDecls(decls, A->getDecl())) {
+                return QualType();
+            }
             QualType canonical = checkCanonicals(decls, A->getRefType(), set);
-            A->setCanonicalType(canonical);
+            assert(Q.isValid());
+            if (set) A->setCanonicalType(canonical);
             return canonical;
         }
     case TC_STRUCT:

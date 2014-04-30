@@ -533,6 +533,7 @@ bool C2Builder::loadPackage(const std::string& name) {
             init->setConstant();
             init->setType(QT);
             VarDecl* var = new VarDecl(VARDECL_GLOBAL, "buildtime", loc, QT, init, true, file_id);
+            var->setType(QT);
             c2Pkg->addSymbol(var);
         }
         return true;

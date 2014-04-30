@@ -124,7 +124,7 @@ public:
     }
     virtual void print(StringBuilder& buffer, unsigned indent) const;
 
-    QualType getBBType() const {
+    QualType getType() const {
         assert(type.isValid());
         return type;
     }
