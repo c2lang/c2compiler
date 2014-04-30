@@ -745,10 +745,7 @@ void FunctionAnalyser::analyseSizeofExpr(Expr* expr) {
 void FunctionAnalyser::analyseArrayType(VarDecl* V, QualType T) {
     LOG_FUNC
     // TODO V not needed? (or move more diags here from checkVarInits)
-    fprintf(stderr, "AA\n");
-    T.dump();
     if (!T.isArrayType()) return;
-    fprintf(stderr, "BB\n");
 
     switch (T->getTypeClass()) {
     case TC_BUILTIN:

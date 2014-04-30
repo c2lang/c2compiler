@@ -26,7 +26,7 @@
 #define QUAL_VOLATILE   (0x2)
 #define QUAL_RESTRICT   (0x4)
 
-//#define TYPE_DEBUG
+#define TYPE_DEBUG
 
 namespace C2 {
 

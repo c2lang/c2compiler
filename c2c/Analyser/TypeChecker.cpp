@@ -228,11 +228,7 @@ QualType TypeChecker::resolveType(QualType Q, bool usedPublic) {
     if (checkType(Q, usedPublic)) return QualType();
     QualType resolved = resolveUnresolved(Q);
 
-    // set Canonical types
-    if (!resolved->hasCanonicalType()) {
-        QualType canonical = resolveCanonical(resolved);
-        resolved->setCanonicalType(canonical);
-    }
+    resolveCanonical(resolved);
     return resolved;
 }
 
@@ -310,7 +306,6 @@ QualType TypeChecker::checkCanonicals(Decls& decls, QualType Q, bool set) const 
 }
 
 QualType TypeChecker::resolveCanonical(QualType Q) const {
-    // TODO needed? (might be slower)
     if (Q->hasCanonicalType()) return Q.getCanonicalType();
 
     const Type* T = Q.getTypePtr();
@@ -324,12 +319,14 @@ QualType TypeChecker::resolveCanonical(QualType Q) const {
             // Pointee will always be in same TypeContext (file), since it's either built-in or UnresolvedType
             QualType t2 = resolveCanonical(t1);
             assert(t2.isValid());
-            // create new PointerType if PointeeType has different canonical than itself
-            if (t1 == t2) return Q;
-            // TODO qualifiers
-            else {
+            if (t1 == t2) {
+                Q->setCanonicalType(Q);
+                return Q;
+            } else {
+                // TODO qualifiers
                 QualType Canon = typeContext.getPointerType(t2);
-                Canon->setCanonicalType(Canon);
+                if (!Canon->hasCanonicalType()) Canon->setCanonicalType(Canon);
+                Q->setCanonicalType(Canon);
                 return Canon;
             }
         }
@@ -339,11 +336,14 @@ QualType TypeChecker::resolveCanonical(QualType Q) const {
             QualType t1 = A->getElementType();
             // NOTE: qualifiers are lost here!
             QualType t2 = resolveCanonical(t1);
-            if (t1 == t2) return Q;
-            else  {
+            if (t1 == t2) {
+                Q->setCanonicalType(Q);
+                return Q;
+            } else  {
                 // NOTE: need size Expr, but set ownership to none
                 QualType Canon = typeContext.getArrayType(t2, A->getSizeExpr(), false);
-                Canon->setCanonicalType(Canon);
+                if (!Canon->hasCanonicalType()) Canon->setCanonicalType(Canon);
+                Q->setCanonicalType(Canon);
                 return Canon;
             }
         }

@@ -56,7 +56,7 @@ StringBuilder& StringBuilder::operator<<(void* input) {
 #ifdef SIZE_DEBUG
     assert(10 < space_left() && "buffer overflow");
 #endif
-    ptr += sprintf(ptr, "0x%p", input);
+    ptr += sprintf(ptr, "%p", input);
     return *this;
 }
 
