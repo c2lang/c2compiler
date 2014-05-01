@@ -412,42 +412,6 @@ void FunctionAnalyser::analyseStmtExpr(Stmt* stmt) {
     analyseExpr(expr, 0);
 }
 
-C2::QualType FunctionAnalyser::Decl2Type(Decl* decl) {
-    LOG_FUNC
-    assert(decl);
-    switch (decl->getKind()) {
-    case DECL_FUNC:
-        {
-            FunctionDecl* FD = cast<FunctionDecl>(decl);
-            return FD->getType();
-        }
-    case DECL_VAR:
-        {
-            VarDecl* VD = cast<VarDecl>(decl);
-            return resolveUserType(VD->getType());
-        }
-    case DECL_ENUMVALUE:
-        {
-            EnumConstantDecl* EC = cast<EnumConstantDecl>(decl);
-            return EC->getType();
-        }
-    case DECL_ALIASTYPE:
-    case DECL_STRUCTTYPE:
-    case DECL_ENUMTYPE:
-    case DECL_FUNCTIONTYPE:
-        {
-            TypeDecl* TD = cast<TypeDecl>(decl);
-            return TD->getType();
-        }
-    case DECL_ARRAYVALUE:
-    case DECL_USE:
-        assert(0);
-        break;
-    }
-    QualType qt;
-    return qt;
-}
-
 C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
     LOG_FUNC
     if (side & LHS) {
@@ -523,7 +487,7 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
                 break;
             }
             if (side & RHS) D->setUsed();
-            QualType T = Decl2Type(D);
+            QualType T = D->getType();
             expr->setType(T);
             return T;
         }
@@ -1196,7 +1160,8 @@ QualType FunctionAnalyser::analyseArraySubscript(Expr* expr) {
 QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
     LOG_FUNC
     MemberExpr* M = cast<MemberExpr>(expr);
-    IdentifierExpr* member = M->getMember();
+    const std::string& member = M->getMemberName();
+    SourceLocation memberLoc = M->getMemberLoc();
 
     bool isArrow = M->isArrow();
     // we dont know what we're looking at here, it could be:
@@ -1232,7 +1197,7 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
                     // TODO extract to function?
                     VarDecl* VD = cast<VarDecl>(SRD);
                     if (side & RHS) VD->setUsed();
-                    QualType T = Decl2Type(VD);
+                    QualType T = VD->getType();
                     assert(T.isValid());  // analyser should set
 
                     // for arrow it should be Ptr to StructType, otherwise StructType
@@ -1266,13 +1231,10 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
                         StringBuilder buf(MAX_LEN_TYPENAME);
                         T.DiagName(buf);
                         Diags.Report(M->getLocation(), diag::err_typecheck_member_reference_struct_union)
-                            << buf << M->getSourceRange() << member->getLocation();
+                            << buf << M->getSourceRange() << memberLoc;
                         return QualType();
                     }
-                    // TODO use return value?
-                    analyseMember(T, member, side);
-                    expr->setType(member->getType());
-                    // TODO setCTC/setConstant but cleanup code
+                    analyseMember(T, M, side);
                 }
                 break;
             case DECL_ENUMVALUE:
@@ -1290,16 +1252,13 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
                 fprintf(stderr, "TODO ERROR: cannot use -> for package access\n");
                 // continue checking
             }
-            ScopeResult res = scope.findSymbolInPackage(member->getName(), member->getLocation(), SR.getPackage());
+            ScopeResult res = scope.findSymbolInPackage(member, memberLoc, SR.getPackage());
             Decl* D = res.getDecl();
             if (D) {
-                QualType Q = Decl2Type(D);
                 if (side & RHS) D->setUsed();
-                member->setDecl(D);
-                member->setType(Q);
-                SetConstantFlags(D, member);
-                expr->setCTC(member->getCTC());
-                if (member->isConstant()) expr->setConstant();
+                M->setDecl(D);
+                SetConstantFlags(D, M);
+                QualType Q = D->getType();
                 expr->setType(Q);
                 return Q;
             }
@@ -1318,30 +1277,21 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
             LType2->dump();
             return QualType();
         }
-        return analyseMember(LType2, member, side);
+        return analyseMember(LType2, M, side);
     }
     return QualType();
 }
 
-QualType FunctionAnalyser::analyseMember(QualType T, IdentifierExpr* member, unsigned side) {
+QualType FunctionAnalyser::analyseMember(QualType T, MemberExpr* M, unsigned side) {
     LOG_FUNC
     const StructType* ST = cast<StructType>(T);
     const StructTypeDecl* S = ST->getDecl();
-    Decl* match = S->find(member->getName());
+    Decl* match = S->find(M->getMemberName());
     if (match) {
-        member->setDecl(match);
-        // NOT very nice, structs can have VarDecls or StructTypeDecls
-        if (isa<VarDecl>(match)) {
-            VarDecl* V = cast<VarDecl>(match);
-            if (side & RHS) V->setUsed();
-            member->setType(V->getType());
-            return V->getType();
-        }
-        if (isa<StructTypeDecl>(match)) {
-            return cast<StructTypeDecl>(match)->getType();
-        }
-        assert(0);
-        return QualType();
+        if (side & RHS) match->setUsed();
+        M->setDecl(match);
+        M->setType(match->getType());
+        return match->getType();
     }
     char temp1[MAX_LEN_TYPENAME];
     StringBuilder buf1(MAX_LEN_TYPENAME, temp1);
@@ -1349,8 +1299,8 @@ QualType FunctionAnalyser::analyseMember(QualType T, IdentifierExpr* member, uns
 
     char temp2[MAX_LEN_VARNAME];
     StringBuilder buf2(MAX_LEN_VARNAME, temp2);
-    buf2 << '\'' << member->getName() << '\'';
-    Diags.Report(member->getLocation(), diag::err_no_member) << temp2 << temp1;
+    buf2 << '\'' << M->getMemberName() << '\'';
+    Diags.Report(M->getMemberLoc(), diag::err_no_member) << temp2 << temp1;
     return QualType();
 }
 

@@ -38,6 +38,7 @@ class Stmt;
 class Expr;
 class IdentifierExpr;
 class InitListExpr;
+class MemberExpr;
 
 class FunctionAnalyser {
 public:
@@ -77,7 +78,7 @@ private:
     QualType analyseBuiltinExpr(Expr* expr);
     QualType analyseArraySubscript(Expr* expr);
     QualType analyseMemberExpr(Expr* expr, unsigned side);
-    QualType analyseMember(QualType T, IdentifierExpr* member, unsigned side);
+    QualType analyseMember(QualType T, MemberExpr* M, unsigned side);
     QualType analyseParenExpr(Expr* expr);
     QualType analyseCall(Expr* expr);
     ScopeResult analyseIdentifier(IdentifierExpr* expr);
@@ -111,7 +112,6 @@ private:
     void checkDeclAssignment(Decl* decl, Expr* expr);
 
     static QualType resolveUserType(QualType T);
-    QualType Decl2Type(Decl* decl);
 
     Scope& scope;
     TypeChecker& TC;

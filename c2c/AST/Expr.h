@@ -502,10 +502,12 @@ private:
 // Represents a symbol reference 'a.b'/'a.b.c', A can be a pkg,struct or other Member expr
 class MemberExpr : public Expr {
 public:
-    MemberExpr(Expr* Base_, bool isArrow_, IdentifierExpr* Member_)
+    MemberExpr(Expr* Base_, bool isArrow_, const std::string& member_, SourceLocation loc_)
         : Expr(EXPR_MEMBER, false)
         , Base(Base_)
-        , Member(Member_)
+        , member(member_)
+        , loc(loc_)
+        , decl(0)
     {
         StmtBits.MemberExprIsArrow = isArrow_;
     }
@@ -516,10 +518,14 @@ public:
     virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return Base->getLocation(); }
     virtual SourceLocation getLocStart() const { return Base->getLocStart(); }
-    virtual SourceLocation getLocEnd() const { return Member->getLocEnd(); }
+    virtual SourceLocation getLocEnd() const { return loc; }
 
     Expr* getBase() const { return Base; }
-    IdentifierExpr* getMember() const { return Member; }
+    const std::string& getMemberName() const { return member; }
+    SourceLocation getMemberLoc() const { return loc; }
+    Decl* getDecl() const { return decl; }
+    void setDecl(Decl* D) { decl = D; }
+
     bool isArrow() const { return StmtBits.MemberExprIsArrow; }
     void setPkgPrefix(bool v) { StmtBits.MemberExprIsPkgPrefix = v; }
     bool isPkgPrefix() const { return StmtBits.MemberExprIsPkgPrefix; }
@@ -528,7 +534,9 @@ public:
     virtual void printLiteral(StringBuilder& buffer) const;
 private:
     Expr* Base;
-    IdentifierExpr* Member;
+    const std::string member;
+    SourceLocation loc;
+    Decl* decl;
 };
 
 

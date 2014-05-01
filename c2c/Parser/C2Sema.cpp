@@ -230,7 +230,7 @@ C2::FunctionDecl* C2Sema::createFuncDecl(const char* name, SourceLocation loc,
     FunctionDecl* D = new FunctionDecl(name, loc, is_public, ast.getFileID(), typeExpr->getType());
     delete typeExpr;
     QualType qt =  typeContext.getFunctionType(D);
-    D->setFunctionType(qt);
+    D->setType(qt);
     return D;
 }
 
@@ -739,15 +739,15 @@ C2::ExprResult C2Sema::ActOnArraySubScriptExpr(SourceLocation RLoc, Expr* Base, 
     return ExprResult(new ArraySubscriptExpr(RLoc, Base, Idx));
 }
 
-C2::ExprResult C2Sema::ActOnMemberExpr(Expr* Base, bool isArrow, Expr* Member) {
+C2::ExprResult C2Sema::ActOnMemberExpr(Expr* Base, bool isArrow, IdentifierInfo* sym, SourceLocation loc) {
     assert(Base);
-    assert(Member);
-    IdentifierExpr* Id = cast<IdentifierExpr>(Member);
+    assert(sym);
+    std::string member(sym->getNameStart(), sym->getLength());
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: member access";
+    std::cerr << COL_SEMA"SEMA: member access " << member;
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    return ExprResult(new MemberExpr(Base, isArrow, Id));
+    return ExprResult(new MemberExpr(Base, isArrow, member, loc));
 }
 
 C2::ExprResult C2Sema::ActOnPostfixUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Expr* Input) {

@@ -467,7 +467,7 @@ bool C2Builder::loadPackage(const std::string& name) {
             func->addArg(Arg1);
             stdioPkg->addSymbol(func);
             // function type
-            func->setFunctionType(QualType(new FunctionType(func), 0));
+            func->setType(QualType(new FunctionType(func), 0));
         }
         //int printf(const char *format, ...);
         {
@@ -481,7 +481,7 @@ bool C2Builder::loadPackage(const std::string& name) {
             func->setVariadic();
             stdioPkg->addSymbol(func);
             // function type
-            func->setFunctionType(QualType(new FunctionType(func), 0));
+            func->setType(QualType(new FunctionType(func), 0));
         }
         //int sprintf(char *str, const char *format, ...);
         {
@@ -498,7 +498,7 @@ bool C2Builder::loadPackage(const std::string& name) {
             func->setVariadic();
             stdioPkg->addSymbol(func);
             // function type
-            func->setFunctionType(QualType(new FunctionType(func), 0));
+            func->setType(QualType(new FunctionType(func), 0));
         }
         return true;
     }
@@ -515,7 +515,7 @@ bool C2Builder::loadPackage(const std::string& name) {
             func->addArg(Arg1);
             stdlibPkg->addSymbol(func);
             // function type
-            func->setFunctionType(QualType(new FunctionType(func), 0));
+            func->setType(QualType(new FunctionType(func), 0));
         }
         return true;
     }

@@ -1010,9 +1010,9 @@ C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
         ConsumeToken();  // Eat the "." or "->" token.
 
         if (ExpectIdentifier()) return ExprError();
-        ExprResult Res = ParseIdentifier();
-        if (Res.isInvalid()) return ExprError();
-        LHS = Actions.ActOnMemberExpr(LHS.release(), OpKind == tok::arrow, Res.release());
+        IdentifierInfo* sym = Tok.getIdentifierInfo();
+        SourceLocation loc = ConsumeToken();
+        LHS = Actions.ActOnMemberExpr(LHS.release(), OpKind == tok::arrow, sym, loc);
         break;
     }
     case tok::plusplus:    // postfix-expression: postfix-expression '++'

@@ -167,7 +167,7 @@ APSInt LiteralAnalyser::checkLiterals(const Expr* Right) {
     case EXPR_NIL:
         break;
     case EXPR_IDENTIFIER:
-        return checkIdentifier(Right);
+        return checkDecl(cast<IdentifierExpr>(Right)->getDecl());
     case EXPR_TYPE:
     case EXPR_CALL:
     case EXPR_INITLIST:
@@ -191,7 +191,7 @@ APSInt LiteralAnalyser::checkLiterals(const Expr* Right) {
         {
             // Q: is this correct for Struct.Member?
             const MemberExpr* M = cast<MemberExpr>(Right);
-            return checkLiterals(M->getMember());
+            return checkDecl(M->getDecl());
         }
     case EXPR_PAREN:
         {
@@ -368,9 +368,7 @@ APSInt LiteralAnalyser::checkBinaryLiterals(const Expr* Right) {
     return APSInt();
 }
 
-APSInt LiteralAnalyser::checkIdentifier(const Expr* Right) {
-    const IdentifierExpr* I = cast<IdentifierExpr>(Right);
-    const Decl* D = I->getDecl();
+APSInt LiteralAnalyser::checkDecl(const Decl* D) {
     assert(D);
     const EnumConstantDecl* ECD = dyncast<EnumConstantDecl>(D);
     if (ECD) return ECD->getValue();

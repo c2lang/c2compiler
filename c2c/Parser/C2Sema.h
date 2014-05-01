@@ -115,7 +115,7 @@ public:
     ExprResult ActOnTypeQualifier(ExprResult R, unsigned qualifier);
     ExprResult ActOnBuiltinExpression(SourceLocation Loc, Expr* expr, bool isSizeof);
     ExprResult ActOnArraySubScriptExpr(SourceLocation RLoc, Expr* Base, Expr* Idx);
-    ExprResult ActOnMemberExpr(Expr* Base, bool isArrow, Expr* Member);
+    ExprResult ActOnMemberExpr(Expr* Base, bool isArrow, IdentifierInfo* sym, SourceLocation loc);
     ExprResult ActOnPostfixUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Expr* Input);
     ExprResult ActOnUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Expr* Input);
 

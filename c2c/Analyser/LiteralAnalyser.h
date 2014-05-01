@@ -28,6 +28,7 @@ class DiagnosticsEngine;
 namespace C2 {
 
 class Expr;
+class Decl;
 
 class LiteralAnalyser {
 public:
@@ -40,7 +41,7 @@ private:
     llvm::APSInt checkIntegerLiterals(const Expr* Right);
     llvm::APSInt checkUnaryLiterals(const Expr* Right);
     llvm::APSInt checkBinaryLiterals(const Expr* Right);
-    llvm::APSInt checkIdentifier(const Expr* Right);
+    llvm::APSInt checkDecl(const Decl* D);
 
     clang::DiagnosticsEngine& Diags;
 

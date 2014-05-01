@@ -55,7 +55,8 @@ enum DeclKind {
 
 class Decl {
 public:
-    Decl(DeclKind k, const std::string& name_, SourceLocation loc_, bool is_public, unsigned file_id);
+    Decl(DeclKind k, const std::string& name_, SourceLocation loc_,
+         QualType type_, bool is_public, unsigned file_id);
     virtual ~Decl();
 
     virtual void print(StringBuilder& buffer, unsigned indent) const = 0;
@@ -74,11 +75,15 @@ public:
     const Package* getPackage() const { return pkg; }
     unsigned getFileID() const { return DeclBits.DeclFileID; }
 
+    QualType getType() const { return type; }
+    void setType(QualType t) { type = t; }
+
     // for debugging
     void dump() const;
 protected:
     const std::string name;
     SourceLocation loc;
+    QualType type;      // set by Analyser
 
     class DeclBitfields {
     public:
@@ -124,11 +129,6 @@ public:
     }
     virtual void print(StringBuilder& buffer, unsigned indent) const;
 
-    QualType getType() const {
-        assert(type.isValid());
-        return type;
-    }
-    void setType(QualType t) { type = t; }
     QualType getRefType() const { return refType; }
     Expr* getInitValue() const { return initValue; }
 
@@ -150,7 +150,6 @@ public:
     llvm::Value* getIRValue() const { return IRValue; }
     void setIRValue(llvm::Value* v) const { IRValue = v; }
 private:
-    QualType type;      // set by Analyser
     QualType refType;   // set by Parser
     Expr* initValue;
     // TODO remove, since only for Incremental Arrays (subclass VarDecl -> GlobalVarDecl)
@@ -188,15 +187,11 @@ public:
 
     QualType getReturnType() const { return rtype; }
 
-    void setFunctionType(QualType qt) { functionType = qt; }
-    QualType getType() const { return functionType; }
-
     // for codegen
     llvm::Function* getIRProto() const { return IRProto; }
     void setIRProto(llvm::Function* f) const { IRProto = f; }
 private:
     QualType rtype;
-    QualType functionType;
 
     typedef OwningVector<VarDecl> Args;
     Args args;
@@ -215,12 +210,10 @@ public:
     }
     virtual void print(StringBuilder& buffer, unsigned indent) const;
 
-    QualType getType() const { return type; }
     Expr* getInitValue() const { return InitVal; } // static value, NOT incremental values
     llvm::APSInt getValue() const { return Val; }
     void setValue(llvm::APSInt v) { Val = v; }
 private:
-    QualType type;
     Expr* InitVal;
     llvm::APSInt Val;
 };
@@ -242,11 +235,6 @@ public:
             return false;
         }
     }
-
-    QualType getType() const { return type; }
-    void setType(QualType qt) { type = qt; }
-protected:
-    mutable QualType type;
 };
 
 
@@ -309,11 +297,10 @@ public:
     unsigned numConstants() const { return constants.size(); }
     EnumConstantDecl* getConstant(unsigned index) const { return constants[index]; }
 
-    QualType getImplType() const { return implType; }
 private:
     typedef OwningVector<EnumConstantDecl> Constants;
     Constants constants;
-
+    // TODO use
     QualType implType;
 };
 

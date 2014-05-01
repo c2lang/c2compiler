@@ -412,7 +412,6 @@ void ArraySubscriptExpr::print(StringBuilder& buffer, unsigned indent) const {
 
 MemberExpr::~MemberExpr() {
     delete Base;
-    delete Member;
 }
 
 void MemberExpr::print(StringBuilder& buffer, unsigned indent) const {
@@ -425,13 +424,14 @@ void MemberExpr::print(StringBuilder& buffer, unsigned indent) const {
     Expr::print(buffer, 0);
     buffer << '\n';
     Base->print(buffer, indent + INDENT);
-    Member->print(buffer, indent + INDENT);
+    buffer.indent(indent);
+    buffer.setColor(COL_ATTR);
+    buffer << "member=" << member;
 }
 
 void MemberExpr::printLiteral(StringBuilder& buffer) const {
     Base->printLiteral(buffer);
-    buffer << '.';
-    Member->printLiteral(buffer);
+    buffer << '.' << member;
 }
 
 

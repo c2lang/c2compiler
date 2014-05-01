@@ -308,16 +308,16 @@ void CCodeGenerator::EmitUnaryOperator(Expr* E, StringBuilder& output) {
 void CCodeGenerator::EmitMemberExpr(Expr* E, StringBuilder& output) {
     LOG_FUNC
     MemberExpr* M = cast<MemberExpr>(E);
-    IdentifierExpr* RHS = M->getMember();
     if (M->isPkgPrefix()) {
         // A.B where A is a package
-        EmitIdentifierExpr(RHS, output);
+        // TEMP
+        output << M->getMemberName();
     } else {
         // A.B where A is decl of struct/union type
         EmitExpr(M->getBase(), cbuf);
         if (M->isArrow()) cbuf << "->";
         else cbuf << '.';
-        cbuf << RHS->getName();
+        cbuf << M->getMemberName();
     }
 }
 
