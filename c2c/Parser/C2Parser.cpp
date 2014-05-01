@@ -1026,26 +1026,6 @@ C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
   }
 }
 
-/// For C2, only identifiers are allowed
-/// \returns true if parsing fails, false otherwise.
-C2::ExprResult C2Parser::ParseUnqualifiedId() {
-    LOG_FUNC
-/*
-    if (ExpectIdentifier()) return ExprError();
-    IdentifierInfo* id = Tok.getIdentifierInfo();
-    SourceLocation idLoc = ConsumeToken();
-    
-    return 
-  // TODO use ParsePostFix again?
-    //C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
-
-  Diag(Tok, diag::err_expected_unqualified_id);
-  return true;
-  */
-  return ExprError();
-}
-
-
 /// ParseExpressionList - Used for C/C++ (argument-)expression-list.
 ///
 /// \verbatim

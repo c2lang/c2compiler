@@ -499,6 +499,7 @@ private:
 };
 
 
+// Represents a symbol reference 'a.b'/'a.b.c', A can be a pkg,struct or other Member expr
 class MemberExpr : public Expr {
 public:
     MemberExpr(Expr* Base_, bool isArrow_, IdentifierExpr* Member_)

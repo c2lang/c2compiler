@@ -177,8 +177,6 @@ private:
       typedef SmallVector<Expr*, 20> ExprListTy;
       typedef SmallVector<SourceLocation, 20> CommaLocsTy;
 
-    ExprResult ParseUnqualifiedId();
-
     /// ParseExpressionList - Used for C/C++ (argument-)expression-list.
     bool ParseExpressionList(SmallVectorImpl<Expr*> &Exprs,
                              SmallVectorImpl<SourceLocation> &CommaLocs);
