@@ -658,13 +658,13 @@ QualType TypeContext::getPointerType(QualType ref) {
         }
     }
     Type* N = new PointerType(ref);
+    if (ref->hasCanonicalType()) N->setCanonicalType(N);
     return add(N);
 }
 
 QualType TypeContext::getArrayType(QualType element, Expr* size, bool ownSize) {
-    // Q: check for Expr*? (might be needed to resolve canonical type?)
-    // always unique
     Type* N = new ArrayType(element, size, ownSize);
+    if (element->hasCanonicalType()) N->setCanonicalType(N);
     return add(N);
 }
 
