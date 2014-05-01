@@ -71,7 +71,7 @@ public:
     }
     bool isOK() const { return value & 0x1; }
 private:
-    unsigned value;
+    uintptr_t value;
 };
 
 

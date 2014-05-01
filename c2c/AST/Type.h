@@ -21,10 +21,12 @@
 #include <string>
 
 #include <llvm/ADT/APInt.h>
+#include <clang/Basic/SourceLocation.h>
+
+using clang::SourceLocation;
 
 #define QUAL_CONST      (0x1)
 #define QUAL_VOLATILE   (0x2)
-
 #define QUALS_MASK (0x3)
 
 //#define TYPE_DEBUG
@@ -313,17 +315,26 @@ private:
 // Represents symbols that refer to user type (eg 'Point')
 class UnresolvedType : public Type {
 public:
-    UnresolvedType(Expr* E)
+    UnresolvedType(SourceLocation ploc_, const std::string& pname_,
+                   SourceLocation tloc_, const std::string& tname_)
         : Type(TC_UNRESOLVED, QualType())
-        , expr(E)
+        , pname(pname_)
+        , tname(tname_)
+        , ploc(ploc_)
+        , tloc(tloc_)
         , decl(0)
     {}
-    virtual ~UnresolvedType();
+    virtual ~UnresolvedType() {}
     static bool classof(const Type* T) { return T->getTypeClass() == TC_UNRESOLVED; }
 
-    Expr* getExpr() const { return expr; }
+    const std::string& getPName() const { return pname; }
+    const std::string& getTName() const { return tname; }
+    SourceLocation getPLoc() const { return ploc; }
+    SourceLocation getTLoc() const { return tloc; }
+
     void setDecl(TypeDecl* t) const { decl = t; }
     TypeDecl* getDecl() const { return decl; }
+    void printLiteral(StringBuilder& output) const;
 protected:
     virtual void printName(StringBuilder& buffer) const;
     virtual void debugPrint(StringBuilder& buffer) const;
@@ -331,7 +342,10 @@ protected:
     virtual void fullDebug(StringBuilder& buffer, int indent) const;
 #endif
 private:
-    Expr* expr;         // can be IdentifierExpr (type) or MemberExpr (pkg.type)
+    std::string pname;
+    std::string tname;
+    SourceLocation ploc;
+    SourceLocation tloc;
     mutable TypeDecl* decl;
 };
 
@@ -489,7 +503,8 @@ public:
 
     QualType getPointerType(QualType ref);
     QualType getArrayType(QualType element, Expr* size, bool ownSize);
-    QualType getUnresolvedType(Expr* E);
+    QualType getUnresolvedType(SourceLocation ploc, const std::string& pname,
+                               SourceLocation tloc, const std::string& tname);
     QualType getAliasType(AliasTypeDecl* A, QualType ref);
     QualType getStructType();
     QualType getEnumType();

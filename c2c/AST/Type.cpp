@@ -493,15 +493,10 @@ void ArrayType::setSize(const llvm::APInt& value) {
 }
 
 
-UnresolvedType::~UnresolvedType() {
-    delete expr;
-}
-
 void UnresolvedType::printName(StringBuilder& buffer) const {
     if (decl) {
         buffer << decl->getName();
     } else {
-        // TODO print Expr's name (need function for that)
         buffer << "TODO_EXPR_NAME" << "(unresolved!)";
     }
 }
@@ -511,7 +506,7 @@ void UnresolvedType::debugPrint(StringBuilder& buffer) const {
         buffer << "(Unresolved)" << decl->getName();
     } else {
         buffer.setColor(ANSI_RED);
-        expr->printLiteral(buffer);
+        printLiteral(buffer);
     }
 }
 #ifdef TYPE_DEBUG
@@ -530,10 +525,16 @@ void UnresolvedType::fullDebug(StringBuilder& buffer, int indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_ATTR);
     buffer << "expr=";
-    expr->printLiteral(buffer);
+    printLiteral(buffer);
     buffer << '\n';
 }
 #endif
+void UnresolvedType::printLiteral(StringBuilder& output) const {
+    if (!pname.empty()) {
+        output << pname << '.';
+    }
+    output << tname;
+}
 
 
 void AliasType::printName(StringBuilder& buffer) const {
@@ -667,9 +668,9 @@ QualType TypeContext::getArrayType(QualType element, Expr* size, bool ownSize) {
     return add(N);
 }
 
-QualType TypeContext::getUnresolvedType(Expr* E) {
-    // Q: check for Expr*? (might be needed to resolve canonical type?)
-    return add(new UnresolvedType(E));
+QualType TypeContext::getUnresolvedType(SourceLocation ploc, const std::string& pname,
+                                        SourceLocation tloc, const std::string& tname) {
+    return add(new UnresolvedType(ploc, pname, tloc, tname));
 }
 
 QualType TypeContext::getAliasType(AliasTypeDecl* A, QualType refType) {

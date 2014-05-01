@@ -97,81 +97,48 @@ unsigned TypeChecker::checkType(QualType Q, bool used_public) {
 }
 
 unsigned TypeChecker::checkUnresolvedType(const UnresolvedType* type, bool used_public) {
-    // TODO refactor
-    Expr* id = type->getExpr();
-    const Package* pkg = 0;
-    switch (id->getKind()) {
-    case EXPR_IDENTIFIER:   // unqualified
-        {
-            IdentifierExpr* I = cast<IdentifierExpr>(id);
-            ScopeResult res = globals.findSymbol(I->getName(), I->getLocation());
-            if (!res.isOK()) return 1;
-            if (res.getPackage()) {
-                Diags.Report(I->getLocation(), diag::err_not_a_typename) << I->getName();
-                return 1;
-            }
-            Decl* D = res.getDecl();
-            if (!D) {
-                Diags.Report(I->getLocation(), diag::err_unknown_typename) << I->getName();
-                return 1;
-            }
-            TypeDecl* td = dyncast<TypeDecl>(D);
-            if (!td) {
-                Diags.Report(I->getLocation(), diag::err_not_a_typename) << I->getName();
-                return 1;
-            }
-            bool external = globals.isExternal(D->getPackage());
-            if (used_public && !external && !td->isPublic()) {
-                Diags.Report(I->getLocation(), diag::err_non_public_type) << I->getName();
-                return 1;
-            }
-            // ok
-            td->setUsed();
-            if (used_public || external) td->setUsedPublic();
-            I->setDecl(D);
-            type->setDecl(td);
+    const std::string& pName = type->getPName();
+    const std::string& tName = type->getTName();
+    SourceLocation tLoc = type->getTLoc();
+    Decl* D = 0;
+    if (!pName.empty()) {   // pkg.type
+        // check if package exists
+        const Package* pkg = globals.usePackage(pName, type->getPLoc());
+        if (!pkg) return 1;
+        // check type
+        ScopeResult res = globals.findSymbolInPackage(tName, tLoc, pkg);
+        if (!res.isOK()) return 1;
+        D = res.getDecl();
+    } else {
+        ScopeResult res = globals.findSymbol(tName, tLoc);
+        if (!res.isOK()) return 1;
+        if (res.getPackage()) {
+            Diags.Report(tLoc, diag::err_not_a_typename) << tName;
+            return 1;
         }
-        break;
-    case EXPR_MEMBER:   // fully qualified
-        {
-            MemberExpr* M = cast<MemberExpr>(id);
-            Expr* base = M->getBase();
-            IdentifierExpr* pkg_id = cast<IdentifierExpr>(base);
-            const std::string& pName = pkg_id->getName();
-            // check if package exists
-            pkg = globals.usePackage(pName, pkg_id->getLocation());
-            if (!pkg) return 1;
-            M->setPkgPrefix(true);
-            // check member
-            IdentifierExpr* member_id = M->getMember();
-            // check Type
-            ScopeResult res = globals.findSymbolInPackage(member_id->getName(), member_id->getLocation(), pkg);
-            if (!res.isOK()) return 1;
-            Decl* MD = res.getDecl();
-            TypeDecl* td = dyncast<TypeDecl>(MD);
-            if (!td) {
-                StringBuilder name;
-                M->printLiteral(name);
-                Diags.Report(member_id->getLocation(), diag::err_not_a_typename) << name;
-                return 1;
-            }
-            bool external = globals.isExternal(MD->getPackage());
-            if (used_public &&!external && !td->isPublic()) {
-                StringBuilder name;
-                M->printLiteral(name);
-                Diags.Report(member_id->getLocation(), diag::err_non_public_type) << name;
-                return 1;
-            }
-            // ok
-            td->setUsed();
-            if (used_public || external) td->setUsedPublic();
-            member_id->setDecl(MD);
-            type->setDecl(td);
+        D = res.getDecl();
+        if (!D) {
+            Diags.Report(tLoc, diag::err_unknown_typename) << tName;
+            return 1;
         }
-        break;
-    default:
-        assert(0);
     }
+    TypeDecl* TD = dyncast<TypeDecl>(D);
+    if (!TD) {
+        StringBuilder name;
+        type->printLiteral(name);
+        Diags.Report(tLoc, diag::err_not_a_typename) << name;
+        return 1;
+    }
+    bool external = globals.isExternal(D->getPackage());
+    if (used_public &&!external && !TD->isPublic()) {
+        StringBuilder name;
+        type->printLiteral(name);
+        Diags.Report(tLoc, diag::err_non_public_type) << name;
+        return 1;
+    }
+    D->setUsed();
+    if (used_public || external) D->setUsedPublic();
+    type->setDecl(TD);
     return 0;
 }
 

@@ -106,7 +106,8 @@ public:
     ExprResult ActOnInitList(SourceLocation left_, SourceLocation right_, ExprList& vals);
     ExprResult ActOnArrayType(Expr* base, Expr* size);
     ExprResult ActOnPointerType(Expr* base);
-    ExprResult ActOnUserType(Expr* id);
+    ExprResult ActOnUserType(IdentifierInfo* psym, SourceLocation ploc,
+                             IdentifierInfo* tsym, SourceLocation tloc);
     ExprResult ActOnBuiltinType(tok::TokenKind k);
     EnumTypeDecl* ActOnEnumType(const char* name, SourceLocation loc, Expr* implType, bool is_public);
     ExprResult ActOnEnumTypeFinished(Expr* enumType, SourceLocation leftBrace, SourceLocation rightBrace);

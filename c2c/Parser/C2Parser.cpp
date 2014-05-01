@@ -504,10 +504,7 @@ C2::ExprResult C2Parser::ParseSingleTypeSpecifier(bool allow_qualifier) {
         ConsumeToken();
         break;
     case tok::identifier:
-        {
-            ExprResult Res = ParseFullIdentifier();
-            base = Actions.ActOnUserType(Res.release());
-        }
+        base = ParseFullIdentifier();
         break;
     default:
         Diag(Tok, diag::err_expected_type_spec);
@@ -1433,19 +1430,23 @@ C2::ExprResult C2Parser::ParseIdentifier() {
 C2::ExprResult C2Parser::ParseFullIdentifier() {
     LOG_FUNC
     assert(Tok.is(tok::identifier) && "Not an identifier!");
-    IdentifierInfo* symII = Tok.getIdentifierInfo();
-    SourceLocation symLoc = ConsumeToken();
-    ExprResult LHS = Actions.ActOnIdExpression(*symII, symLoc);
+    IdentifierInfo* pSym = 0;
+    SourceLocation pLoc;
+    IdentifierInfo* tSym = Tok.getIdentifierInfo();
+    SourceLocation tLoc = ConsumeToken();
 
-    if (Tok.isNot(tok::period)) return LHS;
-    ConsumeToken(); // consume the '.'
+    if (Tok.is(tok::period)) {
+        ConsumeToken(); // consume the '.'
+        if (ExpectIdentifier()) return ExprError();
+        // type is a packages
+        pSym = tSym;
+        pLoc = tLoc;
 
-    if (ExpectIdentifier()) return ExprError();
-    IdentifierInfo* symII2 = Tok.getIdentifierInfo();
-    SourceLocation symLoc2 = ConsumeToken();
-    ExprResult RHS = Actions.ActOnIdExpression(*symII2, symLoc2);
+        tSym = Tok.getIdentifierInfo();
+        tLoc = ConsumeToken();
+    }
 
-    return Actions.ActOnMemberExpr(LHS.release(), false, RHS.release());
+    return Actions.ActOnUserType(pSym, pLoc, tSym, tLoc);
 }
 
 /*

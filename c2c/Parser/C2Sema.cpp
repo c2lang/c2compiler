@@ -32,8 +32,6 @@
 
 //#define SEMA_DEBUG
 
-#define COL_SEMA ANSI_RED
-
 using namespace C2;
 using namespace clang;
 using llvm::APFloat;
@@ -105,7 +103,22 @@ C2Sema::C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, TypeContext& tc, A
     , typeContext(tc)
     , ast(ast_)
     , PP(PP_)
-{}
+{
+#if 0
+    fprintf(stderr, "SIZES:\n");
+    fprintf(stderr, "  QualType = %d\n", sizeof(QualType));
+    fprintf(stderr, "  Type     = %d\n", sizeof(Type));
+    fprintf(stderr, "  BuiltinType = %d\n", sizeof(BuiltinType));
+    fprintf(stderr, "  PointerType = %d\n", sizeof(PointerType));
+    fprintf(stderr, "  UnresolvedType = %d\n", sizeof(UnresolvedType));
+    fprintf(stderr, "  Stmt = %d\n", sizeof(Stmt));
+    fprintf(stderr, "  EXPR     = %d\n", sizeof(Expr));
+    fprintf(stderr, "  IdentifierExpr = %d\n", sizeof(IdentifierExpr));
+    fprintf(stderr, "  MemberExpr = %d\n", sizeof(MemberExpr));
+    fprintf(stderr, "  Decl=%d\n", sizeof(Decl));
+    fprintf(stderr, "  VarDecl=%d\n", sizeof(VarDecl));
+#endif
+}
 
 C2Sema::~C2Sema() {}
 
@@ -513,7 +526,7 @@ C2::ExprResult C2Sema::ActOnConditionalOp(SourceLocation QuestionLoc, SourceLoca
                              Expr* CondExpr, Expr* LHSExpr, Expr* RHSExpr) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: CondOp at ";
-    opLoc.dump(SourceMgr);
+    QuestionLoc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
     return ExprResult(new ConditionalOperator(QuestionLoc, ColonLoc, CondExpr, LHSExpr, RHSExpr));
@@ -550,12 +563,24 @@ C2::ExprResult C2Sema::ActOnPointerType(Expr* base) {
     return ExprResult(base);
 }
 
-C2::ExprResult C2Sema::ActOnUserType(Expr* expr) {
-    assert(expr);
+C2::ExprResult C2Sema::ActOnUserType(IdentifierInfo* psym, SourceLocation ploc,
+                                     IdentifierInfo* tsym, SourceLocation tloc) {
+    assert(tsym);
+    std::string tname(tsym->getNameStart(), tsym->getLength());
+    std::string pname;
+    if (psym) {
+        pname = psym->getNameStart();
+    }
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: User Type"ANSI_NORMAL"\n";
+    std::cerr << COL_SEMA"SEMA: User Type ";
+    if (psym) {
+        std::cerr << pname << '.';
+    }
+    std::cerr << tname << " at ";
+    tloc.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL << '\n';
 #endif
-    QualType qt = typeContext.getUnresolvedType(expr);
+    QualType qt = typeContext.getUnresolvedType(ploc, pname, tloc, tname);
     return ExprResult(new TypeExpr(qt));
 }
 
@@ -594,7 +619,8 @@ C2::ExprResult C2Sema::ActOnBuiltinType(tok::TokenKind k) {
 StructTypeDecl* C2Sema::ActOnStructType(const char* name, SourceLocation loc,
             bool isStruct, bool is_public, bool is_global) {
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: Struct/Union Type '" << name ? name : "<anonymous>" << ANSI_NORMAL"\n";
+    std::cerr << COL_SEMA"SEMA: Struct/Union Type '" << (name ? name : "<anonymous>");
+    std::cerr << ANSI_NORMAL << '\n';
 #endif
     QualType qt = typeContext.getStructType();
     StructTypeDecl* S = new StructTypeDecl(name, loc, qt, isStruct, is_global, is_public, ast.getFileID());
@@ -623,9 +649,7 @@ void C2Sema::ActOnStructVar(StructTypeDecl* S, const char* name, SourceLocation 
 
 void C2Sema::ActOnStructMember(StructTypeDecl* S, Decl* member) {
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: struct member at ";
-    loc.dump(SourceMgr);
-    std::cerr << ANSI_NORMAL"\n";
+    std::cerr << COL_SEMA"SEMA: struct member" << ANSI_NORMAL << '\n';
 #endif
     S->addMember(member);
 }

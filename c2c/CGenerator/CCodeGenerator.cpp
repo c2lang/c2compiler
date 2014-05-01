@@ -848,7 +848,7 @@ void CCodeGenerator::EmitTypePreName(QualType type, StringBuilder& output) {
         // TODO handle Qualifiers?
         {
             const UnresolvedType* U = cast<UnresolvedType>(T);
-            EmitExpr(U->getExpr(), output);
+            U->printLiteral(output);
         }
         break;
     case TC_ALIAS:
