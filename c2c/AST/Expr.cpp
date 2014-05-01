@@ -291,7 +291,13 @@ void BinaryOperator::print(StringBuilder& buffer, unsigned indent) const {
     buffer << " '" << OpCode2str(opc) << '\'';
     buffer << '\n';
 
+    buffer.indent(indent);
+    buffer.setColor(COL_ATTR);
+    buffer << "LHS=\n";
     lhs->print(buffer, indent + INDENT);
+    buffer.indent(indent);
+    buffer.setColor(COL_ATTR);
+    buffer << "RHS=\n";
     rhs->print(buffer, indent + INDENT);
 }
 
@@ -426,7 +432,18 @@ void MemberExpr::print(StringBuilder& buffer, unsigned indent) const {
     Base->print(buffer, indent + INDENT);
     buffer.indent(indent);
     buffer.setColor(COL_ATTR);
-    buffer << "member=" << member;
+    buffer << "member=";
+    buffer.setColor(COL_VALUE);
+    buffer << member << '\n';
+    buffer.indent(indent);
+    buffer.setColor(COL_ATTR);
+    buffer << "decl=";
+    if (decl) buffer << decl->getName();
+    else {
+        buffer.setColor(ANSI_RED);
+        buffer << 'NULL';
+    }
+    buffer << '\n';
 }
 
 void MemberExpr::printLiteral(StringBuilder& buffer) const {
