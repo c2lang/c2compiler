@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+package test;
+
+type Ints int[];
+
+Ints a; // @error{definition of variable with array type needs an explicit size or an initializer}
+

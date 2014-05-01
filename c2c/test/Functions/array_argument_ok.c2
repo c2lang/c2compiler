@@ -1,0 +1,16 @@
+// @warnings{no-unused}
+package test;
+
+func void test1(int[] a) {
+    a[3] = 1;
+    *a = 2;
+}
+
+
+type Array int[];
+
+func void test2(Array b) {
+    b[3] = 1;
+    *b = 2;
+}
+

@@ -722,8 +722,6 @@ void FunctionAnalyser::analyseArrayType(VarDecl* V, QualType T) {
         {
             ArrayType* AT = cast<ArrayType>(T.getTypePtr());
             analyseArraySizeExpr(AT);
-
-            // recurse further
             analyseArrayType(V, AT->getElementType());
             break;
         }
@@ -731,13 +729,8 @@ void FunctionAnalyser::analyseArrayType(VarDecl* V, QualType T) {
         assert(0 && "should not happen");
         break;
     case TC_ALIAS:
-        {
-            //AliasType* AT = cast<AliasType>(T.getTypePtr());
-            //AliasTypeDecl* ATD = AT->getDecl();
-            assert(0 && "TODO");
-            // TODO Q: get ATD->getType() or getRefType()?
-            break;
-        }
+        analyseArrayType(V, cast<AliasType>(T)->getRefType());
+        break;
     case TC_STRUCT:
     case TC_ENUM:
     case TC_FUNCTION:
