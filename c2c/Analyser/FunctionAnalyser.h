@@ -111,8 +111,6 @@ private:
     void checkAssignment(Expr* assignee, QualType TLeft);
     void checkDeclAssignment(Decl* decl, Expr* expr);
 
-    static QualType resolveUserType(QualType T);
-
     Scope& scope;
     TypeChecker& TC;
     TypeContext& typeContext;

@@ -1139,19 +1139,16 @@ QualType FunctionAnalyser::analyseArraySubscript(Expr* expr) {
     ArraySubscriptExpr* sub = cast<ArraySubscriptExpr>(expr);
     QualType LType = analyseExpr(sub->getBase(), RHS);
     if (LType.isNull()) return 0;
-    // TODO this should be done in analyseExpr()
-    QualType LType2 = resolveUserType(LType);
-    if (LType2.isNull()) return 0;
-    if (!LType2.isSubscriptable()) {
+    if (!LType.isSubscriptable()) {
         Diags.Report(expr->getLocation(), diag::err_typecheck_subscript);
         return 0;
     }
     analyseExpr(sub->getIndex(), RHS);
     QualType Result;
-    if (isa<PointerType>(LType2)) {
-        Result = cast<PointerType>(LType2)->getPointeeType();
-    } else if (isa<ArrayType>(LType2)) {
-        Result = cast<ArrayType>(LType2)->getElementType();
+    if (isa<PointerType>(LType)) {
+        Result = cast<PointerType>(LType)->getPointeeType();
+    } else if (isa<ArrayType>(LType)) {
+        Result = cast<ArrayType>(LType)->getElementType();
     }
     expr->setType(Result);
     return Result;
@@ -1213,7 +1210,7 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
                         } else {
                             // deref
                             const PointerType* PT = cast<PointerType>(T);
-                            T = resolveUserType(PT->getPointeeType());
+                            T = PT->getPointeeType();
                         }
                     } else {
                         if (T.isPointerType()) {
@@ -1269,15 +1266,12 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
     } else {
         QualType LType = analyseExpr(base, RHS);
         if (LType.isNull()) return QualType();
-        // TODO this should be done in analyseExpr()
-        QualType LType2 = resolveUserType(LType);
-        if (LType2.isNull()) return QualType();
-        if (!LType2.isStructType()) {
+        if (!LType.isStructType()) {
             fprintf(stderr, "error: not a struct or union type\n");
-            LType2->dump();
+            LType->dump();
             return QualType();
         }
-        return analyseMember(LType2, M, side);
+        return analyseMember(LType, M, side);
     }
     return QualType();
 }
@@ -1324,17 +1318,15 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
         return QualType();
     }
     // TODO this should be done in analyseExpr()
-    QualType LType2 = resolveUserType(LType);
-    if (LType2.isNull()) return QualType();
-    if (!LType2.isFunctionType()) {
+    if (!LType.isFunctionType()) {
         char typeName[MAX_LEN_TYPENAME];
         StringBuilder buf(MAX_LEN_TYPENAME, typeName);
-        LType2.DiagName(buf);
+        LType.DiagName(buf);
         Diags.Report(call->getLocation(), diag::err_typecheck_call_not_function) << typeName;
         return QualType();
     }
 
-    const FunctionType* FT = cast<FunctionType>(LType2);
+    const FunctionType* FT = cast<FunctionType>(LType);
     FunctionDecl* func = FT->getDecl();
     func->setUsed();
     unsigned protoArgs = func->numArgs();
@@ -1494,16 +1486,6 @@ void FunctionAnalyser::checkDeclAssignment(Decl* decl, Expr* expr) {
         assert(0);
         break;
     }
-}
-
-C2::QualType FunctionAnalyser::resolveUserType(QualType T) {
-    if (isa<UnresolvedType>(T)) {
-        const UnresolvedType* U = cast<UnresolvedType>(T);
-        TypeDecl* D = U->getDecl();
-        assert(D);
-        return D->getType();
-    }
-    return T;
 }
 
 void FunctionAnalyser::pushMode(unsigned DiagID) {
