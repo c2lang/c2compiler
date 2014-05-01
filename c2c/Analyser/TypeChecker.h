@@ -35,14 +35,13 @@ class TypeChecker {
 public:
     TypeChecker(Scope& g, clang::DiagnosticsEngine& Diags_, TypeContext& tc_);
 
-    // resolving
+    // TODO extract the resolving funcs to TypeResolver
+    // resolving of TypeDecls (during Type Analysis phase)
     unsigned checkType(QualType Q, bool used_public);
-    QualType resolveCanonicals(const Decl* D, QualType Q, bool set) const;
     QualType resolveUnresolved(QualType Q) const;
-    // NEW
-    // resolves type (no UnresolvedTypes) and sets canonical
+    QualType resolveCanonicals(const Decl* D, QualType Q, bool set) const;
+    // resolving of other Types (after Type Analysis phase)
     QualType resolveType(QualType Q, bool usedPublic);
-    QualType resolveCanonical(QualType Q) const;
 
     // checking
     bool checkCompatible(QualType left, const Expr* expr) const;
@@ -50,6 +49,7 @@ public:
     // conversions
     QualType UsualUnaryConversions(Expr* expr) const;
 private:
+    QualType resolveCanonical(QualType Q) const;
     unsigned checkUnresolvedType(const UnresolvedType* type, bool used_public);
 
     bool checkBuiltin(QualType left, QualType right, const Expr* expr, bool first) const;

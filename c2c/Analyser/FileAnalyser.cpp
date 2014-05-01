@@ -384,6 +384,7 @@ unsigned FileAnalyser::resolveFunctionDecl(FunctionDecl* D) {
     LOG_FUNC
     unsigned errors = 0;
     // return type
+    // TODO use TC->resolveType()?
     QualType RT = D->getReturnType();
     if (!RT->hasCanonicalType()) {
         unsigned errs = TC->checkType(RT, D->isPublic());

@@ -142,12 +142,6 @@ unsigned TypeChecker::checkUnresolvedType(const UnresolvedType* type, bool used_
     return 0;
 }
 
-QualType TypeChecker::resolveCanonicals(const Decl* D, QualType Q, bool set) const {
-    Decls decls;
-    if (D != 0 && !isa<AliasTypeDecl>(D)) decls.push_back(D);
-    return checkCanonicals(decls, Q, set);
-}
-
 QualType TypeChecker::resolveUnresolved(QualType Q) const {
     const Type* T = Q.getTypePtr();
     switch (Q->getTypeClass()) {
@@ -188,6 +182,13 @@ QualType TypeChecker::resolveUnresolved(QualType Q) const {
     }
     return Q;
 }
+
+QualType TypeChecker::resolveCanonicals(const Decl* D, QualType Q, bool set) const {
+    Decls decls;
+    if (D != 0 && !isa<AliasTypeDecl>(D)) decls.push_back(D);
+    return checkCanonicals(decls, Q, set);
+}
+
 
 QualType TypeChecker::resolveType(QualType Q, bool usedPublic) {
     if (Q->hasCanonicalType()) return Q;    // should be ok already
