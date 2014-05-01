@@ -14,7 +14,6 @@
  */
 
 #include <stdio.h>
-#include <assert.h>
 
 #include "AST/Type.h"
 #include "AST/Expr.h"
@@ -28,14 +27,9 @@ using namespace C2;
 
 // TODO insert QualType function impls
 QualType QualType::getCanonicalType() const {
-    QualType canon = type->canonicalType;
-    canon.setQualifiers(qualifiers);
+    QualType canon = getTypePtr()->canonicalType;
+    canon.setQualifiers(getQualifiers());
     return canon;
-}
-
-C2::Type* QualType::getTypePtr() const {
-    assert(!isNull() && "Cannot retrieve a NULL type pointer");
-    return type;
 }
 
 bool QualType::isBuiltinType() const { return getTypePtr()->isBuiltinType(); }
@@ -67,7 +61,8 @@ void QualType::print(StringBuilder& buffer) const {
     buffer << '\'';
     debugPrint(buffer);
     buffer << '\'';
-    if (!isNull() && type != type->canonicalType.type) {
+    const Type* T = getTypePtrOrNull();
+    if (T && T != T->canonicalType.getTypePtrOrNull()) {
         buffer.setColor(COL_CANON);
         buffer << "=>";
         getCanonicalType().debugPrint(buffer);
@@ -125,7 +120,6 @@ void QualType::printQualifiers(StringBuilder& buffer) const {
     if (hasQualifiers()) {
         if (isConstQualified()) buffer << "const ";
         if (isVolatileQualified()) buffer << "volatile ";
-        if (isRestrictQualified()) buffer << "restrict ";
     }
 }
 
@@ -698,5 +692,4 @@ QualType TypeContext::add(Type* T) {
     types.push_back(T);
     return QualType(T);
 }
-
 

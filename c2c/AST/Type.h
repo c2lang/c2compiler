@@ -24,7 +24,8 @@
 
 #define QUAL_CONST      (0x1)
 #define QUAL_VOLATILE   (0x2)
-#define QUAL_RESTRICT   (0x4)
+
+#define QUALS_MASK (0x3)
 
 //#define TYPE_DEBUG
 
@@ -44,33 +45,42 @@ class TypeDecl;
 class QualType {
 public:
     QualType()
-        : type(0), qualifiers(0) {}
+        : Value(0) {}
     QualType(Type* Ptr, unsigned Quals = 0)
-        : type(Ptr), qualifiers(Quals) {}
+        : Value((uintptr_t)Ptr | (Quals & QUALS_MASK)) {}
 
-    Type* getTypePtr() const;
-    const Type* getTypePtrOrNull() const { return type; }
-    unsigned getQualifiers() const { return qualifiers; }
+    Type* getTypePtr() const {
+        Type* T = getTypePtrOrNull();
+        assert(T && "Cannot retrieve a NULL type pointer");
+        return T;
+    }
+
+    Type* getTypePtrOrNull() const { return reinterpret_cast<Type*>(Value & ~QUALS_MASK); }
+    unsigned getQualifiers() const { return Value & QUALS_MASK; }
 
     const Type& operator*() const { return *getTypePtr(); }
     const Type* operator->() const { return getTypePtr(); }
     operator const Type*() const { return getTypePtr(); }
     bool operator==(const QualType& rhs) {
-        return (type == rhs.type) && (qualifiers == rhs.qualifiers);
+        // Q: use Type equal operator?
+        return Value == rhs.Value;
     }
-    bool isNull() const { return type == NULL; }
-    bool isValid() const { return type != NULL; }
-    bool isConstQualified() const { return (qualifiers & QUAL_CONST); }
-    bool isVolatileQualified() const { return (qualifiers & QUAL_VOLATILE); }
-    bool isRestrictQualified() const { return (qualifiers & QUAL_RESTRICT); }
-    bool hasQualifiers() const { return qualifiers != 0; }
+    bool isNull() const { return getTypePtrOrNull() == NULL; }
+    bool isValid() const { return getTypePtrOrNull() != NULL; }
+    bool isConstQualified() const { return (Value & QUAL_CONST); }
+    bool isVolatileQualified() const { return (Value & QUAL_VOLATILE); }
+    bool hasQualifiers() const { return (Value & QUALS_MASK) != 0; }
     QualType getCanonicalType() const;
 
-    void addConst() { qualifiers |= QUAL_CONST; }
-    void addVolatile() { qualifiers |= QUAL_VOLATILE; }
-    void addRestrict() { qualifiers |= QUAL_RESTRICT; }
-    void setQualifiers(unsigned quals) { qualifiers = quals; }
-    void clearQualifiers() { qualifiers = 0; }
+    void addConst() { Value |= QUAL_CONST; }
+    void addVolatile() { Value |= QUAL_VOLATILE; }
+    void setQualifiers(unsigned quals) {
+        Value &= ~QUALS_MASK;
+        Value |= (quals & QUALS_MASK);
+    }
+    void clearQualifiers() {
+        Value &= ~QUALS_MASK;
+    }
 
     // Helper functions
     bool isBuiltinType() const;
@@ -95,8 +105,9 @@ public:
 private:
     void printQualifiers(StringBuilder& buffer) const;
 
-    Type* type;
-    unsigned qualifiers;
+    //Type* type;
+    //unsigned qualifiers;
+    uintptr_t Value;
 };
 
 
