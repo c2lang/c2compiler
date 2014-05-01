@@ -1263,8 +1263,7 @@ bool C2Parser::isDeclaration() {
 // will skip until token is after ']'
 // skip until ']' (keep track of other braces)
 int C2Parser::SkipArray(int lookahead) {
-    const Token& tok2 = GetLookAheadToken(lookahead);
-    assert(tok2.is(tok::l_square) && "Expected '['");
+    assert(GetLookAheadToken(lookahead).is(tok::l_square) && "Expected '['");
     lookahead++;
 
     int count = 1;
