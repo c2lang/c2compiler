@@ -88,8 +88,6 @@ unsigned TypeChecker::checkType(QualType Q, bool used_public) {
         return checkUnresolvedType(cast<UnresolvedType>(T), used_public);
     case TC_ALIAS:
         return checkType(cast<AliasType>(T)->getRefType(), used_public);
-        // will be removed?
-        return 0;
     case TC_STRUCT:
     case TC_ENUM:
     case TC_FUNCTION:

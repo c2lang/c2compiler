@@ -138,11 +138,13 @@ public:
     bool isGlobal() const { return getVarKind() == VARDECL_GLOBAL; }
     VarDeclKind getVarKind() const { return static_cast<VarDeclKind>(DeclBits.varDeclKind); }
 
-    // TODO move to GlobalVarDecl subclass
+#if 0
+    // TODO move to ArrayVarDecl subclass
     typedef std::vector<ArrayValueDecl*> InitValues;
     typedef InitValues::const_iterator InitValuesConstIter;
     const InitValues& getIncrValues() const { return initValues; }
     void addInitValue(ArrayValueDecl* value);
+#endif
 
     // for codegen
     llvm::Value* getIRValue() const { return IRValue; }
@@ -152,7 +154,7 @@ private:
     QualType refType;   // set by Parser
     Expr* initValue;
     // TODO remove, since only for Incremental Arrays (subclass VarDecl -> GlobalVarDecl)
-    InitValues initValues;
+    //InitValues initValues;
     mutable llvm::Value* IRValue;
 };
 

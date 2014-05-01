@@ -440,6 +440,7 @@ void CCodeGenerator::EmitVariable(VarDecl* V) {
         cbuf << " = ";
         EmitExpr(V->getInitValue(), cbuf);
     }
+#if 0
     const VarDecl::InitValues& inits = V->getIncrValues();
     if (inits.size()) {
         cbuf << " = {\n";
@@ -453,6 +454,7 @@ void CCodeGenerator::EmitVariable(VarDecl* V) {
         }
         cbuf << '}';
     }
+#endif
     cbuf << ";\n";
     cbuf << '\n';
 }
