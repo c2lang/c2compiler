@@ -1,0 +1,12 @@
+// @warnings{no-unused}
+
+// @file{file1}
+package foo;
+
+// @file{file2}
+package bar;
+
+use foo as fooz;
+
+int foo;
+

@@ -1,0 +1,16 @@
+// @skip
+// @warnings{no-unused}
+package test;
+
+type Arr int[];
+
+Arr a = { 1, 2 }
+
+Arr b = { 3, 4, 5 }
+
+public func int main() {
+    int c = a;      // @error{invalid type conversion from 'Arr' (aka 'int32[2]') to 'int32'}
+    int d = b;      // @error{invalid type conversion from 'Arr' (aka 'int32[3]') to 'int32'}
+    return 0;
+}
+
