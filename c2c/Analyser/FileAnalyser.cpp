@@ -20,7 +20,7 @@
 
 #include "Analyser/FileAnalyser.h"
 #include "Analyser/Scope.h"
-#include "Analyser/TypeChecker.h"
+#include "Analyser/TypeResolver.h"
 #include "AST/Decl.h"
 #include "AST/Expr.h"
 #include "AST/AST.h"
@@ -43,9 +43,9 @@ FileAnalyser::FileAnalyser(const Pkgs& pkgs, clang::DiagnosticsEngine& Diags_,
                     AST& ast_, TypeContext& typeContext_, bool verbose_)
     : ast(ast_)
     , globals(new Scope(ast_.getPkgName(), pkgs, Diags_, ast.getFileID()))
-    , TC(new TypeChecker(*globals, Diags_, typeContext_))
+    , TR(new TypeResolver(*globals, Diags_, typeContext_))
     , Diags(Diags_)
-    , functionAnalyser(*globals, *TC, typeContext_, Diags_)
+    , functionAnalyser(*globals, *TR, typeContext_, Diags_)
     , typeContext(typeContext_)
     , verbose(verbose_)
 {}
@@ -76,7 +76,7 @@ unsigned FileAnalyser::resolveTypeCanonicals() {
     for (unsigned i=0; i<ast.numTypes(); i++) {
         const TypeDecl* D = ast.getType(i);
         // check generic type
-        TC->resolveCanonicals(D, D->getType(), true);
+        TR->resolveCanonicals(D, D->getType(), true);
 
         // NOTE dont check any subclass specific things yet
 
@@ -306,7 +306,7 @@ void FileAnalyser::getExternals(DepAnalyser& dep) const {
 unsigned FileAnalyser::checkTypeDecl(TypeDecl* D) {
     LOG_FUNC
     // check generic type
-    unsigned errors = TC->checkType(D->getType(), D->isPublic());
+    unsigned errors = TR->checkType(D->getType(), D->isPublic());
 
     // check extra stuff depending on subclass
     switch (D->getKind()) {
@@ -319,7 +319,7 @@ unsigned FileAnalyser::checkTypeDecl(TypeDecl* D) {
         // Any UnresolvedType should point to decl that has type set
         if (errors == 0) {
             AliasType* A = cast<AliasType>(D->getType().getTypePtr());
-            QualType Q = TC->resolveUnresolved(A->getRefType());
+            QualType Q = TR->resolveUnresolved(A->getRefType());
             A->updateRefType(Q);
         }
         break;
@@ -365,7 +365,7 @@ unsigned FileAnalyser::checkStructTypeDecl(StructTypeDecl* D) {
 unsigned FileAnalyser::resolveVarDecl(VarDecl* D) {
     LOG_FUNC
     // TODO duplicate code with FileAnalyser::analyseDeclExpr()
-    QualType Q = TC->resolveType(D->getRefType(), D->isPublic());
+    QualType Q = TR->resolveType(D->getRefType(), D->isPublic());
     if (Q.isValid()) {
         D->setType(Q);
 
@@ -384,12 +384,12 @@ unsigned FileAnalyser::resolveFunctionDecl(FunctionDecl* D) {
     LOG_FUNC
     unsigned errors = 0;
     // return type
-    // TODO use TC->resolveType()?
+    // TODO use TR->resolveType()?
     QualType RT = D->getReturnType();
     if (!RT->hasCanonicalType()) {
-        unsigned errs = TC->checkType(RT, D->isPublic());
+        unsigned errs = TR->checkType(RT, D->isPublic());
         errors += errs;
-        if (!errs) TC->resolveCanonicals(D, RT, true);
+        if (!errs) TR->resolveCanonicals(D, RT, true);
     }
 
     // args

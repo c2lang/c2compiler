@@ -21,7 +21,7 @@
 #include <clang/Sema/SemaDiagnostic.h>
 
 #include "Analyser/FunctionAnalyser.h"
-#include "Analyser/TypeChecker.h"
+#include "Analyser/TypeResolver.h"
 #include "Analyser/AnalyserUtils.h"
 #include "Analyser/LiteralAnalyser.h"
 #include "Analyser/constants.h"
@@ -89,11 +89,11 @@ static void SetConstantFlags(Decl* D, Expr* expr) {
 
 
 FunctionAnalyser::FunctionAnalyser(Scope& scope_,
-                                   TypeChecker& typeRes_,
+                                   TypeResolver& typeRes_,
                                    TypeContext& tc,
                                    clang::DiagnosticsEngine& Diags_)
     : scope(scope_)
-    , TC(typeRes_)
+    , TR(typeRes_)
     , typeContext(tc)
     , EA(Diags_)
     , Diags(Diags_)
@@ -780,7 +780,7 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     VarDecl* decl = DE->getDecl();
 
     bool haveError = false;
-    QualType Q = TC.resolveType(decl->getRefType(), decl->isPublic());
+    QualType Q = TR.resolveType(decl->getRefType(), decl->isPublic());
     if (Q.isValid()) {
         decl->setType(Q);
 
@@ -942,8 +942,8 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
         // TODO apply UsualArithmeticConversions() to L + R
         // TEMP for now just return Right side
         // TEMP use UnaryConversion
-        Result = TC.UsualUnaryConversions(Left);
-        TC.UsualUnaryConversions(Right);
+        Result = UsualUnaryConversions(Left);
+        UsualUnaryConversions(Right);
         break;
     case BO_Shl:
     case BO_Shr:
@@ -1030,7 +1030,7 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
             QualType Q = typeContext.getPointerType(LType);
             expr->setType(Q);
             expr->setConstant();
-            TC.resolveCanonicals(0, Q, true);
+            TR.resolveCanonicals(0, Q, true);
             return Q;
         }
     case UO_Deref:
@@ -1057,7 +1057,7 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
         unaryop->setCTC(SubExpr->getCTC());
         if (SubExpr->isConstant()) unaryop->setConstant();
         if (LType.isNull()) return 0;
-        expr->setType(TC.UsualUnaryConversions(SubExpr));
+        expr->setType(UsualUnaryConversions(SubExpr));
         break;
     case UO_LNot:
         // TODO first cast expr to bool, then invert here, return type bool
@@ -1067,7 +1067,7 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
         unaryop->setCTC(SubExpr->getCTC());
         // Also set type?
         if (LType.isNull()) return 0;
-        //TC.UsualUnaryConversions(SubExpr);
+        //UsualUnaryConversions(SubExpr);
         LType = Type::Bool();
         expr->setType(LType);
         break;
@@ -1491,5 +1491,19 @@ void FunctionAnalyser::popMode() {
     LOG_FUNC
     inConstExpr = false;
     constDiagID = 0;
+}
+
+// Convert smaller types to int, others remain the same
+// This function should only be called if Expr's type is ok for unary operator
+QualType FunctionAnalyser::UsualUnaryConversions(Expr* expr) const {
+    const Type* canon = expr->getType().getCanonicalType();
+    assert(canon->isBuiltinType());
+    const BuiltinType* BI = cast<BuiltinType>(canon);
+    if (BI->isPromotableIntegerType()) {
+        // TODO keep flags (const, etc)?
+        expr->setImpCast(BuiltinType::Int32);
+        return Type::Int32();
+    }
+    return expr->getType();
 }
 

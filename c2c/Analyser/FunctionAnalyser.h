@@ -28,7 +28,7 @@ class DiagnosticsEngine;
 
 namespace C2 {
 
-class TypeChecker;
+class TypeResolver;
 class Scope;
 class Decl;
 class VarDecl;
@@ -43,7 +43,7 @@ class MemberExpr;
 class FunctionAnalyser {
 public:
     FunctionAnalyser(Scope& scope_,
-                    TypeChecker& typeRes_,
+                    TypeResolver& typeRes_,
                     TypeContext& tc,
                     clang::DiagnosticsEngine& Diags_);
 
@@ -111,8 +111,11 @@ private:
     void checkAssignment(Expr* assignee, QualType TLeft);
     void checkDeclAssignment(Decl* decl, Expr* expr);
 
+    // conversions
+    QualType UsualUnaryConversions(Expr* expr) const;
+
     Scope& scope;
-    TypeChecker& TC;
+    TypeResolver& TR;
     TypeContext& typeContext;
     ExprTypeAnalyser EA;
 

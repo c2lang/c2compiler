@@ -21,7 +21,7 @@
 #include <clang/Sema/SemaDiagnostic.h>
 
 #include "Analyser/Scope.h"
-#include "Analyser/TypeChecker.h"
+#include "Analyser/TypeResolver.h"
 #include "Analyser/constants.h"
 #include "AST/Package.h"
 #include "AST/Decl.h"
@@ -31,13 +31,13 @@
 using namespace C2;
 using namespace clang;
 
-TypeChecker::TypeChecker(Scope& g, clang::DiagnosticsEngine& Diags_, TypeContext& tc_)
+TypeResolver::TypeResolver(Scope& g, clang::DiagnosticsEngine& Diags_, TypeContext& tc_)
     : globals(g)
     , Diags(Diags_)
     , typeContext(tc_)
 {}
 
-unsigned TypeChecker::checkType(QualType Q, bool used_public) {
+unsigned TypeResolver::checkType(QualType Q, bool used_public) {
     const Type* T = Q.getTypePtr();
     switch (T->getTypeClass()) {
     case TC_BUILTIN:
@@ -59,7 +59,7 @@ unsigned TypeChecker::checkType(QualType Q, bool used_public) {
     }
 }
 
-unsigned TypeChecker::checkUnresolvedType(const UnresolvedType* type, bool used_public) {
+unsigned TypeResolver::checkUnresolvedType(const UnresolvedType* type, bool used_public) {
     const std::string& pName = type->getPName();
     const std::string& tName = type->getTName();
     SourceLocation tLoc = type->getTLoc();
@@ -105,7 +105,7 @@ unsigned TypeChecker::checkUnresolvedType(const UnresolvedType* type, bool used_
     return 0;
 }
 
-QualType TypeChecker::resolveUnresolved(QualType Q) const {
+QualType TypeResolver::resolveUnresolved(QualType Q) const {
     const Type* T = Q.getTypePtr();
     switch (Q->getTypeClass()) {
     case TC_BUILTIN:
@@ -146,14 +146,14 @@ QualType TypeChecker::resolveUnresolved(QualType Q) const {
     return Q;
 }
 
-QualType TypeChecker::resolveCanonicals(const Decl* D, QualType Q, bool set) const {
+QualType TypeResolver::resolveCanonicals(const Decl* D, QualType Q, bool set) const {
     Decls decls;
     if (D != 0 && !isa<AliasTypeDecl>(D)) decls.push_back(D);
     return checkCanonicals(decls, Q, set);
 }
 
 
-QualType TypeChecker::resolveType(QualType Q, bool usedPublic) {
+QualType TypeResolver::resolveType(QualType Q, bool usedPublic) {
     if (Q->hasCanonicalType()) return Q;    // should be ok already
 
     // basic resolving of Unresolved
@@ -164,7 +164,7 @@ QualType TypeChecker::resolveType(QualType Q, bool usedPublic) {
     return resolved;
 }
 
-QualType TypeChecker::checkCanonicals(Decls& decls, QualType Q, bool set) const {
+QualType TypeResolver::checkCanonicals(Decls& decls, QualType Q, bool set) const {
     if (Q->hasCanonicalType()) return Q.getCanonicalType();
 
     const Type* T = Q.getTypePtr();
@@ -243,7 +243,7 @@ QualType TypeChecker::checkCanonicals(Decls& decls, QualType Q, bool set) const 
     }
 }
 
-QualType TypeChecker::resolveCanonical(QualType Q) const {
+QualType TypeResolver::resolveCanonical(QualType Q) const {
     if (Q->hasCanonicalType()) return Q.getCanonicalType();
 
     const Type* T = Q.getTypePtr();
@@ -295,7 +295,7 @@ QualType TypeChecker::resolveCanonical(QualType Q) const {
         return Q.getCanonicalType();
     }
 }
-bool TypeChecker::checkDecls(Decls& decls, const Decl* D) const {
+bool TypeResolver::checkDecls(Decls& decls, const Decl* D) const {
     for (DeclsIter iter = decls.begin(); iter != decls.end(); ++iter) {
         if (*iter == D) {
             bool first = true;
@@ -314,19 +314,5 @@ bool TypeChecker::checkDecls(Decls& decls, const Decl* D) const {
     }
     decls.push_back(D);
     return true;
-}
-
-// Convert smaller types to int, others remain the same
-// This function should only be called if Expr's type is ok for unary operator
-QualType TypeChecker::UsualUnaryConversions(Expr* expr) const {
-    const Type* canon = expr->getType().getCanonicalType();
-    assert(canon->isBuiltinType());
-    const BuiltinType* BI = cast<BuiltinType>(canon);
-    if (BI->isPromotableIntegerType()) {
-        // TODO keep flags (const, etc)?
-        expr->setImpCast(BuiltinType::Int32);
-        return Type::Int32();
-    }
-    return expr->getType();
 }
 

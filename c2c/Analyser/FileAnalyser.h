@@ -34,7 +34,7 @@ class VarDecl;
 class FunctionDecl;
 class ArrayValueDecl;
 class AST;
-class TypeChecker;
+class TypeResolver;
 class DepAnalyser;
 
 class FileAnalyser {
@@ -65,7 +65,7 @@ private:
 
     AST& ast;
     std::auto_ptr<Scope> globals;
-    std::auto_ptr<TypeChecker> TC;
+    std::auto_ptr<TypeResolver> TR;
     clang::DiagnosticsEngine& Diags;
     FunctionAnalyser functionAnalyser;
     TypeContext& typeContext;

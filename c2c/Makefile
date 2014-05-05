@@ -14,7 +14,7 @@ OBJS = \
     Parser/C2Sema.o \
     Analyser/AnalyserUtils.o \
     Analyser/Scope.o \
-    Analyser/TypeChecker.o \
+    Analyser/TypeResolver.o \
     Analyser/LiteralAnalyser.o \
     Analyser/FileAnalyser.o \
     Analyser/FunctionAnalyser.o \

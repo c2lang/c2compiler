@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef ANALYSER_TYPE_CHECKER_H
-#define ANALYSER_TYPE_CHECKER_H
+#ifndef ANALYSER_TYPE_RESOLVER_H
+#define ANALYSER_TYPE_RESOLVER_H
 
 #include <vector>
 
@@ -28,23 +28,18 @@ namespace C2 {
 
 class Decl;
 class Scope;
-class Expr;
 
-
-class TypeChecker {
+class TypeResolver {
 public:
-    TypeChecker(Scope& g, clang::DiagnosticsEngine& Diags_, TypeContext& tc_);
+    TypeResolver(Scope& g, clang::DiagnosticsEngine& Diags_, TypeContext& tc_);
 
-    // TODO extract the resolving funcs to TypeResolver
     // resolving of TypeDecls (during Type Analysis phase)
     unsigned checkType(QualType Q, bool used_public);
     QualType resolveUnresolved(QualType Q) const;
     QualType resolveCanonicals(const Decl* D, QualType Q, bool set) const;
+
     // resolving of other Types (after Type Analysis phase)
     QualType resolveType(QualType Q, bool usedPublic);
-
-    // conversions (only by FunctionAnalyser)
-    QualType UsualUnaryConversions(Expr* expr) const;
 private:
     QualType resolveCanonical(QualType Q) const;
     unsigned checkUnresolvedType(const UnresolvedType* type, bool used_public);
