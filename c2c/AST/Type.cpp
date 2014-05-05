@@ -497,7 +497,8 @@ void UnresolvedType::printName(StringBuilder& buffer) const {
     if (decl) {
         buffer << decl->getName();
     } else {
-        buffer << "TODO_EXPR_NAME" << "(unresolved!)";
+        buffer << "(UnresolvedType)";
+        printLiteral(buffer);
     }
 }
 

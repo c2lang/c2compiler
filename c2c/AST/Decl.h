@@ -183,7 +183,9 @@ public:
     void setDefaultArgs() { DeclBits.FuncHasDefaultArgs = true; }
     bool hasDefaultArgs() const { return DeclBits.FuncHasDefaultArgs; }
 
+    // return type
     QualType getReturnType() const { return rtype; }
+    void updateReturnType(QualType rt) { rtype = rt; }
 
     // for codegen
     llvm::Function* getIRProto() const { return IRProto; }
