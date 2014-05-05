@@ -54,7 +54,7 @@ public:
     void dump();
 
     llvm::Type* ConvertType(BuiltinType::Kind K);
-    llvm::Type* ConvertType(const C2::Type* type);
+    llvm::Type* ConvertType(QualType Q);
     llvm::Function* createExternal(const Package* P, const std::string& name);
     llvm::GlobalValue::LinkageTypes getLinkage(bool isPublic);
 

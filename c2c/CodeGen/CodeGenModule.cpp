@@ -254,29 +254,24 @@ llvm::Type* CodeGenModule::ConvertType(BuiltinType::Kind K) {
     return 0;   // satisfy compiler
 }
 
-llvm::Type* CodeGenModule::ConvertType(const C2::Type* type) {
-    switch (type->getTypeClass()) {
+llvm::Type* CodeGenModule::ConvertType(QualType Q) {
+    const C2::Type* canon = Q.getCanonicalType();
+    switch (canon->getTypeClass()) {
     case TC_BUILTIN:
-        return ConvertType(cast<BuiltinType>(type)->getKind());
+        return ConvertType(cast<BuiltinType>(canon)->getKind());
     case TC_POINTER:
         {
-            llvm::Type* tt = ConvertType(cast<PointerType>(type)->getPointeeType().getTypePtr());
+            llvm::Type* tt = ConvertType(cast<PointerType>(canon)->getPointeeType().getTypePtr());
             return tt->getPointerTo();
         }
     case TC_ARRAY:
         {
             // Hmm for function args, array are simply converted to pointers, do that for now
             // array: use type = ArrayType::get(elementType, numElements)
-            llvm::Type* tt = ConvertType(cast<ArrayType>(type)->getElementType().getTypePtr());
+            llvm::Type* tt = ConvertType(cast<ArrayType>(canon)->getElementType().getTypePtr());
             return tt->getPointerTo();
         }
     case TC_UNRESOLVED:
-        {
-            const UnresolvedType* U = cast<UnresolvedType>(type);
-            TypeDecl* TD = U->getDecl();
-            assert(TD);
-            return ConvertType(TD->getType());
-        }
     case TC_ALIAS:
         assert(0 && "should be resolved");
         break;

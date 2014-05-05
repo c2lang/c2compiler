@@ -61,7 +61,7 @@ llvm::Function* CodeGenFunction::generateProto(const std::string& pkgname) {
     // arguments + return type
     llvm::FunctionType *funcType;
     QualType rt = FuncDecl->getReturnType();
-    llvm::Type* RT = CGM.ConvertType(rt.getTypePtr());
+    llvm::Type* RT = CGM.ConvertType(rt);
     if (FuncDecl->numArgs() == 0) {
         funcType = llvm::FunctionType::get(RT, FuncDecl->isVariadic());
     } else {
@@ -69,7 +69,7 @@ llvm::Function* CodeGenFunction::generateProto(const std::string& pkgname) {
         for (unsigned i=0; i<FuncDecl->numArgs(); i++) {
             VarDecl* arg = FuncDecl->getArg(i);
             QualType qt = arg->getType();
-            Args.push_back(CGM.ConvertType(qt.getTypePtr()));
+            Args.push_back(CGM.ConvertType(qt));
         }
         llvm::ArrayRef<llvm::Type*> argsRef(Args);
         funcType = llvm::FunctionType::get(RT, argsRef, FuncDecl->isVariadic());
@@ -430,7 +430,7 @@ llvm::Value* CodeGenFunction::EmitExprNoImpCast(const Expr* E) {
             assert(T->isBuiltinType());
             const BuiltinType* BT = cast<BuiltinType>(T);
             uint64_t v = N->Value.getZExtValue();
-            return llvm::ConstantInt::get(CGM.ConvertType(T), v, BT->isSignedInteger());
+            return llvm::ConstantInt::get(CGM.ConvertType(N->getType()), v, BT->isSignedInteger());
         }
     case EXPR_FLOAT_LITERAL:
         {
@@ -612,7 +612,7 @@ void CodeGenFunction::EmitVarDecl(const VarDecl* D) {
     StringBuilder name(64);
     name << D->getName();
     if (D->isParameter()) name << ".addr";
-    llvm::AllocaInst *inst = CreateTempAlloca(CGM.ConvertType(qt.getTypePtr()), (const char*)name);
+    llvm::AllocaInst *inst = CreateTempAlloca(CGM.ConvertType(qt), (const char*)name);
     D->setIRValue(inst);
 
     // set alignment
