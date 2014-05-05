@@ -83,7 +83,7 @@ public:
 protected:
     const std::string name;
     SourceLocation loc;
-    QualType type;      // set by Analyser
+    QualType type;
 
     class DeclBitfields {
     public:

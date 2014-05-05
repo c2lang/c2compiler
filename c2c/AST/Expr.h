@@ -245,8 +245,11 @@ public:
     virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return loc; }
 
-    const std::string& getName() const { return name; }
-    void setDecl(Decl* decl_) { decl = decl_; }
+    const std::string& getName() const;
+    void setDecl(Decl* decl_) {
+        decl = decl_;
+        name.clear();   // clear name to save memory
+    }
     Decl* getDecl() const { return decl; }
 
     virtual void printLiteral(StringBuilder& buffer) const;

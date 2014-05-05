@@ -133,6 +133,12 @@ void NilExpr::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 
+
+const std::string& IdentifierExpr::getName() const {
+    if (decl) return decl->getName();
+    return name;
+}
+
 void IdentifierExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_EXPR);
@@ -147,7 +153,7 @@ void IdentifierExpr::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 void IdentifierExpr::printLiteral(StringBuilder& buffer) const {
-    buffer << name;
+    buffer << getName();
 }
 
 
