@@ -614,14 +614,12 @@ void EnumType::fullDebug(StringBuilder& buffer, int indent) const {
 void FunctionType::printName(StringBuilder& buffer) const {
     // print something like int (int, int)
     QualType Q = func->getReturnType();
-    Q = Q.getCanonicalType();
     Q.printName(buffer);
     buffer << " (";
     for (int i=0; i<func->numArgs(); i++) {
         if (i != 0) buffer << ", ";
         VarDecl* A = func->getArg(i);
-        Q = A->getRefType();
-        Q = Q.getCanonicalType();
+        Q = A->getType();
         Q.printName(buffer);
     }
     if (func->isVariadic()) buffer << ", ...";
