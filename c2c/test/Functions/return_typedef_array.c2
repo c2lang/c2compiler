@@ -1,3 +1,4 @@
+// @skip
 package test;
 
 type Point int[2];

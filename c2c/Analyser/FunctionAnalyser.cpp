@@ -95,7 +95,7 @@ FunctionAnalyser::FunctionAnalyser(Scope& scope_,
     : scope(scope_)
     , TC(typeRes_)
     , typeContext(tc)
-    , EA(TC, Diags_)
+    , EA(Diags_)
     , Diags(Diags_)
     , errors(0)
     , CurrentFunction(0)

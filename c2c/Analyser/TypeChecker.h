@@ -43,17 +43,11 @@ public:
     // resolving of other Types (after Type Analysis phase)
     QualType resolveType(QualType Q, bool usedPublic);
 
-    // checking
-    bool checkCompatible(QualType left, const Expr* expr) const;
-
-    // conversions
+    // conversions (only by FunctionAnalyser)
     QualType UsualUnaryConversions(Expr* expr) const;
 private:
     QualType resolveCanonical(QualType Q) const;
     unsigned checkUnresolvedType(const UnresolvedType* type, bool used_public);
-
-    bool checkBuiltin(QualType left, QualType right, const Expr* expr, bool first) const;
-    bool checkPointer(QualType left, QualType right, const Expr* expr) const;
 
     typedef std::vector<const Decl*> Decls;
     typedef Decls::iterator DeclsIter;

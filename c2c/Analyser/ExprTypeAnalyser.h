@@ -28,7 +28,6 @@ class Expr;
 class BinaryOperator;
 class UnaryOperator;
 class ConditionalOperator;
-class TypeChecker;
 
 /*
  *  ExprTypeAnalyser checks each sub-expression that is CTC_FULL or
@@ -39,13 +38,16 @@ class TypeChecker;
 */
 class ExprTypeAnalyser {
 public:
-    ExprTypeAnalyser(TypeChecker& TC_, clang::DiagnosticsEngine& Diags_);
+    ExprTypeAnalyser(clang::DiagnosticsEngine& Diags_);
 
     void check(QualType Tleft, const Expr* expr);
 private:
     void checkBinOp(QualType TLeft, const BinaryOperator* binop);
 
-    TypeChecker& TC;
+    bool checkCompatible(QualType left, const Expr* expr) const;
+    bool checkBuiltin(QualType left, QualType right, const Expr* expr, bool first) const;
+    bool checkPointer(QualType left, QualType right, const Expr* expr) const;
+
     clang::DiagnosticsEngine& Diags;
 
     ExprTypeAnalyser(const ExprTypeAnalyser&);

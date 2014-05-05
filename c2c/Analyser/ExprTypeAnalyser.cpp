@@ -13,25 +13,65 @@
  * limitations under the License.
  */
 
+#include <clang/Basic/SourceLocation.h>
+#include <clang/Parse/ParseDiagnostic.h>
+#include <clang/Sema/SemaDiagnostic.h>
+
 #include "Analyser/ExprTypeAnalyser.h"
 #include "Analyser/LiteralAnalyser.h"
-#include "Analyser/TypeChecker.h"
+#include "Analyser/TypeFinder.h"
+#include "Analyser/constants.h"
 #include "AST/Expr.h"
+#include "Utils/StringBuilder.h"
 
 using namespace C2;
 using namespace llvm;
 using namespace clang;
 
+// 0 = ok,
+// 1 = loss of integer precision,
+// 2 = sign-conversion,
+// 3 = float->integer,
+// 4 = incompatible,
+// 5 = loss of FP precision
+static int type_conversions[14][14] = {
+    // I8  I16  I32  I64   U8  U16  U32  U64  F32  F64  Bool  Void
+    // I8 ->
+    {   0,   0,   0,   0,   2,   2,   2,   2,   0,   0,    0,   4},
+    // I16 ->
+    {   1,   0,   0,   0,   2,   2,   2,   2,   0,   0,    0,   4},
+    // I32 ->
+    {   1,   1,   0,   0,   2,   2,   2,   2,   0,   0,    0,   4},
+    // I64 ->
+    {   1,   1,   1,   0,   2,   2,   2,   2,   0,   0,    0,   4},
+    // U8 ->
+    {   2,   0,   0,   0,   0,   0,   0,   0,   0,   0,    0,   4},
+    // U16 ->
+    {   1,   2,   0,   0,   1,   0,   0,   0,   0,   0,    0,   4},
+    // U32 ->
+    {   1,   1,   2,   0,   1,   1,   0,   0,   0,   0,    0,   4},
+    // U64 ->
+    {   1,   1,   1,   2,   1,   1,   1,   0,   0,   0,    0,   4},
+    // F32 ->
+    {   3,   3,   3,   3,   3,   3,   3,   3,   0,   0,    4,   4},
+    // F64 ->
+    {   3,   3,   3,   3,   3,   3,   3,   3,   5,   0,    4,   4},
+    // BOOL ->
+    {   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,    0,   4},
+    // VOID ->
+    {  4,    4,   4,   4,  4,   4,   4,   4,   4,   4,    4,    0},
+};
 
-ExprTypeAnalyser::ExprTypeAnalyser(TypeChecker& TC_, DiagnosticsEngine& Diags_)
-    : TC(TC_)
-    , Diags(Diags_)
+
+
+ExprTypeAnalyser::ExprTypeAnalyser(DiagnosticsEngine& Diags_)
+    : Diags(Diags_)
 {}
 
 void ExprTypeAnalyser::check(QualType TLeft, const Expr* expr) {
     switch (expr->getCTC()) {
     case CTC_NONE:
-        TC.checkCompatible(TLeft, expr);
+        checkCompatible(TLeft, expr);
         return;
     case CTC_PARTIAL:
         break;
@@ -130,5 +170,113 @@ void ExprTypeAnalyser::checkBinOp(QualType TLeft, const BinaryOperator* binop) {
         assert(0 && "TODO?");
         break;
     }
+}
+
+bool ExprTypeAnalyser::checkCompatible(QualType left, const Expr* expr) const {
+    QualType right = expr->getType();
+    //right = TypeFinder::findType(expr);
+    assert(left.isValid());
+    const Type* canon = left.getCanonicalType();
+    switch (canon->getTypeClass()) {
+    case TC_BUILTIN:
+        return checkBuiltin(left, right, expr, true);
+    case TC_POINTER:
+        return checkPointer(left, right, expr);
+    case TC_ARRAY:
+        break;
+    case TC_UNRESOLVED:
+        break;
+    case TC_ALIAS:
+        break;
+    case TC_STRUCT:
+        break;
+    case TC_ENUM:
+        break;
+    case TC_FUNCTION:
+        break;
+    }
+    return false;
+}
+
+bool ExprTypeAnalyser::checkBuiltin(QualType left, QualType right, const Expr* expr, bool first) const {
+    if (right->isBuiltinType()) {
+        // NOTE: canonical is builtin, var itself my be UnresolvedType etc
+        const BuiltinType* Right = cast<BuiltinType>(right.getCanonicalType());
+        const BuiltinType* Left = cast<BuiltinType>(left.getCanonicalType());
+        int rule = type_conversions[Right->getKind()][Left->getKind()];
+        // 0 = ok, 1 = loss of precision, 2 sign-conversion, 3=float->integer, 4 incompatible, 5 loss of FP prec.
+        // TODO use matrix with allowed conversions: 3 options: ok, error, warn
+        int errorMsg = 0;
+
+        if (first) {
+            if (Right->getKind() != Left->getKind()) {
+                // add Implicit Cast
+                // TODO remove const cast
+                Expr* E = const_cast<Expr*>(expr);
+                E->setImpCast(Left->getKind());
+            }
+            if (rule == 1) {
+                QualType Q = TypeFinder::findType(expr);
+                return checkBuiltin(left, Q, expr, false);
+            }
+        }
+
+        switch (rule) {
+        case 0:
+            return true;
+        case 1: // loss of precision
+            errorMsg = diag::warn_impcast_integer_precision;
+            break;
+        case 2: // sign-conversion
+            errorMsg = diag::warn_impcast_integer_sign;
+            break;
+        case 3: // float->integer
+            errorMsg = diag::warn_impcast_float_integer;
+            break;
+        case 4: // incompatible
+            errorMsg = diag::err_illegal_type_conversion;
+            break;
+        case 5: // loss of fp-precision
+            errorMsg = diag::warn_impcast_float_precision;
+            break;
+        default:
+            assert(0 && "should not come here");
+        }
+        StringBuilder buf1(MAX_LEN_TYPENAME);
+        StringBuilder buf2(MAX_LEN_TYPENAME);
+        right.DiagName(buf1);
+        left.DiagName(buf2);
+        // TODO error msg depends on conv type (see clang errors)
+        Diags.Report(expr->getLocation(), errorMsg) << buf1 << buf2
+            << expr->getSourceRange();
+        return false;
+    }
+
+    StringBuilder buf1(MAX_LEN_TYPENAME);
+    StringBuilder buf2(MAX_LEN_TYPENAME);
+    right.DiagName(buf1);
+    left.DiagName(buf2);
+    // TODO error msg depends on conv type (see clang errors)
+    Diags.Report(expr->getLocation(), diag::err_illegal_type_conversion) << buf1 << buf2;
+    return false;
+}
+
+bool ExprTypeAnalyser::checkPointer(QualType left, QualType right, const Expr* expr) const {
+    if (right->isPointerType()) {
+        // TODO
+        return true;
+    }
+    if (right->isArrayType()) {
+        // TODO
+        return true;
+    }
+    StringBuilder buf1(MAX_LEN_TYPENAME);
+    StringBuilder buf2(MAX_LEN_TYPENAME);
+    right.DiagName(buf1);
+    left.DiagName(buf2);
+    // TODO error msg depends on conv type (see clang errors)
+    Diags.Report(expr->getLocation(), diag::err_illegal_type_conversion)
+            << buf1 << buf2;
+    return false;
 }
 
