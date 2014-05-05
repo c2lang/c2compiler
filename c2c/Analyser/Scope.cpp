@@ -47,21 +47,6 @@ Scope::Scope(const std::string& name_, const Pkgs& pkgs_, clang::DiagnosticsEngi
 }
 
 bool Scope::addUsedPackage(UseDecl* useDecl) {
-    // NOTE: dont change if Package exists, already done by Builder
-#if 0
-    // check if aliasname is not a package
-    // TODO still needed? Or just search filescope globals?
-    const std::string& aliasName = useDecl->getAlias();
-    if (aliasName != "") {
-        const Package* pkg2 = globals->findAnyPackage(aliasName);
-        if (pkg2) {
-            Diags.Report(useDecl->getAliasLocation(), diag::err_alias_is_package) << aliasName;
-            errors++;
-            continue;
-        }
-    }
-#endif
-
     std::string pkgName = useDecl->getName();
     clang::SourceLocation Loc = useDecl->getLocation();
     if (useDecl->getAlias() != "") {
