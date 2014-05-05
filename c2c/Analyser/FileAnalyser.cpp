@@ -365,7 +365,7 @@ unsigned FileAnalyser::checkStructTypeDecl(StructTypeDecl* D) {
 unsigned FileAnalyser::resolveVarDecl(VarDecl* D) {
     LOG_FUNC
     // TODO duplicate code with FileAnalyser::analyseDeclExpr()
-    QualType Q = TR->resolveType(D->getRefType(), D->isPublic());
+    QualType Q = TR->resolveType(D->getType(), D->isPublic());
     if (Q.isValid()) {
         D->setType(Q);
 

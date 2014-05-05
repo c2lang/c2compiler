@@ -780,7 +780,7 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     VarDecl* decl = DE->getDecl();
 
     bool haveError = false;
-    QualType Q = TR.resolveType(decl->getRefType(), decl->isPublic());
+    QualType Q = TR.resolveType(decl->getType(), decl->isPublic());
     if (Q.isValid()) {
         decl->setType(Q);
 

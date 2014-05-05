@@ -129,7 +129,6 @@ public:
     }
     virtual void print(StringBuilder& buffer, unsigned indent) const;
 
-    QualType getRefType() const { return refType; }
     Expr* getInitValue() const { return initValue; }
 
     void setLocalQualifier() { DeclBits.VarDeclHasLocalQualifier = true; }
@@ -150,7 +149,6 @@ public:
     llvm::Value* getIRValue() const { return IRValue; }
     void setIRValue(llvm::Value* v) const { IRValue = v; }
 private:
-    QualType refType;   // set by Parser
     Expr* initValue;
     // TODO remove, since only for Incremental Arrays (subclass VarDecl -> GlobalVarDecl)
     //InitValues initValues;
