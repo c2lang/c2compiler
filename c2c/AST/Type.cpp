@@ -18,6 +18,7 @@
 #include "AST/Type.h"
 #include "AST/Expr.h"
 #include "AST/Decl.h"
+#include "AST/Package.h"
 #include "Utils/StringBuilder.h"
 #include "Utils/Utils.h"
 #include "Utils/color.h"
@@ -641,6 +642,25 @@ void FunctionType::fullDebug(StringBuilder& buffer, int indent) const {
 #endif
 
 
+const Package* PackageType::getPackage() const {
+    return decl->getPackage();
+}
+
+void PackageType::printName(StringBuilder& buffer) const {
+    buffer << "package";
+}
+
+void PackageType::debugPrint(StringBuilder& buffer) const {
+    buffer << "(pkg)" << decl->getName();
+}
+
+#ifdef TYPE_DEBUG
+void PackageType::fullDebug(StringBuilder& buffer, int indent) const {
+    buffer << "TODO PackageType\n";
+}
+#endif
+
+
 TypeContext::TypeContext() {}
 
 TypeContext::~TypeContext() {
@@ -686,6 +706,10 @@ QualType TypeContext::getEnumType() {
 
 QualType TypeContext::getFunctionType(FunctionDecl* F) {
     return add(new FunctionType(F));
+}
+
+QualType TypeContext::getPackageType(UseDecl* D) {
+    return add(new PackageType(D));
 }
 
 QualType TypeContext::add(Type* T) {

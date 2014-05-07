@@ -36,45 +36,6 @@ class VarDecl;
 class UseDecl;
 class DepAnalyser;
 
-// This class combines a Decl or Package* and bool into 1 word
-class ScopeResult {
-public:
-    // TODO ok should be false by default
-    ScopeResult() : value(0x1) {}
-
-    void setPackage(const Package* P) {
-        value &= 0x1;
-        value |= (uintptr_t)P;
-    }
-    const Package* getPackage() const {
-        if (value & 0x2) {  // decl
-            return 0;
-        } else {
-            return reinterpret_cast<const Package*>(value & ~0x3);
-        }
-    }
-    void setDecl(Decl* D) {
-        value &= 0x1;
-        value |= (uintptr_t)D;
-        value |= 0x2;
-    }
-    Decl* getDecl() const {
-        if (value & 0x2) {  // decl
-            return reinterpret_cast<Decl*>(value & ~0x3);
-        } else {
-            return 0;
-        }
-    }
-    void setOK(bool ok) {
-        value &= ~0x1;
-        value |= ok;
-    }
-    bool isOK() const { return value & 0x1; }
-private:
-    uintptr_t value;
-};
-
-
 struct DynamicScope {
     DynamicScope();
     void Init(unsigned flags_);
@@ -122,21 +83,17 @@ public:
         SwitchScope = 0x800,
     };
 
-
     Scope(const std::string& name_, const Pkgs& pkgs_, clang::DiagnosticsEngine& Diags_, unsigned id);
 
-    // TODO remove usePackage, just use findSymbol?
-    const Package* usePackage(const std::string& name, clang::SourceLocation loc) const;
-    const Package* findAnyPackage(const std::string& name) const;
-    bool addUsedPackage(UseDecl* useDecl);
-
-    ScopeResult findSymbol(const std::string& name, clang::SourceLocation loc) const;
-    ScopeResult findSymbolInPackage(const std::string& name, clang::SourceLocation loc, const Package* pkg) const;
-    ScopeResult findSymbolInUsed(const std::string& name) const;
-
-    // NEW API
+    // adding symbols
+    bool addUseDecl(UseDecl* useDecl);
     bool checkScopedSymbol(const VarDecl* V) const;
     void addScopedSymbol(VarDecl* V);
+
+    // searching
+    const Package* findUsedPackage(const std::string& name, clang::SourceLocation loc) const;
+    Decl* findSymbol(const std::string& name, clang::SourceLocation loc, bool isType) const;
+    Decl* findSymbolInPackage(const std::string& name, clang::SourceLocation loc, const Package* pkg) const;
 
     // Scopes
     void EnterScope(unsigned flags);
@@ -149,28 +106,29 @@ public:
         return (pkg && pkg != myPkg);
     }
 
-    void dump() const;
     void getExternals(DepAnalyser& dep) const;
 private:
-    ScopeResult findGlobalSymbol(const std::string& name, clang::SourceLocation loc) const;
-    const Package* findPackage(const std::string& name) const;
+    const Package* findAnyPackage(const std::string& name) const;
+    Decl* findOwn(const std::string& symbol) const;
     void addExternal(const Decl* D) const;
+    //Decl* findSymbolInUsed(const std::string& name) const;
 
-    // Scopes
+    // Dynamic Scopes
     DynamicScope scopes[MAX_SCOPE_DEPTH];
     unsigned scopeIndex;    // first free scope (= count of scopes)
     DynamicScope* curScope;
 
-    // Packages
-    // locals (or used local)
+    // Packages with local symbols (includes self pkg)
     typedef std::vector<const Package*> Locals;
     typedef Locals::const_iterator LocalsConstIter;
     Locals locals;
+
     // used Packages (use <as>)
     typedef std::map<std::string, UseDecl*> Packages;
     typedef Packages::const_iterator PackagesConstIter;
     typedef Packages::iterator PackagesIter;
     Packages usedPackages;
+
     // all packages
     const Pkgs& allPackages;
 
@@ -178,18 +136,13 @@ private:
     const Package* myPkg;
 
     // Symbol caches
-    typedef std::map<std::string, ScopeResult> Globals;
-    typedef Globals::const_iterator GlobalsConstIter;
-    typedef Globals::iterator GlobalsIter;
-    mutable Globals globalCache;
+    typedef std::map<const std::string, Decl*> SymbolCache;
+    typedef SymbolCache::const_iterator CacheConstIter;
+    typedef SymbolCache::iterator CacheIter;
+    mutable SymbolCache symbolCache;
 
     typedef std::vector<const Decl*> Externals;
     mutable Externals externals;
-
-    typedef std::map<const std::string, VarDecl*> LocalCache;
-    typedef LocalCache::const_iterator LocalCacheConstIter;
-    typedef LocalCache::iterator LocalCacheIter;
-    LocalCache localCache;
 
     clang::DiagnosticsEngine& Diags;
 };

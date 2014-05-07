@@ -10,5 +10,5 @@ package bar;
 
 use foo local;
 
-public func void test(int a) {}
+public func void test(int a) {}     // @error{redefinition of a}
 

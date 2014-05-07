@@ -42,6 +42,8 @@ class EnumTypeDecl;
 class FunctionDecl;
 class AliasTypeDecl;
 class TypeDecl;
+class UseDecl;
+class Package;
 
 
 class QualType {
@@ -122,6 +124,7 @@ enum TypeClass {
     TC_STRUCT,
     TC_ENUM,
     TC_FUNCTION,
+    TC_PACKAGE,
 };
 
 
@@ -437,6 +440,27 @@ private:
 };
 
 
+class PackageType : public Type {
+public:
+    PackageType(UseDecl* decl_)
+        : Type(TC_PACKAGE, QualType(this))
+        , decl(decl_)
+    {}
+    static bool classof(const Type* T) { return T->getTypeClass() == TC_PACKAGE; }
+
+    UseDecl* getDecl() const { return decl; }
+    const Package* getPackage() const;
+protected:
+    virtual void printName(StringBuilder& buffer) const;
+    virtual void debugPrint(StringBuilder& buffer) const;
+#ifdef TYPE_DEBUG
+    virtual void fullDebug(StringBuilder& buffer, int indent) const;
+#endif
+private:
+    UseDecl* decl;
+};
+
+
 template <class T> static inline bool isa(const Type* type) {
     return T::classof(type);
 }
@@ -509,6 +533,7 @@ public:
     QualType getStructType();
     QualType getEnumType();
     QualType getFunctionType(FunctionDecl* F);
+    QualType getPackageType(UseDecl* D);
 private:
     QualType add(Type* T);
 

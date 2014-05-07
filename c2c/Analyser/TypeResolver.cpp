@@ -56,6 +56,9 @@ unsigned TypeResolver::checkType(QualType Q, bool used_public) {
     case TC_FUNCTION:
         // ok (TypeDecl will be checked)
         return 0;
+    case TC_PACKAGE:
+        assert(0 && "TBD");
+        return 0;
     }
 }
 
@@ -65,26 +68,13 @@ unsigned TypeResolver::checkUnresolvedType(const UnresolvedType* type, bool used
     SourceLocation tLoc = type->getTLoc();
     Decl* D = 0;
     if (!pName.empty()) {   // pkg.type
-        // check if package exists
-        const Package* pkg = globals.usePackage(pName, type->getPLoc());
+        const Package* pkg = globals.findUsedPackage(pName, type->getPLoc());
         if (!pkg) return 1;
-        // check type
-        ScopeResult res = globals.findSymbolInPackage(tName, tLoc, pkg);
-        if (!res.isOK()) return 1;
-        D = res.getDecl();
+        D =  globals.findSymbolInPackage(tName, tLoc, pkg);
     } else {
-        ScopeResult res = globals.findSymbol(tName, tLoc);
-        if (!res.isOK()) return 1;
-        if (res.getPackage()) {
-            Diags.Report(tLoc, diag::err_not_a_typename) << tName;
-            return 1;
-        }
-        D = res.getDecl();
-        if (!D) {
-            Diags.Report(tLoc, diag::err_unknown_typename) << tName;
-            return 1;
-        }
+        D = globals.findSymbol(tName, tLoc, true);
     }
+    if (!D) return 1;
     TypeDecl* TD = dyncast<TypeDecl>(D);
     if (!TD) {
         StringBuilder name;
@@ -141,6 +131,9 @@ QualType TypeResolver::resolveUnresolved(QualType Q) const {
     case TC_STRUCT:
     case TC_ENUM:
     case TC_FUNCTION:
+        return Q;
+    case TC_PACKAGE:
+        assert(0 && "TBD");
         return Q;
     }
     return Q;
@@ -240,6 +233,9 @@ QualType TypeResolver::checkCanonicals(Decls& decls, QualType Q, bool set) const
         }
     case TC_FUNCTION:
         return Q.getCanonicalType();
+    case TC_PACKAGE:
+        assert(0 && "TBD");
+        return 0;
     }
 }
 
@@ -293,6 +289,9 @@ QualType TypeResolver::resolveCanonical(QualType Q) const {
     case TC_ENUM:
     case TC_FUNCTION:
         return Q.getCanonicalType();
+    case TC_PACKAGE:
+        assert(0 && "TBD");
+        return Q;
     }
 }
 bool TypeResolver::checkDecls(Decls& decls, const Decl* D) const {

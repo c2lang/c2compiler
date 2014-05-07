@@ -18,7 +18,6 @@
 
 #include <llvm/ADT/APSInt.h>
 
-#include "Analyser/Scope.h"
 #include "Analyser/ExprTypeAnalyser.h"
 #include "AST/Type.h"
 
@@ -78,10 +77,10 @@ private:
     QualType analyseBuiltinExpr(Expr* expr);
     QualType analyseArraySubscript(Expr* expr);
     QualType analyseMemberExpr(Expr* expr, unsigned side);
-    QualType analyseMember(QualType T, MemberExpr* M, unsigned side);
+    QualType analyseStructMember(QualType T, MemberExpr* M, unsigned side);
     QualType analyseParenExpr(Expr* expr);
     QualType analyseCall(Expr* expr);
-    ScopeResult analyseIdentifier(IdentifierExpr* expr);
+    Decl* analyseIdentifier(IdentifierExpr* expr);
 
     void analyseInitExpr(Expr* expr, QualType expectedType);
     void analyseInitList(InitListExpr* expr, QualType expectedType);
@@ -110,6 +109,7 @@ private:
     bool checkAssignee(Expr* expr) const;
     void checkAssignment(Expr* assignee, QualType TLeft);
     void checkDeclAssignment(Decl* decl, Expr* expr);
+    QualType getStructType(QualType T) const;
 
     // conversions
     QualType UsualUnaryConversions(Expr* expr) const;

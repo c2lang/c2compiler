@@ -461,7 +461,6 @@ void CCodeGenerator::EmitVariable(VarDecl* V) {
 
 void CCodeGenerator::EmitTypeDecl(TypeDecl* T) {
     LOG_FUNC
-    T->dump();
 
     StringBuilder* out = &cbuf;
     if (T->isPublic()) out = &hbuf;
@@ -473,14 +472,11 @@ void CCodeGenerator::EmitTypeDecl(TypeDecl* T) {
         break;
     case DECL_ALIASTYPE:
         *out << "typedef ";
-fprintf(stderr, "AAA\n");
         EmitTypePreName(T->getType(), *out);
         *out << ' ';
         addPrefix(*curpkg, T->getName(), *out);
-fprintf(stderr, "BBB\n");
         EmitTypePostName(T->getType(), *out);
         *out << ";\n\n";
-fprintf(stderr, "CCC\n");
         break;
     case DECL_STRUCTTYPE:
         EmitStructType(cast<StructTypeDecl>(T), T->isPublic() ? hbuf : cbuf, 0);
@@ -872,6 +868,9 @@ void CCodeGenerator::EmitTypePreName(QualType type, StringBuilder& output) {
         }
     case TC_FUNCTION:
         output << cast<FunctionType>(T)->getDecl()->getName();
+        break;
+    case TC_PACKAGE:
+        assert(0 && "TODO");
         break;
     }
 }

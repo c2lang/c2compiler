@@ -43,109 +43,97 @@ Scope::Scope(const std::string& name_, const Pkgs& pkgs_, clang::DiagnosticsEngi
     // add own package to scope
     myPkg = findAnyPackage(name_);
     assert(myPkg);
-    locals.push_back(myPkg);
 }
 
-bool Scope::addUsedPackage(UseDecl* useDecl) {
+bool Scope::addUseDecl(UseDecl* useDecl) {
     std::string pkgName = useDecl->getName();
     clang::SourceLocation Loc = useDecl->getLocation();
     if (useDecl->getAlias() != "") {
         pkgName = useDecl->getAlias();
         Loc = useDecl->getAliasLocation();
     }
-    // TODO dont use findGlobalSymbol here, since it searches too much and add to cache
-    ScopeResult SR = findGlobalSymbol(pkgName, SourceLocation());
-    const Decl* Old = SR.getDecl();
-    if (Old != 0) {
-        Diags.Report(Loc, diag::err_redefinition)
-            << pkgName;
-        Diags.Report(Old->getLocation(), diag::note_previous_definition);
-        return false;
-    }
     const Package* pkg = findAnyPackage(useDecl->getName());
     assert(pkg);
     useDecl->setPackage(pkg);
-    if (useDecl->isLocal()) locals.push_back(useDecl->getPackage());
+    if (useDecl->isLocal()) locals.push_back(pkg);
     usedPackages[pkgName] = useDecl;
+    symbolCache[pkgName] = useDecl;
     return true;
 }
 
-const Package* Scope::usePackage(const std::string& name, clang::SourceLocation loc) const {
-    const Package* P = findPackage(name);
-    if (!P) {
-        // check if used with alias (then fullname is forbidden)
-        for (PackagesConstIter iter = usedPackages.begin(); iter != usedPackages.end(); ++iter) {
-            UseDecl* U = iter->second;
-            U->setUsed();
-            const Package* p = U->getPackage();
-            if (p->getName() == name) {
-                Diags.Report(loc, diag::err_package_has_alias) << name << iter->first;
-                return 0;
-            }
-        }
-        PkgsConstIter iter = allPackages.find(name);
-        if (iter == allPackages.end()) {
-            Diags.Report(loc, diag::err_unknown_package) << name;
-        } else {
-            Diags.Report(loc, diag::err_package_not_used) << name;
-        }
+bool Scope::checkScopedSymbol(const VarDecl* V) const {
+    const Decl* Old = 0;
+
+    CacheConstIter iter = symbolCache.find(V->getName());
+    if (iter != symbolCache.end()) {
+        Old = iter->second;
+        goto err;
     }
-    return P;
+
+    // lookup in all used local (= also own)
+    for (LocalsConstIter iter = locals.begin(); iter != locals.end(); ++iter) {
+        Old = (*iter)->findSymbol(V->getName());
+        if (Old) goto err;
+    }
+    return true;
+err:
+        Diags.Report(V->getLocation(), diag::err_redefinition)
+            << V->getName();
+        Diags.Report(Old->getLocation(), diag::note_previous_definition);
+    return false;
 }
 
-const Package* Scope::findAnyPackage(const std::string& name) const {
-    PkgsConstIter iter = allPackages.find(name);
-    if (iter == allPackages.end()) return 0;
-    return iter->second;
+void Scope::addScopedSymbol(VarDecl* V) {
+    // NOTE: must already be checked with checkScopedSymbol
+    assert(curScope);
+    curScope->decls.push_back(V);
+    symbolCache[V->getName()] = V;
 }
 
-void Scope::dump() const {
-    fprintf(stderr, "used usedPackages:\n");
+const Package* Scope::findUsedPackage(const std::string& name, clang::SourceLocation loc) const {
+    PackagesConstIter iter = usedPackages.find(name);
+    if (iter != usedPackages.end()) {
+        UseDecl* U = iter->second;
+        U->setUsed();
+        return U->getPackage();
+    }
+
+    // check if used with alias (then fullname is forbidden)
     for (PackagesConstIter iter = usedPackages.begin(); iter != usedPackages.end(); ++iter) {
-        fprintf(stderr, "  %s (as %s)\n", iter->second->getName().c_str(), iter->first.c_str());
+        UseDecl* U = iter->second;
+        U->setUsed();
+        const Package* p = U->getPackage();
+        if (p->getName() == name) {
+            Diags.Report(loc, diag::err_package_has_alias) << name << iter->first;
+            return 0;
+        }
     }
+    const Package* P2 = findAnyPackage(name);
+    if (P2) {
+        Diags.Report(loc, diag::err_package_not_used) << name;
+    } else {
+        Diags.Report(loc, diag::err_unknown_package) << name;
+    }
+    return 0;
 }
 
-void Scope::getExternals(DepAnalyser& dep) const {
-    dep.startFile(myPkg, file_id);
-    for (unsigned i=0; i<externals.size(); i++) {
-        dep.add(file_id, externals[i]);
-    }
-    for (GlobalsConstIter iter = globalCache.begin(); iter != globalCache.end(); ++iter) {
-        const Decl* D = iter->second.getDecl();
-        if (!D) continue;
-        if (D->getFileID() != file_id) dep.add(file_id, D);
-    }
-    dep.doneFile();
-}
-
-ScopeResult Scope::findGlobalSymbol(const std::string& symbol, clang::SourceLocation loc) const {
+Decl* Scope::findSymbol(const std::string& symbol, clang::SourceLocation loc, bool isType) const {
     // lookup in global cache first, return if found
-    GlobalsConstIter iter = globalCache.find(symbol);
-    if (iter != globalCache.end()) {
+    CacheConstIter iter = symbolCache.find(symbol);
+    if (iter != symbolCache.end()) {
         return iter->second;
     }
-    ScopeResult result;
-    // lookup in used package list
-    const Package* pkg = findPackage(symbol);
-    if (pkg) {
-        result.setOK(true);
-        result.setPackage(pkg);
-        // add to cache
-        globalCache[symbol] = result;
-        return result;
-    }
 
+    // lookup in used package list
     bool ambiguous = false;
     bool visible_match = false;
     Decl* D = 0;
     for (LocalsConstIter iter = locals.begin(); iter != locals.end(); ++iter) {
-        pkg = *iter;
+        const Package* pkg = *iter;
         Decl* decl = pkg->findSymbol(symbol);
         if (!decl) continue;
 
-        bool external = isExternal(pkg);
-        bool visible = !(external && !decl->isPublic());
+        bool visible = !(isExternal(pkg) && !decl->isPublic());
         if (D) {
             // if previous result was non-visible, replace with new one
             if (visible_match == visible) {
@@ -157,7 +145,6 @@ ScopeResult Scope::findGlobalSymbol(const std::string& symbol, clang::SourceLoca
                         << AnalyserUtils::fullName(D->getPackage()->getName(), D->getName());
 
                     ambiguous = true;
-                    result.setOK(false);
                 }
                 Diags.Report(SourceLocation(), diag::note_function_suggestion)
                     << AnalyserUtils::fullName(pkg->getName(), decl->getName());
@@ -173,8 +160,10 @@ ScopeResult Scope::findGlobalSymbol(const std::string& symbol, clang::SourceLoca
             visible_match = visible;
         }
     }
-    if (D && !ambiguous) {
-        // find useDecl and set it used
+    if (ambiguous) return 0;
+
+    if (D) {
+        // mark UseDecl as used
         PackagesConstIter iter = usedPackages.begin();
         while (iter != usedPackages.end()) {
             UseDecl* Use = iter->second;
@@ -187,55 +176,67 @@ ScopeResult Scope::findGlobalSymbol(const std::string& symbol, clang::SourceLoca
 
         if (!visible_match) {
             Diags.Report(loc, diag::err_not_public) << symbol;
-            result.setOK(false);
+            return 0;
         }
-        if (result.isOK()) {
-            if (isExternal(D->getPackage())) D->setUsedPublic();
-            result.setDecl(D);
-            globalCache[symbol] = result;
+        if (isExternal(D->getPackage())) D->setUsedPublic();
+        symbolCache[symbol] = D;
+        return D;
+    } else {
+        if (isType) {
+            Diags.Report(loc, diag::err_unknown_typename) << symbol;
+        } else {
+            Diags.Report(loc, diag::err_undeclared_var_use) << symbol;
         }
+/*
+        ScopeResult res2 = scope.findSymbolInUsed(symbol);
+        Decl* D2 = res2.getDecl();
+        if (D2) {
+            assert(D2->getPackage());
+            // Crashes if ambiguous
+            Diags.Report(D->getLocation(), diag::note_function_suggestion)
+                << AnalyserUtils::fullName(D2->getPackage()->getName(), id->getName());
+        }
+
+*/
     }
     // TODO make suggestion otherwise? (used Packages w/alias, other packages?)
-    return result;
+    return 0;
 }
 
-ScopeResult Scope::findSymbol(const std::string& symbol, clang::SourceLocation loc) const {
-    // lookup in local vars (all in cache), return if found
-    LocalCacheConstIter iter = localCache.find(symbol);
-    if (iter != localCache.end()) {
-        ScopeResult result;
-        result.setOK(true);
-        result.setDecl(iter->second);
-        return result;
-    }
-
-    // otherwise search globals
-    return findGlobalSymbol(symbol, loc);
-}
-
-ScopeResult Scope::findSymbolInPackage(const std::string& name, clang::SourceLocation loc, const Package* pkg) const {
-    ScopeResult res;
+Decl* Scope::findSymbolInPackage(const std::string& name, clang::SourceLocation loc, const Package* pkg) const {
     Decl* D = pkg->findSymbol(name);
-    res.setDecl(D);
     if (!D) {
         Diags.Report(loc, diag::err_unknown_package_symbol) << pkg->getName() << name;
-        res.setOK(false);
-    } else {
-        // if external package, check visibility
-        if (isExternal(pkg) && !D->isPublic()) {
-            Diags.Report(loc, diag::err_not_public) << AnalyserUtils::fullName(pkg->getName(), name);
-            res.setDecl(0);
-            res.setOK(false);
-        } else {
-            if (isExternal(pkg)) D->setUsedPublic();
-            if (D->getFileID() != file_id) addExternal(D);
-        }
+        return 0;
     }
-    return res;
+    // if external package, check visibility
+    if (isExternal(pkg)) {
+        if (!D->isPublic()) {
+            Diags.Report(loc, diag::err_not_public) << AnalyserUtils::fullName(pkg->getName(), name);
+            return 0;
+        }
+        D->setUsedPublic();
+    }
+    if (D->getFileID() != file_id) addExternal(D);
+    return D;
 }
 
-ScopeResult Scope::findSymbolInUsed(const std::string& symbol) const {
-    ScopeResult result;
+void Scope::getExternals(DepAnalyser& dep) const {
+    dep.startFile(myPkg, file_id);
+    for (unsigned i=0; i<externals.size(); i++) {
+        dep.add(file_id, externals[i]);
+    }
+    for (CacheConstIter iter = symbolCache.begin(); iter != symbolCache.end(); ++iter) {
+        const Decl* D = iter->second;
+        if (!D) continue;
+        if (D->getFileID() != file_id) dep.add(file_id, D);
+    }
+    dep.doneFile();
+}
+
+#if 0
+// TODO rename to makeSuggestion() and use in findSymbol
+Decl* Scope::findSymbolInUsed(const std::string& symbol) const {
     // symbol can be package name or symbol within package
     const Package* pkg = findPackage(symbol);
     if (pkg) {
@@ -259,43 +260,7 @@ ScopeResult Scope::findSymbolInUsed(const std::string& symbol) const {
     }
     return result;
 }
-
-bool Scope::checkScopedSymbol(const VarDecl* V) const {
-    // lookup in local scopes, error if found
-    LocalCacheConstIter iter = localCache.find(V->getName());
-    if (iter != localCache.end()) {
-        const VarDecl* Old = iter->second;
-        Diags.Report(V->getLocation(), diag::err_redefinition)
-            << V->getName();
-        Diags.Report(Old->getLocation(), diag::note_previous_definition);
-        return false;
-    }
-
-    // check if symbol is a package, error is so
-    const Package* Pkg = findPackage(V->getName());
-    if (Pkg) {
-        fprintf(stderr, "TODO ERROR symbol is package\n");
-        return false;
-    }
-
-    // lookup in own package, error if found
-    Decl* Old= myPkg->findSymbol(V->getName());
-    if (Old) {
-        Diags.Report(V->getLocation(), diag::err_redefinition)
-            << V->getName();
-        // NASTY, loc might be other file!!
-        Diags.Report(Old->getLocation(), diag::note_previous_definition);
-        return false;
-    }
-    return true;
-}
-
-void Scope::addScopedSymbol(VarDecl* V) {
-    // NOTE: must already be checked with checkScopedSymbol
-    assert(curScope);
-    curScope->decls.push_back(V);
-    localCache[V->getName()] = V;
-}
+#endif
 
 void Scope::EnterScope(unsigned flags) {
     assert (scopeIndex < MAX_SCOPE_DEPTH && "out of scopes");
@@ -319,9 +284,10 @@ void Scope::ExitScope() {
             if (D->isParameter()) msg = diag::warn_unused_parameter;
             Diags.Report(D->getLocation(), msg) << D->getName();
         }
-        // remove from localCache
-        LocalCacheIter iter = localCache.find(D->getName());
-        localCache.erase(iter);
+        // remove from symbol cache
+        CacheIter iter = symbolCache.find(D->getName());
+        assert(iter != symbolCache.end());
+        symbolCache.erase(iter);
     }
     curScope->decls.clear();
     curScope->Flags = 0;
@@ -338,12 +304,9 @@ void Scope::addExternal(const Decl* D) const {
     externals.push_back(D);
 }
 
-const Package* Scope::findPackage(const std::string& name) const {
-    if (name == myPkg->getName()) return myPkg;
-    PackagesConstIter iter = usedPackages.find(name);
-    if (iter == usedPackages.end()) return 0;
-    UseDecl* U = iter->second;
-    U->setUsed();
-    return U->getPackage();
+const Package* Scope::findAnyPackage(const std::string& name) const {
+    PkgsConstIter iter = allPackages.find(name);
+    if (iter == allPackages.end()) return 0;
+    return iter->second;
 }
 

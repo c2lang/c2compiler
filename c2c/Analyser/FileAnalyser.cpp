@@ -54,7 +54,7 @@ unsigned  FileAnalyser::checkUses() {
     LOG_FUNC
     unsigned errors = 0;
     for (unsigned i=0; i<ast.numUses(); i++) {
-        if (!globals->addUsedPackage(ast.getUse(i))) errors++;
+        if (!globals->addUseDecl(ast.getUse(i))) errors++;
     }
     return errors;
 }

@@ -431,23 +431,27 @@ void MemberExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.setColor(COL_EXPR);
     buffer << "MemberExpr";
     buffer.setColor(COL_ATTR);
-    if (isPkgPrefix()) buffer << " (pkg-prefix)";
+    if (isPkgPrefix()) buffer << " pkg-prefix";
     buffer << ' ';
     Expr::print(buffer, 0);
     buffer << '\n';
+    buffer.indent(indent);
+    buffer.setColor(COL_ATTR);
+    buffer << "LHS=\n";
     Base->print(buffer, indent + INDENT);
     buffer.indent(indent);
     buffer.setColor(COL_ATTR);
-    buffer << "member=";
+    buffer << "RHS=";
     buffer.setColor(COL_VALUE);
     buffer << member << '\n';
     buffer.indent(indent);
     buffer.setColor(COL_ATTR);
     buffer << "decl=";
-    if (decl) buffer << decl->getName();
-    else {
+    if (decl) {
+        buffer << decl->getName();
+    } else {
         buffer.setColor(ANSI_RED);
-        buffer << 'NULL';
+        buffer << "NULL";
     }
     buffer << '\n';
 }

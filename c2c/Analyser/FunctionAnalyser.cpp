@@ -24,6 +24,7 @@
 #include "Analyser/TypeResolver.h"
 #include "Analyser/AnalyserUtils.h"
 #include "Analyser/LiteralAnalyser.h"
+#include "Analyser/Scope.h"
 #include "Analyser/constants.h"
 #include "AST/Decl.h"
 #include "AST/Expr.h"
@@ -452,19 +453,13 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
     case EXPR_IDENTIFIER:
         {
             IdentifierExpr* id = cast<IdentifierExpr>(expr);
-            ScopeResult Res = analyseIdentifier(id);
-            if (Res.getPackage()) {
-                Diags.Report(id->getLocation(), diag::err_is_a_package) << id->getName();
-                break;
-            }
-            Decl* D = Res.getDecl();
+            Decl* D = analyseIdentifier(id);
             if (!D) break;
             if (D == CurrentVarDecl) {
                 Diags.Report(id->getLocation(), diag::err_var_self_init) << D->getName();
                 return QualType();
             }
             if (side & LHS) checkDeclAssignment(D, expr);
-            // TODO move this to analyseIdentifier?
             switch (D->getKind()) {
             case DECL_FUNC:
                 expr->setConstant();
@@ -483,7 +478,9 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
                 expr->setConstant();
                 break;
             case DECL_ARRAYVALUE:
+                break;
             case DECL_USE:
+                expr->setConstant();
                 break;
             }
             if (side & RHS) D->setUsed();
@@ -645,12 +642,7 @@ void FunctionAnalyser::analyseSizeofExpr(Expr* expr) {
     {
         // TODO extract to function (duplicated code)
         IdentifierExpr* id = cast<IdentifierExpr>(expr);
-        ScopeResult Res = analyseIdentifier(id);
-        if (Res.getPackage()) {
-            Diags.Report(id->getLocation(), diag::err_is_a_package) << id->getName();
-            return;
-        }
-        Decl* D = Res.getDecl();
+        Decl* D = analyseIdentifier(id);
         if (!D) return;
         switch (D->getKind()) {
         case DECL_FUNC:
@@ -664,9 +656,11 @@ void FunctionAnalyser::analyseSizeofExpr(Expr* expr) {
             // ok
             return;
         case DECL_ARRAYVALUE:
-        case DECL_USE:
             assert(0 && "should not happen");
             break;
+        case DECL_USE:
+            Diags.Report(id->getLocation(), diag::err_is_a_package) << id->getName();
+            return;
         }
         break;
     }
@@ -735,6 +729,9 @@ void FunctionAnalyser::analyseArrayType(VarDecl* V, QualType T) {
     case TC_ENUM:
     case TC_FUNCTION:
         assert(0 && "should not happen");
+        break;
+    case TC_PACKAGE:
+        assert(0 && "TBD");
         break;
     }
 }
@@ -1161,115 +1158,64 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
     // var(Type=struct>.member
     // var[index].member
     // var->member
-    Expr* base = M->getBase();
-    if (base->getKind() == EXPR_IDENTIFIER) {
-        IdentifierExpr* base_id = cast<IdentifierExpr>(base);
-        ScopeResult SR = analyseIdentifier(base_id);
-        Decl* SRD = SR.getDecl();
-        if (SRD) {      // Struct.Member?
-            M->setPkgPrefix(false);
-            switch (SRD->getKind()) {
-            case DECL_FUNC:
-                fprintf(stderr, "error: member reference base 'type' is not a structure, union or package\n");
-                return QualType();
-            case DECL_ALIASTYPE:
-                assert(0 && "TODO");
-                break;
-            case DECL_FUNCTIONTYPE:
-            case DECL_ENUMTYPE:
-                fprintf(stderr, "error: member reference base 'type' is not a structure, union or package\n");
-                return QualType();
-            case DECL_STRUCTTYPE:
-                assert(0);  // will always be UnresolvedType
-                break;
-            case DECL_VAR:
-                {
-                    // TODO extract to function?
-                    VarDecl* VD = cast<VarDecl>(SRD);
-                    if (side & RHS) VD->setUsed();
-                    QualType T = VD->getType();
-                    assert(T.isValid());  // analyser should set
+    QualType LType = analyseExpr(M->getBase(), RHS);
+    if (!LType.isValid()) return QualType();
 
-                    // for arrow it should be Ptr to StructType, otherwise StructType
-                    if (isArrow) {
-                        if (!T.isPointerType()) {
-                            fprintf(stderr, "TODO using -> with non-pointer type\n");
-                            char typeName[MAX_LEN_TYPENAME];
-                            StringBuilder buf(MAX_LEN_TYPENAME, typeName);
-                            T.DiagName(buf);
-                            Diags.Report(M->getLocation(), diag::err_typecheck_member_reference_arrow)
-                                << buf;
-                            return QualType();
-                        } else {
-                            // deref
-                            const PointerType* PT = cast<PointerType>(T);
-                            T = PT->getPointeeType();
-                        }
-                    } else {
-                        if (T.isPointerType()) {
-                            StringBuilder buf(MAX_LEN_TYPENAME);
-                            T.DiagName(buf);
-                            Diags.Report(M->getLocation(), diag::err_typecheck_member_reference_suggestion)
-                                << buf << 0 << 1;
-                            return QualType();
-                        }
-                    }
-                    // Q: resolve UnresolvedTypes?
-
-                    // check if struct/union type
-                    if (!T->isStructType()) {
-                        StringBuilder buf(MAX_LEN_TYPENAME);
-                        T.DiagName(buf);
-                        Diags.Report(M->getLocation(), diag::err_typecheck_member_reference_struct_union)
-                            << buf << M->getSourceRange() << memberLoc;
-                        return QualType();
-                    }
-                    analyseMember(T, M, side);
-                }
-                break;
-            case DECL_ENUMVALUE:
-                expr->setConstant();
-                assert(0 && "TODO");
-                break;
-            case DECL_ARRAYVALUE:
-            case DECL_USE:
-                assert(0);
-                break;
-            }
-        } else if (SR.getPackage()) {   // Pkg.Symbol
-            M->setPkgPrefix(true);
-            if (isArrow) {
-                fprintf(stderr, "TODO ERROR: cannot use -> for package access\n");
-                // continue checking
-            }
-            ScopeResult res = scope.findSymbolInPackage(member, memberLoc, SR.getPackage());
-            Decl* D = res.getDecl();
-            if (D) {
-                if (side & RHS) D->setUsed();
-                M->setDecl(D);
-                SetConstantFlags(D, M);
-                QualType Q = D->getType();
-                expr->setType(Q);
-                return Q;
-            }
-            return QualType();
-        } else  {
-            return QualType();
+    if (isa<PackageType>(LType)) {
+        M->setPkgPrefix(true);
+        if (isArrow) {
+            fprintf(stderr, "TODO ERROR: cannot use -> for package access\n");
+            // continue checking
+        }
+        PackageType* PT = cast<PackageType>(LType.getTypePtr());
+        Decl* D = scope.findSymbolInPackage(member, memberLoc, PT->getPackage());
+        if (D) {
+            if (side & RHS) D->setUsed();
+            M->setDecl(D);
+            SetConstantFlags(D, M);
+            QualType Q = D->getType();
+            expr->setType(Q);
+            return Q;
         }
     } else {
-        QualType LType = analyseExpr(base, RHS);
-        if (LType.isNull()) return QualType();
-        if (!LType.isStructType()) {
-            fprintf(stderr, "error: not a struct or union type\n");
-            LType->dump();
+        M->setPkgPrefix(false);
+        if (isArrow) {
+            // try to dereference pointer
+            if (LType.isPointerType()) {
+                // TODO use function to get elementPtr (could be alias type)
+                const PointerType* PT = cast<PointerType>(LType.getTypePtr());
+                LType = PT->getPointeeType();
+            } else {
+                char typeName[MAX_LEN_TYPENAME];
+                StringBuilder buf(MAX_LEN_TYPENAME, typeName);
+                LType.DiagName(buf);
+                Diags.Report(M->getLocation(), diag::err_typecheck_member_reference_arrow) << buf;
+                return QualType();
+            }
+        } else {
+            if (LType.isPointerType()) {
+                StringBuilder buf(MAX_LEN_TYPENAME);
+                LType.DiagName(buf);
+                Diags.Report(M->getLocation(), diag::err_typecheck_member_reference_suggestion)
+                    << buf << 0 << 1;
+                return QualType();
+            }
+        }
+        QualType S = getStructType(LType);
+        if (!S.isValid()) {
+            StringBuilder buf(MAX_LEN_TYPENAME);
+            LType.DiagName(buf);
+            Diags.Report(M->getLocation(), diag::err_typecheck_member_reference_struct_union)
+                << buf << M->getSourceRange() << memberLoc;
             return QualType();
         }
-        return analyseMember(LType, M, side);
+        return analyseStructMember(S, M, side);
+
     }
     return QualType();
 }
 
-QualType FunctionAnalyser::analyseMember(QualType T, MemberExpr* M, unsigned side) {
+QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr* M, unsigned side) {
     LOG_FUNC
     const StructType* ST = cast<StructType>(T);
     const StructTypeDecl* S = ST->getDecl();
@@ -1376,31 +1322,15 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
     return func->getReturnType();
 }
 
-ScopeResult FunctionAnalyser::analyseIdentifier(IdentifierExpr* id) {
+Decl* FunctionAnalyser::analyseIdentifier(IdentifierExpr* id) {
     LOG_FUNC
-    ScopeResult res = scope.findSymbol(id->getName(), id->getLocation());
-    Decl* D = res.getDecl();
-    if (!res.isOK()) return res;
-
+    Decl* D = scope.findSymbol(id->getName(), id->getLocation(), false);
     if (D) {
         id->setDecl(D);
+        id->setType(D->getType());
         SetConstantFlags(D, id);
-    } else if (res.getPackage()) {
-        // symbol is package
-    } else {
-        res.setOK(false);
-        Diags.Report(id->getLocation(), diag::err_undeclared_var_use)
-            << id->getName();
-        ScopeResult res2 = scope.findSymbolInUsed(id->getName());
-        Decl* D2 = res2.getDecl();
-        if (D2) {
-            assert(D2->getPackage());
-            // Crashes if ambiguous
-            Diags.Report(D->getLocation(), diag::note_function_suggestion)
-                << AnalyserUtils::fullName(D2->getPackage()->getName(), id->getName());
-        }
     }
-    return res;
+    return D;
 }
 
 bool FunctionAnalyser::checkAssignee(Expr* expr) const {
@@ -1478,6 +1408,38 @@ void FunctionAnalyser::checkDeclAssignment(Decl* decl, Expr* expr) {
     case DECL_USE:
         assert(0);
         break;
+    }
+}
+
+QualType FunctionAnalyser::getStructType(QualType Q) const {
+    // Q: use CanonicalType to get rid of AliasTypes?
+
+    Type* T = Q.getTypePtr();
+    switch (T->getTypeClass()) {
+    case TC_BUILTIN:
+        return QualType();
+    case TC_POINTER:
+        {
+            // Could be pointer to structtype
+            PointerType* PT = cast<PointerType>(T);
+            return getStructType(PT->getPointeeType());
+        }
+    case TC_ARRAY:
+        return QualType();
+    case TC_UNRESOLVED:
+        assert(0 && "should not happen");
+        return QualType();
+    case TC_ALIAS:
+        {
+            AliasType* AT = cast<AliasType>(T);
+            return getStructType(AT->getRefType());
+        }
+    case TC_STRUCT:
+        return Q;
+    case TC_ENUM:
+    case TC_FUNCTION:
+    case TC_PACKAGE:
+        return QualType();
     }
 }
 

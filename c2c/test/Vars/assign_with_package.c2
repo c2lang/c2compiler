@@ -3,7 +3,6 @@ package test;
 
 func void test1() {
     int b;
-    b = test;       // @error{test is a package name}
+    b = test;       // @error{invalid type conversion from 'package' to 'int32'}:
 }
-
 

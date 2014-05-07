@@ -11,6 +11,6 @@ package bar;
 use foo local;
 
 public func void test() {
-    int a;
+    int a;      // @error{redefinition of a}
 }
 

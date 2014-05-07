@@ -284,6 +284,9 @@ llvm::Type* CodeGenModule::ConvertType(QualType Q) {
     case TC_FUNCTION:
         assert(0 && "TODO func type");
         break;
+    case TC_PACKAGE:
+        assert(0 && "TODO");
+        break;
     }
     return 0;
 }

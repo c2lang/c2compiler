@@ -1,5 +1,5 @@
 // @warnings{no-unused}
 package test;
 
-int a = test;       // @error{test is a package name}
+int a = test;       // @error{invalid type conversion from 'package' to 'int32'}
 

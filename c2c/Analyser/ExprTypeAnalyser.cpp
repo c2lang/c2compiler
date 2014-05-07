@@ -194,6 +194,9 @@ bool ExprTypeAnalyser::checkCompatible(QualType left, const Expr* expr) const {
         break;
     case TC_FUNCTION:
         break;
+    case TC_PACKAGE:
+        assert(0 && "TODO");
+        break;
     }
     return false;
 }

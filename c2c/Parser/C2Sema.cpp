@@ -137,6 +137,10 @@ void C2Sema::ActOnPackage(const char* name, SourceLocation loc) {
         return;
     }
     ast.setName(name, loc);
+    UseDecl* U = new UseDecl(name, loc, true, "", SourceLocation());
+    U->setType(typeContext.getPackageType(U));
+    U->setUsed();
+    ast.addUse(U);
 }
 
 void C2Sema::ActOnUse(const char* name, SourceLocation loc, Token& aliasTok, bool isLocal) {
@@ -184,7 +188,9 @@ void C2Sema::ActOnUse(const char* name, SourceLocation loc, Token& aliasTok, boo
             return;
         }
     }
-    ast.addUse(new UseDecl(name, loc, isLocal, aliasName, aliasTok.getLocation()));
+    UseDecl* U = new UseDecl(name, loc, isLocal, aliasName, aliasTok.getLocation());
+    U->setType(typeContext.getPackageType(U));
+    ast.addUse(U);
 }
 
 void C2Sema::ActOnAliasType(const char* name, SourceLocation loc, Expr* type, bool is_public) {
