@@ -143,7 +143,6 @@ public:
     }
     ~FileInfo() {
         //Diags.getClient()->EndSourceFile();
-        delete analyser;
     }
 
     bool parse(const BuildOptions& options) {
@@ -156,6 +155,10 @@ public:
 
     void createAnalyser(const Pkgs& pkgs, bool verbose) {
         analyser = new FileAnalyser(pkgs, Diags, ast, typeContext, verbose);
+    }
+    void deleteAnalyser() {
+        delete analyser;
+        analyser = 0;
     }
 
     std::string filename;
@@ -349,13 +352,15 @@ int C2Builder::build() {
 
     // create analysers/scopes
     for (unsigned i=0; i<files.size(); i++) {
-        FileInfo* info = files[i];
-        info->createAnalyser(pkgs, options.verbose);
+        files[i]->createAnalyser(pkgs, options.verbose);
     }
 
     // phase 2: run analysing on all files
     errors += analyse();
 
+    for (unsigned i=0; i<files.size(); i++) {
+        files[i]->deleteAnalyser();
+    }
     t2_analyse = Utils::getCurrentTime();
     if (options.printTiming) printf(COL_TIME"analysis took %lld usec"ANSI_NORMAL"\n", t2_analyse - t1_analyse);
     if (client->getNumErrors()) goto out;
