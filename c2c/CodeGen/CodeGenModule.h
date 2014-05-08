@@ -22,6 +22,7 @@
 #include <llvm/IR/GlobalValue.h>
 #include <llvm/IR/IRBuilder.h>
 #include "AST/Type.h"
+#include "AST/Expr.h"
 
 namespace llvm {
 class Module;
@@ -70,6 +71,8 @@ private:
 
     llvm::Constant* EvaluateExprAsConstant(const Expr *E);
     llvm::Constant* GetConstantArrayFromStringLiteral(const StringLiteral* E);
+    llvm::Constant* EmitDefaultInit(QualType Q);
+    llvm::Constant* EmitArrayInit(const ArrayType *AT, const ExprList& Vals);
 
     const std::string name;
     bool single_module;     // multiple packages in single module

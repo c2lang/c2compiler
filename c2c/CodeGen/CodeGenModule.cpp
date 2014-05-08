@@ -38,7 +38,6 @@
 #include "AST/Package.h"
 #include "AST/AST.h"
 #include "AST/Decl.h"
-#include "AST/Expr.h"
 #include "Utils/StringBuilder.h"
 
 //#define DEBUG_CODEGEN
@@ -171,13 +170,8 @@ void CodeGenModule::write(const std::string& target, const std::string& name) {
 }
 
 void CodeGenModule::EmitGlobalVariable(VarDecl* Var) {
-    //QualType qt = Var->getType();
-    //llvm::Type* type = ConvertType(qt.getTypePtr());
     bool constant = false;
     llvm::GlobalValue::LinkageTypes ltype = getLinkage(Var->isPublic());
-    // TODO use correct arguments for constant and Initializer
-    // NOTE: getName() doesn't have to be virtual here
-    // TODO is var is array and has bool isIncrementalArray also generate init code
 
     const Expr* I = Var->getInitValue();
     llvm::Constant* init;
@@ -185,12 +179,8 @@ void CodeGenModule::EmitGlobalVariable(VarDecl* Var) {
         init = EvaluateExprAsConstant(I);
     } else {
         // ALWAYS initialize globals
-        // TODO dynamic width
-        init = llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), 0, true);
+        init = EmitDefaultInit(Var->getType());
     }
-    //new llvm::GlobalVariable(*module, type, constant, ltype, init, Var->getName());
-    // Set alignment based on Type
-
     llvm::GlobalVariable* GV = new llvm::GlobalVariable(*module, init->getType(), constant, ltype, init, Var->getName());
     GV->setAlignment(getAlignment(Var->getType()));
     GV->setConstant(Var->getType().isConstant());
@@ -353,70 +343,13 @@ llvm::Constant* CodeGenModule::EvaluateExprAsConstant(const Expr *E) {
         {
             // TODO only use this for arrays of Builtins
             const InitListExpr* I = cast<InitListExpr>(E);
+            const ExprList& Vals = I->getValues();
             QualType Q = I->getType().getCanonicalType();
             // NOTE: we only support array inits currently (no struct inits yet)
             assert(Q.isArrayType());
+
             const ArrayType* AT = cast<ArrayType>(Q.getTypePtr());
-            QualType ET = AT->getElementType();
-            assert(isa<BuiltinType>(ET.getTypePtr()));
-            BuiltinType* BT = cast<BuiltinType>(ET.getTypePtr());
-            // TEMP assume int32
-            // TODO get size from AT->getElement..
-            const ExprList& Vals = I->getValues();
-            int padding =  AT->getSize().getZExtValue() - Vals.size();
-            switch (BT->getWidth()) {
-            case 8:
-            {
-                SmallVector<uint8_t, 32> Elements;
-                for (unsigned i=0; i<Vals.size(); i++) {
-                    const Expr* elem = Vals[i];
-                    assert(isa<IntegerLiteral>(elem));
-                    const IntegerLiteral* N = cast<IntegerLiteral>(elem);
-                    Elements.push_back((uint8_t)N->Value.getZExtValue());
-                }
-                for (unsigned i=0; i<padding; i++) Elements.push_back(0);
-                return llvm::ConstantDataArray::get(context, Elements);
-            }
-            case 16:
-            {
-                SmallVector<uint16_t, 32> Elements;
-                for (unsigned i=0; i<Vals.size(); i++) {
-                    const Expr* elem = Vals[i];
-                    assert(isa<IntegerLiteral>(elem));
-                    const IntegerLiteral* N = cast<IntegerLiteral>(elem);
-                    Elements.push_back((uint16_t)N->Value.getZExtValue());
-                }
-                for (unsigned i=0; i<padding; i++) Elements.push_back(0);
-                return llvm::ConstantDataArray::get(context, Elements);
-            }
-            case 32:
-            {
-                SmallVector<uint32_t, 32> Elements;
-                for (unsigned i=0; i<Vals.size(); i++) {
-                    const Expr* elem = Vals[i];
-                    assert(isa<IntegerLiteral>(elem));
-                    const IntegerLiteral* N = cast<IntegerLiteral>(elem);
-                    Elements.push_back((uint32_t)N->Value.getZExtValue());
-                }
-                for (unsigned i=0; i<padding; i++) Elements.push_back(0);
-                return llvm::ConstantDataArray::get(context, Elements);
-            }
-            case 64:
-            {
-                SmallVector<uint64_t, 32> Elements;
-                for (unsigned i=0; i<Vals.size(); i++) {
-                    const Expr* elem = Vals[i];
-                    assert(isa<IntegerLiteral>(elem));
-                    const IntegerLiteral* N = cast<IntegerLiteral>(elem);
-                    Elements.push_back((uint64_t)N->Value.getZExtValue());
-                }
-                for (unsigned i=0; i<padding; i++) Elements.push_back(0);
-                return llvm::ConstantDataArray::get(context, Elements);
-            }
-            default:
-                assert(0 && "TODO?");
-                return 0;
-            }
+            return EmitArrayInit(AT, Vals);
         }
     default:
         E->dump();
@@ -471,5 +404,98 @@ llvm::Constant* CodeGenModule::GetConstantArrayFromStringLiteral(const StringLit
   Elements.resize(NumElements);
   return llvm::ConstantDataArray::get(VMContext, Elements);
 #endif
+}
+
+llvm::Constant* CodeGenModule::EmitDefaultInit(QualType Q) {
+    const Type* T = Q.getCanonicalType();
+    switch (T->getTypeClass()) {
+    case TC_BUILTIN:
+        return llvm::ConstantInt::get(ConvertType(Q), 0, true);
+    case TC_POINTER:
+        {
+            llvm::Type* tt = ConvertType(cast<PointerType>(T)->getPointeeType().getTypePtr());
+            return ConstantPointerNull::get(tt->getPointerTo());
+        }
+    case TC_ARRAY:
+        return EmitArrayInit(cast<ArrayType>(T), ExprList());
+    case TC_UNRESOLVED:
+    case TC_ALIAS:
+        assert(0);
+        break;
+    case TC_STRUCT:
+        assert(0 && "TODO");
+        break;
+    case TC_ENUM:
+        assert(0);
+        break;
+    case TC_FUNCTION:
+        assert(0 && "TODO");
+        break;
+    case TC_PACKAGE:
+        assert(0);
+        break;
+    }
+    return 0;
+}
+
+llvm::Constant* CodeGenModule::EmitArrayInit(const ArrayType *AT, const ExprList& Vals) {
+    QualType ET = AT->getElementType();
+    assert(isa<BuiltinType>(ET.getTypePtr()));
+    BuiltinType* BT = cast<BuiltinType>(ET.getTypePtr());
+    int padding =  AT->getSize().getZExtValue() - Vals.size();
+    switch (BT->getWidth()) {
+    case 8:
+    {
+        SmallVector<uint8_t, 32> Elements;
+        for (unsigned i=0; i<Vals.size(); i++) {
+            const Expr* elem = Vals[i];
+            assert(isa<IntegerLiteral>(elem));
+            const IntegerLiteral* N = cast<IntegerLiteral>(elem);
+            Elements.push_back((uint8_t)N->Value.getZExtValue());
+        }
+        for (unsigned i=0; i<padding; i++) Elements.push_back(0);
+        return llvm::ConstantDataArray::get(context, Elements);
+    }
+    case 16:
+    {
+        SmallVector<uint16_t, 32> Elements;
+        for (unsigned i=0; i<Vals.size(); i++) {
+            const Expr* elem = Vals[i];
+            assert(isa<IntegerLiteral>(elem));
+            const IntegerLiteral* N = cast<IntegerLiteral>(elem);
+            Elements.push_back((uint16_t)N->Value.getZExtValue());
+        }
+        for (unsigned i=0; i<padding; i++) Elements.push_back(0);
+        return llvm::ConstantDataArray::get(context, Elements);
+    }
+    case 32:
+    {
+        SmallVector<uint32_t, 32> Elements;
+        for (unsigned i=0; i<Vals.size(); i++) {
+            const Expr* elem = Vals[i];
+            assert(isa<IntegerLiteral>(elem));
+            const IntegerLiteral* N = cast<IntegerLiteral>(elem);
+            Elements.push_back((uint32_t)N->Value.getZExtValue());
+        }
+        for (unsigned i=0; i<padding; i++) Elements.push_back(0);
+        return llvm::ConstantDataArray::get(context, Elements);
+    }
+    case 64:
+    {
+        SmallVector<uint64_t, 32> Elements;
+        for (unsigned i=0; i<Vals.size(); i++) {
+            const Expr* elem = Vals[i];
+            assert(isa<IntegerLiteral>(elem));
+            const IntegerLiteral* N = cast<IntegerLiteral>(elem);
+            Elements.push_back((uint64_t)N->Value.getZExtValue());
+        }
+        for (unsigned i=0; i<padding; i++) Elements.push_back(0);
+        return llvm::ConstantDataArray::get(context, Elements);
+    }
+    default:
+        assert(0 && "TODO?");
+        return 0;
+    }
+    return 0;
 }
 
