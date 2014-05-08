@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+package test;
+
+const int N = 10;
+
+int a = N;
+// CHECK: @a = internal global i32 10, align 4
+

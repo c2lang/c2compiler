@@ -186,26 +186,13 @@ void CodeGenModule::EmitGlobalVariable(VarDecl* Var) {
     GV->setConstant(Var->getType().isConstant());
 }
 
-// TODO remove
+#if 0
 void CodeGenModule::EmitTopLevelDecl(Decl* D) {
-    switch (D->getKind()) {
-    case DECL_FUNC:
-    case DECL_VAR:
-    case DECL_ENUMVALUE:
-        assert(0);
-        break;
-    case DECL_ALIASTYPE:
-        {
-            //AliasTypeDecl* A = cast<AliasTypeDecl>(D);
-            //QualType QT = A->getType();
-        }
-        break;
     case DECL_STRUCTTYPE:
         {
             //StructTypeDecl* TD = cast<StructTypeDecl>(D);
             //QualType QT = TD->getType();
             // NOTE: only generate code for struct/union types (even this is optional)
-#if 0
             if (QT.isStructOrUnionType()) {
                 // TEMP try some ints
                 std::vector<llvm::Type *> putsArgs;
@@ -214,21 +201,9 @@ void CodeGenModule::EmitTopLevelDecl(Decl* D) {
                 llvm::StructType* s = llvm::StructType::create(getContext(), putsArgs, TD->getName());
                 //const Type* T = QT.getTypePtr();
             }
-#endif
         }
-        break;
-    case DECL_ENUMTYPE:
-    case DECL_FUNCTIONTYPE:
-        assert(0);
-        break;
-    case DECL_ARRAYVALUE:
-        assert(0 && "TODO arrayvalue");
-        break;
-    case DECL_USE:
-        // nothing needed
-        break;
-    }
 }
+#endif
 
 unsigned CodeGenModule::getAlignment(QualType Q) const {
     const Type* T = Q.getCanonicalType();
@@ -339,6 +314,8 @@ llvm::Constant* CodeGenModule::EvaluateExprAsConstant(const Expr *E) {
             // Get Width/signed from CanonicalType?
             return llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), N->Value.getSExtValue(), true);
         }
+    case EXPR_IDENTIFIER:
+        return EmitConstantDecl(cast<IdentifierExpr>(E)->getDecl());
     case EXPR_INITLIST:
         {
             // TODO only use this for arrays of Builtins
@@ -499,3 +476,27 @@ llvm::Constant* CodeGenModule::EmitArrayInit(const ArrayType *AT, const ExprList
     return 0;
 }
 
+llvm::Constant* CodeGenModule::EmitConstantDecl(const Decl* D) {
+    switch (D->getKind()) {
+    case DECL_FUNC:
+        assert(0 && "TODO");
+        break;
+    case DECL_VAR:
+        {
+            const VarDecl* V = cast<VarDecl>(D);
+            return EvaluateExprAsConstant(V->getInitValue());
+        }
+    case DECL_ENUMVALUE:
+        assert(0 && "TODO");
+        break;
+    case DECL_ALIASTYPE:
+    case DECL_STRUCTTYPE:
+    case DECL_ENUMTYPE:
+    case DECL_FUNCTIONTYPE:
+    case DECL_ARRAYVALUE:
+    case DECL_USE:
+        assert(0);
+        break;
+    }
+    return 0;
+}

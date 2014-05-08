@@ -65,14 +65,14 @@ public:
     llvm::IRBuilder<> getBuilder() const { return builder; }
 
 private:
-    void EmitGlobalVariable(VarDecl* V);
-    void EmitTopLevelDecl(Decl* D);
     unsigned getAlignment(QualType Q) const;
 
+    void EmitGlobalVariable(VarDecl* V);
     llvm::Constant* EvaluateExprAsConstant(const Expr *E);
     llvm::Constant* GetConstantArrayFromStringLiteral(const StringLiteral* E);
     llvm::Constant* EmitDefaultInit(QualType Q);
     llvm::Constant* EmitArrayInit(const ArrayType *AT, const ExprList& Vals);
+    llvm::Constant* EmitConstantDecl(const Decl* D);
 
     const std::string name;
     bool single_module;     // multiple packages in single module
