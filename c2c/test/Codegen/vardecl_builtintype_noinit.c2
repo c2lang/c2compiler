@@ -1,0 +1,21 @@
+// @warnings{no-unused}
+package test;
+
+int8 a;
+// CHECK: @a = internal global i32 0, align 1
+int16 b;
+// CHECK: @b = internal global i32 0, align 2
+int32 c;
+// CHECK: @c = internal global i32 0, align 4
+int64 d;
+// CHECK: @d = internal global i32 0, align 8
+
+public int8 a2;
+// CHECK: @a2 = global i32 0, align 1
+public int16 b2;
+// CHECK: @b2 = global i32 0, align 2
+public int32 c2;
+// CHECK: @c2 = global i32 0, align 4
+public int64 d2;
+// CHECK: @d2 = global i32 0, align 8
+

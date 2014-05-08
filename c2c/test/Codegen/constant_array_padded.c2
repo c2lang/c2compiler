@@ -1,0 +1,12 @@
+// @warnings{no-unused}
+package test;
+
+int8[4] a = { 5, 6 }
+// CHECK: @a = internal global [4 x i8] c"\05\06\00\00", align 1
+int16[5] b = { 10, 11, 12 }
+// CHECK: @b = internal global [5 x i16] [i16 10, i16 11, i16 12, i16 0, i16 0], align 2
+int32[4] c = { 100, 101, 102 }
+// CHECK: @c = internal global [4 x i32] [i32 100, i32 101, i32 102, i32 0], align 4
+int64[3] d = { 20 }
+// CHECK: @d = internal global [3 x i64] [i64 20, i64 0, i64 0], align 8
+

@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+package test;
+
+public const int32[] a = { 1, 2 }
+// CHECK: @a = constant [2 x i32] [i32 1, i32 2], align 4
+
+public int32[] b = { 3, 4 }
+// CHECK: @b = global [2 x i32] [i32 3, i32 4], align 4
+
