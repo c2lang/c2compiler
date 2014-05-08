@@ -189,7 +189,10 @@ void CodeGenModule::EmitGlobalVariable(VarDecl* Var) {
         init = llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), 0, true);
     }
     //new llvm::GlobalVariable(*module, type, constant, ltype, init, Var->getName());
-    new llvm::GlobalVariable(*module, init->getType(), constant, ltype, init, Var->getName());
+    // Set alignment based on Type
+
+    llvm::GlobalVariable* GV = new llvm::GlobalVariable(*module, init->getType(), constant, ltype, init, Var->getName());
+    GV->setAlignment(getAlignment(Var->getType()));
 }
 
 // TODO remove
@@ -234,6 +237,35 @@ void CodeGenModule::EmitTopLevelDecl(Decl* D) {
         // nothing needed
         break;
     }
+}
+
+unsigned CodeGenModule::getAlignment(QualType Q) const {
+    const Type* T = Q.getCanonicalType();
+    switch (T->getTypeClass()) {
+    case TC_BUILTIN:
+        return cast<BuiltinType>(T)->getWidth() / 8;
+    case TC_POINTER:
+        return 4; // TEMP
+    case TC_ARRAY:
+        return getAlignment(cast<ArrayType>(T)->getElementType());
+    case TC_UNRESOLVED:
+    case TC_ALIAS:
+        assert(0);
+        break;
+    case TC_STRUCT:
+        assert(0 && "TODO");
+        break;
+    case TC_ENUM:
+        assert(0);
+        break;
+    case TC_FUNCTION:
+        assert(0 && "TODO");
+        break;
+    case TC_PACKAGE:
+        assert(0);
+        break;
+    }
+    return 0;
 }
 
 llvm::Type* CodeGenModule::ConvertType(BuiltinType::Kind K) {
