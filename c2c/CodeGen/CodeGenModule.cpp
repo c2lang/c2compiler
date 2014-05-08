@@ -390,6 +390,7 @@ llvm::Constant* CodeGenModule::EvaluateExprAsConstant(const Expr *E) {
             // TEMP assume int32
             // TODO get size from AT->getElement..
             const ExprList& Vals = I->getValues();
+            int padding =  AT->getSize().getZExtValue() - Vals.size();
             switch (BT->getWidth()) {
             case 8:
             {
@@ -400,6 +401,7 @@ llvm::Constant* CodeGenModule::EvaluateExprAsConstant(const Expr *E) {
                     const IntegerLiteral* N = cast<IntegerLiteral>(elem);
                     Elements.push_back((uint8_t)N->Value.getZExtValue());
                 }
+                for (unsigned i=0; i<padding; i++) Elements.push_back(0);
                 return llvm::ConstantDataArray::get(context, Elements);
             }
             case 16:
@@ -411,6 +413,7 @@ llvm::Constant* CodeGenModule::EvaluateExprAsConstant(const Expr *E) {
                     const IntegerLiteral* N = cast<IntegerLiteral>(elem);
                     Elements.push_back((uint16_t)N->Value.getZExtValue());
                 }
+                for (unsigned i=0; i<padding; i++) Elements.push_back(0);
                 return llvm::ConstantDataArray::get(context, Elements);
             }
             case 32:
@@ -422,6 +425,7 @@ llvm::Constant* CodeGenModule::EvaluateExprAsConstant(const Expr *E) {
                     const IntegerLiteral* N = cast<IntegerLiteral>(elem);
                     Elements.push_back((uint32_t)N->Value.getZExtValue());
                 }
+                for (unsigned i=0; i<padding; i++) Elements.push_back(0);
                 return llvm::ConstantDataArray::get(context, Elements);
             }
             case 64:
@@ -433,6 +437,7 @@ llvm::Constant* CodeGenModule::EvaluateExprAsConstant(const Expr *E) {
                     const IntegerLiteral* N = cast<IntegerLiteral>(elem);
                     Elements.push_back((uint64_t)N->Value.getZExtValue());
                 }
+                for (unsigned i=0; i<padding; i++) Elements.push_back(0);
                 return llvm::ConstantDataArray::get(context, Elements);
             }
             default:

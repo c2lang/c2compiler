@@ -471,8 +471,14 @@ llvm::Value* CodeGenFunction::EmitExprNoImpCast(const Expr* E) {
     case EXPR_UNARYOP:
     case EXPR_BUILTIN:
     case EXPR_ARRAYSUBSCRIPT:
-    case EXPR_MEMBER:
         break;
+    case EXPR_MEMBER:
+        {
+            const MemberExpr* M = cast<MemberExpr>(E);
+            assert(M->isPkgPrefix() && "TODO not-prefix members");
+            // TODO
+            break;
+        }
     case EXPR_PAREN:
         {
             const ParenExpr* P = cast<ParenExpr>(E);
