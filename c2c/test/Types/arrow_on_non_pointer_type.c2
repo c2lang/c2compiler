@@ -10,7 +10,7 @@ func void test1() {
     a->b = 10;      // @error{member reference type 'int32' is not a pointer}
 
     int[2] b;
-    b->a = 10;      // @error{member reference type 'int32[]' is not a pointer}
+    b->a = 10;      // @error{member reference type 'int32[2]' is not a pointer}
 
     int* ip;
     ip->x = 10;     // @error{member reference base type 'int32' is not a structure or union}

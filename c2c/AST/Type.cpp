@@ -438,7 +438,9 @@ ArrayType::~ArrayType() {
 
 void ArrayType::printName(StringBuilder& buffer) const {
     ElementType.printName(buffer);
-    buffer << "[]";
+    buffer << '[';
+    if (hasSize) buffer << (unsigned)Size.getZExtValue();
+    buffer << ']';
 }
 
 void ArrayType::debugPrint(StringBuilder& buffer) const {
