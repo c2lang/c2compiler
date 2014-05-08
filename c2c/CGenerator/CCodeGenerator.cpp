@@ -549,7 +549,7 @@ void CCodeGenerator::EmitFunctionType(FunctionTypeDecl* FTD, StringBuilder& outp
 void CCodeGenerator::EmitUse(UseDecl* D) {
     LOG_FUNC
     typedef Pkgs::const_iterator PkgsConstIter;
-    PkgsConstIter iter = pkgs.find(D->getName());
+    PkgsConstIter iter = pkgs.find(D->getPkgName());
     assert(iter != pkgs.end());
     const Package* P = iter->second;
 
