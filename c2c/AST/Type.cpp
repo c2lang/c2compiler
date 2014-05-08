@@ -41,6 +41,33 @@ bool QualType::isStructType() const { return getTypePtr()->isStructType(); }
 bool QualType::isFunctionType() const { return getTypePtr()->isFunctionType(); }
 bool QualType::isSubscriptable() const { return getTypePtr()->isSubscriptable(); }
 
+bool QualType::isConstant() const {
+    const Type* T = getCanonicalType();
+    switch (T->getTypeClass()) {
+    case TC_BUILTIN:
+    case TC_POINTER:
+        return isConstQualified();
+    case TC_ARRAY:
+        return cast<ArrayType>(T)->getElementType().isConstant();
+    case TC_UNRESOLVED:
+    case TC_ALIAS:
+        assert(0);
+        break;
+    case TC_STRUCT:
+        return isConstQualified();
+    case TC_ENUM:
+        assert(0);
+        break;
+    case TC_FUNCTION:
+        return isConstQualified();
+    case TC_PACKAGE:
+        assert(0);
+        break;
+    }
+    return false;
+
+}
+
 void QualType::DiagName(StringBuilder& buffer) const {
     if (isNull()) {
         buffer << "NULL";

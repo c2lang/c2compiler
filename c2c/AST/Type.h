@@ -95,6 +95,8 @@ public:
     bool isFunctionType() const;
     bool isSubscriptable() const;
 
+    bool isConstant() const;    // NOTE: not is const!
+
     // for Debug/Diagnostic messages
     void DiagName(StringBuilder& buffer) const;
     void printName(StringBuilder& buffer) const;
