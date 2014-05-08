@@ -193,6 +193,7 @@ void CodeGenModule::EmitGlobalVariable(VarDecl* Var) {
 
     llvm::GlobalVariable* GV = new llvm::GlobalVariable(*module, init->getType(), constant, ltype, init, Var->getName());
     GV->setAlignment(getAlignment(Var->getType()));
+    GV->setConstant(isTypeConstant(Var->getType()));
 }
 
 // TODO remove
@@ -266,6 +267,33 @@ unsigned CodeGenModule::getAlignment(QualType Q) const {
         break;
     }
     return 0;
+}
+
+bool CodeGenModule::isTypeConstant(QualType Q) const {
+    const Type* T = Q.getCanonicalType();
+    switch (T->getTypeClass()) {
+    case TC_BUILTIN:
+    case TC_POINTER:
+        return Q.isConstQualified();
+    case TC_ARRAY:
+        return isTypeConstant(cast<ArrayType>(T)->getElementType());
+    case TC_UNRESOLVED:
+    case TC_ALIAS:
+        assert(0);
+        break;
+    case TC_STRUCT:
+        return Q.isConstQualified();
+    case TC_ENUM:
+        assert(0);
+        break;
+    case TC_FUNCTION:
+        return Q.isConstQualified();
+    case TC_PACKAGE:
+        assert(0);
+        break;
+    }
+    return 0;
+    return true;
 }
 
 llvm::Type* CodeGenModule::ConvertType(BuiltinType::Kind K) {

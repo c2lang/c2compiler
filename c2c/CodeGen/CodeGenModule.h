@@ -67,6 +67,7 @@ private:
     void EmitGlobalVariable(VarDecl* V);
     void EmitTopLevelDecl(Decl* D);
     unsigned getAlignment(QualType Q) const;
+    bool isTypeConstant(QualType Q) const;
 
     llvm::Constant* EvaluateExprAsConstant(const Expr *E);
     llvm::Constant* GetConstantArrayFromStringLiteral(const StringLiteral* E);
