@@ -103,22 +103,7 @@ C2Sema::C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, TypeContext& tc, A
     , typeContext(tc)
     , ast(ast_)
     , PP(PP_)
-{
-#if 0
-    fprintf(stderr, "SIZES:\n");
-    fprintf(stderr, "  QualType = %d\n", sizeof(QualType));
-    fprintf(stderr, "  Type     = %d\n", sizeof(Type));
-    fprintf(stderr, "  BuiltinType = %d\n", sizeof(BuiltinType));
-    fprintf(stderr, "  PointerType = %d\n", sizeof(PointerType));
-    fprintf(stderr, "  UnresolvedType = %d\n", sizeof(UnresolvedType));
-    fprintf(stderr, "  Stmt = %d\n", sizeof(Stmt));
-    fprintf(stderr, "  EXPR     = %d\n", sizeof(Expr));
-    fprintf(stderr, "  IdentifierExpr = %d\n", sizeof(IdentifierExpr));
-    fprintf(stderr, "  MemberExpr = %d\n", sizeof(MemberExpr));
-    fprintf(stderr, "  Decl=%d\n", sizeof(Decl));
-    fprintf(stderr, "  VarDecl=%d\n", sizeof(VarDecl));
-#endif
-}
+{}
 
 C2Sema::~C2Sema() {}
 
