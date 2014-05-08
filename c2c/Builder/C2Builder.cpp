@@ -418,6 +418,7 @@ bool C2Builder::createPkgs() {
         const AST::Symbols& symbols = info->ast.getSymbols();
         for (AST::SymbolsConstIter iter = symbols.begin(); iter != symbols.end(); ++iter) {
             Decl* New = iter->second;
+            if (isa<UseDecl>(New)) continue;
             Decl* Old = pkg->findSymbol(iter->first);
             if (Old) {
                 fprintf(stderr, "MULTI_FILE: duplicate symbol %s\n", New->getName().c_str());
@@ -439,7 +440,7 @@ bool C2Builder::loadExternalPackages() {
         FileInfo* info = files[i];
         for (unsigned u=0; u<info->ast.numUses(); u++) {
             UseDecl* D = info->ast.getUse(u);
-            const std::string& name = D->getName();
+            const std::string& name = D->getPkgName();
             if (havePackage(name)) continue;
             if (!loadPackage(name)) {
                 info->Diags.Report(D->getLocation(), clang::diag::err_unknown_package) << name;

@@ -1,4 +1,4 @@
 package test;
 
-use other as test;      // @error{cannot use own package 'test'}
+use other as test;      // @error{redefinition of test}
 

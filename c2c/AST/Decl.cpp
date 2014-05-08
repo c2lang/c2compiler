@@ -285,9 +285,9 @@ void ArrayValueDecl::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 UseDecl::UseDecl(const std::string& name_, SourceLocation loc_, bool isLocal_,
-                 const char* alias_, SourceLocation aliasLoc_)
+                 const std::string& pkgName_, SourceLocation aliasLoc_)
     : Decl(DECL_USE, name_, loc_, QualType(), false, 0)
-    , alias(alias_)
+    , pkgName(pkgName_)
     , aliasLoc(aliasLoc_)
 {
     DeclBits.UseIsLocal = isLocal_;
@@ -297,8 +297,8 @@ void UseDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.setColor(COL_DECL);
     buffer << "UseDecl ";
     buffer.setColor(COL_VALUE);
-    buffer << name;
-    if (alias != "") buffer << " as " << alias;
+    buffer << pkgName;
+    if (aliasLoc.isValid()) buffer << " as " << name;
     if (isLocal()) buffer << " local";
     buffer << '\n';
 }

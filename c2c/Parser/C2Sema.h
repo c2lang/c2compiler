@@ -131,7 +131,7 @@ private:
 
     DiagnosticBuilder Diag(SourceLocation Loc, unsigned DiagID);
     void addSymbol(Decl* d);
-    const UseDecl* findUseOrAlias(const char* name) const;
+    const UseDecl* findPackage(const std::string& name) const;
 
     SourceManager& SourceMgr;
     DiagnosticsEngine& Diags;

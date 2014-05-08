@@ -5,7 +5,7 @@ func int calc() { return 2; }
 
 int[] g = { calc() }        // @error{initializer element is not a compile-time constant}
 
-func void test() {
+func void test1() {
     int[2] nums = { calc() }
 }
 

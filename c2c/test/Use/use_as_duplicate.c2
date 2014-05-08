@@ -1,5 +1,5 @@
 package test;
 
 use other1 as foo;
-use other2 as foo;      // @error{duplicate use of package 'foo'}
+use other2 as foo;      // @error{redefinition of foo}
 

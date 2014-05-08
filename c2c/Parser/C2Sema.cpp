@@ -137,60 +137,45 @@ void C2Sema::ActOnPackage(const char* name, SourceLocation loc) {
         return;
     }
     ast.setName(name, loc);
-    UseDecl* U = new UseDecl(name, loc, true, "", SourceLocation());
+    UseDecl* U = new UseDecl(name, loc, true, name, SourceLocation());
     U->setType(typeContext.getPackageType(U));
     U->setUsed();
     ast.addUse(U);
+    addSymbol(U);
 }
 
-void C2Sema::ActOnUse(const char* name, SourceLocation loc, Token& aliasTok, bool isLocal) {
+void C2Sema::ActOnUse(const char* pkgName_, SourceLocation loc, Token& aliasTok, bool isLocal) {
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: use " << name << " at ";
+    std::cerr << COL_SEMA"SEMA: use " << pkgName_ << " at ";
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
+    std::string pkgName = pkgName_;
     // check if use-ing own package
-    if (ast.getPkgName() == name) {
-        Diag(loc, diag::err_use_own_package) << name;
+    if (ast.getPkgName() == pkgName) {
+        Diag(loc, diag::err_use_own_package) << pkgName_;
         return;
     }
-    // check for duplicate use
-    const UseDecl* old = findUseOrAlias(name);
+    // check for duplicate use of package
+    const UseDecl* old = findPackage(pkgName);
     if (old) {
-        Diag(loc, diag::err_duplicate_use) << name;
-        if (name == old->getName())
-            Diag(old->getLocation(), diag::note_previous_use);
-        else
-            Diag(old->getAliasLocation(), diag::note_previous_use);
+        Diag(loc, diag::err_duplicate_use) << pkgName;
+        Diag(old->getLocation(), diag::note_previous_use);
         return;
     }
-    const char* aliasName = "";
+    std::string name = pkgName;
     if (aliasTok.is(tok::identifier)) {
-        aliasName = aliasTok.getIdentifierInfo()->getNameStart();
+        name = aliasTok.getIdentifierInfo()->getNameStart();
         // check if same as normal package name
-        if (strcmp(name, aliasName) == 0) {
+        if (name == pkgName) {
             Diag(aliasTok.getLocation(), diag::err_alias_same_as_package);
             return;
         }
-        // check if same as own package
-        if (ast.getPkgName() == aliasName) {
-            Diag(aliasTok.getLocation(), diag::err_use_own_package) << aliasName;
-            return;
-        }
-        // check for duplicate use
-        const UseDecl* oldUse = findUseOrAlias(aliasName);
-        if (oldUse) {
-            Diag(aliasTok.getLocation(), diag::err_duplicate_use) << aliasName;
-            if (name == oldUse->getName())
-                Diag(oldUse->getLocation(), diag::note_previous_use);
-            else
-                Diag(oldUse->getAliasLocation(), diag::note_previous_use);
-            return;
-        }
     }
-    UseDecl* U = new UseDecl(name, loc, isLocal, aliasName, aliasTok.getLocation());
+    UseDecl* U = new UseDecl(name, loc, isLocal, pkgName, aliasTok.getLocation());
     U->setType(typeContext.getPackageType(U));
     ast.addUse(U);
+    addSymbol(U);
 }
 
 void C2Sema::ActOnAliasType(const char* name, SourceLocation loc, Expr* type, bool is_public) {
@@ -975,10 +960,10 @@ void C2Sema::addSymbol(Decl* d) {
     }
 }
 
-const C2::UseDecl* C2Sema::findUseOrAlias(const char* name) const {
+const C2::UseDecl* C2Sema::findPackage(const std::string& name) const {
     for (unsigned i=0; i<ast.numUses(); i++) {
         UseDecl* D = ast.getUse(i);
-        if (D->getName() == name || D->getAlias() == name) return D;
+        if (D->getPkgName() == name) return D;
     }
     return 0;
 }

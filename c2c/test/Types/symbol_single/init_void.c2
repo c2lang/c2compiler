@@ -3,7 +3,7 @@ package test;
 
 func void foo() {}
 
-func void test() {
+func void test1() {
     int8  a = foo();     // @error{invalid type conversion from 'void' to 'int8'}
     int16 b = foo();     // @error{invalid type conversion from 'void' to 'int16'}
     int32 c = foo();     // @error{invalid type conversion from 'void' to 'int32'}

@@ -46,18 +46,16 @@ Scope::Scope(const std::string& name_, const Pkgs& pkgs_, clang::DiagnosticsEngi
 }
 
 bool Scope::addUseDecl(UseDecl* useDecl) {
-    std::string pkgName = useDecl->getName();
     clang::SourceLocation Loc = useDecl->getLocation();
-    if (useDecl->getAlias() != "") {
-        pkgName = useDecl->getAlias();
+    if (useDecl->getAliasLocation().isValid()) {
         Loc = useDecl->getAliasLocation();
     }
-    const Package* pkg = findAnyPackage(useDecl->getName());
+    const Package* pkg = findAnyPackage(useDecl->getPkgName());
     assert(pkg);
     useDecl->setPackage(pkg);
     if (useDecl->isLocal()) locals.push_back(pkg);
-    usedPackages[pkgName] = useDecl;
-    symbolCache[pkgName] = useDecl;
+    usedPackages[useDecl->getName()] = useDecl;
+    symbolCache[useDecl->getName()] = useDecl;
     return true;
 }
 

@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 package test;
 
-func void test() {
+func void test1() {
     const char* size1 = 10;
     int[size1] a;      // @error{size of array has non-integer type 'int8*'}
 

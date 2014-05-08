@@ -236,7 +236,7 @@ void FileAnalyser::checkDeclsForUsed() {
     for (unsigned i=0; i<ast.numUses(); i++) {
         UseDecl* U = ast.getUse(i);
         if (!U->isUsed()) {
-            Diags.Report(U->getLocation(), diag::warn_unused_package) << U->getName();
+            Diags.Report(U->getLocation(), diag::warn_unused_package) << U->getPkgName();
         }
     }
 

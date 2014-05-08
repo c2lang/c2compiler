@@ -338,17 +338,17 @@ private:
 class UseDecl : public Decl {
 public:
     UseDecl(const std::string& name_, SourceLocation loc_, bool isLocal_,
-            const char* alias_, SourceLocation aliasLoc_);
+            const std::string& pkgName_, SourceLocation aliasLoc_);
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_USE;
     }
     virtual void print(StringBuilder& buffer, unsigned indent) const;
 
-    const std::string& getAlias() const { return alias; }
+    const std::string& getPkgName() const { return pkgName; }
     virtual clang::SourceLocation getAliasLocation() const { return aliasLoc; }
     bool isLocal() const { return DeclBits.UseIsLocal; }
 private:
-    std::string alias;
+    std::string pkgName;
     SourceLocation aliasLoc;
 };
 
