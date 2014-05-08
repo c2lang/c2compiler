@@ -22,6 +22,7 @@
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/Constants.h>
 // for SmallString
 #include <llvm/ADT/SmallString.h>
 #include <llvm/Support/FileSystem.h>
@@ -316,7 +317,69 @@ llvm::Constant* CodeGenModule::EvaluateExprAsConstant(const Expr *E) {
             return llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), N->Value.getSExtValue(), true);
         }
     case EXPR_INITLIST:
-        // TODO
+        {
+            // TODO only use this for arrays of Builtins
+            const InitListExpr* I = cast<InitListExpr>(E);
+            QualType Q = I->getType().getCanonicalType();
+            // NOTE: we only support array inits currently (no struct inits yet)
+            assert(Q.isArrayType());
+            const ArrayType* AT = cast<ArrayType>(Q.getTypePtr());
+            QualType ET = AT->getElementType();
+            assert(isa<BuiltinType>(ET.getTypePtr()));
+            BuiltinType* BT = cast<BuiltinType>(ET.getTypePtr());
+            // TEMP assume int32
+            // TODO get size from AT->getElement..
+            const ExprList& Vals = I->getValues();
+            switch (BT->getWidth()) {
+            case 8:
+            {
+                SmallVector<uint8_t, 32> Elements;
+                for (unsigned i=0; i<Vals.size(); i++) {
+                    const Expr* elem = Vals[i];
+                    assert(isa<IntegerLiteral>(elem));
+                    const IntegerLiteral* N = cast<IntegerLiteral>(elem);
+                    Elements.push_back((uint8_t)N->Value.getZExtValue());
+                }
+                return llvm::ConstantDataArray::get(context, Elements);
+            }
+            case 16:
+            {
+                SmallVector<uint16_t, 32> Elements;
+                for (unsigned i=0; i<Vals.size(); i++) {
+                    const Expr* elem = Vals[i];
+                    assert(isa<IntegerLiteral>(elem));
+                    const IntegerLiteral* N = cast<IntegerLiteral>(elem);
+                    Elements.push_back((uint16_t)N->Value.getZExtValue());
+                }
+                return llvm::ConstantDataArray::get(context, Elements);
+            }
+            case 32:
+            {
+                SmallVector<uint32_t, 32> Elements;
+                for (unsigned i=0; i<Vals.size(); i++) {
+                    const Expr* elem = Vals[i];
+                    assert(isa<IntegerLiteral>(elem));
+                    const IntegerLiteral* N = cast<IntegerLiteral>(elem);
+                    Elements.push_back((uint32_t)N->Value.getZExtValue());
+                }
+                return llvm::ConstantDataArray::get(context, Elements);
+            }
+            case 64:
+            {
+                SmallVector<uint64_t, 32> Elements;
+                for (unsigned i=0; i<Vals.size(); i++) {
+                    const Expr* elem = Vals[i];
+                    assert(isa<IntegerLiteral>(elem));
+                    const IntegerLiteral* N = cast<IntegerLiteral>(elem);
+                    Elements.push_back((uint64_t)N->Value.getZExtValue());
+                }
+                return llvm::ConstantDataArray::get(context, Elements);
+            }
+            default:
+                assert(0 && "TODO?");
+                return 0;
+            }
+        }
     default:
         E->dump();
         assert(0 && "TODO");

@@ -561,7 +561,7 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
 
 void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
     LOG_FUNC
-    ExprList& values = expr->getValues();
+    const ExprList& values = expr->getValues();
     if (Q.isArrayType()) {
         // TODO use helper function
         ArrayType* AT = cast<ArrayType>(Q.getCanonicalType().getTypePtr());

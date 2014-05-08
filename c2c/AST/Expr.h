@@ -325,7 +325,7 @@ public:
     virtual SourceLocation getLocStart() const { return leftBrace; }
     virtual SourceLocation getLocEnd() const { return rightBrace; }
 
-    ExprList& getValues() { return values; }
+    const ExprList& getValues() const { return values; }
 private:
     SourceLocation leftBrace;
     SourceLocation rightBrace;

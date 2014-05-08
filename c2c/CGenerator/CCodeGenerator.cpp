@@ -164,7 +164,7 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
         {
             InitListExpr* I = cast<InitListExpr>(E);
             output << "{ ";
-            ExprList& values = I->getValues();
+            const ExprList& values = I->getValues();
             for (unsigned i=0; i<values.size(); i++) {
                 if (i == 0 && values[0]->getKind() == EXPR_INITLIST) output << '\n';
                 EmitExpr(values[i], output);
