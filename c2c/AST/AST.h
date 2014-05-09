@@ -22,6 +22,7 @@
 
 #include <clang/Basic/SourceLocation.h>
 
+#include "AST/Decl.h"
 #include "AST/OwningVector.h"
 
 namespace C2 {

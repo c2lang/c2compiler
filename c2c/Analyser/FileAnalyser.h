@@ -35,7 +35,6 @@ class FunctionDecl;
 class ArrayValueDecl;
 class AST;
 class TypeResolver;
-class DepAnalyser;
 
 class FileAnalyser {
 public:
@@ -55,7 +54,6 @@ public:
     unsigned checkFunctionBodies();
     void checkDeclsForUsed();
 
-    void getExternals(DepAnalyser& dep) const;
 private:
     unsigned checkTypeDecl(TypeDecl* D);
     unsigned checkStructTypeDecl(StructTypeDecl* D);

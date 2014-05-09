@@ -34,7 +34,6 @@ namespace C2 {
 class Decl;
 class VarDecl;
 class UseDecl;
-class DepAnalyser;
 
 struct DynamicScope {
     DynamicScope();
@@ -83,7 +82,7 @@ public:
         SwitchScope = 0x800,
     };
 
-    Scope(const std::string& name_, const Pkgs& pkgs_, clang::DiagnosticsEngine& Diags_, unsigned id);
+    Scope(const std::string& name_, const Pkgs& pkgs_, clang::DiagnosticsEngine& Diags_);
 
     // adding symbols
     bool addUseDecl(UseDecl* useDecl);
@@ -106,11 +105,9 @@ public:
         return (pkg && pkg != myPkg);
     }
 
-    void getExternals(DepAnalyser& dep) const;
 private:
     const Package* findAnyPackage(const std::string& name) const;
     Decl* findOwn(const std::string& symbol) const;
-    void addExternal(const Decl* D) const;
     //Decl* findSymbolInUsed(const std::string& name) const;
 
     // Dynamic Scopes
@@ -132,7 +129,6 @@ private:
     // all packages
     const Pkgs& allPackages;
 
-    unsigned file_id;
     const Package* myPkg;
 
     // Symbol caches
@@ -140,9 +136,6 @@ private:
     typedef SymbolCache::const_iterator CacheConstIter;
     typedef SymbolCache::iterator CacheIter;
     mutable SymbolCache symbolCache;
-
-    typedef std::vector<const Decl*> Externals;
-    mutable Externals externals;
 
     clang::DiagnosticsEngine& Diags;
 };

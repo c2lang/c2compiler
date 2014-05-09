@@ -20,7 +20,6 @@
 #include <clang/Sema/SemaDiagnostic.h>
 
 #include "Analyser/Scope.h"
-#include "Analyser/DepAnalyser.h"
 #include "Analyser/AnalyserUtils.h"
 #include "AST/Package.h"
 #include "AST/Decl.h"
@@ -32,11 +31,10 @@ using namespace clang;
 DynamicScope::DynamicScope() : Flags(0) {}
 
 
-Scope::Scope(const std::string& name_, const Pkgs& pkgs_, clang::DiagnosticsEngine& Diags_, unsigned id)
+Scope::Scope(const std::string& name_, const Pkgs& pkgs_, clang::DiagnosticsEngine& Diags_)
     : scopeIndex(0)
     , curScope(0)
     , allPackages(pkgs_)
-    , file_id(id)
     , myPkg(0)
     , Diags(Diags_)
 {
@@ -215,21 +213,7 @@ Decl* Scope::findSymbolInPackage(const std::string& name, clang::SourceLocation 
         }
         D->setUsedPublic();
     }
-    if (D->getFileID() != file_id) addExternal(D);
     return D;
-}
-
-void Scope::getExternals(DepAnalyser& dep) const {
-    dep.startFile(myPkg, file_id);
-    for (unsigned i=0; i<externals.size(); i++) {
-        dep.add(file_id, externals[i]);
-    }
-    for (CacheConstIter iter = symbolCache.begin(); iter != symbolCache.end(); ++iter) {
-        const Decl* D = iter->second;
-        if (!D) continue;
-        if (D->getFileID() != file_id) dep.add(file_id, D);
-    }
-    dep.doneFile();
 }
 
 #if 0
@@ -293,13 +277,6 @@ void Scope::ExitScope() {
     scopeIndex--;
     if (scopeIndex == 0) curScope = 0;
     else curScope = &scopes[scopeIndex-1];
-}
-
-void Scope::addExternal(const Decl* D) const {
-    for (unsigned i=0; i<externals.size(); i++) {
-        if (externals[i] == D) return;  // already in
-    }
-    externals.push_back(D);
 }
 
 const Package* Scope::findAnyPackage(const std::string& name) const {

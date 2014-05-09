@@ -24,8 +24,8 @@ OBJS = \
     CodeGen/CodeGenModule.o \
     CGenerator/CCodeGenerator.o \
     Builder/C2Builder.o \
-    Builder/DepGenerator.o \
     Builder/Recipe.o \
+    Builder/DepGenerator.o \
     Builder/RecipeReader.o \
     FileUtils/FileMap.o \
     FileUtils/FileUtils.o \

@@ -548,13 +548,12 @@ bool C2Builder::loadPackage(const std::string& name) {
 }
 
 void C2Builder::printDependencies() const {
-    StringBuilder output;
-    DepGenerator generator(output);
+    DepGenerator generator;
     for (unsigned i=0; i<files.size(); i++) {
-        files[i]->analyser->getExternals(generator);
+        generator.analyse(files[i]->ast);
     }
-    generator.close();
-
+    StringBuilder output;
+    generator.write(output);
     std::string path = "output/" + recipe.name;
     std::string filename = path + '/' + "deps.xml";
     FileUtils::writeFile(path.c_str(), filename, output);

@@ -42,7 +42,7 @@ using namespace llvm;
 FileAnalyser::FileAnalyser(const Pkgs& pkgs, clang::DiagnosticsEngine& Diags_,
                     AST& ast_, TypeContext& typeContext_, bool verbose_)
     : ast(ast_)
-    , globals(new Scope(ast_.getPkgName(), pkgs, Diags_, ast.getFileID()))
+    , globals(new Scope(ast_.getPkgName(), pkgs, Diags_))
     , TR(new TypeResolver(*globals, Diags_, typeContext_))
     , Diags(Diags_)
     , functionAnalyser(*globals, *TR, typeContext_, Diags_)
@@ -297,10 +297,6 @@ void FileAnalyser::checkDeclsForUsed() {
             }
         }
     }
-}
-
-void FileAnalyser::getExternals(DepAnalyser& dep) const {
-    globals->getExternals(dep);
 }
 
 unsigned FileAnalyser::checkTypeDecl(TypeDecl* D) {

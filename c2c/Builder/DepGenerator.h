@@ -16,33 +16,33 @@
 #ifndef BUILDER_DEP_GENERATOR_H
 #define BUILDER_DEP_GENERATOR_H
 
-#include <vector>
 #include <string>
-
-#include "Analyser/DepAnalyser.h"
+#include <vector>
 
 namespace C2 {
 
-class Decl;
+class AST;
+class PkgInfo;
 class StringBuilder;
-class Package;
+class Decl;
 
-class DepGenerator : public DepAnalyser {
+class DepGenerator {
 public:
-    DepGenerator(StringBuilder& output_);
+    DepGenerator() {}
+    ~DepGenerator();
 
-    virtual void startFile(const Package* p, unsigned file_id);
-    virtual void doneFile();
-    virtual void add(unsigned file_id, const Decl* decl);
-
-    void close();
+    void analyse(const AST& ast);
+    void write(StringBuilder& output) const;
 private:
-    StringBuilder& output;
-    typedef std::vector<const Decl*> Decls;
-    Decls decls;
+    PkgInfo* getInfo(const std::string& pkgname);
+    void writeAST(const AST& ast, StringBuilder& output, unsigned indent) const;
+    void writeDecl(const Decl* D, StringBuilder& output, unsigned indent) const;
 
-    const Package* package;
-    unsigned file_id;
+    typedef std::vector<PkgInfo*> Packages;
+    Packages packages;
+
+    DepGenerator(const DepGenerator&);
+    DepGenerator& operator= (const DepGenerator&);
 };
 
 }
