@@ -25,6 +25,9 @@ namespace C2 {
 class Decl;
 class VarDecl;
 class FunctionDecl;
+class Stmt;
+class CompoundStmt;
+class Expr;
 
 class DepVisitor {
 public:
@@ -35,9 +38,18 @@ public:
     unsigned getNumDeps() const { return deps.size(); }
     const Decl* getDep(unsigned i) const { return deps[i]; }
 private:
+    // Decl
+    void checkDecl(const Decl* D);
     void checkVarDecl(const VarDecl* V);
     void checkFunctionDecl(const FunctionDecl* F);
+    // Type
     void checkType(QualType Q);
+    // Stmt
+    void checkStmt(const Stmt* S);
+    void checkCompoundStmt(const CompoundStmt* C);
+    // Expr
+    void checkExpr(const Expr* E);
+
     void addDep(const Decl* D);
 
     typedef std::vector<const Decl*> Deps;
