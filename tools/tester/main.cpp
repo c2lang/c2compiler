@@ -50,6 +50,7 @@ static int color_output = 1;
 static const char* c2c_cmd = "./c2c";
 static const char* test_root = "/tmp/tester";
 static char* cwd;
+static bool runSkipped;
 
 #ifdef DEBUG
 static void debug(const char* format, ...) {
@@ -318,9 +319,8 @@ bool IssueDb::parseFile() {
     line_nr = 1;
     const char* line_start = cp;
     recipe << "target test\n";
-    if (strncmp(cp, "// @skip", 8) == 0) {
-        return true;
-    }
+    bool hasSkip = strncmp(cp, "// @skip", 8) == 0;
+    if (runSkipped != hasSkip) return true;
     while (cp != end) {
         while (*cp != '\n' && cp != end) cp++;
         if (cp != line_start) parseLine(line_start, cp);
@@ -531,14 +531,23 @@ static void handle_dir(const char* path) {
 }
 
 static void usage(const char* name) {
-    printf("Usage %s [file/dir]\n", name);
+    printf("Usage: %s [file/dir] <options>\n", name);
+    printf("    -s    only run skipped tests\n");
     exit(-1);
 }
 
 int main(int argc, const char *argv[])
 {
-    if (argc != 2) usage(argv[0]);
+    if (argc == 1 || argc > 3) usage(argv[0]);
     const char* target = argv[1];
+
+    if (argc == 3) {
+        if (strcmp(argv[2], "-s") == 0) {
+            runSkipped = true;
+        } else {
+            usage(argv[0]);
+        }
+    }
 
     color_output = isatty(1);
 
