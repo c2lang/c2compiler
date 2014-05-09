@@ -14,6 +14,7 @@
  */
 
 #include "Builder/DepGenerator.h"
+#include "Builder/DepVisitor.h"
 #include "AST/Package.h"
 #include "AST/AST.h"
 #include "AST/Decl.h"
@@ -35,6 +36,10 @@ static const char* getFileName(const std::string& s) {
         cp--;
     }
     return cp;
+}
+
+static void fullName(const Decl* D, StringBuilder& output) {
+    output << D->getPackage()->getName() << '_' << D->getName();
 }
 
 namespace C2 {
@@ -147,6 +152,7 @@ void DepGenerator::writeAST(const AST& ast, StringBuilder& output, unsigned inde
 
 void DepGenerator::writeDecl(const Decl* D, StringBuilder& output, unsigned indent) const {
     const char* type = "";
+/*
     switch (D->getKind()) {
     case DECL_FUNC:
         type = "func:";
@@ -163,9 +169,28 @@ void DepGenerator::writeDecl(const Decl* D, StringBuilder& output, unsigned inde
     default:
         assert(0);
     }
+*/
     output.indent(indent);
     output << "<atom name='" << D->getName() << "' full='" << type;
-    output << D->getPackage()->getName() << '_' << D->getName() << "'>\n";
+    fullName(D, output);
+    output << "'>\n";
+    indent += INDENT;
+
+    DepVisitor visitor(D);
+    visitor.run();
+
+    for (unsigned i=0; i<visitor.getNumDeps(); i++) {
+        const Decl* dep = visitor.getDep(i);
+        // syntax: <dep dest='G1/B' str='1'/>
+        output.indent(indent);
+        output << "<dep dest='";
+        fullName(dep, output);
+        output << "' str='1'/>\n";
+
+    }
+    //visitor.write(output, indent+INDENT)
+
+    indent -= INDENT;
     output.indent(indent);
     output << "</atom>\n";
 }

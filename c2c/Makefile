@@ -25,6 +25,7 @@ OBJS = \
     CGenerator/CCodeGenerator.o \
     Builder/C2Builder.o \
     Builder/Recipe.o \
+    Builder/DepVisitor.o \
     Builder/DepGenerator.o \
     Builder/RecipeReader.o \
     FileUtils/FileMap.o \
