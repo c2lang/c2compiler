@@ -22,7 +22,6 @@
 #include "Utils/constants.h"
 
 #include <string.h>
-#include <stdio.h>
 
 using namespace C2;
 using namespace std;
@@ -58,7 +57,9 @@ class PkgInfo {
 public:
     PkgInfo(const std::string& name_) : name(name_) {}
     ~PkgInfo() {
-        // TODO delete DepFiles
+        for (unsigned i=0; i<files.size(); i++) {
+            delete files[i];
+        }
     }
 
     void addFile(const std::string& name_, const AST& ast_) {
@@ -81,7 +82,6 @@ DepGenerator::~DepGenerator() {
 void DepGenerator::analyse(const AST& ast) {
     const string& pkgName = ast.getPkgName();
     const string& fileName = ast.getFileName();
-    //fprintf(stderr, "DEP %s  %s\n", pkgName.c_str(), fileName.c_str());
 
     PkgInfo* info = getInfo(pkgName);
     info->addFile(fileName, ast);
@@ -115,7 +115,6 @@ void DepGenerator::write(StringBuilder& output) const {
         for (unsigned j=0; j<P->files.size(); j++) {
             const DepFile* F = P->files[j];
             output.indent(indent);
-            // TODO use name / fullName
             const char* fname = getFileName(F->name);
             output << "<group name='" << fname << "' full='file:" << F->name << "' collapsed='1'>\n";
             indent += INDENT;
@@ -152,27 +151,8 @@ void DepGenerator::writeAST(const AST& ast, StringBuilder& output, unsigned inde
 }
 
 void DepGenerator::writeDecl(const Decl* D, StringBuilder& output, unsigned indent) const {
-    const char* type = "";
-/*
-    switch (D->getKind()) {
-    case DECL_FUNC:
-        type = "func:";
-        break;
-    case DECL_VAR:
-        type = "var:";
-        break;
-    case DECL_ALIASTYPE:
-    case DECL_STRUCTTYPE:
-    case DECL_ENUMTYPE:
-    case DECL_FUNCTIONTYPE:
-        type = "type:";
-        break;
-    default:
-        assert(0);
-    }
-*/
     output.indent(indent);
-    output << "<atom name='" << D->getName() << "' full='" << type;
+    output << "<atom name='" << D->getName() << "' full='";
     fullName(D, output);
     output << "'>\n";
     indent += INDENT;
