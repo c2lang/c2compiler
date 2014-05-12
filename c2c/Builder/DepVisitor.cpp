@@ -13,8 +13,7 @@
  * limitations under the License.
  */
 
-// TEMP
-#include <stdio.h>
+//#include <stdio.h>
 
 #include "Builder/DepVisitor.h"
 #include "AST/Decl.h"
@@ -24,7 +23,7 @@
 using namespace C2;
 
 void DepVisitor::run() {
-    fprintf(stderr, "CHECKING %s\n", decl->getName().c_str());
+    //fprintf(stderr, "CHECKING %s\n", decl->getName().c_str());
     checkDecl(decl);
 }
 
@@ -54,14 +53,20 @@ void DepVisitor::checkDecl(const Decl* D) {
         {
             const EnumTypeDecl* E = cast<EnumTypeDecl>(D);
             checkType(E->getType());
-            // TODO check constant init values
+            for (unsigned i=0; i<E->numConstants(); i++) {
+                const EnumConstantDecl* ECD = E->getConstant(i);
+                if (ECD->getInitValue()) checkExpr(ECD->getInitValue());
+            }
             break;
         }
     case DECL_FUNCTIONTYPE:
-        // TODO
-        break;
+        {
+            const FunctionTypeDecl* F = cast<FunctionTypeDecl>(D);
+            checkFunctionDecl(F->getDecl());
+            break;
+        }
     case DECL_ARRAYVALUE:
-        // TODO
+        assert(0 && "TODO");
         break;
     case DECL_USE:
         break;
@@ -78,7 +83,7 @@ void DepVisitor::checkFunctionDecl(const FunctionDecl* F) {
     }
 
     // check body
-    checkCompoundStmt(F->getBody());
+    if (F->getBody()) checkCompoundStmt(F->getBody());
 }
 
 void DepVisitor::checkVarDecl(const VarDecl* V) {
@@ -115,7 +120,6 @@ void DepVisitor::checkType(QualType Q) {
         addDep(cast<EnumType>(T)->getDecl());
         break;
     case TC_FUNCTION:
-        // TODO fix for FunctionTypeDecl
         addDep(cast<FunctionType>(T)->getDecl());
         break;
     case TC_PACKAGE:
@@ -125,6 +129,7 @@ void DepVisitor::checkType(QualType Q) {
 }
 
 void DepVisitor::checkStmt(const Stmt* S) {
+    assert(S);
     switch (S->getKind()) {
     case STMT_RETURN:
         {
@@ -144,13 +149,57 @@ void DepVisitor::checkStmt(const Stmt* S) {
             break;
         }
     case STMT_WHILE:
+        {
+            const WhileStmt* W = cast<WhileStmt>(S);
+            checkStmt(W->getCond());
+            checkStmt(W->getBody());
+            break;
+        }
     case STMT_DO:
+        {
+            const DoStmt* D = cast<DoStmt>(S);
+            checkStmt(D->getCond());
+            checkStmt(D->getBody());
+            break;
+        }
     case STMT_FOR:
+        {
+            const ForStmt* F = cast<ForStmt>(S);
+            if (F->getInit()) checkStmt(F->getInit());
+            if (F->getCond()) checkExpr(F->getCond());
+            if (F->getIncr()) checkExpr(F->getIncr());
+            checkStmt(F->getBody());
+            break;
+        }
     case STMT_SWITCH:
+        {
+            const SwitchStmt* SW = cast<SwitchStmt>(S);
+            checkExpr(SW->getCond());
+            const StmtList& Cases = SW->getCases();
+            for (unsigned i=0; i<Cases.size(); i++) {
+                checkStmt(Cases[i]);
+            }
+            break;
+        }
     case STMT_CASE:
+        {
+            const CaseStmt* C = cast<CaseStmt>(S);
+            checkExpr(C->getCond());
+            const StmtList& stmts = C->getStmts();
+            for (unsigned i=0; i<stmts.size(); i++) {
+                checkStmt(stmts[i]);
+            }
+            break;
+        }
     case STMT_DEFAULT:
-        // TODO
-        break;
+        {
+            const DefaultStmt* D = cast<DefaultStmt>(S);
+            const StmtList& stmts = D->getStmts();
+            for (unsigned i=0; i<stmts.size(); i++) {
+                checkStmt(stmts[i]);
+            }
+            break;
+        }
     case STMT_BREAK:
     case STMT_CONTINUE:
     case STMT_LABEL:
@@ -171,6 +220,7 @@ void DepVisitor::checkCompoundStmt(const CompoundStmt* C) {
 
 
 void DepVisitor::checkExpr(const Expr* E) {
+    assert(E);
     switch (E->getKind()) {
     case EXPR_INTEGER_LITERAL:
     case EXPR_FLOAT_LITERAL:
@@ -183,7 +233,7 @@ void DepVisitor::checkExpr(const Expr* E) {
         addDep(cast<IdentifierExpr>(E)->getDecl());
         break;
     case EXPR_TYPE:
-        assert(0);
+        // only in sizeof(int), so no need to check here
         break;
     case EXPR_CALL:
         {
@@ -195,8 +245,14 @@ void DepVisitor::checkExpr(const Expr* E) {
             break;
         }
     case EXPR_INITLIST:
-        // TODO
-        break;
+        {
+            const InitListExpr* I = cast<InitListExpr>(E);
+            const ExprList& values = I->getValues();
+            for (unsigned i=0; i<values.size(); i++) {
+                checkExpr(values[i]);
+            }
+            break;
+        }
     case EXPR_DECL:
         checkVarDecl(cast<DeclExpr>(E)->getDecl());
         break;
@@ -208,11 +264,26 @@ void DepVisitor::checkExpr(const Expr* E) {
             break;
         }
     case EXPR_CONDOP:
+        {
+            const ConditionalOperator* C = cast<ConditionalOperator>(E);
+            checkExpr(C->getCond());
+            checkExpr(C->getLHS());
+            checkExpr(C->getRHS());
+            break;
+        }
     case EXPR_UNARYOP:
-    case EXPR_BUILTIN:
-    case EXPR_ARRAYSUBSCRIPT:
-        // TODO
+        checkExpr(cast<UnaryOperator>(E)->getExpr());
         break;
+    case EXPR_BUILTIN:
+        checkExpr(cast<BuiltinExpr>(E)->getExpr());
+        break;
+    case EXPR_ARRAYSUBSCRIPT:
+        {
+            const ArraySubscriptExpr* A = cast<ArraySubscriptExpr>(E);
+            checkExpr(A->getBase());
+            checkExpr(A->getIndex());
+            break;
+        }
     case EXPR_MEMBER:
         {
             const MemberExpr* M = cast<MemberExpr>(E);
@@ -255,6 +326,6 @@ void DepVisitor::addDep(const Decl* D) {
         if (deps[i] == D) return;
     }
     deps.push_back(D);
-    fprintf(stderr, "  %s -> %s\n", decl->getName().c_str(), D->getName().c_str());
+    //fprintf(stderr, "  %s -> %s\n", decl->getName().c_str(), D->getName().c_str());
 }
 
