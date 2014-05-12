@@ -157,7 +157,9 @@ void DepGenerator::writeAST(const AST& ast, StringBuilder& output, unsigned inde
 void DepGenerator::writeDecl(const Decl* D, StringBuilder& output, unsigned indent) const {
     if (!showPrivate && !D->isPublic()) return;
     output.indent(indent);
-    output << "<atom name='" << D->getName() << "' full='";
+    output << "<atom name='" << D->getName();
+    if (isa<FunctionDecl>(D)) output << "()";
+    output << "' full='";
     fullName(D, output);
     output << "'>\n";
     indent += INDENT;
