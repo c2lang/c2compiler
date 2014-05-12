@@ -331,8 +331,13 @@ unsigned FileAnalyser::checkTypeDecl(TypeDecl* D) {
         break;
     }
     case DECL_FUNCTIONTYPE:
+    {
+        const FunctionTypeDecl* FTD = cast<FunctionTypeDecl>(D);
+        // set package on inner FunctionDecl
+        FTD->getDecl()->setPackage(FTD->getPackage());
         // dont check return/argument types yet
         break;
+    }
     case DECL_ARRAYVALUE:
     case DECL_USE:
         assert(0);
