@@ -22,14 +22,15 @@
 namespace C2 {
 
 class AST;
+class Package;
+class Decl;
 class PkgInfo;
 class StringBuilder;
-class Decl;
 
 class DepGenerator {
 public:
-    DepGenerator(bool showFiles_, bool showPrivate_)
-        : showFiles(showFiles_), showPrivate(showPrivate_)
+    DepGenerator(bool showFiles_, bool showPrivate_, bool showExternals_)
+        : showFiles(showFiles_), showPrivate(showPrivate_), showExternals(showExternals_)
     {}
     ~DepGenerator();
 
@@ -37,14 +38,20 @@ public:
     void write(StringBuilder& output) const;
 private:
     PkgInfo* getInfo(const std::string& pkgname);
+    void addExternal(const Package* P) const;
     void writeAST(const AST& ast, StringBuilder& output, unsigned indent) const;
     void writeDecl(const Decl* D, StringBuilder& output, unsigned indent) const;
+    void writeExternal(const Package* P, StringBuilder& output, unsigned indent) const;
 
     typedef std::vector<PkgInfo*> Packages;
     Packages packages;
 
+    typedef std::vector<const Package*> Externals;
+    mutable Externals externals;
+
     bool showFiles;
     bool showPrivate;
+    bool showExternals;
 
     DepGenerator(const DepGenerator&);
     DepGenerator& operator= (const DepGenerator&);

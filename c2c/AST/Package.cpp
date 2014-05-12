@@ -45,7 +45,7 @@ Decl* Package::findSymbol(const std::string& name_) const {
 }
 
 void Package::dump() const {
-    printf("symbols of package %s:\n", name.c_str());
+    printf("symbols of package %s (clib=%d, external=%d)\n", name.c_str(), isCLib, is_External);
     for (SymbolsConstIter iter = symbols.begin(); iter != symbols.end(); ++iter) {
         printf("  %s\n", iter->second->getName().c_str());
     }

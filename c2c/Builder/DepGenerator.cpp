@@ -18,6 +18,7 @@
 #include "AST/Package.h"
 #include "AST/AST.h"
 #include "AST/Decl.h"
+#include "AST/Type.h"
 #include "Utils/StringBuilder.h"
 #include "Utils/constants.h"
 
@@ -38,8 +39,9 @@ static const char* getFileName(const std::string& s) {
 }
 
 static void fullName(const Decl* D, StringBuilder& output) {
-    assert(D->getPackage());
-    output << D->getPackage()->getName() << '_' << D->getName();
+    const Package* P = D->getPackage();
+    assert(P);
+    output << P->getName() << '_' << D->getName();
 }
 
 namespace C2 {
@@ -97,6 +99,13 @@ PkgInfo* DepGenerator::getInfo(const std::string& pkgname) {
     return P;
 }
 
+void DepGenerator::addExternal(const Package* P) const {
+    for (unsigned i=0; i<externals.size(); i++) {
+        if (externals[i] == P) return;
+    }
+    externals.push_back(P);
+}
+
 void DepGenerator::write(StringBuilder& output) const {
     int indent = 0;
     output << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
@@ -134,6 +143,17 @@ void DepGenerator::write(StringBuilder& output) const {
         output.indent(indent);
         output << "</group>\n";
     }
+    if (showExternals) {
+        output.indent(indent);
+        output << "<group name='Externals' full='Externals' collapsed='1'>\n";
+        indent += INDENT;
+        for (unsigned i=0; i<externals.size(); i++) {
+            writeExternal(externals[i], output, indent);
+        }
+        indent -= INDENT;
+        output.indent(indent);
+        output << "</group>\n";
+    }
     indent -= INDENT;
 
     output.indent(indent);
@@ -143,6 +163,16 @@ void DepGenerator::write(StringBuilder& output) const {
 }
 
 void DepGenerator::writeAST(const AST& ast, StringBuilder& output, unsigned indent) const {
+    if (showExternals) {
+        for (unsigned i=0; i<ast.numUses(); i++) {
+            const UseDecl* U = ast.getUse(i);
+            QualType Q = U->getType();
+            const PackageType* T = cast<PackageType>(Q.getTypePtr());
+            const Package* P = T->getPackage();
+            assert(P);
+            if (P->isExternal()) addExternal(P);
+        }
+    }
     for (unsigned i=0; i<ast.numTypes(); i++) {
         writeDecl(ast.getType(i), output, indent);
     }
@@ -171,6 +201,7 @@ void DepGenerator::writeDecl(const Decl* D, StringBuilder& output, unsigned inde
         // syntax: <dep dest='G1/B' str='1'/>
         const Decl* dep = visitor.getDep(i);
         if (!showPrivate && !dep->isPublic()) continue;
+        if (!showExternals && dep->getPackage()->isExternal()) continue;
         output.indent(indent);
         output << "<dep dest='";
         fullName(dep, output);
@@ -180,5 +211,26 @@ void DepGenerator::writeDecl(const Decl* D, StringBuilder& output, unsigned inde
     indent -= INDENT;
     output.indent(indent);
     output << "</atom>\n";
+}
+
+void DepGenerator::writeExternal(const Package* P, StringBuilder& output, unsigned indent) const {
+    output.indent(indent);
+    output << "<group name='" << P->getName() << "' full='package:" << P->getName() << "' collapsed='1'>\n";
+    indent += INDENT;
+
+    const Package::Symbols& symbols = P->getSymbols();
+    for (Package::SymbolsConstIter iter=symbols.begin(); iter!=symbols.end(); ++iter) {
+        const Decl* D = iter->second;
+        output.indent(indent);
+        output << "<atom name='" << D->getName();
+        if (isa<FunctionDecl>(D)) output << "()";
+        output << "' full='";
+        fullName(D, output);
+        output << "' />\n";
+    }
+
+    indent -= INDENT;
+    output.indent(indent);
+    output << "</group>\n";
 }
 

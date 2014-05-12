@@ -35,14 +35,16 @@ public:
     bool isExternal() const { return is_External; }
 
     void dump() const;
+
+    typedef std::map<std::string, Decl*> Symbols;
+    typedef Symbols::const_iterator SymbolsConstIter;
+    typedef Symbols::iterator SymbolsIter;
+    const Symbols& getSymbols() const { return symbols; }
 private:
     const std::string name;
     bool is_External;
     bool isCLib;    // not a C2 package, but used C library
 
-    typedef std::map<std::string, Decl*> Symbols;
-    typedef Symbols::const_iterator SymbolsConstIter;
-    typedef Symbols::iterator SymbolsIter;
     Symbols symbols;
 };
 

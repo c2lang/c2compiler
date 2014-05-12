@@ -552,7 +552,7 @@ bool C2Builder::loadPackage(const std::string& name) {
 }
 
 void C2Builder::printDependencies() const {
-    DepGenerator generator(false /*showFiles*/, true /*showPrivate*/);
+    DepGenerator generator(false /*showFiles*/, true /*showPrivate*/, true /*showExternals*/);
     for (unsigned i=0; i<files.size(); i++) {
         generator.analyse(files[i]->ast);
     }
