@@ -97,7 +97,7 @@ PkgInfo* DepGenerator::getInfo(const std::string& pkgname) {
     return P;
 }
 
-void DepGenerator::write(StringBuilder& output) const {
+void DepGenerator::write(StringBuilder& output, bool showFiles) const {
     int indent = 0;
     output << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
     output << "<dsm>\n";
@@ -114,16 +114,20 @@ void DepGenerator::write(StringBuilder& output) const {
 
         for (unsigned j=0; j<P->files.size(); j++) {
             const DepFile* F = P->files[j];
-            output.indent(indent);
-            const char* fname = getFileName(F->name);
-            output << "<group name='" << fname << "' full='file:" << F->name << "' collapsed='1'>\n";
-            indent += INDENT;
+            if (showFiles) {
+                output.indent(indent);
+                const char* fname = getFileName(F->name);
+                output << "<group name='" << fname << "' full='file:" << F->name << "' collapsed='1'>\n";
+                indent += INDENT;
+            }
 
             writeAST(F->ast, output, indent);
 
-            indent -= INDENT;
-            output.indent(indent);
-            output << "</group>\n";
+            if (showFiles) {
+                indent -= INDENT;
+                output.indent(indent);
+                output << "</group>\n";
+            }
         }
 
         indent -= INDENT;

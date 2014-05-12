@@ -557,7 +557,7 @@ void C2Builder::printDependencies() const {
         generator.analyse(files[i]->ast);
     }
     StringBuilder output;
-    generator.write(output);
+    generator.write(output, false);
     std::string path = "output/" + recipe.name;
     std::string filename = path + '/' + "deps.xml";
     FileUtils::writeFile(path.c_str(), filename, output);

@@ -32,7 +32,7 @@ public:
     ~DepGenerator();
 
     void analyse(const AST& ast);
-    void write(StringBuilder& output) const;
+    void write(StringBuilder& output, bool showFiles) const;
 private:
     PkgInfo* getInfo(const std::string& pkgname);
     void writeAST(const AST& ast, StringBuilder& output, unsigned indent) const;
