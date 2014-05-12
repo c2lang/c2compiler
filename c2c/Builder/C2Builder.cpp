@@ -135,6 +135,10 @@ public:
 
         // File stuff
         const FileEntry *pFile = FileMgr.getFile(filename);
+        if (pFile == 0) {
+            fprintf(stderr, "Error opening file: '%s'\n", filename.c_str());
+            exit(-1);
+        }
         SM.createMainFileID(pFile);
         PP.EnterMainSourceFile();
         // NOTE: filling zero instead of PP works
