@@ -28,11 +28,13 @@ class Decl;
 
 class DepGenerator {
 public:
-    DepGenerator() {}
+    DepGenerator(bool showFiles_, bool showPrivate_)
+        : showFiles(showFiles_), showPrivate(showPrivate_)
+    {}
     ~DepGenerator();
 
     void analyse(const AST& ast);
-    void write(StringBuilder& output, bool showFiles) const;
+    void write(StringBuilder& output) const;
 private:
     PkgInfo* getInfo(const std::string& pkgname);
     void writeAST(const AST& ast, StringBuilder& output, unsigned indent) const;
@@ -40,6 +42,9 @@ private:
 
     typedef std::vector<PkgInfo*> Packages;
     Packages packages;
+
+    bool showFiles;
+    bool showPrivate;
 
     DepGenerator(const DepGenerator&);
     DepGenerator& operator= (const DepGenerator&);

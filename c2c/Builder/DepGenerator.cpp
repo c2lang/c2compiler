@@ -97,7 +97,7 @@ PkgInfo* DepGenerator::getInfo(const std::string& pkgname) {
     return P;
 }
 
-void DepGenerator::write(StringBuilder& output, bool showFiles) const {
+void DepGenerator::write(StringBuilder& output) const {
     int indent = 0;
     output << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
     output << "<dsm>\n";
@@ -155,6 +155,7 @@ void DepGenerator::writeAST(const AST& ast, StringBuilder& output, unsigned inde
 }
 
 void DepGenerator::writeDecl(const Decl* D, StringBuilder& output, unsigned indent) const {
+    if (!showPrivate && !D->isPublic()) return;
     output.indent(indent);
     output << "<atom name='" << D->getName() << "' full='";
     fullName(D, output);
@@ -167,6 +168,7 @@ void DepGenerator::writeDecl(const Decl* D, StringBuilder& output, unsigned inde
     for (unsigned i=0; i<visitor.getNumDeps(); i++) {
         // syntax: <dep dest='G1/B' str='1'/>
         const Decl* dep = visitor.getDep(i);
+        if (!showPrivate && !dep->isPublic()) continue;
         output.indent(indent);
         output << "<dep dest='";
         fullName(dep, output);
