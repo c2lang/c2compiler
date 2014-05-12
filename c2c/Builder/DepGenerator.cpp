@@ -39,6 +39,7 @@ static const char* getFileName(const std::string& s) {
 }
 
 static void fullName(const Decl* D, StringBuilder& output) {
+    assert(D->getPackage());
     output << D->getPackage()->getName() << '_' << D->getName();
 }
 
@@ -180,15 +181,13 @@ void DepGenerator::writeDecl(const Decl* D, StringBuilder& output, unsigned inde
     visitor.run();
 
     for (unsigned i=0; i<visitor.getNumDeps(); i++) {
-        const Decl* dep = visitor.getDep(i);
         // syntax: <dep dest='G1/B' str='1'/>
+        const Decl* dep = visitor.getDep(i);
         output.indent(indent);
         output << "<dep dest='";
         fullName(dep, output);
         output << "' str='1'/>\n";
-
     }
-    //visitor.write(output, indent+INDENT)
 
     indent -= INDENT;
     output.indent(indent);

@@ -112,10 +112,11 @@ void DepVisitor::checkType(QualType Q) {
         addDep(cast<StructType>(T)->getDecl());
         break;
     case TC_ENUM:
-        // TODO
+        addDep(cast<EnumType>(T)->getDecl());
         break;
     case TC_FUNCTION:
-        // TODO
+        // TODO fix for FunctionTypeDecl
+        addDep(cast<FunctionType>(T)->getDecl());
         break;
     case TC_PACKAGE:
         assert(0);
@@ -231,17 +232,25 @@ void DepVisitor::checkExpr(const Expr* E) {
 void DepVisitor::addDep(const Decl* D) {
     assert(D);
     if (decl == D) return;
+    // Skip local VarDecls
     if (const VarDecl* V = dyncast<VarDecl>(D)) {
         switch (V->getVarKind()) {
         case VARDECL_GLOBAL:
             break;
         case VARDECL_LOCAL:
         case VARDECL_PARAM:
-            return; // skip local VarDecls
+            return;
         case VARDECL_MEMBER:
             break;
         }
     }
+    // Convert EnumConstants -> EnumTypeDecl (via EnumType)
+    if (const EnumConstantDecl* ECD = dyncast<EnumConstantDecl>(D)) {
+        QualType Q = ECD->getType();
+        const EnumType* T = cast<EnumType>(Q.getTypePtr());
+        D = T->getDecl();
+    }
+
     for (unsigned i=0; i<deps.size(); i++) {
         if (deps[i] == D) return;
     }
