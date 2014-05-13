@@ -611,11 +611,12 @@ unsigned C2Builder::analyse() {
     for (unsigned i=0; i<files.size(); i++) {
         errors += files[i]->analyser->checkFunctionBodies();
     }
-    if (options.printAST3) printASTs();
 
     for (unsigned i=0; i<files.size(); i++) {
         files[i]->analyser->checkDeclsForUsed();
     }
+
+    if (options.printAST3) printASTs();
     return errors;
 }
 
