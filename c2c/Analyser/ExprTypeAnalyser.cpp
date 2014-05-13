@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-#include <clang/Basic/SourceLocation.h>
 #include <clang/Parse/ParseDiagnostic.h>
 #include <clang/Sema/SemaDiagnostic.h>
 
@@ -193,7 +192,7 @@ bool ExprTypeAnalyser::checkCompatible(QualType left, const Expr* expr) const {
     case TC_ENUM:
         break;
     case TC_FUNCTION:
-        break;
+        return checkFunction(left, expr);
     case TC_PACKAGE:
         assert(0 && "TODO");
         break;
@@ -254,13 +253,7 @@ bool ExprTypeAnalyser::checkBuiltin(QualType left, QualType right, const Expr* e
             << expr->getSourceRange();
         return false;
     }
-
-    StringBuilder buf1(MAX_LEN_TYPENAME);
-    StringBuilder buf2(MAX_LEN_TYPENAME);
-    right.DiagName(buf1);
-    left.DiagName(buf2);
-    // TODO error msg depends on conv type (see clang errors)
-    Diags.Report(expr->getLocation(), diag::err_illegal_type_conversion) << buf1 << buf2;
+    error(expr->getLocation(), left, right);
     return false;
 }
 
@@ -273,13 +266,36 @@ bool ExprTypeAnalyser::checkPointer(QualType left, QualType right, const Expr* e
         // TODO
         return true;
     }
+    error(expr->getLocation(), left, right);
+    return false;
+}
+
+bool ExprTypeAnalyser::checkFunction(QualType L, const Expr* expr) const {
+    QualType R = expr->getType();
+    // NOTE: for now only allow FunctionTypes
+    if (!R->isFunctionType()) {
+        error(expr->getLocation(), L, R);
+        return false;
+    }
+#if 0
+    const FunctionType* FLeft = cast<FunctionType>(L.getTypePtr());
+    const FunctionType* FRight = cast<FunctionType>(R.getTypePtr());
+    const FunctionDecl* DL = FLeft->getDecl();
+    const FunctionDecl* DR = FRight->getDecl();
+    // TODO compare
+#endif
+
+
+    return true;
+}
+
+void ExprTypeAnalyser::error(SourceLocation loc, QualType left, QualType right) const {
     StringBuilder buf1(MAX_LEN_TYPENAME);
     StringBuilder buf2(MAX_LEN_TYPENAME);
     right.DiagName(buf1);
     left.DiagName(buf2);
     // TODO error msg depends on conv type (see clang errors)
-    Diags.Report(expr->getLocation(), diag::err_illegal_type_conversion)
+    Diags.Report(loc, diag::err_illegal_type_conversion)
             << buf1 << buf2;
-    return false;
-}
 
+}

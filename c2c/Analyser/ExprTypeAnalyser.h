@@ -16,6 +16,8 @@
 #ifndef ANALYSER_EXPR_TYPE_ANALYSER_H
 #define ANALYSER_EXPR_TYPE_ANALYSER_H
 
+#include <clang/Basic/SourceLocation.h>
+
 #include "AST/Type.h"
 
 namespace clang {
@@ -42,11 +44,13 @@ public:
 
     void check(QualType Tleft, const Expr* expr);
 private:
+    void error(SourceLocation loc, QualType left, QualType right) const;
     void checkBinOp(QualType TLeft, const BinaryOperator* binop);
 
     bool checkCompatible(QualType left, const Expr* expr) const;
     bool checkBuiltin(QualType left, QualType right, const Expr* expr, bool first) const;
     bool checkPointer(QualType left, QualType right, const Expr* expr) const;
+    bool checkFunction(QualType left, const Expr* expr) const;
 
     clang::DiagnosticsEngine& Diags;
 
