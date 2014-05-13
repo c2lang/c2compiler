@@ -23,6 +23,7 @@
 #include <llvm/IR/Function.h>
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Constants.h>
+#include <llvm/IR/DerivedTypes.h>
 // for SmallString
 #include <llvm/ADT/SmallString.h>
 #include <llvm/Support/FileSystem.h>
@@ -39,6 +40,7 @@
 #include "AST/AST.h"
 #include "AST/Decl.h"
 #include "Utils/StringBuilder.h"
+#include "Utils/GenUtils.h"
 
 //#define DEBUG_CODEGEN
 
@@ -181,6 +183,7 @@ void CodeGenModule::EmitGlobalVariable(VarDecl* Var) {
         // ALWAYS initialize globals
         init = EmitDefaultInit(Var->getType());
     }
+    assert(init);
     llvm::GlobalVariable* GV = new llvm::GlobalVariable(*module, init->getType(), constant, ltype, init, Var->getName());
     GV->setAlignment(getAlignment(Var->getType()));
     GV->setConstant(Var->getType().isConstant());
@@ -205,11 +208,31 @@ void CodeGenModule::EmitTopLevelDecl(Decl* D) {
 }
 #endif
 
+llvm::Type* CodeGenModule::ConvertStructType(const StructType* S) {
+    const StructTypeDecl* D = S->getDecl();
+
+    StringBuilder fullName(128);    // TODO use constant for length
+    fullName << "struct.";
+    GenUtils::addName(D->getPackage()->getName(), D->getName(), fullName);
+
+    llvm::StructType* Old = module->getTypeByName((const char*)fullName);
+    if (Old) return Old;
+
+    SmallVector<llvm::Type*, 16> Elems;
+    for (unsigned i=0; i<D->numMembers(); i++) {
+        Decl* M = D->getMember(i);
+        Elems.push_back(ConvertType(M->getType()));
+    }
+
+    llvm::StructType* ST = llvm::StructType::create(context, Elems, (const char*)fullName, false /*packed*/);
+    return ST;
+}
+
 unsigned CodeGenModule::getAlignment(QualType Q) const {
     const Type* T = Q.getCanonicalType();
     switch (T->getTypeClass()) {
     case TC_BUILTIN:
-        return cast<BuiltinType>(T)->getWidth() / 8;
+        return cast<BuiltinType>(T)->getAlignment();
     case TC_POINTER:
         return 4; // TEMP
     case TC_ARRAY:
@@ -219,8 +242,8 @@ unsigned CodeGenModule::getAlignment(QualType Q) const {
         assert(0);
         break;
     case TC_STRUCT:
-        assert(0 && "TODO");
-        break;
+        // TEMP, for now always align on 4
+        return 4;
     case TC_ENUM:
         assert(0);
         break;
@@ -275,8 +298,7 @@ llvm::Type* CodeGenModule::ConvertType(QualType Q) {
         assert(0 && "should be resolved");
         break;
     case TC_STRUCT:
-        assert(0 && "TODO union/struct type");
-        break;
+        return ConvertStructType(cast<StructType>(canon));
     case TC_ENUM:
         // TODO use canonical type, for now use Int32()
         return builder.getInt32Ty();
@@ -323,10 +345,11 @@ llvm::Constant* CodeGenModule::EvaluateExprAsConstant(const Expr *E) {
             const ExprList& Vals = I->getValues();
             QualType Q = I->getType().getCanonicalType();
             // NOTE: we only support array inits currently (no struct inits yet)
-            assert(Q.isArrayType());
-
-            const ArrayType* AT = cast<ArrayType>(Q.getTypePtr());
-            return EmitArrayInit(AT, Vals);
+            if (Q.isArrayType()) {
+                return EmitArrayInit(cast<ArrayType>(Q.getTypePtr()), Vals);
+            } else {
+                return EmitStructInit(cast<StructType>(Q.getTypePtr()), Vals);
+            }
         }
     default:
         E->dump();
@@ -400,8 +423,7 @@ llvm::Constant* CodeGenModule::EmitDefaultInit(QualType Q) {
         assert(0);
         break;
     case TC_STRUCT:
-        assert(0 && "TODO");
-        break;
+        return EmitStructInit(cast<StructType>(T), ExprList());
     case TC_ENUM:
         assert(0);
         break;
@@ -413,6 +435,34 @@ llvm::Constant* CodeGenModule::EmitDefaultInit(QualType Q) {
         break;
     }
     return 0;
+}
+
+llvm::Constant* CodeGenModule::EmitStructInit(const StructType *ST, const ExprList& Vals) {
+    const StructTypeDecl* D = ST->getDecl();
+    assert(D->isStruct() && "TODO unions");
+    SmallVector<llvm::Constant*, 16> Elements;
+    for (unsigned i=0; i<D->numMembers(); i++) {
+        const Decl* M = D->getMember(i);
+
+        llvm::Constant *EltInit;
+        if (i < Vals.size()) {
+            //EltInit = CGM.EmitConstantExpr(Vals[i], M->getType(), CGF);
+            EltInit = EvaluateExprAsConstant(Vals[i]);
+        } else {
+            EltInit = EmitDefaultInit(M->getType());
+        }
+        assert(EltInit);
+
+        // clang: AppendField(M, offset, EltInit);
+        Elements.push_back(EltInit);
+    }
+
+    //llvm::StructType *STy = llvm::ConstantStruct::getTypeForElements(context, Elements, false /*packed*/);
+    llvm::Type* ValTy = ConvertType(D->getType());
+    llvm::StructType *STy = dyn_cast<llvm::StructType>(ValTy);
+    assert(STy);
+    llvm::Constant *Result = llvm::ConstantStruct::get(STy, Elements);
+    return Result;
 }
 
 llvm::Constant* CodeGenModule::EmitArrayInit(const ArrayType *AT, const ExprList& Vals) {

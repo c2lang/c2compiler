@@ -64,13 +64,15 @@ public:
     llvm::LLVMContext& getContext() const { return context; }
     llvm::IRBuilder<> getBuilder() const { return builder; }
 
-private:
     unsigned getAlignment(QualType Q) const;
+private:
+    llvm::Type* ConvertStructType(const StructType* S);
 
     void EmitGlobalVariable(VarDecl* V);
     llvm::Constant* EvaluateExprAsConstant(const Expr *E);
     llvm::Constant* GetConstantArrayFromStringLiteral(const StringLiteral* E);
     llvm::Constant* EmitDefaultInit(QualType Q);
+    llvm::Constant* EmitStructInit(const StructType *AT, const ExprList& Vals);
     llvm::Constant* EmitArrayInit(const ArrayType *AT, const ExprList& Vals);
     llvm::Constant* EmitConstantDecl(const Decl* D);
 
