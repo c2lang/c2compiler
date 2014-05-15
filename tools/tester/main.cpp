@@ -66,7 +66,6 @@ static void debug(const char* format, ...) {
 static void debug(const char* format, ...) {}
 #endif
 
-
 static void color_print(const char* color, const char* format, ...) {
     char buffer[1024];
     va_list(Args);
@@ -77,6 +76,7 @@ static void color_print(const char* color, const char* format, ...) {
     if (color_output) printf("%s%s"ANSI_NORMAL"\n", color, buffer);
     else printf("%s\n", buffer);
 }
+
 
 static u_int64_t getCurrentTime() {
     struct timespec now;
@@ -92,6 +92,15 @@ static int endsWith(const char* name, const char* tail) {
     int tlen = strlen(tail);
     if (tlen > len + 1) return 0;
     return strcmp(name + len - tlen, tail) == 0;
+}
+
+static const char* find(const char* start, const char* end, const char* text) {
+    const char* cp = start;
+    while (cp != end) {
+        if (strncmp(cp, text, strlen(text)) == 0) return cp;
+        cp++;
+    }
+    return 0;
 }
 
 static void writeFile(const char* name, const char* content, unsigned size) {
@@ -150,7 +159,7 @@ public:
 private:
     void parseLine(const char* start, const char* end);
     void error(const char* msg) {
-        color_print(ANSI_NORMAL, "%s:%d: %s", file.filename.c_str(), line_nr, msg);
+        color_print(ANSI_BRED, "%s:%d: %s", file.filename.c_str(), line_nr, msg);
         hasErrors = true;
     }
 
@@ -267,13 +276,16 @@ void IssueDb::parseLine(const char* start, const char* end) {
         recipe << "  $warnings " << name << '\n';
         return;
     }
-    if (strncmp(cp, "//", 2) == 0) return;   // skip other comments
+    //if (strncmp(cp, "//", 2) == 0) return;   // skip other comments
+    // find // @..
+
+    cp = find(start, end, "// ");
+    if (!cp) return;
+    cp += 3;    // skip "// ";
 
     // search for @
-    while (*cp != '@') {
-        if (cp == end) return;
-        cp++;
-    }
+    if (*cp != '@') return;
+
     cp++;   // skip @
     bool isError = true;
     if (strncmp(cp, "error{", 6) == 0) {
@@ -499,7 +511,9 @@ static void handle_file(const char* filename) {
     db.showErrors();
     db.showWarnings();
 out:
-    if (db.haveErrors()) numerrors++;
+    if (db.haveErrors()) {
+        numerrors++;
+    }
 }
 
 static void handle_dir(const char* path) {

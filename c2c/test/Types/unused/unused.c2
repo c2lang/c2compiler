@@ -1,4 +1,4 @@
 package test;
 
-type Number int;    //@warning{unused type Number}
+type Number int;    // @warning{unused type Number}
 

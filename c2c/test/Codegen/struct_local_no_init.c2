@@ -1,0 +1,14 @@
+// @warnings{no-unused}
+package test;
+
+type Point struct {
+    int x;
+    int y;
+}
+// CHECK: %struct.__test_Point = type { i32, i32 }
+
+func void test1() {
+    Point p;
+// CHECK: %p = alloca %struct.__test_Point, align 4
+}
+
