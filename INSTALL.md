@@ -75,7 +75,7 @@ If you get an error with some Clang/C2 errors, try updating your clang C2 archiv
 ## Getting and Building C2C
 To run the unit tests:
 ```
-cd tools/test
+cd tools/tester
 make
 cd ../../c2c/build
 make test
