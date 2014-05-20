@@ -63,9 +63,12 @@ To build C2: (llvm-c2/bin must be in PATH)
 ```
 git clone git://github.com/c2lang/c2compiler.git
 cd c2compiler/c2c
+mkdir build
+cd build
+cmake . ..
 make -j4
 ```
-If all goes well, the **c2c** executable should appear.
+If all goes well, the **c2c** executable should appear in the build directory.
 
 If you get an error with some Clang/C2 errors, try updating your clang C2 archive.
 
@@ -74,7 +77,7 @@ To run the unit tests:
 ```
 cd tools/test
 make
-cd ../../c2c
+cd ../../c2c/build
 make test
 ```
 

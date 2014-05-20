@@ -26,7 +26,6 @@ so hereby my thanks to the Clang folks!
 A short list of open items (the full list would probably fill-up GitHub) with
 their priority:
 * [high] c2c: parse full syntax into AST
-* [high] Makefile: fix header dependencies and move .o files to .objs dir
 * [high] c2c: generate IR code for more AST elements
 * [medium] c2c: improve C generation by generating forward declarations in C code.
 * [medium] c2c: tab completion on targets in recipe / cmdline args
@@ -44,33 +43,33 @@ By default, c2c will only parse and analyse the targets. Generating C-code
 should work on all examples, but generating LLVM's IR code is work in
 progress.
 ```
-./c2c multi
-./c2c hello
-./c2c iter
-./c2c switch
-./c2c working_ir
+c2c multi
+c2c hello
+c2c iter
+c2c switch
+c2c working_ir
 ```
 
 It's also possible to manually compile a single .c2 file without a recipe
 file with:
 ```
-./c2c -f <file.c2>
+c2c -f <file.c2>
 ```
 
 To generate ANSI-C code, use:
 ```
-./c2c -C <target>
+c2c -C <target>
 ```
 
 The C2 compiler is able to generate a package dependency file in dot format. This
 file can be converted into a png as follows:
 ```
-./c2c --deps <target>
+c2c --deps <target>
 dot -T png output/target/deps.dot > image.png
 ```
 
 To see all available options, run:
 ```
-./c2c -h
+c2c -h
 ```
 
