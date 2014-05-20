@@ -78,7 +78,6 @@ private:
     bool createPkgs();
     bool loadExternalPackages();
     bool loadPackage(const std::string& name);
-    void printDependencies() const;
     unsigned analyse();
     void dumpPkgs() const;
     void printASTs() const;
@@ -86,6 +85,7 @@ private:
     bool checkMainFunction(clang::DiagnosticsEngine& Diags);
     void generateOptionalC();
     void generateOptionalIR();
+    void generateOptionsDeps() const;
 
     const Recipe& recipe;
     BuildOptions options;

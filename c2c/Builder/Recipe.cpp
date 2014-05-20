@@ -33,6 +33,10 @@ void Recipe::addCodeGenConfig(const std::string& config_) {
     genConfigs.push_back(config_);
 }
 
+void Recipe::addDepsConfig(const std::string& config_) {
+    depConfigs.push_back(config_);
+}
+
 void Recipe::silenceWarning(const std::string& warn_) {
     silentWarnings.push_back(warn_);
 }

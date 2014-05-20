@@ -369,11 +369,9 @@ int C2Builder::build() {
     if (options.printTiming) printf(COL_TIME"analysis took %lld usec"ANSI_NORMAL"\n", t2_analyse - t1_analyse);
     if (client->getNumErrors()) goto out;
 
-    if (options.printDependencies) {
-        printDependencies();
-    }
-
     if (!options.testMode && !checkMainFunction(Diags)) goto out;
+
+    generateOptionsDeps();
 
     generateOptionalC();
 
@@ -549,18 +547,6 @@ bool C2Builder::loadPackage(const std::string& name) {
         return true;
     }
     return false;
-}
-
-void C2Builder::printDependencies() const {
-    DepGenerator generator(false /*showFiles*/, true /*showPrivate*/, true /*showExternals*/);
-    for (unsigned i=0; i<files.size(); i++) {
-        generator.analyse(files[i]->ast);
-    }
-    StringBuilder output;
-    generator.write(output);
-    std::string path = "output/" + recipe.name;
-    std::string filename = path + '/' + "deps.xml";
-    FileUtils::writeFile(path.c_str(), filename, output);
 }
 
 unsigned C2Builder::analyse() {
@@ -763,3 +749,28 @@ void C2Builder::generateOptionalIR() {
         }
     }
 }
+
+void C2Builder::generateOptionsDeps() const {
+    if (!options.printDependencies && !recipe.hasDeps) return;
+
+    bool showFiles = false;
+    bool showExternals = false;
+    bool showPrivate = true;
+    for (unsigned i=0; i<recipe.depConfigs.size(); i++) {
+        const std::string& conf = recipe.depConfigs[i];
+        // TODO just pass struct with bools?
+        if (conf == "show_files") showFiles = true;
+        if (conf == "show_externals") showExternals = true;
+    }
+
+    DepGenerator generator(showFiles, showPrivate, showExternals);
+    for (unsigned i=0; i<files.size(); i++) {
+        generator.analyse(files[i]->ast);
+    }
+    StringBuilder output;
+    generator.write(output);
+    std::string path = "output/" + recipe.name;
+    std::string filename = path + '/' + "deps.xml";
+    FileUtils::writeFile(path.c_str(), filename, output);
+}
+

@@ -154,6 +154,14 @@ void RecipeReader::handleLine(char* line) {
                         // TODO check duplicate silence?
                         current->silenceWarning(tok2);
                     }
+                } else if (strcmp(tok, "deps") == 0) {
+                    current->hasDeps = true;
+                    while (1) {
+                        const char* tok2 = get_token();
+                        if (!tok2) break;
+                        // TODO check duplicate configs
+                        current->addDepsConfig(tok2);
+                    }
                 } else {
                     error("unknown option '%s'", tok);
                 }

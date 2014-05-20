@@ -23,18 +23,20 @@ namespace C2 {
 
 class Recipe {
 public:
-    Recipe(const std::string& name_) : name(name_) {}
+    Recipe(const std::string& name_) : name(name_) , hasDeps(false) {}
     ~Recipe() {}
 
     void addFile(const std::string& name_);
     void addConfig(const std::string& config_);
     void addAnsiCConfig(const std::string& config_);
     void addCodeGenConfig(const std::string& config_);
+    void addDepsConfig(const std::string& config_);
     void silenceWarning(const std::string& warn_);
     int size() const { return files.size(); }
     const std::string& get(int i) const;
 
     std::string name;
+    bool hasDeps;
 
     typedef std::vector<std::string> Files;
     Files files;
@@ -44,6 +46,7 @@ public:
     Configs configs;
     Configs cConfigs;
     Configs genConfigs;
+    Configs depConfigs;
     Configs silentWarnings;
 private:
     Recipe(const Recipe&);
