@@ -11,7 +11,7 @@ $ cd llvm-c2
 $ makepkg -is
 
 $ curl -O https://aur.archlinux.org/packages/c2/c2c-git/c2c-git.tar.gz
-$ tar xxf c2c-git.tar.gz
+$ tar xvf c2c-git.tar.gz
 $ cd c2c-git
 $ makepkg -is
 ```
