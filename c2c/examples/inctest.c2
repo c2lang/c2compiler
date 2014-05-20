@@ -1,4 +1,4 @@
-#include "examples/macros.c2h"
+#include "macros.c2h"
 
 PACKAGE inctest;
 
