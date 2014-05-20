@@ -138,5 +138,6 @@ target puzzle
     $deps show_files show_externals
     $ansi-c no_local_prefix single_module
     examples/puzzle.c2
+    examples/puzzle2.c2
 end
 
