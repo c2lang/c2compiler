@@ -47,7 +47,7 @@ static unsigned numerrors;
 static unsigned numskipped;
 
 static int color_output = 1;
-static const char* c2c_cmd = "./c2c";
+static const char* c2c_cmd = "build/c2c";
 static const char* test_root = "/tmp/tester";
 static char* cwd;
 static bool runSkipped;
