@@ -134,6 +134,7 @@ void RecipeReader::handleLine(char* line) {
                         current->addConfig(tok2);
                     }
                 } else if (strcmp(tok, "ansi-c") == 0) {
+                    current->generateCCode = true;
                     while (1) {
                         const char* tok2 = get_token();
                         if (!tok2) break;
@@ -155,7 +156,7 @@ void RecipeReader::handleLine(char* line) {
                         current->silenceWarning(tok2);
                     }
                 } else if (strcmp(tok, "deps") == 0) {
-                    current->hasDeps = true;
+                    current->generateDeps = true;
                     while (1) {
                         const char* tok2 = get_token();
                         if (!tok2) break;

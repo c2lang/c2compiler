@@ -23,7 +23,8 @@ namespace C2 {
 
 class Recipe {
 public:
-    Recipe(const std::string& name_) : name(name_) , hasDeps(false) {}
+    Recipe(const std::string& name_)
+        : name(name_) , generateDeps(false), generateCCode(false) {}
     ~Recipe() {}
 
     void addFile(const std::string& name_);
@@ -36,7 +37,8 @@ public:
     const std::string& get(int i) const;
 
     std::string name;
-    bool hasDeps;
+    bool generateDeps;
+    bool generateCCode;
 
     typedef std::vector<std::string> Files;
     Files files;

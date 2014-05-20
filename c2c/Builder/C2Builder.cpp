@@ -641,7 +641,7 @@ bool C2Builder::checkMainFunction(DiagnosticsEngine& Diags) {
 }
 
 void C2Builder::generateOptionalC() {
-    if (!options.generateC) return;
+    if (!options.generateC && !recipe.generateCCode) return;
 
     bool single_module = false;
     bool no_local_prefix = false;
@@ -751,7 +751,7 @@ void C2Builder::generateOptionalIR() {
 }
 
 void C2Builder::generateOptionsDeps() const {
-    if (!options.printDependencies && !recipe.hasDeps) return;
+    if (!options.printDependencies && !recipe.generateDeps) return;
 
     bool showFiles = false;
     bool showExternals = false;
