@@ -753,6 +753,7 @@ void C2Builder::generateOptionalIR() {
 void C2Builder::generateOptionsDeps() const {
     if (!options.printDependencies && !recipe.generateDeps) return;
 
+    u_int64_t t1 = Utils::getCurrentTime();
     bool showFiles = false;
     bool showExternals = false;
     bool showPrivate = true;
@@ -769,8 +770,10 @@ void C2Builder::generateOptionsDeps() const {
     }
     StringBuilder output;
     generator.write(output);
+    u_int64_t t2 = Utils::getCurrentTime();
     std::string path = "output/" + recipe.name;
     std::string filename = path + '/' + "deps.xml";
     FileUtils::writeFile(path.c_str(), filename, output);
+    if (options.printTiming) printf(COL_TIME"dep generation took %lld usec"ANSI_NORMAL"\n", t2 - t1);
 }
 
