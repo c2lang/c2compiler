@@ -166,7 +166,6 @@ QualType TypeResolver::checkCanonicals(Decls& decls, QualType Q, bool set) const
         return Q;
     case TC_POINTER:
         {
-            // TODO Helper to get PointerType (can be aliased?)
             const PointerType* P = cast<PointerType>(T);
             QualType t1 = P->getPointeeType();
             // Pointee will always be in same TypeContext (file), since it's either built-in or UnresolvedType
