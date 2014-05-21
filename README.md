@@ -41,7 +41,7 @@ Read the [installation document](INSTALL.md).
 ## Using the C2 compiler
 By default, c2c will only parse and analyse the targets. Generating C-code
 should work on all examples, but generating LLVM's IR code is work in
-progress.
+progress. In the example directory: (or add -d example/)
 ```
 c2c multi
 c2c hello
