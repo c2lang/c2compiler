@@ -849,7 +849,7 @@ C2::ExprResult C2Sema::ActOnNumericConstant(const Token& Tok) {
         const unsigned MaxWidth = 64; // for now limit to 64 bits
         llvm::APInt ResultVal(MaxWidth, 0);
         if (Literal.GetIntegerValue(ResultVal)) {
-            Diag(Tok.getLocation(), diag::warn_integer_too_large);
+            Diag(Tok.getLocation(), diag::err_integer_too_large);
         } else {
 #if 0
             // Octal, Hexadecimal, and integers with a U suffix are allowed to

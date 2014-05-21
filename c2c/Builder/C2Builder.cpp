@@ -123,7 +123,7 @@ public:
         , Diags(Diags_)
         , FileMgr(FileSystemOpts)
         , SM(Diags, FileMgr)
-        , Headers(HSOpts, FileMgr, Diags, LangOpts_, pti)
+        , Headers(HSOpts, SM, Diags, LangOpts_, pti)
         , PPOpts(new PreprocessorOptions())
         , PP(PPOpts, Diags, LangOpts_, pti, SM, Headers, loader)
         , ast(filename_, file_id)
@@ -250,11 +250,11 @@ int C2Builder::build() {
     Diags.setDiagnosticGroupMapping("conversion", diag::MAP_WARNING);
     Diags.setDiagnosticGroupMapping("all", diag::MAP_WARNING);
     Diags.setDiagnosticGroupMapping("extra", diag::MAP_WARNING);
-    Diags.setDiagnosticWarningAsError(diag::warn_integer_too_large, true);
+    //Diags.setDiagnosticWarningAsError(diag::warn_integer_too_large, true);
     Diags.setDiagnosticWarningAsError(diag::warn_falloff_nonvoid_function, true);
     // Workaround
-    Diags.setDiagnosticErrorAsFatal(diag::warn_integer_too_large, true);
-    Diags.setDiagnosticErrorAsFatal(diag::warn_integer_too_large, false);
+    //Diags.setDiagnosticErrorAsFatal(diag::warn_integer_too_large, true);
+    //Diags.setDiagnosticErrorAsFatal(diag::warn_integer_too_large, false);
     Diags.setDiagnosticErrorAsFatal(diag::warn_falloff_nonvoid_function, true);
     Diags.setDiagnosticErrorAsFatal(diag::warn_falloff_nonvoid_function, false);
 
