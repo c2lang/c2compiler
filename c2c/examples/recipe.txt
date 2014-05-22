@@ -134,6 +134,12 @@ target ccode
     ccode3.c2
 end
 
+target mylib
+    $warnings no-unused
+    $ansi-c no_local_prefix single_module
+    mylib1.c2
+end
+
 target puzzle
     $deps show_files show_externals
     $ansi-c no_local_prefix single_module

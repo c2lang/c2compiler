@@ -1,0 +1,22 @@
+package mylib;
+
+/*
+func void* malloc(uint32 size) {
+    return nil;
+}
+*/
+
+public type Handle struct {
+    int x;
+    int y;
+}
+
+public func Handle* init() {
+    Handle* p; //= malloc(sizeof(Handle));
+    return p;
+}
+
+public func int main() {
+    return 0;
+}
+

@@ -469,7 +469,9 @@ llvm::Value* CodeGenFunction::EmitExprNoImpCast(const Expr* E) {
         return EmitBinaryOperator(cast<BinaryOperator>(E));
     case EXPR_CONDOP:
     case EXPR_UNARYOP:
+        break;
     case EXPR_BUILTIN:
+        return EmitBuiltinExpr(cast<BuiltinExpr>(E));
     case EXPR_ARRAYSUBSCRIPT:
         break;
     case EXPR_MEMBER:
@@ -610,6 +612,13 @@ llvm::Value* CodeGenFunction::EmitIdentifierExpr(const IdentifierExpr* E) {
     }
     assert(0 && "TODO?");
     return 0;
+}
+
+llvm::Value* CodeGenFunction::EmitBuiltinExpr(const BuiltinExpr* E) {
+    assert(E->isSizeof() && "TODO elemsof");
+    // TEMP always return 4, Q: add Type::getSize()?, also for alignment
+    int value = 4;
+    return llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), value, true);
 }
 
 void CodeGenFunction::EmitVarDecl(const VarDecl* D) {

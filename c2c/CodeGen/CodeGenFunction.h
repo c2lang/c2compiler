@@ -40,6 +40,7 @@ class CallExpr;
 class IdentifierExpr;
 class VarDecl;
 class BinaryOperator;
+class BuiltinExpr;
 
 // This class organizes the per-function state that is used
 // while generating LLVM code.
@@ -60,6 +61,7 @@ private:
     llvm::Value* EmitExprNoImpCast(const Expr* E);
     llvm::Value* EmitCallExpr(const CallExpr* E);
     llvm::Value* EmitIdentifierExpr(const IdentifierExpr* E);
+    llvm::Value* EmitBuiltinExpr(const BuiltinExpr* E);
     void EmitVarDecl(const VarDecl* D);
     llvm::Value* EmitBinaryOperator(const BinaryOperator* E);
 
