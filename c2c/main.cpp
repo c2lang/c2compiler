@@ -171,7 +171,7 @@ int main(int argc, const char *argv[])
         }
     }
     if (!use_recipe) {
-        Recipe dummy("dummy");
+        Recipe dummy("dummy", true);
         dummy.addFile(targetFilter);
         C2Builder builder(dummy, opts);
         int errors = builder.checkFiles();

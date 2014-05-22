@@ -23,8 +23,8 @@ namespace C2 {
 
 class Recipe {
 public:
-    Recipe(const std::string& name_)
-        : name(name_) , generateDeps(false), generateCCode(false) {}
+    Recipe(const std::string& name_, bool isExec_)
+        : name(name_) , isExec(isExec_), generateDeps(false), generateCCode(false) {}
     ~Recipe() {}
 
     void addFile(const std::string& name_);
@@ -37,6 +37,7 @@ public:
     const std::string& get(int i) const;
 
     std::string name;
+    bool isExec;
     bool generateDeps;
     bool generateCCode;
 

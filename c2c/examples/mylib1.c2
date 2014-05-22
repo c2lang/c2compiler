@@ -16,7 +16,7 @@ public func Handle* init() {
     return p;
 }
 
-public func int main() {
-    return 0;
+public func void close(Handle* H) {
+    //free(H);
 }
 

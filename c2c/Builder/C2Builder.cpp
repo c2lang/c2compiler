@@ -369,7 +369,7 @@ int C2Builder::build() {
     if (options.printTiming) printf(COL_TIME"analysis took %lld usec"ANSI_NORMAL"\n", t2_analyse - t1_analyse);
     if (client->getNumErrors()) goto out;
 
-    if (!options.testMode && !checkMainFunction(Diags)) goto out;
+    if (!checkMainFunction(Diags)) goto out;
 
     generateOptionsDeps();
 
@@ -621,6 +621,9 @@ void C2Builder::printASTs() const {
 }
 
 bool C2Builder::checkMainFunction(DiagnosticsEngine& Diags) {
+    if (!recipe.isExec) return false;
+    if (options.testMode) return true;
+
     Decl* mainDecl = 0;
     for (PkgsIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
         Package* P = iter->second;

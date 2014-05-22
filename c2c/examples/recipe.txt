@@ -134,9 +134,9 @@ target ccode
     ccode3.c2
 end
 
-target mylib
+lib mylib
     $warnings no-unused
-    $ansi-c no_local_prefix single_module
+    $ansi-c
     mylib1.c2
 end
 

@@ -112,12 +112,21 @@ void RecipeReader::handleLine(char* line) {
         {
             // line should be 'TARGET <name>'
             const char* kw = get_token();
-            if (strcmp(kw, "target") != 0) error("expected keyword target");
-            const char* target_name = get_token();
-            if (target_name == 0) error("expected target name");
-            current = new Recipe(target_name);
-            recipes.push_back(current);
-            state = INSIDE_TARGET;
+            if (strcmp(kw, "target") == 0) {
+                const char* target_name = get_token();
+                if (target_name == 0) error("expected target name");
+                current = new Recipe(target_name, true);
+                recipes.push_back(current);
+                state = INSIDE_TARGET;
+            } else if (strcmp(kw, "lib") == 0) {
+                const char* target_name = get_token();
+                if (target_name == 0) error("expected lib name");
+                current = new Recipe(target_name, false);
+                recipes.push_back(current);
+                state = INSIDE_TARGET;
+            } else {
+                error("expected keyword target|lib");
+            }
         }
         break;
     case INSIDE_TARGET:
