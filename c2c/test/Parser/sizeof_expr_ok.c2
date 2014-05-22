@@ -1,0 +1,14 @@
+// @warnings{no-unused}
+package test;
+
+type Handle int;
+
+func void test1() {
+    int a = sizeof(int*);
+    int b = sizeof(a);
+    int c = sizeof(a*);
+    int d = sizeof(Handle);
+    int e = sizeof(Handle*);
+    int f = sizeof(Handle[2]);
+}
+

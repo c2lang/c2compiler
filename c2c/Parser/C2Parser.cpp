@@ -1331,10 +1331,15 @@ C2::ExprResult C2Parser::ParseSizeof()
 
     if (ExpectAndConsume(tok::l_paren, diag::err_expected_lparen)) return ExprError();
     ExprResult Res;
-    // TEMP only support base types and identifier (no struct members etc)
+
     switch (Tok.getKind()) {
     case tok::identifier:
-        Res = ParseIdentifier();
+        // identifier might be followed by * or [..]
+        if (NextToken().is(tok::r_paren)) {
+            Res = ParseIdentifier();
+        } else {
+            Res = ParseTypeSpecifier(false);
+        }
         break;
     // all basic types
     case tok::kw_uint8:
