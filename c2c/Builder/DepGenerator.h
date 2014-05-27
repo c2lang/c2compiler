@@ -35,7 +35,7 @@ public:
     ~DepGenerator();
 
     void analyse(const AST& ast);
-    void write(StringBuilder& output) const;
+    void write(StringBuilder& output, const std::string& title) const;
 private:
     PkgInfo* getInfo(const std::string& pkgname);
     void addExternal(const Package* P) const;

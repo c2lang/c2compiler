@@ -106,10 +106,10 @@ void DepGenerator::addExternal(const Package* P) const {
     externals.push_back(P);
 }
 
-void DepGenerator::write(StringBuilder& output) const {
+void DepGenerator::write(StringBuilder& output, const std::string& title) const {
     int indent = 0;
     output << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-    output << "<dsm>\n";
+    output << "<dsm name='" << title << "'>\n";
     indent += INDENT;
     output.indent(indent);
     output << "<model>\n";

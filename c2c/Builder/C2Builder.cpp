@@ -772,7 +772,7 @@ void C2Builder::generateOptionsDeps() const {
         generator.analyse(files[i]->ast);
     }
     StringBuilder output;
-    generator.write(output);
+    generator.write(output, recipe.name);
     u_int64_t t2 = Utils::getCurrentTime();
     std::string path = "output/" + recipe.name;
     std::string filename = path + '/' + "deps.xml";
