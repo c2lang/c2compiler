@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+import c2;
+
+func void test1() {
+    uint64 t1 = c2.buildtime;
+    char t2 = c2.buildtime;         // @warning{implicit conversion loses integer precision: 'uint64' to 'int8'}
+}
+

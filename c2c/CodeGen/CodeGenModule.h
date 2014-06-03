@@ -39,7 +39,7 @@ class Decl;
 class VarDecl;
 class Expr;
 class Type;
-class Package;
+class Module;
 class StringLiteral;
 
 // generates LLVM Module from (multiple) ASTs
@@ -56,7 +56,7 @@ public:
 
     llvm::Type* ConvertType(BuiltinType::Kind K);
     llvm::Type* ConvertType(QualType Q);
-    llvm::Function* createExternal(const Package* P, const std::string& name);
+    llvm::Function* createExternal(const C2::Module* P, const std::string& name);
     llvm::GlobalValue::LinkageTypes getLinkage(bool isPublic);
 
     const std::string& getName() const { return name; }
@@ -77,7 +77,7 @@ private:
     llvm::Constant* EmitConstantDecl(const Decl* D);
 
     const std::string name;
-    bool single_module;     // multiple packages in single module
+    bool single_module;     // multiple modules in single module
 
     typedef std::vector<AST*> Entries;
     typedef Entries::iterator EntriesIter;

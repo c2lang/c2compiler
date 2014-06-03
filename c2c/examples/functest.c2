@@ -1,4 +1,4 @@
-package func_test;
+module func_test;
 
 import utils;
 import c2;
@@ -15,7 +15,7 @@ func void doThing() {}
 
 func void printf(int argc, const char* text, ...) {}
 
-type Coor int;  // temp until we support multi-package
+type Coor int;  // temp until we support multi-module
 
 func utils.Coor getCoor(int argc, char*[] argv) {
     return 0;

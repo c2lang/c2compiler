@@ -1,11 +1,11 @@
 // @warnings{no-unused-variable no-unused-function}
 // @file{file1}
-package foo;
+module foo;
 
 public func void test1() {}
 
 // @file{file2}
-package bar;
+module bar;
 
 import foo local;
 

@@ -1,5 +1,5 @@
 // @warnings{no-unused}
-package test;
+module test;
 
 func char test1() { return 100; }
 

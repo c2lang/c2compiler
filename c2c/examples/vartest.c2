@@ -1,4 +1,4 @@
-package var_test;
+module var_test;
 
 type Struct struct {
     int a;

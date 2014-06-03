@@ -1,5 +1,5 @@
 // @warnings{no-unused-variable no-unused-function}
-package test;
+module test;
 
 type Number int;
 

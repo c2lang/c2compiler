@@ -50,12 +50,12 @@ static void usage(const char* name) {
     fprintf(stderr, "   -i            - generate LLVM IR code\n");
     fprintf(stderr, "   -I            - generate + print LLVM IR code\n");
     fprintf(stderr, "   -l            - list targets\n");
-    fprintf(stderr, "   -p            - print all packages\n");
+    fprintf(stderr, "   -p            - print all modules\n");
     fprintf(stderr, "   -s            - print symbols\n");
     fprintf(stderr, "   -t            - print timing\n");
     fprintf(stderr, "   -v            - verbose logging\n");
     fprintf(stderr, "   --test        - test mode (don't check for main())\n");
-    fprintf(stderr, "   --deps        - print package dependencies\n");
+    fprintf(stderr, "   --deps        - print module dependencies\n");
     exit(-1);
 }
 
@@ -115,7 +115,7 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
                 print_targets = true;
                 break;
             case 'p':
-                opts.printPackages = true;
+                opts.printModules = true;
                 break;
             case 's':
                 opts.printSymbols = true;

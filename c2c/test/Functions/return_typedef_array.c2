@@ -1,5 +1,5 @@
 // @skip
-package test;
+module test;
 
 type Point int[2];
 

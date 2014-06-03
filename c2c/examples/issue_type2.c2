@@ -1,4 +1,4 @@
-package type2;
+module type2;
 
 public type Long uint32;
 

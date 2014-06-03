@@ -1,9 +1,0 @@
-// @file{file1}
-package foo;
-
-// @file{file2}
-package bar;
-import foo;
-
-foo.Bla a;      // @error{package foo has no symbol Bla}
-

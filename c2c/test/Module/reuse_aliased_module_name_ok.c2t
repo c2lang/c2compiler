@@ -1,0 +1,12 @@
+// @warnings{no-unused}
+
+// @file{file1}
+module foo;
+
+// @file{file2}
+module bar;
+
+import foo as fooz;
+
+int foo;
+

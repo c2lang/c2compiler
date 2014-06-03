@@ -1,12 +1,12 @@
 // @warnings{no-unused-function}
 
 // @file{file1}
-package foo;
+module foo;
 
 public int Num = 0;
 
 // @file{file2}
-package bar;
+module bar;
 
 import foo;
 

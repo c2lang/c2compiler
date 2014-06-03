@@ -39,7 +39,7 @@ class Stmt;
 class Expr;
 class ArrayValueDecl;
 class CompoundStmt;
-class Package;
+class Module;
 
 enum DeclKind {
     DECL_FUNC = 0,
@@ -71,8 +71,8 @@ public:
     void setUsed() { DeclBits.DeclIsUsed = true; }
     void setUsedPublic() { DeclBits.DeclIsUsedPublic = true; }
 
-    void setPackage(const Package* pkg_) { pkg = pkg_; }
-    const Package* getPackage() const { return pkg; }
+    void setModule(const Module* mod_) { mod = mod_; }
+    const Module* getModule() const { return mod; }
     unsigned getFileID() const { return DeclBits.DeclFileID; }
 
     QualType getType() const { return type; }
@@ -105,7 +105,7 @@ protected:
         unsigned BitsInit;      // to initialize all bits
     };
 private:
-    const Package* pkg;
+    const Module* mod;
 
     Decl(const Decl&);
     Decl& operator= (const Decl&);
@@ -338,17 +338,17 @@ private:
 class ImportDecl : public Decl {
 public:
     ImportDecl(const std::string& name_, SourceLocation loc_, bool isLocal_,
-            const std::string& pkgName_, SourceLocation aliasLoc_);
+            const std::string& modName_, SourceLocation aliasLoc_);
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_IMPORT;
     }
     virtual void print(StringBuilder& buffer, unsigned indent) const;
 
-    const std::string& getPkgName() const { return pkgName; }
+    const std::string& getModuleName() const { return modName; }
     virtual clang::SourceLocation getAliasLocation() const { return aliasLoc; }
     bool isLocal() const { return DeclBits.ImportIsLocal; }
 private:
-    std::string pkgName;
+    std::string modName;
     SourceLocation aliasLoc;
 };
 

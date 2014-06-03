@@ -1,5 +1,5 @@
 // @warnings{no-unused}
-package test;
+module test;
 
 int8[4] a;
 // CHECK: @a = internal global [4 x i8] zeroinitializer, align 1

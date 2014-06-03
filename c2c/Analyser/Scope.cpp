@@ -21,7 +21,6 @@
 
 #include "Analyser/Scope.h"
 #include "Analyser/AnalyserUtils.h"
-#include "AST/Package.h"
 #include "AST/Decl.h"
 #include "AST/Expr.h"
 
@@ -31,29 +30,29 @@ using namespace clang;
 DynamicScope::DynamicScope() : Flags(0) {}
 
 
-Scope::Scope(const std::string& name_, const Pkgs& pkgs_, clang::DiagnosticsEngine& Diags_)
+Scope::Scope(const std::string& name_, const Modules& modules_, clang::DiagnosticsEngine& Diags_)
     : scopeIndex(0)
     , curScope(0)
-    , allPackages(pkgs_)
-    , myPkg(0)
+    , allModules(modules_)
+    , myModule(0)
     , Diags(Diags_)
 {
-    // add own package to scope
-    myPkg = findAnyPackage(name_);
-    assert(myPkg);
+    // add own module to scope
+    myModule = findAnyModule(name_);
+    assert(myModule);
 }
 
-bool Scope::addImportDecl(ImportDecl* useDecl) {
-    clang::SourceLocation Loc = useDecl->getLocation();
-    if (useDecl->getAliasLocation().isValid()) {
-        Loc = useDecl->getAliasLocation();
+bool Scope::addImportDecl(ImportDecl* importDecl) {
+    clang::SourceLocation Loc = importDecl->getLocation();
+    if (importDecl->getAliasLocation().isValid()) {
+        Loc = importDecl->getAliasLocation();
     }
-    const Package* pkg = findAnyPackage(useDecl->getPkgName());
-    assert(pkg);
-    useDecl->setPackage(pkg);
-    if (useDecl->isLocal()) locals.push_back(pkg);
-    usedPackages[useDecl->getName()] = useDecl;
-    symbolCache[useDecl->getName()] = useDecl;
+    const Module* mod = findAnyModule(importDecl->getModuleName());
+    assert(mod);
+    importDecl->setModule(mod);
+    if (importDecl->isLocal()) locals.push_back(mod);
+    importedModules[importDecl->getName()] = importDecl;
+    symbolCache[importDecl->getName()] = importDecl;
     return true;
 }
 
@@ -86,29 +85,29 @@ void Scope::addScopedSymbol(VarDecl* V) {
     symbolCache[V->getName()] = V;
 }
 
-const Package* Scope::findUsedPackage(const std::string& name, clang::SourceLocation loc) const {
-    PackagesConstIter iter = usedPackages.find(name);
-    if (iter != usedPackages.end()) {
+const Module* Scope::findUsedModule(const std::string& name, clang::SourceLocation loc) const {
+    ImportsConstIter iter = importedModules.find(name);
+    if (iter != importedModules.end()) {
         ImportDecl* U = iter->second;
         U->setUsed();
-        return U->getPackage();
+        return U->getModule();
     }
 
     // check if used with alias (then fullname is forbidden)
-    for (PackagesConstIter iter = usedPackages.begin(); iter != usedPackages.end(); ++iter) {
+    for (ImportsConstIter iter = importedModules.begin(); iter != importedModules.end(); ++iter) {
         ImportDecl* U = iter->second;
         U->setUsed();
-        const Package* p = U->getPackage();
+        const Module* p = U->getModule();
         if (p->getName() == name) {
-            Diags.Report(loc, diag::err_package_has_alias) << name << iter->first;
+            Diags.Report(loc, diag::err_module_has_alias) << name << iter->first;
             return 0;
         }
     }
-    const Package* P2 = findAnyPackage(name);
+    const Module* P2 = findAnyModule(name);
     if (P2) {
-        Diags.Report(loc, diag::err_package_not_used) << name;
+        Diags.Report(loc, diag::err_module_not_used) << name;
     } else {
-        Diags.Report(loc, diag::err_unknown_package) << name;
+        Diags.Report(loc, diag::err_unknown_module) << name;
     }
     return 0;
 }
@@ -120,16 +119,16 @@ Decl* Scope::findSymbol(const std::string& symbol, clang::SourceLocation loc, bo
         return iter->second;
     }
 
-    // lookup in used package list
+    // lookup in used module list
     bool ambiguous = false;
     bool visible_match = false;
     Decl* D = 0;
     for (LocalsConstIter iter = locals.begin(); iter != locals.end(); ++iter) {
-        const Package* pkg = *iter;
-        Decl* decl = pkg->findSymbol(symbol);
+        const Module* mod = *iter;
+        Decl* decl = mod->findSymbol(symbol);
         if (!decl) continue;
 
-        bool visible = !(isExternal(pkg) && !decl->isPublic());
+        bool visible = !(isExternal(mod) && !decl->isPublic());
         if (D) {
             // if previous result was non-visible, replace with new one
             if (visible_match == visible) {
@@ -138,12 +137,12 @@ Decl* Scope::findSymbol(const std::string& symbol, clang::SourceLocation loc, bo
                     // NASTY: are different FileManagers!
                     // TEMP just use 0 location
                     Diags.Report(SourceLocation(), diag::note_function_suggestion)
-                        << AnalyserUtils::fullName(D->getPackage()->getName(), D->getName());
+                        << AnalyserUtils::fullName(D->getModule()->getName(), D->getName());
 
                     ambiguous = true;
                 }
                 Diags.Report(SourceLocation(), diag::note_function_suggestion)
-                    << AnalyserUtils::fullName(pkg->getName(), decl->getName());
+                    << AnalyserUtils::fullName(mod->getName(), decl->getName());
 
                 continue;
             }
@@ -160,10 +159,10 @@ Decl* Scope::findSymbol(const std::string& symbol, clang::SourceLocation loc, bo
 
     if (D) {
         // mark ImportDecl as used
-        PackagesConstIter iter = usedPackages.begin();
-        while (iter != usedPackages.end()) {
+        ImportsConstIter iter = importedModules.begin();
+        while (iter != importedModules.end()) {
             ImportDecl* Use = iter->second;
-            if (D->getPackage() == Use->getPackage()) {
+            if (D->getModule() == Use->getModule()) {
                 Use->setUsed();
                 break;
             }
@@ -174,7 +173,7 @@ Decl* Scope::findSymbol(const std::string& symbol, clang::SourceLocation loc, bo
             Diags.Report(loc, diag::err_not_public) << symbol;
             return 0;
         }
-        if (isExternal(D->getPackage())) D->setUsedPublic();
+        if (isExternal(D->getModule())) D->setUsedPublic();
         symbolCache[symbol] = D;
         return D;
     } else {
@@ -187,28 +186,28 @@ Decl* Scope::findSymbol(const std::string& symbol, clang::SourceLocation loc, bo
         ScopeResult res2 = scope.findSymbolInUsed(symbol);
         Decl* D2 = res2.getDecl();
         if (D2) {
-            assert(D2->getPackage());
+            assert(D2->getModule());
             // Crashes if ambiguous
             Diags.Report(D->getLocation(), diag::note_function_suggestion)
-                << AnalyserUtils::fullName(D2->getPackage()->getName(), id->getName());
+                << AnalyserUtils::fullName(D2->getModule()->getName(), id->getName());
         }
 
 */
     }
-    // TODO make suggestion otherwise? (used Packages w/alias, other packages?)
+    // TODO make suggestion otherwise? (used Modules w/alias, other modules?)
     return 0;
 }
 
-Decl* Scope::findSymbolInPackage(const std::string& name, clang::SourceLocation loc, const Package* pkg) const {
-    Decl* D = pkg->findSymbol(name);
+Decl* Scope::findSymbolInModule(const std::string& name, clang::SourceLocation loc, const Module* mod) const {
+    Decl* D = mod->findSymbol(name);
     if (!D) {
-        Diags.Report(loc, diag::err_unknown_package_symbol) << pkg->getName() << name;
+        Diags.Report(loc, diag::err_unknown_module_symbol) << mod->getName() << name;
         return 0;
     }
-    // if external package, check visibility
-    if (isExternal(pkg)) {
+    // if external module, check visibility
+    if (isExternal(mod)) {
         if (!D->isPublic()) {
-            Diags.Report(loc, diag::err_not_public) << AnalyserUtils::fullName(pkg->getName(), name);
+            Diags.Report(loc, diag::err_not_public) << AnalyserUtils::fullName(mod->getName(), name);
             return 0;
         }
         D->setUsedPublic();
@@ -219,24 +218,24 @@ Decl* Scope::findSymbolInPackage(const std::string& name, clang::SourceLocation 
 #if 0
 // TODO rename to makeSuggestion() and use in findSymbol
 Decl* Scope::findSymbolInUsed(const std::string& symbol) const {
-    // symbol can be package name or symbol within package
-    const Package* pkg = findPackage(symbol);
-    if (pkg) {
-        result.setPackage(pkg);
+    // symbol can be module name or symbol within module
+    const Module* mod = findModule(symbol);
+    if (mod) {
+        result.setModule(mod);
         return result;
     }
 
-    // search in all used usedPackages
-    for (PackagesConstIter iter = usedPackages.begin(); iter != usedPackages.end(); ++iter) {
+    // search in all used importedModules
+    for (ModulesConstIter iter = importedModules.begin(); iter != importedModules.end(); ++iter) {
         ImportDecl* U = iter->second;
         U->setUsed();
-        const Package* pkg2 = U->getPackage();
-        Decl* decl = pkg2->findSymbol(symbol);
+        const Module* mod2 = U->getModule();
+        Decl* decl = mod2->findSymbol(symbol);
         if (!decl) continue;
 
         // NOTE: dont check ambiguity here (just return first match)
         result.setDecl(decl);
-        //bool external = isExternal(pkg2);
+        //bool external = isExternal(mod2);
         //bool visible = !(external && !decl->isPublic());
         // Q: check visibility and set ok?
     }
@@ -279,9 +278,9 @@ void Scope::ExitScope() {
     else curScope = &scopes[scopeIndex-1];
 }
 
-const Package* Scope::findAnyPackage(const std::string& name) const {
-    PkgsConstIter iter = allPackages.find(name);
-    if (iter == allPackages.end()) return 0;
+const Module* Scope::findAnyModule(const std::string& name) const {
+    ModulesConstIter iter = allModules.find(name);
+    if (iter == allModules.end()) return 0;
     return iter->second;
 }
 

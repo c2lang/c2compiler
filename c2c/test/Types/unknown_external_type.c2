@@ -1,4 +1,4 @@
-package test;
+module test;
 
-utils.foo[] a;      // @error{unknown package: utils}
+utils.foo[] a;      // @error{unknown module: utils}
 

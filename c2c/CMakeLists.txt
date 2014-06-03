@@ -42,7 +42,7 @@ ADD_EXECUTABLE(c2c
     AST/AST.cpp
     AST/Decl.cpp
     AST/Expr.cpp
-    AST/Package.cpp
+    AST/Module.cpp
     AST/Stmt.cpp
     AST/Type.cpp
     Parser/C2Parser.cpp

@@ -1,5 +1,5 @@
 // @warnings{no-unused-function}
-package test;
+module test;
 
 type Point struct {
     int x;

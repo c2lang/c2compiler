@@ -1,4 +1,4 @@
-package use1;
+module use1;
 
 public type Number int;
 

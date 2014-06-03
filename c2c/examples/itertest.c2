@@ -1,4 +1,4 @@
-package iter_test;
+module iter_test;
 
 func void a() {}
 func void b() {}

@@ -1,4 +1,4 @@
-package test;
+module test;
 
 import other as test;      // @error{redefinition of test}
 

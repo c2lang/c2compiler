@@ -1,4 +1,4 @@
-package puzzle;
+module puzzle;
 
 const uint32 LIST_SIZE = 100;
 int[LIST_SIZE] activeList;

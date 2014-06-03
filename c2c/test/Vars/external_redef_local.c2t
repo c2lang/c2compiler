@@ -1,12 +1,12 @@
 // @warnings{no-unused}
 
 // @file{file1}
-package foo;
+module foo;
 
 public int a;
 
 // @file{file2}
-package bar;
+module bar;
 
 import foo local;
 

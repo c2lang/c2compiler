@@ -1,0 +1,12 @@
+// @warnings{no-unused}
+// @file{file1}
+module foo;
+
+// @file{file2}
+module bar;
+import foo;
+
+func void test1() {
+    foo.n = 10;         // @error{module foo has no symbol n}
+}
+

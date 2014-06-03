@@ -20,9 +20,9 @@
 
 using namespace C2;
 
-const char* AnalyserUtils::fullName(const std::string& pkgname, const std::string& symname) {
+const char* AnalyserUtils::fullName(const std::string& modName, const std::string& symname) {
     static char buffer[128];
-    sprintf(buffer, "%s.%s", pkgname.c_str(), symname.c_str());
+    sprintf(buffer, "%s.%s", modName.c_str(), symname.c_str());
     return buffer;
 }
 

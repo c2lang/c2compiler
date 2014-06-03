@@ -24,7 +24,7 @@ class StringBuilder;
 
 class GenUtils {
 public:
-    static void addName(const std::string& pkgName, const std::string& name, StringBuilder& buffer);
+    static void addName(const std::string& modName, const std::string& name, StringBuilder& buffer);
     static void toCapital(const std::string& input, StringBuilder& output);
 };
 

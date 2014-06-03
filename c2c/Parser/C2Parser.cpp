@@ -107,7 +107,7 @@ void C2Parser::Initialize() {
 
 bool C2Parser::Parse() {
     LOG_FUNC
-    ParsePackage();
+    ParseModule();
     if (Diags.hasErrorOccurred()) return false;
 
     ParseImports();
@@ -122,18 +122,18 @@ bool C2Parser::Parse() {
     return true;
 }
 
-void C2Parser::ParsePackage() {
+void C2Parser::ParseModule() {
     LOG_FUNC
-    if (ExpectAndConsume(tok::kw_package, diag::err_expected_package)) return;
+    if (ExpectAndConsume(tok::kw_module, diag::err_expected_module)) return;
     if (ExpectIdentifier()) return;
 
-    IdentifierInfo* Pkg = Tok.getIdentifierInfo();
-    SourceLocation PkgLoc = ConsumeToken();
+    IdentifierInfo* Mod = Tok.getIdentifierInfo();
+    SourceLocation ModLoc = ConsumeToken();
 
 
-    if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "package name")) return;
+    if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "module name")) return;
 
-    Actions.ActOnPackage(Pkg->getNameStart(), PkgLoc);
+    Actions.ActOnModule(Mod->getNameStart(), ModLoc);
 }
 
 void C2Parser::ParseImports() {
@@ -143,8 +143,8 @@ void C2Parser::ParseImports() {
         // Syntax: import [identifier] <as identifier> <local>
         ConsumeToken();
         if (ExpectIdentifier()) return;
-        IdentifierInfo* Pkg = Tok.getIdentifierInfo();
-        SourceLocation PkgLoc = ConsumeToken();
+        IdentifierInfo* Mod = Tok.getIdentifierInfo();
+        SourceLocation ModLoc = ConsumeToken();
         SourceLocation AliasLoc;
         Token AliasToken;
         AliasToken.startToken();
@@ -164,7 +164,7 @@ void C2Parser::ParseImports() {
         }
         if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "import statement")) return;
 
-        Actions.ActOnImport(Pkg->getNameStart(), PkgLoc, AliasToken, isLocal);
+        Actions.ActOnImport(Mod->getNameStart(), ModLoc, AliasToken, isLocal);
     }
 }
 
@@ -1418,7 +1418,7 @@ C2::ExprResult C2Parser::ParseFullIdentifier() {
     if (Tok.is(tok::period)) {
         ConsumeToken(); // consume the '.'
         if (ExpectIdentifier()) return ExprError();
-        // type is a packages
+        // type is a modules
         pSym = tSym;
         pLoc = tLoc;
 
@@ -1851,11 +1851,11 @@ C2::StmtResult C2Parser::ParseBreakStatement() {
 /*
   Syntax:
     Number num = .     // id = type
-    Utils.Type t = .  // id = pkg.type
+    Utils.Type t = .  // id = module.type
     myfunc()        // id = func
-    Pkg.func()     // id = pkg.func
+    Mod.func()     // id = module.func
     count =         // id = var
-    Pkg.var =      // id = pkg.var
+    Mod.var =      // id = module.var
     id:             // id = label
 */
 // TODO see Parser::ParseStatementOrDeclarationAfterAttributes()
@@ -1890,7 +1890,7 @@ C2::StmtResult C2Parser::ParseDeclOrStatement() {
     switch (afterIdent.getKind()) {
     case tok::coloncolon:
         // syntax error
-        assert(0 && "double package id");
+        assert(0 && "double module id");
         return StmtError();
     case tok::colon:
         // TODO move this to ParseLabeledStatement

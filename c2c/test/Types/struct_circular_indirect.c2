@@ -1,6 +1,6 @@
 // @skip
 // @warnings{no-unused}
-package test;
+module test;
 
 type Foo struct {
     Bar b;       // @error{circular type definition: Foo -> Bar -> Foo}

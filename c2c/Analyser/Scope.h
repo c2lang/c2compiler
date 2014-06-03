@@ -21,7 +21,7 @@
 #include <vector>
 #include <stdint.h>
 
-#include "AST/Package.h"
+#include "AST/Module.h"
 
 #define MAX_SCOPE_DEPTH 15
 
@@ -82,17 +82,17 @@ public:
         SwitchScope = 0x800,
     };
 
-    Scope(const std::string& name_, const Pkgs& pkgs_, clang::DiagnosticsEngine& Diags_);
+    Scope(const std::string& name_, const Modules& modules_, clang::DiagnosticsEngine& Diags_);
 
     // adding symbols
-    bool addImportDecl(ImportDecl* useDecl);
+    bool addImportDecl(ImportDecl* importDecl);
     bool checkScopedSymbol(const VarDecl* V) const;
     void addScopedSymbol(VarDecl* V);
 
     // searching
-    const Package* findUsedPackage(const std::string& name, clang::SourceLocation loc) const;
+    const Module* findUsedModule(const std::string& name, clang::SourceLocation loc) const;
     Decl* findSymbol(const std::string& name, clang::SourceLocation loc, bool isType) const;
-    Decl* findSymbolInPackage(const std::string& name, clang::SourceLocation loc, const Package* pkg) const;
+    Decl* findSymbolInModule(const std::string& name, clang::SourceLocation loc, const Module* mod) const;
 
     // Scopes
     void EnterScope(unsigned flags);
@@ -101,12 +101,12 @@ public:
     bool allowBreak()    const { return curScope->Flags & BreakScope; }
     bool allowContinue() const { return curScope->Flags & ContinueScope; }
 
-    bool isExternal(const Package* pkg) const {
-        return (pkg && pkg != myPkg);
+    bool isExternal(const Module* mod) const {
+        return (mod && mod != myModule);
     }
 
 private:
-    const Package* findAnyPackage(const std::string& name) const;
+    const Module* findAnyModule(const std::string& name) const;
     Decl* findOwn(const std::string& symbol) const;
     //Decl* findSymbolInUsed(const std::string& name) const;
 
@@ -115,21 +115,21 @@ private:
     unsigned scopeIndex;    // first free scope (= count of scopes)
     DynamicScope* curScope;
 
-    // Packages with local symbols (includes self pkg)
-    typedef std::vector<const Package*> Locals;
+    // Modules with local symbols (includes self mod)
+    typedef std::vector<const Module*> Locals;
     typedef Locals::const_iterator LocalsConstIter;
     Locals locals;
 
-    // used Packages (use <as>)
-    typedef std::map<std::string, ImportDecl*> Packages;
-    typedef Packages::const_iterator PackagesConstIter;
-    typedef Packages::iterator PackagesIter;
-    Packages usedPackages;
+    // used Modules (use <as>)
+    typedef std::map<std::string, ImportDecl*> Imports;
+    typedef Imports::const_iterator ImportsConstIter;
+    typedef Imports::iterator ImportsIter;
+    Imports importedModules;
 
-    // all packages
-    const Pkgs& allPackages;
+    // all modules
+    const Modules& allModules;
 
-    const Package* myPkg;
+    const Module* myModule;
 
     // Symbol caches
     typedef std::map<const std::string, Decl*> SymbolCache;

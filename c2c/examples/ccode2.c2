@@ -1,4 +1,4 @@
-package ccode2;
+module ccode2;
 
 import ccode3;
 

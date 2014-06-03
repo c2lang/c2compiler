@@ -1,0 +1,16 @@
+// @warnings{no-unused-variable no-unused-function}
+
+// @file{file1}
+module foo;
+
+public const int Num = 0;
+
+// @file{file2}
+module bar;
+
+import foo local;
+
+func void test() {
+    int a = Num;
+}
+

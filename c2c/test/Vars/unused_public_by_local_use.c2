@@ -1,5 +1,5 @@
 // @warnings{no-unused-variable}
-package test;
+module test;
 
 public const int n = 1; // @warning{variable 'n' is not used public}
 

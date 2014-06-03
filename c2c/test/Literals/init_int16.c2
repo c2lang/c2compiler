@@ -1,5 +1,5 @@
 // @warnings{no-unused}
-package test;
+module test;
 
 func void test1() {
     int16 a =  32767;

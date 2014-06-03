@@ -1,4 +1,4 @@
-package test;
+module test;
 
 public func void test1(local int a) {}  // @error{cannot use keyword local for function parameters}
 

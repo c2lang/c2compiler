@@ -52,7 +52,7 @@ public:
     ~C2Sema();
 
     // file level actions
-    void ActOnPackage(const char* name, SourceLocation loc);
+    void ActOnModule(const char* name, SourceLocation loc);
     void ActOnImport(const char* name, SourceLocation loc, Token& aliasTok, bool isLocal);
     void ActOnVarDef(const char* name, SourceLocation loc, bool is_public, Expr* type, Expr* InitValue);
 
@@ -131,7 +131,7 @@ private:
 
     DiagnosticBuilder Diag(SourceLocation Loc, unsigned DiagID);
     void addSymbol(Decl* d);
-    const ImportDecl* findPackage(const std::string& name) const;
+    const ImportDecl* findModule(const std::string& name) const;
 
     SourceManager& SourceMgr;
     DiagnosticsEngine& Diags;

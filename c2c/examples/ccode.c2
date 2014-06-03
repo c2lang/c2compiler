@@ -1,4 +1,4 @@
-package ccode1;
+module ccode1;
 
 import stdio;
 import ccode2;

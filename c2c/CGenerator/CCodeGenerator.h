@@ -19,7 +19,7 @@
 #include <string>
 #include <vector>
 
-#include "AST/Package.h"
+#include "AST/Module.h"
 #include "AST/Type.h"
 #include "Utils/StringBuilder.h"
 
@@ -44,7 +44,7 @@ class CompoundStmt;
 class CCodeGenerator {
 public:
     enum Mode { MULTI_FILE, SINGLE_FILE };
-    CCodeGenerator(const std::string& filename_, Mode mode_, const Pkgs& pkgs_, bool prefix);
+    CCodeGenerator(const std::string& filename_, Mode mode_, const Modules& modules_, bool prefix);
     ~CCodeGenerator();
 
     void addEntry(AST& ast) { entries.push_back(&ast); }
@@ -85,14 +85,14 @@ private:
     void EmitTypePreName(QualType type, StringBuilder& output);
     void EmitTypePostName(QualType type, StringBuilder& output);
     void EmitStringLiteral(const std::string& input, StringBuilder& output);
-    void addPrefix(const std::string& pkgName, const std::string& name, StringBuilder& buffer) const;
+    void addPrefix(const std::string& modName, const std::string& name, StringBuilder& buffer) const;
 
     const std::string& filename;
-    const std::string* curpkg;
+    const std::string* curmod;
     Mode mode;
     bool no_local_prefix;
 
-    const Pkgs& pkgs;
+    const Modules& modules;
 
     typedef std::vector<AST*> Entries;
     typedef Entries::iterator EntriesIter;

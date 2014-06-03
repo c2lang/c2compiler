@@ -1,4 +1,4 @@
-package test;
+module test;
 
 const int32 n;        // @error{constant variable n must be initialized}
 

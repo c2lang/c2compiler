@@ -15,7 +15,7 @@
 
 #include "Builder/DepGenerator.h"
 #include "Builder/DepVisitor.h"
-#include "AST/Package.h"
+#include "AST/Module.h"
 #include "AST/AST.h"
 #include "AST/Decl.h"
 #include "AST/Type.h"
@@ -39,7 +39,7 @@ static const char* getFileName(const std::string& s) {
 }
 
 static void fullName(const Decl* D, StringBuilder& output) {
-    const Package* P = D->getPackage();
+    const Module* P = D->getModule();
     assert(P);
     output << P->getName() << '_' << D->getName();
 }
@@ -55,10 +55,10 @@ public:
     const AST& ast;
 };
 
-class PkgInfo {
+class ModInfo {
 public:
-    PkgInfo(const std::string& name_) : name(name_) {}
-    ~PkgInfo() {
+    ModInfo(const std::string& name_) : name(name_) {}
+    ~ModInfo() {
         for (unsigned i=0; i<files.size(); i++) {
             delete files[i];
         }
@@ -76,30 +76,30 @@ public:
 }
 
 DepGenerator::~DepGenerator() {
-    for (unsigned i=0; i<packages.size(); i++) {
-        delete packages[i];
+    for (unsigned i=0; i<modules.size(); i++) {
+        delete modules[i];
     }
 }
 
 void DepGenerator::analyse(const AST& ast) {
-    const string& pkgName = ast.getPkgName();
+    const string& modName = ast.getModuleName();
     const string& fileName = ast.getFileName();
 
-    PkgInfo* info = getInfo(pkgName);
+    ModInfo* info = getInfo(modName);
     info->addFile(fileName, ast);
 }
 
-PkgInfo* DepGenerator::getInfo(const std::string& pkgname) {
-    for (unsigned i=0; i<packages.size(); i++) {
-        PkgInfo* P = packages[i];
-        if (P->name == pkgname) return P;
+ModInfo* DepGenerator::getInfo(const std::string& modName) {
+    for (unsigned i=0; i<modules.size(); i++) {
+        ModInfo* P = modules[i];
+        if (P->name == modName) return P;
     }
-    PkgInfo* P = new PkgInfo(pkgname);
-    packages.push_back(P);
+    ModInfo* P = new ModInfo(modName);
+    modules.push_back(P);
     return P;
 }
 
-void DepGenerator::addExternal(const Package* P) const {
+void DepGenerator::addExternal(const Module* P) const {
     for (unsigned i=0; i<externals.size(); i++) {
         if (externals[i] == P) return;
     }
@@ -115,10 +115,10 @@ void DepGenerator::write(StringBuilder& output, const std::string& title) const 
     output << "<model>\n";
 
     indent += INDENT;
-    for (unsigned i=0; i<packages.size(); i++) {
-        const PkgInfo* P = packages[i];
+    for (unsigned i=0; i<modules.size(); i++) {
+        const ModInfo* P = modules[i];
         output.indent(indent);
-        output << "<group name='" << P->name << "' full='package:" << P->name << "' collapsed='1'>\n";
+        output << "<group name='" << P->name << "' full='module:" << P->name << "' collapsed='1'>\n";
         indent += INDENT;
 
         for (unsigned j=0; j<P->files.size(); j++) {
@@ -167,8 +167,8 @@ void DepGenerator::writeAST(const AST& ast, StringBuilder& output, unsigned inde
         for (unsigned i=0; i<ast.numImports(); i++) {
             const ImportDecl* U = ast.getImport(i);
             QualType Q = U->getType();
-            const PackageType* T = cast<PackageType>(Q.getTypePtr());
-            const Package* P = T->getPackage();
+            const ModuleType* T = cast<ModuleType>(Q.getTypePtr());
+            const Module* P = T->getModule();
             assert(P);
             if (P->isExternal()) addExternal(P);
         }
@@ -201,7 +201,7 @@ void DepGenerator::writeDecl(const Decl* D, StringBuilder& output, unsigned inde
         // syntax: <dep dest='G1/B' str='1'/>
         const Decl* dep = visitor.getDep(i);
         if (!showPrivate && !dep->isPublic()) continue;
-        if (!showExternals && dep->getPackage()->isExternal()) continue;
+        if (!showExternals && dep->getModule()->isExternal()) continue;
         output.indent(indent);
         output << "<dep dest='";
         fullName(dep, output);
@@ -213,13 +213,13 @@ void DepGenerator::writeDecl(const Decl* D, StringBuilder& output, unsigned inde
     output << "</atom>\n";
 }
 
-void DepGenerator::writeExternal(const Package* P, StringBuilder& output, unsigned indent) const {
+void DepGenerator::writeExternal(const Module* P, StringBuilder& output, unsigned indent) const {
     output.indent(indent);
-    output << "<group name='" << P->getName() << "' full='package:" << P->getName() << "' collapsed='1'>\n";
+    output << "<group name='" << P->getName() << "' full='module:" << P->getName() << "' collapsed='1'>\n";
     indent += INDENT;
 
-    const Package::Symbols& symbols = P->getSymbols();
-    for (Package::SymbolsConstIter iter=symbols.begin(); iter!=symbols.end(); ++iter) {
+    const Module::Symbols& symbols = P->getSymbols();
+    for (Module::SymbolsConstIter iter=symbols.begin(); iter!=symbols.end(); ++iter) {
         const Decl* D = iter->second;
         output.indent(indent);
         output << "<atom name='" << D->getName();

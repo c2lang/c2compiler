@@ -1,5 +1,5 @@
 // @warnings{no-unused-variable}
-package test;
+module test;
 
 type State enum uint16 { STATE_A }
 

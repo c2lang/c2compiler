@@ -1,5 +1,5 @@
 // @warnings{no-unused-variable}
-package test;
+module test;
 
 int a = a;  // @error{cannot initialize a with itself}
 

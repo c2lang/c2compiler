@@ -43,7 +43,7 @@ class FunctionDecl;
 class AliasTypeDecl;
 class TypeDecl;
 class ImportDecl;
-class Package;
+class Module;
 
 
 class QualType {
@@ -442,16 +442,16 @@ private:
 };
 
 
-class PackageType : public Type {
+class ModuleType : public Type {
 public:
-    PackageType(ImportDecl* decl_)
+    ModuleType(ImportDecl* decl_)
         : Type(TC_PACKAGE, QualType(this))
         , decl(decl_)
     {}
     static bool classof(const Type* T) { return T->getTypeClass() == TC_PACKAGE; }
 
     ImportDecl* getDecl() const { return decl; }
-    const Package* getPackage() const;
+    const Module* getModule() const;
 protected:
     virtual void printName(StringBuilder& buffer) const;
     virtual void debugPrint(StringBuilder& buffer) const;
@@ -535,7 +535,7 @@ public:
     QualType getStructType();
     QualType getEnumType();
     QualType getFunctionType(FunctionDecl* F);
-    QualType getPackageType(ImportDecl* D);
+    QualType getModuleType(ImportDecl* D);
 private:
     QualType add(Type* T);
 

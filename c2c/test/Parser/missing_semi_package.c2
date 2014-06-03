@@ -1,1 +1,1 @@
-package test    // @error{expected ';' after package name}
+module test    // @error{expected ';' after module name}

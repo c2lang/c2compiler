@@ -1,4 +1,4 @@
-package utils;
+module utils;
 
 public type Buffer struct {
     int count;

@@ -1,0 +1,16 @@
+module multi1;
+
+import multi2 local;
+import stdio;
+
+public func int main() {
+    func2();
+    return 10;
+}
+
+public func void func1(int b, int c) {
+    stdio.puts("multi1.func1()\n");
+    return;
+}
+
+

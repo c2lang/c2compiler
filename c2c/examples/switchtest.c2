@@ -1,4 +1,4 @@
-package switch_test;
+module switch_test;
 
 import stdio;
 

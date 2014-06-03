@@ -1,4 +1,4 @@
-package hello_world;
+module hello_world;
 
 import stdio local;
 

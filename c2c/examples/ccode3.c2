@@ -1,4 +1,4 @@
-package ccode3;
+module ccode3;
 
 public int MAX_COUNT = 3;
 int PRIV_COUNT = 4;

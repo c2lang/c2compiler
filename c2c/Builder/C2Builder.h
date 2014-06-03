@@ -19,7 +19,7 @@
 #include <vector>
 #include <string>
 
-#include "AST/Package.h"
+#include "AST/Module.h"
 #include "FileUtils/FileDb.h"
 
 namespace clang {
@@ -43,7 +43,7 @@ struct BuildOptions {
         , printIR(false)
         , generateC(false)
         , printC(false)
-        , printPackages(false)
+        , printModules(false)
         , printDependencies(false)
         , verbose(false)
         , testMode(false)
@@ -58,7 +58,7 @@ struct BuildOptions {
     bool printIR;
     bool generateC;
     bool printC;
-    bool printPackages;
+    bool printModules;
     bool printDependencies;
     bool verbose;
     bool testMode;
@@ -73,13 +73,13 @@ public:
     int checkFiles();
     int build();
 private:
-    bool havePackage(const std::string& name) const;
-    Package* getPackage(const std::string& name, bool isExternal, bool isCLib);
-    bool createPkgs();
-    bool loadExternalPackages();
-    bool loadPackage(const std::string& name);
+    bool haveModule(const std::string& name) const;
+    Module* getModule(const std::string& name, bool isExternal, bool isCLib);
+    bool createModules();
+    bool loadExternalModules();
+    bool loadModule(const std::string& name);
     unsigned analyse();
-    void dumpPkgs() const;
+    void dumpModules() const;
     void printASTs() const;
 
     bool checkMainFunction(clang::DiagnosticsEngine& Diags);
@@ -94,7 +94,7 @@ private:
     Files files;
     FileDb filenames;
 
-    Pkgs pkgs;
+    Modules modules;
 
     C2Builder(const C2Builder&);
     C2Builder& operator= (const C2Builder&);

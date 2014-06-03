@@ -1,4 +1,4 @@
-package layer3;
+module layer3;
 
 import layer2;
 

@@ -87,7 +87,7 @@ private:
     DeclResult DeclError();
 
     // top level
-    void ParsePackage();
+    void ParseModule();
     void ParseImports();
     bool ParseTopLevel();
     void ParseTypeDef(bool is_public);

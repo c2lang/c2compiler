@@ -80,10 +80,10 @@ public:
     }
 
     void setName(const std::string& name, clang::SourceLocation loc) {
-        pkgName = name;
-        pkgLoc = loc;
+        modName = name;
+        modLoc = loc;
     }
-    const std::string& getPkgName() const { return pkgName; }
+    const std::string& getModuleName() const { return modName; }
     const std::string& getFileName() const { return filename; }
     unsigned getFileID() const { return file_id; }
 
@@ -93,8 +93,8 @@ private:
 
     const std::string filename;
     unsigned file_id;
-    std::string pkgName;
-    clang::SourceLocation pkgLoc;
+    std::string modName;
+    clang::SourceLocation modLoc;
 
     typedef OwningVector<ImportDecl> ImportList;
     ImportList importList;

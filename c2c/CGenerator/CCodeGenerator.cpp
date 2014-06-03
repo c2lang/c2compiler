@@ -24,7 +24,7 @@
 //#include <llvm/Support/ToolOutputFile.h>
 
 #include "CGenerator/CCodeGenerator.h"
-#include "AST/Package.h"
+#include "AST/Module.h"
 #include "AST/AST.h"
 #include "AST/Decl.h"
 #include "AST/Expr.h"
@@ -47,12 +47,12 @@ using namespace C2;
 using namespace llvm;
 using namespace clang;
 
-CCodeGenerator::CCodeGenerator(const std::string& filename_, Mode mode_, const Pkgs& pkgs_, bool prefix)
+CCodeGenerator::CCodeGenerator(const std::string& filename_, Mode mode_, const Modules& modules_, bool prefix)
     : filename(filename_)
-    , curpkg(0)
+    , curmod(0)
     , mode(mode_)
     , no_local_prefix(prefix)
-    , pkgs(pkgs_)
+    , modules(modules_)
 {
     hfilename = filename + ".h";
     cfilename = filename + ".c";
@@ -73,11 +73,11 @@ void CCodeGenerator::generate() {
     // generate all includes
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
         AST* ast = *iter;
-        curpkg = &ast->getPkgName();
+        curmod = &ast->getModuleName();
         for (unsigned i=0; i<ast->numImports(); i++) {
             EmitImport(ast->getImport(i));
         }
-        curpkg = 0;
+        curmod = 0;
     }
     cbuf << "#include \"" << hfilename << "\"\n";
     cbuf << '\n';
@@ -85,32 +85,32 @@ void CCodeGenerator::generate() {
     // generate types
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
         AST* ast = *iter;
-        curpkg = &ast->getPkgName();
+        curmod = &ast->getModuleName();
         for (unsigned i=0; i<ast->numTypes(); i++) {
             EmitTypeDecl(ast->getType(i));
         }
-        curpkg = 0;
+        curmod = 0;
     }
 
     // generate variables
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
         AST* ast = *iter;
-        curpkg = &ast->getPkgName();
+        curmod = &ast->getModuleName();
         for (unsigned i=0; i<ast->numVars(); i++) {
             EmitVariable(ast->getVar(i));
         }
-        curpkg = 0;
+        curmod = 0;
     }
     // TODO Arrayvalues
 
     // generate functions
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
         AST* ast = *iter;
-        curpkg = &ast->getPkgName();
+        curmod = &ast->getModuleName();
         for (unsigned i=0; i<ast->numFunctions(); i++) {
             EmitFunction(ast->getFunction(i));
         }
-        curpkg = 0;
+        curmod = 0;
     }
 
     hbuf << "#endif\n";
@@ -308,8 +308,8 @@ void CCodeGenerator::EmitUnaryOperator(Expr* E, StringBuilder& output) {
 void CCodeGenerator::EmitMemberExpr(Expr* E, StringBuilder& output) {
     LOG_FUNC
     MemberExpr* M = cast<MemberExpr>(E);
-    if (M->isPkgPrefix()) {
-        // A.B where A is a package
+    if (M->isModulePrefix()) {
+        // A.B where A is a module
         // TEMP
         output << M->getMemberName();
     } else {
@@ -360,8 +360,8 @@ void CCodeGenerator::EmitIdentifierExpr(Expr* E, StringBuilder& output) {
     }
     assert(D);
 
-    if (D->getPackage()) {
-        addPrefix(D->getPackage()->getCName(), I->getName(), output);
+    if (D->getModule()) {
+        addPrefix(D->getModule()->getCName(), I->getName(), output);
     } else {
         output << I->getName();
     }
@@ -373,7 +373,7 @@ void CCodeGenerator::dump() {
 }
 
 void CCodeGenerator::write(const std::string& target, const std::string& name) {
-    // write C files to output/<target>/<package>.{c,h}
+    // write C files to output/<target>/<module>.{c,h}
     StringBuilder outname(128);
     outname << "output/" << target << '/';
 
@@ -424,7 +424,7 @@ void CCodeGenerator::EmitVariable(VarDecl* V) {
         hbuf << "extern ";
         EmitTypePreName(V->getType(), hbuf);
         hbuf << ' ';
-        addPrefix(*curpkg, V->getName(), hbuf);
+        addPrefix(*curmod, V->getName(), hbuf);
         EmitTypePostName(V->getType(), hbuf);
         // TODO add space if needed (on StringBuilder)
         hbuf << ";\n";
@@ -434,7 +434,7 @@ void CCodeGenerator::EmitVariable(VarDecl* V) {
     }
     EmitTypePreName(V->getType(), cbuf);
     cbuf << ' ';
-    addPrefix(*curpkg, V->getName(), cbuf);
+    addPrefix(*curmod, V->getName(), cbuf);
     EmitTypePostName(V->getType(), cbuf);
     if (V->getInitValue()) {
         cbuf << " = ";
@@ -474,7 +474,7 @@ void CCodeGenerator::EmitTypeDecl(TypeDecl* T) {
         *out << "typedef ";
         EmitTypePreName(T->getType(), *out);
         *out << ' ';
-        addPrefix(*curpkg, T->getName(), *out);
+        addPrefix(*curmod, T->getName(), *out);
         EmitTypePostName(T->getType(), *out);
         *out << ";\n\n";
         break;
@@ -524,7 +524,7 @@ void CCodeGenerator::EmitEnumType(EnumTypeDecl* E, StringBuilder& output) {
     for (unsigned i=0; i<E->numConstants(); i++) {
         EnumConstantDecl* C = E->getConstant(i);
         output.indent(INDENT);
-        addPrefix(*curpkg, C->getName(), output);
+        addPrefix(*curmod, C->getName(), output);
         if (C->getInitValue()) {
             output << " = ";
             EmitExpr(C->getInitValue(), output);
@@ -548,10 +548,9 @@ void CCodeGenerator::EmitFunctionType(FunctionTypeDecl* FTD, StringBuilder& outp
 
 void CCodeGenerator::EmitImport(ImportDecl* D) {
     LOG_FUNC
-    typedef Pkgs::const_iterator PkgsConstIter;
-    PkgsConstIter iter = pkgs.find(D->getPkgName());
-    assert(iter != pkgs.end());
-    const Package* P = iter->second;
+    ModulesConstIter iter = modules.find(D->getModuleName());
+    assert(iter != modules.end());
+    const Module* P = iter->second;
 
     if (mode == MULTI_FILE || P->isPlainC()) {
         cbuf << "#include ";
@@ -804,7 +803,7 @@ void CCodeGenerator::EmitFunctionProto(FunctionDecl* F, StringBuilder& output) {
     EmitTypePreName(F->getReturnType(), output);
     EmitTypePostName(F->getReturnType(), output);
     output << ' ';
-    addPrefix(*curpkg, F->getName(), output);
+    addPrefix(*curmod, F->getName(), output);
     EmitFunctionArgs(F, output);
 }
 
@@ -918,15 +917,15 @@ void CCodeGenerator::EmitStringLiteral(const std::string& input, StringBuilder& 
     output << '"';
 }
 
-void CCodeGenerator::addPrefix(const std::string& pkgName, const std::string& name, StringBuilder& buffer) const {
-    if (pkgName.empty()) {
+void CCodeGenerator::addPrefix(const std::string& modName, const std::string& name, StringBuilder& buffer) const {
+    if (modName.empty()) {
         buffer << name;
         return;
     }
-    if (no_local_prefix && pkgName == *curpkg) {
+    if (no_local_prefix && modName == *curmod) {
         buffer << name;
         return;
     }
-    GenUtils::addName(pkgName, name, buffer);
+    GenUtils::addName(modName, name, buffer);
 }
 

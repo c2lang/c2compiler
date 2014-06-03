@@ -1,4 +1,4 @@
-package mylib;
+module mylib;
 
 /*
 func void* malloc(uint32 size) {

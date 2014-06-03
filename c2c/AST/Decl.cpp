@@ -38,7 +38,7 @@ Decl::Decl(DeclKind k, const std::string& name_, SourceLocation loc_, QualType t
     , loc(loc_)
     , type(type_)
     , BitsInit(0)
-    , pkg(0)
+    , mod(0)
 {
     DeclBits.dKind = k;
     DeclBits.DeclIsPublic = is_public;
@@ -285,9 +285,9 @@ void ArrayValueDecl::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 ImportDecl::ImportDecl(const std::string& name_, SourceLocation loc_, bool isLocal_,
-                 const std::string& pkgName_, SourceLocation aliasLoc_)
+                 const std::string& modName_, SourceLocation aliasLoc_)
     : Decl(DECL_IMPORT, name_, loc_, QualType(), false, 0)
-    , pkgName(pkgName_)
+    , modName(modName_)
     , aliasLoc(aliasLoc_)
 {
     DeclBits.ImportIsLocal = isLocal_;
@@ -297,7 +297,7 @@ void ImportDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.setColor(COL_DECL);
     buffer << "ImportDecl ";
     buffer.setColor(COL_VALUE);
-    buffer << pkgName;
+    buffer << modName;
     if (aliasLoc.isValid()) buffer << " as " << name;
     if (isLocal()) buffer << " local";
     buffer << '\n';

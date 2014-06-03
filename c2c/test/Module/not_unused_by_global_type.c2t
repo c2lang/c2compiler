@@ -1,0 +1,14 @@
+// @warnings{no-unused-variable}
+
+// @file{file1}
+module foo;
+
+public type Number int;
+
+// @file{file2}
+module bar;
+
+import foo;
+
+foo.Number a;
+

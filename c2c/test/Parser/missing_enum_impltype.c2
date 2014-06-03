@@ -1,4 +1,4 @@
-package test;
+module test;
 
 type State enum {   // @error{expected type specifier}
 }

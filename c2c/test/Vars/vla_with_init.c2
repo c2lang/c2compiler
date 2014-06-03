@@ -1,5 +1,5 @@
 // @warnings{no-unused}
-package test;
+module test;
 
 func void test1(int x) {
     int[x] a = { 1, 2 } // @error{variable length array may not be initialized}

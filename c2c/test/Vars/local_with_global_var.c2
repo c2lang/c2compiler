@@ -1,4 +1,4 @@
-package test;
+module test;
 
 local int a;    // @error{cannot use keyword local for global variables}
 

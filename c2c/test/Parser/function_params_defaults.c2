@@ -1,4 +1,4 @@
-package test;
+module test;
 
 type CB func void(int a = 10);  // @error{default arguments can only be specified for parameters in a function declaration}
 

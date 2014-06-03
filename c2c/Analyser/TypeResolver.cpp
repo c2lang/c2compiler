@@ -23,7 +23,7 @@
 #include "Analyser/Scope.h"
 #include "Analyser/TypeResolver.h"
 #include "Analyser/constants.h"
-#include "AST/Package.h"
+#include "AST/Module.h"
 #include "AST/Decl.h"
 #include "AST/Expr.h"
 #include "Utils/StringBuilder.h"
@@ -67,10 +67,10 @@ unsigned TypeResolver::checkUnresolvedType(const UnresolvedType* type, bool used
     const std::string& tName = type->getTName();
     SourceLocation tLoc = type->getTLoc();
     Decl* D = 0;
-    if (!pName.empty()) {   // pkg.type
-        const Package* pkg = globals.findUsedPackage(pName, type->getPLoc());
-        if (!pkg) return 1;
-        D =  globals.findSymbolInPackage(tName, tLoc, pkg);
+    if (!pName.empty()) {   // mod.type
+        const Module* mod = globals.findUsedModule(pName, type->getPLoc());
+        if (!mod) return 1;
+        D =  globals.findSymbolInModule(tName, tLoc, mod);
     } else {
         D = globals.findSymbol(tName, tLoc, true);
     }
@@ -82,7 +82,7 @@ unsigned TypeResolver::checkUnresolvedType(const UnresolvedType* type, bool used
         Diags.Report(tLoc, diag::err_not_a_typename) << name;
         return 1;
     }
-    bool external = globals.isExternal(D->getPackage());
+    bool external = globals.isExternal(D->getModule());
     if (used_public &&!external && !TD->isPublic()) {
         StringBuilder name;
         type->printLiteral(name);

@@ -1,5 +1,5 @@
 // @warnings{no-unused}
-package test;
+module test;
 
 type A enum int {
     B = FOO,    // @error{use of undeclared identifier FOO}

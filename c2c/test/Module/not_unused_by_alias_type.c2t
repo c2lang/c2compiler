@@ -1,0 +1,14 @@
+// @warnings{no-unused-type}
+
+// @file{file1}
+module foo;
+
+public type Number int;
+
+// @file{file2}
+module bar;
+
+import foo;
+
+type Point foo.Number;
+

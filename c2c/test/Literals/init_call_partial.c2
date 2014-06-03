@@ -1,5 +1,5 @@
 // @warnings{no-unused}
-package test;
+module test;
 
 func void test2() {
     int a = test2() + 1; // @error{invalid type conversion from 'void' to 'int32'}

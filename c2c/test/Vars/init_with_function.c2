@@ -1,5 +1,5 @@
 // @warnings{no-unused}
-package test;
+module test;
 
 func void test1(int, char*[]) {
     int a = test1;       // @error{invalid type conversion from 'void (int32, int8*[])' to 'int32'}

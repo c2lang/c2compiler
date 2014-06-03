@@ -1,4 +1,4 @@
-package body_test;
+module body_test;
 
 public func void getMax() {
     int a;

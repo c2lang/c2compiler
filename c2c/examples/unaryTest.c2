@@ -1,4 +1,4 @@
-package unary_test;
+module unary_test;
 
 public func void main() {
     int a;

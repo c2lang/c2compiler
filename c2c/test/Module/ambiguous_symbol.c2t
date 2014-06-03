@@ -1,0 +1,22 @@
+// @warnings{no-unused}
+
+// @file{file1}
+module foo;
+
+public int a;
+
+// @file{file2}
+module bar;
+
+public int a;
+
+// @file{file3}
+module test;
+
+import foo local;
+import bar local;
+
+func void test1() {
+    int i = a;      // @error{symbol a is ambiguous}
+}
+

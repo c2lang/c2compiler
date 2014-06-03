@@ -1,4 +1,4 @@
-package test;
+module test;
 
 public int n;       // @warning{variable 'n' is not used public}
 

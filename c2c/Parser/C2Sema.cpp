@@ -107,9 +107,9 @@ C2Sema::C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, TypeContext& tc, A
 
 C2Sema::~C2Sema() {}
 
-void C2Sema::ActOnPackage(const char* name, SourceLocation loc) {
+void C2Sema::ActOnModule(const char* name, SourceLocation loc) {
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: package " << name << " at ";
+    std::cerr << COL_SEMA"SEMA: module " << name << " at ";
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
@@ -118,47 +118,47 @@ void C2Sema::ActOnPackage(const char* name, SourceLocation loc) {
         return;
     }
     if (strcmp(name, "c2") == 0) {
-        Diag(loc, diag::err_package_c2);
+        Diag(loc, diag::err_module_c2);
         return;
     }
     ast.setName(name, loc);
     ImportDecl* U = new ImportDecl(name, loc, true, name, SourceLocation());
-    U->setType(typeContext.getPackageType(U));
+    U->setType(typeContext.getModuleType(U));
     U->setUsed();
     ast.addImport(U);
     addSymbol(U);
 }
 
-void C2Sema::ActOnImport(const char* pkgName_, SourceLocation loc, Token& aliasTok, bool isLocal) {
+void C2Sema::ActOnImport(const char* moduleName_, SourceLocation loc, Token& aliasTok, bool isLocal) {
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: import " << pkgName_ << " at ";
+    std::cerr << COL_SEMA"SEMA: import " << moduleName_ << " at ";
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    std::string pkgName = pkgName_;
-    // check if importing own package
-    if (ast.getPkgName() == pkgName) {
-        Diag(loc, diag::err_import_own_package) << pkgName_;
+    std::string moduleName = moduleName_;
+    // check if importing own module
+    if (ast.getModuleName() == moduleName) {
+        Diag(loc, diag::err_import_own_module) << moduleName_;
         return;
     }
-    // check for duplicate import of package
-    const ImportDecl* old = findPackage(pkgName);
+    // check for duplicate import of module
+    const ImportDecl* old = findModule(moduleName);
     if (old) {
-        Diag(loc, diag::err_duplicate_import) << pkgName;
+        Diag(loc, diag::err_duplicate_import) << moduleName;
         Diag(old->getLocation(), diag::note_previous_import);
         return;
     }
-    std::string name = pkgName;
+    std::string name = moduleName;
     if (aliasTok.is(tok::identifier)) {
         name = aliasTok.getIdentifierInfo()->getNameStart();
-        // check if same as normal package name
-        if (name == pkgName) {
-            Diag(aliasTok.getLocation(), diag::err_alias_same_as_package);
+        // check if same as normal module name
+        if (name == moduleName) {
+            Diag(aliasTok.getLocation(), diag::err_alias_same_as_module);
             return;
         }
     }
-    ImportDecl* U = new ImportDecl(name, loc, isLocal, pkgName, aliasTok.getLocation());
-    U->setType(typeContext.getPackageType(U));
+    ImportDecl* U = new ImportDecl(name, loc, isLocal, moduleName, aliasTok.getLocation());
+    U->setType(typeContext.getModuleType(U));
     ast.addImport(U);
     addSymbol(U);
 }
@@ -212,7 +212,7 @@ C2::FunctionDecl* C2Sema::createFuncDecl(const char* name, SourceLocation loc,
 
 // NOTE: takes Type* from typeExpr and deletes typeExpr;
 C2::VarDecl* C2Sema::createVarDecl(VarDeclKind k, const char* name, SourceLocation loc, TypeExpr* typeExpr, Expr* InitValue, bool is_public) {
-    // TODO check that type is not pre-fixed with own package
+    // TODO check that type is not pre-fixed with own module
     // globals, function params, struct members
     VarDecl* V = new VarDecl(k, name, loc, typeExpr->getType(), InitValue, is_public, ast.getFileID());
     delete typeExpr;
@@ -945,10 +945,10 @@ void C2Sema::addSymbol(Decl* d) {
     }
 }
 
-const C2::ImportDecl* C2Sema::findPackage(const std::string& name) const {
+const C2::ImportDecl* C2Sema::findModule(const std::string& name) const {
     for (unsigned i=0; i<ast.numImports(); i++) {
         ImportDecl* D = ast.getImport(i);
-        if (D->getPkgName() == name) return D;
+        if (D->getModuleName() == name) return D;
     }
     return 0;
 }

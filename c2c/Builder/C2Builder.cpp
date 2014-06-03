@@ -49,9 +49,9 @@
 #include "Builder/Recipe.h"
 #include "Builder/DepGenerator.h"
 #include "AST/AST.h"
-#include "AST/Package.h"
+#include "AST/Module.h"
 #include "AST/Decl.h"
-// only for Dummy Packages
+// only for Dummy Modules
 #include "AST/Expr.h"
 
 #include "Parser/C2Parser.h"
@@ -89,15 +89,15 @@ public:
     virtual ~C2ModuleLoader () {}
 
     virtual ModuleLoadResult loadModule(SourceLocation ImportLoc, ModuleIdPath Path,
-                               Module::NameVisibilityKind Visibility,
+                               clang::Module::NameVisibilityKind Visibility,
                                bool IsInclusionDirective)
     {
         fprintf(stderr, "MODULE LOADER: loadModule\n");
         return ModuleLoadResult();
     }
 
-    virtual void makeModuleVisible(Module *Mod,
-                                   Module::NameVisibilityKind Visibility,
+    virtual void makeModuleVisible(clang::Module *Mod,
+                                   clang::Module::NameVisibilityKind Visibility,
                                    SourceLocation ImportLoc,
                                    bool Complain)
     {
@@ -157,8 +157,8 @@ public:
         return parser.Parse();
     }
 
-    void createAnalyser(const Pkgs& pkgs, bool verbose) {
-        analyser = new FileAnalyser(pkgs, Diags, ast, typeContext, verbose);
+    void createAnalyser(const Modules& modules, bool verbose) {
+        analyser = new FileAnalyser(modules, Diags, ast, typeContext, verbose);
     }
     void deleteAnalyser() {
         delete analyser;
@@ -203,7 +203,7 @@ C2Builder::C2Builder(const Recipe& recipe_, const BuildOptions& opts)
 
 C2Builder::~C2Builder()
 {
-    for (PkgsIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
+    for (ModulesIter iter = modules.begin(); iter != modules.end(); ++iter) {
         //delete iter->second;
         // TODO delete CAUSES crash (caused by delete of FileInfo below)
     }
@@ -283,8 +283,8 @@ int C2Builder::build() {
             Diags.setDiagnosticGroupMapping("unused-type", diag::MAP_IGNORE);
             continue;
         }
-        if (conf == "no-unused-package") {
-            Diags.setDiagnosticGroupMapping("unused-package", diag::MAP_IGNORE);
+        if (conf == "no-unused-module") {
+            Diags.setDiagnosticGroupMapping("unused-module", diag::MAP_IGNORE);
             continue;
         }
         if (conf == "no-unused-public") {
@@ -337,26 +337,26 @@ int C2Builder::build() {
     if (client->getNumErrors()) goto out;
     t1_analyse = Utils::getCurrentTime();
 
-    // phase 1b: merge file's symbol tables to package symbols tables
-    errors = !createPkgs();
-    if (options.printSymbols) dumpPkgs();
+    // phase 1b: merge file's symbol tables to module symbols tables
+    errors = !createModules();
+    if (options.printSymbols) dumpModules();
 
     if (client->getNumErrors()) goto out;
 
-    // phase 1c: load required external packages
-    if (!loadExternalPackages()) goto out;
+    // phase 1c: load required external modules
+    if (!loadExternalModules()) goto out;
 
-    if (options.printPackages) {
-        printf("List of packages:\n");
-        for (PkgsConstIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
-            const Package* P = iter->second;
+    if (options.printModules) {
+        printf("List of modules:\n");
+        for (ModulesConstIter iter = modules.begin(); iter != modules.end(); ++iter) {
+            const Module* P = iter->second;
             printf("  %s %s\n", P->getName().c_str(), P->isExternal() ? "(external)" : "");
         }
     }
 
     // create analysers/scopes
     for (unsigned i=0; i<files.size(); i++) {
-        files[i]->createAnalyser(pkgs, options.verbose);
+        files[i]->createAnalyser(modules, options.verbose);
     }
 
     // phase 2: run analysing on all files
@@ -395,57 +395,57 @@ out:
     return NumErrors;
 }
 
-bool C2Builder::havePackage(const std::string& name) const {
-    PkgsConstIter iter = pkgs.find(name);
-    return iter != pkgs.end();
+bool C2Builder::haveModule(const std::string& name) const {
+    ModulesConstIter iter = modules.find(name);
+    return iter != modules.end();
 }
 
-Package* C2Builder::getPackage(const std::string& name, bool isExternal, bool isCLib) {
-    PkgsIter iter = pkgs.find(name);
-    if (iter == pkgs.end()) {
-        Package* P = new Package(name, isExternal, isCLib);
-        pkgs[name] = P;
+C2::Module* C2Builder::getModule(const std::string& name, bool isExternal, bool isCLib) {
+    ModulesIter iter = modules.find(name);
+    if (iter == modules.end()) {
+        C2::Module* P = new C2::Module(name, isExternal, isCLib);
+        modules[name] = P;
         return P;
     } else {
-        // TODO check that isCLib/isExternal matches returned package? otherwise give error
+        // TODO check that isCLib/isExternal matches returned module? otherwise give error
         return iter->second;
     }
 }
 
-// merges symbols of all files of each package
-bool C2Builder::createPkgs() {
+// merges symbols of all files of each module
+bool C2Builder::createModules() {
     for (unsigned i=0; i<files.size(); i++) {
         FileInfo* info = files[i];
-        Package* pkg = getPackage(info->ast.getPkgName(), false, false);
+        Module* mod = getModule(info->ast.getModuleName(), false, false);
         const AST::Symbols& symbols = info->ast.getSymbols();
         for (AST::SymbolsConstIter iter = symbols.begin(); iter != symbols.end(); ++iter) {
             Decl* New = iter->second;
             if (isa<ImportDecl>(New)) continue;
-            Decl* Old = pkg->findSymbol(iter->first);
+            Decl* Old = mod->findSymbol(iter->first);
             if (Old) {
                 fprintf(stderr, "MULTI_FILE: duplicate symbol %s\n", New->getName().c_str());
                 fprintf(stderr, "TODO NASTY: locs have to be resolved in different SourceManagers..\n");
                 // TODO: continue/return?
                 return false;
             } else {
-                pkg->addSymbol(New);
+                mod->addSymbol(New);
             }
         }
     }
     return true;
 }
 
-bool C2Builder::loadExternalPackages() {
-    // collect all external packages
+bool C2Builder::loadExternalModules() {
+    // collect all external modules
     bool haveErrors = false;
     for (unsigned i=0; i<files.size(); i++) {
         FileInfo* info = files[i];
         for (unsigned u=0; u<info->ast.numImports(); u++) {
             ImportDecl* D = info->ast.getImport(u);
-            const std::string& name = D->getPkgName();
-            if (havePackage(name)) continue;
-            if (!loadPackage(name)) {
-                info->Diags.Report(D->getLocation(), clang::diag::err_unknown_package) << name;
+            const std::string& name = D->getModuleName();
+            if (haveModule(name)) continue;
+            if (!loadModule(name)) {
+                info->Diags.Report(D->getLocation(), clang::diag::err_unknown_module) << name;
                 haveErrors = true;
             }
         }
@@ -453,17 +453,17 @@ bool C2Builder::loadExternalPackages() {
     return !haveErrors;
 }
 
-bool C2Builder::loadPackage(const std::string& name) {
-    if (options.verbose) printf(COL_VERBOSE"loading external package %s"ANSI_NORMAL"\n", name.c_str());
+bool C2Builder::loadModule(const std::string& name) {
+    if (options.verbose) printf(COL_VERBOSE"loading external module %s"ANSI_NORMAL"\n", name.c_str());
 
-    assert(!havePackage(name));
+    assert(!haveModule(name));
     // NOTE: MEMLEAK on Types
 
     SourceLocation loc;
 
     if (name == "stdio") {
         unsigned file_id = filenames.add("(stdio)");
-        Package* stdioPkg = getPackage("stdio", true, true);
+        Module* stdioMod = getModule("stdio", true, true);
         // int puts(const char* s);
         {
             FunctionDecl* func = new FunctionDecl("puts", loc, true, file_id, Type::Int32());
@@ -473,7 +473,7 @@ bool C2Builder::loadPackage(const std::string& name) {
             VarDecl* Arg1 = new VarDecl(VARDECL_PARAM, "s", loc, QT, 0, true, file_id);
             Arg1->setType(QT);
             func->addArg(Arg1);
-            stdioPkg->addSymbol(func);
+            stdioMod->addSymbol(func);
             // function type
             func->setType(QualType(new FunctionType(func), 0));
         }
@@ -487,7 +487,7 @@ bool C2Builder::loadPackage(const std::string& name) {
             Arg1->setType(QT);
             func->addArg(Arg1);
             func->setVariadic();
-            stdioPkg->addSymbol(func);
+            stdioMod->addSymbol(func);
             // function type
             func->setType(QualType(new FunctionType(func), 0));
         }
@@ -504,7 +504,7 @@ bool C2Builder::loadPackage(const std::string& name) {
             Arg2->setType(QT);
             func->addArg(Arg2);
             func->setVariadic();
-            stdioPkg->addSymbol(func);
+            stdioMod->addSymbol(func);
             // function type
             func->setType(QualType(new FunctionType(func), 0));
         }
@@ -513,7 +513,7 @@ bool C2Builder::loadPackage(const std::string& name) {
 
     if (name == "stdlib") {
         unsigned file_id = filenames.add("(stdlib)");
-        Package* stdlibPkg = getPackage("stdlib", true, true);
+        Module* stdlibMod = getModule("stdlib", true, true);
         //void exit(int status);
         {
             FunctionDecl* func = new FunctionDecl("exit", loc, true, file_id, Type::Void());
@@ -521,7 +521,7 @@ bool C2Builder::loadPackage(const std::string& name) {
             VarDecl* Arg1 = new VarDecl(VARDECL_PARAM, "status", loc, Type::Int32(), 0, true, file_id);
             Arg1->setType(Type::Int32());
             func->addArg(Arg1);
-            stdlibPkg->addSymbol(func);
+            stdlibMod->addSymbol(func);
             // function type
             func->setType(QualType(new FunctionType(func), 0));
         }
@@ -529,7 +529,7 @@ bool C2Builder::loadPackage(const std::string& name) {
     }
     if (name == "c2") {
         unsigned file_id = filenames.add("(c2)");
-        Package* c2Pkg = getPackage("c2", true, false);
+        Module* c2Mod = getModule("c2", true, false);
         {
             // make constant, CTC_NONE
             QualType QT = Type::UInt64();
@@ -542,7 +542,7 @@ bool C2Builder::loadPackage(const std::string& name) {
             init->setType(QT);
             VarDecl* var = new VarDecl(VARDECL_GLOBAL, "buildtime", loc, QT, init, true, file_id);
             var->setType(QT);
-            c2Pkg->addSymbol(var);
+            c2Mod->addSymbol(var);
         }
         return true;
     }
@@ -606,9 +606,9 @@ unsigned C2Builder::analyse() {
     return errors;
 }
 
-void C2Builder::dumpPkgs() const {
-    for (PkgsConstIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
-        const Package* P = iter->second;
+void C2Builder::dumpModules() const {
+    for (ModulesConstIter iter = modules.begin(); iter != modules.end(); ++iter) {
+        const Module* P = iter->second;
         P->dump();
     }
 }
@@ -625,8 +625,8 @@ bool C2Builder::checkMainFunction(DiagnosticsEngine& Diags) {
     if (options.testMode) return true;
 
     Decl* mainDecl = 0;
-    for (PkgsIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
-        Package* P = iter->second;
+    for (ModulesIter iter = modules.begin(); iter != modules.end(); ++iter) {
+        Module* P = iter->second;
         Decl* decl = P->findSymbol("main");
         if (decl) {
             if (mainDecl) {
@@ -659,7 +659,7 @@ void C2Builder::generateOptionalC() {
         u_int64_t t1 = Utils::getCurrentTime();
         // TODO
         std::string filename = recipe.name;
-        CCodeGenerator gen(filename, CCodeGenerator::SINGLE_FILE, pkgs, no_local_prefix);
+        CCodeGenerator gen(filename, CCodeGenerator::SINGLE_FILE, modules, no_local_prefix);
         for (unsigned i=0; i<files.size(); i++) {
             FileInfo* info = files[i];
             gen.addEntry(info->ast);
@@ -671,17 +671,17 @@ void C2Builder::generateOptionalC() {
         if (options.printC) gen.dump();
         gen.write(recipe.name, "");
     } else {
-        for (PkgsIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
-            Package* P = iter->second;
+        for (ModulesIter iter = modules.begin(); iter != modules.end(); ++iter) {
+            Module* P = iter->second;
             u_int64_t t1 = Utils::getCurrentTime();
             if (P->isPlainC()) continue;
             // for now filter out 'c2' as well
             if (P->getName() == "c2") continue;
-            if (options.verbose) printf(COL_VERBOSE"generating C for package %s"ANSI_NORMAL"\n", P->getName().c_str());
-            CCodeGenerator gen(P->getName(), CCodeGenerator::MULTI_FILE, pkgs, no_local_prefix);
+            if (options.verbose) printf(COL_VERBOSE"generating C for module %s"ANSI_NORMAL"\n", P->getName().c_str());
+            CCodeGenerator gen(P->getName(), CCodeGenerator::MULTI_FILE, modules, no_local_prefix);
             for (unsigned i=0; i<files.size(); i++) {
                 FileInfo* info = files[i];
-                if (info->ast.getPkgName() == P->getName()) {
+                if (info->ast.getModuleName() == P->getName()) {
                     gen.addEntry(info->ast);
                 }
             }
@@ -707,17 +707,17 @@ void C2Builder::generateOptionalIR() {
     if (single_module) {
         u_int64_t t1 = Utils::getCurrentTime();
         std::string filename = recipe.name;
-        //  HMM dont have Package P here, refactor
+        //  HMM dont have Module P here, refactor
         CodeGenModule cgm(filename, true);
         if (options.verbose) printf(COL_VERBOSE"generating IR for single module %s"ANSI_NORMAL"\n", filename.c_str());
-        for (PkgsIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
-            Package* P = iter->second;
+        for (ModulesIter iter = modules.begin(); iter != modules.end(); ++iter) {
+            Module* P = iter->second;
             if (P->isPlainC()) continue;
             if (P->getName() == "c2") continue;
 
             for (unsigned i=0; i<files.size(); i++) {
                 FileInfo* info = files[i];
-                if (info->ast.getPkgName() == P->getName()) {
+                if (info->ast.getModuleName() == P->getName()) {
                     cgm.addEntry(info->ast);
                 }
             }
@@ -729,17 +729,17 @@ void C2Builder::generateOptionalIR() {
         bool ok = cgm.verify();
         if (ok) cgm.write(recipe.name, filename);
     } else {
-        for (PkgsIter iter = pkgs.begin(); iter != pkgs.end(); ++iter) {
-            Package* P = iter->second;
+        for (ModulesIter iter = modules.begin(); iter != modules.end(); ++iter) {
+            Module* P = iter->second;
             u_int64_t t1 = Utils::getCurrentTime();
             if (P->isPlainC()) continue;
             if (P->getName() == "c2") continue;
 
-            if (options.verbose) printf(COL_VERBOSE"generating IR for package %s"ANSI_NORMAL"\n", P->getName().c_str());
+            if (options.verbose) printf(COL_VERBOSE"generating IR for module %s"ANSI_NORMAL"\n", P->getName().c_str());
             CodeGenModule cgm(P->getName(), false);
             for (unsigned i=0; i<files.size(); i++) {
                 FileInfo* info = files[i];
-                if (info->ast.getPkgName() == P->getName()) {
+                if (info->ast.getModuleName() == P->getName()) {
                     cgm.addEntry(info->ast);
                 }
             }

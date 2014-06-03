@@ -1,6 +1,6 @@
 // @skip
 // @warnings{no-unused}
-package test;
+module test;
 
 type Arr int[];
 

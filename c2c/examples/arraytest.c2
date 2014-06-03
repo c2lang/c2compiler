@@ -1,4 +1,4 @@
-package array_test;
+module array_test;
 
 import stdio as IO;
 

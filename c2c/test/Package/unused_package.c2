@@ -1,5 +1,0 @@
-package test;
-
-import stdio;  // @warning{unused package stdio}
-import stdlib as std;  // @warning{unused package stdlib}
-

@@ -1,5 +1,5 @@
-package test;
+module test;
 
 import other;
-import other;  // @error{duplicate import of package 'other'}
+import other;  // @error{duplicate import of module 'other'}
 

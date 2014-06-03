@@ -1,0 +1,15 @@
+// @warnings{no-unused}
+
+// @file{file1}
+module foo;
+
+int n;
+
+// @file{file2}
+module bar;
+import foo;
+
+func void test1() {
+    foo.n = 10;         // @error{foo.n is not public}
+}
+

@@ -1,5 +1,5 @@
 // @warnings{no-unused}
-package test;
+module test;
 
 int8[] a = { 5, 6 , 7 }
 // CHECK: @a = internal global [3 x i8] c"\05\06\07", align 1

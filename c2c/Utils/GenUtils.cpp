@@ -20,11 +20,11 @@
 
 using namespace C2;
 
-void GenUtils::addName(const std::string& pkgName, const std::string& name, StringBuilder& buffer) {
-    if (name == "main" || pkgName == "") {
+void GenUtils::addName(const std::string& modName, const std::string& name, StringBuilder& buffer) {
+    if (name == "main" || modName == "") {
         buffer << name;
     } else {
-        buffer << "__" << pkgName << '_' << name;
+        buffer << "__" << modName << '_' << name;
     }
 }
 

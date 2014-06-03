@@ -1,6 +1,6 @@
 // @skip
 // @warnings{no-unused}
-package test;
+module test;
 
 func void test1(int[] a) {
     a[3] = 1;

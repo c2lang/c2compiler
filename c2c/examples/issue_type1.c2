@@ -1,4 +1,4 @@
-package type1;
+module type1;
 
 public type Long uint8;
 

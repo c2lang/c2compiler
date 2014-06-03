@@ -31,7 +31,6 @@
 namespace C2 {
 
 class StringBuilder;
-class Package;
 class Decl;
 class VarDecl;
 
@@ -502,7 +501,7 @@ private:
 };
 
 
-// Represents a symbol reference 'a.b'/'a.b.c', A can be a pkg,struct or other Member expr
+// Represents a symbol reference 'a.b'/'a.b.c', A can be a module,struct or other Member expr
 class MemberExpr : public Expr {
 public:
     MemberExpr(Expr* Base_, bool isArrow_, const std::string& member_, SourceLocation loc_)
@@ -530,8 +529,8 @@ public:
     void setDecl(Decl* D) { decl = D; }
 
     bool isArrow() const { return StmtBits.MemberExprIsArrow; }
-    void setPkgPrefix(bool v) { StmtBits.MemberExprIsPkgPrefix = v; }
-    bool isPkgPrefix() const { return StmtBits.MemberExprIsPkgPrefix; }
+    void setModulePrefix(bool v) { StmtBits.MemberExprIsModPrefix = v; }
+    bool isModulePrefix() const { return StmtBits.MemberExprIsModPrefix; }
 
     // NOTE: uses static var
     virtual void printLiteral(StringBuilder& buffer) const;

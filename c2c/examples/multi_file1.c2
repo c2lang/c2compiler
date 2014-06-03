@@ -1,4 +1,4 @@
-package multi;
+module multi;
 
 public func int main() {
     int a = getNumber2();

@@ -1,4 +1,4 @@
-package use2;
+module use2;
 
 import use1 as U1;
 

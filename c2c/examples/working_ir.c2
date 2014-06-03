@@ -1,4 +1,4 @@
-package working_ir;
+module working_ir;
 
 import stdio local;
 

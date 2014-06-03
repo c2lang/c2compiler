@@ -1,5 +1,5 @@
 // @warnings{no-unused-variable no-usused-public}
-package test;
+module test;
 
 public type Number int;
 

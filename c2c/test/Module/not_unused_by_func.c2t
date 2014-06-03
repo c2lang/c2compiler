@@ -1,0 +1,14 @@
+// @file{file1}
+module foo;
+
+public func int test1() { return 1; }
+
+// @file{file2}
+module bar;
+
+import foo;
+
+func int test2() {   // @warning{unused function test2}
+    return foo.test1();
+}
+

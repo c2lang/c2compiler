@@ -1,4 +1,4 @@
-package test;
+module test;
 
-import other as other;     // @error{alias name is same as package name}
+import other as other;     // @error{alias name is same as module name}
 

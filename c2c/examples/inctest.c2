@@ -1,5 +1,5 @@
 #include "macros.c2h"
 
-PACKAGE inctest;
+MODULE inctest;
 
 public func int main() { return 0; }

@@ -1,0 +1,9 @@
+// @file{file1}
+module foo;
+
+// @file{file2}
+module bar;
+import foo;
+
+foo.Bla a;      // @error{module foo has no symbol Bla}
+

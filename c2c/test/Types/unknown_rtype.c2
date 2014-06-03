@@ -1,4 +1,4 @@
-package test;
+module test;
 
 func Bar foo() {}        // @error{unknown type name Bar}
 

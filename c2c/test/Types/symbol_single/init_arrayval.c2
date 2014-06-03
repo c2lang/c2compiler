@@ -1,5 +1,5 @@
 // @warnings{no-unused}
-package test;
+module test;
 
 func void test1() {
     int[100] array = { 0 }

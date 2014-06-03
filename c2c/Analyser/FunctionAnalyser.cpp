@@ -29,7 +29,7 @@
 #include "AST/Decl.h"
 #include "AST/Expr.h"
 #include "AST/Stmt.h"
-#include "AST/Package.h"
+#include "AST/Module.h"
 #include "Utils/color.h"
 #include "Utils/StringBuilder.h"
 
@@ -659,7 +659,7 @@ void FunctionAnalyser::analyseSizeofExpr(Expr* expr) {
             assert(0 && "should not happen");
             break;
         case DECL_IMPORT:
-            Diags.Report(id->getLocation(), diag::err_is_a_package) << id->getName();
+            Diags.Report(id->getLocation(), diag::err_is_a_module) << id->getName();
             return;
         }
         break;
@@ -1152,23 +1152,23 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
 
     bool isArrow = M->isArrow();
     // we dont know what we're looking at here, it could be:
-    // pkg.type
-    // pkg.var
-    // pkg.func
+    // mod.type
+    // mod.var
+    // mod.func
     // var(Type=struct>.member
     // var[index].member
     // var->member
     QualType LType = analyseExpr(M->getBase(), RHS);
     if (!LType.isValid()) return QualType();
 
-    if (isa<PackageType>(LType)) {
-        M->setPkgPrefix(true);
+    if (isa<ModuleType>(LType)) {
+        M->setModulePrefix(true);
         if (isArrow) {
-            fprintf(stderr, "TODO ERROR: cannot use -> for package access\n");
+            fprintf(stderr, "TODO ERROR: cannot use -> for module access\n");
             // continue checking
         }
-        PackageType* PT = cast<PackageType>(LType.getTypePtr());
-        Decl* D = scope.findSymbolInPackage(member, memberLoc, PT->getPackage());
+        ModuleType* PT = cast<ModuleType>(LType.getTypePtr());
+        Decl* D = scope.findSymbolInModule(member, memberLoc, PT->getModule());
         if (D) {
             if (side & RHS) D->setUsed();
             M->setDecl(D);
@@ -1178,7 +1178,7 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
             return Q;
         }
     } else {
-        M->setPkgPrefix(false);
+        M->setModulePrefix(false);
         if (isArrow) {
             // try to dereference pointer
             if (LType.isPointerType()) {

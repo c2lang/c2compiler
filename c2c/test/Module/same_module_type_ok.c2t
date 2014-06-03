@@ -1,0 +1,12 @@
+// @warnings{no-unused}
+
+// @file{file1}
+module test;
+
+type Number int;
+
+// @file{file2}
+module test;
+
+Number n;
+

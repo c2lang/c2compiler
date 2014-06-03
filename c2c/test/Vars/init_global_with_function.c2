@@ -1,5 +1,5 @@
 // @warnings{no-unused}
-package test;
+module test;
 
 int a = function;       // @error{invalid type conversion from 'void ()' to 'int32'}
 

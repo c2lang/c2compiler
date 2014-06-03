@@ -287,7 +287,7 @@ void DepVisitor::checkExpr(const Expr* E) {
     case EXPR_MEMBER:
         {
             const MemberExpr* M = cast<MemberExpr>(E);
-            if (M->isPkgPrefix()) {
+            if (M->isModulePrefix()) {
                 addDep(M->getDecl());
             } else {
                 checkExpr(M->getBase());

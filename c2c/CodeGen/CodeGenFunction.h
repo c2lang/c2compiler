@@ -49,7 +49,7 @@ public:
     CodeGenFunction(CodeGenModule& CGM_, FunctionDecl* Func_);
     ~CodeGenFunction() {}
 
-    llvm::Function* generateProto(const std::string& pkgname);
+    llvm::Function* generateProto(const std::string& modName);
     void generateBody(llvm::Function* func);
 private:
     void EmitStmt(const Stmt* S);

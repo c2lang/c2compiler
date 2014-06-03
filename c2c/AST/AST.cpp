@@ -31,7 +31,7 @@ using namespace C2;
 void AST::print(bool colors) const {
     StringBuilder buffer;
     buffer.enableColor(colors);
-    buffer << "---- AST " << "(pkg=" << pkgName << ") " << filename << " ----\n";
+    buffer << "---- AST " << "(module=" << modName << ") " << filename << " ----\n";
     // ImportDecls
     for (unsigned i=0; i<importList.size(); i++) {
         importList[i]->print(buffer, 0);

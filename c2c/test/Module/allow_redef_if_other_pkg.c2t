@@ -1,0 +1,14 @@
+// @warnings{no-unused}
+
+// @file{file1}
+module foo;
+
+public int a;
+
+// @file{file2}
+module bar;
+
+import foo local;
+
+public int a;
+

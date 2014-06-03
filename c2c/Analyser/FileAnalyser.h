@@ -19,7 +19,7 @@
 #include <memory>
 #include "Analyser/FunctionAnalyser.h"
 #include "AST/Type.h"
-#include "AST/Package.h"
+#include "AST/Module.h"
 
 namespace clang {
 class DiagnosticsEngine;
@@ -38,7 +38,7 @@ class TypeResolver;
 
 class FileAnalyser {
 public:
-    FileAnalyser(const Pkgs& pkgs, clang::DiagnosticsEngine& Diags_,
+    FileAnalyser(const Modules& modules, clang::DiagnosticsEngine& Diags_,
                  AST& ast_, TypeContext& typeContext_, bool verbose);
     ~FileAnalyser() {}
 

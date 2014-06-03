@@ -28,7 +28,7 @@
 #include "AST/Expr.h"
 #include "AST/Stmt.h"
 #include "AST/Type.h"
-#include "AST/Package.h"
+#include "AST/Module.h"
 #include "Utils/StringBuilder.h"
 #include "Utils/GenUtils.h"
 
@@ -55,7 +55,7 @@ CodeGenFunction::CodeGenFunction(CodeGenModule& CGM_, FunctionDecl* Func_)
     , Builder(context)
 {}
 
-llvm::Function* CodeGenFunction::generateProto(const std::string& pkgname) {
+llvm::Function* CodeGenFunction::generateProto(const std::string& modName) {
     LOG_FUNC
     // function part
     // arguments + return type
@@ -75,7 +75,7 @@ llvm::Function* CodeGenFunction::generateProto(const std::string& pkgname) {
         funcType = llvm::FunctionType::get(RT, argsRef, FuncDecl->isVariadic());
     }
     StringBuilder buffer;
-    GenUtils::addName(pkgname, FuncDecl->getName(), buffer);
+    GenUtils::addName(modName, FuncDecl->getName(), buffer);
 
     llvm::GlobalValue::LinkageTypes ltype = CGM.getLinkage(FuncDecl->isPublic());
     // override for main
@@ -477,7 +477,7 @@ llvm::Value* CodeGenFunction::EmitExprNoImpCast(const Expr* E) {
     case EXPR_MEMBER:
         {
             const MemberExpr* M = cast<MemberExpr>(E);
-            assert(M->isPkgPrefix() && "TODO not-prefix members");
+            assert(M->isModulePrefix() && "TODO not-prefix members");
             // TODO
             break;
         }
@@ -512,13 +512,13 @@ llvm::Value* CodeGenFunction::EmitCallExpr(const CallExpr* E) {
         break;
     case EXPR_MEMBER:
         {
-            // NOTE: we only support pkg.symbol now (not struct.member)
+            // NOTE: we only support module.symbol now (not struct.member)
             // So only FunctionDecl
             const MemberExpr* M = cast<MemberExpr>(Fn);
 
             FuncName = M->getMemberName();
             FD = M->getDecl();
-            assert(FD->getKind() == DECL_FUNC && "Only support pkg.symbol for now");
+            assert(FD->getKind() == DECL_FUNC && "Only support module.symbol for now");
         }
         break;
     default:
@@ -528,14 +528,14 @@ llvm::Value* CodeGenFunction::EmitCallExpr(const CallExpr* E) {
     // TODO optimize buffer below (lots of copying)
     llvm::Function* function;
     StringBuilder fullname;
-    GenUtils::addName(FD->getPackage()->getCName(), FuncName, fullname);
+    GenUtils::addName(FD->getModule()->getCName(), FuncName, fullname);
     // TODO FIX THIS for single module!
-    if (FD->getPackage()->getName() == CGM.getName()) {       // same-package (find func)
+    if (FD->getModule()->getName() == CGM.getName()) {       // same-module (find func)
         function = module->getFunction((const char*)fullname);
-    } else {    // other package (find or generate decl)
+    } else {    // other module (find or generate decl)
         function = module->getFunction((const char*)fullname);
         if (!function) {
-            function = CGM.createExternal(FD->getPackage(), FuncName);
+            function = CGM.createExternal(FD->getModule(), FuncName);
         }
     }
     assert(function && "CANNOT FIND FUNCTION");

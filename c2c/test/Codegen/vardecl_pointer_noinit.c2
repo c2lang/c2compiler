@@ -1,5 +1,5 @@
 // @warnings{no-unused}
-package test;
+module test;
 
 int8*  a;
 // CHECK: @a = internal global i8* null, align 4

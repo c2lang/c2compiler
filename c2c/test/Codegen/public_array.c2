@@ -1,5 +1,5 @@
 // @warnings{no-unused}
-package test;
+module test;
 
 public const int32[] a = { 1, 2 }
 // CHECK: @a = constant [2 x i32] [i32 1, i32 2], align 4

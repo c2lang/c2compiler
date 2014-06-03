@@ -1,5 +1,5 @@
 // @warnings{no-unused}
-package test;
+module test;
 
 func int function() {
     int a = function();

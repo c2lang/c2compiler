@@ -1,5 +1,0 @@
-package test;
-
-import foo;    // @error{unknown package: foo}
-import bar;    // @error{unknown package: bar}
-

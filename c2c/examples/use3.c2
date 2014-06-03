@@ -1,4 +1,4 @@
-package use3;
+module use3;
 
 import use1 as U1 local;
 import use2 as U2 local;

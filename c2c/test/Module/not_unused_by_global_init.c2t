@@ -1,0 +1,14 @@
+// @warnings{no-unused-variable}
+
+// @file{file1}
+module foo;
+
+public const int Num = 0;
+
+// @file{file2}
+module bar;
+
+import foo;
+
+int a = foo.Num;
+

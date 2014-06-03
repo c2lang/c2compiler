@@ -1,4 +1,4 @@
-package puzzle;
+module puzzle;
 
 import stdio as io;
 import stdlib local;

@@ -1,5 +1,5 @@
 // @warnings{no-unused-function}
-package test;
+module test;
 
 int a;  // @warning{unused variable a}
 

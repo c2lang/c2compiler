@@ -1,5 +1,5 @@
 // @warnings{no-unused}
-package test;
+module test;
 
 int8 a = 1;
 // CHECK: @a = internal global i32 1, align 1

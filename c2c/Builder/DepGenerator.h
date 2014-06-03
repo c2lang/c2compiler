@@ -22,9 +22,9 @@
 namespace C2 {
 
 class AST;
-class Package;
+class Module;
 class Decl;
-class PkgInfo;
+class ModInfo;
 class StringBuilder;
 
 class DepGenerator {
@@ -37,16 +37,16 @@ public:
     void analyse(const AST& ast);
     void write(StringBuilder& output, const std::string& title) const;
 private:
-    PkgInfo* getInfo(const std::string& pkgname);
-    void addExternal(const Package* P) const;
+    ModInfo* getInfo(const std::string& modName);
+    void addExternal(const Module* P) const;
     void writeAST(const AST& ast, StringBuilder& output, unsigned indent) const;
     void writeDecl(const Decl* D, StringBuilder& output, unsigned indent) const;
-    void writeExternal(const Package* P, StringBuilder& output, unsigned indent) const;
+    void writeExternal(const Module* P, StringBuilder& output, unsigned indent) const;
 
-    typedef std::vector<PkgInfo*> Packages;
-    Packages packages;
+    typedef std::vector<ModInfo*> Modules;
+    Modules modules;
 
-    typedef std::vector<const Package*> Externals;
+    typedef std::vector<const Module*> Externals;
     mutable Externals externals;
 
     bool showFiles;

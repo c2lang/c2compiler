@@ -1,4 +1,4 @@
-package layer1;
+module layer1;
 
 public type Number int;
 

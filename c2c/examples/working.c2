@@ -1,4 +1,4 @@
-package working;
+module working;
 
 import stdio;
 

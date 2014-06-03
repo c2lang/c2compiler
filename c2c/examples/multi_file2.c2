@@ -1,4 +1,4 @@
-package multi;
+module multi;
 
 func int getNumber2() {
     getNumber1();

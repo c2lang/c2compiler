@@ -1,11 +1,11 @@
 // @warnings{no-unused-variable}
 // @file{file1}
-package foo;
+module foo;
 
 public const int n = 1;
 
 // @file{file2}
-package bar;
+module bar;
 import foo local;
 
 public int f1 = foo.n;

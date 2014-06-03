@@ -36,7 +36,7 @@
 
 #include "CodeGen/CodeGenModule.h"
 #include "CodeGen/CodeGenFunction.h"
-#include "AST/Package.h"
+#include "AST/Module.h"
 #include "AST/AST.h"
 #include "AST/Decl.h"
 #include "Utils/StringBuilder.h"
@@ -86,7 +86,7 @@ void CodeGenModule::generate() {
         for (unsigned i=0; i<ast->numFunctions(); i++) {
             FunctionDecl* F = ast->getFunction(i);
             CodeGenFunction cgf(*this, F);
-            llvm::Function* proto = cgf.generateProto(F->getPackage()->getCName());
+            llvm::Function* proto = cgf.generateProto(F->getModule()->getCName());
             F->setIRProto(proto);
         }
     }
@@ -129,7 +129,7 @@ void CodeGenModule::dump() {
 }
 
 void CodeGenModule::write(const std::string& target, const std::string& name) {
-    // write IR Module to output/<target>/<package>.ll
+    // write IR Module to output/<target>/<module>.ll
     StringBuilder filename;
     filename << "output/" << target << '/';
     bool existed;
@@ -213,7 +213,7 @@ llvm::Type* CodeGenModule::ConvertStructType(const StructType* S) {
 
     StringBuilder fullName(128);    // TODO use constant for length
     fullName << "struct.";
-    GenUtils::addName(D->getPackage()->getName(), D->getName(), fullName);
+    GenUtils::addName(D->getModule()->getName(), D->getName(), fullName);
 
     llvm::StructType* Old = module->getTypeByName((const char*)fullName);
     if (Old) return Old;
@@ -312,7 +312,7 @@ llvm::Type* CodeGenModule::ConvertType(QualType Q) {
     return 0;
 }
 
-llvm::Function* CodeGenModule::createExternal(const Package* P, const std::string& name) {
+llvm::Function* CodeGenModule::createExternal(const C2::Module* P, const std::string& name) {
     Decl* D = P->findSymbol(name);
     assert(D);
     FunctionDecl* F = cast<FunctionDecl>(D);

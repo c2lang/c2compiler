@@ -1,5 +1,5 @@
 // @warnings{no-unused-parameter}
-package test;
+module test;
 
 public type Number int;
 

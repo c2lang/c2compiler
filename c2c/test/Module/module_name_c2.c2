@@ -1,0 +1,2 @@
+module c2;     // @error{module-name c2 is reserved}
+

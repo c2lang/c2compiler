@@ -1,5 +1,5 @@
 // @warnings{no-unused}
-package test;
+module test;
 
 const int Num = 200;
 

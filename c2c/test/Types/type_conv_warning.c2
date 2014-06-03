@@ -1,5 +1,5 @@
 // @warnings{no-unused}
-package test;
+module test;
 
 public func int main() {
     int64 Int64 = 1;

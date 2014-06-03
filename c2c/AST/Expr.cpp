@@ -17,7 +17,6 @@
 #include "AST/Expr.h"
 #include "AST/Type.h"
 #include "AST/Decl.h"
-#include "AST/Package.h"
 #include "Utils/StringBuilder.h"
 #include "Utils/Utils.h"
 #include "Utils/color.h"
@@ -431,7 +430,7 @@ void MemberExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.setColor(COL_EXPR);
     buffer << "MemberExpr";
     buffer.setColor(COL_ATTR);
-    if (isPkgPrefix()) buffer << " pkg-prefix";
+    if (isModulePrefix()) buffer << " mod-prefix";
     buffer << ' ';
     Expr::print(buffer, 0);
     buffer << '\n';

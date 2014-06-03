@@ -1,4 +1,4 @@
-package issue;
+module issue;
 
 import type2 local;
 

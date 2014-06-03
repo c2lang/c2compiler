@@ -1,5 +1,5 @@
 // @warnings{no-unused}
-package test;
+module test;
 
 type Number1 Number2;       // @error{circular type definition: Number1 -> Number2 -> Number1}
 type Number2 Number1;       // @error{circular type definition: Number2 -> Number1 -> Number2}

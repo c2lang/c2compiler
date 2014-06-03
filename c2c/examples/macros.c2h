@@ -1,4 +1,4 @@
 
-#define PACKAGE package
+#define MODULE module
 #define FUNC func
 

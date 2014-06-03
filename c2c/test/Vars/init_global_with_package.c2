@@ -1,5 +1,5 @@
 // @warnings{no-unused}
-package test;
+module test;
 
-int a = test;       // @error{invalid type conversion from 'package' to 'int32'}
+int a = test;       // @error{invalid type conversion from 'module' to 'int32'}
 

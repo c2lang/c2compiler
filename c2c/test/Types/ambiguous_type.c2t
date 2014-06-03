@@ -1,17 +1,17 @@
 // @warnings{no-unused}
 
 // @file{file1}
-package foo;
+module foo;
 
 public type Number int;
 
 // @file{file2}
-package bar;
+module bar;
 
 public type Number int;
 
 // @file{file3}
-package test;
+module test;
 
 import foo local;
 import bar local;

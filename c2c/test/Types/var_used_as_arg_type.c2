@@ -1,4 +1,4 @@
-package test;
+module test;
 
 int a;
 

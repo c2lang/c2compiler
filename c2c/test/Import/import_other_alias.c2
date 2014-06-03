@@ -1,4 +1,4 @@
-package test;
+module test;
 
 import other2 as other1;
 import other1;     // @error{redefinition of other1}

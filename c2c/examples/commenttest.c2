@@ -5,7 +5,7 @@
 */
 
 // one-liner
-package comments;    // after
+module comments;    // after
 
 // another one
 public func int main(int argc /*first arg*/, char*[] argv) {

@@ -39,10 +39,10 @@ using namespace llvm;
 #define LOG_FUNC
 #endif
 
-FileAnalyser::FileAnalyser(const Pkgs& pkgs, clang::DiagnosticsEngine& Diags_,
+FileAnalyser::FileAnalyser(const Modules& modules, clang::DiagnosticsEngine& Diags_,
                     AST& ast_, TypeContext& typeContext_, bool verbose_)
     : ast(ast_)
-    , globals(new Scope(ast_.getPkgName(), pkgs, Diags_))
+    , globals(new Scope(ast_.getModuleName(), modules, Diags_))
     , TR(new TypeResolver(*globals, Diags_, typeContext_))
     , Diags(Diags_)
     , functionAnalyser(*globals, *TR, typeContext_, Diags_)
@@ -236,7 +236,7 @@ void FileAnalyser::checkDeclsForUsed() {
     for (unsigned i=0; i<ast.numImports(); i++) {
         ImportDecl* U = ast.getImport(i);
         if (!U->isUsed()) {
-            Diags.Report(U->getLocation(), diag::warn_unused_package) << U->getPkgName();
+            Diags.Report(U->getLocation(), diag::warn_unused_module) << U->getModuleName();
         }
     }
 
@@ -333,8 +333,8 @@ unsigned FileAnalyser::checkTypeDecl(TypeDecl* D) {
     case DECL_FUNCTIONTYPE:
     {
         const FunctionTypeDecl* FTD = cast<FunctionTypeDecl>(D);
-        // set package on inner FunctionDecl
-        FTD->getDecl()->setPackage(FTD->getPackage());
+        // set module on inner FunctionDecl
+        FTD->getDecl()->setModule(FTD->getModule());
         // dont check return/argument types yet
         break;
     }
