@@ -33,7 +33,7 @@ namespace C2 {
 
 class Decl;
 class VarDecl;
-class UseDecl;
+class ImportDecl;
 
 struct DynamicScope {
     DynamicScope();
@@ -85,7 +85,7 @@ public:
     Scope(const std::string& name_, const Pkgs& pkgs_, clang::DiagnosticsEngine& Diags_);
 
     // adding symbols
-    bool addUseDecl(UseDecl* useDecl);
+    bool addImportDecl(ImportDecl* useDecl);
     bool checkScopedSymbol(const VarDecl* V) const;
     void addScopedSymbol(VarDecl* V);
 
@@ -121,7 +121,7 @@ private:
     Locals locals;
 
     // used Packages (use <as>)
-    typedef std::map<std::string, UseDecl*> Packages;
+    typedef std::map<std::string, ImportDecl*> Packages;
     typedef Packages::const_iterator PackagesConstIter;
     typedef Packages::iterator PackagesIter;
     Packages usedPackages;

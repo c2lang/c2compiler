@@ -1,5 +1,0 @@
-package test;
-
-use other1;
-use other2 as other1;       // @error{redefinition of other1}
-

@@ -1,7 +1,7 @@
 package use3;
 
-use use1 as U1 local;
-use use2 as U2 local;
+import use1 as U1 local;
+import use2 as U2 local;
 
 Coor c1;
 

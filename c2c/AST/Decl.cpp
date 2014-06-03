@@ -284,18 +284,18 @@ void ArrayValueDecl::print(StringBuilder& buffer, unsigned indent) const {
     value->print(buffer, INDENT);
 }
 
-UseDecl::UseDecl(const std::string& name_, SourceLocation loc_, bool isLocal_,
+ImportDecl::ImportDecl(const std::string& name_, SourceLocation loc_, bool isLocal_,
                  const std::string& pkgName_, SourceLocation aliasLoc_)
-    : Decl(DECL_USE, name_, loc_, QualType(), false, 0)
+    : Decl(DECL_IMPORT, name_, loc_, QualType(), false, 0)
     , pkgName(pkgName_)
     , aliasLoc(aliasLoc_)
 {
-    DeclBits.UseIsLocal = isLocal_;
+    DeclBits.ImportIsLocal = isLocal_;
 }
 
-void UseDecl::print(StringBuilder& buffer, unsigned indent) const {
+void ImportDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.setColor(COL_DECL);
-    buffer << "UseDecl ";
+    buffer << "ImportDecl ";
     buffer.setColor(COL_VALUE);
     buffer << pkgName;
     if (aliasLoc.isValid()) buffer << " as " << name;

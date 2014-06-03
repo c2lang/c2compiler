@@ -74,8 +74,8 @@ void CCodeGenerator::generate() {
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
         AST* ast = *iter;
         curpkg = &ast->getPkgName();
-        for (unsigned i=0; i<ast->numUses(); i++) {
-            EmitUse(ast->getUse(i));
+        for (unsigned i=0; i<ast->numImports(); i++) {
+            EmitImport(ast->getImport(i));
         }
         curpkg = 0;
     }
@@ -229,7 +229,7 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
                 case DECL_ENUMTYPE:
                 case DECL_FUNCTIONTYPE:
                 case DECL_ARRAYVALUE:
-                case DECL_USE:
+                case DECL_IMPORT:
                     assert(0);
                     break;
                 }
@@ -488,7 +488,7 @@ void CCodeGenerator::EmitTypeDecl(TypeDecl* T) {
         EmitFunctionType(cast<FunctionTypeDecl>(T), T->isPublic() ? hbuf : cbuf);
         return;
     case DECL_ARRAYVALUE:
-    case DECL_USE:
+    case DECL_IMPORT:
         assert(0);
         break;
     }
@@ -546,7 +546,7 @@ void CCodeGenerator::EmitFunctionType(FunctionTypeDecl* FTD, StringBuilder& outp
     output << ";\n\n";
 }
 
-void CCodeGenerator::EmitUse(UseDecl* D) {
+void CCodeGenerator::EmitImport(ImportDecl* D) {
     LOG_FUNC
     typedef Pkgs::const_iterator PkgsConstIter;
     PkgsConstIter iter = pkgs.find(D->getPkgName());

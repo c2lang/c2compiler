@@ -43,7 +43,7 @@ Scope::Scope(const std::string& name_, const Pkgs& pkgs_, clang::DiagnosticsEngi
     assert(myPkg);
 }
 
-bool Scope::addUseDecl(UseDecl* useDecl) {
+bool Scope::addImportDecl(ImportDecl* useDecl) {
     clang::SourceLocation Loc = useDecl->getLocation();
     if (useDecl->getAliasLocation().isValid()) {
         Loc = useDecl->getAliasLocation();
@@ -89,14 +89,14 @@ void Scope::addScopedSymbol(VarDecl* V) {
 const Package* Scope::findUsedPackage(const std::string& name, clang::SourceLocation loc) const {
     PackagesConstIter iter = usedPackages.find(name);
     if (iter != usedPackages.end()) {
-        UseDecl* U = iter->second;
+        ImportDecl* U = iter->second;
         U->setUsed();
         return U->getPackage();
     }
 
     // check if used with alias (then fullname is forbidden)
     for (PackagesConstIter iter = usedPackages.begin(); iter != usedPackages.end(); ++iter) {
-        UseDecl* U = iter->second;
+        ImportDecl* U = iter->second;
         U->setUsed();
         const Package* p = U->getPackage();
         if (p->getName() == name) {
@@ -159,10 +159,10 @@ Decl* Scope::findSymbol(const std::string& symbol, clang::SourceLocation loc, bo
     if (ambiguous) return 0;
 
     if (D) {
-        // mark UseDecl as used
+        // mark ImportDecl as used
         PackagesConstIter iter = usedPackages.begin();
         while (iter != usedPackages.end()) {
-            UseDecl* Use = iter->second;
+            ImportDecl* Use = iter->second;
             if (D->getPackage() == Use->getPackage()) {
                 Use->setUsed();
                 break;
@@ -228,7 +228,7 @@ Decl* Scope::findSymbolInUsed(const std::string& symbol) const {
 
     // search in all used usedPackages
     for (PackagesConstIter iter = usedPackages.begin(); iter != usedPackages.end(); ++iter) {
-        UseDecl* U = iter->second;
+        ImportDecl* U = iter->second;
         U->setUsed();
         const Package* pkg2 = U->getPackage();
         Decl* decl = pkg2->findSymbol(symbol);

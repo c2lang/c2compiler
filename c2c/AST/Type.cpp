@@ -737,7 +737,7 @@ QualType TypeContext::getFunctionType(FunctionDecl* F) {
     return add(new FunctionType(F));
 }
 
-QualType TypeContext::getPackageType(UseDecl* D) {
+QualType TypeContext::getPackageType(ImportDecl* D) {
     return add(new PackageType(D));
 }
 

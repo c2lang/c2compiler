@@ -43,7 +43,7 @@ public:
     ~FileAnalyser() {}
 
     // call in this order
-    unsigned checkUses();
+    unsigned checkImports();
     unsigned resolveTypes();
     unsigned resolveTypeCanonicals();
     unsigned resolveStructMembers();

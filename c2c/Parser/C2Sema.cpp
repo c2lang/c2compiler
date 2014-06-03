@@ -122,30 +122,30 @@ void C2Sema::ActOnPackage(const char* name, SourceLocation loc) {
         return;
     }
     ast.setName(name, loc);
-    UseDecl* U = new UseDecl(name, loc, true, name, SourceLocation());
+    ImportDecl* U = new ImportDecl(name, loc, true, name, SourceLocation());
     U->setType(typeContext.getPackageType(U));
     U->setUsed();
-    ast.addUse(U);
+    ast.addImport(U);
     addSymbol(U);
 }
 
-void C2Sema::ActOnUse(const char* pkgName_, SourceLocation loc, Token& aliasTok, bool isLocal) {
+void C2Sema::ActOnImport(const char* pkgName_, SourceLocation loc, Token& aliasTok, bool isLocal) {
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: use " << pkgName_ << " at ";
+    std::cerr << COL_SEMA"SEMA: import " << pkgName_ << " at ";
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
     std::string pkgName = pkgName_;
-    // check if use-ing own package
+    // check if importing own package
     if (ast.getPkgName() == pkgName) {
-        Diag(loc, diag::err_use_own_package) << pkgName_;
+        Diag(loc, diag::err_import_own_package) << pkgName_;
         return;
     }
-    // check for duplicate use of package
-    const UseDecl* old = findPackage(pkgName);
+    // check for duplicate import of package
+    const ImportDecl* old = findPackage(pkgName);
     if (old) {
-        Diag(loc, diag::err_duplicate_use) << pkgName;
-        Diag(old->getLocation(), diag::note_previous_use);
+        Diag(loc, diag::err_duplicate_import) << pkgName;
+        Diag(old->getLocation(), diag::note_previous_import);
         return;
     }
     std::string name = pkgName;
@@ -157,9 +157,9 @@ void C2Sema::ActOnUse(const char* pkgName_, SourceLocation loc, Token& aliasTok,
             return;
         }
     }
-    UseDecl* U = new UseDecl(name, loc, isLocal, pkgName, aliasTok.getLocation());
+    ImportDecl* U = new ImportDecl(name, loc, isLocal, pkgName, aliasTok.getLocation());
     U->setType(typeContext.getPackageType(U));
-    ast.addUse(U);
+    ast.addImport(U);
     addSymbol(U);
 }
 
@@ -945,9 +945,9 @@ void C2Sema::addSymbol(Decl* d) {
     }
 }
 
-const C2::UseDecl* C2Sema::findPackage(const std::string& name) const {
-    for (unsigned i=0; i<ast.numUses(); i++) {
-        UseDecl* D = ast.getUse(i);
+const C2::ImportDecl* C2Sema::findPackage(const std::string& name) const {
+    for (unsigned i=0; i<ast.numImports(); i++) {
+        ImportDecl* D = ast.getImport(i);
         if (D->getPkgName() == name) return D;
     }
     return 0;

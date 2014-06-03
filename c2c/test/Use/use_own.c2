@@ -1,4 +1,0 @@
-package test;
-
-use test;   // @error{cannot use own package 'test'}
-

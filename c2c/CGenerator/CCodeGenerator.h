@@ -29,7 +29,7 @@ class AST;
 class Type;
 class Decl;
 class VarDecl;
-class UseDecl;
+class ImportDecl;
 class TypeDecl;
 class FunctionDecl;
 class StructTypeDecl;
@@ -57,7 +57,7 @@ private:
     void EmitFunctionArgs(FunctionDecl* F, StringBuilder& output);
     void EmitVariable(VarDecl* D);
     void EmitTypeDecl(TypeDecl* D);
-    void EmitUse(UseDecl* D);
+    void EmitImport(ImportDecl* D);
     void EmitStructType(StructTypeDecl* S, StringBuilder& output, unsigned indent);
     void EmitEnumType(EnumTypeDecl* E, StringBuilder& output);
     void EmitFunctionType(FunctionTypeDecl* F, StringBuilder& output);

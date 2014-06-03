@@ -110,7 +110,7 @@ bool C2Parser::Parse() {
     ParsePackage();
     if (Diags.hasErrorOccurred()) return false;
 
-    ParseUses();
+    ParseImports();
     if (Diags.hasErrorOccurred()) return false;
 
     bool done = false;
@@ -136,11 +136,11 @@ void C2Parser::ParsePackage() {
     Actions.ActOnPackage(Pkg->getNameStart(), PkgLoc);
 }
 
-void C2Parser::ParseUses() {
+void C2Parser::ParseImports() {
     LOG_FUNC
     while (1) {
-        if (Tok.isNot(tok::kw_use)) break;
-        // Syntax: use [identifier] <as identifier> <local>
+        if (Tok.isNot(tok::kw_import)) break;
+        // Syntax: import [identifier] <as identifier> <local>
         ConsumeToken();
         if (ExpectIdentifier()) return;
         IdentifierInfo* Pkg = Tok.getIdentifierInfo();
@@ -162,13 +162,9 @@ void C2Parser::ParseUses() {
             isLocal = true;
             ConsumeToken();
         }
-        if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "use statement")) return;
+        if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "import statement")) return;
 
-        Actions.ActOnUse(Pkg->getNameStart(), PkgLoc, AliasToken, isLocal);
-    }
-    // check for 'using' instead of 'use' mistake
-    if (Tok.is(tok::kw_using)) {
-        Diag(Tok, diag::err_using_not_use);
+        Actions.ActOnImport(Pkg->getNameStart(), PkgLoc, AliasToken, isLocal);
     }
 }
 

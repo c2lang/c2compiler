@@ -1,7 +1,7 @@
 package multi2;
 
-use multi1;
-use stdio;
+import multi1;
+import stdio;
 
 public func int func2() {
     stdio.puts("multi2.func2()\n");

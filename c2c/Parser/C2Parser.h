@@ -88,7 +88,7 @@ private:
 
     // top level
     void ParsePackage();
-    void ParseUses();
+    void ParseImports();
     bool ParseTopLevel();
     void ParseTypeDef(bool is_public);
     void ParseVarDef(bool is_public);

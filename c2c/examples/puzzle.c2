@@ -1,7 +1,7 @@
 package puzzle;
 
-use stdio as io;
-use stdlib local;
+import stdio as io;
+import stdlib local;
 
 const char* ANSI_BRED   = "\033[01;31m";
 const char* ANSI_BGREEN = "\033[01;32m";

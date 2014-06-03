@@ -8,7 +8,7 @@ public type Number int;
 // @file{file2}
 package bar;
 
-use foo local;
+import foo local;
 
 type Point Number;
 

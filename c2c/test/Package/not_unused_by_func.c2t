@@ -6,7 +6,7 @@ public func int test1() { return 1; }
 // @file{file2}
 package bar;
 
-use foo;
+import foo;
 
 func int test2() {   // @warning{unused function test2}
     return foo.test1();

@@ -1,4 +1,0 @@
-package test;
-
-use other as test;      // @error{redefinition of test}
-

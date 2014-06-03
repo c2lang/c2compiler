@@ -8,7 +8,7 @@ public type Number int;
 // @file{file2}
 package bar;
 
-use foo;
+import foo;
 
 func void test() {
     foo.Number a;

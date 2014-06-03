@@ -1,6 +1,6 @@
 package type_test;
 
-use utils;
+import utils;
 
 // -- Base types --
 public type Number int;

@@ -1,6 +1,6 @@
 package layer2;
 
-use layer1;
+import layer1;
 
 public type Layer2 struct {
     layer1.Number l1;

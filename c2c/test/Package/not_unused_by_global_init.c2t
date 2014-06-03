@@ -8,7 +8,7 @@ public const int Num = 0;
 // @file{file2}
 package bar;
 
-use foo;
+import foo;
 
 int a = foo.Num;
 

@@ -3,7 +3,7 @@ package foo;
 
 // @file{file2}
 package bar;
-use foo;
+import foo;
 
 foo.Bla a;      // @error{package foo has no symbol Bla}
 

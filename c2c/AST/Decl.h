@@ -50,7 +50,7 @@ enum DeclKind {
     DECL_ENUMTYPE,
     DECL_FUNCTIONTYPE,
     DECL_ARRAYVALUE,
-    DECL_USE
+    DECL_IMPORT
 };
 
 class Decl {
@@ -98,7 +98,7 @@ protected:
         unsigned StructTypeIsGlobal : 1;
         unsigned FuncIsVariadic : 1;
         unsigned FuncHasDefaultArgs : 1;
-        unsigned UseIsLocal : 1;
+        unsigned ImportIsLocal : 1;
     };
     union {
         DeclBitfields DeclBits;
@@ -335,18 +335,18 @@ private:
 };
 
 
-class UseDecl : public Decl {
+class ImportDecl : public Decl {
 public:
-    UseDecl(const std::string& name_, SourceLocation loc_, bool isLocal_,
+    ImportDecl(const std::string& name_, SourceLocation loc_, bool isLocal_,
             const std::string& pkgName_, SourceLocation aliasLoc_);
     static bool classof(const Decl* D) {
-        return D->getKind() == DECL_USE;
+        return D->getKind() == DECL_IMPORT;
     }
     virtual void print(StringBuilder& buffer, unsigned indent) const;
 
     const std::string& getPkgName() const { return pkgName; }
     virtual clang::SourceLocation getAliasLocation() const { return aliasLoc; }
-    bool isLocal() const { return DeclBits.UseIsLocal; }
+    bool isLocal() const { return DeclBits.ImportIsLocal; }
 private:
     std::string pkgName;
     SourceLocation aliasLoc;

@@ -1,0 +1,4 @@
+package test;
+
+import other as test;      // @error{redefinition of test}
+

@@ -32,9 +32,9 @@ void AST::print(bool colors) const {
     StringBuilder buffer;
     buffer.enableColor(colors);
     buffer << "---- AST " << "(pkg=" << pkgName << ") " << filename << " ----\n";
-    // UseDecls
-    for (unsigned i=0; i<useList.size(); i++) {
-        useList[i]->print(buffer, 0);
+    // ImportDecls
+    for (unsigned i=0; i<importList.size(); i++) {
+        importList[i]->print(buffer, 0);
         buffer << '\n';
     }
     // TypeDecls

@@ -164,8 +164,8 @@ void DepGenerator::write(StringBuilder& output, const std::string& title) const 
 
 void DepGenerator::writeAST(const AST& ast, StringBuilder& output, unsigned indent) const {
     if (showExternals) {
-        for (unsigned i=0; i<ast.numUses(); i++) {
-            const UseDecl* U = ast.getUse(i);
+        for (unsigned i=0; i<ast.numImports(); i++) {
+            const ImportDecl* U = ast.getImport(i);
             QualType Q = U->getType();
             const PackageType* T = cast<PackageType>(Q.getTypePtr());
             const Package* P = T->getPackage();

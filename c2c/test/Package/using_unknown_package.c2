@@ -1,4 +1,4 @@
 package test;
 
-use foo;        // @error{unknown package: foo}
+import foo;        // @error{unknown package: foo}
 

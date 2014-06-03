@@ -2,7 +2,7 @@
 // @warnings{no-unused}
 package test;
 
-use stdio as io;
+import stdio as io;
 
 func void test1() {
     stdio.puts("hello");  // @error{use of fullname 'stdio' of aliased package is forbidden (use 'io')}

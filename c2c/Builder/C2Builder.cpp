@@ -420,7 +420,7 @@ bool C2Builder::createPkgs() {
         const AST::Symbols& symbols = info->ast.getSymbols();
         for (AST::SymbolsConstIter iter = symbols.begin(); iter != symbols.end(); ++iter) {
             Decl* New = iter->second;
-            if (isa<UseDecl>(New)) continue;
+            if (isa<ImportDecl>(New)) continue;
             Decl* Old = pkg->findSymbol(iter->first);
             if (Old) {
                 fprintf(stderr, "MULTI_FILE: duplicate symbol %s\n", New->getName().c_str());
@@ -440,8 +440,8 @@ bool C2Builder::loadExternalPackages() {
     bool haveErrors = false;
     for (unsigned i=0; i<files.size(); i++) {
         FileInfo* info = files[i];
-        for (unsigned u=0; u<info->ast.numUses(); u++) {
-            UseDecl* D = info->ast.getUse(u);
+        for (unsigned u=0; u<info->ast.numImports(); u++) {
+            ImportDecl* D = info->ast.getImport(u);
             const std::string& name = D->getPkgName();
             if (havePackage(name)) continue;
             if (!loadPackage(name)) {
@@ -553,7 +553,7 @@ unsigned C2Builder::analyse() {
     unsigned errors = 0;
 
     for (unsigned i=0; i<files.size(); i++) {
-        errors += files[i]->analyser->checkUses();
+        errors += files[i]->analyser->checkImports();
     }
     if (errors) return errors;
 

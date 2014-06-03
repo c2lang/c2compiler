@@ -7,7 +7,7 @@ public int n;
 // @file{file2}
 package bar;
 
-use foo local;
+import foo local;
 
 func int test2() {
     return foo.n;

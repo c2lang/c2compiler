@@ -1,7 +1,7 @@
 package ccode1;
 
-use stdio;
-use ccode2;
+import stdio;
+import ccode2;
 
 type Point struct {
     int x;

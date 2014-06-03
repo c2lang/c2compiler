@@ -1,0 +1,5 @@
+package test;
+
+import other;
+import other;  // @error{duplicate import of package 'other'}
+

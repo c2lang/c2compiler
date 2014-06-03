@@ -81,7 +81,7 @@ static void SetConstantFlags(Decl* D, Expr* expr) {
         expr->setConstant();
         break;
     case DECL_ARRAYVALUE:
-    case DECL_USE:
+    case DECL_IMPORT:
         break;
     }
     // TODO needed?
@@ -479,7 +479,7 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
                 break;
             case DECL_ARRAYVALUE:
                 break;
-            case DECL_USE:
+            case DECL_IMPORT:
                 expr->setConstant();
                 break;
             }
@@ -658,7 +658,7 @@ void FunctionAnalyser::analyseSizeofExpr(Expr* expr) {
         case DECL_ARRAYVALUE:
             assert(0 && "should not happen");
             break;
-        case DECL_USE:
+        case DECL_IMPORT:
             Diags.Report(id->getLocation(), diag::err_is_a_package) << id->getName();
             return;
         }
@@ -1116,7 +1116,7 @@ QualType FunctionAnalyser::analyseBuiltinExpr(Expr* expr) {
             assert(0 && "TODO");
             break;
         case DECL_ARRAYVALUE:
-        case DECL_USE:
+        case DECL_IMPORT:
             assert(0);
             break;
         }
@@ -1405,7 +1405,7 @@ void FunctionAnalyser::checkDeclAssignment(Decl* decl, Expr* expr) {
         // error
         fprintf(stderr, "TODO cannot assign to non-variable\n");
         break;
-    case DECL_USE:
+    case DECL_IMPORT:
         assert(0);
         break;
     }

@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 package test;
 
-use c2;
+import c2;
 
 func void test1() {
     uint64 t1 = c2.buildtime;

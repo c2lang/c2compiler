@@ -28,7 +28,7 @@
 namespace C2 {
 
 class Decl;
-class UseDecl;
+class ImportDecl;
 class TypeDecl;
 class VarDecl;
 class FunctionDecl;
@@ -43,10 +43,10 @@ public:
 
     void print(bool colors) const;
 
-    // UseDecls
-    void addUse(UseDecl* d) { useList.push_back(d); }
-    unsigned numUses() const { return useList.size(); }
-    UseDecl* getUse(unsigned i) const { return useList[i]; }
+    // ImportDecls
+    void addImport(ImportDecl* d) { importList.push_back(d); }
+    unsigned numImports() const { return importList.size(); }
+    ImportDecl* getImport(unsigned i) const { return importList[i]; }
 
     // TypeDecls
     void addType(TypeDecl* d) { typeList.push_back(d); }
@@ -96,8 +96,8 @@ private:
     std::string pkgName;
     clang::SourceLocation pkgLoc;
 
-    typedef OwningVector<UseDecl> UseList;
-    UseList useList;
+    typedef OwningVector<ImportDecl> ImportList;
+    ImportList importList;
 
     typedef OwningVector<TypeDecl> TypeList;
     TypeList typeList;

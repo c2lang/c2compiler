@@ -1,4 +1,0 @@
-package test;
-
-use other as other;     // @error{alias name is same as package name}
-

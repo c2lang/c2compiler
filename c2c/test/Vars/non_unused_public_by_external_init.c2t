@@ -6,7 +6,7 @@ public const int n = 1;
 
 // @file{file2}
 package bar;
-use foo local;
+import foo local;
 
 public int y = n;
 

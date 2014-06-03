@@ -1,7 +1,7 @@
 package func_test;
 
-use utils;
-use c2;
+import utils;
+import c2;
 
 public func int getMax() {
     return 1;

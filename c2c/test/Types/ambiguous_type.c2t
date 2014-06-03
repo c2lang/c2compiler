@@ -13,8 +13,8 @@ public type Number int;
 // @file{file3}
 package test;
 
-use foo local;
-use bar local;
+import foo local;
+import bar local;
 
 func void test1() {
     Number i;   // @error{symbol Number is ambiguous}

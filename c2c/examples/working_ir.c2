@@ -1,6 +1,6 @@
 package working_ir;
 
-use stdio local;
+import stdio local;
 
 int foo;
 public int bar;

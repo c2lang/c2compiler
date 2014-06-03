@@ -8,7 +8,7 @@ public int a;
 // @file{file2}
 package bar;
 
-use foo local;
+import foo local;
 
 public func void test(int a) {}     // @error{redefinition of a}
 

@@ -1,0 +1,4 @@
+package test;
+
+import test;   // @error{cannot import own package 'test'}
+

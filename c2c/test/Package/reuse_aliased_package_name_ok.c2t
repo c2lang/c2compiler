@@ -6,7 +6,7 @@ package foo;
 // @file{file2}
 package bar;
 
-use foo as fooz;
+import foo as fooz;
 
 int foo;
 

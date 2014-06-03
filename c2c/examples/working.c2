@@ -1,6 +1,6 @@
 package working;
 
-use stdio;
+import stdio;
 
 type Number int;
 

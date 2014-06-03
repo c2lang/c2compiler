@@ -1,6 +1,6 @@
 package switch_test;
 
-use stdio;
+import stdio;
 
 func void call(int a) {
     switch (1) {

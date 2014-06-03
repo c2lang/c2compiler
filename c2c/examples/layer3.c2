@@ -1,6 +1,6 @@
 package layer3;
 
-use layer2;
+import layer2;
 
 public type Layer3 struct {
     layer2.Layer2 l2;

@@ -50,11 +50,11 @@ FileAnalyser::FileAnalyser(const Pkgs& pkgs, clang::DiagnosticsEngine& Diags_,
     , verbose(verbose_)
 {}
 
-unsigned  FileAnalyser::checkUses() {
+unsigned  FileAnalyser::checkImports() {
     LOG_FUNC
     unsigned errors = 0;
-    for (unsigned i=0; i<ast.numUses(); i++) {
-        if (!globals->addUseDecl(ast.getUse(i))) errors++;
+    for (unsigned i=0; i<ast.numImports(); i++) {
+        if (!globals->addImportDecl(ast.getImport(i))) errors++;
     }
     return errors;
 }
@@ -104,7 +104,7 @@ unsigned FileAnalyser::resolveTypeCanonicals() {
                 break;
             }
         case DECL_ARRAYVALUE:
-        case DECL_USE:
+        case DECL_IMPORT:
             assert(0);
             break;
         }
@@ -233,8 +233,8 @@ void FileAnalyser::checkDeclsForUsed() {
     if (verbose) printf(COL_VERBOSE"%s %s"ANSI_NORMAL"\n", __func__, ast.getFileName().c_str());
 
     // checkfor unused uses
-    for (unsigned i=0; i<ast.numUses(); i++) {
-        UseDecl* U = ast.getUse(i);
+    for (unsigned i=0; i<ast.numImports(); i++) {
+        ImportDecl* U = ast.getImport(i);
         if (!U->isUsed()) {
             Diags.Report(U->getLocation(), diag::warn_unused_package) << U->getPkgName();
         }
@@ -339,7 +339,7 @@ unsigned FileAnalyser::checkTypeDecl(TypeDecl* D) {
         break;
     }
     case DECL_ARRAYVALUE:
-    case DECL_USE:
+    case DECL_IMPORT:
         assert(0);
         break;
     }

@@ -1,6 +1,6 @@
 package issue;
 
-use type1 local;
+import type1 local;
 
 public func void main() {
     Number n = 300;

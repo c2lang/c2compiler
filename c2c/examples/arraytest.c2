@@ -1,6 +1,6 @@
 package array_test;
 
-use stdio as IO;
+import stdio as IO;
 
 #define TEST(x,y) \
 elements += { #x, y} \
