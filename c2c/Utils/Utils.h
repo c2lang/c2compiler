@@ -17,6 +17,7 @@
 #define UTILS_UTILS_H
 
 #include <sys/types.h>
+#include <inttypes.h>
 
 namespace C2 {
 

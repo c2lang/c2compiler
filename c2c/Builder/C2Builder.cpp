@@ -333,7 +333,7 @@ int C2Builder::build() {
     }
     u_int64_t t2_parse = Utils::getCurrentTime();
     u_int64_t t1_analyse, t2_analyse;
-    if (options.printTiming) printf(COL_TIME"parsing took %lld usec"ANSI_NORMAL"\n", t2_parse - t1_parse);
+    if (options.printTiming) printf(COL_TIME"parsing took %"PRIu64" usec"ANSI_NORMAL"\n", t2_parse - t1_parse);
     if (client->getNumErrors()) goto out;
     t1_analyse = Utils::getCurrentTime();
 
@@ -366,7 +366,7 @@ int C2Builder::build() {
         files[i]->deleteAnalyser();
     }
     t2_analyse = Utils::getCurrentTime();
-    if (options.printTiming) printf(COL_TIME"analysis took %lld usec"ANSI_NORMAL"\n", t2_analyse - t1_analyse);
+    if (options.printTiming) printf(COL_TIME"analysis took %"PRIu64" usec"ANSI_NORMAL"\n", t2_analyse - t1_analyse);
     if (client->getNumErrors()) goto out;
 
     if (!checkMainFunction(Diags)) goto out;
@@ -380,7 +380,7 @@ int C2Builder::build() {
     if (options.verbose) printf(COL_VERBOSE"done"ANSI_NORMAL"\n");
 out:
     u_int64_t t2_build = Utils::getCurrentTime();
-    if (options.printTiming) printf(COL_TIME"total build took %lld usec"ANSI_NORMAL"\n", t2_build - t1_build);
+    if (options.printTiming) printf(COL_TIME"total build took %"PRIu64" usec"ANSI_NORMAL"\n", t2_build - t1_build);
     raw_ostream &OS = llvm::errs();
     unsigned NumWarnings = client->getNumWarnings();
     unsigned NumErrors = client->getNumErrors();
@@ -667,7 +667,7 @@ void C2Builder::generateOptionalC() {
         if (options.verbose) printf(COL_VERBOSE"generating C (single module)"ANSI_NORMAL"\n");
         gen.generate();
         u_int64_t t2 = Utils::getCurrentTime();
-        if (options.printTiming) printf(COL_TIME"C code generation took %lld usec"ANSI_NORMAL"\n", t2 - t1);
+        if (options.printTiming) printf(COL_TIME"C code generation took %"PRIu64" usec"ANSI_NORMAL"\n", t2 - t1);
         if (options.printC) gen.dump();
         gen.write(recipe.name, "");
     } else {
@@ -687,7 +687,7 @@ void C2Builder::generateOptionalC() {
             }
             gen.generate();
             u_int64_t t2 = Utils::getCurrentTime();
-            if (options.printTiming) printf(COL_TIME"C code generation took %lld usec"ANSI_NORMAL"\n", t2 - t1);
+            if (options.printTiming) printf(COL_TIME"C code generation took %"PRIu64" usec"ANSI_NORMAL"\n", t2 - t1);
             if (options.printC) gen.dump();
             gen.write(recipe.name, P->getName());
         }
@@ -724,7 +724,7 @@ void C2Builder::generateOptionalIR() {
         }
         cgm.generate();
         u_int64_t t2 = Utils::getCurrentTime();
-        if (options.printTiming) printf(COL_TIME"IR generation took %lld usec"ANSI_NORMAL"\n", t2 - t1);
+        if (options.printTiming) printf(COL_TIME"IR generation took %"PRIu64" usec"ANSI_NORMAL"\n", t2 - t1);
         if (options.printIR) cgm.dump();
         bool ok = cgm.verify();
         if (ok) cgm.write(recipe.name, filename);
@@ -745,7 +745,7 @@ void C2Builder::generateOptionalIR() {
             }
             cgm.generate();
             u_int64_t t2 = Utils::getCurrentTime();
-            if (options.printTiming) printf(COL_TIME"IR generation took %lld usec"ANSI_NORMAL"\n", t2 - t1);
+            if (options.printTiming) printf(COL_TIME"IR generation took %"PRIu64" usec"ANSI_NORMAL"\n", t2 - t1);
             if (options.printIR) cgm.dump();
             bool ok = cgm.verify();
             if (ok) cgm.write(recipe.name, P->getName());
@@ -777,6 +777,6 @@ void C2Builder::generateOptionsDeps() const {
     std::string path = "output/" + recipe.name;
     std::string filename = path + '/' + "deps.xml";
     FileUtils::writeFile(path.c_str(), filename, output);
-    if (options.printTiming) printf(COL_TIME"dep generation took %lld usec"ANSI_NORMAL"\n", t2 - t1);
+    if (options.printTiming) printf(COL_TIME"dep generation took %"PRIu64" usec"ANSI_NORMAL"\n", t2 - t1);
 }
 

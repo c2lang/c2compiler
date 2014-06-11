@@ -201,7 +201,7 @@ int main(int argc, const char *argv[])
     }
     if (opts.printTiming) {
         u_int64_t t2 = Utils::getCurrentTime();
-        printf(COL_TIME"total building time: %lld usec"ANSI_NORMAL"\n", t2 - t1);
+        printf(COL_TIME"total building time: %"PRIu64" usec"ANSI_NORMAL"\n", t2 - t1);
     }
 
     return hasErrors ? 1 : 0;
