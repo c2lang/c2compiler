@@ -3,20 +3,20 @@
 * [llvm-c2](https://aur.archlinux.org/packages/llvm-c2/)
 * [c2c-git](https://aur.archlinux.org/packages/c2c-git/)
 
-Howto build without an AUR helper:
+Howto build directly from git for Arch Linux:
 ```
-$ curl -O https://aur.archlinux.org/packages/ll/llvm-c2/llvm-c2.tar.gz
-$ tar xvf llvm-c2.tar.gz
+$ mkdir llvm-c2
 $ cd llvm-c2
+$ curl -O https://code.kluisip.nl/pkgbuilds/plain/llvm-c2/PKGBUILD
 $ makepkg -is
 
-$ curl -O https://aur.archlinux.org/packages/c2/c2c-git/c2c-git.tar.gz
-$ tar xvf c2c-git.tar.gz
+$ mkdir c2c-git
 $ cd c2c-git
+$ curl -O https://code.kluisip.nl/pkgbuilds/plain/c2c-git/PKGBUILD
 $ makepkg -is
 ```
 
-* To build with an AUR helper, for example [packer](https://aur.archlinux.org/packages/packer/):
+* To build from AUR with an AUR helper, for example [packer](https://aur.archlinux.org/packages/packer/):
 
 ```$ packer -S c2c-git```
 
