@@ -53,11 +53,12 @@ public:
     void dump();
 
 private:
+    void EmitIncludes();
+
     void EmitFunction(FunctionDecl* F);
     void EmitFunctionArgs(FunctionDecl* F, StringBuilder& output);
     void EmitVariable(VarDecl* D);
     void EmitTypeDecl(TypeDecl* D);
-    void EmitImport(ImportDecl* D);
     void EmitStructType(StructTypeDecl* S, StringBuilder& output, unsigned indent);
     void EmitEnumType(EnumTypeDecl* E, StringBuilder& output);
     void EmitFunctionType(FunctionTypeDecl* F, StringBuilder& output);

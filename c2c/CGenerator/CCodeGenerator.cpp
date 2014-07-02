@@ -14,6 +14,7 @@
  */
 
 #include <vector>
+#include <set>
 // TODO REMOVE
 #include <stdio.h>
 
@@ -62,6 +63,7 @@ CCodeGenerator::~CCodeGenerator() {
 }
 
 void CCodeGenerator::generate() {
+    // emit include guard
     hbuf << "#ifndef ";
     GenUtils::toCapital(filename, hbuf);
     hbuf << "_H\n";
@@ -71,16 +73,7 @@ void CCodeGenerator::generate() {
     hbuf << '\n';
 
     // generate all includes
-    for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
-        AST* ast = *iter;
-        curmod = &ast->getModuleName();
-        for (unsigned i=0; i<ast->numImports(); i++) {
-            EmitImport(ast->getImport(i));
-        }
-        curmod = 0;
-    }
-    cbuf << "#include \"" << hfilename << "\"\n";
-    cbuf << '\n';
+    EmitIncludes();
 
     // generate types
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
@@ -113,6 +106,7 @@ void CCodeGenerator::generate() {
         curmod = 0;
     }
 
+    // emit end of include guard
     hbuf << "#endif\n";
 }
 
@@ -381,6 +375,41 @@ void CCodeGenerator::write(const std::string& target, const std::string& name) {
     FileUtils::writeFile(outname, std::string(outname) + hfilename, hbuf);
 }
 
+void CCodeGenerator::EmitIncludes() {
+    typedef std::set<std::string> StringList;
+    typedef StringList::const_iterator StringListConstIter;
+    StringList systemIncludes;
+    StringList localIncludes;
+
+    // filter out unique entries, split into system and local includes
+    for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
+        AST* ast = *iter;
+        for (unsigned i=0; i<ast->numImports(); i++) {
+            const ImportDecl* D = ast->getImport(i);
+            ModulesConstIter iter = modules.find(D->getModuleName());
+            assert(iter != modules.end());
+            const Module* P = iter->second;
+
+            if (P->isPlainC()) {
+                systemIncludes.insert(P->getName());
+                continue;
+            }
+            if (mode == MULTI_FILE) {
+                localIncludes.insert(P->getName());
+            }
+        }
+    }
+
+    for (StringListConstIter iter = systemIncludes.begin(); iter != systemIncludes.end(); ++iter) {
+        cbuf << "#include <" << *iter << ".h>\n";
+    }
+    for (StringListConstIter iter = localIncludes.begin(); iter != localIncludes.end(); ++iter) {
+        cbuf << "#include \"" << *iter << ".h\"\n";
+    }
+    cbuf << '\n';
+}
+
+
 void CCodeGenerator::EmitFunction(FunctionDecl* F) {
     LOG_FUNC
     if (mode == SINGLE_FILE) {
@@ -544,23 +573,6 @@ void CCodeGenerator::EmitFunctionType(FunctionTypeDecl* FTD, StringBuilder& outp
     output << " (*" << F->getName() << ')';
     EmitFunctionArgs(F, output);
     output << ";\n\n";
-}
-
-void CCodeGenerator::EmitImport(ImportDecl* D) {
-    LOG_FUNC
-    ModulesConstIter iter = modules.find(D->getModuleName());
-    assert(iter != modules.end());
-    const Module* P = iter->second;
-
-    if (mode == MULTI_FILE || P->isPlainC()) {
-        cbuf << "#include ";
-        if (P->isPlainC()) cbuf << '<';
-        else cbuf << '"';
-        cbuf << D->getName() << ".h";
-        if (P->isPlainC()) cbuf << '>';
-        else cbuf << '"';
-        cbuf << '\n';
-    }
 }
 
 void CCodeGenerator::EmitVarDecl(VarDecl* D, StringBuilder& output, unsigned indent) {
