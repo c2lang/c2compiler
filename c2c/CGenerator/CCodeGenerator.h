@@ -82,6 +82,7 @@ private:
     void EmitIdentifierExpr(Expr* E, StringBuilder& output);
 
     // Helpers
+    void EmitDecl(const Decl* D, StringBuilder& output);
     void EmitFunctionProto(FunctionDecl* F, StringBuilder& output);
     void EmitTypePreName(QualType type, StringBuilder& output);
     void EmitTypePostName(QualType type, StringBuilder& output);

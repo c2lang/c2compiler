@@ -35,12 +35,14 @@
 #include "Utils/constants.h"
 #include "Utils/GenUtils.h"
 
-//#define CCODE_DEBUG
+#define CCODE_DEBUG
 #ifdef CCODE_DEBUG
 #include <iostream>
 #define LOG_FUNC std::cerr << ANSI_BLUE << __func__ << "()" << ANSI_NORMAL << "\n";
+#define LOG_DECL(_d) std::cerr << ANSI_BLUE << __func__ << "() " << ANSI_YELLOW  << _d->getName()<< ANSI_NORMAL << "\n";
 #else
 #define LOG_FUNC
+#define LOG_DECL(_d)
 #endif
 
 
@@ -304,8 +306,7 @@ void CCodeGenerator::EmitMemberExpr(Expr* E, StringBuilder& output) {
     MemberExpr* M = cast<MemberExpr>(E);
     if (M->isModulePrefix()) {
         // A.B where A is a module
-        // TEMP
-        output << M->getMemberName();
+        EmitDecl(M->getDecl(), output);
     } else {
         // A.B where A is decl of struct/union type
         EmitExpr(M->getBase(), cbuf);
@@ -344,20 +345,16 @@ void CCodeGenerator::EmitCallExpr(Expr* E, StringBuilder& output) {
 void CCodeGenerator::EmitIdentifierExpr(Expr* E, StringBuilder& output) {
     LOG_FUNC
     IdentifierExpr* I = cast<IdentifierExpr>(E);
-    Decl* D = I->getDecl();
-    // TEMP until we fix the analyser
-    if (!D) {
-        output << I->getName();
-        fprintf(stderr, "WARNING: no decl set (skipping for now)\n");
-        I->dump();
-        return;
-    }
+    EmitDecl(I->getDecl(), output);
+}
+
+void CCodeGenerator::EmitDecl(const Decl* D, StringBuilder& output) {
     assert(D);
 
     if (D->getModule()) {
-        addPrefix(D->getModule()->getCName(), I->getName(), output);
+        addPrefix(D->getModule()->getCName(), D->getName(), output);
     } else {
-        output << I->getName();
+        output << D->getName();
     }
 }
 
@@ -411,7 +408,7 @@ void CCodeGenerator::EmitIncludes() {
 
 
 void CCodeGenerator::EmitFunction(FunctionDecl* F) {
-    LOG_FUNC
+    LOG_DECL(F)
     if (mode == SINGLE_FILE) {
         // emit all function protos as forward declarations in header
         EmitFunctionProto(F, hbuf);
@@ -432,7 +429,7 @@ void CCodeGenerator::EmitFunction(FunctionDecl* F) {
 }
 
 void CCodeGenerator::EmitFunctionArgs(FunctionDecl* F, StringBuilder& output) {
-    LOG_FUNC
+    LOG_DECL(F)
     output << '(';
     int count = F->numArgs();
     if (F->isVariadic()) count++;
@@ -447,7 +444,7 @@ void CCodeGenerator::EmitFunctionArgs(FunctionDecl* F, StringBuilder& output) {
 }
 
 void CCodeGenerator::EmitVariable(VarDecl* V) {
-    LOG_FUNC
+    LOG_DECL(V)
     if (V->isPublic() && mode != SINGLE_FILE) {
         // TODO type
         hbuf << "extern ";
@@ -489,7 +486,7 @@ void CCodeGenerator::EmitVariable(VarDecl* V) {
 }
 
 void CCodeGenerator::EmitTypeDecl(TypeDecl* T) {
-    LOG_FUNC
+    LOG_DECL(T)
 
     StringBuilder* out = &cbuf;
     if (T->isPublic()) out = &hbuf;
@@ -524,7 +521,7 @@ void CCodeGenerator::EmitTypeDecl(TypeDecl* T) {
 }
 
 void CCodeGenerator::EmitStructType(StructTypeDecl* S, StringBuilder& out, unsigned indent) {
-    LOG_FUNC
+    LOG_DECL(S)
     out.indent(indent);
     if (S->isGlobal()) out << "typedef ";
     out << (S->isStruct() ? "struct " : "union ");
@@ -548,7 +545,7 @@ void CCodeGenerator::EmitStructType(StructTypeDecl* S, StringBuilder& out, unsig
 }
 
 void CCodeGenerator::EmitEnumType(EnumTypeDecl* E, StringBuilder& output) {
-    LOG_FUNC
+    LOG_DECL(E)
     output << "typedef enum {\n";
     for (unsigned i=0; i<E->numConstants(); i++) {
         EnumConstantDecl* C = E->getConstant(i);
@@ -565,7 +562,7 @@ void CCodeGenerator::EmitEnumType(EnumTypeDecl* E, StringBuilder& output) {
 
 // output: typedef void (*name)(args);
 void CCodeGenerator::EmitFunctionType(FunctionTypeDecl* FTD, StringBuilder& output) {
-    LOG_FUNC
+    LOG_DECL(FTD)
     FunctionDecl* F = FTD->getDecl();
     output << "typedef ";
     EmitTypePreName(F->getReturnType(), output);
@@ -576,7 +573,7 @@ void CCodeGenerator::EmitFunctionType(FunctionTypeDecl* FTD, StringBuilder& outp
 }
 
 void CCodeGenerator::EmitVarDecl(VarDecl* D, StringBuilder& output, unsigned indent) {
-    LOG_FUNC
+    LOG_DECL(D)
     output.indent(indent);
     //if (D->hasLocalQualifier()) output << "static ";
     EmitTypePreName(D->getType(), output);
