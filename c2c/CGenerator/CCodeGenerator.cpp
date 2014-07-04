@@ -35,7 +35,7 @@
 #include "Utils/constants.h"
 #include "Utils/GenUtils.h"
 
-#define CCODE_DEBUG
+//#define CCODE_DEBUG
 #ifdef CCODE_DEBUG
 #include <iostream>
 #define LOG_FUNC std::cerr << ANSI_BLUE << __func__ << "()" << ANSI_NORMAL << "\n";
