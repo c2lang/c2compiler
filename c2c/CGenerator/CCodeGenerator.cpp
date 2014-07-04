@@ -409,16 +409,18 @@ void CCodeGenerator::EmitIncludes() {
 
 void CCodeGenerator::EmitFunction(FunctionDecl* F) {
     LOG_DECL(F)
-    if (mode == SINGLE_FILE) {
-        // emit all function protos as forward declarations in header
-        EmitFunctionProto(F, hbuf);
-        hbuf << ";\n\n";
-    } else {
-        if (F->isPublic()) {
+    if (F->getName() != "main") {
+        if (mode == SINGLE_FILE) {
+            // emit all function protos as forward declarations in header
             EmitFunctionProto(F, hbuf);
             hbuf << ";\n\n";
         } else {
-            cbuf << "static ";
+            if (F->isPublic()) {
+                EmitFunctionProto(F, hbuf);
+                hbuf << ";\n\n";
+            } else {
+                cbuf << "static ";
+            }
         }
     }
 
@@ -448,7 +450,6 @@ void CCodeGenerator::EmitVariable(VarDecl* V) {
     QualType Q = V->getType();
     // convert const integer literals to define
     if (Q.isBuiltinType() && Q.isConstQualified()) {
-        fprintf(stderr, "CONST\n");
         StringBuilder* out = &cbuf;
         if (V->isPublic()) out = &hbuf;
         *out << "#define ";
