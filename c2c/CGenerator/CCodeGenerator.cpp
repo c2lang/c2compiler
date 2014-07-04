@@ -445,6 +445,20 @@ void CCodeGenerator::EmitFunctionArgs(FunctionDecl* F, StringBuilder& output) {
 
 void CCodeGenerator::EmitVariable(VarDecl* V) {
     LOG_DECL(V)
+    QualType Q = V->getType();
+    // convert const integer literals to define
+    if (Q.isBuiltinType() && Q.isConstQualified()) {
+        fprintf(stderr, "CONST\n");
+        StringBuilder* out = &cbuf;
+        if (V->isPublic()) out = &hbuf;
+        *out << "#define ";
+        addPrefix(*curmod, V->getName(), *out);
+        assert(V->getInitValue());
+        *out << ' ';
+        EmitExpr(V->getInitValue(), *out);
+        *out << "\n";
+        return;
+    }
     if (V->isPublic() && mode != SINGLE_FILE) {
         // TODO type
         hbuf << "extern ";
