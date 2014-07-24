@@ -105,7 +105,9 @@ private:
     bool ParseParamDecl(FunctionDecl* func, bool allow_defaults);
 
     // var def
-    ExprResult ParseInitValue(bool* need_semi);
+    ExprResult ParseArrayDesignator(bool* need_semi);
+    ExprResult ParseFieldDesignator(bool* need_semi);
+    ExprResult ParseInitValue(bool* need_semi, bool allow_designator);
     ExprResult ParseInitValues();
     void ParseArrayEntry();
     ExprResult ParseConstantExpression();

@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+int[] array = {
+    [10] = 0,
+    [11] = 1,
+    [12] = 2,
+    [5+5] = 5, // @error{duplicate initialization of array index}
+}
+

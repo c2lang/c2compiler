@@ -1,0 +1,16 @@
+// @warnings{no-unused}
+module test;
+
+const char* p = 0;
+char* q = 0;
+
+
+func void foo() {}
+
+int[] array = {
+    [p] = 1,    // @error{array subscript is not an integer}
+    [q] = 2,    // @error{initializer element is not a compile-time constant}
+    [test] = 3, // @error{array subscript is not an integer}
+    [foo] = 4,  // @error{array subscript is not an integer}
+}
+

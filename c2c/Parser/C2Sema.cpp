@@ -517,6 +517,24 @@ C2::ExprResult C2Sema::ActOnInitList(SourceLocation left_, SourceLocation right_
     return ExprResult(new InitListExpr(left_, right_, vals));
 }
 
+C2::ExprResult C2Sema::ActOnArrayDesignatorExpr(SourceLocation left, ExprResult Designator, ExprResult InitValue) {
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: ArrayDesignatorExpr at ";
+    left_.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    return ExprResult(new DesignatedInitExpr(left, Designator.release(), InitValue.release()));
+}
+
+C2::ExprResult C2Sema::ActOnFieldDesignatorExpr(SourceLocation loc, IdentifierInfo* field, ExprResult InitValue) {
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: FieldDesignatorExpr at ";
+    loc.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    return ExprResult(new DesignatedInitExpr(loc, field->getNameStart(), InitValue.release()));
+}
+
 C2::ExprResult C2Sema::ActOnArrayType(Expr* base, Expr* size) {
 #ifdef SEMA_DEBUGG
     std::cerr << COL_SEMA"SEMA: Array Type"ANSI_NORMAL"\n";

@@ -84,6 +84,7 @@ private:
 
     void analyseInitExpr(Expr* expr, QualType expectedType);
     void analyseInitList(InitListExpr* expr, QualType expectedType);
+    void analyseDesignatorInitExpr(Expr* expr, QualType expectedType);
     void analyseSizeofExpr(Expr* expr);
     void analyseArrayType(VarDecl* V, QualType T);
     void analyseArraySizeExpr(ArrayType* AT);
@@ -109,6 +110,7 @@ private:
     bool checkAssignee(Expr* expr) const;
     void checkAssignment(Expr* assignee, QualType TLeft);
     void checkDeclAssignment(Decl* decl, Expr* expr);
+    void checkArrayDesignators(InitListExpr* expr, int64_t* size);
     QualType getStructType(QualType T) const;
 
     // conversions

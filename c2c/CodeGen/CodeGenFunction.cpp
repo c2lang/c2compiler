@@ -460,6 +460,7 @@ llvm::Value* CodeGenFunction::EmitExprNoImpCast(const Expr* E) {
     case EXPR_IDENTIFIER:
         return EmitIdentifierExpr(cast<IdentifierExpr>(E));
     case EXPR_INITLIST:
+    case EXPR_DESIGNATOR_INIT:
     case EXPR_TYPE:
         break;
     case EXPR_DECL:

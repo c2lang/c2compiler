@@ -579,14 +579,14 @@ unsigned C2Builder::analyse() {
     if (errors) return errors;
 
     for (unsigned i=0; i<files.size(); i++) {
-        errors += files[i]->analyser->checkVarInits();
+        errors += files[i]->analyser->resolveEnumConstants();
     }
-    if (options.printAST2) printASTs();
     if (errors) return errors;
 
     for (unsigned i=0; i<files.size(); i++) {
-        errors += files[i]->analyser->resolveEnumConstants();
+        errors += files[i]->analyser->checkVarInits();
     }
+    if (options.printAST2) printASTs();
     if (errors) return errors;
 
     for (unsigned i=0; i<files.size(); i++) {

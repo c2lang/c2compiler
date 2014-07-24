@@ -273,6 +273,13 @@ public:
         }
         return 0;
     }
+    int findIndex(const std::string& name_) const {
+        for (unsigned i=0; i<members.size(); i++) {
+            Decl* D = members[i];
+            if (D->getName() == name_) return i;
+        }
+        return -1;
+    }
 
     bool isStruct() const { return DeclBits.StructTypeIsStruct; }
     bool isGlobal() const { return DeclBits.StructTypeIsGlobal; }

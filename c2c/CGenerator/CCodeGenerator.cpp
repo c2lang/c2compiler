@@ -170,6 +170,19 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
             output << " }";
             return;
         }
+    case EXPR_DESIGNATOR_INIT:
+        {
+            DesignatedInitExpr* D = cast<DesignatedInitExpr>(E);
+            if (D->getDesignatorKind() == DesignatedInitExpr::ARRAY_DESIGNATOR) {
+                output << '[';
+                EmitExpr(D->getDesignator(), output);
+                output << "] = ";
+            } else {
+                output << '.' << D->getField() << " = ";
+            }
+            EmitExpr(D->getInitValue(), output);
+            return;
+        }
     case EXPR_TYPE:
         {
             TypeExpr* T = cast<TypeExpr>(E);

@@ -1929,7 +1929,7 @@ C2::StmtResult C2Parser::ParseDeclaration() {
     ExprResult InitValue;
     if (Tok.is(tok::equal)) {
         ConsumeToken();
-        InitValue = ParseInitValue(&need_semi);
+        InitValue = ParseInitValue(&need_semi, false);
         if (InitValue.isInvalid()) return StmtError();
     }
     StmtResult Res = Actions.ActOnDeclaration(id->getNameStart(), idLoc, type.release(), InitValue.release());
@@ -2070,7 +2070,7 @@ void C2Parser::ParseVarDef(bool is_public) {
     ExprResult InitValue;
     if (Tok.is(tok::equal)) {
         ConsumeToken();
-        InitValue = ParseInitValue(&need_semi);
+        InitValue = ParseInitValue(&need_semi, false);
         if (InitValue.isInvalid()) return;
     }
     if (Tok.is(tok::l_paren)) {
@@ -2086,22 +2086,69 @@ void C2Parser::ParseVarDef(bool is_public) {
 }
 
 /*
+    Syntax:
+     [<constant expr>] = init_value
+*/
+C2::ExprResult C2Parser::ParseArrayDesignator(bool* need_semi) {
+    LOG_FUNC
+    SourceLocation L = ConsumeToken();
+    ExprResult Designator = ParseAssignmentExpression();
+    if (Designator.isInvalid()) return ExprError();
+    if (Tok.isNot(tok::r_square)) {
+        Diag(Tok, diag::err_expected_rsquare);
+        return ExprError();
+    }
+    ConsumeToken();
+    if (ExpectAndConsume(tok::equal, diag::err_expected_equal_after, "array designator")) return ExprError();
+
+    ExprResult Result = ParseInitValue(need_semi, false);
+    if (Result.isInvalid()) return ExprError();
+    return Actions.ActOnArrayDesignatorExpr(L, Designator, Result);
+}
+
+/*
+    Syntax: .identifier = <init_value>
+*/
+C2::ExprResult C2Parser::ParseFieldDesignator(bool* need_semi) {
+    LOG_FUNC
+    assert(Tok.is(tok::period) && "Expected '.'");
+    ConsumeToken();
+
+    if (ExpectIdentifier()) return ExprError();
+    IdentifierInfo* Field = Tok.getIdentifierInfo();
+    SourceLocation FieldLoc = ConsumeToken();
+
+    if (ExpectAndConsume(tok::equal, diag::err_expected_equal_after, "field designator")) return ExprError();
+
+    ExprResult Result = ParseInitValue(need_semi, false);
+    if (Result.isInvalid()) return ExprError();
+    return Actions.ActOnFieldDesignatorExpr(FieldLoc, Field, Result);
+}
+
+/*
    Syntax:
     init_value ::= constant_expression.
     init_value ::= LBRACE init_values RBRACE.
     init_value ::= DOT identifier = init_value.
 */
-C2::ExprResult C2Parser::ParseInitValue(bool* need_semi) {
+C2::ExprResult C2Parser::ParseInitValue(bool* need_semi, bool allow_designator) {
     LOG_FUNC
     if (Tok.is(tok::l_brace)) {
         // Syntax: { <init_values> }
         *need_semi = false;
         return ParseInitValues();
     } else if (Tok.is(tok::period)) {
-        // Syntax: .identifier = <init_value>
-        ConsumeToken();
-        // NOTE: cannot use ParseAssignmentExpression since .id = { 10 } cannot be parsed then
-        return ParseAssignmentExpression();
+        if (!allow_designator) {
+            Diag(Tok, diag::err_expected_expression);
+            return ExprError();
+        }
+        return ParseFieldDesignator(need_semi);
+    } else if (Tok.is(tok::l_square)) {
+        if (!allow_designator) {
+            Diag(Tok, diag::err_expected_expression);
+            return ExprError();
+        }
+        return ParseArrayDesignator(need_semi);
     } else {
         // Syntax: <constant expr>
         *need_semi = true;
@@ -2121,11 +2168,11 @@ C2::ExprResult C2Parser::ParseInitValues() {
     SourceLocation left = ConsumeToken();
 
     ExprList vals;
-    // NOTE memleak on vals
+    // NOTE memleak on vals on error
     while (1) {
         if (Tok.is(tok::r_brace)) break;
         bool unused;
-        ExprResult R = ParseInitValue(&unused);
+        ExprResult R = ParseInitValue(&unused, true);
         if (R.isInvalid()) return ExprError();
         vals.push_back(R.release());
         if (Tok.is(tok::comma)) {
@@ -2153,7 +2200,7 @@ void C2Parser::ParseArrayEntry() {
     ConsumeToken();
 
     bool need_semi = true;
-    ExprResult Value = ParseInitValue(&need_semi);
+    ExprResult Value = ParseInitValue(&need_semi, false);
     if (Value.isInvalid()) return;
 
     Actions.ActOnArrayValue(id->getNameStart(), idLoc, Value.release());

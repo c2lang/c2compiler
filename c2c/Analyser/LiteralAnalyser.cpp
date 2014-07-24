@@ -172,6 +172,9 @@ APSInt LiteralAnalyser::checkLiterals(const Expr* Right) {
     case EXPR_CALL:
     case EXPR_INITLIST:
         break;
+    case EXPR_DESIGNATOR_INIT:
+        assert(0 && "TODO");
+        break;
     case EXPR_DECL:
         break;
     case EXPR_BINOP:

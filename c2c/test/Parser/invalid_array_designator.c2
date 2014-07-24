@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+int[] array = {
+    [3] 3, // @error{expected '=' after array designator}
+}
+

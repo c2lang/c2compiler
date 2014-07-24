@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+type Point struct {
+    int x;
+    const char* y;
+}
+
+Point p = { .x = 10, .x = 20 }  // @error{duplicate initialization of field 'x'}
+

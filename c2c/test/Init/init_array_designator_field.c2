@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+int[] array = {
+    1,
+    2,
+    [3] = 3,
+    .x = 6,     // @error{field designator cannot initialize a non-struct, non-union type 'int32[]'}
+}
+

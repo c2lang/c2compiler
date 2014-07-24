@@ -1,0 +1,23 @@
+// @warnings{no-unused}
+module test;
+
+type Foo struct {
+    int x;
+    int y;
+}
+
+Foo[] foos = {
+    { 1, 2 },
+    { .x = 3, .y = 4 },
+    [2] = { 3, 4 },
+    [3] = { .x = 5, .y = 6 },
+}
+
+type Bar struct {
+    int x;
+    int[3] y;
+}
+
+Bar b1 = { 10, { 1, 2, 3 } }
+Bar b2 = { 10, { [2] = 2 } }
+

@@ -1,0 +1,15 @@
+// @warnings{no-unused}
+module test;
+
+type Types enum int8 {
+    FOO = -1,
+    BAR,
+    FAA,
+}
+
+int[] array = {
+    [FOO] = 1,  // @error{array designator value '-1' is negative}
+    [BAR] = 2,
+    [FAA] = 3,
+}
+

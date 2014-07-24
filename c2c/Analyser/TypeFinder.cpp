@@ -38,6 +38,7 @@ QualType TypeFinder::findType(const Expr* expr) {
     case EXPR_CALL:
         break;
     case EXPR_INITLIST:
+    case EXPR_DESIGNATOR_INIT:
     case EXPR_DECL:
         assert(0 && "should not come here");
         break;

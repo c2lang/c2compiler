@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+module test;
+
+int[] array = {
+    [a] = 0,        // @error{use of undeclared identifier a}
+    [1] = 1,
+    [1] = 2,
+}
+

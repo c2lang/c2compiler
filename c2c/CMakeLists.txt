@@ -36,7 +36,7 @@ SET(CLANG_LIBS "-lclangFrontend -lclangEdit -lclangLex -lclangBasic")
 
 INCLUDE_DIRECTORIES("${CMAKE_CURRENT_SOURCE_DIR}")
 #line below is needed for Ubuntu 13.04 32 bit
-#INCLUDE_DIRECTORIES("/usr/include/i386-linux-gnu/c++/4.8/")
+INCLUDE_DIRECTORIES("/usr/include/i386-linux-gnu/c++/4.8/")
 
 ADD_EXECUTABLE(c2c
     AST/AST.cpp

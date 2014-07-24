@@ -204,10 +204,46 @@ void InitListExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.setColor(COL_EXPR);
     buffer << "InitListExpr ";
     Expr::print(buffer, 0);
+    if (hasDesignators()) {
+        buffer << " designators=1";
+    }
     buffer << '\n';
     for (unsigned i=0; i<values.size(); i++) {
         values[i]->print(buffer, indent + INDENT);
     }
+}
+
+
+DesignatedInitExpr::~DesignatedInitExpr() {
+    delete designator;
+    delete initValue;
+}
+
+void DesignatedInitExpr::print(StringBuilder& buffer, unsigned indent) const {
+    buffer.indent(indent);
+    buffer.setColor(COL_EXPR);
+    buffer << "DesignatedInitExpr ";
+    Expr::print(buffer, 0);
+    if (getDesignatorKind() == ARRAY_DESIGNATOR) {
+        buffer << " array";
+    } else {
+        buffer << " field";
+    }
+    buffer << '\n';
+    buffer.indent(indent);
+    buffer.setColor(COL_ATTR);
+    if (getDesignatorKind() == ARRAY_DESIGNATOR) {
+        buffer << "Designator = [" << index.getSExtValue() << "]\n";
+        designator->print(buffer, indent + INDENT);
+    } else {
+        buffer << "field = ";
+        buffer.setColor(COL_VALUE);
+        buffer << '\'' << field << '\'' << '\n';
+    }
+    buffer.indent(indent);
+    buffer.setColor(COL_ATTR);
+    buffer << "InitValue=\n";
+    initValue->print(buffer, indent + INDENT);
 }
 
 

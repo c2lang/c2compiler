@@ -1,0 +1,27 @@
+// @warnings{no-unused}
+module test;
+
+type Types enum int8 {
+    FOO = 0,
+    BAR,
+    FAA = 4,
+}
+
+int[] array = {
+    [FAA] = 4,
+    [BAR] = 1,
+    2,
+    3,
+    [FOO] = 0,
+}
+
+type Point struct {
+    int x;
+    const char* name;
+}
+
+Point[] array2 = {
+    [2] = { 2, "two" },
+    [3] = { 3, "three" },
+}
+

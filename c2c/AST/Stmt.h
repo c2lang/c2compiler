@@ -74,6 +74,8 @@ protected:
         unsigned BuiltInIsSizeOf: 1;
         unsigned MemberExprIsArrow: 1;
         unsigned MemberExprIsModPrefix: 1;
+        unsigned InitListHasDesignators : 1;
+        unsigned DesignatorKind : 1;
     };
     union {
         StmtBitfields StmtBits;

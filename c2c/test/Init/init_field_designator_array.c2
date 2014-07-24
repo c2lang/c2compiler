@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+type Point struct {
+    int x;
+    const char* y;
+}
+
+Point a = { [0] = 2, "hello" }  // @error{array designator cannot initialize non-array type '(struct)Point'}
+

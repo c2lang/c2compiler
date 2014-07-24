@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+type Point struct {
+    int x;
+    const char* y;
+}
+
+Point p = { .z = 10 }   // @error{field designator 'z' does not refer to any field in type '(struct)Point'}
+

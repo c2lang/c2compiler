@@ -1,0 +1,14 @@
+// @warnings{no-unused}
+module test;
+
+type Point struct {
+    int x;
+    const char* y;
+}
+
+Point[] array2 = {
+    [0] = { .x = 10, .y = "one" },
+    [1] = { .x = 20, .y = "two" },
+    { 3, "three" },
+}
+

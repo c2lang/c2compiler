@@ -1,0 +1,23 @@
+// @warnings{no-unused}
+module test;
+
+type Types enum int8 {
+    FOO = 2,
+    BAR = 5,
+}
+
+int[] array = {
+    [BAR] = 5,
+    0,
+    1,
+    [FOO] = 2,
+    3,
+    4,
+    5,  // @error{duplicate initialization of array index}
+}
+
+int[3] array2 = {
+    [FOO] = 2,
+    3,  // @error{excess elements in array initializer}
+}
+

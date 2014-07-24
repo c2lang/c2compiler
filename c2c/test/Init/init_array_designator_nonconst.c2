@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+module test;
+int a;
+
+int[] array = {
+    [a] = 1,    // @error{initializer element is not a compile-time constant}
+}
+

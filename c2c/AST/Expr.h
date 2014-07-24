@@ -45,6 +45,7 @@ enum ExprKind {
     EXPR_TYPE,
     EXPR_CALL,
     EXPR_INITLIST,
+    EXPR_DESIGNATOR_INIT,
     EXPR_DECL,
     EXPR_BINOP,
     EXPR_CONDOP,
@@ -325,10 +326,71 @@ public:
     virtual SourceLocation getLocEnd() const { return rightBrace; }
 
     const ExprList& getValues() const { return values; }
+    void setDesignators() { StmtBits.InitListHasDesignators = true; }
+    bool hasDesignators() const { return StmtBits.InitListHasDesignators; }
 private:
     SourceLocation leftBrace;
     SourceLocation rightBrace;
     ExprList values;
+};
+
+
+class DesignatedInitExpr : public Expr {
+public:
+    typedef enum {
+        ARRAY_DESIGNATOR,
+        FIELD_DESIGNATOR,
+    } DesignatorKind;
+    DesignatedInitExpr(SourceLocation left, Expr* d, Expr* i)
+        : Expr(EXPR_DESIGNATOR_INIT, false)
+        , SquareOrNameLoc(left)
+        , initValue(i)
+        , designator(d)
+        , index(64, false)
+        //, member(0)
+    {
+        index = llvm::APInt(64, -1, true);
+        StmtBits.DesignatorKind = ARRAY_DESIGNATOR;
+    }
+    DesignatedInitExpr(SourceLocation left, const char* name, Expr* i)
+        : Expr(EXPR_DESIGNATOR_INIT, false)
+        , SquareOrNameLoc(left)
+        , initValue(i)
+        , designator(0)
+        , index(64, false)
+        , field(name)
+        //, member(0)
+    {
+        StmtBits.DesignatorKind = FIELD_DESIGNATOR;
+    }
+    virtual ~DesignatedInitExpr();
+    static bool classof(const Expr* E) {
+        return E->getKind() == EXPR_DESIGNATOR_INIT;
+    }
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
+    virtual SourceLocation getLocStart() const { return SquareOrNameLoc; }
+    virtual SourceLocation getLocEnd() const { return initValue->getLocEnd(); }
+    virtual SourceLocation getLocation() const { return SquareOrNameLoc; }
+
+    Expr* getInitValue() const { return initValue; }
+    DesignatorKind getDesignatorKind() const {
+        return static_cast<DesignatorKind>(StmtBits.DesignatorKind);
+    }
+    // for Array designator
+    Expr* getDesignator() const { return designator; }
+    llvm::APSInt getIndex() const { return index; }
+    void setIndex(llvm::APSInt i) { index = i; }
+    // for Field designator
+    const std::string& getField() const { return field; }
+private:
+    SourceLocation SquareOrNameLoc;
+    Expr* initValue;
+
+    // Array designator
+    Expr* designator;
+    llvm::APSInt index; // set during analysis
+    // Field designator
+    const std::string field;
 };
 
 

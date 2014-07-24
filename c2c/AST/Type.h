@@ -94,6 +94,7 @@ public:
     bool isStructType() const;
     bool isFunctionType() const;
     bool isSubscriptable() const;
+    bool isIntegerType() const;
 
     bool isConstant() const;    // NOTE: not is const!
 

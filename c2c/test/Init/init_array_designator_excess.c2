@@ -1,0 +1,14 @@
+// @warnings{no-unused}
+module test;
+
+int[4] array = {
+    [3] = 3,
+    [4] = 4,    // @error{array designator index (4) exceeds array bounds (4)}
+}
+
+int[4] array2 = {
+    0,
+    [3] = 3,
+    4,          // @error{excess elements in array initializer}
+}
+

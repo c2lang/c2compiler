@@ -1,0 +1,19 @@
+// @warnings{no-unused}
+module test;
+
+type Outer struct {
+    Inner i1;
+    int x;
+    Inner i2;
+}
+
+type Inner struct {
+    int y;
+}
+
+Outer[] array = {
+    { { 1 }, 2, { 3 } },
+    { .i1 = { 1 }, .x = 2, .i2 = { 3 } },
+    { .i1 = { .y = 4 }, .x = 5, .i2 = { .y = 6 } },
+
+}

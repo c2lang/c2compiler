@@ -490,6 +490,7 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
         }
         break;
     case EXPR_INITLIST:
+    case EXPR_DESIGNATOR_INIT:
     case EXPR_TYPE:
         // dont handle here
         break;
@@ -537,6 +538,8 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
     }
     if (ILE) {
         analyseInitList(ILE, expectedType);
+    } else if (isa<DesignatedInitExpr>(expr)) {
+        analyseDesignatorInitExpr(expr, expectedType);
     } else {
         QualType Q = analyseExpr(expr, RHS);
         if (Q.isValid()) {
@@ -562,6 +565,8 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
 void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
     LOG_FUNC
     const ExprList& values = expr->getValues();
+    bool haveDesignators = false;
+    bool haveErrors = false;
     if (Q.isArrayType()) {
         // TODO use helper function
         ArrayType* AT = cast<ArrayType>(Q.getCanonicalType().getTypePtr());
@@ -569,19 +574,42 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
         bool constant = true;
         for (unsigned i=0; i<values.size(); i++) {
             analyseInitExpr(values[i], ET);
+            if (DesignatedInitExpr* D = cast<DesignatedInitExpr>(values[i])) {
+                haveDesignators = true;
+                if (D->getDesignatorKind() != DesignatedInitExpr::ARRAY_DESIGNATOR) {
+                    StringBuilder buf;
+                    Q.DiagName(buf);
+                    Diags.Report(D->getLocation(), diag::err_field_designator_non_aggr) << 0 << buf;
+                    haveErrors = true;
+                    continue;
+                }
+            }
             if (!values[i]->isConstant()) constant = false;
         }
         if (constant) expr->setConstant();
-        llvm::APInt initSize(64, (int)values.size(), false);
-        if (AT->getSizeExpr()) {    // size given
-            uint64_t arraySize = AT->getSize().getZExtValue();
-            if (values.size() > arraySize) {
-                int firstExceed = AT->getSize().getZExtValue();
-                Diags.Report(values[firstExceed]->getLocation(), diag::err_excess_initializers) << 0;
+        if (haveDesignators) expr->setDesignators();
+        // determine real array size
+        llvm::APInt initSize(64, 0, false);
+        if (haveDesignators && !haveErrors) {
+            int64_t arraySize = -1;
+            if (AT->getSizeExpr()) {    // size determined by expr
+                arraySize = AT->getSize().getZExtValue();
+            } //else, size determined by designators
+            checkArrayDesignators(expr, &arraySize);
+            initSize = arraySize;
+        } else {
+            if (AT->getSizeExpr()) {    // size determined by expr
+                initSize = AT->getSize();
+                uint64_t arraySize = AT->getSize().getZExtValue();
+                if (values.size() > arraySize) {
+                    int firstExceed = AT->getSize().getZExtValue();
+                    Diags.Report(values[firstExceed]->getLocation(), diag::err_excess_initializers) << 0;
+                }
+            } else {    // size determined from #elems in initializer list
+                initSize = values.size();
             }
-        } else {    // size induced from initializer list
-            AT->setSize(initSize);
         }
+        AT->setSize(initSize);
         expr->setType(Q);
     } else if (Q.isStructType()) {
         expr->setType(Q);
@@ -590,6 +618,14 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
         StructTypeDecl* STD = TT->getDecl();
         assert(STD->isStruct() && "TEMP only support structs for now");
         bool constant = true;
+        // ether init whole struct with field designators, or don't use any (no mixing allowed)
+        if (!values.empty() && isa<DesignatedInitExpr>(values[0])) {
+            haveDesignators = true;
+        }
+        // TODO cleanup this code (after unit-tests) Split into field-designator / non-designator init
+        typedef std::vector<Expr*> Fields;
+        Fields fields;
+        fields.resize(STD->numMembers());
         for (unsigned i=0; i<values.size(); i++) {
             if (i >= STD->numMembers()) {
                 // note: 0 for array, 2 for scalar, 3 for union, 4 for structs
@@ -598,10 +634,49 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
                 errors++;
                 return;
             }
-            VarDecl* VD = dyncast<VarDecl>(STD->getMember(i));
-            assert(VD && "TEMP don't support sub-struct member inits");
-            analyseInitExpr(values[i], VD->getType());
-            if (!values[i]->isConstant()) constant = false;
+            if (DesignatedInitExpr* D = dyncast<DesignatedInitExpr>(values[i])) {
+                if (D->getDesignatorKind() != DesignatedInitExpr::FIELD_DESIGNATOR) {
+                    StringBuilder buf;
+                    Q.DiagName(buf);
+                    Diags.Report(D->getLocation(), diag::err_array_designator_non_array) << buf;
+                    haveErrors = true;
+                    return;
+                }
+                int memberIndex = STD->findIndex(D->getField());
+                if (memberIndex == -1) {
+                    // TODO use Helper to add surrounding ''
+                    StringBuilder fname(MAX_LEN_VARNAME);
+                    fname << '\'' << D->getField() << '\'';
+                    StringBuilder tname(MAX_LEN_TYPENAME);
+                    Q.DiagName(tname);
+                    Diags.Report(D->getLocation(), diag::err_field_designator_unknown) << fname << tname;
+                    continue;
+                }
+                Expr* existing = fields[memberIndex];
+                if (existing) {
+                    StringBuilder fname(MAX_LEN_VARNAME);
+                    fname << '\'' << D->getField() << '\'';
+                    Diags.Report(D->getLocation(), diag::err_duplicate_field_init) << fname;
+                    Diags.Report(existing->getLocation(), diag::note_previous_initializer) << 0 << 0;
+                    continue;
+                }
+                fields[memberIndex] = values[i];
+                Decl* member = STD->getMember(memberIndex);
+                assert(member);
+                VarDecl* VD = dyncast<VarDecl>(STD->getMember(i));
+                assert(VD && "TEMP don't support sub-struct member inits");
+                analyseInitExpr(values[i], VD->getType());
+            } else {
+                VarDecl* VD = dyncast<VarDecl>(STD->getMember(i));
+                assert(VD && "TEMP don't support sub-struct member inits");
+                analyseInitExpr(values[i], VD->getType());
+                if (!values[i]->isConstant()) constant = false;
+            }
+            if (isa<DesignatedInitExpr>(values[i]) != haveDesignators) {
+                Diags.Report(values[i]->getLocation(), diag::err_mixed_field_designator);
+                return;
+            }
+
         }
         if (constant) expr->setConstant();
     } else {
@@ -622,6 +697,40 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
         }
         return;
     }
+}
+
+void FunctionAnalyser::analyseDesignatorInitExpr(Expr* expr, QualType expectedType) {
+    LOG_FUNC
+    DesignatedInitExpr* D = cast<DesignatedInitExpr>(expr);
+    if (D->getDesignatorKind() == DesignatedInitExpr::ARRAY_DESIGNATOR) {
+        Expr* Desig = D->getDesignator();
+        QualType DT = analyseExpr(Desig, RHS);
+        if (DT.isValid()) {
+            if (!Desig->isConstant()) {
+                assert(constDiagID);
+                Diags.Report(Desig->getLocation(), constDiagID) << Desig->getSourceRange();
+            } else {
+                if (!Desig->getType().isIntegerType()) {
+                    Diags.Report(Desig->getLocation(), diag::err_typecheck_subscript_not_integer) << Desig->getSourceRange();
+                } else {
+                    LiteralAnalyser LA(Diags);
+                    llvm::APSInt V = LA.checkLiterals(Desig);
+                    if (V.isSigned() && V.isNegative()) {
+                        Diags.Report(Desig->getLocation(), diag::err_array_designator_negative) << V.toString(10) << Desig->getSourceRange();
+                    } else {
+                        D->setIndex(V);
+                    }
+                }
+            }
+        }
+    } else {
+        // cannot check here, need structtype
+    }
+
+    analyseInitExpr(D->getInitValue(), expectedType);
+    if (D->getInitValue()->isConstant()) D->setConstant();
+
+    D->setType(expectedType);
 }
 
 void FunctionAnalyser::analyseSizeofExpr(Expr* expr) {
@@ -665,6 +774,7 @@ void FunctionAnalyser::analyseSizeofExpr(Expr* expr) {
         break;
     }
     case EXPR_INITLIST:
+    case EXPR_DESIGNATOR_INIT:
         assert(0 && "TODO good error");
         return;
     case EXPR_TYPE:
@@ -1347,6 +1457,7 @@ bool FunctionAnalyser::checkAssignee(Expr* expr) const {
         // ok
         return true;
     case EXPR_INITLIST:
+    case EXPR_DESIGNATOR_INIT:
     case EXPR_TYPE:
         break;
     case EXPR_DECL:
@@ -1409,6 +1520,46 @@ void FunctionAnalyser::checkDeclAssignment(Decl* decl, Expr* expr) {
         assert(0);
         break;
     }
+}
+
+void FunctionAnalyser::checkArrayDesignators(InitListExpr* expr, int64_t* size) {
+    LOG_FUNC
+    typedef std::vector<Expr*> Indexes;
+    Indexes indexes;
+    const ExprList& values = expr->getValues();
+    indexes.resize(values.size());
+    uint64_t maxIndex = 0;
+    int currentIndex = -1;
+    for (unsigned i=0; i<values.size(); i++) {
+        Expr* E = values[i];
+        if (DesignatedInitExpr* D = dyncast<DesignatedInitExpr>(E)) {
+            currentIndex = D->getIndex().getSExtValue();
+            if (currentIndex == -1) return; // some designators are invalid
+            if (*size != -1 && currentIndex >= *size) {
+                Diags.Report(E->getLocation(), diag::err_array_designator_too_large) << D->getIndex().toString(10) << (int)*size;
+                return;
+            }
+        } else {
+            currentIndex++;
+        }
+        if (*size != -1 && currentIndex >= *size) {
+            Diags.Report(E->getLocation(), diag::err_excess_initializers) << 0;
+            return;
+        }
+        if (currentIndex >= indexes.size()) {
+            indexes.resize(currentIndex + 1);
+        }
+        Expr* existing = indexes[currentIndex];
+        if (existing) {
+            Diags.Report(E->getLocation(), diag::err_duplicate_array_index_init) << E->getSourceRange();
+            Diags.Report(existing->getLocation(), diag::note_previous_initializer) << 0 << 0 << E->getSourceRange();
+        } else {
+            indexes[currentIndex] = E;
+        }
+        if (currentIndex > maxIndex) maxIndex = currentIndex;
+    }
+    if (*size == -1) *size = maxIndex + 1;
+    //for (unsigned i=0; i<indexes.size(); i++) printf("[%d] = %p\n", i, indexes[i]);
 }
 
 QualType FunctionAnalyser::getStructType(QualType Q) const {

@@ -253,6 +253,8 @@ void DepVisitor::checkExpr(const Expr* E) {
             }
             break;
         }
+    case EXPR_DESIGNATOR_INIT:
+        break;
     case EXPR_DECL:
         checkVarDecl(cast<DeclExpr>(E)->getDecl());
         break;

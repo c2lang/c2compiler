@@ -1,0 +1,12 @@
+// @warnings{no-unused}
+module test;
+
+type Point struct {
+    int x;
+    const char* y;
+}
+
+Point a = { .x = 10, "hello" }  // @error{mixing field declarators with non-field declarators}
+
+Point b = { 10, .y = "hello" }  // @error{mixing field declarators with non-field declarators}
+
