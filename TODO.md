@@ -4,6 +4,8 @@
 Parsing of:
 * Balanced brackets/braces (Convert clang::BalancedDelimiterTracker)
 * cast expression
+* bitfields
+* attributes
 
 AST Generation for:
 * cast expression
