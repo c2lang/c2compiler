@@ -4,7 +4,6 @@
 Parsing of:
 * Balanced brackets/braces (Convert clang::BalancedDelimiterTracker)
 * cast expression
-* array inits via  .member = value,
 
 AST Generation for:
 * cast expression
