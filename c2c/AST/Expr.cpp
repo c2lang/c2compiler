@@ -106,12 +106,32 @@ void CharacterLiteral::print(StringBuilder& buffer, unsigned indent) const {
     buffer.setColor(COL_EXPR);
     buffer << "CharacterLiteral ";
     Expr::print(buffer, 0);
+    buffer << ' ';
     buffer.setColor(COL_VALUE);
-    buffer << " '" << (char)value << "'\n";
+    printLiteral(buffer);
+    buffer << '\n';
 }
 
 void CharacterLiteral::printLiteral(StringBuilder& buffer) const {
-    buffer << '\'' << (char)value << '\'';
+    buffer << '\'';
+    switch (value) {
+    case '\0':
+        buffer << "\\0";
+        break;
+    case '\n':
+        buffer << "\\n";
+        break;
+    case '\r':
+        buffer << "\\n";
+        break;
+    case '\t':
+        buffer << "\\n";
+        break;
+    default:
+        buffer << (char)value;
+        break;
+    }
+     buffer << '\'';
 }
 
 

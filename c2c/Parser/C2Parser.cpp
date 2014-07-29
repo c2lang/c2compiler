@@ -805,7 +805,7 @@ C2::ExprResult C2Parser::ParseCastExpression(bool isUnaryExpression,
         Res = ParseStringLiteralExpression(true);
         break;
     case tok::char_constant:    // constant: character-constant
-        Res = Actions.ActOnCharacterConstant(Tok.getLocation(), PP.getSpelling(Tok));
+        Res = Actions.ActOnCharacterConstant(Tok);
         ConsumeToken();
         break;
     case tok::kw___func__:

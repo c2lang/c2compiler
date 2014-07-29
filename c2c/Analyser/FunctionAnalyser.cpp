@@ -665,7 +665,7 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
                 assert(member);
                 VarDecl* VD = dyncast<VarDecl>(STD->getMember(i));
                 assert(VD && "TEMP don't support sub-struct member inits");
-                analyseInitExpr(values[i], VD->getType());
+                analyseInitExpr(D->getInitValue(), VD->getType());
             } else {
                 VarDecl* VD = dyncast<VarDecl>(STD->getMember(i));
                 assert(VD && "TEMP don't support sub-struct member inits");

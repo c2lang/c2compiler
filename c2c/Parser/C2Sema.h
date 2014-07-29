@@ -93,7 +93,7 @@ public:
     ExprResult ActOnBooleanConstant(const Token& Tok);
     ExprResult ActOnNumericConstant(const Token& Tok);
     ExprResult ActOnStringLiteral(const clang::Token* StringToks, unsigned NumStringToks);
-    ExprResult ActOnCharacterConstant(SourceLocation Loc, const std::string& value);
+    ExprResult ActOnCharacterConstant(const Token& Tok);
     ExprResult ActOnCallExpr(Expr* id, Expr** args, unsigned num, SourceLocation RParenLoc);
     ExprResult ActOnIdExpression(IdentifierInfo& symII, SourceLocation symLoc);
     ExprResult ActOnParenExpr(SourceLocation L, SourceLocation R, Expr* E);

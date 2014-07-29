@@ -147,3 +147,9 @@ target puzzle
     puzzle2.c2
 end
 
+target snake
+    $warnings no-unused
+    $deps show_files show_externals
+    $ansi-c no_local_prefix single_module
+    snake.c2
+end

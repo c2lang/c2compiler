@@ -1,0 +1,25 @@
+// @warnings{no-unused}
+module test;
+
+type Coor struct {
+    int8 x;
+    int8 y;
+    int8 z;
+}
+
+type Piece struct {
+    Coor[4] side1;
+    Coor[4] side2;
+}
+
+Piece[] pieces = {
+    {
+        .side1 = { { 0, 0, 0 } },
+        .side2 = { { 0, 0, 0 } },
+    },
+    {
+        .side1 = { { 0, 0, 0 }, { 0, 1, 2 }, { }, { 1, 2, 0 } },
+        .side2 = { { 0, 0, 0 }, { 1, 0, 0 }, { 1, 1, 4 }, { .x=12, .y=1, .z=3 } },
+    },
+}
+

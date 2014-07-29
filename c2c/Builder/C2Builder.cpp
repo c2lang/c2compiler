@@ -510,7 +510,33 @@ bool C2Builder::loadModule(const std::string& name) {
         }
         return true;
     }
+    if (name == "string_h") {
+        // TODO
+        unsigned file_id = filenames.add("(string_h)");
+        Module* stringMod = getModule("string_h", true, true);
+        // void *memset(void *s, int c, size_t n);
+        {
+            QualType VP(new PointerType(Type::Void()));
+            VP->setCanonicalType(VP);
+            FunctionDecl* func = new FunctionDecl("memset", loc, true, file_id, VP);
+            // NOTE: MEMLEAK ON TYPE, this will go away when we remove these dummy protos
+            VarDecl* Arg1 = new VarDecl(VARDECL_PARAM, "s", loc, VP, 0, true, file_id);
+            Arg1->setType(VP);
+            func->addArg(Arg1);
+            VarDecl* Arg2 = new VarDecl(VARDECL_PARAM, "c", loc, Type::Int32(), 0, true, file_id);
+            Arg2->setType(Type::Int32());
+            func->addArg(Arg2);
+            // TEMP size_t -> uint32
+            VarDecl* Arg3 = new VarDecl(VARDECL_PARAM, "n", loc, Type::UInt32(), 0, true, file_id);
+            Arg3->setType(Type::UInt32());
+            func->addArg(Arg3);
+            stringMod->addSymbol(func);
+            // function type
+            func->setType(QualType(new FunctionType(func), 0));
+        }
+        return true;
 
+    }
     if (name == "stdlib") {
         unsigned file_id = filenames.add("(stdlib)");
         Module* stdlibMod = getModule("stdlib", true, true);

@@ -935,17 +935,23 @@ C2::ExprResult C2Sema::ActOnStringLiteral(const Token* StringToks, unsigned NumS
     return ExprResult(new StringLiteral(StringToks[0].getLocation(), ref.data()));
 }
 
-C2::ExprResult C2Sema::ActOnCharacterConstant(SourceLocation Loc, const std::string& value) {
+C2::ExprResult C2Sema::ActOnCharacterConstant(const Token& Tok) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: char constant at ";
     Loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    // TODO parse value (\0, octal, \0x, etc) (see clang::CharLiteralParser)
-    const char* str = value.c_str();
-    assert(str[0] == '\'' && str[2] == '\'' && "char constant parsing not supported yet");
-    unsigned cvalue = str[1];
-    return ExprResult(new CharacterLiteral(Loc, cvalue));
+    SmallString<16> CharBuffer;
+    bool Invalid = false;
+    StringRef ThisTok = PP.getSpelling(Tok, CharBuffer, &Invalid);
+    if (Invalid) return ExprError();
+
+    CharLiteralParser Literal(ThisTok.begin(), ThisTok.end(), Tok.getLocation(),
+                              PP, Tok.getKind());
+    if (Literal.hadError())
+        return ExprError();
+
+    return ExprResult(new CharacterLiteral(Tok.getLocation(), Literal.getValue()));
 }
 
 DiagnosticBuilder C2Sema::Diag(SourceLocation Loc, unsigned DiagID) {
