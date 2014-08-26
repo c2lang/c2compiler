@@ -537,6 +537,7 @@ private:
 };
 
 
+// Represents an array expression like a[10] or array[a*3]
 class ArraySubscriptExpr : public Expr {
 public:
     ArraySubscriptExpr(SourceLocation RLoc_, Expr* Base_, Expr* Idx_)
