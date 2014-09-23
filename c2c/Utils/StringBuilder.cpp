@@ -80,43 +80,35 @@ StringBuilder& StringBuilder::operator<<(char input) {
     return *this;
 }
 
-StringBuilder& StringBuilder::operator<<(int input) {
+StringBuilder& StringBuilder::operator<<(int32_t input) {
 #ifdef SIZE_DEBUG
     assert(10 < space_left() && "buffer overflow");
 #endif
-    ptr += sprintf(ptr, "%d", input);
+    ptr += sprintf(ptr, "%"PRId32"", input);
     return *this;
 }
 
-StringBuilder& StringBuilder::operator<<(unsigned input) {
+StringBuilder& StringBuilder::operator<<(u_int32_t input) {
 #ifdef SIZE_DEBUG
     assert(10 < space_left() && "buffer overflow");
 #endif
-    ptr += sprintf(ptr, "%u", input);
+    ptr += sprintf(ptr, "%"PRIu32"", input);
     return *this;
 }
 
-StringBuilder& StringBuilder::operator<<(long input) {
+StringBuilder& StringBuilder::operator<<(int64_t input) {
 #ifdef SIZE_DEBUG
     assert(10 < space_left() && "buffer overflow");
 #endif
-    ptr += sprintf(ptr, "%ld", input);
+    ptr += sprintf(ptr, "%"PRId64"", input);
     return *this;
 }
 
-StringBuilder& StringBuilder::operator<<(long long input) {
+StringBuilder& StringBuilder::operator<<(u_int64_t input) {
 #ifdef SIZE_DEBUG
     assert(10 < space_left() && "buffer overflow");
 #endif
-    ptr += sprintf(ptr, "%lld", input);
-    return *this;
-}
-
-StringBuilder& StringBuilder::operator<<(unsigned long long input) {
-#ifdef SIZE_DEBUG
-    assert(10 < space_left() && "buffer overflow");
-#endif
-    ptr += sprintf(ptr, "%llu", input);
+    ptr += sprintf(ptr, "%"PRIu64"", input);
     return *this;
 }
 

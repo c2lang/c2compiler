@@ -17,6 +17,8 @@
 #define UTILS_STRINGBUILDER_H
 
 #include <string>
+#include <sys/types.h>
+#include <inttypes.h>
 
 namespace C2 {
 
@@ -29,11 +31,10 @@ public:
     StringBuilder& operator<<(void* input);
     StringBuilder& operator<<(const std::string& input);
     StringBuilder& operator<<(char input);
-    StringBuilder& operator<<(int input);
-    StringBuilder& operator<<(unsigned input);
-    StringBuilder& operator<<(long input);
-    StringBuilder& operator<<(long long input);
-    StringBuilder& operator<<(unsigned long long input);
+    StringBuilder& operator<<(int32_t input);
+    StringBuilder& operator<<(u_int32_t input);
+    StringBuilder& operator<<(int64_t input);
+    StringBuilder& operator<<(u_int64_t input);
     StringBuilder& operator<<(const StringBuilder& input);
 
     operator const char*() const;
