@@ -37,7 +37,7 @@ git clone git://github.com/llvm-mirror/llvm.git
 cd llvm/
 git checkout -b release_34 origin/release_34
 cd projects
-tar -xf <path>/compiler-rt-3.3.src.tar.gz
+tar -xf <path>/compiler-rt-3.4.src.tar.gz
 mv compiler-rt-3.4.src compiler-rt
 cd ../tools
 git clone git://github.com/c2lang/clang.git
@@ -45,9 +45,13 @@ cd clang
 git checkout -b c2master_34 origin/c2master_34
 cd ../../..
 mkdir llvm_build
+cd llvm_build
 export CC=gcc (optional)
 export CXX=g++ (optional)
+# on linux:
 ../llvm/configure --enable-optimized --prefix=$HOME/llvm-c2/ --with-python=/usr/bin/python2
+# on OS X:
+../llvm/configure --enable-optimized --prefix=$HOME/llvm-c2/
 make -j4
 make install
 ```

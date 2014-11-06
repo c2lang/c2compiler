@@ -14,6 +14,7 @@
  */
 
 #include <time.h>
+#include <sys/time.h>
 #include <stdio.h>
 
 #include "Utils/Utils.h"
@@ -22,11 +23,20 @@ using namespace C2;
 
 u_int64_t Utils::getCurrentTime()
 {
+#ifdef __APPLE__
+    struct timeval now;
+    gettimeofday(&now, NULL);
+    u_int64_t now64 = now.tv_sec;
+    now64 *= 1000000;
+    now64 += now.tv_usec;
+    return now64;
+#else
     struct timespec now;
     clock_gettime(CLOCK_MONOTONIC, &now);
     u_int64_t now64 = now.tv_sec;
     now64 *= 1000000;
     now64 += (now.tv_nsec/1000);
     return now64;
+#endif
 }
 

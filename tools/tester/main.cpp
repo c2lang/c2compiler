@@ -23,6 +23,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <map>
@@ -79,11 +80,11 @@ static void color_print(const char* color, const char* format, ...) {
 
 
 static u_int64_t getCurrentTime() {
-    struct timespec now;
-    clock_gettime(CLOCK_MONOTONIC, &now);
+    struct timeval now;
+    gettimeofday(&now, NULL);
     u_int64_t now64 = now.tv_sec;
     now64 *= 1000000;
-    now64 += (now.tv_nsec/1000);
+    now64 += now.tv_usec;
     return now64;
 }
 
@@ -577,9 +578,9 @@ int main(int argc, const char *argv[])
         *end = 0;
     }
 
-    cwd = get_current_dir_name();
+    cwd = getcwd(NULL, 0);
     if (cwd == 0) {
-        perror("get_current_dir_name");
+        perror("getcwd");
         exit(-1);
     }
 

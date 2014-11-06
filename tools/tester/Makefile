@@ -1,7 +1,7 @@
-CFLAGS=-Wall -Wextra -Wno-unused -Wshadow -O2
+CFLAGS=-Wall -Wextra -Wno-unused -Wno-unused-parameter -Wshadow -O2
 
 tester: main.cpp
-	g++ $(CFLAGS) main.cpp FileMap.cpp StringBuilder.cpp -lrt -o tester
+	g++ $(CFLAGS) main.cpp FileMap.cpp StringBuilder.cpp -o tester
 	strip tester
 
 clean:
