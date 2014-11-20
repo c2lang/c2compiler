@@ -109,7 +109,7 @@ C2Sema::~C2Sema() {}
 
 void C2Sema::ActOnModule(const char* name, SourceLocation loc) {
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: module " << name << " at ";
+    std::cerr << COL_SEMA << "SEMA: module " << name << " at ";
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
@@ -316,7 +316,7 @@ C2::StmtResult C2Sema::ActOnIfStmt(SourceLocation ifLoc,
     ifLoc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    return StmtResult(new IfStmt(ifLoc, condition.release(), thenStmt.release(), elseLoc, elseStmt.release()));
+    return StmtResult(new IfStmt(ifLoc, condition.get(), thenStmt.get(), elseLoc, elseStmt.get()));
 }
 
 C2::StmtResult C2Sema::ActOnWhileStmt(SourceLocation loc, ExprResult Cond, StmtResult Then) {
@@ -325,7 +325,7 @@ C2::StmtResult C2Sema::ActOnWhileStmt(SourceLocation loc, ExprResult Cond, StmtR
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    return StmtResult(new WhileStmt(loc, Cond.release(), Then.release()));
+    return StmtResult(new WhileStmt(loc, Cond.get(), Then.get()));
 }
 
 C2::StmtResult C2Sema::ActOnDoStmt(SourceLocation loc, ExprResult Cond, StmtResult Then) {
@@ -334,7 +334,7 @@ C2::StmtResult C2Sema::ActOnDoStmt(SourceLocation loc, ExprResult Cond, StmtResu
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    return StmtResult(new DoStmt(loc, Cond.release(), Then.release()));
+    return StmtResult(new DoStmt(loc, Cond.get(), Then.get()));
 }
 
 C2::StmtResult C2Sema::ActOnForStmt(SourceLocation loc, Stmt* Init, Expr* Cond, Expr* Incr, Stmt* Body) {
@@ -523,7 +523,7 @@ C2::ExprResult C2Sema::ActOnArrayDesignatorExpr(SourceLocation left, ExprResult 
     left_.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    return ExprResult(new DesignatedInitExpr(left, Designator.release(), InitValue.release()));
+    return ExprResult(new DesignatedInitExpr(left, Designator.get(), InitValue.get()));
 }
 
 C2::ExprResult C2Sema::ActOnFieldDesignatorExpr(SourceLocation loc, IdentifierInfo* field, ExprResult InitValue) {
@@ -532,12 +532,12 @@ C2::ExprResult C2Sema::ActOnFieldDesignatorExpr(SourceLocation loc, IdentifierIn
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    return ExprResult(new DesignatedInitExpr(loc, field->getNameStart(), InitValue.release()));
+    return ExprResult(new DesignatedInitExpr(loc, field->getNameStart(), InitValue.get()));
 }
 
 C2::ExprResult C2Sema::ActOnArrayType(Expr* base, Expr* size) {
 #ifdef SEMA_DEBUGG
-    std::cerr << COL_SEMA"SEMA: Array Type"ANSI_NORMAL"\n";
+    std::cerr << COL_SEMA << "SEMA: Array Type" << ANSI_NORMAL"\n";
 #endif
     assert(base);
     TypeExpr* typeExpr = cast<TypeExpr>(base);
@@ -548,7 +548,7 @@ C2::ExprResult C2Sema::ActOnArrayType(Expr* base, Expr* size) {
 
 C2::ExprResult C2Sema::ActOnPointerType(Expr* base) {
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: Pointer Type"ANSI_NORMAL"\n";
+    std::cerr << COL_SEMA << "SEMA: Pointer Type" << ANSI_NORMAL"\n";
 #endif
     assert(base);
     TypeExpr* typeExpr = cast<TypeExpr>(base);
@@ -566,7 +566,7 @@ C2::ExprResult C2Sema::ActOnUserType(IdentifierInfo* psym, SourceLocation ploc,
         pname = psym->getNameStart();
     }
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: User Type ";
+    std::cerr << COL_SEMA << "SEMA: User Type ";
     if (psym) {
         std::cerr << pname << '.';
     }
@@ -580,7 +580,7 @@ C2::ExprResult C2Sema::ActOnUserType(IdentifierInfo* psym, SourceLocation ploc,
 
 C2::ExprResult C2Sema::ActOnBuiltinType(tok::TokenKind k) {
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: Builtin Type"ANSI_NORMAL"\n";
+    std::cerr << COL_SEMA << "SEMA: Builtin Type" << ANSI_NORMAL"\n";
 #endif
     QualType qt;
     switch (k) {
@@ -613,7 +613,7 @@ C2::ExprResult C2Sema::ActOnBuiltinType(tok::TokenKind k) {
 StructTypeDecl* C2Sema::ActOnStructType(const char* name, SourceLocation loc,
             bool isStruct, bool is_public, bool is_global) {
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: Struct/Union Type '" << (name ? name : "<anonymous>");
+    std::cerr << COL_SEMA << "SEMA: Struct/Union Type '" << (name ? name : "<anonymous>");
     std::cerr << ANSI_NORMAL << '\n';
 #endif
     QualType qt = typeContext.getStructType();
@@ -629,7 +629,7 @@ StructTypeDecl* C2Sema::ActOnStructType(const char* name, SourceLocation loc,
 
 void C2Sema::ActOnStructVar(StructTypeDecl* S, const char* name, SourceLocation loc, Expr* type, Expr* InitValue, bool is_public) {
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: struct var " << name << " at ";
+    std::cerr << COL_SEMA << "SEMA: struct var " << name << " at ";
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
@@ -643,14 +643,14 @@ void C2Sema::ActOnStructVar(StructTypeDecl* S, const char* name, SourceLocation 
 
 void C2Sema::ActOnStructMember(StructTypeDecl* S, Decl* member) {
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: struct member" << ANSI_NORMAL << '\n';
+    std::cerr << COL_SEMA << "SEMA: struct member" << ANSI_NORMAL << '\n';
 #endif
     S->addMember(member);
 }
 
 void C2Sema::ActOnStructTypeFinish(StructTypeDecl* S, SourceLocation left, SourceLocation right) {
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: Struct finish"ANSI_NORMAL"\n";
+    std::cerr << COL_SEMA << "SEMA: Struct finish" << ANSI_NORMAL"\n";
 #endif
     //S->setLocs(left, right);
     Names names;
@@ -677,7 +677,7 @@ EnumTypeDecl* C2Sema::ActOnEnumType(const char* name, SourceLocation loc, Expr* 
 void C2Sema::ActOnEnumConstant(EnumTypeDecl* Enum, IdentifierInfo* symII,
                                 SourceLocation symLoc, Expr* Value) {
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: enum constant"ANSI_NORMAL"\n";
+    std::cerr << COL_SEMA << "SEMA: enum constant" << ANSI_NORMAL"\n";
 #endif
     EnumConstantDecl* D = new EnumConstantDecl(symII->getNameStart(), symLoc, Enum->getType(), Value,
                                                Enum->isPublic(), ast.getFileID());
@@ -688,7 +688,7 @@ void C2Sema::ActOnEnumConstant(EnumTypeDecl* Enum, IdentifierInfo* symII,
 C2::ExprResult C2Sema::ActOnEnumTypeFinished(Expr* enumType,
                             SourceLocation leftBrace, SourceLocation rightBrace) {
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: enum Type"ANSI_NORMAL"\n";
+    std::cerr << COL_SEMA << "SEMA: enum Type" << ANSI_NORMAL"\n";
 #endif
     // TODO use left/rightBrace (add to TypeExpr, then pass to TypeDecl)
     return ExprResult(enumType);
@@ -698,7 +698,7 @@ C2::ExprResult C2Sema::ActOnTypeQualifier(ExprResult R, unsigned qualifier) {
     assert(R.get());
     if (qualifier) {
 #ifdef SEMA_DEBUG
-        std::cerr << COL_SEMA"SEMA: Qualifier Type"ANSI_NORMAL"\n";
+        std::cerr << COL_SEMA << "SEMA: Qualifier Type" << ANSI_NORMAL"\n";
 #endif
         TypeExpr* typeExpr = cast<TypeExpr>(R.get());
         // TODO use typeExpr.addConst() and just return QualType (not ref) in getType()
@@ -715,7 +715,7 @@ C2::ExprResult C2Sema::ActOnBuiltinExpression(SourceLocation Loc, Expr* expr, bo
     assert(expr);
 #ifdef SEMA_DEBUG
     const char* fname = (isSizeof ? "sizeof" : "elemsof");
-    std::cerr << COL_SEMA"SEMA: " << fname << " at ";
+    std::cerr << COL_SEMA << "SEMA: " << fname << " at ";
     Loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
@@ -726,7 +726,7 @@ C2::ExprResult C2Sema::ActOnArraySubScriptExpr(SourceLocation RLoc, Expr* Base, 
     assert(Base);
     assert(Idx);
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: array subscript at ";
+    std::cerr << COL_SEMA << "SEMA: array subscript at ";
     RLoc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
@@ -738,7 +738,7 @@ C2::ExprResult C2Sema::ActOnMemberExpr(Expr* Base, bool isArrow, IdentifierInfo*
     assert(sym);
     std::string member(sym->getNameStart(), sym->getLength());
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: member access " << member;
+    std::cerr << COL_SEMA << "SEMA: member access " << member;
     std::cerr << ANSI_NORMAL"\n";
 #endif
     return ExprResult(new MemberExpr(Base, isArrow, member, loc));
@@ -747,7 +747,7 @@ C2::ExprResult C2Sema::ActOnMemberExpr(Expr* Base, bool isArrow, IdentifierInfo*
 C2::ExprResult C2Sema::ActOnPostfixUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Expr* Input) {
     assert(Input);
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: postop at ";
+    std::cerr << COL_SEMA << "SEMA: postop at ";
     OpLoc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
@@ -769,7 +769,7 @@ C2::ExprResult C2Sema::ActOnPostfixUnaryOp(SourceLocation OpLoc, tok::TokenKind 
 C2::ExprResult C2Sema::ActOnUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Expr* Input) {
     assert(Input);
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: unary op at ";
+    std::cerr << COL_SEMA << "SEMA: unary op at ";
     OpLoc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
@@ -779,7 +779,7 @@ C2::ExprResult C2Sema::ActOnUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, E
 
 C2::ExprResult C2Sema::ActOnIntegerConstant(SourceLocation Loc, uint64_t Val) {
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: integer constant"ANSI_NORMAL"\n";
+    std::cerr << COL_SEMA << "SEMA: integer constant" << ANSI_NORMAL"\n";
 #endif
     // NOTE: always 64 bits?
     llvm::APInt ResultValue(64, Val, true);
@@ -788,14 +788,14 @@ C2::ExprResult C2Sema::ActOnIntegerConstant(SourceLocation Loc, uint64_t Val) {
 
 C2::ExprResult C2Sema::ActOnBooleanConstant(const Token& Tok) {
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: boolean constant"ANSI_NORMAL"\n";
+    std::cerr << COL_SEMA << "SEMA: boolean constant" << ANSI_NORMAL"\n";
 #endif
     return ExprResult(new BooleanLiteral(Tok.getLocation(), Tok.is(tok::kw_true)));
 }
 
 C2::ExprResult C2Sema::ActOnNumericConstant(const Token& Tok) {
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: numeric constant"ANSI_NORMAL"\n";
+    std::cerr << COL_SEMA << "SEMA: numeric constant" << ANSI_NORMAL"\n";
 #endif
     // Fast path for a single digit (which is quite common).  A single digit
     // cannot have a trigraph, escaped newline, radix prefix, or suffix.
@@ -924,11 +924,11 @@ C2::ExprResult C2Sema::ActOnNumericConstant(const Token& Tok) {
 }
 
 
-C2::ExprResult C2Sema::ActOnStringLiteral(const Token* StringToks, unsigned NumStringToks) {
+C2::ExprResult C2Sema::ActOnStringLiteral(ArrayRef<Token> StringToks) {
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: string literal"ANSI_NORMAL"\n";
+    std::cerr << COL_SEMA << "SEMA: string literal" << ANSI_NORMAL"\n";
 #endif
-    StringLiteralParser Literal(StringToks, NumStringToks, PP);
+    StringLiteralParser Literal(StringToks, PP);
     if (Literal.hadError) return ExprError();
 
     llvm::StringRef ref = Literal.GetString();
@@ -937,7 +937,7 @@ C2::ExprResult C2Sema::ActOnStringLiteral(const Token* StringToks, unsigned NumS
 
 C2::ExprResult C2Sema::ActOnCharacterConstant(const Token& Tok) {
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: char constant at ";
+    std::cerr << COL_SEMA << "SEMA: char constant at ";
     Loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif

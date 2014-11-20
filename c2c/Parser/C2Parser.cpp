@@ -124,14 +124,14 @@ bool C2Parser::Parse() {
 
 void C2Parser::ParseModule() {
     LOG_FUNC
-    if (ExpectAndConsume(tok::kw_module, diag::err_expected_module)) return;
+    if (ExpectAndConsume(tok::kw_module)) return;
     if (ExpectIdentifier()) return;
 
     IdentifierInfo* Mod = Tok.getIdentifierInfo();
     SourceLocation ModLoc = ConsumeToken();
 
 
-    if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "module name")) return;
+    if (ExpectAndConsume(tok::semi, diag::err_expected_after, "module name")) return;
 
     Actions.ActOnModule(Mod->getNameStart(), ModLoc);
 }
@@ -162,7 +162,7 @@ void C2Parser::ParseImports() {
             isLocal = true;
             ConsumeToken();
         }
-        if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "import statement")) return;
+        if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after_stmt, "import")) return;
 
         Actions.ActOnImport(Mod->getNameStart(), ModLoc, AliasToken, isLocal);
     }
@@ -239,9 +239,9 @@ void C2Parser::ParseTypeDef(bool is_public) {
         return;
     default:
         type = ParseTypeSpecifier(true);
-        if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "type definition")) return;
+        if (ExpectAndConsume(tok::semi, diag::err_expected_after, "type definition")) return;
         if (!type.isUsable()) return;
-        Actions.ActOnAliasType(id->getNameStart(), idLoc, type.release(), is_public);
+        Actions.ActOnAliasType(id->getNameStart(), idLoc, type.get(), is_public);
         break;
     }
 }
@@ -257,7 +257,9 @@ void C2Parser::ParseStructType(bool is_struct, const char* id, SourceLocation id
 void C2Parser::ParseStructBlock(StructTypeDecl* S) {
     LOG_FUNC
     SourceLocation LeftBrace = Tok.getLocation();
-    if (ExpectAndConsume(tok::l_brace, diag::err_expected_lbrace)) return;
+    // clang: ca70f4fa1c4eae6a47c97c773b8e63803a43a90c
+    //        af9a02c0cdaafab155de9b2f43bfad33a28429c3
+    if (ExpectAndConsume(tok::l_brace)) return;
 
     while (1) {
         //Syntax:
@@ -292,12 +294,12 @@ void C2Parser::ParseStructBlock(StructTypeDecl* S) {
             IdentifierInfo* id = Tok.getIdentifierInfo();
             SourceLocation idLoc = ConsumeToken();
 
-            if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "member")) return;
-            Actions.ActOnStructVar(S, id->getNameStart(), idLoc, type.release(), 0, S->isPublic());
+            if (ExpectAndConsume(tok::semi, diag::err_expected_after, "member")) return;
+            Actions.ActOnStructVar(S, id->getNameStart(), idLoc, type.get(), 0, S->isPublic());
         }
     }
     SourceLocation RightBrace = Tok.getLocation();
-    if (ExpectAndConsume(tok::r_brace, diag::err_expected_rbrace)) return;
+    if (ExpectAndConsume(tok::r_brace)) return;
 
     Actions.ActOnStructTypeFinish(S, LeftBrace, RightBrace);
 }
@@ -345,9 +347,9 @@ void C2Parser::ParseEnumType(const char* id, SourceLocation idLoc, bool is_publi
 
     Tok.getLocation();
     //SourceLocation LeftBrace = Tok.getLocation();
-    if (ExpectAndConsume(tok::l_brace, diag::err_expected_lbrace)) return;
+    if (ExpectAndConsume(tok::l_brace)) return;
 
-    EnumTypeDecl* TheEnum = Actions.ActOnEnumType(id, idLoc, implType.release(), is_public);
+    EnumTypeDecl* TheEnum = Actions.ActOnEnumType(id, idLoc, implType.get(), is_public);
 
     // Syntax: enum_block
     while (Tok.is(tok::identifier)) {
@@ -364,13 +366,13 @@ void C2Parser::ParseEnumType(const char* id, SourceLocation idLoc, bool is_publi
             }
         }
 
-        Actions.ActOnEnumConstant(TheEnum, Ident, IdentLoc, Value.release());
+        Actions.ActOnEnumConstant(TheEnum, Ident, IdentLoc, Value.get());
         if (Tok.isNot(tok::comma)) break;
         ConsumeToken();
     }
     //SourceLocation RightBrace = Tok.getLocation();
     Tok.getLocation();
-    ExpectAndConsume(tok::r_brace, diag::err_expected_rbrace);
+    ExpectAndConsume(tok::r_brace);
 }
 
 /*
@@ -385,11 +387,11 @@ void C2Parser::ParseFuncType(IdentifierInfo* id, SourceLocation& idLoc, bool is_
     ExprResult rtype = ParseSingleTypeSpecifier(true);
     if (rtype.isInvalid()) return;
 
-    FunctionDecl* func = Actions.ActOnFuncTypeDecl(id->getNameStart(), idLoc, is_public, rtype.release());
+    FunctionDecl* func = Actions.ActOnFuncTypeDecl(id->getNameStart(), idLoc, is_public, rtype.get());
 
     if (!ParseFunctionParams(func, false)) return;
 
-    if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "type definition")) return;
+    if (ExpectAndConsume(tok::semi, diag::err_expected_after, "type definition")) return;
 }
 
 /*
@@ -403,7 +405,7 @@ void C2Parser::ParseFuncType(IdentifierInfo* id, SourceLocation& idLoc, bool is_
 */
 bool C2Parser::ParseFunctionParams(FunctionDecl* func, bool allow_defaults) {
     LOG_FUNC
-    if (ExpectAndConsume(tok::l_paren, diag::err_expected_lparen)) return false;
+    if (ExpectAndConsume(tok::l_paren)) return false;
     // fast path for "()"
     if (Tok.is(tok::r_paren)) {
         ConsumeToken();
@@ -425,7 +427,7 @@ bool C2Parser::ParseFunctionParams(FunctionDecl* func, bool allow_defaults) {
         }
     }
 
-    if (ExpectAndConsume(tok::r_paren, diag::err_expected_rparen)) return false;
+    if (ExpectAndConsume(tok::r_paren)) return false;
     return true;
 }
 
@@ -459,7 +461,7 @@ bool C2Parser::ParseParamDecl(FunctionDecl* func, bool allow_defaults) {
         InitValue = ParseConstantExpression();
         if (InitValue.isInvalid()) return false;
     }
-    Actions.ActOnFunctionArg(func, name, idLoc, type.release(), InitValue.release());
+    Actions.ActOnFunctionArg(func, name, idLoc, type.get(), InitValue.get());
     return true;
 }
 
@@ -508,7 +510,7 @@ C2::ExprResult C2Parser::ParseSingleTypeSpecifier(bool allow_qualifier) {
     }
     // Syntax: pointer type
     while (Tok.is(tok::star)) {
-        base = Actions.ActOnPointerType(base.release());
+        base = Actions.ActOnPointerType(base.get());
         ConsumeToken();
     }
     return Actions.ActOnTypeQualifier(base, type_qualifier);
@@ -598,10 +600,7 @@ C2::ExprResult C2Parser::ParseRHSOfBinaryExpression(ExprResult LHS, prec::Level 
         Diag(Tok, diag::ext_gnu_conditional_expr);
       }
 
-      if (Tok.is(tok::colon)) {
-        // Eat the colon.
-        ColonLoc = ConsumeToken();
-      } else {
+      if (!TryConsumeToken(tok::colon, ColonLoc)) {
         // Otherwise, we're missing a ':'.  Assume that this was a typo that
         // the user forgot. If we're not in a macro expansion, we can suggest
         // a fixit hint. If there were two spaces before the current token,
@@ -624,9 +623,9 @@ C2::ExprResult C2Parser::ParseRHSOfBinaryExpression(ExprResult LHS, prec::Level 
           }
         }
 
-        Diag(Tok, diag::err_expected_colon)
-          << FixItHint::CreateInsertion(FILoc, FIText);
-        Diag(OpToken, diag::note_matching) << "?";
+        Diag(Tok, diag::err_expected)
+            << tok::colon << FixItHint::CreateInsertion(FILoc, FIText);
+        Diag(OpToken, diag::note_matching) << tok::question;
         ColonLoc = Tok.getLocation();
       }
     }
@@ -728,11 +727,11 @@ C2::ExprResult C2Parser::ParseRHSOfBinaryExpression(ExprResult LHS, prec::Level 
 #endif
 
         LHS = Actions.ActOnBinOp(OpToken.getLocation(),
-                                 OpToken.getKind(), LHS.take(), RHS.take());
+                                 OpToken.getKind(), LHS.get(), RHS.get());
       } else {
         LHS = Actions.ActOnConditionalOp(OpToken.getLocation(), ColonLoc,
-                                         LHS.take(), TernaryMiddle.take(),
-                                         RHS.take());
+                                         LHS.get(), TernaryMiddle.get(),
+                                         RHS.get());
       }
     }
 
@@ -901,7 +900,7 @@ C2::ExprResult C2Parser::ParseStringLiteralExpression(bool AllowUserDefinedLiter
     ConsumeStringToken();
   } while (isTokenStringLiteral());
 
-  return Actions.ActOnStringLiteral(&StringToks[0], StringToks.size());
+  return Actions.ActOnStringLiteral(StringToks);
 }
 
 /// \brief Once the leading part of a postfix-expression is parsed, this
@@ -943,11 +942,11 @@ C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
         ExprResult Idx = ParseExpression();
         if (Idx.isInvalid()) return ExprError();
         if (Tok.isNot(tok::r_square)) {
-            Diag(Tok, diag::err_expected_rsquare);
+            Diag(Tok, diag::err_expected) << tok::r_square;
             return ExprError();
         }
         SourceLocation RLoc = ConsumeToken();
-        LHS = Actions.ActOnArraySubScriptExpr(RLoc, LHS.release(), Idx.release());
+        LHS = Actions.ActOnArraySubScriptExpr(RLoc, LHS.get(), Idx.get());
         break;
     }
 
@@ -986,14 +985,14 @@ C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
                 ArgExprs.size()-1 == CommaLocs.size())&&
                "Unexpected number of commas!");
         if (ArgExprs.size() == 0)
-            LHS = Actions.ActOnCallExpr(LHS.take(), 0, 0, Tok.getLocation());
+            LHS = Actions.ActOnCallExpr(LHS.get(), 0, 0, Tok.getLocation());
         else
-            LHS = Actions.ActOnCallExpr(LHS.take(), &ArgExprs[0], ArgExprs.size(), Tok.getLocation());
+            LHS = Actions.ActOnCallExpr(LHS.get(), &ArgExprs[0], ArgExprs.size(), Tok.getLocation());
         //LHS = Actions.ActOnCallExpr(getCurScope(), LHS.take(), Loc,
         //                            ArgExprs, Tok.getLocation(),
         //                            ExecConfig);
         //PT.consumeClose();
-        if (ExpectAndConsume(tok::r_paren, diag::err_expected_rparen)) return ExprError();
+        if (ExpectAndConsume(tok::r_paren)) return ExprError();
       }
 
       break;
@@ -1008,13 +1007,13 @@ C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
         if (ExpectIdentifier()) return ExprError();
         IdentifierInfo* sym = Tok.getIdentifierInfo();
         SourceLocation loc = ConsumeToken();
-        LHS = Actions.ActOnMemberExpr(LHS.release(), OpKind == tok::arrow, sym, loc);
+        LHS = Actions.ActOnMemberExpr(LHS.get(), OpKind == tok::arrow, sym, loc);
         break;
     }
     case tok::plusplus:    // postfix-expression: postfix-expression '++'
     case tok::minusminus:  // postfix-expression: postfix-expression '--'
         if (!LHS.isInvalid()) {
-            LHS = Actions.ActOnPostfixUnaryOp(Tok.getLocation(), Tok.getKind(), LHS.take());
+            LHS = Actions.ActOnPostfixUnaryOp(Tok.getLocation(), Tok.getKind(), LHS.get());
         }
         ConsumeToken();
         break;
@@ -1059,7 +1058,7 @@ bool C2Parser::ParseExpressionList(SmallVectorImpl<Expr*> &Exprs,
     if (Expr.isInvalid())
       return true;
 
-    Exprs.push_back(Expr.release());
+    Exprs.push_back(Expr.get());
 
     if (Tok.isNot(tok::comma))
       return false;
@@ -1118,7 +1117,7 @@ C2Parser::ParseParenExpression(ParenParseOption &ExprType, bool stopIfCastExpr,
         if (type.isInvalid()) return ExprError();
 
         RParenLoc = Tok.getLocation();
-        if (ExpectAndConsume(tok::r_paren, diag::err_expected_rparen)) return ExprError();
+        if (ExpectAndConsume(tok::r_paren)) return ExprError();
 
         if (Tok.is(tok::l_brace)) {
             assert(0 && "TODO");
@@ -1145,7 +1144,7 @@ C2Parser::ParseParenExpression(ParenParseOption &ExprType, bool stopIfCastExpr,
         Result = ParseExpression();
         ExprType = SimpleExpr;
         if (!Result.isInvalid() && Tok.is(tok::r_paren)) {
-            Result = Actions.ActOnParenExpr(OpenLoc, Tok.getLocation(), Result.take());
+            Result = Actions.ActOnParenExpr(OpenLoc, Tok.getLocation(), Result.get());
         }
     }
 
@@ -1156,7 +1155,7 @@ C2Parser::ParseParenExpression(ParenParseOption &ExprType, bool stopIfCastExpr,
     }
 
     RParenLoc = Tok.getLocation();
-    ExpectAndConsume(tok::r_paren, diag::err_expected_rparen);
+    ExpectAndConsume(tok::r_paren);
 
     return Result;
 }
@@ -1295,25 +1294,25 @@ C2::ExprResult C2Parser::ParseArray(ExprResult base) {
     // fast path for "[]"
     if (Tok.is(tok::r_square)) {
         ConsumeToken();
-        return Actions.ActOnArrayType(base.release(), 0);
+        return Actions.ActOnArrayType(base.get(), 0);
     }
     // fast path for "[10]"
     if (Tok.is(tok::numeric_constant) && NextToken().is(tok::r_square)) {
         ExprResult E = Actions.ActOnNumericConstant(Tok);
         ConsumeToken(); // consume number
         ConsumeToken(); // consume ']'
-        return Actions.ActOnArrayType(base.release(), E.release());
+        return Actions.ActOnArrayType(base.get(), E.get());
     }
     // incremental arrays "[+]"
     if (Tok.is(tok::plus) && NextToken().is(tok::r_square)) {
         ConsumeToken(); // consume '+'
         ConsumeToken(); // consume ']'
-        return Actions.ActOnArrayType(base.release(), 0);
+        return Actions.ActOnArrayType(base.get(), 0);
     }
     ExprResult E = ParseConstantExpression();
     if (E.isInvalid()) return ExprError();
-    ExpectAndConsume(tok::r_square, diag::err_expected_rsquare);
-    return Actions.ActOnArrayType(base.release(), E.release());
+    ExpectAndConsume(tok::r_square);
+    return Actions.ActOnArrayType(base.get(), E.get());
 }
 
 /// Syntax:
@@ -1325,7 +1324,7 @@ C2::ExprResult C2Parser::ParseSizeof()
     assert(Tok.is(tok::kw_sizeof) && "Not sizeof keyword!");
     SourceLocation Loc = ConsumeToken();
 
-    if (ExpectAndConsume(tok::l_paren, diag::err_expected_lparen)) return ExprError();
+    if (ExpectAndConsume(tok::l_paren)) return ExprError();
     ExprResult Res;
 
     switch (Tok.getKind()) {
@@ -1370,8 +1369,8 @@ C2::ExprResult C2Parser::ParseSizeof()
     }
     if (Res.isInvalid()) return ExprError();
 
-    if (ExpectAndConsume(tok::r_paren, diag::err_expected_rparen)) return ExprError();
-    return Actions.ActOnBuiltinExpression(Loc, Res.release(), true);
+    if (ExpectAndConsume(tok::r_paren)) return ExprError();
+    return Actions.ActOnBuiltinExpression(Loc, Res.get(), true);
 }
 
 /// Syntax:
@@ -1383,15 +1382,15 @@ C2::ExprResult C2Parser::ParseElemsof()
     assert(Tok.is(tok::kw_elemsof) && "Not elemsof keyword!");
     SourceLocation Loc = ConsumeToken();
 
-    if (ExpectAndConsume(tok::l_paren, diag::err_expected_lparen)) return ExprError();
+    if (ExpectAndConsume(tok::l_paren)) return ExprError();
 
     if (Tok.isNot(tok::identifier)) {
-        Diag(Tok, diag::err_expected_ident);
+        Diag(Tok, diag::err_expected) << tok::identifier;
         return ExprError();
     }
     ExprResult Res = ParseIdentifier();
-    if (ExpectAndConsume(tok::r_paren, diag::err_expected_rparen)) return ExprError();
-    return Actions.ActOnBuiltinExpression(Loc, Res.release(), false);
+    if (ExpectAndConsume(tok::r_paren)) return ExprError();
+    return Actions.ActOnBuiltinExpression(Loc, Res.get(), false);
 }
 
 // Syntax:
@@ -1446,12 +1445,12 @@ void C2Parser::ParseFuncDef(bool is_public) {
     SourceLocation idLoc = ConsumeToken();
 
     // TODO use ParseIdentifier()
-    FunctionDecl* func = Actions.ActOnFuncDecl(id->getNameStart(), idLoc, is_public, rtype.release());
+    FunctionDecl* func = Actions.ActOnFuncDecl(id->getNameStart(), idLoc, is_public, rtype.get());
 
     if (!ParseFunctionParams(func, true)) return;
 
     StmtResult FnBody = ParseCompoundStatement();
-    Actions.ActOnFinishFunctionBody(func, FnBody.release());
+    Actions.ActOnFinishFunctionBody(func, FnBody.get());
 }
 
 /*
@@ -1465,7 +1464,7 @@ void C2Parser::ParseFuncDef(bool is_public) {
 C2::StmtResult C2Parser::ParseCompoundStatement() {
     LOG_FUNC
     if (Tok.isNot(tok::l_brace)) {
-        Diag(Tok, diag::err_expected_lbrace);
+        Diag(Tok, diag::err_expected) << tok::l_brace;
         return StmtError();
     }
     SourceLocation OpenLoc = ConsumeToken();
@@ -1476,7 +1475,7 @@ C2::StmtResult C2Parser::ParseCompoundStatement() {
 
         StmtResult R = ParseStatement();
         if (R.isUsable()) {
-            Stmts.push_back(R.release());
+            Stmts.push_back(R.get());
         } else {
             bool found = SkipUntil(tok::semi);
             if (!found) return StmtError();
@@ -1484,7 +1483,7 @@ C2::StmtResult C2Parser::ParseCompoundStatement() {
     }
 
     if (Tok.isNot(tok::r_brace)) {
-        Diag(Tok, diag::err_expected_rbrace);
+        Diag(Tok, diag::err_expected) << tok::r_brace;
         return StmtError();
     }
 
@@ -1571,8 +1570,8 @@ C2::StmtResult C2Parser::ParseReturnStatement() {
         if (Diags.hasErrorOccurred()) return StmtError();
     }
 
-    if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "return")) return StmtError();
-    return Actions.ActOnReturnStmt(loc, result.release());
+    if (ExpectAndConsume(tok::semi, diag::err_expected_after, "return")) return StmtError();
+    return Actions.ActOnReturnStmt(loc, result.get());
 }
 
 /// ParseIfStatement
@@ -1597,10 +1596,10 @@ C2::StmtResult C2Parser::ParseIfStatement() {
 // TODO import ParseParenExprOrCondition function (with BalancedTracker)
   //if (ParseParenExprOrCondition(CondExp, CondVar, IfLoc, true))
   //  return StmtError();
-    if (ExpectAndConsume(tok::l_paren, diag::err_expected_lparen)) return StmtError();
+    if (ExpectAndConsume(tok::l_paren)) return StmtError();
     ExprResult CondExp = ParseExpression();
     if (CondExp.isInvalid()) return StmtError();
-    if (ExpectAndConsume(tok::r_paren, diag::err_expected_rparen)) return StmtError();
+    if (ExpectAndConsume(tok::r_paren)) return StmtError();
 
     // Read the 'then' stmt.
     //SourceLocation ThenStmtLoc = Tok.getLocation();
@@ -1658,13 +1657,13 @@ C2::StmtResult C2Parser::ParseSwitchStatement() {
     assert(Tok.is(tok::kw_switch) && "Not a switch stmt!");
     SourceLocation Loc = ConsumeToken();
 
-    if (ExpectAndConsume(tok::l_paren, diag::err_expected_lparen)) return StmtError();
+    if (ExpectAndConsume(tok::l_paren)) return StmtError();
 
     ExprResult Cond = ParseExpression();
     if (Cond.isInvalid()) return StmtError();
 
-    if (ExpectAndConsume(tok::r_paren, diag::err_expected_rparen)) return StmtError();
-    if (ExpectAndConsume(tok::l_brace, diag::err_expected_lbrace)) return StmtError();
+    if (ExpectAndConsume(tok::r_paren)) return StmtError();
+    if (ExpectAndConsume(tok::l_brace)) return StmtError();
 
     StmtList Cases;
     bool done = false;
@@ -1685,13 +1684,13 @@ C2::StmtResult C2Parser::ParseSwitchStatement() {
             fprintf(stderr, "UNEXPECTED TOKEN IN SWITCH\n");
             return StmtError();
         }
-        if (Res.isUsable()) Cases.push_back(Res.release());
+        if (Res.isUsable()) Cases.push_back(Res.get());
         else return StmtError();
     }
 
-    if (ExpectAndConsume(tok::r_brace, diag::err_expected_rbrace)) return StmtError();
+    if (ExpectAndConsume(tok::r_brace)) return StmtError();
 
-    return Actions.ActOnSwitchStmt(Loc, Cond.release(), Cases);
+    return Actions.ActOnSwitchStmt(Loc, Cond.get(), Cases);
 }
 
 /// ParseWhileStatement
@@ -1702,12 +1701,12 @@ C2::StmtResult C2Parser::ParseWhileStatement() {
     assert(Tok.is(tok::kw_while) && "Not a while stmt!");
     SourceLocation Loc = ConsumeToken();
 
-    if (ExpectAndConsume(tok::l_paren, diag::err_expected_lparen)) return StmtError();
+    if (ExpectAndConsume(tok::l_paren)) return StmtError();
 
     ExprResult Cond = ParseExpression();
     if (Cond.isInvalid()) return StmtError();
 
-    if (ExpectAndConsume(tok::r_paren, diag::err_expected_rparen)) return StmtError();
+    if (ExpectAndConsume(tok::r_paren)) return StmtError();
 
     StmtResult Then = ParseStatement();
     if (Then.isInvalid()) return StmtError();
@@ -1727,16 +1726,16 @@ C2::StmtResult C2Parser::ParseDoStatement() {
     StmtResult Then = ParseStatement();
     if (Then.isInvalid()) return StmtError();
 
-    if (ExpectAndConsume(tok::kw_while, diag::err_expected_while)) return StmtError();
+    if (ExpectAndConsume(tok::kw_while)) return StmtError();
 
-    if (ExpectAndConsume(tok::l_paren, diag::err_expected_lparen)) return StmtError();
+    if (ExpectAndConsume(tok::l_paren)) return StmtError();
 
     ExprResult Cond = ParseExpression();
     if (Cond.isInvalid()) return StmtError();
 
-    if (ExpectAndConsume(tok::r_paren, diag::err_expected_rparen)) return StmtError();
+    if (ExpectAndConsume(tok::r_paren)) return StmtError();
     StmtResult Res = Actions.ActOnDoStmt(Loc, Cond, Then);
-    if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "while")) return StmtError();
+    if (ExpectAndConsume(tok::semi, diag::err_expected_after, "while")) return StmtError();
     return Res;
 }
 
@@ -1760,7 +1759,7 @@ C2::StmtResult C2Parser::ParseForStatement() {
     assert(Tok.is(tok::kw_for) && "Not a for stmt!");
     SourceLocation Loc = ConsumeToken();
 
-    if (ExpectAndConsume(tok::l_paren, diag::err_expected_lparen_after, "for")) return StmtError();
+    if (ExpectAndConsume(tok::l_paren, diag::err_expected_after, "for")) return StmtError();
 
     // first substmt
     StmtResult Init;
@@ -1776,7 +1775,7 @@ C2::StmtResult C2Parser::ParseForStatement() {
         }
         if (Init.isInvalid()) return StmtError();
 
-        //if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "statement")) return;
+        //if (ExpectAndConsume(tok::semi, diag::err_expected_after, "statement")) return;
     }
 
     // second substmt
@@ -1785,7 +1784,7 @@ C2::StmtResult C2Parser::ParseForStatement() {
         Cond = ParseExpression();
         if (Cond.isInvalid()) return StmtError();
     }
-    if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "statement")) return StmtError();
+    if (ExpectAndConsume(tok::semi, diag::err_expected_after, "statement")) return StmtError();
 
     // third substmt
     ExprResult Incr;
@@ -1793,12 +1792,12 @@ C2::StmtResult C2Parser::ParseForStatement() {
         Incr = ParseExpression();
         if (Incr.isInvalid()) return StmtError();
     }
-    if (ExpectAndConsume(tok::r_paren, diag::err_expected_rparen)) return StmtError();
+    if (ExpectAndConsume(tok::r_paren)) return StmtError();
 
     StmtResult Body = ParseStatement();
     if (Body.isInvalid()) return StmtError();
 
-    return Actions.ActOnForStmt(Loc, Init.release(), Cond.release(), Incr.release(), Body.release());
+    return Actions.ActOnForStmt(Loc, Init.get(), Cond.get(), Incr.get(), Body.get());
 }
 
 /// ParseGotoStatement
@@ -1810,7 +1809,7 @@ C2::StmtResult C2Parser::ParseGotoStatement() {
     SourceLocation GotoLoc = ConsumeToken();  // eat the 'goto'.
 
     if (Tok.isNot(tok::identifier)) {
-        Diag(Tok, diag::err_expected_ident);
+        Diag(Tok, diag::err_expected) << tok::identifier;
         return StmtError();
     }
     IdentifierInfo* id = Tok.getIdentifierInfo();
@@ -1818,7 +1817,7 @@ C2::StmtResult C2Parser::ParseGotoStatement() {
 
     StmtResult Res = Actions.ActOnGotoStmt(id->getNameStart(), GotoLoc, LabelLoc);
 
-    if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "goto")) return StmtError();
+    if (ExpectAndConsume(tok::semi, diag::err_expected_after, "goto")) return StmtError();
     return Res;
 }
 
@@ -1831,7 +1830,7 @@ C2::StmtResult C2Parser::ParseContinueStatement() {
     SourceLocation Loc = ConsumeToken();
 
     StmtResult Res = Actions.ActOnContinueStmt(Loc);
-    if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "continue")) return StmtError();
+    if (ExpectAndConsume(tok::semi, diag::err_expected_after, "continue")) return StmtError();
     return Res;
 }
 
@@ -1844,7 +1843,7 @@ C2::StmtResult C2Parser::ParseBreakStatement() {
     SourceLocation Loc = ConsumeToken();
 
     StmtResult Res = Actions.ActOnBreakStmt(Loc);
-    if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "break")) return StmtError();
+    if (ExpectAndConsume(tok::semi, diag::err_expected_after, "break")) return StmtError();
     return Res;
 }
 
@@ -1878,7 +1877,7 @@ C2::StmtResult C2Parser::ParseDeclOrStatement() {
         lookahead++;
         afterIdent = GetLookAheadToken(lookahead);
         if (afterIdent.isNot(tok::identifier)) {
-            Diag(afterIdent, diag::err_expected_ident);
+            Diag(afterIdent, diag::err_expected) << tok::identifier;
             return StmtError();
         }
         lookahead++;
@@ -1902,7 +1901,7 @@ C2::StmtResult C2Parser::ParseDeclOrStatement() {
 /*
     case tok::l_paren:
         Res = ParseFunctionCall();
-        if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "function call")) return StmtError();
+        if (ExpectAndConsume(tok::semi, diag::err_expected_after, "function call")) return StmtError();
         break;
 */
     default:
@@ -1932,10 +1931,10 @@ C2::StmtResult C2Parser::ParseDeclaration() {
         InitValue = ParseInitValue(&need_semi, false);
         if (InitValue.isInvalid()) return StmtError();
     }
-    StmtResult Res = Actions.ActOnDeclaration(id->getNameStart(), idLoc, type.release(), InitValue.release());
+    StmtResult Res = Actions.ActOnDeclaration(id->getNameStart(), idLoc, type.get(), InitValue.get());
 
     if (need_semi) {
-        if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "declaration")) return StmtError();
+        if (ExpectAndConsume(tok::semi, diag::err_expected_after, "declaration")) return StmtError();
     }
     return Res;
 }
@@ -1952,7 +1951,7 @@ C2::StmtResult C2Parser::ParseCaseStatement() {
     ExprResult Cond = ParseConstantExpression();
     if (Cond.isInvalid()) return StmtError();
 
-    if (ExpectAndConsume(tok::colon, diag::err_expected_colon_after, "case")) return StmtError();
+    if (ExpectAndConsume(tok::colon, diag::err_expected_after, "case")) return StmtError();
 
     StmtList Stmts;
     bool done = false;
@@ -1966,13 +1965,13 @@ C2::StmtResult C2Parser::ParseCaseStatement() {
         default:
             {
                 StmtResult Res = ParseStatement();
-                if (Res.isUsable()) Stmts.push_back(Res.release());
+                if (Res.isUsable()) Stmts.push_back(Res.get());
                 else return StmtError();
             }
         }
     }
 
-    return Actions.ActOnCaseStmt(Loc, Cond.release(), Stmts);
+    return Actions.ActOnCaseStmt(Loc, Cond.get(), Stmts);
 }
 
 /// ParseDefaultStatement
@@ -1984,7 +1983,7 @@ C2::StmtResult C2Parser::ParseDefaultStatement() {
     assert(Tok.is(tok::kw_default) && "Not a default stmt!");
     SourceLocation Loc = ConsumeToken();
 
-    if (ExpectAndConsume(tok::colon, diag::err_expected_colon_after, "default")) return StmtError();
+    if (ExpectAndConsume(tok::colon, diag::err_expected_after, "default")) return StmtError();
 
     StmtList Stmts;
     bool done = false;
@@ -1998,7 +1997,7 @@ C2::StmtResult C2Parser::ParseDefaultStatement() {
         default:
             {
                 StmtResult Res = ParseStatement();
-                if (Res.isUsable()) Stmts.push_back(Res.release());
+                if (Res.isUsable()) Stmts.push_back(Res.get());
                 else return StmtError();
             }
         }
@@ -2048,7 +2047,7 @@ C2::StmtResult C2Parser::ParseExprStatement() {
     }
 
     ExpectAndConsumeSemi(diag::err_expected_semi_after_expr);
-    return StmtResult(Expr.release());
+    return StmtResult(Expr.get());
 }
 
 /*
@@ -2078,10 +2077,10 @@ void C2Parser::ParseVarDef(bool is_public) {
         return;
     }
     // TODO use ParseIdentifier()
-    Actions.ActOnVarDef(id->getNameStart(), idLoc, is_public, type.release(), InitValue.release());
+    Actions.ActOnVarDef(id->getNameStart(), idLoc, is_public, type.get(), InitValue.get());
 
     if (need_semi) {
-        ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "variable definition");
+        ExpectAndConsume(tok::semi, diag::err_expected_after, "variable definition");
     }
 }
 
@@ -2095,11 +2094,11 @@ C2::ExprResult C2Parser::ParseArrayDesignator(bool* need_semi) {
     ExprResult Designator = ParseAssignmentExpression();
     if (Designator.isInvalid()) return ExprError();
     if (Tok.isNot(tok::r_square)) {
-        Diag(Tok, diag::err_expected_rsquare);
+        Diag(Tok, diag::err_expected) << tok::r_square;
         return ExprError();
     }
     ConsumeToken();
-    if (ExpectAndConsume(tok::equal, diag::err_expected_equal_after, "array designator")) return ExprError();
+    if (ExpectAndConsume(tok::equal, diag::err_expected_after, "array designator")) return ExprError();
 
     ExprResult Result = ParseInitValue(need_semi, false);
     if (Result.isInvalid()) return ExprError();
@@ -2118,7 +2117,7 @@ C2::ExprResult C2Parser::ParseFieldDesignator(bool* need_semi) {
     IdentifierInfo* Field = Tok.getIdentifierInfo();
     SourceLocation FieldLoc = ConsumeToken();
 
-    if (ExpectAndConsume(tok::equal, diag::err_expected_equal_after, "field designator")) return ExprError();
+    if (ExpectAndConsume(tok::equal, diag::err_expected_after, "field designator")) return ExprError();
 
     ExprResult Result = ParseInitValue(need_semi, false);
     if (Result.isInvalid()) return ExprError();
@@ -2174,7 +2173,7 @@ C2::ExprResult C2Parser::ParseInitValues() {
         bool unused;
         ExprResult R = ParseInitValue(&unused, true);
         if (R.isInvalid()) return ExprError();
-        vals.push_back(R.release());
+        vals.push_back(R.get());
         if (Tok.is(tok::comma)) {
             ConsumeToken();
         } else {
@@ -2182,7 +2181,7 @@ C2::ExprResult C2Parser::ParseInitValues() {
         }
     }
     if (Tok.isNot(tok::r_brace)) {
-        Diag(Tok, diag::err_expected_rbrace) << PP.getSpelling(Tok);
+        Diag(Tok, diag::err_expected) << tok::r_brace << PP.getSpelling(Tok);
         return ExprError();
     }
     SourceLocation right = ConsumeToken();
@@ -2203,10 +2202,10 @@ void C2Parser::ParseArrayEntry() {
     ExprResult Value = ParseInitValue(&need_semi, false);
     if (Value.isInvalid()) return;
 
-    Actions.ActOnArrayValue(id->getNameStart(), idLoc, Value.release());
+    Actions.ActOnArrayValue(id->getNameStart(), idLoc, Value.get());
 
     if (need_semi) {
-        if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after, "array entry")) return;
+        if (ExpectAndConsume(tok::semi, diag::err_expected_after, "array entry")) return;
     }
 }
 
@@ -2246,30 +2245,23 @@ bool C2Parser::ParseOptionalAccessSpecifier() {
 
 // Syntax foo, bar10
 bool C2Parser::ExpectIdentifier(const char *Msg) {
-    const unsigned DiagID = diag::err_expected_ident;
     if (Tok.is(tok::identifier)) return false;
 
     const char *Spelling = 0;
     SourceLocation EndLoc = PP.getLocForEndOfToken(PrevTokLocation);
-    if (EndLoc.isValid() && (Spelling = tok::getTokenSimpleSpelling(tok::identifier))) {
+    if (EndLoc.isValid() && (Spelling = tok::getPunctuatorSpelling(tok::identifier))) {
         // Show what code to insert to fix this problem.
-        Diag(EndLoc, DiagID)
+        Diag(EndLoc, diag::err_expected) << tok::identifier
         << Msg
         << FixItHint::CreateInsertion(EndLoc, Spelling);
     } else
-        Diag(Tok, DiagID) << Msg;
+        Diag(Tok, diag::err_expected) << tok::identifier << Msg;
 
     return true;
 }
 
-/// ExpectAndConsume - The parser expects that 'ExpectedTok' is next in the
-/// input.  If so, it is consumed and false is returned.
-///
-/// If the input is malformed, this emits the specified diagnostic.  Next, if
-/// SkipToTok is specified, it calls SkipUntil(SkipToTok).  Finally, true is
-/// returned.
 bool C2Parser::ExpectAndConsume(tok::TokenKind ExpectedTok, unsigned DiagID,
-                              const char *Msg, tok::TokenKind SkipToTok) {
+                                const char* Msg) {
   if (Tok.is(ExpectedTok) || Tok.is(tok::code_completion)) {
     ConsumeAnyToken();
     return false;
@@ -2279,30 +2271,39 @@ bool C2Parser::ExpectAndConsume(tok::TokenKind ExpectedTok, unsigned DiagID,
   // Detect common single-character typos and resume.
   if (IsCommonTypo(ExpectedTok, Tok)) {
     SourceLocation Loc = Tok.getLocation();
-    Diag(Loc, DiagID)
-      << Msg
-      << FixItHint::CreateReplacement(SourceRange(Loc),
-                                      getTokenSimpleSpelling(ExpectedTok));
-    ConsumeAnyToken();
+    {
+      DiagnosticBuilder DB = Diag(Loc, DiagID);
+      DB << FixItHint::CreateReplacement(
+                SourceRange(Loc), tok::getPunctuatorSpelling(ExpectedTok));
+      if (DiagID == diag::err_expected)
+        DB << ExpectedTok;
+      else if (DiagID == diag::err_expected_after)
+        DB << Msg << ExpectedTok;
+      else
+        DB << Msg;
+    }
 
     // Pretend there wasn't a problem.
+    ConsumeAnyToken();
     return false;
   }
 #endif
-
-  const char *Spelling = 0;
   SourceLocation EndLoc = PP.getLocForEndOfToken(PrevTokLocation);
-  if (EndLoc.isValid() &&
-      (Spelling = tok::getTokenSimpleSpelling(ExpectedTok))) {
-    // Show what code to insert to fix this problem.
-    Diag(EndLoc, DiagID)
-      << Msg
-      << FixItHint::CreateInsertion(EndLoc, Spelling);
-  } else
-    Diag(Tok, DiagID) << Msg;
+  const char *Spelling = nullptr;
+  if (EndLoc.isValid())
+    Spelling = tok::getPunctuatorSpelling(ExpectedTok);
 
-  //if (SkipToTok != tok::unknown)
-  //  SkipUntil(SkipToTok);
+  DiagnosticBuilder DB =
+      Spelling
+          ? Diag(EndLoc, DiagID) << FixItHint::CreateInsertion(EndLoc, Spelling)
+          : Diag(Tok, DiagID);
+  if (DiagID == diag::err_expected)
+    DB << ExpectedTok;
+  else if (DiagID == diag::err_expected_after)
+    DB << Msg << ExpectedTok;
+  else
+    DB << Msg;
+
   return true;
 }
 

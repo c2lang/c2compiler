@@ -32,7 +32,7 @@
 // for WriteBitcodeToFile
 #include <llvm/Bitcode/ReaderWriter.h>
 // For verifyModule()
-#include <llvm/Analysis/Verifier.h>
+#include <llvm/IR/Verifier.h>
 
 #include "CodeGen/CodeGenModule.h"
 #include "CodeGen/CodeGenFunction.h"
@@ -132,16 +132,17 @@ void CodeGenModule::write(const std::string& target, const std::string& name) {
     // write IR Module to output/<target>/<module>.ll
     StringBuilder filename;
     filename << "output/" << target << '/';
-    bool existed;
+    bool existed = false;
     llvm::Twine path(filename);
-    if (llvm::sys::fs::create_directories(path, existed) != llvm::errc::success) {
-        fprintf(stderr, "Could not create directory: %s\n", (const char*)filename);
+    if (std::error_code ec = llvm::sys::fs::create_directories(path, existed)) {
+        llvm::errs() << "warning: could not create directory '"
+                     << path << "': " << ec.message() << '\n';
         return;
     }
 
     filename << name << ".ll";
     std::string ErrorInfo;
-    llvm::raw_fd_ostream OS((const char*)filename, ErrorInfo);
+    llvm::raw_fd_ostream OS((const char*)filename, ErrorInfo, sys::fs::F_None);
     if (!ErrorInfo.empty()) {
         fprintf(stderr, "%s\n", ErrorInfo.c_str());
         return;
@@ -480,7 +481,7 @@ llvm::Constant* CodeGenModule::EmitArrayInit(const ArrayType *AT, const ExprList
             const IntegerLiteral* N = cast<IntegerLiteral>(elem);
             Elements.push_back((uint8_t)N->Value.getZExtValue());
         }
-        for (unsigned i=0; i<padding; i++) Elements.push_back(0);
+        for (int i=0; i<padding; i++) Elements.push_back(0);
         return llvm::ConstantDataArray::get(context, Elements);
     }
     case 16:
@@ -492,7 +493,7 @@ llvm::Constant* CodeGenModule::EmitArrayInit(const ArrayType *AT, const ExprList
             const IntegerLiteral* N = cast<IntegerLiteral>(elem);
             Elements.push_back((uint16_t)N->Value.getZExtValue());
         }
-        for (unsigned i=0; i<padding; i++) Elements.push_back(0);
+        for (int i=0; i<padding; i++) Elements.push_back(0);
         return llvm::ConstantDataArray::get(context, Elements);
     }
     case 32:
@@ -504,7 +505,7 @@ llvm::Constant* CodeGenModule::EmitArrayInit(const ArrayType *AT, const ExprList
             const IntegerLiteral* N = cast<IntegerLiteral>(elem);
             Elements.push_back((uint32_t)N->Value.getZExtValue());
         }
-        for (unsigned i=0; i<padding; i++) Elements.push_back(0);
+        for (int i=0; i<padding; i++) Elements.push_back(0);
         return llvm::ConstantDataArray::get(context, Elements);
     }
     case 64:
@@ -516,7 +517,7 @@ llvm::Constant* CodeGenModule::EmitArrayInit(const ArrayType *AT, const ExprList
             const IntegerLiteral* N = cast<IntegerLiteral>(elem);
             Elements.push_back((uint64_t)N->Value.getZExtValue());
         }
-        for (unsigned i=0; i<padding; i++) Elements.push_back(0);
+        for (int i=0; i<padding; i++) Elements.push_back(0);
         return llvm::ConstantDataArray::get(context, Elements);
     }
     default:

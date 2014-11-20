@@ -341,6 +341,7 @@ const char* BinaryOperator::OpCode2str(clang::BinaryOperatorKind opc) {
         case BO_OrAssign: return "|=";
         case BO_Comma: return ",";
     }
+    assert(0);
 }
 
 void BinaryOperator::print(StringBuilder& buffer, unsigned indent) const {

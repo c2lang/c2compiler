@@ -60,6 +60,7 @@ unsigned TypeResolver::checkType(QualType Q, bool used_public) {
         assert(0 && "TBD");
         return 0;
     }
+    assert(0);
 }
 
 unsigned TypeResolver::checkUnresolvedType(const UnresolvedType* type, bool used_public) {
@@ -236,6 +237,7 @@ QualType TypeResolver::checkCanonicals(Decls& decls, QualType Q, bool set) const
         assert(0 && "TBD");
         return 0;
     }
+    assert(0);
 }
 
 QualType TypeResolver::resolveCanonical(QualType Q) const {
@@ -292,7 +294,9 @@ QualType TypeResolver::resolveCanonical(QualType Q) const {
         assert(0 && "TBD");
         return Q;
     }
+    assert(0);
 }
+
 bool TypeResolver::checkDecls(Decls& decls, const Decl* D) const {
     for (DeclsIter iter = decls.begin(); iter != decls.end(); ++iter) {
         if (*iter == D) {

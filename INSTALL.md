@@ -25,24 +25,23 @@ $ makepkg -is
 For other Linux distro, a manual build is required. See below.
 
 ## Installation of LLVM/Clang (C2 version)
-C2 is based on LLVM 3.4 and some parts of Clang 3.4.
+C2 is based on LLVM 3.5 and some parts of Clang 3.5.
 To install C2, follow the steps below. The example shows
 how to install in **$HOME/llvm-c2**, but any other dir should work.
-
-* download Compiler RT sources (http://llvm.org/releases/3.4/compiler-rt-3.4.src.tar.gz)
 
 To build:
 ```
 git clone git://github.com/llvm-mirror/llvm.git
 cd llvm/
-git checkout -b release_34 origin/release_34
+git checkout -b release_35 origin/release_35
 cd projects
-tar -xf <path>/compiler-rt-3.4.src.tar.gz
-mv compiler-rt-3.4.src compiler-rt
-cd ../tools
+git clone git://github.com/llvm-mirror/compiler-rt.git
+cd compiler-rt
+git checkout -b release_35 origin/release_35
+cd ../../tools
 git clone git://github.com/c2lang/clang.git
 cd clang
-git checkout -b c2master_34 origin/c2master_34
+git checkout -b c2master_35 origin/c2master_35
 cd ../../..
 mkdir llvm_build
 cd llvm_build

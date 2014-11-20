@@ -22,17 +22,19 @@
 #include "Utils/StringBuilder.h"
 
 using namespace C2;
+using namespace llvm;
 
 void FileUtils::writeFile(const char* pathstr, const std::string& filename, const StringBuilder& content) {
-    bool existed;
+    bool existed = true;
     llvm::Twine path(pathstr);
-    if (llvm::sys::fs::create_directories(path, existed) != llvm::errc::success) {
-        fprintf(stderr, "Could not create directory: %s\n", filename.c_str());
+    if (std::error_code ec = llvm::sys::fs::create_directories(path, existed)) {
+        llvm::errs() << "warning: could not create directory '"
+                     << path << "': " << ec.message() << '\n';
         return;
     }
 
     std::string ErrorInfo;
-    llvm::raw_fd_ostream OS(filename.c_str(), ErrorInfo);
+    llvm::raw_fd_ostream OS(filename.c_str(), ErrorInfo, sys::fs::F_None);
     if (!ErrorInfo.empty()) {
         fprintf(stderr, "%s\n", ErrorInfo.c_str());
         return;

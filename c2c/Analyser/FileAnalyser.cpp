@@ -61,7 +61,7 @@ unsigned  FileAnalyser::checkImports() {
 
 unsigned FileAnalyser::resolveTypes() {
     LOG_FUNC
-    if (verbose) printf(COL_VERBOSE"%s %s"ANSI_NORMAL"\n", __func__, ast.getFileName().c_str());
+    if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
     unsigned errors = 0;
     for (unsigned i=0; i<ast.numTypes(); i++) {
         errors += checkTypeDecl(ast.getType(i));
@@ -71,7 +71,7 @@ unsigned FileAnalyser::resolveTypes() {
 
 unsigned FileAnalyser::resolveTypeCanonicals() {
     LOG_FUNC
-    if (verbose) printf(COL_VERBOSE"%s %s"ANSI_NORMAL"\n", __func__, ast.getFileName().c_str());
+    if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
     unsigned errors = 0;
     for (unsigned i=0; i<ast.numTypes(); i++) {
         const TypeDecl* D = ast.getType(i);
@@ -114,7 +114,7 @@ unsigned FileAnalyser::resolveTypeCanonicals() {
 
 unsigned FileAnalyser::resolveStructMembers() {
     LOG_FUNC
-    if (verbose) printf(COL_VERBOSE"%s %s"ANSI_NORMAL"\n", __func__, ast.getFileName().c_str());
+    if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
     unsigned errors = 0;
     for (unsigned i=0; i<ast.numTypes(); i++) {
         TypeDecl* D = ast.getType(i);
@@ -127,7 +127,7 @@ unsigned FileAnalyser::resolveStructMembers() {
 
 unsigned FileAnalyser::resolveVars() {
     LOG_FUNC
-    if (verbose) printf(COL_VERBOSE"%s %s"ANSI_NORMAL"\n", __func__, ast.getFileName().c_str());
+    if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
     unsigned errors = 0;
     for (unsigned i=0; i<ast.numVars(); i++) {
         errors += resolveVarDecl(ast.getVar(i));
@@ -137,7 +137,7 @@ unsigned FileAnalyser::resolveVars() {
 
 unsigned FileAnalyser::checkVarInits() {
     LOG_FUNC
-    if (verbose) printf(COL_VERBOSE"%s %s"ANSI_NORMAL"\n", __func__, ast.getFileName().c_str());
+    if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
     unsigned errors = 0;
     for (unsigned i=0; i<ast.numVars(); i++) {
         VarDecl* V = ast.getVar(i);
@@ -166,7 +166,7 @@ unsigned FileAnalyser::checkVarInits() {
 
 unsigned FileAnalyser::resolveEnumConstants() {
     LOG_FUNC
-    if (verbose) printf(COL_VERBOSE"%s %s"ANSI_NORMAL"\n", __func__, ast.getFileName().c_str());
+    if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
     unsigned errors = 0;
     for (unsigned i=0; i<ast.numTypes(); i++) {
         TypeDecl* TD = ast.getType(i);
@@ -205,7 +205,7 @@ unsigned FileAnalyser::resolveEnumConstants() {
 
 unsigned FileAnalyser::checkFunctionProtos() {
     LOG_FUNC
-    if (verbose) printf(COL_VERBOSE"%s %s"ANSI_NORMAL"\n", __func__, ast.getFileName().c_str());
+    if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
     unsigned errors = 0;
     for (unsigned i=0; i<ast.numFunctions(); i++) {
         FunctionDecl* F = ast.getFunction(i);
@@ -220,7 +220,7 @@ unsigned FileAnalyser::checkFunctionProtos() {
 
 unsigned FileAnalyser::checkFunctionBodies() {
     LOG_FUNC
-    if (verbose) printf(COL_VERBOSE"%s %s"ANSI_NORMAL"\n", __func__, ast.getFileName().c_str());
+    if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
     unsigned errors = 0;
     for (unsigned i=0; i<ast.numFunctions(); i++) {
         errors += functionAnalyser.check(ast.getFunction(i));
@@ -230,7 +230,7 @@ unsigned FileAnalyser::checkFunctionBodies() {
 
 void FileAnalyser::checkDeclsForUsed() {
     LOG_FUNC
-    if (verbose) printf(COL_VERBOSE"%s %s"ANSI_NORMAL"\n", __func__, ast.getFileName().c_str());
+    if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
 
     // checkfor unused uses
     for (unsigned i=0; i<ast.numImports(); i++) {

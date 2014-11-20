@@ -216,8 +216,21 @@ private:
         return PrevTokLocation;
     }
 
-    void ConsumeOptionalSemi() {
-        if (Tok.is(tok::semi)) ConsumeToken();
+    bool TryConsumeToken(tok::TokenKind Expected) {
+        if (Tok.isNot(Expected))
+            return false;
+        assert(!isTokenSpecial() &&
+                "Should consume special tokens with Consume*Token");
+        PrevTokLocation = Tok.getLocation();
+        PP.Lex(Tok);
+        return true;
+    }
+
+    bool TryConsumeToken(tok::TokenKind Expected, SourceLocation &Loc) {
+        if (!TryConsumeToken(Expected))
+            return false;
+        Loc = PrevTokLocation;
+        return true;
     }
 
     // Low-level token peeking and consumption methods (from Parser.h)
@@ -317,18 +330,26 @@ private:
            Tok.getKind() == tok::utf32_string_literal;
   }
 
+  /// isTokenSpecial - True if this token requires special consumption methods.
+  bool isTokenSpecial() const {
+    return isTokenStringLiteral() || isTokenParen() || isTokenBracket() ||
+           isTokenBrace() || Tok.is(tok::code_completion);
+  }
 
     bool ExpectIdentifier(const char *Msg = "");
 
     /// ExpectAndConsume - The parser expects that 'ExpectedTok' is next in the
     /// input.  If so, it is consumed and false is returned.
     ///
-    /// If the input is malformed, this emits the specified diagnostic.  Next, if
-    /// SkipToTok is specified, it calls SkipUntil(SkipToTok).  Finally, true is
+    /// If a trivial punctuator misspelling is encountered, a FixIt error
+    /// diagnostic is issued and false is returned after recovery.
+    ///
+    /// If the input is malformed, this emits the specified diagnostic and true is
     /// returned.
-    bool ExpectAndConsume(tok::TokenKind ExpectedTok, unsigned DiagID,
-                        const char *DiagMsg = "",
-                        tok::TokenKind SkipToTok = tok::unknown);
+
+    bool ExpectAndConsume(tok::TokenKind ExpectedTok,
+                          unsigned DiagID = diag::err_expected,
+                          const char* DiagMsg = "");
 
     bool ExpectAndConsumeSemi(unsigned DiagID);
 

@@ -84,7 +84,7 @@ StringBuilder& StringBuilder::operator<<(int32_t input) {
 #ifdef SIZE_DEBUG
     assert(10 < space_left() && "buffer overflow");
 #endif
-    ptr += sprintf(ptr, "%"PRId32"", input);
+    ptr += sprintf(ptr, "%" PRId32"", input);
     return *this;
 }
 
@@ -92,7 +92,7 @@ StringBuilder& StringBuilder::operator<<(u_int32_t input) {
 #ifdef SIZE_DEBUG
     assert(10 < space_left() && "buffer overflow");
 #endif
-    ptr += sprintf(ptr, "%"PRIu32"", input);
+    ptr += sprintf(ptr, "%" PRIu32"", input);
     return *this;
 }
 
@@ -100,7 +100,7 @@ StringBuilder& StringBuilder::operator<<(int64_t input) {
 #ifdef SIZE_DEBUG
     assert(10 < space_left() && "buffer overflow");
 #endif
-    ptr += sprintf(ptr, "%"PRId64"", input);
+    ptr += sprintf(ptr, "%" PRId64"", input);
     return *this;
 }
 
@@ -108,7 +108,7 @@ StringBuilder& StringBuilder::operator<<(u_int64_t input) {
 #ifdef SIZE_DEBUG
     assert(10 < space_left() && "buffer overflow");
 #endif
-    ptr += sprintf(ptr, "%"PRIu64"", input);
+    ptr += sprintf(ptr, "%" PRIu64"", input);
     return *this;
 }
 

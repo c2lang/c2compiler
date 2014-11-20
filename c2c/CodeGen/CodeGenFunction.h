@@ -17,8 +17,8 @@
 #define CODEGEN_FUNCTION_H
 
 #include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/ValueHandle.h>
 #include <llvm/ADT/Twine.h>
-#include <llvm/Support/ValueHandle.h>
 
 namespace llvm {
 class Module;

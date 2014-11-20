@@ -654,7 +654,7 @@ void FunctionType::printName(StringBuilder& buffer) const {
     QualType Q = func->getReturnType();
     Q.printName(buffer);
     buffer << " (";
-    for (int i=0; i<func->numArgs(); i++) {
+    for (unsigned i=0; i<func->numArgs(); i++) {
         if (i != 0) buffer << ", ";
         VarDecl* A = func->getArg(i);
         Q = A->getType();

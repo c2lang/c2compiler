@@ -1528,7 +1528,8 @@ void FunctionAnalyser::checkArrayDesignators(InitListExpr* expr, int64_t* size) 
     Indexes indexes;
     const ExprList& values = expr->getValues();
     indexes.resize(values.size());
-    uint64_t maxIndex = 0;
+    //uint64_t maxIndex = 0;
+    int maxIndex = 0;
     int currentIndex = -1;
     for (unsigned i=0; i<values.size(); i++) {
         Expr* E = values[i];
@@ -1592,6 +1593,7 @@ QualType FunctionAnalyser::getStructType(QualType Q) const {
     case TC_PACKAGE:
         return QualType();
     }
+    assert(0);
 }
 
 void FunctionAnalyser::pushMode(unsigned DiagID) {

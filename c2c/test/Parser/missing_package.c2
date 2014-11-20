@@ -1,3 +1,0 @@
-
-int a;  // @error{expected 'module' keyword}
-

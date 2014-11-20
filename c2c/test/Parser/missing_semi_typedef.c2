@@ -1,0 +1,4 @@
+module test;
+
+type Number int // @error{expected ';' after type definition}
+

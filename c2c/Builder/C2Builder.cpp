@@ -24,9 +24,9 @@
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/IntrusiveRefCntPtr.h>
-#include <llvm/ADT/OwningPtr.h>
 #include <llvm/Support/Host.h>
 #include <clang/Basic/Diagnostic.h>
+#include <clang/Basic/DiagnosticIDs.h>
 #include <clang/Parse/ParseDiagnostic.h>
 #include <clang/Basic/DiagnosticOptions.h>
 #include <clang/Basic/FileManager.h>
@@ -81,6 +81,7 @@ using clang::TargetOptions;
 using clang::TextDiagnosticPrinter;
 
 using namespace C2;
+using namespace clang;
 
 namespace C2 {
 class C2ModuleLoader : public ModuleLoader {
@@ -88,9 +89,10 @@ public:
     C2ModuleLoader() {}
     virtual ~C2ModuleLoader () {}
 
-    virtual ModuleLoadResult loadModule(SourceLocation ImportLoc, ModuleIdPath Path,
-                               clang::Module::NameVisibilityKind Visibility,
-                               bool IsInclusionDirective)
+    virtual ModuleLoadResult loadModule(SourceLocation ImportLoc,
+                                        ModuleIdPath Path,
+                                        clang::Module::NameVisibilityKind Visibility,
+                                        bool IsInclusionDirective)
     {
         fprintf(stderr, "MODULE LOADER: loadModule\n");
         return ModuleLoadResult();
@@ -104,6 +106,18 @@ public:
         fprintf(stderr, "MODULE LOADER: make visible\n");
     }
 
+    virtual GlobalModuleIndex* loadGlobalModuleIndex(SourceLocation TriggerLoc)
+    {
+        fprintf(stderr, "MODULE LOADER: loadGlobalModuleIndex\n");
+        return 0;
+    }
+
+    virtual bool lookupMissingImports(StringRef Name,
+                                      SourceLocation TriggerLoc)
+    {
+        fprintf(stderr, "MODULE LOADER: lookupMissingImports\n");
+        return false;
+    }
 private:
     C2ModuleLoader(const C2ModuleLoader& rhs);
     C2ModuleLoader& operator= (const C2ModuleLoader& rhs);
@@ -125,13 +139,14 @@ public:
         , SM(Diags, FileMgr)
         , Headers(HSOpts, SM, Diags, LangOpts_, pti)
         , PPOpts(new PreprocessorOptions())
-        , PP(PPOpts, Diags, LangOpts_, pti, SM, Headers, loader)
+        , PP(PPOpts, Diags, LangOpts_, SM, Headers, loader)
         , ast(filename_, file_id)
         , analyser(0)
     {
         ApplyHeaderSearchOptions(PP.getHeaderSearchInfo(), *HSOpts, LangOpts_, pti->getTriple());
 
         PP.setPredefines(configs);
+        PP.Initialize(*pti);
 
         // File stuff
         const FileEntry *pFile = FileMgr.getFile(filename);
@@ -139,7 +154,7 @@ public:
             fprintf(stderr, "Error opening file: '%s'\n", filename.c_str());
             exit(-1);
         }
-        SM.createMainFileID(pFile);
+        SM.setMainFileID(SM.createFileID(pFile, SourceLocation(), SrcMgr::C_User));
         PP.EnterMainSourceFile();
         // NOTE: filling zero instead of PP works
         //Diags.getClient()->BeginSourceFile(LangOpts_, &PP);
@@ -150,7 +165,7 @@ public:
     }
 
     bool parse(const BuildOptions& options) {
-        if (options.verbose) printf(COL_VERBOSE"parsing %s"ANSI_NORMAL"\n", filename.c_str());
+        if (options.verbose) printf(COL_VERBOSE "parsing %s" ANSI_NORMAL "\n", filename.c_str());
         C2Sema sema(SM, Diags, typeContext, ast, PP);
         C2Parser parser(PP, sema);
         parser.Initialize();
@@ -170,7 +185,7 @@ public:
     TypeContext typeContext;
 
     // Diagnostics
-    DiagnosticsEngine Diags;
+    DiagnosticsEngine& Diags;
 
     // FileManager
     FileSystemOptions FileSystemOpts;
@@ -226,7 +241,7 @@ int C2Builder::checkFiles() {
 }
 
 int C2Builder::build() {
-    printf(ANSI_GREEN"building target %s"ANSI_NORMAL"\n", recipe.name.c_str());
+    printf(ANSI_GREEN "building target %s" ANSI_NORMAL "\n", recipe.name.c_str());
 
     u_int64_t t1_build = Utils::getCurrentTime();
     // TODO save these common objects in Builder class?
@@ -247,48 +262,48 @@ int C2Builder::build() {
     DiagnosticConsumer* client = Diags.getClient();
 
     // add these diagnostic groups by default
-    Diags.setDiagnosticGroupMapping("conversion", diag::MAP_WARNING);
-    Diags.setDiagnosticGroupMapping("all", diag::MAP_WARNING);
-    Diags.setDiagnosticGroupMapping("extra", diag::MAP_WARNING);
+    Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "conversion", diag::Severity::Warning);
+    Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "all", diag::Severity::Warning);
+    Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "extra", diag::Severity::Warning);
     //Diags.setDiagnosticWarningAsError(diag::warn_integer_too_large, true);
-    Diags.setDiagnosticWarningAsError(diag::warn_falloff_nonvoid_function, true);
+
+    Diags.setSeverity(diag::warn_falloff_nonvoid_function, diag::Severity::Error, SourceLocation());
     // Workaround
     //Diags.setDiagnosticErrorAsFatal(diag::warn_integer_too_large, true);
     //Diags.setDiagnosticErrorAsFatal(diag::warn_integer_too_large, false);
-    Diags.setDiagnosticErrorAsFatal(diag::warn_falloff_nonvoid_function, true);
-    Diags.setDiagnosticErrorAsFatal(diag::warn_falloff_nonvoid_function, false);
+    Diags.setSeverity(diag::warn_falloff_nonvoid_function, diag::Severity::Error, SourceLocation());
 
     // set recipe warning options
     for (unsigned i=0; i<recipe.silentWarnings.size(); i++) {
         const std::string& conf = recipe.silentWarnings[i];
 
         if (conf == "no-unused") {
-            Diags.setDiagnosticGroupMapping("unused", diag::MAP_IGNORE);
-            Diags.setDiagnosticGroupMapping("unused-parameter", diag::MAP_IGNORE);
+            Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "unused", diag::Severity::Ignored);
+            Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "unused-parameter", diag::Severity::Ignored);
             continue;
         }
         if (conf == "no-unused-variable") {
-            Diags.setDiagnosticGroupMapping("unused-variable", diag::MAP_IGNORE);
+            Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "unused-variable", diag::Severity::Ignored);
             continue;
         }
         if (conf == "no-unused-function") {
-            Diags.setDiagnosticGroupMapping("unused-function", diag::MAP_IGNORE);
+            Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "unused-function", diag::Severity::Ignored);
             continue;
         }
         if (conf == "no-unused-parameter") {
-            Diags.setDiagnosticGroupMapping("unused-parameter", diag::MAP_IGNORE);
+            Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "unused-parameter", diag::Severity::Ignored);
             continue;
         }
         if (conf == "no-unused-type") {
-            Diags.setDiagnosticGroupMapping("unused-type", diag::MAP_IGNORE);
+            Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "unused-type", diag::Severity::Ignored);
             continue;
         }
         if (conf == "no-unused-module") {
-            Diags.setDiagnosticGroupMapping("unused-module", diag::MAP_IGNORE);
+            Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "unused-module", diag::Severity::Ignored);
             continue;
         }
         if (conf == "no-unused-public") {
-            Diags.setDiagnosticGroupMapping("unused-public", diag::MAP_IGNORE);
+            Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "unused-public", diag::Severity::Ignored);
             continue;
         }
         fprintf(stderr, "recipe: unknown warning: '%s'\n", conf.c_str());
@@ -296,7 +311,7 @@ int C2Builder::build() {
     }
 
     // TargetInfo
-    TargetOptions* to = new TargetOptions();
+    std::shared_ptr<TargetOptions> to(new TargetOptions());
     to->Triple = llvm::sys::getDefaultTargetTriple();
     TargetInfo *pti = TargetInfo::CreateTargetInfo(Diags, to);
     IntrusiveRefCntPtr<TargetInfo> Target(pti);
@@ -333,7 +348,7 @@ int C2Builder::build() {
     }
     u_int64_t t2_parse = Utils::getCurrentTime();
     u_int64_t t1_analyse, t2_analyse;
-    if (options.printTiming) printf(COL_TIME"parsing took %"PRIu64" usec"ANSI_NORMAL"\n", t2_parse - t1_parse);
+    if (options.printTiming) printf(COL_TIME "parsing took %" PRIu64" usec" ANSI_NORMAL "\n", t2_parse - t1_parse);
     if (client->getNumErrors()) goto out;
     t1_analyse = Utils::getCurrentTime();
 
@@ -366,7 +381,7 @@ int C2Builder::build() {
         files[i]->deleteAnalyser();
     }
     t2_analyse = Utils::getCurrentTime();
-    if (options.printTiming) printf(COL_TIME"analysis took %"PRIu64" usec"ANSI_NORMAL"\n", t2_analyse - t1_analyse);
+    if (options.printTiming) printf(COL_TIME "analysis took %" PRIu64" usec" ANSI_NORMAL"\n", t2_analyse - t1_analyse);
     if (client->getNumErrors()) goto out;
 
     if (!checkMainFunction(Diags)) goto out;
@@ -377,10 +392,10 @@ int C2Builder::build() {
 
     generateOptionalIR();
 
-    if (options.verbose) printf(COL_VERBOSE"done"ANSI_NORMAL"\n");
+    if (options.verbose) printf(COL_VERBOSE "done" ANSI_NORMAL "\n");
 out:
     u_int64_t t2_build = Utils::getCurrentTime();
-    if (options.printTiming) printf(COL_TIME"total build took %"PRIu64" usec"ANSI_NORMAL"\n", t2_build - t1_build);
+    if (options.printTiming) printf(COL_TIME"total build took %" PRIu64" usec" ANSI_NORMAL"\n", t2_build - t1_build);
     raw_ostream &OS = llvm::errs();
     unsigned NumWarnings = client->getNumWarnings();
     unsigned NumErrors = client->getNumErrors();
@@ -454,7 +469,7 @@ bool C2Builder::loadExternalModules() {
 }
 
 bool C2Builder::loadModule(const std::string& name) {
-    if (options.verbose) printf(COL_VERBOSE"loading external module %s"ANSI_NORMAL"\n", name.c_str());
+    if (options.verbose) printf(COL_VERBOSE "loading external module %s" ANSI_NORMAL "\n", name.c_str());
 
     assert(!haveModule(name));
     // NOTE: MEMLEAK on Types
@@ -690,10 +705,10 @@ void C2Builder::generateOptionalC() {
             FileInfo* info = files[i];
             gen.addEntry(info->ast);
         }
-        if (options.verbose) printf(COL_VERBOSE"generating C (single module)"ANSI_NORMAL"\n");
+        if (options.verbose) printf(COL_VERBOSE "generating C (single module)" ANSI_NORMAL"\n");
         gen.generate();
         u_int64_t t2 = Utils::getCurrentTime();
-        if (options.printTiming) printf(COL_TIME"C code generation took %"PRIu64" usec"ANSI_NORMAL"\n", t2 - t1);
+        if (options.printTiming) printf(COL_TIME"C code generation took %" PRIu64" usec" ANSI_NORMAL"\n", t2 - t1);
         if (options.printC) gen.dump();
         gen.write(recipe.name, "");
     } else {
@@ -703,7 +718,7 @@ void C2Builder::generateOptionalC() {
             if (P->isPlainC()) continue;
             // for now filter out 'c2' as well
             if (P->getName() == "c2") continue;
-            if (options.verbose) printf(COL_VERBOSE"generating C for module %s"ANSI_NORMAL"\n", P->getName().c_str());
+            if (options.verbose) printf(COL_VERBOSE "generating C for module %s" ANSI_NORMAL "\n", P->getName().c_str());
             CCodeGenerator gen(P->getName(), CCodeGenerator::MULTI_FILE, modules, no_local_prefix);
             for (unsigned i=0; i<files.size(); i++) {
                 FileInfo* info = files[i];
@@ -713,7 +728,7 @@ void C2Builder::generateOptionalC() {
             }
             gen.generate();
             u_int64_t t2 = Utils::getCurrentTime();
-            if (options.printTiming) printf(COL_TIME"C code generation took %"PRIu64" usec"ANSI_NORMAL"\n", t2 - t1);
+            if (options.printTiming) printf(COL_TIME"C code generation took %" PRIu64" usec" ANSI_NORMAL"\n", t2 - t1);
             if (options.printC) gen.dump();
             gen.write(recipe.name, P->getName());
         }
@@ -735,7 +750,7 @@ void C2Builder::generateOptionalIR() {
         std::string filename = recipe.name;
         //  HMM dont have Module P here, refactor
         CodeGenModule cgm(filename, true);
-        if (options.verbose) printf(COL_VERBOSE"generating IR for single module %s"ANSI_NORMAL"\n", filename.c_str());
+        if (options.verbose) printf(COL_VERBOSE "generating IR for single module %s" ANSI_NORMAL "\n", filename.c_str());
         for (ModulesIter iter = modules.begin(); iter != modules.end(); ++iter) {
             Module* P = iter->second;
             if (P->isPlainC()) continue;
@@ -750,7 +765,7 @@ void C2Builder::generateOptionalIR() {
         }
         cgm.generate();
         u_int64_t t2 = Utils::getCurrentTime();
-        if (options.printTiming) printf(COL_TIME"IR generation took %"PRIu64" usec"ANSI_NORMAL"\n", t2 - t1);
+        if (options.printTiming) printf(COL_TIME"IR generation took %" PRIu64" usec" ANSI_NORMAL"\n", t2 - t1);
         if (options.printIR) cgm.dump();
         bool ok = cgm.verify();
         if (ok) cgm.write(recipe.name, filename);
@@ -761,7 +776,7 @@ void C2Builder::generateOptionalIR() {
             if (P->isPlainC()) continue;
             if (P->getName() == "c2") continue;
 
-            if (options.verbose) printf(COL_VERBOSE"generating IR for module %s"ANSI_NORMAL"\n", P->getName().c_str());
+            if (options.verbose) printf(COL_VERBOSE "generating IR for module %s" ANSI_NORMAL "\n", P->getName().c_str());
             CodeGenModule cgm(P->getName(), false);
             for (unsigned i=0; i<files.size(); i++) {
                 FileInfo* info = files[i];
@@ -771,7 +786,7 @@ void C2Builder::generateOptionalIR() {
             }
             cgm.generate();
             u_int64_t t2 = Utils::getCurrentTime();
-            if (options.printTiming) printf(COL_TIME"IR generation took %"PRIu64" usec"ANSI_NORMAL"\n", t2 - t1);
+            if (options.printTiming) printf(COL_TIME"IR generation took %" PRIu64" usec" ANSI_NORMAL"\n", t2 - t1);
             if (options.printIR) cgm.dump();
             bool ok = cgm.verify();
             if (ok) cgm.write(recipe.name, P->getName());
@@ -803,6 +818,6 @@ void C2Builder::generateOptionsDeps() const {
     std::string path = "output/" + recipe.name;
     std::string filename = path + '/' + "deps.xml";
     FileUtils::writeFile(path.c_str(), filename, output);
-    if (options.printTiming) printf(COL_TIME"dep generation took %"PRIu64" usec"ANSI_NORMAL"\n", t2 - t1);
+    if (options.printTiming) printf(COL_TIME"dep generation took %" PRIu64" usec" ANSI_NORMAL"\n", t2 - t1);
 }
 
