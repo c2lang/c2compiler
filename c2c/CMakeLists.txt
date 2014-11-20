@@ -46,6 +46,7 @@ ADD_EXECUTABLE(c2c
     AST/Stmt.cpp
     AST/Type.cpp
     Parser/C2Parser.cpp
+    Parser/ParserHelpers.cpp
     Parser/C2Sema.cpp
     Analyser/AnalyserUtils.cpp
     Analyser/Scope.cpp

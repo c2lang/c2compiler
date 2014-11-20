@@ -341,7 +341,7 @@ void C2Parser::ParseEnumType(const char* id, SourceLocation idLoc, bool is_publi
         break;
     default:
         Diag(Tok, diag::err_expected_type_spec);
-        SkipUntil(tok::r_brace, /*StopAtSemi=*/false, /*DontConsume=*/false);
+        SkipUntil(tok::r_brace);
         return;
     }
 
@@ -361,7 +361,7 @@ void C2Parser::ParseEnumType(const char* id, SourceLocation idLoc, bool is_publi
             ConsumeToken();
             Value = ParseConstantExpression();
             if (Value.isInvalid()) {
-                SkipUntil(tok::comma, tok::r_brace, true, true);
+                SkipUntil(tok::comma, tok::r_brace, StopAtSemi | StopBeforeMatch);
                 continue;
             }
         }
@@ -2041,7 +2041,7 @@ C2::StmtResult C2Parser::ParseExprStatement() {
         // If the expression is invalid, skip ahead to the next semicolon or '}'.
         // Not doing this opens us up to the possibility of infinite loops if
         // ParseExpression does not consume any tokens.
-        SkipUntil(tok::r_brace, /*StopAtSemi=*/true, /*DontConsume=*/true);
+        SkipUntil(tok::r_brace, StopAtSemi | StopBeforeMatch);
         if (Tok.is(tok::semi)) ConsumeToken();
         return StmtError();
     }
@@ -2337,6 +2337,9 @@ DiagnosticBuilder C2Parser::Diag(const Token &T, unsigned DiagID) {
 // Error recovery.
 //===----------------------------------------------------------------------===//
 
+static bool HasFlagsSet(C2Parser::SkipUntilFlags L, C2Parser::SkipUntilFlags R) {
+  return (static_cast<unsigned>(L) & static_cast<unsigned>(R)) != 0;
+}
 /// SkipUntil - Read tokens until we get to the specified token, then consume
 /// it (unless DontConsume is true).  Because we cannot guarantee that the
 /// token will ever occur, this skips to the next token, or to some likely
@@ -2345,8 +2348,7 @@ DiagnosticBuilder C2Parser::Diag(const Token &T, unsigned DiagID) {
 ///
 /// If SkipUntil finds the specified token, it returns true, otherwise it
 /// returns false.
-bool C2Parser::SkipUntil(ArrayRef<tok::TokenKind> Toks, bool StopAtSemi,
-                       bool DontConsume, bool StopAtCodeCompletion) {
+bool C2Parser::SkipUntil(ArrayRef<tok::TokenKind> Toks, SkipUntilFlags Flags) {
   // We always want this function to skip at least one token if the first token
   // isn't T and if not at EOF.
   bool isFirstTokenSkipped = true;
@@ -2354,7 +2356,7 @@ bool C2Parser::SkipUntil(ArrayRef<tok::TokenKind> Toks, bool StopAtSemi,
     // If we found one of the tokens, stop and return true.
     for (unsigned i = 0, NumToks = Toks.size(); i != NumToks; ++i) {
       if (Tok.is(Toks[i])) {
-        if (DontConsume) {
+        if (HasFlagsSet(Flags, StopBeforeMatch)) {
           // Noop, don't consume the token.
         } else {
           ConsumeAnyToken();
@@ -2363,30 +2365,63 @@ bool C2Parser::SkipUntil(ArrayRef<tok::TokenKind> Toks, bool StopAtSemi,
       }
     }
 
+    // Important special case: The caller has given up and just wants us to
+    // skip the rest of the file. Do this without recursing, since we can
+    // get here precisely because the caller detected too much recursion.
+    if (Toks.size() == 1 && Toks[0] == tok::eof &&
+        !HasFlagsSet(Flags, StopAtSemi) &&
+        !HasFlagsSet(Flags, StopAtCodeCompletion)) {
+      while (Tok.isNot(tok::eof))
+        ConsumeAnyToken();
+      return true;
+    }
+
     switch (Tok.getKind()) {
     case tok::eof:
       // Ran out of tokens.
       return false;
 
-    case tok::code_completion:
-      if (!StopAtCodeCompletion)
-        ConsumeToken();
+    case tok::annot_pragma_openmp_end:
+      // Stop before an OpenMP pragma boundary.
+    case tok::annot_module_begin:
+    case tok::annot_module_end:
+    case tok::annot_module_include:
+      // Stop before we change submodules. They generally indicate a "good"
+      // place to pick up parsing again (except in the special case where
+      // we're trying to skip to EOF).
       return false;
 
-   case tok::l_paren:
+    case tok::code_completion:
+#if 0
+      if (!HasFlagsSet(Flags, StopAtCodeCompletion))
+        handleUnexpectedCodeCompletionToken();
+#endif
+      assert(0 && "TODO");
+      return false;
+
+    case tok::l_paren:
       // Recursively skip properly-nested parens.
       ConsumeParen();
-      SkipUntil(tok::r_paren, false, false, StopAtCodeCompletion);
+      if (HasFlagsSet(Flags, StopAtCodeCompletion))
+        SkipUntil(tok::r_paren, StopAtCodeCompletion);
+      else
+        SkipUntil(tok::r_paren);
       break;
     case tok::l_square:
       // Recursively skip properly-nested square brackets.
       ConsumeBracket();
-      SkipUntil(tok::r_square, false, false, StopAtCodeCompletion);
+      if (HasFlagsSet(Flags, StopAtCodeCompletion))
+        SkipUntil(tok::r_square, StopAtCodeCompletion);
+      else
+        SkipUntil(tok::r_square);
       break;
     case tok::l_brace:
       // Recursively skip properly-nested braces.
       ConsumeBrace();
-      SkipUntil(tok::r_brace, false, false, StopAtCodeCompletion);
+      if (HasFlagsSet(Flags, StopAtCodeCompletion))
+        SkipUntil(tok::r_brace, StopAtCodeCompletion);
+      else
+        SkipUntil(tok::r_brace);
       break;
 
     // Okay, we found a ']' or '}' or ')', which we think should be balanced.
@@ -2419,7 +2454,7 @@ bool C2Parser::SkipUntil(ArrayRef<tok::TokenKind> Toks, bool StopAtSemi,
       break;
 
     case tok::semi:
-      if (StopAtSemi)
+      if (HasFlagsSet(Flags, StopAtSemi))
         return false;
       // FALL THROUGH.
     default:
