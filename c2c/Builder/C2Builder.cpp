@@ -571,6 +571,7 @@ bool C2Builder::loadModule(const std::string& name) {
     if (name == "c2") {
         unsigned file_id = filenames.add("(c2)");
         Module* c2Mod = getModule("c2", true, false);
+        // uint64 buildtime
         {
             // make constant, CTC_NONE
             QualType QT = Type::UInt64();
@@ -585,6 +586,201 @@ bool C2Builder::loadModule(const std::string& name) {
             var->setType(QT);
             c2Mod->addSymbol(var);
         }
+        // int8 min_int8
+        {
+            QualType QT = Type::Int8();
+            QT.addConst();
+            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, -128, true));
+            init->setCTC(CTC_FULL);
+            init->setConstant();
+            init->setType(QT);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "min_int8", loc, QT, init, true, file_id);
+            var->setType(QT);
+            c2Mod->addSymbol(var);
+        }
+        // int8 max_int8
+        {
+            QualType QT = Type::Int8();
+            QT.addConst();
+            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, 127, true));
+            init->setCTC(CTC_FULL);
+            init->setConstant();
+            init->setType(QT);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "max_int8", loc, QT, init, true, file_id);
+            var->setType(QT);
+            c2Mod->addSymbol(var);
+        }
+        // uint8 min_uint8
+        {
+            QualType QT = Type::UInt8();
+            QT.addConst();
+            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, 0, false));
+            init->setCTC(CTC_FULL);
+            init->setConstant();
+            init->setType(QT);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "min_uint8", loc, QT, init, true, file_id);
+            var->setType(QT);
+            c2Mod->addSymbol(var);
+        }
+        // uint8 max_uint8
+        {
+            QualType QT = Type::UInt8();
+            QT.addConst();
+            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, 255, false));
+            init->setCTC(CTC_FULL);
+            init->setConstant();
+            init->setType(QT);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "max_uint8", loc, QT, init, true, file_id);
+            var->setType(QT);
+            c2Mod->addSymbol(var);
+        }
+        // int16 min_int16
+        {
+            QualType QT = Type::Int16();
+            QT.addConst();
+            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, -32768, true));
+            init->setCTC(CTC_FULL);
+            init->setConstant();
+            init->setType(QT);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "min_int16", loc, QT, init, true, file_id);
+            var->setType(QT);
+            c2Mod->addSymbol(var);
+        }
+        // int16 max_int16
+        {
+            QualType QT = Type::Int16();
+            QT.addConst();
+            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, 32767, true));
+            init->setCTC(CTC_FULL);
+            init->setConstant();
+            init->setType(QT);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "max_int16", loc, QT, init, true, file_id);
+            var->setType(QT);
+            c2Mod->addSymbol(var);
+        }
+        // uint16 min_uint16
+        {
+            QualType QT = Type::UInt16();
+            QT.addConst();
+            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, 0, false));
+            init->setCTC(CTC_FULL);
+            init->setConstant();
+            init->setType(QT);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "min_uint16", loc, QT, init, true, file_id);
+            var->setType(QT);
+            c2Mod->addSymbol(var);
+        }
+        // uint16 max_uint16
+        {
+            QualType QT = Type::UInt16();
+            QT.addConst();
+            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, 65535, false));
+            init->setCTC(CTC_FULL);
+            init->setConstant();
+            init->setType(QT);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "max_uint16", loc, QT, init, true, file_id);
+            var->setType(QT);
+            c2Mod->addSymbol(var);
+        }
+        // int32 min_int32
+        {
+            QualType QT = Type::Int32();
+            QT.addConst();
+            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, -2147483648, true));
+            init->setCTC(CTC_FULL);
+            init->setConstant();
+            init->setType(QT);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "min_int32", loc, QT, init, true, file_id);
+            var->setType(QT);
+            c2Mod->addSymbol(var);
+        }
+        // int32 max_int32
+        {
+            QualType QT = Type::Int32();
+            QT.addConst();
+            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, 2147483647, true));
+            init->setCTC(CTC_FULL);
+            init->setConstant();
+            init->setType(QT);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "max_int32", loc, QT, init, true, file_id);
+            var->setType(QT);
+            c2Mod->addSymbol(var);
+        }
+        // uint32 min_uint32
+        {
+            QualType QT = Type::UInt32();
+            QT.addConst();
+            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, 0, false));
+            init->setCTC(CTC_FULL);
+            init->setConstant();
+            init->setType(QT);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "min_uint32", loc, QT, init, true, file_id);
+            var->setType(QT);
+            c2Mod->addSymbol(var);
+        }
+        // uint32 max_uint32
+        {
+            QualType QT = Type::UInt32();
+            QT.addConst();
+            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, 4294967295, false));
+            init->setCTC(CTC_FULL);
+            init->setConstant();
+            init->setType(QT);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "max_uint32", loc, QT, init, true, file_id);
+            var->setType(QT);
+            c2Mod->addSymbol(var);
+        }
+        // int64 min_int64
+        {
+            QualType QT = Type::Int64();
+            QT.addConst();
+            // NOTE: minimum should be -..808, but clang complains about it..
+            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, -9223372036854775807ll, true));
+            init->setCTC(CTC_FULL);
+            init->setConstant();
+            init->setType(QT);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "min_int64", loc, QT, init, true, file_id);
+            var->setType(QT);
+            c2Mod->addSymbol(var);
+        }
+        // int64 max_int64
+        {
+            QualType QT = Type::Int64();
+            QT.addConst();
+            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, 9223372036854775807ll, true));
+            init->setCTC(CTC_FULL);
+            init->setConstant();
+            init->setType(QT);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "max_int64", loc, QT, init, true, file_id);
+            var->setType(QT);
+            c2Mod->addSymbol(var);
+        }
+        // uint64 min_uint64
+        {
+            QualType QT = Type::UInt64();
+            QT.addConst();
+            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, 0, false));
+            init->setCTC(CTC_FULL);
+            init->setConstant();
+            init->setType(QT);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "min_uint64", loc, QT, init, true, file_id);
+            var->setType(QT);
+            c2Mod->addSymbol(var);
+        }
+        // uint64 max_uint64
+        {
+            QualType QT = Type::UInt64();
+            QT.addConst();
+            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, 18446744073709551615llu, false));
+            init->setCTC(CTC_FULL);
+            init->setConstant();
+            init->setType(QT);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "max_uint64", loc, QT, init, true, file_id);
+            var->setType(QT);
+            c2Mod->addSymbol(var);
+        }
+#if 0
+#endif
         return true;
     }
     return false;
