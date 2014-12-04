@@ -506,11 +506,14 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
     case EXPR_BUILTIN:
         return analyseBuiltinExpr(expr);
     case EXPR_ARRAYSUBSCRIPT:
-        return analyseArraySubscript(expr);
+        return analyseArraySubscript(expr, side);
     case EXPR_MEMBER:
         return analyseMemberExpr(expr, side);
     case EXPR_PAREN:
         return analyseParenExpr(expr);
+    case EXPR_BITOFFSET:
+        assert(0 && "should not happen");
+        break;
     }
     return QualType();
 }
@@ -804,6 +807,9 @@ void FunctionAnalyser::analyseSizeofExpr(Expr* expr) {
     case EXPR_PAREN:
         analyseSizeofExpr(cast<ParenExpr>(expr)->getExpr());
         return;
+    case EXPR_BITOFFSET:
+        assert(0 && "should not happen");
+        break;
     }
 
 }
@@ -927,15 +933,20 @@ void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
     scope.addScopedSymbol(decl);
 }
 
-static ExprCTC combineCtc(ExprCTC left, ExprCTC right) {
+static ExprCTC combineCtc(Expr* Result, const Expr* L, const Expr* R) {
+    const ExprCTC left =  L->getCTC();
+    const ExprCTC right = R->getCTC();
     switch (left + right) {
     case 0:
+        Result->setCTC(CTC_NONE);
         return CTC_NONE;
     case 1:
     case 2:
     case 3:
+        Result->setCTC(CTC_PARTIAL);
         return CTC_PARTIAL;
     case 4:
+        Result->setCTC(CTC_FULL);
         return CTC_FULL;
     }
     assert(0 && "should not come here");
@@ -957,6 +968,15 @@ QualType FunctionAnalyser::analyseIntegerLiteral(Expr* expr) {
     if (numbits <= 32) return Type::Int32();
     expr->setType(Type::Int64());
     return Type::Int64();
+}
+
+static bool isConstantBitOffset(const Expr* E) {
+    if (const ArraySubscriptExpr* A = dyncast<ArraySubscriptExpr>(E)) {
+        if (const BitOffsetExpr* B = dyncast<BitOffsetExpr>(A->getIndex())) {
+            return B->isConstant();
+        }
+    }
+    return false;
 }
 
 QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
@@ -981,7 +1001,7 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
         // RHS, RHS
         TLeft = analyseExpr(Left, RHS);
         TRight = analyseExpr(Right, RHS);
-        expr->setCTC(combineCtc(Left->getCTC(), Right->getCTC()));
+        combineCtc(expr, Left, Right);
         if (Left->isConstant() && Right->isConstant()) expr->setConstant();
         break;
     case BO_LE:
@@ -1005,7 +1025,7 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
         // RHS, RHS
         TLeft = analyseExpr(Left, RHS);
         TRight = analyseExpr(Right, RHS);
-        expr->setCTC(combineCtc(Left->getCTC(), Right->getCTC()));
+        combineCtc(expr, Left, Right);
         if (Left->isConstant() && Right->isConstant()) expr->setConstant();
         break;
     case BO_Assign:
@@ -1076,7 +1096,13 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     case BO_Assign:
     {
         assert(TRight.isValid());
-        EA.check(TLeft, Right);
+        // special case for a[4:2] = b
+        if (isConstantBitOffset(Left) && Right->isConstant()) {
+            LiteralAnalyser LA(Diags);
+            LA.checkBitOffset(Left, Right);
+        } else {
+            EA.check(TLeft, Right);
+        }
         checkAssignment(Left, TLeft);
         Result = TLeft;
         break;
@@ -1234,16 +1260,32 @@ QualType FunctionAnalyser::analyseBuiltinExpr(Expr* expr) {
     return Type::UInt32();
 }
 
-QualType FunctionAnalyser::analyseArraySubscript(Expr* expr) {
+QualType FunctionAnalyser::analyseArraySubscript(Expr* expr, unsigned side) {
     LOG_FUNC
     ArraySubscriptExpr* sub = cast<ArraySubscriptExpr>(expr);
     QualType LType = analyseExpr(sub->getBase(), RHS);
     if (LType.isNull()) return 0;
+
+    if (BitOffsetExpr* BO = dyncast<BitOffsetExpr>(sub->getIndex())) {
+        if (side & LHS) {
+            Diags.Report(BO->getLocation(), diag::err_bitoffset_lhs) << expr->getSourceRange();
+            return 0;
+        }
+        QualType T = analyseBitOffsetExpr(sub->getIndex(), LType, sub->getLocation());
+        expr->setType(T);
+        combineCtc(expr, sub->getBase(), sub->getIndex());
+        // dont analyse partial BitOffset expressions per part
+        if (expr->getCTC() == CTC_PARTIAL) expr->setCTC(CTC_NONE);
+        return T;
+    }
+
+    analyseExpr(sub->getIndex(), RHS);
+
     if (!LType.isSubscriptable()) {
         Diags.Report(expr->getLocation(), diag::err_typecheck_subscript);
         return 0;
     }
-    analyseExpr(sub->getIndex(), RHS);
+
     QualType Result;
     if (isa<PointerType>(LType)) {
         Result = cast<PointerType>(LType)->getPointeeType();
@@ -1354,6 +1396,85 @@ QualType FunctionAnalyser::analyseParenExpr(Expr* expr) {
     expr->setCTC(P->getExpr()->getCTC());
     expr->setType(Q);
     return Q;
+}
+
+
+// return whether Result is valid
+bool FunctionAnalyser::analyseBitOffsetIndex(Expr* expr, llvm::APSInt* Result, BuiltinType* BaseType) {
+    LOG_FUNC
+    QualType T = analyseExpr(expr, RHS);
+    if (!T.isValid()) return false;
+
+    if (!T.getCanonicalType().isIntegerType()) {
+        StringBuilder buf;
+        T.DiagName(buf);
+        Diags.Report(expr->getLocation(), diag::err_bitoffset_index_non_int)
+            << buf << expr->getSourceRange();
+        return false;
+    }
+    if (!expr->isConstant()) return false;
+
+    LiteralAnalyser LA(Diags);
+    llvm::APSInt Val = LA.checkLiterals(expr);
+    if (Val.isSigned() && Val.isNegative()) {
+        Diags.Report(expr->getLocation(), diag::err_bitoffset_index_negative)
+            << Val.toString(10) << expr->getSourceRange();
+        return false;
+    }
+    if (Val.ugt(BaseType->getWidth()-1)) {
+        Diags.Report(expr->getLocation(), diag::err_bitoffset_index_too_large)
+            << Val.toString(10) << BaseType->getName() << expr->getSourceRange();
+        return false;
+    }
+    *Result = Val;
+    return true;
+}
+
+QualType FunctionAnalyser::analyseBitOffsetExpr(Expr* expr, QualType BaseType, SourceLocation base) {
+    LOG_FUNC
+    BitOffsetExpr* B = cast<BitOffsetExpr>(expr);
+
+    // check if base type is unsigned integer
+    QualType CT = BaseType.getCanonicalType();
+    BuiltinType* BI = dyncast<BuiltinType>(CT.getTypePtr());
+    if (!BI || !BI->isInteger() || BI->isSignedInteger()) {
+        Diags.Report(base, diag::err_bitoffset_not_unsigned);
+        return QualType();
+    }
+
+    llvm::APSInt VL;
+    bool VLvalid = analyseBitOffsetIndex(B->getLHS(), &VL, BI);
+    llvm::APSInt VR;
+    bool VRvalid = analyseBitOffsetIndex(B->getRHS(), &VR, BI);
+
+    if (VLvalid && VRvalid) {
+        if (VR > VL) {
+            Diags.Report(B->getLocation(), diag::err_bitoffset_invalid_order)
+                << B->getLHS()->getSourceRange() << B->getRHS()->getSourceRange();
+            return QualType();
+        } else {
+            llvm::APInt width = VL - VR;
+            width++;
+
+            QualType T;
+            if (width.ult(8+1)) {         T = Type::UInt8();
+            } else if (width.ult(16+1)) { T = Type::UInt16();
+            } else if (width.ult(32+1)) { T = Type::UInt32();
+            } else if (width.ult(64+1)) { T = Type::UInt64();
+            } else {
+                assert(0 && "should not happen");
+            }
+            B->setType(T);
+            B->setWidth((unsigned char)width.getSExtValue());
+        }
+    } else {
+        B->setType(BaseType);
+    }
+
+    if (B->getLHS()->isConstant() && B->getRHS()->isConstant()) B->setConstant();
+    combineCtc(B, B->getLHS(), B->getRHS());
+
+    return B->getType();
 }
 
 QualType FunctionAnalyser::analyseCall(Expr* expr) {
@@ -1476,6 +1597,7 @@ bool FunctionAnalyser::checkAssignee(Expr* expr) const {
     case EXPR_ARRAYSUBSCRIPT:
     case EXPR_MEMBER:
     case EXPR_PAREN:
+    case EXPR_BITOFFSET:
         // ok
         return true;
     }

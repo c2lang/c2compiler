@@ -75,10 +75,12 @@ private:
     QualType analyseConditionalOperator(Expr* expr);
     QualType analyseUnaryOperator(Expr* expr, unsigned side);
     QualType analyseBuiltinExpr(Expr* expr);
-    QualType analyseArraySubscript(Expr* expr);
+    QualType analyseArraySubscript(Expr* expr, unsigned side);
     QualType analyseMemberExpr(Expr* expr, unsigned side);
     QualType analyseStructMember(QualType T, MemberExpr* M, unsigned side);
     QualType analyseParenExpr(Expr* expr);
+    bool analyseBitOffsetIndex(Expr* expr, llvm::APSInt* Result, BuiltinType* BaseType);
+    QualType analyseBitOffsetExpr(Expr* expr, QualType BaseType, SourceLocation base);
     QualType analyseCall(Expr* expr);
     Decl* analyseIdentifier(IdentifierExpr* expr);
 

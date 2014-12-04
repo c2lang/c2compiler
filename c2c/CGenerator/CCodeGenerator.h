@@ -80,6 +80,7 @@ private:
     void EmitDeclExpr(DeclExpr* D, StringBuilder& output, unsigned indent);
     void EmitCallExpr(Expr* E, StringBuilder& output);
     void EmitIdentifierExpr(Expr* E, StringBuilder& output);
+    void EmitBitOffsetExpr(Expr* Base, Expr* E, StringBuilder& output);
 
     // Helpers
     void EmitDecl(const Decl* D, StringBuilder& output);

@@ -24,17 +24,20 @@
 #include "AST/Expr.h"
 #include "AST/Decl.h"
 #include "Utils/StringBuilder.h"
+#include "Utils/Utils.h"
 
 using namespace C2;
 using namespace llvm;
 using namespace clang;
 
+namespace C2 {
 struct Limit {
     int64_t minVal;
     uint64_t maxVal;
     const char* minStr;
     const char* maxStr;
 };
+}
 
 static const Limit limits [] = {
     // bool
@@ -115,9 +118,15 @@ void LiteralAnalyser::check(QualType TLeft, const Expr* Right) {
         assert(0 && "todo");
     }
 
+    StringBuilder tname;
+    TLeft->DiagName(tname);
+    const Limit* L = getLimit(availableWidth);
+    checkWidth(availableWidth, L, Right, tname);
+}
+
+void LiteralAnalyser::checkWidth(int availableWidth, const Limit* L, const Expr* Right, const char* tname) {
     APSInt Result = checkLiterals(Right);
 
-    const Limit* L = getLimit(availableWidth);
     assert(Result.isSigned() && "TEMP FOR NOW");
     int64_t value = Result.getSExtValue();
     bool overflow = false;
@@ -137,11 +146,8 @@ void LiteralAnalyser::check(QualType TLeft, const Expr* Right) {
         SmallString<20> ss;
         Result.toString(ss, 10, true);
 
-        StringBuilder buf1;
-        TLeft->DiagName(buf1);
-
         Diags.Report(Right->getLocStart(), diag::err_literal_outofbounds)
-            << buf1 << L->minStr << L->maxStr << ss << Right->getSourceRange();
+            << tname << L->minStr << L->maxStr << ss << Right->getSourceRange();
     }
 }
 
@@ -188,8 +194,7 @@ APSInt LiteralAnalyser::checkLiterals(const Expr* Right) {
         result = APInt(64, 4, true);
         break;
     case EXPR_ARRAYSUBSCRIPT:
-        assert(0 && "TODO");
-        break;
+        return checkArraySubscript(Right);
     case EXPR_MEMBER:
         {
             // Q: is this correct for Struct.Member?
@@ -201,8 +206,30 @@ APSInt LiteralAnalyser::checkLiterals(const Expr* Right) {
             const ParenExpr* P = cast<ParenExpr>(Right);
             return checkLiterals(P->getExpr());
         }
+    case EXPR_BITOFFSET:
+        assert(0 && "TODO");
+        break;
     }
     return result;
+}
+
+void LiteralAnalyser::checkBitOffset(const Expr* Left, const Expr* Right) {
+    assert(isa<ArraySubscriptExpr>(Left));
+    const ArraySubscriptExpr* A = cast<ArraySubscriptExpr>(Left);
+    assert(isa<BitOffsetExpr>(A->getIndex()));
+    const BitOffsetExpr* BO = cast<BitOffsetExpr>(A->getIndex());
+
+    StringBuilder tname;
+    tname << "unsigned:" << BO->getWidth();
+    Limit L;
+    L.minVal = 0;
+    L.maxVal = (((uint64_t) 1)<<BO->getWidth()) -1;
+    // TODO do something special for width 64?
+    StringBuilder maxVal;
+    maxVal << L.maxVal;
+    L.minStr = "0";
+    L.maxStr = (const char*)maxVal;
+    checkWidth(BO->getWidth(), &L, Right, tname);
 }
 
 bool LiteralAnalyser::checkRange(QualType TLeft, const Expr* Right, clang::SourceLocation Loc, llvm::APSInt Result) {
@@ -369,6 +396,27 @@ APSInt LiteralAnalyser::checkBinaryLiterals(const Expr* Right) {
         break;
     }
     return APSInt();
+}
+
+APSInt LiteralAnalyser::checkArraySubscript(const Expr* Right) {
+    const ArraySubscriptExpr* AS = cast<ArraySubscriptExpr>(Right);
+    assert(AS);
+    assert(isa<BitOffsetExpr>(AS->getIndex()) && "TODO only bitoffsets for now");
+
+    APSInt base = checkLiterals(AS->getBase());
+
+    const BitOffsetExpr* BO = cast<BitOffsetExpr>(AS->getIndex());
+    APSInt low = checkLiterals(BO->getRHS());
+    unsigned width = BO->getWidth();
+
+    // calculate result = ((base >> low) & bitmask(width));
+    uint64_t result = base.getZExtValue();
+    result >>= low.getZExtValue();
+    result &= Utils::bitmask(width);
+
+    APSInt Result(64, false);
+    Result = result;
+    return Result;
 }
 
 APSInt LiteralAnalyser::checkDecl(const Decl* D) {

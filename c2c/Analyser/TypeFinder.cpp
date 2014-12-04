@@ -56,6 +56,8 @@ QualType TypeFinder::findType(const Expr* expr) {
         break;
     case EXPR_PAREN:
         return findType(cast<ParenExpr>(expr)->getExpr());
+    case EXPR_BITOFFSET:
+        break;
     }
     return expr->getType();
 }

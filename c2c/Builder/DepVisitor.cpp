@@ -299,6 +299,14 @@ void DepVisitor::checkExpr(const Expr* E) {
     case EXPR_PAREN:
         checkExpr(cast<ParenExpr>(E)->getExpr());
         break;
+    case EXPR_BITOFFSET:
+        {
+            const BitOffsetExpr* B = cast<BitOffsetExpr>(E);
+            checkExpr(B->getLHS());
+            checkExpr(B->getRHS());
+            break;
+        }
+        break;
     }
 }
 

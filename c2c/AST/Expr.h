@@ -53,7 +53,8 @@ enum ExprKind {
     EXPR_BUILTIN,
     EXPR_ARRAYSUBSCRIPT,
     EXPR_MEMBER,
-    EXPR_PAREN
+    EXPR_PAREN,
+    EXPR_BITOFFSET
 };
 
 enum ExprCTC {
@@ -116,12 +117,38 @@ private:
 typedef std::vector<C2::Expr*> ExprList;
 
 class IntegerLiteral : public Expr {
+private:
+    enum Radix {
+        RADIX_2 = 0,
+        RADIX_8,
+        RADIX_10,
+        RADIX_16
+    };
 public:
-    IntegerLiteral(SourceLocation loc_, const llvm::APInt& V)
+    IntegerLiteral(SourceLocation loc_, const llvm::APInt& V, unsigned radix = 10)
         : Expr(EXPR_INTEGER_LITERAL, true)
         , Value(V), loc(loc_)
     {
         setCTC(CTC_FULL);
+        Radix r = RADIX_10;
+        switch (radix) {
+        case 2:
+            r = RADIX_2;
+            break;
+        case 8:
+            r = RADIX_8;
+            break;
+        case 10:
+            r = RADIX_10;
+            break;
+        case 16:
+            r = RADIX_16;
+            break;
+        default:
+            assert(0 && "unsupported radix");
+            break;
+        }
+        StmtBits.LiteralRadix = r;
     }
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_INTEGER_LITERAL;
@@ -130,6 +157,15 @@ public:
     virtual SourceLocation getLocation() const { return loc; }
 
     virtual void printLiteral(StringBuilder& buffer) const;
+    unsigned getRadix() const {
+        Radix r = static_cast<IntegerLiteral::Radix>(StmtBits.LiteralRadix);
+        switch (r) {
+        case RADIX_2:  return 2;
+        case RADIX_8:  return 8;
+        case RADIX_10: return 10;
+        case RADIX_16: return 16;
+        }
+    }
 
     llvm::APInt Value;
 private:
@@ -626,6 +662,37 @@ public:
 private:
     SourceLocation L, R;
     Expr* Val;
+};
+
+
+class BitOffsetExpr : public Expr {
+public:
+    BitOffsetExpr(Expr* lhs_, Expr* rhs_, SourceLocation colLoc_)
+        : Expr(EXPR_BITOFFSET, false)
+        , colLoc(colLoc_)
+        , lhs(lhs_)
+        , rhs(rhs_)
+    {}
+    virtual ~BitOffsetExpr();
+    static bool classof(const Expr* E) {
+        return E->getKind() == EXPR_BITOFFSET;
+    }
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
+    virtual SourceLocation getLocation() const { return colLoc; }
+    virtual SourceLocation getLocStart() const { return lhs->getLocStart();  }
+    virtual SourceLocation getLocEnd() const { return rhs->getLocEnd(); }
+
+    Expr* getLHS() const { return lhs; }
+    Expr* getRHS() const { return rhs; }
+    unsigned char getWidth() const { return width; }
+    void setWidth(unsigned char width_) { width = width_; }
+
+    virtual void printLiteral(StringBuilder& buffer) const;
+private:
+    SourceLocation colLoc;
+    Expr* lhs;
+    Expr* rhs;
+    unsigned char width;    // only valid if constant
 };
 
 

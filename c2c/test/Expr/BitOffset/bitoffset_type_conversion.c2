@@ -1,0 +1,17 @@
+// @warnings{no-unused}
+module test;
+
+func void test1() {
+    uint32 a = 0;
+
+    uint8 b = a[20:13];
+    uint8 c = a[30:22]; // @warning{implicit conversion loses integer precision: 'uint16' to 'uint8'}
+
+    uint16 d = a[30:20];
+    uint16 e = a[30:10]; // @warning{implicit conversion loses integer precision: 'uint32' to 'uint16'}
+
+    uint32 f = a[31:0];
+
+    uint8 g = d[a:b];   // @warning{implicit conversion loses integer precision: 'uint16' to 'uint8'}
+}
+

@@ -120,6 +120,7 @@ public:
     ExprResult ActOnMemberExpr(Expr* Base, bool isArrow, IdentifierInfo* sym, SourceLocation loc);
     ExprResult ActOnPostfixUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Expr* Input);
     ExprResult ActOnUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Expr* Input);
+    ExprResult ActOnBitOffset(SourceLocation colLoc, Expr* LHS, Expr* RHS);
 
 private:
     ExprResult ActOnIntegerConstant(SourceLocation Loc, uint64_t Val);

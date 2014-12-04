@@ -42,7 +42,7 @@ bool QualType::isFunctionType() const { return getTypePtr()->isFunctionType(); }
 bool QualType::isSubscriptable() const { return getTypePtr()->isSubscriptable(); }
 bool QualType::isIntegerType() const {
     QualType Canon = getTypePtr()->getCanonicalType();
-    if (BuiltinType* BI = cast<BuiltinType>(Canon.getTypePtr())) {
+    if (BuiltinType* BI = dyncast<BuiltinType>(Canon.getTypePtr())) {
         return BI->isInteger();
     }
    return false;

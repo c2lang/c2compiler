@@ -71,7 +71,10 @@ void IntegerLiteral::print(StringBuilder& buffer, unsigned indent) const {
     buffer << "IntegerLiteral ";
     Expr::print(buffer, 0);
     buffer.setColor(COL_VALUE);
-    buffer << ' ' << Value.getSExtValue() << '\n';
+    buffer << ' ';
+
+    buffer.radix(getRadix(), Value.getSExtValue());
+    buffer << '\n';
 }
 
 void IntegerLiteral::printLiteral(StringBuilder& buffer) const {
@@ -531,3 +534,32 @@ void ParenExpr::print(StringBuilder& buffer, unsigned indent) const {
     Val->print(buffer, indent + INDENT);
 }
 
+
+BitOffsetExpr::~BitOffsetExpr() {
+    delete lhs;
+    delete rhs;
+}
+
+void BitOffsetExpr::print(StringBuilder& buffer, unsigned indent) const {
+    buffer.indent(indent);
+    buffer.setColor(COL_EXPR);
+    buffer << "BitOffsetExpr ";
+    Expr::print(buffer, 0);
+    buffer << '\n';
+
+    buffer.indent(indent);
+    buffer.setColor(COL_ATTR);
+    buffer << "LHS=\n";
+    lhs->print(buffer, indent + INDENT);
+    buffer.indent(indent);
+    buffer.setColor(COL_ATTR);
+    buffer << "RHS=\n";
+    rhs->print(buffer, indent + INDENT);
+}
+
+
+void BitOffsetExpr::printLiteral(StringBuilder& buffer) const {
+    lhs->printLiteral(buffer);
+    buffer << " : ";
+    rhs->printLiteral(buffer);
+}

@@ -34,6 +34,7 @@
 #include "Utils/color.h"
 #include "Utils/constants.h"
 #include "Utils/GenUtils.h"
+#include "Utils/Utils.h"
 
 //#define CCODE_DEBUG
 #ifdef CCODE_DEBUG
@@ -121,7 +122,7 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
     case EXPR_INTEGER_LITERAL:
         {
             IntegerLiteral* N = cast<IntegerLiteral>(E);
-            output << (int) N->Value.getSExtValue();
+            output.radix(N->getRadix(), N->Value.getSExtValue());
             return;
         }
     case EXPR_FLOAT_LITERAL:
@@ -251,10 +252,14 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
     case EXPR_ARRAYSUBSCRIPT:
         {
             ArraySubscriptExpr* A = cast<ArraySubscriptExpr>(E);
-            EmitExpr(A->getBase(), output);
-            output << '[';
-            EmitExpr(A->getIndex(), output);
-            output << ']';
+            if (isa<BitOffsetExpr>(A->getIndex())) {
+                EmitBitOffsetExpr(A->getBase(), A->getIndex(), output);
+            } else {
+                EmitExpr(A->getBase(), output);
+                output << '[';
+                EmitExpr(A->getIndex(), output);
+                output << ']';
+            }
             return;
         }
     case EXPR_MEMBER:
@@ -268,6 +273,9 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
             cbuf << ')';
             return;
         }
+    case EXPR_BITOFFSET:
+        assert(0 && "should not happen");
+        break;
     }
 }
 
@@ -362,6 +370,29 @@ void CCodeGenerator::EmitIdentifierExpr(Expr* E, StringBuilder& output) {
     LOG_FUNC
     IdentifierExpr* I = cast<IdentifierExpr>(E);
     EmitDecl(I->getDecl(), output);
+}
+
+static void bitmask(unsigned width, StringBuilder& output) {
+    char tmp[20];
+    sprintf(tmp, "0x%" PRIX64"", Utils::bitmask(width));
+    output << tmp;
+}
+
+void CCodeGenerator::EmitBitOffsetExpr(Expr* Base, Expr* E, StringBuilder& output) {
+    LOG_FUNC
+    // NOTE: only support RHS for now!
+    // a[7:4] -> ((a >> 4) & 0xF);
+    const BitOffsetExpr* B = cast<BitOffsetExpr>(E);
+    assert(B->getLHS()->isConstant() && "only support constant bitoffset for now");
+    assert(B->getRHS()->isConstant() && "only support constant bitoffset for now");
+    assert(B->getWidth() != 0);
+    output << "((";
+    EmitExpr(Base, output);
+    output << " >> ";
+    EmitExpr(B->getRHS(), output);
+    output << ") & ";
+    bitmask(B->getWidth(), output);
+    output << ')';
 }
 
 void CCodeGenerator::EmitDecl(const Decl* D, StringBuilder& output) {

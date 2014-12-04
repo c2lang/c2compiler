@@ -487,6 +487,8 @@ llvm::Value* CodeGenFunction::EmitExprNoImpCast(const Expr* E) {
             const ParenExpr* P = cast<ParenExpr>(E);
             return EmitExpr(P->getExpr());
         }
+    case EXPR_BITOFFSET:
+        break;
     }
     E->dump();
     assert(0 && "TODO");

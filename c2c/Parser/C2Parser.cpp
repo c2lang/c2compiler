@@ -941,6 +941,13 @@ C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
         ConsumeToken();
         ExprResult Idx = ParseExpression();
         if (Idx.isInvalid()) return ExprError();
+        if (Tok.is(tok::colon)) {
+            // BitOffset <expr> : <expr>
+            SourceLocation colLoc = ConsumeToken();
+            ExprResult RHS = ParseExpression();
+            if (RHS.isInvalid()) return ExprError();
+            Idx = Actions.ActOnBitOffset(colLoc, Idx.get(), RHS.get());
+        }
         if (Tok.isNot(tok::r_square)) {
             Diag(Tok, diag::err_expected) << tok::r_square;
             return ExprError();

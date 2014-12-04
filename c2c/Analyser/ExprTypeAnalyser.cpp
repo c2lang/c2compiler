@@ -121,6 +121,9 @@ void ExprTypeAnalyser::check(QualType TLeft, const Expr* expr) {
     case EXPR_PAREN:
         check(TLeft, cast<ParenExpr>(expr)->getExpr());
         return;
+    case EXPR_BITOFFSET:
+        assert(0 && "TODO");
+        return;
     }
     assert(0 && "should not come here");
 }

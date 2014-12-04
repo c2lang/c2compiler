@@ -1,0 +1,15 @@
+// @warnings{no-unused}
+module test;
+
+func void test1() {
+    uint32 b;
+    uint32 a = 0;
+    b = a[32:0];     // @error{bitoffset index value '32' too large for type uint32}
+
+    uint8 c = 1;
+    b = c[8:0];     // @error{bitoffset index value '8' too large for type uint8}
+
+    uint64 d = 1;
+    b = d[63:40];
+}
+

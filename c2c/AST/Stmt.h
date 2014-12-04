@@ -69,6 +69,7 @@ protected:
         unsigned ExprIsCTC: 2;          // CTC_FULL -> value matters, CTC_NONE -> type matters
         unsigned ExprIsConstant : 1;    // const :"bla", test, 3. Not const: test(). Depends: a
         unsigned ExprImpCast: 4;
+        unsigned LiteralRadix: 2;
         unsigned BoolLiteralValue : 1;
         unsigned TypeExprIsLocal : 1;
         unsigned BuiltInIsSizeOf: 1;

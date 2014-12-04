@@ -1,0 +1,15 @@
+// @skip
+// @warnings{no-unused}
+module test;
+
+func void test1() {
+    uint32 a = 0;
+    a[4:2] = 7;
+    a[4:2] = 8;     // @error{constant value 8 out-of-bounds for type unsigned:3, range [0, 7]}
+
+    a[15:0] = 65535;
+    a[15:0] = 65536;     // @error{constant value 65536 out-of-bounds for type unsigned:16, range [0, 65535]}
+
+    a[31:0] = 5000000000;   // @error{constant value 5000000000 out-of-bounds for type unsigned:32, range [0, 4294967295]}
+}
+

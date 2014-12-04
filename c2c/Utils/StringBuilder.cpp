@@ -128,6 +128,38 @@ void StringBuilder::clear() {
     buffer[0] = 0;
 }
 
+void StringBuilder::radix(unsigned radix, int64_t value) {
+    char temp[80];
+    switch (radix) {
+    case 2:
+        {
+            char* cp = &temp[2];
+            temp[0] = '0';
+            temp[1] = 'b';
+            bool print = false;
+            for (int i=63; i>0; i--) {
+                if (value & (1lu<<i)) print = true;
+                if (print) {
+                    *cp++ = (value & (1lu<<i) ? '1' : '0');
+                }
+            }
+            *cp++ = (value & (1lu<<0) ? '1' : '0');
+            *cp = 0;
+        }
+        break;
+    case 8:
+        sprintf(temp, "0%" PRIo64, value);
+        break;
+    case 10:
+        sprintf(temp, "%" PRId64, value);
+        break;
+    case 16:
+        sprintf(temp, "0x%" PRIX64, value);
+        break;
+    }
+    (*this) << temp;
+}
+
 unsigned StringBuilder::size() const { return (unsigned)(ptr - buffer); }
 
 unsigned StringBuilder::space_left() const { return capacity - size(); }

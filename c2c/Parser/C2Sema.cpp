@@ -777,13 +777,25 @@ C2::ExprResult C2Sema::ActOnUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, E
     return ExprResult(new UnaryOperator(OpLoc, Opc, Input));
 }
 
+C2::ExprResult C2Sema::ActOnBitOffset(SourceLocation colLoc, Expr* LHS, Expr* RHS) {
+    assert(LHS);
+    assert(RHS);
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: bitoffset at ";
+    colLoc.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    return ExprResult(new BitOffsetExpr(LHS, RHS, colLoc));
+}
+
 C2::ExprResult C2Sema::ActOnIntegerConstant(SourceLocation Loc, uint64_t Val) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA << "SEMA: integer constant" << ANSI_NORMAL"\n";
 #endif
     // NOTE: always 64 bits?
     llvm::APInt ResultValue(64, Val, true);
-    return ExprResult(new IntegerLiteral(Loc, ResultValue));
+    unsigned radix = 10;
+    return ExprResult(new IntegerLiteral(Loc, ResultValue, radix));
 }
 
 C2::ExprResult C2Sema::ActOnBooleanConstant(const Token& Tok) {
@@ -918,7 +930,7 @@ C2::ExprResult C2Sema::ActOnNumericConstant(const Token& Tok) {
 #endif
         }
 
-        Res = new IntegerLiteral(Tok.getLocation(), ResultVal);
+        Res = new IntegerLiteral(Tok.getLocation(), ResultVal, Literal.getRadix());
     }
     return ExprResult(Res);
 }
