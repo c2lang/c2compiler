@@ -144,6 +144,12 @@ public:
 
     bool haveErrors() const { return hasErrors; }
 
+    void showNotes() const {
+        for (IssuesConstIter iter = notes.begin(); iter != notes.end(); ++iter) {
+            color_print(COL_ERROR, "  expected note '%s' at %s:%d",
+                    iter->msg.c_str(), iter->filename.c_str(), iter->line_nr);
+        }
+    }
     void showWarnings() const {
         for (IssuesConstIter iter = warnings.begin(); iter != warnings.end(); ++iter) {
             color_print(COL_ERROR, "  expected warning '%s' at %s:%d",
@@ -165,6 +171,25 @@ private:
     }
 
     void checkErrors(const char* buffer, unsigned size);
+
+    void matchNote(const char* filename, unsigned linenr, const char* msg) {
+        for (IssuesIter iter = notes.begin(); iter != notes.end(); ++iter) {
+            if (iter->line_nr != linenr) continue;
+            if (iter->filename == filename) {
+                if (iter->msg != msg) {
+                    color_print(COL_ERROR, "  wrong note at %s:%d:", filename, linenr);
+                    color_print(COL_ERROR, "     expected: %s", iter->msg.c_str());
+                    color_print(COL_ERROR, "     got: %s", msg);
+                    hasErrors = true;
+                }
+                notes.erase(iter);
+                return;
+            }
+        }
+        // not expected
+        color_print(COL_ERROR, "  unexpected note on line %d: %s", linenr, msg);
+        hasErrors = true;
+    }
 
     void matchWarning(const char* filename, unsigned linenr, const char* msg) {
         for (IssuesIter iter = warnings.begin(); iter != warnings.end(); ++iter) {
@@ -221,6 +246,7 @@ private:
     typedef Issues::iterator IssuesIter;
     Issues errors;
     Issues warnings;
+    Issues notes;
 
     bool single;
     unsigned line_nr;
@@ -288,15 +314,21 @@ void IssueDb::parseLine(const char* start, const char* end) {
     if (*cp != '@') return;
 
     cp++;   // skip @
-    bool isError = true;
+    enum Type { ERROR, WARNING, NOTE };
+    Type type = ERROR;
     if (strncmp(cp, "error{", 6) == 0) {
         cp += 6;
-        isError = true;
+        type = ERROR;
         goto parse_msg;
     }
     if (strncmp(cp, "warning{", 8) == 0) {
         cp += 8;
-        isError = false;
+        type = WARNING;
+        goto parse_msg;
+    }
+    if (strncmp(cp, "note{", 5) == 0) {
+        cp += 5;
+        type = NOTE;
         goto parse_msg;
     }
     error("unknown tag");
@@ -313,16 +345,25 @@ parse_msg:
     char msg[128];
     memcpy(msg, msg_start, cp-msg_start);
     msg[cp-msg_start] = 0;
-    if (isError) {
+    switch (type) {
+    case ERROR:
 #ifdef DEBUG
         printf(ANSI_BLUE"  expecting error '%s'"ANSI_NORMAL"\n", msg);
 #endif
         errors.push_back(Issue(current_file, line_nr - line_offset, msg));
-    } else {
+        break;
+    case WARNING:
 #ifdef DEBUG
         printf(ANSI_BLUE"  expecting warning '%s'"ANSI_NORMAL"\n", msg);
 #endif
         warnings.push_back(Issue(current_file, line_nr - line_offset, msg));
+        break;
+    case NOTE:
+#ifdef DEBUG
+        printf(ANSI_BLUE"  expecting note '%s'"ANSI_NORMAL"\n", msg);
+#endif
+        notes.push_back(Issue(current_file, line_nr - line_offset, msg));
+        break;
     }
 }
 
@@ -450,6 +491,17 @@ void IssueDb::checkErrors(const char* buffer, unsigned size) {
                 printf("  '%s'"ANSI_NORMAL"\n", msg);
 #endif
                 matchWarning(filename, error_line, msg);
+            } else {
+                res = sscanf(cp, "%[^: ]:%d:%d: note: %[^\n]\n", filename, &error_line, &col, msg);
+                if (res == 4) {
+                    // found note
+#ifdef DEBUG
+                    printf(ANSI_CYAN"%s", filename);
+                    printf("  %d:%d", error_line, col);
+                    printf("  '%s'"ANSI_NORMAL"\n", msg);
+#endif
+                    matchNote(filename, error_line, msg);
+                }
             }
         }
 
@@ -511,6 +563,7 @@ static void handle_file(const char* filename) {
     db.testFile();
     db.showErrors();
     db.showWarnings();
+    db.showNotes();
 out:
     if (db.haveErrors()) {
         numerrors++;
