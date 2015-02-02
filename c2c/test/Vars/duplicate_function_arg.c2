@@ -1,4 +1,5 @@
 module test;
 
-func void test1(int a, int a) {}     // @error{redefinition of parameter a}
+func void test1(int a,        // @note{previous declaration is here}
+                int a) {}     // @error{redefinition of parameter a}
 

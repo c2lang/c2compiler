@@ -2,8 +2,7 @@
 module test;
 
 public func void test1() {
-    int a;
+    int a;      // @note{previous definition is here}
     int a;      // @error{redefinition of a}
 }
-
 

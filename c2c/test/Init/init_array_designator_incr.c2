@@ -7,7 +7,7 @@ type Types enum int8 {
 }
 
 int[] array = {
-    [BAR] = 5,
+    [BAR] = 5,  // @note{previous initialization is here}
     0,
     1,
     [FOO] = 2,

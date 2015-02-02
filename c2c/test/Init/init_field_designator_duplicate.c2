@@ -6,5 +6,6 @@ type Point struct {
     const char* y;
 }
 
-Point p = { .x = 10, .x = 20 }  // @error{duplicate initialization of field 'x'}
+Point p = { .x = 10,   // @note{previous initialization is here}
+            .x = 20 }  // @error{duplicate initialization of field 'x'}
 

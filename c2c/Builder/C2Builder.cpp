@@ -41,7 +41,9 @@
 #include <clang/Lex/HeaderSearch.h>
 #include <clang/Lex/HeaderSearchOptions.h>
 #include <clang/Lex/ModuleLoader.h>
+#define private public
 #include <clang/Lex/Preprocessor.h>
+#undef private
 #include <clang/Lex/PreprocessorOptions.h>
 #include <clang/Sema/SemaDiagnostic.h>
 
@@ -129,14 +131,15 @@ public:
              LangOptions& LangOpts_,
              TargetInfo* pti,
              HeaderSearchOptions* HSOpts,
+             FileManager& FileMgr,
+             SourceManager& SM_,
              const std::string& filename_,
              unsigned file_id,
              const std::string& configs)
         : filename(filename_)
     // TODO note: Diags makes copy constr, pass DiagnosticIDs?
         , Diags(Diags_)
-        , FileMgr(FileSystemOpts)
-        , SM(Diags, FileMgr)
+        , SM(SM_)
         , Headers(HSOpts, SM, Diags, LangOpts_, pti)
         , PPOpts(new PreprocessorOptions())
         , PP(PPOpts, Diags, LangOpts_, SM, Headers, loader)
@@ -148,20 +151,35 @@ public:
         PP.setPredefines(configs);
         PP.Initialize(*pti);
 
+
         // File stuff
         const FileEntry *pFile = FileMgr.getFile(filename);
         if (pFile == 0) {
             fprintf(stderr, "Error opening file: '%s'\n", filename.c_str());
             exit(-1);
         }
-        SM.setMainFileID(SM.createFileID(pFile, SourceLocation(), SrcMgr::C_User));
-        PP.EnterMainSourceFile();
-        // NOTE: filling zero instead of PP works
-        //Diags.getClient()->BeginSourceFile(LangOpts_, &PP);
+        FileID id = SM.createFileID(pFile, SourceLocation(), SrcMgr::C_User);
+        PP.EnterSourceFile(id, nullptr, SourceLocation());
+
+        // Manually set predefines (normally done in EnterMainSourceFile())
+        llvm::MemoryBuffer* SB = llvm::MemoryBuffer::getMemBufferCopy(configs, "<built-in>");
+        assert(SB && "Cannot created predefined source buffer");
+        FileID FID = SM.createFileID(SB);
+        // NOTE: setPredefines() is normally private
+        PP.setPredefinesFileID(FID);
+        PP.EnterSourceFile(FID, nullptr, SourceLocation());
+
         Diags.getClient()->BeginSourceFile(LangOpts_, 0);
     }
     ~FileInfo() {
+        //PP.EndSourceFile();
         //Diags.getClient()->EndSourceFile();
+
+        //llvm::errs() << "\nSTATISTICS FOR '" << filename << "':\n";
+        //PP.PrintStats();
+        //PP.getIdentifierTable().PrintStats();
+        //PP.getHeaderSearchInfo().PrintStats();
+        //llvm::errs() << "\n";
     }
 
     bool parse(const BuildOptions& options) {
@@ -187,12 +205,8 @@ public:
     // Diagnostics
     DiagnosticsEngine& Diags;
 
-    // FileManager
-    FileSystemOptions FileSystemOpts;
-    FileManager FileMgr;
-
     // SourceManager
-    SourceManager SM;
+    SourceManager& SM;
 
     // HeaderSearch
     HeaderSearch Headers;
@@ -334,13 +348,18 @@ int C2Builder::build() {
         }
     }
 
+    // FileManager
+    FileSystemOptions FileSystemOpts;
+    FileManager FileMgr(FileSystemOpts);
+    SourceManager SM(Diags, FileMgr);
+
     // phase 1: parse and local analyse
     unsigned errors = 0;
     u_int64_t t1_parse = Utils::getCurrentTime();
     for (int i=0; i<recipe.size(); i++) {
         const std::string& filename = recipe.get(i);
         unsigned file_id = filenames.add(filename);
-        FileInfo* info = new FileInfo(Diags, LangOpts, pti, HSOpts, filename, file_id, PredefineBuffer);
+        FileInfo* info = new FileInfo(Diags, LangOpts, pti, HSOpts, FileMgr, SM, filename, file_id, PredefineBuffer);
         files.push_back(info);
         bool ok = info->parse(options);
         if (options.printAST0) info->ast.print(true);
@@ -394,6 +413,7 @@ int C2Builder::build() {
 
     if (options.verbose) printf(COL_VERBOSE "done" ANSI_NORMAL "\n");
 out:
+    //SM.PrintStats();
     u_int64_t t2_build = Utils::getCurrentTime();
     if (options.printTiming) printf(COL_TIME"total build took %" PRIu64" usec" ANSI_NORMAL"\n", t2_build - t1_build);
     raw_ostream &OS = llvm::errs();
@@ -438,10 +458,8 @@ bool C2Builder::createModules() {
             if (isa<ImportDecl>(New)) continue;
             Decl* Old = mod->findSymbol(iter->first);
             if (Old) {
-                fprintf(stderr, "MULTI_FILE: duplicate symbol %s\n", New->getName().c_str());
-                fprintf(stderr, "TODO NASTY: locs have to be resolved in different SourceManagers..\n");
-                // TODO: continue/return?
-                return false;
+                info->Diags.Report(New->getLocation(), diag::err_redefinition) << New->getName();
+                info->Diags.Report(Old->getLocation(), diag::note_previous_definition);
             } else {
                 mod->addSymbol(New);
             }

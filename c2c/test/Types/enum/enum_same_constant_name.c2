@@ -1,7 +1,6 @@
 // @warnings{no-unused}
 module test;
-
-type A enum int {
+type A enum int { // @note{previous definition is here}
     A,  // @error{redefinition of A}
 }
 
