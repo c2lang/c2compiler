@@ -1,0 +1,29 @@
+// @warnings{no-unused}
+// @generate-c
+
+// @file{file1}
+module test;
+
+type Number int32;
+
+type Point struct {
+    int x;
+}
+
+type State enum int8 { A, B, C }
+
+// @expect{test.c}
+typedef int __test_Number;
+
+typedef struct __test_Point_ __test_Point;
+
+struct __test_Point_ {
+    int x;
+};
+
+typedef enum {
+  __test_A,
+  __test_B,
+  __test_C,
+} State;
+

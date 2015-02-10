@@ -902,19 +902,17 @@ void C2Builder::generateOptionalC() {
     if (!options.generateC && !recipe.generateCCode) return;
 
     bool single_module = false;
-    bool no_local_prefix = false;
     for (unsigned i=0; i<recipe.cConfigs.size(); i++) {
         const std::string& conf = recipe.cConfigs[i];
         // TODO just pass struct with bools?
         if (conf == "single_module") single_module = true;
-        if (conf == "no_local_prefix") no_local_prefix = true;
     }
 
     if (single_module) {
         u_int64_t t1 = Utils::getCurrentTime();
         // TODO
         std::string filename = recipe.name;
-        CCodeGenerator gen(filename, CCodeGenerator::SINGLE_FILE, modules, no_local_prefix);
+        CCodeGenerator gen(filename, CCodeGenerator::SINGLE_FILE, modules);
         for (unsigned i=0; i<files.size(); i++) {
             FileInfo* info = files[i];
             gen.addEntry(info->ast);
@@ -933,7 +931,7 @@ void C2Builder::generateOptionalC() {
             // for now filter out 'c2' as well
             if (P->getName() == "c2") continue;
             if (options.verbose) printf(COL_VERBOSE "generating C for module %s" ANSI_NORMAL "\n", P->getName().c_str());
-            CCodeGenerator gen(P->getName(), CCodeGenerator::MULTI_FILE, modules, no_local_prefix);
+            CCodeGenerator gen(P->getName(), CCodeGenerator::MULTI_FILE, modules);
             for (unsigned i=0; i<files.size(); i++) {
                 FileInfo* info = files[i];
                 if (info->ast.getModuleName() == P->getName()) {

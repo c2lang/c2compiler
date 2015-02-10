@@ -1,0 +1,25 @@
+// @warnings{no-unused}
+// @generate-c
+
+// @file{file1}
+module test;
+
+type Bar int32;
+
+type Foo struct {
+    Bar b;
+}
+
+type Faa int16;
+
+// @expect{test.c}
+typedef int __test_Bar;
+
+typedef short __test_Faa;
+
+typedef struct __test_Foo_ __test_Foo;
+
+struct __test_Foo_ {
+    int b;
+};
+

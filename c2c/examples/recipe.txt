@@ -142,7 +142,7 @@ end
 
 target puzzle
     $deps show_files show_externals
-    $ansi-c no_local_prefix single_module
+    $ansi-c single_module
     puzzle.c2
     puzzle2.c2
 end
@@ -150,6 +150,6 @@ end
 target snake
     $warnings no-unused
     $deps show_files show_externals
-    $ansi-c no_local_prefix single_module
+    $ansi-c single_module
     snake.c2
 end

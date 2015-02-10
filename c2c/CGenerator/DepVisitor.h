@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef BUILDER_DEP_VISITOR_H
-#define BUILDER_DEP_VISITOR_H
+#ifndef CGENERATOR_DEP_VISITOR_H
+#define CGENERATOR_DEP_VISITOR_H
 
 #include <vector>
 
@@ -31,30 +31,35 @@ class Expr;
 
 class DepVisitor {
 public:
-    DepVisitor(const Decl* D) : decl(D) {}
+    DepVisitor(const Decl* D, bool checkExternals_) : decl(D), checkExternals(checkExternals_) {}
 
     void run();
 
     unsigned getNumDeps() const { return deps.size(); }
-    const Decl* getDep(unsigned i) const { return deps[i]; }
+    inline const Decl* getDep(unsigned i) const {
+        return reinterpret_cast<const Decl*>(deps[i] & ~0x1);
+    }
+    inline bool isFull(unsigned i) const { return  deps[i] & 0x1; }
 private:
     // Decl
     void checkDecl(const Decl* D);
     void checkVarDecl(const VarDecl* V);
     void checkFunctionDecl(const FunctionDecl* F);
     // Type
-    void checkType(QualType Q);
+    void checkType(QualType Q, bool isFull = true);
     // Stmt
     void checkStmt(const Stmt* S);
     void checkCompoundStmt(const CompoundStmt* C);
     // Expr
     void checkExpr(const Expr* E);
 
-    void addDep(const Decl* D);
+    void addDep(const Decl* D, bool isFull = true);
 
-    typedef std::vector<const Decl*> Deps;
+    // isFull is stored in lowest bit, Decl* in rest
+    typedef std::vector<uintptr_t> Deps;
     Deps deps;
     const Decl* decl;
+    bool checkExternals;
 };
 
 }

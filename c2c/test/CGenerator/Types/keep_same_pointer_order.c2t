@@ -1,0 +1,27 @@
+// @warnings{no-unused}
+// @generate-c
+
+// @file{file1}
+module test;
+
+type Foo struct {
+    Bar* b;
+}
+
+type Bar struct {
+    Foo* f;
+}
+
+// @expect{test.c}
+typedef struct __test_Bar_ __test_Bar;
+
+typedef struct __test_Foo_ __test_Foo;
+
+struct __test_Foo_ {
+    __test_Bar* b;
+};
+
+struct __test_Bar_ {
+    __test_Foo* f;
+};
+

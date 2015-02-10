@@ -1,0 +1,16 @@
+// @warnings{no-unused}
+// @generate-c
+
+// @file{file1}
+module test;
+
+type Foo int32;
+
+public type Bar int16;
+
+// @expect{test.h}
+typedef short __test_Bar;
+
+// @expect{test.c}
+typedef int __test_Foo;
+

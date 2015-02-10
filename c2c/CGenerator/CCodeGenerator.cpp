@@ -51,11 +51,9 @@ using namespace C2;
 using namespace llvm;
 using namespace clang;
 
-CCodeGenerator::CCodeGenerator(const std::string& filename_, Mode mode_, const Modules& modules_, bool prefix)
+CCodeGenerator::CCodeGenerator(const std::string& filename_, Mode mode_, const Modules& modules_)
     : filename(filename_)
-    , curmod(0)
     , mode(mode_)
-    , no_local_prefix(prefix)
     , modules(modules_)
 {
     hfilename = filename + ".h";
@@ -81,53 +79,59 @@ void CCodeGenerator::generate() {
     // generate all includes
     EmitIncludes();
 
+    // generate types, reorder and do forward decls if needed
+    TypeSorter sorter;
+    for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
+        AST* ast = *iter;
+        for (unsigned i=0; i<ast->numTypes(); i++) {
+            sorter.add(ast->getType(i));
+        }
+    }
+    sorter.write(*this);
+
+#if 0
     // generate types
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
         AST* ast = *iter;
-        curmod = &ast->getModuleName();
         for (unsigned i=0; i<ast->numTypes(); i++) {
             EmitTypeDecl(ast->getType(i));
         }
-        curmod = 0;
     }
+#endif
 
     // generate variables
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
         AST* ast = *iter;
-        curmod = &ast->getModuleName();
         for (unsigned i=0; i<ast->numVars(); i++) {
             EmitVariable(ast->getVar(i));
         }
-        curmod = 0;
     }
     // TODO Arrayvalues
 
     // generate functions
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
         AST* ast = *iter;
-        curmod = &ast->getModuleName();
         for (unsigned i=0; i<ast->numFunctions(); i++) {
             EmitFunction(ast->getFunction(i));
         }
-        curmod = 0;
     }
 
     // emit end of include guard
     hbuf << "#endif\n";
 }
 
-void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
+void CCodeGenerator::EmitExpr(const Expr* E, StringBuilder& output) {
     LOG_FUNC
     switch (E->getKind()) {
     case EXPR_INTEGER_LITERAL:
         {
-            IntegerLiteral* N = cast<IntegerLiteral>(E);
+            const IntegerLiteral* N = cast<IntegerLiteral>(E);
             output.radix(N->getRadix(), N->Value.getSExtValue());
             return;
         }
     case EXPR_FLOAT_LITERAL:
         {
-            FloatingLiteral* F = cast<FloatingLiteral>(E);
+            const FloatingLiteral* F = cast<FloatingLiteral>(E);
             char temp[20];
             sprintf(temp, "%f", F->Value.convertToFloat());
             output << temp;
@@ -135,19 +139,19 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
         }
     case EXPR_BOOL_LITERAL:
         {
-            BooleanLiteral* B = cast<BooleanLiteral>(E);
+            const BooleanLiteral* B = cast<BooleanLiteral>(E);
             cbuf << (int)B->getValue();
             return;
         }
     case EXPR_CHAR_LITERAL:
         {
-            CharacterLiteral* C = cast<CharacterLiteral>(E);
+            const CharacterLiteral* C = cast<CharacterLiteral>(E);
             C->printLiteral(output);
             return;
         }
     case EXPR_STRING_LITERAL:
         {
-            StringLiteral* S = cast<StringLiteral>(E);
+            const StringLiteral* S = cast<StringLiteral>(E);
             EmitStringLiteral(S->value, output);
             return;
         }
@@ -162,7 +166,7 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
         return;
     case EXPR_INITLIST:
         {
-            InitListExpr* I = cast<InitListExpr>(E);
+            const InitListExpr* I = cast<InitListExpr>(E);
             output << "{ ";
             const ExprList& values = I->getValues();
             for (unsigned i=0; i<values.size(); i++) {
@@ -176,7 +180,7 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
         }
     case EXPR_DESIGNATOR_INIT:
         {
-            DesignatedInitExpr* D = cast<DesignatedInitExpr>(E);
+            const DesignatedInitExpr* D = cast<DesignatedInitExpr>(E);
             if (D->getDesignatorKind() == DesignatedInitExpr::ARRAY_DESIGNATOR) {
                 output << '[';
                 EmitExpr(D->getDesignator(), output);
@@ -189,7 +193,7 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
         }
     case EXPR_TYPE:
         {
-            TypeExpr* T = cast<TypeExpr>(E);
+            const TypeExpr* T = cast<TypeExpr>(E);
             EmitTypePreName(T->getType(), output);
             EmitTypePostName(T->getType(), output);
             return;
@@ -208,13 +212,13 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
         return;
     case EXPR_BUILTIN:
         {
-            BuiltinExpr* S = cast<BuiltinExpr>(E);
+            const BuiltinExpr* S = cast<BuiltinExpr>(E);
             if (S->isSizeof()) {
                 output << "sizeof(";
                 EmitExpr(S->getExpr(), output);
                 output << ')';
             } else {
-                IdentifierExpr* I = cast<IdentifierExpr>(S->getExpr());
+                const IdentifierExpr* I = cast<IdentifierExpr>(S->getExpr());
                 Decl* D = I->getDecl();
                 // should be VarDecl(for array/enum) or TypeDecl(array/enum)
                 switch (D->getKind()) {
@@ -251,7 +255,7 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
         }
     case EXPR_ARRAYSUBSCRIPT:
         {
-            ArraySubscriptExpr* A = cast<ArraySubscriptExpr>(E);
+            const ArraySubscriptExpr* A = cast<ArraySubscriptExpr>(E);
             if (isa<BitOffsetExpr>(A->getIndex())) {
                 EmitBitOffsetExpr(A->getBase(), A->getIndex(), output);
             } else {
@@ -267,7 +271,7 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
         return;
     case EXPR_PAREN:
         {
-            ParenExpr* P = cast<ParenExpr>(E);
+            const ParenExpr* P = cast<ParenExpr>(E);
             cbuf << '(';
             EmitExpr(P->getExpr(), cbuf);
             cbuf << ')';
@@ -279,17 +283,17 @@ void CCodeGenerator::EmitExpr(Expr* E, StringBuilder& output) {
     }
 }
 
-void CCodeGenerator::EmitBinaryOperator(Expr* E, StringBuilder& output) {
+void CCodeGenerator::EmitBinaryOperator(const Expr* E, StringBuilder& output) {
     LOG_FUNC
-    BinaryOperator* B = cast<BinaryOperator>(E);
+    const BinaryOperator* B = cast<BinaryOperator>(E);
     EmitExpr(B->getLHS(), output);
     output << ' ' << BinaryOperator::OpCode2str(B->getOpcode()) << ' ';
     EmitExpr(B->getRHS(), output);
 }
 
-void CCodeGenerator::EmitConditionalOperator(Expr* E, StringBuilder& output) {
+void CCodeGenerator::EmitConditionalOperator(const Expr* E, StringBuilder& output) {
     LOG_FUNC
-    ConditionalOperator* C = cast<ConditionalOperator>(E);
+    const ConditionalOperator* C = cast<ConditionalOperator>(E);
     EmitExpr(C->getCond(), output);
     output << " ? ";
     EmitExpr(C->getLHS(), output);
@@ -298,9 +302,9 @@ void CCodeGenerator::EmitConditionalOperator(Expr* E, StringBuilder& output) {
 
 }
 
-void CCodeGenerator::EmitUnaryOperator(Expr* E, StringBuilder& output) {
+void CCodeGenerator::EmitUnaryOperator(const Expr* E, StringBuilder& output) {
     LOG_FUNC
-    UnaryOperator* U = cast<UnaryOperator>(E);
+    const UnaryOperator* U = cast<UnaryOperator>(E);
 
     switch (U->getOpcode()) {
     case UO_PostInc:
@@ -325,9 +329,9 @@ void CCodeGenerator::EmitUnaryOperator(Expr* E, StringBuilder& output) {
     }
 }
 
-void CCodeGenerator::EmitMemberExpr(Expr* E, StringBuilder& output) {
+void CCodeGenerator::EmitMemberExpr(const Expr* E, StringBuilder& output) {
     LOG_FUNC
-    MemberExpr* M = cast<MemberExpr>(E);
+    const MemberExpr* M = cast<MemberExpr>(E);
     if (M->isModulePrefix()) {
         // A.B where A is a module
         EmitDecl(M->getDecl(), output);
@@ -340,7 +344,7 @@ void CCodeGenerator::EmitMemberExpr(Expr* E, StringBuilder& output) {
     }
 }
 
-void CCodeGenerator::EmitDeclExpr(DeclExpr* E, StringBuilder& output, unsigned indent) {
+void CCodeGenerator::EmitDeclExpr(const DeclExpr* E, StringBuilder& output, unsigned indent) {
     LOG_FUNC
     output.indent(indent);
     if (E->hasLocalQualifier()) output << "static ";
@@ -354,9 +358,9 @@ void CCodeGenerator::EmitDeclExpr(DeclExpr* E, StringBuilder& output, unsigned i
     }
 }
 
-void CCodeGenerator::EmitCallExpr(Expr* E, StringBuilder& output) {
+void CCodeGenerator::EmitCallExpr(const Expr* E, StringBuilder& output) {
     LOG_FUNC
-    CallExpr* C = cast<CallExpr>(E);
+    const CallExpr* C = cast<CallExpr>(E);
     EmitExpr(C->getFn(), output);
     output << '(';
     for (unsigned i=0; i<C->numArgs(); i++) {
@@ -366,9 +370,9 @@ void CCodeGenerator::EmitCallExpr(Expr* E, StringBuilder& output) {
     output << ')';
 }
 
-void CCodeGenerator::EmitIdentifierExpr(Expr* E, StringBuilder& output) {
+void CCodeGenerator::EmitIdentifierExpr(const Expr* E, StringBuilder& output) {
     LOG_FUNC
-    IdentifierExpr* I = cast<IdentifierExpr>(E);
+    const IdentifierExpr* I = cast<IdentifierExpr>(E);
     EmitDecl(I->getDecl(), output);
 }
 
@@ -378,7 +382,7 @@ static void bitmask(unsigned width, StringBuilder& output) {
     output << tmp;
 }
 
-void CCodeGenerator::EmitBitOffsetExpr(Expr* Base, Expr* E, StringBuilder& output) {
+void CCodeGenerator::EmitBitOffsetExpr(const Expr* Base, Expr* E, StringBuilder& output) {
     LOG_FUNC
     // NOTE: only support RHS for now!
     // a[7:4] -> ((a >> 4) & 0xF);
@@ -399,7 +403,13 @@ void CCodeGenerator::EmitDecl(const Decl* D, StringBuilder& output) {
     assert(D);
 
     if (D->getModule()) {
-        addPrefix(D->getModule()->getCName(), D->getName(), output);
+        const std::string& modName = D->getModule()->getCName();
+        // TODO remove empty check, already done in addName
+        if (modName.empty()) {
+            output << D->getName();
+        } else {
+            GenUtils::addName(modName, D->getName(), output);
+        }
     } else {
         output << D->getName();
     }
@@ -417,6 +427,14 @@ void CCodeGenerator::write(const std::string& target, const std::string& name) {
 
     FileUtils::writeFile(outname, std::string(outname) + cfilename, cbuf);
     FileUtils::writeFile(outname, std::string(outname) + hfilename, hbuf);
+}
+
+void CCodeGenerator::forwardDecl(const Decl* D) {
+    EmitForwardTypeDecl(cast<TypeDecl>(D));
+}
+
+void CCodeGenerator::fullDecl(const Decl* D) {
+    EmitTypeDecl(cast<TypeDecl>(D));
 }
 
 void CCodeGenerator::EmitIncludes() {
@@ -454,7 +472,7 @@ void CCodeGenerator::EmitIncludes() {
 }
 
 
-void CCodeGenerator::EmitFunction(FunctionDecl* F) {
+void CCodeGenerator::EmitFunction(const FunctionDecl* F) {
     LOG_DECL(F)
     if (F->getName() != "main") {
         if (mode == SINGLE_FILE) {
@@ -477,7 +495,7 @@ void CCodeGenerator::EmitFunction(FunctionDecl* F) {
     cbuf << '\n';
 }
 
-void CCodeGenerator::EmitFunctionArgs(FunctionDecl* F, StringBuilder& output) {
+void CCodeGenerator::EmitFunctionArgs(const FunctionDecl* F, StringBuilder& output) {
     LOG_DECL(F)
     output << '(';
     int count = F->numArgs();
@@ -492,7 +510,7 @@ void CCodeGenerator::EmitFunctionArgs(FunctionDecl* F, StringBuilder& output) {
     output << ')';
 }
 
-void CCodeGenerator::EmitVariable(VarDecl* V) {
+void CCodeGenerator::EmitVariable(const VarDecl* V) {
     LOG_DECL(V)
     QualType Q = V->getType();
     // convert const integer literals to define
@@ -500,7 +518,7 @@ void CCodeGenerator::EmitVariable(VarDecl* V) {
         StringBuilder* out = &cbuf;
         if (V->isPublic()) out = &hbuf;
         *out << "#define ";
-        addPrefix(*curmod, V->getName(), *out);
+        EmitDecl(V, *out);
         assert(V->getInitValue());
         *out << ' ';
         EmitExpr(V->getInitValue(), *out);
@@ -512,7 +530,7 @@ void CCodeGenerator::EmitVariable(VarDecl* V) {
         hbuf << "extern ";
         EmitTypePreName(V->getType(), hbuf);
         hbuf << ' ';
-        addPrefix(*curmod, V->getName(), hbuf);
+        EmitDecl(V, hbuf);
         EmitTypePostName(V->getType(), hbuf);
         // TODO add space if needed (on StringBuilder)
         hbuf << ";\n";
@@ -522,7 +540,7 @@ void CCodeGenerator::EmitVariable(VarDecl* V) {
     }
     EmitTypePreName(V->getType(), cbuf);
     cbuf << ' ';
-    addPrefix(*curmod, V->getName(), cbuf);
+    EmitDecl(V, cbuf);
     EmitTypePostName(V->getType(), cbuf);
     if (V->getInitValue()) {
         cbuf << " = ";
@@ -547,7 +565,7 @@ void CCodeGenerator::EmitVariable(VarDecl* V) {
     cbuf << '\n';
 }
 
-void CCodeGenerator::EmitTypeDecl(TypeDecl* T) {
+void CCodeGenerator::EmitTypeDecl(const TypeDecl* T) {
     LOG_DECL(T)
 
     StringBuilder* out = &cbuf;
@@ -562,7 +580,7 @@ void CCodeGenerator::EmitTypeDecl(TypeDecl* T) {
         *out << "typedef ";
         EmitTypePreName(T->getType(), *out);
         *out << ' ';
-        addPrefix(*curmod, T->getName(), *out);
+        EmitDecl(T, *out);
         EmitTypePostName(T->getType(), *out);
         *out << ";\n\n";
         break;
@@ -582,11 +600,29 @@ void CCodeGenerator::EmitTypeDecl(TypeDecl* T) {
     }
 }
 
-void CCodeGenerator::EmitStructType(StructTypeDecl* S, StringBuilder& out, unsigned indent) {
+void CCodeGenerator::EmitForwardTypeDecl(const TypeDecl* D) {
+    LOG_DECL(D)
+    assert(isa<StructTypeDecl>(D));
+
+    StringBuilder* out = &cbuf;
+    if (D->isPublic()) out = &hbuf;
+
+    // Syntax: typedef struct mod_name_ mod_name;
+    *out << "typedef struct ";
+    EmitDecl(D, *out);
+    *out << "_ ";
+    EmitDecl(D, *out);
+    *out << ";\n\n";
+}
+
+void CCodeGenerator::EmitStructType(const StructTypeDecl* S, StringBuilder& out, unsigned indent) {
     LOG_DECL(S)
     out.indent(indent);
-    if (S->isGlobal()) out << "typedef ";
     out << (S->isStruct() ? "struct " : "union ");
+    if (S->getName() != "" && S->isGlobal()) {
+        EmitDecl(S, out);
+        out << "_ ";
+    }
     out << "{\n";
     for (unsigned i=0;i<S->numMembers(); i++) {
         Decl* member = S->getMember(i);
@@ -601,18 +637,21 @@ void CCodeGenerator::EmitStructType(StructTypeDecl* S, StringBuilder& out, unsig
     }
     out.indent(indent);
     out << '}';
-    if (S->getName() != "") out << ' ' << S->getName();
+    if (S->getName() != "" && !S->isGlobal()) {
+        out << ' ';
+        EmitDecl(S, out);
+    }
     out << ";\n";
     if (S->isGlobal()) out << '\n';
 }
 
-void CCodeGenerator::EmitEnumType(EnumTypeDecl* E, StringBuilder& output) {
+void CCodeGenerator::EmitEnumType(const EnumTypeDecl* E, StringBuilder& output) {
     LOG_DECL(E)
     output << "typedef enum {\n";
     for (unsigned i=0; i<E->numConstants(); i++) {
         EnumConstantDecl* C = E->getConstant(i);
         output.indent(INDENT);
-        addPrefix(*curmod, C->getName(), output);
+        EmitDecl(C, output);
         if (C->getInitValue()) {
             output << " = ";
             EmitExpr(C->getInitValue(), output);
@@ -623,7 +662,7 @@ void CCodeGenerator::EmitEnumType(EnumTypeDecl* E, StringBuilder& output) {
 }
 
 // output: typedef void (*name)(args);
-void CCodeGenerator::EmitFunctionType(FunctionTypeDecl* FTD, StringBuilder& output) {
+void CCodeGenerator::EmitFunctionType(const FunctionTypeDecl* FTD, StringBuilder& output) {
     LOG_DECL(FTD)
     FunctionDecl* F = FTD->getDecl();
     output << "typedef ";
@@ -634,13 +673,14 @@ void CCodeGenerator::EmitFunctionType(FunctionTypeDecl* FTD, StringBuilder& outp
     output << ";\n\n";
 }
 
-void CCodeGenerator::EmitVarDecl(VarDecl* D, StringBuilder& output, unsigned indent) {
+void CCodeGenerator::EmitVarDecl(const VarDecl* D, StringBuilder& output, unsigned indent) {
     LOG_DECL(D)
     output.indent(indent);
     //if (D->hasLocalQualifier()) output << "static ";
     EmitTypePreName(D->getType(), output);
     output << ' ';
-    output << D->getName();
+    if (D->isGlobal()) EmitDecl(D, output);
+    else output << D->getName();
     EmitTypePostName(D->getType(), output);
     if (D->getInitValue()) {
         output << " = ";
@@ -649,12 +689,12 @@ void CCodeGenerator::EmitVarDecl(VarDecl* D, StringBuilder& output, unsigned ind
     //output << ";\n";
 }
 
-void CCodeGenerator::EmitStmt(Stmt* S, unsigned indent) {
+void CCodeGenerator::EmitStmt(const Stmt* S, unsigned indent) {
     LOG_FUNC
     switch (S->getKind()) {
     case STMT_RETURN:
         {
-            ReturnStmt* R = cast<ReturnStmt>(S);
+            const ReturnStmt* R = cast<ReturnStmt>(S);
             cbuf.indent(indent);
             cbuf << "return";
             if (R->getExpr()) {
@@ -666,7 +706,7 @@ void CCodeGenerator::EmitStmt(Stmt* S, unsigned indent) {
         }
     case STMT_EXPR:
         {
-            Expr* E = cast<Expr>(S);
+            const Expr* E = cast<Expr>(S);
             cbuf.indent(indent);
             EmitExpr(E, cbuf);
             cbuf << ";\n";
@@ -701,7 +741,7 @@ void CCodeGenerator::EmitStmt(Stmt* S, unsigned indent) {
         return;
     case STMT_LABEL:
         {
-            LabelStmt* L = cast<LabelStmt>(S);
+            const LabelStmt* L = cast<LabelStmt>(S);
             cbuf << L->getName();
             cbuf << ":\n";
             EmitStmt(L->getSubStmt(), indent);
@@ -709,21 +749,21 @@ void CCodeGenerator::EmitStmt(Stmt* S, unsigned indent) {
         }
     case STMT_GOTO:
         {
-            GotoStmt* G = cast<GotoStmt>(S);
+            const GotoStmt* G = cast<GotoStmt>(S);
             cbuf.indent(indent);
             cbuf << "goto " << G->getName() << ";\n";
             return;
         }
     case STMT_COMPOUND:
         {
-            CompoundStmt* C = cast<CompoundStmt>(S);
+            const CompoundStmt* C = cast<CompoundStmt>(S);
             EmitCompoundStmt(C, indent, true);
             return;
         }
     }
 }
 
-void CCodeGenerator::EmitCompoundStmt(CompoundStmt* C, unsigned indent, bool startOnNewLine) {
+void CCodeGenerator::EmitCompoundStmt(const CompoundStmt* C, unsigned indent, bool startOnNewLine) {
     LOG_FUNC
     if (startOnNewLine) cbuf.indent(indent);
     cbuf << "{\n";
@@ -735,9 +775,9 @@ void CCodeGenerator::EmitCompoundStmt(CompoundStmt* C, unsigned indent, bool sta
     cbuf << "}\n";
 }
 
-void CCodeGenerator::EmitIfStmt(Stmt* S, unsigned indent) {
+void CCodeGenerator::EmitIfStmt(const Stmt* S, unsigned indent) {
     LOG_FUNC
-    IfStmt* I = cast<IfStmt>(S);
+    const IfStmt* I = cast<IfStmt>(S);
     cbuf.indent(indent);
     cbuf << "if (";
     EmitExpr(I->getCond(), cbuf);
@@ -750,9 +790,9 @@ void CCodeGenerator::EmitIfStmt(Stmt* S, unsigned indent) {
     }
 }
 
-void CCodeGenerator::EmitWhileStmt(Stmt* S, unsigned indent) {
+void CCodeGenerator::EmitWhileStmt(const Stmt* S, unsigned indent) {
     LOG_FUNC
-    WhileStmt* W = cast<WhileStmt>(S);
+    const WhileStmt* W = cast<WhileStmt>(S);
     cbuf.indent(indent);
     cbuf << "while (";
     // TEMP, assume Expr
@@ -768,9 +808,9 @@ void CCodeGenerator::EmitWhileStmt(Stmt* S, unsigned indent) {
     }
 }
 
-void CCodeGenerator::EmitDoStmt(Stmt* S, unsigned indent) {
+void CCodeGenerator::EmitDoStmt(const Stmt* S, unsigned indent) {
     LOG_FUNC
-    DoStmt* D = cast<DoStmt>(S);
+    const DoStmt* D = cast<DoStmt>(S);
     cbuf.indent(indent);
     cbuf << "do ";
     Stmt* Body = D->getBody();
@@ -789,9 +829,9 @@ void CCodeGenerator::EmitDoStmt(Stmt* S, unsigned indent) {
     cbuf << ");\n";
 }
 
-void CCodeGenerator::EmitForStmt(Stmt* S, unsigned indent) {
+void CCodeGenerator::EmitForStmt(const Stmt* S, unsigned indent) {
     LOG_FUNC
-    ForStmt* F = cast<ForStmt>(S);
+    const ForStmt* F = cast<ForStmt>(S);
     cbuf.indent(indent);
     cbuf << "for (";
     Stmt* Init = F->getInit();
@@ -823,9 +863,9 @@ void CCodeGenerator::EmitForStmt(Stmt* S, unsigned indent) {
     }
 }
 
-void CCodeGenerator::EmitSwitchStmt(Stmt* S, unsigned indent) {
+void CCodeGenerator::EmitSwitchStmt(const Stmt* S, unsigned indent) {
     LOG_FUNC
-    SwitchStmt* SW = cast<SwitchStmt>(S);
+    const SwitchStmt* SW = cast<SwitchStmt>(S);
     cbuf.indent(indent);
     cbuf << "switch (";
     EmitExpr(SW->getCond(), cbuf);
@@ -868,30 +908,35 @@ void CCodeGenerator::EmitSwitchStmt(Stmt* S, unsigned indent) {
     cbuf << "}\n";
 }
 
-void CCodeGenerator::EmitFunctionProto(FunctionDecl* F, StringBuilder& output) {
+void CCodeGenerator::EmitFunctionProto(const FunctionDecl* F, StringBuilder& output) {
     LOG_FUNC
     if (mode == SINGLE_FILE && F->getName() != "main") output << "static ";
     EmitTypePreName(F->getReturnType(), output);
     EmitTypePostName(F->getReturnType(), output);
     output << ' ';
-    addPrefix(*curmod, F->getName(), output);
+    EmitDecl(F, output);
     EmitFunctionArgs(F, output);
 }
 
-static const char* builtin2cname[] = {
-    "char",             // Int8
-    "short",            // Int16
-    "int",              // Int32
-    "long long",        // Int64
-    "unsigned char",    // UInt8
-    "unsigned short",   // UInt16
-    "unsigned int",     // UInt32
-    "unsigned long long",// UInt64
-    "float",            // Float32
-    "double",           // Float64
-    "int",              // Bool
-    "void",             // Void
-};
+static const char* builtin2cname(BuiltinType::Kind kind) {
+    switch (kind) {
+    case BuiltinType::Int8:     return "char";
+    case BuiltinType::Int16:    return "short";
+    case BuiltinType::Int32:    return "int";
+    case BuiltinType::Int64:    return "long long";
+    case BuiltinType::UInt8:    return "unsigned char";
+    case BuiltinType::UInt16:   return "unsigned short";
+    case BuiltinType::UInt32:   return "unsigned";
+    case BuiltinType::UInt64:   return "unsigned long long";
+    case BuiltinType::Float32:  return "float";
+    case BuiltinType::Float64:  return "double";
+    case BuiltinType::Bool:     return "int";
+    case BuiltinType::Void:     return "void";
+    }
+    assert(0 && "should not come here");
+    return 0;
+}
+
 
 void CCodeGenerator::EmitTypePreName(QualType type, StringBuilder& output) {
     LOG_FUNC
@@ -902,7 +947,7 @@ void CCodeGenerator::EmitTypePreName(QualType type, StringBuilder& output) {
         {
             // TODO handle Qualifiers
             const BuiltinType* BI = cast<BuiltinType>(T);
-            output << builtin2cname[BI->getKind()];
+            output << builtin2cname(BI->getKind());
             break;
         }
     case TC_POINTER:
@@ -925,19 +970,13 @@ void CCodeGenerator::EmitTypePreName(QualType type, StringBuilder& output) {
         EmitTypePreName(cast<AliasType>(T)->getRefType(), output);
         break;
     case TC_STRUCT:
-        {
-            const StructType* ST = cast<StructType>(T);
-            output << ST->getDecl()->getName();
-            break;
-        }
+        EmitDecl(cast<StructType>(T)->getDecl(), output);
+        break;
     case TC_ENUM:
-        {
-            const EnumType* ET = cast<EnumType>(T);
-            output << ET->getDecl()->getName();
-            break;
-        }
+        EmitDecl(cast<EnumType>(T)->getDecl(), output);
+        break;
     case TC_FUNCTION:
-        output << cast<FunctionType>(T)->getDecl()->getName();
+        EmitDecl(cast<FunctionType>(T)->getDecl(), output);
         break;
     case TC_PACKAGE:
         assert(0 && "TODO");
@@ -986,17 +1025,5 @@ void CCodeGenerator::EmitStringLiteral(const std::string& input, StringBuilder& 
         cp++;
     }
     output << '"';
-}
-
-void CCodeGenerator::addPrefix(const std::string& modName, const std::string& name, StringBuilder& buffer) const {
-    if (modName.empty()) {
-        buffer << name;
-        return;
-    }
-    if (no_local_prefix && modName == *curmod) {
-        buffer << name;
-        return;
-    }
-    GenUtils::addName(modName, name, buffer);
 }
 

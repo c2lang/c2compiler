@@ -1,0 +1,20 @@
+// @warnings{no-unused}
+// @generate-c
+// @file{file1}
+module test;
+
+import stdio;
+
+public func int main(int argc, const char*[] argv) {
+    stdio.printf("Hello World!\n");
+    return 0;
+}
+
+// @expect{test.c}
+#include <stdio.h>
+
+int main(int argc, const char* argv[]) {
+    printf("Hello World!\n");
+    return 0;
+}
+

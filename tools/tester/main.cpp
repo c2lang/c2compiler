@@ -28,6 +28,7 @@
 #include <sys/wait.h>
 #include <map>
 #include <list>
+#include <vector>
 #include <string>
 
 #include "FileMap.h"
@@ -66,6 +67,12 @@ static void debug(const char* format, ...) {
 #else
 static void debug(const char* format, ...) {}
 #endif
+
+static void skipWhitespace(const char** start, const char* end) {
+    const char* cp = *start;
+    while (cp != end && isblank(*cp)) cp++;
+    *start = cp;
+}
 
 static void color_print(const char* color, const char* format, ...) {
     char buffer[1024];
@@ -120,13 +127,68 @@ static void writeFile(const char* name, const char* content, unsigned size) {
     close(fd);
 }
 
+class ExpectFile {
+public:
+    ExpectFile(const std::string& name) : filename(name) {}
+
+    void addLine(const char* start, const char* end) {
+        if (strncmp(start, "//", 2) == 0) return;   // ignore comments
+
+        skipWhitespace(&start, end);
+        // TODO strip trailing whitespace
+        std::string line(start, end);
+        lines.push_back(line);
+    }
+    bool check(const std::string& basedir) {
+        debug("checking %s %s\n", basedir.c_str(), filename.c_str());
+        std::string fullname = basedir + filename;
+        // check if file exists
+        struct stat statbuf;
+        int err = stat(fullname.c_str(), &statbuf);
+        if (err) {
+            color_print(COL_ERROR, "  missing expected file '%s'", filename.c_str());
+            return false;
+        }
+        FileMap file(fullname.c_str());
+        file.open();
+
+        const char* cur = (const char*)file.region;
+        for (unsigned i=0; i!=lines.size(); ++i) {
+            const char* line = lines[i].c_str();
+            debug(  "searching '%s'\n", line);
+            const char* found = strstr(cur, line);
+            if (!found) {
+                color_print(COL_ERROR, "  in file %s: expected line '%s'", filename.c_str(), line);
+#ifdef DEBUG
+                printf(COL_DEBUG"%s"ANSI_NORMAL"\n", cur);
+#endif
+                return false;
+            } else {
+#ifdef DEBUG
+                color_print(COL_OK, "  in file %s: found line '%s'", filename.c_str(), line);
+#endif
+            }
+            cur = found + strlen(line);
+        }
+
+        return true;
+    }
+private:
+    std::string filename;
+
+    typedef std::vector<std::string> Lines;
+    Lines lines;
+};
+
 
 class IssueDb {
 public:
     IssueDb(File& file_, bool single_)
         : file(file_)
+        , currentExpect(0)
         , single(single_)
         , line_nr(0)
+        , mode(OUTSIDE)
         , current_file("")
         , file_start(0)
         , line_offset(0)
@@ -165,12 +227,19 @@ public:
     }
 private:
     void parseLine(const char* start, const char* end);
+
+    void parseLineOutside(const char* start, const char* end);
+    void parseLineFile(const char* start, const char* end);
+    void parseLineExpect(const char* start, const char* end);
+    void parseTags(const char* start, const char* end);
+
     void error(const char* msg) {
         color_print(ANSI_BRED, "%s:%d: %s", file.filename.c_str(), line_nr, msg);
         hasErrors = true;
     }
 
     void checkErrors(const char* buffer, unsigned size);
+    void checkExpectedFiles();
 
     void matchNote(const char* filename, unsigned linenr, const char* msg) {
         for (IssuesIter iter = notes.begin(); iter != notes.end(); ++iter) {
@@ -248,8 +317,14 @@ private:
     Issues warnings;
     Issues notes;
 
+    typedef std::vector<ExpectFile*> ExpectFiles;
+    ExpectFiles expectedFiles;
+    ExpectFile* currentExpect;
+
     bool single;
     unsigned line_nr;
+    enum Mode { OUTSIDE, INFILE, INEXPECTFILE };
+    Mode mode;
     std::string current_file;
     const char* file_start;
     unsigned line_offset;
@@ -257,63 +332,47 @@ private:
     bool hasErrors;
 };
 
-void IssueDb::parseLine(const char* start, const char* end) {
-    unsigned int len = end - start;
-    const char* cp = start;
-    if (len < 11) return;
-    // check for '// @file{' at start
-    if (strncmp(cp, "// @file{", 9) == 0) {
-        if (single) {
-            error("invalid @file tag in single test");
-            return;
-        }
-        if (file_start) {
-            const char* file_end = start;
-            writeFile(current_file.c_str(), file_start, file_end - file_start);
-            recipe << "  " << current_file << '\n';
-        }
-        cp += 9;
-        const char* name_start = cp;
-        while (*cp != '}') {
-            if (cp == end) {
-                error("missing '}'");
-                exit(-1);
-            }
-            cp++;
-        }
-        std::string name(name_start, cp-name_start);
-        if (!endsWith(name.c_str(), ".c2")) name += ".c2";
-        current_file = name;
-        file_start = end + 1;
-        line_offset = line_nr;
+void IssueDb::parseLineExpect(const char* start, const char* end) {
+    // if line starts with '// @' stop filemode
+    if (strncmp(start, "// @", 4) == 0) {
+        currentExpect = 0;
+        mode = OUTSIDE;
+        parseLine(start, end);
         return;
     }
-    // TEMP only support single argument for now
-    if (strncmp(cp, "// @warnings{", 13) == 0) {
-        cp += 13;
-        const char* name_start = cp;
-        while (*cp != '}') {
-            if (cp == end) {
-                error("missing '}'");
-                exit(-1);
-            }
-            cp++;
-        }
-        std::string name(name_start, cp-name_start);
-        recipe << "  $warnings " << name << '\n';
-        return;
-    }
-    //if (strncmp(cp, "//", 2) == 0) return;   // skip other comments
-    // find // @..
+    assert(currentExpect);
+    currentExpect->addLine(start, end);
+    // add non-empty lines (stripped of heading+trailing whitespace) to list
+    // TODO
+}
 
-    cp = find(start, end, "// ");
+void IssueDb::parseLineFile(const char* start, const char* end) {
+
+    // if line starts with '// @' stop filemode
+    if (strncmp(start, "// @", 4) == 0) {
+        assert(file_start);
+        const char* file_end = start;
+        writeFile(current_file.c_str(), file_start, file_end - file_start);
+        file_start = 0;
+        mode = OUTSIDE;
+        parseLine(start, end);
+        return;
+    }
+
+    parseTags(start, end);
+}
+
+void IssueDb::parseTags(const char* start, const char* end) {
+    // if finding '// @' somewhere else, it's a note/warning/error
+    unsigned int len = end - start;
+    const char* cp = find(start, end, "// ");
     if (!cp) return;
     cp += 3;    // skip "// ";
 
     // search for @
     if (*cp != '@') return;
-
     cp++;   // skip @
+
     enum Type { ERROR, WARNING, NOTE };
     Type type = ERROR;
     if (strncmp(cp, "error{", 6) == 0) {
@@ -331,9 +390,10 @@ void IssueDb::parseLine(const char* start, const char* end) {
         type = NOTE;
         goto parse_msg;
     }
-    error("unknown tag");
+    error("unknown note/warning/error tag");
     return;
 parse_msg:
+    // todo extract to function
     const char* msg_start = cp;
     while (*cp != '}') {
         if (cp == end) {
@@ -367,12 +427,120 @@ parse_msg:
     }
 }
 
+void IssueDb::parseLineOutside(const char* start, const char* end) {
+    const char* cp = start;
+    skipWhitespace(&cp, end);
+    if (cp == end) return;
+
+    // TODO if !single mode, only accept tags or comments
+    if (!single && strncmp(cp, "// ", 3) != 0) {
+        error("unexpected line");
+        return;
+    }
+
+    if (strncmp(cp, "// @", 4) == 0) {
+        cp += 4;
+        if (strncmp(cp, "warnings{", 9) == 0) {
+            cp += 9;
+
+            // TODO extract parsing on name
+            const char* name_start = cp;
+            while (*cp != '}') {
+                if (cp == end) {
+                    error("missing '}'");
+                    exit(-1);
+                }
+                cp++;
+            }
+            std::string name(name_start, cp-name_start);
+            recipe << "  $warnings " << name << '\n';
+        } else if (strncmp(cp, "file{", 5) == 0) {
+            if (single) {
+                error("invalid @file tag in single test");
+                return;
+            }
+            cp += 5;
+            // parse name
+            const char* name_start = cp;
+            while (*cp != '}') {
+                if (cp == end) {
+                    error("missing '}'");
+                    exit(-1);
+                }
+                cp++;
+            }
+            std::string name(name_start, cp-name_start);
+            if (!endsWith(name.c_str(), ".c2")) name += ".c2";
+            current_file = name;
+            recipe << "  " << current_file << '\n';
+            file_start = end + 1;
+            line_offset = line_nr;
+            mode = INFILE;
+        } else if (strncmp(cp, "expect{", 7) == 0) {
+            if (single) {
+                error("invalid @expect tag in single test");
+                return;
+            }
+            cp += 7;
+            // parse name
+            const char* name_start = cp;
+            while (*cp != '}') {
+                if (cp == end) {
+                    error("missing '}'");
+                    exit(-1);
+                }
+                cp++;
+            }
+            std::string name(name_start, cp-name_start);
+            currentExpect = new ExpectFile(name);
+            // TODO check for name duplicates
+            expectedFiles.push_back(currentExpect);
+            mode = INEXPECTFILE;
+        } else if (strncmp(cp, "generate-c", 10) == 0) {
+            if (single) {
+                error("invalid @generate-c tag in single test");
+                return;
+            }
+            cp += 10;
+            // parse args
+            char args[128];
+            char* out = args;
+            while (cp < end) {
+                *out++ = *cp++;
+            }
+            *out = 0;
+            recipe << "  $ansi-c " << args << '\n';
+        } else {
+            error("unknown tag");
+        }
+        return;
+    }
+    parseTags(start, end);
+}
+
+void IssueDb::parseLine(const char* start, const char* end) {
+    switch (mode) {
+    case OUTSIDE:
+        parseLineOutside(start, end);
+        break;
+    case INFILE:
+        parseLineFile(start, end);
+        break;
+    case INEXPECTFILE:
+        parseLineExpect(start, end);
+        break;
+    }
+}
+
 bool IssueDb::parseFile() {
     const char* cp = (const char*) file.region;
     const char* end = cp + file.size;
     line_nr = 1;
     const char* line_start = cp;
     recipe << "target test\n";
+    if (single) {
+        recipe << current_file << '\n';
+    }
     bool hasSkip = strncmp(cp, "// @skip", 8) == 0;
     if (runSkipped != hasSkip) return true;
     while (cp != end) {
@@ -383,10 +551,11 @@ bool IssueDb::parseFile() {
         line_start = cp;
     }
     if (!single) {
-        const char* file_end = cp;
-        writeFile(current_file.c_str(), file_start, file_end- file_start);
+        if (file_start) {
+            const char* file_end = cp;
+            writeFile(current_file.c_str(), file_start, file_end- file_start);
+        }
     }
-    recipe << "  " << current_file << '\n';
     recipe << "end\n";
     writeFile("recipe.txt", recipe, recipe.size());
     return false;
@@ -427,6 +596,7 @@ void IssueDb::testFile() {
         int status = 0;
         waitpid(pid, &status, 0);
         if (!WIFEXITED(status)) { // child exited abnormally
+            // TODO print pipe_stderr
             color_print(COL_ERROR, "c2c crashed!");
             numerrors++;
             return;
@@ -453,6 +623,7 @@ void IssueDb::testFile() {
         close(pipe_stdout[0]);
         close(pipe_stderr[0]);
         wait(0);
+        checkExpectedFiles();
         if (errors.size() || warnings.size()) hasErrors = true;
     }
 }
@@ -517,6 +688,15 @@ void IssueDb::checkErrors(const char* buffer, unsigned size) {
              if (cp == end) return;
         }
         cp++;
+    }
+}
+
+void IssueDb::checkExpectedFiles() {
+    StringBuilder basedir;
+    basedir << test_root << "/output/test/";
+    for (unsigned i=0; i<expectedFiles.size(); ++i) {
+        ExpectFile* E = expectedFiles[i];
+        if (!E->check((const char*)basedir)) hasErrors = true;
     }
 }
 

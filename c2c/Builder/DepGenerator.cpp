@@ -14,7 +14,7 @@
  */
 
 #include "Builder/DepGenerator.h"
-#include "Builder/DepVisitor.h"
+#include "CGenerator/DepVisitor.h"
 #include "AST/Module.h"
 #include "AST/AST.h"
 #include "AST/Decl.h"
@@ -194,7 +194,7 @@ void DepGenerator::writeDecl(const Decl* D, StringBuilder& output, unsigned inde
     output << "'>\n";
     indent += INDENT;
 
-    DepVisitor visitor(D);
+    DepVisitor visitor(D, true);
     visitor.run();
 
     for (unsigned i=0; i<visitor.getNumDeps(); i++) {

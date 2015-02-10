@@ -1,0 +1,40 @@
+// @warnings{no-unused}
+// @generate-c
+
+// @file{file1}
+module test;
+
+type Outer struct {
+    int x;
+    struct a {
+        int x;
+        int y;
+    }
+    struct {
+        int z;
+    }
+    union {
+        int32 c;
+        int16 d;
+        int8  e;
+    }
+}
+
+// @expect{test.c}
+typedef struct __test_Outer_ __test_Outer;
+struct __test_Outer_ {
+    int x;
+    struct {
+        int x;
+        int y;
+    } a;
+    struct {
+        int z;
+    };
+    union {
+        int c;
+        short d;
+        char e;
+    }
+};
+

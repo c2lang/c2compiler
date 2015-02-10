@@ -15,7 +15,7 @@
 
 //#include <stdio.h>
 
-#include "Builder/DepVisitor.h"
+#include "CGenerator/DepVisitor.h"
 #include "AST/Decl.h"
 #include "AST/Stmt.h"
 #include "AST/Expr.h"
@@ -52,7 +52,6 @@ void DepVisitor::checkDecl(const Decl* D) {
     case DECL_ENUMTYPE:
         {
             const EnumTypeDecl* E = cast<EnumTypeDecl>(D);
-            checkType(E->getType());
             for (unsigned i=0; i<E->numConstants(); i++) {
                 const EnumConstantDecl* ECD = E->getConstant(i);
                 if (ECD->getInitValue()) checkExpr(ECD->getInitValue());
@@ -92,35 +91,35 @@ void DepVisitor::checkVarDecl(const VarDecl* V) {
     if (V->getInitValue()) checkExpr(V->getInitValue());
 }
 
-void DepVisitor::checkType(QualType Q) {
+void DepVisitor::checkType(QualType Q, bool isFull) {
     const Type* T = Q.getTypePtr();
     switch (T->getTypeClass()) {
     case TC_BUILTIN:
         return;
     case TC_POINTER:
-        checkType(cast<PointerType>(T)->getPointeeType());
+        checkType(cast<PointerType>(T)->getPointeeType(), false);
         break;
     case TC_ARRAY:
         {
             const ArrayType* A = cast<ArrayType>(T);
-            checkType(A->getElementType());
+            checkType(A->getElementType(), isFull);
             if (A->getSizeExpr()) checkExpr(A->getSizeExpr());
             break;
         }
     case TC_UNRESOLVED:
-        addDep(cast<UnresolvedType>(T)->getDecl());
+        addDep(cast<UnresolvedType>(T)->getDecl(), isFull);
         break;
     case TC_ALIAS:
-        addDep(cast<AliasType>(T)->getDecl());
+        addDep(cast<AliasType>(T)->getDecl(), isFull);
         break;
     case TC_STRUCT:
-        addDep(cast<StructType>(T)->getDecl());
+        addDep(cast<StructType>(T)->getDecl(), isFull);
         break;
     case TC_ENUM:
-        addDep(cast<EnumType>(T)->getDecl());
+        addDep(cast<EnumType>(T)->getDecl(), isFull);
         break;
     case TC_FUNCTION:
-        addDep(cast<FunctionType>(T)->getDecl());
+        addDep(cast<FunctionType>(T)->getDecl(), isFull);
         break;
     case TC_PACKAGE:
         assert(0);
@@ -310,9 +309,9 @@ void DepVisitor::checkExpr(const Expr* E) {
     }
 }
 
-void DepVisitor::addDep(const Decl* D) {
+void DepVisitor::addDep(const Decl* D, bool isFull) {
     assert(D);
-    if (decl == D) return;
+
     // Skip local VarDecls
     if (const VarDecl* V = dyncast<VarDecl>(D)) {
         switch (V->getVarKind()) {
@@ -325,6 +324,9 @@ void DepVisitor::addDep(const Decl* D) {
             break;
         }
     }
+
+    if (!checkExternals && D->getModule() != decl->getModule()) return;
+
     // Convert EnumConstants -> EnumTypeDecl (via EnumType)
     if (const EnumConstantDecl* ECD = dyncast<EnumConstantDecl>(D)) {
         QualType Q = ECD->getType();
@@ -333,9 +335,13 @@ void DepVisitor::addDep(const Decl* D) {
     }
 
     for (unsigned i=0; i<deps.size(); i++) {
-        if (deps[i] == D) return;
+        if (getDep(i) == D) {
+            // update pointer to full if needed
+            if (deps[i] != (uintptr_t)D) deps[i] |= 0x1;
+            return;
+        }
     }
-    deps.push_back(D);
-    //fprintf(stderr, "  %s -> %s\n", decl->getName().c_str(), D->getName().c_str());
+    deps.push_back((uintptr_t)D | isFull);
+    //fprintf(stderr, "  %s -> %s (%s)\n", decl->getName().c_str(), D->getName().c_str(), isFull ? "full" : "pointer");
 }
 

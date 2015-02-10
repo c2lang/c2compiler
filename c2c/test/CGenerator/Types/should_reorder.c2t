@@ -1,0 +1,42 @@
+// @warnings{no-unused}
+// @generate-c
+
+// @file{file1}
+module test;
+
+type E C;
+
+type C B;
+
+type D struct {
+    D* next;
+}
+
+type A struct {
+    B b;
+}
+
+type B struct {
+    int x;
+}
+
+// @expect{test.c}
+typedef struct __test_B_ __test_B;
+struct __test_B_ {
+    int x;
+};
+
+typedef __test_B __test_C;
+
+typedef __test_B __test_E;
+
+typedef struct __test_D_ __test_D;
+struct __test_D_ {
+    __test_D* next;
+};
+
+typedef struct __test_A_ __test_A;
+struct __test_A_ {
+    __test_B b;
+};
+
