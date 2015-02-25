@@ -1,8 +1,8 @@
 // @warnings{no-unused}
 module test;
 
-public func int main() {
-    int a;
+public func int32 main() {
+    int32 a;
     a += {1, 2, 3}      // @error{expected expression}
     return 0;
 }

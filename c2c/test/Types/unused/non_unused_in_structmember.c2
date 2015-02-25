@@ -1,7 +1,7 @@
 // @warnings{no-unused-variable no-unused-function}
 module test;
 
-type Number int;
+type Number int32;
 
 type Point struct {
     Number n;

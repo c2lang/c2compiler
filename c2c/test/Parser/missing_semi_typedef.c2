@@ -1,4 +1,4 @@
 module test;
 
-type Number int // @error{expected ';' after type definition}
+type Number int32 // @error{expected ';' after type definition}
 

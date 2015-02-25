@@ -1,4 +1,4 @@
 module test;
 
-type Number int;    // @warning{unused type Number}
+type Number int32;    // @warning{unused type Number}
 

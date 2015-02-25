@@ -3,7 +3,7 @@ module test;
 
 type S struct {
     char* cp;
-    int a;
+    int32 a;
 }
 
 S[] s = {

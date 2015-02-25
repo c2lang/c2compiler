@@ -2,10 +2,10 @@
 module test;
 
 type Point struct {
-    int x;
+    int32 x;
 }
 
-func int test1() {
+func int32 test1() {
     Point p = { 10 }
     return p.x;
 }

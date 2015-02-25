@@ -1,6 +1,6 @@
 module test;
 
-func int main() {   // @error{function 'main' should be declared public}
+func int32 main() {   // @error{function 'main' should be declared public}
     return 0;
 }
 

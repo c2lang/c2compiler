@@ -2,7 +2,7 @@ module switch_test;
 
 import stdio;
 
-func void call(int a) {
+func void call(int32 a) {
     switch (1) {
     case 0:
         stdio.printf("hallo");
@@ -22,5 +22,5 @@ func void test2() {
     }
 }
 
-public func int main() { return 0; }
+public func int32 main() { return 0; }
 

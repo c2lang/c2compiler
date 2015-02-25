@@ -4,13 +4,13 @@ import stdio as IO;
 
 #define TEST(x,y) \
 elements += { #x, y} \
-func int test_##x()
+func int32 test_##x()
 
-type TestFunc func int ();
+type TestFunc func int32 ();
 
 type Element struct {
     const char[16] name;
-    int value;
+    int32 value;
 }
 
 /*
@@ -30,14 +30,14 @@ Element[] elems = {
     { "t2", 2 },
 }
 
-const int const_a = 10;
-int a = 20;
-func int myfunc(int val) { return 2 * val; }
-int[const_a] buf1;   // ok
+const int32 const_a = 10;
+int32 a = 20;
+func int32 myfunc(int32 val) { return 2 * val; }
+int32[const_a] buf1;   // ok
 
 public func void main() {
-    int count = sizeof(elems) / sizeof(Element);
-    for (int i=0; i<count; i++) {
+    int32 count = sizeof(elems) / sizeof(Element);
+    for (int32 i=0; i<count; i++) {
         IO.printf("[%2d] %16s\n", i, elems[i].name);
     }
     Element e;

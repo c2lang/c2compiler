@@ -2,7 +2,7 @@
 module test;
 
 func void test1() {
-    int[-1] a;      // @error{array size is negative}
-    int[10-20] b;   // @error{array size is negative}
+    int32[-1] a;      // @error{array size is negative}
+    int32[10-20] b;   // @error{array size is negative}
 }
 

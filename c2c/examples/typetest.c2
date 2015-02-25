@@ -3,21 +3,21 @@ module type_test;
 import utils;
 
 // -- Base types --
-public type Number int;
+public type Number int32;
 public type String const uint8*;
 
 // -- pointer types --
-type PNum int*;
-type PPNum int**;
+type PNum int32*;
+type PPNum int32**;
 type Pnum2 volatile Number*;
 
 // -- array types --
-type IntArr int[20];
-type IntArrArr int[5][5];
-type PArr int*[10];
+type IntArr int32[20];
+type IntArrArr int32[5][5];
+type PArr int32*[10];
 
-type Point int; // TEMP
-type Buffer int; // TEMP
+type Point int32; // TEMP
+type Buffer int32; // TEMP
 
 type Coor utils.Point[2];
 type MyType utils.Buffer*[2];
@@ -27,37 +27,37 @@ type Struct struct {
 }
 
 type S3 struct {
-    int[100] data;
-    int[12][12] board;
-    int count;
+    int32[100] data;
+    int32[12][12] board;
+    int32 count;
     utils.Buffer bb;
 }
 
 type S4 struct {
     struct {
-        int a;
-        int b;
+        int32 a;
+        int32 b;
     }
     struct named {
-        int c;
-        int d;
+        int32 c;
+        int32 d;
     }
 }
 
 type S2 struct {
-    int n;
+    int32 n;
     union choice {
-        int b;
+        int32 b;
     }
     union ONeOf {
-        int a;
+        int32 a;
     }
     volatile uint32 count;
-    const int d;
+    const int32 d;
 }
 
 type Data union {
-    int bla;
+    int32 bla;
     const char* text;
     uint32 number;
 }
@@ -85,25 +85,25 @@ type Enum4 enum uint32 {
 float pi = 3.1415926;
 
 // -- Function --
-type CallBack func int(int a, utils.Point*p);
+type CallBack func int32(int32 a, utils.Point*p);
 type CBFunc func void (MyType* mt, ...);
 type CBFunc2 func void (const char* buffer, uint8 t2, ...);
 
-func void test1(int n) {}
-func void test2(int n) {}
+func void test1(int32 n) {}
+func void test2(int32 n) {}
 
-type Func1 func void(int a);
-type Func2 func void(int a);
+type Func1 func void(int32 a);
+type Func2 func void(int32 a);
 
 type Callback struct {
     Func1 cb;
 }
 
-func void myfunc(int a, ...) {}
+func void myfunc(int32 a, ...) {}
 
-func void myfunc2(int a = 10, int b = 20) {}
+func void myfunc2(int32 a = 10, int32 b = 20) {}
 
-public func int main() {
+public func int32 main() {
 
     Func1 f = test1;
     Func2 g = test2;

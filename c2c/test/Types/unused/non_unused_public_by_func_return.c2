@@ -1,6 +1,6 @@
 module test;
 
-public type Number int;
+public type Number int32;
 
 public func Number main() {
     return 0;

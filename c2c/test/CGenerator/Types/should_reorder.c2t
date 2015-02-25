@@ -17,7 +17,7 @@ type A struct {
 }
 
 type B struct {
-    int x;
+    int32 x;
 }
 
 // @expect{test.c}

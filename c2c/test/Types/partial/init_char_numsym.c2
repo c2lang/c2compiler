@@ -2,7 +2,7 @@
 module test;
 
 func void test1() {
-    int a = 1;
+    int32 a = 1;
     char b = 1;
     char c = b + b;
     char d = 100

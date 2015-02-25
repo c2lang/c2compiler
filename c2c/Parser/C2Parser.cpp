@@ -331,10 +331,7 @@ void C2Parser::ParseEnumType(const char* id, SourceLocation idLoc, bool is_publi
     case tok::kw_int16:
     case tok::kw_int32:
     case tok::kw_int64:
-    case tok::kw_int:
-    case tok::kw_uint:
     case tok::kw_char:
-    case tok::kw_uchar:
     case tok::kw_bool:
         implType = Actions.ActOnBuiltinType(Tok.getKind());
         ConsumeToken();
@@ -488,15 +485,11 @@ C2::ExprResult C2Parser::ParseSingleTypeSpecifier(bool allow_qualifier) {
     case tok::kw_int16:
     case tok::kw_int32:
     case tok::kw_int64:
-    case tok::kw_int:
-    case tok::kw_uint:
-    case tok::kw_string:
     case tok::kw_float:
     case tok::kw_float32:
     case tok::kw_float64:
     case tok::kw_char:
     case tok::kw_void:
-    case tok::kw_uchar:
     case tok::kw_bool:
         base = Actions.ActOnBuiltinType(Tok.getKind());
         ConsumeToken();
@@ -1242,15 +1235,11 @@ bool C2Parser::isDeclaration() {
     case tok::kw_int16:
     case tok::kw_int32:
     case tok::kw_int64:
-    case tok::kw_int:
-    case tok::kw_uint:
-    case tok::kw_string:
     case tok::kw_float:
     case tok::kw_float32:
     case tok::kw_float64:
     case tok::kw_void:
     case tok::kw_char:
-    case tok::kw_uchar:
     case tok::kw_const:
     case tok::kw_volatile:
     case tok::kw_local:
@@ -1352,15 +1341,11 @@ C2::ExprResult C2Parser::ParseSizeof()
     case tok::kw_int16:
     case tok::kw_int32:
     case tok::kw_int64:
-    case tok::kw_int:
-    case tok::kw_uint:
-    case tok::kw_string:
     case tok::kw_float:
     case tok::kw_float32:
     case tok::kw_float64:
     case tok::kw_void:
     case tok::kw_char:
-    case tok::kw_uchar:
         Res = ParseTypeSpecifier(false);
         break;
     case tok::kw_const:
@@ -1539,15 +1524,11 @@ C2::StmtResult C2Parser::ParseStatement() {
     case tok::kw_int16:
     case tok::kw_int32:
     case tok::kw_int64:
-    case tok::kw_int:
-    case tok::kw_uint:
-    case tok::kw_string:
     case tok::kw_float:
     case tok::kw_float32:
     case tok::kw_float64:
     case tok::kw_void:
     case tok::kw_char:
-    case tok::kw_uchar:
     case tok::kw_bool:
     case tok::kw_const:
     case tok::kw_volatile:

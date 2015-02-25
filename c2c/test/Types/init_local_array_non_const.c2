@@ -1,15 +1,15 @@
 // @warnings{no-unused}
 module test;
 
-func int foo() { return 10; }
+func int32 foo() { return 10; }
 
 func void test1() {
-    const int constant = 1;
-    int[constant] a;
+    const int32 constant = 1;
+    int32[constant] a;
 
-    int non_constant = 10;
-    int[non_constant] b;
+    int32 non_constant = 10;
+    int32[non_constant] b;
 
-    int[foo()] c;
+    int32[foo()] c;
 }
 

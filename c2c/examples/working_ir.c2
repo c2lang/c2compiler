@@ -2,9 +2,9 @@ module working_ir;
 
 import stdio local;
 
-int foo;
-public int bar;
-int faa = 246;
+int32 foo;
+public int32 bar;
+int32 faa = 246;
 
 public func void myfunction() {
     puts("voila");
@@ -13,17 +13,17 @@ public func void myfunction() {
 
 type Number int32;
 
-public func int main(int argc, char*[] argv) {
-    int a = 123;
-    int b = 456;
+public func int32 main(int32 argc, char*[] argv) {
+    int32 a = 123;
+    int32 b = 456;
     float pi = 3.1415926;
     uint16 c;
     Number n;
     puts("Hello World!\n");
     myfunction();
-    int aa = 20 + 30;
+    int32 aa = 20 + 30;
     bool bb = 20 < 30;
-    int cc = 12 * 10;
+    int32 cc = 12 * 10;
     bool dd = (13 == 13);
     return 0;
 }

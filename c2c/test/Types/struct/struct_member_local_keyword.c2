@@ -2,11 +2,11 @@
 module test;
 
 type Point struct {
-    int x;
-    local int y;        // @error{cannot use keyword local for struct members}
+    int32 x;
+    local int32 y;        // @error{cannot use keyword local for struct members}
     union {
-        int a;
-        local int b;        // @error{cannot use keyword local for union members}
+        int32 a;
+        local int32 b;        // @error{cannot use keyword local for union members}
     }
 }
 

@@ -1,11 +1,11 @@
 module puzzle;
 
 const uint32 LIST_SIZE = 100;
-int[LIST_SIZE] activeList;
-int readIndex = 0;
-int writeIndex = 0;
+int32[LIST_SIZE] activeList;
+int32 readIndex = 0;
+int32 writeIndex = 0;
 
-func int listSize() {
+func int32 listSize() {
     if (readIndex == writeIndex) return 0;
     if (writeIndex > readIndex) {
         return writeIndex - readIndex;
@@ -15,14 +15,14 @@ func int listSize() {
     return 0;   // to satisfy C2 analyser
 }
 
-func int listGet() {
-    int v = activeList[readIndex];
+func int32 listGet() {
+    int32 v = activeList[readIndex];
     readIndex++;
     if (readIndex == LIST_SIZE) readIndex = 0;
     return v;
 }
 
-func void listAdd(int v) {
+func void listAdd(int32 v) {
     activeList[writeIndex] = v;
     writeIndex++;
     if (writeIndex == LIST_SIZE) writeIndex = 0;

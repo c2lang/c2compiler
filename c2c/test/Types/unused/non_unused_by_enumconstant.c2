@@ -3,5 +3,5 @@ module test;
 
 type State enum uint16 { STATE_A }
 
-int b = STATE_A;
+int32 b = STATE_A;
 

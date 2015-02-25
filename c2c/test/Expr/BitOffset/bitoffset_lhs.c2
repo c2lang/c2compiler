@@ -1,6 +1,6 @@
 module test;
 
-public func int main() {
+public func int32 main() {
     uint32 value = 0;
     uint32 a = 0;
     a[12:4] = value[7:0];   // @error{bitoffset cannot be used as left hand side expression}

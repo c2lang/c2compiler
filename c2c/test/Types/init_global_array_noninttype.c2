@@ -4,5 +4,5 @@ module test;
 
 type PTR const char*;
 const PTR size2 = 20;
-int[size2] b;      // @error{size of array has non-integer type 'PTR' (aka 'char*')}
+int32[size2] b;      // @error{size of array has non-integer type 'PTR' (aka 'char*')}
 

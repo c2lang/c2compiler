@@ -1,4 +1,4 @@
 module test;
 
-func local int test1() {}    // @error{cannot use keyword local for function return types}
+func local int32 test1() {}    // @error{cannot use keyword local for function return types}
 

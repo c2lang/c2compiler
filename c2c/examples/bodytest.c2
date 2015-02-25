@@ -1,22 +1,22 @@
 module body_test;
 
 public func void getMax() {
-    int a;
+    int32 a;
     {
-        int b;
+        int32 b;
         {
-            int c;
+            int32 c;
         }
     }
 }
 
-int number = 10;
+int32 number = 10;
 
 type CB func void();
 
 func void callback(CB cb) {}
 
-func void convert(int a, int b, int c) {
+func void convert(int32 a, int32 b, int32 c) {
 }
 
 public func void MyFunc() {
@@ -28,9 +28,9 @@ end:
 }
 
 func void test() {
-    int a;
-    int[10] a2;
-    int[5][5] buffer;
+    int32 a;
+    int32[10] a2;
+    int32[5][5] buffer;
     char* text;
     uint32*[10] pointers;
     //const char* text2;
@@ -41,17 +41,17 @@ func void test2() {
 }
 
 func void test3() {
-label1: int a;
+label1: int32 a;
     test2();
 label2:
     test2();
 }
 
 func void test4() {
-    int a = 10;
+    int32 a = 10;
 }
 
-func int test5() {
+func int32 test5() {
     if (1) {
 
     } else {
@@ -62,5 +62,5 @@ error:
     return 13;
 }
 
-public func int main() { return 0; }
+public func int32 main() { return 0; }
 

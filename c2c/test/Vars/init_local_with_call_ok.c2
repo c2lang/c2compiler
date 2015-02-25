@@ -1,8 +1,8 @@
 // @warnings{no-unused}
 module test;
 
-func int function() {
-    int a = function();
+func int32 function() {
+    int32 a = function();
     return 0;
 }
 

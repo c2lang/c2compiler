@@ -2,6 +2,6 @@
 module test;
 
 func void test1() {
-    int a = -10 + 10;
+    int32 a = -10 + 10;
 }
 

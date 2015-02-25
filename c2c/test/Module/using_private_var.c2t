@@ -3,7 +3,7 @@
 // @file{file1}
 module foo;
 
-int n;
+int32 n;
 
 // @file{file2}
 module bar;

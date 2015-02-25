@@ -1,10 +1,10 @@
 module unary_test;
 
 public func void main() {
-    int a;
+    int32 a;
     a = !a;
     (&a)[2] = 3;
-    int* pa;
+    int32* pa;
     *pa = 10;
 }
 

@@ -39,37 +39,37 @@ const Connection[] connections = {
     { POINT_R, POINT_B, true },
 }
 
-int startPoint;
-int endPoint;
+int32 startPoint;
+int32 endPoint;
 #define DEPTH_MAX 10
-int[POINT_MAX*DEPTH_MAX] paths;    // value 0 is start, -1 not used, other is prev in path
+int32[POINT_MAX*DEPTH_MAX] paths;    // value 0 is start, -1 not used, other is prev in path
 
-func int index(Point p, int depth) { return p + POINT_MAX * depth; }
+func int32 index(Point p, int32 depth) { return p + POINT_MAX * depth; }
 
-func Point toPoint(int i) {
+func Point toPoint(int32 i) {
     //return (Point)(i%POINT_MAX);
     return (i%POINT_MAX);
 }
 
-func int toDepth(int i) { return (i/POINT_MAX); }
+func int32 toDepth(int32 i) { return (i/POINT_MAX); }
 
-func const char* print(int index2) {
+func const char* print(int32 index2) {
     local char[16][4] buffer;
-    local int idx = 0;
+    local int32 idx = 0;
     idx = (idx + 1) % 4;
-    int p = 'A' + toPoint(index2);
+    int32 p = 'A' + toPoint(index2);
     io.sprintf(buffer[idx], "%c%d", p, toDepth(index2));
     return buffer[idx];
 }
 
 func void showPaths() {
     io.puts("depth   A   B   C   D   E   F   G   H   I   J   K   L   M   N   O   P   Q   R\n");
-    for (int d=0; d<DEPTH_MAX; d++) {
+    for (int32 d=0; d<DEPTH_MAX; d++) {
         io.printf("%5d   ", d);
-        for (int p=0; p<POINT_MAX; p++) {
-            //int idx = index((Point)p, d);
-            int idx = index(p, d);
-            int prev = paths[idx];
+        for (int32 p=0; p<POINT_MAX; p++) {
+            //int32 idx = index((Point)p, d);
+            int32 idx = index(p, d);
+            int32 prev = paths[idx];
             if (idx == startPoint) io.puts(ANSI_BGREEN);
             if (idx == endPoint) io.puts(ANSI_BRED);
             if (prev == -1) io.puts("  ");
@@ -81,26 +81,26 @@ func void showPaths() {
     }
 }
 
-func void tryPath(int cur, int next) {
+func void tryPath(int32 cur, int32 next) {
     if (paths[next] == -1) {
         paths[next] = cur;
         listAdd(next);
     }
 }
 
-func int printPath(int idx) {
-    int prev = paths[idx];
-    int step = 0;
+func int32 printPath(int32 idx) {
+    int32 prev = paths[idx];
+    int32 step = 0;
     if (prev != idx) step = printPath(prev) + 1;
     io.printf("  %2d %s\n", step, print(idx));
     return step;
 
 }
 
-public func int main(int, const char*[]) {
+public func int32 main(int32, const char*[]) {
     // initialize paths
-    for (int p=0; p<POINT_MAX; p++) {
-        for (int d=0; d<DEPTH_MAX; d++) {
+    for (int32 p=0; p<POINT_MAX; p++) {
+        for (int32 d=0; d<DEPTH_MAX; d++) {
             paths[index(p,d)] = -1;
             // C2 cannot properly handle CastOperator yet
             //paths[index((Point)p,d)] = -1;
@@ -113,19 +113,19 @@ public func int main(int, const char*[]) {
     listAdd(startPoint);
 
     while (listSize()) {
-        int idx = listGet();
-        int prev = paths[idx];
+        int32 idx = listGet();
+        int32 prev = paths[idx];
         if (prev == -1) {
             io.printf("Error: path has no parent %s\n", print(idx));
             exit(-1);
         }
         Point curPoint = toPoint(idx);
-        int curDepth = toDepth(idx);
+        int32 curDepth = toDepth(idx);
 
         // follow all connections, except incoming
         for (uint32 c = 0; c<elemsof(connections); c++) {
             const Connection* C = &connections[c];
-            int next = -1;
+            int32 next = -1;
             if (C->src == curPoint) { // go down (or same)
                 next = index(C->dst, C->otherDepth ? curDepth + 1 : curDepth);
                 if (next == prev) continue;

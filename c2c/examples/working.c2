@@ -2,23 +2,23 @@ module working;
 
 import stdio;
 
-type Number int;
+type Number int32;
 
 public const char* name = "Hallo";
 
-int[] numbers = { 1, 1, 2, 3, 5, 8, 13 }
+int32[] numbers = { 1, 1, 2, 3, 5, 8, 13 }
 
 type Buffer struct {
-    int size;
+    int32 size;
     uint8* data;
     uint16 count;
 }
 
-public func void foo(int a, const char* text) {
+public func void foo(int32 a, const char* text) {
     stdio.printf("foo %d %s\n", a, text);
 }
 
-public func int main(int argc, char*[] argv) {
+public func int32 main(int32 argc, char*[] argv) {
     Buffer buf;
 
     if (argc == 1) {

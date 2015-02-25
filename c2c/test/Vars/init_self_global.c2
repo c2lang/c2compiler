@@ -1,5 +1,5 @@
 // @warnings{no-unused-variable}
 module test;
 
-int a = a;  // @error{cannot initialize a with itself}
+int32 a = a;  // @error{cannot initialize a with itself}
 

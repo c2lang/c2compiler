@@ -924,9 +924,9 @@ void C2Builder::generateOptionalC() {
         if (options.printC) gen.dump();
         gen.write(recipe.name, "");
     } else {
+        u_int64_t t1 = Utils::getCurrentTime();
         for (ModulesIter iter = modules.begin(); iter != modules.end(); ++iter) {
             Module* P = iter->second;
-            u_int64_t t1 = Utils::getCurrentTime();
             if (P->isPlainC()) continue;
             // for now filter out 'c2' as well
             if (P->getName() == "c2") continue;
@@ -939,11 +939,11 @@ void C2Builder::generateOptionalC() {
                 }
             }
             gen.generate();
-            u_int64_t t2 = Utils::getCurrentTime();
-            if (options.printTiming) printf(COL_TIME"C code generation took %" PRIu64" usec" ANSI_NORMAL"\n", t2 - t1);
             if (options.printC) gen.dump();
             gen.write(recipe.name, P->getName());
         }
+        u_int64_t t2 = Utils::getCurrentTime();
+        if (options.printTiming) printf(COL_TIME"C code generation took %" PRIu64" usec" ANSI_NORMAL"\n", t2 - t1);
     }
 }
 

@@ -1,48 +1,48 @@
 module test;
 
-type Number int;
+type Number int32;
 
-func int calc() { return 2; }
+func int32 calc() { return 2; }
 
 public func void main() {
     // --- var decls, OK ---
     const char[12] buffer;
-    int a;
+    int32 a;
     Number num;
-    int* ptr;
+    int32* ptr;
     Number** ptr2;
-    int*[5][2] bla;
+    int32*[5][2] bla;
 
     // --- var decls with init, OK ---
-    int a2 = 10;
-    int[] a3 = { 10, 20 }
+    int32 a2 = 10;
+    int32[] a3 = { 10, 20 }
     Number[] num2 = { 10, 20 }
-    int a4 = calc();
-    int b2 = 10 / 2;
+    int32 a4 = calc();
+    int32 b2 = 10 / 2;
     Number a5 = calc();
-    int* ptr3 = nil;
+    int32* ptr3 = nil;
     Number** ptr4 = nil;
-    int*[10] bla2;
-    int[2] nums = { calc(), calc() }
-    int b4 = 4/2;
+    int32*[10] bla2;
+    int32[2] nums = { calc(), calc() }
+    int32 b4 = 4/2;
 
-    int b6 = 2*2;
+    int32 b6 = 2*2;
 
     // --- assignment expression ---
     a = 10;
-    int res;
-    int* rp;
+    int32 res;
+    int32* rp;
     *rp  = 0;       // ok, bliep -> primary_expression
     a *= 2;        // ok -> primary_expression
     //const char* text;
     //text = "hallo" "dit" "is" "een" "test";
 
-    int[2] array;
+    int32[2] array;
     array[2] = 'b';
 
     a = 2 * 20;
 
-    int[2] bb;
+    int32[2] bb;
     bb[2] = 0;
 }
 

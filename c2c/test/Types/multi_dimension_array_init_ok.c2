@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-int[][] a = {
+int32[][] a = {
     { 1, 2, 3 },
     { 4, 5, 6 },
     { 7, 8, 9 },

@@ -7,7 +7,7 @@ type Types enum int8 {
     FAA = 4,
 }
 
-int[] array = {
+int32[] array = {
     [FAA] = 4,
     [BAR] = 1,
     2,
@@ -16,7 +16,7 @@ int[] array = {
 }
 
 type Point struct {
-    int x;
+    int32 x;
     const char* name;
 }
 

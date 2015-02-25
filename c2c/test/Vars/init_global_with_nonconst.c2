@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-int b = 1;
+int32 b = 1;
 
-int a = b;  // @error{initializer element is not a compile-time constant}
+int32 a = b;  // @error{initializer element is not a compile-time constant}
 

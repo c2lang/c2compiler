@@ -3,16 +3,16 @@
 // @file{file1}
 module foo;
 
-public int a;
+public int32 a;
 
 // @file{file2}
 module bar;
 
 import foo local;
 
-public int a;
+public int32 a;
 
 func void test2() {
-    int b = a;  // @error{symbol a is ambiguous}
+    int32 b = a;  // @error{symbol a is ambiguous}
 }
 

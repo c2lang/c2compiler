@@ -3,7 +3,7 @@
 // @file{file1}
 module test;
 
-type Number int;
+type Number int32;
 
 // @file{file2}
 module test;

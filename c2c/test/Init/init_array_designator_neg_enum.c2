@@ -7,7 +7,7 @@ type Types enum int8 {
     FAA,
 }
 
-int[] array = {
+int32[] array = {
     [FOO] = 1,  // @error{array designator value '-1' is negative}
     [BAR] = 2,
     [FAA] = 3,

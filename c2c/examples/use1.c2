@@ -1,6 +1,6 @@
 module use1;
 
-public type Number int;
+public type Number int32;
 
 type Coor uint8;
 

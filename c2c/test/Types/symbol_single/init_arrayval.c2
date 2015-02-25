@@ -2,7 +2,7 @@
 module test;
 
 func void test1() {
-    int[100] array = { 0 }
-    int v = array[1];
+    int32[100] array = { 0 }
+    int32 v = array[1];
 }
 

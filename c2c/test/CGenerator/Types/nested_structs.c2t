@@ -5,13 +5,13 @@
 module test;
 
 type Outer struct {
-    int x;
+    int32 x;
     struct a {
-        int x;
-        int y;
+        int32 x;
+        int32 y;
     }
     struct {
-        int z;
+        int32 z;
     }
     union {
         int32 c;

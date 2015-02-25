@@ -3,12 +3,12 @@ module test;
 public func void main() {
     const char[12] buffer;
     local char[10] buffer2;
-    int a;
-    int b = 10;
+    int32 a;
+    int32 b = 10;
     const char* name = "bas";
     a = 10;
 
-    const int a2 = 20;
-    //volatile int* b2 = 0x2000;
+    const int32 a2 = 20;
+    //volatile int32* b2 = 0x2000;
 }
 

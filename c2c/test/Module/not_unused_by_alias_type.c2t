@@ -3,7 +3,7 @@
 // @file{file1}
 module foo;
 
-public type Number int;
+public type Number int32;
 
 // @file{file2}
 module bar;

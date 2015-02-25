@@ -3,7 +3,7 @@ module test;
 
 func void test1() {
     char a = 1;
-    int b = 2;
+    int32 b = 2;
     char c = b > a;
 }
 

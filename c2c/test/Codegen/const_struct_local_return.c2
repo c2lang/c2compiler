@@ -2,14 +2,14 @@
 module test;
 
 type Point struct {
-    int x;
-    int y;
+    int32 x;
+    int32 y;
 }
 // CHECK: %struct.__test_Point = type { i32, i32 }
 
 // CHECK: @__test_test1.p = internal constant %struct.__test_Point { i32 5, i32 6 }, align 4
 
-func int test1() {
+func int32 test1() {
     const Point p = { 5, 6 }
     return p.y;
     // CHECK: %0 = load i32* getelementptr inbounds (%struct.__test_Point* @__test_test1.p, i32 0, i32 1), align 4

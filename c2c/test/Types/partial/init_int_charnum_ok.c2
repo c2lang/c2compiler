@@ -3,6 +3,6 @@ module test;
 
 func void test1() {
     char a = 1;
-    int b = 400 + a;
+    int32 b = 400 + a;
 }
 

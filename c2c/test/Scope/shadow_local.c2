@@ -2,7 +2,7 @@
 module test;
 
 public func void test1() {
-    int a;      // @note{previous definition is here}
-    int a;      // @error{redefinition of a}
+    int32 a;      // @note{previous definition is here}
+    int32 a;      // @error{redefinition of a}
 }
 

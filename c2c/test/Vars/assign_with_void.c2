@@ -4,7 +4,7 @@ module test;
 func void foo() {}
 
 func void test1() {
-    int b;
+    int32 b;
     b = foo();          // @error{invalid type conversion from 'void' to 'int32'}
 }
 

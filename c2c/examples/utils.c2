@@ -1,14 +1,14 @@
 module utils;
 
 public type Buffer struct {
-    int count;
+    int32 count;
     char[10] buffer;
 }
 
-public type Coor int;
+public type Coor int32;
 
 public type Point struct {
-    int x;
-    int y;
+    int32 x;
+    int32 y;
 }
 

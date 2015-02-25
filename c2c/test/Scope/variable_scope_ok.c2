@@ -3,10 +3,10 @@ module test;
 
 func void func1() {
     {
-        int a;
+        int32 a;
     }
     {
-        int b;
+        int32 b;
     }
 }
 

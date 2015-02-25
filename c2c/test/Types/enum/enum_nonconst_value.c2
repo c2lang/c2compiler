@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func int foo() { return 10; }
+func int32 foo() { return 10; }
 
 type State enum int8 {
     A = foo(),      // @error{expression is not an integer constant expression}

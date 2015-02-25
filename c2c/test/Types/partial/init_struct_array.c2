@@ -2,12 +2,12 @@
 module test;
 
 type Point struct {
-    int x;
+    int32 x;
     char y;
 }
 
 func void test1() {
-    const int a = 50;
+    const int32 a = 50;
     Point[] p = {
         { 10, 20 },
         { 100, 200 },    // @error{constant value 200 out-of-bounds for type 'int8', range [-128, 127]}

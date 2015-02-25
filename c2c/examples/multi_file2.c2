@@ -1,6 +1,6 @@
 module multi;
 
-func int getNumber2() {
+func int32 getNumber2() {
     getNumber1();
     return 20;
 }

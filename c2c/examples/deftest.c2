@@ -2,5 +2,5 @@
 module deftest;
 #endif
 
-public func int main() { return 0; }
+public func int32 main() { return 0; }
 

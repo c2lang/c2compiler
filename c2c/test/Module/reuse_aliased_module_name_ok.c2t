@@ -8,5 +8,5 @@ module bar;
 
 import foo as fooz;
 
-int foo;
+int32 foo;
 

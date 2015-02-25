@@ -2,8 +2,8 @@
 module test;
 
 type Point struct {
-    int x;
-    int y;
+    int32 x;
+    int32 y;
 }
 // CHECK: %struct.__test_Point = type { i32, i32 }
 // CHECK @__test_test1.p = internal constant %struct.Point { i32 5, i32 6 }, align 4

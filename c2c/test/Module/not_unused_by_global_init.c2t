@@ -3,12 +3,12 @@
 // @file{file1}
 module foo;
 
-public const int Num = 0;
+public const int32 Num = 0;
 
 // @file{file2}
 module bar;
 
 import foo;
 
-int a = foo.Num;
+int32 a = foo.Num;
 

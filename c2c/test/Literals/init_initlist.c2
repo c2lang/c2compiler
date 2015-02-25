@@ -3,7 +3,7 @@ module test;
 
 type Struct struct {
     int8 a;
-    int b;
+    int32 b;
     int16 c;
     const char* d;
 }

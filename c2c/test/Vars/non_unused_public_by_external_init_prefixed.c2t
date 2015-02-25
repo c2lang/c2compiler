@@ -2,11 +2,11 @@
 // @file{file1}
 module foo;
 
-public const int n = 1;
+public const int32 n = 1;
 
 // @file{file2}
 module bar;
 import foo local;
 
-public int f1 = foo.n;
+public int32 f1 = foo.n;
 

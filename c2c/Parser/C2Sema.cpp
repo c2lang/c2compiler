@@ -593,15 +593,12 @@ C2::ExprResult C2Sema::ActOnBuiltinType(tok::TokenKind k) {
     case tok::kw_int32:     qt = Type::Int32(); break;
     case tok::kw_int64:     qt = Type::Int64(); break;
     case tok::kw_int:       qt = Type::Int32(); break;
-    case tok::kw_uint:      qt = Type::UInt32(); break;
-    case tok::kw_string: assert(0); break;
     case tok::kw_float: qt = Type::Float32(); break;
     case tok::kw_float32:   qt = Type::Float32(); break;
     case tok::kw_float64:   qt = Type::Float64(); break;
     case tok::kw_char:      qt = Type::Int8(); break;
     case tok::kw_bool:      qt = Type::Bool(); break;
     case tok::kw_void:      qt = Type::Void(); break;
-    case tok::kw_uchar:     qt = Type::UInt8(); break;
     default:
         assert(0);
         break;

@@ -3,6 +3,6 @@ module test;
 
 func void test1() {
     // > 64 bits
-    int a = 20000000000000000000; // @error{integer constant is larger than the largest unsigned integer type}
+    int32 a = 20000000000000000000; // @error{integer constant is larger than the largest unsigned integer type}
 }
 

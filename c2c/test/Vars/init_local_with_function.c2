@@ -2,6 +2,6 @@
 module test;
 
 func void function() {
-    int a = function;       // @error{invalid type conversion from 'void ()' to 'int32'}
+    int32 a = function;       // @error{invalid type conversion from 'void ()' to 'int32'}
 }
 

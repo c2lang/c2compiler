@@ -1,10 +1,10 @@
 // @warnings{no-unused}
 module test;
 
-int a;  // @note{previous definition is here}
+int32 a;  // @note{previous definition is here}
 
-public func int main() {
-    int a;          // @error{redefinition of a}
+public func int32 main() {
+    int32 a;          // @error{redefinition of a}
     return 0;
 }
 

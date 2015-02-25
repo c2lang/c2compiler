@@ -2,10 +2,10 @@ module ccode2;
 
 import ccode3;
 
-public func int myfunction() {
+public func int32 myfunction() {
     bool test = false;
     test = true;
-    int a = (test ? 20 : 30);
+    int32 a = (test ? 20 : 30);
     return ((10));
 }
 

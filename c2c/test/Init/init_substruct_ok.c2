@@ -3,12 +3,12 @@ module test;
 
 type Outer struct {
     Inner i1;
-    int x;
+    int32 x;
     Inner i2;
 }
 
 type Inner struct {
-    int y;
+    int32 y;
 }
 
 Outer[] array = {

@@ -2,7 +2,7 @@
 module test;
 
 func void test1() {
-    int b;
+    int32 b;
     b = test;       // @error{invalid type conversion from 'module' to 'int32'}:
 }
 

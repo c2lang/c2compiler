@@ -1,8 +1,8 @@
 // @warnings{no-unused}
 module test;
-int a;
+int32 a;
 
-int[] array = {
+int32[] array = {
     [a] = 1,    // @error{initializer element is not a compile-time constant}
 }
 

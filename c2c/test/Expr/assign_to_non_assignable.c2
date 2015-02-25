@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-type Number int;
+type Number int32;
 
 func void test1() {
     10 = 20;        // @error{expression is not assignable}

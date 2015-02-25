@@ -9,5 +9,5 @@ module bar;
 
 import foo local;
 
-int b = STATE_A;
+int32 b = STATE_A;
 

@@ -1,9 +1,9 @@
 // @warnings{no-unused}
 module test;
 
-int b = 1;
+int32 b = 1;
 
 func void function() {
-    int a = b;
+    int32 a = b;
 }
 

@@ -2,14 +2,14 @@
 module test;
 
 func void test1() {
-    int[] a;    // @error{definition of variable with array type needs an explicit size or an initializer}
+    int32[] a;    // @error{definition of variable with array type needs an explicit size or an initializer}
     char[] b;   // @error{definition of variable with array type needs an explicit size or an initializer}
 
-    int[]   c = 10;  // @error{array initializer must be an initializer list}
+    int32[]   c = 10;  // @error{array initializer must be an initializer list}
     char[]  d = 20;  // @error{array initializer must be an initializer list or string literal}
     uint8[] e = 20;  // @error{array initializer must be an initializer list or string literal}
 
-    int[]   f = "foo"; // @error{array initializer must be an initializer list}
+    int32[]   f = "foo"; // @error{array initializer must be an initializer list}
     char[]  g = "bar";
     uint8[] h = "faa";
 
