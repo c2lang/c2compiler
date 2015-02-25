@@ -59,14 +59,17 @@ public:
 private:
     void EmitIncludes();
 
+    void EmitFunctionForward(const FunctionDecl* F);
     void EmitFunction(const FunctionDecl* F);
     void EmitFunctionArgs(const FunctionDecl* F, StringBuilder& output);
+    void EmitConstant(const VarDecl* D);
     void EmitVariable(const VarDecl* D);
     void EmitTypeDecl(const TypeDecl* D);
     void EmitForwardTypeDecl(const TypeDecl* D);
     void EmitStructType(const StructTypeDecl* S, StringBuilder& output, unsigned indent);
     void EmitEnumType(const EnumTypeDecl* E, StringBuilder& output);
     void EmitFunctionType(const FunctionTypeDecl* F, StringBuilder& output);
+    void EmitArgVarDecl(const VarDecl* D, StringBuilder& output, unsigned index);
     void EmitVarDecl(const VarDecl* D, StringBuilder& output, unsigned indent);
 
     void EmitStmt(const Stmt* S, unsigned indent);

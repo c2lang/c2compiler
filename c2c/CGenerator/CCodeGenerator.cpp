@@ -79,6 +79,14 @@ void CCodeGenerator::generate() {
     // generate all includes
     EmitIncludes();
 
+    // generate variables
+    for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
+        AST* ast = *iter;
+        for (unsigned i=0; i<ast->numVars(); i++) {
+            EmitConstant(ast->getVar(i));
+        }
+    }
+
     // generate types, reorder and do forward decls if needed
     TypeSorter sorter;
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
@@ -89,15 +97,15 @@ void CCodeGenerator::generate() {
     }
     sorter.write(*this);
 
-#if 0
-    // generate types
+    // generate function prototypes
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
         AST* ast = *iter;
-        for (unsigned i=0; i<ast->numTypes(); i++) {
-            EmitTypeDecl(ast->getType(i));
+        for (unsigned i=0; i<ast->numFunctions(); i++) {
+            EmitFunctionForward(ast->getFunction(i));
         }
     }
-#endif
+    cbuf << '\n';
+    hbuf << '\n';
 
     // generate variables
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
@@ -231,7 +239,11 @@ void CCodeGenerator::EmitExpr(const Expr* E, StringBuilder& output) {
                         QualType Q = VD->getType();
                         if (Q.isArrayType()) {
                             // generate: sizeof(array) / sizeof(array[0]);
-                            output << "sizeof(" << I->getName() << ")/sizeof(" << I->getName() << "[0])";
+                            output << "sizeof(";
+                            EmitDecl(D, output);
+                            output << ")/sizeof(";
+                            EmitDecl(D, output);
+                            output << "[0])";
                             return;
                         }
                         // TODO also allow elemsof for EnumType
@@ -471,23 +483,19 @@ void CCodeGenerator::EmitIncludes() {
     cbuf << '\n';
 }
 
+void CCodeGenerator::EmitFunctionForward(const FunctionDecl* F) {
+    LOG_DECL(F)
+
+    if (F->getName() == "main") return;
+
+    StringBuilder* out = &cbuf;
+    if (mode != SINGLE_FILE && F->isPublic()) out = &hbuf;
+    EmitFunctionProto(F, *out);
+    (*out) << ";\n";
+}
 
 void CCodeGenerator::EmitFunction(const FunctionDecl* F) {
     LOG_DECL(F)
-    if (F->getName() != "main") {
-        if (mode == SINGLE_FILE) {
-            // emit all function protos as forward declarations in header
-            EmitFunctionProto(F, hbuf);
-            hbuf << ";\n\n";
-        } else {
-            if (F->isPublic()) {
-                EmitFunctionProto(F, hbuf);
-                hbuf << ";\n\n";
-            } else {
-                cbuf << "static ";
-            }
-        }
-    }
 
     EmitFunctionProto(F, cbuf);
     cbuf << ' ';
@@ -502,7 +510,7 @@ void CCodeGenerator::EmitFunctionArgs(const FunctionDecl* F, StringBuilder& outp
     if (F->isVariadic()) count++;
     for (unsigned i=0; i<F->numArgs(); i++) {
         VarDecl* A = F->getArg(i);
-        EmitVarDecl(A, output, 0);
+        EmitArgVarDecl(A, output, i);
         if (count != 1) output << ", ";
         count--;
     }
@@ -510,7 +518,7 @@ void CCodeGenerator::EmitFunctionArgs(const FunctionDecl* F, StringBuilder& outp
     output << ')';
 }
 
-void CCodeGenerator::EmitVariable(const VarDecl* V) {
+void CCodeGenerator::EmitConstant(const VarDecl* V) {
     LOG_DECL(V)
     QualType Q = V->getType();
     // convert const integer literals to define
@@ -523,6 +531,17 @@ void CCodeGenerator::EmitVariable(const VarDecl* V) {
         *out << ' ';
         EmitExpr(V->getInitValue(), *out);
         *out << "\n";
+        return;
+    }
+    // else skip
+}
+
+void CCodeGenerator::EmitVariable(const VarDecl* V) {
+    LOG_DECL(V)
+    QualType Q = V->getType();
+    // convert const integer literals to define
+    if (Q.isBuiltinType() && Q.isConstQualified()) {
+        // already done in EmitConstant
         return;
     }
     if (V->isPublic() && mode != SINGLE_FILE) {
@@ -658,7 +677,9 @@ void CCodeGenerator::EmitEnumType(const EnumTypeDecl* E, StringBuilder& output) 
         }
         output << ",\n";
     }
-    output << "} " << E->getName() << ";\n\n";
+    output << "} ";
+    EmitDecl(E, output);
+    output << ";\n\n";
 }
 
 // output: typedef void (*name)(args);
@@ -671,6 +692,23 @@ void CCodeGenerator::EmitFunctionType(const FunctionTypeDecl* FTD, StringBuilder
     output << " (*" << F->getName() << ')';
     EmitFunctionArgs(F, output);
     output << ";\n\n";
+}
+
+void CCodeGenerator::EmitArgVarDecl(const VarDecl* D, StringBuilder& output, unsigned index) {
+    LOG_DECL(D)
+    EmitTypePreName(D->getType(), output);
+    output << ' ';
+    if (D->getName() == "") {
+        output << "_arg" << index;
+    } else {
+        output << D->getName();
+    }
+    EmitTypePostName(D->getType(), output);
+    if (D->getInitValue()) {
+        output << " = ";
+        EmitExpr(D->getInitValue(), output);
+    }
+    //output << ";\n";
 }
 
 void CCodeGenerator::EmitVarDecl(const VarDecl* D, StringBuilder& output, unsigned indent) {
@@ -755,11 +793,8 @@ void CCodeGenerator::EmitStmt(const Stmt* S, unsigned indent) {
             return;
         }
     case STMT_COMPOUND:
-        {
-            const CompoundStmt* C = cast<CompoundStmt>(S);
-            EmitCompoundStmt(C, indent, true);
-            return;
-        }
+        EmitCompoundStmt(cast<CompoundStmt>(S), indent, true);
+        return;
     }
 }
 
@@ -781,12 +816,26 @@ void CCodeGenerator::EmitIfStmt(const Stmt* S, unsigned indent) {
     cbuf.indent(indent);
     cbuf << "if (";
     EmitExpr(I->getCond(), cbuf);
-    cbuf << ")\n";
-    EmitStmt(I->getThen(), indent);
+    cbuf << ')';
+
+    if (isa<CompoundStmt>(I->getThen())) {
+        cbuf << '\n';
+        EmitStmt(I->getThen(), indent);
+    } else {
+        cbuf << ' ';
+        EmitStmt(I->getThen(), 0);
+    }
+
     if (I->getElse()) {
         cbuf.indent(indent);
-        cbuf << "else\n";
-        EmitStmt(I->getElse(), indent);
+        cbuf << "else";
+        if (isa<CompoundStmt>(I->getElse())) {
+            cbuf << '\n';
+            EmitStmt(I->getElse(), indent);
+        } else {
+            cbuf << ' ';
+            EmitStmt(I->getElse(), 0);
+        }
     }
 }
 
@@ -910,7 +959,12 @@ void CCodeGenerator::EmitSwitchStmt(const Stmt* S, unsigned indent) {
 
 void CCodeGenerator::EmitFunctionProto(const FunctionDecl* F, StringBuilder& output) {
     LOG_FUNC
-    if (mode == SINGLE_FILE && F->getName() != "main") output << "static ";
+
+    bool emitStatic = true;
+    if (F->getName() == "main") emitStatic = false;
+    if (mode != SINGLE_FILE && F->isPublic()) emitStatic = false;
+    if (emitStatic) output << "static ";
+
     EmitTypePreName(F->getReturnType(), output);
     EmitTypePostName(F->getReturnType(), output);
     output << ' ';

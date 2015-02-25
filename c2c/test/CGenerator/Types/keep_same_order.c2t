@@ -25,5 +25,5 @@ typedef enum {
   __test_A,
   __test_B,
   __test_C,
-} State;
+} __test_State;
 

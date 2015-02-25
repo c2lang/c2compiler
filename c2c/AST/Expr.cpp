@@ -336,7 +336,7 @@ const char* BinaryOperator::OpCode2str(clang::BinaryOperatorKind opc) {
         case BO_DivAssign: return "/=";
         case BO_RemAssign: return "%=";
         case BO_AddAssign: return "+=";
-        case BO_SubAssign: return "-+";
+        case BO_SubAssign: return "-=";
         case BO_ShlAssign: return "<<=";
         case BO_ShrAssign: return ">>=";
         case BO_AndAssign: return "&=";

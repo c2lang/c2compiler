@@ -1,0 +1,28 @@
+// @warnings{no-unused}
+// @generate-c
+
+// @file{file1}
+module test;
+
+int a = 10;
+
+type Foo struct {
+    int x;
+}
+
+const int b = 20;
+const int c = 30;
+
+// @expect{test.c}
+
+#define __test_b 20
+#define __test_c 30
+
+typedef struct __test_Foo_ __test_Foo;
+
+struct __test_Foo_ {
+    int x;
+};
+
+static int __test_a = 10;
+

@@ -1,0 +1,44 @@
+// @warnings{no-unused}
+// @generate-c single_module
+// @file{file1}
+module test1;
+
+import test2;
+
+public func void pub1() {}
+
+func void nonpub1() {}
+
+public func int main(int argc, const char*[] argv) {
+    return 0;
+}
+
+// @file{file2}
+module test2;
+
+public func void pub2() {}
+
+func void nonpub2() {}
+
+// @expect{test.c}
+static void __test1_pub1();
+static void __test1_nonpub1();
+static void __test2_pub2();
+static void __test2_nonpub2();
+
+static void __test1_pub1() {
+}
+
+static void __test1_nonpub1() {
+}
+
+int main(int argc, const char* argv[]) {
+    return 0;
+}
+
+static void __test2_pub2() {
+}
+
+static void __test2_nonpub2() {
+}
+
