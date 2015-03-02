@@ -455,6 +455,9 @@ void CCodeGenerator::EmitIncludes() {
     StringList systemIncludes;
     StringList localIncludes;
 
+    // always include stdint.h for int16_t, etc types
+    hbuf << "#include <stdint.h>\n";
+
     // filter out unique entries, split into system and local includes
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
         AST* ast = *iter;
@@ -971,14 +974,14 @@ void CCodeGenerator::EmitFunctionProto(const FunctionDecl* F, StringBuilder& out
 
 static const char* builtin2cname(BuiltinType::Kind kind) {
     switch (kind) {
-    case BuiltinType::Int8:     return "char";
-    case BuiltinType::Int16:    return "short";
-    case BuiltinType::Int32:    return "int";
-    case BuiltinType::Int64:    return "long long";
-    case BuiltinType::UInt8:    return "unsigned char";
-    case BuiltinType::UInt16:   return "unsigned short";
-    case BuiltinType::UInt32:   return "unsigned";
-    case BuiltinType::UInt64:   return "unsigned long long";
+    case BuiltinType::Int8:     return "int8_t";
+    case BuiltinType::Int16:    return "int16_t";
+    case BuiltinType::Int32:    return "int32_t";
+    case BuiltinType::Int64:    return "int64_t";
+    case BuiltinType::UInt8:    return "uint8_t";
+    case BuiltinType::UInt16:   return "uint16_t";
+    case BuiltinType::UInt32:   return "uint32_t";
+    case BuiltinType::UInt64:   return "uint64_t";
     case BuiltinType::Float32:  return "float";
     case BuiltinType::Float64:  return "double";
     case BuiltinType::Bool:     return "int";
