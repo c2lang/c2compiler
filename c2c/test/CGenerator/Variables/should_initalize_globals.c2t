@@ -1,0 +1,29 @@
+// @warnings{no-unused}
+// @generate-c
+
+// @file{file1}
+module test;
+
+type Foo struct {
+    int32 i;
+    char* cp;
+    bool b;
+}
+
+Foo f;
+int32 i;
+
+// @expect{test.c}
+
+typedef struct __test_Foo_ __test_Foo;
+
+struct __test_Foo_ {
+    int i;
+    char* cp;
+    int b;
+};
+
+static __test_Foo __test_f = { 0 };
+
+static int __test_i = 0;
+

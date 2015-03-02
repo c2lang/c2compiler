@@ -63,7 +63,7 @@ private:
     void EmitFunction(const FunctionDecl* F);
     void EmitFunctionArgs(const FunctionDecl* F, StringBuilder& output);
     void EmitConstant(const VarDecl* D);
-    void EmitVariable(const VarDecl* D);
+    void EmitGlobalVariable(const VarDecl* D);
     void EmitTypeDecl(const TypeDecl* D);
     void EmitForwardTypeDecl(const TypeDecl* D);
     void EmitStructType(const StructTypeDecl* S, StringBuilder& output, unsigned indent);

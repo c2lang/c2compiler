@@ -672,6 +672,7 @@ public:
         , colLoc(colLoc_)
         , lhs(lhs_)
         , rhs(rhs_)
+        , width(0)
     {}
     virtual ~BitOffsetExpr();
     static bool classof(const Expr* E) {

@@ -111,7 +111,7 @@ void CCodeGenerator::generate() {
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
         AST* ast = *iter;
         for (unsigned i=0; i<ast->numVars(); i++) {
-            EmitVariable(ast->getVar(i));
+            EmitGlobalVariable(ast->getVar(i));
         }
     }
     // TODO Arrayvalues
@@ -536,7 +536,7 @@ void CCodeGenerator::EmitConstant(const VarDecl* V) {
     // else skip
 }
 
-void CCodeGenerator::EmitVariable(const VarDecl* V) {
+void CCodeGenerator::EmitGlobalVariable(const VarDecl* V) {
     LOG_DECL(V)
     QualType Q = V->getType();
     // convert const integer literals to define
@@ -564,22 +564,14 @@ void CCodeGenerator::EmitVariable(const VarDecl* V) {
     if (V->getInitValue()) {
         cbuf << " = ";
         EmitExpr(V->getInitValue(), cbuf);
-    }
-#if 0
-    const VarDecl::InitValues& inits = V->getIncrValues();
-    if (inits.size()) {
-        cbuf << " = {\n";
-        VarDecl::InitValuesConstIter iter=inits.begin();
-        while (iter != inits.end()) {
-            const ArrayValueDecl* E = (*iter);
-            cbuf.indent(INDENT);
-            EmitExpr(E->getExpr(), cbuf);
-            cbuf << ",\n";
-            ++iter;
+    } else {
+        // always generate initialization
+        if (V->getType().isStructType()) {
+            cbuf << " = { 0 }";
+        } else {
+            cbuf << " = 0";
         }
-        cbuf << '}';
     }
-#endif
     cbuf << ";\n";
     cbuf << '\n';
 }
