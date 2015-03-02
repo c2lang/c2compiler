@@ -813,6 +813,11 @@ void CCodeGenerator::EmitIfStmt(const Stmt* S, unsigned indent) {
     if (isa<CompoundStmt>(I->getThen())) {
         cbuf << '\n';
         EmitStmt(I->getThen(), indent);
+    } else if (isa<IfStmt>(I->getThen())) {
+        cbuf << " {\n";
+        EmitStmt(I->getThen(), indent+INDENT);
+        cbuf.indent(indent);
+        cbuf << "}\n";
     } else {
         cbuf << ' ';
         EmitStmt(I->getThen(), 0);
