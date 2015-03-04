@@ -35,7 +35,7 @@ void __test1_pub1() {
 static void __test1_nonpub1() {
 }
 
-int main(int argc, const char* argv[]) {
+int32_t main(int32_t argc, const char* argv[]) {
     return 0;
 }
 

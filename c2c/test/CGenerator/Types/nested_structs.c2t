@@ -23,17 +23,17 @@ type Outer struct {
 // @expect{test.c}
 typedef struct __test_Outer_ __test_Outer;
 struct __test_Outer_ {
-    int x;
+    int32_t x;
     struct {
-        int x;
-        int y;
+        int32_t x;
+        int32_t y;
     } a;
     struct {
-        int z;
+        int32_t z;
     };
     union {
-        int c;
-        short d;
+        int32_t c;
+        int16_t d;
         char e;
     }
 };

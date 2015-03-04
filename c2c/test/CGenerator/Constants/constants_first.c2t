@@ -21,8 +21,8 @@ const int32 c = 30;
 typedef struct __test_Foo_ __test_Foo;
 
 struct __test_Foo_ {
-    int x;
+    int32_t x;
 };
 
-static int __test_a = 10;
+static int32_t __test_a = 10;
 

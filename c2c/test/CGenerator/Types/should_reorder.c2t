@@ -23,7 +23,7 @@ type B struct {
 // @expect{test.c}
 typedef struct __test_B_ __test_B;
 struct __test_B_ {
-    int x;
+    int32_t x;
 };
 
 typedef __test_B __test_C;

@@ -16,12 +16,12 @@ func int32 sum(int32 c, int32 d) {
 }
 
 // @expect{mod1.c}
-static int __mod1_sum(int a, int b) {
+static int32_t __mod1_sum(int32_t a, int32_t b) {
     return a + b;
 }
 
 // @expect{mod2.c}
-static int __mod2_sum(int c, int d) {
+static int32_t __mod2_sum(int32_t c, int32_t d) {
     return c + d;
 }
 

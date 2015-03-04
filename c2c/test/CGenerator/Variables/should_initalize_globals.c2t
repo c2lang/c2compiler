@@ -18,12 +18,12 @@ int32 i;
 typedef struct __test_Foo_ __test_Foo;
 
 struct __test_Foo_ {
-    int i;
+    int32_t i;
     char* cp;
     int b;
 };
 
 static __test_Foo __test_f = { 0 };
 
-static int __test_i = 0;
+static int32_t __test_i = 0;
 

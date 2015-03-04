@@ -9,8 +9,8 @@ type Foo int32;
 public type Bar int16;
 
 // @expect{test.h}
-typedef short __test_Bar;
+typedef int16_t __test_Bar;
 
 // @expect{test.c}
-typedef int __test_Foo;
+typedef int32_t __test_Foo;
 

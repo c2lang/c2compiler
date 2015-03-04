@@ -974,11 +974,11 @@ void CCodeGenerator::EmitFunctionProto(const FunctionDecl* F, StringBuilder& out
 
 static const char* builtin2cname(BuiltinType::Kind kind) {
     switch (kind) {
-    case BuiltinType::Int8:     return "int8_t";
+    case BuiltinType::Int8:     return "char";
     case BuiltinType::Int16:    return "int16_t";
     case BuiltinType::Int32:    return "int32_t";
     case BuiltinType::Int64:    return "int64_t";
-    case BuiltinType::UInt8:    return "uint8_t";
+    case BuiltinType::UInt8:    return "unsigned char";
     case BuiltinType::UInt16:   return "uint16_t";
     case BuiltinType::UInt32:   return "uint32_t";
     case BuiltinType::UInt64:   return "uint64_t";
