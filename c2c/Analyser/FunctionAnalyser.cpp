@@ -25,7 +25,7 @@
 #include "Analyser/AnalyserUtils.h"
 #include "Analyser/LiteralAnalyser.h"
 #include "Analyser/Scope.h"
-#include "Analyser/constants.h"
+#include "Analyser/AnalyserConstants.h"
 #include "AST/Decl.h"
 #include "AST/Expr.h"
 #include "AST/Stmt.h"

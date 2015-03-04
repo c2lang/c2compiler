@@ -22,7 +22,7 @@
 
 #include "Analyser/Scope.h"
 #include "Analyser/TypeResolver.h"
-#include "Analyser/constants.h"
+#include "Analyser/AnalyserConstants.h"
 #include "AST/Module.h"
 #include "AST/Decl.h"
 #include "AST/Expr.h"

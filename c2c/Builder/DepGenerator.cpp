@@ -20,7 +20,7 @@
 #include "AST/Decl.h"
 #include "AST/Type.h"
 #include "Utils/StringBuilder.h"
-#include "Utils/constants.h"
+#include "Utils/UtilsConstants.h"
 
 #include <string.h>
 

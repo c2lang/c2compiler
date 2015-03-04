@@ -19,7 +19,7 @@
 #include "Analyser/ExprTypeAnalyser.h"
 #include "Analyser/LiteralAnalyser.h"
 #include "Analyser/TypeFinder.h"
-#include "Analyser/constants.h"
+#include "Analyser/AnalyserConstants.h"
 #include "AST/Expr.h"
 #include "Utils/StringBuilder.h"
 

@@ -21,7 +21,7 @@
 #include "Utils/StringBuilder.h"
 #include "Utils/Utils.h"
 #include "Utils/color.h"
-#include "Utils/constants.h"
+#include "Utils/UtilsConstants.h"
 
 using namespace C2;
 using namespace std;
