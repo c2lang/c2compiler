@@ -25,18 +25,18 @@ using namespace C2;
 using namespace llvm;
 
 void FileUtils::writeFile(const char* pathstr, const std::string& filename, const StringBuilder& content) {
-    bool existed = true;
+    bool ignoreExisting = true;
     llvm::Twine path(pathstr);
-    if (std::error_code ec = llvm::sys::fs::create_directories(path, existed)) {
+    if (std::error_code ec = llvm::sys::fs::create_directories(path, ignoreExisting)) {
         llvm::errs() << "warning: could not create directory '"
                      << path << "': " << ec.message() << '\n';
         return;
     }
 
-    std::string ErrorInfo;
-    llvm::raw_fd_ostream OS(filename.c_str(), ErrorInfo, sys::fs::F_None);
-    if (!ErrorInfo.empty()) {
-        fprintf(stderr, "%s\n", ErrorInfo.c_str());
+    std::error_code EC;
+    llvm::raw_fd_ostream OS(filename.c_str(), EC, sys::fs::F_None);
+    if (EC) {
+        fprintf(stderr, "error opening %s for writing: %s\n", filename.c_str(), EC.message().c_str());
         return;
     }
     OS << content;

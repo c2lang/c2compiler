@@ -14,6 +14,7 @@
  */
 
 #include <vector>
+#include <system_error>
 // TODO REMOVE
 #include <stdio.h>
 
@@ -132,23 +133,22 @@ void CodeGenModule::write(const std::string& target, const std::string& name) {
     // write IR Module to output/<target>/<module>.ll
     StringBuilder filename;
     filename << "output/" << target << '/';
-    bool existed = false;
+    bool ignoreExisting = true;
     llvm::Twine path(filename);
-    if (std::error_code ec = llvm::sys::fs::create_directories(path, existed)) {
+    if (std::error_code ec = llvm::sys::fs::create_directories(path, ignoreExisting)) {
         llvm::errs() << "warning: could not create directory '"
                      << path << "': " << ec.message() << '\n';
         return;
     }
 
     filename << name << ".ll";
-    std::string ErrorInfo;
-    llvm::raw_fd_ostream OS((const char*)filename, ErrorInfo, sys::fs::F_None);
-    if (!ErrorInfo.empty()) {
-        fprintf(stderr, "%s\n", ErrorInfo.c_str());
+    std::error_code EC;
+    llvm::raw_fd_ostream OS((const char*)filename, EC, sys::fs::F_None);
+    if (EC) {
+        fprintf(stderr, "Error opening %s for writing: %s\n", (const char*)filename, EC.message().c_str());
         return;
     }
     module->print(OS, 0);
-    printf("written %s\n", (const char*)filename);
 #if 0
     // print to binary file
     {

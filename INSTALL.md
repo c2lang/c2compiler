@@ -1,5 +1,5 @@
 
-## Packages for Arch Linux (AUR)
+## Packages for Arch Linux (AUR),
 * [llvm-c2](https://aur.archlinux.org/packages/llvm-c2/)
 * [c2c-git](https://aur.archlinux.org/packages/c2c-git/)
 
@@ -25,7 +25,7 @@ $ makepkg -is
 For other Linux distro, a manual build is required. See below.
 
 ## Installation of LLVM/Clang (C2 version)
-C2 is based on LLVM 3.5 and some parts of Clang 3.5.
+C2 is based on LLVM 3.6 and some parts of Clang 3.6.
 To install C2, follow the steps below. The example shows
 how to install in **$HOME/llvm-c2**, but any other dir should work.
 
@@ -33,15 +33,15 @@ To build:
 ```
 git clone git://github.com/llvm-mirror/llvm.git
 cd llvm/
-git checkout -b release_35 origin/release_35
+git checkout -b release_36 origin/release_36
 cd projects
 git clone git://github.com/llvm-mirror/compiler-rt.git
 cd compiler-rt
-git checkout -b release_35 origin/release_35
+git checkout -b release_36 origin/release_36
 cd ../../tools
 git clone git://github.com/c2lang/clang.git
 cd clang
-git checkout -b c2master_35 origin/c2master_35
+git checkout -b c2master_36 origin/c2master_36
 cd ../../..
 mkdir llvm_build
 cd llvm_build

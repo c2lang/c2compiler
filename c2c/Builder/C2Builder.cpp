@@ -162,9 +162,10 @@ public:
         PP.EnterSourceFile(id, nullptr, SourceLocation());
 
         // Manually set predefines (normally done in EnterMainSourceFile())
-        llvm::MemoryBuffer* SB = llvm::MemoryBuffer::getMemBufferCopy(configs, "<built-in>");
-        assert(SB && "Cannot created predefined source buffer");
-        FileID FID = SM.createFileID(SB);
+        std::unique_ptr<llvm::MemoryBuffer> SB = llvm::MemoryBuffer::getMemBufferCopy(configs, "<built-in>");
+        assert(SB && "Cannot create predefined source buffer");
+        FileID FID = SM.createFileID(std::move(SB));
+
         // NOTE: setPredefines() is normally private
         PP.setPredefinesFileID(FID);
         PP.EnterSourceFile(FID, nullptr, SourceLocation());
