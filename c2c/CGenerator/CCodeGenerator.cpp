@@ -471,6 +471,7 @@ void CCodeGenerator::EmitIncludes() {
         cbuf << "#include <" << *iter << ".h>\n";
     }
     for (StringListConstIter iter = localIncludes.begin(); iter != localIncludes.end(); ++iter) {
+        if (*iter == "c2") continue;
         cbuf << "#include \"" << *iter << ".h\"\n";
     }
     cbuf << '\n';
