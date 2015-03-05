@@ -66,6 +66,7 @@
 #include "Utils/StringBuilder.h"
 #include "Utils/color.h"
 #include "Utils/Utils.h"
+#include "Utils/ProcessUtils.h"
 
 using clang::DiagnosticOptions;
 using clang::DiagnosticsEngine;
@@ -955,6 +956,9 @@ void C2Builder::generateOptionalC() {
         if (options.printTiming) printf(COL_TIME"C code generation took %" PRIu64" usec" ANSI_NORMAL"\n", t2 - t1);
     }
     makeGen.write();
+
+    // execute the generated makefile
+    ProcessUtils::run(outdir, "/usr/bin/make");
 }
 
 void C2Builder::generateOptionalIR() {

@@ -71,6 +71,7 @@ ADD_EXECUTABLE(c2c
     Utils/StringBuilder.cpp
     Utils/Utils.cpp
     Utils/GenUtils.cpp
+    Utils/ProcessUtils.cpp
     main.cpp
 )
 # note: tinfo seems to needed from Feb'15 on Ubuntu 14.04..

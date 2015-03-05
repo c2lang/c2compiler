@@ -24,7 +24,7 @@ void MakefileGenerator::add(const std::string& filename) {
 }
 
 void MakefileGenerator::write() {
-    std::string targetname = target;
+    std::string targetname = "../" + target;
     if (!isExec) targetname += ".a";
 
     std::string args = "-O3 -Wall -Wextra -Wno-unused -Wno-unused-parameter -std=c99";
@@ -37,7 +37,12 @@ void MakefileGenerator::write() {
     out << "all: " << targetname << '\n';
     out << '\n';
 
-    out << targetname << ":\n";
+    // our target
+    out << targetname << ':';
+    for (FilesConstIter iter=files.begin(); iter!=files.end(); ++iter) {
+        out << ' ' << *iter;
+    }
+    out << '\n';
 
     // compile step
     for (FilesConstIter iter=files.begin(); iter!=files.end(); ++iter) {
@@ -52,11 +57,12 @@ void MakefileGenerator::write() {
     for (FilesConstIter iter=files.begin(); iter!=files.end(); ++iter) {
         out << ' ' << *iter << ".o";
     }
-    out << "\n\n";
+    out << '\n';
+    out << '\n';
 
     // clean target
     out << "clean:\n";
-    out << "\t rm -f *.o *.a " << target << '\n';
+    out << "\t rm -f *.o *.a " << targetname << '\n';
     out << '\n';
 
     FileUtils::writeFile(path.c_str(), path + "/Makefile", out);
