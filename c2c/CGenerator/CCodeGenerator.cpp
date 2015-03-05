@@ -415,13 +415,7 @@ void CCodeGenerator::EmitDecl(const Decl* D, StringBuilder& output) {
     assert(D);
 
     if (D->getModule()) {
-        const std::string& modName = D->getModule()->getCName();
-        // TODO remove empty check, already done in addName
-        if (modName.empty()) {
-            output << D->getName();
-        } else {
-            GenUtils::addName(modName, D->getName(), output);
-        }
+        GenUtils::addName(D->getModule()->getCName(), D->getName(), output);
     } else {
         output << D->getName();
     }
