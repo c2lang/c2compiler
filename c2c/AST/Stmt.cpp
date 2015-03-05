@@ -276,7 +276,9 @@ LabelStmt::~LabelStmt()
 void LabelStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
-    buffer << "LabelStmt\n";
+    buffer << "LabelStmt ";
+    buffer.setColor(COL_VALUE);
+    buffer << name << '\n';
     subStmt->print(buffer, indent + INDENT);
 }
 
@@ -291,7 +293,9 @@ GotoStmt::~GotoStmt() {}
 void GotoStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
-    buffer << "GotoStmt\n";
+    buffer << "GotoStmt ";
+    buffer.setColor(COL_VALUE);
+    buffer << name << '\n';
 }
 
 
