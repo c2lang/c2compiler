@@ -1,0 +1,15 @@
+module test;
+
+public func int32 main() {
+first:
+second:
+    {
+third:
+        {
+            {
+                return 0;
+            }
+        }
+    }
+}
+

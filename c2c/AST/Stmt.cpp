@@ -319,23 +319,17 @@ void CompoundStmt::print(StringBuilder& buffer, unsigned indent) const {
 
 Stmt* CompoundStmt::getLastStmt() const {
     if (Stmts.size() == 0) return 0;
-    else {
-        // NOTE: if last is compound, get last from that one
-        // NOTE: if last is label, get label.subStmt
-        // TODO handle goto statement as last statement
-        Stmt* last = Stmts[Stmts.size() -1];
+
+    Stmt* last = Stmts[Stmts.size() -1];
+
+    // TODO handle goto statement as last statement
+    while (1) {
         switch (last->getKind()) {
         case STMT_LABEL:
-        {
-            LabelStmt* label = cast<LabelStmt>(last);
-            // TODO handle compound substatements
-            return label->getSubStmt();
-        }
+            last = cast<LabelStmt>(last)->getSubStmt();
+            break;
         case STMT_COMPOUND:
-        {
-            CompoundStmt* compound = cast<CompoundStmt>(last);
-            return compound->getLastStmt();
-        }
+            return cast<CompoundStmt>(last)->getLastStmt();
         default:
             return last;
         }
