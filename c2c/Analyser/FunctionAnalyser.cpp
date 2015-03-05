@@ -307,7 +307,14 @@ void FunctionAnalyser::analyseForStmt(Stmt* stmt) {
     ForStmt* F = cast<ForStmt>(stmt);
     scope.EnterScope(Scope::BreakScope | Scope::ContinueScope | Scope::DeclScope | Scope::ControlScope);
     if (F->getInit()) analyseStmt(F->getInit());
-    if (F->getCond()) analyseExpr(F->getCond(), RHS);
+    if (F->getCond()) {
+        QualType CT = analyseExpr(F->getCond(), RHS);
+        if (!CT.isScalarType()) {
+            StringBuilder buf;
+            CT.DiagName(buf);
+            Diags.Report(F->getCond()->getLocation(), diag::err_typecheck_statement_requires_scalar) << buf;
+        }
+    }
     if (F->getIncr()) analyseExpr(F->getIncr(), RHS);
     analyseStmt(F->getBody(), true);
     scope.ExitScope();

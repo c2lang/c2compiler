@@ -47,6 +47,15 @@ bool QualType::isIntegerType() const {
     }
    return false;
 }
+bool QualType::isScalarType() const {
+    QualType Canon = getTypePtr()->getCanonicalType();
+    if (Canon == Type::Bool()) return true;
+    if (isIntegerType()) return true;
+    if (isPointerType()) return true;
+    if (isFunctionType()) return true;
+    if (isa<EnumType>(Canon)) return true;
+    return false;
+}
 
 bool QualType::isConstant() const {
     const Type* T = getCanonicalType();

@@ -15,8 +15,6 @@
 
 #include <vector>
 #include <set>
-// TODO REMOVE
-#include <stdio.h>
 
 // for SmallString
 #include <llvm/ADT/SmallString.h>

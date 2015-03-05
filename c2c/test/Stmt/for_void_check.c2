@@ -1,0 +1,9 @@
+module test;
+
+func void foo() {}
+
+public func int32 main() {
+    for (; foo() ; ) {}      // @error{statement requires expression of scalar type ('void' invalid)}
+    return 0;
+}
+

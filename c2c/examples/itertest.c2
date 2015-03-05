@@ -1,7 +1,7 @@
 module iter_test;
 
 func void a() {}
-func void b() {}
+func bool b() { return true; }
 
 func void test1() {
     while (1) {

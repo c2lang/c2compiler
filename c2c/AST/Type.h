@@ -95,6 +95,7 @@ public:
     bool isFunctionType() const;
     bool isSubscriptable() const;
     bool isIntegerType() const;
+    bool isScalarType() const;
 
     bool isConstant() const;    // NOTE: not is const!
 
