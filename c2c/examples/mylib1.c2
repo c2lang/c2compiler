@@ -1,5 +1,7 @@
 module mylib;
 
+import mylib_internal as internal;
+
 /*
 func void* malloc(uint32 size) {
     return nil;
@@ -13,10 +15,12 @@ public type Handle struct {
 
 public func Handle* init() {
     Handle* p; //= malloc(sizeof(Handle));
+    internal.init();
     return p;
 }
 
 public func void close(Handle* H) {
     //free(H);
 }
+
 

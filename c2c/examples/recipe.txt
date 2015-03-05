@@ -138,6 +138,7 @@ lib mylib
     $warnings no-unused
     $ansi-c
     mylib1.c2
+    mylib2.c2
 end
 
 target puzzle

@@ -877,7 +877,7 @@ void C2Builder::printASTs() const {
 }
 
 bool C2Builder::checkMainFunction(DiagnosticsEngine& Diags) {
-    if (!recipe.isExec) return false;
+    if (!recipe.isExec) return true;
     if (options.testMode) return true;
 
     Decl* mainDecl = 0;

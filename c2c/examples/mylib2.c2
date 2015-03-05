@@ -1,0 +1,8 @@
+module mylib_internal;
+
+import stdio as io;
+
+public func void init() {
+    io.printf("internal init()\n");
+}
+
