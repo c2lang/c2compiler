@@ -432,7 +432,7 @@ void CCodeGenerator::dump() {
     printf("---- code for %s ----\n%s\n", cfilename.c_str(), (const char*)cbuf);
 }
 
-void CCodeGenerator::write(const std::string& outputDir, const std::string& name) {
+void CCodeGenerator::write(const std::string& outputDir) {
     FileUtils::writeFile(outputDir.c_str(), outputDir + cfilename, cbuf);
     FileUtils::writeFile(outputDir.c_str(), outputDir + hfilename, hbuf);
 }

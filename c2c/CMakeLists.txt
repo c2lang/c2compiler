@@ -59,6 +59,7 @@ ADD_EXECUTABLE(c2c
     CodeGen/CodeGenFunction.cpp
     CodeGen/CodeGenModule.cpp
     CGenerator/CCodeGenerator.cpp
+    CGenerator/MakefileGenerator.cpp
     CGenerator/DepVisitor.cpp
     CGenerator/TypeSorter.cpp
     Builder/C2Builder.cpp

@@ -61,6 +61,7 @@
 #include "Analyser/FileAnalyser.h"
 #include "CodeGen/CodeGenModule.h"
 #include "CGenerator/CCodeGenerator.h"
+#include "CGenerator/MakefileGenerator.h"
 #include "FileUtils/FileUtils.h"
 #include "Utils/StringBuilder.h"
 #include "Utils/color.h"
@@ -914,10 +915,11 @@ void C2Builder::generateOptionalC() {
 
     std::string outdir = OUTPUT_DIR + recipe.name + BUILD_DIR;
 
+    MakefileGenerator makeGen(outdir, recipe.name, recipe.isExec);
     if (single_module) {
         u_int64_t t1 = Utils::getCurrentTime();
-        // TODO
         std::string filename = recipe.name;
+        makeGen.add(filename);
         CCodeGenerator gen(filename, CCodeGenerator::SINGLE_FILE, modules);
         for (unsigned i=0; i<files.size(); i++) {
             FileInfo* info = files[i];
@@ -928,7 +930,7 @@ void C2Builder::generateOptionalC() {
         u_int64_t t2 = Utils::getCurrentTime();
         if (options.printTiming) printf(COL_TIME"C code generation took %" PRIu64" usec" ANSI_NORMAL"\n", t2 - t1);
         if (options.printC) gen.dump();
-        gen.write(outdir, "");
+        gen.write(outdir);
     } else {
         u_int64_t t1 = Utils::getCurrentTime();
         for (ModulesIter iter = modules.begin(); iter != modules.end(); ++iter) {
@@ -937,6 +939,7 @@ void C2Builder::generateOptionalC() {
             // for now filter out 'c2' as well
             if (P->getName() == "c2") continue;
             if (options.verbose) printf(COL_VERBOSE "generating C for module %s" ANSI_NORMAL "\n", P->getName().c_str());
+            makeGen.add(P->getName());
             CCodeGenerator gen(P->getName(), CCodeGenerator::MULTI_FILE, modules);
             for (unsigned i=0; i<files.size(); i++) {
                 FileInfo* info = files[i];
@@ -946,11 +949,12 @@ void C2Builder::generateOptionalC() {
             }
             gen.generate();
             if (options.printC) gen.dump();
-            gen.write(outdir, P->getName());
+            gen.write(outdir);
         }
         u_int64_t t2 = Utils::getCurrentTime();
         if (options.printTiming) printf(COL_TIME"C code generation took %" PRIu64" usec" ANSI_NORMAL"\n", t2 - t1);
     }
+    makeGen.write();
 }
 
 void C2Builder::generateOptionalIR() {
