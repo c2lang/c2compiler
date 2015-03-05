@@ -24,7 +24,6 @@ static void child_error(int fd, const char* msg) {
 }
 
 void ProcessUtils::run(const std::string& path, const std::string& cmd) {
-    fprintf(stderr, "STARTING %s  %s\n", path.c_str(), cmd.c_str());
     int error_pipe[2];
     if (pipe(error_pipe)) {
         //errorMsg = "pipe() failed";
@@ -65,6 +64,22 @@ void ProcessUtils::run(const std::string& path, const std::string& cmd) {
             child_error(error_pipe[1], errmsg);
         }
 #endif
+        // redirect output
+        std::string logfile = path + "build.log";
+        fflush(stdout);
+        close(STDOUT_FILENO);
+        int fdout = open(logfile.c_str(), O_APPEND | O_CREAT | O_WRONLY, 0644);
+        if (fdout == -1) {
+            // TODO extract
+            sprintf(errmsg, "cannot open logfile '%s': %s", logfile.c_str(), strerror(errno));
+            child_error(error_pipe[1], errmsg);
+        }
+        close(STDERR_FILENO);
+        if (dup(STDOUT_FILENO) == -1) {
+            sprintf(errmsg, "dup(): %s", strerror(errno));
+            child_error(error_pipe[1], errmsg);
+        }
+
         // working dir
         if (chdir(path.c_str()) != 0) {
             sprintf(errmsg, "cannot change to dir '%s': %s", path.c_str(), strerror(errno));
