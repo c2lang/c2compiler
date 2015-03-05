@@ -9,7 +9,8 @@ module bar;
 
 import foo local;
 
-public func void main() {
+public func int32 main() {
     test1();
+    return 0;
 }
 

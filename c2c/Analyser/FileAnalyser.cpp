@@ -210,9 +210,17 @@ unsigned FileAnalyser::checkFunctionProtos() {
     for (unsigned i=0; i<ast.numFunctions(); i++) {
         FunctionDecl* F = ast.getFunction(i);
         errors += resolveFunctionDecl(F);
-        if (F->getName() == "main" && !F->isPublic()) {
-            Diags.Report(F->getLocation(), diag::err_main_non_public);
-            errors++;
+        if (F->getName() == "main") {
+            if (!F->isPublic()) {
+                Diags.Report(F->getLocation(), diag::err_main_non_public);
+                errors++;
+            }
+            if (F->getReturnType() != Type::Int32()) {
+                Diags.Report(F->getLocation(), diag::err_main_returns_nonint);
+                errors++;
+            }
+            //if (!F->getReturnType().isBuiltinType() || cast<BuiltinType>(F->getReturnType()).getKind() == BuiltinType::Int32) {
+           // }
         }
     }
     return errors;

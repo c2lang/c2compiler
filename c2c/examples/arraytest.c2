@@ -35,7 +35,7 @@ int32 a = 20;
 func int32 myfunc(int32 val) { return 2 * val; }
 int32[const_a] buf1;   // ok
 
-public func void main() {
+public func int32 main() {
     int32 count = sizeof(elems) / sizeof(Element);
     for (int32 i=0; i<count; i++) {
         IO.printf("[%2d] %16s\n", i, elems[i].name);
@@ -44,6 +44,6 @@ public func void main() {
     e.name;
     Element* pe;
     pe->name;
-
+    return 0;
 }
 

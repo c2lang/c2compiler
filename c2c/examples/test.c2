@@ -4,7 +4,7 @@ type Number int32;
 
 func int32 calc() { return 2; }
 
-public func void main() {
+public func int32 main() {
     // --- var decls, OK ---
     const char[12] buffer;
     int32 a;
@@ -44,5 +44,6 @@ public func void main() {
 
     int32[2] bb;
     bb[2] = 0;
+    return 0;
 }
 

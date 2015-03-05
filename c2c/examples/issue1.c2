@@ -2,8 +2,9 @@ module issue;
 
 import type1 local;
 
-public func void main() {
+public func int32 main() {
     Number n = 300;
+    return 0;
 }
 
 type Number Range;

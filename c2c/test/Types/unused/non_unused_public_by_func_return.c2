@@ -1,8 +1,10 @@
+// @warnings{no-unused-function}
+
 module test;
 
 public type Number int32;
 
-public func Number main() {
+public func Number foo() {
     return 0;
 }
 

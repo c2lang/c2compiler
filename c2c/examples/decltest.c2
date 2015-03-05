@@ -1,6 +1,6 @@
 module test;
 
-public func void main() {
+public func int32 main() {
     const char[12] buffer;
     local char[10] buffer2;
     int32 a;
@@ -10,5 +10,6 @@ public func void main() {
 
     const int32 a2 = 20;
     //volatile int32* b2 = 0x2000;
+    return 0;
 }
 

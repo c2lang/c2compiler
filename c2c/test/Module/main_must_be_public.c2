@@ -4,4 +4,3 @@ func int32 main() {   // @error{function 'main' should be declared public}
     return 0;
 }
 
-

@@ -5,9 +5,10 @@ import use2 as U2 local;
 
 Coor c1;
 
-public func void main() {
+public func int32 main() {
     U1.Number num = 10;
     Coor coor;
     U2.Coor c2;
+    return 0;
 }
 
