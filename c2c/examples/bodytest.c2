@@ -41,7 +41,8 @@ func void test2() {
 }
 
 func void test3() {
-label1: int32 a;
+    int32 a;
+label1:
     test2();
 label2:
     test2();

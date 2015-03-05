@@ -361,8 +361,14 @@ void FunctionAnalyser::analyseContinueStmt(Stmt* stmt) {
 void FunctionAnalyser::analyseLabelStmt(Stmt* S) {
     LOG_FUNC
     LabelStmt* L = cast<LabelStmt>(S);
-    // TODO check label itself
     analyseStmt(L->getSubStmt());
+    // substmt cannot be declaration
+
+    if (const Expr* E = dyncast<Expr>(L->getSubStmt())) {
+        if (isa<DeclExpr>(E)) {
+            Diags.Report(L->getSubStmt()->getLocation(), diag::err_decl_after_label);
+        }
+    }
 }
 
 void FunctionAnalyser::analyseCaseStmt(Stmt* stmt) {

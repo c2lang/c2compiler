@@ -674,7 +674,9 @@ void CCodeGenerator::EmitFunctionType(const FunctionTypeDecl* FTD, StringBuilder
     output << "typedef ";
     EmitTypePreName(F->getReturnType(), output);
     EmitTypePostName(F->getReturnType(), output);
-    output << " (*" << F->getName() << ')';
+    output << " (*";
+    EmitDecl(F, output);
+    output << ')';
     EmitFunctionArgs(F, output);
     output << ";\n\n";
 }
