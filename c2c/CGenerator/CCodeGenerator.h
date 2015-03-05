@@ -50,7 +50,7 @@ public:
 
     void addEntry(AST& ast) { entries.push_back(&ast); }
     void generate();
-    void write(const std::string& target, const std::string& name);
+    void write(const std::string& outputDir, const std::string& name);
     void dump();
 
     // for CTypeWriter

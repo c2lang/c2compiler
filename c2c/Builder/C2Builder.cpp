@@ -85,6 +85,8 @@ using clang::TextDiagnosticPrinter;
 using namespace C2;
 using namespace clang;
 
+const char* outputDir = "output/";
+
 namespace C2 {
 class C2ModuleLoader : public ModuleLoader {
 public:
@@ -909,6 +911,8 @@ void C2Builder::generateOptionalC() {
         if (conf == "single_module") single_module = true;
     }
 
+    std::string outdir = outputDir + recipe.name + "/";
+
     if (single_module) {
         u_int64_t t1 = Utils::getCurrentTime();
         // TODO
@@ -923,7 +927,7 @@ void C2Builder::generateOptionalC() {
         u_int64_t t2 = Utils::getCurrentTime();
         if (options.printTiming) printf(COL_TIME"C code generation took %" PRIu64" usec" ANSI_NORMAL"\n", t2 - t1);
         if (options.printC) gen.dump();
-        gen.write(recipe.name, "");
+        gen.write(outdir, "");
     } else {
         u_int64_t t1 = Utils::getCurrentTime();
         for (ModulesIter iter = modules.begin(); iter != modules.end(); ++iter) {
@@ -941,7 +945,7 @@ void C2Builder::generateOptionalC() {
             }
             gen.generate();
             if (options.printC) gen.dump();
-            gen.write(recipe.name, P->getName());
+            gen.write(outdir, P->getName());
         }
         u_int64_t t2 = Utils::getCurrentTime();
         if (options.printTiming) printf(COL_TIME"C code generation took %" PRIu64" usec" ANSI_NORMAL"\n", t2 - t1);
@@ -957,6 +961,8 @@ void C2Builder::generateOptionalIR() {
         // TODO just pass struct with bools?
         if (conf == "single_module") single_module = true;
     }
+
+    std::string outdir = outputDir + recipe.name + "/";
 
     if (single_module) {
         u_int64_t t1 = Utils::getCurrentTime();
@@ -981,7 +987,7 @@ void C2Builder::generateOptionalIR() {
         if (options.printTiming) printf(COL_TIME"IR generation took %" PRIu64" usec" ANSI_NORMAL"\n", t2 - t1);
         if (options.printIR) cgm.dump();
         bool ok = cgm.verify();
-        if (ok) cgm.write(recipe.name, filename);
+        if (ok) cgm.write(outdir, filename);
     } else {
         for (ModulesIter iter = modules.begin(); iter != modules.end(); ++iter) {
             Module* P = iter->second;
@@ -1002,7 +1008,7 @@ void C2Builder::generateOptionalIR() {
             if (options.printTiming) printf(COL_TIME"IR generation took %" PRIu64" usec" ANSI_NORMAL"\n", t2 - t1);
             if (options.printIR) cgm.dump();
             bool ok = cgm.verify();
-            if (ok) cgm.write(recipe.name, P->getName());
+            if (ok) cgm.write(outdir, P->getName());
         }
     }
 }
@@ -1028,7 +1034,7 @@ void C2Builder::generateOptionsDeps() const {
     StringBuilder output;
     generator.write(output, recipe.name);
     u_int64_t t2 = Utils::getCurrentTime();
-    std::string path = "output/" + recipe.name;
+    std::string path = outputDir + recipe.name;
     std::string filename = path + '/' + "deps.xml";
     FileUtils::writeFile(path.c_str(), filename, output);
     if (options.printTiming) printf(COL_TIME"dep generation took %" PRIu64" usec" ANSI_NORMAL"\n", t2 - t1);

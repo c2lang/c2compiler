@@ -129,10 +129,10 @@ void CodeGenModule::dump() {
     module->print(llvm::outs(), 0);
 }
 
-void CodeGenModule::write(const std::string& target, const std::string& name) {
-    // write IR Module to output/<target>/<module>.ll
+void CodeGenModule::write(const std::string& outputDir, const std::string& name) {
+    // write IR Module to <outputDir>/<module>.ll
     StringBuilder filename;
-    filename << "output/" << target << '/';
+    filename << outputDir;
     bool ignoreExisting = true;
     llvm::Twine path(filename);
     if (std::error_code ec = llvm::sys::fs::create_directories(path, ignoreExisting)) {
@@ -154,7 +154,7 @@ void CodeGenModule::write(const std::string& target, const std::string& name) {
     {
         std::string ErrInfo;
         StringBuilder filename;
-        filename << "output/" << target << '/' << name;
+        filename << outputDir << name;
         const char* outfile = (const char*)filename;
         tool_output_file Out(outfile, ErrInfo, raw_fd_ostream::F_Binary);
         if (!ErrInfo.empty()) {

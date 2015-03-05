@@ -432,13 +432,9 @@ void CCodeGenerator::dump() {
     printf("---- code for %s ----\n%s\n", cfilename.c_str(), (const char*)cbuf);
 }
 
-void CCodeGenerator::write(const std::string& target, const std::string& name) {
-    // write C files to output/<target>/<module>.{c,h}
-    StringBuilder outname(128);
-    outname << "output/" << target << '/';
-
-    FileUtils::writeFile(outname, std::string(outname) + cfilename, cbuf);
-    FileUtils::writeFile(outname, std::string(outname) + hfilename, hbuf);
+void CCodeGenerator::write(const std::string& outputDir, const std::string& name) {
+    FileUtils::writeFile(outputDir.c_str(), outputDir + cfilename, cbuf);
+    FileUtils::writeFile(outputDir.c_str(), outputDir + hfilename, hbuf);
 }
 
 void CCodeGenerator::forwardDecl(const Decl* D) {
