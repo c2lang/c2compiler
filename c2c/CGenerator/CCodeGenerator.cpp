@@ -559,7 +559,7 @@ void CCodeGenerator::EmitGlobalVariable(const VarDecl* V) {
         EmitExpr(V->getInitValue(), cbuf);
     } else {
         // always generate initialization
-        if (V->getType().isStructType()) {
+        if (V->getType().isStructType() || V->getType().isArrayType()) {
             cbuf << " = { 0 }";
         } else {
             cbuf << " = 0";

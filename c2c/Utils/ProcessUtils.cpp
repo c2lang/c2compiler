@@ -68,7 +68,7 @@ void ProcessUtils::run(const std::string& path, const std::string& cmd) {
         std::string logfile = path + "build.log";
         fflush(stdout);
         close(STDOUT_FILENO);
-        int fdout = open(logfile.c_str(), O_APPEND | O_CREAT | O_WRONLY, 0644);
+        int fdout = open(logfile.c_str(), O_TRUNC | O_CREAT | O_WRONLY, 0644);
         if (fdout == -1) {
             // TODO extract
             sprintf(errmsg, "cannot open logfile '%s': %s", logfile.c_str(), strerror(errno));

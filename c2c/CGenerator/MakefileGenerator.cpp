@@ -40,7 +40,7 @@ void MakefileGenerator::write() {
     // our target
     out << targetname << ':';
     for (FilesConstIter iter=files.begin(); iter!=files.end(); ++iter) {
-        out << ' ' << *iter;
+        out << ' ' << *iter << ".c";
     }
     out << '\n';
 

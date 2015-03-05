@@ -13,6 +13,9 @@ type Foo struct {
 Foo f;
 int32 i;
 
+Foo[2] fs;
+int32[2] is;
+
 // @expect{test.c}
 
 typedef struct __test_Foo_ __test_Foo;
@@ -26,4 +29,8 @@ struct __test_Foo_ {
 static __test_Foo __test_f = { 0 };
 
 static int32_t __test_i = 0;
+
+static __test_Foo __test_fs[2] = { 0 };
+
+static int32_t __test_is[2] = { 0 };
 
