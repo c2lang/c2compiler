@@ -693,7 +693,7 @@ void IssueDb::checkErrors(const char* buffer, unsigned size) {
 
 void IssueDb::checkExpectedFiles() {
     StringBuilder basedir;
-    basedir << test_root << "/output/test/";
+    basedir << test_root << "/output/test/build/";
     for (unsigned i=0; i<expectedFiles.size(); ++i) {
         ExpectFile* E = expectedFiles[i];
         if (!E->check((const char*)basedir)) hasErrors = true;
