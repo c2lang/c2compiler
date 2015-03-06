@@ -114,16 +114,18 @@ void CCodeGenerator::generate(bool printCode) {
     hbuf << "#endif\n";
 
     if (printCode) {
-        printf("---- code for %s ----\n%s\n", hfilename.c_str(), (const char*)hbuf);
+        if (mode != SINGLE_FILE) {
+            printf("---- code for %s ----\n%s\n", hfilename.c_str(), (const char*)hbuf);
+        }
         printf("---- code for %s ----\n%s\n", cfilename.c_str(), (const char*)cbuf);
     }
 }
 
 void CCodeGenerator::write(const std::string& outputDir) {
-    FileUtils::writeFile(outputDir.c_str(), outputDir + cfilename, cbuf);
     if (mode != SINGLE_FILE) {
         FileUtils::writeFile(outputDir.c_str(), outputDir + hfilename, hbuf);
     }
+    FileUtils::writeFile(outputDir.c_str(), outputDir + cfilename, cbuf);
 }
 
 void CCodeGenerator::createLibHeader(bool printCode, const std::string& outputDir) {
@@ -587,7 +589,7 @@ void CCodeGenerator::EmitConstant(const VarDecl* V) {
     // convert const integer literals to define
     if (Q.isBuiltinType() && Q.isConstQualified()) {
         StringBuilder* out = &cbuf;
-        if (V->isPublic()) out = &hbuf;
+        if (mode != SINGLE_FILE && V->isPublic()) out = &hbuf;
         *out << "#define ";
         EmitDecl(V, *out);
         assert(V->getInitValue());
@@ -607,7 +609,7 @@ void CCodeGenerator::EmitGlobalVariable(const VarDecl* V) {
         // already done in EmitConstant
         return;
     }
-    if (V->isPublic() && mode != SINGLE_FILE) {
+    if (mode != SINGLE_FILE && V->isPublic()) {
         // TODO type
         hbuf << "extern ";
         EmitTypePreName(V->getType(), hbuf);
@@ -618,7 +620,7 @@ void CCodeGenerator::EmitGlobalVariable(const VarDecl* V) {
         hbuf << ";\n";
         hbuf << '\n';
     } else {
-        cbuf << "static ";
+        if (EmitAsStatic(V)) cbuf << "static ";
     }
     EmitTypePreName(V->getType(), cbuf);
     cbuf << ' ';
@@ -643,7 +645,7 @@ void CCodeGenerator::EmitTypeDecl(const TypeDecl* T) {
     LOG_DECL(T)
 
     StringBuilder* out = &cbuf;
-    if (T->isPublic()) out = &hbuf;
+    if (mode != SINGLE_FILE && T->isPublic()) out = &hbuf;
     switch (T->getKind()) {
     case DECL_FUNC:
     case DECL_VAR:
@@ -659,13 +661,13 @@ void CCodeGenerator::EmitTypeDecl(const TypeDecl* T) {
         *out << ";\n\n";
         break;
     case DECL_STRUCTTYPE:
-        EmitStructType(cast<StructTypeDecl>(T), T->isPublic() ? hbuf : cbuf, 0);
+        EmitStructType(cast<StructTypeDecl>(T), *out, 0);
         return;
     case DECL_ENUMTYPE:
-        EmitEnumType(cast<EnumTypeDecl>(T), T->isPublic() ? hbuf : cbuf);
+        EmitEnumType(cast<EnumTypeDecl>(T), *out);
         return;
     case DECL_FUNCTIONTYPE:
-        EmitFunctionType(cast<FunctionTypeDecl>(T), T->isPublic() ? hbuf : cbuf);
+        EmitFunctionType(cast<FunctionTypeDecl>(T), *out);
         return;
     case DECL_ARRAYVALUE:
     case DECL_IMPORT:
@@ -679,7 +681,7 @@ void CCodeGenerator::EmitForwardTypeDecl(const TypeDecl* D) {
     assert(isa<StructTypeDecl>(D));
 
     StringBuilder* out = &cbuf;
-    if (D->isPublic()) out = &hbuf;
+    if (mode != SINGLE_FILE && D->isPublic()) out = &hbuf;
 
     // Syntax: typedef struct mod_name_ mod_name;
     *out << "typedef struct ";
@@ -767,7 +769,6 @@ void CCodeGenerator::EmitArgVarDecl(const VarDecl* D, StringBuilder& output, uns
 void CCodeGenerator::EmitVarDecl(const VarDecl* D, StringBuilder& output, unsigned indent) {
     LOG_DECL(D)
     output.indent(indent);
-    //if (D->hasLocalQualifier()) output << "static ";
     EmitTypePreName(D->getType(), output);
     output << ' ';
     if (D->isGlobal()) EmitDecl(D, output);
@@ -1018,10 +1019,7 @@ void CCodeGenerator::EmitSwitchStmt(const Stmt* S, unsigned indent) {
 void CCodeGenerator::EmitFunctionProto(const FunctionDecl* F, StringBuilder& output) {
     LOG_FUNC
 
-    bool emitStatic = true;
-    if (F->getName() == "main") emitStatic = false;
-    if (mode != SINGLE_FILE && F->isPublic()) emitStatic = false;
-    if (emitStatic) output << "static ";
+    if (EmitAsStatic(F)) output << "static ";
 
     EmitTypePreName(F->getReturnType(), output);
     EmitTypePostName(F->getReturnType(), output);
@@ -1137,5 +1135,13 @@ void CCodeGenerator::EmitStringLiteral(const std::string& input, StringBuilder& 
         cp++;
     }
     output << '"';
+}
+
+bool CCodeGenerator::EmitAsStatic(const Decl* D) const {
+    bool emitStatic = true;
+    if (D->getName() == "main") emitStatic = false;
+    if (mode != SINGLE_FILE && D->isPublic()) emitStatic = false;
+    if (D->getModule()->isExported()) return false;
+    return emitStatic;
 }
 

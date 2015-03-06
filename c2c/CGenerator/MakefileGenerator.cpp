@@ -24,8 +24,12 @@ void MakefileGenerator::add(const std::string& filename) {
 }
 
 void MakefileGenerator::write() {
-    std::string targetname = "../" + target;
-    if (!isExec) targetname += ".a";
+    std::string targetname = "../";
+    if (isExec) {
+        targetname += target;
+    } else {
+        targetname += "lib" + target + ".a";
+    }
 
     std::string args = "-O3 -Wall -Wextra -Wno-unused -Wno-unused-parameter -std=c99";
 
