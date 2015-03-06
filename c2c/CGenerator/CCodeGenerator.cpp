@@ -443,8 +443,8 @@ void CCodeGenerator::EmitIncludes() {
     StringList systemIncludes;
     StringList localIncludes;
 
-    // always include stdint.h for int16_t, etc types
-    hbuf << "#include <stdint.h>\n";
+    hbuf << "#include <stdint.h>\n"; // always include int16_t, etc types
+    hbuf << "#include <stddef.h>\n"; // always include for NULL
 
     // filter out unique entries, split into system and local includes
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
