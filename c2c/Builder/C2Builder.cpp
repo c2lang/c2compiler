@@ -448,6 +448,7 @@ C2::Module* C2Builder::getModule(const std::string& name, bool isExternal, bool 
     if (iter == modules.end()) {
         C2::Module* P = new C2::Module(name, isExternal, isCLib);
         modules[name] = P;
+        if (recipe.hasExported(name)) P->setExported();
         return P;
     } else {
         // TODO check that isCLib/isExternal matches returned module? otherwise give error
@@ -811,8 +812,6 @@ bool C2Builder::loadModule(const std::string& name) {
             var->setType(QT);
             c2Mod->addSymbol(var);
         }
-#if 0
-#endif
         return true;
     }
     return false;
@@ -914,14 +913,14 @@ bool C2Builder::checkMainFunction(DiagnosticsEngine& Diags) {
 
 bool C2Builder::checkExportedPackages() const {
     for (unsigned i=0; i<recipe.exported.size(); i++) {
-        const std::string& pkg = recipe.exported[i];
-        const Module* M = findModule(pkg);
+        const std::string& modName = recipe.exported[i];
+        const Module* M = findModule(modName);
         if (!M) {
-            fprintf(stderr, "cannot export '%s', no such module\n", pkg.c_str());
+            fprintf(stderr, "cannot export '%s', no such module\n", modName.c_str());
             exit(-1);
         }
         if (M->isExternal()) {
-            fprintf(stderr, "cannot export external module '%s'\n", pkg.c_str());
+            fprintf(stderr, "cannot export external module '%s'\n", modName.c_str());
             exit(-1);
         }
     }
@@ -943,23 +942,19 @@ void C2Builder::generateOptionalC() {
 
     MakefileGenerator makeGen(outdir, recipe.name, recipe.isExec);
     if (single_module) {
-        std::string filename = recipe.name;
-        makeGen.add(filename);
-        CCodeGenerator gen(filename, CCodeGenerator::SINGLE_FILE, modules);
+        makeGen.add(recipe.name);
+        CCodeGenerator gen(recipe.name, CCodeGenerator::SINGLE_FILE, modules);
         for (unsigned i=0; i<files.size(); i++) {
             FileInfo* info = files[i];
             gen.addEntry(info->ast);
         }
         if (options.verbose) printf(COL_VERBOSE "generating C (single module)" ANSI_NORMAL"\n");
-        gen.generate();
-        if (options.printC) gen.dump();
+        gen.generate(options.printC);
         gen.write(outdir);
     } else {
         for (ModulesIter iter = modules.begin(); iter != modules.end(); ++iter) {
             Module* P = iter->second;
-            if (P->isPlainC()) continue;
-            // for now filter out 'c2' as well
-            if (P->getName() == "c2") continue;
+            if (P->isExternal()) continue;
             if (options.verbose) printf(COL_VERBOSE "generating C for module %s" ANSI_NORMAL "\n", P->getName().c_str());
             makeGen.add(P->getName());
             CCodeGenerator gen(P->getName(), CCodeGenerator::MULTI_FILE, modules);
@@ -969,12 +964,28 @@ void C2Builder::generateOptionalC() {
                     gen.addEntry(info->ast);
                 }
             }
-            gen.generate();
-            if (options.printC) gen.dump();
+            gen.generate(options.printC);
             gen.write(outdir);
         }
     }
     makeGen.write();
+
+    // generate external library header
+    if (!recipe.isExec) {
+        CCodeGenerator gen(recipe.name, CCodeGenerator::MULTI_FILE, modules);
+        for (ModulesIter iter = modules.begin(); iter != modules.end(); ++iter) {
+            Module* P = iter->second;
+            if (!P->isExported()) continue;
+            for (unsigned i=0; i<files.size(); i++) {
+                FileInfo* info = files[i];
+                if (info->ast.getModuleName() == P->getName()) {
+                    gen.addEntry(info->ast);
+                }
+            }
+        }
+        gen.createLibHeader(options.printC, std::string(OUTPUT_DIR) + recipe.name + "/");
+    }
+
     u_int64_t t2 = Utils::getCurrentTime();
     if (options.printTiming) printf(COL_TIME"C code generation took %" PRIu64" usec" ANSI_NORMAL"\n", t2 - t1);
 

@@ -49,14 +49,16 @@ public:
     ~CCodeGenerator();
 
     void addEntry(AST& ast) { entries.push_back(&ast); }
-    void generate();
+
+    void generate(bool printCode);
     void write(const std::string& outputDir);
-    void dump();
+    void createLibHeader(bool printCode, const std::string& outputDir);
 
     // for CTypeWriter
     virtual void forwardDecl(const Decl* D);
     virtual void fullDecl(const Decl* D);
 private:
+    void EmitIncludeGuard();
     void EmitIncludes();
 
     void EmitFunctionForward(const FunctionDecl* F);

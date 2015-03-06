@@ -29,16 +29,15 @@ public:
 
     void addFile(const std::string& name_);
     void addConfig(const std::string& config_);
-    void addExported(const std::string& pkg_);
+    void addExported(const std::string& mod_);
     void addAnsiCConfig(const std::string& config_);
     void addCodeGenConfig(const std::string& config_);
     void addDepsConfig(const std::string& config_);
     void silenceWarning(const std::string& warn_);
 
-
     int size() const { return files.size(); }
     const std::string& get(int i) const;
-    bool hasExported(const std::string& pkg) const;
+    bool hasExported(const std::string& mod) const;
 
     std::string name;
     bool isExec;

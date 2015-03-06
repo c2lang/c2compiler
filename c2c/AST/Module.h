@@ -31,8 +31,10 @@ public:
     Decl* findSymbol(const std::string& name) const;
     const std::string& getName() const { return name; }
     const std::string& getCName() const;
-    bool isPlainC() const { return isCLib; }
-    bool isExternal() const { return is_External; }
+    bool isPlainC() const { return m_isCLib; }
+    bool isExternal() const { return m_isExternal; }
+    bool isExported() const { return m_isExported; }
+    void setExported() { m_isExported = true; }
 
     void dump() const;
 
@@ -42,8 +44,9 @@ public:
     const Symbols& getSymbols() const { return symbols; }
 private:
     const std::string name;
-    bool is_External;       // not a module in current target
-    bool isCLib;            // not a C2 module, but used C library
+    bool m_isExternal;       // not a module in current target
+    bool m_isCLib;           // not a C2 module, but used C library
+    bool m_isExported;       // symbols should be exported (in recipe)
 
     Symbols symbols;
 };

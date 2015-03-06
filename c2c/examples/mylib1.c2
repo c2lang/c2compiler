@@ -14,7 +14,7 @@ public type Handle struct {
 }
 
 public func Handle* init() {
-    Handle* p; //= malloc(sizeof(Handle));
+    Handle* p = nil; //= malloc(sizeof(Handle));
     internal.init();
     return p;
 }

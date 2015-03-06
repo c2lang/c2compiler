@@ -24,12 +24,13 @@ static std::string empty = "";
 
 Module::Module(const std::string& name_, bool isExternal_, bool isCLib_)
     : name(name_)
-    , is_External(isExternal_)
-    , isCLib(isCLib_)
+    , m_isExternal(isExternal_)
+    , m_isCLib(isCLib_)
+    , m_isExported(false)
 {}
 
 const std::string& Module::getCName() const {
-    if (isCLib) return empty;
+    if (m_isCLib) return empty;
     return name;
 }
 
@@ -45,7 +46,8 @@ Decl* Module::findSymbol(const std::string& name_) const {
 }
 
 void Module::dump() const {
-    printf("symbols of module %s (clib=%d, external=%d)\n", name.c_str(), isCLib, is_External);
+    printf("symbols of module %s (clib=%d, external=%d, exported=%d)\n",
+        name.c_str(), m_isCLib, m_isExternal, m_isExported);
     for (SymbolsConstIter iter = symbols.begin(); iter != symbols.end(); ++iter) {
         printf("  %s\n", iter->second->getName().c_str());
     }

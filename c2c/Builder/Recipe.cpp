@@ -25,8 +25,8 @@ void Recipe::addConfig(const std::string& config_) {
     configs.push_back(config_);
 }
 
-void Recipe::addExported(const std::string& pkg_) {
-    exported.push_back(pkg_);
+void Recipe::addExported(const std::string& mod_) {
+    exported.push_back(mod_);
 }
 
 void Recipe::addAnsiCConfig(const std::string& config_) {
@@ -49,9 +49,9 @@ const std::string& Recipe::get(int i) const {
     return files[i];
 }
 
-bool Recipe::hasExported(const std::string& pkg) const {
+bool Recipe::hasExported(const std::string& mod) const {
     for (unsigned i=0; i<exported.size(); ++i) {
-        if (exported[i] == pkg) return true;
+        if (exported[i] == mod) return true;
     }
     return false;
 }
