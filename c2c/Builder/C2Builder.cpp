@@ -413,6 +413,8 @@ int C2Builder::build() {
 
     generateOptionsDeps();
 
+    if (!checkExportedPackages()) goto out;
+
     generateOptionalC();
 
     generateOptionalIR();
@@ -451,6 +453,12 @@ C2::Module* C2Builder::getModule(const std::string& name, bool isExternal, bool 
         // TODO check that isCLib/isExternal matches returned module? otherwise give error
         return iter->second;
     }
+}
+
+C2::Module* C2Builder::findModule(const std::string& name) const {
+    ModulesConstIter iter = modules.find(name);
+    if (iter == modules.end()) return 0;
+    else return iter->second;
 }
 
 // merges symbols of all files of each module
@@ -900,6 +908,22 @@ bool C2Builder::checkMainFunction(DiagnosticsEngine& Diags) {
     if (!mainDecl) {
         Diags.Report(diag::err_main_missing);
         return false;
+    }
+    return true;
+}
+
+bool C2Builder::checkExportedPackages() const {
+    for (unsigned i=0; i<recipe.exported.size(); i++) {
+        const std::string& pkg = recipe.exported[i];
+        const Module* M = findModule(pkg);
+        if (!M) {
+            fprintf(stderr, "cannot export '%s', no such module\n", pkg.c_str());
+            exit(-1);
+        }
+        if (M->isExternal()) {
+            fprintf(stderr, "cannot export external module '%s'\n", pkg.c_str());
+            exit(-1);
+        }
     }
     return true;
 }

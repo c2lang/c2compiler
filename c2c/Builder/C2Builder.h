@@ -75,6 +75,7 @@ public:
 private:
     bool haveModule(const std::string& name) const;
     Module* getModule(const std::string& name, bool isExternal, bool isCLib);
+    Module* findModule(const std::string& name) const;
     bool createModules();
     bool loadExternalModules();
     bool loadModule(const std::string& name);
@@ -83,6 +84,7 @@ private:
     void printASTs() const;
 
     bool checkMainFunction(clang::DiagnosticsEngine& Diags);
+    bool checkExportedPackages() const;
     void generateOptionalC();
     void generateOptionalIR();
     void generateOptionsDeps() const;

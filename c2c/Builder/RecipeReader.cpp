@@ -147,7 +147,7 @@ void RecipeReader::handleLine(char* line) {
                         const char* tok2 = get_token();
                         if (!tok2) break;
                         if (current->hasExported(tok2)) {
-                            error("duplicate package '%s'", tok2);
+                            error("duplicate module '%s'", tok2);
                         }
                         current->addExported(tok2);
                     }

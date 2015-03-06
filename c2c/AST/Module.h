@@ -42,8 +42,8 @@ public:
     const Symbols& getSymbols() const { return symbols; }
 private:
     const std::string name;
-    bool is_External;
-    bool isCLib;    // not a C2 module, but used C library
+    bool is_External;       // not a module in current target
+    bool isCLib;            // not a C2 module, but used C library
 
     Symbols symbols;
 };
