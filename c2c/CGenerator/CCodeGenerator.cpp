@@ -438,7 +438,9 @@ void CCodeGenerator::dump() {
 
 void CCodeGenerator::write(const std::string& outputDir) {
     FileUtils::writeFile(outputDir.c_str(), outputDir + cfilename, cbuf);
-    FileUtils::writeFile(outputDir.c_str(), outputDir + hfilename, hbuf);
+    if (mode != SINGLE_FILE) {
+        FileUtils::writeFile(outputDir.c_str(), outputDir + hfilename, hbuf);
+    }
 }
 
 void CCodeGenerator::forwardDecl(const Decl* D) {
@@ -455,8 +457,12 @@ void CCodeGenerator::EmitIncludes() {
     StringList systemIncludes;
     StringList localIncludes;
 
-    hbuf << "#include <stdint.h>\n"; // always include int16_t, etc types
-    hbuf << "#include <stddef.h>\n"; // always include for NULL
+    {
+        StringBuilder* out = &hbuf;
+        if (mode != MULTI_FILE) out = &cbuf;
+        (*out) << "#include <stdint.h>\n"; // always include int16_t, etc types
+        (*out) << "#include <stddef.h>\n"; // always include for NULL
+    }
 
     // filter out unique entries, split into system and local includes
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
