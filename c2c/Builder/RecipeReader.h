@@ -38,6 +38,7 @@ private:
     void handleLine(char* line);
     char* get_token();
     void error(const char *fmt, ...);
+    void checkCurrent();
 
     typedef std::vector<Recipe*> Recipes;
     Recipes recipes;

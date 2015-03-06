@@ -142,6 +142,15 @@ void RecipeReader::handleLine(char* line) {
                         // TODO check duplicate configs
                         current->addConfig(tok2);
                     }
+                } else if (strcmp(tok, "export") == 0) {
+                    while (1) {
+                        const char* tok2 = get_token();
+                        if (!tok2) break;
+                        if (current->hasExported(tok2)) {
+                            error("duplicate package '%s'", tok2);
+                        }
+                        current->addExported(tok2);
+                    }
                 } else if (strcmp(tok, "ansi-c") == 0) {
                     current->generateCCode = true;
                     while (1) {
@@ -176,6 +185,7 @@ void RecipeReader::handleLine(char* line) {
                     error("unknown option '%s'", tok);
                 }
             } else if (strcmp(tok, "end") == 0) {
+                checkCurrent();
                 state = START;
                 current = 0;
             } else {
@@ -236,6 +246,14 @@ void RecipeReader::print() const {
     for (unsigned i=0; i<recipes.size(); i++) {
         Recipe* R = recipes[i];
         printf("  %s\n", R->name.c_str());
+    }
+}
+
+void RecipeReader::checkCurrent() {
+    // lib targets must have export entry
+    if (!current->isExec && current->exported.size() == 0) {
+        fprintf(stderr, "recipe: target %s is type lib but has no 'export' entry\n", current->name.c_str());
+        exit(-1);
     }
 }
 

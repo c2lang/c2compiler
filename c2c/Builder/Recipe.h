@@ -29,12 +29,16 @@ public:
 
     void addFile(const std::string& name_);
     void addConfig(const std::string& config_);
+    void addExported(const std::string& pkg_);
     void addAnsiCConfig(const std::string& config_);
     void addCodeGenConfig(const std::string& config_);
     void addDepsConfig(const std::string& config_);
     void silenceWarning(const std::string& warn_);
+
+
     int size() const { return files.size(); }
     const std::string& get(int i) const;
+    bool hasExported(const std::string& pkg) const;
 
     std::string name;
     bool isExec;
@@ -44,13 +48,14 @@ public:
     typedef std::vector<std::string> Files;
     Files files;
 
-    typedef std::vector<std::string> Configs;
+    typedef std::vector<std::string> StringList;
 
-    Configs configs;
-    Configs cConfigs;
-    Configs genConfigs;
-    Configs depConfigs;
-    Configs silentWarnings;
+    StringList configs;
+    StringList exported;
+    StringList cConfigs;
+    StringList genConfigs;
+    StringList depConfigs;
+    StringList silentWarnings;
 private:
     Recipe(const Recipe&);
     Recipe& operator= (const Recipe&);

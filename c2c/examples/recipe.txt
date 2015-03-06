@@ -137,6 +137,7 @@ end
 lib mylib
     $warnings no-unused
     $ansi-c
+    $export mylib
     mylib1.c2
     mylib2.c2
 end
