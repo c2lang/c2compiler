@@ -931,6 +931,7 @@ bool C2Builder::checkExportedPackages() const {
 void C2Builder::generateOptionalC() {
     if (!options.generateC && !recipe.generateCCode) return;
 
+    u_int64_t t1 = Utils::getCurrentTime();
     bool single_module = false;
     for (unsigned i=0; i<recipe.cConfigs.size(); i++) {
         const std::string& conf = recipe.cConfigs[i];
@@ -942,7 +943,6 @@ void C2Builder::generateOptionalC() {
 
     MakefileGenerator makeGen(outdir, recipe.name, recipe.isExec);
     if (single_module) {
-        u_int64_t t1 = Utils::getCurrentTime();
         std::string filename = recipe.name;
         makeGen.add(filename);
         CCodeGenerator gen(filename, CCodeGenerator::SINGLE_FILE, modules);
@@ -952,12 +952,9 @@ void C2Builder::generateOptionalC() {
         }
         if (options.verbose) printf(COL_VERBOSE "generating C (single module)" ANSI_NORMAL"\n");
         gen.generate();
-        u_int64_t t2 = Utils::getCurrentTime();
-        if (options.printTiming) printf(COL_TIME"C code generation took %" PRIu64" usec" ANSI_NORMAL"\n", t2 - t1);
         if (options.printC) gen.dump();
         gen.write(outdir);
     } else {
-        u_int64_t t1 = Utils::getCurrentTime();
         for (ModulesIter iter = modules.begin(); iter != modules.end(); ++iter) {
             Module* P = iter->second;
             if (P->isPlainC()) continue;
@@ -976,13 +973,16 @@ void C2Builder::generateOptionalC() {
             if (options.printC) gen.dump();
             gen.write(outdir);
         }
-        u_int64_t t2 = Utils::getCurrentTime();
-        if (options.printTiming) printf(COL_TIME"C code generation took %" PRIu64" usec" ANSI_NORMAL"\n", t2 - t1);
     }
     makeGen.write();
+    u_int64_t t2 = Utils::getCurrentTime();
+    if (options.printTiming) printf(COL_TIME"C code generation took %" PRIu64" usec" ANSI_NORMAL"\n", t2 - t1);
 
-    // execute the generated makefile
+    u_int64_t t3 = Utils::getCurrentTime();
+    // execute generate makefile
     ProcessUtils::run(outdir, "/usr/bin/make");
+    u_int64_t t4 = Utils::getCurrentTime();
+    if (options.printTiming) printf(COL_TIME"C code compilation took %" PRIu64" usec" ANSI_NORMAL"\n", t4 - t3);
 }
 
 void C2Builder::generateOptionalIR() {
