@@ -1,4 +1,4 @@
-package test;
+module test;
 
 func int8 test1() {
     return 100;

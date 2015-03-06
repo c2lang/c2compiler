@@ -1,10 +1,10 @@
-package test;
+module test;
 
-use stdio as io;
+import stdio as io;
 
-public func int main(int a) {
+public func int32 main(int32 a) {
 //func void main() {
-//    int a = 10;
+//    int32 a = 10;
     if (a) {
         io.puts("hello\n");
     } else {
