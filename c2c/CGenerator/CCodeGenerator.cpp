@@ -377,6 +377,18 @@ void CCodeGenerator::EmitCallExpr(const Expr* E, StringBuilder& output) {
         if (i != 0) output << ", ";
         EmitExpr(C->getArg(i), output);
     }
+    const FunctionType* FT = cast<FunctionType>(C->getFn()->getType());
+    const FunctionDecl* func = FT->getDecl();
+    // generate default arguments in call
+    if (C->numArgs() < func->numArgs()) {
+        for (unsigned i=C->numArgs(); i<func->numArgs(); i++) {
+            if (i != 0) output << ", ";
+            VarDecl* arg = func->getArg(i);
+            assert(arg->getInitValue());
+            EmitExpr(arg->getInitValue(), output);
+        }
+
+    }
     output << ')';
 }
 
@@ -690,11 +702,7 @@ void CCodeGenerator::EmitArgVarDecl(const VarDecl* D, StringBuilder& output, uns
         output << D->getName();
     }
     EmitTypePostName(D->getType(), output);
-    if (D->getInitValue()) {
-        output << " = ";
-        EmitExpr(D->getInitValue(), output);
-    }
-    //output << ";\n";
+    // NOTE dont generate init values since C doesn't support default args
 }
 
 void CCodeGenerator::EmitVarDecl(const VarDecl* D, StringBuilder& output, unsigned indent) {

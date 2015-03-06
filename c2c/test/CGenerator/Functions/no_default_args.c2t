@@ -1,0 +1,41 @@
+// @warnings{no-unused}
+// @generate-c
+
+// @file{file1}
+module test;
+
+func void foo(int32 a = 11) {}
+
+func void bar(int32 a, int32 b = 22) {}
+
+func void faa(int32 a = 11, int32 b = 22) {}
+
+public func int32 main(int32 argc, const char*[] argv) {
+    foo();
+    foo(1);
+
+    bar(10);
+    bar(10, 20);
+
+    faa();
+    faa(1);
+    faa(1, 2);
+    return 0;
+}
+
+// @expect{test.c}
+static void __test_foo(int32_t a);
+static void __test_bar(int32_t a, int32_t b);
+static void __test_faa(int32_t a, int32_t b);
+
+int32_t main(int32_t argc, const char* argv[]) {
+    foo(11);
+    foo(1);
+    bar(10, 22);
+    bar(10, 20);
+    faa(11, 22);
+    faa(1, 22);
+    faa(1, 2);
+    return 0;
+}
+
