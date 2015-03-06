@@ -15,14 +15,14 @@ const int32 c = 30;
 
 // @expect{test.c}
 
-#define __test_b 20
-#define __test_c 30
+#define test_b 20
+#define test_c 30
 
-typedef struct __test_Foo_ __test_Foo;
+typedef struct test_Foo_ test_Foo;
 
-struct __test_Foo_ {
+struct test_Foo_ {
     int32_t x;
 };
 
-static int32_t __test_a = 10;
+static int32_t test_a = 10;
 

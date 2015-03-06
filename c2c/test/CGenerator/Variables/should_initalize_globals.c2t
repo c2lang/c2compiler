@@ -18,19 +18,19 @@ int32[2] is;
 
 // @expect{test.c}
 
-typedef struct __test_Foo_ __test_Foo;
+typedef struct test_Foo_ test_Foo;
 
-struct __test_Foo_ {
+struct test_Foo_ {
     int32_t i;
     char* cp;
     int b;
 };
 
-static __test_Foo __test_f = { 0 };
+static test_Foo test_f = { 0 };
 
-static int32_t __test_i = 0;
+static int32_t test_i = 0;
 
-static __test_Foo __test_fs[2] = { 0 };
+static test_Foo test_fs[2] = { 0 };
 
-static int32_t __test_is[2] = { 0 };
+static int32_t test_is[2] = { 0 };
 

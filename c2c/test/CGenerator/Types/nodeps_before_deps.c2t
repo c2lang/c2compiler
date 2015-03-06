@@ -13,13 +13,13 @@ type Foo struct {
 type Faa int16;
 
 // @expect{test.c}
-typedef int32_t __test_Bar;
+typedef int32_t test_Bar;
 
-typedef int16_t __test_Faa;
+typedef int16_t test_Faa;
 
-typedef struct __test_Foo_ __test_Foo;
+typedef struct test_Foo_ test_Foo;
 
-struct __test_Foo_ {
+struct test_Foo_ {
     int32_t b;
 };
 

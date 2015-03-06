@@ -13,17 +13,17 @@ type Point struct {
 type State enum int8 { A, B, C }
 
 // @expect{test.c}
-typedef int32_t __test_Number;
+typedef int32_t test_Number;
 
-typedef struct __test_Point_ __test_Point;
+typedef struct test_Point_ test_Point;
 
-struct __test_Point_ {
+struct test_Point_ {
     int32_t x;
 };
 
 typedef enum {
-  __test_A,
-  __test_B,
-  __test_C,
-} __test_State;
+  test_A,
+  test_B,
+  test_C,
+} test_State;
 

@@ -13,15 +13,15 @@ type Bar struct {
 }
 
 // @expect{test.c}
-typedef struct __test_Bar_ __test_Bar;
+typedef struct test_Bar_ test_Bar;
 
-typedef struct __test_Foo_ __test_Foo;
+typedef struct test_Foo_ test_Foo;
 
-struct __test_Foo_ {
-    __test_Bar* b;
+struct test_Foo_ {
+    test_Bar* b;
 };
 
-struct __test_Bar_ {
-    __test_Foo* f;
+struct test_Bar_ {
+    test_Foo* f;
 };
 

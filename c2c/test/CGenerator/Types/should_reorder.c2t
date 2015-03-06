@@ -21,22 +21,22 @@ type B struct {
 }
 
 // @expect{test.c}
-typedef struct __test_B_ __test_B;
-struct __test_B_ {
+typedef struct test_B_ test_B;
+struct test_B_ {
     int32_t x;
 };
 
-typedef __test_B __test_C;
+typedef test_B test_C;
 
-typedef __test_B __test_E;
+typedef test_B test_E;
 
-typedef struct __test_D_ __test_D;
-struct __test_D_ {
-    __test_D* next;
+typedef struct test_D_ test_D;
+struct test_D_ {
+    test_D* next;
 };
 
-typedef struct __test_A_ __test_A;
-struct __test_A_ {
-    __test_B b;
+typedef struct test_A_ test_A;
+struct test_A_ {
+    test_B b;
 };
 

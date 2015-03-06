@@ -24,7 +24,7 @@ void GenUtils::addName(const std::string& modName, const std::string& name, Stri
     if (name == "main" || modName == "") {
         buffer << name;
     } else {
-        buffer << "__" << modName << '_' << name;
+        buffer << modName << '_' << name;
     }
 }
 
