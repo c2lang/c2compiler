@@ -193,6 +193,8 @@ public:
         , file_start(0)
         , line_offset(0)
         , hasErrors(false)
+        , skip(false)
+        , cur(0)
     {
         if (single) {
             current_file = cwd;
@@ -205,6 +207,8 @@ public:
     void testFile();
 
     bool haveErrors() const { return hasErrors; }
+
+    bool shouldSkip() const { return skip; }
 
     void showNotes() const {
         for (IssuesConstIter iter = notes.begin(); iter != notes.end(); ++iter) {
@@ -228,6 +232,12 @@ public:
 private:
     void parseLine(const char* start, const char* end);
 
+    // NEW API
+    bool parseOuter();
+    bool parseKeyword();
+    void skipLine();
+
+    // OLD API
     void parseLineOutside(const char* start, const char* end);
     void parseLineFile(const char* start, const char* end);
     void parseLineExpect(const char* start, const char* end);
@@ -330,6 +340,8 @@ private:
     unsigned line_offset;
     StringBuilder recipe;
     bool hasErrors;
+    bool skip;
+    const char* cur;
 };
 
 void IssueDb::parseLineExpect(const char* start, const char* end) {
@@ -532,16 +544,73 @@ void IssueDb::parseLine(const char* start, const char* end) {
     }
 }
 
+
+bool IssueDb::parseKeyword() {
+    // NOTE: cur points to start of keyword after // @
+
+    if (strncmp(cur, "skip", 4) == 0) {
+        if (!runSkipped) skip = true;
+        return true;
+    } else if (strncmp(cur, "recipe", 6) == 0) {
+    } else {
+        // error << "unknown keyword '" << keyword << "' on line " << line_nr;
+        return false;
+    }
+    return true;
+}
+
+// returns if OK
+bool IssueDb::parseOuter() {
+    // NOTE: cur always points to beginning of line
+    printf("%s() %6s\n", __func__, cur);
+
+    while (*cur != 0) {
+        if (*cur == '\n') {
+            skipLine();
+            continue;
+        }
+        // search for lines starting with // @..
+        if (strncmp(cur, "// @", 4) == 0) {
+            cur += 4;
+            if (!parseKeyword()) return false;
+            continue;
+        }
+
+        // TODO give error on non-empty lines
+        skipLine();
+    }
+    return true;
+}
+
+void IssueDb::skipLine() {
+    while (*cur != 0) {
+        if (*cur == '\n') {
+            line_nr++;
+            cur++;
+            return;
+        }
+        cur++;
+    }
+}
+
+
+
 bool IssueDb::parseFile() {
     const char* cp = (const char*) file.region;
-    const char* end = cp + file.size;
+    cur = cp;
     line_nr = 1;
+    if (!parseOuter()) {
+        // print error (global StringBuilder?)
+    }
+    return skip;
+
+    const char* end = cp + file.size;
     const char* line_start = cp;
     recipe << "target test\n";
     if (single) {
         recipe << current_file << '\n';
     }
-    bool hasSkip = strncmp(cp, "// @skip", 8) == 0;
+    bool hasSkip = (strncmp(cp, "// @skip", 8) == 0);
     if (runSkipped != hasSkip) return true;
     while (cp != end) {
         while (*cp != '\n' && cp != end) cp++;
