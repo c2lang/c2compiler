@@ -151,7 +151,7 @@ void RecipeReader::handleLine(char* line) {
                         }
                         current->addExported(tok2);
                     }
-                } else if (strcmp(tok, "ansi-c") == 0) {
+                } else if (strcmp(tok, "generate-c") == 0) {
                     current->generateCCode = true;
                     while (1) {
                         const char* tok2 = get_token();

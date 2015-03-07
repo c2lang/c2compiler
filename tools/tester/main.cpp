@@ -202,7 +202,7 @@ public:
         }
     }
 
-    bool parseFile();
+    bool parse();
 
     void testFile();
 
@@ -233,14 +233,20 @@ private:
     void parseLine(const char* start, const char* end);
 
     // NEW API
-    bool parseOuter();
+    bool parseRecipe();
+    bool parseFile();
+    bool parseExpect();
     bool parseKeyword();
+    bool parseOuter();
     void skipLine();
+    const char* readWord();
+    const char* readLine();
+    const char* readUntil(char delim);
 
     // OLD API
-    void parseLineOutside(const char* start, const char* end);
-    void parseLineFile(const char* start, const char* end);
-    void parseLineExpect(const char* start, const char* end);
+    //void parseLineOutside(const char* start, const char* end);
+    //void parseLineFile(const char* start, const char* end);
+    //void parseLineExpect(const char* start, const char* end);
     void parseTags(const char* start, const char* end);
 
     void error(const char* msg) {
@@ -342,8 +348,10 @@ private:
     bool hasErrors;
     bool skip;
     const char* cur;
+    StringBuilder errorMsg;
 };
 
+#if 0
 void IssueDb::parseLineExpect(const char* start, const char* end) {
     // if line starts with '// @' stop filemode
     if (strncmp(start, "// @", 4) == 0) {
@@ -373,6 +381,7 @@ void IssueDb::parseLineFile(const char* start, const char* end) {
 
     parseTags(start, end);
 }
+#endif
 
 void IssueDb::parseTags(const char* start, const char* end) {
     // if finding '// @' somewhere else, it's a note/warning/error
@@ -439,6 +448,7 @@ parse_msg:
     }
 }
 
+#if 0
 void IssueDb::parseLineOutside(const char* start, const char* end) {
     const char* cp = start;
     skipWhitespace(&cp, end);
@@ -465,7 +475,7 @@ void IssueDb::parseLineOutside(const char* start, const char* end) {
                 cp++;
             }
             std::string name(name_start, cp-name_start);
-            recipe << "  $warnings " << name << '\n';
+            recipe << "    $warnings " << name << '\n';
         } else if (strncmp(cp, "file{", 5) == 0) {
             if (single) {
                 error("invalid @file tag in single test");
@@ -530,6 +540,7 @@ void IssueDb::parseLineOutside(const char* start, const char* end) {
     parseTags(start, end);
 }
 
+
 void IssueDb::parseLine(const char* start, const char* end) {
     switch (mode) {
     case OUTSIDE:
@@ -543,26 +554,183 @@ void IssueDb::parseLine(const char* start, const char* end) {
         break;
     }
 }
+#endif
 
+bool IssueDb::parseRecipe() {
+    if (strncmp(cur, "bin", 3) == 0) {
+        recipe << "target ";
+    } else if (strncmp(cur, "lib", 3) == 0) {
+        recipe << "lib ";
+    } else {
+        errorMsg << "unknown library type '" << readWord() << "'";
+        return false;
+    }
+    recipe << "test\n";
+    skipLine();
+    // TODO check that each line starts with $? (after optional whitespace)
+    while (1) {
+        if (*cur == 0 || strncmp(cur, "// @", 4) == 0) return true;
+
+        if (*cur != '\n') {
+            recipe << readLine() << '\n';
+        }
+        skipLine();
+    }
+
+    return true;
+}
+
+bool IssueDb::parseFile() {
+    // Syntax file{name}
+    if (*cur != '{') {
+        errorMsg << "expected { after file";
+        return false;
+    }
+    cur++;
+
+    std::string filename = readUntil('}');
+    if (filename.empty()) {
+        errorMsg << "expected filename";
+        return false;
+    }
+    if (!endsWith(filename.c_str(), ".c2")) filename += ".c2";
+    recipe << "    " << filename << '\n';
+    skipLine();
+    const char* start = cur;
+    while (1) {
+        if (*cur == 0 || strncmp(cur, "// @", 4) == 0) {
+            const char* end = cur;
+            writeFile(filename.c_str(), start, end - start);
+            break;
+        }
+        skipLine();
+    }
+    return true;
+}
+
+bool IssueDb::parseExpect() {
+    // Syntax expect{name}
+    if (*cur != '{') {
+        errorMsg << "expected { after file";
+        return false;
+    }
+    cur++;
+
+    std::string filename = readUntil('}');
+    if (filename.empty()) {
+        errorMsg << "expected filename";
+        return false;
+    }
+    skipLine();
+
+    currentExpect = new ExpectFile(filename);
+    // TODO check for name duplicates
+    expectedFiles.push_back(currentExpect);
+    while (*cur != 0) {
+        if (strncmp(cur, "// @", 4) == 0) {
+            break;
+        }
+
+        if (*cur == '\n') {
+            skipLine();
+            continue;
+        }
+
+        const char* end = cur;
+        while (*end != 0 && *end != '\n') end++;
+        currentExpect->addLine(cur, end);
+        skipLine();
+    }
+    currentExpect = 0;
+    return true;
+}
 
 bool IssueDb::parseKeyword() {
     // NOTE: cur points to start of keyword after // @
+    const char* keyword = readWord();
 
-    if (strncmp(cur, "skip", 4) == 0) {
+    if (strcmp(keyword, "skip") == 0) {
         if (!runSkipped) skip = true;
         return true;
-    } else if (strncmp(cur, "recipe", 6) == 0) {
+    } else if (strcmp(keyword, "recipe") == 0) {
+        if (single) {
+            errorMsg << "keyword 'recipe' only allowed in .c2t files";
+            return false;
+        }
+        cur += 7;
+        return parseRecipe();
+    } else if (strcmp(keyword, "warnings") == 0) {
+        if (!single) {
+            errorMsg << "keyword 'warnings' only allowed in .c2 files";
+            return false;
+        }
+        recipe << "\t$warnings " << readLine() << '\n';
+        skipLine();
+    } else if (strcmp(keyword, "file") == 0) {
+        if (single) {
+            errorMsg << "keyword 'file' only allowed in .c2t files";
+            return false;
+        }
+        cur += 4;
+        return parseFile();
+    } else if (strcmp(keyword, "expect") == 0) {
+        if (single) {
+            errorMsg << "keyword 'expect' only allowed in .c2t files";
+            return false;
+        }
+        cur += 6;
+        return parseExpect();
     } else {
-        // error << "unknown keyword '" << keyword << "' on line " << line_nr;
+        errorMsg << "unknown keyword '" << keyword << "'";
         return false;
     }
     return true;
 }
 
+const char* IssueDb::readWord() {
+    static char buffer[32];
+    const char* cp = cur;
+    while (*cp != 0 && cp - cur < 31) {
+        if ((*cp < 'a' || *cp > 'z') && *cp != '-') break;
+        cp++;
+    }
+    int len = cp - cur;
+    memcpy(buffer, cur, len);
+    buffer[len] = 0;
+    return buffer;
+}
+
+const char* IssueDb::readLine() {
+    static char buffer[256];
+    const char* cp = cur;
+    while (*cp != 0 && cp - cur < 255) {
+        if (*cp == 0 || *cp == '\n') break;
+        cp++;
+    }
+    int len = cp - cur;
+    memcpy(buffer, cur, len);
+    buffer[len] = 0;
+    return buffer;
+}
+
+const char* IssueDb::readUntil(char delim) {
+    static char buffer[128];
+    const char* cp = cur;
+    while (1) {
+        if (*cp == 0) return 0;
+        if (*cp == delim) break;
+        if (cp - cur > 127) return 0;
+        cp++;
+    }
+    int len = cp - cur;
+    memcpy(buffer, cur, len);
+    buffer[len] = 0;
+    return buffer;
+}
+
 // returns if OK
 bool IssueDb::parseOuter() {
     // NOTE: cur always points to beginning of line
-    printf("%s() %6s\n", __func__, cur);
 
     while (*cur != 0) {
         if (*cur == '\n') {
@@ -593,17 +761,23 @@ void IssueDb::skipLine() {
     }
 }
 
-
-
-bool IssueDb::parseFile() {
+bool IssueDb::parse() {
     const char* cp = (const char*) file.region;
     cur = cp;
     line_nr = 1;
-    if (!parseOuter()) {
-        // print error (global StringBuilder?)
+    if (single) {
+        recipe << "target test\n";
     }
+
+    if (!parseOuter()) {
+        fprintf(stderr, "Error in recipe: %s on line %d\n", (const char*)errorMsg, line_nr);
+        return false;
+    }
+    recipe << "end\n";
+    writeFile("recipe.txt", recipe, recipe.size());
     return skip;
 
+/*
     const char* end = cp + file.size;
     const char* line_start = cp;
     recipe << "target test\n";
@@ -628,6 +802,7 @@ bool IssueDb::parseFile() {
     recipe << "end\n";
     writeFile("recipe.txt", recipe, recipe.size());
     return false;
+*/
 }
 
 void IssueDb::testFile() {
@@ -799,7 +974,7 @@ static void handle_file(const char* filename) {
     file.open();
     IssueDb db(file, single);
 
-    bool skip = db.parseFile();
+    bool skip = db.parse();
     if (skip) {
         numskipped++;
         printf(COL_SKIP"%s SKIPPED"ANSI_NORMAL"\n", filename);
