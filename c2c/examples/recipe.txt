@@ -26,6 +26,7 @@ end
 
 target hello
     $warnings no-unused
+    $generate-ir
     helloworld.c2
 end
 

@@ -24,7 +24,12 @@ namespace C2 {
 class Recipe {
 public:
     Recipe(const std::string& name_, bool isExec_)
-        : name(name_) , isExec(isExec_), generateDeps(false), generateCCode(false) {}
+        : name(name_)
+        , isExec(isExec_)
+        , generateDeps(false)
+        , generateIR(false)
+        , generateCCode(false)
+    {}
     ~Recipe() {}
 
     void addFile(const std::string& name_);
@@ -42,6 +47,7 @@ public:
     std::string name;
     bool isExec;
     bool generateDeps;
+    bool generateIR;
     bool generateCCode;
 
     typedef std::vector<std::string> Files;

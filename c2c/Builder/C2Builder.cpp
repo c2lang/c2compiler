@@ -1006,7 +1006,7 @@ void C2Builder::generateOptionalC() {
 }
 
 void C2Builder::generateOptionalIR() {
-    if (!options.generateIR) return;
+    if (!options.generateIR && !recipe.generateIR) return;
 
     bool single_module = false;
     for (unsigned i=0; i<recipe.genConfigs.size(); i++) {

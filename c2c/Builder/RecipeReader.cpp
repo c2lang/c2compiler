@@ -159,7 +159,8 @@ void RecipeReader::handleLine(char* line) {
                         // TODO check duplicate configs
                         current->addAnsiCConfig(tok2);
                     }
-                } else if (strcmp(tok, "codegen") == 0) {
+                } else if (strcmp(tok, "generate-ir") == 0) {
+                    current->generateIR = true;
                     while (1) {
                         const char* tok2 = get_token();
                         if (!tok2) break;
