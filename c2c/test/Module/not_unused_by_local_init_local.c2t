@@ -1,4 +1,5 @@
-// @warnings{no-unused-variable no-unused-function}
+// @recipe bin
+    $warnings no-unused-variable no-unused-function
 
 // @file{file1}
 module foo;

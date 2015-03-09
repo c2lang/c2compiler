@@ -1,5 +1,7 @@
-// @warnings{no-unused}
-// @generate-c
+// @recipe bin
+    $warnings no-unused
+    $generate-c
+
 // @file{file1}
 module test1;
 

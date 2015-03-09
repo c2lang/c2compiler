@@ -1,4 +1,5 @@
-// @warnings{no-unused-type}
+// @recipe bin
+    $warnings no-unused-type
 
 // @file{file1}
 module foo;

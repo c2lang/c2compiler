@@ -13,6 +13,18 @@
  * limitations under the License.
  */
 
+/*
+    Syntax:
+    .c2:
+        (optional) // @warnings{..}
+        (optional) // @skip
+    .c2t:
+        (required) // @recipe bin/lib
+        (optional) // @skip
+        (required) // @file{filename}
+        (optional) // @expect{filename}
+*/
+
 #include <assert.h>
 #include <dirent.h>
 #include <errno.h>
@@ -239,6 +251,7 @@ private:
     bool parseKeyword();
     bool parseOuter();
     void skipLine();
+    const char* findEndOfLine();
     const char* readWord();
     const char* readLine();
     const char* readUntil(char delim);
@@ -595,6 +608,8 @@ bool IssueDb::parseFile() {
     }
     if (!endsWith(filename.c_str(), ".c2")) filename += ".c2";
     recipe << "    " << filename << '\n';
+    line_offset = line_nr;
+    current_file = filename;
     skipLine();
     const char* start = cur;
     while (1) {
@@ -603,6 +618,7 @@ bool IssueDb::parseFile() {
             writeFile(filename.c_str(), start, end - start);
             break;
         }
+        parseTags(cur, findEndOfLine());
         skipLine();
     }
     return true;
@@ -685,6 +701,14 @@ bool IssueDb::parseKeyword() {
         return false;
     }
     return true;
+}
+
+const char* IssueDb::findEndOfLine() {
+    const char* cp = cur;
+    while (*cp != 0 && *cp != '\n') {
+        cp++;
+    }
+    return cp;
 }
 
 const char* IssueDb::readWord() {
@@ -770,7 +794,7 @@ bool IssueDb::parse() {
     }
 
     if (!parseOuter()) {
-        fprintf(stderr, "Error in recipe: %s on line %d\n", (const char*)errorMsg, line_nr);
+        fprintf(stderr, ANSI_BYELLOW"Error in recipe: %s on line %d"ANSI_NORMAL"\n", (const char*)errorMsg, line_nr);
         return false;
     }
     recipe << "end\n";

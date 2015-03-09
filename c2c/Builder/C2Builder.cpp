@@ -889,8 +889,6 @@ void C2Builder::printASTs() const {
 }
 
 bool C2Builder::checkMainFunction(DiagnosticsEngine& Diags) {
-    if (!recipe.isExec) return true;
-    if (options.testMode) return true;
 
     Decl* mainDecl = 0;
     for (ModulesIter iter = modules.begin(); iter != modules.end(); ++iter) {
@@ -904,9 +902,20 @@ bool C2Builder::checkMainFunction(DiagnosticsEngine& Diags) {
             }
         }
     }
-    if (!mainDecl) {
-        Diags.Report(diag::err_main_missing);
-        return false;
+
+    if (recipe.isExec) {
+        // bin: must have main
+        if (options.testMode) return true;
+        if (!mainDecl) {
+            Diags.Report(diag::err_main_missing);
+            return false;
+        }
+    } else {
+        // lib: cannot have main
+        if (mainDecl) {
+            Diags.Report(mainDecl->getLocation(), diag::err_lib_has_main);
+            return false;
+        }
     }
     return true;
 }

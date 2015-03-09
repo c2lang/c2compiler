@@ -1,3 +1,5 @@
+// @recipe bin
+
 // @file{file1}
 module foo;
 
