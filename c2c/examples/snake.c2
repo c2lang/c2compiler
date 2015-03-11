@@ -1,7 +1,7 @@
 module snake;
 
 import stdio as io;
-import string_h local;
+import string local;
 
 #define ANSI_BLACK    "\033[0;30m"
 #define ANSI_RED      "\033[0;31m"
@@ -426,7 +426,7 @@ public func int32 main() {
     calculate_rotations();
     board_init();
     board_try_piece(0);
-    io.printf("%lluM tries, found %d solutions\n", tried/1000000, found);
+    io.printf("%luM tries, found %d solutions\n", tried/1000000, found);
     return 0;
 }
 

@@ -13,13 +13,20 @@ public type Handle struct {
     int32 y;
 }
 
+public int32 foo = 10;
+int32 bar = 20;
+
 public func Handle* init() {
     Handle* p = nil; //= malloc(sizeof(Handle));
     internal.init();
     return p;
 }
 
+func void destroy() {
+}
+
 public func void close(Handle* H) {
+    destroy();
     //free(H);
 }
 

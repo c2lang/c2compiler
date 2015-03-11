@@ -632,7 +632,7 @@ void CCodeGenerator::EmitGlobalVariable(const VarDecl* V) {
     } else {
         // always generate initialization
         if (V->getType().isStructType() || V->getType().isArrayType()) {
-            cbuf << " = { 0 }";
+            cbuf << " = { }";
         } else {
             cbuf << " = 0";
         }
@@ -680,11 +680,14 @@ void CCodeGenerator::EmitForwardTypeDecl(const TypeDecl* D) {
     LOG_DECL(D)
     assert(isa<StructTypeDecl>(D));
 
+    const StructTypeDecl* S = cast<StructTypeDecl>(D);
+
     StringBuilder* out = &cbuf;
     if (mode != SINGLE_FILE && D->isPublic()) out = &hbuf;
 
-    // Syntax: typedef struct mod_name_ mod_name;
-    *out << "typedef struct ";
+    // Syntax: typedef struct/union mod_name_ mod_name;
+    *out << "typedef ";
+    *out << (S->isStruct() ? "struct " : "union ");
     EmitDecl(D, *out);
     *out << "_ ";
     EmitDecl(D, *out);
@@ -1138,10 +1141,16 @@ void CCodeGenerator::EmitStringLiteral(const std::string& input, StringBuilder& 
 }
 
 bool CCodeGenerator::EmitAsStatic(const Decl* D) const {
-    bool emitStatic = true;
-    if (D->getName() == "main") emitStatic = false;
-    if (mode != SINGLE_FILE && D->isPublic()) emitStatic = false;
+    if (D->getName() == "main") return false;
+    if (!D->isPublic()) return true;
     if (D->getModule()->isExported()) return false;
-    return emitStatic;
+    if (mode == SINGLE_FILE) return true;
+    return false;
+}
+
+bool CCodeGenerator::EmitAsVisible(const Decl* D) const {
+    if (D->getName() == "main") return true;
+    if (D->isPublic() && D->getModule()->isExported()) return true;
+    return false;
 }
 

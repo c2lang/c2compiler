@@ -21,7 +21,7 @@ func utils.Coor getCoor(int32 argc, char*[] argv) {
     return 0;
 }
 
-func void needed(char[][] data) {}
+func void needed(char*[] data) {}
 
 func void doThing2(int32* result = 0) {}
 

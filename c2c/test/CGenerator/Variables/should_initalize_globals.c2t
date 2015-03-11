@@ -27,11 +27,11 @@ struct test_Foo_ {
     int b;
 };
 
-static test_Foo test_f = { 0 };
+static test_Foo test_f = { };
 
 static int32_t test_i = 0;
 
-static test_Foo test_fs[2] = { 0 };
+static test_Foo test_fs[2] = { };
 
-static int32_t test_is[2] = { 0 };
+static int32_t test_is[2] = { };
 

@@ -558,10 +558,10 @@ bool C2Builder::loadModule(const std::string& name) {
         }
         return true;
     }
-    if (name == "string_h") {
+    if (name == "string") {
         // TODO
-        unsigned file_id = filenames.add("(string_h)");
-        Module* stringMod = getModule("string_h", true, true);
+        unsigned file_id = filenames.add("(string)");
+        Module* stringMod = getModule("string", true, true);
         // void *memset(void *s, int c, size_t n);
         {
             QualType VP(new PointerType(Type::Void()));
@@ -1000,7 +1000,10 @@ void C2Builder::generateOptionalC() {
 
     u_int64_t t3 = Utils::getCurrentTime();
     // execute generate makefile
-    ProcessUtils::run(outdir, "/usr/bin/make");
+    int retval = ProcessUtils::run(outdir, "/usr/bin/make");
+    if (retval != 0) {
+        fprintf(stderr, ANSI_RED"error during external c compilation" ANSI_NORMAL"\n");
+    }
     u_int64_t t4 = Utils::getCurrentTime();
     if (options.printTiming) printf(COL_TIME"C code compilation took %" PRIu64" usec" ANSI_NORMAL"\n", t4 - t3);
 }

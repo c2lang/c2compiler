@@ -4,8 +4,9 @@ func void test2(int32 a) {
 
 }
 
-func void test() {
+public func int32 main() {
     int8 b = 10;
     test2(b);
+    return 0;
 }
 

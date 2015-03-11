@@ -23,20 +23,20 @@ static void child_error(int fd, const char* msg) {
     _exit(-1);      // don't call atexit functions
 }
 
-void ProcessUtils::run(const std::string& path, const std::string& cmd) {
+int ProcessUtils::run(const std::string& path, const std::string& cmd) {
     int error_pipe[2];
     if (pipe(error_pipe)) {
         //errorMsg = "pipe() failed";
-        return;
+        return -1;
     }
 
     if (fcntl(error_pipe[0], F_SETFD, FD_CLOEXEC) != 0) {
         //errorMsg = "fcncl(FD_CLOEXEC) failed";
-        return;
+        return -1;
     }
     if (fcntl(error_pipe[1], F_SETFD, FD_CLOEXEC) != 0) {
         //errorMsg = "fcncl(FD_CLOEXEC) failed";
-        return;
+        return -1;
     }
 
     pid_t child_pid = fork();
@@ -104,20 +104,29 @@ void ProcessUtils::run(const std::string& path, const std::string& cmd) {
         ssize_t numread = read(error_pipe[0], error, sizeof(error)-1);
         if (numread < 0) {
             fprintf(stderr, "Error reading pipe\n");
-            return;
+            return -1;
         }
         else error[numread] = 0;
         close(error_pipe[0]);
 
         if (numread != 0) {
-            int state = 0;
-            pid_t pid = waitpid(child_pid, &state, 0);
-            if (pid == -1) {
-                fprintf(stderr, "Error waiting for pid: %s\n", strerror(errno));
-                return;
-            }
             //errorMsg = error;
+            // always give error
+            return -1;
+        }
+        int state = 0;
+        pid_t pid = waitpid(child_pid, &state, 0);
+        if (pid == -1) {
+            fprintf(stderr, "Error waiting for pid: %s\n", strerror(errno));
+            return -1;
+        }
+        if (WIFEXITED(state)) { // normal termination)
+            char exitcode = (char)WEXITSTATUS(state);
+            if (exitcode != 0) return -1;
+        } else {
+            return -1;
         }
     }
+    return 0;
 }
 

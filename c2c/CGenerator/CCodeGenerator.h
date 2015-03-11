@@ -100,6 +100,7 @@ private:
     void EmitStringLiteral(const std::string& input, StringBuilder& output);
 
     bool EmitAsStatic(const Decl* D) const;
+    bool EmitAsVisible(const Decl* D) const;
 
     const std::string& filename;
     Mode mode;

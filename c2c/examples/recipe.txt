@@ -137,7 +137,7 @@ end
 
 lib mylib
     $warnings no-unused
-    $generate-c single_module
+    $generate-c
     $export mylib
     mylib1.c2
     mylib2.c2

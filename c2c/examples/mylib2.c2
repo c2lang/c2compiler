@@ -2,7 +2,16 @@ module mylib_internal;
 
 import stdio as io;
 
+int32 count = 0;
+
 public func void init() {
     io.printf("internal init()\n");
+    destroy();
+    count++;
+}
+
+func void destroy() {
+    io.printf("internal destroy()\n");
+    count--;
 }
 
