@@ -19,14 +19,16 @@
 #include <string>
 #include <vector>
 
+#include "Utils/GenUtils.h"
+
 namespace C2 {
 
 class MakefileGenerator {
 public:
-    MakefileGenerator(const std::string& path_, const std::string& target_, bool isExec_)
+    MakefileGenerator(const std::string& path_, const std::string& target_, GenUtils::TargetType type_)
         : path(path_)
         , target(target_)
-        , isExec(isExec_)
+        , type(type_)
     {}
 
     void add(const std::string& filename);
@@ -34,7 +36,7 @@ public:
 private:
     std::string path;
     std::string target;
-    bool isExec;
+    GenUtils::TargetType type;
 
     typedef std::vector<std::string> Files;
     typedef Files::const_iterator FilesConstIter;

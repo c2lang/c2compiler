@@ -19,13 +19,15 @@
 #include <string>
 #include <vector>
 
+#include "Utils/GenUtils.h"
+
 namespace C2 {
 
 class Recipe {
 public:
-    Recipe(const std::string& name_, bool isExec_)
+    Recipe(const std::string& name_, GenUtils::TargetType type_)
         : name(name_)
-        , isExec(isExec_)
+        , type(type_)
         , generateDeps(false)
         , generateIR(false)
         , generateCCode(false)
@@ -45,7 +47,8 @@ public:
     bool hasExported(const std::string& mod) const;
 
     std::string name;
-    bool isExec;
+    GenUtils::TargetType type;
+
     bool generateDeps;
     bool generateIR;
     bool generateCCode;

@@ -19,7 +19,7 @@
         (optional) // @warnings{..}
         (optional) // @skip
     .c2t:
-        (required) // @recipe bin/lib
+        (required) // @recipe bin/lib shared/static
         (optional) // @skip
         (required) // @file{filename}
         (optional) // @expect{filename}
@@ -571,14 +571,21 @@ void IssueDb::parseLine(const char* start, const char* end) {
 
 bool IssueDb::parseRecipe() {
     if (strncmp(cur, "bin", 3) == 0) {
-        recipe << "target ";
+        recipe << "target test\n";
     } else if (strncmp(cur, "lib", 3) == 0) {
-        recipe << "lib ";
+        cur += 4;
+        // Syntax lib shared/static
+        const char* libtype = readWord();
+        if (strcmp(libtype, "shared") == 0 || strcmp(libtype, "static") == 0) {
+        } else {
+            errorMsg << "unknown library type '" << libtype << "'";
+            return false;
+        }
+        recipe << "lib test " << libtype << "\n";
     } else {
-        errorMsg << "unknown library type '" << readWord() << "'";
+        errorMsg << "unknown target type '" << readWord() << "'";
         return false;
     }
-    recipe << "test\n";
     skipLine();
     // TODO check that each line starts with $? (after optional whitespace)
     while (1) {

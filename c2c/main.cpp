@@ -167,7 +167,7 @@ int main(int argc, const char *argv[])
         }
     }
     if (!use_recipe) {
-        Recipe dummy("dummy", true);
+        Recipe dummy("dummy", GenUtils::EXECUTABLE);
         dummy.addFile(targetFilter);
         C2Builder builder(dummy, opts);
         int errors = builder.checkFiles();

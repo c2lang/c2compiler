@@ -115,13 +115,24 @@ void RecipeReader::handleLine(char* line) {
             if (strcmp(kw, "target") == 0) {
                 const char* target_name = get_token();
                 if (target_name == 0) error("expected target name");
-                current = new Recipe(target_name, true);
+                current = new Recipe(target_name, GenUtils::EXECUTABLE);
                 recipes.push_back(current);
                 state = INSIDE_TARGET;
             } else if (strcmp(kw, "lib") == 0) {
                 const char* target_name = get_token();
-                if (target_name == 0) error("expected lib name");
-                current = new Recipe(target_name, false);
+                if (target_name == 0) error("expected library name");
+                const char* type_name = get_token();
+                if (type_name == 0) error("expected library type");
+
+                GenUtils::TargetType type = GenUtils::SHARED_LIB;
+                if (strcmp(type_name, "shared") == 0) {
+                    type = GenUtils::SHARED_LIB;
+                } else if (strcmp(type_name, "static") == 0) {
+                    type = GenUtils::STATIC_LIB;
+                } else {
+                    error("unknown library type '%s'", type_name);
+                }
+                current = new Recipe(target_name, type);
                 recipes.push_back(current);
                 state = INSIDE_TARGET;
             } else {
@@ -252,7 +263,17 @@ void RecipeReader::print() const {
 
 void RecipeReader::checkCurrent() {
     // lib targets must have export entry
-    if (!current->isExec && current->exported.size() == 0) {
+    bool needExport = false;
+    switch (current->type) {
+    case GenUtils::EXECUTABLE:
+        needExport = false;
+        break;
+    case GenUtils::SHARED_LIB:
+    case GenUtils::STATIC_LIB:
+        needExport = true;
+        break;
+    }
+    if (needExport && current->exported.size() == 0) {
         fprintf(stderr, "recipe: target %s is type lib but has no 'export' entry\n", current->name.c_str());
         exit(-1);
     }

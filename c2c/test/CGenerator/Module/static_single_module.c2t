@@ -1,4 +1,4 @@
-// @recipe lib
+// @recipe lib static
     $warnings no-unused
     $generate-c single_module
     $export test1

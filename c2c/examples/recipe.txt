@@ -135,7 +135,15 @@ target ccode
     ccode3.c2
 end
 
-lib mylib
+lib mylib static
+    $warnings no-unused
+    $generate-c
+    $export mylib
+    mylib1.c2
+    mylib2.c2
+end
+
+lib foobar shared
     $warnings no-unused
     $generate-c
     $export mylib

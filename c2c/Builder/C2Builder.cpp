@@ -903,7 +903,7 @@ bool C2Builder::checkMainFunction(DiagnosticsEngine& Diags) {
         }
     }
 
-    if (recipe.isExec) {
+    if (recipe.type == GenUtils::EXECUTABLE) {
         // bin: must have main
         if (options.testMode) return true;
         if (!mainDecl) {
@@ -949,7 +949,7 @@ void C2Builder::generateOptionalC() {
 
     std::string outdir = OUTPUT_DIR + recipe.name + BUILD_DIR;
 
-    MakefileGenerator makeGen(outdir, recipe.name, recipe.isExec);
+    MakefileGenerator makeGen(outdir, recipe.name, recipe.type);
     if (single_module) {
         makeGen.add(recipe.name);
         CCodeGenerator gen(recipe.name, CCodeGenerator::SINGLE_FILE, modules);
@@ -980,7 +980,16 @@ void C2Builder::generateOptionalC() {
     makeGen.write();
 
     // generate external library header
-    if (!recipe.isExec) {
+    bool generateHeader = false;
+    switch (recipe.type) {
+    case GenUtils::EXECUTABLE:
+        break;
+    case GenUtils::SHARED_LIB:
+    case GenUtils::STATIC_LIB:
+        generateHeader = true;
+        break;
+    }
+    if (generateHeader) {
         CCodeGenerator gen(recipe.name, CCodeGenerator::MULTI_FILE, modules);
         for (ModulesIter iter = modules.begin(); iter != modules.end(); ++iter) {
             Module* P = iter->second;
