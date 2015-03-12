@@ -62,7 +62,6 @@
 #include "CodeGen/CodeGenModule.h"
 #include "CGenerator/CCodeGenerator.h"
 #include "CGenerator/MakefileGenerator.h"
-#include "FileUtils/FileUtils.h"
 #include "Utils/StringBuilder.h"
 #include "Utils/color.h"
 #include "Utils/Utils.h"
@@ -1096,12 +1095,10 @@ void C2Builder::generateOptionsDeps() const {
     for (unsigned i=0; i<files.size(); i++) {
         generator.analyse(files[i]->ast);
     }
-    StringBuilder output;
-    generator.write(output, recipe.name);
+
+    std::string path = OUTPUT_DIR + recipe.name + '/';
+    generator.write(recipe.name, path);
     u_int64_t t2 = Utils::getCurrentTime();
-    std::string path = OUTPUT_DIR + recipe.name;
-    std::string filename = path + '/' + "deps.xml";
-    FileUtils::writeFile(path.c_str(), filename, output);
     if (options.printTiming) printf(COL_TIME"dep generation took %" PRIu64" usec" ANSI_NORMAL"\n", t2 - t1);
 }
 

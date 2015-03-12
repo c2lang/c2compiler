@@ -35,7 +35,7 @@ public:
     ~DepGenerator();
 
     void analyse(const AST& ast);
-    void write(StringBuilder& output, const std::string& title) const;
+    void write(const std::string& title, const std::string& path) const;
 private:
     ModInfo* getInfo(const std::string& modName);
     void addExternal(const Module* P) const;

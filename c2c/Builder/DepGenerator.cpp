@@ -21,6 +21,7 @@
 #include "AST/Type.h"
 #include "Utils/StringBuilder.h"
 #include "Utils/UtilsConstants.h"
+#include "FileUtils/FileUtils.h"
 
 #include <string.h>
 
@@ -106,8 +107,10 @@ void DepGenerator::addExternal(const Module* P) const {
     externals.push_back(P);
 }
 
-void DepGenerator::write(StringBuilder& output, const std::string& title) const {
+void DepGenerator::write(const std::string& title, const std::string& path) const {
+
     int indent = 0;
+    StringBuilder output;
     output << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
     output << "<dsm name='" << title << "'>\n";
     indent += INDENT;
@@ -160,6 +163,8 @@ void DepGenerator::write(StringBuilder& output, const std::string& title) const 
     output << "</model>\n";
     indent -= INDENT;
     output << "</dsm>\n";
+
+    FileUtils::writeFile(path.c_str(), path + "deps.xml", output);
 }
 
 void DepGenerator::writeAST(const AST& ast, StringBuilder& output, unsigned indent) const {
