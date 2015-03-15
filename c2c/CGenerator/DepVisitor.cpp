@@ -142,7 +142,7 @@ void DepVisitor::checkStmt(const Stmt* S) {
     case STMT_IF:
         {
             const IfStmt* I = cast<IfStmt>(S);
-            checkExpr(I->getCond());
+            checkStmt(I->getCond());
             checkStmt(I->getThen());
             if (I->getElse()) checkStmt(I->getElse());
             break;

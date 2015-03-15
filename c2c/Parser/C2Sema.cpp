@@ -309,14 +309,14 @@ C2::StmtResult C2Sema::ActOnReturnStmt(SourceLocation loc, Expr* value) {
 }
 
 C2::StmtResult C2Sema::ActOnIfStmt(SourceLocation ifLoc,
-                                   ExprResult condition, StmtResult thenStmt,
+                                   Stmt* condition, StmtResult thenStmt,
                                    SourceLocation elseLoc, StmtResult elseStmt) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: if statement at ";
     ifLoc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    return StmtResult(new IfStmt(ifLoc, condition.get(), thenStmt.get(), elseLoc, elseStmt.get()));
+    return StmtResult(new IfStmt(ifLoc, condition, thenStmt.get(), elseLoc, elseStmt.get()));
 }
 
 C2::StmtResult C2Sema::ActOnWhileStmt(SourceLocation loc, ExprResult Cond, StmtResult Then) {

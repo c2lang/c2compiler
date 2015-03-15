@@ -113,7 +113,7 @@ private:
 class IfStmt : public Stmt {
 public:
     IfStmt(SourceLocation ifLoc,
-           Expr* condition, Stmt* thenStmt,
+           Stmt* condition, Stmt* thenStmt,
            SourceLocation elseLoc, Stmt* elseStmt);
     virtual ~IfStmt();
     static bool classof(const Stmt* S) {
@@ -123,7 +123,7 @@ public:
     virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return IfLoc; }
 
-    Expr* getCond() const { return reinterpret_cast<Expr*>(SubExprs[COND]); }
+    Stmt* getCond() const { return SubExprs[COND]; }
     Stmt* getThen() const { return SubExprs[THEN]; }
     Stmt* getElse() const { return SubExprs[ELSE]; }
 private:

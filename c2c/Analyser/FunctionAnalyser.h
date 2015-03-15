@@ -67,6 +67,7 @@ private:
     void analyseDefaultStmt(Stmt* stmt);
     void analyseReturnStmt(Stmt* stmt);
     void analyseDeclStmt(Stmt* stmt);
+    void analyseCondition(Stmt* stmt);
     void analyseStmtExpr(Stmt* stmt);
 
     QualType analyseExpr(Expr* expr, unsigned side);

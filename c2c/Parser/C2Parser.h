@@ -141,11 +141,12 @@ private:
     StmtResult ParseBreakStatement();
     StmtResult ParseContinueStatement();
     StmtResult ParseDeclOrStatement();
-    StmtResult ParseDeclaration();
+    StmtResult ParseDeclaration(bool checkSemi);
     StmtResult ParseCaseStatement();
     StmtResult ParseDefaultStatement();
     StmtResult ParseLabeledStatement();
     StmtResult ParseExprStatement();
+    bool ParseCondition(StmtResult& Res);
 
     // expressions
     /// TypeCastState - State whether an expression is or may be a type cast.

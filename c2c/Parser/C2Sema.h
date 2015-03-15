@@ -74,7 +74,7 @@ public:
     // statements
     StmtResult ActOnReturnStmt(SourceLocation loc, Expr* value);
     StmtResult ActOnIfStmt(SourceLocation ifLoc,
-                           ExprResult condition, StmtResult thenStmt,
+                           Stmt* condition, StmtResult thenStmt,
                            SourceLocation elseLoc, StmtResult elseStmt);
     StmtResult ActOnWhileStmt(SourceLocation loc, ExprResult condition, StmtResult thenStmt);
     StmtResult ActOnDoStmt(SourceLocation loc, ExprResult condition, StmtResult thenStmt);

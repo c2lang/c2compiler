@@ -224,7 +224,8 @@ void CodeGenFunction::EmitIfStmt(const IfStmt* S) {
   llvm::BasicBlock *ElseBlock = ContBlock;
   if (S->getElse())
     ElseBlock = createBasicBlock("if.else");
-  EmitBranchOnBoolExpr(S->getCond(), ThenBlock, ElseBlock);
+  // TODO FIX with Condition
+  //EmitBranchOnBoolExpr(S->getCond(), ThenBlock, ElseBlock);
 
   // Emit the 'then' code.
   EmitBlock(ThenBlock);

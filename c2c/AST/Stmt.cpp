@@ -76,7 +76,7 @@ void ReturnStmt::print(StringBuilder& buffer, unsigned indent) const {
 
 
 IfStmt::IfStmt(SourceLocation ifLoc,
-               Expr* condition, Stmt* thenStmt,
+               Stmt* condition, Stmt* thenStmt,
                SourceLocation elseLoc, Stmt* elseStmt)
     : Stmt(STMT_IF)
     , IfLoc(ifLoc)

@@ -268,11 +268,8 @@ void FunctionAnalyser::analyseCompoundStmt(Stmt* stmt) {
 void FunctionAnalyser::analyseIfStmt(Stmt* stmt) {
     LOG_FUNC
     IfStmt* I = cast<IfStmt>(stmt);
-    Expr* cond = I->getCond();
-    QualType Q1 = analyseExpr(cond, RHS);
-    if (Q1.isValid()) {
-        EA.check(Type::Bool(), cond);
-    }
+    analyseCondition(I->getCond());
+
     scope.EnterScope(Scope::DeclScope);
     analyseStmt(I->getThen(), true);
     scope.ExitScope();
@@ -465,6 +462,21 @@ void FunctionAnalyser::analyseDeclStmt(Stmt* stmt) {
         Diags.Report(decl->getLocation(), diag::err_uninitialized_const_var) << decl->getName();
     }
     scope.addScopedSymbol(decl);
+}
+
+void FunctionAnalyser::analyseCondition(Stmt* stmt) {
+    LOG_FUNC
+
+    if (isa<DeclStmt>(stmt)) {
+       analyseDeclStmt(stmt);
+    } else {
+        assert(isa<Expr>(stmt));
+        Expr* E = cast<Expr>(stmt);
+        QualType Q1 = analyseExpr(E, RHS);
+        if (Q1.isValid()) {
+            EA.check(Type::Bool(), E);
+        }
+    }
 }
 
 void FunctionAnalyser::analyseStmtExpr(Stmt* stmt) {

@@ -858,7 +858,8 @@ void CCodeGenerator::EmitIfStmt(const Stmt* S, unsigned indent) {
     const IfStmt* I = cast<IfStmt>(S);
     cbuf.indent(indent);
     cbuf << "if (";
-    EmitExpr(I->getCond(), cbuf);
+#warning TODO FIX EmitCondition (VarDecl outside if scope)
+    //EmitExpr(I->getCond(), cbuf);
     cbuf << ')';
 
     if (isa<CompoundStmt>(I->getThen())) {

@@ -1533,7 +1533,7 @@ C2::StmtResult C2Parser::ParseStatement() {
     case tok::kw_const:
     case tok::kw_volatile:
     case tok::kw_local:
-        return ParseDeclaration();
+        return ParseDeclaration(true);
     case tok::star:
         return ParseExprStatement();
     default:
@@ -1578,16 +1578,10 @@ C2::StmtResult C2Parser::ParseIfStatement() {
         return StmtError();
     }
 
-  // Parse the condition.
-  //ExprResult CondExp;
-  Decl *CondVar = 0;
-// TODO import ParseParenExprOrCondition function (with BalancedTracker)
-  //if (ParseParenExprOrCondition(CondExp, CondVar, IfLoc, true))
-  //  return StmtError();
-    if (ExpectAndConsume(tok::l_paren)) return StmtError();
-    ExprResult CondExp = ParseExpression();
-    if (CondExp.isInvalid()) return StmtError();
-    if (ExpectAndConsume(tok::r_paren)) return StmtError();
+    // Parse the condition.
+    StmtResult CondStmt;
+    if (!ParseCondition(CondStmt)) return StmtError();
+    assert(!CondStmt.isInvalid());
 
     // Read the 'then' stmt.
     //SourceLocation ThenStmtLoc = Tok.getLocation();
@@ -1608,11 +1602,6 @@ C2::StmtResult C2Parser::ParseIfStatement() {
         ElseStmt = ParseStatement();
     }
 
-    // If the condition was invalid, discard the if statement.  We could recover
-    // better by replacing it with a valid expr, but don't do that yet.
-    if (CondExp.isInvalid() && !CondVar)
-        return StmtError();
-
     // If the then or else stmt is invalid and the other is valid (and present),
     // make turn the invalid one into a null stmt to avoid dropping the other
     // part.  If both are invalid, return error.
@@ -1631,7 +1620,7 @@ C2::StmtResult C2Parser::ParseIfStatement() {
     if (ElseStmt.isInvalid())
         ElseStmt = Actions.ActOnNullStmt(ElseStmtLoc);
 */
-    return Actions.ActOnIfStmt(IfLoc, CondExp, ThenStmt.get(),
+    return Actions.ActOnIfStmt(IfLoc, CondStmt.get(), ThenStmt.get(),
                                ElseLoc, ElseStmt.get());
     //return Actions.ActOnIfStmt(IfLoc, FullCondExp, CondVar, ThenStmt.get(),
     //                           ElseLoc, ElseStmt.get());
@@ -1754,10 +1743,11 @@ C2::StmtResult C2Parser::ParseForStatement() {
     if (Tok.is(tok::semi)) {    // for (;
         ConsumeToken();
     } else {
+        // TODO use ParseCondition()
         bool isDecl = isDeclaration();
         if (Diags.hasErrorOccurred()) return StmtError();
         if (isDecl) {
-            Init = ParseDeclaration();
+            Init = ParseDeclaration(true);
         } else {
             Init = ParseExprStatement();
         }
@@ -1853,7 +1843,7 @@ C2::StmtResult C2Parser::ParseDeclOrStatement() {
     bool isDecl = isTypeSpec();
     if (Diags.hasErrorOccurred()) return StmtError();
     // case 1: declaration
-    if (isDecl) return ParseDeclaration();
+    if (isDecl) return ParseDeclaration(true);
 
     int lookahead = 1;
     // Note: making copies otherwise const error
@@ -1900,7 +1890,7 @@ C2::StmtResult C2Parser::ParseDeclOrStatement() {
 }
 
 //Syntax: declaration ::= type_qualifier type_specifier IDENTIFIER var_initialization.
-C2::StmtResult C2Parser::ParseDeclaration() {
+C2::StmtResult C2Parser::ParseDeclaration(bool checkSemi) {
     LOG_FUNC
 
     ExprResult type = ParseTypeSpecifier(true);
@@ -1921,7 +1911,7 @@ C2::StmtResult C2Parser::ParseDeclaration() {
     }
     StmtResult Res = Actions.ActOnDeclaration(id->getNameStart(), idLoc, type.get(), InitValue.get());
 
-    if (need_semi) {
+    if (checkSemi && need_semi) {
         if (ExpectAndConsume(tok::semi, diag::err_expected_after, "declaration")) return StmtError();
     }
     return Res;
@@ -2036,6 +2026,34 @@ C2::StmtResult C2Parser::ParseExprStatement() {
 
     ExpectAndConsumeSemi(diag::err_expected_semi_after_expr);
     return StmtResult(Expr.get());
+}
+
+// ParseCondition - A condition is used inside If/While/Switch statemnts
+//   and can be either a VarDecl (wrapped in DeclStmt) or an Expr
+//   returns false on error. See clang ParseCXXCondition()
+bool C2Parser::ParseCondition(C2::StmtResult& Res) {
+    LOG_FUNC
+    if (ExpectAndConsume(tok::l_paren)) return false;
+
+    bool isDecl = isDeclaration();
+    if (isDecl) {
+        Res = ParseDeclaration(false);
+        if (Res.isInvalid()) return false;
+        // must have initializer
+        assert(dyncast<DeclStmt>(Res.get()) && "expect DeclStmt");
+        DeclStmt* DS = cast<DeclStmt>(Res.get());
+        if (!DS->getDecl()->getInitValue()) {
+            Diag(Tok, diag::err_expected_init_in_condition);
+            return false;
+        }
+    } else {
+        ExprResult CondExp = ParseExpression();
+        Res = StmtResult(CondExp.get());
+        if (Res.isInvalid()) return false;
+    }
+
+    if (ExpectAndConsume(tok::r_paren)) return false;
+    return true;
 }
 
 /*

@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+module test;
+
+public func int32 main() {
+    if (int32 a = foo()) {      // @error{use of undeclared identifier foo}
+    }
+    return 0;
+}
+

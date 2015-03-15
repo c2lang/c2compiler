@@ -1,0 +1,7 @@
+module test;
+
+public func int32 main() {
+    if (int32 a) {}     // @error{variable declaration in condition must have an initializer}
+    return 0;
+}
+
