@@ -104,6 +104,14 @@ void IfStmt::print(StringBuilder& buffer, unsigned indent) const {
     if (SubExprs[ELSE]) SubExprs[ELSE]->print(buffer, indent + INDENT);
 }
 
+VarDecl* IfStmt::getConditionVariable() const {
+    const Stmt* C = getCond();
+    if (isa<DeclStmt>(C)) {
+        return cast<DeclStmt>(C)->getDecl();
+    } else {
+        return NULL;
+    }
+}
 
 WhileStmt::WhileStmt(SourceLocation Loc_, Stmt* Cond_, Stmt* Then_)
     : Stmt(STMT_WHILE)

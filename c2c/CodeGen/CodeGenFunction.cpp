@@ -191,8 +191,10 @@ void CodeGenFunction::EmitIfStmt(const IfStmt* S) {
   // unequal to 0.  The condition must be a scalar type.
   //RunCleanupsScope ConditionScope(*this);
 
-  //if (S.getConditionVariable())
-  //  EmitAutoVarDecl(*S.getConditionVariable());
+  if (S->getConditionVariable()) {
+      assert(0 && "TODO");
+    //EmitAutoVarDecl(S->getConditionVariable());
+  }
 
   // If the condition constant folds and can be elided, try to avoid emitting
   // the condition and the dead arm of the if/else.
@@ -224,8 +226,7 @@ void CodeGenFunction::EmitIfStmt(const IfStmt* S) {
   llvm::BasicBlock *ElseBlock = ContBlock;
   if (S->getElse())
     ElseBlock = createBasicBlock("if.else");
-  // TODO FIX with Condition
-  //EmitBranchOnBoolExpr(S->getCond(), ThenBlock, ElseBlock);
+  EmitBranchOnBoolExpr(cast<Expr>(S->getCond()), ThenBlock, ElseBlock);
 
   // Emit the 'then' code.
   EmitBlock(ThenBlock);
