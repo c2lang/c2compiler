@@ -2042,8 +2042,13 @@ bool C2Parser::ParseCondition(C2::StmtResult& Res) {
         // must have initializer
         assert(dyncast<DeclStmt>(Res.get()) && "expect DeclStmt");
         DeclStmt* DS = cast<DeclStmt>(Res.get());
-        if (!DS->getDecl()->getInitValue()) {
+        VarDecl* VD = DS->getDecl();
+        if (!VD->getInitValue()) {
             Diag(Tok, diag::err_expected_init_in_condition);
+            return false;
+        }
+        if (VD->hasLocalQualifier()) {
+            Diag(VD->getLocation(), diag::err_invalid_local_condition_decl);
             return false;
         }
     } else {

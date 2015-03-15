@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+public func int32 main() {
+    if (local int32 a = 12) {        // @error{variable declaration in condition cannot have keyword local}
+    }
+    return 0;
+}
+
+

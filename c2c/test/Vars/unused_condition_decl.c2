@@ -1,0 +1,9 @@
+module test;
+
+public func int32 main() {
+    if (int32 a = 12) {        // @warning{unused variable a}
+    }
+    return 0;
+}
+
+

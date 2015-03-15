@@ -1,0 +1,10 @@
+module test;
+
+public func int32 main() {
+    if (int32 a = 12) {
+        return a;
+    }
+    return 0;
+}
+
+
