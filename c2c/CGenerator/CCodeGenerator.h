@@ -98,6 +98,8 @@ private:
     void EmitTypePreName(QualType type, StringBuilder& output);
     void EmitTypePostName(QualType type, StringBuilder& output);
     void EmitStringLiteral(const std::string& input, StringBuilder& output);
+    void EmitConditionPre(const Stmt* S, unsigned indent);
+    void EmitConditionPost(const Stmt* S);
 
     bool EmitAsStatic(const Decl* D) const;
     bool EmitAsVisible(const Decl* D) const;

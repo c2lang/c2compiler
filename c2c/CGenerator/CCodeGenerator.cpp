@@ -764,7 +764,6 @@ void CCodeGenerator::EmitVarDecl(const VarDecl* D, StringBuilder& output, unsign
         output << " = ";
         EmitExpr(D->getInitValue(), output);
     }
-    //output << ";\n";
 }
 
 void CCodeGenerator::EmitStmt(const Stmt* S, unsigned indent) {
@@ -856,10 +855,10 @@ void CCodeGenerator::EmitCompoundStmt(const CompoundStmt* C, unsigned indent, bo
 void CCodeGenerator::EmitIfStmt(const Stmt* S, unsigned indent) {
     LOG_FUNC
     const IfStmt* I = cast<IfStmt>(S);
+    EmitConditionPre(I->getCond(), indent);
     cbuf.indent(indent);
     cbuf << "if (";
-#warning TODO FIX EmitCondition (VarDecl outside if scope)
-    //EmitExpr(I->getCond(), cbuf);
+    EmitConditionPost(I->getCond());
     cbuf << ')';
 
     if (isa<CompoundStmt>(I->getThen())) {
@@ -1143,6 +1142,26 @@ void CCodeGenerator::EmitStringLiteral(const std::string& input, StringBuilder& 
         cp++;
     }
     output << '"';
+}
+
+void CCodeGenerator::EmitConditionPre(const Stmt* S, unsigned indent) {
+    LOG_FUNC
+    if (isa<DeclStmt>(S)) {
+        EmitDeclStmt(S, indent);
+    }
+}
+
+void CCodeGenerator::EmitConditionPost(const Stmt* S) {
+    LOG_FUNC
+    if (isa<DeclStmt>(S)) {
+        // only emit name, declaration has already been done in Pre part
+        const DeclStmt* DS = cast<DeclStmt>(S);
+        cbuf << DS->getDecl()->getName();
+    } else {
+        assert(isa<Expr>(S));
+        EmitExpr(cast<Expr>(S), cbuf);
+    }
+
 }
 
 bool CCodeGenerator::EmitAsStatic(const Decl* D) const {
