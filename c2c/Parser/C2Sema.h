@@ -79,7 +79,7 @@ public:
     StmtResult ActOnWhileStmt(SourceLocation loc, Stmt* condition, StmtResult thenStmt);
     StmtResult ActOnDoStmt(SourceLocation loc, ExprResult condition, StmtResult thenStmt);
     StmtResult ActOnForStmt(SourceLocation loc, Stmt* Init, Expr* Cond, Expr* Incr, Stmt* Body);
-    StmtResult ActOnSwitchStmt(SourceLocation loc, Expr* condition, StmtList& cases);
+    StmtResult ActOnSwitchStmt(SourceLocation loc, Stmt* condition, StmtList& cases);
     StmtResult ActOnCaseStmt(SourceLocation loc, Expr* condition, StmtList& stmts);
     StmtResult ActOnDefaultStmt(SourceLocation loc, StmtList& stmts);
     StmtResult ActOnBreakStmt(SourceLocation loc);

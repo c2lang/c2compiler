@@ -174,7 +174,7 @@ void ForStmt::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 
-SwitchStmt::SwitchStmt(SourceLocation Loc_, Expr* Cond_, StmtList& Cases_)
+SwitchStmt::SwitchStmt(SourceLocation Loc_, Stmt* Cond_, StmtList& Cases_)
     : Stmt(STMT_SWITCH)
     , Loc(Loc_)
     , Cond(Cond_)

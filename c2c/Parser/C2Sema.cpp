@@ -346,7 +346,7 @@ C2::StmtResult C2Sema::ActOnForStmt(SourceLocation loc, Stmt* Init, Expr* Cond, 
     return StmtResult(new ForStmt(loc, Init, Cond, Incr, Body));
 }
 
-C2::StmtResult C2Sema::ActOnSwitchStmt(SourceLocation loc, Expr* Cond, StmtList& cases) {
+C2::StmtResult C2Sema::ActOnSwitchStmt(SourceLocation loc, Stmt* Cond, StmtList& cases) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: switch statement at ";
     loc.dump(SourceMgr);

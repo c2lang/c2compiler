@@ -1634,12 +1634,10 @@ C2::StmtResult C2Parser::ParseSwitchStatement() {
     assert(Tok.is(tok::kw_switch) && "Not a switch stmt!");
     SourceLocation Loc = ConsumeToken();
 
-    if (ExpectAndConsume(tok::l_paren)) return StmtError();
+    StmtResult CondStmt;
+    if (!ParseCondition(CondStmt)) return StmtError();
+    assert(!CondStmt.isInvalid());
 
-    ExprResult Cond = ParseExpression();
-    if (Cond.isInvalid()) return StmtError();
-
-    if (ExpectAndConsume(tok::r_paren)) return StmtError();
     if (ExpectAndConsume(tok::l_brace)) return StmtError();
 
     StmtList Cases;
@@ -1667,7 +1665,7 @@ C2::StmtResult C2Parser::ParseSwitchStatement() {
 
     if (ExpectAndConsume(tok::r_brace)) return StmtError();
 
-    return Actions.ActOnSwitchStmt(Loc, Cond.get(), Cases);
+    return Actions.ActOnSwitchStmt(Loc, CondStmt.get(), Cases);
 }
 
 /// ParseWhileStatement

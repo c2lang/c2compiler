@@ -201,7 +201,7 @@ private:
 
 class SwitchStmt : public Stmt {
 public:
-    SwitchStmt(SourceLocation Loc_, Expr* Cond_, StmtList& Cases_);
+    SwitchStmt(SourceLocation Loc_, Stmt* Cond_, StmtList& Cases_);
     virtual ~SwitchStmt();
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_SWITCH;
@@ -210,11 +210,11 @@ public:
     virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return Loc; }
 
-    Expr* getCond() const { return Cond; }
+    Stmt* getCond() const { return Cond; }
     const StmtList& getCases() const { return Cases; }
 private:
     SourceLocation Loc;
-    Expr* Cond;
+    Stmt* Cond;
     StmtList Cases;
 };
 

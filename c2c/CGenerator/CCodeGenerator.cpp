@@ -963,9 +963,10 @@ void CCodeGenerator::EmitForStmt(const Stmt* S, unsigned indent) {
 void CCodeGenerator::EmitSwitchStmt(const Stmt* S, unsigned indent) {
     LOG_FUNC
     const SwitchStmt* SW = cast<SwitchStmt>(S);
+    EmitConditionPre(SW->getCond(), indent);
     cbuf.indent(indent);
     cbuf << "switch (";
-    EmitExpr(SW->getCond(), cbuf);
+    EmitConditionPost(SW->getCond());
     cbuf << ") {\n";
 
     const StmtList& Cases = SW->getCases();

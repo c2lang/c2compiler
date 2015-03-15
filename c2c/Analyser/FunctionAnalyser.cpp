@@ -325,7 +325,10 @@ void FunctionAnalyser::analyseForStmt(Stmt* stmt) {
 void FunctionAnalyser::analyseSwitchStmt(Stmt* stmt) {
     LOG_FUNC
     SwitchStmt* S = cast<SwitchStmt>(stmt);
-    analyseExpr(S->getCond(), RHS);
+
+    scope.EnterScope(Scope::DeclScope);
+    analyseCondition(S->getCond());
+
     const StmtList& Cases = S->getCases();
     Stmt* defaultStmt = 0;
     scope.EnterScope(Scope::BreakScope | Scope::SwitchScope);
@@ -348,6 +351,7 @@ void FunctionAnalyser::analyseSwitchStmt(Stmt* stmt) {
             assert(0);
         }
     }
+    scope.ExitScope();
     scope.ExitScope();
 }
 

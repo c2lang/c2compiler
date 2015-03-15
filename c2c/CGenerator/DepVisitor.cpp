@@ -173,7 +173,7 @@ void DepVisitor::checkStmt(const Stmt* S) {
     case STMT_SWITCH:
         {
             const SwitchStmt* SW = cast<SwitchStmt>(S);
-            checkExpr(SW->getCond());
+            checkStmt(SW->getCond());
             const StmtList& Cases = SW->getCases();
             for (unsigned i=0; i<Cases.size(); i++) {
                 checkStmt(Cases[i]);
