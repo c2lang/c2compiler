@@ -268,18 +268,20 @@ void FunctionAnalyser::analyseCompoundStmt(Stmt* stmt) {
 void FunctionAnalyser::analyseIfStmt(Stmt* stmt) {
     LOG_FUNC
     IfStmt* I = cast<IfStmt>(stmt);
+
+    scope.EnterScope(Scope::DeclScope);
     analyseCondition(I->getCond());
 
     scope.EnterScope(Scope::DeclScope);
     analyseStmt(I->getThen(), true);
     scope.ExitScope();
 
-    Stmt* elseSt = I->getElse();
-    if (elseSt) {
+    if (I->getElse()) {
         scope.EnterScope(Scope::DeclScope);
-        analyseStmt(elseSt, true);
+        analyseStmt(I->getElse(), true);
         scope.ExitScope();
     }
+    scope.ExitScope();
 }
 
 void FunctionAnalyser::analyseWhileStmt(Stmt* stmt) {

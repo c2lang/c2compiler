@@ -1,0 +1,15 @@
+// @warnings{no-unused}
+module test;
+
+func void foo() {
+    switch (int32 a = 12) {
+    case 0:
+        a++;
+        break;
+    case 1:
+        a--;
+        break;
+    }
+    a++;            // @error{use of undeclared identifier a}
+}
+
