@@ -81,13 +81,13 @@ private:
     void EmitDoStmt(const Stmt* S, unsigned indent);
     void EmitForStmt(const Stmt* S, unsigned indent);
     void EmitSwitchStmt(const Stmt* S, unsigned indent);
+    void EmitDeclStmt(const Stmt* S, unsigned indent);
 
     void EmitExpr(const Expr* E, StringBuilder& output);
     void EmitBinaryOperator(const Expr* E, StringBuilder& output);
     void EmitConditionalOperator(const Expr* E, StringBuilder& output);
     void EmitUnaryOperator(const Expr* E, StringBuilder& output);
     void EmitMemberExpr(const Expr* E, StringBuilder& output);
-    void EmitDeclExpr(const DeclExpr* D, StringBuilder& output, unsigned indent);
     void EmitCallExpr(const Expr* E, StringBuilder& output);
     void EmitIdentifierExpr(const Expr* E, StringBuilder& output);
     void EmitBitOffsetExpr(const Expr* Base, Expr* E, StringBuilder& output);

@@ -270,32 +270,6 @@ void DesignatedInitExpr::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 
-DeclExpr::DeclExpr(VarDecl* decl_)
-    : Expr(EXPR_DECL, true)
-    , decl(decl_)
-{}
-
-DeclExpr::~DeclExpr() {
-    delete decl;
-}
-
-void DeclExpr::print(StringBuilder& buffer, unsigned indent) const {
-    decl->print(buffer, indent);
-}
-
-const std::string& DeclExpr::getName() const { return decl->getName(); }
-
-clang::SourceLocation DeclExpr::getLocation() const {
-    return decl->getLocation();
-}
-
-QualType DeclExpr::getDeclType() const { return decl->getType(); }
-
-Expr* DeclExpr::getInitValue() const { return decl->getInitValue(); }
-
-bool DeclExpr::hasLocalQualifier() const { return decl->hasLocalQualifier(); }
-
-
 BinaryOperator::BinaryOperator(Expr* lhs_, Expr* rhs_, Opcode opc_, SourceLocation opLoc_)
     : Expr(EXPR_BINOP, false)
     , opLoc(opLoc_)

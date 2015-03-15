@@ -46,7 +46,6 @@ enum ExprKind {
     EXPR_CALL,
     EXPR_INITLIST,
     EXPR_DESIGNATOR_INIT,
-    EXPR_DECL,
     EXPR_BINOP,
     EXPR_CONDOP,
     EXPR_UNARYOP,
@@ -427,26 +426,6 @@ private:
     llvm::APSInt index; // set during analysis
     // Field designator
     const std::string field;
-};
-
-
-class DeclExpr : public Expr {
-public:
-    DeclExpr(VarDecl* decl_);
-    virtual ~DeclExpr();
-    static bool classof(const Expr* E) {
-        return E->getKind() == EXPR_DECL;
-    }
-    virtual void print(StringBuilder& buffer, unsigned indent) const;
-
-    const std::string& getName() const;
-    virtual SourceLocation getLocation() const;
-    QualType getDeclType() const;
-    Expr* getInitValue() const;
-    bool hasLocalQualifier() const;
-    VarDecl* getDecl() const { return decl; }
-private:
-    VarDecl* decl;
 };
 
 

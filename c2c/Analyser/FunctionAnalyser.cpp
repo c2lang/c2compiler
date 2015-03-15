@@ -249,6 +249,9 @@ void FunctionAnalyser::analyseStmt(Stmt* S, bool haveScope) {
         analyseCompoundStmt(S);
         if (!haveScope) scope.ExitScope();
         break;
+    case STMT_DECL:
+        analyseDeclStmt(S);
+        break;
     }
 }
 
@@ -371,10 +374,8 @@ void FunctionAnalyser::analyseLabelStmt(Stmt* S) {
     analyseStmt(L->getSubStmt());
     // substmt cannot be declaration
 
-    if (const Expr* E = dyncast<Expr>(L->getSubStmt())) {
-        if (isa<DeclExpr>(E)) {
-            Diags.Report(L->getSubStmt()->getLocation(), diag::err_decl_after_label);
-        }
+    if (isa<DeclStmt>(L->getSubStmt())) {
+        Diags.Report(L->getSubStmt()->getLocation(), diag::err_decl_after_label);
     }
 }
 
@@ -418,6 +419,52 @@ void FunctionAnalyser::analyseReturnStmt(Stmt* stmt) {
             Diags.Report(ret->getLocation(), diag::ext_return_missing_expr) << CurrentFunction->getName() << 0;
         }
     }
+}
+
+void FunctionAnalyser::analyseDeclStmt(Stmt* stmt) {
+    LOG_FUNC
+    DeclStmt* DS = cast<DeclStmt>(stmt);
+    VarDecl* decl = DS->getDecl();
+
+    bool haveError = false;
+    QualType Q = TR.resolveType(decl->getType(), decl->isPublic());
+    if (Q.isValid()) {
+        decl->setType(Q);
+
+        if (Q.isArrayType()) {
+            // TODO use Helper-function to get ArrayType (might be AliasType)
+            ArrayType* AT = cast<ArrayType>(Q.getTypePtr());
+            Expr* sizeExpr = AT->getSizeExpr();
+            if (sizeExpr) {
+                analyseArraySizeExpr(AT);
+                if (sizeExpr->getCTC() != CTC_FULL && decl->getInitValue()) {
+                    Diags.Report(decl->getLocation(), diag::err_vla_with_init_value) << decl->getInitValue()->getLocation();
+                    haveError = true;
+                }
+            } else {
+                if (!decl->getInitValue()) {
+                    Diags.Report(decl->getLocation(), diag::err_typecheck_incomplete_array_needs_initializer);
+                    haveError = true;
+                }
+            }
+        }
+    }
+
+    // check name
+    if (!scope.checkScopedSymbol(decl)) return;
+
+    // check initial value
+    Expr* initialValue = decl->getInitValue();
+    if (initialValue && !haveError) {
+        CurrentVarDecl = decl;
+        analyseInitExpr(initialValue, decl->getType());
+        CurrentVarDecl = 0;
+    }
+
+    if (Q.isConstQualified() && !initialValue) {
+        Diags.Report(decl->getLocation(), diag::err_uninitialized_const_var) << decl->getName();
+    }
+    scope.addScopedSymbol(decl);
 }
 
 void FunctionAnalyser::analyseStmtExpr(Stmt* stmt) {
@@ -506,9 +553,6 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
     case EXPR_DESIGNATOR_INIT:
     case EXPR_TYPE:
         // dont handle here
-        break;
-    case EXPR_DECL:
-        analyseDeclExpr(expr);
         break;
     case EXPR_BINOP:
         return analyseBinaryOperator(expr, side);
@@ -796,9 +840,6 @@ void FunctionAnalyser::analyseSizeofExpr(Expr* expr) {
     case EXPR_TYPE:
         // ok
         return;
-    case EXPR_DECL:
-        assert(0 && "should not happen");
-        return;
     case EXPR_BINOP:
         // not allowed
         assert(0 && "TODO good error");
@@ -898,52 +939,6 @@ void FunctionAnalyser::analyseArraySizeExpr(ArrayType* AT) {
             AT->setSize(Result);
         }
     }
-}
-
-void FunctionAnalyser::analyseDeclExpr(Expr* expr) {
-    LOG_FUNC
-    DeclExpr* DE = cast<DeclExpr>(expr);
-    VarDecl* decl = DE->getDecl();
-
-    bool haveError = false;
-    QualType Q = TR.resolveType(decl->getType(), decl->isPublic());
-    if (Q.isValid()) {
-        decl->setType(Q);
-
-        if (Q.isArrayType()) {
-            // TODO use Helper-function to get ArrayType (might be AliasType)
-            ArrayType* AT = cast<ArrayType>(Q.getTypePtr());
-            Expr* sizeExpr = AT->getSizeExpr();
-            if (sizeExpr) {
-                analyseArraySizeExpr(AT);
-                if (sizeExpr->getCTC() != CTC_FULL && decl->getInitValue()) {
-                    Diags.Report(decl->getLocation(), diag::err_vla_with_init_value) << decl->getInitValue()->getLocation();
-                    haveError = true;
-                }
-            } else {
-                if (!decl->getInitValue()) {
-                    Diags.Report(decl->getLocation(), diag::err_typecheck_incomplete_array_needs_initializer);
-                    haveError = true;
-                }
-            }
-        }
-    }
-
-    // check name
-    if (!scope.checkScopedSymbol(decl)) return;
-
-    // check initial value
-    Expr* initialValue = decl->getInitValue();
-    if (initialValue && !haveError) {
-        CurrentVarDecl = decl;
-        analyseInitExpr(initialValue, decl->getType());
-        CurrentVarDecl = 0;
-    }
-
-    if (Q.isConstQualified() && !initialValue) {
-        Diags.Report(decl->getLocation(), diag::err_uninitialized_const_var) << decl->getName();
-    }
-    scope.addScopedSymbol(decl);
 }
 
 static ExprCTC combineCtc(Expr* Result, const Expr* L, const Expr* R) {
@@ -1594,9 +1589,6 @@ bool FunctionAnalyser::checkAssignee(Expr* expr) const {
     case EXPR_DESIGNATOR_INIT:
     case EXPR_TYPE:
         break;
-    case EXPR_DECL:
-        assert(0);  // can happen?
-        return true;
     case EXPR_BINOP:
         // ok
         return true;

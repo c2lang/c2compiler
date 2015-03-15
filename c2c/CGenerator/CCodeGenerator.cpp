@@ -257,9 +257,6 @@ void CCodeGenerator::EmitExpr(const Expr* E, StringBuilder& output) {
             EmitTypePostName(T->getType(), output);
             return;
         }
-    case EXPR_DECL:
-        EmitDeclExpr(cast<DeclExpr>(E), output, 0);
-        return;
     case EXPR_BINOP:
         EmitBinaryOperator(E, output);
         return;
@@ -404,20 +401,6 @@ void CCodeGenerator::EmitMemberExpr(const Expr* E, StringBuilder& output) {
         if (M->isArrow()) cbuf << "->";
         else cbuf << '.';
         cbuf << M->getMemberName();
-    }
-}
-
-void CCodeGenerator::EmitDeclExpr(const DeclExpr* E, StringBuilder& output, unsigned indent) {
-    LOG_FUNC
-    output.indent(indent);
-    if (E->hasLocalQualifier()) output << "static ";
-    EmitTypePreName(E->getDeclType(), output);
-    output << ' ';
-    output << E->getName();
-    EmitTypePostName(E->getDeclType(), output);
-    if (E->getInitValue()) {
-        output << " = ";
-        EmitExpr(E->getInitValue(), output);
     }
 }
 
@@ -852,6 +835,9 @@ void CCodeGenerator::EmitStmt(const Stmt* S, unsigned indent) {
     case STMT_COMPOUND:
         EmitCompoundStmt(cast<CompoundStmt>(S), indent, true);
         return;
+    case STMT_DECL:
+        EmitDeclStmt(cast<DeclStmt>(S), indent);
+        return;
     }
 }
 
@@ -906,7 +892,7 @@ void CCodeGenerator::EmitWhileStmt(const Stmt* S, unsigned indent) {
     const WhileStmt* W = cast<WhileStmt>(S);
     cbuf.indent(indent);
     cbuf << "while (";
-    // TEMP, assume Expr
+    assert(dyncast<Expr>(W->getCond()) && "assumed Expr");
     Expr* E = cast<Expr>(W->getCond());
     EmitExpr(E, cbuf);
     cbuf << ") ";
@@ -947,10 +933,11 @@ void CCodeGenerator::EmitForStmt(const Stmt* S, unsigned indent) {
     cbuf << "for (";
     Stmt* Init = F->getInit();
     if (Init) {
-        // assume Expr
-        EmitExpr(cast<Expr>(Init), cbuf);
+        EmitStmt(Init, 0);
+        cbuf.strip('\n');
+    } else {
+        cbuf << ';';
     }
-    cbuf << ';';
 
     Expr* Cond = F->getCond();
     if (Cond) {
@@ -1017,6 +1004,23 @@ void CCodeGenerator::EmitSwitchStmt(const Stmt* S, unsigned indent) {
 
     cbuf.indent(indent);
     cbuf << "}\n";
+}
+
+void CCodeGenerator::EmitDeclStmt(const Stmt* S, unsigned indent) {
+    LOG_FUNC
+    const DeclStmt* DS = cast<DeclStmt>(S);
+    const VarDecl* VD = DS->getDecl();
+    cbuf.indent(indent);
+    if (VD->hasLocalQualifier()) cbuf << "static ";
+    EmitTypePreName(VD->getType(), cbuf);
+    cbuf << ' ';
+    cbuf << VD->getName();
+    EmitTypePostName(VD->getType(), cbuf);
+    if (VD->getInitValue()) {
+        cbuf << " = ";
+        EmitExpr(VD->getInitValue(), cbuf);
+    }
+    cbuf << ";\n";
 }
 
 void CCodeGenerator::EmitFunctionProto(const FunctionDecl* F, StringBuilder& output) {

@@ -181,8 +181,6 @@ APSInt LiteralAnalyser::checkLiterals(const Expr* Right) {
     case EXPR_DESIGNATOR_INIT:
         assert(0 && "TODO");
         break;
-    case EXPR_DECL:
-        break;
     case EXPR_BINOP:
         return checkBinaryLiterals(Right);
     case EXPR_CONDOP:

@@ -155,6 +155,9 @@ void CodeGenFunction::EmitStmt(const Stmt* S) {
     case STMT_COMPOUND:
         EmitCompoundStmt(cast<CompoundStmt>(S));
         break;
+    case STMT_DECL:
+        EmitVarDecl(cast<DeclStmt>(S)->getDecl());
+        break;
     }
 }
 
@@ -463,9 +466,6 @@ llvm::Value* CodeGenFunction::EmitExprNoImpCast(const Expr* E) {
     case EXPR_DESIGNATOR_INIT:
     case EXPR_TYPE:
         break;
-    case EXPR_DECL:
-        EmitVarDecl(cast<DeclExpr>(E)->getDecl());
-        return 0;
     case EXPR_BINOP:
         return EmitBinaryOperator(cast<BinaryOperator>(E));
     case EXPR_CONDOP:

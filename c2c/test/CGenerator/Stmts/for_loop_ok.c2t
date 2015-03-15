@@ -1,0 +1,33 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c
+
+// @file{file1}
+module test;
+
+public func int32 main(int32 argc, const char*[] argv) {
+    int32 a = 0;
+    for (a=0; a<10; a++) {}
+
+    for (int32 b=0; b<10; b++) {}
+
+    for (;;) {}
+
+    return 0;
+}
+
+// @expect{test.c}
+
+int32_t main(int32_t argc, const char* argv[]) {
+    int32_t a = 0;
+    for (a = 0; a < 10; a++) {
+    }
+
+    for (int32_t b = 0; b < 10; b++) {
+    }
+
+    for (;;) {
+    }
+    return 0;
+}
+

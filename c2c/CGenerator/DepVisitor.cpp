@@ -207,6 +207,9 @@ void DepVisitor::checkStmt(const Stmt* S) {
     case STMT_COMPOUND:
         checkCompoundStmt(cast<CompoundStmt>(S));
         break;
+    case STMT_DECL:
+        checkVarDecl(cast<DeclStmt>(S)->getDecl());
+        break;
     }
 }
 
@@ -253,9 +256,6 @@ void DepVisitor::checkExpr(const Expr* E) {
             break;
         }
     case EXPR_DESIGNATOR_INIT:
-        break;
-    case EXPR_DECL:
-        checkVarDecl(cast<DeclExpr>(E)->getDecl());
         break;
     case EXPR_BINOP:
         {

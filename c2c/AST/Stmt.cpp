@@ -18,6 +18,7 @@
 
 #include "AST/Stmt.h"
 #include "AST/Expr.h"
+#include "AST/Decl.h"
 #include "Utils/StringBuilder.h"
 #include "Utils/Utils.h"
 #include "Utils/color.h"
@@ -335,4 +336,27 @@ Stmt* CompoundStmt::getLastStmt() const {
         }
     }
 }
+
+
+DeclStmt::DeclStmt(VarDecl* decl_)
+    : Stmt(STMT_DECL)
+    , decl(decl_)
+{}
+
+DeclStmt::~DeclStmt() {
+    delete decl;
+}
+
+void DeclStmt::print(StringBuilder& buffer, unsigned indent) const {
+    buffer.indent(indent);
+    buffer.setColor(COL_STMT);
+    buffer << "DeclStmt\n";
+    decl->print(buffer, indent + INDENT);
+}
+
+SourceLocation DeclStmt::getLocation() const {
+    return decl->getLocation();
+}
+
+const std::string& DeclStmt::getName() const { return decl->getName(); }
 

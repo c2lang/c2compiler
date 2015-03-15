@@ -33,6 +33,7 @@ namespace C2 {
 
 class StringBuilder;
 class Expr;
+class VarDecl;
 
 enum StmtKind {
     STMT_RETURN = 0,
@@ -49,6 +50,7 @@ enum StmtKind {
     STMT_LABEL,
     STMT_GOTO,
     STMT_COMPOUND,
+    STMT_DECL,
 };
 
 
@@ -340,6 +342,23 @@ private:
     SourceLocation Left;
     SourceLocation Right;
     StmtList Stmts;
+};
+
+
+class DeclStmt : public Stmt {
+public:
+    DeclStmt(VarDecl* decl_);
+    virtual ~DeclStmt();
+    static bool classof(const Stmt* S) {
+        return S->getKind() == STMT_DECL;
+    }
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
+    virtual SourceLocation getLocation() const;
+
+    const std::string& getName() const;
+    VarDecl* getDecl() const { return decl; }
+private:
+    VarDecl* decl;
 };
 
 

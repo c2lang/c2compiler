@@ -436,7 +436,7 @@ C2::StmtResult C2Sema::ActOnDeclaration(const char* name, SourceLocation loc, Ex
     bool hasLocal = typeExpr->hasLocalQualifier();
     VarDecl* V =  createVarDecl(VARDECL_LOCAL, name, loc, typeExpr, InitValue, false);
     if (hasLocal) V->setLocalQualifier();
-    return StmtResult(new DeclExpr(V));
+    return StmtResult(new DeclStmt(V));
 }
 
 C2::ExprResult C2Sema::ActOnCallExpr(Expr* Fn, Expr** args, unsigned numArgs, SourceLocation RParenLoc) {

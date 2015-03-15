@@ -66,10 +66,10 @@ private:
     void analyseCaseStmt(Stmt* stmt);
     void analyseDefaultStmt(Stmt* stmt);
     void analyseReturnStmt(Stmt* stmt);
+    void analyseDeclStmt(Stmt* stmt);
     void analyseStmtExpr(Stmt* stmt);
 
     QualType analyseExpr(Expr* expr, unsigned side);
-    void analyseDeclExpr(Expr* expr);
     QualType analyseIntegerLiteral(Expr* expr);
     QualType analyseBinaryOperator(Expr* expr, unsigned side);
     QualType analyseConditionalOperator(Expr* expr);
