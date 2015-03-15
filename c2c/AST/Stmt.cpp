@@ -105,7 +105,7 @@ void IfStmt::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 
-WhileStmt::WhileStmt(SourceLocation Loc_, Expr* Cond_, Stmt* Then_)
+WhileStmt::WhileStmt(SourceLocation Loc_, Stmt* Cond_, Stmt* Then_)
     : Stmt(STMT_WHILE)
     , Loc(Loc_)
     , Cond(Cond_)

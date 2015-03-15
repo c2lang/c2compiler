@@ -319,13 +319,13 @@ C2::StmtResult C2Sema::ActOnIfStmt(SourceLocation ifLoc,
     return StmtResult(new IfStmt(ifLoc, condition, thenStmt.get(), elseLoc, elseStmt.get()));
 }
 
-C2::StmtResult C2Sema::ActOnWhileStmt(SourceLocation loc, ExprResult Cond, StmtResult Then) {
+C2::StmtResult C2Sema::ActOnWhileStmt(SourceLocation loc, Stmt* Cond, StmtResult Then) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: while statement at ";
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    return StmtResult(new WhileStmt(loc, Cond.get(), Then.get()));
+    return StmtResult(new WhileStmt(loc, Cond, Then.get()));
 }
 
 C2::StmtResult C2Sema::ActOnDoStmt(SourceLocation loc, ExprResult Cond, StmtResult Then) {

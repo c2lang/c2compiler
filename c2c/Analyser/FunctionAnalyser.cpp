@@ -287,12 +287,12 @@ void FunctionAnalyser::analyseIfStmt(Stmt* stmt) {
 void FunctionAnalyser::analyseWhileStmt(Stmt* stmt) {
     LOG_FUNC
     WhileStmt* W = cast<WhileStmt>(stmt);
-    // TODO check cast to Bool, but Stmts don't have LType!
+    scope.EnterScope(Scope::DeclScope);
     analyseStmt(W->getCond());
     scope.EnterScope(Scope::BreakScope | Scope::ContinueScope | Scope::DeclScope | Scope::ControlScope);
     analyseStmt(W->getBody(), true);
     scope.ExitScope();
-
+    scope.ExitScope();
 }
 
 void FunctionAnalyser::analyseDoStmt(Stmt* stmt) {

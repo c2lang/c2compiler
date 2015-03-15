@@ -137,7 +137,7 @@ private:
 
 class WhileStmt : public Stmt {
 public:
-    WhileStmt(SourceLocation Loc_, Expr* Cond_, Stmt* Then_);
+    WhileStmt(SourceLocation Loc_, Stmt* Cond_, Stmt* Then_);
     virtual ~WhileStmt();
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_WHILE;

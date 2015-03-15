@@ -1678,17 +1678,14 @@ C2::StmtResult C2Parser::ParseWhileStatement() {
     assert(Tok.is(tok::kw_while) && "Not a while stmt!");
     SourceLocation Loc = ConsumeToken();
 
-    if (ExpectAndConsume(tok::l_paren)) return StmtError();
-
-    ExprResult Cond = ParseExpression();
-    if (Cond.isInvalid()) return StmtError();
-
-    if (ExpectAndConsume(tok::r_paren)) return StmtError();
+    StmtResult CondStmt;
+    if (!ParseCondition(CondStmt)) return StmtError();
+    assert(!CondStmt.isInvalid());
 
     StmtResult Then = ParseStatement();
     if (Then.isInvalid()) return StmtError();
 
-    return Actions.ActOnWhileStmt(Loc, Cond, Then);
+    return Actions.ActOnWhileStmt(Loc, CondStmt.get(), Then);
 }
 
 /// ParseDoStatement

@@ -890,11 +890,10 @@ void CCodeGenerator::EmitIfStmt(const Stmt* S, unsigned indent) {
 void CCodeGenerator::EmitWhileStmt(const Stmt* S, unsigned indent) {
     LOG_FUNC
     const WhileStmt* W = cast<WhileStmt>(S);
+    EmitConditionPre(W->getCond(), indent);
     cbuf.indent(indent);
     cbuf << "while (";
-    assert(dyncast<Expr>(W->getCond()) && "assumed Expr");
-    Expr* E = cast<Expr>(W->getCond());
-    EmitExpr(E, cbuf);
+    EmitConditionPost(W->getCond());
     cbuf << ") ";
     Stmt* Body = W->getBody();
     if (Body->getKind() == STMT_COMPOUND) {
