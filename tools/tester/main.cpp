@@ -257,9 +257,9 @@ private:
     const char* readUntil(char delim);
 
     // OLD API
-    //void parseLineOutside(const char* start, const char* end);
-    //void parseLineFile(const char* start, const char* end);
-    //void parseLineExpect(const char* start, const char* end);
+    void parseLineOutside(const char* start, const char* end);
+    void parseLineFile(const char* start, const char* end);
+    void parseLineExpect(const char* start, const char* end);
     void parseTags(const char* start, const char* end);
 
     void error(const char* msg) {
@@ -364,7 +364,6 @@ private:
     StringBuilder errorMsg;
 };
 
-#if 0
 void IssueDb::parseLineExpect(const char* start, const char* end) {
     // if line starts with '// @' stop filemode
     if (strncmp(start, "// @", 4) == 0) {
@@ -394,7 +393,6 @@ void IssueDb::parseLineFile(const char* start, const char* end) {
 
     parseTags(start, end);
 }
-#endif
 
 void IssueDb::parseTags(const char* start, const char* end) {
     // if finding '// @' somewhere else, it's a note/warning/error
@@ -461,7 +459,6 @@ parse_msg:
     }
 }
 
-#if 0
 void IssueDb::parseLineOutside(const char* start, const char* end) {
     const char* cp = start;
     skipWhitespace(&cp, end);
@@ -567,7 +564,6 @@ void IssueDb::parseLine(const char* start, const char* end) {
         break;
     }
 }
-#endif
 
 bool IssueDb::parseRecipe() {
     if (strncmp(cur, "bin", 3) == 0) {
@@ -797,43 +793,40 @@ bool IssueDb::parse() {
     cur = cp;
     line_nr = 1;
     if (single) {
+        const char* end = cp + file.size;
+        const char* line_start = cp;
         recipe << "target test\n";
-    }
-
-    if (!parseOuter()) {
-        fprintf(stderr, ANSI_BYELLOW"Error in recipe: %s on line %d"ANSI_NORMAL"\n", (const char*)errorMsg, line_nr);
-        return false;
-    }
-    recipe << "end\n";
-    writeFile("recipe.txt", recipe, recipe.size());
-    return skip;
-
-/*
-    const char* end = cp + file.size;
-    const char* line_start = cp;
-    recipe << "target test\n";
-    if (single) {
-        recipe << current_file << '\n';
-    }
-    bool hasSkip = (strncmp(cp, "// @skip", 8) == 0);
-    if (runSkipped != hasSkip) return true;
-    while (cp != end) {
-        while (*cp != '\n' && cp != end) cp++;
-        if (cp != line_start) parseLine(line_start, cp);
-        line_nr++;
-        if (*cp == '\n') cp++;
-        line_start = cp;
-    }
-    if (!single) {
-        if (file_start) {
-            const char* file_end = cp;
-            writeFile(current_file.c_str(), file_start, file_end- file_start);
+        if (single) {
+            recipe << current_file << '\n';
         }
+        bool hasSkip = (strncmp(cp, "// @skip", 8) == 0);
+        if (runSkipped != hasSkip) return true;
+        while (cp != end) {
+            while (*cp != '\n' && cp != end) cp++;
+            if (cp != line_start) parseLine(line_start, cp);
+            line_nr++;
+            if (*cp == '\n') cp++;
+            line_start = cp;
+        }
+        if (!single) {
+            if (file_start) {
+                const char* file_end = cp;
+                writeFile(current_file.c_str(), file_start, file_end- file_start);
+            }
+        }
+        recipe << "end\n";
+        writeFile("recipe.txt", recipe, recipe.size());
+        return false;
+    } else {
+        if (!parseOuter()) {
+            fprintf(stderr, ANSI_BYELLOW"Error in recipe: %s on line %d"ANSI_NORMAL"\n", (const char*)errorMsg, line_nr);
+            return false;
+        }
+        recipe << "end\n";
+        writeFile("recipe.txt", recipe, recipe.size());
+        return skip;
     }
-    recipe << "end\n";
-    writeFile("recipe.txt", recipe, recipe.size());
-    return false;
-*/
+
 }
 
 void IssueDb::testFile() {
