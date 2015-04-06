@@ -23,16 +23,10 @@
 #include <clang/Basic/SourceLocation.h>
 
 #include "AST/Decl.h"
+#include "AST/Attr.h"
 #include "AST/OwningVector.h"
 
 namespace C2 {
-
-class Decl;
-class ImportDecl;
-class TypeDecl;
-class VarDecl;
-class FunctionDecl;
-class ArrayValueDecl;
 
 class AST {
 public:
@@ -40,8 +34,9 @@ public:
         : filename(filename_)
         , file_id(id)
     {}
+    ~AST();
 
-    void print(bool colors) const;
+    void print(bool colors, bool showAttrs = false) const;
 
     // ImportDecls
     void addImport(ImportDecl* d) { importList.push_back(d); }
@@ -67,6 +62,11 @@ public:
     void addArrayValue(ArrayValueDecl* d) { arrayValues.push_back(d); }
     unsigned numArrayValues() const { return arrayValues.size(); }
     ArrayValueDecl* getArrayValue(unsigned i) const { return arrayValues[i]; }
+
+    // Attributes
+    void addAttribute(const Decl* d, Attr* attr);
+    bool hasAttribute(const Decl* d, AttrKind k) const;
+    AttrMap& getAttributes() { return declAttrs; }
 
     void addSymbol(Decl* d);
 
@@ -112,6 +112,8 @@ private:
     ArrayValues arrayValues;
 
     Symbols symbols;
+
+    AttrMap declAttrs;
 };
 
 }

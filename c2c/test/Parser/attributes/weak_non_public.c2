@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+int32 a @(weak);        // @error{weak declaration must be public}
+

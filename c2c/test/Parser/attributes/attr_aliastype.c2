@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+type Number int32 @(unused);
+

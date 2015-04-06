@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+type Type1 struct {
+    int32 x;
+} @(packed)
+
+type Type2 union {
+    int32 x;
+} @(packed)
+

@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+int32 x @(section=""); // @error{attribute argument cannot be empty string}
+

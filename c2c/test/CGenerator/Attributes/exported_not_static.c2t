@@ -1,0 +1,38 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c single_module
+
+// @file{file1}
+module file1;
+
+public int32 a;
+public int32 b @(export);
+int32 c;
+
+public func void f() {}
+public func void g() @(export) {}
+func void h() {}
+
+public func int32 main(int32 argc, const char*[] argv)
+{
+    return 0;
+}
+
+// @expect{test.c}
+static void file1_f();
+void file1_g();
+static void file1_h();
+
+static int32_t file1_a = 0;
+int32_t file1_b = 0;
+static int32_t file1_c = 0;
+
+static void file1_f() {
+}
+
+void file1_g() {
+}
+
+static void file1_h() {
+}
+

@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+type Point struct {
+    int32 x;
+} @(section="foo")      // @error{attribute 'section' cannot be applied to type declarations}
+

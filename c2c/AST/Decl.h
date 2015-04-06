@@ -25,6 +25,7 @@
 
 #include "AST/OwningVector.h"
 #include "AST/Type.h"
+#include "AST/Attr.h"
 
 using clang::SourceLocation;
 
@@ -60,16 +61,23 @@ public:
     virtual ~Decl();
 
     virtual void print(StringBuilder& buffer, unsigned indent) const = 0;
+    void printAttributes(StringBuilder& buffer, unsigned indent) const;
 
     const std::string& getName() const { return name; }
     SourceLocation getLocation() const { return loc; }
 
     DeclKind getKind() const { return static_cast<DeclKind>(DeclBits.dKind); }
+    bool isExported() const { return DeclBits.DeclIsExported; }
     bool isPublic() const { return DeclBits.DeclIsPublic; }
     bool isUsed() const { return DeclBits.DeclIsUsed; }
     bool isUsedPublic() const { return DeclBits.DeclIsUsedPublic; }
+    void setExported() { DeclBits.DeclIsExported = true; }
     void setUsed() { DeclBits.DeclIsUsed = true; }
     void setUsedPublic() { DeclBits.DeclIsUsedPublic = true; }
+    void setHasAttributes() { DeclBits.DeclHasAttributes = true; }
+    bool hasAttributes() const { return DeclBits.DeclHasAttributes; }
+    bool hasAttribute(AttrKind kind) const;
+    const AttrList& getAttributes() const;
 
     void setModule(const Module* mod_) { mod = mod_; }
     const Module* getModule() const { return mod; }
@@ -81,6 +89,8 @@ public:
     // for debugging
     void dump() const;
 protected:
+    void printPublic(StringBuilder& buffer) const;
+
     const std::string name;
     SourceLocation loc;
     QualType type;
@@ -89,9 +99,11 @@ protected:
     public:
         unsigned dKind : 8;
         unsigned DeclFileID : 10;   // 10 bits for now
+        unsigned DeclIsExported: 1;
         unsigned DeclIsPublic : 1;
         unsigned DeclIsUsed : 1;
         unsigned DeclIsUsedPublic : 1;
+        unsigned DeclHasAttributes : 1;
         unsigned varDeclKind: 2;
         unsigned VarDeclHasLocalQualifier : 1;
         unsigned StructTypeIsStruct : 1;
@@ -130,6 +142,10 @@ public:
     virtual void print(StringBuilder& buffer, unsigned indent) const;
 
     Expr* getInitValue() const { return initValue; }
+    void setInitValue(Expr* v) {
+        assert(initValue == 0);
+        initValue = v;
+    }
 
     void setLocalQualifier() { DeclBits.VarDeclHasLocalQualifier = true; }
     bool hasLocalQualifier() const { return DeclBits.VarDeclHasLocalQualifier; }

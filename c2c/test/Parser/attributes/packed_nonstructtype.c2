@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+type Enum enum int8 {
+    A,
+} @(packed)         // @error{attribute 'packed' can only be applied to struct/union types}
+
+type Alias int32 @(packed);  // @error{attribute 'packed' can only be applied to struct/union types}
+
+type Func func void() @(packed);    // @error{attribute 'packed' can only be applied to struct/union types}
+

@@ -16,7 +16,6 @@
 #include <vector>
 #include <set>
 
-// for SmallString
 #include <llvm/ADT/SmallString.h>
 #include <llvm/Support/FileSystem.h>
 // for tool_output_file
@@ -545,6 +544,10 @@ void CCodeGenerator::EmitFunctionForward(const FunctionDecl* F) {
 void CCodeGenerator::EmitFunction(const FunctionDecl* F) {
     LOG_DECL(F)
 
+    if (F->hasAttributes()) {
+        EmitAttributes(F, cbuf);
+        cbuf << ' ';
+    }
     EmitFunctionProto(F, cbuf);
     cbuf << ' ';
     EmitCompoundStmt(F->getBody(), 0, false);
@@ -609,6 +612,7 @@ void CCodeGenerator::EmitGlobalVariable(const VarDecl* V) {
     cbuf << ' ';
     EmitDecl(V, cbuf);
     EmitTypePostName(V->getType(), cbuf);
+    EmitAttributes(V, cbuf);
     if (V->getInitValue()) {
         cbuf << " = ";
         EmitExpr(V->getInitValue(), cbuf);
@@ -703,6 +707,7 @@ void CCodeGenerator::EmitStructType(const StructTypeDecl* S, StringBuilder& out,
         out << ' ';
         EmitDecl(S, out);
     }
+    EmitAttributes(S, out);
     out << ";\n";
     if (S->isGlobal()) out << '\n';
 }
@@ -722,12 +727,14 @@ void CCodeGenerator::EmitEnumType(const EnumTypeDecl* E, StringBuilder& output) 
     }
     output << "} ";
     EmitDecl(E, output);
+    EmitAttributes(E, output);
     output << ";\n\n";
 }
 
 // output: typedef void (*name)(args);
 void CCodeGenerator::EmitFunctionType(const FunctionTypeDecl* FTD, StringBuilder& output) {
     LOG_DECL(FTD)
+    FTD->dump();
     FunctionDecl* F = FTD->getDecl();
     output << "typedef ";
     EmitTypePreName(F->getReturnType(), output);
@@ -736,6 +743,7 @@ void CCodeGenerator::EmitFunctionType(const FunctionTypeDecl* FTD, StringBuilder
     EmitDecl(F, output);
     output << ')';
     EmitFunctionArgs(F, output);
+    EmitAttributes(FTD, output);
     output << ";\n\n";
 }
 
@@ -1164,17 +1172,45 @@ void CCodeGenerator::EmitConditionPost(const Stmt* S) {
 
 }
 
-bool CCodeGenerator::EmitAsStatic(const Decl* D) const {
-    if (D->getName() == "main") return false;
-    if (!D->isPublic()) return true;
-    if (D->getModule()->isExported()) return false;
-    if (mode == SINGLE_FILE) return true;
-    return false;
+void CCodeGenerator::EmitAttributes(const Decl* D, StringBuilder& output) {
+    if (!D->hasAttributes()) return;
+
+    bool first = true;
+    const AttrList& AL = D->getAttributes();
+    for (AttrListConstIter iter = AL.begin(); iter != AL.end(); ++iter) {
+        const Attr* A = *iter;
+        const Expr* Arg = A->getArg();
+        switch (A->getKind()) {
+        case ATTR_UNKNOWN:
+        case ATTR_EXPORT:
+        case ATTR_NORETURN:
+        case ATTR_INLINE:
+            // ignore for now
+            break;
+        case ATTR_WEAK:
+        case ATTR_PACKED:
+        case ATTR_UNUSED:
+        case ATTR_SECTION:
+        case ATTR_ALIGNED:
+            if (first) output << " __attribute__((";
+            else output << ", ";
+            output << A->kind2str();
+            if (Arg) {
+                output << '(';
+                Arg->printLiteral(output);
+                output << ')';
+            }
+            first = false;
+            break;
+        }
+    }
+    if (!first) output << "))";
 }
 
-bool CCodeGenerator::EmitAsVisible(const Decl* D) const {
-    if (D->getName() == "main") return true;
-    if (D->isPublic() && D->getModule()->isExported()) return true;
+bool CCodeGenerator::EmitAsStatic(const Decl* D) const {
+    if (!D->isPublic()) return true;
+    if (D->isExported()) return false;
+    if (mode == SINGLE_FILE) return true;
     return false;
 }
 

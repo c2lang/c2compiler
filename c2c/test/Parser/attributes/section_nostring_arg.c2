@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+int32 x @(section=9); // @error{section attribute requires a string}
+

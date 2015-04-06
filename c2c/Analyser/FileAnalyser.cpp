@@ -64,7 +64,9 @@ unsigned FileAnalyser::resolveTypes() {
     if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
     unsigned errors = 0;
     for (unsigned i=0; i<ast.numTypes(); i++) {
-        errors += checkTypeDecl(ast.getType(i));
+        TypeDecl* T = ast.getType(i);
+        errors += checkTypeDecl(T);
+        checkAttributes(T);
     }
     return errors;
 }
@@ -130,7 +132,9 @@ unsigned FileAnalyser::resolveVars() {
     if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
     unsigned errors = 0;
     for (unsigned i=0; i<ast.numVars(); i++) {
-        errors += resolveVarDecl(ast.getVar(i));
+        VarDecl* V = ast.getVar(i);
+        errors += resolveVarDecl(V);
+        checkVarDeclAttributes(V);
     }
     return errors;
 }
@@ -222,6 +226,7 @@ unsigned FileAnalyser::checkFunctionProtos() {
             //if (!F->getReturnType().isBuiltinType() || cast<BuiltinType>(F->getReturnType()).getKind() == BuiltinType::Int32) {
            // }
         }
+        checkAttributes(F);
     }
     return errors;
 }
@@ -251,6 +256,9 @@ void FileAnalyser::checkDeclsForUsed() {
     // check for unused variables
     for (unsigned i=0; i<ast.numVars(); i++) {
         VarDecl* V = ast.getVar(i);
+        if (V->hasAttribute(ATTR_UNUSED)) continue;
+        if (V->isExported()) continue;
+
         if (!V->isUsed()) {
             Diags.Report(V->getLocation(), diag::warn_unused_variable) << V->getName();
         } else {
@@ -263,7 +271,9 @@ void FileAnalyser::checkDeclsForUsed() {
     // check for unused functions
     for (unsigned i=0; i<ast.numFunctions(); i++) {
         FunctionDecl* F = ast.getFunction(i);
-        if (F->getName() == "main") continue;
+        if (F->hasAttribute(ATTR_UNUSED)) continue;
+        if (F->isExported()) continue;
+
         if (!F->isUsed()) {
             Diags.Report(F->getLocation(), diag::warn_unused_function) << F->getName();
         } else {
@@ -276,6 +286,8 @@ void FileAnalyser::checkDeclsForUsed() {
     // check for unused types
     for (unsigned i=0; i<ast.numTypes(); i++) {
         TypeDecl* T = ast.getType(i);
+        if (T->hasAttribute(ATTR_UNUSED)) continue;
+        if (T->isExported()) continue;
 
         // mark Enum Types as used(public) if its constants are used(public)
         if (EnumTypeDecl* ETD = dyncast<EnumTypeDecl>(T)) {
@@ -430,5 +442,97 @@ unsigned FileAnalyser::checkArrayValue(ArrayValueDecl* D) {
     return checkInitValue(D->getExpr(), Q);
 #endif
     return 0;
+}
+
+void FileAnalyser::checkVarDeclAttributes(VarDecl* D) {
+    LOG_FUNC
+    if (!D->hasAttributes()) return;
+    checkAttributes(D);
+
+    // constants cannot have section|aligned|weak attributes, because they're similar to #define MAX 10
+    QualType T = D->getType();
+    if (T.isConstQualified() && isa<BuiltinType>(T.getCanonicalType())) {
+        const AttrList& AL = D->getAttributes();
+        for (AttrListConstIter iter = AL.begin(); iter != AL.end(); ++iter) {
+            const Attr* A = *iter;
+            switch (A->getKind()) {
+            case ATTR_UNKNOWN:
+            case ATTR_EXPORT:
+            case ATTR_PACKED:
+            case ATTR_UNUSED:
+            case ATTR_NORETURN:
+            case ATTR_INLINE:
+                break;
+            case ATTR_SECTION:
+            case ATTR_ALIGNED:
+            case ATTR_WEAK:
+                Diags.Report(A->getLocation(), diag::err_attribute_invalid_constants) << A->kind2str() << A->getRange();
+                break;
+            }
+        }
+    }
+}
+
+void FileAnalyser::checkAttributes(Decl* D) {
+    LOG_FUNC
+    if (!D->hasAttributes()) return;
+
+    const AttrList& AL = D->getAttributes();
+    for (AttrListConstIter iter = AL.begin(); iter != AL.end(); ++iter) {
+        const Attr* A = *iter;
+        const Expr* arg = A->getArg();
+        switch (A->getKind()) {
+        case ATTR_UNKNOWN:
+            break;
+        case ATTR_EXPORT:
+            if (!D->isPublic()) {
+                Diags.Report(A->getLocation(), diag::err_attribute_export_non_public) << A->getRange();
+            } else {
+                D->setExported();
+            }
+            break;
+        case ATTR_PACKED:
+            if (!isa<StructTypeDecl>(D)) {
+                Diags.Report(A->getLocation(), diag::err_attribute_packed_non_struct) << A->getRange();
+            }
+            break;
+        case ATTR_UNUSED:
+            break;
+        case ATTR_SECTION:
+            if (const StringLiteral* S = dyncast<StringLiteral>(arg)) {
+                if (S->value == "") {
+                    Diags.Report(arg->getLocation(), diag::err_attribute_argument_empty_string) << arg->getSourceRange();
+                }
+            } else {
+                Diags.Report(arg->getLocation(), diag::err_attribute_argument_type) << A->kind2str() << 2 << arg->getSourceRange();
+            }
+            break;
+        case ATTR_NORETURN:
+        case ATTR_INLINE:
+            break;
+        case ATTR_ALIGNED:
+        {
+            assert(arg);
+            const IntegerLiteral* I = dyncast<IntegerLiteral>(arg);
+            if (!I) {
+                Diags.Report(arg->getLocation(), diag::err_aligned_attribute_argument_not_int) << arg->getSourceRange();
+            } else {
+                if (!I->Value.isPowerOf2()) {
+                    Diags.Report(arg->getLocation(), diag::err_alignment_not_power_of_two) << arg->getSourceRange();
+                }
+                // TODO check if alignment is too small (smaller then size of type)
+
+            }
+            break;
+        }
+        case ATTR_WEAK:
+            if (!D->isPublic()) {
+                Diags.Report(A->getLocation(), diag::err_attribute_weak_non_public) << A->getRange();
+            } else if (!D->isExported()) {
+                Diags.Report(A->getLocation(), diag::err_attribute_weak_non_exported) << A->getRange();
+            }
+            break;
+        }
+    }
 }
 

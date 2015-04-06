@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+public type State enum int8 {
+    A,
+} @(unused, export)
+

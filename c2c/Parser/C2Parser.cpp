@@ -25,6 +25,7 @@
 #include "AST/Decl.h"
 #include "AST/Stmt.h"
 #include "AST/Expr.h"
+#include "AST/Attr.h"
 #include "Utils/StringBuilder.h"
 #include "Utils/color.h"
 
@@ -217,7 +218,6 @@ void C2Parser::ParseTypeDef(bool is_public) {
     IdentifierInfo* id = Tok.getIdentifierInfo();
     SourceLocation idLoc = ConsumeToken();
 
-    ExprResult type;
     switch (Tok.getKind()) {
     case tok::kw_func:
         ParseFuncType(id, idLoc, is_public);
@@ -238,19 +238,18 @@ void C2Parser::ParseTypeDef(bool is_public) {
         SkipUntil(tok::semi);
         return;
     default:
-        type = ParseTypeSpecifier(true);
-        if (ExpectAndConsume(tok::semi, diag::err_expected_after, "type definition")) return;
-        if (!type.isUsable()) return;
-        Actions.ActOnAliasType(id->getNameStart(), idLoc, type.get(), is_public);
-        break;
+        ParseAliasType(id->getNameStart(), idLoc, is_public);
+        return;
     }
 }
 
-// syntax: { <struct_block> }
+// syntax: { <struct_block> } <attributes>
 void C2Parser::ParseStructType(bool is_struct, const char* id, SourceLocation idLoc, bool is_public) {
     LOG_FUNC
     StructTypeDecl* S = Actions.ActOnStructType(id, idLoc, is_struct, is_public, true);
     ParseStructBlock(S);
+    ParseAttributes(S);
+    // TODO parse semi?
 }
 
 // Syntax: { <struct_block> } etc
@@ -306,7 +305,7 @@ void C2Parser::ParseStructBlock(StructTypeDecl* S) {
 
 /*
    Syntax:
-    type_def ::= access_specifier TYPE IDENTIFIER ENUM <type> LBRACE enum_block RBRACE SEMICOLON.
+    type_def ::= access_specifier TYPE IDENTIFIER ENUM <type> LBRACE enum_block RBRACE <attributes> SEMICOLON.
 
     enum_block   ::= enum_block COMMA enum_member.
     enum_block   ::= enum_block COMMA.
@@ -370,11 +369,26 @@ void C2Parser::ParseEnumType(const char* id, SourceLocation idLoc, bool is_publi
     //SourceLocation RightBrace = Tok.getLocation();
     Tok.getLocation();
     ExpectAndConsume(tok::r_brace);
+
+    if (!ParseAttributes(TheEnum)) return;
 }
 
 /*
-   Systax:
-    func_type ::= FUNC type_qualifier single_type_specifier LPAREN full_param_list RPAREN.
+    Syntax:
+     alias_type ::= type_qualifier single_type_specifier <attributes> SEMICOLON
+*/
+void C2Parser::ParseAliasType(const char* id, SourceLocation idLoc, bool is_public) {
+    LOG_FUNC
+    ExprResult type = ParseTypeSpecifier(true);
+    if (!type.isUsable()) return;
+    Decl * D = Actions.ActOnAliasType(id, idLoc, type.get(), is_public);
+    if (!ParseAttributes(D)) return;
+    if (ExpectAndConsume(tok::semi, diag::err_expected_after, "type definition")) return;
+}
+
+/*
+   Syntax:
+    func_type ::= FUNC type_qualifier single_type_specifier LPAREN full_param_list RPAREN <attributes>.
 */
 void C2Parser::ParseFuncType(IdentifierInfo* id, SourceLocation& idLoc, bool is_public) {
     LOG_FUNC
@@ -384,9 +398,10 @@ void C2Parser::ParseFuncType(IdentifierInfo* id, SourceLocation& idLoc, bool is_
     ExprResult rtype = ParseSingleTypeSpecifier(true);
     if (rtype.isInvalid()) return;
 
-    FunctionDecl* func = Actions.ActOnFuncTypeDecl(id->getNameStart(), idLoc, is_public, rtype.get());
+    FunctionTypeDecl* funcType = Actions.ActOnFuncTypeDecl(id->getNameStart(), idLoc, is_public, rtype.get());
 
-    if (!ParseFunctionParams(func, false)) return;
+    if (!ParseFunctionParams(funcType->getDecl(), false)) return;
+    if (!ParseAttributes(funcType)) return;
 
     if (ExpectAndConsume(tok::semi, diag::err_expected_after, "type definition")) return;
 }
@@ -1422,7 +1437,7 @@ C2::ExprResult C2Parser::ParseFullIdentifier() {
 
 /*
    Syntax:
-    func_def ::= FUNC type_qualifier single_type_specifier IDENTIFIER LPAREN full_param_list RPAREN compound_statement SEMICOLON.
+    func_def ::= FUNC type_qualifier single_type_specifier IDENTIFIER LPAREN full_param_list RPAREN <attributes> compound_statement SEMICOLON.
 */
 void C2Parser::ParseFuncDef(bool is_public) {
     LOG_FUNC
@@ -1436,10 +1451,10 @@ void C2Parser::ParseFuncDef(bool is_public) {
     IdentifierInfo* id = Tok.getIdentifierInfo();
     SourceLocation idLoc = ConsumeToken();
 
-    // TODO use ParseIdentifier()
     FunctionDecl* func = Actions.ActOnFuncDecl(id->getNameStart(), idLoc, is_public, rtype.get());
 
     if (!ParseFunctionParams(func, true)) return;
+    if (!ParseAttributes(func)) return;
 
     StmtResult FnBody = ParseCompoundStatement();
     Actions.ActOnFinishFunctionBody(func, FnBody.get());
@@ -2056,9 +2071,60 @@ bool C2Parser::ParseCondition(C2::StmtResult& Res) {
     return true;
 }
 
+// Syntax:
+// Attributes ::= @(AttrList)
+// AttrList   ::= AttrList, Attr
+//                Attr
+// Attr       ::= name
+//                name="value"
+bool C2Parser::ParseAttributes(Decl* D) {
+    LOG_FUNC
+
+    if (Tok.isNot(tok::at)) return true;
+    ConsumeToken();
+
+    if (ExpectAndConsume(tok::l_paren, diag::err_expected_after, "@")) return false;
+
+    while (1) {
+        if (ExpectIdentifier()) return false;
+        IdentifierInfo* attrId = Tok.getIdentifierInfo();
+        SourceLocation attrLoc = ConsumeToken();
+
+        SourceLocation endLoc = attrLoc;
+        ExprResult Arg;
+        if (Tok.is(tok::equal)) {
+            ConsumeToken();
+            endLoc = Tok.getLocation();
+            switch (Tok.getKind()) {
+            case tok::string_literal:
+                Arg = ParseStringLiteralExpression(true);
+                break;
+            case tok::numeric_constant:
+                Arg = Actions.ActOnNumericConstant(Tok);
+                ConsumeToken();
+                break;
+            default:
+                Diag(Tok, diag::err_expected) << "attribute argument";
+                return false;
+            }
+            // TODO
+        }
+
+        Actions.ActOnAttr(D, attrId->getNameStart(), SourceRange(attrLoc, endLoc), Arg.get());
+
+        if (Tok.isNot(tok::comma)) break;
+        ConsumeToken();
+    }
+    if (ExpectAndConsume(tok::r_paren)) return false;
+
+    // TODO check if empty
+
+    return true;
+}
+
 /*
    Syntax:
-    var_def ::= type_qualifier type_specifier IDENTIFIER var_initialization SEMICOLON.
+    var_def ::= type_qualifier type_specifier IDENTIFIER <attributes> var_initialization SEMICOLON.
 */
 void C2Parser::ParseVarDef(bool is_public) {
     LOG_FUNC
@@ -2071,19 +2137,22 @@ void C2Parser::ParseVarDef(bool is_public) {
     IdentifierInfo* id = Tok.getIdentifierInfo();
     SourceLocation idLoc = ConsumeToken();
 
+    VarDecl* VD = Actions.ActOnVarDef(id->getNameStart(), idLoc, is_public, type.get());
+
     bool need_semi = true;
-    ExprResult InitValue;
+
+    if (!ParseAttributes(VD)) return;
+
     if (Tok.is(tok::equal)) {
         ConsumeToken();
-        InitValue = ParseInitValue(&need_semi, false);
+        ExprResult InitValue = ParseInitValue(&need_semi, false);
         if (InitValue.isInvalid()) return;
+        VD->setInitValue(InitValue.get());
     }
     if (Tok.is(tok::l_paren)) {
         Diag(Tok, diag::err_invalid_token_after_declaration_suggest_func) << PP.getSpelling(Tok);
         return;
     }
-    // TODO use ParseIdentifier()
-    Actions.ActOnVarDef(id->getNameStart(), idLoc, is_public, type.get(), InitValue.get());
 
     if (need_semi) {
         ExpectAndConsume(tok::semi, diag::err_expected_after, "variable definition");

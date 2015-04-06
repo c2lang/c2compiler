@@ -147,13 +147,17 @@ void StringLiteral::print(StringBuilder& buffer, unsigned indent) const {
     buffer << " '" << value << "'\n";
 }
 
+void StringLiteral::printLiteral(StringBuilder& buffer) const {
+    buffer << '"' << value << '"';
+}
+
+
 
 void NilExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_EXPR);
     buffer << "NilExpr\n";
 }
-
 
 
 const std::string& IdentifierExpr::getName() const {
@@ -330,11 +334,11 @@ void BinaryOperator::print(StringBuilder& buffer, unsigned indent) const {
     buffer << " '" << OpCode2str(opc) << '\'';
     buffer << '\n';
 
-    buffer.indent(indent);
+    buffer.indent(indent + INDENT);
     buffer.setColor(COL_ATTR);
     buffer << "LHS=\n";
     lhs->print(buffer, indent + INDENT);
-    buffer.indent(indent);
+    buffer.indent(indent + INDENT);
     buffer.setColor(COL_ATTR);
     buffer << "RHS=\n";
     rhs->print(buffer, indent + INDENT);
@@ -468,11 +472,11 @@ void MemberExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer << ' ';
     Expr::print(buffer, 0);
     buffer << '\n';
-    buffer.indent(indent);
+    buffer.indent(indent + INDENT);
     buffer.setColor(COL_ATTR);
     buffer << "LHS=\n";
     Base->print(buffer, indent + INDENT);
-    buffer.indent(indent);
+    buffer.indent(indent + INDENT);
     buffer.setColor(COL_ATTR);
     buffer << "RHS=";
     buffer.setColor(COL_VALUE);
@@ -521,11 +525,11 @@ void BitOffsetExpr::print(StringBuilder& buffer, unsigned indent) const {
     Expr::print(buffer, 0);
     buffer << '\n';
 
-    buffer.indent(indent);
+    buffer.indent(indent + INDENT);
     buffer.setColor(COL_ATTR);
     buffer << "LHS=\n";
     lhs->print(buffer, indent + INDENT);
-    buffer.indent(indent);
+    buffer.indent(indent + INDENT);
     buffer.setColor(COL_ATTR);
     buffer << "RHS=\n";
     rhs->print(buffer, indent + INDENT);

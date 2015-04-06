@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+func void foo() @(packed) {}    // @error{attribute 'packed' cannot be applied to function declarations}
+

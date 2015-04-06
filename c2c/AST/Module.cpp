@@ -17,6 +17,8 @@
 
 #include "AST/Module.h"
 #include "AST/Decl.h"
+#include "Utils/StringBuilder.h"
+#include "Utils/color.h"
 
 using namespace C2;
 
@@ -45,11 +47,32 @@ Decl* Module::findSymbol(const std::string& name_) const {
     else return iter->second;
 }
 
+void Module::addAttributes(AttrMap& am) {
+    declAttrs.insert(am.begin(), am.end());
+}
+
 void Module::dump() const {
-    printf("symbols of module %s (clib=%d, external=%d, exported=%d)\n",
-        name.c_str(), m_isCLib, m_isExternal, m_isExported);
+    StringBuilder out;
+    out.enableColor(true);
+    out << "symbols of module " << name << "(clib=" << m_isCLib
+        <<", external=" << m_isExternal << ", exported=" << m_isExported << ")\n";
     for (SymbolsConstIter iter = symbols.begin(); iter != symbols.end(); ++iter) {
-        printf("  %s\n", iter->second->getName().c_str());
+        const Decl* D = iter->second;
+        out.indent(3);
+        out << D->getName() << "    ";// << '\n';
+        out.setColor(COL_ATTRIBUTES);
+        if (D->isPublic()) out << "public";
+        if (D->isExported()) out << " exported";
+        out.setColor(COL_NORM);
+        out << '\n';
     }
+    printf("%s", (const char*)out);
+}
+
+const AttrList& Module::getAttributes(const Decl* d) const {
+    assert(d->hasAttributes());
+    AttrMapConstIter iter = declAttrs.find(d);
+    assert(iter != declAttrs.end() && "called before Decl is linked to module!");
+    return iter->second;
 }
 

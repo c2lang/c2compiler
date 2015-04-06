@@ -244,6 +244,7 @@ public:
         return E->getKind() == EXPR_STRING_LITERAL;
     }
     virtual void print(StringBuilder& buffer, unsigned indent) const;
+    virtual void printLiteral(StringBuilder& buffer) const;
     virtual SourceLocation getLocation() const { return loc; }
     int getByteLength() const { return value.size(); }
 

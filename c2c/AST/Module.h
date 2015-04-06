@@ -19,6 +19,8 @@
 #include <string>
 #include <map>
 
+#include "AST/Attr.h"
+
 namespace C2 {
 
 class Decl;
@@ -42,6 +44,10 @@ public:
     typedef Symbols::const_iterator SymbolsConstIter;
     typedef Symbols::iterator SymbolsIter;
     const Symbols& getSymbols() const { return symbols; }
+
+    void addAttributes(AttrMap& am);
+    const AttrList& getAttributes(const Decl* d) const;
+
 private:
     const std::string name;
     bool m_isExternal;       // not a module in current target
@@ -49,6 +55,8 @@ private:
     bool m_isExported;       // symbols should be exported (in recipe)
 
     Symbols symbols;
+    
+    AttrMap declAttrs;
 };
 
 typedef std::map<std::string, Module*> Modules;

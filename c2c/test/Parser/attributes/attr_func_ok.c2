@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+public func void f1() @(unused, export, section="section1") { }
+

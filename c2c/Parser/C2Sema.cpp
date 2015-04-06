@@ -24,9 +24,8 @@
 #include <clang/Lex/LiteralSupport.h>
 
 #include "Parser/C2Sema.h"
-#include "AST/Decl.h"
-#include "AST/Expr.h"
 #include "AST/AST.h"
+#include "AST/Attr.h"
 #include "Utils/StringBuilder.h"
 #include "Utils/color.h"
 
@@ -163,7 +162,7 @@ void C2Sema::ActOnImport(const char* moduleName_, SourceLocation loc, Token& ali
     addSymbol(U);
 }
 
-void C2Sema::ActOnAliasType(const char* name, SourceLocation loc, Expr* type, bool is_public) {
+C2::Decl* C2Sema::ActOnAliasType(const char* name, SourceLocation loc, Expr* type, bool is_public) {
     assert(name);
     assert(type);
 #ifdef SEMA_DEBUG
@@ -181,17 +180,18 @@ void C2Sema::ActOnAliasType(const char* name, SourceLocation loc, Expr* type, bo
     ast.addType(T);
     addSymbol(T);
     delete typeExpr;
+    return T;
 }
 
-void C2Sema::ActOnVarDef(const char* name, SourceLocation loc,
-                        bool is_public, Expr* type, Expr* InitValue) {
+VarDecl* C2Sema::ActOnVarDef(const char* name, SourceLocation loc, bool is_public, Expr* type) {
     TypeExpr* typeExpr = cast<TypeExpr>(type);
     if (typeExpr->hasLocalQualifier()) {
         Diag(loc, diag::err_invalid_local_globalvar);
     }
-    VarDecl* V =  createVarDecl(VARDECL_GLOBAL, name, loc, typeExpr, InitValue, is_public);
+    VarDecl* V =  createVarDecl(VARDECL_GLOBAL, name, loc, typeExpr, 0, is_public);
     ast.addVar(V);
     addSymbol(V);
+    return V;
 }
 
 C2::FunctionDecl* C2Sema::createFuncDecl(const char* name, SourceLocation loc,
@@ -226,12 +226,13 @@ C2::FunctionDecl* C2Sema::ActOnFuncDecl(const char* name, SourceLocation loc, bo
     std::cerr << ANSI_NORMAL"\n";
 #endif
     FunctionDecl* D = createFuncDecl(name, loc, is_public, rtype);
+    if (D->getName() == "main") D->setExported();
     ast.addFunction(D);
     addSymbol(D);
     return D;
 }
 
-C2::FunctionDecl* C2Sema::ActOnFuncTypeDecl(const char* name, SourceLocation loc,
+C2::FunctionTypeDecl* C2Sema::ActOnFuncTypeDecl(const char* name, SourceLocation loc,
             bool is_public, Expr* rtype) {
 #ifdef SEMA_DEBUG
     assert(name);
@@ -243,7 +244,7 @@ C2::FunctionDecl* C2Sema::ActOnFuncTypeDecl(const char* name, SourceLocation loc
     FunctionTypeDecl* FTD = new FunctionTypeDecl(D, ast.getFileID());
     ast.addType(FTD);
     addSymbol(FTD);
-    return D;
+    return FTD;
 }
 
 void C2Sema::ActOnFunctionArg(FunctionDecl* func, const char* name, SourceLocation loc, Expr* type, Expr* InitValue) {
@@ -783,6 +784,53 @@ C2::ExprResult C2Sema::ActOnBitOffset(SourceLocation colLoc, Expr* LHS, Expr* RH
     std::cerr << ANSI_NORMAL"\n";
 #endif
     return ExprResult(new BitOffsetExpr(LHS, RHS, colLoc));
+}
+
+void C2Sema::ActOnAttr(Decl* D, const char* name, SourceRange range, Expr* arg) {
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA << "SEMA: attribute " << name << ANSI_NORMAL"\n";
+#endif
+    AttrKind kind = Attr::name2kind(name);
+    if (kind == ATTR_UNKNOWN) {
+        Diag(range.getBegin(), diag::err_attribute_unknown) << name << range;
+        return;
+    }
+    const AttrInfo& ai = Attr::getInfo(kind);
+    // check if allowed for type of Decl
+    if (isa<TypeDecl>(D) && !ai.isAllowedInType()) {
+        Diag(range.getBegin(), diag::err_attribute_invalid_decl) << name << 0 << range;
+        return;
+    }
+    if (isa<FunctionDecl>(D) && !ai.isAllowedInFunction()) {
+        Diag(range.getBegin(), diag::err_attribute_invalid_decl) << name << 1 << range;
+        return;
+    }
+    if (isa<VarDecl>(D) && !ai.isAllowedInVar()) {
+        Diag(range.getBegin(), diag::err_attribute_invalid_decl) << name << 2 << range;
+        return;
+    }
+
+    // check if it requires an argument or has argument while not needing one
+    if (arg) {
+        if (!ai.requiresArgument) {
+            Diag(range.getBegin(), diag::err_attribute_wrong_number_arguments) << name << 0 << range;
+            return;
+        }
+    } else {
+        if (ai.requiresArgument) {
+            Diag(range.getBegin(), diag::err_attribute_wrong_number_arguments) << name << 1 << range;
+            return;
+        }
+    }
+
+    // check for duplicates
+    if (ast.hasAttribute(D, kind)) {
+        Diag(range.getBegin(), diag::warn_duplicate_attribute_exact) << name << range;
+        return;
+    }
+
+    D->setHasAttributes();
+    ast.addAttribute(D, new Attr(kind, range, arg));
 }
 
 C2::ExprResult C2Sema::ActOnIntegerConstant(SourceLocation Loc, uint64_t Val) {

@@ -60,6 +60,8 @@ private:
     unsigned resolveVarDecl(VarDecl* D);
     unsigned resolveFunctionDecl(FunctionDecl* D);
     unsigned checkArrayValue(ArrayValueDecl* D);
+    void checkVarDeclAttributes(VarDecl* D);
+    void checkAttributes(Decl* D);
 
     AST& ast;
     std::auto_ptr<Scope> globals;

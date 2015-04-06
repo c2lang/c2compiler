@@ -1,0 +1,22 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c
+
+// @file{file1}
+module test;
+
+int32 x @(section="test") = 123;
+
+func void foo() @(section="test") {}
+
+public func int32 main(int32 argc, const char*[] argv)
+{
+    return 0;
+}
+
+// @expect{test.c}
+static int32_t test_x __attribute__((section("test"))) = 123;
+
+__attribute__((section("test"))) static void test_foo() {
+}
+

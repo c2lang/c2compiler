@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+int32 x @(unused="extra"); // @error{unused attribute takes no arguments}
+

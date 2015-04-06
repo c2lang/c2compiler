@@ -54,18 +54,18 @@ public:
     // file level actions
     void ActOnModule(const char* name, SourceLocation loc);
     void ActOnImport(const char* name, SourceLocation loc, Token& aliasTok, bool isLocal);
-    void ActOnVarDef(const char* name, SourceLocation loc, bool is_public, Expr* type, Expr* InitValue);
+    VarDecl* ActOnVarDef(const char* name, SourceLocation loc, bool is_public, Expr* type);
 
     // function decls
     FunctionDecl* ActOnFuncDecl(const char* name, SourceLocation loc, bool is_public, Expr* rtype);
-    FunctionDecl* ActOnFuncTypeDecl(const char* name, SourceLocation loc, bool is_public, Expr* rtype);
+    FunctionTypeDecl* ActOnFuncTypeDecl(const char* name, SourceLocation loc, bool is_public, Expr* rtype);
     void ActOnFunctionArg(FunctionDecl* func, const char* name, SourceLocation loc, Expr* type, Expr* InitValue);
     void ActOnFinishFunctionBody(Decl* func, Stmt* body);
 
     void ActOnArrayValue(const char* name, SourceLocation loc, Expr* Value);
 
     // struct decls
-    void ActOnAliasType(const char* name, SourceLocation loc, Expr* typeExpr, bool is_public);
+    Decl* ActOnAliasType(const char* name, SourceLocation loc, Expr* typeExpr, bool is_public);
     StructTypeDecl* ActOnStructType(const char* name, SourceLocation loc, bool isStruct, bool is_public, bool is_global);
     void ActOnStructVar(StructTypeDecl* S, const char* name, SourceLocation loc, Expr* type, Expr* InitValue, bool is_public);
     void ActOnStructMember(StructTypeDecl* S, Decl* member);
@@ -122,6 +122,8 @@ public:
     ExprResult ActOnUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Expr* Input);
     ExprResult ActOnBitOffset(SourceLocation colLoc, Expr* LHS, Expr* RHS);
 
+    // Attributes
+    void ActOnAttr(Decl* D, const char* name, SourceRange range, Expr* arg);
 private:
     ExprResult ActOnIntegerConstant(SourceLocation Loc, uint64_t Val);
     typedef std::map<const std::string, const Decl*> Names;

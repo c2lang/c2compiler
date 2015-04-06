@@ -53,8 +53,7 @@
 #include "AST/AST.h"
 #include "AST/Module.h"
 #include "AST/Decl.h"
-// only for Dummy Modules
-#include "AST/Expr.h"
+#include "AST/Attr.h"
 
 #include "Parser/C2Parser.h"
 #include "Parser/C2Sema.h"
@@ -292,6 +291,8 @@ int C2Builder::build() {
     //Diags.setDiagnosticErrorAsFatal(diag::warn_integer_too_large, false);
     Diags.setSeverity(diag::warn_falloff_nonvoid_function, diag::Severity::Error, SourceLocation());
 
+    Diags.setSeverity(diag::warn_duplicate_attribute_exact, diag::Severity::Error, SourceLocation());
+
     // set recipe warning options
     for (unsigned i=0; i<recipe.silentWarnings.size(); i++) {
         const std::string& conf = recipe.silentWarnings[i];
@@ -367,7 +368,7 @@ int C2Builder::build() {
         FileInfo* info = new FileInfo(Diags, LangOpts, pti, HSOpts, FileMgr, SM, filename, file_id, PredefineBuffer);
         files.push_back(info);
         bool ok = info->parse(options);
-        if (options.printAST0) info->ast.print(true);
+        if (options.printAST0) info->ast.print(true, true);
         errors += !ok;
     }
     u_int64_t t2_parse = Utils::getCurrentTime();
@@ -410,9 +411,9 @@ int C2Builder::build() {
 
     if (!checkMainFunction(Diags)) goto out;
 
-    generateOptionsDeps();
-
     if (!checkExportedPackages()) goto out;
+
+    generateOptionsDeps();
 
     generateOptionalC();
 
@@ -477,7 +478,10 @@ bool C2Builder::createModules() {
             } else {
                 mod->addSymbol(New);
             }
+            if (New->isPublic() && mod->isExported()) New->setExported();
         }
+        // merge attributes
+        mod->addAttributes(info->ast.getAttributes());
     }
     return true;
 }
@@ -944,6 +948,9 @@ void C2Builder::generateOptionalC() {
         const std::string& conf = recipe.cConfigs[i];
         // TODO just pass struct with bools?
         if (conf == "single_module") single_module = true;
+        else {
+            fprintf(stderr, ANSI_RED"invalid c-generation argument '%s'" ANSI_NORMAL"\n", conf.c_str());
+        }
     }
 
     std::string outdir = OUTPUT_DIR + recipe.name + BUILD_DIR;

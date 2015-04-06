@@ -100,6 +100,7 @@ private:
     void ParseStructType(bool is_struct, const char* id, SourceLocation idLoc, bool is_public);
     void ParseStructBlock(StructTypeDecl* S);
     void ParseEnumType(const char* id, SourceLocation idLoc, bool is_public);
+    void ParseAliasType(const char* id, SourceLocation idLoc, bool is_public);
     void ParseFuncType(IdentifierInfo* id, SourceLocation& idLoc, bool is_public);
 
     // function def
@@ -147,6 +148,7 @@ private:
     StmtResult ParseLabeledStatement();
     StmtResult ParseExprStatement();
     bool ParseCondition(StmtResult& Res);
+    bool ParseAttributes(Decl* D);
 
     // expressions
     /// TypeCastState - State whether an expression is or may be a type cast.

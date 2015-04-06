@@ -1,0 +1,12 @@
+module test;
+
+public int32 a @(export);
+
+public type Number int32 @(export);
+
+public func void f() @(export) {}
+
+public type State enum int8 {
+    A,
+} @(export)
+

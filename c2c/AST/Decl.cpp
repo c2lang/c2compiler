@@ -18,9 +18,11 @@
 #include "AST/Decl.h"
 #include "AST/Stmt.h"
 #include "AST/Expr.h"
-#include "Utils/StringBuilder.h"
+#include "AST/Attr.h"
+#include "AST/Module.h"
 #include "Utils/Utils.h"
 #include "Utils/color.h"
+#include "Utils/StringBuilder.h"
 #include "Utils/UtilsConstants.h"
 
 using namespace C2;
@@ -56,12 +58,55 @@ Decl::~Decl() {
 #endif
 }
 
+void Decl::printAttributes(StringBuilder& buffer, unsigned indent) const {
+    if (isExported()) {
+        buffer.indent(indent);
+        buffer.setColor(COL_ATTRIBUTES);
+        buffer << "exported\n";
+    }
+    if (!hasAttributes()) return;
+    buffer.indent(indent);
+    buffer.setColor(COL_ATTRIBUTES);
+    buffer << "Attributes: ";
+    if (mod) {
+        const AttrList& AL = mod->getAttributes(this);
+        for (AttrListConstIter iter = AL.begin(); iter != AL.end(); ++iter) {
+            if (iter != AL.begin()) buffer << ", ";
+            (*iter)->print(buffer);
+        }
+    } else {
+        buffer << "<NO MODULE>";
+    }
+    buffer << '\n';
+}
+
 void Decl::dump() const {
     StringBuilder buffer;
     print(buffer, 0);
     printf("%s\n", (const char*) buffer);
 }
 
+void Decl::printPublic(StringBuilder& buffer) const {
+    if (isPublic()) {
+        buffer.setColor(COL_ATTR);
+        buffer << " public";
+    }
+}
+
+bool Decl::hasAttribute(AttrKind kind) const {
+    if (!hasAttributes()) return false;
+    const AttrList& AL = getAttributes();
+    for (AttrListConstIter iter = AL.begin(); iter != AL.end(); ++iter) {
+        const Attr* A = (*iter);
+        if (A->getKind() == kind) return true;
+    }
+    return false;
+}
+
+const AttrList& Decl::getAttributes() const {
+    assert(hasAttributes());
+    return mod->getAttributes(this);
+}
 
 FunctionDecl::FunctionDecl(const std::string& name_, SourceLocation loc_,
                            bool is_public, unsigned file_id, QualType rtype_)
@@ -80,12 +125,14 @@ void FunctionDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.setColor(COL_DECL);
     buffer << "FunctionDecl ";
     type.print(buffer);
+    printPublic(buffer);
     buffer.setColor(COL_VALUE);
     buffer << ' ' << name;
     buffer << '\n';
     for (unsigned i=0; i<args.size(); i++) {
         args[i]->print(buffer, indent + INDENT);
     }
+    printAttributes(buffer, indent + INDENT);
     if (body) body->print(buffer, INDENT);
 }
 
@@ -140,8 +187,10 @@ void VarDecl::print(StringBuilder& buffer, unsigned indent) const {
     type.print(buffer);
     buffer.setColor(COL_ATTR);
     buffer << ' ' << VarDeclKind2Str(getVarKind());
+    printPublic(buffer);
     buffer.setColor(COL_VALUE);
     buffer << ' ' << name << '\n';
+    printAttributes(buffer, indent + INDENT);
 
     if (hasLocalQualifier()) buffer << " LOCAL";
     indent += INDENT;
@@ -199,10 +248,12 @@ void AliasTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.setColor(COL_DECL);
     buffer << "AliasTypeDecl ";
     type.print(buffer);
+    printPublic(buffer);
     buffer.setColor(COL_VALUE);
     buffer << ' ' << name;
     buffer.setColor(COL_ATTR); buffer << " refType: "; refType.print(buffer);
     buffer << '\n';
+    printAttributes(buffer, indent + INDENT);
 }
 
 
@@ -227,8 +278,10 @@ void StructTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
     if (isStruct()) buffer << "struct";
     else buffer << "union";
     buffer << ") ";
+    printPublic(buffer);
     buffer.setColor(COL_VALUE);
     buffer << name << '\n';
+    printAttributes(buffer, indent + INDENT);
     for (unsigned i=0; i<members.size(); i++) {
         members[i]->print(buffer, indent + INDENT);
     }
@@ -240,9 +293,11 @@ void EnumTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.setColor(COL_DECL);
     buffer << "EnumTypeDecl ";
     type.print(buffer);
+    printPublic(buffer);
     buffer.setColor(COL_VALUE);
     buffer << ' ' << name;
     buffer << '\n';
+    printAttributes(buffer, indent + INDENT);
     for (unsigned i=0; i<constants.size(); i++) {
         constants[i]->print(buffer, indent + INDENT);
     }
@@ -262,6 +317,7 @@ void FunctionTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_DECL);
     buffer << "FunctionTypeDecl\n";
+    printAttributes(buffer, indent + INDENT);
     func->print(buffer, indent + INDENT);
 }
 

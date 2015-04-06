@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+int32 x @(aligned="foo"); // @error{'aligned' attribute requires integer constant}
+
