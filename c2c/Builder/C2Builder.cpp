@@ -948,7 +948,7 @@ void C2Builder::generateOptionalC() {
     for (unsigned i=0; i<recipe.cConfigs.size(); i++) {
         const std::string& conf = recipe.cConfigs[i];
         // TODO just pass struct with bools?
-        if (conf == "single_module") single_module = true;
+        if (conf == "single-module") single_module = true;
         else if (conf == "no-build") no_build = true;
         else {
             fprintf(stderr, ANSI_RED"invalid c-generation argument '%s'" ANSI_NORMAL"\n", conf.c_str());
@@ -1034,7 +1034,10 @@ void C2Builder::generateOptionalIR() {
     for (unsigned i=0; i<recipe.genConfigs.size(); i++) {
         const std::string& conf = recipe.genConfigs[i];
         // TODO just pass struct with bools?
-        if (conf == "single_module") single_module = true;
+        if (conf == "single-module") single_module = true;
+        else {
+            fprintf(stderr, ANSI_RED"invalid code generation argument '%s'" ANSI_NORMAL"\n", conf.c_str());
+        }
     }
 
     std::string outdir = OUTPUT_DIR + recipe.name + BUILD_DIR;
@@ -1098,8 +1101,8 @@ void C2Builder::generateOptionsDeps() const {
     for (unsigned i=0; i<recipe.depConfigs.size(); i++) {
         const std::string& conf = recipe.depConfigs[i];
         // TODO just pass struct with bools?
-        if (conf == "show_files") showFiles = true;
-        if (conf == "show_externals") showExternals = true;
+        if (conf == "show-files") showFiles = true;
+        if (conf == "show-externals") showExternals = true;
     }
 
     DepGenerator generator(showFiles, showPrivate, showExternals);

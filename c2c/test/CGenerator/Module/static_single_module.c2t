@@ -1,6 +1,6 @@
 // @recipe lib static
     $warnings no-unused
-    $generate-c single_module
+    $generate-c single-module
     $export test1
 
 // @file{file1}

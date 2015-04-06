@@ -152,15 +152,16 @@ lib foobar shared
 end
 
 target puzzle
-    $deps show_files show_externals
-    $generate-c single_module
+    $deps show-files show-externals
+    $generate-c single-module
     puzzle.c2
     puzzle2.c2
 end
 
 target snake
     $warnings no-unused
-    $deps show_files show_externals
-    $generate-c single_module
+    $deps show-files show-externals
+    $generate-c single-module
     snake.c2
 end
+

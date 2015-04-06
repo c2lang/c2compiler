@@ -734,7 +734,6 @@ void CCodeGenerator::EmitEnumType(const EnumTypeDecl* E, StringBuilder& output) 
 // output: typedef void (*name)(args);
 void CCodeGenerator::EmitFunctionType(const FunctionTypeDecl* FTD, StringBuilder& output) {
     LOG_DECL(FTD)
-    FTD->dump();
     FunctionDecl* F = FTD->getDecl();
     output << "typedef ";
     EmitTypePreName(F->getReturnType(), output);
