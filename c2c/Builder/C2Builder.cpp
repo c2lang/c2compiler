@@ -944,10 +944,12 @@ void C2Builder::generateOptionalC() {
 
     u_int64_t t1 = Utils::getCurrentTime();
     bool single_module = false;
+    bool no_build = false;
     for (unsigned i=0; i<recipe.cConfigs.size(); i++) {
         const std::string& conf = recipe.cConfigs[i];
         // TODO just pass struct with bools?
         if (conf == "single_module") single_module = true;
+        else if (conf == "no-build") no_build = true;
         else {
             fprintf(stderr, ANSI_RED"invalid c-generation argument '%s'" ANSI_NORMAL"\n", conf.c_str());
         }
@@ -1013,14 +1015,16 @@ void C2Builder::generateOptionalC() {
     u_int64_t t2 = Utils::getCurrentTime();
     if (options.printTiming) printf(COL_TIME"C code generation took %" PRIu64" usec" ANSI_NORMAL"\n", t2 - t1);
 
-    u_int64_t t3 = Utils::getCurrentTime();
-    // execute generate makefile
-    int retval = ProcessUtils::run(outdir, "/usr/bin/make");
-    if (retval != 0) {
-        fprintf(stderr, ANSI_RED"error during external c compilation" ANSI_NORMAL"\n");
+    if (!no_build) {
+        u_int64_t t3 = Utils::getCurrentTime();
+        // execute generated makefile
+        int retval = ProcessUtils::run(outdir, "/usr/bin/make");
+        if (retval != 0) {
+            fprintf(stderr, ANSI_RED"error during external c compilation" ANSI_NORMAL"\n");
+        }
+        u_int64_t t4 = Utils::getCurrentTime();
+        if (options.printTiming) printf(COL_TIME"C code compilation took %" PRIu64" usec" ANSI_NORMAL"\n", t4 - t3);
     }
-    u_int64_t t4 = Utils::getCurrentTime();
-    if (options.printTiming) printf(COL_TIME"C code compilation took %" PRIu64" usec" ANSI_NORMAL"\n", t4 - t3);
 }
 
 void C2Builder::generateOptionalIR() {
