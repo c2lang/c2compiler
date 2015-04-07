@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#include "Builder/DepGenerator.h"
-#include "CGenerator/DepVisitor.h"
+#include "Algo/DepGenerator.h"
+#include "Algo/DepVisitor.h"
 #include "AST/Module.h"
 #include "AST/AST.h"
 #include "AST/Decl.h"

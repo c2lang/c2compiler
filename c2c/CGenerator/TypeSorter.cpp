@@ -17,7 +17,7 @@
 #include <map>
 
 #include "CGenerator/TypeSorter.h"
-#include "CGenerator/DepVisitor.h"
+#include "Algo/DepVisitor.h"
 #include "AST/Decl.h"
 #include "AST/Type.h"
 

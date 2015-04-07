@@ -49,7 +49,7 @@
 
 #include "Builder/C2Builder.h"
 #include "Builder/Recipe.h"
-#include "Builder/DepGenerator.h"
+#include "Algo/DepGenerator.h"
 #include "AST/AST.h"
 #include "AST/Module.h"
 #include "AST/Decl.h"

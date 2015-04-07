@@ -13,9 +13,7 @@
  * limitations under the License.
  */
 
-//#include <stdio.h>
-
-#include "CGenerator/DepVisitor.h"
+#include "Algo/DepVisitor.h"
 #include "AST/Decl.h"
 #include "AST/Stmt.h"
 #include "AST/Expr.h"
