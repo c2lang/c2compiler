@@ -61,7 +61,28 @@ void Module::dump() const {
         out.indent(3);
         out << D->getName() << "    ";// << '\n';
         out.setColor(COL_ATTRIBUTES);
-        if (D->isPublic()) out << "public";
+        switch (D->getKind()) {
+        case DECL_FUNC:
+            out << "function";
+            break;
+        case DECL_VAR:
+            out << "variable";
+            break;
+        case DECL_ALIASTYPE:
+        case DECL_STRUCTTYPE:
+        case DECL_ENUMTYPE:
+        case DECL_FUNCTIONTYPE:
+            out << "type";
+            break;
+        case DECL_ENUMVALUE:
+            out << "constant";
+            break;
+        case DECL_ARRAYVALUE:
+        case DECL_IMPORT:
+            // never symbol
+            break;
+        }
+        if (D->isPublic()) out << " public";
         if (D->isExported()) out << " exported";
         out.setColor(COL_NORM);
         out << '\n';
