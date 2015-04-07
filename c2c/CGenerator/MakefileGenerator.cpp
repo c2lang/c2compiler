@@ -66,19 +66,32 @@ void MakefileGenerator::write() {
     switch (type) {
     case GenUtils::EXECUTABLE:
         out << "\tgcc -o " << targetname;
+        for (FilesConstIter iter=files.begin(); iter!=files.end(); ++iter) {
+            out << ' ' << *iter << ".o";
+        }
         break;
     case GenUtils::SHARED_LIB:
         out << "#link against with: gcc main.c -L. -l<libname> -o test\n";
-        out << "\tgcc -shared -Wl,-soname," << libname << ".1 -o " << targetname;
+        out << "\tgcc";
+        for (FilesConstIter iter=files.begin(); iter!=files.end(); ++iter) {
+            out << ' ' << *iter << ".o";
+        }
+        out << " -shared -o " << targetname << " -Wl,-soname," << libname << ".1";
+        out << " -Wl,--version-script=exports.version";
         break;
     case GenUtils::STATIC_LIB:
         out << "\tar rcs " << targetname;
+        for (FilesConstIter iter=files.begin(); iter!=files.end(); ++iter) {
+            out << ' ' << *iter << ".o";
+        }
         break;
     }
-    for (FilesConstIter iter=files.begin(); iter!=files.end(); ++iter) {
-        out << ' ' << *iter << ".o";
-    }
     out << '\n';
+    out << '\n';
+
+    // show target (for export debug)
+    out << "symbols:\n";
+    out << "\t nm -g -D -C --defined-only " << targetname << '\n';
     out << '\n';
 
     // clean target

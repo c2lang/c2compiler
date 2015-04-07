@@ -65,6 +65,10 @@
 #include "Utils/color.h"
 #include "Utils/Utils.h"
 #include "Utils/ProcessUtils.h"
+// TEMP UNTIL CGENERATOR REFACTOR
+#include "Utils/GenUtils.h"
+#include "FileUtils/FileUtils.h"
+
 
 using clang::DiagnosticOptions;
 using clang::DiagnosticsEngine;
@@ -1010,6 +1014,31 @@ void C2Builder::generateOptionalC() {
             }
         }
         gen.createLibHeader(options.printC, std::string(OUTPUT_DIR) + recipe.name + "/");
+    }
+
+    // generate exports.version
+    if (recipe.type == GenUtils::SHARED_LIB) {
+        StringBuilder expmap;
+        expmap << "LIB_1.0 {\n";
+        expmap << "\tglobal:\n";
+        for (ModulesIter iter = modules.begin(); iter != modules.end(); ++iter) {
+            Module* M = iter->second;
+            if (M->isExternal()) continue;
+            const std::string& modname = M->getName();
+            const Module::Symbols& syms = M->getSymbols();
+            for (Module::SymbolsConstIter iter = syms.begin(); iter != syms.end(); ++iter) {
+                const Decl* D = iter->second;
+                if (!D->isExported()) continue;
+                if (!isa<FunctionDecl>(D) && !isa<VarDecl>(D)) continue;
+                expmap << "\t\t";
+                GenUtils::addName(modname, iter->first, expmap);
+                expmap << ";\n";
+            }
+        }
+        expmap << "\tlocal:\n\t\t*;\n";
+        expmap << "};\n";
+        std::string outfile = outdir + "exports.version";
+        FileUtils::writeFile(outdir.c_str(), outfile.c_str(), expmap);
     }
 
     u_int64_t t2 = Utils::getCurrentTime();
