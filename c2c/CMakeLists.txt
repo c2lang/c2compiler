@@ -64,6 +64,7 @@ ADD_EXECUTABLE(c2c
     CGenerator/CCodeGenerator.cpp
     CGenerator/MakefileGenerator.cpp
     CGenerator/TypeSorter.cpp
+    CGenerator/CGenerator.cpp
     Builder/C2Builder.cpp
     Builder/Recipe.cpp
     Builder/RecipeReader.cpp

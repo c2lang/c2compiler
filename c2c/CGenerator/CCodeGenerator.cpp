@@ -507,14 +507,14 @@ void CCodeGenerator::EmitIncludes() {
             const ImportDecl* D = ast->getImport(i);
             ModulesConstIter iter = modules.find(D->getModuleName());
             assert(iter != modules.end());
-            const Module* P = iter->second;
+            const Module* M = iter->second;
 
-            if (P->isPlainC()) {
-                systemIncludes.insert(P->getName());
+            if (M->isPlainC()) {
+                systemIncludes.insert(M->getName());
                 continue;
             }
             if (mode == MULTI_FILE) {
-                localIncludes.insert(P->getName());
+                localIncludes.insert(M->getName());
             }
         }
     }

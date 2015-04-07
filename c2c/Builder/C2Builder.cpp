@@ -15,8 +15,6 @@
 
 #include <stdio.h>
 #include <unistd.h>
-#include <string.h>
-#include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
@@ -49,7 +47,6 @@
 
 #include "Builder/C2Builder.h"
 #include "Builder/Recipe.h"
-#include "Algo/DepGenerator.h"
 #include "AST/AST.h"
 #include "AST/Module.h"
 #include "AST/Decl.h"
@@ -58,17 +55,11 @@
 #include "Parser/C2Parser.h"
 #include "Parser/C2Sema.h"
 #include "Analyser/FileAnalyser.h"
+#include "Algo/DepGenerator.h"
 #include "CodeGen/CodeGenModule.h"
-#include "CGenerator/CCodeGenerator.h"
-#include "CGenerator/MakefileGenerator.h"
-#include "Utils/StringBuilder.h"
+#include "CGenerator/CGenerator.h"
 #include "Utils/color.h"
 #include "Utils/Utils.h"
-#include "Utils/ProcessUtils.h"
-// TEMP UNTIL CGENERATOR REFACTOR
-#include "Utils/GenUtils.h"
-#include "FileUtils/FileUtils.h"
-
 
 using clang::DiagnosticOptions;
 using clang::DiagnosticsEngine;
@@ -959,98 +950,24 @@ void C2Builder::generateOptionalC() {
         }
     }
 
-    std::string outdir = OUTPUT_DIR + recipe.name + BUILD_DIR;
-
-    MakefileGenerator makeGen(outdir, recipe.name, recipe.type);
-    if (single_module) {
-        makeGen.add(recipe.name);
-        CCodeGenerator gen(recipe.name, CCodeGenerator::SINGLE_FILE, modules);
-        for (unsigned i=0; i<files.size(); i++) {
-            FileInfo* info = files[i];
-            gen.addEntry(info->ast);
-        }
-        if (options.verbose) printf(COL_VERBOSE "generating C (single module)" ANSI_NORMAL"\n");
-        gen.generate(options.printC);
-        gen.write(outdir);
-    } else {
-        for (ModulesIter iter = modules.begin(); iter != modules.end(); ++iter) {
-            Module* P = iter->second;
-            if (P->isExternal()) continue;
-            if (options.verbose) printf(COL_VERBOSE "generating C for module %s" ANSI_NORMAL "\n", P->getName().c_str());
-            makeGen.add(P->getName());
-            CCodeGenerator gen(P->getName(), CCodeGenerator::MULTI_FILE, modules);
-            for (unsigned i=0; i<files.size(); i++) {
-                FileInfo* info = files[i];
-                if (info->ast.getModuleName() == P->getName()) {
-                    gen.addEntry(info->ast);
-                }
-            }
-            gen.generate(options.printC);
-            gen.write(outdir);
-        }
+    CGenerator::Options cgen_options(OUTPUT_DIR, BUILD_DIR);
+    cgen_options.single_module = single_module;
+    cgen_options.printC = options.printC;
+    CGenerator cgen(recipe.name, recipe.type, modules, cgen_options);
+    for (unsigned i=0; i<files.size(); i++) {
+        FileInfo* info = files[i];
+        cgen.addFile(info->ast);
     }
-    makeGen.write();
-
-    // generate external library header
-    bool generateHeader = false;
-    switch (recipe.type) {
-    case GenUtils::EXECUTABLE:
-        break;
-    case GenUtils::SHARED_LIB:
-    case GenUtils::STATIC_LIB:
-        generateHeader = true;
-        break;
-    }
-    if (generateHeader) {
-        CCodeGenerator gen(recipe.name, CCodeGenerator::MULTI_FILE, modules);
-        for (ModulesIter iter = modules.begin(); iter != modules.end(); ++iter) {
-            Module* P = iter->second;
-            if (!P->isExported()) continue;
-            for (unsigned i=0; i<files.size(); i++) {
-                FileInfo* info = files[i];
-                if (info->ast.getModuleName() == P->getName()) {
-                    gen.addEntry(info->ast);
-                }
-            }
-        }
-        gen.createLibHeader(options.printC, std::string(OUTPUT_DIR) + recipe.name + "/");
-    }
-
-    // generate exports.version
-    if (recipe.type == GenUtils::SHARED_LIB) {
-        StringBuilder expmap;
-        expmap << "LIB_1.0 {\n";
-        expmap << "\tglobal:\n";
-        for (ModulesIter iter = modules.begin(); iter != modules.end(); ++iter) {
-            Module* M = iter->second;
-            if (M->isExternal()) continue;
-            const std::string& modname = M->getName();
-            const Module::Symbols& syms = M->getSymbols();
-            for (Module::SymbolsConstIter iter = syms.begin(); iter != syms.end(); ++iter) {
-                const Decl* D = iter->second;
-                if (!D->isExported()) continue;
-                if (!isa<FunctionDecl>(D) && !isa<VarDecl>(D)) continue;
-                expmap << "\t\t";
-                GenUtils::addName(modname, iter->first, expmap);
-                expmap << ";\n";
-            }
-        }
-        expmap << "\tlocal:\n\t\t*;\n";
-        expmap << "};\n";
-        std::string outfile = outdir + "exports.version";
-        FileUtils::writeFile(outdir.c_str(), outfile.c_str(), expmap);
-    }
+    if (options.verbose) printf(COL_VERBOSE "generating C code" ANSI_NORMAL"\n");
+    cgen.generate();
 
     u_int64_t t2 = Utils::getCurrentTime();
     if (options.printTiming) printf(COL_TIME"C code generation took %" PRIu64" usec" ANSI_NORMAL"\n", t2 - t1);
 
     if (!no_build) {
+        if (options.verbose) printf(COL_VERBOSE "building C code" ANSI_NORMAL"\n");
         u_int64_t t3 = Utils::getCurrentTime();
-        // execute generated makefile
-        int retval = ProcessUtils::run(outdir, "/usr/bin/make");
-        if (retval != 0) {
-            fprintf(stderr, ANSI_RED"error during external c compilation" ANSI_NORMAL"\n");
-        }
+        cgen.build();
         u_int64_t t4 = Utils::getCurrentTime();
         if (options.printTiming) printf(COL_TIME"C code compilation took %" PRIu64" usec" ANSI_NORMAL"\n", t4 - t3);
     }

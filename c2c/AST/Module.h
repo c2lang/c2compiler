@@ -55,7 +55,6 @@ private:
     bool m_isExported;       // symbols should be exported (in recipe)
 
     Symbols symbols;
-    
     AttrMap declAttrs;
 };
 
