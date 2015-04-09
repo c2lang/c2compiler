@@ -54,6 +54,7 @@ static void usage(const char* name) {
     fprintf(stderr, "   -v            - verbose logging\n");
     fprintf(stderr, "   --test        - test mode (don't check for main())\n");
     fprintf(stderr, "   --deps        - print module dependencies\n");
+    fprintf(stderr, "   --check       - only parse + analyse\n");
     exit(-1);
 }
 
@@ -131,6 +132,10 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
                 }
                 if (strcmp(&arg[2], "deps") == 0) {
                     opts.printDependencies = true;
+                    continue;
+                }
+                if (strcmp(&arg[2], "check") == 0) {
+                    opts.checkOnly = true;
                     continue;
                 }
                 usage(argv[0]);

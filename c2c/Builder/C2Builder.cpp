@@ -935,6 +935,7 @@ bool C2Builder::checkExportedPackages() const {
 }
 
 void C2Builder::generateOptionalC() {
+    if (options.checkOnly) return;
     if (!options.generateC && !recipe.generateCCode) return;
 
     u_int64_t t1 = Utils::getCurrentTime();
@@ -974,6 +975,7 @@ void C2Builder::generateOptionalC() {
 }
 
 void C2Builder::generateOptionalIR() {
+    if (options.checkOnly) return;
     if (!options.generateIR && !recipe.generateIR) return;
 
     bool single_module = false;
@@ -1038,7 +1040,10 @@ void C2Builder::generateOptionalIR() {
 }
 
 void C2Builder::generateOptionsDeps() const {
+    if (options.checkOnly) return;
     if (!options.printDependencies && !recipe.generateDeps) return;
+
+    if (options.verbose) printf(COL_VERBOSE "generating dependencies" ANSI_NORMAL"\n");
 
     u_int64_t t1 = Utils::getCurrentTime();
     bool showFiles = false;

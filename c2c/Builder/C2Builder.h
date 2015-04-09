@@ -43,6 +43,7 @@ struct BuildOptions {
         , printIR(false)
         , generateC(false)
         , printC(false)
+        , checkOnly(false)
         , printModules(false)
         , printDependencies(false)
         , verbose(false)
@@ -58,6 +59,7 @@ struct BuildOptions {
     bool printIR;
     bool generateC;
     bool printC;
+    bool checkOnly;
     bool printModules;
     bool printDependencies;
     bool verbose;
