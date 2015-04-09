@@ -26,11 +26,11 @@ static const AttrInfo attrInfo[] {
     { ATTR_EXPORT,   "export",   false, ATTR_TYPE | ATTR_FUNC | ATTR_VAR },
     { ATTR_PACKED,   "packed",   false, ATTR_TYPE },
     { ATTR_UNUSED,   "unused",   false, ATTR_TYPE | ATTR_FUNC | ATTR_VAR },
-    { ATTR_SECTION,  "section",  true,  ATTR_FUNC | ATTR_VAR },
-    { ATTR_NORETURN, "noreturn", false, ATTR_FUNC },
-    { ATTR_INLINE,   "inline",   false, ATTR_FUNC },
+    { ATTR_SECTION,  "section",  true,              ATTR_FUNC | ATTR_VAR },
+    { ATTR_NORETURN, "noreturn", false,             ATTR_FUNC },
+    { ATTR_INLINE,   "inline",   false,             ATTR_FUNC },
     { ATTR_ALIGNED,  "aligned",  true,  ATTR_TYPE | ATTR_FUNC | ATTR_VAR },
-    { ATTR_WEAK,     "weak",     false, ATTR_FUNC | ATTR_VAR },
+    { ATTR_WEAK,     "weak",     false,             ATTR_FUNC | ATTR_VAR },
 };
 
 const char* Attr::kind2str() const {
