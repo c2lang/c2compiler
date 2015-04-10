@@ -94,7 +94,7 @@ typedef OwningVector<Stmt> StmtList;
 
 class ReturnStmt : public Stmt {
 public:
-    ReturnStmt(SourceLocation loc,Expr* value_);
+    ReturnStmt(SourceLocation loc, Expr* value_);
     virtual ~ReturnStmt();
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_RETURN;

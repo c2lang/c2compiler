@@ -34,6 +34,7 @@ class VarDecl;
 class FunctionDecl;
 class EnumConstantDecl;
 class Stmt;
+class SwitchStmt;
 class Expr;
 class IdentifierExpr;
 class InitListExpr;
@@ -114,7 +115,9 @@ private:
     void checkAssignment(Expr* assignee, QualType TLeft);
     void checkDeclAssignment(Decl* decl, Expr* expr);
     void checkArrayDesignators(InitListExpr* expr, int64_t* size);
+    void checkEnumCases(const SwitchStmt* SS, const EnumType* ET) const;
     QualType getStructType(QualType T) const;
+    QualType getConditionType(const Stmt* C) const;
 
     // conversions
     QualType UsualUnaryConversions(Expr* expr) const;

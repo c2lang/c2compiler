@@ -320,6 +320,7 @@ public:
     unsigned numConstants() const { return constants.size(); }
     EnumConstantDecl* getConstant(unsigned index) const { return constants[index]; }
 
+    int getIndex(const EnumConstantDecl* c) const;
 private:
     typedef OwningVector<EnumConstantDecl> Constants;
     Constants constants;

@@ -1,0 +1,23 @@
+// @warnings{no-unused}
+module test;
+
+type Foo enum int8 {
+    A,
+}
+
+type Bar enum int8 {
+    C,
+}
+
+public func void foo() {
+    int32 bar = 1;
+    Foo f = A;
+    switch (f) {
+    case A:
+    case 1:         // @error{case value not in enumerated type '(enum)Foo' (aka 'int8')}
+    case bar:         // @error{case value not in enumerated type '(enum)Foo' (aka 'int8')}
+    case C:         // @error{case value not in enumerated type '(enum)Foo' (aka 'int8')}
+        break;
+    }
+}
+

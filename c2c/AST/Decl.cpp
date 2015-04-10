@@ -303,6 +303,12 @@ void EnumTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
     }
 }
 
+int EnumTypeDecl::getIndex(const EnumConstantDecl* c) const {
+    for (unsigned i=0; i<constants.size(); i++) {
+        if (constants[i] == c) return i;
+    }
+    return -1;
+}
 
 FunctionTypeDecl::FunctionTypeDecl(FunctionDecl* F, unsigned file_id)
     : TypeDecl(DECL_FUNCTIONTYPE, F->getName(), F->getLocation(), F->getType(), F->isPublic(), file_id)

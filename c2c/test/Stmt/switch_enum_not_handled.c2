@@ -1,0 +1,44 @@
+// @warnings{no-unused}
+module test;
+
+type Foo enum int8 {
+    A,
+    B,
+    C,
+    D,
+}
+
+public func void foo() {
+    Foo f = A;
+    switch (f) {    // @error{4 enumeration values not handled in switch: A, B, C...}
+    }
+
+    switch (f) { // @error{enumeration values B, C, and D not handled in switch}
+    case A:
+        break;
+    }
+
+    switch (f) { // @error{enumeration values B and D not handled in switch}
+    case A:
+    case C:
+        break;
+    }
+
+    switch (f) { // @error{enumeration value B not handled in switch}
+    case A:
+    case C:
+    case D:
+        break;
+    }
+
+    switch (f) {
+    case A:
+    case B:
+    case C:
+    case D:
+        break;
+    default:    // @warning{default label in switch which covers all enumeration values}
+        break;
+    }
+}
+

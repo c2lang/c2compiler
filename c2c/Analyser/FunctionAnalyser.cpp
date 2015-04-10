@@ -312,7 +312,7 @@ void FunctionAnalyser::analyseForStmt(Stmt* stmt) {
     if (F->getCond()) {
         QualType CT = analyseExpr(F->getCond(), RHS);
         if (!CT.isScalarType()) {
-            StringBuilder buf;
+            StringBuilder buf(64);
             CT.DiagName(buf);
             Diags.Report(F->getCond()->getLocation(), diag::err_typecheck_statement_requires_scalar) << buf;
         }
@@ -351,6 +351,12 @@ void FunctionAnalyser::analyseSwitchStmt(Stmt* stmt) {
             assert(0);
         }
     }
+
+    QualType QT = getConditionType(S->getCond());
+    if (const EnumType* ET = dyncast<EnumType>(QT)) {
+        checkEnumCases(S, ET);
+    }
+
     scope.ExitScope();
     scope.ExitScope();
 }
@@ -1707,6 +1713,72 @@ void FunctionAnalyser::checkArrayDesignators(InitListExpr* expr, int64_t* size) 
     //for (unsigned i=0; i<indexes.size(); i++) printf("[%d] = %p\n", i, indexes[i]);
 }
 
+void FunctionAnalyser::checkEnumCases(const SwitchStmt* SS, const EnumType* ET) const {
+    const EnumTypeDecl* ETD = ET->getDecl();
+    char enumHandled[ETD->numConstants()];
+    memset(enumHandled, 0, sizeof(enumHandled));
+    Stmt* TheDefaultStmt = 0;
+    const StmtList& cases = SS->getCases();
+    for (unsigned i=0; i<cases.size(); i++) {
+        if (isa<DefaultStmt>(cases[i])) {
+            TheDefaultStmt = cases[i];
+            continue;
+        }
+        const CaseStmt* CS = cast<CaseStmt>(cases[i]);
+        // only allow enum states as cases if switchin on enum (IdentifierExpr -> EnumConstantDecl)
+        const Expr* cond = CS->getCond();
+        if (const IdentifierExpr* IE = dyncast<IdentifierExpr>(cond)) {
+            if (IE->getDecl() == 0) continue;
+            // check if it refers to right enumdecl
+            if (const EnumConstantDecl* ECD = dyncast<EnumConstantDecl>(IE->getDecl())) {
+                int index = ETD->getIndex(ECD);
+                if (index != -1) {
+                    enumHandled[index] = true;
+                    continue;
+                }
+            }
+        }
+        StringBuilder buf(64);
+        ET->DiagName(buf);
+        Diags.Report(cond->getLocation(), diag::warn_not_in_enum) << buf << cond->getSourceRange();
+    }
+
+    SmallVector<std::string ,8> UnhandledNames;
+    for (unsigned i=0; i<ETD->numConstants(); ++i) {
+        if (!enumHandled[i]) UnhandledNames.push_back(ETD->getConstant(i)->getName());
+    }
+
+    if (TheDefaultStmt) {
+        if (UnhandledNames.empty()) {
+            Diags.Report(TheDefaultStmt->getLocation(), diag::warn_unreachable_default);
+        }
+        return;
+    }
+
+    // Produce a nice diagnostic if multiple values aren't handled.
+    switch (UnhandledNames.size()) {
+    case 0:
+        break;
+    case 1:
+        Diags.Report(SS->getCond()->getLocation(), diag::warn_missing_case1)
+            << UnhandledNames[0];
+        break;
+    case 2:
+        Diags.Report(SS->getCond()->getLocation(), diag::warn_missing_case2)
+            << UnhandledNames[0] << UnhandledNames[1];
+        break;
+    case 3:
+        Diags.Report(SS->getCond()->getLocation(), diag::warn_missing_case3)
+            << UnhandledNames[0] << UnhandledNames[1] << UnhandledNames[2];
+        break;
+    default:
+        Diags.Report(SS->getCond()->getLocation(), diag::warn_missing_cases)
+            << (unsigned)UnhandledNames.size()
+            << UnhandledNames[0] << UnhandledNames[1] << UnhandledNames[2];
+        break;
+    }
+}
+
 QualType FunctionAnalyser::getStructType(QualType Q) const {
     // Q: use CanonicalType to get rid of AliasTypes?
 
@@ -1738,6 +1810,17 @@ QualType FunctionAnalyser::getStructType(QualType Q) const {
         return QualType();
     }
     assert(0);
+}
+
+QualType FunctionAnalyser::getConditionType(const Stmt* C) const {
+    if (const Expr* E = dyncast<Expr>(C)) {
+        return E->getType();
+    }
+    if (const DeclStmt* D = dyncast<DeclStmt>(C)) {
+        return D->getDecl()->getType();
+    }
+    assert(0 && "invalid Condition");
+    return QualType();
 }
 
 void FunctionAnalyser::pushMode(unsigned DiagID) {

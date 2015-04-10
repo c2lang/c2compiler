@@ -278,15 +278,17 @@ int C2Builder::build() {
     Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "conversion", diag::Severity::Warning);
     Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "all", diag::Severity::Warning);
     Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "extra", diag::Severity::Warning);
+    assert (!Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "covered-switch-default", diag::Severity::Warning));
     //Diags.setDiagnosticWarningAsError(diag::warn_integer_too_large, true);
 
     Diags.setSeverity(diag::warn_falloff_nonvoid_function, diag::Severity::Error, SourceLocation());
-    // Workaround
-    //Diags.setDiagnosticErrorAsFatal(diag::warn_integer_too_large, true);
-    //Diags.setDiagnosticErrorAsFatal(diag::warn_integer_too_large, false);
     Diags.setSeverity(diag::warn_falloff_nonvoid_function, diag::Severity::Error, SourceLocation());
-
     Diags.setSeverity(diag::warn_duplicate_attribute_exact, diag::Severity::Error, SourceLocation());
+    Diags.setSeverity(diag::warn_not_in_enum, diag::Severity::Error, SourceLocation());
+    Diags.setSeverity(diag::warn_missing_case1, diag::Severity::Error, SourceLocation());
+    Diags.setSeverity(diag::warn_missing_case2, diag::Severity::Error, SourceLocation());
+    Diags.setSeverity(diag::warn_missing_case3, diag::Severity::Error, SourceLocation());
+    Diags.setSeverity(diag::warn_missing_cases, diag::Severity::Error, SourceLocation());
 
     // set recipe warning options
     for (unsigned i=0; i<recipe.silentWarnings.size(); i++) {
