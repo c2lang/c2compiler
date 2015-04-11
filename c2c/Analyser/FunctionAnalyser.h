@@ -17,6 +17,7 @@
 #define ANALYSER_FUNCTION_ANALYSER_H
 
 #include <llvm/ADT/APSInt.h>
+#include <clang/Basic/SourceLocation.h>
 
 #include "Analyser/ExprTypeAnalyser.h"
 #include "AST/Type.h"
@@ -82,7 +83,7 @@ private:
     QualType analyseStructMember(QualType T, MemberExpr* M, unsigned side);
     QualType analyseParenExpr(Expr* expr);
     bool analyseBitOffsetIndex(Expr* expr, llvm::APSInt* Result, BuiltinType* BaseType);
-    QualType analyseBitOffsetExpr(Expr* expr, QualType BaseType, SourceLocation base);
+    QualType analyseBitOffsetExpr(Expr* expr, QualType BaseType, clang::SourceLocation base);
     QualType analyseCall(Expr* expr);
     Decl* analyseIdentifier(IdentifierExpr* expr);
 
@@ -93,6 +94,7 @@ private:
     void analyseArrayType(VarDecl* V, QualType T);
     void analyseArraySizeExpr(ArrayType* AT);
 
+    clang::DiagnosticBuilder Diag(clang::SourceLocation Loc, unsigned DiagID) const;
     void pushMode(unsigned DiagID);
     void popMode();
 

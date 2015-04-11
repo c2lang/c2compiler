@@ -153,13 +153,13 @@ unsigned FunctionAnalyser::checkEnumValue(EnumConstantDecl* E, llvm::APSInt& nex
         if (!T.isValid()) return 1;
 
         if (!Init->isConstant()) {
-            Diags.Report(Init->getLocation(), diag::err_expr_not_ice) << 0 << Init->getSourceRange();
+            Diag(Init->getLocation(), diag::err_expr_not_ice) << 0 << Init->getSourceRange();
             return 1;
         }
         // TODO refactor duplicate code with analyseArraySizeExpr()
         QualType CT = T.getCanonicalType();
         if (!CT.isBuiltinType() || !cast<BuiltinType>(CT)->isInteger()) {
-            Diags.Report(Init->getLocation(), diag::err_expr_not_ice) << 0 << Init->getSourceRange();
+            Diag(Init->getLocation(), diag::err_expr_not_ice) << 0 << Init->getSourceRange();
             return 1;
         }
         assert(Init->getCTC() == CTC_FULL);
@@ -199,7 +199,7 @@ void FunctionAnalyser::checkFunction(FunctionDecl* func) {
         CompoundStmt* compound = func->getBody();
         Stmt* lastStmt = compound->getLastStmt();
         if (!lastStmt || lastStmt->getKind() != STMT_RETURN) {
-            Diags.Report(compound->getRight(), diag::warn_falloff_nonvoid_function);
+            Diag(compound->getRight(), diag::warn_falloff_nonvoid_function);
         }
     }
 }
@@ -314,7 +314,7 @@ void FunctionAnalyser::analyseForStmt(Stmt* stmt) {
         if (!CT.isScalarType()) {
             StringBuilder buf(64);
             CT.DiagName(buf);
-            Diags.Report(F->getCond()->getLocation(), diag::err_typecheck_statement_requires_scalar) << buf;
+            Diag(F->getCond()->getLocation(), diag::err_typecheck_statement_requires_scalar) << buf;
         }
     }
     if (F->getIncr()) analyseExpr(F->getIncr(), RHS);
@@ -340,8 +340,8 @@ void FunctionAnalyser::analyseSwitchStmt(Stmt* stmt) {
             break;
         case STMT_DEFAULT:
             if (defaultStmt) {
-                Diags.Report(C->getLocation(), diag::err_multiple_default_labels_defined);
-                Diags.Report(defaultStmt->getLocation(), diag::note_duplicate_case_prev);
+                Diag(C->getLocation(), diag::err_multiple_default_labels_defined);
+                Diag(defaultStmt->getLocation(), diag::note_duplicate_case_prev);
             } else {
                 defaultStmt = C;
             }
@@ -365,7 +365,7 @@ void FunctionAnalyser::analyseBreakStmt(Stmt* stmt) {
     LOG_FUNC
     if (!scope.allowBreak()) {
         BreakStmt* B = cast<BreakStmt>(stmt);
-        Diags.Report(B->getLocation(), diag::err_break_not_in_loop_or_switch);
+        Diag(B->getLocation(), diag::err_break_not_in_loop_or_switch);
     }
 }
 
@@ -373,7 +373,7 @@ void FunctionAnalyser::analyseContinueStmt(Stmt* stmt) {
     LOG_FUNC
     if (!scope.allowContinue()) {
         ContinueStmt* C = cast<ContinueStmt>(stmt);
-        Diags.Report(C->getLocation(), diag::err_continue_not_in_loop);
+        Diag(C->getLocation(), diag::err_continue_not_in_loop);
     }
 }
 
@@ -384,7 +384,7 @@ void FunctionAnalyser::analyseLabelStmt(Stmt* S) {
     // substmt cannot be declaration
 
     if (isa<DeclStmt>(L->getSubStmt())) {
-        Diags.Report(L->getSubStmt()->getLocation(), diag::err_decl_after_label);
+        Diag(L->getSubStmt()->getLocation(), diag::err_decl_after_label);
     }
 }
 
@@ -416,7 +416,7 @@ void FunctionAnalyser::analyseReturnStmt(Stmt* stmt) {
     if (value) {
         QualType type = analyseExpr(value, RHS);
         if (no_rvalue) {
-            Diags.Report(ret->getLocation(), diag::ext_return_has_expr) << CurrentFunction->getName() << 0
+            Diag(ret->getLocation(), diag::ext_return_has_expr) << CurrentFunction->getName() << 0
                 << value->getSourceRange();
         } else {
             if (type.isValid()) {
@@ -425,7 +425,7 @@ void FunctionAnalyser::analyseReturnStmt(Stmt* stmt) {
         }
     } else {
         if (!no_rvalue) {
-            Diags.Report(ret->getLocation(), diag::ext_return_missing_expr) << CurrentFunction->getName() << 0;
+            Diag(ret->getLocation(), diag::ext_return_missing_expr) << CurrentFunction->getName() << 0;
         }
     }
 }
@@ -447,12 +447,12 @@ void FunctionAnalyser::analyseDeclStmt(Stmt* stmt) {
             if (sizeExpr) {
                 analyseArraySizeExpr(AT);
                 if (sizeExpr->getCTC() != CTC_FULL && decl->getInitValue()) {
-                    Diags.Report(decl->getLocation(), diag::err_vla_with_init_value) << decl->getInitValue()->getLocation();
+                    Diag(decl->getLocation(), diag::err_vla_with_init_value) << decl->getInitValue()->getLocation();
                     haveError = true;
                 }
             } else {
                 if (!decl->getInitValue()) {
-                    Diags.Report(decl->getLocation(), diag::err_typecheck_incomplete_array_needs_initializer);
+                    Diag(decl->getLocation(), diag::err_typecheck_incomplete_array_needs_initializer);
                     haveError = true;
                 }
             }
@@ -471,7 +471,7 @@ void FunctionAnalyser::analyseDeclStmt(Stmt* stmt) {
     }
 
     if (Q.isConstQualified() && !initialValue) {
-        Diags.Report(decl->getLocation(), diag::err_uninitialized_const_var) << decl->getName();
+        Diag(decl->getLocation(), diag::err_uninitialized_const_var) << decl->getName();
     }
     scope.addScopedSymbol(decl);
 }
@@ -540,7 +540,7 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
             Decl* D = analyseIdentifier(id);
             if (!D) break;
             if (D == CurrentVarDecl) {
-                Diags.Report(id->getLocation(), diag::err_var_self_init) << D->getName();
+                Diag(id->getLocation(), diag::err_var_self_init) << D->getName();
                 return QualType();
             }
             if (side & LHS) checkDeclAssignment(D, expr);
@@ -558,7 +558,7 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
             case DECL_STRUCTTYPE:
             case DECL_ENUMTYPE:
             case DECL_FUNCTIONTYPE:
-                Diags.Report(id->getLocation(), diag::err_unexpected_typedef) << id->getName();
+                Diag(id->getLocation(), diag::err_unexpected_typedef) << id->getName();
                 expr->setConstant();
                 break;
             case DECL_ARRAYVALUE:
@@ -610,12 +610,12 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
 
         if (isCharArray) {
             if (!ILE && !isa<StringLiteral>(expr)) {
-                Diags.Report(expr->getLocation(), diag::err_array_init_not_init_list) << 1;
+                Diag(expr->getLocation(), diag::err_array_init_not_init_list) << 1;
                 return;
             }
         } else {
             if (!ILE) {
-                Diags.Report(expr->getLocation(), diag::err_array_init_not_init_list) << 0;
+                Diag(expr->getLocation(), diag::err_array_init_not_init_list) << 0;
                 return;
             }
         }
@@ -629,7 +629,7 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
         if (Q.isValid()) {
             if (inConstExpr && !expr->isConstant()) {
                 assert(constDiagID);
-                Diags.Report(expr->getLocation(), constDiagID) << expr->getSourceRange();
+                Diag(expr->getLocation(), constDiagID) << expr->getSourceRange();
             } else {
                 EA.check(expectedType, expr);
             }
@@ -638,7 +638,7 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
                 assert(isa<StringLiteral>(expr));
                 const StringLiteral* S = cast<StringLiteral>(expr);
                 if (S->getByteLength() > AT->getSize().getZExtValue()) {
-                    Diags.Report(S->getLocation(), diag::err_initializer_string_for_char_array_too_long) << S->getSourceRange();
+                    Diag(S->getLocation(), diag::err_initializer_string_for_char_array_too_long) << S->getSourceRange();
                     return;
                 }
             }
@@ -663,7 +663,7 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
                 if (D->getDesignatorKind() != DesignatedInitExpr::ARRAY_DESIGNATOR) {
                     StringBuilder buf;
                     Q.DiagName(buf);
-                    Diags.Report(D->getLocation(), diag::err_field_designator_non_aggr) << 0 << buf;
+                    Diag(D->getLocation(), diag::err_field_designator_non_aggr) << 0 << buf;
                     haveErrors = true;
                     continue;
                 }
@@ -687,7 +687,7 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
                 uint64_t arraySize = AT->getSize().getZExtValue();
                 if (values.size() > arraySize) {
                     int firstExceed = AT->getSize().getZExtValue();
-                    Diags.Report(values[firstExceed]->getLocation(), diag::err_excess_initializers) << 0;
+                    Diag(values[firstExceed]->getLocation(), diag::err_excess_initializers) << 0;
                 }
             } else {    // size determined from #elems in initializer list
                 initSize = values.size();
@@ -713,7 +713,7 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
         for (unsigned i=0; i<values.size(); i++) {
             if (i >= STD->numMembers()) {
                 // note: 0 for array, 2 for scalar, 3 for union, 4 for structs
-                Diags.Report(values[STD->numMembers()]->getLocation(), diag::err_excess_initializers)
+                Diag(values[STD->numMembers()]->getLocation(), diag::err_excess_initializers)
                     << 4;
                 errors++;
                 return;
@@ -722,7 +722,7 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
                 if (D->getDesignatorKind() != DesignatedInitExpr::FIELD_DESIGNATOR) {
                     StringBuilder buf;
                     Q.DiagName(buf);
-                    Diags.Report(D->getLocation(), diag::err_array_designator_non_array) << buf;
+                    Diag(D->getLocation(), diag::err_array_designator_non_array) << buf;
                     haveErrors = true;
                     return;
                 }
@@ -733,15 +733,15 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
                     fname << '\'' << D->getField() << '\'';
                     StringBuilder tname(MAX_LEN_TYPENAME);
                     Q.DiagName(tname);
-                    Diags.Report(D->getLocation(), diag::err_field_designator_unknown) << fname << tname;
+                    Diag(D->getLocation(), diag::err_field_designator_unknown) << fname << tname;
                     continue;
                 }
                 Expr* existing = fields[memberIndex];
                 if (existing) {
                     StringBuilder fname(MAX_LEN_VARNAME);
                     fname << '\'' << D->getField() << '\'';
-                    Diags.Report(D->getLocation(), diag::err_duplicate_field_init) << fname;
-                    Diags.Report(existing->getLocation(), diag::note_previous_initializer) << 0 << 0;
+                    Diag(D->getLocation(), diag::err_duplicate_field_init) << fname;
+                    Diag(existing->getLocation(), diag::note_previous_initializer) << 0 << 0;
                     continue;
                 }
                 fields[memberIndex] = values[i];
@@ -757,7 +757,7 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
                 if (!values[i]->isConstant()) constant = false;
             }
             if (isa<DesignatedInitExpr>(values[i]) != haveDesignators) {
-                Diags.Report(values[i]->getLocation(), diag::err_mixed_field_designator);
+                Diag(values[i]->getLocation(), diag::err_mixed_field_designator);
                 return;
             }
 
@@ -775,7 +775,7 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
             //see clang: cannot initialize variable of type %0 with initializer list">
             break;
         default:
-            Diags.Report(values[1]->getLocation(), diag::err_excess_initializers) << 2;
+            Diag(values[1]->getLocation(), diag::err_excess_initializers) << 2;
             errors++;
             break;
         }
@@ -792,15 +792,15 @@ void FunctionAnalyser::analyseDesignatorInitExpr(Expr* expr, QualType expectedTy
         if (DT.isValid()) {
             if (!Desig->isConstant()) {
                 assert(constDiagID);
-                Diags.Report(Desig->getLocation(), constDiagID) << Desig->getSourceRange();
+                Diag(Desig->getLocation(), constDiagID) << Desig->getSourceRange();
             } else {
                 if (!Desig->getType().isIntegerType()) {
-                    Diags.Report(Desig->getLocation(), diag::err_typecheck_subscript_not_integer) << Desig->getSourceRange();
+                    Diag(Desig->getLocation(), diag::err_typecheck_subscript_not_integer) << Desig->getSourceRange();
                 } else {
                     LiteralAnalyser LA(Diags);
                     llvm::APSInt V = LA.checkLiterals(Desig);
                     if (V.isSigned() && V.isNegative()) {
-                        Diags.Report(Desig->getLocation(), diag::err_array_designator_negative) << V.toString(10) << Desig->getSourceRange();
+                        Diag(Desig->getLocation(), diag::err_array_designator_negative) << V.toString(10) << Desig->getSourceRange();
                     } else {
                         D->setIndex(V);
                     }
@@ -852,7 +852,7 @@ void FunctionAnalyser::analyseSizeofExpr(Expr* expr) {
             assert(0 && "should not happen");
             break;
         case DECL_IMPORT:
-            Diags.Report(id->getLocation(), diag::err_is_a_module) << id->getName();
+            Diag(id->getLocation(), diag::err_is_a_module) << id->getName();
             return;
         }
         break;
@@ -939,7 +939,7 @@ void FunctionAnalyser::analyseArraySizeExpr(ArrayType* AT) {
     if (!T.isValid()) return;
 
     if (inConstExpr && !E->isConstant()) {
-        Diags.Report(E->getLocation(), diag::err_vla_decl_in_file_scope) << E->getSourceRange();
+        Diag(E->getLocation(), diag::err_vla_decl_in_file_scope) << E->getSourceRange();
         errors++;
         return;
     }
@@ -948,7 +948,7 @@ void FunctionAnalyser::analyseArraySizeExpr(ArrayType* AT) {
     if (!CT.isBuiltinType() || !cast<BuiltinType>(CT)->isInteger()) {
         StringBuilder buf;
         T.DiagName(buf);
-        Diags.Report(E->getLocation(), diag::err_array_size_non_int) << buf << E->getSourceRange();
+        Diag(E->getLocation(), diag::err_array_size_non_int) << buf << E->getSourceRange();
         errors++;
         return;
     }
@@ -957,7 +957,7 @@ void FunctionAnalyser::analyseArraySizeExpr(ArrayType* AT) {
         LiteralAnalyser LA(Diags);
         llvm::APSInt Result = LA.checkLiterals(E);
         if (Result.isSigned() && Result.isNegative()) {
-            Diags.Report(E->getLocation(), diag::err_typecheck_negative_array_size) << E->getSourceRange();
+            Diag(E->getLocation(), diag::err_typecheck_negative_array_size) << E->getSourceRange();
             errors++;
         } else {
             AT->setSize(Result);
@@ -1205,7 +1205,7 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
             char typeName[MAX_LEN_TYPENAME];
             StringBuilder buf(MAX_LEN_TYPENAME, typeName);
             LType.DiagName(buf);
-            Diags.Report(unaryop->getOpLoc(), diag::err_typecheck_indirection_requires_pointer)
+            Diag(unaryop->getOpLoc(), diag::err_typecheck_indirection_requires_pointer)
                 << buf;
             return 0;
         } else {
@@ -1269,7 +1269,7 @@ QualType FunctionAnalyser::analyseBuiltinExpr(Expr* expr) {
                 if (!Q.isArrayType()) {
                     StringBuilder msg;
                     Q.DiagName(msg);
-                    Diags.Report(I->getLocation(), diag::err_invalid_elemsof_type)
+                    Diag(I->getLocation(), diag::err_invalid_elemsof_type)
                         << msg;
                 }
                 return Type::UInt32();
@@ -1300,7 +1300,7 @@ QualType FunctionAnalyser::analyseArraySubscript(Expr* expr, unsigned side) {
 
     if (BitOffsetExpr* BO = dyncast<BitOffsetExpr>(sub->getIndex())) {
         if (side & LHS) {
-            Diags.Report(BO->getLocation(), diag::err_bitoffset_lhs) << expr->getSourceRange();
+            Diag(BO->getLocation(), diag::err_bitoffset_lhs) << expr->getSourceRange();
             return 0;
         }
         QualType T = analyseBitOffsetExpr(sub->getIndex(), LType, sub->getLocation());
@@ -1314,7 +1314,7 @@ QualType FunctionAnalyser::analyseArraySubscript(Expr* expr, unsigned side) {
     analyseExpr(sub->getIndex(), RHS);
 
     if (!LType.isSubscriptable()) {
-        Diags.Report(expr->getLocation(), diag::err_typecheck_subscript);
+        Diag(expr->getLocation(), diag::err_typecheck_subscript);
         return 0;
     }
 
@@ -1373,14 +1373,14 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
                 char typeName[MAX_LEN_TYPENAME];
                 StringBuilder buf(MAX_LEN_TYPENAME, typeName);
                 LType.DiagName(buf);
-                Diags.Report(M->getLocation(), diag::err_typecheck_member_reference_arrow) << buf;
+                Diag(M->getLocation(), diag::err_typecheck_member_reference_arrow) << buf;
                 return QualType();
             }
         } else {
             if (LType.isPointerType()) {
                 StringBuilder buf(MAX_LEN_TYPENAME);
                 LType.DiagName(buf);
-                Diags.Report(M->getLocation(), diag::err_typecheck_member_reference_suggestion)
+                Diag(M->getLocation(), diag::err_typecheck_member_reference_suggestion)
                     << buf << 0 << 1;
                 return QualType();
             }
@@ -1389,7 +1389,7 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
         if (!S.isValid()) {
             StringBuilder buf(MAX_LEN_TYPENAME);
             LType.DiagName(buf);
-            Diags.Report(M->getLocation(), diag::err_typecheck_member_reference_struct_union)
+            Diag(M->getLocation(), diag::err_typecheck_member_reference_struct_union)
                 << buf << M->getSourceRange() << memberLoc;
             return QualType();
         }
@@ -1417,7 +1417,7 @@ QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr* M, unsign
     char temp2[MAX_LEN_VARNAME];
     StringBuilder buf2(MAX_LEN_VARNAME, temp2);
     buf2 << '\'' << M->getMemberName() << '\'';
-    Diags.Report(M->getMemberLoc(), diag::err_no_member) << temp2 << temp1;
+    Diag(M->getMemberLoc(), diag::err_no_member) << temp2 << temp1;
     return QualType();
 }
 
@@ -1440,7 +1440,7 @@ bool FunctionAnalyser::analyseBitOffsetIndex(Expr* expr, llvm::APSInt* Result, B
     if (!T.getCanonicalType().isIntegerType()) {
         StringBuilder buf;
         T.DiagName(buf);
-        Diags.Report(expr->getLocation(), diag::err_bitoffset_index_non_int)
+        Diag(expr->getLocation(), diag::err_bitoffset_index_non_int)
             << buf << expr->getSourceRange();
         return false;
     }
@@ -1449,12 +1449,12 @@ bool FunctionAnalyser::analyseBitOffsetIndex(Expr* expr, llvm::APSInt* Result, B
     LiteralAnalyser LA(Diags);
     llvm::APSInt Val = LA.checkLiterals(expr);
     if (Val.isSigned() && Val.isNegative()) {
-        Diags.Report(expr->getLocation(), diag::err_bitoffset_index_negative)
+        Diag(expr->getLocation(), diag::err_bitoffset_index_negative)
             << Val.toString(10) << expr->getSourceRange();
         return false;
     }
     if (Val.ugt(BaseType->getWidth()-1)) {
-        Diags.Report(expr->getLocation(), diag::err_bitoffset_index_too_large)
+        Diag(expr->getLocation(), diag::err_bitoffset_index_too_large)
             << Val.toString(10) << BaseType->getName() << expr->getSourceRange();
         return false;
     }
@@ -1470,7 +1470,7 @@ QualType FunctionAnalyser::analyseBitOffsetExpr(Expr* expr, QualType BaseType, S
     QualType CT = BaseType.getCanonicalType();
     BuiltinType* BI = dyncast<BuiltinType>(CT.getTypePtr());
     if (!BI || !BI->isInteger() || BI->isSignedInteger()) {
-        Diags.Report(base, diag::err_bitoffset_not_unsigned);
+        Diag(base, diag::err_bitoffset_not_unsigned);
         return QualType();
     }
 
@@ -1481,7 +1481,7 @@ QualType FunctionAnalyser::analyseBitOffsetExpr(Expr* expr, QualType BaseType, S
 
     if (VLvalid && VRvalid) {
         if (VR > VL) {
-            Diags.Report(B->getLocation(), diag::err_bitoffset_invalid_order)
+            Diag(B->getLocation(), diag::err_bitoffset_invalid_order)
                 << B->getLHS()->getSourceRange() << B->getRHS()->getSourceRange();
             return QualType();
         } else {
@@ -1524,7 +1524,7 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
         char typeName[MAX_LEN_TYPENAME];
         StringBuilder buf(MAX_LEN_TYPENAME, typeName);
         LType.DiagName(buf);
-        Diags.Report(call->getLocation(), diag::err_typecheck_call_not_function) << typeName;
+        Diag(call->getLocation(), diag::err_typecheck_call_not_function) << typeName;
         return QualType();
     }
 
@@ -1550,7 +1550,7 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
             Expr* arg = call->getArg(minArgs);
             unsigned msg = diag::err_typecheck_call_too_many_args;
             if (func->hasDefaultArgs()) msg = diag::err_typecheck_call_too_many_args_at_most;
-            Diags.Report(arg->getLocation(), msg)
+            Diag(arg->getLocation(), msg)
                 << 0 << protoArgs << callArgs;
             return QualType();
         }
@@ -1560,7 +1560,7 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
             // TODO use canonical
             if (typeGiven == Type::Void()) {
                 fprintf(stderr, "ERROR: (TODO) passing 'void' to parameter of incompatible type '...'\n");
-                //Diags.Report(argGiven->getLocation(), diag::err_typecheck_convert_incompatible)
+                //Diag(argGiven->getLocation(), diag::err_typecheck_convert_incompatible)
                 //    << "from" << "to" << 1;// << argGiven->getLocation();
             }
         }
@@ -1571,10 +1571,10 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
             if (!arg->getInitValue()) {
                 if (func->hasDefaultArgs()) {
                     protoArgs = func->minArgs();
-                    Diags.Report(arg->getLocation(), diag::err_typecheck_call_too_few_args_at_least)
+                    Diag(arg->getLocation(), diag::err_typecheck_call_too_few_args_at_least)
                         << 0 << protoArgs << callArgs;
                 } else {
-                    Diags.Report(arg->getLocation(), diag::err_typecheck_call_too_few_args)
+                    Diag(arg->getLocation(), diag::err_typecheck_call_too_few_args)
                         << 0 << protoArgs << callArgs;
                 }
                 return QualType();
@@ -1632,13 +1632,13 @@ bool FunctionAnalyser::checkAssignee(Expr* expr) const {
     }
     // expr is not assignable
     // TODO test (also ternary)
-    Diags.Report(expr->getLocation(), diag::err_typecheck_expression_not_modifiable_lvalue);
+    Diag(expr->getLocation(), diag::err_typecheck_expression_not_modifiable_lvalue);
     return false;
 }
 
 void FunctionAnalyser::checkAssignment(Expr* assignee, QualType TLeft) {
     if (TLeft.isConstQualified()) {
-        Diags.Report(assignee->getLocation(), diag::err_typecheck_assign_const) << assignee->getSourceRange();
+        Diag(assignee->getLocation(), diag::err_typecheck_assign_const) << assignee->getSourceRange();
     }
 }
 
@@ -1661,7 +1661,7 @@ void FunctionAnalyser::checkDeclAssignment(Decl* decl, Expr* expr) {
     case DECL_STRUCTTYPE:
     case DECL_ENUMTYPE:
     case DECL_FUNCTIONTYPE:
-        Diags.Report(expr->getLocation(), diag::err_typecheck_expression_not_modifiable_lvalue);
+        Diag(expr->getLocation(), diag::err_typecheck_expression_not_modifiable_lvalue);
         break;
     case DECL_ARRAYVALUE:
         // error
@@ -1687,14 +1687,14 @@ void FunctionAnalyser::checkArrayDesignators(InitListExpr* expr, int64_t* size) 
             currentIndex = D->getIndex().getSExtValue();
             if (currentIndex == -1) return; // some designators are invalid
             if (*size != -1 && currentIndex >= *size) {
-                Diags.Report(E->getLocation(), diag::err_array_designator_too_large) << D->getIndex().toString(10) << (int)*size;
+                Diag(E->getLocation(), diag::err_array_designator_too_large) << D->getIndex().toString(10) << (int)*size;
                 return;
             }
         } else {
             currentIndex++;
         }
         if (*size != -1 && currentIndex >= *size) {
-            Diags.Report(E->getLocation(), diag::err_excess_initializers) << 0;
+            Diag(E->getLocation(), diag::err_excess_initializers) << 0;
             return;
         }
         if (currentIndex >= indexes.size()) {
@@ -1702,8 +1702,8 @@ void FunctionAnalyser::checkArrayDesignators(InitListExpr* expr, int64_t* size) 
         }
         Expr* existing = indexes[currentIndex];
         if (existing) {
-            Diags.Report(E->getLocation(), diag::err_duplicate_array_index_init) << E->getSourceRange();
-            Diags.Report(existing->getLocation(), diag::note_previous_initializer) << 0 << 0 << E->getSourceRange();
+            Diag(E->getLocation(), diag::err_duplicate_array_index_init) << E->getSourceRange();
+            Diag(existing->getLocation(), diag::note_previous_initializer) << 0 << 0 << E->getSourceRange();
         } else {
             indexes[currentIndex] = E;
         }
@@ -1734,7 +1734,7 @@ void FunctionAnalyser::checkEnumCases(const SwitchStmt* SS, const EnumType* ET) 
                 int index = ETD->getIndex(ECD);
                 if (index != -1) {
                     if (enumHandled[index]) {
-                        Diags.Report(cond->getLocation(), diag::err_duplicate_case) << ECD->getName() << cond->getSourceRange();
+                        Diag(cond->getLocation(), diag::err_duplicate_case) << ECD->getName() << cond->getSourceRange();
                     }
                     enumHandled[index] = true;
                     continue;
@@ -1743,7 +1743,7 @@ void FunctionAnalyser::checkEnumCases(const SwitchStmt* SS, const EnumType* ET) 
         }
         StringBuilder buf(64);
         ET->DiagName(buf);
-        Diags.Report(cond->getLocation(), diag::warn_not_in_enum) << buf << cond->getSourceRange();
+        Diag(cond->getLocation(), diag::warn_not_in_enum) << buf << cond->getSourceRange();
     }
 
     SmallVector<std::string ,8> UnhandledNames;
@@ -1753,7 +1753,7 @@ void FunctionAnalyser::checkEnumCases(const SwitchStmt* SS, const EnumType* ET) 
 
     if (TheDefaultStmt) {
         if (UnhandledNames.empty()) {
-            Diags.Report(TheDefaultStmt->getLocation(), diag::warn_unreachable_default);
+            Diag(TheDefaultStmt->getLocation(), diag::warn_unreachable_default);
         }
         return;
     }
@@ -1763,19 +1763,19 @@ void FunctionAnalyser::checkEnumCases(const SwitchStmt* SS, const EnumType* ET) 
     case 0:
         break;
     case 1:
-        Diags.Report(SS->getCond()->getLocation(), diag::warn_missing_case1)
+        Diag(SS->getCond()->getLocation(), diag::warn_missing_case1)
             << UnhandledNames[0];
         break;
     case 2:
-        Diags.Report(SS->getCond()->getLocation(), diag::warn_missing_case2)
+        Diag(SS->getCond()->getLocation(), diag::warn_missing_case2)
             << UnhandledNames[0] << UnhandledNames[1];
         break;
     case 3:
-        Diags.Report(SS->getCond()->getLocation(), diag::warn_missing_case3)
+        Diag(SS->getCond()->getLocation(), diag::warn_missing_case3)
             << UnhandledNames[0] << UnhandledNames[1] << UnhandledNames[2];
         break;
     default:
-        Diags.Report(SS->getCond()->getLocation(), diag::warn_missing_cases)
+        Diag(SS->getCond()->getLocation(), diag::warn_missing_cases)
             << (unsigned)UnhandledNames.size()
             << UnhandledNames[0] << UnhandledNames[1] << UnhandledNames[2];
         break;
@@ -1824,6 +1824,10 @@ QualType FunctionAnalyser::getConditionType(const Stmt* C) const {
     }
     assert(0 && "invalid Condition");
     return QualType();
+}
+
+DiagnosticBuilder FunctionAnalyser::Diag(SourceLocation Loc, unsigned DiagID) const {
+    return Diags.Report(Loc, DiagID);
 }
 
 void FunctionAnalyser::pushMode(unsigned DiagID) {
