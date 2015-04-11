@@ -1733,6 +1733,9 @@ void FunctionAnalyser::checkEnumCases(const SwitchStmt* SS, const EnumType* ET) 
             if (const EnumConstantDecl* ECD = dyncast<EnumConstantDecl>(IE->getDecl())) {
                 int index = ETD->getIndex(ECD);
                 if (index != -1) {
+                    if (enumHandled[index]) {
+                        Diags.Report(cond->getLocation(), diag::err_duplicate_case) << ECD->getName() << cond->getSourceRange();
+                    }
                     enumHandled[index] = true;
                     continue;
                 }

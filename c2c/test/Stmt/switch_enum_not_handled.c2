@@ -40,5 +40,10 @@ public func void foo() {
     default:    // @warning{default label in switch which covers all enumeration values}
         break;
     }
+
+    switch (f) {
+    default:
+        break;
+    }
 }
 
