@@ -43,7 +43,7 @@ public func int32 main() {
     Element e;
     e.name;
     Element* pe;
-    pe->name;
+    pe.name;
     return 0;
 }
 

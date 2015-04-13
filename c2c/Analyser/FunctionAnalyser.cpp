@@ -1334,7 +1334,6 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
     const std::string& member = M->getMemberName();
     SourceLocation memberLoc = M->getMemberLoc();
 
-    bool isArrow = M->isArrow();
     // we dont know what we're looking at here, it could be:
     // mod.type
     // mod.var
@@ -1347,10 +1346,6 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
 
     if (isa<ModuleType>(LType)) {
         M->setModulePrefix(true);
-        if (isArrow) {
-            fprintf(stderr, "TODO ERROR: cannot use -> for module access\n");
-            // continue checking
-        }
         ModuleType* PT = cast<ModuleType>(LType.getTypePtr());
         Decl* D = scope.findSymbolInModule(member, memberLoc, PT->getModule());
         if (D) {
@@ -1363,27 +1358,11 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
         }
     } else {
         M->setModulePrefix(false);
-        if (isArrow) {
-            // try to dereference pointer
-            if (LType.isPointerType()) {
-                // TODO use function to get elementPtr (could be alias type)
-                const PointerType* PT = cast<PointerType>(LType.getTypePtr());
-                LType = PT->getPointeeType();
-            } else {
-                char typeName[MAX_LEN_TYPENAME];
-                StringBuilder buf(MAX_LEN_TYPENAME, typeName);
-                LType.DiagName(buf);
-                Diag(M->getLocation(), diag::err_typecheck_member_reference_arrow) << buf;
-                return QualType();
-            }
-        } else {
-            if (LType.isPointerType()) {
-                StringBuilder buf(MAX_LEN_TYPENAME);
-                LType.DiagName(buf);
-                Diag(M->getLocation(), diag::err_typecheck_member_reference_suggestion)
-                    << buf << 0 << 1;
-                return QualType();
-            }
+        // dereference pointer
+        if (LType.isPointerType()) {
+            // TODO use function to get elementPtr (could be alias type)
+            const PointerType* PT = cast<PointerType>(LType.getTypePtr());
+            LType = PT->getPointeeType();
         }
         QualType S = getStructType(LType);
         if (!S.isValid()) {

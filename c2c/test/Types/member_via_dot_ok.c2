@@ -1,0 +1,16 @@
+// @warnings{no-unused}
+module test;
+
+type Point struct {
+    int32 x;
+}
+
+public func int32 main() {
+    Point p = { 1 }
+    Point* pp = &p;
+
+    p.x = 10;
+    pp.x = 20;
+    return 0;
+}
+

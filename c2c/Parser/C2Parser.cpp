@@ -1017,12 +1017,17 @@ C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
         // postfix-expression: p-e '->' template[opt] id-expression
         // postfix-expression: p-e '.' template[opt] id-expression
         tok::TokenKind OpKind = Tok.getKind();
-        ConsumeToken();  // Eat the "." or "->" token.
+
+        SourceLocation oploc = ConsumeToken();  // Eat the "." or "->" token.
+        if (OpKind == tok::arrow) {
+            Diag(oploc, diag::err_member_access_arrow);
+            // just continue pretending it's a dot
+        }
 
         if (ExpectIdentifier()) return ExprError();
         IdentifierInfo* sym = Tok.getIdentifierInfo();
         SourceLocation loc = ConsumeToken();
-        LHS = Actions.ActOnMemberExpr(LHS.get(), OpKind == tok::arrow, sym, loc);
+        LHS = Actions.ActOnMemberExpr(LHS.get(), sym, loc);
         break;
     }
     case tok::plusplus:    // postfix-expression: postfix-expression '++'

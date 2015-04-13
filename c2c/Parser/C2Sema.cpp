@@ -731,7 +731,7 @@ C2::ExprResult C2Sema::ActOnArraySubScriptExpr(SourceLocation RLoc, Expr* Base, 
     return ExprResult(new ArraySubscriptExpr(RLoc, Base, Idx));
 }
 
-C2::ExprResult C2Sema::ActOnMemberExpr(Expr* Base, bool isArrow, IdentifierInfo* sym, SourceLocation loc) {
+C2::ExprResult C2Sema::ActOnMemberExpr(Expr* Base, IdentifierInfo* sym, SourceLocation loc) {
     assert(Base);
     assert(sym);
     std::string member(sym->getNameStart(), sym->getLength());
@@ -739,7 +739,7 @@ C2::ExprResult C2Sema::ActOnMemberExpr(Expr* Base, bool isArrow, IdentifierInfo*
     std::cerr << COL_SEMA << "SEMA: member access " << member;
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    return ExprResult(new MemberExpr(Base, isArrow, member, loc));
+    return ExprResult(new MemberExpr(Base, member, loc));
 }
 
 C2::ExprResult C2Sema::ActOnPostfixUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Expr* Input) {

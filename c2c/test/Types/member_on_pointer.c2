@@ -3,7 +3,7 @@ module test;
 
 func void test1() {
     int32* p;
-    p.x = 10;       // @error{member reference type 'int32*' is a pointer; maybe you meant to use '->'?}
+    p->x = 10;      // @error{member access must be though '.' operator}
+    p.x = 10;
 }
-
 

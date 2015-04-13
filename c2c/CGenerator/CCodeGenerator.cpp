@@ -397,7 +397,8 @@ void CCodeGenerator::EmitMemberExpr(const Expr* E, StringBuilder& output) {
     } else {
         // A.B where A is decl of struct/union type
         EmitExpr(M->getBase(), cbuf);
-        if (M->isArrow()) cbuf << "->";
+        QualType LType = M->getBase()->getType();
+        if (LType.isPointerType()) cbuf << "->";
         else cbuf << '.';
         cbuf << M->getMemberName();
     }

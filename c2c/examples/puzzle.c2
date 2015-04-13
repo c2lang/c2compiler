@@ -126,12 +126,12 @@ public func int32 main(int32, const char*[]) {
         for (uint32 c = 0; c<elemsof(connections); c++) {
             const Connection* C = &connections[c];
             int32 next = -1;
-            if (C->src == curPoint) { // go down (or same)
-                next = index(C->dst, C->otherDepth ? curDepth + 1 : curDepth);
+            if (C.src == curPoint) { // go down (or same)
+                next = index(C.dst, C.otherDepth ? curDepth + 1 : curDepth);
                 if (next == prev) continue;
                 tryPath(idx, next);
-            } else if (C->dst == curPoint) { // go up (or same)
-                next = index(C->src, C->otherDepth ? curDepth - 1 : curDepth);
+            } else if (C.dst == curPoint) { // go up (or same)
+                next = index(C.src, C.otherDepth ? curDepth - 1 : curDepth);
                 if (next == prev) continue;
                 tryPath(idx, next);
             }

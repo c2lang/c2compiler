@@ -583,15 +583,13 @@ private:
 // Represents a symbol reference 'a.b'/'a.b.c', A can be a module,struct or other Member expr
 class MemberExpr : public Expr {
 public:
-    MemberExpr(Expr* Base_, bool isArrow_, const std::string& member_, SourceLocation loc_)
+    MemberExpr(Expr* Base_, const std::string& member_, SourceLocation loc_)
         : Expr(EXPR_MEMBER, false)
         , Base(Base_)
         , member(member_)
         , loc(loc_)
         , decl(0)
-    {
-        StmtBits.MemberExprIsArrow = isArrow_;
-    }
+    {}
     virtual ~MemberExpr();
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_MEMBER;
@@ -607,7 +605,6 @@ public:
     Decl* getDecl() const { return decl; }
     void setDecl(Decl* D) { decl = D; }
 
-    bool isArrow() const { return StmtBits.MemberExprIsArrow; }
     void setModulePrefix(bool v) { StmtBits.MemberExprIsModPrefix = v; }
     bool isModulePrefix() const { return StmtBits.MemberExprIsModPrefix; }
 

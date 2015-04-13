@@ -155,15 +155,15 @@ func void calculate_rotations() {
         for (uint32 o=0; o<4; o++) {  // 4 rotations
             Option* O1 = &options[o][p];
             for (uint32 i=0; i<4; i++) {  // side1
-                Coor c = P->side1[i];
+                Coor c = P.side1[i];
                 if (i != 0 && c.x == 0 && c.y == 0) break;
-                O1->parts[i] = coor_rotate(c, o);
+                O1.parts[i] = coor_rotate(c, o);
             }
             Option* O2 = &options[o+4][p];
             for (uint32 i=0; i<4; i++) {  // side2
-                Coor c = P->side2[i];
+                Coor c = P.side2[i];
                 if (i != 0 && c.x == 0 && c.y == 0) break;
-                O2->parts[i] = coor_rotate(c, o);
+                O2.parts[i] = coor_rotate(c, o);
             }
         }
     }
@@ -283,7 +283,7 @@ func int32 board_check_fault(int32 xx, int32 yy, int32 expect) {
 // return 0=OK, 1=Not OK
 func int32 board_try_option(const Option* P, int32 x, int32 y) {
     for (uint32 i=0; i<4; i++) {
-        Coor c = P->parts[i];
+        Coor c = P.parts[i];
         if (i != 0 && c.x == 0 && c.y == 0) return 0;    // ignore unused parts
         int32 xx = x + c.x;
         if (xx < 0 || xx > 4) return 1;
@@ -330,7 +330,7 @@ func void board_setExpected(int32 x, int32 y, uint8 side) {
 
 func void board_add(const Option* P, int32 x, int32 y, uint8 id) {
     for (uint32 i=0; i<4; i++) {
-        Coor c = P->parts[i];
+        Coor c = P.parts[i];
         if (i != 0 && c.x == 0 && c.y == 0) break;
         int32 xx = x + c.x;
         int32 yy = y + c.y;
@@ -366,7 +366,7 @@ func void board_add(const Option* P, int32 x, int32 y, uint8 id) {
 
 func void board_rem(const Option* P, int32 x, int32 y) {
     for (uint32 i=0; i<4; i++) {
-        Coor c = P->parts[i];
+        Coor c = P.parts[i];
         if (i != 0 && c.x == 0 && c.y == 0) break;
         int32 xx = x + c.x;
         int32 yy = y + c.y;
