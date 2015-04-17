@@ -1,29 +1,4 @@
 
-## Packages for Arch Linux (AUR),
-* [llvm-c2](https://aur.archlinux.org/packages/llvm-c2/)
-* [c2c-git](https://aur.archlinux.org/packages/c2c-git/)
-
-Howto build directly from git for Arch Linux:
-```
-$ mkdir llvm-c2
-$ cd llvm-c2
-$ curl -O https://code.kluisip.nl/pkgbuilds/plain/llvm-c2/PKGBUILD
-$ makepkg -is
-
-$ mkdir c2c-git
-$ cd c2c-git
-$ curl -O https://code.kluisip.nl/pkgbuilds/plain/c2c-git/PKGBUILD
-$ makepkg -is
-```
-
-* To build from AUR with an AUR helper, for example [packer](https://aur.archlinux.org/packages/packer/):
-
-```$ packer -S c2c-git```
-
-
-
-For other Linux distro, a manual build is required. See below.
-
 ## Installation of LLVM/Clang (C2 version)
 C2 is based on LLVM 3.6 and some parts of Clang 3.6.
 To install C2, follow the steps below. The example shows
