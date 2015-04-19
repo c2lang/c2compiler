@@ -84,6 +84,7 @@ private:
     unsigned analyse();
     void dumpModules() const;
     void printASTs() const;
+    void log(const char* color, const char* format, ...) const;
 
     bool checkMainFunction(clang::DiagnosticsEngine& Diags);
     bool checkExportedPackages() const;
@@ -99,6 +100,8 @@ private:
     FileDb filenames;
 
     Modules modules;
+
+    bool useColors;
 
     C2Builder(const C2Builder&);
     C2Builder& operator= (const C2Builder&);

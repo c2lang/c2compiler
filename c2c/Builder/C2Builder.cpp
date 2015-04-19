@@ -17,6 +17,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <unistd.h>
+#include <stdarg.h>
 #include <errno.h>
 
 #include <llvm/ADT/ArrayRef.h>
@@ -182,7 +184,6 @@ public:
     }
 
     bool parse(const BuildOptions& options) {
-        if (options.verbose) printf(COL_VERBOSE "parsing %s" ANSI_NORMAL "\n", filename.c_str());
         C2Sema sema(SM, Diags, typeContext, ast, PP);
         C2Parser parser(PP, sema);
         parser.Initialize();
@@ -227,7 +228,10 @@ public:
 C2Builder::C2Builder(const Recipe& recipe_, const BuildOptions& opts)
     : recipe(recipe_)
     , options(opts)
-{}
+    , useColors(true)
+{
+    if (!isatty(1)) useColors = false;
+}
 
 C2Builder::~C2Builder()
 {
@@ -254,7 +258,7 @@ int C2Builder::checkFiles() {
 }
 
 int C2Builder::build() {
-    printf(ANSI_GREEN "building target %s" ANSI_NORMAL "\n", recipe.name.c_str());
+    log(ANSI_GREEN, "building target %s", recipe.name.c_str());
 
     u_int64_t t1_build = Utils::getCurrentTime();
     // TODO save these common objects in Builder class?
@@ -267,7 +271,7 @@ int C2Builder::build() {
     // Diagnostics
     // NOTE: DiagOpts is somehow deleted by Diags/TextDiagnosticPrinter below?
     DiagnosticOptions* DiagOpts = new DiagnosticOptions();
-    if (!options.testMode) DiagOpts->ShowColors = true;
+    if (!options.testMode && isatty(2)) DiagOpts->ShowColors = true;
     IntrusiveRefCntPtr<DiagnosticIDs> DiagID(new DiagnosticIDs());
     DiagnosticsEngine Diags(DiagID, DiagOpts,
             // NOTE: setting ShouldOwnClient to true causes crash??
@@ -364,13 +368,14 @@ int C2Builder::build() {
         unsigned file_id = filenames.add(filename);
         FileInfo* info = new FileInfo(Diags, LangOpts, pti, HSOpts, FileMgr, SM, filename, file_id, PredefineBuffer);
         files.push_back(info);
+        if (options.verbose) log(COL_VERBOSE, "parsing %s", filename.c_str());
         bool ok = info->parse(options);
         if (options.printAST0) info->ast.print(true, true);
         errors += !ok;
     }
     u_int64_t t2_parse = Utils::getCurrentTime();
     u_int64_t t1_analyse, t2_analyse;
-    if (options.printTiming) printf(COL_TIME "parsing took %" PRIu64" usec" ANSI_NORMAL "\n", t2_parse - t1_parse);
+    if (options.printTiming) log(COL_TIME, "parsing took %" PRIu64" usec", t2_parse - t1_parse);
     if (client->getNumErrors()) goto out;
     t1_analyse = Utils::getCurrentTime();
 
@@ -403,7 +408,7 @@ int C2Builder::build() {
         files[i]->deleteAnalyser();
     }
     t2_analyse = Utils::getCurrentTime();
-    if (options.printTiming) printf(COL_TIME "analysis took %" PRIu64" usec" ANSI_NORMAL"\n", t2_analyse - t1_analyse);
+    if (options.printTiming) log(COL_TIME, "analysis took %" PRIu64" usec", t2_analyse - t1_analyse);
     if (client->getNumErrors()) goto out;
 
     if (!checkMainFunction(Diags)) goto out;
@@ -416,11 +421,11 @@ int C2Builder::build() {
 
     generateOptionalIR();
 
-    if (options.verbose) printf(COL_VERBOSE "done" ANSI_NORMAL "\n");
+    if (options.verbose) log(COL_VERBOSE, "done");
 out:
     //SM.PrintStats();
     u_int64_t t2_build = Utils::getCurrentTime();
-    if (options.printTiming) printf(COL_TIME"total build took %" PRIu64" usec" ANSI_NORMAL"\n", t2_build - t1_build);
+    if (options.printTiming) log(COL_TIME, "total build took %" PRIu64" usec", t2_build - t1_build);
     raw_ostream &OS = llvm::errs();
     unsigned NumWarnings = client->getNumWarnings();
     unsigned NumErrors = client->getNumErrors();
@@ -502,7 +507,7 @@ bool C2Builder::loadExternalModules() {
 }
 
 bool C2Builder::loadModule(const std::string& name) {
-    if (options.verbose) printf(COL_VERBOSE "loading external module %s" ANSI_NORMAL "\n", name.c_str());
+    if (options.verbose) log(COL_VERBOSE, "loading external module %s", name.c_str());
 
     assert(!haveModule(name));
     // NOTE: MEMLEAK on Types
@@ -888,6 +893,17 @@ void C2Builder::printASTs() const {
     }
 }
 
+void C2Builder::log(const char* color, const char* format, ...) const {
+    char buffer[256];
+    va_list(Args);
+    va_start(Args, format);
+    vsprintf(buffer, format, Args);
+    va_end(Args);
+
+    if (useColors) printf("%s%s" ANSI_NORMAL "\n", color, buffer);
+    else printf("%s\n", buffer);
+}
+
 bool C2Builder::checkMainFunction(DiagnosticsEngine& Diags) {
 
     Decl* mainDecl = 0;
@@ -961,18 +977,18 @@ void C2Builder::generateOptionalC() {
         FileInfo* info = files[i];
         cgen.addFile(info->ast);
     }
-    if (options.verbose) printf(COL_VERBOSE "generating C code" ANSI_NORMAL"\n");
+    if (options.verbose) log(COL_VERBOSE, "generating C code");
     cgen.generate();
 
     u_int64_t t2 = Utils::getCurrentTime();
-    if (options.printTiming) printf(COL_TIME"C code generation took %" PRIu64" usec" ANSI_NORMAL"\n", t2 - t1);
+    if (options.printTiming) log(COL_TIME, "C code generation took %" PRIu64" usec", t2 - t1);
 
     if (!no_build) {
-        if (options.verbose) printf(COL_VERBOSE "building C code" ANSI_NORMAL"\n");
+        if (options.verbose) log(COL_VERBOSE, "building C code");
         u_int64_t t3 = Utils::getCurrentTime();
         cgen.build();
         u_int64_t t4 = Utils::getCurrentTime();
-        if (options.printTiming) printf(COL_TIME"C code compilation took %" PRIu64" usec" ANSI_NORMAL"\n", t4 - t3);
+        if (options.printTiming) log(COL_TIME, "C code compilation took %" PRIu64" usec", t4 - t3);
     }
 }
 
@@ -997,7 +1013,7 @@ void C2Builder::generateOptionalIR() {
         std::string filename = recipe.name;
         //  HMM dont have Module P here, refactor
         CodeGenModule cgm(filename, true);
-        if (options.verbose) printf(COL_VERBOSE "generating IR for single module %s" ANSI_NORMAL "\n", filename.c_str());
+        if (options.verbose) log(COL_VERBOSE, "generating IR for single module %s", filename.c_str());
         for (ModulesIter iter = modules.begin(); iter != modules.end(); ++iter) {
             Module* P = iter->second;
             if (P->isPlainC()) continue;
@@ -1012,7 +1028,7 @@ void C2Builder::generateOptionalIR() {
         }
         cgm.generate();
         u_int64_t t2 = Utils::getCurrentTime();
-        if (options.printTiming) printf(COL_TIME"IR generation took %" PRIu64" usec" ANSI_NORMAL"\n", t2 - t1);
+        if (options.printTiming) log(COL_TIME, "IR generation took %" PRIu64" usec", t2 - t1);
         if (options.printIR) cgm.dump();
         bool ok = cgm.verify();
         if (ok) cgm.write(outdir, filename);
@@ -1023,7 +1039,7 @@ void C2Builder::generateOptionalIR() {
             if (P->isPlainC()) continue;
             if (P->getName() == "c2") continue;
 
-            if (options.verbose) printf(COL_VERBOSE "generating IR for module %s" ANSI_NORMAL "\n", P->getName().c_str());
+            if (options.verbose) log(COL_VERBOSE, "generating IR for module %s", P->getName().c_str());
             CodeGenModule cgm(P->getName(), false);
             for (unsigned i=0; i<files.size(); i++) {
                 FileInfo* info = files[i];
@@ -1033,7 +1049,7 @@ void C2Builder::generateOptionalIR() {
             }
             cgm.generate();
             u_int64_t t2 = Utils::getCurrentTime();
-            if (options.printTiming) printf(COL_TIME"IR generation took %" PRIu64" usec" ANSI_NORMAL"\n", t2 - t1);
+            if (options.printTiming) log(COL_TIME, "IR generation took %" PRIu64" usec", t2 - t1);
             if (options.printIR) cgm.dump();
             bool ok = cgm.verify();
             if (ok) cgm.write(outdir, P->getName());
@@ -1045,7 +1061,7 @@ void C2Builder::generateOptionsDeps() const {
     if (options.checkOnly) return;
     if (!options.printDependencies && !recipe.generateDeps) return;
 
-    if (options.verbose) printf(COL_VERBOSE "generating dependencies" ANSI_NORMAL"\n");
+    if (options.verbose) log(COL_VERBOSE, "generating dependencies");
 
     u_int64_t t1 = Utils::getCurrentTime();
     bool showFiles = false;
@@ -1066,6 +1082,6 @@ void C2Builder::generateOptionsDeps() const {
     std::string path = OUTPUT_DIR + recipe.name + '/';
     generator.write(recipe.name, path);
     u_int64_t t2 = Utils::getCurrentTime();
-    if (options.printTiming) printf(COL_TIME"dep generation took %" PRIu64" usec" ANSI_NORMAL"\n", t2 - t1);
+    if (options.printTiming) log(COL_TIME, "dep generation took %" PRIu64" usec", t2 - t1);
 }
 
