@@ -49,6 +49,7 @@
 
 #include "Builder/C2Builder.h"
 #include "Builder/Recipe.h"
+#include "Builder/C2ModuleLoader.h"
 #include "AST/AST.h"
 #include "AST/Module.h"
 #include "AST/Decl.h"
@@ -446,10 +447,10 @@ bool C2Builder::haveModule(const std::string& name) const {
 C2::Module* C2Builder::getModule(const std::string& name, bool isExternal, bool isCLib) {
     ModulesIter iter = modules.find(name);
     if (iter == modules.end()) {
-        C2::Module* P = new C2::Module(name, isExternal, isCLib);
-        modules[name] = P;
-        if (recipe.hasExported(name)) P->setExported();
-        return P;
+        C2::Module* M = new C2::Module(name, isExternal, isCLib);
+        modules[name] = M;
+        if (recipe.hasExported(name)) M->setExported();
+        return M;
     } else {
         // TODO check that isCLib/isExternal matches returned module? otherwise give error
         return iter->second;
@@ -492,6 +493,7 @@ bool C2Builder::createModules() {
 
 bool C2Builder::loadExternalModules() {
     // collect all external modules
+    C2ModuleLoader loader;
     bool haveErrors = false;
     for (unsigned i=0; i<files.size(); i++) {
         FileInfo* info = files[i];
@@ -499,323 +501,16 @@ bool C2Builder::loadExternalModules() {
             ImportDecl* D = info->ast.getImport(u);
             const std::string& name = D->getModuleName();
             if (haveModule(name)) continue;
-            if (!loadModule(name)) {
+            if (options.verbose) log(COL_VERBOSE, "loading external module %s", name.c_str());
+            Module* M = loader.load(name);
+            if (!M) {
                 info->Diags.Report(D->getLocation(), clang::diag::err_unknown_module) << name;
                 haveErrors = true;
             }
+            modules[name] = M;
         }
     }
     return !haveErrors;
-}
-
-bool C2Builder::loadModule(const std::string& name) {
-    if (options.verbose) log(COL_VERBOSE, "loading external module %s", name.c_str());
-
-    // NOTE: MEMLEAK on Types
-
-    SourceLocation loc;
-
-    if (name == "stdio") {
-        Module* stdioMod = getModule("stdio", true, true);
-        // int puts(const char* s);
-        {
-            FunctionDecl* func = new FunctionDecl("puts", loc, true, Type::Int32());
-            // TODO correct arg
-            QualType QT(new PointerType(Type::Int8()), QUAL_CONST);
-            QT->setCanonicalType(QT);
-            VarDecl* Arg1 = new VarDecl(VARDECL_PARAM, "s", loc, QT, 0, true);
-            Arg1->setType(QT);
-            func->addArg(Arg1);
-            stdioMod->addSymbol(func);
-            // function type
-            func->setType(QualType(new FunctionType(func), 0));
-        }
-        //int printf(const char *format, ...);
-        {
-            FunctionDecl* func = new FunctionDecl("printf", loc, true, Type::Int32());
-            // NOTE: MEMLEAK ON TYPE, this will go away when we remove these dummy protos
-            QualType QT(new PointerType(Type::Int8()), QUAL_CONST);
-            QT->setCanonicalType(QT);
-            VarDecl* Arg1 = new VarDecl(VARDECL_PARAM, "format", loc, QT, 0, true);
-            Arg1->setType(QT);
-            func->addArg(Arg1);
-            func->setVariadic();
-            stdioMod->addSymbol(func);
-            // function type
-            func->setType(QualType(new FunctionType(func), 0));
-        }
-        //int sprintf(char *str, const char *format, ...);
-        {
-            FunctionDecl* func = new FunctionDecl("sprintf", loc, true, Type::Int32());
-            // NOTE: MEMLEAK ON TYPE, this will go away when we remove these dummy protos
-            QualType QT(new PointerType(Type::Int8()), QUAL_CONST);
-            QT->setCanonicalType(QT);
-            VarDecl* Arg1 = new VarDecl(VARDECL_PARAM, "str", loc, QT, 0, true);
-            Arg1->setType(QT);
-            func->addArg(Arg1);
-            VarDecl* Arg2 = new VarDecl(VARDECL_PARAM, "format", loc, QT, 0, true);
-            Arg2->setType(QT);
-            func->addArg(Arg2);
-            func->setVariadic();
-            stdioMod->addSymbol(func);
-            // function type
-            func->setType(QualType(new FunctionType(func), 0));
-        }
-        return true;
-    }
-    if (name == "string") {
-        Module* stringMod = getModule("string", true, true);
-        // void *memset(void *s, int c, size_t n);
-        {
-            QualType VP(new PointerType(Type::Void()));
-            VP->setCanonicalType(VP);
-            FunctionDecl* func = new FunctionDecl("memset", loc, true, VP);
-            // NOTE: MEMLEAK ON TYPE, this will go away when we remove these dummy protos
-            VarDecl* Arg1 = new VarDecl(VARDECL_PARAM, "s", loc, VP, 0, true);
-            Arg1->setType(VP);
-            func->addArg(Arg1);
-            VarDecl* Arg2 = new VarDecl(VARDECL_PARAM, "c", loc, Type::Int32(), 0, true);
-            Arg2->setType(Type::Int32());
-            func->addArg(Arg2);
-            // TEMP size_t -> uint32
-            VarDecl* Arg3 = new VarDecl(VARDECL_PARAM, "n", loc, Type::UInt32(), 0, true);
-            Arg3->setType(Type::UInt32());
-            func->addArg(Arg3);
-            stringMod->addSymbol(func);
-            // function type
-            func->setType(QualType(new FunctionType(func), 0));
-        }
-        return true;
-
-    }
-    if (name == "stdlib") {
-        Module* stdlibMod = getModule("stdlib", true, true);
-        //void exit(int status);
-        {
-            FunctionDecl* func = new FunctionDecl("exit", loc, true, Type::Void());
-            // TODO correct arg
-            VarDecl* Arg1 = new VarDecl(VARDECL_PARAM, "status", loc, Type::Int32(), 0, true);
-            Arg1->setType(Type::Int32());
-            func->addArg(Arg1);
-            stdlibMod->addSymbol(func);
-            // function type
-            func->setType(QualType(new FunctionType(func), 0));
-        }
-        return true;
-    }
-    if (name == "c2") {
-        Module* c2Mod = getModule("c2", true, false);
-        // uint64 buildtime
-        {
-            // make constant, CTC_NONE
-            QualType QT = Type::UInt64();
-            QT.addConst();
-            uint64_t value = time(0);
-            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, value, false));
-            // TODO get error without value if CTC_NONE, CTC_FULL gives out-of-bounds for value 123?!!
-            init->setCTC(CTC_NONE); // Don't check range, only type
-            init->setConstant();
-            init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "buildtime", loc, QT, init, true);
-            var->setType(QT);
-            c2Mod->addSymbol(var);
-        }
-        // int8 min_int8
-        {
-            QualType QT = Type::Int8();
-            QT.addConst();
-            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, -128, true));
-            init->setCTC(CTC_FULL);
-            init->setConstant();
-            init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "min_int8", loc, QT, init, true);
-            var->setType(QT);
-            c2Mod->addSymbol(var);
-        }
-        // int8 max_int8
-        {
-            QualType QT = Type::Int8();
-            QT.addConst();
-            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, 127, true));
-            init->setCTC(CTC_FULL);
-            init->setConstant();
-            init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "max_int8", loc, QT, init, true);
-            var->setType(QT);
-            c2Mod->addSymbol(var);
-        }
-        // uint8 min_uint8
-        {
-            QualType QT = Type::UInt8();
-            QT.addConst();
-            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, 0, false));
-            init->setCTC(CTC_FULL);
-            init->setConstant();
-            init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "min_uint8", loc, QT, init, true);
-            var->setType(QT);
-            c2Mod->addSymbol(var);
-        }
-        // uint8 max_uint8
-        {
-            QualType QT = Type::UInt8();
-            QT.addConst();
-            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, 255, false));
-            init->setCTC(CTC_FULL);
-            init->setConstant();
-            init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "max_uint8", loc, QT, init, true);
-            var->setType(QT);
-            c2Mod->addSymbol(var);
-        }
-        // int16 min_int16
-        {
-            QualType QT = Type::Int16();
-            QT.addConst();
-            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, -32768, true));
-            init->setCTC(CTC_FULL);
-            init->setConstant();
-            init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "min_int16", loc, QT, init, true);
-            var->setType(QT);
-            c2Mod->addSymbol(var);
-        }
-        // int16 max_int16
-        {
-            QualType QT = Type::Int16();
-            QT.addConst();
-            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, 32767, true));
-            init->setCTC(CTC_FULL);
-            init->setConstant();
-            init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "max_int16", loc, QT, init, true);
-            var->setType(QT);
-            c2Mod->addSymbol(var);
-        }
-        // uint16 min_uint16
-        {
-            QualType QT = Type::UInt16();
-            QT.addConst();
-            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, 0, false));
-            init->setCTC(CTC_FULL);
-            init->setConstant();
-            init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "min_uint16", loc, QT, init, true);
-            var->setType(QT);
-            c2Mod->addSymbol(var);
-        }
-        // uint16 max_uint16
-        {
-            QualType QT = Type::UInt16();
-            QT.addConst();
-            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, 65535, false));
-            init->setCTC(CTC_FULL);
-            init->setConstant();
-            init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "max_uint16", loc, QT, init, true);
-            var->setType(QT);
-            c2Mod->addSymbol(var);
-        }
-        // int32 min_int32
-        {
-            QualType QT = Type::Int32();
-            QT.addConst();
-            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, -2147483648, true));
-            init->setCTC(CTC_FULL);
-            init->setConstant();
-            init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "min_int32", loc, QT, init, true);
-            var->setType(QT);
-            c2Mod->addSymbol(var);
-        }
-        // int32 max_int32
-        {
-            QualType QT = Type::Int32();
-            QT.addConst();
-            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, 2147483647, true));
-            init->setCTC(CTC_FULL);
-            init->setConstant();
-            init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "max_int32", loc, QT, init, true);
-            var->setType(QT);
-            c2Mod->addSymbol(var);
-        }
-        // uint32 min_uint32
-        {
-            QualType QT = Type::UInt32();
-            QT.addConst();
-            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, 0, false));
-            init->setCTC(CTC_FULL);
-            init->setConstant();
-            init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "min_uint32", loc, QT, init, true);
-            var->setType(QT);
-            c2Mod->addSymbol(var);
-        }
-        // uint32 max_uint32
-        {
-            QualType QT = Type::UInt32();
-            QT.addConst();
-            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, 4294967295, false));
-            init->setCTC(CTC_FULL);
-            init->setConstant();
-            init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "max_uint32", loc, QT, init, true);
-            var->setType(QT);
-            c2Mod->addSymbol(var);
-        }
-        // int64 min_int64
-        {
-            QualType QT = Type::Int64();
-            QT.addConst();
-            // NOTE: minimum should be -..808, but clang complains about it..
-            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, -9223372036854775807ll, true));
-            init->setCTC(CTC_FULL);
-            init->setConstant();
-            init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "min_int64", loc, QT, init, true);
-            var->setType(QT);
-            c2Mod->addSymbol(var);
-        }
-        // int64 max_int64
-        {
-            QualType QT = Type::Int64();
-            QT.addConst();
-            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, 9223372036854775807ll, true));
-            init->setCTC(CTC_FULL);
-            init->setConstant();
-            init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "max_int64", loc, QT, init, true);
-            var->setType(QT);
-            c2Mod->addSymbol(var);
-        }
-        // uint64 min_uint64
-        {
-            QualType QT = Type::UInt64();
-            QT.addConst();
-            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, 0, false));
-            init->setCTC(CTC_FULL);
-            init->setConstant();
-            init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "min_uint64", loc, QT, init, true);
-            var->setType(QT);
-            c2Mod->addSymbol(var);
-        }
-        // uint64 max_uint64
-        {
-            QualType QT = Type::UInt64();
-            QT.addConst();
-            Expr* init = new IntegerLiteral(loc, llvm::APInt(64, 18446744073709551615llu, false));
-            init->setCTC(CTC_FULL);
-            init->setConstant();
-            init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "max_uint64", loc, QT, init, true);
-            var->setType(QT);
-            c2Mod->addSymbol(var);
-        }
-        return true;
-    }
-    return false;
 }
 
 unsigned C2Builder::analyse() {

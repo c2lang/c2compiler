@@ -79,7 +79,6 @@ private:
     Module* findModule(const std::string& name) const;
     bool createModules();
     bool loadExternalModules();
-    bool loadModule(const std::string& name);
     unsigned analyse();
     void dumpModules() const;
     void printASTs() const;
