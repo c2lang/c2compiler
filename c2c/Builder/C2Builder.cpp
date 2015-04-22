@@ -134,7 +134,6 @@ public:
              FileManager& FileMgr,
              SourceManager& SM_,
              const std::string& filename_,
-             unsigned file_id,
              const std::string& configs)
         : filename(filename_)
     // TODO note: Diags makes copy constr, pass DiagnosticIDs?
@@ -143,7 +142,7 @@ public:
         , Headers(HSOpts, SM, Diags, LangOpts_, pti)
         , PPOpts(new PreprocessorOptions())
         , PP(PPOpts, Diags, LangOpts_, SM, Headers, loader)
-        , ast(filename_, file_id)
+        , ast(filename_)
         , analyser(0)
     {
         ApplyHeaderSearchOptions(PP.getHeaderSearchInfo(), *HSOpts, LangOpts_, pti->getTriple());
@@ -365,8 +364,7 @@ int C2Builder::build() {
     u_int64_t t1_parse = Utils::getCurrentTime();
     for (int i=0; i<recipe.size(); i++) {
         const std::string& filename = recipe.get(i);
-        unsigned file_id = filenames.add(filename);
-        FileInfo* info = new FileInfo(Diags, LangOpts, pti, HSOpts, FileMgr, SM, filename, file_id, PredefineBuffer);
+        FileInfo* info = new FileInfo(Diags, LangOpts, pti, HSOpts, FileMgr, SM, filename, PredefineBuffer);
         files.push_back(info);
         if (options.verbose) log(COL_VERBOSE, "parsing %s", filename.c_str());
         bool ok = info->parse(options);
@@ -518,15 +516,14 @@ bool C2Builder::loadModule(const std::string& name) {
     SourceLocation loc;
 
     if (name == "stdio") {
-        unsigned file_id = filenames.add("(stdio)");
         Module* stdioMod = getModule("stdio", true, true);
         // int puts(const char* s);
         {
-            FunctionDecl* func = new FunctionDecl("puts", loc, true, file_id, Type::Int32());
+            FunctionDecl* func = new FunctionDecl("puts", loc, true, Type::Int32());
             // TODO correct arg
             QualType QT(new PointerType(Type::Int8()), QUAL_CONST);
             QT->setCanonicalType(QT);
-            VarDecl* Arg1 = new VarDecl(VARDECL_PARAM, "s", loc, QT, 0, true, file_id);
+            VarDecl* Arg1 = new VarDecl(VARDECL_PARAM, "s", loc, QT, 0, true);
             Arg1->setType(QT);
             func->addArg(Arg1);
             stdioMod->addSymbol(func);
@@ -535,11 +532,11 @@ bool C2Builder::loadModule(const std::string& name) {
         }
         //int printf(const char *format, ...);
         {
-            FunctionDecl* func = new FunctionDecl("printf", loc, true, file_id, Type::Int32());
+            FunctionDecl* func = new FunctionDecl("printf", loc, true, Type::Int32());
             // NOTE: MEMLEAK ON TYPE, this will go away when we remove these dummy protos
             QualType QT(new PointerType(Type::Int8()), QUAL_CONST);
             QT->setCanonicalType(QT);
-            VarDecl* Arg1 = new VarDecl(VARDECL_PARAM, "format", loc, QT, 0, true, file_id);
+            VarDecl* Arg1 = new VarDecl(VARDECL_PARAM, "format", loc, QT, 0, true);
             Arg1->setType(QT);
             func->addArg(Arg1);
             func->setVariadic();
@@ -549,14 +546,14 @@ bool C2Builder::loadModule(const std::string& name) {
         }
         //int sprintf(char *str, const char *format, ...);
         {
-            FunctionDecl* func = new FunctionDecl("sprintf", loc, true, file_id, Type::Int32());
+            FunctionDecl* func = new FunctionDecl("sprintf", loc, true, Type::Int32());
             // NOTE: MEMLEAK ON TYPE, this will go away when we remove these dummy protos
             QualType QT(new PointerType(Type::Int8()), QUAL_CONST);
             QT->setCanonicalType(QT);
-            VarDecl* Arg1 = new VarDecl(VARDECL_PARAM, "str", loc, QT, 0, true, file_id);
+            VarDecl* Arg1 = new VarDecl(VARDECL_PARAM, "str", loc, QT, 0, true);
             Arg1->setType(QT);
             func->addArg(Arg1);
-            VarDecl* Arg2 = new VarDecl(VARDECL_PARAM, "format", loc, QT, 0, true, file_id);
+            VarDecl* Arg2 = new VarDecl(VARDECL_PARAM, "format", loc, QT, 0, true);
             Arg2->setType(QT);
             func->addArg(Arg2);
             func->setVariadic();
@@ -567,23 +564,21 @@ bool C2Builder::loadModule(const std::string& name) {
         return true;
     }
     if (name == "string") {
-        // TODO
-        unsigned file_id = filenames.add("(string)");
         Module* stringMod = getModule("string", true, true);
         // void *memset(void *s, int c, size_t n);
         {
             QualType VP(new PointerType(Type::Void()));
             VP->setCanonicalType(VP);
-            FunctionDecl* func = new FunctionDecl("memset", loc, true, file_id, VP);
+            FunctionDecl* func = new FunctionDecl("memset", loc, true, VP);
             // NOTE: MEMLEAK ON TYPE, this will go away when we remove these dummy protos
-            VarDecl* Arg1 = new VarDecl(VARDECL_PARAM, "s", loc, VP, 0, true, file_id);
+            VarDecl* Arg1 = new VarDecl(VARDECL_PARAM, "s", loc, VP, 0, true);
             Arg1->setType(VP);
             func->addArg(Arg1);
-            VarDecl* Arg2 = new VarDecl(VARDECL_PARAM, "c", loc, Type::Int32(), 0, true, file_id);
+            VarDecl* Arg2 = new VarDecl(VARDECL_PARAM, "c", loc, Type::Int32(), 0, true);
             Arg2->setType(Type::Int32());
             func->addArg(Arg2);
             // TEMP size_t -> uint32
-            VarDecl* Arg3 = new VarDecl(VARDECL_PARAM, "n", loc, Type::UInt32(), 0, true, file_id);
+            VarDecl* Arg3 = new VarDecl(VARDECL_PARAM, "n", loc, Type::UInt32(), 0, true);
             Arg3->setType(Type::UInt32());
             func->addArg(Arg3);
             stringMod->addSymbol(func);
@@ -594,13 +589,12 @@ bool C2Builder::loadModule(const std::string& name) {
 
     }
     if (name == "stdlib") {
-        unsigned file_id = filenames.add("(stdlib)");
         Module* stdlibMod = getModule("stdlib", true, true);
         //void exit(int status);
         {
-            FunctionDecl* func = new FunctionDecl("exit", loc, true, file_id, Type::Void());
+            FunctionDecl* func = new FunctionDecl("exit", loc, true, Type::Void());
             // TODO correct arg
-            VarDecl* Arg1 = new VarDecl(VARDECL_PARAM, "status", loc, Type::Int32(), 0, true, file_id);
+            VarDecl* Arg1 = new VarDecl(VARDECL_PARAM, "status", loc, Type::Int32(), 0, true);
             Arg1->setType(Type::Int32());
             func->addArg(Arg1);
             stdlibMod->addSymbol(func);
@@ -610,7 +604,6 @@ bool C2Builder::loadModule(const std::string& name) {
         return true;
     }
     if (name == "c2") {
-        unsigned file_id = filenames.add("(c2)");
         Module* c2Mod = getModule("c2", true, false);
         // uint64 buildtime
         {
@@ -623,7 +616,7 @@ bool C2Builder::loadModule(const std::string& name) {
             init->setCTC(CTC_NONE); // Don't check range, only type
             init->setConstant();
             init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "buildtime", loc, QT, init, true, file_id);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "buildtime", loc, QT, init, true);
             var->setType(QT);
             c2Mod->addSymbol(var);
         }
@@ -635,7 +628,7 @@ bool C2Builder::loadModule(const std::string& name) {
             init->setCTC(CTC_FULL);
             init->setConstant();
             init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "min_int8", loc, QT, init, true, file_id);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "min_int8", loc, QT, init, true);
             var->setType(QT);
             c2Mod->addSymbol(var);
         }
@@ -647,7 +640,7 @@ bool C2Builder::loadModule(const std::string& name) {
             init->setCTC(CTC_FULL);
             init->setConstant();
             init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "max_int8", loc, QT, init, true, file_id);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "max_int8", loc, QT, init, true);
             var->setType(QT);
             c2Mod->addSymbol(var);
         }
@@ -659,7 +652,7 @@ bool C2Builder::loadModule(const std::string& name) {
             init->setCTC(CTC_FULL);
             init->setConstant();
             init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "min_uint8", loc, QT, init, true, file_id);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "min_uint8", loc, QT, init, true);
             var->setType(QT);
             c2Mod->addSymbol(var);
         }
@@ -671,7 +664,7 @@ bool C2Builder::loadModule(const std::string& name) {
             init->setCTC(CTC_FULL);
             init->setConstant();
             init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "max_uint8", loc, QT, init, true, file_id);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "max_uint8", loc, QT, init, true);
             var->setType(QT);
             c2Mod->addSymbol(var);
         }
@@ -683,7 +676,7 @@ bool C2Builder::loadModule(const std::string& name) {
             init->setCTC(CTC_FULL);
             init->setConstant();
             init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "min_int16", loc, QT, init, true, file_id);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "min_int16", loc, QT, init, true);
             var->setType(QT);
             c2Mod->addSymbol(var);
         }
@@ -695,7 +688,7 @@ bool C2Builder::loadModule(const std::string& name) {
             init->setCTC(CTC_FULL);
             init->setConstant();
             init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "max_int16", loc, QT, init, true, file_id);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "max_int16", loc, QT, init, true);
             var->setType(QT);
             c2Mod->addSymbol(var);
         }
@@ -707,7 +700,7 @@ bool C2Builder::loadModule(const std::string& name) {
             init->setCTC(CTC_FULL);
             init->setConstant();
             init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "min_uint16", loc, QT, init, true, file_id);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "min_uint16", loc, QT, init, true);
             var->setType(QT);
             c2Mod->addSymbol(var);
         }
@@ -719,7 +712,7 @@ bool C2Builder::loadModule(const std::string& name) {
             init->setCTC(CTC_FULL);
             init->setConstant();
             init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "max_uint16", loc, QT, init, true, file_id);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "max_uint16", loc, QT, init, true);
             var->setType(QT);
             c2Mod->addSymbol(var);
         }
@@ -731,7 +724,7 @@ bool C2Builder::loadModule(const std::string& name) {
             init->setCTC(CTC_FULL);
             init->setConstant();
             init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "min_int32", loc, QT, init, true, file_id);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "min_int32", loc, QT, init, true);
             var->setType(QT);
             c2Mod->addSymbol(var);
         }
@@ -743,7 +736,7 @@ bool C2Builder::loadModule(const std::string& name) {
             init->setCTC(CTC_FULL);
             init->setConstant();
             init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "max_int32", loc, QT, init, true, file_id);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "max_int32", loc, QT, init, true);
             var->setType(QT);
             c2Mod->addSymbol(var);
         }
@@ -755,7 +748,7 @@ bool C2Builder::loadModule(const std::string& name) {
             init->setCTC(CTC_FULL);
             init->setConstant();
             init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "min_uint32", loc, QT, init, true, file_id);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "min_uint32", loc, QT, init, true);
             var->setType(QT);
             c2Mod->addSymbol(var);
         }
@@ -767,7 +760,7 @@ bool C2Builder::loadModule(const std::string& name) {
             init->setCTC(CTC_FULL);
             init->setConstant();
             init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "max_uint32", loc, QT, init, true, file_id);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "max_uint32", loc, QT, init, true);
             var->setType(QT);
             c2Mod->addSymbol(var);
         }
@@ -780,7 +773,7 @@ bool C2Builder::loadModule(const std::string& name) {
             init->setCTC(CTC_FULL);
             init->setConstant();
             init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "min_int64", loc, QT, init, true, file_id);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "min_int64", loc, QT, init, true);
             var->setType(QT);
             c2Mod->addSymbol(var);
         }
@@ -792,7 +785,7 @@ bool C2Builder::loadModule(const std::string& name) {
             init->setCTC(CTC_FULL);
             init->setConstant();
             init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "max_int64", loc, QT, init, true, file_id);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "max_int64", loc, QT, init, true);
             var->setType(QT);
             c2Mod->addSymbol(var);
         }
@@ -804,7 +797,7 @@ bool C2Builder::loadModule(const std::string& name) {
             init->setCTC(CTC_FULL);
             init->setConstant();
             init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "min_uint64", loc, QT, init, true, file_id);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "min_uint64", loc, QT, init, true);
             var->setType(QT);
             c2Mod->addSymbol(var);
         }
@@ -816,7 +809,7 @@ bool C2Builder::loadModule(const std::string& name) {
             init->setCTC(CTC_FULL);
             init->setConstant();
             init->setType(QT);
-            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "max_uint64", loc, QT, init, true, file_id);
+            VarDecl* var = new VarDecl(VARDECL_GLOBAL, "max_uint64", loc, QT, init, true);
             var->setType(QT);
             c2Mod->addSymbol(var);
         }

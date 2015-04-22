@@ -20,7 +20,6 @@
 #include <string>
 
 #include "AST/Module.h"
-#include "FileUtils/FileDb.h"
 
 namespace clang {
 class DiagnosticsEngine;
@@ -97,7 +96,6 @@ private:
 
     typedef std::vector<FileInfo*> Files;
     Files files;
-    FileDb filenames;
 
     Modules modules;
 

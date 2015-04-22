@@ -57,7 +57,7 @@ enum DeclKind {
 class Decl {
 public:
     Decl(DeclKind k, const std::string& name_, SourceLocation loc_,
-         QualType type_, bool is_public, unsigned file_id);
+         QualType type_, bool is_public);
     virtual ~Decl();
 
     virtual void print(StringBuilder& buffer, unsigned indent) const = 0;
@@ -81,7 +81,6 @@ public:
 
     void setModule(const Module* mod_) { mod = mod_; }
     const Module* getModule() const { return mod; }
-    unsigned getFileID() const { return DeclBits.DeclFileID; }
 
     QualType getType() const { return type; }
     void setType(QualType t) { type = t; }
@@ -98,7 +97,6 @@ protected:
     class DeclBitfields {
     public:
         unsigned dKind : 4;
-        unsigned DeclFileID : 10;   // 10 bits for now
         unsigned DeclIsExported: 1;
         unsigned DeclIsPublic : 1;
         unsigned DeclIsUsed : 1;
@@ -135,7 +133,7 @@ enum VarDeclKind {
 class VarDecl : public Decl {
 public:
     VarDecl(VarDeclKind k_, const std::string& name_, SourceLocation loc_,
-            QualType type_, Expr* initValue_, bool is_public, unsigned file_id);
+            QualType type_, Expr* initValue_, bool is_public);
     virtual ~VarDecl();
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_VAR;
@@ -166,7 +164,7 @@ private:
 class FunctionDecl : public Decl {
 public:
     FunctionDecl(const std::string& name_, SourceLocation loc_,
-                 bool is_public, unsigned file_id, QualType rtype_);
+                 bool is_public, QualType rtype_);
     virtual ~FunctionDecl();
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_FUNC;
@@ -210,7 +208,7 @@ private:
 class EnumConstantDecl : public Decl {
 public:
     EnumConstantDecl(const std::string& name_, SourceLocation loc_, QualType type_, Expr* Init,
-                     bool is_public, unsigned file_id);
+                     bool is_public);
     virtual ~EnumConstantDecl();
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_ENUMVALUE;
@@ -229,7 +227,7 @@ private:
 class TypeDecl : public Decl {
 protected:
     TypeDecl(DeclKind kind, const std::string& name_, SourceLocation loc_,
-             QualType type_, bool is_public, unsigned file_id);
+             QualType type_, bool is_public);
 public:
     static bool classof(const Decl* D) {
         switch (D->getKind()) {
@@ -247,8 +245,8 @@ public:
 
 class AliasTypeDecl : public TypeDecl {
 public:
-    AliasTypeDecl(const std::string& name_, SourceLocation loc_, QualType type_, bool is_public, unsigned file_id)
-        : TypeDecl(DECL_ALIASTYPE, name_, loc_, type_, is_public, file_id)
+    AliasTypeDecl(const std::string& name_, SourceLocation loc_, QualType type_, bool is_public)
+        : TypeDecl(DECL_ALIASTYPE, name_, loc_, type_, is_public)
         , refType(type_)
     {}
     static bool classof(const Decl* D) {
@@ -264,7 +262,7 @@ private:
 class StructTypeDecl : public TypeDecl {
 public:
     StructTypeDecl(const std::string& name_, SourceLocation loc_, QualType type_,
-            bool is_struct, bool is_global, bool is_public, unsigned file_id);
+            bool is_struct, bool is_global, bool is_public);
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_STRUCTTYPE;
     }
@@ -298,8 +296,8 @@ private:
 class EnumTypeDecl : public TypeDecl {
 public:
     EnumTypeDecl(const std::string& name_, SourceLocation loc_,
-            QualType implType_, QualType type_, bool is_public, unsigned file_id)
-        : TypeDecl(DECL_ENUMTYPE, name_, loc_, type_, is_public, file_id)
+            QualType implType_, QualType type_, bool is_public)
+        : TypeDecl(DECL_ENUMTYPE, name_, loc_, type_, is_public)
         , implType(implType_)
     {}
     static bool classof(const Decl* D) {
@@ -322,7 +320,7 @@ private:
 
 class FunctionTypeDecl : public TypeDecl {
 public:
-    FunctionTypeDecl(FunctionDecl* func_, unsigned file_id);
+    FunctionTypeDecl(FunctionDecl* func_);
     virtual ~FunctionTypeDecl();
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_FUNCTIONTYPE;

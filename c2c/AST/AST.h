@@ -30,9 +30,8 @@ namespace C2 {
 
 class AST {
 public:
-    AST(const std::string& filename_, unsigned id)
+    AST(const std::string& filename_)
         : filename(filename_)
-        , file_id(id)
     {}
     ~AST();
 
@@ -85,14 +84,12 @@ public:
     }
     const std::string& getModuleName() const { return modName; }
     const std::string& getFileName() const { return filename; }
-    unsigned getFileID() const { return file_id; }
 
 private:
     AST(const AST&);
     void operator=(const AST&);
 
     const std::string filename;
-    unsigned file_id;
     std::string modName;
     clang::SourceLocation modLoc;
 
