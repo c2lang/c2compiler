@@ -86,10 +86,10 @@ using namespace clang;
 #define BUILD_DIR  "/build/"
 
 namespace C2 {
-class C2ModuleLoader : public ModuleLoader {
+class DummyLoader : public ModuleLoader {
 public:
-    C2ModuleLoader() {}
-    virtual ~C2ModuleLoader () {}
+    DummyLoader() {}
+    virtual ~DummyLoader () {}
 
     virtual ModuleLoadResult loadModule(SourceLocation ImportLoc,
                                         ModuleIdPath Path,
@@ -121,8 +121,8 @@ public:
         return false;
     }
 private:
-    C2ModuleLoader(const C2ModuleLoader& rhs);
-    C2ModuleLoader& operator= (const C2ModuleLoader& rhs);
+    DummyLoader(const DummyLoader& rhs);
+    DummyLoader& operator= (const DummyLoader& rhs);
 };
 
 class FileInfo {
@@ -211,7 +211,7 @@ public:
     // HeaderSearch
     HeaderSearch Headers;
 
-    C2ModuleLoader loader;
+    DummyLoader loader;
 
     // Preprocessor
     IntrusiveRefCntPtr<PreprocessorOptions> PPOpts;
@@ -482,6 +482,10 @@ bool C2Builder::createModules() {
             }
             if (New->isPublic() && mod->isExported()) New->setExported();
         }
+        // setModule() for ArrayValueDecls since they're not symbols
+        for (unsigned i=0; i<info->ast.numArrayValues(); i++) {
+            info->ast.getArrayValue(i)->setModule(mod);
+        }
         // merge attributes
         mod->addAttributes(info->ast.getAttributes());
     }
@@ -509,7 +513,6 @@ bool C2Builder::loadExternalModules() {
 bool C2Builder::loadModule(const std::string& name) {
     if (options.verbose) log(COL_VERBOSE, "loading external module %s", name.c_str());
 
-    assert(!haveModule(name));
     // NOTE: MEMLEAK on Types
 
     SourceLocation loc;
@@ -853,6 +856,11 @@ unsigned C2Builder::analyse() {
 
     for (unsigned i=0; i<files.size(); i++) {
         errors += files[i]->analyser->resolveEnumConstants();
+    }
+    if (errors) return errors;
+
+    for (unsigned i=0; i<files.size(); i++) {
+        errors += files[i]->analyser->checkArrayValues();
     }
     if (errors) return errors;
 

@@ -1,0 +1,18 @@
+// @warnings{no-unused}
+module test;
+
+int32 a;
+int8[2] d = { 1, 2 }
+
+a += 10;    // @error{'a' is not an incremental array}
+
+b += 20;    // @error{module test has no symbol b}
+
+d += 30;    // @error{'d' is not an incremental array}
+
+main += 20; // @error{'main' is not an incremental array}
+
+public func int32 main() {
+    return 0;
+}
+

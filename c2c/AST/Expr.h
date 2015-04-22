@@ -364,6 +364,9 @@ public:
     const ExprList& getValues() const { return values; }
     void setDesignators() { StmtBits.InitListHasDesignators = true; }
     bool hasDesignators() const { return StmtBits.InitListHasDesignators; }
+
+    // for incremental arrays
+    void addExpr(Expr* E) { values.push_back(E); }
 private:
     SourceLocation leftBrace;
     SourceLocation rightBrace;

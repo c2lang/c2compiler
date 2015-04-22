@@ -289,18 +289,20 @@ private:
 
 class ArrayType : public Type {
 public:
-    ArrayType(QualType et, Expr* size, bool ownSize_)
+    ArrayType(QualType et, Expr* size, bool ownSize_, bool isIncremental_)
         : Type(TC_ARRAY, QualType())
         , ElementType(et)
         , sizeExpr(size)
         , Size(32, 0, false)
         , hasSize(false)
         , ownSizeExpr(ownSize_)
+        , incremental(isIncremental_)
     {}
     virtual ~ArrayType();
     static bool classof(const Type* T) { return T->getTypeClass() == TC_ARRAY; }
 
     QualType getElementType() const { return ElementType; }
+    bool isIncremental() const { return incremental; }
     Expr* getSizeExpr() const { return sizeExpr; }
     const llvm::APInt& getSize() const { return Size; }
     void setSize(const llvm::APInt& value);
@@ -316,6 +318,7 @@ private:
     llvm::APInt Size;
     bool hasSize;
     bool ownSizeExpr;
+    bool incremental;
 };
 
 
@@ -530,7 +533,7 @@ public:
     ~TypeContext();
 
     QualType getPointerType(QualType ref);
-    QualType getArrayType(QualType element, Expr* size, bool ownSize);
+    QualType getArrayType(QualType element, Expr* size, bool ownSize, bool isIncremental);
     QualType getUnresolvedType(SourceLocation ploc, const std::string& pname,
                                SourceLocation tloc, const std::string& tname);
     QualType getAliasType(AliasTypeDecl* A, QualType ref);

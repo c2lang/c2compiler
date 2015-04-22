@@ -267,6 +267,7 @@ private:
         hasErrors = true;
     }
 
+    void checkDiagnosticLine(const char* line);
     void checkErrors(const char* buffer, unsigned size);
     void checkExpectedFiles();
 
@@ -324,6 +325,7 @@ private:
         }
         // not expected
         color_print(COL_ERROR, "  unexpected error on line %d: %s", linenr, msg);
+        fflush(stdout);
         hasErrors = true;
     }
 
@@ -440,19 +442,19 @@ parse_msg:
     switch (type) {
     case ERROR:
 #ifdef DEBUG
-        printf(ANSI_BLUE"  expecting error '%s'"ANSI_NORMAL"\n", msg);
+        printf(ANSI_BLUE"  expecting error '%s' at %d"ANSI_NORMAL"\n", msg, line_nr - line_offset);
 #endif
         errors.push_back(Issue(current_file, line_nr - line_offset, msg));
         break;
     case WARNING:
 #ifdef DEBUG
-        printf(ANSI_BLUE"  expecting warning '%s'"ANSI_NORMAL"\n", msg);
+        printf(ANSI_BLUE"  expecting warning '%s' at %d "ANSI_NORMAL"\n", msg, line_nr - line_offset);
 #endif
         warnings.push_back(Issue(current_file, line_nr - line_offset, msg));
         break;
     case NOTE:
 #ifdef DEBUG
-        printf(ANSI_BLUE"  expecting note '%s'"ANSI_NORMAL"\n", msg);
+        printf(ANSI_BLUE"  expecting note '%s' at %d"ANSI_NORMAL"\n", msg, line_nr - line_offset);
 #endif
         notes.push_back(Issue(current_file, line_nr - line_offset, msg));
         break;
@@ -896,66 +898,83 @@ void IssueDb::testFile() {
     }
 }
 
+void IssueDb::checkDiagnosticLine(const char* line) {
+#ifdef DEBUG
+    printf(ANSI_WHITE"line: '%s'"ANSI_NORMAL"\n", line);
+#endif
+    // line syntax: '<filename>.c2:<linenr>:<offset>: error/warning/note: <msg>\n'
+    char filename[128];
+    char msg[128];
+    int error_line = 0;
+    int col = 0;
+    memset(filename, 0, sizeof(filename));
+    memset(msg, 0, sizeof(msg));
+
+    int res = sscanf(line, "%[^: ]:%d:%d: error: %[^\n]\n", filename, &error_line, &col, msg);
+    if (res == 4) {
+        // found error
+#ifdef DEBUG
+        printf(ANSI_CYAN"%s", filename);
+        printf("  %d:%d", error_line, col);
+        printf("  '%s'"ANSI_NORMAL"\n", msg);
+#endif
+        matchError(filename, error_line, msg);
+    } else {
+        res = sscanf(line, "%[^: ]:%d:%d: warning: %[^\n]\n", filename, &error_line, &col, msg);
+        if (res == 4) {
+            // found warning
+#ifdef DEBUG
+            printf(ANSI_CYAN"%s", filename);
+            printf("  %d:%d", error_line, col);
+            printf("  '%s'"ANSI_NORMAL"\n", msg);
+#endif
+            matchWarning(filename, error_line, msg);
+        } else {
+            res = sscanf(line, "%[^: ]:%d:%d: note: %[^\n]\n", filename, &error_line, &col, msg);
+            if (res == 4) {
+                // found note
+#ifdef DEBUG
+                printf(ANSI_CYAN"%s", filename);
+                printf("  %d:%d", error_line, col);
+                printf("  '%s'"ANSI_NORMAL"\n", msg);
+#endif
+                matchNote(filename, error_line, msg);
+            }
+        }
+    }
+
+    if (res == 4) {
+        // match msg string and set cp to that to avoid duplicates on empty lines
+        const char* found = strstr(line, msg);
+        assert(found);
+        line = found;
+    }
+}
+
 void IssueDb::checkErrors(const char* buffer, unsigned size) {
 #ifdef DEBUG
     printf(ANSI_MAGENTA"stderr:\n%s"ANSI_NORMAL"\n", buffer);
 #endif
     const char* cp = buffer;
     const char* end = cp + size;
+    const char* line = cp;
+    bool haveColon = false;
     while (cp != end) {
-        // line syntax: '<filename>.c2:<linenr>:<offset>: error: <msg>\n'
-        //char* filename = 0;
-        char filename[128];
-        char msg[128];
-        int error_line = 0;
-        int col = 0;
-        memset(filename, 0, sizeof(filename));
-        memset(msg, 0, sizeof(msg));
-        int res = sscanf(cp, "%[^: ]:%d:%d: error: %[^\n]\n", filename, &error_line, &col, msg);
-        if (res == 4) {
-            // found error
-#ifdef DEBUG
-            printf(ANSI_CYAN"%s", filename);
-            printf("  %d:%d", error_line, col);
-            printf("  '%s'"ANSI_NORMAL"\n", msg);
-#endif
-            matchError(filename, error_line, msg);
+        // cut up into lines
+        if (*cp == ':') haveColon = true;
+        if (*cp == '\n') {
+            char data[512];
+            unsigned len = cp - line;
+            assert(len < sizeof(data));
+            memcpy(data, line, len);
+            data[len] = 0;
+            if (haveColon) checkDiagnosticLine(data);
+            cp++;
+            line = cp;
+            haveColon = false;
         } else {
-            res = sscanf(cp, "%[^: ]:%d:%d: warning: %[^\n]\n", filename, &error_line, &col, msg);
-            if (res == 4) {
-                // found warning
-#ifdef DEBUG
-                printf(ANSI_CYAN"%s", filename);
-                printf("  %d:%d", error_line, col);
-                printf("  '%s'"ANSI_NORMAL"\n", msg);
-#endif
-                matchWarning(filename, error_line, msg);
-            } else {
-                res = sscanf(cp, "%[^: ]:%d:%d: note: %[^\n]\n", filename, &error_line, &col, msg);
-                if (res == 4) {
-                    // found note
-#ifdef DEBUG
-                    printf(ANSI_CYAN"%s", filename);
-                    printf("  %d:%d", error_line, col);
-                    printf("  '%s'"ANSI_NORMAL"\n", msg);
-#endif
-                    matchNote(filename, error_line, msg);
-                }
-            }
+            cp++;
         }
-
-        if (res == 4) {
-            // match msg string and set cp to that to avoid duplicates on empty lines
-            const char* found = strstr(cp, msg);
-            assert(found);
-            cp = found;
-        }
-
-        while (*cp != '\n') {
-             cp++;
-             if (cp == end) return;
-        }
-        cp++;
     }
 }
 

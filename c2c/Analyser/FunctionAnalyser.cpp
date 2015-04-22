@@ -242,7 +242,7 @@ void FunctionAnalyser::analyseStmt(Stmt* S, bool haveScope) {
         analyseLabelStmt(S);
         break;
     case STMT_GOTO:
-        // TODO
+        assert(0 && "TODO");
         break;
     case STMT_COMPOUND:
         if (!haveScope) scope.EnterScope(Scope::DeclScope);
@@ -451,7 +451,10 @@ void FunctionAnalyser::analyseDeclStmt(Stmt* stmt) {
                     haveError = true;
                 }
             } else {
-                if (!decl->getInitValue()) {
+                if (AT->isIncremental()) {
+                    Diag(decl->getLocation(), diag::err_incremental_array_function_scope);
+                    haveError = true;
+                } else if (!decl->getInitValue()) {
                     Diag(decl->getLocation(), diag::err_typecheck_incomplete_array_needs_initializer);
                     haveError = true;
                 }
@@ -764,6 +767,7 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
         }
         if (constant) expr->setConstant();
     } else {
+        // TODO always give error like case 1?
         // only allow 1
         switch (values.size()) {
         case 0:
@@ -771,9 +775,12 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
             errors++;
             break;
         case 1:
-            // Q: allow initlist for single var?-> NO
-            //see clang: cannot initialize variable of type %0 with initializer list">
+        {
+            StringBuilder buf;
+            Q.DiagName(buf);
+            Diag(expr->getLocation(), diag::err_invalid_initlist_init) << buf << expr->getSourceRange();
             break;
+        }
         default:
             Diag(values[1]->getLocation(), diag::err_excess_initializers) << 2;
             errors++;
@@ -911,6 +918,11 @@ void FunctionAnalyser::analyseArrayType(VarDecl* V, QualType T) {
             ArrayType* AT = cast<ArrayType>(T.getTypePtr());
             analyseArraySizeExpr(AT);
             analyseArrayType(V, AT->getElementType());
+            // generate empty InitList for Incremental Array decls
+            if (AT->isIncremental() && V->getInitValue() == 0) {
+                ExprList vals;
+                V->setInitValue(new InitListExpr(SourceLocation(), SourceLocation(), vals));
+            }
             break;
         }
     case TC_UNRESOLVED:

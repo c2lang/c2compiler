@@ -1,0 +1,13 @@
+// @warnings{no-unused}
+module test;
+
+int32[+] a = {}
+
+a += c; // @error{use of undeclared identifier c}
+
+a += main;  // @error{invalid type conversion from 'int32 ()' to 'int32'}
+
+public func int32 main() {
+    return 0;
+}
+

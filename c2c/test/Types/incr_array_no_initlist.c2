@@ -1,0 +1,11 @@
+module test;
+
+int32[+] a;     // @warning{unused variable a}
+a += 10;
+a += 20;
+a += 30;
+
+public func int32 main() {
+    return 0;
+}
+

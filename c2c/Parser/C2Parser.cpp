@@ -1310,25 +1310,25 @@ C2::ExprResult C2Parser::ParseArray(ExprResult base) {
     // fast path for "[]"
     if (Tok.is(tok::r_square)) {
         ConsumeToken();
-        return Actions.ActOnArrayType(base.get(), 0);
+        return Actions.ActOnArrayType(base.get(), 0, false);
     }
     // fast path for "[10]"
     if (Tok.is(tok::numeric_constant) && NextToken().is(tok::r_square)) {
         ExprResult E = Actions.ActOnNumericConstant(Tok);
         ConsumeToken(); // consume number
         ConsumeToken(); // consume ']'
-        return Actions.ActOnArrayType(base.get(), E.get());
+        return Actions.ActOnArrayType(base.get(), E.get(), false);
     }
     // incremental arrays "[+]"
     if (Tok.is(tok::plus) && NextToken().is(tok::r_square)) {
         ConsumeToken(); // consume '+'
         ConsumeToken(); // consume ']'
-        return Actions.ActOnArrayType(base.get(), 0);
+        return Actions.ActOnArrayType(base.get(), 0, true);
     }
     ExprResult E = ParseConstantExpression();
     if (E.isInvalid()) return ExprError();
     ExpectAndConsume(tok::r_square);
-    return Actions.ActOnArrayType(base.get(), E.get());
+    return Actions.ActOnArrayType(base.get(), E.get(), false);
 }
 
 /// Syntax:

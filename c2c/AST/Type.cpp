@@ -492,6 +492,7 @@ void ArrayType::debugPrint(StringBuilder& buffer) const {
     if (hasSize) {
         buffer << (unsigned)Size.getZExtValue();
     } else {
+        if (incremental) buffer << '+';
         if (sizeExpr) {
             buffer.setColor(COL_ATTR);
             buffer << "(expr)";
@@ -509,6 +510,7 @@ void ArrayType::fullDebug(StringBuilder& buffer, int indent) const {
     buffer << " hasSize=" << hasSize;
     buffer << " size=" << (int)Size.getZExtValue();
     buffer << " ownSizeExpr=" << ownSizeExpr << '\n';
+    buffer << " isIncremental=" << incremental << '\n';
     buffer.indent(indent);
     buffer << "sizeExpr=";
     if (sizeExpr) {
@@ -726,8 +728,8 @@ QualType TypeContext::getPointerType(QualType ref) {
     return add(N);
 }
 
-QualType TypeContext::getArrayType(QualType element, Expr* size, bool ownSize) {
-    Type* N = new ArrayType(element, size, ownSize);
+QualType TypeContext::getArrayType(QualType element, Expr* size, bool ownSize, bool isIncremental) {
+    Type* N = new ArrayType(element, size, ownSize, isIncremental);
     if (element->hasCanonicalType()) N->setCanonicalType(N);
     return add(N);
 }

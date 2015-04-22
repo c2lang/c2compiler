@@ -97,7 +97,7 @@ protected:
 
     class DeclBitfields {
     public:
-        unsigned dKind : 8;
+        unsigned dKind : 4;
         unsigned DeclFileID : 10;   // 10 bits for now
         unsigned DeclIsExported: 1;
         unsigned DeclIsPublic : 1;
@@ -106,6 +106,7 @@ protected:
         unsigned DeclHasAttributes : 1;
         unsigned varDeclKind: 2;
         unsigned VarDeclHasLocalQualifier : 1;
+        unsigned arrayDeclOwnsExpr: 1;
         unsigned StructTypeIsStruct : 1;
         unsigned StructTypeIsGlobal : 1;
         unsigned FuncIsVariadic : 1;
@@ -153,21 +154,11 @@ public:
     bool isGlobal() const { return getVarKind() == VARDECL_GLOBAL; }
     VarDeclKind getVarKind() const { return static_cast<VarDeclKind>(DeclBits.varDeclKind); }
 
-#if 0
-    // TODO move to ArrayVarDecl subclass
-    typedef std::vector<ArrayValueDecl*> InitValues;
-    typedef InitValues::const_iterator InitValuesConstIter;
-    const InitValues& getIncrValues() const { return initValues; }
-    void addInitValue(ArrayValueDecl* value);
-#endif
-
     // for codegen
     llvm::Value* getIRValue() const { return IRValue; }
     void setIRValue(llvm::Value* v) const { IRValue = v; }
 private:
     Expr* initValue;
-    // TODO remove, since only for Incremental Arrays (subclass VarDecl -> GlobalVarDecl)
-    //InitValues initValues;
     mutable llvm::Value* IRValue;
 };
 
@@ -354,6 +345,11 @@ public:
     virtual void print(StringBuilder& buffer, unsigned indent) const;
 
     Expr* getExpr() const { return value; }
+    Expr* transferExpr() {
+        assert(DeclBits.arrayDeclOwnsExpr);
+        DeclBits.arrayDeclOwnsExpr = false;
+        return value;
+    }
 private:
     Expr* value;
 };

@@ -139,6 +139,16 @@ unsigned FileAnalyser::resolveVars() {
     return errors;
 }
 
+unsigned FileAnalyser::checkArrayValues() {
+    LOG_FUNC
+    if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
+    unsigned errors = 0;
+    for (unsigned i=0; i<ast.numArrayValues(); i++) {
+        errors += checkArrayValue(ast.getArrayValue(i));
+    }
+    return errors;
+}
+
 unsigned FileAnalyser::checkVarInits() {
     LOG_FUNC
     if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
@@ -161,9 +171,6 @@ unsigned FileAnalyser::checkVarInits() {
                 }
             }
         }
-    }
-    for (unsigned i=0; i<ast.numArrayValues(); i++) {
-        errors += checkArrayValue(ast.getArrayValue(i));
     }
     return errors;
 }
@@ -423,24 +430,32 @@ unsigned FileAnalyser::resolveFunctionDecl(FunctionDecl* D) {
 
 unsigned FileAnalyser::checkArrayValue(ArrayValueDecl* D) {
     LOG_FUNC
-#if 0
-    ScopeResult Result = globals->checkScopedSymbol(D->getName(), D->getLocation(), IDENTIFIER);
-    if (!Result.ok) return 1;
-    assert(Result.decl);
-    VarDecl* V = dyncast<VarDecl>(Result.decl);
-    if (!V) {
-        fprintf(stderr, "TODO Error: 'x' is not a variable\n");
+    // find decl
+    Decl* found = globals->findSymbolInModule(D->getName(), D->getLocation(), D->getModule());
+    if (!found) return 1;
+
+    VarDecl* VD = dyncast<VarDecl>(found);
+    if (!VD) {
+        Diags.Report(D->getLocation(), diag::err_not_incremental_array) << D->getName();
         return 1;
     }
 
-    QualType Q = V->getType();
-    if (!Q->isArrayType()) {
-        fprintf(stderr, "TODO Error: 'x' is not an array type\n");
+    QualType QT = VD->getType();
+    if (!QT.isArrayType()) {
+        Diags.Report(D->getLocation(), diag::err_not_incremental_array) << D->getName();
+        return 1;
+    }
+    const ArrayType* AT = cast<ArrayType>(QT.getCanonicalType());
+    if (!AT->isIncremental()) {
+        Diags.Report(D->getLocation(), diag::err_not_incremental_array) << D->getName();
         return 1;
     }
 
-    return checkInitValue(D->getExpr(), Q);
-#endif
+    Expr* I = VD->getInitValue();
+    assert(I);
+    InitListExpr* ILE = dyncast<InitListExpr>(I);
+    assert(ILE);
+    ILE->addExpr(D->transferExpr());
     return 0;
 }
 

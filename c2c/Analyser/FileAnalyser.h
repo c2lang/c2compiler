@@ -48,6 +48,7 @@ public:
     unsigned resolveTypeCanonicals();
     unsigned resolveStructMembers();
     unsigned resolveVars();
+    unsigned checkArrayValues();
     unsigned checkVarInits();
     unsigned resolveEnumConstants();
     unsigned checkFunctionProtos();

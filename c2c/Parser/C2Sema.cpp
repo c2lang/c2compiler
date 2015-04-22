@@ -536,13 +536,13 @@ C2::ExprResult C2Sema::ActOnFieldDesignatorExpr(SourceLocation loc, IdentifierIn
     return ExprResult(new DesignatedInitExpr(loc, field->getNameStart(), InitValue.get()));
 }
 
-C2::ExprResult C2Sema::ActOnArrayType(Expr* base, Expr* size) {
+C2::ExprResult C2Sema::ActOnArrayType(Expr* base, Expr* size, bool isIncremental) {
 #ifdef SEMA_DEBUGG
     std::cerr << COL_SEMA << "SEMA: Array Type" << ANSI_NORMAL"\n";
 #endif
     assert(base);
     TypeExpr* typeExpr = cast<TypeExpr>(base);
-    QualType QT = typeContext.getArrayType(typeExpr->getType(), size, true);
+    QualType QT = typeContext.getArrayType(typeExpr->getType(), size, true, isIncremental);
     typeExpr->setType(QT);
     return ExprResult(base);
 }

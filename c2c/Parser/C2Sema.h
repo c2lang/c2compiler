@@ -106,7 +106,7 @@ public:
     ExprResult ActOnInitList(SourceLocation left_, SourceLocation right_, ExprList& vals);
     ExprResult ActOnArrayDesignatorExpr(SourceLocation left, ExprResult Designator, ExprResult InitValue);
     ExprResult ActOnFieldDesignatorExpr(SourceLocation loc, IdentifierInfo* field, ExprResult InitValue);
-    ExprResult ActOnArrayType(Expr* base, Expr* size);
+    ExprResult ActOnArrayType(Expr* base, Expr* size, bool isIncremental);
     ExprResult ActOnPointerType(Expr* base);
     ExprResult ActOnUserType(IdentifierInfo* psym, SourceLocation ploc,
                              IdentifierInfo* tsym, SourceLocation tloc);

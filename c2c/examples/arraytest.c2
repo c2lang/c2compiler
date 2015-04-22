@@ -11,19 +11,28 @@ type TestFunc func int32 ();
 type Element struct {
     const char[16] name;
     int32 value;
+    TestFunc function;
 }
 
-/*
-const Element[+] elements;
-elements += { "test1", 10 }
-elements += { "test2", 20 }
-elements += { "test3", 30 }
-*/
 
-TEST(foo, 10) {
+func int32 generic() {
+    return 0;
+}
+
+const Element[+] elements;
+elements += { "test1", 10, generic }
+elements += { "test2", 20, generic }
+elements += { "test3", 30, generic }
+
+TEST(foo, 100) {
     IO.printf("here!\n");
     return 0;
 }
+TEST(bar, 200) {
+    IO.printf("here!\n");
+    return 0;
+}
+
 
 Element[] elems = {
     { "t1", 1 },

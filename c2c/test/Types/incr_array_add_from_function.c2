@@ -1,0 +1,13 @@
+// @skip
+// @warnings{no-unused}
+module test;
+
+int32[+] a;
+
+a += 10;
+
+public func int32 main() {
+    a += 20;    // @error{TODO}
+    return 0;
+}
+

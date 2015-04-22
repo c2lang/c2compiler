@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+int32[] a = { 1, { 2 }, 3 }     // @error{cannot initialize variable of type 'int32' with initializer list}
+
+int32 b = { 4 } // @error{cannot initialize variable of type 'int32' with initializer list}
+
+public func int32 main() {
+    return 0;
+}
+

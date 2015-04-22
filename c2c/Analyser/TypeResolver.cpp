@@ -118,7 +118,7 @@ QualType TypeResolver::resolveUnresolved(QualType Q) const {
             QualType Result = resolveUnresolved(t1);
             if (t1 == Result) return Q;
             // TODO qualifiers
-            return typeContext.getArrayType(Result, A->getSizeExpr(), false);
+            return typeContext.getArrayType(Result, A->getSizeExpr(), false, A->isIncremental());
 
         }
     case TC_UNRESOLVED:
@@ -193,7 +193,7 @@ QualType TypeResolver::checkCanonicals(Decls& decls, QualType Q, bool set) const
             if (t1 == t2) canon = Q;
             // NOTE: need size Expr, but set ownership to none
             else {
-                canon = typeContext.getArrayType(t2, A->getSizeExpr(), false);
+                canon = typeContext.getArrayType(t2, A->getSizeExpr(), false, A->isIncremental());
                 if (!canon->hasCanonicalType()) canon->setCanonicalType(canon);
             }
 
@@ -276,7 +276,7 @@ QualType TypeResolver::resolveCanonical(QualType Q) const {
                 return Q;
             } else  {
                 // NOTE: need size Expr, but set ownership to none
-                QualType Canon = typeContext.getArrayType(t2, A->getSizeExpr(), false);
+                QualType Canon = typeContext.getArrayType(t2, A->getSizeExpr(), false, A->isIncremental());
                 if (!Canon->hasCanonicalType()) Canon->setCanonicalType(Canon);
                 Q->setCanonicalType(Canon);
                 return Canon;

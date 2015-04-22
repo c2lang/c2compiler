@@ -1,0 +1,10 @@
+module test;
+
+public func int32 main() {
+    int32[+] a;     // @error{incremental arrays not allowed in function scope}
+    a += 10;
+    a += 20;
+
+    return 0;
+}
+

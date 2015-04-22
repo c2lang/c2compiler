@@ -332,10 +332,12 @@ ArrayValueDecl::ArrayValueDecl(const std::string& name_, SourceLocation loc_,
                                Expr* value_)
     : Decl(DECL_ARRAYVALUE, name_, loc_, QualType(), false, 0)
     , value(value_)
-{}
+{
+    DeclBits.arrayDeclOwnsExpr = true;
+}
 
 ArrayValueDecl::~ArrayValueDecl() {
-    delete value;
+    if (DeclBits.arrayDeclOwnsExpr) delete value;
 }
 
 void ArrayValueDecl::print(StringBuilder& buffer, unsigned indent) const {
