@@ -1,0 +1,14 @@
+module aa;
+
+public type AA struct {
+    int32 value;
+    const char* name;
+}
+
+list += { 100, "honderd" }
+public AA[+] list = {}
+
+list += { 10, "tien" }
+list += { 20, "twintig" }
+list += { 30, "dertig" }
+

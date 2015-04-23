@@ -1,0 +1,16 @@
+module test;
+
+import aa local;
+import stdio as io;
+
+public func int32 main() {
+
+    io.printf("size=%d\n", elemsof(list));
+    for (uint32 i=0; i<elemsof(list); i++) {
+        io.printf("\t%d %s\n", list[i].value, list[i].name);
+    }
+
+    return 0;
+}
+
+

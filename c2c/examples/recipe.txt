@@ -151,6 +151,14 @@ lib foobar shared
     mylib2.c2
 end
 
+target incremental
+    $deps show-files show-externals
+    $generate-c single-module
+    incr1.c2
+    incr2.c2
+    incr_main.c2
+end
+
 target puzzle
     $deps show-files show-externals
     $generate-c single-module
