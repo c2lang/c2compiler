@@ -23,6 +23,7 @@
 #include "Analyser/Scope.h"
 #include "Analyser/TypeResolver.h"
 #include "Analyser/AnalyserConstants.h"
+#include "Analyser/AnalyserUtils.h"
 #include "AST/Module.h"
 #include "AST/Decl.h"
 #include "AST/Expr.h"
@@ -87,7 +88,8 @@ unsigned TypeResolver::checkUnresolvedType(const UnresolvedType* type, bool used
     if (used_public &&!external && !TD->isPublic()) {
         StringBuilder name;
         type->printLiteral(name);
-        Diags.Report(tLoc, diag::err_non_public_type) << name;
+        Diags.Report(tLoc, diag::err_non_public_type) << AnalyserUtils::fullName(TD->getModule()->getName(), TD->getName());
+        //Diags.Report(tLoc, diag::err_non_public_type) << name;
         return 1;
     }
     D->setUsed();

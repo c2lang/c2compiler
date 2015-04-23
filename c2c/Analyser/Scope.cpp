@@ -170,7 +170,7 @@ Decl* Scope::findSymbol(const std::string& symbol, clang::SourceLocation loc, bo
         }
 
         if (!visible_match) {
-            Diags.Report(loc, diag::err_not_public) << symbol;
+            Diags.Report(loc, diag::err_not_public) << AnalyserUtils::fullName(D->getModule()->getName(), D->getName());
             return 0;
         }
         if (isExternal(D->getModule())) D->setUsedPublic();

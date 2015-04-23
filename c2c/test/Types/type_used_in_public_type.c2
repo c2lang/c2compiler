@@ -2,5 +2,5 @@ module test;
 
 type Number int32;
 
-public type Count Number;   // @error{public declaration using non-public type Number}
+public type Count Number;   // @error{public declaration using non-public type test.Number}
 

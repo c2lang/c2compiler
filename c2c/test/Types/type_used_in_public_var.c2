@@ -4,7 +4,7 @@ module test;
 
 type Number int32;
 
-public Number n;       // @error{public declaration using non-public type Number}
+public Number n;       // @error{public declaration using non-public type test.Number}
 
-public Number* np;     // @error{public declaration using non-public type Number}
+public Number* np;     // @error{public declaration using non-public type test.Number}
 
