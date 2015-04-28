@@ -66,6 +66,7 @@ void DepVisitor::checkDecl(const Decl* D) {
         assert(0 && "TODO");
         break;
     case DECL_IMPORT:
+    case DECL_LABEL:
         break;
     }
 }

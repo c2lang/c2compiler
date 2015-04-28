@@ -2023,7 +2023,6 @@ C2::StmtResult C2Parser::ParseLabeledStatement() {
     SubStmt = Actions.ActOnNullStmt(ColonLoc);
 */
 
-    //LabelDecl *LD = Actions.LookupOrCreateLabel(id, LabelLoc);
     return Actions.ActOnLabelStmt(id->getNameStart(), LabelLoc, SubStmt.get());
 }
 

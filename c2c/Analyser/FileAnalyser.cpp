@@ -107,6 +107,7 @@ unsigned FileAnalyser::resolveTypeCanonicals() {
             }
         case DECL_ARRAYVALUE:
         case DECL_IMPORT:
+        case DECL_LABEL:
             assert(0);
             break;
         }
@@ -367,6 +368,7 @@ unsigned FileAnalyser::checkTypeDecl(TypeDecl* D) {
     }
     case DECL_ARRAYVALUE:
     case DECL_IMPORT:
+    case DECL_LABEL:
         assert(0);
         break;
     }

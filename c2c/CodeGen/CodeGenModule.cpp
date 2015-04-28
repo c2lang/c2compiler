@@ -546,6 +546,7 @@ llvm::Constant* CodeGenModule::EmitConstantDecl(const Decl* D) {
     case DECL_FUNCTIONTYPE:
     case DECL_ARRAYVALUE:
     case DECL_IMPORT:
+    case DECL_LABEL:
         assert(0);
         break;
     }

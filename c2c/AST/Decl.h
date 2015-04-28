@@ -40,6 +40,7 @@ class Stmt;
 class Expr;
 class ArrayValueDecl;
 class CompoundStmt;
+class LabelStmt;
 class Module;
 
 enum DeclKind {
@@ -51,7 +52,8 @@ enum DeclKind {
     DECL_ENUMTYPE,
     DECL_FUNCTIONTYPE,
     DECL_ARRAYVALUE,
-    DECL_IMPORT
+    DECL_IMPORT,
+    DECL_LABEL
 };
 
 class Decl {
@@ -369,6 +371,22 @@ private:
     std::string modName;
     SourceLocation aliasLoc;
 };
+
+
+class LabelDecl : public Decl {
+public:
+    LabelDecl(const std::string& name_, SourceLocation loc_, LabelStmt* S);
+    static bool classof(const Decl* D) {
+        return D->getKind() == DECL_LABEL;
+    }
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
+
+    LabelStmt* getStmt() const { return TheStmt; }
+    void setStmt(LabelStmt* S) { TheStmt = S; }
+private:
+    LabelStmt* TheStmt;
+};
+
 
 template <class T> static inline bool isa(const Decl* D) {
     return T::classof(D);

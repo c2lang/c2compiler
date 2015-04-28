@@ -82,6 +82,7 @@ static void SetConstantFlags(Decl* D, Expr* expr) {
         break;
     case DECL_ARRAYVALUE:
     case DECL_IMPORT:
+    case DECL_LABEL:
         break;
     }
     // TODO needed?
@@ -569,6 +570,9 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
             case DECL_IMPORT:
                 expr->setConstant();
                 break;
+            case DECL_LABEL:
+                assert(0 && "TODO");
+                break;
             }
             if (side & RHS) D->setUsed();
             QualType T = D->getType();
@@ -861,6 +865,9 @@ void FunctionAnalyser::analyseSizeofExpr(Expr* expr) {
         case DECL_IMPORT:
             Diag(id->getLocation(), diag::err_is_a_module) << id->getName();
             return;
+        case DECL_LABEL:
+            assert(0 && "TODO");
+            break;
         }
         break;
     }
@@ -1297,6 +1304,7 @@ QualType FunctionAnalyser::analyseBuiltinExpr(Expr* expr) {
             break;
         case DECL_ARRAYVALUE:
         case DECL_IMPORT:
+        case DECL_LABEL:
             assert(0);
             break;
         }
@@ -1659,6 +1667,7 @@ void FunctionAnalyser::checkDeclAssignment(Decl* decl, Expr* expr) {
         fprintf(stderr, "TODO cannot assign to non-variable\n");
         break;
     case DECL_IMPORT:
+    case DECL_LABEL:
         assert(0);
         break;
     }

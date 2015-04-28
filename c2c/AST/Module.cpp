@@ -79,6 +79,7 @@ void Module::dump() const {
             break;
         case DECL_ARRAYVALUE:
         case DECL_IMPORT:
+        case DECL_LABEL:
             // never symbol
             break;
         }

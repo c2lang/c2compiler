@@ -348,6 +348,7 @@ void ArrayValueDecl::print(StringBuilder& buffer, unsigned indent) const {
     value->print(buffer, INDENT);
 }
 
+
 ImportDecl::ImportDecl(const std::string& name_, SourceLocation loc_, bool isLocal_,
                  const std::string& modName_, SourceLocation aliasLoc_)
     : Decl(DECL_IMPORT, name_, loc_, QualType(), false)
@@ -365,5 +366,19 @@ void ImportDecl::print(StringBuilder& buffer, unsigned indent) const {
     if (aliasLoc.isValid()) buffer << " as " << name;
     if (isLocal()) buffer << " local";
     buffer << '\n';
+}
+
+
+LabelDecl::LabelDecl(const std::string& name_, SourceLocation loc_, LabelStmt* S)
+    : Decl(DECL_LABEL, name_, loc_, QualType(), false)
+    , TheStmt(S)
+{}
+
+void LabelDecl::print(StringBuilder& buffer, unsigned indent) const {
+    buffer.setColor(COL_DECL);
+    buffer << "LabelDecl ";
+    buffer.setColor(COL_VALUE);
+    buffer << name << '\n';
+    if (TheStmt) TheStmt->print(buffer, indent+INDENT);
 }
 

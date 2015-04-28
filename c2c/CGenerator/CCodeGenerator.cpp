@@ -306,6 +306,7 @@ void CCodeGenerator::EmitExpr(const Expr* E, StringBuilder& output) {
                 case DECL_FUNCTIONTYPE:
                 case DECL_ARRAYVALUE:
                 case DECL_IMPORT:
+                case DECL_LABEL:
                     assert(0);
                     break;
                 }
@@ -659,6 +660,7 @@ void CCodeGenerator::EmitTypeDecl(const TypeDecl* T) {
         return;
     case DECL_ARRAYVALUE:
     case DECL_IMPORT:
+    case DECL_LABEL:
         assert(0);
         break;
     }
