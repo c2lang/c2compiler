@@ -242,7 +242,7 @@ void FunctionAnalyser::analyseStmt(Stmt* S, bool haveScope) {
         analyseLabelStmt(S);
         break;
     case STMT_GOTO:
-        assert(0 && "TODO");
+        //assert(0 && "TODO");
         break;
     case STMT_COMPOUND:
         if (!haveScope) scope.EnterScope(Scope::DeclScope);
