@@ -227,7 +227,7 @@ unsigned FileAnalyser::checkFunctionProtos() {
                 errors++;
             }
             if (F->getReturnType() != Type::Int32()) {
-                Diags.Report(F->getLocation(), diag::err_main_returns_nonint);
+                Diags.Report(F->getLocation(), diag::err_main_returns_nonint32);
                 errors++;
             }
             //if (!F->getReturnType().isBuiltinType() || cast<BuiltinType>(F->getReturnType()).getKind() == BuiltinType::Int32) {
