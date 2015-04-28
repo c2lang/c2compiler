@@ -34,6 +34,7 @@ class Decl;
 class VarDecl;
 class FunctionDecl;
 class EnumConstantDecl;
+class LabelDecl;
 class Stmt;
 class SwitchStmt;
 class Expr;
@@ -65,6 +66,7 @@ private:
     void analyseBreakStmt(Stmt* S);
     void analyseContinueStmt(Stmt* S);
     void analyseLabelStmt(Stmt* S);
+    void analyseGotoStmt(Stmt* S);
     void analyseCaseStmt(Stmt* stmt);
     void analyseDefaultStmt(Stmt* stmt);
     void analyseReturnStmt(Stmt* stmt);
@@ -112,6 +114,8 @@ private:
     private:
         FunctionAnalyser& analyser;
     };
+
+    LabelDecl* LookupOrCreateLabel(const std::string& name, clang::SourceLocation loc);
 
     bool checkAssignee(Expr* expr) const;
     void checkAssignment(Expr* assignee, QualType TLeft);

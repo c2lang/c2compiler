@@ -243,7 +243,7 @@ void FunctionAnalyser::analyseStmt(Stmt* S, bool haveScope) {
         analyseLabelStmt(S);
         break;
     case STMT_GOTO:
-        //assert(0 && "TODO");
+        analyseGotoStmt(S);
         break;
     case STMT_COMPOUND:
         if (!haveScope) scope.EnterScope(Scope::DeclScope);
@@ -387,6 +387,22 @@ void FunctionAnalyser::analyseLabelStmt(Stmt* S) {
     if (isa<DeclStmt>(L->getSubStmt())) {
         Diag(L->getSubStmt()->getLocation(), diag::err_decl_after_label);
     }
+
+    LabelDecl* LD = LookupOrCreateLabel(L->getName(), L->getLocation());
+    if (LD->getStmt()) {
+        Diag(L->getLocation(), diag::err_redefinition_of_label);
+        Diag(LD->getLocation(), diag::note_previous_definition);
+    } else {
+        LD->setStmt(L);
+        LD->setLocation(L->getLocation());
+    }
+}
+
+void FunctionAnalyser::analyseGotoStmt(Stmt* S) {
+    LOG_FUNC
+    GotoStmt* G = cast<GotoStmt>(S);
+    (void)G;
+    // TODO
 }
 
 void FunctionAnalyser::analyseCaseStmt(Stmt* stmt) {
@@ -1593,6 +1609,20 @@ Decl* FunctionAnalyser::analyseIdentifier(IdentifierExpr* id) {
         SetConstantFlags(D, id);
     }
     return D;
+}
+
+LabelDecl* FunctionAnalyser::LookupOrCreateLabel(const std::string& name, SourceLocation loc) {
+    LOG_FUNC
+    LabelDecl* LD = 0;
+    // HMM use this one
+    Decl* D = scope.findSymbol(name, loc, false);
+    // TODO cast
+    if (!LD) {
+        LD = new LabelDecl(name, loc);
+        // add to functionScope
+        scope.addFunctionScopedSymbol(LD);
+    }
+    return LD;
 }
 
 bool FunctionAnalyser::checkAssignee(Expr* expr) const {

@@ -85,6 +85,14 @@ void Scope::addScopedSymbol(VarDecl* V) {
     symbolCache[V->getName()] = V;
 }
 
+void Scope::addFunctionScopedSymbol(Decl* D) {
+    assert(scopeIndex != 0);
+    // mainly used for LabelDecls
+    DynamicScope* DS = &scopes[0];  // index 0 is always FunctionScope
+    DS->decls.push_back(D);
+    symbolCache[D->getName()] = D;
+}
+
 const Module* Scope::findUsedModule(const std::string& name, clang::SourceLocation loc) const {
     ImportsConstIter iter = importedModules.find(name);
     if (iter != importedModules.end()) {
@@ -259,11 +267,23 @@ void Scope::EnterScope(unsigned flags) {
 
 void Scope::ExitScope() {
     for (unsigned i=0; i<curScope->decls.size(); i++) {
-        VarDecl* D = curScope->decls[i];
-        if (!D->isUsed()) {
-            unsigned msg = diag::warn_unused_variable;
-            if (D->isParameter()) msg = diag::warn_unused_parameter;
-            Diags.Report(D->getLocation(), msg) << D->getName();
+        Decl* D = curScope->decls[i];
+        D->dump();
+        if (LabelDecl* LD = dyncast<LabelDecl>(D)) {
+            if (LD->getStmt()) {    // have label part
+                if (!D->isUsed()) {
+                    Diags.Report(D->getLocation(), diag::warn_unused_label) << D->getName();
+                }
+            } else {    // only have goto part
+                Diags.Report(D->getLocation(), diag:: err_undeclared_label_use);
+            }
+        }
+        if (VarDecl* VD = dyncast<VarDecl>(D)) {
+            if (!D->isUsed()) {
+                unsigned msg = diag::warn_unused_variable;
+                if (VD->isParameter()) msg = diag::warn_unused_parameter;
+                Diags.Report(D->getLocation(), msg) << D->getName();
+            }
         }
         // remove from symbol cache
         CacheIter iter = symbolCache.find(D->getName());

@@ -369,9 +369,9 @@ void ImportDecl::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 
-LabelDecl::LabelDecl(const std::string& name_, SourceLocation loc_, LabelStmt* S)
+LabelDecl::LabelDecl(const std::string& name_, SourceLocation loc_)
     : Decl(DECL_LABEL, name_, loc_, QualType(), false)
-    , TheStmt(S)
+    , TheStmt(0)
 {}
 
 void LabelDecl::print(StringBuilder& buffer, unsigned indent) const {

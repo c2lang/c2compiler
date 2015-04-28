@@ -375,7 +375,7 @@ private:
 
 class LabelDecl : public Decl {
 public:
-    LabelDecl(const std::string& name_, SourceLocation loc_, LabelStmt* S);
+    LabelDecl(const std::string& name_, SourceLocation loc_);
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_LABEL;
     }
@@ -383,8 +383,9 @@ public:
 
     LabelStmt* getStmt() const { return TheStmt; }
     void setStmt(LabelStmt* S) { TheStmt = S; }
+    void setLocation(SourceLocation loc_) { loc = loc_; }
 private:
-    LabelStmt* TheStmt;
+    LabelStmt* TheStmt; // no ownership
 };
 
 

@@ -42,7 +42,7 @@ struct DynamicScope {
     unsigned Flags;
 
     // local decls (in scope), no ownership
-    typedef std::vector<VarDecl*> Decls;
+    typedef std::vector<Decl*> Decls;
     typedef Decls::const_iterator DeclsConstIter;
     Decls decls;
 };
@@ -88,6 +88,7 @@ public:
     bool addImportDecl(ImportDecl* importDecl);
     bool checkScopedSymbol(const VarDecl* V) const;
     void addScopedSymbol(VarDecl* V);
+    void addFunctionScopedSymbol(Decl* D);
 
     // searching
     const Module* findUsedModule(const std::string& name, clang::SourceLocation loc) const;
