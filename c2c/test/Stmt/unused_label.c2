@@ -1,0 +1,7 @@
+module test;
+
+public func int32 main() {
+begin:          // @warning{unused label 'begin'}
+    return 0;
+}
+

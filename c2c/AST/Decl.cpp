@@ -57,6 +57,12 @@ Decl::~Decl() {
 #endif
 }
 
+string Decl::DiagName() const {
+    StringBuilder tmp(128);
+    tmp << "'" << name << "'";
+    return (const char*)tmp;
+}
+
 void Decl::printAttributes(StringBuilder& buffer, unsigned indent) const {
     if (isExported()) {
         buffer.indent(indent);

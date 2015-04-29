@@ -66,6 +66,7 @@ public:
     void printAttributes(StringBuilder& buffer, unsigned indent) const;
 
     const std::string& getName() const { return name; }
+    std::string DiagName() const;
     SourceLocation getLocation() const { return loc; }
 
     DeclKind getKind() const { return static_cast<DeclKind>(DeclBits.dKind); }

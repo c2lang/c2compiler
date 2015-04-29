@@ -381,28 +381,29 @@ void FunctionAnalyser::analyseContinueStmt(Stmt* stmt) {
 void FunctionAnalyser::analyseLabelStmt(Stmt* S) {
     LOG_FUNC
     LabelStmt* L = cast<LabelStmt>(S);
+
+    LabelDecl* LD = LookupOrCreateLabel(L->getName(), L->getLocation());
+    if (LD->getStmt()) {
+        Diag(L->getLocation(), diag::err_redefinition_of_label) <<  LD->DiagName();
+        Diag(LD->getLocation(), diag::note_previous_definition);
+    } else {
+        LD->setStmt(L);
+        LD->setLocation(L->getLocation());
+    }
+
     analyseStmt(L->getSubStmt());
     // substmt cannot be declaration
 
     if (isa<DeclStmt>(L->getSubStmt())) {
         Diag(L->getSubStmt()->getLocation(), diag::err_decl_after_label);
     }
-
-    LabelDecl* LD = LookupOrCreateLabel(L->getName(), L->getLocation());
-    if (LD->getStmt()) {
-        Diag(L->getLocation(), diag::err_redefinition_of_label);
-        Diag(LD->getLocation(), diag::note_previous_definition);
-    } else {
-        LD->setStmt(L);
-        LD->setLocation(L->getLocation());
-    }
 }
 
 void FunctionAnalyser::analyseGotoStmt(Stmt* S) {
     LOG_FUNC
     GotoStmt* G = cast<GotoStmt>(S);
-    (void)G;
-    // TODO
+    LabelDecl* LD = LookupOrCreateLabel(G->getName(), G->getLocation());
+    LD->setUsed();
 }
 
 void FunctionAnalyser::analyseCaseStmt(Stmt* stmt) {
@@ -1614,10 +1615,13 @@ Decl* FunctionAnalyser::analyseIdentifier(IdentifierExpr* id) {
 LabelDecl* FunctionAnalyser::LookupOrCreateLabel(const std::string& name, SourceLocation loc) {
     LOG_FUNC
     LabelDecl* LD = 0;
-    // HMM use this one
-    Decl* D = scope.findSymbol(name, loc, false);
-    // TODO cast
-    if (!LD) {
+    Decl* D = scope.lookupCachedSymbol(name);
+    if (D) {
+        LD = dyncast<LabelDecl>(D);
+        if (!LD) {
+            fprintf(stderr, "TODO NOT A LABEL\n");
+        }
+    } else {
         LD = new LabelDecl(name, loc);
         // add to functionScope
         scope.addFunctionScopedSymbol(LD);

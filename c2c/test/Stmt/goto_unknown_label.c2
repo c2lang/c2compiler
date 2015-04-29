@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+module test;
+
+public func int32 main() {
+    goto begin;     // @error{use of undeclared label 'begin'}
+    return 0;
+}
+

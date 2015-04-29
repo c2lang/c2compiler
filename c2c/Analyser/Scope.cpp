@@ -223,6 +223,14 @@ Decl* Scope::findSymbolInModule(const std::string& name, clang::SourceLocation l
     return D;
 }
 
+Decl* Scope::lookupCachedSymbol(const std::string& name) const {
+    CacheConstIter iter = symbolCache.find(name);
+    if (iter != symbolCache.end()) {
+        return iter->second;
+    }
+    return 0;
+}
+
 #if 0
 // TODO rename to makeSuggestion() and use in findSymbol
 Decl* Scope::findSymbolInUsed(const std::string& symbol) const {
@@ -268,21 +276,20 @@ void Scope::EnterScope(unsigned flags) {
 void Scope::ExitScope() {
     for (unsigned i=0; i<curScope->decls.size(); i++) {
         Decl* D = curScope->decls[i];
-        D->dump();
         if (LabelDecl* LD = dyncast<LabelDecl>(D)) {
             if (LD->getStmt()) {    // have label part
                 if (!D->isUsed()) {
-                    Diags.Report(D->getLocation(), diag::warn_unused_label) << D->getName();
+                    Diags.Report(D->getLocation(), diag::warn_unused_label) << D->DiagName();
                 }
             } else {    // only have goto part
-                Diags.Report(D->getLocation(), diag:: err_undeclared_label_use);
+                Diags.Report(D->getLocation(), diag:: err_undeclared_label_use) << D->DiagName();
             }
         }
         if (VarDecl* VD = dyncast<VarDecl>(D)) {
             if (!D->isUsed()) {
                 unsigned msg = diag::warn_unused_variable;
                 if (VD->isParameter()) msg = diag::warn_unused_parameter;
-                Diags.Report(D->getLocation(), msg) << D->getName();
+                Diags.Report(D->getLocation(), msg) << D->DiagName();
             }
         }
         // remove from symbol cache

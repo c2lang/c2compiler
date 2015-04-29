@@ -2,9 +2,9 @@
 module test;
 
 func void test1() {
-    int32 a;      // @warning{unused variable a}
+    int32 a;      // @warning{unused variable 'a'}
     {
-        int32 b;  // @warning{unused variable b}
+        int32 b;  // @warning{unused variable 'b'}
     }
 }
 

@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+module test;
+
+public func int32 main() {
+begin:  // @note{previous definition is here}
+begin:  // @error{redefinition of label 'begin'}
+    return 0;
+}
+
