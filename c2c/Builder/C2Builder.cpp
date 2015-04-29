@@ -327,6 +327,10 @@ int C2Builder::build() {
             Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "unused-public", diag::Severity::Ignored);
             continue;
         }
+        if (conf == "no-unused-label") {
+            Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "unused-label", diag::Severity::Ignored);
+            continue;
+        }
         fprintf(stderr, "recipe: unknown warning: '%s'\n", conf.c_str());
         exit(-1);
     }

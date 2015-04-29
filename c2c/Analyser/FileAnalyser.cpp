@@ -268,10 +268,10 @@ void FileAnalyser::checkDeclsForUsed() {
         if (V->isExported()) continue;
 
         if (!V->isUsed()) {
-            Diags.Report(V->getLocation(), diag::warn_unused_variable) << V->getName();
+            Diags.Report(V->getLocation(), diag::warn_unused_variable) << V->DiagName();
         } else {
             if (V->isPublic() && !V->isUsedPublic()) {
-                Diags.Report(V->getLocation(), diag::warn_unused_public) << 2 << V->getName();
+                Diags.Report(V->getLocation(), diag::warn_unused_public) << 2 << V->DiagName();
             }
         }
     }
@@ -283,10 +283,10 @@ void FileAnalyser::checkDeclsForUsed() {
         if (F->isExported()) continue;
 
         if (!F->isUsed()) {
-            Diags.Report(F->getLocation(), diag::warn_unused_function) << F->getName();
+            Diags.Report(F->getLocation(), diag::warn_unused_function) << F->DiagName();
         } else {
             if (F->isPublic() && !F->isUsedPublic()) {
-                Diags.Report(F->getLocation(), diag::warn_unused_public) << 1 << F->getName();
+                Diags.Report(F->getLocation(), diag::warn_unused_public) << 1 << F->DiagName();
             }
         }
     }
@@ -308,10 +308,10 @@ void FileAnalyser::checkDeclsForUsed() {
         }
 
         if (!T->isUsed()) {
-            Diags.Report(T->getLocation(), diag::warn_unused_type) << T->getName();
+            Diags.Report(T->getLocation(), diag::warn_unused_type) << T->DiagName();
         } else {
             if (T->isPublic() && !T->isUsedPublic()) {
-                Diags.Report(T->getLocation(), diag::warn_unused_public) << 0 << T->getName();
+                Diags.Report(T->getLocation(), diag::warn_unused_public) << 0 << T->DiagName();
             }
             // check if members are used
             if (isa<StructTypeDecl>(T)) {
@@ -319,7 +319,7 @@ void FileAnalyser::checkDeclsForUsed() {
                 for (unsigned j=0; j<S->numMembers(); j++) {
                     Decl* M = S->getMember(j);
                     if (!M->isUsed()) {
-                        Diags.Report(M->getLocation(), diag::warn_unused_struct_member) << M->getName();
+                        Diags.Report(M->getLocation(), diag::warn_unused_struct_member) << M->DiagName();
                     }
                 }
             }
