@@ -15,7 +15,6 @@
 
 #include <time.h>
 #include <sys/time.h>
-#include <stdio.h>
 
 #include "Utils/Utils.h"
 

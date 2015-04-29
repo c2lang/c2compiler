@@ -17,17 +17,12 @@
 #define AST_STMT_H
 
 #include <string>
-#include <vector>
 
 #include <clang/Basic/SourceLocation.h>
 
 #include "AST/OwningVector.h"
 
 using clang::SourceLocation;
-
-namespace llvm {
-class Value;
-}
 
 namespace C2 {
 

@@ -12,13 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <stdio.h>
 
 #include "AST/Expr.h"
 #include "AST/Type.h"
 #include "AST/Decl.h"
 #include "Utils/StringBuilder.h"
-#include "Utils/Utils.h"
 #include "Utils/color.h"
 #include "Utils/UtilsConstants.h"
 

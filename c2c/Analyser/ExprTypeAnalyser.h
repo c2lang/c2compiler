@@ -18,8 +18,6 @@
 
 #include <clang/Basic/SourceLocation.h>
 
-#include "AST/Type.h"
-
 namespace clang {
 class DiagnosticsEngine;
 }
@@ -28,8 +26,7 @@ namespace C2 {
 
 class Expr;
 class BinaryOperator;
-class UnaryOperator;
-class ConditionalOperator;
+class QualType;
 
 /*
  *  ExprTypeAnalyser checks each sub-expression that is CTC_FULL or
@@ -44,7 +41,7 @@ public:
 
     void check(QualType Tleft, const Expr* expr);
 private:
-    void error(SourceLocation loc, QualType left, QualType right) const;
+    void error(clang::SourceLocation loc, QualType left, QualType right) const;
     void checkBinOp(QualType TLeft, const BinaryOperator* binop);
 
     bool checkCompatible(QualType left, const Expr* expr) const;

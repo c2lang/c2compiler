@@ -17,6 +17,7 @@
 #define FILEUTILS_FILEMAP_H
 
 #include <string>
+#include <time.h>
 
 namespace C2 {
 

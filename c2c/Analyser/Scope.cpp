@@ -22,7 +22,6 @@
 #include "Analyser/Scope.h"
 #include "Analyser/AnalyserUtils.h"
 #include "AST/Decl.h"
-#include "AST/Expr.h"
 
 using namespace C2;
 using namespace clang;

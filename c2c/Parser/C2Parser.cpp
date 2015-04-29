@@ -14,25 +14,22 @@
  */
 
 #include <stdio.h>
-#include <string.h>
 
 #include <clang/Parse/ParseDiagnostic.h>
 #include <clang/Sema/SemaDiagnostic.h>
 #include <clang/Basic/SourceLocation.h>
 
+
 #include "Parser/C2Parser.h"
 #include "Parser/C2Sema.h"
 #include "AST/Decl.h"
-#include "AST/Stmt.h"
 #include "AST/Expr.h"
-#include "AST/Attr.h"
-#include "Utils/StringBuilder.h"
-#include "Utils/color.h"
 
 using namespace C2;
 using namespace clang;
 
 #ifdef PARSER_DEBUG
+#include "Utils/color.h"
 #define LOG_FUNC std::cerr << ANSI_YELLOW << __func__ << "()" << ANSI_NORMAL << "\n";
 #else
 #define LOG_FUNC

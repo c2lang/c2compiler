@@ -20,6 +20,7 @@
 #include <clang/Parse/ParseDiagnostic.h>
 #include <clang/Sema/SemaDiagnostic.h>
 
+#include "AST/Type.h"
 #include "Analyser/LiteralAnalyser.h"
 #include "AST/Expr.h"
 #include "AST/Decl.h"

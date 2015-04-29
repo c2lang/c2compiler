@@ -14,6 +14,7 @@
  */
 
 #include <stdio.h>
+#include <assert.h>
 
 #include "AST/Module.h"
 #include "AST/Decl.h"

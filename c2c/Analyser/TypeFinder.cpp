@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <assert.h>
 #include "Analyser/TypeFinder.h"
 #include "AST/Expr.h"
 

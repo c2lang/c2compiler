@@ -32,7 +32,6 @@ namespace C2 {
 
 class StringBuilder;
 class Decl;
-class VarDecl;
 
 enum ExprKind {
     EXPR_INTEGER_LITERAL=0,

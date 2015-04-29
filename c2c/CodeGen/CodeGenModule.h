@@ -29,7 +29,6 @@ class Module;
 class LLVMContext;
 class Type;
 class Function;
-class BasicBlock;
 }
 
 namespace C2 {
@@ -37,7 +36,6 @@ namespace C2 {
 class AST;
 class Decl;
 class VarDecl;
-class Expr;
 class Type;
 class Module;
 class StringLiteral;

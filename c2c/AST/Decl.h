@@ -17,7 +17,6 @@
 #define AST_DECL_H
 
 #include <string>
-#include <vector>
 #include <assert.h>
 
 #include <llvm/ADT/APSInt.h>
@@ -36,9 +35,7 @@ class Value;
 
 namespace C2 {
 class StringBuilder;
-class Stmt;
 class Expr;
-class ArrayValueDecl;
 class CompoundStmt;
 class LabelStmt;
 class Module;

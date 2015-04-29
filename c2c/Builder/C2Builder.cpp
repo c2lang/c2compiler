@@ -15,9 +15,10 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <assert.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <stdarg.h>
 #include <errno.h>
 
@@ -53,7 +54,6 @@
 #include "AST/AST.h"
 #include "AST/Module.h"
 #include "AST/Decl.h"
-#include "AST/Attr.h"
 
 #include "Parser/C2Parser.h"
 #include "Parser/C2Sema.h"
@@ -63,6 +63,7 @@
 #include "CGenerator/CGenerator.h"
 #include "Utils/color.h"
 #include "Utils/Utils.h"
+#include "Utils/GenUtils.h"
 
 using clang::DiagnosticOptions;
 using clang::DiagnosticsEngine;

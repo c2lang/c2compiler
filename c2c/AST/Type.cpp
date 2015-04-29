@@ -18,11 +18,8 @@
 #include "AST/Type.h"
 #include "AST/Expr.h"
 #include "AST/Decl.h"
-#include "AST/Module.h"
 #include "Utils/StringBuilder.h"
-#include "Utils/Utils.h"
 #include "Utils/color.h"
-#include "Utils/UtilsConstants.h"
 
 using namespace C2;
 

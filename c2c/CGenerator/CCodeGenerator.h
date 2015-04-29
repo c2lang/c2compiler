@@ -21,23 +21,20 @@
 
 #include "CGenerator/TypeSorter.h"
 #include "AST/Module.h"
-#include "AST/Type.h"
 #include "Utils/StringBuilder.h"
 
 namespace C2 {
 
 class AST;
-class Type;
 class Decl;
 class VarDecl;
-class ImportDecl;
 class TypeDecl;
 class FunctionDecl;
 class StructTypeDecl;
 class FunctionTypeDecl;
-class FunctionDecl;
+class EnumTypeDecl;
+class QualType;
 class Expr;
-class DeclExpr;
 class Stmt;
 class CompoundStmt;
 

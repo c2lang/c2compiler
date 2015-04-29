@@ -15,6 +15,8 @@
 
 #include <vector>
 #include <set>
+#include <assert.h>
+#include <inttypes.h>
 
 #include <llvm/ADT/SmallString.h>
 #include <llvm/Support/FileSystem.h>
@@ -24,17 +26,20 @@
 #include "CGenerator/CCodeGenerator.h"
 #include "AST/Module.h"
 #include "AST/AST.h"
+#include "AST/Attr.h"
+#include "AST/Stmt.h"
+#include "AST/Type.h"
 #include "AST/Decl.h"
 #include "AST/Expr.h"
 #include "FileUtils/FileUtils.h"
 #include "Utils/StringBuilder.h"
-#include "Utils/color.h"
 #include "Utils/UtilsConstants.h"
 #include "Utils/GenUtils.h"
 #include "Utils/Utils.h"
 
 //#define CCODE_DEBUG
 #ifdef CCODE_DEBUG
+#include "Utils/color.h"
 #include <iostream>
 #define LOG_FUNC std::cerr << ANSI_BLUE << __func__ << "()" << ANSI_NORMAL << "\n";
 #define LOG_DECL(_d) std::cerr << ANSI_BLUE << __func__ << "() " << ANSI_YELLOW  << _d->getName()<< ANSI_NORMAL << "\n";

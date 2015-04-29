@@ -16,7 +16,6 @@
 #ifndef AST_ATTR_H
 #define AST_ATTR_H
 
-#include <string>
 #include <vector>
 #include <map>
 

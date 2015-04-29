@@ -19,6 +19,7 @@
 #include <assert.h>
 #include <clang/Lex/Preprocessor.h>
 #include <clang/Sema/Ownership.h>
+#include "Parser/ParserTypes.h"
 
 //#define PARSER_DEBUG
 
@@ -26,8 +27,6 @@
 #include <iostream>
 #include "Utils/color.h"
 #endif
-
-#include "Parser/ParserTypes.h"
 
 // EXCEPTION
 using namespace clang;
@@ -37,11 +36,8 @@ namespace C2 {
 class C2Sema;
 class Decl;
 class Expr;
-class Stmt;
-class CallExpr;
 class FunctionDecl;
 class StructTypeDecl;
-class EnumTypeDecl;
 
 /// PrecedenceLevels - These are precedences for the binary/ternary
 /// operators in the C99 grammar.  These have been named to relate

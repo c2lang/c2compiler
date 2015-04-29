@@ -14,13 +14,11 @@
  */
 
 #include <stdio.h>
-#include <string.h>
 
 #include "AST/Stmt.h"
 #include "AST/Expr.h"
 #include "AST/Decl.h"
 #include "Utils/StringBuilder.h"
-#include "Utils/Utils.h"
 #include "Utils/color.h"
 #include "Utils/UtilsConstants.h"
 

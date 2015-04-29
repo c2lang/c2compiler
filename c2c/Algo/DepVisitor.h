@@ -16,12 +16,12 @@
 #ifndef CGENERATOR_DEP_VISITOR_H
 #define CGENERATOR_DEP_VISITOR_H
 
+#include <stdint.h>
 #include <vector>
-
-#include "AST/Type.h"
 
 namespace C2 {
 
+class QualType;
 class Decl;
 class VarDecl;
 class FunctionDecl;

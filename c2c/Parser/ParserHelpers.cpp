@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <assert.h>
 #include <clang/Parse/ParseDiagnostic.h>
 
 #include "Parser/ParserHelpers.h"

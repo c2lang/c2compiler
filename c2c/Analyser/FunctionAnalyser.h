@@ -16,11 +16,12 @@
 #ifndef ANALYSER_FUNCTION_ANALYSER_H
 #define ANALYSER_FUNCTION_ANALYSER_H
 
+#include <string>
+#include <vector>
 #include <llvm/ADT/APSInt.h>
 #include <clang/Basic/SourceLocation.h>
-
-#include "Analyser/ExprTypeAnalyser.h"
 #include "AST/Type.h"
+#include "Analyser/ExprTypeAnalyser.h"
 
 namespace clang {
 class DiagnosticsEngine;

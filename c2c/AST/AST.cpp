@@ -13,13 +13,9 @@
  * limitations under the License.
  */
 
-#include <iostream>
-#include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 
 #include "AST/Decl.h"
-#include "AST/Expr.h"
 #include "AST/AST.h"
 #include "Utils/StringBuilder.h"
 #include "Utils/color.h"

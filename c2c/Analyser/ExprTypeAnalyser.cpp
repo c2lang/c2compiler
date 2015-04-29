@@ -21,6 +21,7 @@
 #include "Analyser/TypeFinder.h"
 #include "Analyser/AnalyserConstants.h"
 #include "AST/Expr.h"
+#include "AST/Type.h"
 #include "Utils/StringBuilder.h"
 
 using namespace C2;

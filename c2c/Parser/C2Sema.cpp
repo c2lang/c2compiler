@@ -13,9 +13,6 @@
  * limitations under the License.
  */
 
-#include <iostream>
-#include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 
 #include <llvm/ADT/APFloat.h>
@@ -25,11 +22,15 @@
 
 #include "Parser/C2Sema.h"
 #include "AST/AST.h"
+#include "AST/Expr.h"
+#include "AST/Type.h"
 #include "AST/Attr.h"
-#include "Utils/StringBuilder.h"
-#include "Utils/color.h"
 
 //#define SEMA_DEBUG
+
+#ifdef SEMA_DEBUG
+#include "Utils/color.h"
+#endif
 
 using namespace C2;
 using namespace clang;

@@ -13,7 +13,10 @@
  * limitations under the License.
  */
 
+#include <assert.h>
+
 #include "Algo/DepVisitor.h"
+#include "AST/Type.h"
 #include "AST/Decl.h"
 #include "AST/Stmt.h"
 #include "AST/Expr.h"

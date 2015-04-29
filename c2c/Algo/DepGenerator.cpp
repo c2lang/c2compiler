@@ -24,6 +24,7 @@
 #include "FileUtils/FileUtils.h"
 
 #include <string.h>
+#include <assert.h>
 
 using namespace C2;
 using namespace std;

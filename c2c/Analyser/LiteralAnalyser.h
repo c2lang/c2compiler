@@ -19,8 +19,6 @@
 #include <llvm/ADT/APSInt.h>
 #include <clang/Basic/SourceLocation.h>
 
-#include "AST/Type.h"
-
 namespace clang {
 class DiagnosticsEngine;
 }
@@ -29,6 +27,7 @@ namespace C2 {
 
 class Expr;
 class Decl;
+class QualType;
 struct Limit;
 
 class LiteralAnalyser {

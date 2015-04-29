@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 
-#include <string>
 #include <map>
+#include <assert.h>
+#include <stdint.h>
 
 #include "CGenerator/TypeSorter.h"
 #include "Algo/DepVisitor.h"
 #include "AST/Decl.h"
-#include "AST/Type.h"
 
 using namespace C2;
 

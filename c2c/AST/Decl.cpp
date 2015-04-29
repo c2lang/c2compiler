@@ -20,7 +20,6 @@
 #include "AST/Expr.h"
 #include "AST/Attr.h"
 #include "AST/Module.h"
-#include "Utils/Utils.h"
 #include "Utils/color.h"
 #include "Utils/StringBuilder.h"
 #include "Utils/UtilsConstants.h"

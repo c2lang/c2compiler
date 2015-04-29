@@ -17,6 +17,7 @@
 #define AST_TYPE_H
 
 #include <assert.h>
+#include <stddef.h>
 #include <vector>
 #include <string>
 
@@ -36,7 +37,6 @@ namespace C2 {
 class StringBuilder;
 class Type;
 class Expr;
-class EnumConstantDecl;
 class StructTypeDecl;
 class EnumTypeDecl;
 class FunctionDecl;

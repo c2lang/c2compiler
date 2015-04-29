@@ -16,10 +16,9 @@
 #ifndef ANALYSER_SCOPE_H
 #define ANALYSER_SCOPE_H
 
-#include <string>
 #include <map>
+#include <string>
 #include <vector>
-#include <stdint.h>
 
 #include "AST/Module.h"
 

@@ -20,8 +20,6 @@
 
 namespace C2 {
 
-class StringBuilder;
-
 class AnalyserUtils {
 public:
     static const char* fullName(const std::string& modName, const std::string& symname);

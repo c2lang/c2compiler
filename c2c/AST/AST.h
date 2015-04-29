@@ -17,7 +17,6 @@
 #define AST_AST_H
 
 #include <string>
-#include <vector>
 #include <map>
 
 #include <clang/Basic/SourceLocation.h>

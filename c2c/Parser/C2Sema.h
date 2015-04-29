@@ -21,10 +21,9 @@
 
 #include <clang/Basic/SourceLocation.h>
 
-#include "Parser/ParserTypes.h"
-#include "AST/Expr.h"
 #include "AST/Decl.h"
-#include "AST/Type.h"
+#include "AST/Stmt.h"
+#include "Parser/ParserTypes.h"
 
 namespace clang {
 class SourceManager;
@@ -44,7 +43,9 @@ using namespace clang;
 namespace C2 {
 
 class AST;
-class Stmt;
+class Expr;
+class TypeContext;
+class TypeExpr;
 
 class C2Sema {
 public:

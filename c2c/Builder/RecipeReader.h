@@ -17,7 +17,6 @@
 #define BUILDER_RECIPE_READER_H
 
 #include <stdarg.h>
-#include <string>
 #include <vector>
 
 namespace C2 {

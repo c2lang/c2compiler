@@ -20,6 +20,8 @@
 
 namespace C2 {
 
+class C2Parser;
+
 class BalancedDelimiterTracker {
 private:
     C2Parser& P;

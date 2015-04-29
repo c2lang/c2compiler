@@ -13,8 +13,6 @@
  * limitations under the License.
  */
 
-#include <stdio.h>
-
 #include "Utils/GenUtils.h"
 #include "Utils/StringBuilder.h"
 

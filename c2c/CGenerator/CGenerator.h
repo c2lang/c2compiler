@@ -17,6 +17,7 @@
 #define CGENERATOR_CGENERATOR_H
 
 #include <string>
+#include <vector>
 
 #include "Utils/GenUtils.h"
 #include "AST/Module.h"
