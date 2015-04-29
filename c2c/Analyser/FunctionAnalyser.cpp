@@ -115,6 +115,21 @@ unsigned FunctionAnalyser::check(FunctionDecl* func) {
     checkFunction(func);
 
     scope.ExitScope();
+
+    // check labels
+    for (LabelsIter iter = labels.begin(); iter != labels.end(); ++iter) {
+        LabelDecl* LD = *iter;
+        if (LD->getStmt()) {    // have label part
+            if (!LD->isUsed()) {
+                Diag(LD->getLocation(), diag::warn_unused_label) << LD->DiagName();
+            }
+        } else {    // only have goto part
+            Diag(LD->getLocation(), diag:: err_undeclared_label_use) << LD->DiagName();
+        }
+        delete LD;
+    }
+    labels.clear();
+
     CurrentFunction = 0;
     return errors;
 }
@@ -1615,16 +1630,16 @@ Decl* FunctionAnalyser::analyseIdentifier(IdentifierExpr* id) {
 LabelDecl* FunctionAnalyser::LookupOrCreateLabel(const std::string& name, SourceLocation loc) {
     LOG_FUNC
     LabelDecl* LD = 0;
-    Decl* D = scope.lookupCachedSymbol(name);
-    if (D) {
-        LD = dyncast<LabelDecl>(D);
-        if (!LD) {
-            fprintf(stderr, "TODO NOT A LABEL\n");
+    for (LabelsIter iter = labels.begin(); iter != labels.end(); ++iter) {
+        if ((*iter)->getName() == name) {
+            LD = *iter;
+            break;
         }
-    } else {
+    }
+    if (!LD) {
         LD = new LabelDecl(name, loc);
         // add to functionScope
-        scope.addFunctionScopedSymbol(LD);
+        labels.push_back(LD);
     }
     return LD;
 }

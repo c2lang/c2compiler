@@ -141,6 +141,10 @@ private:
     unsigned constDiagID;
     bool inConstExpr;
 
+    typedef std::vector<LabelDecl*> Labels;
+    typedef Labels::iterator LabelsIter;
+    Labels labels;
+
     FunctionAnalyser(const FunctionAnalyser&);
     FunctionAnalyser& operator= (const FunctionAnalyser&);
 };
