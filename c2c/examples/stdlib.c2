@@ -10,10 +10,10 @@ public type lldiv_t struct {
     int64 rem;
 }
 
-const int32 RAND_MAX = 2147483647;      // same as Int32_max
+public const int32 RAND_MAX = 2147483647;      // same as Int32_max
 
-const int32 EXIT_FAILURE = 1;
-const int32 EXIT_SUCCESS = 0;
+public const int32 EXIT_FAILURE = 1;
+public const int32 EXIT_SUCCESS = 0;
 
 public func int32 __ctype_get_mb_cur_max () { return 0; }
 public func float64 atof (const char* __nptr) { return 0; }
