@@ -151,6 +151,15 @@ lib foobar shared
     mylib2.c2
 end
 
+lib libc shared
+    $warnings no-unused
+    $generate-c
+    $export stdio string stdlib
+    stdio.c2
+    string.c2
+    stdlib.c2
+end
+
 target incremental
     $deps show-files show-externals
     $generate-c single-module

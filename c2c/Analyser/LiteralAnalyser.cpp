@@ -115,11 +115,18 @@ void LiteralAnalyser::check(QualType TLeft, const Expr* Right) {
         availableWidth = 32;    // only 32-bit for now
         // dont ask for pointer, replace with uint32 here.
     } else {
-        QT.dump();
-        assert(0 && "todo");
+        StringBuilder t1name(128);
+        Right->getType().DiagName(t1name);
+        // Q: allow FuncPtr to return 0? (or nil?)
+        StringBuilder t2name(128);
+        TLeft->DiagName(t2name);
+        Diags.Report(Right->getLocation(), diag::err_typecheck_convert_incompatible) << t1name << t2name << 2 << 0 << 0;
+        return;
+        //QT.dump();
+        //assert(0 && "todo");
     }
 
-    StringBuilder tname;
+    StringBuilder tname(128);
     TLeft->DiagName(tname);
     const Limit* L = getLimit(availableWidth);
     checkWidth(availableWidth, L, Right, tname);

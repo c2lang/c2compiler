@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+type Foo struct {
+    int32 x;
+}
+
+func Foo getFoo() {
+    return 0;   // @error{returning 'int32' from a function with incompatible result type '(struct)Foo'}
+}
+
