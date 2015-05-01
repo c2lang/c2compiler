@@ -171,14 +171,14 @@ public:
         Diags.getClient()->BeginSourceFile(LangOpts_, 0);
     }
     ~FileInfo() {
-        //PP.EndSourceFile();
-        //Diags.getClient()->EndSourceFile();
+#if 0
+        PP.EndSourceFile();
 
-        //llvm::errs() << "\nSTATISTICS FOR '" << filename << "':\n";
-        //PP.PrintStats();
-        //PP.getIdentifierTable().PrintStats();
-        //PP.getHeaderSearchInfo().PrintStats();
-        //llvm::errs() << "\n";
+        llvm::errs() << "\nSTATISTICS FOR '" << filename << "':\n";
+        PP.PrintStats();
+        PP.getIdentifierTable().PrintStats();
+        llvm::errs() << "\n";
+#endif
     }
 
     bool parse() {
