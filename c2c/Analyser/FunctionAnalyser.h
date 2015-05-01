@@ -25,6 +25,7 @@
 
 namespace clang {
 class DiagnosticsEngine;
+class DiagnosticBuilder;
 }
 
 namespace C2 {

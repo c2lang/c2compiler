@@ -81,7 +81,6 @@ private:
     bool loadExternalModules();
     unsigned analyse();
     void dumpModules() const;
-    void printASTs() const;
     void log(const char* color, const char* format, ...) const;
 
     bool checkMainFunction(clang::DiagnosticsEngine& Diags);

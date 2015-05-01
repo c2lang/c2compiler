@@ -57,6 +57,7 @@ ADD_EXECUTABLE(c2c
     Analyser/FunctionAnalyser.cpp
     Analyser/TypeFinder.cpp
     Analyser/ExprTypeAnalyser.cpp
+    Analyser/TargetAnalyser.cpp
     Algo/DepVisitor.cpp
     Algo/DepGenerator.cpp
     CodeGen/CodeGenFunction.cpp

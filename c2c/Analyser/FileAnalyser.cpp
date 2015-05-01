@@ -50,6 +50,10 @@ FileAnalyser::FileAnalyser(const Modules& modules, clang::DiagnosticsEngine& Dia
     , verbose(verbose_)
 {}
 
+void FileAnalyser::printAST() const {
+    ast.print(true);
+}
+
 unsigned  FileAnalyser::checkImports() {
     LOG_FUNC
     unsigned errors = 0;

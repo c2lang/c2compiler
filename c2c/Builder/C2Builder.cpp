@@ -26,8 +26,6 @@
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/IntrusiveRefCntPtr.h>
 #include <llvm/Support/Host.h>
-#include <clang/Basic/Diagnostic.h>
-#include <clang/Basic/DiagnosticIDs.h>
 #include <clang/Parse/ParseDiagnostic.h>
 #include <clang/Basic/DiagnosticOptions.h>
 #include <clang/Basic/FileManager.h>
@@ -57,7 +55,7 @@
 
 #include "Parser/C2Parser.h"
 #include "Parser/C2Sema.h"
-#include "Analyser/FileAnalyser.h"
+#include "Analyser/TargetAnalyser.h"
 #include "Algo/DepGenerator.h"
 #include "CodeGen/CodeGenModule.h"
 #include "CGenerator/CGenerator.h"
@@ -145,7 +143,6 @@ public:
         , PPOpts(new PreprocessorOptions())
         , PP(PPOpts, Diags, LangOpts_, SM, Headers, loader)
         , ast(filename_)
-        , analyser(0)
     {
         ApplyHeaderSearchOptions(PP.getHeaderSearchInfo(), *HSOpts, LangOpts_, pti->getTriple());
 
@@ -184,19 +181,11 @@ public:
         //llvm::errs() << "\n";
     }
 
-    bool parse(const BuildOptions& options) {
+    bool parse() {
         C2Sema sema(SM, Diags, typeContext, ast, PP);
         C2Parser parser(PP, sema);
         parser.Initialize();
         return parser.Parse();
-    }
-
-    void createAnalyser(const Modules& modules, bool verbose) {
-        analyser = new FileAnalyser(modules, Diags, ast, typeContext, verbose);
-    }
-    void deleteAnalyser() {
-        delete analyser;
-        analyser = 0;
     }
 
     std::string filename;
@@ -220,7 +209,6 @@ public:
 
     // C2 Parser + Sema
     AST ast;
-    FileAnalyser* analyser;
 };
 
 }
@@ -365,7 +353,7 @@ int C2Builder::build() {
     FileManager FileMgr(FileSystemOpts);
     SourceManager SM(Diags, FileMgr);
 
-    // phase 1: parse and local analyse
+    // phase 1a: parse and local analyse
     unsigned errors = 0;
     u_int64_t t1_parse = Utils::getCurrentTime();
     for (int i=0; i<recipe.size(); i++) {
@@ -373,20 +361,18 @@ int C2Builder::build() {
         FileInfo* info = new FileInfo(Diags, LangOpts, pti, HSOpts, FileMgr, SM, filename, PredefineBuffer);
         files.push_back(info);
         if (options.verbose) log(COL_VERBOSE, "parsing %s", filename.c_str());
-        bool ok = info->parse(options);
+        bool ok = info->parse();
         if (options.printAST0) info->ast.print(true, true);
         errors += !ok;
     }
     u_int64_t t2_parse = Utils::getCurrentTime();
-    u_int64_t t1_analyse, t2_analyse;
     if (options.printTiming) log(COL_TIME, "parsing took %" PRIu64" usec", t2_parse - t1_parse);
+    u_int64_t t1_analyse = Utils::getCurrentTime();
     if (client->getNumErrors()) goto out;
-    t1_analyse = Utils::getCurrentTime();
 
     // phase 1b: merge file's symbol tables to module symbols tables
     errors = !createModules();
     if (options.printSymbols) dumpModules();
-
     if (client->getNumErrors()) goto out;
 
     // phase 1c: load required external modules
@@ -400,19 +386,17 @@ int C2Builder::build() {
         }
     }
 
-    // create analysers/scopes
-    for (unsigned i=0; i<files.size(); i++) {
-        files[i]->createAnalyser(modules, options.verbose);
+    // phase 2: analyse all files
+    {
+        TargetAnalyser analyser(modules, Diags, files.size(), options.verbose);
+        // create analysers/scopes
+        for (unsigned i=0; i<files.size(); i++) {
+            analyser.addFile(files[i]->ast, files[i]->typeContext);
+        }
+        errors += analyser.analyse(options.printAST1, options.printAST2, options.printAST3);
+        uint64_t t2_analyse = Utils::getCurrentTime();
+        if (options.printTiming) log(COL_TIME, "analysis took %" PRIu64" usec", t2_analyse - t1_analyse);
     }
-
-    // phase 2: run analysing on all files
-    errors += analyse();
-
-    for (unsigned i=0; i<files.size(); i++) {
-        files[i]->deleteAnalyser();
-    }
-    t2_analyse = Utils::getCurrentTime();
-    if (options.printTiming) log(COL_TIME, "analysis took %" PRIu64" usec", t2_analyse - t1_analyse);
     if (client->getNumErrors()) goto out;
 
     if (!checkMainFunction(Diags)) goto out;
@@ -518,79 +502,10 @@ bool C2Builder::loadExternalModules() {
     return !haveErrors;
 }
 
-unsigned C2Builder::analyse() {
-    unsigned errors = 0;
-
-    for (unsigned i=0; i<files.size(); i++) {
-        errors += files[i]->analyser->checkImports();
-    }
-    if (errors) return errors;
-
-    for (unsigned i=0; i<files.size(); i++) {
-        errors += files[i]->analyser->resolveTypes();
-    }
-    if (errors) return errors;
-
-    for (unsigned i=0; i<files.size(); i++) {
-        errors += files[i]->analyser->resolveTypeCanonicals();
-    }
-    if (errors) return errors;
-
-    for (unsigned i=0; i<files.size(); i++) {
-        errors += files[i]->analyser->resolveStructMembers();
-    }
-    if (options.printAST1) printASTs();
-    if (errors) return errors;
-
-    for (unsigned i=0; i<files.size(); i++) {
-        errors += files[i]->analyser->resolveVars();
-    }
-    if (errors) return errors;
-
-    for (unsigned i=0; i<files.size(); i++) {
-        errors += files[i]->analyser->resolveEnumConstants();
-    }
-    if (errors) return errors;
-
-    for (unsigned i=0; i<files.size(); i++) {
-        errors += files[i]->analyser->checkArrayValues();
-    }
-    if (errors) return errors;
-
-    for (unsigned i=0; i<files.size(); i++) {
-        errors += files[i]->analyser->checkVarInits();
-    }
-    if (options.printAST2) printASTs();
-    if (errors) return errors;
-
-    for (unsigned i=0; i<files.size(); i++) {
-        errors += files[i]->analyser->checkFunctionProtos();
-    }
-    if (errors) return errors;
-
-    for (unsigned i=0; i<files.size(); i++) {
-        errors += files[i]->analyser->checkFunctionBodies();
-    }
-
-    for (unsigned i=0; i<files.size(); i++) {
-        files[i]->analyser->checkDeclsForUsed();
-    }
-
-    if (options.printAST3) printASTs();
-    return errors;
-}
-
 void C2Builder::dumpModules() const {
     for (ModulesConstIter iter = modules.begin(); iter != modules.end(); ++iter) {
         const Module* P = iter->second;
         P->dump();
-    }
-}
-
-void C2Builder::printASTs() const {
-    for (unsigned i=0; i<files.size(); i++) {
-        FileInfo* info = files[i];
-        info->ast.print(true);
     }
 }
 

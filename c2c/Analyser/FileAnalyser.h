@@ -42,6 +42,8 @@ public:
                  AST& ast_, TypeContext& typeContext_, bool verbose);
     ~FileAnalyser() {}
 
+    void printAST() const;
+
     // call in this order
     unsigned checkImports();
     unsigned resolveTypes();
