@@ -14,12 +14,14 @@
  */
 
 #include <map>
+#include <list>
 #include <assert.h>
 #include <stdint.h>
 
 #include "CGenerator/TypeSorter.h"
 #include "Algo/DepVisitor.h"
 #include "AST/Decl.h"
+#include "Utils/StringBuilder.h"
 
 using namespace C2;
 
@@ -47,30 +49,35 @@ public:
         return false;
     }
 
-    static bool compare(const DeclDep* A, const DeclDep* B) {
+    // return true if B should go before A (A depends on B)
+    static bool goesBefore(const DeclDep* A, const DeclDep* B) {
         const Decl* a = A->decl;
         const Decl* b = B->decl;
         //printf("COMPARE %s vs %s\n", a->getName().c_str(), b->getName().c_str());
         // public before non-public
-        if (a->isPublic() != b->isPublic()) return a->isPublic();
+        if (a->isPublic() != b->isPublic()) return b->isPublic();
 
         // no-deps before deps
-        if (A->numDeps() == 0 && B->numDeps() != 0) return true;
-        if (B->numDeps() == 0 && A->numDeps() != 0) return false;
+        if (A->numDeps() == 0) return false;
 
         // if A depends on B, but not B on A, swap
         bool abFull = false;
         bool baFull = false;
         bool a_on_b = A->dependsOn(B, &abFull);
         bool b_on_a = B->dependsOn(A, &baFull);
-        if (a_on_b && !b_on_a) return false;
-        if (b_on_a && !a_on_b) return true;
-        if (!a_on_b && !b_on_a) return false;
 
-        // circular dep, check full/ptr, pointer goes first
-        if (abFull != baFull) return !abFull;
-        assert(!abFull);    // analyser should have checked
-        return false;
+        if (a_on_b) {
+            if (b_on_a) {
+                // circular dep, check full/ptr, pointer goes first
+                if (abFull != baFull) return abFull;
+                assert(!abFull);    // analyser should have checked
+                return false;
+            } else {
+                return true;
+            }
+        } else {
+            return false;
+        }
     }
 
     const Decl* decl;
@@ -100,9 +107,35 @@ void TypeSorter::add(const Decl* decl) {
 }
 
 void TypeSorter::write(CTypeWriter& writer) {
-    // sort
     //dump("ORIGINAL", true);
-    std::sort(depmap.begin(), depmap.end(), DeclDep::compare);
+    // sort Types, basic algorithms, O(N*N), so optimization is very well possible
+    typedef std::list<DeclDep*> SortedDecls;
+    typedef SortedDecls::iterator SortedDeclsIter;
+    SortedDecls sorted;
+    for (DeclDepListIter it1=depmap.begin(); it1 != depmap.end(); ++it1) {
+        DeclDep* newDD = *it1;
+        bool added = false;
+        // check if element in new list depends on new one, otherwise add at tail
+        for (SortedDeclsIter it2=sorted.begin(); it2 != sorted.end(); ++it2) {
+            const DeclDep* curDD = *it2;
+            bool before = DeclDep::goesBefore(curDD, newDD);
+            if (before) {
+                // insert before it2
+                //printf("adding %s before %s\n", newDD->decl->getName().c_str(), curDD->decl->getName().c_str());
+                sorted.insert(it2, newDD);
+                added = true;
+                break;
+            }
+        }
+        if (!added) {
+            //printf("adding %s at end\n", newDD->decl->getName().c_str());
+            sorted.push_back(newDD);
+        }
+    }
+    depmap.clear();
+    for (SortedDeclsIter it=sorted.begin(); it != sorted.end(); ++it) {
+        depmap.push_back(*it);
+    }
     //dump("AFTER", false);
 
     enum State { FORWARD_DECLARED, DEFINED };
@@ -139,15 +172,18 @@ void TypeSorter::write(CTypeWriter& writer) {
 }
 
 void TypeSorter::dump(const char* msg, bool showDeps) const {
-    printf("%s:\n", msg);
+    StringBuilder output;
+    output << msg << ":\n";
     for (DeclDepListConstIter iter=depmap.begin(); iter != depmap.end(); ++iter) {
         const DeclDep* dd = *iter;
-        printf(" %s\n", dd->decl->getName().c_str());
+        output << "  " << dd->decl->getName();
         if (showDeps) {
             for (unsigned i=0; i<dd->numDeps(); ++i) {
-                printf("  -> %s  %s\n", dd->getDep(i)->getName().c_str(), dd->isFull(i) ? "full" : "ptr");
+                output << "  -> " << dd->getDep(i)->getName() << "  " << (dd->isFull(i) ? "full" : "ptr");
             }
         }
+        output << '\n';
     }
+    printf("%s", (const char*)output);
 }
 
