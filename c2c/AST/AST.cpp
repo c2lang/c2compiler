@@ -34,7 +34,7 @@ AST::~AST() {
 }
 
 void AST::print(bool colors, bool showAttrs) const {
-    StringBuilder buffer;
+    StringBuilder buffer(4*1024*1024);
     buffer.enableColor(colors);
     buffer << "---- AST " << "(module=" << modName << ") " << filename << " ----\n";
     // ImportDecls
