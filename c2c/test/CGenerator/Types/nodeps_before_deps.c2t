@@ -16,11 +16,12 @@ type Faa int16;
 // @expect{test.c}
 typedef int32_t test_Bar;
 
-typedef int16_t test_Faa;
 
 typedef struct test_Foo_ test_Foo;
 
 struct test_Foo_ {
     int32_t b;
 };
+
+typedef int16_t test_Faa;
 
