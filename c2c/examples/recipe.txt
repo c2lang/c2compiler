@@ -182,3 +182,9 @@ target snake
     snake.c2
 end
 
+target big
+    $warnings no-unused
+    $deps show-files show-externals
+    $generate-c single-module
+    big.c2
+end

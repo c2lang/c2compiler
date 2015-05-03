@@ -199,22 +199,7 @@ void VarDecl::print(StringBuilder& buffer, unsigned indent) const {
     if (hasLocalQualifier()) buffer << " LOCAL";
     indent += INDENT;
     if (initValue) initValue->print(buffer, indent);
-#if 0
-    // TODO move
-    if (initValues.size()) {
-        buffer.indent(INDENT);
-        for (InitValuesConstIter iter=initValues.begin(); iter != initValues.end(); ++iter) {
-            (*iter)->getExpr()->print(buffer, INDENT);
-        }
-    }
-#endif
 }
-
-#if 0
-void VarDecl::addInitValue(ArrayValueDecl* value) {
-    initValues.push_back(value);
-}
-#endif
 
 
 EnumConstantDecl::EnumConstantDecl(const std::string& name_, SourceLocation loc_,
