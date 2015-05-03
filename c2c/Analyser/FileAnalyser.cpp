@@ -17,6 +17,7 @@
 #include <llvm/ADT/APInt.h>
 #include <clang/Parse/ParseDiagnostic.h>
 #include <clang/Sema/SemaDiagnostic.h>
+#include <clang/Basic/TokenKinds.h>
 
 #include "Analyser/FileAnalyser.h"
 #include "Analyser/Scope.h"
@@ -439,6 +440,18 @@ unsigned FileAnalyser::checkArrayValue(ArrayValueDecl* D) {
     // find decl
     Decl* found = globals->findSymbolInModule(D->getName(), D->getLocation(), D->getModule());
     if (!found) return 1;
+
+    EnumTypeDecl* ETD = dyncast<EnumTypeDecl>(found);
+    if (ETD) {
+        IdentifierExpr* IE = dyncast<IdentifierExpr>(D->getExpr());
+        if (!IE) {
+            Diags.Report(D->getExpr()->getLocation(), diag::err_expected_after) << "incremental enum" << tok::identifier;
+            return 1;
+        }
+        // TODO check duplicate values?
+        //ILE->addExpr(D->transferExpr());
+        return 0;
+    }
 
     VarDecl* VD = dyncast<VarDecl>(found);
     if (!VD) {

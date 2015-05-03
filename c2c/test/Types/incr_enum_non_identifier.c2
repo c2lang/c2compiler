@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+type State enum uint8 {
+    A,
+    B,
+}
+
+State += 10;        // @error{expected identifier after incremental enum}
+

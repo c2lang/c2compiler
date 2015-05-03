@@ -19,7 +19,6 @@
 #include <clang/Sema/SemaDiagnostic.h>
 #include <clang/Basic/SourceLocation.h>
 
-
 #include "Parser/C2Parser.h"
 #include "Parser/C2Sema.h"
 #include "AST/Decl.h"
