@@ -1,4 +1,29 @@
-module stdio;
+module stdio_c2;
+
+// TEMP
+import stdio as io;
+
+// possibilities for the third argument to 'setvbuf'
+public const uint32 _IOFBF = 0; // fully buffered
+public const uint32 _IOLBF = 1; // line buffering
+public const uint32 _IONBF = 2; // no buffering
+
+public const int32 EOF = -1;
+
+public const uint32 SEEK_SET = 0;   // Seek from beginning of file.
+public const uint32 SEEK_CUR = 1;   // Seek from current position.
+public const uint32 SEEK_END = 2;   // Seek from end of file.
+#ifdef __USE_GNU
+public const uint32 SEEK_DATA = 3;  // Seek to next data.
+public const uint32 SEEK_HOLE = 4;  // Seek to next hole.
+#endif
+
+// from libio.h
+public type _IO_marker struct {
+    _IO_marker* next;
+    FILE* sbuf;
+    int32 _pos;
+}
 
 public type FILE struct {
     int32 _flags;
@@ -13,7 +38,7 @@ public type FILE struct {
     char* _IO_save_base;
     char* _IO_backup_base;
     char* _IO_save_end;
-    //struct _IO_marker* _markers;
+    _IO_marker* _markers;
     FILE* _chain;
     int32 _fileno;
     int32 _flags2;
@@ -32,6 +57,10 @@ public type FILE struct {
     char _unused2;
 }
 
+
+
+
+
 public type va_list int32;
 
 public type off_t uint64;
@@ -49,6 +78,9 @@ public func int32 remove (const char* __filename) { return 0; }
 public func int32 rename (const char* __old, const char* __new) { return 0; }
 public func int32 renameat (int32 __oldfd, const char* __old, int32 __newfd, const char* __new) { return 0; }
 public func FILE* tmpfile () { return 0; }
+#ifdef __USE_LARGEFIE64
+public func FILE* tmpfile64(void) {}
+#endif
 public func char* tmpnam (char* __s) { return 0; }
 public func char* tmpnam_r (char* __s) { return 0; }
 public func char* tempnam (const char* __dir, const char* __pfx) { return 0; }
@@ -119,4 +151,9 @@ public func char* ctermid (char* __s) { return 0; }
 public func void flockfile (FILE* __stream) {}
 public func int32 ftrylockfile (FILE* __stream) { return 0; }
 public func void funlockfile (FILE* __stream) {}
+
+public func int32 main() {
+    io.printf("size=%d\n", sizeof(FILE));
+    return 0;
+}
 
