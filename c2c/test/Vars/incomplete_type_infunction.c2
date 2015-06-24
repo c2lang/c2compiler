@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+
+module test;
+
+public func int32 main() {
+    void v;             // @error{variable has incomplete type 'void'}
+    void[4] va;         // @error{variable has incomplete type 'void[4]'}
+    void* vp = nil;     // ok
+    return 0;
+}
+

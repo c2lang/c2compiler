@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+
+module test;
+
+type Struct struct {
+    void v;     // @error{field has incomplete type 'void'}
+    void[4] va; // @error{field has incomplete type 'void[4]'}
+    void* vp;   // ok
+}
+

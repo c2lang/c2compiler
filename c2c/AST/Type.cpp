@@ -54,6 +54,18 @@ bool QualType::isScalarType() const {
     return false;
 }
 
+bool QualType::isIncompleteType() const {
+    const Type* T = getCanonicalType();
+    switch (T->getTypeClass()) {
+    case TC_BUILTIN:
+        return cast<BuiltinType>(T)->isVoid();
+    case TC_ARRAY:
+        return cast<ArrayType>(T)->getElementType().isIncompleteType();
+    default:
+        return false;
+    }
+}
+
 bool QualType::isConstant() const {
     const Type* T = getCanonicalType();
     switch (T->getTypeClass()) {

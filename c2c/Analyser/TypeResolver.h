@@ -40,6 +40,8 @@ public:
 
     // resolving of other Types (after Type Analysis phase)
     QualType resolveType(QualType Q, bool usedPublic);
+
+    bool requireCompleteType(SourceLocation loc, QualType Q, int msg);
 private:
     QualType resolveCanonical(QualType Q) const;
     unsigned checkUnresolvedType(const UnresolvedType* type, bool used_public);

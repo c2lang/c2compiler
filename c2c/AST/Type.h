@@ -96,6 +96,7 @@ public:
     bool isSubscriptable() const;
     bool isIntegerType() const;
     bool isScalarType() const;
+    bool isIncompleteType() const;
 
     bool isConstant() const;    // NOTE: not is const!
 

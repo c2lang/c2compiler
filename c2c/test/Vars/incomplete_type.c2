@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+
+module test;
+
+func void myfunc() {}        // ok
+
+void vg;             // @error{variable has incomplete type 'void'}
+void[4] vag;         // @error{variable has incomplete type 'void[4]'}
+void* vpg = nil;     // ok
+

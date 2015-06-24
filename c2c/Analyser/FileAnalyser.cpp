@@ -139,8 +139,12 @@ unsigned FileAnalyser::resolveVars() {
     unsigned errors = 0;
     for (unsigned i=0; i<ast.numVars(); i++) {
         VarDecl* V = ast.getVar(i);
-        errors += resolveVarDecl(V);
+        unsigned errs = resolveVarDecl(V);
+        errors += errs;
         checkVarDeclAttributes(V);
+        if (!errs && !TR->requireCompleteType(V->getLocation(), V->getType(), diag::err_typecheck_decl_incomplete_type)) {
+            errors++;
+        }
     }
     return errors;
 }
@@ -388,7 +392,13 @@ unsigned FileAnalyser::checkStructTypeDecl(StructTypeDecl* D) {
         if (isa<VarDecl>(M)) {
             VarDecl* V = cast<VarDecl>(M);
             assert(V->getInitValue() == 0);
-            errors += resolveVarDecl(V);
+            bool error = resolveVarDecl(V);
+            errors += error;
+            if (!error) {
+                if (!TR->requireCompleteType(V->getLocation(), V->getType(), diag::err_field_incomplete)) {
+                    errors++;
+                }
+            }
         }
         if (isa<StructTypeDecl>(M)) {
             errors += checkStructTypeDecl(cast<StructTypeDecl>(M));

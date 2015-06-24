@@ -491,6 +491,12 @@ void FunctionAnalyser::analyseDeclStmt(Stmt* stmt) {
                 }
             }
         }
+
+        if (!haveError) {
+            if (!TR.requireCompleteType(decl->getLocation(), Q, diag::err_typecheck_decl_incomplete_type)) {
+                haveError = true;
+            }
+        }
     }
 
     // check name

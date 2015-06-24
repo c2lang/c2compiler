@@ -160,6 +160,16 @@ QualType TypeResolver::resolveType(QualType Q, bool usedPublic) {
     return resolved;
 }
 
+bool TypeResolver::requireCompleteType(SourceLocation loc, QualType Q, int msg) {
+    if (Q.isIncompleteType()) {
+        StringBuilder name;
+        Q.DiagName(name);
+        Diags.Report(loc, msg) << name;
+        return false;
+    }
+    return true;
+}
+
 QualType TypeResolver::checkCanonicals(Decls& decls, QualType Q, bool set) const {
     if (Q->hasCanonicalType()) return Q.getCanonicalType();
 
