@@ -1,0 +1,6 @@
+// @warnings{no-unused}
+
+module test;
+
+func void myfunc(void a) {} // @error{variable has incomplete type 'void'}
+

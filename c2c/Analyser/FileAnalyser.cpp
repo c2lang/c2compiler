@@ -438,6 +438,9 @@ unsigned FileAnalyser::resolveFunctionDecl(FunctionDecl* D) {
         VarDecl* Arg = D->getArg(i);
         unsigned errs = resolveVarDecl(Arg);
         errors += errs;
+        if (!errs && !TR->requireCompleteType(Arg->getLocation(), Arg->getType(), diag::err_typecheck_decl_incomplete_type)) {
+            errors ++;
+        }
         if (!errs && Arg->getInitValue()) {
             errors += functionAnalyser.checkVarInit(Arg);
         }

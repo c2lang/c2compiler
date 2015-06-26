@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+public func int32 main() {
+    if (void* A = nil) {}
+
+    if (void B = nil) {}    // @error{variable has incomplete type 'void'}
+    return 0;
+}
+
