@@ -89,7 +89,7 @@ public func int32 posix_memalign (void** __memptr, int32 __alignment, int32 __si
 public func void* aligned_alloc (int32 __alignment, int32 __size) { return 0; }
 
 public func void abort () {}
-public type AtExitFn func void(void);
+public type AtExitFn func void();
 public func int32 atexit (AtExitFn __func) { return 0; }
 public func int32 at_quick_exit (AtExitFn __func) { return 0; }
 public type OnExitFn func void(int32, void*);
