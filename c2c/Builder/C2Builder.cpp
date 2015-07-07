@@ -45,6 +45,8 @@
 #undef private
 #include <clang/Lex/PreprocessorOptions.h>
 #include <clang/Sema/SemaDiagnostic.h>
+// for Rewriter
+#include <clang/Rewrite/Core/Rewriter.h>
 
 #include "Builder/C2Builder.h"
 #include "Builder/Recipe.h"
@@ -59,6 +61,7 @@
 #include "Algo/DepGenerator.h"
 #include "CodeGen/CodeGenModule.h"
 #include "CGenerator/CGenerator.h"
+#include "Refactor/RefFinder.h"
 #include "Utils/color.h"
 #include "Utils/Utils.h"
 #include "Utils/GenUtils.h"
@@ -149,7 +152,6 @@ public:
         PP.setPredefines(configs);
         PP.Initialize(*pti);
 
-
         // File stuff
         const FileEntry *pFile = FileMgr.getFile(filename);
         if (pFile == 0) {
@@ -169,6 +171,9 @@ public:
         PP.EnterSourceFile(FID, nullptr, SourceLocation());
 
         Diags.getClient()->BeginSourceFile(LangOpts_, 0);
+
+        // TEMP rewriter test
+        fileID = id;
     }
     ~FileInfo() {
 #if 0
@@ -206,6 +211,7 @@ public:
     // Preprocessor
     IntrusiveRefCntPtr<PreprocessorOptions> PPOpts;
     Preprocessor PP;
+    FileID fileID;
 
     // C2 Parser + Sema
     AST ast;
@@ -365,6 +371,7 @@ int C2Builder::build() {
         if (options.printAST0) info->ast.print(true, true);
         errors += !ok;
     }
+
     u_int64_t t2_parse = Utils::getCurrentTime();
     if (options.printTiming) log(COL_TIME, "parsing took %" PRIu64" usec", t2_parse - t1_parse);
     u_int64_t t1_analyse = Utils::getCurrentTime();
@@ -403,6 +410,61 @@ int C2Builder::build() {
 
     if (!checkExportedPackages()) goto out;
 
+        // TEMP rewriter test
+        {
+            Rewriter rewriter;
+            rewriter.setSourceMgr(SM, LangOpts);
+
+            // TEMP rename global
+            const std::string modName = "test";
+            const std::string oldName = "aa";
+            const std::string newName = "bb";
+
+            // Step 1a: find Module
+            const Module* M = 0;
+            for (ModulesConstIter iter = modules.begin(); iter != modules.end(); ++iter) {
+                const Module* mod = iter->second;
+                if (mod->getName() == modName) {
+                    M = mod;
+                    break;
+                }
+            }
+            assert(M && "unknown module");
+
+            // Step 1b: find Decl
+            Decl* D = M->findSymbol(oldName);
+            assert(D && "unknown decl");
+
+            // Step 2a: replace Decl itself
+            rewriter.ReplaceText(D->getLocation(), oldName.size(), newName);
+
+            // Step 2b: replace all references
+            for (unsigned i=0; i<files.size(); i++) {
+                RefFinder finder(files[i]->ast, D);
+                unsigned count = finder.find();
+                printf("replaced %d instances\n", count);
+                for (unsigned i=0; i<count; i++) {
+                    rewriter.ReplaceText(finder.locs[i], oldName.size(), newName);
+                }
+            }
+
+            // Step 3: reparse and check
+            // TODO
+
+            // print output
+            for (unsigned i=0; i<files.size(); i++) {
+                FileInfo* info = files[i];
+                const RewriteBuffer *RewriteBuf =
+                    rewriter.getRewriteBufferFor(info->fileID);
+                if (RewriteBuf) {
+                    printf("====== %s ======\n", info->filename.c_str());
+                    llvm::outs() << std::string(RewriteBuf->begin(), RewriteBuf->end());
+                }
+            }
+            // also works!
+            //bool err = rewriter.overwriteChangedFiles();
+            //printf("errors = %d\n", err);
+        }
     generateOptionsDeps();
 
     generateOptionalC();

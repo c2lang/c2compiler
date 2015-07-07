@@ -32,7 +32,7 @@ execute_process(
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
-SET(CLANG_LIBS "-lclangFrontend -lclangEdit -lclangLex -lclangBasic")
+SET(CLANG_LIBS "-lclangFrontend -lclangEdit -lclangLex -lclangBasic -lclangRewrite")
 
 INCLUDE_DIRECTORIES("${CMAKE_CURRENT_SOURCE_DIR}")
 #line below is needed for Ubuntu 13.04 32 bit
@@ -66,6 +66,7 @@ ADD_EXECUTABLE(c2c
     CGenerator/MakefileGenerator.cpp
     CGenerator/TypeSorter.cpp
     CGenerator/CGenerator.cpp
+    Refactor/RefFinder.cpp
     Builder/C2ModuleLoader.cpp
     Builder/Recipe.cpp
     Builder/RecipeReader.cpp
