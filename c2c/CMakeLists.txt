@@ -79,11 +79,16 @@ ADD_EXECUTABLE(c2c
     Utils/ProcessUtils.cpp
     main.cpp
 )
-# note: tinfo seems to needed from Feb'15 on Ubuntu 14.04..
-# on Ubuntu
-#TARGET_LINK_LIBRARIES(c2c ${LLVM_LDFLAGS} ${CLANG_LIBS} ${LLVM_LIBS} dl pthread tinfo)
-# on MAC OS X
-TARGET_LINK_LIBRARIES(c2c ${LLVM_LDFLAGS} ${CLANG_LIBS} ${LLVM_LIBS} dl pthread ncurses)
+TARGET_LINK_LIBRARIES(c2c ${LLVM_LDFLAGS} ${CLANG_LIBS} ${LLVM_LIBS} dl pthread)
+
+
+if (APPLE)
+    TARGET_LINK_LIBRARIES(c2c ncurses)
+else()
+# on Ubuntu,  tinfo seems to needed from Feb'15 on Ubuntu 14.04..
+    TARGET_LINK_LIBRARIES(c2c tinfo)
+endif()
+
 #SET_TARGET_PROPERTIES(c2c PROPERTIES COMPILE_FLAGS "${LLVM_CXXFLAGS} -Wno-covered-switch-default")
 SET_TARGET_PROPERTIES(c2c PROPERTIES COMPILE_FLAGS "${LLVM_CXXFLAGS}")
 
