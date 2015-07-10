@@ -36,6 +36,13 @@ to build C2.
 export PATH=$HOME/llvm-c2/bin:$PATH
 ```
 
+NOTE:
+On Mac OS X (Yosemite) you might need to create a link for your new clang to find the C++ headers.
+Since this uses the toolchain that comes with XCode, XCode will have to be installed.
+```
+sudo ln -s /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1 /usr/include/c++/v1 
+```
+
 ## Installation of C2C
 To build C2: (llvm-c2/bin must be in PATH)
 ```
@@ -56,6 +63,6 @@ To run the unit tests:
 cd tools/tester
 make
 cd ../../c2c/build
-make test
+make tests
 ```
 

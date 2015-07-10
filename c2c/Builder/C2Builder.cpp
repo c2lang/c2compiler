@@ -410,6 +410,7 @@ int C2Builder::build() {
 
     if (!checkExportedPackages()) goto out;
 
+#if 0
     // TEMP rewriter test
     {
         Rewriter rewriter;
@@ -465,6 +466,7 @@ int C2Builder::build() {
         //bool err = rewriter.overwriteChangedFiles();
         //printf("errors = %d\n", err);
     }
+#endif
 
     generateOptionsDeps();
 
