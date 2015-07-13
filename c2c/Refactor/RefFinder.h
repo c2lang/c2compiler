@@ -42,8 +42,8 @@ public:
 private:
     void searchStmt(const Stmt* S);
     void searchCompoundStmt(const CompoundStmt* S);
-
     void searchExpr(const Expr* E);
+    void addFileLocation(clang::SourceLocation loc);
 
     AST& ast;
     const Decl* decl;

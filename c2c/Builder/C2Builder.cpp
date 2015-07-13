@@ -410,7 +410,7 @@ int C2Builder::build() {
 
     if (!checkExportedPackages()) goto out;
 
-#if 0
+#if 1
     // TEMP rewriter test
     {
         Rewriter rewriter;
@@ -445,6 +445,13 @@ int C2Builder::build() {
             unsigned count = finder.find();
             if (count) printf("replaced %d references in %s\n", count, files[i]->filename.c_str());
             for (unsigned i=0; i<count; i++) {
+                std::string temp = finder.locs[i].printToString(SM);
+                printf("loc %d -> %s\n", finder.locs[i].getRawEncoding(), temp.c_str());
+                PresumedLoc loc = SM.getPresumedLoc(finder.locs[i]);;
+                assert(!loc.isInvalid() && "Invalid location");
+                printf(" -> %s:%d:%d\n", loc.getFilename(), loc.getLine(), loc.getColumn());
+                std::pair<FileID, unsigned> Off = SM.getDecomposedExpansionLoc(finder.locs[i]);
+                printf("-> offset %d\n", Off.second);
                 rewriter.ReplaceText(finder.locs[i], oldName.size(), newName);
             }
         }

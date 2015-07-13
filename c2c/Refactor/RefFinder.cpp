@@ -141,7 +141,7 @@ void RefFinder::searchExpr(const Expr* E) {
         {
             const IdentifierExpr* I = cast<IdentifierExpr>(E);
             if (I->getDecl() == decl) {
-                locs.push_back(I->getLocation());
+                addFileLocation(I->getLocation());
             }
             break;
         }
@@ -200,7 +200,7 @@ void RefFinder::searchExpr(const Expr* E) {
         {
             const MemberExpr* M = cast<MemberExpr>(E);
             if (M->getDecl() == decl) {
-                locs.push_back(M->getMemberLoc());
+                addFileLocation(M->getMemberLoc());
             }
             break;
         }
@@ -216,5 +216,10 @@ void RefFinder::searchExpr(const Expr* E) {
         }
         break;
     }
+}
+
+void RefFinder::addFileLocation(clang::SourceLocation loc) {
+    if (!loc.isFileID()) return;         // skip macro expansions etc
+    locs.push_back(loc);
 }
 
