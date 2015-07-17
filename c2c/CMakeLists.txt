@@ -38,7 +38,7 @@ INCLUDE_DIRECTORIES("${CMAKE_CURRENT_SOURCE_DIR}")
 #line below is needed for Ubuntu 13.04 32 bit
 INCLUDE_DIRECTORIES("/usr/include/i386-linux-gnu/c++/4.8/")
 
-ADD_EXECUTABLE(c2c
+ADD_LIBRARY(c2core
     AST/AST.cpp
     AST/Decl.cpp
     AST/Expr.cpp
@@ -77,9 +77,13 @@ ADD_EXECUTABLE(c2c
     Utils/Utils.cpp
     Utils/GenUtils.cpp
     Utils/ProcessUtils.cpp
+)
+SET_TARGET_PROPERTIES(c2core PROPERTIES COMPILE_FLAGS "${LLVM_CXXFLAGS}")
+
+ADD_EXECUTABLE(c2c
     main.cpp
 )
-TARGET_LINK_LIBRARIES(c2c ${LLVM_LDFLAGS} ${CLANG_LIBS} ${LLVM_LIBS} dl pthread)
+TARGET_LINK_LIBRARIES(c2c c2core ${LLVM_LDFLAGS} ${CLANG_LIBS} ${LLVM_LIBS} dl pthread)
 
 
 if (APPLE)
