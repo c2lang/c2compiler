@@ -23,16 +23,16 @@ static void child_error(int fd, const char* msg) {
 int ProcessUtils::run(const std::string& path, const std::string& cmd) {
     int error_pipe[2];
     if (pipe(error_pipe)) {
-        //errorMsg = "pipe() failed";
+        fprintf(stderr, "pipe() failed: %s\n", strerror(errno));
         return -1;
     }
 
     if (fcntl(error_pipe[0], F_SETFD, FD_CLOEXEC) != 0) {
-        //errorMsg = "fcncl(FD_CLOEXEC) failed";
+        fprintf(stderr, "fcncl(FD_CLOEXEC() failed: %s\n", strerror(errno));
         return -1;
     }
     if (fcntl(error_pipe[1], F_SETFD, FD_CLOEXEC) != 0) {
-        //errorMsg = "fcncl(FD_CLOEXEC) failed";
+        fprintf(stderr, "fcncl(FD_CLOEXEC) failed: %s\n", strerror(errno));
         return -1;
     }
 
@@ -44,23 +44,6 @@ int ProcessUtils::run(const std::string& path, const std::string& cmd) {
             perror("close(errpipe)");
         }
 
-#if 0
-        char logfile[32];
-        sprintf(logfile, "/tmp/luna-%d.log", T.tid);
-        fflush(stdout);
-        close(STDOUT_FILENO);
-        int fdout = open(logfile, O_APPEND | O_CREAT | O_WRONLY, 0644);
-        if (fdout == -1) {
-            // TODO extract
-            sprintf(errmsg, "cannot open logfile '%s': %s", logfile, strerror(errno));
-            child_error(error_pipe[1], errmsg);
-        }
-        close(STDERR_FILENO);
-        if (dup(STDOUT_FILENO) == -1) {
-            sprintf(errmsg, "dup(): %s", strerror(errno));
-            child_error(error_pipe[1], errmsg);
-        }
-#endif
         // redirect output
         std::string logfile = path + "build.log";
         fflush(stdout);
@@ -71,23 +54,25 @@ int ProcessUtils::run(const std::string& path, const std::string& cmd) {
             sprintf(errmsg, "cannot open logfile '%s': %s", logfile.c_str(), strerror(errno));
             child_error(error_pipe[1], errmsg);
         }
+
         close(STDERR_FILENO);
         if (dup(STDOUT_FILENO) == -1) {
             sprintf(errmsg, "dup(): %s", strerror(errno));
             child_error(error_pipe[1], errmsg);
         }
+        printf("current dir: %s\n", getcwd(0, 0));
 
         // working dir
         if (chdir(path.c_str()) != 0) {
             sprintf(errmsg, "cannot change to dir '%s': %s", path.c_str(), strerror(errno));
             child_error(error_pipe[1], errmsg);
         }
+        printf("changing to dir: %s\n", path.c_str());
 
-        // arguments
+        // no arguments
         char* argv[1] = { 0 };
 
-        //Utils::parseArgs(T.cmd, T.args, argv, MAX_ARGUMENTS);
-
+        printf("running command: %s\n", cmd.c_str());
         execv(cmd.c_str(), argv);
         int lasterr = errno;
         fprintf(stderr, "failed to start %s: %s\n", cmd.c_str(), strerror(lasterr));
@@ -117,10 +102,18 @@ int ProcessUtils::run(const std::string& path, const std::string& cmd) {
             fprintf(stderr, "Error waiting for pid: %s\n", strerror(errno));
             return -1;
         }
+        if (WIFSIGNALED(state)) {
+            //bool termsig = WTERMSIG(state);
+            //bool coredump = WCOREDUMP(state);
+            //fprintf(stderr, "child was SIGNALED: term=%d core=%d\n", termsig, coredump);
+            return -1;
+        }
         if (WIFEXITED(state)) { // normal termination)
             char exitcode = (char)WEXITSTATUS(state);
+            //fprintf(stderr, "child exited NORMALLY, exitcode=%d\n", exitcode);
             if (exitcode != 0) return -1;
         } else {
+            //fprintf(stderr, "child exited ABNORMALLY\n");
             return -1;
         }
     }

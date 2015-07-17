@@ -410,7 +410,7 @@ int C2Builder::build() {
 
     if (!checkExportedPackages()) goto out;
 
-#if 1
+#if 0
     // TEMP rewriter test
     {
         Rewriter rewriter;
