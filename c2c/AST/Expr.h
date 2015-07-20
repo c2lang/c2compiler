@@ -694,6 +694,7 @@ public:
     virtual SourceLocation getLocEnd() const { return inner->getLocEnd(); }
 
     QualType getDestType() const { return destType; }
+    void setDestType(QualType Q) { destType = Q; }
     Expr* getInner() const { return inner; }
 private:
     SourceLocation castLoc;

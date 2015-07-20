@@ -124,8 +124,41 @@ void ExprTypeAnalyser::check(QualType TLeft, const Expr* expr) {
     case EXPR_BITOFFSET:
         assert(0 && "TODO");
         return;
+    case EXPR_CAST:
+        assert(0 && "TODO");
+        return;
     }
     assert(0 && "should not come here");
+}
+
+void ExprTypeAnalyser::checkExplicitCast(const ExplicitCastExpr* expr, QualType TLeft, QualType TRight) {
+    // TEMP, only handle builtin types
+    if (TLeft->isBuiltinType() && TRight->isBuiltinType()) {
+        const BuiltinType* Left = cast<BuiltinType>(TLeft.getCanonicalType());
+        const BuiltinType* Right = cast<BuiltinType>(TRight.getCanonicalType());
+        int rule = type_conversions[Right->getKind()][Left->getKind()];
+        switch (rule) {
+        case 0:
+        case 1: // loss of precision
+        case 2: // sign-conversion
+        case 3: // float->integer
+            break;
+        case 4: // incompatible
+            {
+                StringBuilder buf1(MAX_LEN_TYPENAME);
+                StringBuilder buf2(MAX_LEN_TYPENAME);
+                TRight.DiagName(buf1);
+                TLeft.DiagName(buf2);
+                Diags.Report(expr->getLocation(), diag::err_illegal_cast)
+                        << buf1 << buf2 << expr->getSourceRange();
+                break;
+            }
+        case 5: // loss of fp-precision
+            break;
+        default:
+            assert(0 && "should not come here");
+        }
+    }
 }
 
 void ExprTypeAnalyser::checkBinOp(QualType TLeft, const BinaryOperator* binop) {

@@ -553,7 +553,7 @@ void ExplicitCastExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer << '\n';
     buffer.setColor(COL_ATTR);
     buffer.indent(indent + INDENT);
-    buffer << "desttype: ";
+    buffer << "DEST: ";
     destType.print(buffer);
     buffer << '\n';
     inner->print(buffer, indent + INDENT);

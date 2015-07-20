@@ -88,6 +88,7 @@ private:
     QualType analyseParenExpr(Expr* expr);
     bool analyseBitOffsetIndex(Expr* expr, llvm::APSInt* Result, BuiltinType* BaseType);
     QualType analyseBitOffsetExpr(Expr* expr, QualType BaseType, clang::SourceLocation base);
+    QualType analyseExplicitCastExpr(Expr* expr);
     QualType analyseCall(Expr* expr);
     Decl* analyseIdentifier(IdentifierExpr* expr);
 

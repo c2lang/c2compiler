@@ -638,6 +638,8 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
     case EXPR_BITOFFSET:
         assert(0 && "should not happen");
         break;
+    case EXPR_CAST:
+        return analyseExplicitCastExpr(expr);
     }
     return QualType();
 }
@@ -937,6 +939,9 @@ void FunctionAnalyser::analyseSizeofExpr(Expr* expr) {
         return;
     case EXPR_BITOFFSET:
         assert(0 && "should not happen");
+        break;
+    case EXPR_CAST:
+        assert(0 && "TODO");
         break;
     }
 
@@ -1544,6 +1549,28 @@ QualType FunctionAnalyser::analyseBitOffsetExpr(Expr* expr, QualType BaseType, S
     return B->getType();
 }
 
+QualType FunctionAnalyser::analyseExplicitCastExpr(Expr* expr) {
+    LOG_FUNC
+    ExplicitCastExpr* E = cast<ExplicitCastExpr>(expr);
+
+    QualType outerType = TR.resolveType(E->getDestType(), false);
+    if (outerType.isValid()) {
+        E->setType(outerType);
+        E->setDestType(outerType);
+    }
+
+    QualType innerType = analyseExpr(E->getInner(), RHS);
+    if (innerType.isValid()) {
+        E->setCTC(E->getInner()->getCTC());
+
+        if (outerType.isValid()) {
+            EA.checkExplicitCast(E, outerType, innerType);
+        }
+    }
+
+    return outerType.isValid() ? outerType : QualType();;
+}
+
 QualType FunctionAnalyser::analyseCall(Expr* expr) {
     LOG_FUNC
     CallExpr* call = cast<CallExpr>(expr);
@@ -1681,6 +1708,9 @@ bool FunctionAnalyser::checkAssignee(Expr* expr) const {
     case EXPR_BITOFFSET:
         // ok
         return true;
+    case EXPR_CAST:
+        assert(0 && "TODO");
+        break;
     }
     // expr is not assignable
     // TODO test (also ternary)

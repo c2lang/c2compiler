@@ -215,6 +215,12 @@ APSInt LiteralAnalyser::checkLiterals(const Expr* Right) {
     case EXPR_BITOFFSET:
         assert(0 && "TODO");
         break;
+    case EXPR_CAST:
+        {
+            const ExplicitCastExpr* E = cast<ExplicitCastExpr>(Right);
+            // TODO check if it fits in cast type
+            return checkLiterals(E->getInner());
+        }
     }
     return result;
 }

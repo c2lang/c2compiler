@@ -215,6 +215,9 @@ void RefFinder::searchExpr(const Expr* E) {
             break;
         }
         break;
+    case EXPR_CAST:
+        assert(0 && "TODO");
+        break;
     }
 }
 

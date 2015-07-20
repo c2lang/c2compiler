@@ -490,6 +490,7 @@ llvm::Value* CodeGenFunction::EmitExprNoImpCast(const Expr* E) {
             return EmitExpr(P->getExpr());
         }
     case EXPR_BITOFFSET:
+    case EXPR_CAST:
         break;
     }
     E->dump();

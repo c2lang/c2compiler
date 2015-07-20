@@ -1,0 +1,26 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c
+
+// @file{file1}
+module test;
+
+public func int32 main(int32 argc, const char*[] argv) {
+    int32 a = 10;
+
+    int32 b = cast<int8>(20);
+    int32 c = cast<int8>(a);
+    return 0;
+}
+
+// @expect{test.c}
+
+int32_t main(int32_t argc, const char* argv[]) {
+    int32_t a = 10;
+
+    int32_t b = (char)(20);
+    int32_t c = (char)(a);
+
+    return 0;
+}
+

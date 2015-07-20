@@ -345,6 +345,17 @@ void CCodeGenerator::EmitExpr(const Expr* E, StringBuilder& output) {
     case EXPR_BITOFFSET:
         assert(0 && "should not happen");
         break;
+    case EXPR_CAST:
+        {
+            const ExplicitCastExpr* ECE = cast<ExplicitCastExpr>(E);
+            cbuf << '(';
+            EmitTypePreName(ECE->getDestType(), cbuf);
+            EmitTypePostName(ECE->getDestType(), cbuf);
+            cbuf << ")(";
+            EmitExpr(ECE->getInner(), cbuf);
+            cbuf << ')';
+            return;
+        }
     }
 }
 

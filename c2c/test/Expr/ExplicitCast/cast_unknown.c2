@@ -1,0 +1,18 @@
+// @warnings{no-unused}
+module test;
+
+type Number int32;
+
+func void test1() {
+    int32 a = 10;
+
+    int32 b = cast<Number>(a);
+
+    int32 c = cast<Foo>(a);         // @error{unknown type name Foo}
+
+    int32 d = cast<Number>(bar);    // @error{use of undeclared identifier bar}
+
+    int32 e = cast<Bar>         // @error{unknown type name Bar}
+        (faa);                  // @error{use of undeclared identifier faa}
+}
+
