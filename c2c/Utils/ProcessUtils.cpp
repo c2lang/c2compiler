@@ -69,8 +69,10 @@ int ProcessUtils::run(const std::string& path, const std::string& cmd) {
         }
         printf("changing to dir: %s\n", path.c_str());
 
-        // no arguments
-        char* argv[1] = { 0 };
+        // only 'self' argument
+        char self[cmd.size()+1];
+        strcpy(self, cmd.c_str());
+        char* const argv[2] = { self, 0 };
 
         printf("running command: %s\n", cmd.c_str());
         execv(cmd.c_str(), argv);

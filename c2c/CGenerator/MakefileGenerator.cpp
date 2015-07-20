@@ -31,8 +31,13 @@ void MakefileGenerator::write() {
         targetname += target;
         break;
     case GenUtils::SHARED_LIB:
+#ifdef __APPLE__
+        targetname += "lib" + target + ".dylib";
+        libname = "lib" + target + ".dylib";
+#else
         targetname += "lib" + target + ".so";
         libname = "lib" + target + ".so";
+#endif
         break;
     case GenUtils::STATIC_LIB:
         targetname += "lib" + target + ".a";
@@ -76,8 +81,14 @@ void MakefileGenerator::write() {
         for (FilesConstIter iter=files.begin(); iter!=files.end(); ++iter) {
             out << ' ' << *iter << ".o";
         }
+#ifdef __APPLE__
+        out << " -dynamiclib -Wl,-headerpad_max_install_names -o " << targetname;
+        out << " -Wl,-install_name," << libname;
+        // TODO export script replacement?
+#else
         out << " -shared -o " << targetname << " -Wl,-soname," << libname << ".1";
         out << " -Wl,--version-script=exports.version";
+#endif
         break;
     case GenUtils::STATIC_LIB:
         out << "\tar rcs " << targetname;

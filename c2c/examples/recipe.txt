@@ -151,7 +151,7 @@ lib foobar shared
     mylib2.c2
 end
 
-target libc shared
+target libc
     $warnings no-unused
     $generate-c
     stdio.c2
