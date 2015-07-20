@@ -787,6 +787,24 @@ C2::ExprResult C2Sema::ActOnBitOffset(SourceLocation colLoc, Expr* LHS, Expr* RH
     return ExprResult(new BitOffsetExpr(LHS, RHS, colLoc));
 }
 
+C2::ExprResult C2Sema::ActOnExplicitCast(SourceLocation castLoc, Expr* type, Expr* expr) {
+    assert(type);
+    assert(expr);
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: explicit cast at ";
+    castLoc.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    TypeExpr* typeExpr = cast<TypeExpr>(type);
+    if (typeExpr->hasLocalQualifier()) {
+        // TODO correct error message: cannot use keyword local with cast type
+        Diag(castLoc, diag::err_invalid_local_typedef);
+    }
+    ExplicitCastExpr* E = new ExplicitCastExpr(castLoc, typeExpr->getType(), expr);
+    delete typeExpr;
+    return ExprResult(E);
+}
+
 void C2Sema::ActOnAttr(Decl* D, const char* name, SourceRange range, Expr* arg) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA << "SEMA: attribute " << name << ANSI_NORMAL"\n";

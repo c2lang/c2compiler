@@ -164,6 +164,7 @@ private:
     ExprResult ParseCastExpression(bool isUnaryExpression,
                              bool isAddressOfOperand = false,
                              TypeCastState isTypeCast = NotTypeCast);
+    ExprResult ParseExplicitCastExpression();
     ExprResult ParseRHSOfBinaryExpression(ExprResult LHS, prec::Level MinPrec);
     ExprResult ParseStringLiteralExpression(bool AllowUserDefinedLiteral = false);
     ExprResult ParsePostfixExpressionSuffix(ExprResult LHS);

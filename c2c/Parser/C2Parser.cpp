@@ -743,6 +743,7 @@ C2::ExprResult C2Parser::ParseRHSOfBinaryExpression(ExprResult LHS, prec::Level 
   // TODO add return value?
 }
 
+// NOTE: this is the C-style cast expression that's not used anymore for actual casting
 C2::ExprResult C2Parser::ParseCastExpression(bool isUnaryExpression,
                          bool isAddressOfOperand,
                          bool &NotCastExpr,
@@ -823,6 +824,8 @@ C2::ExprResult C2Parser::ParseCastExpression(bool isUnaryExpression,
         return ParseSizeof();
     case tok::kw_elemsof:
         return ParseElemsof();
+    case tok::kw_cast:
+        return ParseExplicitCastExpression();
     case tok::plusplus:      // unary-expression: '++' unary-expression [C99]
     case tok::minusminus:    // unary-expression: '--' unary-expression [C99]
     {
@@ -881,6 +884,27 @@ C2::ExprResult C2Parser::ParseCastExpression(bool isUnaryExpression,
                                          isTypeCast);
     if (NotCastExpr) Diag(Tok, diag::err_expected_expression);
     return Res;
+}
+
+//Syntax: cast<type>(expr)
+C2::ExprResult C2Parser::ParseExplicitCastExpression() {
+    LOG_FUNC
+    assert(Tok.is(tok::kw_cast) && "Not an explicit cast expr!");
+
+    SourceLocation loc = ConsumeToken();
+
+    // <type>
+    if (ExpectAndConsume(tok::less, diag::err_expected_after, "cast")) return ExprError();
+    ExprResult type = ParseTypeSpecifier(true);
+    if (type.isInvalid()) return ExprError();
+    if (ExpectAndConsume(tok::greater)) return ExprError();
+
+    // (expr)
+    if (ExpectAndConsume(tok::l_paren)) return ExprError();
+    ExprResult expr = ParseExpression();
+    if (ExpectAndConsume(tok::r_paren)) return ExprError();
+
+    return Actions.ActOnExplicitCast(loc, type.get(), expr.get());
 }
 
 /// ParseStringLiteralExpression - This handles the various token types that

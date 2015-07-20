@@ -122,6 +122,7 @@ public:
     ExprResult ActOnPostfixUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Expr* Input);
     ExprResult ActOnUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Expr* Input);
     ExprResult ActOnBitOffset(SourceLocation colLoc, Expr* LHS, Expr* RHS);
+    ExprResult ActOnExplicitCast(SourceLocation castLoc, Expr* type, Expr* expr);
 
     // Attributes
     void ActOnAttr(Decl* D, const char* name, SourceRange range, Expr* arg);

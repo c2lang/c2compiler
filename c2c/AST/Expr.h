@@ -52,7 +52,8 @@ enum ExprKind {
     EXPR_ARRAYSUBSCRIPT,
     EXPR_MEMBER,
     EXPR_PAREN,
-    EXPR_BITOFFSET
+    EXPR_BITOFFSET,
+    EXPR_CAST
 };
 
 enum ExprCTC {
@@ -673,6 +674,31 @@ private:
     Expr* lhs;
     Expr* rhs;
     unsigned char width;    // only valid if constant
+};
+
+
+class ExplicitCastExpr : public Expr {
+public:
+    ExplicitCastExpr(SourceLocation loc, QualType type, Expr* expr_)
+        : Expr(EXPR_CAST, false)
+        , castLoc(loc)
+        , destType(type)
+        , inner(expr_)
+    {}
+    virtual ~ExplicitCastExpr();
+    static bool classof(const Expr* E) {
+        return E->getKind() == EXPR_CAST;
+    }
+    virtual void print(StringBuilder& buffer, unsigned indent) const;
+    virtual SourceLocation getLocation() const { return castLoc; }
+    virtual SourceLocation getLocEnd() const { return inner->getLocEnd(); }
+
+    QualType getDestType() const { return destType; }
+    Expr* getInner() const { return inner; }
+private:
+    SourceLocation castLoc;
+    QualType destType;
+    Expr* inner;
 };
 
 

@@ -539,3 +539,23 @@ void BitOffsetExpr::printLiteral(StringBuilder& buffer) const {
     buffer << " : ";
     rhs->printLiteral(buffer);
 }
+
+
+ExplicitCastExpr::~ExplicitCastExpr() {
+    delete inner;
+}
+
+void ExplicitCastExpr::print(StringBuilder& buffer, unsigned indent) const {
+    buffer.indent(indent);
+    buffer.setColor(COL_EXPR);
+    buffer << "ExplicitCastExpr ";
+    Expr::print(buffer, 0);
+    buffer << '\n';
+    buffer.setColor(COL_ATTR);
+    buffer.indent(indent + INDENT);
+    buffer << "desttype: ";
+    destType.print(buffer);
+    buffer << '\n';
+    inner->print(buffer, indent + INDENT);
+}
+
