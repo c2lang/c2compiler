@@ -85,19 +85,15 @@ LiteralAnalyser::LiteralAnalyser(clang::DiagnosticsEngine& Diags_)
 {
 }
 
-void LiteralAnalyser::check(QualType TLeft, const Expr* Right) {
-    if (Right->getCTC() == CTC_NONE) return;
-    // TODO assert here instead of check?
-
+bool LiteralAnalyser::calcWidth(QualType TLeft, const Expr* Right, int* availableWidth) {
     const QualType QT = TLeft.getCanonicalType();
     // TODO check if type is already ok?, then skip check?
     //if (QT == Right->getType().getCanonicalType()) return;
-    int availableWidth = 0;
     if (QT.isBuiltinType()) {
         const BuiltinType* TL = cast<BuiltinType>(QT);
         if (!TL->isInteger()) {
             // TODO floats
-            return;
+            return false;
         }
         // TODO remove const cast
         Expr* EE = const_cast<Expr*>(Right);
@@ -107,12 +103,12 @@ void LiteralAnalyser::check(QualType TLeft, const Expr* Right) {
         if (TL->getKind() != BI->getKind()) EE->setImpCast(TL->getKind());
         if (QT == Type::Bool()) {
             // NOTE: any integer to bool is ok
-            return;
+            return false;
         }
 
-        availableWidth = TL->getIntegerWidth();
+        *availableWidth = TL->getIntegerWidth();
     } else if (QT.isPointerType()) {
-        availableWidth = 32;    // only 32-bit for now
+        *availableWidth = 32;    // only 32-bit for now
         // dont ask for pointer, replace with uint32 here.
     } else {
         StringBuilder t1name(128);
@@ -121,10 +117,20 @@ void LiteralAnalyser::check(QualType TLeft, const Expr* Right) {
         StringBuilder t2name(128);
         TLeft->DiagName(t2name);
         Diags.Report(Right->getLocation(), diag::err_typecheck_convert_incompatible) << t1name << t2name << 2 << 0 << 0;
-        return;
+        return false;
         //QT.dump();
         //assert(0 && "todo");
     }
+
+    return true;
+}
+
+void LiteralAnalyser::check(QualType TLeft, const Expr* Right) {
+    if (Right->getCTC() == CTC_NONE) return;
+    // TODO assert here instead of check?
+
+    int availableWidth = 0;
+    if (!calcWidth(TLeft, Right, &availableWidth)) return;
 
     StringBuilder tname(128);
     TLeft->DiagName(tname);
@@ -217,9 +223,13 @@ APSInt LiteralAnalyser::checkLiterals(const Expr* Right) {
         break;
     case EXPR_CAST:
         {
+            // a cast may change the value without warning
             const ExplicitCastExpr* E = cast<ExplicitCastExpr>(Right);
-            // TODO check if it fits in cast type
-            return checkLiterals(E->getInner());
+            APSInt Result = checkLiterals(E->getInner());
+            SmallString<20> ss;
+            Result.toString(ss, 10, true);
+            fprintf(stderr, "Original %s\n", ss.c_str());
+            return truncateLiteral(E->getDestType(), Right, Result);
         }
     }
     return result;
@@ -445,5 +455,13 @@ APSInt LiteralAnalyser::checkDecl(const Decl* D) {
     }
     assert(0 && "should not come here");
     return APSInt();
+}
+
+APSInt LiteralAnalyser::truncateLiteral(QualType TLeft, const Expr* Right, APSInt Orig) {
+    int availableWidth = 0;
+    // TODO needs cleanup (first check if conversions are ok, then check literal values?)
+    if (!calcWidth(TLeft, Right, &availableWidth)) return APSInt(0);
+
+    return Orig.trunc(availableWidth);
 }
 

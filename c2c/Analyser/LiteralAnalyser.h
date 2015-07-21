@@ -40,11 +40,13 @@ public:
     bool checkRange(QualType T, const Expr* Right, clang::SourceLocation Loc, llvm::APSInt Result);
 private:
     void checkWidth(int availableWidth, const Limit* L, const Expr* Right, const char* tname);
+    bool calcWidth(QualType TLeft, const Expr* Right, int* availableWidth);
     llvm::APSInt checkIntegerLiterals(const Expr* Right);
     llvm::APSInt checkUnaryLiterals(const Expr* Right);
     llvm::APSInt checkBinaryLiterals(const Expr* Right);
     llvm::APSInt checkArraySubscript(const Expr* Right);
     llvm::APSInt checkDecl(const Decl* D);
+    llvm::APSInt truncateLiteral(QualType type, const Expr* Right,llvm::APSInt Result);
 
     clang::DiagnosticsEngine& Diags;
 

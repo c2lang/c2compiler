@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+module test;
+
+func void test1() {
+    int8  a = cast<int8>(256+1);   // turned into 1
+    int16 b = cast<uint16>(65536+1);  // turned into 1
+    int8  c = cast<uint16>(65536+400);  // @error{constant value 400 out-of-bounds for type 'int8', range [-128, 127]}
+}
+
