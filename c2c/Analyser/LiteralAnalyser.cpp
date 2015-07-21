@@ -85,6 +85,70 @@ LiteralAnalyser::LiteralAnalyser(clang::DiagnosticsEngine& Diags_)
 {
 }
 
+void LiteralAnalyser::check(QualType TLeft, const Expr* Right) {
+    if (Right->getCTC() == CTC_NONE) return;
+    // TODO assert here instead of check?
+
+
+    // special case for assignments to enums
+    if (TLeft.isEnumType()) {
+        // dont check value if right is also same enum type
+        if (TLeft == Right->getType()) return;
+
+        // TODO should be done elsewhere (checking if conversion is allowed)
+        fprintf(stderr, "TODO refactor checking!!, type conversion not allowed\n");
+#if 0
+        // this part should be used when checking casting CTC's to Enum types
+        APSInt Result = checkLiterals(Right);
+
+        // check if value has matching enum constant
+        const EnumType* ET = cast<EnumType>(TLeft.getTypePtr());
+        const EnumTypeDecl* ETD = ET->getDecl();
+        assert(ETD);
+        if (!ETD->hasConstantValue(Result)) {
+            fprintf(stderr, "NO SUCH CONSTANT\n");
+
+        }
+#endif
+        return;
+    }
+
+    int availableWidth = 0;
+    if (!calcWidth(TLeft, Right, &availableWidth)) return;
+
+    StringBuilder tname(128);
+    TLeft->DiagName(tname);
+    const Limit* L = getLimit(availableWidth);
+    checkWidth(availableWidth, L, Right, tname);
+}
+
+void LiteralAnalyser::checkWidth(int availableWidth, const Limit* L, const Expr* Right, const char* tname) {
+    APSInt Result = checkLiterals(Right);
+
+    assert(Result.isSigned() && "TEMP FOR NOW");
+    int64_t value = Result.getSExtValue();
+    bool overflow = false;
+    if (Result.isNegative()) {
+        const int64_t limit = L->minVal;
+        if (value < limit) overflow = true;
+    } else {
+        if (availableWidth == 64) {
+            // NOTE: assume for now value always fits in uint64
+        } else {
+            const int64_t limit = (int64_t)L->maxVal;
+            if (value > limit) overflow = true;
+        }
+    }
+    //fprintf(stderr, "VAL=%lld  width=%d signed=%d\n", value, availableWidth, Result.isSigned());
+    if (overflow) {
+        SmallString<20> ss;
+        Result.toString(ss, 10, true);
+
+        Diags.Report(Right->getLocStart(), diag::err_literal_outofbounds)
+            << tname << L->minStr << L->maxStr << ss << Right->getSourceRange();
+    }
+}
+
 bool LiteralAnalyser::calcWidth(QualType TLeft, const Expr* Right, int* availableWidth) {
     const QualType QT = TLeft.getCanonicalType();
     // TODO check if type is already ok?, then skip check?
@@ -123,46 +187,6 @@ bool LiteralAnalyser::calcWidth(QualType TLeft, const Expr* Right, int* availabl
     }
 
     return true;
-}
-
-void LiteralAnalyser::check(QualType TLeft, const Expr* Right) {
-    if (Right->getCTC() == CTC_NONE) return;
-    // TODO assert here instead of check?
-
-    int availableWidth = 0;
-    if (!calcWidth(TLeft, Right, &availableWidth)) return;
-
-    StringBuilder tname(128);
-    TLeft->DiagName(tname);
-    const Limit* L = getLimit(availableWidth);
-    checkWidth(availableWidth, L, Right, tname);
-}
-
-void LiteralAnalyser::checkWidth(int availableWidth, const Limit* L, const Expr* Right, const char* tname) {
-    APSInt Result = checkLiterals(Right);
-
-    assert(Result.isSigned() && "TEMP FOR NOW");
-    int64_t value = Result.getSExtValue();
-    bool overflow = false;
-    if (Result.isNegative()) {
-        const int64_t limit = L->minVal;
-        if (value < limit) overflow = true;
-    } else {
-        if (availableWidth == 64) {
-            // NOTE: assume for now value always fits in uint64
-        } else {
-            const int64_t limit = (int64_t)L->maxVal;
-            if (value > limit) overflow = true;
-        }
-    }
-    //fprintf(stderr, "VAL=%lld  width=%d signed=%d\n", value, availableWidth, Result.isSigned());
-    if (overflow) {
-        SmallString<20> ss;
-        Result.toString(ss, 10, true);
-
-        Diags.Report(Right->getLocStart(), diag::err_literal_outofbounds)
-            << tname << L->minStr << L->maxStr << ss << Right->getSourceRange();
-    }
 }
 
 APSInt LiteralAnalyser::checkLiterals(const Expr* Right) {

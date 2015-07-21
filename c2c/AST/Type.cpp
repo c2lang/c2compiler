@@ -37,6 +37,7 @@ bool QualType::isAliasType() const { return getTypePtr()->isAliasType(); }
 bool QualType::isStructType() const { return getTypePtr()->isStructType(); }
 bool QualType::isFunctionType() const { return getTypePtr()->isFunctionType(); }
 bool QualType::isSubscriptable() const { return getTypePtr()->isSubscriptable(); }
+bool QualType::isEnumType() const { return isa<EnumType>(getTypePtr()); }
 bool QualType::isIntegerType() const {
     QualType Canon = getTypePtr()->getCanonicalType();
     if (BuiltinType* BI = dyncast<BuiltinType>(Canon.getTypePtr())) {

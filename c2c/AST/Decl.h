@@ -310,10 +310,10 @@ public:
     EnumConstantDecl* getConstant(unsigned index) const { return constants[index]; }
 
     int getIndex(const EnumConstantDecl* c) const;
+    bool hasConstantValue(llvm::APSInt Val) const;
 private:
     typedef OwningVector<EnumConstantDecl> Constants;
     Constants constants;
-    // TODO use
     QualType implType;
 };
 

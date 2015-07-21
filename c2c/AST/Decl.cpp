@@ -299,6 +299,14 @@ int EnumTypeDecl::getIndex(const EnumConstantDecl* c) const {
     return -1;
 }
 
+bool EnumTypeDecl::hasConstantValue(llvm::APSInt Val) const {
+    for (unsigned i=0; i<constants.size(); i++) {
+        if (constants[i]->getValue() == Val) return true;
+    }
+    return false;
+}
+
+
 FunctionTypeDecl::FunctionTypeDecl(FunctionDecl* F)
     : TypeDecl(DECL_FUNCTIONTYPE, F->getName(), F->getLocation(), F->getType(), F->isPublic())
     , func(F)
