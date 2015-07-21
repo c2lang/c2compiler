@@ -23,27 +23,29 @@
 using namespace C2;
 
 static const AttrInfo attrInfo[] {
-    { ATTR_EXPORT,   "export",   false, ATTR_TYPE | ATTR_FUNC | ATTR_VAR },
-    { ATTR_PACKED,   "packed",   false, ATTR_TYPE },
-    { ATTR_UNUSED,   "unused",   false, ATTR_TYPE | ATTR_FUNC | ATTR_VAR },
-    { ATTR_SECTION,  "section",  true,              ATTR_FUNC | ATTR_VAR },
-    { ATTR_NORETURN, "noreturn", false,             ATTR_FUNC },
-    { ATTR_INLINE,   "inline",   false,             ATTR_FUNC },
-    { ATTR_ALIGNED,  "aligned",  true,  ATTR_TYPE | ATTR_FUNC | ATTR_VAR },
-    { ATTR_WEAK,     "weak",     false,             ATTR_FUNC | ATTR_VAR },
+    { ATTR_EXPORT,        "export",        false, ATTR_TYPE | ATTR_FUNC | ATTR_VAR },
+    { ATTR_PACKED,        "packed",        false, ATTR_TYPE },
+    { ATTR_UNUSED,        "unused",        false, ATTR_TYPE | ATTR_FUNC | ATTR_VAR },
+    { ATTR_UNUSED_PARAMS, "unused_params", false, ATTR_FUNC },
+    { ATTR_SECTION,       "section",       true,              ATTR_FUNC | ATTR_VAR },
+    { ATTR_NORETURN,      "noreturn",      false,             ATTR_FUNC },
+    { ATTR_INLINE,        "inline",        false,             ATTR_FUNC },
+    { ATTR_ALIGNED,       "aligned",       true,  ATTR_TYPE | ATTR_FUNC | ATTR_VAR },
+    { ATTR_WEAK,          "weak",          false,             ATTR_FUNC | ATTR_VAR },
 };
 
 const char* Attr::kind2str() const {
     switch (kind) {
-    case ATTR_UNKNOWN:  return "unkown";
-    case ATTR_EXPORT:   return "export";
-    case ATTR_PACKED:   return "packed";
-    case ATTR_UNUSED:   return "unused";
-    case ATTR_SECTION:  return "section";
-    case ATTR_NORETURN: return "noreturn";
-    case ATTR_INLINE:   return "inline";
-    case ATTR_ALIGNED:  return "aligned";
-    case ATTR_WEAK:     return "weak";
+    case ATTR_UNKNOWN:       return "unkown";
+    case ATTR_EXPORT:        return "export";
+    case ATTR_PACKED:        return "packed";
+    case ATTR_UNUSED:        return "unused";
+    case ATTR_UNUSED_PARAMS: return "unused_params";
+    case ATTR_SECTION:       return "section";
+    case ATTR_NORETURN:      return "noreturn";
+    case ATTR_INLINE:        return "inline";
+    case ATTR_ALIGNED:       return "aligned";
+    case ATTR_WEAK:          return "weak";
     }
     return "?";
 }

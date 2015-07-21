@@ -510,6 +510,7 @@ void FileAnalyser::checkVarDeclAttributes(VarDecl* D) {
             case ATTR_NORETURN:
             case ATTR_INLINE:
                 break;
+            case ATTR_UNUSED_PARAMS:
             case ATTR_SECTION:
             case ATTR_ALIGNED:
             case ATTR_WEAK:
@@ -544,6 +545,8 @@ void FileAnalyser::checkAttributes(Decl* D) {
             }
             break;
         case ATTR_UNUSED:
+            break;
+        case ATTR_UNUSED_PARAMS:
             break;
         case ATTR_SECTION:
             if (const StringLiteral* S = dyncast<StringLiteral>(arg)) {

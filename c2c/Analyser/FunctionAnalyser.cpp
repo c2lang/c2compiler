@@ -189,9 +189,12 @@ unsigned FunctionAnalyser::checkEnumValue(EnumConstantDecl* E, llvm::APSInt& nex
 
 void FunctionAnalyser::checkFunction(FunctionDecl* func) {
     LOG_FUNC
+    bool no_unused_params = func->hasAttribute(ATTR_UNUSED_PARAMS);
     // add arguments to new scope
     for (unsigned i=0; i<func->numArgs(); i++) {
         VarDecl* arg = func->getArg(i);
+
+        if (no_unused_params) arg->setUsed();
         if (arg->getName() != "") {
             // check that argument names dont clash with globals
             if (!scope.checkScopedSymbol(arg)) {
