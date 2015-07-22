@@ -102,7 +102,11 @@ void MakefileGenerator::write() {
 
     // show target (for export debug)
     out << "symbols:\n";
+#ifdef __APPLE__
+    out << "\t nm -U " << targetname << '\n';
+#else
     out << "\t nm -g -D -C --defined-only " << targetname << '\n';
+#endif
     out << '\n';
 
     // clean target
