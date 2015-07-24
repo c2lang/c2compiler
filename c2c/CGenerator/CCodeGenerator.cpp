@@ -1203,6 +1203,7 @@ void CCodeGenerator::EmitAttributes(const Decl* D, StringBuilder& output) {
         case ATTR_EXPORT:
         case ATTR_NORETURN:
         case ATTR_INLINE:
+        case ATTR_UNUSED_PARAMS:
             // ignore for now
             break;
         case ATTR_WEAK:
