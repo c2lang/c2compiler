@@ -500,6 +500,11 @@ out:
     return NumErrors;
 }
 
+const AST& C2Builder::getAST(unsigned i) const {
+    assert(i < files.size());
+    return files[i]->ast;
+}
+
 bool C2Builder::haveModule(const std::string& name) const {
     ModulesConstIter iter = modules.find(name);
     return iter != modules.end();

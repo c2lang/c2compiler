@@ -27,6 +27,7 @@ class DiagnosticsEngine;
 
 namespace C2 {
 
+class AST;
 class Recipe;
 class FileInfo;
 
@@ -73,6 +74,10 @@ public:
 
     int checkFiles();
     int build();
+
+    // AST extraction (for tools)
+    unsigned numASTs() const { return files.size(); }
+    const AST& getAST(unsigned i) const;
 private:
     bool haveModule(const std::string& name) const;
     Module* getModule(const std::string& name, bool isExternal, bool isCLib);
