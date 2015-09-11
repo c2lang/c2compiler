@@ -257,7 +257,7 @@ void BreakStmt::print(StringBuilder& buffer, unsigned indent) const {
 
 
 ContinueStmt::ContinueStmt(SourceLocation Loc_)
-    : Stmt(STMT_BREAK)
+    : Stmt(STMT_CONTINUE)
     , Loc(Loc_)
 {}
 
