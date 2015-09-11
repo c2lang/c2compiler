@@ -27,14 +27,16 @@ type Coor struct {
     uint8 flags;
 }
 
+type Piece struct {
+    Coor[4] side1;
+    Coor[4] side2;
+}
+
 type FieldStatus enum int8 {
     FIELD_FREE = 0,
     FIELD_BLOCKED,
     FIELD_TAKEN,    // + index of piece
 }
-
-uint32 found;
-uint64 tried;
 
 type Field struct {
 #if 0
@@ -49,12 +51,6 @@ type Field struct {
     uint8 expected;  // set by other pieces
 }
 
-type Board struct {
-    Field[5*5] fields;
-    bool haveHead;
-    bool haveTail;
-}
-
 type Flags enum int8 {
     NORTH = 1,
     EAST  = 2,
@@ -64,9 +60,10 @@ type Flags enum int8 {
     TAIL  = 6,
 }
 
-type Piece struct {
-    Coor[4] side1;
-    Coor[4] side2;
+type Board struct {
+    Field[5*5] fields;
+    bool haveHead;
+    bool haveTail;
 }
 
 type Option struct {
@@ -110,9 +107,25 @@ Piece[] pieces = {
     },
 }
 Option[num_options][num_pieces] options;
-
 const int32 num_pieces = elemsof(pieces);
 const int32 num_options = 8;
+
+type PositionType enum int8 {
+    PLACE_FREE = 0, // not placed yet
+    PLACE_SETUP,    // placed by initial setup
+    PLACE_PLACED,   // placed during search
+}
+
+type Position struct {
+    PositionType postype;
+    int8 option;
+    int8 x;
+    int8 y;
+}
+
+Position[num_pieces] setup = {
+    [0] = { PLACE_SETUP, 0, 1, 4 },
+}
 
 
 func Coor coor_rotate(Coor input, uint32 rotation) {
@@ -175,6 +188,14 @@ func void board_set(int32 x, int32 y, Field field) {
 
 func Field board_get(int32 x, int32 y) {
     return board.fields[x + y * 5];
+}
+
+func void board_clearflags(int32 x, int32 y) {
+    board.fields[x + y * 5].expected = 0;
+}
+
+func void board_setExpected(int32 x, int32 y, uint8 side) {
+    board.fields[x + y * 5].expected = side;
 }
 
 func void board_init() {
@@ -320,14 +341,6 @@ func int32 board_try_option(const Option* P, int32 x, int32 y) {
     return 0;
 }
 
-func void board_clearflags(int32 x, int32 y) {
-    board.fields[x + y * 5].expected = 0;
-}
-
-func void board_setExpected(int32 x, int32 y, uint8 side) {
-    board.fields[x + y * 5].expected = side;
-}
-
 func void board_add(const Option* P, int32 x, int32 y, uint8 id) {
     for (uint32 i=0; i<4; i++) {
         Coor c = P.parts[i];
@@ -398,12 +411,26 @@ func void board_rem(const Option* P, int32 x, int32 y) {
     }
 }
 
+uint32 found;
+uint64 tried;
 func void board_try_piece(uint8 p) {
     if (p == num_pieces) {
         found++;
         io.printf("Found solution %u\n", found);
         board_print();
         return;
+    }
+    if (setup[p].postype == PLACE_SETUP) {
+        int32 o = setup[p].option;
+        int32 x = setup[p].x;
+        int32 y = setup[p].y;
+        if (board_try_option(&options[o][p], x, y)) {
+            io.printf("invalid setup: piece %d, option %d at %d,%d\n", p, o, x, y);
+            return;
+            //exit(-1);
+        }
+        board_add(&options[o][p], x, y, p);
+        board_try_piece(p+1);
     }
     for (int32 y=4; y>=0; y--) {
         for (int32 x=0; x<5; x++) {

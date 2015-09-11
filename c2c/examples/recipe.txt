@@ -175,7 +175,6 @@ target puzzle
 end
 
 target snake
-    $warnings no-unused
     $deps show-files show-externals
     $generate-c single-module
     snake.c2
