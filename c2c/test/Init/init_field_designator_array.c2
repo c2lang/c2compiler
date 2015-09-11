@@ -3,7 +3,7 @@ module test;
 
 type Point struct {
     int32 x;
-    const char* y;
+    const int8* y;
 }
 
 Point a = { [0] = 2, "hello" }  // @error{array designator cannot initialize non-array type '(struct)Point'}

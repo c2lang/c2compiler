@@ -6,7 +6,7 @@ func void foo(int32 a, int32 b) @(unused_params, unused)
 func void bar(int32 c, bool) @(unused)  // @warning{unused parameter 'c'}
 {}
 
-public func int32 main(int32 argc, char*[] argv) @(unused_params)
+public func int32 main(int32 argc, int8*[] argv) @(unused_params)
 {
     return 0;
 }

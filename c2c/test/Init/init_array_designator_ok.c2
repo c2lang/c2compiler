@@ -17,7 +17,7 @@ int32[] array = {
 
 type Point struct {
     int32 x;
-    const char* name;
+    const int8* name;
 }
 
 Point[] array2 = {

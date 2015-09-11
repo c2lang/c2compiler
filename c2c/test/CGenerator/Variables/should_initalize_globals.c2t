@@ -7,7 +7,7 @@ module test;
 
 type Foo struct {
     int32 i;
-    char* cp;
+    int8* cp;
     bool b;
 }
 

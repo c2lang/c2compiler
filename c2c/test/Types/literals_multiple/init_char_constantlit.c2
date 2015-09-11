@@ -3,7 +3,7 @@ module test;
 
 func void test1() {
     const int32 NUM = 100;
-    char a = NUM;
-    char b = NUM + 28; // @error{constant value 128 out-of-bounds for type 'int8', range [-128, 127]}
+    int8 a = NUM;
+    int8 b = NUM + 28; // @error{constant value 128 out-of-bounds for type 'int8', range [-128, 127]}
 }
 

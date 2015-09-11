@@ -13,7 +13,7 @@ public func void f() {}
 public func void g() @(export) {}
 func void h() {}
 
-public func int32 main(int32 argc, const char*[] argv)
+public func int32 main(int32 argc, const int8*[] argv)
 {
     return 0;
 }

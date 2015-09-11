@@ -4,8 +4,11 @@ module test;
 func void test1() {
     const int32 NUM = 100;
     const int32 NUM2 = 200;
-    char a = 1;
-    char b = a + NUM;
-    char c = a + NUM2;  // @error{constant value 200 out-of-bounds for type 'int8', range [-128, 127]}
+    int8 a = 1;
+    int8 b = a + NUM;
+    int8 c = a + NUM2;  // @error{constant value 200 out-of-bounds for type 'int8', range [-128, 127]}
+
+    char d = 250;
+    char e = 260;   // @error{constant value 260 out-of-bounds for type 'uint8', range [0, 255]}
 }
 

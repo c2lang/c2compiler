@@ -2,8 +2,8 @@
 module test;
 
 func void test1() {
-    char a = 1;
-    char b = 2;
-    char c = (b > a) + a + b;
+    int8 a = 1;
+    int8 b = 2;
+    int8 c = (b > a) + a + b;
 }
 

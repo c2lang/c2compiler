@@ -5,7 +5,7 @@ func void test1() {
     const int32 NUM = 100;
     const int32 NUM2 = 200;
     // NOTE: NUM is CTC_FULL, so its value is checked below, not the type
-    char a = NUM;
-    char b = NUM2;  // @error{constant value 200 out-of-bounds for type 'int8', range [-128, 127]}
+    int8 a = NUM;
+    int8 b = NUM2;  // @error{constant value 200 out-of-bounds for type 'int8', range [-128, 127]}
 }
 

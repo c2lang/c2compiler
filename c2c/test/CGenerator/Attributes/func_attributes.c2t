@@ -12,7 +12,7 @@ public func int32 foo() @(section="ctest") {
 func int32 bar() @(section="ctest") {
     return 2;
 }
-public func int32 main(int32 argc, const char*[] argv)
+public func int32 main(int32 argc, const int8*[] argv)
 {
     return 0;
 }

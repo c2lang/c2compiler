@@ -13,7 +13,7 @@ func void test1() {
     bool c = true;
     b = c[0:0];      // @error{bit offsets are only allowed on unsigned integer type}
 
-    const char* text = "hallo";
+    const int8* text = "hallo";
     b = text[4:2];   // @error{bit offsets are only allowed on unsigned integer type}
 
     b = test1[4:2];  // @error{bit offsets are only allowed on unsigned integer type}

@@ -4,7 +4,7 @@ module test;
 func void test1() {
     uint32 a = 0;
     uint32 b = 0;
-    const char* text = "";
+    const int8* text = "";
     b = a[test1:0];     // @error{index of bitoffset has non-integer type 'void ()'}
     b = a[0:text];      // @error{index of bitoffset has non-integer type 'int8*'}
 

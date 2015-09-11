@@ -2,7 +2,7 @@
 module test;
 
 func void test1() {
-    char a = 1;
-    char b = 10 + a;
+    int8 a = 1;
+    int8 b = 10 + a;
 }
 

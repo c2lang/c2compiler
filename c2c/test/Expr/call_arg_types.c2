@@ -1,11 +1,11 @@
 // @warnings{no-unused}
 module test;
 
-func void test2(char a) {}
+func void test2(int8 a) {}
 
 func void test1() {
     test2(100);
-    char c = 1;
+    int8 c = 1;
     test2(c);
 
     test2(100 + 100);   // @error{constant value 200 out-of-bounds for type 'int8', range [-128, 127]}

@@ -3,7 +3,7 @@ module test;
 
 type Point struct {
     int32 x;
-    char y;
+    int8 y;
 }
 
 func void test1() {

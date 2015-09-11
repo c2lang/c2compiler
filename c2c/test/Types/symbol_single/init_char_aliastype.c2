@@ -5,7 +5,7 @@ type Number int32;
 
 func void test1() {
     Number a = 10;
-    char c = a;     // @warning{implicit conversion loses integer precision: 'Number' (aka 'int32') to 'int8'}
+    int8 c = a;     // @warning{implicit conversion loses integer precision: 'Number' (aka 'int32') to 'int8'}
 }
 
 

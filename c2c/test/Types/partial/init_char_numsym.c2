@@ -3,11 +3,11 @@ module test;
 
 func void test1() {
     int32 a = 1;
-    char b = 1;
-    char c = b + b;
-    char d = 100
+    int8 b = 1;
+    int8 c = b + b;
+    int8 d = 100
              + a;   // @warning{implicit conversion loses integer precision: 'int32' to 'int8'}
-    char e = 200    // @error{constant value 200 out-of-bounds for type 'int8', range [-128, 127]}
+    int8 e = 200    // @error{constant value 200 out-of-bounds for type 'int8', range [-128, 127]}
              + a;   // @warning{implicit conversion loses integer precision: 'int32' to 'int8'}
 }
 

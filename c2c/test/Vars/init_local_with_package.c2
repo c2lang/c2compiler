@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func void test1(int32, char*[]) {
+func void test1(int32, int8*[]) {
     int32 a = test;       // @error{invalid type conversion from 'module' to 'int32'}
 }
 

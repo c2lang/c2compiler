@@ -2,7 +2,7 @@
 // @warnings{no-unused}
 module test;
 
-type PTR const char*;
+type PTR const int8*;
 const PTR size2 = 20;
-int32[size2] b;      // @error{size of array has non-integer type 'PTR' (aka 'char*')}
+int32[size2] b;      // @error{size of array has non-integer type 'PTR' (aka 'int8*')}
 

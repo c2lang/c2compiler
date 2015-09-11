@@ -5,7 +5,7 @@
 // @file{file1}
 module test;
 
-public func int32 main(int32 argc, const char*[] argv) {
+public func int32 main(int32 argc, const int8*[] argv) {
     int32 a = 0;
     for (a=0; a<10; a++) {}
 

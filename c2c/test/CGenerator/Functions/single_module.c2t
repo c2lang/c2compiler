@@ -11,7 +11,7 @@ public func void pub1() {}
 
 func void nonpub1() {}
 
-public func int32 main(int32 argc, const char*[] argv) {
+public func int32 main(int32 argc, const int8*[] argv) {
     return 0;
 }
 

@@ -3,7 +3,7 @@ module test;
 
 type Point struct {
     int32 x;
-    const char* y;
+    const int8* y;
 }
 
 Point p = { .z = 10 }   // @error{field designator 'z' does not refer to any field in type '(struct)Point'}

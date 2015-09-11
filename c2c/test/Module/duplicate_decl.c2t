@@ -9,5 +9,5 @@ int32 a;  // @note{previous definition is here}
 // @file{file2}
 module foo;
 
-char a;     // @error{redefinition of a}
+int8 a;     // @error{redefinition of a}
 

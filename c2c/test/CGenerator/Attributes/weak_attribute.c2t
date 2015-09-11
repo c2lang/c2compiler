@@ -10,7 +10,7 @@ public int32 x @(weak) = 123;
 
 public func void foo() @(weak) {}
 
-public func int32 main(int32 argc, const char*[] argv)
+public func int32 main(int32 argc, const int8*[] argv)
 {
     return 0;
 }

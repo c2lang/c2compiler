@@ -9,7 +9,7 @@ int32 x @(section="test") = 123;
 
 func void foo() @(section="test") {}
 
-public func int32 main(int32 argc, const char*[] argv)
+public func int32 main(int32 argc, const int8*[] argv)
 {
     return 0;
 }

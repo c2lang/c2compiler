@@ -3,7 +3,7 @@ module test;
 
 import c2 local;
 
-public func int32 main(int32 argc, char*[] argv) {
+public func int32 main(int32 argc, int8*[] argv) {
     int8  a = min_int8 - 1; // @error{constant value -129 out-of-bounds for type 'int8', range [-128, 127]}
     int8  b = max_int8 + 1; // @error{constant value 128 out-of-bounds for type 'int8', range [-128, 127]}
 

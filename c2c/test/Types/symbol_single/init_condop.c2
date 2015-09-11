@@ -6,10 +6,10 @@ func void test1() {
     int32 i = 1;
     int32 a = (f ? 1 : 0);  // @error{invalid type conversion from 'float32' to 'bool'}
 
-    char c = (1 ? 'c' : 'd');
-    char d = (1 ? 'c' : i); // @warning{implicit conversion loses integer precision: 'int32' to 'int8'}
-    char e = (1 ? i : 0);   // @warning{implicit conversion loses integer precision: 'int32' to 'int8'}
-    char g = (1 ? i         // @warning{implicit conversion loses integer precision: 'int32' to 'int8'}
+    int8 c = (1 ? 'c' : 'd');
+    int8 d = (1 ? 'c' : i); // @warning{implicit conversion loses integer precision: 'int32' to 'int8'}
+    int8 e = (1 ? i : 0);   // @warning{implicit conversion loses integer precision: 'int32' to 'int8'}
+    int8 g = (1 ? i         // @warning{implicit conversion loses integer precision: 'int32' to 'int8'}
                 : f);       // @warning{implicit conversion turns floating-point number into integer: 'float32' to 'int8'}
 }
 

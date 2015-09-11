@@ -2,7 +2,7 @@
 module test;
 
 func void test1() {
-    const char* size1 = 10;
+    const int8* size1 = 10;
     int32[size1] a;      // @error{size of array has non-integer type 'int8*'}
 
     const bool b = true;

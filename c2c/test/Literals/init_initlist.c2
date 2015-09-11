@@ -5,7 +5,7 @@ type Struct struct {
     int8 a;
     int32 b;
     int16 c;
-    const char* d;
+    const int8* d;
 }
 
 Struct s = { 300,   // @error{constant value 300 out-of-bounds for type 'int8', range [-128, 127]}

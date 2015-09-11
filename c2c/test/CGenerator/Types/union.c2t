@@ -7,7 +7,7 @@ module test;
 
 type Data union {
     int32 a;
-    char* b;
+    int8* b;
 }
 
 // @expect{test.c}

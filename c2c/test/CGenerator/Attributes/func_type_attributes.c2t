@@ -9,7 +9,7 @@ type Func1 func void() @(unused);
 public type Func2 func void() @(export);
 type Func3 func void() @(aligned=16);
 
-public func int32 main(int32 argc, const char*[] argv)
+public func int32 main(int32 argc, const int8*[] argv)
 {
     return 0;
 }

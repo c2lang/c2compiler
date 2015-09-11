@@ -10,7 +10,7 @@ type Struct struct {
     int8 y;
 } @(packed)
 
-public func int32 main(int32 argc, const char*[] argv)
+public func int32 main(int32 argc, const int8*[] argv)
 {
     return 0;
 }
@@ -21,6 +21,6 @@ typedef struct test_Struct_ test_Struct;
 
 struct test_Struct_ {
       int32_t x;
-        char y;
+         char y;
 } __attribute__((packed));
 

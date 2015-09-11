@@ -1,5 +1,5 @@
 // @warnings{no-unused}
 module test;
 
-char[] a = "hello";
+int8[] a = "hello";
 

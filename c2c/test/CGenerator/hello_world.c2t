@@ -7,7 +7,7 @@ module test;
 
 import stdio;
 
-public func int32 main(int32 argc, const char*[] argv) {
+public func int32 main(int32 argc, const int8*[] argv) {
     stdio.printf("Hello World!\n");
     return 0;
 }
@@ -16,7 +16,7 @@ public func int32 main(int32 argc, const char*[] argv) {
 #include <stdio.h>
 
 int32_t main(int32_t argc, const char* argv[]) {
-    printf("Hello World!\n");
+    printf((const unsigned char*)"Hello World!\n");
     return 0;
 }
 

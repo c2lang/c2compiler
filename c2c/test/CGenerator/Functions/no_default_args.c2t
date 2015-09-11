@@ -11,7 +11,7 @@ func void bar(int32 a, int32 b = 22) {}
 
 func void faa(int32 a = 11, int32 b = 22) {}
 
-public func int32 main(int32 argc, const char*[] argv) {
+public func int32 main(int32 argc, const int8*[] argv) {
     foo();
     foo(1);
 

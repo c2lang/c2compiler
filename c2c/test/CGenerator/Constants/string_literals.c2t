@@ -1,0 +1,13 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c no-build
+
+// @file{file1}
+module test;
+
+const char* a = "foo";
+
+// @expect{test.c}
+
+static const unsigned char* test_a = (const unsigned char*)"foo";
+

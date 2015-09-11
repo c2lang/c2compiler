@@ -3,7 +3,7 @@ module test;
 
 type Point struct {
     int32 x;
-    const char* y;
+    const int8* y;
 }
 
 Point p = { .x = 10,   // @note{previous initialization is here}
