@@ -1,0 +1,17 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c
+
+// @file{file1}
+module test;
+
+int32[] numbers = { 1, 2, 3, 4 }
+
+const int32 amount = elemsof(numbers);
+
+// @expect{test.c}
+
+#define test_amount (sizeof(test_numbers)/sizeof(test_numbers[0]))
+
+static int32_t test_numbers[] = { 1, 2, 3, 4 };
+

@@ -290,12 +290,12 @@ void CCodeGenerator::EmitExpr(const Expr* E, StringBuilder& output) {
                         VarDecl* VD = cast<VarDecl>(D);
                         QualType Q = VD->getType();
                         if (Q.isArrayType()) {
-                            // generate: sizeof(array) / sizeof(array[0]);
-                            output << "sizeof(";
+                            // generate: (sizeof(array) / sizeof(array[0]))
+                            output << "(sizeof(";
                             EmitDecl(D, output);
                             output << ")/sizeof(";
                             EmitDecl(D, output);
-                            output << "[0])";
+                            output << "[0]))";
                             return;
                         }
                         // TODO also allow elemsof for EnumType
