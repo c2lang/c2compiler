@@ -1,0 +1,11 @@
+// @skip
+// @warnings{no-unused}
+module test;
+
+func void test1() {
+    char* c = "A";    // @error{conversion from const char* to char* TODO}
+    const char* d = "B";
+    const uint8* e = "C";
+    const int8* f = "D";    // @error{implicit conversion between different pointers TODO}
+}
+

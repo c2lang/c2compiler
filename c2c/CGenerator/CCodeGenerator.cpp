@@ -1145,7 +1145,6 @@ void CCodeGenerator::EmitTypePostName(QualType type, StringBuilder& output) {
 void CCodeGenerator::EmitStringLiteral(const std::string& input, StringBuilder& output) {
     LOG_FUNC
     // always cast to 'unsigned char*'
-    output << "(const unsigned char*)";
     output << '"';
     const char* cp = input.c_str();
     for (unsigned i=0; i<input.size(); i++) {

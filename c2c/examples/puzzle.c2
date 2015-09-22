@@ -63,21 +63,21 @@ func const char* print(int32 index2) {
 }
 
 func void showPaths() {
-    io.puts("depth   A   B   C   D   E   F   G   H   I   J   K   L   M   N   O   P   Q   R\n");
+    io.printf("depth   A   B   C   D   E   F   G   H   I   J   K   L   M   N   O   P   Q   R\n");
     for (int32 d=0; d<DEPTH_MAX; d++) {
         io.printf("%5d   ", d);
         for (int32 p=0; p<POINT_MAX; p++) {
             //int32 idx = index((Point)p, d);
             int32 idx = index(p, d);
             int32 prev = paths[idx];
-            if (idx == startPoint) io.puts(ANSI_BGREEN);
-            if (idx == endPoint) io.puts(ANSI_BRED);
-            if (prev == -1) io.puts("  ");
+            if (idx == startPoint) io.printf(ANSI_BGREEN);
+            if (idx == endPoint) io.printf(ANSI_BRED);
+            if (prev == -1) io.printf("  ");
             else io.printf("%s", print(prev));
-            if (d==0 && (p==POINT_A || p==POINT_J)) io.puts(ANSI_NORMAL);
-            io.puts("  ");
+            if (d==0 && (p==POINT_A || p==POINT_J)) io.printf(ANSI_NORMAL);
+            io.printf("  ");
         }
-        io.puts("\n");
+        io.printf("\n");
     }
 }
 
@@ -97,7 +97,7 @@ func int32 printPath(int32 idx) {
 
 }
 
-public func int32 main(int32, const char*[]) {
+public func int32 main(int32, const int8*[]) {
     // initialize paths
     for (int32 p=0; p<POINT_MAX; p++) {
         for (int32 d=0; d<DEPTH_MAX; d++) {
@@ -143,9 +143,9 @@ public func int32 main(int32, const char*[]) {
     }
     showPaths();
     if (paths[endPoint] == -1) {
-        io.puts("No solution found\n");
+        io.printf("No solution found\n");
     } else {
-        io.puts("Found path:\n");
+        io.printf("Found path:\n");
         printPath(endPoint);
     }
 
