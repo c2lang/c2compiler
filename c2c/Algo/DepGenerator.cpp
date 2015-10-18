@@ -29,6 +29,7 @@
 using namespace C2;
 using namespace std;
 
+// TODO move to Utils..
 // return pointer to filename after last '/'
 static const char* getFileName(const std::string& s) {
     const char* input = s.c_str();
@@ -40,6 +41,7 @@ static const char* getFileName(const std::string& s) {
     return cp;
 }
 
+// TODO move to Utils..
 static void fullName(const Decl* D, StringBuilder& output) {
     const Module* P = D->getModule();
     assert(P);

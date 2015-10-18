@@ -16,7 +16,7 @@ public func int32 main(int32 argc, const int8*[] argv) {
 #include <stdio.h>
 
 int32_t main(int32_t argc, const char* argv[]) {
-    printf((const unsigned char*)"Hello World!\n");
+    printf("Hello World!\n");
     return 0;
 }
 

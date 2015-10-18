@@ -1395,8 +1395,7 @@ QualType FunctionAnalyser::analyseArraySubscript(Expr* expr, unsigned side) {
 QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
     LOG_FUNC
     MemberExpr* M = cast<MemberExpr>(expr);
-    const std::string& member = M->getMemberName();
-    SourceLocation memberLoc = M->getMemberLoc();
+    IdentifierExpr* member = M->getMember();
 
     // we dont know what we're looking at here, it could be:
     // mod.type
@@ -1411,13 +1410,15 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
     if (isa<ModuleType>(LType)) {
         M->setModulePrefix(true);
         ModuleType* PT = cast<ModuleType>(LType.getTypePtr());
-        Decl* D = scope.findSymbolInModule(member, memberLoc, PT->getModule());
+        Decl* D = scope.findSymbolInModule(member->getName(), member->getLocation(), PT->getModule());
         if (D) {
             if (side & RHS) D->setUsed();
             M->setDecl(D);
             SetConstantFlags(D, M);
             QualType Q = D->getType();
             expr->setType(Q);
+            member->setType(Q);
+            member->setDecl(D);
             return Q;
         }
     } else {
@@ -1433,7 +1434,7 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
             StringBuilder buf(MAX_LEN_TYPENAME);
             LType.DiagName(buf);
             Diag(M->getLocation(), diag::err_typecheck_member_reference_struct_union)
-                << buf << M->getSourceRange() << memberLoc;
+                << buf << M->getSourceRange() << member->getLocation();
             return QualType();
         }
         return analyseStructMember(S, M, side);
@@ -1446,11 +1447,14 @@ QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr* M, unsign
     LOG_FUNC
     const StructType* ST = cast<StructType>(T);
     const StructTypeDecl* S = ST->getDecl();
-    Decl* match = S->find(M->getMemberName());
+    IdentifierExpr* member = M->getMember();
+    Decl* match = S->find(member->getName());
     if (match) {
         if (side & RHS) match->setUsed();
         M->setDecl(match);
         M->setType(match->getType());
+        member->setDecl(match);
+        member->setType(match->getType());
         return match->getType();
     }
     char temp1[MAX_LEN_TYPENAME];
@@ -1459,8 +1463,8 @@ QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr* M, unsign
 
     char temp2[MAX_LEN_VARNAME];
     StringBuilder buf2(MAX_LEN_VARNAME, temp2);
-    buf2 << '\'' << M->getMemberName() << '\'';
-    Diag(M->getMemberLoc(), diag::err_no_member) << temp2 << temp1;
+    buf2 << '\'' << member->getName() << '\'';
+    Diag(member->getLocation(), diag::err_no_member) << temp2 << temp1;
     return QualType();
 }
 

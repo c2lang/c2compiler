@@ -151,11 +151,13 @@ public:
     bool isParameter() const { return getVarKind() == VARDECL_PARAM; }
     bool isGlobal() const { return getVarKind() == VARDECL_GLOBAL; }
     VarDeclKind getVarKind() const { return static_cast<VarDeclKind>(DeclBits.varDeclKind); }
+    QualType getOrigType() const { return origType; }
 
     // for codegen
     llvm::Value* getIRValue() const { return IRValue; }
     void setIRValue(llvm::Value* v) const { IRValue = v; }
 private:
+    QualType origType;
     Expr* initValue;
     mutable llvm::Value* IRValue;
 };
@@ -190,13 +192,15 @@ public:
 
     // return type
     QualType getReturnType() const { return rtype; }
-    void updateReturnType(QualType rt) { rtype = rt; }
+    QualType getOrigReturnType() const { return origRType; }
+    void setReturnType(QualType rt) { rtype = rt; }
 
     // for codegen
     llvm::Function* getIRProto() const { return IRProto; }
     void setIRProto(llvm::Function* f) const { IRProto = f; }
 private:
     QualType rtype;
+    QualType origRType;
 
     typedef OwningVector<VarDecl> Args;
     Args args;

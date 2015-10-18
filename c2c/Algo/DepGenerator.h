@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef BUILDER_DEP_GENERATOR_H
-#define BUILDER_DEP_GENERATOR_H
+#ifndef ALGO_DEP_GENERATOR_H
+#define ALGO_DEP_GENERATOR_H
 
 #include <string>
 #include <vector>

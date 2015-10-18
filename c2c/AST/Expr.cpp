@@ -470,16 +470,9 @@ void MemberExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer << ' ';
     Expr::print(buffer, 0);
     buffer << '\n';
-    buffer.indent(indent + INDENT);
-    buffer.setColor(COL_ATTR);
-    buffer << "LHS=\n";
     Base->print(buffer, indent + INDENT);
+    member->print(buffer, indent + INDENT);
     buffer.indent(indent + INDENT);
-    buffer.setColor(COL_ATTR);
-    buffer << "RHS=";
-    buffer.setColor(COL_VALUE);
-    buffer << member << '\n';
-    buffer.indent(indent);
     buffer.setColor(COL_ATTR);
     buffer << "decl=";
     if (decl) {

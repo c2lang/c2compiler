@@ -169,6 +169,7 @@ end
 
 target puzzle
     $deps show-files show-externals
+    $refs
     $generate-c single-module
     puzzle.c2
     puzzle2.c2
@@ -176,12 +177,14 @@ end
 
 target snake
     $deps show-files show-externals
+    $refs
     $generate-c single-module
     snake.c2
 end
 
 target big
     $warnings no-unused
+    $refs
     $deps show-files show-externals
     $generate-c single-module
     big.c2

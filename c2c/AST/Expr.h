@@ -586,11 +586,10 @@ private:
 // Represents a symbol reference 'a.b'/'a.b.c', A can be a module,struct or other Member expr
 class MemberExpr : public Expr {
 public:
-    MemberExpr(Expr* Base_, const std::string& member_, SourceLocation loc_)
+    MemberExpr(Expr* Base_, IdentifierExpr* member_)
         : Expr(EXPR_MEMBER, false)
         , Base(Base_)
         , member(member_)
-        , loc(loc_)
         , decl(0)
     {}
     virtual ~MemberExpr();
@@ -600,11 +599,11 @@ public:
     virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return Base->getLocation(); }
     virtual SourceLocation getLocStart() const { return Base->getLocStart(); }
-    virtual SourceLocation getLocEnd() const { return loc; }
+    virtual SourceLocation getLocEnd() const { return member->getLocEnd(); }
 
     Expr* getBase() const { return Base; }
-    const std::string& getMemberName() const { return member; }
-    SourceLocation getMemberLoc() const { return loc; }
+    IdentifierExpr* getMember() const { return member; }
+
     Decl* getDecl() const { return decl; }
     void setDecl(Decl* D) { decl = D; }
 
@@ -615,8 +614,7 @@ public:
     virtual void printLiteral(StringBuilder& buffer) const;
 private:
     Expr* Base;
-    const std::string member;
-    SourceLocation loc;
+    IdentifierExpr* member;
     Decl* decl;
 };
 

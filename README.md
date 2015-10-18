@@ -72,4 +72,18 @@ To see all available options, run:
 ```
 c2c -h
 ```
+##c2tags
+**c2tags** is C2's version of ctags. This tool is used by vim (e.a.) to "jump to
+definition". See the [installation document](INSTALL.md) on how to install.
+
+How it works is as follows:
+* c2c generates a **refs** file per target. This file contains all references
+    and their destination
+* c2tags currently doesn't have a full-blown vim-plugin yet, but a small
+    code-fragment in you .vimrc suffices.
+* when standing on any symbol in C2 code, pressing ctrl-h (configurable)
+    will jump to the definition. Pressing ctrl-o (default) will jump back.
+
+Just like **c2c** itself, **c2tags** can be called from any (sub)directory in the
+project tree.
 

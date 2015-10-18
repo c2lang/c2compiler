@@ -13,8 +13,14 @@
  * limitations under the License.
  */
 
-#ifndef ALGO_DEP_VISITOR_H
-#define ALGO_DEP_VISITOR_H
+#ifndef ALGO_AST_VISITOR_H
+#define ALGO_AST_VISITOR_H
+
+/*
+    This class is the beginning of a generic AST-Visitor class that can be
+    extended for various purposes. Currently it only supports visiting all
+    IdentifierExpr's in the code, for a Decl
+*/
 
 #include <stdint.h>
 #include <vector>
@@ -28,18 +34,15 @@ class FunctionDecl;
 class Stmt;
 class CompoundStmt;
 class Expr;
+class IdentifierExpr;
 
-class DepVisitor {
+class ASTVisitor {
 public:
-    DepVisitor(const Decl* D, bool checkExternals_) : decl(D), checkExternals(checkExternals_) {}
+    ASTVisitor(const Decl* D) : decl(D) {}
 
     void run();
 
-    unsigned getNumDeps() const { return deps.size(); }
-    inline const Decl* getDep(unsigned i) const {
-        return reinterpret_cast<const Decl*>(deps[i] & ~0x1);
-    }
-    inline bool isFull(unsigned i) const { return  deps[i] & 0x1; }
+    virtual void visitIdentifierExpr(const IdentifierExpr* I) = 0;
 private:
     // Decl
     void checkDecl(const Decl* D);
@@ -53,13 +56,7 @@ private:
     // Expr
     void checkExpr(const Expr* E);
 
-    void addDep(const Decl* D, bool isFull = true);
-
-    // isFull is stored in lowest bit, Decl* in rest
-    typedef std::vector<uintptr_t> Deps;
-    Deps deps;
     const Decl* decl;
-    bool checkExternals;
 };
 
 }

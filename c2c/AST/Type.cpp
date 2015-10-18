@@ -19,6 +19,7 @@
 #include "AST/Expr.h"
 #include "AST/Decl.h"
 #include "Utils/StringBuilder.h"
+#include "Utils/UtilsConstants.h"
 #include "Utils/color.h"
 
 using namespace C2;
@@ -114,6 +115,7 @@ void QualType::print(StringBuilder& buffer) const {
     buffer.setColor(COL_TYPE);
     buffer << '\'';
     debugPrint(buffer);
+    buffer.setColor(COL_TYPE);
     buffer << '\'';
     const Type* T = getTypePtrOrNull();
     if (T && T != T->canonicalType.getTypePtrOrNull()) {
@@ -551,7 +553,20 @@ void ArrayType::setSize(const llvm::APInt& value) {
 }
 
 
+UnresolvedType::~UnresolvedType() {
+    delete moduleName;
+    delete typeName;
+}
+
+TypeDecl* UnresolvedType::getDecl() const {
+    Decl* decl = typeName->getDecl();
+    if (!decl) return 0;
+    assert(isa<TypeDecl>(decl));
+    return cast<TypeDecl>(decl);
+}
+
 void UnresolvedType::printName(StringBuilder& buffer) const {
+    const Decl* decl = typeName->getDecl();
     if (decl) {
         buffer << decl->getName();
     } else {
@@ -561,6 +576,7 @@ void UnresolvedType::printName(StringBuilder& buffer) const {
 }
 
 void UnresolvedType::debugPrint(StringBuilder& buffer) const {
+    const Decl* decl = typeName->getDecl();
     if (decl) {
         buffer << "(Unresolved)" << decl->getName();
     } else {
@@ -568,6 +584,7 @@ void UnresolvedType::debugPrint(StringBuilder& buffer) const {
         printLiteral(buffer);
     }
 }
+
 #ifdef TYPE_DEBUG
 void UnresolvedType::fullDebug(StringBuilder& buffer, int indent) const {
     buffer.indent(indent);
@@ -576,6 +593,7 @@ void UnresolvedType::fullDebug(StringBuilder& buffer, int indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_ATTR);
     buffer << "decl=";
+    const Decl* decl = typeName->getDecl();
     if (decl) {
         buffer << decl->getName() << '\n';
     } else {
@@ -589,10 +607,11 @@ void UnresolvedType::fullDebug(StringBuilder& buffer, int indent) const {
 }
 #endif
 void UnresolvedType::printLiteral(StringBuilder& output) const {
-    if (!pname.empty()) {
-        output << pname << '.';
+    if (moduleName) {
+        moduleName->printLiteral(output);
+        output << '.';
     }
-    output << tname;
+    typeName->printLiteral(output);
 }
 
 
@@ -744,9 +763,8 @@ QualType TypeContext::getArrayType(QualType element, Expr* size, bool ownSize, b
     return add(N);
 }
 
-QualType TypeContext::getUnresolvedType(SourceLocation ploc, const std::string& pname,
-                                        SourceLocation tloc, const std::string& tname) {
-    return add(new UnresolvedType(ploc, pname, tloc, tname));
+QualType TypeContext::getUnresolvedType(IdentifierExpr* moduleName, IdentifierExpr* typeName) {
+    return add(new UnresolvedType(moduleName, typeName));
 }
 
 QualType TypeContext::getAliasType(AliasTypeDecl* A, QualType refType) {

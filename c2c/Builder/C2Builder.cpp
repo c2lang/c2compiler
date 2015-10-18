@@ -59,6 +59,7 @@
 #include "Parser/C2Sema.h"
 #include "Analyser/TargetAnalyser.h"
 #include "Algo/DepGenerator.h"
+#include "Algo/TagWriter.h"
 #include "CodeGen/CodeGenModule.h"
 #include "CGenerator/CGenerator.h"
 #include "Refactor/RefFinder.h"
@@ -256,6 +257,7 @@ int C2Builder::build() {
     log(ANSI_GREEN, "building target %s", recipe.name.c_str());
 
     u_int64_t t1_build = Utils::getCurrentTime();
+    // TODO store longer, SourceManager must be available during AST parsing, etc
     // TODO save these common objects in Builder class?
     // LangOptions
     LangOptions LangOpts;
@@ -475,7 +477,9 @@ int C2Builder::build() {
     }
 #endif
 
-    generateOptionsDeps();
+    generateOptionalDeps();
+
+    generateOptionalTags(SM);
 
     generateOptionalC();
 
@@ -750,8 +754,7 @@ void C2Builder::generateOptionalIR() {
     }
 }
 
-void C2Builder::generateOptionsDeps() const {
-    if (options.checkOnly) return;
+void C2Builder::generateOptionalDeps() const {
     if (!options.printDependencies && !recipe.generateDeps) return;
 
     if (options.verbose) log(COL_VERBOSE, "generating dependencies");
@@ -776,5 +779,23 @@ void C2Builder::generateOptionsDeps() const {
     generator.write(recipe.name, path);
     u_int64_t t2 = Utils::getCurrentTime();
     if (options.printTiming) log(COL_TIME, "dep generation took %" PRIu64" usec", t2 - t1);
+}
+
+void C2Builder::generateOptionalTags(const SourceManager& SM) const {
+    if (!options.generateRefs && !recipe.generateRefs) return;
+
+    if (options.verbose) log(COL_VERBOSE, "generating refs");
+
+    u_int64_t t1 = Utils::getCurrentTime();
+
+    TagWriter generator(SM);
+    for (unsigned i=0; i<files.size(); i++) {
+        generator.analyse(files[i]->ast);
+    }
+
+    std::string path = OUTPUT_DIR + recipe.name + '/';
+    generator.write(recipe.name, path);
+    u_int64_t t2 = Utils::getCurrentTime();
+    if (options.printTiming) log(COL_TIME, "refs generation took %" PRIu64" usec", t2 - t1);
 }
 

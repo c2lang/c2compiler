@@ -60,6 +60,8 @@ ADD_LIBRARY(c2core
     Analyser/TargetAnalyser.cpp
     Algo/DepVisitor.cpp
     Algo/DepGenerator.cpp
+    Algo/ASTVisitor.cpp
+    Algo/TagWriter.cpp
     CodeGen/CodeGenFunction.cpp
     CodeGen/CodeGenModule.cpp
     CGenerator/CCodeGenerator.cpp
@@ -68,6 +70,7 @@ ADD_LIBRARY(c2core
     CGenerator/CGenerator.cpp
     Refactor/RefFinder.cpp
     Builder/C2ModuleLoader.cpp
+    Builder/RootFinder.cpp
     Builder/Recipe.cpp
     Builder/RecipeReader.cpp
     Builder/C2Builder.cpp

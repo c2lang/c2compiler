@@ -29,6 +29,7 @@ public:
         : name(name_)
         , type(type_)
         , generateDeps(false)
+        , generateRefs(false)
         , generateIR(false)
         , generateCCode(false)
     {}
@@ -50,6 +51,7 @@ public:
     GenUtils::TargetType type;
 
     bool generateDeps;
+    bool generateRefs;
     bool generateIR;
     bool generateCCode;
 

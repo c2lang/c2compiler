@@ -408,6 +408,7 @@ void CCodeGenerator::EmitUnaryOperator(const Expr* E, StringBuilder& output) {
 void CCodeGenerator::EmitMemberExpr(const Expr* E, StringBuilder& output) {
     LOG_FUNC
     const MemberExpr* M = cast<MemberExpr>(E);
+    const IdentifierExpr* rhs = M->getMember();
     if (M->isModulePrefix()) {
         // A.B where A is a module
         EmitDecl(M->getDecl(), output);
@@ -417,7 +418,7 @@ void CCodeGenerator::EmitMemberExpr(const Expr* E, StringBuilder& output) {
         QualType LType = M->getBase()->getType();
         if (LType.isPointerType()) cbuf << "->";
         else cbuf << '.';
-        cbuf << M->getMemberName();
+        cbuf << rhs->getName();
     }
 }
 

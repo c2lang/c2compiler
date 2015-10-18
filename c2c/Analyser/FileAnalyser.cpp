@@ -430,7 +430,7 @@ unsigned FileAnalyser::resolveFunctionDecl(FunctionDecl* D) {
     unsigned errors = 0;
     // return type
     QualType Q = TR->resolveType(D->getReturnType(), D->isPublic());
-    if (Q.isValid()) D->updateReturnType(Q);
+    if (Q.isValid()) D->setReturnType(Q);
     else errors++;
 
     // args

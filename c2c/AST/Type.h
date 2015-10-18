@@ -19,7 +19,7 @@
 #include <assert.h>
 #include <stddef.h>
 #include <vector>
-#include <string>
+//#include <string>
 
 #include <llvm/ADT/APInt.h>
 #include <clang/Basic/SourceLocation.h>
@@ -37,6 +37,7 @@ namespace C2 {
 class StringBuilder;
 class Type;
 class Expr;
+class IdentifierExpr;
 class StructTypeDecl;
 class EnumTypeDecl;
 class FunctionDecl;
@@ -327,25 +328,19 @@ private:
 // Represents symbols that refer to user type (eg 'Point')
 class UnresolvedType : public Type {
 public:
-    UnresolvedType(SourceLocation ploc_, const std::string& pname_,
-                   SourceLocation tloc_, const std::string& tname_)
+    UnresolvedType(IdentifierExpr* moduleName_, IdentifierExpr* typeName_)
         : Type(TC_UNRESOLVED, QualType())
-        , pname(pname_)
-        , tname(tname_)
-        , ploc(ploc_)
-        , tloc(tloc_)
-        , decl(0)
+        , moduleName(moduleName_)
+        , typeName(typeName_)
     {}
-    virtual ~UnresolvedType() {}
+    virtual ~UnresolvedType();
     static bool classof(const Type* T) { return T->getTypeClass() == TC_UNRESOLVED; }
 
-    const std::string& getPName() const { return pname; }
-    const std::string& getTName() const { return tname; }
-    SourceLocation getPLoc() const { return ploc; }
-    SourceLocation getTLoc() const { return tloc; }
+    IdentifierExpr* getModuleName() const { return moduleName; }
+    IdentifierExpr* getTypeName() const { return typeName; }
 
-    void setDecl(TypeDecl* t) const { decl = t; }
-    TypeDecl* getDecl() const { return decl; }
+    TypeDecl* getDecl() const;
+
     void printLiteral(StringBuilder& output) const;
 protected:
     virtual void printName(StringBuilder& buffer) const;
@@ -354,11 +349,8 @@ protected:
     virtual void fullDebug(StringBuilder& buffer, int indent) const;
 #endif
 private:
-    std::string pname;
-    std::string tname;
-    SourceLocation ploc;
-    SourceLocation tloc;
-    mutable TypeDecl* decl;
+    IdentifierExpr* moduleName;
+    IdentifierExpr* typeName;
 };
 
 
@@ -536,8 +528,7 @@ public:
 
     QualType getPointerType(QualType ref);
     QualType getArrayType(QualType element, Expr* size, bool ownSize, bool isIncremental);
-    QualType getUnresolvedType(SourceLocation ploc, const std::string& pname,
-                               SourceLocation tloc, const std::string& tname);
+    QualType getUnresolvedType(IdentifierExpr* moduleName, IdentifierExpr* typeName);
     QualType getAliasType(AliasTypeDecl* A, QualType ref);
     QualType getStructType();
     QualType getEnumType();

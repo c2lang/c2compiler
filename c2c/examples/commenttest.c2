@@ -8,7 +8,7 @@
 module comments;    // after
 
 // another one
-public func int32 main(int32 argc /*first arg*/, char*[] argv) {
+public func int32 main(int32 argc /*first arg*/, int8*[] argv) {
     // in body
     return 0;
 }

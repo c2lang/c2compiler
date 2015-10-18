@@ -128,9 +128,9 @@ void StringBuilder::clear() {
     buffer[0] = 0;
 }
 
-void StringBuilder::radix(unsigned radix, int64_t value) {
+void StringBuilder::radix(unsigned radix_, int64_t value) {
     char temp[80];
-    switch (radix) {
+    switch (radix_) {
     case 2:
         {
             char* cp = &temp[2];

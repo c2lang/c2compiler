@@ -18,7 +18,7 @@ public func void foo(int32 a, const char* text) {
     stdio.printf("foo %d %s\n", a, text);
 }
 
-public func int32 main(int32 argc, char*[] argv) {
+public func int32 main(int32 argc, int8*[] argv) {
     Buffer buf;
 
     if (argc == 1) {

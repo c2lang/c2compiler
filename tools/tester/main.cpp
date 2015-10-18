@@ -1,4 +1,4 @@
-/* Copyright 2013,2014 Bas van den Berg
+/* Copyright 2013-2015 Bas van den Berg
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,9 +43,9 @@
 #include <vector>
 #include <string>
 
-#include "FileMap.h"
-#include "StringBuilder.h"
-#include "color.h"
+#include "FileUtils/FileMap.h"
+#include "Utils/StringBuilder.h"
+#include "Utils/color.h"
 
 #define COL_ERROR ANSI_BRED
 #define COL_SKIP  ANSI_BCYAN

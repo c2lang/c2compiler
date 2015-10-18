@@ -44,7 +44,7 @@ sudo ln -s /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xc
 ```
 
 ## Installation of C2C
-To build C2: (llvm-c2/bin must be in PATH)
+To build C2: (llvm-c2/bin must be in $PATH)
 ```
 git clone git://github.com/c2lang/c2compiler.git
 cd c2compiler/c2c
@@ -58,11 +58,25 @@ If all goes well, the **c2c** executable should appear in the build directory.
 If you get an error with some Clang/C2 errors, try updating your clang C2 archive.
 
 ## Getting and Building C2C
-To run the unit tests:
+To run the unit tests, first build the **tester** tool:
 ```
 cd tools/tester
 make
 cd ../../c2c/build
 make tests
 ```
+
+## Installing c2tags
+```
+cd tools/c2tags
+make
+```
+To use **c2tags**, it must be in the $PATH. The easiest is creating a $HOME/bin directory,
+copying **c2tags** there. Then add a line to .bashrc (or something similar):
+```
+export PATH=$PATH:~/bin
+cp c2tags ~/bin
+```
+Additionally, copy the contents of *tools/c2tags/fragment.vim* to your ~/.vimrc.
+
 

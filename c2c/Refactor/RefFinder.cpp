@@ -199,8 +199,9 @@ void RefFinder::searchExpr(const Expr* E) {
     case EXPR_MEMBER:
         {
             const MemberExpr* M = cast<MemberExpr>(E);
+            const IdentifierExpr* rhs = M->getMember();
             if (M->getDecl() == decl) {
-                addFileLocation(M->getMemberLoc());
+                addFileLocation(rhs->getLocation());
             }
             break;
         }

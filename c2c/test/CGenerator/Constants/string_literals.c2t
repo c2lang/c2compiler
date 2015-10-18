@@ -9,5 +9,5 @@ const char* a = "foo";
 
 // @expect{test.c}
 
-static const unsigned char* test_a = (const unsigned char*)"foo";
+static const unsigned char* test_a = "foo";
 

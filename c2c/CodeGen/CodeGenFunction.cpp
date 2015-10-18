@@ -521,8 +521,9 @@ llvm::Value* CodeGenFunction::EmitCallExpr(const CallExpr* E) {
             // NOTE: we only support module.symbol now (not struct.member)
             // So only FunctionDecl
             const MemberExpr* M = cast<MemberExpr>(Fn);
+            const IdentifierExpr* rhs = M->getMember();
 
-            FuncName = M->getMemberName();
+            FuncName = rhs->getName();
             FD = M->getDecl();
             assert(FD->getKind() == DECL_FUNC && "Only support module.symbol for now");
         }

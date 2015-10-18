@@ -559,24 +559,24 @@ C2::ExprResult C2Sema::ActOnPointerType(Expr* base) {
     return ExprResult(base);
 }
 
-C2::ExprResult C2Sema::ActOnUserType(IdentifierInfo* psym, SourceLocation ploc,
-                                     IdentifierInfo* tsym, SourceLocation tloc) {
-    assert(tsym);
-    std::string tname(tsym->getNameStart(), tsym->getLength());
-    std::string pname;
-    if (psym) {
-        pname = psym->getNameStart();
+C2::ExprResult C2Sema::ActOnUserType(Expr* mName_, Expr* tName_) {
+    assert(isa<IdentifierExpr>(tName_));
+    IdentifierExpr* tName = cast<IdentifierExpr>(tName_);
+    IdentifierExpr* mName = 0;
+    if (mName_) {
+        assert(isa<IdentifierExpr>(mName_));
+        mName = cast<IdentifierExpr>(mName_);
     }
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA << "SEMA: User Type ";
-    if (psym) {
-        std::cerr << pname << '.';
+    if (moduleName) {
+        std::cerr << moduleName->getName() << '.';
     }
-    std::cerr << tname << " at ";
-    tloc.dump(SourceMgr);
+    std::cerr << typeName->getName() << " at ";
+    tName->getLocation().dump(SourceMgr);
     std::cerr << ANSI_NORMAL << '\n';
 #endif
-    QualType qt = typeContext.getUnresolvedType(ploc, pname, tloc, tname);
+    QualType qt = typeContext.getUnresolvedType(mName, tName);
     return ExprResult(new TypeExpr(qt));
 }
 
@@ -732,15 +732,16 @@ C2::ExprResult C2Sema::ActOnArraySubScriptExpr(SourceLocation RLoc, Expr* Base, 
     return ExprResult(new ArraySubscriptExpr(RLoc, Base, Idx));
 }
 
-C2::ExprResult C2Sema::ActOnMemberExpr(Expr* Base, IdentifierInfo* sym, SourceLocation loc) {
+C2::ExprResult C2Sema::ActOnMemberExpr(Expr* Base, Expr* member) {
     assert(Base);
-    assert(sym);
-    std::string member(sym->getNameStart(), sym->getLength());
+    assert(member);
+    IdentifierExpr* I = dyncast<IdentifierExpr>(member);
+    assert(I);
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA << "SEMA: member access " << member;
+    std::cerr << COL_SEMA << "SEMA: member access" << I->getName();
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    return ExprResult(new MemberExpr(Base, member, loc));
+    return ExprResult(new MemberExpr(Base, I));
 }
 
 C2::ExprResult C2Sema::ActOnPostfixUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Expr* Input) {

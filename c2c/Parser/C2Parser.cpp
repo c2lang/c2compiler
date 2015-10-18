@@ -1045,9 +1045,8 @@ C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
         }
 
         if (ExpectIdentifier()) return ExprError();
-        IdentifierInfo* sym = Tok.getIdentifierInfo();
-        SourceLocation loc = ConsumeToken();
-        LHS = Actions.ActOnMemberExpr(LHS.get(), sym, loc);
+        ExprResult rhs = ParseIdentifier();
+        LHS = Actions.ActOnMemberExpr(LHS.get(), rhs.get());
         break;
     }
     case tok::plusplus:    // postfix-expression: postfix-expression '++'
@@ -1441,23 +1440,19 @@ C2::ExprResult C2Parser::ParseIdentifier() {
 C2::ExprResult C2Parser::ParseFullIdentifier() {
     LOG_FUNC
     assert(Tok.is(tok::identifier) && "Not an identifier!");
-    IdentifierInfo* pSym = 0;
-    SourceLocation pLoc;
-    IdentifierInfo* tSym = Tok.getIdentifierInfo();
-    SourceLocation tLoc = ConsumeToken();
+
+    ExprResult tName = ParseIdentifier();
+    ExprResult mName;
 
     if (Tok.is(tok::period)) {
         ConsumeToken(); // consume the '.'
         if (ExpectIdentifier()) return ExprError();
         // type is a modules
-        pSym = tSym;
-        pLoc = tLoc;
-
-        tSym = Tok.getIdentifierInfo();
-        tLoc = ConsumeToken();
+        mName = tName;
+        tName = ParseIdentifier();
     }
 
-    return Actions.ActOnUserType(pSym, pLoc, tSym, tLoc);
+    return Actions.ActOnUserType(mName.get(), tName.get());
 }
 
 /*

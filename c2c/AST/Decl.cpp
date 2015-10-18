@@ -116,6 +116,7 @@ FunctionDecl::FunctionDecl(const std::string& name_, SourceLocation loc_,
                            bool is_public, QualType rtype_)
     : Decl(DECL_FUNC, name_, loc_, QualType(), is_public)
     , rtype(rtype_)
+    , origRType(rtype_)
     , body(0)
     , IRProto(0)
 {}
@@ -174,6 +175,7 @@ static const char* VarDeclKind2Str(VarDeclKind k) {
 VarDecl::VarDecl(VarDeclKind k_, const std::string& name_, SourceLocation loc_,
             QualType type_, Expr* initValue_, bool is_public)
     : Decl(DECL_VAR, name_, loc_, type_, is_public)
+    , origType(type_)
     , initValue(initValue_)
     , IRValue(0)
 {

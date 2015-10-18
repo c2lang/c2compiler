@@ -65,13 +65,20 @@ unsigned TypeResolver::checkType(QualType Q, bool used_public) {
 }
 
 unsigned TypeResolver::checkUnresolvedType(const UnresolvedType* type, bool used_public) {
-    const std::string& pName = type->getPName();
-    const std::string& tName = type->getTName();
-    SourceLocation tLoc = type->getTLoc();
+    IdentifierExpr* moduleName = type->getModuleName();
+    IdentifierExpr* typeName = type->getTypeName();
+    SourceLocation tLoc = typeName->getLocation();
+    const std::string& tName = typeName->getName();
+
     Decl* D = 0;
-    if (!pName.empty()) {   // mod.type
-        const Module* mod = globals.findUsedModule(pName, type->getPLoc());
+    if (moduleName) {   // mod.type
+        const std::string& mName = moduleName->getName();
+        const Module* mod = globals.findUsedModule(mName, moduleName->getLocation());
         if (!mod) return 1;
+        Decl* modDecl = globals.findSymbol(mName, moduleName->getLocation(), true);
+        assert(modDecl);
+        moduleName->setDecl(modDecl);
+
         D =  globals.findSymbolInModule(tName, tLoc, mod);
     } else {
         D = globals.findSymbol(tName, tLoc, true);
@@ -94,7 +101,7 @@ unsigned TypeResolver::checkUnresolvedType(const UnresolvedType* type, bool used
     }
     D->setUsed();
     if (used_public || external) D->setUsedPublic();
-    type->setDecl(TD);
+    typeName->setDecl(TD);
     return 0;
 }
 

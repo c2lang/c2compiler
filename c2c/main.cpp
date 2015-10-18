@@ -23,6 +23,7 @@
 #include <string>
 #include "Builder/C2Builder.h"
 #include "Builder/Recipe.h"
+#include "Builder/RootFinder.h"
 #include "Builder/RecipeReader.h"
 #include "Utils/Utils.h"
 #include "Utils/color.h"
@@ -55,6 +56,7 @@ static void usage(const char* name) {
     fprintf(stderr, "   -v            - verbose logging\n");
     fprintf(stderr, "   --test        - test mode (don't check for main())\n");
     fprintf(stderr, "   --deps        - print module dependencies\n");
+    fprintf(stderr, "   --refs        - generate c2tags file\n");
     fprintf(stderr, "   --check       - only parse + analyse\n");
     exit(-1);
 }
@@ -135,6 +137,10 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
                     opts.printDependencies = true;
                     continue;
                 }
+                if (strcmp(&arg[2], "refs") == 0) {
+                    opts.generateRefs = true;
+                    continue;
+                }
                 if (strcmp(&arg[2], "check") == 0) {
                     opts.checkOnly = true;
                     continue;
@@ -180,6 +186,9 @@ int main(int argc, const char *argv[])
         if (!errors) errors = builder.build();
         return errors ? 1 : 0;
     }
+
+    RootFinder finder;
+    finder.findTopDir();
 
     RecipeReader reader;
     if (print_targets) {

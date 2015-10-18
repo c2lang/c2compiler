@@ -109,8 +109,7 @@ public:
     ExprResult ActOnFieldDesignatorExpr(SourceLocation loc, IdentifierInfo* field, ExprResult InitValue);
     ExprResult ActOnArrayType(Expr* base, Expr* size, bool isIncremental);
     ExprResult ActOnPointerType(Expr* base);
-    ExprResult ActOnUserType(IdentifierInfo* psym, SourceLocation ploc,
-                             IdentifierInfo* tsym, SourceLocation tloc);
+    ExprResult ActOnUserType(Expr* mName, Expr* tName);
     ExprResult ActOnBuiltinType(tok::TokenKind k);
     EnumTypeDecl* ActOnEnumType(const char* name, SourceLocation loc, Expr* implType, bool is_public);
     ExprResult ActOnEnumTypeFinished(Expr* enumType, SourceLocation leftBrace, SourceLocation rightBrace);
@@ -118,7 +117,7 @@ public:
     ExprResult ActOnTypeQualifier(ExprResult R, unsigned qualifier);
     ExprResult ActOnBuiltinExpression(SourceLocation Loc, Expr* expr, bool isSizeof);
     ExprResult ActOnArraySubScriptExpr(SourceLocation RLoc, Expr* Base, Expr* Idx);
-    ExprResult ActOnMemberExpr(Expr* Base, IdentifierInfo* sym, SourceLocation loc);
+    ExprResult ActOnMemberExpr(Expr* Base, Expr* member);
     ExprResult ActOnPostfixUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Expr* Input);
     ExprResult ActOnUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Expr* Input);
     ExprResult ActOnBitOffset(SourceLocation colLoc, Expr* LHS, Expr* RHS);

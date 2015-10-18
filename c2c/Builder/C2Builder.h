@@ -23,6 +23,7 @@
 
 namespace clang {
 class DiagnosticsEngine;
+class SourceManager;
 }
 
 namespace C2 {
@@ -46,6 +47,7 @@ struct BuildOptions {
         , checkOnly(false)
         , printModules(false)
         , printDependencies(false)
+        , generateRefs(false)
         , verbose(false)
         , testMode(false)
     {}
@@ -62,6 +64,7 @@ struct BuildOptions {
     bool checkOnly;
     bool printModules;
     bool printDependencies;
+    bool generateRefs;
     bool verbose;
     bool testMode;
 };
@@ -92,7 +95,8 @@ private:
     bool checkExportedPackages() const;
     void generateOptionalC();
     void generateOptionalIR();
-    void generateOptionsDeps() const;
+    void generateOptionalDeps() const;
+    void generateOptionalTags(const clang::SourceManager& SM) const;
 
     const Recipe& recipe;
     BuildOptions options;

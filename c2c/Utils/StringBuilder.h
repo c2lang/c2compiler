@@ -37,7 +37,7 @@ public:
     StringBuilder& operator<<(u_int64_t input);
     StringBuilder& operator<<(const StringBuilder& input);
 
-    void radix(unsigned radix, int64_t value);
+    void radix(unsigned radix_, int64_t value);
 
     operator const char*() const;
     void clear();
