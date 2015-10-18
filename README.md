@@ -25,14 +25,13 @@ so hereby my thanks to the Clang folks!
 ## What needs to be done
 A short list of open items (the full list would probably fill-up GitHub) with
 their priority:
-* [high] c2c: parse full syntax into AST
+* [high] c2c: parse full syntax into AST (ALMOST DONE)
 * [high] c2c: generate IR code for more AST elements
-* [medium] c2c: improve C generation by generating forward declarations in C code.
+* [medium] tool: create graphical refactor tool (c2reto) (IN PROGRESS)
 * [medium] c2c: tab completion on targets in recipe / cmdline args
-* [medium] tool: c2grep - grep only files in recipe
 * [medium] tool: create c-parser for parsing C headers.
-* [medium] tool: create c2style - astyle for C2.
-* [low] c2tags/c2scope - only add files in recipe
+* [medium] tool: create c2format - astyle for C2.
+* [low] tool: c2grep - grep only files in recipe
 
 
 ## Installation
@@ -45,9 +44,8 @@ progress. In the examples directory: (or add -d examples/)
 ```
 c2c multi
 c2c hello
-c2c iter
-c2c switch
-c2c working_ir
+c2c puzzle
+c2c -I working_ir
 ```
 
 It's also possible to manually compile a single .c2 file without a recipe
@@ -77,6 +75,7 @@ c2c -h
 definition". See the [installation document](INSTALL.md) on how to install.
 
 How it works is as follows:
+* use --refs or add $refs in recipe.txt to generate **refs** file during compilation.
 * c2c generates a **refs** file per target. This file contains all references
     and their destination
 * c2tags currently doesn't have a full-blown vim-plugin yet, but a small
