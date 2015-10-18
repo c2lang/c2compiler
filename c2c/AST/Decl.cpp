@@ -262,6 +262,19 @@ void StructTypeDecl::addMember(Decl* D) {
     members.push_back(D);
 }
 
+Decl* StructTypeDecl::find(const std::string& name_) const {
+    for (unsigned i=0; i<members.size(); i++) {
+        Decl* D = members[i];
+        if (D->getName() == name_) return D;
+        if (D->getName() == "") {
+            assert(isa<StructTypeDecl>(D));
+            StructTypeDecl* sub = cast<StructTypeDecl>(D);
+            D = sub->find(name_);
+            if (D) return D;
+        }
+    }
+    return 0;
+}
 void StructTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_DECL);

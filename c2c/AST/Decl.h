@@ -275,13 +275,7 @@ public:
     void addMember(Decl* D);
     unsigned numMembers() const { return members.size(); }
     Decl* getMember(unsigned index) const { return members[index]; }
-    Decl* find(const std::string& name_) const {
-        for (unsigned i=0; i<members.size(); i++) {
-            Decl* D = members[i];
-            if (D->getName() == name_) return D;
-        }
-        return 0;
-    }
+    Decl* find(const std::string& name_) const;
     int findIndex(const std::string& name_) const {
         for (unsigned i=0; i<members.size(); i++) {
             Decl* D = members[i];
