@@ -1,0 +1,38 @@
+// @warnings{no-unused}
+module test;
+
+type Point struct {
+    int32 a;
+    struct B {
+        int32 b;
+    }
+    struct {
+        int32 b;
+        int32 c;
+        struct {
+            Point* p;
+        }
+    }
+    union {
+        int32 d;
+        int16 e;
+    }
+    union U {
+        int32 d;
+        uint16 e;
+    }
+}
+
+func void tester() {
+    Point p;
+    p.a = 1;
+    p.B.b = 2;
+    p.b = 3;
+    p.c = 4;
+    p.p = nil;
+    p.d = 5;
+    p.e = 6;
+    p.U.d = 7;
+    p.U.e = 8;
+}
+

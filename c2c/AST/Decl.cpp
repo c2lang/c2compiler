@@ -271,7 +271,9 @@ void StructTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer << ") ";
     printPublic(buffer);
     buffer.setColor(COL_VALUE);
-    buffer << name << '\n';
+    if (name != "") buffer << name;
+    else buffer << "<anonymous>";
+    buffer << '\n';
     printAttributes(buffer, indent + INDENT);
     for (unsigned i=0; i<members.size(); i++) {
         members[i]->print(buffer, indent + INDENT);
