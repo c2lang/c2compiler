@@ -185,6 +185,10 @@ bool C2Parser::ParseTopLevel() {
     switch (Tok.getKind()) {
     case tok::eof:
         return true;
+    case tok::kw_import:
+        Diag(Tok, diag::err_import_after_decls);
+        SkipUntil(tok::semi);
+        break;
     case tok::kw_type:
         ParseTypeDef(is_public);
         break;

@@ -1,0 +1,6 @@
+module test;
+
+int32 a;
+
+import stdio;       // @error{no imports allowed after declarations}
+
