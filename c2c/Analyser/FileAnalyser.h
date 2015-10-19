@@ -17,6 +17,8 @@
 #define ANALYSER_FILE_ANALYSER_H
 
 #include <memory>
+#include <map>
+#include <string>
 #include "Analyser/FunctionAnalyser.h"
 #include "AST/Type.h"
 #include "AST/Module.h"
@@ -32,6 +34,7 @@ class Scope;
 class TypeDecl;
 class VarDecl;
 class FunctionDecl;
+class StructTypeDecl;
 class ArrayValueDecl;
 class AST;
 class TypeResolver;
@@ -63,6 +66,8 @@ private:
     unsigned resolveVarDecl(VarDecl* D);
     unsigned resolveFunctionDecl(FunctionDecl* D);
     unsigned checkArrayValue(ArrayValueDecl* D);
+    typedef std::map<const std::string, const Decl*> Names;
+    void analyseStructNames(const StructTypeDecl* S, Names& names, bool isStruct);
     void checkVarDeclAttributes(VarDecl* D);
     void checkAttributes(Decl* D);
 

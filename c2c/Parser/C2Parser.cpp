@@ -255,7 +255,6 @@ void C2Parser::ParseStructType(bool is_struct, const char* id, SourceLocation id
 // Syntax: { <struct_block> } etc
 void C2Parser::ParseStructBlock(StructTypeDecl* S) {
     LOG_FUNC
-    SourceLocation LeftBrace = Tok.getLocation();
     // clang: ca70f4fa1c4eae6a47c97c773b8e63803a43a90c
     //        af9a02c0cdaafab155de9b2f43bfad33a28429c3
     if (ExpectAndConsume(tok::l_brace)) return;
@@ -297,10 +296,7 @@ void C2Parser::ParseStructBlock(StructTypeDecl* S) {
             Actions.ActOnStructVar(S, id->getNameStart(), idLoc, type.get(), 0, S->isPublic());
         }
     }
-    SourceLocation RightBrace = Tok.getLocation();
     if (ExpectAndConsume(tok::r_brace)) return;
-
-    Actions.ActOnStructTypeFinish(S, LeftBrace, RightBrace);
 }
 
 /*

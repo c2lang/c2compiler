@@ -1,0 +1,17 @@
+// @warnings{no-unused}
+module test;
+
+// TODO anonymous
+type AA struct {
+    struct BB {
+        int32 b;
+    }
+    struct {
+    }
+}
+
+func void tester() {
+    AA a1;
+    int32 aa = a1.BB;    // @error{invalid type conversion from '(struct)BB' to 'int32'}
+}
+

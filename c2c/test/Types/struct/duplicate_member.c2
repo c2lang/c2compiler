@@ -1,0 +1,55 @@
+// @warnings{no-unused}
+module test;
+
+type AA struct {
+    int32 a;    // @note{previous declaration is here}
+    int32 a;    // @error{duplicate struct member 'a'}
+}
+
+type BB struct {
+    int32 a;    // @note{previous declaration is here}
+    struct a {  // @error{duplicate struct member 'a'}
+        int32 b;
+    }
+}
+
+type CC union {
+    int32 a;    // @note{previous declaration is here}
+    int32 a;    // @error{duplicate union member 'a'}
+
+    struct b {
+        int32 c;    // @note{previous declaration is here}
+        int32 c;    // @error{duplicate struct member 'c'}
+    }
+}
+
+type DD struct {
+    int32 b;    // @note{previous declaration is here}
+    int32 a;    // @note{previous declaration is here}
+    struct {
+        union {
+            int16 a;  // @error{duplicate struct member 'a'}
+            int32 b;  // @error{duplicate struct member 'b'}
+        }
+    }
+}
+
+type EE union {
+    int32 a;    // @note{previous declaration is here}
+    struct {
+        int16 a;  // @error{duplicate union member 'a'}
+    }
+}
+
+type FF struct {
+    struct {
+        int32 a;    // @note{previous declaration is here}
+    }
+    struct b {
+        int32 a;
+    }
+    union {
+        int32 a;  // @error{duplicate struct member 'a'}
+    }
+}
+

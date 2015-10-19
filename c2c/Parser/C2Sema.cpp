@@ -647,15 +647,6 @@ void C2Sema::ActOnStructMember(StructTypeDecl* S, Decl* member) {
     S->addMember(member);
 }
 
-void C2Sema::ActOnStructTypeFinish(StructTypeDecl* S, SourceLocation left, SourceLocation right) {
-#ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA << "SEMA: Struct finish" << ANSI_NORMAL"\n";
-#endif
-    //S->setLocs(left, right);
-    Names names;
-    analyseStructNames(S, names);
-}
-
 EnumTypeDecl* C2Sema::ActOnEnumType(const char* name, SourceLocation loc, Expr* implType, bool is_public) {
     assert(implType);
     TypeExpr* T = cast<TypeExpr>(implType);
@@ -1056,26 +1047,5 @@ const C2::ImportDecl* C2Sema::findModule(const std::string& name) const {
 
 C2::ExprResult C2Sema::ExprError() {
     return C2::ExprResult(true);
-}
-
-void C2Sema::analyseStructNames(const StructTypeDecl* S, Names& names) {
-    typedef Names::iterator NamesIter;
-    for (unsigned i=0; i<S->numMembers(); i++) {
-        const Decl* member = S->getMember(i);
-        const std::string& name = member->getName();
-        if (name == "") {
-            assert(isa<StructTypeDecl>(member));
-            analyseStructNames(cast<StructTypeDecl>(member), names);
-        } else {
-            NamesIter iter = names.find(name);
-            if (iter != names.end()) {
-                const Decl* existing = iter->second;
-                Diag(member->getLocation(), diag::err_duplicate_member) << name;
-                Diag(existing->getLocation(), diag::note_previous_declaration);
-            } else {
-                names[name] = member;
-            }
-        }
-    }
 }
 

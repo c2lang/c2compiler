@@ -357,8 +357,12 @@ unsigned FileAnalyser::checkTypeDecl(TypeDecl* D) {
         }
         break;
     case DECL_STRUCTTYPE:
-        // dont check struct members yet
+    {
+        Names names;
+        const StructTypeDecl* S = cast<StructTypeDecl>(D);
+        analyseStructNames(S, names, S->isStruct());
         break;
+    }
     case DECL_ENUMTYPE:
     {
         EnumTypeDecl* E = cast<EnumTypeDecl>(D);
@@ -382,6 +386,33 @@ unsigned FileAnalyser::checkTypeDecl(TypeDecl* D) {
         break;
     }
     return errors;
+}
+
+void FileAnalyser::analyseStructNames(const StructTypeDecl* S, Names& names, bool isStruct) {
+    typedef Names::iterator NamesIter;
+    for (unsigned i=0; i<S->numMembers(); i++) {
+        const Decl* member = S->getMember(i);
+        const std::string& name = member->getName();
+        if (name == "") {
+            assert(isa<StructTypeDecl>(member));
+            analyseStructNames(cast<StructTypeDecl>(member), names, isStruct);
+        } else {
+            NamesIter iter = names.find(name);
+            if (iter != names.end()) {
+                const Decl* existing = iter->second;
+                Diags.Report(member->getLocation(), diag::err_duplicate_struct_member) << isStruct << member->DiagName();
+                Diags.Report(existing->getLocation(), diag::note_previous_declaration);
+            } else {
+                names[name] = member;
+            }
+            const StructTypeDecl* sub = dyncast<StructTypeDecl>(member);
+            if (sub) {
+                Names subNames;
+                analyseStructNames(sub, subNames, sub->isStruct());
+            }
+        }
+
+    }
 }
 
 unsigned FileAnalyser::checkStructTypeDecl(StructTypeDecl* D) {

@@ -70,7 +70,6 @@ public:
     StructTypeDecl* ActOnStructType(const char* name, SourceLocation loc, bool isStruct, bool is_public, bool is_global);
     void ActOnStructVar(StructTypeDecl* S, const char* name, SourceLocation loc, Expr* type, Expr* InitValue, bool is_public);
     void ActOnStructMember(StructTypeDecl* S, Decl* member);
-    void ActOnStructTypeFinish(StructTypeDecl* S, SourceLocation left, SourceLocation right);
 
     // statements
     StmtResult ActOnReturnStmt(SourceLocation loc, Expr* value);
@@ -127,8 +126,6 @@ public:
     void ActOnAttr(Decl* D, const char* name, SourceRange range, Expr* arg);
 private:
     ExprResult ActOnIntegerConstant(SourceLocation Loc, uint64_t Val);
-    typedef std::map<const std::string, const Decl*> Names;
-    void analyseStructNames(const StructTypeDecl* S, Names& names);
     FunctionDecl* createFuncDecl(const char* name, SourceLocation loc, bool is_public, Expr* rtype);
     VarDecl* createVarDecl(VarDeclKind k, const char* name, SourceLocation loc, TypeExpr* typeExpr,
                                     Expr* InitValue, bool is_public);
