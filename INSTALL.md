@@ -37,10 +37,11 @@ export PATH=$HOME/llvm-c2/bin:$PATH
 ```
 
 NOTE:
-On Mac OS X (Yosemite) you might need to create a link for your new clang to find the C++ headers.
+On Mac OS X (Yosemite/El Capitan) you might need to create a link for your new clang to find the C++ headers.
 Since this uses the toolchain that comes with XCode, XCode will have to be installed.
 ```
-sudo ln -s /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1 /usr/include/c++/v1 
+mkdir -p ~/llvm-c2/include/c++
+ln -s /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1 ~/llvm-2/include/c++/v1
 ```
 
 ## Installation of C2C
