@@ -1,0 +1,11 @@
+module test;
+
+import stdio as io;
+
+public func int32 main(int32 argc, int8*[] argv)
+{
+    int32 i = 0;
+    io.printf("%d\n", sizeof(argv[i]);      // @error{expected ')'}
+    return 0;
+}
+
