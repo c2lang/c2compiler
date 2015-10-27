@@ -44,7 +44,9 @@ void RootFinder::findTopDir() {
         int error = stat(RECIPE_FILE, &buf);
         if (error) {
             if (buffer[0] == '/' && buffer[1] == 0) {
-                fprintf(stderr, "error: cannot find C2 root dir (%s)\n", RECIPE_FILE);
+                fprintf(stderr, "error: cannot find C2 root dir\n");
+                fprintf(stderr, "c2c requires a %s file for compilation of targets\n", RECIPE_FILE);
+                fprintf(stderr, "Use argument -h for a list of available options and usage of c2c\n");
                 exit(-1);
             }
             if (errno != ENOENT) {
