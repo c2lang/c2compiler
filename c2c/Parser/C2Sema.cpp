@@ -117,8 +117,13 @@ void C2Sema::ActOnModule(const char* name, SourceLocation loc) {
         Diag(loc, diag::err_invalid_symbol_name) << name;
         return;
     }
+
     if (strcmp(name, "c2") == 0) {
         Diag(loc, diag::err_module_c2);
+        return;
+    }
+    if (strcmp(name, "main") == 0) {
+        Diag(loc, diag::err_module_invalid_name) << name;
         return;
     }
     ast.setName(name, loc);

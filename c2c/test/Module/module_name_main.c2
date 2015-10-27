@@ -1,0 +1,2 @@
+module main;        // @error{invalid module name 'main'}
+
