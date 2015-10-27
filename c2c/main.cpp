@@ -54,6 +54,7 @@ static void usage(const char* name) {
     fprintf(stderr, "   -s            - print symbols\n");
     fprintf(stderr, "   -t            - print timing\n");
     fprintf(stderr, "   -v            - verbose logging\n");
+    fprintf(stderr, "   --about       - print information about C2 and c2c");
     fprintf(stderr, "   --test        - test mode (don't check for main())\n");
     fprintf(stderr, "   --deps        - print module dependencies\n");
     fprintf(stderr, "   --refs        - generate c2tags file\n");
@@ -129,6 +130,17 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
                 opts.verbose = true;
                 break;
             case '-':
+                if (strcmp(&arg[2], "about") == 0) {
+                    fprintf(stderr, "The C2 Compiler by Bas van den Berg\n");
+                    fprintf(stderr, "\n C2 is a programming language aiming to keep to good of C and remove/improve its\n");
+                    fprintf(stderr, "bad parts. It provides stricter syntax, great tooling, better compilation time\n");
+                    fprintf(stderr, "than C, easy debugging, smart integrated build system, friendly and readable\n");
+                    fprintf(stderr, "syntax, requires less typing than C and allows higher development speed.\n");
+                    fprintf(stderr, " Its aim is to be used for problems where currently C would be used. So low-\n");
+                    fprintf(stderr, "level programs, like bootloaders, kernels, drivers and system-level tooling.\n");
+                    fprintf(stderr, "\nC2 is based on LLVM+Clang 3.6.\nSee c2lang.org for more information\n");
+                    exit(0);
+                }
                 if (strcmp(&arg[2], "test") == 0) {
                     opts.testMode = true;
                     continue;
