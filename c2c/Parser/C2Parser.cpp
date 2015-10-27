@@ -1099,6 +1099,10 @@ bool C2Parser::ParseExpressionList(SmallVectorImpl<Expr*> &Exprs,
 
     Exprs.push_back(Expr.get());
 
+    if (Tok.is(tok::semi)) {
+        Diag(Tok, diag::err_expected) << tok::r_paren;
+        return true;
+    }
     if (Tok.isNot(tok::comma))
       return false;
     // Move to the next argument, remember where the comma was.
