@@ -70,6 +70,7 @@ private:
     void analyseStructNames(const StructTypeDecl* S, Names& names, bool isStruct);
     void checkVarDeclAttributes(VarDecl* D);
     void checkAttributes(Decl* D);
+    void checkStructMembersForUsed(const StructTypeDecl* S);
 
     AST& ast;
     std::auto_ptr<Scope> globals;

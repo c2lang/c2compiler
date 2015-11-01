@@ -324,16 +324,23 @@ void FileAnalyser::checkDeclsForUsed() {
             }
             // check if members are used
             if (isa<StructTypeDecl>(T)) {
-                StructTypeDecl* S = cast<StructTypeDecl>(T);
-                for (unsigned j=0; j<S->numMembers(); j++) {
-                    Decl* M = S->getMember(j);
-                    if (!M->isUsed()) {
-                        Diags.Report(M->getLocation(), diag::warn_unused_struct_member) << M->DiagName();
-                    }
-                }
+                checkStructMembersForUsed(cast<StructTypeDecl>(T));
             }
         }
     }
+}
+
+void FileAnalyser::checkStructMembersForUsed(const StructTypeDecl* S) {
+    for (unsigned j=0; j<S->numMembers(); j++) {
+        Decl* M = S->getMember(j);
+        if (!M->isUsed() && M->getName() != "") {   // dont warn for anonymous structs/unions
+            Diags.Report(M->getLocation(), diag::warn_unused_struct_member) << S->isStruct() << M->DiagName();
+        }
+        if (isa<StructTypeDecl>(M)) {
+            checkStructMembersForUsed(cast<StructTypeDecl>(M));
+        }
+    }
+
 }
 
 unsigned FileAnalyser::checkTypeDecl(TypeDecl* D) {
