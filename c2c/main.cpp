@@ -43,7 +43,7 @@ static void usage(const char* name) {
     fprintf(stderr, "   -a2           - print AST after analysis 2\n");
     fprintf(stderr, "   -a3           - print AST after analysis 3 (final)\n");
     fprintf(stderr, "   -c            - generate C code\n");
-    fprintf(stderr, "   -C            - generate + print C-code\n");
+    fprintf(stderr, "   -C            - generate + print C code\n");
     fprintf(stderr, "   -d <dir>      - change directory first\n");
     fprintf(stderr, "   -f <file>     - compile single file without recipe\n");
     fprintf(stderr, "   -h            - show this help\n");
@@ -132,8 +132,8 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
             case '-':
                 if (strcmp(&arg[2], "about") == 0) {
                     fprintf(stderr, "The C2 Compiler by Bas van den Berg\n");
-                    fprintf(stderr, "\n C2 is a programming language aiming to keep to good of C and remove/improve its\n");
-                    fprintf(stderr, "bad parts. It provides stricter syntax, great tooling, better compilation time\n");
+                    fprintf(stderr, "\n C2 is a programming language aiming to keep the good of C and remove/improve its\n");
+                    fprintf(stderr, "bad parts. It provides stricter syntax, great tooling, better compilation times\n");
                     fprintf(stderr, "than C, easy debugging, smart integrated build system, friendly and readable\n");
                     fprintf(stderr, "syntax, requires less typing than C and allows higher development speed.\n");
                     fprintf(stderr, " Its aim is to be used for problems where currently C would be used. So low-\n");
@@ -169,7 +169,7 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
         }
     }
     if (!use_recipe && !targetFilter) {
-        fprintf(stderr, "error: argument -f needs filename\n");
+        fprintf(stderr, "error: argument -f needs a filename\n");
         exit(-1);
     }
     if (!use_recipe && print_targets) {
