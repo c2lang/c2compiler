@@ -1,0 +1,44 @@
+module string;
+
+// TODO restrict, size_t
+//void* memcpy(void* restrict dst, const void* restrict src, size_t n);
+public func void* memcpy(void* dst, const void* src, uint32 n);
+public func void* memccpy(void* dest, const void* src, int32 c, int32 n);
+
+public func void* memset(void *b, int32 c, uint32 len);
+
+public func char* strcpy(char* dest, const char* src);
+public func char* strncpy(char* dest, const char* src, int32 n);
+
+public func char* strcat(char* dest, const char* src);
+public func char* strncat(char* dest, const char* src, int32 n);
+
+public func int32 strcmp(const char* s1, const char* s2);
+public func int32 strncmp(const char* s1, const char* s2, int32 n);
+
+public func int32 strcoll(const char* s1, const char* s2);
+
+public func char* strdup(const char* s);
+public func char* strndup(const char* s, int32 n);
+
+public func char* strchr(const char* s, int32 c);
+public func char* strrchr(const char* s, int32 c);
+public func char* strpbrk(const char* s1, const char* s2);
+
+public func char* strstr(const char* big, const char* little);
+public func char* strcasestr(const char* big, const char* little);
+public func char* strnstr(const char* big, const char* little, int32 n);
+
+public func char* strtok(char* s, const char* delim);
+public func char* strtok_r(char* s, const char* delim, char** save_ptr);
+
+public func int32 strlen(const char* s);
+public func int32 strnlen(const char* s, int32 maxlen);
+
+public func char* strerror(int32 errnum);
+public func int32 strerror_r(int32 errnum, char* buf, int32 buflen);
+
+public func char* strsep(char** stringp, const char* delim);
+
+public func char* strsignal(int32 sig);
+

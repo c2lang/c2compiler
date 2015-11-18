@@ -27,7 +27,6 @@ namespace C2 {
 
 class FileAnalyser;
 class AST;
-class TypeContext;
 
 class TargetAnalyser {
 public:
@@ -41,12 +40,12 @@ public:
 
     ~TargetAnalyser();
 
-    void addFile(AST& ast, TypeContext& typeContext);
+    void addFile(AST& ast);
 
-    unsigned analyse(bool print1, bool print2, bool print3);
+    unsigned analyse(bool print1, bool print2, bool print3, bool printLib);
 
 private:
-    void printASTs() const;
+    void printASTs(bool printLib) const;
 
     const Modules& modules;
     clang::DiagnosticsEngine& Diags;

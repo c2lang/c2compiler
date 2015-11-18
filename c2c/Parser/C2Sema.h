@@ -49,7 +49,7 @@ class TypeExpr;
 
 class C2Sema {
 public:
-    C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, TypeContext& tc, AST& ast_, clang::Preprocessor& PP_);
+    C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, AST& ast_, clang::Preprocessor& PP_);
     ~C2Sema();
 
     // file level actions

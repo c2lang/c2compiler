@@ -164,8 +164,6 @@ unsigned StringBuilder::size() const { return (unsigned)(ptr - buffer); }
 
 unsigned StringBuilder::space_left() const { return capacity - size(); }
 
-StringBuilder::operator const char*() const { return buffer; }
-
 bool StringBuilder::isEmpty() const { return (size() == 0); }
 
 void StringBuilder::strip(char c) {

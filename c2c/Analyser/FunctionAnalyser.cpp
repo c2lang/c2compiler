@@ -91,7 +91,8 @@ static void SetConstantFlags(Decl* D, Expr* expr) {
 FunctionAnalyser::FunctionAnalyser(Scope& scope_,
                                    TypeResolver& typeRes_,
                                    TypeContext& tc,
-                                   clang::DiagnosticsEngine& Diags_)
+                                   clang::DiagnosticsEngine& Diags_,
+                                   bool isInterface_)
     : scope(scope_)
     , TR(typeRes_)
     , typeContext(tc)
@@ -102,6 +103,7 @@ FunctionAnalyser::FunctionAnalyser(Scope& scope_,
     , CurrentVarDecl(0)
     , constDiagID(0)
     , inConstExpr(false)
+    , isInterface(isInterface_)
 {
 }
 
@@ -190,6 +192,7 @@ unsigned FunctionAnalyser::checkEnumValue(EnumConstantDecl* E, llvm::APSInt& nex
 void FunctionAnalyser::checkFunction(FunctionDecl* func) {
     LOG_FUNC
     bool no_unused_params = func->hasAttribute(ATTR_UNUSED_PARAMS);
+    if (isInterface) no_unused_params = true;
     // add arguments to new scope
     for (unsigned i=0; i<func->numArgs(); i++) {
         VarDecl* arg = func->getArg(i);
@@ -206,17 +209,19 @@ void FunctionAnalyser::checkFunction(FunctionDecl* func) {
     }
     if (errors) return;
 
-    analyseCompoundStmt(func->getBody());
+    CompoundStmt* body = func->getBody();
+    if (body) {
+        analyseCompoundStmt(body);
+    }
     if (errors) return;
 
     // check for return statement of return value is required
     QualType rtype = func->getReturnType();
     bool need_rvalue = (rtype.getTypePtr() != BuiltinType::get(BuiltinType::Void));
-    if (need_rvalue) {
-        CompoundStmt* compound = func->getBody();
-        Stmt* lastStmt = compound->getLastStmt();
+    if (need_rvalue && body) {
+        Stmt* lastStmt = body->getLastStmt();
         if (!lastStmt || lastStmt->getKind() != STMT_RETURN) {
-            Diag(compound->getRight(), diag::warn_falloff_nonvoid_function);
+            Diag(body->getRight(), diag::warn_falloff_nonvoid_function);
         }
     }
 }

@@ -41,17 +41,17 @@ using namespace llvm;
 #endif
 
 FileAnalyser::FileAnalyser(const Modules& modules, clang::DiagnosticsEngine& Diags_,
-                    AST& ast_, TypeContext& typeContext_, bool verbose_)
+                    AST& ast_, bool verbose_)
     : ast(ast_)
     , globals(new Scope(ast_.getModuleName(), modules, Diags_))
-    , TR(new TypeResolver(*globals, Diags_, typeContext_))
+    , TR(new TypeResolver(*globals, Diags_, ast.getTypeContext()))
     , Diags(Diags_)
-    , functionAnalyser(*globals, *TR, typeContext_, Diags_)
-    , typeContext(typeContext_)
+    , functionAnalyser(*globals, *TR, ast.getTypeContext(), Diags_, ast.isInterface())
     , verbose(verbose_)
 {}
 
-void FileAnalyser::printAST() const {
+void FileAnalyser::printAST(bool printInterface) const {
+    if (ast.isInterface() && !printInterface) return;
     ast.print(true);
 }
 
@@ -259,6 +259,8 @@ unsigned FileAnalyser::checkFunctionBodies() {
 }
 
 void FileAnalyser::checkDeclsForUsed() {
+    if (ast.isInterface()) return;
+
     LOG_FUNC
     if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
 

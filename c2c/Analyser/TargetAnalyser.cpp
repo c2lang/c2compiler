@@ -24,11 +24,11 @@ TargetAnalyser::~TargetAnalyser() {
     }
 }
 
-void TargetAnalyser::addFile(AST& ast, TypeContext& typeContext) {
-    analysers.push_back(new FileAnalyser(modules, Diags, ast, typeContext, verbose));
+void TargetAnalyser::addFile(AST& ast) {
+    analysers.push_back(new FileAnalyser(modules, Diags, ast, verbose));
 }
 
-unsigned TargetAnalyser::analyse(bool print1, bool print2, bool print3) {
+unsigned TargetAnalyser::analyse(bool print1, bool print2, bool print3, bool printLib) {
     unsigned errors = 0;
     const size_t count = analysers.size();
 
@@ -50,7 +50,7 @@ unsigned TargetAnalyser::analyse(bool print1, bool print2, bool print3) {
     for (unsigned i=0; i<count; i++) {
         errors += analysers[i]->resolveStructMembers();
     }
-    if (print1) printASTs();
+    if (print1) printASTs(printLib);
     if (errors) return errors;
 
     for (unsigned i=0; i<count; i++) {
@@ -71,7 +71,7 @@ unsigned TargetAnalyser::analyse(bool print1, bool print2, bool print3) {
     for (unsigned i=0; i<count; i++) {
         errors += analysers[i]->checkVarInits();
     }
-    if (print2) printASTs();
+    if (print2) printASTs(printLib);
     if (errors) return errors;
 
     for (unsigned i=0; i<count; i++) {
@@ -87,13 +87,13 @@ unsigned TargetAnalyser::analyse(bool print1, bool print2, bool print3) {
         analysers[i]->checkDeclsForUsed();
     }
 
-    if (print3) printASTs();
+    if (print3) printASTs(printLib);
     return errors;
 }
 
-void TargetAnalyser::printASTs() const {
+void TargetAnalyser::printASTs(bool printLib) const {
     for (unsigned i=0; i<analysers.size(); i++) {
-        analysers[i]->printAST();
+        analysers[i]->printAST(printLib);
     }
 }
 

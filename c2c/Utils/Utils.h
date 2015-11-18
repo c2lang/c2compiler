@@ -32,6 +32,7 @@ public:
         }
         return mask;
     }
+    static bool endsWith(const char* text, const char* tail);
 };
 
 }

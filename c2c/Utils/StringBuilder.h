@@ -39,7 +39,8 @@ public:
 
     void radix(unsigned radix_, int64_t value);
 
-    operator const char*() const;
+    operator const char*() const { return buffer; }
+    const char* c_str() const { return buffer; }
     void clear();
     unsigned size() const;
     unsigned space_left() const;

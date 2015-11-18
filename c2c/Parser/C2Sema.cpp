@@ -97,10 +97,10 @@ static inline UnaryOperatorKind ConvertTokenKindToUnaryOpcode(
 }
 
 
-C2Sema::C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, TypeContext& tc, AST& ast_, clang::Preprocessor& PP_)
+C2Sema::C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, AST& ast_, clang::Preprocessor& PP_)
     : SourceMgr(sm_)
     , Diags(Diags_)
-    , typeContext(tc)
+    , typeContext(ast_.getTypeContext())
     , ast(ast_)
     , PP(PP_)
 {}

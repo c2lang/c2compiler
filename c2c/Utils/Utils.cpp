@@ -15,6 +15,7 @@
 
 #include <time.h>
 #include <sys/time.h>
+#include <string.h>
 
 #include "Utils/Utils.h"
 
@@ -37,5 +38,14 @@ u_int64_t Utils::getCurrentTime()
     now64 += (now.tv_nsec/1000);
     return now64;
 #endif
+}
+
+bool Utils::endsWith(const char* text, const char* tail) {
+    int len1 = strlen(text);
+    int len2 = strlen(tail);
+    if (len1 < len2) return 0;
+
+    int start = len1 - len2;
+    return (strcmp(text + start, tail) == 0);
 }
 

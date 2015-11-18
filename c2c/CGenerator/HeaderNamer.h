@@ -13,11 +13,21 @@
  * limitations under the License.
  */
 
-#ifndef BUILDER_CONSTANTS_H
-#define BUILDER_CONSTANTS_H
+#ifndef CGENERATOR_HEADERNAMER_H
+#define CGENERATOR_HEADERNAMER_H
 
-#define RECIPE_FILE "recipe.txt"
-#define MANIFEST_FILE "manifest"
+#include <string>
+
+namespace C2 {
+
+class HeaderNamer {
+public:
+    virtual ~HeaderNamer() {}
+
+    virtual const std::string& getIncludeName(const std::string& modName) = 0;
+};
+
+}
 
 #endif
 

@@ -1,0 +1,54 @@
+module libc_test;
+
+import stdio as io;
+import string as str;
+import strings;
+import stdlib as std;
+import c_errno;
+
+func void test_stdio() {
+    io.printf("testing io\n");
+
+    int32 res = io.remove("remove.txt");
+    if (res == -1) {
+        int32 err = c_errno.errno;
+        io.perror("remove");
+    }
+
+    res = io.rename("rename.txt", "rename2.txt");
+    if (res == -1) {
+        io.perror("rename");
+    }
+
+    io.FILE* f = io.tmpfile();
+    if (f == nil) {
+        io.fprintf(io.stderr, "error creating tmpfile\n");
+    }
+}
+
+func void test_string() {
+    io.printf("testing string\n");
+    const char* text = "hello";
+    int32 len = str.strlen(text);
+    io.printf("strlen(%s) = %d\n", text, len);
+}
+
+func void test_strings() {
+    int32 i = strings.ffs(0x800);
+    io.printf("ffs(0x800) = %d\n", i);
+    // TODO
+}
+
+func void test_stdlib() {
+    io.printf("testing stdlib\n");
+    // TODO
+}
+
+public func int32 main() {
+    test_stdio();
+    test_string();
+    test_strings();
+    test_stdlib();
+    return 0;
+}
+

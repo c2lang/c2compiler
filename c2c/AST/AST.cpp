@@ -15,7 +15,6 @@
 
 #include <stdio.h>
 
-#include "AST/Decl.h"
 #include "AST/AST.h"
 #include "Utils/StringBuilder.h"
 #include "Utils/color.h"

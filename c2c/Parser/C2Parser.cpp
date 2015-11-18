@@ -83,13 +83,14 @@ static SourceRange getExprRange(C2::Expr *E) {
 }
 
 
-C2Parser::C2Parser(Preprocessor& pp, C2Sema& sema)
+C2Parser::C2Parser(Preprocessor& pp, C2Sema& sema, bool isInterface_)
     : PP(pp)
     , ParenCount(0)
     , BracketCount(0)
     , BraceCount(0)
     , Actions(sema)
     , Diags(PP.getDiagnostics())
+    , isInterface(isInterface_)
 {
     Tok.startToken();
     Tok.setKind(tok::eof);
@@ -97,13 +98,11 @@ C2Parser::C2Parser(Preprocessor& pp, C2Sema& sema)
 
 C2Parser::~C2Parser() {}
 
-void C2Parser::Initialize() {
-    // Prime the lexer look-ahead.
-    ConsumeToken();
-}
-
 bool C2Parser::Parse() {
     LOG_FUNC
+    // Prime the lexer look-ahead.
+    ConsumeToken();
+
     ParseModule();
     if (Diags.hasErrorOccurred()) return false;
 
@@ -1480,7 +1479,17 @@ void C2Parser::ParseFuncDef(bool is_public) {
     if (!ParseFunctionParams(func, true)) return;
     if (!ParseAttributes(func)) return;
 
-    StmtResult FnBody = ParseCompoundStatement();
+    StmtResult FnBody;
+    if (isInterface) {
+        if (Tok.is(tok::l_brace)) {
+            //Diag(Tok, diag::err_interface_func_body);
+            fprintf(stderr, "INTERFACE functions cannot have function bodies\n");
+            return;
+        }
+        if (ExpectAndConsume(tok::semi)) return;
+    } else {
+        FnBody = ParseCompoundStatement();
+    }
     Actions.ActOnFinishFunctionBody(func, FnBody.get());
 }
 

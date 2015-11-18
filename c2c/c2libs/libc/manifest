@@ -1,0 +1,25 @@
+# C2 wrapper for the standard C library
+
+[library]
+language = "C"
+
+[[modules]]
+name = "stdio"
+header = "stdio.h"
+
+[[modules]]
+name = "c_errno"
+header = "errno.h"
+
+[[modules]]
+name = "stdlib"
+header = "stdlib.h"
+
+[[modules]]
+name = "string"
+header = "string.h"
+
+[[modules]]
+name = "strings"
+header = "strings.h"
+

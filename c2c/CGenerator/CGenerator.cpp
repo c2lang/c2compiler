@@ -26,10 +26,11 @@
 using namespace C2;
 
 
-CGenerator::CGenerator(const std::string& name_, GenUtils::TargetType type_, const Modules& modules_, const Options& options_)
+CGenerator::CGenerator(const std::string& name_, GenUtils::TargetType type_, const Modules& modules_, HeaderNamer& namer_, const Options& options_)
     : targetName(name_)
     , targetType(type_)
     , modules(modules_)
+    , includeNamer(namer_)
     , options(options_)
 {}
 
@@ -39,7 +40,7 @@ void CGenerator::generate() {
     MakefileGenerator makeGen(outdir, targetName, targetType);
     if (options.single_module) {
         makeGen.add(targetName);
-        CCodeGenerator gen(targetName, CCodeGenerator::SINGLE_FILE, modules);
+        CCodeGenerator gen(targetName, CCodeGenerator::SINGLE_FILE, modules, includeNamer);
         for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
             gen.addEntry(*(*iter));
         }
@@ -50,7 +51,7 @@ void CGenerator::generate() {
             const Module* M = iter->second;
             if (M->isExternal()) continue;
             makeGen.add(M->getName());
-            CCodeGenerator gen(M->getName(), CCodeGenerator::MULTI_FILE, modules);
+            CCodeGenerator gen(M->getName(), CCodeGenerator::MULTI_FILE, modules, includeNamer);
             for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
                 AST* ast = *iter;
                 if (ast->getModuleName() == M->getName()) {
@@ -74,7 +75,7 @@ void CGenerator::generate() {
         break;
     }
     if (generateHeader) {
-        CCodeGenerator gen(targetName, CCodeGenerator::MULTI_FILE, modules);
+        CCodeGenerator gen(targetName, CCodeGenerator::MULTI_FILE, modules, includeNamer);
         for (ModulesConstIter iter = modules.begin(); iter != modules.end(); ++iter) {
             const Module* M = iter->second;
             // TODO dont look at Module, but at exported Decls

@@ -85,12 +85,20 @@ DepGenerator::~DepGenerator() {
     }
 }
 
-void DepGenerator::analyse(const AST& ast) {
-    const string& modName = ast.getModuleName();
-    const string& fileName = ast.getFileName();
+void DepGenerator::analyse(const Components& components) {
+    for (unsigned c=0; c<components.size(); c++) {
+        const Component* C = components[c];
+        if (!showExternals && C->isExternal) continue;
+        for (unsigned i=0; i<C->files.size(); i++) {
+            const AST& ast = *C->files[i];
 
-    ModInfo* info = getInfo(modName);
-    info->addFile(fileName, ast);
+            const string& modName = ast.getModuleName();
+            const string& fileName = ast.getFileName();
+
+            ModInfo* info = getInfo(modName);
+            info->addFile(fileName, ast);
+        }
+    }
 }
 
 ModInfo* DepGenerator::getInfo(const std::string& modName) {
@@ -101,13 +109,6 @@ ModInfo* DepGenerator::getInfo(const std::string& modName) {
     ModInfo* P = new ModInfo(modName);
     modules.push_back(P);
     return P;
-}
-
-void DepGenerator::addExternal(const Module* P) const {
-    for (unsigned i=0; i<externals.size(); i++) {
-        if (externals[i] == P) return;
-    }
-    externals.push_back(P);
 }
 
 void DepGenerator::write(const std::string& title, const std::string& path) const {
@@ -149,17 +150,6 @@ void DepGenerator::write(const std::string& title, const std::string& path) cons
         output.indent(indent);
         output << "</group>\n";
     }
-    if (showExternals) {
-        output.indent(indent);
-        output << "<group name='Externals' full='Externals' collapsed='1'>\n";
-        indent += INDENT;
-        for (unsigned i=0; i<externals.size(); i++) {
-            writeExternal(externals[i], output, indent);
-        }
-        indent -= INDENT;
-        output.indent(indent);
-        output << "</group>\n";
-    }
     indent -= INDENT;
 
     output.indent(indent);
@@ -171,16 +161,6 @@ void DepGenerator::write(const std::string& title, const std::string& path) cons
 }
 
 void DepGenerator::writeAST(const AST& ast, StringBuilder& output, unsigned indent) const {
-    if (showExternals) {
-        for (unsigned i=0; i<ast.numImports(); i++) {
-            const ImportDecl* U = ast.getImport(i);
-            QualType Q = U->getType();
-            const ModuleType* T = cast<ModuleType>(Q.getTypePtr());
-            const Module* P = T->getModule();
-            assert(P);
-            if (P->isExternal()) addExternal(P);
-        }
-    }
     for (unsigned i=0; i<ast.numTypes(); i++) {
         writeDecl(ast.getType(i), output, indent);
     }

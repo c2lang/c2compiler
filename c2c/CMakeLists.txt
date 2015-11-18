@@ -46,6 +46,7 @@ ADD_LIBRARY(c2core
     AST/Stmt.cpp
     AST/Type.cpp
     AST/Attr.cpp
+    AST/Component.cpp
     Parser/C2Parser.cpp
     Parser/ParserHelpers.cpp
     Parser/C2Sema.cpp
@@ -70,6 +71,8 @@ ADD_LIBRARY(c2core
     CGenerator/CGenerator.cpp
     Refactor/RefFinder.cpp
     Builder/C2ModuleLoader.cpp
+    Builder/ManifestReader.cpp
+    Builder/LibraryLoader.cpp
     Builder/RootFinder.cpp
     Builder/Recipe.cpp
     Builder/RecipeReader.cpp

@@ -67,9 +67,8 @@ class C2Parser {
 public:
     friend class BalancedDelimiterTracker;
 
-    C2Parser(clang::Preprocessor& pp, C2Sema& sema);
+    C2Parser(clang::Preprocessor& pp, C2Sema& sema, bool isInterface_);
     ~C2Parser();
-    void Initialize();
 
     bool Parse();
 private:
@@ -79,6 +78,7 @@ private:
     unsigned short ParenCount, BracketCount, BraceCount;
     C2Sema& Actions;
     DiagnosticsEngine& Diags;
+    bool isInterface;
 
     ExprResult ExprError();
     StmtResult StmtError();

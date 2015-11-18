@@ -37,12 +37,13 @@ class QualType;
 class Expr;
 class Stmt;
 class CompoundStmt;
+class HeaderNamer;
 
 // generates LLVM Module from (multiple) ASTs
 class CCodeGenerator : public CTypeWriter {
 public:
     enum Mode { MULTI_FILE, SINGLE_FILE };
-    CCodeGenerator(const std::string& filename_, Mode mode_, const Modules& modules_);
+    CCodeGenerator(const std::string& filename_, Mode mode_, const Modules& modules_, HeaderNamer& namer_);
     ~CCodeGenerator();
 
     void addEntry(AST& ast) { entries.push_back(&ast); }
@@ -105,6 +106,7 @@ private:
     Mode mode;
 
     const Modules& modules;
+    HeaderNamer& headerNamer;
 
     typedef std::vector<AST*> Entries;
     typedef Entries::iterator EntriesIter;

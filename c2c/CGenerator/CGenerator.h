@@ -25,6 +25,7 @@
 namespace C2 {
 
 class AST;
+class HeaderNamer;
 
 class CGenerator {
 public:
@@ -40,7 +41,7 @@ public:
         std::string buildDir;
     };
 
-    CGenerator(const std::string& name_, GenUtils::TargetType type_, const Modules& modules_, const Options& options_);
+    CGenerator(const std::string& name_, GenUtils::TargetType type_, const Modules& modules_, HeaderNamer& namer_, const Options& options_);
 
     void addFile(AST& ast) { entries.push_back(&ast); }
 
@@ -50,6 +51,7 @@ private:
     std::string targetName;
     GenUtils::TargetType targetType;
     const Modules& modules;
+    HeaderNamer& includeNamer;
     const Options& options;
 
     typedef std::vector<AST*> Entries;

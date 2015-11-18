@@ -24,7 +24,7 @@ class Module;
 
 class C2ModuleLoader {
 public:
-    Module* load(const std::string& name);
+    static void load(Module* c2mod);
 };
 
 }

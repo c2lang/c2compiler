@@ -1,0 +1,149 @@
+module stdio;
+
+// possibilities for the third argument to 'setvbuf'
+public const uint32 _IOFBF = 0; // fully buffered
+public const uint32 _IOLBF = 1; // line buffering
+public const uint32 _IONBF = 2; // no buffering
+
+public const int32 EOF = -1;
+
+public const uint32 SEEK_SET = 0;   // Seek from beginning of file.
+public const uint32 SEEK_CUR = 1;   // Seek from current position.
+public const uint32 SEEK_END = 2;   // Seek from end of file.
+#ifdef __USE_GNU
+public const uint32 SEEK_DATA = 3;  // Seek to next data.
+public const uint32 SEEK_HOLE = 4;  // Seek to next hole.
+#endif
+
+// from libio.h
+public type _IO_marker struct {
+    _IO_marker* next;
+    FILE* sbuf;
+    int32 _pos;
+}
+
+public type FILE struct {
+    int32 _flags;
+    char* _IO_read_ptr;
+    char* _IO_read_end;
+    char* _IO_read_base;
+    char* _IO_write_base;
+    char* _IO_write_ptr;
+    char* _IO_write_end;
+    char* _IO_buf_base;
+    char* _IO_buf_end;
+    char* _IO_save_base;
+    char* _IO_backup_base;
+    char* _IO_save_end;
+    _IO_marker* _markers;
+    FILE* _chain;
+    int32 _fileno;
+    int32 _flags2;
+    off_t _old_offset;
+    uint16 _cur_column;
+    int8 _vtable_offset;
+    char[1] _shortbuf;
+    //_IO_lock_t* _lock;
+    //__off64_t _offset;
+    void* __pad1;
+    void* __pad2;
+    void* __pad3;
+    void* __pad4;
+    int32 __pad5;
+    int32 _mode;
+    char _unused2;
+}
+
+
+public type va_list int32;
+public type off_t uint64;
+public type ssize_t uint64;
+
+//NOTE: _G_fpos_t is some struct(_G_fpos_t.h)
+//public type fpos_t _G_fpos_t;
+
+public FILE* stdin;
+public FILE* stdout;
+public FILE* stderr;
+
+public func int32 remove(const char* __filename);
+
+public func int32 rename(const char* __old, const char* __new);
+public func int32 renameat(int32 __oldfd, const char* __old, int32 __newfd, const char* __new);
+
+public func FILE* tmpfile();
+#ifdef __USE_LARGEFIE64
+public func FILE* tmpfile64(void);
+#endif
+//public func char* tmpnam(char* __s); // deprecated
+public func char* tmpnam_r(char* __s);
+public func char* tempnam(const char* __dir, const char* __pfx);
+
+public func int32 fclose(FILE* __stream);
+public func int32 fflush(FILE* __stream);
+public func int32 fflush_unlocked(FILE* __stream);
+public func FILE* fopen(const char* __filename, const char* __modes);
+public func FILE* freopen(const char* __filename, const char* __modes, FILE* __stream);
+public func FILE* fdopen(int32 __fd, const char* __modes);
+public func FILE* fmemopen(void* __s, int32 __len, const char* __modes);
+public func FILE* open_memstream(char** __bufloc, int32* __sizeloc);
+public func void setbuf(FILE* __stream, char* __buf);
+public func int32 setvbuf(FILE* __stream, char* __buf, int32 __modes, int32 __n);
+public func void setbuffer(FILE* __stream, char* __buf, int32 __size);
+public func void setlinebuf(FILE* __stream);
+public func int32 fprintf(FILE* __stream, const char* __format, ...);
+public func int32 printf(const char* __format, ...);
+public func int32 sprintf(char* __s, const char* __format, ...);
+public func int32 vdprintf(int32 __fd, const char* __fmt, int32 __arg);
+public func int32 dprintf(int32 __fd, const char* __fmt, ...);
+public func int32 fscanf(FILE* __stream, const char* __format, ...);
+public func int32 scanf(const char* __format, ...);
+public func int32 sscanf(const char* __s, const char* __format, ...);
+public func int32 fgetc(FILE* __stream);
+public func int32 getc(FILE* __stream);
+public func int32 getchar();
+public func int32 getc_unlocked(FILE* __stream);
+public func int32 getchar_unlocked();
+public func int32 fgetc_unlocked(FILE* __stream);
+public func int32 fputc(int32 __c, FILE* __stream);
+public func int32 putc(int32 __c, FILE* __stream);
+public func int32 putchar(int32 __c);
+public func int32 fputc_unlocked(int32 __c, FILE* __stream);
+public func int32 putc_unlocked(int32 __c, FILE* __stream);
+public func int32 putchar_unlocked(int32 __c);
+public func int32 getw(FILE* __stream);
+public func int32 putw(int32 __w, FILE* __stream);
+public func char* fgets(char* __s, int32 __n, FILE* __stream);
+public func ssize_t __getdelim(char** __lineptr, int32* __n, int32 __delimiter, FILE* __stream);
+public func ssize_t getdelim(char** __lineptr, int32* __n, int32 __delimiter, FILE* __stream);
+public func ssize_t getline(char** __lineptr, int32* __n, FILE* __stream);
+public func int32 fputs(const char* __s, FILE* __stream);
+public func int32 puts(const char* __s);
+public func int32 ungetc(int32 __c, FILE* __stream);
+public func int32 fread(void* __ptr, int32 __size, int32 __n, FILE* __stream);
+public func int32 fwrite(const void* __ptr, int32 __size, int32 __n, FILE* __s);
+public func int32 fread_unlocked(void* __ptr, int32 __size, int32 __n, FILE* __stream);
+public func int32 fwrite_unlocked(const void* __ptr, int32 __size, int32 __n, FILE* __stream);
+public func int32 fseek(FILE* __stream, int32 __off, int32 __whence);
+public func int32 ftell(FILE* __stream);
+public func void rewind(FILE* __stream);
+public func int32 fseeko(FILE* __stream, off_t __off, int32 __whence);
+public func off_t ftello(FILE* __stream);
+//public func int32 fgetpos(FILE* __stream, fpos_t* __pos);
+//public func int32 fsetpos(FILE* __stream, const fpos_t* __pos);
+public func void clearerr(FILE* __stream);
+public func int32 feof(FILE* __stream);
+public func int32 ferror(FILE* __stream);
+public func void clearerr_unlocked(FILE* __stream);
+public func int32 feof_unlocked(FILE* __stream);
+public func int32 ferror_unlocked(FILE* __stream);
+public func void perror(const char* __s);
+public func int32 fileno(FILE* __stream);
+public func int32 fileno_unlocked(FILE* __stream);
+public func FILE* popen(const char* __command, const char* __modes);
+public func int32 pclose(FILE* __stream);
+public func char* ctermid(char* __s);
+public func void flockfile(FILE* __stream);
+public func int32 ftrylockfile(FILE* __stream);
+public func void funlockfile(FILE* __stream);
+

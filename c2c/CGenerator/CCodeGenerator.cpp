@@ -24,6 +24,7 @@
 //#include <llvm/Support/ToolOutputFile.h>
 
 #include "CGenerator/CCodeGenerator.h"
+#include "CGenerator/HeaderNamer.h"
 #include "AST/Module.h"
 #include "AST/AST.h"
 #include "AST/Attr.h"
@@ -53,10 +54,11 @@ using namespace C2;
 using namespace llvm;
 using namespace clang;
 
-CCodeGenerator::CCodeGenerator(const std::string& filename_, Mode mode_, const Modules& modules_)
+CCodeGenerator::CCodeGenerator(const std::string& filename_, Mode mode_, const Modules& modules_, HeaderNamer& namer_)
     : filename(filename_)
     , mode(mode_)
     , modules(modules_)
+    , headerNamer(namer_)
 {
     hfilename = filename + ".h";
     cfilename = filename + ".c";
@@ -529,7 +531,7 @@ void CCodeGenerator::EmitIncludes() {
             const Module* M = iter->second;
 
             if (M->isPlainC()) {
-                systemIncludes.insert(M->getName());
+                systemIncludes.insert(headerNamer.getIncludeName(M->getName()));
                 continue;
             }
             if (mode == MULTI_FILE) {
@@ -539,7 +541,7 @@ void CCodeGenerator::EmitIncludes() {
     }
 
     for (StringListConstIter iter = systemIncludes.begin(); iter != systemIncludes.end(); ++iter) {
-        cbuf << "#include <" << *iter << ".h>\n";
+        cbuf << "#include <" << *iter << ">\n";
     }
     for (StringListConstIter iter = localIncludes.begin(); iter != localIncludes.end(); ++iter) {
         if (*iter == "c2") continue;

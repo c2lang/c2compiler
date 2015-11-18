@@ -22,6 +22,7 @@
 #include <clang/Basic/SourceLocation.h>
 
 #include "AST/Decl.h"
+#include "AST/Type.h"
 #include "AST/Attr.h"
 #include "AST/OwningVector.h"
 
@@ -29,8 +30,9 @@ namespace C2 {
 
 class AST {
 public:
-    AST(const std::string& filename_)
+    AST(const std::string& filename_, bool isInterface_)
         : filename(filename_)
+        , m_isInterface(isInterface_)
     {}
     ~AST();
 
@@ -83,6 +85,8 @@ public:
     }
     const std::string& getModuleName() const { return modName; }
     const std::string& getFileName() const { return filename; }
+    TypeContext& getTypeContext() { return typeContext; }
+    bool isInterface() const { return m_isInterface; }
 
 private:
     AST(const AST&);
@@ -91,6 +95,7 @@ private:
     const std::string filename;
     std::string modName;
     clang::SourceLocation modLoc;
+    bool m_isInterface;       // set for .c2i files
 
     typedef OwningVector<ImportDecl> ImportList;
     ImportList importList;
@@ -109,7 +114,11 @@ private:
 
     Symbols symbols;
 
+    TypeContext typeContext;
     AttrMap declAttrs;
+
+    // TEMP for Rewriter
+    //FileID fileID;
 };
 
 }

@@ -42,6 +42,7 @@ static void usage(const char* name) {
     fprintf(stderr, "   -a1           - print AST after analysis 1\n");
     fprintf(stderr, "   -a2           - print AST after analysis 2\n");
     fprintf(stderr, "   -a3           - print AST after analysis 3 (final)\n");
+    fprintf(stderr, "   -aL           - also print library AST\n");
     fprintf(stderr, "   -c            - generate C code\n");
     fprintf(stderr, "   -C            - generate + print C code\n");
     fprintf(stderr, "   -d <dir>      - change directory first\n");
@@ -59,6 +60,7 @@ static void usage(const char* name) {
     fprintf(stderr, "   --deps        - print module dependencies\n");
     fprintf(stderr, "   --refs        - generate c2tags file\n");
     fprintf(stderr, "   --check       - only parse + analyse\n");
+    fprintf(stderr, "   --showlibs    - print available libraries\n");
     exit(-1);
 }
 
@@ -80,6 +82,9 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
                     break;
                 case '3':
                     opts.printAST3 = true;
+                    break;
+                case 'L':
+                    opts.printASTLib = true;
                     break;
                 default:
                     usage(argv[0]);
@@ -157,6 +162,10 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
                     opts.checkOnly = true;
                     continue;
                 }
+                if (strcmp(&arg[2], "showlibs") == 0) {
+                    opts.showLibs = true;
+                    continue;
+                }
                 usage(argv[0]);
                 break;
             default:
@@ -184,12 +193,23 @@ int main(int argc, const char *argv[])
     BuildOptions opts;
     parse_arguments(argc, argv, opts);
 
+    // TODO get ENV C2LIBDIR -> should be set
+    {
+        const char* envname = "C2_LIBDIR";
+        opts.libdir = getenv(envname);
+        if (!opts.libdir) {
+            fprintf(stderr, "please set %s in the ENV to point at the directory containing c2libs/\n", envname);
+            return -1;
+        }
+    }
     if (other_dir) {
         if (chdir(other_dir)) {
             fprintf(stderr, "cannot chdir to %s: %s\n", other_dir, strerror(errno));
             return -1;
         }
     }
+
+
     if (!use_recipe) {
         Recipe dummy("dummy", GenUtils::EXECUTABLE);
         dummy.addFile(targetFilter);

@@ -19,6 +19,8 @@
 #include <string>
 #include <vector>
 
+#include "AST/Component.h"
+
 namespace C2 {
 
 class AST;
@@ -34,7 +36,7 @@ public:
     {}
     ~DepGenerator();
 
-    void analyse(const AST& ast);
+    void analyse(const Components& components);
     void write(const std::string& title, const std::string& path) const;
 private:
     ModInfo* getInfo(const std::string& modName);
@@ -45,9 +47,6 @@ private:
 
     typedef std::vector<ModInfo*> Modules;
     Modules modules;
-
-    typedef std::vector<const Module*> Externals;
-    mutable Externals externals;
 
     bool showFiles;
     bool showPrivate;

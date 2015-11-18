@@ -168,7 +168,7 @@ public:
                     parseNumber(Result);
                     return;
                 }
-                if (*current == '/' || isalpha(*current)) {        // may also be path: /
+                if (*current == '_' || *current == '/' || isalpha(*current)) {        // may also be path: /
                     parseText(Result);
                     return;
                 }
@@ -194,7 +194,8 @@ private:
         return IsNameStartChar( ch )
                || isdigit( ch )
                || ch == '.'
-               || ch == '-';
+               || ch == '-'
+               || ch == '_';
     }
     void advanceToken(unsigned amount) {
         loc.column += amount;
@@ -306,7 +307,7 @@ public:
 
             return parseRefs(tag, line, col);
         } // else got error, errorMsg should be set
-        fprintf(stderr, "ERROR: %s\n", errorMsg);
+        fprintf(stderr, "error: %s\n", errorMsg);
         exit(-1);
         return false;
     }
@@ -325,7 +326,7 @@ public:
             }
             return;
         } // else got error, errorMsg should be set
-        fprintf(stderr, "ERROR: %s\n", errorMsg);
+        fprintf(stderr, "error: %s\n", errorMsg);
         exit(-1);
     }
 private:

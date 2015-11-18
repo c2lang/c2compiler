@@ -49,7 +49,8 @@ public:
     FunctionAnalyser(Scope& scope_,
                     TypeResolver& typeRes_,
                     TypeContext& tc,
-                    clang::DiagnosticsEngine& Diags_);
+                    clang::DiagnosticsEngine& Diags_,
+                    bool isInterface_);
 
     unsigned check(FunctionDecl* F);
     unsigned checkVarInit(VarDecl* V);
@@ -143,6 +144,7 @@ private:
     VarDecl* CurrentVarDecl;
     unsigned constDiagID;
     bool inConstExpr;
+    bool isInterface;
 
     typedef std::vector<LabelDecl*> Labels;
     typedef Labels::iterator LabelsIter;

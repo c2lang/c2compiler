@@ -19,7 +19,9 @@
 #include <vector>
 #include <string>
 
+#include "Builder/LibraryLoader.h"
 #include "AST/Module.h"
+#include "AST/Component.h"
 
 namespace clang {
 class DiagnosticsEngine;
@@ -30,7 +32,6 @@ namespace C2 {
 
 class AST;
 class Recipe;
-class FileInfo;
 
 struct BuildOptions {
     BuildOptions()
@@ -38,6 +39,7 @@ struct BuildOptions {
         , printAST1(false)
         , printAST2(false)
         , printAST3(false)
+        , printASTLib(false)
         , printTiming(false)
         , printSymbols(false)
         , generateIR(false)
@@ -45,16 +47,19 @@ struct BuildOptions {
         , generateC(false)
         , printC(false)
         , checkOnly(false)
+        , showLibs(false)
         , printModules(false)
         , printDependencies(false)
         , generateRefs(false)
         , verbose(false)
         , testMode(false)
+        , libdir(0)
     {}
     bool printAST0;
     bool printAST1;
     bool printAST2;
     bool printAST3;
+    bool printASTLib;
     bool printTiming;
     bool printSymbols;
     bool generateIR;
@@ -62,11 +67,14 @@ struct BuildOptions {
     bool generateC;
     bool printC;
     bool checkOnly;
+    bool showLibs;
     bool printModules;
     bool printDependencies;
     bool generateRefs;
     bool verbose;
     bool testMode;
+
+    const char* libdir;
 };
 
 
@@ -78,15 +86,20 @@ public:
     int checkFiles();
     int build();
 
+#if 0
     // AST extraction (for tools)
     unsigned numASTs() const { return files.size(); }
-    const AST& getAST(unsigned i) const;
+    const AST& getAST(unsigned i) const {
+        assert(i < files.size());
+        return *files[i];
+    }
+#endif
 private:
     bool haveModule(const std::string& name) const;
     Module* getModule(const std::string& name, bool isExternal, bool isCLib);
     Module* findModule(const std::string& name) const;
-    bool createModules();
-    bool loadExternalModules();
+    bool createModules(Component* C, clang::DiagnosticsEngine& Diags);
+    bool addFileToModule(clang::DiagnosticsEngine& Diags, Module* mod, AST* ast);
     unsigned analyse();
     void dumpModules() const;
     void log(const char* color, const char* format, ...) const;
@@ -101,10 +114,10 @@ private:
     const Recipe& recipe;
     BuildOptions options;
 
-    typedef std::vector<FileInfo*> Files;
-    Files files;
-
     Modules modules;
+
+    Components components;
+    LibraryLoader libLoader;
 
     bool useColors;
 

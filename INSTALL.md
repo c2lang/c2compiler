@@ -31,9 +31,12 @@ make install
 ```
 
 Voila! When adding **$HOME/llvm-c2/bin** to the your $PATH, you should be able
-to build C2.
+to build C2. Additionally, you need to add the PATH to c2tags and point the
+environment variable C2_LIBDIR to point at the directory containing the 'c2libs'
+directory. If you place c2tags in $HOME/bin, the following works:
 ```
-export PATH=$HOME/llvm-c2/bin:$PATH
+export PATH=$HOME/bin:$HOME/llvm-c2/bin:$PATH
+export C2_LIBDIR=$HOME/path/to/c2c/c2libs/
 ```
 
 NOTE:
@@ -41,7 +44,7 @@ On Mac OS X (Yosemite/El Capitan) you might need to create a link for your new c
 Since this uses the toolchain that comes with XCode, XCode will have to be installed.
 ```
 mkdir -p ~/llvm-c2/include/c++
-ln -s /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1 ~/llvm-2/include/c++/v1
+ln -s /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1 ~/llvm-c2/include/c++/v1
 ```
 
 ## Installation of C2C

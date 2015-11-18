@@ -13,11 +13,39 @@
  * limitations under the License.
  */
 
-#ifndef BUILDER_CONSTANTS_H
-#define BUILDER_CONSTANTS_H
+#ifndef AST_COMPONENT_H
+#define AST_COMPONENT_H
 
-#define RECIPE_FILE "recipe.txt"
-#define MANIFEST_FILE "manifest"
+#include <string>
+#include <vector>
+
+namespace C2 {
+
+class AST;
+
+class Component {
+public:
+    Component(const std::string& name_, bool isExternal_)
+        : name(name_)
+        , isExternal(isExternal_)
+    {}
+    ~Component();
+
+    void addFile(const std::string& filename);
+
+    std::string name;
+    bool isExternal;
+
+    typedef std::vector<AST*> Files;
+    Files files;
+private:
+    Component(const Component&);
+    Component& operator= (const Component&);
+};
+
+typedef std::vector<Component*> Components;
+
+}
 
 #endif
 

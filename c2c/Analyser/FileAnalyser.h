@@ -42,10 +42,10 @@ class TypeResolver;
 class FileAnalyser {
 public:
     FileAnalyser(const Modules& modules, clang::DiagnosticsEngine& Diags_,
-                 AST& ast_, TypeContext& typeContext_, bool verbose);
+                 AST& ast_, bool verbose);
     ~FileAnalyser() {}
 
-    void printAST() const;
+    void printAST(bool printInterface) const;
 
     // call in this order
     unsigned checkImports();
@@ -77,7 +77,6 @@ private:
     std::auto_ptr<TypeResolver> TR;
     clang::DiagnosticsEngine& Diags;
     FunctionAnalyser functionAnalyser;
-    TypeContext& typeContext;
     bool verbose;
 
     FileAnalyser(const FileAnalyser&);

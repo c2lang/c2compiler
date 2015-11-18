@@ -13,11 +13,19 @@
  * limitations under the License.
  */
 
-#ifndef BUILDER_CONSTANTS_H
-#define BUILDER_CONSTANTS_H
+#include "AST/Component.h"
+#include "AST/AST.h"
 
-#define RECIPE_FILE "recipe.txt"
-#define MANIFEST_FILE "manifest"
+using namespace C2;
 
-#endif
+Component::~Component() {
+    for (unsigned i=0; i<files.size(); i++) {
+        delete files[i];
+    }
+}
+
+void Component::addFile(const std::string& filename) {
+    AST* ast = new AST(filename, isExternal);
+    files.push_back(ast);
+}
 
