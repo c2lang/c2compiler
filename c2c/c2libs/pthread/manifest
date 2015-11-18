@@ -1,0 +1,8 @@
+
+[library]
+language = "C"
+
+[[modules]]
+name = "pthread"
+header = "pthread.h"
+

@@ -23,3 +23,6 @@ header = "string.h"
 name = "strings"
 header = "strings.h"
 
+[[modules]]
+name = "unistd"
+header = "unistd.h"

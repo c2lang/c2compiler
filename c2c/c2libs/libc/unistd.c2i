@@ -1,0 +1,4 @@
+module unistd;
+
+public func uint32 sleep(uint32 __seconds);
+
