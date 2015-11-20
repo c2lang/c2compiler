@@ -167,6 +167,14 @@ target incremental
     incr_main.c2
 end
 
+target pthread
+    $warnings no-unused
+    $refs
+    $deps show-files show-externals
+    $generate-c
+    pthread.c2
+end
+
 target puzzle
     $deps show-files show-externals
     $refs

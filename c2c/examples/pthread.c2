@@ -1,0 +1,51 @@
+module test;
+
+import pthread local;
+import stdio as io;
+import unistd local;
+
+bool stop = false;
+
+func void* startThread1(void*) {
+    io.printf("started thread1\n");
+    while (!stop) {
+        sleep(1);
+        io.printf("running1\n");
+    }
+    io.printf("quit thread1\n");
+    return nil;
+}
+
+func void* startThread2(void*) {
+    io.printf("started thread2\n");
+    while (!stop) {
+        sleep(1);
+        io.printf("running2\n");
+    }
+    io.printf("quit thread2\n");
+    return nil;
+}
+
+public func int32 main() {
+    pthread_t[2] threads;
+    int32 rc = pthread_create(&threads[0], nil, startThread1, nil);
+    if (rc != 0) {
+        io.perror("pthread_create");
+        return -1;
+    }
+    int32 rc2 = pthread_create(&threads[1], nil, startThread2, nil);
+    if (rc2 != 0) {
+        io.perror("pthread_create");
+        return -1;
+    }
+
+    sleep(4);
+    io.printf("stopping threads\n");
+    stop = true;
+    int32 res;
+    res = pthread_join(threads[0], nil);
+    res = pthread_join(threads[1], nil);
+    io.printf("done\n");
+    return 0;
+}
+

@@ -364,6 +364,7 @@ int C2Builder::build() {
     {
         u_int64_t t1_parse_libs = Utils::getCurrentTime();
         components.push_back(new Component("libc", true));
+        components.push_back(new Component("pthread", true));
         libLoader.scan();
         if (options.showLibs) libLoader.showLibs(useColors);
 
