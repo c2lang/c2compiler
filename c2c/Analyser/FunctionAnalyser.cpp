@@ -1732,7 +1732,7 @@ bool FunctionAnalyser::checkAssignee(Expr* expr) const {
 
 void FunctionAnalyser::checkAssignment(Expr* assignee, QualType TLeft) {
     if (TLeft.isConstQualified()) {
-        Diag(assignee->getLocation(), diag::err_typecheck_assign_const) << assignee->getSourceRange();
+        Diag(assignee->getLocation(), diag::err_typecheck_assign_const) << 4 << assignee->getSourceRange();
     }
 }
 
@@ -1854,26 +1854,13 @@ void FunctionAnalyser::checkEnumCases(const SwitchStmt* SS, const EnumType* ET) 
     }
 
     // Produce a nice diagnostic if multiple values aren't handled.
-    switch (UnhandledNames.size()) {
-    case 0:
-        break;
-    case 1:
-        Diag(SS->getCond()->getLocation(), diag::warn_missing_case1)
-            << UnhandledNames[0];
-        break;
-    case 2:
-        Diag(SS->getCond()->getLocation(), diag::warn_missing_case2)
-            << UnhandledNames[0] << UnhandledNames[1];
-        break;
-    case 3:
-        Diag(SS->getCond()->getLocation(), diag::warn_missing_case3)
-            << UnhandledNames[0] << UnhandledNames[1] << UnhandledNames[2];
-        break;
-    default:
-        Diag(SS->getCond()->getLocation(), diag::warn_missing_cases)
-            << (unsigned)UnhandledNames.size()
-            << UnhandledNames[0] << UnhandledNames[1] << UnhandledNames[2];
-        break;
+    if (!UnhandledNames.empty()) {
+        DiagnosticBuilder DB = Diag(SS->getCond()->getLocation(),
+                                    diag::warn_missing_case)
+                        << (int)UnhandledNames.size();
+        for (size_t I=0, E = std::min(UnhandledNames.size(), (size_t)3); I != E; ++I) {
+            DB << UnhandledNames[I];
+        }
     }
 }
 

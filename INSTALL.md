@@ -1,6 +1,6 @@
 
 ## Installation of LLVM/Clang (C2 version)
-C2 is based on LLVM 3.6 and some parts of Clang 3.6.
+C2 is based on LLVM 3.7 and some parts of Clang 3.7.
 To install C2, follow the steps below. The example shows
 how to install in **$HOME/llvm-c2**, but any other dir should work.
 
@@ -8,15 +8,15 @@ To build:
 ```
 git clone git://github.com/llvm-mirror/llvm.git
 cd llvm/
-git checkout -b release_36 origin/release_36
+git checkout -b release_37 origin/release_37
 cd projects
 git clone git://github.com/llvm-mirror/compiler-rt.git
 cd compiler-rt
-git checkout -b release_36 origin/release_36
+git checkout -b release_37 origin/release_37
 cd ../../tools
 git clone git://github.com/c2lang/clang.git
 cd clang
-git checkout -b c2master_36 origin/c2master_36
+git checkout -b c2master_37 origin/c2master_37
 cd ../../..
 mkdir llvm_build
 cd llvm_build

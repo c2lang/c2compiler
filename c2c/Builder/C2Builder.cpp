@@ -107,8 +107,7 @@ public:
 
     virtual void makeModuleVisible(clang::Module *Mod,
                                    clang::Module::NameVisibilityKind Visibility,
-                                   SourceLocation ImportLoc,
-                                   bool Complain)
+                                   SourceLocation ImportLoc)
     {
         fprintf(stderr, "MODULE LOADER: make visible\n");
     }
@@ -253,10 +252,7 @@ int C2Builder::build() {
     Diags.setSeverity(diag::warn_falloff_nonvoid_function, diag::Severity::Error, SourceLocation());
     Diags.setSeverity(diag::warn_duplicate_attribute_exact, diag::Severity::Error, SourceLocation());
     Diags.setSeverity(diag::warn_not_in_enum, diag::Severity::Error, SourceLocation());
-    Diags.setSeverity(diag::warn_missing_case1, diag::Severity::Error, SourceLocation());
-    Diags.setSeverity(diag::warn_missing_case2, diag::Severity::Error, SourceLocation());
-    Diags.setSeverity(diag::warn_missing_case3, diag::Severity::Error, SourceLocation());
-    Diags.setSeverity(diag::warn_missing_cases, diag::Severity::Error, SourceLocation());
+    Diags.setSeverity(diag::warn_missing_case, diag::Severity::Error, SourceLocation());
 
     // set recipe warning options
     for (unsigned i=0; i<recipe.silentWarnings.size(); i++) {

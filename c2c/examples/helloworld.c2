@@ -12,7 +12,7 @@ public func int32 main(int32 argc, int8*[] argv) {
 // CHECK:   store i32 %argc, i32* %argc.addr
 // CHECK:   store i8** %argv, i8*** %argv.addr
     printf("Hello World!\n");
-// CHECK:   %0 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @0, i32 0, i32 0))
+// CHECK:   %0 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([14 x i8], [14 x i8]* @0, i32 0, i32 0))
     return 0;
 // CHECK:   ret i32 0
 }

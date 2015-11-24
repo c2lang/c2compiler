@@ -21,7 +21,7 @@ entry:
   %argv.addr = alloca i8**
   store i32 %argc, i32* %argc.addr
   store i8** %argv, i8*** %argv.addr
-  %0 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @0, i32 0, i32 0))
+  %0 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([14 x i8], [14 x i8]* @0, i32 0, i32 0))
   ret i32 0
 }
 
