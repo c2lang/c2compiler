@@ -39,6 +39,7 @@ class IdentifierExpr;
 class ASTVisitor {
 public:
     ASTVisitor(const Decl* D) : decl(D) {}
+    virtual ~ASTVisitor() {}
 
     void run();
 

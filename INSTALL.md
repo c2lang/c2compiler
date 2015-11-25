@@ -20,14 +20,32 @@ git checkout -b c2master_37 origin/c2master_37
 cd ../../..
 mkdir llvm_build
 cd llvm_build
+
 export CC=gcc (optional)
 export CXX=g++ (optional)
 # on linux:
 ../llvm/configure --enable-optimized --prefix=$HOME/llvm-c2/ --with-python=/usr/bin/python2
 # on OS X:
 ../llvm/configure --enable-optimized --prefix=$HOME/llvm-c2/
+# alternatively, you can use cmake (on OS X you should)
+cmake -G "Unix Makefiles" \
+    -DCMAKE_BUILD_TYPE="RelWithDebInfo" \
+    -DCMAKE_ENABLE_ASSERTIONS=ON \
+    -DCMAKE_INSTALL_PREFIX=$HOME/llvm-c2 \
+    ../llvm
+
+TODO enable asserts
+
 make -j4
 make install
+```
+
+NOTE:
+On Mac OS X (Yosemite/El Capitan) you might need to create a link for your new clang to find the C++ headers.
+Since this uses the toolchain that comes with XCode, XCode will have to be installed.
+```
+mkdir -p ~/llvm-c2/include/c++
+ln -s /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1 ~/llvm-c2/include/c++/v1
 ```
 
 Voila! When adding **$HOME/llvm-c2/bin** to the your $PATH, you should be able
@@ -39,15 +57,7 @@ export PATH=$HOME/bin:$HOME/llvm-c2/bin:$PATH
 export C2_LIBDIR=$HOME/path/to/c2c/c2libs/
 ```
 
-NOTE:
-On Mac OS X (Yosemite/El Capitan) you might need to create a link for your new clang to find the C++ headers.
-Since this uses the toolchain that comes with XCode, XCode will have to be installed.
-```
-mkdir -p ~/llvm-c2/include/c++
-ln -s /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1 ~/llvm-c2/include/c++/v1
-```
-
-## Installation of C2C
+## Building of C2C
 To build C2: (llvm-c2/bin must be in $PATH)
 ```
 git clone git://github.com/c2lang/c2compiler.git
