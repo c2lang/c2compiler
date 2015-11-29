@@ -7,6 +7,8 @@
 
 #include "Utils/ProcessUtils.h"
 
+#define MAX_ARG_LEN 256
+
 using namespace C2;
 using namespace std;
 
@@ -69,8 +71,9 @@ int ProcessUtils::run(const std::string& path, const std::string& cmd) {
         }
         printf("changing to dir: %s\n", path.c_str());
 
-        // only 'self' argument
-        char self[cmd.size()+1];
+        // only 'self' argument, convert const char* to char*
+        assert(cmd.size() <= MAX_ARG_LEN);
+        char self[MAX_ARG_LEN+1];
         strcpy(self, cmd.c_str());
         char* const argv[2] = { self, 0 };
 
