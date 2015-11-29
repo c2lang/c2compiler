@@ -29,7 +29,7 @@ export CXX=g++ (optional)
 ../llvm/configure --enable-optimized --prefix=$HOME/llvm-c2/
 # alternatively, you can use cmake (on OS X you should)
 cmake -G "Unix Makefiles" \
-    -DCMAKE_BUILD_TYPE="RelWithDebInfo" \
+    -DCMAKE_BUILD_TYPE="Release" \
     -DLLVM_ENABLE_ASSERTIONS=ON \
     -DCMAKE_INSTALL_PREFIX=$HOME/llvm-c2 \
     ../llvm
