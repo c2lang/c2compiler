@@ -690,7 +690,7 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
                 // it should be char array type already and expr is string literal
                 assert(isa<StringLiteral>(expr));
                 const StringLiteral* S = cast<StringLiteral>(expr);
-                if (S->getByteLength() > AT->getSize().getZExtValue()) {
+                if (S->getByteLength() > (int)AT->getSize().getZExtValue()) {
                     Diag(S->getLocation(), diag::err_initializer_string_for_char_array_too_long) << S->getSourceRange();
                     return;
                 }
@@ -1792,7 +1792,7 @@ void FunctionAnalyser::checkArrayDesignators(InitListExpr* expr, int64_t* size) 
             Diag(E->getLocation(), diag::err_excess_initializers) << 0;
             return;
         }
-        if (currentIndex >= indexes.size()) {
+        if (currentIndex >= (int)indexes.size()) {
             indexes.resize(currentIndex + 1);
         }
         Expr* existing = indexes[currentIndex];
