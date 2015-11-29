@@ -30,7 +30,7 @@ export CXX=g++ (optional)
 # alternatively, you can use cmake (on OS X you should)
 cmake -G "Unix Makefiles" \
     -DCMAKE_BUILD_TYPE="RelWithDebInfo" \
-    -DCMAKE_ENABLE_ASSERTIONS=ON \
+    -DLLVM_ENABLE_ASSERTIONS=ON \
     -DCMAKE_INSTALL_PREFIX=$HOME/llvm-c2 \
     ../llvm
 
