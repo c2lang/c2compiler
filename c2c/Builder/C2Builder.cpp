@@ -41,9 +41,7 @@
 #include <clang/Lex/HeaderSearch.h>
 #include <clang/Lex/HeaderSearchOptions.h>
 #include <clang/Lex/ModuleLoader.h>
-#define private public
 #include <clang/Lex/Preprocessor.h>
-#undef private
 #include <clang/Lex/PreprocessorOptions.h>
 #include <clang/Sema/SemaDiagnostic.h>
 // for Rewriter
