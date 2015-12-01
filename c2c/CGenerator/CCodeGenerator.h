@@ -43,7 +43,8 @@ class HeaderNamer;
 class CCodeGenerator : public CTypeWriter {
 public:
     enum Mode { MULTI_FILE, SINGLE_FILE };
-    CCodeGenerator(const std::string& filename_, Mode mode_, const Modules& modules_, HeaderNamer& namer_);
+    CCodeGenerator(const std::string& filename_, Mode mode_,
+                   const Modules& modules_, HeaderNamer& namer_);
     ~CCodeGenerator();
 
     void addEntry(AST& ast) { entries.push_back(&ast); }

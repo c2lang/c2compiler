@@ -106,6 +106,7 @@ private:
 
     bool checkMainFunction(clang::DiagnosticsEngine& Diags);
     bool checkExportedPackages() const;
+    void generateInterface() const;
     void generateOptionalC();
     void generateOptionalIR();
     void generateOptionalDeps() const;

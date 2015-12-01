@@ -516,6 +516,8 @@ int C2Builder::build() {
 
     generateOptionalTags(SM);
 
+    generateInterface();
+
     generateOptionalC();
 
     generateOptionalIR();
@@ -663,6 +665,38 @@ bool C2Builder::checkExportedPackages() const {
         }
     }
     return true;
+}
+
+void C2Builder::generateInterface() const {
+    if (options.checkOnly) return;
+    if (!options.generateC && !recipe.generateCCode) return;
+
+    switch (recipe.type) {
+    case GenUtils::EXECUTABLE:
+        return;
+    case GenUtils::SHARED_LIB:
+    case GenUtils::STATIC_LIB:
+        break;
+    }
+    if (options.verbose) log(COL_VERBOSE, "generating interface file(s)");
+
+    InterfaceGenerator gen(targetName, options.outputDir + targetName + '/');
+    // TODO need better loop
+    for (ModulesConstIter iter = modules.begin(); iter != modules.end(); ++iter) {
+        const Module* M = iter->second;
+        if (!M->isExported()) continue;
+        for (unsigned c=0; c<components.size(); c++) {
+            Component* C = components[c];
+            if (C->isExternal) continue;
+            for (unsigned i=0; i<C->files.size(); i++) {
+                AST* ast = C->files[i];
+                if (ast->getModuleName() == M->getName()) {
+                    gen.addEntry(*ast);
+                }
+            }
+        }
+    }
+    gen.generate();
 }
 
 void C2Builder::generateOptionalC() {
