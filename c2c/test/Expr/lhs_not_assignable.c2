@@ -1,0 +1,12 @@
+// @skip
+// @warnings{no-unused}
+module test;
+
+public func int32 main() {
+    int32 a = 10;
+    int32 b = 20;
+    a++ = b++;      // @error{expression is not assignable}
+    return 0;
+}
+
+
