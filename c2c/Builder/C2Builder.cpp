@@ -60,6 +60,7 @@
 #include "Algo/DepGenerator.h"
 #include "Algo/TagWriter.h"
 #include "CodeGen/CodeGenModule.h"
+#include "CodeGen/InterfaceGenerator.h"
 #include "CGenerator/CGenerator.h"
 #include "Refactor/RefFinder.h"
 #include "Utils/color.h"
@@ -680,7 +681,7 @@ void C2Builder::generateInterface() const {
     }
     if (options.verbose) log(COL_VERBOSE, "generating interface file(s)");
 
-    InterfaceGenerator gen(targetName, options.outputDir + targetName + '/');
+    InterfaceGenerator gen(recipe.name, OUTPUT_DIR + recipe.name + '/', modules);
     // TODO need better loop
     for (ModulesConstIter iter = modules.begin(); iter != modules.end(); ++iter) {
         const Module* M = iter->second;
@@ -696,7 +697,7 @@ void C2Builder::generateInterface() const {
             }
         }
     }
-    gen.generate();
+    gen.generate(options.printC);
 }
 
 void C2Builder::generateOptionalC() {
