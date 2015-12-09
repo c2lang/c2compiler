@@ -55,8 +55,9 @@ void Module::addAttributes(AttrMap& am) {
 void Module::dump() const {
     StringBuilder out;
     out.enableColor(true);
-    out << "symbols of module " << name << "(clib=" << m_isCLib
-        <<", external=" << m_isExternal << ", exported=" << m_isExported << ")\n";
+    out << "symbols of module ";
+    print(out);
+    out << '\n';
     for (SymbolsConstIter iter = symbols.begin(); iter != symbols.end(); ++iter) {
         const Decl* D = iter->second;
         out.indent(3);
@@ -90,6 +91,18 @@ void Module::dump() const {
         out << '\n';
     }
     printf("%s", (const char*)out);
+}
+
+void Module::print(StringBuilder& output) const {
+    output << name;
+    if (m_isCLib || m_isExported || m_isExternal) {
+        output.setColor(COL_ATTRIBUTES);
+        output << "  ";
+        if (m_isCLib) output << " clib";
+        if (m_isExternal) output << " external";
+        if (m_isExported) output << " exported";
+        output.setColor(ANSI_NORMAL);
+    }
 }
 
 const AttrList& Module::getAttributes(const Decl* d) const {

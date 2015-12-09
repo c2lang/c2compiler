@@ -61,9 +61,6 @@ InterfaceGenerator::InterfaceGenerator(const std::string& targetName_, const std
 {
 }
 
-InterfaceGenerator::~InterfaceGenerator() {
-}
-
 void InterfaceGenerator::generate(bool printCode) {
     EmitIncludeGuard();
     EmitIncludes();

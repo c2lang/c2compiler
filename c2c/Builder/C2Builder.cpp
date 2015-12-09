@@ -66,6 +66,7 @@
 #include "Utils/color.h"
 #include "Utils/Utils.h"
 #include "Utils/GenUtils.h"
+#include "Utils/StringBuilder.h"
 
 using clang::DiagnosticOptions;
 using clang::DiagnosticsEngine;
@@ -422,11 +423,16 @@ int C2Builder::build() {
     // always add Main as last
     components.push_back(Main.release());
     if (options.printModules) {
-        printf("List of modules:\n");
+        StringBuilder output;
+        output.enableColor(true);
+        output << "List of modules:\n";
         for (ModulesConstIter iter = modules.begin(); iter != modules.end(); ++iter) {
             const Module* P = iter->second;
-            printf("  %s %s\n", P->getName().c_str(), P->isExternal() ? "(external)" : "");
+            output.indent(3);
+            P->print(output);
+            output << '\n';
         }
+        printf("%s", (const char*)output);
     }
 
     // phase 2: analyse all files

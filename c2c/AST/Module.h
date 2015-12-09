@@ -24,6 +24,7 @@
 namespace C2 {
 
 class Decl;
+class StringBuilder;
 
 class Module {
 public:
@@ -39,6 +40,7 @@ public:
     void setExported() { m_isExported = true; }
 
     void dump() const;
+    void print(StringBuilder& output) const;
 
     typedef std::map<std::string, Decl*> Symbols;
     typedef Symbols::const_iterator SymbolsConstIter;

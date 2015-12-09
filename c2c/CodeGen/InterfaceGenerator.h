@@ -38,11 +38,10 @@ class Stmt;
 class CompoundStmt;
 class HeaderNamer;
 
-// generates LLVM Module from (multiple) ASTs
 class InterfaceGenerator {
 public:
     InterfaceGenerator(const std::string& targetTame_, const std::string& outputDir_, const Modules& modules_);
-    ~InterfaceGenerator();
+    ~InterfaceGenerator() {}
 
     void addEntry(AST& ast) { entries.push_back(&ast); }
 
