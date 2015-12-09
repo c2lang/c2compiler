@@ -685,13 +685,13 @@ void C2Builder::generateInterface() const {
     case GenUtils::STATIC_LIB:
         break;
     }
-    if (options.verbose) log(COL_VERBOSE, "generating interface file(s)");
 
-    InterfaceGenerator gen(recipe.name, OUTPUT_DIR + recipe.name + '/', modules);
-    // TODO need better loop
     for (ModulesConstIter iter = modules.begin(); iter != modules.end(); ++iter) {
         const Module* M = iter->second;
         if (!M->isExported()) continue;
+        if (options.verbose) log(COL_VERBOSE, "generating interface %s.c2i", M->getName().c_str());
+        InterfaceGenerator gen(M->getName());
+        // TODO need better loop
         for (unsigned c=0; c<components.size(); c++) {
             Component* C = components[c];
             if (C->isExternal) continue;
@@ -702,8 +702,8 @@ void C2Builder::generateInterface() const {
                 }
             }
         }
+        gen.write(OUTPUT_DIR + recipe.name + '/', options.printC);
     }
-    gen.generate(options.printC);
 }
 
 void C2Builder::generateOptionalC() {

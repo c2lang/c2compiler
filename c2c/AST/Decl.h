@@ -309,6 +309,7 @@ public:
 
     int getIndex(const EnumConstantDecl* c) const;
     bool hasConstantValue(llvm::APSInt Val) const;
+    QualType getImplType() const { return implType; }
 private:
     typedef OwningVector<EnumConstantDecl> Constants;
     Constants constants;
@@ -362,6 +363,7 @@ public:
 
     const std::string& getModuleName() const { return modName; }
     virtual clang::SourceLocation getAliasLocation() const { return aliasLoc; }
+    bool hasAlias() const {return aliasLoc.isValid(); }
     bool isLocal() const { return DeclBits.ImportIsLocal; }
 private:
     std::string modName;

@@ -19,7 +19,6 @@
 #include <string>
 #include <vector>
 
-#include "AST/Module.h"
 #include "Utils/StringBuilder.h"
 
 namespace C2 {
@@ -29,6 +28,7 @@ class Decl;
 class VarDecl;
 class TypeDecl;
 class FunctionDecl;
+class ImportDecl;
 class StructTypeDecl;
 class FunctionTypeDecl;
 class EnumTypeDecl;
@@ -40,34 +40,33 @@ class HeaderNamer;
 
 class InterfaceGenerator {
 public:
-    InterfaceGenerator(const std::string& targetTame_, const std::string& outputDir_, const Modules& modules_);
+    InterfaceGenerator(const std::string& moduleName_);
     ~InterfaceGenerator() {}
 
     void addEntry(AST& ast) { entries.push_back(&ast); }
 
-    void generate(bool printCode);
-    void write(const std::string& outputDir);
-    void createLibHeader(bool printCode, const std::string& outputDir);
+    void write(const std::string& outputDir, bool printCode);
 
-    // for CTypeWriter
-    void forwardDecl(const Decl* D);
-    void fullDecl(const Decl* D);
 private:
-    void EmitIncludeGuard();
-    void EmitIncludes();
+    void EmitImport(const ImportDecl* D);
+    void EmitTypeDecl(const TypeDecl* D);
+    void EmitVarDecl(const VarDecl* D, unsigned indent);
+    void EmitFunctionDecl(const FunctionDecl* D);
 
-    void EmitFunctionForward(const FunctionDecl* F);
+    // TODO check if all functions are still used
+
     void EmitFunction(const FunctionDecl* F);
-    void EmitFunctionArgs(const FunctionDecl* F, StringBuilder& output);
+    void EmitFunctionArgs(const FunctionDecl* F);
     void EmitConstant(const VarDecl* D);
     void EmitGlobalVariable(const VarDecl* D);
-    void EmitTypeDecl(const TypeDecl* D);
     void EmitForwardTypeDecl(const TypeDecl* D);
-    void EmitStructType(const StructTypeDecl* S, StringBuilder& output, unsigned indent);
-    void EmitEnumType(const EnumTypeDecl* E, StringBuilder& output);
-    void EmitFunctionType(const FunctionTypeDecl* F, StringBuilder& output);
-    void EmitArgVarDecl(const VarDecl* D, StringBuilder& output, unsigned index);
-    void EmitVarDecl(const VarDecl* D, StringBuilder& output, unsigned indent);
+
+    void EmitAliasType(const TypeDecl* T);
+    void EmitStructType(const StructTypeDecl* S, unsigned indent);
+    void EmitEnumType(const EnumTypeDecl* E);
+    void EmitFunctionType(const FunctionTypeDecl* F);
+    void EmitArgVarDecl(const VarDecl* D, unsigned index);
+    void EmitType(QualType type);
 
     void EmitStmt(const Stmt* S, unsigned indent);
     void EmitCompoundStmt(const CompoundStmt* C, unsigned indent, bool startOnNewLine);
@@ -88,28 +87,20 @@ private:
     void EmitBitOffsetExpr(const Expr* Base, Expr* E, StringBuilder& output);
 
     // Helpers
-    void EmitDecl(const Decl* D, StringBuilder& output);
-    void EmitFunctionProto(const FunctionDecl* F, StringBuilder& output);
-    void EmitTypePreName(QualType type, StringBuilder& output);
-    void EmitTypePostName(QualType type, StringBuilder& output);
     void EmitStringLiteral(const std::string& input, StringBuilder& output);
     void EmitConditionPre(const Stmt* S, unsigned indent);
     void EmitConditionPost(const Stmt* S);
-    void EmitAttributes(const Decl* D, StringBuilder& output);
+    void EmitAttributes(const Decl* D);
 
     bool EmitAsStatic(const Decl* D) const;
 
-    const std::string targetName;
-    const std::string outputDir;
-
-    const Modules& modules;
+    const std::string moduleName;
 
     typedef std::vector<AST*> Entries;
     typedef Entries::iterator EntriesIter;
     Entries entries;
 
-    StringBuilder cbuf;
-    StringBuilder hbuf;
+    StringBuilder iface;
 
     InterfaceGenerator(const InterfaceGenerator&);
     InterfaceGenerator& operator= (const InterfaceGenerator&);
