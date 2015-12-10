@@ -53,29 +53,14 @@ private:
     void EmitVarDecl(const VarDecl* D, unsigned indent);
     void EmitFunctionDecl(const FunctionDecl* D);
 
-    // TODO check if all functions are still used
-
-    void EmitFunction(const FunctionDecl* F);
     void EmitFunctionArgs(const FunctionDecl* F);
-    void EmitConstant(const VarDecl* D);
-    void EmitGlobalVariable(const VarDecl* D);
-    void EmitForwardTypeDecl(const TypeDecl* D);
+    void EmitArgVarDecl(const VarDecl* D, unsigned index);
 
+    void EmitType(QualType type);
     void EmitAliasType(const TypeDecl* T);
     void EmitStructType(const StructTypeDecl* S, unsigned indent);
     void EmitEnumType(const EnumTypeDecl* E);
     void EmitFunctionType(const FunctionTypeDecl* F);
-    void EmitArgVarDecl(const VarDecl* D, unsigned index);
-    void EmitType(QualType type);
-
-    void EmitStmt(const Stmt* S, unsigned indent);
-    void EmitCompoundStmt(const CompoundStmt* C, unsigned indent, bool startOnNewLine);
-    void EmitIfStmt(const Stmt* S, unsigned indent);
-    void EmitWhileStmt(const Stmt* S, unsigned indent);
-    void EmitDoStmt(const Stmt* S, unsigned indent);
-    void EmitForStmt(const Stmt* S, unsigned indent);
-    void EmitSwitchStmt(const Stmt* S, unsigned indent);
-    void EmitDeclStmt(const Stmt* S, unsigned indent);
 
     void EmitExpr(const Expr* E, StringBuilder& output);
     void EmitBinaryOperator(const Expr* E, StringBuilder& output);
@@ -88,8 +73,6 @@ private:
 
     // Helpers
     void EmitStringLiteral(const std::string& input, StringBuilder& output);
-    void EmitConditionPre(const Stmt* S, unsigned indent);
-    void EmitConditionPost(const Stmt* S);
     void EmitAttributes(const Decl* D);
 
     bool EmitAsStatic(const Decl* D) const;

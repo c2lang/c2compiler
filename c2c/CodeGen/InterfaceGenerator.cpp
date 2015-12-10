@@ -105,23 +105,6 @@ void InterfaceGenerator::write(const std::string& outputDir, bool printCode) {
     //unsigned numArrayValues() const { return arrayValues.size(); }
     //ArrayValueDecl* getArrayValue(unsigned i) const { return arrayValues[i]; }
 
-    // generate variables
-    for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
-        AST* ast = *iter;
-        for (unsigned i=0; i<ast->numVars(); i++) {
-            EmitGlobalVariable(ast->getVar(i));
-        }
-    }
-    // TODO Arrayvalues
-
-    // generate functions
-    for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
-        AST* ast = *iter;
-        for (unsigned i=0; i<ast->numFunctions(); i++) {
-            EmitFunction(ast->getFunction(i));
-        }
-    }
-
     // write file
     // TODO handle errors
     std::string filename = moduleName + ".c2i";
@@ -435,19 +418,6 @@ void InterfaceGenerator::EmitImport(const ImportDecl* D) {
     iface << ";\n";
 }
 
-void InterfaceGenerator::EmitFunction(const FunctionDecl* F) {
-    LOG_DECL(F)
-
-    if (F->hasAttributes()) {
-        EmitAttributes(F);
-        iface << ' ';
-    }
-    ///EmitFunctionProto(F, iface);
-    iface << ' ';
-    EmitCompoundStmt(F->getBody(), 0, false);
-    iface << '\n';
-}
-
 void InterfaceGenerator::EmitFunctionArgs(const FunctionDecl* F) {
     LOG_DECL(F)
     iface << '(';
@@ -461,66 +431,6 @@ void InterfaceGenerator::EmitFunctionArgs(const FunctionDecl* F) {
     }
     if (F->isVariadic()) iface << "...";
     iface << ')';
-}
-
-void InterfaceGenerator::EmitConstant(const VarDecl* V) {
-    LOG_DECL(V)
-    QualType Q = V->getType();
-    // convert const integer literals to define
-    if (Q.isBuiltinType() && Q.isConstQualified()) {
-        StringBuilder* out = &iface;
-        *out << "#define ";
-        //EmitDecl(V, *out);
-        assert(V->getInitValue());
-        *out << ' ';
-        EmitExpr(V->getInitValue(), *out);
-        *out << "\n";
-        return;
-    }
-    // else skip
-}
-
-void InterfaceGenerator::EmitGlobalVariable(const VarDecl* V) {
-    LOG_DECL(V)
-    QualType Q = V->getType();
-    // convert const integer literals to define
-    if (Q.isBuiltinType() && Q.isConstQualified()) {
-        // already done in EmitConstant
-        return;
-    }
-/*
-    if (mode != SINGLE_FILE && V->isPublic()) {
-        // TODO type
-        hbuf << "extern ";
-        EmitTypePreName(V->getType(), hbuf);
-        hbuf << ' ';
-        EmitDecl(V, hbuf);
-        EmitTypePostName(V->getType(), hbuf);
-        // TODO add space if needed (on StringBuilder)
-        hbuf << ";\n";
-        hbuf << '\n';
-    } else {
-        if (EmitAsStatic(V)) iface << "static ";
-    }
-*/
-    //EmitTypePreName(V->getType(), iface);
-    iface << ' ';
-    //EmitDecl(V, iface);
-    //EmitTypePostName(V->getType(), iface);
-    EmitAttributes(V);
-    if (V->getInitValue()) {
-        iface << " = ";
-        EmitExpr(V->getInitValue(), iface);
-    } else {
-        // always generate initialization
-        if (V->getType().isStructType() || V->getType().isArrayType()) {
-            iface << " = { }";
-        } else {
-            iface << " = 0";
-        }
-    }
-    iface << ";\n";
-    iface << '\n';
 }
 
 void InterfaceGenerator::EmitTypeDecl(const TypeDecl* T) {
@@ -550,23 +460,6 @@ void InterfaceGenerator::EmitTypeDecl(const TypeDecl* T) {
         assert(0);
         break;
     }
-}
-
-void InterfaceGenerator::EmitForwardTypeDecl(const TypeDecl* D) {
-    LOG_DECL(D)
-    assert(isa<StructTypeDecl>(D));
-
-    const StructTypeDecl* S = cast<StructTypeDecl>(D);
-
-    StringBuilder* out = &iface;
-
-    // Syntax: typedef struct/union mod_name_ mod_name;
-    *out << "typedef ";
-    *out << (S->isStruct() ? "struct " : "union ");
-    //EmitDecl(D, *out);
-    *out << "_ ";
-    //EmitDecl(D, *out);
-    *out << ";\n\n";
 }
 
 void InterfaceGenerator::EmitAliasType(const TypeDecl* T) {
@@ -675,20 +568,23 @@ void InterfaceGenerator::EmitType(QualType type) {
     case TC_UNRESOLVED:
         // TODO handle Qualifiers?
         {
-            const UnresolvedType* U = cast<UnresolvedType>(T);
-            U->printLiteral(iface);
+            assert(0 && "should be resolved");
+            //const UnresolvedType* U = cast<UnresolvedType>(T);
+            //U->printLiteral(iface);
         }
         break;
     case TC_ALIAS:
+        assert(0 && "TODO");
         //EmitTypePreName(cast<AliasType>(T)->getRefType(), iface);
         break;
     case TC_STRUCT:
-        //EmitDecl(cast<StructType>(T)->getDecl(), iface);
+        iface << cast<StructType>(T)->getDecl()->getName();
         break;
     case TC_ENUM:
-        //EmitDecl(cast<EnumType>(T)->getDecl(), iface);
+        iface << cast<EnumType>(T)->getDecl()->getName();
         break;
     case TC_FUNCTION:
+        assert(0 && "TODO");
         //EmitDecl(cast<FunctionType>(T)->getDecl(), iface);
         break;
     case TC_PACKAGE:
@@ -707,6 +603,12 @@ void InterfaceGenerator::EmitArgVarDecl(const VarDecl* D, unsigned index) {
 void InterfaceGenerator::EmitFunctionDecl(const FunctionDecl* F) {
     LOG_DECL(F)
     // TODO
+    iface << "public func ";
+    EmitType(F->getReturnType());
+    iface << ' ' << F->getName();
+    EmitFunctionArgs(F);
+    EmitAttributes(F);
+    iface << ";\n";
 }
 
 void InterfaceGenerator::EmitVarDecl(const VarDecl* D, unsigned indent) {
@@ -719,263 +621,6 @@ void InterfaceGenerator::EmitVarDecl(const VarDecl* D, unsigned indent) {
        // iface << " = ";
         //EmitExpr(D->getInitValue(), iface);
     }
-}
-
-void InterfaceGenerator::EmitStmt(const Stmt* S, unsigned indent) {
-    LOG_FUNC
-    switch (S->getKind()) {
-    case STMT_RETURN:
-        {
-            const ReturnStmt* R = cast<ReturnStmt>(S);
-            iface.indent(indent);
-            iface << "return";
-            if (R->getExpr()) {
-                iface << ' ';
-                EmitExpr(R->getExpr(), iface);
-            }
-            iface << ";\n";
-            return;
-        }
-    case STMT_EXPR:
-        {
-            const Expr* E = cast<Expr>(S);
-            iface.indent(indent);
-            EmitExpr(E, iface);
-            iface << ";\n";
-            return;
-        }
-    case STMT_IF:
-        EmitIfStmt(S, indent);
-        return;
-    case STMT_WHILE:
-        EmitWhileStmt(S, indent);
-        return;
-    case STMT_DO:
-        EmitDoStmt(S, indent);
-        return;
-    case STMT_FOR:
-        EmitForStmt(S, indent);
-        return;
-    case STMT_SWITCH:
-        EmitSwitchStmt(S, indent);
-        return;
-    case STMT_CASE:
-    case STMT_DEFAULT:
-        assert(0 && "Should already be generated");
-        break;
-    case STMT_BREAK:
-        iface.indent(indent);
-        iface << "break;\n";
-        return;
-    case STMT_CONTINUE:
-        iface.indent(indent);
-        iface << "continue;\n";
-        return;
-    case STMT_LABEL:
-        {
-            const LabelStmt* L = cast<LabelStmt>(S);
-            iface << L->getName();
-            iface << ":\n";
-            EmitStmt(L->getSubStmt(), indent);
-            return;
-        }
-    case STMT_GOTO:
-        {
-            const GotoStmt* G = cast<GotoStmt>(S);
-            iface.indent(indent);
-            iface << "goto " << G->getName() << ";\n";
-            return;
-        }
-    case STMT_COMPOUND:
-        EmitCompoundStmt(cast<CompoundStmt>(S), indent, true);
-        return;
-    case STMT_DECL:
-        EmitDeclStmt(cast<DeclStmt>(S), indent);
-        return;
-    }
-}
-
-void InterfaceGenerator::EmitCompoundStmt(const CompoundStmt* C, unsigned indent, bool startOnNewLine) {
-    LOG_FUNC
-    if (startOnNewLine) iface.indent(indent);
-    iface << "{\n";
-    const StmtList& Stmts = C->getStmts();
-    for (unsigned i=0; i<Stmts.size(); i++) {
-        EmitStmt(Stmts[i], indent + INDENT);
-    }
-    iface.indent(indent);
-    iface << "}\n";
-}
-
-void InterfaceGenerator::EmitIfStmt(const Stmt* S, unsigned indent) {
-    LOG_FUNC
-    const IfStmt* I = cast<IfStmt>(S);
-    EmitConditionPre(I->getCond(), indent);
-    iface.indent(indent);
-    iface << "if (";
-    EmitConditionPost(I->getCond());
-    iface << ')';
-
-    if (isa<CompoundStmt>(I->getThen())) {
-        iface << '\n';
-        EmitStmt(I->getThen(), indent);
-    } else if (isa<IfStmt>(I->getThen())) {
-        iface << " {\n";
-        EmitStmt(I->getThen(), indent+INDENT);
-        iface.indent(indent);
-        iface << "}\n";
-    } else {
-        iface << ' ';
-        EmitStmt(I->getThen(), 0);
-    }
-
-    if (I->getElse()) {
-        iface.indent(indent);
-        iface << "else";
-        if (isa<CompoundStmt>(I->getElse())) {
-            iface << '\n';
-            EmitStmt(I->getElse(), indent);
-        } else {
-            iface << ' ';
-            EmitStmt(I->getElse(), 0);
-        }
-    }
-}
-
-void InterfaceGenerator::EmitWhileStmt(const Stmt* S, unsigned indent) {
-    LOG_FUNC
-    const WhileStmt* W = cast<WhileStmt>(S);
-    EmitConditionPre(W->getCond(), indent);
-    iface.indent(indent);
-    iface << "while (";
-    EmitConditionPost(W->getCond());
-    iface << ") ";
-    Stmt* Body = W->getBody();
-    if (Body->getKind() == STMT_COMPOUND) {
-        CompoundStmt* C = cast<CompoundStmt>(Body);
-        EmitCompoundStmt(C, indent, false);
-    } else {
-        EmitStmt(Body, 0);
-    }
-}
-
-void InterfaceGenerator::EmitDoStmt(const Stmt* S, unsigned indent) {
-    LOG_FUNC
-    const DoStmt* D = cast<DoStmt>(S);
-    iface.indent(indent);
-    iface << "do ";
-    Stmt* Body = D->getBody();
-    if (Body->getKind() == STMT_COMPOUND) {
-        CompoundStmt* C = cast<CompoundStmt>(Body);
-        EmitCompoundStmt(C, indent, false);
-    } else {
-        EmitStmt(Body, 0);
-    }
-    iface.indent(indent);
-    // TODO add after '}'
-    iface << "while (";
-    // TEMP, assume Expr
-    Expr* E = cast<Expr>(D->getCond());
-    EmitExpr(E, iface);
-    iface << ");\n";
-}
-
-void InterfaceGenerator::EmitForStmt(const Stmt* S, unsigned indent) {
-    LOG_FUNC
-    const ForStmt* F = cast<ForStmt>(S);
-    iface.indent(indent);
-    iface << "for (";
-    Stmt* Init = F->getInit();
-    if (Init) {
-        EmitStmt(Init, 0);
-        iface.strip('\n');
-    } else {
-        iface << ';';
-    }
-
-    Expr* Cond = F->getCond();
-    if (Cond) {
-        iface << ' ';
-        EmitExpr(Cond, iface);
-    }
-    iface << ';';
-
-    Expr* Incr = F->getIncr();
-    if (Incr) {
-        iface << ' ';
-        EmitExpr(Incr, iface);
-    }
-
-    iface << ") ";
-    Stmt* Body = F->getBody();
-    if (Body->getKind() == STMT_COMPOUND) {
-        EmitCompoundStmt(cast<CompoundStmt>(Body), indent, false);
-    } else {
-        EmitStmt(Body, 0);
-    }
-}
-
-void InterfaceGenerator::EmitSwitchStmt(const Stmt* S, unsigned indent) {
-    LOG_FUNC
-    const SwitchStmt* SW = cast<SwitchStmt>(S);
-    EmitConditionPre(SW->getCond(), indent);
-    iface.indent(indent);
-    iface << "switch (";
-    EmitConditionPost(SW->getCond());
-    iface << ") {\n";
-
-    const StmtList& Cases = SW->getCases();
-    for (unsigned i=0; i<Cases.size(); i++) {
-        Stmt* Case = Cases[i];
-        switch (Case->getKind()) {
-        case STMT_CASE:
-            {
-                CaseStmt* C = cast<CaseStmt>(Case);
-                iface.indent(indent + INDENT);
-                iface << "case ";
-                EmitExpr(C->getCond(), iface);
-                iface << ":\n";
-                const StmtList& Stmts = C->getStmts();
-                for (unsigned s=0; s<Stmts.size(); s++) {
-                    EmitStmt(Stmts[s], indent + INDENT + INDENT);
-                }
-                break;
-            }
-        case STMT_DEFAULT:
-            {
-                DefaultStmt* D = cast<DefaultStmt>(Case);
-                iface.indent(indent + INDENT);
-                iface << "default:\n";
-                const StmtList& Stmts = D->getStmts();
-                for (unsigned s=0; s<Stmts.size(); s++) {
-                    EmitStmt(Stmts[s], indent + INDENT + INDENT);
-                }
-                break;
-            }
-        default:
-            assert(0);
-        }
-    }
-
-    iface.indent(indent);
-    iface << "}\n";
-}
-
-void InterfaceGenerator::EmitDeclStmt(const Stmt* S, unsigned indent) {
-    LOG_FUNC
-    const DeclStmt* DS = cast<DeclStmt>(S);
-    const VarDecl* VD = DS->getDecl();
-    iface.indent(indent);
-    if (VD->hasLocalQualifier()) iface << "static ";
-    //EmitTypePreName(VD->getType(), iface);
-    iface << ' ';
-    iface << VD->getName();
-    //EmitTypePostName(VD->getType(), iface);
-    if (VD->getInitValue()) {
-        iface << " = ";
-        EmitExpr(VD->getInitValue(), iface);
-    }
-    iface << ";\n";
 }
 
 void InterfaceGenerator::EmitStringLiteral(const std::string& input, StringBuilder& output) {
@@ -1005,26 +650,6 @@ void InterfaceGenerator::EmitStringLiteral(const std::string& input, StringBuild
         cp++;
     }
     output << '"';
-}
-
-void InterfaceGenerator::EmitConditionPre(const Stmt* S, unsigned indent) {
-    LOG_FUNC
-    if (isa<DeclStmt>(S)) {
-        EmitDeclStmt(S, indent);
-    }
-}
-
-void InterfaceGenerator::EmitConditionPost(const Stmt* S) {
-    LOG_FUNC
-    if (isa<DeclStmt>(S)) {
-        // only emit name, declaration has already been done in Pre part
-        const DeclStmt* DS = cast<DeclStmt>(S);
-        iface << DS->getDecl()->getName();
-    } else {
-        assert(isa<Expr>(S));
-        EmitExpr(cast<Expr>(S), iface);
-    }
-
 }
 
 void InterfaceGenerator::EmitAttributes(const Decl* D) {
