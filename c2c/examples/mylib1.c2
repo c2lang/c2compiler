@@ -24,6 +24,8 @@ type Callback func int32 (Position* p, char c);
 public int32 foo = 10;
 int32 bar = 20;
 
+public const int32 MAX_FOO = 30;
+
 public func Handle* init() {
     Handle* p = nil; //= malloc(sizeof(Handle));
     internal.init();

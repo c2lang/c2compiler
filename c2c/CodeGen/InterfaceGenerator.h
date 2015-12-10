@@ -62,17 +62,16 @@ private:
     void EmitEnumType(const EnumTypeDecl* E);
     void EmitFunctionType(const FunctionTypeDecl* F);
 
-    void EmitExpr(const Expr* E, StringBuilder& output);
-    void EmitBinaryOperator(const Expr* E, StringBuilder& output);
-    void EmitConditionalOperator(const Expr* E, StringBuilder& output);
-    void EmitUnaryOperator(const Expr* E, StringBuilder& output);
-    void EmitMemberExpr(const Expr* E, StringBuilder& output);
-    void EmitCallExpr(const Expr* E, StringBuilder& output);
-    void EmitIdentifierExpr(const Expr* E, StringBuilder& output);
-    void EmitBitOffsetExpr(const Expr* Base, Expr* E, StringBuilder& output);
+    void EmitExpr(const Expr* E);
+    void EmitBinaryOperator(const Expr* E);
+    void EmitConditionalOperator(const Expr* E);
+    void EmitUnaryOperator(const Expr* E);
+    void EmitMemberExpr(const Expr* E);
+    void EmitCallExpr(const Expr* E);
+    void EmitIdentifierExpr(const Expr* E);
 
     // Helpers
-    void EmitStringLiteral(const std::string& input, StringBuilder& output);
+    void EmitStringLiteral(const std::string& input);
     void EmitAttributes(const Decl* D);
 
     bool EmitAsStatic(const Decl* D) const;
