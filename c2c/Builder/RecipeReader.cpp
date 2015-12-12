@@ -17,6 +17,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "Builder/Recipe.h"
 #include "Builder/RecipeReader.h"
@@ -169,9 +170,12 @@ void RecipeReader::handleLine(char* line) {
                 struct stat buf;
                 int err = stat(tok, &buf);
                 if (err) {
-                    // TODO also check read rights (access() )
                     error("file '%s' does not exist", tok);
                 }
+				err = access(tok, R_OK);
+				if (err) {
+					error("missing read permissions for file: %s", tok);
+				}
                 current->addFile(tok);
             }
         }
