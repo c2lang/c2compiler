@@ -172,10 +172,10 @@ void RecipeReader::handleLine(char* line) {
                 if (err) {
                     error("file '%s' does not exist", tok);
                 }
-				err = access(tok, R_OK);
-				if (err) {
-					error("missing read permissions for file: %s", tok);
-				}
+                err = access(tok, R_OK);
+                if (err) {
+                	error("missing read permissions for file: %s", tok);
+                }
                 current->addFile(tok);
             }
         }
