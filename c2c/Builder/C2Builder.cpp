@@ -676,11 +676,12 @@ bool C2Builder::checkExportedPackages() const {
 
 void C2Builder::generateInterface() const {
     if (options.checkOnly) return;
-    if (!options.generateC && !recipe.generateCCode) return;
+    if (!options.generateC && !recipe.generateCCode &&
+        !options.generateIR && !recipe.generateIR) return;
 
     switch (recipe.type) {
     case GenUtils::EXECUTABLE:
-        return;
+        return; // no interface needed
     case GenUtils::SHARED_LIB:
     case GenUtils::STATIC_LIB:
         break;
