@@ -158,7 +158,8 @@ public:
         struct stat statbuf;
         int err = stat(fullname.c_str(), &statbuf);
         if (err) {
-            color_print(COL_ERROR, "  missing expected file '%s'", filename.c_str());
+            color_print(COL_ERROR, "  missing expected file '%s' (%s)",
+                    filename.c_str(), fullname.c_str());
             return false;
         }
         FileMap file(fullname.c_str());
@@ -980,7 +981,7 @@ void IssueDb::checkErrors(const char* buffer, unsigned size) {
 
 void IssueDb::checkExpectedFiles() {
     StringBuilder basedir;
-    basedir << test_root << "/output/test/build/";
+    basedir << test_root << "/output/test/";
     for (unsigned i=0; i<expectedFiles.size(); ++i) {
         ExpectFile* E = expectedFiles[i];
         if (!E->check((const char*)basedir)) hasErrors = true;

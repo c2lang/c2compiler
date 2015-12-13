@@ -9,7 +9,7 @@ int32[] numbers = { 1, 2, 3, 4 }
 
 const int32 amount = elemsof(numbers);
 
-// @expect{test.c}
+// @expect{build/test.c}
 
 #define test_amount (sizeof(test_numbers)/sizeof(test_numbers[0]))
 

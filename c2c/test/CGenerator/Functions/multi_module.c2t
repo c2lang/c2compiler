@@ -22,11 +22,11 @@ public func void pub2() {}
 
 func void nonpub2() {}
 
-// @expect{test1.h}
+// @expect{build/test1.h}
 
 void test1_pub1();
 
-// @expect{test1.c}
+// @expect{build/test1.c}
 #include "test1.h"
 
 static void test1_nonpub1();
@@ -41,11 +41,11 @@ int32_t main(int32_t argc, const char* argv[]) {
     return 0;
 }
 
-// @expect{test2.h}
+// @expect{build/test2.h}
 
 void test2_pub2();
 
-// @expect{test2.c}
+// @expect{build/test2.c}
 #include "test2.h"
 
 static void test2_nonpub2();

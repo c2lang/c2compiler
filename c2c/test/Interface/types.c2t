@@ -1,0 +1,16 @@
+// @recipe lib static
+$warnings no-unused
+$generate-c
+$export hello
+
+// @file{file1}
+module hello;
+
+public type Number int32;
+type Priv int32;
+
+// @expect{hello.c2i}
+module hello;
+
+public type Number int32;
+

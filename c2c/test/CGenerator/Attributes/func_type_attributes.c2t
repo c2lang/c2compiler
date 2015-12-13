@@ -14,11 +14,11 @@ public func int32 main(int32 argc, const int8*[] argv)
     return 0;
 }
 
-// @expect{test.c}
+// @expect{build/test.c}
 typedef void (*test_Func1)() __attribute__((unused));
 typedef void (*test_Func3)() __attribute__((aligned(16)));
 
-// @expect{test.h}
+// @expect{build/test.h}
 
 typedef void (*test_Func2)();
 

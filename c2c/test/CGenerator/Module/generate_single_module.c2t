@@ -16,7 +16,7 @@ func int32 sum(int32 c, int32 d) {
     return c + d;
 }
 
-// @expect{test.c}
+// @expect{build/test.c}
 static int32_t mod1_sum(int32_t a, int32_t b) {
     return a + b;
 }

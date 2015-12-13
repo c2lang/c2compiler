@@ -15,7 +15,7 @@ public func int32 main(int32 argc, const int8*[] argv)
     return 0;
 }
 
-// @expect{test.c}
+// @expect{build/test.c}
 
 typedef struct test_Struct_ test_Struct;
 

@@ -17,7 +17,7 @@ int32 i;
 Foo[2] fs;
 int32[2] is;
 
-// @expect{test.c}
+// @expect{build/test.c}
 
 typedef struct test_Foo_ test_Foo;
 

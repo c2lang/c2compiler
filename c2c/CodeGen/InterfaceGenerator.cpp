@@ -558,8 +558,7 @@ void InterfaceGenerator::EmitType(QualType type) {
         }
         break;
     case TC_ALIAS:
-        assert(0 && "TODO");
-        //EmitTypePreName(cast<AliasType>(T)->getRefType());
+        EmitType(cast<AliasType>(T)->getRefType());
         break;
     case TC_STRUCT:
         iface << cast<StructType>(T)->getDecl()->getName();

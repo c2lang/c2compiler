@@ -14,7 +14,7 @@ type Foo struct {
 const int32 b = 20;
 const int32 c = 30;
 
-// @expect{test.c}
+// @expect{build/test.c}
 
 #define test_b 20
 #define test_c 30

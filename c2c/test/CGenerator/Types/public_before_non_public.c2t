@@ -9,9 +9,9 @@ type Foo int32;
 
 public type Bar int16;
 
-// @expect{test.h}
+// @expect{build/test.h}
 typedef int16_t test_Bar;
 
-// @expect{test.c}
+// @expect{build/test.c}
 typedef int32_t test_Foo;
 

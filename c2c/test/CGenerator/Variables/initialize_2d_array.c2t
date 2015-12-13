@@ -7,6 +7,6 @@ module test;
 
 int32[3][2] a;
 
-// @expect{test.c}
+// @expect{build/test.c}
 static int32_t test_a[3][2] = { };
 
