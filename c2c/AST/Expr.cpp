@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include <stdio.h>
+
 #include "AST/Expr.h"
 #include "AST/Type.h"
 #include "AST/Decl.h"

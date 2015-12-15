@@ -17,6 +17,7 @@
 #include <list>
 #include <assert.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include "CGenerator/TypeSorter.h"
 #include "Algo/DepVisitor.h"

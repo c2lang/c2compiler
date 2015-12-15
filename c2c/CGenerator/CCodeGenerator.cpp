@@ -17,6 +17,7 @@
 #include <set>
 #include <assert.h>
 #include <inttypes.h>
+#include <stdio.h>
 
 #include <llvm/ADT/SmallString.h>
 #include <llvm/Support/FileSystem.h>

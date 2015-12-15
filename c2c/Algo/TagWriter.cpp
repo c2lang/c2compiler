@@ -29,6 +29,7 @@
 
 #include <string.h>
 #include <assert.h>
+#include <stdio.h>
 
 using namespace C2;
 using namespace std;

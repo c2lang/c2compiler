@@ -15,6 +15,7 @@
 
 #include <vector>
 #include <string>
+#include <stdio.h>
 
 #include <llvm/IR/Module.h>
 #include <llvm/ADT/ArrayRef.h>

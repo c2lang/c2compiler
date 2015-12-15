@@ -23,6 +23,8 @@
 #include "Utils/ProcessUtils.h"
 #include "Utils/color.h"
 
+#include <stdio.h>
+
 using namespace C2;
 
 

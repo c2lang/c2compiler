@@ -18,6 +18,7 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdlib.h>
 
 #include "Builder/Recipe.h"
 #include "Builder/RecipeReader.h"
