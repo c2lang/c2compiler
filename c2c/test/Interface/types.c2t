@@ -17,6 +17,20 @@ public type State enum int8 {
 
 public type Func func int8*(int32* a, State* b);
 
+public type Struct struct {
+    int32 x;
+    Struct* s;
+    Number n;
+    struct AA {
+        int64 xx;
+    }
+    union {
+        Struct* sp;
+        void* vp;
+    }
+    Func ff;
+}
+
 // @expect{hello.c2i}
 module hello;
 
@@ -29,4 +43,18 @@ public type State enum int8 {
 }
 
 public type Func func int8*(int32* a, State* b);
+
+public type Struct struct {
+    int32 x;
+    Struct* s;
+    Number n;
+    struct AA {
+        int64 xx;
+    }
+    union {
+        Struct* sp;
+        void* vp;
+    }
+    Func ff;
+}
 

@@ -354,7 +354,7 @@ private:
 };
 
 
-// AliasType are used whenever 'type A B' is used. B is the AliasType,
+// AliasType are used whenever 'type A B' is used. A is the AliasType,
 // since we need a Type there.
 class AliasType : public Type {
 public:

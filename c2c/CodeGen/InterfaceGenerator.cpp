@@ -449,7 +449,8 @@ void InterfaceGenerator::EmitTypeDecl(const TypeDecl* T) {
 void InterfaceGenerator::EmitAliasType(const TypeDecl* T) {
     LOG_DECL(T);
     iface << "public type " << T->getName() << ' ';
-    EmitType(T->getType());
+    const AliasTypeDecl* ATD = cast<AliasTypeDecl>(T);
+    EmitType(ATD->getRefType());
     iface << ";\n";
 }
 
@@ -461,7 +462,9 @@ void InterfaceGenerator::EmitStructType(const StructTypeDecl* S, unsigned indent
     } else {
         iface.indent(indent);
         iface << (S->isStruct() ? "struct" : "union");
-        iface << ' ' << S->getName();
+        if (S->getName() != "") {
+            iface << ' ' << S->getName();
+        }
     }
     iface << " {\n";
     for (unsigned i=0;i<S->numMembers(); i++) {
@@ -550,15 +553,10 @@ void InterfaceGenerator::EmitType(QualType type) {
             break;
         }
     case TC_UNRESOLVED:
-        // TODO handle Qualifiers?
-        {
-            assert(0 && "should be resolved");
-            //const UnresolvedType* U = cast<UnresolvedType>(T);
-            //U->printLiteral(iface);
-        }
+        assert(0 && "should be resolved");
         break;
     case TC_ALIAS:
-        EmitType(cast<AliasType>(T)->getRefType());
+        iface << cast<AliasType>(T)->getDecl()->getName();
         break;
     case TC_STRUCT:
         iface << cast<StructType>(T)->getDecl()->getName();
@@ -567,11 +565,10 @@ void InterfaceGenerator::EmitType(QualType type) {
         iface << cast<EnumType>(T)->getDecl()->getName();
         break;
     case TC_FUNCTION:
-        assert(0 && "TODO");
-        //EmitDecl(cast<FunctionType>(T)->getDecl());
+        iface << cast<FunctionType>(T)->getDecl()->getName();
         break;
     case TC_PACKAGE:
-        assert(0 && "TODO");
+        assert(0 && "should not happen");
         break;
     }
 }
