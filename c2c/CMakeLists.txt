@@ -92,7 +92,7 @@ ADD_EXECUTABLE(c2c
 TARGET_LINK_LIBRARIES(c2c c2core ${LLVM_LDFLAGS} ${CLANG_LIBS} ${LLVM_LIBS} dl pthread)
 
 
-if (APPLE)
+if (APPLE OR CYGWIN)
     TARGET_LINK_LIBRARIES(c2c ncurses)
 else()
 # on Ubuntu,  tinfo seems to needed from Feb'15 on Ubuntu 14.04..
