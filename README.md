@@ -35,7 +35,8 @@ their priority:
 
 
 ## Installation
-Read the [installation document](INSTALL.md).
+Read the [installation document](INSTALL.md) for installation on Linux or OSX. For
+Windows installation, see [windows installation document](INSTALL_WIN.md).
 
 ## Using the C2 compiler
 By default, c2c will only parse and analyse the targets. Generating C-code
