@@ -511,8 +511,17 @@ void InterfaceGenerator::EmitType(QualType type) {
         assert(0 && "should be resolved");
         break;
     case TC_ALIAS:
+    {
+        // add module prefix if from other module
+#warning add module prefix
+        const AliasTypeDecl* D = cast<AliasType>(T)->getDecl();
+        if (D->getModule()->getName() != moduleName) {
+            // TODO use alias if used
+            iface << D->getModule()->getName() << '.';
+        }
         iface << cast<AliasType>(T)->getDecl()->getName();
         break;
+    }
     case TC_STRUCT:
         iface << cast<StructType>(T)->getDecl()->getName();
         break;
