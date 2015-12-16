@@ -9,10 +9,13 @@ module hello;
 public type Number int32;
 type Priv int32;
 
+public const int8 Third = 124;
+
 public type State enum int8 {
     AA = 0,
     BB = 123,
-    CC,
+    CC = Third,
+    DD,
 }
 
 public type Func func int8*(int32* a, State* b);
@@ -39,7 +42,8 @@ public type Number int32;
 public type State enum int8 {
     AA = 0,
     BB = 123,
-    CC,
+    CC = Third,
+    DD,
 }
 
 public type Func func int8*(int32* a, State* b);

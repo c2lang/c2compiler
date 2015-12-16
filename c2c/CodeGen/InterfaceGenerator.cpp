@@ -336,23 +336,14 @@ void InterfaceGenerator::EmitMemberExpr(const Expr* E) {
     LOG_FUNC
     const MemberExpr* M = cast<MemberExpr>(E);
     const IdentifierExpr* rhs = M->getMember();
-    if (M->isModulePrefix()) {
-        // A.B where A is a module
-        //EmitDecl(M->getDecl());
-    } else {
-        // A.B where A is decl of struct/union type
-        EmitExpr(M->getBase());
-        QualType LType = M->getBase()->getType();
-        if (LType.isPointerType()) iface << "->";
-        else iface << '.';
-        iface << rhs->getName();
-    }
+    EmitExpr(M->getBase());
+    iface << '.' << rhs->getName();
 }
 
 void InterfaceGenerator::EmitIdentifierExpr(const Expr* E) {
     LOG_FUNC
-    //const IdentifierExpr* I = cast<IdentifierExpr>(E);
-    //EmitDecl(I->getDecl());
+    const IdentifierExpr* I = cast<IdentifierExpr>(E);
+    iface << I->getName();
 }
 
 void InterfaceGenerator::EmitImport(const ImportDecl* D) {

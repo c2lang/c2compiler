@@ -1,0 +1,45 @@
+// @recipe lib static
+$warnings no-unused
+$generate-c
+$export aa bb
+
+// @file{file1}
+module aa;
+
+public type AA int32;
+
+public const int32 FIRST = 1;
+
+// @file{file2}
+module bb;
+
+import aa;
+
+public type Enum enum int8 {
+    One = aa.FIRST,
+    Two,
+}
+
+public func aa.AA bb1(aa.AA* arg1) {
+    return 123;
+}
+
+// @expect{aa.c2i}
+module aa;
+
+public type AA int32;
+
+public const int32 FIRST = 1;
+
+// @expect{bb.c2i}
+module bb;
+
+import aa;
+
+public type Enum enum int8 {
+    One = aa.FIRST,
+    Two,
+}
+
+public func aa.AA bb1(aa.AA* arg1);
+
