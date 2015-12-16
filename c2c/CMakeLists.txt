@@ -73,6 +73,7 @@ ADD_LIBRARY(c2core
     Refactor/RefFinder.cpp
     Builder/C2ModuleLoader.cpp
     Builder/ManifestReader.cpp
+    Builder/ManifestWriter.cpp
     Builder/LibraryLoader.cpp
     Builder/RootFinder.cpp
     Builder/Recipe.cpp

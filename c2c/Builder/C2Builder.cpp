@@ -50,6 +50,7 @@
 #include "Builder/C2Builder.h"
 #include "Builder/Recipe.h"
 #include "Builder/C2ModuleLoader.h"
+#include "Builder/ManifestWriter.h"
 #include "AST/AST.h"
 #include "AST/Module.h"
 #include "AST/Decl.h"
@@ -687,11 +688,14 @@ void C2Builder::generateInterface() const {
         break;
     }
 
+    ManifestWriter manifest;
+    std::string outdir = OUTPUT_DIR + recipe.name + '/';
     for (ModulesConstIter iter = modules.begin(); iter != modules.end(); ++iter) {
         const Module* M = iter->second;
         if (!M->isExported()) continue;
         if (options.verbose) log(COL_VERBOSE, "generating interface %s.c2i", M->getName().c_str());
         InterfaceGenerator gen(M->getName());
+        manifest.add(M->getName());
         // TODO need better loop
         for (unsigned c=0; c<components.size(); c++) {
             Component* C = components[c];
@@ -703,8 +707,9 @@ void C2Builder::generateInterface() const {
                 }
             }
         }
-        gen.write(OUTPUT_DIR + recipe.name + '/', options.printC);
+        gen.write(outdir, options.printC);
     }
+    manifest.write(outdir);
 }
 
 void C2Builder::generateOptionalC() {
