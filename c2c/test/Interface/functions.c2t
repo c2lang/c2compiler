@@ -1,0 +1,23 @@
+// @recipe lib static
+$warnings no-unused
+$generate-c
+$export hello
+
+// @file{file1}
+module hello;
+
+public func void a() {}
+
+public func int32 b(void* c, ...) {
+    return 0;
+}
+
+func void d() {}
+
+// @expect{hello.c2i}
+module hello;
+
+public func void a();
+
+public func int32 b(void* c, ...);
+
