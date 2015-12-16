@@ -18,25 +18,15 @@
 #include <assert.h>
 #include <inttypes.h>
 
-#include <llvm/ADT/SmallString.h>
-#include <llvm/Support/FileSystem.h>
-// for tool_iface_file
-//#include <llvm/Support/ToolOutputFile.h>
-
 #include "CodeGen/InterfaceGenerator.h"
 #include "CGenerator/HeaderNamer.h"
 #include "AST/Module.h"
 #include "AST/AST.h"
-#include "AST/Attr.h"
-#include "AST/Stmt.h"
 #include "AST/Type.h"
 #include "AST/Decl.h"
 #include "AST/Expr.h"
 #include "FileUtils/FileUtils.h"
-#include "Utils/StringBuilder.h"
 #include "Utils/UtilsConstants.h"
-#include "Utils/GenUtils.h"
-#include "Utils/Utils.h"
 
 //#define CCODE_DEBUG
 #ifdef CCODE_DEBUG
@@ -50,7 +40,6 @@
 #endif
 
 using namespace C2;
-using namespace llvm;
 using namespace clang;
 
 InterfaceGenerator::InterfaceGenerator(const std::string& moduleName_)
@@ -72,7 +61,7 @@ void InterfaceGenerator::write(const std::string& ifaceDir, bool printCode) {
             EmitImport(ast->getImport(i));
         }
     }
-    iface << '\n';
+    if (entries.size() != 0) iface << '\n';
 
     // TypeDecls
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
@@ -108,7 +97,6 @@ void InterfaceGenerator::write(const std::string& ifaceDir, bool printCode) {
     }
 
     // ArrayValueDecls
-    // TODO
     //unsigned numArrayValues() const { return arrayValues.size(); }
     //ArrayValueDecl* getArrayValue(unsigned i) const { return arrayValues[i]; }
 
@@ -161,7 +149,7 @@ void InterfaceGenerator::EmitExpr(const Expr* E) {
         iface << "NULL";
         return;
     case EXPR_CALL:
-        EmitCallExpr(E);
+        assert(0 && "cannot happen");
         return;
     case EXPR_IDENTIFIER:
         EmitIdentifierExpr(E);
@@ -361,30 +349,6 @@ void InterfaceGenerator::EmitMemberExpr(const Expr* E) {
     }
 }
 
-void InterfaceGenerator::EmitCallExpr(const Expr* E) {
-    LOG_FUNC
-    const CallExpr* C = cast<CallExpr>(E);
-    EmitExpr(C->getFn());
-    iface << '(';
-    for (unsigned i=0; i<C->numArgs(); i++) {
-        if (i != 0) iface << ", ";
-        EmitExpr(C->getArg(i));
-    }
-    const FunctionType* FT = cast<FunctionType>(C->getFn()->getType());
-    const FunctionDecl* func = FT->getDecl();
-    // generate default arguments in call
-    if (C->numArgs() < func->numArgs()) {
-        for (unsigned i=C->numArgs(); i<func->numArgs(); i++) {
-            if (i != 0) iface << ", ";
-            VarDecl* arg = func->getArg(i);
-            assert(arg->getInitValue());
-            EmitExpr(arg->getInitValue());
-        }
-
-    }
-    iface << ')';
-}
-
 void InterfaceGenerator::EmitIdentifierExpr(const Expr* E) {
     LOG_FUNC
     //const IdentifierExpr* I = cast<IdentifierExpr>(E);
@@ -577,7 +541,7 @@ void InterfaceGenerator::EmitArgVarDecl(const VarDecl* D, unsigned index) {
     LOG_DECL(D)
     EmitType(D->getType());
     iface << ' '<< D->getName();
-    // TODO generate default arg values?
+    // TODO generate default arg values if const?
 }
 
 void InterfaceGenerator::EmitFunctionDecl(const FunctionDecl* F) {
@@ -600,7 +564,7 @@ void InterfaceGenerator::EmitVarDecl(const VarDecl* D, unsigned indent) {
     }
     EmitType(D->getType());
     iface << ' ' << D->getName();
-    // TODO when initval (if constant?)
+
     QualType T = D->getType();
     if (T.isConstQualified()) {
         assert(D->getInitValue());

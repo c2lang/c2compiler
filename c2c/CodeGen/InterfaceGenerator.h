@@ -67,7 +67,6 @@ private:
     void EmitConditionalOperator(const Expr* E);
     void EmitUnaryOperator(const Expr* E);
     void EmitMemberExpr(const Expr* E);
-    void EmitCallExpr(const Expr* E);
     void EmitIdentifierExpr(const Expr* E);
 
     // Helpers
