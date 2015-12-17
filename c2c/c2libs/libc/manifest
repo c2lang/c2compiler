@@ -34,3 +34,7 @@ header = "assert.h"
 [[modules]]
 name = "regex"
 header = "regex.h"
+
+[[modules]]
+name = "ctype"
+header = "ctype.h"
