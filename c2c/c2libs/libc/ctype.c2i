@@ -1,0 +1,15 @@
+module ctype;
+
+public func int32 isalnum(int32 c);
+public func int32 isalpha(int32 c);
+public func int32 iscntrl(int32 c);
+public func int32 isdigit(int32 c);
+public func int32 isgraph(int32 c);
+public func int32 islower(int32 c);
+public func int32 isprint(int32 c);
+public func int32 ispunct(int32 c);
+public func int32 isspace(int32 c);
+public func int32 isupper(int32 c);
+public func int32 isxdigit(int32 c);
+public func int32 tolower(int32 c);
+public func int32 toupper(int32 c);
