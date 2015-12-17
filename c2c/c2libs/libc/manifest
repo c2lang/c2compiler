@@ -27,6 +27,10 @@ header = "strings.h"
 name = "unistd"
 header = "unistd.h"
 
-[[cassert]]
+[[modules]]
 name = "cassert"
 header = "assert.h"
+
+[[modules]]
+name = "regex"
+header = "regex.h"
