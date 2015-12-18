@@ -23,6 +23,7 @@
         (optional) // @skip
         (required) // @file{filename}
         (optional) // @expect{filename}
+        (optional) // @expect_lines(filename}
 */
 
 #include <assert.h>
@@ -51,6 +52,8 @@
 #define COL_SKIP  ANSI_BCYAN
 #define COL_OK    ANSI_GREEN
 #define COL_DEBUG ANSI_BMAGENTA
+
+#define MAX_LINE 256
 
 //#define DEBUG
 
@@ -84,6 +87,14 @@ static void skipWhitespace(const char** start, const char* end) {
     const char* cp = *start;
     while (cp != end && isblank(*cp)) cp++;
     *start = cp;
+}
+
+static const char* findLineEnd(const char* cp) {
+    while (*cp) {
+        if (*cp == '\n') break;
+        ++cp;
+    }
+    return cp;
 }
 
 static void color_print(const char* color, const char* format, ...) {
@@ -141,7 +152,9 @@ static void writeFile(const char* name, const char* content, unsigned size) {
 
 class ExpectFile {
 public:
-    ExpectFile(const std::string& name) : filename(name) {}
+    ExpectFile(const std::string& name, bool allLines_)
+        : filename(name), allLines(allLines_)
+        , lineStart(0), lineEnd(0) {}
 
     void addLine(const char* start, const char* end) {
         if (strncmp(start, "//", 2) == 0) return;   // ignore comments
@@ -165,29 +178,84 @@ public:
         FileMap file(fullname.c_str());
         file.open();
 
-        const char* cur = (const char*)file.region;
-        for (unsigned i=0; i!=lines.size(); ++i) {
-            const char* line = lines[i].c_str();
-            debug(  "searching '%s'\n", line);
-            const char* found = strstr(cur, line);
-            if (!found) {
-                color_print(COL_ERROR, "  in file %s: expected line '%s'", filename.c_str(), line);
-#ifdef DEBUG
-                printf(COL_DEBUG"%s"ANSI_NORMAL"\n", cur);
-#endif
-                return false;
-            } else {
-#ifdef DEBUG
-                color_print(COL_OK, "  in file %s: found line '%s'", filename.c_str(), line);
-#endif
-            }
-            cur = found + strlen(line);
-        }
+        if (lines.size() == 0) return true;
 
+        lineStart = (const char*)file.region;
+        lineEnd = 0;
+        unsigned expIndex = 0;
+        const char* expectedLine = lines[expIndex].c_str();
+#ifdef DEBUG
+        color_print(ANSI_GREEN, "exp '%s'", expectedLine);
+#endif
+        while (1) {
+            // find next real line
+            const char* line = nextRealLine();
+            if (line == 0) break;
+            if (line[0] == 0) continue;     // ignore empty lines
+            if (line[0] == '/' && line[1] == '/') continue; // ignore comments
+#ifdef DEBUG
+            color_print(ANSI_YELLOW, "got '%s'", line);
+#endif
+
+            if (!expectedLine) {
+                color_print(COL_ERROR, "  in file %s: unexpected line '%s'", filename.c_str(), line);
+                return false;
+            }
+
+            // TODO dont copy in nextRealLine, but do memcmp on substring
+            if (strcmp(expectedLine, line) == 0) {
+#ifdef DEBUG
+                color_print(ANSI_CYAN, "match");
+#endif
+                expIndex++;
+                if (expIndex == lines.size()) expectedLine = 0;
+                else expectedLine = lines[expIndex].c_str();
+#ifdef DEBUG
+                color_print(ANSI_GREEN, "exp '%s'", expectedLine ? expectedLine : "<none>");
+#endif
+                if (!expectedLine && !allLines) return true;
+            } else {
+                if (allLines) {
+                    color_print(COL_ERROR, "  in file %s:\n  expected '%s'\n       got '%s'", filename.c_str(), expectedLine, line);
+                    return false;
+                }
+            }
+        }
+        if (expectedLine != 0) {
+            color_print(COL_ERROR, "  in file %s: expected '%s'", filename.c_str(), expectedLine);
+            return false;
+        }
         return true;
     }
 private:
+    const char* nextRealLine() {
+        assert(lineStart);
+        static char line[MAX_LINE];
+        if (lineEnd == 0) {
+            lineEnd = lineStart;
+        } else {
+            if (*lineEnd == 0) return 0;
+            lineStart = lineEnd + 1;
+            lineEnd = lineStart;
+        }
+
+        while (*lineEnd != 0) {
+            if (*lineEnd == '\n') break;
+            lineEnd++;
+        }
+        skipWhitespace(&lineStart, lineEnd);
+        int size = lineEnd - lineStart;
+        assert(size < MAX_LINE);
+        memcpy(line, lineStart, size);
+        while (isblank(line[size-1])) size--;
+        line[size] = 0;
+        return line;
+    }
+
     std::string filename;
+    bool allLines;
+    const char* lineStart;
+    const char* lineEnd;
 
     typedef std::vector<std::string> Lines;
     Lines lines;
@@ -248,7 +316,7 @@ private:
     // NEW API
     bool parseRecipe();
     bool parseFile();
-    bool parseExpect();
+    bool parseExpect(bool allLines);
     bool parseKeyword();
     bool parseOuter();
     void skipLine();
@@ -511,7 +579,7 @@ void IssueDb::parseLineOutside(const char* start, const char* end) {
             file_start = end + 1;
             line_offset = line_nr;
             mode = INFILE;
-        } else if (strncmp(cp, "expect{", 7) == 0) {
+        } else if (strncmp(cp, "expect{", 7) == 0 || strncmp(cp, "expect_lines{", 13) == 0) {
             if (single) {
                 error("invalid @expect tag in single test");
                 return;
@@ -527,7 +595,7 @@ void IssueDb::parseLineOutside(const char* start, const char* end) {
                 cp++;
             }
             std::string name(name_start, cp-name_start);
-            currentExpect = new ExpectFile(name);
+            currentExpect = new ExpectFile(name, false);
             // TODO check for name duplicates
             expectedFiles.push_back(currentExpect);
             mode = INEXPECTFILE;
@@ -630,10 +698,10 @@ bool IssueDb::parseFile() {
     return true;
 }
 
-bool IssueDb::parseExpect() {
-    // Syntax expect{name}
+bool IssueDb::parseExpect(bool allLines) {
+    // Syntax expect{name} or expect_lines{name}
     if (*cur != '{') {
-        errorMsg << "expected { after file";
+        errorMsg << "expected { after expect";
         return false;
     }
     cur++;
@@ -645,7 +713,7 @@ bool IssueDb::parseExpect() {
     }
     skipLine();
 
-    currentExpect = new ExpectFile(filename);
+    currentExpect = new ExpectFile(filename, allLines);
     // TODO check for name duplicates
     expectedFiles.push_back(currentExpect);
     while (*cur != 0) {
@@ -701,7 +769,14 @@ bool IssueDb::parseKeyword() {
             return false;
         }
         cur += 6;
-        return parseExpect();
+        return parseExpect(false);
+    } else if (strcmp(keyword, "expect_lines") == 0) {
+        if (single) {
+            errorMsg << "keyword 'expect_lines' only allowed in .c2t files";
+            return false;
+        }
+        cur += 12;
+        return parseExpect(true);
     } else {
         errorMsg << "unknown keyword '" << keyword << "'";
         return false;
@@ -721,7 +796,7 @@ const char* IssueDb::readWord() {
     static char buffer[32];
     const char* cp = cur;
     while (*cp != 0 && cp - cur < 31) {
-        if ((*cp < 'a' || *cp > 'z') && *cp != '-') break;
+        if ((*cp < 'a' || *cp > 'z') && *cp != '-' && *cp != '_') break;
         cp++;
     }
     int len = cp - cur;

@@ -22,15 +22,13 @@ public func int32 main(int32 argc, const int8*[] argv) {
 
 int32_t main(int32_t argc, const char* argv[]) {
     int32_t a = 0;
-    switch (a)
-    {
+    switch (a) {
     default:
         break;
     }
 
     int32_t b = 10;
-    switch (b)
-    {
+    switch (b) {
     default:
         break;
     }

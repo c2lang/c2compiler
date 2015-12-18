@@ -36,6 +36,6 @@ struct test_Outer_ {
         int32_t c;
         int16_t d;
         char e;
-    }
+    };
 };
 

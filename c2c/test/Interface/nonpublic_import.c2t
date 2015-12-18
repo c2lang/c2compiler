@@ -1,0 +1,22 @@
+// @recipe lib static
+$warnings no-unused
+$generate-c
+$export foo
+
+// @file{file1}
+module foo;
+
+import stdio;
+
+public func void bar() {
+    stdio.printf("");
+}
+
+// @expect_lines{foo.c2i}
+module foo;
+
+// TEMP
+import stdio;
+
+public func void bar();
+

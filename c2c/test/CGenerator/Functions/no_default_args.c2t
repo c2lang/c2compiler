@@ -30,13 +30,13 @@ static void test_bar(int32_t a, int32_t b);
 static void test_faa(int32_t a, int32_t b);
 
 int32_t main(int32_t argc, const char* argv[]) {
-    foo(11);
-    foo(1);
-    bar(10, 22);
-    bar(10, 20);
-    faa(11, 22);
-    faa(1, 22);
-    faa(1, 2);
+    test_foo(11);
+    test_foo(1);
+    test_bar(10, 22);
+    test_bar(10, 20);
+    test_faa(11, 22);
+    test_faa(1, 22);
+    test_faa(1, 2);
     return 0;
 }
 
