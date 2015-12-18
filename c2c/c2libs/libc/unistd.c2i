@@ -1,10 +1,13 @@
 module unistd;
 
+public type size_t int32;
+
 public func uint32 sleep(uint32 __seconds);
-public func char* getcwd(char* buf, int32 size);
+public func char* getcwd(char* buf, size_t size);
 public func int32 chdir(const char* path);
 
-public int32 R_OK = 4;
-public int32 W_OK = 2;
-public int32 X_OK = 1;
-public int32 F_OK = 0;
+public const int32 R_OK = 4;
+public const int32 W_OK = 2;
+public const int32 X_OK = 1;
+public const int32 F_OK = 0;
+
