@@ -15,8 +15,5 @@ public func void bar() {
 // @expect{complete, foo.c2i}
 module foo;
 
-// TEMP
-import stdio;
-
 public func void bar();
 
