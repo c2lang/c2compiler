@@ -61,6 +61,7 @@ private:
     void EmitStructType(const StructTypeDecl* S, unsigned indent);
     void EmitEnumType(const EnumTypeDecl* E);
     void EmitFunctionType(const FunctionTypeDecl* F);
+    void EmitPrefixedType(const Decl* D);
 
     void EmitExpr(const Expr* E);
     void EmitBinaryOperator(const Expr* E);
@@ -73,8 +74,6 @@ private:
     void EmitStringLiteral(const std::string& input);
     void EmitAttributes(const Decl* D);
 
-    bool EmitAsStatic(const Decl* D) const;
-
     const std::string moduleName;
 
     typedef std::vector<AST*> Entries;
@@ -82,6 +81,7 @@ private:
     Entries entries;
 
     StringBuilder iface;
+    const AST* currentAST;
 
     InterfaceGenerator(const InterfaceGenerator&);
     InterfaceGenerator& operator= (const InterfaceGenerator&);

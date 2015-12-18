@@ -44,6 +44,7 @@ using namespace clang;
 
 InterfaceGenerator::InterfaceGenerator(const std::string& moduleName_)
     : moduleName(moduleName_)
+    , currentAST(0)
 {
 }
 
@@ -56,18 +57,18 @@ void InterfaceGenerator::write(const std::string& ifaceDir, bool printCode) {
 
     // ImportDecls
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
-        const AST* ast = *iter;
-        for (unsigned i=0; i<ast->numImports(); i++) {
-            EmitImport(ast->getImport(i));
+        currentAST = *iter;
+        for (unsigned i=0; i<currentAST->numImports(); i++) {
+            EmitImport(currentAST->getImport(i));
         }
     }
     if (entries.size() != 0) iface << '\n';
 
     // TypeDecls
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
-        const AST* ast = *iter;
-        for (unsigned i=0; i<ast->numTypes(); i++) {
-            const TypeDecl* T = ast->getType(i);
+        currentAST = *iter;
+        for (unsigned i=0; i<currentAST->numTypes(); i++) {
+            const TypeDecl* T = currentAST->getType(i);
             if (!T->isPublic()) continue;
             EmitTypeDecl(T);
             iface << '\n';
@@ -76,9 +77,9 @@ void InterfaceGenerator::write(const std::string& ifaceDir, bool printCode) {
 
     // VarDecls
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
-        const AST* ast = *iter;
-        for (unsigned i=0; i<ast->numVars(); i++) {
-            const VarDecl* V = ast->getVar(i);
+        currentAST = *iter;
+        for (unsigned i=0; i<currentAST->numVars(); i++) {
+            const VarDecl* V = currentAST->getVar(i);
             if (!V->isPublic()) continue;
             EmitVarDecl(V, 0);
             iface << ";\n\n";
@@ -87,9 +88,9 @@ void InterfaceGenerator::write(const std::string& ifaceDir, bool printCode) {
 
     // FunctionDecls
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
-        const AST* ast = *iter;
-        for (unsigned i=0; i<ast->numFunctions(); i++) {
-            const FunctionDecl* F = ast->getFunction(i);
+        currentAST = *iter;
+        for (unsigned i=0; i<currentAST->numFunctions(); i++) {
+            const FunctionDecl* F = currentAST->getFunction(i);
             if (!F->isPublic()) continue;
             EmitFunctionDecl(F);
             iface << "\n";
@@ -463,7 +464,6 @@ void InterfaceGenerator::EmitEnumType(const EnumTypeDecl* E) {
     iface << '\n';
 }
 
-// iface: typedef void (*name)(args);
 void InterfaceGenerator::EmitFunctionType(const FunctionTypeDecl* FTD) {
     LOG_DECL(FTD)
     iface << "public type " << FTD->getName() << " func ";
@@ -472,6 +472,15 @@ void InterfaceGenerator::EmitFunctionType(const FunctionTypeDecl* FTD) {
     EmitFunctionArgs(F);
     EmitAttributes(FTD);
     iface << ";\n";
+}
+
+void InterfaceGenerator::EmitPrefixedType(const Decl* D) {
+    const std::string& mname = D->getModule()->getName();
+    // since we dont remember the UnresolvedType, recover prefix here
+    if (mname != moduleName) {
+        iface << currentAST->getImportName(mname) << '.';
+    }
+    iface << D->getName();
 }
 
 void InterfaceGenerator::EmitType(QualType type) {
@@ -511,25 +520,16 @@ void InterfaceGenerator::EmitType(QualType type) {
         assert(0 && "should be resolved");
         break;
     case TC_ALIAS:
-    {
-        // add module prefix if from other module
-#warning add module prefix
-        const AliasTypeDecl* D = cast<AliasType>(T)->getDecl();
-        if (D->getModule()->getName() != moduleName) {
-            // TODO use alias if used
-            iface << D->getModule()->getName() << '.';
-        }
-        iface << cast<AliasType>(T)->getDecl()->getName();
+        EmitPrefixedType(cast<AliasType>(T)->getDecl());
         break;
-    }
     case TC_STRUCT:
-        iface << cast<StructType>(T)->getDecl()->getName();
+        EmitPrefixedType(cast<StructType>(T)->getDecl());
         break;
     case TC_ENUM:
-        iface << cast<EnumType>(T)->getDecl()->getName();
+        EmitPrefixedType(cast<EnumType>(T)->getDecl());
         break;
     case TC_FUNCTION:
-        iface << cast<FunctionType>(T)->getDecl()->getName();
+        EmitPrefixedType(cast<FunctionType>(T)->getDecl());
         break;
     case TC_PACKAGE:
         assert(0 && "should not happen");
@@ -636,11 +636,5 @@ void InterfaceGenerator::EmitAttributes(const Decl* D) {
         }
     }
     if (!first) iface << "))";
-}
-
-bool InterfaceGenerator::EmitAsStatic(const Decl* D) const {
-    if (!D->isPublic()) return true;
-    if (D->isExported()) return false;
-    return false;
 }
 

@@ -88,6 +88,8 @@ public:
     TypeContext& getTypeContext() { return typeContext; }
     bool isInterface() const { return m_isInterface; }
 
+    // Helper function
+    const std::string& getImportName(const std::string& moduleName) const;
 private:
     AST(const AST&);
     void operator=(const AST&);
