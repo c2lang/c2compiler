@@ -1,0 +1,3 @@
+module cassert;
+
+public func void assert(bool condition);
