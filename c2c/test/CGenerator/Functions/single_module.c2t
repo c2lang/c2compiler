@@ -22,7 +22,7 @@ public func void pub2() {}
 
 func void nonpub2() {}
 
-// @expect{build/test.c}
+// @expect{atleast, build/test.c}
 static void test1_pub1();
 static void test1_nonpub1();
 static void test2_pub2();

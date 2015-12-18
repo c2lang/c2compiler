@@ -13,7 +13,7 @@ public int64 z = 10;
 public type Number int32;
 public Number nn;
 
-// @expect{hello.c2i}
+// @expect{atleast, hello.c2i}
 module hello;
 
 public type Number int32;

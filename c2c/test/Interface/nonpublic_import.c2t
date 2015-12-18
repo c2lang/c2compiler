@@ -12,7 +12,7 @@ public func void bar() {
     stdio.printf("");
 }
 
-// @expect_lines{foo.c2i}
+// @expect{complete, foo.c2i}
 module foo;
 
 // TEMP

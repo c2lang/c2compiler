@@ -19,7 +19,7 @@ public func int32 main(int32 argc, const int8*[] argv) {
     return 0;
 }
 
-// @expect{build/test.c}
+// @expect{atleast, build/test.c}
 
 int32_t main(int32_t argc, const char* argv[]) {
     int32_t a = 0;

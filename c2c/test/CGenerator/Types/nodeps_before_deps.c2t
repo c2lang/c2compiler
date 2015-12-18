@@ -13,7 +13,7 @@ type Foo struct {
 
 type Faa int16;
 
-// @expect{build/test.c}
+// @expect{atleast, build/test.c}
 typedef int32_t test_Bar;
 
 

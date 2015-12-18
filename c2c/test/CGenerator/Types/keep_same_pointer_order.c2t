@@ -13,7 +13,7 @@ type Bar struct {
     Foo* f;
 }
 
-// @expect{build/test.c}
+// @expect{atleast, build/test.c}
 typedef struct test_Bar_ test_Bar;
 
 typedef struct test_Foo_ test_Foo;

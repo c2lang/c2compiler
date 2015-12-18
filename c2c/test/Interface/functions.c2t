@@ -14,7 +14,7 @@ public func int32 b(void* c, ...) {
 
 func void d() {}
 
-// @expect{hello.c2i}
+// @expect{atleast, hello.c2i}
 module hello;
 
 public func void a();

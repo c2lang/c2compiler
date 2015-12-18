@@ -17,10 +17,10 @@ public func int32 main(int32 argc, const int8*[] argv)
     return 0;
 }
 
-// @expect{build/test.h}
+// @expect{atleast, build/test.h}
 int32_t test_foo();
 
-// @expect{build/test.c}
+// @expect{atleast, build/test.c}
 __attribute__((section("ctest"))) int32_t test_foo() {
     return 1;
 }

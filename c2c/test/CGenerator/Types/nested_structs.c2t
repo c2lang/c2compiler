@@ -21,7 +21,7 @@ type Outer struct {
     }
 }
 
-// @expect{build/test.c}
+// @expect{atleast, build/test.c}
 typedef struct test_Outer_ test_Outer;
 struct test_Outer_ {
     int32_t x;

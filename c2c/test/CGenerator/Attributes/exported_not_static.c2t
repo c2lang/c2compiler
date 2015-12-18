@@ -18,7 +18,7 @@ public func int32 main(int32 argc, const int8*[] argv)
     return 0;
 }
 
-// @expect{build/test.c}
+// @expect{atleast, build/test.c}
 static void file1_f();
 void file1_g();
 static void file1_h();

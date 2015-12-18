@@ -15,7 +15,7 @@ public func int32 main(int32 argc, const int8*[] argv)
     return 0;
 }
 
-// @expect{build/test.c}
+// @expect{atleast, build/test.c}
 int32_t test_x __attribute__((weak)) = 123;
 
 __attribute__((weak)) void test_foo() {

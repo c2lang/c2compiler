@@ -24,7 +24,7 @@ public func int32 main(int32 argc, const int8*[] argv) {
     return 0;
 }
 
-// @expect{build/test.c}
+// @expect{atleast, build/test.c}
 static void test_foo(int32_t a);
 static void test_bar(int32_t a, int32_t b);
 static void test_faa(int32_t a, int32_t b);

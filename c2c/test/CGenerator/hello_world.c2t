@@ -12,7 +12,7 @@ public func int32 main(int32 argc, const int8*[] argv) {
     return 0;
 }
 
-// @expect{build/test.c}
+// @expect{atleast, build/test.c}
 #include <stdio.h>
 
 int32_t main(int32_t argc, const char* argv[]) {

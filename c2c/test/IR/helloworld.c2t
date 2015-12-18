@@ -12,7 +12,7 @@ public func int32 main(int32 argc, int8*[] argv) {
     return 0;
 }
 
-// @expect{build/hello.ll}
+// @expect{atleast, build/hello.ll}
 @0 = private unnamed_addr constant [14 x i8] c"Hello World!\0A\00"
 
 define i32 @main(i32 %argc, i8** %argv) {

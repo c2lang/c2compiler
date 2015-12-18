@@ -21,7 +21,7 @@ type B struct {
     int32 x;
 }
 
-// @expect{build/test.c}
+// @expect{atleast, build/test.c}
 typedef struct test_B_ test_B;
 struct test_B_ {
     int32_t x;

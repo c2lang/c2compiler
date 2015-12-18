@@ -10,7 +10,7 @@ type Data union {
     int8* b;
 }
 
-// @expect{build/test.c}
+// @expect{atleast, build/test.c}
 typedef union test_Data_ test_Data;
 
 union test_Data_ {

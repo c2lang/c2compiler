@@ -14,7 +14,7 @@ public func int32 main(int32 argc, const int8*[] argv)
     return 0;
 }
 
-// @expect{build/test.c}
+// @expect{atleast, build/test.c}
 static int32_t test_x __attribute__((section("test"))) = 123;
 
 __attribute__((section("test"))) static void test_foo() {

@@ -152,8 +152,12 @@ static void writeFile(const char* name, const char* content, unsigned size) {
 
 class ExpectFile {
 public:
-    ExpectFile(const std::string& name, bool allLines_)
-        : filename(name), allLines(allLines_)
+    enum Mode {
+        ATLEAST,
+        COMPLETE,
+    };
+    ExpectFile(const std::string& name, Mode m)
+        : filename(name), mode(m)
         , lineStart(0), lineEnd(0) {}
 
     void addLine(const char* start, const char* end) {
@@ -213,9 +217,9 @@ public:
 #ifdef DEBUG
                 color_print(ANSI_GREEN, "exp '%s'", expectedLine ? expectedLine : "<none>");
 #endif
-                if (!expectedLine && !allLines) return true;
+                if (!expectedLine && mode != COMPLETE) return true;
             } else {
-                if (allLines) {
+                if (mode == COMPLETE) {
                     color_print(COL_ERROR, "  in file %s:\n  expected '%s'\n       got '%s'", filename.c_str(), expectedLine, line);
                     return false;
                 }
@@ -253,7 +257,7 @@ private:
     }
 
     std::string filename;
-    bool allLines;
+    Mode mode;
     const char* lineStart;
     const char* lineEnd;
 
@@ -316,7 +320,7 @@ private:
     // NEW API
     bool parseRecipe();
     bool parseFile();
-    bool parseExpect(bool allLines);
+    bool parseExpect();
     bool parseKeyword();
     bool parseOuter();
     void skipLine();
@@ -579,7 +583,7 @@ void IssueDb::parseLineOutside(const char* start, const char* end) {
             file_start = end + 1;
             line_offset = line_nr;
             mode = INFILE;
-        } else if (strncmp(cp, "expect{", 7) == 0 || strncmp(cp, "expect_lines{", 13) == 0) {
+        } else if (strncmp(cp, "expect{", 7) == 0) {
             if (single) {
                 error("invalid @expect tag in single test");
                 return;
@@ -595,7 +599,7 @@ void IssueDb::parseLineOutside(const char* start, const char* end) {
                 cp++;
             }
             std::string name(name_start, cp-name_start);
-            currentExpect = new ExpectFile(name, false);
+            currentExpect = new ExpectFile(name, ExpectFile::ATLEAST);
             // TODO check for name duplicates
             expectedFiles.push_back(currentExpect);
             mode = INEXPECTFILE;
@@ -698,13 +702,32 @@ bool IssueDb::parseFile() {
     return true;
 }
 
-bool IssueDb::parseExpect(bool allLines) {
-    // Syntax expect{name} or expect_lines{name}
+bool IssueDb::parseExpect() {
+    // Syntax expect{mode, name}
     if (*cur != '{') {
         errorMsg << "expected { after expect";
         return false;
     }
     cur++;
+    const char* modeStr = readWord();
+    ExpectFile::Mode em = ExpectFile::ATLEAST;
+    if (strcmp(modeStr, "atleast") == 0) {
+        em = ExpectFile::ATLEAST;
+    } else if (strcmp(modeStr, "complete") == 0) {
+        em = ExpectFile::COMPLETE;
+    } else {
+        errorMsg << "unknown mode: " << modeStr;
+        return false;
+    }
+
+    cur += strlen(modeStr);
+    if (*cur != ',') {
+        errorMsg << "expected comma";
+        return false;
+    }
+    cur++;
+
+    while (*cur == ' ') cur++;
 
     std::string filename = readUntil('}');
     if (filename.empty()) {
@@ -713,7 +736,7 @@ bool IssueDb::parseExpect(bool allLines) {
     }
     skipLine();
 
-    currentExpect = new ExpectFile(filename, allLines);
+    currentExpect = new ExpectFile(filename, em);
     // TODO check for name duplicates
     expectedFiles.push_back(currentExpect);
     while (*cur != 0) {
@@ -769,14 +792,7 @@ bool IssueDb::parseKeyword() {
             return false;
         }
         cur += 6;
-        return parseExpect(false);
-    } else if (strcmp(keyword, "expect_lines") == 0) {
-        if (single) {
-            errorMsg << "keyword 'expect_lines' only allowed in .c2t files";
-            return false;
-        }
-        cur += 12;
-        return parseExpect(true);
+        return parseExpect();
     } else {
         errorMsg << "unknown keyword '" << keyword << "'";
         return false;
