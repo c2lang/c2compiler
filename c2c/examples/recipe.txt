@@ -138,9 +138,10 @@ end
 lib mylib static
     $warnings no-unused
     $generate-c
-    $export mylib
+    $export mylib mylib_extra
     mylib1.c2
     mylib2.c2
+    mylib3.c2
 end
 
 lib foobar shared

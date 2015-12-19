@@ -1,0 +1,8 @@
+module mylib_extra;
+
+import stdio;
+
+public func void print() {
+   stdio.printf("extra\n");
+}
+
