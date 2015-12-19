@@ -35,8 +35,6 @@ cmake -G "Unix Makefiles" \
     -DLLVM_ENABLE_PEDANTIC=OFF \
     ../llvm
 
-TODO enable asserts
-
 make -j4
 make install
 ```
