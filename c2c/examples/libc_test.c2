@@ -5,6 +5,8 @@ import string as str;
 import strings;
 import stdlib as std;
 import c_errno;
+import ctype;
+import regex;
 
 func void test_stdio() {
     io.printf("testing io\n");
@@ -44,11 +46,49 @@ func void test_stdlib() {
     // TODO
 }
 
+func void test_ctype()
+{
+    char[] teststr="n-a´!?:_'/\nc-.,ů§¨%=";
+	int32 i = 0;
+	char c;		
+	while (teststr[i])
+	{
+		c = teststr[i];
+		if(ctype.isspace(c)) io.puts("testing ctype");
+		i++;
+	}
+}
+
+func void test_regex()
+{
+    regex.regex_t rx;
+    int32 result;
+    
+    if(regex.regcomp(&rx, "^a[[:alnum:]]", 0))
+    {
+        io.fprintf(io.stderr, "Regex test failed"); 
+        std.abort(); 
+    }
+    
+    result = regex.regexec(&rx, "n-a´!?:_'/\nc-.,ů§¨%=", 0, nil, 0);
+    if( !result )
+    {
+        io.puts("Match");
+    }
+    else if( result == regex.REG_NOMATCH )
+    {
+        io.puts("regex test successful");
+    }
+    regex.regfree(&rx);
+}
+
 public func int32 main() {
     test_stdio();
     test_string();
     test_strings();
     test_stdlib();
+    test_ctype();
+    test_regex();
     return 0;
 }
 
