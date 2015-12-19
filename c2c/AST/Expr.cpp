@@ -488,7 +488,8 @@ void MemberExpr::print(StringBuilder& buffer, unsigned indent) const {
 
 void MemberExpr::printLiteral(StringBuilder& buffer) const {
     Base->printLiteral(buffer);
-    buffer << '.' << member;
+    buffer << '.';
+    member->printLiteral(buffer);
 }
 
 
