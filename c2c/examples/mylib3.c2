@@ -1,6 +1,9 @@
 module mylib_extra;
 
-import stdio;
+import mylib;       // public deps
+import stdio;       // non-public deps
+
+public mylib.Handle handle;
 
 public func void print() {
    stdio.printf("extra\n");
