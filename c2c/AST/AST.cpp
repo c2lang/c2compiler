@@ -79,6 +79,7 @@ void AST::print(bool colors, bool showAttrs) const {
     }
 
     buffer.setColor(COL_NORM);
+    buffer << '\n';
     printf("%s", (const char*)buffer);
 }
 
