@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "Utils/StringBuilder.h"
+#include "Utils/StringList.h"
 
 namespace C2 {
 
@@ -48,7 +49,7 @@ public:
     void write(const std::string& outputDir, bool printCode);
 
 private:
-    void EmitImport(const ImportDecl* D);
+    void EmitImport(const ImportDecl* D, StringList& importList);
     void EmitTypeDecl(const TypeDecl* D);
     void EmitVarDecl(const VarDecl* D, unsigned indent);
     void EmitFunctionDecl(const FunctionDecl* D);
