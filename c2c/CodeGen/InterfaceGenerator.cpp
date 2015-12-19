@@ -56,13 +56,16 @@ void InterfaceGenerator::write(const std::string& ifaceDir, bool printCode) {
     iface << '\n';
 
     // ImportDecls
-    for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
-        currentAST = *iter;
-        for (unsigned i=0; i<currentAST->numImports(); i++) {
-            EmitImport(currentAST->getImport(i));
+    {
+        // StringList
+        for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
+            currentAST = *iter;
+            for (unsigned i=0; i<currentAST->numImports(); i++) {
+                EmitImport(currentAST->getImport(i));
+            }
         }
+        if (entries.size() != 0) iface << '\n';
     }
-    if (entries.size() != 0) iface << '\n';
 
     // TypeDecls
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
@@ -348,14 +351,12 @@ void InterfaceGenerator::EmitIdentifierExpr(const Expr* E) {
 }
 
 void InterfaceGenerator::EmitImport(const ImportDecl* D) {
+    // NOTE: only emit real name, never any aliases/local
     LOG_DECL(D)
 
     if (D->getModuleName() == moduleName) return; // skip 'self-import'
 
-    iface << "import " << D->getModuleName();
-    if (D->hasAlias()) iface << " as " << D->getName();
-    if (D->isLocal()) iface << " local";
-    iface << ";\n";
+    iface << "import " << D->getModuleName() << ";\n";
 }
 
 void InterfaceGenerator::EmitFunctionArgs(const FunctionDecl* F) {

@@ -16,10 +16,8 @@
 #ifndef BUILDER_RECIPE_H
 #define BUILDER_RECIPE_H
 
-#include <string>
-#include <vector>
-
 #include "Utils/GenUtils.h"
+#include "Utils/StringList.h"
 
 namespace C2 {
 
@@ -55,11 +53,7 @@ public:
     bool generateIR;
     bool generateCCode;
 
-    typedef std::vector<std::string> Files;
-    Files files;
-
-    typedef std::vector<std::string> StringList;
-
+    StringList files;
     StringList configs;
     StringList exported;
     StringList cConfigs;

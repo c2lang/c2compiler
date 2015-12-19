@@ -58,27 +58,27 @@ void MakefileGenerator::write() {
 
     // our target
     out << targetname << ':';
-    for (FilesConstIter iter=files.begin(); iter!=files.end(); ++iter) {
+    for (StringListConstIter iter=files.begin(); iter!=files.end(); ++iter) {
         out << ' ' << *iter << ".c";
     }
     out << '\n';
 
     // compile step
-    for (FilesConstIter iter=files.begin(); iter!=files.end(); ++iter) {
+    for (StringListConstIter iter=files.begin(); iter!=files.end(); ++iter) {
         out << "\tgcc " << args << " -c " << *iter << ".c -o " << *iter << ".o\n"; 
     }
     // link step
     switch (type) {
     case GenUtils::EXECUTABLE:
         out << "\tgcc -o " << targetname;
-        for (FilesConstIter iter=files.begin(); iter!=files.end(); ++iter) {
+        for (StringListConstIter iter=files.begin(); iter!=files.end(); ++iter) {
             out << ' ' << *iter << ".o";
         }
         break;
     case GenUtils::SHARED_LIB:
         out << "#link against with: gcc main.c -L. -l<libname> -o test\n";
         out << "\tgcc";
-        for (FilesConstIter iter=files.begin(); iter!=files.end(); ++iter) {
+        for (StringListConstIter iter=files.begin(); iter!=files.end(); ++iter) {
             out << ' ' << *iter << ".o";
         }
 #ifdef __APPLE__
@@ -92,7 +92,7 @@ void MakefileGenerator::write() {
         break;
     case GenUtils::STATIC_LIB:
         out << "\tar rcs " << targetname;
-        for (FilesConstIter iter=files.begin(); iter!=files.end(); ++iter) {
+        for (StringListConstIter iter=files.begin(); iter!=files.end(); ++iter) {
             out << ' ' << *iter << ".o";
         }
         break;

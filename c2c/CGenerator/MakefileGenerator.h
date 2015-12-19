@@ -16,10 +16,8 @@
 #ifndef CGENERATOR_MAKEFILE_GENERATOR_H
 #define CGENERATOR_MAKEFILE_GENERATOR_H
 
-#include <string>
-#include <vector>
-
 #include "Utils/GenUtils.h"
+#include "Utils/StringList.h"
 
 namespace C2 {
 
@@ -38,9 +36,7 @@ private:
     std::string target;
     GenUtils::TargetType type;
 
-    typedef std::vector<std::string> Files;
-    typedef Files::const_iterator FilesConstIter;
-    Files files;
+    StringList files;
 
     MakefileGenerator(const MakefileGenerator&);
     MakefileGenerator& operator= (const MakefileGenerator&);

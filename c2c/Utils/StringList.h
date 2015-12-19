@@ -13,25 +13,16 @@
  * limitations under the License.
  */
 
-#ifndef BUILDER_MANIFEST_WRITER_H
-#define BUILDER_MANIFEST_WRITER_H
+#ifndef UTILS_STRING_LIST_H
+#define UTILS_STRING_LIST_H
 
-#include "Utils/StringList.h"
+#include <vector>
+#include <string>
 
 namespace C2 {
 
-class ManifestWriter {
-public:
-    ManifestWriter() {}
-    ~ManifestWriter() {}
-
-    void add(const std::string& name) {
-        modules.push_back(name);
-    }
-    void write(const std::string& filename) const;
-private:
-    StringList modules;
-};
+typedef std::vector<std::string> StringList;
+typedef StringList::const_iterator StringListConstIter;
 
 }
 
