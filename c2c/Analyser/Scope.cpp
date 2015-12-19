@@ -158,14 +158,16 @@ Decl* Scope::findSymbol(const std::string& symbol, clang::SourceLocation loc, bo
 
     if (D) {
         // mark ImportDecl as used
-        ImportsConstIter iter = importedModules.begin();
-        while (iter != importedModules.end()) {
-            ImportDecl* I = iter->second;
-            if (D->getModule() == I->getModule()) {
-                I->setUsed();
-                break;
+        if (D->getModule() != myModule) {
+            ImportsConstIter iter = importedModules.begin();
+            while (iter != importedModules.end()) {
+                ImportDecl* I = iter->second;
+                if (D->getModule() == I->getModule()) {
+                    I->setUsed();
+                    break;
+                }
+                ++iter;
             }
-            ++iter;
         }
 
         if (!visible_match) {
