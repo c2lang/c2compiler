@@ -24,14 +24,14 @@ public func aa.AA bb1(aa.AA* arg1) {
     return 123;
 }
 
-// @expect{atleast, aa.c2i}
+// @expect{complete, aa.c2i}
 module aa;
 
 public type AA int32;
 
 public const int32 FIRST = 1;
 
-// @expect{atleast, bb.c2i}
+// @expect{complete, bb.c2i}
 module bb;
 
 import aa;

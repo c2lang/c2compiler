@@ -107,14 +107,3 @@ void AST::addSymbol(Decl* d) {
     symbols[d->getName()] = d;
 }
 
-const std::string& AST::getImportName(const std::string& moduleName) const {
-    // skip first one since it's the self module
-    for (unsigned i=1; i<importList.size(); i++) {
-        const ImportDecl* I = importList[i];
-        if (I->getModuleName() == moduleName) {
-            return I->getName();
-        }
-    }
-    return moduleName;
-}
-

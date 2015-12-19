@@ -34,7 +34,7 @@ public type Struct struct {
     Func ff;
 }
 
-// @expect{atleast, hello.c2i}
+// @expect{complete, hello.c2i}
 module hello;
 
 public type Number int32;
@@ -61,4 +61,6 @@ public type Struct struct {
     }
     Func ff;
 }
+
+public const int8 Third = 124;
 

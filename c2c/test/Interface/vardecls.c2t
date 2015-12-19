@@ -14,7 +14,6 @@ public type Number int32;
 public Number nn;
 
 // @expect{atleast, hello.c2i}
-module hello;
 
 public type Number int32;
 

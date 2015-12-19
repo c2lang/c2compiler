@@ -13,14 +13,14 @@ public const int32 FIRST = 1;
 // @file{file2}
 module bb;
 
-import aa as cc;
+import aa local;
 
 public type Enum enum int8 {
-    One = cc.FIRST,
+    One = FIRST,
     Two,
 }
 
-public func cc.AA bb1(cc.AA* arg1) {
+public func AA bb1(AA* arg1) {
     return 123;
 }
 

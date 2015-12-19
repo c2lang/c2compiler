@@ -35,9 +35,7 @@ class FunctionTypeDecl;
 class EnumTypeDecl;
 class QualType;
 class Expr;
-class Stmt;
-class CompoundStmt;
-class HeaderNamer;
+class IdentifierExpr;
 
 class InterfaceGenerator {
 public:
@@ -62,14 +60,14 @@ private:
     void EmitStructType(const StructTypeDecl* S, unsigned indent);
     void EmitEnumType(const EnumTypeDecl* E);
     void EmitFunctionType(const FunctionTypeDecl* F);
-    void EmitPrefixedType(const Decl* D);
+    void EmitPrefixedDecl(const Decl* D);
 
     void EmitExpr(const Expr* E);
     void EmitBinaryOperator(const Expr* E);
     void EmitConditionalOperator(const Expr* E);
     void EmitUnaryOperator(const Expr* E);
     void EmitMemberExpr(const Expr* E);
-    void EmitIdentifierExpr(const Expr* E);
+    void EmitIdentifierExpr(const IdentifierExpr* E);
 
     // Helpers
     void EmitStringLiteral(const std::string& input);

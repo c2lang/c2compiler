@@ -157,7 +157,7 @@ void InterfaceGenerator::EmitExpr(const Expr* E) {
         assert(0 && "cannot happen");
         return;
     case EXPR_IDENTIFIER:
-        EmitIdentifierExpr(E);
+        EmitIdentifierExpr(cast<IdentifierExpr>(E));
         return;
     case EXPR_INITLIST:
         {
@@ -340,15 +340,17 @@ void InterfaceGenerator::EmitUnaryOperator(const Expr* E) {
 void InterfaceGenerator::EmitMemberExpr(const Expr* E) {
     LOG_FUNC
     const MemberExpr* M = cast<MemberExpr>(E);
-    const IdentifierExpr* rhs = M->getMember();
-    EmitExpr(M->getBase());
-    iface << '.' << rhs->getName();
+    if (M->isModulePrefix()) {
+        EmitIdentifierExpr(M->getMember());
+    } else {
+        assert(0 && "can this happen?");
+    }
 }
 
-void InterfaceGenerator::EmitIdentifierExpr(const Expr* E) {
+void InterfaceGenerator::EmitIdentifierExpr(const IdentifierExpr* E) {
     LOG_FUNC
-    const IdentifierExpr* I = cast<IdentifierExpr>(E);
-    iface << I->getName();
+    const Decl* D = E->getDecl();
+    EmitPrefixedDecl(D);
 }
 
 void InterfaceGenerator::EmitImport(const ImportDecl* D, StringList& importList) {
@@ -479,11 +481,12 @@ void InterfaceGenerator::EmitFunctionType(const FunctionTypeDecl* FTD) {
     iface << ";\n";
 }
 
-void InterfaceGenerator::EmitPrefixedType(const Decl* D) {
+void InterfaceGenerator::EmitPrefixedDecl(const Decl* D) {
+    assert(D);
     const std::string& mname = D->getModule()->getName();
-    // since we dont remember the UnresolvedType, recover prefix here
+    // add prefix here, since we might have changed the ImportDecl (removed alias/local)
     if (mname != moduleName) {
-        iface << currentAST->getImportName(mname) << '.';
+        iface << mname << '.';
     }
     iface << D->getName();
 }
@@ -525,16 +528,16 @@ void InterfaceGenerator::EmitType(QualType type) {
         assert(0 && "should be resolved");
         break;
     case TC_ALIAS:
-        EmitPrefixedType(cast<AliasType>(T)->getDecl());
+        EmitPrefixedDecl(cast<AliasType>(T)->getDecl());
         break;
     case TC_STRUCT:
-        EmitPrefixedType(cast<StructType>(T)->getDecl());
+        EmitPrefixedDecl(cast<StructType>(T)->getDecl());
         break;
     case TC_ENUM:
-        EmitPrefixedType(cast<EnumType>(T)->getDecl());
+        EmitPrefixedDecl(cast<EnumType>(T)->getDecl());
         break;
     case TC_FUNCTION:
-        EmitPrefixedType(cast<FunctionType>(T)->getDecl());
+        EmitPrefixedDecl(cast<FunctionType>(T)->getDecl());
         break;
     case TC_PACKAGE:
         assert(0 && "should not happen");
