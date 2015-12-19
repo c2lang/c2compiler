@@ -380,6 +380,8 @@ void ImportDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer << modName;
     if (aliasLoc.isValid()) buffer << " as " << name;
     if (isLocal()) buffer << " local";
+    buffer.setColor(COL_ATTRIBUTES);
+    buffer << "  used=" << isUsed() << '/' << isUsedPublic();
     buffer << '\n';
 }
 
