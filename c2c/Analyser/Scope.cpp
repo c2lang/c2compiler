@@ -87,16 +87,16 @@ void Scope::addScopedSymbol(VarDecl* V) {
 const Module* Scope::findUsedModule(const std::string& name, clang::SourceLocation loc) const {
     ImportsConstIter iter = importedModules.find(name);
     if (iter != importedModules.end()) {
-        ImportDecl* U = iter->second;
-        U->setUsed();
-        return U->getModule();
+        ImportDecl* I = iter->second;
+        I->setUsed();
+        return I->getModule();
     }
 
     // check if used with alias (then fullname is forbidden)
     for (ImportsConstIter iter = importedModules.begin(); iter != importedModules.end(); ++iter) {
-        ImportDecl* U = iter->second;
-        U->setUsed();
-        const Module* p = U->getModule();
+        ImportDecl* I = iter->second;
+        I->setUsed();
+        const Module* p = I->getModule();
         if (p->getName() == name) {
             Diags.Report(loc, diag::err_module_has_alias) << name << iter->first;
             return 0;
@@ -160,9 +160,9 @@ Decl* Scope::findSymbol(const std::string& symbol, clang::SourceLocation loc, bo
         // mark ImportDecl as used
         ImportsConstIter iter = importedModules.begin();
         while (iter != importedModules.end()) {
-            ImportDecl* Use = iter->second;
-            if (D->getModule() == Use->getModule()) {
-                Use->setUsed();
+            ImportDecl* I = iter->second;
+            if (D->getModule() == I->getModule()) {
+                I->setUsed();
                 break;
             }
             ++iter;
