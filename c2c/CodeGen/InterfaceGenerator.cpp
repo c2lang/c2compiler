@@ -483,6 +483,7 @@ void InterfaceGenerator::EmitFunctionType(const FunctionTypeDecl* FTD) {
 
 void InterfaceGenerator::EmitPrefixedDecl(const Decl* D) {
     assert(D);
+    // TODO compare by pointer instead of string
     const std::string& mname = D->getModule()->getName();
     // add prefix here, since we might have changed the ImportDecl (removed alias/local)
     if (mname != moduleName) {
