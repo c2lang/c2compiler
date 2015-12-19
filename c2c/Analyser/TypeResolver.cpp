@@ -73,15 +73,15 @@ unsigned TypeResolver::checkUnresolvedType(const UnresolvedType* type, bool used
     Decl* D = 0;
     if (moduleName) {   // mod.type
         const std::string& mName = moduleName->getName();
-        const Module* mod = globals.findUsedModule(mName, moduleName->getLocation());
+        const Module* mod = globals.findUsedModule(mName, moduleName->getLocation(), used_public);
         if (!mod) return 1;
-        Decl* modDecl = globals.findSymbol(mName, moduleName->getLocation(), true);
+        Decl* modDecl = globals.findSymbol(mName, moduleName->getLocation(), true, used_public);
         assert(modDecl);
         moduleName->setDecl(modDecl);
 
         D =  globals.findSymbolInModule(tName, tLoc, mod);
     } else {
-        D = globals.findSymbol(tName, tLoc, true);
+        D = globals.findSymbol(tName, tLoc, true, used_public);
     }
     if (!D) return 1;
     TypeDecl* TD = dyncast<TypeDecl>(D);

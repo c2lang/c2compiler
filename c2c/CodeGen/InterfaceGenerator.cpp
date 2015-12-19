@@ -62,7 +62,9 @@ void InterfaceGenerator::write(const std::string& ifaceDir, bool printCode) {
         for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
             currentAST = *iter;
             for (unsigned i=0; i<currentAST->numImports(); i++) {
-                EmitImport(currentAST->getImport(i), importList);
+                const ImportDecl* I = currentAST->getImport(i);
+                if (!I->isUsedPublic()) continue;
+                EmitImport(I, importList);
             }
         }
         if (entries.size() != 0) iface << '\n';

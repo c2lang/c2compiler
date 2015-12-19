@@ -84,11 +84,16 @@ void Scope::addScopedSymbol(VarDecl* V) {
     symbolCache[V->getName()] = V;
 }
 
-const Module* Scope::findUsedModule(const std::string& name, clang::SourceLocation loc) const {
+const Module* Scope::findUsedModule(const std::string& name, clang::SourceLocation loc, bool usedPublic) const {
     ImportsConstIter iter = importedModules.find(name);
     if (iter != importedModules.end()) {
         ImportDecl* I = iter->second;
         I->setUsed();
+        if (usedPublic) {
+            // TODO refactor common code
+            // TODO check if using non-exported module from exported one
+            I->setUsedPublic();
+        }
         return I->getModule();
     }
 
@@ -96,6 +101,11 @@ const Module* Scope::findUsedModule(const std::string& name, clang::SourceLocati
     for (ImportsConstIter iter = importedModules.begin(); iter != importedModules.end(); ++iter) {
         ImportDecl* I = iter->second;
         I->setUsed();
+        if (usedPublic) {
+            // TODO refactor common code
+            // TODO check if using non-exported module from exported one
+            I->setUsedPublic();
+        }
         const Module* p = I->getModule();
         if (p->getName() == name) {
             Diags.Report(loc, diag::err_module_has_alias) << name << iter->first;
@@ -111,7 +121,7 @@ const Module* Scope::findUsedModule(const std::string& name, clang::SourceLocati
     return 0;
 }
 
-Decl* Scope::findSymbol(const std::string& symbol, clang::SourceLocation loc, bool isType) const {
+Decl* Scope::findSymbol(const std::string& symbol, clang::SourceLocation loc, bool isType, bool usedPublic) const {
     // lookup in global cache first, return if found
     CacheConstIter iter = symbolCache.find(symbol);
     if (iter != symbolCache.end()) {
@@ -164,6 +174,11 @@ Decl* Scope::findSymbol(const std::string& symbol, clang::SourceLocation loc, bo
                 ImportDecl* I = iter->second;
                 if (D->getModule() == I->getModule()) {
                     I->setUsed();
+                    if (usedPublic) {
+                        I->setUsedPublic();
+                        // TODO refactor common code
+                        // TODO check if using non-exported module from exported one
+                    }
                     break;
                 }
                 ++iter;

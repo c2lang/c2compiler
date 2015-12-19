@@ -1661,7 +1661,7 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
 
 Decl* FunctionAnalyser::analyseIdentifier(IdentifierExpr* id) {
     LOG_FUNC
-    Decl* D = scope.findSymbol(id->getName(), id->getLocation(), false);
+    Decl* D = scope.findSymbol(id->getName(), id->getLocation(), false, false);
     if (D) {
         id->setDecl(D);
         id->setType(D->getType());

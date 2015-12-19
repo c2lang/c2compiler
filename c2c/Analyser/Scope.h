@@ -89,8 +89,8 @@ public:
     void addScopedSymbol(VarDecl* V);
 
     // searching
-    const Module* findUsedModule(const std::string& name, clang::SourceLocation loc) const;
-    Decl* findSymbol(const std::string& name, clang::SourceLocation loc, bool isType) const;
+    const Module* findUsedModule(const std::string& name, clang::SourceLocation loc, bool usedPublic) const;
+    Decl* findSymbol(const std::string& name, clang::SourceLocation loc, bool isType, bool usedPublic) const;
     Decl* findSymbolInModule(const std::string& name, clang::SourceLocation loc, const Module* mod) const;
 
     // Scopes
