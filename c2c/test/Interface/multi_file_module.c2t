@@ -30,3 +30,12 @@ import aa;
 public aa.Number n;
 public aa.Number n2;
 
+// @expect{atleast, aa.h}
+
+typedef int32_t aa_Number;
+
+// @expect{atleast, bb.h}
+
+extern int32_t bb_n;
+extern int32_t bb_n2;
+

@@ -1,0 +1,70 @@
+// @recipe lib static
+$warnings no-unused
+$generate-c
+$export aa bb
+
+// @file{file1}
+module aa;
+
+import internal;
+
+public type AA struct {
+    int32 x;
+}
+
+public func void foo() {
+   internal.Internal i;
+}
+
+// @file{file2}
+module bb;
+
+import aa;
+
+public aa.AA a1;
+
+// @file{file_internal}
+module internal;
+
+public type Internal struct {
+    int32 x;
+}
+
+// @expect{complete, aa.c2i}
+module aa;
+
+public type AA struct {
+    int32 x;
+}
+
+public func void foo();
+
+// @expect{complete, bb.c2i}
+module bb;
+
+import aa;
+
+public aa.AA a1;
+
+// @expect{complete, aa.h}
+#ifndef AA_H
+#define AA_H
+
+#include <stdint.h>
+#include <stddef.h>
+
+typedef struct aa_AA_ aa_AA;
+
+struct aa_AA_ {
+    int32_t x;
+};
+
+void aa_foo();
+#endif
+
+// @expect{atleast, bb.h}
+
+#include "aa.h"
+extern aa_AA bb_a1;
+
+

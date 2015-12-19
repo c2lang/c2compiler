@@ -43,3 +43,13 @@ public type Enum enum int8 {
 
 public func aa.AA bb1(aa.AA* arg1);
 
+// @expect{atleast, aa.h}
+#define aa_FIRST 1
+typedef int32_t aa_AA;
+
+// @expect{atleast, bb.h}
+typedef enum {
+    bb_One = aa_FIRST,
+    bb_Two,
+} bb_Enum;
+

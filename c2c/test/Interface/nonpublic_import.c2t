@@ -17,3 +17,14 @@ module foo;
 
 public func void bar();
 
+// @expect{complete, foo.h}
+#ifndef FOO_H
+#define FOO_H
+
+#include <stdint.h>
+#include <stddef.h>
+
+void foo_bar();
+
+#endif
+

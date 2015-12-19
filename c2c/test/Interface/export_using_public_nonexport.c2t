@@ -1,0 +1,19 @@
+// @recipe lib static
+$warnings no-unused
+$generate-c
+$export bb
+
+// @file{file1}
+module aa;
+
+public type AA struct {
+    int32 x;
+}
+
+// @file{file2}
+module bb;
+
+import aa;
+
+public aa.AA a1;        // @error{exported symbol using non-exported symbol 'aa.AA'}
+
