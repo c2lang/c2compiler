@@ -66,33 +66,6 @@ void CGenerator::generate() {
     }
     makeGen.write();
 
-    // generate external library header
-    bool generateHeader = false;
-    switch (targetType) {
-    case GenUtils::EXECUTABLE:
-        break;
-    case GenUtils::SHARED_LIB:
-    case GenUtils::STATIC_LIB:
-        generateHeader = true;
-        break;
-    }
-    if (generateHeader) {
-        // TODO need better loop
-        for (ModulesConstIter iter = modules.begin(); iter != modules.end(); ++iter) {
-            const Module* M = iter->second;
-            if (!M->isExported()) continue;
-            CCodeGenerator gen(M->getName(), CCodeGenerator::MULTI_FILE, modules, includeNamer);
-
-            for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
-                AST* ast = *iter;
-                if (ast->getModuleName() == M->getName()) {
-                    gen.addEntry(*ast);
-                }
-            }
-            gen.createLibHeader(options.printC, options.outputDir + targetName + "/");
-        }
-    }
-
     // generate exports.version
     if (targetType == GenUtils::SHARED_LIB) {
         StringBuilder expmap;
@@ -126,6 +99,35 @@ void CGenerator::build() {
     int retval = ProcessUtils::run(outdir, "/usr/bin/make");
     if (retval != 0) {
         fprintf(stderr, ANSI_RED"error during external c compilation" ANSI_NORMAL"\n");
+    }
+}
+
+void CGenerator::generateInterfaceFiles() {
+    // generate external library header
+    bool generateHeader = false;
+    switch (targetType) {
+    case GenUtils::EXECUTABLE:
+        break;
+    case GenUtils::SHARED_LIB:
+    case GenUtils::STATIC_LIB:
+        generateHeader = true;
+        break;
+    }
+    if (generateHeader) {
+        // TODO need better loop
+        for (ModulesConstIter iter = modules.begin(); iter != modules.end(); ++iter) {
+            const Module* M = iter->second;
+            if (!M->isExported()) continue;
+            CCodeGenerator gen(M->getName(), CCodeGenerator::MULTI_FILE, modules, includeNamer);
+
+            for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
+                AST* ast = *iter;
+                if (ast->getModuleName() == M->getName()) {
+                    gen.addEntry(*ast);
+                }
+            }
+            gen.createLibHeader(options.printC, options.outputDir + targetName + "/");
+        }
     }
 }
 

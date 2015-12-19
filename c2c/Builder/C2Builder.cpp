@@ -679,14 +679,7 @@ void C2Builder::generateInterface() const {
     if (options.checkOnly) return;
     if (!options.generateC && !recipe.generateCCode &&
         !options.generateIR && !recipe.generateIR) return;
-
-    switch (recipe.type) {
-    case GenUtils::EXECUTABLE:
-        return; // no interface needed
-    case GenUtils::SHARED_LIB:
-    case GenUtils::STATIC_LIB:
-        break;
-    }
+    if (!recipe.needsInterface()) return;
 
     ManifestWriter manifest;
     std::string outdir = OUTPUT_DIR + recipe.name + '/';
@@ -742,19 +735,26 @@ void C2Builder::generateOptionalC() {
             cgen.addFile(*ast);
         }
     }
-    if (options.verbose) log(COL_VERBOSE, "generating C code");
-    cgen.generate();
 
-    u_int64_t t2 = Utils::getCurrentTime();
-    if (options.printTiming) log(COL_TIME, "C code generation took %" PRIu64" usec", t2 - t1);
+    // use C-backend
+    if (options.generateC || recipe.generateCCode) {
+        if (options.verbose) log(COL_VERBOSE, "generating C code");
+        cgen.generate();
 
-    if (!no_build) {
-        if (options.verbose) log(COL_VERBOSE, "building C code");
-        u_int64_t t3 = Utils::getCurrentTime();
-        cgen.build();
-        u_int64_t t4 = Utils::getCurrentTime();
-        if (options.printTiming) log(COL_TIME, "C code compilation took %" PRIu64" usec", t4 - t3);
+        u_int64_t t2 = Utils::getCurrentTime();
+        if (options.printTiming) log(COL_TIME, "C code generation took %" PRIu64" usec", t2 - t1);
+
+        if (!no_build) {
+            if (options.verbose) log(COL_VERBOSE, "building C code");
+            u_int64_t t3 = Utils::getCurrentTime();
+            cgen.build();
+            u_int64_t t4 = Utils::getCurrentTime();
+            if (options.printTiming) log(COL_TIME, "C code compilation took %" PRIu64" usec", t4 - t3);
+        }
     }
+
+    // generate C interface files
+    if (recipe.needsInterface()) cgen.generateInterfaceFiles();
 }
 
 void C2Builder::generateOptionalIR() {

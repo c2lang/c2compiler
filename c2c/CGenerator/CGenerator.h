@@ -51,6 +51,7 @@ public:
 
     void generate();
     void build();
+    void generateInterfaceFiles();
 private:
     std::string targetName;
     GenUtils::TargetType targetType;

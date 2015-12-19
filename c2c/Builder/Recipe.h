@@ -44,6 +44,7 @@ public:
     int size() const { return files.size(); }
     const std::string& get(int i) const;
     bool hasExported(const std::string& mod) const;
+    bool needsInterface() const { return GenUtils::needsInterface(type); }
 
     std::string name;
     GenUtils::TargetType type;
