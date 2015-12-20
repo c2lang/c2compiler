@@ -103,6 +103,7 @@ FunctionAnalyser::FunctionAnalyser(Scope& scope_,
     , CurrentVarDecl(0)
     , constDiagID(0)
     , inConstExpr(false)
+    , usedPublicly(false)
     , isInterface(isInterface_)
 {
 }
@@ -140,7 +141,9 @@ unsigned FunctionAnalyser::checkVarInit(VarDecl* V) {
     errors = 0;
 
     ConstModeSetter cms(*this, diag::err_init_element_not_constant);
+    usedPublicly = (V->isPublic() && (!V->isGlobal() || V->getType().isConstQualified()));
     analyseInitExpr(V->getInitValue(), V->getType());
+    usedPublicly = false;
     // TODO if type is array, update type of VarDecl? (add size)
 
     CurrentVarDecl = 0;
@@ -153,7 +156,9 @@ unsigned FunctionAnalyser::checkArraySizeExpr(VarDecl* V) {
     errors = 0;
 
     ConstModeSetter cms(*this, diag::err_init_element_not_constant);
+    usedPublicly = V->isPublic();
     analyseArrayType(V, V->getType());
+    usedPublicly = false;
 
     CurrentVarDecl = 0;
     return errors;
@@ -165,7 +170,9 @@ unsigned FunctionAnalyser::checkEnumValue(EnumConstantDecl* E, llvm::APSInt& nex
     LiteralAnalyser LA(Diags);
     Expr* Init = E->getInitValue();
     if (Init) {
+        usedPublicly = E->isPublic();
         QualType T = analyseExpr(Init, RHS);
+        usedPublicly = false;
         if (!T.isValid()) return 1;
 
         if (!Init->isConstant()) {
@@ -618,7 +625,10 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
                 assert(0 && "TODO");
                 break;
             }
-            if (side & RHS) D->setUsed();
+            if (side & RHS) {
+                D->setUsed();
+                if (usedPublicly) D->setUsedPublic();
+            }
             QualType T = D->getType();
             expr->setType(T);
             return T;
@@ -1406,7 +1416,7 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
     // mod.type
     // mod.var
     // mod.func
-    // var(Type=struct>.member
+    // var<Type=struct>.member
     // var[index].member
     // var->member
     QualType LType = analyseExpr(M->getBase(), RHS);
@@ -1414,8 +1424,8 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
 
     if (isa<ModuleType>(LType)) {
         M->setModulePrefix(true);
-        ModuleType* PT = cast<ModuleType>(LType.getTypePtr());
-        Decl* D = scope.findSymbolInModule(member->getName(), member->getLocation(), PT->getModule());
+        ModuleType* MT = cast<ModuleType>(LType.getTypePtr());
+        Decl* D = scope.findSymbolInModule(member->getName(), member->getLocation(), MT->getModule());
         if (D) {
             if (side & RHS) D->setUsed();
             M->setDecl(D);

@@ -552,7 +552,12 @@ void InterfaceGenerator::EmitArgVarDecl(const VarDecl* D, unsigned index) {
     LOG_DECL(D)
     EmitType(D->getType());
     iface << ' '<< D->getName();
-    // TODO generate default arg values if const?
+
+    const Expr* init = D->getInitValue();
+    if (init) {
+        iface << " = ";
+        EmitExpr(init);
+    }
 }
 
 void InterfaceGenerator::EmitFunctionDecl(const FunctionDecl* F) {

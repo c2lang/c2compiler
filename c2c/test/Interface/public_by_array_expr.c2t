@@ -11,21 +11,16 @@ public const int32 AA = 10;
 module bb;
 import aa;
 
-public type BB enum int8 {
-    BB1 = aa.AA,
-}
+public int32[aa.AA] b;
 
 // @expect{complete, bb.c2i}
 module bb;
 import aa;
 
-public type BB enum int8 {
-    BB1 = aa.AA,
-}
+public int32[aa.AA] b;
 
 // @expect{atleast, bb.h}
 #include "aa.h"
-typedef enum {
-      bb_BB1 = aa_AA,
-} bb_BB;
+
+extern int32_t bb_b[aa_AA];
 

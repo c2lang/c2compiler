@@ -144,6 +144,7 @@ private:
     VarDecl* CurrentVarDecl;
     unsigned constDiagID;
     bool inConstExpr;
+    bool usedPublicly;
     bool isInterface;
 
     typedef std::vector<LabelDecl*> Labels;
