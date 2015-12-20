@@ -514,6 +514,7 @@ int C2Builder::build() {
 
     generateOptionalDeps();
 
+    // TODO BBB HERE WITH REFACTORING
     generateOptionalTags(SM);
 
     generateInterface();
