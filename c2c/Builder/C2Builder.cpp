@@ -755,7 +755,6 @@ void C2Builder::generateOptionalC() {
             if (options.printTiming) log(COL_TIME, "C code compilation took %" PRIu64" usec", t4 - t3);
         }
     }
-
 }
 
 void C2Builder::generateOptionalIR() {

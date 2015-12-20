@@ -1,6 +1,6 @@
 // @recipe lib static
 $warnings no-unused
-$generate-c
+$generate-c no-build
 $export bb
 
 // @file{file1}
