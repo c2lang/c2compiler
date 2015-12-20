@@ -15,8 +15,24 @@
 
 #include "Analyser/TargetAnalyser.h"
 #include "Analyser/FileAnalyser.h"
+#include "AST/Component.h"
+#include "AST/Module.h"
 
 using namespace C2;
+
+TargetAnalyser::TargetAnalyser(const Modules& modules_, clang::DiagnosticsEngine& Diags_, Component& C, bool verbose_)
+    : modules(modules_)
+    , Diags(Diags_)
+    , verbose(verbose_)
+{
+    ModuleList& mods = C.getModules();
+    for (unsigned m=0; m<mods.size(); m++) {
+        Files& files = mods[m]->getFiles();
+        for (unsigned f=0; f<files.size(); f++) {
+            addFile(*files[f]);
+        }
+    }
+}
 
 TargetAnalyser::~TargetAnalyser() {
     for (unsigned i=0; i<analysers.size(); i++) {

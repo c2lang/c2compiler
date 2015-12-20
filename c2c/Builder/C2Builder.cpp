@@ -366,10 +366,9 @@ int C2Builder::build() {
         bool ok = true;
         ModuleList& mods = Main->getModules();
         for (unsigned i=0; i<mods.size(); i++) {
-            // BBB rename to files
-            Files files2 = mods[i]->getFiles();
-            for (unsigned a=0; a<files2.size(); a++) {
-                AST* ast = files2[i];
+            Files files = mods[i]->getFiles();
+            for (unsigned a=0; a<files.size(); a++) {
+                AST* ast = files[i];
                 for (unsigned u=0; u<ast->numImports(); u++) {
                     ImportDecl* D = ast->getImport(u);
                     const std::string& name = D->getModuleName();
@@ -388,9 +387,8 @@ int C2Builder::build() {
                         ok = false;
                         continue;
                     }
+                    if (recipe.hasExported(name)) M->setExported();
                     modules[name] = M;
-                    // BBB: check if ok
-                    //if (recipe.hasExported(name)) M->setExported();
                 }
             }
         }
@@ -403,9 +401,9 @@ int C2Builder::build() {
             ModuleList& mods = C->getModules();
             for (unsigned i=0; i<mods.size(); i++) {
                 // BBB rename to files
-                Files files2 = mods[i]->getFiles();
-                for (unsigned i=0; i<files2.size(); i++) {
-                    AST* ast2 = files2[i];
+                Files files = mods[i]->getFiles();
+                for (unsigned i=0; i<files.size(); i++) {
+                    AST* ast2 = files[i];
                     if (options.verbose) log(COL_VERBOSE, "parsing (%s) %s", C->name.c_str(), ast2->getFileName().c_str());
                     if (!parse(Diags, LangOpts, pti, HSOpts, SM, FileMgr, *ast2, PredefineBuffer)) {
                         ok = false;
@@ -435,17 +433,10 @@ int C2Builder::build() {
     components.push_back(Main.release());
     if (options.printModules) printComponents();
 
-    // BBB REFACTORED UNTIL HERE
-
     // phase 2: analyse all files
     t1_analyse = Utils::getCurrentTime();
     for (unsigned c=0; c<components.size(); c++) {
-        Component* C = components[c];
-        TargetAnalyser analyser(modules, Diags, C->files.size(), options.verbose);
-        // create analysers/scopes
-        for (unsigned i=0; i<C->files.size(); i++) {
-            analyser.addFile(*C->files[i]);
-        }
+        TargetAnalyser analyser(modules, Diags, *components[c], options.verbose);
         errors += analyser.analyse(options.printAST1, options.printAST2, options.printAST3, options.printASTLib);
     }
     t2_analyse = Utils::getCurrentTime();
@@ -648,6 +639,7 @@ void C2Builder::log(const char* color, const char* format, ...) const {
 bool C2Builder::checkMainFunction(DiagnosticsEngine& Diags) {
 
     Decl* mainDecl = 0;
+    // TODO BBB only search in Main component
     for (ModulesIter iter = modules.begin(); iter != modules.end(); ++iter) {
         Module* P = iter->second;
         Decl* decl = P->findSymbol("main");

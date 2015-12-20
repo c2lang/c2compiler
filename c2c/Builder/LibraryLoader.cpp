@@ -95,7 +95,6 @@ void LibraryLoader::showLibs(bool useColors) const {
             if (err) goto next;
             out << "    " << entry->d_name << '\n';
             {
-                // TODO parse manifest, print modules
                 ManifestReader manifest(fullname);
                 if (!manifest.parse()) {
                     fprintf(stderr, "c2c: error: %s: %s\n", fullname, manifest.getErrorMsg());
@@ -119,7 +118,6 @@ C2::Module* LibraryLoader::loadModule(const std::string& moduleName) {
     if (iter == libs.end()) return 0;
 
     const File* file = iter->second;
-    // BBB: AST should be parsed here?
     Component* C = getComponent(file->component, file->isClib);
     return C->addAST(new AST(file->c2file, true), moduleName);
 }

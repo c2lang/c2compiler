@@ -27,24 +27,16 @@ namespace C2 {
 
 class FileAnalyser;
 class AST;
+class Component;
 
 class TargetAnalyser {
 public:
-    TargetAnalyser(const Modules& modules_, clang::DiagnosticsEngine& Diags_, int numfiles, bool verbose_)
-        : modules(modules_)
-        , Diags(Diags_)
-        , verbose(verbose_)
-    {
-        analysers.reserve(numfiles);
-    }
-
+    TargetAnalyser(const Modules& modules_, clang::DiagnosticsEngine& Diags_, Component& C_, bool verbose_);
     ~TargetAnalyser();
 
-    void addFile(AST& ast);
-
     unsigned analyse(bool print1, bool print2, bool print3, bool printLib);
-
 private:
+    void addFile(AST& ast);
     void printASTs(bool printLib) const;
 
     const Modules& modules;
