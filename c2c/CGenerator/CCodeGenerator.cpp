@@ -510,11 +510,6 @@ void CCodeGenerator::EmitIncludeGuard() {
 }
 
 void CCodeGenerator::EmitIncludes() {
-    typedef std::set<std::string> StringList;
-    typedef StringList::const_iterator StringListConstIter;
-    StringList systemIncludes;
-    StringList localIncludes;
-
     {
         StringBuilder* out = &hbuf;
         if (mode != MULTI_FILE) out = &cbuf;
@@ -522,7 +517,15 @@ void CCodeGenerator::EmitIncludes() {
         (*out) << "#include <stddef.h>\n"; // always include for NULL
     }
 
-    // filter out unique entries, split into system and local includes
+    struct IncludeEntry {
+        std::string name;
+        bool isSystem;
+        bool usedPublic;
+    };
+    typedef std::vector<IncludeEntry> Includes;
+    Includes includes;
+
+    // filter out unique entries, split into system and local includes and .c/.h
     for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
         AST* ast = *iter;
         for (unsigned i=0; i<ast->numImports(); i++) {
@@ -530,23 +533,37 @@ void CCodeGenerator::EmitIncludes() {
             ModulesConstIter iter = modules.find(D->getModuleName());
             assert(iter != modules.end());
             const Module* M = iter->second;
-
+            IncludeEntry ie;
+            ie.isSystem = false;
+            ie.usedPublic = D->isUsedPublic();
+            // TODO filter/change duplicates (now both includes are done)
             if (M->isPlainC()) {
-                systemIncludes.insert(headerNamer.getIncludeName(M->getName()));
-                continue;
-            }
-            if (mode == MULTI_FILE) {
-                localIncludes.insert(M->getName());
+                ie.name = headerNamer.getIncludeName(M->getName());
+                ie.isSystem = true;
+                includes.push_back(ie);
+            } else if (mode == MULTI_FILE) {
+                ie.name = M->getName();
+                includes.push_back(ie);
             }
         }
     }
-
-    for (StringListConstIter iter = systemIncludes.begin(); iter != systemIncludes.end(); ++iter) {
-        cbuf << "#include <" << *iter << ">\n";
+    // write system includes
+    for (unsigned i=0; i<includes.size(); ++i) {
+        const IncludeEntry& entry = includes[i];
+        if (!entry.isSystem) continue;
+        StringBuilder* out = &cbuf;
+        if (entry.usedPublic) out = &hbuf;
+        (*out) << "#include <" << entry.name << ">\n";
     }
-    for (StringListConstIter iter = localIncludes.begin(); iter != localIncludes.end(); ++iter) {
-        if (*iter == "c2") continue;
-        cbuf << "#include \"" << *iter << ".h\"\n";
+    hbuf << '\n';
+    cbuf << '\n';
+    // write local includes
+    for (unsigned i=0; i<includes.size(); ++i) {
+        const IncludeEntry& entry = includes[i];
+        if (entry.isSystem) continue;
+        StringBuilder* out = &cbuf;
+        if (entry.usedPublic) out = &hbuf;
+        (*out) << "#include \"" << entry.name << ".h\"\n";
     }
     hbuf << '\n';
     cbuf << '\n';

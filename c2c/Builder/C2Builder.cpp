@@ -736,6 +736,9 @@ void C2Builder::generateOptionalC() {
         }
     }
 
+    // generate C interface files
+    if (recipe.needsInterface()) cgen.generateInterfaceFiles();
+
     // use C-backend
     if (options.generateC || recipe.generateCCode) {
         if (options.verbose) log(COL_VERBOSE, "generating C code");
@@ -753,8 +756,6 @@ void C2Builder::generateOptionalC() {
         }
     }
 
-    // generate C interface files
-    if (recipe.needsInterface()) cgen.generateInterfaceFiles();
 }
 
 void C2Builder::generateOptionalIR() {

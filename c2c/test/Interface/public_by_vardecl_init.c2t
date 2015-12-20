@@ -21,5 +21,5 @@ public const int32 b = aa.AA;
 
 // @expect{atleast, bb.h}
 #include "aa.h"
-#define bb_b aa.AA
+#define bb_b aa_AA
 
