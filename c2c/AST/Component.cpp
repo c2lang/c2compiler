@@ -26,11 +26,6 @@ Component::~Component() {
     }
 }
 
-void Component::addFile(const std::string& filename) {
-    //AST* ast = new AST(filename, isExternal);
-    //files.push_back(ast);
-}
-
 Module* Component::addAST(AST* ast, const std::string& moduleName) {
     Module* M = getModule(moduleName);
     M->addAST(ast);

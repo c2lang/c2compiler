@@ -38,9 +38,6 @@ public:
     {}
     ~Component();
 
-    // TODO BBB remove addFile (after all users gone)
-    void addFile(const std::string& filename);
-
     Module* addAST(AST* ast, const std::string& moduleName);
 
     void print(StringBuilder& output) const;
