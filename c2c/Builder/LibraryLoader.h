@@ -21,6 +21,7 @@
 
 #include "AST/Component.h"
 #include "CGenerator/HeaderNamer.h"
+#include "Utils/StringList.h"
 
 struct dirent;
 
@@ -36,6 +37,9 @@ public:
     {}
     ~LibraryLoader();
 
+    void addLib(const std::string& name) {
+        compNames.push_back(name);
+    }
     void scan();
     void showLibs(bool useColors) const;
 
@@ -43,17 +47,20 @@ public:
 
     virtual const std::string& getIncludeName(const std::string& modName);
 private:
+    Component* getComponent(const std::string& name, bool isCLib);
+
     std::string libdir;
 
+    StringList compNames;
     Components& components;
 
     struct File {
-        File(const std::string& h, const std::string& f, Component* c, bool isClib_)
+        File(const std::string& h, const std::string& f, const std::string& c, bool isClib_)
             : headerFile(h), c2file(f), component(c), isClib(isClib_)
         {}
         std::string headerFile;
         std::string c2file;
-        Component* component;
+        const std::string& component;
         bool isClib;
     };
 

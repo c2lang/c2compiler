@@ -120,6 +120,8 @@ private:
     //FileID fileID;
 };
 
+typedef std::vector<AST*> Files;
+
 }
 
 #endif

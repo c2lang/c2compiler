@@ -201,8 +201,9 @@ C2Builder::C2Builder(const Recipe& recipe_, const BuildOptions& opts)
 
 C2Builder::~C2Builder()
 {
+    // TODO BBB delete some internal modules? (add to own ModuleList?)
     for (ModulesIter iter = modules.begin(); iter != modules.end(); ++iter) {
-        delete iter->second;
+        //delete iter->second;
     }
     for (unsigned i=0; i<components.size(); i++) {
         delete components[i];
@@ -326,24 +327,21 @@ int C2Builder::build() {
     FileManager FileMgr(FileSystemOpts);
     SourceManager SM(Diags, FileMgr);
 
-    // phase 0: create Main component
-    std::unique_ptr<Component> Main(new Component(recipe.name, false));
-    for (int i=0; i<recipe.size(); i++) {
-        const std::string& filename = recipe.get(i);
-        Main->addFile(filename);
-    }
 
-    unsigned errors = 0;
     // phase 1a: parse and local analyse
     u_int64_t t1_parse = Utils::getCurrentTime();
-    for (unsigned i=0; i<Main->files.size(); i++) {
-        AST* ast = Main->files[i];
-        if (options.verbose) log(COL_VERBOSE, "parsing (%s) %s", Main->name.c_str(), ast->getFileName().c_str());
+    unsigned errors = 0;
+    std::unique_ptr<Component> Main(new Component(recipe.name, false, false));
+    for (int i=0; i<recipe.size(); i++) {
+        const std::string& filename = recipe.get(i);
+
+        if (options.verbose) log(COL_VERBOSE, "parsing (%s) %s", Main->name.c_str(), filename.c_str());
+        AST* ast = new AST(filename, false);
         bool ok = parse(Diags, LangOpts, pti, HSOpts, SM, FileMgr, *ast, PredefineBuffer);
         if (options.printAST0) ast->print(true, true);
         errors += !ok;
+        Main->addAST(ast, ast->getModuleName());
     }
-
     u_int64_t t2_parse = Utils::getCurrentTime();
     if (options.printTiming) log(COL_TIME, "parsing took %" PRIu64" usec", t2_parse - t1_parse);
     if (client->getNumErrors()) goto out;
@@ -360,61 +358,73 @@ int C2Builder::build() {
     // TODO and put everything here into some function
     {
         u_int64_t t1_parse_libs = Utils::getCurrentTime();
-        components.push_back(new Component("libc", true));
-        components.push_back(new Component("pthread", true));
+        libLoader.addLib("libc");
+        libLoader.addLib("pthread");
         libLoader.scan();
         if (options.showLibs) libLoader.showLibs(useColors);
 
         bool ok = true;
-        for (unsigned i=0; i<Main->files.size(); i++) {
-            AST* ast = Main->files[i];
-            for (unsigned u=0; u<ast->numImports(); u++) {
-                ImportDecl* D = ast->getImport(u);
-                const std::string& name = D->getModuleName();
-                if (haveModule(name)) continue;
+        ModuleList& mods = Main->getModules();
+        for (unsigned i=0; i<mods.size(); i++) {
+            // BBB rename to files
+            Files files2 = mods[i]->getFiles();
+            for (unsigned a=0; a<files2.size(); a++) {
+                AST* ast = files2[i];
+                for (unsigned u=0; u<ast->numImports(); u++) {
+                    ImportDecl* D = ast->getImport(u);
+                    const std::string& name = D->getModuleName();
+                    if (haveModule(name)) continue;
 
-                if (name == "c2") {
-                    if (options.verbose) log(COL_VERBOSE, "generating module %s", name.c_str());
-                    Module* c2Mod = getModule("c2", true, false);
-                    C2ModuleLoader::load(c2Mod);
-                    continue;
+                    if (name == "c2") {
+                        if (options.verbose) log(COL_VERBOSE, "generating module %s", name.c_str());
+                        // TODO BBB c2Mod should be deleted by Builder itself
+                        Module* c2Mod = getModule("c2", true, false);
+                        C2ModuleLoader::load(c2Mod);
+                        continue;
+                    }
+                    Module* M = libLoader.loadModule(name);
+                    if (M == 0) {
+                        Diags.Report(D->getLocation(), clang::diag::err_unknown_module) << name;
+                        ok = false;
+                        continue;
+                    }
+                    modules[name] = M;
+                    // BBB: check if ok
+                    //if (recipe.hasExported(name)) M->setExported();
                 }
-
-                Module* M = libLoader.loadModule(name);
-                if (M == 0) {
-                    Diags.Report(D->getLocation(), clang::diag::err_unknown_module) << name;
-                    ok = false;
-                    continue;
-                }
-                modules[name] = M;
-                if (recipe.hasExported(name)) M->setExported();
             }
         }
+
         // parse all external libs
         for (unsigned i=0; i<components.size(); i++) {
             Component* C = components[i];
             if (!C->isExternal) continue;
 
-            for (unsigned i=0; i<C->files.size(); i++) {
-                AST* ast2 = C->files[i];
-                if (options.verbose) log(COL_VERBOSE, "parsing (%s) %s", C->name.c_str(), ast2->getFileName().c_str());
-                if (!parse(Diags, LangOpts, pti, HSOpts, SM, FileMgr, *ast2, PredefineBuffer)) {
-                    ok = false;
-                } else {
-                    // TODO fix
-                    /*
-                    if (name != ast2->getModuleName()) {
-                        ImportDecl* ID = ast->getImport(0);
-                        assert(ID);
-                        Diags.Report(ID->getLocation(), diag::err_file_wrong_module) << name << ast2->getModuleName();
+            ModuleList& mods = C->getModules();
+            for (unsigned i=0; i<mods.size(); i++) {
+                // BBB rename to files
+                Files files2 = mods[i]->getFiles();
+                for (unsigned i=0; i<files2.size(); i++) {
+                    AST* ast2 = files2[i];
+                    if (options.verbose) log(COL_VERBOSE, "parsing (%s) %s", C->name.c_str(), ast2->getFileName().c_str());
+                    if (!parse(Diags, LangOpts, pti, HSOpts, SM, FileMgr, *ast2, PredefineBuffer)) {
                         ok = false;
+                    } else {
+                        // TODO fix
+                        /*
+                        if (name != ast2->getModuleName()) {
+                            ImportDecl* ID = ast->getImport(0);
+                            assert(ID);
+                            Diags.Report(ID->getLocation(), diag::err_file_wrong_module) << name << ast2->getModuleName();
+                            ok = false;
+                        }
+                        */
+                        Module* M = findModule(ast2->getModuleName());
+                        assert(M);
+                        ok &= addFileToModule(Diags, M, ast2);
                     }
-                    */
-                    Module* M = findModule(ast2->getModuleName());
-                    assert(M);
-                    ok &= addFileToModule(Diags, M, ast2);
+                    if (options.printAST0 && options.printASTLib) ast2->print(true, true);
                 }
-                if (options.printAST0 && options.printASTLib) ast2->print(true, true);
             }
         }
         u_int64_t t2_parse_libs = Utils::getCurrentTime();
@@ -423,18 +433,7 @@ int C2Builder::build() {
     }
     // always add Main as last
     components.push_back(Main.release());
-    if (options.printModules) {
-        StringBuilder output;
-        output.enableColor(true);
-        output << "List of modules:\n";
-        for (ModulesConstIter iter = modules.begin(); iter != modules.end(); ++iter) {
-            const Module* P = iter->second;
-            output.indent(3);
-            P->print(output);
-            output << '\n';
-        }
-        printf("%s", (const char*)output);
-    }
+    if (options.printModules) printComponents();
 
     // phase 2: analyse all files
     t1_analyse = Utils::getCurrentTime();
@@ -576,10 +575,18 @@ C2::Module* C2Builder::findModule(const std::string& name) const {
 // merges symbols of all files of each module
 bool C2Builder::createModules(Component* C, DiagnosticsEngine& Diags) {
     bool ok = true;
-    for (unsigned i=0; i<C->files.size(); i++) {
-        AST* ast = C->files[i];
-        Module* mod = getModule(ast->getModuleName(), false, false);
-        ok &= addFileToModule(Diags, mod, ast);
+    ModuleList& mods = C->getModules();
+    for (unsigned i=0; i<mods.size(); i++) {
+        Module* M = mods[i];
+        const std::string& name = M->getName();
+        if (recipe.hasExported(name)) M->setExported();
+        modules[name] = M;
+
+        Files& files = M->getFiles();
+        for (unsigned i=0; i<files.size(); i++) {
+            AST* ast = files[i];
+            ok &= addFileToModule(Diags, M, ast);
+        }
     }
     return ok;
 }
@@ -614,6 +621,15 @@ void C2Builder::dumpModules() const {
         const Module* P = iter->second;
         P->dump();
     }
+}
+
+void C2Builder::printComponents() const {
+    StringBuilder output;
+    output.enableColor(true);
+    for (unsigned i=0; i<components.size(); i++) {
+        components[i]->print(output);;
+    }
+    printf("%s\n", (const char*)output);
 }
 
 void C2Builder::log(const char* color, const char* format, ...) const {

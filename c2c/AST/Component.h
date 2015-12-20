@@ -19,26 +19,45 @@
 #include <string>
 #include <vector>
 
+#include "AST/Module.h"
+
+// TODO remove BBB (only for files)
+#include "AST/AST.h"
+
 namespace C2 {
 
 class AST;
+class StringBuilder;
 
 class Component {
 public:
-    Component(const std::string& name_, bool isExternal_)
+    Component(const std::string& name_, bool isExternal_, bool isCLib_)
         : name(name_)
         , isExternal(isExternal_)
+        , isCLib(isCLib_)
     {}
     ~Component();
 
+    // TODO BBB remove addFile (after all users gone)
     void addFile(const std::string& filename);
+
+    Module* addAST(AST* ast, const std::string& moduleName);
+
+    void print(StringBuilder& output) const;
 
     std::string name;
     bool isExternal;
+    bool isCLib;
 
-    typedef std::vector<AST*> Files;
+    // TODO BBB REMOVE (kept to keep complication ok)
     Files files;
+
+    ModuleList& getModules() { return modules; }
 private:
+    ModuleList modules;
+
+    Module* getModule(const std::string& name);
+
     Component(const Component&);
     Component& operator= (const Component&);
 };

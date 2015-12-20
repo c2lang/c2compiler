@@ -20,15 +20,18 @@
 #include <map>
 
 #include "AST/Attr.h"
+#include "AST/AST.h"
 
 namespace C2 {
 
 class Decl;
 class StringBuilder;
+class AST;
 
 class Module {
 public:
     Module(const std::string& name_, bool isExternal_, bool isCLib_);
+    ~Module();
 
     void addSymbol(Decl* decl);
     Decl* findSymbol(const std::string& name) const;
@@ -40,6 +43,7 @@ public:
     void setExported() { m_isExported = true; }
 
     void dump() const;
+    void dumpAST(StringBuilder& output) const;
     void print(StringBuilder& output) const;
 
     typedef std::map<std::string, Decl*> Symbols;
@@ -50,6 +54,10 @@ public:
     void addAttributes(AttrMap& am);
     const AttrList& getAttributes(const Decl* d) const;
 
+    // AST part
+    void addAST(AST* ast) { files.push_back(ast); }
+
+    Files& getFiles() { return files; }
 private:
     const std::string name;
     bool m_isExternal;       // not a module in current target
@@ -58,7 +66,14 @@ private:
 
     Symbols symbols;
     AttrMap declAttrs;
+
+    Files files;
+
+    Module(const Module&);
+    Module& operator= (const Module&);
 };
+
+typedef std::vector<Module*> ModuleList;
 
 typedef std::map<std::string, Module*> Modules;
 typedef Modules::const_iterator ModulesConstIter;

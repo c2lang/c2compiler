@@ -50,9 +50,9 @@ private:
     typedef FileMap::iterator FileMapIter;
     FileMap filemap;
 
-    typedef std::vector<TagFile*> Files;
-    typedef Files::iterator FilesIter;
-    Files files;
+    typedef std::vector<TagFile*> TagFiles;
+    typedef TagFiles::iterator FilesIter;
+    TagFiles files;
 
     TagFile* currentFile;
 

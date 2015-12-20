@@ -41,15 +41,13 @@ void LibraryLoader::scan() {
         fprintf(stderr, "c2c: error: cannot open libdir %s: %s\n", libdir.c_str(), strerror(errno));
         // just continue to get 'cannot find library X' errors
     }
-    for (unsigned i=0; i<components.size(); i++) {
-        Component* C = components[i];
-        if (!C->isExternal) continue;
-
+    for (unsigned i=0; i<compNames.size(); i++) {
+        const std::string& name = compNames[i];
         char fullname[512];
-        sprintf(fullname, "%s/%s/%s", libdir.c_str(), C->name.c_str(), MANIFEST_FILE);
+        sprintf(fullname, "%s/%s/%s", libdir.c_str(), name.c_str(), MANIFEST_FILE);
         err = stat(fullname, &statbuf);
         if (err) {
-            fprintf(stderr, "c2c: error: cannot find library '%s'\n", C->name.c_str());
+            fprintf(stderr, "c2c: error: cannot find library '%s'\n", name.c_str());
             continue;
         }
 
@@ -63,8 +61,8 @@ void LibraryLoader::scan() {
             const ManifestEntry& entry = manifest.get(e);
             // TODO check if already exists
             StringBuilder c2file(512);
-            c2file << libdir << '/' << C->name << '/' << entry.name << ".c2i";
-            libs[entry.name] = new File(entry.headerFile, c2file.c_str(), C, !manifest.isNative());
+            c2file << libdir << '/' << name << '/' << entry.name << ".c2i";
+            libs[entry.name] = new File(entry.headerFile, c2file.c_str(), name, !manifest.isNative());
         }
     }
 }
@@ -121,10 +119,9 @@ C2::Module* LibraryLoader::loadModule(const std::string& moduleName) {
     if (iter == libs.end()) return 0;
 
     const File* file = iter->second;
-    file->component->addFile(file->c2file);
-
-    Module* M = new Module(moduleName, true, file->isClib);
-    return M;
+    // BBB: AST should be parsed here?
+    Component* C = getComponent(file->component, file->isClib);
+    return C->addAST(new AST(file->c2file, true), moduleName);
 }
 
 const std::string& LibraryLoader::getIncludeName(const std::string& modName) {
@@ -132,5 +129,15 @@ const std::string& LibraryLoader::getIncludeName(const std::string& modName) {
     assert(iter != libs.end());
     const File* file = iter->second;
     return file->headerFile;
+}
+
+Component* LibraryLoader::getComponent(const std::string& name, bool isCLib) {
+    for (unsigned i=0; i<components.size(); i++) {
+        Component* C = components[i];
+        if (C->name == name) return C;
+    }
+    Component* C = new Component(name, true, isCLib);
+    components.push_back(C);
+    return C;
 }
 

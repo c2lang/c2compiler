@@ -15,17 +15,47 @@
 
 #include "AST/Component.h"
 #include "AST/AST.h"
+#include "Utils/StringBuilder.h"
+#include "Utils/color.h"
 
 using namespace C2;
 
 Component::~Component() {
-    for (unsigned i=0; i<files.size(); i++) {
-        delete files[i];
+    for (unsigned i=0; i<modules.size(); i++) {
+        delete modules[i];
     }
 }
 
 void Component::addFile(const std::string& filename) {
-    AST* ast = new AST(filename, isExternal);
-    files.push_back(ast);
+    //AST* ast = new AST(filename, isExternal);
+    //files.push_back(ast);
+}
+
+Module* Component::addAST(AST* ast, const std::string& moduleName) {
+    Module* M = getModule(moduleName);
+    M->addAST(ast);
+    return M;
+}
+
+Module* Component::getModule(const std::string& name) {
+    for (unsigned i=0; i<modules.size(); i++) {
+        if (modules[i]->getName() == name) return modules[i];
+    }
+    Module* module = new Module(name, isExternal, isCLib);
+    modules.push_back(module);
+    return module;
+}
+
+void Component::print(StringBuilder& out) const {
+    out << "Component " << name;
+    if (isExternal) {
+        out.setColor(COL_ATTRIBUTES);
+        out << "  external";
+        out.setColor(ANSI_NORMAL);
+    }
+    out << '\n';
+    for (unsigned i=0; i<modules.size(); i++) {
+        modules[i]->dumpAST(out);
+    }
 }
 

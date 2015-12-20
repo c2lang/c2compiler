@@ -32,6 +32,12 @@ Module::Module(const std::string& name_, bool isExternal_, bool isCLib_)
     , m_isExported(false)
 {}
 
+Module::~Module() {
+    for (unsigned i=0; i<files.size(); i++) {
+        delete files[i];
+    }
+}
+
 const std::string& Module::getCName() const {
     if (m_isCLib) return empty;
     return name;
@@ -104,6 +110,16 @@ void Module::print(StringBuilder& output) const {
         output.setColor(ANSI_NORMAL);
     }
 }
+
+void Module::dumpAST(StringBuilder& out) const {
+    out << "  ";
+    print(out);
+    out << '\n';
+    for (unsigned i=0; i<files.size(); i++) {
+        out << "    " << files[i]->getFileName() << '\n';
+    }
+}
+
 
 const AttrList& Module::getAttributes(const Decl* d) const {
     assert(d->hasAttributes());

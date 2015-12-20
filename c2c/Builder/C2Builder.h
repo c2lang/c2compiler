@@ -102,6 +102,7 @@ private:
     bool addFileToModule(clang::DiagnosticsEngine& Diags, Module* mod, AST* ast);
     unsigned analyse();
     void dumpModules() const;
+    void printComponents() const;
     void log(const char* color, const char* format, ...) const;
 
     bool checkMainFunction(clang::DiagnosticsEngine& Diags);

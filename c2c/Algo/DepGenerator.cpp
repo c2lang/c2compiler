@@ -73,8 +73,8 @@ public:
     }
 
     std::string name;
-    typedef std::vector<DepFile*> Files;
-    Files files;
+    typedef std::vector<DepFile*> DepFiles;
+    DepFiles files;
 };
 
 }
