@@ -435,6 +435,8 @@ int C2Builder::build() {
     components.push_back(Main.release());
     if (options.printModules) printComponents();
 
+    // BBB REFACTORED UNTIL HERE
+
     // phase 2: analyse all files
     t1_analyse = Utils::getCurrentTime();
     for (unsigned c=0; c<components.size(); c++) {
