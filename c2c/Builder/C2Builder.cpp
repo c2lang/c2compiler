@@ -364,7 +364,7 @@ int C2Builder::build() {
         if (options.showLibs) libLoader.showLibs(useColors);
 
         bool ok = true;
-        ModuleList& mods = Main->getModules();
+        const ModuleList& mods = Main->getModules();
         for (unsigned i=0; i<mods.size(); i++) {
             Files files = mods[i]->getFiles();
             for (unsigned a=0; a<files.size(); a++) {
@@ -398,7 +398,7 @@ int C2Builder::build() {
             Component* C = components[i];
             if (!C->isExternal) continue;
 
-            ModuleList& mods = C->getModules();
+            const ModuleList& mods = C->getModules();
             for (unsigned i=0; i<mods.size(); i++) {
                 // BBB rename to files
                 Files files = mods[i]->getFiles();
@@ -568,14 +568,14 @@ C2::Module* C2Builder::findModule(const std::string& name) const {
 // merges symbols of all files of each module
 bool C2Builder::createModules(Component* C, DiagnosticsEngine& Diags) {
     bool ok = true;
-    ModuleList& mods = C->getModules();
+    const ModuleList& mods = C->getModules();
     for (unsigned i=0; i<mods.size(); i++) {
         Module* M = mods[i];
         const std::string& name = M->getName();
         if (recipe.hasExported(name)) M->setExported();
         modules[name] = M;
 
-        Files& files = M->getFiles();
+        const Files& files = M->getFiles();
         for (unsigned i=0; i<files.size(); i++) {
             AST* ast = files[i];
             ok &= addFileToModule(Diags, M, ast);
@@ -842,7 +842,7 @@ void C2Builder::generateOptionalIR() {
     }
 }
 
-void C2Builder::generateOptionalDeps() const {
+void C2Builder::generateOptionalDeps() {
     if (!options.printDependencies && !recipe.generateDeps) return;
 
     if (options.verbose) log(COL_VERBOSE, "generating dependencies");
@@ -859,9 +859,8 @@ void C2Builder::generateOptionalDeps() const {
     }
 
     DepGenerator generator(showFiles, showPrivate, showExternals);
-    generator.analyse(components);
     std::string path = OUTPUT_DIR + recipe.name + '/';
-    generator.write(recipe.name, path);
+    generator.write(components, recipe.name, path);
     u_int64_t t2 = Utils::getCurrentTime();
     if (options.printTiming) log(COL_TIME, "dep generation took %" PRIu64" usec", t2 - t1);
 }

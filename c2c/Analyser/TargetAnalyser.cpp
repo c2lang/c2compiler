@@ -25,9 +25,9 @@ TargetAnalyser::TargetAnalyser(const Modules& modules_, clang::DiagnosticsEngine
     , Diags(Diags_)
     , verbose(verbose_)
 {
-    ModuleList& mods = C.getModules();
+    const ModuleList& mods = C.getModules();
     for (unsigned m=0; m<mods.size(); m++) {
-        Files& files = mods[m]->getFiles();
+        const Files& files = mods[m]->getFiles();
         for (unsigned f=0; f<files.size(); f++) {
             addFile(*files[f]);
         }

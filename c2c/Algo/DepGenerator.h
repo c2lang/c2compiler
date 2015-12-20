@@ -26,7 +26,6 @@ namespace C2 {
 class AST;
 class Module;
 class Decl;
-class ModInfo;
 class StringBuilder;
 
 class DepGenerator {
@@ -34,19 +33,15 @@ public:
     DepGenerator(bool showFiles_, bool showPrivate_, bool showExternals_)
         : showFiles(showFiles_), showPrivate(showPrivate_), showExternals(showExternals_)
     {}
-    ~DepGenerator();
 
-    void analyse(const Components& components);
-    void write(const std::string& title, const std::string& path) const;
+    //void analyse(const Components& components);
+    void write(const Components& components, const std::string& title, const std::string& path) const;
 private:
-    ModInfo* getInfo(const std::string& modName);
     void addExternal(const Module* P) const;
+    void writeModule(const Module& M, StringBuilder& output, unsigned indent) const;
     void writeAST(const AST& ast, StringBuilder& output, unsigned indent) const;
     void writeDecl(const Decl* D, StringBuilder& output, unsigned indent) const;
     void writeExternal(const Module* P, StringBuilder& output, unsigned indent) const;
-
-    typedef std::vector<ModInfo*> Modules;
-    Modules modules;
 
     bool showFiles;
     bool showPrivate;

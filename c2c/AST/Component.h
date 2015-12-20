@@ -49,7 +49,7 @@ public:
     // TODO BBB REMOVE (kept to keep complication ok)
     Files files;
 
-    ModuleList& getModules() { return modules; }
+    const ModuleList& getModules() const { return modules; }
 private:
     ModuleList modules;
 

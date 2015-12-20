@@ -57,7 +57,7 @@ public:
     // AST part
     void addAST(AST* ast) { files.push_back(ast); }
 
-    Files& getFiles() { return files; }
+    const Files& getFiles() const { return files; }
 private:
     const std::string name;
     bool m_isExternal;       // not a module in current target

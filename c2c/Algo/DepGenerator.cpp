@@ -48,73 +48,11 @@ static void fullName(const Decl* D, StringBuilder& output) {
     output << P->getName() << '_' << D->getName();
 }
 
-namespace C2 {
 
-class DepFile {
-public:
-    DepFile(const std::string& name_, const AST& ast_)
-        : name(name_), ast(ast_) {}
+void DepGenerator::write(const Components& components, const std::string& title, const std::string& path) const {
 
-    std::string name;
-    const AST& ast;
-};
-
-class ModInfo {
-public:
-    ModInfo(const std::string& name_) : name(name_) {}
-    ~ModInfo() {
-        for (unsigned i=0; i<files.size(); i++) {
-            delete files[i];
-        }
-    }
-
-    void addFile(const std::string& name_, const AST& ast_) {
-        files.push_back(new DepFile(name_, ast_));
-    }
-
-    std::string name;
-    typedef std::vector<DepFile*> DepFiles;
-    DepFiles files;
-};
-
-}
-
-DepGenerator::~DepGenerator() {
-    for (unsigned i=0; i<modules.size(); i++) {
-        delete modules[i];
-    }
-}
-
-void DepGenerator::analyse(const Components& components) {
-    for (unsigned c=0; c<components.size(); c++) {
-        const Component* C = components[c];
-        if (!showExternals && C->isExternal) continue;
-        for (unsigned i=0; i<C->files.size(); i++) {
-            const AST& ast = *C->files[i];
-
-            const string& modName = ast.getModuleName();
-            const string& fileName = ast.getFileName();
-
-            ModInfo* info = getInfo(modName);
-            info->addFile(fileName, ast);
-        }
-    }
-}
-
-ModInfo* DepGenerator::getInfo(const std::string& modName) {
-    for (unsigned i=0; i<modules.size(); i++) {
-        ModInfo* P = modules[i];
-        if (P->name == modName) return P;
-    }
-    ModInfo* P = new ModInfo(modName);
-    modules.push_back(P);
-    return P;
-}
-
-void DepGenerator::write(const std::string& title, const std::string& path) const {
-
-    int indent = 0;
     StringBuilder output;
+    int indent = 0;
     output << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
     output << "<dsm name='" << title << "'>\n";
     indent += INDENT;
@@ -122,33 +60,15 @@ void DepGenerator::write(const std::string& title, const std::string& path) cons
     output << "<model>\n";
 
     indent += INDENT;
-    for (unsigned i=0; i<modules.size(); i++) {
-        const ModInfo* P = modules[i];
-        output.indent(indent);
-        output << "<group name='" << P->name << "' full='module:" << P->name << "' collapsed='1'>\n";
-        indent += INDENT;
+    for (unsigned c=0; c<components.size(); c++) {
+        // BBB also show components
+        const Component* C = components[c];
+        if (!showExternals && C->isExternal) continue;
 
-        for (unsigned j=0; j<P->files.size(); j++) {
-            const DepFile* F = P->files[j];
-            if (showFiles) {
-                output.indent(indent);
-                const char* fname = getFileName(F->name);
-                output << "<group name='" << fname << "' full='file:" << F->name << "' collapsed='1'>\n";
-                indent += INDENT;
-            }
-
-            writeAST(F->ast, output, indent);
-
-            if (showFiles) {
-                indent -= INDENT;
-                output.indent(indent);
-                output << "</group>\n";
-            }
+        const ModuleList& mods = C->getModules();
+        for (unsigned m=0; m<mods.size(); m++) {
+            writeModule(*mods[m], output, indent);
         }
-
-        indent -= INDENT;
-        output.indent(indent);
-        output << "</group>\n";
     }
     indent -= INDENT;
 
@@ -158,6 +78,35 @@ void DepGenerator::write(const std::string& title, const std::string& path) cons
     output << "</dsm>\n";
 
     FileUtils::writeFile(path.c_str(), path + "deps.xml", output);
+}
+
+void DepGenerator::writeModule(const Module& M, StringBuilder& output, unsigned indent) const {
+    output.indent(indent);
+    output << "<group name='" << M.getName() << "' full='module:" << M.getName() << "' collapsed='1'>\n";
+    indent += INDENT;
+
+    const Files& files = M.getFiles();
+    for (unsigned j=0; j<files.size(); j++) {
+        const AST* A = files[j];
+        if (showFiles) {
+            output.indent(indent);
+            const char* fname = getFileName(A->getFileName());
+            output << "<group name='" << fname << "' full='file:" << A->getFileName() << "' collapsed='1'>\n";
+            indent += INDENT;
+        }
+
+        writeAST(*A, output, indent);
+
+        if (showFiles) {
+            indent -= INDENT;
+            output.indent(indent);
+            output << "</group>\n";
+        }
+    }
+
+    indent -= INDENT;
+    output.indent(indent);
+    output << "</group>\n";
 }
 
 void DepGenerator::writeAST(const AST& ast, StringBuilder& output, unsigned indent) const {

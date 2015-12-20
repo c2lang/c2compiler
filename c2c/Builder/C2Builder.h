@@ -110,7 +110,7 @@ private:
     void generateInterface() const;
     void generateOptionalC();
     void generateOptionalIR();
-    void generateOptionalDeps() const;
+    void generateOptionalDeps();
     void generateOptionalTags(const clang::SourceManager& SM) const;
 
     const Recipe& recipe;
