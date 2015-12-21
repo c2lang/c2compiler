@@ -20,6 +20,9 @@
 #include <map>
 #include <vector>
 
+
+#include "AST/Component.h"
+
 namespace clang {
 class SourceManager;
 }
@@ -33,13 +36,14 @@ struct TagFile;
 
 class TagWriter {
 public:
-    TagWriter(const clang::SourceManager& SM_);
+    TagWriter(const clang::SourceManager& SM_, const Components& components);
     ~TagWriter();
 
-    void analyse(const AST& ast);
     void write(const std::string& title, const std::string& path) const;
 private:
     friend class TagVisitor;
+
+    void analyse(const AST& ast);
     void addRef(unsigned src_line, unsigned src_col, const std::string&  symbol,
                 const std::string& dest_file, unsigned dst_line, unsigned dst_col);
     TagFile* getFile(const std::string& filename);

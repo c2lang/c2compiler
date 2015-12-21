@@ -113,13 +113,25 @@ struct TagFile {
 }
 
 
-TagWriter::TagWriter(const clang::SourceManager& SM_)
+TagWriter::TagWriter(const clang::SourceManager& SM_, const Components& components)
     : SM(SM_)
     , currentFile(0)
-{}
+{
+    for (unsigned c=0; c<components.size(); c++) {
+        const ModuleList& mods = components[c]->getModules();
+        for (unsigned m=0; m<mods.size(); m++) {
+            const Files& files = mods[m]->getFiles();
+            for (unsigned i=0; i<files.size(); i++) {
+                analyse(*files[i]);
+            }
+        }
+    }
+}
 
 TagWriter::~TagWriter() {
-    // TODO delete entries
+    for (unsigned i=0; i<files.size(); i++) {
+        delete files[i];
+    }
 }
 
 void TagWriter::analyse(const AST& ast) {

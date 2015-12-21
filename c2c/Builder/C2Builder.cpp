@@ -401,7 +401,6 @@ int C2Builder::build() {
 
             const ModuleList& mods = C->getModules();
             for (unsigned m=0; m<mods.size(); m++) {
-                // BBB rename to files
                 Files files = mods[m]->getFiles();
                 for (unsigned a=0; a<files.size(); a++) {
                     AST* ast2 = files[a];
@@ -515,9 +514,9 @@ int C2Builder::build() {
 
     generateOptionalDeps();
 
-    // TODO BBB HERE WITH REFACTORING
     generateOptionalTags(SM);
 
+    // BBB refactoring HERE
     generateInterface();
 
     generateOptionalC();
@@ -861,14 +860,7 @@ void C2Builder::generateOptionalTags(const SourceManager& SM) const {
 
     u_int64_t t1 = Utils::getCurrentTime();
 
-    TagWriter generator(SM);
-    for (unsigned c=0; c<components.size(); c++) {
-        const Component* C = components[c];
-        for (unsigned i=0; i<C->files.size(); i++) {
-            generator.analyse(*C->files[i]);
-        }
-    }
-
+    TagWriter generator(SM, components);
     std::string path = OUTPUT_DIR + recipe.name + '/';
     generator.write(recipe.name, path);
     u_int64_t t2 = Utils::getCurrentTime();
