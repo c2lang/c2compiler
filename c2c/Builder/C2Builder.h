@@ -96,7 +96,6 @@ public:
 #endif
 private:
     bool haveModule(const std::string& name) const;
-    Module* getModule(const std::string& name, bool isExternal, bool isCLib);
     Module* findModule(const std::string& name) const;
     bool createModules(Component* C, clang::DiagnosticsEngine& Diags);
     bool addFileToModule(clang::DiagnosticsEngine& Diags, Module* mod, AST* ast);

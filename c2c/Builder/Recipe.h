@@ -41,7 +41,7 @@ public:
     void addDepsConfig(const std::string& config_);
     void silenceWarning(const std::string& warn_);
 
-    int size() const { return files.size(); }
+    unsigned size() const { return files.size(); }
     const std::string& get(int i) const;
     bool hasExported(const std::string& mod) const;
     bool needsInterface() const { return GenUtils::needsInterface(type); }

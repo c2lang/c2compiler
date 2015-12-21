@@ -212,7 +212,7 @@ C2Builder::~C2Builder()
 
 int C2Builder::checkFiles() {
     int errors = 0;
-    for (int i=0; i<recipe.size(); i++) {
+    for (unsigned i=0; i<recipe.size(); i++) {
         const std::string& filename = recipe.get(i);
         struct stat buf;
         if (stat(filename.c_str(), &buf)) {
@@ -332,7 +332,7 @@ int C2Builder::build() {
     u_int64_t t1_parse = Utils::getCurrentTime();
     unsigned errors = 0;
     std::unique_ptr<Component> Main(new Component(recipe.name, false, false));
-    for (int i=0; i<recipe.size(); i++) {
+    for (unsigned i=0; i<recipe.size(); i++) {
         const std::string& filename = recipe.get(i);
 
         if (options.verbose) log(COL_VERBOSE, "parsing (%s) %s", Main->name.c_str(), filename.c_str());
@@ -368,7 +368,7 @@ int C2Builder::build() {
         for (unsigned i=0; i<mods.size(); i++) {
             Files files = mods[i]->getFiles();
             for (unsigned a=0; a<files.size(); a++) {
-                AST* ast = files[i];
+                AST* ast = files[a];
                 for (unsigned u=0; u<ast->numImports(); u++) {
                     ImportDecl* D = ast->getImport(u);
                     const std::string& name = D->getModuleName();
@@ -376,8 +376,9 @@ int C2Builder::build() {
 
                     if (name == "c2") {
                         if (options.verbose) log(COL_VERBOSE, "generating module %s", name.c_str());
-                        // TODO BBB c2Mod should be deleted by Builder itself
-                        Module* c2Mod = getModule("c2", true, false);
+                        // TODO BBB c2Mod should be deleted by Builder itself, added to local ModuleList?
+                        Module* c2Mod = new Module("c2", true, false);
+                        modules["c2"] = c2Mod;
                         C2ModuleLoader::load(c2Mod);
                         continue;
                     }
@@ -399,11 +400,11 @@ int C2Builder::build() {
             if (!C->isExternal) continue;
 
             const ModuleList& mods = C->getModules();
-            for (unsigned i=0; i<mods.size(); i++) {
+            for (unsigned m=0; m<mods.size(); m++) {
                 // BBB rename to files
-                Files files = mods[i]->getFiles();
-                for (unsigned i=0; i<files.size(); i++) {
-                    AST* ast2 = files[i];
+                Files files = mods[m]->getFiles();
+                for (unsigned a=0; a<files.size(); a++) {
+                    AST* ast2 = files[a];
                     if (options.verbose) log(COL_VERBOSE, "parsing (%s) %s", C->name.c_str(), ast2->getFileName().c_str());
                     if (!parse(Diags, LangOpts, pti, HSOpts, SM, FileMgr, *ast2, PredefineBuffer)) {
                         ok = false;
@@ -547,19 +548,6 @@ bool C2Builder::haveModule(const std::string& name) const {
     return iter != modules.end();
 }
 
-C2::Module* C2Builder::getModule(const std::string& name, bool isExternal, bool isCLib) {
-    Module* M = findModule(name);
-    if (M) {
-        assert(M->isExternal() == isExternal);
-        assert(M->isPlainC() == isCLib);
-    } else {
-        M = new Module(name, isExternal, isCLib);
-        modules[name] = M;
-        if (recipe.hasExported(name)) M->setExported();
-    }
-    return M;
-}
-
 C2::Module* C2Builder::findModule(const std::string& name) const {
     ModulesConstIter iter = modules.find(name);
     if (iter == modules.end()) return 0;
@@ -570,15 +558,15 @@ C2::Module* C2Builder::findModule(const std::string& name) const {
 bool C2Builder::createModules(Component* C, DiagnosticsEngine& Diags) {
     bool ok = true;
     const ModuleList& mods = C->getModules();
-    for (unsigned i=0; i<mods.size(); i++) {
-        Module* M = mods[i];
+    for (unsigned m=0; m<mods.size(); m++) {
+        Module* M = mods[m];
         const std::string& name = M->getName();
         if (recipe.hasExported(name)) M->setExported();
         modules[name] = M;
 
         const Files& files = M->getFiles();
-        for (unsigned i=0; i<files.size(); i++) {
-            AST* ast = files[i];
+        for (unsigned a=0; a<files.size(); a++) {
+            AST* ast = files[a];
             ok &= addFileToModule(Diags, M, ast);
         }
     }
