@@ -193,6 +193,7 @@ static bool parse(DiagnosticsEngine& Diags,
 C2Builder::C2Builder(const Recipe& recipe_, const BuildOptions& opts)
     : recipe(recipe_)
     , options(opts)
+    , c2Mod(0)
     , mainComponent(0)
     , libLoader(components, options.libdir)
     , useColors(true)
@@ -202,13 +203,10 @@ C2Builder::C2Builder(const Recipe& recipe_, const BuildOptions& opts)
 
 C2Builder::~C2Builder()
 {
-    // TODO BBB delete some internal modules? (add to own ModuleList?)
-    for (ModulesIter iter = modules.begin(); iter != modules.end(); ++iter) {
-        //delete iter->second;
-    }
     for (unsigned i=0; i<components.size(); i++) {
         delete components[i];
     }
+    delete c2Mod;
 }
 
 int C2Builder::checkFiles() {
@@ -378,8 +376,7 @@ int C2Builder::build() {
 
                     if (name == "c2") {
                         if (options.verbose) log(COL_VERBOSE, "generating module %s", name.c_str());
-                        // TODO BBB c2Mod should be deleted by Builder itself, added to local ModuleList?
-                        Module* c2Mod = new Module("c2", true, false);
+                        c2Mod = new Module("c2", true, false);
                         modules["c2"] = c2Mod;
                         C2ModuleLoader::load(c2Mod);
                         continue;
@@ -820,7 +817,6 @@ void C2Builder::generateOptionalTags(const SourceManager& SM) const {
     if (options.verbose) log(COL_VERBOSE, "generating refs");
 
     u_int64_t t1 = Utils::getCurrentTime();
-
     TagWriter generator(SM, components);
     std::string path = OUTPUT_DIR + recipe.name + '/';
     generator.write(recipe.name, path);

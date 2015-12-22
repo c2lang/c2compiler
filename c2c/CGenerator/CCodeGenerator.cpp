@@ -156,6 +156,7 @@ void CCodeGenerator::write(const std::string& outputDir) {
 }
 
 void CCodeGenerator::createLibHeader(bool printCode, const std::string& outputDir) {
+    // BBB same as generate! refactor to common
     EmitIncludeGuard();
     EmitIncludes();
 

@@ -21,9 +21,6 @@
 
 #include "AST/Module.h"
 
-// TODO remove BBB (only for files)
-#include "AST/AST.h"
-
 namespace C2 {
 
 class AST;
@@ -46,9 +43,6 @@ public:
     std::string name;
     bool isExternal;
     bool isCLib;
-
-    // TODO BBB REMOVE (kept to keep complication ok)
-    Files files;
 
     const ModuleList& getModules() const { return modules; }
 private:

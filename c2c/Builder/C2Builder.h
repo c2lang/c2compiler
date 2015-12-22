@@ -116,6 +116,7 @@ private:
     BuildOptions options;
 
     Modules modules;
+    Module*  c2Mod;
 
     Components components;
     Component* mainComponent;

@@ -49,11 +49,11 @@ public:
         const Decl* D = I->getDecl();
         assert(D);
         clang::PresumedLoc loc2 = SM.getPresumedLoc(D->getLocation());
-        if (loc2.isInvalid()) {
-            return; // probably external (like stdio)
+        assert(!loc2.isInvalid());
+        if (!loc2.isInvalid()) {
+            writer.addRef(loc.getLine(), loc.getColumn(), I->getName(),
+                         loc2.getFilename(), loc2.getLine(), loc2.getColumn());
         }
-        writer.addRef(loc.getLine(), loc.getColumn(), I->getName(),
-                     loc2.getFilename(), loc2.getLine(), loc2.getColumn());
     }
 private:
     TagWriter& writer;
