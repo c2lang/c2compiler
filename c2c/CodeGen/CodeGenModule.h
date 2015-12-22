@@ -21,6 +21,7 @@
 
 #include <llvm/IR/GlobalValue.h>
 #include <llvm/IR/IRBuilder.h>
+#include "AST/Module.h"
 #include "AST/Type.h"
 #include "AST/Expr.h"
 
@@ -33,20 +34,17 @@ class Function;
 
 namespace C2 {
 
-class AST;
 class Decl;
 class VarDecl;
 class Type;
-class Module;
 class StringLiteral;
 
-// generates LLVM Module from (multiple) ASTs
+// generates LLVM Module from (multiple) Module(s)
 class CodeGenModule {
 public:
-    CodeGenModule(const std::string& name_, bool single);
+    CodeGenModule(const std::string& name_, bool single, const ModuleList& mods_);
     ~CodeGenModule();
 
-    void addEntry(AST& ast) { entries.push_back(&ast); }
     void generate();
     bool verify();
     void write(const std::string& outputDir, const std::string& name);
@@ -76,10 +74,7 @@ private:
 
     const std::string name;
     bool single_module;     // multiple modules in single module
-
-    typedef std::vector<AST*> Entries;
-    typedef Entries::iterator EntriesIter;
-    Entries entries;
+    const ModuleList& mods;
 
     llvm::LLVMContext& context;
     llvm::Module* module;

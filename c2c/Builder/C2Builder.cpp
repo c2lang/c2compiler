@@ -521,7 +521,6 @@ int C2Builder::build() {
     // BBB move contents for these functions to sub-modules
     generateInterface();
 
-    // BBB refactoring HERE
     generateOptionalC();
 
     generateOptionalIR();
@@ -758,29 +757,13 @@ void C2Builder::generateOptionalIR() {
 
     std::string outdir = OUTPUT_DIR + recipe.name + BUILD_DIR;
 
+    const ModuleList& mods = mainComponent->getModules();
+    // BBB move entire function to Codegen/
     if (single_module) {
         u_int64_t t1 = Utils::getCurrentTime();
         std::string filename = recipe.name;
-        //  HMM dont have Module M here, refactor
-        CodeGenModule cgm(filename, true);
         if (options.verbose) log(COL_VERBOSE, "generating IR for single module %s", filename.c_str());
-        for (ModulesIter iter = modules.begin(); iter != modules.end(); ++iter) {
-            Module* M = iter->second;
-            if (M->isExternal()) continue;
-            if (M->getName() == "c2") continue;
-
-            // crude way to add all ASTs belonging to a module
-            for (unsigned c=0; c<components.size(); c++) {
-                const Component* C = components[c];
-                if (C->isExternal) continue;
-                for (unsigned i=0; i<C->files.size(); i++) {
-                    AST* ast = C->files[i];
-                    if (ast->getModuleName() == M->getName()) {
-                        cgm.addEntry(*ast);
-                    }
-                }
-            }
-        }
+        CodeGenModule cgm(filename, true, mods);
         cgm.generate();
         u_int64_t t2 = Utils::getCurrentTime();
         if (options.printTiming) log(COL_TIME, "IR generation took %" PRIu64" usec", t2 - t1);
@@ -788,25 +771,16 @@ void C2Builder::generateOptionalIR() {
         bool ok = cgm.verify();
         if (ok) cgm.write(outdir, filename);
     } else {
-        for (ModulesIter iter = modules.begin(); iter != modules.end(); ++iter) {
-            Module* M = iter->second;
+        for (unsigned m=0; m<mods.size(); m++) {
+            Module* M = mods[m];
             u_int64_t t1 = Utils::getCurrentTime();
             if (M->isPlainC()) continue;
             if (M->getName() == "c2") continue;
 
             if (options.verbose) log(COL_VERBOSE, "generating IR for module %s", M->getName().c_str());
-            CodeGenModule cgm(M->getName(), false);
-
-            for (unsigned c=0; c<components.size(); c++) {
-                Component* C = components[c];
-                if (C->isExternal) continue;
-                for (unsigned i=0; i<C->files.size(); i++) {
-                    AST* ast = C->files[i];
-                    if (ast->getModuleName() == M->getName()) {
-                        cgm.addEntry(*ast);
-                    }
-                }
-            }
+            ModuleList single;
+            single.push_back(M);
+            CodeGenModule cgm(M->getName(), false, single);
             cgm.generate();
             u_int64_t t2 = Utils::getCurrentTime();
             if (options.printTiming) log(COL_TIME, "IR generation took %" PRIu64" usec", t2 - t1);

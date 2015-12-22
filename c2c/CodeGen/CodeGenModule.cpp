@@ -37,7 +37,6 @@
 
 #include "CodeGen/CodeGenModule.h"
 #include "CodeGen/CodeGenFunction.h"
-#include "AST/Module.h"
 #include "AST/AST.h"
 #include "AST/Decl.h"
 #include "Utils/StringBuilder.h"
@@ -48,9 +47,10 @@
 using namespace C2;
 using namespace llvm;
 
-CodeGenModule::CodeGenModule(const std::string& name_, bool single)
+CodeGenModule::CodeGenModule(const std::string& name_, bool single, const ModuleList& mods_)
     : name(name_)
     , single_module(single)
+    , mods(mods_)
     , context(llvm::getGlobalContext())
     , module(new llvm::Module(name, context))
     , builder(context)
@@ -79,39 +79,48 @@ void CodeGenModule::generate() {
     new llvm::GlobalVariable(*module, ST, false, ltype, init, "p");
 #endif
 
-    for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
-        const AST* ast = *iter;
+    for (unsigned m=0; m<mods.size(); m++) {
+        const Files& files = mods[m]->getFiles();
+        for (unsigned a=0; a<files.size(); a++) {
+            const AST* ast = files[a];
 #ifdef DEBUG_CODEGEN
-        printf("CodeGen for %s - step 1\n", ast->getFileName().c_str());
+            printf("CodeGen for %s - step 1\n", ast->getFileName().c_str());
 #endif
-        for (unsigned i=0; i<ast->numFunctions(); i++) {
-            FunctionDecl* F = ast->getFunction(i);
-            CodeGenFunction cgf(*this, F);
-            llvm::Function* proto = cgf.generateProto(F->getModule()->getCName());
-            F->setIRProto(proto);
+            for (unsigned i=0; i<ast->numFunctions(); i++) {
+                FunctionDecl* F = ast->getFunction(i);
+                CodeGenFunction cgf(*this, F);
+                llvm::Function* proto = cgf.generateProto(F->getModule()->getCName());
+                F->setIRProto(proto);
+            }
         }
     }
     // step 2: generate variables
-    for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
-        const AST* ast = *iter;
+    for (unsigned m=0; m<mods.size(); m++) {
+        const Files& files = mods[m]->getFiles();
+        for (unsigned a=0; a<files.size(); a++) {
+            const AST* ast = files[a];
 #ifdef DEBUG_CODEGEN
-        printf("CodeGen for %s - step 1\n", ast->getFileName().c_str());
+            printf("CodeGen for %s - step 2\n", ast->getFileName().c_str());
 #endif
-        for (unsigned i=0; i<ast->numVars(); i++) {
-            EmitGlobalVariable(ast->getVar(i));
+            for (unsigned i=0; i<ast->numVars(); i++) {
+                EmitGlobalVariable(ast->getVar(i));
+            }
         }
     }
 
     // step 3: generate all function bodies (and possibly external function decls)
-    for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
-        const AST* ast = *iter;
+    for (unsigned m=0; m<mods.size(); m++) {
+        const Files& files = mods[m]->getFiles();
+        for (unsigned a=0; a<files.size(); a++) {
+            const AST* ast = files[a];
 #ifdef DEBUG_CODEGEN
-        printf("CodeGen for %s - step 1\n", ast->getFileName().c_str());
+            printf("CodeGen for %s - step 3\n", ast->getFileName().c_str());
 #endif
-        for (unsigned i=0; i<ast->numFunctions(); i++) {
-            FunctionDecl* F = ast->getFunction(i);
-            CodeGenFunction cgf(*this, F);
-            cgf.generateBody(F->getIRProto());
+            for (unsigned i=0; i<ast->numFunctions(); i++) {
+                FunctionDecl* F = ast->getFunction(i);
+                CodeGenFunction cgf(*this, F);
+                cgf.generateBody(F->getIRProto());
+            }
         }
     }
 }
