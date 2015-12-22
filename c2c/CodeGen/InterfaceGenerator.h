@@ -17,7 +17,6 @@
 #define CODEGEN_INTERFACE_GENERATOR_H
 
 #include <string>
-#include <vector>
 
 #include "Utils/StringBuilder.h"
 #include "Utils/StringList.h"
@@ -36,13 +35,12 @@ class EnumTypeDecl;
 class QualType;
 class Expr;
 class IdentifierExpr;
+class Module;
 
 class InterfaceGenerator {
 public:
-    InterfaceGenerator(const std::string& moduleName_);
+    InterfaceGenerator(const Module& module_);
     ~InterfaceGenerator() {}
-
-    void addEntry(AST& ast) { entries.push_back(&ast); }
 
     void write(const std::string& outputDir, bool printCode);
 
@@ -73,12 +71,7 @@ private:
     void EmitStringLiteral(const std::string& input);
     void EmitAttributes(const Decl* D);
 
-    const std::string moduleName;
-
-    typedef std::vector<AST*> Entries;
-    typedef Entries::iterator EntriesIter;
-    Entries entries;
-
+    const Module& module;
     StringBuilder iface;
     const AST* currentAST;
 

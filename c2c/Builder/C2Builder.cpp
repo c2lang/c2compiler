@@ -516,9 +516,9 @@ int C2Builder::build() {
 
     generateOptionalTags(SM);
 
-    // BBB refactoring HERE
     generateInterface();
 
+    // BBB refactoring HERE
     generateOptionalC();
 
     generateOptionalIR();
@@ -681,24 +681,18 @@ void C2Builder::generateInterface() const {
 
     ManifestWriter manifest;
     std::string outdir = OUTPUT_DIR + recipe.name + '/';
-    for (ModulesConstIter iter = modules.begin(); iter != modules.end(); ++iter) {
-        const Module* M = iter->second;
-        if (!M->isExported()) continue;
-        if (options.verbose) log(COL_VERBOSE, "generating interface %s.c2i", M->getName().c_str());
-        InterfaceGenerator gen(M->getName());
-        manifest.add(M->getName());
-        // TODO need better loop
-        for (unsigned c=0; c<components.size(); c++) {
-            Component* C = components[c];
-            if (C->isExternal) continue;
-            for (unsigned i=0; i<C->files.size(); i++) {
-                AST* ast = C->files[i];
-                if (ast->getModuleName() == M->getName()) {
-                    gen.addEntry(*ast);
-                }
-            }
+    for (unsigned c=0; c<components.size(); c++) {
+        const Component* C = components[c];
+        if (C->isExternal) continue;
+        const ModuleList& mods = C->getModules();
+        for (unsigned m=0; m<mods.size(); m++) {
+            const Module* M = mods[m];
+            if (!M->isExported()) continue;
+            if (options.verbose) log(COL_VERBOSE, "generating interface %s.c2i", M->getName().c_str());
+            manifest.add(M->getName());
+            InterfaceGenerator gen(*M);
+            gen.write(outdir, options.printC);
         }
-        gen.write(outdir, options.printC);
     }
     manifest.write(outdir);
 }
