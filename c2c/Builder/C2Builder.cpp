@@ -193,6 +193,7 @@ static bool parse(DiagnosticsEngine& Diags,
 C2Builder::C2Builder(const Recipe& recipe_, const BuildOptions& opts)
     : recipe(recipe_)
     , options(opts)
+    , mainComponent(0)
     , libLoader(components, options.libdir)
     , useColors(true)
 {
@@ -332,6 +333,7 @@ int C2Builder::build() {
     u_int64_t t1_parse = Utils::getCurrentTime();
     unsigned errors = 0;
     std::unique_ptr<Component> Main(new Component(recipe.name, false, false));
+    mainComponent = Main.get();
     for (unsigned i=0; i<recipe.size(); i++) {
         const std::string& filename = recipe.get(i);
 
@@ -348,7 +350,7 @@ int C2Builder::build() {
 
     u_int64_t t1_analyse, t2_analyse;
     // phase 1b: merge file's symbol tables to module symbols tables
-    errors = !createModules(Main.get(), Diags);
+    errors = !createModules(mainComponent, Diags);
     if (options.printSymbols) dumpModules();
     if (client->getNumErrors()) goto out;
 
@@ -516,6 +518,7 @@ int C2Builder::build() {
 
     generateOptionalTags(SM);
 
+    // BBB move contents for these functions to sub-modules
     generateInterface();
 
     // BBB refactoring HERE
@@ -598,6 +601,7 @@ bool C2Builder::addFileToModule(DiagnosticsEngine& Diags, Module* mod, AST* ast)
 }
 
 void C2Builder::dumpModules() const {
+    // TODO BBB refactor to use recursive function via components
     for (ModulesConstIter iter = modules.begin(); iter != modules.end(); ++iter) {
         const Module* P = iter->second;
         P->dump();
@@ -625,12 +629,13 @@ void C2Builder::log(const char* color, const char* format, ...) const {
 }
 
 bool C2Builder::checkMainFunction(DiagnosticsEngine& Diags) {
+    assert(mainComponent);
 
     Decl* mainDecl = 0;
-    // TODO BBB only search in Main component
-    for (ModulesIter iter = modules.begin(); iter != modules.end(); ++iter) {
-        Module* P = iter->second;
-        Decl* decl = P->findSymbol("main");
+    const ModuleList& mods = mainComponent->getModules();
+    for (unsigned m=0; m<mods.size(); m++) {
+        const Module* M = mods[m];
+        Decl* decl = M->findSymbol("main");
         if (decl) {
             if (mainDecl) {
                 // TODO multiple main functions
@@ -681,18 +686,14 @@ void C2Builder::generateInterface() const {
 
     ManifestWriter manifest;
     std::string outdir = OUTPUT_DIR + recipe.name + '/';
-    for (unsigned c=0; c<components.size(); c++) {
-        const Component* C = components[c];
-        if (C->isExternal) continue;
-        const ModuleList& mods = C->getModules();
-        for (unsigned m=0; m<mods.size(); m++) {
-            const Module* M = mods[m];
-            if (!M->isExported()) continue;
-            if (options.verbose) log(COL_VERBOSE, "generating interface %s.c2i", M->getName().c_str());
-            manifest.add(M->getName());
-            InterfaceGenerator gen(*M);
-            gen.write(outdir, options.printC);
-        }
+    const ModuleList& mods = mainComponent->getModules();
+    for (unsigned m=0; m<mods.size(); m++) {
+        const Module* M = mods[m];
+        if (!M->isExported()) continue;
+        if (options.verbose) log(COL_VERBOSE, "generating interface %s.c2i", M->getName().c_str());
+        manifest.add(M->getName());
+        InterfaceGenerator gen(*M);
+        gen.write(outdir, options.printC);
     }
     manifest.write(outdir);
 }
@@ -717,16 +718,8 @@ void C2Builder::generateOptionalC() {
     CGenerator::Options cgen_options(OUTPUT_DIR, BUILD_DIR);
     cgen_options.single_module = single_module;
     cgen_options.printC = options.printC;
-    CGenerator cgen(recipe.name, recipe.type, modules, libLoader, cgen_options);
-    for (unsigned c=0; c<components.size(); c++) {
-        Component* C = components[c];
-        if (C->isExternal) continue;
-        for (unsigned i=0; i<C->files.size(); i++) {
-            AST* ast = C->files[i];
-            assert(!ast->isInterface());
-            cgen.addFile(*ast);
-        }
-    }
+    const ModuleList& mods = mainComponent->getModules();
+    CGenerator cgen(recipe.name, recipe.type, modules, mods, libLoader, cgen_options);
 
     // generate C interface files
     if (recipe.needsInterface()) cgen.generateInterfaceFiles();

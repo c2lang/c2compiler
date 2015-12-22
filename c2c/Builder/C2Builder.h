@@ -118,6 +118,7 @@ private:
     Modules modules;
 
     Components components;
+    Component* mainComponent;
     LibraryLoader libLoader;
 
     bool useColors;

@@ -17,14 +17,12 @@
 #define CGENERATOR_CGENERATOR_H
 
 #include <string>
-#include <vector>
 
 #include "Utils/GenUtils.h"
 #include "AST/Module.h"
 
 namespace C2 {
 
-class AST;
 class HeaderNamer;
 
 class CGenerator {
@@ -43,11 +41,10 @@ public:
 
     CGenerator(const std::string& name_,
                GenUtils::TargetType type_,
-               const Modules& modules_,
+               const Modules& moduleMap_,
+               const ModuleList& mods_,
                HeaderNamer& namer_,
                const Options& options_);
-
-    void addFile(AST& ast) { entries.push_back(&ast); }
 
     void generate();
     void build();
@@ -55,13 +52,10 @@ public:
 private:
     std::string targetName;
     GenUtils::TargetType targetType;
-    const Modules& modules;
+    const Modules& moduleMap;
+    const ModuleList& mods;
     HeaderNamer& includeNamer;
     const Options& options;
-
-    typedef std::vector<AST*> Entries;
-    typedef Entries::iterator EntriesIter;
-    Entries entries;
 };
 
 }

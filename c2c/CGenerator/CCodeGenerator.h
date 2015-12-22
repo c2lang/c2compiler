@@ -17,7 +17,6 @@
 #define CGENERATOR_CCODE_GENERATOR_H
 
 #include <string>
-#include <vector>
 
 #include "CGenerator/TypeSorter.h"
 #include "AST/Module.h"
@@ -25,7 +24,6 @@
 
 namespace C2 {
 
-class AST;
 class Decl;
 class VarDecl;
 class TypeDecl;
@@ -39,15 +37,13 @@ class Stmt;
 class CompoundStmt;
 class HeaderNamer;
 
-// generates LLVM Module from (multiple) ASTs
+// generates LLVM Module from (multiple) Module(s)
 class CCodeGenerator : public CTypeWriter {
 public:
     enum Mode { MULTI_FILE, SINGLE_FILE };
     CCodeGenerator(const std::string& filename_, Mode mode_,
-                   const Modules& modules_, HeaderNamer& namer_);
+                   const Modules& modules_, const ModuleList& mods_, HeaderNamer& namer_);
     ~CCodeGenerator();
-
-    void addEntry(AST& ast) { entries.push_back(&ast); }
 
     void generate(bool printCode);
     void write(const std::string& outputDir);
@@ -107,11 +103,8 @@ private:
     Mode mode;
 
     const Modules& modules;
+    const ModuleList& mods;
     HeaderNamer& headerNamer;
-
-    typedef std::vector<AST*> Entries;
-    typedef Entries::iterator EntriesIter;
-    Entries entries;
 
     StringBuilder cbuf;
     StringBuilder hbuf;

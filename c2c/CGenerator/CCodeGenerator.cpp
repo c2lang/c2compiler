@@ -26,7 +26,6 @@
 
 #include "CGenerator/CCodeGenerator.h"
 #include "CGenerator/HeaderNamer.h"
-#include "AST/Module.h"
 #include "AST/AST.h"
 #include "AST/Attr.h"
 #include "AST/Stmt.h"
@@ -55,10 +54,15 @@ using namespace C2;
 using namespace llvm;
 using namespace clang;
 
-CCodeGenerator::CCodeGenerator(const std::string& filename_, Mode mode_, const Modules& modules_, HeaderNamer& namer_)
+CCodeGenerator::CCodeGenerator(const std::string& filename_,
+                               Mode mode_,
+                               const Modules& modules_,
+                               const ModuleList& mods_,
+                               HeaderNamer& namer_)
     : filename(filename_)
     , mode(mode_)
     , modules(modules_)
+    , mods(mods_)
     , headerNamer(namer_)
 {
     hfilename = filename + ".h";
@@ -73,47 +77,63 @@ void CCodeGenerator::generate(bool printCode) {
     EmitIncludes();
 
     // generate variables
-    for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
-        AST* ast = *iter;
-        for (unsigned i=0; i<ast->numVars(); i++) {
-            EmitConstant(ast->getVar(i));
+    // BBB: refactor to better loops, since this is done 10x here, visitor??
+    for (unsigned m=0; m<mods.size(); m++) {
+        const Files& files = mods[m]->getFiles();
+        for (unsigned a=0; a<files.size(); a++) {
+            const AST* ast = files[a];
+            for (unsigned i=0; i<ast->numVars(); i++) {
+                EmitConstant(ast->getVar(i));
+            }
         }
     }
 
     // generate types, reorder and do forward decls if needed
     TypeSorter sorter;
-    for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
-        AST* ast = *iter;
-        for (unsigned i=0; i<ast->numTypes(); i++) {
-            sorter.add(ast->getType(i));
+    for (unsigned m=0; m<mods.size(); m++) {
+        const Files& files = mods[m]->getFiles();
+        for (unsigned a=0; a<files.size(); a++) {
+            const AST* ast = files[a];
+            for (unsigned i=0; i<ast->numTypes(); i++) {
+                sorter.add(ast->getType(i));
+            }
         }
     }
     sorter.write(*this);
 
     // generate function prototypes
-    for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
-        AST* ast = *iter;
-        for (unsigned i=0; i<ast->numFunctions(); i++) {
-            EmitFunctionForward(ast->getFunction(i));
+    for (unsigned m=0; m<mods.size(); m++) {
+        const Files& files = mods[m]->getFiles();
+        for (unsigned a=0; a<files.size(); a++) {
+            const AST* ast = files[a];
+            for (unsigned i=0; i<ast->numFunctions(); i++) {
+                EmitFunctionForward(ast->getFunction(i));
+            }
         }
     }
     cbuf << '\n';
     hbuf << '\n';
 
     // generate variables
-    for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
-        AST* ast = *iter;
-        for (unsigned i=0; i<ast->numVars(); i++) {
-            EmitGlobalVariable(ast->getVar(i));
+    for (unsigned m=0; m<mods.size(); m++) {
+        const Files& files = mods[m]->getFiles();
+        for (unsigned a=0; a<files.size(); a++) {
+            const AST* ast = files[a];
+            for (unsigned i=0; i<ast->numVars(); i++) {
+                EmitGlobalVariable(ast->getVar(i));
+            }
         }
     }
     // TODO Arrayvalues
 
     // generate functions
-    for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
-        AST* ast = *iter;
-        for (unsigned i=0; i<ast->numFunctions(); i++) {
-            EmitFunction(ast->getFunction(i));
+    for (unsigned m=0; m<mods.size(); m++) {
+        const Files& files = mods[m]->getFiles();
+        for (unsigned a=0; a<files.size(); a++) {
+            const AST* ast = files[a];
+            for (unsigned i=0; i<ast->numFunctions(); i++) {
+                EmitFunction(ast->getFunction(i));
+            }
         }
     }
 
@@ -140,37 +160,49 @@ void CCodeGenerator::createLibHeader(bool printCode, const std::string& outputDi
     EmitIncludes();
 
     // generate variables
-    for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
-        AST* ast = *iter;
-        for (unsigned i=0; i<ast->numVars(); i++) {
-            EmitConstant(ast->getVar(i));
+    for (unsigned m=0; m<mods.size(); m++) {
+        const Files& files = mods[m]->getFiles();
+        for (unsigned a=0; a<files.size(); a++) {
+            const AST* ast = files[a];
+            for (unsigned i=0; i<ast->numVars(); i++) {
+                EmitConstant(ast->getVar(i));
+            }
         }
     }
 
     // generate types, reorder and do forward decls if needed
     TypeSorter sorter;
-    for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
-        AST* ast = *iter;
-        for (unsigned i=0; i<ast->numTypes(); i++) {
-            sorter.add(ast->getType(i));
+    for (unsigned m=0; m<mods.size(); m++) {
+        const Files& files = mods[m]->getFiles();
+        for (unsigned a=0; a<files.size(); a++) {
+            const AST* ast = files[a];
+            for (unsigned i=0; i<ast->numTypes(); i++) {
+                sorter.add(ast->getType(i));
+            }
         }
     }
     sorter.write(*this);
 
     // generate function prototypes
-    for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
-        AST* ast = *iter;
-        for (unsigned i=0; i<ast->numFunctions(); i++) {
-            EmitFunctionForward(ast->getFunction(i));
+    for (unsigned m=0; m<mods.size(); m++) {
+        const Files& files = mods[m]->getFiles();
+        for (unsigned a=0; a<files.size(); a++) {
+            const AST* ast = files[a];
+            for (unsigned i=0; i<ast->numFunctions(); i++) {
+                EmitFunctionForward(ast->getFunction(i));
+            }
         }
     }
     hbuf << '\n';
 
     // generate variables
-    for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
-        AST* ast = *iter;
-        for (unsigned i=0; i<ast->numVars(); i++) {
-            EmitGlobalVariable(ast->getVar(i));
+    for (unsigned m=0; m<mods.size(); m++) {
+        const Files& files = mods[m]->getFiles();
+        for (unsigned a=0; a<files.size(); a++) {
+            const AST* ast = files[a];
+            for (unsigned i=0; i<ast->numVars(); i++) {
+                EmitGlobalVariable(ast->getVar(i));
+            }
         }
     }
     // TODO Arrayvalues
@@ -526,24 +558,27 @@ void CCodeGenerator::EmitIncludes() {
     Includes includes;
 
     // filter out unique entries, split into system and local includes and .c/.h
-    for (EntriesIter iter = entries.begin(); iter != entries.end(); ++iter) {
-        AST* ast = *iter;
-        for (unsigned i=0; i<ast->numImports(); i++) {
-            const ImportDecl* D = ast->getImport(i);
-            ModulesConstIter iter = modules.find(D->getModuleName());
-            assert(iter != modules.end());
-            const Module* M = iter->second;
-            IncludeEntry ie;
-            ie.isSystem = false;
-            ie.usedPublic = D->isUsedPublic();
-            // TODO filter/change duplicates (now both includes are done)
-            if (M->isPlainC()) {
-                ie.name = headerNamer.getIncludeName(M->getName());
-                ie.isSystem = true;
-                includes.push_back(ie);
-            } else if (mode == MULTI_FILE) {
-                ie.name = M->getName();
-                includes.push_back(ie);
+    for (unsigned m=0; m<mods.size(); m++) {
+        const Files& files = mods[m]->getFiles();
+        for (unsigned a=0; a<files.size(); a++) {
+            const AST* ast = files[a];
+            for (unsigned i=0; i<ast->numImports(); i++) {
+                const ImportDecl* D = ast->getImport(i);
+                ModulesConstIter iter = modules.find(D->getModuleName());
+                assert(iter != modules.end());
+                const Module* M = iter->second;
+                IncludeEntry ie;
+                ie.isSystem = false;
+                ie.usedPublic = D->isUsedPublic();
+                // TODO filter/change duplicates (now both includes are done)
+                if (M->isPlainC()) {
+                    ie.name = headerNamer.getIncludeName(M->getName());
+                    ie.isSystem = true;
+                    includes.push_back(ie);
+                } else if (mode == MULTI_FILE) {
+                    ie.name = M->getName();
+                    includes.push_back(ie);
+                }
             }
         }
     }
