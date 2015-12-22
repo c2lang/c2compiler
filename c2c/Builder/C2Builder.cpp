@@ -351,7 +351,7 @@ int C2Builder::build() {
     u_int64_t t1_analyse, t2_analyse;
     // phase 1b: merge file's symbol tables to module symbols tables
     errors = !createModules(mainComponent, Diags);
-    if (options.printSymbols) dumpModules();
+    if (options.printSymbols) printSymbols();
     if (client->getNumErrors()) goto out;
 
     // phase 1c: load required external modules
@@ -600,12 +600,12 @@ bool C2Builder::addFileToModule(DiagnosticsEngine& Diags, Module* mod, AST* ast)
     return ok;
 }
 
-void C2Builder::dumpModules() const {
-    // TODO BBB refactor to use recursive function via components
-    for (ModulesConstIter iter = modules.begin(); iter != modules.end(); ++iter) {
-        const Module* P = iter->second;
-        P->dump();
-    }
+void C2Builder::printSymbols() const {
+    assert(mainComponent);
+    StringBuilder output;
+    output.enableColor(true);
+    mainComponent->printSymbols(output);
+    printf("%s\n", (const char*)output);
 }
 
 void C2Builder::printComponents() const {

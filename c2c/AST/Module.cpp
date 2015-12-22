@@ -58,15 +58,12 @@ void Module::addAttributes(AttrMap& am) {
     declAttrs.insert(am.begin(), am.end());
 }
 
-void Module::dump() const {
-    StringBuilder out;
-    out.enableColor(true);
-    out << "symbols of module ";
-    print(out);
-    out << '\n';
+void Module::printSymbols(StringBuilder& out) const {
+    out.indent(2);
+    out << "module " << name << '\n';;
     for (SymbolsConstIter iter = symbols.begin(); iter != symbols.end(); ++iter) {
         const Decl* D = iter->second;
-        out.indent(3);
+        out.indent(4);
         out << D->getName() << "    ";// << '\n';
         out.setColor(COL_ATTRIBUTES);
         switch (D->getKind()) {
@@ -96,7 +93,6 @@ void Module::dump() const {
         out.setColor(COL_NORM);
         out << '\n';
     }
-    printf("%s", (const char*)out);
 }
 
 void Module::print(StringBuilder& output) const {
@@ -111,15 +107,12 @@ void Module::print(StringBuilder& output) const {
     }
 }
 
-void Module::dumpAST(StringBuilder& out) const {
-    out << "  ";
-    print(out);
-    out << '\n';
+void Module::printFiles(StringBuilder& out) const {
+    out << "  " << name << "\n";
     for (unsigned i=0; i<files.size(); i++) {
         out << "    " << files[i]->getFileName() << '\n';
     }
 }
-
 
 const AttrList& Module::getAttributes(const Decl* d) const {
     assert(d->hasAttributes());

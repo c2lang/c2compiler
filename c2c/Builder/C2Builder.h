@@ -100,7 +100,7 @@ private:
     bool createModules(Component* C, clang::DiagnosticsEngine& Diags);
     bool addFileToModule(clang::DiagnosticsEngine& Diags, Module* mod, AST* ast);
     unsigned analyse();
-    void dumpModules() const;
+    void printSymbols() const;
     void printComponents() const;
     void log(const char* color, const char* format, ...) const;
 

@@ -43,7 +43,8 @@ public:
     void setExported() { m_isExported = true; }
 
     void dump() const;
-    void dumpAST(StringBuilder& output) const;
+    void printFiles(StringBuilder& output) const;
+    void printSymbols(StringBuilder& output) const;
     void print(StringBuilder& output) const;
 
     typedef std::map<std::string, Decl*> Symbols;

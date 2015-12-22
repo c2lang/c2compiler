@@ -41,6 +41,7 @@ public:
     Module* addAST(AST* ast, const std::string& moduleName);
 
     void print(StringBuilder& output) const;
+    void printSymbols(StringBuilder& output) const;
 
     std::string name;
     bool isExternal;

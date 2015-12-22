@@ -50,7 +50,14 @@ void Component::print(StringBuilder& out) const {
     }
     out << '\n';
     for (unsigned i=0; i<modules.size(); i++) {
-        modules[i]->dumpAST(out);
+        modules[i]->printFiles(out);
+    }
+}
+
+void Component::printSymbols(StringBuilder& out) const {
+    out << "Component " << name << '\n';
+    for (unsigned i=0; i<modules.size(); i++) {
+        modules[i]->printSymbols(out);
     }
 }
 
