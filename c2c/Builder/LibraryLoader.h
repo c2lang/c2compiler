@@ -45,7 +45,7 @@ public:
 
     Module* loadModule(const std::string& moduleName);
 
-    virtual const std::string& getIncludeName(const std::string& modName);
+    virtual const std::string& getIncludeName(const std::string& modName) const;
 private:
     Component* getComponent(const std::string& name, bool isCLib);
 

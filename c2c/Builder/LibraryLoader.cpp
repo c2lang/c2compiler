@@ -122,7 +122,7 @@ C2::Module* LibraryLoader::loadModule(const std::string& moduleName) {
     return C->addAST(new AST(file->c2file, true), moduleName);
 }
 
-const std::string& LibraryLoader::getIncludeName(const std::string& modName) {
+const std::string& LibraryLoader::getIncludeName(const std::string& modName) const {
     LibrariesConstIter iter = libs.find(modName);
     assert(iter != libs.end());
     const File* file = iter->second;

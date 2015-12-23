@@ -29,7 +29,7 @@
 using namespace C2;
 using namespace std;
 
-// TODO move to Utils..
+// TODO BBB move to Utils..
 // return pointer to filename after last '/'
 static const char* getFileName(const std::string& s) {
     const char* input = s.c_str();
@@ -41,7 +41,7 @@ static const char* getFileName(const std::string& s) {
     return cp;
 }
 
-// TODO move to Utils..
+// TODO BBB move to (Gen)Utils..
 static void fullName(const Decl* D, StringBuilder& output) {
     const Module* P = D->getModule();
     assert(P);
@@ -50,7 +50,6 @@ static void fullName(const Decl* D, StringBuilder& output) {
 
 
 void DepGenerator::write(const Components& components, const std::string& title, const std::string& path) const {
-
     StringBuilder output;
     int indent = 0;
     output << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";

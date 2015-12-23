@@ -42,7 +42,7 @@ class CCodeGenerator : public CTypeWriter {
 public:
     enum Mode { MULTI_FILE, SINGLE_FILE };
     CCodeGenerator(const std::string& filename_, Mode mode_,
-                   const Modules& modules_, const ModuleList& mods_, HeaderNamer& namer_);
+                   const Modules& modules_, const ModuleList& mods_, const HeaderNamer& namer_);
     ~CCodeGenerator();
 
     void generate(bool printCode);
@@ -53,6 +53,7 @@ public:
     virtual void forwardDecl(const Decl* D);
     virtual void fullDecl(const Decl* D);
 private:
+    void EmitAll(bool emitFunctionBodies);
     void EmitIncludeGuard();
     void EmitIncludes();
 
@@ -104,7 +105,7 @@ private:
 
     const Modules& modules;
     const ModuleList& mods;
-    HeaderNamer& headerNamer;
+    const HeaderNamer& headerNamer;
 
     StringBuilder cbuf;
     StringBuilder hbuf;

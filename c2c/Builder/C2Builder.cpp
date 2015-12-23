@@ -511,11 +511,11 @@ int C2Builder::build() {
     }
 #endif
 
+    // BBB move contents for these functions to sub-modules
     generateOptionalDeps();
 
     generateOptionalTags(SM);
 
-    // BBB move contents for these functions to sub-modules
     generateInterface();
 
     generateOptionalC();
@@ -674,11 +674,70 @@ bool C2Builder::checkExportedPackages() const {
     return true;
 }
 
+void C2Builder::generateOptionalDeps() {
+/*
+    need:
+        depconfig options: show-files, show-externals (= StringList)
+        const Components&
+        target name (=recipe.name)
+        path (output path)
+
+*/
+    if (!options.printDependencies && !recipe.generateDeps) return;
+
+    if (options.verbose) log(COL_VERBOSE, "generating dependencies");
+
+    u_int64_t t1 = Utils::getCurrentTime();
+    bool showFiles = false;
+    bool showExternals = false;
+    bool showPrivate = true;
+    for (unsigned i=0; i<recipe.depConfigs.size(); i++) {
+        const std::string& conf = recipe.depConfigs[i];
+        // TODO just pass struct with bools?
+        if (conf == "show-files") showFiles = true;
+        if (conf == "show-externals") showExternals = true;
+    }
+
+    DepGenerator generator(showFiles, showPrivate, showExternals);
+    std::string path = OUTPUT_DIR + recipe.name + '/';
+    generator.write(components, recipe.name, path);
+    u_int64_t t2 = Utils::getCurrentTime();
+    if (options.printTiming) log(COL_TIME, "dep generation took %" PRIu64" usec", t2 - t1);
+}
+
+void C2Builder::generateOptionalTags(const SourceManager& SM) const {
+/*
+    need:
+        const SourceManager&
+        const Components&
+        target name (=recipe.name)
+        path (output path)
+*/
+    if (!options.generateRefs && !recipe.generateRefs) return;
+
+    if (options.verbose) log(COL_VERBOSE, "generating refs");
+
+    u_int64_t t1 = Utils::getCurrentTime();
+    TagWriter generator(SM, components);
+    std::string path = OUTPUT_DIR + recipe.name + '/';
+    generator.write(recipe.name, path);
+    u_int64_t t2 = Utils::getCurrentTime();
+    if (options.printTiming) log(COL_TIME, "refs generation took %" PRIu64" usec", t2 - t1);
+}
+
 void C2Builder::generateInterface() const {
+/*
+    need:
+        path (output path)
+        const MainComponent*
+        bool printC
+*/
     if (options.checkOnly) return;
     if (!options.generateC && !recipe.generateCCode &&
         !options.generateIR && !recipe.generateIR) return;
     if (!recipe.needsInterface()) return;
+
+    if (options.verbose) log(COL_VERBOSE, "generating c2 interfaces");
 
     ManifestWriter manifest;
     std::string outdir = OUTPUT_DIR + recipe.name + '/';
@@ -686,7 +745,6 @@ void C2Builder::generateInterface() const {
     for (unsigned m=0; m<mods.size(); m++) {
         const Module* M = mods[m];
         if (!M->isExported()) continue;
-        if (options.verbose) log(COL_VERBOSE, "generating interface %s.c2i", M->getName().c_str());
         manifest.add(M->getName());
         InterfaceGenerator gen(*M);
         gen.write(outdir, options.printC);
@@ -695,6 +753,15 @@ void C2Builder::generateInterface() const {
 }
 
 void C2Builder::generateOptionalC() {
+/*
+    need:
+        CGenerator::Options (builddir, etc
+        const MainComponent*
+        const ModuleMap
+        target name (recipe.name)
+        target type (recipe.type)
+        const LibLoader& (=HeaderNamer)
+*/
     if (options.checkOnly) return;
     if (!options.generateC && !recipe.generateCCode) return;
 
@@ -739,6 +806,16 @@ void C2Builder::generateOptionalC() {
 }
 
 void C2Builder::generateOptionalIR() {
+/*
+    need:
+        options (single_module)
+        paths
+        const MainComponent*
+        no ModuleMap ?!
+        recipe.name
+        recipe.type (later)
+
+*/
     if (options.checkOnly) return;
     if (!options.generateIR && !recipe.generateIR) return;
 
@@ -786,41 +863,5 @@ void C2Builder::generateOptionalIR() {
             if (ok) cgm.write(outdir, M->getName());
         }
     }
-}
-
-void C2Builder::generateOptionalDeps() {
-    if (!options.printDependencies && !recipe.generateDeps) return;
-
-    if (options.verbose) log(COL_VERBOSE, "generating dependencies");
-
-    u_int64_t t1 = Utils::getCurrentTime();
-    bool showFiles = false;
-    bool showExternals = false;
-    bool showPrivate = true;
-    for (unsigned i=0; i<recipe.depConfigs.size(); i++) {
-        const std::string& conf = recipe.depConfigs[i];
-        // TODO just pass struct with bools?
-        if (conf == "show-files") showFiles = true;
-        if (conf == "show-externals") showExternals = true;
-    }
-
-    DepGenerator generator(showFiles, showPrivate, showExternals);
-    std::string path = OUTPUT_DIR + recipe.name + '/';
-    generator.write(components, recipe.name, path);
-    u_int64_t t2 = Utils::getCurrentTime();
-    if (options.printTiming) log(COL_TIME, "dep generation took %" PRIu64" usec", t2 - t1);
-}
-
-void C2Builder::generateOptionalTags(const SourceManager& SM) const {
-    if (!options.generateRefs && !recipe.generateRefs) return;
-
-    if (options.verbose) log(COL_VERBOSE, "generating refs");
-
-    u_int64_t t1 = Utils::getCurrentTime();
-    TagWriter generator(SM, components);
-    std::string path = OUTPUT_DIR + recipe.name + '/';
-    generator.write(recipe.name, path);
-    u_int64_t t2 = Utils::getCurrentTime();
-    if (options.printTiming) log(COL_TIME, "refs generation took %" PRIu64" usec", t2 - t1);
 }
 

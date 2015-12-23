@@ -43,7 +43,7 @@ public:
                GenUtils::TargetType type_,
                const Modules& moduleMap_,
                const ModuleList& mods_,
-               HeaderNamer& namer_,
+               const HeaderNamer& namer_,
                const Options& options_);
 
     void generate();
@@ -54,7 +54,7 @@ private:
     GenUtils::TargetType targetType;
     const Modules& moduleMap;
     const ModuleList& mods;
-    HeaderNamer& includeNamer;
+    const HeaderNamer& includeNamer;
     const Options& options;
 };
 

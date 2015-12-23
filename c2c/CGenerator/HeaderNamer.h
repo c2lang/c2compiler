@@ -24,7 +24,7 @@ class HeaderNamer {
 public:
     virtual ~HeaderNamer() {}
 
-    virtual const std::string& getIncludeName(const std::string& modName) = 0;
+    virtual const std::string& getIncludeName(const std::string& modName) const = 0;
 };
 
 }

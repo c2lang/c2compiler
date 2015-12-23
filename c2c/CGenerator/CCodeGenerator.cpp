@@ -58,7 +58,7 @@ CCodeGenerator::CCodeGenerator(const std::string& filename_,
                                Mode mode_,
                                const Modules& modules_,
                                const ModuleList& mods_,
-                               HeaderNamer& namer_)
+                               const HeaderNamer& namer_)
     : filename(filename_)
     , mode(mode_)
     , modules(modules_)
@@ -73,11 +73,21 @@ CCodeGenerator::~CCodeGenerator() {
 }
 
 void CCodeGenerator::generate(bool printCode) {
+    EmitAll(true);
+
+    if (printCode) {
+        if (mode != SINGLE_FILE) {
+            printf("---- code for %s ----\n%s\n", hfilename.c_str(), (const char*)hbuf);
+        }
+        printf("---- code for %s ----\n%s\n", cfilename.c_str(), (const char*)cbuf);
+    }
+}
+
+void CCodeGenerator::EmitAll(bool emitFunctionBodies) {
     EmitIncludeGuard();
     EmitIncludes();
 
     // generate variables
-    // BBB: refactor to better loops, since this is done 10x here, visitor??
     for (unsigned m=0; m<mods.size(); m++) {
         const Files& files = mods[m]->getFiles();
         for (unsigned a=0; a<files.size(); a++) {
@@ -126,26 +136,21 @@ void CCodeGenerator::generate(bool printCode) {
     }
     // TODO Arrayvalues
 
-    // generate functions
-    for (unsigned m=0; m<mods.size(); m++) {
-        const Files& files = mods[m]->getFiles();
-        for (unsigned a=0; a<files.size(); a++) {
-            const AST* ast = files[a];
-            for (unsigned i=0; i<ast->numFunctions(); i++) {
-                EmitFunction(ast->getFunction(i));
+    if (emitFunctionBodies) {
+        // generate functions
+        for (unsigned m=0; m<mods.size(); m++) {
+            const Files& files = mods[m]->getFiles();
+            for (unsigned a=0; a<files.size(); a++) {
+                const AST* ast = files[a];
+                for (unsigned i=0; i<ast->numFunctions(); i++) {
+                    EmitFunction(ast->getFunction(i));
+                }
             }
         }
     }
 
     // emit end of include guard
     hbuf << "#endif\n";
-
-    if (printCode) {
-        if (mode != SINGLE_FILE) {
-            printf("---- code for %s ----\n%s\n", hfilename.c_str(), (const char*)hbuf);
-        }
-        printf("---- code for %s ----\n%s\n", cfilename.c_str(), (const char*)cbuf);
-    }
 }
 
 void CCodeGenerator::write(const std::string& outputDir) {
@@ -156,66 +161,12 @@ void CCodeGenerator::write(const std::string& outputDir) {
 }
 
 void CCodeGenerator::createLibHeader(bool printCode, const std::string& outputDir) {
-    // BBB same as generate! refactor to common
-    EmitIncludeGuard();
-    EmitIncludes();
-
-    // generate variables
-    for (unsigned m=0; m<mods.size(); m++) {
-        const Files& files = mods[m]->getFiles();
-        for (unsigned a=0; a<files.size(); a++) {
-            const AST* ast = files[a];
-            for (unsigned i=0; i<ast->numVars(); i++) {
-                EmitConstant(ast->getVar(i));
-            }
-        }
-    }
-
-    // generate types, reorder and do forward decls if needed
-    TypeSorter sorter;
-    for (unsigned m=0; m<mods.size(); m++) {
-        const Files& files = mods[m]->getFiles();
-        for (unsigned a=0; a<files.size(); a++) {
-            const AST* ast = files[a];
-            for (unsigned i=0; i<ast->numTypes(); i++) {
-                sorter.add(ast->getType(i));
-            }
-        }
-    }
-    sorter.write(*this);
-
-    // generate function prototypes
-    for (unsigned m=0; m<mods.size(); m++) {
-        const Files& files = mods[m]->getFiles();
-        for (unsigned a=0; a<files.size(); a++) {
-            const AST* ast = files[a];
-            for (unsigned i=0; i<ast->numFunctions(); i++) {
-                EmitFunctionForward(ast->getFunction(i));
-            }
-        }
-    }
-    hbuf << '\n';
-
-    // generate variables
-    for (unsigned m=0; m<mods.size(); m++) {
-        const Files& files = mods[m]->getFiles();
-        for (unsigned a=0; a<files.size(); a++) {
-            const AST* ast = files[a];
-            for (unsigned i=0; i<ast->numVars(); i++) {
-                EmitGlobalVariable(ast->getVar(i));
-            }
-        }
-    }
-    // TODO Arrayvalues
-
-    // emit end of include guard
-    hbuf << "#endif\n";
+    EmitAll(false);
 
     if (printCode) {
         printf("---- code for %s ----\n%s\n", hfilename.c_str(), (const char*)hbuf);
     }
 
-    // write file
     FileUtils::writeFile(outputDir.c_str(), outputDir + hfilename, hbuf);
 }
 
