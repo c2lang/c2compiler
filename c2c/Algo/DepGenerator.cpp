@@ -21,6 +21,7 @@
 #include "AST/Type.h"
 #include "Utils/StringBuilder.h"
 #include "Utils/UtilsConstants.h"
+#include "Utils/Utils.h"
 #include "FileUtils/FileUtils.h"
 
 #include <string.h>
@@ -28,25 +29,6 @@
 
 using namespace C2;
 using namespace std;
-
-// TODO BBB move to Utils..
-// return pointer to filename after last '/'
-static const char* getFileName(const std::string& s) {
-    const char* input = s.c_str();
-    const char* cp = input + strlen(input) - 1;
-    while (cp != input) {
-        if (*cp == '/') return cp+1;
-        cp--;
-    }
-    return cp;
-}
-
-// TODO BBB move to (Gen)Utils..
-static void fullName(const Decl* D, StringBuilder& output) {
-    const Module* P = D->getModule();
-    assert(P);
-    output << P->getName() << '_' << D->getName();
-}
 
 
 void DepGenerator::write(const Components& components, const std::string& title, const std::string& path) const {
@@ -89,7 +71,7 @@ void DepGenerator::writeModule(const Module& M, StringBuilder& output, unsigned 
         const AST* A = files[j];
         if (showFiles) {
             output.indent(indent);
-            const char* fname = getFileName(A->getFileName());
+            const char* fname = Utils::getFileName(A->getFileName());
             output << "<group name='" << fname << "' full='file:" << A->getFileName() << "' collapsed='1'>\n";
             indent += INDENT;
         }
@@ -126,7 +108,7 @@ void DepGenerator::writeDecl(const Decl* D, StringBuilder& output, unsigned inde
     output << "<atom name='" << D->getName();
     if (isa<FunctionDecl>(D)) output << "()";
     output << "' full='";
-    fullName(D, output);
+    D->fullName(output);
     output << "'>\n";
     indent += INDENT;
 
@@ -140,7 +122,7 @@ void DepGenerator::writeDecl(const Decl* D, StringBuilder& output, unsigned inde
         if (!showExternals && dep->getModule()->isExternal()) continue;
         output.indent(indent);
         output << "<dep dest='";
-        fullName(dep, output);
+        dep->fullName(output);
         output << "' str='1'/>\n";
     }
 
@@ -161,7 +143,7 @@ void DepGenerator::writeExternal(const Module* P, StringBuilder& output, unsigne
         output << "<atom name='" << D->getName();
         if (isa<FunctionDecl>(D)) output << "()";
         output << "' full='";
-        fullName(D, output);
+        D->fullName(output);
         output << "' />\n";
     }
 

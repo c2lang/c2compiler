@@ -18,6 +18,7 @@
 
 #include <stdint.h>
 #include <sys/types.h>
+#include <string>
 
 namespace C2 {
 
@@ -33,6 +34,8 @@ public:
         return mask;
     }
     static bool endsWith(const char* text, const char* tail);
+    // return pointer to filename after last '/'
+    static const char* getFileName(const std::string& s);
 };
 
 }

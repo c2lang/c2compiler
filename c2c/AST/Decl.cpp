@@ -56,6 +56,11 @@ Decl::~Decl() {
 #endif
 }
 
+void Decl::fullName(StringBuilder& output) const {
+    assert(mod);
+    output << mod->getName() << '_' << name;
+}
+
 string Decl::DiagName() const {
     StringBuilder tmp(128);
     tmp << "'" << name << "'";

@@ -49,3 +49,13 @@ bool Utils::endsWith(const char* text, const char* tail) {
     return (strcmp(text + start, tail) == 0);
 }
 
+const char* Utils::getFileName(const std::string& s) {
+    const char* input = s.c_str();
+    const char* cp = input + strlen(input) - 1;
+    while (cp != input) {
+        if (*cp == '/') return cp+1;
+        cp--;
+    }
+    return cp;
+}
+

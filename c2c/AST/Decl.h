@@ -63,6 +63,7 @@ public:
     void printAttributes(StringBuilder& buffer, unsigned indent) const;
 
     const std::string& getName() const { return name; }
+    void fullName(StringBuilder& output) const;
     std::string DiagName() const;
     SourceLocation getLocation() const { return loc; }
 
