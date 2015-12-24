@@ -18,7 +18,7 @@
 #include <assert.h>
 #include <inttypes.h>
 
-#include "CodeGen/InterfaceGenerator.h"
+#include "IRGenerator/InterfaceGenerator.h"
 #include "CGenerator/HeaderNamer.h"
 #include "AST/Module.h"
 #include "AST/AST.h"

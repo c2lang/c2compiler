@@ -63,9 +63,9 @@ ADD_LIBRARY(c2core
     Algo/DepGenerator.cpp
     Algo/ASTVisitor.cpp
     Algo/TagWriter.cpp
-    CodeGen/CodeGenFunction.cpp
-    CodeGen/CodeGenModule.cpp
-    CodeGen/InterfaceGenerator.cpp
+    IRGenerator/CodeGenFunction.cpp
+    IRGenerator/CodeGenModule.cpp
+    IRGenerator/InterfaceGenerator.cpp
     CGenerator/CCodeGenerator.cpp
     CGenerator/MakefileGenerator.cpp
     CGenerator/TypeSorter.cpp

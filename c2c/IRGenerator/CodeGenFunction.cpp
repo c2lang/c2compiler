@@ -23,8 +23,8 @@
 #include <llvm/IR/Function.h>
 #include <llvm/IR/BasicBlock.h>
 
-#include "CodeGen/CodeGenFunction.h"
-#include "CodeGen/CodeGenModule.h"
+#include "IRGenerator/CodeGenFunction.h"
+#include "IRGenerator/CodeGenModule.h"
 #include "AST/Decl.h"
 #include "AST/Expr.h"
 #include "AST/Stmt.h"
@@ -35,7 +35,6 @@
 
 //#define GEN_DEBUG
 
-#include <stdio.h>
 #ifdef GEN_DEBUG
 #include <iostream>
 #include "Utils/color.h"

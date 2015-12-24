@@ -60,8 +60,8 @@
 #include "Analyser/TargetAnalyser.h"
 #include "Algo/DepGenerator.h"
 #include "Algo/TagWriter.h"
-#include "CodeGen/CodeGenModule.h"
-#include "CodeGen/InterfaceGenerator.h"
+#include "IRGenerator/CodeGenModule.h"
+#include "IRGenerator/InterfaceGenerator.h"
 #include "CGenerator/CGenerator.h"
 #include "Refactor/RefFinder.h"
 #include "Utils/color.h"
@@ -446,70 +446,7 @@ int C2Builder::build() {
 
     if (!checkExportedPackages()) goto out;
 
-#if 0
-    // TEMP rewriter test
-    {
-        Rewriter rewriter;
-        rewriter.setSourceMgr(SM, LangOpts);
-
-        // TEMP rename global
-        const std::string modName = "test";
-        const std::string oldName = "aa";
-        const std::string newName = "bb";
-
-        // Step 1a: find Module
-        const Module* M = 0;
-        for (ModulesConstIter iter = modules.begin(); iter != modules.end(); ++iter) {
-            const Module* mod = iter->second;
-            if (mod->getName() == modName) {
-                M = mod;
-                break;
-            }
-        }
-        assert(M && "unknown module");
-
-        // Step 1b: find Decl
-        Decl* D = M->findSymbol(oldName);
-        assert(D && "unknown decl");
-
-        // Step 2a: replace Decl itself
-        rewriter.ReplaceText(D->getLocation(), oldName.size(), newName);
-
-        // Step 2b: replace all references
-        for (unsigned i=0; i<files.size(); i++) {
-            RefFinder finder(*files[i], D);
-            unsigned count = finder.find();
-            if (count) printf("replaced %d references in %s\n", count, files[i]->getFileName().c_str());
-            for (unsigned i=0; i<count; i++) {
-                std::string temp = finder.locs[i].printToString(SM);
-                printf("loc %d -> %s\n", finder.locs[i].getRawEncoding(), temp.c_str());
-                PresumedLoc loc = SM.getPresumedLoc(finder.locs[i]);;
-                assert(!loc.isInvalid() && "Invalid location");
-                printf(" -> %s:%d:%d\n", loc.getFilename(), loc.getLine(), loc.getColumn());
-                std::pair<FileID, unsigned> Off = SM.getDecomposedExpansionLoc(finder.locs[i]);
-                printf("-> offset %d\n", Off.second);
-                rewriter.ReplaceText(finder.locs[i], oldName.size(), newName);
-            }
-        }
-
-        // Step 3: reparse and check
-        // TODO
-
-        // print output
-        for (unsigned i=0; i<files.size(); i++) {
-            AST* ast = files[i];
-            const RewriteBuffer *RewriteBuf =
-                rewriter.getRewriteBufferFor(ast->fileID);
-            if (RewriteBuf) {
-                printf("====== %s ======\n", ast->getFileName().c_str());
-                llvm::outs() << std::string(RewriteBuf->begin(), RewriteBuf->end());
-            }
-        }
-        // also works!
-        //bool err = rewriter.overwriteChangedFiles();
-        //printf("errors = %d\n", err);
-    }
-#endif
+    rewriterTest(SM, LangOpts);
 
     // BBB move contents for these functions to sub-modules
     generateOptionalDeps();
@@ -674,7 +611,76 @@ bool C2Builder::checkExportedPackages() const {
     return true;
 }
 
+void C2Builder::rewriterTest(SourceManager& SM, LangOptions& LangOpts) {
+#if 0
+    // FOR TESTING rename global test.aa -> bb
+    const std::string modName = "test";
+    const std::string oldName = "aa";
+    const std::string newName = "bb";
+
+    // Step 1a: find Module
+    const Module* M = 0;
+    const Module* mod = findModule(modName);
+    assert(M && "unknown module");
+    assert(!M->isExternal() && "cannot replace symbol in external module");
+
+    // Step 1b: find Decl
+    Decl* D = M->findSymbol(oldName);
+    assert(D && "unknown decl");
+
+    // Step 2a: replace Decl itself
+    Rewriter rewriter;
+    rewriter.setSourceMgr(SM, LangOpts);
+    rewriter.ReplaceText(D->getLocation(), oldName.size(), newName);
+
+    // Step 2b: replace all references
+    // TODO only in mainComponent
+    const ModuleList& mods = mainComponent->getModules();
+    for (unsigned m=0; m<mods.size(); m++) {
+        const Files& files = mods[m]->getFiles();
+        for (unsigned a=0; a<files.size(); a++) {
+            AST* ast = files[a];
+
+            RefFinder finder(*ast, D);
+            unsigned count = finder.find();
+            if (count) printf("replaced %d references in %s\n", count, files[i]->getFileName().c_str());
+            for (unsigned i=0; i<count; i++) {
+                std::string temp = finder.locs[i].printToString(SM);
+                printf("loc %d -> %s\n", finder.locs[i].getRawEncoding(), temp.c_str());
+                PresumedLoc loc = SM.getPresumedLoc(finder.locs[i]);;
+                assert(!loc.isInvalid() && "Invalid location");
+                printf(" -> %s:%d:%d\n", loc.getFilename(), loc.getLine(), loc.getColumn());
+                std::pair<FileID, unsigned> Off = SM.getDecomposedExpansionLoc(finder.locs[i]);
+                printf("-> offset %d\n", Off.second);
+                rewriter.ReplaceText(finder.locs[i], oldName.size(), newName);
+            }
+        }
+    }
+
+    // Step 3: reparse and check
+    // TODO
+
+    // print output
+    for (unsigned m=0; m<mods.size(); m++) {
+        const Files& files = mods[m]->getFiles();
+        for (unsigned a=0; a<files.size(); a++) {
+            AST* ast = files[a];
+            const RewriteBuffer *RewriteBuf =
+                rewriter.getRewriteBufferFor(ast->fileID);
+            if (RewriteBuf) {
+                printf("====== %s ======\n", ast->getFileName().c_str());
+                llvm::outs() << std::string(RewriteBuf->begin(), RewriteBuf->end());
+            }
+        }
+    }
+    // also works!
+    //bool err = rewriter.overwriteChangedFiles();
+    //printf("errors = %d\n", err);
+#endif
+}
+
 void C2Builder::generateOptionalDeps() {
+    // BBB cleanup need comments
 /*
     need:
         depconfig options: show-files, show-externals (= StringList)
@@ -832,7 +838,6 @@ void C2Builder::generateOptionalIR() {
     std::string outdir = OUTPUT_DIR + recipe.name + BUILD_DIR;
 
     const ModuleList& mods = mainComponent->getModules();
-    // BBB move entire function to Codegen/
     if (single_module) {
         u_int64_t t1 = Utils::getCurrentTime();
         std::string filename = recipe.name;

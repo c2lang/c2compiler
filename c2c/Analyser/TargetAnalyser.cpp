@@ -29,7 +29,7 @@ TargetAnalyser::TargetAnalyser(const Modules& modules_, clang::DiagnosticsEngine
     for (unsigned m=0; m<mods.size(); m++) {
         const Files& files = mods[m]->getFiles();
         for (unsigned f=0; f<files.size(); f++) {
-            addFile(*files[f]);
+            analysers.push_back(new FileAnalyser(modules, Diags, *files[f], verbose));
         }
     }
 }
@@ -38,10 +38,6 @@ TargetAnalyser::~TargetAnalyser() {
     for (unsigned i=0; i<analysers.size(); i++) {
         delete analysers[i];
     }
-}
-
-void TargetAnalyser::addFile(AST& ast) {
-    analysers.push_back(new FileAnalyser(modules, Diags, ast, verbose));
 }
 
 unsigned TargetAnalyser::analyse(bool print1, bool print2, bool print3, bool printLib) {

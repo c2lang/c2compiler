@@ -26,6 +26,7 @@
 namespace clang {
 class DiagnosticsEngine;
 class SourceManager;
+class LangOptions;
 }
 
 namespace C2 {
@@ -106,11 +107,13 @@ private:
 
     bool checkMainFunction(clang::DiagnosticsEngine& Diags);
     bool checkExportedPackages() const;
+
+    void rewriterTest(clang::SourceManager& SM, clang::LangOptions& LangOpts);
+    void generateOptionalDeps();
+    void generateOptionalTags(const clang::SourceManager& SM) const;
     void generateInterface() const;
     void generateOptionalC();
     void generateOptionalIR();
-    void generateOptionalDeps();
-    void generateOptionalTags(const clang::SourceManager& SM) const;
 
     const Recipe& recipe;
     BuildOptions options;

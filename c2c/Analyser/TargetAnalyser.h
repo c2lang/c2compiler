@@ -36,7 +36,6 @@ public:
 
     unsigned analyse(bool print1, bool print2, bool print3, bool printLib);
 private:
-    void addFile(AST& ast);
     void printASTs(bool printLib) const;
 
     const Modules& modules;

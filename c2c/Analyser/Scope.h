@@ -127,7 +127,6 @@ private:
 
     // all modules
     const Modules& allModules;
-
     const Module* myModule;
 
     // Symbol caches

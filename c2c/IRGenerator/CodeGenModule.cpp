@@ -35,8 +35,8 @@
 // For verifyModule()
 #include <llvm/IR/Verifier.h>
 
-#include "CodeGen/CodeGenModule.h"
-#include "CodeGen/CodeGenFunction.h"
+#include "IRGenerator/CodeGenModule.h"
+#include "IRGenerator/CodeGenFunction.h"
 #include "AST/AST.h"
 #include "AST/Decl.h"
 #include "Utils/StringBuilder.h"
