@@ -83,7 +83,7 @@ void DepGenerator::writeModule(const Module& M, StringBuilder& output, unsigned 
             indent += INDENT;
         }
 
-        writeAST(*A, output, indent);
+        writeAST(*A, output, indent, M.isExternal());
 
         if (showFiles) {
             indent -= INDENT;
@@ -97,15 +97,21 @@ void DepGenerator::writeModule(const Module& M, StringBuilder& output, unsigned 
     output << "</group>\n";
 }
 
-void DepGenerator::writeAST(const AST& ast, StringBuilder& output, unsigned indent) const {
+void DepGenerator::writeAST(const AST& ast, StringBuilder& output, unsigned indent, bool isExternal) const {
     for (unsigned i=0; i<ast.numTypes(); i++) {
-        writeDecl(ast.getType(i), output, indent);
+        const Decl* D = ast.getType(i);
+        if (isExternal && !D->isUsed()) continue;
+        writeDecl(D, output, indent);
     }
     for (unsigned i=0; i<ast.numVars(); i++) {
-       writeDecl(ast.getVar(i), output, indent);
+        const Decl* D = ast.getVar(i);
+        if (isExternal && !D->isUsed()) continue;
+       writeDecl(D, output, indent);
     }
     for (unsigned i=0; i<ast.numFunctions(); i++) {
-        writeDecl(ast.getFunction(i), output, indent);
+        const Decl* D = ast.getFunction(i);
+        if (isExternal && !D->isUsed()) continue;
+        writeDecl(D, output, indent);
     }
 }
 

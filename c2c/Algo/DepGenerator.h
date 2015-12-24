@@ -34,12 +34,11 @@ public:
         : showFiles(showFiles_), showPrivate(showPrivate_), showExternals(showExternals_)
     {}
 
-    //void analyse(const Components& components);
     void write(const Components& components, const std::string& title, const std::string& path) const;
 private:
     void addExternal(const Module* P) const;
     void writeModule(const Module& M, StringBuilder& output, unsigned indent) const;
-    void writeAST(const AST& ast, StringBuilder& output, unsigned indent) const;
+    void writeAST(const AST& ast, StringBuilder& output, unsigned indent, bool isExternal) const;
     void writeDecl(const Decl* D, StringBuilder& output, unsigned indent) const;
     void writeExternal(const Module* P, StringBuilder& output, unsigned indent) const;
 

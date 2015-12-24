@@ -448,7 +448,6 @@ int C2Builder::build() {
 
     rewriterTest(SM, LangOpts);
 
-    // BBB move contents for these functions to sub-modules
     generateOptionalDeps();
 
     generateOptionalTags(SM);
@@ -680,15 +679,6 @@ void C2Builder::rewriterTest(SourceManager& SM, LangOptions& LangOpts) {
 }
 
 void C2Builder::generateOptionalDeps() {
-    // BBB cleanup need comments
-/*
-    need:
-        depconfig options: show-files, show-externals (= StringList)
-        const Components&
-        target name (=recipe.name)
-        path (output path)
-
-*/
     if (!options.printDependencies && !recipe.generateDeps) return;
 
     if (options.verbose) log(COL_VERBOSE, "generating dependencies");
@@ -712,13 +702,6 @@ void C2Builder::generateOptionalDeps() {
 }
 
 void C2Builder::generateOptionalTags(const SourceManager& SM) const {
-/*
-    need:
-        const SourceManager&
-        const Components&
-        target name (=recipe.name)
-        path (output path)
-*/
     if (!options.generateRefs && !recipe.generateRefs) return;
 
     if (options.verbose) log(COL_VERBOSE, "generating refs");
@@ -732,12 +715,6 @@ void C2Builder::generateOptionalTags(const SourceManager& SM) const {
 }
 
 void C2Builder::generateInterface() const {
-/*
-    need:
-        path (output path)
-        const MainComponent*
-        bool printC
-*/
     if (options.checkOnly) return;
     if (!options.generateC && !recipe.generateCCode &&
         !options.generateIR && !recipe.generateIR) return;
@@ -759,15 +736,6 @@ void C2Builder::generateInterface() const {
 }
 
 void C2Builder::generateOptionalC() {
-/*
-    need:
-        CGenerator::Options (builddir, etc
-        const MainComponent*
-        const ModuleMap
-        target name (recipe.name)
-        target type (recipe.type)
-        const LibLoader& (=HeaderNamer)
-*/
     if (options.checkOnly) return;
     if (!options.generateC && !recipe.generateCCode) return;
 
@@ -812,16 +780,6 @@ void C2Builder::generateOptionalC() {
 }
 
 void C2Builder::generateOptionalIR() {
-/*
-    need:
-        options (single_module)
-        paths
-        const MainComponent*
-        no ModuleMap ?!
-        recipe.name
-        recipe.type (later)
-
-*/
     if (options.checkOnly) return;
     if (!options.generateIR && !recipe.generateIR) return;
 
