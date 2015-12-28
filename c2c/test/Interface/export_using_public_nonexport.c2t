@@ -1,3 +1,4 @@
+// @skip
 // @recipe lib static
 $warnings no-unused
 $generate-c no-build
