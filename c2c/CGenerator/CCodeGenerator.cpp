@@ -176,7 +176,7 @@ void CCodeGenerator::EmitExpr(const Expr* E, StringBuilder& output) {
     case EXPR_INTEGER_LITERAL:
         {
             const IntegerLiteral* N = cast<IntegerLiteral>(E);
-            output.radix(N->getRadix(), N->Value.getSExtValue());
+            output.number(N->getRadix(), N->Value.getSExtValue());
             return;
         }
     case EXPR_FLOAT_LITERAL:

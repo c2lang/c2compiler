@@ -24,8 +24,8 @@ namespace C2 {
 
 class Utils {
 public:
-    static u_int64_t getCurrentTime();
-    static u_int64_t bitmask(unsigned width) {
+    static uint64_t getCurrentTime();
+    static uint64_t bitmask(unsigned width) {
         // create mask, 4 -> 0xF,  5-> 0x1F, etc
         uint64_t mask = 0;
         for (unsigned i=0; i<width; i++) {

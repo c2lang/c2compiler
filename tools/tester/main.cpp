@@ -109,10 +109,10 @@ static void color_print(const char* color, const char* format, ...) {
 }
 
 
-static u_int64_t getCurrentTime() {
+static uint64_t getCurrentTime() {
     struct timeval now;
     gettimeofday(&now, NULL);
-    u_int64_t now64 = now.tv_sec;
+    uint64_t now64 = now.tv_sec;
     now64 *= 1000000;
     now64 += now.tv_usec;
     return now64;
@@ -1196,7 +1196,7 @@ int main(int argc, const char *argv[])
         exit(-1);
     }
 
-    u_int64_t t1 = getCurrentTime();
+    uint64_t t1 = getCurrentTime();
     if (S_ISREG(statbuf.st_mode)) {
         handle_file(target);
     } else if (S_ISDIR(statbuf.st_mode)) {
@@ -1205,7 +1205,7 @@ int main(int argc, const char *argv[])
     } else {
         usage(argv[0]);
     }
-    u_int64_t t2 = getCurrentTime();
+    uint64_t t2 = getCurrentTime();
     const char* color = (numerrors ? COL_ERROR : COL_OK);
     color_print(color, "RESULTS: %u test%s (%u ok, %u failed, %u skipped) ran in %llu ms", numtests, numtests == 1 ? "" : "s", numtests - (numerrors+numskipped), numerrors, numskipped, (t2-t1)/1000);
 

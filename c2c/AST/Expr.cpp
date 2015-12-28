@@ -73,7 +73,7 @@ void IntegerLiteral::print(StringBuilder& buffer, unsigned indent) const {
     buffer.setColor(COL_VALUE);
     buffer << ' ';
 
-    buffer.radix(getRadix(), Value.getSExtValue());
+    buffer.number(getRadix(), Value.getSExtValue());
     buffer << '\n';
 }
 

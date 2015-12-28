@@ -16,6 +16,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 
 #include "Utils/StringBuilder.h"
 
@@ -88,7 +89,7 @@ StringBuilder& StringBuilder::operator<<(int32_t input) {
     return *this;
 }
 
-StringBuilder& StringBuilder::operator<<(u_int32_t input) {
+StringBuilder& StringBuilder::operator<<(uint32_t input) {
 #ifdef SIZE_DEBUG
     assert(10 < space_left() && "buffer overflow");
 #endif
@@ -104,7 +105,7 @@ StringBuilder& StringBuilder::operator<<(int64_t input) {
     return *this;
 }
 
-StringBuilder& StringBuilder::operator<<(u_int64_t input) {
+StringBuilder& StringBuilder::operator<<(uint64_t input) {
 #ifdef SIZE_DEBUG
     assert(10 < space_left() && "buffer overflow");
 #endif
@@ -128,7 +129,19 @@ void StringBuilder::clear() {
     buffer[0] = 0;
 }
 
-void StringBuilder::radix(unsigned radix_, int64_t value) {
+void StringBuilder::print(const char* format, ...) {
+    va_list(Args);
+    va_start(Args, format);
+    unsigned len = vsprintf(ptr, format, Args);
+#ifdef SIZE_DEBUG
+    assert(len < space_left() && "buffer overflow");
+#endif
+    va_end(Args);
+    ptr += len;
+    *ptr = 0;
+}
+
+void StringBuilder::number(unsigned radix_, int64_t value) {
     char temp[80];
     switch (radix_) {
     case 2:
@@ -136,10 +149,10 @@ void StringBuilder::radix(unsigned radix_, int64_t value) {
             char* cp = &temp[2];
             temp[0] = '0';
             temp[1] = 'b';
-            bool print = false;
+            bool show = false;
             for (int i=63; i>0; i--) {
-                if (value & (1lu<<i)) print = true;
-                if (print) {
+                if (value & (1lu<<i)) show = true;
+                if (show) {
                     *cp++ = (value & (1lu<<i) ? '1' : '0');
                 }
             }

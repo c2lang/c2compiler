@@ -189,7 +189,7 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
 
 int main(int argc, const char *argv[])
 {
-    u_int64_t t1 = Utils::getCurrentTime();
+    uint64_t t1 = Utils::getCurrentTime();
     BuildOptions opts;
     parse_arguments(argc, argv, opts);
 
@@ -243,7 +243,7 @@ int main(int argc, const char *argv[])
         return -1;
     }
     if (opts.printTiming) {
-        u_int64_t t2 = Utils::getCurrentTime();
+        uint64_t t2 = Utils::getCurrentTime();
         printf(COL_TIME"total building time: %" PRIu64" usec" ANSI_NORMAL"\n", t2 - t1);
     }
 

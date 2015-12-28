@@ -32,12 +32,13 @@ public:
     StringBuilder& operator<<(const std::string& input);
     StringBuilder& operator<<(char input);
     StringBuilder& operator<<(int32_t input);
-    StringBuilder& operator<<(u_int32_t input);
+    StringBuilder& operator<<(uint32_t input);
     StringBuilder& operator<<(int64_t input);
-    StringBuilder& operator<<(u_int64_t input);
+    StringBuilder& operator<<(uint64_t input);
     StringBuilder& operator<<(const StringBuilder& input);
 
-    void radix(unsigned radix_, int64_t value);
+    void print(const char* format, ...);
+    void number(unsigned radix_, int64_t value);
 
     operator const char*() const { return buffer; }
     const char* c_str() const { return buffer; }

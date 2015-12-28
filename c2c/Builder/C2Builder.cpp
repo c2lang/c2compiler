@@ -225,7 +225,7 @@ int C2Builder::checkFiles() {
 int C2Builder::build() {
     log(ANSI_GREEN, "building target %s", recipe.name.c_str());
 
-    u_int64_t t1_build = Utils::getCurrentTime();
+    uint64_t t1_build = Utils::getCurrentTime();
     // LangOptions
     LangOptions LangOpts;
     LangOpts.C2 = 1;
@@ -328,7 +328,7 @@ int C2Builder::build() {
 
 
     // phase 1a: parse and local analyse
-    u_int64_t t1_parse = Utils::getCurrentTime();
+    uint64_t t1_parse = Utils::getCurrentTime();
     unsigned errors = 0;
     std::unique_ptr<Component> Main(new Component(recipe.name, false, false));
     mainComponent = Main.get();
@@ -342,11 +342,11 @@ int C2Builder::build() {
         errors += !ok;
         Main->addAST(ast, ast->getModuleName());
     }
-    u_int64_t t2_parse = Utils::getCurrentTime();
+    uint64_t t2_parse = Utils::getCurrentTime();
     if (options.printTiming) log(COL_TIME, "parsing took %" PRIu64" usec", t2_parse - t1_parse);
     if (client->getNumErrors()) goto out;
 
-    u_int64_t t1_analyse, t2_analyse;
+    uint64_t t1_analyse, t2_analyse;
     // phase 1b: merge file's symbol tables to module symbols tables
     errors = !createModules(mainComponent, Diags);
     if (options.printSymbols) printSymbols();
@@ -357,7 +357,7 @@ int C2Builder::build() {
     // TODO refactor to put all LLVM/CLang objects in some container
     // TODO and put everything here into some function
     {
-        u_int64_t t1_parse_libs = Utils::getCurrentTime();
+        uint64_t t1_parse_libs = Utils::getCurrentTime();
         libLoader.addLib("libc");
         libLoader.addLib("pthread");
         libLoader.scan();
@@ -424,7 +424,7 @@ int C2Builder::build() {
                 }
             }
         }
-        u_int64_t t2_parse_libs = Utils::getCurrentTime();
+        uint64_t t2_parse_libs = Utils::getCurrentTime();
         if (options.printTiming) log(COL_TIME, "parsing libs took %" PRIu64" usec", t2_parse_libs - t1_parse_libs);
         if (!ok) goto out;
     }
@@ -461,7 +461,7 @@ int C2Builder::build() {
     if (options.verbose) log(COL_VERBOSE, "done");
 out:
     //SM.PrintStats();
-    u_int64_t t2_build = Utils::getCurrentTime();
+    uint64_t t2_build = Utils::getCurrentTime();
     if (options.printTiming) log(COL_TIME, "total build took %" PRIu64" usec", t2_build - t1_build);
     raw_ostream &OS = llvm::errs();
     unsigned NumWarnings = client->getNumWarnings();
@@ -683,7 +683,7 @@ void C2Builder::generateOptionalDeps() {
 
     if (options.verbose) log(COL_VERBOSE, "generating dependencies");
 
-    u_int64_t t1 = Utils::getCurrentTime();
+    uint64_t t1 = Utils::getCurrentTime();
     bool showFiles = false;
     bool showExternals = false;
     bool showPrivate = true;
@@ -697,7 +697,7 @@ void C2Builder::generateOptionalDeps() {
     DepGenerator generator(showFiles, showPrivate, showExternals);
     std::string path = OUTPUT_DIR + recipe.name + '/';
     generator.write(components, recipe.name, path);
-    u_int64_t t2 = Utils::getCurrentTime();
+    uint64_t t2 = Utils::getCurrentTime();
     if (options.printTiming) log(COL_TIME, "dep generation took %" PRIu64" usec", t2 - t1);
 }
 
@@ -706,11 +706,11 @@ void C2Builder::generateOptionalTags(const SourceManager& SM) const {
 
     if (options.verbose) log(COL_VERBOSE, "generating refs");
 
-    u_int64_t t1 = Utils::getCurrentTime();
+    uint64_t t1 = Utils::getCurrentTime();
     TagWriter generator(SM, components);
     std::string path = OUTPUT_DIR + recipe.name + '/';
     generator.write(recipe.name, path);
-    u_int64_t t2 = Utils::getCurrentTime();
+    uint64_t t2 = Utils::getCurrentTime();
     if (options.printTiming) log(COL_TIME, "refs generation took %" PRIu64" usec", t2 - t1);
 }
 
@@ -739,7 +739,7 @@ void C2Builder::generateOptionalC() {
     if (options.checkOnly) return;
     if (!options.generateC && !recipe.generateCCode) return;
 
-    u_int64_t t1 = Utils::getCurrentTime();
+    uint64_t t1 = Utils::getCurrentTime();
     bool single_module = false;
     bool no_build = false;
     for (unsigned i=0; i<recipe.cConfigs.size(); i++) {
@@ -766,14 +766,14 @@ void C2Builder::generateOptionalC() {
         if (options.verbose) log(COL_VERBOSE, "generating C code");
         cgen.generate();
 
-        u_int64_t t2 = Utils::getCurrentTime();
+        uint64_t t2 = Utils::getCurrentTime();
         if (options.printTiming) log(COL_TIME, "C code generation took %" PRIu64" usec", t2 - t1);
 
         if (!no_build) {
             if (options.verbose) log(COL_VERBOSE, "building C code");
-            u_int64_t t3 = Utils::getCurrentTime();
+            uint64_t t3 = Utils::getCurrentTime();
             cgen.build();
-            u_int64_t t4 = Utils::getCurrentTime();
+            uint64_t t4 = Utils::getCurrentTime();
             if (options.printTiming) log(COL_TIME, "C code compilation took %" PRIu64" usec", t4 - t3);
         }
     }
@@ -797,12 +797,12 @@ void C2Builder::generateOptionalIR() {
 
     const ModuleList& mods = mainComponent->getModules();
     if (single_module) {
-        u_int64_t t1 = Utils::getCurrentTime();
+        uint64_t t1 = Utils::getCurrentTime();
         std::string filename = recipe.name;
         if (options.verbose) log(COL_VERBOSE, "generating IR for single module %s", filename.c_str());
         CodeGenModule cgm(filename, true, mods);
         cgm.generate();
-        u_int64_t t2 = Utils::getCurrentTime();
+        uint64_t t2 = Utils::getCurrentTime();
         if (options.printTiming) log(COL_TIME, "IR generation took %" PRIu64" usec", t2 - t1);
         if (options.printIR) cgm.dump();
         bool ok = cgm.verify();
@@ -810,7 +810,7 @@ void C2Builder::generateOptionalIR() {
     } else {
         for (unsigned m=0; m<mods.size(); m++) {
             Module* M = mods[m];
-            u_int64_t t1 = Utils::getCurrentTime();
+            uint64_t t1 = Utils::getCurrentTime();
             if (M->isPlainC()) continue;
             if (M->getName() == "c2") continue;
 
@@ -819,7 +819,7 @@ void C2Builder::generateOptionalIR() {
             single.push_back(M);
             CodeGenModule cgm(M->getName(), false, single);
             cgm.generate();
-            u_int64_t t2 = Utils::getCurrentTime();
+            uint64_t t2 = Utils::getCurrentTime();
             if (options.printTiming) log(COL_TIME, "IR generation took %" PRIu64" usec", t2 - t1);
             if (options.printIR) cgm.dump();
             bool ok = cgm.verify();

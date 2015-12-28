@@ -123,7 +123,7 @@ void InterfaceGenerator::EmitExpr(const Expr* E) {
     case EXPR_INTEGER_LITERAL:
         {
             const IntegerLiteral* N = cast<IntegerLiteral>(E);
-            iface.radix(N->getRadix(), N->Value.getSExtValue());
+            iface.number(N->getRadix(), N->Value.getSExtValue());
             return;
         }
     case EXPR_FLOAT_LITERAL:
