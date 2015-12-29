@@ -17,6 +17,7 @@
 #include <set>
 #include <assert.h>
 #include <inttypes.h>
+#include <stdio.h>
 
 #include "IRGenerator/InterfaceGenerator.h"
 #include "CGenerator/HeaderNamer.h"
