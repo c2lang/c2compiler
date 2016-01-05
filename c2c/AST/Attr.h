@@ -38,6 +38,7 @@ enum AttrKind {
     ATTR_INLINE,
     ATTR_ALIGNED,
     ATTR_WEAK,
+    ATTR_OPAQUE,
 };
 
 // TODO make private
@@ -51,9 +52,9 @@ struct AttrInfo {
     bool requiresArgument;
     unsigned allowedTypes;
 
-    bool isAllowedInFunction() const { return allowedTypes & ATTR_FUNC; }
-    bool isAllowedInType() const { return allowedTypes & ATTR_TYPE; }
-    bool isAllowedInVar() const { return allowedTypes & ATTR_VAR; }
+    inline bool isAllowedInFunction() const { return allowedTypes & ATTR_FUNC; }
+    inline bool isAllowedInType() const { return allowedTypes & ATTR_TYPE; }
+    inline bool isAllowedInVar() const { return allowedTypes & ATTR_VAR; }
 };
 
 class Attr {

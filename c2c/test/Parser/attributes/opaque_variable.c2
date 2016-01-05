@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+public int32 a @(opaque); // @error{attribute 'opaque' cannot be applied to variable declarations}
+

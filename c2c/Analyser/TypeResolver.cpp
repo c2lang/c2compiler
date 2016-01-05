@@ -167,6 +167,24 @@ QualType TypeResolver::resolveType(QualType Q, bool usedPublic) {
     return resolved;
 }
 
+void TypeResolver::checkOpaqueType(SourceLocation loc, bool isPublic, QualType Q) {
+    const StructType* ST = dyncast<StructType>(Q);
+    if (!ST) return;
+
+    const StructTypeDecl* S = ST->getDecl();
+    if (!S->hasAttribute(ATTR_OPAQUE)) return;
+
+    // if S is not in same Module, give 'used by value' error
+    // if S is in same module, and used in public interface, give error: 'public decl with opaque..'
+    if (globals.isExternal(S->getModule())) {
+        Diags.Report(loc, diag::err_opaque_used_by_value) << S->DiagName();
+    } else {
+        if (isPublic){
+            Diags.Report(loc, diag::err_opaque_used_by_value_public_decl) << S->DiagName();
+        }
+    }
+}
+
 bool TypeResolver::requireCompleteType(SourceLocation loc, QualType Q, int msg) {
     if (Q.isIncompleteType()) {
         StringBuilder name;

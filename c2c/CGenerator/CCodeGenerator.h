@@ -45,15 +45,14 @@ public:
                    const Modules& modules_, const ModuleList& mods_, const HeaderNamer& namer_);
     ~CCodeGenerator();
 
-    void generate(bool printCode);
-    void write(const std::string& outputDir);
+    void generate(bool printCode, const std::string& outputDir);
     void createLibHeader(bool printCode, const std::string& outputDir);
 
     // for CTypeWriter
     virtual void forwardDecl(const Decl* D);
     virtual void fullDecl(const Decl* D);
 private:
-    void EmitAll(bool emitFunctionBodies);
+    void EmitAll();
     void EmitIncludeGuard();
     void EmitIncludes();
 
@@ -102,6 +101,7 @@ private:
 
     const std::string& filename;
     Mode mode;
+    bool inInterface;
 
     const Modules& modules;
     const ModuleList& mods;

@@ -506,6 +506,7 @@ void FunctionAnalyser::analyseDeclStmt(Stmt* stmt) {
                 }
             }
         }
+        TR.checkOpaqueType(decl->getLocation(), false, Q);
 
         if (!haveError) {
             if (!TR.requireCompleteType(decl->getLocation(), Q, diag::err_typecheck_decl_incomplete_type)) {
@@ -904,6 +905,8 @@ void FunctionAnalyser::analyseSizeofExpr(Expr* expr) {
         IdentifierExpr* id = cast<IdentifierExpr>(expr);
         Decl* D = analyseIdentifier(id);
         if (!D) return;
+        TR.checkOpaqueType(id->getLocation(), false, D->getType());
+
         switch (D->getKind()) {
         case DECL_FUNC:
             // Q: allow?
@@ -1462,6 +1465,10 @@ QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr* M, unsign
     LOG_FUNC
     const StructType* ST = cast<StructType>(T);
     const StructTypeDecl* S = ST->getDecl();
+    if (CurrentFunction->getModule() != S->getModule() && S->hasAttribute(ATTR_OPAQUE)) {
+        Diag(M->getLocation(), diag::err_deref_opaque) << S->isStruct() << S->DiagName();
+        return QualType();
+    }
     IdentifierExpr* member = M->getMember();
     Decl* match = S->find(member->getName());
     if (match) {

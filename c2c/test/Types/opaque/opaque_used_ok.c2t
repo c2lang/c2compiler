@@ -1,0 +1,28 @@
+// @recipe bin
+$warnings no-unused
+
+// @file{file1}
+module foo;
+
+public type Foo struct {
+    int32 x;
+} @(opaque)
+
+public func int32 f4() {
+    return sizeof(Foo);
+}
+
+// @file{file2}
+module bar;
+import foo local;
+
+Foo* v;
+type Bar struct {
+    Foo* f;
+}
+public func Foo* f1() { return nil; }
+func void f2(Foo* arg1) {}
+public func void f3() {
+    Foo* f;
+}
+

@@ -70,6 +70,7 @@ public:
     DeclKind getKind() const { return static_cast<DeclKind>(DeclBits.dKind); }
     bool isExported() const { return DeclBits.DeclIsExported; }
     bool isPublic() const { return DeclBits.DeclIsPublic; }
+    void setPublic(bool isPublic) { DeclBits.DeclIsPublic = isPublic; }
     bool isUsed() const { return DeclBits.DeclIsUsed; }
     bool isUsedPublic() const { return DeclBits.DeclIsUsedPublic; }
     void setExported() { DeclBits.DeclIsExported = true; }
@@ -284,6 +285,7 @@ public:
         }
         return -1;
     }
+    void setOpaqueMembers();
 
     bool isStruct() const { return DeclBits.StructTypeIsStruct; }
     bool isGlobal() const { return DeclBits.StructTypeIsGlobal; }

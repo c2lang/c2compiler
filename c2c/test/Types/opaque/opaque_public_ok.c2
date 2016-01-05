@@ -1,0 +1,30 @@
+// @warnings{no-unused}
+module test;
+
+public type Foo struct {
+    int32 x;
+} @(opaque)
+
+public type Foo2 struct {
+    Foo f;
+} @(opaque)
+
+Foo v1;
+type A struct {
+    Foo f;
+}
+func Foo a() {
+    Foo f;
+    return f;
+}
+func void f1(Foo arg1) {}
+
+public Foo* f2;
+public type B struct {
+    Foo* a;
+}
+public func Foo* f3() {
+    return nil;
+}
+public func void f4(Foo* arg1) {}
+

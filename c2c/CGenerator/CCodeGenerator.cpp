@@ -61,6 +61,7 @@ CCodeGenerator::CCodeGenerator(const std::string& filename_,
                                const HeaderNamer& namer_)
     : filename(filename_)
     , mode(mode_)
+    , inInterface(false)
     , modules(modules_)
     , mods(mods_)
     , headerNamer(namer_)
@@ -72,8 +73,9 @@ CCodeGenerator::CCodeGenerator(const std::string& filename_,
 CCodeGenerator::~CCodeGenerator() {
 }
 
-void CCodeGenerator::generate(bool printCode) {
-    EmitAll(true);
+void CCodeGenerator::generate(bool printCode, const std::string& outputDir) {
+    inInterface = false;
+    EmitAll();
 
     if (printCode) {
         if (mode != SINGLE_FILE) {
@@ -81,9 +83,17 @@ void CCodeGenerator::generate(bool printCode) {
         }
         printf("---- code for %s ----\n%s\n", cfilename.c_str(), (const char*)cbuf);
     }
+    switch (mode) {
+    case MULTI_FILE:
+        FileUtils::writeFile(outputDir.c_str(), outputDir + hfilename, hbuf);
+        break;
+    case SINGLE_FILE:
+        break;
+    }
+    FileUtils::writeFile(outputDir.c_str(), outputDir + cfilename, cbuf);
 }
 
-void CCodeGenerator::EmitAll(bool emitFunctionBodies) {
+void CCodeGenerator::EmitAll() {
     EmitIncludeGuard();
     EmitIncludes();
 
@@ -136,7 +146,7 @@ void CCodeGenerator::EmitAll(bool emitFunctionBodies) {
     }
     // TODO Arrayvalues
 
-    if (emitFunctionBodies) {
+    if (!inInterface) {
         // generate functions
         for (unsigned m=0; m<mods.size(); m++) {
             const Files& files = mods[m]->getFiles();
@@ -153,15 +163,9 @@ void CCodeGenerator::EmitAll(bool emitFunctionBodies) {
     hbuf << "#endif\n";
 }
 
-void CCodeGenerator::write(const std::string& outputDir) {
-    if (mode != SINGLE_FILE) {
-        FileUtils::writeFile(outputDir.c_str(), outputDir + hfilename, hbuf);
-    }
-    FileUtils::writeFile(outputDir.c_str(), outputDir + cfilename, cbuf);
-}
-
 void CCodeGenerator::createLibHeader(bool printCode, const std::string& outputDir) {
-    EmitAll(false);
+    inInterface = true;
+    EmitAll();
 
     if (printCode) {
         printf("---- code for %s ----\n%s\n", hfilename.c_str(), (const char*)hbuf);
@@ -674,6 +678,7 @@ void CCodeGenerator::EmitTypeDecl(const TypeDecl* T) {
         *out << ";\n\n";
         break;
     case DECL_STRUCTTYPE:
+        if (T->hasAttribute(ATTR_OPAQUE)) out = &cbuf;
         EmitStructType(cast<StructTypeDecl>(T), *out, 0);
         return;
     case DECL_ENUMTYPE:
@@ -709,7 +714,9 @@ void CCodeGenerator::EmitForwardTypeDecl(const TypeDecl* D) {
 }
 
 void CCodeGenerator::EmitStructType(const StructTypeDecl* S, StringBuilder& out, unsigned indent) {
+    if (S->hasAttribute(ATTR_OPAQUE) && inInterface) return;
     LOG_DECL(S)
+
     out.indent(indent);
     out << (S->isStruct() ? "struct " : "union ");
     if (S->getName() != "" && S->isGlobal()) {
@@ -1229,6 +1236,9 @@ void CCodeGenerator::EmitAttributes(const Decl* D, StringBuilder& output) {
                 output << ')';
             }
             first = false;
+            break;
+        case ATTR_OPAQUE:
+            // dont emit
             break;
         }
     }

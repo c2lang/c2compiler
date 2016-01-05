@@ -451,18 +451,19 @@ unsigned FileAnalyser::resolveVarDecl(VarDecl* D) {
     LOG_FUNC
     // TODO duplicate code with FileAnalyser::analyseDeclExpr()
     QualType Q = TR->resolveType(D->getType(), D->isPublic());
-    if (Q.isValid()) {
-        D->setType(Q);
+    if (!Q.isValid()) return 1;
 
-        // TODO move to after checkVarInits() (to allow constants in array size)
-        if (Q.isArrayType()) {
-            functionAnalyser.checkArraySizeExpr(D);
-        }
+    D->setType(Q);
 
-        // NOTE: dont check initValue here (doesn't have canonical type yet)
-        return 0;
+    // TODO move to after checkVarInits() (to allow constants in array size)
+    if (Q.isArrayType()) {
+        functionAnalyser.checkArraySizeExpr(D);
     }
-    return 1;
+
+    TR->checkOpaqueType(D->getLocation(), D->isPublic(), Q);
+
+    // NOTE: dont check initValue here (doesn't have canonical type yet)
+    return 0;
 }
 
 unsigned FileAnalyser::resolveFunctionDecl(FunctionDecl* D) {
@@ -470,8 +471,10 @@ unsigned FileAnalyser::resolveFunctionDecl(FunctionDecl* D) {
     unsigned errors = 0;
     // return type
     QualType Q = TR->resolveType(D->getReturnType(), D->isPublic());
-    if (Q.isValid()) D->setReturnType(Q);
-    else errors++;
+    if (Q.isValid()) {
+        D->setReturnType(Q);
+        TR->checkOpaqueType(D->getLocation(), D->isPublic(), Q);
+    } else errors++;
 
     // args
     for (unsigned i=0; i<D->numArgs(); i++) {
@@ -549,11 +552,13 @@ void FileAnalyser::checkVarDeclAttributes(VarDecl* D) {
             case ATTR_UNUSED:
             case ATTR_NORETURN:
             case ATTR_INLINE:
+                // should not happen?
                 break;
             case ATTR_UNUSED_PARAMS:
             case ATTR_SECTION:
             case ATTR_ALIGNED:
             case ATTR_WEAK:
+            case ATTR_OPAQUE:
                 Diags.Report(A->getLocation(), diag::err_attribute_invalid_constants) << A->kind2str() << A->getRange();
                 break;
             }
@@ -581,7 +586,7 @@ void FileAnalyser::checkAttributes(Decl* D) {
             break;
         case ATTR_PACKED:
             if (!isa<StructTypeDecl>(D)) {
-                Diags.Report(A->getLocation(), diag::err_attribute_packed_non_struct) << A->getRange();
+                Diags.Report(A->getLocation(), diag::err_attribute_non_struct) << A->kind2str() <<A->getRange();
             }
             break;
         case ATTR_UNUSED:
@@ -620,6 +625,15 @@ void FileAnalyser::checkAttributes(Decl* D) {
                 Diags.Report(A->getLocation(), diag::err_attribute_weak_non_public) << A->getRange();
             } else if (!D->isExported()) {
                 Diags.Report(A->getLocation(), diag::err_attribute_weak_non_exported) << A->getRange();
+            }
+            break;
+        case ATTR_OPAQUE:
+            if (!isa<StructTypeDecl>(D)) {
+                Diags.Report(A->getLocation(), diag::err_attribute_non_struct) << A->kind2str() << A->getRange();
+                break;
+            }
+            if (!D->isPublic()) {
+                Diags.Report(A->getLocation(), diag::err_attr_opaque_non_public) << A->getRange();
             }
             break;
         }

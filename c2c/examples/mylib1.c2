@@ -29,6 +29,10 @@ public const int32 MAX_FOO = 30;
 public func Handle* init() {
     Handle* p = nil; //= malloc(sizeof(Handle));
     internal.init();
+
+    internal.Handle* h = internal.create();
+    internal.modify(h);
+
     return p;
 }
 

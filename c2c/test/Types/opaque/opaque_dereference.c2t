@@ -1,0 +1,20 @@
+// @recipe bin
+$warnings no-unused
+
+// @file{file1}
+module foo;
+
+public type Foo struct {
+    int32 x;
+} @(opaque)
+
+// @file{file2}
+module bar;
+import foo local;
+
+Foo* f;
+
+func void b() {
+    int32 x = f.x;   // @error{cannot dereference opaque struct 'Foo'}
+}
+

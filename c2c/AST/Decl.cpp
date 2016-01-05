@@ -280,15 +280,26 @@ Decl* StructTypeDecl::find(const std::string& name_) const {
     }
     return 0;
 }
+
+void StructTypeDecl::setOpaqueMembers() {
+    for (unsigned i=0; i<members.size(); i++) {
+        Decl* D = members[i];
+        D->setPublic(false);
+        StructTypeDecl* subStruct = dyncast<StructTypeDecl>(D);
+        if (subStruct) subStruct->setOpaqueMembers();
+    }
+}
+
 void StructTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_DECL);
     buffer << "StructTypeDecl (";
     if (isStruct()) buffer << "struct";
     else buffer << "union";
-    buffer << ") ";
+    buffer << ")";
     printPublic(buffer);
     buffer.setColor(COL_VALUE);
+    buffer << ' ';
     if (name != "") buffer << name;
     else buffer << "<anonymous>";
     buffer << '\n';

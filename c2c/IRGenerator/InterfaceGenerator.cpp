@@ -432,6 +432,14 @@ void InterfaceGenerator::EmitStructType(const StructTypeDecl* S, unsigned indent
             iface << ' ' << S->getName();
         }
     }
+
+    if (S->hasAttribute(ATTR_OPAQUE)) {
+        iface << " {}";
+        EmitAttributes(S);
+        iface << '\n';
+        return;
+    }
+
     iface << " {\n";
     for (unsigned i=0;i<S->numMembers(); i++) {
         Decl* member = S->getMember(i);
@@ -640,7 +648,8 @@ void InterfaceGenerator::EmitAttributes(const Decl* D) {
         case ATTR_UNUSED:
         case ATTR_SECTION:
         case ATTR_ALIGNED:
-            if (first) iface << " __attribute__((";
+        case ATTR_OPAQUE:
+            if (first) iface << " @(";
             else iface << ", ";
             iface << A->kind2str();
             if (Arg) {
@@ -652,6 +661,6 @@ void InterfaceGenerator::EmitAttributes(const Decl* D) {
             break;
         }
     }
-    if (!first) iface << "))";
+    if (!first) iface << ")";
 }
 

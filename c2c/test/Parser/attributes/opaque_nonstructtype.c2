@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+type Enum enum int8 {
+    A,
+} @(opaque)         // @error{attribute 'opaque' can only be applied to struct/union types}
+
+type Alias int32 @(opaque);  // @error{attribute 'opaque' can only be applied to struct/union types}
+
+type Func func void() @(opaque);    // @error{attribute 'opaque' can only be applied to struct/union types}
+

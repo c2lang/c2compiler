@@ -49,8 +49,7 @@ void CGenerator::generate() {
     if (options.single_module) {
         makeGen.add(targetName);
         CCodeGenerator gen(targetName, CCodeGenerator::SINGLE_FILE, moduleMap, mods, includeNamer);
-        gen.generate(options.printC);
-        gen.write(outdir);
+        gen.generate(options.printC, outdir);
     } else {
         for (unsigned m=0; m<mods.size(); m++) {
             Module* M = mods[m];
@@ -58,8 +57,7 @@ void CGenerator::generate() {
             ModuleList single;
             single.push_back(M);
             CCodeGenerator gen(M->getName(), CCodeGenerator::MULTI_FILE, moduleMap, single, includeNamer);
-            gen.generate(options.printC);
-            gen.write(outdir);
+            gen.generate(options.printC, outdir);
         }
     }
     makeGen.write();

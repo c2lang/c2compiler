@@ -847,6 +847,12 @@ void C2Sema::ActOnAttr(Decl* D, const char* name, SourceRange range, Expr* arg) 
 
     D->setHasAttributes();
     ast.addAttribute(D, new Attr(kind, range, arg));
+
+    // Fixup opaque structs; members are not public!
+    if (kind == ATTR_OPAQUE && isa<StructTypeDecl>(D)) {
+        StructTypeDecl* S = cast<StructTypeDecl>(D);
+        S->setOpaqueMembers();
+    }
 }
 
 C2::ExprResult C2Sema::ActOnIntegerConstant(SourceLocation Loc, uint64_t Val) {

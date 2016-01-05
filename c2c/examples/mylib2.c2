@@ -15,3 +15,15 @@ func void destroy() {
     count--;
 }
 
+public type Handle struct {
+    int32 x;
+} @(opaque)
+
+public func Handle* create() {
+    return nil;
+}
+
+public func void modify(Handle* handle) {
+    handle.x++;
+}
+
