@@ -15,8 +15,13 @@ func void destroy() {
     count--;
 }
 
+type Priv struct {
+    char* cp;
+}
+
 public type Handle struct {
     int32 x;
+    Priv priv;      // non-public types allowed in opaque struct
 } @(opaque)
 
 public func Handle* create() {
@@ -25,5 +30,6 @@ public func Handle* create() {
 
 public func void modify(Handle* handle) {
     handle.x++;
+    handle.priv.cp = nil;
 }
 
