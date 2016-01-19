@@ -10,7 +10,7 @@ module bar;
 
 import foo;
 
-func int32 test2() {   // @warning{unused function 'test2'}
+func int32 test2() {   // @warning{unused function 'bar.test2'}
     return foo.test1();
 }
 

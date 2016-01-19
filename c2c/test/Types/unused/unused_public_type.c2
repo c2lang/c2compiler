@@ -1,7 +1,7 @@
 // @warnings{no-unused-variable}
 module test;
 
-public type Number int32; // @warning{type 'Number' is not used public}
+public type Number int32; // @warning{type 'test.Number' is not used public}
 
 Number n;
 

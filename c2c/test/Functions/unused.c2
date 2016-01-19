@@ -1,5 +1,5 @@
 module test;
 
-func void test1() {     // @warning{unused function 'test1'}
+func void test1() {     // @warning{unused function 'test.test1'}
 }
 

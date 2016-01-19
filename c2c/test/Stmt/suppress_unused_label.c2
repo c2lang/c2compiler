@@ -1,7 +1,7 @@
 // @warnings{no-unused-label}
 module test;
 
-func void foo() {}      // @warning{unused function 'foo'}
+func void foo() {}      // @warning{unused function 'test.foo'}
 
 public func int32 main() {
     int32 x = 0;        // @warning{unused variable 'x'}

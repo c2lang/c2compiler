@@ -1,6 +1,6 @@
 module test;
 
-public int32 n;       // @warning{variable 'n' is not used public}
+public int32 n;       // @warning{variable 'test.n' is not used public}
 
 public func int32 main() {
     return n;

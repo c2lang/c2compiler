@@ -63,7 +63,12 @@ void Decl::fullName(StringBuilder& output) const {
 
 string Decl::DiagName() const {
     StringBuilder tmp(128);
-    tmp << "'" << name << "'";
+    tmp << '\'';
+    if (mod) {
+        tmp << mod->getName() << '.';
+    }
+    tmp << name;
+    tmp << '\'';
     return (const char*)tmp;
 }
 

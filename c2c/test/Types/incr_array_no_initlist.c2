@@ -1,6 +1,6 @@
 module test;
 
-int32[+] a;     // @warning{unused variable 'a'}
+int32[+] a;     // @warning{unused variable 'test.a'}
 a += 10;
 a += 20;
 a += 30;

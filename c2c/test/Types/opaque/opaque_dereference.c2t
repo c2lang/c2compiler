@@ -15,6 +15,6 @@ import foo local;
 Foo* f;
 
 func void b() {
-    int32 x = f.x;   // @error{cannot dereference opaque struct 'Foo'}
+    int32 x = f.x;   // @error{cannot dereference opaque struct 'foo.Foo'}
 }
 

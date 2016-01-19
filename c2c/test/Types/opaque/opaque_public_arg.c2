@@ -5,6 +5,6 @@ public type Foo struct {
     int32 x;
 } @(opaque)
 
-public func void a(Foo arg1) {   // @error{public declaration using opaque type 'Foo' by value}
+public func void a(Foo arg1) {   // @error{public declaration using opaque type 'test.Foo' by value}
 }
 

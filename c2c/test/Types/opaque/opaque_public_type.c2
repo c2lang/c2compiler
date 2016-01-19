@@ -6,6 +6,6 @@ public type Foo struct {
 } @(opaque)
 
 public type A struct {
-    Foo f;      // @error{public declaration using opaque type 'Foo' by value}
+    Foo f;      // @error{public declaration using opaque type 'test.Foo' by value}
 }
 

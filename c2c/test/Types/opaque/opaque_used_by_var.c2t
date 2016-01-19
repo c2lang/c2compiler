@@ -12,5 +12,5 @@ public type Foo struct {
 module bar;
 import foo local;
 
-Foo v;      // @error{opaque type 'Foo' used by value}
+Foo v;      // @error{opaque type 'foo.Foo' used by value}
 
