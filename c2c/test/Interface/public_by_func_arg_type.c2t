@@ -19,7 +19,7 @@ public func void b(aa.AA arg1) {}
 module bb;
 import aa;
 
-public func void b(aa.AA arg1);
+func void b(aa.AA arg1);
 
 // @expect{atleast, bb.h}
 #include "aa.h"

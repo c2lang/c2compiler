@@ -68,7 +68,7 @@ public:
     // struct decls
     Decl* ActOnAliasType(const char* name, SourceLocation loc, Expr* typeExpr, bool is_public);
     StructTypeDecl* ActOnStructType(const char* name, SourceLocation loc, bool isStruct, bool is_public, bool is_global);
-    void ActOnStructVar(StructTypeDecl* S, const char* name, SourceLocation loc, Expr* type, Expr* InitValue, bool is_public);
+    void ActOnStructVar(StructTypeDecl* S, const char* name, SourceLocation loc, Expr* type, Expr* InitValue);
     void ActOnStructMember(StructTypeDecl* S, Decl* member);
 
     // statements

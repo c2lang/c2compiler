@@ -1,4 +1,4 @@
 module c_errno;
 
-public int32 errno;
+int32 errno;
 

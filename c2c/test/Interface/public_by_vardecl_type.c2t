@@ -19,7 +19,7 @@ public aa.AA b;
 module bb;
 import aa;
 
-public aa.AA b;
+aa.AA b;
 
 // @expect{atleast, bb.h}
 #include "aa.h"

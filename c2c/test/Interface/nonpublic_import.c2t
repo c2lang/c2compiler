@@ -15,7 +15,7 @@ public func void bar() {
 // @expect{complete, foo.c2i}
 module foo;
 
-public func void bar();
+func void bar();
 
 // @expect{complete, foo.h}
 #ifndef FOO_H

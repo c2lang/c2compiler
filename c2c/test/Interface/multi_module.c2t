@@ -27,21 +27,21 @@ public func aa.AA bb1(aa.AA* arg1) {
 // @expect{complete, aa.c2i}
 module aa;
 
-public type AA int32;
+type AA int32;
 
-public const int32 FIRST = 1;
+const int32 FIRST = 1;
 
 // @expect{complete, bb.c2i}
 module bb;
 
 import aa;
 
-public type Enum enum int8 {
+type Enum enum int8 {
     One = aa.FIRST,
     Two,
 }
 
-public func aa.AA bb1(aa.AA* arg1);
+func aa.AA bb1(aa.AA* arg1);
 
 // @expect{atleast, aa.h}
 #define aa_FIRST 1

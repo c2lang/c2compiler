@@ -176,6 +176,10 @@ C2::Decl* C2Sema::ActOnAliasType(const char* name, SourceLocation loc, Expr* typ
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
+    if (ast.isInterface()) {
+        if (is_public) Diag(loc, diag::err_public_in_interface);
+        is_public = true;
+    }
     TypeExpr* typeExpr = cast<TypeExpr>(type);
     if (typeExpr->hasLocalQualifier()) {
         Diag(loc, diag::err_invalid_local_typedef);
@@ -193,6 +197,10 @@ VarDecl* C2Sema::ActOnVarDef(const char* name, SourceLocation loc, bool is_publi
     TypeExpr* typeExpr = cast<TypeExpr>(type);
     if (typeExpr->hasLocalQualifier()) {
         Diag(loc, diag::err_invalid_local_globalvar);
+    }
+    if (ast.isInterface()) {
+        if (is_public) Diag(loc, diag::err_public_in_interface);
+        is_public = true;
     }
     VarDecl* V =  createVarDecl(VARDECL_GLOBAL, name, loc, typeExpr, 0, is_public);
     ast.addVar(V);
@@ -231,6 +239,10 @@ C2::FunctionDecl* C2Sema::ActOnFuncDecl(const char* name, SourceLocation loc, bo
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
+    if (ast.isInterface()) {
+        if (is_public) Diag(loc, diag::err_public_in_interface);
+        is_public = true;
+    }
     FunctionDecl* D = createFuncDecl(name, loc, is_public, rtype);
     if (D->getName() == "main") D->setExported();
     ast.addFunction(D);
@@ -246,6 +258,10 @@ C2::FunctionTypeDecl* C2Sema::ActOnFuncTypeDecl(const char* name, SourceLocation
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
+    if (ast.isInterface()) {
+        if (is_public) Diag(loc, diag::err_public_in_interface);
+        is_public = true;
+    }
     FunctionDecl* D = createFuncDecl(name, loc, is_public, rtype);
     FunctionTypeDecl* FTD = new FunctionTypeDecl(D);
     ast.addType(FTD);
@@ -620,8 +636,12 @@ StructTypeDecl* C2Sema::ActOnStructType(const char* name, SourceLocation loc,
     std::cerr << COL_SEMA << "SEMA: Struct/Union Type '" << (name ? name : "<anonymous>");
     std::cerr << ANSI_NORMAL << '\n';
 #endif
+    if (ast.isInterface()) {
+        if (is_public) Diag(loc, diag::err_public_in_interface);
+        is_public = true;
+    }
     QualType qt = typeContext.getStructType();
-    StructTypeDecl* S = new StructTypeDecl(name, loc, qt, isStruct, is_global, is_public); 
+    StructTypeDecl* S = new StructTypeDecl(name, loc, qt, isStruct, is_global, is_public);
     StructType* ST = cast<StructType>(qt.getTypePtr());
     ST->setDecl(S);
     if (is_global) {
@@ -631,7 +651,7 @@ StructTypeDecl* C2Sema::ActOnStructType(const char* name, SourceLocation loc,
     return S;
 }
 
-void C2Sema::ActOnStructVar(StructTypeDecl* S, const char* name, SourceLocation loc, Expr* type, Expr* InitValue, bool is_public) {
+void C2Sema::ActOnStructVar(StructTypeDecl* S, const char* name, SourceLocation loc, Expr* type, Expr* InitValue) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA << "SEMA: struct var " << name << " at ";
     loc.dump(SourceMgr);
@@ -641,7 +661,7 @@ void C2Sema::ActOnStructVar(StructTypeDecl* S, const char* name, SourceLocation 
     if (typeExpr->hasLocalQualifier()) {
         Diag(loc, diag::err_invalid_local_structmember) << (S->isStruct() ? 0 : 1);
     }
-    VarDecl* V = createVarDecl(VARDECL_MEMBER, name, loc, typeExpr, InitValue, is_public);
+    VarDecl* V = createVarDecl(VARDECL_MEMBER, name, loc, typeExpr, InitValue, S->isPublic());
     ActOnStructMember(S, V);
 }
 

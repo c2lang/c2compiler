@@ -1,14 +1,14 @@
 module pthread;
 
-public type pthread_t uint64;
+type pthread_t uint64;
 
-public type pthread_attr_t uint8[64];
+type pthread_attr_t uint8[64];
 
-public type ThreadFunc func void*(void*);
+type ThreadFunc func void*(void*);
 
-public func int32 pthread_create(pthread_t* __newthread,
+func int32 pthread_create(pthread_t* __newthread,
                                  const pthread_attr_t* __attr,
                                  ThreadFunc __start_routine,
                                  void* __arg);
 
-public func int32 pthread_join(pthread_t thread, void** value_ptr);
+func int32 pthread_join(pthread_t thread, void** value_ptr);

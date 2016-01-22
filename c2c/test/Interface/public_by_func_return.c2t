@@ -22,7 +22,7 @@ public func aa.AA b() {
 module bb;
 import aa;
 
-public func aa.AA b();
+func aa.AA b();
 
 // @expect{atleast, bb.h}
 #include "aa.h"

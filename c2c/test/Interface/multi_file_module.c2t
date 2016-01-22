@@ -27,8 +27,8 @@ module bb;
 
 import aa;
 
-public aa.Number n;
-public aa.Number n2;
+aa.Number n;
+aa.Number n2;
 
 // @expect{atleast, aa.h}
 

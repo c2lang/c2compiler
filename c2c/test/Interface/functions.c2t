@@ -19,9 +19,9 @@ func void d() {}
 // @expect{atleast, hello.c2i}
 module hello;
 
-public func void a();
+func void a();
 
-public func int32 b(void* arg1, ...);
+func int32 b(void* arg1, ...);
 
-public func void c(int32 arg1 = 10);
+func void c(int32 arg1 = 10);
 

@@ -1,64 +1,64 @@
 module regex;
 
-public type size_t int32;
+type size_t int32;
 
-public type regex_t struct
+type regex_t struct
 {
 	int32 re_magic;
 	size_t re_nsub;
 	const char* re_endp;
 }
 
-public type regoff_t int32;
+type regoff_t int32;
 
-public type regmatch_t struct
+type regmatch_t struct
 {
 	regoff_t rm_so;
 	regoff_t rm_eo;
 }
 
 /* regcomp() flags */
-public const int32 REG_BASIC = 0000;
-public const int32 REG_EXTENDED = 0001;
-public const int32 REG_ICASE = 0002;
-public const int32 REG_NOSUB = 0004;
-public const int32 REG_NEWLINE = 0010;
-public const int32 REG_NOSPEC = 0020;
-public const int32 REG_PEND = 0040;
-public const int32 REG_DUMP = 0200;
+const int32 REG_BASIC = 0000;
+const int32 REG_EXTENDED = 0001;
+const int32 REG_ICASE = 0002;
+const int32 REG_NOSUB = 0004;
+const int32 REG_NEWLINE = 0010;
+const int32 REG_NOSPEC = 0020;
+const int32 REG_PEND = 0040;
+const int32 REG_DUMP = 0200;
 
 /* regerror() flags */
-public const int32 REG_ENOSYS = -1;
-public const int32 REG_NOERROR =  0;
-public const int32 REG_NOMATCH =  1;
-public const int32 REG_BADPAT =  2;
-public const int32 REG_ECOLLATE =  3;
-public const int32 REG_ECTYPE =  4;
-public const int32 REG_EESCAPE =  5;
-public const int32 REG_ESUBREG =  6;
-public const int32 REG_EBRACK =  7;
-public const int32 REG_EPAREN =  8;
-public const int32 REG_EBRACE =  9;
-public const int32 REG_BADBR = 10;
-public const int32 REG_ERANGE = 11;
-public const int32 REG_ESPACE = 12;
-public const int32 REG_BADRPT = 13;
-public const int32 REG_EMPTY = 14;
-public const int32 REG_ASSERT = 15;
-public const int32 REG_INVARG = 16;
-public const int32 REG_ILLSEQ = 17;
-public const int32 REG_ATOI = 255;
-public const int32 REG_ITOA = 0400;
+const int32 REG_ENOSYS = -1;
+const int32 REG_NOERROR =  0;
+const int32 REG_NOMATCH =  1;
+const int32 REG_BADPAT =  2;
+const int32 REG_ECOLLATE =  3;
+const int32 REG_ECTYPE =  4;
+const int32 REG_EESCAPE =  5;
+const int32 REG_ESUBREG =  6;
+const int32 REG_EBRACK =  7;
+const int32 REG_EPAREN =  8;
+const int32 REG_EBRACE =  9;
+const int32 REG_BADBR = 10;
+const int32 REG_ERANGE = 11;
+const int32 REG_ESPACE = 12;
+const int32 REG_BADRPT = 13;
+const int32 REG_EMPTY = 14;
+const int32 REG_ASSERT = 15;
+const int32 REG_INVARG = 16;
+const int32 REG_ILLSEQ = 17;
+const int32 REG_ATOI = 255;
+const int32 REG_ITOA = 0400;
 
 /* regexec() flags */
-public const int32 REG_NOTBOL = 00001;
-public const int32 REG_NOTEOL = 00002;
-public const int32 REG_STARTEND = 00004;
-public const int32 REG_TRACE = 00400;
-public const int32 REG_LARGE = 01000;
-public const int32 REG_BACKR = 02000;
+const int32 REG_NOTBOL = 00001;
+const int32 REG_NOTEOL = 00002;
+const int32 REG_STARTEND = 00004;
+const int32 REG_TRACE = 00400;
+const int32 REG_LARGE = 01000;
+const int32 REG_BACKR = 02000;
 
-public func int32 regcomp(regex_t* preg, const char* pattern, int32 cflags);
-public func int32 regexec(const regex_t* preg, const char* string, size_t nmatch, regmatch_t[] pmatch, int32 eflags);
-public func size_t regerror(int32 errcode, const regex_t* preg, char* errbuf, size_t errbuf_size);
-public func void regfree(regex_t* preg);
+func int32 regcomp(regex_t* preg, const char* pattern, int32 cflags);
+func int32 regexec(const regex_t* preg, const char* string, size_t nmatch, regmatch_t[] pmatch, int32 eflags);
+func size_t regerror(int32 errcode, const regex_t* preg, char* errbuf, size_t errbuf_size);
+func void regfree(regex_t* preg);

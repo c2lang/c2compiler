@@ -292,7 +292,7 @@ void C2Parser::ParseStructBlock(StructTypeDecl* S) {
             SourceLocation idLoc = ConsumeToken();
 
             if (ExpectAndConsume(tok::semi, diag::err_expected_after, "member")) return;
-            Actions.ActOnStructVar(S, id->getNameStart(), idLoc, type.get(), 0, S->isPublic());
+            Actions.ActOnStructVar(S, id->getNameStart(), idLoc, type.get(), 0);
         }
     }
     if (ExpectAndConsume(tok::r_brace)) return;

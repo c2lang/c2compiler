@@ -37,18 +37,18 @@ public type Struct struct {
 // @expect{complete, hello.c2i}
 module hello;
 
-public type Number int32;
+type Number int32;
 
-public type State enum int8 {
+type State enum int8 {
     AA = 0,
     BB = 123,
     CC = Third,
     DD,
 }
 
-public type Func func int8*(int32* a, State* b);
+type Func func int8*(int32* a, State* b);
 
-public type Struct struct {
+type Struct struct {
     int32 x;
     Struct* s;
     Number n;
@@ -62,5 +62,5 @@ public type Struct struct {
     Func ff;
 }
 
-public const int8 Third = 124;
+const int8 Third = 124;
 

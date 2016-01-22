@@ -24,4 +24,4 @@ static int32_t test2_y2 = 0;
 // @expect{complete, test1.c2i}
 module test1;
 
-public int32 y1;
+int32 y1;

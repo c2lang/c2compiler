@@ -16,7 +16,7 @@ public int32 b = aa.AA;
 // @expect{complete, bb.c2i}
 module bb;
 
-public int32 b;
+int32 b;
 
 // @expect{atleast, bb.h}
 extern int32_t bb_b;

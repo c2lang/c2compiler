@@ -33,18 +33,18 @@ public type Internal struct {
 // @expect{complete, aa.c2i}
 module aa;
 
-public type AA struct {
+type AA struct {
     int32 x;
 }
 
-public func void foo();
+func void foo();
 
 // @expect{complete, bb.c2i}
 module bb;
 
 import aa;
 
-public aa.AA a1;
+aa.AA a1;
 
 // @expect{complete, aa.h}
 #ifndef AA_H

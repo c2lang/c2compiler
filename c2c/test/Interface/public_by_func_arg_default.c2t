@@ -17,7 +17,7 @@ public func void b(int32 arg1 = aa.AA) {}
 module bb;
 import aa;
 
-public func void b(int32 arg1 = aa.AA);
+func void b(int32 arg1 = aa.AA);
 
 // @expect{atleast, bb.h}
 #include "aa.h"

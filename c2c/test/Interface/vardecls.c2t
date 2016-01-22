@@ -15,11 +15,11 @@ public Number nn;
 
 // @expect{atleast, hello.c2i}
 
-public type Number int32;
+type Number int32;
 
-public int8 x;
-public const int32 y = 20;
-public int64 z;
+int8 x;
+const int32 y = 20;
+int64 z;
 
-public Number nn;
+Number nn;
 

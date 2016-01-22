@@ -17,7 +17,7 @@ public int32[aa.AA] b;
 module bb;
 import aa;
 
-public int32[aa.AA] b;
+int32[aa.AA] b;
 
 // @expect{atleast, bb.h}
 #include "aa.h"

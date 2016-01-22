@@ -1,54 +1,54 @@
 module stdlib;
 
-public type div_t struct {
+type div_t struct {
     int32 quot;
     int32 rem;
 }
 
-public type lldiv_t struct {
+type lldiv_t struct {
     int64 quot;
     int64 rem;
 }
 
-public const int32 RAND_MAX = 2147483647;      // same as Int32_max
+const int32 RAND_MAX = 2147483647;      // same as Int32_max
 
-public const int32 EXIT_FAILURE = 1;
-public const int32 EXIT_SUCCESS = 0;
+const int32 EXIT_FAILURE = 1;
+const int32 EXIT_SUCCESS = 0;
 
 // TEMP here
-public type size_t int32;
+type size_t int32;
 
-public func void* calloc(size_t count, size_t size);
-public func void* malloc(size_t size);
-public func void* realloc(void* ptr, size_t size);
-public func void* reallocf(void* ptr, size_t size);
-public func void* valloc(size_t size);
-public func void free(void* ptr);
+func void* calloc(size_t count, size_t size);
+func void* malloc(size_t size);
+func void* realloc(void* ptr, size_t size);
+func void* reallocf(void* ptr, size_t size);
+func void* valloc(size_t size);
+func void free(void* ptr);
 
-public func float64 atof(const char* nptr);
-public func int32 atoi(const char* nptr);
-public func int64 atol(const char* nptr);
-public func int64 atoll(const char* nptr);
+func float64 atof(const char* nptr);
+func int32 atoi(const char* nptr);
+func int64 atol(const char* nptr);
+func int64 atoll(const char* nptr);
 
-public func float64 strtod(const char* nptr, char** endptr);
-public func float32 strtof(const char* nptr, char** endptr);
-public func float64 strtold(const char* nptr, char** endptr);
-public func int64 strtol(const char* nptr, char** endptr, int32 base);
-public func uint64 strtoul(const char* nptr, char** endptr, int32 base);
-public func int64 strtoq(const char* nptr, char** endptr, int32 base);
-public func uint64 strtouq(const char* nptr, char** endptr, int32 base);
-public func int64 strtoll(const char* nptr, char** endptr, int32 base);
-public func uint64 strtoull(const char* nptr, char** endptr, int32 base);
+func float64 strtod(const char* nptr, char** endptr);
+func float32 strtof(const char* nptr, char** endptr);
+func float64 strtold(const char* nptr, char** endptr);
+func int64 strtol(const char* nptr, char** endptr, int32 base);
+func uint64 strtoul(const char* nptr, char** endptr, int32 base);
+func int64 strtoq(const char* nptr, char** endptr, int32 base);
+func uint64 strtouq(const char* nptr, char** endptr, int32 base);
+func int64 strtoll(const char* nptr, char** endptr, int32 base);
+func uint64 strtoull(const char* nptr, char** endptr, int32 base);
 
-public func char* l64a(int64 n);
-public func int64 a64l(const char* s);
+func char* l64a(int64 n);
+func int64 a64l(const char* s);
 
-public func int64 random();
-public func void srandom(uint32 __seed);
-public func char* initstate(uint32 __seed, char* __statebuf, int32 __statelen);
-public func char* setstate(char* __statebuf);
+func int64 random();
+func void srandom(uint32 __seed);
+func char* initstate(uint32 __seed, char* __statebuf, int32 __statelen);
+func char* setstate(char* __statebuf);
 
-public type random_data struct {
+type random_data struct {
    int32* fptr;
    int32* rptr;
    int32* state;
@@ -58,24 +58,24 @@ public type random_data struct {
    int32* end_ptr;
 }
 
-public func int32 random_r(random_data* __buf, int32* __result);
-public func int32 srandom_r(uint32 __seed, random_data* __buf);
-public func int32 initstate_r(uint32 __seed, char* __statebuf, int32 __statelen, random_data* __buf);
-public func int32 setstate_r(char* __statebuf, random_data* __buf);
-public func int32 rand();
-public func void srand(uint32 __seed);
-public func int32 rand_r(uint32* __seed);
-public func float64 drand48();
-public func float64 erand48(uint16* __xsubi);
-public func int64 lrand48();
-public func int64 nrand48(uint16* __xsubi);
-public func int64 mrand48();
-public func int64 jrand48(uint16* __xsubi);
-public func void srand48(int64 __seedval);
-public func uint16* seed48(uint16* __seed16v);
-public func void lcong48(uint16* __param);
+func int32 random_r(random_data* __buf, int32* __result);
+func int32 srandom_r(uint32 __seed, random_data* __buf);
+func int32 initstate_r(uint32 __seed, char* __statebuf, int32 __statelen, random_data* __buf);
+func int32 setstate_r(char* __statebuf, random_data* __buf);
+func int32 rand();
+func void srand(uint32 __seed);
+func int32 rand_r(uint32* __seed);
+func float64 drand48();
+func float64 erand48(uint16* __xsubi);
+func int64 lrand48();
+func int64 nrand48(uint16* __xsubi);
+func int64 mrand48();
+func int64 jrand48(uint16* __xsubi);
+func void srand48(int64 __seedval);
+func uint16* seed48(uint16* __seed16v);
+func void lcong48(uint16* __param);
 
-public type drand48_data struct {
+type drand48_data struct {
    uint16[3] __x;
    uint16[3] __old_x;
    uint16 __c;
@@ -83,72 +83,72 @@ public type drand48_data struct {
    uint64 __a;
 }
 
-public func int32 drand48_r(drand48_data* __buffer, float64* __result);
-public func int32 erand48_r(uint16* __xsubi, drand48_data* __buffer, float64* __result);
-public func int32 lrand48_r(drand48_data* __buffer, int64* __result);
-public func int32 nrand48_r(uint16* __xsubi, drand48_data* __buffer, int64* __result);
-public func int32 mrand48_r(drand48_data* __buffer, int64* __result);
-public func int32 jrand48_r(uint16* __xsubi, drand48_data* __buffer, int64* __result);
-public func int32 srand48_r(int64 __seedval, drand48_data* __buffer);
-public func int32 seed48_r(uint16* __seed16v, drand48_data* __buffer);
-public func int32 lcong48_r(uint16* __param, drand48_data* __buffer);
+func int32 drand48_r(drand48_data* __buffer, float64* __result);
+func int32 erand48_r(uint16* __xsubi, drand48_data* __buffer, float64* __result);
+func int32 lrand48_r(drand48_data* __buffer, int64* __result);
+func int32 nrand48_r(uint16* __xsubi, drand48_data* __buffer, int64* __result);
+func int32 mrand48_r(drand48_data* __buffer, int64* __result);
+func int32 jrand48_r(uint16* __xsubi, drand48_data* __buffer, int64* __result);
+func int32 srand48_r(int64 __seedval, drand48_data* __buffer);
+func int32 seed48_r(uint16* __seed16v, drand48_data* __buffer);
+func int32 lcong48_r(uint16* __param, drand48_data* __buffer);
 
-public func int32 posix_memalign(void** __memptr, int32 __alignment, int32 __size);
-public func void* aligned_alloc(int32 __alignment, int32 __size);
+func int32 posix_memalign(void** __memptr, int32 __alignment, int32 __size);
+func void* aligned_alloc(int32 __alignment, int32 __size);
 
-public func void abort();
-public type AtExitFn func void();
-public func int32 atexit(AtExitFn __func);
-public func int32 at_quick_exit(AtExitFn __func);
-public type OnExitFn func void(int32, void*);
-public func int32 on_exit(OnExitFn __func, void* __arg);
-public func void exit(int32 __status);
-public func void quick_exit(int32 __status);
-public func void _Exit(int32 __status);
+func void abort();
+type AtExitFn func void();
+func int32 atexit(AtExitFn __func);
+func int32 at_quick_exit(AtExitFn __func);
+type OnExitFn func void(int32, void*);
+func int32 on_exit(OnExitFn __func, void* __arg);
+func void exit(int32 __status);
+func void quick_exit(int32 __status);
+func void _Exit(int32 __status);
 
-public func char* getenv(const char* __name);
-public func int32 putenv(char* __string);
-public func int32 setenv(const char* __name, const char* __value, int32 __replace);
-public func int32 unsetenv(const char* __name);
-public func int32 clearenv();
+func char* getenv(const char* __name);
+func int32 putenv(char* __string);
+func int32 setenv(const char* __name, const char* __value, int32 __replace);
+func int32 unsetenv(const char* __name);
+func int32 clearenv();
 
-public func int32 mkstemp(char* __template);
-public func int32 mkstemps(char* __template, int32 __suffixlen);
-public func char* mkdtemp(char* __template);
-public func int32 system(const char* __command);
-public func char* realpath(const char* __name, char* __resolved);
-public func char* mktemp(char* __template);
+func int32 mkstemp(char* __template);
+func int32 mkstemps(char* __template, int32 __suffixlen);
+func char* mkdtemp(char* __template);
+func int32 system(const char* __command);
+func char* realpath(const char* __name, char* __resolved);
+func char* mktemp(char* __template);
 
-public type __compar_fn_t func int32(const void*, const void*);
-public func void* bsearch(const void* __key, const void* __base, int32 __nmemb, int32 __size, __compar_fn_t __compar);
-public func void qsort(void* __base, int32 __nmemb, int32 __size, __compar_fn_t __compar);
+type __compar_fn_t func int32(const void*, const void*);
+func void* bsearch(const void* __key, const void* __base, int32 __nmemb, int32 __size, __compar_fn_t __compar);
+func void qsort(void* __base, int32 __nmemb, int32 __size, __compar_fn_t __compar);
 
-public func int32 abs(int32 __x);
-public func int64 labs(int64 __x);
-public func int64 llabs(int64 __x);
-public func div_t div(int32 __numer, int32 __denom);
-public func div_t ldiv(int64 __numer, int64 __denom);
-public func lldiv_t lldiv(int64 __numer, int64 __denom);
+func int32 abs(int32 __x);
+func int64 labs(int64 __x);
+func int64 llabs(int64 __x);
+func div_t div(int32 __numer, int32 __denom);
+func div_t ldiv(int64 __numer, int64 __denom);
+func lldiv_t lldiv(int64 __numer, int64 __denom);
 
-public func char* ecvt(float64 __value, int32 __ndigit, int32* __decpt, int32* __sign);
-public func char* fcvt(float64 __value, int32 __ndigit, int32* __decpt, int32* __sign);
-public func char* gcvt(float64 __value, int32 __ndigit, char* __buf);
-public func char* qecvt(float64 __value, int32 __ndigit, int32* __decpt, int32* __sign);
-public func char* qfcvt(float64 __value, int32 __ndigit, int32* __decpt, int32* __sign);
-public func char* qgcvt(float64 __value, int32 __ndigit, char* __buf);
-public func int32 ecvt_r(float64 __value, int32 __ndigit, int32* __decpt, int32* __sign, char* __buf, int32 __len);
-public func int32 fcvt_r(float64 __value, int32 __ndigit, int32* __decpt, int32* __sign, char* __buf, int32 __len);
-public func int32 qecvt_r(float64 __value, int32 __ndigit, int32* __decpt, int32* __sign, char* __buf, int32 __len);
-public func int32 qfcvt_r(float64 __value, int32 __ndigit, int32* __decpt, int32* __sign, char* __buf, int32 __len);
+func char* ecvt(float64 __value, int32 __ndigit, int32* __decpt, int32* __sign);
+func char* fcvt(float64 __value, int32 __ndigit, int32* __decpt, int32* __sign);
+func char* gcvt(float64 __value, int32 __ndigit, char* __buf);
+func char* qecvt(float64 __value, int32 __ndigit, int32* __decpt, int32* __sign);
+func char* qfcvt(float64 __value, int32 __ndigit, int32* __decpt, int32* __sign);
+func char* qgcvt(float64 __value, int32 __ndigit, char* __buf);
+func int32 ecvt_r(float64 __value, int32 __ndigit, int32* __decpt, int32* __sign, char* __buf, int32 __len);
+func int32 fcvt_r(float64 __value, int32 __ndigit, int32* __decpt, int32* __sign, char* __buf, int32 __len);
+func int32 qecvt_r(float64 __value, int32 __ndigit, int32* __decpt, int32* __sign, char* __buf, int32 __len);
+func int32 qfcvt_r(float64 __value, int32 __ndigit, int32* __decpt, int32* __sign, char* __buf, int32 __len);
 
-public func int32 mblen(const char* __s, int32 __n);
-public func int32 mbtowc(int32* __pwc, const char* __s, int32 __n);
-public func int32 wctomb(char* __s, int32 __wchar);
-public func int32 mbstowcs(int32* __pwcs, const char* __s, int32 __n);
-public func int32 wcstombs(char* __s, const int32* __pwcs, int32 __n);
-public func int32 rpmatch(const char* __response);
+func int32 mblen(const char* __s, int32 __n);
+func int32 mbtowc(int32* __pwc, const char* __s, int32 __n);
+func int32 wctomb(char* __s, int32 __wchar);
+func int32 mbstowcs(int32* __pwcs, const char* __s, int32 __n);
+func int32 wcstombs(char* __s, const int32* __pwcs, int32 __n);
+func int32 rpmatch(const char* __response);
 // TODO need to parse char* const*
-//public func int32 getsubopt(char** __optionp, char*const* __tokens, char** __valuep);
-public func int32 getsubopt(char** __optionp, char** __tokens, char** __valuep);
-public func int32 getloadavg(float64* __loadavg, int32 __nelem);
+//func int32 getsubopt(char** __optionp, char*const* __tokens, char** __valuep);
+func int32 getsubopt(char** __optionp, char** __tokens, char** __valuep);
+func int32 getloadavg(float64* __loadavg, int32 __nelem);
 

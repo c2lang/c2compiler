@@ -414,7 +414,7 @@ void InterfaceGenerator::EmitTypeDecl(const TypeDecl* T) {
 
 void InterfaceGenerator::EmitAliasType(const TypeDecl* T) {
     LOG_DECL(T);
-    iface << "public type " << T->getName() << ' ';
+    iface << "type " << T->getName() << ' ';
     const AliasTypeDecl* ATD = cast<AliasTypeDecl>(T);
     EmitType(ATD->getRefType());
     iface << ";\n";
@@ -423,7 +423,7 @@ void InterfaceGenerator::EmitAliasType(const TypeDecl* T) {
 void InterfaceGenerator::EmitStructType(const StructTypeDecl* S, unsigned indent) {
     LOG_DECL(S)
     if (S->isGlobal()) {
-        iface << "public type " << S->getName() << ' ';
+        iface << "type " << S->getName() << ' ';
         iface << (S->isStruct() ? "struct" : "union");
     } else {
         iface.indent(indent);
@@ -464,7 +464,7 @@ void InterfaceGenerator::EmitStructType(const StructTypeDecl* S, unsigned indent
 
 void InterfaceGenerator::EmitEnumType(const EnumTypeDecl* E) {
     LOG_DECL(E)
-    iface << "public type " << E->getName() << " enum ";
+    iface << "type " << E->getName() << " enum ";
     EmitType(E->getImplType());
     iface << " {\n";
     for (unsigned i=0; i<E->numConstants(); i++) {
@@ -484,7 +484,7 @@ void InterfaceGenerator::EmitEnumType(const EnumTypeDecl* E) {
 
 void InterfaceGenerator::EmitFunctionType(const FunctionTypeDecl* FTD) {
     LOG_DECL(FTD)
-    iface << "public type " << FTD->getName() << " func ";
+    iface << "type " << FTD->getName() << " func ";
     FunctionDecl* F = FTD->getDecl();
     EmitType(F->getReturnType());
     EmitFunctionArgs(F);
@@ -572,7 +572,7 @@ void InterfaceGenerator::EmitArgVarDecl(const VarDecl* D, unsigned index) {
 void InterfaceGenerator::EmitFunctionDecl(const FunctionDecl* F) {
     LOG_DECL(F)
     // TODO
-    iface << "public func ";
+    iface << "func ";
     EmitType(F->getReturnType());
     iface << ' ' << F->getName();
     EmitFunctionArgs(F);
@@ -582,11 +582,7 @@ void InterfaceGenerator::EmitFunctionDecl(const FunctionDecl* F) {
 
 void InterfaceGenerator::EmitVarDecl(const VarDecl* D, unsigned indent) {
     LOG_DECL(D)
-    if (D->isGlobal()) {
-        iface << "public ";
-    } else {
-        iface.indent(indent);
-    }
+    iface.indent(indent);
     EmitType(D->getType());
     iface << ' ' << D->getName();
 

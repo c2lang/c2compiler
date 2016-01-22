@@ -21,7 +21,7 @@ public type BB struct {
 module bb;
 import aa;
 
-public type BB struct {
+type BB struct {
     aa.AA a;
 }
 

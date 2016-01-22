@@ -13,7 +13,7 @@ public type Struct struct {
 // @expect{complete, test.c2i}
 module test;
 
-public type Struct struct {} @(opaque)
+type Struct struct {} @(opaque)
 
 // @expect{complete, test.h}
 #ifndef TEST_H

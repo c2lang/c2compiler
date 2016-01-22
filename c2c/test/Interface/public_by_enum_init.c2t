@@ -19,7 +19,7 @@ public type BB enum int8 {
 module bb;
 import aa;
 
-public type BB enum int8 {
+type BB enum int8 {
     BB1 = aa.AA,
 }
 
