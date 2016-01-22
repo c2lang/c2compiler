@@ -54,9 +54,13 @@ public:
     static bool goesBefore(const DeclDep* A, const DeclDep* B) {
         const Decl* a = A->decl;
         const Decl* b = B->decl;
-        //printf("COMPARE %s vs %s\n", a->getName().c_str(), b->getName().c_str());
+        //printf("COMPARE %s  --  %s\n", a->DiagName().c_str(), b->DiagName().c_str());
+
         // public before non-public
-        if (a->isPublic() != b->isPublic()) return b->isPublic();
+        // opaque struct are treated as non-public
+        bool aPub = a->isPublic() && !a->hasAttribute(ATTR_OPAQUE);
+        bool bPub = b->isPublic() && !b->hasAttribute(ATTR_OPAQUE);
+        if (aPub != bPub) return bPub;
 
         // no-deps before deps
         if (A->numDeps() == 0) return false;
