@@ -1,0 +1,36 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c no-build
+
+// @file{file1}
+module test;
+
+public type Public struct {
+    Priv p;
+} @(opaque)
+
+type Priv struct {
+    int32 x;
+}
+
+// @expect{complete, build/test.h}
+#ifndef TEST_H
+#define TEST_H
+
+#include <stdint.h>
+#include <stddef.h>
+
+typedef struct test_Public_ test_Public;
+
+#endif
+// @expect{atleast, build/test.c}
+
+typedef struct test_Priv_ test_Priv;
+struct test_Priv_ {
+    int32_t x;
+};
+
+struct test_Public_ {
+    test_Priv p;
+};
+
