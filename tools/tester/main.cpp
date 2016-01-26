@@ -89,19 +89,11 @@ static void skipWhitespace(const char** start, const char* end) {
     *start = cp;
 }
 
-static const char* findLineEnd(const char* cp) {
-    while (*cp) {
-        if (*cp == '\n') break;
-        ++cp;
-    }
-    return cp;
-}
-
 static void color_print(const char* color, const char* format, ...) {
     char buffer[1024];
     va_list(Args);
     va_start(Args, format);
-    int len = vsprintf(buffer, format, Args);
+    vsnprintf(buffer, sizeof(buffer), format, Args);
     va_end(Args);
 
     if (color_output) printf("%s%s"ANSI_NORMAL"\n", color, buffer);
@@ -471,7 +463,6 @@ void IssueDb::parseLineFile(const char* start, const char* end) {
 
 void IssueDb::parseTags(const char* start, const char* end) {
     // if finding '// @' somewhere else, it's a note/warning/error
-    unsigned int len = end - start;
     const char* cp = find(start, end, "// ");
     if (!cp) return;
     cp += 3;    // skip "// ";

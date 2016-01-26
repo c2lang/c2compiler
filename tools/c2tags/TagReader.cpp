@@ -359,7 +359,7 @@ private:
         ExpectAndConsumeText("file");
 
         Expect(tok::number);
-        int number = Tok.getNumber();
+        //int number = Tok.getNumber();
         ConsumeToken();
 
         ExpectAndConsume(tok::open);
@@ -381,7 +381,7 @@ private:
         ExpectAndConsumeText("file");
 
         Expect(tok::number);
-        int number = Tok.getNumber();
+        //int number = Tok.getNumber();
         ConsumeToken();
 
         ExpectAndConsume(tok::open);

@@ -1,4 +1,4 @@
-CFLAGS=-Wall -Wextra -Wno-unused -Wno-unused-parameter -Wshadow -O2
+CFLAGS=-Wall -Wextra -Wshadow -O2
 C2C_DIR= ../../c2c
 
 SOURCES = \
