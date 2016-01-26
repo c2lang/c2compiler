@@ -102,8 +102,8 @@ void LibraryLoader::showLibs(bool useColors) const {
                 }
 
                 for (unsigned e=0; e<manifest.numEntries(); e++) {
-                    const ManifestEntry& entry = manifest.get(e);
-                    out << "      " << entry.name << '\n';
+                    const ManifestEntry& entry2 = manifest.get(e);
+                    out << "      " << entry2.name << '\n';
                 }
             }
         }

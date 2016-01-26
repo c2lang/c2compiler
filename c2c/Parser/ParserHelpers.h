@@ -45,8 +45,8 @@ private:
 
     public:
     BalancedDelimiterTracker(C2Parser& p, tok::TokenKind k,
-                             tok::TokenKind FinalToken = tok::semi)
-        :P(p), Kind(k), FinalToken(FinalToken)
+                             tok::TokenKind FinalToken_ = tok::semi)
+        :P(p), Kind(k), FinalToken(FinalToken_)
     {
         switch (Kind) {
         default: llvm_unreachable("Unexpected balanced token");

@@ -157,16 +157,16 @@ void TypeSorter::write(CTypeWriter& writer) {
             // only care about other types for now
             if (!isa<TypeDecl>(dep)) continue;
 
-            StatesIter iter = states.find(dep);
-            if (iter == states.end()) {
+            StatesIter iter2 = states.find(dep);
+            if (iter2 == states.end()) {
                 writer.forwardDecl(dep);
                 states[dep] = FORWARD_DECLARED;
             }
         }
         // always output typedef for struct types
         if (isa<StructTypeDecl>(d)) {
-            StatesIter iter = states.find(d);
-            if (iter == states.end()) {
+            StatesIter iter2 = states.find(d);
+            if (iter2 == states.end()) {
                 writer.forwardDecl(d);
                 states[d] = FORWARD_DECLARED;
             }

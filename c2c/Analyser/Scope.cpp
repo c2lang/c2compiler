@@ -65,8 +65,8 @@ bool Scope::checkScopedSymbol(const VarDecl* V) const {
     }
 
     // lookup in all used local (= also own)
-    for (LocalsConstIter iter = locals.begin(); iter != locals.end(); ++iter) {
-        Old = (*iter)->findSymbol(V->getName());
+    for (LocalsConstIter iter2 = locals.begin(); iter2 != locals.end(); ++iter2) {
+        Old = (*iter2)->findSymbol(V->getName());
         if (Old) goto err;
     }
     return true;
@@ -98,8 +98,8 @@ const Module* Scope::findUsedModule(const std::string& name, clang::SourceLocati
     }
 
     // check if used with alias (then fullname is forbidden)
-    for (ImportsConstIter iter = importedModules.begin(); iter != importedModules.end(); ++iter) {
-        ImportDecl* I = iter->second;
+    for (ImportsConstIter iter2 = importedModules.begin(); iter2 != importedModules.end(); ++iter2) {
+        ImportDecl* I = iter2->second;
         I->setUsed();
         if (usedPublic) {
             // TODO refactor common code
@@ -108,7 +108,7 @@ const Module* Scope::findUsedModule(const std::string& name, clang::SourceLocati
         }
         const Module* p = I->getModule();
         if (p->getName() == name) {
-            Diags.Report(loc, diag::err_module_has_alias) << name << iter->first;
+            Diags.Report(loc, diag::err_module_has_alias) << name << iter2->first;
             return 0;
         }
     }
@@ -123,9 +123,11 @@ const Module* Scope::findUsedModule(const std::string& name, clang::SourceLocati
 
 Decl* Scope::findSymbol(const std::string& symbol, clang::SourceLocation loc, bool isType, bool usedPublic) const {
     // lookup in global cache first, return if found
-    CacheConstIter iter = symbolCache.find(symbol);
-    if (iter != symbolCache.end()) {
-        return iter->second;
+    {
+        CacheConstIter iter = symbolCache.find(symbol);
+        if (iter != symbolCache.end()) {
+            return iter->second;
+        }
     }
 
     // lookup in used module list

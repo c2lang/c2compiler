@@ -364,9 +364,9 @@ int C2Builder::build() {
         if (options.showLibs) libLoader.showLibs(useColors);
 
         bool ok = true;
-        const ModuleList& mods = Main->getModules();
-        for (unsigned i=0; i<mods.size(); i++) {
-            Files files = mods[i]->getFiles();
+        const ModuleList& mainModules = Main->getModules();
+        for (unsigned i=0; i<mainModules.size(); i++) {
+            Files files = mainModules[i]->getFiles();
             for (unsigned a=0; a<files.size(); a++) {
                 AST* ast = files[a];
                 for (unsigned u=0; u<ast->numImports(); u++) {

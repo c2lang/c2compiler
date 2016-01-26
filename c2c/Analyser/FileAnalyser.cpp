@@ -200,8 +200,8 @@ unsigned FileAnalyser::resolveEnumConstants() {
             typedef std::map<int64_t, EnumConstantDecl*> Values;
             typedef Values::iterator ValuesIter;
             Values values;
-            for (unsigned i=0; i<ETD->numConstants(); i++) {
-                EnumConstantDecl* ECD = ETD->getConstant(i);
+            for (unsigned c=0; c<ETD->numConstants(); c++) {
+                EnumConstantDecl* ECD = ETD->getConstant(c);
                 int errs = functionAnalyser.checkEnumValue(ECD, value);
                 errors += errs;
                 if (!errors) {
@@ -310,8 +310,8 @@ void FileAnalyser::checkDeclsForUsed() {
 
         // mark Enum Types as used(public) if its constants are used(public)
         if (EnumTypeDecl* ETD = dyncast<EnumTypeDecl>(T)) {
-            for (unsigned i=0; i<ETD->numConstants(); i++) {
-                EnumConstantDecl* C = ETD->getConstant(i);
+            for (unsigned c=0; c<ETD->numConstants(); c++) {
+                EnumConstantDecl* C = ETD->getConstant(c);
                 if (C->isUsed()) ETD->setUsed();
                 if (C->isUsedPublic()) ETD->setUsedPublic();
                 if (C->isUsed() && C->isUsedPublic()) break;

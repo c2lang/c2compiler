@@ -8,7 +8,7 @@ SET(CMAKE_CXX_COMPILER "clang++")
 #SET(CMAKE_BUILD_TYPE Debug)
 #SET(CMAKE_VERBOSE_MAKEFILE true)
 ADD_DEFINITIONS(-Wall)
-#ADD_DEFINITIONS(-Wall -Wextra -Wno-overloaded-virtual -Wno-unused -Wno-unused-parameter)
+#ADD_DEFINITIONS(-Wall -Wextra -Wshadow -Wno-overloaded-virtual -Wno-unused-parameter)
 
 SET(LLVM_CONFIG_EXECUTABLE "llvm-config")
 

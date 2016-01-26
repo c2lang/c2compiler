@@ -47,12 +47,12 @@ public:
 
     void generate();
     bool verify();
-    void write(const std::string& outputDir, const std::string& name);
+    void write(const std::string& outputDir, const std::string& name_);
     void dump();
 
     llvm::Type* ConvertType(BuiltinType::Kind K);
     llvm::Type* ConvertType(QualType Q);
-    llvm::Function* createExternal(const C2::Module* P, const std::string& name);
+    llvm::Function* createExternal(const C2::Module* P, const std::string& name_);
     llvm::GlobalValue::LinkageTypes getLinkage(bool isPublic);
 
     const std::string& getName() const { return name; }

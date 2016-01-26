@@ -138,7 +138,7 @@ void CodeGenModule::dump() {
     module->print(llvm::outs(), 0);
 }
 
-void CodeGenModule::write(const std::string& outputDir, const std::string& name) {
+void CodeGenModule::write(const std::string& outputDir, const std::string& name_) {
     // write IR Module to <outputDir>/<module>.ll
     StringBuilder filename;
     filename << outputDir;
@@ -150,7 +150,7 @@ void CodeGenModule::write(const std::string& outputDir, const std::string& name)
         return;
     }
 
-    filename << name << ".ll";
+    filename << name_ << ".ll";
     std::error_code EC;
     llvm::raw_fd_ostream OS((const char*)filename, EC, sys::fs::F_None);
     if (EC) {
@@ -163,7 +163,7 @@ void CodeGenModule::write(const std::string& outputDir, const std::string& name)
     {
         std::string ErrInfo;
         StringBuilder filename;
-        filename << outputDir << name;
+        filename << outputDir << name_;
         const char* outfile = (const char*)filename;
         tool_output_file Out(outfile, ErrInfo, raw_fd_ostream::F_Binary);
         if (!ErrInfo.empty()) {
@@ -322,8 +322,8 @@ llvm::Type* CodeGenModule::ConvertType(QualType Q) {
     return 0;
 }
 
-llvm::Function* CodeGenModule::createExternal(const C2::Module* P, const std::string& name) {
-    Decl* D = P->findSymbol(name);
+llvm::Function* CodeGenModule::createExternal(const C2::Module* P, const std::string& name_) {
+    Decl* D = P->findSymbol(name_);
     assert(D);
     FunctionDecl* F = cast<FunctionDecl>(D);
     CodeGenFunction cgf(*this, F);
