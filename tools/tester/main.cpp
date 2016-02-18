@@ -75,6 +75,7 @@ static void debug(const char* format, ...) {
     va_list(Args);
     va_start(Args, format);
     int len = vsprintf(buffer, format, Args);
+    (void*)len; // silence warning
     va_end(Args);
     if (color_output) fprintf(stderr, COL_DEBUG"%s"ANSI_NORMAL"\n", buffer);
     else printf("%s\n", buffer);
@@ -284,8 +285,6 @@ public:
     void testFile();
 
     bool haveErrors() const { return hasErrors; }
-
-    bool shouldSkip() const { return skip; }
 
     void showNotes() const {
         for (IssuesConstIter iter = notes.begin(); iter != notes.end(); ++iter) {

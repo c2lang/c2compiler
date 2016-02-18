@@ -40,7 +40,6 @@ private:
     void writeModule(const Module& M, StringBuilder& output, unsigned indent) const;
     void writeAST(const AST& ast, StringBuilder& output, unsigned indent, bool isExternal) const;
     void writeDecl(const Decl* D, StringBuilder& output, unsigned indent) const;
-    void writeExternal(const Module* P, StringBuilder& output, unsigned indent) const;
 
     bool showFiles;
     bool showPrivate;

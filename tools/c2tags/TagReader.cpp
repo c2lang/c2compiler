@@ -108,7 +108,9 @@ private:
 
 class Tokenizer {
 public:
-    Tokenizer() : dataStart(0), current(0) , loc(1, 1) {}
+    Tokenizer() : dataStart(0), current(0) , loc(1, 1) {
+        text[0] = 0;
+    }
     void init(const char* input) {
         dataStart = input;
         current = input;

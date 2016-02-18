@@ -144,24 +144,3 @@ void DepGenerator::writeDecl(const Decl* D, StringBuilder& output, unsigned inde
     output << "</atom>\n";
 }
 
-void DepGenerator::writeExternal(const Module* P, StringBuilder& output, unsigned indent) const {
-    output.indent(indent);
-    output << "<group name='" << P->getName() << "' full='module:" << P->getName() << "' collapsed='1'>\n";
-    indent += INDENT;
-
-    const Module::Symbols& symbols = P->getSymbols();
-    for (Module::SymbolsConstIter iter=symbols.begin(); iter!=symbols.end(); ++iter) {
-        const Decl* D = iter->second;
-        output.indent(indent);
-        output << "<atom name='" << D->getName();
-        if (isa<FunctionDecl>(D)) output << "()";
-        output << "' full='";
-        D->fullName(output);
-        output << "' />\n";
-    }
-
-    indent -= INDENT;
-    output.indent(indent);
-    output << "</group>\n";
-}
-

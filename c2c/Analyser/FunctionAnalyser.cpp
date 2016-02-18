@@ -714,8 +714,8 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
     LOG_FUNC
     const ExprList& values = expr->getValues();
     bool haveDesignators = false;
-    bool haveErrors = false;
     if (Q.isArrayType()) {
+        bool haveErrors = false;
         // TODO use helper function
         ArrayType* AT = cast<ArrayType>(Q.getCanonicalType().getTypePtr());
         QualType ET = AT->getElementType();
@@ -787,7 +787,6 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
                     StringBuilder buf;
                     Q.DiagName(buf);
                     Diag(D->getLocation(), diag::err_array_designator_non_array) << buf;
-                    haveErrors = true;
                     return;
                 }
                 int memberIndex = STD->findIndex(D->getField());

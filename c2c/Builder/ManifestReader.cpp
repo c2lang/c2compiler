@@ -118,15 +118,12 @@ private:
 
 class Tokenizer {
 public:
-    Tokenizer() : dataStart(0), current(0) , loc(1, 1) {}
+    Tokenizer() : dataStart(0), current(0) , loc(1, 1) {
+        text[0] = 0;
+    }
     void init(const char* input) {
         dataStart = input;
         current = input;
-    }
-    void skipTo(unsigned offset) {
-        current = dataStart + offset;
-        loc.line = 1;   // from offset
-        loc.column = 1;
     }
     void Lex(Token& Result) {
         Result.clear();
@@ -211,13 +208,6 @@ private:
             return true;
         }
         return ch == '_' || ch == '/';
-    }
-    inline bool IsNameChar( unsigned char ch ) {
-        return IsNameStartChar( ch )
-               || isdigit( ch )
-               || ch == '.'
-               || ch == '-'
-               || ch == '_';
     }
     void advanceToken(unsigned amount) {
         loc.column += amount;
@@ -422,33 +412,6 @@ private:
             longjmp(jump_err, 1);
         }
         ConsumeToken();
-    }
-    void ExpectAndConsumeText(const char* text) {
-        if (Tok.isNot(tok::text)) {
-            sprintf(errorMsg, "expected 'text' token at %s", Tok.getLoc().str());
-            longjmp(jump_err, 1);
-        }
-        const char* got = Tok.getText();
-        if (strcmp(text, got) != 0) {
-            sprintf(errorMsg, "expected '%s' at %s", text, Tok.getLoc().str());
-            longjmp(jump_err, 1);
-        }
-        ConsumeToken();
-    }
-    bool ExpectAndConsumeBoolean() {
-        Expect(tok::text);
-        const char* text = Tok.getText();
-        bool value = false;
-        if (strcmp(text, "true") == 0) {
-            value = true;
-        } else if (strcmp(text, "false") == 0) {
-            value = false;
-        } else {
-            sprintf(errorMsg, "expected boolean at %s", Tok.getLoc().str());
-            longjmp(jump_err, 1);
-        }
-        ConsumeToken();
-        return value;
     }
     void Expect(tok::TokenKind k) {
         if (Tok.isNot(k)) {

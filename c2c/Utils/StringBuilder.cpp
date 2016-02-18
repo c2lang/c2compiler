@@ -153,10 +153,10 @@ void StringBuilder::number(unsigned radix_, int64_t value) {
             for (int i=63; i>0; i--) {
                 if (value & (1lu<<i)) show = true;
                 if (show) {
-                    *cp++ = (value & (1lu<<i) ? '1' : '0');
+                    *cp++ = ((value & (1lu<<i)) ? '1' : '0');
                 }
             }
-            *cp++ = (value & (1lu<<0) ? '1' : '0');
+            *cp++ = ((value & (1lu<<0)) ? '1' : '0');
             *cp = 0;
         }
         break;
