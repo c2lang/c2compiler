@@ -43,9 +43,10 @@ public:
     operator const char*() const { return buffer; }
     const char* c_str() const { return buffer; }
     void clear();
-    unsigned size() const;
-    unsigned space_left() const;
-    bool isEmpty() const;
+    unsigned size() const { return (unsigned)(ptr - buffer); }
+    unsigned space_left() const { return capacity - size(); }
+    bool isEmpty() const { return (size() == 0); }
+
     void strip(char c);
     void indent(unsigned num);
     void setColor(const char* color);

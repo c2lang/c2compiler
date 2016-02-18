@@ -69,7 +69,7 @@ string Decl::DiagName() const {
     }
     tmp << name;
     tmp << '\'';
-    return (const char*)tmp;
+    return tmp.c_str();
 }
 
 void Decl::printAttributes(StringBuilder& buffer, unsigned indent) const {
@@ -97,7 +97,7 @@ void Decl::printAttributes(StringBuilder& buffer, unsigned indent) const {
 void Decl::dump() const {
     StringBuilder buffer;
     print(buffer, 0);
-    printf("%s\n", (const char*) buffer);
+    printf("%s\n", buffer.c_str());
 }
 
 void Decl::printPublic(StringBuilder& buffer) const {

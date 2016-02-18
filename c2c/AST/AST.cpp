@@ -80,7 +80,7 @@ void AST::print(bool colors, bool showAttrs) const {
 
     buffer.setColor(COL_NORM);
     buffer << '\n';
-    printf("%s", (const char*)buffer);
+    printf("%s", buffer.c_str());
 }
 
 void AST::addAttribute(const Decl* d, Attr* attr) {

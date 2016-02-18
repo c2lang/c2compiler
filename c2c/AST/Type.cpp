@@ -149,7 +149,7 @@ void QualType::dump() const {
 #else
         debugPrint(output);
 #endif
-        fprintf(stderr, "%s\n", (const char*)output);
+        fprintf(stderr, "%s\n", output.c_str());
     }
 }
 
@@ -251,7 +251,7 @@ void Type::dump() const {
 #else
     debugPrint(output);
 #endif
-    fprintf(stderr, "[TYPE] '%s'\n", (const char*)output);
+    fprintf(stderr, "[TYPE] '%s'\n", output.c_str());
 }
 
 

@@ -88,7 +88,7 @@ unsigned TypeResolver::checkUnresolvedType(const UnresolvedType* type, bool used
     if (!TD) {
         StringBuilder name;
         type->printLiteral(name);
-        Diags.Report(tLoc, diag::err_not_a_typename) << name;
+        Diags.Report(tLoc, diag::err_not_a_typename) << name.c_str();
         return 1;
     }
     bool external = globals.isExternal(D->getModule());

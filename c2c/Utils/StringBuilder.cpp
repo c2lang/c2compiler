@@ -173,12 +173,6 @@ void StringBuilder::number(unsigned radix_, int64_t value) {
     (*this) << temp;
 }
 
-unsigned StringBuilder::size() const { return (unsigned)(ptr - buffer); }
-
-unsigned StringBuilder::space_left() const { return capacity - size(); }
-
-bool StringBuilder::isEmpty() const { return (size() == 0); }
-
 void StringBuilder::strip(char c) {
     if (size() > 0 && *(ptr-1) == c) {
         --ptr;

@@ -49,7 +49,7 @@ Stmt::~Stmt() {
 void Stmt::dump() const {
     StringBuilder buffer;
     print(buffer, 0);
-    fprintf(stderr, "%s\n", (const char*)buffer);
+    fprintf(stderr, "%s\n", buffer.c_str());
 }
 
 
