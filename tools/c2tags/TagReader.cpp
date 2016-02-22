@@ -78,7 +78,6 @@ class Token {
 public:
     Token() : kind(tok::eof), text(0), number(0) {}
 
-    tok::TokenKind getKind() const { return kind; }
     void setKind(tok::TokenKind k) { kind = k; }
     bool is(tok::TokenKind k) const { return kind == k; }
     bool isNot(tok::TokenKind k) const { return kind != k; }
@@ -97,7 +96,7 @@ public:
         number = 0;
     }
 
-    const char* getName() const { return tok::getTokenName(kind); }
+    //const char* getName() const { return tok::getTokenName(kind); }
 
 private:
     Location loc;
