@@ -160,6 +160,8 @@ void RecipeReader::handleLine(char* line) {
                     }
                 } else if (strcmp(tok, "refs") == 0) {
                     current->generateRefs = true;
+                } else if (strcmp(tok, "nolibc") == 0) {
+                    current->noLibC = true;
                 } else if (strcmp(tok, "use") == 0) {
                     while (1) {
                         const char* tok2 = get_token();

@@ -168,6 +168,13 @@ target incremental
     incr_main.c2
 end
 
+target baremetal
+    $warnings no-unused
+    $nolibc
+    $generate-c
+    baremetal.c2
+end
+
 target pthread
     $warnings no-unused
     $refs

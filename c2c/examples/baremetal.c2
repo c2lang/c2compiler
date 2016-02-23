@@ -1,0 +1,9 @@
+module test;
+//import stdio; // will generate error, since $nolibc is used
+
+public func int32 main() {
+
+    return 0;
+}
+
+

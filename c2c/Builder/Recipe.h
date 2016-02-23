@@ -30,6 +30,7 @@ public:
         , generateRefs(false)
         , generateIR(false)
         , generateCCode(false)
+        , noLibC(false)
     {}
     ~Recipe() {}
 
@@ -54,6 +55,7 @@ public:
     bool generateRefs;
     bool generateIR;
     bool generateCCode;
+    bool noLibC;
 
     StringList files;
     StringList configs;
