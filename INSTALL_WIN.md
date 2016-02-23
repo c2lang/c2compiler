@@ -51,7 +51,7 @@ export CXX=g++
 make -j4 #can be raised a bit on faster computers
 make install
 ```
-NOT:
+NOTE:
 On some devices a bug in LLVM's make install command may occur and the following files are not put in correct directories:
 * DiagnosticCommonKinds.inc
 * DiagnosticSemaKinds.inc
