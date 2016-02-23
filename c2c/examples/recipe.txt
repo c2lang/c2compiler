@@ -173,6 +173,7 @@ target pthread
     $refs
     $deps show-files show-externals
     $generate-c
+    $use pthread
     pthread.c2
 end
 

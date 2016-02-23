@@ -39,6 +39,7 @@ public:
     void addAnsiCConfig(const std::string& config_);
     void addCodeGenConfig(const std::string& config_);
     void addDepsConfig(const std::string& config_);
+    void addLibrary(const std::string& lib_);
     void silenceWarning(const std::string& warn_);
 
     unsigned size() const { return files.size(); }
@@ -60,6 +61,7 @@ public:
     StringList cConfigs;
     StringList genConfigs;
     StringList depConfigs;
+    StringList libraries;
     StringList silentWarnings;
 private:
     Recipe(const Recipe&);

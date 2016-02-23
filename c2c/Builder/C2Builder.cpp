@@ -359,7 +359,10 @@ int C2Builder::build() {
     {
         uint64_t t1_parse_libs = Utils::getCurrentTime();
         libLoader.addLib("libc");
-        libLoader.addLib("pthread");
+        for (unsigned i=0; i<recipe.libraries.size(); i++) {
+            const std::string& lib = recipe.libraries[i];
+            libLoader.addLib(lib);
+        }
         libLoader.scan();
         if (options.showLibs) libLoader.showLibs(useColors);
 

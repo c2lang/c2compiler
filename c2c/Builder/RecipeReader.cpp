@@ -160,6 +160,13 @@ void RecipeReader::handleLine(char* line) {
                     }
                 } else if (strcmp(tok, "refs") == 0) {
                     current->generateRefs = true;
+                } else if (strcmp(tok, "use") == 0) {
+                    while (1) {
+                        const char* tok2 = get_token();
+                        if (!tok2) break;
+                        // TODO check duplicates
+                        current->addLibrary(tok2);
+                    }
                 } else {
                     error("unknown option '%s'", tok);
                 }
