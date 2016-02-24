@@ -53,8 +53,18 @@ On some devices a bug in LLVM's make install command may occur and the following
 * DiagnosticSemaKinds.inc
 * DiagnosticParseKinds.inc
 It appears to be a recurring bug which is not 100% reproduceable. The solution is to simply copy
-said files from ```llvm_install_dir/llvm_build/tools/clang/include/clang/Basic/``` to 
-```llvm_install_dir/include/clang/Basic```
+said files from
+
+```bash
+llvm_install_dir/llvm_build/tools/clang/include/clang/Basic/
+```
+
+to
+
+```bash
+llvm_install_dir/include/clang/Basic
+```
+
 
 Voila! When adding **$HOME/llvm-c2/bin** to the your $PATH, you should be able
 to build C2. Additionally, you need to add the PATH to c2tags and point the
