@@ -1,0 +1,13 @@
+// @recipe bin
+    $warnings no-unused
+    $nolibc
+
+// @file{file1}
+module test;
+
+import stdio;   // @error{unknown module: stdio}
+
+public func int32 main(int32 argc, const int8*[] argv) {
+    return 0;
+}
+
