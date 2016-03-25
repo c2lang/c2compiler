@@ -22,6 +22,8 @@
 
 namespace C2 {
 
+#define PRINTF_FORMAT_CHECK(format_index, args_index) __attribute__ ((__format__(printf, format_index, args_index)))
+
 class StringBuilder {
 public:
     StringBuilder(unsigned cap = CAPACITY, char* buf = 0);
@@ -37,7 +39,7 @@ public:
     StringBuilder& operator<<(uint64_t input);
     StringBuilder& operator<<(const StringBuilder& input);
 
-    void print(const char* format, ...);
+    void print(const char* format, ...) PRINTF_FORMAT_CHECK(2, 3);
     void number(unsigned radix_, int64_t value);
 
     operator const char*() const { return buffer; }
