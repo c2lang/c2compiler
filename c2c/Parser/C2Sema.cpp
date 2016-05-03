@@ -16,6 +16,7 @@
 #include <string.h>
 
 #include <llvm/ADT/APFloat.h>
+#include <clang/AST/Expr.h>
 #include <clang/Parse/ParseDiagnostic.h>
 #include <clang/Sema/SemaDiagnostic.h>
 #include <clang/Lex/LiteralSupport.h>
@@ -193,7 +194,7 @@ C2::Decl* C2Sema::ActOnAliasType(const char* name, SourceLocation loc, Expr* typ
     return T;
 }
 
-VarDecl* C2Sema::ActOnVarDef(const char* name, SourceLocation loc, bool is_public, Expr* type) {
+C2::VarDecl* C2Sema::ActOnVarDef(const char* name, SourceLocation loc, bool is_public, Expr* type) {
     TypeExpr* typeExpr = cast<TypeExpr>(type);
     if (typeExpr->hasLocalQualifier()) {
         Diag(loc, diag::err_invalid_local_globalvar);

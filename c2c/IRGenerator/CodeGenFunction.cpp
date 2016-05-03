@@ -109,7 +109,8 @@ void CodeGenFunction::generateBody(llvm::Function* func) {
     for (unsigned i=0; i<FuncDecl->numArgs(); i++) {
         VarDecl* arg = FuncDecl->getArg(i);
         EmitVarDecl(arg);
-        Value* argumentValue = argsValues++;
+        Value* argumentValue = &*argsValues;
+        argsValues++;
         argumentValue->setName(arg->getName());
         new StoreInst(argumentValue, arg->getIRValue(), false, EntryBB);
     }
@@ -271,7 +272,7 @@ void CodeGenFunction::EmitBlock(llvm::BasicBlock *BB, bool IsFinished) {
   // Place the block after the current block, if possible, or else at
   // the end of the function.
   if (CurBB && CurBB->getParent())
-    CurFn->getBasicBlockList().insertAfter(CurBB, BB);
+    CurFn->getBasicBlockList().insertAfter(CurBB->getIterator(), BB);
   else
     CurFn->getBasicBlockList().push_back(BB);
   Builder.SetInsertPoint(BB);

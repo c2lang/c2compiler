@@ -17,7 +17,7 @@
 #define PARSER_TYPES_H
 
 #include <clang/Lex/Preprocessor.h>
-#include <clang/Sema/Ownership.h>
+#include "Parser/Ownership.h"
 
 #define TYPE_CONST      (1<<1)
 #define TYPE_VOLATILE   (1<<2)
