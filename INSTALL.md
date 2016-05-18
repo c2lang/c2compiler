@@ -1,6 +1,6 @@
 
 ## Installation of LLVM/Clang (C2 version)
-C2 is based on LLVM 3.7 and some parts of Clang 3.7.
+C2 is based on LLVM 3.8 and some parts of Clang 3.8.
 To install C2, follow the steps below. The example shows
 how to install in **$HOME/llvm-c2**, but any other dir should work.
 
@@ -24,7 +24,7 @@ cd llvm_build
 
 # Ubuntu 14.04:
 sudo apt-get install clang-3.5 cmake
-export CXX=clang-3.5
+export CC=clang-3.5
 export CXX=clang++-3.5
 
 cmake -G "Unix Makefiles" \
@@ -65,49 +65,46 @@ llvm_install_dir/include/clang/Basic
 ```
 
 
-Voila! When adding **$HOME/llvm-c2/bin** to the your $PATH, you should be able
-to build C2. Additionally, you need to add the PATH to c2tags and point the
-environment variable C2_LIBDIR to point at the directory containing the 'c2libs'
-directory. If you place c2tags in $HOME/bin, the following works:
-```
-export PATH=$HOME/bin:$HOME/llvm-c2/bin:$PATH
-export C2_LIBDIR=$HOME/path/to/c2c/c2libs/
+## Downloading C2C
+```bash
+git clone git://github.com/c2lang/c2compiler.git
 ```
 
-## Building of C2C
-To build C2: (llvm-c2/bin must be in $PATH)
-```
-git clone git://github.com/c2lang/c2compiler.git
-cd c2compiler/c2c
+## Building C2C
+```bash
+cd c2compiler
+source ./env.sh  (this assumes LLvm/Clang are installed to $HOME/llvm-c2)
 mkdir build
 cd build
 cmake . ..
 make -j4
 ```
-If all goes well, the **c2c** executable should appear in the build directory.
+If all goes well, the **c2c** executable should appear in the build/c2c/ directory.
 
-If you get an error with some Clang/C2 errors, try updating your clang C2 archive.
+If you get an error with some Clang/C2-related errors, try updating your clang C2 archive.
 
-## Getting and Building C2C
-To run the unit tests, first build the **tester** tool:
-```
-cd tools/tester
-make
-cd ../../c2c/build
+The env.sh script sets some some environment variables that c2c requires to work,
+like *C2_LIBDIR*. It will also add $HOME/llvm-c2/bin to the $PATH
+
+
+## Running the tests
+To run the unit tests (from build/)
+```bash
 make tests
 ```
 
 ## Installing c2tags
-```
-cd tools/c2tags
-make
-```
+c2tags is C2's equivalent of ctags; it allows *jumping to definition* inside c2 source files.
+
 To use **c2tags**, it must be in the $PATH. The easiest is creating a $HOME/bin directory,
-copying **c2tags** there. Then add a line to .bashrc (or something similar):
-```
+installing **c2tags** there and adding in to the $PATH:
+```bash
+make install DESTDIR=$HOME/bin
 export PATH=$PATH:~/bin
-cp c2tags ~/bin
 ```
+
 Additionally, copy the contents of *tools/c2tags/fragment.vim* to your ~/.vimrc.
 
+After building your C2 project, you can jump to a definition by moving the cursor anywhere
+on a reference and pressing *Ctrl-h*.
 

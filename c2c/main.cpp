@@ -143,7 +143,7 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
                     fprintf(stderr, "syntax, requires less typing than C and allows higher development speed.\n");
                     fprintf(stderr, " Its aim is to be used for problems where currently C would be used. So low-\n");
                     fprintf(stderr, "level programs, like bootloaders, kernels, drivers and system-level tooling.\n");
-                    fprintf(stderr, "\nC2 is based on LLVM+Clang 3.6.\nSee c2lang.org for more information\n");
+                    fprintf(stderr, "\nC2 is based on LLVM+Clang.\nSee c2lang.org for more information\n");
                     exit(0);
                 }
                 if (strcmp(&arg[2], "test") == 0) {
