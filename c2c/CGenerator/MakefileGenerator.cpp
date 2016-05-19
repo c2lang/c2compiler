@@ -23,6 +23,10 @@ void MakefileGenerator::add(const std::string& filename) {
     files.push_back(filename);
 }
 
+void MakefileGenerator::addLinkerLib(const std::string& name) {
+    libs.push_back(name);
+}
+
 void MakefileGenerator::write() {
     std::string targetname = "../";
     std::string libname;
@@ -65,7 +69,7 @@ void MakefileGenerator::write() {
 
     // compile step
     for (StringListConstIter iter=files.begin(); iter!=files.end(); ++iter) {
-        out << "\tgcc " << args << " -c " << *iter << ".c -o " << *iter << ".o\n"; 
+        out << "\tgcc " << args << " -c " << *iter << ".c -o " << *iter << ".o\n";
     }
     // link step
     switch (type) {
@@ -73,6 +77,10 @@ void MakefileGenerator::write() {
         out << "\tgcc -o " << targetname;
         for (StringListConstIter iter=files.begin(); iter!=files.end(); ++iter) {
             out << ' ' << *iter << ".o";
+        }
+        // TODO move after switch?
+        for (StringListConstIter iter=libs.begin(); iter!=libs.end(); ++iter) {
+            out << " -l" << *iter;
         }
         break;
     case GenUtils::SHARED_LIB:

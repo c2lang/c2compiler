@@ -30,6 +30,7 @@ public:
     {}
 
     void add(const std::string& filename);
+    void addLinkerLib(const std::string& name);
     void write();
 private:
     std::string path;
@@ -37,6 +38,7 @@ private:
     GenUtils::TargetType type;
 
     StringList files;
+    StringList libs;
 
     MakefileGenerator(const MakefileGenerator&);
     MakefileGenerator& operator= (const MakefileGenerator&);

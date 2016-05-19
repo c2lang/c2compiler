@@ -32,12 +32,14 @@ CGenerator::CGenerator(const std::string& name_,
                        GenUtils::TargetType type_,
                        const Modules& moduleMap_,
                        const ModuleList& mods_,
+                        const StringList& libs_,
                        const HeaderNamer& namer_,
                        const Options& options_)
     : targetName(name_)
     , targetType(type_)
     , moduleMap(moduleMap_)
     , mods(mods_)
+    , libs(libs_)
     , includeNamer(namer_)
     , options(options_)
 {}
@@ -59,6 +61,9 @@ void CGenerator::generate() {
             CCodeGenerator gen(M->getName(), CCodeGenerator::MULTI_FILE, moduleMap, single, includeNamer);
             gen.generate(options.printC, outdir);
         }
+    }
+    for (StringListConstIter iter=libs.begin(); iter!=libs.end(); ++iter) {
+        makeGen.addLinkerLib(*iter);
     }
     makeGen.write();
 

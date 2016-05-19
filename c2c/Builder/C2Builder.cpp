@@ -759,7 +759,13 @@ void C2Builder::generateOptionalC() {
     cgen_options.single_module = single_module;
     cgen_options.printC = options.printC;
     const ModuleList& mods = mainComponent->getModules();
-    CGenerator cgen(recipe.name, recipe.type, modules, mods, libLoader, cgen_options);
+    StringList libs;
+    for (unsigned i=0; i<components.size(); i++) {
+        Component* C = components[i];
+        // NOTE: libc hardcoded
+        if (C->isExternal && C->name != "libc") libs.push_back(C->name);
+    }
+    CGenerator cgen(recipe.name, recipe.type, modules, mods, libs, libLoader, cgen_options);
 
     // generate C interface files
     if (recipe.needsInterface()) cgen.generateInterfaceFiles();

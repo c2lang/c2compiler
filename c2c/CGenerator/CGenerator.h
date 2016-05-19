@@ -20,6 +20,7 @@
 
 #include "Utils/GenUtils.h"
 #include "AST/Module.h"
+#include "Utils/StringList.h"
 
 namespace C2 {
 
@@ -43,6 +44,7 @@ public:
                GenUtils::TargetType type_,
                const Modules& moduleMap_,
                const ModuleList& mods_,
+               const StringList& libs_,
                const HeaderNamer& namer_,
                const Options& options_);
 
@@ -54,6 +56,7 @@ private:
     GenUtils::TargetType targetType;
     const Modules& moduleMap;
     const ModuleList& mods;
+    const StringList& libs;
     const HeaderNamer& includeNamer;
     const Options& options;
 };
