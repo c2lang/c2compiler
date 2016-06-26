@@ -57,8 +57,14 @@ On some devices a bug in LLVM's make install command may occur and the following
 * DiagnosticSemaKinds.inc
 * DiagnosticParseKinds.inc
 It appears to be a recurring bug which is not 100% reproduceable. The solution is to simply copy
-said files from ```llvm_install_dir/llvm_build/tools/clang/include/clang/Basic/``` to
-```llvm_install_dir/include/clang/Basic```
+said files from 
+```
+llvm_install_dir/llvm_build/tools/clang/include/clang/Basic/
+``` 
+to
+```
+llvm_install_dir/include/clang/Basic
+```
 
 
 Voila! When adding **$HOME/llvm-c2/bin** to the your $PATH, you should be able
@@ -83,15 +89,13 @@ this shows nano)
 ```
 nano CMakeLists.txt
 ```
-and change these two lines:
+and change this line:
 ```
-# SET(CMAKE_CXX_COMPILER "g++")
 SET(CMAKE_CXX_COMPILER "clang++")
 ```
 to this
 ```
 SET(CMAKE_CXX_COMPILER "g++")
-#SET(CMAKE_CXX_COMPILER "clang++")
 ```
 Save and exit nano with Ctrl+O and Ctrl+X.
 
