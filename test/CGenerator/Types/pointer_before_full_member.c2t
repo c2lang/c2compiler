@@ -1,0 +1,22 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c
+
+// @file{file1}
+module test;
+
+public type Callback func void(Mytype* m);
+
+public type Mytype struct {
+     Callback func1;
+}
+
+// @expect{atleast, build/test.h}
+typedef struct test_Mytype_ test_Mytype;
+
+typedef void (*test_Callback)(test_Mytype* m);
+
+struct test_Mytype_ {
+  test_Callback func1;
+};
+

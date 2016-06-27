@@ -100,6 +100,12 @@ TypeSorter::~TypeSorter() {
 }
 
 void TypeSorter::add(const Decl* decl) {
+    // For FunctionTypeDecl's record the FunctionDecl, not the FunctionTypeDecl!
+    if (isa<FunctionTypeDecl>(decl)) {
+        const FunctionTypeDecl* ftd = cast<FunctionTypeDecl>(decl);
+        decl = ftd->getDecl();
+        functions[decl] = ftd;
+    }
     DeclDep* dd = new DeclDep(decl);
     DepVisitor visitor(decl, false);
     visitor.run();
@@ -141,7 +147,7 @@ void TypeSorter::write(CTypeWriter& writer) {
     for (SortedDeclsIter it=sorted.begin(); it != sorted.end(); ++it) {
         depmap.push_back(*it);
     }
-    //dump("AFTER", false);
+    //dump("AFTER", true);
 
     enum State { FORWARD_DECLARED, DEFINED };
     typedef std::map<const Decl*, State> States;
@@ -152,6 +158,11 @@ void TypeSorter::write(CTypeWriter& writer) {
     for (DeclDepListConstIter iter=depmap.begin(); iter != depmap.end(); ++iter) {
         const DeclDep* dd = *iter;
         const Decl* d = dd->decl;
+        if (isa<FunctionDecl>(d)) {
+            FunctionMapConstIter iter2 = functions.find(d);
+            assert(iter2 != functions.end());
+            d = iter2->second;
+        }
         for (unsigned i=0; i<dd->numDeps(); ++i) {
             const Decl* dep = dd->getDep(i);
             // only care about other types for now

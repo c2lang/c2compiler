@@ -17,6 +17,7 @@
 #define CGENERATOR_TYPE_SORTER_H
 
 #include <vector>
+#include <map>
 
 namespace C2 {
 
@@ -44,6 +45,10 @@ private:
     typedef DeclDepList::const_iterator DeclDepListConstIter;
     typedef DeclDepList::iterator DeclDepListIter;
     DeclDepList depmap;
+
+    typedef std::map<const Decl*, const Decl*> FunctionMap;
+    typedef FunctionMap::const_iterator FunctionMapConstIter;
+    FunctionMap functions;
 };
 
 }
