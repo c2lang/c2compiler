@@ -260,7 +260,7 @@ unsigned CodeGenModule::getAlignment(QualType Q) const {
     case TC_FUNCTION:
         assert(0 && "TODO");
         break;
-    case TC_PACKAGE:
+    case TC_MODULE:
         assert(0);
         break;
     }
@@ -315,7 +315,7 @@ llvm::Type* CodeGenModule::ConvertType(QualType Q) {
     case TC_FUNCTION:
         assert(0 && "TODO func type");
         break;
-    case TC_PACKAGE:
+    case TC_MODULE:
         assert(0 && "TODO");
         break;
     }
@@ -440,7 +440,7 @@ llvm::Constant* CodeGenModule::EmitDefaultInit(QualType Q) {
     case TC_FUNCTION:
         assert(0 && "TODO");
         break;
-    case TC_PACKAGE:
+    case TC_MODULE:
         assert(0);
         break;
     }

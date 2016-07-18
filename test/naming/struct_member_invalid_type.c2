@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+module test;
+
+type Point struct {
+    // should not crash
+    Number x;       // @error{unknown type name Number}
+}
+

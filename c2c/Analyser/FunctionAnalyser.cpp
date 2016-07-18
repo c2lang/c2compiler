@@ -486,6 +486,18 @@ void FunctionAnalyser::analyseDeclStmt(Stmt* stmt) {
     if (Q.isValid()) {
         decl->setType(Q);
 
+        if (!isInterface) {
+            if (Q.isConstant()) {
+               if (!isupper(decl->getName()[0])) {
+                    Diags.Report(decl->getLocation(), diag::err_const_casing);
+                }
+            } else {
+                if (!islower(decl->getName()[0])) {
+                    Diags.Report(decl->getLocation(), diag::err_var_casing);
+                }
+            }
+        }
+
         if (Q.isArrayType()) {
             // TODO use Helper-function to get ArrayType (might be AliasType)
             ArrayType* AT = cast<ArrayType>(Q.getTypePtr());
@@ -1004,7 +1016,7 @@ void FunctionAnalyser::analyseArrayType(VarDecl* V, QualType T) {
     case TC_FUNCTION:
         assert(0 && "should not happen");
         break;
-    case TC_PACKAGE:
+    case TC_MODULE:
         assert(0 && "TBD");
         break;
     }
@@ -1907,7 +1919,7 @@ QualType FunctionAnalyser::getStructType(QualType Q) const {
         return Q;
     case TC_ENUM:
     case TC_FUNCTION:
-    case TC_PACKAGE:
+    case TC_MODULE:
         return QualType();
     }
     assert(0);

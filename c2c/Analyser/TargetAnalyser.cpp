@@ -45,7 +45,7 @@ unsigned TargetAnalyser::analyse(bool print1, bool print2, bool print3, bool pri
     const size_t count = analysers.size();
 
     for (unsigned i=0; i<count; i++) {
-        errors += analysers[i]->checkImports();
+        analysers[i]->checkImports();
     }
     if (errors) return errors;
 

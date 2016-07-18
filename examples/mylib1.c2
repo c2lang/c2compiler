@@ -39,9 +39,9 @@ public func Handle* init() {
 func void destroy() {
 }
 
-public func void close(Handle* H) {
+public func void close(Handle* h) {
     destroy();
-    //free(H);
+    //free(h);
 }
 
 

@@ -19,10 +19,10 @@ func void callback(CB cb) {}
 func void convert(int32 a, int32 b, int32 c) {
 }
 
-public func void MyFunc() {
+public func void myFunc() {
     if (3) goto end;
     convert(3, 4, number);
-    callback(MyFunc);
+    callback(myFunc);
 end:
     return;
 }

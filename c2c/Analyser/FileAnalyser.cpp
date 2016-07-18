@@ -26,6 +26,7 @@
 #include "AST/Expr.h"
 #include "AST/AST.h"
 #include "Utils/color.h"
+#include <ctype.h>
 
 using namespace C2;
 using namespace clang;
@@ -55,13 +56,11 @@ void FileAnalyser::printAST(bool printInterface) const {
     ast.print(true);
 }
 
-unsigned  FileAnalyser::checkImports() {
+void FileAnalyser::checkImports() {
     LOG_FUNC
-    unsigned errors = 0;
     for (unsigned i=0; i<ast.numImports(); i++) {
-        if (!globals->addImportDecl(ast.getImport(i))) errors++;
+        globals->addImportDecl(ast.getImport(i));
     }
-    return errors;
 }
 
 unsigned FileAnalyser::resolveTypes() {
@@ -426,6 +425,9 @@ void FileAnalyser::analyseStructNames(const StructTypeDecl* S, Names& names, boo
 
 unsigned FileAnalyser::checkStructTypeDecl(StructTypeDecl* D) {
     LOG_FUNC
+    if (!D->isGlobal() && !ast.isInterface() && !D->getName().empty() && !islower(D->getName()[0])) {
+        Diags.Report(D->getLocation(), diag::err_var_casing);
+    }
     unsigned errors = 0;
     for (unsigned i=0; i<D->numMembers(); i++) {
         Decl* M = D->getMember(i);
@@ -462,6 +464,17 @@ unsigned FileAnalyser::resolveVarDecl(VarDecl* D) {
 
     TR->checkOpaqueType(D->getLocation(), D->isPublic(), Q);
 
+    if (!ast.isInterface() && !D->getName().empty()) {
+        if (Q.isConstant()) {
+           if (!isupper(D->getName()[0])) {
+                Diags.Report(D->getLocation(), diag::err_const_casing);
+            }
+        } else {
+            if (!islower(D->getName()[0])) {
+                Diags.Report(D->getLocation(), diag::err_var_casing);
+            }
+        }
+    }
     // NOTE: dont check initValue here (doesn't have canonical type yet)
     return 0;
 }

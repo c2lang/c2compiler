@@ -27,7 +27,7 @@ func void doThing2(int32* result = 0) {}
 
 func void doThing3(int32 number = 2, int32* result = 0) {}
 
-func void testFunc(const char c, volatile int32* reg) {}
+func void testFunc(const char C, volatile int32* reg) {}
 
 func const char* getToken() { return nil; }
 

@@ -1,0 +1,6 @@
+// @warnings{no-unused}
+module test;
+
+func void test2(int32) {
+}
+

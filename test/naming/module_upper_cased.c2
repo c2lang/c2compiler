@@ -1,0 +1,3 @@
+// @warnings{no-unused}
+module Test;  // @error{a module name must start with a lower case character}
+

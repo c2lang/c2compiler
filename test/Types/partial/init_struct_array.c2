@@ -7,11 +7,11 @@ type Point struct {
 }
 
 func void test1() {
-    const int32 a = 50;
+    const int32 A = 50;
     Point[] p = {
         { 10, 20 },
         { 100, 200 },    // @error{constant value 200 out-of-bounds for type 'int8', range [-128, 127]}
-        { 100, 100 + a}, // @error{constant value 150 out-of-bounds for type 'int8', range [-128, 127]}
+        { 100, 100 + A}, // @error{constant value 150 out-of-bounds for type 'int8', range [-128, 127]}
     }
 }
 

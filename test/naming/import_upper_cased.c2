@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+import stdio as Stdio; // @error{a module name must start with a lower case character}
+

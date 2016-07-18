@@ -72,8 +72,10 @@ bool QualType::isConstant() const {
     const Type* T = getCanonicalType();
     switch (T->getTypeClass()) {
     case TC_BUILTIN:
-    case TC_POINTER:
         return isConstQualified();
+    case TC_POINTER:
+        // both pointer and pointee must be const qualified
+        return isConstQualified() && cast<PointerType>(T)->getPointeeType().isConstQualified();
     case TC_ARRAY:
         return cast<ArrayType>(T)->getElementType().isConstant();
     case TC_UNRESOLVED:
@@ -87,7 +89,7 @@ bool QualType::isConstant() const {
         break;
     case TC_FUNCTION:
         return isConstQualified();
-    case TC_PACKAGE:
+    case TC_MODULE:
         assert(0);
         break;
     }

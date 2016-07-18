@@ -49,11 +49,11 @@ type S2 struct {
     union choice {
         int32 b;
     }
-    union ONeOf {
+    union oneOf {
         int32 a;
     }
     volatile uint32 count;
-    const int32 d;
+    const int32 D;
 }
 
 type Data union {

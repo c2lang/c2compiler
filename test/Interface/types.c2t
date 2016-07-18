@@ -24,7 +24,7 @@ public type Struct struct {
     int32 x;
     Struct* s;
     Number n;
-    struct AA {
+    struct aa {
         int64 xx;
     }
     union {
@@ -52,7 +52,7 @@ type Struct struct {
     int32 x;
     Struct* s;
     Number n;
-    struct AA {
+    struct aa {
         int64 xx;
     }
     union {

@@ -939,7 +939,7 @@ void IssueDb::testFile() {
         close(pipe_stderr[1]);
         close(pipe_stderr[0]);
         execl(c2c_cmd, "c2c", "-d", test_root, "--test", NULL);
-        perror("execv");
+        perror("execl");
         exit(127); /* only if execv fails */
     }
     else { // parent

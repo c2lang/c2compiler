@@ -2,40 +2,39 @@
 module test;
 
 public func int32 main() {
-    int64 Int64 = 1;
-    int32 Int32 = 1;
-    int16 Int16 = 1;
-    int8 Int8 = 1;
-    uint64 UInt64 = 1;
-    uint32 UInt32 = 1;
-    uint16 UInt16 = 1;
-    uint8 UInt8 = 1;
-    float32 Float32 = 1;
-    float64 Float64 = 1;
-    bool Bool = true;
+    int64 myInt64 = 1;
+    int32 myInt32 = 1;
+    int16 myInt16 = 1;
+    int8 myInt8 = 1;
+    uint64 myUInt64 = 1;
+    uint32 myUInt32 = 1;
+    uint16 myUInt16 = 1;
+    uint8 myUInt8 = 1;
+    float32 myFloat32 = 1;
+    float64 myFloat64 = 1;
+    bool myBool = true;
 
-    Int32 = Int64;  // @warning{implicit conversion loses integer precision: 'int64' to 'int32'}
-    Int16 = Int32;  // @warning{implicit conversion loses integer precision: 'int32' to 'int16'}
-    Int8  = Int16;  // @warning{implicit conversion loses integer precision: 'int16' to 'int8'}
-    Bool  = Int64;
+    myInt32 = myInt64;  // @warning{implicit conversion loses integer precision: 'int64' to 'int32'}
+    myInt16 = myInt32;  // @warning{implicit conversion loses integer precision: 'int32' to 'int16'}
+    myInt8  = myInt16;  // @warning{implicit conversion loses integer precision: 'int16' to 'int8'}
+    myBool  = myInt64;
 
-    UInt32 = UInt64;    // @warning{implicit conversion loses integer precision: 'uint64' to 'uint32'}
-    UInt16 = UInt32;    // @warning{implicit conversion loses integer precision: 'uint32' to 'uint16'}
-    UInt8  = UInt16;    // @warning{implicit conversion loses integer precision: 'uint16' to 'uint8'}
-    Bool   = UInt64;
+    myUInt32 = myUInt64;    // @warning{implicit conversion loses integer precision: 'uint64' to 'uint32'}
+    myUInt16 = myUInt32;    // @warning{implicit conversion loses integer precision: 'uint32' to 'uint16'}
+    myUInt8  = myUInt16;    // @warning{implicit conversion loses integer precision: 'uint16' to 'uint8'}
+    myBool   = myUInt64;
 
-    Int32  = UInt32;    // @warning{implicit conversion changes signedness: 'uint32' to 'int32'}
-    Int32  = UInt16;
-    UInt32 = Int16;     // @warning{implicit conversion changes signedness: 'int16' to 'uint32'}
+    myInt32  = myUInt32;    // @warning{implicit conversion changes signedness: 'uint32' to 'int32'}
+    myInt32  = myUInt16;
+    myUInt32 = myInt16;     // @warning{implicit conversion changes signedness: 'int16' to 'uint32'}
 
-    Int64   = Float32;  // @warning{implicit conversion turns floating-point number into integer: 'float32' to 'int64'}
-    Int32   = Float32;  // @warning{implicit conversion turns floating-point number into integer: 'float32' to 'int32'}
-    Float32 = Float64;  // @warning{implicit conversion loses floating-point precision: 'float64' to 'float32'}
+    myInt64   = myFloat32;  // @warning{implicit conversion turns floating-point number into integer: 'float32' to 'int64'}
+    myInt32   = myFloat32;  // @warning{implicit conversion turns floating-point number into integer: 'float32' to 'int32'}
+    myFloat32 = myFloat64;  // @warning{implicit conversion loses floating-point precision: 'float64' to 'float32'}
 
-    Bool = Float32;     // @error{invalid type conversion from 'float32' to 'bool'}
-    Bool = Float64;     // @error{invalid type conversion from 'float64' to 'bool'}
+    myBool = myFloat32;     // @error{invalid type conversion from 'float32' to 'bool'}
+    myBool = myFloat64;     // @error{invalid type conversion from 'float64' to 'bool'}
 
     return 0;
 }
-
 

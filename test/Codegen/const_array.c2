@@ -1,6 +1,6 @@
 // @warnings{no-unused}
 module test;
 
-const int32[] a = { 1, 2 }
-// CHECK: @a = internal constant [2 x i32] [i32 1, i32 2], align 4
+const int32[] A = { 1, 2 }
+// CHECK: @A = internal constant [2 x i32] [i32 1, i32 2], align 4
 

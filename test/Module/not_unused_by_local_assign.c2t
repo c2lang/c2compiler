@@ -4,7 +4,7 @@
 // @file{file1}
 module foo;
 
-public int32 Num = 0;
+public int32 num = 0;
 
 // @file{file2}
 module bar;
@@ -12,6 +12,6 @@ module bar;
 import foo;
 
 func void test() {
-    foo.Num = 1;
+    foo.num = 1;
 }
 

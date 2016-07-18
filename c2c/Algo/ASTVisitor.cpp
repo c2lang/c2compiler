@@ -121,7 +121,7 @@ void ASTVisitor::checkType(QualType Q, bool isFull) {
     case TC_ENUM:
     case TC_FUNCTION:
         break;
-    case TC_PACKAGE:
+    case TC_MODULE:
         assert(0);
         break;
     }

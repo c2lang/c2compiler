@@ -57,7 +57,7 @@ unsigned TypeResolver::checkType(QualType Q, bool used_public) {
     case TC_FUNCTION:
         // ok (TypeDecl will be checked)
         return 0;
-    case TC_PACKAGE:
+    case TC_MODULE:
         assert(0 && "TBD");
         return 0;
     }
@@ -135,14 +135,17 @@ QualType TypeResolver::resolveUnresolved(QualType Q) const {
             const UnresolvedType* U = cast<UnresolvedType>(T);
             TypeDecl* TD = U->getDecl();
             assert(TD);
-            return TD->getType();
+            QualType result = TD->getType();
+            if (Q.isConstQualified()) result.addConst();
+            if (Q.isVolatileQualified()) result.addVolatile();
+            return result;
         }
     case TC_ALIAS:
     case TC_STRUCT:
     case TC_ENUM:
     case TC_FUNCTION:
         return Q;
-    case TC_PACKAGE:
+    case TC_MODULE:
         assert(0 && "TBD");
         return Q;
     }
@@ -270,7 +273,7 @@ QualType TypeResolver::checkCanonicals(Decls& decls, QualType Q, bool set) const
         }
     case TC_FUNCTION:
         return Q.getCanonicalType();
-    case TC_PACKAGE:
+    case TC_MODULE:
         assert(0 && "TBD");
         return 0;
     }
@@ -327,7 +330,7 @@ QualType TypeResolver::resolveCanonical(QualType Q) const {
     case TC_ENUM:
     case TC_FUNCTION:
         return Q.getCanonicalType();
-    case TC_PACKAGE:
+    case TC_MODULE:
         assert(0 && "TBD");
         return Q;
     }

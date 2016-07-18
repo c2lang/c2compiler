@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+func void test2() {
+    const char* Name = 0; // @error{a variable name must start with a lower case character}
+}
+

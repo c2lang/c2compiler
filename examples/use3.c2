@@ -1,14 +1,14 @@
 module use3;
 
-import use1 as U1 local;
-import use2 as U2 local;
+import use1 as u1 local;
+import use2 as u2 local;
 
 Coor c1;
 
 public func int32 main() {
-    U1.Number num = 10;
+    u1.Number num = 10;
     Coor coor;
-    U2.Coor c2;
+    u2.Coor c2;
     return 0;
 }
 

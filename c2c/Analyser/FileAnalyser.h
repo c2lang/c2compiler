@@ -48,7 +48,7 @@ public:
     void printAST(bool printInterface) const;
 
     // call in this order
-    unsigned checkImports();
+    void checkImports();
     unsigned resolveTypes();
     unsigned resolveTypeCanonicals();
     unsigned resolveStructMembers();

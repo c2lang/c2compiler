@@ -1,14 +1,14 @@
 module test;
 
 public func int32 main() {
-    const char[12] buffer;
+    const char[12] Buffer = { 0 }
     local char[10] buffer2;
     int32 a;
     int32 b = 10;
     const char* name = "bas";
     a = 10;
 
-    const int32 a2 = 20;
+    const int32 A2 = 20;
     //volatile int32* b2 = 0x2000;
     return 0;
 }

@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+uint32 Foo; // @error{a variable name must start with a lower case character}
+

@@ -1,4 +1,4 @@
 module test;
 
-const int32 n;        // @error{constant variable n must be initialized}
+const int32 N;        // @error{constant variable N must be initialized}
 

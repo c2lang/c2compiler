@@ -3,9 +3,10 @@ module puzzle;
 import stdio as io;
 import stdlib local;
 
-const char* ANSI_BRED   = "\033[01;31m";
-const char* ANSI_BGREEN = "\033[01;32m";
-const char* ANSI_NORMAL = "\033[0m";
+// TODO support const char* const (for string constants)
+const char* ansi_BRED   = "\033[01;31m";
+const char* ansi_BGREEN = "\033[01;32m";
+const char* ansi_NORMAL = "\033[0m";
 
 type Point enum int32 {
     POINT_A=0, POINT_B, POINT_C, POINT_D, POINT_E, POINT_F,
@@ -20,7 +21,7 @@ type Connection struct {
     bool  otherDepth;
 }
 
-const Connection[] connections = {
+const Connection[] Connections = {
     { POINT_A, POINT_C, true },
     { POINT_B, POINT_A, true },
     { POINT_C, POINT_E, true }, { POINT_C, POINT_F, false },
@@ -70,11 +71,11 @@ func void showPaths() {
             //int32 idx = index((Point)p, d);
             int32 idx = index(p, d);
             int32 prev = paths[idx];
-            if (idx == startPoint) io.printf(ANSI_BGREEN);
-            if (idx == endPoint) io.printf(ANSI_BRED);
+            if (idx == startPoint) io.printf(ansi_BGREEN);
+            if (idx == endPoint) io.printf(ansi_BRED);
             if (prev == -1) io.printf("  ");
             else io.printf("%s", print(prev));
-            if (d==0 && (p==POINT_A || p==POINT_J)) io.printf(ANSI_NORMAL);
+            if (d==0 && (p==POINT_A || p==POINT_J)) io.printf(ansi_NORMAL);
             io.printf("  ");
         }
         io.printf("\n");
@@ -122,16 +123,16 @@ public func int32 main(int32, const int8*[]) {
         Point curPoint = toPoint(idx);
         int32 curDepth = toDepth(idx);
 
-        // follow all connections, except incoming
-        for (uint32 c = 0; c<elemsof(connections); c++) {
-            const Connection* C = &connections[c];
+        // follow all Connections, except incoming
+        for (uint32 c = 0; c<elemsof(Connections); c++) {
+            const Connection* cc = &Connections[c];
             int32 next = -1;
-            if (C.src == curPoint) { // go down (or same)
-                next = index(C.dst, C.otherDepth ? curDepth + 1 : curDepth);
+            if (cc.src == curPoint) { // go down (or same)
+                next = index(cc.dst, cc.otherDepth ? curDepth + 1 : curDepth);
                 if (next == prev) continue;
                 tryPath(idx, next);
-            } else if (C.dst == curPoint) { // go up (or same)
-                next = index(C.src, C.otherDepth ? curDepth - 1 : curDepth);
+            } else if (cc.dst == curPoint) { // go up (or same)
+                next = index(cc.src, cc.otherDepth ? curDepth - 1 : curDepth);
                 if (next == prev) continue;
                 tryPath(idx, next);
             }

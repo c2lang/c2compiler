@@ -2,11 +2,11 @@
 module test;
 
 public func int32 main() {
-    int32 Int32 = 1;
-    uint32 UInt32 = 1;
+    int32 myInt32 = 1;
+    uint32 myUInt32 = 1;
 
-    int32* p1 = Int32;        // @error{invalid type conversion from 'int32' to 'int32*'}
-    int32* p2 = UInt32;       // @error{invalid type conversion from 'uint32' to 'int32*'}
+    int32* p1 = myInt32;        // @error{invalid type conversion from 'int32' to 'int32*'}
+    int32* p2 = myUInt32;       // @error{invalid type conversion from 'uint32' to 'int32*'}
 
     return 0;
 }

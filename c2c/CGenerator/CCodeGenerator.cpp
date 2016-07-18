@@ -1136,7 +1136,7 @@ void CCodeGenerator::EmitTypePreName(QualType type, StringBuilder& output) {
     case TC_FUNCTION:
         EmitDecl(cast<FunctionType>(T)->getDecl(), output);
         break;
-    case TC_PACKAGE:
+    case TC_MODULE:
         assert(0 && "TODO");
         break;
     }

@@ -4,7 +4,7 @@ import stdio;
 
 type Number int32;
 
-public const char* name = "Hallo";
+public const char* nName = "Hallo";
 
 int32[] numbers = { 1, 1, 2, 3, 5, 8, 13 }
 

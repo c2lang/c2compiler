@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+func void test2() {
+    uint32 Foo; // @error{a variable name must start with a lower case character}
+}
+

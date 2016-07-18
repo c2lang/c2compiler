@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+module test;
+
+type state enum int8 { // @error{a type name must start with an upper case character}
+    Foo,
+    Bar,
+}
+

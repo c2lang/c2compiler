@@ -106,9 +106,9 @@ Piece[] pieces = {
         .side2 = { { 0, 0, 0 }, { 0, 1, 0 } },
     },
 }
-Option[num_options][num_pieces] options;
-const int32 num_pieces = elemsof(pieces);
-const int32 num_options = 8;
+Option[NumOptions][NumPieces] options;
+const int32 NumPieces = elemsof(pieces);
+const int32 NumOptions = 8;
 
 type PositionType enum int8 {
     PLACE_FREE = 0, // not placed yet
@@ -123,7 +123,7 @@ type Position struct {
     int8 y;
 }
 
-Position[num_pieces] setup = {
+Position[NumPieces] setup = {
     [0] = { PLACE_SETUP, 0, 1, 4 },
 }
 
@@ -163,20 +163,20 @@ func Coor coor_rotate(Coor input, uint32 rotation) {
 // calculate all rotations + flipped rotations
 func void calculate_rotations() {
     memset(options, 0, sizeof(options));
-    for (uint32 p=0; p<num_pieces; p++) {
-        const Piece* P = &pieces[p];
+    for (uint32 p=0; p<NumPieces; p++) {
+        const Piece* pp = &pieces[p];
         for (uint32 o=0; o<4; o++) {  // 4 rotations
-            Option* O1 = &options[o][p];
+            Option* o1 = &options[o][p];
             for (uint32 i=0; i<4; i++) {  // side1
-                Coor c = P.side1[i];
+                Coor c = pp.side1[i];
                 if (i != 0 && c.x == 0 && c.y == 0) break;
-                O1.parts[i] = coor_rotate(c, o);
+                o1.parts[i] = coor_rotate(c, o);
             }
-            Option* O2 = &options[o+4][p];
+            Option* o2 = &options[o+4][p];
             for (uint32 i=0; i<4; i++) {  // side2
-                Coor c = P.side2[i];
+                Coor c = pp.side2[i];
                 if (i != 0 && c.x == 0 && c.y == 0) break;
-                O2.parts[i] = coor_rotate(c, o);
+                o2.parts[i] = coor_rotate(c, o);
             }
         }
     }
@@ -287,32 +287,32 @@ func void board_print() {
 }
 
 func int32 board_check_fault(int32 xx, int32 yy, int32 expect) {
-    Field F = board_get(xx, yy);
-    switch (F.status) {
+    Field f = board_get(xx, yy);
+    switch (f.status) {
     case FIELD_FREE:
-        if (F.expected && F.expected != expect) return 1;
+        if (f.expected && f.expected != expect) return 1;
         break;
     case FIELD_BLOCKED:
         return 1;
     case FIELD_TAKEN:
-        if (F.flags != expect) return 1;
+        if (f.flags != expect) return 1;
         break;
     }
     return 0;
 }
 
 // return 0=OK, 1=Not OK
-func int32 board_try_option(const Option* P, int32 x, int32 y) {
+func int32 board_try_option(const Option* pp, int32 x, int32 y) {
     for (uint32 i=0; i<4; i++) {
-        Coor c = P.parts[i];
+        Coor c = pp.parts[i];
         if (i != 0 && c.x == 0 && c.y == 0) return 0;    // ignore unused parts
         int32 xx = x + c.x;
         if (xx < 0 || xx > 4) return 1;
         int32 yy = y + c.y;
         if (yy < 0 || yy > 4) return 1;
-        Field F = board_get(xx, yy);
-        if (F.status != FIELD_FREE) return 1;
-        if (F.expected != 0 && F.expected != c.flags) return 1;
+        Field f = board_get(xx, yy);
+        if (f.status != FIELD_FREE) return 1;
+        if (f.expected != 0 && f.expected != c.flags) return 1;
         switch (c.flags) {
         case NORTH:
             if (yy == 4) return 1;
@@ -341,9 +341,9 @@ func int32 board_try_option(const Option* P, int32 x, int32 y) {
     return 0;
 }
 
-func void board_add(const Option* P, int32 x, int32 y, uint8 id) {
+func void board_add(const Option* pp, int32 x, int32 y, uint8 id) {
     for (uint32 i=0; i<4; i++) {
-        Coor c = P.parts[i];
+        Coor c = pp.parts[i];
         if (i != 0 && c.x == 0 && c.y == 0) break;
         int32 xx = x + c.x;
         int32 yy = y + c.y;
@@ -377,9 +377,9 @@ func void board_add(const Option* P, int32 x, int32 y, uint8 id) {
     }
 }
 
-func void board_rem(const Option* P, int32 x, int32 y) {
+func void board_rem(const Option* pp, int32 x, int32 y) {
     for (uint32 i=0; i<4; i++) {
-        Coor c = P.parts[i];
+        Coor c = pp.parts[i];
         if (i != 0 && c.x == 0 && c.y == 0) break;
         int32 xx = x + c.x;
         int32 yy = y + c.y;
@@ -414,7 +414,7 @@ func void board_rem(const Option* P, int32 x, int32 y) {
 uint32 found;
 uint64 tried;
 func void board_try_piece(uint8 p) {
-    if (p == num_pieces) {
+    if (p == NumPieces) {
         found++;
         io.printf("Found solution %u\n", found);
         board_print();
@@ -434,9 +434,9 @@ func void board_try_piece(uint8 p) {
     }
     for (int32 y=4; y>=0; y--) {
         for (int32 x=0; x<5; x++) {
-            Field F = board_get(x, y);
-            if (F.status != FIELD_FREE) continue;
-            for (uint32 o=0; o<num_options; o++) {
+            Field f = board_get(x, y);
+            if (f.status != FIELD_FREE) continue;
+            for (uint32 o=0; o<NumOptions; o++) {
                 if (!board_try_option(&options[o][p], x, y)) {
                     board_add(&options[o][p], x, y, p);
                     board_try_piece(p+1);

@@ -1,11 +1,11 @@
 // @warnings{no-unused}
 module test;
 
-int32 Num = 10;
+int32 num = 10;
 
 func void test1() {
-    int32 a = Num;
-    int32 b = test.Num;
-    int8 c = test.Num; // @warning{implicit conversion loses integer precision: 'int32' to 'int8'}
+    int32 a = num;
+    int32 b = test.num;
+    int8 c = test.num; // @warning{implicit conversion loses integer precision: 'int32' to 'int8'}
 }
 

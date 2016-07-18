@@ -3,7 +3,7 @@ module test;
 
 type Point struct {
     int32 a;
-    struct B {
+    struct bb {
         int32 b;
     }
     struct {
@@ -17,7 +17,7 @@ type Point struct {
         int32 d;
         int16 e;
     }
-    union U {
+    union uu {
         int32 d;
         uint16 e;
     }
@@ -26,13 +26,13 @@ type Point struct {
 func void tester() {
     Point p;
     p.a = 1;
-    p.B.b = 2;
+    p.bb.b = 2;
     p.b = 3;
     p.c = 4;
     p.p = nil;
     p.d = 5;
     p.e = 6;
-    p.U.d = 7;
-    p.U.e = 8;
+    p.uu.d = 7;
+    p.uu.e = 8;
 }
 

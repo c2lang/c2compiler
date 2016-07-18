@@ -41,7 +41,7 @@ Scope::Scope(const std::string& name_, const Modules& modules_, clang::Diagnosti
     assert(myModule);
 }
 
-bool Scope::addImportDecl(ImportDecl* importDecl) {
+void Scope::addImportDecl(ImportDecl* importDecl) {
     clang::SourceLocation Loc = importDecl->getLocation();
     if (importDecl->getAliasLocation().isValid()) {
         Loc = importDecl->getAliasLocation();
@@ -52,7 +52,6 @@ bool Scope::addImportDecl(ImportDecl* importDecl) {
     if (importDecl->isLocal()) locals.push_back(mod);
     importedModules[importDecl->getName()] = importDecl;
     symbolCache[importDecl->getName()] = importDecl;
-    return true;
 }
 
 bool Scope::checkScopedSymbol(const VarDecl* V) const {

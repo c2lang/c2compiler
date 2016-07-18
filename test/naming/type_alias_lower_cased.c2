@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+type number int32; // @error{a type name must start with an upper case character}
+

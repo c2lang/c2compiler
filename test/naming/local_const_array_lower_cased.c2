@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+func void test2() {
+    const int32[10] array = {0} // @error{a constant name must start with an upper case character}
+}
+

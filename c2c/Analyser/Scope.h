@@ -84,7 +84,7 @@ public:
     Scope(const std::string& name_, const Modules& modules_, clang::DiagnosticsEngine& Diags_);
 
     // adding symbols
-    bool addImportDecl(ImportDecl* importDecl);
+    void addImportDecl(ImportDecl* importDecl);
     bool checkScopedSymbol(const VarDecl* V) const;
     void addScopedSymbol(VarDecl* V);
 

@@ -4,11 +4,11 @@ module test;
 func void test1() {
     uint32 a = 0;
     uint32 b = 0;
-    const uint32 index = 4;
+    const uint32 Index = 4;
 
     b = a[1:2];         // @error{left bitoffset index is smaller than right index}
     b = a[a:10];
-    b = a[index:2];
-    b = a[2:index];     // @error{left bitoffset index is smaller than right index}
+    b = a[Index:2];
+    b = a[2:Index];     // @error{left bitoffset index is smaller than right index}
 }
 

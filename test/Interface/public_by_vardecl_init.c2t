@@ -11,15 +11,15 @@ public const int32 AA = 10;
 module bb;
 import aa;
 
-public const int32 b = aa.AA;
+public const int32 B = aa.AA;
 
 // @expect{complete, bb.c2i}
 module bb;
 import aa;
 
-const int32 b = aa.AA;
+const int32 B = aa.AA;
 
 // @expect{atleast, bb.h}
 #include "aa.h"
-#define bb_b aa_AA
+#define bb_B aa_AA
 

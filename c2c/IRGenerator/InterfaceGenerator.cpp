@@ -551,7 +551,7 @@ void InterfaceGenerator::EmitType(QualType type) {
     case TC_FUNCTION:
         EmitPrefixedDecl(cast<FunctionType>(T)->getDecl());
         break;
-    case TC_PACKAGE:
+    case TC_MODULE:
         assert(0 && "should not happen");
         break;
     }

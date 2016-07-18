@@ -1,8 +1,8 @@
 module use2;
 
-import use1 as U1;
+import use1 as u1;
 
-public U1.Number number;
+public u1.Number number;
 
 public type Coor struct {
     int32 x;

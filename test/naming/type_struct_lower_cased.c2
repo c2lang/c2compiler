@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+type point struct { // @error{a type name must start with an upper case character}
+    int32 x;
+}
+

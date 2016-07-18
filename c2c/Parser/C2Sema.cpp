@@ -14,6 +14,7 @@
  */
 
 #include <string.h>
+#include <ctype.h>
 
 #include <llvm/ADT/APFloat.h>
 #include <clang/AST/Expr.h>
@@ -118,6 +119,10 @@ void C2Sema::ActOnModule(const char* name, SourceLocation loc) {
         Diag(loc, diag::err_invalid_symbol_name) << name;
         return;
     }
+    if (!islower(name[0]) && !ast.isInterface()) {
+        Diag(loc, diag::err_module_casing);
+        return;
+    }
 
     if (strcmp(name, "c2") == 0) {
         Diag(loc, diag::err_module_c2);
@@ -162,6 +167,10 @@ void C2Sema::ActOnImport(const char* moduleName_, SourceLocation loc, Token& ali
             Diag(aliasTok.getLocation(), diag::err_alias_same_as_module);
             return;
         }
+        if (!islower(name[0]) && !ast.isInterface()) {
+            Diag(aliasTok.getLocation(), diag::err_module_casing);
+            return;
+        }
     }
     ImportDecl* U = new ImportDecl(name, loc, isLocal, moduleName, aliasTok.getLocation());
     U->setType(typeContext.getModuleType(U));
@@ -203,7 +212,7 @@ C2::VarDecl* C2Sema::ActOnVarDef(const char* name, SourceLocation loc, bool is_p
         if (is_public) Diag(loc, diag::err_public_in_interface);
         is_public = true;
     }
-    VarDecl* V =  createVarDecl(VARDECL_GLOBAL, name, loc, typeExpr, 0, is_public);
+    VarDecl* V = createVarDecl(VARDECL_GLOBAL, name, loc, typeExpr, 0, is_public);
     ast.addVar(V);
     addSymbol(V);
     return V;
@@ -229,6 +238,7 @@ C2::FunctionDecl* C2Sema::createFuncDecl(const char* name, SourceLocation loc,
 C2::VarDecl* C2Sema::createVarDecl(VarDeclKind k, const char* name, SourceLocation loc, TypeExpr* typeExpr, Expr* InitValue, bool is_public) {
     // TODO check that type is not pre-fixed with own module
     // globals, function params, struct members
+
     VarDecl* V = new VarDecl(k, name, loc, typeExpr->getType(), InitValue, is_public);
     delete typeExpr;
     return V;
@@ -458,7 +468,7 @@ C2::StmtResult C2Sema::ActOnDeclaration(const char* name, SourceLocation loc, Ex
     // TEMP extract here to Type and delete rtype Expr
     TypeExpr* typeExpr = cast<TypeExpr>(type);
     bool hasLocal = typeExpr->hasLocalQualifier();
-    VarDecl* V =  createVarDecl(VARDECL_LOCAL, name, loc, typeExpr, InitValue, false);
+    VarDecl* V = createVarDecl(VARDECL_LOCAL, name, loc, typeExpr, InitValue, false);
     if (hasLocal) V->setLocalQualifier();
     return StmtResult(new DeclStmt(V));
 }
@@ -699,6 +709,10 @@ void C2Sema::ActOnEnumConstant(EnumTypeDecl* Enum, IdentifierInfo* symII,
                                                Enum->isPublic());
     Enum->addConstant(D);
     addSymbol(D);
+
+    if (!isupper(symII->getNameStart()[0]) && !ast.isInterface()) {
+        Diag(symLoc, diag::err_enumconst_casing);
+    }
 }
 
 C2::ExprResult C2Sema::ActOnEnumTypeFinished(Expr* enumType,

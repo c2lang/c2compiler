@@ -2,9 +2,9 @@
 module test;
 
 public func int32 main() {
-    if (void* A = nil) {}
+    if (void* a = nil) {}
 
-    if (void B = nil) {}    // @error{variable has incomplete type 'void'}
+    if (void a = nil) {}    // @error{variable has incomplete type 'void'}
     return 0;
 }
 

@@ -230,7 +230,7 @@ bool ExprTypeAnalyser::checkCompatible(QualType left, const Expr* expr) const {
         break;
     case TC_FUNCTION:
         return checkFunction(left, expr);
-    case TC_PACKAGE:
+    case TC_MODULE:
         assert(0 && "TODO");
         break;
     }

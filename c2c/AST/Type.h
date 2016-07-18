@@ -131,7 +131,7 @@ enum TypeClass {
     TC_STRUCT,
     TC_ENUM,
     TC_FUNCTION,
-    TC_PACKAGE,
+    TC_MODULE,
 };
 
 
@@ -444,10 +444,10 @@ private:
 class ModuleType : public Type {
 public:
     ModuleType(ImportDecl* decl_)
-        : Type(TC_PACKAGE, QualType(this))
+        : Type(TC_MODULE, QualType(this))
         , decl(decl_)
     {}
-    static bool classof(const Type* T) { return T->getTypeClass() == TC_PACKAGE; }
+    static bool classof(const Type* T) { return T->getTypeClass() == TC_MODULE; }
 
     ImportDecl* getDecl() const { return decl; }
     const Module* getModule() const;

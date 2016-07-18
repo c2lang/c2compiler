@@ -6,7 +6,7 @@ func int32 calc() { return 2; }
 
 public func int32 main() {
     // --- var decls, OK ---
-    const char[12] buffer;
+    const char[12] Buffer = { 0 }
     int32 a;
     Number num;
     int32* ptr;

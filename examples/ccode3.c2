@@ -1,7 +1,7 @@
 module ccode3;
 
-public int32 MAX_COUNT = 3;
-int32 PRIV_COUNT = 4;
+public const int32 MAX_COUNT = 3;
+const int32 PRIV_COUNT = 4;
 
 public func int32 myfunction() {
     return sizeof(int32);

@@ -14,6 +14,7 @@
  */
 
 #include <stdio.h>
+#include <ctype.h>
 
 #include <clang/AST/Expr.h>
 #include <clang/Parse/ParseDiagnostic.h>
@@ -217,6 +218,11 @@ void C2Parser::ParseTypeDef(bool is_public) {
     if (ExpectIdentifier()) return;
     IdentifierInfo* id = Tok.getIdentifierInfo();
     SourceLocation idLoc = ConsumeToken();
+
+    if (!isupper(id->getNameStart()[0]) && !isInterface) {
+        Diag(idLoc, diag::err_type_casing);
+        return;
+    }
 
     switch (Tok.getKind()) {
     case tok::kw_func:
@@ -1475,6 +1481,11 @@ void C2Parser::ParseFuncDef(bool is_public) {
     IdentifierInfo* id = Tok.getIdentifierInfo();
     SourceLocation idLoc = ConsumeToken();
 
+    if (!islower(id->getNameStart()[0]) && !isInterface) {
+        Diag(idLoc, diag::err_func_casing);
+        return;
+    }
+
     FunctionDecl* func = Actions.ActOnFuncDecl(id->getNameStart(), idLoc, is_public, rtype.get());
 
     if (!ParseFunctionParams(func, true)) return;
@@ -1954,10 +1965,12 @@ C2::StmtResult C2Parser::ParseDeclaration(bool checkSemi) {
         if (InitValue.isInvalid()) return StmtError();
     }
     StmtResult Res = Actions.ActOnDeclaration(id->getNameStart(), idLoc, type.get(), InitValue.get());
+    // BBB
 
     if (checkSemi && need_semi) {
         if (ExpectAndConsume(tok::semi, diag::err_expected_after, "declaration")) return StmtError();
     }
+
     return Res;
 }
 

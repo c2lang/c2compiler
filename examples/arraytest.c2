@@ -1,15 +1,15 @@
 module array_test;
 
-import stdio as IO;
+import stdio as io;
 
 #define TEST(x,y) \
-elements += { #x, y} \
+Elements += { #x, y} \
 func int32 test_##x()
 
 type TestFunc func int32 ();
 
 type Element struct {
-    const char[16] name;
+    const char[16] Name;
     int32 value;
     TestFunc function;
 }
@@ -19,17 +19,17 @@ func int32 generic() {
     return 0;
 }
 
-const Element[+] elements;
-elements += { "test1", 10, generic }
-elements += { "test2", 20, generic }
-elements += { "test3", 30, generic }
+const Element[+] Elements;
+Elements += { "test1", 10, generic }
+Elements += { "test2", 20, generic }
+Elements += { "test3", 30, generic }
 
 TEST(foo, 100) {
-    IO.printf("here!\n");
+    io.printf("here!\n");
     return 0;
 }
 TEST(bar, 200) {
-    IO.printf("here!\n");
+    io.printf("here!\n");
     return 0;
 }
 
@@ -39,20 +39,20 @@ Element[] elems = {
     { "t2", 2 },
 }
 
-const int32 const_a = 10;
+const int32 Const_a = 10;
 int32 a = 20;
 func int32 myfunc(int32 val) { return 2 * val; }
-int32[const_a] buf1;   // ok
+int32[Const_a] buf1;   // ok
 
 public func int32 main() {
     int32 count = sizeof(elems) / sizeof(Element);
     for (int32 i=0; i<count; i++) {
-        IO.printf("[%2d] %16s\n", i, elems[i].name);
+        io.printf("[%2d] %16s\n", i, elems[i].Name);
     }
     Element e;
-    e.name;
+    e.Name;
     Element* pe;
-    pe.name;
+    pe.Name;
     return 0;
 }
 

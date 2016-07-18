@@ -123,7 +123,7 @@ void DepVisitor::checkType(QualType Q, bool isFull) {
     case TC_FUNCTION:
         addDep(cast<FunctionType>(T)->getDecl(), isFull);
         break;
-    case TC_PACKAGE:
+    case TC_MODULE:
         assert(0);
         break;
     }

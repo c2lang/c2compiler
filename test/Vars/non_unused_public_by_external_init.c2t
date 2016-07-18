@@ -4,11 +4,11 @@
 // @file{file1}
 module foo;
 
-public const int32 n = 1;
+public const int32 N = 1;
 
 // @file{file2}
 module bar;
 import foo local;
 
-public int32 y = n;
+public int32 y = N;
 

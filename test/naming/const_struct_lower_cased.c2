@@ -1,0 +1,12 @@
+// @warnings{no-unused}
+module test;
+
+type Point struct {
+    int32 x;
+}
+
+func void test2() {
+    const Point p = { 1 }   // @error{a constant name must start with an upper case character}
+
+}
+

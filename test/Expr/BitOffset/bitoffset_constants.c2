@@ -2,13 +2,13 @@
 module test;
 
 func void test1() {
-    const uint32 a = 0x1234;
+    const uint32 A = 0x1234;
     uint32 b = 0xffff;
 
     int8 c = b[15:0];   // @warning{implicit conversion loses integer precision: 'uint16' to 'int8'}
     int8 d = b[16:0];   // @warning{implicit conversion loses integer precision: 'uint32' to 'int8'}
 
-    int8 e = a[6:0] + 100;  // @error{constant value 152 out-of-bounds for type 'int8', range [-128, 127]}
-    int8 f = a[15:8] + 200; // @error{constant value 218 out-of-bounds for type 'int8', range [-128, 127]}
+    int8 e = A[6:0] + 100;  // @error{constant value 152 out-of-bounds for type 'int8', range [-128, 127]}
+    int8 f = A[15:8] + 200; // @error{constant value 218 out-of-bounds for type 'int8', range [-128, 127]}
 }
 
