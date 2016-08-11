@@ -93,6 +93,12 @@ To run the unit tests (from build/)
 make tests
 ```
 
+or from the base dir:
+```bash
+./build/tools/tester test
+./build/tools/tester test/Functions
+```
+
 ## Installing c2tags
 c2tags is C2's equivalent of ctags; it allows *jumping to definition* inside c2 source files.
 

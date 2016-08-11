@@ -52,11 +52,11 @@ enum StmtKind {
 class Stmt {
 public:
     Stmt(StmtKind k);
-    virtual ~Stmt();
+    ~Stmt();
     StmtKind getKind() const { return static_cast<StmtKind>(stmtBits.sKind); }
-    virtual void print(StringBuilder& buffer, unsigned indent) const = 0;
+    void print(StringBuilder& buffer, unsigned indent) const;
     void dump() const;
-    virtual SourceLocation getLocation() const = 0;
+    SourceLocation getLocation() const;
 
 protected:
     class StmtBitfields {
@@ -168,13 +168,13 @@ typedef OwningVector<Stmt> StmtList;
 class ReturnStmt : public Stmt {
 public:
     ReturnStmt(SourceLocation loc, Expr* value_);
-    virtual ~ReturnStmt();
+    ~ReturnStmt();
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_RETURN;
     }
 
-    virtual void print(StringBuilder& buffer, unsigned indent) const;
-    virtual SourceLocation getLocation() const { return RetLoc; }
+    void print(StringBuilder& buffer, unsigned indent) const;
+    SourceLocation getLocation() const { return RetLoc; }
 
     Expr* getExpr() const { return value; }
 private:
@@ -188,13 +188,13 @@ public:
     IfStmt(SourceLocation ifLoc,
            Stmt* condition, Stmt* thenStmt,
            SourceLocation elseLoc, Stmt* elseStmt);
-    virtual ~IfStmt();
+    ~IfStmt();
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_IF;
     }
 
-    virtual void print(StringBuilder& buffer, unsigned indent) const;
-    virtual SourceLocation getLocation() const { return IfLoc; }
+    void print(StringBuilder& buffer, unsigned indent) const;
+    SourceLocation getLocation() const { return IfLoc; }
 
     VarDecl* getConditionVariable() const;
 
@@ -213,13 +213,13 @@ private:
 class WhileStmt : public Stmt {
 public:
     WhileStmt(SourceLocation Loc_, Stmt* Cond_, Stmt* Then_);
-    virtual ~WhileStmt();
+    ~WhileStmt();
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_WHILE;
     }
 
-    virtual void print(StringBuilder& buffer, unsigned indent) const;
-    virtual SourceLocation getLocation() const { return Loc; }
+    void print(StringBuilder& buffer, unsigned indent) const;
+    SourceLocation getLocation() const { return Loc; }
 
     Stmt* getCond() const { return Cond; }
     Stmt* getBody() const { return Then; }
@@ -233,13 +233,13 @@ private:
 class DoStmt : public Stmt {
 public:
     DoStmt(SourceLocation Loc_, Expr* Cond_, Stmt* Then_);
-    virtual ~DoStmt();
+    ~DoStmt();
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_DO;
     }
 
-    virtual void print(StringBuilder& buffer, unsigned indent) const;
-    virtual SourceLocation getLocation() const { return Loc; }
+    void print(StringBuilder& buffer, unsigned indent) const;
+    SourceLocation getLocation() const { return Loc; }
 
     Stmt* getCond() const { return Cond; }
     Stmt* getBody() const { return Then; }
@@ -253,13 +253,13 @@ private:
 class ForStmt : public Stmt {
 public:
     ForStmt(SourceLocation Loc_, Stmt* Init_, Expr* Cond_, Expr* Incr_, Stmt* Body_);
-    virtual ~ForStmt();
+    ~ForStmt();
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_FOR;
     }
 
-    virtual void print(StringBuilder& buffer, unsigned indent) const;
-    virtual SourceLocation getLocation() const { return Loc; }
+    void print(StringBuilder& buffer, unsigned indent) const;
+    SourceLocation getLocation() const { return Loc; }
 
     Stmt* getInit() const { return Init; }
     Expr* getCond() const { return Cond; }
@@ -277,13 +277,13 @@ private:
 class SwitchStmt : public Stmt {
 public:
     SwitchStmt(SourceLocation Loc_, Stmt* Cond_, StmtList& Cases_);
-    virtual ~SwitchStmt();
+    ~SwitchStmt();
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_SWITCH;
     }
 
-    virtual void print(StringBuilder& buffer, unsigned indent) const;
-    virtual SourceLocation getLocation() const { return Loc; }
+    void print(StringBuilder& buffer, unsigned indent) const;
+    SourceLocation getLocation() const { return Loc; }
 
     Stmt* getCond() const { return Cond; }
     const StmtList& getCases() const { return Cases; }
@@ -297,13 +297,13 @@ private:
 class CaseStmt : public Stmt {
 public:
     CaseStmt(SourceLocation Loc_, Expr* Cond_, StmtList& Stmts_);
-    virtual ~CaseStmt();
+    ~CaseStmt();
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_CASE;
     }
 
-    virtual void print(StringBuilder& buffer, unsigned indent) const;
-    virtual SourceLocation getLocation() const { return Loc; }
+    void print(StringBuilder& buffer, unsigned indent) const;
+    SourceLocation getLocation() const { return Loc; }
 
     Expr* getCond() const { return Cond; }
     const StmtList& getStmts() const { return Stmts; }
@@ -317,13 +317,13 @@ private:
 class DefaultStmt : public Stmt {
 public:
     DefaultStmt(SourceLocation Loc_, StmtList& Stmts_);
-    virtual ~DefaultStmt();
+    ~DefaultStmt();
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_DEFAULT;
     }
 
-    virtual void print(StringBuilder& buffer, unsigned indent) const;
-    virtual SourceLocation getLocation() const { return Loc; }
+    void print(StringBuilder& buffer, unsigned indent) const;
+    SourceLocation getLocation() const { return Loc; }
 
     const StmtList& getStmts() const { return Stmts; }
 private:
@@ -335,13 +335,13 @@ private:
 class BreakStmt : public Stmt {
 public:
     BreakStmt(SourceLocation Loc_);
-    virtual ~BreakStmt();
+    ~BreakStmt();
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_BREAK;
     }
 
-    virtual void print(StringBuilder& buffer, unsigned indent) const;
-    virtual SourceLocation getLocation() const { return Loc; }
+    void print(StringBuilder& buffer, unsigned indent) const;
+    SourceLocation getLocation() const { return Loc; }
 private:
     SourceLocation Loc;
 };
@@ -350,13 +350,13 @@ private:
 class ContinueStmt : public Stmt {
 public:
     ContinueStmt(SourceLocation Loc_);
-    virtual ~ContinueStmt();
+    ~ContinueStmt();
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_CONTINUE;
     }
 
-    virtual void print(StringBuilder& buffer, unsigned indent) const;
-    virtual SourceLocation getLocation() const { return Loc; }
+    void print(StringBuilder& buffer, unsigned indent) const;
+    SourceLocation getLocation() const { return Loc; }
 private:
     SourceLocation Loc;
 };
@@ -365,13 +365,13 @@ private:
 class LabelStmt : public Stmt {
 public:
     LabelStmt(const char* name_, SourceLocation Loc_, Stmt* subStmt_);
-    virtual ~LabelStmt();
+    ~LabelStmt();
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_LABEL;
     }
 
-    virtual void print(StringBuilder& buffer, unsigned indent) const;
-    virtual SourceLocation getLocation() const { return Loc; }
+    void print(StringBuilder& buffer, unsigned indent) const;
+    SourceLocation getLocation() const { return Loc; }
     Stmt* getSubStmt() const { return subStmt; }
     const std::string& getName() const { return name; }
 private:
@@ -384,13 +384,13 @@ private:
 class GotoStmt : public Stmt {
 public:
     GotoStmt(const char* name_, SourceLocation GotoLoc_, SourceLocation LabelLoc_);
-    virtual ~GotoStmt();
+    ~GotoStmt();
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_GOTO;
     }
 
-    virtual void print(StringBuilder& buffer, unsigned indent) const;
-    virtual SourceLocation getLocation() const { return GotoLoc; }
+    void print(StringBuilder& buffer, unsigned indent) const;
+    SourceLocation getLocation() const { return GotoLoc; }
     const std::string& getName() const { return name; }
 private:
     std::string name;
@@ -402,13 +402,13 @@ private:
 class CompoundStmt : public Stmt {
 public:
     CompoundStmt(SourceLocation l, SourceLocation r, StmtList& stmts_);
-    virtual ~CompoundStmt();
+    ~CompoundStmt();
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_COMPOUND;
     }
 
-    virtual void print(StringBuilder& buffer, unsigned indent) const;
-    virtual SourceLocation getLocation() const { return Left; }
+    void print(StringBuilder& buffer, unsigned indent) const;
+    SourceLocation getLocation() const { return Left; }
 
     const StmtList& getStmts() const { return Stmts; }
     Stmt* getLastStmt() const;
@@ -423,12 +423,12 @@ private:
 class DeclStmt : public Stmt {
 public:
     DeclStmt(VarDecl* decl_);
-    virtual ~DeclStmt();
+    ~DeclStmt();
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_DECL;
     }
-    virtual void print(StringBuilder& buffer, unsigned indent) const;
-    virtual SourceLocation getLocation() const;
+    void print(StringBuilder& buffer, unsigned indent) const;
+    SourceLocation getLocation() const;
 
     const std::string& getName() const;
     VarDecl* getDecl() const { return decl; }

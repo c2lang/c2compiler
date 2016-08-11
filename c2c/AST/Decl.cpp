@@ -97,6 +97,41 @@ void Decl::printAttributes(StringBuilder& buffer, unsigned indent) const {
     buffer << '\n';
 }
 
+void Decl::print(StringBuilder& buffer, unsigned indent) const {
+    switch (getKind()) {
+    case DECL_FUNC:
+        cast<FunctionDecl>(this)->print(buffer, indent);
+        break;
+    case DECL_VAR:
+        cast<VarDecl>(this)->print(buffer, indent);
+        break;
+    case DECL_ENUMVALUE:
+        cast<EnumConstantDecl>(this)->print(buffer, indent);
+        break;
+    case DECL_ALIASTYPE:
+        cast<AliasTypeDecl>(this)->print(buffer, indent);
+        break;
+    case DECL_STRUCTTYPE:
+        cast<StructTypeDecl>(this)->print(buffer, indent);
+        break;
+    case DECL_ENUMTYPE:
+        cast<EnumTypeDecl>(this)->print(buffer, indent);
+        break;
+    case DECL_FUNCTIONTYPE:
+        cast<FunctionTypeDecl>(this)->print(buffer, indent);
+        break;
+    case DECL_ARRAYVALUE:
+        cast<ArrayValueDecl>(this)->print(buffer, indent);
+        break;
+    case DECL_IMPORT:
+        cast<ImportDecl>(this)->print(buffer, indent);
+        break;
+    case DECL_LABEL:
+        cast<LabelDecl>(this)->print(buffer, indent);
+        break;
+    }
+}
+
 void Decl::dump() const {
     StringBuilder buffer;
     print(buffer, 0);

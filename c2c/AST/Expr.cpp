@@ -55,7 +55,7 @@ Expr::~Expr() {
 
 static const char* ctc_strings[] = { "none", "partial", "full" };
 
-void Expr::print(StringBuilder& buffer, unsigned indent) const {
+void Expr::print(StringBuilder& buffer) const {
     QualType Q = getType();
     Q.print(buffer);
     buffer.setColor(COL_ATTR);
@@ -66,11 +66,218 @@ void Expr::print(StringBuilder& buffer, unsigned indent) const {
     }
 }
 
+void Expr::print(StringBuilder& buffer, unsigned indent) const {
+    switch (getKind()) {
+    case EXPR_INTEGER_LITERAL:
+        return cast<IntegerLiteral>(this)->print(buffer, indent);
+    case EXPR_FLOAT_LITERAL:
+        return cast<FloatingLiteral>(this)->print(buffer, indent);
+    case EXPR_BOOL_LITERAL:
+        return cast<BooleanLiteral>(this)->print(buffer, indent);
+    case EXPR_CHAR_LITERAL:
+        return cast<CharacterLiteral>(this)->print(buffer, indent);
+    case EXPR_STRING_LITERAL:
+        return cast<StringLiteral>(this)->print(buffer, indent);
+    case EXPR_NIL:
+        return cast<NilExpr>(this)->print(buffer, indent);
+    case EXPR_IDENTIFIER:
+        return cast<IdentifierExpr>(this)->print(buffer, indent);
+    case EXPR_TYPE:
+        return cast<TypeExpr>(this)->print(buffer, indent);
+    case EXPR_CALL:
+        return cast<CallExpr>(this)->print(buffer, indent);
+    case EXPR_INITLIST:
+        return cast<InitListExpr>(this)->print(buffer, indent);
+    case EXPR_DESIGNATOR_INIT:
+        return cast<DesignatedInitExpr>(this)->print(buffer, indent);
+    case EXPR_BINOP:
+        return cast<BinaryOperator>(this)->print(buffer, indent);
+    case EXPR_CONDOP:
+        return cast<ConditionalOperator>(this)->print(buffer, indent);
+    case EXPR_UNARYOP:
+        return cast<UnaryOperator>(this)->print(buffer, indent);
+    case EXPR_BUILTIN:
+        return cast<BuiltinExpr>(this)->print(buffer, indent);
+    case EXPR_ARRAYSUBSCRIPT:
+        return cast<ArraySubscriptExpr>(this)->print(buffer, indent);
+    case EXPR_MEMBER:
+        return cast<MemberExpr>(this)->print(buffer, indent);
+    case EXPR_PAREN:
+        return cast<ParenExpr>(this)->print(buffer, indent);
+    case EXPR_BITOFFSET:
+        return cast<BitOffsetExpr>(this)->print(buffer, indent);
+    case EXPR_CAST:
+        return cast<ExplicitCastExpr>(this)->print(buffer, indent);
+    }
+}
+
+void Expr::printLiteral(StringBuilder& buffer) const {
+    switch (getKind()) {
+    case EXPR_INTEGER_LITERAL:
+        return cast<IntegerLiteral>(this)->printLiteral(buffer);
+    case EXPR_FLOAT_LITERAL:
+        return cast<FloatingLiteral>(this)->printLiteral(buffer);
+    case EXPR_BOOL_LITERAL:
+        break;
+    case EXPR_CHAR_LITERAL:
+        return cast<CharacterLiteral>(this)->printLiteral(buffer);
+    case EXPR_STRING_LITERAL:
+        return cast<StringLiteral>(this)->printLiteral(buffer);
+    case EXPR_NIL:
+        break;
+    case EXPR_IDENTIFIER:
+        return cast<IdentifierExpr>(this)->printLiteral(buffer);
+    case EXPR_TYPE:
+    case EXPR_CALL:
+    case EXPR_INITLIST:
+    case EXPR_DESIGNATOR_INIT:
+        break;
+    case EXPR_BINOP:
+        return cast<BinaryOperator>(this)->printLiteral(buffer);
+    case EXPR_CONDOP:
+    case EXPR_UNARYOP:
+    case EXPR_BUILTIN:
+    case EXPR_ARRAYSUBSCRIPT:
+        break;
+    case EXPR_MEMBER:
+        return cast<MemberExpr>(this)->printLiteral(buffer);
+    case EXPR_PAREN:
+        break;
+    case EXPR_BITOFFSET:
+        return cast<BitOffsetExpr>(this)->printLiteral(buffer);
+    case EXPR_CAST:
+        break;
+    }
+}
+
+SourceLocation Expr::getLocation() const {
+    switch (getKind()) {
+    case EXPR_INTEGER_LITERAL:
+        return cast<IntegerLiteral>(this)->getLocation();
+    case EXPR_FLOAT_LITERAL:
+        return cast<FloatingLiteral>(this)->getLocation();
+    case EXPR_BOOL_LITERAL:
+        return cast<BooleanLiteral>(this)->getLocation();
+    case EXPR_CHAR_LITERAL:
+        return cast<CharacterLiteral>(this)->getLocation();
+    case EXPR_STRING_LITERAL:
+        return cast<StringLiteral>(this)->getLocation();
+    case EXPR_NIL:
+        return cast<NilExpr>(this)->getLocation();
+    case EXPR_IDENTIFIER:
+        return cast<IdentifierExpr>(this)->getLocation();
+    case EXPR_TYPE:
+        return SourceLocation();
+    case EXPR_CALL:
+        return cast<CallExpr>(this)->getLocation();
+    case EXPR_INITLIST:
+        return cast<InitListExpr>(this)->getLocation();
+    case EXPR_DESIGNATOR_INIT:
+        return cast<DesignatedInitExpr>(this)->getLocation();
+    case EXPR_BINOP:
+        return cast<BinaryOperator>(this)->getLocation();
+    case EXPR_CONDOP:
+        return cast<ConditionalOperator>(this)->getLocation();
+    case EXPR_UNARYOP:
+        return cast<UnaryOperator>(this)->getLocation();
+    case EXPR_BUILTIN:
+        return cast<BuiltinExpr>(this)->getLocation();
+    case EXPR_ARRAYSUBSCRIPT:
+        return cast<ArraySubscriptExpr>(this)->getLocation();
+    case EXPR_MEMBER:
+        return cast<MemberExpr>(this)->getLocation();
+    case EXPR_PAREN:
+        return cast<ParenExpr>(this)->getLocation();
+    case EXPR_BITOFFSET:
+        return cast<BitOffsetExpr>(this)->getLocation();
+    case EXPR_CAST:
+        return cast<ExplicitCastExpr>(this)->getLocation();
+    }
+}
+
+SourceLocation Expr::getLocStart() const {
+    switch (getKind()) {
+    case EXPR_INTEGER_LITERAL:
+    case EXPR_FLOAT_LITERAL:
+    case EXPR_BOOL_LITERAL:
+    case EXPR_CHAR_LITERAL:
+    case EXPR_STRING_LITERAL:
+    case EXPR_NIL:
+    case EXPR_IDENTIFIER:
+    case EXPR_TYPE:
+        break;
+    case EXPR_CALL:
+        return cast<CallExpr>(this)->getLocStart();
+    case EXPR_INITLIST:
+        return cast<InitListExpr>(this)->getLocStart();
+    case EXPR_DESIGNATOR_INIT:
+        return cast<DesignatedInitExpr>(this)->getLocStart();
+    case EXPR_BINOP:
+        return cast<BinaryOperator>(this)->getLocStart();
+    case EXPR_CONDOP:
+        break;
+    case EXPR_UNARYOP:
+        return cast<UnaryOperator>(this)->getLocStart();
+    case EXPR_BUILTIN:
+        break;
+    case EXPR_ARRAYSUBSCRIPT:
+        return cast<ArraySubscriptExpr>(this)->getLocStart();
+    case EXPR_MEMBER:
+        return cast<MemberExpr>(this)->getLocStart();
+    case EXPR_PAREN:
+        return cast<ParenExpr>(this)->getLocStart();
+    case EXPR_BITOFFSET:
+        return cast<BitOffsetExpr>(this)->getLocStart();
+    case EXPR_CAST:
+        break;
+    }
+    return getLocation();
+}
+
+SourceLocation Expr::getLocEnd() const {
+    switch (getKind()) {
+    case EXPR_INTEGER_LITERAL:
+    case EXPR_FLOAT_LITERAL:
+    case EXPR_BOOL_LITERAL:
+    case EXPR_CHAR_LITERAL:
+    case EXPR_STRING_LITERAL:
+    case EXPR_NIL:
+    case EXPR_IDENTIFIER:
+    case EXPR_TYPE:
+        break;
+    case EXPR_CALL:
+        return cast<CallExpr>(this)->getLocEnd();
+    case EXPR_INITLIST:
+        return cast<InitListExpr>(this)->getLocEnd();
+    case EXPR_DESIGNATOR_INIT:
+        return cast<DesignatedInitExpr>(this)->getLocEnd();
+    case EXPR_BINOP:
+        return cast<BinaryOperator>(this)->getLocEnd();
+    case EXPR_CONDOP:
+        break;
+    case EXPR_UNARYOP:
+        return cast<UnaryOperator>(this)->getLocEnd();
+    case EXPR_BUILTIN:
+        break;
+    case EXPR_ARRAYSUBSCRIPT:
+        return cast<ArraySubscriptExpr>(this)->getLocEnd();
+    case EXPR_MEMBER:
+        return cast<MemberExpr>(this)->getLocEnd();
+    case EXPR_PAREN:
+        return cast<ParenExpr>(this)->getLocEnd();
+    case EXPR_BITOFFSET:
+        return cast<BitOffsetExpr>(this)->getLocEnd();
+    case EXPR_CAST:
+        return cast<ExplicitCastExpr>(this)->getLocEnd();
+    }
+    return getLocation();
+}
+
 void IntegerLiteral::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_EXPR);
     buffer << "IntegerLiteral ";
-    Expr::print(buffer, 0);
+    Expr::print(buffer);
     buffer.setColor(COL_VALUE);
     buffer << ' ';
 
@@ -87,7 +294,7 @@ void FloatingLiteral::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_EXPR);
     buffer << "FloatingLiteral ";
-    Expr::print(buffer, 0);
+    Expr::print(buffer);
     char temp[20];
     sprintf(temp, "%f", Value.convertToFloat());
     buffer.setColor(COL_VALUE);
@@ -99,7 +306,7 @@ void BooleanLiteral::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_EXPR);
     buffer << "BooleanLiteral ";
-    Expr::print(buffer, 0);
+    Expr::print(buffer);
     buffer.setColor(COL_VALUE);
     buffer << ' ' << getValue() << '\n';
 }
@@ -109,7 +316,7 @@ void CharacterLiteral::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_EXPR);
     buffer << "CharacterLiteral ";
-    Expr::print(buffer, 0);
+    Expr::print(buffer);
     buffer << ' ';
     buffer.setColor(COL_VALUE);
     printLiteral(buffer);
@@ -143,7 +350,7 @@ void StringLiteral::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_EXPR);
     buffer << "StringLiteral ";
-    Expr::print(buffer, 0);
+    Expr::print(buffer);
     buffer.setColor(COL_VALUE);
     buffer << " '" << value << "'\n";
 }
@@ -170,7 +377,7 @@ void IdentifierExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_EXPR);
     buffer << "IdentifierExpr ";
-    Expr::print(buffer, 0);
+    Expr::print(buffer);
     buffer.setColor(COL_VALUE);
     buffer << ' ' << getName();
     buffer.setColor(COL_ATTR);
@@ -202,7 +409,7 @@ void CallExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_EXPR);
     buffer << "CallExpr ";
-    Expr::print(buffer, 0);
+    Expr::print(buffer);
     buffer.setColor(COL_VALUE);
     buffer << ' ';
     Fn->printLiteral(buffer);
@@ -233,7 +440,7 @@ void InitListExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_EXPR);
     buffer << "InitListExpr ";
-    Expr::print(buffer, 0);
+    Expr::print(buffer);
     if (hasDesignators()) {
         buffer << " designators=1";
     }
@@ -253,7 +460,7 @@ void DesignatedInitExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_EXPR);
     buffer << "DesignatedInitExpr ";
-    Expr::print(buffer, 0);
+    Expr::print(buffer);
     if (getDesignatorKind() == ARRAY_DESIGNATOR) {
         buffer << " array";
     } else {
@@ -332,7 +539,7 @@ void BinaryOperator::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_EXPR);
     buffer << "BinaryOperator ";
-    Expr::print(buffer, 0);
+    Expr::print(buffer);
     buffer.setColor(COL_VALUE);
     buffer << " '" << OpCode2str(opc) << '\'';
     buffer << '\n';
@@ -374,7 +581,7 @@ void ConditionalOperator::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_EXPR);
     buffer << "ConditionalOperator ";
-    Expr::print(buffer, 0);
+    Expr::print(buffer);
     buffer << '\n';
     cond->print(buffer, indent + INDENT);
     lhs->print(buffer, indent + INDENT);
@@ -409,7 +616,7 @@ void UnaryOperator::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_EXPR);
     buffer << "UnaryOperator ";
-    Expr::print(buffer, 0);
+    Expr::print(buffer);
     buffer.setColor(COL_ATTR);
     switch (opc) {
     case UO_PostInc:
@@ -437,7 +644,7 @@ void BuiltinExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_EXPR);
     buffer << "BuiltinExpr ";
-    Expr::print(buffer, 0);
+    Expr::print(buffer);
     buffer.setColor(COL_ATTR);
     if (isSizeof()) buffer << " sizeof";
     else buffer << " elemsof";
@@ -455,7 +662,7 @@ void ArraySubscriptExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_EXPR);
     buffer << "ArraySubscriptExpr ";
-    Expr::print(buffer, 0);
+    Expr::print(buffer);
     buffer << '\n';
     base->print(buffer, indent + INDENT);
     idx->print(buffer, indent + INDENT);
@@ -475,7 +682,7 @@ void MemberExpr::print(StringBuilder& buffer, unsigned indent) const {
     if (isStructFunction()) buffer << " struct-function";
     if (isStaticStructFunction()) buffer << " static-struct-function";
     buffer << ' ';
-    Expr::print(buffer, 0);
+    Expr::print(buffer);
     buffer.setColor(COL_VALUE);
     buffer << ' ';
     Base->printLiteral(buffer);
@@ -511,7 +718,7 @@ void ParenExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_EXPR);
     buffer << "ParenExpr ";
-    Expr::print(buffer, 0);
+    Expr::print(buffer);
     buffer << '\n';
     Val->print(buffer, indent + INDENT);
 }
@@ -526,7 +733,7 @@ void BitOffsetExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_EXPR);
     buffer << "BitOffsetExpr ";
-    Expr::print(buffer, 0);
+    Expr::print(buffer);
     buffer << '\n';
 
     buffer.indent(indent + INDENT);
@@ -555,7 +762,7 @@ void ExplicitCastExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_EXPR);
     buffer << "ExplicitCastExpr ";
-    Expr::print(buffer, 0);
+    Expr::print(buffer);
     buffer << '\n';
     buffer.setColor(COL_ATTR);
     buffer.indent(indent + INDENT);

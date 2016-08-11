@@ -58,9 +58,9 @@ class Decl {
 public:
     Decl(DeclKind k, const std::string& name_, SourceLocation loc_,
          QualType type_, bool is_public);
-    virtual ~Decl();
+    ~Decl();
 
-    virtual void print(StringBuilder& buffer, unsigned indent) const = 0;
+    void print(StringBuilder& buffer, unsigned indent) const;
     void printAttributes(StringBuilder& buffer, unsigned indent) const;
 
     const std::string& getName() const { return name; }
@@ -174,11 +174,11 @@ class VarDecl : public Decl {
 public:
     VarDecl(VarDeclKind k_, const std::string& name_, SourceLocation loc_,
             QualType type_, Expr* initValue_, bool is_public);
-    virtual ~VarDecl();
+    ~VarDecl();
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_VAR;
     }
-    virtual void print(StringBuilder& buffer, unsigned indent) const;
+    void print(StringBuilder& buffer, unsigned indent) const;
 
     Expr* getInitValue() const { return initValue; }
     void setInitValue(Expr* v) {
@@ -207,11 +207,11 @@ class FunctionDecl : public Decl {
 public:
     FunctionDecl(const std::string& name_, SourceLocation loc_,
                  bool is_public, QualType rtype_);
-    virtual ~FunctionDecl();
+    ~FunctionDecl();
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_FUNC;
     }
-    virtual void print(StringBuilder& buffer, unsigned indent) const;
+    void print(StringBuilder& buffer, unsigned indent) const;
 
     void setBody(CompoundStmt* body_) {
         assert(body == 0);
@@ -253,11 +253,11 @@ class EnumConstantDecl : public Decl {
 public:
     EnumConstantDecl(const std::string& name_, SourceLocation loc_, QualType type_, Expr* Init,
                      bool is_public);
-    virtual ~EnumConstantDecl();
+    ~EnumConstantDecl();
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_ENUMVALUE;
     }
-    virtual void print(StringBuilder& buffer, unsigned indent) const;
+    void print(StringBuilder& buffer, unsigned indent) const;
 
     Expr* getInitValue() const { return InitVal; } // static value, NOT incremental values
     llvm::APSInt getValue() const { return Val; }
@@ -296,7 +296,7 @@ public:
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_ALIASTYPE;
     }
-    virtual void print(StringBuilder& buffer, unsigned indent) const;
+    void print(StringBuilder& buffer, unsigned indent) const;
     QualType getRefType() const { return refType; }
 private:
     QualType refType;
@@ -310,7 +310,7 @@ public:
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_STRUCTTYPE;
     }
-    virtual void print(StringBuilder& buffer, unsigned indent) const;
+    void print(StringBuilder& buffer, unsigned indent) const;
 
     void addMember(Decl* D);
     unsigned numMembers() const { return members.size(); }
@@ -347,7 +347,7 @@ public:
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_ENUMTYPE;
     }
-    virtual void print(StringBuilder& buffer, unsigned indent) const;
+    void print(StringBuilder& buffer, unsigned indent) const;
 
     void addConstant(EnumConstantDecl* c) { constants.push_back(c); }
     unsigned numConstants() const { return constants.size(); }
@@ -366,11 +366,11 @@ private:
 class FunctionTypeDecl : public TypeDecl {
 public:
     FunctionTypeDecl(FunctionDecl* func_);
-    virtual ~FunctionTypeDecl();
+    ~FunctionTypeDecl();
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_FUNCTIONTYPE;
     }
-    virtual void print(StringBuilder& buffer, unsigned indent) const;
+    void print(StringBuilder& buffer, unsigned indent) const;
 
     FunctionDecl* getDecl() const { return func; }
 private:
@@ -381,11 +381,11 @@ private:
 class ArrayValueDecl : public Decl {
 public:
     ArrayValueDecl(const std::string& name_, SourceLocation loc_, Expr* value_);
-    virtual ~ArrayValueDecl();
+    ~ArrayValueDecl();
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_ARRAYVALUE;
     }
-    virtual void print(StringBuilder& buffer, unsigned indent) const;
+    void print(StringBuilder& buffer, unsigned indent) const;
 
     Expr* getExpr() const { return value; }
     Expr* transferExpr() {
@@ -405,10 +405,9 @@ public:
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_IMPORT;
     }
-    virtual void print(StringBuilder& buffer, unsigned indent) const;
+    void print(StringBuilder& buffer, unsigned indent) const;
 
     const std::string& getModuleName() const { return modName; }
-    virtual clang::SourceLocation getAliasLocation() const { return aliasLoc; }
     bool hasAlias() const {return aliasLoc.isValid(); }
     bool isLocal() const { return importDeclBits.IsLocal; }
 private:
@@ -423,7 +422,7 @@ public:
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_LABEL;
     }
-    virtual void print(StringBuilder& buffer, unsigned indent) const;
+    void print(StringBuilder& buffer, unsigned indent) const;
 
     LabelStmt* getStmt() const { return TheStmt; }
     void setStmt(LabelStmt* S) { TheStmt = S; }

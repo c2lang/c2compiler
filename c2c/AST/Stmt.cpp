@@ -46,6 +46,76 @@ Stmt::~Stmt() {
 #endif
 }
 
+void Stmt::print(StringBuilder& buffer, unsigned indent) const {
+    switch (getKind()) {
+    case STMT_RETURN:
+        return cast<ReturnStmt>(this)->print(buffer, indent);
+    case STMT_EXPR:
+        return cast<Expr>(this)->print(buffer, indent);
+    case STMT_IF:
+        return cast<IfStmt>(this)->print(buffer, indent);
+    case STMT_WHILE:
+        return cast<WhileStmt>(this)->print(buffer, indent);
+    case STMT_DO:
+        return cast<DoStmt>(this)->print(buffer, indent);
+    case STMT_FOR:
+        return cast<ForStmt>(this)->print(buffer, indent);
+    case STMT_SWITCH:
+        return cast<SwitchStmt>(this)->print(buffer, indent);
+    case STMT_CASE:
+        return cast<CaseStmt>(this)->print(buffer, indent);
+    case STMT_DEFAULT:
+        return cast<DefaultStmt>(this)->print(buffer, indent);
+    case STMT_BREAK:
+        return cast<BreakStmt>(this)->print(buffer, indent);
+    case STMT_CONTINUE:
+        return cast<ContinueStmt>(this)->print(buffer, indent);
+    case STMT_LABEL:
+        return cast<LabelStmt>(this)->print(buffer, indent);
+    case STMT_GOTO:
+        return cast<GotoStmt>(this)->print(buffer, indent);
+    case STMT_COMPOUND:
+        return cast<CompoundStmt>(this)->print(buffer, indent);
+    case STMT_DECL:
+        return cast<DeclStmt>(this)->print(buffer, indent);
+    }
+}
+
+SourceLocation Stmt::getLocation() const {
+    switch (getKind()) {
+    case STMT_RETURN:
+        return cast<ReturnStmt>(this)->getLocation();
+    case STMT_EXPR:
+        return cast<Expr>(this)->getLocation();
+    case STMT_IF:
+        return cast<IfStmt>(this)->getLocation();
+    case STMT_WHILE:
+        return cast<WhileStmt>(this)->getLocation();
+    case STMT_DO:
+        return cast<DoStmt>(this)->getLocation();
+    case STMT_FOR:
+        return cast<ForStmt>(this)->getLocation();
+    case STMT_SWITCH:
+        return cast<SwitchStmt>(this)->getLocation();
+    case STMT_CASE:
+        return cast<CaseStmt>(this)->getLocation();
+    case STMT_DEFAULT:
+        return cast<DefaultStmt>(this)->getLocation();
+    case STMT_BREAK:
+        return cast<BreakStmt>(this)->getLocation();
+    case STMT_CONTINUE:
+        return cast<ContinueStmt>(this)->getLocation();
+    case STMT_LABEL:
+        return cast<LabelStmt>(this)->getLocation();
+    case STMT_GOTO:
+        return cast<GotoStmt>(this)->getLocation();
+    case STMT_COMPOUND:
+        return cast<CompoundStmt>(this)->getLocation();
+    case STMT_DECL:
+        return cast<DeclStmt>(this)->getLocation();
+    }
+}
+
 void Stmt::dump() const {
     StringBuilder buffer;
     print(buffer, 0);
