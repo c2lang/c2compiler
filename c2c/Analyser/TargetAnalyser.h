@@ -38,7 +38,6 @@ public:
 private:
     void printASTs(bool printLib) const;
 
-    const Modules& modules;
     clang::DiagnosticsEngine& Diags;
     bool verbose;
 

@@ -1,0 +1,37 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c
+
+// @file{file1}
+module test;
+
+type Type struct {
+    int32 member;
+}
+
+func void type_init(Type*) {}
+
+Type t;
+
+public func int32 main() {
+    test.t.init();
+    return 0;
+}
+
+// @expect{atleast, build/test.c}
+typedef struct test_Type_ test_Type;
+
+struct test_Type_ {
+  int32_t member;
+};
+
+static test_Type test_t = { };
+
+static void test_type_init(test_Type* _arg0) {
+}
+
+int32_t main() {
+  test_type_init(&test_t);
+  return 0;
+}
+

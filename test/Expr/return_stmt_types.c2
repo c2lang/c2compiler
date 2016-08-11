@@ -8,8 +8,3 @@ func int8 test2() { return c; }
 
 func int8 test3() { return 150; }   // @error{constant value 150 out-of-bounds for type 'int8', range [-128, 127]}
 
-func int8 test4() {
-    int32 a = 1;
-    return a;   // @warning{implicit conversion loses integer precision: 'int32' to 'int8'}
-}
-

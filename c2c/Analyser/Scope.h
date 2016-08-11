@@ -92,6 +92,7 @@ public:
     const Module* findUsedModule(const std::string& name, clang::SourceLocation loc, bool usedPublic) const;
     Decl* findSymbol(const std::string& name, clang::SourceLocation loc, bool isType, bool usedPublic) const;
     Decl* findSymbolInModule(const std::string& name, clang::SourceLocation loc, const Module* mod) const;
+    void checkAccess(Decl* D, clang::SourceLocation loc) const;
 
     // Scopes
     void EnterScope(unsigned flags);

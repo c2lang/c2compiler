@@ -14,6 +14,7 @@
  */
 
 #include <stdio.h>
+#include <ctype.h>
 
 #include "Analyser/AnalyserUtils.h"
 
@@ -23,5 +24,26 @@ const char* AnalyserUtils::fullName(const std::string& modName, const std::strin
     static char buffer[128];
     sprintf(buffer, "%s.%s", modName.c_str(), symname.c_str());
     return buffer;
+}
+
+const char* AnalyserUtils::splitStructFunctionName(char* structName, const std::string& funcName) {
+    // foo_bar -> typename='Foo', return 'bar' (or NULL if no _)
+    const char* cp = funcName.c_str();
+    char* op = structName;
+    const char* memberName = 0;
+    while (*cp != 0) {
+        if (*cp == '_') {
+            cp++;
+            memberName = cp;
+            break;
+        }
+        *op = *cp;
+        ++cp;
+        ++op;
+    }
+    *op = 0;
+    structName[0] = toupper(structName[0]);
+
+    return memberName;
 }
 

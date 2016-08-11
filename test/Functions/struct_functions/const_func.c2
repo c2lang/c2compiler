@@ -1,0 +1,16 @@
+// @skip
+// @warnings{no-unused}
+module test;
+
+type Type struct {
+    int32 member;
+}
+
+func void type_init(Type* t) {
+}
+
+func void myfunc() {
+    const Type T = { 1 }
+    T.init();           // @error{conversion from 'const Type*' to 'Type*' discards const}
+}
+

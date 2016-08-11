@@ -1,0 +1,12 @@
+// @warnings{no-unused}
+module test;
+
+type Type struct {
+    int32 member;
+}
+
+func void myfunc() {
+    Type t;
+    t.init();           // @error{no member/struct-function named 'init' in '(struct)Type'}
+}
+

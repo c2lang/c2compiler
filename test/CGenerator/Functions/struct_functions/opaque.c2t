@@ -1,0 +1,67 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c
+
+// @file{file1}
+module foo;
+
+public type Type struct {
+    int32 x;
+} @(opaque)
+
+public func Type* type_create() {
+    Type* t = nil;
+    return t;
+}
+
+func void type_internal(Type* t) {
+    t.x = 1;
+}
+
+// @file{file2}
+module foo;
+
+public func void type_init(Type* t) {
+    t.internal();
+}
+
+// @file{file3}
+module bar;
+
+import foo;
+
+public func int32 main() {
+    foo.Type* t = foo.Type.create();
+    t.init();
+    return 0;
+}
+
+// @expect{atleast, build/foo.c}
+#include "foo.h"
+
+struct foo_Type_ {
+  int32_t x;
+};
+
+static void foo_type_internal(foo_Type* t);
+
+foo_Type* foo_type_create() {
+  foo_Type* t = NULL;
+  return t;
+}
+
+static void foo_type_internal(foo_Type* t) {
+  t->x = 1;
+}
+
+void foo_type_init(foo_Type* t) {
+  foo_type_internal(t);
+}
+
+// @expect{atleast, build/bar.c}
+int32_t main() {
+  foo_Type* t = foo_type_create();
+  foo_type_init(t);
+  return 0;
+}
+

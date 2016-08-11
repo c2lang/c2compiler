@@ -1,0 +1,30 @@
+// @warnings{no-unused}
+module test;
+
+type Type struct {
+    int32 member;
+}
+
+func void type_init(Type* t) {
+    t.member = 0;
+}
+
+func int32 type_getMember(const Type* t) {
+    return t.member;
+}
+
+func void type_add(Type* t, int32 n) {
+    t.member += n;
+}
+
+func void myfunc() {
+    Type t;
+    t.init();
+    int32 m = t.getMember();
+    t.add(1);
+
+    type_init(&t);
+    type_add(&t, 2);
+    m = type_getMember(&t);
+}
+

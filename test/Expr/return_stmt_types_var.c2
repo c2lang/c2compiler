@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+module test;
+
+func int8 test4() {
+    int32 a = 1;
+    return a;   // @warning{implicit conversion loses integer precision: 'int32' to 'int8'}
+}
+

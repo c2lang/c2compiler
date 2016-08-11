@@ -20,7 +20,6 @@
 #include <stdio.h>
 
 #include "IRGenerator/InterfaceGenerator.h"
-#include "CGenerator/HeaderNamer.h"
 #include "AST/Module.h"
 #include "AST/AST.h"
 #include "AST/Type.h"

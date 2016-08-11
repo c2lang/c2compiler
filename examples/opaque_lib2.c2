@@ -1,0 +1,19 @@
+module opaque_lib;
+
+import stdlib;
+
+func void myType_init(MyType* t, char* text) {
+    t.number = 123;
+    t.text = text;
+}
+
+public func MyType* myType_create(char* text) {
+    MyType* t = stdlib.malloc(sizeof(MyType));
+    t.init(text);
+    return t;
+}
+
+public func void myType_destroy(MyType* t) {
+    stdlib.free(t);
+}
+

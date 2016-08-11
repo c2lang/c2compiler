@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+type Type struct {
+    struct x {
+        int32 y;
+    }
+}
+
+func void type_y(Type* t) {}
+

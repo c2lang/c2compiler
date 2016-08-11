@@ -41,38 +41,40 @@ class TypeResolver;
 
 class FileAnalyser {
 public:
-    FileAnalyser(const Modules& modules, clang::DiagnosticsEngine& Diags_,
-                 AST& ast_, bool verbose);
+    FileAnalyser(const Module& module_, const Modules& modules,
+                 clang::DiagnosticsEngine& Diags_, AST& ast_, bool verbose);
     ~FileAnalyser() {}
 
     void printAST(bool printInterface) const;
 
     // call in this order
-    void checkImports();
-    unsigned resolveTypes();
+    void addImports();
+    void resolveTypes();
     unsigned resolveTypeCanonicals();
     unsigned resolveStructMembers();
     unsigned resolveVars();
     unsigned checkArrayValues();
-    unsigned checkVarInits();
-    unsigned resolveEnumConstants();
     unsigned checkFunctionProtos();
-    unsigned checkFunctionBodies();
+    void checkVarInits();
+    unsigned resolveEnumConstants();
+    void checkFunctionBodies();
     void checkDeclsForUsed();
 
 private:
     unsigned checkTypeDecl(TypeDecl* D);
     unsigned checkStructTypeDecl(StructTypeDecl* D);
     unsigned resolveVarDecl(VarDecl* D);
-    unsigned resolveFunctionDecl(FunctionDecl* D);
+    unsigned resolveFunctionDecl(FunctionDecl* D, bool checkArgs);
     unsigned checkArrayValue(ArrayValueDecl* D);
     typedef std::map<const std::string, const Decl*> Names;
+    void checkStructFunction(FunctionDecl* F);
     void analyseStructNames(const StructTypeDecl* S, Names& names, bool isStruct);
     void checkVarDeclAttributes(VarDecl* D);
     void checkAttributes(Decl* D);
     void checkStructMembersForUsed(const StructTypeDecl* S);
 
     AST& ast;
+    const Module& module;
     std::auto_ptr<Scope> globals;
     std::auto_ptr<TypeResolver> TR;
     clang::DiagnosticsEngine& Diags;

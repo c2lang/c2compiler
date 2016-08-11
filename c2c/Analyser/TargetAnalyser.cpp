@@ -18,18 +18,20 @@
 #include "AST/Component.h"
 #include "AST/Module.h"
 
+#include <clang/Basic/Diagnostic.h>
+
 using namespace C2;
 
 TargetAnalyser::TargetAnalyser(const Modules& modules_, clang::DiagnosticsEngine& Diags_, Component& C, bool verbose_)
-    : modules(modules_)
-    , Diags(Diags_)
+    : Diags(Diags_)
     , verbose(verbose_)
 {
     const ModuleList& mods = C.getModules();
     for (unsigned m=0; m<mods.size(); m++) {
-        const Files& files = mods[m]->getFiles();
+        const Module* M = mods[m];
+        const Files& files = M->getFiles();
         for (unsigned f=0; f<files.size(); f++) {
-            analysers.push_back(new FileAnalyser(modules, Diags, *files[f], verbose));
+            analysers.push_back(new FileAnalyser(*M, modules_, Diags, *files[f], verbose));
         }
     }
 }
@@ -45,14 +47,13 @@ unsigned TargetAnalyser::analyse(bool print1, bool print2, bool print3, bool pri
     const size_t count = analysers.size();
 
     for (unsigned i=0; i<count; i++) {
-        analysers[i]->checkImports();
+        analysers[i]->addImports();
     }
-    if (errors) return errors;
 
     for (unsigned i=0; i<count; i++) {
-        errors += analysers[i]->resolveTypes();
+        analysers[i]->resolveTypes();
     }
-    if (errors) return errors;
+    if (Diags.hasErrorOccurred()) return 1;
 
     for (unsigned i=0; i<count; i++) {
         errors += analysers[i]->resolveTypeCanonicals();
@@ -81,19 +82,20 @@ unsigned TargetAnalyser::analyse(bool print1, bool print2, bool print3, bool pri
     if (errors) return errors;
 
     for (unsigned i=0; i<count; i++) {
-        errors += analysers[i]->checkVarInits();
-    }
-    if (print2) printASTs(printLib);
-    if (errors) return errors;
-
-    for (unsigned i=0; i<count; i++) {
         errors += analysers[i]->checkFunctionProtos();
     }
     if (errors) return errors;
 
     for (unsigned i=0; i<count; i++) {
-        errors += analysers[i]->checkFunctionBodies();
+        analysers[i]->checkVarInits();
     }
+    if (print2) printASTs(printLib);
+    if (Diags.hasErrorOccurred()) return 1;
+
+    for (unsigned i=0; i<count; i++) {
+        analysers[i]->checkFunctionBodies();
+    }
+    if (Diags.hasErrorOccurred()) return 1;
 
     for (unsigned i=0; i<count; i++) {
         analysers[i]->checkDeclsForUsed();

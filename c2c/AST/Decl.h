@@ -17,6 +17,7 @@
 #define AST_DECL_H
 
 #include <string>
+#include <map>
 #include <assert.h>
 
 #include <llvm/ADT/APSInt.h>
@@ -67,17 +68,17 @@ public:
     std::string DiagName() const;
     SourceLocation getLocation() const { return loc; }
 
-    DeclKind getKind() const { return static_cast<DeclKind>(DeclBits.dKind); }
-    bool isExported() const { return DeclBits.DeclIsExported; }
-    bool isPublic() const { return DeclBits.DeclIsPublic; }
-    void setPublic(bool isPublic) { DeclBits.DeclIsPublic = isPublic; }
-    bool isUsed() const { return DeclBits.DeclIsUsed; }
-    bool isUsedPublic() const { return DeclBits.DeclIsUsedPublic; }
-    void setExported() { DeclBits.DeclIsExported = true; }
-    void setUsed() { DeclBits.DeclIsUsed = true; }
-    void setUsedPublic() { DeclBits.DeclIsUsedPublic = true; }
-    void setHasAttributes() { DeclBits.DeclHasAttributes = true; }
-    bool hasAttributes() const { return DeclBits.DeclHasAttributes; }
+    DeclKind getKind() const { return static_cast<DeclKind>(declBits.dKind); }
+    bool isExported() const { return declBits.IsExported; }
+    void setExported() { declBits.IsExported = true; }
+    bool isPublic() const { return declBits.IsPublic; }
+    void setPublic(bool isPublic) { declBits.IsPublic = isPublic; }
+    bool isUsed() const { return declBits.IsUsed; }
+    void setUsed() { declBits.IsUsed = true; }
+    bool isUsedPublic() const { return declBits.IsUsedPublic; }
+    void setUsedPublic() { declBits.IsUsedPublic = true; }
+    void setHasAttributes() { declBits.HasAttributes = true; }
+    bool hasAttributes() const { return declBits.HasAttributes; }
     bool hasAttribute(AttrKind kind) const;
     const AttrList& getAttributes() const;
 
@@ -97,25 +98,62 @@ protected:
     QualType type;
 
     class DeclBitfields {
-    public:
+        friend class Decl;
+
         unsigned dKind : 4;
-        unsigned DeclIsExported: 1;
-        unsigned DeclIsPublic : 1;
-        unsigned DeclIsUsed : 1;
-        unsigned DeclIsUsedPublic : 1;
-        unsigned DeclHasAttributes : 1;
-        unsigned varDeclKind: 2;
-        unsigned VarDeclHasLocalQualifier : 1;
-        unsigned arrayDeclOwnsExpr: 1;
-        unsigned StructTypeIsStruct : 1;
-        unsigned StructTypeIsGlobal : 1;
-        unsigned FuncIsVariadic : 1;
-        unsigned FuncHasDefaultArgs : 1;
-        unsigned ImportIsLocal : 1;
+        unsigned IsExported: 1;
+        unsigned IsPublic : 1;
+        unsigned IsUsed : 1;
+        unsigned IsUsedPublic : 1;
+        unsigned HasAttributes : 1;
     };
+    enum { NumDeclBits = 16 };
+
+    class VarDeclBits {
+        friend class VarDecl;
+        unsigned : NumDeclBits;
+
+        unsigned Kind: 2;
+        unsigned HasLocalQualifier : 1;
+    };
+
+    class ArrayValueDeclBits {
+        friend class ArrayValueDecl;
+        unsigned : NumDeclBits;
+
+        unsigned OwnsExpr: 1;
+    };
+
+    class StructTypeDeclBits {
+        friend class StructTypeDecl;
+        unsigned : NumDeclBits;
+
+        unsigned IsStruct : 1;
+        unsigned IsGlobal : 1;
+    };
+
+    class FunctionDeclBits {
+        friend class FunctionDecl;
+        unsigned : NumDeclBits;
+
+        unsigned IsVariadic : 1;
+        unsigned HasDefaultArgs : 1;
+    };
+
+    class ImportDeclBits {
+        friend class ImportDecl;
+        unsigned : NumDeclBits;
+
+        unsigned IsLocal : 1;
+    };
+
     union {
-        DeclBitfields DeclBits;
-        unsigned BitsInit;      // to initialize all bits
+        DeclBitfields declBits;
+        VarDeclBits varDeclBits;
+        ArrayValueDeclBits arrayValueDeclBits;
+        StructTypeDeclBits structTypeDeclBits;
+        FunctionDeclBits functionDeclBits;
+        ImportDeclBits importDeclBits;
     };
 private:
     const Module* mod;
@@ -148,11 +186,11 @@ public:
         initValue = v;
     }
 
-    void setLocalQualifier() { DeclBits.VarDeclHasLocalQualifier = true; }
-    bool hasLocalQualifier() const { return DeclBits.VarDeclHasLocalQualifier; }
+    void setLocalQualifier() { varDeclBits.HasLocalQualifier = true; }
+    bool hasLocalQualifier() const { return varDeclBits.HasLocalQualifier; }
     bool isParameter() const { return getVarKind() == VARDECL_PARAM; }
     bool isGlobal() const { return getVarKind() == VARDECL_GLOBAL; }
-    VarDeclKind getVarKind() const { return static_cast<VarDeclKind>(DeclBits.varDeclKind); }
+    VarDeclKind getVarKind() const { return static_cast<VarDeclKind>(varDeclBits.Kind); }
     QualType getOrigType() const { return origType; }
 
     // for codegen
@@ -187,10 +225,10 @@ public:
     VarDecl* getArg(unsigned i) const { return args[i]; }
     unsigned numArgs() const { return args.size(); }
     unsigned minArgs() const;
-    void setVariadic() { DeclBits.FuncIsVariadic = true; }
-    bool isVariadic() const { return DeclBits.FuncIsVariadic; }
-    void setDefaultArgs() { DeclBits.FuncHasDefaultArgs = true; }
-    bool hasDefaultArgs() const { return DeclBits.FuncHasDefaultArgs; }
+    void setVariadic() { functionDeclBits.IsVariadic = true; }
+    bool isVariadic() const { return functionDeclBits.IsVariadic; }
+    void setDefaultArgs() { functionDeclBits.HasDefaultArgs = true; }
+    bool hasDefaultArgs() const { return functionDeclBits.HasDefaultArgs; }
 
     // return type
     QualType getReturnType() const { return rtype; }
@@ -276,8 +314,10 @@ public:
 
     void addMember(Decl* D);
     unsigned numMembers() const { return members.size(); }
+    void addStructFunction(const std::string& name_, Decl* D);
     Decl* getMember(unsigned index) const { return members[index]; }
     Decl* find(const std::string& name_) const;
+    Decl* findFunction(const std::string& name_) const;
     int findIndex(const std::string& name_) const {
         for (unsigned i=0; i<members.size(); i++) {
             Decl* D = members[i];
@@ -287,11 +327,14 @@ public:
     }
     void setOpaqueMembers();
 
-    bool isStruct() const { return DeclBits.StructTypeIsStruct; }
-    bool isGlobal() const { return DeclBits.StructTypeIsGlobal; }
+    bool isStruct() const { return structTypeDeclBits.IsStruct; }
+    bool isGlobal() const { return structTypeDeclBits.IsGlobal; }
 private:
     typedef OwningVector<Decl> Members;
     Members members;
+    typedef std::map<std::string, Decl*> StructFunctions;
+    typedef StructFunctions::const_iterator StructFunctionsConstIter;
+    StructFunctions structFunctions;
 };
 
 class EnumTypeDecl : public TypeDecl {
@@ -346,8 +389,8 @@ public:
 
     Expr* getExpr() const { return value; }
     Expr* transferExpr() {
-        assert(DeclBits.arrayDeclOwnsExpr);
-        DeclBits.arrayDeclOwnsExpr = false;
+        assert(arrayValueDeclBits.OwnsExpr);
+        arrayValueDeclBits.OwnsExpr = false;
         return value;
     }
 private:
@@ -367,7 +410,7 @@ public:
     const std::string& getModuleName() const { return modName; }
     virtual clang::SourceLocation getAliasLocation() const { return aliasLoc; }
     bool hasAlias() const {return aliasLoc.isValid(); }
-    bool isLocal() const { return DeclBits.ImportIsLocal; }
+    bool isLocal() const { return importDeclBits.IsLocal; }
 private:
     std::string modName;
     SourceLocation aliasLoc;

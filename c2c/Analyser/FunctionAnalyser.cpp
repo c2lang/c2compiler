@@ -98,19 +98,27 @@ FunctionAnalyser::FunctionAnalyser(Scope& scope_,
     , typeContext(tc)
     , EA(Diags_)
     , Diags(Diags_)
-    , errors(0)
     , CurrentFunction(0)
     , CurrentVarDecl(0)
     , constDiagID(0)
     , inConstExpr(false)
     , usedPublicly(false)
     , isInterface(isInterface_)
+    , inCallExpr(false)
+    , structFunctionArg(0)
 {
 }
 
-unsigned FunctionAnalyser::check(FunctionDecl* func) {
+void FunctionAnalyser::check(FunctionDecl* func) {
+    // check argument inits
+    for (unsigned i=0; i<func->numArgs(); i++) {
+        VarDecl* Arg = func->getArg(i);
+        if (Arg->getInitValue()) {
+            checkVarInit(Arg);
+        }
+    }
+
     CurrentFunction = func;
-    errors = 0;
     scope.EnterScope(Scope::FnScope | Scope::DeclScope);
 
     checkFunction(func);
@@ -132,28 +140,23 @@ unsigned FunctionAnalyser::check(FunctionDecl* func) {
     labels.clear();
 
     CurrentFunction = 0;
-    return errors;
 }
 
-unsigned FunctionAnalyser::checkVarInit(VarDecl* V) {
+void FunctionAnalyser::checkVarInit(VarDecl* V) {
     LOG_FUNC
     CurrentVarDecl = V;
-    errors = 0;
 
     ConstModeSetter cms(*this, diag::err_init_element_not_constant);
     usedPublicly = (V->isPublic() && (!V->isGlobal() || V->getType().isConstQualified()));
     analyseInitExpr(V->getInitValue(), V->getType());
     usedPublicly = false;
     // TODO if type is array, update type of VarDecl? (add size)
-
     CurrentVarDecl = 0;
-    return errors;
 }
 
-unsigned FunctionAnalyser::checkArraySizeExpr(VarDecl* V) {
+void FunctionAnalyser::checkArraySizeExpr(VarDecl* V) {
     LOG_FUNC
     CurrentVarDecl = V;
-    errors = 0;
 
     ConstModeSetter cms(*this, diag::err_init_element_not_constant);
     usedPublicly = V->isPublic();
@@ -161,7 +164,6 @@ unsigned FunctionAnalyser::checkArraySizeExpr(VarDecl* V) {
     usedPublicly = false;
 
     CurrentVarDecl = 0;
-    return errors;
 }
 
 unsigned FunctionAnalyser::checkEnumValue(EnumConstantDecl* E, llvm::APSInt& nextValue) {
@@ -208,19 +210,18 @@ void FunctionAnalyser::checkFunction(FunctionDecl* func) {
         if (arg->getName() != "") {
             // check that argument names dont clash with globals
             if (!scope.checkScopedSymbol(arg)) {
-                errors++;
                 continue;
             }
             scope.addScopedSymbol(arg);
         }
     }
-    if (errors) return;
+    if (Diags.hasErrorOccurred()) return;
 
     CompoundStmt* body = func->getBody();
     if (body) {
         analyseCompoundStmt(body);
     }
-    if (errors) return;
+    if (Diags.hasErrorOccurred()) return;
 
     // check for return statement of return value is required
     QualType rtype = func->getReturnType();
@@ -622,8 +623,11 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
                 expr->setCTC(CTC_FULL);
                 expr->setConstant();
                 break;
-            case DECL_ALIASTYPE:
             case DECL_STRUCTTYPE:
+                // Type.func is allowed as init
+                // TODO handle, mark that Type was specified, not just return StructType
+                break;
+            case DECL_ALIASTYPE:
             case DECL_ENUMTYPE:
             case DECL_FUNCTIONTYPE:
                 Diag(id->getLocation(), diag::err_unexpected_typedef) << id->getName();
@@ -734,7 +738,7 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
         bool constant = true;
         for (unsigned i=0; i<values.size(); i++) {
             analyseInitExpr(values[i], ET);
-            if (DesignatedInitExpr* D = cast<DesignatedInitExpr>(values[i])) {
+            if (DesignatedInitExpr* D = dyncast<DesignatedInitExpr>(values[i])) {
                 haveDesignators = true;
                 if (D->getDesignatorKind() != DesignatedInitExpr::ARRAY_DESIGNATOR) {
                     StringBuilder buf;
@@ -791,7 +795,6 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
                 // note: 0 for array, 2 for scalar, 3 for union, 4 for structs
                 Diag(values[STD->numMembers()]->getLocation(), diag::err_excess_initializers)
                     << 4;
-                errors++;
                 return;
             }
             if (DesignatedInitExpr* D = dyncast<DesignatedInitExpr>(values[i])) {
@@ -844,7 +847,6 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
         switch (values.size()) {
         case 0:
             fprintf(stderr, "TODO ERROR: scalar initializer cannot be empty\n");
-            errors++;
             break;
         case 1:
         {
@@ -855,7 +857,6 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
         }
         default:
             Diag(values[1]->getLocation(), diag::err_excess_initializers) << 2;
-            errors++;
             break;
         }
         return;
@@ -1032,7 +1033,6 @@ void FunctionAnalyser::analyseArraySizeExpr(ArrayType* AT) {
 
     if (inConstExpr && !E->isConstant()) {
         Diag(E->getLocation(), diag::err_vla_decl_in_file_scope) << E->getSourceRange();
-        errors++;
         return;
     }
     // check if type is integer
@@ -1041,7 +1041,6 @@ void FunctionAnalyser::analyseArraySizeExpr(ArrayType* AT) {
         StringBuilder buf;
         T.DiagName(buf);
         Diag(E->getLocation(), diag::err_array_size_non_int) << buf << E->getSourceRange();
-        errors++;
         return;
     }
     // check if negative
@@ -1050,7 +1049,6 @@ void FunctionAnalyser::analyseArraySizeExpr(ArrayType* AT) {
         llvm::APSInt Result = LA.checkLiterals(E);
         if (Result.isSigned() && Result.isNegative()) {
             Diag(E->getLocation(), diag::err_typecheck_negative_array_size) << E->getSourceRange();
-            errors++;
         } else {
             AT->setSize(Result);
         }
@@ -1427,17 +1425,19 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
     IdentifierExpr* member = M->getMember();
 
     // we dont know what we're looking at here, it could be:
-    // mod.type
+    // mod.Type
     // mod.var
     // mod.func
     // var<Type=struct>.member
+    // var<Type=struct>.struct_function
     // var[index].member
-    // var->member
+    // var->member (= error)
+    // Type.struct_function
     QualType LType = analyseExpr(M->getBase(), RHS);
     if (!LType.isValid()) return QualType();
 
     if (isa<ModuleType>(LType)) {
-        M->setModulePrefix(true);
+        M->setModulePrefix();
         ModuleType* MT = cast<ModuleType>(LType.getTypePtr());
         Decl* D = scope.findSymbolInModule(member->getName(), member->getLocation(), MT->getModule());
         if (D) {
@@ -1446,12 +1446,12 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
             SetConstantFlags(D, M);
             QualType Q = D->getType();
             expr->setType(Q);
+            if (isa<TypeDecl>(D)) member->setIsType();
             member->setType(Q);
             member->setDecl(D);
             return Q;
         }
     } else {
-        M->setModulePrefix(false);
         // dereference pointer
         if (LType.isPointerType()) {
             // TODO use function to get elementPtr (could be alias type)
@@ -1466,30 +1466,74 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
                 << buf << M->getSourceRange() << member->getLocation();
             return QualType();
         }
-        return analyseStructMember(S, M, side);
-
+        return analyseStructMember(S, M, side, exprIsType(M->getBase()));
     }
     return QualType();
 }
 
-QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr* M, unsigned side) {
+QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr* M, unsigned side, bool isStatic) {
+    assert(M);
     LOG_FUNC
     const StructType* ST = cast<StructType>(T);
     const StructTypeDecl* S = ST->getDecl();
-    if (CurrentFunction->getModule() != S->getModule() && S->hasAttribute(ATTR_OPAQUE)) {
-        Diag(M->getLocation(), diag::err_deref_opaque) << S->isStruct() << S->DiagName();
-        return QualType();
-    }
+    unsigned msg = 0;
     IdentifierExpr* member = M->getMember();
-    Decl* match = S->find(member->getName());
-    if (match) {
-        if (side & RHS) match->setUsed();
-        M->setDecl(match);
-        M->setType(match->getType());
-        member->setDecl(match);
-        member->setType(match->getType());
-        return match->getType();
+
+    if (isStatic) {
+        M->setIsStructFunction();
+        M->setIsStaticStructFunction();
+        member->setIsStructFunction();
+        Decl* match = S->findFunction(member->getName());
+        if (match) {
+            // NOTE: static struct-functions are allowed outside call expr
+
+            structFunctionArg = M->getBase();
+            if (side & RHS) match->setUsed();
+            M->setDecl(match);
+            M->setType(match->getType());
+            member->setDecl(match);
+            member->setType(match->getType());
+            SetConstantFlags(match, M);
+            return match->getType();
+        }
+        msg = diag::err_no_struct_func;
+    } else {
+        assert(CurrentFunction);
+        Decl* match = S->find(member->getName());
+        if (match) {
+            FunctionDecl* func = dyncast<FunctionDecl>(match);
+
+            // NOTE: access of struct-function is not a dereference
+            if (!func && CurrentFunction->getModule() != S->getModule() && S->hasAttribute(ATTR_OPAQUE)) {
+                Diag(M->getLocation(), diag::err_deref_opaque) << S->isStruct() << S->DiagName();
+                return QualType();
+            }
+            if (func) {
+                scope.checkAccess(func, member->getLocation());
+
+                if (!checkStructTypeArg(T, func)) {
+                    Diag(member->getLocation(), diag::err_struct_func_args) << func->DiagName();
+                    return QualType();
+                }
+                M->setIsStructFunction();
+                member->setIsStructFunction();
+                structFunctionArg = M->getBase();
+                if (!inCallExpr) {
+                    Diag(member->getLocation(), diag::err_non_static_struct_func_usage) << M->getBase()->getSourceRange();
+                    return QualType();
+                }
+            }
+
+            if (side & RHS) match->setUsed();
+            M->setDecl(match);
+            M->setType(match->getType());
+            member->setDecl(match);
+            member->setType(match->getType());
+            return match->getType();
+        }
+        msg = diag::err_no_member_struct_func;
     }
+
     char temp1[MAX_LEN_TYPENAME];
     StringBuilder buf1(MAX_LEN_TYPENAME, temp1);
     T->DiagName(buf1);
@@ -1497,8 +1541,50 @@ QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr* M, unsign
     char temp2[MAX_LEN_VARNAME];
     StringBuilder buf2(MAX_LEN_VARNAME, temp2);
     buf2 << '\'' << member->getName() << '\'';
-    Diag(member->getLocation(), diag::err_no_member) << temp2 << temp1;
+    Diag(member->getLocation(), msg) << temp2 << temp1;
     return QualType();
+}
+
+bool FunctionAnalyser::checkStructTypeArg(QualType T,  FunctionDecl* func) const {
+    if (func->numArgs() == 0) return false;
+
+    VarDecl* functionArg = func->getArg(0);
+    Decl* functionArgDecl = getStructDecl(functionArg->getType());
+
+    // might be done more effictien by not creating PointerType first
+    QualType callArgType = typeContext.getPointerType(T);
+    Decl* callArgDecl = getStructDecl(callArgType);
+    return (functionArgDecl == callArgDecl);
+}
+
+Decl* FunctionAnalyser::getStructDecl(QualType T) const {
+    // try to convert QualType(Struct*) -> StructDecl
+    const PointerType* pt = dyncast<PointerType>(T);
+    if (!pt) return 0;
+
+    const StructType* st = dyncast<StructType>(pt->getPointeeType());
+    if (!st) return 0;
+
+    return st->getDecl();
+}
+
+bool FunctionAnalyser::exprIsType(const Expr* E) const {
+    // can be IdentifierExpr or MemberExpr
+    switch (E->getKind()) {
+    case EXPR_IDENTIFIER:
+        {
+            const IdentifierExpr* I = cast<IdentifierExpr>(E);
+            return I->isType();
+        }
+    case EXPR_MEMBER:
+        {
+            const MemberExpr* M = cast<MemberExpr>(E);
+            return M->getMember()->isType();
+        }
+    default:
+        break;
+    }
+    return false;
 }
 
 QualType FunctionAnalyser::analyseParenExpr(Expr* expr) {
@@ -1509,7 +1595,6 @@ QualType FunctionAnalyser::analyseParenExpr(Expr* expr) {
     expr->setType(Q);
     return Q;
 }
-
 
 // return whether Result is valid
 bool FunctionAnalyser::analyseBitOffsetIndex(Expr* expr, llvm::APSInt* Result, BuiltinType* BaseType) {
@@ -1615,13 +1700,12 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
     LOG_FUNC
     CallExpr* call = cast<CallExpr>(expr);
     // analyse function
+    structFunctionArg = 0;
+    inCallExpr = true;
     QualType LType = analyseExpr(call->getFn(), RHS);
-    if (LType.isNull()) {
-        fprintf(stderr, "CALL unknown function (already error)\n");
-        call->getFn()->dump();
-        return QualType();
-    }
-    // TODO this should be done in analyseExpr()
+    inCallExpr = false;
+    if (LType.isNull()) return QualType();      // already handled
+
     if (!LType.isFunctionType()) {
         char typeName[MAX_LEN_TYPENAME];
         StringBuilder buf(MAX_LEN_TYPENAME, typeName);
@@ -1633,64 +1717,91 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
     const FunctionType* FT = cast<FunctionType>(LType);
     FunctionDecl* func = FT->getDecl();
     func->setUsed();
-    unsigned protoArgs = func->numArgs();
+    call->setType(func->getReturnType());
+    if (structFunctionArg) call->setIsStructFunction();
+
+    if (!checkCallArgs(func, call)) return QualType();
+    return func->getReturnType();
+}
+
+bool FunctionAnalyser::checkCallArgs(FunctionDecl* func, CallExpr* call) {
+    LOG_FUNC
+    unsigned funcArgs = func->numArgs();
     unsigned callArgs = call->numArgs();
-    unsigned minArgs = MIN(protoArgs, callArgs);
-    for (unsigned i=0; i<minArgs; i++) {
-        Expr* argGiven = call->getArg(i);
-        QualType typeGiven = analyseExpr(argGiven, RHS);
-        VarDecl* Arg = func->getArg(i);
-        QualType argType = Arg->getType();
-        if (typeGiven.isValid()) {
-            assert(argType.isValid());
-            EA.check(argType, argGiven);
+
+    unsigned funcIndex = 0;
+    unsigned callIndex = 0;
+
+    const bool isStructFunction = (structFunctionArg != 0);
+    unsigned diagIndex = 0;
+    if (isStructFunction) {
+        if (exprIsType(structFunctionArg)) {
+            diagIndex = 5;
+        } else {
+            diagIndex = 4;
+            funcArgs--;
+            funcIndex = 1;
         }
     }
-    if (callArgs > protoArgs) {
+    unsigned minArgs = MIN(funcArgs, callArgs);
+
+    for (unsigned i=0; i<minArgs; i++) {
+        Expr* callArg = call->getArg(callIndex);
+        QualType callArgType = analyseExpr(callArg, RHS);
+        if (callArgType.isValid()) {
+            VarDecl* funcArg = func->getArg(funcIndex);
+            QualType funcArgType = funcArg->getType();
+            assert(funcArgType.isValid());
+            EA.check(funcArgType, callArg);
+        }
+        callIndex++;
+        funcIndex++;
+    }
+    if (callArgs > funcArgs) {
         // more args given, check if function is variadic
         if (!func->isVariadic()) {
-            Expr* arg = call->getArg(minArgs);
+            Expr* arg = call->getArg(callIndex);
             unsigned msg = diag::err_typecheck_call_too_many_args;
             if (func->hasDefaultArgs()) msg = diag::err_typecheck_call_too_many_args_at_most;
             Diag(arg->getLocation(), msg)
-                << 0 << protoArgs << callArgs;
-            return QualType();
+                << diagIndex << funcArgs << callArgs;
+            return false;
         }
         for (unsigned i=minArgs; i<callArgs; i++) {
-            Expr* argGiven = call->getArg(i);
-            QualType typeGiven = analyseExpr(argGiven, RHS);
+            Expr* callArg = call->getArg(callIndex);
+            QualType callArgType = analyseExpr(callArg, RHS);
             // TODO use canonical
-            if (typeGiven == Type::Void()) {
+            if (callArgType == Type::Void()) {
                 fprintf(stderr, "ERROR: (TODO) passing 'void' to parameter of incompatible type '...'\n");
-                //Diag(argGiven->getLocation(), diag::err_typecheck_convert_incompatible)
-                //    << "from" << "to" << 1;// << argGiven->getLocation();
+                //Diag(callArg->getLocation(), diag::err_typecheck_convert_incompatible)
+                //    << "from" << "to" << 1;// << callArg->getLocation();
             }
+            callIndex++;
         }
-    } else if (callArgs < protoArgs) {
+    } else if (callArgs < funcArgs) {
         // less args given, check for default argument values
-        for (unsigned i=minArgs; i<protoArgs; i++) {
-            VarDecl* arg = func->getArg(i);
+        for (unsigned i=minArgs; i<funcArgs; i++) {
+            VarDecl* arg = func->getArg(funcIndex++);
             if (!arg->getInitValue()) {
+                unsigned msg = diag::err_typecheck_call_too_few_args;
                 if (func->hasDefaultArgs()) {
-                    protoArgs = func->minArgs();
-                    Diag(arg->getLocation(), diag::err_typecheck_call_too_few_args_at_least)
-                        << 0 << protoArgs << callArgs;
-                } else {
-                    Diag(arg->getLocation(), diag::err_typecheck_call_too_few_args)
-                        << 0 << protoArgs << callArgs;
+                    funcArgs = func->minArgs();
+                    if (isStructFunction) funcArgs--;
+                    msg = diag::err_typecheck_call_too_few_args_at_least;
                 }
-                return QualType();
+                Diag(call->getLocEnd(), msg) << diagIndex << funcArgs << callArgs;
+                return false;
             }
         }
     }
-    call->setType(func->getReturnType());
-    return func->getReturnType();
+    return true;
 }
 
 Decl* FunctionAnalyser::analyseIdentifier(IdentifierExpr* id) {
     LOG_FUNC
     Decl* D = scope.findSymbol(id->getName(), id->getLocation(), false, false);
     if (D) {
+        if (isa<TypeDecl>(D)) id->setIsType();
         id->setDecl(D);
         id->setType(D->getType());
         SetConstantFlags(D, id);

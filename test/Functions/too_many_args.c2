@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+func void func1() {
+}
+
+func void test1() {
+    func1(10); // @error{too many arguments to function call, expected 0, have 1}
+}
+

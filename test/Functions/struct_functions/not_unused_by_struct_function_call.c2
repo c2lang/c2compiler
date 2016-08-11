@@ -1,0 +1,15 @@
+// @warnings{no-unused-parameter}
+module test;
+
+type Type struct {
+    int32 member;       // @warning{unused struct member 'member'}
+}
+
+func void type_init(Type* t) {
+}
+
+func void myfunc() {  // @warning{unused function 'test.myfunc'}
+    Type t;
+    t.init();
+}
+

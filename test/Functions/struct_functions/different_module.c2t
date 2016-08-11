@@ -1,0 +1,28 @@
+// @recipe bin
+$warnings no-unused
+
+// @file{file1}
+module mod1;
+
+public type Type struct {
+    int32 x;
+}
+
+// @file{file2}
+module mod2;
+
+import mod1 local;
+
+public func void type_init(Type* t) {}
+
+// @file{file3}
+module mod3;
+
+import mod1 local;
+import mod2 local;
+
+func void test() {
+    Type t;
+    t.init();           // @error{no member/struct-function named 'init' in '(struct)Type'}
+}
+

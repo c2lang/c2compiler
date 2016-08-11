@@ -1,0 +1,22 @@
+// @recipe bin
+$warnings no-unused
+
+// @file{file1}
+module foo;
+
+public type Type struct {
+    int32 x;
+}
+
+func void type_init(Type* t) {}
+
+// @file{file2}
+module bar;
+
+import foo local;
+
+func void test() {
+    Type t;
+    t.init();   // @error{symbol foo.type_init is not public}
+}
+

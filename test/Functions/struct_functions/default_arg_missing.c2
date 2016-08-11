@@ -1,0 +1,17 @@
+// @warnings{no-unused}
+module test;
+
+type Type struct {
+    int32 member;
+}
+
+func void type_init(Type* t, int32 x, int32 y, int32 z=0) {
+    t.member = x;
+}
+
+func void myfunc() {
+    Type t;
+    t.init(1);          // @error{too few arguments to struct-function call, expected at least 2, have 1}
+    type_init(&t, 1);   // @error{too few arguments to function call, expected at least 3, have 2}
+}
+

@@ -36,9 +36,10 @@ static int deleteCount;
 Expr::Expr(ExprKind k, bool isConstant_)
     : Stmt(STMT_EXPR)
 {
-    StmtBits.eKind = k;
-    StmtBits.ExprIsConstant = isConstant_;
-    StmtBits.ExprImpCast = BuiltinType::Void;
+    exprBits.eKind = k;
+    exprBits.ImpCast = BuiltinType::Void;
+    exprBits.IsCTC = 0;
+    exprBits.IsConstant = isConstant_;
 #ifdef EXPR_DEBUG
     creationCount++;
     fprintf(stderr, "[EXPR] create %p  created %d deleted %d\n", this, creationCount, deleteCount);
@@ -58,7 +59,7 @@ void Expr::print(StringBuilder& buffer, unsigned indent) const {
     QualType Q = getType();
     Q.print(buffer);
     buffer.setColor(COL_ATTR);
-    buffer << " ctc=" << ctc_strings[StmtBits.ExprIsCTC];
+    buffer << " ctc=" << ctc_strings[exprBits.IsCTC];
     buffer << ", constant=" << isConstant();
     if (getImpCast() != BuiltinType::Void) {
         buffer << ", cast=" << BuiltinType::kind2name(getImpCast());
@@ -218,7 +219,9 @@ InitListExpr::InitListExpr(SourceLocation left, SourceLocation right, ExprList& 
     , leftBrace(left)
     , rightBrace(right)
     , values(values_)
-{}
+{
+    initListExprBits.HasDesignators = 0;
+}
 
 InitListExpr::~InitListExpr() {
     for (unsigned i=0; i<values.size(); i++) {
@@ -469,8 +472,15 @@ void MemberExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer << "MemberExpr";
     buffer.setColor(COL_ATTR);
     if (isModulePrefix()) buffer << " mod-prefix";
+    if (isStructFunction()) buffer << " struct-function";
+    if (isStaticStructFunction()) buffer << " static-struct-function";
     buffer << ' ';
     Expr::print(buffer, 0);
+    buffer.setColor(COL_VALUE);
+    buffer << ' ';
+    Base->printLiteral(buffer);
+    buffer << ' ';
+    member->printLiteral(buffer);
     buffer << '\n';
     Base->print(buffer, indent + INDENT);
     member->print(buffer, indent + INDENT);

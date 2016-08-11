@@ -350,7 +350,7 @@ int C2Builder::build() {
     // phase 1b: merge file's symbol tables to module symbols tables
     errors = !createModules(mainComponent, Diags);
     if (options.printSymbols) printSymbols();
-    if (client->getNumErrors()) goto out;
+    if (Diags.hasErrorOccurred()) goto out;
 
     // phase 1c: load required external modules
     // TEMP placed here to easy access stuff
@@ -692,7 +692,6 @@ void C2Builder::generateOptionalDeps() {
     bool showPrivate = true;
     for (unsigned i=0; i<recipe.depConfigs.size(); i++) {
         const std::string& conf = recipe.depConfigs[i];
-        // TODO just pass struct with bools?
         if (conf == "show-files") showFiles = true;
         if (conf == "show-externals") showExternals = true;
     }

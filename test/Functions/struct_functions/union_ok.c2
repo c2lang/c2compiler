@@ -1,0 +1,31 @@
+// @warnings{no-unused}
+module test;
+
+type Type union {
+    int32 member;
+    int8* cp;
+}
+
+func void type_init(Type* t) {
+    t.member = 0;
+}
+
+func int32 type_getMember(const Type* t) {
+    return t.member;
+}
+
+func int8* type_getCp(const Type* t) {
+    return t.cp;
+}
+
+func void myfunc() {
+    Type t;
+    t.init();
+    int32 m = t.getMember();
+    int8* cp = t.getCp();
+
+    type_init(&t);
+    m = type_getMember(&t);
+    cp = type_getCp(&t);
+}
+

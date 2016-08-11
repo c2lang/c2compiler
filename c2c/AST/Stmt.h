@@ -53,30 +53,109 @@ class Stmt {
 public:
     Stmt(StmtKind k);
     virtual ~Stmt();
-    StmtKind getKind() const { return static_cast<StmtKind>(StmtBits.sKind); }
+    StmtKind getKind() const { return static_cast<StmtKind>(stmtBits.sKind); }
     virtual void print(StringBuilder& buffer, unsigned indent) const = 0;
     void dump() const;
     virtual SourceLocation getLocation() const = 0;
 
 protected:
     class StmtBitfields {
-    public:
+        friend class Stmt;
+
         unsigned sKind : 8;
-        unsigned eKind : 8;
-        unsigned ExprIsCTC: 2;          // CTC_FULL -> value matters, CTC_NONE -> type matters
-        unsigned ExprIsConstant : 1;    // const :"bla", test, 3. Not const: test(). Depends: a
-        unsigned ExprImpCast: 4;
-        unsigned LiteralRadix: 2;
-        unsigned BoolLiteralValue : 1;
-        unsigned TypeExprIsLocal : 1;
-        unsigned BuiltInIsSizeOf: 1;
-        unsigned MemberExprIsModPrefix: 1;
-        unsigned InitListHasDesignators : 1;
+    };
+    enum { NumStmtBits = 8 };
+
+    class ExprBitfields {
+        friend class Expr;
+        unsigned : NumStmtBits;
+
+        unsigned eKind : 8;             // BBB TODO Merge with sKind
+        unsigned ImpCast: 4;
+        unsigned IsCTC: 2;          // CTC_FULL -> value matters, CTC_NONE -> type matters
+        unsigned IsConstant : 1;    // const :"bla", test, 3. Not const: test(). Depends: a
+    };
+    enum { NumExprBits = 16 + NumStmtBits };      // TODO make 8 when eKind is merged
+
+    class IdentifierExprBitfields {
+        friend class IdentifierExpr;
+        unsigned : NumExprBits;
+
+        unsigned IsType : 1;
+        unsigned IsStructFunction : 1;
+    };
+
+    class CallExprBitfields {
+        friend class CallExpr;
+        unsigned : NumExprBits;
+
+        unsigned IsStructFunc : 1;
+    };
+
+
+    class IntegerLiteralBitfields {
+        friend class IntegerLiteral;
+        unsigned : NumExprBits;
+
+        unsigned Radix: 2;
+    };
+
+    class BooleanLiteralBitfields {
+        friend class BooleanLiteral;
+        unsigned : NumExprBits;
+
+        unsigned Value : 1;
+    };
+
+    class TypeExprBitfields {
+        friend class TypeExpr;
+        unsigned : NumExprBits;
+
+        unsigned IsLocal : 1;
+    };
+
+    class BuiltinExprBitfields {
+        friend class BuiltinExpr;
+        unsigned : NumExprBits;
+
+        unsigned IsSizeOf: 1;
+    };
+
+    class MemberExprBitfields {
+        friend class MemberExpr;
+        unsigned : NumExprBits;
+
+        unsigned IsModPrefix: 1;
+        unsigned IsStructFunction : 1;
+        unsigned IsStaticStructFunction : 1;
+    };
+
+    class InitListExprBitfields {
+        friend class InitListExpr;
+        unsigned : NumExprBits;
+
+        unsigned HasDesignators : 1;
+    };
+
+    class DesignatedInitExprBitfields {
+        friend class DesignatedInitExpr;
+        unsigned : NumExprBits;
+
         unsigned DesignatorKind : 1;
     };
+
     union {
-        StmtBitfields StmtBits;
-        unsigned BitsInit;      // to initialize all bits
+        StmtBitfields stmtBits;
+        ExprBitfields exprBits;
+        IdentifierExprBitfields identifierExprBits;
+        CallExprBitfields callExprBits;
+        IntegerLiteralBitfields integerLiteralBits;
+        BooleanLiteralBitfields booleanLiteralBits;
+        TypeExprBitfields typeExprBits;
+        BuiltinExprBitfields builtinExprBits;
+        MemberExprBitfields memberExprBits;
+        InitListExprBitfields initListExprBits;
+        DesignatedInitExprBitfields designatedInitExprBits;
     };
 private:
     Stmt(const Stmt&);

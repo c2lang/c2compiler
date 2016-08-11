@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+type Type struct {
+    int32 member;
+}
+
+func void myfunc() {
+    int32 a = Type.member;      // @error{type '(struct)Type' has no struct-function 'member'}
+}
+

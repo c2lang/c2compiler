@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+func void func1(int32, int32, int32) {
+}
+
+func void test1() {
+    func1(1,
+          2); // @error{too few arguments to function call, expected 3, have 2}
+}
+

@@ -38,11 +38,14 @@ Decl::Decl(DeclKind k, const std::string& name_, SourceLocation loc_, QualType t
     : name(name_)
     , loc(loc_)
     , type(type_)
-    , BitsInit(0)
     , mod(0)
 {
-    DeclBits.dKind = k;
-    DeclBits.DeclIsPublic = is_public;
+    declBits.dKind = k;
+    declBits.IsExported = 0;
+    declBits.IsPublic = is_public;
+    declBits.IsUsed = 0;
+    declBits.IsUsedPublic = 0;
+    declBits.HasAttributes = 0;
 #ifdef DECL_DEBUG
     creationCount++;
     fprintf(stderr, "[DECL] create %p  created %d deleted %d\n", this, creationCount, deleteCount);
@@ -129,7 +132,10 @@ FunctionDecl::FunctionDecl(const std::string& name_, SourceLocation loc_,
     , origRType(rtype_)
     , body(0)
     , IRProto(0)
-{}
+{
+    functionDeclBits.IsVariadic = 0;
+    functionDeclBits.HasDefaultArgs = 0;
+}
 
 FunctionDecl::~FunctionDecl() {
     delete body;
@@ -189,7 +195,8 @@ VarDecl::VarDecl(VarDeclKind k_, const std::string& name_, SourceLocation loc_,
     , initValue(initValue_)
     , IRValue(0)
 {
-    DeclBits.varDeclKind = k_;
+    varDeclBits.Kind = k_;
+    varDeclBits.HasLocalQualifier = 0;
 }
 
 VarDecl::~VarDecl() {
@@ -263,8 +270,8 @@ StructTypeDecl::StructTypeDecl(const std::string& name_, SourceLocation loc_,
                              bool is_public)
     : TypeDecl(DECL_STRUCTTYPE, name_, loc_, type_, is_public)
 {
-    DeclBits.StructTypeIsStruct = is_struct;
-    DeclBits.StructTypeIsGlobal = is_global;
+    structTypeDeclBits.IsStruct = is_struct;
+    structTypeDeclBits.IsGlobal = is_global;
 }
 
 void StructTypeDecl::addMember(Decl* D) {
@@ -272,7 +279,12 @@ void StructTypeDecl::addMember(Decl* D) {
     members.push_back(D);
 }
 
+void StructTypeDecl::addStructFunction(const std::string& name_, Decl* D) {
+    structFunctions[name_] = D;
+}
+
 Decl* StructTypeDecl::find(const std::string& name_) const {
+    // normal members
     for (unsigned i=0; i<members.size(); i++) {
         Decl* D = members[i];
         if (D->getName() == name_) return D;
@@ -283,6 +295,14 @@ Decl* StructTypeDecl::find(const std::string& name_) const {
             if (D) return D;
         }
     }
+
+    return findFunction(name_);
+}
+
+Decl* StructTypeDecl::findFunction(const std::string& name_) const {
+    // struct-functions
+    StructFunctionsConstIter iter = structFunctions.find(name_);
+    if (iter != structFunctions.end()) return iter->second;
     return 0;
 }
 
@@ -348,7 +368,8 @@ bool EnumTypeDecl::hasConstantValue(llvm::APSInt Val) const {
 FunctionTypeDecl::FunctionTypeDecl(FunctionDecl* F)
     : TypeDecl(DECL_FUNCTIONTYPE, F->getName(), F->getLocation(), F->getType(), F->isPublic())
     , func(F)
-{}
+{
+}
 
 FunctionTypeDecl::~FunctionTypeDecl() {
     delete func;
@@ -368,11 +389,11 @@ ArrayValueDecl::ArrayValueDecl(const std::string& name_, SourceLocation loc_,
     : Decl(DECL_ARRAYVALUE, name_, loc_, QualType(), false)
     , value(value_)
 {
-    DeclBits.arrayDeclOwnsExpr = true;
+    arrayValueDeclBits.OwnsExpr = 1;
 }
 
 ArrayValueDecl::~ArrayValueDecl() {
-    if (DeclBits.arrayDeclOwnsExpr) delete value;
+    if (arrayValueDeclBits.OwnsExpr) delete value;
 }
 
 void ArrayValueDecl::print(StringBuilder& buffer, unsigned indent) const {
@@ -391,7 +412,7 @@ ImportDecl::ImportDecl(const std::string& name_, SourceLocation loc_, bool isLoc
     , modName(modName_)
     , aliasLoc(aliasLoc_)
 {
-    DeclBits.ImportIsLocal = isLocal_;
+    importDeclBits.IsLocal = isLocal_;
 }
 
 void ImportDecl::print(StringBuilder& buffer, unsigned indent) const {

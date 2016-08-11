@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+module test;
+
+type Type struct {
+    int32 x;
+}
+
+int32 type_x;
+

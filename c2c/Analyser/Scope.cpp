@@ -42,10 +42,6 @@ Scope::Scope(const std::string& name_, const Modules& modules_, clang::Diagnosti
 }
 
 void Scope::addImportDecl(ImportDecl* importDecl) {
-    clang::SourceLocation Loc = importDecl->getLocation();
-    if (importDecl->getAliasLocation().isValid()) {
-        Loc = importDecl->getAliasLocation();
-    }
     const Module* mod = findAnyModule(importDecl->getModuleName());
     assert(mod);
     importDecl->setModule(mod);
@@ -230,6 +226,19 @@ Decl* Scope::findSymbolInModule(const std::string& name, clang::SourceLocation l
         D->setUsedPublic();
     }
     return D;
+}
+
+void Scope::checkAccess(Decl* D, clang::SourceLocation loc) const {
+    const Module* mod = D->getModule();
+    assert(mod);
+    // if external module, check visibility
+    if (isExternal(mod)) {
+        if (!D->isPublic()) {
+            Diags.Report(loc, diag::err_not_public) << AnalyserUtils::fullName(mod->getName(), D->getName());
+            return;
+        }
+        D->setUsedPublic();
+    }
 }
 
 #if 0

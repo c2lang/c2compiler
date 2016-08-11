@@ -1,0 +1,31 @@
+// @warnings{no-unused}
+module test;
+
+import stdlib;
+
+type Type struct {
+    int32 member;
+}
+
+func Type* type_create() {
+    Type* t = stdlib.malloc(sizeof(Type));
+    t.member = 0;
+    return t;
+}
+
+func void type_init(Type* t) {
+    t.member = 0;
+}
+
+func void type_delete(Type* t) {
+    stdlib.free(t);
+}
+
+func void myfunc() {
+    Type* t = Type.create();
+
+    t.init();
+
+    t.delete();
+}
+

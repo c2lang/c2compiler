@@ -6,6 +6,16 @@ target multi_file
     multi_file2.c2
 end
 
+target opaque_example
+    $warnings no-unused
+    $refs
+    $deps show-files show-externals
+    $generate-c single-module
+    opaque_lib1.c2
+    opaque_lib2.c2
+    opaque_user.c2
+end
+
 target multi_mod
     $warnings no-unused
     multi_mod1.c2

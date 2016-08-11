@@ -43,6 +43,7 @@ class Expr;
 class IdentifierExpr;
 class InitListExpr;
 class MemberExpr;
+class CallExpr;
 
 class FunctionAnalyser {
 public:
@@ -52,9 +53,9 @@ public:
                     clang::DiagnosticsEngine& Diags_,
                     bool isInterface_);
 
-    unsigned check(FunctionDecl* F);
-    unsigned checkVarInit(VarDecl* V);
-    unsigned checkArraySizeExpr(VarDecl* V);
+    void check(FunctionDecl* F);
+    void checkVarInit(VarDecl* V);
+    void checkArraySizeExpr(VarDecl* V);
     unsigned checkEnumValue(EnumConstantDecl* E, llvm::APSInt& nextValue);
 private:
     void checkFunction(FunctionDecl* F);
@@ -85,12 +86,16 @@ private:
     QualType analyseBuiltinExpr(Expr* expr);
     QualType analyseArraySubscript(Expr* expr, unsigned side);
     QualType analyseMemberExpr(Expr* expr, unsigned side);
-    QualType analyseStructMember(QualType T, MemberExpr* M, unsigned side);
+    QualType analyseStructMember(QualType T, MemberExpr* M, unsigned side, bool isStatic);
+    bool checkStructTypeArg(QualType T,  FunctionDecl* func) const;
+    Decl* getStructDecl(QualType T) const;
+    bool exprIsType(const Expr* E) const;
     QualType analyseParenExpr(Expr* expr);
     bool analyseBitOffsetIndex(Expr* expr, llvm::APSInt* Result, BuiltinType* BaseType);
     QualType analyseBitOffsetExpr(Expr* expr, QualType BaseType, clang::SourceLocation base);
     QualType analyseExplicitCastExpr(Expr* expr);
     QualType analyseCall(Expr* expr);
+    bool checkCallArgs(FunctionDecl* func, CallExpr* call);
     Decl* analyseIdentifier(IdentifierExpr* expr);
 
     void analyseInitExpr(Expr* expr, QualType expectedType);
@@ -139,13 +144,14 @@ private:
 
     clang::DiagnosticsEngine& Diags;
 
-    unsigned errors;
     FunctionDecl* CurrentFunction;
     VarDecl* CurrentVarDecl;
     unsigned constDiagID;
     bool inConstExpr;
     bool usedPublicly;
     bool isInterface;
+    bool inCallExpr;
+    Expr* structFunctionArg;
 
     typedef std::vector<LabelDecl*> Labels;
     typedef Labels::iterator LabelsIter;

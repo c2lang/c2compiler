@@ -74,15 +74,15 @@ public:
     virtual void print(StringBuilder& buffer, unsigned indent) const;
 
     ExprKind getKind() const {
-        return static_cast<ExprKind>(StmtBits.eKind);
+        return static_cast<ExprKind>(exprBits.eKind);
     }
     ExprCTC getCTC() const {
-        return static_cast<ExprCTC>(StmtBits.ExprIsCTC);
+        return static_cast<ExprCTC>(exprBits.IsCTC);
     }
-    void setCTC(ExprCTC ctc) { StmtBits.ExprIsCTC = ctc; }
+    void setCTC(ExprCTC ctc) { exprBits.IsCTC = ctc; }
 
-    bool isConstant() const { return StmtBits.ExprIsConstant; }
-    void setConstant() { StmtBits.ExprIsConstant = true; }
+    bool isConstant() const { return exprBits.IsConstant; }
+    void setConstant() { exprBits.IsConstant = true; }
 
     clang::SourceRange getSourceRange() const {
         return clang::SourceRange(getLocStart(), getLocEnd());
@@ -96,12 +96,12 @@ public:
     QualType getType() const { return QT; }
     void setType(QualType t) { QT = t; }
 
-    void setImpCast(BuiltinType::Kind k) { StmtBits.ExprImpCast = k; }
+    void setImpCast(BuiltinType::Kind k) { exprBits.ImpCast = k; }
     bool hasImpCast() const {
         return getImpCast() != BuiltinType::Void;
     }
     BuiltinType::Kind getImpCast() const {
-        return static_cast<BuiltinType::Kind>(StmtBits.ExprImpCast);
+        return static_cast<BuiltinType::Kind>(exprBits.ImpCast);
     }
 
     virtual void printLiteral(StringBuilder& buffer) const {};
@@ -128,6 +128,7 @@ public:
         : Expr(EXPR_INTEGER_LITERAL, true)
         , Value(V), loc(loc_)
     {
+
         setCTC(CTC_FULL);
         Radix r = RADIX_10;
         switch (radix) {
@@ -147,7 +148,7 @@ public:
             assert(0 && "unsupported radix");
             break;
         }
-        StmtBits.LiteralRadix = r;
+        integerLiteralBits.Radix = r;
     }
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_INTEGER_LITERAL;
@@ -157,7 +158,7 @@ public:
 
     virtual void printLiteral(StringBuilder& buffer) const;
     unsigned getRadix() const {
-        Radix r = static_cast<IntegerLiteral::Radix>(StmtBits.LiteralRadix);
+        Radix r = static_cast<IntegerLiteral::Radix>(integerLiteralBits.Radix);
         switch (r) {
         case RADIX_2:  return 2;
         case RADIX_8:  return 8;
@@ -197,7 +198,7 @@ public:
         : Expr(EXPR_BOOL_LITERAL, true)
         , loc(loc_)
     {
-        StmtBits.BoolLiteralValue = val;
+        booleanLiteralBits.Value = val;
         setCTC(CTC_FULL);
     }
     static bool classof(const Expr* E) {
@@ -205,7 +206,7 @@ public:
     }
     virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return loc; }
-    bool getValue() const { return StmtBits.BoolLiteralValue; }
+    bool getValue() const { return booleanLiteralBits.Value; }
 
     clang::SourceLocation loc;
 };
@@ -228,7 +229,6 @@ public:
     unsigned getValue() const { return value; }
     virtual void printLiteral(StringBuilder& buffer) const;
 private:
-    // TODO use StmtBits (need to use union then)
     unsigned value;
     clang::SourceLocation loc;
 };
@@ -274,10 +274,20 @@ class IdentifierExpr : public Expr {
 public:
     IdentifierExpr(SourceLocation loc_, const std::string& name_)
         : Expr(EXPR_IDENTIFIER, false)
-        , name(name_), loc(loc_), decl(0) {}
+        , name(name_), loc(loc_), decl(0)
+    {
+        identifierExprBits.IsType = 0;
+        identifierExprBits.IsStructFunction = 0;
+    }
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_IDENTIFIER;
     }
+    bool isType() const { return identifierExprBits.IsType; }
+    void setIsType() { identifierExprBits.IsType = true; }
+
+    void setIsStructFunction() { identifierExprBits.IsStructFunction = true; }
+    bool isStructFunction() const { return identifierExprBits.IsStructFunction; }
+
     virtual void print(StringBuilder& buffer, unsigned indent) const;
     virtual SourceLocation getLocation() const { return loc; }
 
@@ -301,6 +311,7 @@ public:
     TypeExpr(QualType QT_)
         : Expr(EXPR_TYPE, true)
     {
+        typeExprBits.IsLocal = 0;
         setType(QT_);
     }
     static bool classof(const Expr* E) {
@@ -311,18 +322,20 @@ public:
         SourceLocation loc;
         return loc;
     }
-    void setLocalQualifier() { StmtBits.TypeExprIsLocal = true; }
-    bool hasLocalQualifier() const { return StmtBits.TypeExprIsLocal; }
+    void setLocalQualifier() { typeExprBits.IsLocal = true; }
+    bool hasLocalQualifier() const { return typeExprBits.IsLocal; }
 };
 
 
 class CallExpr : public Expr {
 public:
-    CallExpr(Expr* Fn_, SourceLocation r)
+    CallExpr(Expr* Fn_, SourceLocation rparenLoc_)
         : Expr(EXPR_CALL, false)
-        , R(r)
+        , rparenLoc(rparenLoc_)
         , Fn(Fn_)
-    {}
+    {
+        callExprBits.IsStructFunc = 0;
+    }
     virtual ~CallExpr();
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_CALL;
@@ -333,7 +346,7 @@ public:
         return Fn->getLocStart();
     }
     virtual SourceLocation getLocEnd() const {
-        return R;
+        return rparenLoc;
     }
 
     void addArg(Expr* arg);
@@ -341,8 +354,11 @@ public:
     Expr* getFn() const { return Fn; }
     Expr* getArg(unsigned i) const { return args[i]; }
     unsigned numArgs() const { return args.size(); }
+
+    void setIsStructFunction() { callExprBits.IsStructFunc = true; }
+    bool isStructFunction() const { return callExprBits.IsStructFunc; }
 private:
-    SourceLocation R;
+    SourceLocation rparenLoc;
     Expr* Fn;
     typedef OwningVector<Expr> Args;
     Args args;
@@ -362,8 +378,8 @@ public:
     virtual SourceLocation getLocEnd() const { return rightBrace; }
 
     const ExprList& getValues() const { return values; }
-    void setDesignators() { StmtBits.InitListHasDesignators = true; }
-    bool hasDesignators() const { return StmtBits.InitListHasDesignators; }
+    void setDesignators() { initListExprBits.HasDesignators = true; }
+    bool hasDesignators() const { return initListExprBits.HasDesignators; }
 
     // for incremental arrays
     void addExpr(Expr* E) { values.push_back(E); }
@@ -389,7 +405,7 @@ public:
         //, member(0)
     {
         index = llvm::APInt(64, -1, true);
-        StmtBits.DesignatorKind = ARRAY_DESIGNATOR;
+        designatedInitExprBits.DesignatorKind = ARRAY_DESIGNATOR;
     }
     DesignatedInitExpr(SourceLocation left, const char* name, Expr* i)
         : Expr(EXPR_DESIGNATOR_INIT, false)
@@ -400,7 +416,7 @@ public:
         , field(name)
         //, member(0)
     {
-        StmtBits.DesignatorKind = FIELD_DESIGNATOR;
+        designatedInitExprBits.DesignatorKind = FIELD_DESIGNATOR;
     }
     virtual ~DesignatedInitExpr();
     static bool classof(const Expr* E) {
@@ -413,7 +429,7 @@ public:
 
     Expr* getInitValue() const { return initValue; }
     DesignatorKind getDesignatorKind() const {
-        return static_cast<DesignatorKind>(StmtBits.DesignatorKind);
+        return static_cast<DesignatorKind>(designatedInitExprBits.DesignatorKind);
     }
     // for Array designator
     Expr* getDesignator() const { return designator; }
@@ -538,7 +554,7 @@ public:
         , Loc(Loc_)
         , expr(expr_)
     {
-        StmtBits.BuiltInIsSizeOf = isSizeof_;
+        builtinExprBits.IsSizeOf = isSizeof_;
         setCTC(CTC_FULL);
     }
     virtual ~BuiltinExpr();
@@ -549,7 +565,7 @@ public:
     virtual SourceLocation getLocation() const { return Loc; }
 
     Expr* getExpr() const { return expr; }
-    bool isSizeof() const { return StmtBits.BuiltInIsSizeOf; }
+    bool isSizeof() const { return builtinExprBits.IsSizeOf; }
 private:
     SourceLocation Loc;
     Expr* expr;
@@ -591,7 +607,11 @@ public:
         , Base(Base_)
         , member(member_)
         , decl(0)
-    {}
+    {
+        memberExprBits.IsModPrefix = 0;
+        memberExprBits.IsStructFunction = 0;
+        memberExprBits.IsStaticStructFunction = 0;
+    }
     virtual ~MemberExpr();
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_MEMBER;
@@ -607,8 +627,12 @@ public:
     Decl* getDecl() const { return decl; }
     void setDecl(Decl* D) { decl = D; }
 
-    void setModulePrefix(bool v) { StmtBits.MemberExprIsModPrefix = v; }
-    bool isModulePrefix() const { return StmtBits.MemberExprIsModPrefix; }
+    void setModulePrefix() { memberExprBits.IsModPrefix = true; }
+    bool isModulePrefix() const { return memberExprBits.IsModPrefix; }
+    void setIsStructFunction() { memberExprBits.IsStructFunction = true; }
+    bool isStructFunction() const { return memberExprBits.IsStructFunction; }
+    void setIsStaticStructFunction() { memberExprBits.IsStaticStructFunction = true; }
+    bool isStaticStructFunction() const { return memberExprBits.IsStaticStructFunction; }
 
     // NOTE: uses static var
     virtual void printLiteral(StringBuilder& buffer) const;

@@ -105,7 +105,35 @@ C2Sema::C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, AST& ast_, clang::
     , typeContext(ast_.getTypeContext())
     , ast(ast_)
     , PP(PP_)
-{}
+{
+#if 0
+#define PRINT(x) printf("%24s  %u\n", #x, (unsigned)sizeof(x))
+    PRINT(Expr);
+    PRINT(IdentifierExpr);
+    PRINT(CallExpr);
+    PRINT(BinaryOperator);
+    PRINT(MemberExpr);
+    PRINT(ExplicitCastExpr);
+    printf("\n");
+    PRINT(Stmt);
+    PRINT(LabelStmt);
+    PRINT(ReturnStmt);
+    PRINT(IfStmt);
+    PRINT(WhileStmt);
+    PRINT(DoStmt);
+    PRINT(ForStmt);
+    PRINT(ContinueStmt);
+    PRINT(SwitchStmt);
+    PRINT(BreakStmt);
+    PRINT(ContinueStmt);
+    PRINT(DeclStmt);
+    printf("\n");
+    PRINT(Decl);
+    PRINT(VarDecl);
+    PRINT(FunctionDecl);
+    PRINT(StructTypeDecl);
+#endif
+}
 
 C2Sema::~C2Sema() {}
 
@@ -160,6 +188,7 @@ void C2Sema::ActOnImport(const char* moduleName_, SourceLocation loc, Token& ali
         return;
     }
     std::string name = moduleName;
+    clang::SourceLocation realLoc = loc;
     if (aliasTok.is(tok::identifier)) {
         name = aliasTok.getIdentifierInfo()->getNameStart();
         // check if same as normal module name
@@ -171,8 +200,10 @@ void C2Sema::ActOnImport(const char* moduleName_, SourceLocation loc, Token& ali
             Diag(aliasTok.getLocation(), diag::err_module_casing);
             return;
         }
+        realLoc = aliasTok.getLocation();
     }
-    ImportDecl* U = new ImportDecl(name, loc, isLocal, moduleName, aliasTok.getLocation());
+
+    ImportDecl* U = new ImportDecl(name, realLoc, isLocal, moduleName, aliasTok.getLocation());
     U->setType(typeContext.getModuleType(U));
     ast.addImport(U);
     addSymbol(U);

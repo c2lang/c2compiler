@@ -79,6 +79,7 @@ private:
     void EmitDeclStmt(const Stmt* S, unsigned indent);
 
     void EmitExpr(const Expr* E, StringBuilder& output);
+    void EmitBuiltinExpr(const Expr* E, StringBuilder& output);
     void EmitBinaryOperator(const Expr* E, StringBuilder& output);
     void EmitConditionalOperator(const Expr* E, StringBuilder& output);
     void EmitUnaryOperator(const Expr* E, StringBuilder& output);

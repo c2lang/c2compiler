@@ -1,0 +1,15 @@
+// @warnings{no-unused}
+module test;
+
+type Type struct {
+    int32 member;
+}
+
+func void type_init(int32 n) {
+}
+
+func void myfunc() {
+    Type t;
+    t.init();       // @error{'test.type_init' is not a struct-function (first argument incorrect/missing)}
+}
+

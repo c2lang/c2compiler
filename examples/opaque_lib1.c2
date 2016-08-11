@@ -1,0 +1,16 @@
+module opaque_lib;
+
+public type MyType struct {
+    int32 number;
+    char* text;
+} @(opaque)
+
+
+public func int32 myType_getNumber(MyType* t) {
+    return t.number;
+}
+
+public func const char* myType_getText(MyType* t) {
+    return t.text;
+}
+

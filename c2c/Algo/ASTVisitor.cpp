@@ -288,8 +288,7 @@ void ASTVisitor::checkExpr(const Expr* E) {
     case EXPR_MEMBER:
         {
             const MemberExpr* M = cast<MemberExpr>(E);
-            checkExpr(M->getBase());
-            checkExpr(M->getMember());
+            visitIdentifierExpr(M->getMember());
             break;
         }
     case EXPR_PAREN:

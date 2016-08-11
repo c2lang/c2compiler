@@ -22,6 +22,8 @@
 #include "Analyser/FileAnalyser.h"
 #include "Analyser/Scope.h"
 #include "Analyser/TypeResolver.h"
+#include "Analyser/AnalyserUtils.h"
+#include "Analyser/AnalyserConstants.h"
 #include "AST/Decl.h"
 #include "AST/Expr.h"
 #include "AST/AST.h"
@@ -41,9 +43,10 @@ using namespace llvm;
 #define LOG_FUNC
 #endif
 
-FileAnalyser::FileAnalyser(const Modules& modules, clang::DiagnosticsEngine& Diags_,
-                    AST& ast_, bool verbose_)
+FileAnalyser::FileAnalyser(const Module& module_, const Modules& modules,
+                           clang::DiagnosticsEngine& Diags_, AST& ast_, bool verbose_)
     : ast(ast_)
+    , module(module_)
     , globals(new Scope(ast_.getModuleName(), modules, Diags_))
     , TR(new TypeResolver(*globals, Diags_, ast.getTypeContext()))
     , Diags(Diags_)
@@ -56,23 +59,21 @@ void FileAnalyser::printAST(bool printInterface) const {
     ast.print(true);
 }
 
-void FileAnalyser::checkImports() {
+void FileAnalyser::addImports() {
     LOG_FUNC
     for (unsigned i=0; i<ast.numImports(); i++) {
         globals->addImportDecl(ast.getImport(i));
     }
 }
 
-unsigned FileAnalyser::resolveTypes() {
+void FileAnalyser::resolveTypes() {
     LOG_FUNC
     if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
-    unsigned errors = 0;
     for (unsigned i=0; i<ast.numTypes(); i++) {
         TypeDecl* T = ast.getType(i);
-        errors += checkTypeDecl(T);
+        checkTypeDecl(T);
         checkAttributes(T);
     }
-    return errors;
 }
 
 unsigned FileAnalyser::resolveTypeCanonicals() {
@@ -106,7 +107,7 @@ unsigned FileAnalyser::resolveTypeCanonicals() {
             {
                 // return + argument types
                 const FunctionTypeDecl* FTD = cast<FunctionTypeDecl>(D);
-                errors += resolveFunctionDecl(FTD->getDecl());
+                errors += resolveFunctionDecl(FTD->getDecl(), true);
                 break;
             }
         case DECL_ARRAYVALUE:
@@ -158,30 +159,26 @@ unsigned FileAnalyser::checkArrayValues() {
     return errors;
 }
 
-unsigned FileAnalyser::checkVarInits() {
+void FileAnalyser::checkVarInits() {
     LOG_FUNC
     if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
-    unsigned errors = 0;
     for (unsigned i=0; i<ast.numVars(); i++) {
         VarDecl* V = ast.getVar(i);
         if (V->getInitValue()) {
-            errors += functionAnalyser.checkVarInit(V);
+            functionAnalyser.checkVarInit(V);
         } else {
             QualType T = V->getType();
             if (T.isConstQualified()) {
                 Diags.Report(V->getLocation(), diag::err_uninitialized_const_var) << V->getName();
-                errors++;
             } else if (T->isArrayType()) {
                 const ArrayType* AT = cast<ArrayType>(T.getCanonicalType());
                 if (!AT->getSizeExpr()) {
                     // Move to checking of array type (same as in FunctionAnalyser::analyseDeclExpr())
                     Diags.Report(V->getLocation(), diag::err_typecheck_incomplete_array_needs_initializer);
-                    errors++;
                 }
             }
         }
     }
-    return errors;
 }
 
 unsigned FileAnalyser::resolveEnumConstants() {
@@ -229,7 +226,7 @@ unsigned FileAnalyser::checkFunctionProtos() {
     unsigned errors = 0;
     for (unsigned i=0; i<ast.numFunctions(); i++) {
         FunctionDecl* F = ast.getFunction(i);
-        errors += resolveFunctionDecl(F);
+        errors += resolveFunctionDecl(F, false);
         if (F->getName() == "main") {
             if (!F->isPublic()) {
                 Diags.Report(F->getLocation(), diag::err_main_non_public);
@@ -243,18 +240,17 @@ unsigned FileAnalyser::checkFunctionProtos() {
            // }
         }
         checkAttributes(F);
+        checkStructFunction(F);
     }
     return errors;
 }
 
-unsigned FileAnalyser::checkFunctionBodies() {
+void FileAnalyser::checkFunctionBodies() {
     LOG_FUNC
     if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
-    unsigned errors = 0;
     for (unsigned i=0; i<ast.numFunctions(); i++) {
-        errors += functionAnalyser.check(ast.getFunction(i));
+        functionAnalyser.check(ast.getFunction(i));
     }
-    return errors;
 }
 
 void FileAnalyser::checkDeclsForUsed() {
@@ -367,7 +363,7 @@ unsigned FileAnalyser::checkTypeDecl(TypeDecl* D) {
     case DECL_STRUCTTYPE:
     {
         Names names;
-        const StructTypeDecl* S = cast<StructTypeDecl>(D);
+        StructTypeDecl* S = cast<StructTypeDecl>(D);
         analyseStructNames(S, names, S->isStruct());
         break;
     }
@@ -376,6 +372,7 @@ unsigned FileAnalyser::checkTypeDecl(TypeDecl* D) {
         EnumTypeDecl* E = cast<EnumTypeDecl>(D);
         if (E->numConstants() == 0) {
             Diags.Report(D->getLocation(), diag::error_empty_enum) << D->getName();
+            errors++;
         }
         break;
     }
@@ -394,6 +391,26 @@ unsigned FileAnalyser::checkTypeDecl(TypeDecl* D) {
         break;
     }
     return errors;
+}
+
+void FileAnalyser::checkStructFunction(FunctionDecl* F) {
+    char structName[MAX_LEN_VARNAME];
+    const char* memberName = AnalyserUtils::splitStructFunctionName(structName, F->getName());
+    if (!memberName) return;
+
+    Decl* D = module.findSymbol(structName);
+    if (D) {
+        StructTypeDecl* S = dyncast<StructTypeDecl>(D);
+        if (S) {
+            Decl* match = S->find(memberName);
+            if (match) {
+                Diags.Report(match->getLocation(), diag::err_struct_function_conflict) << match->DiagName() << F->DiagName();
+                Diags.Report(F->getLocation(), diag::note_previous_declaration);
+            } else {
+                S->addStructFunction(memberName, F);
+            }
+        }
+    }
 }
 
 void FileAnalyser::analyseStructNames(const StructTypeDecl* S, Names& names, bool isStruct) {
@@ -419,7 +436,6 @@ void FileAnalyser::analyseStructNames(const StructTypeDecl* S, Names& names, boo
                 analyseStructNames(sub, subNames, sub->isStruct());
             }
         }
-
     }
 }
 
@@ -428,6 +444,7 @@ unsigned FileAnalyser::checkStructTypeDecl(StructTypeDecl* D) {
     if (!D->isGlobal() && !ast.isInterface() && !D->getName().empty() && !islower(D->getName()[0])) {
         Diags.Report(D->getLocation(), diag::err_var_casing);
     }
+
     unsigned errors = 0;
     for (unsigned i=0; i<D->numMembers(); i++) {
         Decl* M = D->getMember(i);
@@ -479,7 +496,7 @@ unsigned FileAnalyser::resolveVarDecl(VarDecl* D) {
     return 0;
 }
 
-unsigned FileAnalyser::resolveFunctionDecl(FunctionDecl* D) {
+unsigned FileAnalyser::resolveFunctionDecl(FunctionDecl* D, bool checkArgs) {
     LOG_FUNC
     unsigned errors = 0;
     // return type
@@ -497,8 +514,8 @@ unsigned FileAnalyser::resolveFunctionDecl(FunctionDecl* D) {
         if (!errs && !TR->requireCompleteType(Arg->getLocation(), Arg->getType(), diag::err_typecheck_decl_incomplete_type)) {
             errors ++;
         }
-        if (!errs && Arg->getInitValue()) {
-            errors += functionAnalyser.checkVarInit(Arg);
+        if (checkArgs && !errs && Arg->getInitValue()) {
+            functionAnalyser.checkVarInit(Arg);
         }
     }
     return errors;

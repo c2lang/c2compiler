@@ -1,0 +1,20 @@
+// @warnings{no-unused}
+module test;
+
+import stdlib;
+
+type Type struct {
+    int32 member;
+}
+
+func Type* type_create(int32 n) {
+    Type* t = stdlib.malloc(sizeof(Type));
+    t.member = n;
+    return t;
+}
+
+func void myfunc() {
+    Type* t = Type.create(15);
+    Type* t2 = test.Type.create(15);
+}
+

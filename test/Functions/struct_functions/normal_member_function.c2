@@ -1,0 +1,15 @@
+// @warnings{no-unused}
+module test;
+
+type Func func void();
+
+type Type struct {
+    int32 member;
+    Func init;
+}
+
+func void myfunc() {
+    Type t;
+    t.init();
+}
+

@@ -23,6 +23,8 @@
 #include "Utils/StringBuilder.h"
 #include "Utils/UtilsConstants.h"
 #include "FileUtils/FileUtils.h"
+#include "Analyser/AnalyserConstants.h"
+#include "Analyser/AnalyserUtils.h"
 
 #include <clang/Basic/SourceLocation.h>
 #include <clang/Basic/SourceManager.h>
@@ -51,7 +53,12 @@ public:
         clang::PresumedLoc loc2 = SM.getPresumedLoc(D->getLocation());
         assert(!loc2.isInvalid());
         if (!loc2.isInvalid()) {
-            writer.addRef(loc.getLine(), loc.getColumn(), I->getName(),
+            std::string name = I->getName();
+            if (I->isStructFunction()) {
+                char structName[MAX_LEN_VARNAME];
+                name = AnalyserUtils::splitStructFunctionName(structName, I->getName());
+            }
+            writer.addRef(loc.getLine(), loc.getColumn(), name,
                          loc2.getFilename(), loc2.getLine(), loc2.getColumn());
         }
     }
@@ -152,7 +159,7 @@ void TagWriter::analyse(const AST& ast) {
     // TODO TypeDecls ArrayValueDecls
 }
 
-void TagWriter::addRef(unsigned src_line, unsigned src_col, const std::string&  symbol,
+void TagWriter::addRef(unsigned src_line, unsigned src_col, const std::string& symbol,
             const std::string& dst_file, unsigned dst_line, unsigned dst_col)
 {
     TagFile* destFile = getFile(dst_file);

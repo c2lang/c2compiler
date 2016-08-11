@@ -1,0 +1,16 @@
+// @warnings{no-unused}
+module test;
+
+type Type struct {
+    int32 member;
+}
+
+func void type_init(Type* t, int32 n) {
+    t.member = n;
+}
+
+func void myfunc() {
+    Type t;
+    type_init(&2, 1, 2);       // @error{too many arguments to function call, expected 2, have 3}
+}
+

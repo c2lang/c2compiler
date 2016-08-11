@@ -1965,7 +1965,6 @@ C2::StmtResult C2Parser::ParseDeclaration(bool checkSemi) {
         if (InitValue.isInvalid()) return StmtError();
     }
     StmtResult Res = Actions.ActOnDeclaration(id->getNameStart(), idLoc, type.get(), InitValue.get());
-    // BBB
 
     if (checkSemi && need_semi) {
         if (ExpectAndConsume(tok::semi, diag::err_expected_after, "declaration")) return StmtError();

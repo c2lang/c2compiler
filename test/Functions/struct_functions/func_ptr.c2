@@ -1,0 +1,18 @@
+// @warnings{no-unused}
+module test;
+
+type Type struct {
+    int32 x;
+}
+
+func void type_init(Type* t) {}
+
+
+type Func func void(Type*);
+
+func void myfunc() {
+    Type t;
+    Func f1 = Type.init;  // static struct-function usage
+    Func f2 = t.init;     // @error{non-static use of struct-function is only allowed as function call}
+}
+

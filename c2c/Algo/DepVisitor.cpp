@@ -294,6 +294,7 @@ void DepVisitor::checkExpr(const Expr* E) {
                 addDep(M->getDecl());
             } else {
                 checkExpr(M->getBase());
+                if (M->isStructFunction()) addDep(M->getDecl());
             }
             break;
         }

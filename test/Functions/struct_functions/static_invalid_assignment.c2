@@ -1,0 +1,12 @@
+// @warnings{no-unused}
+module test;
+
+type Type struct {
+    int32 x;
+}
+
+func void type_init(Type* t) {}
+
+int32 a = type_init;    // @error{invalid type conversion from 'void ((struct)Type*)' to 'int32'}
+int32 b = Type.init;    // @error{invalid type conversion from 'void ((struct)Type*)' to 'int32'}
+

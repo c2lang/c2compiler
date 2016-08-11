@@ -1,0 +1,12 @@
+// @warnings{no-unused}
+module test;
+
+type Struct struct {
+    int32 a;
+}
+
+func void myfunc() {
+    Struct s;
+    s.b = 10;       // @error{no member/struct-function named 'b' in '(struct)Struct'}
+}
+

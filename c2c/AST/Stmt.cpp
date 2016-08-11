@@ -31,8 +31,8 @@ static int creationCount;
 static int deleteCount;
 #endif
 
-Stmt::Stmt(StmtKind k) : BitsInit(0) {
-    StmtBits.sKind = k;
+Stmt::Stmt(StmtKind k) {
+    stmtBits.sKind = k;
 #ifdef STMT_DEBUG
     creationCount++;
     fprintf(stderr, "[STMT] create %p  created %d deleted %d\n", this, creationCount, deleteCount);

@@ -1,0 +1,15 @@
+// @warnings{no-unused-type}
+module test;
+
+public type Type struct {
+    int32 x;            // @warning{unused struct member 'x'}
+}
+
+public func void type_init(Type*) {   // @warning{function 'test.type_init' is not used public}
+}
+
+func void myfunc() @(unused) {
+    Type t;
+    t.init();
+}
+

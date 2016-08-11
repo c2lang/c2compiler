@@ -1,7 +1,6 @@
 module func_test;
 
 import utils;
-import c2;
 
 public func int32 getMax() {
     return 1;

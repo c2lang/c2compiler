@@ -23,7 +23,7 @@ mkdir llvm_build
 cd llvm_build
 
 # Ubuntu 14.04:
-sudo apt-get install clang-3.5 cmake
+sudo apt-get install clang-3.5 cmake ncurses-dev
 export CC=clang-3.5
 export CXX=clang++-3.5
 

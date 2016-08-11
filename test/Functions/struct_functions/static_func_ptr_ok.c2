@@ -1,0 +1,18 @@
+// @warnings{no-unused}
+module test;
+
+type Type struct {
+    int32 x;
+}
+
+func void type_init(Type* t) {}
+
+
+type Func func void(Type*);
+
+Func f1 = Type.init;
+
+func void myfunc() {
+    Func f2 = Type.init;
+}
+
