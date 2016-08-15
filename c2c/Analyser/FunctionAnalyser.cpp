@@ -28,6 +28,7 @@
 #include "AST/Decl.h"
 #include "AST/Expr.h"
 #include "AST/Stmt.h"
+#include "AST/ASTContext.h"
 #include "Utils/color.h"
 #include "Utils/StringBuilder.h"
 
@@ -90,12 +91,12 @@ static void SetConstantFlags(Decl* D, Expr* expr) {
 
 FunctionAnalyser::FunctionAnalyser(Scope& scope_,
                                    TypeResolver& typeRes_,
-                                   TypeContext& tc,
+                                   ASTContext& context_,
                                    clang::DiagnosticsEngine& Diags_,
                                    bool isInterface_)
     : scope(scope_)
     , TR(typeRes_)
-    , typeContext(tc)
+    , Context(context_)
     , EA(Diags_)
     , Diags(Diags_)
     , CurrentFunction(0)
@@ -135,7 +136,6 @@ void FunctionAnalyser::check(FunctionDecl* func) {
         } else {    // only have goto part
             Diag(LD->getLocation(), diag:: err_undeclared_label_use) << LD->DiagName();
         }
-        delete LD;
     }
     labels.clear();
 
@@ -588,7 +588,7 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
     case EXPR_STRING_LITERAL:
         {
             // return type: 'const uint8*'
-            QualType Q = typeContext.getPointerType(Type::UInt8());
+            QualType Q = Context.getPointerType(Type::UInt8());
             Q.addConst();
             if (!Q->hasCanonicalType()) Q->setCanonicalType(Q);
             expr->setType(Q);
@@ -596,7 +596,7 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
         }
     case EXPR_NIL:
         {
-            QualType Q = typeContext.getPointerType(Type::Void());
+            QualType Q = Context.getPointerType(Type::Void());
             if (!Q->hasCanonicalType()) Q->setCanonicalType(Q);
             expr->setType(Q);
             return Q;
@@ -1002,7 +1002,7 @@ void FunctionAnalyser::analyseArrayType(VarDecl* V, QualType T) {
             // generate empty InitList for Incremental Array decls
             if (AT->isIncremental() && V->getInitValue() == 0) {
                 ExprList vals;
-                V->setInitValue(new InitListExpr(SourceLocation(), SourceLocation(), vals));
+                V->setInitValue(new (Context) InitListExpr(SourceLocation(), SourceLocation(), vals));
             }
             break;
         }
@@ -1282,7 +1282,7 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
         {
             LType = analyseExpr(SubExpr, side | RHS);
             if (LType.isNull()) return 0;
-            QualType Q = typeContext.getPointerType(LType);
+            QualType Q = Context.getPointerType(LType);
             expr->setType(Q);
             expr->setConstant();
             TR.resolveCanonicals(0, Q, true);
@@ -1552,7 +1552,7 @@ bool FunctionAnalyser::checkStructTypeArg(QualType T,  FunctionDecl* func) const
     Decl* functionArgDecl = getStructDecl(functionArg->getType());
 
     // might be done more effictien by not creating PointerType first
-    QualType callArgType = typeContext.getPointerType(T);
+    QualType callArgType = Context.getPointerType(T);
     Decl* callArgDecl = getStructDecl(callArgType);
     return (functionArgDecl == callArgDecl);
 }
@@ -1693,7 +1693,7 @@ QualType FunctionAnalyser::analyseExplicitCastExpr(Expr* expr) {
         }
     }
 
-    return outerType.isValid() ? outerType : QualType();;
+    return outerType.isValid() ? outerType : QualType();
 }
 
 QualType FunctionAnalyser::analyseCall(Expr* expr) {
@@ -1819,7 +1819,7 @@ LabelDecl* FunctionAnalyser::LookupOrCreateLabel(const std::string& name, Source
         }
     }
     if (!LD) {
-        LD = new LabelDecl(name, loc);
+        LD = new (Context) LabelDecl(name, loc);
         // add to functionScope
         labels.push_back(LD);
     }

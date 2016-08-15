@@ -24,7 +24,7 @@
 #include "AST/Decl.h"
 #include "AST/Type.h"
 #include "AST/Attr.h"
-#include "AST/OwningVector.h"
+#include "AST/ASTContext.h"
 
 namespace C2 {
 
@@ -34,7 +34,7 @@ public:
         : filename(filename_)
         , m_isInterface(isInterface_)
     {}
-    ~AST();
+    ~AST() {}
 
     void print(bool colors, bool showAttrs = false) const;
 
@@ -85,7 +85,7 @@ public:
     }
     const std::string& getModuleName() const { return modName; }
     const std::string& getFileName() const { return filename; }
-    TypeContext& getTypeContext() { return typeContext; }
+    ASTContext& getASTContext() { return astContext; }
     bool isInterface() const { return m_isInterface; }
 private:
     AST(const AST&);
@@ -96,24 +96,24 @@ private:
     clang::SourceLocation modLoc;
     bool m_isInterface;       // set for .c2i files
 
-    typedef OwningVector<ImportDecl> ImportList;
+    typedef std::vector<ImportDecl*> ImportList;
     ImportList importList;
 
-    typedef OwningVector<TypeDecl> TypeList;
+    typedef std::vector<TypeDecl*> TypeList;
     TypeList typeList;
 
-    typedef OwningVector<VarDecl> VarList;
+    typedef std::vector<VarDecl*> VarList;
     VarList varList;
 
-    typedef OwningVector<FunctionDecl> FunctionList;
+    typedef std::vector<FunctionDecl*> FunctionList;
     FunctionList functionList;
 
-    typedef OwningVector<ArrayValueDecl> ArrayValues;
+    typedef std::vector<ArrayValueDecl*> ArrayValues;
     ArrayValues arrayValues;
 
     Symbols symbols;
 
-    TypeContext typeContext;
+    ASTContext astContext;
     AttrMap declAttrs;
 
     // TEMP for Rewriter

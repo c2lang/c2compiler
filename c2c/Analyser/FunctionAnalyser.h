@@ -44,12 +44,13 @@ class IdentifierExpr;
 class InitListExpr;
 class MemberExpr;
 class CallExpr;
+class ASTContext;
 
 class FunctionAnalyser {
 public:
     FunctionAnalyser(Scope& scope_,
                     TypeResolver& typeRes_,
-                    TypeContext& tc,
+                    ASTContext& context_,
                     clang::DiagnosticsEngine& Diags_,
                     bool isInterface_);
 
@@ -139,7 +140,7 @@ private:
 
     Scope& scope;
     TypeResolver& TR;
-    TypeContext& typeContext;
+    ASTContext& Context;
     ExprTypeAnalyser EA;
 
     clang::DiagnosticsEngine& Diags;

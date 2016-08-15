@@ -26,31 +26,15 @@ using namespace C2;
 using namespace std;
 using namespace clang;
 
-//#define EXPR_DEBUG
-#ifdef EXPR_DEBUG
-static int creationCount;
-static int deleteCount;
-#endif
 
-
-Expr::Expr(ExprKind k, bool isConstant_)
+Expr::Expr(ExprKind k, clang::SourceLocation loc_, bool isConstant_)
     : Stmt(STMT_EXPR)
+    , exprLoc(loc_)
 {
     exprBits.eKind = k;
     exprBits.ImpCast = BuiltinType::Void;
     exprBits.IsCTC = 0;
     exprBits.IsConstant = isConstant_;
-#ifdef EXPR_DEBUG
-    creationCount++;
-    fprintf(stderr, "[EXPR] create %p  created %d deleted %d\n", this, creationCount, deleteCount);
-#endif
-}
-
-Expr::~Expr() {
-#ifdef EXPR_DEBUG
-    deleteCount++;
-    fprintf(stderr, "[EXPR] delete %p  created %d deleted %d\n", this, creationCount, deleteCount);
-#endif
 }
 
 static const char* ctc_strings[] = { "none", "partial", "full" };
@@ -153,19 +137,13 @@ void Expr::printLiteral(StringBuilder& buffer) const {
 SourceLocation Expr::getLocation() const {
     switch (getKind()) {
     case EXPR_INTEGER_LITERAL:
-        return cast<IntegerLiteral>(this)->getLocation();
     case EXPR_FLOAT_LITERAL:
-        return cast<FloatingLiteral>(this)->getLocation();
     case EXPR_BOOL_LITERAL:
-        return cast<BooleanLiteral>(this)->getLocation();
     case EXPR_CHAR_LITERAL:
-        return cast<CharacterLiteral>(this)->getLocation();
     case EXPR_STRING_LITERAL:
-        return cast<StringLiteral>(this)->getLocation();
     case EXPR_NIL:
-        return cast<NilExpr>(this)->getLocation();
     case EXPR_IDENTIFIER:
-        return cast<IdentifierExpr>(this)->getLocation();
+        return exprLoc;
     case EXPR_TYPE:
         return SourceLocation();
     case EXPR_CALL:
@@ -173,15 +151,13 @@ SourceLocation Expr::getLocation() const {
     case EXPR_INITLIST:
         return cast<InitListExpr>(this)->getLocation();
     case EXPR_DESIGNATOR_INIT:
-        return cast<DesignatedInitExpr>(this)->getLocation();
     case EXPR_BINOP:
-        return cast<BinaryOperator>(this)->getLocation();
+        return exprLoc;
     case EXPR_CONDOP:
         return cast<ConditionalOperator>(this)->getLocation();
     case EXPR_UNARYOP:
-        return cast<UnaryOperator>(this)->getLocation();
     case EXPR_BUILTIN:
-        return cast<BuiltinExpr>(this)->getLocation();
+        return exprLoc;
     case EXPR_ARRAYSUBSCRIPT:
         return cast<ArraySubscriptExpr>(this)->getLocation();
     case EXPR_MEMBER:
@@ -189,9 +165,8 @@ SourceLocation Expr::getLocation() const {
     case EXPR_PAREN:
         return cast<ParenExpr>(this)->getLocation();
     case EXPR_BITOFFSET:
-        return cast<BitOffsetExpr>(this)->getLocation();
     case EXPR_CAST:
-        return cast<ExplicitCastExpr>(this)->getLocation();
+        return exprLoc;
     }
 }
 
@@ -399,8 +374,6 @@ void TypeExpr::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 
-CallExpr::~CallExpr() {}
-
 void CallExpr::addArg(Expr* arg) {
     args.push_back(arg);
 }
@@ -422,18 +395,12 @@ void CallExpr::print(StringBuilder& buffer, unsigned indent) const {
 
 
 InitListExpr::InitListExpr(SourceLocation left, SourceLocation right, ExprList& values_)
-    : Expr(EXPR_INITLIST, false)
+    : Expr(EXPR_INITLIST, SourceLocation(), false)
     , leftBrace(left)
     , rightBrace(right)
     , values(values_)
 {
     initListExprBits.HasDesignators = 0;
-}
-
-InitListExpr::~InitListExpr() {
-    for (unsigned i=0; i<values.size(); i++) {
-        delete values[i];
-    }
 }
 
 void InitListExpr::print(StringBuilder& buffer, unsigned indent) const {
@@ -450,11 +417,6 @@ void InitListExpr::print(StringBuilder& buffer, unsigned indent) const {
     }
 }
 
-
-DesignatedInitExpr::~DesignatedInitExpr() {
-    delete designator;
-    delete initValue;
-}
 
 void DesignatedInitExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
@@ -485,20 +447,15 @@ void DesignatedInitExpr::print(StringBuilder& buffer, unsigned indent) const {
 
 
 BinaryOperator::BinaryOperator(Expr* lhs_, Expr* rhs_, Opcode opc_, SourceLocation opLoc_)
-    : Expr(EXPR_BINOP, false)
-    , opLoc(opLoc_)
-    , opc(opc_)
+    : Expr(EXPR_BINOP, opLoc_, false)
     , lhs(lhs_)
     , rhs(rhs_)
-{}
-
-BinaryOperator::~BinaryOperator() {
-    delete lhs;
-    delete rhs;
+{
+    binaryOperatorBits.opcode = opc_;
 }
 
-const char* BinaryOperator::OpCode2str(clang::BinaryOperatorKind opc) {
-    switch (opc) {
+const char* BinaryOperator::OpCode2str(clang::BinaryOperatorKind opc_) {
+    switch (opc_) {
         case BO_PtrMemD: return ".";
         case BO_PtrMemI: return "->";
         case BO_Mul: return "*";
@@ -541,7 +498,7 @@ void BinaryOperator::print(StringBuilder& buffer, unsigned indent) const {
     buffer << "BinaryOperator ";
     Expr::print(buffer);
     buffer.setColor(COL_VALUE);
-    buffer << " '" << OpCode2str(opc) << '\'';
+    buffer << " '" << OpCode2str(getOpcode()) << '\'';
     buffer << '\n';
 
     buffer.indent(indent + INDENT);
@@ -556,26 +513,20 @@ void BinaryOperator::print(StringBuilder& buffer, unsigned indent) const {
 
 void BinaryOperator::printLiteral(StringBuilder& buffer) const {
     lhs->printLiteral(buffer);
-    buffer << OpCode2str(opc);
+    buffer << OpCode2str(getOpcode());
     rhs->printLiteral(buffer);
 }
 
 
 ConditionalOperator::ConditionalOperator(SourceLocation questionLoc, SourceLocation colonLoc,
                 Expr* cond_, Expr* lhs_, Expr* rhs_)
-    : Expr(EXPR_CONDOP, false)
+    : Expr(EXPR_CONDOP, SourceLocation(), false)
     , QuestionLoc(questionLoc)
     , ColonLoc(colonLoc)
     , cond(cond_)
     , lhs(lhs_)
     , rhs(rhs_)
 {}
-
-ConditionalOperator::~ConditionalOperator() {
-    delete cond;
-    delete lhs;
-    delete rhs;
-}
 
 void ConditionalOperator::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
@@ -589,12 +540,8 @@ void ConditionalOperator::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 
-UnaryOperator::~UnaryOperator() {
-    delete val;
-}
-
-const char* UnaryOperator::OpCode2str(clang::UnaryOperatorKind opc) {
-    switch (opc) {
+const char* UnaryOperator::OpCode2str(clang::UnaryOperatorKind opc_) {
+    switch (opc_) {
     case UO_PostInc:    return "++";
     case UO_PostDec:    return "--";
     case UO_PreInc:     return "++";
@@ -618,7 +565,7 @@ void UnaryOperator::print(StringBuilder& buffer, unsigned indent) const {
     buffer << "UnaryOperator ";
     Expr::print(buffer);
     buffer.setColor(COL_ATTR);
-    switch (opc) {
+    switch (getOpcode()) {
     case UO_PostInc:
     case UO_PostDec:
         buffer << " postfix";
@@ -631,14 +578,10 @@ void UnaryOperator::print(StringBuilder& buffer, unsigned indent) const {
         break;
     }
     buffer.setColor(COL_VALUE);
-    buffer << " '" << OpCode2str(opc) << "'\n";
+    buffer << " '" << OpCode2str(getOpcode()) << "'\n";
     val->print(buffer, indent + INDENT);
 }
 
-
-BuiltinExpr::~BuiltinExpr() {
-    delete expr;
-}
 
 void BuiltinExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
@@ -653,11 +596,6 @@ void BuiltinExpr::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 
-ArraySubscriptExpr::~ArraySubscriptExpr() {
-    delete base;
-    delete idx;
-}
-
 void ArraySubscriptExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_EXPR);
@@ -668,10 +606,6 @@ void ArraySubscriptExpr::print(StringBuilder& buffer, unsigned indent) const {
     idx->print(buffer, indent + INDENT);
 }
 
-
-MemberExpr::~MemberExpr() {
-    delete Base;
-}
 
 void MemberExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
@@ -710,10 +644,6 @@ void MemberExpr::printLiteral(StringBuilder& buffer) const {
 }
 
 
-ParenExpr::~ParenExpr() {
-    delete Val;
-}
-
 void ParenExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_EXPR);
@@ -723,11 +653,6 @@ void ParenExpr::print(StringBuilder& buffer, unsigned indent) const {
     Val->print(buffer, indent + INDENT);
 }
 
-
-BitOffsetExpr::~BitOffsetExpr() {
-    delete lhs;
-    delete rhs;
-}
 
 void BitOffsetExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
@@ -753,10 +678,6 @@ void BitOffsetExpr::printLiteral(StringBuilder& buffer) const {
     rhs->printLiteral(buffer);
 }
 
-
-ExplicitCastExpr::~ExplicitCastExpr() {
-    delete inner;
-}
 
 void ExplicitCastExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);

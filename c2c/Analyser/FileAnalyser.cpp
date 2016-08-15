@@ -48,9 +48,9 @@ FileAnalyser::FileAnalyser(const Module& module_, const Modules& modules,
     : ast(ast_)
     , module(module_)
     , globals(new Scope(ast_.getModuleName(), modules, Diags_))
-    , TR(new TypeResolver(*globals, Diags_, ast.getTypeContext()))
+    , TR(new TypeResolver(*globals, Diags_, ast.getASTContext()))
     , Diags(Diags_)
-    , functionAnalyser(*globals, *TR, ast.getTypeContext(), Diags_, ast.isInterface())
+    , functionAnalyser(*globals, *TR, ast.getASTContext(), Diags_, ast.isInterface())
     , verbose(verbose_)
 {}
 
@@ -560,7 +560,7 @@ unsigned FileAnalyser::checkArrayValue(ArrayValueDecl* D) {
     assert(I);
     InitListExpr* ILE = dyncast<InitListExpr>(I);
     assert(ILE);
-    ILE->addExpr(D->transferExpr());
+    ILE->addExpr(D->getExpr());
     return 0;
 }
 

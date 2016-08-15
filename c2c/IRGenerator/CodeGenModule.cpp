@@ -44,6 +44,9 @@
 
 //#define DEBUG_CODEGEN
 
+// TEMP to print Clang sizes
+//#include <clang/AST/Expr.h>
+
 using namespace C2;
 using namespace llvm;
 
@@ -54,7 +57,15 @@ CodeGenModule::CodeGenModule(const std::string& name_, bool single, const Module
     , context(llvm::getGlobalContext())
     , module(new llvm::Module(name, context))
     , builder(context)
-{}
+{
+#if 0
+    printf("clang Stmt = %d\n", sizeof(clang::Stmt));
+    printf("clang NullStmt = %d\n", sizeof(clang::NullStmt));
+    printf("clang BreakStmt = %d\n", sizeof(clang::BreakStmt));
+    printf("clang Expr = %d\n", sizeof(clang::Expr));
+    printf("clang DeclRefExpr = %d\n", sizeof(clang::DeclRefExpr));
+#endif
+}
 
 CodeGenModule::~CodeGenModule() {
     delete module;

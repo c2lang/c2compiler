@@ -23,7 +23,6 @@
 #include <llvm/ADT/APSInt.h>
 #include <clang/Basic/SourceLocation.h>
 
-#include "AST/OwningVector.h"
 #include "AST/Type.h"
 #include "AST/Attr.h"
 
@@ -40,6 +39,7 @@ class Expr;
 class CompoundStmt;
 class LabelStmt;
 class Module;
+class ASTContext;
 
 enum DeclKind {
     DECL_FUNC = 0,
@@ -54,11 +54,12 @@ enum DeclKind {
     DECL_LABEL
 };
 
-class Decl {
+class LLVM_ALIGNAS(LLVM_PTR_SIZE) Decl {
 public:
     Decl(DeclKind k, const std::string& name_, SourceLocation loc_,
          QualType type_, bool is_public);
-    ~Decl();
+
+    void* operator new(size_t bytes, const ASTContext& C, unsigned alignment = 8);
 
     void print(StringBuilder& buffer, unsigned indent) const;
     void printAttributes(StringBuilder& buffer, unsigned indent) const;
@@ -91,11 +92,14 @@ public:
     // for debugging
     void dump() const;
 protected:
-    void printPublic(StringBuilder& buffer) const;
+    void* operator new(size_t bytes) {
+        assert(0 && "Decl cannot be allocated with regular 'new'");
+    }
+    void operator delete(void* data) {
+        assert(0 && "Decl cannot be released with regular 'delete'");
+    }
 
-    const std::string name;
-    SourceLocation loc;
-    QualType type;
+    void printPublic(StringBuilder& buffer) const;
 
     class DeclBitfields {
         friend class Decl;
@@ -115,13 +119,6 @@ protected:
 
         unsigned Kind: 2;
         unsigned HasLocalQualifier : 1;
-    };
-
-    class ArrayValueDeclBits {
-        friend class ArrayValueDecl;
-        unsigned : NumDeclBits;
-
-        unsigned OwnsExpr: 1;
     };
 
     class StructTypeDeclBits {
@@ -150,11 +147,13 @@ protected:
     union {
         DeclBitfields declBits;
         VarDeclBits varDeclBits;
-        ArrayValueDeclBits arrayValueDeclBits;
         StructTypeDeclBits structTypeDeclBits;
         FunctionDeclBits functionDeclBits;
         ImportDeclBits importDeclBits;
     };
+    SourceLocation loc;
+    QualType type;
+    const std::string name;
 private:
     const Module* mod;
 
@@ -174,7 +173,6 @@ class VarDecl : public Decl {
 public:
     VarDecl(VarDeclKind k_, const std::string& name_, SourceLocation loc_,
             QualType type_, Expr* initValue_, bool is_public);
-    ~VarDecl();
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_VAR;
     }
@@ -207,7 +205,6 @@ class FunctionDecl : public Decl {
 public:
     FunctionDecl(const std::string& name_, SourceLocation loc_,
                  bool is_public, QualType rtype_);
-    ~FunctionDecl();
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_FUNC;
     }
@@ -242,7 +239,7 @@ private:
     QualType rtype;
     QualType origRType;
 
-    typedef OwningVector<VarDecl> Args;
+    typedef std::vector<VarDecl*> Args;
     Args args;
     CompoundStmt* body;
     mutable llvm::Function* IRProto;
@@ -253,7 +250,6 @@ class EnumConstantDecl : public Decl {
 public:
     EnumConstantDecl(const std::string& name_, SourceLocation loc_, QualType type_, Expr* Init,
                      bool is_public);
-    ~EnumConstantDecl();
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_ENUMVALUE;
     }
@@ -330,7 +326,7 @@ public:
     bool isStruct() const { return structTypeDeclBits.IsStruct; }
     bool isGlobal() const { return structTypeDeclBits.IsGlobal; }
 private:
-    typedef OwningVector<Decl> Members;
+    typedef std::vector<Decl*> Members;
     Members members;
     typedef std::map<std::string, Decl*> StructFunctions;
     typedef StructFunctions::const_iterator StructFunctionsConstIter;
@@ -357,7 +353,7 @@ public:
     bool hasConstantValue(llvm::APSInt Val) const;
     QualType getImplType() const { return implType; }
 private:
-    typedef OwningVector<EnumConstantDecl> Constants;
+    typedef std::vector<EnumConstantDecl*> Constants;
     Constants constants;
     QualType implType;
 };
@@ -366,7 +362,6 @@ private:
 class FunctionTypeDecl : public TypeDecl {
 public:
     FunctionTypeDecl(FunctionDecl* func_);
-    ~FunctionTypeDecl();
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_FUNCTIONTYPE;
     }
@@ -381,18 +376,12 @@ private:
 class ArrayValueDecl : public Decl {
 public:
     ArrayValueDecl(const std::string& name_, SourceLocation loc_, Expr* value_);
-    ~ArrayValueDecl();
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_ARRAYVALUE;
     }
     void print(StringBuilder& buffer, unsigned indent) const;
 
     Expr* getExpr() const { return value; }
-    Expr* transferExpr() {
-        assert(arrayValueDeclBits.OwnsExpr);
-        arrayValueDeclBits.OwnsExpr = false;
-        return value;
-    }
 private:
     Expr* value;
 };

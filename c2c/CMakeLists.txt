@@ -35,6 +35,7 @@ ADD_LIBRARY(c2core
     AST/Stmt.cpp
     AST/Type.cpp
     AST/Attr.cpp
+    AST/ASTContext.cpp
     AST/Component.cpp
     Parser/C2Parser.cpp
     Parser/ParserHelpers.cpp

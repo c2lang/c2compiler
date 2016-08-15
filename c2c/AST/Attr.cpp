@@ -18,6 +18,7 @@
 
 #include "AST/Attr.h"
 #include "AST/Expr.h"
+#include "AST/ASTContext.h"
 #include "Utils/StringBuilder.h"
 
 using namespace C2;
@@ -59,6 +60,10 @@ AttrKind Attr::name2kind(const char* name) {
         if (strcmp(AI->name, name) == 0) return AI->kind;
     }
     return ATTR_UNKNOWN;
+}
+
+void* Attr::operator new(size_t bytes, const C2::ASTContext& C, unsigned alignment) {
+    return ::operator new(bytes, C, alignment);
 }
 
 const AttrInfo& Attr::getInfo(AttrKind kind) {

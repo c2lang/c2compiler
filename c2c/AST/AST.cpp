@@ -23,15 +23,6 @@
 
 using namespace C2;
 
-AST::~AST() {
-    for (AttrMapIter iter = declAttrs.begin(); iter != declAttrs.end(); ++iter) {
-        AttrList& AL = iter->second;
-        for (AttrListIter ai = AL.begin(); ai != AL.end(); ++ai) {
-            delete *ai;
-        }
-    }
-}
-
 void AST::print(bool colors, bool showAttrs) const {
     StringBuilder buffer(4*1024*1024);
     buffer.enableColor(colors);

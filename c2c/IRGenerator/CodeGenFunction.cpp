@@ -679,22 +679,22 @@ llvm::Value* CodeGenFunction::EmitBinaryOperator(const BinaryOperator* B) {
     case BO_Shr:
         break;
     case BO_LT:
-        return Builder.CreateICmpULT(L, R, "cmp");;
+        return Builder.CreateICmpULT(L, R, "cmp");
         //L = Builder.CreateFCmpULT(L, R, "cmptmp");
         // convert bool 0/1 to double 0.0 or 1.0
         //return Builder.CreateUIToFP(L, llvm::Type::getDoubleTy(context), "booltmp");
     case BO_GT:
         // TODO UGT for unsigned, SGT for signed?
-        return Builder.CreateICmpSGT(L, R, "cmp");;
-        //return Builder.CreateICmpUGT(L, R, "cmp");;
+        return Builder.CreateICmpSGT(L, R, "cmp");
+        //return Builder.CreateICmpUGT(L, R, "cmp");
     case BO_LE:
-        return Builder.CreateICmpULE(L, R, "cmp");;
+        return Builder.CreateICmpULE(L, R, "cmp");
     case BO_GE:
-        return Builder.CreateICmpUGE(L, R, "cmp");;
+        return Builder.CreateICmpUGE(L, R, "cmp");
     case BO_EQ:
-        return Builder.CreateICmpEQ(L, R, "eq");;
+        return Builder.CreateICmpEQ(L, R, "eq");
     case BO_NE:
-        return Builder.CreateICmpNE(L, R, "neq");;
+        return Builder.CreateICmpNE(L, R, "neq");
     case BO_And:
     case BO_Xor:
     case BO_Or:

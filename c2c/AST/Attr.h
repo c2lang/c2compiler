@@ -18,6 +18,7 @@
 
 #include <vector>
 #include <map>
+#include <assert.h>
 
 #include <clang/Basic/SourceLocation.h>
 
@@ -25,6 +26,7 @@ namespace C2 {
 
 class Decl;
 class Expr;
+class ASTContext;
 class StringBuilder;
 
 enum AttrKind {
@@ -61,6 +63,8 @@ class Attr {
 public:
     Attr(AttrKind k, clang::SourceRange R, Expr* e) : Range(R), kind(k), arg(e) {}
 
+    void* operator new(size_t bytes, const ASTContext& C, unsigned alignment = 8);
+
     AttrKind getKind() const { return kind; }
     clang::SourceRange getRange() const { return Range; }
     clang::SourceLocation getLocation() const { return Range.getBegin(); }
@@ -72,6 +76,13 @@ public:
     void print(StringBuilder& output) const;
     const char* kind2str() const;
 private:
+    void* operator new(size_t bytes) {
+        assert(0 && "Attr cannot be allocated with regular 'new'");
+    }
+    void operator delete(void* data) {
+        assert(0 && "Attr cannot be released with regular 'delete'");
+    }
+
     clang::SourceRange Range;
     AttrKind kind;
     Expr* arg;

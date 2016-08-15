@@ -18,6 +18,7 @@
 #include "AST/Type.h"
 #include "AST/Expr.h"
 #include "AST/Decl.h"
+#include "AST/ASTContext.h"
 #include "Utils/StringBuilder.h"
 #include "Utils/UtilsConstants.h"
 #include "Utils/color.h"
@@ -182,10 +183,77 @@ void QualType::printQualifiers(StringBuilder& buffer) const {
 }
 
 
+void* Type::operator new(size_t bytes, const C2::ASTContext& C, unsigned alignment) {
+    return ::operator new(bytes, C, alignment);
+}
 
 void Type::setCanonicalType(QualType qt) const {
     assert(canonicalType.isNull());
     canonicalType = qt;
+}
+
+void Type::printName(StringBuilder& buffer) const {
+    switch (getTypeClass()) {
+    case TC_BUILTIN:
+        cast<BuiltinType>(this)->printName(buffer);
+        break;
+    case TC_POINTER:
+        cast<PointerType>(this)->printName(buffer);
+        break;
+    case TC_ARRAY:
+        cast<ArrayType>(this)->printName(buffer);
+        break;
+    case TC_UNRESOLVED:
+        cast<UnresolvedType>(this)->printName(buffer);
+        break;
+    case TC_ALIAS:
+        cast<AliasType>(this)->printName(buffer);
+        break;
+    case TC_STRUCT:
+        cast<StructType>(this)->printName(buffer);
+        break;
+    case TC_ENUM:
+        cast<EnumType>(this)->printName(buffer);
+        break;
+    case TC_FUNCTION:
+        cast<FunctionType>(this)->printName(buffer);
+        break;
+    case TC_MODULE:
+        cast<ModuleType>(this)->printName(buffer);
+        break;
+    }
+}
+
+void Type::debugPrint(StringBuilder& buffer) const {
+    switch (getTypeClass()) {
+    case TC_BUILTIN:
+        cast<BuiltinType>(this)->printName(buffer);
+        break;
+    case TC_POINTER:
+        cast<PointerType>(this)->printName(buffer);
+        break;
+    case TC_ARRAY:
+        cast<ArrayType>(this)->printName(buffer);
+        break;
+    case TC_UNRESOLVED:
+        cast<UnresolvedType>(this)->printName(buffer);
+        break;
+    case TC_ALIAS:
+        cast<AliasType>(this)->printName(buffer);
+        break;
+    case TC_STRUCT:
+        cast<StructType>(this)->printName(buffer);
+        break;
+    case TC_ENUM:
+        cast<EnumType>(this)->printName(buffer);
+        break;
+    case TC_FUNCTION:
+        cast<FunctionType>(this)->printName(buffer);
+        break;
+    case TC_MODULE:
+        cast<ModuleType>(this)->printName(buffer);
+        break;
+    }
 }
 
 void Type::DiagName(StringBuilder& buf) const {
@@ -204,8 +272,10 @@ void Type::DiagName(StringBuilder& buf) const {
     }
 
 }
-
+#if 0
 void Type::debugPrint(StringBuilder& buffer) const {
+    // NOTE: never used
+    assert(0);
     // only used to print canonical type (called by Sub-Class::debugPrint())
     buffer << "  canonical=";
     if (canonicalType.isNull()) {
@@ -222,6 +292,8 @@ void Type::debugPrint(StringBuilder& buffer) const {
     }
     buffer << '\n';
 }
+#endif
+
 #ifdef TYPE_DEBUG
 void Type::fullDebug(StringBuilder& buffer, int indent) const {
     buffer.indent(indent);
@@ -302,7 +374,7 @@ BuiltinType* BuiltinType::get(Kind k) {
 }
 
 unsigned BuiltinType::getWidth() const {
-    switch (kind) {
+    switch (getKind()) {
         case Int8:      return 8;
         case Int16:     return 16;
         case Int32:     return 32;
@@ -320,7 +392,7 @@ unsigned BuiltinType::getWidth() const {
 }
 
 unsigned BuiltinType::getIntegerWidth() const {
-    switch (kind) {
+    switch (getKind()) {
         case Int8:      return 7;
         case Int16:     return 15;
         case Int32:     return 31;
@@ -356,11 +428,11 @@ const char* BuiltinType::kind2name(Kind k) {
 
 }
 const char* BuiltinType::getName() const {
-    return kind2name(kind);
+    return kind2name(getKind());
 }
 
 const char* BuiltinType::getCName() const {
-    switch (kind) {
+    switch (getKind()) {
         case Int8:      return "char";
         case Int16:     return "short";
         case Int32:     return "int";
@@ -378,7 +450,7 @@ const char* BuiltinType::getCName() const {
 }
 
 bool BuiltinType::isInteger() const {
-    switch (kind) {
+    switch (getKind()) {
         case Int8:      return true;
         case Int16:     return true;
         case Int32:     return true;
@@ -396,7 +468,7 @@ bool BuiltinType::isInteger() const {
 }
 
 bool BuiltinType::isSignedInteger() const {
-    switch (kind) {
+    switch (getKind()) {
         case Int8:      return true;
         case Int16:     return true;
         case Int32:     return true;
@@ -414,7 +486,7 @@ bool BuiltinType::isSignedInteger() const {
 }
 
 bool BuiltinType::isUnsignedInteger() const {
-    switch (kind) {
+    switch (getKind()) {
         case Int8:      return false;
         case Int16:     return false;
         case Int32:     return false;
@@ -432,7 +504,7 @@ bool BuiltinType::isUnsignedInteger() const {
 }
 
 bool BuiltinType::isFloatingPoint() const {
-    switch (kind) {
+    switch (getKind()) {
         case Int8:      return false;
         case Int16:     return false;
         case Int32:     return false;
@@ -449,10 +521,6 @@ bool BuiltinType::isFloatingPoint() const {
     return false;       // to satisfy compiler
 }
 
-void BuiltinType::printName(StringBuilder& buffer) const {
-    buffer << getName();
-}
-
 void BuiltinType::debugPrint(StringBuilder& buffer) const {
     buffer << getName();
 }
@@ -460,11 +528,15 @@ void BuiltinType::debugPrint(StringBuilder& buffer) const {
 void BuiltinType::fullDebug(StringBuilder& buffer, int indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
-    buffer << "[BuiltinType] " << (void*)this << ' '<< getName() << '\n';;
+    buffer << "[BuiltinType] " << (void*)this << ' '<< getName() << '\n';
     Type::fullDebug(buffer, indent);
 }
 #endif
 
+
+void BuiltinType::printName(StringBuilder& buffer) const {
+    buffer << getName();
+}
 
 void PointerType::printName(StringBuilder& buffer) const {
     PointeeType.printName(buffer);
@@ -489,24 +561,20 @@ void PointerType::fullDebug(StringBuilder& buffer, int indent) const {
 #endif
 
 
-ArrayType::~ArrayType() {
-    if (ownSizeExpr) delete sizeExpr;
-}
-
 void ArrayType::printName(StringBuilder& buffer) const {
     ElementType.printName(buffer);
     buffer << '[';
-    if (hasSize) buffer << (unsigned)Size.getZExtValue();
+    if (arrayTypeBits.hasSize) buffer << (unsigned)Size.getZExtValue();
     buffer << ']';
 }
 
 void ArrayType::debugPrint(StringBuilder& buffer) const {
     ElementType.debugPrint(buffer);
     buffer << '[';
-    if (hasSize) {
+    if (arrayTypeBits.hasSize) {
         buffer << (unsigned)Size.getZExtValue();
     } else {
-        if (incremental) buffer << '+';
+        if (arrayTypeBits.incremental) buffer << '+';
         if (sizeExpr) {
             buffer.setColor(COL_ATTR);
             buffer << "(expr)";
@@ -521,9 +589,8 @@ void ArrayType::fullDebug(StringBuilder& buffer, int indent) const {
     buffer.setColor(COL_STMT);
     buffer << "[ArrayType] " << (void*)this;
     buffer.setColor(COL_ATTR);
-    buffer << " hasSize=" << hasSize;
+    buffer << " hasSize=" << arrayTypeBits.hasSize;
     buffer << " size=" << (int)Size.getZExtValue();
-    buffer << " ownSizeExpr=" << ownSizeExpr << '\n';
     buffer << " isIncremental=" << incremental << '\n';
     buffer.indent(indent);
     buffer << "sizeExpr=";
@@ -543,7 +610,7 @@ void ArrayType::fullDebug(StringBuilder& buffer, int indent) const {
 
 void ArrayType::setSize(const llvm::APInt& value) {
     Size = value;
-    hasSize = true;
+    arrayTypeBits.hasSize = 1;
     // also set on Canonical
     QualType canonical = getCanonicalType();
     assert(canonical.isValid());
@@ -554,11 +621,6 @@ void ArrayType::setSize(const llvm::APInt& value) {
     }
 }
 
-
-UnresolvedType::~UnresolvedType() {
-    delete moduleName;
-    delete typeName;
-}
 
 TypeDecl* UnresolvedType::getDecl() const {
     Decl* decl = typeName->getDecl();
@@ -737,60 +799,4 @@ void ModuleType::fullDebug(StringBuilder& buffer, int indent) const {
     buffer << "TODO ModuleType\n";
 }
 #endif
-
-
-TypeContext::TypeContext() {}
-
-TypeContext::~TypeContext() {
-    for (unsigned i=0; i<types.size(); i++) delete types[i];
-}
-
-QualType TypeContext::getPointerType(QualType ref) {
-    assert(ref.isValid());
-    for (unsigned i=0; i<types.size(); i++) {
-        Type* t = types[i];
-        if (isa<PointerType>(t)) {
-            PointerType* P = cast<PointerType>(t);
-            if (P->getPointeeType() == ref) return t;
-        }
-    }
-    Type* N = new PointerType(ref);
-    if (ref->hasCanonicalType()) N->setCanonicalType(N);
-    return add(N);
-}
-
-QualType TypeContext::getArrayType(QualType element, Expr* size, bool ownSize, bool isIncremental) {
-    Type* N = new ArrayType(element, size, ownSize, isIncremental);
-    if (element->hasCanonicalType()) N->setCanonicalType(N);
-    return add(N);
-}
-
-QualType TypeContext::getUnresolvedType(IdentifierExpr* moduleName, IdentifierExpr* typeName) {
-    return add(new UnresolvedType(moduleName, typeName));
-}
-
-QualType TypeContext::getAliasType(AliasTypeDecl* A, QualType refType) {
-    return add(new AliasType(A, refType));
-}
-
-QualType TypeContext::getStructType() {
-    return add(new StructType());
-}
-
-QualType TypeContext::getEnumType() {
-    return add(new EnumType());
-}
-
-QualType TypeContext::getFunctionType(FunctionDecl* F) {
-    return add(new FunctionType(F));
-}
-
-QualType TypeContext::getModuleType(ImportDecl* D) {
-    return add(new ModuleType(D));
-}
-
-QualType TypeContext::add(Type* T) {
-    types.push_back(T);
-    return QualType(T);
-}
 

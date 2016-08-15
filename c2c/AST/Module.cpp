@@ -60,7 +60,7 @@ void Module::addAttributes(AttrMap& am) {
 
 void Module::printSymbols(StringBuilder& out) const {
     out.indent(2);
-    out << "module " << name << '\n';;
+    out << "module " << name << '\n';
     for (SymbolsConstIter iter = symbols.begin(); iter != symbols.end(); ++iter) {
         const Decl* D = iter->second;
         out.indent(4);

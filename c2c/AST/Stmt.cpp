@@ -18,6 +18,7 @@
 #include "AST/Stmt.h"
 #include "AST/Expr.h"
 #include "AST/Decl.h"
+#include "AST/ASTContext.h"
 #include "Utils/StringBuilder.h"
 #include "Utils/color.h"
 #include "Utils/UtilsConstants.h"
@@ -25,25 +26,12 @@
 using namespace C2;
 using namespace std;
 
-//#define STMT_DEBUG
-#ifdef STMT_DEBUG
-static int creationCount;
-static int deleteCount;
-#endif
-
 Stmt::Stmt(StmtKind k) {
     stmtBits.sKind = k;
-#ifdef STMT_DEBUG
-    creationCount++;
-    fprintf(stderr, "[STMT] create %p  created %d deleted %d\n", this, creationCount, deleteCount);
-#endif
 }
 
-Stmt::~Stmt() {
-#ifdef STMT_DEBUG
-    deleteCount++;
-    fprintf(stderr, "[STMT] delete %p  created %d deleted %d\n", this, creationCount, deleteCount);
-#endif
+void* Stmt::operator new(size_t bytes, const C2::ASTContext& C, unsigned alignment) {
+    return ::operator new(bytes, C, alignment);
 }
 
 void Stmt::print(StringBuilder& buffer, unsigned indent) const {
@@ -125,13 +113,9 @@ void Stmt::dump() const {
 
 ReturnStmt::ReturnStmt(SourceLocation loc, Expr* value_)
     : Stmt(STMT_RETURN)
-    , value(value_)
     , RetLoc(loc)
+    , value(value_)
 {}
-
-ReturnStmt::~ReturnStmt() {
-    delete value;
-}
 
 void ReturnStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
@@ -154,13 +138,6 @@ IfStmt::IfStmt(SourceLocation ifLoc,
     SubExprs[COND] = condition;
     SubExprs[THEN] = thenStmt;
     SubExprs[ELSE] = elseStmt;
-}
-
-IfStmt::~IfStmt() {
-    delete SubExprs[VAR];
-    delete SubExprs[COND];
-    delete SubExprs[THEN];
-    delete SubExprs[ELSE];
 }
 
 void IfStmt::print(StringBuilder& buffer, unsigned indent) const {
@@ -188,11 +165,6 @@ WhileStmt::WhileStmt(SourceLocation Loc_, Stmt* Cond_, Stmt* Then_)
     , Then(Then_)
 {}
 
-WhileStmt::~WhileStmt() {
-    delete Cond;
-    delete Then;
-}
-
 void WhileStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
@@ -208,11 +180,6 @@ DoStmt::DoStmt(SourceLocation Loc_, Expr* Cond_, Stmt* Then_)
     , Cond(Cond_)
     , Then(Then_)
 {}
-
-DoStmt::~DoStmt() {
-    delete Cond;
-    delete Then;
-}
 
 void DoStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
@@ -232,13 +199,6 @@ ForStmt::ForStmt(SourceLocation Loc_, Stmt* Init_, Expr* Cond_, Expr* Incr_, Stm
     , Body(Body_)
 {}
 
-ForStmt::~ForStmt() {
-    delete Body;
-    delete Incr;
-    delete Cond;
-    delete Init;
-}
-
 void ForStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
@@ -256,10 +216,6 @@ SwitchStmt::SwitchStmt(SourceLocation Loc_, Stmt* Cond_, StmtList& Cases_)
     , Cond(Cond_)
     , Cases(Cases_)
 {}
-
-SwitchStmt::~SwitchStmt() {
-    delete Cond;
-}
 
 void SwitchStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
@@ -279,10 +235,6 @@ CaseStmt::CaseStmt(SourceLocation Loc_, Expr* Cond_, StmtList& Stmts_)
     , Stmts(Stmts_)
 {}
 
-CaseStmt::~CaseStmt() {
-    delete Cond;
-}
-
 void CaseStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
@@ -300,8 +252,6 @@ DefaultStmt::DefaultStmt(SourceLocation Loc_, StmtList& Stmts_)
     , Stmts(Stmts_)
 {}
 
-DefaultStmt::~DefaultStmt() {}
-
 void DefaultStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
@@ -317,8 +267,6 @@ BreakStmt::BreakStmt(SourceLocation Loc_)
     , Loc(Loc_)
 {}
 
-BreakStmt::~BreakStmt() {}
-
 void BreakStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
@@ -331,8 +279,6 @@ ContinueStmt::ContinueStmt(SourceLocation Loc_)
     , Loc(Loc_)
 {}
 
-ContinueStmt::~ContinueStmt() {}
-
 void ContinueStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
@@ -342,13 +288,10 @@ void ContinueStmt::print(StringBuilder& buffer, unsigned indent) const {
 
 LabelStmt::LabelStmt(const char* name_, SourceLocation Loc_, Stmt* subStmt_)
     : Stmt(STMT_LABEL)
-    , name(name_), Loc(Loc_), subStmt(subStmt_)
+    , Loc(Loc_)
+    , name(name_)
+    , subStmt(subStmt_)
 {}
-
-LabelStmt::~LabelStmt()
-{
-    delete subStmt;
-}
 
 void LabelStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
@@ -365,8 +308,6 @@ GotoStmt::GotoStmt(const char* name_, SourceLocation GotoLoc_, SourceLocation La
     , name(name_), GotoLoc(GotoLoc_), LabelLoc(LabelLoc_)
 {}
 
-GotoStmt::~GotoStmt() {}
-
 void GotoStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
@@ -382,8 +323,6 @@ CompoundStmt::CompoundStmt(SourceLocation l, SourceLocation r, StmtList& stmts_)
     , Right(r)
     , Stmts(stmts_)
 {}
-
-CompoundStmt::~CompoundStmt() {}
 
 void CompoundStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
@@ -418,10 +357,6 @@ DeclStmt::DeclStmt(VarDecl* decl_)
     : Stmt(STMT_DECL)
     , decl(decl_)
 {}
-
-DeclStmt::~DeclStmt() {
-    delete decl;
-}
 
 void DeclStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);

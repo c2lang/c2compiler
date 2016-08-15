@@ -17,10 +17,10 @@
 #define AST_STMT_H
 
 #include <string>
+#include <vector>
 
 #include <clang/Basic/SourceLocation.h>
 
-#include "AST/OwningVector.h"
 
 using clang::SourceLocation;
 
@@ -29,6 +29,7 @@ namespace C2 {
 class StringBuilder;
 class Expr;
 class VarDecl;
+class ASTContext;
 
 enum StmtKind {
     STMT_RETURN = 0,
@@ -49,14 +50,32 @@ enum StmtKind {
 };
 
 
-class Stmt {
+class LLVM_ALIGNAS(LLVM_PTR_SIZE) Stmt {
 public:
     Stmt(StmtKind k);
-    ~Stmt();
     StmtKind getKind() const { return static_cast<StmtKind>(stmtBits.sKind); }
     void print(StringBuilder& buffer, unsigned indent) const;
     void dump() const;
     SourceLocation getLocation() const;
+
+protected:
+    // See Clang comments in include/clang/AST/Stmt.h about operator new/delete
+    void* operator new(size_t bytes) {
+        assert(0 && "Stmt cannot be allocated with regular 'new'");
+    }
+    void operator delete(void* data) {
+        assert(0 && "Stmt cannot be released with regular 'delete'");
+    }
+
+public:
+    void* operator new(size_t bytes, const ASTContext& C, unsigned alignment = 8);
+    // placement operator, for sub-class specific allocators
+    void* operator new(size_t bytes, void* mem) LLVM_NOEXCEPT { return mem; }
+
+    void operator delete(void*, const ASTContext& C, unsigned) LLVM_NOEXCEPT {}
+    void operator delete(void*, const ASTContext* C, unsigned) LLVM_NOEXCEPT {}
+    void operator delete(void*, size_t) LLVM_NOEXCEPT {}
+    void operator delete(void*, void*) LLVM_NOEXCEPT {}
 
 protected:
     class StmtBitfields {
@@ -70,12 +89,12 @@ protected:
         friend class Expr;
         unsigned : NumStmtBits;
 
-        unsigned eKind : 8;             // BBB TODO Merge with sKind
+        unsigned eKind : 8;
         unsigned ImpCast: 4;
         unsigned IsCTC: 2;          // CTC_FULL -> value matters, CTC_NONE -> type matters
         unsigned IsConstant : 1;    // const :"bla", test, 3. Not const: test(). Depends: a
     };
-    enum { NumExprBits = 16 + NumStmtBits };      // TODO make 8 when eKind is merged
+    enum { NumExprBits = 16 + NumStmtBits };
 
     class IdentifierExprBitfields {
         friend class IdentifierExpr;
@@ -114,6 +133,20 @@ protected:
         unsigned IsLocal : 1;
     };
 
+    class BinaryOperatorBitfields {
+        friend class BinaryOperator;
+        unsigned : NumExprBits;
+
+        unsigned opcode : 6;
+    };
+
+    class UnaryOperatorBitfields {
+        friend class UnaryOperator;
+        unsigned : NumExprBits;
+
+        unsigned opcode : 5;
+    };
+
     class BuiltinExprBitfields {
         friend class BuiltinExpr;
         unsigned : NumExprBits;
@@ -144,6 +177,13 @@ protected:
         unsigned DesignatorKind : 1;
     };
 
+    class BitOffsetExprBitfields {
+        friend class BitOffsetExpr;
+        unsigned : NumExprBits;
+
+        unsigned width : 8;
+    };
+
     union {
         StmtBitfields stmtBits;
         ExprBitfields exprBits;
@@ -152,10 +192,13 @@ protected:
         IntegerLiteralBitfields integerLiteralBits;
         BooleanLiteralBitfields booleanLiteralBits;
         TypeExprBitfields typeExprBits;
+        BinaryOperatorBitfields binaryOperatorBits;
+        UnaryOperatorBitfields unaryOperatorBits;
         BuiltinExprBitfields builtinExprBits;
         MemberExprBitfields memberExprBits;
         InitListExprBitfields initListExprBits;
         DesignatedInitExprBitfields designatedInitExprBits;
+        BitOffsetExprBitfields bitOffsetExprBits;
     };
 private:
     Stmt(const Stmt&);
@@ -163,12 +206,11 @@ private:
 };
 
 
-typedef OwningVector<Stmt> StmtList;
+typedef std::vector<Stmt*> StmtList;
 
 class ReturnStmt : public Stmt {
 public:
     ReturnStmt(SourceLocation loc, Expr* value_);
-    ~ReturnStmt();
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_RETURN;
     }
@@ -178,8 +220,8 @@ public:
 
     Expr* getExpr() const { return value; }
 private:
-    Expr* value;
     SourceLocation RetLoc;
+    Expr* value;
 };
 
 
@@ -188,7 +230,6 @@ public:
     IfStmt(SourceLocation ifLoc,
            Stmt* condition, Stmt* thenStmt,
            SourceLocation elseLoc, Stmt* elseStmt);
-    ~IfStmt();
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_IF;
     }
@@ -213,7 +254,6 @@ private:
 class WhileStmt : public Stmt {
 public:
     WhileStmt(SourceLocation Loc_, Stmt* Cond_, Stmt* Then_);
-    ~WhileStmt();
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_WHILE;
     }
@@ -233,7 +273,6 @@ private:
 class DoStmt : public Stmt {
 public:
     DoStmt(SourceLocation Loc_, Expr* Cond_, Stmt* Then_);
-    ~DoStmt();
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_DO;
     }
@@ -253,7 +292,6 @@ private:
 class ForStmt : public Stmt {
 public:
     ForStmt(SourceLocation Loc_, Stmt* Init_, Expr* Cond_, Expr* Incr_, Stmt* Body_);
-    ~ForStmt();
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_FOR;
     }
@@ -277,7 +315,6 @@ private:
 class SwitchStmt : public Stmt {
 public:
     SwitchStmt(SourceLocation Loc_, Stmt* Cond_, StmtList& Cases_);
-    ~SwitchStmt();
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_SWITCH;
     }
@@ -297,7 +334,6 @@ private:
 class CaseStmt : public Stmt {
 public:
     CaseStmt(SourceLocation Loc_, Expr* Cond_, StmtList& Stmts_);
-    ~CaseStmt();
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_CASE;
     }
@@ -317,7 +353,6 @@ private:
 class DefaultStmt : public Stmt {
 public:
     DefaultStmt(SourceLocation Loc_, StmtList& Stmts_);
-    ~DefaultStmt();
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_DEFAULT;
     }
@@ -335,7 +370,6 @@ private:
 class BreakStmt : public Stmt {
 public:
     BreakStmt(SourceLocation Loc_);
-    ~BreakStmt();
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_BREAK;
     }
@@ -350,7 +384,6 @@ private:
 class ContinueStmt : public Stmt {
 public:
     ContinueStmt(SourceLocation Loc_);
-    ~ContinueStmt();
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_CONTINUE;
     }
@@ -365,7 +398,6 @@ private:
 class LabelStmt : public Stmt {
 public:
     LabelStmt(const char* name_, SourceLocation Loc_, Stmt* subStmt_);
-    ~LabelStmt();
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_LABEL;
     }
@@ -375,8 +407,8 @@ public:
     Stmt* getSubStmt() const { return subStmt; }
     const std::string& getName() const { return name; }
 private:
-    std::string name;
     SourceLocation Loc;
+    std::string name;
     Stmt* subStmt;
 };
 
@@ -384,7 +416,6 @@ private:
 class GotoStmt : public Stmt {
 public:
     GotoStmt(const char* name_, SourceLocation GotoLoc_, SourceLocation LabelLoc_);
-    ~GotoStmt();
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_GOTO;
     }
@@ -402,7 +433,6 @@ private:
 class CompoundStmt : public Stmt {
 public:
     CompoundStmt(SourceLocation l, SourceLocation r, StmtList& stmts_);
-    ~CompoundStmt();
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_COMPOUND;
     }
@@ -423,7 +453,6 @@ private:
 class DeclStmt : public Stmt {
 public:
     DeclStmt(VarDecl* decl_);
-    ~DeclStmt();
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_DECL;
     }

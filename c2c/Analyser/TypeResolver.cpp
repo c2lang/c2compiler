@@ -27,15 +27,16 @@
 #include "AST/Module.h"
 #include "AST/Decl.h"
 #include "AST/Expr.h"
+#include "AST/ASTContext.h"
 #include "Utils/StringBuilder.h"
 
 using namespace C2;
 using namespace clang;
 
-TypeResolver::TypeResolver(Scope& g, clang::DiagnosticsEngine& Diags_, TypeContext& tc_)
+TypeResolver::TypeResolver(Scope& g, clang::DiagnosticsEngine& Diags_, ASTContext& ctx_)
     : globals(g)
     , Diags(Diags_)
-    , typeContext(tc_)
+    , Context(ctx_)
 {}
 
 unsigned TypeResolver::checkType(QualType Q, bool used_public) {
@@ -118,7 +119,7 @@ QualType TypeResolver::resolveUnresolved(QualType Q) const {
             QualType Result = resolveUnresolved(t1);
             if (t1 == Result) return Q;
             // TODO qualifiers
-            return typeContext.getPointerType(Result);
+            return Context.getPointerType(Result);
         }
     case TC_ARRAY:
         {
@@ -127,7 +128,7 @@ QualType TypeResolver::resolveUnresolved(QualType Q) const {
             QualType Result = resolveUnresolved(t1);
             if (t1 == Result) return Q;
             // TODO qualifiers
-            return typeContext.getArrayType(Result, A->getSizeExpr(), false, A->isIncremental());
+            return Context.getArrayType(Result, A->getSizeExpr(), A->isIncremental());
 
         }
     case TC_UNRESOLVED:
@@ -209,13 +210,13 @@ QualType TypeResolver::checkCanonicals(Decls& decls, QualType Q, bool set) const
         {
             const PointerType* P = cast<PointerType>(T);
             QualType t1 = P->getPointeeType();
-            // Pointee will always be in same TypeContext (file), since it's either built-in or UnresolvedType
+            // Pointee will always be in same ASTContext (file), since it's either built-in or UnresolvedType
             QualType t2 = checkCanonicals(decls, t1, set);
             if (!t2.isValid()) return t2;
             QualType canon;
             if (t1 == t2) canon = Q;
             else {
-                canon = typeContext.getPointerType(t2);
+                canon = Context.getPointerType(t2);
                 if (!canon->hasCanonicalType()) canon->setCanonicalType(canon);
             }
             assert(Q.isValid());
@@ -233,7 +234,7 @@ QualType TypeResolver::checkCanonicals(Decls& decls, QualType Q, bool set) const
             if (t1 == t2) canon = Q;
             // NOTE: need size Expr, but set ownership to none
             else {
-                canon = typeContext.getArrayType(t2, A->getSizeExpr(), false, A->isIncremental());
+                canon = Context.getArrayType(t2, A->getSizeExpr(), A->isIncremental());
                 if (!canon->hasCanonicalType()) canon->setCanonicalType(canon);
             }
 
@@ -291,7 +292,7 @@ QualType TypeResolver::resolveCanonical(QualType Q) const {
         {
             const PointerType* P = cast<PointerType>(T);
             QualType t1 = P->getPointeeType();
-            // Pointee will always be in same TypeContext (file), since it's either built-in or UnresolvedType
+            // Pointee will always be in same ASTContext (file), since it's either built-in or UnresolvedType
             QualType t2 = resolveCanonical(t1);
             assert(t2.isValid());
             if (t1 == t2) {
@@ -299,7 +300,7 @@ QualType TypeResolver::resolveCanonical(QualType Q) const {
                 return Q;
             } else {
                 // TODO qualifiers
-                QualType Canon = typeContext.getPointerType(t2);
+                QualType Canon = Context.getPointerType(t2);
                 if (!Canon->hasCanonicalType()) Canon->setCanonicalType(Canon);
                 Q->setCanonicalType(Canon);
                 return Canon;
@@ -316,7 +317,7 @@ QualType TypeResolver::resolveCanonical(QualType Q) const {
                 return Q;
             } else  {
                 // NOTE: need size Expr, but set ownership to none
-                QualType Canon = typeContext.getArrayType(t2, A->getSizeExpr(), false, A->isIncremental());
+                QualType Canon = Context.getArrayType(t2, A->getSizeExpr(), A->isIncremental());
                 if (!Canon->hasCanonicalType()) Canon->setCanonicalType(Canon);
                 Q->setCanonicalType(Canon);
                 return Canon;

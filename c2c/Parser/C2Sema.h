@@ -23,6 +23,7 @@
 
 #include "AST/Decl.h"
 #include "AST/Stmt.h"
+#include "AST/Type.h"
 #include "Parser/ParserTypes.h"
 
 namespace clang {
@@ -44,8 +45,7 @@ namespace C2 {
 
 class AST;
 class Expr;
-class TypeContext;
-class TypeExpr;
+class ASTContext;
 
 class C2Sema {
 public:
@@ -139,7 +139,8 @@ private:
     SourceManager& SourceMgr;
     DiagnosticsEngine& Diags;
 
-    TypeContext& typeContext;
+    ASTContext& Context;
+
     AST& ast;
     clang::Preprocessor& PP;
 

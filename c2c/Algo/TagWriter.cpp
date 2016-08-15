@@ -208,6 +208,6 @@ void TagWriter::write(const std::string& title, const std::string& path) const {
         files[index]->write(buffer);
     }
 
-    FileUtils::writeFile(path.c_str(), path + "refs", buffer);;
+    FileUtils::writeFile(path.c_str(), path + "refs", buffer);
 }
 

@@ -25,7 +25,6 @@
 #include "Parser/C2Sema.h"
 #include "AST/AST.h"
 #include "AST/Expr.h"
-#include "AST/Type.h"
 #include "AST/Attr.h"
 
 //#define SEMA_DEBUG
@@ -35,18 +34,38 @@
 #include "Utils/color.h"
 #endif
 
-#ifdef SEMA_MEMSIZE
-static int counter;
-static uint64_t memsize;
-static uint64_t memsize_total;
-#define MEM_ADD(x) (memsize += sizeof(x))
-#else
-#define MEM_ADD(x)
-#endif
-
 using namespace C2;
 using namespace clang;
 using llvm::APFloat;
+
+#ifdef SEMA_MEMSIZE
+static int counter;
+
+static uint64_t declCounters[DECL_LABEL+1];
+static uint32_t declSizes[DECL_LABEL+1];
+static const char* declNames[DECL_LABEL+1];
+
+static uint64_t stmtCounters[STMT_DECL+1];
+static uint32_t stmtSizes[STMT_DECL+1];
+static const char* stmtNames[STMT_DECL+1];
+
+static uint64_t exprCounters[EXPR_CAST+1];
+static uint32_t exprSizes[EXPR_CAST+1];
+static const char* exprNames[EXPR_CAST+1];
+
+// TODO attributes
+// TODO types
+
+#define MEM_ADD(x)
+#define MEM_DECL(x) do { declCounters[x]++; } while(0)
+#define MEM_STMT(x) do { stmtCounters[x]++; } while(0)
+#define MEM_EXPR(x) do { exprCounters[x]++; } while(0)
+#else
+#define MEM_ADD(x)
+#define MEM_DECL(x)
+#define MEM_STMT(x)
+#define MEM_EXPR(x)
+#endif
 
 static inline clang::BinaryOperatorKind ConvertTokenKindToBinaryOpcode(tok::TokenKind Kind) {
   clang::BinaryOperatorKind Opc;
@@ -112,67 +131,137 @@ static inline UnaryOperatorKind ConvertTokenKindToUnaryOpcode(
 C2Sema::C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, AST& ast_, clang::Preprocessor& PP_)
     : SourceMgr(sm_)
     , Diags(Diags_)
-    , typeContext(ast_.getTypeContext())
+    , Context(ast_.getASTContext())
     , ast(ast_)
     , PP(PP_)
 {
 #ifdef SEMA_MEMSIZE
-#define PRINT(x) printf("%24s  %u\n", #x, (unsigned)sizeof(x))
-    memsize = 0;
+    memset(declCounters, 0, sizeof(declCounters));
+    memset(stmtCounters, 0, sizeof(stmtCounters));
+    memset(exprCounters, 0, sizeof(exprCounters));
     if (counter == 0) {
-        PRINT(Decl);
-        PRINT(VarDecl);
-        PRINT(FunctionDecl);
-        PRINT(EnumConstantDecl);
-        PRINT(ArrayValueDecl);
-        PRINT(StructTypeDecl);
-        PRINT(ImportDecl);
-        PRINT(LabelDecl);
-        printf("\n");
-        PRINT(Stmt);
-        PRINT(ReturnStmt);
-        PRINT(IfStmt);
-        PRINT(WhileStmt);
-        PRINT(DoStmt);
-        PRINT(ForStmt);
-        PRINT(SwitchStmt);
-        PRINT(CaseStmt);
-        PRINT(DefaultStmt);
-        PRINT(BreakStmt);
-        PRINT(ContinueStmt);
-        PRINT(LabelStmt);
-        PRINT(GotoStmt);
-        PRINT(CompoundStmt);
-        PRINT(DeclStmt);
-        printf("\n");
-        PRINT(Expr);
-        PRINT(IntegerLiteral);
-        PRINT(FloatingLiteral);
-        PRINT(BooleanLiteral);
-        PRINT(CharacterLiteral);
-        PRINT(StringLiteral);
-        PRINT(NilExpr);
-        PRINT(IdentifierExpr);
-        PRINT(TypeExpr);
-        PRINT(CallExpr);
-        PRINT(DesignatedInitExpr);
-        PRINT(BinaryOperator);
-        PRINT(ConditionalOperator);
-        PRINT(UnaryOperator);
-        PRINT(BuiltinExpr);
-        PRINT(ArraySubscriptExpr);
-        PRINT(MemberExpr);
-        PRINT(BitOffsetExpr);
-        PRINT(ExplicitCastExpr);
+#define DECL_INIT(x, y) \
+    do { \
+        declSizes[x] = sizeof(y); \
+        declNames[x] = #y; \
+    } while(0);
+        DECL_INIT(DECL_FUNC, FunctionDecl);
+        DECL_INIT(DECL_VAR, VarDecl);
+        DECL_INIT(DECL_ENUMVALUE, EnumConstantDecl);
+        DECL_INIT(DECL_ALIASTYPE, AliasTypeDecl);
+        DECL_INIT(DECL_STRUCTTYPE, StructTypeDecl);
+        DECL_INIT(DECL_ENUMTYPE, EnumTypeDecl);
+        DECL_INIT(DECL_FUNCTIONTYPE, FunctionTypeDecl);
+        DECL_INIT(DECL_ARRAYVALUE, ArrayValueDecl);
+        DECL_INIT(DECL_IMPORT, ImportDecl);
+        DECL_INIT(DECL_LABEL, LabelDecl);
+#define STMT_INIT(x, y) \
+    do { \
+        stmtSizes[x] = sizeof(y); \
+        stmtNames[x] = #y; \
+    } while(0);
+        STMT_INIT(STMT_RETURN, ReturnStmt);
+        STMT_INIT(STMT_EXPR, Expr);
+        STMT_INIT(STMT_IF, IfStmt);
+        STMT_INIT(STMT_WHILE, WhileStmt);
+        STMT_INIT(STMT_DO, DoStmt);
+        STMT_INIT(STMT_FOR, ForStmt);
+        STMT_INIT(STMT_SWITCH, SwitchStmt);
+        STMT_INIT(STMT_CASE, CaseStmt);
+        STMT_INIT(STMT_DEFAULT, DefaultStmt);
+        STMT_INIT(STMT_BREAK, BreakStmt);
+        STMT_INIT(STMT_CONTINUE, ContinueStmt);
+        STMT_INIT(STMT_LABEL, LabelStmt);
+        STMT_INIT(STMT_GOTO, GotoStmt);
+        STMT_INIT(STMT_COMPOUND, CompoundStmt);
+        STMT_INIT(STMT_DECL, DeclStmt);
+#define EXPR_INIT(x, y) \
+    do { \
+        exprSizes[x] = sizeof(y); \
+        exprNames[x] = #y; \
+    } while(0);
+        EXPR_INIT(EXPR_INTEGER_LITERAL, IntegerLiteral);
+        EXPR_INIT(EXPR_FLOAT_LITERAL, FloatingLiteral);
+        EXPR_INIT(EXPR_BOOL_LITERAL, BooleanLiteral);
+        EXPR_INIT(EXPR_CHAR_LITERAL, CharacterLiteral);
+        EXPR_INIT(EXPR_STRING_LITERAL, StringLiteral);
+        EXPR_INIT(EXPR_NIL, NilExpr);
+        EXPR_INIT(EXPR_IDENTIFIER, IdentifierExpr);
+        EXPR_INIT(EXPR_TYPE, TypeExpr);
+        EXPR_INIT(EXPR_CALL, CallExpr);
+        EXPR_INIT(EXPR_INITLIST, InitListExpr);
+        EXPR_INIT(EXPR_DESIGNATOR_INIT, DesignatedInitExpr);
+        EXPR_INIT(EXPR_BINOP, BinaryOperator);
+        EXPR_INIT(EXPR_CONDOP, ConditionalOperator);
+        EXPR_INIT(EXPR_UNARYOP, UnaryOperator);
+        EXPR_INIT(EXPR_BUILTIN, BuiltinExpr);
+        EXPR_INIT(EXPR_ARRAYSUBSCRIPT, ArraySubscriptExpr);
+        EXPR_INIT(EXPR_MEMBER, MemberExpr);
+        EXPR_INIT(EXPR_PAREN, ParenExpr);
+        EXPR_INIT(EXPR_BITOFFSET, BitOffsetExpr);
+        EXPR_INIT(EXPR_CAST, CastExpr);
     }
     counter++;
 #endif
 }
 
 C2Sema::~C2Sema() {
+#if 0
+    printf("%u  BuiltinType\n", (int)sizeof(BuiltinType));
+    printf("%u  PointerType\n", (int)sizeof(PointerType));
+    printf("%u  ArrayType\n", (int)sizeof(ArrayType));
+    printf("%u  UnresolvedType\n", (int)sizeof(UnresolvedType));
+    printf("%u  AliasType\n", (int)sizeof(AliasType));
+    printf("%u  StructType\n", (int)sizeof(StructType));
+    printf("%u  EnumType\n", (int)sizeof(EnumType));
+    printf("%u  FunctionType\n", (int)sizeof(FunctionType));
+    printf("%u  ModuleType\n", (int)sizeof(ModuleType));
+#endif
 #ifdef SEMA_MEMSIZE
-    memsize_total += memsize;
-    printf("mem usage %10lu  %10lu\n", memsize, memsize_total);
+    uint64_t total_elems = 0;
+    uint64_t total_size = 0;
+    for (unsigned i=0; i<(sizeof(declCounters)/sizeof(declCounters[0])); i++) {
+        total_elems += declCounters[i];
+        total_size += declCounters[i] * declSizes[i];
+    }
+    for (unsigned i=0; i<(sizeof(stmtCounters)/sizeof(stmtCounters[0])); i++) {
+        total_elems += stmtCounters[i];
+        total_size += stmtCounters[i] * stmtSizes[i];
+    }
+    for (unsigned i=0; i<(sizeof(exprCounters)/sizeof(exprCounters[0])); i++) {
+        total_elems += exprCounters[i];
+        total_size += exprCounters[i] * exprSizes[i];
+    }
+
+#define PRINT_STATS \
+    if (count != 0) { \
+        int percCount = (count * 100) / total_elems; \
+        uint64_t size = count * elemsize; \
+        int percSize = (size * 100) / total_size; \
+        printf("   %6" PRIu64"(%2d%%)   %8" PRIu64"(%2d%%)   %3d   %s\n", count, percCount, size, percSize, elemsize, name); \
+    }
+
+    printf("AST COUNT            SIZE       ELEM   NAME\n");
+    printf("   %6" PRIu64"        %8" PRIu64"\n", total_elems, total_size);
+    for (unsigned i=0; i<(sizeof(declCounters)/sizeof(declCounters[0])); i++) {
+        uint64_t count = declCounters[i];
+        uint32_t elemsize = declSizes[i];
+        const char* name = declNames[i];
+        PRINT_STATS;
+    }
+    for (unsigned i=0; i<(sizeof(stmtCounters)/sizeof(stmtCounters[0])); i++) {
+        uint64_t count = stmtCounters[i];
+        uint32_t elemsize = stmtSizes[i];
+        const char* name = stmtNames[i];
+        PRINT_STATS;
+    }
+    for (unsigned i=0; i<(sizeof(exprCounters)/sizeof(exprCounters[0])); i++) {
+        uint64_t count = exprCounters[i];
+        uint32_t elemsize = exprSizes[i];
+        const char* name = exprNames[i];
+        PRINT_STATS;
+    }
+    Context.dump();
 #endif
 }
 
@@ -200,9 +289,9 @@ void C2Sema::ActOnModule(const char* name, SourceLocation loc) {
         return;
     }
     ast.setName(name, loc);
-    MEM_ADD(ImportDecl);
-    ImportDecl* U = new ImportDecl(name, loc, true, name, SourceLocation());
-    U->setType(typeContext.getModuleType(U));
+    MEM_DECL(DECL_IMPORT);
+    ImportDecl* U = new (Context) ImportDecl(name, loc, true, name, SourceLocation());
+    U->setType(Context.getModuleType(U));
     U->setUsed();
     ast.addImport(U);
     addSymbol(U);
@@ -243,9 +332,9 @@ void C2Sema::ActOnImport(const char* moduleName_, SourceLocation loc, Token& ali
         realLoc = aliasTok.getLocation();
     }
 
-    MEM_ADD(ImportDecl);
-    ImportDecl* U = new ImportDecl(name, realLoc, isLocal, moduleName, aliasTok.getLocation());
-    U->setType(typeContext.getModuleType(U));
+    MEM_DECL(DECL_IMPORT);
+    ImportDecl* U = new (Context) ImportDecl(name, realLoc, isLocal, moduleName, aliasTok.getLocation());
+    U->setType(Context.getModuleType(U));
     ast.addImport(U);
     addSymbol(U);
 }
@@ -266,13 +355,13 @@ C2::Decl* C2Sema::ActOnAliasType(const char* name, SourceLocation loc, Expr* typ
     if (typeExpr->hasLocalQualifier()) {
         Diag(loc, diag::err_invalid_local_typedef);
     }
-    MEM_ADD(AliasTypeDecl);
-    AliasTypeDecl* T = new AliasTypeDecl(name, loc, typeExpr->getType(), is_public);
-    QualType A = typeContext.getAliasType(T, typeExpr->getType());
+    MEM_DECL(DECL_ALIASTYPE);
+    AliasTypeDecl* T = new (Context) AliasTypeDecl(name, loc, typeExpr->getType(), is_public);
+    QualType A = Context.getAliasType(T, typeExpr->getType());
     T->setType(A);
     ast.addType(T);
     addSymbol(T);
-    delete typeExpr;
+    Context.freeTypeExpr(typeExpr);
     return T;
 }
 
@@ -300,10 +389,10 @@ C2::FunctionDecl* C2Sema::createFuncDecl(const char* name, SourceLocation loc,
         // TODO need local's location
         Diag(loc, diag::err_invalid_local_returntype);
     }
-    MEM_ADD(FunctionDecl);
-    FunctionDecl* D = new FunctionDecl(name, loc, is_public, typeExpr->getType());
-    delete typeExpr;
-    QualType qt =  typeContext.getFunctionType(D);
+    MEM_DECL(DECL_FUNC);
+    FunctionDecl* D = new (Context) FunctionDecl(name, loc, is_public, typeExpr->getType());
+    Context.freeTypeExpr(typeExpr);
+    QualType qt =  Context.getFunctionType(D);
     D->setType(qt);
     return D;
 }
@@ -313,9 +402,9 @@ C2::VarDecl* C2Sema::createVarDecl(VarDeclKind k, const char* name, SourceLocati
     // TODO check that type is not pre-fixed with own module
     // globals, function params, struct members
 
-    MEM_ADD(VarDecl);
-    VarDecl* V = new VarDecl(k, name, loc, typeExpr->getType(), InitValue, is_public);
-    delete typeExpr;
+    MEM_DECL(DECL_VAR);
+    VarDecl* V = new (Context) VarDecl(k, name, loc, typeExpr->getType(), InitValue, is_public);
+    Context.freeTypeExpr(typeExpr);
     return V;
 }
 
@@ -349,8 +438,8 @@ C2::FunctionTypeDecl* C2Sema::ActOnFuncTypeDecl(const char* name, SourceLocation
         is_public = true;
     }
     FunctionDecl* D = createFuncDecl(name, loc, is_public, rtype);
-    MEM_ADD(FunctionTypeDecl);
-    FunctionTypeDecl* FTD = new FunctionTypeDecl(D);
+    MEM_DECL(DECL_FUNCTIONTYPE);
+    FunctionTypeDecl* FTD = new (Context) FunctionTypeDecl(D);
     ast.addType(FTD);
     addSymbol(FTD);
     return FTD;
@@ -406,8 +495,8 @@ void C2Sema::ActOnArrayValue(const char* name, SourceLocation loc, Expr* Value) 
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    MEM_ADD(ArrayValueDecl);
-    ast.addArrayValue(new ArrayValueDecl(name, loc, Value));
+    MEM_DECL(DECL_ARRAYVALUE);
+    ast.addArrayValue(new (Context) ArrayValueDecl(name, loc, Value));
 }
 
 C2::StmtResult C2Sema::ActOnReturnStmt(SourceLocation loc, Expr* value) {
@@ -416,8 +505,8 @@ C2::StmtResult C2Sema::ActOnReturnStmt(SourceLocation loc, Expr* value) {
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    MEM_ADD(ReturnStmt);
-    return StmtResult(new ReturnStmt(loc, value));
+    MEM_STMT(STMT_RETURN);
+    return StmtResult(new (Context) ReturnStmt(loc, value));
 }
 
 C2::StmtResult C2Sema::ActOnIfStmt(SourceLocation ifLoc,
@@ -428,8 +517,8 @@ C2::StmtResult C2Sema::ActOnIfStmt(SourceLocation ifLoc,
     ifLoc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    MEM_ADD(IfStmt);
-    return StmtResult(new IfStmt(ifLoc, condition, thenStmt.get(), elseLoc, elseStmt.get()));
+    MEM_STMT(STMT_IF);
+    return StmtResult(new (Context) IfStmt(ifLoc, condition, thenStmt.get(), elseLoc, elseStmt.get()));
 }
 
 C2::StmtResult C2Sema::ActOnWhileStmt(SourceLocation loc, Stmt* Cond, StmtResult Then) {
@@ -438,8 +527,8 @@ C2::StmtResult C2Sema::ActOnWhileStmt(SourceLocation loc, Stmt* Cond, StmtResult
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    MEM_ADD(WhileStmt);
-    return StmtResult(new WhileStmt(loc, Cond, Then.get()));
+    MEM_STMT(STMT_WHILE);
+    return StmtResult(new (Context) WhileStmt(loc, Cond, Then.get()));
 }
 
 C2::StmtResult C2Sema::ActOnDoStmt(SourceLocation loc, ExprResult Cond, StmtResult Then) {
@@ -448,8 +537,8 @@ C2::StmtResult C2Sema::ActOnDoStmt(SourceLocation loc, ExprResult Cond, StmtResu
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    MEM_ADD(DoStmt);
-    return StmtResult(new DoStmt(loc, Cond.get(), Then.get()));
+    MEM_STMT(STMT_DO);
+    return StmtResult(new (Context) DoStmt(loc, Cond.get(), Then.get()));
 }
 
 C2::StmtResult C2Sema::ActOnForStmt(SourceLocation loc, Stmt* Init, Expr* Cond, Expr* Incr, Stmt* Body) {
@@ -458,8 +547,8 @@ C2::StmtResult C2Sema::ActOnForStmt(SourceLocation loc, Stmt* Init, Expr* Cond, 
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    MEM_ADD(ForStmt);
-    return StmtResult(new ForStmt(loc, Init, Cond, Incr, Body));
+    MEM_STMT(STMT_FOR);
+    return StmtResult(new (Context) ForStmt(loc, Init, Cond, Incr, Body));
 }
 
 C2::StmtResult C2Sema::ActOnSwitchStmt(SourceLocation loc, Stmt* Cond, StmtList& cases) {
@@ -468,8 +557,8 @@ C2::StmtResult C2Sema::ActOnSwitchStmt(SourceLocation loc, Stmt* Cond, StmtList&
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    MEM_ADD(SwitchStmt);
-    return StmtResult(new SwitchStmt(loc, Cond, cases));
+    MEM_STMT(STMT_SWITCH);
+    return StmtResult(new (Context) SwitchStmt(loc, Cond, cases));
 }
 
 C2::StmtResult C2Sema::ActOnCaseStmt(SourceLocation loc, Expr* Cond, StmtList& stmts) {
@@ -478,8 +567,8 @@ C2::StmtResult C2Sema::ActOnCaseStmt(SourceLocation loc, Expr* Cond, StmtList& s
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    MEM_ADD(CaseStmt);
-    return StmtResult(new CaseStmt(loc, Cond, stmts));
+    MEM_STMT(STMT_CASE);
+    return StmtResult(new (Context) CaseStmt(loc, Cond, stmts));
 }
 
 C2::StmtResult C2Sema::ActOnDefaultStmt(SourceLocation loc, StmtList& stmts) {
@@ -488,8 +577,8 @@ C2::StmtResult C2Sema::ActOnDefaultStmt(SourceLocation loc, StmtList& stmts) {
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    MEM_ADD(DefaultStmt);
-    return StmtResult(new DefaultStmt(loc, stmts));
+    MEM_STMT(STMT_DEFAULT);
+    return StmtResult(new (Context) DefaultStmt(loc, stmts));
 }
 
 C2::StmtResult C2Sema::ActOnBreakStmt(SourceLocation loc) {
@@ -498,8 +587,8 @@ C2::StmtResult C2Sema::ActOnBreakStmt(SourceLocation loc) {
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    MEM_ADD(BreakStmt);
-    return StmtResult(new BreakStmt(loc));
+    MEM_STMT(STMT_BREAK);
+    return StmtResult(new (Context) BreakStmt(loc));
 }
 
 C2::StmtResult C2Sema::ActOnContinueStmt(SourceLocation loc) {
@@ -508,8 +597,8 @@ C2::StmtResult C2Sema::ActOnContinueStmt(SourceLocation loc) {
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    MEM_ADD(ContinueStmt);
-    return StmtResult(new ContinueStmt(loc));
+    MEM_STMT(STMT_CONTINUE);
+    return StmtResult(new (Context) ContinueStmt(loc));
 }
 
 C2::StmtResult C2Sema::ActOnLabelStmt(const char* name, SourceLocation loc, Stmt* subStmt) {
@@ -518,8 +607,8 @@ C2::StmtResult C2Sema::ActOnLabelStmt(const char* name, SourceLocation loc, Stmt
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    MEM_ADD(LabelStmt);
-    return StmtResult(new LabelStmt(name, loc, subStmt));
+    MEM_STMT(STMT_LABEL);
+    return StmtResult(new (Context) LabelStmt(name, loc, subStmt));
 }
 
 C2::StmtResult C2Sema::ActOnGotoStmt(const char* name, SourceLocation GotoLoc, SourceLocation LabelLoc) {
@@ -528,8 +617,8 @@ C2::StmtResult C2Sema::ActOnGotoStmt(const char* name, SourceLocation GotoLoc, S
     GotoLoc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    MEM_ADD(GotoStmt);
-    return StmtResult(new GotoStmt(name, GotoLoc, LabelLoc));
+    MEM_STMT(STMT_GOTO);
+    return StmtResult(new (Context) GotoStmt(name, GotoLoc, LabelLoc));
 }
 
 C2::StmtResult C2Sema::ActOnCompoundStmt(SourceLocation L, SourceLocation R, StmtList& stmts) {
@@ -538,8 +627,8 @@ C2::StmtResult C2Sema::ActOnCompoundStmt(SourceLocation L, SourceLocation R, Stm
     L.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    MEM_ADD(CompoundStmt);
-    return StmtResult(new CompoundStmt(L, R, stmts));
+    MEM_STMT(STMT_COMPOUND);
+    return StmtResult(new (Context) CompoundStmt(L, R, stmts));
 }
 
 C2::StmtResult C2Sema::ActOnDeclaration(const char* name, SourceLocation loc, Expr* type, Expr* InitValue) {
@@ -551,8 +640,6 @@ C2::StmtResult C2Sema::ActOnDeclaration(const char* name, SourceLocation loc, Ex
 #endif
     if (name[0] == '_' && name[1] == '_') {
         Diag(loc, diag::err_invalid_symbol_name) << name;
-        delete type;
-        delete InitValue;
         return StmtResult(true);
     }
     // TEMP extract here to Type and delete rtype Expr
@@ -560,8 +647,8 @@ C2::StmtResult C2Sema::ActOnDeclaration(const char* name, SourceLocation loc, Ex
     bool hasLocal = typeExpr->hasLocalQualifier();
     VarDecl* V = createVarDecl(VARDECL_LOCAL, name, loc, typeExpr, InitValue, false);
     if (hasLocal) V->setLocalQualifier();
-    MEM_ADD(DeclStmt);
-    return StmtResult(new DeclStmt(V));
+    MEM_STMT(STMT_DECL);
+    return StmtResult(new (Context) DeclStmt(V));
 }
 
 C2::ExprResult C2Sema::ActOnCallExpr(Expr* Fn, Expr** args, unsigned numArgs, SourceLocation RParenLoc) {
@@ -570,8 +657,8 @@ C2::ExprResult C2Sema::ActOnCallExpr(Expr* Fn, Expr** args, unsigned numArgs, So
     //expr2loc(Fn).dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    MEM_ADD(CallExpr);
-    CallExpr* call = new CallExpr(Fn, RParenLoc);
+    MEM_EXPR(EXPR_CALL);
+    CallExpr* call = new (Context) CallExpr(Fn, RParenLoc);
     assert(call);
     for (unsigned i=0; i<numArgs; i++) call->addArg(args[i]);
     return ExprResult(call);
@@ -584,8 +671,8 @@ C2::ExprResult C2Sema::ActOnIdExpression(IdentifierInfo& symII, SourceLocation s
     symLoc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    MEM_ADD(IdentifierExpr);
-    return ExprResult(new IdentifierExpr(symLoc, id));
+    MEM_EXPR(EXPR_IDENTIFIER);
+    return ExprResult(new (Context) IdentifierExpr(symLoc, id));
 }
 
 C2::ExprResult C2Sema::ActOnParenExpr(SourceLocation L, SourceLocation R, Expr* E) {
@@ -595,8 +682,8 @@ C2::ExprResult C2Sema::ActOnParenExpr(SourceLocation L, SourceLocation R, Expr* 
     L.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    MEM_ADD(ParenExpr);
-    return ExprResult(new ParenExpr(L, R, E));
+    MEM_EXPR(EXPR_PAREN);
+    return ExprResult(new (Context) ParenExpr(L, R, E));
 }
 
 C2::ExprResult C2Sema::ActOnNil(SourceLocation L) {
@@ -605,8 +692,8 @@ C2::ExprResult C2Sema::ActOnNil(SourceLocation L) {
     L.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    MEM_ADD(NilExpr);
-    return ExprResult(new NilExpr(L));
+    MEM_EXPR(EXPR_NIL);
+    return ExprResult(new (Context) NilExpr(L));
 }
 
 
@@ -623,8 +710,8 @@ C2::ExprResult C2Sema::ActOnBinOp(SourceLocation opLoc, tok::TokenKind Kind, Exp
     // Emit warnings for tricky precedence issues, e.g. "bitfield & 0x4 == 0"
     //DiagnoseBinOpPrecedence(*this, Opc, TokLoc, LHSExpr, RHSExpr);
 
-    MEM_ADD(BinaryOperator);
-    return ExprResult(new BinaryOperator(LHS, RHS, Opc, opLoc));
+    MEM_EXPR(EXPR_BINOP);
+    return ExprResult(new (Context) BinaryOperator(LHS, RHS, Opc, opLoc));
 }
 
 // see clang, some GCC extension allows LHS to be null (C2 doesn't?)
@@ -635,8 +722,8 @@ C2::ExprResult C2Sema::ActOnConditionalOp(SourceLocation QuestionLoc, SourceLoca
     QuestionLoc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    MEM_ADD(ConditionalOperator);
-    return ExprResult(new ConditionalOperator(QuestionLoc, ColonLoc, CondExpr, LHSExpr, RHSExpr));
+    MEM_EXPR(EXPR_CONDOP);
+    return ExprResult(new (Context) ConditionalOperator(QuestionLoc, ColonLoc, CondExpr, LHSExpr, RHSExpr));
 }
 
 C2::ExprResult C2Sema::ActOnInitList(SourceLocation left_, SourceLocation right_, ExprList& vals) {
@@ -645,8 +732,8 @@ C2::ExprResult C2Sema::ActOnInitList(SourceLocation left_, SourceLocation right_
     left_.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    MEM_ADD(InitListExpr);
-    return ExprResult(new InitListExpr(left_, right_, vals));
+    MEM_EXPR(EXPR_INITLIST);
+    return ExprResult(new (Context) InitListExpr(left_, right_, vals));
 }
 
 C2::ExprResult C2Sema::ActOnArrayDesignatorExpr(SourceLocation left, ExprResult Designator, ExprResult InitValue) {
@@ -655,8 +742,8 @@ C2::ExprResult C2Sema::ActOnArrayDesignatorExpr(SourceLocation left, ExprResult 
     left_.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    MEM_ADD(DesignatedInitExpr);
-    return ExprResult(new DesignatedInitExpr(left, Designator.get(), InitValue.get()));
+    MEM_EXPR(EXPR_DESIGNATOR_INIT);
+    return ExprResult(new (Context) DesignatedInitExpr(left, Designator.get(), InitValue.get()));
 }
 
 C2::ExprResult C2Sema::ActOnFieldDesignatorExpr(SourceLocation loc, IdentifierInfo* field, ExprResult InitValue) {
@@ -665,8 +752,8 @@ C2::ExprResult C2Sema::ActOnFieldDesignatorExpr(SourceLocation loc, IdentifierIn
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    MEM_ADD(DesignatedInitExpr);
-    return ExprResult(new DesignatedInitExpr(loc, field->getNameStart(), InitValue.get()));
+    MEM_EXPR(EXPR_DESIGNATOR_INIT);
+    return ExprResult(new (Context) DesignatedInitExpr(loc, field->getNameStart(), InitValue.get()));
 }
 
 C2::ExprResult C2Sema::ActOnArrayType(Expr* base, Expr* size, bool isIncremental) {
@@ -675,7 +762,7 @@ C2::ExprResult C2Sema::ActOnArrayType(Expr* base, Expr* size, bool isIncremental
 #endif
     assert(base);
     TypeExpr* typeExpr = cast<TypeExpr>(base);
-    QualType QT = typeContext.getArrayType(typeExpr->getType(), size, true, isIncremental);
+    QualType QT = Context.getArrayType(typeExpr->getType(), size, isIncremental);
     typeExpr->setType(QT);
     return ExprResult(base);
 }
@@ -686,7 +773,7 @@ C2::ExprResult C2Sema::ActOnPointerType(Expr* base) {
 #endif
     assert(base);
     TypeExpr* typeExpr = cast<TypeExpr>(base);
-    QualType qt = typeContext.getPointerType(typeExpr->getType());
+    QualType qt = Context.getPointerType(typeExpr->getType());
     typeExpr->setType(qt);
     return ExprResult(base);
 }
@@ -708,8 +795,9 @@ C2::ExprResult C2Sema::ActOnUserType(Expr* mName_, Expr* tName_) {
     tName->getLocation().dump(SourceMgr);
     std::cerr << ANSI_NORMAL << '\n';
 #endif
-    QualType qt = typeContext.getUnresolvedType(mName, tName);
-    return ExprResult(new TypeExpr(qt));
+    QualType qt = Context.getUnresolvedType(mName, tName);
+    TypeExpr* te = new (Context.allocTypeExpr())TypeExpr(qt);
+    return ExprResult(te);
 }
 
 C2::ExprResult C2Sema::ActOnBuiltinType(tok::TokenKind k) {
@@ -738,7 +826,8 @@ C2::ExprResult C2Sema::ActOnBuiltinType(tok::TokenKind k) {
         break;
     }
 
-    return ExprResult(new TypeExpr(qt));
+    TypeExpr* te = new (Context.allocTypeExpr())TypeExpr(qt);
+    return ExprResult(te);
 }
 
 StructTypeDecl* C2Sema::ActOnStructType(const char* name, SourceLocation loc,
@@ -751,9 +840,9 @@ StructTypeDecl* C2Sema::ActOnStructType(const char* name, SourceLocation loc,
         if (is_public) Diag(loc, diag::err_public_in_interface);
         is_public = true;
     }
-    QualType qt = typeContext.getStructType();
-    MEM_ADD(StructTypeDecl);
-    StructTypeDecl* S = new StructTypeDecl(name, loc, qt, isStruct, is_global, is_public);
+    QualType qt = Context.getStructType();
+    MEM_DECL(DECL_STRUCTTYPE);
+    StructTypeDecl* S = new (Context) StructTypeDecl(name, loc, qt, isStruct, is_global, is_public);
     StructType* ST = cast<StructType>(qt.getTypePtr());
     ST->setDecl(S);
     if (is_global) {
@@ -789,11 +878,11 @@ EnumTypeDecl* C2Sema::ActOnEnumType(const char* name, SourceLocation loc, Expr* 
     TypeExpr* T = cast<TypeExpr>(implType);
     QualType impl = T->getType();
     assert(impl->hasCanonicalType());
-    delete T;
+    Context.freeTypeExpr(T);
 
-    QualType qt = typeContext.getEnumType();
-    MEM_ADD(EnumTypeDecl);
-    EnumTypeDecl* E = new EnumTypeDecl(name, loc, impl, qt, is_public);
+    QualType qt = Context.getEnumType();
+    MEM_DECL(DECL_ENUMTYPE);
+    EnumTypeDecl* E = new (Context) EnumTypeDecl(name, loc, impl, qt, is_public);
     EnumType* ET = cast<EnumType>(qt.getTypePtr());
     ET->setCanonicalType(impl);
     ET->setDecl(E);
@@ -807,8 +896,8 @@ void C2Sema::ActOnEnumConstant(EnumTypeDecl* Enum, IdentifierInfo* symII,
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA << "SEMA: enum constant" << ANSI_NORMAL"\n";
 #endif
-    MEM_ADD(EnumConstantDecl);
-    EnumConstantDecl* D = new EnumConstantDecl(symII->getNameStart(), symLoc, Enum->getType(), Value,
+    MEM_DECL(DECL_ENUMVALUE);
+    EnumConstantDecl* D = new (Context) EnumConstantDecl(symII->getNameStart(), symLoc, Enum->getType(), Value,
                                                Enum->isPublic());
     Enum->addConstant(D);
     addSymbol(D);
@@ -852,8 +941,8 @@ C2::ExprResult C2Sema::ActOnBuiltinExpression(SourceLocation Loc, Expr* expr, bo
     Loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    MEM_ADD(BuiltinExpr);
-    return ExprResult(new BuiltinExpr(Loc, expr, isSizeof));
+    MEM_EXPR(EXPR_BUILTIN);
+    return ExprResult(new (Context) BuiltinExpr(Loc, expr, isSizeof));
 }
 
 C2::ExprResult C2Sema::ActOnArraySubScriptExpr(SourceLocation RLoc, Expr* Base, Expr* Idx) {
@@ -864,8 +953,8 @@ C2::ExprResult C2Sema::ActOnArraySubScriptExpr(SourceLocation RLoc, Expr* Base, 
     RLoc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    MEM_ADD(ArraySubscriptExpr);
-    return ExprResult(new ArraySubscriptExpr(RLoc, Base, Idx));
+    MEM_EXPR(EXPR_ARRAYSUBSCRIPT);
+    return ExprResult(new (Context) ArraySubscriptExpr(RLoc, Base, Idx));
 }
 
 C2::ExprResult C2Sema::ActOnMemberExpr(Expr* Base, Expr* member) {
@@ -877,8 +966,8 @@ C2::ExprResult C2Sema::ActOnMemberExpr(Expr* Base, Expr* member) {
     std::cerr << COL_SEMA << "SEMA: member access" << I->getName();
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    MEM_ADD(MemberExpr);
-    return ExprResult(new MemberExpr(Base, I));
+    MEM_EXPR(EXPR_MEMBER);
+    return ExprResult(new (Context) MemberExpr(Base, I));
 }
 
 C2::ExprResult C2Sema::ActOnPostfixUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Expr* Input) {
@@ -900,8 +989,8 @@ C2::ExprResult C2Sema::ActOnPostfixUnaryOp(SourceLocation OpLoc, tok::TokenKind 
     if (Result.isInvalid()) return ExprError();
     Input = Result.take();
 #endif
-    MEM_ADD(UnaryOperator);
-    return ExprResult(new UnaryOperator(OpLoc, Opc, Input));
+    MEM_EXPR(EXPR_UNARYOP);
+    return ExprResult(new (Context) UnaryOperator(OpLoc, Opc, Input));
 }
 
 C2::ExprResult C2Sema::ActOnUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Expr* Input) {
@@ -912,8 +1001,8 @@ C2::ExprResult C2Sema::ActOnUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, E
     std::cerr << ANSI_NORMAL"\n";
 #endif
     UnaryOperatorKind Opc = ConvertTokenKindToUnaryOpcode(Kind);
-    MEM_ADD(UnaryOperator);
-    return ExprResult(new UnaryOperator(OpLoc, Opc, Input));
+    MEM_EXPR(EXPR_UNARYOP);
+    return ExprResult(new (Context) UnaryOperator(OpLoc, Opc, Input));
 }
 
 C2::ExprResult C2Sema::ActOnBitOffset(SourceLocation colLoc, Expr* LHS, Expr* RHS) {
@@ -924,8 +1013,8 @@ C2::ExprResult C2Sema::ActOnBitOffset(SourceLocation colLoc, Expr* LHS, Expr* RH
     colLoc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    MEM_ADD(BitOffsetExpr);
-    return ExprResult(new BitOffsetExpr(LHS, RHS, colLoc));
+    MEM_EXPR(EXPR_BITOFFSET);
+    return ExprResult(new (Context) BitOffsetExpr(LHS, RHS, colLoc));
 }
 
 C2::ExprResult C2Sema::ActOnExplicitCast(SourceLocation castLoc, Expr* type, Expr* expr) {
@@ -941,9 +1030,9 @@ C2::ExprResult C2Sema::ActOnExplicitCast(SourceLocation castLoc, Expr* type, Exp
         // TODO correct error message: cannot use keyword local with cast type
         Diag(castLoc, diag::err_invalid_local_typedef);
     }
-    MEM_ADD(ExplicitCastExpr);
-    ExplicitCastExpr* E = new ExplicitCastExpr(castLoc, typeExpr->getType(), expr);
-    delete typeExpr;
+    MEM_EXPR(EXPR_CAST);
+    ExplicitCastExpr* E = new (Context) ExplicitCastExpr(castLoc, typeExpr->getType(), expr);
+    Context.freeTypeExpr(typeExpr);
     return ExprResult(E);
 }
 
@@ -992,7 +1081,7 @@ void C2Sema::ActOnAttr(Decl* D, const char* name, SourceRange range, Expr* arg) 
 
     D->setHasAttributes();
     MEM_ADD(Attr);
-    ast.addAttribute(D, new Attr(kind, range, arg));
+    ast.addAttribute(D, new (Context) Attr(kind, range, arg));
 
     // Fixup opaque structs; members are not public!
     if (kind == ATTR_OPAQUE && isa<StructTypeDecl>(D)) {
@@ -1008,16 +1097,16 @@ C2::ExprResult C2Sema::ActOnIntegerConstant(SourceLocation Loc, uint64_t Val) {
     // NOTE: always 64 bits?
     llvm::APInt ResultValue(64, Val, true);
     unsigned radix = 10;
-    MEM_ADD(IntegerLiteral);
-    return ExprResult(new IntegerLiteral(Loc, ResultValue, radix));
+    MEM_EXPR(EXPR_INTEGER_LITERAL);
+    return ExprResult(new (Context) IntegerLiteral(Loc, ResultValue, radix));
 }
 
 C2::ExprResult C2Sema::ActOnBooleanConstant(const Token& Tok) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA << "SEMA: boolean constant" << ANSI_NORMAL"\n";
 #endif
-    MEM_ADD(BooleanLiteral);
-    return ExprResult(new BooleanLiteral(Tok.getLocation(), Tok.is(tok::kw_true)));
+    MEM_EXPR(EXPR_BOOL_LITERAL);
+    return ExprResult(new (Context) BooleanLiteral(Tok.getLocation(), Tok.is(tok::kw_true)));
 }
 
 C2::ExprResult C2Sema::ActOnNumericConstant(const Token& Tok) {
@@ -1084,8 +1173,8 @@ C2::ExprResult C2Sema::ActOnNumericConstant(const Token& Tok) {
 
         //bool isExact = (result == APFloat::opOK);
         //return FloatingLiteral::Create(S.Context, Val, isExact, Ty, Loc);
-        MEM_ADD(FloatingLiteral);
-        Res = new FloatingLiteral(Tok.getLocation(), Val);
+        MEM_EXPR(EXPR_FLOAT_LITERAL);
+        Res = new (Context) FloatingLiteral(Tok.getLocation(), Val);
 
     } else if (!Literal.isIntegerLiteral()) {
         return ExprError();
@@ -1146,8 +1235,8 @@ C2::ExprResult C2Sema::ActOnNumericConstant(const Token& Tok) {
 #endif
         }
 
-        MEM_ADD(IntegerLiteral);
-        Res = new IntegerLiteral(Tok.getLocation(), ResultVal, Literal.getRadix());
+        MEM_EXPR(EXPR_INTEGER_LITERAL);
+        Res = new (Context) IntegerLiteral(Tok.getLocation(), ResultVal, Literal.getRadix());
     }
     return ExprResult(Res);
 }
@@ -1161,8 +1250,8 @@ C2::ExprResult C2Sema::ActOnStringLiteral(ArrayRef<Token> StringToks) {
     if (Literal.hadError) return ExprError();
 
     llvm::StringRef ref = Literal.GetString();
-    MEM_ADD(StringLiteral);
-    return ExprResult(new StringLiteral(StringToks[0].getLocation(), ref.data()));
+    MEM_EXPR(EXPR_STRING_LITERAL);
+    return ExprResult(new (Context) StringLiteral(StringToks[0].getLocation(), ref.data()));
 }
 
 C2::ExprResult C2Sema::ActOnCharacterConstant(const Token& Tok) {
@@ -1181,8 +1270,8 @@ C2::ExprResult C2Sema::ActOnCharacterConstant(const Token& Tok) {
     if (Literal.hadError())
         return ExprError();
 
-    MEM_ADD(CharacterLiteral);
-    return ExprResult(new CharacterLiteral(Tok.getLocation(), Literal.getValue()));
+    MEM_EXPR(EXPR_CHAR_LITERAL);
+    return ExprResult(new (Context) CharacterLiteral(Tok.getLocation(), Literal.getValue()));
 }
 
 DiagnosticBuilder C2Sema::Diag(SourceLocation Loc, unsigned DiagID) {

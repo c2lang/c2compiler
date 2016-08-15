@@ -129,7 +129,7 @@ const int32 AaaNumPieces = elemsof(aaa_pieces);
 const int32 AaaNumOptions = 8;
 
 
-func AaaCoor aaa_coor_rotate(AaaCoor input, uint32 rotation) {
+func AaaCoor aaa_coor_rotate(AaaCoor input, uint32 rotation) @(unused) {
     int8 x = input.x;
     int8 y = input.y;
     int8 t;
@@ -517,7 +517,7 @@ const int32 BbbNumPieces = elemsof(bbb_pieces);
 const int32 BbbNumOptions = 8;
 
 
-func BbbCoor bbb_coor_rotate(BbbCoor input, uint32 rotation) {
+func BbbCoor bbb_coor_rotate(BbbCoor input, uint32 rotation) @(unused) {
     int8 x = input.x;
     int8 y = input.y;
     int8 t;
@@ -905,7 +905,7 @@ const int32 CccNumPieces = elemsof(ccc_pieces);
 const int32 CccNumOptions = 8;
 
 
-func CccCoor ccc_coor_rotate(CccCoor input, uint32 rotation) {
+func CccCoor ccc_coor_rotate(CccCoor input, uint32 rotation) @(unused) {
     int8 x = input.x;
     int8 y = input.y;
     int8 t;
@@ -1293,7 +1293,7 @@ const int32 DddNumPieces = elemsof(ddd_pieces);
 const int32 DddNumOptions = 8;
 
 
-func DddCoor ddd_coor_rotate(DddCoor input, uint32 rotation) {
+func DddCoor ddd_coor_rotate(DddCoor input, uint32 rotation) @(unused) {
     int8 x = input.x;
     int8 y = input.y;
     int8 t;
@@ -1681,7 +1681,7 @@ const int32 EeeNumPieces = elemsof(eee_pieces);
 const int32 EeeNumOptions = 8;
 
 
-func EeeCoor eee_coor_rotate(EeeCoor input, uint32 rotation) {
+func EeeCoor eee_coor_rotate(EeeCoor input, uint32 rotation) @(unused) {
     int8 x = input.x;
     int8 y = input.y;
     int8 t;
@@ -2069,7 +2069,7 @@ const int32 FffNumPieces = elemsof(fff_pieces);
 const int32 FffNumOptions = 8;
 
 
-func FffCoor fff_coor_rotate(FffCoor input, uint32 rotation) {
+func FffCoor fff_coor_rotate(FffCoor input, uint32 rotation) @(unused) {
     int8 x = input.x;
     int8 y = input.y;
     int8 t;
@@ -2457,7 +2457,7 @@ const int32 GggNumPieces = elemsof(ggg_pieces);
 const int32 GggNumOptions = 8;
 
 
-func GggCoor ggg_coor_rotate(GggCoor input, uint32 rotation) {
+func GggCoor ggg_coor_rotate(GggCoor input, uint32 rotation) @(unused) {
     int8 x = input.x;
     int8 y = input.y;
     int8 t;
@@ -2845,7 +2845,7 @@ const int32 HhhNumPieces = elemsof(hhh_pieces);
 const int32 HhhNumOptions = 8;
 
 
-func HhhCoor hhh_coor_rotate(HhhCoor input, uint32 rotation) {
+func HhhCoor hhh_coor_rotate(HhhCoor input, uint32 rotation) @(unused) {
     int8 x = input.x;
     int8 y = input.y;
     int8 t;
@@ -3234,7 +3234,7 @@ const int32 IiiNumPieces = elemsof(iii_pieces);
 const int32 IiiNumOptions = 8;
 
 
-func IiiCoor iii_coor_rotate(IiiCoor input, uint32 rotation) {
+func IiiCoor iii_coor_rotate(IiiCoor input, uint32 rotation) @(unused) {
     int8 x = input.x;
     int8 y = input.y;
     int8 t;
@@ -3622,7 +3622,7 @@ const int32 JjjNumPieces = elemsof(jjj_pieces);
 const int32 JjjNumOptions = 8;
 
 
-func JjjCoor jjj_coor_rotate(JjjCoor input, uint32 rotation) {
+func JjjCoor jjj_coor_rotate(JjjCoor input, uint32 rotation) @(unused) {
     int8 x = input.x;
     int8 y = input.y;
     int8 t;
@@ -4010,7 +4010,7 @@ const int32 KkkNumPieces = elemsof(kkk_pieces);
 const int32 KkkNumOptions = 8;
 
 
-func KkkCoor kkk_coor_rotate(KkkCoor input, uint32 rotation) {
+func KkkCoor kkk_coor_rotate(KkkCoor input, uint32 rotation) @(unused) {
     int8 x = input.x;
     int8 y = input.y;
     int8 t;
@@ -4398,7 +4398,7 @@ const int32 LllNumPieces = elemsof(lll_pieces);
 const int32 LllNumOptions = 8;
 
 
-func LllCoor lll_coor_rotate(LllCoor input, uint32 rotation) {
+func LllCoor lll_coor_rotate(LllCoor input, uint32 rotation) @(unused) {
     int8 x = input.x;
     int8 y = input.y;
     int8 t;
@@ -4786,7 +4786,7 @@ const int32 MmmNumPieces = elemsof(mmm_pieces);
 const int32 MmmNumOptions = 8;
 
 
-func MmmCoor mmm_coor_rotate(MmmCoor input, uint32 rotation) {
+func MmmCoor mmm_coor_rotate(MmmCoor input, uint32 rotation) @(unused) {
     int8 x = input.x;
     int8 y = input.y;
     int8 t;
@@ -5174,7 +5174,7 @@ const int32 NnnNumPieces = elemsof(nnn_pieces);
 const int32 NnnNumOptions = 8;
 
 
-func NnnCoor nnn_coor_rotate(NnnCoor input, uint32 rotation) {
+func NnnCoor nnn_coor_rotate(NnnCoor input, uint32 rotation) @(unused) {
     int8 x = input.x;
     int8 y = input.y;
     int8 t;
@@ -5562,7 +5562,7 @@ const int32 OooNumPieces = elemsof(ooo_pieces);
 const int32 OooNumOptions = 8;
 
 
-func OooCoor ooo_coor_rotate(OooCoor input, uint32 rotation) {
+func OooCoor ooo_coor_rotate(OooCoor input, uint32 rotation) @(unused) {
     int8 x = input.x;
     int8 y = input.y;
     int8 t;
@@ -5950,7 +5950,7 @@ const int32 PppNumPieces = elemsof(ppp_pieces);
 const int32 PppNumOptions = 8;
 
 
-func PppCoor ppp_coor_rotate(PppCoor input, uint32 rotation) {
+func PppCoor ppp_coor_rotate(PppCoor input, uint32 rotation) @(unused) {
     int8 x = input.x;
     int8 y = input.y;
     int8 t;
@@ -6338,7 +6338,7 @@ const int32 QqqNumPieces = elemsof(qqq_pieces);
 const int32 QqqNumOptions = 8;
 
 
-func QqqCoor qqq_coor_rotate(QqqCoor input, uint32 rotation) {
+func QqqCoor qqq_coor_rotate(QqqCoor input, uint32 rotation) @(unused) {
     int8 x = input.x;
     int8 y = input.y;
     int8 t;
@@ -6726,7 +6726,7 @@ const int32 RrrNumPieces = elemsof(rrr_pieces);
 const int32 RrrNumOptions = 8;
 
 
-func RrrCoor rrr_coor_rotate(RrrCoor input, uint32 rotation) {
+func RrrCoor rrr_coor_rotate(RrrCoor input, uint32 rotation) @(unused) {
     int8 x = input.x;
     int8 y = input.y;
     int8 t;
@@ -7114,7 +7114,7 @@ const int32 SssNumPieces = elemsof(sss_pieces);
 const int32 SssNumOptions = 8;
 
 
-func SssCoor sss_coor_rotate(SssCoor input, uint32 rotation) {
+func SssCoor sss_coor_rotate(SssCoor input, uint32 rotation) @(unused) {
     int8 x = input.x;
     int8 y = input.y;
     int8 t;
@@ -7502,7 +7502,7 @@ const int32 TttNumPieces = elemsof(ttt_pieces);
 const int32 TttNumOptions = 8;
 
 
-func TttCoor ttt_coor_rotate(TttCoor input, uint32 rotation) {
+func TttCoor ttt_coor_rotate(TttCoor input, uint32 rotation) @(unused) {
     int8 x = input.x;
     int8 y = input.y;
     int8 t;
@@ -7890,7 +7890,7 @@ const int32 UuuNumPieces = elemsof(uuu_pieces);
 const int32 UuuNumOptions = 8;
 
 
-func UuuCoor uuu_coor_rotate(UuuCoor input, uint32 rotation) {
+func UuuCoor uuu_coor_rotate(UuuCoor input, uint32 rotation) @(unused) {
     int8 x = input.x;
     int8 y = input.y;
     int8 t;
@@ -8278,7 +8278,7 @@ const int32 VvvNumPieces = elemsof(vvv_pieces);
 const int32 VvvNumOptions = 8;
 
 
-func VvvCoor vvv_coor_rotate(VvvCoor input, uint32 rotation) {
+func VvvCoor vvv_coor_rotate(VvvCoor input, uint32 rotation) @(unused) {
     int8 x = input.x;
     int8 y = input.y;
     int8 t;
@@ -8666,7 +8666,7 @@ const int32 WwwNumPieces = elemsof(www_pieces);
 const int32 WwwNumOptions = 8;
 
 
-func WwwCoor www_coor_rotate(WwwCoor input, uint32 rotation) {
+func WwwCoor www_coor_rotate(WwwCoor input, uint32 rotation) @(unused) {
     int8 x = input.x;
     int8 y = input.y;
     int8 t;
@@ -9054,7 +9054,7 @@ const int32 XxxNumPieces = elemsof(xxx_pieces);
 const int32 XxxNumOptions = 8;
 
 
-func XxxCoor xxx_coor_rotate(XxxCoor input, uint32 rotation) {
+func XxxCoor xxx_coor_rotate(XxxCoor input, uint32 rotation) @(unused) {
     int8 x = input.x;
     int8 y = input.y;
     int8 t;
@@ -9442,7 +9442,7 @@ const int32 YyyNumPieces = elemsof(yyy_pieces);
 const int32 YyyNumOptions = 8;
 
 
-func YyyCoor yyy_coor_rotate(YyyCoor input, uint32 rotation) {
+func YyyCoor yyy_coor_rotate(YyyCoor input, uint32 rotation) @(unused) {
     int8 x = input.x;
     int8 y = input.y;
     int8 t;
@@ -9830,7 +9830,7 @@ const int32 ZzzNumPieces = elemsof(zzz_pieces);
 const int32 ZzzNumOptions = 8;
 
 
-func ZzzCoor zzz_coor_rotate(ZzzCoor input, uint32 rotation) {
+func ZzzCoor zzz_coor_rotate(ZzzCoor input, uint32 rotation) @(unused) {
     int8 x = input.x;
     int8 y = input.y;
     int8 t;

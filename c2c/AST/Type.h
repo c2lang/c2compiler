@@ -19,18 +19,15 @@
 #include <assert.h>
 #include <stddef.h>
 #include <vector>
-//#include <string>
 
 #include <llvm/ADT/APInt.h>
-#include <clang/Basic/SourceLocation.h>
-
-using clang::SourceLocation;
 
 #define QUAL_CONST      (0x1)
 #define QUAL_VOLATILE   (0x2)
 #define QUALS_MASK (0x3)
 
 //#define TYPE_DEBUG
+//#define TYPE_MEMSIZE
 
 namespace C2 {
 
@@ -45,6 +42,7 @@ class AliasTypeDecl;
 class TypeDecl;
 class ImportDecl;
 class Module;
+class ASTContext;
 
 
 class QualType {
@@ -116,8 +114,6 @@ public:
 private:
     void printQualifiers(StringBuilder& buffer) const;
 
-    //Type* type;
-    //unsigned qualifiers;
     uintptr_t Value;
 };
 
@@ -135,22 +131,31 @@ enum TypeClass {
 };
 
 
-class Type {
+class LLVM_ALIGNAS(LLVM_PTR_SIZE) Type {
 protected:
     Type(TypeClass tc, QualType canon)
-        : typeClass(tc)
-        , canonicalType(canon)
-    {}
-    virtual void printName(StringBuilder& buffer) const = 0;
-    virtual void debugPrint(StringBuilder& buffer) const = 0;
+        : canonicalType(canon)
+    {
+        typeBits.typeClass = tc;
+    }
+
+    void* operator new(size_t bytes) {
+        assert(0 && "Type cannot be allocated with regular 'new'");
+    }
+    void operator delete(void* data) {
+        assert(0 && "Type cannot be released with regular 'delete'");
+    }
+
+    void printName(StringBuilder& buffer) const;
+    void debugPrint(StringBuilder& buffer) const;
 #ifdef TYPE_DEBUG
     virtual void fullDebug(StringBuilder& buffer, int indent) const = 0;
 #endif
     QualType getCanonicalType() const { return canonicalType; }
 public:
-    virtual ~Type() {}
+    void* operator new(size_t bytes, const ASTContext& C, unsigned alignment = 8);
 
-    TypeClass getTypeClass() const { return typeClass; }
+    TypeClass getTypeClass() const { return static_cast<TypeClass>(typeBits.typeClass); }
     bool hasCanonicalType() const { return canonicalType.isValid(); }
     void setCanonicalType(QualType qt) const;
 
@@ -177,14 +182,40 @@ public:
     static QualType Float64();
     static QualType Bool();
     static QualType Void();
+protected:
+    class TypeBitfields {
+        friend class Type;
+
+        unsigned typeClass : 8;
+    };
+    enum { NumTypeBits = 8 };
+
+    class BuiltinTypeBits {
+        friend class BuiltinType;
+        unsigned : NumTypeBits;
+
+        unsigned kind : 8;
+    };
+
+    class ArrayTypeBits {
+        friend class ArrayType;
+        unsigned : NumTypeBits;
+
+        unsigned hasSize : 1;
+        unsigned incremental : 1;
+    };
+
+    union {
+        TypeBitfields typeBits;
+        BuiltinTypeBits builtinTypeBits;
+        ArrayTypeBits arrayTypeBits;
+    };
 private:
     friend class QualType;
-
-    TypeClass typeClass;
     mutable QualType canonicalType; // can set during analysis/parsing
 
     Type(const Type&);
-    void operator=(const Type&);
+    Type& operator=(const Type&);
 };
 
 
@@ -207,16 +238,17 @@ public:
 
     BuiltinType(Kind k)
         : Type(TC_BUILTIN, QualType(this))
-        , kind(k)
-    {}
+    {
+        builtinTypeBits.kind = k;
+    }
     static bool classof(const Type* T) { return T->getTypeClass() == TC_BUILTIN; }
     static BuiltinType* get(Kind k);
 
-    Kind getKind() const { return kind; }
+    Kind getKind() const { return static_cast<Kind>(builtinTypeBits.kind); }
     unsigned getWidth() const;
     unsigned getIntegerWidth() const;
     unsigned getAlignment() const {
-        switch (kind) {
+        switch (getKind()) {
             case Int8:      return 1;
             case Int16:     return 2;
             case Int32:     return 4;
@@ -239,9 +271,9 @@ public:
     bool isSignedInteger() const;
     bool isUnsignedInteger() const;
     bool isFloatingPoint() const;
-    bool isVoid() const { return kind == Void; }
+    bool isVoid() const { return getKind() == Void; }
     bool isPromotableIntegerType() const {
-        switch (kind) {
+        switch (getKind()) {
             case Int8:      return true;
             case Int16:     return true;
             case Int32:     return false;
@@ -258,14 +290,12 @@ public:
         return false;       // to satisfy compiler
     }
 
+    void printName(StringBuilder& buffer) const;
+    void debugPrint(StringBuilder& buffer) const;
 protected:
-    virtual void printName(StringBuilder& buffer) const;
-    virtual void debugPrint(StringBuilder& buffer) const;
 #ifdef TYPE_DEBUG
     virtual void fullDebug(StringBuilder& buffer, int indent) const;
 #endif
-private:
-    Kind kind;
 };
 
 
@@ -279,9 +309,9 @@ public:
 
     QualType getPointeeType() const { return PointeeType; }
 
+    void printName(StringBuilder& buffer) const;
+    void debugPrint(StringBuilder& buffer) const;
 protected:
-    virtual void printName(StringBuilder& buffer) const;
-    virtual void debugPrint(StringBuilder& buffer) const;
 #ifdef TYPE_DEBUG
     virtual void fullDebug(StringBuilder& buffer, int indent) const;
 #endif
@@ -292,26 +322,26 @@ private:
 
 class ArrayType : public Type {
 public:
-    ArrayType(QualType et, Expr* size, bool ownSize_, bool isIncremental_)
+    ArrayType(QualType et, Expr* size, bool isIncremental_)
         : Type(TC_ARRAY, QualType())
         , ElementType(et)
         , sizeExpr(size)
         , Size(32, 0, false)
-        , hasSize(false)
-        , ownSizeExpr(ownSize_)
-        , incremental(isIncremental_)
-    {}
-    virtual ~ArrayType();
+    {
+        arrayTypeBits.hasSize = 0;
+        arrayTypeBits.incremental = isIncremental_;
+    }
     static bool classof(const Type* T) { return T->getTypeClass() == TC_ARRAY; }
 
     QualType getElementType() const { return ElementType; }
-    bool isIncremental() const { return incremental; }
+    bool isIncremental() const { return arrayTypeBits.incremental; }
     Expr* getSizeExpr() const { return sizeExpr; }
     const llvm::APInt& getSize() const { return Size; }
     void setSize(const llvm::APInt& value);
+
+    void printName(StringBuilder& buffer) const;
+    void debugPrint(StringBuilder& buffer) const;
 protected:
-    virtual void printName(StringBuilder& buffer) const;
-    virtual void debugPrint(StringBuilder& buffer) const;
 #ifdef TYPE_DEBUG
     virtual void fullDebug(StringBuilder& buffer, int indent) const;
 #endif
@@ -319,9 +349,6 @@ private:
     QualType ElementType;
     Expr* sizeExpr;
     llvm::APInt Size;
-    bool hasSize;
-    bool ownSizeExpr;
-    bool incremental;
 };
 
 
@@ -333,7 +360,6 @@ public:
         , moduleName(moduleName_)
         , typeName(typeName_)
     {}
-    virtual ~UnresolvedType();
     static bool classof(const Type* T) { return T->getTypeClass() == TC_UNRESOLVED; }
 
     IdentifierExpr* getModuleName() const { return moduleName; }
@@ -342,9 +368,10 @@ public:
     TypeDecl* getDecl() const;
 
     void printLiteral(StringBuilder& output) const;
+
+    void printName(StringBuilder& buffer) const;
+    void debugPrint(StringBuilder& buffer) const;
 protected:
-    virtual void printName(StringBuilder& buffer) const;
-    virtual void debugPrint(StringBuilder& buffer) const;
 #ifdef TYPE_DEBUG
     virtual void fullDebug(StringBuilder& buffer, int indent) const;
 #endif
@@ -368,9 +395,10 @@ public:
     AliasTypeDecl* getDecl() const { return decl; }
     QualType getRefType() const { return refType; }
     void updateRefType(QualType ref) { refType = ref; }
+
+    void printName(StringBuilder& buffer) const;
+    void debugPrint(StringBuilder& buffer) const;
 protected:
-    virtual void printName(StringBuilder& buffer) const;
-    virtual void debugPrint(StringBuilder& buffer) const;
 #ifdef TYPE_DEBUG
     virtual void fullDebug(StringBuilder& buffer, int indent) const;
 #endif
@@ -390,9 +418,10 @@ public:
 
     void setDecl(StructTypeDecl* decl_) { decl = decl_; }
     StructTypeDecl* getDecl() const { return decl; }
+
+    void printName(StringBuilder& buffer) const;
+    void debugPrint(StringBuilder& buffer) const;
 protected:
-    virtual void printName(StringBuilder& buffer) const;
-    virtual void debugPrint(StringBuilder& buffer) const;
 #ifdef TYPE_DEBUG
     virtual void fullDebug(StringBuilder& buffer, int indent) const;
 #endif
@@ -411,9 +440,10 @@ public:
 
     void setDecl(EnumTypeDecl* decl_) { decl = decl_; }
     EnumTypeDecl* getDecl() const { return decl; }
+
+    void printName(StringBuilder& buffer) const;
+    void debugPrint(StringBuilder& buffer) const;
 protected:
-    virtual void printName(StringBuilder& buffer) const;
-    virtual void debugPrint(StringBuilder& buffer) const;
 #ifdef TYPE_DEBUG
     virtual void fullDebug(StringBuilder& buffer, int indent) const;
 #endif
@@ -430,9 +460,10 @@ public:
     {}
     static bool classof(const Type* T) { return T->getTypeClass() == TC_FUNCTION; }
     FunctionDecl* getDecl() const { return func; }
+
+    void printName(StringBuilder& buffer) const;
+    void debugPrint(StringBuilder& buffer) const;
 protected:
-    virtual void printName(StringBuilder& buffer) const;
-    virtual void debugPrint(StringBuilder& buffer) const;
 #ifdef TYPE_DEBUG
     virtual void fullDebug(StringBuilder& buffer, int indent) const;
 #endif
@@ -451,9 +482,10 @@ public:
 
     ImportDecl* getDecl() const { return decl; }
     const Module* getModule() const;
+
+    void printName(StringBuilder& buffer) const;
+    void debugPrint(StringBuilder& buffer) const;
 protected:
-    virtual void printName(StringBuilder& buffer) const;
-    virtual void debugPrint(StringBuilder& buffer) const;
 #ifdef TYPE_DEBUG
     virtual void fullDebug(StringBuilder& buffer, int indent) const;
 #endif
@@ -520,26 +552,6 @@ inline bool Type::isSubscriptable() const {
     assert(canonicalType.isValid());
     return isa<PointerType>(canonicalType) || isa<ArrayType>(canonicalType);
 }
-
-class TypeContext {
-public:
-    TypeContext();
-    ~TypeContext();
-
-    QualType getPointerType(QualType ref);
-    QualType getArrayType(QualType element, Expr* size, bool ownSize, bool isIncremental);
-    QualType getUnresolvedType(IdentifierExpr* moduleName, IdentifierExpr* typeName);
-    QualType getAliasType(AliasTypeDecl* A, QualType ref);
-    QualType getStructType();
-    QualType getEnumType();
-    QualType getFunctionType(FunctionDecl* F);
-    QualType getModuleType(ImportDecl* D);
-private:
-    QualType add(Type* T);
-
-    typedef std::vector<Type*> Types;
-    Types types;
-};
 
 }
 

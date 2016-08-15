@@ -21,10 +21,11 @@
 namespace C2 {
 
 class Module;
+class ASTContext;
 
 class C2ModuleLoader {
 public:
-    static void load(Module* c2mod);
+    static void load(Module* c2mod, ASTContext& Context);
 };
 
 }

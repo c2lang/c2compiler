@@ -21,6 +21,7 @@
 
 #include "Builder/LibraryLoader.h"
 #include "AST/Module.h"
+#include "AST/ASTContext.h"
 #include "AST/Component.h"
 
 namespace clang {
@@ -118,6 +119,7 @@ private:
     const Recipe& recipe;
     BuildOptions options;
 
+    ASTContext Context;
     Modules modules;
     Module*  c2Mod;
 

@@ -24,7 +24,6 @@
 #include <clang/Basic/SourceLocation.h>
 #include <clang/AST/OperationKinds.h>
 
-#include "AST/OwningVector.h"
 #include "AST/Stmt.h"
 #include "AST/Type.h"
 
@@ -65,8 +64,7 @@ enum ExprCTC {
 
 class Expr : public Stmt {
 public:
-    Expr(ExprKind k, bool isConstant_);
-    ~Expr();
+    Expr(ExprKind k, clang::SourceLocation loc_, bool isConstant_);
     // from Stmt
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_EXPR;
@@ -103,6 +101,9 @@ public:
         return static_cast<BuiltinType::Kind>(exprBits.ImpCast);
     }
 
+protected:
+    // NOTE: store here, because on 64-bit systems, these 4 bytes are wasted
+    clang::SourceLocation exprLoc;
 private:
     QualType QT;
 
@@ -123,10 +124,9 @@ private:
     };
 public:
     IntegerLiteral(SourceLocation loc_, const llvm::APInt& V, unsigned radix = 10)
-        : Expr(EXPR_INTEGER_LITERAL, true)
-        , Value(V), loc(loc_)
+        : Expr(EXPR_INTEGER_LITERAL, loc_, true)
+        , Value(V)
     {
-
         setCTC(CTC_FULL);
         Radix r = RADIX_10;
         switch (radix) {
@@ -152,7 +152,6 @@ public:
         return E->getKind() == EXPR_INTEGER_LITERAL;
     }
     void print(StringBuilder& buffer, unsigned indent) const;
-    SourceLocation getLocation() const { return loc; }
 
     void printLiteral(StringBuilder& buffer) const;
     unsigned getRadix() const {
@@ -166,16 +165,14 @@ public:
     }
 
     llvm::APInt Value;
-private:
-    clang::SourceLocation loc;
 };
 
 
 class FloatingLiteral : public Expr {
 public:
     FloatingLiteral(SourceLocation loc_, const llvm::APFloat& V)
-        : Expr(EXPR_FLOAT_LITERAL, true)
-        , Value(V), loc(loc_)
+        : Expr(EXPR_FLOAT_LITERAL, loc_, true)
+        , Value(V)
     {
         setCTC(CTC_FULL);
     }
@@ -183,18 +180,15 @@ public:
         return E->getKind() == EXPR_FLOAT_LITERAL;
     }
     void print(StringBuilder& buffer, unsigned indent) const;
-    SourceLocation getLocation() const { return loc; }
 
     llvm::APFloat Value;
-    clang::SourceLocation loc;
 };
 
 
 class BooleanLiteral : public Expr {
 public:
     BooleanLiteral(SourceLocation loc_, bool val)
-        : Expr(EXPR_BOOL_LITERAL, true)
-        , loc(loc_)
+        : Expr(EXPR_BOOL_LITERAL, loc_, true)
     {
         booleanLiteralBits.Value = val;
         setCTC(CTC_FULL);
@@ -203,18 +197,15 @@ public:
         return E->getKind() == EXPR_BOOL_LITERAL;
     }
     void print(StringBuilder& buffer, unsigned indent) const;
-    SourceLocation getLocation() const { return loc; }
     bool getValue() const { return booleanLiteralBits.Value; }
-
-    clang::SourceLocation loc;
 };
 
 
 class CharacterLiteral : public Expr {
 public:
     CharacterLiteral(SourceLocation loc_, unsigned val)
-        : Expr(EXPR_CHAR_LITERAL, true)
-        , value(val), loc(loc_)
+        : Expr(EXPR_CHAR_LITERAL, loc_, true)
+        , value(val)
     {
         setCTC(CTC_FULL);
     }
@@ -222,48 +213,40 @@ public:
         return E->getKind() == EXPR_CHAR_LITERAL;
     }
     void print(StringBuilder& buffer, unsigned indent) const;
-    SourceLocation getLocation() const { return loc; }
 
     unsigned getValue() const { return value; }
     void printLiteral(StringBuilder& buffer) const;
 private:
     unsigned value;
-    clang::SourceLocation loc;
 };
 
 
 class StringLiteral : public Expr {
 public:
     StringLiteral(SourceLocation loc_, const std::string& val)
-        : Expr(EXPR_STRING_LITERAL, true)
-        , value(val), loc(loc_)
+        : Expr(EXPR_STRING_LITERAL, loc_, true)
+        , value(val)
     {}
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_STRING_LITERAL;
     }
     void print(StringBuilder& buffer, unsigned indent) const;
     void printLiteral(StringBuilder& buffer) const;
-    SourceLocation getLocation() const { return loc; }
     int getByteLength() const { return value.size(); }
 
     std::string value;
-    clang::SourceLocation loc;
 };
 
 
 class NilExpr : public Expr {
 public:
     NilExpr(SourceLocation loc_)
-        : Expr(EXPR_NIL, true)
-        , loc(loc_)
+        : Expr(EXPR_NIL, loc_, true)
     {}
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_NIL;
     }
     void print(StringBuilder& buffer, unsigned indent) const;
-    SourceLocation getLocation() const { return loc; }
-
-    clang::SourceLocation loc;
 };
 
 
@@ -271,8 +254,8 @@ public:
 class IdentifierExpr : public Expr {
 public:
     IdentifierExpr(SourceLocation loc_, const std::string& name_)
-        : Expr(EXPR_IDENTIFIER, false)
-        , name(name_), loc(loc_), decl(0)
+        : Expr(EXPR_IDENTIFIER, loc_, false)
+        , name(name_), decl(0)
     {
         identifierExprBits.IsType = 0;
         identifierExprBits.IsStructFunction = 0;
@@ -288,7 +271,6 @@ public:
 
     void print(StringBuilder& buffer, unsigned indent) const;
     void printLiteral(StringBuilder& buffer) const;
-    SourceLocation getLocation() const { return loc; }
 
     const std::string& getName() const;
     void setDecl(Decl* decl_) {
@@ -299,7 +281,6 @@ public:
 
 private:
     std::string name;
-    clang::SourceLocation loc;
     Decl* decl;   // set during analysis
 };
 
@@ -307,7 +288,7 @@ private:
 class TypeExpr : public Expr {
 public:
     TypeExpr(QualType QT_)
-        : Expr(EXPR_TYPE, true)
+        : Expr(EXPR_TYPE, SourceLocation(), true)
     {
         typeExprBits.IsLocal = 0;
         setType(QT_);
@@ -324,20 +305,18 @@ public:
 class CallExpr : public Expr {
 public:
     CallExpr(Expr* Fn_, SourceLocation rparenLoc_)
-        : Expr(EXPR_CALL, false)
-        , rparenLoc(rparenLoc_)
+        : Expr(EXPR_CALL, rparenLoc_, false)
         , Fn(Fn_)
     {
         callExprBits.IsStructFunc = 0;
     }
-    ~CallExpr();
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_CALL;
     }
     void print(StringBuilder& buffer, unsigned indent) const;
     SourceLocation getLocation() const { return Fn->getLocation(); }
     SourceLocation getLocStart() const { return Fn->getLocStart(); }
-    SourceLocation getLocEnd() const { return rparenLoc; }
+    SourceLocation getLocEnd() const { return exprLoc; }
 
     void addArg(Expr* arg);
 
@@ -348,17 +327,14 @@ public:
     void setIsStructFunction() { callExprBits.IsStructFunc = true; }
     bool isStructFunction() const { return callExprBits.IsStructFunc; }
 private:
-    SourceLocation rparenLoc;
     Expr* Fn;
-    typedef OwningVector<Expr> Args;
-    Args args;
+    ExprList args;
 };
 
 
 class InitListExpr : public Expr {
 public:
     InitListExpr(SourceLocation lbraceLoc, SourceLocation rbraceLoc, ExprList& values_);
-    ~InitListExpr();
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_INITLIST;
     }
@@ -387,19 +363,17 @@ public:
         FIELD_DESIGNATOR,
     } DesignatorKind;
     DesignatedInitExpr(SourceLocation left, Expr* d, Expr* i)
-        : Expr(EXPR_DESIGNATOR_INIT, false)
-        , SquareOrNameLoc(left)
+        : Expr(EXPR_DESIGNATOR_INIT, left, false)
         , initValue(i)
         , designator(d)
         , index(64, false)
         //, member(0)
     {
-        index = llvm::APInt(64, -1, true);
         designatedInitExprBits.DesignatorKind = ARRAY_DESIGNATOR;
+        index = llvm::APInt(64, -1, true);
     }
     DesignatedInitExpr(SourceLocation left, const char* name, Expr* i)
-        : Expr(EXPR_DESIGNATOR_INIT, false)
-        , SquareOrNameLoc(left)
+        : Expr(EXPR_DESIGNATOR_INIT, left, false)
         , initValue(i)
         , designator(0)
         , index(64, false)
@@ -408,13 +382,11 @@ public:
     {
         designatedInitExprBits.DesignatorKind = FIELD_DESIGNATOR;
     }
-    ~DesignatedInitExpr();
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_DESIGNATOR_INIT;
     }
     void print(StringBuilder& buffer, unsigned indent) const;
-    SourceLocation getLocation() const { return SquareOrNameLoc; }
-    SourceLocation getLocStart() const { return SquareOrNameLoc; }
+    SourceLocation getLocStart() const { return exprLoc; }
     SourceLocation getLocEnd() const { return initValue->getLocEnd(); }
 
     Expr* getInitValue() const { return initValue; }
@@ -428,7 +400,6 @@ public:
     // for Field designator
     const std::string& getField() const { return field; }
 private:
-    SourceLocation SquareOrNameLoc;
     Expr* initValue;
 
     // Array designator
@@ -442,26 +413,22 @@ private:
 class BinaryOperator : public Expr {
 public:
     typedef clang::BinaryOperatorKind Opcode;
-    static const char* OpCode2str(clang::BinaryOperatorKind opc);
+    static const char* OpCode2str(clang::BinaryOperatorKind opc_);
 
-    BinaryOperator(Expr* lhs, Expr* rhs, Opcode opc, SourceLocation opLoc);
-    ~BinaryOperator();
+    BinaryOperator(Expr* lhs, Expr* rhs, Opcode opc_, SourceLocation opLoc_);
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_BINOP;
     }
     void print(StringBuilder& buffer, unsigned indent) const;
-    SourceLocation getLocation() const { return opLoc; }
     SourceLocation getLocStart() const { return lhs->getLocStart(); }
     SourceLocation getLocEnd() const { return rhs->getLocEnd(); }
 
     Expr* getLHS() const { return lhs; }
     Expr* getRHS() const { return rhs; }
-    Opcode getOpcode() const { return opc; }
+    Opcode getOpcode() const { return static_cast<Opcode>(binaryOperatorBits.opcode); }
 
     void printLiteral(StringBuilder& buffer) const;
 private:
-    SourceLocation opLoc;
-    Opcode opc;
     Expr* lhs;
     Expr* rhs;
 };
@@ -471,7 +438,6 @@ class ConditionalOperator : public Expr {
 public:
     ConditionalOperator(SourceLocation questionLoc, SourceLocation colonLoc,
                     Expr* cond_, Expr* lhs_, Expr* rhs_);
-    ~ConditionalOperator();
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_CONDOP;
     }
@@ -493,45 +459,41 @@ private:
 class UnaryOperator : public Expr {
 public:
     typedef clang::UnaryOperatorKind Opcode;
-    static const char* OpCode2str(clang::UnaryOperatorKind opc);
+    static const char* OpCode2str(clang::UnaryOperatorKind opc_);
 
     UnaryOperator(SourceLocation opLoc_, Opcode opc_, Expr* val_)
-        : Expr(EXPR_UNARYOP, false)
-        , opLoc(opLoc_)
-        , opc(opc_)
+        : Expr(EXPR_UNARYOP, opLoc_, false)
         , val(val_)
-    {}
-    ~UnaryOperator();
+    {
+        unaryOperatorBits.opcode = opc_;
+    }
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_UNARYOP;
     }
     void print(StringBuilder& buffer, unsigned indent) const;
-    SourceLocation getLocation() const { return opLoc; }
     SourceLocation getLocStart() const {
-        switch (opc) {
+        switch (getOpcode()) {
         case clang::UO_PostInc:
         case clang::UO_PostDec:
             return val->getLocStart();
         default:
-            return opLoc;
+            return exprLoc;
         }
     }
     SourceLocation getLocEnd() const {
-        switch (opc) {
+        switch (getOpcode()) {
         case clang::UO_PostInc:
         case clang::UO_PostDec:
-            return opLoc;
+            return exprLoc;
         default:
             return val->getLocEnd();
         }
     }
 
     Expr* getExpr() const { return val; }
-    Opcode getOpcode() const { return opc; }
-    SourceLocation getOpLoc() const { return opLoc; }
+    Opcode getOpcode() const { return static_cast<Opcode>(unaryOperatorBits.opcode); }
+    SourceLocation getOpLoc() const { return exprLoc; }
 private:
-    SourceLocation opLoc;
-    Opcode opc;
     Expr* val;
 };
 
@@ -539,25 +501,21 @@ private:
 // BuiltinExpr's are sizeof() and elemsof() expressions
 class BuiltinExpr : public Expr {
 public:
-    BuiltinExpr(SourceLocation Loc_, Expr* expr_, bool isSizeof_)
-        : Expr(EXPR_BUILTIN, true)
-        , Loc(Loc_)
+    BuiltinExpr(SourceLocation loc_, Expr* expr_, bool isSizeof_)
+        : Expr(EXPR_BUILTIN, loc_, true)
         , expr(expr_)
     {
         builtinExprBits.IsSizeOf = isSizeof_;
         setCTC(CTC_FULL);
     }
-    ~BuiltinExpr();
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_BUILTIN;
     }
     void print(StringBuilder& buffer, unsigned indent) const;
-    SourceLocation getLocation() const { return Loc; }
 
     Expr* getExpr() const { return expr; }
     bool isSizeof() const { return builtinExprBits.IsSizeOf; }
 private:
-    SourceLocation Loc;
     Expr* expr;
 };
 
@@ -566,24 +524,21 @@ private:
 class ArraySubscriptExpr : public Expr {
 public:
     ArraySubscriptExpr(SourceLocation RLoc_, Expr* Base_, Expr* Idx_)
-        : Expr(EXPR_ARRAYSUBSCRIPT, false)
-        , RLoc(RLoc_)
+        : Expr(EXPR_ARRAYSUBSCRIPT, RLoc_, false)
         , base(Base_)
         , idx(Idx_)
     {}
-    ~ArraySubscriptExpr();
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_ARRAYSUBSCRIPT;
     }
     void print(StringBuilder& buffer, unsigned indent) const;
     SourceLocation getLocation() const { return base->getLocation(); }
     SourceLocation getLocStart() const { return base->getLocStart(); }
-    SourceLocation getLocEnd() const { return RLoc; }
+    SourceLocation getLocEnd() const { return exprLoc; }
 
     Expr* getBase() const { return base; }
     Expr* getIndex() const { return idx; }
 private:
-    SourceLocation RLoc;
     Expr* base;
     Expr* idx;
 };
@@ -593,7 +548,7 @@ private:
 class MemberExpr : public Expr {
 public:
     MemberExpr(Expr* Base_, IdentifierExpr* member_)
-        : Expr(EXPR_MEMBER, false)
+        : Expr(EXPR_MEMBER, SourceLocation(), false)
         , Base(Base_)
         , member(member_)
         , decl(0)
@@ -602,7 +557,6 @@ public:
         memberExprBits.IsStructFunction = 0;
         memberExprBits.IsStaticStructFunction = 0;
     }
-    ~MemberExpr();
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_MEMBER;
     }
@@ -636,10 +590,9 @@ private:
 class ParenExpr : public Expr {
 public:
     ParenExpr(SourceLocation l, SourceLocation r, Expr* val)
-        : Expr(EXPR_PAREN, false)
+        : Expr(EXPR_PAREN, SourceLocation(), false)
         , L(l), R(r), Val(val)
     {}
-    ~ParenExpr();
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_PAREN;
     }
@@ -660,56 +613,49 @@ private:
 class BitOffsetExpr : public Expr {
 public:
     BitOffsetExpr(Expr* lhs_, Expr* rhs_, SourceLocation colLoc_)
-        : Expr(EXPR_BITOFFSET, false)
-        , colLoc(colLoc_)
+        : Expr(EXPR_BITOFFSET, colLoc_, false)
         , lhs(lhs_)
         , rhs(rhs_)
-        , width(0)
-    {}
-    ~BitOffsetExpr();
+    {
+        bitOffsetExprBits.width = 0;
+    }
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_BITOFFSET;
     }
     void print(StringBuilder& buffer, unsigned indent) const;
-    SourceLocation getLocation() const { return colLoc; }
     SourceLocation getLocStart() const { return lhs->getLocStart(); }
     SourceLocation getLocEnd() const { return rhs->getLocEnd(); }
 
     Expr* getLHS() const { return lhs; }
     Expr* getRHS() const { return rhs; }
-    unsigned char getWidth() const { return width; }
-    void setWidth(unsigned char width_) { width = width_; }
+    // NOTE: width is only valid if constant
+    unsigned char getWidth() const { return bitOffsetExprBits.width; }
+    void setWidth(unsigned char width_) { bitOffsetExprBits.width = width_; }
 
     void printLiteral(StringBuilder& buffer) const;
 private:
-    SourceLocation colLoc;
     Expr* lhs;
     Expr* rhs;
-    unsigned char width;    // only valid if constant
 };
 
 
 class ExplicitCastExpr : public Expr {
 public:
-    ExplicitCastExpr(SourceLocation loc, QualType type, Expr* expr_)
-        : Expr(EXPR_CAST, false)
-        , castLoc(loc)
+    ExplicitCastExpr(SourceLocation loc_, QualType type, Expr* expr_)
+        : Expr(EXPR_CAST, loc_, false)
         , destType(type)
         , inner(expr_)
     {}
-    ~ExplicitCastExpr();
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_CAST;
     }
     void print(StringBuilder& buffer, unsigned indent) const;
-    SourceLocation getLocation() const { return castLoc; }
     SourceLocation getLocEnd() const { return inner->getLocEnd(); }
 
     QualType getDestType() const { return destType; }
     void setDestType(QualType Q) { destType = Q; }
     Expr* getInner() const { return inner; }
 private:
-    SourceLocation castLoc;
     QualType destType;
     Expr* inner;
 };

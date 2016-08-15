@@ -381,7 +381,7 @@ int C2Builder::build() {
                         if (options.verbose) log(COL_VERBOSE, "generating module %s", name.c_str());
                         c2Mod = new Module("c2", true, false);
                         modules["c2"] = c2Mod;
-                        C2ModuleLoader::load(c2Mod);
+                        C2ModuleLoader::load(c2Mod, Context);
                         continue;
                     }
                     Module* M = libLoader.loadModule(name);
@@ -547,7 +547,7 @@ void C2Builder::printComponents() const {
     StringBuilder output;
     output.enableColor(true);
     for (unsigned i=0; i<components.size(); i++) {
-        components[i]->print(output);;
+        components[i]->print(output);
     }
     printf("%s\n", (const char*)output);
 }
@@ -649,7 +649,7 @@ void C2Builder::rewriterTest(SourceManager& SM, LangOptions& LangOpts) {
             for (unsigned i=0; i<count; i++) {
                 std::string temp = finder.locs[i].printToString(SM);
                 printf("loc %d -> %s\n", finder.locs[i].getRawEncoding(), temp.c_str());
-                PresumedLoc loc = SM.getPresumedLoc(finder.locs[i]);;
+                PresumedLoc loc = SM.getPresumedLoc(finder.locs[i]);
                 assert(!loc.isInvalid() && "Invalid location");
                 printf(" -> %s:%d:%d\n", loc.getFilename(), loc.getLine(), loc.getColumn());
                 std::pair<FileID, unsigned> Off = SM.getDecomposedExpansionLoc(finder.locs[i]);

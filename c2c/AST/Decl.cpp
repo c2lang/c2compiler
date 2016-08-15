@@ -19,6 +19,7 @@
 #include "AST/Stmt.h"
 #include "AST/Expr.h"
 #include "AST/Attr.h"
+#include "AST/ASTContext.h"
 #include "AST/Module.h"
 #include "Utils/color.h"
 #include "Utils/StringBuilder.h"
@@ -27,17 +28,11 @@
 using namespace C2;
 using namespace std;
 
-//#define DECL_DEBUG
-
-#ifdef DECL_DEBUG
-static int creationCount;
-static int deleteCount;
-#endif
 
 Decl::Decl(DeclKind k, const std::string& name_, SourceLocation loc_, QualType type_, bool is_public)
-    : name(name_)
-    , loc(loc_)
+    : loc(loc_)
     , type(type_)
+    , name(name_)
     , mod(0)
 {
     declBits.dKind = k;
@@ -46,17 +41,6 @@ Decl::Decl(DeclKind k, const std::string& name_, SourceLocation loc_, QualType t
     declBits.IsUsed = 0;
     declBits.IsUsedPublic = 0;
     declBits.HasAttributes = 0;
-#ifdef DECL_DEBUG
-    creationCount++;
-    fprintf(stderr, "[DECL] create %p  created %d deleted %d\n", this, creationCount, deleteCount);
-#endif
-}
-
-Decl::~Decl() {
-#ifdef DECL_DEBUG
-    deleteCount++;
-    fprintf(stderr, "[DECL] delete %p  created %d deleted %d\n", this, creationCount, deleteCount);
-#endif
 }
 
 void Decl::fullName(StringBuilder& output) const {
@@ -132,6 +116,10 @@ void Decl::print(StringBuilder& buffer, unsigned indent) const {
     }
 }
 
+void* Decl::operator new(size_t bytes, const C2::ASTContext& C, unsigned alignment) {
+    return ::operator new(bytes, C, alignment);
+}
+
 void Decl::dump() const {
     StringBuilder buffer;
     print(buffer, 0);
@@ -170,10 +158,6 @@ FunctionDecl::FunctionDecl(const std::string& name_, SourceLocation loc_,
 {
     functionDeclBits.IsVariadic = 0;
     functionDeclBits.HasDefaultArgs = 0;
-}
-
-FunctionDecl::~FunctionDecl() {
-    delete body;
 }
 
 void FunctionDecl::print(StringBuilder& buffer, unsigned indent) const {
@@ -234,10 +218,6 @@ VarDecl::VarDecl(VarDeclKind k_, const std::string& name_, SourceLocation loc_,
     varDeclBits.HasLocalQualifier = 0;
 }
 
-VarDecl::~VarDecl() {
-    delete initValue;
-}
-
 void VarDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_DECL);
@@ -262,12 +242,7 @@ EnumConstantDecl::EnumConstantDecl(const std::string& name_, SourceLocation loc_
     : Decl(DECL_ENUMVALUE, name_, loc_, type_, is_public)
     , InitVal(Init)
     , Val(64, false)
-{
-}
-
-EnumConstantDecl::~EnumConstantDecl() {
-    delete InitVal;
-}
+{}
 
 void EnumConstantDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
@@ -406,10 +381,6 @@ FunctionTypeDecl::FunctionTypeDecl(FunctionDecl* F)
 {
 }
 
-FunctionTypeDecl::~FunctionTypeDecl() {
-    delete func;
-}
-
 void FunctionTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_DECL);
@@ -423,13 +394,7 @@ ArrayValueDecl::ArrayValueDecl(const std::string& name_, SourceLocation loc_,
                                Expr* value_)
     : Decl(DECL_ARRAYVALUE, name_, loc_, QualType(), false)
     , value(value_)
-{
-    arrayValueDeclBits.OwnsExpr = 1;
-}
-
-ArrayValueDecl::~ArrayValueDecl() {
-    if (arrayValueDeclBits.OwnsExpr) delete value;
-}
+{}
 
 void ArrayValueDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
