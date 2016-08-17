@@ -16,7 +16,6 @@
 #ifndef AST_STMT_H
 #define AST_STMT_H
 
-#include <string>
 #include <vector>
 
 #include <clang/Basic/SourceLocation.h>
@@ -102,6 +101,7 @@ protected:
 
         unsigned IsType : 1;
         unsigned IsStructFunction : 1;
+        unsigned haveDecl : 1;
     };
 
     class CallExprBitfields {
@@ -405,10 +405,10 @@ public:
     void print(StringBuilder& buffer, unsigned indent) const;
     SourceLocation getLocation() const { return Loc; }
     Stmt* getSubStmt() const { return subStmt; }
-    const std::string& getName() const { return name; }
+    const char* getName() const { return name; }
 private:
     SourceLocation Loc;
-    std::string name;
+    const char* name;
     Stmt* subStmt;
 };
 
@@ -422,9 +422,9 @@ public:
 
     void print(StringBuilder& buffer, unsigned indent) const;
     SourceLocation getLocation() const { return GotoLoc; }
-    const std::string& getName() const { return name; }
+    const char* getName() const { return name; }
 private:
-    std::string name;
+    const char* name;
     SourceLocation GotoLoc;
     SourceLocation LabelLoc;
 };
@@ -459,7 +459,7 @@ public:
     void print(StringBuilder& buffer, unsigned indent) const;
     SourceLocation getLocation() const;
 
-    const std::string& getName() const;
+    const char* getName() const;
     VarDecl* getDecl() const { return decl; }
 private:
     VarDecl* decl;

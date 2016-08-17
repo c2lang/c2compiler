@@ -3,13 +3,12 @@
 
 #include <stdlib.h>
 #include <assert.h>
-#include <string.h>
-#include <stdio.h>  // for printf
 
 using namespace C2;
 
 void ASTContext::dump() const {
     BumpAlloc.PrintStats();
+    stringPool.PrintStats();
 }
 
 QualType ASTContext::getPointerType(QualType ref) {

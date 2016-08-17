@@ -149,7 +149,7 @@ void InterfaceGenerator::EmitExpr(const Expr* E) {
     case EXPR_STRING_LITERAL:
         {
             const StringLiteral* S = cast<StringLiteral>(E);
-            EmitStringLiteral(S->value);
+            EmitStringLiteral(S->getValue());
             return;
         }
     case EXPR_NIL:
@@ -427,7 +427,7 @@ void InterfaceGenerator::EmitStructType(const StructTypeDecl* S, unsigned indent
     } else {
         iface.indent(indent);
         iface << (S->isStruct() ? "struct" : "union");
-        if (S->getName() != "") {
+        if (!S->hasEmptyName()) {
             iface << ' ' << S->getName();
         }
     }
@@ -453,7 +453,7 @@ void InterfaceGenerator::EmitStructType(const StructTypeDecl* S, unsigned indent
     }
     iface.indent(indent);
     iface << '}';
-    if (S->getName() != "" && !S->isGlobal()) {
+    if (!S->hasEmptyName() && !S->isGlobal()) {
         iface << ' ';
         //EmitDecl(S);
     }

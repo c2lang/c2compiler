@@ -107,8 +107,7 @@ FunctionAnalyser::FunctionAnalyser(Scope& scope_,
     , isInterface(isInterface_)
     , inCallExpr(false)
     , structFunctionArg(0)
-{
-}
+{}
 
 void FunctionAnalyser::check(FunctionDecl* func) {
     // check argument inits
@@ -207,7 +206,7 @@ void FunctionAnalyser::checkFunction(FunctionDecl* func) {
         VarDecl* arg = func->getArg(i);
 
         if (no_unused_params) arg->setUsed();
-        if (arg->getName() != "") {
+        if (!arg->hasEmptyName()) {
             // check that argument names dont clash with globals
             if (!scope.checkScopedSymbol(arg)) {
                 continue;
@@ -1809,11 +1808,11 @@ Decl* FunctionAnalyser::analyseIdentifier(IdentifierExpr* id) {
     return D;
 }
 
-LabelDecl* FunctionAnalyser::LookupOrCreateLabel(const std::string& name, SourceLocation loc) {
+LabelDecl* FunctionAnalyser::LookupOrCreateLabel(const char* name, SourceLocation loc) {
     LOG_FUNC
     LabelDecl* LD = 0;
     for (LabelsIter iter = labels.begin(); iter != labels.end(); ++iter) {
-        if ((*iter)->getName() == name) {
+        if (strcmp((*iter)->getName(), name) == 0) {
             LD = *iter;
             break;
         }

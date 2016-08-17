@@ -134,7 +134,7 @@ private:
 
     DiagnosticBuilder Diag(SourceLocation Loc, unsigned DiagID);
     void addSymbol(Decl* d);
-    const ImportDecl* findModule(const std::string& name) const;
+    const ImportDecl* findModule(const char* name_) const;
 
     SourceManager& SourceMgr;
     DiagnosticsEngine& Diags;

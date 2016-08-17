@@ -206,7 +206,7 @@ void CCodeGenerator::EmitExpr(const Expr* E, StringBuilder& output) {
     case EXPR_STRING_LITERAL:
         {
             const StringLiteral* S = cast<StringLiteral>(E);
-            EmitStringLiteral(S->value, output);
+            EmitStringLiteral(S->getValue(), output);
             return;
         }
     case EXPR_NIL:
@@ -586,7 +586,7 @@ void CCodeGenerator::EmitIncludes() {
 void CCodeGenerator::EmitFunctionForward(const FunctionDecl* F) {
     LOG_DECL(F)
 
-    if (F->getName() == "main") return;
+    if (strcmp(F->getName(), "main") == 0) return;
 
     StringBuilder* out = &cbuf;
     if (mode != SINGLE_FILE && F->isPublic()) out = &hbuf;
@@ -742,7 +742,7 @@ void CCodeGenerator::EmitStructType(const StructTypeDecl* S, StringBuilder& out,
 
     out.indent(indent);
     out << (S->isStruct() ? "struct " : "union ");
-    if (S->getName() != "" && S->isGlobal()) {
+    if (!S->hasEmptyName() && S->isGlobal()) {
         EmitDecl(S, out);
         out << "_ ";
     }
@@ -760,7 +760,7 @@ void CCodeGenerator::EmitStructType(const StructTypeDecl* S, StringBuilder& out,
     }
     out.indent(indent);
     out << '}';
-    if (S->getName() != "" && !S->isGlobal()) {
+    if (!S->hasEmptyName() && !S->isGlobal()) {
         out << ' ';
         EmitDecl(S, out);
     }
@@ -807,7 +807,7 @@ void CCodeGenerator::EmitArgVarDecl(const VarDecl* D, StringBuilder& output, uns
     LOG_DECL(D)
     EmitTypePreName(D->getType(), output);
     output << ' ';
-    if (D->getName() == "") {
+    if (D->hasEmptyName()) {
         output << "_arg" << index;
     } else {
         output << D->getName();

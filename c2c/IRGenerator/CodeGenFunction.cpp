@@ -79,7 +79,7 @@ llvm::Function* CodeGenFunction::generateProto(const std::string& modName) {
 
     llvm::GlobalValue::LinkageTypes ltype = CGM.getLinkage(FuncDecl->isPublic());
     // override for main
-    if (FuncDecl->getName() == "main") ltype = llvm::GlobalValue::ExternalLinkage;
+    if (strcmp(FuncDecl->getName(), "main") == 0) ltype = llvm::GlobalValue::ExternalLinkage;
 
     llvm::Function *func =
         llvm::Function::Create(funcType, ltype, (const char*)buffer, module);
@@ -456,7 +456,7 @@ llvm::Value* CodeGenFunction::EmitExprNoImpCast(const Expr* E) {
     case EXPR_STRING_LITERAL:
         {
             const StringLiteral* S = cast<StringLiteral>(E);
-            return Builder.CreateGlobalStringPtr(S->value);
+            return Builder.CreateGlobalStringPtr(S->getValue());
         }
     case EXPR_NIL:
         assert(0 && "TODO");

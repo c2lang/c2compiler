@@ -16,8 +16,8 @@
 #ifndef AST_EXPR_H
 #define AST_EXPR_H
 
-#include <string>
 #include <vector>
+#include <string.h>
 
 #include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/APFloat.h>
@@ -223,7 +223,7 @@ private:
 
 class StringLiteral : public Expr {
 public:
-    StringLiteral(SourceLocation loc_, const std::string& val)
+    StringLiteral(SourceLocation loc_, const char* val)
         : Expr(EXPR_STRING_LITERAL, loc_, true)
         , value(val)
     {}
@@ -232,9 +232,11 @@ public:
     }
     void print(StringBuilder& buffer, unsigned indent) const;
     void printLiteral(StringBuilder& buffer) const;
-    int getByteLength() const { return value.size(); }
+    int getByteLength() const { return strlen(value); }
 
-    std::string value;
+    const char* getValue() const { return value; }
+private:
+    const char* value;
 };
 
 
@@ -253,12 +255,13 @@ public:
 // Represents a symbol reference (eg 'x' or 'counter')
 class IdentifierExpr : public Expr {
 public:
-    IdentifierExpr(SourceLocation loc_, const std::string& name_)
+    IdentifierExpr(SourceLocation loc_, const char* name_)
         : Expr(EXPR_IDENTIFIER, loc_, false)
-        , name(name_), decl(0)
+        , name(name_)
     {
         identifierExprBits.IsType = 0;
         identifierExprBits.IsStructFunction = 0;
+        identifierExprBits.haveDecl = 0;
     }
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_IDENTIFIER;
@@ -272,16 +275,21 @@ public:
     void print(StringBuilder& buffer, unsigned indent) const;
     void printLiteral(StringBuilder& buffer) const;
 
-    const std::string& getName() const;
+    const char* getName() const;
     void setDecl(Decl* decl_) {
         decl = decl_;
-        name.clear();   // clear name to save memory
+        identifierExprBits.haveDecl = 1;
     }
-    Decl* getDecl() const { return decl; }
+    Decl* getDecl() const {
+        if (identifierExprBits.haveDecl) return decl;
+        return 0;
+    }
 
 private:
-    std::string name;
-    Decl* decl;   // set during analysis
+    union {
+        const char* name;
+        Decl* decl;   // set during analysis
+    };
 };
 
 
@@ -367,6 +375,7 @@ public:
         , initValue(i)
         , designator(d)
         , index(64, false)
+        ,  field(0)
         //, member(0)
     {
         designatedInitExprBits.DesignatorKind = ARRAY_DESIGNATOR;
@@ -398,7 +407,7 @@ public:
     llvm::APSInt getIndex() const { return index; }
     void setIndex(llvm::APSInt i) { index = i; }
     // for Field designator
-    const std::string& getField() const { return field; }
+    const char* getField() const { return field; }
 private:
     Expr* initValue;
 
@@ -406,7 +415,7 @@ private:
     Expr* designator;
     llvm::APSInt index; // set during analysis
     // Field designator
-    const std::string field;
+    const char* field;
 };
 
 

@@ -343,8 +343,8 @@ void NilExpr::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 
-const std::string& IdentifierExpr::getName() const {
-    if (decl) return decl->getName();
+const char* IdentifierExpr::getName() const {
+    if (identifierExprBits.haveDecl) return decl->getName();
     return name;
 }
 

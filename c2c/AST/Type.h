@@ -18,7 +18,6 @@
 
 #include <assert.h>
 #include <stddef.h>
-#include <vector>
 
 #include <llvm/ADT/APInt.h>
 

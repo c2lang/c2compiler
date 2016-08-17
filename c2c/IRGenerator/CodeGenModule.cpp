@@ -383,8 +383,8 @@ llvm::Constant* CodeGenModule::GetConstantArrayFromStringLiteral(const StringLit
   //assert(!E->getType()->isPointerType() && "Strings are always arrays");
 
     // TEMP only handle 1 byte per char
-    SmallString<64> Str(E->value);
-    Str.resize(E->value.size());
+    SmallString<64> Str(E->getValue());
+    Str.resize(E->getByteLength());
     //return llvm::ConstantDataArray::getString(context, Str, false);
     return llvm::ConstantDataArray::getString(context, Str, true); // add 0
 

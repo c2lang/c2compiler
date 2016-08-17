@@ -37,7 +37,7 @@ Scope::Scope(const std::string& name_, const Modules& modules_, clang::Diagnosti
     , Diags(Diags_)
 {
     // add own module to scope
-    myModule = findAnyModule(name_);
+    myModule = findAnyModule(name_.c_str());
     assert(myModule);
 }
 
@@ -107,7 +107,7 @@ const Module* Scope::findUsedModule(const std::string& name, clang::SourceLocati
             return 0;
         }
     }
-    const Module* P2 = findAnyModule(name);
+    const Module* P2 = findAnyModule(name.c_str());
     if (P2) {
         Diags.Report(loc, diag::err_module_not_used) << name;
     } else {
@@ -220,7 +220,7 @@ Decl* Scope::findSymbolInModule(const std::string& name, clang::SourceLocation l
     // if external module, check visibility
     if (isExternal(mod)) {
         if (!D->isPublic()) {
-            Diags.Report(loc, diag::err_not_public) << AnalyserUtils::fullName(mod->getName(), name);
+            Diags.Report(loc, diag::err_not_public) << AnalyserUtils::fullName(mod->getName(), name.c_str());
             return 0;
         }
         D->setUsedPublic();
@@ -304,8 +304,8 @@ void Scope::ExitScope() {
     else curScope = &scopes[scopeIndex-1];
 }
 
-const Module* Scope::findAnyModule(const std::string& name) const {
-    ModulesConstIter iter = allModules.find(name);
+const Module* Scope::findAnyModule(const char* name_) const {
+    ModulesConstIter iter = allModules.find(name_);
     if (iter == allModules.end()) return 0;
     return iter->second;
 }

@@ -56,7 +56,7 @@ enum DeclKind {
 
 class LLVM_ALIGNAS(LLVM_PTR_SIZE) Decl {
 public:
-    Decl(DeclKind k, const std::string& name_, SourceLocation loc_,
+    Decl(DeclKind k, const char* name_, SourceLocation loc_,
          QualType type_, bool is_public);
 
     void* operator new(size_t bytes, const ASTContext& C, unsigned alignment = 8);
@@ -64,7 +64,8 @@ public:
     void print(StringBuilder& buffer, unsigned indent) const;
     void printAttributes(StringBuilder& buffer, unsigned indent) const;
 
-    const std::string& getName() const { return name; }
+    const char* getName() const { return name; }
+    bool hasEmptyName() const { return name[0] == 0; }
     void fullName(StringBuilder& output) const;
     std::string DiagName() const;
     SourceLocation getLocation() const { return loc; }
@@ -153,7 +154,7 @@ protected:
     };
     SourceLocation loc;
     QualType type;
-    const std::string name;
+    const char* name;
 private:
     const Module* mod;
 
@@ -171,7 +172,7 @@ enum VarDeclKind {
 
 class VarDecl : public Decl {
 public:
-    VarDecl(VarDeclKind k_, const std::string& name_, SourceLocation loc_,
+    VarDecl(VarDeclKind k_, const char* name_, SourceLocation loc_,
             QualType type_, Expr* initValue_, bool is_public);
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_VAR;
@@ -203,7 +204,7 @@ private:
 
 class FunctionDecl : public Decl {
 public:
-    FunctionDecl(const std::string& name_, SourceLocation loc_,
+    FunctionDecl(const char* name_, SourceLocation loc_,
                  bool is_public, QualType rtype_);
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_FUNC;
@@ -218,7 +219,7 @@ public:
 
     // args
     void addArg(VarDecl* arg) { args.push_back(arg); }
-    VarDecl* findArg(const std::string& name) const;
+    VarDecl* findArg(const char* name_) const;
     VarDecl* getArg(unsigned i) const { return args[i]; }
     unsigned numArgs() const { return args.size(); }
     unsigned minArgs() const;
@@ -248,7 +249,7 @@ private:
 
 class EnumConstantDecl : public Decl {
 public:
-    EnumConstantDecl(const std::string& name_, SourceLocation loc_, QualType type_, Expr* Init,
+    EnumConstantDecl(const char* name_, SourceLocation loc_, QualType type_, Expr* Init,
                      bool is_public);
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_ENUMVALUE;
@@ -266,7 +267,7 @@ private:
 
 class TypeDecl : public Decl {
 protected:
-    TypeDecl(DeclKind kind, const std::string& name_, SourceLocation loc_,
+    TypeDecl(DeclKind kind, const char* name_, SourceLocation loc_,
              QualType type_, bool is_public);
 public:
     static bool classof(const Decl* D) {
@@ -285,7 +286,7 @@ public:
 
 class AliasTypeDecl : public TypeDecl {
 public:
-    AliasTypeDecl(const std::string& name_, SourceLocation loc_, QualType type_, bool is_public)
+    AliasTypeDecl(const char* name_, SourceLocation loc_, QualType type_, bool is_public)
         : TypeDecl(DECL_ALIASTYPE, name_, loc_, type_, is_public)
         , refType(type_)
     {}
@@ -301,7 +302,7 @@ private:
 
 class StructTypeDecl : public TypeDecl {
 public:
-    StructTypeDecl(const std::string& name_, SourceLocation loc_, QualType type_,
+    StructTypeDecl(const char* name_, SourceLocation loc_, QualType type_,
             bool is_struct, bool is_global, bool is_public);
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_STRUCTTYPE;
@@ -310,17 +311,11 @@ public:
 
     void addMember(Decl* D);
     unsigned numMembers() const { return members.size(); }
-    void addStructFunction(const std::string& name_, Decl* D);
+    void addStructFunction(const char* name_, Decl* D);
     Decl* getMember(unsigned index) const { return members[index]; }
-    Decl* find(const std::string& name_) const;
-    Decl* findFunction(const std::string& name_) const;
-    int findIndex(const std::string& name_) const {
-        for (unsigned i=0; i<members.size(); i++) {
-            Decl* D = members[i];
-            if (D->getName() == name_) return i;
-        }
-        return -1;
-    }
+    Decl* find(const char* name_) const;
+    Decl* findFunction(const char* name_) const;
+    int findIndex(const char*  name_) const;
     void setOpaqueMembers();
 
     bool isStruct() const { return structTypeDeclBits.IsStruct; }
@@ -328,6 +323,7 @@ public:
 private:
     typedef std::vector<Decl*> Members;
     Members members;
+    // TODO FIX map, not freed!
     typedef std::map<std::string, Decl*> StructFunctions;
     typedef StructFunctions::const_iterator StructFunctionsConstIter;
     StructFunctions structFunctions;
@@ -335,7 +331,7 @@ private:
 
 class EnumTypeDecl : public TypeDecl {
 public:
-    EnumTypeDecl(const std::string& name_, SourceLocation loc_,
+    EnumTypeDecl(const char* name_, SourceLocation loc_,
             QualType implType_, QualType type_, bool is_public)
         : TypeDecl(DECL_ENUMTYPE, name_, loc_, type_, is_public)
         , implType(implType_)
@@ -375,7 +371,7 @@ private:
 
 class ArrayValueDecl : public Decl {
 public:
-    ArrayValueDecl(const std::string& name_, SourceLocation loc_, Expr* value_);
+    ArrayValueDecl(const char* name_, SourceLocation loc_, Expr* value_);
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_ARRAYVALUE;
     }
@@ -389,25 +385,25 @@ private:
 
 class ImportDecl : public Decl {
 public:
-    ImportDecl(const std::string& name_, SourceLocation loc_, bool isLocal_,
-            const std::string& modName_, SourceLocation aliasLoc_);
+    ImportDecl(const char* name_, SourceLocation loc_, bool isLocal_,
+            const char* modName_, SourceLocation aliasLoc_);
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_IMPORT;
     }
     void print(StringBuilder& buffer, unsigned indent) const;
 
-    const std::string& getModuleName() const { return modName; }
+    const char* getModuleName() const { return modName; }
     bool hasAlias() const {return aliasLoc.isValid(); }
     bool isLocal() const { return importDeclBits.IsLocal; }
 private:
-    std::string modName;
+    const char* modName;
     SourceLocation aliasLoc;
 };
 
 
 class LabelDecl : public Decl {
 public:
-    LabelDecl(const std::string& name_, SourceLocation loc_);
+    LabelDecl(const char* name_, SourceLocation loc_);
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_LABEL;
     }
@@ -417,7 +413,7 @@ public:
     void setStmt(LabelStmt* S) { TheStmt = S; }
     void setLocation(SourceLocation loc_) { loc = loc_; }
 private:
-    LabelStmt* TheStmt; // no ownership
+    LabelStmt* TheStmt;
 };
 
 

@@ -369,5 +369,5 @@ SourceLocation DeclStmt::getLocation() const {
     return decl->getLocation();
 }
 
-const std::string& DeclStmt::getName() const { return decl->getName(); }
+const char* DeclStmt::getName() const { return decl->getName(); }
 

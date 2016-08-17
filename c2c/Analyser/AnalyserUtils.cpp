@@ -20,15 +20,15 @@
 
 using namespace C2;
 
-const char* AnalyserUtils::fullName(const std::string& modName, const std::string& symname) {
+const char* AnalyserUtils::fullName(const std::string& modName, const char* symname) {
     static char buffer[128];
-    sprintf(buffer, "%s.%s", modName.c_str(), symname.c_str());
+    sprintf(buffer, "%s.%s", modName.c_str(), symname);
     return buffer;
 }
 
-const char* AnalyserUtils::splitStructFunctionName(char* structName, const std::string& funcName) {
+const char* AnalyserUtils::splitStructFunctionName(char* structName, const char* funcName) {
     // foo_bar -> typename='Foo', return 'bar' (or NULL if no _)
-    const char* cp = funcName.c_str();
+    const char* cp = funcName;
     char* op = structName;
     const char* memberName = 0;
     while (*cp != 0) {

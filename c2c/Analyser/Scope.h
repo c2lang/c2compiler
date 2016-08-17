@@ -106,7 +106,7 @@ public:
     }
 
 private:
-    const Module* findAnyModule(const std::string& name) const;
+    const Module* findAnyModule(const char* name) const;
     Decl* findOwn(const std::string& symbol) const;
     //Decl* findSymbolInUsed(const std::string& name) const;
 

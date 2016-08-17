@@ -227,7 +227,7 @@ unsigned FileAnalyser::checkFunctionProtos() {
     for (unsigned i=0; i<ast.numFunctions(); i++) {
         FunctionDecl* F = ast.getFunction(i);
         errors += resolveFunctionDecl(F, false);
-        if (F->getName() == "main") {
+        if (strcmp(F->getName(), "main") == 0) {
             if (!F->isPublic()) {
                 Diags.Report(F->getLocation(), diag::err_main_non_public);
                 errors++;
@@ -330,7 +330,7 @@ void FileAnalyser::checkDeclsForUsed() {
 void FileAnalyser::checkStructMembersForUsed(const StructTypeDecl* S) {
     for (unsigned j=0; j<S->numMembers(); j++) {
         Decl* M = S->getMember(j);
-        if (!M->isUsed() && M->getName() != "") {   // dont warn for anonymous structs/unions
+        if (!M->isUsed() && !M->hasEmptyName()) {   // dont warn for anonymous structs/unions
             Diags.Report(M->getLocation(), diag::warn_unused_struct_member) << S->isStruct() << M->DiagName();
         }
         if (isa<StructTypeDecl>(M)) {
@@ -441,7 +441,7 @@ void FileAnalyser::analyseStructNames(const StructTypeDecl* S, Names& names, boo
 
 unsigned FileAnalyser::checkStructTypeDecl(StructTypeDecl* D) {
     LOG_FUNC
-    if (!D->isGlobal() && !ast.isInterface() && !D->getName().empty() && !islower(D->getName()[0])) {
+    if (!D->isGlobal() && !ast.isInterface() && !D->hasEmptyName() && !islower(D->getName()[0])) {
         Diags.Report(D->getLocation(), diag::err_var_casing);
     }
 
@@ -481,7 +481,7 @@ unsigned FileAnalyser::resolveVarDecl(VarDecl* D) {
 
     TR->checkOpaqueType(D->getLocation(), D->isPublic(), Q);
 
-    if (!ast.isInterface() && !D->getName().empty()) {
+    if (!ast.isInterface() && !D->hasEmptyName()) {
         if (Q.isConstant()) {
            if (!isupper(D->getName()[0])) {
                 Diags.Report(D->getLocation(), diag::err_const_casing);
@@ -625,7 +625,7 @@ void FileAnalyser::checkAttributes(Decl* D) {
             break;
         case ATTR_SECTION:
             if (const StringLiteral* S = dyncast<StringLiteral>(arg)) {
-                if (S->value == "") {
+                if (S->getValue()[0] == 0) {
                     Diags.Report(arg->getLocation(), diag::err_attribute_argument_empty_string) << arg->getSourceRange();
                 }
             } else {

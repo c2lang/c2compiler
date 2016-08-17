@@ -29,7 +29,7 @@ using namespace C2;
 using namespace std;
 
 
-Decl::Decl(DeclKind k, const std::string& name_, SourceLocation loc_, QualType type_, bool is_public)
+Decl::Decl(DeclKind k, const char* name_, SourceLocation loc_, QualType type_, bool is_public)
     : loc(loc_)
     , type(type_)
     , name(name_)
@@ -148,7 +148,7 @@ const AttrList& Decl::getAttributes() const {
     return mod->getAttributes(this);
 }
 
-FunctionDecl::FunctionDecl(const std::string& name_, SourceLocation loc_,
+FunctionDecl::FunctionDecl(const char* name_, SourceLocation loc_,
                            bool is_public, QualType rtype_)
     : Decl(DECL_FUNC, name_, loc_, QualType(), is_public)
     , rtype(rtype_)
@@ -176,10 +176,10 @@ void FunctionDecl::print(StringBuilder& buffer, unsigned indent) const {
     if (body) body->print(buffer, INDENT);
 }
 
-VarDecl* FunctionDecl::findArg(const std::string& name) const {
+VarDecl* FunctionDecl::findArg(const char* name_) const {
     for (unsigned i=0; i<args.size(); i++) {
         VarDecl* arg = args[i];
-        if (arg->getName() == name) return arg;
+        if (strcmp(arg->getName(), name_) == 0) return arg;
     }
     return 0;
 }
@@ -207,7 +207,7 @@ static const char* VarDeclKind2Str(VarDeclKind k) {
 }
 
 
-VarDecl::VarDecl(VarDeclKind k_, const std::string& name_, SourceLocation loc_,
+VarDecl::VarDecl(VarDeclKind k_, const char* name_, SourceLocation loc_,
             QualType type_, Expr* initValue_, bool is_public)
     : Decl(DECL_VAR, name_, loc_, type_, is_public)
     , origType(type_)
@@ -236,7 +236,7 @@ void VarDecl::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 
-EnumConstantDecl::EnumConstantDecl(const std::string& name_, SourceLocation loc_,
+EnumConstantDecl::EnumConstantDecl(const char* name_, SourceLocation loc_,
                                    QualType type_, Expr* Init,
                                    bool is_public)
     : Decl(DECL_ENUMVALUE, name_, loc_, type_, is_public)
@@ -256,7 +256,7 @@ void EnumConstantDecl::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 
-TypeDecl::TypeDecl(DeclKind k, const std::string& name_, SourceLocation loc_, QualType type_,
+TypeDecl::TypeDecl(DeclKind k, const char* name_, SourceLocation loc_, QualType type_,
                    bool is_public)
     : Decl(k, name_, loc_, type_, is_public)
 {}
@@ -275,7 +275,7 @@ void AliasTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 
-StructTypeDecl::StructTypeDecl(const std::string& name_, SourceLocation loc_,
+StructTypeDecl::StructTypeDecl(const char* name_, SourceLocation loc_,
                              QualType type_, bool is_struct, bool is_global,
                              bool is_public)
     : TypeDecl(DECL_STRUCTTYPE, name_, loc_, type_, is_public)
@@ -289,16 +289,16 @@ void StructTypeDecl::addMember(Decl* D) {
     members.push_back(D);
 }
 
-void StructTypeDecl::addStructFunction(const std::string& name_, Decl* D) {
+void StructTypeDecl::addStructFunction(const char* name_, Decl* D) {
     structFunctions[name_] = D;
 }
 
-Decl* StructTypeDecl::find(const std::string& name_) const {
+Decl* StructTypeDecl::find(const char* name_) const {
     // normal members
     for (unsigned i=0; i<members.size(); i++) {
         Decl* D = members[i];
-        if (D->getName() == name_) return D;
-        if (D->getName() == "") {
+        if (strcmp(D->getName(), name_) == 0) return D;
+        if (D->hasEmptyName()) {      // empty string
             assert(isa<StructTypeDecl>(D));
             StructTypeDecl* sub = cast<StructTypeDecl>(D);
             D = sub->find(name_);
@@ -309,11 +309,19 @@ Decl* StructTypeDecl::find(const std::string& name_) const {
     return findFunction(name_);
 }
 
-Decl* StructTypeDecl::findFunction(const std::string& name_) const {
+Decl* StructTypeDecl::findFunction(const char* name_) const {
     // struct-functions
     StructFunctionsConstIter iter = structFunctions.find(name_);
     if (iter != structFunctions.end()) return iter->second;
     return 0;
+}
+
+int StructTypeDecl::findIndex(const char*  name_) const {
+    for (unsigned i=0; i<members.size(); i++) {
+        Decl* D = members[i];
+        if (strcmp(D->getName(), name_) == 0) return i;
+    }
+    return -1;
 }
 
 void StructTypeDecl::setOpaqueMembers() {
@@ -335,7 +343,7 @@ void StructTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
     printPublic(buffer);
     buffer.setColor(COL_VALUE);
     buffer << ' ';
-    if (name != "") buffer << name;
+    if (name[0] != 0) buffer << name;
     else buffer << "<anonymous>";
     buffer << '\n';
     printAttributes(buffer, indent + INDENT);
@@ -390,8 +398,7 @@ void FunctionTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 
-ArrayValueDecl::ArrayValueDecl(const std::string& name_, SourceLocation loc_,
-                               Expr* value_)
+ArrayValueDecl::ArrayValueDecl(const char* name_, SourceLocation loc_, Expr* value_)
     : Decl(DECL_ARRAYVALUE, name_, loc_, QualType(), false)
     , value(value_)
 {}
@@ -406,8 +413,8 @@ void ArrayValueDecl::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 
-ImportDecl::ImportDecl(const std::string& name_, SourceLocation loc_, bool isLocal_,
-                 const std::string& modName_, SourceLocation aliasLoc_)
+ImportDecl::ImportDecl(const char* name_, SourceLocation loc_, bool isLocal_,
+                 const char* modName_, SourceLocation aliasLoc_)
     : Decl(DECL_IMPORT, name_, loc_, QualType(), false)
     , modName(modName_)
     , aliasLoc(aliasLoc_)
@@ -428,7 +435,7 @@ void ImportDecl::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 
-LabelDecl::LabelDecl(const std::string& name_, SourceLocation loc_)
+LabelDecl::LabelDecl(const char* name_, SourceLocation loc_)
     : Decl(DECL_LABEL, name_, loc_, QualType(), false)
     , TheStmt(0)
 {}

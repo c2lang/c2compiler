@@ -227,31 +227,31 @@ void Type::printName(StringBuilder& buffer) const {
 void Type::debugPrint(StringBuilder& buffer) const {
     switch (getTypeClass()) {
     case TC_BUILTIN:
-        cast<BuiltinType>(this)->printName(buffer);
+        cast<BuiltinType>(this)->debugPrint(buffer);
         break;
     case TC_POINTER:
-        cast<PointerType>(this)->printName(buffer);
+        cast<PointerType>(this)->debugPrint(buffer);
         break;
     case TC_ARRAY:
-        cast<ArrayType>(this)->printName(buffer);
+        cast<ArrayType>(this)->debugPrint(buffer);
         break;
     case TC_UNRESOLVED:
-        cast<UnresolvedType>(this)->printName(buffer);
+        cast<UnresolvedType>(this)->debugPrint(buffer);
         break;
     case TC_ALIAS:
-        cast<AliasType>(this)->printName(buffer);
+        cast<AliasType>(this)->debugPrint(buffer);
         break;
     case TC_STRUCT:
-        cast<StructType>(this)->printName(buffer);
+        cast<StructType>(this)->debugPrint(buffer);
         break;
     case TC_ENUM:
-        cast<EnumType>(this)->printName(buffer);
+        cast<EnumType>(this)->debugPrint(buffer);
         break;
     case TC_FUNCTION:
-        cast<FunctionType>(this)->printName(buffer);
+        cast<FunctionType>(this)->debugPrint(buffer);
         break;
     case TC_MODULE:
-        cast<ModuleType>(this)->printName(buffer);
+        cast<ModuleType>(this)->debugPrint(buffer);
         break;
     }
 }

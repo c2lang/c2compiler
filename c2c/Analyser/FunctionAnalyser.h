@@ -125,7 +125,7 @@ private:
         FunctionAnalyser& analyser;
     };
 
-    LabelDecl* LookupOrCreateLabel(const std::string& name, clang::SourceLocation loc);
+    LabelDecl* LookupOrCreateLabel(const char* name, clang::SourceLocation loc);
 
     bool checkAssignee(Expr* expr) const;
     void checkAssignment(Expr* assignee, QualType TLeft);

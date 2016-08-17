@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 #include <vector>
 
 #include "llvm/Support/Allocator.h"
@@ -24,8 +25,6 @@ public:
 
     void dump() const;
 
-    //size_t getAllocatedMemory() const { return BumpAlloc.getTotalMemory(); }
-
     // For Types
     QualType getPointerType(QualType ref);
     QualType getArrayType(QualType element, Expr* size, bool isIncremental);
@@ -38,10 +37,23 @@ public:
 
     void* allocTypeExpr();
     void freeTypeExpr(TypeExpr* t);
+
+    const char* addIdentifier(const char* name, unsigned len) {
+        len++;  // include 0
+        char* mem = (char*)stringPool.Allocate(len, 1);
+        memcpy(mem, name, len);
+        return mem;
+    }
+#if 0
+    void clearStrings() {
+        stringPool.Reset();
+    }
+#endif
 private:
     QualType add(Type* T);
 
     mutable llvm::BumpPtrAllocator BumpAlloc;
+    llvm::BumpPtrAllocator stringPool;
 
     typedef std::vector<Type*> Types;
     Types types;
