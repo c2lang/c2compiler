@@ -109,6 +109,7 @@ protected:
         unsigned : NumExprBits;
 
         unsigned IsStructFunc : 1;
+        unsigned numArgs : 4;
     };
 
 

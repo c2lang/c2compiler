@@ -384,7 +384,7 @@ void CallExpr::print(StringBuilder& buffer, unsigned indent) const {
     Fn->printLiteral(buffer);
     buffer << '\n';
     Fn->print(buffer, indent + INDENT);
-    for (unsigned i=0; i<args.size(); i++) {
+    for (unsigned i=0; i<numArgs(); i++) {
         args[i]->print(buffer, indent + INDENT);
     }
 }

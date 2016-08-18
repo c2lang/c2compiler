@@ -660,13 +660,15 @@ C2::StmtResult C2Sema::ActOnDeclaration(const char* name_, SourceLocation loc, E
     return StmtResult(new (Context) DeclStmt(V));
 }
 
-C2::ExprResult C2Sema::ActOnCallExpr(Expr* Fn, Expr** args, unsigned numArgs, SourceLocation RParenLoc) {
+C2::ExprResult C2Sema::ActOnCallExpr(Expr* Fn, Expr** args_, unsigned numArgs, SourceLocation RParenLoc) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: call to " << "TODO Fn" << " at " << "TODO Fn";
     //expr2loc(Fn).dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
     MEM_EXPR(EXPR_CALL);
+    Expr** args = (Expr**)Context.Allocate(sizeof(Expr*)*numArgs);
+    memcpy(args, args_, sizeof(Expr*)*numArgs);
     CallExpr* call = new (Context) CallExpr(Fn, RParenLoc, args, numArgs);
     return ExprResult(call);
 }

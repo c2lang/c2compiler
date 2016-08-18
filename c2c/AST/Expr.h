@@ -315,9 +315,10 @@ public:
     CallExpr(Expr* Fn_, SourceLocation rparenLoc_, Expr** args_, unsigned numArgs_)
         : Expr(EXPR_CALL, rparenLoc_, false)
         , Fn(Fn_)
+        , args(args_)
     {
         callExprBits.IsStructFunc = 0;
-        for (unsigned i=0; i<numArgs_; i++) args.push_back(args_[i]);
+        callExprBits.numArgs = numArgs_;
     }
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_CALL;
@@ -329,13 +330,13 @@ public:
 
     Expr* getFn() const { return Fn; }
     Expr* getArg(unsigned i) const { return args[i]; }
-    unsigned numArgs() const { return args.size(); }
+    unsigned numArgs() const { return callExprBits.numArgs; }
 
     void setIsStructFunction() { callExprBits.IsStructFunc = true; }
     bool isStructFunction() const { return callExprBits.IsStructFunc; }
 private:
     Expr* Fn;
-    ExprList args;
+    Expr** args;
 };
 
 
