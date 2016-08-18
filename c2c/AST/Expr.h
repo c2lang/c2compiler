@@ -312,11 +312,12 @@ public:
 
 class CallExpr : public Expr {
 public:
-    CallExpr(Expr* Fn_, SourceLocation rparenLoc_)
+    CallExpr(Expr* Fn_, SourceLocation rparenLoc_, Expr** args_, unsigned numArgs_)
         : Expr(EXPR_CALL, rparenLoc_, false)
         , Fn(Fn_)
     {
         callExprBits.IsStructFunc = 0;
+        for (unsigned i=0; i<numArgs_; i++) args.push_back(args_[i]);
     }
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_CALL;
@@ -325,8 +326,6 @@ public:
     SourceLocation getLocation() const { return Fn->getLocation(); }
     SourceLocation getLocStart() const { return Fn->getLocStart(); }
     SourceLocation getLocEnd() const { return exprLoc; }
-
-    void addArg(Expr* arg);
 
     Expr* getFn() const { return Fn; }
     Expr* getArg(unsigned i) const { return args[i]; }

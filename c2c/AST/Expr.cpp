@@ -374,10 +374,6 @@ void TypeExpr::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 
-void CallExpr::addArg(Expr* arg) {
-    args.push_back(arg);
-}
-
 void CallExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_EXPR);

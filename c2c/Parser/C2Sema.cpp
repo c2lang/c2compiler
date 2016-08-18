@@ -667,9 +667,7 @@ C2::ExprResult C2Sema::ActOnCallExpr(Expr* Fn, Expr** args, unsigned numArgs, So
     std::cerr << ANSI_NORMAL"\n";
 #endif
     MEM_EXPR(EXPR_CALL);
-    CallExpr* call = new (Context) CallExpr(Fn, RParenLoc);
-    assert(call);
-    for (unsigned i=0; i<numArgs; i++) call->addArg(args[i]);
+    CallExpr* call = new (Context) CallExpr(Fn, RParenLoc, args, numArgs);
     return ExprResult(call);
 }
 
