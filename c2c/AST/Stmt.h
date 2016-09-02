@@ -84,6 +84,13 @@ protected:
     };
     enum { NumStmtBits = 8 };
 
+    class SwitchStmtBitfields {
+        friend class SwitchStmt;
+        unsigned : NumStmtBits;
+
+        unsigned numCases : 32 - NumStmtBits;
+    };
+
     class ExprBitfields {
         friend class Expr;
         unsigned : NumStmtBits;
@@ -187,6 +194,7 @@ protected:
 
     union {
         StmtBitfields stmtBits;
+        SwitchStmtBitfields switchStmtBits;
         ExprBitfields exprBits;
         IdentifierExprBitfields identifierExprBits;
         CallExprBitfields callExprBits;
@@ -315,7 +323,7 @@ private:
 
 class SwitchStmt : public Stmt {
 public:
-    SwitchStmt(SourceLocation Loc_, Stmt* Cond_, StmtList& Cases_);
+    SwitchStmt(SourceLocation Loc_, Stmt* Cond_, Stmt** cases_, unsigned numCases_);
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_SWITCH;
     }
@@ -324,11 +332,12 @@ public:
     SourceLocation getLocation() const { return Loc; }
 
     Stmt* getCond() const { return Cond; }
-    const StmtList& getCases() const { return Cases; }
+    unsigned numCases() const { return switchStmtBits.numCases; }
+    Stmt** getCases() const { return cases; }
 private:
     SourceLocation Loc;
     Stmt* Cond;
-    StmtList Cases;
+    Stmt** cases;
 };
 
 

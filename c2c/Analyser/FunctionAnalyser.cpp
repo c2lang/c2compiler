@@ -358,11 +358,12 @@ void FunctionAnalyser::analyseSwitchStmt(Stmt* stmt) {
     scope.EnterScope(Scope::DeclScope);
     analyseCondition(S->getCond());
 
-    const StmtList& Cases = S->getCases();
+    unsigned numCases = S->numCases();
+    Stmt** cases = S->getCases();
     Stmt* defaultStmt = 0;
     scope.EnterScope(Scope::BreakScope | Scope::SwitchScope);
-    for (unsigned i=0; i<Cases.size(); i++) {
-        Stmt* C = Cases[i];
+    for (unsigned i=0; i<numCases; i++) {
+        Stmt* C = cases[i];
         switch (C->getKind()) {
         case STMT_CASE:
             analyseCaseStmt(C);
@@ -1951,8 +1952,8 @@ void FunctionAnalyser::checkEnumCases(const SwitchStmt* SS, const EnumType* ET) 
     char enumHandled[ETD->numConstants()];
     memset(enumHandled, 0, sizeof(enumHandled));
     Stmt* TheDefaultStmt = 0;
-    const StmtList& cases = SS->getCases();
-    for (unsigned i=0; i<cases.size(); i++) {
+    Stmt** cases = SS->getCases();
+    for (unsigned i=0; i<SS->numCases(); i++) {
         if (isa<DefaultStmt>(cases[i])) {
             TheDefaultStmt = cases[i];
             continue;

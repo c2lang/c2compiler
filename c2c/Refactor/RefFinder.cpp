@@ -80,8 +80,8 @@ void RefFinder::searchStmt(const Stmt* S) {
         {
             const SwitchStmt* SW = cast<SwitchStmt>(S);
             searchStmt(SW->getCond());
-            const StmtList& Cases = SW->getCases();
-            for (unsigned i=0; i<Cases.size(); i++) {
+            Stmt** Cases = SW->getCases();
+            for (unsigned i=0; i<SW->numCases(); i++) {
                 searchStmt(Cases[i]);
             }
             break;

@@ -1033,9 +1033,9 @@ void CCodeGenerator::EmitSwitchStmt(const Stmt* S, unsigned indent) {
     EmitConditionPost(SW->getCond());
     cbuf << ") {\n";
 
-    const StmtList& Cases = SW->getCases();
-    for (unsigned i=0; i<Cases.size(); i++) {
-        Stmt* Case = Cases[i];
+    Stmt** cases = SW->getCases();
+    for (unsigned i=0; i<SW->numCases(); i++) {
+        Stmt* Case = cases[i];
         switch (Case->getKind()) {
         case STMT_CASE:
             {

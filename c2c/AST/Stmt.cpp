@@ -210,20 +210,22 @@ void ForStmt::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 
-SwitchStmt::SwitchStmt(SourceLocation Loc_, Stmt* Cond_, StmtList& Cases_)
+SwitchStmt::SwitchStmt(SourceLocation Loc_, Stmt* Cond_, Stmt** cases_, unsigned numCases_)
     : Stmt(STMT_SWITCH)
     , Loc(Loc_)
     , Cond(Cond_)
-    , Cases(Cases_)
-{}
+    , cases(cases_)
+{
+    switchStmtBits.numCases = numCases_;
+}
 
 void SwitchStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
     buffer << "SwitchStmt\n";
     Cond->print(buffer, indent + INDENT);
-    for (unsigned i=0; i<Cases.size(); i++) {
-        Cases[i]->print(buffer, indent + INDENT);
+    for (unsigned i=0; i<numCases(); i++) {
+        cases[i]->print(buffer, indent + INDENT);
     }
 }
 

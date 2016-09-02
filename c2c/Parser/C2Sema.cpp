@@ -558,14 +558,17 @@ C2::StmtResult C2Sema::ActOnForStmt(SourceLocation loc, Stmt* Init, Expr* Cond, 
     return StmtResult(new (Context) ForStmt(loc, Init, Cond, Incr, Body));
 }
 
-C2::StmtResult C2Sema::ActOnSwitchStmt(SourceLocation loc, Stmt* Cond, StmtList& cases) {
+C2::StmtResult C2Sema::ActOnSwitchStmt(SourceLocation loc, Stmt* Cond, StmtList& cases_) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: switch statement at ";
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
     MEM_STMT(STMT_SWITCH);
-    return StmtResult(new (Context) SwitchStmt(loc, Cond, cases));
+    unsigned numCases = cases_.size();
+    Stmt** cases = (Stmt**)Context.Allocate(sizeof(Stmt*)*numCases);
+    memcpy(cases, &cases_[0], sizeof(Stmt*)*numCases);
+    return StmtResult(new (Context) SwitchStmt(loc, Cond, cases, numCases));
 }
 
 C2::StmtResult C2Sema::ActOnCaseStmt(SourceLocation loc, Expr* Cond, StmtList& stmts) {

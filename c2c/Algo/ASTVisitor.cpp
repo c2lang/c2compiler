@@ -174,9 +174,9 @@ void ASTVisitor::checkStmt(const Stmt* S) {
         {
             const SwitchStmt* SW = cast<SwitchStmt>(S);
             checkStmt(SW->getCond());
-            const StmtList& Cases = SW->getCases();
-            for (unsigned i=0; i<Cases.size(); i++) {
-                checkStmt(Cases[i]);
+            Stmt** cases = SW->getCases();
+            for (unsigned i=0; i<SW->numCases(); i++) {
+                checkStmt(cases[i]);
             }
             break;
         }
