@@ -112,6 +112,7 @@ private:
 };
 
 
+// TODO move somewhere else?
 typedef std::vector<C2::Expr*> ExprList;
 
 class IntegerLiteral : public Expr {
@@ -342,7 +343,7 @@ private:
 
 class InitListExpr : public Expr {
 public:
-    InitListExpr(SourceLocation lbraceLoc, SourceLocation rbraceLoc, ExprList& values_);
+    InitListExpr(SourceLocation lbraceLoc, SourceLocation rbraceLoc, Expr** values_ = 0, unsigned num = 0);
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_INITLIST;
     }
@@ -351,16 +352,22 @@ public:
     SourceLocation getLocStart() const { return leftBrace; }
     SourceLocation getLocEnd() const { return rightBrace; }
 
-    const ExprList& getValues() const { return values; }
+    Expr** getValues() const { return values; }
+    unsigned numValues() const { return numValues_; }
     void setDesignators() { initListExprBits.HasDesignators = true; }
     bool hasDesignators() const { return initListExprBits.HasDesignators; }
 
     // for incremental arrays
-    void addExpr(Expr* E) { values.push_back(E); }
+    void setValues(Expr** values_, unsigned num) {
+        assert(values == 0);
+        values = values_;
+        numValues_ = num;
+    }
 private:
     SourceLocation leftBrace;
     SourceLocation rightBrace;
-    ExprList values;
+    Expr** values;
+    unsigned numValues_;
 };
 
 

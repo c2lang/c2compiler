@@ -73,6 +73,8 @@ const AttrInfo& Attr::getInfo(AttrKind kind) {
         if (AI->kind == kind) return *AI;
     }
     assert(0);
+    static AttrInfo none;
+    return none;
 }
 
 void Attr::print(StringBuilder& output) const {

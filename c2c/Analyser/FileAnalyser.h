@@ -22,6 +22,7 @@
 #include "Analyser/FunctionAnalyser.h"
 #include "AST/Type.h"
 #include "AST/Module.h"
+#include "AST/Expr.h"
 
 namespace clang {
 class DiagnosticsEngine;
@@ -39,6 +40,13 @@ class ArrayValueDecl;
 class AST;
 class TypeResolver;
 
+typedef std::vector<FunctionDecl*> StructFunctionEntries;
+typedef std::map<StructTypeDecl*, StructFunctionEntries> StructFunctionList;
+typedef StructFunctionList::const_iterator StructFunctionListIter;;
+
+typedef std::map<VarDecl*, ExprList> IncrementalArrayVals;
+typedef IncrementalArrayVals::const_iterator IncrementalArrayValsIter;
+
 class FileAnalyser {
 public:
     FileAnalyser(const Module& module_, const Modules& modules,
@@ -53,8 +61,8 @@ public:
     unsigned resolveTypeCanonicals();
     unsigned resolveStructMembers();
     unsigned resolveVars();
-    unsigned checkArrayValues();
-    unsigned checkFunctionProtos();
+    unsigned checkArrayValues(IncrementalArrayVals& values);
+    unsigned checkFunctionProtos(StructFunctionList& structFuncs);
     void checkVarInits();
     unsigned resolveEnumConstants();
     void checkFunctionBodies();
@@ -65,9 +73,9 @@ private:
     unsigned checkStructTypeDecl(StructTypeDecl* D);
     unsigned resolveVarDecl(VarDecl* D);
     unsigned resolveFunctionDecl(FunctionDecl* D, bool checkArgs);
-    unsigned checkArrayValue(ArrayValueDecl* D);
+    unsigned checkArrayValue(ArrayValueDecl* D, IncrementalArrayVals& values);
     typedef std::map<const std::string, const Decl*> Names;
-    void checkStructFunction(FunctionDecl* F);
+    void checkStructFunction(FunctionDecl* F, StructFunctionList& structFuncs);
     void analyseStructNames(const StructTypeDecl* S, Names& names, bool isStruct);
     void checkVarDeclAttributes(VarDecl* D);
     void checkAttributes(Decl* D);

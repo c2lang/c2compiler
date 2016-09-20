@@ -254,6 +254,7 @@ int C2Builder::build() {
     Diags.setSeverity(diag::warn_duplicate_attribute_exact, diag::Severity::Error, SourceLocation());
     Diags.setSeverity(diag::warn_not_in_enum, diag::Severity::Error, SourceLocation());
     Diags.setSeverity(diag::warn_missing_case, diag::Severity::Error, SourceLocation());
+    Diags.setSeverity(diag::warn_unreachable_default, diag::Severity::Warning, SourceLocation());
 
     // set recipe warning options
     for (unsigned i=0; i<recipe.silentWarnings.size(); i++) {
@@ -369,7 +370,7 @@ int C2Builder::build() {
         bool ok = true;
         const ModuleList& mainModules = Main->getModules();
         for (unsigned i=0; i<mainModules.size(); i++) {
-            Files files = mainModules[i]->getFiles();
+            const AstList& files = mainModules[i]->getFiles();
             for (unsigned a=0; a<files.size(); a++) {
                 AST* ast = files[a];
                 for (unsigned u=0; u<ast->numImports(); u++) {
@@ -381,7 +382,7 @@ int C2Builder::build() {
                         if (options.verbose) log(COL_VERBOSE, "generating module %s", name.c_str());
                         c2Mod = new Module("c2", true, false);
                         modules["c2"] = c2Mod;
-                        C2ModuleLoader::load(c2Mod, Context);
+                        C2ModuleLoader::load(c2Mod, context);
                         continue;
                     }
                     Module* M = libLoader.loadModule(name);
@@ -403,7 +404,7 @@ int C2Builder::build() {
 
             const ModuleList& mods = C->getModules();
             for (unsigned m=0; m<mods.size(); m++) {
-                Files files = mods[m]->getFiles();
+                const AstList& files = mods[m]->getFiles();
                 for (unsigned a=0; a<files.size(); a++) {
                     AST* ast2 = files[a];
                     if (options.verbose) log(COL_VERBOSE, "parsing (%s) %s", C->name.c_str(), ast2->getFileName().c_str());
@@ -438,7 +439,7 @@ int C2Builder::build() {
     // phase 2: analyse all files
     t1_analyse = Utils::getCurrentTime();
     for (unsigned c=0; c<components.size(); c++) {
-        TargetAnalyser analyser(modules, Diags, *components[c], options.verbose);
+        TargetAnalyser analyser(modules, Diags, *components[c], context, options.verbose);
         errors += analyser.analyse(options.printAST1, options.printAST2, options.printAST3, options.printASTLib);
     }
     t2_analyse = Utils::getCurrentTime();
@@ -501,7 +502,7 @@ bool C2Builder::createModules(Component* C, DiagnosticsEngine& Diags) {
         if (recipe.hasExported(name)) M->setExported();
         modules[name] = M;
 
-        const Files& files = M->getFiles();
+        const AstList& files = M->getFiles();
         for (unsigned a=0; a<files.size(); a++) {
             AST* ast = files[a];
             ok &= addFileToModule(Diags, M, ast);
@@ -639,7 +640,7 @@ void C2Builder::rewriterTest(SourceManager& SM, LangOptions& LangOpts) {
     // TODO only in mainComponent
     const ModuleList& mods = mainComponent->getModules();
     for (unsigned m=0; m<mods.size(); m++) {
-        const Files& files = mods[m]->getFiles();
+        const AstList& files = mods[m]->getFiles();
         for (unsigned a=0; a<files.size(); a++) {
             AST* ast = files[a];
 
@@ -664,7 +665,7 @@ void C2Builder::rewriterTest(SourceManager& SM, LangOptions& LangOpts) {
 
     // print output
     for (unsigned m=0; m<mods.size(); m++) {
-        const Files& files = mods[m]->getFiles();
+        const AstList& files = mods[m]->getFiles();
         for (unsigned a=0; a<files.size(); a++) {
             AST* ast = files[a];
             const RewriteBuffer *RewriteBuf =

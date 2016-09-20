@@ -15,6 +15,7 @@
 
 #include <stdio.h>
 #include <ctype.h>
+#include <vector>
 
 #include <clang/AST/Expr.h>
 #include <clang/Parse/ParseDiagnostic.h>
@@ -82,6 +83,14 @@ static prec::Level getBinOpPrecedence(tok::TokenKind Kind) {
 // TEMP
 static SourceRange getExprRange(C2::Expr *E) {
     return E ? E->getSourceRange() : SourceRange();
+}
+
+static C2::VarDecl* findDecl(VarDeclList decls, const char* name_) {
+    for (unsigned i=0; i<decls.size(); i++) {
+        C2::VarDecl* decl = decls[i];
+        if (strcmp(decl->getName(), name_) == 0) return decl;
+    }
+    return 0;
 }
 
 
@@ -265,6 +274,8 @@ void C2Parser::ParseStructBlock(StructTypeDecl* S) {
     //        af9a02c0cdaafab155de9b2f43bfad33a28429c3
     if (ExpectAndConsume(tok::l_brace)) return;
 
+    DeclList members;
+
     while (1) {
         //Syntax:
         // struct_member ::= type_qualifier type_specifier.
@@ -286,7 +297,7 @@ void C2Parser::ParseStructBlock(StructTypeDecl* S) {
                 idLoc = Tok.getLocation();
             }
             StructTypeDecl* member = Actions.ActOnStructType(name, idLoc, is_struct, S->isPublic(), false);
-            Actions.ActOnStructMember(S, member);
+            members.push_back(member);
             ParseStructBlock(member);
             // TODO remove, use other way and use skipto '}' ? (in ParseStructBlock
             if (Diags.hasErrorOccurred()) return;
@@ -299,9 +310,11 @@ void C2Parser::ParseStructBlock(StructTypeDecl* S) {
             SourceLocation idLoc = ConsumeToken();
 
             if (ExpectAndConsume(tok::semi, diag::err_expected_after, "member")) return;
-            Actions.ActOnStructVar(S, id->getNameStart(), idLoc, type.get(), 0);
+            Decl* member = Actions.ActOnStructVar(S, id->getNameStart(), idLoc, type.get(), 0);
+            members.push_back(member);
         }
     }
+    Actions.ActOnStructMembers(S, members);
     if (ExpectAndConsume(tok::r_brace)) return;
 }
 
@@ -347,29 +360,41 @@ void C2Parser::ParseEnumType(const char* id, SourceLocation idLoc, bool is_publi
     //SourceLocation LeftBrace = Tok.getLocation();
     if (ExpectAndConsume(tok::l_brace)) return;
 
-    EnumTypeDecl* TheEnum = Actions.ActOnEnumType(id, idLoc, implType.get(), is_public);
+    bool is_incr = Tok.is(tok::plus);
 
-    // Syntax: enum_block
-    while (Tok.is(tok::identifier)) {
-        IdentifierInfo* Ident = Tok.getIdentifierInfo();
-        SourceLocation IdentLoc = ConsumeToken();
+    EnumTypeDecl* TheEnum = Actions.ActOnEnumType(id, idLoc, implType.get(), is_public, is_incr);
 
-        ExprResult Value;
-        if (Tok.is(tok::equal)) {
-            ConsumeToken();
-            Value = ParseConstantExpression();
-            if (Value.isInvalid()) {
-                SkipUntil(tok::comma, tok::r_brace, StopAtSemi | StopBeforeMatch);
-                continue;
+    if (is_incr) {
+        ConsumeToken();  // +
+        assert(0 && "TODO incremental enum");
+    } else {
+        // Syntax: enum_block
+        typedef SmallVector<EnumConstantDecl*, 10> EnumConstants;
+        EnumConstants constants;
+
+        while (Tok.is(tok::identifier)) {
+            IdentifierInfo* Ident = Tok.getIdentifierInfo();
+            SourceLocation IdentLoc = ConsumeToken();
+
+            ExprResult Value;
+            if (Tok.is(tok::equal)) {
+                ConsumeToken();
+                Value = ParseConstantExpression();
+                if (Value.isInvalid()) {
+                    SkipUntil(tok::comma, tok::r_brace, StopAtSemi | StopBeforeMatch);
+                    continue;
+                }
             }
+
+            EnumConstantDecl* D = Actions.ActOnEnumConstant(TheEnum, Ident, IdentLoc, Value.get());
+            constants.push_back(D);
+            if (Tok.isNot(tok::comma)) break;
+            ConsumeToken();
         }
 
-        Actions.ActOnEnumConstant(TheEnum, Ident, IdentLoc, Value.get());
-        if (Tok.isNot(tok::comma)) break;
-        ConsumeToken();
+        Actions.ActOnEnumTypeFinished(TheEnum, &constants[0], constants.size());
     }
     //SourceLocation RightBrace = Tok.getLocation();
-    Tok.getLocation();
     ExpectAndConsume(tok::r_brace);
 
     if (!ParseAttributes(TheEnum)) return;
@@ -426,8 +451,23 @@ bool C2Parser::ParseFunctionParams(FunctionDecl* func, bool allow_defaults) {
         return true;
     }
 
+    VarDeclList args;
+
     while (1) {
-        if (!ParseParamDecl(func, allow_defaults)) return false;
+        VarDeclResult decl = ParseParamDecl(func, allow_defaults);
+        if (!decl.isUsable()) return false;
+
+        // check args for duplicates
+        VarDecl* var = decl.get();
+        if (!var->hasEmptyName()) {
+            VarDecl* existing = findDecl(args, var->getName());
+            if (existing) {
+                Diag(var->getLocation(), diag::err_param_redefinition) << var->getName();
+                Diag(existing->getLocation(), diag::note_previous_declaration);
+            }
+        }
+
+        args.push_back(var);
 
         // Syntax: param_decl, param_decl
         if (Tok.isNot(tok::comma)) break;
@@ -441,6 +481,8 @@ bool C2Parser::ParseFunctionParams(FunctionDecl* func, bool allow_defaults) {
         }
     }
 
+    Actions.ActOnFinishFunctionArgs(func, args);
+
     if (ExpectAndConsume(tok::r_paren)) return false;
     return true;
 }
@@ -450,11 +492,11 @@ bool C2Parser::ParseFunctionParams(FunctionDecl* func, bool allow_defaults) {
     param_declaration ::= type_qualifier type_specifier IDENTIFIER param_default.
     param_default ::= EQUALS constant_expression.
 */
-bool C2Parser::ParseParamDecl(FunctionDecl* func, bool allow_defaults) {
+C2::VarDeclResult C2Parser::ParseParamDecl(FunctionDecl* func, bool allow_defaults) {
     LOG_FUNC
 
     ExprResult type = ParseTypeSpecifier(true);
-    if (type.isInvalid()) return false;
+    if (type.isInvalid()) return VarDeclError();
 
     const char* name = "";
     SourceLocation idLoc;
@@ -469,14 +511,13 @@ bool C2Parser::ParseParamDecl(FunctionDecl* func, bool allow_defaults) {
     if (Tok.is(tok::equal)) {
         if (!allow_defaults) {
             Diag(Tok, diag::err_param_default_argument_nonfunc);
-            return false;
+            return VarDeclError();
         }
         ConsumeToken();
         InitValue = ParseConstantExpression();
-        if (InitValue.isInvalid()) return false;
+        if (InitValue.isInvalid()) return VarDeclError();
     }
-    Actions.ActOnFunctionArg(func, name, idLoc, type.get(), InitValue.get());
-    return true;
+    return Actions.ActOnFunctionArg(func, name, idLoc, type.get(), InitValue.get());
 }
 
 /*

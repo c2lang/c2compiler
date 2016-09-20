@@ -101,7 +101,7 @@ private:
 
     // function def
     bool ParseFunctionParams(FunctionDecl* func, bool allow_defaults);
-    bool ParseParamDecl(FunctionDecl* func, bool allow_defaults);
+    VarDeclResult ParseParamDecl(FunctionDecl* func, bool allow_defaults);
 
     // var def
     ExprResult ParseArrayDesignator(bool* need_semi);

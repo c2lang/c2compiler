@@ -73,7 +73,7 @@ void DepGenerator::writeModule(const Module& M, StringBuilder& output, unsigned 
     output << "<group name='" << M.getName() << "' full='module:" << M.getName() << "' collapsed='1'>\n";
     indent += INDENT;
 
-    const Files& files = M.getFiles();
+    const AstList& files = M.getFiles();
     for (unsigned j=0; j<files.size(); j++) {
         const AST* A = files[j];
         if (showFiles) {

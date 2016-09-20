@@ -1,0 +1,31 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c
+
+// @file{file1}
+module foo;
+
+List += 10;
+
+// @file{file2}
+module foo;
+
+List += 20;
+
+const int32[+] List;
+
+List += 30;
+
+// @file{file3}
+module foo;
+
+List += 40;
+
+public func int32 main()
+{
+    return 0;
+}
+
+// @expect{atleast, build/foo.c}
+
+static const int32_t foo_List[] = { 10, 20, 30, 40 };

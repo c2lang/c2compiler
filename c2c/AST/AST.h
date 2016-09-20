@@ -120,7 +120,7 @@ private:
     //FileID fileID;
 };
 
-typedef std::vector<AST*> Files;
+typedef std::vector<AST*> AstList;
 
 }
 

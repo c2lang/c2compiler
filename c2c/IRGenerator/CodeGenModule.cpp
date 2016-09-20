@@ -91,7 +91,7 @@ void CodeGenModule::generate() {
 #endif
 
     for (unsigned m=0; m<mods.size(); m++) {
-        const Files& files = mods[m]->getFiles();
+        const AstList& files = mods[m]->getFiles();
         for (unsigned a=0; a<files.size(); a++) {
             const AST* ast = files[a];
 #ifdef DEBUG_CODEGEN
@@ -107,7 +107,7 @@ void CodeGenModule::generate() {
     }
     // step 2: generate variables
     for (unsigned m=0; m<mods.size(); m++) {
-        const Files& files = mods[m]->getFiles();
+        const AstList& files = mods[m]->getFiles();
         for (unsigned a=0; a<files.size(); a++) {
             const AST* ast = files[a];
 #ifdef DEBUG_CODEGEN
@@ -121,7 +121,7 @@ void CodeGenModule::generate() {
 
     // step 3: generate all function bodies (and possibly external function decls)
     for (unsigned m=0; m<mods.size(); m++) {
-        const Files& files = mods[m]->getFiles();
+        const AstList& files = mods[m]->getFiles();
         for (unsigned a=0; a<files.size(); a++) {
             const AST* ast = files[a];
 #ifdef DEBUG_CODEGEN
@@ -363,13 +363,13 @@ llvm::Constant* CodeGenModule::EvaluateExprAsConstant(const Expr *E) {
         {
             // TODO only use this for arrays of Builtins
             const InitListExpr* I = cast<InitListExpr>(E);
-            const ExprList& Vals = I->getValues();
+            Expr** Vals = I->getValues();
             QualType Q = I->getType().getCanonicalType();
             // NOTE: we only support array inits currently (no struct inits yet)
             if (Q.isArrayType()) {
-                return EmitArrayInit(cast<ArrayType>(Q.getTypePtr()), Vals);
+                return EmitArrayInit(cast<ArrayType>(Q.getTypePtr()), Vals, I->numValues());
             } else {
-                return EmitStructInit(cast<StructType>(Q.getTypePtr()), Vals);
+                return EmitStructInit(cast<StructType>(Q.getTypePtr()), Vals, I->numValues());
             }
         }
     default:
@@ -438,13 +438,13 @@ llvm::Constant* CodeGenModule::EmitDefaultInit(QualType Q) {
             return ConstantPointerNull::get(tt->getPointerTo());
         }
     case TC_ARRAY:
-        return EmitArrayInit(cast<ArrayType>(T), ExprList());
+        return EmitArrayInit(cast<ArrayType>(T), 0, 0);
     case TC_UNRESOLVED:
     case TC_ALIAS:
         assert(0);
         break;
     case TC_STRUCT:
-        return EmitStructInit(cast<StructType>(T), ExprList());
+        return EmitStructInit(cast<StructType>(T), 0, 0);
     case TC_ENUM:
         assert(0);
         break;
@@ -458,7 +458,7 @@ llvm::Constant* CodeGenModule::EmitDefaultInit(QualType Q) {
     return 0;
 }
 
-llvm::Constant* CodeGenModule::EmitStructInit(const StructType *ST, const ExprList& Vals) {
+llvm::Constant* CodeGenModule::EmitStructInit(const StructType *ST, Expr** Vals, unsigned numValues) {
     const StructTypeDecl* D = ST->getDecl();
     assert(D->isStruct() && "TODO unions");
     SmallVector<llvm::Constant*, 16> Elements;
@@ -466,7 +466,7 @@ llvm::Constant* CodeGenModule::EmitStructInit(const StructType *ST, const ExprLi
         const Decl* M = D->getMember(i);
 
         llvm::Constant *EltInit;
-        if (i < Vals.size()) {
+        if (i < numValues) {
             //EltInit = CGM.EmitConstantExpr(Vals[i], M->getType(), CGF);
             EltInit = EvaluateExprAsConstant(Vals[i]);
         } else {
@@ -486,16 +486,16 @@ llvm::Constant* CodeGenModule::EmitStructInit(const StructType *ST, const ExprLi
     return Result;
 }
 
-llvm::Constant* CodeGenModule::EmitArrayInit(const ArrayType *AT, const ExprList& Vals) {
+llvm::Constant* CodeGenModule::EmitArrayInit(const ArrayType *AT, Expr** Vals, unsigned numValues) {
     QualType ET = AT->getElementType();
     assert(isa<BuiltinType>(ET.getTypePtr()));
     BuiltinType* BT = cast<BuiltinType>(ET.getTypePtr());
-    int padding =  AT->getSize().getZExtValue() - Vals.size();
+    int padding =  AT->getSize().getZExtValue() - numValues;
     switch (BT->getWidth()) {
     case 8:
     {
         SmallVector<uint8_t, 32> Elements;
-        for (unsigned i=0; i<Vals.size(); i++) {
+        for (unsigned i=0; i<numValues; i++) {
             const Expr* elem = Vals[i];
             assert(isa<IntegerLiteral>(elem));
             const IntegerLiteral* N = cast<IntegerLiteral>(elem);
@@ -507,7 +507,7 @@ llvm::Constant* CodeGenModule::EmitArrayInit(const ArrayType *AT, const ExprList
     case 16:
     {
         SmallVector<uint16_t, 32> Elements;
-        for (unsigned i=0; i<Vals.size(); i++) {
+        for (unsigned i=0; i<numValues; i++) {
             const Expr* elem = Vals[i];
             assert(isa<IntegerLiteral>(elem));
             const IntegerLiteral* N = cast<IntegerLiteral>(elem);
@@ -519,7 +519,7 @@ llvm::Constant* CodeGenModule::EmitArrayInit(const ArrayType *AT, const ExprList
     case 32:
     {
         SmallVector<uint32_t, 32> Elements;
-        for (unsigned i=0; i<Vals.size(); i++) {
+        for (unsigned i=0; i<numValues; i++) {
             const Expr* elem = Vals[i];
             assert(isa<IntegerLiteral>(elem));
             const IntegerLiteral* N = cast<IntegerLiteral>(elem);
@@ -531,7 +531,7 @@ llvm::Constant* CodeGenModule::EmitArrayInit(const ArrayType *AT, const ExprList
     case 64:
     {
         SmallVector<uint64_t, 32> Elements;
-        for (unsigned i=0; i<Vals.size(); i++) {
+        for (unsigned i=0; i<numValues; i++) {
             const Expr* elem = Vals[i];
             assert(isa<IntegerLiteral>(elem));
             const IntegerLiteral* N = cast<IntegerLiteral>(elem);

@@ -16,10 +16,8 @@
 #ifndef PARSER_C2SEMA_H
 #define PARSER_C2SEMA_H
 
-#include <string>
-#include <map>
-
 #include <clang/Basic/SourceLocation.h>
+#include <vector>
 
 #include "AST/Decl.h"
 #include "AST/Stmt.h"
@@ -47,6 +45,9 @@ class AST;
 class Expr;
 class ASTContext;
 
+typedef std::vector<Decl*> DeclList;
+typedef std::vector<VarDecl*> VarDeclList;
+
 class C2Sema {
 public:
     C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, AST& ast_, clang::Preprocessor& PP_);
@@ -60,16 +61,17 @@ public:
     // function decls
     FunctionDecl* ActOnFuncDecl(const char* name, SourceLocation loc, bool is_public, Expr* rtype);
     FunctionTypeDecl* ActOnFuncTypeDecl(const char* name, SourceLocation loc, bool is_public, Expr* rtype);
-    void ActOnFunctionArg(FunctionDecl* func, const char* name, SourceLocation loc, Expr* type, Expr* InitValue);
-    void ActOnFinishFunctionBody(Decl* func, Stmt* body);
+    VarDeclResult ActOnFunctionArg(FunctionDecl* func, const char* name, SourceLocation loc, Expr* type, Expr* InitValue);
+    void ActOnFinishFunctionArgs(FunctionDecl* func, VarDeclList& args);
+    void ActOnFinishFunctionBody(FunctionDecl* func, Stmt* body);
 
     void ActOnArrayValue(const char* name, SourceLocation loc, Expr* Value);
 
     // struct decls
     Decl* ActOnAliasType(const char* name, SourceLocation loc, Expr* typeExpr, bool is_public);
     StructTypeDecl* ActOnStructType(const char* name, SourceLocation loc, bool isStruct, bool is_public, bool is_global);
-    void ActOnStructVar(StructTypeDecl* S, const char* name, SourceLocation loc, Expr* type, Expr* InitValue);
-    void ActOnStructMember(StructTypeDecl* S, Decl* member);
+    Decl* ActOnStructVar(StructTypeDecl* S, const char* name, SourceLocation loc, Expr* type, Expr* InitValue);
+    void ActOnStructMembers(StructTypeDecl* S, DeclList& members);
 
     // statements
     StmtResult ActOnReturnStmt(SourceLocation loc, Expr* value);
@@ -110,9 +112,9 @@ public:
     ExprResult ActOnPointerType(Expr* base);
     ExprResult ActOnUserType(Expr* mName, Expr* tName);
     ExprResult ActOnBuiltinType(tok::TokenKind k);
-    EnumTypeDecl* ActOnEnumType(const char* name, SourceLocation loc, Expr* implType, bool is_public);
-    ExprResult ActOnEnumTypeFinished(Expr* enumType, SourceLocation leftBrace, SourceLocation rightBrace);
-    void ActOnEnumConstant(EnumTypeDecl* Enum, IdentifierInfo* symII, SourceLocation symLoc, Expr* Value);
+    EnumTypeDecl* ActOnEnumType(const char* name, SourceLocation loc, Expr* implType, bool is_public, bool is_incr);
+    void ActOnEnumTypeFinished(EnumTypeDecl* Enum, EnumConstantDecl** constants, unsigned numConstants);
+    EnumConstantDecl* ActOnEnumConstant(EnumTypeDecl* Enum, IdentifierInfo* symII, SourceLocation symLoc, Expr* Value);
     ExprResult ActOnTypeQualifier(ExprResult R, unsigned qualifier);
     ExprResult ActOnBuiltinExpression(SourceLocation Loc, Expr* expr, bool isSizeof);
     ExprResult ActOnArraySubScriptExpr(SourceLocation RLoc, Expr* Base, Expr* Idx);

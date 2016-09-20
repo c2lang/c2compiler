@@ -1,0 +1,4 @@
+module test;
+
+int32[+] a = {}     // @error{incremental array cannot have initializer}
+

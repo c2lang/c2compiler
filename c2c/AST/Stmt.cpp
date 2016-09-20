@@ -230,36 +230,40 @@ void SwitchStmt::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 
-CaseStmt::CaseStmt(SourceLocation Loc_, Expr* Cond_, StmtList& Stmts_)
+CaseStmt::CaseStmt(SourceLocation Loc_, Expr* Cond_, Stmt** stmts_, unsigned numStmts_)
     : Stmt(STMT_CASE)
     , Loc(Loc_)
     , Cond(Cond_)
-    , Stmts(Stmts_)
-{}
+    , stmts(stmts_)
+{
+    caseStmtBits.numStmts = numStmts_;
+}
 
 void CaseStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
     buffer << "CaseStmt\n";
     Cond->print(buffer, indent + INDENT);
-    for (unsigned i=0; i<Stmts.size(); i++) {
-        Stmts[i]->print(buffer, indent + INDENT);
+    for (unsigned i=0; i<numStmts(); i++) {
+        stmts[i]->print(buffer, indent + INDENT);
     }
 }
 
 
-DefaultStmt::DefaultStmt(SourceLocation Loc_, StmtList& Stmts_)
+DefaultStmt::DefaultStmt(SourceLocation Loc_, Stmt** stmts_, unsigned numStmts_)
     : Stmt(STMT_DEFAULT)
     , Loc(Loc_)
-    , Stmts(Stmts_)
-{}
+    , stmts(stmts_)
+{
+    defaultStmtBits.numStmts = numStmts_;
+}
 
 void DefaultStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
     buffer << "DefaultStmt\n";
-    for (unsigned i=0; i<Stmts.size(); i++) {
-        Stmts[i]->print(buffer, indent + INDENT);
+    for (unsigned i=0; i<numStmts(); i++) {
+        stmts[i]->print(buffer, indent + INDENT);
     }
 }
 
@@ -319,26 +323,28 @@ void GotoStmt::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 
-CompoundStmt::CompoundStmt(SourceLocation l, SourceLocation r, StmtList& stmts_)
+CompoundStmt::CompoundStmt(SourceLocation l, SourceLocation r, Stmt** stmts_, unsigned numStmts_)
     : Stmt(STMT_COMPOUND)
     , Left(l)
     , Right(r)
-    , Stmts(stmts_)
-{}
+    , stmts(stmts_)
+{
+    compoundStmtBits.numStmts = numStmts_;
+}
 
 void CompoundStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
     buffer << "CompoundStmt\n";
-    for (unsigned i=0; i<Stmts.size(); i++) {
-        Stmts[i]->print(buffer, indent + INDENT);
+    for (unsigned i=0; i<numStmts(); i++) {
+        stmts[i]->print(buffer, indent + INDENT);
     }
 }
 
 Stmt* CompoundStmt::getLastStmt() const {
-    if (Stmts.size() == 0) return 0;
+    if (numStmts() == 0) return 0;
 
-    Stmt* last = Stmts[Stmts.size() -1];
+    Stmt* last = stmts[numStmts() -1];
 
     // TODO handle goto statement as last statement
     while (1) {

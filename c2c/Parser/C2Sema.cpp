@@ -31,6 +31,7 @@
 //#define SEMA_MEMSIZE
 
 #ifdef SEMA_DEBUG
+#include <iostream>
 #include "Utils/color.h"
 #endif
 
@@ -369,6 +370,11 @@ C2::Decl* C2Sema::ActOnAliasType(const char* name_, SourceLocation loc, Expr* ty
 }
 
 C2::VarDecl* C2Sema::ActOnVarDef(const char* name, SourceLocation loc, bool is_public, Expr* type) {
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: VarDef " << name << " at ";
+    loc.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
     TypeExpr* typeExpr = cast<TypeExpr>(type);
     if (typeExpr->hasLocalQualifier()) {
         Diag(loc, diag::err_invalid_local_globalvar);
@@ -451,7 +457,7 @@ C2::FunctionTypeDecl* C2Sema::ActOnFuncTypeDecl(const char* name_, SourceLocatio
     return FTD;
 }
 
-void C2Sema::ActOnFunctionArg(FunctionDecl* func, const char* name, SourceLocation loc, Expr* type, Expr* InitValue) {
+C2::VarDeclResult C2Sema::ActOnFunctionArg(FunctionDecl* func, const char* name, SourceLocation loc, Expr* type, Expr* InitValue) {
 #ifdef SEMA_DEBUG
     assert(name);
     std::cerr << COL_SEMA"SEMA: function arg" << name << " at ";
@@ -465,15 +471,6 @@ void C2Sema::ActOnFunctionArg(FunctionDecl* func, const char* name, SourceLocati
     }
     VarDecl* var = createVarDecl(VARDECL_PARAM, name, loc, typeExpr, InitValue, func->isPublic());
 
-    // check args for duplicates
-    if (!var->hasEmptyName()) {
-        VarDecl* existing = func->findArg(var->getName());
-        if (existing) {
-            Diag(var->getLocation(), diag::err_param_redefinition) << var->getName();
-            Diag(existing->getLocation(), diag::note_previous_declaration);
-        }
-    }
-    func->addArg(var);
     // check if already have default args
     if (var->getInitValue()) {
         func->setDefaultArgs();
@@ -487,10 +484,17 @@ void C2Sema::ActOnFunctionArg(FunctionDecl* func, const char* name, SourceLocati
             }
         }
     }
+    return VarDeclResult(var);
 }
 
-void C2Sema::ActOnFinishFunctionBody(Decl* decl, Stmt* body) {
-    FunctionDecl* func = cast<FunctionDecl>(decl);
+void C2Sema::ActOnFinishFunctionArgs(FunctionDecl* func, VarDeclList& args_) {
+    unsigned numArgs = args_.size();
+    VarDecl** args = (VarDecl**)Context.Allocate(sizeof(VarDecl*)*numArgs);
+    memcpy(args, &args_[0], sizeof(VarDecl*)*numArgs);
+    func->setArgs(args, numArgs);
+}
+
+void C2Sema::ActOnFinishFunctionBody(FunctionDecl* func, Stmt* body) {
     CompoundStmt* C = cast<CompoundStmt>(body);
     func->setBody(C);
 }
@@ -571,24 +575,30 @@ C2::StmtResult C2Sema::ActOnSwitchStmt(SourceLocation loc, Stmt* Cond, StmtList&
     return StmtResult(new (Context) SwitchStmt(loc, Cond, cases, numCases));
 }
 
-C2::StmtResult C2Sema::ActOnCaseStmt(SourceLocation loc, Expr* Cond, StmtList& stmts) {
+C2::StmtResult C2Sema::ActOnCaseStmt(SourceLocation loc, Expr* Cond, StmtList& stmts_) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: case statement at ";
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
     MEM_STMT(STMT_CASE);
-    return StmtResult(new (Context) CaseStmt(loc, Cond, stmts));
+    unsigned numStmts = stmts_.size();
+    Stmt** stmts = (Stmt**)Context.Allocate(sizeof(Stmt*)*numStmts);
+    memcpy(stmts, &stmts_[0], sizeof(Stmt*)*numStmts);
+    return StmtResult(new (Context) CaseStmt(loc, Cond, stmts, numStmts));
 }
 
-C2::StmtResult C2Sema::ActOnDefaultStmt(SourceLocation loc, StmtList& stmts) {
+C2::StmtResult C2Sema::ActOnDefaultStmt(SourceLocation loc, StmtList& stmts_) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: default statement at ";
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
     MEM_STMT(STMT_DEFAULT);
-    return StmtResult(new (Context) DefaultStmt(loc, stmts));
+    unsigned numStmts = stmts_.size();
+    Stmt** stmts = (Stmt**)Context.Allocate(sizeof(Stmt*)*numStmts);
+    memcpy(stmts, &stmts_[0], sizeof(Stmt*)*numStmts);
+    return StmtResult(new (Context) DefaultStmt(loc, stmts, numStmts));
 }
 
 C2::StmtResult C2Sema::ActOnBreakStmt(SourceLocation loc) {
@@ -633,14 +643,17 @@ C2::StmtResult C2Sema::ActOnGotoStmt(const char* name_, SourceLocation GotoLoc, 
     return StmtResult(new (Context) GotoStmt(name, GotoLoc, LabelLoc));
 }
 
-C2::StmtResult C2Sema::ActOnCompoundStmt(SourceLocation L, SourceLocation R, StmtList& stmts) {
+C2::StmtResult C2Sema::ActOnCompoundStmt(SourceLocation L, SourceLocation R, StmtList& stmts_) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: compound statement at ";
     L.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
     MEM_STMT(STMT_COMPOUND);
-    return StmtResult(new (Context) CompoundStmt(L, R, stmts));
+    unsigned numStmts = stmts_.size();
+    Stmt** stmts = (Stmt**)Context.Allocate(sizeof(Stmt*)*numStmts);
+    memcpy(stmts, &stmts_[0], sizeof(Stmt*)*numStmts);
+    return StmtResult(new (Context) CompoundStmt(L, R, stmts, numStmts));
 }
 
 C2::StmtResult C2Sema::ActOnDeclaration(const char* name_, SourceLocation loc, Expr* type, Expr* InitValue) {
@@ -713,7 +726,7 @@ C2::ExprResult C2Sema::ActOnBinOp(SourceLocation opLoc, tok::TokenKind Kind, Exp
     assert(LHS);
     assert(RHS);
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: BinOp " << tok::getTokenSimpleSpelling(Kind) << " at ";
+    std::cerr << COL_SEMA"SEMA: BinOp " << tok::getPunctuatorSpelling(Kind) << " at ";
     opLoc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
@@ -744,14 +757,19 @@ C2::ExprResult C2Sema::ActOnInitList(SourceLocation left_, SourceLocation right_
     left_.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
+    unsigned numValues = vals.size();
+    // TODO allow size = 0?
+    assert(numValues != 0);
+    Expr** values = (Expr**)Context.Allocate(sizeof(Expr*)*numValues);
+    memcpy(values, &vals[0], sizeof(Expr*)*numValues);
     MEM_EXPR(EXPR_INITLIST);
-    return ExprResult(new (Context) InitListExpr(left_, right_, vals));
+    return ExprResult(new (Context) InitListExpr(left_, right_, values, numValues));
 }
 
 C2::ExprResult C2Sema::ActOnArrayDesignatorExpr(SourceLocation left, ExprResult Designator, ExprResult InitValue) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: ArrayDesignatorExpr at ";
-    left_.dump(SourceMgr);
+    left.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
     MEM_EXPR(EXPR_DESIGNATOR_INIT);
@@ -801,10 +819,10 @@ C2::ExprResult C2Sema::ActOnUserType(Expr* mName_, Expr* tName_) {
     }
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA << "SEMA: User Type ";
-    if (moduleName) {
-        std::cerr << moduleName->getName() << '.';
+    if (mName) {
+        std::cerr << mName->getName() << '.';
     }
-    std::cerr << typeName->getName() << " at ";
+    std::cerr << tName->getName() << " at ";
     tName->getLocation().dump(SourceMgr);
     std::cerr << ANSI_NORMAL << '\n';
 #endif
@@ -866,7 +884,7 @@ StructTypeDecl* C2Sema::ActOnStructType(const char* name_, SourceLocation loc,
     return S;
 }
 
-void C2Sema::ActOnStructVar(StructTypeDecl* S, const char* name_, SourceLocation loc, Expr* type, Expr* InitValue) {
+C2::Decl* C2Sema::ActOnStructVar(StructTypeDecl* S, const char* name_, SourceLocation loc, Expr* type, Expr* InitValue) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA << "SEMA: struct var " << name_ << " at ";
     loc.dump(SourceMgr);
@@ -876,18 +894,20 @@ void C2Sema::ActOnStructVar(StructTypeDecl* S, const char* name_, SourceLocation
     if (typeExpr->hasLocalQualifier()) {
         Diag(loc, diag::err_invalid_local_structmember) << (S->isStruct() ? 0 : 1);
     }
-    VarDecl* V = createVarDecl(VARDECL_MEMBER, name_, loc, typeExpr, InitValue, S->isPublic());
-    ActOnStructMember(S, V);
+    return createVarDecl(VARDECL_MEMBER, name_, loc, typeExpr, InitValue, S->isPublic());
 }
 
-void C2Sema::ActOnStructMember(StructTypeDecl* S, Decl* member) {
+void C2Sema::ActOnStructMembers(StructTypeDecl* S, DeclList& members_) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA << "SEMA: struct member" << ANSI_NORMAL << '\n';
 #endif
-    S->addMember(member);
+    unsigned numMembers = members_.size();
+    Decl** members = (Decl**)Context.Allocate(sizeof(Decl*)*numMembers);
+    memcpy(members, &members_[0], sizeof(Decl*)*numMembers);
+    S->setMembers(members, numMembers);
 }
 
-EnumTypeDecl* C2Sema::ActOnEnumType(const char* name_, SourceLocation loc, Expr* implType, bool is_public) {
+EnumTypeDecl* C2Sema::ActOnEnumType(const char* name_, SourceLocation loc, Expr* implType, bool is_public, bool is_incr) {
     assert(implType);
     TypeExpr* T = cast<TypeExpr>(implType);
     QualType impl = T->getType();
@@ -897,7 +917,7 @@ EnumTypeDecl* C2Sema::ActOnEnumType(const char* name_, SourceLocation loc, Expr*
     QualType qt = Context.getEnumType();
     MEM_DECL(DECL_ENUMTYPE);
     const char* name = Context.addIdentifier(name_, strlen(name_));
-    EnumTypeDecl* E = new (Context) EnumTypeDecl(name, loc, impl, qt, is_public);
+    EnumTypeDecl* E = new (Context) EnumTypeDecl(name, loc, impl, qt, is_incr, is_public);
     EnumType* ET = cast<EnumType>(qt.getTypePtr());
     ET->setCanonicalType(impl);
     ET->setDecl(E);
@@ -906,7 +926,7 @@ EnumTypeDecl* C2Sema::ActOnEnumType(const char* name_, SourceLocation loc, Expr*
     return E;
 }
 
-void C2Sema::ActOnEnumConstant(EnumTypeDecl* Enum, IdentifierInfo* symII,
+C2::EnumConstantDecl* C2Sema::ActOnEnumConstant(EnumTypeDecl* Enum, IdentifierInfo* symII,
                                 SourceLocation symLoc, Expr* Value) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA << "SEMA: enum constant" << ANSI_NORMAL"\n";
@@ -916,21 +936,18 @@ void C2Sema::ActOnEnumConstant(EnumTypeDecl* Enum, IdentifierInfo* symII,
     const char* name = Context.addIdentifier(symII->getNameStart(), symII->getLength());
     EnumConstantDecl* D = new (Context) EnumConstantDecl(name, symLoc, Enum->getType(), Value,
                                                Enum->isPublic());
-    Enum->addConstant(D);
     addSymbol(D);
 
     if (!isupper(name[0]) && !ast.isInterface()) {
         Diag(symLoc, diag::err_enumconst_casing);
     }
+    return D;
 }
 
-C2::ExprResult C2Sema::ActOnEnumTypeFinished(Expr* enumType,
-                            SourceLocation leftBrace, SourceLocation rightBrace) {
-#ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA << "SEMA: enum Type" << ANSI_NORMAL"\n";
-#endif
-    // TODO use left/rightBrace (add to TypeExpr, then pass to TypeDecl)
-    return ExprResult(enumType);
+void C2Sema::ActOnEnumTypeFinished(EnumTypeDecl* Enum, EnumConstantDecl** constants_, unsigned numConstants) {
+    EnumConstantDecl** constants = (EnumConstantDecl**)Context.Allocate(sizeof(EnumConstantDecl*)*numConstants);
+    memcpy(constants, constants_, sizeof(EnumConstantDecl*)*numConstants);
+    Enum->setConstants(constants, numConstants);
 }
 
 C2::ExprResult C2Sema::ActOnTypeQualifier(ExprResult R, unsigned qualifier) {
@@ -1275,7 +1292,7 @@ C2::ExprResult C2Sema::ActOnStringLiteral(ArrayRef<Token> StringToks) {
 C2::ExprResult C2Sema::ActOnCharacterConstant(const Token& Tok) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA << "SEMA: char constant at ";
-    Loc.dump(SourceMgr);
+    Tok.getLocation().dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
     SmallString<16> CharBuffer;

@@ -25,7 +25,6 @@
 #include "Analyser/AnalyserUtils.h"
 #include "Analyser/AnalyserConstants.h"
 #include "AST/Decl.h"
-#include "AST/Expr.h"
 #include "AST/AST.h"
 #include "Utils/color.h"
 #include <ctype.h>
@@ -149,12 +148,12 @@ unsigned FileAnalyser::resolveVars() {
     return errors;
 }
 
-unsigned FileAnalyser::checkArrayValues() {
+unsigned FileAnalyser::checkArrayValues(IncrementalArrayVals& values) {
     LOG_FUNC
     if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
     unsigned errors = 0;
     for (unsigned i=0; i<ast.numArrayValues(); i++) {
-        errors += checkArrayValue(ast.getArrayValue(i));
+        errors += checkArrayValue(ast.getArrayValue(i), values);
     }
     return errors;
 }
@@ -172,7 +171,7 @@ void FileAnalyser::checkVarInits() {
                 Diags.Report(V->getLocation(), diag::err_uninitialized_const_var) << V->getName();
             } else if (T->isArrayType()) {
                 const ArrayType* AT = cast<ArrayType>(T.getCanonicalType());
-                if (!AT->getSizeExpr()) {
+                if (!AT->isIncremental() && !AT->getSizeExpr()) {
                     // Move to checking of array type (same as in FunctionAnalyser::analyseDeclExpr())
                     Diags.Report(V->getLocation(), diag::err_typecheck_incomplete_array_needs_initializer);
                 }
@@ -220,7 +219,7 @@ unsigned FileAnalyser::resolveEnumConstants() {
     return errors;
 }
 
-unsigned FileAnalyser::checkFunctionProtos() {
+unsigned FileAnalyser::checkFunctionProtos(StructFunctionList& structFuncs) {
     LOG_FUNC
     if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
     unsigned errors = 0;
@@ -240,7 +239,7 @@ unsigned FileAnalyser::checkFunctionProtos() {
            // }
         }
         checkAttributes(F);
-        checkStructFunction(F);
+        checkStructFunction(F, structFuncs);
     }
     return errors;
 }
@@ -393,23 +392,25 @@ unsigned FileAnalyser::checkTypeDecl(TypeDecl* D) {
     return errors;
 }
 
-void FileAnalyser::checkStructFunction(FunctionDecl* F) {
+void FileAnalyser::checkStructFunction(FunctionDecl* F, StructFunctionList& structFuncs) {
     char structName[MAX_LEN_VARNAME];
     const char* memberName = AnalyserUtils::splitStructFunctionName(structName, F->getName());
     if (!memberName) return;
 
     Decl* D = module.findSymbol(structName);
-    if (D) {
-        StructTypeDecl* S = dyncast<StructTypeDecl>(D);
-        if (S) {
-            Decl* match = S->find(memberName);
-            if (match) {
-                Diags.Report(match->getLocation(), diag::err_struct_function_conflict) << match->DiagName() << F->DiagName();
-                Diags.Report(F->getLocation(), diag::note_previous_declaration);
-            } else {
-                S->addStructFunction(memberName, F);
-            }
-        }
+    if (!D) return;
+
+    StructTypeDecl* S = dyncast<StructTypeDecl>(D);
+    if (!S) return;
+
+    Decl* match = S->find(memberName);
+    if (match) {
+        Diags.Report(match->getLocation(), diag::err_struct_function_conflict) << match->DiagName() << F->DiagName();
+        Diags.Report(F->getLocation(), diag::note_previous_declaration);
+    } else {
+        unsigned offset = memberName - F->getName();
+        F->setStructFuncNameOffset(offset);
+        structFuncs[S].push_back(F);
     }
 }
 
@@ -477,6 +478,16 @@ unsigned FileAnalyser::resolveVarDecl(VarDecl* D) {
     // TODO move to after checkVarInits() (to allow constants in array size)
     if (Q.isArrayType()) {
         functionAnalyser.checkArraySizeExpr(D);
+
+        const ArrayType* AT = cast<ArrayType>(Q.getCanonicalType());
+        if (AT->isIncremental()) {
+            if (D->getInitValue()) {
+                Diags.Report(D->getInitValue()->getLocation(),  diag::err_incremental_array_initlist);
+                return 1;
+            }
+            InitListExpr* ILE = new (ast.getASTContext()) InitListExpr(D->getLocation(), D->getLocation());
+            D->setInitValue(ILE);
+        }
     }
 
     TR->checkOpaqueType(D->getLocation(), D->isPublic(), Q);
@@ -492,6 +503,7 @@ unsigned FileAnalyser::resolveVarDecl(VarDecl* D) {
             }
         }
     }
+
     // NOTE: dont check initValue here (doesn't have canonical type yet)
     return 0;
 }
@@ -521,7 +533,7 @@ unsigned FileAnalyser::resolveFunctionDecl(FunctionDecl* D, bool checkArgs) {
     return errors;
 }
 
-unsigned FileAnalyser::checkArrayValue(ArrayValueDecl* D) {
+unsigned FileAnalyser::checkArrayValue(ArrayValueDecl* D, IncrementalArrayVals& values) {
     LOG_FUNC
     // find decl
     Decl* found = globals->findSymbolInModule(D->getName(), D->getLocation(), D->getModule());
@@ -536,6 +548,7 @@ unsigned FileAnalyser::checkArrayValue(ArrayValueDecl* D) {
         }
         // TODO check duplicate values?
         //ILE->addExpr(D->transferExpr());
+        // TODO add to temp list here
         return 0;
     }
 
@@ -556,11 +569,7 @@ unsigned FileAnalyser::checkArrayValue(ArrayValueDecl* D) {
         return 1;
     }
 
-    Expr* I = VD->getInitValue();
-    assert(I);
-    InitListExpr* ILE = dyncast<InitListExpr>(I);
-    assert(ILE);
-    ILE->addExpr(D->getExpr());
+    values[VD].push_back(D->getExpr());
     return 0;
 }
 

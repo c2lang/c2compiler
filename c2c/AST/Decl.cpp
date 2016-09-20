@@ -153,9 +153,12 @@ FunctionDecl::FunctionDecl(const char* name_, SourceLocation loc_,
     : Decl(DECL_FUNC, name_, loc_, QualType(), is_public)
     , rtype(rtype_)
     , origRType(rtype_)
+    , args(0)
     , body(0)
     , IRProto(0)
 {
+    functionDeclBits.structFuncNameOffset= 0;
+    functionDeclBits.numArgs = 0;
     functionDeclBits.IsVariadic = 0;
     functionDeclBits.HasDefaultArgs = 0;
 }
@@ -169,26 +172,18 @@ void FunctionDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.setColor(COL_VALUE);
     buffer << ' ' << name;
     buffer << '\n';
-    for (unsigned i=0; i<args.size(); i++) {
+    for (unsigned i=0; i<numArgs(); i++) {
         args[i]->print(buffer, indent + INDENT);
     }
     printAttributes(buffer, indent + INDENT);
     if (body) body->print(buffer, INDENT);
 }
 
-VarDecl* FunctionDecl::findArg(const char* name_) const {
-    for (unsigned i=0; i<args.size(); i++) {
-        VarDecl* arg = args[i];
-        if (strcmp(arg->getName(), name_) == 0) return arg;
-    }
-    return 0;
-}
-
 unsigned FunctionDecl::minArgs() const {
-    if (!hasDefaultArgs()) return args.size();
+    if (!hasDefaultArgs()) return numArgs();
 
     unsigned i;
-    for (i=0; i<args.size(); i++) {
+    for (i=0; i<numArgs(); i++) {
         VarDecl* arg = args[i];
         if (arg->getInitValue()) break;
     }
@@ -279,23 +274,18 @@ StructTypeDecl::StructTypeDecl(const char* name_, SourceLocation loc_,
                              QualType type_, bool is_struct, bool is_global,
                              bool is_public)
     : TypeDecl(DECL_STRUCTTYPE, name_, loc_, type_, is_public)
+    , members(0)
+    , structFunctions(0)
 {
+    structTypeDeclBits.numMembers = 0;
+    structTypeDeclBits.numStructFunctions = 0;
     structTypeDeclBits.IsStruct = is_struct;
     structTypeDeclBits.IsGlobal = is_global;
 }
 
-void StructTypeDecl::addMember(Decl* D) {
-    assert(isa<VarDecl>(D) || isa<StructTypeDecl>(D));
-    members.push_back(D);
-}
-
-void StructTypeDecl::addStructFunction(const char* name_, Decl* D) {
-    structFunctions[name_] = D;
-}
-
 Decl* StructTypeDecl::find(const char* name_) const {
     // normal members
-    for (unsigned i=0; i<members.size(); i++) {
+    for (unsigned i=0; i<numMembers(); i++) {
         Decl* D = members[i];
         if (strcmp(D->getName(), name_) == 0) return D;
         if (D->hasEmptyName()) {      // empty string
@@ -311,13 +301,15 @@ Decl* StructTypeDecl::find(const char* name_) const {
 
 Decl* StructTypeDecl::findFunction(const char* name_) const {
     // struct-functions
-    StructFunctionsConstIter iter = structFunctions.find(name_);
-    if (iter != structFunctions.end()) return iter->second;
+    for (unsigned i=0; i<numStructFunctions(); i++) {
+        FunctionDecl* F = structFunctions[i];
+        if (F->matchesStructFuncName(name_)) return F;
+    }
     return 0;
 }
 
 int StructTypeDecl::findIndex(const char*  name_) const {
-    for (unsigned i=0; i<members.size(); i++) {
+    for (unsigned i=0; i<numMembers(); i++) {
         Decl* D = members[i];
         if (strcmp(D->getName(), name_) == 0) return i;
     }
@@ -325,7 +317,7 @@ int StructTypeDecl::findIndex(const char*  name_) const {
 }
 
 void StructTypeDecl::setOpaqueMembers() {
-    for (unsigned i=0; i<members.size(); i++) {
+    for (unsigned i=0; i<numMembers(); i++) {
         Decl* D = members[i];
         D->setPublic(false);
         StructTypeDecl* subStruct = dyncast<StructTypeDecl>(D);
@@ -347,7 +339,7 @@ void StructTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
     else buffer << "<anonymous>";
     buffer << '\n';
     printAttributes(buffer, indent + INDENT);
-    for (unsigned i=0; i<members.size(); i++) {
+    for (unsigned i=0; i<numMembers(); i++) {
         members[i]->print(buffer, indent + INDENT);
     }
 }
@@ -361,22 +353,23 @@ void EnumTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
     printPublic(buffer);
     buffer.setColor(COL_VALUE);
     buffer << ' ' << name;
+    if (isIncremental()) buffer << " incremental";
     buffer << '\n';
     printAttributes(buffer, indent + INDENT);
-    for (unsigned i=0; i<constants.size(); i++) {
+    for (unsigned i=0; i<numConstants(); i++) {
         constants[i]->print(buffer, indent + INDENT);
     }
 }
 
 int EnumTypeDecl::getIndex(const EnumConstantDecl* c) const {
-    for (unsigned i=0; i<constants.size(); i++) {
+    for (unsigned i=0; i<numConstants(); i++) {
         if (constants[i] == c) return i;
     }
     return -1;
 }
 
 bool EnumTypeDecl::hasConstantValue(llvm::APSInt Val) const {
-    for (unsigned i=0; i<constants.size(); i++) {
+    for (unsigned i=0; i<numConstants(); i++) {
         if (constants[i]->getValue() == Val) return true;
     }
     return false;

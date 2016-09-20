@@ -90,8 +90,8 @@ void RefFinder::searchStmt(const Stmt* S) {
         {
             const CaseStmt* C = cast<CaseStmt>(S);
             searchExpr(C->getCond());
-            const StmtList& stmts = C->getStmts();
-            for (unsigned i=0; i<stmts.size(); i++) {
+            Stmt** stmts = C->getStmts();
+            for (unsigned i=0; i<C->numStmts(); i++) {
                 searchStmt(stmts[i]);
             }
             break;
@@ -99,8 +99,8 @@ void RefFinder::searchStmt(const Stmt* S) {
     case STMT_DEFAULT:
         {
             const DefaultStmt* D = cast<DefaultStmt>(S);
-            const StmtList& stmts = D->getStmts();
-            for (unsigned i=0; i<stmts.size(); i++) {
+            Stmt** stmts = D->getStmts();
+            for (unsigned i=0; i<D->numStmts(); i++) {
                 searchStmt(stmts[i]);
             }
             break;
@@ -121,8 +121,8 @@ void RefFinder::searchStmt(const Stmt* S) {
 }
 
 void RefFinder::searchCompoundStmt(const CompoundStmt* C) {
-    const StmtList& stmts = C->getStmts();
-    for (unsigned i=0; i<stmts.size(); i++) {
+    Stmt** stmts = C->getStmts();
+    for (unsigned i=0; i<C->numStmts(); i++) {
         searchStmt(stmts[i]);
     }
 }
@@ -160,8 +160,8 @@ void RefFinder::searchExpr(const Expr* E) {
     case EXPR_INITLIST:
         {
             const InitListExpr* I = cast<InitListExpr>(E);
-            const ExprList& values = I->getValues();
-            for (unsigned i=0; i<values.size(); i++) {
+            Expr** values = I->getValues();
+            for (unsigned i=0; i<I->numValues(); i++) {
                 searchExpr(values[i]);
             }
             break;

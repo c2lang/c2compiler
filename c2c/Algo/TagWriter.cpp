@@ -127,7 +127,7 @@ TagWriter::TagWriter(const clang::SourceManager& SM_, const Components& componen
     for (unsigned c=0; c<components.size(); c++) {
         const ModuleList& mods = components[c]->getModules();
         for (unsigned m=0; m<mods.size(); m++) {
-            const Files& modFiles = mods[m]->getFiles();
+            const AstList& modFiles = mods[m]->getFiles();
             for (unsigned i=0; i<modFiles.size(); i++) {
                 analyse(*modFiles[i]);
             }

@@ -288,8 +288,8 @@ void FunctionAnalyser::analyseCompoundStmt(Stmt* stmt) {
     LOG_FUNC
     assert(CurrentFunction);
     CompoundStmt* compound = cast<CompoundStmt>(stmt);
-    const StmtList& stmts = compound->getStmts();
-    for (unsigned i=0; i<stmts.size(); i++) {
+    Stmt** stmts = compound->getStmts();
+    for (unsigned i=0; i<compound->numStmts(); i++) {
         analyseStmt(stmts[i]);
     }
 }
@@ -439,8 +439,8 @@ void FunctionAnalyser::analyseCaseStmt(Stmt* stmt) {
     LOG_FUNC
     CaseStmt* C = cast<CaseStmt>(stmt);
     analyseExpr(C->getCond(), RHS);
-    const StmtList& stmts = C->getStmts();
-    for (unsigned i=0; i<stmts.size(); i++) {
+    Stmt** stmts = C->getStmts();
+    for (unsigned i=0; i<C->numStmts(); i++) {
         analyseStmt(stmts[i]);
     }
 }
@@ -448,8 +448,8 @@ void FunctionAnalyser::analyseCaseStmt(Stmt* stmt) {
 void FunctionAnalyser::analyseDefaultStmt(Stmt* stmt) {
     LOG_FUNC
     DefaultStmt* D = cast<DefaultStmt>(stmt);
-    const StmtList& stmts = D->getStmts();
-    for (unsigned i=0; i<stmts.size(); i++) {
+    Stmt** stmts = D->getStmts();
+    for (unsigned i=0; i<D->numStmts(); i++) {
         analyseStmt(stmts[i]);
     }
 }
@@ -728,7 +728,8 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
 
 void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
     LOG_FUNC
-    const ExprList& values = expr->getValues();
+    Expr** values = expr->getValues();
+    unsigned numValues = expr->numValues();
     bool haveDesignators = false;
     if (Q.isArrayType()) {
         bool haveErrors = false;
@@ -736,7 +737,7 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
         ArrayType* AT = cast<ArrayType>(Q.getCanonicalType().getTypePtr());
         QualType ET = AT->getElementType();
         bool constant = true;
-        for (unsigned i=0; i<values.size(); i++) {
+        for (unsigned i=0; i<numValues; i++) {
             analyseInitExpr(values[i], ET);
             if (DesignatedInitExpr* D = dyncast<DesignatedInitExpr>(values[i])) {
                 haveDesignators = true;
@@ -765,12 +766,12 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
             if (AT->getSizeExpr()) {    // size determined by expr
                 initSize = AT->getSize();
                 uint64_t arraySize = AT->getSize().getZExtValue();
-                if (values.size() > arraySize) {
+                if (numValues > arraySize) {
                     int firstExceed = AT->getSize().getZExtValue();
                     Diag(values[firstExceed]->getLocation(), diag::err_excess_initializers) << 0;
                 }
             } else {    // size determined from #elems in initializer list
-                initSize = values.size();
+                initSize = numValues;
             }
         }
         AT->setSize(initSize);
@@ -783,14 +784,14 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
         assert(STD->isStruct() && "TEMP only support structs for now");
         bool constant = true;
         // ether init whole struct with field designators, or don't use any (no mixing allowed)
-        if (!values.empty() && isa<DesignatedInitExpr>(values[0])) {
+        if (numValues!=0 && isa<DesignatedInitExpr>(values[0])) {
             haveDesignators = true;
         }
         // TODO cleanup this code (after unit-tests) Split into field-designator / non-designator init
         typedef std::vector<Expr*> Fields;
         Fields fields;
         fields.resize(STD->numMembers());
-        for (unsigned i=0; i<values.size(); i++) {
+        for (unsigned i=0; i<numValues; i++) {
             if (i >= STD->numMembers()) {
                 // note: 0 for array, 2 for scalar, 3 for union, 4 for structs
                 Diag(values[STD->numMembers()]->getLocation(), diag::err_excess_initializers)
@@ -823,8 +824,7 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
                     continue;
                 }
                 fields[memberIndex] = values[i];
-                Decl* member = STD->getMember(memberIndex);
-                assert(member);
+                assert(STD->getMember(memberIndex));
                 VarDecl* VD = dyncast<VarDecl>(STD->getMember(i));
                 assert(VD && "TEMP don't support sub-struct member inits");
                 analyseInitExpr(D->getInitValue(), VD->getType());
@@ -844,7 +844,7 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
     } else {
         // TODO always give error like case 1?
         // only allow 1
-        switch (values.size()) {
+        switch (numValues) {
         case 0:
             fprintf(stderr, "TODO ERROR: scalar initializer cannot be empty\n");
             break;
@@ -999,11 +999,6 @@ void FunctionAnalyser::analyseArrayType(VarDecl* V, QualType T) {
             ArrayType* AT = cast<ArrayType>(T.getTypePtr());
             analyseArraySizeExpr(AT);
             analyseArrayType(V, AT->getElementType());
-            // generate empty InitList for Incremental Array decls
-            if (AT->isIncremental() && V->getInitValue() == 0) {
-                ExprList vals;
-                V->setInitValue(new (Context) InitListExpr(SourceLocation(), SourceLocation(), vals));
-            }
             break;
         }
     case TC_UNRESOLVED:
@@ -1870,6 +1865,12 @@ bool FunctionAnalyser::checkAssignee(Expr* expr) const {
 }
 
 void FunctionAnalyser::checkAssignment(Expr* assignee, QualType TLeft) {
+    if (TLeft.isArrayType()) {
+        ArrayType* AT = cast<ArrayType>(TLeft.getTypePtr());
+        if (AT->isIncremental()) {
+            Diag(assignee->getLocation(), diag::err_incremental_array_value_function_scope);
+        }
+    }
     if (TLeft.isConstQualified()) {
         Diag(assignee->getLocation(), diag::err_typecheck_assign_const) << 4 << assignee->getSourceRange();
     }
@@ -1911,11 +1912,12 @@ void FunctionAnalyser::checkArrayDesignators(InitListExpr* expr, int64_t* size) 
     LOG_FUNC
     typedef std::vector<Expr*> Indexes;
     Indexes indexes;
-    const ExprList& values = expr->getValues();
-    indexes.resize(values.size());
+    Expr** values = expr->getValues();
+    unsigned numValues = expr->numValues();
+    indexes.resize(numValues);
     int maxIndex = 0;
     int currentIndex = -1;
-    for (unsigned i=0; i<values.size(); i++) {
+    for (unsigned i=0; i<numValues; i++) {
         Expr* E = values[i];
         if (DesignatedInitExpr* D = dyncast<DesignatedInitExpr>(E)) {
             currentIndex = D->getIndex().getSExtValue();

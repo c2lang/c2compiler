@@ -6,7 +6,7 @@ public type AA struct {
 }
 
 list += { 100, "honderd" }
-public AA[+] list = {}
+public AA[+] list;
 
 list += { 10, "tien" }
 list += { 20, "twintig" }

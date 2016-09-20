@@ -99,7 +99,7 @@ void CCodeGenerator::EmitAll() {
 
     // generate variables
     for (unsigned m=0; m<mods.size(); m++) {
-        const Files& files = mods[m]->getFiles();
+        const AstList& files = mods[m]->getFiles();
         for (unsigned a=0; a<files.size(); a++) {
             const AST* ast = files[a];
             for (unsigned i=0; i<ast->numVars(); i++) {
@@ -111,7 +111,7 @@ void CCodeGenerator::EmitAll() {
     // generate types, reorder and do forward decls if needed
     TypeSorter sorter;
     for (unsigned m=0; m<mods.size(); m++) {
-        const Files& files = mods[m]->getFiles();
+        const AstList& files = mods[m]->getFiles();
         for (unsigned a=0; a<files.size(); a++) {
             const AST* ast = files[a];
             for (unsigned i=0; i<ast->numTypes(); i++) {
@@ -123,7 +123,7 @@ void CCodeGenerator::EmitAll() {
 
     // generate function prototypes
     for (unsigned m=0; m<mods.size(); m++) {
-        const Files& files = mods[m]->getFiles();
+        const AstList& files = mods[m]->getFiles();
         for (unsigned a=0; a<files.size(); a++) {
             const AST* ast = files[a];
             for (unsigned i=0; i<ast->numFunctions(); i++) {
@@ -136,7 +136,7 @@ void CCodeGenerator::EmitAll() {
 
     // generate variables
     for (unsigned m=0; m<mods.size(); m++) {
-        const Files& files = mods[m]->getFiles();
+        const AstList& files = mods[m]->getFiles();
         for (unsigned a=0; a<files.size(); a++) {
             const AST* ast = files[a];
             for (unsigned i=0; i<ast->numVars(); i++) {
@@ -149,7 +149,7 @@ void CCodeGenerator::EmitAll() {
     if (!inInterface) {
         // generate functions
         for (unsigned m=0; m<mods.size(); m++) {
-            const Files& files = mods[m]->getFiles();
+            const AstList& files = mods[m]->getFiles();
             for (unsigned a=0; a<files.size(); a++) {
                 const AST* ast = files[a];
                 for (unsigned i=0; i<ast->numFunctions(); i++) {
@@ -222,11 +222,12 @@ void CCodeGenerator::EmitExpr(const Expr* E, StringBuilder& output) {
         {
             const InitListExpr* I = cast<InitListExpr>(E);
             output << "{ ";
-            const ExprList& values = I->getValues();
-            for (unsigned i=0; i<values.size(); i++) {
+            Expr** values = I->getValues();
+            const unsigned numValues = I->numValues();
+            for (unsigned i=0; i<numValues; i++) {
                 if (i == 0 && values[0]->getKind() == EXPR_INITLIST) output << '\n';
                 EmitExpr(values[i], output);
-                if (i != values.size() -1) output << ", ";
+                if (i != numValues -1) output << ", ";
                 if (values[i]->getKind() == EXPR_INITLIST) output << '\n';
             }
             output << " }";
@@ -537,7 +538,7 @@ void CCodeGenerator::EmitIncludes() {
 
     // filter out unique entries, split into system and local includes and .c/.h
     for (unsigned m=0; m<mods.size(); m++) {
-        const Files& files = mods[m]->getFiles();
+        const AstList& files = mods[m]->getFiles();
         for (unsigned a=0; a<files.size(); a++) {
             const AST* ast = files[a];
             for (unsigned i=0; i<ast->numImports(); i++) {
@@ -908,9 +909,9 @@ void CCodeGenerator::EmitCompoundStmt(const CompoundStmt* C, unsigned indent, bo
     LOG_FUNC
     if (startOnNewLine) cbuf.indent(indent);
     cbuf << "{\n";
-    const StmtList& Stmts = C->getStmts();
-    for (unsigned i=0; i<Stmts.size(); i++) {
-        EmitStmt(Stmts[i], indent + INDENT);
+    Stmt** stmts = C->getStmts();
+    for (unsigned i=0; i<C->numStmts(); i++) {
+        EmitStmt(stmts[i], indent + INDENT);
     }
     cbuf.indent(indent);
     cbuf << "}\n";
@@ -1044,9 +1045,9 @@ void CCodeGenerator::EmitSwitchStmt(const Stmt* S, unsigned indent) {
                 cbuf << "case ";
                 EmitExpr(C->getCond(), cbuf);
                 cbuf << ":\n";
-                const StmtList& Stmts = C->getStmts();
-                for (unsigned s=0; s<Stmts.size(); s++) {
-                    EmitStmt(Stmts[s], indent + INDENT + INDENT);
+                Stmt** stmts = C->getStmts();
+                for (unsigned s=0; s<C->numStmts(); s++) {
+                    EmitStmt(stmts[s], indent + INDENT + INDENT);
                 }
                 break;
             }
@@ -1055,9 +1056,9 @@ void CCodeGenerator::EmitSwitchStmt(const Stmt* S, unsigned indent) {
                 DefaultStmt* D = cast<DefaultStmt>(Case);
                 cbuf.indent(indent + INDENT);
                 cbuf << "default:\n";
-                const StmtList& Stmts = D->getStmts();
-                for (unsigned s=0; s<Stmts.size(); s++) {
-                    EmitStmt(Stmts[s], indent + INDENT + INDENT);
+                Stmt** stmts = D->getStmts();
+                for (unsigned s=0; s<D->numStmts(); s++) {
+                    EmitStmt(stmts[s], indent + INDENT + INDENT);
                 }
                 break;
             }

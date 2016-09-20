@@ -68,8 +68,8 @@ private:
     llvm::Constant* EvaluateExprAsConstant(const Expr *E);
     llvm::Constant* GetConstantArrayFromStringLiteral(const StringLiteral* E);
     llvm::Constant* EmitDefaultInit(QualType Q);
-    llvm::Constant* EmitStructInit(const StructType *AT, const ExprList& Vals);
-    llvm::Constant* EmitArrayInit(const ArrayType *AT, const ExprList& Vals);
+    llvm::Constant* EmitStructInit(const StructType *AT, Expr** Vals, unsigned numValues);
+    llvm::Constant* EmitArrayInit(const ArrayType *AT, Expr** Vals, unsigned numValues);
     llvm::Constant* EmitConstantDecl(const Decl* D);
 
     const std::string name;

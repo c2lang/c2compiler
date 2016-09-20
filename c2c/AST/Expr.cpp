@@ -390,13 +390,14 @@ void CallExpr::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 
-InitListExpr::InitListExpr(SourceLocation left, SourceLocation right, ExprList& values_)
+InitListExpr::InitListExpr(SourceLocation left, SourceLocation right, Expr** values_, unsigned num)
     : Expr(EXPR_INITLIST, SourceLocation(), false)
     , leftBrace(left)
     , rightBrace(right)
     , values(values_)
 {
     initListExprBits.HasDesignators = 0;
+    numValues_ = num;
 }
 
 void InitListExpr::print(StringBuilder& buffer, unsigned indent) const {
@@ -408,7 +409,7 @@ void InitListExpr::print(StringBuilder& buffer, unsigned indent) const {
         buffer << " designators=1";
     }
     buffer << '\n';
-    for (unsigned i=0; i<values.size(); i++) {
+    for (unsigned i=0; i<numValues(); i++) {
         values[i]->print(buffer, indent + INDENT);
     }
 }

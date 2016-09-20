@@ -186,8 +186,8 @@ void DepVisitor::checkStmt(const Stmt* S) {
         {
             const CaseStmt* C = cast<CaseStmt>(S);
             checkExpr(C->getCond());
-            const StmtList& stmts = C->getStmts();
-            for (unsigned i=0; i<stmts.size(); i++) {
+            Stmt** stmts = C->getStmts();
+            for (unsigned i=0; i<C->numStmts(); i++) {
                 checkStmt(stmts[i]);
             }
             break;
@@ -195,8 +195,8 @@ void DepVisitor::checkStmt(const Stmt* S) {
     case STMT_DEFAULT:
         {
             const DefaultStmt* D = cast<DefaultStmt>(S);
-            const StmtList& stmts = D->getStmts();
-            for (unsigned i=0; i<stmts.size(); i++) {
+            Stmt** stmts = D->getStmts();
+            for (unsigned i=0; i<D->numStmts(); i++) {
                 checkStmt(stmts[i]);
             }
             break;
@@ -216,8 +216,8 @@ void DepVisitor::checkStmt(const Stmt* S) {
 }
 
 void DepVisitor::checkCompoundStmt(const CompoundStmt* C) {
-    const StmtList& stmts = C->getStmts();
-    for (unsigned i=0; i<stmts.size(); i++) {
+    Stmt** stmts = C->getStmts();
+    for (unsigned i=0; i<C->numStmts(); i++) {
         checkStmt(stmts[i]);
     }
 }
@@ -251,8 +251,8 @@ void DepVisitor::checkExpr(const Expr* E) {
     case EXPR_INITLIST:
         {
             const InitListExpr* I = cast<InitListExpr>(E);
-            const ExprList& values = I->getValues();
-            for (unsigned i=0; i<values.size(); i++) {
+            Expr** values = I->getValues();
+            for (unsigned i=0; i<I->numValues(); i++) {
                 checkExpr(values[i]);
             }
             break;

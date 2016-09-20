@@ -17,19 +17,25 @@
 #include "Analyser/FileAnalyser.h"
 #include "AST/Component.h"
 #include "AST/Module.h"
+#include "AST/ASTContext.h"
 
 #include <clang/Basic/Diagnostic.h>
 
 using namespace C2;
 
-TargetAnalyser::TargetAnalyser(const Modules& modules_, clang::DiagnosticsEngine& Diags_, Component& C, bool verbose_)
+TargetAnalyser::TargetAnalyser(const Modules& modules_,
+                               clang::DiagnosticsEngine& Diags_,
+                               Component& C,
+                               ASTContext& context_,
+                               bool verbose_)
     : Diags(Diags_)
+    , context(context_)
     , verbose(verbose_)
 {
     const ModuleList& mods = C.getModules();
     for (unsigned m=0; m<mods.size(); m++) {
         const Module* M = mods[m];
-        const Files& files = M->getFiles();
+        const AstList& files = M->getFiles();
         for (unsigned f=0; f<files.size(); f++) {
             analysers.push_back(new FileAnalyser(*M, modules_, Diags, *files[f], verbose));
         }
@@ -76,15 +82,43 @@ unsigned TargetAnalyser::analyse(bool print1, bool print2, bool print3, bool pri
     }
     if (errors) return errors;
 
+    IncrementalArrayVals ia_values;
     for (unsigned i=0; i<count; i++) {
-        errors += analysers[i]->checkArrayValues();
+        errors += analysers[i]->checkArrayValues(ia_values);
     }
     if (errors) return errors;
 
+    // Set ArraValues
+    for (IncrementalArrayValsIter iter = ia_values.begin(); iter != ia_values.end(); ++iter) {
+        VarDecl* D = iter->first;
+        unsigned numValues = iter->second.size();
+        assert(numValues);
+        // NOTE: incremenal array is given InitListExpr in resolveVars()
+        Expr* I = D->getInitValue();
+        assert(I);
+        assert(dyncast<InitListExpr>(I));
+        InitListExpr* ILE = cast<InitListExpr>(I);
+        Expr** values = (Expr**)context.Allocate(sizeof(Expr*)*numValues);
+        memcpy(values, &iter->second[0], sizeof(Expr*)*numValues);
+        ILE->setValues(values, numValues);
+    }
+    ia_values.clear();
+
+    StructFunctionList structFuncs;
     for (unsigned i=0; i<count; i++) {
-        errors += analysers[i]->checkFunctionProtos();
+        errors += analysers[i]->checkFunctionProtos(structFuncs);
     }
     if (errors) return errors;
+    // Set StructFunctions
+    // NOTE: since these are linked anyways, just use special ASTContext from Builder
+    for (StructFunctionListIter iter = structFuncs.begin(); iter != structFuncs.end(); ++iter) {
+        StructTypeDecl* S = iter->first;
+        const StructFunctionEntries& entries = iter->second;
+        unsigned numFuncs = entries.size();
+        FunctionDecl** funcs = (FunctionDecl**)context.Allocate(sizeof(FunctionDecl*)*numFuncs);
+        memcpy(funcs, &entries[0], sizeof(FunctionDecl*)*numFuncs);
+        S->setStructFuncs(funcs, numFuncs);
+    }
 
     for (unsigned i=0; i<count; i++) {
         analysers[i]->checkVarInits();

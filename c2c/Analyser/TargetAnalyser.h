@@ -27,11 +27,16 @@ namespace C2 {
 
 class FileAnalyser;
 class AST;
+class ASTContext;
 class Component;
 
 class TargetAnalyser {
 public:
-    TargetAnalyser(const Modules& modules_, clang::DiagnosticsEngine& Diags_, Component& C_, bool verbose_);
+    TargetAnalyser(const Modules& modules_,
+                   clang::DiagnosticsEngine& Diags_,
+                   Component& C_,
+                   ASTContext& context_,
+                   bool verbose_);
     ~TargetAnalyser();
 
     unsigned analyse(bool print1, bool print2, bool print3, bool printLib);
@@ -39,6 +44,7 @@ private:
     void printASTs(bool printLib) const;
 
     clang::DiagnosticsEngine& Diags;
+    ASTContext& context;
     bool verbose;
 
     typedef std::vector<FileAnalyser*> Analysers;

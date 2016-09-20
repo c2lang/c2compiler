@@ -248,8 +248,8 @@ namespace clang {
   typedef ActionResult<C2::Expr*> ExprResult;
   typedef ActionResult<C2::Stmt*> StmtResult;
   typedef ActionResult<ParsedType> TypeResult;
-
   typedef ActionResult<C2::Decl*> DeclResult;
+  typedef ActionResult<C2::VarDecl*> VarDeclResult;
 
   typedef MutableArrayRef<C2::Expr*> MultiExprArg;
   typedef MutableArrayRef<C2::Stmt*> MultiStmtArg;
@@ -257,6 +257,8 @@ namespace clang {
 
   inline ExprResult ExprError() { return ExprResult(true); }
   inline StmtResult StmtError() { return StmtResult(true); }
+  inline DeclResult DeclError() { return DeclResult(true); }
+  inline VarDeclResult VarDeclError() { return VarDeclResult(true); }
 
   inline ExprResult ExprError(const DiagnosticBuilder&) { return ExprError(); }
   inline StmtResult StmtError(const DiagnosticBuilder&) { return StmtError(); }

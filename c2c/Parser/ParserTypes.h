@@ -28,11 +28,12 @@ namespace C2 {
 class Decl;
 class Expr;
 class Stmt;
+class VarDecl;
 
 typedef clang::ActionResult<C2::Expr*> ExprResult;
 typedef clang::ActionResult<C2::Stmt*> StmtResult;
 typedef clang::ActionResult<C2::Decl*> DeclResult;
-typedef std::vector<C2::Expr*> ExprList;
+typedef clang::ActionResult<C2::VarDecl*> VarDeclResult;
 
 }
 

@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-int32[+] a = {}
+int32[+] a;
 
 a += c; // @error{use of undeclared identifier c}
 

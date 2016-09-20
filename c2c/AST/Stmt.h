@@ -59,8 +59,9 @@ public:
 
 protected:
     // See Clang comments in include/clang/AST/Stmt.h about operator new/delete
-    void* operator new(size_t bytes) {
+    void* operator new(size_t bytes) LLVM_NOEXCEPT {
         assert(0 && "Stmt cannot be allocated with regular 'new'");
+        return 0;
     }
     void operator delete(void* data) {
         assert(0 && "Stmt cannot be released with regular 'delete'");
@@ -89,6 +90,27 @@ protected:
         unsigned : NumStmtBits;
 
         unsigned numCases : 32 - NumStmtBits;
+    };
+
+    class CaseStmtBitfields {
+        friend class CaseStmt;
+        unsigned : NumStmtBits;
+
+        unsigned numStmts : 32 - NumStmtBits;
+    };
+
+    class DefaultStmtBitfields {
+        friend class DefaultStmt;
+        unsigned : NumStmtBits;
+
+        unsigned numStmts : 32 - NumStmtBits;
+    };
+
+    class CompoundStmtBitfields {
+        friend class CompoundStmt;
+        unsigned : NumStmtBits;
+
+        unsigned numStmts : 32 - NumStmtBits;
     };
 
     class ExprBitfields {
@@ -195,6 +217,10 @@ protected:
     union {
         StmtBitfields stmtBits;
         SwitchStmtBitfields switchStmtBits;
+        CaseStmtBitfields caseStmtBits;
+        DefaultStmtBitfields defaultStmtBits;
+        CompoundStmtBitfields compoundStmtBits;
+
         ExprBitfields exprBits;
         IdentifierExprBitfields identifierExprBits;
         CallExprBitfields callExprBits;
@@ -343,7 +369,7 @@ private:
 
 class CaseStmt : public Stmt {
 public:
-    CaseStmt(SourceLocation Loc_, Expr* Cond_, StmtList& Stmts_);
+    CaseStmt(SourceLocation Loc_, Expr* Cond_, Stmt** stmts_, unsigned numStmts_);
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_CASE;
     }
@@ -352,17 +378,18 @@ public:
     SourceLocation getLocation() const { return Loc; }
 
     Expr* getCond() const { return Cond; }
-    const StmtList& getStmts() const { return Stmts; }
+    unsigned numStmts() const { return caseStmtBits.numStmts; }
+    Stmt** getStmts() const { return stmts; }
 private:
     SourceLocation Loc;
     Expr* Cond;
-    StmtList Stmts;
+    Stmt** stmts;
 };
 
 
 class DefaultStmt : public Stmt {
 public:
-    DefaultStmt(SourceLocation Loc_, StmtList& Stmts_);
+    DefaultStmt(SourceLocation Loc_, Stmt** stmts_, unsigned numStmts_);
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_DEFAULT;
     }
@@ -370,10 +397,11 @@ public:
     void print(StringBuilder& buffer, unsigned indent) const;
     SourceLocation getLocation() const { return Loc; }
 
-    const StmtList& getStmts() const { return Stmts; }
+    unsigned numStmts() const { return defaultStmtBits.numStmts; }
+    Stmt** getStmts() const { return stmts; }
 private:
     SourceLocation Loc;
-    StmtList Stmts;
+    Stmt** stmts;
 };
 
 
@@ -442,7 +470,7 @@ private:
 
 class CompoundStmt : public Stmt {
 public:
-    CompoundStmt(SourceLocation l, SourceLocation r, StmtList& stmts_);
+    CompoundStmt(SourceLocation l, SourceLocation r, Stmt** stmts_, unsigned numStmts_);
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_COMPOUND;
     }
@@ -450,13 +478,15 @@ public:
     void print(StringBuilder& buffer, unsigned indent) const;
     SourceLocation getLocation() const { return Left; }
 
-    const StmtList& getStmts() const { return Stmts; }
+    unsigned numStmts() const { return compoundStmtBits.numStmts; }
+    Stmt** getStmts() const { return stmts; }
+
     Stmt* getLastStmt() const;
     SourceLocation getRight() const { return Right; }
 private:
     SourceLocation Left;
     SourceLocation Right;
-    StmtList Stmts;
+    Stmt** stmts;
 };
 
 

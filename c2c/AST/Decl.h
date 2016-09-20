@@ -17,7 +17,6 @@
 #define AST_DECL_H
 
 #include <string>
-#include <map>
 #include <assert.h>
 
 #include <llvm/ADT/APSInt.h>
@@ -93,8 +92,9 @@ public:
     // for debugging
     void dump() const;
 protected:
-    void* operator new(size_t bytes) {
+    void* operator new(size_t bytes) LLVM_NOEXCEPT {
         assert(0 && "Decl cannot be allocated with regular 'new'");
+        return 0;
     }
     void operator delete(void* data) {
         assert(0 && "Decl cannot be released with regular 'delete'");
@@ -126,14 +126,26 @@ protected:
         friend class StructTypeDecl;
         unsigned : NumDeclBits;
 
+        unsigned numMembers : 8;
+        unsigned numStructFunctions : 6;
         unsigned IsStruct : 1;
         unsigned IsGlobal : 1;
+    };
+
+    class EnumTypeDeclBits {
+        friend class EnumTypeDecl;
+        unsigned : NumDeclBits;
+
+        unsigned numConstants : 15;
+        unsigned incremental : 1;
     };
 
     class FunctionDeclBits {
         friend class FunctionDecl;
         unsigned : NumDeclBits;
 
+        unsigned structFuncNameOffset : 8;
+        unsigned numArgs : 6;
         unsigned IsVariadic : 1;
         unsigned HasDefaultArgs : 1;
     };
@@ -149,6 +161,7 @@ protected:
         DeclBitfields declBits;
         VarDeclBits varDeclBits;
         StructTypeDeclBits structTypeDeclBits;
+        EnumTypeDeclBits enumTypeDeclBits;
         FunctionDeclBits functionDeclBits;
         ImportDeclBits importDeclBits;
     };
@@ -217,11 +230,19 @@ public:
     }
     CompoundStmt* getBody() const { return body; }
 
+    void setStructFuncNameOffset(unsigned offset) { functionDeclBits.structFuncNameOffset = offset; }
+    bool matchesStructFuncName(const char* name_) const {
+        return strcmp(name + functionDeclBits.structFuncNameOffset, name_) == 0;
+    }
+
     // args
-    void addArg(VarDecl* arg) { args.push_back(arg); }
-    VarDecl* findArg(const char* name_) const;
+    void setArgs(VarDecl** args_, unsigned numArgs_) {
+        assert(args == 0);
+        args = args_;
+        functionDeclBits.numArgs = numArgs_;
+    }
     VarDecl* getArg(unsigned i) const { return args[i]; }
-    unsigned numArgs() const { return args.size(); }
+    unsigned numArgs() const { return functionDeclBits.numArgs; }
     unsigned minArgs() const;
     void setVariadic() { functionDeclBits.IsVariadic = true; }
     bool isVariadic() const { return functionDeclBits.IsVariadic; }
@@ -240,8 +261,7 @@ private:
     QualType rtype;
     QualType origRType;
 
-    typedef std::vector<VarDecl*> Args;
-    Args args;
+    VarDecl** args;
     CompoundStmt* body;
     mutable llvm::Function* IRProto;
 };
@@ -309,9 +329,19 @@ public:
     }
     void print(StringBuilder& buffer, unsigned indent) const;
 
-    void addMember(Decl* D);
-    unsigned numMembers() const { return members.size(); }
-    void addStructFunction(const char* name_, Decl* D);
+    void setMembers(Decl** members_, unsigned numMembers_) {
+        assert(members == 0);
+        members = members_;
+        structTypeDeclBits.numMembers = numMembers_;
+    }
+    void setStructFuncs(FunctionDecl** funcs, unsigned numFuncs) {
+        assert(structFunctions == 0);
+        structFunctions = funcs;
+        structTypeDeclBits.numStructFunctions = numFuncs;
+    }
+
+    unsigned numMembers() const { return structTypeDeclBits.numMembers; }
+    unsigned numStructFunctions() const { return structTypeDeclBits.numStructFunctions; }
     Decl* getMember(unsigned index) const { return members[index]; }
     Decl* find(const char* name_) const;
     Decl* findFunction(const char* name_) const;
@@ -321,36 +351,40 @@ public:
     bool isStruct() const { return structTypeDeclBits.IsStruct; }
     bool isGlobal() const { return structTypeDeclBits.IsGlobal; }
 private:
-    typedef std::vector<Decl*> Members;
-    Members members;
-    // TODO FIX map, not freed!
-    typedef std::map<std::string, Decl*> StructFunctions;
-    typedef StructFunctions::const_iterator StructFunctionsConstIter;
-    StructFunctions structFunctions;
+    Decl** members;
+    FunctionDecl** structFunctions;
 };
 
 class EnumTypeDecl : public TypeDecl {
 public:
     EnumTypeDecl(const char* name_, SourceLocation loc_,
-            QualType implType_, QualType type_, bool is_public)
+            QualType implType_, QualType type_, bool is_incr, bool is_public)
         : TypeDecl(DECL_ENUMTYPE, name_, loc_, type_, is_public)
         , implType(implType_)
-    {}
+    {
+        enumTypeDeclBits.incremental = is_incr;
+        enumTypeDeclBits.numConstants = 0;
+    }
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_ENUMTYPE;
     }
     void print(StringBuilder& buffer, unsigned indent) const;
 
-    void addConstant(EnumConstantDecl* c) { constants.push_back(c); }
-    unsigned numConstants() const { return constants.size(); }
-    EnumConstantDecl* getConstant(unsigned index) const { return constants[index]; }
+    void setConstants(EnumConstantDecl** constants_, unsigned numConstants_) {
+        assert(constants == 0);
+        constants = constants_;
+        enumTypeDeclBits.numConstants = numConstants_;
+    }
+    unsigned numConstants() const { return enumTypeDeclBits.numConstants; }
+    EnumConstantDecl* getConstant(unsigned i) const { return constants[i]; }
+
+    bool isIncremental() const { return enumTypeDeclBits.incremental; }
 
     int getIndex(const EnumConstantDecl* c) const;
     bool hasConstantValue(llvm::APSInt Val) const;
     QualType getImplType() const { return implType; }
 private:
-    typedef std::vector<EnumConstantDecl*> Constants;
-    Constants constants;
+    EnumConstantDecl** constants;
     QualType implType;
 };
 

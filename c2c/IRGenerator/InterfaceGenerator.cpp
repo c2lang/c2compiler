@@ -54,7 +54,7 @@ void InterfaceGenerator::write(const std::string& ifaceDir, bool printCode) {
     iface << "module " << module.getName() << ";\n";
     iface << '\n';
 
-    Files files = module.getFiles();
+    const AstList& files = module.getFiles();
     // ImportDecls
     {
         StringList importList;
@@ -165,11 +165,12 @@ void InterfaceGenerator::EmitExpr(const Expr* E) {
         {
             const InitListExpr* I = cast<InitListExpr>(E);
             iface << "{ ";
-            const ExprList& values = I->getValues();
-            for (unsigned i=0; i<values.size(); i++) {
+            Expr** values = I->getValues();
+            const unsigned numValues = I->numValues();
+            for (unsigned i=0; i<numValues; i++) {
                 if (i == 0 && values[0]->getKind() == EXPR_INITLIST) iface << '\n';
                 EmitExpr(values[i]);
-                if (i != values.size() -1) iface << ", ";
+                if (i != numValues -1) iface << ", ";
                 if (values[i]->getKind() == EXPR_INITLIST) iface << '\n';
             }
             iface << " }";

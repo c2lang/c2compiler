@@ -119,7 +119,7 @@ private:
     const Recipe& recipe;
     BuildOptions options;
 
-    ASTContext Context;
+    ASTContext context;
     Modules modules;
     Module*  c2Mod;
 

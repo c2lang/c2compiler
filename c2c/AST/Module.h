@@ -58,7 +58,7 @@ public:
     // AST part
     void addAST(AST* ast) { files.push_back(ast); }
 
-    const Files& getFiles() const { return files; }
+    const AstList& getFiles() const { return files; }
 private:
     const std::string name;
     bool m_isExternal;       // not a module in current target
@@ -68,7 +68,7 @@ private:
     Symbols symbols;
     AttrMap declAttrs;
 
-    Files files;
+    AstList files;
 
     Module(const Module&);
     Module& operator= (const Module&);

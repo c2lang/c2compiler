@@ -165,8 +165,8 @@ void CodeGenFunction::EmitStmt(const Stmt* S) {
 void CodeGenFunction::EmitCompoundStmt(const CompoundStmt* S) {
     LOG_FUNC
     // TODO create BasicBlock here?
-    const StmtList& stmts = S->getStmts();
-    for (unsigned i=0; i<stmts.size(); ++i) {
+    Stmt** stmts = S->getStmts();
+    for (unsigned i=0; i<S->numStmts(); i++) {
         EmitStmt(stmts[i]);
     }
 }
@@ -480,8 +480,7 @@ llvm::Value* CodeGenFunction::EmitExprNoImpCast(const Expr* E) {
         break;
     case EXPR_MEMBER:
         {
-            const MemberExpr* M = cast<MemberExpr>(E);
-            assert(M->isModulePrefix() && "TODO not-prefix members");
+            assert(cast<MemberExpr>(E)->isModulePrefix() && "TODO not-prefix members");
             // TODO
             break;
         }
