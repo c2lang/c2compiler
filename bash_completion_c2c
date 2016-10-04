@@ -1,0 +1,28 @@
+_c2c()
+{
+    local cur prev opts
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    opts="-a0 -a1 -a2 -a3 -aL -c -C -d -f -h -i -I -l -p -s -t -v --about --test --deps --refs --check --showlibs"
+
+    local opts2
+# TODO only show dirs
+    if [[ ${cur} == -d* ]] ; then
+        opts2=`ls -d */`
+        COMPREPLY=( $(compgen -W "${opts2}" -- ${cur}) )
+        return 0
+    fi
+    if [[ ${cur} == -* ]] ; then
+        COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+        return 0
+    fi
+
+# TODO if -d is gives, use that dir, otherwise current dir
+    opts2=`c2c -d examples -l 2> /dev/null`
+    if [[ ${cur} == * ]] ; then
+        COMPREPLY=( $(compgen -W "${opts2}" -- ${cur}) )
+        return 0
+    fi
+}
+complete -F _c2c c2c

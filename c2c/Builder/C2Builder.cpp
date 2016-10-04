@@ -697,11 +697,15 @@ void C2Builder::generateOptionalDeps() {
         if (conf == "show-externals") showExternals = true;
     }
 
-    DepGenerator generator(showFiles, showPrivate, showExternals);
     std::string path = OUTPUT_DIR + recipe.name + '/';
-    generator.write(components, recipe.name, path);
+    generateDeps(showFiles, showPrivate, showExternals, path);
     uint64_t t2 = Utils::getCurrentTime();
     if (options.printTiming) log(COL_TIME, "dep generation took %" PRIu64" usec", t2 - t1);
+}
+
+void C2Builder::generateDeps(bool showFiles, bool showPrivate, bool showExternals, const std::string& path) const {
+    DepGenerator generator(showFiles, showPrivate, showExternals);
+    generator.write(components, recipe.name, path);
 }
 
 void C2Builder::generateOptionalTags(const SourceManager& SM) const {

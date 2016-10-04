@@ -87,15 +87,10 @@ public:
 
     int checkFiles();
     int build();
+    void generateDeps(bool showFiles, bool showPrivate, bool showExternals, const std::string& path) const;
 
-#if 0
-    // AST extraction (for tools)
-    unsigned numASTs() const { return files.size(); }
-    const AST& getAST(unsigned i) const {
-        assert(i < files.size());
-        return *files[i];
-    }
-#endif
+    // For external tools
+    const Components& getComponents() const { return components; }
 private:
     bool haveModule(const std::string& name) const;
     Module* findModule(const std::string& name) const;
