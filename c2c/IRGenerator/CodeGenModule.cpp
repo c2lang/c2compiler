@@ -50,11 +50,11 @@
 using namespace C2;
 using namespace llvm;
 
-CodeGenModule::CodeGenModule(const std::string& name_, bool single, const ModuleList& mods_)
+CodeGenModule::CodeGenModule(const std::string& name_, bool single, const ModuleList& mods_, llvm::LLVMContext& context_)
     : name(name_)
     , single_module(single)
     , mods(mods_)
-    , context(llvm::getGlobalContext())
+    , context(context_)
     , module(new llvm::Module(name, context))
     , builder(context)
 {

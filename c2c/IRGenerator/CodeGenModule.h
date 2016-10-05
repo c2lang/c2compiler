@@ -42,7 +42,7 @@ class StringLiteral;
 // generates LLVM Module from (multiple) Module(s)
 class CodeGenModule {
 public:
-    CodeGenModule(const std::string& name_, bool single, const ModuleList& mods_);
+    CodeGenModule(const std::string& name_, bool single, const ModuleList& mods_, llvm::LLVMContext& context_);
     ~CodeGenModule();
 
     void generate();

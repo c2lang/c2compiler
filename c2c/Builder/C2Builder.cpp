@@ -808,12 +808,16 @@ void C2Builder::generateOptionalIR() {
 
     std::string outdir = OUTPUT_DIR + recipe.name + BUILD_DIR;
 
+    // TODO move all this to some generic Codegen class
+    // Q: use single context or one-per-module?
+    llvm::LLVMContext context;
+
     const ModuleList& mods = mainComponent->getModules();
     if (single_module) {
         uint64_t t1 = Utils::getCurrentTime();
         std::string filename = recipe.name;
         if (options.verbose) log(COL_VERBOSE, "generating IR for single module %s", filename.c_str());
-        CodeGenModule cgm(filename, true, mods);
+        CodeGenModule cgm(filename, true, mods, context);
         cgm.generate();
         uint64_t t2 = Utils::getCurrentTime();
         if (options.printTiming) log(COL_TIME, "IR generation took %" PRIu64" usec", t2 - t1);
@@ -830,7 +834,7 @@ void C2Builder::generateOptionalIR() {
             if (options.verbose) log(COL_VERBOSE, "generating IR for module %s", M->getName().c_str());
             ModuleList single;
             single.push_back(M);
-            CodeGenModule cgm(M->getName(), false, single);
+            CodeGenModule cgm(M->getName(), false, single, context);
             cgm.generate();
             uint64_t t2 = Utils::getCurrentTime();
             if (options.printTiming) log(COL_TIME, "IR generation took %" PRIu64" usec", t2 - t1);

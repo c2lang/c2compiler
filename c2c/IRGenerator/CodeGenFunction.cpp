@@ -99,8 +99,7 @@ void CodeGenFunction::generateBody(llvm::Function* func) {
     llvm::IntegerType* Int32Ty = llvm::Type::getInt32Ty(context);
     llvm::Value *Undef = llvm::UndefValue::get(Int32Ty);
     AllocaInsertPt = new llvm::BitCastInst(Undef, Int32Ty, "", EntryBB);
-    if (Builder.isNamePreserving())
-        AllocaInsertPt->setName("allocapt");
+    AllocaInsertPt->setName("allocapt");
 
     Builder.SetInsertPoint(EntryBB);
 
@@ -753,8 +752,6 @@ llvm::Value *CodeGenFunction::EvaluateExprAsBool(const Expr *E) {
 /// block.
 llvm::AllocaInst *CodeGenFunction::CreateTempAlloca(llvm::Type *Ty,
                                                     const Twine &Name) {
-  if (!Builder.isNamePreserving())
-    return new llvm::AllocaInst(Ty, 0, "", AllocaInsertPt);
   return new llvm::AllocaInst(Ty, 0, Name, AllocaInsertPt);
 }
 
