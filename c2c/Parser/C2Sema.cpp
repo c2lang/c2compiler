@@ -69,63 +69,63 @@ static const char* exprNames[EXPR_CAST+1];
 #endif
 
 static inline clang::BinaryOperatorKind ConvertTokenKindToBinaryOpcode(tok::TokenKind Kind) {
-  clang::BinaryOperatorKind Opc;
-  switch (Kind) {
-  default: llvm_unreachable("Unknown binop!");
-  case tok::periodstar:           Opc = BO_PtrMemD; break;
-  case tok::arrowstar:            Opc = BO_PtrMemI; break;
-  case tok::star:                 Opc = BO_Mul; break;
-  case tok::slash:                Opc = BO_Div; break;
-  case tok::percent:              Opc = BO_Rem; break;
-  case tok::plus:                 Opc = BO_Add; break;
-  case tok::minus:                Opc = BO_Sub; break;
-  case tok::lessless:             Opc = BO_Shl; break;
-  case tok::greatergreater:       Opc = BO_Shr; break;
-  case tok::lessequal:            Opc = BO_LE; break;
-  case tok::less:                 Opc = BO_LT; break;
-  case tok::greaterequal:         Opc = BO_GE; break;
-  case tok::greater:              Opc = BO_GT; break;
-  case tok::exclaimequal:         Opc = BO_NE; break;
-  case tok::equalequal:           Opc = BO_EQ; break;
-  case tok::amp:                  Opc = BO_And; break;
-  case tok::caret:                Opc = BO_Xor; break;
-  case tok::pipe:                 Opc = BO_Or; break;
-  case tok::ampamp:               Opc = BO_LAnd; break;
-  case tok::pipepipe:             Opc = BO_LOr; break;
-  case tok::equal:                Opc = BO_Assign; break;
-  case tok::starequal:            Opc = BO_MulAssign; break;
-  case tok::slashequal:           Opc = BO_DivAssign; break;
-  case tok::percentequal:         Opc = BO_RemAssign; break;
-  case tok::plusequal:            Opc = BO_AddAssign; break;
-  case tok::minusequal:           Opc = BO_SubAssign; break;
-  case tok::lesslessequal:        Opc = BO_ShlAssign; break;
-  case tok::greatergreaterequal:  Opc = BO_ShrAssign; break;
-  case tok::ampequal:             Opc = BO_AndAssign; break;
-  case tok::caretequal:           Opc = BO_XorAssign; break;
-  case tok::pipeequal:            Opc = BO_OrAssign; break;
-  case tok::comma:                Opc = BO_Comma; break;
-  }
-  return Opc;
+    clang::BinaryOperatorKind Opc;
+    switch (Kind) {
+    default: llvm_unreachable("Unknown binop!");
+    case tok::periodstar:           Opc = BO_PtrMemD; break;
+    case tok::arrowstar:            Opc = BO_PtrMemI; break;
+    case tok::star:                 Opc = BO_Mul; break;
+    case tok::slash:                Opc = BO_Div; break;
+    case tok::percent:              Opc = BO_Rem; break;
+    case tok::plus:                 Opc = BO_Add; break;
+    case tok::minus:                Opc = BO_Sub; break;
+    case tok::lessless:             Opc = BO_Shl; break;
+    case tok::greatergreater:       Opc = BO_Shr; break;
+    case tok::lessequal:            Opc = BO_LE; break;
+    case tok::less:                 Opc = BO_LT; break;
+    case tok::greaterequal:         Opc = BO_GE; break;
+    case tok::greater:              Opc = BO_GT; break;
+    case tok::exclaimequal:         Opc = BO_NE; break;
+    case tok::equalequal:           Opc = BO_EQ; break;
+    case tok::amp:                  Opc = BO_And; break;
+    case tok::caret:                Opc = BO_Xor; break;
+    case tok::pipe:                 Opc = BO_Or; break;
+    case tok::ampamp:               Opc = BO_LAnd; break;
+    case tok::pipepipe:             Opc = BO_LOr; break;
+    case tok::equal:                Opc = BO_Assign; break;
+    case tok::starequal:            Opc = BO_MulAssign; break;
+    case tok::slashequal:           Opc = BO_DivAssign; break;
+    case tok::percentequal:         Opc = BO_RemAssign; break;
+    case tok::plusequal:            Opc = BO_AddAssign; break;
+    case tok::minusequal:           Opc = BO_SubAssign; break;
+    case tok::lesslessequal:        Opc = BO_ShlAssign; break;
+    case tok::greatergreaterequal:  Opc = BO_ShrAssign; break;
+    case tok::ampequal:             Opc = BO_AndAssign; break;
+    case tok::caretequal:           Opc = BO_XorAssign; break;
+    case tok::pipeequal:            Opc = BO_OrAssign; break;
+    case tok::comma:                Opc = BO_Comma; break;
+    }
+    return Opc;
 }
 
 static inline UnaryOperatorKind ConvertTokenKindToUnaryOpcode(
-  tok::TokenKind Kind) {
-  UnaryOperatorKind Opc;
-  switch (Kind) {
-  default: llvm_unreachable("Unknown unary op!");
-  case tok::plusplus:     Opc = UO_PreInc; break;
-  case tok::minusminus:   Opc = UO_PreDec; break;
-  case tok::amp:          Opc = UO_AddrOf; break;
-  case tok::star:         Opc = UO_Deref; break;
-  case tok::plus:         Opc = UO_Plus; break;
-  case tok::minus:        Opc = UO_Minus; break;
-  case tok::tilde:        Opc = UO_Not; break;
-  case tok::exclaim:      Opc = UO_LNot; break;
-  case tok::kw___real:    Opc = UO_Real; break;
-  case tok::kw___imag:    Opc = UO_Imag; break;
-  case tok::kw___extension__: Opc = UO_Extension; break;
-  }
-  return Opc;
+    tok::TokenKind Kind) {
+    UnaryOperatorKind Opc;
+    switch (Kind) {
+    default: llvm_unreachable("Unknown unary op!");
+    case tok::plusplus:     Opc = UO_PreInc; break;
+    case tok::minusminus:   Opc = UO_PreDec; break;
+    case tok::amp:          Opc = UO_AddrOf; break;
+    case tok::star:         Opc = UO_Deref; break;
+    case tok::plus:         Opc = UO_Plus; break;
+    case tok::minus:        Opc = UO_Minus; break;
+    case tok::tilde:        Opc = UO_Not; break;
+    case tok::exclaim:      Opc = UO_LNot; break;
+    case tok::kw___real:    Opc = UO_Real; break;
+    case tok::kw___imag:    Opc = UO_Imag; break;
+    case tok::kw___extension__: Opc = UO_Extension; break;
+    }
+    return Opc;
 }
 
 
@@ -390,7 +390,7 @@ C2::VarDecl* C2Sema::ActOnVarDef(const char* name, SourceLocation loc, bool is_p
 }
 
 C2::FunctionDecl* C2Sema::createFuncDecl(const char* name_, SourceLocation loc,
-            bool is_public, Expr* rtype) {
+        bool is_public, Expr* rtype) {
     assert(rtype);
     TypeExpr* typeExpr = cast<TypeExpr>(rtype);
     if (typeExpr->hasLocalQualifier()) {
@@ -438,7 +438,7 @@ C2::FunctionDecl* C2Sema::ActOnFuncDecl(const char* name_, SourceLocation loc, b
 }
 
 C2::FunctionTypeDecl* C2Sema::ActOnFuncTypeDecl(const char* name_, SourceLocation loc,
-            bool is_public, Expr* rtype) {
+        bool is_public, Expr* rtype) {
 #ifdef SEMA_DEBUG
     assert(name_);
     std::cerr << COL_SEMA"SEMA: function type decl " << name_ << " at ";
@@ -480,7 +480,7 @@ C2::VarDeclResult C2Sema::ActOnFunctionArg(FunctionDecl* func, const char* name,
                 Diag(var->getLocation(), diag::err_param_default_argument_missing);
             } else {
                 Diag(var->getLocation(), diag::err_param_default_argument_missing_name)
-                    << var->getName();
+                        << var->getName();
             }
         }
     }
@@ -741,7 +741,7 @@ C2::ExprResult C2Sema::ActOnBinOp(SourceLocation opLoc, tok::TokenKind Kind, Exp
 
 // see clang, some GCC extension allows LHS to be null (C2 doesn't?)
 C2::ExprResult C2Sema::ActOnConditionalOp(SourceLocation QuestionLoc, SourceLocation ColonLoc,
-                             Expr* CondExpr, Expr* LHSExpr, Expr* RHSExpr) {
+        Expr* CondExpr, Expr* LHSExpr, Expr* RHSExpr) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: CondOp at ";
     QuestionLoc.dump(SourceMgr);
@@ -862,7 +862,7 @@ C2::ExprResult C2Sema::ActOnBuiltinType(tok::TokenKind k) {
 }
 
 StructTypeDecl* C2Sema::ActOnStructType(const char* name_, SourceLocation loc,
-            bool isStruct, bool is_public, bool is_global) {
+                                        bool isStruct, bool is_public, bool is_global) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA << "SEMA: Struct/Union Type '" << (name_ ? name_ : "<anonymous>");
     std::cerr << ANSI_NORMAL << '\n';
@@ -927,7 +927,7 @@ EnumTypeDecl* C2Sema::ActOnEnumType(const char* name_, SourceLocation loc, Expr*
 }
 
 C2::EnumConstantDecl* C2Sema::ActOnEnumConstant(EnumTypeDecl* Enum, IdentifierInfo* symII,
-                                SourceLocation symLoc, Expr* Value) {
+        SourceLocation symLoc, Expr* Value) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA << "SEMA: enum constant" << ANSI_NORMAL"\n";
 #endif
@@ -935,7 +935,7 @@ C2::EnumConstantDecl* C2Sema::ActOnEnumConstant(EnumTypeDecl* Enum, IdentifierIn
 
     const char* name = Context.addIdentifier(symII->getNameStart(), symII->getLength());
     EnumConstantDecl* D = new (Context) EnumConstantDecl(name, symLoc, Enum->getType(), Value,
-                                               Enum->isPublic());
+            Enum->isPublic());
     addSymbol(D);
 
     if (!isupper(name[0]) && !ast.isInterface()) {
@@ -1153,22 +1153,22 @@ C2::ExprResult C2Sema::ActOnNumericConstant(const Token& Tok) {
         const char Val = PP.getSpellingOfSingleCharacterNumericConstant(Tok);
         return ActOnIntegerConstant(Tok.getLocation(), Val-'0');
     }
-  SmallString<128> SpellingBuffer;
-  // NumericLiteralParser wants to overread by one character.  Add padding to
-  // the buffer in case the token is copied to the buffer.  If getSpelling()
-  // returns a StringRef to the memory buffer, it should have a null char at
-  // the EOF, so it is also safe.
-  SpellingBuffer.resize(Tok.getLength() + 1);
+    SmallString<128> SpellingBuffer;
+    // NumericLiteralParser wants to overread by one character.  Add padding to
+    // the buffer in case the token is copied to the buffer.  If getSpelling()
+    // returns a StringRef to the memory buffer, it should have a null char at
+    // the EOF, so it is also safe.
+    SpellingBuffer.resize(Tok.getLength() + 1);
 
-  // Get the spelling of the token, which eliminates trigraphs, etc.
-  bool Invalid = false;
-  StringRef TokSpelling = PP.getSpelling(Tok, SpellingBuffer, &Invalid);
-  if (Invalid)
-    return ExprError();
+    // Get the spelling of the token, which eliminates trigraphs, etc.
+    bool Invalid = false;
+    StringRef TokSpelling = PP.getSpelling(Tok, SpellingBuffer, &Invalid);
+    if (Invalid)
+        return ExprError();
 
-  NumericLiteralParser Literal(TokSpelling, Tok.getLocation(), PP);
-  if (Literal.hadError)
-    return ExprError();
+    NumericLiteralParser Literal(TokSpelling, Tok.getLocation(), PP);
+    if (Literal.hadError)
+        return ExprError();
 
     if (Literal.hasUDSuffix()) {
         assert(0 && "HUH?");
@@ -1183,27 +1183,27 @@ C2::ExprResult C2Sema::ActOnNumericConstant(const Token& Tok) {
         APFloat Val(Format);
 
         APFloat::opStatus result = Literal.GetFloatValue(Val);
-      // Overflow is always an error, but underflow is only an error if
-      // we underflowed to zero (APFloat reports denormals as underflow).
-      if ((result & APFloat::opOverflow) ||
-          ((result & APFloat::opUnderflow) && Val.isZero())) {
-        assert(0 && "TODO");
+        // Overflow is always an error, but underflow is only an error if
+        // we underflowed to zero (APFloat reports denormals as underflow).
+        if ((result & APFloat::opOverflow) ||
+                ((result & APFloat::opUnderflow) && Val.isZero())) {
+            assert(0 && "TODO");
 #if 0
-        unsigned diagnostic;
-        SmallString<20> buffer;
-        if (result & APFloat::opOverflow) {
-          diagnostic = diag::warn_float_overflow;
-          APFloat::getLargest(Format).toString(buffer);
-        } else {
-          diagnostic = diag::warn_float_underflow;
-          APFloat::getSmallest(Format).toString(buffer);
-        }
+            unsigned diagnostic;
+            SmallString<20> buffer;
+            if (result & APFloat::opOverflow) {
+                diagnostic = diag::warn_float_overflow;
+                APFloat::getLargest(Format).toString(buffer);
+            } else {
+                diagnostic = diag::warn_float_underflow;
+                APFloat::getSmallest(Format).toString(buffer);
+            }
 
-        Diag(Tok.getLocation(), diagnostic)
-          << Ty
-          << StringRef(buffer.data(), buffer.size());
+            Diag(Tok.getLocation(), diagnostic)
+                    << Ty
+                    << StringRef(buffer.data(), buffer.size());
 #endif
-      }
+        }
 
         //bool isExact = (result == APFloat::opOK);
         //return FloatingLiteral::Create(S.Context, Val, isExact, Ty, Loc);
@@ -1227,36 +1227,36 @@ C2::ExprResult C2Sema::ActOnNumericConstant(const Token& Tok) {
 
             // Check from smallest to largest, picking the smallest type we can.
             unsigned Width = 0;
-          if (!Literal.isLong && !Literal.isLongLong) {
-            // Are int/unsigned possibilities?
-            unsigned IntSize = 64;
+            if (!Literal.isLong && !Literal.isLongLong) {
+                // Are int/unsigned possibilities?
+                unsigned IntSize = 64;
 
-            // Does it fit in a unsigned?
-            if (ResultVal.isIntN(IntSize)) {
-              // Does it fit in a signed int?
+                // Does it fit in a unsigned?
+                if (ResultVal.isIntN(IntSize)) {
+                    // Does it fit in a signed int?
 #if 0
-              if (!Literal.isUnsigned && ResultVal[IntSize-1] == 0)
-                Ty = Context.IntTy;
-              else if (AllowUnsigned)
-                Ty = Context.UnsignedIntTy;
+                    if (!Literal.isUnsigned && ResultVal[IntSize-1] == 0)
+                        Ty = Context.IntTy;
+                    else if (AllowUnsigned)
+                        Ty = Context.UnsignedIntTy;
 #endif
-              Width = IntSize;
+                    Width = IntSize;
+                }
             }
-          }
 
-          // Check long long if needed.
-          if (Width == 0) {
-              if (ResultVal.isIntN(64)) {
+            // Check long long if needed.
+            if (Width == 0) {
+                if (ResultVal.isIntN(64)) {
 #if 0
-                  if (!Literal.isUnsigned && (ResultVal[LongLongSize-1] == 0 ||
-                      (getLangOpts().MicrosoftExt && Literal.isLongLong)))
-                    Ty = Context.LongLongTy;
-                  else if (AllowUnsigned)
-                    Ty = Context.UnsignedLongLongTy;
+                    if (!Literal.isUnsigned && (ResultVal[LongLongSize-1] == 0 ||
+                                                (getLangOpts().MicrosoftExt && Literal.isLongLong)))
+                        Ty = Context.LongLongTy;
+                    else if (AllowUnsigned)
+                        Ty = Context.UnsignedLongLongTy;
 #endif
-                  Width = 64;
-              }
-          }
+                    Width = 64;
+                }
+            }
 
             if (Width == 0) {
                 fprintf(stderr, "TOO LARGE\n");
@@ -1317,7 +1317,7 @@ void C2Sema::addSymbol(Decl* d) {
     Decl* Old = ast.findSymbol(d->getName());
     if (Old) {
         Diag(d->getLocation(), diag::err_redefinition)
-        << d->getName();
+                << d->getName();
         Diag(Old->getLocation(), diag::note_previous_definition);
     } else {
         ast.addSymbol(d);

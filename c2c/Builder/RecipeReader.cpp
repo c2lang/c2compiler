@@ -74,122 +74,122 @@ void RecipeReader::handleLine(char* line) {
 
     switch (state) {
     case START:
-        {
-            // line should be 'TARGET <name>'
-            const char* kw = get_token();
-            if (strcmp(kw, "target") == 0) {
-                const char* target_name = get_token();
-                if (target_name == 0) error("expected target name");
-                current = new Recipe(target_name, GenUtils::EXECUTABLE);
-                recipes.push_back(current);
-                state = INSIDE_TARGET;
-            } else if (strcmp(kw, "lib") == 0) {
-                const char* target_name = get_token();
-                if (target_name == 0) error("expected library name");
-                const char* type_name = get_token();
-                if (type_name == 0) error("expected library type");
+    {
+        // line should be 'TARGET <name>'
+        const char* kw = get_token();
+        if (strcmp(kw, "target") == 0) {
+            const char* target_name = get_token();
+            if (target_name == 0) error("expected target name");
+            current = new Recipe(target_name, GenUtils::EXECUTABLE);
+            recipes.push_back(current);
+            state = INSIDE_TARGET;
+        } else if (strcmp(kw, "lib") == 0) {
+            const char* target_name = get_token();
+            if (target_name == 0) error("expected library name");
+            const char* type_name = get_token();
+            if (type_name == 0) error("expected library type");
 
-                GenUtils::TargetType type = GenUtils::SHARED_LIB;
-                if (strcmp(type_name, "shared") == 0) {
-                    type = GenUtils::SHARED_LIB;
-                } else if (strcmp(type_name, "static") == 0) {
-                    type = GenUtils::STATIC_LIB;
-                } else {
-                    error("unknown library type '%s'", type_name);
-                }
-                current = new Recipe(target_name, type);
-                recipes.push_back(current);
-                state = INSIDE_TARGET;
+            GenUtils::TargetType type = GenUtils::SHARED_LIB;
+            if (strcmp(type_name, "shared") == 0) {
+                type = GenUtils::SHARED_LIB;
+            } else if (strcmp(type_name, "static") == 0) {
+                type = GenUtils::STATIC_LIB;
             } else {
-                error("expected keyword target|lib");
+                error("unknown library type '%s'", type_name);
             }
+            current = new Recipe(target_name, type);
+            recipes.push_back(current);
+            state = INSIDE_TARGET;
+        } else {
+            error("expected keyword target|lib");
         }
-        break;
+    }
+    break;
     case INSIDE_TARGET:
-        {
-            // line should be '<filename>' or 'end'
-            const char* tok = get_token();
-            if (tok[0] == '$') {
-                tok++;
-                if (strcmp(tok, "config") == 0) {
-                    while (1) {
-                        const char* tok2 = get_token();
-                        if (!tok2) break;
-                        // TODO check duplicate configs
-                        current->addConfig(tok2);
-                    }
-                } else if (strcmp(tok, "export") == 0) {
-                    while (1) {
-                        const char* tok2 = get_token();
-                        if (!tok2) break;
-                        if (current->hasExported(tok2)) {
-                            error("duplicate module '%s'", tok2);
-                        }
-                        current->addExported(tok2);
-                    }
-                } else if (strcmp(tok, "generate-c") == 0) {
-                    current->generateCCode = true;
-                    while (1) {
-                        const char* tok2 = get_token();
-                        if (!tok2) break;
-                        // TODO check duplicate configs
-                        current->addAnsiCConfig(tok2);
-                    }
-                } else if (strcmp(tok, "generate-ir") == 0) {
-                    current->generateIR = true;
-                    while (1) {
-                        const char* tok2 = get_token();
-                        if (!tok2) break;
-                        // TODO check duplicate configs
-                        current->addCodeGenConfig(tok2);
-                    }
-                } else if (strcmp(tok, "warnings") == 0) {
-                    while (1) {
-                        const char* tok2 = get_token();
-                        if (!tok2) break;
-                        // TODO check duplicate silence?
-                        current->silenceWarning(tok2);
-                    }
-                } else if (strcmp(tok, "deps") == 0) {
-                    current->generateDeps = true;
-                    while (1) {
-                        const char* tok2 = get_token();
-                        if (!tok2) break;
-                        // TODO check duplicate configs
-                        current->addDepsConfig(tok2);
-                    }
-                } else if (strcmp(tok, "refs") == 0) {
-                    current->generateRefs = true;
-                } else if (strcmp(tok, "nolibc") == 0) {
-                    current->noLibC = true;
-                } else if (strcmp(tok, "use") == 0) {
-                    while (1) {
-                        const char* tok2 = get_token();
-                        if (!tok2) break;
-                        // TODO check duplicates
-                        current->addLibrary(tok2);
-                    }
-                } else {
-                    error("unknown option '%s'", tok);
+    {
+        // line should be '<filename>' or 'end'
+        const char* tok = get_token();
+        if (tok[0] == '$') {
+            tok++;
+            if (strcmp(tok, "config") == 0) {
+                while (1) {
+                    const char* tok2 = get_token();
+                    if (!tok2) break;
+                    // TODO check duplicate configs
+                    current->addConfig(tok2);
                 }
-            } else if (strcmp(tok, "end") == 0) {
-                checkCurrent();
-                state = START;
-                current = 0;
+            } else if (strcmp(tok, "export") == 0) {
+                while (1) {
+                    const char* tok2 = get_token();
+                    if (!tok2) break;
+                    if (current->hasExported(tok2)) {
+                        error("duplicate module '%s'", tok2);
+                    }
+                    current->addExported(tok2);
+                }
+            } else if (strcmp(tok, "generate-c") == 0) {
+                current->generateCCode = true;
+                while (1) {
+                    const char* tok2 = get_token();
+                    if (!tok2) break;
+                    // TODO check duplicate configs
+                    current->addAnsiCConfig(tok2);
+                }
+            } else if (strcmp(tok, "generate-ir") == 0) {
+                current->generateIR = true;
+                while (1) {
+                    const char* tok2 = get_token();
+                    if (!tok2) break;
+                    // TODO check duplicate configs
+                    current->addCodeGenConfig(tok2);
+                }
+            } else if (strcmp(tok, "warnings") == 0) {
+                while (1) {
+                    const char* tok2 = get_token();
+                    if (!tok2) break;
+                    // TODO check duplicate silence?
+                    current->silenceWarning(tok2);
+                }
+            } else if (strcmp(tok, "deps") == 0) {
+                current->generateDeps = true;
+                while (1) {
+                    const char* tok2 = get_token();
+                    if (!tok2) break;
+                    // TODO check duplicate configs
+                    current->addDepsConfig(tok2);
+                }
+            } else if (strcmp(tok, "refs") == 0) {
+                current->generateRefs = true;
+            } else if (strcmp(tok, "nolibc") == 0) {
+                current->noLibC = true;
+            } else if (strcmp(tok, "use") == 0) {
+                while (1) {
+                    const char* tok2 = get_token();
+                    if (!tok2) break;
+                    // TODO check duplicates
+                    current->addLibrary(tok2);
+                }
             } else {
-                struct stat buf;
-                int err = stat(tok, &buf);
-                if (err) {
-                    error("file '%s' does not exist", tok);
-                }
-                err = access(tok, R_OK);
-                if (err) {
-                	error("missing read permissions for file: %s", tok);
-                }
-                current->addFile(tok);
+                error("unknown option '%s'", tok);
             }
+        } else if (strcmp(tok, "end") == 0) {
+            checkCurrent();
+            state = START;
+            current = 0;
+        } else {
+            struct stat buf;
+            int err = stat(tok, &buf);
+            if (err) {
+                error("file '%s' does not exist", tok);
+            }
+            err = access(tok, R_OK);
+            if (err) {
+                error("missing read permissions for file: %s", tok);
+            }
+            current->addFile(tok);
         }
-        break;
+    }
+    break;
     }
 }
 

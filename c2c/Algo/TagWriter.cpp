@@ -59,7 +59,7 @@ public:
                 name = AnalyserUtils::splitStructFunctionName(structName, I->getName());
             }
             writer.addRef(loc.getLine(), loc.getColumn(), name,
-                         loc2.getFilename(), loc2.getLine(), loc2.getColumn());
+                          loc2.getFilename(), loc2.getLine(), loc2.getColumn());
         }
     }
 private:
@@ -160,7 +160,7 @@ void TagWriter::analyse(const AST& ast) {
 }
 
 void TagWriter::addRef(unsigned src_line, unsigned src_col, const std::string& symbol,
-            const std::string& dst_file, unsigned dst_line, unsigned dst_col)
+                       const std::string& dst_file, unsigned dst_line, unsigned dst_col)
 {
     TagFile* destFile = getFile(dst_file);
 

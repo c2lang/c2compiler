@@ -121,37 +121,37 @@ void InterfaceGenerator::EmitExpr(const Expr* E) {
     LOG_FUNC
     switch (E->getKind()) {
     case EXPR_INTEGER_LITERAL:
-        {
-            const IntegerLiteral* N = cast<IntegerLiteral>(E);
-            iface.number(N->getRadix(), N->Value.getSExtValue());
-            return;
-        }
+    {
+        const IntegerLiteral* N = cast<IntegerLiteral>(E);
+        iface.number(N->getRadix(), N->Value.getSExtValue());
+        return;
+    }
     case EXPR_FLOAT_LITERAL:
-        {
-            const FloatingLiteral* F = cast<FloatingLiteral>(E);
-            char temp[20];
-            sprintf(temp, "%f", F->Value.convertToFloat());
-            iface << temp;
-            return;
-        }
+    {
+        const FloatingLiteral* F = cast<FloatingLiteral>(E);
+        char temp[20];
+        sprintf(temp, "%f", F->Value.convertToFloat());
+        iface << temp;
+        return;
+    }
     case EXPR_BOOL_LITERAL:
-        {
-            const BooleanLiteral* B = cast<BooleanLiteral>(E);
-            iface << (int)B->getValue();
-            return;
-        }
+    {
+        const BooleanLiteral* B = cast<BooleanLiteral>(E);
+        iface << (int)B->getValue();
+        return;
+    }
     case EXPR_CHAR_LITERAL:
-        {
-            const CharacterLiteral* C = cast<CharacterLiteral>(E);
-            C->printLiteral(iface);
-            return;
-        }
+    {
+        const CharacterLiteral* C = cast<CharacterLiteral>(E);
+        C->printLiteral(iface);
+        return;
+    }
     case EXPR_STRING_LITERAL:
-        {
-            const StringLiteral* S = cast<StringLiteral>(E);
-            EmitStringLiteral(S->getValue());
-            return;
-        }
+    {
+        const StringLiteral* S = cast<StringLiteral>(E);
+        EmitStringLiteral(S->getValue());
+        return;
+    }
     case EXPR_NIL:
         iface << "NULL";
         return;
@@ -162,40 +162,40 @@ void InterfaceGenerator::EmitExpr(const Expr* E) {
         EmitIdentifierExpr(cast<IdentifierExpr>(E));
         return;
     case EXPR_INITLIST:
-        {
-            const InitListExpr* I = cast<InitListExpr>(E);
-            iface << "{ ";
-            Expr** values = I->getValues();
-            const unsigned numValues = I->numValues();
-            for (unsigned i=0; i<numValues; i++) {
-                if (i == 0 && values[0]->getKind() == EXPR_INITLIST) iface << '\n';
-                EmitExpr(values[i]);
-                if (i != numValues -1) iface << ", ";
-                if (values[i]->getKind() == EXPR_INITLIST) iface << '\n';
-            }
-            iface << " }";
-            return;
+    {
+        const InitListExpr* I = cast<InitListExpr>(E);
+        iface << "{ ";
+        Expr** values = I->getValues();
+        const unsigned numValues = I->numValues();
+        for (unsigned i=0; i<numValues; i++) {
+            if (i == 0 && values[0]->getKind() == EXPR_INITLIST) iface << '\n';
+            EmitExpr(values[i]);
+            if (i != numValues -1) iface << ", ";
+            if (values[i]->getKind() == EXPR_INITLIST) iface << '\n';
         }
+        iface << " }";
+        return;
+    }
     case EXPR_DESIGNATOR_INIT:
-        {
-            const DesignatedInitExpr* D = cast<DesignatedInitExpr>(E);
-            if (D->getDesignatorKind() == DesignatedInitExpr::ARRAY_DESIGNATOR) {
-                iface << '[';
-                EmitExpr(D->getDesignator());
-                iface << "] = ";
-            } else {
-                iface << '.' << D->getField() << " = ";
-            }
-            EmitExpr(D->getInitValue());
-            return;
+    {
+        const DesignatedInitExpr* D = cast<DesignatedInitExpr>(E);
+        if (D->getDesignatorKind() == DesignatedInitExpr::ARRAY_DESIGNATOR) {
+            iface << '[';
+            EmitExpr(D->getDesignator());
+            iface << "] = ";
+        } else {
+            iface << '.' << D->getField() << " = ";
         }
+        EmitExpr(D->getInitValue());
+        return;
+    }
     case EXPR_TYPE:
-        {
-            //const TypeExpr* T = cast<TypeExpr>(E);
-            //EmitTypePreName(T->getType(), iface);
-            //EmitTypePostName(T->getType(), iface);
-            return;
-        }
+    {
+        //const TypeExpr* T = cast<TypeExpr>(E);
+        //EmitTypePreName(T->getType(), iface);
+        //EmitTypePostName(T->getType(), iface);
+        return;
+    }
     case EXPR_BINOP:
         EmitBinaryOperator(E);
         return;
@@ -206,91 +206,91 @@ void InterfaceGenerator::EmitExpr(const Expr* E) {
         EmitUnaryOperator(E);
         return;
     case EXPR_BUILTIN:
-        {
-            const BuiltinExpr* S = cast<BuiltinExpr>(E);
-            if (S->isSizeof()) {
-                iface << "sizeof(";
-                EmitExpr(S->getExpr());
-                iface << ')';
-            } else {
-                const IdentifierExpr* I = cast<IdentifierExpr>(S->getExpr());
-                Decl* D = I->getDecl();
-                // should be VarDecl(for array/enum) or TypeDecl(array/enum)
-                switch (D->getKind()) {
-                case DECL_FUNC:
-                    assert(0);
-                    break;
-                case DECL_VAR:
-                    {
-                        VarDecl* VD = cast<VarDecl>(D);
-                        QualType Q = VD->getType();
-                        if (Q.isArrayType()) {
-                            // generate: (sizeof(array) / sizeof(array[0]))
-                            iface << "(sizeof(";
-                            //EmitDecl(D, iface);
-                            iface << ")/sizeof(";
-                            //EmitDecl(D, iface);
-                            iface << "[0]))";
-                            return;
-                        }
-                        // TODO also allow elemsof for EnumType
-                        // NOTE cannot be converted to C if used with enums
-                        assert(0 && "TODO");
-                        return;
-                    }
-                case DECL_ENUMVALUE:
-                    break;
-                case DECL_ALIASTYPE:
-                case DECL_STRUCTTYPE:
-                case DECL_ENUMTYPE:
-                case DECL_FUNCTIONTYPE:
-                case DECL_ARRAYVALUE:
-                case DECL_IMPORT:
-                case DECL_LABEL:
-                    assert(0);
-                    break;
+    {
+        const BuiltinExpr* S = cast<BuiltinExpr>(E);
+        if (S->isSizeof()) {
+            iface << "sizeof(";
+            EmitExpr(S->getExpr());
+            iface << ')';
+        } else {
+            const IdentifierExpr* I = cast<IdentifierExpr>(S->getExpr());
+            Decl* D = I->getDecl();
+            // should be VarDecl(for array/enum) or TypeDecl(array/enum)
+            switch (D->getKind()) {
+            case DECL_FUNC:
+                assert(0);
+                break;
+            case DECL_VAR:
+            {
+                VarDecl* VD = cast<VarDecl>(D);
+                QualType Q = VD->getType();
+                if (Q.isArrayType()) {
+                    // generate: (sizeof(array) / sizeof(array[0]))
+                    iface << "(sizeof(";
+                    //EmitDecl(D, iface);
+                    iface << ")/sizeof(";
+                    //EmitDecl(D, iface);
+                    iface << "[0]))";
+                    return;
                 }
+                // TODO also allow elemsof for EnumType
+                // NOTE cannot be converted to C if used with enums
+                assert(0 && "TODO");
+                return;
             }
-            return;
+            case DECL_ENUMVALUE:
+                break;
+            case DECL_ALIASTYPE:
+            case DECL_STRUCTTYPE:
+            case DECL_ENUMTYPE:
+            case DECL_FUNCTIONTYPE:
+            case DECL_ARRAYVALUE:
+            case DECL_IMPORT:
+            case DECL_LABEL:
+                assert(0);
+                break;
+            }
         }
+        return;
+    }
     case EXPR_ARRAYSUBSCRIPT:
-        {
-            const ArraySubscriptExpr* A = cast<ArraySubscriptExpr>(E);
-            if (isa<BitOffsetExpr>(A->getIndex())) {
-                assert(0 && "todo?");
-            } else {
-                EmitExpr(A->getBase());
-                iface << '[';
-                EmitExpr(A->getIndex());
-                iface << ']';
-            }
-            return;
+    {
+        const ArraySubscriptExpr* A = cast<ArraySubscriptExpr>(E);
+        if (isa<BitOffsetExpr>(A->getIndex())) {
+            assert(0 && "todo?");
+        } else {
+            EmitExpr(A->getBase());
+            iface << '[';
+            EmitExpr(A->getIndex());
+            iface << ']';
         }
+        return;
+    }
     case EXPR_MEMBER:
         EmitMemberExpr(E);
         return;
     case EXPR_PAREN:
-        {
-            const ParenExpr* P = cast<ParenExpr>(E);
-            iface << '(';
-            EmitExpr(P->getExpr());
-            iface << ')';
-            return;
-        }
+    {
+        const ParenExpr* P = cast<ParenExpr>(E);
+        iface << '(';
+        EmitExpr(P->getExpr());
+        iface << ')';
+        return;
+    }
     case EXPR_BITOFFSET:
         assert(0 && "should not happen");
         break;
     case EXPR_CAST:
-        {
-            const ExplicitCastExpr* ECE = cast<ExplicitCastExpr>(E);
-            iface << '(';
-            //EmitTypePreName(ECE->getDestType());
-            //EmitTypePostName(ECE->getDestType());
-            iface << ")(";
-            EmitExpr(ECE->getInner());
-            iface << ')';
-            return;
-        }
+    {
+        const ExplicitCastExpr* ECE = cast<ExplicitCastExpr>(E);
+        iface << '(';
+        //EmitTypePreName(ECE->getDestType());
+        //EmitTypePostName(ECE->getDestType());
+        iface << ")(";
+        EmitExpr(ECE->getInner());
+        iface << ')';
+        return;
+    }
     }
 }
 
@@ -441,7 +441,7 @@ void InterfaceGenerator::EmitStructType(const StructTypeDecl* S, unsigned indent
     }
 
     iface << " {\n";
-    for (unsigned i=0;i<S->numMembers(); i++) {
+    for (unsigned i=0; i<S->numMembers(); i++) {
         Decl* member = S->getMember(i);
         if (isa<VarDecl>(member)) {
             EmitVarDecl(cast<VarDecl>(member), indent + INDENT);
@@ -510,32 +510,32 @@ void InterfaceGenerator::EmitType(QualType type) {
     const Type* T = type.getTypePtr();
     switch (T->getTypeClass()) {
     case TC_BUILTIN:
-        {
-            // TODO handle Qualifiers
-            const BuiltinType* BI = cast<BuiltinType>(T);
-            iface << BuiltinType::kind2name(BI->getKind());
-            break;
-        }
+    {
+        // TODO handle Qualifiers
+        const BuiltinType* BI = cast<BuiltinType>(T);
+        iface << BuiltinType::kind2name(BI->getKind());
+        break;
+    }
     case TC_POINTER:
         // TODO handle Qualifiers
         EmitType(cast<PointerType>(T)->getPointeeType());
         iface << '*';
         break;
     case TC_ARRAY:
-        {
-            // TODO handle Qualifiers
-            EmitType(cast<ArrayType>(T)->getElementType());
+    {
+        // TODO handle Qualifiers
+        EmitType(cast<ArrayType>(T)->getElementType());
 
-            // TEMP, use canonical type, since type can be AliasType
-            type = type.getCanonicalType();
-            const ArrayType* A = cast<ArrayType>(type);
-            iface << '[';
-            if (A->getSizeExpr()) {
-                EmitExpr(A->getSizeExpr());
-            }
-            iface << ']';
-            break;
+        // TEMP, use canonical type, since type can be AliasType
+        type = type.getCanonicalType();
+        const ArrayType* A = cast<ArrayType>(type);
+        iface << '[';
+        if (A->getSizeExpr()) {
+            EmitExpr(A->getSizeExpr());
         }
+        iface << ']';
+        break;
+    }
     case TC_UNRESOLVED:
         assert(0 && "should be resolved");
         break;
@@ -613,7 +613,7 @@ void InterfaceGenerator::EmitStringLiteral(const std::string& input) {
         case '\033':
             iface << "\\033";
             break;
-        // TODO other escaped chars
+            // TODO other escaped chars
         default:
             iface << *cp;
             break;

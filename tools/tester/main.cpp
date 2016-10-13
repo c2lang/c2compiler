@@ -169,7 +169,7 @@ public:
         int err = stat(fullname.c_str(), &statbuf);
         if (err) {
             color_print(COL_ERROR, "  missing expected file '%s' (%s)",
-                    filename.c_str(), fullname.c_str());
+                        filename.c_str(), fullname.c_str());
             return false;
         }
         FileMap file(fullname.c_str());
@@ -284,25 +284,27 @@ public:
 
     void testFile();
 
-    bool haveErrors() const { return hasErrors; }
+    bool haveErrors() const {
+        return hasErrors;
+    }
 
     void showNotes() const {
         for (IssuesConstIter iter = notes.begin(); iter != notes.end(); ++iter) {
             color_print(COL_ERROR, "  expected note '%s' at %s:%d",
-                    iter->msg.c_str(), iter->filename.c_str(), iter->line_nr);
+                        iter->msg.c_str(), iter->filename.c_str(), iter->line_nr);
         }
     }
     void showWarnings() const {
         for (IssuesConstIter iter = warnings.begin(); iter != warnings.end(); ++iter) {
             color_print(COL_ERROR, "  expected warning '%s' at %s:%d",
-                    iter->msg.c_str(), iter->filename.c_str(), iter->line_nr);
+                        iter->msg.c_str(), iter->filename.c_str(), iter->line_nr);
         }
     }
 
     void showErrors() const {
         for (IssuesConstIter iter = errors.begin(); iter != errors.end(); ++iter) {
             color_print(COL_ERROR, "  expected error '%s' at %s:%d",
-                    iter->msg.c_str(), iter->filename.c_str(), iter->line_nr);
+                        iter->msg.c_str(), iter->filename.c_str(), iter->line_nr);
         }
     }
 private:

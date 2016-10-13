@@ -43,28 +43,28 @@ void ASTVisitor::checkDecl(const Decl* D) {
         checkType(cast<AliasTypeDecl>(D)->getRefType());
         break;
     case DECL_STRUCTTYPE:
-        {
-            const StructTypeDecl* S = cast<StructTypeDecl>(D);
-            for (unsigned i=0; i<S->numMembers(); i++) {
-                checkDecl(S->getMember(i));
-            }
-            break;
+    {
+        const StructTypeDecl* S = cast<StructTypeDecl>(D);
+        for (unsigned i=0; i<S->numMembers(); i++) {
+            checkDecl(S->getMember(i));
         }
+        break;
+    }
     case DECL_ENUMTYPE:
-        {
-            const EnumTypeDecl* E = cast<EnumTypeDecl>(D);
-            for (unsigned i=0; i<E->numConstants(); i++) {
-                const EnumConstantDecl* ECD = E->getConstant(i);
-                if (ECD->getInitValue()) checkExpr(ECD->getInitValue());
-            }
-            break;
+    {
+        const EnumTypeDecl* E = cast<EnumTypeDecl>(D);
+        for (unsigned i=0; i<E->numConstants(); i++) {
+            const EnumConstantDecl* ECD = E->getConstant(i);
+            if (ECD->getInitValue()) checkExpr(ECD->getInitValue());
         }
+        break;
+    }
     case DECL_FUNCTIONTYPE:
-        {
-            const FunctionTypeDecl* F = cast<FunctionTypeDecl>(D);
-            checkFunctionDecl(F->getDecl());
-            break;
-        }
+    {
+        const FunctionTypeDecl* F = cast<FunctionTypeDecl>(D);
+        checkFunctionDecl(F->getDecl());
+        break;
+    }
     case DECL_ARRAYVALUE:
         assert(0 && "TODO");
         break;
@@ -102,20 +102,20 @@ void ASTVisitor::checkType(QualType Q, bool isFull) {
         checkType(cast<PointerType>(T)->getPointeeType(), false);
         break;
     case TC_ARRAY:
-        {
-            const ArrayType* A = cast<ArrayType>(T);
-            checkType(A->getElementType(), isFull);
-            if (A->getSizeExpr()) checkExpr(A->getSizeExpr());
-            break;
-        }
+    {
+        const ArrayType* A = cast<ArrayType>(T);
+        checkType(A->getElementType(), isFull);
+        if (A->getSizeExpr()) checkExpr(A->getSizeExpr());
+        break;
+    }
     case TC_UNRESOLVED:
-        {
-            const UnresolvedType* U = cast<UnresolvedType>(T);
-            const IdentifierExpr* moduleName = U->getModuleName();
-            if (moduleName) visitIdentifierExpr(moduleName);
-            visitIdentifierExpr(U->getTypeName());
-            break;
-        }
+    {
+        const UnresolvedType* U = cast<UnresolvedType>(T);
+        const IdentifierExpr* moduleName = U->getModuleName();
+        if (moduleName) visitIdentifierExpr(moduleName);
+        visitIdentifierExpr(U->getTypeName());
+        break;
+    }
     case TC_ALIAS:
     case TC_STRUCT:
     case TC_ENUM:
@@ -131,74 +131,74 @@ void ASTVisitor::checkStmt(const Stmt* S) {
     assert(S);
     switch (S->getKind()) {
     case STMT_RETURN:
-        {
-            const ReturnStmt* R = cast<ReturnStmt>(S);
-            if (R->getExpr()) checkExpr(R->getExpr());
-            break;
-        }
+    {
+        const ReturnStmt* R = cast<ReturnStmt>(S);
+        if (R->getExpr()) checkExpr(R->getExpr());
+        break;
+    }
     case STMT_EXPR:
         checkExpr(cast<Expr>(S));
         break;
     case STMT_IF:
-        {
-            const IfStmt* I = cast<IfStmt>(S);
-            checkStmt(I->getCond());
-            checkStmt(I->getThen());
-            if (I->getElse()) checkStmt(I->getElse());
-            break;
-        }
+    {
+        const IfStmt* I = cast<IfStmt>(S);
+        checkStmt(I->getCond());
+        checkStmt(I->getThen());
+        if (I->getElse()) checkStmt(I->getElse());
+        break;
+    }
     case STMT_WHILE:
-        {
-            const WhileStmt* W = cast<WhileStmt>(S);
-            checkStmt(W->getCond());
-            checkStmt(W->getBody());
-            break;
-        }
+    {
+        const WhileStmt* W = cast<WhileStmt>(S);
+        checkStmt(W->getCond());
+        checkStmt(W->getBody());
+        break;
+    }
     case STMT_DO:
-        {
-            const DoStmt* D = cast<DoStmt>(S);
-            checkStmt(D->getCond());
-            checkStmt(D->getBody());
-            break;
-        }
+    {
+        const DoStmt* D = cast<DoStmt>(S);
+        checkStmt(D->getCond());
+        checkStmt(D->getBody());
+        break;
+    }
     case STMT_FOR:
-        {
-            const ForStmt* F = cast<ForStmt>(S);
-            if (F->getInit()) checkStmt(F->getInit());
-            if (F->getCond()) checkExpr(F->getCond());
-            if (F->getIncr()) checkExpr(F->getIncr());
-            checkStmt(F->getBody());
-            break;
-        }
+    {
+        const ForStmt* F = cast<ForStmt>(S);
+        if (F->getInit()) checkStmt(F->getInit());
+        if (F->getCond()) checkExpr(F->getCond());
+        if (F->getIncr()) checkExpr(F->getIncr());
+        checkStmt(F->getBody());
+        break;
+    }
     case STMT_SWITCH:
-        {
-            const SwitchStmt* SW = cast<SwitchStmt>(S);
-            checkStmt(SW->getCond());
-            Stmt** cases = SW->getCases();
-            for (unsigned i=0; i<SW->numCases(); i++) {
-                checkStmt(cases[i]);
-            }
-            break;
+    {
+        const SwitchStmt* SW = cast<SwitchStmt>(S);
+        checkStmt(SW->getCond());
+        Stmt** cases = SW->getCases();
+        for (unsigned i=0; i<SW->numCases(); i++) {
+            checkStmt(cases[i]);
         }
+        break;
+    }
     case STMT_CASE:
-        {
-            const CaseStmt* C = cast<CaseStmt>(S);
-            checkExpr(C->getCond());
-            Stmt** stmts = C->getStmts();
-            for (unsigned i=0; i<C->numStmts(); i++) {
-                checkStmt(stmts[i]);
-            }
-            break;
+    {
+        const CaseStmt* C = cast<CaseStmt>(S);
+        checkExpr(C->getCond());
+        Stmt** stmts = C->getStmts();
+        for (unsigned i=0; i<C->numStmts(); i++) {
+            checkStmt(stmts[i]);
         }
+        break;
+    }
     case STMT_DEFAULT:
-        {
-            const DefaultStmt* D = cast<DefaultStmt>(S);
-            Stmt** stmts = D->getStmts();
-            for (unsigned i=0; i<D->numStmts(); i++) {
-                checkStmt(stmts[i]);
-            }
-            break;
+    {
+        const DefaultStmt* D = cast<DefaultStmt>(S);
+        Stmt** stmts = D->getStmts();
+        for (unsigned i=0; i<D->numStmts(); i++) {
+            checkStmt(stmts[i]);
         }
+        break;
+    }
     case STMT_BREAK:
     case STMT_CONTINUE:
     case STMT_LABEL:
@@ -238,40 +238,40 @@ void ASTVisitor::checkExpr(const Expr* E) {
         // only in sizeof(int), so no need to check here
         break;
     case EXPR_CALL:
-        {
-            const CallExpr* C = cast<CallExpr>(E);
-            checkExpr(C->getFn());
-            for (unsigned i=0; i<C->numArgs(); i++) {
-                checkExpr(C->getArg(i));
-            }
-            break;
+    {
+        const CallExpr* C = cast<CallExpr>(E);
+        checkExpr(C->getFn());
+        for (unsigned i=0; i<C->numArgs(); i++) {
+            checkExpr(C->getArg(i));
         }
+        break;
+    }
     case EXPR_INITLIST:
-        {
-            const InitListExpr* I = cast<InitListExpr>(E);
-            Expr** values = I->getValues();
-            for (unsigned i=0; i<I->numValues(); i++) {
-                checkExpr(values[i]);
-            }
-            break;
+    {
+        const InitListExpr* I = cast<InitListExpr>(E);
+        Expr** values = I->getValues();
+        for (unsigned i=0; i<I->numValues(); i++) {
+            checkExpr(values[i]);
         }
+        break;
+    }
     case EXPR_DESIGNATOR_INIT:
         break;
     case EXPR_BINOP:
-        {
-            const BinaryOperator* B = cast<BinaryOperator>(E);
-            checkExpr(B->getLHS());
-            checkExpr(B->getRHS());
-            break;
-        }
+    {
+        const BinaryOperator* B = cast<BinaryOperator>(E);
+        checkExpr(B->getLHS());
+        checkExpr(B->getRHS());
+        break;
+    }
     case EXPR_CONDOP:
-        {
-            const ConditionalOperator* C = cast<ConditionalOperator>(E);
-            checkExpr(C->getCond());
-            checkExpr(C->getLHS());
-            checkExpr(C->getRHS());
-            break;
-        }
+    {
+        const ConditionalOperator* C = cast<ConditionalOperator>(E);
+        checkExpr(C->getCond());
+        checkExpr(C->getLHS());
+        checkExpr(C->getRHS());
+        break;
+    }
     case EXPR_UNARYOP:
         checkExpr(cast<UnaryOperator>(E)->getExpr());
         break;
@@ -279,36 +279,36 @@ void ASTVisitor::checkExpr(const Expr* E) {
         checkExpr(cast<BuiltinExpr>(E)->getExpr());
         break;
     case EXPR_ARRAYSUBSCRIPT:
-        {
-            const ArraySubscriptExpr* A = cast<ArraySubscriptExpr>(E);
-            checkExpr(A->getBase());
-            checkExpr(A->getIndex());
-            break;
-        }
+    {
+        const ArraySubscriptExpr* A = cast<ArraySubscriptExpr>(E);
+        checkExpr(A->getBase());
+        checkExpr(A->getIndex());
+        break;
+    }
     case EXPR_MEMBER:
-        {
-            const MemberExpr* M = cast<MemberExpr>(E);
-            visitIdentifierExpr(M->getMember());
-            break;
-        }
+    {
+        const MemberExpr* M = cast<MemberExpr>(E);
+        visitIdentifierExpr(M->getMember());
+        break;
+    }
     case EXPR_PAREN:
         checkExpr(cast<ParenExpr>(E)->getExpr());
         break;
     case EXPR_BITOFFSET:
-        {
-            const BitOffsetExpr* B = cast<BitOffsetExpr>(E);
-            checkExpr(B->getLHS());
-            checkExpr(B->getRHS());
-            break;
-        }
+    {
+        const BitOffsetExpr* B = cast<BitOffsetExpr>(E);
+        checkExpr(B->getLHS());
+        checkExpr(B->getRHS());
         break;
+    }
+    break;
     case EXPR_CAST:
-        {
-            const ExplicitCastExpr* ECE = cast<ExplicitCastExpr>(E);
-            checkExpr(ECE->getInner());
-            checkType(ECE->getDestType());
-        }
-        break;
+    {
+        const ExplicitCastExpr* ECE = cast<ExplicitCastExpr>(E);
+        checkExpr(ECE->getInner());
+        checkType(ECE->getDestType());
+    }
+    break;
     }
 }
 

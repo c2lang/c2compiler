@@ -78,18 +78,36 @@ class Token {
 public:
     Token() : kind(tok::eof), text(0), number(0) {}
 
-    void setKind(tok::TokenKind k) { kind = k; }
-    bool is(tok::TokenKind k) const { return kind == k; }
-    bool isNot(tok::TokenKind k) const { return kind != k; }
+    void setKind(tok::TokenKind k) {
+        kind = k;
+    }
+    bool is(tok::TokenKind k) const {
+        return kind == k;
+    }
+    bool isNot(tok::TokenKind k) const {
+        return kind != k;
+    }
 
-    Location getLoc() const { return loc; }
-    void setLocation(Location l) { loc = l; }
+    Location getLoc() const {
+        return loc;
+    }
+    void setLocation(Location l) {
+        loc = l;
+    }
 
-    const char* getText() const { return text; }
-    void setData(const char* d) { text = d; }
+    const char* getText() const {
+        return text;
+    }
+    void setData(const char* d) {
+        text = d;
+    }
 
-    uint32_t getNumber() const { return number; }
-    void setNumber(uint32_t n) { number = n; }
+    uint32_t getNumber() const {
+        return number;
+    }
+    void setNumber(uint32_t n) {
+        number = n;
+    }
 
     void clear() {
         text = 0;
@@ -280,7 +298,9 @@ public:
             parseFiles();
         } // else got error, errorMsg should be set
     }
-    const char* getErrorMsg() const { return errorMsg; }
+    const char* getErrorMsg() const {
+        return errorMsg;
+    }
 
     const TagFile* findFile(const char* filename) const {
         for (FilesConstIter iter = files.begin(); iter != files.end(); ++iter) {

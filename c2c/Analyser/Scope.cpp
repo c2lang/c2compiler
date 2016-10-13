@@ -66,9 +66,9 @@ bool Scope::checkScopedSymbol(const VarDecl* V) const {
     }
     return true;
 err:
-        Diags.Report(V->getLocation(), diag::err_redefinition)
+    Diags.Report(V->getLocation(), diag::err_redefinition)
             << V->getName();
-        Diags.Report(Old->getLocation(), diag::note_previous_definition);
+    Diags.Report(Old->getLocation(), diag::note_previous_definition);
     return false;
 }
 
@@ -143,12 +143,12 @@ Decl* Scope::findSymbol(const std::string& symbol, clang::SourceLocation loc, bo
                     // NASTY: are different FileManagers!
                     // TEMP just use 0 location
                     Diags.Report(SourceLocation(), diag::note_function_suggestion)
-                        << AnalyserUtils::fullName(D->getModule()->getName(), D->getName());
+                            << AnalyserUtils::fullName(D->getModule()->getName(), D->getName());
 
                     ambiguous = true;
                 }
                 Diags.Report(SourceLocation(), diag::note_function_suggestion)
-                    << AnalyserUtils::fullName(mod->getName(), decl->getName());
+                        << AnalyserUtils::fullName(mod->getName(), decl->getName());
 
                 continue;
             }
@@ -195,17 +195,17 @@ Decl* Scope::findSymbol(const std::string& symbol, clang::SourceLocation loc, bo
         } else {
             Diags.Report(loc, diag::err_undeclared_var_use) << symbol;
         }
-/*
-        ScopeResult res2 = scope.findSymbolInUsed(symbol);
-        Decl* D2 = res2.getDecl();
-        if (D2) {
-            assert(D2->getModule());
-            // Crashes if ambiguous
-            Diags.Report(D->getLocation(), diag::note_function_suggestion)
-                << AnalyserUtils::fullName(D2->getModule()->getName(), id->getName());
-        }
+        /*
+                ScopeResult res2 = scope.findSymbolInUsed(symbol);
+                Decl* D2 = res2.getDecl();
+                if (D2) {
+                    assert(D2->getModule());
+                    // Crashes if ambiguous
+                    Diags.Report(D->getLocation(), diag::note_function_suggestion)
+                        << AnalyserUtils::fullName(D2->getModule()->getName(), id->getName());
+                }
 
-*/
+        */
     }
     // TODO make suggestion otherwise? (used Modules w/alias, other modules?)
     return 0;

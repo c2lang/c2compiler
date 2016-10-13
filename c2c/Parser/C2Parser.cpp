@@ -39,44 +39,44 @@ using namespace clang;
 
 /// \brief Return the precedence of the specified binary operator token.
 static prec::Level getBinOpPrecedence(tok::TokenKind Kind) {
-  switch (Kind) {
-  case tok::greater:
-      return prec::Relational;
-  case tok::greatergreater:
-      return prec::Shift;
-  default:                        return prec::Unknown;
-  case tok::comma:                return prec::Comma;
-  case tok::equal:
-  case tok::starequal:
-  case tok::slashequal:
-  case tok::percentequal:
-  case tok::plusequal:
-  case tok::minusequal:
-  case tok::lesslessequal:
-  case tok::greatergreaterequal:
-  case tok::ampequal:
-  case tok::caretequal:
-  case tok::pipeequal:            return prec::Assignment;
-  case tok::question:             return prec::Conditional;
-  case tok::pipepipe:             return prec::LogicalOr;
-  case tok::ampamp:               return prec::LogicalAnd;
-  case tok::pipe:                 return prec::InclusiveOr;
-  case tok::caret:                return prec::ExclusiveOr;
-  case tok::amp:                  return prec::And;
-  case tok::exclaimequal:
-  case tok::equalequal:           return prec::Equality;
-  case tok::lessequal:
-  case tok::less:
-  case tok::greaterequal:         return prec::Relational;
-  case tok::lessless:             return prec::Shift;
-  case tok::plus:
-  case tok::minus:                return prec::Additive;
-  case tok::percent:
-  case tok::slash:
-  case tok::star:                 return prec::Multiplicative;
-  case tok::periodstar:
-  case tok::arrowstar:            return prec::PointerToMember;
-  }
+    switch (Kind) {
+    case tok::greater:
+        return prec::Relational;
+    case tok::greatergreater:
+        return prec::Shift;
+    default:                        return prec::Unknown;
+    case tok::comma:                return prec::Comma;
+    case tok::equal:
+    case tok::starequal:
+    case tok::slashequal:
+    case tok::percentequal:
+    case tok::plusequal:
+    case tok::minusequal:
+    case tok::lesslessequal:
+    case tok::greatergreaterequal:
+    case tok::ampequal:
+    case tok::caretequal:
+    case tok::pipeequal:            return prec::Assignment;
+    case tok::question:             return prec::Conditional;
+    case tok::pipepipe:             return prec::LogicalOr;
+    case tok::ampamp:               return prec::LogicalAnd;
+    case tok::pipe:                 return prec::InclusiveOr;
+    case tok::caret:                return prec::ExclusiveOr;
+    case tok::amp:                  return prec::And;
+    case tok::exclaimequal:
+    case tok::equalequal:           return prec::Equality;
+    case tok::lessequal:
+    case tok::less:
+    case tok::greaterequal:         return prec::Relational;
+    case tok::lessless:             return prec::Shift;
+    case tok::plus:
+    case tok::minus:                return prec::Additive;
+    case tok::percent:
+    case tok::slash:
+    case tok::star:                 return prec::Multiplicative;
+    case tok::periodstar:
+    case tok::arrowstar:            return prec::PointerToMember;
+    }
 }
 
 
@@ -591,8 +591,8 @@ C2::ExprResult C2Parser::ParseExpression(TypeCastState isTypeCast) {
 C2::ExprResult C2Parser::ParseAssignmentExpression(TypeCastState isTypeCast) {
     LOG_FUNC
     ExprResult LHS = ParseCastExpression(/*isUnaryExpression=*/false,
-                                         /*isAddressOfOperand=*/false,
-                                         isTypeCast);
+                     /*isAddressOfOperand=*/false,
+                     isTypeCast);
     return ParseRHSOfBinaryExpression(LHS, prec::Assignment);
 }
 
@@ -602,236 +602,236 @@ C2::ExprResult C2Parser::ParseRHSOfBinaryExpression(ExprResult LHS, prec::Level 
 
     SourceLocation ColonLoc;
 
-  while (1) {
-    // If this token has a lower precedence than we are allowed to parse (e.g.
-    // because we are called recursively, or because the token is not a binop),
-    // then we are done!
-    if (NextTokPrec < MinPrec) return LHS;
+    while (1) {
+        // If this token has a lower precedence than we are allowed to parse (e.g.
+        // because we are called recursively, or because the token is not a binop),
+        // then we are done!
+        if (NextTokPrec < MinPrec) return LHS;
 
-    // Consume the operator, saving the operator token for error reporting.
-    Token OpToken = Tok;
-    // C2 doesn't currently allow this. Check for comma, because used to ParseConstantExpr
-    if (OpToken.is(tok::comma)) return LHS;
-    ConsumeToken();
+        // Consume the operator, saving the operator token for error reporting.
+        Token OpToken = Tok;
+        // C2 doesn't currently allow this. Check for comma, because used to ParseConstantExpr
+        if (OpToken.is(tok::comma)) return LHS;
+        ConsumeToken();
 
-    // Bail out when encountering a comma followed by a token which can't
-    // possibly be the start of an expression. For instance:
-    //   int f() { return 1, }
-    // We can't do this before consuming the comma, because
-    // isNotExpressionStart() looks at the token stream.
+        // Bail out when encountering a comma followed by a token which can't
+        // possibly be the start of an expression. For instance:
+        //   int f() { return 1, }
+        // We can't do this before consuming the comma, because
+        // isNotExpressionStart() looks at the token stream.
 #if 0
-    // BB: C2 doesn't have this??
-    if (OpToken.is(tok::comma) && isNotExpressionStart()) {
-      PP.EnterToken(Tok);
-      Tok = OpToken;
-      return LHS;
-    }
+        // BB: C2 doesn't have this??
+        if (OpToken.is(tok::comma) && isNotExpressionStart()) {
+            PP.EnterToken(Tok);
+            Tok = OpToken;
+            return LHS;
+        }
 #endif
 #if 1
-    // Special case handling for the ternary operator.
-    ExprResult TernaryMiddle(true);
-    if (NextTokPrec == prec::Conditional) {
-      if (Tok.isNot(tok::colon)) {
-        // Don't parse FOO:BAR as if it were a typo for FOO::BAR.
-        //ColonProtectionRAIIObject X(*this);
+        // Special case handling for the ternary operator.
+        ExprResult TernaryMiddle(true);
+        if (NextTokPrec == prec::Conditional) {
+            if (Tok.isNot(tok::colon)) {
+                // Don't parse FOO:BAR as if it were a typo for FOO::BAR.
+                //ColonProtectionRAIIObject X(*this);
 
-        // Handle this production specially:
-        //   logical-OR-expression '?' expression ':' conditional-expression
-        // In particular, the RHS of the '?' is 'expression', not
-        // 'logical-OR-expression' as we might expect.
-        TernaryMiddle = ParseExpression();
-        if (TernaryMiddle.isInvalid()) {
-          LHS = ExprError();
-          TernaryMiddle = 0;
-        }
-      } else {
-        // Special case handling of "X ? Y : Z" where Y is empty:
-        //   logical-OR-expression '?' ':' conditional-expression   [GNU]
-        TernaryMiddle = 0;
-        Diag(Tok, diag::ext_gnu_conditional_expr);
-      }
-
-      if (!TryConsumeToken(tok::colon, ColonLoc)) {
-        // Otherwise, we're missing a ':'.  Assume that this was a typo that
-        // the user forgot. If we're not in a macro expansion, we can suggest
-        // a fixit hint. If there were two spaces before the current token,
-        // suggest inserting the colon in between them, otherwise insert ": ".
-        SourceLocation FILoc = Tok.getLocation();
-        const char *FIText = ": ";
-        const SourceManager &SM = PP.getSourceManager();
-        if (FILoc.isFileID() || PP.isAtStartOfMacroExpansion(FILoc, &FILoc)) {
-          assert(FILoc.isFileID());
-          bool IsInvalid = false;
-          const char *SourcePtr =
-            SM.getCharacterData(FILoc.getLocWithOffset(-1), &IsInvalid);
-          if (!IsInvalid && *SourcePtr == ' ') {
-            SourcePtr =
-              SM.getCharacterData(FILoc.getLocWithOffset(-2), &IsInvalid);
-            if (!IsInvalid && *SourcePtr == ' ') {
-              FILoc = FILoc.getLocWithOffset(-1);
-              FIText = ":";
+                // Handle this production specially:
+                //   logical-OR-expression '?' expression ':' conditional-expression
+                // In particular, the RHS of the '?' is 'expression', not
+                // 'logical-OR-expression' as we might expect.
+                TernaryMiddle = ParseExpression();
+                if (TernaryMiddle.isInvalid()) {
+                    LHS = ExprError();
+                    TernaryMiddle = 0;
+                }
+            } else {
+                // Special case handling of "X ? Y : Z" where Y is empty:
+                //   logical-OR-expression '?' ':' conditional-expression   [GNU]
+                TernaryMiddle = 0;
+                Diag(Tok, diag::ext_gnu_conditional_expr);
             }
-          }
+
+            if (!TryConsumeToken(tok::colon, ColonLoc)) {
+                // Otherwise, we're missing a ':'.  Assume that this was a typo that
+                // the user forgot. If we're not in a macro expansion, we can suggest
+                // a fixit hint. If there were two spaces before the current token,
+                // suggest inserting the colon in between them, otherwise insert ": ".
+                SourceLocation FILoc = Tok.getLocation();
+                const char *FIText = ": ";
+                const SourceManager &SM = PP.getSourceManager();
+                if (FILoc.isFileID() || PP.isAtStartOfMacroExpansion(FILoc, &FILoc)) {
+                    assert(FILoc.isFileID());
+                    bool IsInvalid = false;
+                    const char *SourcePtr =
+                        SM.getCharacterData(FILoc.getLocWithOffset(-1), &IsInvalid);
+                    if (!IsInvalid && *SourcePtr == ' ') {
+                        SourcePtr =
+                            SM.getCharacterData(FILoc.getLocWithOffset(-2), &IsInvalid);
+                        if (!IsInvalid && *SourcePtr == ' ') {
+                            FILoc = FILoc.getLocWithOffset(-1);
+                            FIText = ":";
+                        }
+                    }
+                }
+
+                Diag(Tok, diag::err_expected)
+                        << tok::colon << FixItHint::CreateInsertion(FILoc, FIText);
+                Diag(OpToken, diag::note_matching) << tok::question;
+                ColonLoc = Tok.getLocation();
+            }
+        }
+#endif
+
+#if 0
+        // Code completion for the right-hand side of an assignment expression
+        // goes through a special hook that takes the left-hand side into account.
+        if (Tok.is(tok::code_completion) && NextTokPrec == prec::Assignment) {
+            Actions.CodeCompleteAssignmentRHS(getCurScope(), LHS.get());
+            cutOffParsing();
+            return ExprError();
+        }
+#endif
+
+        // Parse another leaf here for the RHS of the operator.
+        // ParseCastExpression works here because all RHS expressions in C have it
+        // as a prefix, at least. However, in C++, an assignment-expression could
+        // be a throw-expression, which is not a valid cast-expression.
+        // Therefore we need some special-casing here.
+        // Also note that the third operand of the conditional operator is
+        // an assignment-expression in C++, and in C++11, we can have a
+        // braced-init-list on the RHS of an assignment. For better diagnostics,
+        // parse as if we were allowed braced-init-lists everywhere, and check that
+        // they only appear on the RHS of assignments later.
+        ExprResult RHS;
+        bool RHSIsInitList = false;
+#if 0
+        if (getLangOpts().CPlusPlus0x && Tok.is(tok::l_brace)) {
+            RHS = ParseBraceInitializer();
+            RHSIsInitList = true;
+        } else if (getLangOpts().CPlusPlus && NextTokPrec <= prec::Conditional)
+            RHS = ParseAssignmentExpression();
+        else
+#endif
+            RHS = ParseCastExpression(false);
+
+        if (RHS.isInvalid())
+            LHS = ExprError();
+
+        // Remember the precedence of this operator and get the precedence of the
+        // operator immediately to the right of the RHS.
+        prec::Level ThisPrec = NextTokPrec;
+        NextTokPrec = getBinOpPrecedence(Tok.getKind());
+
+        // Assignment and conditional expressions are right-associative.
+        bool isRightAssoc = ThisPrec == prec::Conditional ||
+                            ThisPrec == prec::Assignment;
+
+        // Get the precedence of the operator to the right of the RHS.  If it binds
+        // more tightly with RHS than we do, evaluate it completely first.
+        if (ThisPrec < NextTokPrec ||
+                (ThisPrec == NextTokPrec && isRightAssoc)) {
+            if (!RHS.isInvalid() && RHSIsInitList) {
+                Diag(Tok, diag::err_init_list_bin_op)
+                        << /*LHS*/0 << PP.getSpelling(Tok) << getExprRange(RHS.get());
+                RHS = ExprError();
+            }
+            // If this is left-associative, only parse things on the RHS that bind
+            // more tightly than the current operator.  If it is left-associative, it
+            // is okay, to bind exactly as tightly.  For example, compile A=B=C=D as
+            // A=(B=(C=D)), where each paren is a level of recursion here.
+            // The function takes ownership of the RHS.
+            RHS = ParseRHSOfBinaryExpression(RHS,
+                                             static_cast<prec::Level>(ThisPrec + !isRightAssoc));
+            RHSIsInitList = false;
+
+            if (RHS.isInvalid())
+                LHS = ExprError();
+
+            NextTokPrec = getBinOpPrecedence(Tok.getKind());
+        }
+        assert(NextTokPrec <= ThisPrec && "Recursion didn't work!");
+
+        if (!RHS.isInvalid() && RHSIsInitList) {
+            if (ThisPrec == prec::Assignment) {
+                Diag(OpToken, diag::warn_cxx98_compat_generalized_initializer_lists)
+                        << getExprRange(RHS.get());
+            } else {
+                Diag(OpToken, diag::err_init_list_bin_op)
+                        << /*RHS*/1 << PP.getSpelling(OpToken)
+                        << getExprRange(RHS.get());
+                LHS = ExprError();
+            }
         }
 
-        Diag(Tok, diag::err_expected)
-            << tok::colon << FixItHint::CreateInsertion(FILoc, FIText);
-        Diag(OpToken, diag::note_matching) << tok::question;
-        ColonLoc = Tok.getLocation();
-      }
-    }
-#endif
-
+        if (!LHS.isInvalid()) {
+            // Combine the LHS and RHS into the LHS (e.g. build AST).
+            if (TernaryMiddle.isInvalid()) {
 #if 0
-    // Code completion for the right-hand side of an assignment expression
-    // goes through a special hook that takes the left-hand side into account.
-    if (Tok.is(tok::code_completion) && NextTokPrec == prec::Assignment) {
-      Actions.CodeCompleteAssignmentRHS(getCurScope(), LHS.get());
-      cutOffParsing();
-      return ExprError();
-    }
+                // If we're using '>>' as an operator within a template
+                // argument list (in C++98), suggest the addition of
+                // parentheses so that the code remains well-formed in C++0x.
+                if (!GreaterThanIsOperator && OpToken.is(tok::greatergreater))
+                    SuggestParentheses(OpToken.getLocation(),
+                                       diag::warn_cxx0x_right_shift_in_template_arg,
+                                       SourceRange(Actions.getExprRange(LHS.get()).getBegin(),
+                                                   Actions.getExprRange(RHS.get()).getEnd()));
 #endif
 
-    // Parse another leaf here for the RHS of the operator.
-    // ParseCastExpression works here because all RHS expressions in C have it
-    // as a prefix, at least. However, in C++, an assignment-expression could
-    // be a throw-expression, which is not a valid cast-expression.
-    // Therefore we need some special-casing here.
-    // Also note that the third operand of the conditional operator is
-    // an assignment-expression in C++, and in C++11, we can have a
-    // braced-init-list on the RHS of an assignment. For better diagnostics,
-    // parse as if we were allowed braced-init-lists everywhere, and check that
-    // they only appear on the RHS of assignments later.
-    ExprResult RHS;
-    bool RHSIsInitList = false;
-#if 0
-    if (getLangOpts().CPlusPlus0x && Tok.is(tok::l_brace)) {
-      RHS = ParseBraceInitializer();
-      RHSIsInitList = true;
-    } else if (getLangOpts().CPlusPlus && NextTokPrec <= prec::Conditional)
-      RHS = ParseAssignmentExpression();
-    else
-#endif
-      RHS = ParseCastExpression(false);
+                LHS = Actions.ActOnBinOp(OpToken.getLocation(),
+                                         OpToken.getKind(), LHS.get(), RHS.get());
+            } else {
+                LHS = Actions.ActOnConditionalOp(OpToken.getLocation(), ColonLoc,
+                                                 LHS.get(), TernaryMiddle.get(),
+                                                 RHS.get());
+            }
+        }
 
-    if (RHS.isInvalid())
-      LHS = ExprError();
-
-    // Remember the precedence of this operator and get the precedence of the
-    // operator immediately to the right of the RHS.
-    prec::Level ThisPrec = NextTokPrec;
-    NextTokPrec = getBinOpPrecedence(Tok.getKind());
-
-    // Assignment and conditional expressions are right-associative.
-    bool isRightAssoc = ThisPrec == prec::Conditional ||
-                        ThisPrec == prec::Assignment;
-
-    // Get the precedence of the operator to the right of the RHS.  If it binds
-    // more tightly with RHS than we do, evaluate it completely first.
-    if (ThisPrec < NextTokPrec ||
-        (ThisPrec == NextTokPrec && isRightAssoc)) {
-      if (!RHS.isInvalid() && RHSIsInitList) {
-        Diag(Tok, diag::err_init_list_bin_op)
-          << /*LHS*/0 << PP.getSpelling(Tok) << getExprRange(RHS.get());
-        RHS = ExprError();
-      }
-      // If this is left-associative, only parse things on the RHS that bind
-      // more tightly than the current operator.  If it is left-associative, it
-      // is okay, to bind exactly as tightly.  For example, compile A=B=C=D as
-      // A=(B=(C=D)), where each paren is a level of recursion here.
-      // The function takes ownership of the RHS.
-      RHS = ParseRHSOfBinaryExpression(RHS,
-                            static_cast<prec::Level>(ThisPrec + !isRightAssoc));
-      RHSIsInitList = false;
-
-      if (RHS.isInvalid())
-        LHS = ExprError();
-
-      NextTokPrec = getBinOpPrecedence(Tok.getKind());
     }
-    assert(NextTokPrec <= ThisPrec && "Recursion didn't work!");
-
-    if (!RHS.isInvalid() && RHSIsInitList) {
-      if (ThisPrec == prec::Assignment) {
-        Diag(OpToken, diag::warn_cxx98_compat_generalized_initializer_lists)
-          << getExprRange(RHS.get());
-      } else {
-        Diag(OpToken, diag::err_init_list_bin_op)
-          << /*RHS*/1 << PP.getSpelling(OpToken)
-          << getExprRange(RHS.get());
-        LHS = ExprError();
-      }
-    }
-
-    if (!LHS.isInvalid()) {
-      // Combine the LHS and RHS into the LHS (e.g. build AST).
-      if (TernaryMiddle.isInvalid()) {
-#if 0
-        // If we're using '>>' as an operator within a template
-        // argument list (in C++98), suggest the addition of
-        // parentheses so that the code remains well-formed in C++0x.
-        if (!GreaterThanIsOperator && OpToken.is(tok::greatergreater))
-          SuggestParentheses(OpToken.getLocation(),
-                             diag::warn_cxx0x_right_shift_in_template_arg,
-                         SourceRange(Actions.getExprRange(LHS.get()).getBegin(),
-                                     Actions.getExprRange(RHS.get()).getEnd()));
-#endif
-
-        LHS = Actions.ActOnBinOp(OpToken.getLocation(),
-                                 OpToken.getKind(), LHS.get(), RHS.get());
-      } else {
-        LHS = Actions.ActOnConditionalOp(OpToken.getLocation(), ColonLoc,
-                                         LHS.get(), TernaryMiddle.get(),
-                                         RHS.get());
-      }
-    }
-
-  }
-  // TODO add return value?
+    // TODO add return value?
 }
 
 // NOTE: this is the C-style cast expression that's not used anymore for actual casting
 C2::ExprResult C2Parser::ParseCastExpression(bool isUnaryExpression,
-                         bool isAddressOfOperand,
-                         bool &NotCastExpr,
-                         TypeCastState isTypeCast) {
+        bool isAddressOfOperand,
+        bool &NotCastExpr,
+        TypeCastState isTypeCast) {
     LOG_FUNC
     ExprResult Res;
     tok::TokenKind SavedKind = Tok.getKind();
     NotCastExpr = false;
 
-  // This handles all of cast-expression, unary-expression, postfix-expression,
-  // and primary-expression.  We handle them together like this for efficiency
-  // and to simplify handling of an expression starting with a '(' token: which
-  // may be one of a parenthesized expression, cast-expression, compound literal
-  // expression, or statement expression.
-  //
-  // If the parsed tokens consist of a primary-expression, the cases below
-  // break out of the switch;  at the end we call ParsePostfixExpressionSuffix
-  // to handle the postfix expression suffixes.  Cases that cannot be followed
-  // by postfix exprs should return without invoking
-  // ParsePostfixExpressionSuffix.
+    // This handles all of cast-expression, unary-expression, postfix-expression,
+    // and primary-expression.  We handle them together like this for efficiency
+    // and to simplify handling of an expression starting with a '(' token: which
+    // may be one of a parenthesized expression, cast-expression, compound literal
+    // expression, or statement expression.
+    //
+    // If the parsed tokens consist of a primary-expression, the cases below
+    // break out of the switch;  at the end we call ParsePostfixExpressionSuffix
+    // to handle the postfix expression suffixes.  Cases that cannot be followed
+    // by postfix exprs should return without invoking
+    // ParsePostfixExpressionSuffix.
     switch (SavedKind) {
     case tok::l_paren:
-        {
-            ParenParseOption ParenExprType = (isUnaryExpression ? CompoundLiteral : CastExpr);
-            SourceLocation RParenLoc;
-            Res = ParseParenExpression(ParenExprType, false/*stopIfCastExpr*/,
-                    isTypeCast == IsTypeCast, RParenLoc);
-            switch (ParenExprType) {
-            case SimpleExpr: break; // Nothing else to do
-            case CompoundStmt: break;   // Nothing else to do
-            case CompoundLiteral:
-              // We parsed '(' type-name ')' '{' ... '}'.  If any suffixes of
-              // postfix-expression exist, parse them now.
-              break;
-            case CastExpr:
-              // We have parsed the cast-expression and no postfix-expr pieces are
-              // following.
-              return Res;
-            }
+    {
+        ParenParseOption ParenExprType = (isUnaryExpression ? CompoundLiteral : CastExpr);
+        SourceLocation RParenLoc;
+        Res = ParseParenExpression(ParenExprType, false/*stopIfCastExpr*/,
+                                   isTypeCast == IsTypeCast, RParenLoc);
+        switch (ParenExprType) {
+        case SimpleExpr: break; // Nothing else to do
+        case CompoundStmt: break;   // Nothing else to do
+        case CompoundLiteral:
+            // We parsed '(' type-name ')' '{' ... '}'.  If any suffixes of
+            // postfix-expression exist, parse them now.
             break;
+        case CastExpr:
+            // We have parsed the cast-expression and no postfix-expr pieces are
+            // following.
+            return Res;
         }
+        break;
+    }
     case tok::numeric_constant:
         Res = Actions.ActOnNumericConstant(Tok);
         ConsumeToken();
@@ -842,16 +842,16 @@ C2::ExprResult C2Parser::ParseCastExpression(bool isUnaryExpression,
         ConsumeToken();
         break;
     case tok::identifier:
-        {                      // primary-expression: identifier
-                               // unqualified-id: identifier
-                               // constant: enumeration-constant
-            Res = ParseIdentifier();
+    {   // primary-expression: identifier
+        // unqualified-id: identifier
+        // constant: enumeration-constant
+        Res = ParseIdentifier();
 
-            // Make sure to pass down the right value for isAddressOfOperand.
-            if (isAddressOfOperand && isPostfixExpressionSuffixStart())
-                isAddressOfOperand = false;
-            break;
-        }
+        // Make sure to pass down the right value for isAddressOfOperand.
+        if (isAddressOfOperand && isPostfixExpressionSuffixStart())
+            isAddressOfOperand = false;
+        break;
+    }
     case tok::string_literal:   // primary-expression: string-literal
         Res = ParseStringLiteralExpression(true);
         break;
@@ -921,8 +921,8 @@ C2::ExprResult C2Parser::ParseCastExpression(bool isUnaryExpression,
 }
 
 C2::ExprResult C2Parser::ParseCastExpression(bool isUnaryExpression,
-                         bool isAddressOfOperand,
-                         TypeCastState isTypeCast) {
+        bool isAddressOfOperand,
+        TypeCastState isTypeCast) {
     //LOG_FUNC
     bool NotCastExpr = true;
     ExprResult Res = ParseCastExpression(isUnaryExpression,
@@ -964,18 +964,18 @@ C2::ExprResult C2Parser::ParseExplicitCastExpression() {
 /// \verbatim
 C2::ExprResult C2Parser::ParseStringLiteralExpression(bool AllowUserDefinedLiteral) {
     LOG_FUNC
-  assert(isTokenStringLiteral() && "Not a string literal!");
+    assert(isTokenStringLiteral() && "Not a string literal!");
 
-  // String concat.  Note that keywords like __func__ and __FUNCTION__ are not
-  // considered to be strings for concatenation purposes.
-  SmallVector<Token, 4> StringToks;
+    // String concat.  Note that keywords like __func__ and __FUNCTION__ are not
+    // considered to be strings for concatenation purposes.
+    SmallVector<Token, 4> StringToks;
 
-  do {
-    StringToks.push_back(Tok);
-    ConsumeStringToken();
-  } while (isTokenStringLiteral());
+    do {
+        StringToks.push_back(Tok);
+        ConsumeStringToken();
+    } while (isTokenStringLiteral());
 
-  return Actions.ActOnStringLiteral(StringToks);
+    return Actions.ActOnStringLiteral(StringToks);
 }
 
 /// \brief Once the leading part of a postfix-expression is parsed, this
@@ -1004,107 +1004,107 @@ C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
     // parsed, see if there are any postfix-expression pieces here.
     SourceLocation Loc;
     while (1) {
-    switch (Tok.getKind()) {
-    case tok::code_completion:
-        assert(0);
-    case tok::identifier:
-    // Fall through; this isn't a message send.
-    default:  // Not a postfix-expression suffix.
-      return LHS;
-    case tok::l_square: {  // postfix-expression: p-e '[' expression ']'
-        // Basic version
-        ConsumeToken();
-        ExprResult Idx = ParseExpression();
-        if (Idx.isInvalid()) return ExprError();
-        if (Tok.is(tok::colon)) {
-            // BitOffset <expr> : <expr>
-            SourceLocation colLoc = ConsumeToken();
-            ExprResult RHS = ParseExpression();
-            if (RHS.isInvalid()) return ExprError();
-            Idx = Actions.ActOnBitOffset(colLoc, Idx.get(), RHS.get());
+        switch (Tok.getKind()) {
+        case tok::code_completion:
+            assert(0);
+        case tok::identifier:
+            // Fall through; this isn't a message send.
+        default:  // Not a postfix-expression suffix.
+            return LHS;
+        case tok::l_square: {  // postfix-expression: p-e '[' expression ']'
+            // Basic version
+            ConsumeToken();
+            ExprResult Idx = ParseExpression();
+            if (Idx.isInvalid()) return ExprError();
+            if (Tok.is(tok::colon)) {
+                // BitOffset <expr> : <expr>
+                SourceLocation colLoc = ConsumeToken();
+                ExprResult RHS = ParseExpression();
+                if (RHS.isInvalid()) return ExprError();
+                Idx = Actions.ActOnBitOffset(colLoc, Idx.get(), RHS.get());
+            }
+            if (Tok.isNot(tok::r_square)) {
+                Diag(Tok, diag::err_expected) << tok::r_square;
+                return ExprError();
+            }
+            SourceLocation RLoc = ConsumeToken();
+            LHS = Actions.ActOnArraySubScriptExpr(RLoc, LHS.get(), Idx.get());
+            break;
         }
-        if (Tok.isNot(tok::r_square)) {
-            Diag(Tok, diag::err_expected) << tok::r_square;
-            return ExprError();
+
+        case tok::l_paren:         // p-e: p-e '(' argument-expression-list[opt] ')'
+            //case tok::lesslessless:  // p-e: p-e '<<<' argument-expression-list '>>>'
+            //   '(' argument-expression-list[opt] ')'
+        {
+            tok::TokenKind OpKind = Tok.getKind();
+            //InMessageExpressionRAIIObject InMessage(*this, false);
+
+            // TODO ParseExpr.cpp:2562
+            //BalancedDelimiterTracker PT(*this, tok::l_paren);
+            //PT.consumeOpen();
+            ///Loc = PT.getOpenLocation();
+            Loc = ConsumeToken();
+
+            ExprVector ArgExprs;
+            CommaLocsTy CommaLocs;
+
+            if (OpKind == tok::l_paren || !LHS.isInvalid()) {
+                if (Tok.isNot(tok::r_paren)) {
+                    if (ParseExpressionList(ArgExprs, CommaLocs)) {
+                        LHS = ExprError();
+                    }
+                }
+            }
+
+            // Match the ')'.
+            if (LHS.isInvalid()) {
+                SkipUntil(tok::r_paren);
+            } else if (Tok.isNot(tok::r_paren)) {
+                //PT.consumeClose();
+                LHS = ExprError();
+            } else {
+                assert((ArgExprs.size() == 0 ||
+                        ArgExprs.size()-1 == CommaLocs.size())&&
+                       "Unexpected number of commas!");
+                if (ArgExprs.size() == 0)
+                    LHS = Actions.ActOnCallExpr(LHS.get(), 0, 0, Tok.getLocation());
+                else
+                    LHS = Actions.ActOnCallExpr(LHS.get(), &ArgExprs[0], ArgExprs.size(), Tok.getLocation());
+                //LHS = Actions.ActOnCallExpr(getCurScope(), LHS.take(), Loc,
+                //                            ArgExprs, Tok.getLocation(),
+                //                            ExecConfig);
+                //PT.consumeClose();
+                if (ExpectAndConsume(tok::r_paren)) return ExprError();
+            }
+
+            break;
         }
-        SourceLocation RLoc = ConsumeToken();
-        LHS = Actions.ActOnArraySubScriptExpr(RLoc, LHS.get(), Idx.get());
-        break;
+        case tok::arrow:
+        case tok::period: {
+            // postfix-expression: p-e '->' template[opt] id-expression
+            // postfix-expression: p-e '.' template[opt] id-expression
+            tok::TokenKind OpKind = Tok.getKind();
+
+            SourceLocation oploc = ConsumeToken();  // Eat the "." or "->" token.
+            if (OpKind == tok::arrow) {
+                Diag(oploc, diag::err_member_access_arrow);
+                // just continue pretending it's a dot
+            }
+
+            if (ExpectIdentifier()) return ExprError();
+            ExprResult rhs = ParseIdentifier();
+            LHS = Actions.ActOnMemberExpr(LHS.get(), rhs.get());
+            break;
+        }
+        case tok::plusplus:    // postfix-expression: postfix-expression '++'
+        case tok::minusminus:  // postfix-expression: postfix-expression '--'
+            if (!LHS.isInvalid()) {
+                LHS = Actions.ActOnPostfixUnaryOp(Tok.getLocation(), Tok.getKind(), LHS.get());
+            }
+            ConsumeToken();
+            break;
+        }
     }
-
-    case tok::l_paren:         // p-e: p-e '(' argument-expression-list[opt] ')'
-    //case tok::lesslessless:  // p-e: p-e '<<<' argument-expression-list '>>>'
-                               //   '(' argument-expression-list[opt] ')'
-    {
-      tok::TokenKind OpKind = Tok.getKind();
-      //InMessageExpressionRAIIObject InMessage(*this, false);
-
-        // TODO ParseExpr.cpp:2562
-      //BalancedDelimiterTracker PT(*this, tok::l_paren);
-      //PT.consumeOpen();
-      ///Loc = PT.getOpenLocation();
-      Loc = ConsumeToken();
-
-      ExprVector ArgExprs;
-      CommaLocsTy CommaLocs;
-
-      if (OpKind == tok::l_paren || !LHS.isInvalid()) {
-        if (Tok.isNot(tok::r_paren)) {
-          if (ParseExpressionList(ArgExprs, CommaLocs)) {
-            LHS = ExprError();
-          }
-        }
-      }
-
-      // Match the ')'.
-      if (LHS.isInvalid()) {
-        SkipUntil(tok::r_paren);
-      } else if (Tok.isNot(tok::r_paren)) {
-        //PT.consumeClose();
-        LHS = ExprError();
-      } else {
-        assert((ArgExprs.size() == 0 ||
-                ArgExprs.size()-1 == CommaLocs.size())&&
-               "Unexpected number of commas!");
-        if (ArgExprs.size() == 0)
-            LHS = Actions.ActOnCallExpr(LHS.get(), 0, 0, Tok.getLocation());
-        else
-            LHS = Actions.ActOnCallExpr(LHS.get(), &ArgExprs[0], ArgExprs.size(), Tok.getLocation());
-        //LHS = Actions.ActOnCallExpr(getCurScope(), LHS.take(), Loc,
-        //                            ArgExprs, Tok.getLocation(),
-        //                            ExecConfig);
-        //PT.consumeClose();
-        if (ExpectAndConsume(tok::r_paren)) return ExprError();
-      }
-
-      break;
-    }
-    case tok::arrow:
-    case tok::period: {
-        // postfix-expression: p-e '->' template[opt] id-expression
-        // postfix-expression: p-e '.' template[opt] id-expression
-        tok::TokenKind OpKind = Tok.getKind();
-
-        SourceLocation oploc = ConsumeToken();  // Eat the "." or "->" token.
-        if (OpKind == tok::arrow) {
-            Diag(oploc, diag::err_member_access_arrow);
-            // just continue pretending it's a dot
-        }
-
-        if (ExpectIdentifier()) return ExprError();
-        ExprResult rhs = ParseIdentifier();
-        LHS = Actions.ActOnMemberExpr(LHS.get(), rhs.get());
-        break;
-    }
-    case tok::plusplus:    // postfix-expression: postfix-expression '++'
-    case tok::minusminus:  // postfix-expression: postfix-expression '--'
-        if (!LHS.isInvalid()) {
-            LHS = Actions.ActOnPostfixUnaryOp(Tok.getLocation(), Tok.getKind(), LHS.get());
-        }
-        ConsumeToken();
-        break;
-    }
-  }
 }
 
 /// ParseExpressionList - Used for C/C++ (argument-)expression-list.
@@ -1133,28 +1133,28 @@ bool C2Parser::ParseExpressionList(SmallVectorImpl<Expr*> &Exprs,
                                    SmallVectorImpl<SourceLocation> &CommaLocs)
 {
     LOG_FUNC
-  while (1) {
-    ExprResult Expr;
-    Expr = ParseAssignmentExpression();
+    while (1) {
+        ExprResult Expr;
+        Expr = ParseAssignmentExpression();
 
-    if (Tok.is(tok::ellipsis)) {
-        ConsumeToken();
-        //Expr = Actions.ActOnPackExpansion(Expr.get(), ConsumeToken());
+        if (Tok.is(tok::ellipsis)) {
+            ConsumeToken();
+            //Expr = Actions.ActOnPackExpansion(Expr.get(), ConsumeToken());
+        }
+        if (Expr.isInvalid())
+            return true;
+
+        Exprs.push_back(Expr.get());
+
+        if (Tok.is(tok::semi)) {
+            Diag(Tok, diag::err_expected) << tok::r_paren;
+            return true;
+        }
+        if (Tok.isNot(tok::comma))
+            return false;
+        // Move to the next argument, remember where the comma was.
+        CommaLocs.push_back(ConsumeToken());
     }
-    if (Expr.isInvalid())
-      return true;
-
-    Exprs.push_back(Expr.get());
-
-    if (Tok.is(tok::semi)) {
-        Diag(Tok, diag::err_expected) << tok::r_paren;
-        return true;
-    }
-    if (Tok.isNot(tok::comma))
-      return false;
-    // Move to the next argument, remember where the comma was.
-    CommaLocs.push_back(ConsumeToken());
-  }
 }
 
 /// ParseParenExpression - This parses the unit that starts with a '(' token,
@@ -1174,7 +1174,7 @@ bool C2Parser::ParseExpressionList(SmallVectorImpl<Expr*> &Exprs,
 /// \endverbatim
 C2::ExprResult
 C2Parser::ParseParenExpression(ParenParseOption &ExprType, bool stopIfCastExpr,
-                             bool isTypeCast, SourceLocation &RParenLoc)
+                               bool isTypeCast, SourceLocation &RParenLoc)
 {
     LOG_FUNC
 
@@ -1222,8 +1222,8 @@ C2Parser::ParseParenExpression(ParenParseOption &ExprType, bool stopIfCastExpr,
             // Parse the cast-expression that follows it next.
             // TODO: For cast expression with CastTy.
             Result = ParseCastExpression(/*isUnaryExpression=*/false,
-                                         /*isAddressOfOperand=*/false,
-                                         /*isTypeCast=*/IsTypeCast);
+                     /*isAddressOfOperand=*/false,
+                     /*isTypeCast=*/IsTypeCast);
             return Result;
         }
         Diag(Tok, diag::err_expected_lbrace_in_compound_literal);
@@ -1316,7 +1316,7 @@ bool C2Parser::isDeclaration() {
     switch (Tok.getKind()) {
     case tok::identifier:
         return isTypeSpec();
-    // all basic types
+        // all basic types
     case tok::kw_uint8:
     case tok::kw_uint16:
     case tok::kw_uint32:
@@ -1422,7 +1422,7 @@ C2::ExprResult C2Parser::ParseSizeof()
             Res = ParseTypeSpecifier(false);
         }
         break;
-    // all basic types
+        // all basic types
     case tok::kw_uint8:
     case tok::kw_uint16:
     case tok::kw_uint32:
@@ -1616,7 +1616,7 @@ C2::StmtResult C2Parser::ParseStatement() {
     case tok::kw_default:
         Diag(Tok, diag::err_default_not_in_switch);
         return StmtError();
-    // all basic types
+        // all basic types
     case tok::kw_uint8:
     case tok::kw_uint16:
     case tok::kw_uint32:
@@ -1707,20 +1707,20 @@ C2::StmtResult C2Parser::ParseIfStatement() {
     // make turn the invalid one into a null stmt to avoid dropping the other
     // part.  If both are invalid, return error.
     if ((ThenStmt.isInvalid() && ElseStmt.isInvalid()) ||
-        (ThenStmt.isInvalid() && ElseStmt.get() == 0) ||
-        (ThenStmt.get() == 0  && ElseStmt.isInvalid()))
+            (ThenStmt.isInvalid() && ElseStmt.get() == 0) ||
+            (ThenStmt.get() == 0  && ElseStmt.isInvalid()))
     {
         // Both invalid, or one is invalid and other is non-present: return error.
         return StmtError();
     }
     // Now if either are invalid, replace with a ';'.
     // TODO FIX
-/*
-    if (ThenStmt.isInvalid())
-        ThenStmt = Actions.ActOnNullStmt(ThenStmtLoc);
-    if (ElseStmt.isInvalid())
-        ElseStmt = Actions.ActOnNullStmt(ElseStmtLoc);
-*/
+    /*
+        if (ThenStmt.isInvalid())
+            ThenStmt = Actions.ActOnNullStmt(ThenStmtLoc);
+        if (ElseStmt.isInvalid())
+            ElseStmt = Actions.ActOnNullStmt(ElseStmtLoc);
+    */
     return Actions.ActOnIfStmt(IfLoc, CondStmt.get(), ThenStmt.get(),
                                ElseLoc, ElseStmt.get());
     //return Actions.ActOnIfStmt(IfLoc, FullCondExp, CondVar, ThenStmt.get(),
@@ -1972,12 +1972,12 @@ C2::StmtResult C2Parser::ParseDeclOrStatement() {
             return StmtError();
         }
         return ParseLabeledStatement();
-/*
-    case tok::l_paren:
-        Res = ParseFunctionCall();
-        if (ExpectAndConsume(tok::semi, diag::err_expected_after, "function call")) return StmtError();
-        break;
-*/
+        /*
+            case tok::l_paren:
+                Res = ParseFunctionCall();
+                if (ExpectAndConsume(tok::semi, diag::err_expected_after, "function call")) return StmtError();
+                break;
+        */
     default:
         Res = ParseExprStatement();
         break;
@@ -2036,13 +2036,13 @@ C2::StmtResult C2Parser::ParseCaseStatement() {
         case tok::kw_default:
         case tok::r_brace:
             done = true;
-             break;
+            break;
         default:
-            {
-                StmtResult Res = ParseStatement();
-                if (Res.isUsable()) Stmts.push_back(Res.get());
-                else return StmtError();
-            }
+        {
+            StmtResult Res = ParseStatement();
+            if (Res.isUsable()) Stmts.push_back(Res.get());
+            else return StmtError();
+        }
         }
     }
 
@@ -2068,13 +2068,13 @@ C2::StmtResult C2Parser::ParseDefaultStatement() {
         case tok::kw_default:
         case tok::r_brace:
             done = true;
-             break;
+            break;
         default:
-            {
-                StmtResult Res = ParseStatement();
-                if (Res.isUsable()) Stmts.push_back(Res.get());
-                else return StmtError();
-            }
+        {
+            StmtResult Res = ParseStatement();
+            if (Res.isUsable()) Stmts.push_back(Res.get());
+            else return StmtError();
+        }
         }
     }
     return Actions.ActOnDefaultStmt(Loc, Stmts);
@@ -2098,12 +2098,12 @@ C2::StmtResult C2Parser::ParseLabeledStatement() {
     ConsumeToken();
 
     StmtResult SubStmt(ParseStatement());
-/*
-    // TODO
- // Broken substmt shouldn't prevent the label from being added to the AST.
-  if (SubStmt.isInvalid())
-    SubStmt = Actions.ActOnNullStmt(ColonLoc);
-*/
+    /*
+        // TODO
+     // Broken substmt shouldn't prevent the label from being added to the AST.
+      if (SubStmt.isInvalid())
+        SubStmt = Actions.ActOnNullStmt(ColonLoc);
+    */
 
     return Actions.ActOnLabelStmt(id->getNameStart(), LabelLoc, SubStmt.get());
 }
@@ -2413,8 +2413,8 @@ bool C2Parser::ExpectIdentifier(const char *Msg) {
     if (EndLoc.isValid() && (Spelling = tok::getPunctuatorSpelling(tok::identifier))) {
         // Show what code to insert to fix this problem.
         Diag(EndLoc, diag::err_expected) << tok::identifier
-        << Msg
-        << FixItHint::CreateInsertion(EndLoc, Spelling);
+                                         << Msg
+                                         << FixItHint::CreateInsertion(EndLoc, Spelling);
     } else
         Diag(Tok, diag::err_expected) << tok::identifier << Msg;
 
@@ -2423,49 +2423,49 @@ bool C2Parser::ExpectIdentifier(const char *Msg) {
 
 bool C2Parser::ExpectAndConsume(tok::TokenKind ExpectedTok, unsigned DiagID,
                                 const char* Msg) {
-  if (Tok.is(ExpectedTok) || Tok.is(tok::code_completion)) {
-    ConsumeAnyToken();
-    return false;
-  }
-
-#if 0
-  // Detect common single-character typos and resume.
-  if (IsCommonTypo(ExpectedTok, Tok)) {
-    SourceLocation Loc = Tok.getLocation();
-    {
-      DiagnosticBuilder DB = Diag(Loc, DiagID);
-      DB << FixItHint::CreateReplacement(
-                SourceRange(Loc), tok::getPunctuatorSpelling(ExpectedTok));
-      if (DiagID == diag::err_expected)
-        DB << ExpectedTok;
-      else if (DiagID == diag::err_expected_after)
-        DB << Msg << ExpectedTok;
-      else
-        DB << Msg;
+    if (Tok.is(ExpectedTok) || Tok.is(tok::code_completion)) {
+        ConsumeAnyToken();
+        return false;
     }
 
-    // Pretend there wasn't a problem.
-    ConsumeAnyToken();
-    return false;
-  }
+#if 0
+    // Detect common single-character typos and resume.
+    if (IsCommonTypo(ExpectedTok, Tok)) {
+        SourceLocation Loc = Tok.getLocation();
+        {
+            DiagnosticBuilder DB = Diag(Loc, DiagID);
+            DB << FixItHint::CreateReplacement(
+                   SourceRange(Loc), tok::getPunctuatorSpelling(ExpectedTok));
+            if (DiagID == diag::err_expected)
+                DB << ExpectedTok;
+            else if (DiagID == diag::err_expected_after)
+                DB << Msg << ExpectedTok;
+            else
+                DB << Msg;
+        }
+
+        // Pretend there wasn't a problem.
+        ConsumeAnyToken();
+        return false;
+    }
 #endif
-  SourceLocation EndLoc = PP.getLocForEndOfToken(PrevTokLocation);
-  const char *Spelling = nullptr;
-  if (EndLoc.isValid())
-    Spelling = tok::getPunctuatorSpelling(ExpectedTok);
+    SourceLocation EndLoc = PP.getLocForEndOfToken(PrevTokLocation);
+    const char *Spelling = nullptr;
+    if (EndLoc.isValid())
+        Spelling = tok::getPunctuatorSpelling(ExpectedTok);
 
-  DiagnosticBuilder DB =
-      Spelling
-          ? Diag(EndLoc, DiagID) << FixItHint::CreateInsertion(EndLoc, Spelling)
-          : Diag(Tok, DiagID);
-  if (DiagID == diag::err_expected)
-    DB << ExpectedTok;
-  else if (DiagID == diag::err_expected_after)
-    DB << Msg << ExpectedTok;
-  else
-    DB << Msg;
+    DiagnosticBuilder DB =
+        Spelling
+        ? Diag(EndLoc, DiagID) << FixItHint::CreateInsertion(EndLoc, Spelling)
+        : Diag(Tok, DiagID);
+    if (DiagID == diag::err_expected)
+        DB << ExpectedTok;
+    else if (DiagID == diag::err_expected_after)
+        DB << Msg << ExpectedTok;
+    else
+        DB << Msg;
 
-  return true;
+    return true;
 }
 
 bool C2Parser::ExpectAndConsumeSemi(unsigned DiagID) {
@@ -2473,17 +2473,17 @@ bool C2Parser::ExpectAndConsumeSemi(unsigned DiagID) {
         ConsumeToken();
         return false;
     }
-  if ((Tok.is(tok::r_paren) || Tok.is(tok::r_square)) &&
-      NextToken().is(tok::semi)) {
-    Diag(Tok, diag::err_extraneous_token_before_semi)
-      << PP.getSpelling(Tok)
-      << FixItHint::CreateRemoval(Tok.getLocation());
-    ConsumeAnyToken(); // The ')' or ']'.
-    ConsumeToken(); // The ';'.
-    return false;
-  }
+    if ((Tok.is(tok::r_paren) || Tok.is(tok::r_square)) &&
+            NextToken().is(tok::semi)) {
+        Diag(Tok, diag::err_extraneous_token_before_semi)
+                << PP.getSpelling(Tok)
+                << FixItHint::CreateRemoval(Tok.getLocation());
+        ConsumeAnyToken(); // The ')' or ']'.
+        ConsumeToken(); // The ';'.
+        return false;
+    }
 
-  return ExpectAndConsume(tok::semi, DiagID);
+    return ExpectAndConsume(tok::semi, DiagID);
 }
 
 DiagnosticBuilder C2Parser::Diag(SourceLocation Loc, unsigned DiagID) {
@@ -2499,7 +2499,7 @@ DiagnosticBuilder C2Parser::Diag(const Token &T, unsigned DiagID) {
 //===----------------------------------------------------------------------===//
 
 static bool HasFlagsSet(C2Parser::SkipUntilFlags L, C2Parser::SkipUntilFlags R) {
-  return (static_cast<unsigned>(L) & static_cast<unsigned>(R)) != 0;
+    return (static_cast<unsigned>(L) & static_cast<unsigned>(R)) != 0;
 }
 /// SkipUntil - Read tokens until we get to the specified token, then consume
 /// it (unless DontConsume is true).  Because we cannot guarantee that the
@@ -2510,126 +2510,132 @@ static bool HasFlagsSet(C2Parser::SkipUntilFlags L, C2Parser::SkipUntilFlags R) 
 /// If SkipUntil finds the specified token, it returns true, otherwise it
 /// returns false.
 bool C2Parser::SkipUntil(ArrayRef<tok::TokenKind> Toks, SkipUntilFlags Flags) {
-  // We always want this function to skip at least one token if the first token
-  // isn't T and if not at EOF.
-  bool isFirstTokenSkipped = true;
-  while (1) {
-    // If we found one of the tokens, stop and return true.
-    for (unsigned i = 0, NumToks = Toks.size(); i != NumToks; ++i) {
-      if (Tok.is(Toks[i])) {
-        if (HasFlagsSet(Flags, StopBeforeMatch)) {
-          // Noop, don't consume the token.
-        } else {
-          ConsumeAnyToken();
+    // We always want this function to skip at least one token if the first token
+    // isn't T and if not at EOF.
+    bool isFirstTokenSkipped = true;
+    while (1) {
+        // If we found one of the tokens, stop and return true.
+        for (unsigned i = 0, NumToks = Toks.size(); i != NumToks; ++i) {
+            if (Tok.is(Toks[i])) {
+                if (HasFlagsSet(Flags, StopBeforeMatch)) {
+                    // Noop, don't consume the token.
+                } else {
+                    ConsumeAnyToken();
+                }
+                return true;
+            }
         }
-        return true;
-      }
-    }
 
-    // Important special case: The caller has given up and just wants us to
-    // skip the rest of the file. Do this without recursing, since we can
-    // get here precisely because the caller detected too much recursion.
-    if (Toks.size() == 1 && Toks[0] == tok::eof &&
-        !HasFlagsSet(Flags, StopAtSemi) &&
-        !HasFlagsSet(Flags, StopAtCodeCompletion)) {
-      while (Tok.isNot(tok::eof))
-        ConsumeAnyToken();
-      return true;
-    }
+        // Important special case: The caller has given up and just wants us to
+        // skip the rest of the file. Do this without recursing, since we can
+        // get here precisely because the caller detected too much recursion.
+        if (Toks.size() == 1 && Toks[0] == tok::eof &&
+                !HasFlagsSet(Flags, StopAtSemi) &&
+                !HasFlagsSet(Flags, StopAtCodeCompletion)) {
+            while (Tok.isNot(tok::eof))
+                ConsumeAnyToken();
+            return true;
+        }
 
-    switch (Tok.getKind()) {
-    case tok::eof:
-      // Ran out of tokens.
-      return false;
+        switch (Tok.getKind()) {
+        case tok::eof:
+            // Ran out of tokens.
+            return false;
 
-    case tok::annot_pragma_openmp_end:
-      // Stop before an OpenMP pragma boundary.
-    case tok::annot_module_begin:
-    case tok::annot_module_end:
-    case tok::annot_module_include:
-      // Stop before we change submodules. They generally indicate a "good"
-      // place to pick up parsing again (except in the special case where
-      // we're trying to skip to EOF).
-      return false;
+        case tok::annot_pragma_openmp_end:
+            // Stop before an OpenMP pragma boundary.
+        case tok::annot_module_begin:
+        case tok::annot_module_end:
+        case tok::annot_module_include:
+            // Stop before we change submodules. They generally indicate a "good"
+            // place to pick up parsing again (except in the special case where
+            // we're trying to skip to EOF).
+            return false;
 
-    case tok::code_completion:
+        case tok::code_completion:
 #if 0
-      if (!HasFlagsSet(Flags, StopAtCodeCompletion))
-        handleUnexpectedCodeCompletionToken();
+            if (!HasFlagsSet(Flags, StopAtCodeCompletion))
+                handleUnexpectedCodeCompletionToken();
 #endif
-      assert(0 && "TODO");
-      return false;
+            assert(0 && "TODO");
+            return false;
 
-    case tok::l_paren:
-      // Recursively skip properly-nested parens.
-      ConsumeParen();
-      if (HasFlagsSet(Flags, StopAtCodeCompletion))
-        SkipUntil(tok::r_paren, StopAtCodeCompletion);
-      else
-        SkipUntil(tok::r_paren);
-      break;
-    case tok::l_square:
-      // Recursively skip properly-nested square brackets.
-      ConsumeBracket();
-      if (HasFlagsSet(Flags, StopAtCodeCompletion))
-        SkipUntil(tok::r_square, StopAtCodeCompletion);
-      else
-        SkipUntil(tok::r_square);
-      break;
-    case tok::l_brace:
-      // Recursively skip properly-nested braces.
-      ConsumeBrace();
-      if (HasFlagsSet(Flags, StopAtCodeCompletion))
-        SkipUntil(tok::r_brace, StopAtCodeCompletion);
-      else
-        SkipUntil(tok::r_brace);
-      break;
+        case tok::l_paren:
+            // Recursively skip properly-nested parens.
+            ConsumeParen();
+            if (HasFlagsSet(Flags, StopAtCodeCompletion))
+                SkipUntil(tok::r_paren, StopAtCodeCompletion);
+            else
+                SkipUntil(tok::r_paren);
+            break;
+        case tok::l_square:
+            // Recursively skip properly-nested square brackets.
+            ConsumeBracket();
+            if (HasFlagsSet(Flags, StopAtCodeCompletion))
+                SkipUntil(tok::r_square, StopAtCodeCompletion);
+            else
+                SkipUntil(tok::r_square);
+            break;
+        case tok::l_brace:
+            // Recursively skip properly-nested braces.
+            ConsumeBrace();
+            if (HasFlagsSet(Flags, StopAtCodeCompletion))
+                SkipUntil(tok::r_brace, StopAtCodeCompletion);
+            else
+                SkipUntil(tok::r_brace);
+            break;
 
-    // Okay, we found a ']' or '}' or ')', which we think should be balanced.
-    // Since the user wasn't looking for this token (if they were, it would
-    // already be handled), this isn't balanced.  If there is a LHS token at a
-    // higher level, we will assume that this matches the unbalanced token
-    // and return it.  Otherwise, this is a spurious RHS token, which we skip.
-    case tok::r_paren:
-      if (ParenCount && !isFirstTokenSkipped)
-        return false;  // Matches something.
-      ConsumeParen();
-      break;
-    case tok::r_square:
-      if (BracketCount && !isFirstTokenSkipped)
-        return false;  // Matches something.
-      ConsumeBracket();
-      break;
-    case tok::r_brace:
-      if (BraceCount && !isFirstTokenSkipped)
-        return false;  // Matches something.
-      ConsumeBrace();
-      break;
+            // Okay, we found a ']' or '}' or ')', which we think should be balanced.
+            // Since the user wasn't looking for this token (if they were, it would
+            // already be handled), this isn't balanced.  If there is a LHS token at a
+            // higher level, we will assume that this matches the unbalanced token
+            // and return it.  Otherwise, this is a spurious RHS token, which we skip.
+        case tok::r_paren:
+            if (ParenCount && !isFirstTokenSkipped)
+                return false;  // Matches something.
+            ConsumeParen();
+            break;
+        case tok::r_square:
+            if (BracketCount && !isFirstTokenSkipped)
+                return false;  // Matches something.
+            ConsumeBracket();
+            break;
+        case tok::r_brace:
+            if (BraceCount && !isFirstTokenSkipped)
+                return false;  // Matches something.
+            ConsumeBrace();
+            break;
 
-    case tok::string_literal:
-    case tok::wide_string_literal:
-    case tok::utf8_string_literal:
-    case tok::utf16_string_literal:
-    case tok::utf32_string_literal:
-      ConsumeStringToken();
-      break;
+        case tok::string_literal:
+        case tok::wide_string_literal:
+        case tok::utf8_string_literal:
+        case tok::utf16_string_literal:
+        case tok::utf32_string_literal:
+            ConsumeStringToken();
+            break;
 
-    case tok::semi:
-      if (HasFlagsSet(Flags, StopAtSemi))
-        return false;
-      // FALL THROUGH.
-    default:
-      // Skip this token.
-      ConsumeToken();
-      break;
+        case tok::semi:
+            if (HasFlagsSet(Flags, StopAtSemi))
+                return false;
+            // FALL THROUGH.
+        default:
+            // Skip this token.
+            ConsumeToken();
+            break;
+        }
+        isFirstTokenSkipped = false;
     }
-    isFirstTokenSkipped = false;
-  }
 }
 
-C2::ExprResult C2Parser::ExprError() { return C2::ExprResult(true); }
+C2::ExprResult C2Parser::ExprError() {
+    return C2::ExprResult(true);
+}
 
-C2::StmtResult C2Parser::StmtError() { return C2::StmtResult(true); }
+C2::StmtResult C2Parser::StmtError() {
+    return C2::StmtResult(true);
+}
 
-C2::DeclResult C2Parser::DeclError() { return C2::DeclResult(true); }
+C2::DeclResult C2Parser::DeclError() {
+    return C2::DeclResult(true);
+}
 

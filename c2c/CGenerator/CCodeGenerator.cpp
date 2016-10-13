@@ -178,37 +178,37 @@ void CCodeGenerator::EmitExpr(const Expr* E, StringBuilder& output) {
     LOG_FUNC
     switch (E->getKind()) {
     case EXPR_INTEGER_LITERAL:
-        {
-            const IntegerLiteral* N = cast<IntegerLiteral>(E);
-            output.number(N->getRadix(), N->Value.getSExtValue());
-            return;
-        }
+    {
+        const IntegerLiteral* N = cast<IntegerLiteral>(E);
+        output.number(N->getRadix(), N->Value.getSExtValue());
+        return;
+    }
     case EXPR_FLOAT_LITERAL:
-        {
-            const FloatingLiteral* F = cast<FloatingLiteral>(E);
-            char temp[20];
-            sprintf(temp, "%f", F->Value.convertToFloat());
-            output << temp;
-            return;
-        }
+    {
+        const FloatingLiteral* F = cast<FloatingLiteral>(E);
+        char temp[20];
+        sprintf(temp, "%f", F->Value.convertToFloat());
+        output << temp;
+        return;
+    }
     case EXPR_BOOL_LITERAL:
-        {
-            const BooleanLiteral* B = cast<BooleanLiteral>(E);
-            cbuf << (int)B->getValue();
-            return;
-        }
+    {
+        const BooleanLiteral* B = cast<BooleanLiteral>(E);
+        cbuf << (int)B->getValue();
+        return;
+    }
     case EXPR_CHAR_LITERAL:
-        {
-            const CharacterLiteral* C = cast<CharacterLiteral>(E);
-            C->printLiteral(output);
-            return;
-        }
+    {
+        const CharacterLiteral* C = cast<CharacterLiteral>(E);
+        C->printLiteral(output);
+        return;
+    }
     case EXPR_STRING_LITERAL:
-        {
-            const StringLiteral* S = cast<StringLiteral>(E);
-            EmitStringLiteral(S->getValue(), output);
-            return;
-        }
+    {
+        const StringLiteral* S = cast<StringLiteral>(E);
+        EmitStringLiteral(S->getValue(), output);
+        return;
+    }
     case EXPR_NIL:
         output << "NULL";
         return;
@@ -219,40 +219,40 @@ void CCodeGenerator::EmitExpr(const Expr* E, StringBuilder& output) {
         EmitIdentifierExpr(E, output);
         return;
     case EXPR_INITLIST:
-        {
-            const InitListExpr* I = cast<InitListExpr>(E);
-            output << "{ ";
-            Expr** values = I->getValues();
-            const unsigned numValues = I->numValues();
-            for (unsigned i=0; i<numValues; i++) {
-                if (i == 0 && values[0]->getKind() == EXPR_INITLIST) output << '\n';
-                EmitExpr(values[i], output);
-                if (i != numValues -1) output << ", ";
-                if (values[i]->getKind() == EXPR_INITLIST) output << '\n';
-            }
-            output << " }";
-            return;
+    {
+        const InitListExpr* I = cast<InitListExpr>(E);
+        output << "{ ";
+        Expr** values = I->getValues();
+        const unsigned numValues = I->numValues();
+        for (unsigned i=0; i<numValues; i++) {
+            if (i == 0 && values[0]->getKind() == EXPR_INITLIST) output << '\n';
+            EmitExpr(values[i], output);
+            if (i != numValues -1) output << ", ";
+            if (values[i]->getKind() == EXPR_INITLIST) output << '\n';
         }
+        output << " }";
+        return;
+    }
     case EXPR_DESIGNATOR_INIT:
-        {
-            const DesignatedInitExpr* D = cast<DesignatedInitExpr>(E);
-            if (D->getDesignatorKind() == DesignatedInitExpr::ARRAY_DESIGNATOR) {
-                output << '[';
-                EmitExpr(D->getDesignator(), output);
-                output << "] = ";
-            } else {
-                output << '.' << D->getField() << " = ";
-            }
-            EmitExpr(D->getInitValue(), output);
-            return;
+    {
+        const DesignatedInitExpr* D = cast<DesignatedInitExpr>(E);
+        if (D->getDesignatorKind() == DesignatedInitExpr::ARRAY_DESIGNATOR) {
+            output << '[';
+            EmitExpr(D->getDesignator(), output);
+            output << "] = ";
+        } else {
+            output << '.' << D->getField() << " = ";
         }
+        EmitExpr(D->getInitValue(), output);
+        return;
+    }
     case EXPR_TYPE:
-        {
-            const TypeExpr* T = cast<TypeExpr>(E);
-            EmitTypePreName(T->getType(), output);
-            EmitTypePostName(T->getType(), output);
-            return;
-        }
+    {
+        const TypeExpr* T = cast<TypeExpr>(E);
+        EmitTypePreName(T->getType(), output);
+        EmitTypePostName(T->getType(), output);
+        return;
+    }
     case EXPR_BINOP:
         EmitBinaryOperator(E, output);
         return;
@@ -266,43 +266,43 @@ void CCodeGenerator::EmitExpr(const Expr* E, StringBuilder& output) {
         EmitBuiltinExpr(E, output);
         return;
     case EXPR_ARRAYSUBSCRIPT:
-        {
-            const ArraySubscriptExpr* A = cast<ArraySubscriptExpr>(E);
-            if (isa<BitOffsetExpr>(A->getIndex())) {
-                EmitBitOffsetExpr(A->getBase(), A->getIndex(), output);
-            } else {
-                EmitExpr(A->getBase(), output);
-                output << '[';
-                EmitExpr(A->getIndex(), output);
-                output << ']';
-            }
-            return;
+    {
+        const ArraySubscriptExpr* A = cast<ArraySubscriptExpr>(E);
+        if (isa<BitOffsetExpr>(A->getIndex())) {
+            EmitBitOffsetExpr(A->getBase(), A->getIndex(), output);
+        } else {
+            EmitExpr(A->getBase(), output);
+            output << '[';
+            EmitExpr(A->getIndex(), output);
+            output << ']';
         }
+        return;
+    }
     case EXPR_MEMBER:
         EmitMemberExpr(E, output);
         return;
     case EXPR_PAREN:
-        {
-            const ParenExpr* P = cast<ParenExpr>(E);
-            cbuf << '(';
-            EmitExpr(P->getExpr(), cbuf);
-            cbuf << ')';
-            return;
-        }
+    {
+        const ParenExpr* P = cast<ParenExpr>(E);
+        cbuf << '(';
+        EmitExpr(P->getExpr(), cbuf);
+        cbuf << ')';
+        return;
+    }
     case EXPR_BITOFFSET:
         assert(0 && "should not happen");
         break;
     case EXPR_CAST:
-        {
-            const ExplicitCastExpr* ECE = cast<ExplicitCastExpr>(E);
-            cbuf << '(';
-            EmitTypePreName(ECE->getDestType(), cbuf);
-            EmitTypePostName(ECE->getDestType(), cbuf);
-            cbuf << ")(";
-            EmitExpr(ECE->getInner(), cbuf);
-            cbuf << ')';
-            return;
-        }
+    {
+        const ExplicitCastExpr* ECE = cast<ExplicitCastExpr>(E);
+        cbuf << '(';
+        EmitTypePreName(ECE->getDestType(), cbuf);
+        EmitTypePostName(ECE->getDestType(), cbuf);
+        cbuf << ")(";
+        EmitExpr(ECE->getInner(), cbuf);
+        cbuf << ')';
+        return;
+    }
     }
 }
 
@@ -322,23 +322,23 @@ void CCodeGenerator::EmitBuiltinExpr(const Expr* E, StringBuilder& output) {
             assert(0);
             break;
         case DECL_VAR:
-            {
-                VarDecl* VD = cast<VarDecl>(D);
-                QualType Q = VD->getType();
-                if (Q.isArrayType()) {
-                    // generate: (sizeof(array) / sizeof(array[0]))
-                    output << "(sizeof(";
-                    EmitDecl(D, output);
-                    output << ")/sizeof(";
-                    EmitDecl(D, output);
-                    output << "[0]))";
-                    return;
-                }
-                // TODO also allow elemsof for EnumType
-                // NOTE cannot be converted to C if used with enums
-                assert(0 && "TODO");
+        {
+            VarDecl* VD = cast<VarDecl>(D);
+            QualType Q = VD->getType();
+            if (Q.isArrayType()) {
+                // generate: (sizeof(array) / sizeof(array[0]))
+                output << "(sizeof(";
+                EmitDecl(D, output);
+                output << ")/sizeof(";
+                EmitDecl(D, output);
+                output << "[0]))";
                 return;
             }
+            // TODO also allow elemsof for EnumType
+            // NOTE cannot be converted to C if used with enums
+            assert(0 && "TODO");
+            return;
+        }
         case DECL_ENUMVALUE:
             break;
         case DECL_ALIASTYPE:
@@ -748,7 +748,7 @@ void CCodeGenerator::EmitStructType(const StructTypeDecl* S, StringBuilder& out,
         out << "_ ";
     }
     out << "{\n";
-    for (unsigned i=0;i<S->numMembers(); i++) {
+    for (unsigned i=0; i<S->numMembers(); i++) {
         Decl* member = S->getMember(i);
         if (isa<VarDecl>(member)) {
             EmitVarDecl(cast<VarDecl>(member), out, indent + INDENT);
@@ -835,25 +835,25 @@ void CCodeGenerator::EmitStmt(const Stmt* S, unsigned indent) {
     LOG_FUNC
     switch (S->getKind()) {
     case STMT_RETURN:
-        {
-            const ReturnStmt* R = cast<ReturnStmt>(S);
-            cbuf.indent(indent);
-            cbuf << "return";
-            if (R->getExpr()) {
-                cbuf << ' ';
-                EmitExpr(R->getExpr(), cbuf);
-            }
-            cbuf << ";\n";
-            return;
+    {
+        const ReturnStmt* R = cast<ReturnStmt>(S);
+        cbuf.indent(indent);
+        cbuf << "return";
+        if (R->getExpr()) {
+            cbuf << ' ';
+            EmitExpr(R->getExpr(), cbuf);
         }
+        cbuf << ";\n";
+        return;
+    }
     case STMT_EXPR:
-        {
-            const Expr* E = cast<Expr>(S);
-            cbuf.indent(indent);
-            EmitExpr(E, cbuf);
-            cbuf << ";\n";
-            return;
-        }
+    {
+        const Expr* E = cast<Expr>(S);
+        cbuf.indent(indent);
+        EmitExpr(E, cbuf);
+        cbuf << ";\n";
+        return;
+    }
     case STMT_IF:
         EmitIfStmt(S, indent);
         return;
@@ -882,20 +882,20 @@ void CCodeGenerator::EmitStmt(const Stmt* S, unsigned indent) {
         cbuf << "continue;\n";
         return;
     case STMT_LABEL:
-        {
-            const LabelStmt* L = cast<LabelStmt>(S);
-            cbuf << L->getName();
-            cbuf << ":\n";
-            EmitStmt(L->getSubStmt(), indent);
-            return;
-        }
+    {
+        const LabelStmt* L = cast<LabelStmt>(S);
+        cbuf << L->getName();
+        cbuf << ":\n";
+        EmitStmt(L->getSubStmt(), indent);
+        return;
+    }
     case STMT_GOTO:
-        {
-            const GotoStmt* G = cast<GotoStmt>(S);
-            cbuf.indent(indent);
-            cbuf << "goto " << G->getName() << ";\n";
-            return;
-        }
+    {
+        const GotoStmt* G = cast<GotoStmt>(S);
+        cbuf.indent(indent);
+        cbuf << "goto " << G->getName() << ";\n";
+        return;
+    }
     case STMT_COMPOUND:
         EmitCompoundStmt(cast<CompoundStmt>(S), indent, true);
         return;
@@ -1039,29 +1039,29 @@ void CCodeGenerator::EmitSwitchStmt(const Stmt* S, unsigned indent) {
         Stmt* Case = cases[i];
         switch (Case->getKind()) {
         case STMT_CASE:
-            {
-                CaseStmt* C = cast<CaseStmt>(Case);
-                cbuf.indent(indent + INDENT);
-                cbuf << "case ";
-                EmitExpr(C->getCond(), cbuf);
-                cbuf << ":\n";
-                Stmt** stmts = C->getStmts();
-                for (unsigned s=0; s<C->numStmts(); s++) {
-                    EmitStmt(stmts[s], indent + INDENT + INDENT);
-                }
-                break;
+        {
+            CaseStmt* C = cast<CaseStmt>(Case);
+            cbuf.indent(indent + INDENT);
+            cbuf << "case ";
+            EmitExpr(C->getCond(), cbuf);
+            cbuf << ":\n";
+            Stmt** stmts = C->getStmts();
+            for (unsigned s=0; s<C->numStmts(); s++) {
+                EmitStmt(stmts[s], indent + INDENT + INDENT);
             }
+            break;
+        }
         case STMT_DEFAULT:
-            {
-                DefaultStmt* D = cast<DefaultStmt>(Case);
-                cbuf.indent(indent + INDENT);
-                cbuf << "default:\n";
-                Stmt** stmts = D->getStmts();
-                for (unsigned s=0; s<D->numStmts(); s++) {
-                    EmitStmt(stmts[s], indent + INDENT + INDENT);
-                }
-                break;
+        {
+            DefaultStmt* D = cast<DefaultStmt>(Case);
+            cbuf.indent(indent + INDENT);
+            cbuf << "default:\n";
+            Stmt** stmts = D->getStmts();
+            for (unsigned s=0; s<D->numStmts(); s++) {
+                EmitStmt(stmts[s], indent + INDENT + INDENT);
             }
+            break;
+        }
         default:
             assert(0);
         }
@@ -1126,12 +1126,12 @@ void CCodeGenerator::EmitTypePreName(QualType type, StringBuilder& output) {
     const Type* T = type.getTypePtr();
     switch (T->getTypeClass()) {
     case TC_BUILTIN:
-        {
-            // TODO handle Qualifiers
-            const BuiltinType* BI = cast<BuiltinType>(T);
-            output << builtin2cname(BI->getKind());
-            break;
-        }
+    {
+        // TODO handle Qualifiers
+        const BuiltinType* BI = cast<BuiltinType>(T);
+        output << builtin2cname(BI->getKind());
+        break;
+    }
     case TC_POINTER:
         // TODO handle Qualifiers
         EmitTypePreName(cast<PointerType>(T)->getPointeeType(), output);
@@ -1143,11 +1143,11 @@ void CCodeGenerator::EmitTypePreName(QualType type, StringBuilder& output) {
         break;
     case TC_UNRESOLVED:
         // TODO handle Qualifiers?
-        {
-            const UnresolvedType* U = cast<UnresolvedType>(T);
-            U->printLiteral(output);
-        }
-        break;
+    {
+        const UnresolvedType* U = cast<UnresolvedType>(T);
+        U->printLiteral(output);
+    }
+    break;
     case TC_ALIAS:
         EmitTypePreName(cast<AliasType>(T)->getRefType(), output);
         break;
@@ -1200,7 +1200,7 @@ void CCodeGenerator::EmitStringLiteral(const std::string& input, StringBuilder& 
         case '\033':
             output << "\\033";
             break;
-        // TODO other escaped chars
+            // TODO other escaped chars
         default:
             output << *cp;
             break;

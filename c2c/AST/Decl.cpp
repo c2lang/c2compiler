@@ -203,7 +203,7 @@ static const char* VarDeclKind2Str(VarDeclKind k) {
 
 
 VarDecl::VarDecl(VarDeclKind k_, const char* name_, SourceLocation loc_,
-            QualType type_, Expr* initValue_, bool is_public)
+                 QualType type_, Expr* initValue_, bool is_public)
     : Decl(DECL_VAR, name_, loc_, type_, is_public)
     , origType(type_)
     , initValue(initValue_)
@@ -271,8 +271,8 @@ void AliasTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
 
 
 StructTypeDecl::StructTypeDecl(const char* name_, SourceLocation loc_,
-                             QualType type_, bool is_struct, bool is_global,
-                             bool is_public)
+                               QualType type_, bool is_struct, bool is_global,
+                               bool is_public)
     : TypeDecl(DECL_STRUCTTYPE, name_, loc_, type_, is_public)
     , members(0)
     , structFunctions(0)
@@ -407,7 +407,7 @@ void ArrayValueDecl::print(StringBuilder& buffer, unsigned indent) const {
 
 
 ImportDecl::ImportDecl(const char* name_, SourceLocation loc_, bool isLocal_,
-                 const char* modName_, SourceLocation aliasLoc_)
+                       const char* modName_, SourceLocation aliasLoc_)
     : Decl(DECL_IMPORT, name_, loc_, QualType(), false)
     , modName(modName_)
     , aliasLoc(aliasLoc_)

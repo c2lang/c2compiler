@@ -32,7 +32,7 @@ CGenerator::CGenerator(const std::string& name_,
                        GenUtils::TargetType type_,
                        const Modules& moduleMap_,
                        const ModuleList& mods_,
-                        const StringList& libs_,
+                       const StringList& libs_,
                        const HeaderNamer& namer_,
                        const Options& options_)
     : targetName(name_)

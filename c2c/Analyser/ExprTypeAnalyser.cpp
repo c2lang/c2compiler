@@ -102,13 +102,13 @@ void ExprTypeAnalyser::check(QualType TLeft, const Expr* expr) {
         checkBinOp(TLeft, cast<BinaryOperator>(expr));
         return;
     case EXPR_CONDOP:
-        {
-            // NOTE: Cond -> Bool has already been checked
-            const ConditionalOperator* C = cast<ConditionalOperator>(expr);
-            check(TLeft, C->getLHS());
-            check(TLeft, C->getRHS());
-            return;
-        }
+    {
+        // NOTE: Cond -> Bool has already been checked
+        const ConditionalOperator* C = cast<ConditionalOperator>(expr);
+        check(TLeft, C->getLHS());
+        check(TLeft, C->getRHS());
+        return;
+    }
     case EXPR_UNARYOP:
         break;
     case EXPR_BUILTIN:
@@ -144,15 +144,15 @@ void ExprTypeAnalyser::checkExplicitCast(const ExplicitCastExpr* expr, QualType 
         case 3: // float->integer
             break;
         case 4: // incompatible
-            {
-                StringBuilder buf1(MAX_LEN_TYPENAME);
-                StringBuilder buf2(MAX_LEN_TYPENAME);
-                TRight.DiagName(buf1);
-                TLeft.DiagName(buf2);
-                Diags.Report(expr->getLocation(), diag::err_illegal_cast)
-                        << buf1 << buf2 << expr->getSourceRange();
-                break;
-            }
+        {
+            StringBuilder buf1(MAX_LEN_TYPENAME);
+            StringBuilder buf2(MAX_LEN_TYPENAME);
+            TRight.DiagName(buf1);
+            TLeft.DiagName(buf2);
+            Diags.Report(expr->getLocation(), diag::err_illegal_cast)
+                    << buf1 << buf2 << expr->getSourceRange();
+            break;
+        }
         case 5: // loss of fp-precision
             break;
         default:
@@ -287,7 +287,7 @@ bool ExprTypeAnalyser::checkBuiltin(QualType left, QualType right, const Expr* e
         left.DiagName(buf2);
         // TODO error msg depends on conv type (see clang errors)
         Diags.Report(expr->getLocation(), errorMsg) << buf1 << buf2
-            << expr->getSourceRange();
+                << expr->getSourceRange();
         return false;
     }
     error(expr->getLocation(), left, right);

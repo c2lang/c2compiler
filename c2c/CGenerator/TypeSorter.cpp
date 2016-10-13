@@ -34,11 +34,15 @@ public:
     void addDep(const Decl* d, bool isFull) {
         deps.push_back((uintptr_t)d | isFull);
     }
-    unsigned numDeps() const { return deps.size(); }
+    unsigned numDeps() const {
+        return deps.size();
+    }
     inline const Decl* getDep(unsigned i) const {
         return reinterpret_cast<const Decl*>(deps[i] & ~0x1);
     }
-    inline bool isFull(unsigned i) const { return  deps[i] & 0x1; }
+    inline bool isFull(unsigned i) const {
+        return  deps[i] & 0x1;
+    }
     bool dependsOn(const DeclDep* dd, bool* full) const {
         const Decl* d = dd->decl;
         for (unsigned i=0; i<numDeps(); ++i) {

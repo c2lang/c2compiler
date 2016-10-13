@@ -317,7 +317,7 @@ void CharacterLiteral::printLiteral(StringBuilder& buffer) const {
         buffer << (char)value;
         break;
     }
-     buffer << '\'';
+    buffer << '\'';
 }
 
 
@@ -453,38 +453,38 @@ BinaryOperator::BinaryOperator(Expr* lhs_, Expr* rhs_, Opcode opc_, SourceLocati
 
 const char* BinaryOperator::OpCode2str(clang::BinaryOperatorKind opc_) {
     switch (opc_) {
-        case BO_PtrMemD: return ".";
-        case BO_PtrMemI: return "->";
-        case BO_Mul: return "*";
-        case BO_Div: return "/";
-        case BO_Rem: return "%";
-        case BO_Add: return "+";
-        case BO_Sub: return "-";
-        case BO_Shl: return "<<";
-        case BO_Shr: return ">>";
-        case BO_LT: return "<";
-        case BO_GT: return ">";
-        case BO_LE: return "<=";
-        case BO_GE: return ">=";
-        case BO_EQ: return "==";
-        case BO_NE: return "!=";
-        case BO_And: return "&";
-        case BO_Xor: return "^";
-        case BO_Or: return "|";
-        case BO_LAnd: return "&&";
-        case BO_LOr: return "||";
-        case BO_Assign: return "=";
-        case BO_MulAssign: return "*=";
-        case BO_DivAssign: return "/=";
-        case BO_RemAssign: return "%=";
-        case BO_AddAssign: return "+=";
-        case BO_SubAssign: return "-=";
-        case BO_ShlAssign: return "<<=";
-        case BO_ShrAssign: return ">>=";
-        case BO_AndAssign: return "&=";
-        case BO_XorAssign: return "^=";
-        case BO_OrAssign: return "|=";
-        case BO_Comma: return ",";
+    case BO_PtrMemD: return ".";
+    case BO_PtrMemI: return "->";
+    case BO_Mul: return "*";
+    case BO_Div: return "/";
+    case BO_Rem: return "%";
+    case BO_Add: return "+";
+    case BO_Sub: return "-";
+    case BO_Shl: return "<<";
+    case BO_Shr: return ">>";
+    case BO_LT: return "<";
+    case BO_GT: return ">";
+    case BO_LE: return "<=";
+    case BO_GE: return ">=";
+    case BO_EQ: return "==";
+    case BO_NE: return "!=";
+    case BO_And: return "&";
+    case BO_Xor: return "^";
+    case BO_Or: return "|";
+    case BO_LAnd: return "&&";
+    case BO_LOr: return "||";
+    case BO_Assign: return "=";
+    case BO_MulAssign: return "*=";
+    case BO_DivAssign: return "/=";
+    case BO_RemAssign: return "%=";
+    case BO_AddAssign: return "+=";
+    case BO_SubAssign: return "-=";
+    case BO_ShlAssign: return "<<=";
+    case BO_ShrAssign: return ">>=";
+    case BO_AndAssign: return "&=";
+    case BO_XorAssign: return "^=";
+    case BO_OrAssign: return "|=";
+    case BO_Comma: return ",";
     }
     assert(0);
 }
@@ -516,7 +516,7 @@ void BinaryOperator::printLiteral(StringBuilder& buffer) const {
 
 
 ConditionalOperator::ConditionalOperator(SourceLocation questionLoc, SourceLocation colonLoc,
-                Expr* cond_, Expr* lhs_, Expr* rhs_)
+        Expr* cond_, Expr* lhs_, Expr* rhs_)
     : Expr(EXPR_CONDOP, SourceLocation(), false)
     , QuestionLoc(questionLoc)
     , ColonLoc(colonLoc)

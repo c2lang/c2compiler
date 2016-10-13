@@ -145,7 +145,7 @@ void LiteralAnalyser::checkWidth(int availableWidth, const Limit* L, const Expr*
         Result.toString(ss, 10, true);
 
         Diags.Report(Right->getLocStart(), diag::err_literal_outofbounds)
-            << tname << L->minStr << L->maxStr << ss << Right->getSourceRange();
+                << tname << L->minStr << L->maxStr << ss << Right->getSourceRange();
     }
 }
 
@@ -201,11 +201,11 @@ APSInt LiteralAnalyser::checkLiterals(const Expr* Right) {
     case EXPR_BOOL_LITERAL:
         break;
     case EXPR_CHAR_LITERAL:
-        {
-            const CharacterLiteral* C = cast<CharacterLiteral>(Right);
-            result = APInt(64, C->getValue(), true);
-            break;
-        }
+    {
+        const CharacterLiteral* C = cast<CharacterLiteral>(Right);
+        result = APInt(64, C->getValue(), true);
+        break;
+    }
     case EXPR_STRING_LITERAL:
         break;
     case EXPR_NIL:
@@ -232,29 +232,29 @@ APSInt LiteralAnalyser::checkLiterals(const Expr* Right) {
     case EXPR_ARRAYSUBSCRIPT:
         return checkArraySubscript(Right);
     case EXPR_MEMBER:
-        {
-            // Q: is this correct for Struct.Member?
-            const MemberExpr* M = cast<MemberExpr>(Right);
-            return checkDecl(M->getDecl());
-        }
+    {
+        // Q: is this correct for Struct.Member?
+        const MemberExpr* M = cast<MemberExpr>(Right);
+        return checkDecl(M->getDecl());
+    }
     case EXPR_PAREN:
-        {
-            const ParenExpr* P = cast<ParenExpr>(Right);
-            return checkLiterals(P->getExpr());
-        }
+    {
+        const ParenExpr* P = cast<ParenExpr>(Right);
+        return checkLiterals(P->getExpr());
+    }
     case EXPR_BITOFFSET:
         assert(0 && "TODO");
         break;
     case EXPR_CAST:
-        {
-            // a cast may change the value without warning
-            const ExplicitCastExpr* E = cast<ExplicitCastExpr>(Right);
-            APSInt Result = checkLiterals(E->getInner());
-            SmallString<20> ss;
-            Result.toString(ss, 10, true);
-            fprintf(stderr, "Original %s\n", ss.c_str());
-            return truncateLiteral(E->getDestType(), Right, Result);
-        }
+    {
+        // a cast may change the value without warning
+        const ExplicitCastExpr* E = cast<ExplicitCastExpr>(Right);
+        APSInt Result = checkLiterals(E->getInner());
+        SmallString<20> ss;
+        Result.toString(ss, 10, true);
+        fprintf(stderr, "Original %s\n", ss.c_str());
+        return truncateLiteral(E->getDestType(), Right, Result);
+    }
     }
     return result;
 }
@@ -315,10 +315,10 @@ bool LiteralAnalyser::checkRange(QualType TLeft, const Expr* Right, clang::Sourc
 
         if (Right) {
             Diags.Report(Right->getLocStart(), diag::err_literal_outofbounds)
-                << buf1 << L->minStr << L->maxStr << ss << Right->getSourceRange();
+                    << buf1 << L->minStr << L->maxStr << ss << Right->getSourceRange();
         } else {
             Diags.Report(Loc, diag::err_literal_outofbounds)
-                << buf1 << L->minStr << L->maxStr << ss;
+                    << buf1 << L->minStr << L->maxStr << ss;
         }
         return false;
     }
@@ -348,13 +348,13 @@ APSInt LiteralAnalyser::checkUnaryLiterals(const Expr* Right) {
         // TODO
         break;
     case UO_Minus:
-        {
-            APSInt Result = checkLiterals(unaryop->getExpr());
-            APInt invert(64, -1, true);
-            APSInt I(invert, false);
-            Result *= I;
-            return Result;
-        }
+    {
+        APSInt Result = checkLiterals(unaryop->getExpr());
+        APInt invert(64, -1, true);
+        APSInt I(invert, false);
+        Result *= I;
+        return Result;
+    }
     case UO_Not:
     case UO_LNot:
         // TODO
@@ -375,35 +375,35 @@ APSInt LiteralAnalyser::checkBinaryLiterals(const Expr* Right) {
         // TODO
         break;
     case BO_Mul:
-        {
-            APSInt L = checkLiterals(binop->getLHS());
-            APSInt R = checkLiterals(binop->getRHS());
-            return L * R;
-        }
+    {
+        APSInt L = checkLiterals(binop->getLHS());
+        APSInt R = checkLiterals(binop->getRHS());
+        return L * R;
+    }
     case BO_Div:
-        {
-            APSInt L = checkLiterals(binop->getLHS());
-            APSInt R = checkLiterals(binop->getRHS());
-            return L / R;
-        }
+    {
+        APSInt L = checkLiterals(binop->getLHS());
+        APSInt R = checkLiterals(binop->getRHS());
+        return L / R;
+    }
     case BO_Rem:
-        {
-            APSInt L = checkLiterals(binop->getLHS());
-            APSInt R = checkLiterals(binop->getRHS());
-            return L % R;
-        }
+    {
+        APSInt L = checkLiterals(binop->getLHS());
+        APSInt R = checkLiterals(binop->getRHS());
+        return L % R;
+    }
     case BO_Add:
-        {
-            APSInt L = checkLiterals(binop->getLHS());
-            APSInt R = checkLiterals(binop->getRHS());
-            return L + R;
-        }
+    {
+        APSInt L = checkLiterals(binop->getLHS());
+        APSInt R = checkLiterals(binop->getRHS());
+        return L + R;
+    }
     case BO_Sub:
-        {
-            APSInt L = checkLiterals(binop->getLHS());
-            APSInt R = checkLiterals(binop->getRHS());
-            return L - R;
-        }
+    {
+        APSInt L = checkLiterals(binop->getLHS());
+        APSInt R = checkLiterals(binop->getRHS());
+        return L - R;
+    }
     case BO_Shl:
     case BO_Shr:
         break;

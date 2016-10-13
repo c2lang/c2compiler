@@ -112,35 +112,35 @@ QualType TypeResolver::resolveUnresolved(QualType Q) const {
     case TC_BUILTIN:
         return Q;
     case TC_POINTER:
-        {
-            // Dont return new type if not needed
-            const PointerType* P = cast<PointerType>(T);
-            QualType t1 = P->getPointeeType();
-            QualType Result = resolveUnresolved(t1);
-            if (t1 == Result) return Q;
-            // TODO qualifiers
-            return Context.getPointerType(Result);
-        }
+    {
+        // Dont return new type if not needed
+        const PointerType* P = cast<PointerType>(T);
+        QualType t1 = P->getPointeeType();
+        QualType Result = resolveUnresolved(t1);
+        if (t1 == Result) return Q;
+        // TODO qualifiers
+        return Context.getPointerType(Result);
+    }
     case TC_ARRAY:
-        {
-            const ArrayType* A = cast<ArrayType>(T);
-            QualType t1 = A->getElementType();
-            QualType Result = resolveUnresolved(t1);
-            if (t1 == Result) return Q;
-            // TODO qualifiers
-            return Context.getArrayType(Result, A->getSizeExpr(), A->isIncremental());
+    {
+        const ArrayType* A = cast<ArrayType>(T);
+        QualType t1 = A->getElementType();
+        QualType Result = resolveUnresolved(t1);
+        if (t1 == Result) return Q;
+        // TODO qualifiers
+        return Context.getArrayType(Result, A->getSizeExpr(), A->isIncremental());
 
-        }
+    }
     case TC_UNRESOLVED:
-        {
-            const UnresolvedType* U = cast<UnresolvedType>(T);
-            TypeDecl* TD = U->getDecl();
-            assert(TD);
-            QualType result = TD->getType();
-            if (Q.isConstQualified()) result.addConst();
-            if (Q.isVolatileQualified()) result.addVolatile();
-            return result;
-        }
+    {
+        const UnresolvedType* U = cast<UnresolvedType>(T);
+        TypeDecl* TD = U->getDecl();
+        assert(TD);
+        QualType result = TD->getType();
+        if (Q.isConstQualified()) result.addConst();
+        if (Q.isVolatileQualified()) result.addVolatile();
+        return result;
+    }
     case TC_ALIAS:
     case TC_STRUCT:
     case TC_ENUM:
@@ -183,7 +183,7 @@ void TypeResolver::checkOpaqueType(SourceLocation loc, bool isPublic, QualType Q
     if (globals.isExternal(S->getModule())) {
         Diags.Report(loc, diag::err_opaque_used_by_value) << S->DiagName();
     } else {
-        if (isPublic){
+        if (isPublic) {
             Diags.Report(loc, diag::err_opaque_used_by_value_public_decl) << S->DiagName();
         }
     }
@@ -207,71 +207,71 @@ QualType TypeResolver::checkCanonicals(Decls& decls, QualType Q, bool set) const
     case TC_BUILTIN:
         return Q;
     case TC_POINTER:
-        {
-            const PointerType* P = cast<PointerType>(T);
-            QualType t1 = P->getPointeeType();
-            // Pointee will always be in same ASTContext (file), since it's either built-in or UnresolvedType
-            QualType t2 = checkCanonicals(decls, t1, set);
-            if (!t2.isValid()) return t2;
-            QualType canon;
-            if (t1 == t2) canon = Q;
-            else {
-                canon = Context.getPointerType(t2);
-                if (!canon->hasCanonicalType()) canon->setCanonicalType(canon);
-            }
-            assert(Q.isValid());
-            if (set) P->setCanonicalType(canon);
-            return canon;
+    {
+        const PointerType* P = cast<PointerType>(T);
+        QualType t1 = P->getPointeeType();
+        // Pointee will always be in same ASTContext (file), since it's either built-in or UnresolvedType
+        QualType t2 = checkCanonicals(decls, t1, set);
+        if (!t2.isValid()) return t2;
+        QualType canon;
+        if (t1 == t2) canon = Q;
+        else {
+            canon = Context.getPointerType(t2);
+            if (!canon->hasCanonicalType()) canon->setCanonicalType(canon);
         }
+        assert(Q.isValid());
+        if (set) P->setCanonicalType(canon);
+        return canon;
+    }
     case TC_ARRAY:
-        {
-            const ArrayType* A = cast<ArrayType>(T);
-            QualType t1 = A->getElementType();
-            // NOTE: qualifiers are lost here!
-            QualType t2 = checkCanonicals(decls, t1, set);
-            if (!t2.isValid()) return t2;
-            QualType canon;
-            if (t1 == t2) canon = Q;
-            // NOTE: need size Expr, but set ownership to none
-            else {
-                canon = Context.getArrayType(t2, A->getSizeExpr(), A->isIncremental());
-                if (!canon->hasCanonicalType()) canon->setCanonicalType(canon);
-            }
+    {
+        const ArrayType* A = cast<ArrayType>(T);
+        QualType t1 = A->getElementType();
+        // NOTE: qualifiers are lost here!
+        QualType t2 = checkCanonicals(decls, t1, set);
+        if (!t2.isValid()) return t2;
+        QualType canon;
+        if (t1 == t2) canon = Q;
+        // NOTE: need size Expr, but set ownership to none
+        else {
+            canon = Context.getArrayType(t2, A->getSizeExpr(), A->isIncremental());
+            if (!canon->hasCanonicalType()) canon->setCanonicalType(canon);
+        }
 
-            if (set) A->setCanonicalType(canon);
-            return canon;
-        }
+        if (set) A->setCanonicalType(canon);
+        return canon;
+    }
     case TC_UNRESOLVED:
-        {
-            const UnresolvedType* U = cast<UnresolvedType>(T);
-            TypeDecl* TD = U->getDecl();
-            assert(TD);
-            // check if exists
-            if (!checkDecls(decls, TD)) {
-                return QualType();
-            }
-            QualType canonical = checkCanonicals(decls, TD->getType(), false);
-            if (set) U->setCanonicalType(canonical);
-            return canonical;
+    {
+        const UnresolvedType* U = cast<UnresolvedType>(T);
+        TypeDecl* TD = U->getDecl();
+        assert(TD);
+        // check if exists
+        if (!checkDecls(decls, TD)) {
+            return QualType();
         }
+        QualType canonical = checkCanonicals(decls, TD->getType(), false);
+        if (set) U->setCanonicalType(canonical);
+        return canonical;
+    }
     case TC_ALIAS:
-        {
-            const AliasType* A = cast<AliasType>(T);
-            if (!checkDecls(decls, A->getDecl())) {
-                return QualType();
-            }
-            QualType canonical = checkCanonicals(decls, A->getRefType(), set);
-            assert(Q.isValid());
-            if (set) A->setCanonicalType(canonical);
-            return canonical;
+    {
+        const AliasType* A = cast<AliasType>(T);
+        if (!checkDecls(decls, A->getDecl())) {
+            return QualType();
         }
+        QualType canonical = checkCanonicals(decls, A->getRefType(), set);
+        assert(Q.isValid());
+        if (set) A->setCanonicalType(canonical);
+        return canonical;
+    }
     case TC_STRUCT:
         return Q.getCanonicalType();
     case TC_ENUM:
-        {
-            assert(0 && "TODO");
-            return 0;
-        }
+    {
+        assert(0 && "TODO");
+        return 0;
+    }
     case TC_FUNCTION:
         return Q.getCanonicalType();
     case TC_MODULE:
@@ -289,40 +289,40 @@ QualType TypeResolver::resolveCanonical(QualType Q) const {
     case TC_BUILTIN:
         return Q;
     case TC_POINTER:
-        {
-            const PointerType* P = cast<PointerType>(T);
-            QualType t1 = P->getPointeeType();
-            // Pointee will always be in same ASTContext (file), since it's either built-in or UnresolvedType
-            QualType t2 = resolveCanonical(t1);
-            assert(t2.isValid());
-            if (t1 == t2) {
-                Q->setCanonicalType(Q);
-                return Q;
-            } else {
-                // TODO qualifiers
-                QualType Canon = Context.getPointerType(t2);
-                if (!Canon->hasCanonicalType()) Canon->setCanonicalType(Canon);
-                Q->setCanonicalType(Canon);
-                return Canon;
-            }
+    {
+        const PointerType* P = cast<PointerType>(T);
+        QualType t1 = P->getPointeeType();
+        // Pointee will always be in same ASTContext (file), since it's either built-in or UnresolvedType
+        QualType t2 = resolveCanonical(t1);
+        assert(t2.isValid());
+        if (t1 == t2) {
+            Q->setCanonicalType(Q);
+            return Q;
+        } else {
+            // TODO qualifiers
+            QualType Canon = Context.getPointerType(t2);
+            if (!Canon->hasCanonicalType()) Canon->setCanonicalType(Canon);
+            Q->setCanonicalType(Canon);
+            return Canon;
         }
+    }
     case TC_ARRAY:
-        {
-            const ArrayType* A = cast<ArrayType>(T);
-            QualType t1 = A->getElementType();
-            // NOTE: qualifiers are lost here!
-            QualType t2 = resolveCanonical(t1);
-            if (t1 == t2) {
-                Q->setCanonicalType(Q);
-                return Q;
-            } else  {
-                // NOTE: need size Expr, but set ownership to none
-                QualType Canon = Context.getArrayType(t2, A->getSizeExpr(), A->isIncremental());
-                if (!Canon->hasCanonicalType()) Canon->setCanonicalType(Canon);
-                Q->setCanonicalType(Canon);
-                return Canon;
-            }
+    {
+        const ArrayType* A = cast<ArrayType>(T);
+        QualType t1 = A->getElementType();
+        // NOTE: qualifiers are lost here!
+        QualType t2 = resolveCanonical(t1);
+        if (t1 == t2) {
+            Q->setCanonicalType(Q);
+            return Q;
+        } else  {
+            // NOTE: need size Expr, but set ownership to none
+            QualType Canon = Context.getArrayType(t2, A->getSizeExpr(), A->isIncremental());
+            if (!Canon->hasCanonicalType()) Canon->setCanonicalType(Canon);
+            Q->setCanonicalType(Canon);
+            return Canon;
         }
+    }
     case TC_UNRESOLVED:
         assert(0 && "should not get here");
         return QualType();

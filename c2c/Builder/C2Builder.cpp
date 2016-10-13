@@ -132,13 +132,13 @@ private:
 
 // TODO wrap these objects into single class
 static bool parse(DiagnosticsEngine& Diags,
-           LangOptions& LangOpts,
-           TargetInfo* pti,
-           HeaderSearchOptions* HSOpts,
-           SourceManager& SM,
-           FileManager& FileMgr,
-           AST& ast,
-           const std::string& configs)
+                  LangOptions& LangOpts,
+                  TargetInfo* pti,
+                  HeaderSearchOptions* HSOpts,
+                  SourceManager& SM,
+                  FileManager& FileMgr,
+                  AST& ast,
+                  const std::string& configs)
 {
     // NOTE: seems to get deleted by Preprocessor
     HeaderSearch* Headers = new HeaderSearch(HSOpts, SM, Diags, LangOpts, pti);
@@ -238,8 +238,8 @@ int C2Builder::build() {
     if (!options.testMode && isatty(2)) DiagOpts->ShowColors = true;
     IntrusiveRefCntPtr<DiagnosticIDs> DiagID(new DiagnosticIDs());
     DiagnosticsEngine Diags(DiagID, DiagOpts,
-            // NOTE: setting ShouldOwnClient to true causes crash??
-            new TextDiagnosticPrinter(llvm::errs(), DiagOpts), false);
+                            // NOTE: setting ShouldOwnClient to true causes crash??
+                            new TextDiagnosticPrinter(llvm::errs(), DiagOpts), false);
     DiagnosticConsumer* client = Diags.getClient();
 
     // add these diagnostic groups by default
@@ -471,13 +471,13 @@ out:
     unsigned NumWarnings = client->getNumWarnings();
     unsigned NumErrors = client->getNumErrors();
     if (NumWarnings)
-      OS << NumWarnings << " warning" << (NumWarnings == 1 ? "" : "s");
+        OS << NumWarnings << " warning" << (NumWarnings == 1 ? "" : "s");
     if (NumWarnings && NumErrors)
-      OS << " and ";
+        OS << " and ";
     if (NumErrors)
-      OS << NumErrors << " error" << (NumErrors == 1 ? "" : "s");
+        OS << NumErrors << " error" << (NumErrors == 1 ? "" : "s");
     if (NumWarnings || NumErrors)
-      OS << " generated.\n";
+        OS << " generated.\n";
     return NumErrors;
 }
 
@@ -724,7 +724,7 @@ void C2Builder::generateOptionalTags(const SourceManager& SM) const {
 void C2Builder::generateInterface() const {
     if (options.checkOnly) return;
     if (!options.generateC && !recipe.generateCCode &&
-        !options.generateIR && !recipe.generateIR) return;
+            !options.generateIR && !recipe.generateIR) return;
     if (!recipe.needsInterface()) return;
 
     if (options.verbose) log(COL_VERBOSE, "generating c2 interfaces");

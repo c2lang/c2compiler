@@ -187,112 +187,112 @@ void CodeGenFunction::EmitReturnStmt(const ReturnStmt* S) {
 
 void CodeGenFunction::EmitIfStmt(const IfStmt* S) {
     LOG_FUNC
-  // C99 6.8.4.1: The first substatement is executed if the expression compares
-  // unequal to 0.  The condition must be a scalar type.
-  //RunCleanupsScope ConditionScope(*this);
+    // C99 6.8.4.1: The first substatement is executed if the expression compares
+    // unequal to 0.  The condition must be a scalar type.
+    //RunCleanupsScope ConditionScope(*this);
 
-  if (S->getConditionVariable()) {
-      assert(0 && "TODO");
-    //EmitAutoVarDecl(S->getConditionVariable());
-  }
-
-  // If the condition constant folds and can be elided, try to avoid emitting
-  // the condition and the dead arm of the if/else.
-#if 0
-  bool CondConstant;
-  if (ConstantFoldsToSimpleInteger(S.getCond(), CondConstant)) {
-    // Figure out which block (then or else) is executed.
-    const Stmt *Executed = S.getThen();
-    const Stmt *Skipped  = S.getElse();
-    if (!CondConstant)  // Condition false?
-      std::swap(Executed, Skipped);
-
-    // If the skipped block has no labels in it, just emit the executed block.
-    // This avoids emitting dead code and simplifies the CFG substantially.
-    if (!ContainsLabel(Skipped)) {
-      if (Executed) {
-        RunCleanupsScope ExecutedScope(*this);
-        EmitStmt(Executed);
-      }
-      return;
+    if (S->getConditionVariable()) {
+        assert(0 && "TODO");
+        //EmitAutoVarDecl(S->getConditionVariable());
     }
-  }
+
+    // If the condition constant folds and can be elided, try to avoid emitting
+    // the condition and the dead arm of the if/else.
+#if 0
+    bool CondConstant;
+    if (ConstantFoldsToSimpleInteger(S.getCond(), CondConstant)) {
+        // Figure out which block (then or else) is executed.
+        const Stmt *Executed = S.getThen();
+        const Stmt *Skipped  = S.getElse();
+        if (!CondConstant)  // Condition false?
+            std::swap(Executed, Skipped);
+
+        // If the skipped block has no labels in it, just emit the executed block.
+        // This avoids emitting dead code and simplifies the CFG substantially.
+        if (!ContainsLabel(Skipped)) {
+            if (Executed) {
+                RunCleanupsScope ExecutedScope(*this);
+                EmitStmt(Executed);
+            }
+            return;
+        }
+    }
 #endif
 
-  // Otherwise, the condition did not fold, or we couldn't elide it.  Just emit
-  // the conditional branch.
-  llvm::BasicBlock *ThenBlock = createBasicBlock("if.then");
-  llvm::BasicBlock *ContBlock = createBasicBlock("if.end");
-  llvm::BasicBlock *ElseBlock = ContBlock;
-  if (S->getElse())
-    ElseBlock = createBasicBlock("if.else");
-  EmitBranchOnBoolExpr(cast<Expr>(S->getCond()), ThenBlock, ElseBlock);
+    // Otherwise, the condition did not fold, or we couldn't elide it.  Just emit
+    // the conditional branch.
+    llvm::BasicBlock *ThenBlock = createBasicBlock("if.then");
+    llvm::BasicBlock *ContBlock = createBasicBlock("if.end");
+    llvm::BasicBlock *ElseBlock = ContBlock;
+    if (S->getElse())
+        ElseBlock = createBasicBlock("if.else");
+    EmitBranchOnBoolExpr(cast<Expr>(S->getCond()), ThenBlock, ElseBlock);
 
-  // Emit the 'then' code.
-  EmitBlock(ThenBlock);
-  {
-    //RunCleanupsScope ThenScope(*this);
-    EmitStmt(S->getThen());
-  }
-  EmitBranch(ContBlock);
-
-  // Emit the 'else' code if present.
-  if (const Stmt *Else = S->getElse()) {
-    // There is no need to emit line number for unconditional branch.
-    //if (getDebugInfo())
-    //  Builder.SetCurrentDebugLocation(llvm::DebugLoc());
-    EmitBlock(ElseBlock);
+    // Emit the 'then' code.
+    EmitBlock(ThenBlock);
     {
-      //RunCleanupsScope ElseScope(*this);
-      EmitStmt(Else);
+        //RunCleanupsScope ThenScope(*this);
+        EmitStmt(S->getThen());
     }
-    // There is no need to emit line number for unconditional branch.
-    //if (getDebugInfo())
-    //  Builder.SetCurrentDebugLocation(llvm::DebugLoc());
     EmitBranch(ContBlock);
-  }
 
-  // Emit the continuation block for code after the if.
-  EmitBlock(ContBlock, true);
+    // Emit the 'else' code if present.
+    if (const Stmt *Else = S->getElse()) {
+        // There is no need to emit line number for unconditional branch.
+        //if (getDebugInfo())
+        //  Builder.SetCurrentDebugLocation(llvm::DebugLoc());
+        EmitBlock(ElseBlock);
+        {
+            //RunCleanupsScope ElseScope(*this);
+            EmitStmt(Else);
+        }
+        // There is no need to emit line number for unconditional branch.
+        //if (getDebugInfo())
+        //  Builder.SetCurrentDebugLocation(llvm::DebugLoc());
+        EmitBranch(ContBlock);
+    }
+
+    // Emit the continuation block for code after the if.
+    EmitBlock(ContBlock, true);
 }
 
 void CodeGenFunction::EmitBlock(llvm::BasicBlock *BB, bool IsFinished) {
     LOG_FUNC
-  llvm::BasicBlock *CurBB = Builder.GetInsertBlock();
+    llvm::BasicBlock *CurBB = Builder.GetInsertBlock();
 
-  // Fall out of the current block (if necessary).
-  EmitBranch(BB);
+    // Fall out of the current block (if necessary).
+    EmitBranch(BB);
 
-  if (IsFinished && BB->use_empty()) {
-    delete BB;
-    return;
-  }
+    if (IsFinished && BB->use_empty()) {
+        delete BB;
+        return;
+    }
 
-  // Place the block after the current block, if possible, or else at
-  // the end of the function.
-  if (CurBB && CurBB->getParent())
-    CurFn->getBasicBlockList().insertAfter(CurBB->getIterator(), BB);
-  else
-    CurFn->getBasicBlockList().push_back(BB);
-  Builder.SetInsertPoint(BB);
+    // Place the block after the current block, if possible, or else at
+    // the end of the function.
+    if (CurBB && CurBB->getParent())
+        CurFn->getBasicBlockList().insertAfter(CurBB->getIterator(), BB);
+    else
+        CurFn->getBasicBlockList().push_back(BB);
+    Builder.SetInsertPoint(BB);
 }
 
 void CodeGenFunction::EmitBranch(llvm::BasicBlock *Target) {
     LOG_FUNC
-  // Emit a branch from the current block to the target one if this
-  // was a real block.  If this was just a fall-through block after a
-  // terminator, don't emit it.
-  llvm::BasicBlock *CurBB = Builder.GetInsertBlock();
+    // Emit a branch from the current block to the target one if this
+    // was a real block.  If this was just a fall-through block after a
+    // terminator, don't emit it.
+    llvm::BasicBlock *CurBB = Builder.GetInsertBlock();
 
-  if (!CurBB || CurBB->getTerminator()) {
-    // If there is no insert point or the previous block is already
-    // terminated, don't touch it.
-  } else {
-    // Otherwise, create a fall-through branch.
-    Builder.CreateBr(Target);
-  }
+    if (!CurBB || CurBB->getTerminator()) {
+        // If there is no insert point or the previous block is already
+        // terminated, don't touch it.
+    } else {
+        // Otherwise, create a fall-through branch.
+        Builder.CreateBr(Target);
+    }
 
-  Builder.ClearInsertionPoint();
+    Builder.ClearInsertionPoint();
 }
 
 /// EmitBranchOnBoolExpr - Emit a branch on a boolean condition (e.g. for an if
@@ -300,117 +300,117 @@ void CodeGenFunction::EmitBranch(llvm::BasicBlock *Target) {
 /// to simplify the codegen of the conditional based on the branch.
 ///
 void CodeGenFunction::EmitBranchOnBoolExpr(const Expr *Cond,
-                                           llvm::BasicBlock *TrueBlock,
-                                           llvm::BasicBlock *FalseBlock) {
+        llvm::BasicBlock *TrueBlock,
+        llvm::BasicBlock *FalseBlock) {
     LOG_FUNC
-  //Cond = Cond->IgnoreParens();
-  if (const BinaryOperator *CondBOp = cast<BinaryOperator>(Cond)) {
-    // Handle X && Y in a condition.
-    if (CondBOp->getOpcode() == BO_LAnd) {
+    //Cond = Cond->IgnoreParens();
+    if (const BinaryOperator *CondBOp = cast<BinaryOperator>(Cond)) {
+        // Handle X && Y in a condition.
+        if (CondBOp->getOpcode() == BO_LAnd) {
 #if 0
-      // If we have "1 && X", simplify the code.  "0 && X" would have constant
-      // folded if the case was simple enough.
-      bool ConstantBool = false;
-      if (ConstantFoldsToSimpleInteger(CondBOp->getLHS(), ConstantBool) &&
-          ConstantBool) {
-        // br(1 && X) -> br(X).
-        return EmitBranchOnBoolExpr(CondBOp->getRHS(), TrueBlock, FalseBlock);
-      }
+            // If we have "1 && X", simplify the code.  "0 && X" would have constant
+            // folded if the case was simple enough.
+            bool ConstantBool = false;
+            if (ConstantFoldsToSimpleInteger(CondBOp->getLHS(), ConstantBool) &&
+                    ConstantBool) {
+                // br(1 && X) -> br(X).
+                return EmitBranchOnBoolExpr(CondBOp->getRHS(), TrueBlock, FalseBlock);
+            }
 
-      // If we have "X && 1", simplify the code to use an uncond branch.
-      // "X && 0" would have been constant folded to 0.
-      if (ConstantFoldsToSimpleInteger(CondBOp->getRHS(), ConstantBool) &&
-          ConstantBool) {
-        // br(X && 1) -> br(X).
-        return EmitBranchOnBoolExpr(CondBOp->getLHS(), TrueBlock, FalseBlock);
-      }
+            // If we have "X && 1", simplify the code to use an uncond branch.
+            // "X && 0" would have been constant folded to 0.
+            if (ConstantFoldsToSimpleInteger(CondBOp->getRHS(), ConstantBool) &&
+                    ConstantBool) {
+                // br(X && 1) -> br(X).
+                return EmitBranchOnBoolExpr(CondBOp->getLHS(), TrueBlock, FalseBlock);
+            }
 #endif
 
-      // Emit the LHS as a conditional.  If the LHS conditional is false, we
-      // want to jump to the FalseBlock.
-      llvm::BasicBlock *LHSTrue = createBasicBlock("land.lhs.true");
+            // Emit the LHS as a conditional.  If the LHS conditional is false, we
+            // want to jump to the FalseBlock.
+            llvm::BasicBlock *LHSTrue = createBasicBlock("land.lhs.true");
 
-      ConditionalEvaluation eval(*this);
-      EmitBranchOnBoolExpr(CondBOp->getLHS(), LHSTrue, FalseBlock);
-      EmitBlock(LHSTrue);
+            ConditionalEvaluation eval(*this);
+            EmitBranchOnBoolExpr(CondBOp->getLHS(), LHSTrue, FalseBlock);
+            EmitBlock(LHSTrue);
 
-      // Any temporaries created here are conditional.
-      eval.begin(*this);
-      EmitBranchOnBoolExpr(CondBOp->getRHS(), TrueBlock, FalseBlock);
-      eval.end(*this);
+            // Any temporaries created here are conditional.
+            eval.begin(*this);
+            EmitBranchOnBoolExpr(CondBOp->getRHS(), TrueBlock, FalseBlock);
+            eval.end(*this);
 
-      return;
+            return;
+        }
+        if (CondBOp->getOpcode() == BO_LOr) {
+#if 0
+            // If we have "0 || X", simplify the code.  "1 || X" would have constant
+            // folded if the case was simple enough.
+            bool ConstantBool = false;
+            if (ConstantFoldsToSimpleInteger(CondBOp->getLHS(), ConstantBool) &&
+                    !ConstantBool) {
+                // br(0 || X) -> br(X).
+                return EmitBranchOnBoolExpr(CondBOp->getRHS(), TrueBlock, FalseBlock);
+            }
+
+            // If we have "X || 0", simplify the code to use an uncond branch.
+            // "X || 1" would have been constant folded to 1.
+            if (ConstantFoldsToSimpleInteger(CondBOp->getRHS(), ConstantBool) &&
+                    !ConstantBool) {
+                // br(X || 0) -> br(X).
+                return EmitBranchOnBoolExpr(CondBOp->getLHS(), TrueBlock, FalseBlock);
+            }
+#endif
+
+            // Emit the LHS as a conditional.  If the LHS conditional is true, we
+            // want to jump to the TrueBlock.
+            llvm::BasicBlock *LHSFalse = createBasicBlock("lor.lhs.false");
+
+            ConditionalEvaluation eval(*this);
+            EmitBranchOnBoolExpr(CondBOp->getLHS(), TrueBlock, LHSFalse);
+            EmitBlock(LHSFalse);
+
+            // Any temporaries created here are conditional.
+            eval.begin(*this);
+            EmitBranchOnBoolExpr(CondBOp->getRHS(), TrueBlock, FalseBlock);
+            eval.end(*this);
+
+            return;
+        }
     }
-    if (CondBOp->getOpcode() == BO_LOr) {
 #if 0
-      // If we have "0 || X", simplify the code.  "1 || X" would have constant
-      // folded if the case was simple enough.
-      bool ConstantBool = false;
-      if (ConstantFoldsToSimpleInteger(CondBOp->getLHS(), ConstantBool) &&
-          !ConstantBool) {
-        // br(0 || X) -> br(X).
-        return EmitBranchOnBoolExpr(CondBOp->getRHS(), TrueBlock, FalseBlock);
-      }
-
-      // If we have "X || 0", simplify the code to use an uncond branch.
-      // "X || 1" would have been constant folded to 1.
-      if (ConstantFoldsToSimpleInteger(CondBOp->getRHS(), ConstantBool) &&
-          !ConstantBool) {
-        // br(X || 0) -> br(X).
-        return EmitBranchOnBoolExpr(CondBOp->getLHS(), TrueBlock, FalseBlock);
-      }
-#endif
-
-      // Emit the LHS as a conditional.  If the LHS conditional is true, we
-      // want to jump to the TrueBlock.
-      llvm::BasicBlock *LHSFalse = createBasicBlock("lor.lhs.false");
-
-      ConditionalEvaluation eval(*this);
-      EmitBranchOnBoolExpr(CondBOp->getLHS(), TrueBlock, LHSFalse);
-      EmitBlock(LHSFalse);
-
-      // Any temporaries created here are conditional.
-      eval.begin(*this);
-      EmitBranchOnBoolExpr(CondBOp->getRHS(), TrueBlock, FalseBlock);
-      eval.end(*this);
-
-      return;
+    if (const UnaryOperator *CondUOp = dyn_cast<UnaryOperator>(Cond)) {
+        // br(!x, t, f) -> br(x, f, t)
+        if (CondUOp->getOpcode() == UO_LNot)
+            return EmitBranchOnBoolExpr(CondUOp->getSubExpr(), FalseBlock, TrueBlock);
     }
-  }
-#if 0
-  if (const UnaryOperator *CondUOp = dyn_cast<UnaryOperator>(Cond)) {
-    // br(!x, t, f) -> br(x, f, t)
-    if (CondUOp->getOpcode() == UO_LNot)
-      return EmitBranchOnBoolExpr(CondUOp->getSubExpr(), FalseBlock, TrueBlock);
-  }
 #endif
 
 #if 0
-  if (const ConditionalOperator *CondOp = dyn_cast<ConditionalOperator>(Cond)) {
-    // br(c ? x : y, t, f) -> br(c, br(x, t, f), br(y, t, f))
-    llvm::BasicBlock *LHSBlock = createBasicBlock("cond.true");
-    llvm::BasicBlock *RHSBlock = createBasicBlock("cond.false");
+    if (const ConditionalOperator *CondOp = dyn_cast<ConditionalOperator>(Cond)) {
+        // br(c ? x : y, t, f) -> br(c, br(x, t, f), br(y, t, f))
+        llvm::BasicBlock *LHSBlock = createBasicBlock("cond.true");
+        llvm::BasicBlock *RHSBlock = createBasicBlock("cond.false");
 
-    ConditionalEvaluation cond(*this);
-    EmitBranchOnBoolExpr(CondOp->getCond(), LHSBlock, RHSBlock);
+        ConditionalEvaluation cond(*this);
+        EmitBranchOnBoolExpr(CondOp->getCond(), LHSBlock, RHSBlock);
 
-    cond.begin(*this);
-    EmitBlock(LHSBlock);
-    EmitBranchOnBoolExpr(CondOp->getLHS(), TrueBlock, FalseBlock);
-    cond.end(*this);
+        cond.begin(*this);
+        EmitBlock(LHSBlock);
+        EmitBranchOnBoolExpr(CondOp->getLHS(), TrueBlock, FalseBlock);
+        cond.end(*this);
 
-    cond.begin(*this);
-    EmitBlock(RHSBlock);
-    EmitBranchOnBoolExpr(CondOp->getRHS(), TrueBlock, FalseBlock);
-    cond.end(*this);
+        cond.begin(*this);
+        EmitBlock(RHSBlock);
+        EmitBranchOnBoolExpr(CondOp->getRHS(), TrueBlock, FalseBlock);
+        cond.end(*this);
 
-    return;
-  }
+        return;
+    }
 #endif
 
-  // Emit the code with the fully general case.
-  llvm::Value *CondV = EvaluateExprAsBool(Cond);
-  Builder.CreateCondBr(CondV, TrueBlock, FalseBlock);
+    // Emit the code with the fully general case.
+    llvm::Value *CondV = EvaluateExprAsBool(Cond);
+    Builder.CreateCondBr(CondV, TrueBlock, FalseBlock);
 }
 
 llvm::Value* CodeGenFunction::EmitExpr(const Expr* E) {
@@ -429,34 +429,34 @@ llvm::Value* CodeGenFunction::EmitExprNoImpCast(const Expr* E) {
 
     switch (E->getKind()) {
     case EXPR_INTEGER_LITERAL:
-        {
-            const IntegerLiteral* N = cast<IntegerLiteral>(E);
-            const Type* T = N->getType().getTypePtr();
-            assert(T->isBuiltinType());
-            const BuiltinType* BT = cast<BuiltinType>(T);
-            uint64_t v = N->Value.getZExtValue();
-            return llvm::ConstantInt::get(CGM.ConvertType(N->getType()), v, BT->isSignedInteger());
-        }
+    {
+        const IntegerLiteral* N = cast<IntegerLiteral>(E);
+        const Type* T = N->getType().getTypePtr();
+        assert(T->isBuiltinType());
+        const BuiltinType* BT = cast<BuiltinType>(T);
+        uint64_t v = N->Value.getZExtValue();
+        return llvm::ConstantInt::get(CGM.ConvertType(N->getType()), v, BT->isSignedInteger());
+    }
     case EXPR_FLOAT_LITERAL:
-        {
-            const FloatingLiteral* F = cast<FloatingLiteral>(E);
-            return llvm::ConstantFP::get(context, F->Value);
-        }
+    {
+        const FloatingLiteral* F = cast<FloatingLiteral>(E);
+        return llvm::ConstantFP::get(context, F->Value);
+    }
     case EXPR_BOOL_LITERAL:
-        {
-            const BooleanLiteral* B = cast<BooleanLiteral>(E);
-            return llvm::ConstantInt::get(llvm::Type::getInt1Ty(context), B->getValue(), true);
-        }
+    {
+        const BooleanLiteral* B = cast<BooleanLiteral>(E);
+        return llvm::ConstantInt::get(llvm::Type::getInt1Ty(context), B->getValue(), true);
+    }
     case EXPR_CHAR_LITERAL:
-        {
-            const CharacterLiteral* C = cast<CharacterLiteral>(E);
-            return llvm::ConstantInt::get(CGM.ConvertType(E->getType()), C->getValue());
-        }
+    {
+        const CharacterLiteral* C = cast<CharacterLiteral>(E);
+        return llvm::ConstantInt::get(CGM.ConvertType(E->getType()), C->getValue());
+    }
     case EXPR_STRING_LITERAL:
-        {
-            const StringLiteral* S = cast<StringLiteral>(E);
-            return Builder.CreateGlobalStringPtr(S->getValue());
-        }
+    {
+        const StringLiteral* S = cast<StringLiteral>(E);
+        return Builder.CreateGlobalStringPtr(S->getValue());
+    }
     case EXPR_NIL:
         assert(0 && "TODO");
         break;
@@ -478,16 +478,16 @@ llvm::Value* CodeGenFunction::EmitExprNoImpCast(const Expr* E) {
     case EXPR_ARRAYSUBSCRIPT:
         break;
     case EXPR_MEMBER:
-        {
-            assert(cast<MemberExpr>(E)->isModulePrefix() && "TODO not-prefix members");
-            // TODO
-            break;
-        }
+    {
+        assert(cast<MemberExpr>(E)->isModulePrefix() && "TODO not-prefix members");
+        // TODO
+        break;
+    }
     case EXPR_PAREN:
-        {
-            const ParenExpr* P = cast<ParenExpr>(E);
-            return EmitExpr(P->getExpr());
-        }
+    {
+        const ParenExpr* P = cast<ParenExpr>(E);
+        return EmitExpr(P->getExpr());
+    }
     case EXPR_BITOFFSET:
     case EXPR_CAST:
         break;
@@ -509,24 +509,24 @@ llvm::Value* CodeGenFunction::EmitCallExpr(const CallExpr* E) {
     std::string FuncName;
     switch (Fn->getKind()) {
     case EXPR_IDENTIFIER:
-        {
-            const IdentifierExpr* I = cast<IdentifierExpr>(Fn);
-            FD = I->getDecl();
-            FuncName = I->getName();
-        }
-        break;
+    {
+        const IdentifierExpr* I = cast<IdentifierExpr>(Fn);
+        FD = I->getDecl();
+        FuncName = I->getName();
+    }
+    break;
     case EXPR_MEMBER:
-        {
-            // NOTE: we only support module.symbol now (not struct.member)
-            // So only FunctionDecl
-            const MemberExpr* M = cast<MemberExpr>(Fn);
-            const IdentifierExpr* rhs = M->getMember();
+    {
+        // NOTE: we only support module.symbol now (not struct.member)
+        // So only FunctionDecl
+        const MemberExpr* M = cast<MemberExpr>(Fn);
+        const IdentifierExpr* rhs = M->getMember();
 
-            FuncName = rhs->getName();
-            FD = M->getDecl();
-            assert(FD->getKind() == DECL_FUNC && "Only support module.symbol for now");
-        }
-        break;
+        FuncName = rhs->getName();
+        FD = M->getDecl();
+        assert(FD->getKind() == DECL_FUNC && "Only support module.symbol for now");
+    }
+    break;
     default:
         assert(0 && "TODO unsupported call type");
         return 0;
@@ -566,16 +566,16 @@ llvm::Value* CodeGenFunction::EmitCallExpr(const CallExpr* E) {
         break;
     }
     default:
-        {
-            std::vector<llvm::Value *> Args;
-            for (unsigned i=0; i<E->numArgs(); i++) {
-                // TODO match argument to callee's arg type
-                Args.push_back(EmitExpr(E->getArg(i)));
-            }
-            llvm::ArrayRef<llvm::Value*> argsRef(Args);
-            call = Builder.CreateCall(function, argsRef);
+    {
+        std::vector<llvm::Value *> Args;
+        for (unsigned i=0; i<E->numArgs(); i++) {
+            // TODO match argument to callee's arg type
+            Args.push_back(EmitExpr(E->getArg(i)));
         }
-        break;
+        llvm::ArrayRef<llvm::Value*> argsRef(Args);
+        call = Builder.CreateCall(function, argsRef);
+    }
+    break;
     }
     return call;
 }
@@ -600,14 +600,14 @@ llvm::Value* CodeGenFunction::EmitIdentifierExpr(const IdentifierExpr* E) {
         return new LoadInst(VD->getIRValue(), "", false, CurBB);
     }
     case DECL_ENUMVALUE:
-        {
-            //EnumConstantDecl* ECD = cast<EnumConstantDecl>(D);
-            // Nasty, we need the value of the constant, but we have no place to store it.
-            // We need to change the AST structure for this.
-            // TODO correct width + value
-            int value = 5;
-            return llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), value, true);
-        }
+    {
+        //EnumConstantDecl* ECD = cast<EnumConstantDecl>(D);
+        // Nasty, we need the value of the constant, but we have no place to store it.
+        // We need to change the AST structure for this.
+        // TODO correct width + value
+        int value = 5;
+        return llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), value, true);
+    }
     case DECL_ALIASTYPE:
     case DECL_STRUCTTYPE:
     case DECL_ENUMTYPE:
@@ -751,8 +751,8 @@ llvm::Value *CodeGenFunction::EvaluateExprAsBool(const Expr *E) {
 /// CreateTempAlloca - This creates a alloca and inserts it into the entry
 /// block.
 llvm::AllocaInst *CodeGenFunction::CreateTempAlloca(llvm::Type *Ty,
-                                                    const Twine &Name) {
-  return new llvm::AllocaInst(Ty, 0, Name, AllocaInsertPt);
+        const Twine &Name) {
+    return new llvm::AllocaInst(Ty, 0, Name, AllocaInsertPt);
 }
 
 

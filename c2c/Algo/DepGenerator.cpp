@@ -106,7 +106,7 @@ void DepGenerator::writeAST(const AST& ast, StringBuilder& output, unsigned inde
     for (unsigned i=0; i<ast.numVars(); i++) {
         const Decl* D = ast.getVar(i);
         if (isExternal && !D->isUsed()) continue;
-       writeDecl(D, output, indent);
+        writeDecl(D, output, indent);
     }
     for (unsigned i=0; i<ast.numFunctions(); i++) {
         const Decl* D = ast.getFunction(i);

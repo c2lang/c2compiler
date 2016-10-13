@@ -32,20 +32,36 @@ QualType QualType::getCanonicalType() const {
     return canon;
 }
 
-bool QualType::isBuiltinType() const { return getTypePtr()->isBuiltinType(); }
-bool QualType::isPointerType() const { return getTypePtr()->isPointerType(); }
-bool QualType::isArrayType() const { return getTypePtr()->isArrayType(); }
-bool QualType::isAliasType() const { return getTypePtr()->isAliasType(); }
-bool QualType::isStructType() const { return getTypePtr()->isStructType(); }
-bool QualType::isFunctionType() const { return getTypePtr()->isFunctionType(); }
-bool QualType::isSubscriptable() const { return getTypePtr()->isSubscriptable(); }
-bool QualType::isEnumType() const { return isa<EnumType>(getTypePtr()); }
+bool QualType::isBuiltinType() const {
+    return getTypePtr()->isBuiltinType();
+}
+bool QualType::isPointerType() const {
+    return getTypePtr()->isPointerType();
+}
+bool QualType::isArrayType() const {
+    return getTypePtr()->isArrayType();
+}
+bool QualType::isAliasType() const {
+    return getTypePtr()->isAliasType();
+}
+bool QualType::isStructType() const {
+    return getTypePtr()->isStructType();
+}
+bool QualType::isFunctionType() const {
+    return getTypePtr()->isFunctionType();
+}
+bool QualType::isSubscriptable() const {
+    return getTypePtr()->isSubscriptable();
+}
+bool QualType::isEnumType() const {
+    return isa<EnumType>(getTypePtr());
+}
 bool QualType::isIntegerType() const {
     QualType Canon = getTypePtr()->getCanonicalType();
     if (BuiltinType* BI = dyncast<BuiltinType>(Canon.getTypePtr())) {
         return BI->isInteger();
     }
-   return false;
+    return false;
 }
 bool QualType::isScalarType() const {
     QualType Canon = getTypePtr()->getCanonicalType();
@@ -342,87 +358,111 @@ static BuiltinType _Float64(BuiltinType::Float64);
 static BuiltinType _Bool(BuiltinType::Bool);
 static BuiltinType _Void(BuiltinType::Void);
 
-QualType Type::Int8() { return QualType(&_Int8); }
-QualType Type::Int16() { return QualType(&_Int16); }
-QualType Type::Int32() { return QualType(&_Int32); }
-QualType Type::Int64() { return QualType(&_Int64); }
-QualType Type::UInt8() { return QualType(&_UInt8); }
-QualType Type::UInt16() { return QualType(&_UInt16); }
-QualType Type::UInt32() { return QualType(&_UInt32); }
-QualType Type::UInt64() { return QualType(&_UInt64); }
-QualType Type::Float32() { return QualType(&_Float32); }
-QualType Type::Float64() { return QualType(&_Float64); }
-QualType Type::Bool() { return QualType(&_Bool); }
-QualType Type::Void() { return QualType(&_Void); }
+QualType Type::Int8() {
+    return QualType(&_Int8);
+}
+QualType Type::Int16() {
+    return QualType(&_Int16);
+}
+QualType Type::Int32() {
+    return QualType(&_Int32);
+}
+QualType Type::Int64() {
+    return QualType(&_Int64);
+}
+QualType Type::UInt8() {
+    return QualType(&_UInt8);
+}
+QualType Type::UInt16() {
+    return QualType(&_UInt16);
+}
+QualType Type::UInt32() {
+    return QualType(&_UInt32);
+}
+QualType Type::UInt64() {
+    return QualType(&_UInt64);
+}
+QualType Type::Float32() {
+    return QualType(&_Float32);
+}
+QualType Type::Float64() {
+    return QualType(&_Float64);
+}
+QualType Type::Bool() {
+    return QualType(&_Bool);
+}
+QualType Type::Void() {
+    return QualType(&_Void);
+}
 
 BuiltinType* BuiltinType::get(Kind k) {
     switch (k) {
-        case Int8:      return &_Int8;
-        case Int16:     return &_Int16;
-        case Int32:     return &_Int32;
-        case Int64:     return &_Int64;
-        case UInt8:     return &_UInt8;
-        case UInt16:    return &_UInt16;
-        case UInt32:    return &_UInt32;
-        case UInt64:    return &_UInt64;
-        case Float32:   return &_Float32;
-        case Float64:   return &_Float64;
-        case Bool:      return &_Bool;
-        case Void:      return &_Void;
+    case Int8:      return &_Int8;
+    case Int16:     return &_Int16;
+    case Int32:     return &_Int32;
+    case Int64:     return &_Int64;
+    case UInt8:     return &_UInt8;
+    case UInt16:    return &_UInt16;
+    case UInt32:    return &_UInt32;
+    case UInt64:    return &_UInt64;
+    case Float32:   return &_Float32;
+    case Float64:   return &_Float64;
+    case Bool:      return &_Bool;
+    case Void:      return &_Void;
     }
     return 0;       // to satisfy compiler
 }
 
 unsigned BuiltinType::getWidth() const {
     switch (getKind()) {
-        case Int8:      return 8;
-        case Int16:     return 16;
-        case Int32:     return 32;
-        case Int64:     return 64;
-        case UInt8:     return 8;
-        case UInt16:    return 16;
-        case UInt32:    return 32;
-        case UInt64:    return 64;
-        case Float32:   return 32;
-        case Float64:   return 64;
-        case Bool:      return 1;
-        case Void:      return 0;
+    case Int8:      return 8;
+    case Int16:     return 16;
+    case Int32:     return 32;
+    case Int64:     return 64;
+    case UInt8:     return 8;
+    case UInt16:    return 16;
+    case UInt32:    return 32;
+    case UInt64:    return 64;
+    case Float32:   return 32;
+    case Float64:   return 64;
+    case Bool:      return 1;
+    case Void:      return 0;
     }
     return 0;       // to satisfy compiler
 }
 
 unsigned BuiltinType::getIntegerWidth() const {
     switch (getKind()) {
-        case Int8:      return 7;
-        case Int16:     return 15;
-        case Int32:     return 31;
-        case Int64:     return 63;
-        case UInt8:     return 8;
-        case UInt16:    return 16;
-        case UInt32:    return 32;
-        case UInt64:    return 64;
-        case Float32:   return 0;
-        case Float64:   return 0;
-        case Bool:      return 1;
-        case Void:      return 0;
+    case Int8:      return 7;
+    case Int16:     return 15;
+    case Int32:     return 31;
+    case Int64:     return 63;
+    case UInt8:     return 8;
+    case UInt16:    return 16;
+    case UInt32:    return 32;
+    case UInt64:    return 64;
+    case Float32:   return 0;
+    case Float64:   return 0;
+    case Bool:      return 1;
+    case Void:      return 0;
     }
     return 0;       // to satisfy compiler
 }
 
 const char* BuiltinType::kind2name(Kind k) {
     switch (k) {
-        case Int8:      return "int8";
-        case Int16:     return "int16";
-        case Int32:     return "int32";
-        case Int64:     return "int64";
-        case UInt8:     return "uint8";
-        case UInt16:    return "uint16";
-        case UInt32:    return "uint32";
-        case UInt64:    return "uint64";
-        case Float32:   return "float32";
-        case Float64:   return "float64";
-        case Bool:      return "bool";
-        case Void:      return "void";
+    case Int8:      return "int8";
+    case Int16:     return "int16";
+    case Int32:     return "int32";
+    case Int64:     return "int64";
+    case UInt8:     return "uint8";
+    case UInt16:    return "uint16";
+    case UInt32:    return "uint32";
+    case UInt64:    return "uint64";
+    case Float32:   return "float32";
+    case Float64:   return "float64";
+    case Bool:      return "bool";
+    case Void:      return "void";
     }
     return "";      // to satisfy compiler
 
@@ -433,90 +473,90 @@ const char* BuiltinType::getName() const {
 
 const char* BuiltinType::getCName() const {
     switch (getKind()) {
-        case Int8:      return "char";
-        case Int16:     return "short";
-        case Int32:     return "int";
-        case Int64:     return "long long";
-        case UInt8:     return "unsigned char";
-        case UInt16:    return "unsigned short";
-        case UInt32:    return "unsigned";
-        case UInt64:    return "unsigned long long";
-        case Float32:   return "float";
-        case Float64:   return "double";
-        case Bool:      return "int";
-        case Void:      return "void";
+    case Int8:      return "char";
+    case Int16:     return "short";
+    case Int32:     return "int";
+    case Int64:     return "long long";
+    case UInt8:     return "unsigned char";
+    case UInt16:    return "unsigned short";
+    case UInt32:    return "unsigned";
+    case UInt64:    return "unsigned long long";
+    case Float32:   return "float";
+    case Float64:   return "double";
+    case Bool:      return "int";
+    case Void:      return "void";
     }
     return "";      // to satisfy compiler
 }
 
 bool BuiltinType::isInteger() const {
     switch (getKind()) {
-        case Int8:      return true;
-        case Int16:     return true;
-        case Int32:     return true;
-        case Int64:     return true;
-        case UInt8:     return true;
-        case UInt16:    return true;
-        case UInt32:    return true;
-        case UInt64:    return true;
-        case Float32:   return false;
-        case Float64:   return false;
-        case Bool:      return false;
-        case Void:      return false;
+    case Int8:      return true;
+    case Int16:     return true;
+    case Int32:     return true;
+    case Int64:     return true;
+    case UInt8:     return true;
+    case UInt16:    return true;
+    case UInt32:    return true;
+    case UInt64:    return true;
+    case Float32:   return false;
+    case Float64:   return false;
+    case Bool:      return false;
+    case Void:      return false;
     }
     return false;       // to satisfy compiler
 }
 
 bool BuiltinType::isSignedInteger() const {
     switch (getKind()) {
-        case Int8:      return true;
-        case Int16:     return true;
-        case Int32:     return true;
-        case Int64:     return true;
-        case UInt8:     return false;
-        case UInt16:    return false;
-        case UInt32:    return false;
-        case UInt64:    return false;
-        case Float32:   return false;
-        case Float64:   return false;
-        case Bool:      return false;
-        case Void:      return false;
+    case Int8:      return true;
+    case Int16:     return true;
+    case Int32:     return true;
+    case Int64:     return true;
+    case UInt8:     return false;
+    case UInt16:    return false;
+    case UInt32:    return false;
+    case UInt64:    return false;
+    case Float32:   return false;
+    case Float64:   return false;
+    case Bool:      return false;
+    case Void:      return false;
     }
     return false;       // to satisfy compiler
 }
 
 bool BuiltinType::isUnsignedInteger() const {
     switch (getKind()) {
-        case Int8:      return false;
-        case Int16:     return false;
-        case Int32:     return false;
-        case Int64:     return false;
-        case UInt8:     return true;
-        case UInt16:    return true;
-        case UInt32:    return true;
-        case UInt64:    return true;
-        case Float32:   return false;
-        case Float64:   return false;
-        case Bool:      return true;
-        case Void:      return false;
+    case Int8:      return false;
+    case Int16:     return false;
+    case Int32:     return false;
+    case Int64:     return false;
+    case UInt8:     return true;
+    case UInt16:    return true;
+    case UInt32:    return true;
+    case UInt64:    return true;
+    case Float32:   return false;
+    case Float64:   return false;
+    case Bool:      return true;
+    case Void:      return false;
     }
     return false;       // to satisfy compiler
 }
 
 bool BuiltinType::isFloatingPoint() const {
     switch (getKind()) {
-        case Int8:      return false;
-        case Int16:     return false;
-        case Int32:     return false;
-        case Int64:     return false;
-        case UInt8:     return false;
-        case UInt16:    return false;
-        case UInt32:    return false;
-        case UInt64:    return false;
-        case Float32:   return true;
-        case Float64:   return true;
-        case Bool:      return false;
-        case Void:      return false;
+    case Int8:      return false;
+    case Int16:     return false;
+    case Int32:     return false;
+    case Int64:     return false;
+    case UInt8:     return false;
+    case UInt16:    return false;
+    case UInt32:    return false;
+    case UInt64:    return false;
+    case Float32:   return true;
+    case Float64:   return true;
+    case Bool:      return false;
+    case Void:      return false;
     }
     return false;       // to satisfy compiler
 }

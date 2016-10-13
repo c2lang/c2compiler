@@ -103,12 +103,12 @@ unsigned FileAnalyser::resolveTypeCanonicals() {
             // dont check constants / implType yet
             break;
         case DECL_FUNCTIONTYPE:
-            {
-                // return + argument types
-                const FunctionTypeDecl* FTD = cast<FunctionTypeDecl>(D);
-                errors += resolveFunctionDecl(FTD->getDecl(), true);
-                break;
-            }
+        {
+            // return + argument types
+            const FunctionTypeDecl* FTD = cast<FunctionTypeDecl>(D);
+            errors += resolveFunctionDecl(FTD->getDecl(), true);
+            break;
+        }
         case DECL_ARRAYVALUE:
         case DECL_IMPORT:
         case DECL_LABEL:
@@ -236,7 +236,7 @@ unsigned FileAnalyser::checkFunctionProtos(StructFunctionList& structFuncs) {
                 errors++;
             }
             //if (!F->getReturnType().isBuiltinType() || cast<BuiltinType>(F->getReturnType()).getKind() == BuiltinType::Int32) {
-           // }
+            // }
         }
         checkAttributes(F);
         checkStructFunction(F, structFuncs);
@@ -494,7 +494,7 @@ unsigned FileAnalyser::resolveVarDecl(VarDecl* D) {
 
     if (!ast.isInterface() && !D->hasEmptyName()) {
         if (Q.isConstant()) {
-           if (!isupper(D->getName()[0])) {
+            if (!isupper(D->getName()[0])) {
                 Diags.Report(D->getLocation(), diag::err_const_casing);
             }
         } else {

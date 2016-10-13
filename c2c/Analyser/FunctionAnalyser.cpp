@@ -55,20 +55,20 @@ static void SetConstantFlags(Decl* D, Expr* expr) {
         expr->setConstant();
         break;
     case DECL_VAR:
-        {
-            VarDecl* VD = cast<VarDecl>(D);
-            QualType T = VD->getType();
-            if (T.isConstQualified()) {
-                Expr* Init = VD->getInitValue();
-                if (Init) {
-                    // Copy CTC status of Init Expr
-                    expr->setCTC(Init->getCTC());
-                }
-                expr->setConstant();
-                return;
+    {
+        VarDecl* VD = cast<VarDecl>(D);
+        QualType T = VD->getType();
+        if (T.isConstQualified()) {
+            Expr* Init = VD->getInitValue();
+            if (Init) {
+                // Copy CTC status of Init Expr
+                expr->setCTC(Init->getCTC());
             }
-            break;
+            expr->setConstant();
+            return;
         }
+        break;
+    }
     case DECL_ENUMVALUE:
         expr->setCTC(CTC_FULL);
         expr->setConstant();
@@ -464,7 +464,7 @@ void FunctionAnalyser::analyseReturnStmt(Stmt* stmt) {
         QualType type = analyseExpr(value, RHS);
         if (no_rvalue) {
             Diag(ret->getLocation(), diag::ext_return_has_expr) << CurrentFunction->getName() << 0
-                << value->getSourceRange();
+                    << value->getSourceRange();
         } else {
             if (type.isValid()) {
                 EA.check(rtype, value);
@@ -489,7 +489,7 @@ void FunctionAnalyser::analyseDeclStmt(Stmt* stmt) {
 
         if (!isInterface) {
             if (Q.isConstant()) {
-               if (!isupper(decl->getName()[0])) {
+                if (!isupper(decl->getName()[0])) {
                     Diags.Report(decl->getLocation(), diag::err_const_casing);
                 }
             } else {
@@ -549,7 +549,7 @@ void FunctionAnalyser::analyseCondition(Stmt* stmt) {
     LOG_FUNC
 
     if (isa<DeclStmt>(stmt)) {
-       analyseDeclStmt(stmt);
+        analyseDeclStmt(stmt);
     } else {
         assert(isa<Expr>(stmt));
         Expr* E = cast<Expr>(stmt);
@@ -586,71 +586,71 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
         expr->setType(Type::UInt8());
         return Type::UInt8();
     case EXPR_STRING_LITERAL:
-        {
-            // return type: 'const uint8*'
-            QualType Q = Context.getPointerType(Type::UInt8());
-            Q.addConst();
-            if (!Q->hasCanonicalType()) Q->setCanonicalType(Q);
-            expr->setType(Q);
-            return Q;
-        }
+    {
+        // return type: 'const uint8*'
+        QualType Q = Context.getPointerType(Type::UInt8());
+        Q.addConst();
+        if (!Q->hasCanonicalType()) Q->setCanonicalType(Q);
+        expr->setType(Q);
+        return Q;
+    }
     case EXPR_NIL:
-        {
-            QualType Q = Context.getPointerType(Type::Void());
-            if (!Q->hasCanonicalType()) Q->setCanonicalType(Q);
-            expr->setType(Q);
-            return Q;
-        }
+    {
+        QualType Q = Context.getPointerType(Type::Void());
+        if (!Q->hasCanonicalType()) Q->setCanonicalType(Q);
+        expr->setType(Q);
+        return Q;
+    }
     case EXPR_CALL:
         return analyseCall(expr);
     case EXPR_IDENTIFIER:
-        {
-            IdentifierExpr* id = cast<IdentifierExpr>(expr);
-            Decl* D = analyseIdentifier(id);
-            if (!D) break;
-            if (D == CurrentVarDecl) {
-                Diag(id->getLocation(), diag::err_var_self_init) << D->getName();
-                return QualType();
-            }
-            if (side & LHS) checkDeclAssignment(D, expr);
-            switch (D->getKind()) {
-            case DECL_FUNC:
-                expr->setConstant();
-                break;
-            case DECL_VAR:
-                break;
-            case DECL_ENUMVALUE:
-                expr->setCTC(CTC_FULL);
-                expr->setConstant();
-                break;
-            case DECL_STRUCTTYPE:
-                // Type.func is allowed as init
-                // TODO handle, mark that Type was specified, not just return StructType
-                break;
-            case DECL_ALIASTYPE:
-            case DECL_ENUMTYPE:
-            case DECL_FUNCTIONTYPE:
-                Diag(id->getLocation(), diag::err_unexpected_typedef) << id->getName();
-                expr->setConstant();
-                break;
-            case DECL_ARRAYVALUE:
-                break;
-            case DECL_IMPORT:
-                expr->setConstant();
-                break;
-            case DECL_LABEL:
-                assert(0 && "TODO");
-                break;
-            }
-            if (side & RHS) {
-                D->setUsed();
-                if (usedPublicly) D->setUsedPublic();
-            }
-            QualType T = D->getType();
-            expr->setType(T);
-            return T;
+    {
+        IdentifierExpr* id = cast<IdentifierExpr>(expr);
+        Decl* D = analyseIdentifier(id);
+        if (!D) break;
+        if (D == CurrentVarDecl) {
+            Diag(id->getLocation(), diag::err_var_self_init) << D->getName();
+            return QualType();
         }
-        break;
+        if (side & LHS) checkDeclAssignment(D, expr);
+        switch (D->getKind()) {
+        case DECL_FUNC:
+            expr->setConstant();
+            break;
+        case DECL_VAR:
+            break;
+        case DECL_ENUMVALUE:
+            expr->setCTC(CTC_FULL);
+            expr->setConstant();
+            break;
+        case DECL_STRUCTTYPE:
+            // Type.func is allowed as init
+            // TODO handle, mark that Type was specified, not just return StructType
+            break;
+        case DECL_ALIASTYPE:
+        case DECL_ENUMTYPE:
+        case DECL_FUNCTIONTYPE:
+            Diag(id->getLocation(), diag::err_unexpected_typedef) << id->getName();
+            expr->setConstant();
+            break;
+        case DECL_ARRAYVALUE:
+            break;
+        case DECL_IMPORT:
+            expr->setConstant();
+            break;
+        case DECL_LABEL:
+            assert(0 && "TODO");
+            break;
+        }
+        if (side & RHS) {
+            D->setUsed();
+            if (usedPublicly) D->setUsedPublic();
+        }
+        QualType T = D->getType();
+        expr->setType(T);
+        return T;
+    }
+    break;
     case EXPR_INITLIST:
     case EXPR_DESIGNATOR_INIT:
     case EXPR_TYPE:
@@ -795,7 +795,7 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
             if (i >= STD->numMembers()) {
                 // note: 0 for array, 2 for scalar, 3 for union, 4 for structs
                 Diag(values[STD->numMembers()]->getLocation(), diag::err_excess_initializers)
-                    << 4;
+                        << 4;
                 return;
             }
             if (DesignatedInitExpr* D = dyncast<DesignatedInitExpr>(values[i])) {
@@ -995,12 +995,12 @@ void FunctionAnalyser::analyseArrayType(VarDecl* V, QualType T) {
         analyseArrayType(V, cast<PointerType>(T)->getPointeeType());
         break;
     case TC_ARRAY:
-        {
-            ArrayType* AT = cast<ArrayType>(T.getTypePtr());
-            analyseArraySizeExpr(AT);
-            analyseArrayType(V, AT->getElementType());
-            break;
-        }
+    {
+        ArrayType* AT = cast<ArrayType>(T.getTypePtr());
+        analyseArraySizeExpr(AT);
+        analyseArrayType(V, AT->getElementType());
+        break;
+    }
     case TC_UNRESOLVED:
         assert(0 && "should not happen");
         break;
@@ -1274,15 +1274,15 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
         expr->setType(LType);
         break;
     case UO_AddrOf:
-        {
-            LType = analyseExpr(SubExpr, side | RHS);
-            if (LType.isNull()) return 0;
-            QualType Q = Context.getPointerType(LType);
-            expr->setType(Q);
-            expr->setConstant();
-            TR.resolveCanonicals(0, Q, true);
-            return Q;
-        }
+    {
+        LType = analyseExpr(SubExpr, side | RHS);
+        if (LType.isNull()) return 0;
+        QualType Q = Context.getPointerType(LType);
+        expr->setType(Q);
+        expr->setConstant();
+        TR.resolveCanonicals(0, Q, true);
+        return Q;
+    }
     case UO_Deref:
         LType = analyseExpr(SubExpr, side | RHS);
         if (LType.isNull()) return 0;
@@ -1291,7 +1291,7 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
             StringBuilder buf(MAX_LEN_TYPENAME, typeName);
             LType.DiagName(buf);
             Diag(unaryop->getOpLoc(), diag::err_typecheck_indirection_requires_pointer)
-                << buf;
+                    << buf;
             return 0;
         } else {
             // TEMP use CanonicalType to avoid Unresolved types etc
@@ -1343,22 +1343,22 @@ QualType FunctionAnalyser::analyseBuiltinExpr(Expr* expr) {
         // should be VarDecl(for array/enum) or TypeDecl(array/enum)
         switch (D->getKind()) {
         case DECL_FUNC:
-             fprintf(stderr, "TODO Function err\n");
+            fprintf(stderr, "TODO Function err\n");
             // ERROR
             break;
         case DECL_VAR:
-            {
-                VarDecl* VD = cast<VarDecl>(D);
-                QualType Q = VD->getType();
-                // TODO also allow elemsof for EnumType
-                if (!Q.isArrayType()) {
-                    StringBuilder msg;
-                    Q.DiagName(msg);
-                    Diag(I->getLocation(), diag::err_invalid_elemsof_type)
+        {
+            VarDecl* VD = cast<VarDecl>(D);
+            QualType Q = VD->getType();
+            // TODO also allow elemsof for EnumType
+            if (!Q.isArrayType()) {
+                StringBuilder msg;
+                Q.DiagName(msg);
+                Diag(I->getLocation(), diag::err_invalid_elemsof_type)
                         << msg;
-                }
-                return Type::UInt32();
             }
+            return Type::UInt32();
+        }
         case DECL_ENUMVALUE:
             // ERROR
             break;
@@ -1458,7 +1458,7 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
             StringBuilder buf(MAX_LEN_TYPENAME);
             LType.DiagName(buf);
             Diag(M->getLocation(), diag::err_typecheck_member_reference_struct_union)
-                << buf << M->getSourceRange() << member->getLocation();
+                    << buf << M->getSourceRange() << member->getLocation();
             return QualType();
         }
         return analyseStructMember(S, M, side, exprIsType(M->getBase()));
@@ -1567,15 +1567,15 @@ bool FunctionAnalyser::exprIsType(const Expr* E) const {
     // can be IdentifierExpr or MemberExpr
     switch (E->getKind()) {
     case EXPR_IDENTIFIER:
-        {
-            const IdentifierExpr* I = cast<IdentifierExpr>(E);
-            return I->isType();
-        }
+    {
+        const IdentifierExpr* I = cast<IdentifierExpr>(E);
+        return I->isType();
+    }
     case EXPR_MEMBER:
-        {
-            const MemberExpr* M = cast<MemberExpr>(E);
-            return M->getMember()->isType();
-        }
+    {
+        const MemberExpr* M = cast<MemberExpr>(E);
+        return M->getMember()->isType();
+    }
     default:
         break;
     }
@@ -1601,7 +1601,7 @@ bool FunctionAnalyser::analyseBitOffsetIndex(Expr* expr, llvm::APSInt* Result, B
         StringBuilder buf;
         T.DiagName(buf);
         Diag(expr->getLocation(), diag::err_bitoffset_index_non_int)
-            << buf << expr->getSourceRange();
+                << buf << expr->getSourceRange();
         return false;
     }
     if (!expr->isConstant()) return false;
@@ -1610,12 +1610,12 @@ bool FunctionAnalyser::analyseBitOffsetIndex(Expr* expr, llvm::APSInt* Result, B
     llvm::APSInt Val = LA.checkLiterals(expr);
     if (Val.isSigned() && Val.isNegative()) {
         Diag(expr->getLocation(), diag::err_bitoffset_index_negative)
-            << Val.toString(10) << expr->getSourceRange();
+                << Val.toString(10) << expr->getSourceRange();
         return false;
     }
     if (Val.ugt(BaseType->getWidth()-1)) {
         Diag(expr->getLocation(), diag::err_bitoffset_index_too_large)
-            << Val.toString(10) << BaseType->getName() << expr->getSourceRange();
+                << Val.toString(10) << BaseType->getName() << expr->getSourceRange();
         return false;
     }
     *Result = Val;
@@ -1642,17 +1642,21 @@ QualType FunctionAnalyser::analyseBitOffsetExpr(Expr* expr, QualType BaseType, S
     if (VLvalid && VRvalid) {
         if (VR > VL) {
             Diag(B->getLocation(), diag::err_bitoffset_invalid_order)
-                << B->getLHS()->getSourceRange() << B->getRHS()->getSourceRange();
+                    << B->getLHS()->getSourceRange() << B->getRHS()->getSourceRange();
             return QualType();
         } else {
             llvm::APInt width = VL - VR;
             width++;
 
             QualType T;
-            if (width.ult(8+1)) {         T = Type::UInt8();
-            } else if (width.ult(16+1)) { T = Type::UInt16();
-            } else if (width.ult(32+1)) { T = Type::UInt32();
-            } else if (width.ult(64+1)) { T = Type::UInt64();
+            if (width.ult(8+1)) {
+                T = Type::UInt8();
+            } else if (width.ult(16+1)) {
+                T = Type::UInt16();
+            } else if (width.ult(32+1)) {
+                T = Type::UInt32();
+            } else if (width.ult(64+1)) {
+                T = Type::UInt64();
             } else {
                 assert(0 && "should not happen");
             }
@@ -1759,7 +1763,7 @@ bool FunctionAnalyser::checkCallArgs(FunctionDecl* func, CallExpr* call) {
             unsigned msg = diag::err_typecheck_call_too_many_args;
             if (func->hasDefaultArgs()) msg = diag::err_typecheck_call_too_many_args_at_most;
             Diag(arg->getLocation(), msg)
-                << diagIndex << funcArgs << callArgs;
+                    << diagIndex << funcArgs << callArgs;
             return false;
         }
         for (unsigned i=minArgs; i<callArgs; i++) {
@@ -1885,11 +1889,11 @@ void FunctionAnalyser::checkDeclAssignment(Decl* decl, Expr* expr) {
         fprintf(stderr, "TODO cannot assign to non-variable\n");
         break;
     case DECL_VAR:
-        {
-            //VarDecl* VD = cast<VarDecl>(decl);
-            //checkAssignment(expr, VD->getType());
-            break;
-        }
+    {
+        //VarDecl* VD = cast<VarDecl>(decl);
+        //checkAssignment(expr, VD->getType());
+        break;
+    }
     case DECL_ENUMVALUE:
     case DECL_ALIASTYPE:
     case DECL_STRUCTTYPE:
@@ -1998,7 +2002,7 @@ void FunctionAnalyser::checkEnumCases(const SwitchStmt* SS, const EnumType* ET) 
     if (!UnhandledNames.empty()) {
         DiagnosticBuilder DB = Diag(SS->getCond()->getLocation(),
                                     diag::warn_missing_case)
-                        << (int)UnhandledNames.size();
+                               << (int)UnhandledNames.size();
         for (size_t I=0, E = std::min(UnhandledNames.size(), (size_t)3); I != E; ++I) {
             DB << UnhandledNames[I];
         }
@@ -2013,21 +2017,21 @@ QualType FunctionAnalyser::getStructType(QualType Q) const {
     case TC_BUILTIN:
         return QualType();
     case TC_POINTER:
-        {
-            // Could be pointer to structtype
-            PointerType* PT = cast<PointerType>(T);
-            return getStructType(PT->getPointeeType());
-        }
+    {
+        // Could be pointer to structtype
+        PointerType* PT = cast<PointerType>(T);
+        return getStructType(PT->getPointeeType());
+    }
     case TC_ARRAY:
         return QualType();
     case TC_UNRESOLVED:
         assert(0 && "should not happen");
         return QualType();
     case TC_ALIAS:
-        {
-            AliasType* AT = cast<AliasType>(T);
-            return getStructType(AT->getRefType());
-        }
+    {
+        AliasType* AT = cast<AliasType>(T);
+        return getStructType(AT->getRefType());
+    }
     case TC_STRUCT:
         return Q;
     case TC_ENUM:

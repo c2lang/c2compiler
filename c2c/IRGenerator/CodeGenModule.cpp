@@ -212,20 +212,20 @@ void CodeGenModule::EmitGlobalVariable(VarDecl* Var) {
 
 #if 0
 void CodeGenModule::EmitTopLevelDecl(Decl* D) {
-    case DECL_STRUCTTYPE:
-        {
-            //StructTypeDecl* TD = cast<StructTypeDecl>(D);
-            //QualType QT = TD->getType();
-            // NOTE: only generate code for struct/union types (even this is optional)
-            if (QT.isStructOrUnionType()) {
-                // TEMP try some ints
-                std::vector<llvm::Type *> putsArgs;
-                putsArgs.push_back(builder.getInt32Ty());
-                llvm::ArrayRef<llvm::Type*>  argsRef(putsArgs);
-                llvm::StructType* s = llvm::StructType::create(getContext(), putsArgs, TD->getName());
-                //const Type* T = QT.getTypePtr();
-            }
+case DECL_STRUCTTYPE:
+    {
+        //StructTypeDecl* TD = cast<StructTypeDecl>(D);
+        //QualType QT = TD->getType();
+        // NOTE: only generate code for struct/union types (even this is optional)
+        if (QT.isStructOrUnionType()) {
+            // TEMP try some ints
+            std::vector<llvm::Type *> putsArgs;
+            putsArgs.push_back(builder.getInt32Ty());
+            llvm::ArrayRef<llvm::Type*>  argsRef(putsArgs);
+            llvm::StructType* s = llvm::StructType::create(getContext(), putsArgs, TD->getName());
+            //const Type* T = QT.getTypePtr();
         }
+    }
 }
 #endif
 
@@ -280,7 +280,7 @@ unsigned CodeGenModule::getAlignment(QualType Q) const {
 
 llvm::Type* CodeGenModule::ConvertType(BuiltinType::Kind K) {
     switch (K) {
-    // TODO make types signed or not
+        // TODO make types signed or not
     case BuiltinType::Int8:      return builder.getInt8Ty();
     case BuiltinType::Int16:     return builder.getInt16Ty();
     case BuiltinType::Int32:     return builder.getInt32Ty();
@@ -303,17 +303,17 @@ llvm::Type* CodeGenModule::ConvertType(QualType Q) {
     case TC_BUILTIN:
         return ConvertType(cast<BuiltinType>(canon)->getKind());
     case TC_POINTER:
-        {
-            llvm::Type* tt = ConvertType(cast<PointerType>(canon)->getPointeeType().getTypePtr());
-            return tt->getPointerTo();
-        }
+    {
+        llvm::Type* tt = ConvertType(cast<PointerType>(canon)->getPointeeType().getTypePtr());
+        return tt->getPointerTo();
+    }
     case TC_ARRAY:
-        {
-            // Hmm for function args, array are simply converted to pointers, do that for now
-            // array: use type = ArrayType::get(elementType, numElements)
-            llvm::Type* tt = ConvertType(cast<ArrayType>(canon)->getElementType().getTypePtr());
-            return tt->getPointerTo();
-        }
+    {
+        // Hmm for function args, array are simply converted to pointers, do that for now
+        // array: use type = ArrayType::get(elementType, numElements)
+        llvm::Type* tt = ConvertType(cast<ArrayType>(canon)->getElementType().getTypePtr());
+        return tt->getPointerTo();
+    }
     case TC_UNRESOLVED:
     case TC_ALIAS:
         assert(0 && "should be resolved");
@@ -352,26 +352,26 @@ llvm::Constant* CodeGenModule::EvaluateExprAsConstant(const Expr *E) {
     case EXPR_STRING_LITERAL:
         return GetConstantArrayFromStringLiteral(cast<StringLiteral>(E));
     case EXPR_INTEGER_LITERAL:
-        {
-            const IntegerLiteral* N = cast<IntegerLiteral>(E);
-            // Get Width/signed from CanonicalType?
-            return llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), N->Value.getSExtValue(), true);
-        }
+    {
+        const IntegerLiteral* N = cast<IntegerLiteral>(E);
+        // Get Width/signed from CanonicalType?
+        return llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), N->Value.getSExtValue(), true);
+    }
     case EXPR_IDENTIFIER:
         return EmitConstantDecl(cast<IdentifierExpr>(E)->getDecl());
     case EXPR_INITLIST:
-        {
-            // TODO only use this for arrays of Builtins
-            const InitListExpr* I = cast<InitListExpr>(E);
-            Expr** Vals = I->getValues();
-            QualType Q = I->getType().getCanonicalType();
-            // NOTE: we only support array inits currently (no struct inits yet)
-            if (Q.isArrayType()) {
-                return EmitArrayInit(cast<ArrayType>(Q.getTypePtr()), Vals, I->numValues());
-            } else {
-                return EmitStructInit(cast<StructType>(Q.getTypePtr()), Vals, I->numValues());
-            }
+    {
+        // TODO only use this for arrays of Builtins
+        const InitListExpr* I = cast<InitListExpr>(E);
+        Expr** Vals = I->getValues();
+        QualType Q = I->getType().getCanonicalType();
+        // NOTE: we only support array inits currently (no struct inits yet)
+        if (Q.isArrayType()) {
+            return EmitArrayInit(cast<ArrayType>(Q.getTypePtr()), Vals, I->numValues());
+        } else {
+            return EmitStructInit(cast<StructType>(Q.getTypePtr()), Vals, I->numValues());
         }
+    }
     default:
         E->dump();
         assert(0 && "TODO");
@@ -380,7 +380,7 @@ llvm::Constant* CodeGenModule::EvaluateExprAsConstant(const Expr *E) {
 }
 
 llvm::Constant* CodeGenModule::GetConstantArrayFromStringLiteral(const StringLiteral* E) {
-  //assert(!E->getType()->isPointerType() && "Strings are always arrays");
+    //assert(!E->getType()->isPointerType() && "Strings are always arrays");
 
     // TEMP only handle 1 byte per char
     SmallString<64> Str(E->getValue());
@@ -389,41 +389,41 @@ llvm::Constant* CodeGenModule::GetConstantArrayFromStringLiteral(const StringLit
     return llvm::ConstantDataArray::getString(context, Str, true); // add 0
 
 #if 0
-  // Don't emit it as the address of the string, emit the string data itself
-  // as an inline array.
-  if (E->getCharByteWidth() == 1) {
-    SmallString<64> Str(E->getString());
+    // Don't emit it as the address of the string, emit the string data itself
+    // as an inline array.
+    if (E->getCharByteWidth() == 1) {
+        SmallString<64> Str(E->getString());
 
-    // Resize the string to the right size, which is indicated by its type.
-    const ConstantArrayType *CAT = Context.getAsConstantArrayType(E->getType());
-    Str.resize(CAT->getSize().getZExtValue());
-    return llvm::ConstantDataArray::getString(VMContext, Str, false);
-  }
+        // Resize the string to the right size, which is indicated by its type.
+        const ConstantArrayType *CAT = Context.getAsConstantArrayType(E->getType());
+        Str.resize(CAT->getSize().getZExtValue());
+        return llvm::ConstantDataArray::getString(VMContext, Str, false);
+    }
 
-  llvm::ArrayType *AType =
-    cast<llvm::ArrayType>(getTypes().ConvertType(E->getType()));
-  llvm::Type *ElemTy = AType->getElementType();
-  unsigned NumElements = AType->getNumElements();
+    llvm::ArrayType *AType =
+        cast<llvm::ArrayType>(getTypes().ConvertType(E->getType()));
+    llvm::Type *ElemTy = AType->getElementType();
+    unsigned NumElements = AType->getNumElements();
 
-  // Wide strings have either 2-byte or 4-byte elements.
-  if (ElemTy->getPrimitiveSizeInBits() == 16) {
-    SmallVector<uint16_t, 32> Elements;
+    // Wide strings have either 2-byte or 4-byte elements.
+    if (ElemTy->getPrimitiveSizeInBits() == 16) {
+        SmallVector<uint16_t, 32> Elements;
+        Elements.reserve(NumElements);
+
+        for(unsigned i = 0, e = E->getLength(); i != e; ++i)
+            Elements.push_back(E->getCodeUnit(i));
+        Elements.resize(NumElements);
+        return llvm::ConstantDataArray::get(VMContext, Elements);
+    }
+
+    assert(ElemTy->getPrimitiveSizeInBits() == 32);
+    SmallVector<uint32_t, 32> Elements;
     Elements.reserve(NumElements);
 
     for(unsigned i = 0, e = E->getLength(); i != e; ++i)
-      Elements.push_back(E->getCodeUnit(i));
+        Elements.push_back(E->getCodeUnit(i));
     Elements.resize(NumElements);
     return llvm::ConstantDataArray::get(VMContext, Elements);
-  }
-
-  assert(ElemTy->getPrimitiveSizeInBits() == 32);
-  SmallVector<uint32_t, 32> Elements;
-  Elements.reserve(NumElements);
-
-  for(unsigned i = 0, e = E->getLength(); i != e; ++i)
-    Elements.push_back(E->getCodeUnit(i));
-  Elements.resize(NumElements);
-  return llvm::ConstantDataArray::get(VMContext, Elements);
 #endif
 }
 
@@ -433,10 +433,10 @@ llvm::Constant* CodeGenModule::EmitDefaultInit(QualType Q) {
     case TC_BUILTIN:
         return llvm::ConstantInt::get(ConvertType(Q), 0, true);
     case TC_POINTER:
-        {
-            llvm::Type* tt = ConvertType(cast<PointerType>(T)->getPointeeType().getTypePtr());
-            return ConstantPointerNull::get(tt->getPointerTo());
-        }
+    {
+        llvm::Type* tt = ConvertType(cast<PointerType>(T)->getPointeeType().getTypePtr());
+        return ConstantPointerNull::get(tt->getPointerTo());
+    }
     case TC_ARRAY:
         return EmitArrayInit(cast<ArrayType>(T), 0, 0);
     case TC_UNRESOLVED:
@@ -553,10 +553,10 @@ llvm::Constant* CodeGenModule::EmitConstantDecl(const Decl* D) {
         assert(0 && "TODO");
         break;
     case DECL_VAR:
-        {
-            const VarDecl* V = cast<VarDecl>(D);
-            return EvaluateExprAsConstant(V->getInitValue());
-        }
+    {
+        const VarDecl* V = cast<VarDecl>(D);
+        return EvaluateExprAsConstant(V->getInitValue());
+    }
     case DECL_ENUMVALUE:
         assert(0 && "TODO");
         break;

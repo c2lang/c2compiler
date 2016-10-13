@@ -37,74 +37,74 @@ void RefFinder::searchStmt(const Stmt* S) {
     assert(S);
     switch (S->getKind()) {
     case STMT_RETURN:
-        {
-            const ReturnStmt* R = cast<ReturnStmt>(S);
-            if (R->getExpr()) searchExpr(R->getExpr());
-            break;
-        }
+    {
+        const ReturnStmt* R = cast<ReturnStmt>(S);
+        if (R->getExpr()) searchExpr(R->getExpr());
+        break;
+    }
     case STMT_EXPR:
         searchExpr(cast<Expr>(S));
         break;
     case STMT_IF:
-        {
-            const IfStmt* I = cast<IfStmt>(S);
-            searchStmt(I->getCond());
-            searchStmt(I->getThen());
-            if (I->getElse()) searchStmt(I->getElse());
-            break;
-        }
+    {
+        const IfStmt* I = cast<IfStmt>(S);
+        searchStmt(I->getCond());
+        searchStmt(I->getThen());
+        if (I->getElse()) searchStmt(I->getElse());
+        break;
+    }
     case STMT_WHILE:
-        {
-            const WhileStmt* W = cast<WhileStmt>(S);
-            searchStmt(W->getCond());
-            searchStmt(W->getBody());
-            break;
-        }
+    {
+        const WhileStmt* W = cast<WhileStmt>(S);
+        searchStmt(W->getCond());
+        searchStmt(W->getBody());
+        break;
+    }
     case STMT_DO:
-        {
-            const DoStmt* D = cast<DoStmt>(S);
-            searchStmt(D->getCond());
-            searchStmt(D->getBody());
-            break;
-        }
+    {
+        const DoStmt* D = cast<DoStmt>(S);
+        searchStmt(D->getCond());
+        searchStmt(D->getBody());
+        break;
+    }
     case STMT_FOR:
-        {
-            const ForStmt* F = cast<ForStmt>(S);
-            if (F->getInit()) searchStmt(F->getInit());
-            if (F->getCond()) searchExpr(F->getCond());
-            if (F->getIncr()) searchExpr(F->getIncr());
-            searchStmt(F->getBody());
-            break;
-        }
+    {
+        const ForStmt* F = cast<ForStmt>(S);
+        if (F->getInit()) searchStmt(F->getInit());
+        if (F->getCond()) searchExpr(F->getCond());
+        if (F->getIncr()) searchExpr(F->getIncr());
+        searchStmt(F->getBody());
+        break;
+    }
     case STMT_SWITCH:
-        {
-            const SwitchStmt* SW = cast<SwitchStmt>(S);
-            searchStmt(SW->getCond());
-            Stmt** Cases = SW->getCases();
-            for (unsigned i=0; i<SW->numCases(); i++) {
-                searchStmt(Cases[i]);
-            }
-            break;
+    {
+        const SwitchStmt* SW = cast<SwitchStmt>(S);
+        searchStmt(SW->getCond());
+        Stmt** Cases = SW->getCases();
+        for (unsigned i=0; i<SW->numCases(); i++) {
+            searchStmt(Cases[i]);
         }
+        break;
+    }
     case STMT_CASE:
-        {
-            const CaseStmt* C = cast<CaseStmt>(S);
-            searchExpr(C->getCond());
-            Stmt** stmts = C->getStmts();
-            for (unsigned i=0; i<C->numStmts(); i++) {
-                searchStmt(stmts[i]);
-            }
-            break;
+    {
+        const CaseStmt* C = cast<CaseStmt>(S);
+        searchExpr(C->getCond());
+        Stmt** stmts = C->getStmts();
+        for (unsigned i=0; i<C->numStmts(); i++) {
+            searchStmt(stmts[i]);
         }
+        break;
+    }
     case STMT_DEFAULT:
-        {
-            const DefaultStmt* D = cast<DefaultStmt>(S);
-            Stmt** stmts = D->getStmts();
-            for (unsigned i=0; i<D->numStmts(); i++) {
-                searchStmt(stmts[i]);
-            }
-            break;
+    {
+        const DefaultStmt* D = cast<DefaultStmt>(S);
+        Stmt** stmts = D->getStmts();
+        for (unsigned i=0; i<D->numStmts(); i++) {
+            searchStmt(stmts[i]);
         }
+        break;
+    }
     case STMT_BREAK:
     case STMT_CONTINUE:
     case STMT_LABEL:
@@ -138,51 +138,51 @@ void RefFinder::searchExpr(const Expr* E) {
     case EXPR_NIL:
         break;
     case EXPR_IDENTIFIER:
-        {
-            const IdentifierExpr* I = cast<IdentifierExpr>(E);
-            if (I->getDecl() == decl) {
-                addFileLocation(I->getLocation());
-            }
-            break;
+    {
+        const IdentifierExpr* I = cast<IdentifierExpr>(E);
+        if (I->getDecl() == decl) {
+            addFileLocation(I->getLocation());
         }
+        break;
+    }
     case EXPR_TYPE:
         // only in sizeof(int), so no need to search here
         break;
     case EXPR_CALL:
-        {
-            const CallExpr* C = cast<CallExpr>(E);
-            searchExpr(C->getFn());
-            for (unsigned i=0; i<C->numArgs(); i++) {
-                searchExpr(C->getArg(i));
-            }
-            break;
+    {
+        const CallExpr* C = cast<CallExpr>(E);
+        searchExpr(C->getFn());
+        for (unsigned i=0; i<C->numArgs(); i++) {
+            searchExpr(C->getArg(i));
         }
+        break;
+    }
     case EXPR_INITLIST:
-        {
-            const InitListExpr* I = cast<InitListExpr>(E);
-            Expr** values = I->getValues();
-            for (unsigned i=0; i<I->numValues(); i++) {
-                searchExpr(values[i]);
-            }
-            break;
+    {
+        const InitListExpr* I = cast<InitListExpr>(E);
+        Expr** values = I->getValues();
+        for (unsigned i=0; i<I->numValues(); i++) {
+            searchExpr(values[i]);
         }
+        break;
+    }
     case EXPR_DESIGNATOR_INIT:
         break;
     case EXPR_BINOP:
-        {
-            const BinaryOperator* B = cast<BinaryOperator>(E);
-            searchExpr(B->getLHS());
-            searchExpr(B->getRHS());
-            break;
-        }
+    {
+        const BinaryOperator* B = cast<BinaryOperator>(E);
+        searchExpr(B->getLHS());
+        searchExpr(B->getRHS());
+        break;
+    }
     case EXPR_CONDOP:
-        {
-            const ConditionalOperator* C = cast<ConditionalOperator>(E);
-            searchExpr(C->getCond());
-            searchExpr(C->getLHS());
-            searchExpr(C->getRHS());
-            break;
-        }
+    {
+        const ConditionalOperator* C = cast<ConditionalOperator>(E);
+        searchExpr(C->getCond());
+        searchExpr(C->getLHS());
+        searchExpr(C->getRHS());
+        break;
+    }
     case EXPR_UNARYOP:
         searchExpr(cast<UnaryOperator>(E)->getExpr());
         break;
@@ -190,32 +190,32 @@ void RefFinder::searchExpr(const Expr* E) {
         searchExpr(cast<BuiltinExpr>(E)->getExpr());
         break;
     case EXPR_ARRAYSUBSCRIPT:
-        {
-            const ArraySubscriptExpr* A = cast<ArraySubscriptExpr>(E);
-            searchExpr(A->getBase());
-            searchExpr(A->getIndex());
-            break;
-        }
+    {
+        const ArraySubscriptExpr* A = cast<ArraySubscriptExpr>(E);
+        searchExpr(A->getBase());
+        searchExpr(A->getIndex());
+        break;
+    }
     case EXPR_MEMBER:
-        {
-            const MemberExpr* M = cast<MemberExpr>(E);
-            const IdentifierExpr* rhs = M->getMember();
-            if (M->getDecl() == decl) {
-                addFileLocation(rhs->getLocation());
-            }
-            break;
+    {
+        const MemberExpr* M = cast<MemberExpr>(E);
+        const IdentifierExpr* rhs = M->getMember();
+        if (M->getDecl() == decl) {
+            addFileLocation(rhs->getLocation());
         }
+        break;
+    }
     case EXPR_PAREN:
         searchExpr(cast<ParenExpr>(E)->getExpr());
         break;
     case EXPR_BITOFFSET:
-        {
-            const BitOffsetExpr* B = cast<BitOffsetExpr>(E);
-            searchExpr(B->getLHS());
-            searchExpr(B->getRHS());
-            break;
-        }
+    {
+        const BitOffsetExpr* B = cast<BitOffsetExpr>(E);
+        searchExpr(B->getLHS());
+        searchExpr(B->getRHS());
         break;
+    }
+    break;
     case EXPR_CAST:
         assert(0 && "TODO");
         break;

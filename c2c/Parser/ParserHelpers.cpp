@@ -23,15 +23,15 @@ using namespace C2;
 
 bool BalancedDelimiterTracker::diagnoseOverflow() {
     P.Diag(P.Tok, diag::err_bracket_depth_exceeded)
-        << MaxDepth;
+            << MaxDepth;
     P.Diag(P.Tok, diag::note_bracket_depth);
     P.cutOffParsing();
     return true;
 }
 
 bool BalancedDelimiterTracker::expectAndConsume(unsigned DiagID,
-                                                const char *Msg,
-                                                tok::TokenKind SkipToTok) {
+        const char *Msg,
+        tok::TokenKind SkipToTok) {
     LOpen = P.Tok.getLocation();
     if (P.ExpectAndConsume(Kind, DiagID, Msg)) {
         if (SkipToTok != tok::unknown)
@@ -54,11 +54,11 @@ bool BalancedDelimiterTracker::diagnoseMissingClose() {
     // If we're not already at some kind of closing bracket, skip to our closing
     // token.
     if (P.Tok.isNot(tok::r_paren) && P.Tok.isNot(tok::r_brace) &&
-        P.Tok.isNot(tok::r_square) &&
-        P.SkipUntil(Close, FinalToken,
-                    C2Parser::StopAtSemi | C2Parser::StopBeforeMatch) &&
-        P.Tok.is(Close))
-    LClose = P.ConsumeAnyToken();
+            P.Tok.isNot(tok::r_square) &&
+            P.SkipUntil(Close, FinalToken,
+                        C2Parser::StopAtSemi | C2Parser::StopBeforeMatch) &&
+            P.Tok.is(Close))
+        LClose = P.ConsumeAnyToken();
     return true;
 }
 
