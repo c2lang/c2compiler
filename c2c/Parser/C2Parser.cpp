@@ -561,7 +561,8 @@ C2::ExprResult C2Parser::ParseSingleTypeSpecifier(bool allow_qualifier) {
     }
     // Syntax: pointer type
     while (Tok.is(tok::star)) {
-        base = Actions.ActOnPointerType(base.get());
+        base = Actions.ActOnPointerType(base.get(), type_qualifier);
+        type_qualifier = 0;
         ConsumeToken();
     }
     return Actions.ActOnTypeQualifier(base, type_qualifier);

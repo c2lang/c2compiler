@@ -25,7 +25,7 @@
 #define QUAL_VOLATILE   (0x2)
 #define QUALS_MASK (0x3)
 
-//#define TYPE_DEBUG
+#define TYPE_DEBUG
 //#define TYPE_MEMSIZE
 
 namespace C2 {
@@ -149,7 +149,8 @@ protected:
     void printName(StringBuilder& buffer) const;
     void debugPrint(StringBuilder& buffer) const;
 #ifdef TYPE_DEBUG
-    virtual void fullDebug(StringBuilder& buffer, int indent) const = 0;
+    void fullDebug(StringBuilder& buffer, int indent) const;
+    void fullDebugImpl(StringBuilder& buffer, int indent) const;
 #endif
     QualType getCanonicalType() const { return canonicalType; }
 public:
@@ -292,9 +293,8 @@ public:
 
     void printName(StringBuilder& buffer) const;
     void debugPrint(StringBuilder& buffer) const;
-protected:
 #ifdef TYPE_DEBUG
-    virtual void fullDebug(StringBuilder& buffer, int indent) const;
+    void fullDebugImpl(StringBuilder& buffer, int indent) const;
 #endif
 };
 
@@ -311,9 +311,8 @@ public:
 
     void printName(StringBuilder& buffer) const;
     void debugPrint(StringBuilder& buffer) const;
-protected:
 #ifdef TYPE_DEBUG
-    virtual void fullDebug(StringBuilder& buffer, int indent) const;
+    void fullDebugImpl(StringBuilder& buffer, int indent) const;
 #endif
 private:
     QualType PointeeType;
@@ -341,9 +340,8 @@ public:
 
     void printName(StringBuilder& buffer) const;
     void debugPrint(StringBuilder& buffer) const;
-protected:
 #ifdef TYPE_DEBUG
-    virtual void fullDebug(StringBuilder& buffer, int indent) const;
+    void fullDebugImpl(StringBuilder& buffer, int indent) const;
 #endif
 private:
     QualType ElementType;
@@ -371,9 +369,8 @@ public:
 
     void printName(StringBuilder& buffer) const;
     void debugPrint(StringBuilder& buffer) const;
-protected:
 #ifdef TYPE_DEBUG
-    virtual void fullDebug(StringBuilder& buffer, int indent) const;
+    void fullDebugImpl(StringBuilder& buffer, int indent) const;
 #endif
 private:
     IdentifierExpr* moduleName;
@@ -398,9 +395,8 @@ public:
 
     void printName(StringBuilder& buffer) const;
     void debugPrint(StringBuilder& buffer) const;
-protected:
 #ifdef TYPE_DEBUG
-    virtual void fullDebug(StringBuilder& buffer, int indent) const;
+    void fullDebugImpl(StringBuilder& buffer, int indent) const;
 #endif
 private:
     AliasTypeDecl* decl;
@@ -421,9 +417,8 @@ public:
 
     void printName(StringBuilder& buffer) const;
     void debugPrint(StringBuilder& buffer) const;
-protected:
 #ifdef TYPE_DEBUG
-    virtual void fullDebug(StringBuilder& buffer, int indent) const;
+    void fullDebugImpl(StringBuilder& buffer, int indent) const;
 #endif
 private:
     StructTypeDecl* decl;
@@ -443,9 +438,8 @@ public:
 
     void printName(StringBuilder& buffer) const;
     void debugPrint(StringBuilder& buffer) const;
-protected:
 #ifdef TYPE_DEBUG
-    virtual void fullDebug(StringBuilder& buffer, int indent) const;
+    void fullDebugImpl(StringBuilder& buffer, int indent) const;
 #endif
 private:
     EnumTypeDecl* decl;
@@ -463,9 +457,8 @@ public:
 
     void printName(StringBuilder& buffer) const;
     void debugPrint(StringBuilder& buffer) const;
-protected:
 #ifdef TYPE_DEBUG
-    virtual void fullDebug(StringBuilder& buffer, int indent) const;
+    void fullDebugImpl(StringBuilder& buffer, int indent) const;
 #endif
 private:
     FunctionDecl* func;
@@ -485,9 +478,8 @@ public:
 
     void printName(StringBuilder& buffer) const;
     void debugPrint(StringBuilder& buffer) const;
-protected:
 #ifdef TYPE_DEBUG
-    virtual void fullDebug(StringBuilder& buffer, int indent) const;
+    void fullDebugImpl(StringBuilder& buffer, int indent) const;
 #endif
 private:
     ImportDecl* decl;

@@ -109,7 +109,7 @@ public:
     ExprResult ActOnArrayDesignatorExpr(SourceLocation left, ExprResult Designator, ExprResult InitValue);
     ExprResult ActOnFieldDesignatorExpr(SourceLocation loc, IdentifierInfo* field, ExprResult InitValue);
     ExprResult ActOnArrayType(Expr* base, Expr* size, bool isIncremental);
-    ExprResult ActOnPointerType(Expr* base);
+    ExprResult ActOnPointerType(Expr* base, unsigned qualifier);
     ExprResult ActOnUserType(Expr* mName, Expr* tName);
     ExprResult ActOnBuiltinType(tok::TokenKind k);
     EnumTypeDecl* ActOnEnumType(const char* name, SourceLocation loc, Expr* implType, bool is_public, bool is_incr);

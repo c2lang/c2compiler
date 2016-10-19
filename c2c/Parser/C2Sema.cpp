@@ -798,14 +798,20 @@ C2::ExprResult C2Sema::ActOnArrayType(Expr* base, Expr* size, bool isIncremental
     return ExprResult(base);
 }
 
-C2::ExprResult C2Sema::ActOnPointerType(Expr* base) {
+C2::ExprResult C2Sema::ActOnPointerType(Expr* base, unsigned qualifier) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA << "SEMA: Pointer Type" << ANSI_NORMAL"\n";
 #endif
     assert(base);
     TypeExpr* typeExpr = cast<TypeExpr>(base);
-    QualType qt = Context.getPointerType(typeExpr->getType());
-    typeExpr->setType(qt);
+    QualType qt = typeExpr->getType();
+    if (qualifier) {
+        if (qualifier & TYPE_CONST) qt.addConst();
+        if (qualifier & TYPE_VOLATILE) qt.addVolatile();
+        // HMM local keyword is lost? -> TODO propagate to outer type
+        if (qualifier & TYPE_LOCAL) typeExpr->setLocalQualifier();
+    }
+    typeExpr->setType(Context.getPointerType(qt));
     return ExprResult(base);
 }
 

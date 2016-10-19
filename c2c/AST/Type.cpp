@@ -312,6 +312,38 @@ void Type::debugPrint(StringBuilder& buffer) const {
 
 #ifdef TYPE_DEBUG
 void Type::fullDebug(StringBuilder& buffer, int indent) const {
+    switch (getTypeClass()) {
+    case TC_BUILTIN:
+        cast<BuiltinType>(this)->fullDebugImpl(buffer, indent);
+        break;
+    case TC_POINTER:
+        cast<PointerType>(this)->fullDebugImpl(buffer, indent);
+        break;
+    case TC_ARRAY:
+        cast<ArrayType>(this)->fullDebugImpl(buffer, indent);
+        break;
+    case TC_UNRESOLVED:
+        cast<UnresolvedType>(this)->fullDebugImpl(buffer, indent);
+        break;
+    case TC_ALIAS:
+        cast<AliasType>(this)->fullDebugImpl(buffer, indent);
+        break;
+    case TC_STRUCT:
+        cast<StructType>(this)->fullDebugImpl(buffer, indent);
+        break;
+    case TC_ENUM:
+        cast<EnumType>(this)->fullDebugImpl(buffer, indent);
+        break;
+    case TC_FUNCTION:
+        cast<FunctionType>(this)->fullDebugImpl(buffer, indent);
+        break;
+    case TC_MODULE:
+        cast<ModuleType>(this)->fullDebugImpl(buffer, indent);
+        break;
+    }
+}
+
+void Type::fullDebugImpl(StringBuilder& buffer, int indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_ATTR);
     buffer << "canonical=";
@@ -565,11 +597,11 @@ void BuiltinType::debugPrint(StringBuilder& buffer) const {
     buffer << getName();
 }
 #ifdef TYPE_DEBUG
-void BuiltinType::fullDebug(StringBuilder& buffer, int indent) const {
+void BuiltinType::fullDebugImpl(StringBuilder& buffer, int indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
     buffer << "[BuiltinType] " << (void*)this << ' '<< getName() << '\n';
-    Type::fullDebug(buffer, indent);
+    Type::fullDebugImpl(buffer, indent);
 }
 #endif
 
@@ -588,7 +620,7 @@ void PointerType::debugPrint(StringBuilder& buffer) const {
     buffer << '*';
 }
 #ifdef TYPE_DEBUG
-void PointerType::fullDebug(StringBuilder& buffer, int indent) const {
+void PointerType::fullDebugImpl(StringBuilder& buffer, int indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
     buffer << "[PointerType] " << (void*)this << '\n';
@@ -596,7 +628,7 @@ void PointerType::fullDebug(StringBuilder& buffer, int indent) const {
     buffer.setColor(COL_ATTR);
     buffer << "pointee=\n";
     PointeeType.fullDebug(buffer, indent+INDENT);
-    Type::fullDebug(buffer, indent);
+    Type::fullDebugImpl(buffer, indent);
 }
 #endif
 
@@ -624,14 +656,14 @@ void ArrayType::debugPrint(StringBuilder& buffer) const {
     buffer << ']';
 }
 #ifdef TYPE_DEBUG
-void ArrayType::fullDebug(StringBuilder& buffer, int indent) const {
+void ArrayType::fullDebugImpl(StringBuilder& buffer, int indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
     buffer << "[ArrayType] " << (void*)this;
     buffer.setColor(COL_ATTR);
     buffer << " hasSize=" << arrayTypeBits.hasSize;
     buffer << " size=" << (int)Size.getZExtValue();
-    buffer << " isIncremental=" << incremental << '\n';
+    buffer << " isIncremental=" << arrayTypeBits.incremental << '\n';
     buffer.indent(indent);
     buffer << "sizeExpr=";
     if (sizeExpr) {
@@ -644,7 +676,7 @@ void ArrayType::fullDebug(StringBuilder& buffer, int indent) const {
     buffer.setColor(COL_ATTR);
     buffer << "element=\n";
     ElementType.fullDebug(buffer, indent+INDENT);
-    Type::fullDebug(buffer, indent);
+    Type::fullDebugImpl(buffer, indent);
 }
 #endif
 
@@ -690,7 +722,7 @@ void UnresolvedType::debugPrint(StringBuilder& buffer) const {
 }
 
 #ifdef TYPE_DEBUG
-void UnresolvedType::fullDebug(StringBuilder& buffer, int indent) const {
+void UnresolvedType::fullDebugImpl(StringBuilder& buffer, int indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
     buffer << "[UnresolvedType] " << (void*)this << '\n';
@@ -727,11 +759,11 @@ void AliasType::debugPrint(StringBuilder& buffer) const {
     buffer << "(alias)" << decl->getName();
 }
 #ifdef TYPE_DEBUG
-void AliasType::fullDebug(StringBuilder& buffer, int indent) const {
+void AliasType::fullDebugImpl(StringBuilder& buffer, int indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
     buffer << "[AliasType] " << (void*)this << '\n';
-    Type::fullDebug(buffer, indent);
+    Type::fullDebugImpl(buffer, indent);
     buffer.indent(indent);
     buffer.setColor(COL_ATTR);
     buffer << "decl=";
@@ -743,7 +775,7 @@ void AliasType::fullDebug(StringBuilder& buffer, int indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_ATTR);
     buffer << "refType=\n";
-    // Dont print fullDebug() to avoid possible circular deps
+    // Dont print fullDebugImpl() to avoid possible circular deps
     refType.fullDebug(buffer, indent+INDENT);
     //buffer.indent(indent+INDENT);
     //refType.debugPrint(buffer);
@@ -765,11 +797,11 @@ void StructType::debugPrint(StringBuilder& buffer) const {
     }
 }
 #ifdef TYPE_DEBUG
-void StructType::fullDebug(StringBuilder& buffer, int indent) const {
+void StructType::fullDebugImpl(StringBuilder& buffer, int indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
     buffer << "[StructType] " << (void*)this << " TODO" << '\n';
-    Type::fullDebug(buffer, indent);
+    Type::fullDebugImpl(buffer, indent);
 }
 #endif
 
@@ -783,12 +815,12 @@ void EnumType::debugPrint(StringBuilder& buffer) const {
     // TODO canonical?
 }
 #ifdef TYPE_DEBUG
-void EnumType::fullDebug(StringBuilder& buffer, int indent) const {
+void EnumType::fullDebugImpl(StringBuilder& buffer, int indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
     buffer << "[EnumType] " << (void*)this << '\n';
     buffer << "TODO\n";
-    Type::fullDebug(buffer, indent);
+    Type::fullDebugImpl(buffer, indent);
 }
 #endif
 
@@ -812,12 +844,12 @@ void FunctionType::debugPrint(StringBuilder& buffer) const {
     printName(buffer);
 }
 #ifdef TYPE_DEBUG
-void FunctionType::fullDebug(StringBuilder& buffer, int indent) const {
+void FunctionType::fullDebugImpl(StringBuilder& buffer, int indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
     buffer << "[FunctionType] " << (void*)this << '\n';
     buffer << "TODO\n";
-    Type::fullDebug(buffer, indent);
+    Type::fullDebugImpl(buffer, indent);
 }
 #endif
 
@@ -835,7 +867,7 @@ void ModuleType::debugPrint(StringBuilder& buffer) const {
 }
 
 #ifdef TYPE_DEBUG
-void ModuleType::fullDebug(StringBuilder& buffer, int indent) const {
+void ModuleType::fullDebugImpl(StringBuilder& buffer, int indent) const {
     buffer << "TODO ModuleType\n";
 }
 #endif
