@@ -424,6 +424,11 @@ void ImportDecl::print(StringBuilder& buffer, unsigned indent) const {
     if (isLocal()) buffer << " local";
     buffer.setColor(COL_ATTRIBUTES);
     buffer << "  used=" << isUsed() << '/' << isUsedPublic();
+    if (getModule()) {
+        buffer << " module=" << getModule()->getName();
+    } else {
+        buffer << " NO MODULE";
+    }
     buffer << '\n';
 }
 

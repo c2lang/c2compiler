@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef ANALYSER_TARGET_ANALYSER_H
-#define ANALYSER_TARGET_ANALYSER_H
+#ifndef ANALYSER_COMPONENT_ANALYSER_H
+#define ANALYSER_COMPONENT_ANALYSER_H
 
 #include <vector>
 #include "AST/Module.h"
@@ -30,14 +30,14 @@ class AST;
 class ASTContext;
 class Component;
 
-class TargetAnalyser {
+class ComponentAnalyser {
 public:
-    TargetAnalyser(const Modules& modules_,
-                   clang::DiagnosticsEngine& Diags_,
-                   Component& C_,
-                   ASTContext& context_,
-                   bool verbose_);
-    ~TargetAnalyser();
+    ComponentAnalyser(Component& C,
+                      const Modules& modules_,
+                      clang::DiagnosticsEngine& Diags_,
+                      ASTContext& context_,
+                      bool verbose_);
+    ~ComponentAnalyser();
 
     unsigned analyse(bool print1, bool print2, bool print3, bool printLib);
 private:
@@ -51,8 +51,8 @@ private:
     typedef Analysers::iterator AnalysersIter;
     Analysers analysers;
 
-    TargetAnalyser(const TargetAnalyser&);
-    TargetAnalyser& operator= (const TargetAnalyser&);
+    ComponentAnalyser(const ComponentAnalyser&);
+    ComponentAnalyser& operator= (const ComponentAnalyser&);
 };
 
 }

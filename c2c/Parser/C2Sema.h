@@ -18,6 +18,7 @@
 
 #include <clang/Basic/SourceLocation.h>
 #include <vector>
+#include <map>
 
 #include "AST/Decl.h"
 #include "AST/Stmt.h"
@@ -44,14 +45,18 @@ namespace C2 {
 class AST;
 class Expr;
 class ASTContext;
+class Component;
 
 typedef std::vector<Decl*> DeclList;
 typedef std::vector<VarDecl*> VarDeclList;
 
 class C2Sema {
 public:
-    C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, AST& ast_, clang::Preprocessor& PP_);
+    C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, clang::Preprocessor& PP_,
+           Component& comp_, const std::string& filename_);
     ~C2Sema();
+
+    void printAST() const;
 
     // file level actions
     void ActOnModule(const char* name, SourceLocation loc);
@@ -136,15 +141,21 @@ private:
 
     DiagnosticBuilder Diag(SourceLocation Loc, unsigned DiagID);
     void addSymbol(Decl* d);
+    Decl* findSymbol(const char* name) const;
     const ImportDecl* findModule(const char* name_) const;
 
     SourceManager& SourceMgr;
     DiagnosticsEngine& Diags;
+    clang::Preprocessor& PP;
 
+    Component& component;
+    Module* module;
+    AST& ast;
     ASTContext& Context;
 
-    AST& ast;
-    clang::Preprocessor& PP;
+    typedef std::map<std::string, Decl*> Symbols;
+    typedef Symbols::const_iterator SymbolsConstIter;
+    Symbols imports;
 
     C2Sema(const C2Sema&);
     C2Sema& operator= (const C2Sema&);

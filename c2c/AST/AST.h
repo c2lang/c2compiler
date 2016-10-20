@@ -17,13 +17,11 @@
 #define AST_AST_H
 
 #include <string>
-#include <map>
 
 #include <clang/Basic/SourceLocation.h>
 
 #include "AST/Decl.h"
 #include "AST/Type.h"
-#include "AST/Attr.h"
 #include "AST/ASTContext.h"
 
 namespace C2 {
@@ -36,7 +34,7 @@ public:
     {}
     ~AST() {}
 
-    void print(bool colors, bool showAttrs = false) const;
+    void print(bool colors) const;
 
     // ImportDecls
     void addImport(ImportDecl* d) { importList.push_back(d); }
@@ -62,22 +60,6 @@ public:
     void addArrayValue(ArrayValueDecl* d) { arrayValues.push_back(d); }
     unsigned numArrayValues() const { return arrayValues.size(); }
     ArrayValueDecl* getArrayValue(unsigned i) const { return arrayValues[i]; }
-
-    // Attributes
-    void addAttribute(const Decl* d, Attr* attr);
-    bool hasAttribute(const Decl* d, AttrKind k) const;
-    AttrMap& getAttributes() { return declAttrs; }
-
-    void addSymbol(Decl* d);
-
-    typedef std::map<std::string, Decl*> Symbols;
-    typedef Symbols::const_iterator SymbolsConstIter;
-    const Symbols& getSymbols() const { return symbols; }
-    Decl* findSymbol(const std::string& name) const {
-        SymbolsConstIter iter = symbols.find(name);
-        if (iter != symbols.end()) return iter->second;
-        return 0;
-    }
 
     void setName(const std::string& name, clang::SourceLocation loc) {
         modName = name;
@@ -111,10 +93,7 @@ private:
     typedef std::vector<ArrayValueDecl*> ArrayValues;
     ArrayValues arrayValues;
 
-    Symbols symbols;
-
     ASTContext astContext;
-    AttrMap declAttrs;
 
     // TEMP for Rewriter
     //FileID fileID;

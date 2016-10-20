@@ -40,12 +40,13 @@ public:
     void addAnsiCConfig(const std::string& config_);
     void addCodeGenConfig(const std::string& config_);
     void addDepsConfig(const std::string& config_);
-    void addLibrary(const std::string& lib_);
+    void addLibrary(const std::string& lib_, GenUtils::TargetType type_);
     void silenceWarning(const std::string& warn_);
 
     unsigned size() const { return files.size(); }
     const std::string& get(int i) const;
     bool hasExported(const std::string& mod) const;
+    const StringList& getExports() const { return exported; }
     bool needsInterface() const { return GenUtils::needsInterface(type); }
 
     std::string name;
@@ -63,7 +64,9 @@ public:
     StringList cConfigs;
     StringList genConfigs;
     StringList depConfigs;
-    StringList libraries;
+
+    GenUtils::Dependencies libraries;
+
     StringList silentWarnings;
 private:
     Recipe(const Recipe&);

@@ -255,7 +255,6 @@ void IntegerLiteral::print(StringBuilder& buffer, unsigned indent) const {
     Expr::print(buffer);
     buffer.setColor(COL_VALUE);
     buffer << ' ';
-
     buffer.number(getRadix(), Value.getSExtValue());
     buffer << '\n';
 }
@@ -263,7 +262,6 @@ void IntegerLiteral::print(StringBuilder& buffer, unsigned indent) const {
 void IntegerLiteral::printLiteral(StringBuilder& buffer) const {
     buffer << Value.getSExtValue();
 }
-
 
 void FloatingLiteral::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);

@@ -16,6 +16,8 @@
 #include "Builder/ManifestWriter.h"
 #include "Utils/StringBuilder.h"
 #include "FileUtils/FileUtils.h"
+#include "AST/Component.h"
+#include "AST/Module.h"
 
 using namespace C2;
 
@@ -24,13 +26,23 @@ void ManifestWriter::write(const std::string& dirname) const {
     StringBuilder out;
     out << "[library]\n";
     out << "language = \"C2\"\n";
-    for (unsigned i=0; i<modules.size(); i++) {
+
+    const GenUtils::Dependencies& deps = component.getDeps();
+    for (unsigned i=0; i<deps.size(); i++) {
         out << '\n';
-        out << "[[modules]]\n";
-        out << "name = \"" << modules[i] << "\"\n";
+        out << "[[deps]]\n";
+        out << "name = \"" << deps[i].name << "\"\n";
     }
 
-    // write file
+    const ModuleList& mods = component.getModules();
+    for (unsigned m=0; m<mods.size(); m++) {
+        const Module* M = mods[m];
+        if (!M->isExported()) continue;
+        out << '\n';
+        out << "[[modules]]\n";
+        out << "name = \"" << M->getName() << "\"\n";
+    }
+
     // TODO handle errors
     FileUtils::writeFile(dirname.c_str(), dirname + "manifest", out);
 }

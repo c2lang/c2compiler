@@ -18,6 +18,7 @@
 #include "Builder/BuilderConstants.h"
 #include "AST/Module.h"
 #include "Utils/Utils.h"
+#include "Utils/GenUtils.h"
 #include "Utils/StringBuilder.h"
 #include "Utils/color.h"
 #include <errno.h>
@@ -25,6 +26,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <algorithm>
 
 using namespace C2;
 
@@ -34,36 +36,51 @@ LibraryLoader::~LibraryLoader() {
     }
 }
 
-void LibraryLoader::scan() {
+bool LibraryLoader::scan() {
     struct stat statbuf;
     int err = stat(libdir.c_str(), &statbuf);
     if (err) {
         fprintf(stderr, "c2c: error: cannot open libdir %s: %s\n", libdir.c_str(), strerror(errno));
         // just continue to get 'cannot find library X' errors
     }
-    for (unsigned i=0; i<compNames.size(); i++) {
-        const std::string& name = compNames[i];
-        char fullname[512];
-        sprintf(fullname, "%s/%s/%s", libdir.c_str(), name.c_str(), MANIFEST_FILE);
-        err = stat(fullname, &statbuf);
-        if (err) {
-            fprintf(stderr, "c2c: error: cannot find library '%s'\n", name.c_str());
-            continue;
-        }
 
-        ManifestReader manifest(fullname);
-        if (!manifest.parse()) {
-            fprintf(stderr, "c2c: error: %s: %s\n", fullname, manifest.getErrorMsg());
-            continue;
-        }
+    assert(components.size() == 1);     // only main component
+    Component* C = components[0];
+    // create libs entry for MainComponent
+    const ModuleList& mainMods = C->getModules();
+    for (unsigned i=0; i<mainMods.size(); i++) {
+        Module* M = mainMods[i];
+        modules[M->getName()] = M;
+        libs[M->getName()] = new LibInfo("", "", C, M, true);
+    }
+    addDependencies(C);
 
-        for (unsigned e=0; e<manifest.numEntries(); e++) {
-            const ManifestEntry& entry = manifest.get(e);
-            // TODO check if already exists
-            StringBuilder c2file(512);
-            c2file << libdir << '/' << name << '/' << entry.name << ".c2i";
-            libs[entry.name] = new File(entry.headerFile, c2file.c_str(), name, !manifest.isNative());
-        }
+    bool hasErrors = false;
+    while (!deps.empty()) {
+        GenUtils::Dependency dep = deps.front();
+        deps.pop_front();
+        hasErrors |= checkLibrary(dep);
+    }
+
+    if (!hasErrors) {
+#if 0
+        printf("before\n");
+        for (unsigned i=0; i<components.size(); i++) { printf("  %s\n", components[i]->name.c_str()); }
+#endif
+        // sort Components by dep, bottom->top
+        std::sort(components.begin(), components.end(), Component::compareDeps);
+#if 0
+        printf("after\n");
+        for (unsigned i=0; i<components.size(); i++) { printf("  %s\n", components[i]->name.c_str()); }
+#endif
+    }
+    return !hasErrors;
+}
+
+void LibraryLoader::addDependencies(const Component* C) {
+    const GenUtils::Dependencies& mainDeps = C->getDeps();
+    for (unsigned i=0; i<mainDeps.size(); i++) {
+        deps.push_back(mainDeps[i]);
     }
 }
 
@@ -113,29 +130,97 @@ next:
     puts(out);
 }
 
-C2::Module* LibraryLoader::loadModule(const std::string& moduleName) {
+const LibInfo* LibraryLoader::findModuleLib(const std::string& moduleName) const {
     LibrariesConstIter iter = libs.find(moduleName);
     if (iter == libs.end()) return 0;
-
-    const File* file = iter->second;
-    Component* C = getComponent(file->component, file->isClib);
-    return C->addAST(new AST(file->c2file, true), moduleName);
+    return iter->second;
 }
 
 const std::string& LibraryLoader::getIncludeName(const std::string& modName) const {
     LibrariesConstIter iter = libs.find(modName);
     assert(iter != libs.end());
-    const File* file = iter->second;
-    return file->headerFile;
+    const LibInfo* file = iter->second;
+    return file->headerLibInfo;
 }
 
-Component* LibraryLoader::getComponent(const std::string& name, bool isCLib) {
+Component* LibraryLoader::findComponent(const std::string& name) const {
     for (unsigned i=0; i<components.size(); i++) {
         Component* C = components[i];
-        if (C->name == name) return C;
+        if (C->getName() == name) return C;
     }
-    Component* C = new Component(name, true, isCLib);
+    return 0;
+}
+
+Component* LibraryLoader::createComponent(const std::string& name, bool isCLib) {
+    Component* C = new Component(name, true, isCLib, exportList);
     components.push_back(C);
     return C;
+}
+
+bool LibraryLoader::checkLibrary(GenUtils::Dependency dep) {
+    bool hasErrors = false;
+    const std::string& componentName = dep.name;
+
+    Component* C = findComponent(componentName);
+    if (C) return false;
+
+    char fullname[512];
+    sprintf(fullname, "%s/%s/%s", libdir.c_str(), componentName.c_str(), MANIFEST_FILE);
+    struct stat statbuf;
+    int err = stat(fullname, &statbuf);
+    if (err) {
+        fprintf(stderr, "c2c: error: cannot find library '%s'\n", componentName.c_str());
+        return true;
+    }
+
+    ManifestReader manifest(fullname);
+    if (!manifest.parse()) {
+        fprintf(stderr, "c2c: error: %s: %s\n", fullname, manifest.getErrorMsg());
+        return true;
+    }
+
+    if (dep.type == GenUtils::SHARED_LIB && !manifest.hasDynamic()) {
+        fprintf(stderr, "c2c: error: '%s' is not available as shared library in %s\n",
+            componentName.c_str(), fullname);
+        hasErrors = true;
+    }
+    if (dep.type == GenUtils::STATIC_LIB&& !manifest.hasStatic()) {
+        fprintf(stderr, "c2c: error: '%s' is not available as static library in %s\n",
+            componentName.c_str(), fullname);
+        hasErrors = true;
+    }
+
+    C = createComponent(componentName, !manifest.isNative());
+    // TODO BBB CHECK that component is same type
+    const StringList& libDeps = manifest.getDeps();
+    for (unsigned i=0; i<libDeps.size(); i++) {
+        // TODO BBB read type from manifest
+        C->addDep(GenUtils::Dependency(libDeps[i], GenUtils::SHARED_LIB));
+    }
+    addDependencies(C);
+
+    // TODO BBB read Component deps from Manifest, add to Component.deps and to deps queue
+
+    for (unsigned e=0; e<manifest.numEntries(); e++) {
+        const ManifestEntry& entry = manifest.get(e);
+        const std::string& moduleName = entry.name;
+        Module* M = C->getModule(moduleName);
+
+        ModulesConstIter iter = modules.find(moduleName);
+        if (iter != modules.end()) {
+            fprintf(stderr, "c2c: error: duplicate module names %s\n", moduleName.c_str());
+            hasErrors = true;
+        }
+        modules[moduleName] = M;
+
+        // TODO check for module clashes (between libraries)
+        // existing library is at fault, since we to top-down (also check for MainComponent)
+        // TODO add multiple files
+        StringBuilder c2file(512);
+        c2file << libdir << '/' << componentName << '/' << moduleName << ".c2i";
+
+        libs[moduleName] = new LibInfo(entry.headerFile, c2file.c_str(), C, M, !manifest.isNative());
+    }
+    return hasErrors;
 }
 

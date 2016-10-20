@@ -25,40 +25,43 @@
 namespace C2 {
 
 class HeaderNamer;
+class Component;
+class TargetInfo;
 
 class CGenerator {
 public:
     struct Options {
-        Options(const std::string& outputDir_, const std::string& buildDir_)
+        Options(const std::string& outputDir_, const std::string& buildDir_, const std::string& libDir_)
             : single_module(false), printC(false)
             , outputDir(outputDir_)
             , buildDir(buildDir_)
+            , libDir(libDir_)
         {}
         bool single_module;
         bool printC;
         std::string outputDir;
         std::string buildDir;
+        std::string libDir;
     };
 
-    CGenerator(const std::string& name_,
+    CGenerator(const Component& component_,
                GenUtils::TargetType type_,
                const Modules& moduleMap_,
-               const ModuleList& mods_,
-               const StringList& libs_,
                const HeaderNamer& namer_,
-               const Options& options_);
+               const Options& options_,
+               const TargetInfo& targetInfo_);
 
     void generate();
     void build();
+    void generateExternalHeaders();
     void generateInterfaceFiles();
 private:
-    std::string targetName;
+    const Component& component;
     GenUtils::TargetType targetType;
     const Modules& moduleMap;
-    const ModuleList& mods;
-    const StringList& libs;
     const HeaderNamer& includeNamer;
     const Options& options;
+    const TargetInfo& targetInfo;
 };
 
 }

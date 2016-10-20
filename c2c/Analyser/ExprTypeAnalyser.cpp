@@ -213,6 +213,7 @@ bool ExprTypeAnalyser::checkCompatible(QualType left, const Expr* expr) const {
     //right = TypeFinder::findType(expr);
     assert(left.isValid());
     const Type* canon = left.getCanonicalType();
+    assert(canon);
     switch (canon->getTypeClass()) {
     case TC_BUILTIN:
         return checkBuiltin(left, right, expr, true);

@@ -3,8 +3,8 @@ PROJECT(c2compiler)
 
 SET(CMAKE_CXX_COMPILER "clang++")
 
-SET(CMAKE_BUILD_TYPE Release)
-#SET(CMAKE_BUILD_TYPE Debug)
+#SET(CMAKE_BUILD_TYPE Release)
+SET(CMAKE_BUILD_TYPE Debug)
 #SET(CMAKE_VERBOSE_MAKEFILE true)
 ADD_DEFINITIONS(-Wall)
 #ADD_DEFINITIONS(-Wall -Wextra -Wshadow -Wno-overloaded-virtual -Wno-unused-parameter)

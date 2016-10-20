@@ -16,21 +16,20 @@
 #ifndef BUILDER_MANIFEST_WRITER_H
 #define BUILDER_MANIFEST_WRITER_H
 
-#include "Utils/StringList.h"
+#include <string>
 
 namespace C2 {
 
+class Component;
+
 class ManifestWriter {
 public:
-    ManifestWriter() {}
+    ManifestWriter(const Component& component_) : component(component_) {}
     ~ManifestWriter() {}
 
-    void add(const std::string& name) {
-        modules.push_back(name);
-    }
     void write(const std::string& filename) const;
 private:
-    StringList modules;
+    const Component& component;
 };
 
 }

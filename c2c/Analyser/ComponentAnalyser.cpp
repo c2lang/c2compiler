@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "Analyser/TargetAnalyser.h"
+#include "Analyser/ComponentAnalyser.h"
 #include "Analyser/FileAnalyser.h"
 #include "AST/Component.h"
 #include "AST/Module.h"
@@ -23,11 +23,11 @@
 
 using namespace C2;
 
-TargetAnalyser::TargetAnalyser(const Modules& modules_,
-                               clang::DiagnosticsEngine& Diags_,
-                               Component& C,
-                               ASTContext& context_,
-                               bool verbose_)
+ComponentAnalyser::ComponentAnalyser(Component& C,
+                                     const Modules& modules_,
+                                     clang::DiagnosticsEngine& Diags_,
+                                     ASTContext& context_,
+                                     bool verbose_)
     : Diags(Diags_)
     , context(context_)
     , verbose(verbose_)
@@ -42,13 +42,13 @@ TargetAnalyser::TargetAnalyser(const Modules& modules_,
     }
 }
 
-TargetAnalyser::~TargetAnalyser() {
+ComponentAnalyser::~ComponentAnalyser() {
     for (unsigned i=0; i<analysers.size(); i++) {
         delete analysers[i];
     }
 }
 
-unsigned TargetAnalyser::analyse(bool print1, bool print2, bool print3, bool printLib) {
+unsigned ComponentAnalyser::analyse(bool print1, bool print2, bool print3, bool printLib) {
     unsigned errors = 0;
     const size_t count = analysers.size();
 
@@ -88,7 +88,7 @@ unsigned TargetAnalyser::analyse(bool print1, bool print2, bool print3, bool pri
     }
     if (errors) return errors;
 
-    // Set ArraValues
+    // Set ArrayValues
     for (IncrementalArrayValsIter iter = ia_values.begin(); iter != ia_values.end(); ++iter) {
         VarDecl* D = iter->first;
         unsigned numValues = iter->second.size();
@@ -139,7 +139,7 @@ unsigned TargetAnalyser::analyse(bool print1, bool print2, bool print3, bool pri
     return errors;
 }
 
-void TargetAnalyser::printASTs(bool printLib) const {
+void ComponentAnalyser::printASTs(bool printLib) const {
     for (unsigned i=0; i<analysers.size(); i++) {
         analysers[i]->printAST(printLib);
     }

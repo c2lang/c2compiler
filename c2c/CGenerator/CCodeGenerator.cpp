@@ -36,6 +36,7 @@
 #include "Utils/StringBuilder.h"
 #include "Utils/UtilsConstants.h"
 #include "Utils/GenUtils.h"
+#include "Utils/TargetInfo.h"
 #include "Utils/Utils.h"
 
 //#define CCODE_DEBUG
@@ -58,13 +59,15 @@ CCodeGenerator::CCodeGenerator(const std::string& filename_,
                                Mode mode_,
                                const Modules& modules_,
                                const ModuleList& mods_,
-                               const HeaderNamer& namer_)
+                               const HeaderNamer& namer_,
+                               const TargetInfo& targetInfo_)
     : filename(filename_)
     , mode(mode_)
     , inInterface(false)
     , modules(modules_)
     , mods(mods_)
     , headerNamer(namer_)
+    , targetInfo(targetInfo_)
 {
     hfilename = filename + ".h";
     cfilename = filename + ".c";
@@ -79,9 +82,9 @@ void CCodeGenerator::generate(bool printCode, const std::string& outputDir) {
 
     if (printCode) {
         if (mode != SINGLE_FILE) {
-            printf("---- code for %s ----\n%s\n", hfilename.c_str(), (const char*)hbuf);
+            printf("---- code for %s%s ----\n%s\n", outputDir.c_str(), hfilename.c_str(), (const char*)hbuf);
         }
-        printf("---- code for %s ----\n%s\n", cfilename.c_str(), (const char*)cbuf);
+        printf("---- code for %s%s ----\n%s\n", outputDir.c_str(), cfilename.c_str(), (const char*)cbuf);
     }
     switch (mode) {
     case MULTI_FILE:
@@ -91,6 +94,25 @@ void CCodeGenerator::generate(bool printCode, const std::string& outputDir) {
         break;
     }
     FileUtils::writeFile(outputDir.c_str(), outputDir + cfilename, cbuf);
+
+    StringBuilder out;
+    out << "#ifndef C2_TYPES_H\n";
+    out << "#define C2_TYPES_H\n";
+    out << '\n';
+    out << "#define NULL ((void*)0)\n";
+    out << '\n';
+    // NOTE: 64-bit only for now
+    out << "typedef signed char int8_t;\n";
+    out << "typedef unsigned char uint8_t;\n";
+    out << "typedef signed short int int16_t;\n";
+    out << "typedef unsigned short int uint16_t;\n";
+    out << "typedef signed int int32_t;\n";
+    out << "typedef unsigned int uint32_t;\n";
+    out << "typedef signed long int64_t;\n";
+    out << "typedef unsigned long uint64_t;\n";
+    out << '\n';
+    out << "#endif\n";
+    FileUtils::writeFile(outputDir.c_str(), outputDir + "c2types.h", out);
 }
 
 void CCodeGenerator::EmitAll() {
@@ -168,7 +190,7 @@ void CCodeGenerator::createLibHeader(bool printCode, const std::string& outputDi
     EmitAll();
 
     if (printCode) {
-        printf("---- code for %s ----\n%s\n", hfilename.c_str(), (const char*)hbuf);
+        printf("---- code for %s%s ----\n%s\n", outputDir.c_str(), hfilename.c_str(), (const char*)hbuf);
     }
 
     FileUtils::writeFile(outputDir.c_str(), outputDir + hfilename, hbuf);
@@ -180,6 +202,7 @@ void CCodeGenerator::EmitExpr(const Expr* E, StringBuilder& output) {
     case EXPR_INTEGER_LITERAL:
     {
         const IntegerLiteral* N = cast<IntegerLiteral>(E);
+        // TODO FIX handle uint64_t values correctly (use getZExtValue)
         output.number(N->getRadix(), N->Value.getSExtValue());
         return;
     }
@@ -524,8 +547,7 @@ void CCodeGenerator::EmitIncludes() {
     {
         StringBuilder* out = &hbuf;
         if (mode != MULTI_FILE) out = &cbuf;
-        (*out) << "#include <stdint.h>\n"; // always include int16_t, etc types
-        (*out) << "#include <stddef.h>\n"; // always include for NULL
+        (*out) << "#include \"c2types.h\"\n";
     }
 
     struct IncludeEntry {
@@ -568,7 +590,7 @@ void CCodeGenerator::EmitIncludes() {
         if (!entry.isSystem) continue;
         StringBuilder* out = &cbuf;
         if (entry.usedPublic) out = &hbuf;
-        (*out) << "#include <" << entry.name << ">\n";
+        (*out) << "#include \"" << entry.name << "\"\n";
     }
     hbuf << '\n';
     cbuf << '\n';
@@ -648,6 +670,28 @@ void CCodeGenerator::EmitGlobalVariable(const VarDecl* V) {
     if (Q.isBuiltinType() && Q.isConstQualified()) {
         // already done in EmitConstant
         return;
+    }
+
+    if (targetInfo.sys == TargetInfo::SYS_DARWIN && filename == "stdio") {
+        // Darwing workaround, since it defines stdin/out/err as #define stdin __stdinp, etc
+        if (strcmp(V->getName(), "stdin") == 0) {
+            hbuf << "#define stdin __stdinp\n";
+            hbuf << "extern FILE* __stdinp;\n";
+            hbuf << '\n';
+            return;
+        }
+        if (strcmp(V->getName(), "stdout") == 0) {
+            hbuf << "#define stdout __stdoutp\n";
+            hbuf << "extern FILE* __stdoutp;\n";
+            hbuf << '\n';
+            return;
+        }
+        if (strcmp(V->getName(), "stderr") == 0) {
+            hbuf << "#define stderr __stderrp\n";
+            hbuf << "extern FILE* __stderrp;\n";
+            hbuf << '\n';
+            return;
+        }
     }
     if (mode != SINGLE_FILE && V->isPublic()) {
         // TODO type

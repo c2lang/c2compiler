@@ -26,6 +26,7 @@
 #include "AST/AST.h"
 #include "AST/Expr.h"
 #include "AST/Attr.h"
+#include "AST/Component.h"
 
 //#define SEMA_DEBUG
 //#define SEMA_MEMSIZE
@@ -129,12 +130,15 @@ static inline UnaryOperatorKind ConvertTokenKindToUnaryOpcode(
 }
 
 
-C2Sema::C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, AST& ast_, clang::Preprocessor& PP_)
+C2Sema::C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, clang::Preprocessor& PP_,
+               Component& component_, const std::string& filename_)
     : SourceMgr(sm_)
     , Diags(Diags_)
-    , Context(ast_.getASTContext())
-    , ast(ast_)
     , PP(PP_)
+    , component(component_)
+    , module(0)
+    , ast(*new AST(filename_, component.isExternal()))
+    , Context(ast.getASTContext())
 {
 #ifdef SEMA_MEMSIZE
     memset(declCounters, 0, sizeof(declCounters));
@@ -266,6 +270,11 @@ C2Sema::~C2Sema() {
 #endif
 }
 
+void C2Sema::printAST() const {
+    ast.print(true);
+    module->printAttributes(true);
+}
+
 void C2Sema::ActOnModule(const char* name_, SourceLocation loc) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA << "SEMA: module " << name_ << " at ";
@@ -289,14 +298,22 @@ void C2Sema::ActOnModule(const char* name_, SourceLocation loc) {
         Diag(loc, diag::err_module_invalid_name) << name_;
         return;
     }
+
+    // First create Module, then AST, the get Context (from Module?)
     const char* name = Context.addIdentifier(name_, strlen(name_));
     ast.setName(name, loc);
+    module = component.getModule(name);
+    module->addAST(&ast);
+
     MEM_DECL(DECL_IMPORT);
     ImportDecl* U = new (Context) ImportDecl(name, loc, true, name, SourceLocation());
     U->setType(Context.getModuleType(U));
     U->setUsed();
     ast.addImport(U);
     addSymbol(U);
+
+    // TODO BBB for external stuff, check if module name matches manifest file
+    //Diag(ID->getLocation(), diag::err_file_wrong_module) << name << ast2->getModuleName();
 }
 
 void C2Sema::ActOnImport(const char* moduleName_, SourceLocation loc, Token& aliasTok, bool isLocal) {
@@ -507,7 +524,9 @@ void C2Sema::ActOnArrayValue(const char* name_, SourceLocation loc, Expr* Value)
 #endif
     MEM_DECL(DECL_ARRAYVALUE);
     const char* name = Context.addIdentifier(name_, strlen(name_));
-    ast.addArrayValue(new (Context) ArrayValueDecl(name, loc, Value));
+    ArrayValueDecl* decl = new (Context) ArrayValueDecl(name, loc, Value);
+    decl->setModule(module);
+    ast.addArrayValue(decl);
 }
 
 C2::StmtResult C2Sema::ActOnReturnStmt(SourceLocation loc, Expr* value) {
@@ -1114,14 +1133,14 @@ void C2Sema::ActOnAttr(Decl* D, const char* name, SourceRange range, Expr* arg) 
     }
 
     // check for duplicates
-    if (ast.hasAttribute(D, kind)) {
+    if (module->hasAttribute(D, kind)) {
         Diag(range.getBegin(), diag::warn_duplicate_attribute_exact) << name << range;
         return;
     }
 
     D->setHasAttributes();
     MEM_ADD(Attr);
-    ast.addAttribute(D, new (Context) Attr(kind, range, arg));
+    module->addAttribute(D, new (Context) Attr(kind, range, arg));
 
     // Fixup opaque structs; members are not public!
     if (kind == ATTR_OPAQUE && isa<StructTypeDecl>(D)) {
@@ -1320,14 +1339,26 @@ DiagnosticBuilder C2Sema::Diag(SourceLocation Loc, unsigned DiagID) {
 }
 
 void C2Sema::addSymbol(Decl* d) {
-    Decl* Old = ast.findSymbol(d->getName());
+    Decl* Old = findSymbol(d->getName());
     if (Old) {
-        Diag(d->getLocation(), diag::err_redefinition)
-                << d->getName();
+        Diag(d->getLocation(), diag::err_redefinition) << d->getName();
         Diag(Old->getLocation(), diag::note_previous_definition);
     } else {
-        ast.addSymbol(d);
+        if (isa<ImportDecl>(d)) {
+            imports[d->getName()]  = d;
+            d->setModule(module);   // Will be changed if it points external
+        } else {
+            if (d->isPublic() && module->isExported()) d->setExported();
+            module->addSymbol(d);
+        }
     }
+}
+
+C2::Decl* C2Sema::findSymbol(const char* name) const {
+    SymbolsConstIter iter = imports.find(name);
+    if (iter != imports.end()) return iter->second;
+
+    return module->findSymbol(name);
 }
 
 const C2::ImportDecl* C2Sema::findModule(const char* name_) const {

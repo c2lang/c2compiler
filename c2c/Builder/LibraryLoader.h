@@ -17,6 +17,7 @@
 #define BUILDER_LIBRARY_LOADER_H
 
 #include <string>
+#include <deque>
 #include <map>
 
 #include "AST/Component.h"
@@ -29,45 +30,53 @@ namespace C2 {
 
 class Module;
 
+struct LibInfo {
+    LibInfo(const std::string& h, const std::string& f, Component* c, Module* m, bool isClib_)
+        : headerLibInfo(h), c2file(f), component(c), module(m), isClib(isClib_)
+    {}
+    std::string headerLibInfo;
+    std::string c2file;
+    Component* component;
+    Module* module;
+    bool isClib;
+};
+
 class LibraryLoader : public HeaderNamer {
 public:
-    LibraryLoader(Components& components_, const char* libdir_)
+    LibraryLoader(Components& components_, Modules& modules_, const char* libdir_, const StringList& exportList_)
         : libdir(libdir_)
         , components(components_)
+        , modules(modules_)
+        , exportList(exportList_)
     {}
     ~LibraryLoader();
 
-    void addLib(const std::string& name) {
-        compNames.push_back(name);
-    }
-    void scan();
+    bool scan();
     void showLibs(bool useColors) const;
 
-    Module* loadModule(const std::string& moduleName);
-
     virtual const std::string& getIncludeName(const std::string& modName) const;
+
+    const LibInfo* findModuleLib(const std::string& moduleName) const;
 private:
-    Component* getComponent(const std::string& name, bool isCLib);
+    Component* findComponent(const std::string& name) const;
+    Component* createComponent(const std::string& name, bool isCLib);
+    bool checkLibrary(GenUtils::Dependency dep);
+    void addDependencies(const Component* C);
 
     std::string libdir;
 
-    StringList compNames;
     Components& components;
+    Modules& modules;
 
-    struct File {
-        File(const std::string& h, const std::string& f, const std::string& c, bool isClib_)
-            : headerFile(h), c2file(f), component(c), isClib(isClib_)
-        {}
-        std::string headerFile;
-        std::string c2file;
-        const std::string& component;
-        bool isClib;
-    };
-
-    typedef std::map<std::string, File*> Libraries;
+    typedef std::map<std::string, LibInfo*> Libraries; // moduleName -> LibInfo
     typedef Libraries::const_iterator LibrariesConstIter;
     typedef Libraries::iterator LibrariesIter;
     Libraries libs;
+
+    const StringList& exportList;
+
+    typedef std::deque<GenUtils::Dependency> Queue;
+    Queue deps;
 };
 
 }

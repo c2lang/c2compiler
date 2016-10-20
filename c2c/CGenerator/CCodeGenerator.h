@@ -36,13 +36,18 @@ class Expr;
 class Stmt;
 class CompoundStmt;
 class HeaderNamer;
+class TargetInfo;
 
 // generates LLVM Module from (multiple) Module(s)
 class CCodeGenerator : public CTypeWriter {
 public:
     enum Mode { MULTI_FILE, SINGLE_FILE };
-    CCodeGenerator(const std::string& filename_, Mode mode_,
-                   const Modules& modules_, const ModuleList& mods_, const HeaderNamer& namer_);
+    CCodeGenerator(const std::string& filename_,
+                   Mode mode_,
+                   const Modules& modules_,
+                   const ModuleList& mods_,
+                   const HeaderNamer& namer_,
+                   const TargetInfo& targetInfo_);
     ~CCodeGenerator();
 
     void generate(bool printCode, const std::string& outputDir);
@@ -107,6 +112,7 @@ private:
     const Modules& modules;
     const ModuleList& mods;
     const HeaderNamer& headerNamer;
+    const TargetInfo& targetInfo;
 
     StringBuilder cbuf;
     StringBuilder hbuf;

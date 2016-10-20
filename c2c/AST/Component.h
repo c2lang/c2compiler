@@ -20,6 +20,8 @@
 #include <vector>
 
 #include "AST/Module.h"
+#include "Utils/StringList.h"
+#include "Utils/GenUtils.h"
 
 namespace C2 {
 
@@ -28,27 +30,46 @@ class StringBuilder;
 
 class Component {
 public:
-    Component(const std::string& name_, bool isExternal_, bool isCLib_)
+    Component(const std::string& name_, bool isExternal_, bool isCLib_, const StringList& exportList_)
         : name(name_)
-        , isExternal(isExternal_)
-        , isCLib(isCLib_)
+        , is_external(isExternal_)
+        , is_clib(isCLib_)
+        , exportList(exportList_)
     {}
     ~Component();
 
-    Module* addAST(AST* ast, const std::string& moduleName);
+    const std::string& getName() const { return name; }
+    bool isExternal() const { return is_external; }
+    bool isCLib() const { return is_clib; }
 
     void print(StringBuilder& output) const;
     void printSymbols(StringBuilder& output) const;
 
-    std::string name;
-    bool isExternal;
-    bool isCLib;
-
-    const ModuleList& getModules() const { return modules; }
-private:
-    ModuleList modules;
 
     Module* getModule(const std::string& name);
+    const ModuleList& getModules() const { return modules; }
+
+    void addDep(const GenUtils::Dependency& dep) {
+        deps.push_back(dep);
+    }
+    const GenUtils::Dependencies& getDeps() const { return deps; }
+    bool hasDep(const Component* other) const;
+
+    static bool compareDeps(const Component* a, const Component* b) {
+        if (a->hasDep(b)) return false;
+        if (b->hasDep(a)) return true;
+        return true;
+    }
+private:
+    bool isExported(const std::string& moduleName) const;
+
+    std::string name;
+    bool is_external;
+    bool is_clib;
+
+    ModuleList modules;
+    const StringList& exportList;
+    GenUtils::Dependencies deps;
 
     Component(const Component&);
     Component& operator= (const Component&);

@@ -18,6 +18,7 @@
 #include "CGenerator/MakefileGenerator.h"
 #include "AST/AST.h"
 #include "AST/Decl.h"
+#include "AST/Component.h"
 #include "FileUtils/FileUtils.h"
 #include "Utils/StringBuilder.h"
 #include "Utils/ProcessUtils.h"
@@ -28,44 +29,41 @@
 using namespace C2;
 
 
-CGenerator::CGenerator(const std::string& name_,
+CGenerator::CGenerator(const Component& component_,
                        GenUtils::TargetType type_,
                        const Modules& moduleMap_,
-                       const ModuleList& mods_,
-                       const StringList& libs_,
                        const HeaderNamer& namer_,
-                       const Options& options_)
-    : targetName(name_)
+                       const Options& options_,
+                       const TargetInfo& targetInfo_)
+    : component(component_)
     , targetType(type_)
     , moduleMap(moduleMap_)
-    , mods(mods_)
-    , libs(libs_)
     , includeNamer(namer_)
     , options(options_)
+    , targetInfo(targetInfo_)
 {}
 
 void CGenerator::generate() {
-    std::string outdir = options.outputDir + targetName + options.buildDir;
+    std::string outdir = options.outputDir + component.getName() + options.buildDir;
+    const ModuleList& mods = component.getModules();
 
-    MakefileGenerator makeGen(outdir, targetName, targetType);
+    // generate code
     if (options.single_module) {
-        makeGen.add(targetName);
-        CCodeGenerator gen(targetName, CCodeGenerator::SINGLE_FILE, moduleMap, mods, includeNamer);
+        CCodeGenerator gen(component.getName(), CCodeGenerator::SINGLE_FILE, moduleMap, mods, includeNamer, targetInfo);
         gen.generate(options.printC, outdir);
     } else {
         for (unsigned m=0; m<mods.size(); m++) {
             Module* M = mods[m];
-            makeGen.add(M->getName());
             ModuleList single;
             single.push_back(M);
-            CCodeGenerator gen(M->getName(), CCodeGenerator::MULTI_FILE, moduleMap, single, includeNamer);
+            CCodeGenerator gen(M->getName(), CCodeGenerator::MULTI_FILE, moduleMap, single, includeNamer, targetInfo);
             gen.generate(options.printC, outdir);
         }
     }
-    for (StringListConstIter iter=libs.begin(); iter!=libs.end(); ++iter) {
-        makeGen.addLinkerLib(*iter);
-    }
-    makeGen.write();
+
+    // generate Makefile
+    MakefileGenerator makeGen(component, targetType, options.libDir, options.single_module);
+    makeGen.write(outdir);
 
     // generate exports.version
     if (targetType == GenUtils::SHARED_LIB) {
@@ -74,6 +72,7 @@ void CGenerator::generate() {
         expmap << "\tglobal:\n";
         for (unsigned m=0; m<mods.size(); m++) {
             const Module* M = mods[m];
+            if (!M->isLoaded()) continue;
             const Module::Symbols& syms = M->getSymbols();
             for (Module::SymbolsConstIter iter = syms.begin(); iter != syms.end(); ++iter) {
                 const Decl* D = iter->second;
@@ -92,7 +91,7 @@ void CGenerator::generate() {
 }
 
 void CGenerator::build() {
-    std::string outdir = options.outputDir + targetName + options.buildDir;
+    std::string outdir = options.outputDir + component.getName() + options.buildDir;
     // execute generated makefile
     int retval = ProcessUtils::run(outdir, "/usr/bin/make");
     if (retval != 0) {
@@ -100,14 +99,28 @@ void CGenerator::build() {
     }
 }
 
+void CGenerator::generateExternalHeaders() {
+    for (ModulesConstIter iter = moduleMap.begin(); iter != moduleMap.end(); ++iter) {
+        Module* M = iter->second;
+        if (!M->isLoaded()) continue;
+        if (!M->isExternal()) continue;;
+        ModuleList single;
+        single.push_back(M);
+        CCodeGenerator gen(M->getName(), CCodeGenerator::MULTI_FILE, moduleMap, single, includeNamer, targetInfo);
+        gen.createLibHeader(options.printC, options.outputDir + component.getName() + options.buildDir);
+    }
+}
+
 void CGenerator::generateInterfaceFiles() {
+    const ModuleList& mods = component.getModules();
     for (unsigned m=0; m<mods.size(); m++) {
         Module* M = mods[m];
+        if (!M->isLoaded()) continue;
         if (!M->isExported()) continue;
         ModuleList single;
         single.push_back(M);
-        CCodeGenerator gen(M->getName(), CCodeGenerator::MULTI_FILE, moduleMap, single, includeNamer);
-        gen.createLibHeader(options.printC, options.outputDir + targetName + "/");
+        CCodeGenerator gen(M->getName(), CCodeGenerator::MULTI_FILE, moduleMap, single, includeNamer, targetInfo);
+        gen.createLibHeader(options.printC, options.outputDir + component.getName() + "/");
     }
 }
 

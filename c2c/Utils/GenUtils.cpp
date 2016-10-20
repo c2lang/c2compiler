@@ -44,3 +44,11 @@ bool GenUtils::needsInterface(TargetType type) {
     }
 }
 
+const char* C2::Str(GenUtils::TargetType type) {
+    switch (type) {
+    case GenUtils::EXECUTABLE:    return "executable";
+    case GenUtils::SHARED_LIB:    return "shared";
+    case GenUtils::STATIC_LIB:    return "static";
+    }
+    return "";
+}

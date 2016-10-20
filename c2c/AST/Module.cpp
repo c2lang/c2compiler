@@ -54,10 +54,6 @@ Decl* Module::findSymbol(const std::string& name_) const {
     else return iter->second;
 }
 
-void Module::addAttributes(AttrMap& am) {
-    declAttrs.insert(am.begin(), am.end());
-}
-
 void Module::printSymbols(StringBuilder& out) const {
     out.indent(2);
     out << "module " << name << '\n';
@@ -108,7 +104,11 @@ void Module::print(StringBuilder& output) const {
 }
 
 void Module::printFiles(StringBuilder& out) const {
-    out << "  " << name << "\n";
+    out << "  ";
+    if (files.size() == 0) out.setColor(ANSI_DARKGREY);
+    out << name;
+    out.setColor(ANSI_NORMAL);
+    out << '\n';
     for (unsigned i=0; i<files.size(); i++) {
         out << "    " << files[i]->getFileName() << '\n';
     }
@@ -121,3 +121,47 @@ const AttrList& Module::getAttributes(const Decl* d) const {
     return iter->second;
 }
 
+void Module::addAttribute(const Decl* d, Attr* attr) {
+    AttrMapIter iter = declAttrs.find(d);
+    if (iter == declAttrs.end()) {
+        declAttrs[d] = AttrList();
+        iter = declAttrs.find(d);
+    }
+    iter->second.push_back(attr);
+}
+
+bool Module::hasAttribute(const Decl* d, AttrKind k) const {
+    AttrMapConstIter iter = declAttrs.find(d);
+    if (iter == declAttrs.end()) return false;
+
+    const AttrList& AL = iter->second;
+    for (AttrListConstIter ai = AL.begin(); ai != AL.end(); ++ai) {
+        if ((*ai)->getKind() == k) return true;
+    }
+
+    return false;
+}
+
+void Module::printAttributes(bool colors) const {
+    StringBuilder buffer(4*1024*1024);
+    buffer.enableColor(colors);
+
+    if (!declAttrs.empty()) {
+        buffer.setColor(ANSI_YELLOW);
+        buffer << "Attributes: (from Module)\n";
+    }
+    for (AttrMapConstIter iter = declAttrs.begin(); iter != declAttrs.end(); ++iter) {
+        const AttrList& AL = iter->second;
+        const Decl* D = iter->first;
+        buffer << "  " << D->getName() << ": ";
+        for (unsigned i=0; i<AL.size(); i++) {
+            const Attr* A = AL[i];
+            if (i != 0) buffer << ", ";
+            A->print(buffer);
+        }
+        buffer << '\n';
+    }
+    buffer.setColor(COL_NORM);
+    buffer << '\n';
+    printf("%s", buffer.c_str());
+}

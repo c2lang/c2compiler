@@ -23,7 +23,7 @@
 
 using namespace C2;
 
-void AST::print(bool colors, bool showAttrs) const {
+void AST::print(bool colors) const {
     StringBuilder buffer(4*1024*1024);
     buffer.enableColor(colors);
     buffer << "---- AST " << "(module=" << modName << ") " << filename << " ----\n";
@@ -52,50 +52,9 @@ void AST::print(bool colors, bool showAttrs) const {
         functionList[i]->print(buffer, 0);
         buffer << '\n';
     }
-    // Decl Attributes
-    if (showAttrs) {
-        buffer.setColor(ANSI_YELLOW);
-        if (!declAttrs.empty()) buffer << "Attributes:\n";
-        for (AttrMapConstIter iter = declAttrs.begin(); iter != declAttrs.end(); ++iter) {
-            const AttrList& AL = iter->second;
-            const Decl* D = iter->first;
-            buffer << "  " << D->getName() << ": ";
-            for (unsigned i=0; i<AL.size(); i++) {
-                const Attr* A = AL[i];
-                if (i != 0) buffer << ", ";
-                A->print(buffer);
-            }
-            buffer << '\n';
-        }
-    }
 
     buffer.setColor(COL_NORM);
     buffer << '\n';
     printf("%s", buffer.c_str());
-}
-
-void AST::addAttribute(const Decl* d, Attr* attr) {
-    AttrMapIter iter = declAttrs.find(d);
-    if (iter == declAttrs.end()) {
-        declAttrs[d] = AttrList();
-        iter = declAttrs.find(d);
-    }
-    iter->second.push_back(attr);
-}
-
-bool AST::hasAttribute(const Decl* d, AttrKind k) const {
-    AttrMapConstIter iter = declAttrs.find(d);
-    if (iter == declAttrs.end()) return false;
-
-    const AttrList& AL = iter->second;
-    for (AttrListConstIter ai = AL.begin(); ai != AL.end(); ++ai) {
-        if ((*ai)->getKind() == k) return true;
-    }
-
-    return false;
-}
-
-void AST::addSymbol(Decl* d) {
-    symbols[d->getName()] = d;
 }
 

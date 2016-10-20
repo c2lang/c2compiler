@@ -57,7 +57,7 @@
 
 #include "Parser/C2Parser.h"
 #include "Parser/C2Sema.h"
-#include "Analyser/TargetAnalyser.h"
+#include "Analyser/ComponentAnalyser.h"
 #include "Algo/DepGenerator.h"
 #include "Algo/TagWriter.h"
 #include "IRGenerator/CodeGenModule.h"
@@ -130,62 +130,81 @@ private:
     DummyLoader& operator= (const DummyLoader& rhs);
 };
 
-// TODO wrap these objects into single class
-static bool parse(DiagnosticsEngine& Diags,
-                  LangOptions& LangOpts,
-                  TargetInfo* pti,
-                  HeaderSearchOptions* HSOpts,
-                  SourceManager& SM,
-                  FileManager& FileMgr,
-                  AST& ast,
-                  const std::string& configs)
-{
-    // NOTE: seems to get deleted by Preprocessor
-    HeaderSearch* Headers = new HeaderSearch(HSOpts, SM, Diags, LangOpts, pti);
-    DummyLoader loader;
+class ParseHelper {
+public:
+    ParseHelper(DiagnosticsEngine& Diags_,
+                LangOptions& LangOpts_,
+                clang::TargetInfo* pti_,
+                HeaderSearchOptions* HSOpts_,
+                SourceManager& SM_,
+                FileManager& FileMgr_,
+                const std::string& configs_)
+        : Diags(Diags_)
+        , LangOpts(LangOpts_)
+        , pti(pti_)
+        , HSOpts(HSOpts_)
+        , SM(SM_)
+        , FileMgr(FileMgr_)
+        , configs(configs_)
+    {}
 
-    IntrusiveRefCntPtr<PreprocessorOptions> PPOpts(new PreprocessorOptions());
-    Preprocessor PP(PPOpts, Diags, LangOpts, SM, *Headers, loader);
+    bool parse(Component& component, const std::string& filename, bool printAST) {
+        // NOTE: seems to get deleted by Preprocessor
+        HeaderSearch* Headers = new HeaderSearch(HSOpts, SM, Diags, LangOpts, pti);
+        DummyLoader loader;
 
-    ApplyHeaderSearchOptions(PP.getHeaderSearchInfo(), *HSOpts, LangOpts, pti->getTriple());
-    PP.setPredefines(configs);
-    PP.Initialize(*pti);
+        IntrusiveRefCntPtr<PreprocessorOptions> PPOpts(new PreprocessorOptions());
+        Preprocessor PP(PPOpts, Diags, LangOpts, SM, *Headers, loader);
 
-    // File stuff
-    const FileEntry *pFile = FileMgr.getFile(ast.getFileName());
-    if (pFile == 0) {
-        fprintf(stderr, "Error opening file: '%s'\n", ast.getFileName().c_str());
-        exit(-1);
-    }
-    FileID id = SM.createFileID(pFile, SourceLocation(), SrcMgr::C_User);
-    PP.EnterSourceFile(id, nullptr, SourceLocation());
+        ApplyHeaderSearchOptions(PP.getHeaderSearchInfo(), *HSOpts, LangOpts, pti->getTriple());
+        PP.setPredefines(configs);
+        PP.Initialize(*pti);
 
-    // TEMP rewriter test
-    //ast.fileID = id;
-    // Manually set predefines (normally done in EnterMainSourceFile())
-    std::unique_ptr<llvm::MemoryBuffer> SB = llvm::MemoryBuffer::getMemBufferCopy(configs, "<built-in>");
-    assert(SB && "Cannot create predefined source buffer");
-    FileID FID = SM.createFileID(std::move(SB));
+        // File stuff
+        const FileEntry *pFile = FileMgr.getFile(filename);
+        if (pFile == 0) {
+            fprintf(stderr, "Error opening file: '%s'\n", filename.c_str());
+            exit(-1);
+        }
+        FileID id = SM.createFileID(pFile, SourceLocation(), SrcMgr::C_User);
+        PP.EnterSourceFile(id, nullptr, SourceLocation());
 
-    // NOTE: setPredefines() is normally private
-    PP.setPredefinesFileID(FID);
-    PP.EnterSourceFile(FID, nullptr, SourceLocation());
+        // TEMP rewriter test
+        //ast.fileID = id;
+        // Manually set predefines (normally done in EnterMainSourceFile())
+        std::unique_ptr<llvm::MemoryBuffer> SB = llvm::MemoryBuffer::getMemBufferCopy(configs, "<built-in>");
+        assert(SB && "Cannot create predefined source buffer");
+        FileID FID = SM.createFileID(std::move(SB));
 
-    Diags.getClient()->BeginSourceFile(LangOpts, 0);
+        // NOTE: setPredefines() is normally private
+        PP.setPredefinesFileID(FID);
+        PP.EnterSourceFile(FID, nullptr, SourceLocation());
 
-    C2Sema sema(SM, Diags, ast, PP);
-    C2Parser parser(PP, sema, ast.isInterface());
-    bool ok = parser.Parse();
+        Diags.getClient()->BeginSourceFile(LangOpts, 0);
+
+        C2Sema sema(SM, Diags, PP, component, filename);
+        C2Parser parser(PP, sema, component.isExternal());
+        bool ok = parser.Parse();
+        if (printAST) sema.printAST();
 #if 0
-    PP.EndSourceFile();
+        PP.EndSourceFile();
 
-    llvm::errs() << "\nSTATISTICS FOR '" << ast.getFileName() << "':\n";
-    PP.PrintStats();
-    PP.getIdentifierTable().PrintStats();
-    llvm::errs() << "\n";
+        llvm::errs() << "\nSTATISTICS FOR '" << ast.getFileName() << "':\n";
+        PP.PrintStats();
+        PP.getIdentifierTable().PrintStats();
+        llvm::errs() << "\n";
 #endif
-    return ok;
-}
+        return ok;
+    }
+
+    DiagnosticsEngine& Diags;
+    LangOptions& LangOpts;
+    clang::TargetInfo* pti;
+    HeaderSearchOptions* HSOpts;
+    SourceManager& SM;
+    FileManager& FileMgr;
+    const std::string& configs;
+};
 
 }
 
@@ -195,9 +214,12 @@ C2Builder::C2Builder(const Recipe& recipe_, const BuildOptions& opts)
     , options(opts)
     , c2Mod(0)
     , mainComponent(0)
-    , libLoader(components, options.libdir)
+    , libLoader(components, modules, options.libdir, recipe.getExports())
     , useColors(true)
 {
+    TargetInfo::getNative(targetInfo);
+    if (options.verbose) log(COL_VERBOSE, "Target: %s-%s", Str(targetInfo.mach), Str(targetInfo.sys));
+
     if (!isatty(1)) useColors = false;
 }
 
@@ -223,6 +245,7 @@ int C2Builder::checkFiles() {
 }
 
 int C2Builder::build() {
+    // TODO refactor this function to 'Work'-framework
     log(ANSI_GREEN, "building target %s", recipe.name.c_str());
 
     uint64_t t1_build = Utils::getCurrentTime();
@@ -300,8 +323,8 @@ int C2Builder::build() {
     // TargetInfo
     std::shared_ptr<TargetOptions> to(new TargetOptions());
     to->Triple = llvm::sys::getDefaultTargetTriple();
-    TargetInfo *pti = TargetInfo::CreateTargetInfo(Diags, to);
-    IntrusiveRefCntPtr<TargetInfo> Target(pti);
+    clang::TargetInfo *pti = clang::TargetInfo::CreateTargetInfo(Diags, to);
+    IntrusiveRefCntPtr<clang::TargetInfo> Target(pti);
 
     HeaderSearchOptions* HSOpts = new HeaderSearchOptions();
     // add current directory (=project root) to #include path
@@ -327,119 +350,49 @@ int C2Builder::build() {
     FileManager FileMgr(FileSystemOpts);
     SourceManager SM(Diags, FileMgr);
 
+    // create main Component
+    mainComponent = new Component(recipe.name, false, false, recipe.getExports());
+    components.push_back(mainComponent);
+    // NOTE: libc always SHARED_LIB for now
+    if (!recipe.noLibC) mainComponent->addDep(GenUtils::Dependency("libc", GenUtils::SHARED_LIB));
+    for (unsigned i=0; i<recipe.libraries.size(); i++) {
+        mainComponent->addDep(recipe.libraries[i]);
+    }
 
+    ParseHelper helper(Diags, LangOpts, pti, HSOpts, SM, FileMgr, PredefineBuffer);
     // phase 1a: parse and local analyse
     uint64_t t1_parse = Utils::getCurrentTime();
     unsigned errors = 0;
-    std::unique_ptr<Component> Main(new Component(recipe.name, false, false));
-    mainComponent = Main.get();
     for (unsigned i=0; i<recipe.size(); i++) {
         const std::string& filename = recipe.get(i);
 
-        if (options.verbose) log(COL_VERBOSE, "parsing (%s) %s", Main->name.c_str(), filename.c_str());
-        AST* ast = new AST(filename, false);
-        bool ok = parse(Diags, LangOpts, pti, HSOpts, SM, FileMgr, *ast, PredefineBuffer);
-        if (options.printAST0) ast->print(true, true);
+        if (options.verbose) log(COL_VERBOSE, "parsing (%s) %s", mainComponent->getName().c_str(), filename.c_str());
+        bool ok = helper.parse(*mainComponent, filename, options.printAST0);
         errors += !ok;
-        Main->addAST(ast, ast->getModuleName());
     }
     uint64_t t2_parse = Utils::getCurrentTime();
     if (options.printTiming) log(COL_TIME, "parsing took %" PRIu64" usec", t2_parse - t1_parse);
     if (client->getNumErrors()) goto out;
 
     uint64_t t1_analyse, t2_analyse;
-    // phase 1b: merge file's symbol tables to module symbols tables
-    errors = !createModules(mainComponent, Diags);
-    if (options.printSymbols) printSymbols();
-    if (Diags.hasErrorOccurred()) goto out;
-
-    // phase 1c: load required external modules
-    // TEMP placed here to easy access stuff
-    // TODO refactor to put all LLVM/CLang objects in some container
-    // TODO and put everything here into some function
+    // phase 1b: load required external Components/Modules
     {
         uint64_t t1_parse_libs = Utils::getCurrentTime();
-        if (!recipe.noLibC) libLoader.addLib("libc");
-        for (unsigned i=0; i<recipe.libraries.size(); i++) {
-            const std::string& lib = recipe.libraries[i];
-            libLoader.addLib(lib);
-        }
-        libLoader.scan();
+        if (!libLoader.scan()) goto out;
         if (options.showLibs) libLoader.showLibs(useColors);
-
-        bool ok = true;
-        const ModuleList& mainModules = Main->getModules();
-        for (unsigned i=0; i<mainModules.size(); i++) {
-            const AstList& files = mainModules[i]->getFiles();
-            for (unsigned a=0; a<files.size(); a++) {
-                AST* ast = files[a];
-                for (unsigned u=0; u<ast->numImports(); u++) {
-                    ImportDecl* D = ast->getImport(u);
-                    const std::string& name = D->getModuleName();
-                    if (haveModule(name)) continue;
-
-                    if (name == "c2") {
-                        if (options.verbose) log(COL_VERBOSE, "generating module %s", name.c_str());
-                        c2Mod = new Module("c2", true, false);
-                        modules["c2"] = c2Mod;
-                        C2ModuleLoader::load(c2Mod, context);
-                        continue;
-                    }
-                    Module* M = libLoader.loadModule(name);
-                    if (M == 0) {
-                        Diags.Report(D->getLocation(), clang::diag::err_unknown_module) << name;
-                        ok = false;
-                        continue;
-                    }
-                    if (recipe.hasExported(name)) M->setExported();
-                    modules[name] = M;
-                }
-            }
-        }
-
-        // parse all external libs
-        for (unsigned i=0; i<components.size(); i++) {
-            Component* C = components[i];
-            if (!C->isExternal) continue;
-
-            const ModuleList& mods = C->getModules();
-            for (unsigned m=0; m<mods.size(); m++) {
-                const AstList& files = mods[m]->getFiles();
-                for (unsigned a=0; a<files.size(); a++) {
-                    AST* ast2 = files[a];
-                    if (options.verbose) log(COL_VERBOSE, "parsing (%s) %s", C->name.c_str(), ast2->getFileName().c_str());
-                    if (!parse(Diags, LangOpts, pti, HSOpts, SM, FileMgr, *ast2, PredefineBuffer)) {
-                        ok = false;
-                    } else {
-                        // TODO fix
-                        /*
-                        if (name != ast2->getModuleName()) {
-                            ImportDecl* ID = ast->getImport(0);
-                            assert(ID);
-                            Diags.Report(ID->getLocation(), diag::err_file_wrong_module) << name << ast2->getModuleName();
-                            ok = false;
-                        }
-                        */
-                        Module* M = findModule(ast2->getModuleName());
-                        assert(M);
-                        ok &= addFileToModule(Diags, M, ast2);
-                    }
-                    if (options.printAST0 && options.printASTLib) ast2->print(true, true);
-                }
-            }
-        }
+        bool ok = checkImports(helper);
         uint64_t t2_parse_libs = Utils::getCurrentTime();
         if (options.printTiming) log(COL_TIME, "parsing libs took %" PRIu64" usec", t2_parse_libs - t1_parse_libs);
         if (!ok) goto out;
     }
-    // always add Main as last
-    components.push_back(Main.release());
     if (options.printModules) printComponents();
+    if (options.printSymbols) printSymbols(options.printLibSymbols);
 
     // phase 2: analyse all files
     t1_analyse = Utils::getCurrentTime();
     for (unsigned c=0; c<components.size(); c++) {
-        TargetAnalyser analyser(modules, Diags, *components[c], context, options.verbose);
+        if (options.verbose) log(COL_VERBOSE, "analysing component %s", components[c]->getName().c_str());
+        ComponentAnalyser analyser(*components[c], modules, Diags, context, options.verbose);
         errors += analyser.analyse(options.printAST1, options.printAST2, options.printAST3, options.printASTLib);
     }
     t2_analyse = Utils::getCurrentTime();
@@ -481,9 +434,80 @@ out:
     return NumErrors;
 }
 
-bool C2Builder::haveModule(const std::string& name) const {
-    ModulesConstIter iter = modules.find(name);
-    return iter != modules.end();
+bool C2Builder::checkImports(ParseHelper& helper) {
+    ImportsQueue queue;
+
+    bool ok = true;
+    const ModuleList& mainModules = mainComponent->getModules();
+    for (unsigned i=0; i<mainModules.size(); i++) {
+        ok &= checkModuleImports(helper, mainComponent, mainModules[i], queue);
+    }
+    if (!ok) return false;
+
+    while (!queue.empty()) {
+        std::string currentModuleName = queue.front();
+        queue.pop_front();
+        const LibInfo* lib = libLoader.findModuleLib(currentModuleName);
+        assert(lib);
+
+        ok &= checkModuleImports(helper, lib->component, lib->module, queue, lib);
+    }
+    return ok;
+}
+
+bool C2Builder::checkModuleImports(ParseHelper& helper, Component* component, Module* module, ImportsQueue& queue, const LibInfo* lib) {
+    if (!module->isLoaded()) {
+        assert(lib);
+        if (options.verbose) log(COL_VERBOSE, "parsing (%s) %s", component->getName().c_str(), lib->c2file.c_str());
+        if (!helper.parse(*component, lib->c2file, (options.printAST0 && options.printASTLib))) {
+            return false;
+        }
+    }
+    if (options.verbose) log(COL_VERBOSE, "checking imports for module (%s) %s", component->getName().c_str(), module->getName().c_str());
+    bool ok = true;
+    const AstList& files = module->getFiles();
+    for (unsigned a=0; a<files.size(); a++) {
+        AST* ast = files[a];
+        for (unsigned u=1; u<ast->numImports(); u++) {  // NOTE: first import is module decl
+            ImportDecl* D = ast->getImport(u);
+            const std::string& targetModuleName = D->getModuleName();
+            // handle c2 pseudo-module
+            if (targetModuleName == "c2") {
+                createC2Module();
+                D->setModule(c2Mod);
+                continue;
+            }
+            const LibInfo* target = libLoader.findModuleLib(targetModuleName);
+            if (!target) {
+                helper.Diags.Report(D->getLocation(), clang::diag::err_unknown_module) << targetModuleName;
+                ok = false;
+                continue;
+            }
+            D->setModule(target->module);
+            if (target->component != component) {
+                // check that imports are in directly dependent component (no indirect component)
+                if (!component->hasDep(target->component)) {
+                    helper.Diags.Report(D->getLocation(), clang::diag::err_indirect_component)
+                            << component->getName() << target->component->getName() << targetModuleName;
+                    ok = false;
+                    continue;
+                }
+            }
+
+            if (target->module->isLoaded()) continue;
+            queue.push_back(targetModuleName);
+        }
+    }
+    return ok;
+}
+
+void C2Builder::createC2Module() {
+    if (!c2Mod) {
+        if (options.verbose) log(COL_VERBOSE, "generating module c2");
+        c2Mod = new Module("c2", true, false);
+        modules["c2"] = c2Mod;
+        C2ModuleLoader::load(c2Mod);
+    }
 }
 
 C2::Module* C2Builder::findModule(const std::string& name) const {
@@ -492,61 +516,31 @@ C2::Module* C2Builder::findModule(const std::string& name) const {
     else return iter->second;
 }
 
-// merges symbols of all files of each module
-bool C2Builder::createModules(Component* C, DiagnosticsEngine& Diags) {
-    bool ok = true;
-    const ModuleList& mods = C->getModules();
-    for (unsigned m=0; m<mods.size(); m++) {
-        Module* M = mods[m];
-        const std::string& name = M->getName();
-        if (recipe.hasExported(name)) M->setExported();
-        modules[name] = M;
-
-        const AstList& files = M->getFiles();
-        for (unsigned a=0; a<files.size(); a++) {
-            AST* ast = files[a];
-            ok &= addFileToModule(Diags, M, ast);
-        }
-    }
-    return ok;
-}
-
-bool C2Builder::addFileToModule(DiagnosticsEngine& Diags, Module* mod, AST* ast) {
-    bool ok = true;
-    const AST::Symbols& symbols = ast->getSymbols();
-    for (AST::SymbolsConstIter iter = symbols.begin(); iter != symbols.end(); ++iter) {
-        Decl* New = iter->second;
-        if (isa<ImportDecl>(New)) continue;
-        Decl* Old = mod->findSymbol(iter->first);
-        if (Old) {
-            Diags.Report(New->getLocation(), diag::err_redefinition) << New->getName();
-            Diags.Report(Old->getLocation(), diag::note_previous_definition);
-            ok = false;
-        } else {
-            mod->addSymbol(New);
-        }
-        if (New->isPublic() && mod->isExported()) New->setExported();
-    }
-    // setModule() for ArrayValueDecls since they're not symbols
-    for (unsigned i=0; i<ast->numArrayValues(); i++) {
-        ast->getArrayValue(i)->setModule(mod);
-    }
-    // merge attributes
-    mod->addAttributes(ast->getAttributes());
-    return ok;
-}
-
-void C2Builder::printSymbols() const {
+void C2Builder::printSymbols(bool printLibs) const {
     assert(mainComponent);
     StringBuilder output;
     output.enableColor(true);
-    mainComponent->printSymbols(output);
+    if (printLibs) {
+        if (c2Mod) {
+            output << "Component <internal>\n";
+            c2Mod->printSymbols(output);
+        }
+        for (unsigned i=0; i<components.size(); i++) {
+            components[i]->printSymbols(output);
+        }
+    } else {
+        mainComponent->printSymbols(output);
+    }
     printf("%s\n", (const char*)output);
 }
 
 void C2Builder::printComponents() const {
     StringBuilder output;
     output.enableColor(true);
+    if (c2Mod) {
+        output << "Component <internal>\n";
+        c2Mod->printFiles(output);
+    }
     for (unsigned i=0; i<components.size(); i++) {
         components[i]->print(output);
     }
@@ -729,16 +723,16 @@ void C2Builder::generateInterface() const {
 
     if (options.verbose) log(COL_VERBOSE, "generating c2 interfaces");
 
-    ManifestWriter manifest;
     std::string outdir = OUTPUT_DIR + recipe.name + '/';
     const ModuleList& mods = mainComponent->getModules();
     for (unsigned m=0; m<mods.size(); m++) {
         const Module* M = mods[m];
         if (!M->isExported()) continue;
-        manifest.add(M->getName());
         InterfaceGenerator gen(*M);
         gen.write(outdir, options.printC);
     }
+
+    ManifestWriter manifest(*mainComponent);
     manifest.write(outdir);
 }
 
@@ -759,36 +753,35 @@ void C2Builder::generateOptionalC() {
         }
     }
 
-    CGenerator::Options cgen_options(OUTPUT_DIR, BUILD_DIR);
+    CGenerator::Options cgen_options(OUTPUT_DIR, BUILD_DIR, options.libdir);
     cgen_options.single_module = single_module;
     cgen_options.printC = options.printC;
-    const ModuleList& mods = mainComponent->getModules();
-    StringList libs;
-    for (unsigned i=0; i<components.size(); i++) {
-        Component* C = components[i];
-        // NOTE: libc hardcoded
-        if (C->isExternal && C->name != "libc") libs.push_back(C->name);
-    }
-    CGenerator cgen(recipe.name, recipe.type, modules, mods, libs, libLoader, cgen_options);
+    // TODO BBB add recipe.type to Component?
+    CGenerator cgen(*mainComponent, recipe.type, modules, libLoader, cgen_options, targetInfo);
+
+    // generate headers for external libraries
+    if (options.verbose) log(COL_VERBOSE, "generating external headers");
+    cgen.generateExternalHeaders();
 
     // generate C interface files
-    if (recipe.needsInterface()) cgen.generateInterfaceFiles();
+    if (recipe.needsInterface()) {
+        if (options.verbose) log(COL_VERBOSE, "generating interface headers");
+        cgen.generateInterfaceFiles();
+    }
 
     // use C-backend
-    if (options.generateC || recipe.generateCCode) {
-        if (options.verbose) log(COL_VERBOSE, "generating C code");
-        cgen.generate();
+    if (options.verbose) log(COL_VERBOSE, "generating C code");
+    cgen.generate();
 
-        uint64_t t2 = Utils::getCurrentTime();
-        if (options.printTiming) log(COL_TIME, "C code generation took %" PRIu64" usec", t2 - t1);
+    uint64_t t2 = Utils::getCurrentTime();
+    if (options.printTiming) log(COL_TIME, "C code generation took %" PRIu64" usec", t2 - t1);
 
-        if (!no_build) {
-            if (options.verbose) log(COL_VERBOSE, "building C code");
-            uint64_t t3 = Utils::getCurrentTime();
-            cgen.build();
-            uint64_t t4 = Utils::getCurrentTime();
-            if (options.printTiming) log(COL_TIME, "C code compilation took %" PRIu64" usec", t4 - t3);
-        }
+    if (!no_build) {
+        if (options.verbose) log(COL_VERBOSE, "building C code");
+        uint64_t t3 = Utils::getCurrentTime();
+        cgen.build();
+        uint64_t t4 = Utils::getCurrentTime();
+        if (options.printTiming) log(COL_TIME, "C code compilation took %" PRIu64" usec", t4 - t3);
     }
 }
 

@@ -74,8 +74,9 @@ static void debug(const char* format, ...) {
     char buffer[1024];
     va_list(Args);
     va_start(Args, format);
-    int len = vsprintf(buffer, format, Args);
-    (void*)len; // silence warning
+    //int len = vsprintf(buffer, format, Args);
+    vsprintf(buffer, format, Args);
+    //(void*)len; // silence warning
     va_end(Args);
     if (color_output) fprintf(stderr, COL_DEBUG"%s"ANSI_NORMAL"\n", buffer);
     else printf("%s\n", buffer);
@@ -634,7 +635,7 @@ void IssueDb::parseLine(const char* start, const char* end) {
 
 bool IssueDb::parseRecipe() {
     if (strncmp(cur, "bin", 3) == 0) {
-        recipe << "target test\n";
+        recipe << "executable test\n";
     } else if (strncmp(cur, "lib", 3) == 0) {
         cur += 4;
         // Syntax lib shared/static
@@ -881,7 +882,7 @@ bool IssueDb::parse() {
     if (single) {
         const char* end = cp + file.size;
         const char* line_start = cp;
-        recipe << "target test\n";
+        recipe << "executable test\n";
         if (single) {
             recipe << current_file << '\n';
         }

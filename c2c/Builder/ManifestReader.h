@@ -18,6 +18,7 @@
 
 #include <string>
 #include <vector>
+#include "Utils/StringList.h"
 
 namespace C2 {
 
@@ -35,6 +36,8 @@ public:
     ManifestReader(const char* filename_)
         : filename(filename_)
         , _isNative(false)
+        , hasStaticLib(false)
+        , hasDynamicLib(false)
     {}
     ~ManifestReader() {}
 
@@ -42,13 +45,19 @@ public:
     const char* getErrorMsg() const { return errorMsg; }
 
     bool isNative() const { return _isNative; }
+    bool hasStatic() const { return hasStaticLib; }
+    bool hasDynamic() const { return hasDynamicLib; }
     unsigned numEntries() const { return entries.size(); }
     const ManifestEntry& get(unsigned index) const { return entries[index]; }
+    const StringList& getDeps() const { return deps; }
 private:
     std::string filename;
     char errorMsg[256];
     Entries entries;
+    StringList deps;
     bool _isNative;
+    bool hasStaticLib;
+    bool hasDynamicLib;
 };
 
 }

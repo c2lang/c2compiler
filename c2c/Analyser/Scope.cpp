@@ -42,10 +42,8 @@ Scope::Scope(const std::string& name_, const Modules& modules_, clang::Diagnosti
 }
 
 void Scope::addImportDecl(ImportDecl* importDecl) {
-    const Module* mod = findAnyModule(importDecl->getModuleName());
-    assert(mod);
-    importDecl->setModule(mod);
-    if (importDecl->isLocal()) locals.push_back(mod);
+    assert(importDecl->getModule());
+    if (importDecl->isLocal()) locals.push_back(importDecl->getModule());
     importedModules[importDecl->getName()] = importDecl;
     symbolCache[importDecl->getName()] = importDecl;
 }

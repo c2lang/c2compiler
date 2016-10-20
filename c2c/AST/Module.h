@@ -19,8 +19,14 @@
 #include <string>
 #include <map>
 
+#include <clang/Basic/SourceLocation.h>
+
 #include "AST/Attr.h"
 #include "AST/AST.h"
+
+namespace clang {
+class SourceLocation;
+}
 
 namespace C2 {
 
@@ -33,6 +39,8 @@ public:
     Module(const std::string& name_, bool isExternal_, bool isCLib_);
     ~Module();
 
+    void addAST(AST* ast) { files.push_back(ast); }
+
     void addSymbol(Decl* decl);
     Decl* findSymbol(const std::string& name) const;
     const std::string& getName() const { return name; }
@@ -41,6 +49,7 @@ public:
     bool isExternal() const { return m_isExternal; }
     bool isExported() const { return m_isExported; }
     void setExported() { m_isExported = true; }
+    bool isLoaded() const { return files.size() != 0; }
 
     void dump() const;
     void printFiles(StringBuilder& output) const;
@@ -52,11 +61,11 @@ public:
     typedef Symbols::iterator SymbolsIter;
     const Symbols& getSymbols() const { return symbols; }
 
-    void addAttributes(AttrMap& am);
+    void addAttribute(const Decl* d, Attr* attr);
+    bool hasAttribute(const Decl* d, AttrKind k) const;
+    AttrMap& getAttributes() { return declAttrs; }
     const AttrList& getAttributes(const Decl* d) const;
-
-    // AST part
-    void addAST(AST* ast) { files.push_back(ast); }
+    void printAttributes(bool colors) const;
 
     const AstList& getFiles() const { return files; }
 private:

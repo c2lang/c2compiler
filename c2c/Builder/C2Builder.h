@@ -23,6 +23,7 @@
 #include "AST/Module.h"
 #include "AST/ASTContext.h"
 #include "AST/Component.h"
+#include "Utils/TargetInfo.h"
 
 namespace clang {
 class DiagnosticsEngine;
@@ -34,6 +35,7 @@ namespace C2 {
 
 class AST;
 class Recipe;
+class ParseHelper;
 
 struct BuildOptions {
     BuildOptions()
@@ -44,6 +46,7 @@ struct BuildOptions {
         , printASTLib(false)
         , printTiming(false)
         , printSymbols(false)
+        , printLibSymbols(false)
         , generateIR(false)
         , printIR(false)
         , generateC(false)
@@ -64,6 +67,7 @@ struct BuildOptions {
     bool printASTLib;
     bool printTiming;
     bool printSymbols;
+    bool printLibSymbols;
     bool generateIR;
     bool printIR;
     bool generateC;
@@ -92,17 +96,18 @@ public:
     // For external tools
     const Components& getComponents() const { return components; }
 private:
-    bool haveModule(const std::string& name) const;
     Module* findModule(const std::string& name) const;
-    bool createModules(Component* C, clang::DiagnosticsEngine& Diags);
-    bool addFileToModule(clang::DiagnosticsEngine& Diags, Module* mod, AST* ast);
+    bool checkImports(ParseHelper& helper);
     unsigned analyse();
-    void printSymbols() const;
+    void printSymbols(bool printLibs) const;
     void printComponents() const;
     void log(const char* color, const char* format, ...) const;
 
     bool checkMainFunction(clang::DiagnosticsEngine& Diags);
     bool checkExportedPackages() const;
+    typedef std::deque<std::string> ImportsQueue;
+    bool checkModuleImports(ParseHelper& helper, Component* component, Module* module, ImportsQueue& queue, const LibInfo* lib = 0);
+    void createC2Module();
 
     void rewriterTest(clang::SourceManager& SM, clang::LangOptions& LangOpts);
     void generateOptionalDeps();
@@ -113,10 +118,11 @@ private:
 
     const Recipe& recipe;
     BuildOptions options;
+    TargetInfo targetInfo;
 
     ASTContext context;
     Modules modules;
-    Module*  c2Mod;
+    Module* c2Mod;
 
     Components components;
     Component* mainComponent;

@@ -13,33 +13,24 @@
  * limitations under the License.
  */
 
-#ifndef CGENERATOR_MAKEFILE_GENERATOR_H
-#define CGENERATOR_MAKEFILE_GENERATOR_H
-
-#include "Utils/GenUtils.h"
+#ifndef UTILS_TARGET_INFO_H
+#define UTILS_TARGET_INFO_H
 
 namespace C2 {
 
-class Component;
-
-class MakefileGenerator {
+class TargetInfo {
 public:
-    MakefileGenerator(const Component& component_,
-                      GenUtils::TargetType type_,
-                      const std::string& libDir_,
-                      bool singleFile_);
+    enum System { SYS_LINUX, SYS_DARWIN, SYS_UNKNOWN };
+    enum Machine { MACH_I686, MACH_X86_64, MACH_UNKNOWN };
 
-    void write(const std::string& path);
-private:
-    const Component& component;
-    std::string libDir;
-    std::string target;
-    GenUtils::TargetType type;
-    bool singleFile;
+    System sys;
+    Machine mach;
 
-    MakefileGenerator(const MakefileGenerator&);
-    MakefileGenerator& operator= (const MakefileGenerator&);
+    static void getNative(TargetInfo& info);
 };
+
+const char* Str(TargetInfo::System sys);
+const char* Str(TargetInfo::Machine mach);
 
 }
 

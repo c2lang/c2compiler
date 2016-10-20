@@ -26,26 +26,31 @@ Component::~Component() {
     }
 }
 
-Module* Component::addAST(AST* ast, const std::string& moduleName) {
-    Module* M = getModule(moduleName);
-    M->addAST(ast);
-    return M;
-}
-
 Module* Component::getModule(const std::string& name) {
     for (unsigned i=0; i<modules.size(); i++) {
-        if (modules[i]->getName() == name) return modules[i];
+        if (modules[i]->getName() == name) { return modules[i]; }
     }
-    Module* module = new Module(name, isExternal, isCLib);
+    Module* module = new Module(name, is_external, is_clib);
+    if (isExported(name)) module->setExported();
     modules.push_back(module);
     return module;
 }
 
 void Component::print(StringBuilder& out) const {
     out << "Component " << name;
-    if (isExternal) {
+    if (is_external) {
         out.setColor(COL_ATTRIBUTES);
         out << "  external";
+        out.setColor(ANSI_NORMAL);
+    }
+    if (!deps.empty()) {
+        out.setColor(COL_EXPR);
+        out << ' ' << '(';
+        for (unsigned i=0; i<deps.size(); i++) {
+            if (i != 0) out << ", ";
+            out << deps[i].name << ' ' << Str(deps[i].type);
+        }
+        out << ')';
         out.setColor(ANSI_NORMAL);
     }
     out << '\n';
@@ -57,7 +62,24 @@ void Component::print(StringBuilder& out) const {
 void Component::printSymbols(StringBuilder& out) const {
     out << "Component " << name << '\n';
     for (unsigned i=0; i<modules.size(); i++) {
+        if (!modules[i]->isLoaded()) continue;
         modules[i]->printSymbols(out);
     }
+}
+
+bool Component::isExported(const std::string& moduleName) const {
+    for (unsigned i=0; i<exportList.size(); ++i) {
+        if (exportList[i] == moduleName) return true;
+    }
+    return false;
+}
+
+bool Component::hasDep(const Component* other) const {
+    GenUtils::DependenciesConstIter iter = deps.begin();
+    while (iter != deps.end()) {
+        if (iter->name == other->name) return true;
+        iter++;
+    }
+    return false;
 }
 

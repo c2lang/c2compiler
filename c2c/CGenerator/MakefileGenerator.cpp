@@ -14,20 +14,35 @@
  */
 
 #include "CGenerator/MakefileGenerator.h"
+#include "AST/Component.h"
 #include "Utils/StringBuilder.h"
 #include "FileUtils/FileUtils.h"
+#include "Utils/StringList.h"
 
 using namespace C2;
 
-void MakefileGenerator::add(const std::string& filename) {
-    files.push_back(filename);
-}
+MakefileGenerator::MakefileGenerator(const Component& component_,
+                                     GenUtils::TargetType type_,
+                                     const std::string& libDir_,
+                                     bool singleFile_)
+    : component(component_)
+    , libDir(libDir_)
+    , target(component.getName())
+    , type(type_)
+    , singleFile(singleFile_)
+{}
 
-void MakefileGenerator::addLinkerLib(const std::string& name) {
-    libs.push_back(name);
-}
+void MakefileGenerator::write(const std::string& path) {
+    StringList files;
+    if (singleFile) {
+        files.push_back(component.getName());
+    } else {
+        const ModuleList& mods = component.getModules();
+        for (unsigned m=0; m<mods.size(); m++) {
+            files.push_back(mods[m]->getName());
+        }
+    }
 
-void MakefileGenerator::write() {
     std::string targetname = "../";
     std::string libname;
     switch (type) {
@@ -71,6 +86,7 @@ void MakefileGenerator::write() {
     for (StringListConstIter iter=files.begin(); iter!=files.end(); ++iter) {
         out << "\tgcc " << args << " -c " << *iter << ".c -o " << *iter << ".o\n";
     }
+    const GenUtils::Dependencies& deps = component.getDeps();
     // link step
     switch (type) {
     case GenUtils::EXECUTABLE:
@@ -79,8 +95,12 @@ void MakefileGenerator::write() {
             out << ' ' << *iter << ".o";
         }
         // TODO move after switch?
-        for (StringListConstIter iter=libs.begin(); iter!=libs.end(); ++iter) {
-            out << " -l" << *iter;
+        for (unsigned i=0; i<deps.size(); i++) {
+            // TODO BBB read from manifest what type it is
+            if (deps[i].name == "libc") continue;
+            // TODO only generate -L<path> if C2 library (not pthread/libc)
+            out << " -L" << libDir << '/' << deps[i].name;
+            out << " -l" << deps[i].name;
         }
         break;
     case GenUtils::SHARED_LIB:

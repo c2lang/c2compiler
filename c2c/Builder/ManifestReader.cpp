@@ -44,6 +44,7 @@ enum TokenKind {
     rbrace,
     rbrace2,
     equals,
+    comma,
     eof,
     error,
 };
@@ -60,6 +61,7 @@ static const char* getTokenName(TokenKind k) {
     case rbrace  : return "[";
     case rbrace2 : return "]]";
     case equals  : return "=";
+    case comma   : return ",";
     case eof : return "eof";
     case error : return "error";
     }
@@ -88,48 +90,26 @@ class Token {
 public:
     Token() : kind(tok::eof), text(0), number(0) {}
 
-    tok::TokenKind getKind() const {
-        return kind;
-    }
-    void setKind(tok::TokenKind k) {
-        kind = k;
-    }
-    bool is(tok::TokenKind k) const {
-        return kind == k;
-    }
-    bool isNot(tok::TokenKind k) const {
-        return kind != k;
-    }
+    tok::TokenKind getKind() const { return kind; }
+    void setKind(tok::TokenKind k) { kind = k; }
+    bool is(tok::TokenKind k) const { return kind == k; }
+    bool isNot(tok::TokenKind k) const { return kind != k; }
 
-    Location getLoc() const {
-        return loc;
-    }
-    void setLocation(Location l) {
-        loc = l;
-    }
+    Location getLoc() const { return loc; }
+    void setLocation(Location l) { loc = l; }
 
-    const char* getText() const {
-        return text;
-    }
-    void setData(const char* d) {
-        text = d;
-    }
+    const char* getText() const { return text; }
+    void setData(const char* d) { text = d; }
 
-    uint32_t getNumber() const {
-        return number;
-    }
-    void setNumber(uint32_t n) {
-        number = n;
-    }
+    uint32_t getNumber() const { return number; }
+    void setNumber(uint32_t n) { number = n; }
 
     void clear() {
         text = 0;
         number = 0;
     }
 
-    const char* getName() const {
-        return tok::getTokenName(kind);
-    }
+    const char* getName() const { return tok::getTokenName(kind); }
 
 private:
     Location loc;
@@ -177,6 +157,11 @@ public:
             case '=':
                 Result.setLocation(loc);
                 Result.setKind(tok::equals);
+                advanceToken(1);
+                return;
+            case ',':
+                Result.setLocation(loc);
+                Result.setKind(tok::comma);
                 advanceToken(1);
                 return;
             case '[':
@@ -303,12 +288,15 @@ private:
 
 class ManifestParser {
 public:
-    ManifestParser(const std::string& filename, char* errorMsg_, Entries& entries_)
+    ManifestParser(const std::string& filename, char* errorMsg_, Entries& entries_, StringList& deps_)
         : _isNative(true)
+        , hasStaticLib(false)
+        , hasDynamicLib(false)
         , index(-1)
         , file(filename.c_str())
         , errorMsg(errorMsg_)
         , entries(entries_)
+        , deps(deps_)
     {
         errorMsg[0] = 0;
 
@@ -323,9 +311,9 @@ public:
             parseTopLevel();
         } // else got error, errorMsg should be set
     }
-    bool isNative() const {
-        return _isNative;
-    }
+    bool isNative() const { return _isNative; }
+    bool hasStatic() const { return hasStaticLib; }
+    bool hasDynamic() const { return hasDynamicLib; }
 private:
     void parseTopLevel() {
         // syntax: [library]
@@ -348,11 +336,47 @@ private:
         }
         ConsumeToken();
 
+        ExpectAndConsumeWord("type");
+        ExpectAndConsume(tok::equals);
+        ExpectAndConsume(tok::lbrace);
+        while (Tok.isNot(tok::rbrace)) {
+            Expect(tok::text);      // for now only support string values
+            char value[MAX_TEXT];
+            strcpy(value, Tok.getText());
+            if (strcmp(value, "static") == 0) {
+                hasStaticLib = true;
+            } else if (strcmp(value, "dynamic") == 0) {
+                hasDynamicLib = true;
+            } else {
+                sprintf(errorMsg, "invalid type '%s' %s", value, Tok.getLoc().str());
+                longjmp(jump_err, 1);
+            }
+            ConsumeToken();
+            if (Tok.is(tok::comma)) {
+                ConsumeToken();
+            } else if (Tok.isNot(tok::rbrace)) {
+                sprintf(errorMsg, "syntax error %s", Tok.getLoc().str());
+                longjmp(jump_err, 1);
+            }
+            // TODO handle other cases
+        }
+        ConsumeToken();
+
+        // TODO deps
+
+
         while (Tok.isNot(tok::eof)) {
             ExpectAndConsume(tok::lbrace2);
-            ExpectAndConsumeWord("modules");
-            ExpectAndConsume(tok::rbrace2);
-            parseModule();
+            Expect(tok::word);
+            if (strcmp("modules", Tok.getText()) == 0) {
+                ConsumeToken();
+                ExpectAndConsume(tok::rbrace2);
+                parseModule();
+            } else if (strcmp("deps", Tok.getText()) == 0) {
+                ConsumeToken();
+                ExpectAndConsume(tok::rbrace2);
+                parseDep();
+            }
         }
     }
     void parseModule() {
@@ -374,10 +398,24 @@ private:
             char value[MAX_TEXT];
             strcpy(value, Tok.getText());
             ConsumeToken();
-            handleKeyValue(key, keyLoc, value);
+            handleModuleKeyValue(key, keyLoc, value);
         }
     }
-    void handleKeyValue(const char* key, const Location& keyLoc, const char* value) {
+    void parseDep() {
+        index = -1;
+
+        while (Tok.is(tok::word)) {
+            // Syntax: name = ..
+            ExpectAndConsumeWord("name");
+            ExpectAndConsume(tok::equals);
+
+            // value
+            Expect(tok::text);
+            handleDep(Tok.getText(), Tok.getLoc());
+            ConsumeToken();
+        }
+    }
+    void handleModuleKeyValue(const char* key, const Location& keyLoc, const char* value) {
         if (index == -1) {
             if (strcmp(key, "name") == 0) {
                 index = entries.size();
@@ -399,6 +437,16 @@ private:
                 longjmp(jump_err, 1);
             }
         }
+    }
+    void handleDep(const char* dep, const Location& loc) {
+        for (unsigned i=0; i<deps.size(); i++) {
+            if (deps[i] == dep) {
+                sprintf(errorMsg, "duplicate dependency '%s' at %s", dep, loc.str());
+                longjmp(jump_err, 1);
+            }
+        }
+        deps.push_back(dep);
+
     }
     Location ConsumeToken() {
         prev = Tok.getLoc();
@@ -445,6 +493,8 @@ private:
     }
     // Entries stuff
     bool _isNative;
+    bool hasStaticLib;
+    bool hasDynamicLib;
     int index;
 
     C2::FileMap file;
@@ -454,16 +504,19 @@ private:
     jmp_buf jump_err;
     char* errorMsg;
     Entries& entries;
+    StringList& deps;
 };
 
 
 bool ManifestReader::parse()
 {
-    ManifestParser parser(filename, errorMsg, entries);
+    ManifestParser parser(filename, errorMsg, entries, deps);
     if (errorMsg[0] != 0) {
         return false;
     }
     _isNative = parser.isNative();
+    hasStaticLib = parser.hasStatic();
+    hasDynamicLib = parser.hasDynamic();
     return true;
 }
 

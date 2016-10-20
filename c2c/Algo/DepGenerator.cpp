@@ -43,10 +43,10 @@ void DepGenerator::write(const Components& components, const std::string& title,
     indent += INDENT;
     for (unsigned c=0; c<components.size(); c++) {
         const Component* C = components[c];
-        if (!showExternals && C->isExternal) continue;
+        if (!showExternals && C->isExternal()) continue;
 
         output.indent(indent);
-        output << "<group name='" << C->name << "' full='component:" << C->name << "' collapsed='0'>\n";
+        output << "<group name='" << C->getName() << "' full='component:" << C->getName() << "' collapsed='0'>\n";
 
         indent += INDENT;
         const ModuleList& mods = C->getModules();

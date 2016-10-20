@@ -48,7 +48,7 @@ ADD_LIBRARY(c2core
     Analyser/FunctionAnalyser.cpp
     Analyser/TypeFinder.cpp
     Analyser/ExprTypeAnalyser.cpp
-    Analyser/TargetAnalyser.cpp
+    Analyser/ComponentAnalyser.cpp
     Algo/DepVisitor.cpp
     Algo/DepGenerator.cpp
     Algo/ASTVisitor.cpp
@@ -74,6 +74,7 @@ ADD_LIBRARY(c2core
     Utils/StringBuilder.cpp
     Utils/Utils.cpp
     Utils/GenUtils.cpp
+    Utils/TargetInfo.cpp
     Utils/ProcessUtils.cpp
 )
 SET_TARGET_PROPERTIES(c2core PROPERTIES COMPILE_FLAGS "${LLVM_CXXFLAGS}")

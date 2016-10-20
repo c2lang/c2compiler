@@ -113,7 +113,7 @@ void InterfaceGenerator::write(const std::string& ifaceDir, bool printCode) {
     FileUtils::writeFile(ifaceDir.c_str(), ifaceDir + filename, iface);
 
     if (printCode) {
-        printf("---- code for %s ----\n%s\n", filename.c_str(), (const char*)iface);
+        printf("---- code for %s%s ----\n%s\n", ifaceDir.c_str(), filename.c_str(), (const char*)iface);
     }
 }
 

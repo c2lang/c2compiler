@@ -52,7 +52,8 @@ static void usage(const char* name) {
     fprintf(stderr, "   -I            - generate + print LLVM IR code\n");
     fprintf(stderr, "   -l            - list targets\n");
     fprintf(stderr, "   -p            - print all modules\n");
-    fprintf(stderr, "   -s            - print symbols\n");
+    fprintf(stderr, "   -s            - print symbols (excluding library symbols)\n");
+    fprintf(stderr, "   -S            - print symbols (including library symbols)\n");
     fprintf(stderr, "   -t            - print timing\n");
     fprintf(stderr, "   -v            - verbose logging\n");
     fprintf(stderr, "   --about       - print information about C2 and c2c\n");
@@ -127,6 +128,10 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
                 break;
             case 's':
                 opts.printSymbols = true;
+                break;
+            case 'S':
+                opts.printSymbols = true;
+                opts.printLibSymbols = true;
                 break;
             case 't':
                 opts.printTiming = true;
