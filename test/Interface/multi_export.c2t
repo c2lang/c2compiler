@@ -46,12 +46,7 @@ import aa;
 
 aa.AA a1;
 
-// @expect{complete, aa.h}
-#ifndef AA_H
-#define AA_H
-
-#include <stdint.h>
-#include <stddef.h>
+// @expect{atleast, aa.h}
 
 typedef struct aa_AA_ aa_AA;
 
@@ -60,11 +55,11 @@ struct aa_AA_ {
 };
 
 void aa_foo();
-#endif
 
 // @expect{atleast, bb.h}
 
 #include "aa.h"
+
 extern aa_AA bb_a1;
 
 

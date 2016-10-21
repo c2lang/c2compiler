@@ -15,14 +15,7 @@ module test;
 
 type Struct struct {} @(opaque)
 
-// @expect{complete, test.h}
-#ifndef TEST_H
-#define TEST_H
-
-#include <stdint.h>
-#include <stddef.h>
+// @expect{atleast, test.h}
 
 typedef struct test_Struct_ test_Struct;
-
-#endif
 

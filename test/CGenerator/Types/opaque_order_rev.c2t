@@ -17,8 +17,7 @@ type Priv struct {
 #ifndef TEST_H
 #define TEST_H
 
-#include <stdint.h>
-#include <stddef.h>
+#include "c2types.h"
 
 typedef struct test_Public_ test_Public;
 

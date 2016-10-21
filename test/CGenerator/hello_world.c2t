@@ -13,7 +13,7 @@ public func int32 main(int32 argc, const int8*[] argv) {
 }
 
 // @expect{atleast, build/test.c}
-#include <stdio.h>
+#include "stdio.h"
 
 int32_t main(int32_t argc, const char* argv[]) {
     printf("Hello World!\n");

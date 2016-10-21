@@ -9,16 +9,10 @@ public type Struct struct {
     int32 x;
 } @(opaque)
 
-// @expect{complete, build/test.h}
-#ifndef TEST_H
-#define TEST_H
-
-#include <stdint.h>
-#include <stddef.h>
+// @expect{atleast, build/test.h}
 
 typedef struct test_Struct_ test_Struct;
 
-#endif
 // @expect{atleast, build/test.c}
 
 struct test_Struct_ {

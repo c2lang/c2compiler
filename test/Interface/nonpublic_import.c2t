@@ -21,8 +21,7 @@ func void bar();
 #ifndef FOO_H
 #define FOO_H
 
-#include <stdint.h>
-#include <stddef.h>
+#include "c2types.h"
 
 void foo_bar();
 
