@@ -1,13 +1,13 @@
 module unistd;
 
-type size_t int32;
+import c2 local;
 
-func uint32 sleep(uint32 __seconds);
-func char* getcwd(char* buf, size_t size);
-func int32 chdir(const char* path);
+func c_uint sleep(c_uint __seconds);
+func c_char* getcwd(char* buf, c_size size);
+func c_int chdir(const c_char* path);
 
-const int32 R_OK = 4;
-const int32 W_OK = 2;
-const int32 X_OK = 1;
-const int32 F_OK = 0;
+const uint8 R_OK = 4;
+const uint8 W_OK = 2;
+const uint8 X_OK = 1;
+const uint8 F_OK = 0;
 

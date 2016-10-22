@@ -1,4 +1,6 @@
 module c_errno;
 
-int32 errno;
+import c2 local;
+
+c_int errno;
 

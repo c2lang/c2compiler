@@ -1,19 +1,19 @@
 module strings;
 
-func int32 bcmp(const void* s1, const void* s2, int32 n);
+import c2 local;
 
-func char* index(const char* s, int32 c);
-func char* rindex(const char* s, int32 c);
+func c_int bcmp(const void* s1, const void* s2, c_size n);
 
-func int32 ffs(int32 value);
+func c_char* index(const c_char* s, c_int c);
+func c_char* rindex(const c_char* s, c_int c);
 
-func int32 ffsl(int32 value);
+func c_int ffs(c_int value);
 
-func int32 ffsll(int64 value);
+//func c_int ffsl(c_long value);
+//func c_int ffsll(c_longlong value);
 
-func int32 fls(int32 value);
+//func c_int fls(c_int value);
 
-func int32 flsl(int32 value);
-
-func int32 flsll(int64 value);
+//func c_int flsl(c_long value);
+//func c_int flsll(c_longlong value);
 
