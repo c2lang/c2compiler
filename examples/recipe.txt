@@ -1,12 +1,12 @@
-# an example recipe with multiple targets
+# an example recipe with multiple executables
 
-target multi_file
+executable multi_file
     $warnings no-unused
     multi_file1.c2
     multi_file2.c2
 end
 
-target opaque_example
+executable opaque_example
     $warnings no-unused
     $refs
     $deps show-files show-externals
@@ -16,121 +16,121 @@ target opaque_example
     opaque_user.c2
 end
 
-target multi_mod
+executable multi_mod
     $warnings no-unused
     multi_mod1.c2
     multi_mod2.c2
 end
 
-target layer
+executable layer
     $warnings no-unused
     layer1.c2
     layer2.c2
     layer3.c2
 end
 
-target comment
+executable comment
     $warnings no-unused
     commenttest.c2
 end
 
-target hello
+executable hello
     $warnings no-unused
     $generate-ir
     helloworld.c2
 end
 
-target iter
+executable iter
     $warnings no-unused
     itertest.c2
 end
 
-target switch
+executable switch
     $warnings no-unused
     switchtest.c2
 end
 
-target typetest
+executable typetest
     $warnings no-unused
     typetest.c2
     utils.c2
 end
 
-target working_ir
+executable working_ir
     $warnings no-unused
     working_ir.c2
 end
 
-target array
+executable array
     $warnings no-unused
     arraytest.c2
 end
 
-target body
+executable body
     $warnings no-unused
     bodytest.c2
 end
 
-target decl
+executable decl
     $warnings no-unused
     decltest.c2
 end
 
-target expr
+executable expr
     $warnings no-unused
     expressiontest.c2
 end
 
-target func
+executable func
     $warnings no-unused
     functest.c2
     utils.c2
 end
 
-target if
+executable if
     $warnings no-unused
     if.c2
 end
 
-target test
+executable test
     $warnings no-unused
     test.c2
 end
 
-target inctest
+executable inctest
     $warnings no-unused
     inctest.c2
 end
 
-target deftest
+executable deftest
     $warnings no-unused
     $config FOOBAR
     deftest.c2
 end
 
-target var
+executable var
     $warnings no-unused
     vartest.c2
 end
 
-target working
+executable working
     $warnings no-unused
     working.c2
 end
 
-target use_as
+executable use_as
     $warnings no-unused
     use1.c2
     use2.c2
     use3.c2
 end
 
-target unarytest
+executable unarytest
     $warnings no-unused
     unaryTest.c2
 end
 
-target issue
+executable issue
     $warnings no-unused
     issue1.c2
     issue2.c2
@@ -138,7 +138,7 @@ target issue
     issue_type2.c2
 end
 
-target ccode
+executable ccode
     $warnings no-unused
     ccode.c2
     ccode2.c2
@@ -162,7 +162,7 @@ lib foobar shared
     mylib2.c2
 end
 
-target libc_test
+executable libc_test
     $warnings no-unused
     $refs
     $deps show-files show-externals
@@ -170,7 +170,7 @@ target libc_test
     libc_test.c2
 end
 
-target incremental
+executable incremental
     $deps show-files show-externals
     $generate-c single-module
     incr1.c2
@@ -178,23 +178,23 @@ target incremental
     incr_main.c2
 end
 
-target baremetal
+executable baremetal
     $warnings no-unused
     $nolibc
     $generate-c
     baremetal.c2
 end
 
-target pthread
+executable pthread_test
     $warnings no-unused
     $refs
     $deps show-files show-externals
     $generate-c
-    $use pthread
+    $use pthread dynamic
     pthread.c2
 end
 
-target puzzle
+executable puzzle
     $deps show-files show-externals
     $refs
     $generate-c single-module
@@ -202,14 +202,14 @@ target puzzle
     puzzle2.c2
 end
 
-target snake
+executable snake
     $deps show-files show-externals
     $refs
     $generate-c single-module
     snake.c2
 end
 
-target big
+executable big
     $warnings no-unused
     $refs
     $deps show-files show-externals

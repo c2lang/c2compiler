@@ -31,8 +31,8 @@ func void test_stdio() {
 func void test_string() {
     io.printf("testing string\n");
     const char* text = "hello";
-    int32 len = str.strlen(text);
-    io.printf("strlen(%s) = %d\n", text, len);
+    uint64 len = str.strlen(text);
+    io.printf("strlen(%s) = %lu\n", text, len);
 }
 
 func void test_strings() {
