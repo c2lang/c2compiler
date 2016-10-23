@@ -391,8 +391,9 @@ void C2Parser::ParseEnumType(const char* id, SourceLocation idLoc, bool is_publi
             if (Tok.isNot(tok::comma)) break;
             ConsumeToken();
         }
-
-        Actions.ActOnEnumTypeFinished(TheEnum, &constants[0], constants.size());
+        EnumConstantDecl** first = 0;
+        if (constants.size() > 0) first = &constants[0];
+        Actions.ActOnEnumTypeFinished(TheEnum, first, constants.size());
     }
     //SourceLocation RightBrace = Tok.getLocation();
     ExpectAndConsume(tok::r_brace);

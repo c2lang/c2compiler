@@ -778,7 +778,6 @@ C2::ExprResult C2Sema::ActOnInitList(SourceLocation left_, SourceLocation right_
 #endif
     unsigned numValues = vals.size();
     // TODO allow size = 0?
-    assert(numValues != 0);
     Expr** values = (Expr**)Context.Allocate(sizeof(Expr*)*numValues);
     memcpy(values, &vals[0], sizeof(Expr*)*numValues);
     MEM_EXPR(EXPR_INITLIST);
@@ -970,6 +969,9 @@ C2::EnumConstantDecl* C2Sema::ActOnEnumConstant(EnumTypeDecl* Enum, IdentifierIn
 }
 
 void C2Sema::ActOnEnumTypeFinished(EnumTypeDecl* Enum, EnumConstantDecl** constants_, unsigned numConstants) {
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA << "SEMA: enum finished" << ANSI_NORMAL"\n";
+#endif
     EnumConstantDecl** constants = (EnumConstantDecl**)Context.Allocate(sizeof(EnumConstantDecl*)*numConstants);
     memcpy(constants, constants_, sizeof(EnumConstantDecl*)*numConstants);
     Enum->setConstants(constants, numConstants);

@@ -51,7 +51,6 @@ public:
         const Decl* D = I->getDecl();
         assert(D);
         clang::PresumedLoc loc2 = SM.getPresumedLoc(D->getLocation());
-        assert(!loc2.isInvalid());
         if (!loc2.isInvalid()) {
             std::string name = I->getName();
             if (I->isStructFunction()) {

@@ -360,6 +360,7 @@ public:
     EnumTypeDecl(const char* name_, SourceLocation loc_,
             QualType implType_, QualType type_, bool is_incr, bool is_public)
         : TypeDecl(DECL_ENUMTYPE, name_, loc_, type_, is_public)
+        , constants(0)
         , implType(implType_)
     {
         enumTypeDeclBits.incremental = is_incr;
