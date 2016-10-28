@@ -82,7 +82,7 @@ type Enum4 enum uint32 {
     VARD4
 }
 
-float pi = 3.1415926;
+float32 pi = 3.1415926;
 
 // -- Function --
 type CallBack func int32(int32 a, utils.Point*p);

@@ -16,7 +16,7 @@ type Number int32;
 public func int32 main(int32 argc, int8*[] argv) {
     int32 a = 123;
     int32 b = 456;
-    float pi = 3.1415926;
+    float32 pi = 3.1415926;
     uint16 c;
     Number n;
     puts("Hello World!\n");
