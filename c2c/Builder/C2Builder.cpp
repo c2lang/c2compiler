@@ -66,7 +66,6 @@
 #include "Refactor/RefFinder.h"
 #include "Utils/color.h"
 #include "Utils/Utils.h"
-#include "Utils/GenUtils.h"
 #include "Utils/StringBuilder.h"
 
 using clang::DiagnosticOptions;
@@ -148,7 +147,7 @@ public:
         , configs(configs_)
     {}
 
-    bool parse(Component& component, const std::string& filename, bool printAST) {
+    bool parse(Component& component, Module* existingMod, const std::string& filename, bool printAST) {
         // NOTE: seems to get deleted by Preprocessor
         HeaderSearch* Headers = new HeaderSearch(HSOpts, SM, Diags, LangOpts, pti);
         DummyLoader loader;
@@ -182,7 +181,7 @@ public:
 
         Diags.getClient()->BeginSourceFile(LangOpts, 0);
 
-        C2Sema sema(SM, Diags, PP, component, filename);
+        C2Sema sema(SM, Diags, PP, component, existingMod, filename);
         C2Parser parser(PP, sema, component.isExternal());
         bool ok = parser.Parse();
         if (printAST) sema.printAST();
@@ -218,8 +217,7 @@ C2Builder::C2Builder(const Recipe& recipe_, const BuildOptions& opts)
     , useColors(true)
 {
     TargetInfo::getNative(targetInfo);
-    if (options.verbose) log(COL_VERBOSE, "Target: %s-%s", Str(targetInfo.mach), Str(targetInfo.sys));
-
+    if (options.verbose) log(COL_VERBOSE, "Target: %s", Str(targetInfo));
     if (!isatty(1)) useColors = false;
 }
 
@@ -351,12 +349,14 @@ int C2Builder::build() {
     SourceManager SM(Diags, FileMgr);
 
     // create main Component
-    mainComponent = new Component(recipe.name, false, false, recipe.getExports());
+    mainComponent = new Component(recipe.name, recipe.type, false, false, recipe.getExports());
     components.push_back(mainComponent);
     // NOTE: libc always SHARED_LIB for now
-    if (!recipe.noLibC) mainComponent->addDep(GenUtils::Dependency("libc", GenUtils::SHARED_LIB));
+    if (!recipe.noLibC) {
+        libLoader.addDep(mainComponent, "libc", Component::SHARED_LIB);
+    }
     for (unsigned i=0; i<recipe.libraries.size(); i++) {
-        mainComponent->addDep(recipe.libraries[i]);
+        libLoader.addDep(mainComponent, recipe.libraries[i].name, recipe.libraries[i].type);
     }
 
     ParseHelper helper(Diags, LangOpts, pti, HSOpts, SM, FileMgr, PredefineBuffer);
@@ -367,7 +367,7 @@ int C2Builder::build() {
         const std::string& filename = recipe.get(i);
 
         if (options.verbose) log(COL_VERBOSE, "parsing (%s) %s", mainComponent->getName().c_str(), filename.c_str());
-        bool ok = helper.parse(*mainComponent, filename, options.printAST0);
+        bool ok = helper.parse(*mainComponent, 0, filename, options.printAST0);
         errors += !ok;
     }
     uint64_t t2_parse = Utils::getCurrentTime();
@@ -459,7 +459,7 @@ bool C2Builder::checkModuleImports(ParseHelper& helper, Component* component, Mo
     if (!module->isLoaded()) {
         assert(lib);
         if (options.verbose) log(COL_VERBOSE, "parsing (%s) %s", component->getName().c_str(), lib->c2file.c_str());
-        if (!helper.parse(*component, lib->c2file, (options.printAST0 && options.printASTLib))) {
+        if (!helper.parse(*component, module, lib->c2file, (options.printAST0 && options.printASTLib))) {
             return false;
         }
     }
@@ -575,7 +575,7 @@ bool C2Builder::checkMainFunction(DiagnosticsEngine& Diags) {
         }
     }
 
-    if (recipe.type == GenUtils::EXECUTABLE) {
+    if (recipe.type == Component::EXECUTABLE) {
         // bin: must have main
         if (options.testMode) return true;
         if (!mainDecl) {
@@ -756,8 +756,7 @@ void C2Builder::generateOptionalC() {
     CGenerator::Options cgen_options(OUTPUT_DIR, BUILD_DIR, options.libdir);
     cgen_options.single_module = single_module;
     cgen_options.printC = options.printC;
-    // TODO BBB add recipe.type to Component?
-    CGenerator cgen(*mainComponent, recipe.type, modules, libLoader, cgen_options, targetInfo);
+    CGenerator cgen(*mainComponent, modules, libLoader, cgen_options, targetInfo);
 
     // generate headers for external libraries
     if (options.verbose) log(COL_VERBOSE, "generating external headers");

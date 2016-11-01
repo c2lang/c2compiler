@@ -21,17 +21,27 @@
 
 using namespace C2;
 
+static const char* type2str(Component::Type type) {
+    if (type == Component::SHARED_LIB) return "dynamic";
+    if (type == Component::STATIC_LIB) return "static";
+    return "";
+}
+
 #include <stdio.h>
 void ManifestWriter::write(const std::string& dirname) const {
     StringBuilder out;
     out << "[library]\n";
     out << "language = \"C2\"\n";
+    out << "type = [ \"" << type2str(component.getType()) << "\" ]\n";
+    out << "linkname = \"" << component.getName() << "\"\n";
 
-    const GenUtils::Dependencies& deps = component.getDeps();
+    const Component::Dependencies& deps = component.getDeps();
     for (unsigned i=0; i<deps.size(); i++) {
+        const Component* dep = deps[i];
         out << '\n';
         out << "[[deps]]\n";
-        out << "name = \"" << deps[i].name << "\"\n";
+        out << "name = \"" << dep->getName() << "\"\n";
+        out << "type = \"" << type2str(dep->getType()) << "\"\n";
     }
 
     const ModuleList& mods = component.getModules();

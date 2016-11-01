@@ -131,12 +131,12 @@ static inline UnaryOperatorKind ConvertTokenKindToUnaryOpcode(
 
 
 C2Sema::C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, clang::Preprocessor& PP_,
-               Component& component_, const std::string& filename_)
+               Component& component_, Module* existingMod, const std::string& filename_)
     : SourceMgr(sm_)
     , Diags(Diags_)
     , PP(PP_)
     , component(component_)
-    , module(0)
+    , module(existingMod)
     , ast(*new AST(filename_, component.isExternal()))
     , Context(ast.getASTContext())
 {
@@ -302,7 +302,15 @@ void C2Sema::ActOnModule(const char* name_, SourceLocation loc) {
     // First create Module, then AST, the get Context (from Module?)
     const char* name = Context.addIdentifier(name_, strlen(name_));
     ast.setName(name, loc);
-    module = component.getModule(name);
+
+    if (module) {
+        // for external modules, filename should match module name
+        if (module->getName() != name) {
+            Diag(loc, diag::err_file_wrong_module) << module->getName() << name;
+        }
+    } else {
+        module = component.getModule(name);
+    }
     module->addAST(&ast);
 
     MEM_DECL(DECL_IMPORT);
@@ -311,9 +319,6 @@ void C2Sema::ActOnModule(const char* name_, SourceLocation loc) {
     U->setUsed();
     ast.addImport(U);
     addSymbol(U);
-
-    // TODO BBB for external stuff, check if module name matches manifest file
-    //Diag(ID->getLocation(), diag::err_file_wrong_module) << name << ast2->getModuleName();
 }
 
 void C2Sema::ActOnImport(const char* moduleName_, SourceLocation loc, Token& aliasTok, bool isLocal) {

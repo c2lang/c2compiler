@@ -41,8 +41,15 @@ void Recipe::addDepsConfig(const std::string& config_) {
     depConfigs.push_back(config_);
 }
 
-void Recipe::addLibrary(const std::string& lib_, GenUtils::TargetType type_) {
-    libraries.push_back(GenUtils::Dependency(lib_, type_));
+void Recipe::addLibrary(const std::string& lib_, Component::Type type_) {
+    libraries.push_back(Dependency(lib_, type_));
+}
+
+bool Recipe::hasLibrary(const std::string& lib_) const {
+    for (unsigned i=0; i<libraries.size(); i++) {
+        if (libraries[i].name == lib_) return true;
+    }
+    return false;
 }
 
 void Recipe::silenceWarning(const std::string& warn_) {

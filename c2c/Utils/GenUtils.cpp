@@ -34,21 +34,3 @@ void GenUtils::toCapital(const std::string& input, StringBuilder& output) {
     }
 }
 
-bool GenUtils::needsInterface(TargetType type) {
-    switch (type) {
-    case EXECUTABLE:
-        return false;
-    case SHARED_LIB:
-    case STATIC_LIB:
-        return true;
-    }
-}
-
-const char* C2::Str(GenUtils::TargetType type) {
-    switch (type) {
-    case GenUtils::EXECUTABLE:    return "executable";
-    case GenUtils::SHARED_LIB:    return "shared";
-    case GenUtils::STATIC_LIB:    return "static";
-    }
-    return "";
-}

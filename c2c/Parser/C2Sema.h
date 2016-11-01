@@ -46,6 +46,7 @@ class AST;
 class Expr;
 class ASTContext;
 class Component;
+class Module;
 
 typedef std::vector<Decl*> DeclList;
 typedef std::vector<VarDecl*> VarDeclList;
@@ -53,7 +54,7 @@ typedef std::vector<VarDecl*> VarDeclList;
 class C2Sema {
 public:
     C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, clang::Preprocessor& PP_,
-           Component& comp_, const std::string& filename_);
+           Component& comp_, Module* existingMod, const std::string& filename_);
     ~C2Sema();
 
     void printAST() const;

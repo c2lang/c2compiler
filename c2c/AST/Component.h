@@ -21,7 +21,6 @@
 
 #include "AST/Module.h"
 #include "Utils/StringList.h"
-#include "Utils/GenUtils.h"
 
 namespace C2 {
 
@@ -30,29 +29,46 @@ class StringBuilder;
 
 class Component {
 public:
-    Component(const std::string& name_, bool isExternal_, bool isCLib_, const StringList& exportList_)
+    enum Type { EXECUTABLE=0, SHARED_LIB, STATIC_LIB };
+
+    Component(const std::string& name_,
+            Type type_,
+            bool isExternal_,
+            bool isCLib_,
+            const StringList& exportList_)
         : name(name_)
-        , is_external(isExternal_)
-        , is_clib(isCLib_)
-        , exportList(exportList_)
+          , type(type_)
+          , is_external(isExternal_)
+          , is_clib(isCLib_)
+          , exportList(exportList_)
     {}
     ~Component();
 
     const std::string& getName() const { return name; }
+    const std::string& getLinkPath() const { return linkPath; }
+    const std::string& getLinkName() const { return linkName; }
+    Type getType() const { return type; }
     bool isExternal() const { return is_external; }
     bool isCLib() const { return is_clib; }
+    bool isSharedLib() const { return type == SHARED_LIB; }
+    bool isStaticLib() const { return type == STATIC_LIB; }
+
+    void setLinkInfo(const std::string& path_, const std::string& name_) {
+        linkPath = path_;
+        linkName = name_;
+    }
 
     void print(StringBuilder& output) const;
     void printSymbols(StringBuilder& output) const;
 
 
-    Module* getModule(const std::string& name);
+    Module* getModule(const std::string& name_);
     const ModuleList& getModules() const { return modules; }
+    Module* findModule(const std::string& name_) const;
 
-    void addDep(const GenUtils::Dependency& dep) {
-        deps.push_back(dep);
-    }
-    const GenUtils::Dependencies& getDeps() const { return deps; }
+    typedef std::vector<Component*> Dependencies;
+    void addDep(Component* c) { deps.push_back(c); }
+    const Dependencies& getDeps() const { return deps; }
     bool hasDep(const Component* other) const;
 
     static bool compareDeps(const Component* a, const Component* b) {
@@ -64,18 +80,23 @@ private:
     bool isExported(const std::string& moduleName) const;
 
     std::string name;
+    std::string linkPath;       // used for external libs (-L..)
+    std::string linkName;       // used for external libs (-l..)
+    Type type;
     bool is_external;
     bool is_clib;
 
     ModuleList modules;
     const StringList& exportList;
-    GenUtils::Dependencies deps;
+    Dependencies deps;
 
     Component(const Component&);
     Component& operator= (const Component&);
 };
 
 typedef std::vector<Component*> Components;
+
+const char* Str(Component::Type type);
 
 }
 

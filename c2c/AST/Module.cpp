@@ -105,7 +105,7 @@ void Module::print(StringBuilder& output) const {
 
 void Module::printFiles(StringBuilder& out) const {
     out << "  ";
-    if (files.size() == 0) out.setColor(ANSI_DARKGREY);
+    if (files.size() == 0) out.setColor(ANSI_GREY);
     out << name;
     out.setColor(ANSI_NORMAL);
     out << '\n';

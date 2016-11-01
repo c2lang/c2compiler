@@ -23,6 +23,7 @@
 #include "Utils/StringBuilder.h"
 #include "Utils/ProcessUtils.h"
 #include "Utils/color.h"
+#include "Utils/GenUtils.h"
 
 #include <stdio.h>
 
@@ -30,13 +31,11 @@ using namespace C2;
 
 
 CGenerator::CGenerator(const Component& component_,
-                       GenUtils::TargetType type_,
                        const Modules& moduleMap_,
                        const HeaderNamer& namer_,
                        const Options& options_,
                        const TargetInfo& targetInfo_)
     : component(component_)
-    , targetType(type_)
     , moduleMap(moduleMap_)
     , includeNamer(namer_)
     , options(options_)
@@ -62,11 +61,11 @@ void CGenerator::generate() {
     }
 
     // generate Makefile
-    MakefileGenerator makeGen(component, targetType, options.libDir, options.single_module);
+    MakefileGenerator makeGen(component, options.libDir, options.single_module, targetInfo);
     makeGen.write(outdir);
 
     // generate exports.version
-    if (targetType == GenUtils::SHARED_LIB) {
+    if (component.isSharedLib()) {
         StringBuilder expmap;
         expmap << "LIB_1.0 {\n";
         expmap << "\tglobal:\n";

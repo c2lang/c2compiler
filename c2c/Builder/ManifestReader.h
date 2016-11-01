@@ -33,8 +33,9 @@ typedef std::vector<ManifestEntry> Entries;
 
 class ManifestReader {
 public:
-    ManifestReader(const char* filename_)
-        : filename(filename_)
+    ManifestReader(const std::string& name_, const char* filename_)
+        : componentName(name_)
+        , filename(filename_)
         , _isNative(false)
         , hasStaticLib(false)
         , hasDynamicLib(false)
@@ -47,11 +48,14 @@ public:
     bool isNative() const { return _isNative; }
     bool hasStatic() const { return hasStaticLib; }
     bool hasDynamic() const { return hasDynamicLib; }
+    const std::string& getLinkName() const { return linkName; }
     unsigned numEntries() const { return entries.size(); }
     const ManifestEntry& get(unsigned index) const { return entries[index]; }
     const StringList& getDeps() const { return deps; }
 private:
+    const std::string& componentName;
     std::string filename;
+    std::string linkName;
     char errorMsg[256];
     Entries entries;
     StringList deps;

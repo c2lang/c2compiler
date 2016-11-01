@@ -16,25 +16,26 @@
 #ifndef CGENERATOR_MAKEFILE_GENERATOR_H
 #define CGENERATOR_MAKEFILE_GENERATOR_H
 
-#include "Utils/GenUtils.h"
+#include <string>
 
 namespace C2 {
 
 class Component;
+class TargetInfo;
 
 class MakefileGenerator {
 public:
     MakefileGenerator(const Component& component_,
-                      GenUtils::TargetType type_,
                       const std::string& libDir_,
-                      bool singleFile_);
+                      bool singleFile_,
+                      const TargetInfo& targetInfo_);
 
     void write(const std::string& path);
 private:
     const Component& component;
     std::string libDir;
     std::string target;
-    GenUtils::TargetType type;
+    const TargetInfo& targetInfo;
     bool singleFile;
 
     MakefileGenerator(const MakefileGenerator&);

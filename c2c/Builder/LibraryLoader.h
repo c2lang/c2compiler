@@ -43,13 +43,18 @@ struct LibInfo {
 
 class LibraryLoader : public HeaderNamer {
 public:
-    LibraryLoader(Components& components_, Modules& modules_, const char* libdir_, const StringList& exportList_)
+    LibraryLoader(Components& components_,
+                  Modules& modules_,
+                  const char* libdir_,
+                  const StringList& exportList_)
         : libdir(libdir_)
         , components(components_)
         , modules(modules_)
         , exportList(exportList_)
     {}
     ~LibraryLoader();
+
+    void addDep(Component* src, const std::string& dest, Component::Type type);
 
     bool scan();
     void showLibs(bool useColors) const;
@@ -58,9 +63,18 @@ public:
 
     const LibInfo* findModuleLib(const std::string& moduleName) const;
 private:
+    struct Dependency {
+        Dependency(Component* s, const std::string& n, Component::Type t)
+            : src(s), name(n), type(t)
+        {}
+        Component* src;
+        std::string name;
+        Component::Type type;
+    };
     Component* findComponent(const std::string& name) const;
-    Component* createComponent(const std::string& name, bool isCLib);
-    bool checkLibrary(GenUtils::Dependency dep);
+    Component* createComponent(const std::string& name, bool isCLib, Component::Type type);
+    Component* findModuleComponent(const std::string& moduleName) const;
+    bool checkLibrary(const Dependency& dep);
     void addDependencies(const Component* C);
 
     std::string libdir;
@@ -75,7 +89,7 @@ private:
 
     const StringList& exportList;
 
-    typedef std::deque<GenUtils::Dependency> Queue;
+    typedef std::deque<Dependency> Queue;
     Queue deps;
 };
 

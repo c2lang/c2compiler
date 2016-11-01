@@ -26,21 +26,30 @@ Component::~Component() {
     }
 }
 
-Module* Component::getModule(const std::string& name) {
+Module* Component::getModule(const std::string& name_) {
     for (unsigned i=0; i<modules.size(); i++) {
-        if (modules[i]->getName() == name) { return modules[i]; }
+        if (modules[i]->getName() == name_) { return modules[i]; }
     }
-    Module* module = new Module(name, is_external, is_clib);
-    if (isExported(name)) module->setExported();
+    Module* module = new Module(name_, is_external, is_clib);
+    if (isExported(name_)) module->setExported();
     modules.push_back(module);
     return module;
 }
 
+Module* Component::findModule(const std::string& name_) const {
+    for (unsigned i=0; i<modules.size(); i++) {
+        if (modules[i]->getName() == name_) { return modules[i]; }
+    }
+    return 0;
+}
+
 void Component::print(StringBuilder& out) const {
-    out << "Component " << name;
+    out << "Component " << name << ' ';
+    out.setColor(COL_ATTRIBUTES);
+    out << Str(type);
     if (is_external) {
         out.setColor(COL_ATTRIBUTES);
-        out << "  external";
+        out << " external";
         out.setColor(ANSI_NORMAL);
     }
     if (!deps.empty()) {
@@ -48,7 +57,7 @@ void Component::print(StringBuilder& out) const {
         out << ' ' << '(';
         for (unsigned i=0; i<deps.size(); i++) {
             if (i != 0) out << ", ";
-            out << deps[i].name << ' ' << Str(deps[i].type);
+            out << deps[i]->name << ' ' << Str(deps[i]->type);
         }
         out << ')';
         out.setColor(ANSI_NORMAL);
@@ -75,11 +84,18 @@ bool Component::isExported(const std::string& moduleName) const {
 }
 
 bool Component::hasDep(const Component* other) const {
-    GenUtils::DependenciesConstIter iter = deps.begin();
-    while (iter != deps.end()) {
-        if (iter->name == other->name) return true;
-        iter++;
+    for (unsigned i=0; i<deps.size(); i++) {
+        if (deps[i] == other) return true;
     }
     return false;
+}
+
+const char* C2::Str(Component::Type type) {
+    switch (type) {
+    case Component::EXECUTABLE:    return "executable";
+    case Component::SHARED_LIB:    return "shared";
+    case Component::STATIC_LIB:    return "static";
+    }
+    return "";
 }
 

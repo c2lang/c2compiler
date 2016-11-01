@@ -2,9 +2,11 @@
 [library]
 language = "C"
 type = [ "static", "dynamic" ]
+linkname = "pthread"
 
 [[deps]]
 name = "libc"
+type = "dynamic"
 
 [[modules]]
 name = "pthread"

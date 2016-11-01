@@ -15,6 +15,7 @@
 
 #include "Builder/ManifestReader.h"
 #include "FileUtils/FileMap.h"
+#include "AST/Component.h"
 
 #include <stdio.h>
 #include <ctype.h>
@@ -31,6 +32,13 @@
 #define MAX_TEXT 128
 
 using namespace C2;
+
+
+static Component::Type str2dep(const char* type) {
+    if (strcmp("static", type) == 0) return Component::STATIC_LIB;
+    if (strcmp("dynamic", type) == 0) return Component::SHARED_LIB;
+    return (Component::Type)-1;
+}
 
 namespace tok {
 enum TokenKind {
@@ -288,15 +296,22 @@ private:
 
 class ManifestParser {
 public:
-    ManifestParser(const std::string& filename, char* errorMsg_, Entries& entries_, StringList& deps_)
+    ManifestParser(const std::string& name_,
+                   const std::string& filename,
+                   char* errorMsg_,
+                   Entries& entries_,
+                   StringList& deps_,
+                   std::string& linkName_)
         : _isNative(true)
         , hasStaticLib(false)
         , hasDynamicLib(false)
         , index(-1)
         , file(filename.c_str())
+        , componentName(name_)
         , errorMsg(errorMsg_)
         , entries(entries_)
         , deps(deps_)
+        , linkName(linkName_)
     {
         errorMsg[0] = 0;
 
@@ -362,10 +377,14 @@ private:
         }
         ConsumeToken();
 
-        // TODO deps
-
-
         while (Tok.isNot(tok::eof)) {
+            if (Tok.is(tok::word)) {
+                // linkname = "x" (optional)
+                if (strcmp("linkname", Tok.getText()) == 0) {
+                    parseLinkName();
+                    continue;
+                }
+            }
             ExpectAndConsume(tok::lbrace2);
             Expect(tok::word);
             if (strcmp("modules", Tok.getText()) == 0) {
@@ -401,19 +420,39 @@ private:
             handleModuleKeyValue(key, keyLoc, value);
         }
     }
+    void parseLinkName() {
+        // TODO duplicate checking
+        ExpectAndConsumeWord("linkname");
+        ExpectAndConsume(tok::equals);
+        Expect(tok::text);
+        linkName = Tok.getText();
+        ConsumeToken();
+    }
     void parseDep() {
         index = -1;
-
-        while (Tok.is(tok::word)) {
-            // Syntax: name = ..
-            ExpectAndConsumeWord("name");
-            ExpectAndConsume(tok::equals);
-
-            // value
-            Expect(tok::text);
-            handleDep(Tok.getText(), Tok.getLoc());
-            ConsumeToken();
+        // Syntax: name = <value>
+        ExpectAndConsumeWord("name");
+        ExpectAndConsume(tok::equals);
+        Expect(tok::text);
+        char value[MAX_TEXT];
+        strcpy(value, Tok.getText());
+        Location valueLoc = ConsumeToken();
+        if (componentName == value) {
+            sprintf(errorMsg, "self dependency %s", valueLoc.str());
+            longjmp(jump_err, 1);
         }
+
+        // type = "static" | "dynamic"
+        ExpectAndConsumeWord("type");
+        ExpectAndConsume(tok::equals);
+        Expect(tok::text);
+        Component::Type depType = str2dep(Tok.getText());
+        if (depType == (Component::Type)-1) {
+            sprintf(errorMsg, "invalid dependency type (supported are static|dynamic) %s", Tok.getLoc().str());
+            longjmp(jump_err, 1);
+        }
+        ConsumeToken();
+        handleDep(value, valueLoc, depType);
     }
     void handleModuleKeyValue(const char* key, const Location& keyLoc, const char* value) {
         if (index == -1) {
@@ -438,7 +477,7 @@ private:
             }
         }
     }
-    void handleDep(const char* dep, const Location& loc) {
+    void handleDep(const char* dep, const Location& loc, Component::Type depType) {
         for (unsigned i=0; i<deps.size(); i++) {
             if (deps[i] == dep) {
                 sprintf(errorMsg, "duplicate dependency '%s' at %s", dep, loc.str());
@@ -498,6 +537,7 @@ private:
     int index;
 
     C2::FileMap file;
+    const std::string& componentName;
     Tokenizer tokenizer;
     Token Tok;
     Location prev;
@@ -505,12 +545,13 @@ private:
     char* errorMsg;
     Entries& entries;
     StringList& deps;
+    std::string& linkName;
 };
 
 
 bool ManifestReader::parse()
 {
-    ManifestParser parser(filename, errorMsg, entries, deps);
+    ManifestParser parser(componentName, filename, errorMsg, entries, deps, linkName);
     if (errorMsg[0] != 0) {
         return false;
     }

@@ -25,7 +25,7 @@
 #include "Builder/BuilderConstants.h"
 
 #include "FileUtils/FileMap.h"
-#include "Utils/GenUtils.h"
+#include "AST/Component.h"
 
 using namespace C2;
 
@@ -80,7 +80,7 @@ void RecipeReader::handleLine(char* line) {
             if (strcmp(kw, "executable") == 0) {
                 const char* target_name = get_token();
                 if (target_name == 0) error("expected executable name");
-                current = new Recipe(target_name, GenUtils::EXECUTABLE);
+                current = new Recipe(target_name, Component::EXECUTABLE);
                 recipes.push_back(current);
                 state = INSIDE_TARGET;
             } else if (strcmp(kw, "lib") == 0) {
@@ -89,11 +89,11 @@ void RecipeReader::handleLine(char* line) {
                 const char* type_name = get_token();
                 if (type_name == 0) error("expected library type");
 
-                GenUtils::TargetType type = GenUtils::SHARED_LIB;
+                Component::Type type = Component::SHARED_LIB;
                 if (strcmp(type_name, "shared") == 0) {
-                    type = GenUtils::SHARED_LIB;
+                    type = Component::SHARED_LIB;
                 } else if (strcmp(type_name, "static") == 0) {
-                    type = GenUtils::STATIC_LIB;
+                    type = Component::STATIC_LIB;
                 } else {
                     error("unknown library type '%s'", type_name);
                 }
@@ -163,20 +163,25 @@ void RecipeReader::handleLine(char* line) {
                 } else if (strcmp(tok, "nolibc") == 0) {
                     current->noLibC = true;
                 } else if (strcmp(tok, "use") == 0) {
-                    // Syntax: $use <libname> <type>,  type = static/dynamic
-                    // TODO check duplicates
+                    // syntax: $use <libname> <type>,  type = static/dynamic
                     const char* tok2 = get_token();
                     if (!tok2) error("missing library name");
                     std::string libname = tok2;
                     const char* tok3 = get_token();
                     if (!tok3) error("missing library type");
-                    GenUtils::TargetType libtype = GenUtils::SHARED_LIB;
+                    Component::Type libtype = Component::SHARED_LIB;
                     if (strcmp(tok3, "static") == 0) {
-                        libtype = GenUtils::STATIC_LIB;
+                        libtype = Component::STATIC_LIB;
                     } else if (strcmp(tok3, "dynamic") == 0) {
-                        libtype = GenUtils::SHARED_LIB;
+                        libtype = Component::SHARED_LIB;
                     } else {
                         error("unknown library type '%s'", tok3);
+                    }
+                    if (current->name == libname) {
+                        error("cannot have dependency on self for target %s", libname.c_str());
+                    }
+                    if (current->hasLibrary(libname)) {
+                        error("duplicate dependency for %s", libname.c_str());
                     }
                     current->addLibrary(libname, libtype);
                 } else {
@@ -254,11 +259,11 @@ void RecipeReader::checkCurrent() {
     // lib targets must have export entry
     bool needExport = false;
     switch (current->type) {
-    case GenUtils::EXECUTABLE:
+    case Component::EXECUTABLE:
         needExport = false;
         break;
-    case GenUtils::SHARED_LIB:
-    case GenUtils::STATIC_LIB:
+    case Component::SHARED_LIB:
+    case Component::STATIC_LIB:
         needExport = true;
         break;
     }

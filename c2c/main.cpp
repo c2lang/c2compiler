@@ -25,6 +25,7 @@
 #include "Builder/Recipe.h"
 #include "Builder/RootFinder.h"
 #include "Builder/RecipeReader.h"
+#include "AST/Component.h"
 #include "Utils/Utils.h"
 #include "Utils/color.h"
 
@@ -216,7 +217,7 @@ int main(int argc, const char *argv[])
 
 
     if (!use_recipe) {
-        Recipe dummy("dummy", GenUtils::EXECUTABLE);
+        Recipe dummy("dummy", Component::EXECUTABLE);
         dummy.addFile(targetFilter);
         C2Builder builder(dummy, opts);
         int errors = builder.checkFiles();

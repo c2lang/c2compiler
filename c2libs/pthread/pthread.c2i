@@ -1,11 +1,6 @@
 module pthread;
 
-// TODO extract to somewhere (C2/other?)
-type c_int int32;
-type c_long int64;
-type c_ulong uint64;
-type c_char int8;
-
+import c2 local;
 
 type pthread_t c_ulong;
 

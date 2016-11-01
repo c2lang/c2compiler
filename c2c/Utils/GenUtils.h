@@ -17,7 +17,6 @@
 #define UTILS_GEN_UTILS_H
 
 #include <string>
-#include <vector>
 
 namespace C2 {
 
@@ -25,22 +24,9 @@ class StringBuilder;
 
 class GenUtils {
 public:
-    enum TargetType { EXECUTABLE, SHARED_LIB, STATIC_LIB };
-
-    struct Dependency {
-        Dependency(const std::string& n, TargetType t) : name(n), type(t) {}
-        std::string name;
-        TargetType type;
-    };
-    typedef std::vector<GenUtils::Dependency> Dependencies;
-    typedef Dependencies::const_iterator DependenciesConstIter;
-
     static void addName(const std::string& modName, const std::string& name, StringBuilder& buffer);
     static void toCapital(const std::string& input, StringBuilder& output);
-    static bool needsInterface(TargetType type);
 };
-
-const char* Str(GenUtils::TargetType type);
 
 }
 

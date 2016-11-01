@@ -18,7 +18,6 @@
 
 #include <string>
 
-#include "Utils/GenUtils.h"
 #include "AST/Module.h"
 #include "Utils/StringList.h"
 
@@ -45,7 +44,6 @@ public:
     };
 
     CGenerator(const Component& component_,
-               GenUtils::TargetType type_,
                const Modules& moduleMap_,
                const HeaderNamer& namer_,
                const Options& options_,
@@ -57,7 +55,6 @@ public:
     void generateInterfaceFiles();
 private:
     const Component& component;
-    GenUtils::TargetType targetType;
     const Modules& moduleMap;
     const HeaderNamer& includeNamer;
     const Options& options;

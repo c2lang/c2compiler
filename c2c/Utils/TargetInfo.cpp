@@ -33,8 +33,12 @@ void TargetInfo::getNative(TargetInfo& info) {
 
     if (strcmp(un.sysname, "Darwin") == 0) {
         info.sys = SYS_DARWIN;
+        info.vendor = VENDOR_APPLE;     // hardcoded
+        info.abi = ABI_MACHO;           // hardcoded
     } else if (strcmp(un.sysname, "Linux") == 0) {
         info.sys = SYS_LINUX;
+        info.vendor = VENDOR_UNKNOWN;   // hardcoded
+        info.abi = ABI_GNU;             // hardcoded
     } else {
         fprintf(stderr, "unsupported system: %s\n", un.sysname);
         exit(-1);
@@ -48,6 +52,13 @@ void TargetInfo::getNative(TargetInfo& info) {
         fprintf(stderr, "unsupported machine: %s\n", un.machine);
         exit(-1);
     }
+}
+
+const char* C2::Str(const TargetInfo& info) {
+    static char result[80];
+    sprintf(result, "%s-%s-%s-%s",
+        Str(info.mach), Str(info.vendor), Str(info.sys), Str(info.abi));
+    return result;
 }
 
 const char* C2::Str(TargetInfo::System sys) {
@@ -67,3 +78,20 @@ const char* C2::Str(TargetInfo::Machine mach) {
     }
     return "";
 }
+
+const char* C2::Str(TargetInfo::Vendor vendor) {
+    switch (vendor) {
+    case TargetInfo::VENDOR_UNKNOWN:   return "unknown";
+    case TargetInfo::VENDOR_APPLE:     return "apple";
+    }
+    return "";
+}
+
+const char* C2::Str(TargetInfo::Abi abi) {
+    switch (abi) {
+    case TargetInfo::ABI_GNU:   return "gnu";
+    case TargetInfo::ABI_MACHO: return "macho";
+    }
+    return "";
+}
+
