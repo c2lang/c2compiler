@@ -131,11 +131,28 @@ void ExprTypeAnalyser::check(QualType TLeft, const Expr* expr) {
     assert(0 && "should not come here");
 }
 
-void ExprTypeAnalyser::checkExplicitCast(const ExplicitCastExpr* expr, QualType TLeft, QualType TRight) {
+bool ExprTypeAnalyser::checkExplicitCast(const ExplicitCastExpr* expr, QualType DestType, QualType SrcType) {
+    // C99 6.5.4p2: the cast type needs to be void or scalar and the expression
+    // TODO
+
+    // TODO check if DestType == SrcType
+
+    if (!DestType.isScalarType()) {
+        // Dont allow any cast to non-scalar
+        StringBuilder buf1(MAX_LEN_TYPENAME);
+        StringBuilder buf2(MAX_LEN_TYPENAME);
+        DestType.DiagName(buf1);
+        SrcType.DiagName(buf2);
+        Diags.Report(expr->getLocation(), diag::err_typecheck_cond_expect_scalar)
+                << buf1 << buf2 << expr->getSourceRange();
+        return false;
+
+    }
+
     // TEMP, only handle builtin types
-    if (TLeft->isBuiltinType() && TRight->isBuiltinType()) {
-        const BuiltinType* Left = cast<BuiltinType>(TLeft.getCanonicalType());
-        const BuiltinType* Right = cast<BuiltinType>(TRight.getCanonicalType());
+    if (DestType->isBuiltinType() && SrcType->isBuiltinType()) {
+        const BuiltinType* Left = cast<BuiltinType>(DestType.getCanonicalType());
+        const BuiltinType* Right = cast<BuiltinType>(SrcType.getCanonicalType());
         int rule = type_conversions[Right->getKind()][Left->getKind()];
         switch (rule) {
         case 0:
@@ -147,11 +164,11 @@ void ExprTypeAnalyser::checkExplicitCast(const ExplicitCastExpr* expr, QualType 
         {
             StringBuilder buf1(MAX_LEN_TYPENAME);
             StringBuilder buf2(MAX_LEN_TYPENAME);
-            TRight.DiagName(buf1);
-            TLeft.DiagName(buf2);
+            DestType.DiagName(buf1);
+            SrcType.DiagName(buf2);
             Diags.Report(expr->getLocation(), diag::err_illegal_cast)
                     << buf1 << buf2 << expr->getSourceRange();
-            break;
+            return false;
         }
         case 5: // loss of fp-precision
             break;
@@ -159,6 +176,7 @@ void ExprTypeAnalyser::checkExplicitCast(const ExplicitCastExpr* expr, QualType 
             assert(0 && "should not come here");
         }
     }
+    return true;
 }
 
 void ExprTypeAnalyser::checkBinOp(QualType TLeft, const BinaryOperator* binop) {

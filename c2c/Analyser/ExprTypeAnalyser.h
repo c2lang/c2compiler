@@ -41,7 +41,7 @@ public:
     ExprTypeAnalyser(clang::DiagnosticsEngine& Diags_);
 
     void check(QualType Tleft, const Expr* expr);
-    void checkExplicitCast(const ExplicitCastExpr* cast, QualType TLeft, QualType TRight);
+    bool checkExplicitCast(const ExplicitCastExpr* cast, QualType TLeft, QualType TRight);
 private:
     void error(clang::SourceLocation loc, QualType left, QualType right) const;
     void checkBinOp(QualType TLeft, const BinaryOperator* binop);

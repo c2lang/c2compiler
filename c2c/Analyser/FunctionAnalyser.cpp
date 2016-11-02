@@ -1688,7 +1688,8 @@ QualType FunctionAnalyser::analyseExplicitCastExpr(Expr* expr) {
         E->setCTC(E->getInner()->getCTC());
 
         if (outerType.isValid()) {
-            EA.checkExplicitCast(E, outerType, innerType);
+            if (!EA.checkExplicitCast(E, outerType, innerType))
+                return QualType();
         }
     }
 
