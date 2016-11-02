@@ -51,6 +51,11 @@ private:
     bool checkPointer(QualType left, QualType right, const Expr* expr) const;
     bool checkFunction(QualType left, const Expr* expr) const;
 
+    bool checkNonPointerCast(const ExplicitCastExpr* expr, QualType DestType, QualType SrcType);
+    bool checkBuiltinCast(const ExplicitCastExpr* expr, QualType DestType, QualType SrcType);
+    bool checkEnumCast(const ExplicitCastExpr* expr, QualType DestType, QualType SrcType);
+    bool checkFunctionCast(const ExplicitCastExpr* expr, QualType DestType, QualType SrcType);
+
     clang::DiagnosticsEngine& Diags;
 
     ExprTypeAnalyser(const ExprTypeAnalyser&);

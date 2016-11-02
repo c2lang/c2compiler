@@ -190,6 +190,19 @@ unsigned FunctionDecl::minArgs() const {
     return i;
 }
 
+bool FunctionDecl::sameProto(const FunctionDecl* lhs, const FunctionDecl* rhs) {
+    if (lhs->rtype != rhs->rtype) return false;
+    if (lhs->numArgs() != rhs->numArgs()) return false;
+    if (lhs->isVariadic() != rhs->isVariadic()) return false;
+
+    for (unsigned i=0; i<lhs->numArgs(); i++) {
+        const VarDecl* leftArg = lhs->getArg(i);
+        const VarDecl* rightArg = rhs->getArg(i);
+        if (leftArg->getType() != rightArg->getType()) return false;
+    }
+    return true;
+}
+
 
 static const char* VarDeclKind2Str(VarDeclKind k) {
     switch (k) {

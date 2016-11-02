@@ -254,6 +254,8 @@ public:
     QualType getOrigReturnType() const { return origRType; }
     void setReturnType(QualType rt) { rtype = rt; }
 
+    static bool sameProto(const FunctionDecl* lhs, const FunctionDecl* rhs);
+
     // for codegen
     llvm::Function* getIRProto() const { return IRProto; }
     void setIRProto(llvm::Function* f) const { IRProto = f; }

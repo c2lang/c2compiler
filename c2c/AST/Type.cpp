@@ -63,10 +63,17 @@ bool QualType::isIntegerType() const {
     }
     return false;
 }
+bool QualType::isArithmeticType() const {
+    QualType Canon = getTypePtr()->getCanonicalType();
+    if (BuiltinType* BI = dyncast<BuiltinType>(Canon.getTypePtr())) {
+        return BI->isArithmetic();
+    }
+    return false;
+}
 bool QualType::isScalarType() const {
     QualType Canon = getTypePtr()->getCanonicalType();
     if (Canon == Type::Bool()) return true;
-    if (isIntegerType()) return true;
+    if (isArithmeticType()) return true;
     if (isPointerType()) return true;
     if (isFunctionType()) return true;
     if (isa<EnumType>(Canon)) return true;
@@ -539,6 +546,24 @@ bool BuiltinType::isInteger() const {
     return false;       // to satisfy compiler
 }
 
+bool BuiltinType::isArithmetic() const {
+    switch (getKind()) {
+    case Int8:      return true;
+    case Int16:     return true;
+    case Int32:     return true;
+    case Int64:     return true;
+    case UInt8:     return true;
+    case UInt16:    return true;
+    case UInt32:    return true;
+    case UInt64:    return true;
+    case Float32:   return true;
+    case Float64:   return true;
+    case Bool:      return false;
+    case Void:      return false;
+    }
+    return false;       // to satisfy compiler
+}
+
 bool BuiltinType::isSignedInteger() const {
     switch (getKind()) {
     case Int8:      return true;
@@ -853,6 +878,9 @@ void FunctionType::fullDebugImpl(StringBuilder& buffer, int indent) const {
 }
 #endif
 
+bool FunctionType::sameProto(const FunctionType* lhs, const FunctionType* rhs) {
+    return FunctionDecl::sameProto(lhs->getDecl(), rhs->getDecl());
+}
 
 const Module* ModuleType::getModule() const {
     return decl->getModule();

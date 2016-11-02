@@ -94,6 +94,7 @@ public:
     bool isSubscriptable() const;
     bool isEnumType() const;
     bool isIntegerType() const;
+    bool isArithmeticType() const;
     bool isScalarType() const;
     bool isIncompleteType() const;
 
@@ -269,6 +270,7 @@ public:
     const char* getName() const;
     const char* getCName() const;
     bool isInteger() const;
+    bool isArithmetic() const;
     bool isSignedInteger() const;
     bool isUnsignedInteger() const;
     bool isFloatingPoint() const;
@@ -460,6 +462,7 @@ public:
 #ifdef TYPE_DEBUG
     void fullDebugImpl(StringBuilder& buffer, int indent) const;
 #endif
+    static bool sameProto(const FunctionType* lhs, const FunctionType* rhs);
 private:
     FunctionDecl* func;
 };
