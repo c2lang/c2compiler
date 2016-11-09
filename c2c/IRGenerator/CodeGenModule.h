@@ -52,6 +52,7 @@ public:
 
     llvm::Type* ConvertType(BuiltinType::Kind K);
     llvm::Type* ConvertType(QualType Q);
+    llvm::PointerType* getVoidPtrType();
     llvm::Function* createExternal(const C2::Module* P, const std::string& name_);
     llvm::GlobalValue::LinkageTypes getLinkage(bool isPublic);
 

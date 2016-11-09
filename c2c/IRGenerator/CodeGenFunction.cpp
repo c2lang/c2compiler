@@ -458,8 +458,8 @@ llvm::Value* CodeGenFunction::EmitExprNoImpCast(const Expr* E) {
         return Builder.CreateGlobalStringPtr(S->getValue());
     }
     case EXPR_NIL:
-        assert(0 && "TODO");
-        break;
+        fprintf(stderr, "WARNING: implicit casts missing for NilExpr! - invalid IR\n");
+        return llvm::ConstantPointerNull::get(CGM.getVoidPtrType());
     case EXPR_CALL:
         return EmitCallExpr(cast<CallExpr>(E));
     case EXPR_IDENTIFIER:

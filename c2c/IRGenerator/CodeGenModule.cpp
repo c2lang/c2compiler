@@ -134,6 +134,9 @@ void CodeGenModule::generate() {
             }
         }
     }
+#ifdef DEBUG_CODEGEN
+            printf("CodeGen - done\n");
+#endif
 }
 
 bool CodeGenModule::verify() {
@@ -331,6 +334,11 @@ llvm::Type* CodeGenModule::ConvertType(QualType Q) {
         break;
     }
     return 0;
+}
+
+llvm::PointerType* CodeGenModule::getVoidPtrType() {
+    llvm::Type* type = builder.getVoidTy();
+    return type->getPointerTo();
 }
 
 llvm::Function* CodeGenModule::createExternal(const C2::Module* P, const std::string& name_) {
