@@ -123,7 +123,7 @@ type Position struct {
     int8 y;
 }
 
-Position[NumPieces] setup = {
+const Position[] Setup = {
     [0] = { PLACE_SETUP, 0, 1, 4 },
 }
 
@@ -420,10 +420,10 @@ func void board_try_piece(uint8 p) {
         board_print();
         return;
     }
-    if (setup[p].postype == PLACE_SETUP) {
-        int32 o = setup[p].option;
-        int32 x = setup[p].x;
-        int32 y = setup[p].y;
+    if (Setup[p].postype == PLACE_SETUP) {
+        int32 o = Setup[p].option;
+        int32 x = Setup[p].x;
+        int32 y = Setup[p].y;
         if (board_try_option(&options[o][p], x, y)) {
             io.printf("invalid setup: piece %d, option %d at %d,%d\n", p, o, x, y);
             return;

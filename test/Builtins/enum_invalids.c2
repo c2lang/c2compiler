@@ -1,0 +1,27 @@
+// @warnings{no-unused}
+module test;
+
+type Enum enum int8 {
+    A = -2,
+    B = 0,
+    C = 10,
+    D,
+}
+
+type Struct struct {
+    int32 x;
+}
+
+func void test2() {
+    Enum ee;
+    int32 ok1 = enum_min(ee);
+    int32 ok2 = enum_min(Enum);
+
+    int32 a = enum_min(test);   // @error{enum_min can only be used on enum types}
+    int32 b = enum_max(test);   // @error{enum_max can only be used on enum types}
+
+    int32 c = enum_min(test2);  // @error{enum_min can only be used on enum types}
+    int32 d = enum_min(a);      // @error{enum_min can only be used on enum types}
+    int32 e = enum_min(Struct); // @error{enum_min can only be used on enum types}
+}
+

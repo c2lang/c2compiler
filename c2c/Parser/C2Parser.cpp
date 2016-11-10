@@ -17,7 +17,6 @@
 #include <ctype.h>
 #include <vector>
 
-#include <clang/AST/Expr.h>
 #include <clang/Parse/ParseDiagnostic.h>
 #include <clang/Sema/SemaDiagnostic.h>
 #include <clang/Basic/SourceLocation.h>
@@ -873,6 +872,10 @@ C2::ExprResult C2Parser::ParseCastExpression(bool isUnaryExpression,
         return ParseSizeof();
     case tok::kw_elemsof:
         return ParseElemsof();
+    case tok::kw_enum_min:
+        return ParseEnumMinMax(true);
+    case tok::kw_enum_max:
+        return ParseEnumMinMax(false);
     case tok::kw_cast:
         return ParseExplicitCastExpression();
     case tok::plusplus:      // unary-expression: '++' unary-expression [C99]
@@ -1409,7 +1412,6 @@ C2::ExprResult C2Parser::ParseArray(ExprResult base) {
 C2::ExprResult C2Parser::ParseSizeof()
 {
     LOG_FUNC
-    assert(Tok.is(tok::kw_sizeof) && "Not sizeof keyword!");
     SourceLocation Loc = ConsumeToken();
 
     if (ExpectAndConsume(tok::l_paren)) return ExprError();
@@ -1454,7 +1456,7 @@ C2::ExprResult C2Parser::ParseSizeof()
     if (Res.isInvalid()) return ExprError();
 
     if (ExpectAndConsume(tok::r_paren)) return ExprError();
-    return Actions.ActOnBuiltinExpression(Loc, Res.get(), true);
+    return Actions.ActOnBuiltinExpression(Loc, Res.get(), BuiltinExpr::BUILTIN_SIZEOF);
 }
 
 /// Syntax:
@@ -1463,7 +1465,6 @@ C2::ExprResult C2Parser::ParseSizeof()
 C2::ExprResult C2Parser::ParseElemsof()
 {
     LOG_FUNC
-    assert(Tok.is(tok::kw_elemsof) && "Not elemsof keyword!");
     SourceLocation Loc = ConsumeToken();
 
     if (ExpectAndConsume(tok::l_paren)) return ExprError();
@@ -1472,9 +1473,31 @@ C2::ExprResult C2Parser::ParseElemsof()
         Diag(Tok, diag::err_expected) << tok::identifier;
         return ExprError();
     }
+    // TODO support FullIdentifier (that's not always a Type)
     ExprResult Res = ParseIdentifier();
     if (ExpectAndConsume(tok::r_paren)) return ExprError();
-    return Actions.ActOnBuiltinExpression(Loc, Res.get(), false);
+    return Actions.ActOnBuiltinExpression(Loc, Res.get(), BuiltinExpr::BUILTIN_ELEMSOF);
+}
+
+/// Syntax:
+///  'enum_min' '(' type-name ')'
+///  'enum_max' '(' type-name ')'
+C2::ExprResult C2Parser::ParseEnumMinMax(bool isMin)
+{
+    LOG_FUNC
+    SourceLocation Loc = ConsumeToken();
+
+    if (ExpectAndConsume(tok::l_paren)) return ExprError();
+
+    if (Tok.isNot(tok::identifier)) {
+        Diag(Tok, diag::err_expected) << tok::identifier;
+        return ExprError();
+    }
+    // TODO support FullIdentifier (that's not always a Type)
+    ExprResult Res = ParseIdentifier();
+    if (ExpectAndConsume(tok::r_paren)) return ExprError();
+    return Actions.ActOnBuiltinExpression(Loc, Res.get(),
+        isMin ? BuiltinExpr::BUILTIN_ENUM_MIN : BuiltinExpr::BUILTIN_ENUM_MAX);
 }
 
 // Syntax:

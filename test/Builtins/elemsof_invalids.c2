@@ -1,0 +1,25 @@
+// @warnings{no-unused}
+module test;
+
+type Enum enum int8 {
+    A
+}
+
+type Struct struct {
+    int32 x;
+}
+
+func void test1() {
+    Enum ee;
+    Struct ss;
+    int32[4] aa;
+    int32 ii;
+
+    int32 a = elemsof(ii);      // @error{elemsof can only be used on arrays}
+    int32 b = elemsof(ee);      // @error{elemsof can only be used on arrays}
+    int32 c = elemsof(ss);     // @error{elemsof can only be used on arrays}
+    int32 d = elemsof(test1);  // @error{elemsof can only be used on arrays}
+    int32 e = elemsof(test);   // @error{elemsof can only be used on arrays}
+    int32 f = elemsof(aa);
+}
+

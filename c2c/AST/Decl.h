@@ -386,6 +386,9 @@ public:
     int getIndex(const EnumConstantDecl* c) const;
     bool hasConstantValue(llvm::APSInt Val) const;
     QualType getImplType() const { return implType; }
+
+    llvm::APSInt getMinValue() const;
+    llvm::APSInt getMaxValue() const;
 private:
     EnumConstantDecl** constants;
     QualType implType;

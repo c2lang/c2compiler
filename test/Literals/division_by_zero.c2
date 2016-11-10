@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+module test;
+
+func void test1() {
+    int32 a = 10 / 0;       // @error{division by zero is undefined}
+    int32 b = 10 % 0;       // @error{remainder by zero is undefined}
+}
+

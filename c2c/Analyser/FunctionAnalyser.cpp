@@ -897,7 +897,14 @@ void FunctionAnalyser::analyseDesignatorInitExpr(Expr* expr, QualType expectedTy
     D->setType(expectedType);
 }
 
-void FunctionAnalyser::analyseSizeofExpr(Expr* expr) {
+void FunctionAnalyser::analyseSizeOfExpr(BuiltinExpr* B) {
+    LOG_FUNC
+
+    Expr* expr = B->getExpr();
+    while (ParenExpr* P = dyncast<ParenExpr>(expr)) {
+        expr = P->getExpr();
+    }
+
     switch (expr->getKind()) {
     case EXPR_INTEGER_LITERAL:
     case EXPR_FLOAT_LITERAL:
@@ -968,8 +975,6 @@ void FunctionAnalyser::analyseSizeofExpr(Expr* expr) {
         assert(0 && "TODO");
         return;
     case EXPR_PAREN:
-        analyseSizeofExpr(cast<ParenExpr>(expr)->getExpr());
-        return;
     case EXPR_BITOFFSET:
         assert(0 && "should not happen");
         break;
@@ -977,7 +982,61 @@ void FunctionAnalyser::analyseSizeofExpr(Expr* expr) {
         assert(0 && "TODO");
         break;
     }
+}
 
+void FunctionAnalyser::analyseElemsOfExpr(BuiltinExpr* B) {
+    LOG_FUNC
+
+    Expr* E = B->getExpr();
+    QualType T = analyseExpr(E, RHS);
+    const ArrayType* AT = dyncast<ArrayType>(T.getCanonicalType());
+    if (!AT) {
+        Diag(E->getLocation(), diag::err_elemsof_no_array) << E->getSourceRange();
+        return;
+    }
+    B->setValue(llvm::APSInt(AT->getSize()));
+}
+
+void FunctionAnalyser::analyseEnumMinMaxExpr(BuiltinExpr* B, bool isMin) {
+    LOG_FUNC
+    Expr* E = B->getExpr();
+    // TODO support memberExpr (module.Type)
+    assert(isa<IdentifierExpr>(E));
+    IdentifierExpr* I = cast<IdentifierExpr>(E);
+    Decl* decl = analyseIdentifier(I);
+    if (!decl) return;
+
+    EnumTypeDecl* Enum = 0;
+    decl->setUsed();
+
+    switch (decl->getKind()) {
+    case DECL_VAR:
+        if (const EnumType* ET = dyncast<EnumType>(decl->getType())) {
+            Enum = ET->getDecl();
+        }
+        break;
+    case DECL_ENUMTYPE:
+        Enum = cast<EnumTypeDecl>(decl);
+        break;
+    default:
+        break;
+    }
+
+    if (!Enum) {
+        Diag(E->getLocation(), diag::err_enum_minmax_no_enum) << (isMin ? 0 : 1) << E->getSourceRange();
+        return;
+    }
+
+    // TODO get value (store in APInt?)
+    StringBuilder buf;
+    if (isMin) B->setValue(Enum->getMinValue());
+    else B->setValue(Enum->getMaxValue());
+    buf << "MIN: " << Enum->getMinValue().getSExtValue() << '\n';
+    buf << "MAX: " << Enum->getMaxValue().getSExtValue() << '\n';
+    printf("%s\n", buf.c_str());
+    // TODO set type of B according to enum impl type
+    // Store number (as APInt)
+    //B->setType(..)
 }
 
 // sets ArrayType sizes recursively if sizeExpr is constant
@@ -1330,51 +1389,23 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
 
 QualType FunctionAnalyser::analyseBuiltinExpr(Expr* expr) {
     LOG_FUNC
-    BuiltinExpr* func = cast<BuiltinExpr>(expr);
+    BuiltinExpr* B = cast<BuiltinExpr>(expr);
     expr->setType(Type::UInt32());
-    if (func->isSizeof()) { // sizeof()
-        analyseSizeofExpr(func->getExpr());
-    } else { // elemsof()
-        // TODO proper checking
-        analyseExpr(func->getExpr(), RHS);
-        Expr* E = func->getExpr();
-        IdentifierExpr* I = cast<IdentifierExpr>(E);
-        Decl* D = I->getDecl();
-        // should be VarDecl(for array/enum) or TypeDecl(array/enum)
-        switch (D->getKind()) {
-        case DECL_FUNC:
-            fprintf(stderr, "TODO Function err\n");
-            // ERROR
-            break;
-        case DECL_VAR:
-        {
-            VarDecl* VD = cast<VarDecl>(D);
-            QualType Q = VD->getType();
-            // TODO also allow elemsof for EnumType
-            if (!Q.isArrayType()) {
-                StringBuilder msg;
-                Q.DiagName(msg);
-                Diag(I->getLocation(), diag::err_invalid_elemsof_type)
-                        << msg;
-            }
-            return Type::UInt32();
-        }
-        case DECL_ENUMVALUE:
-            // ERROR
-            break;
-        case DECL_ALIASTYPE:
-        case DECL_STRUCTTYPE:
-        case DECL_ENUMTYPE:
-        case DECL_FUNCTIONTYPE:
-            assert(0 && "TODO");
-            break;
-        case DECL_ARRAYVALUE:
-        case DECL_IMPORT:
-        case DECL_LABEL:
-            assert(0);
-            break;
-        }
+    switch (B->getBuiltinKind()) {
+    case BuiltinExpr::BUILTIN_SIZEOF:
+        analyseSizeOfExpr(B);
+        break;
+    case BuiltinExpr::BUILTIN_ELEMSOF:
+        analyseElemsOfExpr(B);
+        break;
+    case BuiltinExpr::BUILTIN_ENUM_MIN:
+        analyseEnumMinMaxExpr(B, true);
+        break;
+    case BuiltinExpr::BUILTIN_ENUM_MAX:
+        analyseEnumMinMaxExpr(B, false);
+        break;
     }
+
     return Type::UInt32();
 }
 

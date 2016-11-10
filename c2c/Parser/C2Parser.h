@@ -117,6 +117,7 @@ private:
     ExprResult ParseArray(ExprResult base);
     ExprResult ParseSizeof();
     ExprResult ParseElemsof();
+    ExprResult ParseEnumMinMax(bool isMin);
     ExprResult ParseIdentifier();
     ExprResult ParseFullIdentifier();
 

@@ -24,7 +24,6 @@
 
 #include "Parser/C2Sema.h"
 #include "AST/AST.h"
-#include "AST/Expr.h"
 #include "AST/Attr.h"
 #include "AST/Component.h"
 
@@ -999,16 +998,15 @@ C2::ExprResult C2Sema::ActOnTypeQualifier(ExprResult R, unsigned qualifier) {
     return R;
 }
 
-C2::ExprResult C2Sema::ActOnBuiltinExpression(SourceLocation Loc, Expr* expr, bool isSizeof) {
+C2::ExprResult C2Sema::ActOnBuiltinExpression(SourceLocation Loc, Expr* expr, BuiltinExpr::BuiltinKind kind_) {
     assert(expr);
 #ifdef SEMA_DEBUG
-    const char* fname = (isSizeof ? "sizeof" : "elemsof");
-    std::cerr << COL_SEMA << "SEMA: " << fname << " at ";
+    std::cerr << COL_SEMA << "SEMA: " << BuiltinExpr::Str(kind_) << " at ";
     Loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
     MEM_EXPR(EXPR_BUILTIN);
-    return ExprResult(new (Context) BuiltinExpr(Loc, expr, isSizeof));
+    return ExprResult(new (Context) BuiltinExpr(Loc, expr, kind_));
 }
 
 C2::ExprResult C2Sema::ActOnArraySubScriptExpr(SourceLocation RLoc, Expr* Base, Expr* Idx) {

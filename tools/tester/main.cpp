@@ -53,7 +53,7 @@
 #define COL_OK    ANSI_GREEN
 #define COL_DEBUG ANSI_BMAGENTA
 
-#define MAX_LINE 256
+#define MAX_LINE 512
 
 //#define DEBUG
 
@@ -71,7 +71,7 @@ static bool runSkipped;
 
 #ifdef DEBUG
 static void debug(const char* format, ...) {
-    char buffer[1024];
+    char buffer[4096];
     va_list(Args);
     va_start(Args, format);
     //int len = vsprintf(buffer, format, Args);
@@ -815,9 +815,9 @@ const char* IssueDb::readWord() {
 }
 
 const char* IssueDb::readLine() {
-    static char buffer[256];
+    static char buffer[MAX_LINE];
     const char* cp = cur;
-    while (*cp != 0 && cp - cur < 255) {
+    while (*cp != 0 && cp - cur < MAX_LINE) {
         if (*cp == 0 || *cp == '\n') break;
         cp++;
     }
@@ -963,7 +963,7 @@ void IssueDb::testFile() {
             exit(-1);
         }
         // check output
-        char buffer[4096];
+        char buffer[1024*1024];
         while (1) {
             ssize_t count = read(pipe_stderr[0], buffer, sizeof(buffer)-1);
             if (count == -1) {
@@ -972,6 +972,7 @@ void IssueDb::testFile() {
                 exit(1);
             }
             if (count == 0) break;
+            if (count == sizeof(buffer)-1) color_print(COL_ERROR, "Too many error messages for single read!");
             buffer[count] = 0;
             checkErrors(buffer, count);
         }
@@ -1130,7 +1131,7 @@ static void handle_dir(const char* path) {
         return;
     }
     struct dirent* dir2 = readdir(dir);
-    char temp[256];
+    char temp[MAX_LINE];
     while (dir2 != 0) {
         sprintf(temp, "%s/%s", path, dir2->d_name);
         switch (dir2->d_type) {

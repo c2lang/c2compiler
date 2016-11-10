@@ -514,14 +514,27 @@ private:
 };
 
 
-// BuiltinExpr's are sizeof() and elemsof() expressions
+// BuiltinExpr's can be:
+//   sizeof(type/var)
+//   elemsof(type/var)
+//   enum_min(type/var)
+//   enum_max(type/var)
 class BuiltinExpr : public Expr {
 public:
-    BuiltinExpr(SourceLocation loc_, Expr* expr_, bool isSizeof_)
+    enum BuiltinKind {
+        BUILTIN_SIZEOF = 0,
+        BUILTIN_ELEMSOF,
+        BUILTIN_ENUM_MIN,
+        BUILTIN_ENUM_MAX,
+    };
+    static const char* Str(BuiltinKind kind);
+
+    BuiltinExpr(SourceLocation loc_, Expr* expr_, BuiltinKind kind_)
         : Expr(EXPR_BUILTIN, loc_, true)
         , expr(expr_)
+        , value(64, false)
     {
-        builtinExprBits.IsSizeOf = isSizeof_;
+        builtinExprBits.builtinKind = kind_;
         setCTC(CTC_FULL);
     }
     static bool classof(const Expr* E) {
@@ -530,9 +543,15 @@ public:
     void print(StringBuilder& buffer, unsigned indent) const;
 
     Expr* getExpr() const { return expr; }
-    bool isSizeof() const { return builtinExprBits.IsSizeOf; }
+    BuiltinKind getBuiltinKind() const {
+        return static_cast<BuiltinKind>(builtinExprBits.builtinKind);
+    }
+
+    llvm::APSInt getValue() const { return value; }
+    void setValue(llvm::APSInt v) { value = v; }
 private:
     Expr* expr;
+    llvm::APSInt value;
 };
 
 

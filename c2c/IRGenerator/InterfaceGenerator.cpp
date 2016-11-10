@@ -208,11 +208,14 @@ void InterfaceGenerator::EmitExpr(const Expr* E) {
     case EXPR_BUILTIN:
     {
         const BuiltinExpr* S = cast<BuiltinExpr>(E);
-        if (S->isSizeof()) {
+        switch (S->getBuiltinKind()) {
+        case BuiltinExpr::BUILTIN_SIZEOF:
             iface << "sizeof(";
             EmitExpr(S->getExpr());
             iface << ')';
-        } else {
+            break;
+        case BuiltinExpr::BUILTIN_ELEMSOF:
+        {
             const IdentifierExpr* I = cast<IdentifierExpr>(S->getExpr());
             Decl* D = I->getDecl();
             // should be VarDecl(for array/enum) or TypeDecl(array/enum)
@@ -250,6 +253,12 @@ void InterfaceGenerator::EmitExpr(const Expr* E) {
                 assert(0);
                 break;
             }
+            break;
+        }
+        case BuiltinExpr::BUILTIN_ENUM_MIN:
+        case BuiltinExpr::BUILTIN_ENUM_MAX:
+            assert(0 && "TODO");
+            break;
         }
         return;
     }

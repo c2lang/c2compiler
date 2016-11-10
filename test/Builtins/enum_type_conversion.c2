@@ -1,0 +1,20 @@
+// @warnings{no-unused}
+module test;
+
+type Enum1 enum int8 {
+    AA = -2,
+    DD = 10,
+}
+
+type Enum2 enum uint32 {
+    EE = 300,
+}
+
+const int8 A = enum_min(Enum1);
+const int8 B = enum_max(Enum1);
+const int8 C = enum_min(Enum2);    // @error{constant value 300 out-of-bounds for type 'int8', range [-128, 127]}
+const int8 D = enum_max(Enum2);    // @error{constant value 300 out-of-bounds for type 'int8', range [-128, 127]}
+const uint32 E = enum_min(Enum1);  // @error{constant value -2 out-of-bounds for type 'uint32', range [0, 4294967295]}
+const uint32 F = enum_max(Enum1);
+const int8 G = enum_max(Enum2) - enum_min(Enum1); // @error{constant value 302 out-of-bounds for type 'int8', range [-128, 127]}
+

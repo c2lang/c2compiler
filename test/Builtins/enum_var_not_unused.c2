@@ -1,0 +1,10 @@
+module test;
+
+type Enum enum int8 {
+    A,
+}
+
+Enum e;
+
+const int8 Max = enum_max(e);    // @warning{unused variable 'test.Max'}
+

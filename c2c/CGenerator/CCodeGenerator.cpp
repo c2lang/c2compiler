@@ -331,50 +331,19 @@ void CCodeGenerator::EmitExpr(const Expr* E, StringBuilder& output) {
 
 void CCodeGenerator::EmitBuiltinExpr(const Expr* E, StringBuilder& output) {
     LOG_FUNC
-    const BuiltinExpr* S = cast<BuiltinExpr>(E);
-    if (S->isSizeof()) {
+    const BuiltinExpr* B = cast<BuiltinExpr>(E);
+    switch (B->getBuiltinKind()) {
+    case BuiltinExpr::BUILTIN_SIZEOF:
+        // TODO for now generate external sizeof() instead of number (need StructSizer)
         output << "sizeof(";
-        EmitExpr(S->getExpr(), output);
+        EmitExpr(B->getExpr(), output);
         output << ')';
-    } else {
-        const IdentifierExpr* I = cast<IdentifierExpr>(S->getExpr());
-        Decl* D = I->getDecl();
-        // should be VarDecl(for array/enum) or TypeDecl(array/enum)
-        switch (D->getKind()) {
-        case DECL_FUNC:
-            assert(0);
-            break;
-        case DECL_VAR:
-        {
-            VarDecl* VD = cast<VarDecl>(D);
-            QualType Q = VD->getType();
-            if (Q.isArrayType()) {
-                // generate: (sizeof(array) / sizeof(array[0]))
-                output << "(sizeof(";
-                EmitDecl(D, output);
-                output << ")/sizeof(";
-                EmitDecl(D, output);
-                output << "[0]))";
-                return;
-            }
-            // TODO also allow elemsof for EnumType
-            // NOTE cannot be converted to C if used with enums
-            assert(0 && "TODO");
-            return;
-        }
-        case DECL_ENUMVALUE:
-            break;
-        case DECL_ALIASTYPE:
-        case DECL_STRUCTTYPE:
-        case DECL_ENUMTYPE:
-        case DECL_FUNCTIONTYPE:
-        case DECL_ARRAYVALUE:
-        case DECL_IMPORT:
-        case DECL_LABEL:
-            D->dump();
-            assert(0);
-            break;
-        }
+        break;
+    case BuiltinExpr::BUILTIN_ELEMSOF:
+    case BuiltinExpr::BUILTIN_ENUM_MIN:
+    case BuiltinExpr::BUILTIN_ENUM_MAX:
+        output.number(10, B->getValue().getSExtValue());
+        break;
     }
 }
 

@@ -226,9 +226,10 @@ APSInt LiteralAnalyser::checkLiterals(const Expr* Right) {
     case EXPR_UNARYOP:
         return checkUnaryLiterals(Right);
     case EXPR_BUILTIN:
-        // TODO return correct value, for now always return 4 for sizeof() and elemsof()
-        result = APInt(64, 4, true);
-        break;
+    {
+        const BuiltinExpr* B = cast<BuiltinExpr>(Right);
+        return B->getValue();
+    }
     case EXPR_ARRAYSUBSCRIPT:
         return checkArraySubscript(Right);
     case EXPR_MEMBER:
@@ -384,12 +385,20 @@ APSInt LiteralAnalyser::checkBinaryLiterals(const Expr* Right) {
     {
         APSInt L = checkLiterals(binop->getLHS());
         APSInt R = checkLiterals(binop->getRHS());
+        if (R == 0) {
+            Diags.Report(binop->getRHS()->getLocation(), diag::warn_remainder_division_by_zero) << 1;
+            break;
+        }
         return L / R;
     }
     case BO_Rem:
     {
         APSInt L = checkLiterals(binop->getLHS());
         APSInt R = checkLiterals(binop->getRHS());
+        if (R == 0) {
+            Diags.Report(binop->getRHS()->getLocation(), diag::warn_remainder_division_by_zero) << 0;
+            break;
+        }
         return L % R;
     }
     case BO_Add:

@@ -388,6 +388,26 @@ bool EnumTypeDecl::hasConstantValue(llvm::APSInt Val) const {
     return false;
 }
 
+llvm::APSInt EnumTypeDecl::getMinValue() const {
+    assert(numConstants() != 0);
+    llvm::APSInt min = constants[0]->getValue();
+    for (unsigned i=1; i<numConstants(); i++) {
+        llvm::APSInt cur = constants[i]->getValue();
+        if (cur < min) min = cur;
+    }
+    return min;
+}
+
+llvm::APSInt EnumTypeDecl::getMaxValue() const {
+    assert(numConstants() != 0);
+    llvm::APSInt max = constants[0]->getValue();
+    for (unsigned i=1; i<numConstants(); i++) {
+        llvm::APSInt cur = constants[i]->getValue();
+        if (cur > max) max = cur;
+    }
+    return max;
+}
+
 
 FunctionTypeDecl::FunctionTypeDecl(FunctionDecl* F)
     : TypeDecl(DECL_FUNCTIONTYPE, F->getName(), F->getLocation(), F->getType(), F->isPublic())

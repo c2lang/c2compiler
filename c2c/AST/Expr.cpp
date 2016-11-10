@@ -354,7 +354,7 @@ void IdentifierExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.setColor(COL_VALUE);
     buffer << ' ' << getName();
     buffer.setColor(COL_ATTR);
-    if (decl) buffer << " <RESOLVED>";
+    if (getDecl()) buffer << " <RESOLVED>";
     else buffer << " <UNRESOLVED>";
     buffer << '\n';
 }
@@ -584,12 +584,22 @@ void BuiltinExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer << "BuiltinExpr ";
     Expr::print(buffer);
     buffer.setColor(COL_ATTR);
-    if (isSizeof()) buffer << " sizeof";
-    else buffer << " elemsof";
+    buffer << ' ' << Str(getBuiltinKind());
+    buffer << " value=";
+    buffer.number(10, value.getSExtValue());
     buffer << '\n';
     expr->print(buffer, indent + INDENT);
 }
 
+const char* BuiltinExpr::Str(BuiltinExpr::BuiltinKind kind) {
+    switch (kind) {
+    case BUILTIN_SIZEOF:        return "sizeof";
+    case BUILTIN_ELEMSOF:       return "elemsof";
+    case BUILTIN_ENUM_MIN:      return "enum_min";
+    case BUILTIN_ENUM_MAX:      return "enum_max";
+    }
+    return "";
+}
 
 void ArraySubscriptExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);

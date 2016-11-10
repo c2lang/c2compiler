@@ -44,6 +44,7 @@ class IdentifierExpr;
 class InitListExpr;
 class MemberExpr;
 class CallExpr;
+class BuiltinExpr;
 class ASTContext;
 
 class FunctionAnalyser {
@@ -102,7 +103,9 @@ private:
     void analyseInitExpr(Expr* expr, QualType expectedType);
     void analyseInitList(InitListExpr* expr, QualType expectedType);
     void analyseDesignatorInitExpr(Expr* expr, QualType expectedType);
-    void analyseSizeofExpr(Expr* expr);
+    void analyseSizeOfExpr(BuiltinExpr* expr);
+    void analyseElemsOfExpr(BuiltinExpr* B);
+    void analyseEnumMinMaxExpr(BuiltinExpr* B, bool isMin);
     void analyseArrayType(VarDecl* V, QualType T);
     void analyseArraySizeExpr(ArrayType* AT);
 

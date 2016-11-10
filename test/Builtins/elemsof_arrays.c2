@@ -1,0 +1,19 @@
+// @warnings{no-unused}
+module test;
+
+int32[4] array1 = { 1, 2, 3, }
+
+int32[] array2 = { 1, 2, 3, 4, 5 }
+
+int32[+] array3;
+array3 += 1;
+array3 += 2;
+
+public func int32 main() {
+    int8 a = elemsof(array1) + 130;    // @error{constant value 134 out-of-bounds for type 'int8', range [-128, 127]}
+    int8 b = elemsof(array2) + 130;    // @error{constant value 135 out-of-bounds for type 'int8', range [-128, 127]}
+    int8 c = elemsof(array3) + 130;    // @error{constant value 132 out-of-bounds for type 'int8', range [-128, 127]}
+    return 0;
+}
+
+

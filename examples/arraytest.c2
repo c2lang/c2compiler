@@ -45,8 +45,7 @@ func int32 myfunc(int32 val) { return 2 * val; }
 int32[Const_a] buf1;   // ok
 
 public func int32 main() {
-    int32 count = sizeof(elems) / sizeof(Element);
-    for (int32 i=0; i<count; i++) {
+    for (int32 i=0; i<elemsof(elems); i++) {
         io.printf("[%2d] %16s\n", i, elems[i].Name);
     }
     Element e;

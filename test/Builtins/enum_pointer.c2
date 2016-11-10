@@ -1,0 +1,12 @@
+// @skip
+// @warnings{no-unused}
+module test;
+
+type Enum enum int8 {
+    A,
+}
+
+func void test2() {
+    int32* a = &enum_min(Enum); // @error{lvalue required as unary '&' operand}
+}
+

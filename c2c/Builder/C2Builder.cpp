@@ -276,6 +276,7 @@ int C2Builder::build() {
     Diags.setSeverity(diag::warn_not_in_enum, diag::Severity::Error, SourceLocation());
     Diags.setSeverity(diag::warn_missing_case, diag::Severity::Error, SourceLocation());
     Diags.setSeverity(diag::warn_unreachable_default, diag::Severity::Warning, SourceLocation());
+    Diags.setSeverity(diag::warn_remainder_division_by_zero, diag::Severity::Error, SourceLocation());
 
     // set recipe warning options
     for (unsigned i=0; i<recipe.silentWarnings.size(); i++) {

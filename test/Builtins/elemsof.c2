@@ -1,0 +1,15 @@
+// @warnings{no-unused}
+module test;
+
+int32[] array = {
+    1,
+    2,
+    3,
+    4,
+}
+
+func void test1() {
+    int8 a = 126 + elemsof(array); // @error{constant value 130 out-of-bounds for type 'int8', range [-128, 127]}
+}
+
+

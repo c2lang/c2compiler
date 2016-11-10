@@ -22,6 +22,7 @@
 
 #include "AST/Decl.h"
 #include "AST/Stmt.h"
+#include "AST/Expr.h"
 #include "AST/Type.h"
 #include "Parser/ParserTypes.h"
 
@@ -43,7 +44,6 @@ using namespace clang;
 namespace C2 {
 
 class AST;
-class Expr;
 class ASTContext;
 class Component;
 class Module;
@@ -122,7 +122,7 @@ public:
     void ActOnEnumTypeFinished(EnumTypeDecl* Enum, EnumConstantDecl** constants, unsigned numConstants);
     EnumConstantDecl* ActOnEnumConstant(EnumTypeDecl* Enum, IdentifierInfo* symII, SourceLocation symLoc, Expr* Value);
     ExprResult ActOnTypeQualifier(ExprResult R, unsigned qualifier);
-    ExprResult ActOnBuiltinExpression(SourceLocation Loc, Expr* expr, bool isSizeof);
+    ExprResult ActOnBuiltinExpression(SourceLocation Loc, Expr* expr, BuiltinExpr::BuiltinKind kind_);
     ExprResult ActOnArraySubScriptExpr(SourceLocation RLoc, Expr* Base, Expr* Idx);
     ExprResult ActOnMemberExpr(Expr* Base, Expr* member);
     ExprResult ActOnPostfixUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Expr* Input);
