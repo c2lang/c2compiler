@@ -104,8 +104,8 @@ private:
     void analyseInitList(InitListExpr* expr, QualType expectedType);
     void analyseDesignatorInitExpr(Expr* expr, QualType expectedType);
     void analyseSizeOfExpr(BuiltinExpr* expr);
-    void analyseElemsOfExpr(BuiltinExpr* B);
-    void analyseEnumMinMaxExpr(BuiltinExpr* B, bool isMin);
+    QualType analyseElemsOfExpr(BuiltinExpr* B);
+    QualType analyseEnumMinMaxExpr(BuiltinExpr* B, bool isMin);
     void analyseArrayType(VarDecl* V, QualType T);
     void analyseArraySizeExpr(ArrayType* AT);
 

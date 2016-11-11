@@ -984,7 +984,7 @@ void FunctionAnalyser::analyseSizeOfExpr(BuiltinExpr* B) {
     }
 }
 
-void FunctionAnalyser::analyseElemsOfExpr(BuiltinExpr* B) {
+QualType FunctionAnalyser::analyseElemsOfExpr(BuiltinExpr* B) {
     LOG_FUNC
 
     Expr* E = B->getExpr();
@@ -992,23 +992,25 @@ void FunctionAnalyser::analyseElemsOfExpr(BuiltinExpr* B) {
     const ArrayType* AT = dyncast<ArrayType>(T.getCanonicalType());
     if (!AT) {
         Diag(E->getLocation(), diag::err_elemsof_no_array) << E->getSourceRange();
-        return;
+        return QualType();
     }
     B->setValue(llvm::APSInt(AT->getSize()));
+    return Type::UInt32();
 }
 
-void FunctionAnalyser::analyseEnumMinMaxExpr(BuiltinExpr* B, bool isMin) {
+QualType FunctionAnalyser::analyseEnumMinMaxExpr(BuiltinExpr* B, bool isMin) {
     LOG_FUNC
     Expr* E = B->getExpr();
     // TODO support memberExpr (module.Type)
     assert(isa<IdentifierExpr>(E));
     IdentifierExpr* I = cast<IdentifierExpr>(E);
     Decl* decl = analyseIdentifier(I);
-    if (!decl) return;
+    if (!decl) return QualType();
 
     EnumTypeDecl* Enum = 0;
     decl->setUsed();
 
+    // = Type::UInt32();
     switch (decl->getKind()) {
     case DECL_VAR:
         if (const EnumType* ET = dyncast<EnumType>(decl->getType())) {
@@ -1024,19 +1026,13 @@ void FunctionAnalyser::analyseEnumMinMaxExpr(BuiltinExpr* B, bool isMin) {
 
     if (!Enum) {
         Diag(E->getLocation(), diag::err_enum_minmax_no_enum) << (isMin ? 0 : 1) << E->getSourceRange();
-        return;
+        return QualType();
     }
 
-    // TODO get value (store in APInt?)
-    StringBuilder buf;
     if (isMin) B->setValue(Enum->getMinValue());
     else B->setValue(Enum->getMaxValue());
-    buf << "MIN: " << Enum->getMinValue().getSExtValue() << '\n';
-    buf << "MAX: " << Enum->getMaxValue().getSExtValue() << '\n';
-    printf("%s\n", buf.c_str());
-    // TODO set type of B according to enum impl type
-    // Store number (as APInt)
-    //B->setType(..)
+
+    return decl->getType();
 }
 
 // sets ArrayType sizes recursively if sizeExpr is constant
@@ -1396,14 +1392,11 @@ QualType FunctionAnalyser::analyseBuiltinExpr(Expr* expr) {
         analyseSizeOfExpr(B);
         break;
     case BuiltinExpr::BUILTIN_ELEMSOF:
-        analyseElemsOfExpr(B);
-        break;
+        return analyseElemsOfExpr(B);
     case BuiltinExpr::BUILTIN_ENUM_MIN:
-        analyseEnumMinMaxExpr(B, true);
-        break;
+        return analyseEnumMinMaxExpr(B, true);
     case BuiltinExpr::BUILTIN_ENUM_MAX:
-        analyseEnumMinMaxExpr(B, false);
-        break;
+        return analyseEnumMinMaxExpr(B, false);
     }
 
     return Type::UInt32();

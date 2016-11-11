@@ -548,7 +548,10 @@ public:
     }
 
     llvm::APSInt getValue() const { return value; }
-    void setValue(llvm::APSInt v) { value = v; }
+    void setValue(llvm::APSInt v) {
+        value = v;
+        value.setIsSigned(true);
+    }
 private:
     Expr* expr;
     llvm::APSInt value;

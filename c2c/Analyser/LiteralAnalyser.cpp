@@ -190,7 +190,7 @@ bool LiteralAnalyser::calcWidth(QualType TLeft, const Expr* Right, int* availabl
 }
 
 APSInt LiteralAnalyser::checkLiterals(const Expr* Right) {
-    if (Right->getCTC() == CTC_NONE) return APSInt();
+    if (Right->getCTC() == CTC_NONE) return APSInt(64, false);
 
     APSInt result(64, false);
 
