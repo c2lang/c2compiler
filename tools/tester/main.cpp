@@ -980,7 +980,7 @@ void IssueDb::testFile() {
         close(pipe_stderr[0]);
         wait(0);
         checkExpectedFiles();
-        if (errors.size() || warnings.size()) hasErrors = true;
+        if (!errors.empty() || !warnings.empty()) hasErrors = true;
     }
 }
 
