@@ -51,7 +51,7 @@ cd llvm_build
 
 cmake -G "Unix Makefiles" \
     -DCMAKE_BUILD_TYPE="Release" \
-    -DLLVM_ENABLE_ASSERTIONS=OFF \
+    -DLLVM_ENABLE_ASSERTIONS=ON \
     -DCMAKE_INSTALL_PREFIX=$HOME/llvm-c2 \
     -DLLVM_ENABLE_PEDANTIC=OFF \
     ../llvm
