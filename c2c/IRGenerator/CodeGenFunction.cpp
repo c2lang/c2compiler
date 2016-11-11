@@ -622,10 +622,8 @@ llvm::Value* CodeGenFunction::EmitIdentifierExpr(const IdentifierExpr* E) {
 }
 
 llvm::Value* CodeGenFunction::EmitBuiltinExpr(const BuiltinExpr* E) {
-    assert(E->isSizeof() && "TODO elemsof");
-    // TEMP always return 4, Q: add Type::getSize()?, also for alignment
-    int value = 4;
-    return llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), value, true);
+    uint64_t v = E->getValue().getZExtValue();
+    return llvm::ConstantInt::get(CGM.ConvertType(E->getType()), v, true);
 }
 
 void CodeGenFunction::EmitVarDecl(const VarDecl* D) {
