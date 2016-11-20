@@ -1,4 +1,4 @@
-
+an
 ## Installation of LLVM/Clang (C2 version)
 C2 is based on LLVM 3.9 and some parts of Clang 3.9.
 To install C2, follow the steps below. The example shows
@@ -18,6 +18,13 @@ export PATH=~/progs/cmake-3.5.2-Linux-x86_64/bin:$PATH
 sudo apt-get install clang-3.5 cmake ncurses-dev
 export CC=clang-3.5
 export CXX=clang++-3.5
+```
+
+### Ubuntu 16.04
+```bash
+sudo apt-get install clang cmake ncurses-dev
+export CC=clang
+export CXX=clang++
 ```
 
 ### OS X (Yosemite/El Capitan)
