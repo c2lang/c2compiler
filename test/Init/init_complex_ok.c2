@@ -23,3 +23,5 @@ Piece[] pieces = {
     },
 }
 
+const uint32 Aa = 1 + 2 + 3;
+const uint32 Bb = (1 + 2 + 3);

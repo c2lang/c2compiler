@@ -1610,7 +1610,9 @@ QualType FunctionAnalyser::analyseParenExpr(Expr* expr) {
     LOG_FUNC
     ParenExpr* P = cast<ParenExpr>(expr);
     QualType Q = analyseExpr(P->getExpr(), RHS);
+
     expr->setCTC(P->getExpr()->getCTC());
+    if (P->getExpr()->isConstant()) expr->setConstant();
     expr->setType(Q);
     return Q;
 }
