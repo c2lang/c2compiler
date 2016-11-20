@@ -942,6 +942,11 @@ EnumTypeDecl* C2Sema::ActOnEnumType(const char* name_, SourceLocation loc, Expr*
     assert(impl->hasCanonicalType());
     Context.freeTypeExpr(T);
 
+    if (ast.isInterface()) {
+        if (is_public) Diag(loc, diag::err_public_in_interface);
+        is_public = true;
+    }
+
     QualType qt = Context.getEnumType();
     MEM_DECL(DECL_ENUMTYPE);
     const char* name = Context.addIdentifier(name_, strlen(name_));
