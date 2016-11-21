@@ -217,7 +217,7 @@ void CCodeGenerator::EmitExpr(const Expr* E, StringBuilder& output) {
     case EXPR_BOOL_LITERAL:
     {
         const BooleanLiteral* B = cast<BooleanLiteral>(E);
-        cbuf << (int)B->getValue();
+        output << (int)B->getValue();
         return;
     }
     case EXPR_CHAR_LITERAL:
@@ -307,9 +307,9 @@ void CCodeGenerator::EmitExpr(const Expr* E, StringBuilder& output) {
     case EXPR_PAREN:
     {
         const ParenExpr* P = cast<ParenExpr>(E);
-        cbuf << '(';
-        EmitExpr(P->getExpr(), cbuf);
-        cbuf << ')';
+        output << '(';
+        EmitExpr(P->getExpr(), output);
+        output << ')';
         return;
     }
     case EXPR_BITOFFSET:
@@ -318,12 +318,12 @@ void CCodeGenerator::EmitExpr(const Expr* E, StringBuilder& output) {
     case EXPR_CAST:
     {
         const ExplicitCastExpr* ECE = cast<ExplicitCastExpr>(E);
-        cbuf << '(';
-        EmitTypePreName(ECE->getDestType(), cbuf);
-        EmitTypePostName(ECE->getDestType(), cbuf);
-        cbuf << ")(";
-        EmitExpr(ECE->getInner(), cbuf);
-        cbuf << ')';
+        output << '(';
+        EmitTypePreName(ECE->getDestType(), output);
+        EmitTypePostName(ECE->getDestType(), output);
+        output << ")(";
+        EmitExpr(ECE->getInner(), output);
+        output << ')';
         return;
     }
     }
