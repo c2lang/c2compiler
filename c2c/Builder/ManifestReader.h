@@ -26,7 +26,6 @@ class ManifestEntry {
 public:
     ManifestEntry(const std::string& name_) : name(name_) {}
     std::string name;
-    std::string headerFile;
     std::string c2File;
 };
 typedef std::vector<ManifestEntry> Entries;

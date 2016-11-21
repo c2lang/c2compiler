@@ -464,17 +464,8 @@ private:
                 longjmp(jump_err, 1);
             }
         } else {
-            if (strcmp(key, "header") == 0) {
-                if (entries[index].headerFile == "") {
-                    entries[index].headerFile = value;
-                } else {
-                    sprintf(errorMsg, "duplicate header entry at %s", keyLoc.str());
-                    longjmp(jump_err, 1);
-                }
-            } else {
-                sprintf(errorMsg, "unknown key '%s' at %s", key, keyLoc.str());
-                longjmp(jump_err, 1);
-            }
+            sprintf(errorMsg, "unknown key '%s' at %s", key, keyLoc.str());
+            longjmp(jump_err, 1);
         }
     }
     void handleDep(const char* dep, const Location& loc, Component::Type depType) {

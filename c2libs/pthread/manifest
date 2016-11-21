@@ -10,5 +10,4 @@ type = "dynamic"
 
 [[modules]]
 name = "pthread"
-header = "pthread.h"
 

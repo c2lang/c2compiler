@@ -6,32 +6,24 @@ type = [ "static", "dynamic" ]
 
 [[modules]]
 name = "stdio"
-header = "stdio.h"
 
 [[modules]]
 name = "c_errno"
-header = "errno.h"
 
 [[modules]]
 name = "stdlib"
-header = "stdlib.h"
 
 [[modules]]
 name = "string"
-header = "string.h"
 
 [[modules]]
 name = "strings"
-header = "strings.h"
 
 [[modules]]
 name = "unistd"
-header = "unistd.h"
 
 [[modules]]
 name = "regex"
-header = "regex.h"
 
 [[modules]]
 name = "ctype"
-header = "ctype.h"

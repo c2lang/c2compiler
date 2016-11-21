@@ -243,7 +243,7 @@ bool LibraryLoader::checkLibrary(const Dependency& dep) {
         StringBuilder c2file(512);
         c2file << libdir << '/' << componentName << '/' << moduleName << ".c2i";
 
-        libs[moduleName] = new LibInfo(entry.headerFile, c2file.c_str(), C, M, !manifest.isNative());
+        libs[moduleName] = new LibInfo(moduleName + ".h", c2file.c_str(), C, M, !manifest.isNative());
     }
     return hasErrors;
 }
