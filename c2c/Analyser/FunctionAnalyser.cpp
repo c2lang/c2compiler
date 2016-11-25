@@ -1352,6 +1352,7 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
             // TEMP use CanonicalType to avoid Unresolved types etc
             QualType Q = LType.getCanonicalType();
             const PointerType* P = cast<PointerType>(Q);
+            expr->setType(P->getPointeeType());
             return P->getPointeeType();
         }
         break;
