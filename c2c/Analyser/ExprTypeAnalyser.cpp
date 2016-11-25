@@ -446,10 +446,15 @@ bool ExprTypeAnalyser::checkCompatible(QualType left, const Expr* expr) const {
 }
 
 bool ExprTypeAnalyser::checkBuiltin(QualType left, QualType right, const Expr* expr, bool first) const {
-    if (right->isBuiltinType()) {
+    const BuiltinType* Left = cast<BuiltinType>(left.getCanonicalType());
+
+    // left is builtin
+    QualType C = right.getCanonicalType();
+    switch (C->getTypeClass()) {
+    case TC_BUILTIN:
+    {
         // NOTE: canonical is builtin, var itself my be UnresolvedType etc
         const BuiltinType* Right = cast<BuiltinType>(right.getCanonicalType());
-        const BuiltinType* Left = cast<BuiltinType>(left.getCanonicalType());
         int rule = type_conversions[Right->getKind()][Left->getKind()];
         // 0 = ok, 1 = loss of precision, 2 sign-conversion, 3=float->integer, 4 incompatible, 5 loss of FP prec.
         // TODO use matrix with allowed conversions: 3 options: ok, error, warn
@@ -488,6 +493,7 @@ bool ExprTypeAnalyser::checkBuiltin(QualType left, QualType right, const Expr* e
             break;
         default:
             assert(0 && "should not come here");
+            break;
         }
         StringBuilder buf1(MAX_LEN_TYPENAME);
         StringBuilder buf2(MAX_LEN_TYPENAME);
@@ -497,6 +503,25 @@ bool ExprTypeAnalyser::checkBuiltin(QualType left, QualType right, const Expr* e
         Diags.Report(expr->getLocation(), errorMsg) << buf1 << buf2
                 << expr->getSourceRange();
         return false;
+    }
+    case TC_POINTER:
+        // allow implicit cast to bool if(ptr), TODO other cases
+        if (Left->getKind() == BuiltinType::Bool) return true;
+        break;
+    case TC_ARRAY:
+        break;
+    case TC_UNRESOLVED:
+        break;
+    case TC_ALIAS:
+        break;
+    case TC_STRUCT:
+        break;
+    case TC_ENUM:
+        break;
+    case TC_FUNCTION:
+        break;
+    case TC_MODULE:
+        break;
     }
     error(expr->getLocation(), left, right);
     return false;
