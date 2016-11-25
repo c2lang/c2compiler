@@ -24,7 +24,7 @@ func void test1(Func arg) {
     uint32 f = cast<uint32>(arg);     // @error{pointers may only be cast to integer type 'uint64'}
     uint64 g = cast<uint64>(arg);
     Enum j = cast<Enum>(arg);              // @error{cannot cast type 'void (int32)' to type '(enum)Enum' (aka 'uint32')}
-    FuncOther k = cast<FuncOther>(arg);    // @error{cannot cast type 'void (int32)' to type 'bool (uint8*)'}
+    FuncOther k = cast<FuncOther>(arg);
     FuncSame l = cast<FuncSame>(arg);
 }
 

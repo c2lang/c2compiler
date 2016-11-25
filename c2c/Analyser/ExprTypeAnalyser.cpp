@@ -189,7 +189,8 @@ bool ExprTypeAnalyser::checkExplicitCast(const ExplicitCastExpr* expr, QualType 
 bool ExprTypeAnalyser::checkNonPointerCast(const ExplicitCastExpr* expr, QualType DestType, QualType SrcType) {
     // by now: DestType isScalar(): Bool, Arithmetic, Function or Enum
 
-    switch (SrcType->getTypeClass()) {
+    QualType C = SrcType.getCanonicalType();
+    switch (C->getTypeClass()) {
     case TC_BUILTIN:
         return checkBuiltinCast(expr, DestType, SrcType);
     case TC_POINTER:
@@ -228,9 +229,13 @@ bool ExprTypeAnalyser::checkNonPointerCast(const ExplicitCastExpr* expr, QualTyp
 
 bool ExprTypeAnalyser::checkBuiltinCast(const ExplicitCastExpr* expr, QualType DestType, QualType SrcType) {
     // by now: DestType isScalar(): Bool, Arithmetic, Function or Enum
-    if (DestType->isBuiltinType()) {
+    const BuiltinType* Right = cast<BuiltinType>(SrcType.getCanonicalType());
+
+    QualType C = DestType.getCanonicalType();
+    switch (C->getTypeClass()) {
+    case TC_BUILTIN:
+    {
         const BuiltinType* Left = cast<BuiltinType>(DestType.getCanonicalType());
-        const BuiltinType* Right = cast<BuiltinType>(SrcType.getCanonicalType());
         int rule = type_conversions[Right->getKind()][Left->getKind()];
         switch (rule) {
         case 0:
@@ -253,8 +258,35 @@ bool ExprTypeAnalyser::checkBuiltinCast(const ExplicitCastExpr* expr, QualType D
         default:
             assert(0 && "should not come here");
         }
-    } else {
-        // TODO use complete switch statement
+        return true;
+    }
+    case TC_POINTER:
+        assert(0 && "should not come here");
+        return false;
+    case TC_ARRAY:
+        // TODO
+        break;
+    case TC_UNRESOLVED:
+    case TC_ALIAS:
+    case TC_STRUCT:
+    case TC_ENUM:
+        assert(0 && "should not come here");
+        return false;
+    case TC_FUNCTION:
+        // only allow if uint32/64 (ptr size)
+        // TODO use TargetInfo to check if 32-bit
+        if (Right->getKind() != BuiltinType::UInt64) {
+            StringBuilder buf1(MAX_LEN_TYPENAME);
+            SrcType.DiagName(buf1);
+            StringBuilder buf2(MAX_LEN_TYPENAME);
+            DestType.DiagName(buf2);
+            Diags.Report(expr->getLocation(), diag::warn_int_to_pointer_cast) << buf1 << buf2;
+            return false;
+        }
+        break;
+    case TC_MODULE:
+        assert(0 && "should not come here");
+        return false;
     }
     return true;
 }
@@ -301,6 +333,7 @@ bool ExprTypeAnalyser::checkFunctionCast(const ExplicitCastExpr* expr, QualType 
         QualType expected = Type::UInt64();
         StringBuilder buf1(MAX_LEN_TYPENAME);
         expected.DiagName(buf1);
+        // TODO use  warn_int_to_void_pointer_cast, remove err_cast_pointer_to_nonword
         Diags.Report(expr->getLocation(), diag::err_cast_pointer_to_nonword) << buf1;
         return false;
     }
@@ -315,11 +348,15 @@ bool ExprTypeAnalyser::checkFunctionCast(const ExplicitCastExpr* expr, QualType 
         break;          // deny
     case TC_FUNCTION:
     {
+        // Always allow TEMP
+        return true;
+/*
         // check other function proto, allow if same
         const FunctionType* src = cast<FunctionType>(SrcType);
         const FunctionType* dest = cast<FunctionType>(DestType);
         if (FunctionType::sameProto(src, dest)) return true;
         break;  // deny
+*/
     }
     case TC_MODULE:
         assert(0 && "should not come here");

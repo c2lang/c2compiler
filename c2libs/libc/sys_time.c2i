@@ -1,0 +1,21 @@
+module sys_time;
+
+import c2 local;
+
+type time_t c_long;
+type suseconds_t c_long;
+
+type timeval struct {
+    time_t tv_sec;
+    suseconds_t tv_usec;
+}
+
+type timezone struct {
+    c_int tz_minuteswest;
+    c_int tz_dsttime;
+}
+
+func c_int gettimeofday(timeval* tv, timezone* tz);
+
+func c_int settimeofday(const timeval* tv, const timezone* tz);
+
