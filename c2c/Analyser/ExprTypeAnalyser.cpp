@@ -150,8 +150,8 @@ bool ExprTypeAnalyser::checkExplicitCast(const ExplicitCastExpr* expr, QualType 
     // TODO decide if Enums are arithmatic types or not (they are in C99, not is C++0x)
     if (DestType.isPointerType()) {
         if (SrcType.isPointerType()) {
-            // check pointer member conversion
-            // TODO
+            // allow all pointer casts
+            return true;
         } else {
             // only allow cast to pointer from uint32/64 (pointer size)
             const BuiltinType* BT = dyncast<BuiltinType>(SrcType.getCanonicalType());
@@ -162,7 +162,6 @@ bool ExprTypeAnalyser::checkExplicitCast(const ExplicitCastExpr* expr, QualType 
             StringBuilder buf1(MAX_LEN_TYPENAME);
             expected.DiagName(buf1);
             Diags.Report(expr->getLocation(), diag::err_cast_nonword_to_pointer) << buf1;
-            return false;
         }
     } else {
         if (SrcType.isPointerType()) {
@@ -175,14 +174,12 @@ bool ExprTypeAnalyser::checkExplicitCast(const ExplicitCastExpr* expr, QualType 
             StringBuilder buf1(MAX_LEN_TYPENAME);
             expected.DiagName(buf1);
             Diags.Report(expr->getLocation(), diag::err_cast_pointer_to_nonword) << buf1;
-            return false;
         } else {
             // check non-pointer to non-pointer type
             // TODO make this top level function? (switch on src-type)
             return checkNonPointerCast(expr, DestType, SrcType);
         }
     }
-    assert(0 && "should not come here");
     return false;
 }
 
