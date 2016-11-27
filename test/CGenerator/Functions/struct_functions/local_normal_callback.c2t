@@ -18,10 +18,9 @@ public func int32 main() {
 }
 
 // @expect{atleast, build/test.c}
-typedef void (*test_Func)(int32_t n);
-
 typedef struct test_Type_ test_Type;
 
+typedef void (*test_Func)(int32_t n);
 
 struct test_Type_ {
     test_Func init;

@@ -1,0 +1,22 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c
+
+// @file{file1}
+module test;
+
+type Callback func Struct();
+
+type Struct struct {
+    int32 x;
+}
+
+// @expect{atleast, build/test.c}
+typedef struct test_Struct_ test_Struct;
+
+struct test_Struct_ {
+  int32_t x;
+};
+
+typedef test_Struct (*test_Callback)();
+

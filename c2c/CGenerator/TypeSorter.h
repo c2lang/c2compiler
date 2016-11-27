@@ -39,8 +39,6 @@ public:
     void add(const Decl* D);
     void write(CTypeWriter& writer);
 private:
-    void dump(const char* msg, bool showDeps) const;
-
     typedef std::vector<DeclDep*> DeclDepList;
     typedef DeclDepList::const_iterator DeclDepListConstIter;
     typedef DeclDepList::iterator DeclDepListIter;

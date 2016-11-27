@@ -1,0 +1,32 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c
+
+// @file{file1}
+module test;
+
+type Callback func void(Outer*);
+
+type Outer struct {
+    Inner inner;
+}
+
+type Inner struct {
+    Callback cb;
+}
+
+// @expect{atleast, build/test.c}
+typedef struct test_Outer_ test_Outer;
+
+typedef struct test_Inner_ test_Inner;
+
+typedef void (*test_Callback)(test_Outer* _arg0);
+
+struct test_Inner_ {
+  test_Callback cb;
+};
+
+struct test_Outer_ {
+  test_Inner inner;
+};
+

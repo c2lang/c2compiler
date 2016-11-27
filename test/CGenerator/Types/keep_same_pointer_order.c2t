@@ -14,9 +14,9 @@ type Bar struct {
 }
 
 // @expect{atleast, build/test.c}
-typedef struct test_Bar_ test_Bar;
-
 typedef struct test_Foo_ test_Foo;
+
+typedef struct test_Bar_ test_Bar;
 
 struct test_Foo_ {
     test_Bar* b;
