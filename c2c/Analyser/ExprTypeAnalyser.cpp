@@ -542,6 +542,9 @@ bool ExprTypeAnalyser::checkPointer(QualType left, QualType right, const Expr* e
 
 bool ExprTypeAnalyser::checkFunction(QualType L, const Expr* expr) const {
     QualType R = expr->getType();
+
+    if (isa<NilExpr>(expr)) return true;
+
     // NOTE: for now only allow FunctionTypes
     if (!R->isFunctionType()) {
         error(expr->getLocation(), L, R);
@@ -554,8 +557,6 @@ bool ExprTypeAnalyser::checkFunction(QualType L, const Expr* expr) const {
     const FunctionDecl* DR = FRight->getDecl();
     // TODO compare
 #endif
-
-
     return true;
 }
 
