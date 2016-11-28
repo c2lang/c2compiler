@@ -553,6 +553,7 @@ void CCodeGenerator::EmitIncludes() {
             }
         }
     }
+    // TODO merge system + other includes into one loop (only .h differs)
     // write system includes
     for (unsigned i=0; i<includes.size(); ++i) {
         const IncludeEntry& entry = includes[i];

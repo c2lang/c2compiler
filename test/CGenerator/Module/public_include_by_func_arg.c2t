@@ -1,0 +1,31 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c
+
+// @file{file1}
+module mod1;
+
+public type Struct struct {
+    int32 x;
+}
+
+func void test(Struct*) {}
+
+// @file{file2}
+module mod2;
+import mod1 local;
+
+public type Struct2 struct {
+    int32 x;
+} @(opaque)
+
+public func void struct2_test(Struct*) {}
+
+// @expect{atleast, build/mod1.h}
+
+typedef struct mod1_Struct_ mod1_Struct;
+
+// @expect{atleast, build/mod2.h}
+
+#include "mod1.h"
+

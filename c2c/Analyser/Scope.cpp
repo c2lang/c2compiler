@@ -116,17 +116,31 @@ const Module* Scope::findUsedModule(const std::string& name, clang::SourceLocati
 
 Decl* Scope::findSymbol(const std::string& symbol, clang::SourceLocation loc, bool isType, bool usedPublic) const {
     // lookup in global cache first, return if found
+    Decl* D = 0;
     {
         CacheConstIter iter = symbolCache.find(symbol);
         if (iter != symbolCache.end()) {
-            return iter->second;
+            D = iter->second;
+            // update usedPublic if needed
+            // TODO also cache this part?
+            if (usedPublic && D->getModule() != myModule) {
+                ImportsConstIter iter = importedModules.begin();
+                while (iter != importedModules.end()) {
+                    ImportDecl* I = iter->second;
+                    if (D->getModule() == I->getModule()) {
+                        I->setUsedPublic();
+                        break;
+                    }
+                    ++iter;
+                }
+            }
+            return D;
         }
     }
 
     // lookup in used module list
     bool ambiguous = false;
     bool visible_match = false;
-    Decl* D = 0;
     for (LocalsConstIter iter = locals.begin(); iter != locals.end(); ++iter) {
         const Module* mod = *iter;
         Decl* decl = mod->findSymbol(symbol);
