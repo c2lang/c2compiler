@@ -1,0 +1,26 @@
+// @warnings{no-unused}
+module test;
+
+type Struct struct {
+    int32[4] x;
+}
+
+int32[3] y;
+
+Struct s;
+
+func void test1() {
+    int32[2] z;
+
+    int8 a = elemsof(z);
+    int8 b = elemsof(y);
+    int8 c = elemsof(s.x);
+    int8 d = elemsof(test.s.x);
+    int8 e = elemsof(test.y);
+    int8 f = elemsof(test.s);       // @error{elemsof can only be used on arrays}
+
+    // Not supported (yet)
+    //int8 g = elemsof(Struct.x);
+    //int8 h = elemsof(test.Struct.x);
+}
+

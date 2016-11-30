@@ -1460,8 +1460,7 @@ C2::ExprResult C2Parser::ParseSizeof()
 }
 
 /// Syntax:
-///  'sizeof' '(' var-name ')'
-///  'sizeof' '(' type-name ')'
+///  'elemsof' '(' type-name ')'
 C2::ExprResult C2Parser::ParseElemsof()
 {
     LOG_FUNC
@@ -1473,8 +1472,8 @@ C2::ExprResult C2Parser::ParseElemsof()
         Diag(Tok, diag::err_expected) << tok::identifier;
         return ExprError();
     }
-    // TODO support FullIdentifier (that's not always a Type)
     ExprResult Res = ParseIdentifier();
+    Res = ParsePostfixExpressionSuffix(Res);
     if (ExpectAndConsume(tok::r_paren)) return ExprError();
     return Actions.ActOnBuiltinExpression(Loc, Res.get(), BuiltinExpr::BUILTIN_ELEMSOF);
 }
