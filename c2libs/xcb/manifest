@@ -1,0 +1,9 @@
+
+[library]
+language = "C"
+type = [ "dynamic" ]
+linkname = "xcb"
+
+[[modules]]
+name = "xcb"
+

@@ -1,0 +1,18 @@
+
+executable vk_test
+    $warnings no-unused
+    $use vulkan dynamic
+    $use xcb dynamic
+    $refs
+    $deps show-files show-externals
+#    $generate-c single-module
+    $generate-c
+    base.c2
+    triangle.c2
+    keycodes.c2
+    utils.c2
+    texture.c2
+    device.c2
+    swapchain.c2
+end
+

@@ -1,0 +1,252 @@
+module vulkan_device;
+
+import vulkan local;
+import stdlib local;
+import stdio local;
+import string local;
+
+public const int32 NUM_QUEUES = 2;
+
+
+public type VulkanDevice struct {
+	/** @brief Physical device representation */
+	VkPhysicalDevice physicalDevice;
+	/** @brief Logical device representation (application's view of the device) */
+	VkDevice logicalDevice;
+	/** @brief Properties of the physical device including limits that the application can check against */
+	VkPhysicalDeviceProperties properties;
+	/** @brief Features of the physical device that an application can use to check if a feature is supported */
+	VkPhysicalDeviceFeatures features;
+	/** @brief Memory types and heaps of the physical device */
+	VkPhysicalDeviceMemoryProperties memoryProperties;
+	/** @brief Queue family properties of the physical device */
+	VkQueueFamilyProperties[NUM_QUEUES] queueFamilyProperties;
+
+	/** @brief Default command pool for the graphics queue family index */
+	VkCommandPool commandPool;
+
+	/** @brief Set to true when the debug marker extension is detected */
+	bool enableDebugMarkers;
+
+	/** @brief Contains queue family indices */
+	struct queueFamilyIndices {
+		uint32 graphics;
+		uint32 compute;
+		uint32 transfer;
+	}
+}
+
+public func VulkanDevice* vulkanDevice_new(VkPhysicalDevice physicalDevice) {
+	VulkanDevice* this = malloc(sizeof(VulkanDevice));
+	memset(this, 0, sizeof(VulkanDevice));
+
+	this.commandPool = VK_NULL_HANDLE;
+	this.enableDebugMarkers = false;
+    this.physicalDevice = physicalDevice;
+
+	// Store Properties features, limits and properties of the physical device for later use
+	// Device properties also contain limits and sparse properties
+	vkGetPhysicalDeviceProperties(this.physicalDevice, &this.properties);
+	// Features should be checked by the examples before using them
+	vkGetPhysicalDeviceFeatures(this.physicalDevice, &this.features);
+	// Memory properties are used regularly for creating all kinds of buffer
+	vkGetPhysicalDeviceMemoryProperties(physicalDevice, &this.memoryProperties);
+	// Queue family properties, used for setting up requested queues upon device creation
+	uint32 queueFamilyCount;
+	vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nil);
+	if (queueFamilyCount != NUM_QUEUES) {
+        printf("not 2 queues!\n");
+		exit(-1);
+	}
+	vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, this.queueFamilyProperties);
+
+	return this;
+}
+
+public func void vulkanDevice_delete(VulkanDevice* this) {
+    if (this.commandPool) {
+        vkDestroyCommandPool(this.logicalDevice, this.commandPool, nil);
+    }
+    if (this.logicalDevice) {
+        vkDestroyDevice(this.logicalDevice, nil);
+    }
+	free(this);
+}
+
+public func uint32 vulkanDevice_getMemoryType(VulkanDevice* this, uint32 typeBits, VkMemoryPropertyFlags properties, VkBool32 *memTypeFound = nil) {
+	for (uint32 i = 0; i < this.memoryProperties.memoryTypeCount; i++) {
+		if ((typeBits & 1) == 1) {
+			if ((this.memoryProperties.memoryTypes[i].propertyFlags & properties) == properties)
+			{
+				if (memTypeFound) *memTypeFound = true;
+				return i;
+			}
+		}
+		typeBits >>= 1;
+	}
+    if (memTypeFound) {
+		*memTypeFound = false;
+	} else {
+		printf("Could not find a matching memory type\n");
+		exit(-1);
+	}
+	return 0;
+}
+
+public func uint32 vulkanDevice_getQueueFamiliyIndex(VulkanDevice* this, VkQueueFlagBits queueFlags) {
+	// Dedicated queue for compute
+	// Try to find a queue family index that supports compute but not graphics
+	if (queueFlags & VK_QUEUE_COMPUTE_BIT) {
+		// TODO elemsof needs support for MemberExpr
+		//for (uint32 i = 0; i < elemsof(this.queueFamilyProperties); i++)
+		for (uint32 i = 0; i < 2; i++)
+		{
+			if ((this.queueFamilyProperties[i].queueFlags & queueFlags) && ((this.queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0)) {
+				return i;
+			}
+		}
+	}
+
+	// Dedicated queue for transfer
+	// Try to find a queue family index that supports transfer but not graphics and compute
+	if (queueFlags & VK_QUEUE_TRANSFER_BIT)
+	{
+		for (uint32 i = 0; i < 2; i++) {
+			if ((this.queueFamilyProperties[i].queueFlags & queueFlags) && ((this.queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0) &&
+				((this.queueFamilyProperties[i].queueFlags & VK_QUEUE_COMPUTE_BIT) == 0)) {
+				return i;
+			}
+		}
+	}
+
+	// For other queue types or if no separate compute queue is present, return the first one to support the requested flags
+	for (uint32 i = 0; i < 2; i++)
+	{
+		if (this.queueFamilyProperties[i].queueFlags & queueFlags) {
+			return i;
+		}
+	}
+
+	printf("Could not find a matching queue family index\n");
+	exit(-1);
+	return 0;
+}
+
+public func VkResult vulkanDevice_createLogicalDevice(VulkanDevice* this, VkPhysicalDeviceFeatures enabledFeatures, bool useSwapChain = true, VkQueueFlags requestedQueueTypes = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT)
+{
+	// Desired queues need to be requested upon logical device creation
+	// Due to differing queue family configurations of Vulkan implementations this can be a bit tricky, especially if the application
+	// requests different queue types
+
+	VkDeviceQueueCreateInfo queueCreateInfo = {}
+
+	// Get queue family indices for the requested queue family types
+	// Note that the indices may overlap depending on the implementation
+
+	const float32 DefaultQueuePriority = 0.0f;
+
+	// Graphics queue
+	if (requestedQueueTypes & VK_QUEUE_GRAPHICS_BIT)
+	{
+		this.queueFamilyIndices.graphics = this.getQueueFamiliyIndex(VK_QUEUE_GRAPHICS_BIT);
+		VkDeviceQueueCreateInfo queueInfo = {}
+		queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		queueInfo.queueFamilyIndex = this.queueFamilyIndices.graphics;
+		queueInfo.queueCount = 1;
+		queueInfo.pQueuePriorities = &DefaultQueuePriority;
+		queueCreateInfo = queueInfo;
+	}
+	else
+	{
+		this.queueFamilyIndices.graphics = VK_NULL_HANDLE;
+	}
+
+	// Dedicated compute queue
+	if (requestedQueueTypes & VK_QUEUE_COMPUTE_BIT)
+	{
+		this.queueFamilyIndices.compute = this.getQueueFamiliyIndex(VK_QUEUE_COMPUTE_BIT);
+		if (this.queueFamilyIndices.compute != this.queueFamilyIndices.graphics)
+		{
+			printf("different queues not supported\n");
+            exit(-1);
+		}
+	}
+	else
+	{
+		// Else we use the same queue
+		this.queueFamilyIndices.compute = this.queueFamilyIndices.graphics;
+	}
+
+	// Dedicated transfer queue
+	if (requestedQueueTypes & VK_QUEUE_TRANSFER_BIT)
+	{
+		this.queueFamilyIndices.transfer = this.getQueueFamiliyIndex(VK_QUEUE_TRANSFER_BIT);
+		if ((this.queueFamilyIndices.transfer != this.queueFamilyIndices.graphics) &&
+            (this.queueFamilyIndices.transfer != this.queueFamilyIndices.compute))
+		{
+			printf("different queues not supported\n");
+            exit(-1);
+		}
+	}
+	else
+	{
+		// Else we use the same queue
+		this.queueFamilyIndices.transfer = this.queueFamilyIndices.graphics;
+	}
+
+	// Create the logical device representation
+	const char*[] deviceExtensions = {
+    "VK_KHR_swapchain"  //VK_KHR_SWAPCHAIN_EXTENSION_NAME
+    }
+    uint32 extensionsCount = 0;
+
+	if (useSwapChain) {
+        extensionsCount++;
+	}
+
+	VkDeviceCreateInfo deviceCreateInfo = {}
+	deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+	deviceCreateInfo.queueCreateInfoCount = 1;
+	deviceCreateInfo.pQueueCreateInfos = &queueCreateInfo;
+	deviceCreateInfo.pEnabledFeatures = &enabledFeatures;
+
+/*
+	// Enable the debug marker extension if it is present (likely meaning a debugging tool is present)
+	if (vkTools::checkDeviceExtensionPresent(physicalDevice, VK_EXT_DEBUG_MARKER_EXTENSION_NAME))
+	{
+		//deviceExtensions.push_back(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
+		//enableDebugMarkers = true;
+	}
+*/
+
+	if (extensionsCount > 0)
+	{
+		deviceCreateInfo.enabledExtensionCount = extensionsCount;
+		deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions;
+	}
+
+	VkResult result = vkCreateDevice(this.physicalDevice, &deviceCreateInfo, nil, &this.logicalDevice);
+
+	if (result == VK_SUCCESS)
+	{
+		// Create a default command pool for graphics command buffers
+		this.commandPool = this.createCommandPool(this.queueFamilyIndices.graphics);
+	}
+
+	return result;
+}
+
+
+func VkCommandPool vulkanDevice_createCommandPool(VulkanDevice* this, uint32 queueFamilyIndex, VkCommandPoolCreateFlags createFlags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT)
+{
+    VkCommandPoolCreateInfo cmdPoolInfo = {}
+    cmdPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    cmdPoolInfo.queueFamilyIndex = queueFamilyIndex;
+    cmdPoolInfo.flags = createFlags;
+    VkCommandPool cmdPool;
+    if (vkCreateCommandPool(this.logicalDevice, &cmdPoolInfo, nil, &cmdPool) != VK_SUCCESS) {
+        printf("error vkCreateCommandPool\n");
+        exit(-1);
+    }
+    return cmdPool;
+}

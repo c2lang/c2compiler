@@ -99,9 +99,9 @@ void MakefileGenerator::write(const std::string& path) {
         for (unsigned i=0; i<deps.size(); i++) {
             const Component* dep = deps[i];
             // TEMP add -L flag if static lib (system static libs not yet supported)
-            if (dep->isStaticLib()) {
+            //if (dep->isStaticLib()) {
                 out << " -L" << libDir << '/' << dep->getName() << '/' << Str(targetInfo);
-            }
+            //}
             if (dep->getLinkName() != "") {
                 out << " -l" << dep->getLinkName();
             }

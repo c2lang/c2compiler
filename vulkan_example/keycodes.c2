@@ -1,0 +1,24 @@
+module keycodes;
+
+public const int32 KEY_ESCAPE = 0x9;
+/*
+const int32 KEY_F1 = 0x43;
+const int32 KEY_F2 = 0x44;
+const int32 KEY_F3 = 0x45;
+const int32 KEY_F4 = 0x46;
+const int32 KEY_W = 0x19;
+const int32 KEY_A = 0x26;
+const int32 KEY_S = 0x27;
+const int32 KEY_D = 0x28;
+const int32 KEY_P = 0x21;
+const int32 KEY_SPACE = 0x41;
+const int32 KEY_KPADD = 0x56;
+const int32 KEY_KPSUB = 0x52;
+const int32 KEY_B = 0x38;
+const int32 KEY_F = 0x29;
+const int32 KEY_L = 0x2E;
+const int32 KEY_N = 0x39;
+const int32 KEY_O = 0x20;
+const int32 KEY_T = 0x1C;
+*/
+

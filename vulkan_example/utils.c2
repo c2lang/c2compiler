@@ -1,0 +1,14 @@
+module utils;
+
+import sys_time local;
+
+public func uint64 now() {
+    timeval t;
+    gettimeofday(&t, nil);
+    uint64 now64 = cast<uint64>(t.tv_sec);
+    now64 *= 1000000;
+    now64 += t.tv_usec;
+    return now64;
+}
+
+

@@ -1,0 +1,912 @@
+module vulkan_example_base;
+
+import stdio local;
+import string local;
+import stdlib local;
+import vulkan as vk local;
+import xcb local;
+
+//import utils;
+import texture;
+import vulkan_device local;
+import swapchain local;
+import keycodes local;
+
+
+#define VK_KHR_SURFACE_EXTENSION_NAME     "VK_KHR_surface"
+#define VK_KHR_XCB_SURFACE_EXTENSION_NAME "VK_KHR_xcb_surface"
+
+#define VK_MAKE_VERSION(major, minor, patch) \
+    (((major) << 22) | ((minor) << 12) | (patch))
+
+
+
+public type PFN_GetEnabledFeatures func VkPhysicalDeviceFeatures ();
+
+public type VFuncNoArgs func void (VulkanExampleBase* base);
+
+public type Virtuals struct {
+    VFuncNoArgs setupDepthStencil;
+    VFuncNoArgs viewChanged;
+    VFuncNoArgs setupRenderPass;
+    VFuncNoArgs setupFrameBuffer;
+    VFuncNoArgs buildCommandBuffers;
+}
+
+public type VulkanExampleBase struct {
+	// Set to true when example is created with enabled validation layers
+	bool enableValidation;
+	// Set to true if v-sync will be forced for the swapchain
+	bool enableVSync;
+	// Device features enabled by the example
+	// If not set, no additional features are enabled (may result in validation layer errors)
+	VkPhysicalDeviceFeatures enabledFeatures;
+	// fps timer (one second interval)
+	float32 fpsTimer;
+#if 0
+	// Get window title with example name, device, et.
+	std::string getWindowTitle();
+#endif
+	/** brief Indicates that the view (position, rotation) has changed and */
+	bool viewUpdated;
+	// Destination dimensions for resizing the window
+	uint32 destWidth;
+	uint32 destHeight;
+	bool resizing;
+#if 0
+	// Called if the window is resized and some resources have to be recreatesd
+	void windowResize();
+#endif
+	// Last frame time, measured using a high performance timer (if available)
+	float frameTimer;
+	// Frame counter to display fps
+	uint32 frameCounter;
+	uint32 lastFPS;
+	// Vulkan instance, stores all per-application states
+	VkInstance instance;
+	// Physical device (GPU) that Vulkan will ise
+	VkPhysicalDevice physicalDevice;
+	// Stores physical device properties (for e.g. checking device limits)
+	VkPhysicalDeviceProperties deviceProperties;
+	// Stores phyiscal device features (for e.g. checking if a feature is available)
+	VkPhysicalDeviceFeatures deviceFeatures;
+	// Stores all available memory (type) properties for the physical device
+	VkPhysicalDeviceMemoryProperties deviceMemoryProperties;
+	/** @brief Logical device, application's view of the physical device (GPU) */
+	// todo: getter? should always point to VulkanDevice->device
+	VkDevice device;
+	/** @brief Encapsulated physical and logical vulkan device */
+	VulkanDevice *vulkanDevice;
+	// Handle to the device graphics queue that command buffers are submitted to
+	VkQueue queue;
+	// Color buffer format
+	VkFormat colorformat;
+	// Depth buffer format
+	// Depth format is selected during Vulkan initialization
+	VkFormat depthFormat;
+	// Command buffer pool
+	VkCommandPool cmdPool;
+	// Command buffer used for setup
+	VkCommandBuffer setupCmdBuffer;
+	/** @brief Pipeline stages used to wait at for graphics queue submissions */
+	VkPipelineStageFlags submitPipelineStages;
+	// Contains command buffers and semaphores to be presented to the queue
+	VkSubmitInfo submitInfo;
+	// Command buffers used for rendering
+	VkCommandBuffer[swapchain.IMAGE_COUNT] drawCmdBuffers;
+	// Global render pass for frame buffer writes
+	VkRenderPass renderPass;
+	// List of available frame buffers (same as number of swap chain images)
+    VkFramebuffer[swapchain.IMAGE_COUNT] frameBuffers;
+	// Active frame buffer index
+	uint32 currentBuffer;
+	// Descriptor set pool
+	VkDescriptorPool descriptorPool;
+	// List of shader modules created (stored for cleanup)
+	//std::vector<VkShaderModule> shaderModules;
+	// Pipeline cache object
+	VkPipelineCache pipelineCache;
+	// Wraps the swap chain to present images (framebuffers) to the windowing system
+	VulkanSwapChain swapChain;
+	// Synchronization semaphores
+	struct semaphores {
+		// Swap chain image presentation
+		VkSemaphore presentComplete;
+		// Command buffer submission and execution
+		VkSemaphore renderComplete;
+		// Text overlay submission and execution
+		VkSemaphore textOverlayComplete;
+    }
+	// Simple texture loader
+	texture.Loader* textureLoader;
+	// Returns the base asset path (for shaders, models, textures) depending on the os
+	//const std::string getAssetPath();
+
+	bool prepared;
+	uint32 width;
+	uint32 height;
+
+	//VkClearColorValue defaultClearColor = { { 0.025f, 0.025f, 0.025f, 1.0f } };
+
+	float32 zoom;
+
+	//static std::vector<const char*> args;
+
+	// Defines a frame rate independent timer value clamped from -1.0...1.0
+	// For use in animations, rotations, etc.
+	float timer;
+	// Multiplier for speeding up (or slowing down) the global timer
+	float timerSpeed;
+
+	bool paused;
+
+	bool enableTextOverlay;
+	//VulkanTextOverlay *textOverlay;
+
+	// Use to adjust mouse rotation speed
+	float rotationSpeed;
+	// Use to adjust mouse zoom speed
+	float zoomSpeed;
+
+#if 0
+	Camera camera;
+
+	glm::vec3 rotation = glm::vec3();
+	glm::vec3 cameraPos = glm::vec3();
+	glm::vec2 mousePos;
+#endif
+    const char* title;
+    const char* name;
+
+	struct depthStencil {
+		VkImage image;
+		VkDeviceMemory mem;
+		VkImageView view;
+    }
+
+#if 0
+	// Gamepad state (only one pad supported)
+	struct gamePadState {
+		glm::vec2 axisLeft = glm::vec2(0.0f);
+		glm::vec2 axisRight = glm::vec2(0.0f);
+	}
+
+	// OS specific
+	struct {
+		bool left = false;
+		bool right = false;
+		bool middle = false;
+	} mouseButtons;
+#endif
+	bool quit;
+	xcb_connection_t *connection;
+	xcb_screen_t *screen;
+	xcb_window_t window;
+	xcb_intern_atom_reply_t *atom_wm_delete_window;
+
+    Virtuals virtuals;
+    void* derived;
+#if 0
+	// Pure virtual render function (override in derived class)
+	virtual void render() = 0;
+	// Called if a key is pressed
+	// Can be overriden in derived class to do custom key handling
+	virtual void keyPressed(uint32 keyCode);
+	// Called when the window has been resized
+	// Can be overriden in derived class to recreate or rebuild resources attached to the frame buffer / swapchain
+	virtual void windowResized();
+
+	// Check if command buffers are valid (!= VK_NULL_HANDLE)
+	bool checkCommandBuffers();
+
+	// Command buffer creation
+	// Creates and returns a new command buffer
+	VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level, bool begin);
+	// End the command buffer, submit it to the queue and free (if requested)
+	// Note : Waits for the queue to become idle
+	void flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free);
+
+	// Load a SPIR-V shader
+	VkPipelineShaderStageCreateInfo loadShader(std::string fileName, VkShaderStageFlagBits stage);
+
+	// Create a buffer, fill it with data (if != NULL) and bind buffer memory
+	VkBool32 createBuffer(
+		VkBufferUsageFlags usageFlags,
+		VkMemoryPropertyFlags memoryPropertyFlags,
+		VkDeviceSize size,
+		void *data,
+		VkBuffer *buffer,
+		VkDeviceMemory *memory);
+	// This version always uses HOST_VISIBLE memory
+	VkBool32 createBuffer(
+		VkBufferUsageFlags usage,
+		VkDeviceSize size,
+		void *data,
+		VkBuffer *buffer,
+		VkDeviceMemory *memory);
+	// Overload that assigns buffer info to descriptor
+	VkBool32 createBuffer(
+		VkBufferUsageFlags usage,
+		VkDeviceSize size,
+		void *data,
+		VkBuffer *buffer,
+		VkDeviceMemory *memory,
+		VkDescriptorBufferInfo *descriptor);
+	// Overload to pass memory property flags
+	VkBool32 createBuffer(
+		VkBufferUsageFlags usage,
+		VkMemoryPropertyFlags memoryPropertyFlags,
+		VkDeviceSize size,
+		void *data,
+		VkBuffer *buffer,
+		VkDeviceMemory *memory,
+		VkDescriptorBufferInfo *descriptor);
+
+	// Load a mesh (using ASSIMP) and create vulkan vertex and index buffers with given vertex layout
+	void loadMesh(
+		std::string fiename,
+		vkMeshLoader::MeshBuffer *meshBuffer,
+		std::vector<vkMeshLoader::VertexLayout> vertexLayout,
+		float scale);
+	void loadMesh(
+		std::string filename,
+		vkMeshLoader::MeshBuffer *meshBuffer,
+		std::vector<vkMeshLoader::VertexLayout>
+		vertexLayout,
+		vkMeshLoader::MeshCreateInfo *meshCreateInfo);
+
+	void updateTextOverlay();
+
+	// Called when the text overlay is updating
+	// Can be overriden in derived class to add custom text to the overlay
+	virtual void getOverlayText(VulkanTextOverlay * textOverlay);
+
+	// Prepare the frame for workload submission
+	// - Acquires the next image from the swap chain
+	// - Sets the default wait and signal semaphores
+	void prepareFrame();
+
+	// Submit the frames' workload
+	// - Submits the text overlay (if enabled)
+	void submitFrame();
+#endif
+}
+
+public func void vulkanExampleBase_ctor(VulkanExampleBase* this, bool enableValidation) //, PFN_GetEnabledFeatures enabledFeaturesFn = nil)
+{
+    memset(this, 0, sizeof(VulkanExampleBase));
+    this.enableValidation = enableValidation;
+	this.enableVSync = false;
+	//this.enabledFeatures = {};
+	this.fpsTimer = 0.0;
+	this.viewUpdated = false;
+	this.resizing = false;
+	this.frameTimer = 1.0;
+	this.colorformat = VK_FORMAT_B8G8R8A8_UNORM;
+	this.setupCmdBuffer = VK_NULL_HANDLE;
+	this.submitPipelineStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	this.descriptorPool = VK_NULL_HANDLE;
+
+	this.textureLoader = nil;
+	this.prepared = false;
+	this.width = 1280;
+	this.height = 720;
+
+	this.timer = 0.0;
+	this.timerSpeed = 0.25;
+	this.paused = false;
+	this.enableTextOverlay = false;
+	this.rotationSpeed = 1.0;
+	this.zoomSpeed = 1.0;
+
+	this.quit = false;
+
+    this.virtuals.setupDepthStencil = vulkanExampleBase_setupDepthStencil;
+    this.virtuals.viewChanged = vulkanExampleBase_empty;
+    this.virtuals.setupRenderPass = vulkanExampleBase_setupRenderPass;
+    this.virtuals.setupFrameBuffer = vulkanExampleBase_setupFrameBuffer;
+    this.virtuals.buildCommandBuffers = vulkanExampleBase_empty;
+    this.derived = 0;
+
+    this.initXcbConnection();
+    this.initVulkan(enableValidation);
+}
+
+public func void vulkanExampleBase_dtor(VulkanExampleBase* this) {
+    this.swapChain.cleanup();
+	 if (this.descriptorPool != VK_NULL_HANDLE) {
+        vkDestroyDescriptorPool(this.device, this.descriptorPool, nil);
+    }
+    if (this.setupCmdBuffer != VK_NULL_HANDLE) {
+        vkFreeCommandBuffers(this.device, this.cmdPool, 1, &this.setupCmdBuffer);
+    }
+    this.destroyCommandBuffers();
+    vkDestroyRenderPass(this.device, this.renderPass, nil);
+    //for (uint32 i = 0; i < frameBuffers.size(); i++)
+    for (uint32 i = 0; i < swapchain.IMAGE_COUNT; i++)
+    {
+        vkDestroyFramebuffer(this.device, this.frameBuffers[i], nil);
+    }
+#if 0
+	// TODO
+    for (auto& shaderModule : shaderModules)
+    {
+        vkDestroyShaderModule(device, shaderModule, nil);
+    }
+#endif
+    vkDestroyImageView(this.device, this.depthStencil.view, nil);
+    vkDestroyImage(this.device, this.depthStencil.image, nil);
+    vkFreeMemory(this.device, this.depthStencil.mem, nil);
+
+    vkDestroyPipelineCache(this.device, this.pipelineCache, nil);
+
+    if (this.textureLoader) this.textureLoader.delete();
+
+  	vkDestroyCommandPool(this.device, this.cmdPool, nil);
+
+    vkDestroySemaphore(this.device, this.semaphores.presentComplete, nil);
+    vkDestroySemaphore(this.device, this.semaphores.renderComplete, nil);
+    vkDestroySemaphore(this.device, this.semaphores.textOverlayComplete, nil);
+
+#if 0
+	// TODO
+    if (enableTextOverlay) delete textOverlay;
+#endif
+
+    this.vulkanDevice.delete();
+
+#if 0
+    if (enableValidation) vkDebug::freeDebugCallback(instance);
+#endif
+    vkDestroyInstance(this.instance, nil);
+}
+
+func void vulkanExampleBase_destroyCommandBuffers(VulkanExampleBase* this) {
+	// 3rd ars = drawCmdBuffers.size(), TODO use elemsof(this.drawCmdBuffers)
+	vkFreeCommandBuffers(this.device, this.cmdPool, swapchain.IMAGE_COUNT, this.drawCmdBuffers);
+}
+
+func void vulkanExampleBase_initVulkan(VulkanExampleBase* this, bool enableValidation) {
+    VkResult err = this.createInstance(enableValidation);
+    if (err) {
+        printf("Could not create vulkan instance: %s\n", error2str(err));
+        exit(-1);
+    }
+
+	uint32 gpu_count = 0;
+	VkResult result = vkEnumeratePhysicalDevices(this.instance, &gpu_count, nil);
+	if (result != VK_SUCCESS) {
+		printf("error enumerating");
+		exit(-1);
+	}
+	printf("num gpu's: %d\n", gpu_count);
+	if (gpu_count == 0) {
+		printf("cannot find gpu\n");
+		exit(-1);
+	}
+	VkPhysicalDevice* physical_devices = malloc(sizeof(VkPhysicalDevice) * gpu_count);
+	result = vkEnumeratePhysicalDevices(this.instance, &gpu_count, physical_devices);
+	if (result != VK_SUCCESS) {
+		printf("error enumerating all");
+		exit(-1);
+	}
+	this.physicalDevice = physical_devices[0];
+	free(physical_devices);
+
+    this.vulkanDevice = VulkanDevice.new(this.physicalDevice);
+	this.vulkanDevice.createLogicalDevice(this.enabledFeatures);
+	this.device = this.vulkanDevice.logicalDevice;
+
+    vkGetPhysicalDeviceProperties(this.physicalDevice, &this.deviceProperties);
+    vkGetPhysicalDeviceFeatures(this.physicalDevice, &this.deviceFeatures);
+    // Gather physical device memory properties
+    vkGetPhysicalDeviceMemoryProperties(this.physicalDevice, &this.deviceMemoryProperties);
+
+    // Get a graphics queue from the device
+    vkGetDeviceQueue(this.device, this.vulkanDevice.queueFamilyIndices.graphics, 0, &this.queue);
+
+    // Find a suitable depth format
+    VkBool32 validDepthFormat = getSupportedDepthFormat(this.physicalDevice, &this.depthFormat);
+	if (!validDepthFormat) {
+		printf("no valid depthformat\n");
+        exit(-1);
+	}
+
+    this.swapChain.connect(this.instance, this.physicalDevice, this.device);
+
+	// Create synchronization objects
+    VkSemaphoreCreateInfo semaphoreCreateInfo = doSemaphoreCreateInfo();
+    // Create a semaphore used to synchronize image presentation
+    // Ensures that the image is displayed before we start submitting new commands to the queu
+    result = vkCreateSemaphore(this.device, &semaphoreCreateInfo, nil, &this.semaphores.presentComplete);
+	if (result != VK_SUCCESS) {
+	    printf("error creating semaphore\n");
+        exit(-1);
+	}
+    // Create a semaphore used to synchronize command submission
+    // Ensures that the image is not presented until all commands have been sumbitted and executed
+    result = vkCreateSemaphore(this.device, &semaphoreCreateInfo, nil, &this.semaphores.renderComplete);
+	if (result != VK_SUCCESS) {
+	    printf("error creating semaphore\n");
+        exit(-1);
+	}
+    // Create a semaphore used to synchronize command submission
+    // Ensures that the image is not presented until all commands for the text overlay have been sumbitted and executed
+    // Will be inserted after the render complete semaphore if the text overlay is enabled
+    result = vkCreateSemaphore(this.device, &semaphoreCreateInfo, nil, &this.semaphores.textOverlayComplete);
+	if (result != VK_SUCCESS) {
+	    printf("error creating semaphore\n");
+        exit(-1);
+	}
+
+    // Set up submit info structure
+    // Semaphores will stay the same during application lifetime
+    // Command buffer submission info is set by each example
+    this.submitInfo = doSubmitInfo();
+    this.submitInfo.pWaitDstStageMask = &this.submitPipelineStages;
+    this.submitInfo.waitSemaphoreCount = 1;
+    this.submitInfo.pWaitSemaphores = &this.semaphores.presentComplete;
+    this.submitInfo.signalSemaphoreCount = 1;
+    this.submitInfo.pSignalSemaphores = &this.semaphores.renderComplete;
+}
+
+func VkResult vulkanExampleBase_createInstance(VulkanExampleBase*this, bool enableValidation) {
+    this.enableValidation = enableValidation;
+
+    VkApplicationInfo appInfo = {}
+    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    appInfo.pApplicationName = "C2 App";
+    appInfo.pEngineName = "C2 Engine";
+    appInfo.apiVersion = VK_MAKE_VERSION(1, 0, 0);
+
+	const char*[] enabledExtensions = {
+		VK_KHR_SURFACE_EXTENSION_NAME,
+    	VK_KHR_XCB_SURFACE_EXTENSION_NAME,		// linux specific
+	}
+
+    VkInstanceCreateInfo instanceCreateInfo = {}
+    instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    instanceCreateInfo.pNext = nil;
+    instanceCreateInfo.pApplicationInfo = &appInfo;
+
+	instanceCreateInfo.enabledExtensionCount = elemsof(enabledExtensions);
+	instanceCreateInfo.ppEnabledExtensionNames = enabledExtensions;
+    return vkCreateInstance(&instanceCreateInfo, nil, &this.instance);
+}
+
+
+public func void vulkanExampleBase_initXcbConnection(VulkanExampleBase* this) {
+    int32 scr;
+    this.connection = xcb_connect(nil, &scr);
+    if (this.connection == nil) {
+        printf("Could not find a compatible Vulkan ICD!\n");
+        fflush(stdout);
+        exit(1);
+    }
+
+    const xcb_setup_t *setup = xcb_get_setup(this.connection);
+    xcb_screen_iterator_t iter = xcb_setup_roots_iterator(setup);
+    while (scr-- > 0)
+        xcb_screen_next(&iter);
+    this.screen = iter.data;
+}
+
+func const char* error2str(VkResult errorCode) {
+	switch (errorCode)
+	{
+#define STR(r) case VK_ ##r: return #r
+		STR(NOT_READY);
+		STR(TIMEOUT);
+		STR(EVENT_SET);
+		STR(EVENT_RESET);
+		STR(INCOMPLETE);
+		STR(ERROR_OUT_OF_HOST_MEMORY);
+		STR(ERROR_OUT_OF_DEVICE_MEMORY);
+		STR(ERROR_INITIALIZATION_FAILED);
+		STR(ERROR_DEVICE_LOST);
+		STR(ERROR_MEMORY_MAP_FAILED);
+		STR(ERROR_LAYER_NOT_PRESENT);
+		STR(ERROR_EXTENSION_NOT_PRESENT);
+		STR(ERROR_FEATURE_NOT_PRESENT);
+		STR(ERROR_INCOMPATIBLE_DRIVER);
+		STR(ERROR_TOO_MANY_OBJECTS);
+		STR(ERROR_FORMAT_NOT_SUPPORTED);
+		STR(ERROR_SURFACE_LOST_KHR);
+		STR(ERROR_NATIVE_WINDOW_IN_USE_KHR);
+		STR(SUBOPTIMAL_KHR);
+		STR(ERROR_OUT_OF_DATE_KHR);
+		STR(ERROR_INCOMPATIBLE_DISPLAY_KHR);
+		STR(ERROR_VALIDATION_FAILED_EXT);
+		STR(ERROR_INVALID_SHADER_NV);
+#undef STR
+	default:
+		break;
+	}
+	return "UNKNOWN_ERROR";
+}
+
+
+func void vulkanExampleBase_setupDepthStencil(VulkanExampleBase* this) {
+    // TODO
+    printf("Default vulkanExampleBase_setupDepthStencil\n");
+    exit(-1);
+}
+
+func void vulkanExampleBase_setupRenderPass(VulkanExampleBase* this) {
+    // TODO
+    printf("TODO vulkanExampleBase_setupRenderPass\n");
+    exit(-1);
+}
+
+func void vulkanExampleBase_setupFrameBuffer(VulkanExampleBase* this) {
+    // TODO
+    printf("TODO vulkanExampleBase_setupFrameBuffer\n");
+    exit(-1);
+}
+
+func void vulkanExampleBase_empty(VulkanExampleBase*) {}
+
+
+func VkSubmitInfo doSubmitInfo() {
+    VkSubmitInfo info = {}
+    info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    info.pNext = nil;
+    return info;
+}
+
+func VkBool32 getSupportedDepthFormat(VkPhysicalDevice pd, VkFormat *depthFormat_)
+{
+	// Since all depth formats may be optional, we need to find a suitable depth format to use
+	// Start with the highest precision packed format
+	VkFormat[] depthFormats = {
+		VK_FORMAT_D32_SFLOAT_S8_UINT,
+		VK_FORMAT_D32_SFLOAT,
+		VK_FORMAT_D24_UNORM_S8_UINT,
+		VK_FORMAT_D16_UNORM_S8_UINT,
+		VK_FORMAT_D16_UNORM
+	}
+
+	for (uint32 i=0; i<elemsof(depthFormats); i++) {
+		VkFormatProperties formatProps;
+		vkGetPhysicalDeviceFormatProperties(pd, depthFormats[i], &formatProps);
+		// Format must support depth stencil attachment for optimal tiling
+		if (formatProps.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
+		{
+			*depthFormat_ = depthFormats[i];
+			return true;
+		}
+	}
+
+	return false;
+}
+
+func VkSemaphoreCreateInfo doSemaphoreCreateInfo() {
+    VkSemaphoreCreateInfo semaphoreCreateInfo = {}
+    semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    semaphoreCreateInfo.pNext = nil;
+    semaphoreCreateInfo.flags = 0;
+    return semaphoreCreateInfo;
+}
+
+func VkCommandBufferAllocateInfo commandBufferAllocateInfo(VkCommandPool commandPool,
+														   VkCommandBufferLevel level,
+														   uint32 bufferCount) {
+    VkCommandBufferAllocateInfo info = {}
+    info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    info.commandPool = commandPool;
+    info.level = level;
+    info.commandBufferCount = bufferCount;
+    return info;
+}
+
+func void vulkanExampleBase_createSetupCommandBuffer(VulkanExampleBase* this)
+{
+    if (this.setupCmdBuffer != VK_NULL_HANDLE) {
+        vkFreeCommandBuffers(this.device, this.cmdPool, 1, &this.setupCmdBuffer);
+        this.setupCmdBuffer = VK_NULL_HANDLE; // todo : check if still necessary
+    }
+
+    VkCommandBufferAllocateInfo cmdBufAllocateInfo =
+        	commandBufferAllocateInfo(this.cmdPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
+
+    if (vkAllocateCommandBuffers(this.device, &cmdBufAllocateInfo, &this.setupCmdBuffer) != VK_SUCCESS) {
+        printf("error allocating command buffers\n");
+        exit(-1);
+	}
+
+    VkCommandBufferBeginInfo cmdBufInfo = {}
+    cmdBufInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+    if (vkBeginCommandBuffer(this.setupCmdBuffer, &cmdBufInfo) != VK_SUCCESS) {
+        printf("error begingCommandBuffer\n");
+        exit(-1);
+    }
+}
+
+func void vulkanExampleBase_setupSwapChain(VulkanExampleBase* this) {
+    this.swapChain.create(&this.width, &this.height, this.enableVSync);
+}
+
+public func xcb_window_t vulkanExampleBase_setupWindow(VulkanExampleBase* this) {
+    uint32 value_mask;
+	uint32[32] value_list;
+
+    this.window = xcb_generate_id(this.connection);
+
+    value_mask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
+    value_list[0] = this.screen.black_pixel;
+    value_list[1] =
+        XCB_EVENT_MASK_KEY_RELEASE |
+        XCB_EVENT_MASK_KEY_PRESS |
+        XCB_EVENT_MASK_EXPOSURE |
+        XCB_EVENT_MASK_STRUCTURE_NOTIFY |
+        XCB_EVENT_MASK_POINTER_MOTION |
+        XCB_EVENT_MASK_BUTTON_PRESS |
+        XCB_EVENT_MASK_BUTTON_RELEASE;
+
+    xcb_create_window(this.connection,
+        XCB_COPY_FROM_PARENT,
+        this.window, this.screen.root,
+        0, 0, cast<uint16>(this.width), cast<uint16>(this.height), 0,
+        XCB_WINDOW_CLASS_INPUT_OUTPUT,
+        this.screen.root_visual,
+        value_mask, value_list);
+
+    /* Magic code that will send notification when window is destroyed */
+    xcb_intern_atom_cookie_t cookie = xcb_intern_atom(this.connection, 1, 12, "WM_PROTOCOLS");
+    xcb_intern_atom_reply_t* reply = xcb_intern_atom_reply(this.connection, cookie, 0);
+
+    xcb_intern_atom_cookie_t cookie2 = xcb_intern_atom(this.connection, 0, 16, "WM_DELETE_WINDOW");
+    this.atom_wm_delete_window = xcb_intern_atom_reply(this.connection, cookie2, 0);
+
+    xcb_change_property(this.connection, XCB_PROP_MODE_REPLACE,
+        this.window, (*reply).atom, 4, 32, 1,
+        &(*this.atom_wm_delete_window).atom);
+
+/*
+    std::string windowTitle = getWindowTitle();
+    xcb_change_property(this.connection, XCB_PROP_MODE_REPLACE,
+        this.window, XCB_ATOM_WM_NAME, XCB_ATOM_STRING, 8,
+        title.size(), windowTitle.c_str());
+*/
+
+    free(reply);
+
+    xcb_map_window(this.connection, this.window);
+
+    return this.window;
+}
+
+public func void vulkanExampleBase_initSwapChain(VulkanExampleBase* this) {
+    this.swapChain.initSurface(this.connection, this.window);
+}
+
+func void vulkanExampleBase_handleEvent(VulkanExampleBase* this, const xcb_generic_event_t* event) {
+	// TODO use bitfields?
+	switch (event.response_type & 0x7f)
+    {
+    case XCB_CLIENT_MESSAGE:
+	{
+		xcb_client_message_event_t* mt = cast<xcb_client_message_event_t*>(event);
+		if (mt.data.data32[0] == this.atom_wm_delete_window.atom) {
+			this.quit = true;
+		}
+		break;
+	}
+    case XCB_MOTION_NOTIFY:
+        // TODO
+        break;
+    case XCB_BUTTON_PRESS:
+    case XCB_BUTTON_RELEASE:
+        // TODO
+        break;
+    case XCB_KEY_PRESS:
+    case XCB_KEY_RELEASE:
+	{
+		const xcb_key_release_event_t *keyEvent = cast<const xcb_key_release_event_t*>(event);
+        switch (keyEvent.detail) {
+		case KEY_ESCAPE:
+            this.quit = true;
+			break;
+		default:
+			break;
+		}
+        break;
+	}
+    case XCB_DESTROY_NOTIFY:
+        this.quit = true;
+        break;
+    case XCB_CONFIGURE_NOTIFY:
+    {
+        const xcb_configure_notify_event_t *cfgEvent = cast<const xcb_configure_notify_event_t*>(event);
+        if ((this.prepared) && ((cfgEvent.width != this.width) || (cfgEvent.height != this.height))) {
+			this.destWidth = cfgEvent.width;
+			this.destHeight = cfgEvent.height;
+			if ((this.destWidth > 0) && (this.destHeight > 0)) this.windowResize();
+        }
+        break;
+    }
+	default:
+        //printf("event %d\n", event.response_type & 0x7f);
+		break;
+	}
+}
+
+func void vulkanExampleBase_windowResize(VulkanExampleBase* this) {
+	if (!this.prepared) return;
+	this.prepared = false;
+
+    // Recreate swap chain
+    this.width = cast<uint16>(this.destWidth);
+    this.height = cast<uint16>(this.destHeight);
+    this.createSetupCommandBuffer();
+    this.setupSwapChain();
+
+    // Recreate the frame buffers
+    vkDestroyImageView(this.device, this.depthStencil.view, nil);
+    vkDestroyImage(this.device, this.depthStencil.image, nil);
+    vkFreeMemory(this.device, this.depthStencil.mem, nil);
+
+    // Virtual call!
+    this.virtuals.setupDepthStencil(this);
+    // TODO
+    for (uint32 i = 0; i < swapchain.IMAGE_COUNT; i++)
+    {
+        vkDestroyFramebuffer(this.device, this.frameBuffers[i], nil);
+    }
+    // virtual call
+    this.virtuals.setupFrameBuffer(this);
+
+    this.flushSetupCommandBuffer();
+
+    // Command buffers need to be recreated as they may store
+    // references to the recreated frame buffer
+    this.destroyCommandBuffers();
+    this.createCommandBuffers();
+    this.virtuals.buildCommandBuffers(this);
+#if 0
+
+    vkQueueWaitIdle(this.queue);
+    vkDeviceWaitIdle(this.device);
+
+    if (enableTextOverlay)
+    {
+        textOverlay->reallocateCommandBuffers();
+        updateTextOverlay();
+    }
+
+    camera.updateAspectRatio((float)width / (float)height);
+
+    // Notify derived class
+    windowResized();
+    viewChanged();
+
+    prepared = true;
+#endif
+}
+
+public func void vulkanExampleBase_prepare(VulkanExampleBase* this) {
+//    if (vulkanDevice->enableDebugMarkers) {
+//        vkDebug::DebugMarker::setup(device);
+//    }
+    this.createCommandPool();
+    this.createSetupCommandBuffer();
+    this.setupSwapChain();
+    this.createCommandBuffers();
+    // Virtual call
+    this.virtuals.setupDepthStencil(this);
+    this.virtuals.setupRenderPass(this);
+    this.createPipelineCache();
+    // Virtual call
+    this.virtuals.setupFrameBuffer(this);
+    this.flushSetupCommandBuffer();
+    // Recreate setup command buffer for derived class
+    this.createSetupCommandBuffer();
+
+    // Create a simple texture loader class
+    this.textureLoader = texture.Loader.new(this.vulkanDevice, this.queue, this.cmdPool);
+#if 0
+	// TODO
+    if (enableTextOverlay)
+    {
+        // Load the text rendering shaders
+        std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+        shaderStages.push_back(loadShader(getAssetPath() + "shaders/base/textoverlay.vert.spv", VK_SHADER_STAGE_V
+        shaderStages.push_back(loadShader(getAssetPath() + "shaders/base/textoverlay.frag.spv", VK_SHADER_STAGE_F
+        textOverlay = new VulkanTextOverlay(
+            vulkanDevice,
+            queue,
+            frameBuffers,
+            colorformat,
+            depthFormat,
+            &width,
+            &height,
+            shaderStages
+            );
+        updateTextOverlay();
+    }
+#endif
+}
+
+func void vulkanExampleBase_createCommandPool(VulkanExampleBase* this) {
+    VkCommandPoolCreateInfo cmdPoolInfo = {}
+    cmdPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    cmdPoolInfo.queueFamilyIndex = this.swapChain.queueNodeIndex;
+    cmdPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    if (vkCreateCommandPool(this.device, &cmdPoolInfo, nil, &this.cmdPool) != VK_SUCCESS) {
+		printf("error vkCreateCommandPool\n");
+        exit(-1);
+	}
+}
+
+func void vulkanExampleBase_createCommandBuffers(VulkanExampleBase* this) {
+    // Create one command buffer for each swap chain image and reuse for rendering
+
+    VkCommandBufferAllocateInfo cmdBufAllocateInfo =
+        commandBufferAllocateInfo(
+            this.cmdPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+			swapchain.IMAGE_COUNT);  //elemsof(this.drawCmdBuffers));
+
+    if (vkAllocateCommandBuffers(this.device, &cmdBufAllocateInfo, this.drawCmdBuffers) != VK_SUCCESS) {
+		printf("error vkAllocateCommandBuffers\n");
+        exit(-1);
+	}
+}
+
+func void vulkanExampleBase_createPipelineCache(VulkanExampleBase* this) {
+    VkPipelineCacheCreateInfo pipelineCacheCreateInfo = {}
+    pipelineCacheCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
+    if (vkCreatePipelineCache(this.device, &pipelineCacheCreateInfo, nil, &this.pipelineCache) != VK_SUCCESS) {
+        printf("error vkCreatePipelineCache\n");
+        exit(-1);
+    }
+}
+
+func void vulkanExampleBase_flushSetupCommandBuffer(VulkanExampleBase* this) {
+    if (this. setupCmdBuffer == VK_NULL_HANDLE)
+        return;
+
+    if (vkEndCommandBuffer(this.setupCmdBuffer) != VK_SUCCESS) {
+		printf("error vkEndCommandBuffer\n");
+        exit(-1);
+	}
+
+    VkSubmitInfo submitInfo = {}
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &this.setupCmdBuffer;
+
+    if (vkQueueSubmit(this.queue, 1, &this.submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+        printf("error vkQueueSubmit\n");
+        exit(-1);
+    }
+    if (vkQueueWaitIdle(this.queue) != VK_SUCCESS) {
+        printf("error vkQueueWaitIdle\n");
+        exit(-1);
+    }
+
+    vkFreeCommandBuffers(this.device, this.cmdPool, 1, &this.setupCmdBuffer);
+    this.setupCmdBuffer = VK_NULL_HANDLE;
+}
+
+public func void vulkanExampleBase_renderLoop(VulkanExampleBase* this) {
+	this.destWidth = this.width;
+    this.destHeight = this.height;
+
+    xcb_flush(this.connection);
+    while (!this.quit) {
+        //uint64 tStart = utils.now();
+        if (this.viewUpdated) {
+            this.viewUpdated = false;
+            // TODO virtual NASTY
+            this.virtuals.viewChanged(this);
+        }
+        xcb_generic_event_t *event;
+        while ((event = xcb_poll_for_event(this.connection))) {
+            this.handleEvent(event);
+            free(event);
+        }
+        // TODO
+    }
+}
+

@@ -1,0 +1,36 @@
+module glfw3;
+
+import c2 local;
+import vulkan as vk;
+
+const c_int GLFW_CLIENT_API = 0x00022001;
+const c_int GLFW_NO_API = 0;
+const c_int GLFW_RESIZABLE = 0x00020003;
+
+const c_int GLFW_TRUE = 1;
+const c_int GLFW_FALSE = 0;
+
+type GLFWwindow struct {} @(opaque)
+type GLFWmonitor struct {} @(opaque)
+
+func c_int glfwInit();
+
+func void glfwWindowHint(c_int hint, c_int value);
+
+func GLFWwindow* glfwCreateWindow(c_int width,
+                                  c_int height,
+                                  const c_char* title,
+                                  GLFWmonitor* monitor,
+                                  GLFWwindow* share);
+
+func c_int glfwWindowShouldClose(GLFWwindow* window);
+
+func void glfwPollEvents();
+
+func vk.VkResult glfwCreateWindowSurface(vk.VkInstance instance,
+                                         GLFWwindow* window,
+                                         const vk.VkAllocationCallbacks* allocator,
+                                         vk.VkSurfaceKHR* surface);
+
+func const c_char** glfwGetRequiredInstanceExtensions(uint32* count);
+

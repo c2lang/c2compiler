@@ -1,0 +1,45 @@
+module texture;
+
+import stdlib local;
+import stdio local;
+import vulkan local;
+
+import vulkan_device local;
+
+public type Loader struct {
+    VulkanDevice* vulkanDevice;
+    VkQueue queue;
+    VkCommandBuffer cmdBuffer;
+    VkCommandPool cmdPool;
+} @(opaque)
+// TODO opaque triggers bug, texture.h does not include device.h / vulkan.h
+
+public func Loader* loader_new(VulkanDevice* vulkanDevice, VkQueue queue, VkCommandPool cmdPool)
+{
+	Loader* this = malloc(sizeof(Loader));
+
+	this.vulkanDevice = vulkanDevice;
+	this.queue = queue;
+	this.cmdPool = cmdPool;
+
+	// Create command buffer for submitting image barriers
+	// and converting tilings
+	VkCommandBufferAllocateInfo cmdBufInfo = {}
+	cmdBufInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	cmdBufInfo.commandPool = cmdPool;
+	cmdBufInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	cmdBufInfo.commandBufferCount = 1;
+
+	if (vkAllocateCommandBuffers(this.vulkanDevice.logicalDevice, &cmdBufInfo, &this.cmdBuffer) != VK_SUCCESS) {
+        printf("error vkAllocateCommandBuffers\n");
+		exit(-1);
+	}
+
+    return this;
+}
+
+public func void loader_delete(Loader* this) {
+    vkFreeCommandBuffers(this.vulkanDevice.logicalDevice, this.cmdPool, 1, &this.cmdBuffer);
+    free(this);
+}
+

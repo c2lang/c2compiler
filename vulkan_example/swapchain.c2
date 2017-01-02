@@ -1,0 +1,371 @@
+module swapchain;
+
+import c2;
+import stdio local;
+import stdlib local;
+//import string local;
+import vulkan local;
+import xcb local;
+
+public const uint32 IMAGE_COUNT = 3;
+
+
+#define VK_KHR_SURFACE_EXTENSION_NAME     "VK_KHR_surface"
+#define VK_KHR_XCB_SURFACE_EXTENSION_NAME "VK_KHR_xcb_surface"
+
+// Macro to get a procedure address based on a vulkan instance
+#define GET_INSTANCE_PROC_ADDR(inst, entrypoint)                        \
+{                                                                       \
+    this.fp##entrypoint = cast<PFN_vk##entrypoint>(vkGetInstanceProcAddr(inst, "vk"#entrypoint)); \
+    if (this.fp##entrypoint == nil) {                                   \
+        exit(1);                                                        \
+    }                                                                   \
+}
+
+// Macro to get a procedure address based on a vulkan device
+#define GET_DEVICE_PROC_ADDR(dev, entrypoint)                           \
+{                                                                       \
+    this.fp##entrypoint = cast<PFN_vk##entrypoint>(vkGetDeviceProcAddr(dev, "vk"#entrypoint));   \
+    if (this.fp##entrypoint == nil) {                                        \
+        exit(1);                                                        \
+    }                                                                   \
+}
+
+
+public type SwapChainBuffer struct {
+    VkImage image;
+    VkImageView view;
+}
+
+public type VulkanSwapChain struct {
+    VkInstance instance;
+    VkDevice device;
+    VkPhysicalDevice physicalDevice;
+    VkSurfaceKHR surface;
+    // Function pointers
+    PFN_vkGetPhysicalDeviceSurfaceSupportKHR fpGetPhysicalDeviceSurfaceSupportKHR;
+    PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR fpGetPhysicalDeviceSurfaceCapabilitiesKHR;
+    PFN_vkGetPhysicalDeviceSurfaceFormatsKHR fpGetPhysicalDeviceSurfaceFormatsKHR;
+    PFN_vkGetPhysicalDeviceSurfacePresentModesKHR fpGetPhysicalDeviceSurfacePresentModesKHR;
+    PFN_vkCreateSwapchainKHR fpCreateSwapchainKHR;
+    PFN_vkDestroySwapchainKHR fpDestroySwapchainKHR;
+    PFN_vkGetSwapchainImagesKHR fpGetSwapchainImagesKHR;
+    PFN_vkAcquireNextImageKHR fpAcquireNextImageKHR;
+    PFN_vkQueuePresentKHR fpQueuePresentKHR;
+
+    VkFormat colorFormat;
+    VkColorSpaceKHR colorSpace;
+    VkSwapchainKHR swapChain;
+	uint32 imageCount;
+	VkImage[IMAGE_COUNT] images;
+    SwapChainBuffer[IMAGE_COUNT] buffers;
+	uint32 queueNodeIndex;
+}
+
+public func void vulkanSwapChain_create(VulkanSwapChain* this, uint32* width_, uint32* height_, bool vsync = false) {
+  	VkResult err;
+  	VkSwapchainKHR oldSwapchain = this.swapChain;
+
+	// Get physical device surface properties and formats
+	VkSurfaceCapabilitiesKHR surfCaps;
+	err = this.fpGetPhysicalDeviceSurfaceCapabilitiesKHR(this.physicalDevice, this.surface, &surfCaps);
+	if (err) {
+		printf("error getPhysical..\n");
+		exit(-1);
+	}
+
+	// Get available present modes
+	uint32 presentModeCount;
+	err = this.fpGetPhysicalDeviceSurfacePresentModesKHR(this.physicalDevice, this.surface, &presentModeCount, nil);
+	if (err || presentModeCount == 0) {
+		printf("error here\n");
+        exit(-1);
+	}
+    VkPresentModeKHR[presentModeCount] presentModes;
+	err = this.fpGetPhysicalDeviceSurfacePresentModesKHR(this.physicalDevice, this.surface, &presentModeCount, nil);
+    if (err) {
+        printf("error this.fpGetPhysicalDeviceSurfacePresentModesKHR\n");
+        exit(-1);
+    }
+
+	VkExtent2D swapchainExtent = {}
+	// If width (and height) equals the special value 0xFFFFFFFF, the size of the surface will be set by the swa
+	if (surfCaps.currentExtent.width == c2.max_uint32) {
+		// If the surface size is undefined, the size is set to
+		// the size of the images requested.
+		swapchainExtent.width = *width_;
+		swapchainExtent.height = *height_;
+	} else {
+		// If the surface size is defined, the swap chain size must match
+		swapchainExtent = surfCaps.currentExtent;
+		*width_ = surfCaps.currentExtent.width;
+		*height_ = surfCaps.currentExtent.height;
+	}
+
+	// Select a present mode for the swapchain
+
+	// The VK_PRESENT_MODE_FIFO_KHR mode must always be present as per spec
+	// This mode waits for the vertical blank ("v-sync")
+	VkPresentModeKHR swapchainPresentMode = VK_PRESENT_MODE_FIFO_KHR;
+
+
+	// If v-sync is not requested, try to find a mailbox mode
+	// It's the lowest latency non-tearing present mode available
+	if (!vsync) {
+		for (uint32 i = 0; i < presentModeCount; i++) {
+			if (presentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
+				swapchainPresentMode = VK_PRESENT_MODE_MAILBOX_KHR;
+				break;
+			}
+			if ((swapchainPresentMode != VK_PRESENT_MODE_MAILBOX_KHR) && (presentModes[i] == VK_PRESENT_MODE_IMMEDIATE_KHR)) {
+				swapchainPresentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
+			}
+		}
+	}
+
+	// Determine the number of images
+	uint32 desiredNumberOfSwapchainImages = surfCaps.minImageCount + 1;
+	if ((surfCaps.maxImageCount > 0) && (desiredNumberOfSwapchainImages > surfCaps.maxImageCount))
+	{
+		desiredNumberOfSwapchainImages = surfCaps.maxImageCount;
+	}
+
+	// Find the transformation of the surface
+	VkSurfaceTransformFlagsKHR preTransform;
+	if (surfCaps.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR) {
+		// We prefer a non-rotated transform
+		preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+	} else {
+		preTransform = cast<uint32>(surfCaps.currentTransform);
+	}
+
+	VkSwapchainCreateInfoKHR swapchainCI = {}
+	swapchainCI.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+	swapchainCI.pNext = nil;
+	swapchainCI.surface = this.surface;
+	swapchainCI.minImageCount = desiredNumberOfSwapchainImages;
+	swapchainCI.imageFormat = this.colorFormat;
+	swapchainCI.imageColorSpace = this.colorSpace;
+	//swapchainCI.imageExtent = { swapchainExtent.width, swapchainExtent.height }
+	swapchainCI.imageExtent.width = swapchainExtent.width;
+	swapchainCI.imageExtent.height = swapchainExtent.height;
+	swapchainCI.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+	swapchainCI.preTransform = cast<VkSurfaceTransformFlagBitsKHR>(preTransform);
+	swapchainCI.imageArrayLayers = 1;
+	swapchainCI.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	swapchainCI.queueFamilyIndexCount = 0;
+	swapchainCI.pQueueFamilyIndices = nil;
+	swapchainCI.presentMode = swapchainPresentMode;
+	swapchainCI.oldSwapchain = oldSwapchain;
+	// Setting clipped to VK_TRUE allows the implementation to discard rendering outside of the surface area
+	swapchainCI.clipped = VK_TRUE;
+	swapchainCI.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+
+    err = this.fpCreateSwapchainKHR(this.device, &swapchainCI, nil, &this.swapChain);
+    if (err) {
+        printf("error createSwapChainKHR\n");
+        exit(-1);
+    }
+
+	// If an existing sawp chain is re-created, destroy the old swap chain
+	// This also cleans up all the presentable images
+	if (oldSwapchain != VK_NULL_HANDLE) {
+		for (uint32 i = 0; i < this.imageCount; i++) {
+			vkDestroyImageView(this.device, this.buffers[i].view, nil);
+		}
+		this.fpDestroySwapchainKHR(this.device, oldSwapchain, nil);
+	}
+
+    err = this.fpGetSwapchainImagesKHR(this.device, this.swapChain, &this.imageCount, nil);
+    if (err) {
+        printf("error fpGetSwapchainImagesKHR\n");
+        exit(-1);
+    }
+    if (this.imageCount != IMAGE_COUNT) {
+        printf("Only support %d images, got %d\n", IMAGE_COUNT, this.imageCount);
+        exit(-1);
+    }
+
+	// Get the swap chain images
+	err = this.fpGetSwapchainImagesKHR(this.device, this.swapChain, &this.imageCount, this.images);
+    if (err) {
+        printf("error fpGetSwapchainImagesKHR\n");
+        exit(-1);
+    }
+
+	for (uint32 i = 0; i < this.imageCount; i++)
+	{
+		VkImageViewCreateInfo colorAttachmentView = {}
+		colorAttachmentView.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		colorAttachmentView.pNext = nil;
+		colorAttachmentView.format = this.colorFormat;
+		colorAttachmentView.components.r = VK_COMPONENT_SWIZZLE_R;
+		colorAttachmentView.components.g = VK_COMPONENT_SWIZZLE_G;
+		colorAttachmentView.components.b = VK_COMPONENT_SWIZZLE_B;
+		colorAttachmentView.components.a = VK_COMPONENT_SWIZZLE_A;
+		colorAttachmentView.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		colorAttachmentView.subresourceRange.baseMipLevel = 0;
+		colorAttachmentView.subresourceRange.levelCount = 1;
+		colorAttachmentView.subresourceRange.baseArrayLayer = 0;
+		colorAttachmentView.subresourceRange.layerCount = 1;
+		colorAttachmentView.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		colorAttachmentView.flags = 0;
+
+		this.buffers[i].image = this.images[i];
+
+		colorAttachmentView.image = this.buffers[i].image;
+
+		err = vkCreateImageView(this.device, &colorAttachmentView, nil, &this.buffers[i].view);
+		if (err) {
+            printf("error vkCreateImageView\n");
+            exit(-1);
+		}
+	}
+}
+
+public func void vulkanSwapChain_connect(VulkanSwapChain* this,
+                                  VkInstance instance_,
+                                  VkPhysicalDevice physicalDevice_,
+                                  VkDevice device_)
+{
+    this.instance = instance_;
+    this.physicalDevice = physicalDevice_;
+    this.device = device_;
+    GET_INSTANCE_PROC_ADDR(this.instance, GetPhysicalDeviceSurfaceSupportKHR)
+    GET_INSTANCE_PROC_ADDR(this.instance, GetPhysicalDeviceSurfaceCapabilitiesKHR)
+    GET_INSTANCE_PROC_ADDR(this.instance, GetPhysicalDeviceSurfaceFormatsKHR)
+    GET_INSTANCE_PROC_ADDR(this.instance, GetPhysicalDeviceSurfacePresentModesKHR)
+    GET_DEVICE_PROC_ADDR(this.device, CreateSwapchainKHR)
+    GET_DEVICE_PROC_ADDR(this.device, DestroySwapchainKHR)
+    GET_DEVICE_PROC_ADDR(this.device, GetSwapchainImagesKHR)
+    GET_DEVICE_PROC_ADDR(this.device, AcquireNextImageKHR)
+    GET_DEVICE_PROC_ADDR(this.device, QueuePresentKHR)
+
+    this.swapChain = VK_NULL_HANDLE;
+	this.imageCount = 0;
+	this.queueNodeIndex = c2.max_uint32;
+}
+
+public func void vulkanSwapChain_initSurface(VulkanSwapChain* this, xcb_connection_t* connection_, xcb_window_t window_) {
+    VkResult err;
+
+    // Create the os-specific surface
+    VkXcbSurfaceCreateInfoKHR surfaceCreateInfo = {}
+    surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
+    surfaceCreateInfo.connection = connection_;
+    surfaceCreateInfo.window = window_;
+    err = vkCreateXcbSurfaceKHR(this.instance, &surfaceCreateInfo, nil, &this.surface);
+
+    // Get available queue family properties
+    uint32 queueCount;
+    vkGetPhysicalDeviceQueueFamilyProperties(this.physicalDevice, &queueCount, nil);
+    if (queueCount != 2) {
+        printf("Only support 2 queues, got %d\n", queueCount);
+        exit(-1);
+    }
+
+    VkQueueFamilyProperties[queueCount] queueProps;
+    vkGetPhysicalDeviceQueueFamilyProperties(this.physicalDevice, &queueCount, queueProps);
+
+	// Iterate over each queue to learn whether it supports presenting:
+	// Find a queue with present support
+	// Will be used to present the swap chain images to the windowing system
+	VkBool32[queueCount] supportsPresent;
+	for (uint32 i = 0; i < queueCount; i++) {
+		this.fpGetPhysicalDeviceSurfaceSupportKHR(this.physicalDevice, i, this.surface, &supportsPresent[i]);
+	}
+
+	// Search for a graphics and a present queue in the array of queue
+	// families, try to find one that supports both
+	uint32 graphicsQueueNodeIndex = c2.max_uint32;
+	uint32 presentQueueNodeIndex = c2.max_uint32;
+	for (uint32 i = 0; i < queueCount; i++)
+	{
+		if ((queueProps[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0)
+		{
+			if (graphicsQueueNodeIndex == c2.max_uint32) {
+				graphicsQueueNodeIndex = i;
+			}
+
+			if (supportsPresent[i] == VK_TRUE) {
+				graphicsQueueNodeIndex = i;
+				presentQueueNodeIndex = i;
+				break;
+			}
+		}
+	}
+
+	if (presentQueueNodeIndex == c2.max_uint32) {
+		// If there's no queue that supports both present and graphics
+		// try to find a separate present queue
+		for (uint32 i = 0; i < queueCount; ++i) {
+			if (supportsPresent[i] == VK_TRUE) {
+				presentQueueNodeIndex = i;
+				break;
+			}
+		}
+	}
+
+	// Exit if either a graphics or a presenting queue hasn't been found
+	if (graphicsQueueNodeIndex == c2.max_uint32 || presentQueueNodeIndex == c2.max_uint32)
+	{
+		printf("Could not find a graphics and/or presenting queue!\n");
+		exit(-1);
+	}
+
+	// todo : Add support for separate graphics and presenting queue
+	if (graphicsQueueNodeIndex != presentQueueNodeIndex) {
+		printf("Separate graphics and presenting queues are not supported yet!\n");
+		exit(-1);
+	}
+
+	this.queueNodeIndex = graphicsQueueNodeIndex;
+
+	// Get list of supported surface formats
+	uint32 formatCount;
+	err = this.fpGetPhysicalDeviceSurfaceFormatsKHR(this.physicalDevice, this.surface, &formatCount, nil);
+	if (err || formatCount == 0) {
+		printf("error fpGetPhysicalDeviceSurfaceFormatsKHR\n");
+        exit(-1);
+	}
+
+	VkSurfaceFormatKHR[formatCount] surfaceFormats;
+	err = this.fpGetPhysicalDeviceSurfaceFormatsKHR(this.physicalDevice, this.surface, &formatCount, surfaceFormats);
+	if (err != VK_SUCCESS) {
+	    printf("error this.fpGetPhysicalDeviceSurfaceFormatsKHR\n");
+		exit(-1);
+	}
+
+	// If the surface format list only includes one entry with VK_FORMAT_UNDEFINED,
+	// there is no preferered format, so we assume VK_FORMAT_B8G8R8A8_UNORM
+	if ((formatCount == 1) && (surfaceFormats[0].format == VK_FORMAT_UNDEFINED))
+	{
+		this.colorFormat = VK_FORMAT_B8G8R8A8_UNORM;
+	}
+	else
+	{
+		// Always select the first available color format
+		// If you need a specific format (e.g. SRGB) you'd need to
+		// iterate over the list of available surface format and
+		// check for it's presence
+		this.colorFormat = surfaceFormats[0].format;
+	}
+	this.colorSpace = surfaceFormats[0].colorSpace;
+}
+
+public func void vulkanSwapChain_cleanup(VulkanSwapChain* this)
+{
+    if (this.swapChain != VK_NULL_HANDLE) {
+        for (uint32 i = 0; i < this.imageCount; i++)
+        {
+            vkDestroyImageView(this.device, this.buffers[i].view, nil);
+        }
+    }
+    if (this.surface != VK_NULL_HANDLE) {
+        this.fpDestroySwapchainKHR(this.device, this.swapChain, nil);
+        vkDestroySurfaceKHR(this.instance, this.surface, nil);
+    }
+    this.surface = VK_NULL_HANDLE;
+    this.swapChain = VK_NULL_HANDLE;
+}
+

@@ -1,0 +1,13 @@
+
+[library]
+language = "C"
+type = [ "dynamic" ]
+linkname = "vulkan"
+
+[[deps]]
+name = "xcb"
+type = "dynamic"
+
+[[modules]]
+name = "vulkan"
+

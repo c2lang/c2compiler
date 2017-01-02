@@ -1,0 +1,13 @@
+
+[library]
+language = "C"
+type = [ "static" ]
+linkname = "glfw3"
+
+[[deps]]
+name = "vulkan"
+type = "dynamic"
+
+[[modules]]
+name = "glfw3"
+
