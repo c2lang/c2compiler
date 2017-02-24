@@ -1,13 +1,13 @@
 an
 ## Installation of LLVM/Clang (C2 version)
-C2 is based on LLVM 3.9 and some parts of Clang 3.9.
+C2 is based on LLVM 4.0 and some parts of Clang 4.0.
 To install C2, follow the steps below. The example shows
 how to install in **$HOME/llvm-c2**, but any other dir should work.
 
 Note that both the Ubuntu/OS X guides *also* use the Generic part
 
 ### Ubuntu 14.04
-LLVM/Clang 3.9 needs cmake 3.4.3 or higher, since Ubuntu does not have
+LLVM/Clang 4.0 needs cmake 3.4.3 or higher, since Ubuntu does not have
 this natively, just install it from a binary package:
 (installed here in $HOME/progs)
 ```bash
@@ -42,15 +42,15 @@ fully compatibly with the original one (ie. it can just compile C/C++ just as we
 ```bash
 git clone git://github.com/llvm-mirror/llvm.git
 cd llvm/
-git checkout -b release_39 origin/release_39
+git checkout -b release_40 origin/release_40
 cd projects
 git clone git://github.com/llvm-mirror/compiler-rt.git
 cd compiler-rt
-git checkout -b release_39 origin/release_39
+git checkout -b release_40 origin/release_40
 cd ../../tools
 git clone git://github.com/c2lang/clang.git
 cd clang
-git checkout -b c2master_39 origin/c2master_39
+git checkout -b c2master_40 origin/c2master_40
 cd ../../..
 
 mkdir llvm_build
