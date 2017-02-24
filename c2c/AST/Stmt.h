@@ -49,7 +49,7 @@ enum StmtKind {
 };
 
 
-class LLVM_ALIGNAS(LLVM_PTR_SIZE) Stmt {
+class alignas(void*) Stmt {
 public:
     Stmt(StmtKind k);
     StmtKind getKind() const { return static_cast<StmtKind>(stmtBits.sKind); }
@@ -59,7 +59,7 @@ public:
 
 protected:
     // See Clang comments in include/clang/AST/Stmt.h about operator new/delete
-    void* operator new(size_t bytes) LLVM_NOEXCEPT {
+    void* operator new(size_t bytes) noexcept {
         assert(0 && "Stmt cannot be allocated with regular 'new'");
         return 0;
     }
@@ -70,12 +70,12 @@ protected:
 public:
     void* operator new(size_t bytes, const ASTContext& C, unsigned alignment = 8);
     // placement operator, for sub-class specific allocators
-    void* operator new(size_t bytes, void* mem) LLVM_NOEXCEPT { return mem; }
+    void* operator new(size_t bytes, void* mem) noexcept { return mem; }
 
-    void operator delete(void*, const ASTContext& C, unsigned) LLVM_NOEXCEPT {}
-    void operator delete(void*, const ASTContext* C, unsigned) LLVM_NOEXCEPT {}
-    void operator delete(void*, size_t) LLVM_NOEXCEPT {}
-    void operator delete(void*, void*) LLVM_NOEXCEPT {}
+    void operator delete(void*, const ASTContext& C, unsigned) noexcept {}
+    void operator delete(void*, const ASTContext* C, unsigned) noexcept {}
+    void operator delete(void*, size_t) noexcept {}
+    void operator delete(void*, void*) noexcept {}
 
 protected:
     class StmtBitfields {

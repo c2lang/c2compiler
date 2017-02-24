@@ -31,7 +31,7 @@
 // for tool_output_file
 #include <llvm/Support/ToolOutputFile.h>
 // for WriteBitcodeToFile
-#include <llvm/Bitcode/ReaderWriter.h>
+//#include <llvm/Bitcode/ReaderWriter.h>
 // For verifyModule()
 #include <llvm/IR/Verifier.h>
 

@@ -1214,7 +1214,7 @@ C2::ExprResult C2Sema::ActOnNumericConstant(const Token& Tok) {
     if (Literal.isFloatingLiteral()) {
         // clang::Sema::BuildFloatingLiteral()
         // TEMP Hardcoded
-        const llvm::fltSemantics& Format = llvm::APFloat::IEEEsingle;
+        const llvm::fltSemantics& Format = llvm::APFloat::IEEEsingle();
         APFloat Val(Format);
 
         APFloat::opStatus result = Literal.GetFloatValue(Val);

@@ -53,7 +53,7 @@ enum DeclKind {
     DECL_LABEL
 };
 
-class LLVM_ALIGNAS(LLVM_PTR_SIZE) Decl {
+class alignas(void*) Decl {
 public:
     Decl(DeclKind k, const char* name_, SourceLocation loc_,
          QualType type_, bool is_public);
@@ -92,7 +92,7 @@ public:
     // for debugging
     void dump() const;
 protected:
-    void* operator new(size_t bytes) LLVM_NOEXCEPT {
+    void* operator new(size_t bytes) noexcept {
         assert(0 && "Decl cannot be allocated with regular 'new'");
         return 0;
     }

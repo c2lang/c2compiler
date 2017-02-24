@@ -370,7 +370,7 @@ unsigned FileAnalyser::checkTypeDecl(TypeDecl* D) {
     {
         EnumTypeDecl* E = cast<EnumTypeDecl>(D);
         if (E->numConstants() == 0) {
-            Diags.Report(D->getLocation(), diag::error_empty_enum) << D->getName();
+            Diags.Report(D->getLocation(), diag::err_empty_enum) << D->getName();
             errors++;
         }
         break;

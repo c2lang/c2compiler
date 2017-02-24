@@ -131,7 +131,7 @@ enum TypeClass {
 };
 
 
-class LLVM_ALIGNAS(LLVM_PTR_SIZE) Type {
+class alignas(void*) Type {
 protected:
     Type(TypeClass tc, QualType canon)
         : canonicalType(canon)
@@ -139,7 +139,7 @@ protected:
         typeBits.typeClass = tc;
     }
 
-    void* operator new(size_t bytes) LLVM_NOEXCEPT {
+    void* operator new(size_t bytes) noexcept {
         assert(0 && "Type cannot be allocated with regular 'new'");
         return 0;
     }

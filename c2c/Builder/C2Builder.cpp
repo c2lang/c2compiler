@@ -134,7 +134,7 @@ public:
     ParseHelper(DiagnosticsEngine& Diags_,
                 LangOptions& LangOpts_,
                 clang::TargetInfo* pti_,
-                HeaderSearchOptions* HSOpts_,
+                std::shared_ptr<HeaderSearchOptions> HSOpts_,
                 SourceManager& SM_,
                 FileManager& FileMgr_,
                 const std::string& configs_)
@@ -152,7 +152,7 @@ public:
         HeaderSearch* Headers = new HeaderSearch(HSOpts, SM, Diags, LangOpts, pti);
         DummyLoader loader;
 
-        IntrusiveRefCntPtr<PreprocessorOptions> PPOpts(new PreprocessorOptions());
+        std::shared_ptr<PreprocessorOptions> PPOpts(new PreprocessorOptions());
         Preprocessor PP(PPOpts, Diags, LangOpts, SM, *Headers, loader);
 
         ApplyHeaderSearchOptions(PP.getHeaderSearchInfo(), *HSOpts, LangOpts, pti->getTriple());
@@ -199,7 +199,7 @@ public:
     DiagnosticsEngine& Diags;
     LangOptions& LangOpts;
     clang::TargetInfo* pti;
-    HeaderSearchOptions* HSOpts;
+    std::shared_ptr<HeaderSearchOptions> HSOpts;
     SourceManager& SM;
     FileManager& FileMgr;
     const std::string& configs;
@@ -326,7 +326,7 @@ int C2Builder::build() {
     clang::TargetInfo *pti = clang::TargetInfo::CreateTargetInfo(Diags, to);
     IntrusiveRefCntPtr<clang::TargetInfo> Target(pti);
 
-    HeaderSearchOptions* HSOpts = new HeaderSearchOptions();
+    std::shared_ptr<HeaderSearchOptions> HSOpts(new HeaderSearchOptions());
     // add current directory (=project root) to #include path
     char pwd[512];
     if (getcwd(pwd, 512) == NULL) {

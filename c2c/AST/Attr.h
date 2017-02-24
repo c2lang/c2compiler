@@ -76,7 +76,7 @@ public:
     void print(StringBuilder& output) const;
     const char* kind2str() const;
 private:
-    void* operator new(size_t bytes) LLVM_NOEXCEPT {
+    void* operator new(size_t bytes) noexcept {
         assert(0 && "Attr cannot be allocated with regular 'new'");
         return 0;
     }
