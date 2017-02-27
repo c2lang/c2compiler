@@ -1,6 +1,6 @@
 
 ## Installation of LLVM/Clang (C2 version)
-C2 is based on LLVM 3.8 and some parts of Clang 3.8.
+C2 is based on LLVM 4.0 and some parts of Clang 4.0.
 To install C2 on Windows, follow the steps below. The example shows
 how to install with Cygwin in **$HOME/llvm-c2**, but any other dir should work.
 
@@ -27,19 +27,21 @@ mkdir llvm-c2
 cd llvm-c2
 ```
 
+NOTE: UNTESTED for 4.0 yet
+
 Now, to build LLVM:
 ```bash
 git clone git://github.com/llvm-mirror/llvm.git
 cd llvm/
-git checkout -b release_38 origin/release_38
+git checkout -b release_40 origin/release_40
 cd projects
 git clone git://github.com/llvm-mirror/compiler-rt.git
 cd compiler-rt
-git checkout -b release_38 origin/release_38
+git checkout -b release_40 origin/release_40
 cd ../../tools
 git clone git://github.com/c2lang/clang.git
 cd clang
-git checkout -b c2master_38 origin/c2master_38
+git checkout -b c2master_40 origin/c2master_40
 cd ../../..
 mkdir llvm_build
 cd llvm_build
