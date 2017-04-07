@@ -17,7 +17,7 @@ Have fun! (and code..)
 
 
 ## Generic
-C2 is based on LLVM 3.8 and some parts of Clang 3.8. The design of C2C's
+C2 is based on LLVM 4.0 and some parts of Clang 4.0. The design of C2C's
 C2Parser and C2Sema class are heavily based on clang's Parser and Sema class,
 so hereby my thanks to the Clang folks!
 
@@ -78,11 +78,11 @@ definition". See the [installation document](INSTALL.md) on how to install.
 How it works is as follows:
 * use --refs or add $refs in recipe.txt to generate **refs** file during compilation.
 * c2c generates a **refs** file per target. This file contains all references
-    and their destination
+    and their respective destinations.
 * c2tags currently doesn't have a full-blown vim-plugin yet, but a small
-    code-fragment in you .vimrc suffices.
-* when standing on any symbol in C2 code, pressing ctrl-h (configurable)
-    will jump to the definition. Pressing ctrl-o (default) will jump back.
+    code-fragment in your .vimrc should suffice.
+* Pressing ctrl-h (configurable) with your cursor on any symbol
+    will jump to its definition. Pressing ctrl-o (default) will jump back.
 
 Just like **c2c** itself, **c2tags** can be called from any (sub)directory in the
 project tree.
