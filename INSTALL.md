@@ -1,10 +1,9 @@
-an
 ## Installation of LLVM/Clang (C2 version)
 C2 is based on LLVM 4.0 and some parts of Clang 4.0.
 To install C2, follow the steps below. The example shows
 how to install in **$HOME/llvm-c2**, but any other dir should work.
 
-Note that both the Ubuntu/OS X guides *also* use the Generic part
+Note that all OS-specific instructions include the Generic section
 
 ### Ubuntu 14.04
 LLVM/Clang 4.0 needs cmake 3.4.3 or higher, since Ubuntu does not have
@@ -27,6 +26,12 @@ export CC=clang
 export CXX=clang++
 ```
 
+### Arch
+```bash
+pacman -S cmake ncurses-dev clang
+yaourt -S libtinfo
+```
+
 ### OS X (Yosemite/El Capitan)
 Homebrew is currently at cmake-3.3, so a binary package for cmake is also needed on OS X
 ```bash
@@ -37,7 +42,7 @@ export PATH=~/progs/cmake-3.5.2-Darwin-x86_64/CMake.app/Contents/bin:$PATH
 
 ### Generic
 These commands build the C2-modified LLVM/Clang toolchain. The produced clang is still
-fully compatibly with the original one (ie. it can just compile C/C++ just as well).
+fully compatible with the original one (ie. it can compile C/C++ just as well).
 
 ```bash
 git clone git://github.com/llvm-mirror/llvm.git
@@ -66,7 +71,6 @@ cmake -G "Unix Makefiles" \
 make -j4
 make install
 ```
-
 ### OS X (Yosemite/El Capitan) (after building LLVM/Clang)
 You might need to create a link for your new clang to find the C++ headers.
 Since this uses the toolchain that comes with XCode, XCode will have to be installed.
@@ -93,7 +97,7 @@ If all goes well, the **c2c** executable should appear in the build/c2c/ directo
 
 If you get an error with some Clang/C2-related errors, try updating your clang C2 archive.
 
-The env.sh script sets some some environment variables that c2c requires to work,
+The env.sh script sets some some environment variables that c2c requires to work
 like *C2_LIBDIR*. It will also add $HOME/llvm-c2/bin to the $PATH
 
 
