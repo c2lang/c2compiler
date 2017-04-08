@@ -1,33 +1,42 @@
-
-## Installation of LLVM/Clang (C2 version)
-C2 is based on LLVM 4.0 and some parts of Clang 4.0.
-To install C2 on Windows, follow the steps below. The example shows
-how to install with Cygwin in **$HOME/llvm-c2**, but any other dir should work.
-
-First, you will need Cygwin installation. You can get it [here](https://cygwin.com/install.html).
-During the installation, select the following packages along with all that are selected
-by default:
-
-* OCaml
-* Ruby
-* Python
+This guide is for compiling C2C on Windows with the Cygwin compatibility layer.
+The Cygwin installer can be obtained [here](https://cygwin.com/install.html).
+You will need an installation with at least the base packages along with:
 * make
 * cmake
+* gcc
 * g++
+* libncurses-dev
+* ncurses
+* Python
 * git
-* ncurses (get both libncurses and ncurses)
-* nano (if you don't have any other text editor supporting LF line endings)
+* clang
 
-After the installation is finished, start Cygwin bash, where you will enter following commands.
-As this installation is counting with installation into $HOME/llvm-c2, you can start by creating
+Once your Cygwin is ready, start its shell where you will enter the commands
+written below.
+
+## Installation of LLVM/Clang (C2 version)
+C2 is based on LLVM 4.0 and some parts of a modified Clang 4.0, 
+so we will need to build it first.
+
+As this installation is counting with installation into **$HOME/llvm-c2**, you can start by creating
 the folder and navigating to it:
+
 ```bash
 cd $HOME
 mkdir llvm-c2
 cd llvm-c2
 ```
 
-NOTE: UNTESTED for 4.0 yet
+The git provided with Cygwin automatically changes LF line-endings (standard on Unix-based systems)
+to CRLF line-endings (standard on Windows). This however breaks some of LLVM's scripts, because the
+CR character is recognized as a part of words at the end of the line or as a syntax error. Therefore
+before you clone the following repositories, we need to disable that with:
+
+```bash
+git config --global core.autocrlf false
+```
+
+If you want, you can re-enable it once you are finished with the installation.
 
 Now, to build LLVM:
 ```bash
@@ -46,69 +55,62 @@ cd ../../..
 mkdir llvm_build
 cd llvm_build
 
-export CC=gcc
-export CXX=g++
-../llvm/configure --enable-optimized --prefix=$HOME/llvm-c2/ --with-python=/usr/bin/python2
+cmake -G "Unix Makefiles" \
+    -DCMAKE_BUILD_TYPE="Release" \
+    -DLLVM_ENABLE_ASSERTIONS=ON \
+    -DCMAKE_INSTALL_PREFIX=$HOME/llvm-c2 \
+    -DLLVM_ENABLE_PEDANTIC=OFF \
+    ../llvm
 
 make -j4 #can be raised a bit on faster computers
 make install
 ```
-NOTE:
-On some devices a bug in LLVM's make install command may occur and the following files are not put in correct directories:
-* DiagnosticCommonKinds.inc
-* DiagnosticSemaKinds.inc
-* DiagnosticParseKinds.inc
-It appears to be a recurring bug which is not 100% reproduceable. The solution is to simply copy
-said files from 
-```bash
-llvm_install_dir/llvm_build/tools/clang/include/clang/Basic/
-``` 
-to
-```bash
-llvm_install_dir/include/clang/Basic
-```
 
+Voila! Now you should have a working C2 version LLVM/Clang in $HOME/llvm-c2.
 
-Voila! When adding **$HOME/llvm-c2/bin** to the your $PATH, you should be able
-to build C2. Additionally, you need to add the PATH to c2tags and point the
-environment variable C2_LIBDIR to point at the directory containing the 'c2libs'
-directory. If you place c2tags in $HOME/bin, the following works:
 ```bash
 export PATH=$HOME/bin:$HOME/llvm-c2/bin:$PATH
 export C2_LIBDIR=$HOME/c2compiler/c2c/
 ```
 
 ## Building of C2C
-Note: In order for this to succeed, $PATH needs to contain $HOME/llvm-c2/bin
 
 First, start by cloning the repo and navigating to the folder
 ```bash
 git clone git://github.com/c2lang/c2compiler.git
 cd c2compiler/
-```bash
-Now open the CMakeLists.txt file that is found there (you can use any editor that supports LF endings,
-this shows nano)
-```bash
-nano CMakeLists.txt
 ```
-and change this line:
-```bash
-SET(CMAKE_CXX_COMPILER "clang++")
-```
-to this
-```bash
-SET(CMAKE_CXX_COMPILER "g++")
-```
-Save and exit nano with Ctrl+O and Ctrl+X.
 
-Then the compilation can be finished with
+In order to be able to build C2C, you need to have some enviroment variables set, namely
+C2_LIBDIR and PATH. There is a script called env.sh in the folder which can do it 
+for you automatically. This script needs to be executed like this:
+```bash
+. env.sh # mind the dot
+```
+or this:
+```bash
+source env.sh
+```
+
+This is because otherwise the script would be ran in a subshell and it wouldn't have been
+able to change, albeit temporarily, the environment variables. Alternatively, if you don't use
+a bash-compatible shell or if you installed LLVM into a different directory than **$HOME/llvm-c2**
+you can do it by hand:
+```bash
+alias c2c=$(pwd)/build/c2c/c2c
+export C2_LIBDIR=$(pwd)/c2libs
+export PATH=$PATH:/path/to/llvm/installation/bin
+```
+
+Then you should be able to compile C2C with
 ```bash
 mkdir build
 cd build
 cmake . ..
 make -j4
 ```
-If all goes well, the **c2c** executable should appear in the build directory.
+If all goes well, the **c2c** executable should appear in the build directory and be ready for use.
 
-If you get an error with some Clang/C2 errors, try updating your clang C2 archive.
-
+If you get an error with some Clang/C2 errors, try updating your clang C2 archive. If you have problems
+compiling LLVM, make sure that you have everything in the correct directory and the aforementioned packages
+installed.
