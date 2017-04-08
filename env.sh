@@ -7,13 +7,13 @@ OPTIND=1 #reset getopts
 C2_PATH=$HOME/llvm-c2/bin
 PERMANENT=false
 
-while getopts "pd:h" opt; do
+while getopts ":phd:" opt; do
     case "$opt" in
     p) PERMANENT=true
        ;;
     d) C2_PATH=$OPTARG
        ;;
-    h) echo "Usage: env.sh [-d DIR] [--permanent]"
+    h) echo "Usage: env.sh [-h] [-d DIR] [-p]"
         if [ "$EXECUTION_MANNER" = sourced ] ; then
           return
         else
