@@ -20,10 +20,10 @@ namespace C2 {
 
 class TargetInfo {
 public:
-    enum System { SYS_LINUX, SYS_DARWIN, SYS_UNKNOWN };
+    enum System { SYS_LINUX, SYS_DARWIN, SYS_CYGWIN, SYS_UNKNOWN };
     enum Machine { MACH_I686, MACH_X86_64, MACH_UNKNOWN };
     enum Vendor { VENDOR_UNKNOWN, VENDOR_APPLE };
-    enum Abi { ABI_GNU, ABI_MACHO };
+    enum Abi { ABI_GNU, ABI_MACHO, ABI_WIN32 };
 
     System sys;
     Machine mach;

@@ -39,6 +39,10 @@ void TargetInfo::getNative(TargetInfo& info) {
         info.sys = SYS_LINUX;
         info.vendor = VENDOR_UNKNOWN;   // hardcoded
         info.abi = ABI_GNU;             // hardcoded
+    } else if (strncmp(un.sysname, "CYGWIN", 6) == 0) {
+        info.sys = SYS_CYGWIN;
+	info.vendor = VENDOR_UNKNOWN;
+	info.abi = ABI_WIN32;
     } else {
         fprintf(stderr, "unsupported system: %s\n", un.sysname);
         exit(-1);
@@ -65,6 +69,7 @@ const char* C2::Str(TargetInfo::System sys) {
     switch (sys) {
     case TargetInfo::SYS_LINUX:     return "linux";
     case TargetInfo::SYS_DARWIN:    return "darwin";
+    case TargetInfo::SYS_CYGWIN:    return "cygwin";
     case TargetInfo::SYS_UNKNOWN:   return "unknown";
     }
     return "";
@@ -91,6 +96,7 @@ const char* C2::Str(TargetInfo::Abi abi) {
     switch (abi) {
     case TargetInfo::ABI_GNU:   return "gnu";
     case TargetInfo::ABI_MACHO: return "macho";
+    case TargetInfo::ABI_WIN32: return "win32";
     }
     return "";
 }
