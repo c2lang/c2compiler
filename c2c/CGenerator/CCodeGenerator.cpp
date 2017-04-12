@@ -99,6 +99,7 @@ void CCodeGenerator::generate(bool printCode, const std::string& outputDir) {
     out << "#ifndef C2_TYPES_H\n";
     out << "#define C2_TYPES_H\n";
     out << '\n';
+    out << "#ifdef __cplusplus\nextern \"C\" {\n#endif\n\n";
     out << "#define NULL ((void*)0)\n";
     out << '\n';
     // NOTE: 64-bit only for now
@@ -111,6 +112,7 @@ void CCodeGenerator::generate(bool printCode, const std::string& outputDir) {
     out << "typedef signed long int64_t;\n";
     out << "typedef unsigned long uint64_t;\n";
     out << '\n';
+    out << "#ifdef __cplusplus\n}\n#endif\n\n";
     out << "#endif\n";
     FileUtils::writeFile(outputDir.c_str(), outputDir + "c2types.h", out);
 }
