@@ -119,7 +119,7 @@ void CCodeGenerator::EmitAll() {
     EmitIncludeGuard();
     EmitIncludes();
 
-    // generate variables
+    hbuf << "#ifdef __cplusplus\nextern \"C\" {\n#endif\n\n";
     for (unsigned m=0; m<mods.size(); m++) {
         const AstList& files = mods[m]->getFiles();
         for (unsigned a=0; a<files.size(); a++) {
@@ -180,6 +180,8 @@ void CCodeGenerator::EmitAll() {
             }
         }
     }
+
+    hbuf << "#ifdef __cplusplus\n}\n#endif\n\n";
 
     // emit end of include guard
     hbuf << "#endif\n";
