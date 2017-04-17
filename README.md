@@ -71,7 +71,7 @@ To see all available options, run:
 ```
 c2c -h
 ```
-##c2tags
+## c2tags
 **c2tags** is C2's version of ctags. This tool is used by vim (e.a.) to "jump to
 definition". See the [installation document](INSTALL.md) on how to install.
 
