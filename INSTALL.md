@@ -93,6 +93,13 @@ cd build
 cmake . ..
 make -j4
 ```
+
+alternatively, if you want to you Ninja build, replace last two commands with:
+```bash
+cmake -G Ninja . ..
+ninja
+```
+
 If all goes well, the **c2c** executable should appear in the build/c2c/ directory.
 
 If you get an error with some Clang/C2-related errors, try updating your clang C2 archive.
