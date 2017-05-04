@@ -19,7 +19,15 @@ public type Public struct {
 
 #include "c2types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct test_Public_ test_Public;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 // @expect{atleast, build/test.c}

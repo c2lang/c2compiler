@@ -23,7 +23,15 @@ func void bar();
 
 #include "c2types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void foo_bar();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 
