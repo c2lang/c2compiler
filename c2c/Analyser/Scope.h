@@ -19,6 +19,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <clang/Basic/Diagnostic.h>
 
 #include "AST/Module.h"
 
@@ -35,8 +36,12 @@ class VarDecl;
 class ImportDecl;
 
 struct DynamicScope {
-    DynamicScope();
-    void Init(unsigned flags_);
+    DynamicScope(clang::DiagnosticsEngine& Diags_);
+
+    void reset(unsigned flags);
+    bool hasErrorOccurred() const { return ErrorTrap.hasErrorOccurred(); }
+
+    clang::DiagnosticErrorTrap ErrorTrap;
 
     unsigned Flags;
 
@@ -98,6 +103,8 @@ public:
     void EnterScope(unsigned flags);
     void ExitScope();
 
+    bool hasErrorOccurred() const { return curScope->hasErrorOccurred(); }
+
     bool allowBreak()    const { return curScope->Flags & BreakScope; }
     bool allowContinue() const { return curScope->Flags & ContinueScope; }
 
@@ -111,7 +118,7 @@ private:
     //Decl* findSymbolInUsed(const std::string& name) const;
 
     // Dynamic Scopes
-    DynamicScope scopes[MAX_SCOPE_DEPTH];
+    DynamicScope* scopes[MAX_SCOPE_DEPTH];
     unsigned scopeIndex;    // first free scope (= count of scopes)
     DynamicScope* curScope;
 

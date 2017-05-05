@@ -5,13 +5,29 @@ func void foo() {}
 
 func void test1() {
     int8  a = foo();     // @error{invalid type conversion from 'void' to 'int8'}
+}
+func void test2() {
     int16 b = foo();     // @error{invalid type conversion from 'void' to 'int16'}
+}
+func void test3() {
     int32 c = foo();     // @error{invalid type conversion from 'void' to 'int32'}
+}
+func void test4() {
     int64 d = foo();     // @error{invalid type conversion from 'void' to 'int64'}
+}
+func void test5() {
     uint8  e = foo();    // @error{invalid type conversion from 'void' to 'uint8'}
+}
+func void test6() {
     uint16 f = foo();    // @error{invalid type conversion from 'void' to 'uint16'}
+}
+func void test7() {
     uint32 g = foo();    // @error{invalid type conversion from 'void' to 'uint32'}
+}
+func void test8() {
     uint64 h = foo();    // @error{invalid type conversion from 'void' to 'uint64'}
+}
+func void test9() {
     bool   i = foo();    // @error{invalid type conversion from 'void' to 'bool'}
 }
 

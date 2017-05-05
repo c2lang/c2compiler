@@ -83,6 +83,7 @@ unsigned FileAnalyser::resolveTypeCanonicals() {
         const TypeDecl* D = ast.getType(i);
         // check generic type
         TR->resolveCanonicals(D, D->getType(), true);
+        // TODO check return var?
 
         // NOTE dont check any subclass specific things yet
 

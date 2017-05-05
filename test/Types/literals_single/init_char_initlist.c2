@@ -1,12 +1,10 @@
 // @warnings{no-unused}
 module test;
 
-func void test1() {
-    int8[] a = {1, 2,
-                200,    // @error{constant value 200 out-of-bounds for type 'int8', range [-128, 127]}
-                3, 4,
-                300 }    // @error{constant value 300 out-of-bounds for type 'int8', range [-128, 127]}
+int8[] a = {1, 2,
+            200,    // @error{constant value 200 out-of-bounds for type 'int8', range [-128, 127]}
+            3, 4,
+            300 }    // @error{constant value 300 out-of-bounds for type 'int8', range [-128, 127]}
 
-    int8[] b = { 100 + 50 } // @error{constant value 150 out-of-bounds for type 'int8', range [-128, 127]}
-}
+int8[] b = { 100 + 50 } // @error{constant value 150 out-of-bounds for type 'int8', range [-128, 127]}
 

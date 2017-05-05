@@ -26,8 +26,15 @@
 using namespace C2;
 using namespace clang;
 
-DynamicScope::DynamicScope() : Flags(0) {}
+DynamicScope::DynamicScope(clang::DiagnosticsEngine& Diags_)
+    : ErrorTrap(Diags_)
+    , Flags(0)
+{}
 
+void DynamicScope::reset(unsigned flags) {
+    Flags = flags;
+    ErrorTrap.reset();
+}
 
 Scope::Scope(const std::string& name_, const Modules& modules_, clang::DiagnosticsEngine& Diags_)
     : scopeIndex(0)
@@ -36,6 +43,9 @@ Scope::Scope(const std::string& name_, const Modules& modules_, clang::Diagnosti
     , myModule(0)
     , Diags(Diags_)
 {
+    for (unsigned i=0; i<MAX_SCOPE_DEPTH; i++) {
+        scopes[i] = new DynamicScope(Diags_);
+    }
     // add own module to scope
     myModule = findAnyModule(name_.c_str());
     assert(myModule);
@@ -284,8 +294,8 @@ Decl* Scope::findSymbolInUsed(const std::string& symbol) const {
 void Scope::EnterScope(unsigned flags) {
     assert (scopeIndex < MAX_SCOPE_DEPTH && "out of scopes");
     DynamicScope* parent = curScope;
-    curScope = &scopes[scopeIndex];
-    curScope->Flags = flags;
+    curScope = scopes[scopeIndex];
+    curScope->reset(flags);
 
     if (parent) {
         if (parent->Flags & BreakScope) curScope->Flags |= BreakScope;
@@ -298,7 +308,7 @@ void Scope::EnterScope(unsigned flags) {
 void Scope::ExitScope() {
     for (unsigned i=0; i<curScope->decls.size(); i++) {
         VarDecl* D = curScope->decls[i];
-        if (!D->isUsed()) {
+        if (!D->isUsed() && !curScope->hasErrorOccurred()) {
             unsigned msg = diag::warn_unused_variable;
             if (D->isParameter()) msg = diag::warn_unused_parameter;
             Diags.Report(D->getLocation(), msg) << D->DiagName();
@@ -313,7 +323,7 @@ void Scope::ExitScope() {
 
     scopeIndex--;
     if (scopeIndex == 0) curScope = 0;
-    else curScope = &scopes[scopeIndex-1];
+    else curScope = scopes[scopeIndex-1];
 }
 
 const Module* Scope::findAnyModule(const char* name_) const {

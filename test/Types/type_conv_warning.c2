@@ -1,23 +1,23 @@
 // @warnings{no-unused}
 module test;
 
-public func int32 main() {
-    int64 myInt64 = 1;
-    int32 myInt32 = 1;
-    int16 myInt16 = 1;
-    int8 myInt8 = 1;
-    uint64 myUInt64 = 1;
-    uint32 myUInt32 = 1;
-    uint16 myUInt16 = 1;
-    uint8 myUInt8 = 1;
-    float32 myFloat32 = 1;
-    float64 myFloat64 = 1;
-    bool myBool = true;
+int64 myInt64 = 1;
+int32 myInt32 = 1;
+int16 myInt16 = 1;
+int8 myInt8 = 1;
+uint64 myUInt64 = 1;
+uint32 myUInt32 = 1;
+uint16 myUInt16 = 1;
+uint8 myUInt8 = 1;
+float32 myFloat32 = 1;
+float64 myFloat64 = 1;
+bool myBool = true;
 
+func void test1() {
+    myBool  = myInt64;
     myInt32 = myInt64;  // @warning{implicit conversion loses integer precision: 'int64' to 'int32'}
     myInt16 = myInt32;  // @warning{implicit conversion loses integer precision: 'int32' to 'int16'}
     myInt8  = myInt16;  // @warning{implicit conversion loses integer precision: 'int16' to 'int8'}
-    myBool  = myInt64;
 
     myUInt32 = myUInt64;    // @warning{implicit conversion loses integer precision: 'uint64' to 'uint32'}
     myUInt16 = myUInt32;    // @warning{implicit conversion loses integer precision: 'uint32' to 'uint16'}
@@ -33,8 +33,9 @@ public func int32 main() {
     myFloat32 = myFloat64;  // @warning{implicit conversion loses floating-point precision: 'float64' to 'float32'}
 
     myBool = myFloat32;     // @error{invalid type conversion from 'float32' to 'bool'}
-    myBool = myFloat64;     // @error{invalid type conversion from 'float64' to 'bool'}
+}
 
-    return 0;
+func void test2() {
+    myBool = myFloat64;     // @error{invalid type conversion from 'float64' to 'bool'}
 }
 

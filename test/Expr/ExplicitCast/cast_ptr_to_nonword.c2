@@ -12,7 +12,13 @@ type Enum enum uint32 {
 func void test1(Struct* s) {
     uint64 a = cast<uint64>(s);
     uint32 b = cast<uint32>(s);     // @error{pointers may only be cast to integer type 'uint64'}
+}
+
+func void test2(Struct* s) {
     bool c = cast<bool>(s);       // @error{pointers may only be cast to integer type 'uint64'}
+}
+
+func void test3(Struct* s) {
     Enum d = cast<Enum>(s);       // @error{pointers may only be cast to integer type 'uint64'}
 }
 

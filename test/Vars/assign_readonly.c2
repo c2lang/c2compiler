@@ -1,15 +1,21 @@
 // @warnings{no-unused}
 module test;
 
-public func int32 main() {
-    const int32 A = 0;
+const int32 A = 0;
+func void test1() {
     A = 1;          // @error{read-only variable is not assignable}
-    A++;            // @error{read-only variable is not assignable}
-    A += 3;         // @error{read-only variable is not assignable}
-
-    const int32[10] Array = {0}
-    Array[0] = 1;   // @error{read-only variable is not assignable}
-    return 0;
 }
 
+func void test2() {
+    A++;            // @error{read-only variable is not assignable}
+}
+
+func void test3() {
+    A += 3;         // @error{read-only variable is not assignable}
+}
+
+func void test4() {
+    const int32[10] Array = {0}
+    Array[0] = 1;   // @error{read-only variable is not assignable}
+}
 

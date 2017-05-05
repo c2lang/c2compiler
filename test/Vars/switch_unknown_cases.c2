@@ -1,0 +1,12 @@
+module test;
+
+func void test1() {
+    int32 i;
+    switch (i) {
+    case j:     // @error{use of undeclared identifier j}
+        break;
+    case k:     // @error{use of undeclared identifier k}
+        break;
+    }
+}
+

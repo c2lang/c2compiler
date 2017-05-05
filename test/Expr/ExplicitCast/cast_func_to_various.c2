@@ -17,14 +17,32 @@ type FuncSame func void(int32);
 
 func void test1(Func arg) {
     bool a = cast<bool>(arg);         // @error{pointers may only be cast to integer type 'uint64'}
+}
+
+func void test2(Func arg) {
     uint8 b = cast<uint8>(arg);       // @error{pointers may only be cast to integer type 'uint64'}
+}
+
+func void test3(Func arg) {
     uint32 c = cast<uint32>(arg);     // @error{pointers may only be cast to integer type 'uint64'}
+}
+
+func void test4(Func arg) {
     float32 d = cast<float32>(arg);   // @error{pointers may only be cast to integer type 'uint64'}
+}
+
+func void test5(Func arg) {
     uint32* e = cast<uint32*>(arg);   // @error{only integers of type 'uint64' may be cast to a pointer}
+}
+
+func void test6(Func arg) {
     uint32 f = cast<uint32>(arg);     // @error{pointers may only be cast to integer type 'uint64'}
+}
+
+func void test7(Func arg) {
     uint64 g = cast<uint64>(arg);
-    Enum j = cast<Enum>(arg);              // @error{cannot cast type 'void (int32)' to type '(enum)Enum' (aka 'uint32')}
     FuncOther k = cast<FuncOther>(arg);
     FuncSame l = cast<FuncSame>(arg);
+    Enum j = cast<Enum>(arg);              // @error{cannot cast type 'void (int32)' to type '(enum)Enum' (aka 'uint32')}
 }
 

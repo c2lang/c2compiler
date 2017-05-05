@@ -4,27 +4,35 @@ module test;
 type Int int32;
 type UInt uint32;
 
+uint32 b = 0;
+int32 a = 1;
 func void test1() {
-    uint32 b = 0;
-    int32 a = 1;
     b = b[2:1];
     b = a[2:1];      // @error{bit offsets are only allowed on unsigned integer type}
+}
 
+func void test2() {
     bool c = true;
     b = c[0:0];      // @error{bit offsets are only allowed on unsigned integer type}
+}
 
+func void test3() {
     const int8* text = "hallo";
     b = text[4:2];   // @error{bit offsets are only allowed on unsigned integer type}
+}
 
+func void test4() {
     b = test1[4:2];  // @error{bit offsets are only allowed on unsigned integer type}
+}
 
+func void test5() {
     uint8 d = 2;
     b = d[2:1];
 
-    Int e = 1;
-    b = e[2:1];      // @error{bit offsets are only allowed on unsigned integer type}
-
     UInt f = 1;
     b = f[2:1];
+
+    Int e = 1;
+    b = e[2:1];      // @error{bit offsets are only allowed on unsigned integer type}
 }
 

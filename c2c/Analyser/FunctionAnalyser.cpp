@@ -214,13 +214,13 @@ void FunctionAnalyser::checkFunction(FunctionDecl* func) {
             scope.addScopedSymbol(arg);
         }
     }
-    if (Diags.hasErrorOccurred()) return;
+    if (scope.hasErrorOccurred()) return;
 
     CompoundStmt* body = func->getBody();
     if (body) {
         analyseCompoundStmt(body);
     }
-    if (Diags.hasErrorOccurred()) return;
+    if (scope.hasErrorOccurred()) return;
 
     // check for return statement of return value is required
     QualType rtype = func->getReturnType();
@@ -291,6 +291,7 @@ void FunctionAnalyser::analyseCompoundStmt(Stmt* stmt) {
     Stmt** stmts = compound->getStmts();
     for (unsigned i=0; i<compound->numStmts(); i++) {
         analyseStmt(stmts[i]);
+        if (scope.hasErrorOccurred()) return;
     }
 }
 
@@ -356,7 +357,7 @@ void FunctionAnalyser::analyseSwitchStmt(Stmt* stmt) {
     SwitchStmt* S = cast<SwitchStmt>(stmt);
 
     scope.EnterScope(Scope::DeclScope);
-    analyseCondition(S->getCond());
+    if (!analyseCondition(S->getCond())) return;
 
     unsigned numCases = S->numCases();
     Stmt** cases = S->getCases();
@@ -545,7 +546,7 @@ void FunctionAnalyser::analyseDeclStmt(Stmt* stmt) {
     scope.addScopedSymbol(decl);
 }
 
-void FunctionAnalyser::analyseCondition(Stmt* stmt) {
+bool FunctionAnalyser::analyseCondition(Stmt* stmt) {
     LOG_FUNC
 
     if (isa<DeclStmt>(stmt)) {
@@ -554,10 +555,10 @@ void FunctionAnalyser::analyseCondition(Stmt* stmt) {
         assert(isa<Expr>(stmt));
         Expr* E = cast<Expr>(stmt);
         QualType Q1 = analyseExpr(E, RHS);
-        if (Q1.isValid()) {
-            EA.check(Type::Bool(), E);
-        }
+        if (!Q1.isValid()) return false;
+        EA.check(Type::Bool(), E);
     }
+    return true;
 }
 
 void FunctionAnalyser::analyseStmtExpr(Stmt* stmt) {
@@ -1303,11 +1304,16 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
 QualType FunctionAnalyser::analyseConditionalOperator(Expr* expr) {
     LOG_FUNC
     ConditionalOperator* condop = cast<ConditionalOperator>(expr);
-    analyseExpr(condop->getCond(), RHS);
+    QualType TCond = analyseExpr(condop->getCond(), RHS);
+    if (!TCond.isValid()) return QualType();
+
     // check if Condition can be casted to bool
     EA.check(Type::Bool(), condop->getCond());
     QualType TLeft = analyseExpr(condop->getLHS(), RHS);
-    analyseExpr(condop->getRHS(), RHS);
+
+    QualType TRight = analyseExpr(condop->getRHS(), RHS);
+    if (!TRight.isValid()) return QualType();
+
     expr->setCTC(CTC_PARTIAL);  // always set to Partial for ExprTypeAnalyser
     return TLeft;
 }
@@ -1335,6 +1341,7 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
         QualType Q = Context.getPointerType(LType);
         expr->setType(Q);
         expr->setConstant();
+        // TODO use return type
         TR.resolveCanonicals(0, Q, true);
         return Q;
     }

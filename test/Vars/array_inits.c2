@@ -1,19 +1,17 @@
 // @warnings{no-unused}
 module test;
 
-func void test1() {
-    int32[] a;    // @error{definition of variable with array type needs an explicit size or an initializer}
-    int8[] b;   // @error{definition of variable with array type needs an explicit size or an initializer}
+int32[] a;    // @error{definition of variable with array type needs an explicit size or an initializer}
+int8[] b;   // @error{definition of variable with array type needs an explicit size or an initializer}
 
-    int32[] c = 10;  // @error{array initializer must be an initializer list}
-    int8[]  d = 20;  // @error{array initializer must be an initializer list or string literal}
-    uint8[] e = 20;  // @error{array initializer must be an initializer list or string literal}
+int32[] c = 10;  // @error{array initializer must be an initializer list}
+int8[]  d = 20;  // @error{array initializer must be an initializer list or string literal}
+uint8[] e = 20;  // @error{array initializer must be an initializer list or string literal}
 
-    int32[] f = "foo"; // @error{array initializer must be an initializer list}
-    int8[]  g = "bar";
-    uint8[] h = "faa";
+int32[] f = "foo"; // @error{array initializer must be an initializer list}
+int8[]  g = "bar";
+uint8[] h = "faa";
 
-    int8[3] i = "bar";
-    int8[3] j = "hello"; // @error{initializer-string for char array is too long}
-}
+int8[3] i = "bar";
+int8[3] j = "hello"; // @error{initializer-string for char array is too long}
 

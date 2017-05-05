@@ -9,6 +9,9 @@ func void test1() {
     int32 b = cast<int8>(200);
     int32 c = cast<int32>(200);
     int8  d = cast<int32>(200);     // @error{constant value 200 out-of-bounds for type 'int8', range [-128, 127]}
+}
+
+func void test2() {
     int8  e = cast<Number32>(200);   // @error{constant value 200 out-of-bounds for type 'int8', range [-128, 127]}
 }
 

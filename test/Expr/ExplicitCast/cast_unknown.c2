@@ -9,9 +9,13 @@ func void test1() {
     int32 b = cast<Number>(a);
 
     int32 c = cast<Foo>(a);         // @error{unknown type name Foo}
+}
 
+func void test2() {
     int32 d = cast<Number>(bar);    // @error{use of undeclared identifier bar}
+}
 
+func void test3() {
     int32 e = cast<Bar>         // @error{unknown type name Bar}
         (faa);                  // @error{use of undeclared identifier faa}
 }

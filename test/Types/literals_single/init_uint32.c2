@@ -1,10 +1,8 @@
 // @warnings{no-unused}
 module test;
 
-func void test1() {
-    uint32 a = 0;
-    uint32 b = 4294967295;
-    uint32 c = 4294967296;   // @error{constant value 4294967296 out-of-bounds for type 'uint32', range [0, 4294967295]}
-    uint32 d = -1;           // @error{constant value -1 out-of-bounds for type 'uint32', range [0, 4294967295]}
-}
+uint32 a = 0;
+uint32 b = 4294967295;
+uint32 c = 4294967296;   // @error{constant value 4294967296 out-of-bounds for type 'uint32', range [0, 4294967295]}
+uint32 d = -1;           // @error{constant value -1 out-of-bounds for type 'uint32', range [0, 4294967295]}
 
