@@ -1,0 +1,70 @@
+.TH C2C 1
+.SH NAME
+c2c \- compiler for the C2 language
+.SH SYNOPSIS
+.B c2c
+[\fB\-hiIcClpsStkv] [\fB\-\-help\fR] [\fB\-\-a0\fR] [\fB\-\-a1\fR] [\fB\-\-a2\fR] [\fB\-\-a3\fR] [\fB\-\-aL\fR] [\fB\-\-about\fR] [\fB\-\-test\fR] [\fB\-\-check\fR] [\fB\-\-showlibs\fR] [\fB\-\-check\fR] [\fB\-\-refs\fR] [\fB\-\-deps\fR] [\fB\-d\fR \fIDIR\fR] [\fB\-f\fB \fIFILE\fR] [\fItarget\fR]
+.SH DESCRIPTION
+.B c2c
+is the compiler of the C2 programming language. The language and the compiler is brought to life by Bas van den Berg. The language bears many similarities to C, but provides a stricter syntax, great tooling, a native support for libraries, great tooling, shorter compilation times and allows a higher development speed. C2 is intended to be used in the same fields where C is currently in use. That means low-level programs like bootloaders, kernels, drivers and system-level tooling.
+    The C2 compiler is makes use of the LLVM Compiler Infrastructure and a modified version of the Clang C compiler. See c2lang.org for more information. 
+.SH OPTIONS
+.TP
+.BR \-h ", " \-\-help\fR
+Print the help text.
+.TP
+.BR \-\-about\fR
+Print the about text.
+.TP
+.BR \-c\fR
+Generate C code.
+.TP
+.BR \-C\fR
+Print generated C code.
+.TP
+.BR \-i\fR
+Generate LLVM IR.
+.TP
+.BR \-I\fR
+Print generated LLVM IR.
+.TP
+.BR \-p\fR
+Print a list of modules.
+.TP
+.BR \-s\fR
+Print symbols from modules, but not library symbols.
+.TP
+.BR \-S\fR
+Print symbols from both modules and libraries.
+.TP
+.BR \-t\fR
+Print compilation timing.
+.TP
+.BR \-d " " \fIpath\fR
+Change the current working directory of C2C before starting compilation.
+.TP
+.BR \-f " " \fIfile\fR
+Compile a single file as a dummy target. Useful for testing.
+.TP
+.BR \-l\fR
+Print all targets found in the recipe file.
+.TP
+.BR \-v\fR
+Verbose logging.
+.TP
+.BR \-\-test\fR
+Don't check for a main function in targets. Useful for testing, hence the name.
+.TP
+.BR \-\-deps\fR
+Print all module dependenciess.
+.TP
+.BR \-\-refs\fR
+Generate a refs file. Refs files are used by the c2tags tool for jumping to definition.
+.TP
+.BR \-\-showlibs\fR
+Show all libraries visible to C2C.
+.TP
+.BR \-\-check\fR
+Produce neither C code nor LLVM IR. Code is only parsed analysed.
+.SH LICENSE
+The C2 compiler is licensed under the Apache License, Version 2.0. The licenses is included in nigh every source file of the compiler.
