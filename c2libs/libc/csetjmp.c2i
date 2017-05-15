@@ -1,0 +1,27 @@
+module csetjmp;
+
+import c2 local;
+
+type __jmp_buf_tag struct {
+    char[200] data; // for 64-bit
+}
+
+type jmp_buf __jmp_buf_tag[1];
+
+// TODO alias setjmp -> _setjmp
+func int32 setjmp(__jmp_buf_tag[1] __env);
+
+func int32 _setjmp(__jmp_buf_tag[1] __env);
+
+
+func void longjmp(__jmp_buf_tag[1] __env, int32 __val);  // attribute(no_return)
+
+func c_uint sleep(c_uint __seconds);
+func c_char* getcwd(char* buf, c_size size);
+func c_int chdir(const c_char* path);
+
+const uint8 R_OK = 4;
+const uint8 W_OK = 2;
+const uint8 X_OK = 1;
+const uint8 F_OK = 0;
+
