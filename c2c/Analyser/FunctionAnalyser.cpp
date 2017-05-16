@@ -527,6 +527,8 @@ void FunctionAnalyser::analyseDeclStmt(Stmt* stmt) {
                 haveError = true;
             }
         }
+    } else {
+        haveError = true;
     }
 
     // check name
