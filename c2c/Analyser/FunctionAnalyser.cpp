@@ -1541,7 +1541,7 @@ QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr* M, unsign
                 scope.checkAccess(func, member->getLocation());
 
                 if (!checkStructTypeArg(T, func)) {
-                    Diag(member->getLocation(), diag::err_struct_func_args) << func->DiagName();
+                    Diag(member->getLocation(), diag::err_static_struct_func_notype);// << func->DiagName();
                     return QualType();
                 }
                 M->setIsStructFunction();

@@ -9,10 +9,10 @@ type Type2 struct {
     int32 x;
 }
 
-func void type_init(Type2*) {}
+func void Type.init(Type2*) {}
 
 func void myfunc() {
     Type t;
-    t.init();       // @error{'test.type_init' is not a struct-function (first argument incorrect/missing)}
+    t.init();       // @error{static struct-functions must use type as left hand side}
 }
 

@@ -6,11 +6,11 @@ public type MyType struct {
 } @(opaque)
 
 
-public func int32 myType_getNumber(MyType* t) {
+public func int32 MyType.getNumber(MyType* t) {
     return t.number;
 }
 
-public func const char* myType_getText(MyType* t) {
+public func const char* MyType.getText(MyType* t) {
     return t.text;
 }
 

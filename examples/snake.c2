@@ -70,8 +70,6 @@ type Option struct {
     Coor[4] parts;
 }
 
-Board board;
-
 Piece[] pieces = {
     { // Hollow piece
         .side1 = { { 0, 0, 0 } },
@@ -128,7 +126,7 @@ const Position[] Setup = {
 }
 
 
-func Coor coor_rotate(Coor input, uint32 rotation) {
+func Coor Coor.rotate(const Coor* input, uint32 rotation) {
     int8 x = input.x;
     int8 y = input.y;
     int8 t;
@@ -170,35 +168,35 @@ func void calculate_rotations() {
             for (uint32 i=0; i<4; i++) {  // side1
                 Coor c = pp.side1[i];
                 if (i != 0 && c.x == 0 && c.y == 0) break;
-                o1.parts[i] = coor_rotate(c, o);
+                o1.parts[i] = c.rotate(o);
             }
             Option* o2 = &options[o+4][p];
             for (uint32 i=0; i<4; i++) {  // side2
                 Coor c = pp.side2[i];
                 if (i != 0 && c.x == 0 && c.y == 0) break;
-                o2.parts[i] = coor_rotate(c, o);
+                o2.parts[i] = c.rotate(o);
             }
         }
     }
 }
 
-func void board_set(int32 x, int32 y, Field field) {
-    board.fields[x + y * 5] = field;
+func void Board.set(Board* b, int32 x, int32 y, Field field) {
+    b.fields[x + y * 5] = field;
 }
 
-func Field board_get(int32 x, int32 y) {
-    return board.fields[x + y * 5];
+func Field Board.get(Board* b, int32 x, int32 y) {
+    return b.fields[x + y * 5];
 }
 
-func void board_clearflags(int32 x, int32 y) {
-    board.fields[x + y * 5].expected = 0;
+func void Board.clearflags(Board* b, int32 x, int32 y) {
+    b.fields[x + y * 5].expected = 0;
 }
 
-func void board_setExpected(int32 x, int32 y, uint8 side) {
-    board.fields[x + y * 5].expected = side;
+func void Board.setExpected(Board* b, int32 x, int32 y, uint8 side) {
+    b.fields[x + y * 5].expected = side;
 }
 
-func void board_init() {
+func void Board.init(Board* b) {
     Field f;
     f.status = FIELD_FREE;
     f.piece_id = 0;
@@ -206,13 +204,13 @@ func void board_init() {
     f.expected = 0;
     for (int32 y=0; y<5; y++) {
         for (int32 x=0; x<5; x++) {
-            board_set(x, y, f);
+            b.set(x, y, f);
         }
     }
     f.status = FIELD_BLOCKED;
-    board_set(0, 4, f);
-    board.haveHead = 0;
-    board.haveTail = 0;
+    b.set(0, 4, f);
+    b.haveHead = 0;
+    b.haveTail = 0;
 }
 
 func char flags2char(int32 flags) {
@@ -240,16 +238,16 @@ func char flags2char(int32 flags) {
     return f;
 }
 
-func void board_print() {
+func void Board.print(Board* b) {
     char[1024] buffer;
     memset(buffer, 0, sizeof(buffer));
     char* cp = buffer;
-    cp += io.sprintf(cp, "Board: Head=%d  Tail=%d\n", board.haveHead, board.haveTail);
+    cp += io.sprintf(cp, "Board: Head=%d  Tail=%d\n", b.haveHead, b.haveTail);
     for (int32 y=4; y>=0; y--) {
         cp += io.sprintf(cp, "---------------------\n");
         for (int32 x=0; x<5; x++) {
             *cp++ = '|';
-            Field field = board.fields[x + y * 5];
+            Field field = b.fields[x + y * 5];
             switch (field.status) {
             case FIELD_FREE:
                 if (field.expected) {
@@ -286,8 +284,8 @@ func void board_print() {
     io.puts(buffer);
 }
 
-func int32 board_check_fault(int32 xx, int32 yy, int32 expect) {
-    Field f = board_get(xx, yy);
+func int32 Board.check_fault(Board* b, int32 xx, int32 yy, int32 expect) {
+    Field f = b.get(xx, yy);
     switch (f.status) {
     case FIELD_FREE:
         if (f.expected && f.expected != expect) return 1;
@@ -302,7 +300,7 @@ func int32 board_check_fault(int32 xx, int32 yy, int32 expect) {
 }
 
 // return 0=OK, 1=Not OK
-func int32 board_try_option(const Option* pp, int32 x, int32 y) {
+func int32 Board.try_option(Board* b, const Option* pp, int32 x, int32 y) {
     for (uint32 i=0; i<4; i++) {
         Coor c = pp.parts[i];
         if (i != 0 && c.x == 0 && c.y == 0) return 0;    // ignore unused parts
@@ -310,102 +308,102 @@ func int32 board_try_option(const Option* pp, int32 x, int32 y) {
         if (xx < 0 || xx > 4) return 1;
         int32 yy = y + c.y;
         if (yy < 0 || yy > 4) return 1;
-        Field f = board_get(xx, yy);
+        Field f = b.get(xx, yy);
         if (f.status != FIELD_FREE) return 1;
         if (f.expected != 0 && f.expected != c.flags) return 1;
         switch (c.flags) {
         case NORTH:
             if (yy == 4) return 1;
-            if (board_check_fault(xx, yy+1, SOUTH)) return 1;
+            if (b.check_fault(xx, yy+1, SOUTH)) return 1;
             break;
         case EAST:
             if (xx == 4) return 1;
-            if (board_check_fault(xx+1, yy, WEST)) return 1;
+            if (b.check_fault(xx+1, yy, WEST)) return 1;
             break;
         case SOUTH:
             if (yy == 0) return 1;
-            if (board_check_fault(xx, yy-1, NORTH)) return 1;
+            if (b.check_fault(xx, yy-1, NORTH)) return 1;
             break;
         case WEST:
             if (xx == 0) return 1;
-            if (board_check_fault(xx-1, yy, EAST)) return 1;
+            if (b.check_fault(xx-1, yy, EAST)) return 1;
             break;
         case HEAD:
-            if (board.haveHead) return 1;
+            if (b.haveHead) return 1;
             break;
         case TAIL:
-            if (board.haveTail) return 1;
+            if (b.haveTail) return 1;
             break;
         }
     }
     return 0;
 }
 
-func void board_add(const Option* pp, int32 x, int32 y, uint8 id) {
+func void Board.add(Board* b, const Option* pp, int32 x, int32 y, uint8 id) {
     for (uint32 i=0; i<4; i++) {
         Coor c = pp.parts[i];
         if (i != 0 && c.x == 0 && c.y == 0) break;
         int32 xx = x + c.x;
         int32 yy = y + c.y;
-        Field field = board_get(xx, yy);
+        Field field = b.get(xx, yy);
         //assert(field.status == FIELD_FREE);
         field.status = FIELD_TAKEN;
         field.piece_id = id;
         field.flags = c.flags;
-        board_set(xx, yy, field);
+        b.set(xx, yy, field);
         switch (c.flags) {
         case NORTH:
-            board_setExpected(xx, yy+1, SOUTH);
+            b.setExpected(xx, yy+1, SOUTH);
             break;
         case EAST:
-            board_setExpected(xx+1, yy, WEST);
+            b.setExpected(xx+1, yy, WEST);
             break;
         case SOUTH:
             field.flags = NORTH;
-            board_setExpected(xx, yy-1, NORTH);
+            b.setExpected(xx, yy-1, NORTH);
             break;
         case WEST:
-            board_setExpected(xx-1, yy, EAST);
+            b.setExpected(xx-1, yy, EAST);
             break;
         case HEAD:
-            board.haveHead = 1;
+            b.haveHead = 1;
             break;
         case TAIL:
-            board.haveTail = 1;
+            b.haveTail = 1;
             break;
         }
     }
 }
 
-func void board_rem(const Option* pp, int32 x, int32 y) {
+func void Board.rem(Board* b, const Option* pp, int32 x, int32 y) {
     for (uint32 i=0; i<4; i++) {
         Coor c = pp.parts[i];
         if (i != 0 && c.x == 0 && c.y == 0) break;
         int32 xx = x + c.x;
         int32 yy = y + c.y;
-        Field field = board_get(xx, yy);
+        Field field = b.get(xx, yy);
         field.status = FIELD_FREE;
         field.piece_id = 0;
         field.flags = 0;
-        board_set(xx, yy, field);
+        b.set(xx, yy, field);
         switch (c.flags) {
         case NORTH:
-            board_clearflags(xx, yy+1);
+            b.clearflags(xx, yy+1);
             break;
         case EAST:
-            board_clearflags(xx+1, yy);
+            b.clearflags(xx+1, yy);
             break;
         case SOUTH:
-            board_clearflags(xx, yy-1);
+            b.clearflags(xx, yy-1);
             break;
         case WEST:
-            board_clearflags(xx-1, yy);
+            b.clearflags(xx-1, yy);
             break;
         case HEAD:
-            board.haveHead = 0;
+            b.haveHead = 0;
             break;
         case TAIL:
-            board.haveTail = 0;
+            b.haveTail = 0;
             break;
         }
     }
@@ -413,34 +411,34 @@ func void board_rem(const Option* pp, int32 x, int32 y) {
 
 uint32 found;
 uint64 tried;
-func void board_try_piece(uint8 p) {
+func void Board.try_peace(Board* b, uint8 p) {
     if (p == NumPieces) {
         found++;
         io.printf("Found solution %u\n", found);
-        board_print();
+        b.print();
         return;
     }
     if (Setup[p].postype == PLACE_SETUP) {
         int32 o = Setup[p].option;
         int32 x = Setup[p].x;
         int32 y = Setup[p].y;
-        if (board_try_option(&options[o][p], x, y)) {
+        if (b.try_option(&options[o][p], x, y)) {
             io.printf("invalid setup: piece %d, option %d at %d,%d\n", p, o, x, y);
             return;
             //exit(-1);
         }
-        board_add(&options[o][p], x, y, p);
-        board_try_piece(p+1);
+        b.add(&options[o][p], x, y, p);
+        b.try_peace(p+1);
     }
     for (int32 y=4; y>=0; y--) {
         for (int32 x=0; x<5; x++) {
-            Field f = board_get(x, y);
+            Field f = b.get(x, y);
             if (f.status != FIELD_FREE) continue;
             for (uint32 o=0; o<NumOptions; o++) {
-                if (!board_try_option(&options[o][p], x, y)) {
-                    board_add(&options[o][p], x, y, p);
-                    board_try_piece(p+1);
-                    board_rem(&options[o][p], x, y);
+                if (!b.try_option(&options[o][p], x, y)) {
+                    b.add(&options[o][p], x, y, p);
+                    b.try_peace(p+1);
+                    b.rem(&options[o][p], x, y);
                 }
                 tried++;
                 if (p==0) break;
@@ -451,8 +449,11 @@ func void board_try_piece(uint8 p) {
 
 public func int32 main() {
     calculate_rotations();
-    board_init();
-    board_try_piece(0);
+
+    Board board;
+    board.init();
+    board.try_peace(0);
+
     io.printf("%luM tries, found %d solutions\n", tried/1000000, found);
     return 0;
 }

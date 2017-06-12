@@ -8,9 +8,9 @@ public type Type struct {
     int32 x;
 }
 
-func void type_internal(Type* t) {}
+func void Type.internal(Type* t) {}
 
-public func void type_init(Type* t) {
+public func void Type.init(Type* t) {
     t.internal();
 }
 

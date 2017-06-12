@@ -41,7 +41,7 @@ public:
 
     void addAST(AST* ast) { files.push_back(ast); }
 
-    void addSymbol(Decl* decl);
+    void addSymbol(Decl* decl, bool isStructFunction = false);
     Decl* findSymbol(const std::string& name) const;
     const std::string& getName() const { return name; }
     const std::string& getCName() const;
@@ -69,6 +69,8 @@ public:
 
     const AstList& getFiles() const { return files; }
 private:
+    void printDecl(StringBuilder& out, const Decl* D, unsigned indent) const;
+
     const std::string name;
     bool m_isExternal;       // not a module in current target
     bool m_isCLib;           // not a C2 module, but used C library

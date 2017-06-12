@@ -5,15 +5,15 @@ type Type struct {
     int32 member;
 }
 
-func void type_init(Type* t) {
+func void Type.init(Type* t) {
     t.member = 0;
 }
 
-func int32 type_getMember(const Type* t) {
+func int32 Type.getMember(const Type* t) {
     return t.member;
 }
 
-func void type_add(Type* t, int32 n) {
+func void Type.add(Type* t, int32 n) {
     t.member += n;
 }
 
@@ -23,8 +23,8 @@ func void myfunc() {
     int32 m = t.getMember();
     t.add(1);
 
-    type_init(&t);
-    type_add(&t, 2);
-    m = type_getMember(&t);
+    Type.init(&t);
+    Type.add(&t, 2);
+    m = Type.getMember(&t);
 }
 

@@ -26,6 +26,7 @@
 #include "AST/AST.h"
 #include "AST/Attr.h"
 #include "AST/Component.h"
+#include "Utils/StringBuilder.h"
 
 //#define SEMA_DEBUG
 //#define SEMA_MEMSIZE
@@ -440,9 +441,9 @@ C2::VarDecl* C2Sema::createVarDecl(VarDeclKind k, const char* name_, SourceLocat
     return V;
 }
 
-C2::FunctionDecl* C2Sema::ActOnFuncDecl(const char* name_, SourceLocation loc, bool is_public, Expr* rtype) {
+C2::FunctionDecl* C2Sema::ActOnFuncDecl(const char* func_name_, SourceLocation loc, Expr* structId, bool is_public, Expr* rtype) {
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA"SEMA: func decl " << name_ << " at ";
+    std::cerr << COL_SEMA"SEMA: func decl " << func_name_ << " at ";
     loc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
@@ -450,11 +451,21 @@ C2::FunctionDecl* C2Sema::ActOnFuncDecl(const char* name_, SourceLocation loc, b
         if (is_public) Diag(loc, diag::err_public_in_interface);
         is_public = true;
     }
-    const char* name = Context.addIdentifier(name_, strlen(name_));
-    FunctionDecl* D = createFuncDecl(name, loc, is_public, rtype);
+    StringBuilder fullname_(128);
+    IdentifierExpr* ID = NULL;
+    if (structId) { // struct-function
+        ID = cast<IdentifierExpr>(structId);
+        fullname_ << ID->getName() << '.' << func_name_;
+    } else {
+        fullname_ << func_name_;
+    }
+    const char* fullname = Context.addIdentifier(fullname_, fullname_.size());
+    FunctionDecl* D = createFuncDecl(fullname, loc, is_public, rtype);
+
+    if (ID) D->setStructInfo(ID);
     if (strcmp(D->getName(), "main") == 0) D->setExported();
     ast.addFunction(D);
-    addSymbol(D);
+    addSymbol(D, ID);
     return D;
 }
 
@@ -1348,7 +1359,7 @@ DiagnosticBuilder C2Sema::Diag(SourceLocation Loc, unsigned DiagID) {
     return Diags.Report(Loc, DiagID);
 }
 
-void C2Sema::addSymbol(Decl* d) {
+void C2Sema::addSymbol(Decl* d, bool isStructFunction) {
     Decl* Old = findSymbol(d->getName());
     if (Old) {
         Diag(d->getLocation(), diag::err_redefinition) << d->getName();
@@ -1359,7 +1370,7 @@ void C2Sema::addSymbol(Decl* d) {
             d->setModule(module);   // Will be changed if it points external
         } else {
             if (d->isPublic() && module->isExported()) d->setExported();
-            module->addSymbol(d);
+            module->addSymbol(d, isStructFunction);
         }
     }
 }

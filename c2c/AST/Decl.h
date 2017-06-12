@@ -144,7 +144,7 @@ protected:
         friend class FunctionDecl;
         unsigned : NumDeclBits;
 
-        unsigned structFuncNameOffset : 8;
+        unsigned StructFuncNameOffset : 8;
         unsigned numArgs : 6;
         unsigned IsVariadic : 1;
         unsigned HasDefaultArgs : 1;
@@ -230,11 +230,6 @@ public:
     }
     CompoundStmt* getBody() const { return body; }
 
-    void setStructFuncNameOffset(unsigned offset) { functionDeclBits.structFuncNameOffset = offset; }
-    bool matchesStructFuncName(const char* name_) const {
-        return strcmp(name + functionDeclBits.structFuncNameOffset, name_) == 0;
-    }
-
     // args
     void setArgs(VarDecl** args_, unsigned numArgs_) {
         assert(args == 0);
@@ -249,6 +244,11 @@ public:
     void setDefaultArgs() { functionDeclBits.HasDefaultArgs = true; }
     bool hasDefaultArgs() const { return functionDeclBits.HasDefaultArgs; }
 
+    void setStructInfo(IdentifierExpr* structName_);
+    bool isStructFunction() const { return structName != 0; }
+    IdentifierExpr* getStructName() const { return structName; }
+    const char* getMemberName() const { return &name[functionDeclBits.StructFuncNameOffset]; }
+
     // return type
     QualType getReturnType() const { return rtype; }
     QualType getOrigReturnType() const { return origRType; }
@@ -262,6 +262,8 @@ public:
 private:
     QualType rtype;
     QualType origRType;
+
+    IdentifierExpr* structName;    // set for struct functions
 
     VarDecl** args;
     CompoundStmt* body;
@@ -341,6 +343,7 @@ public:
         structFunctions = funcs;
         structTypeDeclBits.numStructFunctions = numFuncs;
     }
+    FunctionDecl** getStructFuncs() const { return structFunctions; }
 
     unsigned numMembers() const { return structTypeDeclBits.numMembers; }
     unsigned numStructFunctions() const { return structTypeDeclBits.numStructFunctions; }

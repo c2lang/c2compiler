@@ -1533,6 +1533,7 @@ C2::ExprResult C2Parser::ParseFullIdentifier() {
 /*
    Syntax:
     func_def ::= FUNC type_qualifier single_type_specifier IDENTIFIER LPAREN full_param_list RPAREN <attributes> compound_statement SEMICOLON.
+    func_def ::= FUNC type_qualifier single_type_specifier IDENTIFIER.IDENTIFIER LPAREN full_param_list RPAREN <attributes> compound_statement SEMICOLON.
 */
 void C2Parser::ParseFuncDef(bool is_public) {
     LOG_FUNC
@@ -1543,15 +1544,25 @@ void C2Parser::ParseFuncDef(bool is_public) {
     if (rtype.isInvalid()) return;
 
     if (ExpectIdentifier()) return;
-    IdentifierInfo* id = Tok.getIdentifierInfo();
-    SourceLocation idLoc = ConsumeToken();
+    IdentifierInfo* func_id = Tok.getIdentifierInfo();
+    SourceLocation func_loc = ConsumeToken();
 
-    if (!islower(id->getNameStart()[0]) && !isInterface) {
-        Diag(idLoc, diag::err_func_casing);
+    // struct-function: Foo.bar()
+    ExprResult typeId;
+    if (Tok.is(tok::period)) {
+        ConsumeToken();
+        if (ExpectIdentifier()) return;
+        typeId = Actions.ActOnIdExpression(*func_id, func_loc);
+        func_id = Tok.getIdentifierInfo();
+        func_loc = ConsumeToken();
+    }
+
+    if (!islower(func_id->getNameStart()[0]) && !isInterface) {
+        Diag(func_loc, diag::err_func_casing);
         return;
     }
 
-    FunctionDecl* func = Actions.ActOnFuncDecl(id->getNameStart(), idLoc, is_public, rtype.get());
+    FunctionDecl* func = Actions.ActOnFuncDecl(func_id->getNameStart(), func_loc, typeId.get(), is_public, rtype.get());
 
     if (!ParseFunctionParams(func, true)) return;
     if (!ParseAttributes(func)) return;

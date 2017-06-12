@@ -23,7 +23,6 @@ namespace C2 {
 class AnalyserUtils {
 public:
     static const char* fullName(const std::string& modName, const char* symname);
-    static const char* splitStructFunctionName(char* structName, const char* funcName);
 };
 
 }

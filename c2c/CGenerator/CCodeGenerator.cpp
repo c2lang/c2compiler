@@ -400,9 +400,11 @@ void CCodeGenerator::EmitUnaryOperator(const Expr* E, StringBuilder& output) {
 void CCodeGenerator::EmitMemberExpr(const Expr* E, StringBuilder& output) {
     LOG_FUNC
     const MemberExpr* M = cast<MemberExpr>(E);
+    //TODO rewrite to switch?
     const IdentifierExpr* rhs = M->getMember();
-    if (M->isModulePrefix()) {
+    if (M->isModulePrefix() || M->isStructFunction()) {
         // A.B where A is a module
+        // A.B where B is struct-function
         EmitDecl(M->getDecl(), output);
     } else {
         // A.B where A is decl of struct/union type
@@ -489,7 +491,15 @@ void CCodeGenerator::EmitDecl(const Decl* D, StringBuilder& output) {
     assert(D);
 
     if (D->getModule()) {
-        GenUtils::addName(D->getModule()->getCName(), D->getName(), output);
+        const FunctionDecl* F = dyncast<FunctionDecl>(D);
+        if (F && F->isStructFunction()) {
+            StringBuilder cname(128);
+            const IdentifierExpr* structName = F->getStructName();
+            cname << structName->getName() << '_' << F->getMemberName();
+            GenUtils::addName(D->getModule()->getCName(), cname.c_str(), output);
+        } else {
+            GenUtils::addName(D->getModule()->getCName(), D->getName(), output);
+        }
     } else {
         output << D->getName();
     }

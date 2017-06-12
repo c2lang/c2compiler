@@ -65,7 +65,7 @@ public:
     VarDecl* ActOnVarDef(const char* name, SourceLocation loc, bool is_public, Expr* type);
 
     // function decls
-    FunctionDecl* ActOnFuncDecl(const char* name, SourceLocation loc, bool is_public, Expr* rtype);
+    FunctionDecl* ActOnFuncDecl(const char* func_name_, SourceLocation loc, Expr* structId, bool is_public, Expr* rtype);
     FunctionTypeDecl* ActOnFuncTypeDecl(const char* name, SourceLocation loc, bool is_public, Expr* rtype);
     VarDeclResult ActOnFunctionArg(FunctionDecl* func, const char* name, SourceLocation loc, Expr* type, Expr* InitValue);
     void ActOnFinishFunctionArgs(FunctionDecl* func, VarDeclList& args);
@@ -141,7 +141,7 @@ private:
     C2::ExprResult ExprError();
 
     DiagnosticBuilder Diag(SourceLocation Loc, unsigned DiagID);
-    void addSymbol(Decl* d);
+    void addSymbol(Decl* d, bool isStructFunction = false);
     Decl* findSymbol(const char* name) const;
     const ImportDecl* findModule(const char* name_) const;
 

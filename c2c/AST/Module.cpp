@@ -43,8 +43,8 @@ const std::string& Module::getCName() const {
     return name;
 }
 
-void Module::addSymbol(Decl* decl) {
-    symbols[decl->getName()] = decl;
+void Module::addSymbol(Decl* decl, bool isStructFunction) {
+    if (!isStructFunction) symbols[decl->getName()] = decl;
     decl->setModule(this);
 }
 
@@ -54,40 +54,52 @@ Decl* Module::findSymbol(const std::string& name_) const {
     else return iter->second;
 }
 
+
+void Module::printDecl(StringBuilder& out, const Decl* D, unsigned indent) const {
+    out.indent(indent);
+    out << D->getName() << "    ";// << '\n';
+    out.setColor(COL_ATTRIBUTES);
+    switch (D->getKind()) {
+    case DECL_FUNC:
+        out << "function";
+        break;
+    case DECL_VAR:
+        out << "variable";
+        break;
+    case DECL_ALIASTYPE:
+    case DECL_STRUCTTYPE:
+    case DECL_ENUMTYPE:
+    case DECL_FUNCTIONTYPE:
+        out << "type";
+        break;
+    case DECL_ENUMVALUE:
+        out << "constant";
+        break;
+    case DECL_ARRAYVALUE:
+    case DECL_IMPORT:
+    case DECL_LABEL:
+        // never symbol
+        break;
+    }
+    if (D->isPublic()) out << " public";
+    if (D->isExported()) out << " exported";
+    out.setColor(COL_NORM);
+    out << '\n';
+
+    const StructTypeDecl* S = dyncast<StructTypeDecl>(D);
+    if (S) {
+        FunctionDecl** funcs = S->getStructFuncs();
+        for (unsigned i=0; i<S->numStructFunctions(); i++) {
+            printDecl(out, funcs[i], indent+2);
+        }
+    }
+}
+
 void Module::printSymbols(StringBuilder& out) const {
     out.indent(2);
     out << "module " << name << '\n';
     for (SymbolsConstIter iter = symbols.begin(); iter != symbols.end(); ++iter) {
-        const Decl* D = iter->second;
-        out.indent(4);
-        out << D->getName() << "    ";// << '\n';
-        out.setColor(COL_ATTRIBUTES);
-        switch (D->getKind()) {
-        case DECL_FUNC:
-            out << "function";
-            break;
-        case DECL_VAR:
-            out << "variable";
-            break;
-        case DECL_ALIASTYPE:
-        case DECL_STRUCTTYPE:
-        case DECL_ENUMTYPE:
-        case DECL_FUNCTIONTYPE:
-            out << "type";
-            break;
-        case DECL_ENUMVALUE:
-            out << "constant";
-            break;
-        case DECL_ARRAYVALUE:
-        case DECL_IMPORT:
-        case DECL_LABEL:
-            // never symbol
-            break;
-        }
-        if (D->isPublic()) out << " public";
-        if (D->isExported()) out << " exported";
-        out.setColor(COL_NORM);
-        out << '\n';
+        printDecl(out, iter->second, 4);
     }
 }
 

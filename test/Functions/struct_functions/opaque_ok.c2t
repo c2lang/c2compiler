@@ -8,16 +8,16 @@ public type Type struct {
     int32 x;
 } @(opaque)
 
-public func Type* type_create() {
+public func Type* Type.create() {
     Type* t = nil;
     return t;
 }
 
-func void type_internal(Type* t) {
+func void Type.internal(Type* t) {
     t.x = 1;
 }
 
-public func void type_init(Type* t) {
+public func void Type.init(Type* t) {
     t.internal();
 }
 

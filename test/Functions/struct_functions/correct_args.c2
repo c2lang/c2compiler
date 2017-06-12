@@ -5,7 +5,7 @@ type Type struct {
     int32 member;
 }
 
-func void type_init(Type* t, int32 n) {
+func void Type.init(Type* t, int32 n) {
     t.member = n;
 }
 

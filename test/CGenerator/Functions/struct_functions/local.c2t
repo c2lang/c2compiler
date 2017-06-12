@@ -9,7 +9,7 @@ type Type struct {
     int32 member;
 }
 
-func void type_init(Type*) {
+func void Type.init(Type*) {
 }
 
 public func int32 main() {
@@ -25,14 +25,14 @@ struct test_Type_ {
   int32_t member;
 };
 
-static void test_type_init(test_Type* _arg0);
+static void test_Type_init(test_Type* _arg0);
 
-static void test_type_init(test_Type* _arg0) {
+static void test_Type_init(test_Type* _arg0) {
 }
 
 int32_t main() {
   test_Type t;
-  test_type_init(&t);
+  test_Type_init(&t);
   return 0;
 }
 

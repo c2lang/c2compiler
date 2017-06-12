@@ -26,24 +26,3 @@ const char* AnalyserUtils::fullName(const std::string& modName, const char* symn
     return buffer;
 }
 
-const char* AnalyserUtils::splitStructFunctionName(char* structName, const char* funcName) {
-    // foo_bar -> typename='Foo', return 'bar' (or NULL if no _)
-    const char* cp = funcName;
-    char* op = structName;
-    const char* memberName = 0;
-    while (*cp != 0) {
-        if (*cp == '_') {
-            cp++;
-            memberName = cp;
-            break;
-        }
-        *op = *cp;
-        ++cp;
-        ++op;
-    }
-    *op = 0;
-    structName[0] = toupper(structName[0]);
-
-    return memberName;
-}
-

@@ -7,7 +7,7 @@ type Type struct {
     int32 member;
 }
 
-func Type* type_create(int32 n) {
+func Type* Type.create(int32 n) {
     Type* t = stdlib.malloc(sizeof(Type));
     t.member = n;
     return t;

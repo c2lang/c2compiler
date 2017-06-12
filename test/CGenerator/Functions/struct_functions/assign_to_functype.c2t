@@ -6,15 +6,17 @@
 module test;
 
 type Type struct {
-    int32 member;
+    int32 x;
 }
 
 func void Type.init(Type*) {
 }
 
+type Func func void(Type*);
+
 public func int32 main() {
-    Type* t;
-    t.init();
+    Func f = Type.init;
+    f = test.Type.init;
     return 0;
 }
 
@@ -22,8 +24,10 @@ public func int32 main() {
 typedef struct test_Type_ test_Type;
 
 struct test_Type_ {
-  int32_t member;
+  int32_t x;
 };
+
+typedef void (*test_Func)(test_Type* _arg0);
 
 static void test_Type_init(test_Type* _arg0);
 
@@ -31,8 +35,8 @@ static void test_Type_init(test_Type* _arg0) {
 }
 
 int32_t main() {
-  test_Type* t;
-  test_Type_init(t);
+  test_Func f = test_Type_init;
+  f = test_Type_init;
   return 0;
 }
 

@@ -4,10 +4,10 @@ module test;
 type Type struct {
     union {
         int32 x;
-        int32 y;    // @error{member 'y' conflicts with struct-function 'test.type_y'}
+        int32 y;    // @error{member 'y' conflicts with struct-function 'test.Type.y'}
     }
 }
 
-func void type_y(Type* t) {     // @note{previous declaration is here}
+func void Type.y(Type* t) {     // @note{previous declaration is here}
 }
 

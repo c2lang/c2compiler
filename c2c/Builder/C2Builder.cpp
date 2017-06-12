@@ -387,8 +387,6 @@ int C2Builder::build() {
         if (options.printTiming) log(COL_TIME, "parsing libs took %" PRIu64" usec", t2_parse_libs - t1_parse_libs);
         if (!ok) goto out;
     }
-    if (options.printModules) printComponents();
-    if (options.printSymbols) printSymbols(options.printLibSymbols);
 
     // phase 2: analyse all files
     t1_analyse = Utils::getCurrentTime();
@@ -399,6 +397,10 @@ int C2Builder::build() {
     }
     t2_analyse = Utils::getCurrentTime();
     if (options.printTiming) log(COL_TIME, "analysis took %" PRIu64" usec", t2_analyse - t1_analyse);
+
+    if (options.printModules) printComponents();
+    if (options.printSymbols) printSymbols(options.printLibSymbols);
+
     if (client->getNumErrors()) goto out;
 
     if (!checkMainFunction(Diags)) goto out;

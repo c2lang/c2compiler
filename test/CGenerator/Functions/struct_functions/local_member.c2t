@@ -13,7 +13,7 @@ type Outer struct {
     Type t;
 }
 
-func void type_init(Type*) {
+func void Type.init(Type*) {
 }
 
 public func int32 main() {
@@ -25,12 +25,12 @@ public func int32 main() {
 // @expect{atleast, build/test.c}
 typedef struct test_Type_ test_Type;
 
-static void test_type_init(test_Type* _arg0) {
+static void test_Type_init(test_Type* _arg0) {
 }
 
 int32_t main() {
   test_Outer o;
-  test_type_init(&o.t);
+  test_Type_init(&o.t);
   return 0;
 }
 

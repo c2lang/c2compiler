@@ -580,10 +580,15 @@ void InterfaceGenerator::EmitArgVarDecl(const VarDecl* D, unsigned index) {
 
 void InterfaceGenerator::EmitFunctionDecl(const FunctionDecl* F) {
     LOG_DECL(F)
-    // TODO
     iface << "func ";
     EmitType(F->getReturnType());
-    iface << ' ' << F->getName();
+    iface << ' ';
+    if (F->isStructFunction()) {
+
+        iface << F->getStructName()->getName() << '.' << F->getMemberName();
+    } else {
+        iface << F->getName();
+    }
     EmitFunctionArgs(F);
     EmitAttributes(F);
     iface << ";\n";

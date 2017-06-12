@@ -54,8 +54,8 @@ public:
         if (!loc2.isInvalid()) {
             std::string name = I->getName();
             if (I->isStructFunction()) {
-                char structName[MAX_LEN_VARNAME];
-                name = AnalyserUtils::splitStructFunctionName(structName, I->getName());
+                const FunctionDecl* FD = cast<FunctionDecl>(D);
+                name = FD->getMemberName();
             }
             writer.addRef(loc.getLine(), loc.getColumn(), name,
                           loc2.getFilename(), loc2.getLine(), loc2.getColumn());

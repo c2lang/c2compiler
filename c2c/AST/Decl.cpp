@@ -45,7 +45,7 @@ Decl::Decl(DeclKind k, const char* name_, SourceLocation loc_, QualType type_, b
 
 void Decl::fullName(StringBuilder& output) const {
     assert(mod);
-    output << mod->getName() << '_' << name;
+    output << mod->getName() << '.' << name;
 }
 
 string Decl::DiagName() const {
@@ -153,11 +153,12 @@ FunctionDecl::FunctionDecl(const char* name_, SourceLocation loc_,
     : Decl(DECL_FUNC, name_, loc_, QualType(), is_public)
     , rtype(rtype_)
     , origRType(rtype_)
+    , structName(0)
     , args(0)
     , body(0)
     , IRProto(0)
 {
-    functionDeclBits.structFuncNameOffset= 0;
+    functionDeclBits.StructFuncNameOffset = 0;
     functionDeclBits.numArgs = 0;
     functionDeclBits.IsVariadic = 0;
     functionDeclBits.HasDefaultArgs = 0;
@@ -171,12 +172,21 @@ void FunctionDecl::print(StringBuilder& buffer, unsigned indent) const {
     printPublic(buffer);
     buffer.setColor(COL_VALUE);
     buffer << ' ' << name;
+    if (isStructFunction()) {
+        buffer.setColor(COL_ATTRIBUTES);
+        buffer << ' ' << "SF";
+    }
     buffer << '\n';
     for (unsigned i=0; i<numArgs(); i++) {
         args[i]->print(buffer, indent + INDENT);
     }
     printAttributes(buffer, indent + INDENT);
     if (body) body->print(buffer, INDENT);
+}
+
+void FunctionDecl::setStructInfo(IdentifierExpr* structName_) {
+    functionDeclBits.StructFuncNameOffset = strlen(structName_->getName()) + 1;
+    structName = structName_;
 }
 
 unsigned FunctionDecl::minArgs() const {
@@ -316,7 +326,7 @@ Decl* StructTypeDecl::findFunction(const char* name_) const {
     // struct-functions
     for (unsigned i=0; i<numStructFunctions(); i++) {
         FunctionDecl* F = structFunctions[i];
-        if (F->matchesStructFuncName(name_)) return F;
+        if (strcmp(F->getMemberName(), name_) == 0) return F;
     }
     return 0;
 }
@@ -354,6 +364,10 @@ void StructTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
     printAttributes(buffer, indent + INDENT);
     for (unsigned i=0; i<numMembers(); i++) {
         members[i]->print(buffer, indent + INDENT);
+    }
+    for (unsigned i=0; i<structTypeDeclBits.numStructFunctions; i++) {
+        buffer.indent(indent + INDENT);
+        buffer << structFunctions[i]->getMemberName() << "()\n";
     }
 }
 

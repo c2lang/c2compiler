@@ -240,7 +240,7 @@ unsigned FileAnalyser::checkFunctionProtos(StructFunctionList& structFuncs) {
             // }
         }
         checkAttributes(F);
-        checkStructFunction(F, structFuncs);
+        if (F->isStructFunction()) checkStructFunction(F, structFuncs);
     }
     return errors;
 }
@@ -394,23 +394,24 @@ unsigned FileAnalyser::checkTypeDecl(TypeDecl* D) {
 }
 
 void FileAnalyser::checkStructFunction(FunctionDecl* F, StructFunctionList& structFuncs) {
-    char structName[MAX_LEN_VARNAME];
-    const char* memberName = AnalyserUtils::splitStructFunctionName(structName, F->getName());
-    if (!memberName) return;
-
-    Decl* D = module.findSymbol(structName);
+    IdentifierExpr* structName = F->getStructName();
+    Decl* D = globals->findSymbolInModule(structName->getName(), structName->getLocation(), F->getModule());
     if (!D) return;
 
+    structName->setDecl(D);
     StructTypeDecl* S = dyncast<StructTypeDecl>(D);
-    if (!S) return;
+    if (!S) {
+        Diags.Report(structName->getLocation(), diag::err_typecheck_member_reference_struct_union)
+                << structName->getName() << structName->getLocation();
+        return;
+    }
 
+    const char* memberName = F->getMemberName();
     Decl* match = S->find(memberName);
     if (match) {
         Diags.Report(match->getLocation(), diag::err_struct_function_conflict) << match->DiagName() << F->DiagName();
         Diags.Report(F->getLocation(), diag::note_previous_declaration);
     } else {
-        unsigned offset = memberName - F->getName();
-        F->setStructFuncNameOffset(offset);
         structFuncs[S].push_back(F);
     }
 }

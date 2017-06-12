@@ -5,7 +5,7 @@ type Type struct {
     int32 member;
 }
 
-func void type_init(Type* t_, int32 x, int32 y, int32 z=0) {
+func void Type.init(Type* t_, int32 x, int32 y, int32 z=0) {
     t_.member = x;
 }
 
@@ -13,9 +13,5 @@ Type t;
 
 func void test1() {
     t.init(1);          // @error{too few arguments to struct-function call, expected at least 2, have 1}
-}
-
-func void test2() {
-    type_init(&t, 1);   // @error{too few arguments to function call, expected at least 3, have 2}
 }
 

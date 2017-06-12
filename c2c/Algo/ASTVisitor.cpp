@@ -78,6 +78,9 @@ void ASTVisitor::checkFunctionDecl(const FunctionDecl* F) {
     // return Type
     checkType(F->getOrigReturnType());
 
+    const IdentifierExpr* structName = F->getStructName();
+    if (structName) visitIdentifierExpr(structName);
+
     // args
     for (unsigned i=0; i<F->numArgs(); i++) {
         checkVarDecl(F->getArg(i));

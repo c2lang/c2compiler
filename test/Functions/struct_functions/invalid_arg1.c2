@@ -5,11 +5,11 @@ type Type struct {
     int32 member;
 }
 
-func void type_init(int32 n) {
+func void Type.init(int32 n) {
 }
 
 func void myfunc() {
     Type t;
-    t.init();       // @error{'test.type_init' is not a struct-function (first argument incorrect/missing)}
+    t.init();       // @error{static struct-functions must use type as left hand side}
 }
 
