@@ -34,3 +34,6 @@ name = "sys_time"
 [[modules]]
 name = "csetjmp"
 
+[[modules]]
+name = "csignal"
+
