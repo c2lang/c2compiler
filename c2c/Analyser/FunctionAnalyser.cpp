@@ -1512,9 +1512,10 @@ QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr* M, unsign
         M->setIsStructFunction();
         M->setIsStaticStructFunction();
         member->setIsStructFunction();
-        Decl* match = S->findFunction(member->getName());
+        FunctionDecl* match = S->findFunction(member->getName());
         if (match) {
             // NOTE: static struct-functions are allowed outside call expr
+            scope.checkAccess(match, member->getLocation());
 
             structFunctionArg = M->getBase();
             if (side & RHS) match->setUsed();
@@ -1532,11 +1533,6 @@ QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr* M, unsign
         if (match) {
             FunctionDecl* func = dyncast<FunctionDecl>(match);
 
-            // NOTE: access of struct-function is not a dereference
-            if (!func && CurrentFunction->getModule() != S->getModule() && S->hasAttribute(ATTR_OPAQUE)) {
-                Diag(M->getLocation(), diag::err_deref_opaque) << S->isStruct() << S->DiagName();
-                return QualType();
-            }
             if (func) {
                 scope.checkAccess(func, member->getLocation());
 
@@ -1549,6 +1545,12 @@ QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr* M, unsign
                 structFunctionArg = M->getBase();
                 if (!inCallExpr) {
                     Diag(member->getLocation(), diag::err_non_static_struct_func_usage) << M->getBase()->getSourceRange();
+                    return QualType();
+                }
+            } else {
+                // NOTE: access of struct-function is not a dereference
+                if (CurrentFunction->getModule() != S->getModule() && S->hasAttribute(ATTR_OPAQUE)) {
+                    Diag(M->getLocation(), diag::err_deref_opaque) << S->isStruct() << S->DiagName();
                     return QualType();
                 }
             }

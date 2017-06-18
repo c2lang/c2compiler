@@ -322,7 +322,7 @@ Decl* StructTypeDecl::find(const char* name_) const {
     return findFunction(name_);
 }
 
-Decl* StructTypeDecl::findFunction(const char* name_) const {
+FunctionDecl* StructTypeDecl::findFunction(const char* name_) const {
     // struct-functions
     for (unsigned i=0; i<numStructFunctions(); i++) {
         FunctionDecl* F = structFunctions[i];
