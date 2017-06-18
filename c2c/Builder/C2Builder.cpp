@@ -329,7 +329,7 @@ int C2Builder::build() {
     std::shared_ptr<HeaderSearchOptions> HSOpts(new HeaderSearchOptions());
     // add current directory (=project root) to #include path
     char pwd[512];
-    if (getcwd(pwd, 512) == NULL) {
+    if (getcwd(pwd, 512) == 0) {
         assert(0);
     }
     HSOpts->AddPath(pwd, clang::frontend::Quoted, false, false);

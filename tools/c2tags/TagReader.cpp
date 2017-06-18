@@ -540,7 +540,7 @@ void TagReader::findRefs() {
     }
     // check for output dir
     DIR* dir = opendir(OUTPUT_DIR);
-    if (dir == NULL) {
+    if (dir == 0) {
         fprintf(stderr, "error: cannot open output dir\n");
         exit(-1);
     }

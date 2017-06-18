@@ -154,7 +154,7 @@ VarDecl* IfStmt::getConditionVariable() const {
     if (isa<DeclStmt>(C)) {
         return cast<DeclStmt>(C)->getDecl();
     } else {
-        return NULL;
+        return 0;
     }
 }
 

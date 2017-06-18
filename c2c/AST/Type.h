@@ -67,8 +67,8 @@ public:
         // Q: use Type equal operator?
         return Value == rhs.Value;
     }
-    bool isNull() const { return getTypePtrOrNull() == NULL; }
-    bool isValid() const { return getTypePtrOrNull() != NULL; }
+    bool isNull() const { return getTypePtrOrNull() == 0; }
+    bool isValid() const { return getTypePtrOrNull() != 0; }
     bool isConstQualified() const { return (Value & QUAL_CONST); }
     bool isVolatileQualified() const { return (Value & QUAL_VOLATILE); }
     bool hasQualifiers() const { return (Value & QUALS_MASK) != 0; }

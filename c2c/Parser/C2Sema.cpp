@@ -452,7 +452,7 @@ C2::FunctionDecl* C2Sema::ActOnFuncDecl(const char* func_name_, SourceLocation l
         is_public = true;
     }
     StringBuilder fullname_(128);
-    IdentifierExpr* ID = NULL;
+    IdentifierExpr* ID = 0;
     if (structId) { // struct-function
         ID = cast<IdentifierExpr>(structId);
         fullname_ << ID->getName() << '.' << func_name_;

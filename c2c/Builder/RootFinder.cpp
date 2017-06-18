@@ -36,7 +36,7 @@ void RootFinder::findTopDir() {
     char buffer[PATH_MAX];
     while (1) {
         path = getcwd(buffer, PATH_MAX);
-        if (path == NULL) {
+        if (path == 0) {
             perror("getcwd");
             exit(-1);
         }

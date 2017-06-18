@@ -105,7 +105,7 @@ static void color_print(const char* color, const char* format, ...) {
 
 static uint64_t getCurrentTime() {
     struct timeval now;
-    gettimeofday(&now, NULL);
+    gettimeofday(&now, 0);
     uint64_t now64 = now.tv_sec;
     now64 *= 1000000;
     now64 += now.tv_usec;
@@ -941,7 +941,7 @@ void IssueDb::testFile() {
         while ((dup2(pipe_stderr[1], STDERR_FILENO) == -1) && (errno == EINTR)) {}
         close(pipe_stderr[1]);
         close(pipe_stderr[0]);
-        execl(c2c_cmd, "c2c", "-d", test_root, "--test", NULL);
+        execl(c2c_cmd, "c2c", "-d", test_root, "--test", 0);
         perror("execl");
         exit(127); /* only if execv fails */
     }
@@ -1126,7 +1126,7 @@ out:
 static void handle_dir(const char* path) {
     debug("%s() %s", __func__, path);
     DIR* dir = opendir(path);
-    if (dir == NULL) {
+    if (dir == 0) {
         color_print(COL_ERROR, "Cannot open dir '%s': %s", path, strerror(errno));
         return;
     }
@@ -1184,7 +1184,7 @@ int main(int argc, const char *argv[])
         *end = 0;
     }
 
-    cwd = getcwd(NULL, 0);
+    cwd = getcwd(0, 0);
     if (cwd == 0) {
         perror("getcwd");
         exit(-1);

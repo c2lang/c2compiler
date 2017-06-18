@@ -25,7 +25,7 @@ uint64_t Utils::getCurrentTime()
 {
 #ifdef __APPLE__
     struct timeval now;
-    gettimeofday(&now, NULL);
+    gettimeofday(&now, 0);
     uint64_t now64 = now.tv_sec;
     now64 *= 1000000;
     now64 += now.tv_usec;

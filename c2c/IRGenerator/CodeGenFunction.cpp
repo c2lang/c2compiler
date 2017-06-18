@@ -743,7 +743,7 @@ llvm::Value *CodeGenFunction::EvaluateExprAsBool(const Expr *E) {
         // TODO convert to Bool if not already
     }
     assert(0 && "TODO");
-    return NULL;
+    return 0;
 }
 
 /// CreateTempAlloca - This creates a alloca and inserts it into the entry

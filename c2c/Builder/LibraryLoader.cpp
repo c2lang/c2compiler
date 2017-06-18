@@ -91,7 +91,7 @@ void LibraryLoader::showLibs(bool useColors) const {
     out.setColor(ANSI_NORMAL);
     out << '\n';
     DIR* dir = opendir(libdir.c_str());
-    if (dir == NULL) {
+    if (dir == 0) {
         fprintf(stderr, "c2c: error: cannot open library dir '%s'\n", libdir.c_str());
         return;
     }
