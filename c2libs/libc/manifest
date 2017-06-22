@@ -29,6 +29,9 @@ name = "regex"
 name = "ctype"
 
 [[modules]]
+name = "sys_socket"
+
+[[modules]]
 name = "sys_time"
 
 [[modules]]

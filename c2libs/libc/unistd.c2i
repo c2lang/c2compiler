@@ -9,6 +9,10 @@ func c_uint sleep(c_uint __seconds);
 func c_char* getcwd(char* buf, c_size size);
 func c_int chdir(const c_char* path);
 
+func c_int close(c_int fd);
+
+func c_long read(c_int fd, void* buf, c_ulong count);
+
 const uint8 R_OK = 4;
 const uint8 W_OK = 2;
 const uint8 X_OK = 1;

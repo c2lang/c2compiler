@@ -1,0 +1,68 @@
+module sys_socket;
+
+import c2 local;
+
+const c_int AF_INET = 2;
+
+const c_int IPPROTO_TCP = 6;
+
+type __socket_type enum uint32 {
+  SOCK_STREAM    = 1,   /* Sequenced, reliable, connection-based byte streams.  */
+  SOCK_DGRAM     = 2,   /* Connectionless, unreliable datagrams of fixed maximum length.  */
+  SOCK_RAW       = 3,   /* Raw protocol interface.  */
+  SOCK_RDM       = 4,   /* Reliably-delivered messages.  */
+  SOCK_SEQPACKET = 5,   /* Sequenced, reliable, connection-based, datagrams of fixed maximum length.  */
+  SOCK_DCCP      = 6,   /* Datagram Congestion Control Protocol.  */
+  SOCK_PACKET    = 10,  /* Linux specific way of getting packets at the dev level.  For writing rarp and other similar things on the user level. */
+
+  /* Flags to be ORed into the type parameter of socket and socketpair and
+     used for the flags parameter of paccept.  */
+  SOCK_CLOEXEC   = 02000000,  /* Atomically set close-on-exec flag for the new descriptor(s).  */
+  SOCK_NONBLOCK  = 00004000  /* Atomically mark descriptor(s) as non-blocking.  */
+}
+
+func c_int socket(c_int domain, c_int type_, c_int protocol);
+
+
+const c_int SOL_SOCKET = 1;
+
+const c_int SO_DEBUG     = 1;
+const c_int SO_REUSEADDR = 2;
+const c_int SO_BROADCAST = 6;
+
+type sa_family_t uint16;
+
+type sockaddr struct {
+    sa_family_t sa_family;
+    char[14] sa_data;
+}
+
+type in_port_t uint16;
+type in_addr_t uint32;
+type in_addr struct {
+    in_addr_t s_addr;
+}
+
+type sockaddr_in struct {
+    sa_family_t sin_family;
+    in_port_t sin_port;
+    in_addr sin_addr;
+
+    uint8[8] sin_zero; // on 64-bit Ubuntu
+}
+
+const uint32 INADDR_ANY       = 0x00000000;
+const uint32 INADDR_BROADCAST = 0xffffffff;
+const uint32 INADDR_NONE      = 0xffffffff;
+
+func c_int getsockopt(c_int sockfd, c_int level, c_int optname, void* optval, uint32 optlen);
+func c_int setsockopt(c_int sockfd, c_int level, c_int optname, const void* optval, uint32 optlen);
+
+func c_int bind(c_int sockfd, const sockaddr* addr, uint32 addrlen);
+
+func c_int listen(c_int sockfd, c_int backlog);
+
+func c_int accept4(c_int sockfd, sockaddr* addr, uint32* addrlen, c_int flags);
+
+func char* inet_ntoa(in_addr in);
+
