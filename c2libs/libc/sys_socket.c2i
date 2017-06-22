@@ -66,3 +66,9 @@ func c_int accept4(c_int sockfd, sockaddr* addr, uint32* addrlen, c_int flags);
 
 func char* inet_ntoa(in_addr in);
 
+// should be in arpa/inet.h
+func uint32 htonl(uint32 hostlong);
+func uint16 htons(uint16 hostshort);
+func uint32 ntohl(uint32 netlong);
+func uint16 ntohs(uint16 netshort);
+
