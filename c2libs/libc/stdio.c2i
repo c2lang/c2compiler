@@ -26,7 +26,6 @@ type _IO_marker struct {
 
 type FILE struct {} @(opaque)
 
-type va_list int32;
 type off_t uint64;
 
 //NOTE: _G_fpos_t is some struct(_G_fpos_t.h)
@@ -60,7 +59,6 @@ func void setlinebuf(FILE* __stream);
 func c_int fprintf(FILE* __stream, const c_char* __format, ...);
 func c_int printf(const c_char* __format, ...);
 func c_int sprintf(c_char* __s, const c_char* __format, ...);
-func c_int vdprintf(c_int __fd, const c_char* __fmt, va_list __arg);
 func c_int dprintf(c_int __fd, const c_char* __fmt, ...);
 func c_int fscanf(FILE* __stream, const c_char* __format, ...);
 func c_int scanf(const c_char* __format, ...);

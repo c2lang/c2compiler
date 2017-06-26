@@ -1,0 +1,14 @@
+module stdarg;
+
+import c2 local;
+
+type va_list struct {
+    c_char[24] pad;
+}
+
+func void va_start(va_list ap, const c_char* last);
+func void va_end(va_list ap);
+
+// should actually be in stdio, but more convenient here
+func c_int vdprintf(c_int __fd, const c_char* __fmt, va_list __arg);
+func c_int vsprintf(c_char* str, const c_char *format, va_list __ap);

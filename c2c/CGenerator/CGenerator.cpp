@@ -102,7 +102,7 @@ void CGenerator::generateExternalHeaders() {
     for (ModulesConstIter iter = moduleMap.begin(); iter != moduleMap.end(); ++iter) {
         Module* M = iter->second;
         if (!M->isLoaded()) continue;
-        if (!M->isExternal()) continue;;
+        if (!M->isExternal()) continue;
         ModuleList single;
         single.push_back(M);
         CCodeGenerator gen(M->getName(), CCodeGenerator::MULTI_FILE, moduleMap, single, includeNamer, targetInfo);

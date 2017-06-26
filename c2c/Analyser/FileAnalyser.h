@@ -42,7 +42,7 @@ class TypeResolver;
 
 typedef std::vector<FunctionDecl*> StructFunctionEntries;
 typedef std::map<StructTypeDecl*, StructFunctionEntries> StructFunctionList;
-typedef StructFunctionList::const_iterator StructFunctionListIter;;
+typedef StructFunctionList::const_iterator StructFunctionListIter;
 
 typedef std::map<VarDecl*, ExprList> IncrementalArrayVals;
 typedef IncrementalArrayVals::const_iterator IncrementalArrayValsIter;

@@ -29,6 +29,11 @@ executable layer
     layer3.c2
 end
 
+executable varargs
+    $generate-c
+    varargs.c2
+end
+
 executable comment
     $warnings no-unused
     commenttest.c2

@@ -191,7 +191,25 @@ void CCodeGenerator::EmitAll() {
 
 void CCodeGenerator::createLibHeader(bool printCode, const std::string& outputDir) {
     inInterface = true;
-    EmitAll();
+    // workaround for builtin va_list, va_start, va_end for varargs
+    if (filename == "stdarg") {
+        EmitIncludeGuard();
+        hbuf << "#ifdef __cplusplus\nextern \"C\" {\n#endif\n\n";
+
+        hbuf << "#define va_list __builtin_va_list\n";
+        hbuf << "#define va_start __builtin_va_start\n";
+        hbuf << "#define va_end __builtin_va_end\n";
+        hbuf << '\n';
+
+        hbuf << "int32_t vdprintf(int32_t __fd, const char* __fmt, va_list __arg);\n";
+        hbuf << "int32_t vsprintf(char* str, const char* format, va_list __ap);\n";
+        hbuf << '\n';
+
+        hbuf << "#ifdef __cplusplus\n}\n#endif\n\n";
+        hbuf << "#endif\n";
+    } else {
+        EmitAll();
+    }
 
     if (printCode) {
         printf("---- code for %s%s ----\n%s\n", outputDir.c_str(), hfilename.c_str(), (const char*)hbuf);
