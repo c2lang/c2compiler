@@ -19,3 +19,6 @@ const uint8 X_OK = 1;
 const uint8 F_OK = 0;
 
 func c_int isatty(c_int fd);
+
+func c_ssize write(c_int fd, const void* buf, c_size count);
+

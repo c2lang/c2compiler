@@ -1,0 +1,21 @@
+module time;
+
+import c2 local;
+
+type tm struct {
+   c_int tm_sec;    /* Seconds (0-60) */
+   c_int tm_min;    /* Minutes (0-59) */
+   c_int tm_hour;   /* Hours (0-23) */
+   c_int tm_mday;   /* Day of the month (1-31) */
+   c_int tm_mon;    /* Month (0-11) */
+   c_int tm_year;   /* Year - 1900 */
+   c_int tm_wday;   /* Day of the week (0-6, Sunday = 0) */
+   c_int tm_yday;   /* Day in the year (0-365, 1 Jan = 0) */
+   c_int tm_isdst;  /* Daylight saving time */
+}
+
+type time_t c_long;
+
+func tm* localtime(const time_t* timep);
+func tm* localtime_r(const time_t* timep, tm* result);
+

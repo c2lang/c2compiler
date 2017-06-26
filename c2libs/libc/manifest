@@ -38,6 +38,9 @@ name = "sys_socket"
 name = "sys_time"
 
 [[modules]]
+name = "time"
+
+[[modules]]
 name = "csetjmp"
 
 [[modules]]
