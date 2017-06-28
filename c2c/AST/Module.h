@@ -42,7 +42,8 @@ public:
     void addAST(AST* ast) { files.push_back(ast); }
 
     void addSymbol(Decl* decl, bool isStructFunction = false);
-    Decl* findSymbol(const std::string& name) const;
+    Decl* findSymbol(const std::string& name_) const;
+    Decl* findSymbolOrStructFunc(const std::string& name_) const;
     const std::string& getName() const { return name; }
     const std::string& getCName() const;
     bool isPlainC() const { return m_isCLib; }
@@ -78,7 +79,7 @@ private:
 
     Symbols symbols;
     AttrMap declAttrs;
-
+    Symbols structFuncs;
     AstList files;
 
     Module(const Module&);

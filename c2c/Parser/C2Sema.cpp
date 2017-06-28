@@ -1379,7 +1379,7 @@ C2::Decl* C2Sema::findSymbol(const char* name) const {
     SymbolsConstIter iter = imports.find(name);
     if (iter != imports.end()) return iter->second;
 
-    return module->findSymbol(name);
+    return module->findSymbolOrStructFunc(name);
 }
 
 const C2::ImportDecl* C2Sema::findModule(const char* name_) const {

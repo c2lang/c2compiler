@@ -44,7 +44,9 @@ const std::string& Module::getCName() const {
 }
 
 void Module::addSymbol(Decl* decl, bool isStructFunction) {
-    if (!isStructFunction) symbols[decl->getName()] = decl;
+    if (isStructFunction) structFuncs[decl->getName()] = decl;
+    else symbols[decl->getName()] = decl;
+
     decl->setModule(this);
 }
 
@@ -54,6 +56,14 @@ Decl* Module::findSymbol(const std::string& name_) const {
     else return iter->second;
 }
 
+Decl* Module::findSymbolOrStructFunc(const std::string& name_) const
+{
+    Decl* D = findSymbol(name_);
+    if (D) return D;
+    SymbolsConstIter iter = structFuncs.find(name_);
+    if (iter == structFuncs.end()) return 0;
+    else return iter->second;
+}
 
 void Module::printDecl(StringBuilder& out, const Decl* D, unsigned indent) const {
     out.indent(indent);
