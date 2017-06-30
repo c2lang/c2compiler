@@ -11,9 +11,9 @@ import regex;
 func void test_stdio() {
     io.printf("testing io\n");
 
-    int32 res = io.remove("remove.txt");
+    i32 res = io.remove("remove.txt");
     if (res == -1) {
-        int32 err = c_errno.errno;
+        i32 err = c_errno.errno;
         io.perror("remove");
     }
 
@@ -31,12 +31,12 @@ func void test_stdio() {
 func void test_string() {
     io.printf("testing string\n");
     const char* text = "hello";
-    uint64 len = str.strlen(text);
+    u64 len = str.strlen(text);
     io.printf("strlen(%s) = %lu\n", text, len);
 }
 
 func void test_strings() {
-    int32 i = strings.ffs(0x800);
+    i32 i = strings.ffs(0x800);
     io.printf("ffs(0x800) = %d\n", i);
     // TODO
 }
@@ -48,7 +48,7 @@ func void test_stdlib() {
 
 func void test_ctype() {
     char[] teststr = "n-a´!?:_'/\nc-.,ů§¨%=";
-	int32 i = 0;
+	i32 i = 0;
 	char c;
 	while (teststr[i]) {
 		c = teststr[i];
@@ -59,7 +59,7 @@ func void test_ctype() {
 
 func void test_regex() {
     regex.regex_t rx;
-    int32 result;
+    i32 result;
 
     if (regex.regcomp(&rx, "^a[[:alnum:]]", 0)) {
         io.fprintf(io.stderr, "Regex test failed");
@@ -75,7 +75,7 @@ func void test_regex() {
     regex.regfree(&rx);
 }
 
-public func int32 main() {
+public func i32 main() {
     test_stdio();
     test_string();
     test_strings();

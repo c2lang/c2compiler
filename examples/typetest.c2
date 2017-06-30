@@ -3,21 +3,21 @@ module type_test;
 import utils;
 
 // -- Base types --
-public type Number int32;
-public type String const uint8*;
+public type Number i32;
+public type String const u8*;
 
 // -- pointer types --
-type PNum int32*;
-type PPNum int32**;
+type PNum i32*;
+type PPNum i32**;
 type Pnum2 volatile Number*;
 
 // -- array types --
-type IntArr int32[20];
-type IntArrArr int32[5][5];
-type PArr int32*[10];
+type IntArr i32[20];
+type IntArrArr i32[5][5];
+type PArr i32*[10];
 
-type Point int32; // TEMP
-type Buffer int32; // TEMP
+type Point i32; // TEMP
+type Buffer i32; // TEMP
 
 type Coor utils.Point[2];
 type MyType utils.Buffer*[2];
@@ -27,83 +27,83 @@ type Struct struct {
 }
 
 type S3 struct {
-    int32[100] data;
-    int32[12][12] board;
-    int32 count;
+    i32[100] data;
+    i32[12][12] board;
+    i32 count;
     utils.Buffer bb;
 }
 
 type S4 struct {
     struct {
-        int32 a;
-        int32 b;
+        i32 a;
+        i32 b;
     }
     struct named {
-        int32 c;
-        int32 d;
+        i32 c;
+        i32 d;
     }
 }
 
 type S2 struct {
-    int32 n;
+    i32 n;
     union choice {
-        int32 b;
+        i32 b;
     }
     union oneOf {
-        int32 a;
+        i32 a;
     }
-    volatile uint32 count;
-    const int32 D;
+    volatile u32 count;
+    const i32 D;
 }
 
 type Data union {
-    int32 bla;
+    i32 bla;
     const char* text;
-    uint32 number;
+    u32 number;
 }
 
 // -- ENUMS --
-type Enum1 enum uint8 {
+type Enum1 enum u8 {
     VAR1, VAR2, VAR3,
 }
 
-type Enum2 enum int32 {
+type Enum2 enum i32 {
     VARB1 = 1, VARB2 = 5, VARB3 = 10
 }
 
-type Enum3 enum uint32 {
+type Enum3 enum u32 {
     VARC1 = 1, VARC2 = 5,
 }
 
-type Enum4 enum uint32 {
+type Enum4 enum u32 {
     VAR1D
     , VARD2 = 10
     , VARD3,
     VARD4
 }
 
-float32 pi = 3.1415926;
+f32 pi = 3.1415926;
 
 // -- Function --
-type CallBack func int32(int32 a, utils.Point*p);
+type CallBack func i32(i32 a, utils.Point*p);
 type CBFunc func void (MyType* mt, ...);
-type CBFunc2 func void (const char* buffer, uint8 t2, ...);
+type CBFunc2 func void (const char* buffer, u8 t2, ...);
 
-func void test1(int32 n) {}
-func void test2(int32 n) {}
+func void test1(i32 n) {}
+func void test2(i32 n) {}
 
-type Func1 func void(int32 a);
-type Func2 func void(int32 a);
+type Func1 func void(i32 a);
+type Func2 func void(i32 a);
 
 type Callback struct {
     Func1 cb;
 }
 
-func void myfunc(int32 a, ...) {}
+func void myfunc(i32 a, ...) {}
 
-func void myfunc2(int32 a = 10, int32 b = 20) {}
+func void myfunc2(i32 a = 10, i32 b = 20) {}
 
-public func int32 main() {
+public func i32 main() {
 
     Func1 f = test1;
     Func2 g = test2;

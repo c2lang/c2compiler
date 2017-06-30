@@ -3,30 +3,30 @@ module stdio;
 import c2 local;
 
 // possibilities for the third argument to 'setvbuf'
-const uint8 _IOFBF = 0; // fully buffered
-const uint8 _IOLBF = 1; // line buffering
-const uint8 _IONBF = 2; // no buffering
+const u8 _IOFBF = 0; // fully buffered
+const u8 _IOLBF = 1; // line buffering
+const u8 _IONBF = 2; // no buffering
 
-const int8 EOF = -1;
+const i8 EOF = -1;
 
-const uint8 SEEK_SET = 0;   // Seek from beginning of file.
-const uint8 SEEK_CUR = 1;   // Seek from current position.
-const uint8 SEEK_END = 2;   // Seek from end of file.
+const u8 SEEK_SET = 0;   // Seek from beginning of file.
+const u8 SEEK_CUR = 1;   // Seek from current position.
+const u8 SEEK_END = 2;   // Seek from end of file.
 #ifdef __USE_GNU
-const uint8 SEEK_DATA = 3;  // Seek to next data.
-const uint8 SEEK_HOLE = 4;  // Seek to next hole.
+const u8 SEEK_DATA = 3;  // Seek to next data.
+const u8 SEEK_HOLE = 4;  // Seek to next hole.
 #endif
 
 // from libio.h
 type _IO_marker struct {
     _IO_marker* next;
     FILE* sbuf;
-    int32 _pos;
+    i32 _pos;
 }
 
 type FILE struct {} @(opaque)
 
-type off_t uint64;
+type off_t u64;
 
 //NOTE: _G_fpos_t is some struct(_G_fpos_t.h)
 //type fpos_t _G_fpos_t;

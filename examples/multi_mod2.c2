@@ -3,7 +3,7 @@ module multi2;
 import multi1;
 import stdio;
 
-public func int32 func2() {
+public func i32 func2() {
     stdio.puts("multi2.func2()\n");
     multi1.func1(20, 30);
     return 2;

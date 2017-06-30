@@ -5,7 +5,7 @@ import use2 as u2 local;
 
 Coor c1;
 
-public func int32 main() {
+public func i32 main() {
     u1.Number num = 10;
     Coor coor;
     u2.Coor c2;

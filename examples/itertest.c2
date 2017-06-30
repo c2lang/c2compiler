@@ -34,5 +34,5 @@ func void test5() {
     }
 }
 
-public func int32 main() { return 0; }
+public func i32 main() { return 0; }
 

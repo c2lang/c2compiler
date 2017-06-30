@@ -1,7 +1,7 @@
 module aa;
 
 public type AA struct {
-    int32 value;
+    i32 value;
     const char* name;
 }
 

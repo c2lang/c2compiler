@@ -2,7 +2,7 @@ module issue;
 
 import type1 local;
 
-public func int32 main() {
+public func i32 main() {
     Number n = 300;
     return 0;
 }

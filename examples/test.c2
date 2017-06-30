@@ -1,48 +1,48 @@
 module test;
 
-type Number int32;
+type Number i32;
 
-func int32 calc() { return 2; }
+func i32 calc() { return 2; }
 
-public func int32 main() {
+public func i32 main() {
     // --- var decls, OK ---
     const char[12] Buffer = { 0 }
-    int32 a;
+    i32 a;
     Number num;
-    int32* ptr;
+    i32* ptr;
     Number** ptr2;
-    int32*[5][2] bla;
+    i32*[5][2] bla;
 
     // --- var decls with init, OK ---
-    int32 a2 = 10;
-    int32[] a3 = { 10, 20 }
+    i32 a2 = 10;
+    i32[] a3 = { 10, 20 }
     Number[] num2 = { 10, 20 }
-    int32 a4 = calc();
-    int32 b2 = 10 / 2;
+    i32 a4 = calc();
+    i32 b2 = 10 / 2;
     Number a5 = calc();
-    int32* ptr3 = nil;
+    i32* ptr3 = nil;
     Number** ptr4 = nil;
-    int32*[10] bla2;
-    int32[2] nums = { calc(), calc() }
-    int32 b4 = 4/2;
+    i32*[10] bla2;
+    i32[2] nums = { calc(), calc() }
+    i32 b4 = 4/2;
 
-    int32 b6 = 2*2;
+    i32 b6 = 2*2;
 
     // --- assignment expression ---
     a = 10;
-    int32 res;
-    int32* rp;
+    i32 res;
+    i32* rp;
     *rp  = 0;       // ok, bliep -> primary_expression
     a *= 2;        // ok -> primary_expression
     //const char* text;
     //text = "hallo" "dit" "is" "een" "test";
 
-    int32[2] array;
+    i32[2] array;
     array[2] = 'b';
 
     a = 2 * 20;
 
-    int32[2] bb;
+    i32[2] bb;
     bb[2] = 0;
     return 0;
 }

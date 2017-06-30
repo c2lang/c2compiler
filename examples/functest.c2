@@ -2,33 +2,33 @@ module func_test;
 
 import utils;
 
-public func int32 getMax() {
+public func i32 getMax() {
     return 1;
 }
 
-func int32 add(int32 a, int32 b) {
+func i32 add(i32 a, i32 b) {
     return 2;
 }
 
 func void doThing() {}
 
-func void printf(int32 argc, const char* text, ...) {}
+func void printf(i32 argc, const char* text, ...) {}
 
-type Coor int32;  // temp until we support multi-module
+type Coor i32;  // temp until we support multi-module
 
-func utils.Coor getCoor(int32 argc, char*[] argv) {
+func utils.Coor getCoor(i32 argc, char*[] argv) {
     return 0;
 }
 
 func void needed(char*[] data) {}
 
-func void doThing2(int32* result = 0) {}
+func void doThing2(i32* result = 0) {}
 
-func void doThing3(int32 number = 2, int32* result = 0) {}
+func void doThing3(i32 number = 2, i32* result = 0) {}
 
-func void testFunc(const char C, volatile int32* reg) {}
+func void testFunc(const char C, volatile i32* reg) {}
 
 func const char* getToken() { return nil; }
 
-public func int32 main() { return 0; }
+public func i32 main() { return 0; }
 

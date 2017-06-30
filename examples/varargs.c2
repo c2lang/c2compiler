@@ -12,7 +12,7 @@ func void log(const char* fmt, ...) {
     printf("%s\n", buffer);
 }
 
-public func int32 main() {
+public func i32 main() {
     log("Hello world");
     log("The number %d", 10);
     log("main is %p", main);

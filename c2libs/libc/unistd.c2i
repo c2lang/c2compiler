@@ -3,7 +3,7 @@ module unistd;
 import c2 local;
 
 // ifdef USE_XOPEN_EXTENDED ..
-func int32 usleep(c_ulonglong __useconds);
+func i32 usleep(c_ulonglong __useconds);
 
 func c_uint sleep(c_uint __seconds);
 func c_char* getcwd(char* buf, c_size size);
@@ -13,10 +13,10 @@ func c_int close(c_int fd);
 
 func c_long read(c_int fd, void* buf, c_ulong count);
 
-const uint8 R_OK = 4;
-const uint8 W_OK = 2;
-const uint8 X_OK = 1;
-const uint8 F_OK = 0;
+const u8 R_OK = 4;
+const u8 W_OK = 2;
+const u8 X_OK = 1;
+const u8 F_OK = 0;
 
 func c_int isatty(c_int fd);
 

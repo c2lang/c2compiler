@@ -1,31 +1,31 @@
 module var_test;
 
 type Struct struct {
-    int32 a;
-    int32 b;
+    i32 a;
+    i32 b;
     const char* text;
 }
 
-int32 n = 10;
+i32 n = 10;
 const char* hallo = "goodbye";
-int8* text2 = nil;
-uint16 halfword;
-int32 number;
+i8* text2 = nil;
+u16 halfword;
+i32 number;
 
 // aggregate
-uint32 n1 = 10;
-int32 n2 = 10;
+u32 n1 = 10;
+i32 n2 = 10;
 Struct s = { 10, 20, "hallo" }
 
 // arrays
-int32[10] buffer;
-int32[][2] multi_var = { {1,2}, {3,4} }
-int32[2][3] multi_fix;
-int32[] buf = { 1, 2, 3, 4 }
-int32[5] buf2 = { 1, 2, 3, 4 }
+i32[10] buffer;
+i32[][2] multi_var = { {1,2}, {3,4} }
+i32[2][3] multi_fix;
+i32[] buf = { 1, 2, 3, 4 }
+i32[5] buf2 = { 1, 2, 3, 4 }
 Struct[3] structs = { {1,2,"A"}, {3,4,"B"} }
 
 const char*[] names = { "ali", "baba", "chrono", }
 
-public func int32 main() { return 0; }
+public func i32 main() { return 0; }
 

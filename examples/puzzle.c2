@@ -8,7 +8,7 @@ const char* ansi_BRED   = "\033[01;31m";
 const char* ansi_BGREEN = "\033[01;32m";
 const char* ansi_NORMAL = "\033[0m";
 
-type Point enum int32 {
+type Point enum i32 {
     POINT_A=0, POINT_B, POINT_C, POINT_D, POINT_E, POINT_F,
     POINT_G, POINT_H, POINT_I, POINT_J, POINT_K, POINT_L,
     POINT_M, POINT_N, POINT_O, POINT_P, POINT_Q, POINT_R,
@@ -40,37 +40,37 @@ const Connection[] Connections = {
     { POINT_R, POINT_B, true },
 }
 
-int32 startPoint;
-int32 endPoint;
-const int32 DEPTH_MAX = 10;
-int32[POINT_MAX*DEPTH_MAX] paths;    // value 0 is start, -1 not used, other is prev in path
+i32 startPoint;
+i32 endPoint;
+const i32 DEPTH_MAX = 10;
+i32[POINT_MAX*DEPTH_MAX] paths;    // value 0 is start, -1 not used, other is prev in path
 
-func int32 index(Point p, int32 depth) { return p + POINT_MAX * depth; }
+func i32 index(Point p, i32 depth) { return p + POINT_MAX * depth; }
 
-func Point toPoint(int32 i) {
+func Point toPoint(i32 i) {
     //return (Point)(i%POINT_MAX);
     return (i%POINT_MAX);
 }
 
-func int32 toDepth(int32 i) { return (i/POINT_MAX); }
+func i32 toDepth(i32 i) { return (i/POINT_MAX); }
 
-func const char* print(int32 index2) {
+func const char* print(i32 index2) {
     local char[16][4] buffer;
-    local int32 idx = 0;
+    local i32 idx = 0;
     idx = (idx + 1) % 4;
-    int32 p = 'A' + toPoint(index2);
+    i32 p = 'A' + toPoint(index2);
     io.sprintf(buffer[idx], "%c%d", p, toDepth(index2));
     return buffer[idx];
 }
 
 func void showPaths() {
     io.printf("depth   A   B   C   D   E   F   G   H   I   J   K   L   M   N   O   P   Q   R\n");
-    for (int32 d=0; d<DEPTH_MAX; d++) {
+    for (i32 d=0; d<DEPTH_MAX; d++) {
         io.printf("%5d   ", d);
-        for (int32 p=0; p<POINT_MAX; p++) {
-            //int32 idx = index((Point)p, d);
-            int32 idx = index(p, d);
-            int32 prev = paths[idx];
+        for (i32 p=0; p<POINT_MAX; p++) {
+            //i32 idx = index((Point)p, d);
+            i32 idx = index(p, d);
+            i32 prev = paths[idx];
             if (idx == startPoint) io.printf(ansi_BGREEN);
             if (idx == endPoint) io.printf(ansi_BRED);
             if (prev == -1) io.printf("  ");
@@ -82,26 +82,26 @@ func void showPaths() {
     }
 }
 
-func void tryPath(int32 cur, int32 next) {
+func void tryPath(i32 cur, i32 next) {
     if (paths[next] == -1) {
         paths[next] = cur;
         listAdd(next);
     }
 }
 
-func int32 printPath(int32 idx) {
-    int32 prev = paths[idx];
-    int32 step = 0;
+func i32 printPath(i32 idx) {
+    i32 prev = paths[idx];
+    i32 step = 0;
     if (prev != idx) step = printPath(prev) + 1;
     io.printf("  %2d %s\n", step, print(idx));
     return step;
 
 }
 
-public func int32 main(int32, const int8*[]) {
+public func i32 main(i32, const i8*[]) {
     // initialize paths
-    for (int32 p=0; p<POINT_MAX; p++) {
-        for (int32 d=0; d<DEPTH_MAX; d++) {
+    for (i32 p=0; p<POINT_MAX; p++) {
+        for (i32 d=0; d<DEPTH_MAX; d++) {
             paths[index(p,d)] = -1;
             // C2 cannot properly handle CastOperator yet
             //paths[index((Point)p,d)] = -1;
@@ -114,19 +114,19 @@ public func int32 main(int32, const int8*[]) {
     listAdd(startPoint);
 
     while (listSize()) {
-        int32 idx = listGet();
-        int32 prev = paths[idx];
+        i32 idx = listGet();
+        i32 prev = paths[idx];
         if (prev == -1) {
             io.printf("Error: path has no parent %s\n", print(idx));
             exit(-1);
         }
         Point curPoint = toPoint(idx);
-        int32 curDepth = toDepth(idx);
+        i32 curDepth = toDepth(idx);
 
         // follow all Connections, except incoming
-        for (uint32 c = 0; c<elemsof(Connections); c++) {
+        for (u32 c = 0; c<elemsof(Connections); c++) {
             const Connection* cc = &Connections[c];
-            int32 next = -1;
+            i32 next = -1;
             if (cc.src == curPoint) { // go down (or same)
                 next = index(cc.dst, cc.otherDepth ? curDepth + 1 : curDepth);
                 if (next == prev) continue;

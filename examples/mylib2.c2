@@ -2,7 +2,7 @@ module mylib_internal;
 
 import stdio as io;
 
-int32 count = 0;
+i32 count = 0;
 
 public func void init() {
     io.printf("internal init()\n");
@@ -20,7 +20,7 @@ type Priv struct {
 }
 
 public type Handle struct {
-    int32 x;
+    i32 x;
     Priv priv;      // non-public types allowed in opaque struct
 } @(opaque)
 

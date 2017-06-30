@@ -1,4 +1,4 @@
 module type1;
 
-public type Long uint8;
+public type Long u8;
 

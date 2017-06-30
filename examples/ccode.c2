@@ -4,8 +4,8 @@ import stdio;
 import ccode2;
 
 type Point struct {
-    int32 x;
-    uint16 y;
+    i32 x;
+    u16 y;
 }
 
 /*
@@ -18,14 +18,14 @@ points += { 6, 4 }
 points += { 8, 1 }
 */
 
-public func int32 main(int32 argc, int8*[] argv) {
+public func i32 main(i32 argc, i8*[] argv) {
     func1();
     func2();
     return ccode2.myfunction();
 }
 
-public func int32 func2() {
-    int32 a = 3;
+public func i32 func2() {
+    i32 a = 3;
     do {
         a--;
         stdio.puts("voila");
@@ -34,11 +34,11 @@ public func int32 func2() {
 }
 
 func void func1() {
-    int32 a = 'a';
-    int32[2] aa = { 1, 2}
-    uint16 b;
+    i32 a = 'a';
+    i32[2] aa = { 1, 2}
+    u16 b;
     {
-        int32 c;
+        i32 c;
     }
     if (a++ == 10 + 2 * 8) {
         stdio.printf("hello world\n");

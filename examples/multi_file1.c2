@@ -1,7 +1,7 @@
 module multi;
 
-public func int32 main() {
-    int32 a = getNumber2();
+public func i32 main() {
+    i32 a = getNumber2();
     return 10;
 }
 

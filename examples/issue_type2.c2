@@ -1,4 +1,4 @@
 module type2;
 
-public type Long uint32;
+public type Long u32;
 

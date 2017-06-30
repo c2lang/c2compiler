@@ -3,12 +3,12 @@ module multi1;
 import multi2 local;
 import stdio;
 
-public func int32 main() {
+public func i32 main() {
     func2();
     return 10;
 }
 
-public func void func1(int32 b, int32 c) {
+public func void func1(i32 b, i32 c) {
     stdio.puts("multi1.func1()\n");
     return;
 }

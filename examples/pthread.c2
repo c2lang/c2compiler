@@ -26,14 +26,14 @@ func void* startThread2(void*) {
     return nil;
 }
 
-public func int32 main() {
+public func i32 main() {
     pthread_t[2] threads;
-    int32 rc = pthread_create(&threads[0], nil, startThread1, nil);
+    i32 rc = pthread_create(&threads[0], nil, startThread1, nil);
     if (rc != 0) {
         io.perror("pthread_create");
         return -1;
     }
-    int32 rc2 = pthread_create(&threads[1], nil, startThread2, nil);
+    i32 rc2 = pthread_create(&threads[1], nil, startThread2, nil);
     if (rc2 != 0) {
         io.perror("pthread_create");
         return -1;
@@ -42,7 +42,7 @@ public func int32 main() {
     sleep(4);
     io.printf("stopping threads\n");
     stop = true;
-    int32 res;
+    i32 res;
     res = pthread_join(threads[0], nil);
     res = pthread_join(threads[1], nil);
     io.printf("done\n");

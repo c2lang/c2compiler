@@ -3,7 +3,7 @@ module test;
 import opaque_lib as lib;
 import stdio local;
 
-public func int32 main() {
+public func i32 main() {
     lib.MyType* t = lib.MyType.create("hallo");
     printf("number = %d\n", t.getNumber());
     printf("text = %s\n", t.getText());

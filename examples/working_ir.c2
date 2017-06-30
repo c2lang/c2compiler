@@ -2,28 +2,28 @@ module working_ir;
 
 import stdio local;
 
-int32 foo;
-public int32 bar;
-int32 faa = 246;
+i32 foo;
+public i32 bar;
+i32 faa = 246;
 
 public func void myfunction() {
     puts("voila");
     return;
 }
 
-type Number int32;
+type Number i32;
 
-public func int32 main(int32 argc, int8*[] argv) {
-    int32 a = 123;
-    int32 b = 456;
-    float32 pi = 3.1415926;
-    uint16 c;
+public func i32 main(i32 argc, i8*[] argv) {
+    i32 a = 123;
+    i32 b = 456;
+    f32 pi = 3.1415926;
+    u16 c;
     Number n;
     puts("Hello World!\n");
     myfunction();
-    int32 aa = 20 + 30;
+    i32 aa = 20 + 30;
     bool bb = 20 < 30;
-    int32 cc = 12 * 10;
+    i32 cc = 12 * 10;
     bool dd = (13 == 13);
     return 0;
 }

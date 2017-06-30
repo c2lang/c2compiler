@@ -4,7 +4,7 @@ import stdio local;
 
 // CHECK: @0 = private unnamed_addr constant [14 x i8] c"Hello World!\0A\00"
 
-public func int32 main(int32 argc, int8*[] argv) {
+public func i32 main(i32 argc, i8*[] argv) {
 // CHECK: define i32 @main(i32 %argc, i8** %argv) {
 // CHECK: entry:
 // CHECK:   %argc.addr = alloca i32

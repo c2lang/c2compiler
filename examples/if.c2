@@ -4,7 +4,7 @@ func void foo() {}
 func void bar() {}
 func void faa() {}
 
-func int32 haveMorfaa() { return 0; }
+func i32 haveMorfaa() { return 0; }
 
 func void test0() {
     if (10) foo();
@@ -58,5 +58,5 @@ func void test6() {
     else faa();
 }
 
-public func int32 main() { return 0; }
+public func i32 main() { return 0; }
 

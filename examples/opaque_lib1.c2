@@ -1,12 +1,12 @@
 module opaque_lib;
 
 public type MyType struct {
-    int32 number;
+    i32 number;
     char* text;
 } @(opaque)
 
 
-public func int32 MyType.getNumber(MyType* t) {
+public func i32 MyType.getNumber(MyType* t) {
     return t.number;
 }
 

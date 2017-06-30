@@ -6,7 +6,7 @@ const c_int AF_INET = 2;
 
 const c_int IPPROTO_TCP = 6;
 
-type __socket_type enum uint32 {
+type __socket_type enum u32 {
   SOCK_STREAM    = 1,   /* Sequenced, reliable, connection-based byte streams.  */
   SOCK_DGRAM     = 2,   /* Connectionless, unreliable datagrams of fixed maximum length.  */
   SOCK_RAW       = 3,   /* Raw protocol interface.  */
@@ -30,15 +30,15 @@ const c_int SO_DEBUG     = 1;
 const c_int SO_REUSEADDR = 2;
 const c_int SO_BROADCAST = 6;
 
-type sa_family_t uint16;
+type sa_family_t u16;
 
 type sockaddr struct {
     sa_family_t sa_family;
     char[14] sa_data;
 }
 
-type in_port_t uint16;
-type in_addr_t uint32;
+type in_port_t u16;
+type in_addr_t u32;
 type in_addr struct {
     in_addr_t s_addr;
 }
@@ -48,27 +48,27 @@ type sockaddr_in struct {
     in_port_t sin_port;
     in_addr sin_addr;
 
-    uint8[8] sin_zero; // on 64-bit Ubuntu
+    u8[8] sin_zero; // on 64-bit Ubuntu
 }
 
-const uint32 INADDR_ANY       = 0x00000000;
-const uint32 INADDR_BROADCAST = 0xffffffff;
-const uint32 INADDR_NONE      = 0xffffffff;
+const u32 INADDR_ANY       = 0x00000000;
+const u32 INADDR_BROADCAST = 0xffffffff;
+const u32 INADDR_NONE      = 0xffffffff;
 
-func c_int getsockopt(c_int sockfd, c_int level, c_int optname, void* optval, uint32 optlen);
-func c_int setsockopt(c_int sockfd, c_int level, c_int optname, const void* optval, uint32 optlen);
+func c_int getsockopt(c_int sockfd, c_int level, c_int optname, void* optval, u32 optlen);
+func c_int setsockopt(c_int sockfd, c_int level, c_int optname, const void* optval, u32 optlen);
 
-func c_int bind(c_int sockfd, const sockaddr* addr, uint32 addrlen);
+func c_int bind(c_int sockfd, const sockaddr* addr, u32 addrlen);
 
 func c_int listen(c_int sockfd, c_int backlog);
 
-func c_int accept4(c_int sockfd, sockaddr* addr, uint32* addrlen, c_int flags);
+func c_int accept4(c_int sockfd, sockaddr* addr, u32* addrlen, c_int flags);
 
 func char* inet_ntoa(in_addr in);
 
 // should be in arpa/inet.h
-func uint32 htonl(uint32 hostlong);
-func uint16 htons(uint16 hostshort);
-func uint32 ntohl(uint32 netlong);
-func uint16 ntohs(uint16 netshort);
+func u32 htonl(u32 hostlong);
+func u16 htons(u16 hostshort);
+func u32 ntohl(u32 netlong);
+func u16 ntohs(u16 netshort);
 

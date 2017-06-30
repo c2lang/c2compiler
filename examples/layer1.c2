@@ -1,4 +1,4 @@
 module layer1;
 
-public type Number int32;
+public type Number i32;
 

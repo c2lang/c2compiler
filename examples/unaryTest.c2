@@ -1,10 +1,10 @@
 module unary_test;
 
-public func int32 main() {
-    int32 a;
+public func i32 main() {
+    i32 a;
     a = !a;
     (&a)[2] = 3;
-    int32* pa;
+    i32* pa;
     *pa = 10;
     return 0;
 }
