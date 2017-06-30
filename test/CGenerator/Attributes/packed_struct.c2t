@@ -6,11 +6,11 @@
 module test;
 
 type Struct struct {
-    int32 x;
-    int8 y;
+    i32 x;
+    i8 y;
 } @(packed)
 
-public func int32 main(int32 argc, const int8*[] argv)
+public func i32 main(i32 argc, const i8*[] argv)
 {
     return 0;
 }

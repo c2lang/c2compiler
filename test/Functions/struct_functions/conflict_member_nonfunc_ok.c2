@@ -2,8 +2,8 @@
 module test;
 
 type Type struct {
-    int32 x;
+    i32 x;
 }
 
-int32 type_x;
+i32 type_x;
 

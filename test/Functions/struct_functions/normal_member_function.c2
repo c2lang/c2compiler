@@ -4,7 +4,7 @@ module test;
 type Func func void();
 
 type Type struct {
-    int32 member;
+    i32 member;
     Func init;
 }
 

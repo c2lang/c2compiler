@@ -2,12 +2,12 @@
 module test;
 
 func void test1() {
-    const int8* size1 = 10;
-    int32[size1] a;      // @error{size of array has non-integer type 'int8*'}
+    const i8* size1 = 10;
+    i32[size1] a;      // @error{size of array has non-integer type 'i8*'}
 }
 
 func void test2() {
     const bool B = true;
-    int32[B] c;      // @error{size of array has non-integer type 'bool'}
+    i32[B] c;      // @error{size of array has non-integer type 'bool'}
 }
 

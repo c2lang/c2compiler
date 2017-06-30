@@ -5,11 +5,11 @@
 // @file{file1}
 module test;
 
-int32 x @(section="test") = 123;
+i32 x @(section="test") = 123;
 
 func void foo() @(section="test") {}
 
-public func int32 main(int32 argc, const int8*[] argv)
+public func i32 main(i32 argc, const i8*[] argv)
 {
     return 0;
 }

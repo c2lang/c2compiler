@@ -2,6 +2,6 @@
 module test;
 
 func void test1() {
-    const int32 N;        // @error{constant variable N must be initialized}
+    const i32 N;        // @error{constant variable N must be initialized}
 }
 

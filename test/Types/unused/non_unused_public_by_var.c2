@@ -1,7 +1,7 @@
 // @warnings{no-unused-variable}
 module test;
 
-public type Number int32;
+public type Number i32;
 
 public Number n;
 

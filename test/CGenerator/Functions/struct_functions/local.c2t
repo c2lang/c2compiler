@@ -6,13 +6,13 @@
 module test;
 
 type Type struct {
-    int32 member;
+    i32 member;
 }
 
 func void Type.init(Type*) {
 }
 
-public func int32 main() {
+public func i32 main() {
     Type t;
     t.init();
     return 0;

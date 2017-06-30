@@ -2,12 +2,12 @@
 // @warnings{no-unused}
 module test;
 
-type Foo enum int8 {
+type Foo enum i8 {
     A,
 }
 
 public func void foo() {
-    int32 bar = 1;
+    i32 bar = 1;
     switch (bar) {
     case 10:
     case 10:        // @error{duplicate case value '10'}

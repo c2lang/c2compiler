@@ -4,7 +4,7 @@
 // @file{file1}
 module foo;
 
-int32 n;
+i32 n;
 
 // @file{file2}
 module bar;

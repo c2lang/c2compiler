@@ -1,7 +1,7 @@
 // @warnings{no-unused-function}
 module test;
 
-int32 a;  // @warning{unused variable 'test.a'}
+i32 a;  // @warning{unused variable 'test.a'}
 
 func void test1() {
     a = 10;

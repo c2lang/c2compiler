@@ -1,5 +1,5 @@
 // @warnings{no-unused}
 module test;
 
-int32 x @(export);      // @error{attribute 'export' can only be applied to public declarations}
+i32 x @(export);      // @error{attribute 'export' can only be applied to public declarations}
 

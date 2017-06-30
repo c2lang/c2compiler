@@ -6,7 +6,7 @@
 module foo;
 
 public type Type struct {
-    int32 x;
+    i32 x;
 } @(opaque)
 
 public func Type* Type.create() {
@@ -30,7 +30,7 @@ module bar;
 
 import foo;
 
-public func int32 main() {
+public func i32 main() {
     foo.Type* t = foo.Type.create();
     t.init();
     return 0;

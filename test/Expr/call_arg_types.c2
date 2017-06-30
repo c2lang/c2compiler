@@ -1,20 +1,20 @@
 // @warnings{no-unused}
 module test;
 
-func void test2(int8 a) {}
+func void test2(i8 a) {}
 
 func void test1() {
     test2(100);
-    int8 c = 1;
+    i8 c = 1;
     test2(c);
 
-    int32 a = 1;
-    test2(a);   // @warning{implicit conversion loses integer precision: 'int32' to 'int8'}
-    test2(100 + a); // @warning{implicit conversion loses integer precision: 'int32' to 'int8'}
+    i32 a = 1;
+    test2(a);   // @warning{implicit conversion loses integer precision: 'i32' to 'i8'}
+    test2(100 + a); // @warning{implicit conversion loses integer precision: 'i32' to 'i8'}
 
-    const int32 B = 120;
+    const i32 B = 120;
     test2(B);
 
-    test2(100 + 100);   // @error{constant value 200 out-of-bounds for type 'int8', range [-128, 127]}
+    test2(100 + 100);   // @error{constant value 200 out-of-bounds for type 'i8', range [-128, 127]}
 }
 

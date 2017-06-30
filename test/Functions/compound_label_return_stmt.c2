@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-public func int32 main() {
+public func i32 main() {
 first:
 second:
     {

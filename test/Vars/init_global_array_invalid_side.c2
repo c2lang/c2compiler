@@ -1,5 +1,5 @@
 // @warnings{no-unused}
 module test;
 
-int32[MISSING] buf1;  // @error{use of undeclared identifier MISSING}
+i32[MISSING] buf1;  // @error{use of undeclared identifier MISSING}
 

@@ -2,14 +2,14 @@
 module test;
 
 func void foo() {
-    while (int32 a = 12) {
+    while (i32 a = 12) {
         a--;
     }
     a++;            // @error{use of undeclared identifier a}
 }
 
 func void bar() {
-    while (int32 a = 12) {}
-    while (int32 a = 12) {}
+    while (i32 a = 12) {}
+    while (i32 a = 12) {}
 }
 

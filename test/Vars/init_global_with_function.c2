@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-int32 a = function;       // @error{invalid type conversion from 'void ()' to 'int32'}
+i32 a = function;       // @error{invalid type conversion from 'void ()' to 'i32'}
 
 func void function() {}
 

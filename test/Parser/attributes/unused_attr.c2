@@ -4,15 +4,15 @@ func void f1() @(unused) {}
 
 public func void f2() @(unused) {}
 
-int32 v1 @(unused);
+i32 v1 @(unused);
 
-public int32 v2 @(unused);
+public i32 v2 @(unused);
 
 type T1 struct {
-    int32 x;
+    i32 x;
 } @(unused)
 
 public type T2 struct {
-    int32 x;
+    i32 x;
 } @(unused)
 

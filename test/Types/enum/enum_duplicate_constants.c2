@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-type Enum enum int32 {
+type Enum enum i32 {
     A,  // @note{previous definition is here}
     A,  // @error{redefinition of A}
 }

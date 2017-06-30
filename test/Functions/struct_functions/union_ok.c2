@@ -2,26 +2,26 @@
 module test;
 
 type Type union {
-    int32 member;
-    int8* cp;
+    i32 member;
+    i8* cp;
 }
 
 func void Type.init(Type* t) {
     t.member = 0;
 }
 
-func int32 Type.getMember(const Type* t) {
+func i32 Type.getMember(const Type* t) {
     return t.member;
 }
 
-func int8* Type.getCp(const Type* t) {
+func i8* Type.getCp(const Type* t) {
     return t.cp;
 }
 
 func void myfunc() {
     Type t;
     t.init();
-    int32 m = t.getMember();
-    int8* cp = t.getCp();
+    i32 m = t.getMember();
+    i8* cp = t.getCp();
 }
 

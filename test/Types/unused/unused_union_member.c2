@@ -2,8 +2,8 @@
 module test;
 
 type Foo union {
-    int32 a;          // @warning{unused union member 'a'}
-    int32 b;          // @warning{unused union member 'b'}
+    i32 a;          // @warning{unused union member 'a'}
+    i32 b;          // @warning{unused union member 'b'}
 }
 
 func Foo test1() {

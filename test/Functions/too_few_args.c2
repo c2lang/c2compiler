@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func void func1(int32, int32, int32) {
+func void func1(i32, i32, i32) {
 }
 
 func void test1() {

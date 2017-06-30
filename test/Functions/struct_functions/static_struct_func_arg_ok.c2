@@ -4,10 +4,10 @@ module test;
 import stdlib;
 
 type Type struct {
-    int32 member;
+    i32 member;
 }
 
-func Type* Type.create(int32 n) {
+func Type* Type.create(i32 n) {
     Type* t = stdlib.malloc(sizeof(Type));
     t.member = n;
     return t;

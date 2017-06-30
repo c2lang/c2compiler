@@ -1,11 +1,11 @@
 // @warnings{no-unused}
 module test;
 
-func int32 calc() { return 2; }
+func i32 calc() { return 2; }
 
-int32[] g = { calc() }        // @error{initializer element is not a compile-time constant}
+i32[] g = { calc() }        // @error{initializer element is not a compile-time constant}
 
 func void test1() {
-    int32[2] nums = { calc() }
+    i32[2] nums = { calc() }
 }
 

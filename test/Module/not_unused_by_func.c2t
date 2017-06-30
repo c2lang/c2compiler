@@ -3,14 +3,14 @@
 // @file{file1}
 module foo;
 
-public func int32 test1() { return 1; }
+public func i32 test1() { return 1; }
 
 // @file{file2}
 module bar;
 
 import foo;
 
-func int32 test2() {   // @warning{unused function 'bar.test2'}
+func i32 test2() {   // @warning{unused function 'bar.test2'}
     return foo.test1();
 }
 

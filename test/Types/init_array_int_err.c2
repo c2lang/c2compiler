@@ -1,9 +1,9 @@
 // @warnings{no-unused}
 module test;
 
-int32[2][3] b;
+i32[2][3] b;
 
 func void test1() {
-    int32 a = b;  // @error{invalid type conversion from 'int32[2][3]' to 'int32'}
+    i32 a = b;  // @error{invalid type conversion from 'i32[2][3]' to 'i32'}
 }
 

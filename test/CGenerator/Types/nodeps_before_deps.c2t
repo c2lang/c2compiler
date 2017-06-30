@@ -5,13 +5,13 @@
 // @file{file1}
 module test;
 
-type Bar int32;
+type Bar i32;
 
 type Foo struct {
     Bar b;
 }
 
-type Faa int16;
+type Faa i16;
 
 // @expect{atleast, build/test.c}
 typedef struct test_Foo_ test_Foo;

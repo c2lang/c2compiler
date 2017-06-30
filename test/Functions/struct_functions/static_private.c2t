@@ -5,7 +5,7 @@ $warnings no-unused
 module foo;
 
 type Type struct {
-    int32 x;
+    i32 x;
 }
 
 public func void type_init() {

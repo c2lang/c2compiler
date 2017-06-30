@@ -6,16 +6,16 @@
 module test;
 
 type Foo struct {
-    int32 i;
-    int8* cp;
+    i32 i;
+    i8* cp;
     bool b;
 }
 
 Foo f;
-int32 i;
+i32 i;
 
 Foo[2] fs;
-int32[2] is;
+i32[2] is;
 
 // @expect{atleast, build/test.c}
 

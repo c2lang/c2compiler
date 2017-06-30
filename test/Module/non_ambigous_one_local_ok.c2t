@@ -4,12 +4,12 @@
 // @file{file1}
 module foo;
 
-public int32 a;
+public i32 a;
 
 // @file{file2}
 module bar;
 
-public int32 a;
+public i32 a;
 
 // @file{file3}
 module test;
@@ -18,6 +18,6 @@ import foo local;
 import bar;
 
 func void test1() {
-    int32 i = a;
+    i32 i = a;
 }
 

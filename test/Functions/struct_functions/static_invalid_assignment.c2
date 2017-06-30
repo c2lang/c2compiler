@@ -2,10 +2,10 @@
 module test;
 
 type Type struct {
-    int32 x;
+    i32 x;
 }
 
 func void Type.init(Type* t) {}
 
-int32 a = Type.init;    // @error{invalid type conversion from 'void ((struct)Type*)' to 'int32'}
+i32 a = Type.init;    // @error{invalid type conversion from 'void ((struct)Type*)' to 'i32'}
 

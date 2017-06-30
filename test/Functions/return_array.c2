@@ -1,6 +1,6 @@
 module test;
 
-func int32[] test() {     // @error{expected identifier}
+func i32[] test() {     // @error{expected identifier}
     return 0;
 }
 

@@ -1,14 +1,14 @@
 // @warnings{no-unused}
 module test;
 
-int32[+] a;
+i32[+] a;
 
 a += 1;
 a += 2;
 a += 3;
 
-public func int32 main() {
-    int32 c = a;        // @error{invalid type conversion from 'int32[3]' to 'int32'}
+public func i32 main() {
+    i32 c = a;        // @error{invalid type conversion from 'i32[3]' to 'i32'}
     return 0;
 }
 

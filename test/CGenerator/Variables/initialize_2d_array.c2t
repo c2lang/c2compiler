@@ -5,7 +5,7 @@
 // @file{file1}
 module test;
 
-int32[3][2] a;
+i32[3][2] a;
 
 // @expect{atleast, build/test.c}
 static int32_t test_a[3][2] = { };

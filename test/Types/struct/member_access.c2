@@ -2,24 +2,24 @@
 module test;
 
 type Point struct {
-    int32 a;
+    i32 a;
     struct bb {
-        int32 b;
+        i32 b;
     }
     struct {
-        int32 b;
-        int32 c;
+        i32 b;
+        i32 c;
         struct {
             Point* p;
         }
     }
     union {
-        int32 d;
-        int16 e;
+        i32 d;
+        i16 e;
     }
     union uu {
-        int32 d;
-        uint16 e;
+        i32 d;
+        u16 e;
     }
 }
 

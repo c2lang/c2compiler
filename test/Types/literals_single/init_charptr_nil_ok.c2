@@ -2,6 +2,6 @@
 module test;
 
 func void test1() {
-    const int8* a = nil;
+    const i8* a = nil;
 }
 

@@ -1,4 +1,4 @@
 module test;
 
-type Foo local int32;     // @error{cannot use keyword local for type definitions}
+type Foo local i32;     // @error{cannot use keyword local for type definitions}
 

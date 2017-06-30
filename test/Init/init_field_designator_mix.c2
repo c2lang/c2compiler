@@ -2,8 +2,8 @@
 module test;
 
 type Point struct {
-    int32 x;
-    const int8* y;
+    i32 x;
+    const i8* y;
 }
 
 Point a = { .x = 10, "hello" }  // @error{mixing field designator with non-field designators}

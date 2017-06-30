@@ -1,5 +1,5 @@
 // @warnings{no-unused-parameter no-unused-function}
 module test;
 
-func void test1(int32 d = d) {}     // @error{use of undeclared identifier d}
+func void test1(i32 d = d) {}     // @error{use of undeclared identifier d}
 

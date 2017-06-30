@@ -2,8 +2,8 @@
 module test;
 
 func void test1() {
-    uint64 a = 0;
-    uint64 b = 123;
-    uint64 c = 4294967296;
+    u64 a = 0;
+    u64 b = 123;
+    u64 c = 4294967296;
 }
 

@@ -8,11 +8,11 @@ module hello;
 
 public func void a() {}
 
-public func int32 b(void* arg1, ...) {
+public func i32 b(void* arg1, ...) {
     return 0;
 }
 
-public func void c(int32 arg1 = 10) {}
+public func void c(i32 arg1 = 10) {}
 
 func void d() {}
 
@@ -21,7 +21,7 @@ module hello;
 
 func void a();
 
-func int32 b(void* arg1, ...);
+func i32 b(void* arg1, ...);
 
-func void c(int32 arg1 = 10);
+func void c(i32 arg1 = 10);
 

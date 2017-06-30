@@ -6,20 +6,20 @@ $export hello
 // @file{file1}
 module hello;
 
-public int8 x;
-public const int32 Y = 20;
-public int64 z = 10;
+public i8 x;
+public const i32 Y = 20;
+public i64 z = 10;
 
-public type Number int32;
+public type Number i32;
 public Number nn;
 
 // @expect{atleast, hello.c2i}
 
-type Number int32;
+type Number i32;
 
-int8 x;
-const int32 Y = 20;
-int64 z;
+i8 x;
+const i32 Y = 20;
+i64 z;
 
 Number nn;
 

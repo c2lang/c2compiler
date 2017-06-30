@@ -3,6 +3,6 @@ module test;
 
 func void test1() {
     // > 64 bits
-    int32 a = 20000000000000000000; // @error{integer literal is too large to be represented in any integer type}
+    i32 a = 20000000000000000000; // @error{integer literal is too large to be represented in any integer type}
 }
 

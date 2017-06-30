@@ -1,5 +1,5 @@
 // @warnings{no-unused}
 module test;
 
-int32 x @(aligned=999); // @error{requested alignment is not a power of 2}
+i32 x @(aligned=999); // @error{requested alignment is not a power of 2}
 

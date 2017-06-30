@@ -2,7 +2,7 @@
 module test;
 
 type Foo struct {
-    int32 x;
+    i32 x;
 }
 
 public type Foo2 struct {

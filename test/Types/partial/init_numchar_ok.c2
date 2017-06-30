@@ -2,7 +2,7 @@
 module test;
 
 func void test1() {
-    int8 a = 1;
-    int8 b = 10 + a;
+    i8 a = 1;
+    i8 b = 10 + a;
 }
 

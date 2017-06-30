@@ -3,7 +3,7 @@
 module test;
 
 func void test1() {
-    uint32 a = 0;
+    u32 a = 0;
     a[4:2] = 7;
     a[4:2] = 8;     // @error{constant value 8 out-of-bounds for type unsigned:3, range [0, 7]}
 

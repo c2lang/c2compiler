@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-const int32 B @(section="a") = 2; // @error{attribute 'section' cannot be applied to constants}
+const i32 B @(section="a") = 2; // @error{attribute 'section' cannot be applied to constants}
 
-const int32 C @(aligned=8) = 3; // @error{attribute 'aligned' cannot be applied to constants}
+const i32 C @(aligned=8) = 3; // @error{attribute 'aligned' cannot be applied to constants}
 

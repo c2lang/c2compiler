@@ -2,7 +2,7 @@
 // @warnings{no-unused}
 module test;
 
-int32[+] a;
+i32[+] a;
 
 a += 10;
 a += 20;

@@ -5,18 +5,18 @@ $export aa bb
 
 // @file{file1}
 module aa;
-public const int32 AA = 10;
+public const i32 AA = 10;
 
 // @file{file2}
 module bb;
 import aa;
 
-public int32 b = aa.AA;
+public i32 b = aa.AA;
 
 // @expect{complete, bb.c2i}
 module bb;
 
-int32 b;
+i32 b;
 
 // @expect{atleast, bb.h}
 extern int32_t bb_b;

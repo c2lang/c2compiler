@@ -1,8 +1,8 @@
 // @warnings{no-unused}
 module test;
 
-const int32 Const = 1;
+const i32 Const = 1;
 
-int32 a = Const;
-int32 b = test.Const;
+i32 a = Const;
+i32 b = test.Const;
 

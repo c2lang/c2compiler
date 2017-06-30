@@ -2,7 +2,7 @@
 module test;
 
 func void foo() {
-    switch (int32 a = 12) {
+    switch (i32 a = 12) {
     case 0:
         a++;
         break;

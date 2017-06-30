@@ -5,14 +5,14 @@
 // @file{file1}
 module test;
 
-public func int32 main(int32 argc, const int8*[] argv) {
-    int32 a = 0;
+public func i32 main(i32 argc, const i8*[] argv) {
+    i32 a = 0;
     while (a) {
         if (argc == 1) continue;
         if (argc == 2) break;
     }
 
-    while (int32 b = 10) {}
+    while (i32 b = 10) {}
 
     while (true) {}
 

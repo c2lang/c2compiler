@@ -5,10 +5,10 @@ $warnings no-unused
 module foo;
 
 public type Foo struct {
-    int32 x;
+    i32 x;
 } @(opaque)
 
-public func int32 f4() {
+public func i32 f4() {
     return sizeof(Foo);
 }
 

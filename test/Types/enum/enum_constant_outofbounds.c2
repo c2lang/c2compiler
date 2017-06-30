@@ -1,8 +1,8 @@
 // @warnings{no-unused}
 module test;
 
-type A enum int8 {
+type A enum i8 {
     B = 127,
-    C = 200,        // @error{constant value 200 out-of-bounds for type '(enum)A' (aka 'int8'), range [-128, 127]}
+    C = 200,        // @error{constant value 200 out-of-bounds for type '(enum)A' (aka 'i8'), range [-128, 127]}
 }
 

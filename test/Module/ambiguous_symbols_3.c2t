@@ -4,17 +4,17 @@
 // @file{file1}
 module foo;
 
-public int32 a;
+public i32 a;
 
 // @file{file2}
 module bar;
 
-public int32 a;
+public i32 a;
 
 // @file{file3}
 module faa;
 
-public int32 a;
+public i32 a;
 
 // @file{file4}
 module test;
@@ -24,6 +24,6 @@ import bar local;
 import faa local;
 
 func void test1() {
-    int32 i = a;      // @error{symbol a is ambiguous}
+    i32 i = a;      // @error{symbol a is ambiguous}
 }
 

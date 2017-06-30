@@ -4,12 +4,12 @@
 // @file{file1}
 module foo;
 
-public const int32 Num = 0;
+public const i32 Num = 0;
 
 // @file{file2}
 module bar;
 
 import foo;
 
-int32 a = foo.Num;
+i32 a = foo.Num;
 

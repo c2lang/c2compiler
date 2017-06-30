@@ -2,8 +2,8 @@
 module test;
 
 func void test1() {
-    const int32 NUM = 100;
-    int8 a = NUM;
-    int8 b = NUM + 28; // @error{constant value 128 out-of-bounds for type 'int8', range [-128, 127]}
+    const i32 NUM = 100;
+    i8 a = NUM;
+    i8 b = NUM + 28; // @error{constant value 128 out-of-bounds for type 'i8', range [-128, 127]}
 }
 

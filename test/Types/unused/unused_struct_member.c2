@@ -3,14 +3,14 @@ module test;
 
 type Point struct {
     // used as LHS+RHS only
-    int32 x;
+    i32 x;
     // not used
-    int32 y;          // @warning{unused struct member 'y'}
+    i32 y;          // @warning{unused struct member 'y'}
     // used as LHS only
-    int32 z;          // @warning{unused struct member 'z'}
+    i32 z;          // @warning{unused struct member 'z'}
 }
 
-func int32 test1() {
+func i32 test1() {
     Point p;
     p.x = 10;
     p.x = 20;

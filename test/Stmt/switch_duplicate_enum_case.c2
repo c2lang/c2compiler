@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-type Foo enum int8 {
+type Foo enum i8 {
     A,
 }
 

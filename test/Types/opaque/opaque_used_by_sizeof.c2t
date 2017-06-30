@@ -5,7 +5,7 @@ $warnings no-unused
 module foo;
 
 public type Foo struct {
-    int32 x;
+    i32 x;
 } @(opaque)
 
 // @file{file2}
@@ -13,6 +13,6 @@ module bar;
 import foo local;
 
 func void b() {
-    int32 s = sizeof(Foo);  // @error{opaque type 'foo.Foo' used by value}
+    i32 s = sizeof(Foo);  // @error{opaque type 'foo.Foo' used by value}
 }
 

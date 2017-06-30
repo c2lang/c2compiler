@@ -3,7 +3,7 @@ module test;
 
 func void test1() {
     {
-        int32 a;
+        i32 a;
     }
     a = 10;     // @error{use of undeclared identifier a}
 }

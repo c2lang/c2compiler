@@ -10,7 +10,7 @@ public type Public struct {
 } @(opaque)
 
 type Priv struct {
-    int32 x;
+    i32 x;
 }
 
 // @expect{complete, build/test.h}

@@ -1,14 +1,14 @@
 // @warnings{no-unused}
 module test;
 
-type Handle int32;
+type Handle i32;
 
 func void test1() {
-    int32 a = sizeof(int32*);
-    int32 b = sizeof(a);
-    int32 c = sizeof(a*);
-    int32 d = sizeof(Handle);
-    int32 e = sizeof(Handle*);
-    int32 f = sizeof(Handle[2]);
+    i32 a = sizeof(i32*);
+    i32 b = sizeof(a);
+    i32 c = sizeof(a*);
+    i32 d = sizeof(Handle);
+    i32 e = sizeof(Handle*);
+    i32 f = sizeof(Handle[2]);
 }
 

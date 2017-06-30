@@ -1,5 +1,5 @@
 module test;
 
-int32 number;
+i32 number;
 number n;   // @error{number is not a type name}
 

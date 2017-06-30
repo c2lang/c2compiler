@@ -1,10 +1,10 @@
 // @warnings{no-unused}
 module test;
 
-int32[] array = {
+i32[] array = {
     1,
     2,
     [3] = 3,
-    .x = 6,     // @error{field designator cannot initialize a non-struct, non-union type 'int32[]'}
+    .x = 6,     // @error{field designator cannot initialize a non-struct, non-union type 'i32[]'}
 }
 

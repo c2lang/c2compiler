@@ -5,19 +5,19 @@ $export aa bb
 
 // @file{file1}
 module aa;
-public const int32 AA = 10;
+public const i32 AA = 10;
 
 // @file{file2}
 module bb;
 import aa;
 
-public func void b(int32 arg1 = aa.AA) {}
+public func void b(i32 arg1 = aa.AA) {}
 
 // @expect{complete, bb.c2i}
 module bb;
 import aa;
 
-func void b(int32 arg1 = aa.AA);
+func void b(i32 arg1 = aa.AA);
 
 // @expect{atleast, bb.h}
 #include "aa.h"

@@ -5,14 +5,14 @@
 // @file{file1}
 module test;
 
-public func int32 foo() @(section="ctest") {
+public func i32 foo() @(section="ctest") {
     return 1;
 }
 
-func int32 bar() @(section="ctest") {
+func i32 bar() @(section="ctest") {
     return 2;
 }
-public func int32 main(int32 argc, const int8*[] argv)
+public func i32 main(i32 argc, const i8*[] argv)
 {
     return 0;
 }

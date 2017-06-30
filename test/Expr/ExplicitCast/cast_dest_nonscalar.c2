@@ -2,10 +2,10 @@
 module test;
 
 type Struct struct {
-    int32 x;
+    i32 x;
 }
 
 func void test1() {
-    int32 a = cast<Struct>(200);    // @error{used type '(struct)Struct' where arithmetic or pointer type is required}
+    i32 a = cast<Struct>(200);    // @error{used type '(struct)Struct' where arithmetic or pointer type is required}
 }
 

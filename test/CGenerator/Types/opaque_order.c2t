@@ -6,7 +6,7 @@
 module test;
 
 type Priv struct {
-    int32 x;
+    i32 x;
 }
 
 public type Public struct {

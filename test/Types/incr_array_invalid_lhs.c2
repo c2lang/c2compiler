@@ -1,8 +1,8 @@
 // @warnings{no-unused}
 module test;
 
-int32 a;
-int8[2] d = { 1, 2 }
+i32 a;
+i8[2] d = { 1, 2 }
 
 a += 10;    // @error{'a' is not an incremental array}
 
@@ -12,7 +12,7 @@ d += 30;    // @error{'d' is not an incremental array}
 
 main += 20; // @error{'main' is not an incremental array}
 
-public func int32 main() {
+public func i32 main() {
     return 0;
 }
 

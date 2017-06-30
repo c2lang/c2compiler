@@ -4,7 +4,7 @@ module test;
 import stdlib;
 
 type Type struct {
-    int32 member;
+    i32 member;
 }
 
 func Type* Type.create() {

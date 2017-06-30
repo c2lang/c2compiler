@@ -1,6 +1,6 @@
 module test;
 
-public func int32 main() {
+public func i32 main() {
     return 0;
 }
 

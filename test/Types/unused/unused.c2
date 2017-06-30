@@ -1,4 +1,4 @@
 module test;
 
-type Number int32;    // @warning{unused type 'test.Number'}
+type Number i32;    // @warning{unused type 'test.Number'}
 

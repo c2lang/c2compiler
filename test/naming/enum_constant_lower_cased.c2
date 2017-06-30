@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-type State enum int8 {
+type State enum i8 {
     Foo,
     bar, // @error{an enum constant must start with an upper case character}
 }

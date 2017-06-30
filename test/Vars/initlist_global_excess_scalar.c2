@@ -1,5 +1,5 @@
 // @warnings{no-unused-variable}
 module test;
 
-int32 a = {1, 2}  // @error{excess elements in scalar initializer}
+i32 a = {1, 2}  // @error{excess elements in scalar initializer}
 

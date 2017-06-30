@@ -1,11 +1,11 @@
 // @warnings{no-unused}
 module test;
 
-type Int int32;
-type UInt uint32;
+type Int i32;
+type UInt u32;
 
-uint32 b = 0;
-int32 a = 1;
+u32 b = 0;
+i32 a = 1;
 func void test1() {
     b = b[2:1];
     b = a[2:1];      // @error{bit offsets are only allowed on unsigned integer type}
@@ -17,7 +17,7 @@ func void test2() {
 }
 
 func void test3() {
-    const int8* text = "hallo";
+    const i8* text = "hallo";
     b = text[4:2];   // @error{bit offsets are only allowed on unsigned integer type}
 }
 
@@ -26,7 +26,7 @@ func void test4() {
 }
 
 func void test5() {
-    uint8 d = 2;
+    u8 d = 2;
     b = d[2:1];
 
     UInt f = 1;

@@ -2,16 +2,16 @@
 module test;
 
 type Point struct {
-    int32 x;
-    int8 y;
+    i32 x;
+    i8 y;
 }
 
 func void test1() {
-    const int32 A = 50;
+    const i32 A = 50;
     Point[] p = {
         { 10, 20 },
-        { 100, 200 },    // @error{constant value 200 out-of-bounds for type 'int8', range [-128, 127]}
-        { 100, 100 + A}, // @error{constant value 150 out-of-bounds for type 'int8', range [-128, 127]}
+        { 100, 200 },    // @error{constant value 200 out-of-bounds for type 'i8', range [-128, 127]}
+        { 100, 100 + A}, // @error{constant value 150 out-of-bounds for type 'i8', range [-128, 127]}
     }
 }
 

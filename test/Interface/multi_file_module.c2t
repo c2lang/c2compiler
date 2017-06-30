@@ -6,7 +6,7 @@ $export aa bb
 // @file{file1}
 module aa;
 
-public type Number int32;
+public type Number i32;
 
 // @file{file2}
 module bb;

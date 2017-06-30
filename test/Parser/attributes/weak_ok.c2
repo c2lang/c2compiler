@@ -1,4 +1,4 @@
 module test;
 
-public int32 a @(export, weak);
+public i32 a @(export, weak);
 

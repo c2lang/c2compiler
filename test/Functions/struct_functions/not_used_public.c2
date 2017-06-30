@@ -2,7 +2,7 @@
 module test;
 
 public type Type struct {
-    int32 x;            // @warning{unused struct member 'x'}
+    i32 x;            // @warning{unused struct member 'x'}
 }
 
 public func void Type.init(Type*) {   // @warning{function 'test.Type.init' is not used public}

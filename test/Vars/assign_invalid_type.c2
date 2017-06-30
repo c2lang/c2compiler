@@ -2,6 +2,6 @@
 module test;
 
 func void test1() {
-    int32 a = "test";     // @error{invalid type conversion from 'uint8*' to 'int32'}
+    i32 a = "test";     // @error{invalid type conversion from 'u8*' to 'i32'}
 }
 

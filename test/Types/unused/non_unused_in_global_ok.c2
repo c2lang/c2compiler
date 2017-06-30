@@ -1,6 +1,6 @@
 // @warnings{no-unused-variable}
 module test;
 
-type Number int32;
+type Number i32;
 Number n;
 

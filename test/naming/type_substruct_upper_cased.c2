@@ -2,12 +2,12 @@
 module test;
 
 type Outer struct {
-    int32 x;
+    i32 x;
     struct {
-        int32 y;
+        i32 y;
     }
     struct Inner { // @error{a variable name must start with a lower case character}
-        int32 z;
+        i32 z;
     }
 }
 

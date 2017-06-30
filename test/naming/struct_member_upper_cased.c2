@@ -2,6 +2,6 @@
 module test;
 
 type Point struct {
-    int32 X; // @error{a variable name must start with a lower case character}
+    i32 X; // @error{a variable name must start with a lower case character}
 }
 

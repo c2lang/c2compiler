@@ -4,7 +4,7 @@ module test;
 import c2;
 
 func void test1() {
-    uint64 t1 = c2.buildtime;
-    int8 t2 = c2.buildtime;         // @warning{implicit conversion loses integer precision: 'uint64' to 'int8'}
+    u64 t1 = c2.buildtime;
+    i8 t2 = c2.buildtime;         // @warning{implicit conversion loses integer precision: 'u64' to 'i8'}
 }
 

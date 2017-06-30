@@ -1,12 +1,12 @@
 // @warnings{no-unused}
 module test;
 
-int8*  a;
+i8*  a;
 // CHECK: @a = internal global i8* null, align 4
-int16* b;
+i16* b;
 // CHECK: @b = internal global i16* null, align 4
-int32* c;
+i32* c;
 // CHECK: @c = internal global i32* null, align 4
-int64* d;
+i64* d;
 // CHECK: @d = internal global i64* null, align 4
 

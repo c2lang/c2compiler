@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-type Number int32;
+type Number i32;
 
-int32 a = Number;       // @error{unexpected type name Number: expected expression}
+i32 a = Number;       // @error{unexpected type name Number: expected expression}
 

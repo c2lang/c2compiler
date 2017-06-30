@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-type State enum uint8 {
+type State enum u8 {
     A,
     B,
 }

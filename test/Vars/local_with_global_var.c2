@@ -1,8 +1,8 @@
 module test;
 
-local int32 a;    // @error{cannot use keyword local for global variables}
+local i32 a;    // @error{cannot use keyword local for global variables}
 
-public func int32 main() {
+public func i32 main() {
     return 0;
 }
 

@@ -2,6 +2,6 @@
 module test;
 
 type Type1 struct {
-    int32 x;
+    i32 x;
 } @(opaque)         // @error{opaque declaration must be public}
 

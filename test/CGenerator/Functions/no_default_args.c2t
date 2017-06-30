@@ -5,13 +5,13 @@
 // @file{file1}
 module test;
 
-func void foo(int32 a = 11) {}
+func void foo(i32 a = 11) {}
 
-func void bar(int32 a, int32 b = 22) {}
+func void bar(i32 a, i32 b = 22) {}
 
-func void faa(int32 a = 11, int32 b = 22) {}
+func void faa(i32 a = 11, i32 b = 22) {}
 
-public func int32 main(int32 argc, const int8*[] argv) {
+public func i32 main(i32 argc, const i8*[] argv) {
     foo();
     foo(1);
 

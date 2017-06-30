@@ -1,12 +1,12 @@
 // @warnings{no-unused}
 module test;
 
-type Types enum int8 {
+type Types enum i8 {
     FOO = 2,
     BAR = 5,
 }
 
-int32[] array = {
+i32[] array = {
     [BAR] = 5,  // @note{previous initialization is here}
     0,
     1,
@@ -16,7 +16,7 @@ int32[] array = {
     5,  // @error{duplicate initialization of array index}
 }
 
-int32[3] array2 = {
+i32[3] array2 = {
     [FOO] = 2,
     3,  // @error{excess elements in array initializer}
 }

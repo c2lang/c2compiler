@@ -1,14 +1,14 @@
 // @warnings{no-unused}
 module test;
 
-type Enum enum int8 {
+type Enum enum i8 {
     A = 126,
     B,
-    C,      // @error{constant value 128 out-of-bounds for type '(enum)Enum' (aka 'int8'), range [-128, 127]}
-    D,      // @error{constant value 129 out-of-bounds for type '(enum)Enum' (aka 'int8'), range [-128, 127]}
+    C,      // @error{constant value 128 out-of-bounds for type '(enum)Enum' (aka 'i8'), range [-128, 127]}
+    D,      // @error{constant value 129 out-of-bounds for type '(enum)Enum' (aka 'i8'), range [-128, 127]}
 }
 
-type Enum2 enum uint8 {
-    E = -1, // @error{constant value -1 out-of-bounds for type '(enum)Enum2' (aka 'uint8'), range [0, 255]}
+type Enum2 enum u8 {
+    E = -1, // @error{constant value -1 out-of-bounds for type '(enum)Enum2' (aka 'u8'), range [0, 255]}
 }
 

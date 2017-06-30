@@ -2,7 +2,7 @@
 module test;
 
 type Struct struct {
-    uint8* ptr;
+    u8* ptr;
 }
 
 func void test1(Struct* s) {

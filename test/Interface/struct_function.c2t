@@ -7,7 +7,7 @@ $export test
 module test;
 
 public type Struct struct {
-    int32 x;
+    i32 x;
 } @(opaque)
 
 public func void Struct.test1() {}

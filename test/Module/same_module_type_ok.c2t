@@ -4,7 +4,7 @@
 // @file{file1}
 module test;
 
-type Number int32;
+type Number i32;
 
 // @file{file2}
 module test;

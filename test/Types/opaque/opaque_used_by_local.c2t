@@ -5,7 +5,7 @@ $warnings no-unused
 module foo;
 
 public type Foo struct {
-    int32 x;
+    i32 x;
 } @(opaque)
 
 // @file{file2}

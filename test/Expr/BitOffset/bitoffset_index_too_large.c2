@@ -1,18 +1,18 @@
 // @warnings{no-unused}
 module test;
 
-uint32 b;
-uint32 a = 0;
+u32 b;
+u32 a = 0;
 
 func void test1() {
-    b = a[32:0];     // @error{bitoffset index value '32' too large for type uint32}
+    b = a[32:0];     // @error{bitoffset index value '32' too large for type u32}
 }
 
 func void test2() {
-    uint64 d = 1;
+    u64 d = 1;
     b = d[63:40];
 
-    uint8 c = 1;
-    b = c[8:0];     // @error{bitoffset index value '8' too large for type uint8}
+    u8 c = 1;
+    b = c[8:0];     // @error{bitoffset index value '8' too large for type u8}
 }
 

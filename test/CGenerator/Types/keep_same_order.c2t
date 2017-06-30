@@ -5,13 +5,13 @@
 // @file{file1}
 module test;
 
-type Number int32;
+type Number i32;
 
 type Point struct {
-    int32 x;
+    i32 x;
 }
 
-type State enum int8 { A, B, C }
+type State enum i8 { A, B, C }
 
 // @expect{atleast, build/test.c}
 typedef struct test_Point_ test_Point;

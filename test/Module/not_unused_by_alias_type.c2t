@@ -4,7 +4,7 @@
 // @file{file1}
 module foo;
 
-public type Number int32;
+public type Number i32;
 
 // @file{file2}
 module bar;

@@ -1,7 +1,7 @@
 module test;
 
 func void test1() {
-    int32 i;
+    i32 i;
     switch (i) {
     case j:     // @error{use of undeclared identifier j}
         break;

@@ -5,13 +5,13 @@
 // @file{file1}
 module test;
 
-public func int32 main(int32 argc, const int8*[] argv) {
-    int32 a = 0;
+public func i32 main(i32 argc, const i8*[] argv) {
+    i32 a = 0;
     switch (a) {
     default: break;
     }
 
-    switch (int32 b = 10) {
+    switch (i32 b = 10) {
     default: break;
     }
 

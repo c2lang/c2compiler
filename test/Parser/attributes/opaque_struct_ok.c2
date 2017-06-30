@@ -2,10 +2,10 @@
 module test;
 
 public type Type1 struct {
-    int32 x;
+    i32 x;
 } @(opaque)
 
 public type Type2 union {
-    int32 x;
+    i32 x;
 } @(opaque)
 

@@ -2,9 +2,9 @@
 module test;
 
 type Coor struct {
-    int8 x;
-    int8 y;
-    int8 z;
+    i8 x;
+    i8 y;
+    i8 z;
 }
 
 type Piece struct {
@@ -23,5 +23,5 @@ Piece[] pieces = {
     },
 }
 
-const uint32 Aa = 1 + 2 + 3;
-const uint32 Bb = (1 + 2 + 3);
+const u32 Aa = 1 + 2 + 3;
+const u32 Bb = (1 + 2 + 3);

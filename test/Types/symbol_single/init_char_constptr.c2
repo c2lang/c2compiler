@@ -3,7 +3,7 @@
 module test;
 
 func void test1() {
-    const int8 a = 1;
+    const i8 a = 1;
     int8* b = &a;   // @warning{?}
 }
 

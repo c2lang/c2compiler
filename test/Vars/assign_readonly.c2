@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-const int32 A = 0;
+const i32 A = 0;
 func void test1() {
     A = 1;          // @error{read-only variable is not assignable}
 }
@@ -15,7 +15,7 @@ func void test3() {
 }
 
 func void test4() {
-    const int32[10] Array = {0}
+    const i32[10] Array = {0}
     Array[0] = 1;   // @error{read-only variable is not assignable}
 }
 

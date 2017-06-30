@@ -3,8 +3,8 @@ module test;
 
 type Type struct {
     union {
-        int32 x;
-        int32 y;    // @error{member 'y' conflicts with struct-function 'test.Type.y'}
+        i32 x;
+        i32 y;    // @error{member 'y' conflicts with struct-function 'test.Type.y'}
     }
 }
 

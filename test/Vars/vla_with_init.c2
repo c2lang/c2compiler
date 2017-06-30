@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-func void test1(int32 x) {
-    int32[x] a = { 1, 2 } // @error{variable length array may not be initialized}
+func void test1(i32 x) {
+    i32[x] a = { 1, 2 } // @error{variable length array may not be initialized}
 }
 

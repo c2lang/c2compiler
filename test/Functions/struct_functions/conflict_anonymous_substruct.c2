@@ -3,7 +3,7 @@ module test;
 
 type Type struct {
     struct {
-        int32 x;    // @error{member 'x' conflicts with struct-function 'test.Type.x'}
+        i32 x;    // @error{member 'x' conflicts with struct-function 'test.Type.x'}
     }
 }
 

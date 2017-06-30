@@ -5,13 +5,13 @@ $export aa bb
 
 // @file{file1}
 module aa;
-public const int32 AA = 10;
+public const i32 AA = 10;
 
 // @file{file2}
 module bb;
 import aa;
 
-public type BB enum int8 {
+public type BB enum i8 {
     BB1 = aa.AA,
 }
 
@@ -19,7 +19,7 @@ public type BB enum int8 {
 module bb;
 import aa;
 
-type BB enum int8 {
+type BB enum i8 {
     BB1 = aa.AA,
 }
 

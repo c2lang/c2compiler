@@ -6,16 +6,16 @@ $export aa bb
 // @file{file1}
 module aa;
 
-public type AA int32;
+public type AA i32;
 
-public const int32 FIRST = 1;
+public const i32 FIRST = 1;
 
 // @file{file2}
 module bb;
 
 import aa as cc;
 
-public type Enum enum int8 {
+public type Enum enum i8 {
     One = cc.FIRST,
     Two,
 }
@@ -27,16 +27,16 @@ public func cc.AA bb1(cc.AA* arg1) {
 // @expect{complete, aa.c2i}
 module aa;
 
-type AA int32;
+type AA i32;
 
-const int32 FIRST = 1;
+const i32 FIRST = 1;
 
 // @expect{complete, bb.c2i}
 module bb;
 
 import aa;
 
-type Enum enum int8 {
+type Enum enum i8 {
     One = aa.FIRST,
     Two,
 }

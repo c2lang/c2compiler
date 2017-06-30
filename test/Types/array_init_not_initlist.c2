@@ -1,8 +1,8 @@
 // @warnings{no-unused}
 module test;
 
-int32[] a = { 1, 2 }
+i32[] a = { 1, 2 }
 
-int32[] b = 30;   // @error{array initializer must be an initializer list}
-int32[] c = a;    // @error{array initializer must be an initializer list}
+i32[] b = 30;   // @error{array initializer must be an initializer list}
+i32[] c = a;    // @error{array initializer must be an initializer list}
 

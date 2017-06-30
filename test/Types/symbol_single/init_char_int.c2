@@ -2,7 +2,7 @@
 module test;
 
 func void test1() {
-    int32 a = 1;
-    int8 b = a;         // @warning{implicit conversion loses integer precision: 'int32' to 'int8'}
+    i32 a = 1;
+    i8 b = a;         // @warning{implicit conversion loses integer precision: 'i32' to 'i8'}
 }
 

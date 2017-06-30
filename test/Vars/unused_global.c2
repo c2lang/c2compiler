@@ -1,6 +1,6 @@
 module test;
 
-int32 a;  // @warning{unused variable 'test.a'}
+i32 a;  // @warning{unused variable 'test.a'}
 
-public int32 b;  // @warning{unused variable 'test.b'}
+public i32 b;  // @warning{unused variable 'test.b'}
 

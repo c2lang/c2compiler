@@ -6,26 +6,26 @@ $export hello
 // @file{file1}
 module hello;
 
-public type Number int32;
-type Priv int32;
+public type Number i32;
+type Priv i32;
 
-public const int8 Third = 124;
+public const i8 Third = 124;
 
-public type State enum int8 {
+public type State enum i8 {
     AA = 0,
     BB = 123,
     CC = Third,
     DD,
 }
 
-public type Func func int8*(int32* a, State* b);
+public type Func func i8*(i32* a, State* b);
 
 public type Struct struct {
-    int32 x;
+    i32 x;
     Struct* s;
     Number n;
     struct aa {
-        int64 xx;
+        i64 xx;
     }
     union {
         Struct* sp;
@@ -37,23 +37,23 @@ public type Struct struct {
 // @expect{complete, hello.c2i}
 module hello;
 
-type Number int32;
+type Number i32;
 
-type State enum int8 {
+type State enum i8 {
     AA = 0,
     BB = 123,
     CC = Third,
     DD,
 }
 
-type Func func int8*(int32* a, State* b);
+type Func func i8*(i32* a, State* b);
 
 type Struct struct {
-    int32 x;
+    i32 x;
     Struct* s;
     Number n;
     struct aa {
-        int64 xx;
+        i64 xx;
     }
     union {
         Struct* sp;
@@ -62,5 +62,5 @@ type Struct struct {
     Func ff;
 }
 
-const int8 Third = 124;
+const i8 Third = 124;
 

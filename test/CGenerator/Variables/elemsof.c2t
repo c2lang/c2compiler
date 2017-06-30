@@ -5,9 +5,9 @@
 // @file{file1}
 module test;
 
-int32[] numbers = { 1, 2, 3, 4 }
+i32[] numbers = { 1, 2, 3, 4 }
 
-const int32 Amount = elemsof(numbers);
+const i32 Amount = elemsof(numbers);
 
 // @expect{atleast, build/test.c}
 

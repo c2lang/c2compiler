@@ -1,8 +1,8 @@
 // @warnings{no-unused}
 module test;
 
-int32* a = 0;
-int32* b = 4294967295;
-int32* c = 4294967296;   // @error{constant value 4294967296 out-of-bounds for type 'int32*', range [0, 4294967295]}
-int32* d = -1;           // @error{constant value -1 out-of-bounds for type 'int32*', range [0, 4294967295]}
+i32* a = 0;
+i32* b = 4294967295;
+i32* c = 4294967296;   // @error{constant value 4294967296 out-of-bounds for type 'i32*', range [0, 4294967295]}
+i32* d = -1;           // @error{constant value -1 out-of-bounds for type 'i32*', range [0, 4294967295]}
 

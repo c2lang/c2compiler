@@ -1,12 +1,12 @@
 // @warnings{no-unused}
 module test;
 
-int8[4] a;
+i8[4] a;
 // CHECK: @a = internal global [4 x i8] zeroinitializer, align 1
-int16[5] b;
+i16[5] b;
 // CHECK: @b = internal global [5 x i16] zeroinitializer, align 2
-int32[2] c;
+i32[2] c;
 // CHECK: @c = internal global [2 x i32] zeroinitializer, align 4
-int64[3] d;
+i64[3] d;
 // CHECK: @d = internal global [3 x i64] zeroinitializer, align 8
 

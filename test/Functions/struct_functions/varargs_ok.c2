@@ -2,10 +2,10 @@
 module test;
 
 type Type struct {
-    int32 member;
+    i32 member;
 }
 
-func void Type.init(Type* t, int32 n, ...) {
+func void Type.init(Type* t, i32 n, ...) {
     t.member = n;
 }
 

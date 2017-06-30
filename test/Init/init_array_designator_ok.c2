@@ -1,13 +1,13 @@
 // @warnings{no-unused}
 module test;
 
-type Types enum int8 {
+type Types enum i8 {
     FOO = 0,
     BAR,
     FAA = 4,
 }
 
-int32[] array = {
+i32[] array = {
     [FAA] = 4,
     [BAR] = 1,
     2,
@@ -16,8 +16,8 @@ int32[] array = {
 }
 
 type Point struct {
-    int32 x;
-    const int8* name;
+    i32 x;
+    const i8* name;
 }
 
 Point[] array2 = {

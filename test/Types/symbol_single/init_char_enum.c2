@@ -1,13 +1,13 @@
 // @warnings{no-unused}
 module test;
 
-type Enum enum int32 {
+type Enum enum i32 {
     A = 127,
     B,
 }
 
 func void test1() {
-    int8 a = A;
-    int8 b = B;     // @error{constant value 128 out-of-bounds for type 'int8', range [-128, 127]}
+    i8 a = A;
+    i8 b = B;     // @error{constant value 128 out-of-bounds for type 'i8', range [-128, 127]}
 }
 

@@ -7,7 +7,7 @@ $export aa bb
 module aa;
 
 public type AA struct {
-    int32 x;
+    i32 x;
 }
 
 // @file{file2}

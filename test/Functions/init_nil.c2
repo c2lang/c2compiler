@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-type Callback func int32();
+type Callback func i32();
 
 Callback cb = nil;
 

@@ -5,11 +5,11 @@
 // @file{file1}
 module test;
 
-public func int32 main(int32 argc, const int8*[] argv) {
-    int32 a = 0;
+public func i32 main(i32 argc, const i8*[] argv) {
+    i32 a = 0;
     for (a=0; a<10; a++) {}
 
-    for (int32 b=0; b<10; b++) {}
+    for (i32 b=0; b<10; b++) {}
 
     for (;;) {}
 

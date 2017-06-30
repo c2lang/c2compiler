@@ -6,7 +6,7 @@
 module mod1;
 
 public type Struct struct {
-    int32 x;
+    i32 x;
 }
 
 func void test(Struct*) {}
@@ -16,7 +16,7 @@ module mod2;
 import mod1 local;
 
 public type Struct2 struct {
-    int32 x;
+    i32 x;
 } @(opaque)
 
 public func void struct2_test(Struct*) {}

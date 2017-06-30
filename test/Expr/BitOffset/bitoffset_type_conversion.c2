@@ -2,16 +2,16 @@
 module test;
 
 func void test1() {
-    uint32 a = 0;
+    u32 a = 0;
 
-    uint8 b = a[20:13];
-    uint8 c = a[30:22]; // @warning{implicit conversion loses integer precision: 'uint16' to 'uint8'}
+    u8 b = a[20:13];
+    u8 c = a[30:22]; // @warning{implicit conversion loses integer precision: 'u16' to 'u8'}
 
-    uint16 d = a[30:20];
-    uint16 e = a[30:10]; // @warning{implicit conversion loses integer precision: 'uint32' to 'uint16'}
+    u16 d = a[30:20];
+    u16 e = a[30:10]; // @warning{implicit conversion loses integer precision: 'u32' to 'u16'}
 
-    uint32 f = a[31:0];
+    u32 f = a[31:0];
 
-    uint8 g = d[a:b];   // @warning{implicit conversion loses integer precision: 'uint16' to 'uint8'}
+    u8 g = d[a:b];   // @warning{implicit conversion loses integer precision: 'u16' to 'u8'}
 }
 

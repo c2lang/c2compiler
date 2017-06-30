@@ -1,39 +1,39 @@
 // @warnings{no-unused}
 module test;
 
-type Enum enum int8 {
+type Enum enum i8 {
     A
 }
 
 type Struct struct {
-    int32 x;
+    i32 x;
 }
 
 func void test1() {
-    int32 ii;
-    int32 a = elemsof(ii);      // @error{elemsof can only be used on arrays}
+    i32 ii;
+    i32 a = elemsof(ii);      // @error{elemsof can only be used on arrays}
 }
 
 func void test2() {
     Enum ee;
-    int32 b = elemsof(ee);      // @error{elemsof can only be used on arrays}
+    i32 b = elemsof(ee);      // @error{elemsof can only be used on arrays}
 }
 
 func void test3() {
     Struct ss;
-    int32 c = elemsof(ss);     // @error{elemsof can only be used on arrays}
+    i32 c = elemsof(ss);     // @error{elemsof can only be used on arrays}
 }
 
 func void test4() {
-    int32 d = elemsof(test1);  // @error{elemsof can only be used on arrays}
+    i32 d = elemsof(test1);  // @error{elemsof can only be used on arrays}
 }
 
 func void test5() {
-    int32[4] aa;
-    int32 f = elemsof(aa);
+    i32[4] aa;
+    i32 f = elemsof(aa);
 }
 
 func void test6() {
-    int32 e = elemsof(test);   // @error{elemsof can only be used on arrays}
+    i32 e = elemsof(test);   // @error{elemsof can only be used on arrays}
 }
 

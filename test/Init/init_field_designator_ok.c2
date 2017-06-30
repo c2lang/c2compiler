@@ -2,8 +2,8 @@
 module test;
 
 type Point struct {
-    int32 x;
-    const int8* y;
+    i32 x;
+    const i8* y;
 }
 
 Point[] array2 = {

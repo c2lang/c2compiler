@@ -2,10 +2,10 @@
 module test;
 
 type Type struct {
-    int32 member;
+    i32 member;
 }
 
 func void myfunc() {
-    int32 a = Type.member;      // @error{type '(struct)Type' has no struct-function 'member'}
+    i32 a = Type.member;      // @error{type '(struct)Type' has no struct-function 'member'}
 }
 

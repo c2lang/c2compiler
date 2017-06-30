@@ -2,6 +2,6 @@
 module test;
 
 char* a = "AAA";
-int8* b = "BBB";
-uint8* c = "CCC";
+i8* b = "BBB";
+u8* c = "CCC";
 

@@ -2,7 +2,7 @@ module test;
 
 func void test1() {}
 
-public func int32 main() {
+public func i32 main() {
     test1();
     return 0;
 }

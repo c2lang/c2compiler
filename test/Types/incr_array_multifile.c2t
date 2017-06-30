@@ -12,7 +12,7 @@ module foo;
 
 List += 20;
 
-const int32[+] List;
+const i32[+] List;
 
 List += 30;
 
@@ -21,7 +21,7 @@ module foo;
 
 List += 40;
 
-public func int32 main()
+public func i32 main()
 {
     return 0;
 }

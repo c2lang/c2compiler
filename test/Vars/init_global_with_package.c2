@@ -1,5 +1,5 @@
 // @warnings{no-unused}
 module test;
 
-int32 a = test;       // @error{invalid type conversion from 'module' to 'int32'}
+i32 a = test;       // @error{invalid type conversion from 'module' to 'i32'}
 

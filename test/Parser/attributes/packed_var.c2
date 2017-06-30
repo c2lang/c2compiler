@@ -1,5 +1,5 @@
 // @warnings{no-unused}
 module test;
 
-int32 foo @(packed);    // @error{attribute 'packed' cannot be applied to variable declarations}
+i32 foo @(packed);    // @error{attribute 'packed' cannot be applied to variable declarations}
 

@@ -9,7 +9,7 @@ module aa;
 import internal;
 
 public type AA struct {
-    int32 x;
+    i32 x;
 }
 
 public func void foo() {
@@ -27,14 +27,14 @@ public aa.AA a1;
 module internal;
 
 public type Internal struct {
-    int32 x;
+    i32 x;
 }
 
 // @expect{complete, aa.c2i}
 module aa;
 
 type AA struct {
-    int32 x;
+    i32 x;
 }
 
 func void foo();

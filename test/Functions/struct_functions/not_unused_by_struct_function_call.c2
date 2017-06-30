@@ -2,7 +2,7 @@
 module test;
 
 type Type struct {
-    int32 member;       // @warning{unused struct member 'member'}
+    i32 member;       // @warning{unused struct member 'member'}
 }
 
 func void Type.init(Type* t) {

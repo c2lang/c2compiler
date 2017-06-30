@@ -4,14 +4,14 @@
 // @file{file1}
 module foo;
 
-public int32 n;
+public i32 n;
 
 // @file{file2}
 module bar;
 
 import foo local;
 
-func int32 test2() {
+func i32 test2() {
     return n;
 }
 

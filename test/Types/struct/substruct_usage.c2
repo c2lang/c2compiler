@@ -4,7 +4,7 @@ module test;
 // TODO anonymous
 type AA struct {
     struct bb {
-        int32 b;
+        i32 b;
     }
     struct {
     }
@@ -12,6 +12,6 @@ type AA struct {
 
 func void tester() {
     AA a1;
-    int32 aa = a1.bb;    // @error{invalid type conversion from '(struct)bb' to 'int32'}
+    i32 aa = a1.bb;    // @error{invalid type conversion from '(struct)bb' to 'i32'}
 }
 

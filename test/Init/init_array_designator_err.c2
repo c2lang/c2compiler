@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-int32[] array = {
+i32[] array = {
     [10] = 0,  // @note{previous initialization is here}
     [11] = 1,
     [12] = 2,

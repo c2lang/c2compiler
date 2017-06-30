@@ -1,12 +1,12 @@
 // @warnings{no-unused}
 module test;
 
-const int32 Constant = 1;
-int32[Constant] a;
+const i32 Constant = 1;
+i32[Constant] a;
 
-int32 non_constant = 10;
-int32[non_constant] b;        // @error{variable length array declaration not allowed at file scope}
+i32 non_constant = 10;
+i32[non_constant] b;        // @error{variable length array declaration not allowed at file scope}
 
-func int32 foo() { return 10; }
-int32[foo()] c;            // @error{variable length array declaration not allowed at file scope}
+func i32 foo() { return 10; }
+i32[foo()] c;            // @error{variable length array declaration not allowed at file scope}
 

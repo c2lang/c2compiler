@@ -6,8 +6,8 @@
 module test;
 
 type Data union {
-    int32 a;
-    int8* b;
+    i32 a;
+    i8* b;
 }
 
 // @expect{atleast, build/test.c}

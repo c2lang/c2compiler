@@ -5,9 +5,9 @@
 // @file{file1}
 module test;
 
-type Foo int32;
+type Foo i32;
 
-public type Bar int16;
+public type Bar i16;
 
 // @expect{atleast, build/test.h}
 typedef int16_t test_Bar;

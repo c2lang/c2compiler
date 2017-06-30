@@ -4,12 +4,12 @@
 // @file{file1}
 module foo;
 
-public int32 a;   // @note{previous definition is here}
+public i32 a;   // @note{previous definition is here}
 
 // @file{file2}
 module bar;
 
 import foo local;
 
-public func void test(int32 a) {}     // @error{redefinition of a}
+public func void test(i32 a) {}     // @error{redefinition of a}
 

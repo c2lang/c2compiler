@@ -8,7 +8,7 @@ module test;
 type Callback func Struct();
 
 type Struct struct {
-    int32 x;
+    i32 x;
 }
 
 // @expect{atleast, build/test.c}

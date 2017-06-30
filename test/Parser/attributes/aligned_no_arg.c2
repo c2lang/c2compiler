@@ -1,5 +1,5 @@
 // @warnings{no-unused}
 module test;
 
-int32 x @(aligned); // @error{aligned attribute takes one argument}
+i32 x @(aligned); // @error{aligned attribute takes one argument}
 
