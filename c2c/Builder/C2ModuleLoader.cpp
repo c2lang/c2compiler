@@ -68,7 +68,7 @@ void C2ModuleLoader::load(C2::Module* c2Mod) {
         ast->addVar(var);
         c2Mod->addSymbol(var);
     }
-    // int8 min_int8
+    // int8 min_i8
     {
         QualType QT = Type::Int8();
         QT.addConst();
@@ -76,12 +76,12 @@ void C2ModuleLoader::load(C2::Module* c2Mod) {
         init->setCTC(CTC_FULL);
         init->setConstant();
         init->setType(QT);
-        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "min_int8", loc, QT, init, true);
+        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "min_i8", loc, QT, init, true);
         var->setType(QT);
         ast->addVar(var);
         c2Mod->addSymbol(var);
     }
-    // int8 max_int8
+    // int8 max_i8
     {
         QualType QT = Type::Int8();
         QT.addConst();
@@ -89,12 +89,12 @@ void C2ModuleLoader::load(C2::Module* c2Mod) {
         init->setCTC(CTC_FULL);
         init->setConstant();
         init->setType(QT);
-        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "max_int8", loc, QT, init, true);
+        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "max_i8", loc, QT, init, true);
         var->setType(QT);
         ast->addVar(var);
         c2Mod->addSymbol(var);
     }
-    // uint8 min_uint8
+    // uint8 min_u8
     {
         QualType QT = Type::UInt8();
         QT.addConst();
@@ -102,12 +102,12 @@ void C2ModuleLoader::load(C2::Module* c2Mod) {
         init->setCTC(CTC_FULL);
         init->setConstant();
         init->setType(QT);
-        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "min_uint8", loc, QT, init, true);
+        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "min_u8", loc, QT, init, true);
         var->setType(QT);
         ast->addVar(var);
         c2Mod->addSymbol(var);
     }
-    // uint8 max_uint8
+    // uint8 max_u8
     {
         QualType QT = Type::UInt8();
         QT.addConst();
@@ -115,12 +115,12 @@ void C2ModuleLoader::load(C2::Module* c2Mod) {
         init->setCTC(CTC_FULL);
         init->setConstant();
         init->setType(QT);
-        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "max_uint8", loc, QT, init, true);
+        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "max_u8", loc, QT, init, true);
         var->setType(QT);
         ast->addVar(var);
         c2Mod->addSymbol(var);
     }
-    // int16 min_int16
+    // int16 min_i16
     {
         QualType QT = Type::Int16();
         QT.addConst();
@@ -128,12 +128,12 @@ void C2ModuleLoader::load(C2::Module* c2Mod) {
         init->setCTC(CTC_FULL);
         init->setConstant();
         init->setType(QT);
-        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "min_int16", loc, QT, init, true);
+        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "min_i16", loc, QT, init, true);
         var->setType(QT);
         ast->addVar(var);
         c2Mod->addSymbol(var);
     }
-    // int16 max_int16
+    // int16 max_i16
     {
         QualType QT = Type::Int16();
         QT.addConst();
@@ -141,12 +141,12 @@ void C2ModuleLoader::load(C2::Module* c2Mod) {
         init->setCTC(CTC_FULL);
         init->setConstant();
         init->setType(QT);
-        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "max_int16", loc, QT, init, true);
+        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "max_i16", loc, QT, init, true);
         var->setType(QT);
         ast->addVar(var);
         c2Mod->addSymbol(var);
     }
-    // uint16 min_uint16
+    // uint16 min_u16
     {
         QualType QT = Type::UInt16();
         QT.addConst();
@@ -154,12 +154,12 @@ void C2ModuleLoader::load(C2::Module* c2Mod) {
         init->setCTC(CTC_FULL);
         init->setConstant();
         init->setType(QT);
-        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "min_uint16", loc, QT, init, true);
+        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "min_u16", loc, QT, init, true);
         var->setType(QT);
         ast->addVar(var);
         c2Mod->addSymbol(var);
     }
-    // uint16 max_uint16
+    // uint16 max_u16
     {
         QualType QT = Type::UInt16();
         QT.addConst();
@@ -167,12 +167,12 @@ void C2ModuleLoader::load(C2::Module* c2Mod) {
         init->setCTC(CTC_FULL);
         init->setConstant();
         init->setType(QT);
-        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "max_uint16", loc, QT, init, true);
+        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "max_u16", loc, QT, init, true);
         var->setType(QT);
         ast->addVar(var);
         c2Mod->addSymbol(var);
     }
-    // int32 min_int32
+    // int32 min_i32
     {
         QualType QT = Type::Int32();
         QT.addConst();
@@ -180,12 +180,12 @@ void C2ModuleLoader::load(C2::Module* c2Mod) {
         init->setCTC(CTC_FULL);
         init->setConstant();
         init->setType(QT);
-        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "min_int32", loc, QT, init, true);
+        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "min_i32", loc, QT, init, true);
         var->setType(QT);
         ast->addVar(var);
         c2Mod->addSymbol(var);
     }
-    // int32 max_int32
+    // int32 max_i32
     {
         QualType QT = Type::Int32();
         QT.addConst();
@@ -193,12 +193,12 @@ void C2ModuleLoader::load(C2::Module* c2Mod) {
         init->setCTC(CTC_FULL);
         init->setConstant();
         init->setType(QT);
-        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "max_int32", loc, QT, init, true);
+        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "max_i32", loc, QT, init, true);
         var->setType(QT);
         ast->addVar(var);
         c2Mod->addSymbol(var);
     }
-    // uint32 min_uint32
+    // uint32 min_u32
     {
         QualType QT = Type::UInt32();
         QT.addConst();
@@ -206,12 +206,12 @@ void C2ModuleLoader::load(C2::Module* c2Mod) {
         init->setCTC(CTC_FULL);
         init->setConstant();
         init->setType(QT);
-        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "min_uint32", loc, QT, init, true);
+        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "min_u32", loc, QT, init, true);
         var->setType(QT);
         ast->addVar(var);
         c2Mod->addSymbol(var);
     }
-    // uint32 max_uint32
+    // uint32 max_u32
     {
         QualType QT = Type::UInt32();
         QT.addConst();
@@ -219,12 +219,12 @@ void C2ModuleLoader::load(C2::Module* c2Mod) {
         init->setCTC(CTC_FULL);
         init->setConstant();
         init->setType(QT);
-        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "max_uint32", loc, QT, init, true);
+        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "max_u32", loc, QT, init, true);
         var->setType(QT);
         ast->addVar(var);
         c2Mod->addSymbol(var);
     }
-    // int64 min_int64
+    // int64 min_i64
     {
         QualType QT = Type::Int64();
         QT.addConst();
@@ -233,12 +233,12 @@ void C2ModuleLoader::load(C2::Module* c2Mod) {
         init->setCTC(CTC_FULL);
         init->setConstant();
         init->setType(QT);
-        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "min_int64", loc, QT, init, true);
+        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "min_i64", loc, QT, init, true);
         var->setType(QT);
         ast->addVar(var);
         c2Mod->addSymbol(var);
     }
-    // int64 max_int64
+    // int64 max_i64
     {
         QualType QT = Type::Int64();
         QT.addConst();
@@ -246,12 +246,12 @@ void C2ModuleLoader::load(C2::Module* c2Mod) {
         init->setCTC(CTC_FULL);
         init->setConstant();
         init->setType(QT);
-        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "max_int64", loc, QT, init, true);
+        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "max_i64", loc, QT, init, true);
         var->setType(QT);
         ast->addVar(var);
         c2Mod->addSymbol(var);
     }
-    // uint64 min_uint64
+    // uint64 min_u64
     {
         QualType QT = Type::UInt64();
         QT.addConst();
@@ -259,12 +259,12 @@ void C2ModuleLoader::load(C2::Module* c2Mod) {
         init->setCTC(CTC_FULL);
         init->setConstant();
         init->setType(QT);
-        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "min_uint64", loc, QT, init, true);
+        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "min_u64", loc, QT, init, true);
         var->setType(QT);
         ast->addVar(var);
         c2Mod->addSymbol(var);
     }
-    // uint64 max_uint64
+    // uint64 max_u64
     {
         QualType QT = Type::UInt64();
         QT.addConst();
@@ -273,7 +273,7 @@ void C2ModuleLoader::load(C2::Module* c2Mod) {
         init->setCTC(CTC_FULL);
         init->setConstant();
         init->setType(QT);
-        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "max_uint64", loc, QT, init, true);
+        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "max_u64", loc, QT, init, true);
         var->setType(QT);
         ast->addVar(var);
         c2Mod->addSymbol(var);

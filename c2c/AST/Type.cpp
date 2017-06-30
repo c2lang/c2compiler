@@ -490,16 +490,16 @@ unsigned BuiltinType::getIntegerWidth() const {
 
 const char* BuiltinType::kind2name(Kind k) {
     switch (k) {
-    case Int8:      return "int8";
-    case Int16:     return "int16";
-    case Int32:     return "int32";
-    case Int64:     return "int64";
-    case UInt8:     return "uint8";
-    case UInt16:    return "uint16";
-    case UInt32:    return "uint32";
-    case UInt64:    return "uint64";
-    case Float32:   return "float32";
-    case Float64:   return "float64";
+    case Int8:      return "i8";
+    case Int16:     return "i16";
+    case Int32:     return "i32";
+    case Int64:     return "i64";
+    case UInt8:     return "u8";
+    case UInt16:    return "u16";
+    case UInt32:    return "u32";
+    case UInt64:    return "u64";
+    case Float32:   return "f32";
+    case Float64:   return "f64";
     case Bool:      return "bool";
     case Void:      return "void";
     }
