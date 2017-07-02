@@ -734,15 +734,17 @@ C2::StmtResult C2Sema::ActOnLabelStmt(const char* name_, SourceLocation loc, Stm
     return StmtResult(new (Context) LabelStmt(name, loc, subStmt));
 }
 
-C2::StmtResult C2Sema::ActOnGotoStmt(const char* name_, SourceLocation GotoLoc, SourceLocation LabelLoc) {
+C2::StmtResult C2Sema::ActOnGotoStmt(IdentifierInfo& symII, SourceLocation symLoc, SourceLocation GotoLoc) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: goto statement at ";
     GotoLoc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
+    const char* name = Context.addIdentifier(symII.getNameStart(), symII.getLength());
+    IdentifierExpr* id = new (Context) IdentifierExpr(symLoc, name);
+    MEM_EXPR(EXPR_IDENTIFIER);
     MEM_STMT(STMT_GOTO);
-    const char* name = Context.addIdentifier(name_, strlen(name_));
-    return StmtResult(new (Context) GotoStmt(name, GotoLoc, LabelLoc));
+    return StmtResult(new (Context) GotoStmt(id, GotoLoc));
 }
 
 C2::StmtResult C2Sema::ActOnCompoundStmt(SourceLocation L, SourceLocation R, StmtList& stmts_) {

@@ -939,7 +939,7 @@ void CCodeGenerator::EmitStmt(const Stmt* S, unsigned indent) {
     {
         const GotoStmt* G = cast<GotoStmt>(S);
         cbuf.indent(indent);
-        cbuf << "goto " << G->getName() << ";\n";
+        cbuf << "goto " << G->getLabel()->getName() << ";\n";
         return;
     }
     case STMT_COMPOUND:

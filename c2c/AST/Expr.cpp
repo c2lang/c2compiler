@@ -351,6 +351,7 @@ static const char* reftype2str(IdentifierExpr::RefType ref) {
     case IdentifierExpr::REF_ENUM_CONSTANT: return "enum_constant";
     case IdentifierExpr::REF_STRUCT_MEMBER: return "struct_mem";
     case IdentifierExpr::REF_STRUCT_FUNC:   return "struct_func";
+    case IdentifierExpr::REF_LABEL:         return "label";
     }
     assert(0 && "should not come here");
     return "?";

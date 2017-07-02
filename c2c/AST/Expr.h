@@ -265,6 +265,7 @@ public:
         REF_ENUM_CONSTANT,
         REF_STRUCT_MEMBER,
         REF_STRUCT_FUNC,
+        REF_LABEL,
     } RefType;
     IdentifierExpr(SourceLocation loc_, const char* name_)
         : Expr(EXPR_IDENTIFIER, loc_, false)

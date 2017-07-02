@@ -309,17 +309,17 @@ void LabelStmt::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 
-GotoStmt::GotoStmt(const char* name_, SourceLocation GotoLoc_, SourceLocation LabelLoc_)
+GotoStmt::GotoStmt(IdentifierExpr* label_, SourceLocation GotoLoc_)
     : Stmt(STMT_GOTO)
-    , name(name_), GotoLoc(GotoLoc_), LabelLoc(LabelLoc_)
+    , label(label_)
+    , GotoLoc(GotoLoc_)
 {}
 
 void GotoStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
     buffer << "GotoStmt ";
-    buffer.setColor(COL_VALUE);
-    buffer << name << '\n';
+    label->print(buffer, indent + INDENT);
 }
 
 

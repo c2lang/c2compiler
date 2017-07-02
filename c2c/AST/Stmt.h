@@ -29,6 +29,7 @@ class StringBuilder;
 class Expr;
 class VarDecl;
 class ASTContext;
+class IdentifierExpr;
 
 enum StmtKind {
     STMT_RETURN = 0,
@@ -451,18 +452,17 @@ private:
 
 class GotoStmt : public Stmt {
 public:
-    GotoStmt(const char* name_, SourceLocation GotoLoc_, SourceLocation LabelLoc_);
+    GotoStmt(IdentifierExpr* label_, SourceLocation GotoLoc_);
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_GOTO;
     }
 
     void print(StringBuilder& buffer, unsigned indent) const;
     SourceLocation getLocation() const { return GotoLoc; }
-    const char* getName() const { return name; }
+    IdentifierExpr* getLabel() const { return label; }
 private:
-    const char* name;
+    IdentifierExpr* label;
     SourceLocation GotoLoc;
-    SourceLocation LabelLoc;
 };
 
 

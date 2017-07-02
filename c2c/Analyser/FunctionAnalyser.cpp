@@ -432,7 +432,9 @@ void FunctionAnalyser::analyseLabelStmt(Stmt* S) {
 void FunctionAnalyser::analyseGotoStmt(Stmt* S) {
     LOG_FUNC
     GotoStmt* G = cast<GotoStmt>(S);
-    LabelDecl* LD = LookupOrCreateLabel(G->getName(), G->getLocation());
+    IdentifierExpr* label = G->getLabel();
+    LabelDecl* LD = LookupOrCreateLabel(label->getName(), label->getLocation());
+    label->setDecl(LD, IdentifierExpr::REF_LABEL);
     LD->setUsed();
 }
 
@@ -1462,10 +1464,8 @@ static IdentifierExpr::RefType globalDecl2RefType(const Decl* D) {
                             return IdentifierExpr::REF_VAR;
     case DECL_IMPORT:
                             return IdentifierExpr::REF_MODULE;
-    case DECL_LABEL:
-        break; // TODO?
+    case DECL_LABEL:        return IdentifierExpr::REF_LABEL;
     }
-    return IdentifierExpr::REF_UNRESOLVED;
 }
 
 QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {

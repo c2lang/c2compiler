@@ -1920,7 +1920,7 @@ C2::StmtResult C2Parser::ParseGotoStatement() {
     IdentifierInfo* id = Tok.getIdentifierInfo();
     SourceLocation LabelLoc = ConsumeToken();
 
-    StmtResult Res = Actions.ActOnGotoStmt(id->getNameStart(), GotoLoc, LabelLoc);
+    StmtResult Res = Actions.ActOnGotoStmt(*id, GotoLoc, LabelLoc);
 
     if (ExpectAndConsume(tok::semi, diag::err_expected_after, "goto")) return StmtError();
     return Res;
