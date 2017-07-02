@@ -129,7 +129,6 @@ static inline UnaryOperatorKind ConvertTokenKindToUnaryOpcode(
     return Opc;
 }
 
-
 C2Sema::C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, clang::Preprocessor& PP_,
                Component& component_, Module* existingMod, const std::string& filename_)
     : SourceMgr(sm_)
@@ -140,6 +139,75 @@ C2Sema::C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, clang::Preprocesso
     , ast(*new AST(filename_, component.isExternal()))
     , Context(ast.getASTContext())
 {
+#define checkSize(x, s) static_assert(sizeof(x) == s,  #x" size changed")
+#define printSize(x) printf("%s = %d\n", #x, (int)sizeof(x))
+    // check for class sizes to preset unexpected growth
+    // TODO check for 32-bit
+    static_assert(sizeof(void*) == 8, "not 64-bit architecture (TODO handle)");
+
+    checkSize(Decl, 32);
+    checkSize(VarDecl, 56);
+    checkSize(FunctionDecl, 80);
+    checkSize(EnumConstantDecl, 64);
+    checkSize(ArrayValueDecl, 40);
+    checkSize(ImportDecl, 48);
+    checkSize(LabelDecl, 40);
+
+    checkSize(TypeDecl, 32);
+    checkSize(AliasTypeDecl, 40);
+    checkSize(StructTypeDecl, 48);
+    checkSize(EnumTypeDecl, 48);
+    checkSize(FunctionTypeDecl, 40);
+
+	checkSize(Type, 16);
+	checkSize(BuiltinType, 16);
+	checkSize(PointerType, 24);
+	checkSize(ArrayType, 48);
+	checkSize(UnresolvedType, 32);
+	checkSize(AliasType, 32);
+	checkSize(StructType, 24);
+	checkSize(EnumType, 24);
+	checkSize(FunctionType, 24);
+	checkSize(ModuleType, 24);
+
+    checkSize(Stmt, 8);
+    checkSize(ReturnStmt, 16);
+    checkSize(IfStmt, 48);
+    checkSize(WhileStmt, 24);
+    checkSize(DoStmt, 24);
+    checkSize(ForStmt, 40);
+    checkSize(SwitchStmt, 24);
+    checkSize(CaseStmt, 24);
+    checkSize(DefaultStmt, 16);
+    checkSize(BreakStmt, 8);
+    checkSize(ContinueStmt, 8);
+    checkSize(LabelStmt, 24);
+    checkSize(GotoStmt, 24);
+    checkSize(CompoundStmt, 24);
+    checkSize(DeclStmt, 16);
+
+    checkSize(Expr, 16);
+	checkSize(IntegerLiteral, 32);
+	checkSize(FloatingLiteral, 48);
+	checkSize(BooleanLiteral, 16);
+	checkSize(CharacterLiteral, 24);
+	checkSize(StringLiteral, 24);
+	checkSize(NilExpr, 16);
+	checkSize(IdentifierExpr, 24);
+	checkSize(TypeExpr, 16);
+	checkSize(CallExpr, 32);
+	checkSize(InitListExpr, 40);
+	checkSize(DesignatedInitExpr, 64);
+	checkSize(BinaryOperator, 32);
+	checkSize(ConditionalOperator, 48);
+	checkSize(UnaryOperator, 24);
+	checkSize(BuiltinExpr, 48);
+	checkSize(ArraySubscriptExpr, 32);
+	checkSize(MemberExpr, 40);
+	checkSize(ParenExpr, 32);
+	checkSize(BitOffsetExpr, 32);
+	checkSize(ExplicitCastExpr, 32);
+
 #ifdef SEMA_MEMSIZE
     memset(declCounters, 0, sizeof(declCounters));
     memset(stmtCounters, 0, sizeof(stmtCounters));
