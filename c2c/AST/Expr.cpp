@@ -341,8 +341,23 @@ void NilExpr::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 
+static const char* reftype2str(IdentifierExpr::RefType ref) {
+    switch(ref) {
+    case IdentifierExpr::REF_UNRESOLVED:    return "unresolved";
+    case IdentifierExpr::REF_MODULE:        return "module";
+    case IdentifierExpr::REF_FUNC:          return "func";
+    case IdentifierExpr::REF_TYPE:          return "type";
+    case IdentifierExpr::REF_VAR:           return "var";
+    case IdentifierExpr::REF_ENUM_CONSTANT: return "enum_constant";
+    case IdentifierExpr::REF_STRUCT_MEMBER: return "struct_mem";
+    case IdentifierExpr::REF_STRUCT_FUNC:   return "struct_func";
+    }
+    assert(0 && "should not come here");
+    return "?";
+}
+
 const char* IdentifierExpr::getName() const {
-    if (identifierExprBits.haveDecl) return decl->getName();
+    if (getRefType() != REF_UNRESOLVED) return decl->getName();
     return name;
 }
 
@@ -353,9 +368,9 @@ void IdentifierExpr::print(StringBuilder& buffer, unsigned indent) const {
     Expr::print(buffer);
     buffer.setColor(COL_VALUE);
     buffer << ' ' << getName();
-    buffer.setColor(COL_ATTR);
-    if (getDecl()) buffer << " <RESOLVED>";
-    else buffer << " <UNRESOLVED>";
+    if (getRefType() == REF_UNRESOLVED) buffer.setColor(COL_INVALID);
+    else buffer.setColor(COL_INFO);
+    buffer << ' ' << reftype2str(getRefType());
     buffer << '\n';
 }
 

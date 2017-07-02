@@ -256,33 +256,42 @@ public:
 // Represents a symbol reference (eg 'x' or 'counter')
 class IdentifierExpr : public Expr {
 public:
+    typedef enum {
+        REF_UNRESOLVED = 0,
+        REF_MODULE,
+        REF_FUNC,
+        REF_TYPE,
+        REF_VAR,
+        REF_ENUM_CONSTANT,
+        REF_STRUCT_MEMBER,
+        REF_STRUCT_FUNC,
+    } RefType;
     IdentifierExpr(SourceLocation loc_, const char* name_)
         : Expr(EXPR_IDENTIFIER, loc_, false)
         , name(name_)
     {
-        identifierExprBits.IsType = 0;
-        identifierExprBits.IsStructFunction = 0;
-        identifierExprBits.haveDecl = 0;
+        identifierExprBits.refType = 0;
     }
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_IDENTIFIER;
     }
-    bool isType() const { return identifierExprBits.IsType; }
-    void setIsType() { identifierExprBits.IsType = true; }
 
-    void setIsStructFunction() { identifierExprBits.IsStructFunction = true; }
-    bool isStructFunction() const { return identifierExprBits.IsStructFunction; }
+    RefType getRefType() const { return static_cast<RefType>(identifierExprBits.refType); }
+    bool isStructFunction() const { return getRefType() == REF_STRUCT_FUNC; }
+    bool isType() const { return getRefType() == REF_TYPE; }
 
     void print(StringBuilder& buffer, unsigned indent) const;
     void printLiteral(StringBuilder& buffer) const;
 
     const char* getName() const;
-    void setDecl(Decl* decl_) {
+
+    void setDecl(Decl* decl_, RefType ref) {
+        assert(ref != REF_UNRESOLVED);
         decl = decl_;
-        identifierExprBits.haveDecl = 1;
+        identifierExprBits.refType = ref;
     }
     Decl* getDecl() const {
-        if (identifierExprBits.haveDecl) return decl;
+        if (getRefType() != REF_UNRESOLVED) return decl;
         return 0;
     }
 

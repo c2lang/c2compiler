@@ -78,7 +78,7 @@ unsigned TypeResolver::checkUnresolvedType(const UnresolvedType* type, bool used
         if (!mod) return 1;
         Decl* modDecl = globals.findSymbol(mName, moduleName->getLocation(), true, used_public);
         assert(modDecl);
-        moduleName->setDecl(modDecl);
+        moduleName->setDecl(modDecl, IdentifierExpr::REF_MODULE);
 
         D =  globals.findSymbolInModule(tName, tLoc, mod);
     } else {
@@ -102,7 +102,7 @@ unsigned TypeResolver::checkUnresolvedType(const UnresolvedType* type, bool used
     }
     D->setUsed();
     if (used_public || external) D->setUsedPublic();
-    typeName->setDecl(TD);
+    typeName->setDecl(TD, IdentifierExpr::REF_TYPE);
     return 0;
 }
 

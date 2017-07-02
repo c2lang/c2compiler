@@ -398,7 +398,7 @@ void FileAnalyser::checkStructFunction(FunctionDecl* F, StructFunctionList& stru
     Decl* D = globals->findSymbolInModule(structName->getName(), structName->getLocation(), F->getModule());
     if (!D) return;
 
-    structName->setDecl(D);
+    structName->setDecl(D, IdentifierExpr::REF_STRUCT_FUNC);
     StructTypeDecl* S = dyncast<StructTypeDecl>(D);
     if (!S) {
         Diags.Report(structName->getLocation(), diag::err_typecheck_member_reference_struct_union)

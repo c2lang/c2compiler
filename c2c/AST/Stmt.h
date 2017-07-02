@@ -128,9 +128,7 @@ protected:
         friend class IdentifierExpr;
         unsigned : NumExprBits;
 
-        unsigned IsType : 1;
-        unsigned IsStructFunction : 1;
-        unsigned haveDecl : 1;
+        unsigned refType : 4;
     };
 
     class CallExprBitfields {

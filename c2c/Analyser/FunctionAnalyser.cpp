@@ -1448,6 +1448,26 @@ QualType FunctionAnalyser::analyseArraySubscript(Expr* expr, unsigned side) {
     return Result;
 }
 
+static IdentifierExpr::RefType globalDecl2RefType(const Decl* D) {
+    switch (D->getKind()) {
+    case DECL_FUNC:         return IdentifierExpr::REF_FUNC;
+    case DECL_VAR:          return IdentifierExpr::REF_VAR;
+    case DECL_ENUMVALUE:    return IdentifierExpr::REF_ENUM_CONSTANT;
+    case DECL_ALIASTYPE:
+    case DECL_STRUCTTYPE:
+    case DECL_ENUMTYPE:
+    case DECL_FUNCTIONTYPE:
+                            return IdentifierExpr::REF_TYPE;
+    case DECL_ARRAYVALUE:
+                            return IdentifierExpr::REF_VAR;
+    case DECL_IMPORT:
+                            return IdentifierExpr::REF_MODULE;
+    case DECL_LABEL:
+        break; // TODO?
+    }
+    return IdentifierExpr::REF_UNRESOLVED;
+}
+
 QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
     LOG_FUNC
     MemberExpr* M = cast<MemberExpr>(expr);
@@ -1475,9 +1495,8 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
             SetConstantFlags(D, M);
             QualType Q = D->getType();
             expr->setType(Q);
-            if (isa<TypeDecl>(D)) member->setIsType();
             member->setType(Q);
-            member->setDecl(D);
+            member->setDecl(D, globalDecl2RefType(D));
             return Q;
         }
     } else {
@@ -1511,7 +1530,6 @@ QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr* M, unsign
     if (isStatic) {
         M->setIsStructFunction();
         M->setIsStaticStructFunction();
-        member->setIsStructFunction();
         FunctionDecl* match = S->findFunction(member->getName());
         if (match) {
             // NOTE: static struct-functions are allowed outside call expr
@@ -1521,7 +1539,7 @@ QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr* M, unsign
             if (side & RHS) match->setUsed();
             M->setDecl(match);
             M->setType(match->getType());
-            member->setDecl(match);
+            member->setDecl(match, IdentifierExpr::REF_STRUCT_FUNC);
             member->setType(match->getType());
             SetConstantFlags(match, M);
             return match->getType();
@@ -1531,6 +1549,7 @@ QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr* M, unsign
         assert(CurrentFunction);
         Decl* match = S->find(member->getName());
         if (match) {
+            IdentifierExpr::RefType ref = IdentifierExpr::REF_STRUCT_MEMBER;
             FunctionDecl* func = dyncast<FunctionDecl>(match);
 
             if (func) {
@@ -1541,7 +1560,7 @@ QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr* M, unsign
                     return QualType();
                 }
                 M->setIsStructFunction();
-                member->setIsStructFunction();
+                ref = IdentifierExpr::REF_STRUCT_FUNC;
                 structFunctionArg = M->getBase();
                 if (!inCallExpr) {
                     Diag(member->getLocation(), diag::err_non_static_struct_func_usage) << M->getBase()->getSourceRange();
@@ -1558,7 +1577,7 @@ QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr* M, unsign
             if (side & RHS) match->setUsed();
             M->setDecl(match);
             M->setType(match->getType());
-            member->setDecl(match);
+            member->setDecl(match, ref);
             member->setType(match->getType());
             return match->getType();
         }
@@ -1839,8 +1858,7 @@ Decl* FunctionAnalyser::analyseIdentifier(IdentifierExpr* id) {
     LOG_FUNC
     Decl* D = scope.findSymbol(id->getName(), id->getLocation(), false, false);
     if (D) {
-        if (isa<TypeDecl>(D)) id->setIsType();
-        id->setDecl(D);
+        id->setDecl(D, globalDecl2RefType(D));
         id->setType(D->getType());
         SetConstantFlags(D, id);
     }
