@@ -2112,13 +2112,20 @@ void FunctionAnalyser::popMode() {
 // This function should only be called if Expr's type is ok for unary operator
 QualType FunctionAnalyser::UsualUnaryConversions(Expr* expr) const {
     const Type* canon = expr->getType().getCanonicalType();
-    assert(canon->isBuiltinType());
-    const BuiltinType* BI = cast<BuiltinType>(canon);
-    if (BI->isPromotableIntegerType()) {
-        // TODO keep flags (const, etc)?
-        expr->setImpCast(BuiltinType::Int32);
-        return Type::Int32();
+
+    if (const BuiltinType* BI = cast<BuiltinType>(canon)) {
+        if (BI->isPromotableIntegerType()) {
+            // TODO keep flags (const, etc)?
+            expr->setImpCast(BuiltinType::Int32);
+            return Type::Int32();
+        }
     }
+
+    if (canon->isPointerType()) {
+        // TODO use TargetInfo to check if 32-bit
+        return Type::UInt64();
+    }
+
     return expr->getType();
 }
 

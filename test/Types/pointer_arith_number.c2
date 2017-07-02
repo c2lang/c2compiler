@@ -1,0 +1,13 @@
+// @warnings{no-unused}
+module test;
+
+func void test1(char* cp) {
+    i32 a = 10;
+
+    char* cp2 = cp - 10;
+    cp2 -= 10;
+    cp2 -= a;
+
+    //char* cp3 = cp - a;
+}
+
