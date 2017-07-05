@@ -11,6 +11,9 @@ name = "stdio"
 name = "c_errno"
 
 [[modules]]
+name = "libc_poll"
+
+[[modules]]
 name = "stdlib"
 
 [[modules]]
