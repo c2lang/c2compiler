@@ -194,6 +194,8 @@ void CCodeGenerator::createLibHeader(bool printCode, const std::string& outputDi
     // workaround for builtin va_list, va_start, va_end for varargs
     if (filename == "stdarg") {
         EmitIncludeGuard();
+        hbuf << "#include \"c2.h\"\n";
+        hbuf << '\n';
         hbuf << "#ifdef __cplusplus\nextern \"C\" {\n#endif\n\n";
 
         hbuf << "#define va_list __builtin_va_list\n";
