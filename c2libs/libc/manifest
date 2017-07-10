@@ -14,6 +14,9 @@ name = "c_errno"
 name = "libc_poll"
 
 [[modules]]
+name = "libc_fcntl"
+
+[[modules]]
 name = "stdlib"
 
 [[modules]]
@@ -35,7 +38,13 @@ name = "ctype"
 name = "stdarg"
 
 [[modules]]
+name = "sys_mman"
+
+[[modules]]
 name = "sys_socket"
+
+[[modules]]
+name = "sys_stat"
 
 [[modules]]
 name = "sys_time"

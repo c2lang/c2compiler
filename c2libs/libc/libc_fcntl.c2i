@@ -1,0 +1,25 @@
+module libc_fcntl;
+
+import c2 local;
+
+const u32 O_RDONLY    =    00;
+const u32 O_WRONLY    =    01;
+const u32 O_RDWR      =    02;
+const u32 O_CREAT     =  0100;
+const u32 O_EXCL      =  0200;
+const u32 O_NOCTTY    =  0400;
+const u32 O_TRUNC     = 01000;
+const u32 O_APPEND    = 02000;
+const u32 O_NONBLOCK  = 04000;
+const u32 O_SYNC      = 0401000;
+const u32 O_NOATIME   = 01000000;
+const u32 O_CLOEXEC   = 02000000;
+
+const u32 F_DUPFD = 0;
+const u32 F_GETFD = 1;
+const u32 F_SETFD = 2;
+const u32 F_GETFL = 3;
+const u32 F_SETFL = 4;
+
+func c_int open(const char* __file, c_int __oflag, ...);
+

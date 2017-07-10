@@ -2,5 +2,8 @@ module c_errno;
 
 import c2 local;
 
+// NOTE: errno isn't working in case of REENTRANT LIBC, where errno is defined as
+// #define errno *errno_location()
+
 c_int errno;
 
