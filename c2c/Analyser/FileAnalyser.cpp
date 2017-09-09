@@ -20,8 +20,6 @@
 #include <clang/Basic/TokenKinds.h>
 
 #include "Analyser/FileAnalyser.h"
-#include "Analyser/Scope.h"
-#include "Analyser/TypeResolver.h"
 #include "Analyser/AnalyserUtils.h"
 #include "Analyser/AnalyserConstants.h"
 #include "AST/Decl.h"

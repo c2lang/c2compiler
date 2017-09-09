@@ -36,6 +36,7 @@
 #include <clang/Basic/SourceManager.h>
 #include <clang/Basic/TargetInfo.h>
 #include <clang/Basic/TargetOptions.h>
+#include <clang/Basic/MemoryBufferCache.h>
 #include <clang/Frontend/TextDiagnosticPrinter.h>
 #include <clang/Frontend/Utils.h>
 #include <clang/Lex/HeaderSearch.h>
@@ -104,6 +105,13 @@ public:
         fprintf(stderr, "MODULE LOADER: loadModule\n");
         return ModuleLoadResult();
     }
+    virtual void loadModuleFromSource(SourceLocation Loc,
+                                      StringRef ModuleName,
+                                      StringRef Source)
+    {
+        fprintf(stderr, "MODULE LOADER: loadModuleFromSource\n");
+    }
+
 
     virtual void makeModuleVisible(clang::Module *Mod,
                                    clang::Module::NameVisibilityKind Visibility,
@@ -137,6 +145,7 @@ public:
                 std::shared_ptr<HeaderSearchOptions> HSOpts_,
                 SourceManager& SM_,
                 FileManager& FileMgr_,
+                MemoryBufferCache& PCMCache_,
                 const std::string& configs_)
         : Diags(Diags_)
         , LangOpts(LangOpts_)
@@ -144,16 +153,17 @@ public:
         , HSOpts(HSOpts_)
         , SM(SM_)
         , FileMgr(FileMgr_)
+        , PCMCache(PCMCache_)
         , configs(configs_)
     {}
 
     bool parse(Component& component, Module* existingMod, const std::string& filename, bool printAST) {
-        // NOTE: seems to get deleted by Preprocessor
+        // NOTE: seems to get deleted by Preprocessor,
         HeaderSearch* Headers = new HeaderSearch(HSOpts, SM, Diags, LangOpts, pti);
         DummyLoader loader;
 
         std::shared_ptr<PreprocessorOptions> PPOpts(new PreprocessorOptions());
-        Preprocessor PP(PPOpts, Diags, LangOpts, SM, *Headers, loader);
+        Preprocessor PP(PPOpts, Diags, LangOpts, SM, PCMCache, *Headers, loader);
 
         ApplyHeaderSearchOptions(PP.getHeaderSearchInfo(), *HSOpts, LangOpts, pti->getTriple());
         PP.setPredefines(configs);
@@ -202,6 +212,7 @@ public:
     std::shared_ptr<HeaderSearchOptions> HSOpts;
     SourceManager& SM;
     FileManager& FileMgr;
+    MemoryBufferCache& PCMCache;
     const std::string& configs;
 };
 
@@ -349,6 +360,7 @@ int C2Builder::build() {
     FileSystemOptions FileSystemOpts;
     FileManager FileMgr(FileSystemOpts);
     SourceManager SM(Diags, FileMgr);
+    MemoryBufferCache PCMCache;
 
     // create main Component
     mainComponent = new Component(recipe.name, recipe.type, false, false, recipe.getExports());
@@ -361,7 +373,7 @@ int C2Builder::build() {
         libLoader.addDep(mainComponent, recipe.libraries[i].name, recipe.libraries[i].type);
     }
 
-    ParseHelper helper(Diags, LangOpts, pti, HSOpts, SM, FileMgr, PredefineBuffer);
+    ParseHelper helper(Diags, LangOpts, pti, HSOpts, SM, FileMgr, PCMCache, PredefineBuffer);
     // phase 1a: parse and local analyse
     uint64_t t1_parse = Utils::getCurrentTime();
     unsigned errors = 0;

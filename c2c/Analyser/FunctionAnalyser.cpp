@@ -191,7 +191,7 @@ unsigned FunctionAnalyser::checkEnumValue(EnumConstantDecl* E, llvm::APSInt& nex
         nextValue = V;
     }
     E->setValue(nextValue);
-    nextValue++;
+    ++nextValue;
     if (!LA.checkRange(E->getType(), Init, E->getLocation(), E->getValue())) return 1;
 
     return 0;
@@ -1703,7 +1703,7 @@ QualType FunctionAnalyser::analyseBitOffsetExpr(Expr* expr, QualType BaseType, S
             return QualType();
         } else {
             llvm::APInt width = VL - VR;
-            width++;
+            ++width;
 
             QualType T;
             if (width.ult(8+1)) {

@@ -188,18 +188,19 @@ TagFile* TagWriter::getFile(const std::string& filename) {
 }
 
 void TagWriter::write(const std::string& title, const std::string& path) const {
-    StringBuilder buffer(4*1024*1024);
-    const char* offsets[files.size()];
+    char data[4*1024*1024];
+    StringBuilder buffer(sizeof(data), data);
+    char* offsets[files.size()];
     memset(offsets, 0, sizeof(offsets));
     buffer << "files {\n";
     for (unsigned index = 0; index < files.size(); ++index) {
         buffer << '\t' << files[index]->id << ' ' << files[index]->filename << ' ';
-        offsets[index] = (const char*)buffer + buffer.size();
+        offsets[index] = &data[buffer.size()];
         buffer << "        \n";
     }
     buffer << "}\n";
     for (unsigned index = 0; index < files.size(); ++index) {
-        char* cp = (char*)offsets[index];
+        char* cp = offsets[index];
         sprintf(cp, "%d", buffer.size());
         while (*cp != 0) cp++;
         *cp = ' ';

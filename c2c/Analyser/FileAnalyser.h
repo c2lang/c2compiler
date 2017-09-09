@@ -23,6 +23,8 @@
 #include "AST/Type.h"
 #include "AST/Module.h"
 #include "AST/Expr.h"
+#include "Analyser/Scope.h"
+#include "Analyser/TypeResolver.h"
 
 namespace clang {
 class DiagnosticsEngine;
@@ -83,8 +85,8 @@ private:
 
     AST& ast;
     const Module& module;
-    std::auto_ptr<Scope> globals;
-    std::auto_ptr<TypeResolver> TR;
+    std::unique_ptr<Scope> globals;
+    std::unique_ptr<TypeResolver> TR;
     clang::DiagnosticsEngine& Diags;
     FunctionAnalyser functionAnalyser;
     bool verbose;

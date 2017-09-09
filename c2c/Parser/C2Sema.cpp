@@ -148,7 +148,7 @@ C2Sema::C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, clang::Preprocesso
     checkSize(Decl, 32);
     checkSize(VarDecl, 56);
     checkSize(FunctionDecl, 80);
-    checkSize(EnumConstantDecl, 64);
+    checkSize(EnumConstantDecl, 56);
     checkSize(ArrayValueDecl, 40);
     checkSize(ImportDecl, 48);
     checkSize(LabelDecl, 40);
@@ -197,11 +197,11 @@ C2Sema::C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, clang::Preprocesso
 	checkSize(TypeExpr, 16);
 	checkSize(CallExpr, 32);
 	checkSize(InitListExpr, 40);
-	checkSize(DesignatedInitExpr, 64);
+	checkSize(DesignatedInitExpr, 56);
 	checkSize(BinaryOperator, 32);
 	checkSize(ConditionalOperator, 48);
 	checkSize(UnaryOperator, 24);
-	checkSize(BuiltinExpr, 48);
+	checkSize(BuiltinExpr, 40);
 	checkSize(ArraySubscriptExpr, 32);
 	checkSize(MemberExpr, 40);
 	checkSize(ParenExpr, 32);

@@ -15,7 +15,7 @@ Once your Cygwin is ready, start its shell where you will enter the commands
 written below.
 
 ## Installation of LLVM/Clang (C2 version)
-C2 is based on LLVM 4.0 and some parts of a modified Clang 4.0, 
+C2 is based on LLVM 5.0 and some parts of a modified Clang 5.0,
 so we will need to build it first.
 
 As this installation is counting with installation into **$HOME/llvm-c2**, you can start by creating
@@ -38,40 +38,7 @@ git config --global core.autocrlf false
 
 If you want, you can re-enable it once you are finished with the installation.
 
-Now, to build LLVM:
-```bash
-git clone git://github.com/llvm-mirror/llvm.git
-cd llvm/
-git checkout -b release_40 origin/release_40
-cd projects
-git clone git://github.com/llvm-mirror/compiler-rt.git
-cd compiler-rt
-git checkout -b release_40 origin/release_40
-cd ../../tools
-git clone git://github.com/c2lang/clang.git
-cd clang
-git checkout -b c2master_40 origin/c2master_40
-cd ../../..
-mkdir llvm_build
-cd llvm_build
-
-cmake -G "Unix Makefiles" \
-    -DCMAKE_BUILD_TYPE="Release" \
-    -DLLVM_ENABLE_ASSERTIONS=ON \
-    -DCMAKE_INSTALL_PREFIX=$HOME/llvm-c2 \
-    -DLLVM_ENABLE_PEDANTIC=OFF \
-    ../llvm
-
-make -j4 #can be raised a bit on faster computers
-make install
-```
-
-Voila! Now you should have a working C2 version LLVM/Clang in $HOME/llvm-c2.
-
-```bash
-export PATH=$HOME/bin:$HOME/llvm-c2/bin:$PATH
-export C2_LIBDIR=$HOME/c2compiler/c2c/
-```
+For instructions on how to build LLVM, see INSTALL.md.
 
 ## Building of C2C
 
@@ -82,7 +49,7 @@ cd c2compiler/
 ```
 
 In order to be able to build C2C, you need to have some enviroment variables set, namely
-C2_LIBDIR and PATH. There is a script called env.sh in the folder which can do it 
+C2_LIBDIR and PATH. There is a script called env.sh in the folder which can do it
 for you automatically. This script needs to be executed like this:
 ```bash
 . env.sh # mind the dot

@@ -1,12 +1,12 @@
 ## Installation of LLVM/Clang (C2 version)
-C2 is based on LLVM 4.0 and some parts of Clang 4.0.
+C2 is based on LLVM 4.0 and some parts of Clang 5.0.
 To install C2, follow the steps below. The example shows
 how to install in **$HOME/llvm-c2**, but any other dir should work.
 
 Note that all OS-specific instructions include the Generic section
 
 ### Ubuntu 14.04
-LLVM/Clang 4.0 needs cmake 3.4.3 or higher, since Ubuntu does not have
+LLVM/Clang 5.0 needs cmake 3.4.3 or higher, since Ubuntu does not have
 this natively, just install it from a binary package:
 (installed here in $HOME/progs)
 ```bash
@@ -44,22 +44,25 @@ export PATH=~/progs/cmake-3.5.2-Darwin-x86_64/CMake.app/Contents/bin:$PATH
 These commands build the C2-modified LLVM/Clang toolchain. The produced clang is still
 fully compatible with the original one (ie. it can compile C/C++ just as well).
 
+TODO clone all archives to c2lang
+
 ```bash
-git clone git://github.com/llvm-mirror/llvm.git
+git clone git://github.com/c2lang/llvm.git
 cd llvm/
-git checkout -b release_40 origin/release_40
+git checkout -b release_50 origin/release_50
 cd projects
-git clone git://github.com/llvm-mirror/compiler-rt.git
+git clone git://github.com/c2lang/compiler-rt.git
 cd compiler-rt
-git checkout -b release_40 origin/release_40
+git checkout -b release_50 origin/release_50
 cd ../../tools
 git clone git://github.com/c2lang/clang.git
 cd clang
-git checkout -b c2master_40 origin/c2master_40
+git checkout -b c2master_50 origin/c2master_50
 cd ../../..
 
 mkdir llvm_build
 cd llvm_build
+
 
 cmake -G "Unix Makefiles" \
     -DCMAKE_BUILD_TYPE="Release" \
@@ -96,7 +99,7 @@ make -j4
 
 alternatively, if you want to you Ninja build, replace last two commands with:
 ```bash
-cmake -G Ninja . ..
+cmake -G "Ninja" . ..
 ninja
 ```
 
