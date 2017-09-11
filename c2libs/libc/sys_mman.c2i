@@ -20,3 +20,5 @@ const u32 MAP_FIXED     = 0x10;
 const u32 MAP_ANONYMOUS = 0x20;
 const u32 MAP_POPULATE  = 0x8000;
 //const void* MAP_FAILED  = -1;
+// TODO should be dependent on 32/64-bit
+const u32 MAP_FAILED  = max_u32;
