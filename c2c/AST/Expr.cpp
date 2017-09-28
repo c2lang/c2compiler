@@ -306,10 +306,10 @@ void CharacterLiteral::printLiteral(StringBuilder& buffer) const {
         buffer << "\\n";
         break;
     case '\r':
-        buffer << "\\n";
+        buffer << "\\r";
         break;
     case '\t':
-        buffer << "\\n";
+        buffer << "\\t";
         break;
     default:
         buffer << (char)value;
