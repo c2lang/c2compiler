@@ -1360,6 +1360,8 @@ int C2Parser::SkipArray(int lookahead) {
         case tok::r_square:
             count--;
             break;
+        case tok::eof:
+            return 0;
         default:
             break;
         }
