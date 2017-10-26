@@ -191,7 +191,7 @@ C2Sema::C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, clang::Preprocesso
 	checkSize(FloatingLiteral, 48);
 	checkSize(BooleanLiteral, 16);
 	checkSize(CharacterLiteral, 24);
-	checkSize(StringLiteral, 24);
+	checkSize(StringLiteral, 32);
 	checkSize(NilExpr, 16);
 	checkSize(IdentifierExpr, 24);
 	checkSize(TypeExpr, 16);
@@ -1400,7 +1400,7 @@ C2::ExprResult C2Sema::ActOnStringLiteral(ArrayRef<Token> StringToks) {
     MEM_EXPR(EXPR_STRING_LITERAL);
     llvm::StringRef ref = Literal.GetString();
     const char* text = Context.addIdentifier(ref.data(), ref.size());
-    return ExprResult(new (Context) StringLiteral(StringToks[0].getLocation(), text));
+    return ExprResult(new (Context) StringLiteral(StringToks[0].getLocation(), text, ref.size()));
 }
 
 C2::ExprResult C2Sema::ActOnCharacterConstant(const Token& Tok) {

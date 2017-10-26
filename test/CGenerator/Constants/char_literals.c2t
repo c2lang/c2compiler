@@ -10,6 +10,9 @@ char b = '\r';
 char c = '\t';
 char d = '\n';
 char e = '\0';
+char f = '\'';
+char g = '"';
+char h = '\\';
 
 // @expect{atleast, build/test.c}
 
@@ -18,4 +21,7 @@ static unsigned char test_b = '\r';
 static unsigned char test_c = '\t';
 static unsigned char test_d = '\n';
 static unsigned char test_e = '\0';
+static unsigned char test_f = '\'';
+static unsigned char test_g = '"';
+static unsigned char test_h = '\\';
 

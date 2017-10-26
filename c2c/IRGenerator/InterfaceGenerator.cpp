@@ -149,7 +149,7 @@ void InterfaceGenerator::EmitExpr(const Expr* E) {
     case EXPR_STRING_LITERAL:
     {
         const StringLiteral* S = cast<StringLiteral>(E);
-        EmitStringLiteral(S->getValue());
+        S->printLiteral(iface);
         return;
     }
     case EXPR_NIL:
@@ -606,35 +606,6 @@ void InterfaceGenerator::EmitVarDecl(const VarDecl* D, unsigned indent) {
         iface << " = ";
         EmitExpr(D->getInitValue());
     }
-}
-
-void InterfaceGenerator::EmitStringLiteral(const std::string& input) {
-    LOG_FUNC
-    // always cast to 'unsigned char*'
-    iface << '"';
-    const char* cp = input.c_str();
-    for (unsigned i=0; i<input.size(); i++) {
-        switch (*cp) {
-        case '\n':
-            iface << "\\n";
-            break;
-        case '\r':
-            iface << "\\r";
-            break;
-        case '\t':
-            iface << "\\t";
-            break;
-        case '\033':
-            iface << "\\033";
-            break;
-            // TODO other escaped chars
-        default:
-            iface << *cp;
-            break;
-        }
-        cp++;
-    }
-    iface << '"';
 }
 
 void InterfaceGenerator::EmitAttributes(const Decl* D) {

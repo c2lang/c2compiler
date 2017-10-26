@@ -253,7 +253,7 @@ void CCodeGenerator::EmitExpr(const Expr* E, StringBuilder& output) {
     case EXPR_STRING_LITERAL:
     {
         const StringLiteral* S = cast<StringLiteral>(E);
-        EmitStringLiteral(S->getValue(), output);
+        S->printLiteral(output);
         return;
     }
     case EXPR_NIL:
@@ -1227,35 +1227,6 @@ void CCodeGenerator::EmitTypePostName(QualType type, StringBuilder& output) {
         }
         output << ']';
     }
-}
-
-void CCodeGenerator::EmitStringLiteral(const std::string& input, StringBuilder& output) {
-    LOG_FUNC
-    // always cast to 'unsigned char*'
-    output << '"';
-    const char* cp = input.c_str();
-    for (unsigned i=0; i<input.size(); i++) {
-        switch (*cp) {
-        case '\n':
-            output << "\\n";
-            break;
-        case '\r':
-            output << "\\r";
-            break;
-        case '\t':
-            output << "\\t";
-            break;
-        case '\033':
-            output << "\\033";
-            break;
-            // TODO other escaped chars
-        default:
-            output << *cp;
-            break;
-        }
-        cp++;
-    }
-    output << '"';
 }
 
 void CCodeGenerator::EmitConditionPre(const Stmt* S, unsigned indent) {

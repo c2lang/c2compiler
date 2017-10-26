@@ -311,6 +311,12 @@ void CharacterLiteral::printLiteral(StringBuilder& buffer) const {
     case '\t':
         buffer << "\\t";
         break;
+    case '\'':
+        buffer << "\\'";
+        break;
+    case '\\':
+        buffer << "\\\\";
+        break;
     default:
         buffer << (char)value;
         break;
@@ -324,14 +330,48 @@ void StringLiteral::print(StringBuilder& buffer, unsigned indent) const {
     buffer.setColor(COL_EXPR);
     buffer << "StringLiteral ";
     Expr::print(buffer);
+    buffer << " len=" << len;
     buffer.setColor(COL_VALUE);
-    buffer << " '" << value << "'\n";
+    buffer << ' ';
+    StringLiteral::printLiteral(buffer);
+    buffer << '\n';
 }
 
 void StringLiteral::printLiteral(StringBuilder& buffer) const {
-    buffer << '"' << value << '"';
+    StringBuilder escaped;
+    const char* cp = value;
+    buffer << '"';
+    for (unsigned i=0; i<len; ++i) {
+        switch (*cp) {
+        case '\0':
+            buffer << "\\0";
+            break;
+        case '\n':
+            buffer << "\\n";
+            break;
+        case '\r':
+            buffer << "\\r";
+            break;
+        case '\t':
+            buffer << "\\t";
+            break;
+        case '\\':
+            buffer << "\\\\";
+            break;
+        case '"':
+            buffer << "\\\"";
+            break;
+        case '\033':
+            buffer << "\\033";
+            break;
+        default:
+            buffer << *cp;
+            break;
+        }
+        cp++;
+    }
+    buffer << '"';
 }
-
 
 
 void NilExpr::print(StringBuilder& buffer, unsigned indent) const {

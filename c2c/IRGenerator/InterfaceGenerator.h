@@ -68,7 +68,6 @@ private:
     void EmitIdentifierExpr(const IdentifierExpr* E);
 
     // Helpers
-    void EmitStringLiteral(const std::string& input);
     void EmitAttributes(const Decl* D);
 
     const Module& module;

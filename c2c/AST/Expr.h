@@ -224,20 +224,22 @@ private:
 
 class StringLiteral : public Expr {
 public:
-    StringLiteral(SourceLocation loc_, const char* val)
+    StringLiteral(SourceLocation loc_, const char* val, unsigned len_)
         : Expr(EXPR_STRING_LITERAL, loc_, true)
         , value(val)
+        , len(len_)
     {}
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_STRING_LITERAL;
     }
     void print(StringBuilder& buffer, unsigned indent) const;
     void printLiteral(StringBuilder& buffer) const;
-    int getByteLength() const { return strlen(value); }
+    int getByteLength() const { return len; }
 
     const char* getValue() const { return value; }
 private:
     const char* value;
+    unsigned len;
 };
 
 
