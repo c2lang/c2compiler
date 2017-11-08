@@ -690,7 +690,7 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
     // FIXME: expectedType has no canonicalType yet!
     const ArrayType* AT = dyncast<ArrayType>(expectedType.getCanonicalType());
     if (AT) {
-        const QualType ET = AT->getElementType();
+        const QualType ET = AT->getElementType().getCanonicalType();
         bool isCharArray = (ET == Type::Int8() || ET == Type::UInt8());
 
         if (isCharArray) {

@@ -103,6 +103,7 @@ private:
     void EmitAttributes(const Decl* D, StringBuilder& output);
 
     bool EmitAsStatic(const Decl* D) const;
+    bool EmitAsDefine(const VarDecl* V) const;
 
     const std::string& filename;
     Mode mode;

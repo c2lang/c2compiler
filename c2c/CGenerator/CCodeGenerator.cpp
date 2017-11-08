@@ -651,30 +651,23 @@ void CCodeGenerator::EmitFunctionArgs(const FunctionDecl* F, StringBuilder& outp
 
 void CCodeGenerator::EmitConstant(const VarDecl* V) {
     LOG_DECL(V)
-    QualType Q = V->getType();
+    if (!EmitAsDefine(V)) return;
+
     // convert const integer literals to define
-    if (Q.isBuiltinType() && Q.isConstQualified()) {
-        StringBuilder* out = &cbuf;
-        if (mode != SINGLE_FILE && V->isPublic()) out = &hbuf;
-        *out << "#define ";
-        EmitDecl(V, *out);
-        assert(V->getInitValue());
-        *out << ' ';
-        EmitExpr(V->getInitValue(), *out);
-        *out << "\n";
-        return;
-    }
-    // else skip
+    // convert const char[] x = ".." and const char[x] y = .."" to define
+    StringBuilder* out = &cbuf;
+    if (mode != SINGLE_FILE && V->isPublic()) out = &hbuf;
+    *out << "#define ";
+    EmitDecl(V, *out);
+    assert(V->getInitValue());
+    *out << ' ';
+    EmitExpr(V->getInitValue(), *out);
+    *out << "\n";
 }
 
 void CCodeGenerator::EmitGlobalVariable(const VarDecl* V) {
     LOG_DECL(V)
-    QualType Q = V->getType();
-    // convert const integer literals to define
-    if (Q.isBuiltinType() && Q.isConstQualified()) {
-        // already done in EmitConstant
-        return;
-    }
+    if (EmitAsDefine(V)) return;    // already done in EmitConstant
 
     if (targetInfo.sys == TargetInfo::SYS_DARWIN && filename == "stdio") {
         // Darwing workaround, since it defines stdin/out/err as #define stdin __stdinp, etc
@@ -720,10 +713,13 @@ void CCodeGenerator::EmitGlobalVariable(const VarDecl* V) {
         EmitExpr(V->getInitValue(), cbuf);
     } else {
         // always generate initialization
-        if (V->getType().isStructType() || V->getType().isArrayType()) {
-            cbuf << " = { }";
+        cbuf << " = ";
+        if (V->getType().isPointerType()) {
+            cbuf << "NULL";
+        } else if (V->getType().isStructType() || V->getType().isArrayType()) {
+            cbuf << "{ }";
         } else {
-            cbuf << " = 0";
+            cbuf << "0";
         }
     }
     cbuf << ";\n";
@@ -1292,6 +1288,19 @@ bool CCodeGenerator::EmitAsStatic(const Decl* D) const {
     if (!D->isPublic()) return true;
     if (D->isExported()) return false;
     if (mode == SINGLE_FILE) return true;
+    return false;
+}
+
+bool CCodeGenerator::EmitAsDefine(const VarDecl* V) const {
+    QualType type = V->getType();
+    // convert const integer literals to define
+    if (type.isBuiltinType() && type.isConstQualified()) return true;
+    // convert const char[] and const char[x] to define
+    if (type.isArrayType()) {
+        const ArrayType* AT = cast<ArrayType>(type.getTypePtr());
+        QualType ET = AT->getElementType();
+        if (!AT->isIncremental() && ET.isBuiltinType() && ET.isConstQualified()) return true;
+    }
     return false;
 }
 

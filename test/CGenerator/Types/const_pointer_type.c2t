@@ -13,5 +13,5 @@ const Struct* p;
 
 // @expect{atleast, build/test.c}
 
-static const test_Struct* test_p = 0;
+static const test_Struct* test_p = NULL;
 

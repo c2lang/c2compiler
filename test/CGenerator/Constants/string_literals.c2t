@@ -1,13 +1,64 @@
 // @recipe bin
     $warnings no-unused
-    $generate-c no-build
+    $generate-c
 
 // @file{file1}
-module test;
+module test1;
 
-const char* a = "foo";
+import test2;
 
-// @expect{atleast, build/test.c}
+public func void pub1() {}
 
-static const unsigned char* test_a = "foo";
+func void nonpub1() {}
+
+public func i32 main(i32 argc, const i8*[] argv) {
+    return 0;
+}
+
+// @file{file2}
+module test2;
+
+// const with inits
+public const char[] AAA = "aaa";
+public const char[3] BBB = "bbb";
+public const char* ccc = "ccc";
+
+// non-const with inits
+public char[] ddd = "ddd";
+public char[3] eee = "eee";
+public char* fff = "fff";
+
+// 'const' without init
+public const char* ggg;
+
+// non-const without init
+public char[3] hhh;
+public char* iii;
+
+// @expect{atleast, build/test2.h}
+
+#define test2_AAA "aaa"
+#define test2_BBB "bbb"
+extern const unsigned char* test2_ccc;
+extern unsigned char test2_ddd[];
+
+extern unsigned char test2_eee[3];
+extern unsigned char* test2_fff;
+extern const unsigned char* test2_ggg;
+
+extern unsigned char test2_hhh[3];
+extern unsigned char* test2_iii;
+
+// @expect{atleast, build/test2.c}
+#include "test2.h"
+
+const unsigned char* test2_ccc = "ccc";
+unsigned char test2_ddd[] = "ddd";
+unsigned char test2_eee[3] = "eee";
+unsigned char* test2_fff = "fff";
+
+const unsigned char* test2_ggg = NULL;
+
+unsigned char test2_hhh[3] = { };
+unsigned char* test2_iii = NULL;
 
