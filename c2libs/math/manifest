@@ -1,0 +1,10 @@
+# C2 wrapper for the math library
+
+[library]
+language = "C"
+type = [ "static", "dynamic" ]
+linkname = "m"
+
+[[modules]]
+name = "math"
+
