@@ -29,5 +29,17 @@ type stat struct {
 
 func c_int fstat(c_int fd, stat* buf);
 
+const u32 S_IFMT =  00170000;
+const u32 S_IFSOCK = 0140000;
+const u32 S_IFLNK  = 0120000;
+const u32 S_IFREG  = 0100000;
+const u32 S_IFBLK  = 0060000;
+const u32 S_IFDIR  = 0040000;
+const u32 S_IFCHR  = 0020000;
+const u32 S_IFIFO  = 0010000;
+const u32 S_ISUID  = 0004000;
+const u32 S_ISGID  = 0002000;
+const u32 S_ISVTX  = 0001000;
+
 // TODO other functions
 
