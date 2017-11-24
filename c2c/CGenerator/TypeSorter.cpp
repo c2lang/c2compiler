@@ -13,8 +13,6 @@
  * limitations under the License.
  */
 
-#include <map>
-#include <list>
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>

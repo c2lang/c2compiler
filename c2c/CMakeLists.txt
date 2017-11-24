@@ -59,6 +59,7 @@ ADD_LIBRARY(c2core
     CGenerator/CCodeGenerator.cpp
     CGenerator/MakefileGenerator.cpp
     CGenerator/TypeSorter.cpp
+    CGenerator/DepSorter.cpp
     CGenerator/CGenerator.cpp
     Refactor/RefFinder.cpp
     Builder/C2ModuleLoader.cpp

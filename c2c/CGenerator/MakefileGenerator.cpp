@@ -14,6 +14,7 @@
  */
 
 #include "CGenerator/MakefileGenerator.h"
+#include "CGenerator/DepSorter.h"
 #include "AST/Component.h"
 #include "Utils/StringBuilder.h"
 #include "Utils/TargetInfo.h"
@@ -87,26 +88,22 @@ void MakefileGenerator::write(const std::string& path) {
     for (StringListConstIter iter=files.begin(); iter!=files.end(); ++iter) {
         out << "\tgcc " << args << " -c " << *iter << ".c -o " << *iter << ".o\n";
     }
-    const Component::Dependencies& deps = component.getDeps();
+
     // link step
     switch (component.getType()) {
     case Component::EXECUTABLE:
+    {
         out << "\tgcc -o " << targetname;
         for (StringListConstIter iter=files.begin(); iter!=files.end(); ++iter) {
             out << ' ' << *iter << ".o";
         }
-        // TODO move after switch?
-        for (unsigned i=0; i<deps.size(); i++) {
-            const Component* dep = deps[i];
-            // TEMP add -L flag if static lib (system static libs not yet supported)
-            if (dep->isStaticLib()) {
-                out << " -L" << libDir << '/' << dep->getName() << '/' << Str(targetInfo);
-            }
-            if (dep->getLinkName() != "") {
-                out << " -l" << dep->getLinkName();
-            }
+
+        DepSorter sorter(component);
+        for (unsigned i=0; i<sorter.numComps(); ++i) {
+            addLinkFlags(sorter.getComp(i), out);
         }
         break;
+    }
     case Component::SHARED_LIB:
         out << "#link against with: gcc main.c -L. -l<libname> -o test\n";
         out << "\tgcc";
@@ -147,5 +144,16 @@ void MakefileGenerator::write(const std::string& path) {
     out << '\n';
 
     FileUtils::writeFile(path.c_str(), path + "/Makefile", out);
+}
+
+void MakefileGenerator::addLinkFlags(const Component* dep, StringBuilder& out)
+{
+    // TEMP add -L flag if static lib (system static libs not yet supported)
+    if (dep->isStaticLib()) {
+        out << " -L" << libDir << '/' << dep->getName() << '/' << Str(targetInfo);
+    }
+    if (dep->getLinkName() != "") {
+        out << " -l" << dep->getLinkName();
+    }
 }
 

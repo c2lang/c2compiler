@@ -22,6 +22,7 @@ namespace C2 {
 
 class Component;
 class TargetInfo;
+class StringBuilder;
 
 class MakefileGenerator {
 public:
@@ -37,6 +38,8 @@ private:
     std::string target;
     const TargetInfo& targetInfo;
     bool singleFile;
+
+    void addLinkFlags(const Component* dep, StringBuilder& out);
 
     MakefileGenerator(const MakefileGenerator&);
     MakefileGenerator& operator= (const MakefileGenerator&);
