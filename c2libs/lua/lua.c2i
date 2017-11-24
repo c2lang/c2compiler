@@ -1,0 +1,221 @@
+module lua;
+
+import c2 local;
+
+// from luaconf
+const c_uint LUAI_MAXSTACK = 1000000;
+
+const char[] LUA_SIGNATURE = "\x1bLua";
+
+const c_int LUA_MULTRET = -1;
+const c_int LUA_REGISTRYINDEX = -LUAI_MAXSTACK - 1000;
+
+const c_int LUA_OK          = 0;
+const c_int LUA_YIELD       = 1;
+const c_int LUA_ERRRUN      = 2;
+const c_int LUA_ERRSYNTAX   = 3;
+const c_int LUA_ERRMEM      = 4;
+const c_int LUA_ERRGCMM     = 5;
+const c_int LUA_ERRERR      = 6;
+
+// basic types
+const c_int LUA_TNONE           = -1;
+const c_int LUA_TNIL            = 0;
+const c_int LUA_TBOOLEAN        = 1;
+const c_int LUA_TLIGHTUSERDATA  = 2;
+const c_int LUA_TNUMBER         = 3;
+const c_int LUA_TSTRING         = 4;
+const c_int LUA_TTABLE          = 5;
+const c_int LUA_TFUNCTION       = 6;
+const c_int LUA_TUSERDATA       = 7;
+const c_int LUA_TTHREAD         = 8;
+const c_int LUA_NUMTAGS         = 9;
+
+const c_int LUA_MINSTACK        = 20;
+
+// predefined values in the registry
+const c_int LUA_RIDX_MAINTHREAD = 1;
+const c_int LUA_RIDX_GLOBALS    = 2;
+const c_int LUA_RIDX_LAST       = LUA_RIDX_GLOBALS;
+
+type LUA_NUMBER c_double;
+type LUA_INTEGER c_int;
+type LUA_UNSIGNED c_uint;
+type LUA_KCONTEXT c_longlong;
+
+type lua_Number LUA_NUMBER;
+type lua_Integer LUA_INTEGER;
+type lua_Unsigned LUA_UNSIGNED;
+type lua_KContext LUA_KCONTEXT;
+
+type lua_CFunction func c_int (lua_State *L);
+
+type lua_KFunction func c_int (lua_State *L, c_int status, lua_KContext ctx);
+
+type lua_Reader func const c_char* (lua_State *L, void *ud, c_size *sz);
+type lua_Writer func void* (lua_State *L, const void *p, c_size sz, void *ud);
+
+type lua_Alloc func void* (void *ud, void *ptr, c_size osize, c_size nsize);
+
+type lua_State struct {
+
+}
+
+const char* lua_ident;
+
+
+// state manipulation
+func lua_State* lua_newstate(lua_Alloc f, void *ud);
+func void lua_close(lua_State *L);
+func lua_State* lua_newthread(lua_State *L);
+
+func lua_CFunction lua_atpanic(lua_State *L, lua_CFunction panicf);
+
+func const lua_Number* lua_version(lua_State *L);
+
+
+// basic stack manipulation
+func c_int lua_absindex(lua_State* L, c_int idx);
+func c_int lua_gettop(lua_State* L);
+func void lua_settop(lua_State* L, c_int idx);
+func void lua_pushvalue(lua_State* L, c_int idx);
+func void lua_rotate(lua_State* L, c_int idx, c_int n);
+func void lua_copy(lua_State* L, c_int fromidx, c_int toidx);
+func c_int lua_checkstack(lua_State* L, c_int n);
+
+func void lua_xmove(lua_State *from, lua_State *to, c_int n);
+
+
+// access functcions (stack -> C)
+func c_int lua_isnumber(lua_State *L, c_int idx);
+func c_int lua_isstring(lua_State *L, c_int idx);
+func c_int lua_iscfunction(lua_State *L, c_int idx);
+func c_int lua_isinteger(lua_State *L, c_int idx);
+func c_int lua_isuserdata(lua_State *L, c_int idx);
+func c_int lua_type(lua_State *L, c_int idx);
+func const c_char* lua_typename(lua_State *L, c_int tp);
+
+func lua_Number lua_tonumberx(lua_State *L, c_int idx, c_int *isnum);
+func lua_Integer lua_tointegerx(lua_State *L, c_int idx, c_int *isnum);
+func c_int lua_toboolean(lua_State *L, c_int idx);
+func const c_char* lua_tolstring(lua_State *L, c_int idx, c_size *len);
+func c_size lua_rawlen(lua_State* L, c_int idx);
+func lua_CFunction lua_tocfunction(lua_State *L, c_int idx);
+func void* lua_touserdata(lua_State *L, c_int idx);
+func const void* lua_topointer(lua_State *L, c_int idx);
+
+const u8 LUA_OPADD      = 0;    // ORDER TM, ORDER OP
+const u8 LUA_OPSUB      = 1;
+const u8 LUA_OPMUL      = 2;
+const u8 LUA_OPMOD      = 3;
+const u8 LUA_OPPOW      = 4;
+const u8 LUA_OPDIV      = 5;
+const u8 LUA_OPIDIV     = 6;
+const u8 LUA_OPBAND     = 7;
+const u8 LUA_OPBOR      = 8;
+const u8 LUA_OPBXOR     = 9;
+const u8 LUA_OPSHL      = 10;
+const u8 LUA_OPSHR      = 11;
+const u8 LUA_OPUNM      = 12;
+const u8 LUA_OPBNOT     = 13;
+
+func void lua_arith(lua_State *L, c_int op);
+
+const u8 LUA_OPEQ   = 0;
+const u8 LUA_OPLT   = 0;
+const u8 LUA_OPLE   = 0;
+
+func c_int lua_rawequeal(lua_State *L, c_int idx1, c_int idx2);
+func c_int lua_compare(lua_State *L, c_int idx1, c_int idx2, c_int op);
+
+
+// push functions (C -> stack)
+func void lua_pushnil(lua_State *L);
+func void lua_pushnumber(lua_State *L, lua_Number n);
+func void lua_pushinteger(lua_State *L, lua_Integer n);
+func const c_char* lua_pushlstring(lua_State *L, const c_char* s, c_size len);
+func const c_char* lua_pushstring(lua_State *L, const c_char* s);
+//func const c_char* lua_pushvfstring(lua_State *L, const c_char *fmt, va_list argp);
+func const c_char *lua_pushfstring(lua_State *L, const c_char *fmt, ...);
+func void lua_pushcclosure(lua_State *L, lua_CFunction fn, c_int n);
+func void lua_pushboolean(lua_State *L, c_int b);
+func void lua_pushlightuserdata(lua_State *L, void *p);
+func c_int lua_pushthread(lua_State *L);
+
+
+// get functions (Lua -> stack)
+func c_int lua_getglobal(lua_State *L, const c_char *name);
+func c_int lua_gettable(lua_State *L, c_int idx);
+func c_int lua_getfield(lua_State *L, c_int idx, const c_char *k);
+func c_int lua_geti(lua_State *L, c_int idx, lua_Integer n);
+func c_int lua_rawget(lua_State *L, c_int idx);
+func c_int lua_rawgeti(lua_State *L, c_int idx, lua_Integer n);
+func c_int lua_rawgetp(lua_State *L, c_int idx, const void *p);
+
+func void  lua_createtable(lua_State *L, c_int narr, c_int nrec);
+func void *lua_newuserdata(lua_State *L, c_size sz);
+func c_int lua_getmetatable(lua_State *L, c_int objindex);
+func c_int lua_getuservalue(lua_State *L, c_int idx);
+
+
+// set functions (stack -> Lua)
+func void  lua_setglobal(lua_State *L, const c_char *name);
+func void  lua_settable(lua_State *L, c_int idx);
+func void  lua_setfield(lua_State *L, c_int idx, const c_char *k);
+func void  lua_seti(lua_State *L, c_int idx, lua_Integer n);
+func void  lua_rawset(lua_State *L, c_int idx);
+func void  lua_rawseti(lua_State *L, c_int idx, lua_Integer n);
+func void  lua_rawsetp(lua_State *L, c_int idx, const void *p);
+func c_int lua_setmetatable(lua_State *L, c_int objindex);
+func void  lua_setuservalue(lua_State *L, c_int idx);
+
+
+// 'load' and 'call' functions (load and run Lua code)
+func void lua_callk(lua_State *L, c_int nargs, c_int nresults,
+                    lua_KContext ctx, lua_KFunction k);
+
+//#define lua_call(L,n,r)     lua_callk(L, (n), (r), 0, NULL)
+
+func c_int lua_pcallk(lua_State *L, c_int nargs, c_int nresults, c_int errfunc,
+                      lua_KContext ctx, lua_KFunction k);
+//#define lua_pcall(L,n,r,f)  lua_pcallk(L, (n), (r), (f), 0, NULL)
+
+func c_int lua_load(lua_State *L, lua_Reader reader, void *dt,
+                    const c_char *chunkname, const c_char *mode);
+
+func c_int lua_dump(lua_State *L, lua_Writer writer, void *data, c_int strip);
+
+
+// coroutine functions
+func c_int lua_yieldk(lua_State *L, c_int nresults, lua_KContext ctx,
+                      lua_KFunction k);
+func c_int lua_resume(lua_State *L, lua_State *from, c_int narg);
+func c_int lua_status(lua_State *L);
+func c_int lua_isyieldable(lua_State *L);
+
+//#define lua_yield(L,n)      lua_yieldk(L, (n), 0, NULL)
+
+
+// garbage-collection function and options
+const u8 LUA_GCSTOP       = 0;
+const u8 LUA_GCRESTART    = 1;
+const u8 LUA_GCCOLLECT    = 2;
+const u8 LUA_GCCOUNT      = 3;
+const u8 LUA_GCCOUNTB     = 4;
+const u8 LUA_GCSTEP       = 5;
+const u8 LUA_GCSETPAUSE   = 6;
+const u8 LUA_GCSETSTEPMUL = 7;
+const u8 LUA_GCISRUNNING  = 9;
+
+func c_int lua_gc(lua_State *L, c_int what, c_int data);
+
+
+// miscellaneous functions
+func c_int lua_error(lua_State *L);
+func c_int lua_next(lua_State *L, c_int idx);
+func void lua_concat(lua_State *L, c_int n);
+func void lua_len(lua_State *L, c_int idx);
+func c_size lua_stringtonumber(lua_State *L, const c_char *s);
+func lua_Alloc lua_getallocf(lua_State *L, void **ud);
+func void lua_setallocf(lua_State *L, lua_Alloc f, void *ud);
+

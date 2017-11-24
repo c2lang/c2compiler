@@ -1,0 +1,20 @@
+# C2 wrapper lua 5.3.4
+
+[library]
+language = "C"
+type = [ "static", "dynamic" ]
+linkname = "lua"
+
+[[deps]]
+name = "math"
+type = "dynamic"
+
+[[modules]]
+name = "lua"
+
+[[modules]]
+name = "lua_auxlib"
+
+[[modules]]
+name = "lua_lib"
+
