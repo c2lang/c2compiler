@@ -22,3 +22,8 @@ func c_int isatty(c_int fd);
 
 func c_ssize write(c_int fd, const void* buf, c_size count);
 
+func c_int pipe(c_int[2] pipefd);
+
+//#ifdef_GNU_SOURCE             /* See feature_test_macros(7) */
+func c_int pipe2(c_int[2] pipefd, c_int flags);
+
