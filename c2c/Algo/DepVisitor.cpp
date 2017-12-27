@@ -24,7 +24,7 @@
 using namespace C2;
 
 void DepVisitor::run() {
-    //fprintf(stderr, "CHECKING %s\n", decl->getName().c_str());
+    //fprintf(stderr, "CHECKING %s\n", decl->getName());
     checkDecl(decl);
 }
 
@@ -93,7 +93,7 @@ void DepVisitor::checkVarDecl(const VarDecl* V) {
     if (V->getInitValue()) checkExpr(V->getInitValue());
 }
 
-void DepVisitor::checkType(QualType Q, bool isFull) {
+void DepVisitor::checkType(QualType Q, bool isFullDep) {
     const Type* T = Q.getTypePtr();
     switch (T->getTypeClass()) {
     case TC_BUILTIN:
@@ -104,24 +104,24 @@ void DepVisitor::checkType(QualType Q, bool isFull) {
     case TC_ARRAY:
     {
         const ArrayType* A = cast<ArrayType>(T);
-        checkType(A->getElementType(), isFull);
+        checkType(A->getElementType(), isFullDep);
         if (A->getSizeExpr()) checkExpr(A->getSizeExpr());
         break;
     }
     case TC_UNRESOLVED:
-        addDep(cast<UnresolvedType>(T)->getDecl(), isFull);
+        addDep(cast<UnresolvedType>(T)->getDecl(), isFullDep);
         break;
     case TC_ALIAS:
-        addDep(cast<AliasType>(T)->getDecl(), isFull);
+        addDep(cast<AliasType>(T)->getDecl(), isFullDep);
         break;
     case TC_STRUCT:
-        addDep(cast<StructType>(T)->getDecl(), isFull);
+        addDep(cast<StructType>(T)->getDecl(), isFullDep);
         break;
     case TC_ENUM:
-        addDep(cast<EnumType>(T)->getDecl(), isFull);
+        addDep(cast<EnumType>(T)->getDecl(), isFullDep);
         break;
     case TC_FUNCTION:
-        addDep(cast<FunctionType>(T)->getDecl(), isFull);
+        addDep(cast<FunctionType>(T)->getDecl(), isFullDep);
         break;
     case TC_MODULE:
         assert(0);
@@ -319,7 +319,7 @@ void DepVisitor::checkExpr(const Expr* E) {
     }
 }
 
-void DepVisitor::addDep(const Decl* D, bool isFull) {
+void DepVisitor::addDep(const Decl* D, bool isFullDep) {
     assert(D);
 
     // Skip local VarDecls
@@ -347,11 +347,11 @@ void DepVisitor::addDep(const Decl* D, bool isFull) {
     for (unsigned i=0; i<deps.size(); i++) {
         if (getDep(i) == D) {
             // update pointer to full if needed
-            if (deps[i] != (uintptr_t)D) deps[i] |= 0x1;
+            if (isFullDep) deps[i] |= 0x1;
             return;
         }
     }
-    deps.push_back((uintptr_t)D | isFull);
-    //fprintf(stderr, "  %s -> %s %p (%s)\n", decl->getName().c_str(), D->getName().c_str(), D, isFull ? "full" : "pointer");
+    deps.push_back((uintptr_t)D | isFullDep);
+    //fprintf(stderr, "  %s -> %s %p (%s)\n", decl->getName().c_str(), D->getName(), D, isFullDep ? "full" : "pointer");
 }
 
