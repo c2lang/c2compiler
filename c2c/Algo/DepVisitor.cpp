@@ -352,6 +352,6 @@ void DepVisitor::addDep(const Decl* D, bool isFullDep) {
         }
     }
     deps.push_back((uintptr_t)D | isFullDep);
-    //fprintf(stderr, "  %s -> %s %p (%s)\n", decl->getName().c_str(), D->getName(), D, isFullDep ? "full" : "pointer");
+    //fprintf(stderr, "  %s -> %s %p (%s)\n", decl->getName(), D->getName(), D, isFullDep ? "full" : "pointer");
 }
 

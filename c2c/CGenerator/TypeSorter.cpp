@@ -106,7 +106,8 @@ void TypeSorter::write(CTypeWriter& writer) {
             for (unsigned i=0; i<dd->numDeps(); ++i) {
                 const Decl* dep = dd->getDep(i);
                 // only care about other types for now
-                if (!isa<TypeDecl>(dep)) continue;
+                // NOTE: FunctionDecl is really a FunctionTypeDecl
+                if (!isa<TypeDecl>(dep) && !isa<FunctionDecl>(dep)) continue;
 
                 //printf("    dep %s  %s\n", dep->getName(), dd->isFull(i) ? "full" : "ptr");
                 StatesIter iter = states.find(dep);
@@ -118,7 +119,8 @@ void TypeSorter::write(CTypeWriter& writer) {
             if (complete) {
                 //printf("  -> writing\n");
                 writer.fullDecl(d);
-                states[d] = DEFINED;
+                // NOTE: use dd->decl to get FunctionDecl (in case of FunctionTypeDecl)
+                states[dd->decl] = DEFINED;
             } else {
                 //printf("  -> skipping\n");
                 next.push_back(dd);
