@@ -66,7 +66,7 @@ static const char* getTokenName(TokenKind k) {
     case kw_false: return "false";
     case lbrace  : return "[";
     case lbrace2 : return "[[";
-    case rbrace  : return "[";
+    case rbrace  : return "]";
     case rbrace2 : return "]]";
     case equals  : return "=";
     case comma   : return ",";
