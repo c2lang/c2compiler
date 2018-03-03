@@ -29,6 +29,7 @@
 
 using namespace C2;
 
+static const char* logfile = "build.log";
 
 CGenerator::CGenerator(const Component& component_,
                        const Modules& moduleMap_,
@@ -92,9 +93,10 @@ void CGenerator::generate() {
 void CGenerator::build() {
     std::string outdir = options.outputDir + component.getName() + options.buildDir;
     // execute generated makefile
-    int retval = ProcessUtils::run(outdir, "/usr/bin/make");
+    int retval = ProcessUtils::run(outdir, "/usr/bin/make", logfile);
     if (retval != 0) {
         fprintf(stderr, ANSI_RED"error during external c compilation" ANSI_NORMAL"\n");
+        fprintf(stderr, "see %s%s for details)\n", outdir.c_str(), logfile);
     }
 }
 

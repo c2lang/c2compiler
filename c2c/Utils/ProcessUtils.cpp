@@ -38,7 +38,7 @@ static void child_error(int fd, const char* msg) {
     _exit(-1);      // don't call atexit functions
 }
 
-int ProcessUtils::run(const std::string& path, const std::string& cmd) {
+int ProcessUtils::run(const std::string& path, const std::string& cmd, const std::string& logfile) {
     int error_pipe[2];
     if (pipe(error_pipe)) {
         fprintf(stderr, "pipe() failed: %s\n", strerror(errno));
@@ -63,13 +63,13 @@ int ProcessUtils::run(const std::string& path, const std::string& cmd) {
         }
 
         // redirect output
-        std::string logfile = path + "build.log";
+        std::string output = path + logfile;
         fflush(stdout);
         close(STDOUT_FILENO);
-        int fdout = open(logfile.c_str(), O_TRUNC | O_CREAT | O_WRONLY, 0644);
+        int fdout = open(output.c_str(), O_TRUNC | O_CREAT | O_WRONLY, 0644);
         if (fdout == -1) {
             // TODO extract
-            sprintf(errmsg, "cannot open logfile '%s': %s", logfile.c_str(), strerror(errno));
+            sprintf(errmsg, "cannot open output '%s': %s", output.c_str(), strerror(errno));
             child_error(error_pipe[1], errmsg);
         }
 

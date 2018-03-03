@@ -22,7 +22,7 @@ namespace C2 {
 
 class ProcessUtils {
 public:
-    static int run(const std::string& path, const std::string& cmd);
+    static int run(const std::string& path, const std::string& cmd, const std::string& logfile);
 };
 
 }
