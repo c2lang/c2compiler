@@ -96,7 +96,7 @@ void CGenerator::build() {
     int retval = ProcessUtils::run(outdir, "/usr/bin/make", logfile);
     if (retval != 0) {
         fprintf(stderr, ANSI_RED"error during external c compilation" ANSI_NORMAL"\n");
-        fprintf(stderr, "see %s%s for details)\n", outdir.c_str(), logfile);
+        fprintf(stderr, "see %s%s for details\n", outdir.c_str(), logfile);
     }
 }
 
