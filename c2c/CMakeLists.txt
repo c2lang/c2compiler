@@ -65,6 +65,7 @@ ADD_LIBRARY(c2core
     Builder/C2ModuleLoader.cpp
     Builder/ManifestReader.cpp
     Builder/ManifestWriter.cpp
+    Builder/BuildFileReader.cpp
     Builder/LibraryLoader.cpp
     Builder/RootFinder.cpp
     Builder/Recipe.cpp
@@ -72,6 +73,7 @@ ADD_LIBRARY(c2core
     Builder/C2Builder.cpp
     FileUtils/FileMap.cpp
     FileUtils/FileUtils.cpp
+    FileUtils/TomlReader.cpp
     Utils/StringBuilder.cpp
     Utils/Utils.cpp
     Utils/GenUtils.cpp

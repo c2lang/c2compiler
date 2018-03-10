@@ -29,6 +29,8 @@ public:
 
     std::string orig2Root(const std::string& filename) const;
     std::string root2Orig(const std::string& filename) const;
+
+    const char* getBuildFile() const;
 private:
     char base_path[PATH_MAX];
     char rel_path[PATH_MAX];

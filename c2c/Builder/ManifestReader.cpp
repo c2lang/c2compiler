@@ -41,6 +41,7 @@ static Component::Type str2dep(const char* type) {
 }
 
 namespace tok {
+
 enum TokenKind {
     word,
     text,          // any text (until delimiter)
@@ -543,9 +544,8 @@ private:
 bool ManifestReader::parse()
 {
     ManifestParser parser(componentName, filename, errorMsg, entries, deps, linkName);
-    if (errorMsg[0] != 0) {
-        return false;
-    }
+    if (errorMsg[0] != 0) return false;
+
     _isNative = parser.isNative();
     hasStaticLib = parser.hasStatic();
     hasDynamicLib = parser.hasDynamic();

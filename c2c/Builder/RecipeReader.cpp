@@ -240,7 +240,7 @@ void RecipeReader::error(const char* fmt, ...) {
     cp += size;
     va_end(argp);
     fprintf(stderr, "Error: %s\n", tmp);
-    exit(-1);
+    exit(EXIT_FAILURE);
 }
 
 const Recipe& RecipeReader::get(int i) const {
@@ -269,7 +269,7 @@ void RecipeReader::checkCurrent() {
     }
     if (needExport && current->exported.size() == 0) {
         fprintf(stderr, "recipe: target %s is type lib but has no 'export' entry\n", current->name.c_str());
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
 }
 

@@ -38,7 +38,7 @@ void RootFinder::findTopDir() {
         path = getcwd(buffer, PATH_MAX);
         if (path == 0) {
             perror("getcwd");
-            exit(-1);
+            exit(EXIT_FAILURE);
         }
         struct stat buf;
         int error = stat(RECIPE_FILE, &buf);
@@ -47,11 +47,11 @@ void RootFinder::findTopDir() {
                 fprintf(stderr, "c2c: error: cannot find C2 root dir\n");
                 fprintf(stderr, "c2c requires a %s file for compilation of targets\n", RECIPE_FILE);
                 fprintf(stderr, "Use argument -h for a list of available options and usage of c2c\n");
-                exit(-1);
+                exit(EXIT_FAILURE);
             }
             if (errno != ENOENT) {
                 perror("stat");
-                exit(-1);
+                exit(EXIT_FAILURE);
             }
         } else {
             // must be file, not dir
@@ -64,7 +64,7 @@ void RootFinder::findTopDir() {
         error = chdir("..");
         if (error) {
             perror("chdir");
-            exit(-1);
+            exit(EXIT_FAILURE);
         }
         strcat(rel_path, "../");
     }
@@ -84,5 +84,13 @@ std::string RootFinder::root2Orig(const std::string& filename) const {
     char fullname[PATH_MAX];
     sprintf(fullname, "%s%s", rel_path, filename.c_str());
     return fullname;
+}
+
+const char* RootFinder::getBuildFile() const {
+    struct stat buf;
+    int error = stat(BUILD_FILE, &buf);
+    if (error) return NULL;
+    // TODO also check type (file, etc)
+    return BUILD_FILE;
 }
 
