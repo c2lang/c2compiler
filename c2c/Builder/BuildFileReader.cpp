@@ -14,6 +14,7 @@
  */
 
 #include "Builder/BuildFileReader.h"
+#include "Builder/BuildFile.h"
 #include "FileUtils/TomlReader.h"
 
 #include <string.h>
@@ -21,11 +22,8 @@
 
 using namespace C2;
 
-BuildFileReader::BuildFileReader()
-    : target("")
-    , cc("")
-    , cflags("")
-    , ldflags("")
+BuildFileReader::BuildFileReader(BuildFile& build_)
+    : build(build_)
 {
     errorMsg[0] = 0;
 }
@@ -39,16 +37,16 @@ bool BuildFileReader::parse(const std::string& filename)
     }
 
     const char* target_ = reader.getValue("target");
-    target = expandEnvVar(filename, target_);
+    build.target = expandEnvVar(filename, target_);
 
     const char* cc_ = reader.getValue("toolchain.cc");
-    cc = expandEnvVar(filename, cc_);
+    build.cc = expandEnvVar(filename, cc_);
 
     const char* cflags_ = reader.getValue("toolchain.cflags");
-    cflags = expandEnvVar(filename, cflags_);
+    build.cflags = expandEnvVar(filename, cflags_);
 
     const char* ldflags_ = reader.getValue("toolchain.ldflags");
-    ldflags = expandEnvVar(filename, ldflags_);
+    build.ldflags = expandEnvVar(filename, ldflags_);
 
     TomlReader::NodeIter iter = reader.getNodeIter("libdir");
     while (!iter.done()) {
@@ -59,7 +57,7 @@ bool BuildFileReader::parse(const std::string& filename)
             return false;
         }
         const char* expanded = expandEnvVar(filename, dir);
-        if (expanded) libDirs.push_back(expanded);
+        if (expanded) build.libDirs.push_back(expanded);
 
         iter.next();
     }

@@ -25,6 +25,7 @@
 #include "Builder/Recipe.h"
 #include "Builder/RootFinder.h"
 #include "Builder/RecipeReader.h"
+#include "Builder/BuildFile.h"
 #include "Builder/BuildFileReader.h"
 #include "AST/Component.h"
 #include "Utils/Utils.h"
@@ -252,12 +253,13 @@ int main(int argc, const char *argv[])
         return EXIT_SUCCESS;
     }
 
-    BuildFileReader buildFile;
+    BuildFile buildFile;
+    BuildFileReader buildReader(buildFile);
     if (!build_file) build_file = finder.getBuildFile();
     // specified build file must exist
     if (build_file) {
-        if (!buildFile.parse(build_file)) {
-            fprintf(stderr, "Error reading %s: %s\n", build_file, buildFile.getErrorMsg());
+        if (!buildReader.parse(build_file)) {
+            fprintf(stderr, "Error reading %s: %s\n", build_file, buildReader.getErrorMsg());
             return EXIT_FAILURE;
         }
     }

@@ -13,27 +13,23 @@
  * limitations under the License.
  */
 
-#ifndef BUILDER_BUILDFILE_READER_H
-#define BUILDER_BUILDFILE_READER_H
+#ifndef BUILDER_BUILDFILE_H
+#define BUILDER_BUILDFILE_H
 
 #include <string>
+#include "Utils/StringList.h"
 
 namespace C2 {
 
-struct BuildFile;
+struct BuildFile {
+    BuildFile();
 
-class BuildFileReader {
-public:
-    BuildFileReader(BuildFile& build_);
-    ~BuildFileReader() {}
-
-    bool parse(const std::string& filename);
-    const char* getErrorMsg() const { return errorMsg; }
-private:
-    const char* expandEnvVar(const std::string& filename, const char* raw);
-
-    BuildFile& build;
-    char errorMsg[256];
+    std::string target;
+    std::string cc;
+    std::string cflags;
+    std::string ldflags;
+    //std::string path;
+    StringList libDirs;
 };
 
 }

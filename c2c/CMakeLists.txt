@@ -65,6 +65,7 @@ ADD_LIBRARY(c2core
     Builder/C2ModuleLoader.cpp
     Builder/ManifestReader.cpp
     Builder/ManifestWriter.cpp
+    Builder/BuildFile.cpp
     Builder/BuildFileReader.cpp
     Builder/LibraryLoader.cpp
     Builder/RootFinder.cpp
