@@ -30,7 +30,8 @@
 static const char* TAGS_FILE = "refs";
 static const char* OUTPUT_DIR = "output";
 
-namespace tok {
+namespace tag {
+
 enum TokenKind {
     text,          // any text (until delimiter)
     number,
@@ -76,15 +77,15 @@ public:
 
 class Token {
 public:
-    Token() : kind(tok::eof), text(0), number(0) {}
+    Token() : kind(tag::eof), text(0), number(0) {}
 
-    void setKind(tok::TokenKind k) {
+    void setKind(tag::TokenKind k) {
         kind = k;
     }
-    bool is(tok::TokenKind k) const {
+    bool is(tag::TokenKind k) const {
         return kind == k;
     }
-    bool isNot(tok::TokenKind k) const {
+    bool isNot(tag::TokenKind k) const {
         return kind != k;
     }
 
@@ -114,11 +115,11 @@ public:
         number = 0;
     }
 
-    //const char* getName() const { return tok::getTokenName(kind); }
+    //const char* getName() const { return tag::getTokenName(kind); }
 
 private:
     Location loc;
-    tok::TokenKind kind;
+    tag::TokenKind kind;
     const char* text;
     uint32_t number;
 };
@@ -144,7 +145,7 @@ public:
             switch (*current) {
             case 0:
                 Result.setLocation(loc);
-                Result.setKind(tok::eof);
+                Result.setKind(tag::eof);
                 return;
             case ' ':
             case '\t':
@@ -157,29 +158,29 @@ public:
                 break;
             case ':':
                 Result.setLocation(loc);
-                Result.setKind(tok::colon);
+                Result.setKind(tag::colon);
                 advanceToken(1);
                 return;
             case '{':
                 Result.setLocation(loc);
-                Result.setKind(tok::open);
+                Result.setKind(tag::open);
                 advanceToken(1);
                 return;
             case '}':
                 Result.setLocation(loc);
-                Result.setKind(tok::close);
+                Result.setKind(tag::close);
                 advanceToken(1);
                 return;
             case '-': // expect '->'
                 Result.setLocation(loc);
                 if (*(current+1) != '>') {
                     sprintf(text, "expected '>' after '-' at %s", loc.str());
-                    Result.setKind(tok::error);
+                    Result.setKind(tag::error);
                     Result.setData(text);
                     return;
                 }
                 advanceToken(2);
-                Result.setKind(tok::dest);
+                Result.setKind(tag::dest);
                 return;
             default:
                 Result.setLocation(loc);
@@ -192,7 +193,7 @@ public:
                     return;
                 }
                 sprintf(text, "unexpected char '%c' at %s", *current, loc.str());
-                Result.setKind(tok::error);
+                Result.setKind(tag::error);
                 Result.setData(text);
                 return;
             }
@@ -229,14 +230,14 @@ private:
         assert(len < sizeof(text));
         memcpy(text, start, len);
         text[len] = 0;
-        Result.setKind(tok::text);
+        Result.setKind(tag::text);
         Result.setData(text);
         // NOTE: dont use advance() since current is already moved
         loc.column += len;
     }
     void parseNumber(Token& Result) {
         uint32_t number = atoi(current);
-        Result.setKind(tok::number);
+        Result.setKind(tag::number);
         Result.setNumber(number);
         while (*current && isdigit(*current)) {
             current++;
@@ -354,38 +355,38 @@ private:
     void parseFiles() {
         // syntax: files {
         ExpectAndConsumeText("files");
-        ExpectAndConsume(tok::open);
-        while (!Tok.is(tok::close)) {
+        ExpectAndConsume(tag::open);
+        while (!Tok.is(tag::close)) {
             // syntax: 0 file1.c2 1245
-            Expect(tok::number);
+            Expect(tag::number);
             int file_id = Tok.getNumber();
             ConsumeToken();
 
-            Expect(tok::text);
+            Expect(tag::text);
             char filename[MAX_TEXT];
             strcpy(filename, Tok.getText());
             ConsumeToken();
 
-            Expect(tok::number);
+            Expect(tag::number);
             int offset = Tok.getNumber();
             ConsumeToken();
 
             TagFile* TF = new TagFile(filename, offset, file_id);
             files.push_back(TF);
         }
-        ExpectAndConsume(tok::close);
+        ExpectAndConsume(tag::close);
     }
     bool parseRefs(TagEntry& tag, uint32_t line, uint32_t col) {
         // syntax: file <file_id> {
         ExpectAndConsumeText("file");
 
-        Expect(tok::number);
+        Expect(tag::number);
         //int number = Tok.getNumber();
         ConsumeToken();
 
-        ExpectAndConsume(tok::open);
+        ExpectAndConsume(tag::open);
         char symbol[MAX_TEXT];
-        while (!Tok.is(tok::close)) {
+        while (!Tok.is(tag::close)) {
             parseTag(tag, symbol);
             if (tag.src_line == line) {
                 // check if we are somewhere in sybol
@@ -394,21 +395,21 @@ private:
                 }
             }
         }
-        ExpectAndConsume(tok::close);
+        ExpectAndConsume(tag::close);
         return false;
     }
     void parseRefsReverse(Users& users, uint32_t src_fileid, uint32_t fileid, uint32_t line, uint32_t col) {
         // syntax: file <file_id> {
         ExpectAndConsumeText("file");
 
-        Expect(tok::number);
+        Expect(tag::number);
         //int number = Tok.getNumber();
         ConsumeToken();
 
-        ExpectAndConsume(tok::open);
+        ExpectAndConsume(tag::open);
         char symbol[MAX_TEXT];
         TagEntry tag;
-        while (!Tok.is(tok::close)) {
+        while (!Tok.is(tag::close)) {
             parseTag(tag, symbol);
             if (tag.dst_fileid == fileid && tag.dst_line == line) {
                 if (col >= tag.dst_column && col < tag.dst_column+strlen(symbol)) {
@@ -420,42 +421,42 @@ private:
                 }
             }
         }
-        ExpectAndConsume(tok::close);
+        ExpectAndConsume(tag::close);
     }
     void parseTag(TagEntry& tag, char* symbol) {
         // syntax: 9:5 a -> 0:5:7
         // source part
-        Expect(tok::number);
+        Expect(tag::number);
         tag.src_line = Tok.getNumber();
         ConsumeToken();
 
-        ExpectAndConsume(tok::colon);
+        ExpectAndConsume(tag::colon);
 
-        Expect(tok::number);
+        Expect(tag::number);
         tag.src_column = Tok.getNumber();
         ConsumeToken();
 
         // symbol
-        Expect(tok::text);
+        Expect(tag::text);
         strcpy(symbol, Tok.getText());
         ConsumeToken();
 
-        ExpectAndConsume(tok::dest);
+        ExpectAndConsume(tag::dest);
 
         // dest part
-        Expect(tok::number);
+        Expect(tag::number);
         tag.dst_fileid = Tok.getNumber();
         ConsumeToken();
 
-        ExpectAndConsume(tok::colon);
+        ExpectAndConsume(tag::colon);
 
-        Expect(tok::number);
+        Expect(tag::number);
         tag.dst_line = Tok.getNumber();
         ConsumeToken();
 
-        ExpectAndConsume(tok::colon);
+        ExpectAndConsume(tag::colon);
 
-        Expect(tok::number);
+        Expect(tag::number);
         tag.dst_column = Tok.getNumber();
         ConsumeToken();
     }
@@ -465,18 +466,18 @@ private:
 #if 0
         {
             printf("  %8s at %s", Tok.getName(), Tok.getLoc().str());
-            if (Tok.is(tok::number)) printf("  %d", Tok.getNumber());
-            if (Tok.is(tok::text)) printf("  %s", Tok.getText());
+            if (Tok.is(tag::number)) printf("  %d", Tok.getNumber());
+            if (Tok.is(tag::text)) printf("  %s", Tok.getText());
             printf("\n");
         }
 #endif
-        if (Tok.is(tok::error)) {
+        if (Tok.is(tag::error)) {
             strcpy(errorMsg, Tok.getText());
             longjmp(jump_err, 1);
         }
         return prev;
     }
-    void ExpectAndConsume(tok::TokenKind k) {
+    void ExpectAndConsume(tag::TokenKind k) {
         if (Tok.isNot(k)) {
             sprintf(errorMsg, "expected '%s' at %s", getTokenName(k), Tok.getLoc().str());
             longjmp(jump_err, 1);
@@ -484,7 +485,7 @@ private:
         ConsumeToken();
     }
     void ExpectAndConsumeText(const char* text) {
-        if (Tok.isNot(tok::text)) {
+        if (Tok.isNot(tag::text)) {
             sprintf(errorMsg, "expected 'text' token at %s", Tok.getLoc().str());
             longjmp(jump_err, 1);
         }
@@ -496,7 +497,7 @@ private:
         ConsumeToken();
     }
 
-    void Expect(tok::TokenKind k) {
+    void Expect(tag::TokenKind k) {
         if (Tok.isNot(k)) {
             sprintf(errorMsg, "expected '%s' at %s", getTokenName(k), Tok.getLoc().str());
             longjmp(jump_err, 1);
@@ -516,7 +517,6 @@ private:
 
     jmp_buf jump_err;
 };
-
 
 TagReader::TagReader(const char* target_)
     : target(target_)

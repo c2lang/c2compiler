@@ -68,7 +68,8 @@ using namespace C2;
 
 // ----------------------------------------------------------------------------
 
-namespace tok {
+namespace toml {
+
 enum TokenKind {
     word,           // abc
     text,           // ".." or ' ..'
@@ -108,6 +109,8 @@ static const char* getTokenName(TokenKind k) {
 
 }
 
+namespace {
+
 class Location {
 public:
     Location(unsigned l, unsigned c) : line(l), column(c) {}
@@ -126,12 +129,12 @@ public:
 
 class Token {
 public:
-    Token() : kind(tok::eof), text(0), number(0) {}
+    Token() : kind(toml::eof), text(0), number(0) {}
 
-    tok::TokenKind getKind() const { return kind; }
-    void setKind(tok::TokenKind k) { kind = k; }
-    bool is(tok::TokenKind k) const { return kind == k; }
-    bool isNot(tok::TokenKind k) const { return kind != k; }
+    toml::TokenKind getKind() const { return kind; }
+    void setKind(toml::TokenKind k) { kind = k; }
+    bool is(toml::TokenKind k) const { return kind == k; }
+    bool isNot(toml::TokenKind k) const { return kind != k; }
 
     Location getLoc() const { return loc; }
     void setLocation(Location l) { loc = l; }
@@ -147,11 +150,11 @@ public:
         number = 0;
     }
 
-    const char* getName() const { return tok::getTokenName(kind); }
+    const char* getName() const { return toml::getTokenName(kind); }
 
 private:
     Location loc;
-    tok::TokenKind kind;
+    toml::TokenKind kind;
     const char* text;
     uint32_t number;
 };
@@ -180,12 +183,12 @@ public:
             switch (*current) {
             case 0:
                 Result.setLocation(loc);
-                Result.setKind(tok::eof);
+                Result.setKind(toml::eof);
                 return;
             case '#':
                 if (loc.column != 1) {
                     sprintf(text, "unexpected '#' after line start at %s", loc.str());
-                    Result.setKind(tok::error);
+                    Result.setKind(toml::error);
                     Result.setData(text);
                     return;
                 }
@@ -202,37 +205,37 @@ public:
                 break;
             case '=':
                 Result.setLocation(loc);
-                Result.setKind(tok::equals);
+                Result.setKind(toml::equals);
                 advanceToken(1);
                 return;
             case '.':
                 Result.setLocation(loc);
-                Result.setKind(tok::dot);
+                Result.setKind(toml::dot);
                 advanceToken(1);
                 return;
             case ',':
                 Result.setLocation(loc);
-                Result.setKind(tok::comma);
+                Result.setKind(toml::comma);
                 advanceToken(1);
                 return;
             case '[':
                 Result.setLocation(loc);
                 if (current[1] == '[') {
                     advanceToken(2);
-                    Result.setKind(tok::lbrace2);
+                    Result.setKind(toml::lbrace2);
                 } else {
                     advanceToken(1);
-                    Result.setKind(tok::lbrace);
+                    Result.setKind(toml::lbrace);
                 }
                 return;
             case ']':
                 Result.setLocation(loc);
                 if (current[1] == ']') {
                     advanceToken(2);
-                    Result.setKind(tok::rbrace2);
+                    Result.setKind(toml::rbrace2);
                 } else {
                     advanceToken(1);
-                    Result.setKind(tok::rbrace);
+                    Result.setKind(toml::rbrace);
                 }
                 return;
             case '"':
@@ -250,7 +253,7 @@ public:
                     return;
                 }
                 sprintf(text, "unexpected char '%c' at %s", *current, loc.str());
-                Result.setKind(tok::error);
+                Result.setKind(toml::error);
                 Result.setData(text);
                 return;
             }
@@ -305,7 +308,7 @@ private:
         assert(len < sizeof(text));
         memcpy(text, start, len);
         text[len] = 0;
-        Result.setKind(tok::text);
+        Result.setKind(toml::text);
         Result.setData(text);
         // NOTE: dont use advance() since current is already moved
         loc.column += len;
@@ -320,7 +323,7 @@ private:
         assert(len < sizeof(text));
         memcpy(text, start, len);
         text[len] = 0;
-        Result.setKind(tok::word);
+        Result.setKind(toml::word);
         Result.setData(text);
         loc.column += len;
     }
@@ -329,7 +332,7 @@ private:
         // TODO handle hexadecimal/octal/binary numbers
         // TODO handle '_' , like 1_000_000
         uint32_t number = atoi(current);
-        Result.setKind(tok::number);
+        Result.setKind(toml::number);
         Result.setNumber(number);
         while (*current && isdigit(*current)) {
             current++;
@@ -346,6 +349,8 @@ private:
     Token nextToken;
     bool haveNext;
 };
+
+}
 
 // ----------------------------------------------------------------------------
 
@@ -614,7 +619,7 @@ public:
         if (result == 0) {
             ConsumeToken();
 
-            //while (!Tok.is(tok::eof)) ConsumeToken();
+            //while (!Tok.is(toml::eof)) ConsumeToken();
 
             parseTopLevel();
         } // else got error, errorMsg should be set
@@ -629,15 +634,15 @@ private:
         //    key = value
         //  | [[array]]
         //  | [table]
-        while (Tok.isNot(tok::eof)) {
+        while (Tok.isNot(toml::eof)) {
             switch (Tok.getKind()) {
-            case tok::word:
+            case toml::word:
                 parseKeyValue();
                 break;
-            case tok::lbrace:
+            case toml::lbrace:
                 parseTable();
                 break;
-            case tok::lbrace2:
+            case toml::lbrace2:
                 parseTableArray();
                 break;
             default:
@@ -652,7 +657,7 @@ private:
         char key[MAX_TEXT];
         strcpy(key, Tok.getText());
         ConsumeToken();
-        ExpectAndConsume(tok::equals);
+        ExpectAndConsume(toml::equals);
         uint32_t value = parseValue();
         bool isArray = ((value & VALUE_IS_ARRAY) != 0);
         uint32_t off = blocks.addNode(key, isArray ? NODE_VALUE_ARRAY : NODE_VALUE);
@@ -668,67 +673,67 @@ private:
     void parseTable() {
         LOG_FUNC;
         ConsumeToken();
-        Expect(tok::word);
+        Expect(toml::word);
         const char* name = Tok.getText();
         uint32_t depth = 0;
-        bool isTop = NextToken().isNot(tok::dot);
+        bool isTop = NextToken().isNot(toml::dot);
         addTable(name, depth, isTop, NODE_TABLE);
         ConsumeToken();
 
-        while (Tok.is(tok::dot)) {
+        while (Tok.is(toml::dot)) {
             depth++;
             ConsumeToken();
-            Expect(tok::word);
+            Expect(toml::word);
             name = Tok.getText();
-            isTop = NextToken().isNot(tok::dot);
+            isTop = NextToken().isNot(toml::dot);
             addTable(name, depth, isTop, NODE_TABLE);
             ConsumeToken();
         }
         numParents = depth+1;
-        ExpectAndConsume(tok::rbrace);
+        ExpectAndConsume(toml::rbrace);
     }
     void parseTableArray() {
         // TODO same as parseTable
         LOG_FUNC;
         ConsumeToken();
-        Expect(tok::word);
+        Expect(toml::word);
         const char* name = Tok.getText();
         uint32_t depth = 0;
-        bool isTop = NextToken().isNot(tok::dot);
+        bool isTop = NextToken().isNot(toml::dot);
         addTable(name, depth, isTop, NODE_TABLE_ARRAY);
         ConsumeToken();
 
-        while (Tok.is(tok::dot)) {
+        while (Tok.is(toml::dot)) {
             depth++;
             ConsumeToken();
-            Expect(tok::word);
+            Expect(toml::word);
             name = Tok.getText();
-            isTop = NextToken().isNot(tok::dot);
+            isTop = NextToken().isNot(toml::dot);
             addTable(name, depth, isTop, NODE_TABLE_ARRAY);
             ConsumeToken();
         }
         numParents = depth+1;
-        ExpectAndConsume(tok::rbrace2);
+        ExpectAndConsume(toml::rbrace2);
     }
     uint32_t parseValue() {
         LOG_FUNC;
         uint32_t value = 0;
         switch (Tok.getKind()) {
-        case tok::word:
+        case toml::word:
             sprintf(errorMsg, "unexpected word %s", Tok.getLoc().str());
             longjmp(jump_err, 1);
             break;
-        case tok::text:
+        case toml::text:
             value = blocks.addValue(Tok.getText());
             ConsumeToken();
             break;
-        case tok::number:
-        case tok::kw_true:
-        case tok::kw_false:
+        case toml::number:
+        case toml::kw_true:
+        case toml::kw_false:
             // TODO keep number, true/false as text
             ConsumeToken();
             break;
-        case tok::lbrace:
+        case toml::lbrace:
             value = parseArrayValues();
             //sprintf(errorMsg, "array values not supported %s", Tok.getLoc().str());
             //longjmp(jump_err, 1);
@@ -743,12 +748,12 @@ private:
         // syntax: [ value , {value} ]
         ConsumeToken();
         uint32_t value = parseValue() | VALUE_IS_ARRAY;
-        while (Tok.is(tok::comma)) {
+        while (Tok.is(toml::comma)) {
             ConsumeToken();
-            if (Tok.is(tok::rbrace)) break;     // trailing comma is allowed
+            if (Tok.is(toml::rbrace)) break;     // trailing comma is allowed
             parseValue();
         }
-        ExpectAndConsume(tok::rbrace);
+        ExpectAndConsume(toml::rbrace);
         blocks.addNull();
         return value;
     }
@@ -779,13 +784,13 @@ private:
 #ifdef DEBUG_TOKENS
         {
             printf("  %8s at %s", Tok.getName(), Tok.getLoc().str());
-            if (Tok.is(tok::number)) printf("  %d", Tok.getNumber());
-            if (Tok.is(tok::text)) printf("  \"%s\"", Tok.getText());
-            if (Tok.is(tok::word)) printf("  %s", Tok.getText());
+            if (Tok.is(toml::number)) printf("  %d", Tok.getNumber());
+            if (Tok.is(toml::text)) printf("  \"%s\"", Tok.getText());
+            if (Tok.is(toml::word)) printf("  %s", Tok.getText());
             printf("\n");
         }
 #endif
-        if (Tok.is(tok::error)) {
+        if (Tok.is(toml::error)) {
             strcpy(errorMsg, Tok.getText());
             longjmp(jump_err, 1);
         }
@@ -794,14 +799,14 @@ private:
     Token& NextToken() {
         return tokenizer.LookAhead();
     }
-    void ExpectAndConsume(tok::TokenKind k) {
+    void ExpectAndConsume(toml::TokenKind k) {
         if (Tok.isNot(k)) {
             sprintf(errorMsg, "expected '%s' at %s", getTokenName(k), Tok.getLoc().str());
             longjmp(jump_err, 1);
         }
         ConsumeToken();
     }
-    void Expect(tok::TokenKind k) {
+    void Expect(toml::TokenKind k) {
         if (Tok.isNot(k)) {
             sprintf(errorMsg, "expected '%s' at %s", getTokenName(k), Tok.getLoc().str());
             longjmp(jump_err, 1);

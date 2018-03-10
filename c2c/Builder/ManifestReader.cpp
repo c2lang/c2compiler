@@ -79,6 +79,8 @@ static const char* getTokenName(TokenKind k) {
 
 }
 
+namespace {
+
 class Location {
 public:
     Location(unsigned l, unsigned c) : line(l), column(c) {}
@@ -540,6 +542,7 @@ private:
     std::string& linkName;
 };
 
+}
 
 bool ManifestReader::parse()
 {
