@@ -38,7 +38,7 @@ bool BuildFileReader::parse(const std::string& filename)
     printf("MAN: cflags %s\n", cflags.c_str());
     printf("MAN: ldflags %s\n", ldflags.c_str());
 
-    TomlReader::NodeIter iter = reader.getNodeIter("deps");
+    TomlReader::NodeIter iter = reader.getNodeIter("libdir");
     while (!iter.done()) {
         // dir is required
         const char* dir = iter.getValue("dir");
