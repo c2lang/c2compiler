@@ -17,8 +17,18 @@
 #include "FileUtils/TomlReader.h"
 
 #include <string.h>
+#include <stdlib.h>
 
 using namespace C2;
+
+BuildFileReader::BuildFileReader()
+    : target("")
+    , cc("")
+    , cflags("")
+    , ldflags("")
+{
+    errorMsg[0] = 0;
+}
 
 bool BuildFileReader::parse(const std::string& filename)
 {
@@ -28,29 +38,42 @@ bool BuildFileReader::parse(const std::string& filename)
         return false;
     }
 
-    target = reader.getValue("target");
-    cc = reader.getValue("toolchain.cc");
-    cflags = reader.getValue("toolchain.cflags");
-    ldflags = reader.getValue("toolchain.ldflags");
-    // TODO convert env vars "$HOME" to values, warn if not set
-    printf("MAN: target %s\n", target.c_str());
-    printf("MAN: cc %s\n", cc.c_str());
-    printf("MAN: cflags %s\n", cflags.c_str());
-    printf("MAN: ldflags %s\n", ldflags.c_str());
+    const char* target_ = reader.getValue("target");
+    target = expandEnvVar(filename, target_);
+
+    const char* cc_ = reader.getValue("toolchain.cc");
+    cc = expandEnvVar(filename, cc_);
+
+    const char* cflags_ = reader.getValue("toolchain.cflags");
+    cflags = expandEnvVar(filename, cflags_);
+
+    const char* ldflags_ = reader.getValue("toolchain.ldflags");
+    ldflags = expandEnvVar(filename, ldflags_);
 
     TomlReader::NodeIter iter = reader.getNodeIter("libdir");
     while (!iter.done()) {
         // dir is required
         const char* dir = iter.getValue("dir");
         if (!dir) {
-            sprintf(errorMsg, "missing dir entry in [[libdir]]");
+            sprintf(errorMsg, "%s: error: missing dir entry in [[libdir]]", filename.c_str());
             return false;
         }
-        printf("MAN: dir %s\n", dir);
-        // TODO convert env vars "$HOME" to values, warn if not set
-        libDirs.push_back(dir);
+        const char* expanded = expandEnvVar(filename, dir);
+        if (expanded) libDirs.push_back(expanded);
+
         iter.next();
     }
     return true;
+}
+
+const char* BuildFileReader::expandEnvVar(const std::string& filename, const char* raw) {
+    if (!raw) return "";
+    if (raw[0] != '$') return "";
+    const char* expand = getenv(raw + 1);
+    if (!expand) {
+        printf("%s: warning: environment variable '%s' not set\n", filename.c_str(), raw + 1);
+        return "";
+    }
+    return expand;
 }
 

@@ -23,7 +23,7 @@ namespace C2 {
 
 class BuildFileReader {
 public:
-    BuildFileReader() {}
+    BuildFileReader();
     ~BuildFileReader() {}
 
     bool parse(const std::string& filename);
@@ -36,6 +36,8 @@ public:
     //const char* getPath() const { return path; }
     const StringList& getLibDirs() const { return libDirs; }
 private:
+    const char* expandEnvVar(const std::string& filename, const char* raw);
+
     std::string target;
     std::string cc;
     std::string cflags;

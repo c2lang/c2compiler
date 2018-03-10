@@ -256,7 +256,6 @@ int main(int argc, const char *argv[])
     if (!build_file) build_file = finder.getBuildFile();
     // specified build file must exist
     if (build_file) {
-        printf("using BUILD FILE %s\n", build_file);
         if (!buildFile.parse(build_file)) {
             fprintf(stderr, "Error reading %s: %s\n", build_file, buildFile.getErrorMsg());
             return EXIT_FAILURE;
