@@ -238,7 +238,7 @@ int main(int argc, const char *argv[])
         // NOTE: don't support build file in this mode
         Recipe dummy("dummy", Component::EXECUTABLE);
         dummy.addFile(targetFilter);
-        C2Builder builder(dummy, opts);
+        C2Builder builder(dummy, 0, opts);
         int errors = builder.checkFiles();
         if (!errors) errors = builder.build();
         return errors ? EXIT_FAILURE : EXIT_SUCCESS;
@@ -254,14 +254,15 @@ int main(int argc, const char *argv[])
     }
 
     BuildFile buildFile;
+    BuildFile* buildFilePtr = NULL;
     BuildFileReader buildReader(buildFile);
     if (!build_file) build_file = finder.getBuildFile();
-    // specified build file must exist
     if (build_file) {
         if (!buildReader.parse(build_file)) {
             fprintf(stderr, "Error reading %s: %s\n", build_file, buildReader.getErrorMsg());
             return EXIT_FAILURE;
         }
+        buildFilePtr = &buildFile;
     }
 
     int count = 0;
@@ -269,7 +270,7 @@ int main(int argc, const char *argv[])
     for (int i=0; i<reader.count(); i++) {
         const Recipe& recipe = reader.get(i);
         if (targetFilter && recipe.name != targetFilter) continue;
-        C2Builder builder(recipe, opts);
+        C2Builder builder(recipe, buildFilePtr, opts);
         int errors = builder.checkFiles();
         if (!errors) errors = builder.build();
         if (errors) hasErrors = true;

@@ -20,7 +20,7 @@
 
 namespace C2 {
 
-struct BuildFile;
+class BuildFile;
 
 class BuildFileReader {
 public:

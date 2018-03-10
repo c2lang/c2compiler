@@ -36,6 +36,7 @@ namespace C2 {
 class AST;
 class Recipe;
 class ParseHelper;
+class BuildFile;
 
 struct BuildOptions {
     BuildOptions()
@@ -86,7 +87,7 @@ struct BuildOptions {
 
 class C2Builder {
 public:
-    C2Builder(const Recipe& recipe_, const BuildOptions& opts);
+    C2Builder(const Recipe& recipe_, const BuildFile* buildFile_, const BuildOptions& opts);
     ~C2Builder();
 
     int checkFiles();
@@ -117,6 +118,7 @@ private:
     void generateOptionalIR();
 
     const Recipe& recipe;
+    const BuildFile* buildFile;
     BuildOptions options;
     TargetInfo targetInfo;
 

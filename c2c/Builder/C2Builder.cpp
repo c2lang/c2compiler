@@ -52,6 +52,7 @@
 #include "Builder/Recipe.h"
 #include "Builder/C2ModuleLoader.h"
 #include "Builder/ManifestWriter.h"
+#include "Builder/BuildFile.h"
 #include "AST/AST.h"
 #include "AST/Module.h"
 #include "AST/Decl.h"
@@ -219,14 +220,16 @@ public:
 }
 
 
-C2Builder::C2Builder(const Recipe& recipe_, const BuildOptions& opts)
+C2Builder::C2Builder(const Recipe& recipe_, const BuildFile* buildFile_, const BuildOptions& opts)
     : recipe(recipe_)
+    , buildFile(buildFile_)
     , options(opts)
     , c2Mod(0)
     , mainComponent(0)
     , libLoader(components, modules, options.libdir, recipe.getExports())
     , useColors(true)
 {
+    // TODO if buildFile, change below
     TargetInfo::getNative(targetInfo);
     if (options.verbose) log(COL_VERBOSE, "Target: %s", Str(targetInfo));
     if (!isatty(1)) useColors = false;

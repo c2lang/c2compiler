@@ -21,7 +21,8 @@
 
 namespace C2 {
 
-struct BuildFile {
+class BuildFile {
+public:
     BuildFile();
 
     std::string target;
