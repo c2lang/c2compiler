@@ -36,17 +36,17 @@ bool BuildFileReader::parse(const std::string& filename)
         return false;
     }
 
-    const char* target_ = reader.getValue("target");
-    build.target = expandEnvVar(filename, target_);
+    const char* target = reader.getValue("target");
+    build.target = expandEnvVar(filename, target);
 
-    const char* cc_ = reader.getValue("toolchain.cc");
-    build.cc = expandEnvVar(filename, cc_);
+    const char* cc = reader.getValue("toolchain.cc");
+    build.cc = expandEnvVar(filename, cc);
 
-    const char* cflags_ = reader.getValue("toolchain.cflags");
-    build.cflags = expandEnvVar(filename, cflags_);
+    const char* cflags = reader.getValue("toolchain.cflags");
+    build.cflags = expandEnvVar(filename, cflags);
 
-    const char* ldflags_ = reader.getValue("toolchain.ldflags");
-    build.ldflags = expandEnvVar(filename, ldflags_);
+    const char* ldflags = reader.getValue("toolchain.ldflags");
+    build.ldflags = expandEnvVar(filename, ldflags);
 
     TomlReader::NodeIter iter = reader.getNodeIter("libdir");
     while (!iter.done()) {
@@ -61,12 +61,16 @@ bool BuildFileReader::parse(const std::string& filename)
 
         iter.next();
     }
+
+    const char* outputDir = reader.getValue("output.dir");
+    build.outputDir = expandEnvVar(filename, outputDir);
+
     return true;
 }
 
 const char* BuildFileReader::expandEnvVar(const std::string& filename, const char* raw) {
     if (!raw) return "";
-    if (raw[0] != '$') return "";
+    if (raw[0] != '$') return raw;
     const char* expand = getenv(raw + 1);
     if (!expand) {
         printf("%s: warning: environment variable '%s' not set\n", filename.c_str(), raw + 1);

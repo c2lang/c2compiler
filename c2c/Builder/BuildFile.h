@@ -31,6 +31,8 @@ public:
     std::string ldflags;
     //std::string path;
     StringList libDirs;
+
+    std::string outputDir;
 };
 
 }

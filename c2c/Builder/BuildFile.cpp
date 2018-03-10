@@ -22,5 +22,6 @@ BuildFile::BuildFile()
     , cc("")
     , cflags("")
     , ldflags("")
+    , outputDir("")
 {}
 
