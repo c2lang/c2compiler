@@ -25,9 +25,9 @@
 #include "Builder/Recipe.h"
 #include "Builder/RootFinder.h"
 #include "Builder/RecipeReader.h"
-#include "Builder/BuildFile.h"
 #include "Builder/BuildFileReader.h"
 #include "AST/Component.h"
+#include "Utils/BuildFile.h"
 #include "Utils/Utils.h"
 #include "Utils/color.h"
 

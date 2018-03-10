@@ -14,7 +14,7 @@
  */
 
 #include "Builder/BuildFileReader.h"
-#include "Builder/BuildFile.h"
+#include "Utils/BuildFile.h"
 #include "FileUtils/TomlReader.h"
 
 #include <string.h>

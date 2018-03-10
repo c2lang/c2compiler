@@ -13,15 +13,29 @@
  * limitations under the License.
  */
 
-#include "Builder/BuildFile.h"
+#ifndef UTILS_BUILDFILE_H
+#define UTILS_BUILDFILE_H
 
-using namespace C2;
+#include <string>
+#include "Utils/StringList.h"
 
-BuildFile::BuildFile()
-    : target("")
-    , cc("")
-    , cflags("")
-    , ldflags("")
-    , outputDir("")
-{}
+namespace C2 {
+
+class BuildFile {
+public:
+    BuildFile();
+
+    std::string target;
+    std::string cc;
+    std::string cflags;
+    std::string ldflags;
+    //std::string path;
+    StringList libDirs;
+
+    std::string outputDir;
+};
+
+}
+
+#endif
 

@@ -52,10 +52,10 @@
 #include "Builder/Recipe.h"
 #include "Builder/C2ModuleLoader.h"
 #include "Builder/ManifestWriter.h"
-#include "Builder/BuildFile.h"
 #include "AST/AST.h"
 #include "AST/Module.h"
 #include "AST/Decl.h"
+#include "Utils/BuildFile.h"
 
 #include "Parser/C2Parser.h"
 #include "Parser/C2Sema.h"
