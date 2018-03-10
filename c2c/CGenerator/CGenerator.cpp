@@ -35,12 +35,14 @@ CGenerator::CGenerator(const Component& component_,
                        const Modules& moduleMap_,
                        const HeaderNamer& namer_,
                        const Options& options_,
-                       const TargetInfo& targetInfo_)
+                       const TargetInfo& targetInfo_,
+                       const BuildFile* buildFile_)
     : component(component_)
     , moduleMap(moduleMap_)
     , includeNamer(namer_)
     , options(options_)
     , targetInfo(targetInfo_)
+    , buildFile(buildFile_)
 {}
 
 void CGenerator::generate() {
@@ -62,7 +64,7 @@ void CGenerator::generate() {
     }
 
     // generate Makefile
-    MakefileGenerator makeGen(component, options.libDir, options.single_module, targetInfo);
+    MakefileGenerator makeGen(component, options.libDir, options.single_module, targetInfo, buildFile);
     makeGen.write(outdir);
 
     // generate exports.version

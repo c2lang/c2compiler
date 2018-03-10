@@ -775,7 +775,7 @@ void C2Builder::generateOptionalC() {
     CGenerator::Options cgen_options(OUTPUT_DIR, BUILD_DIR, options.libdir);
     cgen_options.single_module = single_module;
     cgen_options.printC = options.printC;
-    CGenerator cgen(*mainComponent, modules, libLoader, cgen_options, targetInfo);
+    CGenerator cgen(*mainComponent, modules, libLoader, cgen_options, targetInfo, buildFile);
 
     // generate headers for external libraries
     if (options.verbose) log(COL_VERBOSE, "generating external headers");

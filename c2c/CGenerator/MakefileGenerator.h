@@ -23,13 +23,15 @@ namespace C2 {
 class Component;
 class TargetInfo;
 class StringBuilder;
+class BuildFile;
 
 class MakefileGenerator {
 public:
     MakefileGenerator(const Component& component_,
                       const std::string& libDir_,
                       bool singleFile_,
-                      const TargetInfo& targetInfo_);
+                      const TargetInfo& targetInfo_,
+                      const BuildFile* buildFile_);
 
     void write(const std::string& path);
 private:
@@ -37,6 +39,7 @@ private:
     std::string libDir;
     std::string target;
     const TargetInfo& targetInfo;
+    const BuildFile* buildFile;
     bool singleFile;
 
     void addLinkFlags(const Component* dep, StringBuilder& out);

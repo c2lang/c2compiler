@@ -26,6 +26,7 @@ namespace C2 {
 class HeaderNamer;
 class Component;
 class TargetInfo;
+class BuildFile;
 
 class CGenerator {
 public:
@@ -47,7 +48,8 @@ public:
                const Modules& moduleMap_,
                const HeaderNamer& namer_,
                const Options& options_,
-               const TargetInfo& targetInfo_);
+               const TargetInfo& targetInfo_,
+               const BuildFile* buildFile_);
 
     void generate();
     void build();
@@ -59,6 +61,7 @@ private:
     const HeaderNamer& includeNamer;
     const Options& options;
     const TargetInfo& targetInfo;
+    const BuildFile* buildFile;
 };
 
 }
