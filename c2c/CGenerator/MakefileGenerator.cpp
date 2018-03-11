@@ -73,6 +73,7 @@ void MakefileGenerator::write(const std::string& path) {
     out << "# Any changes you make might be lost!\n\n";
 
 
+    // CC
     if (buildFile && !buildFile->cc.empty()) {
         out << "CC=" << buildFile->cc;
     } else {
@@ -80,7 +81,7 @@ void MakefileGenerator::write(const std::string& path) {
     }
     out << '\n';
 
-
+    // CFLAGS
     StringBuilder cflags(256);
     if (buildFile && !buildFile->cflags.empty()) {
         cflags << buildFile->cflags;
@@ -90,6 +91,13 @@ void MakefileGenerator::write(const std::string& path) {
     if (component.isSharedLib()) cflags << " -fPIC";
     cflags << " -O2 -std=c99"; // fixed CFLAGS
     out << "CFLAGS=" << cflags.c_str() << '\n';
+
+    // LDFLAGS
+    if (buildFile && !buildFile->ldflags.empty()) {
+        out << "LDFLAGS=" << buildFile->ldflags << '\n';
+    } else {
+        out << "LDFLAGS=\n";
+    }
 
     out << '\n';
 
@@ -113,7 +121,7 @@ void MakefileGenerator::write(const std::string& path) {
     switch (component.getType()) {
     case Component::EXECUTABLE:
     {
-        out << "\t$(CC) -o " << targetname;
+        out << "\t$(CC) $(LDFLAGS) -o " << targetname;
         for (StringListConstIter iter=files.begin(); iter!=files.end(); ++iter) {
             out << ' ' << *iter << ".o";
         }
@@ -125,8 +133,8 @@ void MakefileGenerator::write(const std::string& path) {
         break;
     }
     case Component::SHARED_LIB:
-        out << "#link against with: $$(CC) main.c -L. -l<libname> -o test\n";
-        out << "\t$(CC)";
+        out << "#link against with: $(CC) main.c -L. -l<libname> -o test\n";
+        out << "\t$(CC) $(LDFLAGS)";
         for (StringListConstIter iter=files.begin(); iter!=files.end(); ++iter) {
             out << ' ' << *iter << ".o";
         }
