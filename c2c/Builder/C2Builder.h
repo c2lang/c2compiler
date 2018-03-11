@@ -121,6 +121,7 @@ private:
     const BuildFile* buildFile;
     BuildOptions options;
     TargetInfo targetInfo;
+    std::string outputDir;
 
     ASTContext context;
     Modules modules;

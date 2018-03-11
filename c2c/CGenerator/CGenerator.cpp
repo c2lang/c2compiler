@@ -46,7 +46,7 @@ CGenerator::CGenerator(const Component& component_,
 {}
 
 void CGenerator::generate() {
-    std::string outdir = options.outputDir + component.getName() + options.buildDir;
+    std::string outdir = options.outputDir + options.buildDir;
     const ModuleList& mods = component.getModules();
 
     // generate code
@@ -93,7 +93,7 @@ void CGenerator::generate() {
 }
 
 void CGenerator::build() {
-    std::string outdir = options.outputDir + component.getName() + options.buildDir;
+    std::string outdir = options.outputDir + options.buildDir;
     // execute generated makefile
     int retval = ProcessUtils::run(outdir, "/usr/bin/make", logfile);
     if (retval != 0) {
@@ -110,7 +110,7 @@ void CGenerator::generateExternalHeaders() {
         ModuleList single;
         single.push_back(M);
         CCodeGenerator gen(M->getName(), CCodeGenerator::MULTI_FILE, moduleMap, single, includeNamer, targetInfo);
-        gen.createLibHeader(options.printC, options.outputDir + component.getName() + options.buildDir);
+        gen.createLibHeader(options.printC, options.outputDir + options.buildDir);
     }
 }
 

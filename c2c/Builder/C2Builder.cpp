@@ -90,7 +90,7 @@ using namespace C2;
 using namespace clang;
 
 #define OUTPUT_DIR "output/"
-#define BUILD_DIR  "/build/"
+#define BUILD_DIR  "build/"
 
 namespace C2 {
 class DummyLoader : public ModuleLoader {
@@ -229,6 +229,11 @@ C2Builder::C2Builder(const Recipe& recipe_, const BuildFile* buildFile_, const B
     , libLoader(components, modules, options.libdir, recipe.getExports())
     , useColors(true)
 {
+    if (buildFile && !buildFile->outputDir.empty()) {
+        outputDir = buildFile->outputDir + '/' + recipe.name + '/';
+    } else {
+        outputDir = OUTPUT_DIR + recipe.name + '/';
+    }
     // TODO if buildFile, change below
     TargetInfo::getNative(targetInfo);
     if (options.verbose) log(COL_VERBOSE, "Target: %s", Str(targetInfo));
@@ -710,8 +715,7 @@ void C2Builder::generateOptionalDeps() {
         if (conf == "show-externals") showExternals = true;
     }
 
-    std::string path = OUTPUT_DIR + recipe.name + '/';
-    generateDeps(showFiles, showPrivate, showExternals, path);
+    generateDeps(showFiles, showPrivate, showExternals, outputDir);
     uint64_t t2 = Utils::getCurrentTime();
     if (options.printTiming) log(COL_TIME, "dep generation took %" PRIu64" usec", t2 - t1);
 }
@@ -728,8 +732,7 @@ void C2Builder::generateOptionalTags(const SourceManager& SM) const {
 
     uint64_t t1 = Utils::getCurrentTime();
     TagWriter generator(SM, components);
-    std::string path = OUTPUT_DIR + recipe.name + '/';
-    generator.write(recipe.name, path);
+    generator.write(recipe.name, outputDir);
     uint64_t t2 = Utils::getCurrentTime();
     if (options.printTiming) log(COL_TIME, "refs generation took %" PRIu64" usec", t2 - t1);
 }
@@ -742,17 +745,16 @@ void C2Builder::generateInterface() const {
 
     if (options.verbose) log(COL_VERBOSE, "generating c2 interfaces");
 
-    std::string outdir = OUTPUT_DIR + recipe.name + '/';
     const ModuleList& mods = mainComponent->getModules();
     for (unsigned m=0; m<mods.size(); m++) {
         const Module* M = mods[m];
         if (!M->isExported()) continue;
         InterfaceGenerator gen(*M);
-        gen.write(outdir, options.printC);
+        gen.write(outputDir, options.printC);
     }
 
     ManifestWriter manifest(*mainComponent);
-    manifest.write(outdir);
+    manifest.write(outputDir);
 }
 
 void C2Builder::generateOptionalC() {
@@ -772,7 +774,7 @@ void C2Builder::generateOptionalC() {
         }
     }
 
-    CGenerator::Options cgen_options(OUTPUT_DIR, BUILD_DIR, options.libdir);
+    CGenerator::Options cgen_options(outputDir, BUILD_DIR, options.libdir);
     cgen_options.single_module = single_module;
     cgen_options.printC = options.printC;
     CGenerator cgen(*mainComponent, modules, libLoader, cgen_options, targetInfo, buildFile);
@@ -817,7 +819,7 @@ void C2Builder::generateOptionalIR() {
         }
     }
 
-    std::string outdir = OUTPUT_DIR + recipe.name + BUILD_DIR;
+    std::string buildDir = outputDir + BUILD_DIR;
 
     // TODO move all this to some generic Codegen class
     // Q: use single context or one-per-module?
@@ -834,7 +836,7 @@ void C2Builder::generateOptionalIR() {
         if (options.printTiming) log(COL_TIME, "IR generation took %" PRIu64" usec", t2 - t1);
         if (options.printIR) cgm.dump();
         bool ok = cgm.verify();
-        if (ok) cgm.write(outdir, filename);
+        if (ok) cgm.write(buildDir, filename);
     } else {
         for (unsigned m=0; m<mods.size(); m++) {
             Module* M = mods[m];
@@ -851,7 +853,7 @@ void C2Builder::generateOptionalIR() {
             if (options.printTiming) log(COL_TIME, "IR generation took %" PRIu64" usec", t2 - t1);
             if (options.printIR) cgm.dump();
             bool ok = cgm.verify();
-            if (ok) cgm.write(outdir, M->getName());
+            if (ok) cgm.write(buildDir, M->getName());
         }
     }
 }

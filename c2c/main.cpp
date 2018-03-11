@@ -233,7 +233,6 @@ int main(int argc, const char *argv[])
         }
     }
 
-
     if (!use_recipe) {
         // NOTE: don't support build file in this mode
         Recipe dummy("dummy", Component::EXECUTABLE);
