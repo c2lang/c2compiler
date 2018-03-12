@@ -61,7 +61,7 @@ bool LibraryLoader::scan() {
         struct stat statbuf;
         int err = stat(libdir.c_str(), &statbuf);
         if (err) {
-            fprintf(stderr, "c2c: error: cannot open libdir %s: %s\n", libdir.c_str(), strerror(errno));
+            fprintf(stderr, "c2c: error: cannot open library dir %s: %s\n", libdir.c_str(), strerror(errno));
             // just continue to get 'cannot find library X' errors
         }
     }
