@@ -237,11 +237,19 @@ C2Builder::C2Builder(const Recipe& recipe_, const BuildFile* buildFile_, const B
                 iter != buildFile->libDirs.end(); ++iter) {
             libLoader.addDir(*iter);
         }
+        if (buildFile->target.empty()) {
+            TargetInfo::getNative(targetInfo);
+        } else {
+            if (!TargetInfo::fromString(targetInfo, buildFile->target)) {
+                fprintf(stderr, "c2c: error: invalid target string '%s'\n",
+                    buildFile->target.c_str());
+                // TODO handle (need to extract outside constructor?)
+            }
+        }
     } else {
         libLoader.addDir(opts.libdir);
+        TargetInfo::getNative(targetInfo);
     }
-    // TODO if buildFile, change TargetInfo below
-    TargetInfo::getNative(targetInfo);
     if (options.verbose) log(COL_VERBOSE, "Target: %s", Str(targetInfo));
     if (!isatty(1)) useColors = false;
 }

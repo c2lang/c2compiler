@@ -16,27 +16,30 @@
 #ifndef UTILS_TARGET_INFO_H
 #define UTILS_TARGET_INFO_H
 
+#include <string>
+
 namespace C2 {
 
 class TargetInfo {
 public:
-    enum System { SYS_LINUX, SYS_DARWIN, SYS_CYGWIN, SYS_UNKNOWN };
-    enum Machine { MACH_I686, MACH_X86_64, MACH_UNKNOWN };
+    enum Arch { ARCH_UNKNOWN, ARCH_I686, ARCH_X86_64, ARCH_ARM };
+    enum System { SYS_UNKNOWN, SYS_LINUX, SYS_DARWIN, SYS_CYGWIN };
     enum Vendor { VENDOR_UNKNOWN, VENDOR_APPLE };
-    enum Abi { ABI_GNU, ABI_MACHO, ABI_WIN32 };
+    enum Abi { ABI_UNKNOWN, ABI_GNU, ABI_GNUEABI, ABI_MACHO, ABI_WIN32 };
 
+    Arch arch;
     System sys;
-    Machine mach;
     Vendor vendor;
     Abi abi;
 
     static void getNative(TargetInfo& info);
+    static bool fromString(TargetInfo& info, const std::string& triple);
 };
 
 const char* Str(const TargetInfo& info);
-const char* Str(TargetInfo::System sys);
-const char* Str(TargetInfo::Machine mach);
+const char* Str(TargetInfo::Arch mach);
 const char* Str(TargetInfo::Vendor vendor);
+const char* Str(TargetInfo::System sys);
 const char* Str(TargetInfo::Abi abi);
 
 }
