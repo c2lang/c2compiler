@@ -411,7 +411,7 @@ func void Board.rem(Board* b, const Option* pp, i32 x, i32 y) {
 
 u32 found;
 u64 tried;
-func void Board.try_peace(Board* b, u8 p) {
+func void Board.try_piece(Board* b, u8 p) {
     if (p == NumPieces) {
         found++;
         io.printf("Found solution %u\n", found);
@@ -428,7 +428,7 @@ func void Board.try_peace(Board* b, u8 p) {
             //exit(-1);
         }
         b.add(&options[o][p], x, y, p);
-        b.try_peace(p+1);
+        b.try_piece(p+1);
     }
     for (i32 y=4; y>=0; y--) {
         for (i32 x=0; x<5; x++) {
@@ -437,7 +437,7 @@ func void Board.try_peace(Board* b, u8 p) {
             for (u32 o=0; o<NumOptions; o++) {
                 if (!b.try_option(&options[o][p], x, y)) {
                     b.add(&options[o][p], x, y, p);
-                    b.try_peace(p+1);
+                    b.try_piece(p+1);
                     b.rem(&options[o][p], x, y);
                 }
                 tried++;
@@ -452,7 +452,7 @@ public func i32 main() {
 
     Board board;
     board.init();
-    board.try_peace(0);
+    board.try_piece(0);
 
     io.printf("%luM tries, found %d solutions\n", tried/1000000, found);
     return 0;
