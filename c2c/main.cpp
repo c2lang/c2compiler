@@ -217,15 +217,8 @@ int main(int argc, const char *argv[])
     BuildOptions opts;
     parse_arguments(argc, argv, opts);
 
-    // TODO get ENV C2LIBDIR -> should be set
-    {
-        const char* envname = "C2_LIBDIR";
-        opts.libdir = getenv(envname);
-        if (!opts.libdir) {
-            fprintf(stderr, "please set %s in the ENV to point at the directory containing c2libs/\n", envname);
-            return EXIT_FAILURE;
-        }
-    }
+    opts.libdir = getenv("C2_LIBDIR");
+
     if (other_dir) {
         if (chdir(other_dir)) {
             fprintf(stderr, "cannot chdir to %s: %s\n", other_dir, strerror(errno));

@@ -45,14 +45,14 @@ class LibraryLoader : public HeaderNamer {
 public:
     LibraryLoader(Components& components_,
                   Modules& modules_,
-                  const char* libdir_,
                   const StringList& exportList_)
-        : libdir(libdir_)
-        , components(components_)
+        : components(components_)
         , modules(modules_)
         , exportList(exportList_)
     {}
     ~LibraryLoader();
+
+    void addDir(const std::string& libdir);
 
     void addDep(Component* src, const std::string& dest, Component::Type type);
 
@@ -72,12 +72,17 @@ private:
         Component::Type type;
     };
     Component* findComponent(const std::string& name) const;
-    Component* createComponent(const std::string& name, bool isCLib, Component::Type type);
+    Component* createComponent(const std::string& name,
+                               const std::string& path,
+                               bool isCLib,
+                               Component::Type type);
     Component* findModuleComponent(const std::string& moduleName) const;
+    bool findComponentDir(const std::string& name, char* dirname) const;
     bool checkLibrary(const Dependency& dep);
     void addDependencies(const Component* C);
+    void showLib(StringBuilder& out, const std::string& libdir, bool useColors) const;
 
-    std::string libdir;
+    StringList libraryDirs;
 
     Components& components;
     Modules& modules;

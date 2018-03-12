@@ -31,17 +31,15 @@ class BuildFile;
 class CGenerator {
 public:
     struct Options {
-        Options(const std::string& outputDir_, const std::string& buildDir_, const std::string& libDir_)
+        Options(const std::string& outputDir_, const std::string& buildDir_)
             : single_module(false), printC(false)
             , outputDir(outputDir_)
             , buildDir(buildDir_)
-            , libDir(libDir_)
         {}
         bool single_module;
         bool printC;
         std::string outputDir;
         std::string buildDir;
-        std::string libDir;
     };
 
     CGenerator(const Component& component_,

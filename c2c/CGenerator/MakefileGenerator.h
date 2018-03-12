@@ -28,7 +28,6 @@ class BuildFile;
 class MakefileGenerator {
 public:
     MakefileGenerator(const Component& component_,
-                      const std::string& libDir_,
                       bool singleFile_,
                       const TargetInfo& targetInfo_,
                       const BuildFile* buildFile_);
@@ -36,7 +35,6 @@ public:
     void write(const std::string& path);
 private:
     const Component& component;
-    std::string libDir;
     std::string target;
     const TargetInfo& targetInfo;
     const BuildFile* buildFile;

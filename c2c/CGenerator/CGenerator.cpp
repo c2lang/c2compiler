@@ -64,7 +64,7 @@ void CGenerator::generate() {
     }
 
     // generate Makefile
-    MakefileGenerator makeGen(component, options.libDir, options.single_module, targetInfo, buildFile);
+    MakefileGenerator makeGen(component, options.single_module, targetInfo, buildFile);
     makeGen.write(outdir);
 
     // generate exports.version

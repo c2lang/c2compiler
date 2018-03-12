@@ -35,18 +35,16 @@ LibraryLoader::~LibraryLoader() {
     }
 }
 
+void LibraryLoader::addDir(const std::string& libdir) {
+    // TODO check duplicates
+    libraryDirs.push_back(libdir);
+}
+
 void LibraryLoader::addDep(Component* src, const std::string& dest, Component::Type type) {
     deps.push_back(Dependency(src, dest, type));
 }
 
 bool LibraryLoader::scan() {
-    struct stat statbuf;
-    int err = stat(libdir.c_str(), &statbuf);
-    if (err) {
-        fprintf(stderr, "c2c: error: cannot open libdir %s: %s\n", libdir.c_str(), strerror(errno));
-        // just continue to get 'cannot find library X' errors
-    }
-
     assert(components.size() == 1);     // only main component
     Component* C = components[0];
     // create libs entry for MainComponent
@@ -58,13 +56,22 @@ bool LibraryLoader::scan() {
     }
     // Dependencies for main component have already been added
 
+    for (StringListConstIter iter = libraryDirs.begin(); iter != libraryDirs.end(); ++iter) {
+        const std::string& libdir = *iter;
+        struct stat statbuf;
+        int err = stat(libdir.c_str(), &statbuf);
+        if (err) {
+            fprintf(stderr, "c2c: error: cannot open libdir %s: %s\n", libdir.c_str(), strerror(errno));
+            // just continue to get 'cannot find library X' errors
+        }
+    }
+
     bool hasErrors = false;
     while (!deps.empty()) {
         Dependency dep = deps.front();
         deps.pop_front();
         hasErrors |= checkLibrary(dep);
     }
-
     if (!hasErrors) {
 #if 0
         printf("before\n");
@@ -80,11 +87,7 @@ bool LibraryLoader::scan() {
     return !hasErrors;
 }
 
-void LibraryLoader::showLibs(bool useColors) const {
-    StringBuilder out(8192);
-    out.enableColor(useColors);
-    out << "libraries:\n";
-
+void LibraryLoader::showLib(StringBuilder& out, const std::string& libdir, bool useColors) const {
     out << "  ";
     out.setColor(ANSI_BLUE);
     out << libdir;
@@ -142,6 +145,17 @@ void LibraryLoader::showLibs(bool useColors) const {
 next:
         entry = readdir(dir);
     }
+}
+
+void LibraryLoader::showLibs(bool useColors) const {
+    StringBuilder out(8192);
+    out.enableColor(useColors);
+    out << "libraries:\n";
+
+    for (StringListConstIter iter = libraryDirs.begin(); iter != libraryDirs.end(); ++iter) {
+        std::string libdir = *iter;
+        showLib(out, *iter, useColors);
+    }
     puts(out);
 }
 
@@ -166,8 +180,8 @@ Component* LibraryLoader::findComponent(const std::string& name) const {
     return 0;
 }
 
-Component* LibraryLoader::createComponent(const std::string& name, bool isCLib, Component::Type type) {
-    Component* C = new Component(name, type, true, isCLib, exportList);
+Component* LibraryLoader::createComponent(const std::string& name, const std::string& path, bool isCLib, Component::Type type) {
+    Component* C = new Component(name, path, type, true, isCLib, exportList);
     components.push_back(C);
     return C;
 }
@@ -180,6 +194,21 @@ Component* LibraryLoader::findModuleComponent(const std::string& moduleName) con
     return 0;
 }
 
+bool LibraryLoader::findComponentDir(const std::string& name, char* dirname) const {
+    for (StringListConstIter iter = libraryDirs.begin(); iter != libraryDirs.end(); ++iter) {
+        const std::string& libdir = *iter;
+        char fullname[512];
+        sprintf(fullname, "%s/%s/%s", libdir.c_str(), name.c_str(), MANIFEST_FILE);
+        struct stat statbuf;
+        if (stat(fullname, &statbuf) == 0) {
+            sprintf(dirname, "%s/%s", libdir.c_str(), name.c_str());
+            return true;
+        }
+    }
+    dirname[0] = 0;
+    return false;
+}
+
 bool LibraryLoader::checkLibrary(const Dependency& dep) {
     bool hasErrors = false;
     const std::string& componentName = dep.name;
@@ -190,14 +219,15 @@ bool LibraryLoader::checkLibrary(const Dependency& dep) {
         return false;
     }
 
-    char fullname[512];
-    sprintf(fullname, "%s/%s/%s", libdir.c_str(), componentName.c_str(), MANIFEST_FILE);
-    struct stat statbuf;
-    int err = stat(fullname, &statbuf);
-    if (err) {
+    // TODO search all libDirs until file is found
+    char componentDir[512];
+    if (!findComponentDir(componentName, componentDir)) {
         fprintf(stderr, "c2c: error: cannot find library '%s'\n", componentName.c_str());
         return true;
     }
+    //printf("LIBS: found %s in %s\n", componentName.c_str(), componentDir);
+    char fullname[512];
+    sprintf(fullname, "%s/%s", componentDir, MANIFEST_FILE);
 
     ManifestReader manifest(componentName, fullname);
     if (!manifest.parse()) {
@@ -216,9 +246,9 @@ bool LibraryLoader::checkLibrary(const Dependency& dep) {
         hasErrors = true;
     }
 
-    C = createComponent(componentName, !manifest.isNative(), dep.type);
+    C = createComponent(componentName, componentDir, !manifest.isNative(), dep.type);
     dep.src->addDep(C);
-    C->setLinkInfo("", manifest.getLinkName());
+    C->setLinkName(manifest.getLinkName());
     const StringList& libDeps = manifest.getDeps();
     for (unsigned i=0; i<libDeps.size(); i++) {
         addDep(C, libDeps[i], dep.type);
@@ -241,7 +271,7 @@ bool LibraryLoader::checkLibrary(const Dependency& dep) {
         }
 
         StringBuilder c2file(512);
-        c2file << libdir << '/' << componentName << '/' << moduleName << ".c2i";
+        c2file << componentDir << '/' << moduleName << ".c2i";
 
         libs[moduleName] = new LibInfo(moduleName + ".h", c2file.c_str(), C, M, !manifest.isNative());
     }

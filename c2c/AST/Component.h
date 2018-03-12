@@ -32,20 +32,22 @@ public:
     enum Type { EXECUTABLE=0, SHARED_LIB, STATIC_LIB };
 
     Component(const std::string& name_,
+            const std::string& path_,
             Type type_,
             bool isExternal_,
             bool isCLib_,
             const StringList& exportList_)
         : name(name_)
-          , type(type_)
-          , is_external(isExternal_)
-          , is_clib(isCLib_)
-          , exportList(exportList_)
+        , path(path_)
+        , type(type_)
+        , is_external(isExternal_)
+        , is_clib(isCLib_)
+        , exportList(exportList_)
     {}
     ~Component();
 
     const std::string& getName() const { return name; }
-    const std::string& getLinkPath() const { return linkPath; }
+    const std::string& getPath() const { return path; }
     const std::string& getLinkName() const { return linkName; }
     Type getType() const { return type; }
     bool isExternal() const { return is_external; }
@@ -53,8 +55,7 @@ public:
     bool isSharedLib() const { return type == SHARED_LIB; }
     bool isStaticLib() const { return type == STATIC_LIB; }
 
-    void setLinkInfo(const std::string& path_, const std::string& name_) {
-        linkPath = path_;
+    void setLinkName(const std::string& name_) {
         linkName = name_;
     }
 
@@ -79,15 +80,16 @@ public:
 private:
     bool isExported(const std::string& moduleName) const;
 
-    std::string name;
-    std::string linkPath;       // used for external libs (-L..)
+    std::string name;           // eg libc/pthread
+    std::string path;           // for external Components, points to dir containing manifest
+                                // for main component points to recipe dir
     std::string linkName;       // used for external libs (-l..)
     Type type;
     bool is_external;
     bool is_clib;
 
     ModuleList modules;
-    const StringList& exportList;
+    const StringList& exportList;   // list of exported modules
     Dependencies deps;
 
     Component(const Component&);

@@ -25,12 +25,10 @@
 using namespace C2;
 
 MakefileGenerator::MakefileGenerator(const Component& component_,
-                                     const std::string& libDir_,
                                      bool singleFile_,
                                      const TargetInfo& targetInfo_,
                                      const BuildFile* buildFile_)
     : component(component_)
-    , libDir(libDir_)
     , target(component.getName())
     , targetInfo(targetInfo_)
     , buildFile(buildFile_)
@@ -178,7 +176,7 @@ void MakefileGenerator::addLinkFlags(const Component* dep, StringBuilder& out)
 {
     // TEMP add -L flag if static lib (system static libs not yet supported)
     if (dep->isStaticLib()) {
-        out << " -L" << libDir << '/' << dep->getName() << '/' << Str(targetInfo);
+        out << " -L" << dep->getPath() << '/' << Str(targetInfo);
     }
     if (dep->getLinkName() != "") {
         out << " -l" << dep->getLinkName();

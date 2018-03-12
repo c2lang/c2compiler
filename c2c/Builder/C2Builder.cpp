@@ -21,7 +21,6 @@
 #include <sys/stat.h>
 #include <stdarg.h>
 #include <errno.h>
-#include <memory.h>
 
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/DenseMap.h>
@@ -55,8 +54,6 @@
 #include "AST/AST.h"
 #include "AST/Module.h"
 #include "AST/Decl.h"
-#include "Utils/BuildFile.h"
-
 #include "Parser/C2Parser.h"
 #include "Parser/C2Sema.h"
 #include "Analyser/ComponentAnalyser.h"
@@ -69,6 +66,7 @@
 #include "Utils/color.h"
 #include "Utils/Utils.h"
 #include "Utils/StringBuilder.h"
+#include "Utils/BuildFile.h"
 
 using clang::DiagnosticOptions;
 using clang::DiagnosticsEngine;
@@ -226,7 +224,7 @@ C2Builder::C2Builder(const Recipe& recipe_, const BuildFile* buildFile_, const B
     , options(opts)
     , c2Mod(0)
     , mainComponent(0)
-    , libLoader(components, modules, options.libdir, recipe.getExports())
+    , libLoader(components, modules, recipe.getExports())
     , useColors(true)
 {
     if (buildFile && !buildFile->outputDir.empty()) {
@@ -234,7 +232,15 @@ C2Builder::C2Builder(const Recipe& recipe_, const BuildFile* buildFile_, const B
     } else {
         outputDir = OUTPUT_DIR + recipe.name + '/';
     }
-    // TODO if buildFile, change below
+    if (buildFile) {
+        for (StringListConstIter iter = buildFile->libDirs.begin();
+                iter != buildFile->libDirs.end(); ++iter) {
+            libLoader.addDir(*iter);
+        }
+    } else {
+        libLoader.addDir(opts.libdir);
+    }
+    // TODO if buildFile, change TargetInfo below
     TargetInfo::getNative(targetInfo);
     if (options.verbose) log(COL_VERBOSE, "Target: %s", Str(targetInfo));
     if (!isatty(1)) useColors = false;
@@ -371,7 +377,7 @@ int C2Builder::build() {
     MemoryBufferCache PCMCache;
 
     // create main Component
-    mainComponent = new Component(recipe.name, recipe.type, false, false, recipe.getExports());
+    mainComponent = new Component(recipe.name, "TODO", recipe.type, false, false, recipe.getExports());
     components.push_back(mainComponent);
     // NOTE: libc always SHARED_LIB for now
     if (!recipe.noLibC) {
@@ -774,7 +780,7 @@ void C2Builder::generateOptionalC() {
         }
     }
 
-    CGenerator::Options cgen_options(outputDir, BUILD_DIR, options.libdir);
+    CGenerator::Options cgen_options(outputDir, BUILD_DIR);
     cgen_options.single_module = single_module;
     cgen_options.printC = options.printC;
     CGenerator cgen(*mainComponent, modules, libLoader, cgen_options, targetInfo, buildFile);
