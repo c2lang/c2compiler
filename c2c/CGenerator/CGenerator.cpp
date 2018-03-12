@@ -123,7 +123,7 @@ void CGenerator::generateInterfaceFiles() {
         ModuleList single;
         single.push_back(M);
         CCodeGenerator gen(M->getName(), CCodeGenerator::MULTI_FILE, moduleMap, single, includeNamer, targetInfo);
-        gen.createLibHeader(options.printC, options.outputDir + component.getName() + "/");
+        gen.createLibHeader(options.printC, options.outputDir);
     }
 }
 
