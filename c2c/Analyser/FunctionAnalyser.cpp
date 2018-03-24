@@ -588,12 +588,12 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
         expr->setType(Type::Bool());
         return Type::Bool();
     case EXPR_CHAR_LITERAL:
-        expr->setType(Type::UInt8());
-        return Type::UInt8();
+        expr->setType(Type::Int8());
+        return Type::Int8();
     case EXPR_STRING_LITERAL:
     {
-        // return type: 'const uint8*'
-        QualType Q = Context.getPointerType(Type::UInt8());
+        // return type: 'const i8*'
+        QualType Q = Context.getPointerType(Type::Int8());
         Q.addConst();
         if (!Q->hasCanonicalType()) Q->setCanonicalType(Q);
         expr->setType(Q);

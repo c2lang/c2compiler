@@ -71,11 +71,11 @@ func void showPaths() {
             //i32 idx = index((Point)p, d);
             i32 idx = index(p, d);
             i32 prev = paths[idx];
-            if (idx == startPoint) io.printf(ansi_BGREEN);
-            if (idx == endPoint) io.printf(ansi_BRED);
+            if (idx == startPoint) io.printf("%s", ansi_BGREEN);
+            if (idx == endPoint) io.printf("%s", ansi_BRED);
             if (prev == -1) io.printf("  ");
             else io.printf("%s", print(prev));
-            if (d==0 && (p==POINT_A || p==POINT_J)) io.printf(ansi_NORMAL);
+            if (d==0 && (p==POINT_A || p==POINT_J)) io.printf("%s", ansi_NORMAL);
             io.printf("  ");
         }
         io.printf("\n");

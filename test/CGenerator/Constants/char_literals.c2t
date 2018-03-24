@@ -16,12 +16,12 @@ char h = '\\';
 
 // @expect{atleast, build/test.c}
 
-static unsigned char test_a = ' ';
-static unsigned char test_b = '\r';
-static unsigned char test_c = '\t';
-static unsigned char test_d = '\n';
-static unsigned char test_e = '\0';
-static unsigned char test_f = '\'';
-static unsigned char test_g = '"';
-static unsigned char test_h = '\\';
+static char test_a = ' ';
+static char test_b = '\r';
+static char test_c = '\t';
+static char test_d = '\n';
+static char test_e = '\0';
+static char test_f = '\'';
+static char test_g = '"';
+static char test_h = '\\';
 

@@ -31,7 +31,7 @@ public func i32 main() {
     // --- assignment expression ---
     a = 10;
     i32 res;
-    i32* rp;
+    i32* rp = nil;
     *rp  = 0;       // ok, bliep -> primary_expression
     a *= 2;        // ok -> primary_expression
     //const char* text;

@@ -11,7 +11,8 @@ func void test1() {
 }
 
 func void test2() {
-    char d = 250;
-    char e = 260;   // @error{constant value 260 out-of-bounds for type 'u8', range [0, 255]}
+    char d = -128;
+    char e = 260;   // @error{constant value 260 out-of-bounds for type 'i8', range [-128, 127]}
+    char f = 127;
 }
 

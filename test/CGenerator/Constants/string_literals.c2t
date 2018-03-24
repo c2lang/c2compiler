@@ -39,26 +39,26 @@ public char* iii;
 
 #define test2_AAA "aaa"
 #define test2_BBB "bbb"
-extern const unsigned char* test2_ccc;
-extern unsigned char test2_ddd[];
+extern const char* test2_ccc;
+extern char test2_ddd[];
 
-extern unsigned char test2_eee[3];
-extern unsigned char* test2_fff;
-extern const unsigned char* test2_ggg;
+extern char test2_eee[3];
+extern char* test2_fff;
+extern const char* test2_ggg;
 
-extern unsigned char test2_hhh[3];
-extern unsigned char* test2_iii;
+extern char test2_hhh[3];
+extern char* test2_iii;
 
 // @expect{atleast, build/test2.c}
 #include "test2.h"
 
-const unsigned char* test2_ccc = "ccc";
-unsigned char test2_ddd[] = "ddd";
-unsigned char test2_eee[3] = "eee";
-unsigned char* test2_fff = "fff";
+const char* test2_ccc = "ccc";
+char test2_ddd[] = "ddd";
+char test2_eee[3] = "eee";
+char* test2_fff = "fff";
 
-const unsigned char* test2_ggg = NULL;
+const char* test2_ggg = NULL;
 
-unsigned char test2_hhh[3] = { };
-unsigned char* test2_iii = NULL;
+char test2_hhh[3] = { };
+char* test2_iii = NULL;
 

@@ -85,6 +85,7 @@ void MakefileGenerator::write(const std::string& path) {
         cflags << buildFile->cflags;
     } else {
         cflags << "-Wall -Wextra -Wno-unused";
+        //cflags << " -Werror";
     }
     if (component.isSharedLib()) cflags << " -fPIC";
     cflags << " -pipe -O2 -std=c99"; // fixed CFLAGS

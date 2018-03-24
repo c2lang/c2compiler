@@ -1,5 +1,5 @@
 // @warnings{no-unused}
 module test;
 
-i32 a = "test";     // @error{invalid type conversion from 'u8*' to 'i32'}
+i32 a = "test";     // @error{invalid type conversion from 'i8*' to 'i32'}
 

@@ -16,12 +16,12 @@ char* h = "a\\b";
 
 // @expect{atleast, build/test.c}
 
-static unsigned char* test_a = " ";
-static unsigned char* test_b = "a\rb";
-static unsigned char* test_c = "a\tb";
-static unsigned char* test_d = "a\nb";
-static unsigned char* test_e = "a\0b";
-static unsigned char* test_f = "a'b";
-static unsigned char* test_g = "a\"b";
-static unsigned char* test_h = "a\\b";
+static char* test_a = " ";
+static char* test_b = "a\rb";
+static char* test_c = "a\tb";
+static char* test_d = "a\nb";
+static char* test_e = "a\0b";
+static char* test_f = "a'b";
+static char* test_g = "a\"b";
+static char* test_h = "a\\b";
 
