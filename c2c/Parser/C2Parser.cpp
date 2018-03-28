@@ -151,7 +151,6 @@ void C2Parser::ParseImports() {
         if (ExpectIdentifier()) return;
         IdentifierInfo* Mod = Tok.getIdentifierInfo();
         SourceLocation ModLoc = ConsumeToken();
-        SourceLocation AliasLoc;
         Token AliasToken;
         AliasToken.startToken();
         if (Tok.is(tok::kw_as)) {

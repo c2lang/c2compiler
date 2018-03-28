@@ -382,6 +382,7 @@ void ExprTypeAnalyser::checkBinOp(QualType TLeft, const BinaryOperator* binop) {
     case BO_Sub:
     case BO_Shl:
     case BO_Shr:
+    case BO_Cmp: // C++20 only
     case BO_LE:
     case BO_LT:
     case BO_GE:

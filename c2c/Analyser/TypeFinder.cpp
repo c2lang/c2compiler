@@ -82,6 +82,9 @@ QualType TypeFinder::getBinOpType(const BinaryOperator* binop) {
     case BO_Shr:
         assert(0 && "TODO");
         break;
+    case BO_Cmp: // C++20 only
+        assert(0 && "unhandled binary operator type");
+        break;
     case BO_LE:
     case BO_LT:
     case BO_GE:

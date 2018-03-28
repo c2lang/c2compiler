@@ -415,6 +415,7 @@ APSInt LiteralAnalyser::checkBinaryLiterals(const Expr* Right) {
     }
     case BO_Shl:
     case BO_Shr:
+    case BO_Cmp:
         break;
     case BO_LT:
     case BO_GT:

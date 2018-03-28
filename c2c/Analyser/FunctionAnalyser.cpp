@@ -1181,6 +1181,9 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
         combineCtc(expr, Left, Right);
         if (Left->isConstant() && Right->isConstant()) expr->setConstant();
         break;
+    case BO_Cmp: // C++20 only
+        assert(0 && "unhandled binary operator type");
+        break;
     case BO_LE:
     case BO_LT:
     case BO_GE:
@@ -1252,6 +1255,9 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     case BO_Shl:
     case BO_Shr:
         Result = TLeft;
+        break;
+    case BO_Cmp: // C++20 only
+        assert(0 && "unhandled binary operator type");
         break;
     case BO_LE:
     case BO_LT:
@@ -1933,7 +1939,7 @@ void FunctionAnalyser::checkAssignment(Expr* assignee, QualType TLeft) {
         }
     }
     if (TLeft.isConstQualified()) {
-        Diag(assignee->getLocation(), diag::err_typecheck_assign_const) << 4 << assignee->getSourceRange();
+        Diag(assignee->getLocation(), diag::err_typecheck_assign_const) << 5 << assignee->getSourceRange();
     }
 }
 

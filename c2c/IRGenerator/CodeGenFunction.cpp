@@ -674,6 +674,9 @@ llvm::Value* CodeGenFunction::EmitBinaryOperator(const BinaryOperator* B) {
     case BO_Shl:
     case BO_Shr:
         break;
+    case BO_Cmp:
+        assert(0 && "unhandled binary operator type");
+        break;
     case BO_LT:
         return Builder.CreateICmpULT(L, R, "cmp");
         //L = Builder.CreateFCmpULT(L, R, "cmptmp");

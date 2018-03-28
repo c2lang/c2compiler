@@ -516,6 +516,7 @@ const char* BinaryOperator::OpCode2str(clang::BinaryOperatorKind opc_) {
     case BO_Sub: return "-";
     case BO_Shl: return "<<";
     case BO_Shr: return ">>";
+    case BO_Cmp: return "<=>";
     case BO_LT: return "<";
     case BO_GT: return ">";
     case BO_LE: return "<=";

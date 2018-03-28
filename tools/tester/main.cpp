@@ -98,7 +98,7 @@ static void color_print(const char* color, const char* format, ...) {
     vsnprintf(buffer, sizeof(buffer), format, Args);
     va_end(Args);
 
-    if (color_output) printf("%s%s"ANSI_NORMAL"\n", color, buffer);
+    if (color_output) printf("%s%s" ANSI_NORMAL"\n", color, buffer);
     else printf("%s\n", buffer);
 }
 
@@ -906,7 +906,7 @@ bool IssueDb::parse() {
         return false;
     } else {
         if (!parseOuter()) {
-            fprintf(stderr, ANSI_BYELLOW"Error in recipe: %s on line %d"ANSI_NORMAL"\n", (const char*)errorMsg, line_nr);
+            fprintf(stderr, ANSI_BYELLOW"Error in recipe: %s on line %d" ANSI_NORMAL"\n", (const char*)errorMsg, line_nr);
             return false;
         }
         recipe << "end\n";
@@ -1106,7 +1106,7 @@ static void handle_file(const char* filename) {
     bool skip = db.parse();
     if (skip) {
         numskipped++;
-        printf(COL_SKIP"%s SKIPPED"ANSI_NORMAL"\n", filename);
+        printf(COL_SKIP"%s SKIPPED" ANSI_NORMAL"\n", filename);
         return;
     } else {
         printf("%s\n", filename);
