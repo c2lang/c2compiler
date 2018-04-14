@@ -30,8 +30,8 @@ BuildFileReader::BuildFileReader(BuildFile& build_)
 
 bool BuildFileReader::parse(const std::string& filename)
 {
-    TomlReader reader(filename.c_str());
-    if (!reader.parse()) {
+    TomlReader reader;
+    if (!reader.parse(filename.c_str())) {
         strcpy(errorMsg, reader.getErrorMsg());
         return false;
     }

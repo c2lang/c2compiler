@@ -25,13 +25,16 @@ namespace C2 {
 
 struct Blocks;
 struct Node;
+class StringBuilder;
 
 class TomlReader {
 public:
-    TomlReader(const char* filename_);
+    TomlReader();
     ~TomlReader();
 
-    bool parse();
+    bool parse(const char* filename);
+    bool parse(const char* input, int);
+
     const char* getErrorMsg() const { return errorMsg; }
 
     const char* getValue(const char* key) const;
@@ -62,7 +65,6 @@ public:
 private:
     const Node* findNode(const char* key) const;
 
-    std::string filename;
     char errorMsg[256];
 
     Blocks* blocks;

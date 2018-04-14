@@ -111,7 +111,7 @@ void LibraryLoader::showLib(StringBuilder& out, const std::string& libdir, bool 
             if (err) goto next;
             out << "    " << entry->d_name;
             {
-                ManifestReader manifest(entry->d_name, fullname);
+                ManifestReader manifest(fullname);
                 if (!manifest.parse()) {
                     fprintf(stderr, "c2c: error: %s: %s\n", fullname, manifest.getErrorMsg());
                     goto next;
@@ -229,7 +229,7 @@ bool LibraryLoader::checkLibrary(const Dependency& dep) {
     char fullname[512];
     sprintf(fullname, "%s/%s", componentDir, MANIFEST_FILE);
 
-    ManifestReader manifest(componentName, fullname);
+    ManifestReader manifest(fullname);
     if (!manifest.parse()) {
         fprintf(stderr, "c2c: error: %s: %s\n", fullname, manifest.getErrorMsg());
         return true;

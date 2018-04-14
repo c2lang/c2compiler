@@ -355,7 +355,7 @@ private:
 // ----------------------------------------------------------------------------
 
 #define MAX_NODES 256
-#define NODE_KIND_OFFSET 30
+#define NODE_KIND_OFFSET 29
 #define NAMES_CACHE_SIZE 4
 
 namespace C2 {
@@ -365,6 +365,7 @@ enum NodeKind {
     NODE_TABLE_ARRAY,
     NODE_VALUE_ARRAY,
     NODE_VALUE,
+    NODE_ARRAY_CHILD,
 };
 
 #ifdef DEBUG_NODES
@@ -374,6 +375,7 @@ static const char* Str(NodeKind k) {
     case NODE_TABLE_ARRAY:  return "TAR";
     case NODE_VALUE_ARRAY:  return "KAR";
     case NODE_VALUE:        return "KEY";
+    case NODE_ARRAY_CHILD:  return "CHD";
     }
     return "";
 }
@@ -390,7 +392,7 @@ static NodeKind getKind(uint32_t value) {
 }
 
 static uint32_t getValue(uint32_t node_value) {
-    return node_value & ~(0x3 << NODE_KIND_OFFSET);
+    return node_value & ~(0x7 << NODE_KIND_OFFSET);
 }
 
 static bool same(const char* a, const char* b) {
@@ -403,7 +405,7 @@ static bool same(const char* a, const char* b) {
 }
 
 struct Node {
-    uint32_t name_off;      // highest 2-bits are NodeKind
+    uint32_t name_off;      // highest 3-bits are NodeKind
     uint32_t next_node;
     union {
         uint32_t child;
@@ -429,16 +431,16 @@ struct Blocks {
 
     Blocks() {
         memset(this, 0, sizeof(Blocks));
-        nodes = (Node*)malloc(MAX_NODES * sizeof(Node));
+        nodes = (Node*)calloc(MAX_NODES, sizeof(Node));
         max_nodes = MAX_NODES;
 
         names_size = 4096;
-        names = (char*)malloc(names_size);
+        names = (char*)calloc(1, names_size);
         names[0] = 0;
         names_off = 1;      // 0 indicates no name
 
         values_size = 4096;
-        values = (char*)malloc(values_size);
+        values = (char*)calloc(1, values_size);
         values[0] = 0;
         values_off = 1;     // 0 indicates no value
 
@@ -458,6 +460,7 @@ struct Blocks {
         return 0;
     }
     uint32_t addNode(const char* name, NodeKind kind) {
+        //printf(">>> ADD_NODE %s  %s\n", name, Str(kind));
         if (node_count == MAX_NODES) {
             printf("node limit reached (%u)\n", MAX_NODES);
             exit(EXIT_FAILURE);
@@ -466,18 +469,22 @@ struct Blocks {
         Node* node = &nodes[off];
         node_count++;
 
-        uint32_t name_off = searchNameCache(name);
-        if (name_off != 0) {
-            node->name_off = name_off;
+        if (name[0] == 0) {
+            node->name_off = 0;
         } else {
-            uint32_t len = strlen(name) + 1;
-            name_off = names_off;
-            node->name_off = name_off;
-            char* newname = &names[name_off];
-            memcpy(newname, name, len);
-            names_cache[last_cache] = name_off;
-            last_cache = (last_cache + 1) % NAMES_CACHE_SIZE;
-            names_off += len;
+            uint32_t name_off = searchNameCache(name);
+            if (name_off != 0) {
+                node->name_off = name_off;
+            } else {
+                uint32_t len = strlen(name) + 1;
+                name_off = names_off;
+                node->name_off = name_off;
+                char* newname = &names[name_off];
+                memcpy(newname, name, len);
+                names_cache[last_cache] = name_off;
+                last_cache = (last_cache + 1) % NAMES_CACHE_SIZE;
+                names_off += len;
+            }
         }
         node->name_off = addKind(node->name_off, kind);
         return off;
@@ -532,6 +539,10 @@ struct Blocks {
                 printf("  [%3u]  %s name %3u   next %3u   value %3u  (%s)\n",
                     i, Str(kind), name_off, n->next_node, n->value, &names[name_off]);
                 break;
+            case NODE_ARRAY_CHILD:
+                printf("  [%3u]  %s name ---   next %3u   child %3u\n",
+                    i, Str(kind), n->next_node, n->child);
+                break;
             }
         }
         printf("Names (%u/%u)\n", names_off, names_size);
@@ -558,18 +569,21 @@ struct Blocks {
                 i++;
             }
         }
-        if (node_count != 0) dumpNode(0, 0);
+        if (node_count != 0) {
+            printf("\n");
+            dumpNode(0, 0);
+        }
     }
     void dumpNode(uint32_t off, uint32_t indent) const {
         const Node* node = &nodes[off];
         NodeKind kind = getKind(node->name_off);
         switch (kind) {
         case NODE_TABLE:
-            printf("%*s%s\n", 3*indent, "", &names[getValue(node->name_off)]);
+            printf("%*s[%s]\n", 3*indent, "", &names[getValue(node->name_off)]);
             if (node->child) dumpNode(node->child, indent+1);
             break;
         case NODE_TABLE_ARRAY:
-            printf("%*s%s[]\n", 3*indent, "", &names[getValue(node->name_off)]);
+            printf("%*s[[%s]]\n", 3*indent, "", &names[getValue(node->name_off)]);
             if (node->child) dumpNode(node->child, indent+1);
             break;
         case NODE_VALUE_ARRAY:
@@ -588,6 +602,10 @@ struct Blocks {
             printf("%*s%s = ", 3*indent, "", &names[getValue(node->name_off)]);
             printf("'%s'\n", &values[node->value]);
             break;
+        case NODE_ARRAY_CHILD:
+            printf("%*s<>\n", 3*indent, "");
+            if (node->child) dumpNode(node->child, indent+1);
+            break;
         }
         if (node->next_node) dumpNode(node->next_node, indent);
     }
@@ -600,11 +618,10 @@ struct Blocks {
 
 class TomlParser {
 public:
-    TomlParser(const std::string& filename,
+    TomlParser(const char* input,
                char* errorMsg_,
                Blocks& blocks_)
-        : file(filename.c_str())
-        , errorMsg(errorMsg_)
+        : errorMsg(errorMsg_)
         , blocks(blocks_)
         , numParents(0)
         , topParent(0)
@@ -613,8 +630,7 @@ public:
         memset(lastChild, 0, sizeof(lastChild));
         errorMsg[0] = 0;
 
-        file.open();
-        tokenizer.init((const char*)file.region);
+        tokenizer.init(input);
         int result = setjmp(jump_err);
         if (result == 0) {
             ConsumeToken();
@@ -669,6 +685,7 @@ private:
             if (topParent) topParent->child = off;
         }
         lastChild[numParents] = node;
+        //dumpAdmin("added key-value");
     }
     void parseTable() {
         LOG_FUNC;
@@ -677,7 +694,7 @@ private:
         const char* name = Tok.getText();
         uint32_t depth = 0;
         bool isTop = NextToken().isNot(toml::dot);
-        addTable(name, depth, isTop, NODE_TABLE);
+        depth += addTable(name, depth, isTop, NODE_TABLE);
         ConsumeToken();
 
         while (Tok.is(toml::dot)) {
@@ -686,21 +703,19 @@ private:
             Expect(toml::word);
             name = Tok.getText();
             isTop = NextToken().isNot(toml::dot);
-            addTable(name, depth, isTop, NODE_TABLE);
+            depth += addTable(name, depth, isTop, NODE_TABLE);
             ConsumeToken();
         }
-        numParents = depth+1;
         ExpectAndConsume(toml::rbrace);
     }
     void parseTableArray() {
-        // TODO same as parseTable
         LOG_FUNC;
         ConsumeToken();
         Expect(toml::word);
         const char* name = Tok.getText();
         uint32_t depth = 0;
         bool isTop = NextToken().isNot(toml::dot);
-        addTable(name, depth, isTop, NODE_TABLE_ARRAY);
+        depth += addTable(name, depth, isTop, NODE_TABLE_ARRAY);
         ConsumeToken();
 
         while (Tok.is(toml::dot)) {
@@ -709,10 +724,9 @@ private:
             Expect(toml::word);
             name = Tok.getText();
             isTop = NextToken().isNot(toml::dot);
-            addTable(name, depth, isTop, NODE_TABLE_ARRAY);
+            depth += addTable(name, depth, isTop, NODE_TABLE_ARRAY);
             ConsumeToken();
         }
-        numParents = depth+1;
         ExpectAndConsume(toml::rbrace2);
     }
     uint32_t parseValue() {
@@ -757,11 +771,74 @@ private:
         blocks.addNull();
         return value;
     }
-    void addTable(const char* name, uint32_t depth, bool isTop, NodeKind kind)
+#ifdef DEBUG_NODES
+    void dumpAdmin(const char* msg) const {
+        printf("----[ %s ] ----------\n", msg);
+        int off = -1;
+        if (topParent) off = topParent - blocks.nodes;
+        printf("numParents %u   topParent -> node[%d]\n", numParents, off);
+        for (unsigned i=0; i<numParents; i++) {
+            const Node* node = parents[i];
+            off = -1;
+            if (node) off = node - blocks.nodes;
+            printf("  parent[%u] = node[%d]\n", i, off);
+        }
+        if (numParents) printf("lastChild\n");
+        for (unsigned i=0; i<numParents+1; i++) {
+            off = -1;
+            const Node* node = lastChild[i];
+            if (node) off = node - blocks.nodes;
+            printf("  child [%u] = node[%d]\n", i, off);
+        }
+        dump();
+    }
+#endif
+    unsigned addTable(const char* name, uint32_t depth, bool isTop, NodeKind kind)
     {
+        //printf(">>> ADD_TABLE %s  %s  %u/%u\n", name, Str(kind), depth, numParents);
         if (!isTop && numParents > depth && same(blocks.getName(parents[depth]), name)) {
+            if (getKind(parents[depth]->name_off) == NODE_TABLE_ARRAY) return 1;
             // Do nothing
         } else {
+            if (kind == NODE_TABLE_ARRAY) {
+                // TODO also check if previous is also TableArray
+                if (numParents > depth && same(blocks.getName(parents[depth]), name)) {
+                    //printf("SAME\n");
+                    numParents = depth + 1;
+                } else {
+                    uint32_t off = blocks.addNode(name, kind);
+                    if (numParents > depth) parents[depth]->next_node = off;
+                    Node* node = &blocks.nodes[off];
+                    parents[depth] = node;
+
+                    if (lastChild[depth]) {
+                        lastChild[depth]->next_node = off;
+                    } else {
+                        if (depth > 0) parents[depth-1]->child = off;
+                    }
+                    numParents = depth + 1;
+                    topParent = node;
+                    lastChild[depth] = node;
+                    lastChild[depth + 1] = 0;
+                }
+                if (isTop) {
+                    // add iterator node as child or next
+                    uint32_t off = blocks.addNode("", NODE_ARRAY_CHILD);
+                    Node* iter = &blocks.nodes[off];
+                    if (lastChild[depth]->child) { //already has children
+                        lastChild[depth+1]->next_node = off;
+                    } else {
+                        lastChild[depth]->child = off;
+                    }
+                    lastChild[depth+1] = iter;
+                    parents[depth+1] = iter;
+                    lastChild[depth+2] = 0;
+                    topParent = iter;
+                    numParents++;
+                }
+                //dumpAdmin("added table_array");
+                return 1;
+            }
             uint32_t off = blocks.addNode(name, kind);
             if (numParents > depth) parents[depth]->next_node = off;
             Node* node = &blocks.nodes[off];
@@ -777,6 +854,7 @@ private:
             lastChild[depth] = node;
             lastChild[depth + 1] = 0;
         }
+        return 0;
     }
     Location ConsumeToken() {
         Location prev = Tok.getLoc();
@@ -813,7 +891,6 @@ private:
         }
     }
     // Entries stuff
-    FileMap file;
     Tokenizer tokenizer;
     Token Tok;
     jmp_buf jump_err;
@@ -826,9 +903,8 @@ private:
     Node* topParent;
 };
 
-TomlReader::TomlReader(const char* filename_)
-    : filename(filename_)
-    , blocks(new Blocks())
+TomlReader::TomlReader()
+    : blocks(new Blocks())
 {
 }
 
@@ -837,9 +913,21 @@ TomlReader::~TomlReader()
     delete blocks;
 }
 
-bool TomlReader::parse()
+bool TomlReader::parse(const char* filename)
 {
-    TomlParser parser(filename, errorMsg, *blocks);
+    FileMap file(filename);
+    file.open();
+    TomlParser parser((const char*)file.region, errorMsg, *blocks);
+    if (errorMsg[0] != 0) return false;
+#ifdef DEBUG_NODES
+    parser.dump();
+#endif
+    return true;
+}
+
+bool TomlReader::parse(const char* input, int)
+{
+    TomlParser parser(input, errorMsg, *blocks);
     if (errorMsg[0] != 0) return false;
 #ifdef DEBUG_NODES
     parser.dump();
@@ -889,6 +977,9 @@ const char* TomlReader::getValue(const char* key) const {
 TomlReader::NodeIter TomlReader::getNodeIter(const char* key) const
 {
     const Node* node = findNode(key);
+    if (node && getKind(node->name_off) == NODE_TABLE_ARRAY) {
+        node = &blocks->nodes[node->child];
+    }
     NodeIter iter(blocks, node);
     return iter;
 }
@@ -907,7 +998,7 @@ void TomlReader::NodeIter::next() {
 
 const char* TomlReader::NodeIter::getValue(const char* key) const {
     const Node* child = blocks->findNode(key, node);
-    // TODO check if child == 0 ?
+    if (!child) return 0;
     if (getKind(child->name_off) != NODE_VALUE) return 0;
     return &blocks->values[child->value];
 }
@@ -939,6 +1030,9 @@ TomlReader::ValueIter TomlReader::getValueIter(const char* key) const
             return ValueIter(&blocks->values[node->value], true);
         case NODE_VALUE:
             return ValueIter(&blocks->values[node->value], false);
+        case NODE_ARRAY_CHILD:
+            // TODO
+            break;
         }
     }
     return ValueIter(&blocks->values[0], false);
