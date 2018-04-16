@@ -36,6 +36,7 @@ public:
     bool parse(const char* input, int);
 
     const char* getErrorMsg() const { return errorMsg; }
+    void test(StringBuilder& out) const;
 
     const char* getValue(const char* key) const;
 

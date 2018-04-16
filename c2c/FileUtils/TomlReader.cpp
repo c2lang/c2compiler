@@ -34,11 +34,23 @@
 //#define DEBUG_TOKENS
 //#define DEBUG_PARSER
 //#define DEBUG_NODES
+#define TEST_MODE
+
+#define MAX_NODES  (4096*16)
+#define MAX_NAMES  (4096)
+#define MAX_VALUES (4096*128)
+
+#define NODE_KIND_OFFSET 29
+#define NAMES_CACHE_SIZE 8
 
 #ifdef DEBUG_PARSER
 #define LOG_FUNC printf("%s()\n", __func__)
 #else
 #define LOG_FUNC
+#endif
+
+#ifdef TEST_MODE
+#include "Utils/StringBuilder.h"
 #endif
 
 using namespace C2;
@@ -64,6 +76,8 @@ using namespace C2;
     TODO store numbers, floats (store as string, add getValue functions
         also do same for true/false (store 1 byte type before value?)
         (can also contain whether last in array?)
+
+    TODO search previous TableArray node for cache node nodes (remove duplicates)
 */
 
 // ----------------------------------------------------------------------------
@@ -248,6 +262,16 @@ public:
                     parseNumber(Result);
                     return;
                 }
+                if (*current == 'f' && strncmp("false", current, 5) == 0) {
+                    advanceToken(5);
+                    Result.setKind(toml::kw_false);
+                    return;
+                }
+                if (*current == 't' && strncmp("true", current, 4) == 0) {
+                    advanceToken(4);
+                    Result.setKind(toml::kw_true);
+                    return;
+                }
                 if (isalpha(*current)) {
                     parseKey(Result);
                     return;
@@ -354,10 +378,6 @@ private:
 
 // ----------------------------------------------------------------------------
 
-#define MAX_NODES 256
-#define NODE_KIND_OFFSET 29
-#define NAMES_CACHE_SIZE 4
-
 namespace C2 {
 
 enum NodeKind {
@@ -434,12 +454,12 @@ struct Blocks {
         nodes = (Node*)calloc(MAX_NODES, sizeof(Node));
         max_nodes = MAX_NODES;
 
-        names_size = 4096;
+        names_size = MAX_NAMES;
         names = (char*)calloc(1, names_size);
         names[0] = 0;
         names_off = 1;      // 0 indicates no name
 
-        values_size = 4096;
+        values_size = MAX_VALUES;
         values = (char*)calloc(1, values_size);
         values[0] = 0;
         values_off = 1;     // 0 indicates no value
@@ -608,6 +628,43 @@ struct Blocks {
             break;
         }
         if (node->next_node) dumpNode(node->next_node, indent);
+    }
+#endif
+#ifdef TEST_MODE
+    void dumpTest(StringBuilder& out, uint32_t off, uint32_t indent) const {
+        const Node* node = &nodes[off];
+        NodeKind kind = getKind(node->name_off);
+        switch (kind) {
+        case NODE_TABLE:
+            out.print("%*s[%s]\n", 2*indent, "", &names[getValue(node->name_off)]);
+            if (node->child) dumpTest(out, node->child, indent+1);
+            break;
+        case NODE_TABLE_ARRAY:
+            out.print("%*s[[%s]]\n", 2*indent, "", &names[getValue(node->name_off)]);
+            if (node->child) dumpTest(out, node->child, indent+1);
+            break;
+        case NODE_VALUE_ARRAY:
+        {
+            out.print("%*s%s = ", 2*indent, "", &names[getValue(node->name_off)]);
+            const char* value = &values[node->value];
+            out << "[ ";
+            while (value[0]) {
+                out.print("'%s', ", value);
+                value += strlen(value) + 1;
+            }
+            out << "]\n";
+            break;
+        }
+        case NODE_VALUE:
+            out.print("%*s%s = ", 2*indent, "", &names[getValue(node->name_off)]);
+            out.print("'%s'\n", &values[node->value]);
+            break;
+        case NODE_ARRAY_CHILD:
+            out.print("%*s<>\n", 2*indent, "");
+            if (node->child) dumpTest(out, node->child, indent+1);
+            break;
+        }
+        if (node->next_node) dumpTest(out, node->next_node, indent);
     }
 #endif
 };
@@ -790,7 +847,7 @@ private:
             if (node) off = node - blocks.nodes;
             printf("  child [%u] = node[%d]\n", i, off);
         }
-        dump();
+        blocks.dump();
     }
 #endif
     unsigned addTable(const char* name, uint32_t depth, bool isTop, NodeKind kind)
@@ -922,6 +979,11 @@ bool TomlReader::parse(const char* filename)
 #ifdef DEBUG_NODES
     parser.dump();
 #endif
+#if 0
+    printf("Nodes (%u/%u)  (%u bytes)\n", blocks->node_count, blocks->max_nodes, blocks->node_count * (int)sizeof(Node));
+    printf("Names (%u/%u)\n", blocks->names_off, blocks->names_size);
+    printf("Values (%u/%u)\n", blocks->values_off, blocks->values_size);
+#endif
     return true;
 }
 
@@ -933,6 +995,12 @@ bool TomlReader::parse(const char* input, int)
     parser.dump();
 #endif
     return true;
+}
+
+void TomlReader::test(StringBuilder& out) const {
+#ifdef TEST_MODE
+    blocks->dumpTest(out, 0, 0);
+#endif
 }
 
 const Node* TomlReader::findNode(const char* key) const {
