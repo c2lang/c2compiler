@@ -1,5 +1,5 @@
 ## Installation of LLVM/Clang (C2 version)
-C2 is based on LLVM 4.0 and some parts of Clang 6.0.
+C2 is based on LLVM 6.0 and some parts of Clang 6.0.
 To install C2, follow the steps below. The example shows
 how to install in **$HOME/llvm-c2**, but any other dir should work.
 
