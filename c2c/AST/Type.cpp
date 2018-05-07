@@ -392,8 +392,8 @@ static BuiltinType _UInt8(BuiltinType::UInt8);
 static BuiltinType _UInt16(BuiltinType::UInt16);
 static BuiltinType _UInt32(BuiltinType::UInt32);
 static BuiltinType _UInt64(BuiltinType::UInt64);
-static BuiltinType _Float32(BuiltinType::Float32);
-static BuiltinType _Float64(BuiltinType::Float64);
+static BuiltinType _Float32_(BuiltinType::Float32);
+static BuiltinType _Float64_(BuiltinType::Float64);
 static BuiltinType _Bool(BuiltinType::Bool);
 static BuiltinType _Void(BuiltinType::Void);
 
@@ -422,10 +422,10 @@ QualType Type::UInt64() {
     return QualType(&_UInt64);
 }
 QualType Type::Float32() {
-    return QualType(&_Float32);
+    return QualType(&_Float32_);
 }
 QualType Type::Float64() {
-    return QualType(&_Float64);
+    return QualType(&_Float64_);
 }
 QualType Type::Bool() {
     return QualType(&_Bool);
@@ -444,8 +444,8 @@ BuiltinType* BuiltinType::get(Kind k) {
     case UInt16:    return &_UInt16;
     case UInt32:    return &_UInt32;
     case UInt64:    return &_UInt64;
-    case Float32:   return &_Float32;
-    case Float64:   return &_Float64;
+    case Float32:   return &_Float32_;
+    case Float64:   return &_Float64_;
     case Bool:      return &_Bool;
     case Void:      return &_Void;
     }
