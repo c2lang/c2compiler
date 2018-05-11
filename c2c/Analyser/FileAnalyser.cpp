@@ -261,7 +261,7 @@ void FileAnalyser::checkDeclsForUsed() {
     for (unsigned i=0; i<ast.numImports(); i++) {
         ImportDecl* U = ast.getImport(i);
         if (!U->isUsed()) {
-            Diags.Report(U->getLocation(), diag::warn_unused_module) << U->getModuleName();
+            Diags.Report(U->getLocation(), diag::warn_unused_import) << U->getModuleName();
         }
     }
 

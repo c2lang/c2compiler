@@ -341,6 +341,10 @@ int C2Builder::build() {
             Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "unused-module", diag::Severity::Ignored);
             continue;
         }
+        if (conf == "no-unused-import") {
+            Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "unused-import", diag::Severity::Ignored);
+            continue;
+        }
         if (conf == "no-unused-public") {
             Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "unused-public", diag::Severity::Ignored);
             continue;
