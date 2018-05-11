@@ -49,7 +49,7 @@ void ManifestWriter::write(const std::string& dirname) const {
         const Module* M = mods[m];
         if (!M->isExported()) continue;
         out << '\n';
-        out << "[[modules]]\n";
+        out << "[[module]]\n";
         out << "name = \"" << M->getName() << "\"\n";
     }
 

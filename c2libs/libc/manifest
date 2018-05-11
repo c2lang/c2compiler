@@ -4,57 +4,57 @@
 language = "C"
 type = [ "static", "dynamic" ]
 
-[[modules]]
+[[module]]
 name = "stdio"
 
-[[modules]]
+[[module]]
 name = "c_errno"
 
-[[modules]]
+[[module]]
 name = "libc_poll"
 
-[[modules]]
+[[module]]
 name = "libc_fcntl"
 
-[[modules]]
+[[module]]
 name = "stdlib"
 
-[[modules]]
+[[module]]
 name = "string"
 
-[[modules]]
+[[module]]
 name = "strings"
 
-[[modules]]
+[[module]]
 name = "unistd"
 
-[[modules]]
+[[module]]
 name = "regex"
 
-[[modules]]
+[[module]]
 name = "ctype"
 
-[[modules]]
+[[module]]
 name = "stdarg"
 
-[[modules]]
+[[module]]
 name = "sys_mman"
 
-[[modules]]
+[[module]]
 name = "sys_socket"
 
-[[modules]]
+[[module]]
 name = "sys_stat"
 
-[[modules]]
+[[module]]
 name = "sys_time"
 
-[[modules]]
+[[module]]
 name = "time"
 
-[[modules]]
+[[module]]
 name = "csetjmp"
 
-[[modules]]
+[[module]]
 name = "csignal"
 

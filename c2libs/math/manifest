@@ -5,6 +5,6 @@ language = "C"
 type = [ "static", "dynamic" ]
 linkname = "m"
 
-[[modules]]
+[[module]]
 name = "math"
 

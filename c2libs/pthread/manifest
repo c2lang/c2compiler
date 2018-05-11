@@ -8,6 +8,6 @@ linkname = "pthread"
 name = "libc"
 type = "dynamic"
 
-[[modules]]
+[[module]]
 name = "pthread"
 

@@ -88,11 +88,11 @@ bool ManifestReader::parse()
         depsIter.next();
     }
 
-    TomlReader::NodeIter moduleIter = reader.getNodeIter("modules");
+    TomlReader::NodeIter moduleIter = reader.getNodeIter("module");
     while (!moduleIter.done()) {
         const char* name = moduleIter.getValue("name");
         if (!name) {
-            printf("%s: missing modules need a need\n", filename.c_str());
+            printf("%s: missing module name\n", filename.c_str());
             return false;
         }
         entries.push_back(ManifestEntry(name));

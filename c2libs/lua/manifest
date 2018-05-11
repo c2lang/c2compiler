@@ -9,12 +9,12 @@ linkname = "lua"
 name = "math"
 type = "dynamic"
 
-[[modules]]
+[[module]]
 name = "lua"
 
-[[modules]]
+[[module]]
 name = "lua_auxlib"
 
-[[modules]]
+[[module]]
 name = "lua_lib"
 
