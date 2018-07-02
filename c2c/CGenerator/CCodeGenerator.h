@@ -95,6 +95,7 @@ private:
 
     // Helpers
     void EmitDecl(const Decl* D, StringBuilder& output);
+    void EmitEnumConstant(const EnumConstantDecl* D, const char* typeName, StringBuilder& output);
     void EmitFunctionProto(const FunctionDecl* F, StringBuilder& output);
     void EmitTypePreName(QualType type, StringBuilder& output);
     void EmitTypePostName(QualType type, StringBuilder& output);

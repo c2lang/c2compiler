@@ -4,12 +4,12 @@
 // @file{file1}
 module foo;
 
-public type State enum u16 { STATE_A }
+public type State enum u16 { A }
 
 // @file{file2}
 module bar;
 
 import foo local;
 
-i32 b = STATE_A;
+i32 b = State.A;
 

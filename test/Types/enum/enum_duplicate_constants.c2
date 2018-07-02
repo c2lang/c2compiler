@@ -3,6 +3,6 @@ module test;
 
 type Enum enum i32 {
     A,  // @note{previous definition is here}
-    A,  // @error{redefinition of A}
+    A,  // @error{duplicate enum constant A}
 }
 

@@ -158,6 +158,8 @@ private:
     typedef Symbols::const_iterator SymbolsConstIter;
     Symbols imports;
 
+    Symbols enumConstants;
+
     C2Sema(const C2Sema&);
     C2Sema& operator= (const C2Sema&);
 };

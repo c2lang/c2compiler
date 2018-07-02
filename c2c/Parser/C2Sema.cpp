@@ -1035,6 +1035,7 @@ EnumTypeDecl* C2Sema::ActOnEnumType(const char* name_, SourceLocation loc, Expr*
     ET->setDecl(E);
     ast.addType(E);
     addSymbol(E);
+    enumConstants.clear();
     return E;
 }
 
@@ -1048,8 +1049,17 @@ C2::EnumConstantDecl* C2Sema::ActOnEnumConstant(EnumTypeDecl* Enum, IdentifierIn
     const char* name = Context.addIdentifier(symII->getNameStart(), symII->getLength());
     EnumConstantDecl* D = new (Context) EnumConstantDecl(name, symLoc, Enum->getType(), Value,
             Enum->isPublic());
-    addSymbol(D);
+    if (D->isPublic() && module->isExported()) D->setExported();
 
+    SymbolsConstIter iter = enumConstants.find(name);
+    if (iter != enumConstants.end()) {
+        const Decl* Old = iter->second;
+        Diag(D->getLocation(), diag::err_duplicate_enum_constant) << D->getName();
+        Diag(Old->getLocation(), diag::note_previous_definition);
+    } else {
+        enumConstants[name] = D;
+        D->setModule(module);
+    }
     if (!isupper(name[0]) && !ast.isInterface()) {
         Diag(symLoc, diag::err_enumconst_casing);
     }
@@ -1063,6 +1073,7 @@ void C2Sema::ActOnEnumTypeFinished(EnumTypeDecl* Enum, EnumConstantDecl** consta
     EnumConstantDecl** constants = (EnumConstantDecl**)Context.Allocate(sizeof(EnumConstantDecl*)*numConstants);
     memcpy(constants, constants_, sizeof(EnumConstantDecl*)*numConstants);
     Enum->setConstants(constants, numConstants);
+    enumConstants.clear();
 }
 
 C2::ExprResult C2Sema::ActOnTypeQualifier(ExprResult R, unsigned qualifier) {

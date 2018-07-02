@@ -18,6 +18,7 @@
 
 namespace C2 {
 
+// TODO move to AST
 const unsigned MAX_LEN_TYPENAME = 128;
 const unsigned MAX_LEN_VARNAME = 64;
 

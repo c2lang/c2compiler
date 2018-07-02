@@ -426,6 +426,12 @@ void CCodeGenerator::EmitMemberExpr(const Expr* E, StringBuilder& output) {
         // A.B where A is a module
         // A.B where B is struct-function
         EmitDecl(M->getDecl(), output);
+    } else if (M->isEnumConstant()) {
+        const EnumConstantDecl* ECD = dyncast<EnumConstantDecl>(M->getDecl());
+        assert(ECD);
+        const EnumTypeDecl* ETD = ECD->getTypeDecl();
+        assert(ETD);
+        EmitEnumConstant(cast<EnumConstantDecl>(M->getDecl()), ETD->getName(), output);
     } else {
         // A.B where A is decl of struct/union type
         EmitExpr(M->getBase(), cbuf);
@@ -523,6 +529,10 @@ void CCodeGenerator::EmitDecl(const Decl* D, StringBuilder& output) {
     } else {
         output << D->getName();
     }
+}
+
+void CCodeGenerator::EmitEnumConstant(const EnumConstantDecl* D, const char* typeName, StringBuilder& output) {
+    output << D->getModule()->getCName() << '_' << typeName << '_' << D->getName();
 }
 
 void CCodeGenerator::forwardDecl(const Decl* D) {
@@ -820,7 +830,7 @@ void CCodeGenerator::EmitEnumType(const EnumTypeDecl* E, StringBuilder& output) 
     for (unsigned i=0; i<E->numConstants(); i++) {
         EnumConstantDecl* C = E->getConstant(i);
         output.indent(INDENT);
-        EmitDecl(C, output);
+        EmitEnumConstant(C, E->getName(), output);
         if (C->getInitValue()) {
             output << " = ";
             EmitExpr(C->getInitValue(), output);

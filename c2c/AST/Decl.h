@@ -280,6 +280,8 @@ public:
     }
     void print(StringBuilder& buffer, unsigned indent) const;
 
+    const EnumTypeDecl* getTypeDecl() const;
+
     Expr* getInitValue() const { return InitVal; } // static value, NOT incremental values
     llvm::APSInt getValue() const { return Val; }
     void setValue(llvm::APSInt v) { Val = v; }
@@ -383,6 +385,7 @@ public:
     }
     unsigned numConstants() const { return enumTypeDeclBits.numConstants; }
     EnumConstantDecl* getConstant(unsigned i) const { return constants[i]; }
+    EnumConstantDecl* findConstant(const char* name_) const;
 
     bool isIncremental() const { return enumTypeDeclBits.incremental; }
 

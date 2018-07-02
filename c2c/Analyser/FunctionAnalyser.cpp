@@ -633,9 +633,11 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
             // TODO handle, mark that Type was specified, not just return StructType
             break;
         case DECL_ALIASTYPE:
-        case DECL_ENUMTYPE:
         case DECL_FUNCTIONTYPE:
             Diag(id->getLocation(), diag::err_unexpected_typedef) << id->getName();
+            expr->setConstant();
+            break;
+        case DECL_ENUMTYPE:
             expr->setConstant();
             break;
         case DECL_ARRAYVALUE:
@@ -1488,6 +1490,8 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
     // var[index].member
     // var->member (= error)
     // Type.struct_function
+    // Enum.Constant (eg. Color.Red)
+
     QualType LType = analyseExpr(M->getBase(), RHS);
     if (!LType.isValid()) return QualType();
 
@@ -1505,6 +1509,27 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
             member->setDecl(D, globalDecl2RefType(D));
             return Q;
         }
+    } else if (isa<EnumType>(LType)) {
+        EnumType* ET = cast<EnumType>(LType.getTypePtr());
+        EnumTypeDecl* ETD = ET->getDecl();
+        EnumConstantDecl* ECD = ETD->findConstant(member->getName());
+        if (!ECD) {
+            StringBuilder buf(MAX_LEN_TYPENAME);
+            ETD->fullName(buf);
+            Diag(member->getLocation(), diag::err_unknown_enum_constant)
+                << buf << member->getName();
+            return QualType();
+        }
+        QualType Q = ETD->getType();
+        M->setDecl(ECD);
+        M->setType(Q);
+        M->setIsEnumConstant();
+        SetConstantFlags(ECD, M);
+        member->setCTC(CTC_FULL);
+        member->setConstant();
+        member->setType(Q);
+        member->setDecl(ECD, globalDecl2RefType(ECD));
+        return Q;
     } else {
         // dereference pointer
         if (LType.isPointerType()) {
@@ -2028,20 +2053,25 @@ void FunctionAnalyser::checkEnumCases(const SwitchStmt* SS, const EnumType* ET) 
             continue;
         }
         const CaseStmt* CS = cast<CaseStmt>(cases[i]);
-        // only allow enum states as cases if switchin on enum (IdentifierExpr -> EnumConstantDecl)
+        // TODO add test cases!!
+        // only allow enum states as cases if switchin on enum (MemberExpr -> EnumConstantDecl)
         const Expr* cond = CS->getCond();
-        if (const IdentifierExpr* IE = dyncast<IdentifierExpr>(cond)) {
-            if (IE->getDecl() == 0) continue;
-            // check if it refers to right enumdecl
-            if (const EnumConstantDecl* ECD = dyncast<EnumConstantDecl>(IE->getDecl())) {
-                int index = ETD->getIndex(ECD);
-                if (index != -1) {
-                    if (enumHandled[index]) {
-                        Diag(cond->getLocation(), diag::err_duplicate_case) << ECD->getName() << cond->getSourceRange();
+        if (const MemberExpr* M = dyncast<MemberExpr>(cond)) {
+            if (M->isEnumConstant()) {
+                // check if it refers to right enumdecl
+                // TODO: can M->getDecl() be NULL?
+                const EnumConstantDecl* ECD = dyncast<EnumConstantDecl>(M->getDecl());
+                if (ECD) {
+                    int index = ETD->getIndex(ECD);
+                    if (index != -1) {
+                        if (enumHandled[index]) {
+                            Diag(cond->getLocation(), diag::err_duplicate_case) << ECD->getName() << cond->getSourceRange();
+                        }
+                        enumHandled[index] = true;
+                        continue;
                     }
-                    enumHandled[index] = true;
-                    continue;
                 }
+
             }
         }
         StringBuilder buf(64);

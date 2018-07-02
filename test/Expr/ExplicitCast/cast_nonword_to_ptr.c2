@@ -26,7 +26,7 @@ func void test3() {
 }
 
 func void test4() {
-    Enum d = A;
+    Enum d = Enum.A;
     s = cast<Struct*>(d);       // @error{only integers of type 'u64' may be cast to a pointer}
 }
 

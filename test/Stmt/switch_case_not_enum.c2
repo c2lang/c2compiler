@@ -11,12 +11,12 @@ type Bar enum i8 {
 
 public func void foo() {
     i32 bar = 1;
-    Foo f = A;
+    Foo f = Foo.A;
     switch (f) {
-    case A:
+    case Foo.A:
     case 1:         // @error{case value not in enumerated type '(enum)Foo' (aka 'i8')}
     case bar:         // @error{case value not in enumerated type '(enum)Foo' (aka 'i8')}
-    case C:         // @error{case value not in enumerated type '(enum)Foo' (aka 'i8')}
+    case Bar.C:         // @error{case value not in enumerated type '(enum)Foo' (aka 'i8')}
         break;
     }
 }

@@ -273,6 +273,12 @@ void EnumConstantDecl::print(StringBuilder& buffer, unsigned indent) const {
     if (InitVal) InitVal->print(buffer, indent+INDENT);
 }
 
+const EnumTypeDecl* EnumConstantDecl::getTypeDecl() const {
+    QualType T = getType();
+    // TODO assert for null? (if type not set yet)
+    const EnumType* ET = cast<EnumType>(T.getTypePtr());
+    return ET->getDecl();
+}
 
 TypeDecl::TypeDecl(DeclKind k, const char* name_, SourceLocation loc_, QualType type_,
                    bool is_public)
@@ -371,6 +377,14 @@ void StructTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
     }
 }
 
+
+EnumConstantDecl* EnumTypeDecl::findConstant(const char* name_) const {
+    for (unsigned i=0; i<numConstants(); i++) {
+        EnumConstantDecl* D = constants[i];
+        if (strcmp(D->getName(), name_) == 0) return D;
+    }
+    return 0;
+}
 
 void EnumTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);

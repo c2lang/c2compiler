@@ -49,8 +49,8 @@ typedef int32_t aa_AA;
 
 // @expect{atleast, bb.h}
 typedef enum {
-    bb_One = aa_FIRST,
-    bb_Two,
+    bb_Enum_One = aa_FIRST,
+    bb_Enum_Two,
 } bb_Enum;
 
 int32_t bb_bb1(int32_t* arg1);

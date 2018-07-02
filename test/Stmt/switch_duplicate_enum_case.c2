@@ -6,10 +6,10 @@ type Foo enum i8 {
 }
 
 public func void foo() {
-    Foo f = A;
+    Foo f = Foo.A;
     switch (f) {
-    case A:
-    case A:         // @error{duplicate case value 'A'}
+    case Foo.A:
+    case Foo.A:         // @error{duplicate case value 'A'}
         break;
     }
 }

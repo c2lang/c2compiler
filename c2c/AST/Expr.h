@@ -606,6 +606,7 @@ public:
         memberExprBits.IsModPrefix = 0;
         memberExprBits.IsStructFunction = 0;
         memberExprBits.IsStaticStructFunction = 0;
+        memberExprBits.IsEnumConstant = 0;
     }
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_MEMBER;
@@ -627,6 +628,8 @@ public:
     bool isStructFunction() const { return memberExprBits.IsStructFunction; }
     void setIsStaticStructFunction() { memberExprBits.IsStaticStructFunction = true; }
     bool isStaticStructFunction() const { return memberExprBits.IsStaticStructFunction; }
+    void setIsEnumConstant() { memberExprBits.IsEnumConstant = true; }
+    bool isEnumConstant() const { return memberExprBits.IsEnumConstant; }
 
     // NOTE: uses static var
     void printLiteral(StringBuilder& buffer) const;

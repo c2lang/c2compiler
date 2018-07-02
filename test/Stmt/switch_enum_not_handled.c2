@@ -7,7 +7,7 @@ type Foo enum i8 {
     C,
     D,
 }
-Foo f = A;
+Foo f = Foo.A;
 
 func void test1() {
     switch (f) {    // @error{4 enumeration values not handled in switch: A, B, C...}
@@ -16,34 +16,34 @@ func void test1() {
 
 func void test2() {
     switch (f) { // @error{enumeration values B, C, and D not handled in switch}
-    case A:
+    case Foo.A:
         break;
     }
 }
 
 func void test3() {
     switch (f) { // @error{enumeration values B and D not handled in switch}
-    case A:
-    case C:
+    case Foo.A:
+    case Foo.C:
         break;
     }
 }
 
 func void test4() {
     switch (f) { // @error{enumeration value B not handled in switch}
-    case A:
-    case C:
-    case D:
+    case Foo.A:
+    case Foo.C:
+    case Foo.D:
         break;
     }
 }
 
 func void test5() {
     switch (f) {
-    case A:
-    case B:
-    case C:
-    case D:
+    case Foo.A:
+    case Foo.B:
+    case Foo.C:
+    case Foo.D:
         break;
     default:    // @warning{default label in switch which covers all enumeration values}
         break;

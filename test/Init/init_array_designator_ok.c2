@@ -2,17 +2,17 @@
 module test;
 
 type Types enum i8 {
-    FOO = 0,
-    BAR,
-    FAA = 4,
+    Foo = 0,
+    Bar,
+    Faa = 4,
 }
 
 i32[] array = {
-    [FAA] = 4,
-    [BAR] = 1,
+    [Types.Faa] = 4,
+    [Types.Bar] = 1,
     2,
     3,
-    [FOO] = 0,
+    [Types.Foo] = 0,
 }
 
 type Point struct {

@@ -23,8 +23,8 @@ struct test_Point_ {
 };
 
 typedef enum {
-  test_A,
-  test_B,
-  test_C,
+  test_State_A,
+  test_State_B,
+  test_State_C,
 } test_State;
 

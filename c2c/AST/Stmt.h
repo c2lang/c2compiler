@@ -190,6 +190,7 @@ protected:
         unsigned IsModPrefix: 1;
         unsigned IsStructFunction : 1;
         unsigned IsStaticStructFunction : 1;
+        unsigned IsEnumConstant : 1;
     };
 
     class InitListExprBitfields {

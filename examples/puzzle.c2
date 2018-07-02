@@ -9,10 +9,7 @@ const char* ansi_BGREEN = "\033[01;32m";
 const char* ansi_NORMAL = "\033[0m";
 
 type Point enum i32 {
-    POINT_A=0, POINT_B, POINT_C, POINT_D, POINT_E, POINT_F,
-    POINT_G, POINT_H, POINT_I, POINT_J, POINT_K, POINT_L,
-    POINT_M, POINT_N, POINT_O, POINT_P, POINT_Q, POINT_R,
-    POINT_MAX,
+    A=0, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, MAX,
 }
 
 type Connection struct {
@@ -22,37 +19,37 @@ type Connection struct {
 }
 
 const Connection[] Connections = {
-    { POINT_A, POINT_C, true },
-    { POINT_B, POINT_A, true },
-    { POINT_C, POINT_E, true }, { POINT_C, POINT_F, false },
-    { POINT_D, POINT_A, true },
-    { POINT_D, POINT_G, true },
-    { POINT_E, POINT_I, false },
-    { POINT_F, POINT_H, true },
-    { POINT_G, POINT_H, true }, { POINT_G, POINT_I, true },
-    { POINT_J, POINT_L, true },
-    { POINT_K, POINT_J, true }, { POINT_K, POINT_L, true },
-    { POINT_M, POINT_K, true }, { POINT_M, POINT_O, true },
-    { POINT_N, POINT_Q, true },
-    { POINT_O, POINT_N, true }, { POINT_O, POINT_R, true },
-    { POINT_P, POINT_N, true },
-    { POINT_Q, POINT_P, true },
-    { POINT_R, POINT_B, true },
+    { Point.A, Point.C, true },
+    { Point.B, Point.A, true },
+    { Point.C, Point.E, true }, { Point.C, Point.F, false },
+    { Point.D, Point.A, true },
+    { Point.D, Point.G, true },
+    { Point.E, Point.I, false },
+    { Point.F, Point.H, true },
+    { Point.G, Point.H, true }, { Point.G, Point.I, true },
+    { Point.J, Point.L, true },
+    { Point.K, Point.J, true }, { Point.K, Point.L, true },
+    { Point.M, Point.K, true }, { Point.M, Point.O, true },
+    { Point.N, Point.Q, true },
+    { Point.O, Point.N, true }, { Point.O, Point.R, true },
+    { Point.P, Point.N, true },
+    { Point.Q, Point.P, true },
+    { Point.R, Point.B, true },
 }
 
 i32 startPoint;
 i32 endPoint;
 const i32 DEPTH_MAX = 10;
-i32[POINT_MAX*DEPTH_MAX] paths;    // value 0 is start, -1 not used, other is prev in path
+i32[Point.MAX*DEPTH_MAX] paths;    // value 0 is start, -1 not used, other is prev in path
 
-func i32 index(Point p, i32 depth) { return p + POINT_MAX * depth; }
+func i32 index(Point p, i32 depth) { return p + Point.MAX * depth; }
 
 func Point toPoint(i32 i) {
-    //return (Point)(i%POINT_MAX);
-    return (i%POINT_MAX);
+    //return (Point)(i%Point.MAX);
+    return (i%Point.MAX);
 }
 
-func i32 toDepth(i32 i) { return (i/POINT_MAX); }
+func i32 toDepth(i32 i) { return (i/Point.MAX); }
 
 func const char* print(i32 index2) {
     local char[16][4] buffer;
@@ -67,7 +64,7 @@ func void showPaths() {
     io.printf("depth   A   B   C   D   E   F   G   H   I   J   K   L   M   N   O   P   Q   R\n");
     for (i32 d=0; d<DEPTH_MAX; d++) {
         io.printf("%5d   ", d);
-        for (i32 p=0; p<POINT_MAX; p++) {
+        for (i32 p=0; p<Point.MAX; p++) {
             //i32 idx = index((Point)p, d);
             i32 idx = index(p, d);
             i32 prev = paths[idx];
@@ -75,7 +72,7 @@ func void showPaths() {
             if (idx == endPoint) io.printf("%s", ansi_BRED);
             if (prev == -1) io.printf("  ");
             else io.printf("%s", print(prev));
-            if (d==0 && (p==POINT_A || p==POINT_J)) io.printf("%s", ansi_NORMAL);
+            if (d==0 && (p==Point.A || p==Point.J)) io.printf("%s", ansi_NORMAL);
             io.printf("  ");
         }
         io.printf("\n");
@@ -100,15 +97,15 @@ func i32 printPath(i32 idx) {
 
 public func i32 main(i32, const i8*[]) {
     // initialize paths
-    for (i32 p=0; p<POINT_MAX; p++) {
+    for (i32 p=0; p<Point.MAX; p++) {
         for (i32 d=0; d<DEPTH_MAX; d++) {
             paths[index(p,d)] = -1;
             // C2 cannot properly handle CastOperator yet
             //paths[index((Point)p,d)] = -1;
         }
     }
-    startPoint = index(POINT_A, 0);
-    endPoint = index(POINT_J, 0);
+    startPoint = index(Point.A, 0);
+    endPoint = index(Point.J, 0);
     // add start point
     paths[startPoint] = 0;
     listAdd(startPoint);

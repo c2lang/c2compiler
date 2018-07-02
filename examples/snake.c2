@@ -33,9 +33,9 @@ type Piece struct {
 }
 
 type FieldStatus enum i8 {
-    FIELD_FREE = 0,
-    FIELD_BLOCKED,
-    FIELD_TAKEN,    // + index of piece
+    Free = 0,
+    Blocked,
+    Taken,    // + index of piece
 }
 
 type Field struct {
@@ -52,12 +52,12 @@ type Field struct {
 }
 
 type Flags enum i8 {
-    NORTH = 1,
-    EAST  = 2,
-    SOUTH = 3,
-    WEST  = 4,
-    HEAD  = 5,
-    TAIL  = 6,
+    North = 1,
+    East  = 2,
+    South = 3,
+    West  = 4,
+    Head  = 5,
+    Tail  = 6,
 }
 
 type Board struct {
@@ -76,31 +76,31 @@ Piece[] pieces = {
         .side2 = { { 0, 0, 0 } },
     },
     { // S-shaped
-        .side1 = { { 0, 0, 0 }, { 0, 1, NORTH }, { 1, 1, SOUTH }, { 1, 2, 0 } },
-        .side2 = { { 0, 0, 0 }, { 1, 0, 0 }, { 1, 1, WEST }, { 2, 1, SOUTH } },
+        .side1 = { { 0, 0, 0 }, { 0, 1, Flags.North }, { 1, 1, Flags.South }, { 1, 2, 0 } },
+        .side2 = { { 0, 0, 0 }, { 1, 0, 0 }, { 1, 1, Flags.West }, { 2, 1, Flags.South } },
     },
     { // L-shaped
-        .side1 = { { 0, 0, 0 }, { 0, 1 , 0 }, { 0, 2, NORTH }, { 1, 0, EAST } },
+        .side1 = { { 0, 0, 0 }, { 0, 1 , 0 }, { 0, 2, Flags.North }, { 1, 0, Flags.East } },
         .side2 = { { 0, 0, 0 }, { 1, 0 , 0 }, { 1, 1, 0 }, { 1, 2, 0 } }
     },
     { // L-shaped, head
         .side1 = { { 0, 0, 0 }, { 0, 1, 0 }, { 0, 2, 0 }, { 1, 0, 0 } },
-        .side2 = { { 0, 0, NORTH }, { 1, 0 , 0 }, { 1, 1, 0 }, { 1, 2, HEAD } }
+        .side2 = { { 0, 0, Flags.North }, { 1, 0 , 0 }, { 1, 1, 0 }, { 1, 2, Flags.Head } }
     },
     { // 3 1-side empty
         .side1 = { { 0, 0, 0 }, { 0, 1, 0 }, { 1, 0, 0 } },
-        .side2 = { { 0, 0, 0 }, { 0, 1, EAST }, { 1, 0, EAST } },
+        .side2 = { { 0, 0, 0 }, { 0, 1, Flags.East }, { 1, 0, Flags.East } },
     },
     { // 3 2-tails
-        .side1 = { { 0, 0, WEST }, { 0, 1, TAIL }, { 1, 0, 0 } },
-        .side2 = { { 0, 0, SOUTH }, { 0, 1, 0 }, { 1, 0, TAIL } },
+        .side1 = { { 0, 0, Flags.West }, { 0, 1, Flags.Tail }, { 1, 0, 0 } },
+        .side2 = { { 0, 0, Flags.South }, { 0, 1, 0 }, { 1, 0, Flags.Tail } },
     },
     { // I-shaped, 3-straight
-        .side1 = { { 0, 0, SOUTH }, { 0, 1, 0 }, { 0, 2, HEAD } },
-        .side2 = { { 0, 0, SOUTH }, { 0, 1, 0 }, { 0, 2, WEST } },
+        .side1 = { { 0, 0, Flags.South }, { 0, 1, 0 }, { 0, 2, Flags.Head } },
+        .side2 = { { 0, 0, Flags.South }, { 0, 1, 0 }, { 0, 2, Flags.West } },
     },
     { // I-shaped, 2 long
-        .side1 = { { 0, 0, WEST }, { 0, 1, NORTH } },
+        .side1 = { { 0, 0, Flags.West }, { 0, 1, Flags.North } },
         .side2 = { { 0, 0, 0 }, { 0, 1, 0 } },
     },
 }
@@ -109,9 +109,9 @@ const i32 NumPieces = elemsof(pieces);
 const i32 NumOptions = 8;
 
 type PositionType enum i8 {
-    PLACE_FREE = 0, // not placed yet
-    PLACE_SETUP,    // placed by initial setup
-    PLACE_PLACED,   // placed during search
+    Free = 0, // not placed yet
+    Setup,    // placed by initial setup
+    Placed,   // placed during search
 }
 
 type Position struct {
@@ -122,7 +122,7 @@ type Position struct {
 }
 
 const Position[] Setup = {
-    [0] = { PLACE_SETUP, 0, 1, 4 },
+    [0] = { PositionType.Setup, 0, 1, 4 },
 }
 
 
@@ -148,8 +148,8 @@ func Coor Coor.rotate(const Coor* input, u32 rotation) {
         y = t;
         break;
     }
-    u8 flags = input.flags;  // keep HEAD/TAIL, rotate NESW
-    if (rotation > 0 && flags >= NORTH && flags <= WEST) {
+    u8 flags = input.flags;  // keep Flags.Head/Flags.Tail, rotate NESW
+    if (rotation > 0 && flags >= Flags.North && flags <= Flags.West) {
         flags += rotation;
         if (flags > 4) flags -= 4;
     }
@@ -198,7 +198,7 @@ func void Board.setExpected(Board* b, i32 x, i32 y, u8 side) {
 
 func void Board.init(Board* b) {
     Field f;
-    f.status = FIELD_FREE;
+    f.status = FieldStatus.Free;
     f.piece_id = 0;
     f.flags = 0;
     f.expected = 0;
@@ -207,7 +207,7 @@ func void Board.init(Board* b) {
             b.set(x, y, f);
         }
     }
-    f.status = FIELD_BLOCKED;
+    f.status = FieldStatus.Blocked;
     b.set(0, 4, f);
     b.haveHead = 0;
     b.haveTail = 0;
@@ -216,22 +216,22 @@ func void Board.init(Board* b) {
 func char flags2char(i32 flags) {
     char f = ' ';
     switch (flags) {
-    case NORTH:
+    case Flags.North:
         f = 'N';
         break;
-    case EAST:
+    case Flags.East:
         f = 'E';
         break;
-    case SOUTH:
+    case Flags.South:
         f = 'S';
         break;
-    case WEST:
+    case Flags.West:
         f = 'W';
         break;
-    case HEAD:
+    case Flags.Head:
         f = 'H';
         break;
-    case TAIL:
+    case Flags.Tail:
         f = 'T';
         break;
     }
@@ -249,7 +249,7 @@ func void Board.print(Board* b) {
             *cp++ = '|';
             Field field = b.fields[x + y * 5];
             switch (field.status) {
-            case FIELD_FREE:
+            case FieldStatus.Free:
                 if (field.expected) {
                     cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, flags2char(field.expected));
                 } else {
@@ -258,7 +258,7 @@ func void Board.print(Board* b) {
                 *cp++ = ' ';
                 *cp++ = ' ';
                 break;
-            case FIELD_BLOCKED:
+            case FieldStatus.Blocked:
                 cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
                 break;
             default:
@@ -287,12 +287,12 @@ func void Board.print(Board* b) {
 func i32 Board.check_fault(Board* b, i32 xx, i32 yy, i32 expect) {
     Field f = b.get(xx, yy);
     switch (f.status) {
-    case FIELD_FREE:
+    case FieldStatus.Free:
         if (f.expected && f.expected != expect) return 1;
         break;
-    case FIELD_BLOCKED:
+    case FieldStatus.Blocked:
         return 1;
-    case FIELD_TAKEN:
+    case FieldStatus.Taken:
         if (f.flags != expect) return 1;
         break;
     }
@@ -309,29 +309,29 @@ func i32 Board.try_option(Board* b, const Option* pp, i32 x, i32 y) {
         i32 yy = y + c.y;
         if (yy < 0 || yy > 4) return 1;
         Field f = b.get(xx, yy);
-        if (f.status != FIELD_FREE) return 1;
+        if (f.status != FieldStatus.Free) return 1;
         if (f.expected != 0 && f.expected != c.flags) return 1;
         switch (c.flags) {
-        case NORTH:
+        case Flags.North:
             if (yy == 4) return 1;
-            if (b.check_fault(xx, yy+1, SOUTH)) return 1;
+            if (b.check_fault(xx, yy+1, Flags.South)) return 1;
             break;
-        case EAST:
+        case Flags.East:
             if (xx == 4) return 1;
-            if (b.check_fault(xx+1, yy, WEST)) return 1;
+            if (b.check_fault(xx+1, yy, Flags.West)) return 1;
             break;
-        case SOUTH:
+        case Flags.South:
             if (yy == 0) return 1;
-            if (b.check_fault(xx, yy-1, NORTH)) return 1;
+            if (b.check_fault(xx, yy-1, Flags.North)) return 1;
             break;
-        case WEST:
+        case Flags.West:
             if (xx == 0) return 1;
-            if (b.check_fault(xx-1, yy, EAST)) return 1;
+            if (b.check_fault(xx-1, yy, Flags.East)) return 1;
             break;
-        case HEAD:
+        case Flags.Head:
             if (b.haveHead) return 1;
             break;
-        case TAIL:
+        case Flags.Tail:
             if (b.haveTail) return 1;
             break;
         }
@@ -346,29 +346,29 @@ func void Board.add(Board* b, const Option* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         Field field = b.get(xx, yy);
-        //assert(field.status == FIELD_FREE);
-        field.status = FIELD_TAKEN;
+        //assert(field.status == FieldStatus.Free);
+        field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
         b.set(xx, yy, field);
         switch (c.flags) {
-        case NORTH:
-            b.setExpected(xx, yy+1, SOUTH);
+        case Flags.North:
+            b.setExpected(xx, yy+1, Flags.South);
             break;
-        case EAST:
-            b.setExpected(xx+1, yy, WEST);
+        case Flags.East:
+            b.setExpected(xx+1, yy, Flags.West);
             break;
-        case SOUTH:
-            field.flags = NORTH;
-            b.setExpected(xx, yy-1, NORTH);
+        case Flags.South:
+            field.flags = Flags.North;
+            b.setExpected(xx, yy-1, Flags.North);
             break;
-        case WEST:
-            b.setExpected(xx-1, yy, EAST);
+        case Flags.West:
+            b.setExpected(xx-1, yy, Flags.East);
             break;
-        case HEAD:
+        case Flags.Head:
             b.haveHead = 1;
             break;
-        case TAIL:
+        case Flags.Tail:
             b.haveTail = 1;
             break;
         }
@@ -382,27 +382,27 @@ func void Board.rem(Board* b, const Option* pp, i32 x, i32 y) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         Field field = b.get(xx, yy);
-        field.status = FIELD_FREE;
+        field.status = FieldStatus.Free;
         field.piece_id = 0;
         field.flags = 0;
         b.set(xx, yy, field);
         switch (c.flags) {
-        case NORTH:
+        case Flags.North:
             b.clearflags(xx, yy+1);
             break;
-        case EAST:
+        case Flags.East:
             b.clearflags(xx+1, yy);
             break;
-        case SOUTH:
+        case Flags.South:
             b.clearflags(xx, yy-1);
             break;
-        case WEST:
+        case Flags.West:
             b.clearflags(xx-1, yy);
             break;
-        case HEAD:
+        case Flags.Head:
             b.haveHead = 0;
             break;
-        case TAIL:
+        case Flags.Tail:
             b.haveTail = 0;
             break;
         }
@@ -418,7 +418,7 @@ func void Board.try_piece(Board* b, u8 p) {
         b.print();
         return;
     }
-    if (Setup[p].postype == PLACE_SETUP) {
+    if (Setup[p].postype == PositionType.Setup) {
         i32 o = Setup[p].option;
         i32 x = Setup[p].x;
         i32 y = Setup[p].y;
@@ -433,7 +433,7 @@ func void Board.try_piece(Board* b, u8 p) {
     for (i32 y=4; y>=0; y--) {
         for (i32 x=0; x<5; x++) {
             Field f = b.get(x, y);
-            if (f.status != FIELD_FREE) continue;
+            if (f.status != FieldStatus.Free) continue;
             for (u32 o=0; o<NumOptions; o++) {
                 if (!b.try_option(&options[o][p], x, y)) {
                     b.add(&options[o][p], x, y, p);
