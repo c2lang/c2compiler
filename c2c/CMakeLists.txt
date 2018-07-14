@@ -1,5 +1,5 @@
 
-SET(LLVM_CONFIG_EXECUTABLE "llvm-config")
+set(LLVM_CONFIG_EXECUTABLE "llvm-config")
 
 execute_process(
   COMMAND ${LLVM_CONFIG_EXECUTABLE} --cxxflags
@@ -21,13 +21,13 @@ execute_process(
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
-SET(CLANG_LIBS "-lclangFrontend -lclangEdit -lclangLex -lclangBasic -lclangRewrite")
+set(CLANG_LIBS "-lclangFrontend -lclangEdit -lclangLex -lclangBasic -lclangRewrite")
 
-INCLUDE_DIRECTORIES("${CMAKE_CURRENT_SOURCE_DIR}")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
 #line below is needed for Ubuntu 13.04 32 bit
-INCLUDE_DIRECTORIES("/usr/include/i386-linux-gnu/c++/4.8/")
+include_directories("/usr/include/i386-linux-gnu/c++/4.8/")
 
-ADD_LIBRARY(c2core
+add_library(c2core
     AST/AST.cpp
     AST/Decl.cpp
     AST/Expr.cpp
@@ -81,23 +81,23 @@ ADD_LIBRARY(c2core
     Utils/TargetInfo.cpp
     Utils/ProcessUtils.cpp
 )
-SET_TARGET_PROPERTIES(c2core PROPERTIES COMPILE_FLAGS "${LLVM_CXXFLAGS}")
+set_target_properties(c2core PROPERTIES COMPILE_FLAGS "${LLVM_CXXFLAGS}")
 
-ADD_EXECUTABLE(c2c
+add_executable(c2c
     main.cpp
 )
-TARGET_LINK_LIBRARIES(c2c c2core ${LLVM_LDFLAGS} ${CLANG_LIBS} ${LLVM_LIBS} dl pthread)
+target_link_libraries(c2c c2core ${LLVM_LDFLAGS} ${CLANG_LIBS} ${LLVM_LIBS} dl pthread)
 
 
-if (APPLE OR CYGWIN)
-    TARGET_LINK_LIBRARIES(c2c ncurses)
+if(APPLE OR CYGWIN)
+    target_link_libraries(c2c ncurses)
 else()
 # on Ubuntu,  tinfo seems to needed from Feb'15 on Ubuntu 14.04..
-    TARGET_LINK_LIBRARIES(c2c tinfo)
+    target_link_libraries(c2c tinfo)
 endif()
 
-#SET_TARGET_PROPERTIES(c2c PROPERTIES COMPILE_FLAGS "${LLVM_CXXFLAGS} -Wno-covered-switch-default")
-SET_TARGET_PROPERTIES(c2c PROPERTIES COMPILE_FLAGS "${LLVM_CXXFLAGS}")
+#set_target_properties(c2c PROPERTIES COMPILE_FLAGS "${LLVM_CXXFLAGS} -Wno-covered-switch-default")
+set_target_properties(c2c PROPERTIES COMPILE_FLAGS "${LLVM_CXXFLAGS}")
 
 install(TARGETS c2c DESTINATION ${DESTDIR}/)
 

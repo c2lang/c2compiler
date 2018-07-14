@@ -1,17 +1,17 @@
 
-ADD_DEFINITIONS(-Wall -Wextra -Wshadow -Wno-unused-parameter)
-#-D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wshadow -Wno-unused-parameter")
 
 include_directories(${CMAKE_SOURCE_DIR}/c2c)
 
-ADD_EXECUTABLE(c2tags
+add_executable(c2tags
     c2tags/main.cpp
     c2tags/TagReader.cpp
     ${CMAKE_SOURCE_DIR}/c2c/Builder/RootFinder.cpp
     ${CMAKE_SOURCE_DIR}/c2c/FileUtils/FileMap.cpp
 )
 
-ADD_EXECUTABLE(tester
+add_executable(tester
     tester/main.cpp
     ${CMAKE_SOURCE_DIR}/c2c/FileUtils/FileMap.cpp
     ${CMAKE_SOURCE_DIR}/c2c/Utils/StringBuilder.cpp

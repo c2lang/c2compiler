@@ -1,26 +1,25 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
-PROJECT(c2compiler)
+cmake_minimum_required(VERSION 2.8)
+project(c2compiler CXX)
 
 if(CYGWIN OR WIN32)
-# There is a bug with clang and libstdc++ with the __float128 type which, 
+# There is a bug with clang and libstdc++ with the __float128 type which,
 # quite frankly, affects C2C compilation, hence why we need to use GCC.
-	SET(CMAKE_CXX_COMPILER "g++") 
+	set(CMAKE_CXX_COMPILER "g++")
 else(CYGWIN OR WIN32)
-	SET(CMAKE_CXX_COMPILER "clang++")
+	set(CMAKE_CXX_COMPILER "clang++")
 endif(CYGWIN OR WIN32)
 
-#SET(CMAKE_BUILD_TYPE Release)
-SET(CMAKE_BUILD_TYPE Debug)
-#SET(CMAKE_VERBOSE_MAKEFILE true)
-ADD_DEFINITIONS(-Wall)
-#ADD_DEFINITIONS(-Wall -Wextra -Wshadow -Wno-overloaded-virtual -Wno-unused-parameter)
+set(CMAKE_BUILD_TYPE Release)
+#set(CMAKE_BUILD_TYPE Debug)
 
-SET(CMAKE_VERBOSE_MAKEFILE false)
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wshadow -Wno-overloaded-virtual -Wno-unused-parameter")
 
-ADD_SUBDIRECTORY(c2c)
-ADD_SUBDIRECTORY(tools)
+set(CMAKE_VERBOSE_MAKEFILE false)
 
-ADD_CUSTOM_TARGET(tests
+add_subdirectory(c2c)
+add_subdirectory(tools)
+
+add_custom_target(tests
     COMMAND ${CMAKE_BINARY_DIR}/tools/tester test
     DEPENDS c2c tester
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
