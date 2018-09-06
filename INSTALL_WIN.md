@@ -15,7 +15,7 @@ Once your Cygwin is ready, start its shell where you will enter the commands
 written below.
 
 ## Installation of LLVM/Clang (C2 version)
-C2 is based on LLVM 6.0 and some parts of a modified Clang 6.0,
+C2 is based on LLVM 7.0 and some parts of a modified Clang 7.0,
 so we will need to build it first.
 
 As this installation is counting with installation into **$HOME/llvm-c2**, you can start by creating

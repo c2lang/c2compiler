@@ -1,12 +1,12 @@
 ## Installation of LLVM/Clang (C2 version)
-C2 is based on LLVM 6.0 and some parts of Clang 6.0.
+C2 is based on LLVM 7.0 and some parts of Clang 7.0.
 To install C2, follow the steps below. The example shows
 how to install in **$HOME/llvm-c2**, but any other dir should work.
 
 Note that all OS-specific instructions include the Generic section
 
 ### Ubuntu 14.04
-LLVM/Clang 6.0 needs cmake 3.4.3 or higher, since Ubuntu does not have
+LLVM/Clang 7.0 needs cmake 3.4.3 or higher, since Ubuntu does not have
 this natively, just install it from a binary package:
 (installed here in $HOME/progs)
 ```bash
@@ -19,7 +19,7 @@ export CC=clang-3.5
 export CXX=clang++-3.5
 ```
 
-### Ubuntu 16.04
+### Ubuntu 16.04 / 18.04
 ```bash
 sudo apt-get install clang cmake ncurses-dev
 export CC=clang
@@ -44,20 +44,20 @@ export PATH=~/progs/cmake-3.5.2-Darwin-x86_64/CMake.app/Contents/bin:$PATH
 These commands build the C2-modified LLVM/Clang toolchain. The produced clang is still
 fully compatible with the original one (ie. it can compile C/C++ just as well).
 
-TODO clone all archives to c2lang
+There is a convenience script: *clang\_build.sh* that runs the commands below.
 
 ```bash
 git clone git://github.com/c2lang/llvm.git
 cd llvm/
-git checkout -b release_60 origin/release_60
+git checkout -b release_70 origin/release_70
 cd projects
 git clone git://github.com/c2lang/compiler-rt.git
 cd compiler-rt
-git checkout -b release_60 origin/release_60
+git checkout -b release_70 origin/release_70
 cd ../../tools
 git clone git://github.com/c2lang/clang.git
 cd clang
-git checkout -b c2master_60 origin/c2master_60
+git checkout -b c2master_70 origin/c2master_70
 cd ../../..
 
 mkdir llvm_build
