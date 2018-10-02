@@ -281,6 +281,9 @@ void FunctionAnalyser::analyseStmt(Stmt* S, bool haveScope) {
     case STMT_DECL:
         analyseDeclStmt(S);
         break;
+    case STMT_ASM:
+        analyseAsmStmt(S);
+        break;
     }
 }
 
@@ -548,6 +551,26 @@ void FunctionAnalyser::analyseDeclStmt(Stmt* stmt) {
         Diag(decl->getLocation(), diag::err_uninitialized_const_var) << decl->getName();
     }
     scope.addScopedSymbol(decl);
+}
+
+void FunctionAnalyser::analyseAsmStmt(Stmt* stmt) {
+    LOG_FUNC
+    AsmStmt* A = cast<AsmStmt>(stmt);
+    // outputs
+    for (unsigned i=0; i<A->getNumOutputs(); ++i) {
+        Expr* e = A->getOutputExpr(i);
+        analyseExpr(e, LHS);
+    }
+    // inputs
+    for (unsigned i=0; i<A->getNumInputs(); ++i) {
+        Expr* e = A->getInputExpr(i);
+        analyseExpr(e, RHS);
+    }
+    // clobbers
+    for (unsigned i=0; i<A->getNumClobbers(); ++i) {
+        StringLiteral* c = A->getClobber(i);
+        analyseExpr(c, 0);
+    }
 }
 
 bool FunctionAnalyser::analyseCondition(Stmt* stmt) {

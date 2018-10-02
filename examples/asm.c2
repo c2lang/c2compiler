@@ -1,0 +1,19 @@
+module test;
+import stdio;
+
+func u64 rdtsc() @(inline) {
+    u32 lo;
+    u32 hi;
+    asm volatile ("rdtsc" : "=a" (lo), "=d" (hi));
+    u32 res = hi;
+    res << 32;
+    res |= lo;
+    return res;
+}
+
+public func i32 main() {
+    stdio.printf("%lu\n", rdtsc());
+    stdio.printf("%lu\n", rdtsc());
+    return 0;
+}
+

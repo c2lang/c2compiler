@@ -47,6 +47,7 @@ class AST;
 class ASTContext;
 class Component;
 class Module;
+class TargetInfo;
 
 typedef std::vector<Decl*> DeclList;
 typedef std::vector<VarDecl*> VarDeclList;
@@ -54,7 +55,8 @@ typedef std::vector<VarDecl*> VarDeclList;
 class C2Sema {
 public:
     C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, clang::Preprocessor& PP_,
-           Component& comp_, Module* existingMod, const std::string& filename_);
+           Component& comp_, Module* existingMod, const std::string& filename_,
+           const TargetInfo& ti);
     ~C2Sema();
 
     void printAST() const;
@@ -96,6 +98,10 @@ public:
     StmtResult ActOnGotoStmt(IdentifierInfo& symII, SourceLocation symLoc, SourceLocation GotoLoc);
     StmtResult ActOnCompoundStmt(SourceLocation L, SourceLocation R, StmtList& stmts);
     StmtResult ActOnDeclaration(const char* name, SourceLocation loc, Expr* type, Expr* InitValue);
+    StmtResult ActOnAsmStmt(SourceLocation AsmLoc, bool isBasic, bool isVolatile,
+                            unsigned NumOutputs, unsigned NumInputs,
+                            IdentifierInfo** Names, MultiExprArg constraints,
+                            MultiExprArg Exprs, Expr* asmString, MultiExprArg clobbers);
 
     // expressions
     ExprResult ActOnBooleanConstant(const Token& Tok);
@@ -153,6 +159,7 @@ private:
     Module* module;
     AST& ast;
     ASTContext& Context;
+    const TargetInfo& targetInfo;
 
     typedef std::map<std::string, Decl*> Symbols;
     typedef Symbols::const_iterator SymbolsConstIter;

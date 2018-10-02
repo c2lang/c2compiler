@@ -1646,6 +1646,8 @@ C2::StmtResult C2Parser::ParseStatement() {
     case tok::kw_case:
         Diag(Tok, diag::err_case_not_in_switch);
         return StmtError();
+    case tok::kw_asm:
+        return ParseAsmStatement();
     case tok::kw_default:
         Diag(Tok, diag::err_default_not_in_switch);
         return StmtError();
@@ -1676,6 +1678,178 @@ C2::StmtResult C2Parser::ParseStatement() {
         }
         return ParseExprStatement();
     }
+}
+
+C2::ExprResult C2Parser::ParseAsmStringLiteral() {
+    if (!isTokenStringLiteral()) {
+        Diag(Tok, diag::err_expected_string_literal) << 0 << "'asm'";
+        return ExprError();
+    }
+    ExprResult AsmString(ParseStringLiteralExpression());
+    if (!AsmString.isInvalid()) {
+        // TODO support string types
+#if  0
+        const StringLiteral *SL = cast<StringLiteral>(AsmString.get());
+        if (!SL->isAscii()) {
+          Diag(Tok, diag::err_asm_operand_wide_string_literal)
+            << SL->isWide()
+            << SL->getSourceRange();
+        return ExprError();
+#endif
+    }
+    return AsmString;
+}
+
+// Syntax:
+// asm-operands:
+//      asm-operand
+//      asm-operands ',' asm-operand
+//
+// asm-operand:
+//      asm-string_literal '(' expression ')'
+//      '[' identifier ']' asm-string_literal '(' expression ')'
+//
+bool C2Parser::ParseAsmOperandsOpt(SmallVectorImpl<IdentifierInfo*> &Names,
+                                   SmallVectorImpl<Expr*> &Constraints,
+                                   SmallVectorImpl<Expr*> &Exprs) {
+    // 'asm-operands' isn't present
+    if (!isTokenStringLiteral() && Tok.isNot(tok::l_square)) return false;
+
+    while (1) {
+        // Read the [id] if present
+        if (Tok.is(tok::l_square)) {
+            ConsumeToken();
+
+            if (Tok.isNot(tok::identifier)) {
+                Diag(Tok, diag::err_expected) << tok::identifier;
+                SkipUntil(tok::r_paren, StopAtSemi);
+                return true;
+            }
+            IdentifierInfo* II = Tok.getIdentifierInfo();
+            ConsumeToken();
+            Names.push_back(II);
+            ExpectAndConsume(tok::r_square);
+        } else
+            Names.push_back(nullptr);
+
+        ExprResult Constraint(ParseAsmStringLiteral());
+        if (Constraint.isInvalid()) {
+            SkipUntil(tok::r_paren, StopAtSemi);
+            return true;
+        }
+        Constraints.push_back(Constraint.get());
+
+        if (Tok.isNot(tok::l_paren)) {
+            Diag(Tok, diag::err_expected_lparen_after) << "asm operand";
+            SkipUntil(tok::r_paren, StopAtSemi);
+            return true;
+        }
+
+        // Read the parenthesized expression
+        ExpectAndConsume(tok::l_paren);
+        //ExprResult Res = Actions.CorrectDelayedTyposInExpr(ParseExpression());
+        ExprResult Res = ParseExpression();
+        ExpectAndConsume(tok::r_paren);
+        if (Res.isInvalid()) {
+            SkipUntil(tok::r_paren, StopAtSemi);
+            return true;
+        }
+        Exprs.push_back(Res.get());
+        if (!TryConsumeToken(tok::comma)) return false;
+    }
+}
+
+
+// Syntax (GNU extended asm statement)
+// asm-statement:
+//      'asm' type-qualifier[opt] '(' asm-argument ')' ';'
+//
+// asm-argument:
+//      asm-string-literal
+//      asm-string-literal ':' asm-operands[opt]
+//      asm-string-literal ':' asm-operands[opt] ':' asm-operands[opt]
+//      asm-string-literal ':' asm-operands[opt] ':' asm-operands[opt]
+//              ':' asm-clobbers
+//
+// asm-clobbers:
+//      asm-string-literal
+//      asm-clobbers ',' asm-string-literal
+//
+C2::StmtResult C2Parser::ParseAsmStatement() {
+    LOG_FUNC
+    assert(Tok.is(tok::kw_asm) && "Not an asm stmt");
+    SourceLocation loc = ConsumeToken();
+    // TODO multiple?
+    unsigned type_qualifier = ParseOptionalTypeQualifier();
+    bool isVolatile = (type_qualifier == TYPE_VOLATILE);
+    // TODO check allowed qualifiers
+
+    if (Tok.isNot(tok::l_paren)) {
+        Diag(Tok, diag::err_expected_lparen_after) << "asm";
+        SkipUntil(tok::semi);
+        return StmtError();
+    }
+    //BalancedDelimiterTracker T(*this, tok::l_paren);
+    //T.consumeOpen();
+    ConsumeToken();
+
+    ExprResult AsmString(ParseAsmStringLiteral());
+    if (AsmString.isInvalid()) {
+        // T.skipToEnd()
+        return StmtError();
+    }
+
+    SmallVector<IdentifierInfo*, 4> Names;
+    ExprVector Constraints;
+    ExprVector Exprs;
+    ExprVector Clobbers;
+
+    // Basic Asm stmt
+    if (Tok.is(tok::r_paren)) {
+        ConsumeToken();
+        if (ExpectAndConsume(tok::semi, diag::err_expected_after, "asm")) return StmtError();
+        return Actions.ActOnAsmStmt(
+                loc, true, isVolatile, 0, 0, nullptr, Constraints, Exprs, AsmString.get(),
+                Clobbers);
+    }
+    // Extended Asm stmt
+
+    // parse Outputs, if present
+    if (Tok.is(tok::colon)) {
+        ConsumeToken();
+        if (ParseAsmOperandsOpt(Names, Constraints, Exprs)) return StmtError();
+    }
+    unsigned NumOutputs = Names.size();
+
+    // parse Inputs, if present
+    if (Tok.is(tok::colon)) {
+        ConsumeToken();
+        if (ParseAsmOperandsOpt(Names, Constraints, Exprs)) return StmtError();
+    }
+    unsigned NumInputs = Names.size() - NumOutputs;
+
+    // parse Clobbers, if present
+    if (Tok.is(tok::colon)) {
+        ConsumeToken();
+
+        // Parse the asm-string list for clobbers if present
+        if (Tok.isNot(tok::r_paren)) {
+            while (1) {
+                ExprResult Clobber(ParseAsmStringLiteral());
+                if (Clobber.isInvalid()) break;
+
+                Clobbers.push_back(Clobber.get());
+                if (!TryConsumeToken(tok::comma)) break;
+            }
+        }
+    }
+
+    if (ExpectAndConsume(tok::r_paren)) return StmtError();
+    if (ExpectAndConsume(tok::semi, diag::err_expected_after, "asm")) return StmtError();
+
+    return Actions.ActOnAsmStmt(
+                loc, false, isVolatile, NumOutputs, NumInputs, Names.data(),
+                Constraints, Exprs, AsmString.get(), Clobbers);
 }
 
 // Syntax: return <expression>

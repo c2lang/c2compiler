@@ -66,6 +66,8 @@ void Stmt::print(StringBuilder& buffer, unsigned indent) const {
         return cast<CompoundStmt>(this)->print(buffer, indent);
     case STMT_DECL:
         return cast<DeclStmt>(this)->print(buffer, indent);
+    case STMT_ASM:
+        return cast<AsmStmt>(this)->print(buffer, indent);
     }
 }
 
@@ -101,6 +103,8 @@ SourceLocation Stmt::getLocation() const {
         return cast<CompoundStmt>(this)->getLocation();
     case STMT_DECL:
         return cast<DeclStmt>(this)->getLocation();
+    case STMT_ASM:
+        return cast<AsmStmt>(this)->getLocation();
     }
 }
 
@@ -379,5 +383,90 @@ SourceLocation DeclStmt::getLocation() const {
 
 const char* DeclStmt::getName() const {
     return decl->getName();
+}
+
+
+
+AsmStmt::AsmStmt(SourceLocation asmloc_, bool isBasic_, bool isVolatile_, StringLiteral* asmString_,
+                unsigned numOutputs_, unsigned numInputs_,
+                const char** names_, StringLiteral** constraints_, Expr** exprs_,
+                unsigned numClobbers_, StringLiteral** clobbers_)
+    : Stmt(STMT_ASM)
+    , asmloc(asmloc_)
+    , asmString(asmString_)
+    , numOutputs(numOutputs_)
+    , numInputs(numInputs_)
+    , numClobbers(numClobbers_)
+    , names(names_)
+    , constraints(constraints_)
+    , exprs(exprs_)
+    , clobbers(clobbers_)
+{
+    asmStmtBits.isVolatile = isVolatile_;
+    asmStmtBits.isBasic = isBasic_;
+}
+
+void AsmStmt::print(StringBuilder& buffer, unsigned indent) const {
+    buffer.indent(indent);
+    buffer.setColor(COL_STMT);
+    buffer << "AsmStmt\n";
+    asmString->print(buffer, indent + INDENT);
+    if (numOutputs) {
+        buffer.indent(indent);
+        buffer.setColor(COL_ATTR);
+        buffer << "Outputs\n";
+        for (unsigned i=0; i<numOutputs; i++) {
+            buffer.indent(indent+INDENT);
+            const char* n = getOutputName(i);
+            if (n) {
+                buffer.setColor(COL_ATTR);
+                buffer << '[';
+                buffer.setColor(COL_VALUE);
+                buffer << n;
+                buffer.setColor(COL_ATTR);
+                buffer  << "] ";
+            }
+            const StringLiteral* c = getOutputConstraint(i);
+            c->print(buffer, 0);
+            const Expr* e = getOutputExpr(i);
+            e->print(buffer, indent+2*INDENT);
+        }
+    }
+    if (numInputs) {
+        buffer.indent(indent);
+        buffer.setColor(COL_ATTR);
+        buffer << "Inputs\n";
+        for (unsigned i=0; i<numInputs; i++) {
+            buffer.indent(indent+INDENT);
+            const char* n = getInputName(i);
+            if (n) {
+                buffer.setColor(COL_ATTR);
+                buffer << '[';
+                buffer.setColor(COL_VALUE);
+                buffer << n;
+                buffer.setColor(COL_ATTR);
+                buffer  << "] ";
+            }
+            const StringLiteral* c = getInputConstraint(i);
+            c->print(buffer, 0);
+            const Expr* e = getInputExpr(i);
+            e->print(buffer, indent+2*INDENT);
+        }
+    }
+    if (numClobbers) {
+        buffer.indent(indent);
+        buffer.setColor(COL_ATTR);
+        buffer << "Clobbers: ";
+        buffer.setColor(COL_VALUE);
+        for (unsigned i=0; i<numClobbers; i++) {
+            if (i != 0) buffer << " ";
+            const StringLiteral* c = getClobber(i);
+            c->printLiteral(buffer);
+        }
+    }
+}
+
+SourceLocation AsmStmt::getLocation() const {
+    return asmloc;
 }
 

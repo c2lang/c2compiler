@@ -33,8 +33,10 @@ class FunctionTypeDecl;
 class EnumTypeDecl;
 class QualType;
 class Expr;
+class StringLiteral;
 class Stmt;
 class CompoundStmt;
+class AsmStmt;
 class HeaderNamer;
 class TargetInfo;
 
@@ -82,6 +84,9 @@ private:
     void EmitForStmt(const Stmt* S, unsigned indent);
     void EmitSwitchStmt(const Stmt* S, unsigned indent);
     void EmitDeclStmt(const Stmt* S, unsigned indent);
+    void EmitAsmStmt(const AsmStmt* S, unsigned indent);
+    void EmitAsmPart(bool multiline, unsigned indent);
+    void EmitAsmOperand(const char* name, const StringLiteral* c, const Expr* e);
 
     void EmitExpr(const Expr* E, StringBuilder& output);
     void EmitBuiltinExpr(const Expr* E, StringBuilder& output);
@@ -101,7 +106,7 @@ private:
     void EmitTypePostName(QualType type, StringBuilder& output);
     void EmitConditionPre(const Stmt* S, unsigned indent);
     void EmitConditionPost(const Stmt* S);
-    void EmitAttributes(const Decl* D, StringBuilder& output);
+    bool EmitAttributes(const Decl* D, StringBuilder& output, bool addStartSpace);
 
     bool EmitAsStatic(const Decl* D) const;
     bool EmitAsDefine(const VarDecl* V) const;

@@ -30,6 +30,7 @@ class Expr;
 class VarDecl;
 class ASTContext;
 class IdentifierExpr;
+class StringLiteral;
 
 enum StmtKind {
     STMT_RETURN = 0,
@@ -47,6 +48,7 @@ enum StmtKind {
     STMT_GOTO,
     STMT_COMPOUND,
     STMT_DECL,
+    STMT_ASM,
 };
 
 
@@ -112,6 +114,14 @@ protected:
         unsigned : NumStmtBits;
 
         unsigned numStmts : 32 - NumStmtBits;
+    };
+
+    class AsmStmtBitFields {
+        friend class AsmStmt;
+        unsigned : NumStmtBits;
+
+        unsigned isVolatile : 1;
+        unsigned isBasic : 1;
     };
 
     class ExprBitfields {
@@ -220,6 +230,7 @@ protected:
         CaseStmtBitfields caseStmtBits;
         DefaultStmtBitfields defaultStmtBits;
         CompoundStmtBitfields compoundStmtBits;
+        AsmStmtBitFields asmStmtBits;
 
         ExprBitfields exprBits;
         IdentifierExprBitfields identifierExprBits;
@@ -502,6 +513,45 @@ public:
     VarDecl* getDecl() const { return decl; }
 private:
     VarDecl* decl;
+};
+
+
+class AsmStmt : public Stmt {
+public:
+    AsmStmt(SourceLocation asmloc_, bool isBasic_, bool isVolatile_, StringLiteral* asmString_,
+            unsigned numOutputs_, unsigned numInputs_,
+            const char** names_, StringLiteral** constraints_, Expr** exprs_,
+            unsigned numClobbers_, StringLiteral** clobbers_);
+
+    static bool classof(const Stmt* S) {
+        return S->getKind() == STMT_ASM;
+    }
+    void print(StringBuilder& buffer, unsigned indent) const;
+    SourceLocation getLocation() const;
+
+    bool isVolatile() const { return asmStmtBits.isVolatile; }
+    bool isBasic() const { return asmStmtBits.isBasic; }
+    StringLiteral* getString() const { return asmString; }
+    unsigned getNumOutputs() const { return numOutputs; }
+    unsigned getNumInputs() const { return numInputs; }
+    unsigned getNumClobbers() const { return numClobbers; }
+    const char* getOutputName(unsigned i) const { return names[i]; }
+    const char* getInputName(unsigned i) const { return names[numOutputs + i]; }
+    const StringLiteral* getOutputConstraint(unsigned i) const { return constraints[i]; }
+    const StringLiteral* getInputConstraint(unsigned i) const { return constraints[numOutputs + i]; }
+    Expr* getOutputExpr(unsigned i) const { return exprs[i]; }
+    Expr* getInputExpr(unsigned i) const { return exprs[numOutputs + i]; }
+    StringLiteral* getClobber(unsigned i) const { return clobbers[i]; }
+private:
+    SourceLocation asmloc;
+    StringLiteral* asmString;
+    unsigned numOutputs;
+    unsigned numInputs;
+    unsigned numClobbers;
+    const char** names;
+    StringLiteral** constraints;
+    Expr** exprs;
+    StringLiteral** clobbers;
 };
 
 

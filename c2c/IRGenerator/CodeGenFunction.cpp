@@ -158,6 +158,10 @@ void CodeGenFunction::EmitStmt(const Stmt* S) {
     case STMT_DECL:
         EmitVarDecl(cast<DeclStmt>(S)->getDecl());
         break;
+    case STMT_ASM:
+        assert(0 && "TODO");
+        S->dump();
+        break;
     }
 }
 

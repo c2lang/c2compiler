@@ -145,7 +145,8 @@ public:
                 SourceManager& SM_,
                 FileManager& FileMgr_,
                 MemoryBufferCache& PCMCache_,
-                const std::string& configs_)
+                const std::string& configs_,
+                const TargetInfo& ti)
         : Diags(Diags_)
         , LangOpts(LangOpts_)
         , pti(pti_)
@@ -154,6 +155,7 @@ public:
         , FileMgr(FileMgr_)
         , PCMCache(PCMCache_)
         , configs(configs_)
+        , targetInfo(ti)
     {}
 
     bool parse(Component& component, Module* existingMod, const std::string& filename, bool printAST) {
@@ -190,7 +192,7 @@ public:
 
         Diags.getClient()->BeginSourceFile(LangOpts, 0);
 
-        C2Sema sema(SM, Diags, PP, component, existingMod, filename);
+        C2Sema sema(SM, Diags, PP, component, existingMod, filename, targetInfo);
         C2Parser parser(PP, sema, component.isExternal());
         bool ok = parser.Parse();
         if (printAST) sema.printAST();
@@ -213,6 +215,7 @@ public:
     FileManager& FileMgr;
     MemoryBufferCache& PCMCache;
     const std::string& configs;
+    const TargetInfo& targetInfo;
 };
 
 }
@@ -399,7 +402,8 @@ int C2Builder::build() {
         libLoader.addDep(mainComponent, recipe.libraries[i].name, recipe.libraries[i].type);
     }
 
-    ParseHelper helper(Diags, LangOpts, pti, HSOpts, SM, FileMgr, PCMCache, PredefineBuffer);
+    ParseHelper helper(Diags, LangOpts, pti, HSOpts, SM, FileMgr, PCMCache,
+            PredefineBuffer, targetInfo);
     // phase 1a: parse and local analyse
     uint64_t t1_parse = Utils::getCurrentTime();
     unsigned errors = 0;

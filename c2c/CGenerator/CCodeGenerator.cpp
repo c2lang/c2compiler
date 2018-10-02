@@ -627,6 +627,8 @@ void CCodeGenerator::EmitFunctionForward(const FunctionDecl* F) {
 
     StringBuilder* out = &cbuf;
     if (mode != SINGLE_FILE && F->isPublic()) out = &hbuf;
+    bool hasAttr = EmitAttributes(F, *out, false);
+    if (hasAttr) (*out) << ' ';
     EmitFunctionProto(F, *out);
     (*out) << ";\n";
 }
@@ -634,10 +636,8 @@ void CCodeGenerator::EmitFunctionForward(const FunctionDecl* F) {
 void CCodeGenerator::EmitFunction(const FunctionDecl* F) {
     LOG_DECL(F)
 
-    if (F->hasAttributes()) {
-        EmitAttributes(F, cbuf);
-        cbuf << ' ';
-    }
+    bool hasAttr = EmitAttributes(F, cbuf, false);
+    if (hasAttr) cbuf << ' ';
     EmitFunctionProto(F, cbuf);
     cbuf << ' ';
     EmitCompoundStmt(F->getBody(), 0, false);
@@ -717,13 +717,12 @@ void CCodeGenerator::EmitGlobalVariable(const VarDecl* V) {
     cbuf << ' ';
     EmitDecl(V, cbuf);
     EmitTypePostName(V->getType(), cbuf);
-    EmitAttributes(V, cbuf);
+    EmitAttributes(V, cbuf, true);
+    cbuf << " = ";
     if (V->getInitValue()) {
-        cbuf << " = ";
         EmitExpr(V->getInitValue(), cbuf);
     } else {
         // always generate initialization
-        cbuf << " = ";
         if (V->getType().isPointerType()) {
             cbuf << "NULL";
         } else if (V->getType().isStructType() || V->getType().isArrayType()) {
@@ -819,7 +818,7 @@ void CCodeGenerator::EmitStructType(const StructTypeDecl* S, StringBuilder& out,
         out << ' ';
         EmitDecl(S, out);
     }
-    EmitAttributes(S, out);
+    EmitAttributes(S, out, true);
     out << ";\n";
     if (S->isGlobal()) out << '\n';
 }
@@ -839,7 +838,7 @@ void CCodeGenerator::EmitEnumType(const EnumTypeDecl* E, StringBuilder& output) 
     }
     output << "} ";
     EmitDecl(E, output);
-    EmitAttributes(E, output);
+    EmitAttributes(E, output, true);
     output << ";\n\n";
 }
 
@@ -854,7 +853,7 @@ void CCodeGenerator::EmitFunctionType(const FunctionTypeDecl* FTD, StringBuilder
     EmitDecl(F, output);
     output << ')';
     EmitFunctionArgs(F, output);
-    EmitAttributes(FTD, output);
+    EmitAttributes(FTD, output, true);
     output << ";\n\n";
 }
 
@@ -955,6 +954,9 @@ void CCodeGenerator::EmitStmt(const Stmt* S, unsigned indent) {
         return;
     case STMT_DECL:
         EmitDeclStmt(cast<DeclStmt>(S), indent);
+        return;
+    case STMT_ASM:
+        EmitAsmStmt(cast<AsmStmt>(S), indent);
         return;
     }
 }
@@ -1142,6 +1144,72 @@ void CCodeGenerator::EmitDeclStmt(const Stmt* S, unsigned indent) {
     cbuf << ";\n";
 }
 
+void CCodeGenerator::EmitAsmPart(bool multiline, unsigned indent)
+{
+    if (multiline) {
+        cbuf << '\n';
+        cbuf.indent(indent + INDENT*3);
+    } else {
+        cbuf << ' ';
+    }
+    cbuf << ": ";
+}
+
+void CCodeGenerator::EmitAsmOperand(const char* name, const StringLiteral* c, const Expr* e) {
+    assert(c);
+    assert(e);
+    if (name) {
+        cbuf << '[' << name << "] ";
+    }
+    c->printLiteral(cbuf);
+    cbuf << ' ';
+    cbuf << '(';
+    EmitExpr(e, cbuf);
+    cbuf << ')';
+}
+
+void CCodeGenerator::EmitAsmStmt(const AsmStmt* S, unsigned indent) {
+    LOG_FUNC
+    cbuf.indent(indent);
+    cbuf << "__asm__ ";
+    if (S->isVolatile()) cbuf << "volatile ";
+
+    cbuf << '(';
+    const StringLiteral* asmString = S->getString();
+    asmString->printLiteral(cbuf);
+
+    unsigned numOutputs = S->getNumOutputs();
+    unsigned numInputs = S->getNumInputs();
+    unsigned numClobbers = S->getNumClobbers();
+    bool multiline = false;
+    if (numOutputs + numInputs + numClobbers > 4 || numClobbers != 0) multiline = true;
+    if (numOutputs || numInputs || numClobbers) {
+        EmitAsmPart(multiline, indent);
+        for (unsigned i=0; i<numOutputs; i++) {
+            if (i != 0) cbuf << ", ";
+            EmitAsmOperand(S->getOutputName(i), S->getOutputConstraint(i), S->getOutputExpr(i));
+        }
+        // inputs
+        if (numInputs || numClobbers) {
+            EmitAsmPart(multiline, indent);
+            for (unsigned i=0; i<numInputs; i++) {
+                if (i != 0) cbuf << ", ";
+                EmitAsmOperand(S->getInputName(i), S->getInputConstraint(i), S->getInputExpr(i));
+            }
+        }
+        // clobbers
+        if (numClobbers) {
+            EmitAsmPart(multiline, indent);
+            for (unsigned i=0; i<numClobbers; i++) {
+                if (i != 0) cbuf << ", ";
+                const StringLiteral* c = S->getClobber(i);
+                c->printLiteral(cbuf);
+            }
+        }
+    }
+    cbuf << ");\n";
+}
+
 void CCodeGenerator::EmitFunctionProto(const FunctionDecl* F, StringBuilder& output) {
     LOG_FUNC
 
@@ -1255,9 +1323,10 @@ void CCodeGenerator::EmitConditionPost(const Stmt* S) {
 
 }
 
-void CCodeGenerator::EmitAttributes(const Decl* D, StringBuilder& output) {
-    if (!D->hasAttributes()) return;
+bool CCodeGenerator::EmitAttributes(const Decl* D, StringBuilder& output, bool addStartSpace) {
+    if (!D->hasAttributes()) return false;
 
+    bool hasOutput = false;
     bool first = true;
     const AttrList& AL = D->getAttributes();
     for (AttrListConstIter iter = AL.begin(); iter != AL.end(); ++iter) {
@@ -1267,7 +1336,13 @@ void CCodeGenerator::EmitAttributes(const Decl* D, StringBuilder& output) {
         case ATTR_UNKNOWN:
         case ATTR_EXPORT:
         case ATTR_NORETURN:
+            // ignore for now
+            break;
         case ATTR_INLINE:
+            if (!hasOutput && addStartSpace) output << ' ';
+            hasOutput = true;
+            output << "__inline__";
+            break;
         case ATTR_UNUSED_PARAMS:
             // ignore for now
             break;
@@ -1276,7 +1351,9 @@ void CCodeGenerator::EmitAttributes(const Decl* D, StringBuilder& output) {
         case ATTR_UNUSED:
         case ATTR_SECTION:
         case ATTR_ALIGNED:
-            if (first) output << " __attribute__((";
+            if (!hasOutput && addStartSpace) output << ' ';
+            hasOutput = true;
+            if (first) output << "__attribute__((";
             else output << ", ";
             output << A->kind2str();
             if (Arg) {
@@ -1292,6 +1369,7 @@ void CCodeGenerator::EmitAttributes(const Decl* D, StringBuilder& output) {
         }
     }
     if (!first) output << "))";
+    return hasOutput;
 }
 
 bool CCodeGenerator::EmitAsStatic(const Decl* D) const {

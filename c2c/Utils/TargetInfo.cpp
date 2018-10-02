@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <ctype.h>
 
 #include "Utils/TargetInfo.h"
 
@@ -37,6 +38,10 @@ static ArchList archList[] = {
     { TargetInfo::ARCH_X86_64,    "x86_64" },
     { TargetInfo::ARCH_ARM,       "arm" },
 };
+
+//TargetInfo::TargetInfo(const llvm::Triple& T)
+
+TargetInfo::~TargetInfo() {}
 
 const char* C2::Str(TargetInfo::Arch arch) {
     for (unsigned i=0; i<ARRAY_SIZE(archList); i++) {
@@ -227,5 +232,87 @@ const char* C2::Str(const TargetInfo& info) {
     sprintf(result, "%s-%s-%s-%s",
         Str(info.arch), Str(info.vendor), Str(info.sys), Str(info.abi));
     return result;
+}
+
+static llvm::StringRef removeGCCRegisterPrefix(llvm::StringRef Name) {
+  if (Name[0] == '%' || Name[0] == '#')
+    Name = Name.substr(1);
+
+  return Name;
+}
+
+
+bool TargetInfo::isValidClobber(llvm::StringRef Name) const {
+    return (isValidGCCRegisterName(Name) || Name == "memory" || Name == "cc");
+}
+
+bool TargetInfo::isValidGCCRegisterName(llvm::StringRef Name) const {
+    if (Name.empty()) return false;
+
+  // Get rid of any register prefix.
+  Name = removeGCCRegisterPrefix(Name);
+  if (Name.empty())
+    return false;
+
+#if 0
+  llvm::ArrayRef<const char *> Names = getGCCRegNames();
+
+  // If we have a number it maps to an entry in the register name array.
+  if (isdigit(Name[0])) {
+    unsigned n;
+    if (!Name.getAsInteger(0, n))
+      return n < Names.size();
+  }
+
+  // Check register names.
+  if (std::find(Names.begin(), Names.end(), Name) != Names.end())
+    return true;
+
+  // Check any additional names that we have.
+  for (const AddlRegName &ARN : getGCCAddlRegNames())
+    for (const char *AN : ARN.Names) {
+      if (!AN)
+        break;
+      // Make sure the register that the additional name is for is within
+      // the bounds of the register names from above.
+      if (AN == Name && ARN.RegNum < Names.size())
+        return true;
+    }
+
+  // Now check aliases.
+  for (const GCCRegAlias &GRA : getGCCRegAliases())
+    for (const char *A : GRA.Aliases) {
+      if (!A)
+        break;
+      if (A == Name)
+        return true;
+    }
+#endif
+
+    // TODO
+
+  return true;
+}
+
+bool TargetInfo::validateOutputConstraint(ConstraintInfo& Info) const
+{
+  const char *Name = Info.getConstraintStr().c_str();
+  // An output constraint must start with '=' or '+'
+  if (*Name != '=' && *Name != '+')
+    return false;
+
+  if (*Name == '+')
+    Info.setIsReadWrite();
+
+    Name++;
+
+    // TODO see Clang:: TargetInfo:validateOutputConstraint()
+    return true;
+}
+
+//bool TargetInfo::validateInputConstraint(MutableArrayRef<ConstaintInfo> OutputConstraints,
+bool TargetInfo::validateInputConstraint(ConstraintInfo& Info) const
+{
+    return true;
 }
 

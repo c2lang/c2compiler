@@ -117,6 +117,9 @@ void RefFinder::searchStmt(const Stmt* S) {
         // TODO
         //searchVarDecl(cast<DeclStmt>(S)->getDecl());
         break;
+    case STMT_ASM:
+        searchAsmStmt(cast<AsmStmt>(S));
+        break;
     }
 }
 
@@ -125,6 +128,13 @@ void RefFinder::searchCompoundStmt(const CompoundStmt* C) {
     for (unsigned i=0; i<C->numStmts(); i++) {
         searchStmt(stmts[i]);
     }
+}
+
+void RefFinder::searchAsmStmt(const AsmStmt* A) {
+    unsigned numOutputs = A->getNumOutputs();
+    for (unsigned i=0; i<numOutputs; ++i) searchExpr(A->getOutputExpr(i));
+    unsigned numInputs = A->getNumInputs();
+    for (unsigned i=0; i<numInputs; ++i) searchExpr(A->getInputExpr(i));
 }
 
 void RefFinder::searchExpr(const Expr* E) {

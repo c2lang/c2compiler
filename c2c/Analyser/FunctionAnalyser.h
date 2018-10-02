@@ -77,6 +77,7 @@ private:
     void analyseDefaultStmt(Stmt* stmt);
     void analyseReturnStmt(Stmt* stmt);
     void analyseDeclStmt(Stmt* stmt);
+    void analyseAsmStmt(Stmt* stmt);
     bool analyseCondition(Stmt* stmt);
     void analyseStmtExpr(Stmt* stmt);
 

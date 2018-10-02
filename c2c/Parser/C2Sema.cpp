@@ -27,6 +27,7 @@
 #include "AST/Attr.h"
 #include "AST/Component.h"
 #include "Utils/StringBuilder.h"
+#include "Utils/TargetInfo.h"
 
 //#define SEMA_DEBUG
 //#define SEMA_MEMSIZE
@@ -130,7 +131,8 @@ static inline UnaryOperatorKind ConvertTokenKindToUnaryOpcode(
 }
 
 C2Sema::C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, clang::Preprocessor& PP_,
-               Component& component_, Module* existingMod, const std::string& filename_)
+               Component& component_, Module* existingMod, const std::string& filename_,
+               const TargetInfo& ti)
     : SourceMgr(sm_)
     , Diags(Diags_)
     , PP(PP_)
@@ -138,6 +140,7 @@ C2Sema::C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, clang::Preprocesso
     , module(existingMod)
     , ast(*new AST(filename_, component.isExternal()))
     , Context(ast.getASTContext())
+    , targetInfo(ti)
 {
 #define checkSize(x, s) static_assert(sizeof(x) == s,  #x" size changed")
 #define printSize(x) printf("%s = %d\n", #x, (int)sizeof(x))
@@ -778,6 +781,90 @@ C2::StmtResult C2Sema::ActOnDeclaration(const char* name_, SourceLocation loc, E
     if (hasLocal) V->setLocalQualifier();
     MEM_STMT(STMT_DECL);
     return StmtResult(new (Context) DeclStmt(V));
+}
+
+C2::StmtResult C2Sema::ActOnAsmStmt(SourceLocation AsmLoc, bool isBasic,
+                                    bool isVolatile, unsigned NumOutputs, unsigned NumInputs,
+                                    IdentifierInfo** Names, MultiExprArg constraints,
+                                    MultiExprArg exprs, Expr* asmString, MultiExprArg clobbers) {
+    assert(asmString);
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: asm at ";
+    loc.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    unsigned NumClobbers = clobbers.size();
+    StringLiteral** Constraints = reinterpret_cast<StringLiteral**>(constraints.data());
+    StringLiteral* AsmString = cast<StringLiteral>(asmString);
+    StringLiteral **Clobbers = reinterpret_cast<StringLiteral**>(clobbers.data());
+    Expr** Exprs = reinterpret_cast<Expr**>(exprs.data());
+
+    SmallVector<TargetInfo::ConstraintInfo, 4> OutputConstraintInfos;
+    // The parser verified that there is a string literal here
+    // assert(AsmString->isAscii());
+
+    for (unsigned i=0; i != NumOutputs; i++) {
+        StringLiteral* Literal = Constraints[i];
+        //assert(Literal->isAscii());
+        StringRef OutputName;
+        if (Names[i]) OutputName = Names[i]->getName();
+
+        TargetInfo::ConstraintInfo Info(Literal->getString(), OutputName);
+        if (!targetInfo.validateOutputConstraint(Info)) {
+            return StmtError(Diag(Literal->getLocStart(), diag::err_asm_invalid_output_constraint)
+                << Info.getConstraintStr());
+        }
+        // TODO
+        OutputConstraintInfos.push_back(Info);
+        // TODO
+    }
+
+    SmallVector<TargetInfo::ConstraintInfo, 4> InputConstraintInfos;
+
+    for (unsigned i=NumOutputs, e = NumOutputs + NumInputs; i != e; i++) {
+        StringLiteral* Literal = Constraints[i];
+        //assert(Literal->isAscii());
+        StringRef InputName;
+        if (Names[i]) InputName = Names[i]->getName();
+
+        TargetInfo::ConstraintInfo Info(Literal->getString(), InputName);
+        //if (!targetInfo.validateInputConstraint(OutputConstraintInfos, Info)) {
+        if (!targetInfo.validateInputConstraint(Info)) {
+            return StmtError(Diag(Literal->getLocStart(),
+                                  diag::err_asm_invalid_input_constraint)
+                            << Info.getConstraintStr());
+        }
+        // TODO
+        InputConstraintInfos.push_back(Info);
+        // TODO
+    }
+
+    // Check that the clobbers are valid
+    for (unsigned i=0; i != NumClobbers; i++) {
+        StringLiteral* Literal = Clobbers[i];
+        StringRef Clobber = Literal->getString();
+        if (!targetInfo.isValidClobber(Clobber)) {
+            Diag(Literal->getLocStart(), diag::err_asm_unknown_register_name) << Clobber;
+            return StmtError();
+        }
+    }
+
+    unsigned numExprs = NumOutputs + NumInputs;
+    const char** names = (const char**)Context.Allocate(sizeof(char*)*numExprs);
+    for (unsigned i=0; i<numExprs; i++) {
+        IdentifierInfo* I = Names[i];
+        const char* name = nullptr;
+        if (I) name = Context.addIdentifier(I->getNameStart(), I->getLength());
+        names[i] = name;
+    }
+    StringLiteral** constraints_ = (StringLiteral**)Context.Allocate(sizeof(StringLiteral*)*numExprs);
+    memcpy(constraints_, Constraints, sizeof(StringLiteral*)*numExprs);
+    Expr** exprs_ = (Expr**)Context.Allocate(sizeof(Expr*)*numExprs);
+    memcpy(exprs_, Exprs, sizeof(Expr*)*numExprs);
+    StringLiteral** clobbers_ = (StringLiteral**)Context.Allocate(sizeof(StringLiteral*)*NumClobbers);
+    memcpy(clobbers_, Clobbers, sizeof(StringLiteral*)*NumClobbers);
+    return StmtResult(new (Context) AsmStmt(AsmLoc, isBasic, isVolatile, AsmString,
+            NumOutputs, NumInputs, names, constraints_, exprs_, NumClobbers, clobbers_));
 }
 
 C2::ExprResult C2Sema::ActOnCallExpr(Expr* Fn, Expr** args_, unsigned numArgs, SourceLocation RParenLoc) {

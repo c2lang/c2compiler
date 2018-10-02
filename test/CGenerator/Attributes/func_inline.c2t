@@ -5,27 +5,28 @@
 // @file{file1}
 module test;
 
-public func i32 foo() @(section="ctest") {
+public func i32 foo() @(inline) {
     return 1;
 }
 
-func i32 bar() @(section="ctest") {
+func i32 bar() @(inline) {
     return 2;
 }
+
 public func i32 main(i32 argc, const i8*[] argv)
 {
     return 0;
 }
 
 // @expect{atleast, build/test.h}
-__attribute__((section("ctest"))) int32_t test_foo();
+__inline__ int32_t test_foo();
 
 // @expect{atleast, build/test.c}
-__attribute__((section("ctest"))) int32_t test_foo() {
+__inline__ int32_t test_foo() {
     return 1;
 }
 
-__attribute__((section("ctest"))) static int32_t test_bar() {
+__inline__ static int32_t test_bar() {
     return 2;
 }
 

@@ -212,6 +212,9 @@ void DepVisitor::checkStmt(const Stmt* S) {
     case STMT_DECL:
         checkVarDecl(cast<DeclStmt>(S)->getDecl());
         break;
+    case STMT_ASM:
+        checkAsmStmt(cast<AsmStmt>(S));
+        break;
     }
 }
 
@@ -222,6 +225,12 @@ void DepVisitor::checkCompoundStmt(const CompoundStmt* C) {
     }
 }
 
+void DepVisitor::checkAsmStmt(const AsmStmt* A) {
+    unsigned numOutputs = A->getNumOutputs();
+    for (unsigned i=0; i<numOutputs; ++i) checkExpr(A->getOutputExpr(i));
+    unsigned numInputs = A->getNumInputs();
+    for (unsigned i=0; i<numInputs; ++i) checkExpr(A->getInputExpr(i));
+}
 
 void DepVisitor::checkExpr(const Expr* E) {
     assert(E);

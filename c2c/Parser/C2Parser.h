@@ -120,6 +120,7 @@ private:
     ExprResult ParseEnumMinMax(bool isMin);
     ExprResult ParseIdentifier();
     ExprResult ParseFullIdentifier();
+    ExprResult ParseAsmStringLiteral();
 
   //===--------------------------------------------------------------------===//
   // C99 6.8: Statements and Blocks.
@@ -129,6 +130,7 @@ private:
 
     StmtResult ParseCompoundStatement();
     StmtResult ParseStatement();
+    StmtResult ParseAsmStatement();
     StmtResult ParseReturnStatement();
     StmtResult ParseIfStatement();
     StmtResult ParseSwitchStatement();
@@ -169,6 +171,9 @@ private:
     ExprResult ParseRHSOfBinaryExpression(ExprResult LHS, prec::Level MinPrec);
     ExprResult ParseStringLiteralExpression(bool AllowUserDefinedLiteral = false);
     ExprResult ParsePostfixExpressionSuffix(ExprResult LHS);
+    bool ParseAsmOperandsOpt(SmallVectorImpl<IdentifierInfo*> &Names,
+                             SmallVectorImpl<Expr*> &Constraints,
+                             SmallVectorImpl<Expr*> &Exprs);
 
     /// Returns true if the next token would start a postfix-expression
     /// suffix.

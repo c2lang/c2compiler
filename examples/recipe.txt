@@ -1,5 +1,11 @@
 # an example recipe with multiple executables
 
+executable asm_example
+    $warnings no-unused
+    $generate-c single-module
+    asm.c2
+end
+
 executable multi_file
     $warnings no-unused
     multi_file1.c2

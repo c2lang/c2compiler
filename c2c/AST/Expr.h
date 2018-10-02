@@ -21,6 +21,7 @@
 
 #include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/APFloat.h>
+#include <llvm/ADT/StringRef.h>
 #include <clang/Basic/SourceLocation.h>
 #include <clang/AST/OperationKinds.h>
 
@@ -237,6 +238,9 @@ public:
     int getByteLength() const { return len; }
 
     const char* getValue() const { return value; }
+    llvm::StringRef getString() const {
+        return llvm::StringRef(value, len);
+    }
 private:
     const char* value;
     unsigned len;

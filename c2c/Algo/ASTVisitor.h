@@ -33,6 +33,7 @@ class VarDecl;
 class FunctionDecl;
 class Stmt;
 class CompoundStmt;
+class AsmStmt;
 class Expr;
 class IdentifierExpr;
 
@@ -54,6 +55,7 @@ private:
     // Stmt
     void checkStmt(const Stmt* S);
     void checkCompoundStmt(const CompoundStmt* C);
+    void checkAsmStmt(const AsmStmt* A);
     // Expr
     void checkExpr(const Expr* E);
 

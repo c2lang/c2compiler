@@ -25,6 +25,7 @@ class AST;
 class Decl;
 class Stmt;
 class CompoundStmt;
+class AsmStmt;
 class Expr;
 
 class RefFinder {
@@ -42,6 +43,7 @@ public:
 private:
     void searchStmt(const Stmt* S);
     void searchCompoundStmt(const CompoundStmt* S);
+    void searchAsmStmt(const AsmStmt* A);
     void searchExpr(const Expr* E);
     void addFileLocation(clang::SourceLocation loc);
 
