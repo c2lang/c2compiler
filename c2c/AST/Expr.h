@@ -398,19 +398,17 @@ public:
         , initValue(i)
         , designator(d)
         , index(64, false)
-        ,  field(0)
-        //, member(0)
+        , field(nullptr)
     {
         designatedInitExprBits.DesignatorKind = ARRAY_DESIGNATOR;
         index = llvm::APInt(64, -1, true);
     }
-    DesignatedInitExpr(SourceLocation left, const char* name, Expr* i)
-        : Expr(EXPR_DESIGNATOR_INIT, left, false)
+    DesignatedInitExpr(IdentifierExpr* field_, Expr* i)
+        : Expr(EXPR_DESIGNATOR_INIT, field_->getLocation(), false)
         , initValue(i)
-        , designator(0)
+        , designator(nullptr)
         , index(64, false)
-        , field(name)
-        //, member(0)
+        , field(field_)
     {
         designatedInitExprBits.DesignatorKind = FIELD_DESIGNATOR;
     }
@@ -430,7 +428,7 @@ public:
     llvm::APSInt getIndex() const { return index; }
     void setIndex(llvm::APSInt i) { index = i; }
     // for Field designator
-    const char* getField() const { return field; }
+    IdentifierExpr* getField() const { return field; }
 private:
     Expr* initValue;
 
@@ -438,7 +436,7 @@ private:
     Expr* designator;
     llvm::APSInt index; // set during analysis
     // Field designator
-    const char* field;
+    IdentifierExpr* field;
 };
 
 

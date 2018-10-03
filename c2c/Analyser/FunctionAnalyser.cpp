@@ -756,6 +756,24 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
     }
 }
 
+static IdentifierExpr::RefType globalDecl2RefType(const Decl* D) {
+    switch (D->getKind()) {
+    case DECL_FUNC:         return IdentifierExpr::REF_FUNC;
+    case DECL_VAR:          return IdentifierExpr::REF_VAR;
+    case DECL_ENUMVALUE:    return IdentifierExpr::REF_ENUM_CONSTANT;
+    case DECL_ALIASTYPE:
+    case DECL_STRUCTTYPE:
+    case DECL_ENUMTYPE:
+    case DECL_FUNCTIONTYPE:
+                            return IdentifierExpr::REF_TYPE;
+    case DECL_ARRAYVALUE:
+                            return IdentifierExpr::REF_VAR;
+    case DECL_IMPORT:
+                            return IdentifierExpr::REF_MODULE;
+    case DECL_LABEL:        return IdentifierExpr::REF_LABEL;
+    }
+}
+
 void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
     LOG_FUNC
     Expr** values = expr->getValues();
@@ -835,11 +853,12 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
                     Diag(D->getLocation(), diag::err_array_designator_non_array) << buf;
                     return;
                 }
-                int memberIndex = STD->findIndex(D->getField());
+                IdentifierExpr* field = D->getField();
+                int memberIndex = STD->findIndex(field->getName());
                 if (memberIndex == -1) {
                     // TODO use Helper to add surrounding ''
                     StringBuilder fname(MAX_LEN_VARNAME);
-                    fname << '\'' << D->getField() << '\'';
+                    fname << '\'' << field->getName() << '\'';
                     StringBuilder tname(MAX_LEN_TYPENAME);
                     Q.DiagName(tname);
                     Diag(D->getLocation(), diag::err_field_designator_unknown) << fname << tname;
@@ -848,7 +867,7 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
                 Expr* existing = fields[memberIndex];
                 if (existing) {
                     StringBuilder fname(MAX_LEN_VARNAME);
-                    fname << '\'' << D->getField() << '\'';
+                    fname << '\'' << field->getName() << '\'';
                     Diag(D->getLocation(), diag::err_duplicate_field_init) << fname;
                     Diag(existing->getLocation(), diag::note_previous_initializer) << 0 << 0;
                     continue;
@@ -857,6 +876,7 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
                 assert(STD->getMember(memberIndex));
                 VarDecl* VD = dyncast<VarDecl>(STD->getMember(i));
                 assert(VD && "TEMP don't support sub-struct member inits");
+                field->setDecl(VD, globalDecl2RefType(VD));
                 analyseInitExpr(D->getInitValue(), VD->getType());
             } else {
                 VarDecl* VD = dyncast<VarDecl>(STD->getMember(i));
@@ -1479,24 +1499,6 @@ QualType FunctionAnalyser::analyseArraySubscript(Expr* expr, unsigned side) {
     }
     expr->setType(Result);
     return Result;
-}
-
-static IdentifierExpr::RefType globalDecl2RefType(const Decl* D) {
-    switch (D->getKind()) {
-    case DECL_FUNC:         return IdentifierExpr::REF_FUNC;
-    case DECL_VAR:          return IdentifierExpr::REF_VAR;
-    case DECL_ENUMVALUE:    return IdentifierExpr::REF_ENUM_CONSTANT;
-    case DECL_ALIASTYPE:
-    case DECL_STRUCTTYPE:
-    case DECL_ENUMTYPE:
-    case DECL_FUNCTIONTYPE:
-                            return IdentifierExpr::REF_TYPE;
-    case DECL_ARRAYVALUE:
-                            return IdentifierExpr::REF_VAR;
-    case DECL_IMPORT:
-                            return IdentifierExpr::REF_MODULE;
-    case DECL_LABEL:        return IdentifierExpr::REF_LABEL;
-    }
 }
 
 QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {

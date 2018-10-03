@@ -486,9 +486,8 @@ void DesignatedInitExpr::print(StringBuilder& buffer, unsigned indent) const {
         buffer << "Designator = [" << index.getSExtValue() << "]\n";
         designator->print(buffer, indent + INDENT);
     } else {
-        buffer << "field = ";
-        buffer.setColor(COL_VALUE);
-        buffer << '\'' << field << '\'' << '\n';
+        buffer << "field=\n";
+        field->print(buffer, indent + INDENT);
     }
     buffer.indent(indent);
     buffer.setColor(COL_ATTR);

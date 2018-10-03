@@ -2481,14 +2481,13 @@ C2::ExprResult C2Parser::ParseFieldDesignator(bool* need_semi) {
     ConsumeToken();
 
     if (ExpectIdentifier()) return ExprError();
-    IdentifierInfo* Field = Tok.getIdentifierInfo();
-    SourceLocation FieldLoc = ConsumeToken();
+    ExprResult field = ParseIdentifier();
 
     if (ExpectAndConsume(tok::equal, diag::err_expected_after, "field designator")) return ExprError();
 
     ExprResult Result = ParseInitValue(need_semi, false);
     if (Result.isInvalid()) return ExprError();
-    return Actions.ActOnFieldDesignatorExpr(FieldLoc, Field, Result);
+    return Actions.ActOnFieldDesignatorExpr(field.get(), Result);
 }
 
 /*

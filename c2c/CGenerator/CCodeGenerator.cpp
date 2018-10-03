@@ -288,7 +288,8 @@ void CCodeGenerator::EmitExpr(const Expr* E, StringBuilder& output) {
             EmitExpr(D->getDesignator(), output);
             output << "] = ";
         } else {
-            output << '.' << D->getField() << " = ";
+            const IdentifierExpr* field = D->getField();
+            output << '.' << field->getName() << " = ";
         }
         EmitExpr(D->getInitValue(), output);
         return;

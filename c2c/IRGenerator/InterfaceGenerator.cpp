@@ -184,7 +184,7 @@ void InterfaceGenerator::EmitExpr(const Expr* E) {
             EmitExpr(D->getDesignator());
             iface << "] = ";
         } else {
-            iface << '.' << D->getField() << " = ";
+            iface << '.' << D->getField()->getName() << " = ";
         }
         EmitExpr(D->getInitValue());
         return;

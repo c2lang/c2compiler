@@ -966,15 +966,17 @@ C2::ExprResult C2Sema::ActOnArrayDesignatorExpr(SourceLocation left, ExprResult 
     return ExprResult(new (Context) DesignatedInitExpr(left, Designator.get(), InitValue.get()));
 }
 
-C2::ExprResult C2Sema::ActOnFieldDesignatorExpr(SourceLocation loc, IdentifierInfo* field, ExprResult InitValue) {
+C2::ExprResult C2Sema::ActOnFieldDesignatorExpr(Expr* field, ExprResult InitValue) {
+    assert(field);
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: FieldDesignatorExpr at ";
-    loc.dump(SourceMgr);
+    field->getLocation().dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
     MEM_EXPR(EXPR_DESIGNATOR_INIT);
-    const char* name = Context.addIdentifier(field->getNameStart(), field->getLength());
-    return ExprResult(new (Context) DesignatedInitExpr(loc, name, InitValue.get()));
+    assert(isa<IdentifierExpr>(field));
+    IdentifierExpr* I = cast<IdentifierExpr>(field);
+    return ExprResult(new (Context) DesignatedInitExpr(I, InitValue.get()));
 }
 
 C2::ExprResult C2Sema::ActOnArrayType(Expr* base, Expr* size, bool isIncremental) {

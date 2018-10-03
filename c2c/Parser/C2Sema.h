@@ -119,7 +119,7 @@ public:
 
     ExprResult ActOnInitList(SourceLocation left_, SourceLocation right_, ExprList& vals);
     ExprResult ActOnArrayDesignatorExpr(SourceLocation left, ExprResult Designator, ExprResult InitValue);
-    ExprResult ActOnFieldDesignatorExpr(SourceLocation loc, IdentifierInfo* field, ExprResult InitValue);
+    ExprResult ActOnFieldDesignatorExpr(Expr* field, ExprResult InitValue);
     ExprResult ActOnArrayType(Expr* base, Expr* size, bool isIncremental);
     ExprResult ActOnPointerType(Expr* base, unsigned qualifier);
     ExprResult ActOnUserType(Expr* mName, Expr* tName);
