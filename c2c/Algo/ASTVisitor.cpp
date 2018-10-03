@@ -268,7 +268,16 @@ void ASTVisitor::checkExpr(const Expr* E) {
         break;
     }
     case EXPR_DESIGNATOR_INIT:
+    {
+        const DesignatedInitExpr* D = cast<DesignatedInitExpr>(E);
+        const Expr* designator = D->getDesignator();
+        if (designator) checkExpr(designator);
+        //const char* field = D->getField();
+        //if (field) printf("FIELD %s\n", field);
+        // TODO field -> need IdentifierExpr instead of raw string
+        checkExpr(D->getInitValue());
         break;
+    }
     case EXPR_BINOP:
     {
         const BinaryOperator* B = cast<BinaryOperator>(E);
