@@ -2,7 +2,6 @@ module sys_stat;
 
 import c2 local;
 
-// size should be 144, but is 152... TODO check offsets (need offsetof)
 // Version for Ubuntu 18.04
 type stat struct {
     c_ulong st_dev;
