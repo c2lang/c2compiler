@@ -1004,8 +1004,14 @@ void FunctionAnalyser::analyseSizeOfExpr(BuiltinExpr* B) {
         assert(0 && "TODO good error");
         return;
     case EXPR_TYPE:
-        // ok
+    {
+        // TODO can be public?
+        QualType Q = TR.resolveType(expr->getType(), false);
+        if (Q.isValid()) {
+            expr->setType(Q);
+        }
         return;
+    }
     case EXPR_BINOP:
         // not allowed
         assert(0 && "TODO good error");
