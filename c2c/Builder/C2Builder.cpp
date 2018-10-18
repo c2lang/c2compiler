@@ -250,7 +250,7 @@ C2Builder::C2Builder(const Recipe& recipe_, const BuildFile* buildFile_, const B
             }
         }
     } else {
-        libLoader.addDir(opts.libdir);
+        if (opts.libdir) libLoader.addDir(opts.libdir);
         TargetInfo::getNative(targetInfo);
     }
     if (options.verbose) log(COL_VERBOSE, "Target: %s", Str(targetInfo));
