@@ -218,7 +218,7 @@ int main(int argc, const char *argv[])
     parse_arguments(argc, argv, opts);
 
     opts.libdir = getenv("C2_LIBDIR");
-    printf("Warning: environment variable C2_LIBDIR not set!\n");
+    if (!opts.libdir) printf("Warning: environment variable C2_LIBDIR not set!\n");
 
     if (other_dir) {
         if (chdir(other_dir)) {
