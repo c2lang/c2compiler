@@ -53,9 +53,13 @@ public:
         clang::PresumedLoc loc2 = SM.getPresumedLoc(D->getLocation());
         if (!loc2.isInvalid()) {
             std::string name = I->getName();
+
             if (I->isStructFunction()) {
-                const FunctionDecl* FD = cast<FunctionDecl>(D);
-                name = FD->getMemberName();
+                // NOTE: in definition, it is a StructTypeDecl not FunctionDecl
+                if (isa<FunctionDecl>(D)) {
+                    const FunctionDecl* FD = cast<FunctionDecl>(D);
+                    name = FD->getMemberName();
+                }
             }
             writer.addRef(loc.getLine(), loc.getColumn(), name,
                           loc2.getFilename(), loc2.getLine(), loc2.getColumn());
