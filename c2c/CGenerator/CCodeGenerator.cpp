@@ -375,9 +375,12 @@ void CCodeGenerator::EmitBuiltinExpr(const Expr* E, StringBuilder& output) {
 void CCodeGenerator::EmitBinaryOperator(const Expr* E, StringBuilder& output) {
     LOG_FUNC
     const BinaryOperator* B = cast<BinaryOperator>(E);
+    bool requiresParens = B->requiresParensForC();
+    if (requiresParens) output << '(';
     EmitExpr(B->getLHS(), output);
     output << ' ' << BinaryOperator::OpCode2str(B->getOpcode()) << ' ';
     EmitExpr(B->getRHS(), output);
+    if (requiresParens) output << ')';
 }
 
 void CCodeGenerator::EmitConditionalOperator(const Expr* E, StringBuilder& output) {

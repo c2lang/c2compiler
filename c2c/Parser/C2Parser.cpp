@@ -40,11 +40,6 @@ using namespace clang;
 /// \brief Return the precedence of the specified binary operator token.
 static prec::Level getBinOpPrecedence(tok::TokenKind Kind) {
     switch (Kind) {
-    case tok::greater:
-        return prec::Relational;
-    case tok::greatergreater:
-        return prec::Shift;
-    default:                        return prec::Unknown;
     case tok::comma:                return prec::Comma;
     case tok::equal:
     case tok::starequal:
@@ -58,24 +53,27 @@ static prec::Level getBinOpPrecedence(tok::TokenKind Kind) {
     case tok::caretequal:
     case tok::pipeequal:            return prec::Assignment;
     case tok::question:             return prec::Conditional;
-    case tok::pipepipe:             return prec::LogicalOr;
-    case tok::ampamp:               return prec::LogicalAnd;
-    case tok::pipe:                 return prec::InclusiveOr;
-    case tok::caret:                return prec::ExclusiveOr;
-    case tok::amp:                  return prec::And;
+    case tok::pipepipe:
+    case tok::ampamp:               return prec::LogicalAndOr;
+    case tok::pipe:
+    case tok::caret:
+    case tok::amp:                  return prec::Bitwise;
     case tok::exclaimequal:
-    case tok::equalequal:           return prec::Equality;
+    case tok::equalequal:
     case tok::lessequal:
     case tok::less:
+    case tok::greater:
     case tok::greaterequal:         return prec::Relational;
-    case tok::lessless:             return prec::Shift;
     case tok::plus:
     case tok::minus:                return prec::Additive;
+    case tok::lessless:
+    case tok::greatergreater:       return prec::Shift;
     case tok::percent:
     case tok::slash:
     case tok::star:                 return prec::Multiplicative;
     case tok::periodstar:
     case tok::arrowstar:            return prec::PointerToMember;
+    default:                        return prec::Unknown;
     }
 }
 

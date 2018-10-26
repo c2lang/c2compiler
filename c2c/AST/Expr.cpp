@@ -543,6 +543,34 @@ const char* BinaryOperator::OpCode2str(clang::BinaryOperatorKind opc_) {
     assert(0);
 }
 
+bool BinaryOperator::requiresParensForC() const
+{
+    switch (getOpcode()) {
+    case BO_Mul:
+    case BO_Div:
+    case BO_Rem:
+    case BO_Add:
+    case BO_Sub:
+    case BO_Shl:
+    case BO_Shr:
+    case BO_Cmp:
+    case BO_LT:
+    case BO_GT:
+    case BO_LE:
+    case BO_GE:
+    case BO_EQ:
+    case BO_NE:
+    case BO_And:
+    case BO_Xor:
+    case BO_Or:
+    case BO_LAnd:
+    case BO_LOr:
+        return true;
+    default:
+        return false;
+    }
+}
+
 void BinaryOperator::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_EXPR);

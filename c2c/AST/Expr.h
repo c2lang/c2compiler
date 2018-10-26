@@ -457,6 +457,8 @@ public:
     Expr* getRHS() const { return rhs; }
     Opcode getOpcode() const { return static_cast<Opcode>(binaryOperatorBits.opcode); }
 
+    bool requiresParensForC() const;
+
     void printLiteral(StringBuilder& buffer) const;
 private:
     Expr* lhs;

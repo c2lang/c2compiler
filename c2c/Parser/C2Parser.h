@@ -39,27 +39,23 @@ class Expr;
 class FunctionDecl;
 class StructTypeDecl;
 
-/// PrecedenceLevels - These are precedences for the binary/ternary
-/// operators in the C99 grammar.  These have been named to relate
-/// with the C99 grammar productions.  Low precedences numbers bind
-/// more weakly than high numbers.
+/// PrecedenceLevels - These have been altered from C99 to C2
+/// In particular, addition now comes after bitwise and shifts
+/// Bitwise is directly after shift and equality and relational have
+/// the same precedence.
 namespace prec {
   enum Level {
     Unknown         = 0,    // Not binary operator.
     Comma           = 1,    // ,
     Assignment      = 2,    // =, *=, /=, %=, +=, -=, <<=, >>=, &=, ^=, |=
     Conditional     = 3,    // ?
-    LogicalOr       = 4,    // ||
-    LogicalAnd      = 5,    // &&
-    InclusiveOr     = 6,    // |
-    ExclusiveOr     = 7,    // ^
-    And             = 8,    // &
-    Equality        = 9,    // ==, !=
-    Relational      = 10,   //  >=, <=, >, <
-    Shift           = 11,   // <<, >>
-    Additive        = 12,   // -, +
-    Multiplicative  = 13,   // *, /, %
-    PointerToMember = 14    // .*, ->*
+    LogicalAndOr    = 4,    // &&, ||
+    Relational      = 5,    // ==, !=, >=, <=, >, <
+    Additive        = 6,    // -, +
+    Bitwise         = 7,    // ^, |, &
+    Shift           = 8,    // <<, >>
+    Multiplicative  = 9,    // *, /, %
+    PointerToMember = 10    // .*, ->*
   };
 }
 

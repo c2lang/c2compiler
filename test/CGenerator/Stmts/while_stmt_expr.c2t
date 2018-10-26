@@ -24,8 +24,8 @@ public func i32 main(i32 argc, const i8*[] argv) {
 int32_t main(int32_t argc, const char* argv[]) {
     int32_t a = 0;
     while (a) {
-        if (argc == 1) continue;
-        if (argc == 2) break;
+        if ((argc == 1)) continue;
+        if ((argc == 2)) break;
     }
 
     int32_t b = 10;
