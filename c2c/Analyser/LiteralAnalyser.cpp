@@ -115,7 +115,6 @@ void LiteralAnalyser::check(QualType TLeft, const Expr* Right) {
 
     int availableWidth = 0;
     if (!calcWidth(TLeft, Right, &availableWidth)) return;
-
     StringBuilder tname(128);
     TLeft->DiagName(tname);
     const Limit* L = getLimit(availableWidth);
@@ -367,91 +366,118 @@ APSInt LiteralAnalyser::checkUnaryLiterals(const Expr* Right) {
     return APSInt();
 }
 
-APSInt LiteralAnalyser::checkBinaryLiterals(const Expr* Right) {
-    const BinaryOperator* binop = cast<BinaryOperator>(Right);
-    QualType LType;
-    switch (binop->getOpcode()) {
-    case BO_PtrMemD:
-    case BO_PtrMemI:
-        // TODO
-        break;
-    case BO_Mul:
-    {
-        APSInt L = checkLiterals(binop->getLHS());
-        APSInt R = checkLiterals(binop->getRHS());
-        return L * R;
-    }
-    case BO_Div:
-    {
-        APSInt L = checkLiterals(binop->getLHS());
-        APSInt R = checkLiterals(binop->getRHS());
-        if (R == 0) {
-            Diags.Report(binop->getRHS()->getLocation(), diag::warn_remainder_division_by_zero) << 1;
-            break;
-        }
-        return L / R;
-    }
-    case BO_Rem:
-    {
-        APSInt L = checkLiterals(binop->getLHS());
-        APSInt R = checkLiterals(binop->getRHS());
-        if (R == 0) {
-            Diags.Report(binop->getRHS()->getLocation(), diag::warn_remainder_division_by_zero) << 0;
-            break;
-        }
-        return L % R;
-    }
-    case BO_Add:
-    {
-        APSInt L = checkLiterals(binop->getLHS());
-        APSInt R = checkLiterals(binop->getRHS());
-        return L + R;
-    }
-    case BO_Sub:
-    {
-        APSInt L = checkLiterals(binop->getLHS());
-        APSInt R = checkLiterals(binop->getRHS());
-        return L - R;
-    }
-    case BO_Shl:
-    case BO_Shr:
-    case BO_Cmp:
-        break;
-    case BO_LT:
-    case BO_GT:
-    case BO_LE:
-    case BO_GE:
-    case BO_EQ:
-    case BO_NE:
-    {
-        // TODO check left/right values + set QualType
-        // TEMP always return 1 (!false)
-        APSInt Result(64, false);
-        Result = 1;
 
-        return Result;
-    }
-    case BO_And:
-    case BO_Xor:
-    case BO_Or:
-    case BO_LAnd:
-    case BO_LOr:
-    case BO_Assign:
-    case BO_MulAssign:
-    case BO_DivAssign:
-    case BO_RemAssign:
-    case BO_AddAssign:
-    case BO_SubAssign:
-    case BO_ShlAssign:
-    case BO_ShrAssign:
-    case BO_AndAssign:
-    case BO_XorAssign:
-    case BO_OrAssign:
-    case BO_Comma:
-        // TODO
-        break;
-    }
-    return APSInt();
+APSInt LiteralAnalyser::checkBinaryLiterals(const Expr *Right) {
+	const BinaryOperator *binop = cast<BinaryOperator>(Right);
+	Expr* lhs = binop->getLHS();
+	Expr* rhs = binop->getRHS();
+	QualType LType;
+	switch (binop->getOpcode()) {
+	case BO_PtrMemD:
+	case BO_PtrMemI:
+		// TODO
+		break;
+	case BO_Mul: {
+		APSInt L = checkLiterals(lhs);
+		APSInt R = checkLiterals(lhs);
+		return L * R;
+	}
+	case BO_Div: {
+		APSInt L = checkLiterals(lhs);
+		APSInt R = checkLiterals(rhs);
+		if (R == 0) {
+			Diags.Report(rhs->getLocation(), diag::warn_remainder_division_by_zero) << 1;
+			break;
+		}
+		return L / R;
+	}
+	case BO_Rem: {
+		APSInt L = checkLiterals(lhs);
+		APSInt R = checkLiterals(rhs);
+		if (R == 0) {
+			Diags.Report(rhs->getLocation(), diag::warn_remainder_division_by_zero) << 0;
+			break;
+		}
+		return L % R;
+	}
+	case BO_Add: {
+		APSInt L = checkLiterals(lhs);
+		APSInt R = checkLiterals(rhs);
+		return L + R;
+	}
+	case BO_Sub: {
+		APSInt L = checkLiterals(lhs);
+		APSInt R = checkLiterals(rhs);
+		return L - R;
+	}
+	case BO_Shl: {
+		APSInt L = checkLiterals(lhs);
+		APSInt R = checkLiterals(rhs);
+		if (L.isNegative()) {
+			Diags.Report(lhs->getLocation(), diag::warn_shift_lhs_negative) << 0;
+			break;
+		}
+		if (R.isNegative()) {
+			Diags.Report(rhs->getLocation(), diag::warn_shift_negative) << 0;
+			break;
+		}
+		// TODO warn about overflow in the correct manner.
+		return L << R.getExtValue();
+	}
+	case BO_Shr: {
+		APSInt L = checkLiterals(lhs);
+		APSInt R = checkLiterals(rhs);
+		if (L.isNegative()) {
+			Diags.Report(lhs->getLocation(), diag::warn_shift_lhs_negative) << 0;
+			break;
+		}
+		if (R.isNegative()) {
+			Diags.Report(rhs->getLocation(), diag::warn_shift_negative) << 0;
+			break;
+		}
+		uint64_t rightHandSide = R.getExtValue();
+		if (R.getExtValue() > L.getBitWidth()) {
+			Diags.Report(rhs->getLocation(), diag::warn_shift_gt_typewidth) << 0;
+			break;
+		}
+		return L >> rightHandSide;
+	}
+	case BO_Cmp:
+		break;
+	case BO_LT:
+	case BO_GT:
+	case BO_LE:
+	case BO_GE:
+	case BO_EQ:
+	case BO_NE: {
+		// TODO check left/right values + set QualType
+		// TEMP always return 1 (!false)
+		APSInt Result(64, false);
+		Result = 1;
+
+		return Result;
+	}
+	case BO_And:
+	case BO_Xor:
+	case BO_Or:
+	case BO_LAnd:
+	case BO_LOr:
+	case BO_Assign:
+	case BO_MulAssign:
+	case BO_DivAssign:
+	case BO_RemAssign:
+	case BO_AddAssign:
+	case BO_SubAssign:
+	case BO_ShlAssign:
+	case BO_ShrAssign:
+	case BO_AndAssign:
+	case BO_XorAssign:
+	case BO_OrAssign:
+	case BO_Comma:
+		// TODO
+		break;
+	}
+	return APSInt();
 }
 
 APSInt LiteralAnalyser::checkArraySubscript(const Expr* Right) {
