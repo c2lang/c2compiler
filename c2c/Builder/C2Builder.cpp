@@ -314,6 +314,9 @@ int C2Builder::build() {
     Diags.setSeverity(diag::warn_unreachable_default, diag::Severity::Warning, SourceLocation());
     Diags.setSeverity(diag::warn_remainder_division_by_zero, diag::Severity::Error, SourceLocation());
     Diags.setSeverity(diag::warn_int_to_pointer_cast, diag::Severity::Error, SourceLocation());
+    Diags.setSeverity(diag::warn_shift_lhs_negative, diag::Severity::Error, SourceLocation());
+    Diags.setSeverity(diag::warn_shift_negative, diag::Severity::Error, SourceLocation());
+    Diags.setSeverity(diag::warn_shift_gt_typewidth, diag::Severity::Error, SourceLocation());
 
     // set recipe warning options
     for (unsigned i=0; i<recipe.silentWarnings.size(); i++) {
