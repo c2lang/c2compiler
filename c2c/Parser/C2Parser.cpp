@@ -30,6 +30,7 @@ using namespace C2;
 using namespace clang;
 
 #ifdef PARSER_DEBUG
+#include <iostream>
 #include "Utils/color.h"
 #define LOG_FUNC std::cerr << ANSI_YELLOW << __func__ << "()" << ANSI_NORMAL << "\n";
 #else
