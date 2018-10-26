@@ -119,6 +119,7 @@ void LiteralAnalyser::check(QualType TLeft, const Expr* Right) {
     StringBuilder tname(128);
     TLeft->DiagName(tname);
     const Limit* L = getLimit(availableWidth);
+
     checkWidth(availableWidth, L, Right, tname);
 }
 
@@ -414,8 +415,17 @@ APSInt LiteralAnalyser::checkBinaryLiterals(const Expr* Right) {
         return L - R;
     }
     case BO_Shl:
+    {
+        // TODO can only shift unsigned numbers
+        APSInt L = checkLiterals(binop->getLHS());
+        APSInt R = checkLiterals(binop->getRHS());
+        APInt Res = L;  // NEED unsigned
+        Res <<= R;
+        return APSInt(Res);
+    }
     case BO_Shr:
     case BO_Cmp:
+        assert(0 && "TODO");
         break;
     case BO_LT:
     case BO_GT:
@@ -428,7 +438,6 @@ APSInt LiteralAnalyser::checkBinaryLiterals(const Expr* Right) {
         // TEMP always return 1 (!false)
         APSInt Result(64, false);
         Result = 1;
-
         return Result;
     }
     case BO_And:
