@@ -367,117 +367,132 @@ APSInt LiteralAnalyser::checkUnaryLiterals(const Expr* Right) {
     return APSInt();
 }
 
-APSInt LiteralAnalyser::checkBinaryLiterals(const Expr *Right) {
-	const BinaryOperator *binop = cast<BinaryOperator>(Right);
-	Expr* lhs = binop->getLHS();
-	Expr* rhs = binop->getRHS();
-	QualType LType;
-	switch (binop->getOpcode()) {
-	case BO_PtrMemD:
-	case BO_PtrMemI:
-		// TODO
-		break;
-	case BO_Mul: {
-		APSInt L = checkLiterals(lhs);
-		APSInt R = checkLiterals(lhs);
-		return L * R;
-	}
-	case BO_Div: {
-		APSInt L = checkLiterals(lhs);
-		APSInt R = checkLiterals(rhs);
-		if (R == 0) {
-			Diags.Report(rhs->getLocation(), diag::warn_remainder_division_by_zero) << 1;
-			break;
-		}
-		return L / R;
-	}
-	case BO_Rem: {
-		APSInt L = checkLiterals(lhs);
-		APSInt R = checkLiterals(rhs);
-		if (R == 0) {
-			Diags.Report(rhs->getLocation(), diag::warn_remainder_division_by_zero) << 0;
-			break;
-		}
-		return L % R;
-	}
-	case BO_Add: {
-		APSInt L = checkLiterals(lhs);
-		APSInt R = checkLiterals(rhs);
-		return L + R;
-	}
-	case BO_Sub: {
-		APSInt L = checkLiterals(lhs);
-		APSInt R = checkLiterals(rhs);
-		return L - R;
-	}
-	case BO_Shl: {
-		APSInt L = checkLiterals(lhs);
-		APSInt R = checkLiterals(rhs);
-		if (L.isNegative()) {
-			Diags.Report(lhs->getLocation(), diag::warn_shift_lhs_negative) << 0;
-			break;
-		}
-		if (R.isNegative()) {
-			Diags.Report(rhs->getLocation(), diag::warn_shift_negative) << 0;
-			break;
-		}
-		// TODO warn about overflow in the correct manner.
-		return L << R.getExtValue();
-	}
-	case BO_Shr: {
-		APSInt L = checkLiterals(lhs);
-		APSInt R = checkLiterals(rhs);
-		if (L.isNegative()) {
-			Diags.Report(lhs->getLocation(), diag::warn_shift_lhs_negative) << 0;
-			break;
-		}
-		if (R.isNegative()) {
-			Diags.Report(rhs->getLocation(), diag::warn_shift_negative) << 0;
-			break;
-		}
-		uint64_t rightHandSide = R.getExtValue();
-		if (R.getExtValue() > L.getBitWidth()) {
-			Diags.Report(rhs->getLocation(), diag::warn_shift_gt_typewidth) << 0;
-			break;
-		}
-		return L >> rightHandSide;
-	}
-	case BO_Cmp:
-		break;
-	case BO_LT:
-	case BO_GT:
-	case BO_LE:
-	case BO_GE:
-	case BO_EQ:
-	case BO_NE: {
-		// TODO check left/right values + set QualType
-		// TEMP always return 1 (!false)
-		APSInt Result(64, false);
-		Result = 1;
+static inline int evaluateBinaryComparison(APSInt &lhs, APSInt &rhs, clang::BinaryOperatorKind opcode)
+{
+    switch (opcode) {
+        case BO_LT: return lhs < rhs;
+        case BO_GT: return lhs > rhs;
+        case BO_LE: return lhs <= rhs;
+        case BO_GE: return lhs >= rhs;
+        case BO_EQ: return lhs == rhs;
+        case BO_NE: return lhs != rhs;
+        case BO_LAnd: return !(lhs == 0 || rhs == 0);
+        case BO_LOr: return !(lhs == 0 && rhs == 0);
+        default:
+            assert(0 && "Unreachable statement");
+            return 0;
+    }
+}
 
-		return Result;
-	}
-	case BO_And:
-	case BO_Xor:
-	case BO_Or:
-	case BO_LAnd:
-	case BO_LOr:
-	case BO_Assign:
-	case BO_MulAssign:
-	case BO_DivAssign:
-	case BO_RemAssign:
-	case BO_AddAssign:
-	case BO_SubAssign:
-	case BO_ShlAssign:
-	case BO_ShrAssign:
-	case BO_AndAssign:
-	case BO_XorAssign:
-	case BO_OrAssign:
-	case BO_Comma:
-		// TODO
-		break;
-	}
-	return APSInt();
+static inline APSInt evaluateBinaryBitwiseOp(APSInt &lhs, APSInt &rhs, clang::BinaryOperatorKind opcode)
+{
+    switch (opcode) {
+        case BO_And: return lhs & rhs;
+        case BO_Xor: return lhs ^ rhs;
+        case BO_Or: return lhs | rhs;
+        default:
+            assert(0 && "Unreachable statement");
+            return APSInt();
+    }
+}
+
+
+APSInt LiteralAnalyser::checkBinaryLiterals(const Expr *Right) {
+    const BinaryOperator *binop = cast<BinaryOperator>(Right);
+    Expr *lhs = binop->getLHS();
+    Expr *rhs = binop->getRHS();
+    APSInt L = checkLiterals(lhs);
+    APSInt R = checkLiterals(rhs);
+    QualType LType;
+
+    switch (binop->getOpcode()) {
+
+    case BO_PtrMemD:
+    case BO_PtrMemI:
+        // TODO
+        break;
+    case BO_Mul:
+        return L * R;
+    case BO_Div:
+        if (R == 0) {
+            Diags.Report(rhs->getLocation(), diag::warn_remainder_division_by_zero) << 1;
+            break;
+        }
+        return L / R;
+    case BO_Rem:
+        if (R == 0) {
+            Diags.Report(rhs->getLocation(), diag::warn_remainder_division_by_zero) << 0;
+            break;
+        }
+        return L % R;
+    case BO_Add:
+        return L + R;
+    case BO_Sub:
+        return L - R;
+    case BO_Shl:
+        if (L.isNegative()) {
+            Diags.Report(lhs->getLocation(), diag::warn_shift_lhs_negative) << 0;
+            break;
+        }
+        if (R.isNegative()) {
+            Diags.Report(rhs->getLocation(), diag::warn_shift_negative) << 0;
+            break;
+        }
+        // TODO warn about overflow in the correct manner.
+        return L << R.getExtValue();
+    case BO_Shr:
+        if (L.isNegative()) {
+            Diags.Report(lhs->getLocation(), diag::warn_shift_lhs_negative) << 0;
+            break;
+        }
+        if (R.isNegative()) {
+            Diags.Report(rhs->getLocation(), diag::warn_shift_negative) << 0;
+            break;
+        }
+        {
+            uint64_t rightHandSide = R.getExtValue();
+            if (rightHandSide > L.getBitWidth()) {
+                Diags.Report(rhs->getLocation(), diag::warn_shift_gt_typewidth) << 0;
+                break;
+            }
+            return L >> rightHandSide;
+        }
+    case BO_LT:
+    case BO_GT:
+    case BO_LE:
+    case BO_GE:
+    case BO_EQ:
+    case BO_LAnd:
+    case BO_LOr:
+    case BO_NE: {
+        APSInt result(std::max(L.getBitWidth(), R.getBitWidth()), false);
+        result = evaluateBinaryComparison(L, R, binop->getOpcode());
+        return result;
+    }
+    case BO_And:
+    case BO_Xor:
+    case BO_Or:
+        return evaluateBinaryBitwiseOp(L, R, binop->getOpcode());
+    case BO_Comma:
+        return R;
+    case BO_Cmp:
+        assert(0 && "Not used");
+        break;
+    case BO_Assign:
+    case BO_MulAssign:
+    case BO_DivAssign:
+    case BO_RemAssign:
+    case BO_AddAssign:
+    case BO_SubAssign:
+    case BO_ShlAssign:
+    case BO_ShrAssign:
+    case BO_AndAssign:
+    case BO_XorAssign:
+    case BO_OrAssign:
+        Diags.Report(lhs->getLocation(), diag::err_typecheck_expression_not_modifiable_lvalue);
+        break;
+    }
+    return APSInt();
 }
 
 APSInt LiteralAnalyser::checkArraySubscript(const Expr* Right) {
