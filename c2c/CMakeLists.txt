@@ -45,6 +45,7 @@ add_library(c2core
     Parser/C2Parser.cpp
     Parser/ParserHelpers.cpp
     Parser/C2Sema.cpp
+    Parser/Lexer.cpp
     Analyser/AnalyserUtils.cpp
     Analyser/Scope.cpp
     Analyser/TypeResolver.cpp
