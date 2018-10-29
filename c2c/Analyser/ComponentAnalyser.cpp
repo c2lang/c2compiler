@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include <assert.h>
+
 #include "Analyser/ComponentAnalyser.h"
 #include "Analyser/FileAnalyser.h"
 #include "AST/Component.h"

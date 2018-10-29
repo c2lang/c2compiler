@@ -14,7 +14,6 @@
  */
 
 #include <string.h>
-#include <assert.h>
 
 #include "AST/Attr.h"
 #include "AST/Expr.h"

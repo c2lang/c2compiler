@@ -18,6 +18,7 @@
 #include "AST/Stmt.h"
 #include "AST/Expr.h"
 #include "Refactor/RefFinder.h"
+#include <assert.h>
 
 using namespace C2;
 

@@ -18,7 +18,6 @@
 
 #include <vector>
 #include <map>
-#include <assert.h>
 #include "Utils/Errors.h"
 #include <clang/Basic/SourceLocation.h>
 

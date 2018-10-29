@@ -14,6 +14,7 @@
  */
 
 #include <stdio.h>
+#include <assert.h>
 
 #include <llvm/ADT/SmallString.h>
 #include <llvm/ADT/APInt.h>

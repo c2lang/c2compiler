@@ -17,6 +17,7 @@
 #define UTILS_TARGET_INFO_H
 
 #include <string>
+#include <assert.h>
 
 #include <llvm/ADT/SmallSet.h>
 #include <llvm/ADT/StringMap.h>

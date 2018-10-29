@@ -16,7 +16,6 @@
 #ifndef PARSER_C2PARSER_H
 #define PARSER_C2PARSER_H
 
-#include <assert.h>
 #include <clang/Lex/Preprocessor.h>
 #include "Parser/Ownership.h"
 #include "Parser/ParserTypes.h"
