@@ -90,7 +90,7 @@ unsigned FileAnalyser::resolveTypeCanonicals() {
         case DECL_FUNC:
         case DECL_VAR:
         case DECL_ENUMVALUE:
-            assert(0);
+            TODO; // fatal error?
             break;
         case DECL_ALIASTYPE:
             // nothing to do
@@ -111,7 +111,7 @@ unsigned FileAnalyser::resolveTypeCanonicals() {
         case DECL_ARRAYVALUE:
         case DECL_IMPORT:
         case DECL_LABEL:
-            assert(0);
+            FATAL_ERROR("Cannot have type");
             break;
         }
     }
@@ -348,7 +348,7 @@ unsigned FileAnalyser::checkTypeDecl(TypeDecl* D) {
     case DECL_FUNC:
     case DECL_VAR:
     case DECL_ENUMVALUE:
-        assert(0);
+        FATAL_ERROR("Cannot have type");
         break;
     case DECL_ALIASTYPE:
         // Any UnresolvedType should point to decl that has type set
@@ -385,7 +385,7 @@ unsigned FileAnalyser::checkTypeDecl(TypeDecl* D) {
     case DECL_ARRAYVALUE:
     case DECL_IMPORT:
     case DECL_LABEL:
-        assert(0);
+        FATAL_ERROR("Cannot have type decl");
         break;
     }
     return errors;

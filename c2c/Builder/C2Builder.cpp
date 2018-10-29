@@ -373,7 +373,7 @@ int C2Builder::build() {
     // add current directory (=project root) to #include path
     char pwd[512];
     if (getcwd(pwd, 512) == 0) {
-        assert(0);
+        FATAL_ERROR("Failed to get current directory");
     }
     HSOpts->AddPath(pwd, clang::frontend::Quoted, false, false);
 

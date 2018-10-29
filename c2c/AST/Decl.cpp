@@ -221,7 +221,7 @@ static const char* VarDeclKind2Str(VarDeclKind k) {
     case VARDECL_PARAM:  return "param";
     case VARDECL_MEMBER: return "member";
     }
-    assert(0);
+    FATAL_ERROR("Unreachable");
 }
 
 

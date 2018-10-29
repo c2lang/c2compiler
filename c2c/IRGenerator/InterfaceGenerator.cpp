@@ -156,7 +156,7 @@ void InterfaceGenerator::EmitExpr(const Expr* E) {
         iface << "NULL";
         return;
     case EXPR_CALL:
-        assert(0 && "cannot happen");
+        FATAL_ERROR("Unreachable");
         return;
     case EXPR_IDENTIFIER:
         EmitIdentifierExpr(cast<IdentifierExpr>(E));
@@ -221,7 +221,7 @@ void InterfaceGenerator::EmitExpr(const Expr* E) {
             // should be VarDecl(for array/enum) or TypeDecl(array/enum)
             switch (D->getKind()) {
             case DECL_FUNC:
-                assert(0);
+                FATAL_ERROR("Unreachable");
                 break;
             case DECL_VAR:
             {
@@ -238,7 +238,7 @@ void InterfaceGenerator::EmitExpr(const Expr* E) {
                 }
                 // TODO also allow elemsof for EnumType
                 // NOTE cannot be converted to C if used with enums
-                assert(0 && "TODO");
+                TODO;
                 return;
             }
             case DECL_ENUMVALUE:
@@ -250,14 +250,14 @@ void InterfaceGenerator::EmitExpr(const Expr* E) {
             case DECL_ARRAYVALUE:
             case DECL_IMPORT:
             case DECL_LABEL:
-                assert(0);
+                FATAL_ERROR("Unreachable");
                 break;
             }
             break;
         }
         case BuiltinExpr::BUILTIN_ENUM_MIN:
         case BuiltinExpr::BUILTIN_ENUM_MAX:
-            assert(0 && "TODO");
+            TODO;
             break;
         }
         return;
@@ -266,7 +266,7 @@ void InterfaceGenerator::EmitExpr(const Expr* E) {
     {
         const ArraySubscriptExpr* A = cast<ArraySubscriptExpr>(E);
         if (isa<BitOffsetExpr>(A->getIndex())) {
-            assert(0 && "todo?");
+            TODO; // ?
         } else {
             EmitExpr(A->getBase());
             iface << '[';
@@ -287,7 +287,7 @@ void InterfaceGenerator::EmitExpr(const Expr* E) {
         return;
     }
     case EXPR_BITOFFSET:
-        assert(0 && "should not happen");
+        FATAL_ERROR("Unreachable");
         break;
     case EXPR_CAST:
     {
@@ -345,7 +345,7 @@ void InterfaceGenerator::EmitUnaryOperator(const Expr* E) {
         EmitExpr(U->getExpr());
         break;
     default:
-        assert(0);
+        FATAL_ERROR("Unreachable");
     }
 }
 
@@ -356,6 +356,7 @@ void InterfaceGenerator::EmitMemberExpr(const Expr* E) {
         EmitIdentifierExpr(M->getMember());
     } else {
         assert(0 && "can this happen?");
+        TODO;
     }
 }
 
@@ -399,7 +400,7 @@ void InterfaceGenerator::EmitTypeDecl(const TypeDecl* T) {
     case DECL_FUNC:
     case DECL_VAR:
     case DECL_ENUMVALUE:
-        assert(0);
+        FATAL_ERROR("Unreachable");
         break;
     case DECL_ALIASTYPE:
         EmitAliasType(T);
@@ -416,7 +417,7 @@ void InterfaceGenerator::EmitTypeDecl(const TypeDecl* T) {
     case DECL_ARRAYVALUE:
     case DECL_IMPORT:
     case DECL_LABEL:
-        assert(0);
+        FATAL_ERROR("Unreachable");
         break;
     }
 }
@@ -458,7 +459,7 @@ void InterfaceGenerator::EmitStructType(const StructTypeDecl* S, unsigned indent
         } else if (isa<StructTypeDecl>(member)) {
             EmitStructType(cast<StructTypeDecl>(member), indent+INDENT);
         } else {
-            assert(0);
+            FATAL_ERROR("Unreachable");
         }
     }
     iface.indent(indent);
@@ -546,7 +547,7 @@ void InterfaceGenerator::EmitType(QualType type) {
         break;
     }
     case TC_UNRESOLVED:
-        assert(0 && "should be resolved");
+        TODO; // assert(0 && "should be resolved");
         break;
     case TC_ALIAS:
         EmitPrefixedDecl(cast<AliasType>(T)->getDecl());
@@ -561,7 +562,7 @@ void InterfaceGenerator::EmitType(QualType type) {
         EmitPrefixedDecl(cast<FunctionType>(T)->getDecl());
         break;
     case TC_MODULE:
-        assert(0 && "should not happen");
+        FATAL_ERROR("Unreachable");
         break;
     }
 }

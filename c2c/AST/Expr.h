@@ -145,7 +145,7 @@ public:
             r = RADIX_16;
             break;
         default:
-            assert(0 && "unsupported radix");
+            FATAL_ERROR("unsupported radix");
             break;
         }
         integerLiteralBits.Radix = r;

@@ -104,17 +104,17 @@ bool QualType::isConstant() const {
         return cast<ArrayType>(T)->getElementType().isConstant();
     case TC_UNRESOLVED:
     case TC_ALIAS:
-        assert(0);
+        FATAL_ERROR("Unreachable");
         break;
     case TC_STRUCT:
         return isConstQualified();
     case TC_ENUM:
-        assert(0);
+        FATAL_ERROR("Unreachable");
         break;
     case TC_FUNCTION:
         return isConstQualified();
     case TC_MODULE:
-        assert(0);
+        FATAL_ERROR("Unreachable");
         break;
     }
     return false;
@@ -298,7 +298,7 @@ void Type::DiagName(StringBuilder& buf) const {
 #if 0
 void Type::debugPrint(StringBuilder& buffer) const {
     // NOTE: never used
-    assert(0);
+    FATAL_ERROR("Unreachable");
     // only used to print canonical type (called by Sub-Class::debugPrint())
     buffer << "  canonical=";
     if (canonicalType.isNull()) {

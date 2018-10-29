@@ -365,7 +365,7 @@ void C2Parser::ParseEnumType(const char* id, SourceLocation idLoc, bool is_publi
 
     if (is_incr) {
         ConsumeToken();  // +
-        assert(0 && "TODO incremental enum");
+        TODO; // incremental enum
     } else {
         // Syntax: enum_block
         typedef SmallVector<EnumConstantDecl*, 10> EnumConstants;
@@ -917,7 +917,7 @@ C2::ExprResult C2Parser::ParseCastExpression(bool isUnaryExpression,
         fprintf(stderr, "UNHANDLED TOKEN: ");
         PP.DumpToken(Tok);
         fprintf(stderr, "\n");
-        assert(0 && "TODO");
+        TODO;
 #endif
     }
 
@@ -1010,7 +1010,7 @@ C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
     while (1) {
         switch (Tok.getKind()) {
         case tok::code_completion:
-            assert(0);
+            FATAL_ERROR("Should not occure");
         case tok::identifier:
             // Fall through; this isn't a message send.
         default:  // Not a postfix-expression suffix.
@@ -1190,7 +1190,7 @@ C2Parser::ParseParenExpression(ParenParseOption &ExprType, bool stopIfCastExpr,
     // None of these cases should fall through with an invalid Result
     // unless they've already reported an error.
     if (ExprType >= CompoundStmt && Tok.is(tok::l_brace)) {
-        assert(0 && "TODO");
+        TODO;
 #if 0
         Diag(Tok, diag::ext_gnu_statement_expr);
         Actions.ActOnStartStmtExpr();
@@ -1214,13 +1214,13 @@ C2Parser::ParseParenExpression(ParenParseOption &ExprType, bool stopIfCastExpr,
         if (ExpectAndConsume(tok::r_paren)) return ExprError();
 
         if (Tok.is(tok::l_brace)) {
-            assert(0 && "TODO");
+            TODO;
         }
         if (ExprType == CastExpr) {
             // We parsed '(' type-name ')' and the thing after it wasn't a '{'.
 
             if (stopIfCastExpr) {
-                assert(0 && "TODO");
+                TODO;
             }
 
             // Parse the cast-expression that follows it next.
@@ -1233,7 +1233,7 @@ C2Parser::ParseParenExpression(ParenParseOption &ExprType, bool stopIfCastExpr,
         Diag(Tok, diag::err_expected_lbrace_in_compound_literal);
         return ExprError();
     } else if (isTypeCast) {
-        assert(0 && "TODO");
+        TODO;
     } else {
         Result = ParseExpression();
         ExprType = SimpleExpr;
@@ -1444,11 +1444,11 @@ C2::ExprResult C2Parser::ParseSizeof()
     case tok::kw_const:
     case tok::kw_volatile:
     case tok::kw_local:
-        //Diag(Tok, diag::err_no_qualifier_allowed_here);
+        //Diag(Tok, diag::err_no_qualifier_allowed_here); // TODO why is this commented out?
         fprintf(stderr, "Not type qualifier allowed here\n");
         return ExprError();
     default:
-        //Diag(Tok, diag::err_expected type or symbol name);
+        //Diag(Tok, diag::err_expected type or symbol name); // TODO why is this commented out?
         fprintf(stderr, "Expected Type or Symbol name\n");
         return ExprError();
     }
@@ -1570,7 +1570,7 @@ void C2Parser::ParseFuncDef(bool is_public) {
     if (isInterface) {
         if (Tok.is(tok::l_brace)) {
             //Diag(Tok, diag::err_interface_func_body);
-            fprintf(stderr, "INTERFACE functions cannot have function bodies\n");
+            fprintf(stderr, "INTERFACE functions cannot have function bodies\n"); // TODO Why is this commented out
             return;
         }
         if (ExpectAndConsume(tok::semi)) return;
@@ -2171,6 +2171,7 @@ C2::StmtResult C2Parser::ParseDeclOrStatement() {
     case tok::coloncolon:
         // syntax error
         assert(0 && "double module id");
+        TODO; // Unreachable or diagnostic here?
         return StmtError();
     case tok::colon:
         // TODO move this to ParseLabeledStatement
@@ -2763,7 +2764,7 @@ bool C2Parser::SkipUntil(ArrayRef<tok::TokenKind> Toks, SkipUntilFlags Flags) {
             if (!HasFlagsSet(Flags, StopAtCodeCompletion))
                 handleUnexpectedCodeCompletionToken();
 #endif
-            assert(0 && "TODO");
+            TODO;
             return false;
 
         case tok::l_paren:

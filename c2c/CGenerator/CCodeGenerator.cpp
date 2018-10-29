@@ -338,7 +338,7 @@ void CCodeGenerator::EmitExpr(const Expr* E, StringBuilder& output) {
         return;
     }
     case EXPR_BITOFFSET:
-        assert(0 && "should not happen");
+        FATAL_ERROR("should not happen");
         break;
     case EXPR_CAST:
     {
@@ -414,7 +414,7 @@ void CCodeGenerator::EmitUnaryOperator(const Expr* E, StringBuilder& output) {
         EmitExpr(U->getExpr(), output);
         break;
     default:
-        assert(0);
+        FATAL_ERROR("Unreachable");
     }
 }
 
@@ -745,7 +745,7 @@ void CCodeGenerator::EmitTypeDecl(const TypeDecl* T) {
     case DECL_FUNC:
     case DECL_VAR:
     case DECL_ENUMVALUE:
-        assert(0);
+        FATAL_ERROR("Unreachable");
         break;
     case DECL_ALIASTYPE:
         *out << "typedef ";
@@ -768,7 +768,7 @@ void CCodeGenerator::EmitTypeDecl(const TypeDecl* T) {
     case DECL_ARRAYVALUE:
     case DECL_IMPORT:
     case DECL_LABEL:
-        assert(0);
+        FATAL_ERROR("Unreachable");
         break;
     }
 }
@@ -810,7 +810,7 @@ void CCodeGenerator::EmitStructType(const StructTypeDecl* S, StringBuilder& out,
         } else if (isa<StructTypeDecl>(member)) {
             EmitStructType(cast<StructTypeDecl>(member), out, indent+INDENT);
         } else {
-            assert(0);
+            FATAL_ERROR("Member is neither struct nor var");
         }
     }
     out.indent(indent);
@@ -925,7 +925,7 @@ void CCodeGenerator::EmitStmt(const Stmt* S, unsigned indent) {
         return;
     case STMT_CASE:
     case STMT_DEFAULT:
-        assert(0 && "Should already be generated");
+        FATAL_ERROR("Should already be generated");
         break;
     case STMT_BREAK:
         cbuf.indent(indent);
@@ -1120,7 +1120,7 @@ void CCodeGenerator::EmitSwitchStmt(const Stmt* S, unsigned indent) {
             break;
         }
         default:
-            assert(0);
+            FATAL_ERROR("Unreachable");
         }
     }
 
@@ -1238,7 +1238,7 @@ static const char* builtin2cname(BuiltinType::Kind kind) {
     case BuiltinType::Bool:     return "int";
     case BuiltinType::Void:     return "void";
     }
-    assert(0 && "should not come here");
+    FATAL_ERROR("Unreachable");
     return 0;
 }
 
@@ -1284,7 +1284,7 @@ void CCodeGenerator::EmitTypePreName(QualType type, StringBuilder& output) {
         EmitDecl(cast<FunctionType>(T)->getDecl(), output);
         break;
     case TC_MODULE:
-        assert(0 && "TODO");
+        TODO;
         break;
     }
 }

@@ -259,7 +259,7 @@ void FunctionAnalyser::analyseStmt(Stmt* S, bool haveScope) {
         break;
     case STMT_CASE:
     case STMT_DEFAULT:
-        assert(0 && "not done here");
+        FATAL_ERROR("Unreachable"); // Done at other place.
         break;
     case STMT_BREAK:
         analyseBreakStmt(S);
@@ -382,7 +382,7 @@ void FunctionAnalyser::analyseSwitchStmt(Stmt* stmt) {
             analyseDefaultStmt(C);
             break;
         default:
-            assert(0);
+            FATAL_ERROR("Unreachable");
         }
     }
 
@@ -669,7 +669,7 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
             expr->setConstant();
             break;
         case DECL_LABEL:
-            assert(0 && "TODO");
+            TODO;
             break;
         }
         if (side & RHS) {
@@ -701,7 +701,7 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
     case EXPR_PAREN:
         return analyseParenExpr(expr);
     case EXPR_BITOFFSET:
-        assert(0 && "should not happen");
+        FATAL_ERROR("Unreachable");
         break;
     case EXPR_CAST:
         return analyseExplicitCastExpr(expr);
@@ -897,6 +897,7 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
         switch (numValues) {
         case 0:
             fprintf(stderr, "TODO ERROR: scalar initializer cannot be empty\n");
+            TODO;
             break;
         case 1:
         {
@@ -966,7 +967,7 @@ void FunctionAnalyser::analyseSizeOfExpr(BuiltinExpr* B) {
         return;
     case EXPR_CALL:
         // not allowed
-        assert(0 && "TODO good error");
+        TODO; // assert(0 && "TODO good error");
         return;
     case EXPR_IDENTIFIER:
     {
@@ -988,20 +989,20 @@ void FunctionAnalyser::analyseSizeOfExpr(BuiltinExpr* B) {
             // ok
             return;
         case DECL_ARRAYVALUE:
-            assert(0 && "should not happen");
+            FATAL_ERROR("Unreachable");
             break;
         case DECL_IMPORT:
             Diag(id->getLocation(), diag::err_is_a_module) << id->getName();
             return;
         case DECL_LABEL:
-            assert(0 && "TODO");
+            TODO;
             break;
         }
         break;
     }
     case EXPR_INITLIST:
     case EXPR_DESIGNATOR_INIT:
-        assert(0 && "TODO good error");
+        TODO; // Good error
         return;
     case EXPR_TYPE:
     {
@@ -1014,28 +1015,28 @@ void FunctionAnalyser::analyseSizeOfExpr(BuiltinExpr* B) {
     }
     case EXPR_BINOP:
         // not allowed
-        assert(0 && "TODO good error");
+        TODO; // good error
     case EXPR_CONDOP:
-        assert(0 && "TODO allow?");
+        TODO; // TODO allow?
         return;
     case EXPR_UNARYOP:
         // some allowed (&)?
         // TODO
         return;
     case EXPR_BUILTIN:
-        assert(0 && "should not happen");
+        FATAL_ERROR("Unreachable");
         return;
     case EXPR_ARRAYSUBSCRIPT:
     case EXPR_MEMBER:
         // allowed
-        assert(0 && "TODO");
+        TODO;
         return;
     case EXPR_PAREN:
     case EXPR_BITOFFSET:
-        assert(0 && "should not happen");
+        FATAL_ERROR("Unreachable");
         break;
     case EXPR_CAST:
-        assert(0 && "TODO");
+        TODO;
         break;
     }
 }
@@ -1100,7 +1101,7 @@ void FunctionAnalyser::analyseArrayType(VarDecl* V, QualType T) {
 
     switch (T->getTypeClass()) {
     case TC_BUILTIN:
-        assert(0 && "should not happen");
+        FATAL_ERROR("Unreachable");
         break;
     case TC_POINTER:
         analyseArrayType(V, cast<PointerType>(T)->getPointeeType());
@@ -1113,7 +1114,7 @@ void FunctionAnalyser::analyseArrayType(VarDecl* V, QualType T) {
         break;
     }
     case TC_UNRESOLVED:
-        assert(0 && "should not happen");
+        FATAL_ERROR("Unreachable");
         break;
     case TC_ALIAS:
         analyseArrayType(V, cast<AliasType>(T)->getRefType());
@@ -1121,10 +1122,10 @@ void FunctionAnalyser::analyseArrayType(VarDecl* V, QualType T) {
     case TC_STRUCT:
     case TC_ENUM:
     case TC_FUNCTION:
-        assert(0 && "should not happen");
+        FATAL_ERROR("Unreachable");
         break;
     case TC_MODULE:
-        assert(0 && "TBD");
+        TODO;
         break;
     }
 }
@@ -1177,7 +1178,7 @@ static ExprCTC combineCtc(Expr* Result, const Expr* L, const Expr* R) {
         Result->setCTC(CTC_FULL);
         return CTC_FULL;
     }
-    assert(0 && "should not come here");
+    FATAL_ERROR("Unreachable");
     return CTC_NONE;
 }
 
@@ -1217,7 +1218,7 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     switch (binop->getOpcode()) {
     case BO_PtrMemD:
     case BO_PtrMemI:
-        assert(0 && "unhandled binary operator type");
+        FATAL_ERROR("unhandled binary operator type");
         break;
     case BO_Mul:
     case BO_Div:
@@ -1233,7 +1234,7 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
         if (Left->isConstant() && Right->isConstant()) expr->setConstant();
         break;
     case BO_Cmp: // C++20 only
-        assert(0 && "unhandled binary operator type");
+        FATAL_ERROR("unhandled binary operator type");
         break;
     case BO_LE:
     case BO_LT:
@@ -1279,7 +1280,7 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
         TRight = analyseExpr(Right, RHS);
         break;
     case BO_Comma:
-        assert(0 && "unhandled binary operator type");
+        FATAL_ERROR("unhandled binary operator type");
         break;
     }
     if (TLeft.isNull() || TRight.isNull()) return QualType();
@@ -1289,7 +1290,7 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     switch (binop->getOpcode()) {
     case BO_PtrMemD:
     case BO_PtrMemI:
-        assert(0 && "unhandled binary operator type");
+        FATAL_ERROR("unhandled binary operator type");
         break;
     case BO_Mul:
     case BO_Div:
@@ -1308,7 +1309,7 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
         Result = TLeft;
         break;
     case BO_Cmp: // C++20 only
-        assert(0 && "unhandled binary operator type");
+        FATAL_ERROR("unhandled binary operator type");
         break;
     case BO_LE:
     case BO_LT:
@@ -1355,7 +1356,7 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
         Result = TLeft;
         break;
     case BO_Comma:
-        assert(0 && "unhandled binary operator type");
+        FATAL_ERROR("unhandled binary operator type");
         break;
     }
     expr->setType(Result);
@@ -1446,7 +1447,7 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
         expr->setType(LType);
         break;
     default:
-        assert(0 && "TODO");
+        TODO;
         break;
     }
     return LType;
@@ -1777,7 +1778,7 @@ QualType FunctionAnalyser::analyseBitOffsetExpr(Expr* expr, QualType BaseType, S
             } else if (width.ult(64+1)) {
                 T = Type::UInt64();
             } else {
-                assert(0 && "should not happen");
+                FATAL_ERROR("Unreachable");
             }
             B->setType(T);
             B->setWidth((unsigned char)width.getSExtValue());
@@ -1892,6 +1893,7 @@ bool FunctionAnalyser::checkCallArgs(FunctionDecl* func, CallExpr* call) {
             // TODO use canonical
             if (callArgType == Type::Void()) {
                 fprintf(stderr, "ERROR: (TODO) passing 'void' to parameter of incompatible type '...'\n");
+                TODO;
                 //Diag(callArg->getLocation(), diag::err_typecheck_convert_incompatible)
                 //    << "from" << "to" << 1;// << callArg->getLocation();
             }
@@ -1978,7 +1980,7 @@ bool FunctionAnalyser::checkAssignee(Expr* expr) const {
         // ok
         return true;
     case EXPR_CAST:
-        assert(0 && "TODO");
+        TODO;
         break;
     }
     // expr is not assignable
@@ -2006,6 +2008,7 @@ void FunctionAnalyser::checkDeclAssignment(Decl* decl, Expr* expr) {
     case DECL_FUNC:
         // error
         fprintf(stderr, "TODO cannot assign to non-variable\n");
+        TODO;
         break;
     case DECL_VAR:
     {
@@ -2023,10 +2026,11 @@ void FunctionAnalyser::checkDeclAssignment(Decl* decl, Expr* expr) {
     case DECL_ARRAYVALUE:
         // error
         fprintf(stderr, "TODO cannot assign to non-variable\n");
+        TODO;
         break;
     case DECL_IMPORT:
     case DECL_LABEL:
-        assert(0);
+        FATAL_ERROR("Unreachable");
         break;
     }
 }
@@ -2149,7 +2153,7 @@ QualType FunctionAnalyser::getStructType(QualType Q) const {
     case TC_ARRAY:
         return QualType();
     case TC_UNRESOLVED:
-        assert(0 && "should not happen");
+        FATAL_ERROR("Unreachable");
         return QualType();
     case TC_ALIAS:
     {
@@ -2163,7 +2167,7 @@ QualType FunctionAnalyser::getStructType(QualType Q) const {
     case TC_MODULE:
         return QualType();
     }
-    assert(0);
+    FATAL_ERROR("Unreachable");
 }
 
 QualType FunctionAnalyser::getConditionType(const Stmt* C) const {
@@ -2173,7 +2177,7 @@ QualType FunctionAnalyser::getConditionType(const Stmt* C) const {
     if (const DeclStmt* D = dyncast<DeclStmt>(C)) {
         return D->getDecl()->getType();
     }
-    assert(0 && "invalid Condition");
+    FATAL_ERROR("Invalid Condition");
     return QualType();
 }
 

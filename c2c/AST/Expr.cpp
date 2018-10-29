@@ -393,7 +393,7 @@ static const char* reftype2str(IdentifierExpr::RefType ref) {
     case IdentifierExpr::REF_STRUCT_FUNC:   return "struct_func";
     case IdentifierExpr::REF_LABEL:         return "label";
     }
-    assert(0 && "should not come here");
+    FATAL_ERROR("should not come here");
     return "?";
 }
 
@@ -540,7 +540,7 @@ const char* BinaryOperator::OpCode2str(clang::BinaryOperatorKind opc_) {
     case BO_OrAssign: return "|=";
     case BO_Comma: return ",";
     }
-    assert(0);
+    FATAL_ERROR("should not come here");
 }
 
 void BinaryOperator::print(StringBuilder& buffer, unsigned indent) const {
@@ -604,10 +604,8 @@ const char* UnaryOperator::OpCode2str(clang::UnaryOperatorKind opc_) {
     case UO_Not:        return "~";
     case UO_LNot:       return "!";
     default:
-        assert(0);
-        break;
+        FATAL_ERROR("should not come here");
     }
-    return "";
 }
 
 void UnaryOperator::print(StringBuilder& buffer, unsigned indent) const {

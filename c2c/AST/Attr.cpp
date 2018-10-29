@@ -72,7 +72,7 @@ const AttrInfo& Attr::getInfo(AttrKind kind) {
         const AttrInfo* AI = &attrInfo[i];
         if (AI->kind == kind) return *AI;
     }
-    assert(0);
+    FATAL_ERROR("No attribute info found");
     static AttrInfo none;
     return none;
 }

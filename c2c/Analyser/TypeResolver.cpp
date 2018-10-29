@@ -59,10 +59,10 @@ unsigned TypeResolver::checkType(QualType Q, bool used_public) {
         // ok (TypeDecl will be checked)
         return 0;
     case TC_MODULE:
-        assert(0 && "TBD");
+        TODO;
         return 0;
     }
-    assert(0);
+    FATAL_ERROR("Unreachable");
 }
 
 unsigned TypeResolver::checkUnresolvedType(const UnresolvedType* type, bool used_public) {
@@ -147,7 +147,7 @@ QualType TypeResolver::resolveUnresolved(QualType Q) const {
     case TC_FUNCTION:
         return Q;
     case TC_MODULE:
-        assert(0 && "TBD");
+        TODO;
         return Q;
     }
     return Q;
@@ -268,17 +268,15 @@ QualType TypeResolver::checkCanonicals(Decls& decls, QualType Q, bool set) const
     case TC_STRUCT:
         return Q.getCanonicalType();
     case TC_ENUM:
-    {
-        assert(0 && "TODO");
+        TODO;
         return 0;
-    }
     case TC_FUNCTION:
         return Q.getCanonicalType();
     case TC_MODULE:
-        assert(0 && "TBD");
+        TODO;
         return 0;
     }
-    assert(0);
+    FATAL_ERROR("Unreachable");
 }
 
 QualType TypeResolver::resolveCanonical(QualType Q) const {
@@ -324,7 +322,7 @@ QualType TypeResolver::resolveCanonical(QualType Q) const {
         }
     }
     case TC_UNRESOLVED:
-        assert(0 && "should not get here");
+        FATAL_ERROR("Unreachable");
         return QualType();
     case TC_ALIAS:
     case TC_STRUCT:
@@ -332,10 +330,10 @@ QualType TypeResolver::resolveCanonical(QualType Q) const {
     case TC_FUNCTION:
         return Q.getCanonicalType();
     case TC_MODULE:
-        assert(0 && "TBD");
+        TODO;
         return Q;
     }
-    assert(0);
+    FATAL_ERROR("Unreachable");
 }
 
 bool TypeResolver::checkDecls(Decls& decls, const Decl* D) const {

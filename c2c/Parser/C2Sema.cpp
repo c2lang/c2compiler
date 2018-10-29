@@ -1049,7 +1049,7 @@ C2::ExprResult C2Sema::ActOnBuiltinType(tok::TokenKind k) {
     case tok::kw_bool:      qt = Type::Bool(); break;
     case tok::kw_void:      qt = Type::Void(); break;
     default:
-        assert(0);
+        FATAL_ERRORF("Unkown token %d", k);
         break;
     }
 
@@ -1385,7 +1385,7 @@ C2::ExprResult C2Sema::ActOnNumericConstant(const Token& Tok) {
         return ExprError();
 
     if (Literal.hasUDSuffix()) {
-        assert(0 && "HUH?");
+        FATAL_ERROR("HUH?");
     }
 
     Expr* Res;
@@ -1401,7 +1401,7 @@ C2::ExprResult C2Sema::ActOnNumericConstant(const Token& Tok) {
         // we underflowed to zero (APFloat reports denormals as underflow).
         if ((result & APFloat::opOverflow) ||
                 ((result & APFloat::opUnderflow) && Val.isZero())) {
-            assert(0 && "TODO");
+            TODO;
 #if 0
             unsigned diagnostic;
             SmallString<20> buffer;
@@ -1474,7 +1474,7 @@ C2::ExprResult C2Sema::ActOnNumericConstant(const Token& Tok) {
 
             if (Width == 0) {
                 fprintf(stderr, "TOO LARGE\n");
-                assert(0 && "TODO");
+                TODO;
             }
             // set correct width
             if (ResultVal.getBitWidth() != Width) {

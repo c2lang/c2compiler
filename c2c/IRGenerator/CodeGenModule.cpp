@@ -263,19 +263,19 @@ unsigned CodeGenModule::getAlignment(QualType Q) const {
         return getAlignment(cast<ArrayType>(T)->getElementType());
     case TC_UNRESOLVED:
     case TC_ALIAS:
-        assert(0);
+        FATAL_ERROR("No alignment");
         break;
     case TC_STRUCT:
-        // TEMP, for now always align on 4
+        // TEMP, for now always align on 4 TODO
         return 4;
     case TC_ENUM:
-        assert(0);
+        FATAL_ERROR("Not for enum");
         break;
     case TC_FUNCTION:
-        assert(0 && "TODO");
+        TODO;
         break;
     case TC_MODULE:
-        assert(0);
+        FATAL_ERROR("Not for module");
         break;
     }
     return 0;
@@ -319,7 +319,7 @@ llvm::Type* CodeGenModule::ConvertType(QualType Q) {
     }
     case TC_UNRESOLVED:
     case TC_ALIAS:
-        assert(0 && "should be resolved");
+        FATAL_ERROR("should be resolved");
         break;
     case TC_STRUCT:
         return ConvertStructType(cast<StructType>(canon));
@@ -328,9 +328,10 @@ llvm::Type* CodeGenModule::ConvertType(QualType Q) {
         return builder.getInt32Ty();
     case TC_FUNCTION:
         assert(0 && "TODO func type");
+        TODO;
         break;
     case TC_MODULE:
-        assert(0 && "TODO");
+        TODO;
         break;
     }
     return 0;
@@ -382,7 +383,7 @@ llvm::Constant* CodeGenModule::EvaluateExprAsConstant(const Expr *E) {
     }
     default:
         E->dump();
-        assert(0 && "TODO");
+        TODO;
         return 0;
     }
 }
@@ -449,18 +450,18 @@ llvm::Constant* CodeGenModule::EmitDefaultInit(QualType Q) {
         return EmitArrayInit(cast<ArrayType>(T), 0, 0);
     case TC_UNRESOLVED:
     case TC_ALIAS:
-        assert(0);
+        FATAL_ERROR("Unexpected type");
         break;
     case TC_STRUCT:
         return EmitStructInit(cast<StructType>(T), 0, 0);
     case TC_ENUM:
-        assert(0);
+        FATAL_ERROR("Unexpected type");
         break;
     case TC_FUNCTION:
-        assert(0 && "TODO");
+        TODO;
         break;
     case TC_MODULE:
-        assert(0);
+        FATAL_ERROR("Unexpected type");
         break;
     }
     return 0;
@@ -549,7 +550,7 @@ llvm::Constant* CodeGenModule::EmitArrayInit(const ArrayType *AT, Expr** Vals, u
         return llvm::ConstantDataArray::get(context, Elements);
     }
     default:
-        assert(0 && "TODO?");
+        TODO; // ?
         return 0;
     }
     return 0;
@@ -558,7 +559,7 @@ llvm::Constant* CodeGenModule::EmitArrayInit(const ArrayType *AT, Expr** Vals, u
 llvm::Constant* CodeGenModule::EmitConstantDecl(const Decl* D) {
     switch (D->getKind()) {
     case DECL_FUNC:
-        assert(0 && "TODO");
+        TODO;
         break;
     case DECL_VAR:
     {
@@ -566,7 +567,7 @@ llvm::Constant* CodeGenModule::EmitConstantDecl(const Decl* D) {
         return EvaluateExprAsConstant(V->getInitValue());
     }
     case DECL_ENUMVALUE:
-        assert(0 && "TODO");
+        TODO;
         break;
     case DECL_ALIASTYPE:
     case DECL_STRUCTTYPE:
@@ -575,7 +576,7 @@ llvm::Constant* CodeGenModule::EmitConstantDecl(const Decl* D) {
     case DECL_ARRAYVALUE:
     case DECL_IMPORT:
     case DECL_LABEL:
-        assert(0);
+        FATAL_ERROR("Never constant");
         break;
     }
     return 0;
