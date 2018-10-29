@@ -19,7 +19,7 @@
 #include <vector>
 #include <map>
 #include <assert.h>
-
+#include "Utils/Errors.h"
 #include <clang/Basic/SourceLocation.h>
 
 namespace C2 {
@@ -77,11 +77,11 @@ public:
     const char* kind2str() const;
 private:
     void* operator new(size_t bytes) noexcept {
-        assert(0 && "Attr cannot be allocated with regular 'new'");
+        FATAL_ERROR("Attr cannot be allocated with regular 'new'");
         return 0;
     }
     void operator delete(void* data) {
-        assert(0 && "Attr cannot be released with regular 'delete'");
+        FATAL_ERROR("Attr cannot be released with regular 'delete'");
     }
 
     clang::SourceRange Range;

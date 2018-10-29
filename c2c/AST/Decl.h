@@ -24,7 +24,7 @@
 
 #include "AST/Type.h"
 #include "AST/Attr.h"
-
+#include "Utils/Errors.h"
 using clang::SourceLocation;
 
 namespace llvm {
@@ -93,11 +93,11 @@ public:
     void dump() const;
 protected:
     void* operator new(size_t bytes) noexcept {
-        assert(0 && "Decl cannot be allocated with regular 'new'");
+        FATAL_ERROR("Decl cannot be allocated with regular 'new'");
         return 0;
     }
     void operator delete(void* data) {
-        assert(0 && "Decl cannot be released with regular 'delete'");
+        FATAL_ERROR("Decl cannot be released with regular 'delete'");
     }
 
     void printPublic(StringBuilder& buffer) const;

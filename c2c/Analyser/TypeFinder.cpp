@@ -16,6 +16,7 @@
 #include <assert.h>
 #include "Analyser/TypeFinder.h"
 #include "AST/Expr.h"
+#include "Utils/Errors.h"
 
 using namespace C2;
 using namespace llvm;
@@ -34,13 +35,13 @@ QualType TypeFinder::findType(const Expr* expr) {
     case EXPR_IDENTIFIER:
         break;
     case EXPR_TYPE:
-        assert(0 && "should not come here");
+        FATAL_ERROR("Unreachable");
         break;
     case EXPR_CALL:
         break;
     case EXPR_INITLIST:
     case EXPR_DESIGNATOR_INIT:
-        assert(0 && "should not come here");
+        FATAL_ERROR("Unreachable");
         break;
     case EXPR_BINOP:
         return getBinOpType(cast<BinaryOperator>(expr));
@@ -49,7 +50,7 @@ QualType TypeFinder::findType(const Expr* expr) {
     case EXPR_UNARYOP:
         return getUnaryOpType(cast<UnaryOperator>(expr));
     case EXPR_BUILTIN:
-        assert(0 && "should not come here");
+        FATAL_ERROR("Unreachable");
         break;
     case EXPR_ARRAYSUBSCRIPT:
     case EXPR_MEMBER:
@@ -59,7 +60,7 @@ QualType TypeFinder::findType(const Expr* expr) {
     case EXPR_BITOFFSET:
         break;
     case EXPR_CAST:
-        assert(0 && "TODO");
+        TODO;
         break;
     }
     return expr->getType();
@@ -69,7 +70,7 @@ QualType TypeFinder::getBinOpType(const BinaryOperator* binop) {
     switch (binop->getOpcode()) {
     case BO_PtrMemD:
     case BO_PtrMemI:
-        assert(0 && "TODO?");
+        TODO; // ?
         break;
     case BO_Mul:
     case BO_Div:
@@ -80,10 +81,10 @@ QualType TypeFinder::getBinOpType(const BinaryOperator* binop) {
         return LargestType(binop->getLHS(), binop->getRHS());
     case BO_Shl:
     case BO_Shr:
-        assert(0 && "TODO");
+        TODO;
         break;
     case BO_Cmp: // C++20 only
-        assert(0 && "unhandled binary operator type");
+        FATAL_ERROR("unhandled binary operator type");
         break;
     case BO_LE:
     case BO_LT:
@@ -112,7 +113,7 @@ QualType TypeFinder::getBinOpType(const BinaryOperator* binop) {
         // return LHS type
         return findType(binop->getLHS());
     case BO_Comma:
-        assert(0 && "TODO?");
+        TODO;
         break;
     }
     return binop->getType();
@@ -137,7 +138,7 @@ QualType TypeFinder::getUnaryOpType(const UnaryOperator* unaryop) {
         // should be bool already
         break;
     default:
-        assert(0 && "TODO");
+        TODO;
         break;
     }
     return unaryop->getType();

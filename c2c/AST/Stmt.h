@@ -17,6 +17,7 @@
 #define AST_STMT_H
 
 #include <vector>
+#include "Utils/Errors.h"
 
 #include <clang/Basic/SourceLocation.h>
 
@@ -63,11 +64,11 @@ public:
 protected:
     // See Clang comments in include/clang/AST/Stmt.h about operator new/delete
     void* operator new(size_t bytes) noexcept {
-        assert(0 && "Stmt cannot be allocated with regular 'new'");
+        FATAL_ERROR("Stmt cannot be allocated with regular 'new'");
         return 0;
     }
     void operator delete(void* data) {
-        assert(0 && "Stmt cannot be released with regular 'delete'");
+        FATAL_ERROR("Stmt cannot be released with regular 'delete'");
     }
 
 public:

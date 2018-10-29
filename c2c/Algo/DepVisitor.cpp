@@ -37,7 +37,7 @@ void DepVisitor::checkDecl(const Decl* D) {
         checkVarDecl(cast<VarDecl>(D));
         break;
     case DECL_ENUMVALUE:
-        assert(0);
+        TODO; // FATAL_ERROR or handle?
         break;
     case DECL_ALIASTYPE:
         checkType(cast<AliasTypeDecl>(D)->getRefType());
@@ -66,7 +66,7 @@ void DepVisitor::checkDecl(const Decl* D) {
         break;
     }
     case DECL_ARRAYVALUE:
-        assert(0 && "TODO");
+        TODO;
         break;
     case DECL_IMPORT:
     case DECL_LABEL:
@@ -124,7 +124,7 @@ void DepVisitor::checkType(QualType Q, bool isFullDep) {
         addDep(cast<FunctionType>(T)->getDecl(), isFullDep);
         break;
     case TC_MODULE:
-        assert(0);
+        FATAL_ERROR("Unreachable");
         break;
     }
 }

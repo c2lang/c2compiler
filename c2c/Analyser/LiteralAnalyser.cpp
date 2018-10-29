@@ -75,7 +75,7 @@ static const Limit* getLimit(int width) {
     case 64: return &limits[8];
     default:
         fprintf(stderr, "UNHANDLED width %d\n", width);
-        assert(0 && "todo");
+        TODO;
         return 0;
     }
 }
@@ -97,6 +97,7 @@ void LiteralAnalyser::check(QualType TLeft, const Expr* Right) {
 
         // TODO should be done elsewhere (checking if conversion is allowed)
         fprintf(stderr, "TODO refactor checking!!, type conversion not allowed\n");
+        TODO;
 #if 0
         // this part should be used when checking casting CTC's to Enum types
         APSInt Result = checkLiterals(Right);
@@ -217,7 +218,7 @@ APSInt LiteralAnalyser::checkLiterals(const Expr* Right) {
     case EXPR_INITLIST:
         break;
     case EXPR_DESIGNATOR_INIT:
-        assert(0 && "TODO");
+        TODO;
         break;
     case EXPR_BINOP:
         return checkBinaryLiterals(Right);
@@ -244,7 +245,7 @@ APSInt LiteralAnalyser::checkLiterals(const Expr* Right) {
         return checkLiterals(P->getExpr());
     }
     case EXPR_BITOFFSET:
-        assert(0 && "TODO");
+        TODO;
         break;
     case EXPR_CAST:
     {
@@ -292,7 +293,7 @@ bool LiteralAnalyser::checkRange(QualType TLeft, const Expr* Right, clang::Sourc
         availableWidth = TL->getIntegerWidth();
     } else {
         QT.dump();
-        assert(0 && "todo");
+        TODO;
     }
 
     const Limit* L = getLimit(availableWidth);
@@ -346,22 +347,20 @@ APSInt LiteralAnalyser::checkUnaryLiterals(const Expr* Right) {
     case UO_AddrOf:
     case UO_Deref:
     case UO_Plus:
-        // TODO
+        TODO;
         break;
     case UO_Minus:
+        return -checkLiterals(unaryop->getExpr());
+    case UO_Not:
     {
         APSInt Result = checkLiterals(unaryop->getExpr());
-        APInt invert(64, -1, true);
-        APSInt I(invert, false);
-        Result *= I;
+        Result = Result == 0 ? 1 : 0;
         return Result;
     }
-    case UO_Not:
     case UO_LNot:
-        // TODO
-        break;
+        return ~checkLiterals(unaryop->getExpr());
     default:
-        assert(0 && "TODO");
+        TODO;
         break;
     }
     return APSInt();
@@ -528,7 +527,7 @@ APSInt LiteralAnalyser::checkDecl(const Decl* D) {
         assert(VD->getInitValue());
         return checkLiterals(VD->getInitValue());
     }
-    assert(0 && "should not come here");
+    FATAL_ERROR("Unreachable");
     return APSInt();
 }
 

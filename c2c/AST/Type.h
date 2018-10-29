@@ -18,7 +18,7 @@
 
 #include <assert.h>
 #include <stddef.h>
-
+#include "Utils/Errors.h"
 #include <llvm/ADT/APInt.h>
 
 #define QUAL_CONST      (0x1)
@@ -140,11 +140,11 @@ protected:
     }
 
     void* operator new(size_t bytes) noexcept {
-        assert(0 && "Type cannot be allocated with regular 'new'");
+        FATAL_ERROR("Type cannot be allocated with regular 'new'");
         return 0;
     }
     void operator delete(void* data) {
-        assert(0 && "Type cannot be released with regular 'delete'");
+        FATAL_ERROR("Type cannot be released with regular 'delete'");
     }
 
     void printName(StringBuilder& buffer) const;

@@ -149,8 +149,8 @@ void CodeGenFunction::EmitStmt(const Stmt* S) {
     case STMT_CONTINUE:
     case STMT_LABEL:
     case STMT_GOTO:
-        assert(0 && "TODO");
         S->dump();
+        TODO;
         break;
     case STMT_COMPOUND:
         EmitCompoundStmt(cast<CompoundStmt>(S));
@@ -159,8 +159,8 @@ void CodeGenFunction::EmitStmt(const Stmt* S) {
         EmitVarDecl(cast<DeclStmt>(S)->getDecl());
         break;
     case STMT_ASM:
-        assert(0 && "TODO");
         S->dump();
+        TODO;
         break;
     }
 }
@@ -196,7 +196,7 @@ void CodeGenFunction::EmitIfStmt(const IfStmt* S) {
     //RunCleanupsScope ConditionScope(*this);
 
     if (S->getConditionVariable()) {
-        assert(0 && "TODO");
+        TODO;
         //EmitAutoVarDecl(S->getConditionVariable());
     }
 
@@ -462,7 +462,7 @@ llvm::Value* CodeGenFunction::EmitExprNoImpCast(const Expr* E) {
         return Builder.CreateGlobalStringPtr(S->getValue());
     }
     case EXPR_NIL:
-        fprintf(stderr, "WARNING: implicit casts missing for NilExpr! - invalid IR\n");
+        fprintf(stderr, "WARNING: implicit casts missing for NilExpr! - invalid IR\n"); //TODO
         return llvm::ConstantPointerNull::get(CGM.getVoidPtrType());
     case EXPR_CALL:
         return EmitCallExpr(cast<CallExpr>(E));
@@ -497,7 +497,7 @@ llvm::Value* CodeGenFunction::EmitExprNoImpCast(const Expr* E) {
         break;
     }
     E->dump();
-    assert(0 && "TODO");
+    TODO;
     return 0;
 }
 
@@ -533,6 +533,7 @@ llvm::Value* CodeGenFunction::EmitCallExpr(const CallExpr* E) {
     break;
     default:
         assert(0 && "TODO unsupported call type");
+        TODO;
         return 0;
     };
     // TODO optimize buffer below (lots of copying)
@@ -590,7 +591,7 @@ llvm::Value* CodeGenFunction::EmitIdentifierExpr(const IdentifierExpr* E) {
     assert(D);
     switch (D->getKind()) {
     case DECL_FUNC:
-        assert(0);
+        FATAL_ERROR("Unexpected declaration");
         break;
     case DECL_VAR:
     {
@@ -621,7 +622,7 @@ llvm::Value* CodeGenFunction::EmitIdentifierExpr(const IdentifierExpr* E) {
     case DECL_LABEL:
         break;
     }
-    assert(0 && "TODO?");
+    TODO;
     return 0;
 }
 
@@ -679,7 +680,7 @@ llvm::Value* CodeGenFunction::EmitBinaryOperator(const BinaryOperator* B) {
     case BO_Shr:
         break;
     case BO_Cmp:
-        assert(0 && "unhandled binary operator type");
+        FATAL_ERROR("unhandled binary operator type");
         break;
     case BO_LT:
         return Builder.CreateICmpULT(L, R, "cmp");
@@ -724,7 +725,7 @@ llvm::Value* CodeGenFunction::EmitBinaryOperator(const BinaryOperator* B) {
         break;
     }
     B->dump();
-    assert(0 && "TODO");
+    TODO;
     return 0;
 }
 
@@ -749,7 +750,7 @@ llvm::Value *CodeGenFunction::EvaluateExprAsBool(const Expr *E) {
         return EmitBinaryOperator(BinOp);
         // TODO convert to Bool if not already
     }
-    assert(0 && "TODO");
+    TODO;
     return 0;
 }
 

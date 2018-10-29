@@ -20,6 +20,7 @@
 #include "AST/Decl.h"
 #include "AST/Stmt.h"
 #include "AST/Expr.h"
+#include "Utils/Errors.h"
 
 using namespace C2;
 
@@ -37,7 +38,7 @@ void ASTVisitor::checkDecl(const Decl* D) {
         checkVarDecl(cast<VarDecl>(D));
         break;
     case DECL_ENUMVALUE:
-        assert(0);
+        TODO; // Is this a TODO or fatal error?
         break;
     case DECL_ALIASTYPE:
         checkType(cast<AliasTypeDecl>(D)->getRefType());
@@ -66,7 +67,7 @@ void ASTVisitor::checkDecl(const Decl* D) {
         break;
     }
     case DECL_ARRAYVALUE:
-        assert(0 && "TODO");
+        TODO;
         break;
     case DECL_IMPORT:
     case DECL_LABEL:
@@ -125,7 +126,7 @@ void ASTVisitor::checkType(QualType Q, bool isFull) {
     case TC_FUNCTION:
         break;
     case TC_MODULE:
-        assert(0);
+        FATAL_ERROR("Unexpected type");
         break;
     }
 }

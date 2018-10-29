@@ -23,6 +23,7 @@
 #include "AST/Expr.h"
 #include "AST/Type.h"
 #include "Utils/StringBuilder.h"
+#include "Utils/Errors.h"
 
 using namespace C2;
 using namespace llvm;
@@ -96,7 +97,7 @@ void ExprTypeAnalyser::check(QualType TLeft, const Expr* expr) {
         // always CTC_NONE
     case EXPR_INITLIST:
     case EXPR_DESIGNATOR_INIT:
-        assert(0 && "should not come here");
+        FATAL_ERROR("Unreachable");
         break;
     case EXPR_BINOP:
         checkBinOp(TLeft, cast<BinaryOperator>(expr));
@@ -116,19 +117,19 @@ void ExprTypeAnalyser::check(QualType TLeft, const Expr* expr) {
     case EXPR_ARRAYSUBSCRIPT:
     case EXPR_MEMBER:
         // can be CTC_NONE or CTC_FULL
-        assert(0 && "should not come here");
+        FATAL_ERROR("Unreachable");
         break;
     case EXPR_PAREN:
         check(TLeft, cast<ParenExpr>(expr)->getExpr());
         return;
     case EXPR_BITOFFSET:
-        assert(0 && "TODO");
+        TODO;
         return;
     case EXPR_CAST:
-        assert(0 && "TODO");
+        TODO;
         return;
     }
-    assert(0 && "should not come here");
+    FATAL_ERROR("Unreachable");
 }
 
 bool ExprTypeAnalyser::checkExplicitCast(const ExplicitCastExpr* expr, QualType DestType, QualType SrcType) {
@@ -191,16 +192,16 @@ bool ExprTypeAnalyser::checkNonPointerCast(const ExplicitCastExpr* expr, QualTyp
     case TC_BUILTIN:
         return checkBuiltinCast(expr, DestType, SrcType);
     case TC_POINTER:
-        assert(0 && "should not come here");
+        FATAL_ERROR("Unreachable");
         return false;
     case TC_ARRAY:
-        // TODO
+        TODO;
         break;
     case TC_UNRESOLVED:
-        // TODO
+        TODO;
         break;
     case TC_ALIAS:
-        // TODO
+        TODO;
         break;
     case TC_STRUCT:
         // no casts allowed
@@ -253,21 +254,21 @@ bool ExprTypeAnalyser::checkBuiltinCast(const ExplicitCastExpr* expr, QualType D
         case 5: // loss of fp-precision
             break;
         default:
-            assert(0 && "should not come here");
+            FATAL_ERROR("Unreachable");
         }
         return true;
     }
     case TC_POINTER:
-        assert(0 && "should not come here");
+        FATAL_ERROR("Unreachable");
         return false;
     case TC_ARRAY:
-        // TODO
+        TODO;
         break;
     case TC_UNRESOLVED:
     case TC_ALIAS:
     case TC_STRUCT:
     case TC_ENUM:
-        assert(0 && "should not come here");
+        FATAL_ERROR("Unreachable");
         return false;
     case TC_FUNCTION:
         // only allow if uint32/64 (ptr size)
@@ -282,7 +283,7 @@ bool ExprTypeAnalyser::checkBuiltinCast(const ExplicitCastExpr* expr, QualType D
         }
         break;
     case TC_MODULE:
-        assert(0 && "should not come here");
+        FATAL_ERROR("Unreachable");
         return false;
     }
     return true;
@@ -298,14 +299,14 @@ bool ExprTypeAnalyser::checkEnumCast(const ExplicitCastExpr* expr, QualType Dest
     case TC_UNRESOLVED:
     case TC_ALIAS:
     case TC_STRUCT:
-        assert(0 && "should not come here");
+        FATAL_ERROR("Unreachable");
         return false;
     case TC_ENUM:
         return true;    // allow
     case TC_FUNCTION:
         break;          // deny
     case TC_MODULE:
-        assert(0 && "should not come here");
+        FATAL_ERROR("Unreachable");
         return false;
     }
     StringBuilder buf1(MAX_LEN_TYPENAME);
@@ -339,7 +340,8 @@ bool ExprTypeAnalyser::checkFunctionCast(const ExplicitCastExpr* expr, QualType 
     case TC_UNRESOLVED:
     case TC_ALIAS:
     case TC_STRUCT:
-        assert(0 && "should not come here");
+        FATAL_ERRORF("Test %d", 1);
+        FATAL_ERROR("Unreachable");
         return false;
     case TC_ENUM:
         break;          // deny
@@ -356,7 +358,7 @@ bool ExprTypeAnalyser::checkFunctionCast(const ExplicitCastExpr* expr, QualType 
 */
     }
     case TC_MODULE:
-        assert(0 && "should not come here");
+        FATAL_ERROR("Unreachable");
         return false;
     }
     StringBuilder buf1(MAX_LEN_TYPENAME);
@@ -373,7 +375,7 @@ void ExprTypeAnalyser::checkBinOp(QualType TLeft, const BinaryOperator* binop) {
     switch (binop->getOpcode()) {
     case BO_PtrMemD:
     case BO_PtrMemI:
-        assert(0 && "TODO");
+        TODO;
         break;
     case BO_Mul:
     case BO_Div:
@@ -408,10 +410,10 @@ void ExprTypeAnalyser::checkBinOp(QualType TLeft, const BinaryOperator* binop) {
     case BO_AndAssign:
     case BO_XorAssign:
     case BO_OrAssign:
-        assert(0 && "TODO");
+        TODO;
         break;
     case BO_Comma:
-        assert(0 && "TODO?");
+        TODO;
         break;
     }
 }
@@ -440,7 +442,7 @@ bool ExprTypeAnalyser::checkCompatible(QualType left, const Expr* expr) const {
     case TC_FUNCTION:
         return checkFunction(left, expr);
     case TC_MODULE:
-        assert(0 && "TODO");
+        TODO;
         break;
     }
     return false;
@@ -493,7 +495,7 @@ bool ExprTypeAnalyser::checkBuiltin(QualType left, QualType right, const Expr* e
             errorMsg = diag::warn_impcast_float_precision;
             break;
         default:
-            assert(0 && "should not come here");
+            FATAL_ERROR("Unreachable");
             break;
         }
         StringBuilder buf1(MAX_LEN_TYPENAME);
