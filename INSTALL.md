@@ -33,11 +33,9 @@ yaourt -S libtinfo
 ```
 
 ### OS X (Yosemite/El Capitan)
-Homebrew is currently at cmake-3.3, so a binary package for cmake is also needed on OS X
+Homebrew seems to have updated to a sufficient cmake version, so installation is easy:
 ```bash
-wget https://cmake.org/files/v3.5/cmake-3.5.2-Darwin-x86_64.tar.gz
-tar -xf cmake-3.5.2-Darwin-x86_64.tar.gz ~/progs
-export PATH=~/progs/cmake-3.5.2-Darwin-x86_64/CMake.app/Contents/bin:$PATH
+brew install cmake
 ```
 
 ### Generic
