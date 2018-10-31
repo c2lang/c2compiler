@@ -17,9 +17,9 @@
 #include <ctype.h>
 #include <vector>
 
-#include <clang/Parse/ParseDiagnostic.h>
-#include <clang/Sema/SemaDiagnostic.h>
-#include <clang/Basic/SourceLocation.h>
+#include "Clang/ParseDiagnostic.h"
+#include "Clang/SemaDiagnostic.h"
+#include "Clang/SourceLocation.h"
 
 #include "Parser/C2Parser.h"
 #include "Parser/C2Sema.h"
@@ -27,7 +27,7 @@
 #include "AST/Expr.h"
 
 using namespace C2;
-using namespace clang;
+using namespace c2lang;
 
 #ifdef PARSER_DEBUG
 #include <iostream>
@@ -71,8 +71,6 @@ static prec::Level getBinOpPrecedence(tok::TokenKind Kind) {
     case tok::percent:
     case tok::slash:
     case tok::star:                 return prec::Multiplicative;
-    case tok::periodstar:
-    case tok::arrowstar:            return prec::PointerToMember;
     default:                        return prec::Unknown;
     }
 }
@@ -703,12 +701,10 @@ C2::ExprResult C2Parser::ParseRHSOfBinaryExpression(ExprResult LHS, prec::Level 
         ExprResult RHS;
         bool RHSIsInitList = false;
 #if 0
-        if (getLangOpts().CPlusPlus0x && Tok.is(tok::l_brace)) {
+        if (Tok.is(tok::l_brace)) {
             RHS = ParseBraceInitializer();
             RHSIsInitList = true;
-        } else if (getLangOpts().CPlusPlus && NextTokPrec <= prec::Conditional)
-            RHS = ParseAssignmentExpression();
-        else
+        } else {
 #endif
             RHS = ParseCastExpression(false);
 
@@ -855,9 +851,6 @@ C2::ExprResult C2Parser::ParseCastExpression(bool isUnaryExpression,
         break;
     case tok::char_constant:    // constant: character-constant
         Res = Actions.ActOnCharacterConstant(Tok);
-        ConsumeToken();
-        break;
-    case tok::kw___func__:
         ConsumeToken();
         break;
     case tok::kw_nil:
@@ -1007,8 +1000,6 @@ C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
     SourceLocation Loc;
     while (1) {
         switch (Tok.getKind()) {
-        case tok::code_completion:
-            FATAL_ERROR("Should not occure");
         case tok::identifier:
             // Fall through; this isn't a message send.
         default:  // Not a postfix-expression suffix.
@@ -2628,7 +2619,7 @@ bool C2Parser::ExpectIdentifier(const char *Msg) {
 
 bool C2Parser::ExpectAndConsume(tok::TokenKind ExpectedTok, unsigned DiagID,
                                 const char* Msg) {
-    if (Tok.is(ExpectedTok) || Tok.is(tok::code_completion)) {
+    if (Tok.is(ExpectedTok)) {
         ConsumeAnyToken();
         return false;
     }
@@ -2674,7 +2665,7 @@ bool C2Parser::ExpectAndConsume(tok::TokenKind ExpectedTok, unsigned DiagID,
 }
 
 bool C2Parser::ExpectAndConsumeSemi(unsigned DiagID) {
-    if (Tok.is(tok::semi) || Tok.is(tok::code_completion)) {
+    if (Tok.is(tok::semi)) {
         ConsumeToken();
         return false;
     }
@@ -2746,25 +2737,6 @@ bool C2Parser::SkipUntil(ArrayRef<tok::TokenKind> Toks, SkipUntilFlags Flags) {
         case tok::eof:
             // Ran out of tokens.
             return false;
-
-        case tok::annot_pragma_openmp_end:
-            // Stop before an OpenMP pragma boundary.
-        case tok::annot_module_begin:
-        case tok::annot_module_end:
-        case tok::annot_module_include:
-            // Stop before we change submodules. They generally indicate a "good"
-            // place to pick up parsing again (except in the special case where
-            // we're trying to skip to EOF).
-            return false;
-
-        case tok::code_completion:
-#if 0
-            if (!HasFlagsSet(Flags, StopAtCodeCompletion))
-                handleUnexpectedCodeCompletionToken();
-#endif
-            TODO;
-            return false;
-
         case tok::l_paren:
             // Recursively skip properly-nested parens.
             ConsumeParen();

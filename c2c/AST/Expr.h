@@ -22,8 +22,8 @@
 #include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/APFloat.h>
 #include <llvm/ADT/StringRef.h>
-#include <clang/Basic/SourceLocation.h>
-#include <clang/AST/OperationKinds.h>
+#include "Clang/SourceLocation.h"
+#include "Clang/OperationKinds.h"
 
 #include "AST/Stmt.h"
 #include "AST/Type.h"
@@ -65,7 +65,7 @@ enum ExprCTC {
 
 class Expr : public Stmt {
 public:
-    Expr(ExprKind k, clang::SourceLocation loc_, bool isConstant_);
+    Expr(ExprKind k, c2lang::SourceLocation loc_, bool isConstant_);
     // from Stmt
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_EXPR;
@@ -85,8 +85,8 @@ public:
     bool isConstant() const { return exprBits.IsConstant; }
     void setConstant() { exprBits.IsConstant = true; }
 
-    clang::SourceRange getSourceRange() const {
-        return clang::SourceRange(getLocStart(), getLocEnd());
+    c2lang::SourceRange getSourceRange() const {
+        return c2lang::SourceRange(getLocStart(), getLocEnd());
     }
     SourceLocation getLocation() const;
     SourceLocation getLocStart() const;
@@ -104,7 +104,7 @@ public:
 
 protected:
     // NOTE: store here, because on 64-bit systems, these 4 bytes are wasted
-    clang::SourceLocation exprLoc;
+    c2lang::SourceLocation exprLoc;
 private:
     QualType QT;
 
@@ -442,8 +442,8 @@ private:
 
 class BinaryOperator : public Expr {
 public:
-    typedef clang::BinaryOperatorKind Opcode;
-    static const char* OpCode2str(clang::BinaryOperatorKind opc_);
+    typedef c2lang::BinaryOperatorKind Opcode;
+    static const char* OpCode2str(c2lang::BinaryOperatorKind opc_);
 
     BinaryOperator(Expr* lhs, Expr* rhs, Opcode opc_, SourceLocation opLoc_);
     static bool classof(const Expr* E) {
@@ -490,8 +490,8 @@ private:
 
 class UnaryOperator : public Expr {
 public:
-    typedef clang::UnaryOperatorKind Opcode;
-    static const char* OpCode2str(clang::UnaryOperatorKind opc_);
+    typedef c2lang::UnaryOperatorKind Opcode;
+    static const char* OpCode2str(c2lang::UnaryOperatorKind opc_);
 
     UnaryOperator(SourceLocation opLoc_, Opcode opc_, Expr* val_)
         : Expr(EXPR_UNARYOP, opLoc_, false)
@@ -505,8 +505,8 @@ public:
     void print(StringBuilder& buffer, unsigned indent) const;
     SourceLocation getLocStart() const {
         switch (getOpcode()) {
-        case clang::UO_PostInc:
-        case clang::UO_PostDec:
+        case c2lang::UO_PostInc:
+        case c2lang::UO_PostDec:
             return val->getLocStart();
         default:
             return exprLoc;
@@ -514,8 +514,8 @@ public:
     }
     SourceLocation getLocEnd() const {
         switch (getOpcode()) {
-        case clang::UO_PostInc:
-        case clang::UO_PostDec:
+        case c2lang::UO_PostInc:
+        case c2lang::UO_PostDec:
             return exprLoc;
         default:
             return val->getLocEnd();

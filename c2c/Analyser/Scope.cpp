@@ -16,17 +16,17 @@
 #include <stdio.h>
 #include <assert.h>
 
-#include <clang/Parse/ParseDiagnostic.h>
-#include <clang/Sema/SemaDiagnostic.h>
+#include "Clang/ParseDiagnostic.h"
+#include "Clang/SemaDiagnostic.h"
 
 #include "Analyser/Scope.h"
 #include "Analyser/AnalyserUtils.h"
 #include "AST/Decl.h"
 
 using namespace C2;
-using namespace clang;
+using namespace c2lang;
 
-DynamicScope::DynamicScope(clang::DiagnosticsEngine& Diags_)
+DynamicScope::DynamicScope(c2lang::DiagnosticsEngine& Diags_)
     : ErrorTrap(Diags_)
     , Flags(0)
 {}
@@ -36,7 +36,7 @@ void DynamicScope::reset(unsigned flags) {
     ErrorTrap.reset();
 }
 
-Scope::Scope(const std::string& name_, const Modules& modules_, clang::DiagnosticsEngine& Diags_)
+Scope::Scope(const std::string& name_, const Modules& modules_, c2lang::DiagnosticsEngine& Diags_)
     : scopeIndex(0)
     , curScope(0)
     , allModules(modules_)
@@ -87,7 +87,7 @@ void Scope::addScopedSymbol(VarDecl* V) {
     symbolCache[V->getName()] = V;
 }
 
-const Module* Scope::findUsedModule(const std::string& name, clang::SourceLocation loc, bool usedPublic) const {
+const Module* Scope::findUsedModule(const std::string& name, c2lang::SourceLocation loc, bool usedPublic) const {
     ImportsConstIter iter = importedModules.find(name);
     if (iter != importedModules.end()) {
         ImportDecl* I = iter->second;
@@ -124,7 +124,7 @@ const Module* Scope::findUsedModule(const std::string& name, clang::SourceLocati
     return 0;
 }
 
-Decl* Scope::findSymbol(const std::string& symbol, clang::SourceLocation loc, bool isType, bool usedPublic) const {
+Decl* Scope::findSymbol(const std::string& symbol, c2lang::SourceLocation loc, bool isType, bool usedPublic) const {
     // lookup in global cache first, return if found
     Decl* D = 0;
     {
@@ -233,7 +233,7 @@ Decl* Scope::findSymbol(const std::string& symbol, clang::SourceLocation loc, bo
     return 0;
 }
 
-Decl* Scope::findSymbolInModule(const std::string& name, clang::SourceLocation loc, const Module* mod) const {
+Decl* Scope::findSymbolInModule(const std::string& name, c2lang::SourceLocation loc, const Module* mod) const {
     Decl* D = mod->findSymbol(name);
     if (!D) {
         Diags.Report(loc, diag::err_unknown_module_symbol) << mod->getName() << name;
@@ -250,7 +250,7 @@ Decl* Scope::findSymbolInModule(const std::string& name, clang::SourceLocation l
     return D;
 }
 
-void Scope::checkAccess(Decl* D, clang::SourceLocation loc) const {
+void Scope::checkAccess(Decl* D, c2lang::SourceLocation loc) const {
     const Module* mod = D->getModule();
     assert(mod);
     // if external module, check visibility

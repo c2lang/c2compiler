@@ -26,26 +26,21 @@
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/IntrusiveRefCntPtr.h>
 #include <llvm/Support/Host.h>
-#include <clang/Parse/ParseDiagnostic.h>
-#include <clang/Basic/DiagnosticOptions.h>
-#include <clang/Basic/FileManager.h>
-#include <clang/Basic/FileSystemOptions.h>
-#include <clang/Basic/MacroBuilder.h>
-#include <clang/Basic/LangOptions.h>
-#include <clang/Basic/SourceManager.h>
-#include <clang/Basic/TargetInfo.h>
-#include <clang/Basic/TargetOptions.h>
-#include <clang/Basic/MemoryBufferCache.h>
-#include <clang/Frontend/TextDiagnosticPrinter.h>
-#include <clang/Frontend/Utils.h>
-#include <clang/Lex/HeaderSearch.h>
-#include <clang/Lex/HeaderSearchOptions.h>
-#include <clang/Lex/ModuleLoader.h>
-#include <clang/Lex/Preprocessor.h>
-#include <clang/Lex/PreprocessorOptions.h>
-#include <clang/Sema/SemaDiagnostic.h>
+#include "Clang/ParseDiagnostic.h"
+#include "Clang/DiagnosticOptions.h"
+#include "Clang/FileManager.h"
+#include "Clang/FileSystemOptions.h"
+#include "Clang/MacroBuilder.h"
+#include "Clang/SourceManager.h"
+#include "Clang/TargetOptions.h"
+#include "Clang/TextDiagnosticPrinter.h"
+#include "Clang/Utils.h"
+#include "Clang/HeaderSearch.h"
+#include "Clang/HeaderSearchOptions.h"
+#include "Clang/Preprocessor.h"
+#include "Clang/SemaDiagnostic.h"
 // for Rewriter
-#include <clang/Rewrite/Core/Rewriter.h>
+#include "Clang/Rewriter.h"
 
 #include "Builder/C2Builder.h"
 #include "Builder/Recipe.h"
@@ -68,107 +63,53 @@
 #include "Utils/StringBuilder.h"
 #include "Utils/BuildFile.h"
 
-using clang::DiagnosticOptions;
-using clang::DiagnosticsEngine;
-using clang::FileEntry;
-using clang::FileManager;
-using clang::FileSystemOptions;
-using clang::HeaderSearch;
-using clang::HeaderSearchOptions;
-using clang::LangOptions;
-using clang::ModuleLoader;
-using clang::Preprocessor;
-using clang::PreprocessorOptions;
-using clang::SourceManager;
-using clang::TargetInfo;
-using clang::TargetOptions;
-using clang::TextDiagnosticPrinter;
+using c2lang::DiagnosticOptions;
+using c2lang::DiagnosticsEngine;
+using c2lang::FileEntry;
+using c2lang::FileManager;
+using c2lang::FileSystemOptions;
+using c2lang::HeaderSearch;
+using c2lang::HeaderSearchOptions;
+using c2lang::Preprocessor;
+using c2lang::SourceManager;
+using c2lang::TargetInfo;
+using c2lang::TargetOptions;
+using c2lang::TextDiagnosticPrinter;
 
 using namespace C2;
-using namespace clang;
+using namespace c2lang;
 
 #define OUTPUT_DIR "output/"
 #define BUILD_DIR  "build/"
 
 namespace C2 {
-class DummyLoader : public ModuleLoader {
-public:
-    DummyLoader() {}
-    virtual ~DummyLoader () {}
-
-    virtual ModuleLoadResult loadModule(SourceLocation ImportLoc,
-                                        ModuleIdPath Path,
-                                        clang::Module::NameVisibilityKind Visibility,
-                                        bool IsInclusionDirective)
-    {
-        fprintf(stderr, "MODULE LOADER: loadModule\n");
-        return ModuleLoadResult();
-    }
-    virtual void loadModuleFromSource(SourceLocation Loc,
-                                      StringRef ModuleName,
-                                      StringRef Source)
-    {
-        fprintf(stderr, "MODULE LOADER: loadModuleFromSource\n");
-    }
-
-
-    virtual void makeModuleVisible(clang::Module *Mod,
-                                   clang::Module::NameVisibilityKind Visibility,
-                                   SourceLocation ImportLoc)
-    {
-        fprintf(stderr, "MODULE LOADER: make visible\n");
-    }
-
-    virtual GlobalModuleIndex* loadGlobalModuleIndex(SourceLocation TriggerLoc)
-    {
-        fprintf(stderr, "MODULE LOADER: loadGlobalModuleIndex\n");
-        return 0;
-    }
-
-    virtual bool lookupMissingImports(StringRef Name,
-                                      SourceLocation TriggerLoc)
-    {
-        fprintf(stderr, "MODULE LOADER: lookupMissingImports\n");
-        return false;
-    }
-private:
-    DummyLoader(const DummyLoader& rhs);
-    DummyLoader& operator= (const DummyLoader& rhs);
-};
 
 class ParseHelper {
 public:
-    ParseHelper(DiagnosticsEngine& Diags_,
-                LangOptions& LangOpts_,
-                clang::TargetInfo* pti_,
-                std::shared_ptr<HeaderSearchOptions> HSOpts_,
-                SourceManager& SM_,
-                FileManager& FileMgr_,
-                MemoryBufferCache& PCMCache_,
-                const std::string& configs_,
-                const TargetInfo& ti)
+    ParseHelper(DiagnosticsEngine &Diags_,
+                    std::shared_ptr<HeaderSearchOptions> HSOpts_,
+                    SourceManager &SM_,
+                    FileManager &FileMgr_,
+                    const std::string &configs_,
+                    const TargetInfo &ti)
         : Diags(Diags_)
-        , LangOpts(LangOpts_)
-        , pti(pti_)
         , HSOpts(HSOpts_)
         , SM(SM_)
         , FileMgr(FileMgr_)
-        , PCMCache(PCMCache_)
         , configs(configs_)
         , targetInfo(ti)
     {}
 
     bool parse(Component& component, Module* existingMod, const std::string& filename, bool printAST) {
+
         // NOTE: seems to get deleted by Preprocessor,
-        HeaderSearch* Headers = new HeaderSearch(HSOpts, SM, Diags, LangOpts, pti);
-        DummyLoader loader;
+        HeaderSearch* Headers = new HeaderSearch(HSOpts, SM, Diags);
 
-        std::shared_ptr<PreprocessorOptions> PPOpts(new PreprocessorOptions());
-        Preprocessor PP(PPOpts, Diags, LangOpts, SM, PCMCache, *Headers, loader);
+        Preprocessor PP(Diags, SM, *Headers);
 
-        ApplyHeaderSearchOptions(PP.getHeaderSearchInfo(), *HSOpts, LangOpts, pti->getTriple());
+        ApplyHeaderSearchOptions(PP.getHeaderSearchInfo(), *HSOpts);
         PP.setPredefines(configs);
-        PP.Initialize(*pti);
+        PP.Initialize(targetInfo);
 
         // File stuff
         const FileEntry *pFile = FileMgr.getFile(filename);
@@ -190,7 +131,7 @@ public:
         PP.setPredefinesFileID(FID);
         PP.EnterSourceFile(FID, nullptr, SourceLocation());
 
-        Diags.getClient()->BeginSourceFile(LangOpts, 0);
+        Diags.getClient()->BeginSourceFile(0);
 
         C2Sema sema(SM, Diags, PP, component, existingMod, filename, targetInfo);
         C2Parser parser(PP, sema, component.isExternal());
@@ -208,12 +149,9 @@ public:
     }
 
     DiagnosticsEngine& Diags;
-    LangOptions& LangOpts;
-    clang::TargetInfo* pti;
     std::shared_ptr<HeaderSearchOptions> HSOpts;
     SourceManager& SM;
     FileManager& FileMgr;
-    MemoryBufferCache& PCMCache;
     const std::string& configs;
     const TargetInfo& targetInfo;
 };
@@ -283,11 +221,6 @@ int C2Builder::build() {
     log(ANSI_GREEN, "building target %s", recipe.name.c_str());
 
     uint64_t t1_build = Utils::getCurrentTime();
-    // LangOptions
-    LangOptions LangOpts;
-    LangOpts.C2 = 1;
-    LangOpts.Bool = 1;
-    LangOpts.LineComment = 1;
 
     // Diagnostics
     // NOTE: DiagOpts is somehow deleted by Diags/TextDiagnosticPrinter below?
@@ -366,8 +299,6 @@ int C2Builder::build() {
     // TargetInfo
     std::shared_ptr<TargetOptions> to(new TargetOptions());
     to->Triple = llvm::sys::getDefaultTargetTriple();
-    clang::TargetInfo *pti = clang::TargetInfo::CreateTargetInfo(Diags, to);
-    IntrusiveRefCntPtr<clang::TargetInfo> Target(pti);
 
     std::shared_ptr<HeaderSearchOptions> HSOpts(new HeaderSearchOptions());
     // add current directory (=project root) to #include path
@@ -375,7 +306,7 @@ int C2Builder::build() {
     if (getcwd(pwd, 512) == 0) {
         FATAL_ERROR("Failed to get current directory");
     }
-    HSOpts->AddPath(pwd, clang::frontend::Quoted, false, false);
+    HSOpts->AddPath(pwd, c2lang::frontend::Quoted, false, false);
 
     // set definitions from recipe
     std::string PredefineBuffer;
@@ -392,7 +323,6 @@ int C2Builder::build() {
     FileSystemOptions FileSystemOpts;
     FileManager FileMgr(FileSystemOpts);
     SourceManager SM(Diags, FileMgr);
-    MemoryBufferCache PCMCache;
 
     // create main Component
     mainComponent = new Component(recipe.name, "TODO", recipe.type, false, false, recipe.getExports());
@@ -405,8 +335,7 @@ int C2Builder::build() {
         libLoader.addDep(mainComponent, recipe.libraries[i].name, recipe.libraries[i].type);
     }
 
-    ParseHelper helper(Diags, LangOpts, pti, HSOpts, SM, FileMgr, PCMCache,
-            PredefineBuffer, targetInfo);
+    ParseHelper helper(Diags, HSOpts, SM, FileMgr, PredefineBuffer, targetInfo);
     // phase 1a: parse and local analyse
     uint64_t t1_parse = Utils::getCurrentTime();
     unsigned errors = 0;
@@ -452,7 +381,7 @@ int C2Builder::build() {
 
     if (!checkExportedPackages()) goto out;
 
-    rewriterTest(SM, LangOpts);
+    rewriterTest(SM);
 
     generateOptionalDeps();
 
@@ -528,7 +457,7 @@ bool C2Builder::checkModuleImports(ParseHelper& helper, Component* component, Mo
             }
             const LibInfo* target = libLoader.findModuleLib(targetModuleName);
             if (!target) {
-                helper.Diags.Report(D->getLocation(), clang::diag::err_unknown_module) << targetModuleName;
+                helper.Diags.Report(D->getLocation(), c2lang::diag::err_unknown_module) << targetModuleName;
                 ok = false;
                 continue;
             }
@@ -536,7 +465,7 @@ bool C2Builder::checkModuleImports(ParseHelper& helper, Component* component, Mo
             if (target->component != component) {
                 // check that imports are in directly dependent component (no indirect component)
                 if (!component->hasDep(target->component)) {
-                    helper.Diags.Report(D->getLocation(), clang::diag::err_indirect_component)
+                    helper.Diags.Report(D->getLocation(), c2lang::diag::err_indirect_component)
                             << component->getName() << target->component->getName() << targetModuleName;
                     ok = false;
                     continue;
@@ -657,7 +586,7 @@ bool C2Builder::checkExportedPackages() const {
     return true;
 }
 
-void C2Builder::rewriterTest(SourceManager& SM, LangOptions& LangOpts) {
+void C2Builder::rewriterTest(SourceManager& SM) {
 #if 0
     // FOR TESTING rename global test.aa -> bb
     const std::string modName = "test";
@@ -676,7 +605,7 @@ void C2Builder::rewriterTest(SourceManager& SM, LangOptions& LangOpts) {
 
     // Step 2a: replace Decl itself
     Rewriter rewriter;
-    rewriter.setSourceMgr(SM, LangOpts);
+    rewriter.setSourceMgr(SM);
     rewriter.ReplaceText(D->getLocation(), oldName.size(), newName);
 
     // Step 2b: replace all references

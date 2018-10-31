@@ -16,7 +16,7 @@
 #ifndef PARSER_C2PARSER_H
 #define PARSER_C2PARSER_H
 
-#include <clang/Lex/Preprocessor.h>
+#include "Clang/Preprocessor.h"
 #include "Parser/Ownership.h"
 #include "Parser/ParserTypes.h"
 
@@ -28,7 +28,7 @@
 #endif
 
 // EXCEPTION
-using namespace clang;
+using namespace c2lang;
 
 namespace C2 {
 
@@ -54,7 +54,6 @@ namespace prec {
     Bitwise         = 7,    // ^, |, &
     Shift           = 8,    // <<, >>
     Multiplicative  = 9,    // *, /, %
-    PointerToMember = 10    // .*, ->*
   };
 }
 
@@ -62,12 +61,12 @@ class C2Parser {
 public:
     friend class BalancedDelimiterTracker;
 
-    C2Parser(clang::Preprocessor& pp, C2Sema& sema, bool isInterface_);
+    C2Parser(c2lang::Preprocessor& pp, C2Sema& sema, bool isInterface_);
     ~C2Parser();
 
     bool Parse();
 private:
-    clang::Preprocessor& PP;
+    c2lang::Preprocessor& PP;
     Token Tok;
     SourceLocation PrevTokLocation;
     unsigned short ParenCount, BracketCount, BraceCount;
@@ -309,8 +308,6 @@ private:
   /// \brief Abruptly cut off parsing; mainly used when we have reached the
   /// code-completion point.
   void cutOffParsing() {
-    if (PP.isCodeCompletionEnabled())
-      PP.setCodeCompletionReached();
     // Cut off parsing by acting as if we reached the end-of-file.
     Tok.setKind(tok::eof);
   }
@@ -345,7 +342,7 @@ private:
   /// isTokenSpecial - True if this token requires special consumption methods.
   bool isTokenSpecial() const {
     return isTokenStringLiteral() || isTokenParen() || isTokenBracket() ||
-           isTokenBrace() || Tok.is(tok::code_completion);
+           isTokenBrace();
   }
 
     bool ExpectIdentifier(const char *Msg = "");

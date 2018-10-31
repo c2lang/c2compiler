@@ -25,10 +25,9 @@
 #include "AST/Component.h"
 #include "Utils/TargetInfo.h"
 
-namespace clang {
+namespace c2lang {
 class DiagnosticsEngine;
 class SourceManager;
-class LangOptions;
 }
 
 namespace C2 {
@@ -80,6 +79,16 @@ struct BuildOptions {
     bool generateRefs;
     bool verbose;
     bool testMode;
+    int32_t maxIndirectionsToFollow = 256;
+    int32_t maxBracketNestingDepth = 256;
+    /*
+    LANGOPT(NoBuiltin         , 1, 0, "disable builtin functions")
+    LANGOPT(NoMathBuiltin     , 1, 0, "disable math builtin functions")
+    LANGOPT(MathErrno         , 1, 1, "errno in math functions")
+    LANGOPT(RetainCommentsFromSystemHeaders, 1, 0, "retain documentation comments from system headers in the AST")
+    LANGOPT(FixedPoint, 1, 0, "fixed point types")
+     */
+
 
     const char* libdir;
 };
@@ -99,20 +108,19 @@ public:
 private:
     Module* findModule(const std::string& name) const;
     bool checkImports(ParseHelper& helper);
-    unsigned analyse();
     void printSymbols(bool printLibs) const;
     void printComponents() const;
     void log(const char* color, const char* format, ...) const;
 
-    bool checkMainFunction(clang::DiagnosticsEngine& Diags);
+    bool checkMainFunction(c2lang::DiagnosticsEngine& Diags);
     bool checkExportedPackages() const;
     typedef std::deque<std::string> ImportsQueue;
     bool checkModuleImports(ParseHelper& helper, Component* component, Module* module, ImportsQueue& queue, const LibInfo* lib = 0);
     void createC2Module();
 
-    void rewriterTest(clang::SourceManager& SM, clang::LangOptions& LangOpts);
+    void rewriterTest(c2lang::SourceManager& SM);
     void generateOptionalDeps();
-    void generateOptionalTags(const clang::SourceManager& SM) const;
+    void generateOptionalTags(const c2lang::SourceManager& SM) const;
     void generateInterface() const;
     void generateOptionalC();
     void generateOptionalIR();

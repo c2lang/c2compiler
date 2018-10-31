@@ -33,6 +33,35 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
 include_directories("/usr/include/i386-linux-gnu/c++/4.8/")
 
 add_library(c2core
+    Clang/CharInfo.cpp
+    Clang/Commit.cpp
+    Clang/Diagnostic.cpp
+    Clang/DiagnosticIDs.cpp
+    Clang/DiagnosticOptions.cpp
+    Clang/DiagnosticRenderer.cpp
+    Clang/EditedSource.cpp
+    Clang/FileManager.cpp
+    Clang/FileSystemStatCache.cpp
+    Clang/HeaderMap.cpp
+    Clang/HeaderSearch.cpp
+    Clang/IdentifierTable.cpp
+    Clang/InitHeaderSearch.cpp
+    Clang/Lexer.cpp
+    Clang/LiteralSupport.cpp
+    Clang/MacroArgs.cpp
+    Clang/MacroInfo.cpp
+    Clang/PPCaching.cpp
+    Clang/PPExpressions.cpp
+    Clang/Preprocessor.cpp
+    Clang/PreprocessorLexer.cpp
+    Clang/ScratchBuffer.cpp
+    Clang/SourceLocation.cpp
+    Clang/SourceManager.cpp
+    Clang/TextDiagnostic.cpp
+    Clang/TextDiagnosticPrinter.cpp
+    Clang/TokenKinds.cpp
+    Clang/TokenLexer.cpp
+    Clang/VirtualFileSystem.cpp
     AST/AST.cpp
     AST/Decl.cpp
     AST/Expr.cpp

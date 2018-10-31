@@ -20,7 +20,7 @@
 
 using namespace C2;
 using namespace llvm;
-using namespace clang;
+using namespace c2lang;
 
 
 QualType TypeFinder::findType(const Expr* expr) {
@@ -68,51 +68,44 @@ QualType TypeFinder::findType(const Expr* expr) {
 
 QualType TypeFinder::getBinOpType(const BinaryOperator* binop) {
     switch (binop->getOpcode()) {
-    case BO_PtrMemD:
-    case BO_PtrMemI:
-        TODO; // ?
-        break;
-    case BO_Mul:
-    case BO_Div:
-    case BO_Rem:
+    case BINOP_Mul:
+    case BINOP_Div:
+    case BINOP_Rem:
         return LargestType(binop->getLHS(), binop->getRHS());
-    case BO_Add:
-    case BO_Sub:
+    case BINOP_Add:
+    case BINOP_Sub:
         return LargestType(binop->getLHS(), binop->getRHS());
-    case BO_Shl:
-    case BO_Shr:
+    case BINOP_Shl:
+    case BINOP_Shr:
         TODO;
         break;
-    case BO_Cmp: // C++20 only
-        FATAL_ERROR("unhandled binary operator type");
-        break;
-    case BO_LE:
-    case BO_LT:
-    case BO_GE:
-    case BO_GT:
-    case BO_NE:
-    case BO_EQ:
-    case BO_And:
-    case BO_Xor:
-    case BO_Or:
-    case BO_LAnd:
-    case BO_LOr:
+    case BINOP_LE:
+    case BINOP_LT:
+    case BINOP_GE:
+    case BINOP_GT:
+    case BINOP_NE:
+    case BINOP_EQ:
+    case BINOP_And:
+    case BINOP_Xor:
+    case BINOP_Or:
+    case BINOP_LAnd:
+    case BINOP_LOr:
         // should be bool
         break;
-    case BO_Assign:
-    case BO_MulAssign:
-    case BO_DivAssign:
-    case BO_RemAssign:
-    case BO_AddAssign:
-    case BO_SubAssign:
-    case BO_ShlAssign:
-    case BO_ShrAssign:
-    case BO_AndAssign:
-    case BO_XorAssign:
-    case BO_OrAssign:
+    case BINOP_Assign:
+    case BINOP_MulAssign:
+    case BINOP_DivAssign:
+    case BINOP_RemAssign:
+    case BINOP_AddAssign:
+    case BINOP_SubAssign:
+    case BINOP_ShlAssign:
+    case BINOP_ShrAssign:
+    case BINOP_AndAssign:
+    case BINOP_XorAssign:
+    case BINOP_OrAssign:
         // return LHS type
         return findType(binop->getLHS());
-    case BO_Comma:
+    case BINOP_Comma:
         TODO;
         break;
     }

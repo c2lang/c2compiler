@@ -40,7 +40,7 @@
 #endif
 
 using namespace C2;
-using namespace clang;
+using namespace c2lang;
 
 InterfaceGenerator::InterfaceGenerator(const Module& module_)
     : module(module_)

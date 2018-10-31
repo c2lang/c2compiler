@@ -14,10 +14,10 @@
 #ifndef SEMA_OWNERSHIP_H
 #define SEMA_OWNERSHIP_H
 
-#include "clang/Basic/LLVM.h"
-#include "llvm/ADT/ArrayRef.h"
-#include "llvm/ADT/PointerIntPair.h"
-#include "llvm/Support/PointerLikeTypeTraits.h"
+#include "Clang/LLVM.h"
+#include <llvm/ADT/ArrayRef.h>
+#include <llvm/ADT/PointerIntPair.h>
+#include <llvm/Support/PointerLikeTypeTraits.h>
 
 //===----------------------------------------------------------------------===//
 // OpaquePtr
@@ -33,7 +33,7 @@ namespace C2 {
     class QualType;
 }
 
-namespace clang {
+namespace c2lang {
 
   /// \brief Wrapper for void* pointer.
   /// \tparam PtrTy Either a pointer type like 'T*' or a type that behaves like
@@ -109,23 +109,23 @@ namespace clang {
 
 namespace llvm {
   template <class T>
-  struct PointerLikeTypeTraits<clang::OpaquePtr<T> > {
+  struct PointerLikeTypeTraits<c2lang::OpaquePtr<T> > {
   public:
-    static inline void *getAsVoidPointer(clang::OpaquePtr<T> P) {
+    static inline void *getAsVoidPointer(c2lang::OpaquePtr<T> P) {
       // FIXME: Doesn't work? return P.getAs< void >();
       return P.getAsOpaquePtr();
     }
-    static inline clang::OpaquePtr<T> getFromVoidPointer(void *P) {
-      return clang::OpaquePtr<T>::getFromOpaquePtr(P);
+    static inline c2lang::OpaquePtr<T> getFromVoidPointer(void *P) {
+      return c2lang::OpaquePtr<T>::getFromOpaquePtr(P);
     }
     enum { NumLowBitsAvailable = 0 };
   };
 
   template <class T>
-  struct isPodLike<clang::OpaquePtr<T> > { static const bool value = true; };
+  struct isPodLike<c2lang::OpaquePtr<T> > { static const bool value = true; };
 }
 
-namespace clang {
+namespace c2lang {
   // Basic
   class DiagnosticBuilder;
 
@@ -232,8 +232,8 @@ namespace clang {
 
   /// An opaque type for threading parsed type information through the
   /// parser.
-  typedef OpaquePtr<QualType> ParsedType;
-  typedef UnionOpaquePtr<QualType> UnionParsedType;
+  typedef OpaquePtr<C2::QualType> ParsedType;
+  typedef UnionOpaquePtr<C2::QualType> UnionParsedType;
 
   // We can re-use the low bit of expression, statement, base, and
   // member-initializer pointers for the "invalid" flag of

@@ -17,7 +17,7 @@
 #define REFACTOR_REFFINDER_H
 
 #include <vector>
-#include <clang/Basic/SourceLocation.h>
+#include "Clang/SourceLocation.h"
 
 namespace C2 {
 
@@ -38,14 +38,14 @@ public:
 
     unsigned find();
 
-    typedef std::vector<clang::SourceLocation> Locs;
+    typedef std::vector<c2lang::SourceLocation> Locs;
     Locs locs;
 private:
     void searchStmt(const Stmt* S);
     void searchCompoundStmt(const CompoundStmt* S);
     void searchAsmStmt(const AsmStmt* A);
     void searchExpr(const Expr* E);
-    void addFileLocation(clang::SourceLocation loc);
+    void addFileLocation(c2lang::SourceLocation loc);
 
     AST& ast;
     const Decl* decl;

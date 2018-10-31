@@ -24,10 +24,10 @@
 
 using namespace C2;
 using namespace std;
-using namespace clang;
+using namespace c2lang;
 
 
-Expr::Expr(ExprKind k, clang::SourceLocation loc_, bool isConstant_)
+Expr::Expr(ExprKind k, c2lang::SourceLocation loc_, bool isConstant_)
     : Stmt(STMT_EXPR)
     , exprLoc(loc_)
 {
@@ -504,41 +504,38 @@ BinaryOperator::BinaryOperator(Expr* lhs_, Expr* rhs_, Opcode opc_, SourceLocati
     binaryOperatorBits.opcode = opc_;
 }
 
-const char* BinaryOperator::OpCode2str(clang::BinaryOperatorKind opc_) {
+const char* BinaryOperator::OpCode2str(c2lang::BinaryOperatorKind opc_) {
     switch (opc_) {
-    case BO_PtrMemD: return ".";
-    case BO_PtrMemI: return "->";
-    case BO_Mul: return "*";
-    case BO_Div: return "/";
-    case BO_Rem: return "%";
-    case BO_Add: return "+";
-    case BO_Sub: return "-";
-    case BO_Shl: return "<<";
-    case BO_Shr: return ">>";
-    case BO_Cmp: return "<=>";
-    case BO_LT: return "<";
-    case BO_GT: return ">";
-    case BO_LE: return "<=";
-    case BO_GE: return ">=";
-    case BO_EQ: return "==";
-    case BO_NE: return "!=";
-    case BO_And: return "&";
-    case BO_Xor: return "^";
-    case BO_Or: return "|";
-    case BO_LAnd: return "&&";
-    case BO_LOr: return "||";
-    case BO_Assign: return "=";
-    case BO_MulAssign: return "*=";
-    case BO_DivAssign: return "/=";
-    case BO_RemAssign: return "%=";
-    case BO_AddAssign: return "+=";
-    case BO_SubAssign: return "-=";
-    case BO_ShlAssign: return "<<=";
-    case BO_ShrAssign: return ">>=";
-    case BO_AndAssign: return "&=";
-    case BO_XorAssign: return "^=";
-    case BO_OrAssign: return "|=";
-    case BO_Comma: return ",";
+    case BINOP_Mul: return "*";
+    case BINOP_Div: return "/";
+    case BINOP_Rem: return "%";
+    case BINOP_Add: return "+";
+    case BINOP_Sub: return "-";
+    case BINOP_Shl: return "<<";
+    case BINOP_Shr: return ">>";
+    case BINOP_LT: return "<";
+    case BINOP_GT: return ">";
+    case BINOP_LE: return "<=";
+    case BINOP_GE: return ">=";
+    case BINOP_EQ: return "==";
+    case BINOP_NE: return "!=";
+    case BINOP_And: return "&";
+    case BINOP_Xor: return "^";
+    case BINOP_Or: return "|";
+    case BINOP_LAnd: return "&&";
+    case BINOP_LOr: return "||";
+    case BINOP_Assign: return "=";
+    case BINOP_MulAssign: return "*=";
+    case BINOP_DivAssign: return "/=";
+    case BINOP_RemAssign: return "%=";
+    case BINOP_AddAssign: return "+=";
+    case BINOP_SubAssign: return "-=";
+    case BINOP_ShlAssign: return "<<=";
+    case BINOP_ShrAssign: return ">>=";
+    case BINOP_AndAssign: return "&=";
+    case BINOP_XorAssign: return "^=";
+    case BINOP_OrAssign: return "|=";
+    case BINOP_Comma: return ",";
     }
     FATAL_ERROR("should not come here");
 }
@@ -546,25 +543,24 @@ const char* BinaryOperator::OpCode2str(clang::BinaryOperatorKind opc_) {
 bool BinaryOperator::requiresParensForC() const
 {
     switch (getOpcode()) {
-    case BO_Mul:
-    case BO_Div:
-    case BO_Rem:
-    case BO_Add:
-    case BO_Sub:
-    case BO_Shl:
-    case BO_Shr:
-    case BO_Cmp:
-    case BO_LT:
-    case BO_GT:
-    case BO_LE:
-    case BO_GE:
-    case BO_EQ:
-    case BO_NE:
-    case BO_And:
-    case BO_Xor:
-    case BO_Or:
-    case BO_LAnd:
-    case BO_LOr:
+    case BINOP_Mul:
+    case BINOP_Div:
+    case BINOP_Rem:
+    case BINOP_Add:
+    case BINOP_Sub:
+    case BINOP_Shl:
+    case BINOP_Shr:
+    case BINOP_LT:
+    case BINOP_GT:
+    case BINOP_LE:
+    case BINOP_GE:
+    case BINOP_EQ:
+    case BINOP_NE:
+    case BINOP_And:
+    case BINOP_Xor:
+    case BINOP_Or:
+    case BINOP_LAnd:
+    case BINOP_LOr:
         return true;
     default:
         return false;
@@ -619,7 +615,7 @@ void ConditionalOperator::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 
-const char* UnaryOperator::OpCode2str(clang::UnaryOperatorKind opc_) {
+const char* UnaryOperator::OpCode2str(c2lang::UnaryOperatorKind opc_) {
     switch (opc_) {
     case UO_PostInc:    return "++";
     case UO_PostDec:    return "--";

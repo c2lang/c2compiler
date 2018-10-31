@@ -16,7 +16,7 @@
 #ifndef PARSER_TYPES_H
 #define PARSER_TYPES_H
 
-#include <clang/Lex/Preprocessor.h>
+#include "Clang/Preprocessor.h"
 #include "Parser/Ownership.h"
 
 #define TYPE_CONST      (1<<1)
@@ -30,10 +30,10 @@ class Expr;
 class Stmt;
 class VarDecl;
 
-typedef clang::ActionResult<C2::Expr*> ExprResult;
-typedef clang::ActionResult<C2::Stmt*> StmtResult;
-typedef clang::ActionResult<C2::Decl*> DeclResult;
-typedef clang::ActionResult<C2::VarDecl*> VarDeclResult;
+typedef c2lang::ActionResult<C2::Expr*> ExprResult;
+typedef c2lang::ActionResult<C2::Stmt*> StmtResult;
+typedef c2lang::ActionResult<C2::Decl*> DeclResult;
+typedef c2lang::ActionResult<C2::VarDecl*> VarDeclResult;
 
 }
 

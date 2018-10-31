@@ -17,10 +17,9 @@
 #include <ctype.h>
 
 #include <llvm/ADT/APFloat.h>
-#include <clang/AST/Expr.h>
-#include <clang/Parse/ParseDiagnostic.h>
-#include <clang/Sema/SemaDiagnostic.h>
-#include <clang/Lex/LiteralSupport.h>
+#include "Clang/ParseDiagnostic.h"
+#include "Clang/SemaDiagnostic.h"
+#include "Clang/LiteralSupport.h"
 
 #include "Parser/C2Sema.h"
 #include "AST/AST.h"
@@ -38,7 +37,7 @@
 #endif
 
 using namespace C2;
-using namespace clang;
+using namespace c2lang;
 using llvm::APFloat;
 
 #ifdef SEMA_MEMSIZE
@@ -70,42 +69,40 @@ static const char* exprNames[EXPR_CAST+1];
 #define MEM_EXPR(x)
 #endif
 
-static inline clang::BinaryOperatorKind ConvertTokenKindToBinaryOpcode(tok::TokenKind Kind) {
-    clang::BinaryOperatorKind Opc;
+static inline c2lang::BinaryOperatorKind ConvertTokenKindToBinaryOpcode(tok::TokenKind Kind) {
+    c2lang::BinaryOperatorKind Opc;
     switch (Kind) {
     default: llvm_unreachable("Unknown binop!");
-    case tok::periodstar:           Opc = BO_PtrMemD; break;
-    case tok::arrowstar:            Opc = BO_PtrMemI; break;
-    case tok::star:                 Opc = BO_Mul; break;
-    case tok::slash:                Opc = BO_Div; break;
-    case tok::percent:              Opc = BO_Rem; break;
-    case tok::plus:                 Opc = BO_Add; break;
-    case tok::minus:                Opc = BO_Sub; break;
-    case tok::lessless:             Opc = BO_Shl; break;
-    case tok::greatergreater:       Opc = BO_Shr; break;
-    case tok::lessequal:            Opc = BO_LE; break;
-    case tok::less:                 Opc = BO_LT; break;
-    case tok::greaterequal:         Opc = BO_GE; break;
-    case tok::greater:              Opc = BO_GT; break;
-    case tok::exclaimequal:         Opc = BO_NE; break;
-    case tok::equalequal:           Opc = BO_EQ; break;
-    case tok::amp:                  Opc = BO_And; break;
-    case tok::caret:                Opc = BO_Xor; break;
-    case tok::pipe:                 Opc = BO_Or; break;
-    case tok::ampamp:               Opc = BO_LAnd; break;
-    case tok::pipepipe:             Opc = BO_LOr; break;
-    case tok::equal:                Opc = BO_Assign; break;
-    case tok::starequal:            Opc = BO_MulAssign; break;
-    case tok::slashequal:           Opc = BO_DivAssign; break;
-    case tok::percentequal:         Opc = BO_RemAssign; break;
-    case tok::plusequal:            Opc = BO_AddAssign; break;
-    case tok::minusequal:           Opc = BO_SubAssign; break;
-    case tok::lesslessequal:        Opc = BO_ShlAssign; break;
-    case tok::greatergreaterequal:  Opc = BO_ShrAssign; break;
-    case tok::ampequal:             Opc = BO_AndAssign; break;
-    case tok::caretequal:           Opc = BO_XorAssign; break;
-    case tok::pipeequal:            Opc = BO_OrAssign; break;
-    case tok::comma:                Opc = BO_Comma; break;
+    case tok::star:                 Opc = BINOP_Mul; break;
+    case tok::slash:                Opc = BINOP_Div; break;
+    case tok::percent:              Opc = BINOP_Rem; break;
+    case tok::plus:                 Opc = BINOP_Add; break;
+    case tok::minus:                Opc = BINOP_Sub; break;
+    case tok::lessless:             Opc = BINOP_Shl; break;
+    case tok::greatergreater:       Opc = BINOP_Shr; break;
+    case tok::lessequal:            Opc = BINOP_LE; break;
+    case tok::less:                 Opc = BINOP_LT; break;
+    case tok::greaterequal:         Opc = BINOP_GE; break;
+    case tok::greater:              Opc = BINOP_GT; break;
+    case tok::exclaimequal:         Opc = BINOP_NE; break;
+    case tok::equalequal:           Opc = BINOP_EQ; break;
+    case tok::amp:                  Opc = BINOP_And; break;
+    case tok::caret:                Opc = BINOP_Xor; break;
+    case tok::pipe:                 Opc = BINOP_Or; break;
+    case tok::ampamp:               Opc = BINOP_LAnd; break;
+    case tok::pipepipe:             Opc = BINOP_LOr; break;
+    case tok::equal:                Opc = BINOP_Assign; break;
+    case tok::starequal:            Opc = BINOP_MulAssign; break;
+    case tok::slashequal:           Opc = BINOP_DivAssign; break;
+    case tok::percentequal:         Opc = BINOP_RemAssign; break;
+    case tok::plusequal:            Opc = BINOP_AddAssign; break;
+    case tok::minusequal:           Opc = BINOP_SubAssign; break;
+    case tok::lesslessequal:        Opc = BINOP_ShlAssign; break;
+    case tok::greatergreaterequal:  Opc = BINOP_ShrAssign; break;
+    case tok::ampequal:             Opc = BINOP_AndAssign; break;
+    case tok::caretequal:           Opc = BINOP_XorAssign; break;
+    case tok::pipeequal:            Opc = BINOP_OrAssign; break;
+    case tok::comma:                Opc = BINOP_Comma; break;
     }
     return Opc;
 }
@@ -123,14 +120,11 @@ static inline UnaryOperatorKind ConvertTokenKindToUnaryOpcode(
     case tok::minus:        Opc = UO_Minus; break;
     case tok::tilde:        Opc = UO_Not; break;
     case tok::exclaim:      Opc = UO_LNot; break;
-    case tok::kw___real:    Opc = UO_Real; break;
-    case tok::kw___imag:    Opc = UO_Imag; break;
-    case tok::kw___extension__: Opc = UO_Extension; break;
     }
     return Opc;
 }
 
-C2Sema::C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, clang::Preprocessor& PP_,
+C2Sema::C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, c2lang::Preprocessor& PP_,
                Component& component_, Module* existingMod, const std::string& filename_,
                const TargetInfo& ti)
     : SourceMgr(sm_)
@@ -412,7 +406,7 @@ void C2Sema::ActOnImport(const char* moduleName_, SourceLocation loc, Token& ali
         return;
     }
     const char* name = moduleName;
-    clang::SourceLocation realLoc = loc;
+    c2lang::SourceLocation realLoc = loc;
     if (aliasTok.is(tok::identifier)) {
         IdentifierInfo* aliasSym = aliasTok.getIdentifierInfo();
         name = Context.addIdentifier(aliasSym->getNameStart(), aliasSym->getLength());
@@ -921,7 +915,7 @@ C2::ExprResult C2Sema::ActOnBinOp(SourceLocation opLoc, tok::TokenKind Kind, Exp
     opLoc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    clang::BinaryOperatorKind Opc = ConvertTokenKindToBinaryOpcode(Kind);
+    c2lang::BinaryOperatorKind Opc = ConvertTokenKindToBinaryOpcode(Kind);
 
     // Emit warnings for tricky precedence issues, e.g. "bitfield & 0x4 == 0"
     //DiagnoseBinOpPrecedence(*this, Opc, TokLoc, LHSExpr, RHSExpr);
@@ -1462,8 +1456,7 @@ C2::ExprResult C2Sema::ActOnNumericConstant(const Token& Tok) {
             if (Width == 0) {
                 if (ResultVal.isIntN(64)) {
 #if 0
-                    if (!Literal.isUnsigned && (ResultVal[LongLongSize-1] == 0 ||
-                                                (getLangOpts().MicrosoftExt && Literal.isLongLong)))
+                    if (!Literal.isUnsigned && (ResultVal[LongLongSize-1] == 0))
                         Ty = Context.LongLongTy;
                     else if (AllowUnsigned)
                         Ty = Context.UnsignedLongLongTy;

@@ -14,8 +14,8 @@
  */
 
 #include <assert.h>
-#include <clang/Parse/ParseDiagnostic.h>
-#include <clang/Sema/SemaDiagnostic.h>
+#include "Clang/ParseDiagnostic.h"
+#include "Clang/SemaDiagnostic.h"
 
 #include "Analyser/ExprTypeAnalyser.h"
 #include "Analyser/LiteralAnalyser.h"
@@ -28,7 +28,7 @@
 
 using namespace C2;
 using namespace llvm;
-using namespace clang;
+using namespace c2lang;
 
 // 0 = ok,
 // 1 = loss of integer precision,
@@ -66,7 +66,7 @@ static int type_conversions[14][14] = {
 
 
 
-ExprTypeAnalyser::ExprTypeAnalyser(DiagnosticsEngine& Diags_)
+ExprTypeAnalyser::ExprTypeAnalyser(c2lang::DiagnosticsEngine& Diags_)
     : Diags(Diags_)
 {}
 
@@ -374,46 +374,41 @@ bool ExprTypeAnalyser::checkFunctionCast(const ExplicitCastExpr* expr, QualType 
 void ExprTypeAnalyser::checkBinOp(QualType TLeft, const BinaryOperator* binop) {
     // NOTE we check Left / Right separately if CTC's are not the same
     switch (binop->getOpcode()) {
-    case BO_PtrMemD:
-    case BO_PtrMemI:
-        TODO;
-        break;
-    case BO_Mul:
-    case BO_Div:
-    case BO_Rem:
-    case BO_Add:
-    case BO_Sub:
-    case BO_Shl:
-    case BO_Shr:
-    case BO_Cmp: // C++20 only
-    case BO_LE:
-    case BO_LT:
-    case BO_GE:
-    case BO_GT:
-    case BO_NE:
-    case BO_EQ:
-    case BO_And:
-    case BO_Xor:
-    case BO_Or:
-    case BO_LAnd:
-    case BO_LOr:
+    case BINOP_Mul:
+    case BINOP_Div:
+    case BINOP_Rem:
+    case BINOP_Add:
+    case BINOP_Sub:
+    case BINOP_Shl:
+    case BINOP_Shr:
+    case BINOP_LE:
+    case BINOP_LT:
+    case BINOP_GE:
+    case BINOP_GT:
+    case BINOP_NE:
+    case BINOP_EQ:
+    case BINOP_And:
+    case BINOP_Xor:
+    case BINOP_Or:
+    case BINOP_LAnd:
+    case BINOP_LOr:
         check(TLeft, binop->getLHS());
         check(TLeft, binop->getRHS());
         break;
-    case BO_Assign:
-    case BO_MulAssign:
-    case BO_DivAssign:
-    case BO_RemAssign:
-    case BO_AddAssign:
-    case BO_SubAssign:
-    case BO_ShlAssign:
-    case BO_ShrAssign:
-    case BO_AndAssign:
-    case BO_XorAssign:
-    case BO_OrAssign:
+    case BINOP_Assign:
+    case BINOP_MulAssign:
+    case BINOP_DivAssign:
+    case BINOP_RemAssign:
+    case BINOP_AddAssign:
+    case BINOP_SubAssign:
+    case BINOP_ShlAssign:
+    case BINOP_ShrAssign:
+    case BINOP_AndAssign:
+    case BINOP_XorAssign:
+    case BINOP_OrAssign:
         TODO;
         break;
-    case BO_Comma:
+    case BINOP_Comma:
         TODO;
         break;
     }

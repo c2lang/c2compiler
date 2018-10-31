@@ -18,7 +18,7 @@
 
 #include <string>
 
-#include <clang/Basic/SourceLocation.h>
+#include "Clang/SourceLocation.h"
 
 #include "AST/Decl.h"
 #include "AST/Type.h"
@@ -61,7 +61,7 @@ public:
     unsigned numArrayValues() const { return arrayValues.size(); }
     ArrayValueDecl* getArrayValue(unsigned i) const { return arrayValues[i]; }
 
-    void setName(const std::string& name, clang::SourceLocation loc) {
+    void setName(const std::string& name, c2lang::SourceLocation loc) {
         modName = name;
         modLoc = loc;
     }
@@ -75,7 +75,7 @@ private:
 
     const std::string filename;
     std::string modName;
-    clang::SourceLocation modLoc;
+    c2lang::SourceLocation modLoc;
     bool m_isInterface;       // set for .c2i files
 
     typedef std::vector<ImportDecl*> ImportList;

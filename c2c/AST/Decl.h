@@ -20,12 +20,12 @@
 #include <assert.h>
 
 #include <llvm/ADT/APSInt.h>
-#include <clang/Basic/SourceLocation.h>
+#include "Clang/SourceLocation.h"
 
 #include "AST/Type.h"
 #include "AST/Attr.h"
 #include "Utils/Errors.h"
-using clang::SourceLocation;
+using c2lang::SourceLocation;
 
 namespace llvm {
 class Function;

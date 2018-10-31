@@ -18,8 +18,8 @@
 
 #include <llvm/ADT/SmallString.h>
 #include <llvm/ADT/APInt.h>
-#include <clang/Parse/ParseDiagnostic.h>
-#include <clang/Sema/SemaDiagnostic.h>
+#include "Clang/ParseDiagnostic.h"
+#include "Clang/SemaDiagnostic.h"
 
 #include "Analyser/FunctionAnalyser.h"
 #include "Analyser/TypeResolver.h"
@@ -34,7 +34,7 @@
 #include "Utils/StringBuilder.h"
 
 using namespace C2;
-using namespace clang;
+using namespace c2lang;
 
 //#define ANALYSER_DEBUG
 
@@ -93,7 +93,7 @@ static void SetConstantFlags(Decl* D, Expr* expr) {
 FunctionAnalyser::FunctionAnalyser(Scope& scope_,
                                    TypeResolver& typeRes_,
                                    ASTContext& context_,
-                                   clang::DiagnosticsEngine& Diags_,
+                                   c2lang::DiagnosticsEngine& Diags_,
                                    bool isInterface_)
     : scope(scope_)
     , TR(typeRes_)
@@ -1217,43 +1217,36 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     Expr* Right = binop->getRHS();
 
     switch (binop->getOpcode()) {
-    case BO_PtrMemD:
-    case BO_PtrMemI:
-        FATAL_ERROR("unhandled binary operator type");
-        break;
-    case BO_Mul:
-    case BO_Div:
-    case BO_Rem:
-    case BO_Add:
-    case BO_Sub:
-    case BO_Shl:
-    case BO_Shr:
+    case BINOP_Mul:
+    case BINOP_Div:
+    case BINOP_Rem:
+    case BINOP_Add:
+    case BINOP_Sub:
+    case BINOP_Shl:
+    case BINOP_Shr:
         // RHS, RHS
         TLeft = analyseExpr(Left, RHS);
         TRight = analyseExpr(Right, RHS);
         combineCtc(expr, Left, Right);
         if (Left->isConstant() && Right->isConstant()) expr->setConstant();
         break;
-    case BO_Cmp: // C++20 only
-        FATAL_ERROR("unhandled binary operator type");
-        break;
-    case BO_LE:
-    case BO_LT:
-    case BO_GE:
-    case BO_GT:
-    case BO_NE:
-    case BO_EQ:
+    case BINOP_LE:
+    case BINOP_LT:
+    case BINOP_GE:
+    case BINOP_GT:
+    case BINOP_NE:
+    case BINOP_EQ:
         // RHS, RHS
         TLeft = analyseExpr(Left, RHS);
         TRight = analyseExpr(Right, RHS);
         // NOTE: CTC is never full, because value is not interting, only type
         if (Left->isConstant() && Right->isConstant()) expr->setConstant();
         break;
-    case BO_And:
-    case BO_Xor:
-    case BO_Or:
-    case BO_LAnd:
-    case BO_LOr:
+    case BINOP_And:
+    case BINOP_Xor:
+    case BINOP_Or:
+    case BINOP_LAnd:
+    case BINOP_LOr:
         // TODO check if cast of SubExpr is ok
         // RHS, RHS
         TLeft = analyseExpr(Left, RHS);
@@ -1261,26 +1254,26 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
         combineCtc(expr, Left, Right);
         if (Left->isConstant() && Right->isConstant()) expr->setConstant();
         break;
-    case BO_Assign:
+    case BINOP_Assign:
         // LHS, RHS
         TLeft = analyseExpr(Left, side | LHS);
         TRight = analyseExpr(Right, RHS);
         break;
-    case BO_MulAssign:
-    case BO_DivAssign:
-    case BO_RemAssign:
-    case BO_AddAssign:
-    case BO_SubAssign:
-    case BO_ShlAssign:
-    case BO_ShrAssign:
-    case BO_AndAssign:
-    case BO_XorAssign:
-    case BO_OrAssign:
+    case BINOP_MulAssign:
+    case BINOP_DivAssign:
+    case BINOP_RemAssign:
+    case BINOP_AddAssign:
+    case BINOP_SubAssign:
+    case BINOP_ShlAssign:
+    case BINOP_ShrAssign:
+    case BINOP_AndAssign:
+    case BINOP_XorAssign:
+    case BINOP_OrAssign:
         // LHS|RHS, RHS
         TLeft = analyseExpr(Left, LHS | RHS);
         TRight = analyseExpr(Right, RHS);
         break;
-    case BO_Comma:
+    case BINOP_Comma:
         FATAL_ERROR("unhandled binary operator type");
         break;
     }
@@ -1289,15 +1282,11 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     // determine Result type
     QualType Result;
     switch (binop->getOpcode()) {
-    case BO_PtrMemD:
-    case BO_PtrMemI:
-        FATAL_ERROR("unhandled binary operator type");
-        break;
-    case BO_Mul:
-    case BO_Div:
-    case BO_Rem:
-    case BO_Add:
-    case BO_Sub:
+    case BINOP_Mul:
+    case BINOP_Div:
+    case BINOP_Rem:
+    case BINOP_Add:
+    case BINOP_Sub:
         // TODO return largest witdth of left/right (long*short -> long)
         // TODO apply UsualArithmeticConversions() to L + R
         // TEMP for now just return Right side
@@ -1305,31 +1294,28 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
         Result = UsualUnaryConversions(Left);
         UsualUnaryConversions(Right);
         break;
-    case BO_Shl:
-    case BO_Shr:
+    case BINOP_Shl:
+    case BINOP_Shr:
         Result = TLeft;
         break;
-    case BO_Cmp: // C++20 only
-        FATAL_ERROR("unhandled binary operator type");
-        break;
-    case BO_LE:
-    case BO_LT:
-    case BO_GE:
-    case BO_GT:
-    case BO_NE:
-    case BO_EQ:
+    case BINOP_LE:
+    case BINOP_LT:
+    case BINOP_GE:
+    case BINOP_GT:
+    case BINOP_NE:
+    case BINOP_EQ:
         Result = Type::Bool();
         break;
-    case BO_And:
-    case BO_Xor:
-    case BO_Or:
+    case BINOP_And:
+    case BINOP_Xor:
+    case BINOP_Or:
         Result = TLeft;
         break;
-    case BO_LAnd:
-    case BO_LOr:
+    case BINOP_LAnd:
+    case BINOP_LOr:
         Result = Type::Bool();
         break;
-    case BO_Assign:
+    case BINOP_Assign:
     {
         assert(TRight.isValid());
         // special case for a[4:2] = b
@@ -1343,20 +1329,20 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
         Result = TLeft;
         break;
     }
-    case BO_MulAssign:
-    case BO_DivAssign:
-    case BO_RemAssign:
-    case BO_AddAssign:
-    case BO_SubAssign:
-    case BO_ShlAssign:
-    case BO_ShrAssign:
-    case BO_AndAssign:
-    case BO_XorAssign:
-    case BO_OrAssign:
+    case BINOP_MulAssign:
+    case BINOP_DivAssign:
+    case BINOP_RemAssign:
+    case BINOP_AddAssign:
+    case BINOP_SubAssign:
+    case BINOP_ShlAssign:
+    case BINOP_ShrAssign:
+    case BINOP_AndAssign:
+    case BINOP_XorAssign:
+    case BINOP_OrAssign:
         checkAssignment(Left, TLeft);
         Result = TLeft;
         break;
-    case BO_Comma:
+    case BINOP_Comma:
         FATAL_ERROR("unhandled binary operator type");
         break;
     }

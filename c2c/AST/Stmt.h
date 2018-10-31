@@ -19,10 +19,10 @@
 #include <vector>
 #include "Utils/Errors.h"
 
-#include <clang/Basic/SourceLocation.h>
+#include "Clang/SourceLocation.h"
 
 
-using clang::SourceLocation;
+using c2lang::SourceLocation;
 
 namespace C2 {
 
