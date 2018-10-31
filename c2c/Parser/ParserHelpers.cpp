@@ -14,8 +14,7 @@
  */
 
 #include <assert.h>
-#include <clang/AST/Expr.h>
-#include <clang/Parse/ParseDiagnostic.h>
+#include "Clang/ParseDiagnostic.h"
 
 #include "Parser/ParserHelpers.h"
 

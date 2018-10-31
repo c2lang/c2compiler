@@ -31,8 +31,9 @@
 
 using namespace c2lang;
 
-DiagnosticRenderer::DiagnosticRenderer(DiagnosticOptions *DiagOpts)
-    : DiagOpts(DiagOpts), LastLevel() {}
+DiagnosticRenderer::DiagnosticRenderer(const LangOptions &LangOpts,
+                                       DiagnosticOptions *DiagOpts)
+    : LangOpts(LangOpts), DiagOpts(DiagOpts), LastLevel() {}
 
 DiagnosticRenderer::~DiagnosticRenderer() = default;
 
@@ -57,9 +58,9 @@ public:
 } // namespace
 
 static void mergeFixits(ArrayRef<FixItHint> FixItHints,
-                        const SourceManager &SM,
+                        const SourceManager &SM, const LangOptions &LangOpts,
                         SmallVectorImpl<FixItHint> &MergedFixits) {
-  edit::Commit commit(SM);
+  edit::Commit commit(SM, LangOpts);
   for (const auto &Hint : FixItHints)
     if (Hint.CodeToInsert.empty()) {
       if (Hint.InsertFromRange.isValid())
@@ -77,7 +78,7 @@ static void mergeFixits(ArrayRef<FixItHint> FixItHints,
                     /*afterToken=*/false, Hint.BeforePreviousInsertions);
     }
 
-  edit::EditedSource Editor(SM);
+  edit::EditedSource Editor(SM, LangOpts);
   if (Editor.commit(commit)) {
     FixitReceiver Rec(MergedFixits);
     Editor.applyRewrites(Rec);
@@ -104,7 +105,7 @@ void DiagnosticRenderer::emitDiagnostic(FullSourceLoc Loc,
 
     SmallVector<FixItHint, 8> MergedFixits;
     if (!FixItHints.empty()) {
-      mergeFixits(FixItHints, Loc.getManager(), MergedFixits);
+      mergeFixits(FixItHints, Loc.getManager(), LangOpts, MergedFixits);
       FixItHints = MergedFixits;
     }
 
@@ -179,16 +180,33 @@ void DiagnosticRenderer::emitIncludeStack(FullSourceLoc Loc, PresumedLoc PLoc,
 
   if (IncludeLoc.isValid())
     emitIncludeStackRecursively(IncludeLoc);
+  else {
+    emitModuleBuildStack(Loc.getManager());
+    emitImportStack(Loc);
+  }
 }
 
 /// Helper to recursively walk up the include stack and print each layer
 /// on the way back down.
 void DiagnosticRenderer::emitIncludeStackRecursively(FullSourceLoc Loc) {
+  if (Loc.isInvalid()) {
+    emitModuleBuildStack(Loc.getManager());
+    return;
+  }
 
   PresumedLoc PLoc = Loc.getPresumedLoc(DiagOpts->ShowPresumedLoc);
   if (PLoc.isInvalid())
     return;
 
+  // If this source location was imported from a module, print the module
+  // import stack rather than the
+  // FIXME: We want submodule granularity here.
+  std::pair<FullSourceLoc, StringRef> Imported = Loc.getModuleImportLoc();
+  if (!Imported.second.empty()) {
+    // This location was imported by a module. Emit the module import stack.
+    emitImportStackRecursively(Imported.first, Imported.second);
+    return;
+  }
 
   // Emit the other include frames first.
   emitIncludeStackRecursively(
@@ -198,6 +216,45 @@ void DiagnosticRenderer::emitIncludeStackRecursively(FullSourceLoc Loc) {
   emitIncludeLocation(Loc, PLoc);
 }
 
+/// Emit the module import stack associated with the current location.
+void DiagnosticRenderer::emitImportStack(FullSourceLoc Loc) {
+  if (Loc.isInvalid()) {
+    emitModuleBuildStack(Loc.getManager());
+    return;
+  }
+
+  std::pair<FullSourceLoc, StringRef> NextImportLoc = Loc.getModuleImportLoc();
+  emitImportStackRecursively(NextImportLoc.first, NextImportLoc.second);
+}
+
+/// Helper to recursively walk up the import stack and print each layer
+/// on the way back down.
+void DiagnosticRenderer::emitImportStackRecursively(FullSourceLoc Loc,
+                                                    StringRef ModuleName) {
+  if (ModuleName.empty()) {
+    return;
+  }
+
+  PresumedLoc PLoc = Loc.getPresumedLoc(DiagOpts->ShowPresumedLoc);
+
+  // Emit the other import frames first.
+  std::pair<FullSourceLoc, StringRef> NextImportLoc = Loc.getModuleImportLoc();
+  emitImportStackRecursively(NextImportLoc.first, NextImportLoc.second);
+
+  // Emit the inclusion text/note.
+  emitImportLocation(Loc, PLoc, ModuleName);
+}
+
+/// Emit the module build stack, for cases where a module is (re-)built
+/// on demand.
+void DiagnosticRenderer::emitModuleBuildStack(const SourceManager &SM) {
+  ModuleBuildStack Stack = SM.getModuleBuildStack();
+  for (const auto &I : Stack) {
+    emitBuildingModuleLocation(I.second, I.second.getPresumedLoc(
+                                              DiagOpts->ShowPresumedLoc),
+                               I.first);
+  }
+}
 
 /// A recursive function to trace all possible backtrace locations
 /// to match the \p CaretLocFileID.
@@ -383,7 +440,7 @@ void DiagnosticRenderer::emitSingleMacroExpansion(
   SmallString<100> MessageStorage;
   llvm::raw_svector_ostream Message(MessageStorage);
   StringRef MacroName = Lexer::getImmediateMacroNameForDiagnostics(
-      Loc, Loc.getManager());
+      Loc, Loc.getManager(), LangOpts);
   if (MacroName.empty())
     Message << "expanded from here";
   else

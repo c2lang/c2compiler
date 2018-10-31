@@ -26,7 +26,7 @@
 #include "Analyser/Scope.h"
 #include "Analyser/TypeResolver.h"
 
-namespace clang {
+namespace c2lang {
 class DiagnosticsEngine;
 }
 
@@ -52,7 +52,7 @@ typedef IncrementalArrayVals::const_iterator IncrementalArrayValsIter;
 class FileAnalyser {
 public:
     FileAnalyser(const Module& module_, const Modules& modules,
-                 clang::DiagnosticsEngine& Diags_, AST& ast_, bool verbose);
+                 c2lang::DiagnosticsEngine& Diags_, AST& ast_, bool verbose);
     ~FileAnalyser() {}
 
     void printAST(bool printInterface) const;
@@ -87,7 +87,7 @@ private:
     const Module& module;
     std::unique_ptr<Scope> globals;
     std::unique_ptr<TypeResolver> TR;
-    clang::DiagnosticsEngine& Diags;
+    c2lang::DiagnosticsEngine& Diags;
     FunctionAnalyser functionAnalyser;
     bool verbose;
 

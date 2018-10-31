@@ -16,9 +16,9 @@
 #ifndef ANALYSER_EXPR_TYPE_ANALYSER_H
 #define ANALYSER_EXPR_TYPE_ANALYSER_H
 
-#include <clang/Basic/SourceLocation.h>
+#include "Clang/SourceLocation.h"
 
-namespace clang {
+namespace c2lang {
 class DiagnosticsEngine;
 }
 
@@ -38,12 +38,12 @@ class QualType;
 */
 class ExprTypeAnalyser {
 public:
-    ExprTypeAnalyser(clang::DiagnosticsEngine& Diags_);
+    ExprTypeAnalyser(c2lang::DiagnosticsEngine& Diags_);
 
     void check(QualType Tleft, const Expr* expr);
     bool checkExplicitCast(const ExplicitCastExpr* cast, QualType TLeft, QualType TRight);
 private:
-    void error(clang::SourceLocation loc, QualType left, QualType right) const;
+    void error(c2lang::SourceLocation loc, QualType left, QualType right) const;
     void checkBinOp(QualType TLeft, const BinaryOperator* binop);
 
     bool checkCompatible(QualType left, const Expr* expr) const;
@@ -56,7 +56,7 @@ private:
     bool checkEnumCast(const ExplicitCastExpr* expr, QualType DestType, QualType SrcType);
     bool checkFunctionCast(const ExplicitCastExpr* expr, QualType DestType, QualType SrcType);
 
-    clang::DiagnosticsEngine& Diags;
+    c2lang::DiagnosticsEngine& Diags;
 
     ExprTypeAnalyser(const ExprTypeAnalyser&);
     ExprTypeAnalyser& operator= (const ExprTypeAnalyser&);

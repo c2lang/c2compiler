@@ -15,9 +15,9 @@
 #include <stdio.h>
 
 #include <llvm/ADT/APInt.h>
-#include <clang/Parse/ParseDiagnostic.h>
-#include <clang/Sema/SemaDiagnostic.h>
-#include <clang/Basic/TokenKinds.h>
+#include "Clang/ParseDiagnostic.h"
+#include "Clang/SemaDiagnostic.h"
+#include "Clang/TokenKinds.h"
 
 #include "Analyser/FileAnalyser.h"
 #include "Analyser/AnalyserUtils.h"
@@ -28,7 +28,7 @@
 #include <ctype.h>
 
 using namespace C2;
-using namespace clang;
+using namespace c2lang;
 using namespace llvm;
 
 //#define ANALYSER_DEBUG
@@ -41,7 +41,7 @@ using namespace llvm;
 #endif
 
 FileAnalyser::FileAnalyser(const Module& module_, const Modules& modules,
-                           clang::DiagnosticsEngine& Diags_, AST& ast_, bool verbose_)
+                           DiagnosticsEngine& Diags_, AST& ast_, bool verbose_)
     : ast(ast_)
     , module(module_)
     , globals(new Scope(ast_.getModuleName(), modules, Diags_))

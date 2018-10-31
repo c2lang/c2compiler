@@ -45,7 +45,7 @@
 
 using namespace C2;
 using namespace llvm;
-using namespace clang;
+using namespace c2lang;
 
 CodeGenFunction::CodeGenFunction(CodeGenModule& CGM_, FunctionDecl* Func_)
     : CGM(CGM_)

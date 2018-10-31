@@ -19,13 +19,13 @@
 #include <map>
 #include <string>
 #include <vector>
-#include <clang/Basic/Diagnostic.h>
+#include "Clang/Diagnostic.h"
 
 #include "AST/Module.h"
 
 #define MAX_SCOPE_DEPTH 15
 
-namespace clang {
+namespace c2lang {
 class DiagnosticsEngine;
 }
 
@@ -36,12 +36,12 @@ class VarDecl;
 class ImportDecl;
 
 struct DynamicScope {
-    DynamicScope(clang::DiagnosticsEngine& Diags_);
+    DynamicScope(c2lang::DiagnosticsEngine& Diags_);
 
     void reset(unsigned flags);
     bool hasErrorOccurred() const { return ErrorTrap.hasErrorOccurred(); }
 
-    clang::DiagnosticErrorTrap ErrorTrap;
+    c2lang::DiagnosticErrorTrap ErrorTrap;
 
     unsigned Flags;
 
@@ -86,7 +86,7 @@ public:
         SwitchScope = 0x800,
     };
 
-    Scope(const std::string& name_, const Modules& modules_, clang::DiagnosticsEngine& Diags_);
+    Scope(const std::string& name_, const Modules& modules_, c2lang::DiagnosticsEngine& Diags_);
 
     // adding symbols
     void addImportDecl(ImportDecl* importDecl);
@@ -94,10 +94,10 @@ public:
     void addScopedSymbol(VarDecl* V);
 
     // searching
-    const Module* findUsedModule(const std::string& name, clang::SourceLocation loc, bool usedPublic) const;
-    Decl* findSymbol(const std::string& name, clang::SourceLocation loc, bool isType, bool usedPublic) const;
-    Decl* findSymbolInModule(const std::string& name, clang::SourceLocation loc, const Module* mod) const;
-    void checkAccess(Decl* D, clang::SourceLocation loc) const;
+    const Module* findUsedModule(const std::string& name, c2lang::SourceLocation loc, bool usedPublic) const;
+    Decl* findSymbol(const std::string& name, c2lang::SourceLocation loc, bool isType, bool usedPublic) const;
+    Decl* findSymbolInModule(const std::string& name, c2lang::SourceLocation loc, const Module* mod) const;
+    void checkAccess(Decl* D, c2lang::SourceLocation loc) const;
 
     // Scopes
     void EnterScope(unsigned flags);
@@ -143,7 +143,7 @@ private:
     typedef SymbolCache::iterator CacheIter;
     mutable SymbolCache symbolCache;
 
-    clang::DiagnosticsEngine& Diags;
+    c2lang::DiagnosticsEngine& Diags;
 };
 
 }

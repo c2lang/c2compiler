@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include <clang/Basic/SourceLocation.h>
+#include "Clang/SourceLocation.h"
 
 #include "Builder/C2ModuleLoader.h"
 #include "AST/Module.h"
@@ -45,7 +45,7 @@ static CTypes ctypes[] = {
 };
 
 void C2ModuleLoader::load(C2::Module* c2Mod) {
-    clang::SourceLocation loc;
+    c2lang::SourceLocation loc;
 
     AST* ast = new AST("<generated>", false);
     ASTContext& Context = ast->getASTContext();

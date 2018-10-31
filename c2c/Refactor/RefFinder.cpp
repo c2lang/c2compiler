@@ -233,7 +233,7 @@ void RefFinder::searchExpr(const Expr* E) {
     }
 }
 
-void RefFinder::addFileLocation(clang::SourceLocation loc) {
+void RefFinder::addFileLocation(c2lang::SourceLocation loc) {
     if (!loc.isFileID()) return;         // skip macro expansions etc
     locs.push_back(loc);
 }

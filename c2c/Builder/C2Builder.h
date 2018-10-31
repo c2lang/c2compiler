@@ -25,7 +25,7 @@
 #include "AST/Component.h"
 #include "Utils/TargetInfo.h"
 
-namespace clang {
+namespace c2lang {
 class DiagnosticsEngine;
 class SourceManager;
 class LangOptions;
@@ -104,15 +104,15 @@ private:
     void printComponents() const;
     void log(const char* color, const char* format, ...) const;
 
-    bool checkMainFunction(clang::DiagnosticsEngine& Diags);
+    bool checkMainFunction(c2lang::DiagnosticsEngine& Diags);
     bool checkExportedPackages() const;
     typedef std::deque<std::string> ImportsQueue;
     bool checkModuleImports(ParseHelper& helper, Component* component, Module* module, ImportsQueue& queue, const LibInfo* lib = 0);
     void createC2Module();
 
-    void rewriterTest(clang::SourceManager& SM, clang::LangOptions& LangOpts);
+    void rewriterTest(c2lang::SourceManager& SM, c2lang::LangOptions& LangOpts);
     void generateOptionalDeps();
-    void generateOptionalTags(const clang::SourceManager& SM) const;
+    void generateOptionalTags(const c2lang::SourceManager& SM) const;
     void generateInterface() const;
     void generateOptionalC();
     void generateOptionalIR();

@@ -17,9 +17,9 @@
 #define ANALYSER_LITERAL_ANALYSER_H
 
 #include <llvm/ADT/APSInt.h>
-#include <clang/Basic/SourceLocation.h>
+#include "Clang/SourceLocation.h"
 
-namespace clang {
+namespace c2lang {
 class DiagnosticsEngine;
 }
 
@@ -32,12 +32,12 @@ struct Limit;
 
 class LiteralAnalyser {
 public:
-    LiteralAnalyser(clang::DiagnosticsEngine& Diags_);
+    LiteralAnalyser(c2lang::DiagnosticsEngine& Diags_);
 
     void check(QualType TLeft, const Expr* Right);
     llvm::APSInt checkLiterals(const Expr* Right);
     void checkBitOffset(const Expr* BO, const Expr* Right);
-    bool checkRange(QualType T, const Expr* Right, clang::SourceLocation Loc, llvm::APSInt Result);
+    bool checkRange(QualType T, const Expr* Right, c2lang::SourceLocation Loc, llvm::APSInt Result);
 private:
     void checkWidth(int availableWidth, const Limit* L, const Expr* Right, const char* tname);
     bool calcWidth(QualType TLeft, const Expr* Right, int* availableWidth);
@@ -48,7 +48,7 @@ private:
     llvm::APSInt checkDecl(const Decl* D);
     llvm::APSInt truncateLiteral(QualType type, const Expr* Right,llvm::APSInt Result);
 
-    clang::DiagnosticsEngine& Diags;
+    c2lang::DiagnosticsEngine& Diags;
 
     LiteralAnalyser(const LiteralAnalyser&);
     LiteralAnalyser& operator= (const LiteralAnalyser&);

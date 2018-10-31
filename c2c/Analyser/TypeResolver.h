@@ -19,11 +19,11 @@
 #include <vector>
 
 #include "AST/Type.h"
-#include <clang/Basic/SourceLocation.h>
+#include "Clang/SourceLocation.h"
 
-using clang::SourceLocation;
+using c2lang::SourceLocation;
 
-namespace clang {
+namespace c2lang {
 class DiagnosticsEngine;
 }
 
@@ -35,7 +35,7 @@ class ASTContext;
 
 class TypeResolver {
 public:
-    TypeResolver(Scope& g, clang::DiagnosticsEngine& Diags_, ASTContext& ctx_);
+    TypeResolver(Scope& g, c2lang::DiagnosticsEngine& Diags_, ASTContext& ctx_);
 
     // resolving of TypeDecls (during Type Analysis phase)
     unsigned checkType(QualType Q, bool used_public);
@@ -58,7 +58,7 @@ private:
     bool checkDecls(Decls& decls, const Decl* D) const;
 
     Scope& globals;
-    clang::DiagnosticsEngine& Diags;
+    c2lang::DiagnosticsEngine& Diags;
     ASTContext& Context;
 };
 

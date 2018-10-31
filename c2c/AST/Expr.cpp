@@ -24,10 +24,10 @@
 
 using namespace C2;
 using namespace std;
-using namespace clang;
+using namespace c2lang;
 
 
-Expr::Expr(ExprKind k, clang::SourceLocation loc_, bool isConstant_)
+Expr::Expr(ExprKind k, c2lang::SourceLocation loc_, bool isConstant_)
     : Stmt(STMT_EXPR)
     , exprLoc(loc_)
 {
@@ -504,7 +504,7 @@ BinaryOperator::BinaryOperator(Expr* lhs_, Expr* rhs_, Opcode opc_, SourceLocati
     binaryOperatorBits.opcode = opc_;
 }
 
-const char* BinaryOperator::OpCode2str(clang::BinaryOperatorKind opc_) {
+const char* BinaryOperator::OpCode2str(c2lang::BinaryOperatorKind opc_) {
     switch (opc_) {
     case BO_PtrMemD: return ".";
     case BO_PtrMemI: return "->";
@@ -619,7 +619,7 @@ void ConditionalOperator::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 
-const char* UnaryOperator::OpCode2str(clang::UnaryOperatorKind opc_) {
+const char* UnaryOperator::OpCode2str(c2lang::UnaryOperatorKind opc_) {
     switch (opc_) {
     case UO_PostInc:    return "++";
     case UO_PostDec:    return "--";

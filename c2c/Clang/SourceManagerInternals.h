@@ -124,6 +124,9 @@ public:
   iterator begin() { return LineEntries.begin(); }
   iterator end() { return LineEntries.end(); }
 
+  /// Add a new line entry that has already been encoded into
+  /// the internal representation of the line table.
+  void AddEntry(FileID FID, const std::vector<LineEntry> &Entries);
 };
 
 } // namespace c2lang

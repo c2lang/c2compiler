@@ -20,7 +20,7 @@
 
 using namespace C2;
 using namespace llvm;
-using namespace clang;
+using namespace c2lang;
 
 
 QualType TypeFinder::findType(const Expr* expr) {

@@ -21,13 +21,13 @@
 #include "AST/Module.h"
 #include "AST/ASTContext.h"
 
-#include <clang/Basic/Diagnostic.h>
+#include "Clang/Diagnostic.h"
 
 using namespace C2;
 
 ComponentAnalyser::ComponentAnalyser(Component& C,
                                      const Modules& modules_,
-                                     clang::DiagnosticsEngine& Diags_,
+                                     c2lang::DiagnosticsEngine& Diags_,
                                      ASTContext& context_,
                                      bool verbose_)
     : Diags(Diags_)

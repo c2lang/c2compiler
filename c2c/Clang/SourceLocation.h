@@ -57,6 +57,8 @@ public:
   unsigned getHashValue() const { return static_cast<unsigned>(ID); }
 
 private:
+  friend class ASTWriter;
+  friend class ASTReader;
   friend class SourceManager;
 
   static FileID get(int V) {
@@ -84,6 +86,8 @@ private:
 ///
 /// It is important that this type remains small. It is currently 32 bits wide.
 class SourceLocation {
+  friend class ASTReader;
+  friend class ASTWriter;
   friend class SourceManager;
 
   unsigned ID = 0;
@@ -359,7 +363,8 @@ public:
   PresumedLoc getPresumedLoc(bool UseLineDirectives = true) const;
   bool isMacroArgExpansion(FullSourceLoc *StartLoc = nullptr) const;
   FullSourceLoc getImmediateMacroCallerLoc() const;
-    unsigned getFileOffset() const;
+  std::pair<FullSourceLoc, StringRef> getModuleImportLoc() const;
+  unsigned getFileOffset() const;
 
   unsigned getExpansionLineNumber(bool *Invalid = nullptr) const;
   unsigned getExpansionColumnNumber(bool *Invalid = nullptr) const;

@@ -45,7 +45,7 @@
 //#define DEBUG_CODEGEN
 
 // TEMP to print Clang sizes
-//#include <clang/AST/Expr.h>
+//#include <Clang/Expr.h>
 
 using namespace C2;
 using namespace llvm;
@@ -59,11 +59,11 @@ CodeGenModule::CodeGenModule(const std::string& name_, bool single, const Module
     , builder(context)
 {
 #if 0
-    printf("clang Stmt = %d\n", sizeof(clang::Stmt));
-    printf("clang NullStmt = %d\n", sizeof(clang::NullStmt));
-    printf("clang BreakStmt = %d\n", sizeof(clang::BreakStmt));
-    printf("clang Expr = %d\n", sizeof(clang::Expr));
-    printf("clang DeclRefExpr = %d\n", sizeof(clang::DeclRefExpr));
+    printf("c2lang Stmt = %d\n", sizeof(clang::Stmt));
+    printf("c2lang NullStmt = %d\n", sizeof(clang::NullStmt));
+    printf("c2lang BreakStmt = %d\n", sizeof(clang::BreakStmt));
+    printf("c2lang Expr = %d\n", sizeof(clang::Expr));
+    printf("c2lang DeclRefExpr = %d\n", sizeof(clang::DeclRefExpr));
 #endif
 }
 

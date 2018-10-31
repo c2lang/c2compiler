@@ -27,6 +27,7 @@
 
 namespace c2lang {
 
+class LangOptions;
 class SourceManager;
 
 using DiagOrStoredDiag =
@@ -46,6 +47,7 @@ using DiagOrStoredDiag =
 /// class.
 class DiagnosticRenderer {
 protected:
+  const LangOptions &LangOpts;
   IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts;
 
   /// The location of the previous diagnostic if known.
@@ -67,7 +69,8 @@ protected:
   /// which change the amount of information displayed.
   DiagnosticsEngine::Level LastLevel = DiagnosticsEngine::Ignored;
 
-  DiagnosticRenderer(DiagnosticOptions *DiagOpts);
+  DiagnosticRenderer(const LangOptions &LangOpts,
+                     DiagnosticOptions *DiagOpts);
 
   virtual ~DiagnosticRenderer();
 
@@ -102,7 +105,10 @@ private:
   void emitIncludeStack(FullSourceLoc Loc, PresumedLoc PLoc,
                         DiagnosticsEngine::Level Level);
   void emitIncludeStackRecursively(FullSourceLoc Loc);
-    void emitCaret(FullSourceLoc Loc, DiagnosticsEngine::Level Level,
+  void emitImportStack(FullSourceLoc Loc);
+  void emitImportStackRecursively(FullSourceLoc Loc, StringRef ModuleName);
+  void emitModuleBuildStack(const SourceManager &SM);
+  void emitCaret(FullSourceLoc Loc, DiagnosticsEngine::Level Level,
                  ArrayRef<CharSourceRange> Ranges, ArrayRef<FixItHint> Hints);
   void emitSingleMacroExpansion(FullSourceLoc Loc,
                                 DiagnosticsEngine::Level Level,
@@ -136,8 +142,9 @@ public:
 /// notes.  It is up to subclasses to further define the behavior.
 class DiagnosticNoteRenderer : public DiagnosticRenderer {
 public:
-  DiagnosticNoteRenderer(DiagnosticOptions *DiagOpts)
-      : DiagnosticRenderer(DiagOpts) {}
+  DiagnosticNoteRenderer(const LangOptions &LangOpts,
+                         DiagnosticOptions *DiagOpts)
+      : DiagnosticRenderer(LangOpts, DiagOpts) {}
 
   ~DiagnosticNoteRenderer() override;
 

@@ -260,6 +260,54 @@ const LineEntry *LineTableInfo::FindNearestLineEntry(FileID FID,
   return &*--I;
 }
 
+/// Add a new line entry that has already been encoded into
+/// the internal representation of the line table.
+void LineTableInfo::AddEntry(FileID FID,
+                             const std::vector<LineEntry> &Entries) {
+  LineEntries[FID] = Entries;
+}
+
+/// getLineTableFilenameID - Return the uniqued ID for the specified filename.
+unsigned SourceManager::getLineTableFilenameID(StringRef Name) {
+  return getLineTable().getLineTableFilenameID(Name);
+}
+
+/// AddLineNote - Add a line note to the line table for the FileID and offset
+/// specified by Loc.  If FilenameID is -1, it is considered to be
+/// unspecified.
+void SourceManager::AddLineNote(SourceLocation Loc, unsigned LineNo,
+                                int FilenameID, bool IsFileEntry,
+                                bool IsFileExit,
+                                SrcMgr::CharacteristicKind FileKind) {
+  std::pair<FileID, unsigned> LocInfo = getDecomposedExpansionLoc(Loc);
+
+  bool Invalid = false;
+  const SLocEntry &Entry = getSLocEntry(LocInfo.first, &Invalid);
+  if (!Entry.isFile() || Invalid)
+    return;
+
+  const SrcMgr::FileInfo &FileInfo = Entry.getFile();
+
+  // Remember that this file has #line directives now if it doesn't already.
+  const_cast<SrcMgr::FileInfo&>(FileInfo).setHasLineDirectives();
+
+  (void) getLineTable();
+
+  unsigned EntryExit = 0;
+  if (IsFileEntry)
+    EntryExit = 1;
+  else if (IsFileExit)
+    EntryExit = 2;
+
+  LineTable->AddLineNote(LocInfo.first, LocInfo.second, LineNo, FilenameID,
+                         EntryExit, FileKind);
+}
+
+LineTableInfo &SourceManager::getLineTable() {
+  if (!LineTable)
+    LineTable = new LineTableInfo();
+  return *LineTable;
+}
 
 //===----------------------------------------------------------------------===//
 // Private 'Create' methods.
@@ -273,6 +321,7 @@ SourceManager::SourceManager(DiagnosticsEngine &Diag, FileManager &FileMgr,
 }
 
 SourceManager::~SourceManager() {
+  delete LineTable;
 
   // Delete FileEntry objects corresponding to content caches.  Since the actual
   // content cache objects are bump pointer allocated, we just have to run the
@@ -301,6 +350,8 @@ void SourceManager::clearIDTables() {
   LastLineNoContentCache = nullptr;
   LastFileIDLookup = FileID();
 
+  if (LineTable)
+    LineTable->clear();
 
   // Use up FileID #0 as an invalid expansion.
   NextLocalOffset = 0;
@@ -387,6 +438,19 @@ SourceManager::createMemBufferContentCache(llvm::MemoryBuffer *Buffer,
 const SrcMgr::SLocEntry &SourceManager::loadSLocEntry(unsigned Index,
                                                       bool *Invalid) const {
   assert(!SLocEntryLoaded[Index]);
+  if (ExternalSLocEntries->ReadSLocEntry(-(static_cast<int>(Index) + 2))) {
+    if (Invalid)
+      *Invalid = true;
+    // If the file of the SLocEntry changed we could still have loaded it.
+    if (!SLocEntryLoaded[Index]) {
+      // Try to recover; create a SLocEntry so the rest of c2lang can handle it.
+      LoadedSLocEntryTable[Index] = SLocEntry::get(0,
+                                 FileInfo::get(SourceLocation(),
+                                               getFakeContentCacheForRecovery(),
+                                               SrcMgr::C_User));
+    }
+  }
+
   return LoadedSLocEntryTable[Index];
 }
 
@@ -523,6 +587,15 @@ SourceManager::createExpansionLoc(SourceLocation SpellingLoc,
   return createExpansionLocImpl(Info, TokLength, LoadedID, LoadedOffset);
 }
 
+SourceLocation SourceManager::createTokenSplitLoc(SourceLocation Spelling,
+                                                  SourceLocation TokenStart,
+                                                  SourceLocation TokenEnd) {
+  assert(getFileID(TokenStart) == getFileID(TokenEnd) &&
+         "token spans multiple files");
+  return createExpansionLocImpl(
+      ExpansionInfo::createForTokenSplit(Spelling, TokenStart, TokenEnd),
+      TokenEnd.getOffset() - TokenStart.getOffset());
+}
 
 SourceLocation
 SourceManager::createExpansionLocImpl(const ExpansionInfo &Info,
@@ -566,6 +639,34 @@ void SourceManager::overrideFileContents(const FileEntry *SourceFile,
   getOverriddenFilesInfo().OverriddenFilesWithBuffer.insert(SourceFile);
 }
 
+void SourceManager::overrideFileContents(const FileEntry *SourceFile,
+                                         const FileEntry *NewFile) {
+  assert(SourceFile->getSize() == NewFile->getSize() &&
+         "Different sizes, use the FileManager to create a virtual file with "
+         "the correct size");
+  assert(FileInfos.count(SourceFile) == 0 &&
+         "This function should be called at the initialization stage, before "
+         "any parsing occurs.");
+  getOverriddenFilesInfo().OverriddenFiles[SourceFile] = NewFile;
+}
+
+void SourceManager::disableFileContentsOverride(const FileEntry *File) {
+  if (!isFileOverridden(File))
+    return;
+
+  const SrcMgr::ContentCache *IR = getOrCreateContentCache(File);
+  const_cast<SrcMgr::ContentCache *>(IR)->replaceBuffer(nullptr);
+  const_cast<SrcMgr::ContentCache *>(IR)->ContentsEntry = IR->OrigEntry;
+
+  assert(OverriddenFilesInfo);
+  OverriddenFilesInfo->OverriddenFiles.erase(File);
+  OverriddenFilesInfo->OverriddenFilesWithBuffer.erase(File);
+}
+
+void SourceManager::setFileIsTransient(const FileEntry *File) {
+  const SrcMgr::ContentCache *CC = getOrCreateContentCache(File);
+  const_cast<SrcMgr::ContentCache *>(CC)->IsTransient = true;
+}
 
 StringRef SourceManager::getBufferData(FileID FID, bool *Invalid) const {
   bool MyInvalid = false;
@@ -1322,8 +1423,19 @@ SourceManager::getFileCharacteristic(SourceLocation Loc) const {
 
   // If there are no #line directives in this file, just return the whole-file
   // state.
-  return FI.getFileCharacteristic();
+  if (!FI.hasLineDirectives())
+    return FI.getFileCharacteristic();
 
+  assert(LineTable && "Can't have linetable entries without a LineTable!");
+  // See if there is a #line directive before the location.
+  const LineEntry *Entry =
+    LineTable->FindNearestLineEntry(LocInfo.first, LocInfo.second);
+
+  // If this is before the first line marker, use the file characteristic.
+  if (!Entry)
+    return FI.getFileCharacteristic();
+
+  return Entry->FileKind;
 }
 
 /// Return the filename or buffer identifier of the buffer the location is in.
@@ -1343,7 +1455,8 @@ StringRef SourceManager::getBufferName(SourceLocation Loc,
 ///
 /// Note that a presumed location is always given as the expansion point of an
 /// expansion location, not at the spelling location.
-PresumedLoc SourceManager::getPresumedLoc(SourceLocation Loc) const {
+PresumedLoc SourceManager::getPresumedLoc(SourceLocation Loc,
+                                          bool UseLineDirectives) const {
   if (Loc.isInvalid()) return PresumedLoc();
 
   // Presumed locations are always for expansion points.
@@ -1375,6 +1488,33 @@ PresumedLoc SourceManager::getPresumedLoc(SourceLocation Loc) const {
 
   SourceLocation IncludeLoc = FI.getIncludeLoc();
 
+  // If we have #line directives in this file, update and overwrite the physical
+  // location info if appropriate.
+  if (UseLineDirectives && FI.hasLineDirectives()) {
+    assert(LineTable && "Can't have linetable entries without a LineTable!");
+    // See if there is a #line directive before this.  If so, get it.
+    if (const LineEntry *Entry =
+          LineTable->FindNearestLineEntry(LocInfo.first, LocInfo.second)) {
+      // If the LineEntry indicates a filename, use it.
+      if (Entry->FilenameID != -1)
+        Filename = LineTable->getFilename(Entry->FilenameID);
+
+      // Use the line number specified by the LineEntry.  This line number may
+      // be multiple lines down from the line entry.  Add the difference in
+      // physical line numbers from the query point and the line marker to the
+      // total.
+      unsigned MarkerLineNo = getLineNumber(LocInfo.first, Entry->FileOffset);
+      LineNo = Entry->LineNo + (LineNo-MarkerLineNo-1);
+
+      // Note that column numbers are not molested by line markers.
+
+      // Handle virtual #include manipulation.
+      if (Entry->IncludeOffset) {
+        IncludeLoc = getLocForStartOfFile(LocInfo.first);
+        IncludeLoc = IncludeLoc.getLocWithOffset(Entry->IncludeOffset);
+      }
+    }
+  }
 
   return PresumedLoc(Filename.data(), LineNo, ColNo, IncludeLoc);
 }
@@ -1399,6 +1539,12 @@ bool SourceManager::isInMainFile(SourceLocation Loc) const {
 
   const SrcMgr::FileInfo &FI = Entry.getFile();
 
+  // Check if there is a line directive for this location.
+  if (FI.hasLineDirectives())
+    if (const LineEntry *Entry =
+            LineTable->FindNearestLineEntry(LocInfo.first, LocInfo.second))
+      if (Entry->IncludeOffset)
+        return false;
 
   return FI.getIncludeLoc().isInvalid();
 }
@@ -1442,6 +1588,19 @@ getActualFileUID(const FileEntry *File) {
   return ID;
 }
 
+/// Get the source location for the given file:line:col triplet.
+///
+/// If the source file is included multiple times, the source location will
+/// be based upon an arbitrary inclusion.
+SourceLocation SourceManager::translateFileLineCol(const FileEntry *SourceFile,
+                                                  unsigned Line,
+                                                  unsigned Col) const {
+  assert(SourceFile && "Null source file!");
+  assert(Line && Col && "Line and column should start from 1!");
+
+  FileID FirstFID = translateFile(SourceFile);
+  return translateLineCol(FirstFID, Line, Col);
+}
 
 /// Get the FileID for the given file.
 ///
@@ -2065,4 +2224,63 @@ LLVM_DUMP_METHOD void SourceManager::dump() const {
   }
 }
 
+ExternalSLocEntrySource::~ExternalSLocEntrySource() = default;
 
+/// Return the amount of memory used by memory buffers, breaking down
+/// by heap-backed versus mmap'ed memory.
+SourceManager::MemoryBufferSizes SourceManager::getMemoryBufferSizes() const {
+  size_t malloc_bytes = 0;
+  size_t mmap_bytes = 0;
+
+  for (unsigned i = 0, e = MemBufferInfos.size(); i != e; ++i)
+    if (size_t sized_mapped = MemBufferInfos[i]->getSizeBytesMapped())
+      switch (MemBufferInfos[i]->getMemoryBufferKind()) {
+        case llvm::MemoryBuffer::MemoryBuffer_MMap:
+          mmap_bytes += sized_mapped;
+          break;
+        case llvm::MemoryBuffer::MemoryBuffer_Malloc:
+          malloc_bytes += sized_mapped;
+          break;
+      }
+
+  return MemoryBufferSizes(malloc_bytes, mmap_bytes);
+}
+
+size_t SourceManager::getDataStructureSizes() const {
+  size_t size = llvm::capacity_in_bytes(MemBufferInfos)
+    + llvm::capacity_in_bytes(LocalSLocEntryTable)
+    + llvm::capacity_in_bytes(LoadedSLocEntryTable)
+    + llvm::capacity_in_bytes(SLocEntryLoaded)
+    + llvm::capacity_in_bytes(FileInfos);
+
+  if (OverriddenFilesInfo)
+    size += llvm::capacity_in_bytes(OverriddenFilesInfo->OverriddenFiles);
+
+  return size;
+}
+
+SourceManagerForFile::SourceManagerForFile(StringRef FileName,
+                                           StringRef Content) {
+  // This is referenced by `FileMgr` and will be released by `FileMgr` when it
+  // is deleted.
+  IntrusiveRefCntPtr<vfs::InMemoryFileSystem> InMemoryFileSystem(
+      new vfs::InMemoryFileSystem);
+  InMemoryFileSystem->addFile(
+      FileName, 0,
+      llvm::MemoryBuffer::getMemBuffer(Content, FileName,
+                                       /*RequiresNullTerminator=*/false));
+  // This is passed to `SM` as reference, so the pointer has to be referenced
+  // in `Environment` so that `FileMgr` can out-live this function scope.
+  FileMgr =
+      llvm::make_unique<FileManager>(FileSystemOptions(), InMemoryFileSystem);
+  // This is passed to `SM` as reference, so the pointer has to be referenced
+  // by `Environment` due to the same reason above.
+  Diagnostics = llvm::make_unique<DiagnosticsEngine>(
+      IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs),
+      new DiagnosticOptions);
+  SourceMgr = llvm::make_unique<SourceManager>(*Diagnostics, *FileMgr);
+  FileID ID = SourceMgr->createFileID(FileMgr->getFile(FileName),
+                                      SourceLocation(), c2lang::SrcMgr::C_User);
+  assert(ID.isValid());
+  SourceMgr->setMainFileID(ID);
+}
