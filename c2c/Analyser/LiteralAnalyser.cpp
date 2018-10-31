@@ -18,8 +18,8 @@
 
 #include <llvm/ADT/SmallString.h>
 #include <llvm/ADT/APInt.h>
-#include <clang/Parse/ParseDiagnostic.h>
-#include <clang/Sema/SemaDiagnostic.h>
+#include "Clang/ParseDiagnostic.h"
+#include "Clang/SemaDiagnostic.h"
 
 #include "AST/Type.h"
 #include "Analyser/LiteralAnalyser.h"
@@ -30,7 +30,7 @@
 
 using namespace C2;
 using namespace llvm;
-using namespace clang;
+using namespace c2lang;
 
 namespace C2 {
 struct Limit {
@@ -81,7 +81,7 @@ static const Limit* getLimit(int width) {
     }
 }
 
-LiteralAnalyser::LiteralAnalyser(clang::DiagnosticsEngine& Diags_)
+LiteralAnalyser::LiteralAnalyser(c2lang::DiagnosticsEngine& Diags_)
     : Diags(Diags_)
 {
 }
@@ -281,7 +281,7 @@ void LiteralAnalyser::checkBitOffset(const Expr* Left, const Expr* Right) {
     checkWidth(BO->getWidth(), &L, Right, tname);
 }
 
-bool LiteralAnalyser::checkRange(QualType TLeft, const Expr* Right, clang::SourceLocation Loc, llvm::APSInt Result) {
+bool LiteralAnalyser::checkRange(QualType TLeft, const Expr* Right, c2lang::SourceLocation Loc, llvm::APSInt Result) {
     // TODO refactor with check()
     const QualType QT = TLeft.getCanonicalType();
     int availableWidth = 0;
@@ -367,7 +367,7 @@ APSInt LiteralAnalyser::checkUnaryLiterals(const Expr* Right) {
     return APSInt();
 }
 
-static inline int evaluateBinaryComparison(APSInt &lhs, APSInt &rhs, clang::BinaryOperatorKind opcode)
+static inline int evaluateBinaryComparison(APSInt &lhs, APSInt &rhs, c2lang::BinaryOperatorKind opcode)
 {
     switch (opcode) {
         case BO_LT: return lhs < rhs;
@@ -378,21 +378,17 @@ static inline int evaluateBinaryComparison(APSInt &lhs, APSInt &rhs, clang::Bina
         case BO_NE: return lhs != rhs;
         case BO_LAnd: return !(lhs == 0 || rhs == 0);
         case BO_LOr: return !(lhs == 0 && rhs == 0);
-        default:
-            assert(0 && "Unreachable statement");
-            return 0;
+        default: FATAL_ERROR("Unreachable statement");
     }
 }
 
-static inline APSInt evaluateBinaryBitwiseOp(APSInt &lhs, APSInt &rhs, clang::BinaryOperatorKind opcode)
+static inline APSInt evaluateBinaryBitwiseOp(APSInt &lhs, APSInt &rhs, c2lang::BinaryOperatorKind opcode)
 {
     switch (opcode) {
         case BO_And: return lhs & rhs;
         case BO_Xor: return lhs ^ rhs;
         case BO_Or: return lhs | rhs;
-        default:
-            assert(0 && "Unreachable statement");
-            return APSInt();
+        default: FATAL_ERROR("Unreachable statement");
     }
 }
 
@@ -450,7 +446,7 @@ APSInt LiteralAnalyser::checkBinaryLiterals(const Expr *Right) {
             break;
         }
         {
-            uint64_t rightHandSide = R.getExtValue();
+            uint64_t rightHandSide = (uint64_t)R.getExtValue();
             if (rightHandSide > L.getBitWidth()) {
                 Diags.Report(rhs->getLocation(), diag::warn_shift_gt_typewidth) << 0;
                 break;
@@ -476,7 +472,7 @@ APSInt LiteralAnalyser::checkBinaryLiterals(const Expr *Right) {
     case BO_Comma:
         return R;
     case BO_Cmp:
-        assert(0 && "Not used");
+        FATAL_ERROR("Not used");
         break;
     case BO_Assign:
     case BO_MulAssign:

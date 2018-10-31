@@ -17,9 +17,9 @@
 #include <ctype.h>
 #include <vector>
 
-#include <clang/Parse/ParseDiagnostic.h>
-#include <clang/Sema/SemaDiagnostic.h>
-#include <clang/Basic/SourceLocation.h>
+#include "Clang/ParseDiagnostic.h"
+#include "Clang/SemaDiagnostic.h"
+#include "Clang/SourceLocation.h"
 
 #include "Parser/C2Parser.h"
 #include "Parser/C2Sema.h"
@@ -27,7 +27,7 @@
 #include "AST/Expr.h"
 
 using namespace C2;
-using namespace clang;
+using namespace c2lang;
 
 #ifdef PARSER_DEBUG
 #include <iostream>

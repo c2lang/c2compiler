@@ -19,11 +19,11 @@
 #include <string>
 #include <vector>
 #include <llvm/ADT/APSInt.h>
-#include <clang/Basic/SourceLocation.h>
+#include "Clang/SourceLocation.h"
 #include "AST/Type.h"
 #include "Analyser/ExprTypeAnalyser.h"
 
-namespace clang {
+namespace c2lang {
 class DiagnosticsEngine;
 class DiagnosticBuilder;
 }
@@ -52,7 +52,7 @@ public:
     FunctionAnalyser(Scope& scope_,
                     TypeResolver& typeRes_,
                     ASTContext& context_,
-                    clang::DiagnosticsEngine& Diags_,
+                    c2lang::DiagnosticsEngine& Diags_,
                     bool isInterface_);
 
     void check(FunctionDecl* F);
@@ -95,7 +95,7 @@ private:
     bool exprIsType(const Expr* E) const;
     QualType analyseParenExpr(Expr* expr);
     bool analyseBitOffsetIndex(Expr* expr, llvm::APSInt* Result, BuiltinType* BaseType);
-    QualType analyseBitOffsetExpr(Expr* expr, QualType BaseType, clang::SourceLocation base);
+    QualType analyseBitOffsetExpr(Expr* expr, QualType BaseType, c2lang::SourceLocation base);
     QualType analyseExplicitCastExpr(Expr* expr);
     QualType analyseCall(Expr* expr);
     bool checkCallArgs(FunctionDecl* func, CallExpr* call);
@@ -110,7 +110,7 @@ private:
     void analyseArrayType(VarDecl* V, QualType T);
     void analyseArraySizeExpr(ArrayType* AT);
 
-    clang::DiagnosticBuilder Diag(clang::SourceLocation Loc, unsigned DiagID) const;
+    c2lang::DiagnosticBuilder Diag(c2lang::SourceLocation Loc, unsigned DiagID) const;
     void pushMode(unsigned DiagID);
     void popMode();
 
@@ -129,7 +129,7 @@ private:
         FunctionAnalyser& analyser;
     };
 
-    LabelDecl* LookupOrCreateLabel(const char* name, clang::SourceLocation loc);
+    LabelDecl* LookupOrCreateLabel(const char* name, c2lang::SourceLocation loc);
 
     bool checkAssignee(Expr* expr) const;
     void checkAssignment(Expr* assignee, QualType TLeft);
@@ -147,7 +147,7 @@ private:
     ASTContext& Context;
     ExprTypeAnalyser EA;
 
-    clang::DiagnosticsEngine& Diags;
+    c2lang::DiagnosticsEngine& Diags;
 
     FunctionDecl* CurrentFunction;
     VarDecl* CurrentVarDecl;

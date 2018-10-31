@@ -26,8 +26,8 @@
 #include "Analyser/AnalyserConstants.h"
 #include "Analyser/AnalyserUtils.h"
 
-#include <clang/Basic/SourceLocation.h>
-#include <clang/Basic/SourceManager.h>
+#include "Clang/SourceLocation.h"
+#include "Clang/SourceManager.h"
 
 #include <string.h>
 #include <assert.h>
@@ -40,17 +40,17 @@ namespace C2 {
 
 class TagVisitor : public ASTVisitor {
 public:
-    TagVisitor(TagWriter& writer_, const Decl* D, const clang::SourceManager& SM_)
+    TagVisitor(TagWriter& writer_, const Decl* D, const c2lang::SourceManager& SM_)
         : ASTVisitor(D), writer(writer_), SM(SM_)
     {}
     virtual ~TagVisitor() {}
 
     virtual void visitIdentifierExpr(const IdentifierExpr* I) {
-        clang::PresumedLoc loc = SM.getPresumedLoc(I->getLocation());
+        c2lang::PresumedLoc loc = SM.getPresumedLoc(I->getLocation());
         assert(!loc.isInvalid() && "Invalid location");
         const Decl* D = I->getDecl();
         assert(D);
-        clang::PresumedLoc loc2 = SM.getPresumedLoc(D->getLocation());
+        c2lang::PresumedLoc loc2 = SM.getPresumedLoc(D->getLocation());
         if (!loc2.isInvalid()) {
             std::string name = I->getName();
 
@@ -67,7 +67,7 @@ public:
     }
 private:
     TagWriter& writer;
-    const clang::SourceManager& SM;
+    const c2lang::SourceManager& SM;
 };
 
 
@@ -123,7 +123,7 @@ struct TagFile {
 }
 
 
-TagWriter::TagWriter(const clang::SourceManager& SM_, const Components& components)
+TagWriter::TagWriter(const c2lang::SourceManager& SM_, const Components& components)
     : SM(SM_)
     , currentFile(0)
 {

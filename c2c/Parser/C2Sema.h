@@ -16,7 +16,7 @@
 #ifndef PARSER_C2SEMA_H
 #define PARSER_C2SEMA_H
 
-#include <clang/Basic/SourceLocation.h>
+#include "Clang/SourceLocation.h"
 #include <vector>
 #include <map>
 
@@ -26,20 +26,20 @@
 #include "AST/Type.h"
 #include "Parser/ParserTypes.h"
 
-namespace clang {
+namespace c2lang {
 class SourceManager;
 class Token;
 class DiagnosticsEngine;
 class Preprocessor;
 }
 
-using clang::SourceLocation;
-using clang::SourceManager;
-using clang::Token;
-using clang::DiagnosticsEngine;
+using c2lang::SourceLocation;
+using c2lang::SourceManager;
+using c2lang::Token;
+using c2lang::DiagnosticsEngine;
 
 // TEMP
-using namespace clang;
+using namespace c2lang;
 
 namespace C2 {
 
@@ -54,7 +54,7 @@ typedef std::vector<VarDecl*> VarDeclList;
 
 class C2Sema {
 public:
-    C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, clang::Preprocessor& PP_,
+    C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, c2lang::Preprocessor& PP_,
            Component& comp_, Module* existingMod, const std::string& filename_,
            const TargetInfo& ti);
     ~C2Sema();
@@ -153,7 +153,7 @@ private:
 
     SourceManager& SourceMgr;
     DiagnosticsEngine& Diags;
-    clang::Preprocessor& PP;
+    c2lang::Preprocessor& PP;
 
     Component& component;
     Module* module;

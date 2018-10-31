@@ -16,7 +16,7 @@
 #ifndef PARSER_C2PARSER_H
 #define PARSER_C2PARSER_H
 
-#include <clang/Lex/Preprocessor.h>
+#include "Clang/Preprocessor.h"
 #include "Parser/Ownership.h"
 #include "Parser/ParserTypes.h"
 
@@ -28,7 +28,7 @@
 #endif
 
 // EXCEPTION
-using namespace clang;
+using namespace c2lang;
 
 namespace C2 {
 
@@ -62,12 +62,12 @@ class C2Parser {
 public:
     friend class BalancedDelimiterTracker;
 
-    C2Parser(clang::Preprocessor& pp, C2Sema& sema, bool isInterface_);
+    C2Parser(c2lang::Preprocessor& pp, C2Sema& sema, bool isInterface_);
     ~C2Parser();
 
     bool Parse();
 private:
-    clang::Preprocessor& PP;
+    c2lang::Preprocessor& PP;
     Token Tok;
     SourceLocation PrevTokLocation;
     unsigned short ParenCount, BracketCount, BraceCount;

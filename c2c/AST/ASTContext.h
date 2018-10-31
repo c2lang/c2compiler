@@ -21,7 +21,7 @@
 #include <string.h>
 #include <vector>
 
-#include "llvm/Support/Allocator.h"
+#include <llvm/Support/Allocator.h>
 #include "AST/Type.h"
 
 namespace C2 {

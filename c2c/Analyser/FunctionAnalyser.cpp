@@ -18,8 +18,8 @@
 
 #include <llvm/ADT/SmallString.h>
 #include <llvm/ADT/APInt.h>
-#include <clang/Parse/ParseDiagnostic.h>
-#include <clang/Sema/SemaDiagnostic.h>
+#include "Clang/ParseDiagnostic.h"
+#include "Clang/SemaDiagnostic.h"
 
 #include "Analyser/FunctionAnalyser.h"
 #include "Analyser/TypeResolver.h"
@@ -34,7 +34,7 @@
 #include "Utils/StringBuilder.h"
 
 using namespace C2;
-using namespace clang;
+using namespace c2lang;
 
 //#define ANALYSER_DEBUG
 
@@ -93,7 +93,7 @@ static void SetConstantFlags(Decl* D, Expr* expr) {
 FunctionAnalyser::FunctionAnalyser(Scope& scope_,
                                    TypeResolver& typeRes_,
                                    ASTContext& context_,
-                                   clang::DiagnosticsEngine& Diags_,
+                                   c2lang::DiagnosticsEngine& Diags_,
                                    bool isInterface_)
     : scope(scope_)
     , TR(typeRes_)

@@ -17,10 +17,9 @@
 #include <ctype.h>
 
 #include <llvm/ADT/APFloat.h>
-#include <clang/AST/Expr.h>
-#include <clang/Parse/ParseDiagnostic.h>
-#include <clang/Sema/SemaDiagnostic.h>
-#include <clang/Lex/LiteralSupport.h>
+#include "Clang/ParseDiagnostic.h"
+#include "Clang/SemaDiagnostic.h"
+#include "Clang/LiteralSupport.h"
 
 #include "Parser/C2Sema.h"
 #include "AST/AST.h"
@@ -38,7 +37,7 @@
 #endif
 
 using namespace C2;
-using namespace clang;
+using namespace c2lang;
 using llvm::APFloat;
 
 #ifdef SEMA_MEMSIZE
@@ -70,8 +69,8 @@ static const char* exprNames[EXPR_CAST+1];
 #define MEM_EXPR(x)
 #endif
 
-static inline clang::BinaryOperatorKind ConvertTokenKindToBinaryOpcode(tok::TokenKind Kind) {
-    clang::BinaryOperatorKind Opc;
+static inline c2lang::BinaryOperatorKind ConvertTokenKindToBinaryOpcode(tok::TokenKind Kind) {
+    c2lang::BinaryOperatorKind Opc;
     switch (Kind) {
     default: llvm_unreachable("Unknown binop!");
     case tok::periodstar:           Opc = BO_PtrMemD; break;
@@ -130,7 +129,7 @@ static inline UnaryOperatorKind ConvertTokenKindToUnaryOpcode(
     return Opc;
 }
 
-C2Sema::C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, clang::Preprocessor& PP_,
+C2Sema::C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, c2lang::Preprocessor& PP_,
                Component& component_, Module* existingMod, const std::string& filename_,
                const TargetInfo& ti)
     : SourceMgr(sm_)
@@ -412,7 +411,7 @@ void C2Sema::ActOnImport(const char* moduleName_, SourceLocation loc, Token& ali
         return;
     }
     const char* name = moduleName;
-    clang::SourceLocation realLoc = loc;
+    c2lang::SourceLocation realLoc = loc;
     if (aliasTok.is(tok::identifier)) {
         IdentifierInfo* aliasSym = aliasTok.getIdentifierInfo();
         name = Context.addIdentifier(aliasSym->getNameStart(), aliasSym->getLength());
@@ -921,7 +920,7 @@ C2::ExprResult C2Sema::ActOnBinOp(SourceLocation opLoc, tok::TokenKind Kind, Exp
     opLoc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
-    clang::BinaryOperatorKind Opc = ConvertTokenKindToBinaryOpcode(Kind);
+    c2lang::BinaryOperatorKind Opc = ConvertTokenKindToBinaryOpcode(Kind);
 
     // Emit warnings for tricky precedence issues, e.g. "bitfield & 0x4 == 0"
     //DiagnoseBinOpPrecedence(*this, Opc, TokLoc, LHSExpr, RHSExpr);

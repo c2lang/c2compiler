@@ -14,8 +14,8 @@
  */
 
 #include <assert.h>
-#include <clang/Parse/ParseDiagnostic.h>
-#include <clang/Sema/SemaDiagnostic.h>
+#include "Clang/ParseDiagnostic.h"
+#include "Clang/SemaDiagnostic.h"
 
 #include "Analyser/ExprTypeAnalyser.h"
 #include "Analyser/LiteralAnalyser.h"
@@ -28,7 +28,7 @@
 
 using namespace C2;
 using namespace llvm;
-using namespace clang;
+using namespace c2lang;
 
 // 0 = ok,
 // 1 = loss of integer precision,
@@ -66,7 +66,7 @@ static int type_conversions[14][14] = {
 
 
 
-ExprTypeAnalyser::ExprTypeAnalyser(DiagnosticsEngine& Diags_)
+ExprTypeAnalyser::ExprTypeAnalyser(c2lang::DiagnosticsEngine& Diags_)
     : Diags(Diags_)
 {}
 

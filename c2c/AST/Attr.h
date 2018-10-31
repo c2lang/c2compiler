@@ -19,7 +19,7 @@
 #include <vector>
 #include <map>
 #include "Utils/Errors.h"
-#include <clang/Basic/SourceLocation.h>
+#include "Clang/SourceLocation.h"
 
 namespace C2 {
 
@@ -60,13 +60,13 @@ struct AttrInfo {
 
 class Attr {
 public:
-    Attr(AttrKind k, clang::SourceRange R, Expr* e) : Range(R), kind(k), arg(e) {}
+    Attr(AttrKind k, c2lang::SourceRange R, Expr* e) : Range(R), kind(k), arg(e) {}
 
     void* operator new(size_t bytes, const ASTContext& C, unsigned alignment = 8);
 
     AttrKind getKind() const { return kind; }
-    clang::SourceRange getRange() const { return Range; }
-    clang::SourceLocation getLocation() const { return Range.getBegin(); }
+    c2lang::SourceRange getRange() const { return Range; }
+    c2lang::SourceLocation getLocation() const { return Range.getBegin(); }
 
     static AttrKind name2kind(const char* name);
     static const AttrInfo& getInfo(AttrKind kind);
@@ -83,7 +83,7 @@ private:
         FATAL_ERROR("Attr cannot be released with regular 'delete'");
     }
 
-    clang::SourceRange Range;
+    c2lang::SourceRange Range;
     AttrKind kind;
     Expr* arg;
 };

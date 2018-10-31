@@ -19,7 +19,7 @@
 #include <vector>
 #include "AST/Module.h"
 
-namespace clang {
+namespace c2lang {
 class DiagnosticsEngine;
 }
 
@@ -34,7 +34,7 @@ class ComponentAnalyser {
 public:
     ComponentAnalyser(Component& C,
                       const Modules& modules_,
-                      clang::DiagnosticsEngine& Diags_,
+                      c2lang::DiagnosticsEngine& Diags_,
                       ASTContext& context_,
                       bool verbose_);
     ~ComponentAnalyser();
@@ -43,7 +43,7 @@ public:
 private:
     void printASTs(bool printLib) const;
 
-    clang::DiagnosticsEngine& Diags;
+    c2lang::DiagnosticsEngine& Diags;
     ASTContext& context;
     bool verbose;
 

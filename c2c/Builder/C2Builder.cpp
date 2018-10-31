@@ -26,26 +26,26 @@
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/IntrusiveRefCntPtr.h>
 #include <llvm/Support/Host.h>
-#include <clang/Parse/ParseDiagnostic.h>
-#include <clang/Basic/DiagnosticOptions.h>
-#include <clang/Basic/FileManager.h>
-#include <clang/Basic/FileSystemOptions.h>
-#include <clang/Basic/MacroBuilder.h>
-#include <clang/Basic/LangOptions.h>
-#include <clang/Basic/SourceManager.h>
-#include <clang/Basic/TargetInfo.h>
-#include <clang/Basic/TargetOptions.h>
-#include <clang/Basic/MemoryBufferCache.h>
-#include <clang/Frontend/TextDiagnosticPrinter.h>
-#include <clang/Frontend/Utils.h>
-#include <clang/Lex/HeaderSearch.h>
-#include <clang/Lex/HeaderSearchOptions.h>
-#include <clang/Lex/ModuleLoader.h>
-#include <clang/Lex/Preprocessor.h>
-#include <clang/Lex/PreprocessorOptions.h>
-#include <clang/Sema/SemaDiagnostic.h>
+#include "Clang/ParseDiagnostic.h"
+#include "Clang/DiagnosticOptions.h"
+#include "Clang/FileManager.h"
+#include "Clang/FileSystemOptions.h"
+#include "Clang/MacroBuilder.h"
+#include "Clang/LangOptions.h"
+#include "Clang/SourceManager.h"
+#include "Clang/TargetInfo.h"
+#include "Clang/TargetOptions.h"
+#include "Clang/MemoryBufferCache.h"
+#include "Clang/TextDiagnosticPrinter.h"
+#include "Clang/Utils.h"
+#include "Clang/HeaderSearch.h"
+#include "Clang/HeaderSearchOptions.h"
+#include "Clang/ModuleLoader.h"
+#include "Clang/Preprocessor.h"
+#include "Clang/PreprocessorOptions.h"
+#include "Clang/SemaDiagnostic.h"
 // for Rewriter
-#include <clang/Rewrite/Core/Rewriter.h>
+#include "Clang/Rewriter.h"
 
 #include "Builder/C2Builder.h"
 #include "Builder/Recipe.h"
@@ -68,24 +68,24 @@
 #include "Utils/StringBuilder.h"
 #include "Utils/BuildFile.h"
 
-using clang::DiagnosticOptions;
-using clang::DiagnosticsEngine;
-using clang::FileEntry;
-using clang::FileManager;
-using clang::FileSystemOptions;
-using clang::HeaderSearch;
-using clang::HeaderSearchOptions;
-using clang::LangOptions;
-using clang::ModuleLoader;
-using clang::Preprocessor;
-using clang::PreprocessorOptions;
-using clang::SourceManager;
-using clang::TargetInfo;
-using clang::TargetOptions;
-using clang::TextDiagnosticPrinter;
+using c2lang::DiagnosticOptions;
+using c2lang::DiagnosticsEngine;
+using c2lang::FileEntry;
+using c2lang::FileManager;
+using c2lang::FileSystemOptions;
+using c2lang::HeaderSearch;
+using c2lang::HeaderSearchOptions;
+using c2lang::LangOptions;
+using c2lang::ModuleLoader;
+using c2lang::Preprocessor;
+using c2lang::PreprocessorOptions;
+using c2lang::SourceManager;
+using c2lang::TargetInfo;
+using c2lang::TargetOptions;
+using c2lang::TextDiagnosticPrinter;
 
 using namespace C2;
-using namespace clang;
+using namespace c2lang;
 
 #define OUTPUT_DIR "output/"
 #define BUILD_DIR  "build/"
@@ -98,7 +98,7 @@ public:
 
     virtual ModuleLoadResult loadModule(SourceLocation ImportLoc,
                                         ModuleIdPath Path,
-                                        clang::Module::NameVisibilityKind Visibility,
+                                        c2lang::Module::NameVisibilityKind Visibility,
                                         bool IsInclusionDirective)
     {
         fprintf(stderr, "MODULE LOADER: loadModule\n");
@@ -112,8 +112,8 @@ public:
     }
 
 
-    virtual void makeModuleVisible(clang::Module *Mod,
-                                   clang::Module::NameVisibilityKind Visibility,
+    virtual void makeModuleVisible(c2lang::Module *Mod,
+                                   c2lang::Module::NameVisibilityKind Visibility,
                                    SourceLocation ImportLoc)
     {
         fprintf(stderr, "MODULE LOADER: make visible\n");
@@ -140,7 +140,7 @@ class ParseHelper {
 public:
     ParseHelper(DiagnosticsEngine& Diags_,
                 LangOptions& LangOpts_,
-                clang::TargetInfo* pti_,
+                c2lang::TargetInfo* pti_,
                 std::shared_ptr<HeaderSearchOptions> HSOpts_,
                 SourceManager& SM_,
                 FileManager& FileMgr_,
@@ -209,7 +209,7 @@ public:
 
     DiagnosticsEngine& Diags;
     LangOptions& LangOpts;
-    clang::TargetInfo* pti;
+    c2lang::TargetInfo* pti;
     std::shared_ptr<HeaderSearchOptions> HSOpts;
     SourceManager& SM;
     FileManager& FileMgr;
@@ -366,8 +366,8 @@ int C2Builder::build() {
     // TargetInfo
     std::shared_ptr<TargetOptions> to(new TargetOptions());
     to->Triple = llvm::sys::getDefaultTargetTriple();
-    clang::TargetInfo *pti = clang::TargetInfo::CreateTargetInfo(Diags, to);
-    IntrusiveRefCntPtr<clang::TargetInfo> Target(pti);
+    c2lang::TargetInfo *pti = c2lang::TargetInfo::CreateTargetInfo(Diags, to);
+    IntrusiveRefCntPtr<c2lang::TargetInfo> Target(pti);
 
     std::shared_ptr<HeaderSearchOptions> HSOpts(new HeaderSearchOptions());
     // add current directory (=project root) to #include path
@@ -375,7 +375,7 @@ int C2Builder::build() {
     if (getcwd(pwd, 512) == 0) {
         FATAL_ERROR("Failed to get current directory");
     }
-    HSOpts->AddPath(pwd, clang::frontend::Quoted, false, false);
+    HSOpts->AddPath(pwd, c2lang::frontend::Quoted, false, false);
 
     // set definitions from recipe
     std::string PredefineBuffer;
@@ -528,7 +528,7 @@ bool C2Builder::checkModuleImports(ParseHelper& helper, Component* component, Mo
             }
             const LibInfo* target = libLoader.findModuleLib(targetModuleName);
             if (!target) {
-                helper.Diags.Report(D->getLocation(), clang::diag::err_unknown_module) << targetModuleName;
+                helper.Diags.Report(D->getLocation(), c2lang::diag::err_unknown_module) << targetModuleName;
                 ok = false;
                 continue;
             }
@@ -536,7 +536,7 @@ bool C2Builder::checkModuleImports(ParseHelper& helper, Component* component, Mo
             if (target->component != component) {
                 // check that imports are in directly dependent component (no indirect component)
                 if (!component->hasDep(target->component)) {
-                    helper.Diags.Report(D->getLocation(), clang::diag::err_indirect_component)
+                    helper.Diags.Report(D->getLocation(), c2lang::diag::err_indirect_component)
                             << component->getName() << target->component->getName() << targetModuleName;
                     ok = false;
                     continue;

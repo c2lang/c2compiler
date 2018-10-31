@@ -19,12 +19,12 @@
 #include <string>
 #include <map>
 
-#include <clang/Basic/SourceLocation.h>
+#include "Clang/SourceLocation.h"
 
 #include "AST/Attr.h"
 #include "AST/AST.h"
 
-namespace clang {
+namespace c2lang {
 class SourceLocation;
 }
 

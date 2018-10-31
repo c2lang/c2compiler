@@ -53,7 +53,7 @@
 
 using namespace C2;
 using namespace llvm;
-using namespace clang;
+using namespace c2lang;
 
 CCodeGenerator::CCodeGenerator(const std::string& filename_,
                                Mode mode_,

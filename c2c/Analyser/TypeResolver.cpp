@@ -16,9 +16,9 @@
 #include <string>
 #include <assert.h>
 
-#include <clang/Basic/SourceLocation.h>
-#include <clang/Parse/ParseDiagnostic.h>
-#include <clang/Sema/SemaDiagnostic.h>
+#include "Clang/SourceLocation.h"
+#include "Clang/ParseDiagnostic.h"
+#include "Clang/SemaDiagnostic.h"
 
 #include "Analyser/Scope.h"
 #include "Analyser/TypeResolver.h"
@@ -31,9 +31,9 @@
 #include "Utils/StringBuilder.h"
 
 using namespace C2;
-using namespace clang;
+using namespace c2lang;
 
-TypeResolver::TypeResolver(Scope& g, clang::DiagnosticsEngine& Diags_, ASTContext& ctx_)
+TypeResolver::TypeResolver(Scope& g, c2lang::DiagnosticsEngine& Diags_, ASTContext& ctx_)
     : globals(g)
     , Diags(Diags_)
     , Context(ctx_)
