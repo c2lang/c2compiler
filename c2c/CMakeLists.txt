@@ -70,7 +70,6 @@ add_library(c2core
     Clang/PPLexerChange.cpp
     Clang/PPMacroExpansion.cpp
     Clang/PTHLexer.cpp
-    Clang/Pragma.cpp
     Clang/PreprocessingRecord.cpp
     Clang/Preprocessor.cpp
     Clang/PreprocessorLexer.cpp

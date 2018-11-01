@@ -161,7 +161,6 @@ void Preprocessor::RegisterBuiltinMacros() {
   Ident__DATE__ = RegisterBuiltinMacro(*this, "__DATE__");
   Ident__TIME__ = RegisterBuiltinMacro(*this, "__TIME__");
   Ident__COUNTER__ = RegisterBuiltinMacro(*this, "__COUNTER__");
-  Ident_Pragma  = RegisterBuiltinMacro(*this, "_Pragma");
 
   Ident__has_cpp_attribute = nullptr;
 
@@ -171,7 +170,6 @@ void Preprocessor::RegisterBuiltinMacros() {
   Ident__TIMESTAMP__     = RegisterBuiltinMacro(*this, "__TIMESTAMP__");
 
   Ident__identifier = nullptr;
-  Ident__pragma = nullptr;
 
   // Clang Extensions.
   Ident__has_feature      = RegisterBuiltinMacro(*this, "__has_feature");
@@ -897,7 +895,6 @@ static void ComputeDATE_TIME(SourceLocation &DATELoc, SourceLocation &TIMELoc,
 /// HasFeature - Return true if we recognize and implement the feature
 /// specified by the identifier as a standard language feature.
 static bool HasFeature(const Preprocessor &PP, StringRef Feature) {
-  const LangOptions &LangOpts = PP.getLangOpts();
 
   // Normalize the feature name, __foo__ becomes foo.
   if (Feature.startswith("__") && Feature.endswith("__") && Feature.size() >= 4)
@@ -1043,7 +1040,7 @@ static bool EvaluateHasIncludeCommon(Token &Tok,
   const DirectoryLookup *CurDir;
   const FileEntry *File =
       PP.LookupFile(FilenameLoc, Filename, isAngled, LookupFrom, LookupFromFile,
-                    CurDir, nullptr, nullptr, nullptr, nullptr);
+                    CurDir, nullptr, nullptr, nullptr);
 
   // Get the result value.  A result of true means the file exists.
   return File != nullptr;
@@ -1257,10 +1254,6 @@ void Preprocessor::ExpandBuiltinMacro(Token &Tok) {
   IdentifierInfo *II = Tok.getIdentifierInfo();
   assert(II && "Can't be a macro without id info!");
 
-  // If this is an _Pragma or Microsoft __pragma directive, expand it,
-  // invoke the pragma handler, then lex the token after it.
-  if (II == Ident_Pragma)
-    return Handle_Pragma(Tok);
 
   ++NumBuiltinMacroExpanded;
 
@@ -1400,7 +1393,6 @@ void Preprocessor::ExpandBuiltinMacro(Token &Tok) {
       [this](Token &Tok, bool &HasLexedNextToken) -> int {
         IdentifierInfo *II = ExpectFeatureIdentifierInfo(Tok, *this,
                                            diag::err_feature_check_malformed);
-        const LangOptions &LangOpts = getLangOpts();
         if (!II)
           return false;
         else  {
@@ -1512,7 +1504,7 @@ void Preprocessor::ExpandBuiltinMacro(Token &Tok) {
     // currently building.
     EvaluateFeatureLikeBuiltinMacro(OS, Tok, II, *this,
       [this](Token &Tok, bool &HasLexedNextToken) -> int {
-        IdentifierInfo *II = ExpectFeatureIdentifierInfo(Tok, *this,
+        ExpectFeatureIdentifierInfo(Tok, *this,
                                        diag::err_expected_id_building_module);
         return false;
       });

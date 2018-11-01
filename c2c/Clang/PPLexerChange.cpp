@@ -120,7 +120,7 @@ void Preprocessor::EnterSourceFileWithLexer(Lexer *TheLexer,
   CurLexerKind = CLK_Lexer;
 
   // Notify the client, if desired, that we are in a new source file.
-  if (Callbacks && !CurLexer->Is_PragmaLexer) {
+  if (Callbacks) {
     SrcMgr::CharacteristicKind FileType =
        SourceMgr.getFileCharacteristic(CurLexer->getFileLoc());
 
@@ -312,27 +312,6 @@ bool Preprocessor::HandleEndOfFile(Token &Result, bool isEndOfMacro) {
     }
   }
 
-  // Complain about reaching a true EOF within arc_cf_code_audited.
-  // We don't want to complain about reaching the end of a macro
-  // instantiation or a _Pragma.
-  if (PragmaARCCFCodeAuditedLoc.isValid() &&
-      !isEndOfMacro && !(CurLexer && CurLexer->Is_PragmaLexer)) {
-    Diag(PragmaARCCFCodeAuditedLoc, diag::err_pp_eof_in_arc_cf_code_audited);
-
-    // Recover by leaving immediately.
-    PragmaARCCFCodeAuditedLoc = SourceLocation();
-  }
-
-  // Complain about reaching a true EOF within assume_nonnull.
-  // We don't want to complain about reaching the end of a macro
-  // instantiation or a _Pragma.
-  if (PragmaAssumeNonNullLoc.isValid() &&
-      !isEndOfMacro && !(CurLexer && CurLexer->Is_PragmaLexer)) {
-    Diag(PragmaAssumeNonNullLoc, diag::err_pp_eof_in_assume_nonnull);
-
-    // Recover by leaving immediately.
-    PragmaAssumeNonNullLoc = SourceLocation();
-  }
 
   bool LeavingPCHThroughHeader = false;
 

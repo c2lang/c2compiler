@@ -639,7 +639,6 @@ PreambleBounds Lexer::ComputePreamble(StringRef Buffer,
               .Case("undef", PDK_Skipped)
               .Case("line", PDK_Skipped)
               .Case("error", PDK_Skipped)
-              .Case("pragma", PDK_Skipped)
               .Case("import", PDK_Skipped)
               .Case("include_next", PDK_Skipped)
               .Case("warning", PDK_Skipped)

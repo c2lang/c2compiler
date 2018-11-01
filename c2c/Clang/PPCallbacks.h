@@ -18,7 +18,6 @@
 #include "Clang/DiagnosticIDs.h"
 #include "Clang/SourceLocation.h"
 #include "Clang/SourceManager.h"
-#include "Clang/Pragma.h"
 #include <llvm/ADT/StringRef.h>
 
 namespace c2lang {
@@ -37,7 +36,7 @@ public:
   virtual ~PPCallbacks();
 
   enum FileChangeReason {
-    EnterFile, ExitFile, SystemHeaderPragma, RenameFile
+    EnterFile, ExitFile, RenameFile
   };
 
   /// Callback invoked whenever a source file is entered or exited.
@@ -144,92 +143,6 @@ public:
   virtual void Ident(SourceLocation Loc, StringRef str) {
   }
 
-  /// Callback invoked when start reading any pragma directive.
-  virtual void PragmaDirective(SourceLocation Loc,
-                               PragmaIntroducerKind Introducer) {
-  }
-
-  /// Callback invoked when a \#pragma comment directive is read.
-  virtual void PragmaComment(SourceLocation Loc, const IdentifierInfo *Kind,
-                             StringRef Str) {
-  }
-
-  /// Callback invoked when a \#pragma detect_mismatch directive is
-  /// read.
-  virtual void PragmaDetectMismatch(SourceLocation Loc, StringRef Name,
-                                    StringRef Value) {
-  }
-
-  /// Callback invoked when a \#pragma clang __debug directive is read.
-  /// \param Loc The location of the debug directive.
-  /// \param DebugType The identifier following __debug.
-  virtual void PragmaDebug(SourceLocation Loc, StringRef DebugType) {
-  }
-
-  /// Determines the kind of \#pragma invoking a call to PragmaMessage.
-  enum PragmaMessageKind {
-    /// \#pragma message has been invoked.
-    PMK_Message,
-
-    /// \#pragma GCC warning has been invoked.
-    PMK_Warning,
-
-    /// \#pragma GCC error has been invoked.
-    PMK_Error
-  };
-
-  /// Callback invoked when a \#pragma message directive is read.
-  /// \param Loc The location of the message directive.
-  /// \param Namespace The namespace of the message directive.
-  /// \param Kind The type of the message directive.
-  /// \param Str The text of the message directive.
-  virtual void PragmaMessage(SourceLocation Loc, StringRef Namespace,
-                             PragmaMessageKind Kind, StringRef Str) {
-  }
-
-  /// Callback invoked when a \#pragma gcc diagnostic push directive
-  /// is read.
-  virtual void PragmaDiagnosticPush(SourceLocation Loc,
-                                    StringRef Namespace) {
-  }
-
-  /// Callback invoked when a \#pragma gcc diagnostic pop directive
-  /// is read.
-  virtual void PragmaDiagnosticPop(SourceLocation Loc,
-                                   StringRef Namespace) {
-  }
-
-  /// Callback invoked when a \#pragma gcc diagnostic directive is read.
-  virtual void PragmaDiagnostic(SourceLocation Loc, StringRef Namespace,
-                                diag::Severity mapping, StringRef Str) {}
-
-  /// Called when an OpenCL extension is either disabled or
-  /// enabled with a pragma.
-  virtual void PragmaOpenCLExtension(SourceLocation NameLoc,
-                                     const IdentifierInfo *Name,
-                                     SourceLocation StateLoc, unsigned State) {
-  }
-
-  /// Callback invoked when a \#pragma warning directive is read.
-  virtual void PragmaWarning(SourceLocation Loc, StringRef WarningSpec,
-                             ArrayRef<int> Ids) {
-  }
-
-  /// Callback invoked when a \#pragma warning(push) directive is read.
-  virtual void PragmaWarningPush(SourceLocation Loc, int Level) {
-  }
-
-  /// Callback invoked when a \#pragma warning(pop) directive is read.
-  virtual void PragmaWarningPop(SourceLocation Loc) {
-  }
-
-  /// Callback invoked when a \#pragma clang assume_nonnull begin directive
-  /// is read.
-  virtual void PragmaAssumeNonNullBegin(SourceLocation Loc) {}
-
-  /// Callback invoked when a \#pragma clang assume_nonnull end directive
-  /// is read.
-  virtual void PragmaAssumeNonNullEnd(SourceLocation Loc) {}
 
   /// Called by Preprocessor::HandleMacroExpandedIdentifier when a
   /// macro invocation is found.
@@ -375,82 +288,6 @@ public:
     Second->Ident(Loc, str);
   }
 
-  void PragmaDirective(SourceLocation Loc,
-                       PragmaIntroducerKind Introducer) override {
-    First->PragmaDirective(Loc, Introducer);
-    Second->PragmaDirective(Loc, Introducer);
-  }
-
-  void PragmaComment(SourceLocation Loc, const IdentifierInfo *Kind,
-                     StringRef Str) override {
-    First->PragmaComment(Loc, Kind, Str);
-    Second->PragmaComment(Loc, Kind, Str);
-  }
-
-  void PragmaDetectMismatch(SourceLocation Loc, StringRef Name,
-                            StringRef Value) override {
-    First->PragmaDetectMismatch(Loc, Name, Value);
-    Second->PragmaDetectMismatch(Loc, Name, Value);
-  }
-
-  void PragmaDebug(SourceLocation Loc, StringRef DebugType) override {
-    First->PragmaDebug(Loc, DebugType);
-    Second->PragmaDebug(Loc, DebugType);
-  }
-
-  void PragmaMessage(SourceLocation Loc, StringRef Namespace,
-                     PragmaMessageKind Kind, StringRef Str) override {
-    First->PragmaMessage(Loc, Namespace, Kind, Str);
-    Second->PragmaMessage(Loc, Namespace, Kind, Str);
-  }
-
-  void PragmaDiagnosticPush(SourceLocation Loc, StringRef Namespace) override {
-    First->PragmaDiagnosticPush(Loc, Namespace);
-    Second->PragmaDiagnosticPush(Loc, Namespace);
-  }
-
-  void PragmaDiagnosticPop(SourceLocation Loc, StringRef Namespace) override {
-    First->PragmaDiagnosticPop(Loc, Namespace);
-    Second->PragmaDiagnosticPop(Loc, Namespace);
-  }
-
-  void PragmaDiagnostic(SourceLocation Loc, StringRef Namespace,
-                        diag::Severity mapping, StringRef Str) override {
-    First->PragmaDiagnostic(Loc, Namespace, mapping, Str);
-    Second->PragmaDiagnostic(Loc, Namespace, mapping, Str);
-  }
-
-  void PragmaOpenCLExtension(SourceLocation NameLoc, const IdentifierInfo *Name,
-                             SourceLocation StateLoc, unsigned State) override {
-    First->PragmaOpenCLExtension(NameLoc, Name, StateLoc, State);
-    Second->PragmaOpenCLExtension(NameLoc, Name, StateLoc, State);
-  }
-
-  void PragmaWarning(SourceLocation Loc, StringRef WarningSpec,
-                     ArrayRef<int> Ids) override {
-    First->PragmaWarning(Loc, WarningSpec, Ids);
-    Second->PragmaWarning(Loc, WarningSpec, Ids);
-  }
-
-  void PragmaWarningPush(SourceLocation Loc, int Level) override {
-    First->PragmaWarningPush(Loc, Level);
-    Second->PragmaWarningPush(Loc, Level);
-  }
-
-  void PragmaWarningPop(SourceLocation Loc) override {
-    First->PragmaWarningPop(Loc);
-    Second->PragmaWarningPop(Loc);
-  }
-
-  void PragmaAssumeNonNullBegin(SourceLocation Loc) override {
-    First->PragmaAssumeNonNullBegin(Loc);
-    Second->PragmaAssumeNonNullBegin(Loc);
-  }
-
-  void PragmaAssumeNonNullEnd(SourceLocation Loc) override {
-    First->PragmaAssumeNonNullEnd(Loc);
-    Second->PragmaAssumeNonNullEnd(Loc);
-  }
 
   void MacroExpands(const Token &MacroNameTok, const MacroDefinition &MD,
                     SourceRange Range, const MacroArgs *Args) override {

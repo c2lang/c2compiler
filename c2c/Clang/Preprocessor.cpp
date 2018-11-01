@@ -44,7 +44,6 @@
 #include "Clang/MacroInfo.h"
 #include "Clang/PTHLexer.h"
 #include "Clang/PTHManager.h"
-#include "Clang/Pragma.h"
 #include "Clang/PreprocessingRecord.h"
 #include "Clang/PreprocessorLexer.h"
 #include "Clang/PreprocessorOptions.h"
@@ -72,7 +71,6 @@
 
 using namespace c2lang;
 
-LLVM_INSTANTIATE_REGISTRY(PragmaHandlerRegistry)
 
 ExternalPreprocessorSource::~ExternalPreprocessorSource() = default;
 
@@ -92,7 +90,7 @@ Preprocessor::Preprocessor(std::shared_ptr<PreprocessorOptions> PPOpts,
       // As the language options may have not been loaded yet (when
       // deserializing an ASTUnit), adding keywords to the identifier table is
       // deferred to Preprocessor::Initialize().
-      Identifiers(IILookup), PragmaHandlers(new PragmaNamespace(StringRef())),
+      Identifiers(IILookup),
       TUKind(TUKind), SkipMainFilePreamble(0, true),
       CurSubmoduleState(&NullSubmoduleState) {
   OwnsHeaderSearch = OwnsHeaders;
@@ -108,7 +106,6 @@ Preprocessor::Preprocessor(std::shared_ptr<PreprocessorOptions> PPOpts,
   InMacroArgs = false;
   InMacroArgPreExpansion = false;
   NumCachedTokenLexers = 0;
-  PragmasEnabled = true;
   ParsingIfOrElifDirective = false;
   PreprocessedOutput = false;
 
@@ -121,8 +118,6 @@ Preprocessor::Preprocessor(std::shared_ptr<PreprocessorOptions> PPOpts,
   SetPoisonReason(Ident__VA_ARGS__,diag::ext_pp_bad_vaargs_use);
   Ident__VA_OPT__ = nullptr;
 
-  // Initialize the pragma handlers.
-  RegisterBuiltinPragmas();
 
   // Initialize builtin macros like __LINE__ and friends.
   RegisterBuiltinMacros();
@@ -190,10 +185,6 @@ void Preprocessor::Initialize(const TargetInfo &Target,
 void Preprocessor::InitializeForModelFile() {
   NumEnteredSourceFiles = 0;
 
-  // Reset pragmas
-  PragmaHandlersBackup = std::move(PragmaHandlers);
-  PragmaHandlers = llvm::make_unique<PragmaNamespace>(StringRef());
-  RegisterBuiltinPragmas();
 
   // Reset PredefinesFileID
   PredefinesFileID = FileID();
@@ -202,7 +193,6 @@ void Preprocessor::InitializeForModelFile() {
 void Preprocessor::FinalizeForModelFile() {
   NumEnteredSourceFiles = 1;
 
-  PragmaHandlers = std::move(PragmaHandlersBackup);
 }
 
 void Preprocessor::setPTHManager(PTHManager* pm) {
@@ -258,7 +248,6 @@ void Preprocessor::PrintStats() {
   llvm::errs() << "  " << NumIf << " #if/#ifndef/#ifdef.\n";
   llvm::errs() << "  " << NumElse << " #else/#elif.\n";
   llvm::errs() << "  " << NumEndif << " #endif.\n";
-  llvm::errs() << "  " << NumPragma << " #pragma.\n";
   llvm::errs() << NumSkipped << " #if/#ifndef#ifdef regions skipped\n";
 
   llvm::errs() << NumMacroExpanded << "/" << NumFnMacroExpanded << "/"
@@ -277,8 +266,6 @@ void Preprocessor::PrintStats() {
   // FIXME: List information for all submodules.
   llvm::errs() << "\n  Macros: "
                << llvm::capacity_in_bytes(CurSubmoduleState->Macros);
-  llvm::errs() << "\n  #pragma push_macro Info: "
-               << llvm::capacity_in_bytes(PragmaPushMacroInfo);
   llvm::errs() << "\n  Poison Reasons: "
                << llvm::capacity_in_bytes(PoisonReasons);
   llvm::errs() << "\n  Comment Handlers: "
@@ -305,7 +292,6 @@ size_t Preprocessor::getTotalMemory() const {
     // FIXME: Include sizes from all submodules, and include MacroInfo sizes,
     // and ModuleMacros.
     + llvm::capacity_in_bytes(CurSubmoduleState->Macros)
-    + llvm::capacity_in_bytes(PragmaPushMacroInfo)
     + llvm::capacity_in_bytes(PoisonReasons)
     + llvm::capacity_in_bytes(CommentHandlers);
 }
