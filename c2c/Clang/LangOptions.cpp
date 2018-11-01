@@ -21,21 +21,6 @@ LangOptions::LangOptions() {
 #include "Clang/LangOptions.def"
 }
 
-void LangOptions::resetNonModularOptions() {
-#define LANGOPT(Name, Bits, Default, Description)
-#define BENIGN_LANGOPT(Name, Bits, Default, Description) Name = Default;
-#define BENIGN_ENUM_LANGOPT(Name, Type, Bits, Default, Description) \
-  Name = Default;
-#include "Clang/LangOptions.def"
-
-  // These options do not affect AST generation.
-  SanitizerBlacklistFiles.clear();
-  XRayAlwaysInstrumentFiles.clear();
-  XRayNeverInstrumentFiles.clear();
-
-  CurrentModule.clear();
-  IsHeaderFile = false;
-}
 
 bool LangOptions::isNoBuiltinFunc(StringRef FuncName) const {
   for (unsigned i = 0, e = NoBuiltinFuncs.size(); i != e; ++i)

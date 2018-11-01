@@ -26,8 +26,6 @@
 #include "Clang/TokenKinds.h"
 #include "Clang/Lexer.h"
 #include "Clang/MacroInfo.h"
-#include "Clang/ModuleLoader.h"
-#include "Clang/ModuleMap.h"
 #include "Clang/PPCallbacks.h"
 #include "Clang/PTHLexer.h"
 #include "Clang/Token.h"
@@ -1804,10 +1802,8 @@ public:
   unsigned getCounterValue() const { return CounterValue; }
   void setCounterValue(unsigned V) { CounterValue = V; }
 
-  /// Retrieves the module that we're currently building, if any.
-  Module *getCurrentModule();
 
-  /// Allocate a new MacroInfo object with the provided SourceLocation.
+    /// Allocate a new MacroInfo object with the provided SourceLocation.
   MacroInfo *AllocateMacroInfo(SourceLocation L);
 
   /// Turn the specified lexer token into a fully checked and spelled

@@ -40,7 +40,6 @@
 #include "Clang/Utils.h"
 #include "Clang/HeaderSearch.h"
 #include "Clang/HeaderSearchOptions.h"
-#include "Clang/ModuleLoader.h"
 #include "Clang/Preprocessor.h"
 #include "Clang/PreprocessorOptions.h"
 #include "Clang/SemaDiagnostic.h"

@@ -16,14 +16,12 @@
 
 #include "Clang/LLVM.h"
 #include "Clang/SourceManager.h"
-#include "Clang/ModuleMap.h"
 
 namespace c2lang {
 class HeaderMap;
 class DirectoryEntry;
 class FileEntry;
 class HeaderSearch;
-class Module;
 
 /// DirectoryLookup - This class represents one entry in the search list that
 /// specifies the search order for directories in \#include directives.  It

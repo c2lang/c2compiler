@@ -17,7 +17,6 @@
 
 #include "Clang/CommentOptions.h"
 #include "Clang/LLVM.h"
-#include "Clang/ObjCRuntime.h"
 #include "Clang/Sanitizers.h"
 #include "Clang/Visibility.h"
 #include <llvm/ADT/StringRef.h>
@@ -145,26 +144,6 @@ public:
   /// (files, functions, variables) should not be instrumented.
   std::vector<std::string> SanitizerBlacklistFiles;
 
-  /// Paths to the XRay "always instrument" files specifying which
-  /// objects (files, functions, variables) should be imbued with the XRay
-  /// "always instrument" attribute.
-  /// WARNING: This is a deprecated field and will go away in the future.
-  std::vector<std::string> XRayAlwaysInstrumentFiles;
-
-  /// Paths to the XRay "never instrument" files specifying which
-  /// objects (files, functions, variables) should be imbued with the XRay
-  /// "never instrument" attribute.
-  /// WARNING: This is a deprecated field and will go away in the future.
-  std::vector<std::string> XRayNeverInstrumentFiles;
-
-  /// Paths to the XRay attribute list files, specifying which objects
-  /// (files, functions, variables) should be imbued with the appropriate XRay
-  /// attribute(s).
-  std::vector<std::string> XRayAttrListFiles;
-
-  c2lang::ObjCRuntime ObjCRuntime;
-
-  std::string ObjCConstantStringClass;
 
   /// The name of the handler function to be called when -ftrapv is
   /// specified.
@@ -172,8 +151,6 @@ public:
   /// If none is specified, abort (GCC-compatible behaviour).
   std::string OverflowHandler;
 
-  /// The module currently being compiled as speficied by -fmodule-name.
-  std::string ModuleName;
 
   /// The name of the current module, of which the main source file
   /// is a part. If CompilingModule is set, we are compiling the interface
@@ -215,73 +192,14 @@ public:
   void set##Name(Type Value) { Name = static_cast<unsigned>(Value); }
 #include "Clang/LangOptions.def"
 
-  /// Are we compiling a module interface (.cppm or module map)?
-  bool isCompilingModule() const {
-    return getCompilingModule() != CMK_None;
-  }
 
-  /// Do we need to track the owning module for a local declaration?
-  bool trackLocalOwningModule() const {
-    return isCompilingModule() || ModulesLocalVisibility || ModulesTS;
-  }
-
-  bool isSignedOverflowDefined() const {
-    return getSignedOverflowBehavior() == SOB_Defined;
-  }
-
-
-  bool isCompatibleWithMSVC(MSVCMajorVersion MajorVersion) const {
-    return MSCompatibilityVersion >= MajorVersion * 10000000U;
-  }
-
-  /// Reset all of the options that are not considered when building a
-  /// module.
-  void resetNonModularOptions();
-
-  /// Is this a libc/libm function that is no longer recognized as a
+    /// Is this a libc/libm function that is no longer recognized as a
   /// builtin because a -fno-builtin-* option has been specified?
   bool isNoBuiltinFunc(StringRef Name) const;
 
 
 };
 
-/// Floating point control options
-class FPOptions {
-public:
-  FPOptions() : fp_contract(LangOptions::FPC_Off) {}
-
-  // Used for serializing.
-  explicit FPOptions(unsigned I)
-      : fp_contract(static_cast<LangOptions::FPContractModeKind>(I)) {}
-
-  explicit FPOptions(const LangOptions &LangOpts)
-      : fp_contract(LangOpts.getDefaultFPContractMode()) {}
-
-  bool allowFPContractWithinStatement() const {
-    return fp_contract == LangOptions::FPC_On;
-  }
-
-  bool allowFPContractAcrossStatement() const {
-    return fp_contract == LangOptions::FPC_Fast;
-  }
-
-  void setAllowFPContractWithinStatement() {
-    fp_contract = LangOptions::FPC_On;
-  }
-
-  void setAllowFPContractAcrossStatement() {
-    fp_contract = LangOptions::FPC_Fast;
-  }
-
-  void setDisallowFPContract() { fp_contract = LangOptions::FPC_Off; }
-
-  /// Used to serialize this.
-  unsigned getInt() const { return fp_contract; }
-
-private:
-  /// Adjust BinaryOperator::FPFeatures to match the bit-field size of this.
-  unsigned fp_contract : 2;
-};
 
 /// Describes the kind of translation unit being processed.
 enum TranslationUnitKind {

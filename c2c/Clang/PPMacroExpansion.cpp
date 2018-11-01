@@ -17,7 +17,6 @@
 #include "Clang/IdentifierTable.h"
 #include "Clang/LLVM.h"
 #include "Clang/LangOptions.h"
-#include "Clang/ObjCRuntime.h"
 #include "Clang/SourceLocation.h"
 #include "Clang/TargetInfo.h"
 #include "Clang/CodeCompletionHandler.h"
@@ -75,12 +74,6 @@ void Preprocessor::appendMacroDirective(IdentifierInfo *II, MacroDirective *MD){
   StoredMD.setLatest(MD);
   StoredMD.overrideActiveModuleMacros(*this, II);
 
-  if (needModuleMacros()) {
-    // Track that we created a new macro directive, so we know we should
-    // consider building a ModuleMacro for it when we get to the end of
-    // the module.
-    PendingModuleMacroNames.push_back(II);
-  }
 
   // Set up the identifier as having associated macro history.
   II->setHasMacroDefinition(true);
@@ -1699,8 +1692,7 @@ void Preprocessor::ExpandBuiltinMacro(Token &Tok) {
       [this](Token &Tok, bool &HasLexedNextToken) -> int {
         IdentifierInfo *II = ExpectFeatureIdentifierInfo(Tok, *this,
                                        diag::err_expected_id_building_module);
-        return getLangOpts().isCompilingModule() && II &&
-               (II->getName() == getLangOpts().CurrentModule);
+        return false;
       });
   } else if (II == Ident__MODULE__) {
     // The current module as an identifier.

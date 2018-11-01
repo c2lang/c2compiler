@@ -17,7 +17,6 @@
 #include "Clang/SourceLocation.h"
 #include "Clang/SourceManager.h"
 #include "Clang/DirectoryLookup.h"
-#include "Clang/ModuleMap.h"
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/StringMap.h>
