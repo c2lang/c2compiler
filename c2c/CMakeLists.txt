@@ -46,7 +46,6 @@ add_library(c2core
     Clang/CharInfo.cpp
     Clang/CodeGenOptions.cpp
     Clang/Commit.cpp
-    Clang/Cuda.cpp
     Clang/Diagnostic.cpp
     Clang/DiagnosticIDs.cpp
     Clang/DiagnosticOptions.cpp
