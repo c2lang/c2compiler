@@ -600,13 +600,6 @@ NumericLiteralParser::NumericLiteralParser(StringRef TokSpelling,
       isAccum = true;
       continue;
     case 'h':      // FP Suffix for "half".
-    case 'H':
-      // OpenCL Extension v1.2 s9.5 - h or H suffix for half type.
-      if (!(PP.getLangOpts().Half || PP.getLangOpts().FixedPoint)) break;
-      if (isIntegerLiteral()) break;  // Error for integer constant.
-      if (isHalf || isFloat || isLong) break; // HH, FH, LH invalid.
-      isHalf = true;
-      continue;  // Success.
     case 'f':      // FP Suffix for "float"
     case 'F':
       if (!isFPConstant) break;  // Error for integer constant.
@@ -1283,13 +1276,6 @@ CharLiteralParser::CharLiteralParser(const char *begin, const char *end,
   // Transfer the value from APInt to uint64_t
   Value = LitVal.getZExtValue();
 
-  // If this is a single narrow character, sign extend it (e.g. '\xFF' is "-1")
-  // if 'char' is signed for this target (C99 6.4.4.4p10).  Note that multiple
-  // character constants are not sign extended in the this implementation:
-  // '\xFF\xFF' = 65536 and '\x0\xFF' = 255, which matches GCC.
-  if (isAscii() && NumCharsSoFar == 1 && (Value & 128) &&
-      PP.getLangOpts().CharIsSigned)
-    Value = (signed char)Value;
 }
 
 /// \verbatim
@@ -1539,18 +1525,6 @@ void StringLiteralParser::init(ArrayRef<Token> StringToks){
       }
       ++ThisTokBuf; // skip "
 
-      // Check if this is a pascal string
-      if (Features.PascalStrings && ThisTokBuf + 1 != ThisTokEnd &&
-          ThisTokBuf[0] == '\\' && ThisTokBuf[1] == 'p') {
-
-        // If the \p sequence is found in the first token, we have a pascal string
-        // Otherwise, if we already have a pascal string, ignore the first \p
-        if (i == 0) {
-          ++ThisTokBuf;
-          Pascal = true;
-        } else if (Pascal)
-          ThisTokBuf += 2;
-      }
 
       while (ThisTokBuf != ThisTokEnd) {
         // Is this a span of non-escape characters?

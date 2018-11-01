@@ -32,12 +32,6 @@ void getDarwinDefines(MacroBuilder &Builder, const LangOptions &Opts,
   if (Opts.Sanitize.has(SanitizerKind::Address))
     Builder.defineMacro("_FORTIFY_SOURCE", "0");
 
-  // Darwin defines __weak, __strong, and __unsafe_unretained even in C mode.
-
-  if (Opts.Static)
-    Builder.defineMacro("__STATIC__");
-  else
-    Builder.defineMacro("__DYNAMIC__");
 
   if (Opts.POSIXThreads)
     Builder.defineMacro("_REENTRANT");

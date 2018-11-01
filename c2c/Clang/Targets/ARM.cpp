@@ -700,9 +700,9 @@ void ARMTargetInfo::getTargetDefines(const LangOptions &Opts,
   }
 
   Builder.defineMacro("__ARM_SIZEOF_WCHAR_T",
-                      Twine(Opts.WCharSize ? Opts.WCharSize : 4));
+                      Twine(4));
 
-  Builder.defineMacro("__ARM_SIZEOF_MINIMAL_ENUM", Opts.ShortEnums ? "1" : "4");
+  Builder.defineMacro("__ARM_SIZEOF_MINIMAL_ENUM", "4");
 
   if (ArchVersion >= 6 && CPUAttr != "6M" && CPUAttr != "8M_BASE") {
     Builder.defineMacro("__GCC_HAVE_SYNC_COMPARE_AND_SWAP_1");
@@ -727,8 +727,6 @@ void ARMTargetInfo::getTargetDefines(const LangOptions &Opts,
   if (DSP || SAT)
     Builder.defineMacro("__ARM_FEATURE_QBIT", "1");
 
-  if (Opts.UnsafeFPMath)
-    Builder.defineMacro("__ARM_FP_FAST", "1");
 
   // Armv8.2-A FP16 vector intrinsic
   if ((FPU & NeonFPU) && HasLegalHalfType)

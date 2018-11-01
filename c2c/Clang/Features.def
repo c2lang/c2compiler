@@ -59,14 +59,10 @@ FEATURE(attribute_ns_returns_retained, true)
 FEATURE(attribute_ns_consumes_self, true)
 FEATURE(attribute_ns_consumed, true)
 FEATURE(attribute_cf_consumed, true)
-FEATURE(attribute_objc_ivar_unused, true)
-FEATURE(attribute_objc_method_family, true)
 FEATURE(attribute_overloadable, true)
 FEATURE(attribute_unavailable_with_message, true)
 FEATURE(attribute_unused_on_fields, true)
 FEATURE(attribute_diagnose_if_objc, true)
-FEATURE(blocks, LangOpts.Blocks)
-FEATURE(c_thread_safety_attributes, true)
 FEATURE(enumerator_attributes, true)
 FEATURE(nullability, true)
 FEATURE(nullability_on_arrays, true)
@@ -76,26 +72,6 @@ FEATURE(dataflow_sanitizer, LangOpts.Sanitize.has(SanitizerKind::DataFlow))
 FEATURE(efficiency_sanitizer,
         LangOpts.Sanitize.hasOneOf(SanitizerKind::Efficiency))
 FEATURE(scudo, LangOpts.Sanitize.hasOneOf(SanitizerKind::Scudo))
-// Objective-C features
-FEATURE(ownership_holds, true)
-FEATURE(ownership_returns, true)
-FEATURE(ownership_takes, true)
-// C11 features
-FEATURE(modules, LangOpts.Modules)
-FEATURE(safe_stack, LangOpts.Sanitize.has(SanitizerKind::SafeStack))
-FEATURE(shadow_call_stack,
-        LangOpts.Sanitize.has(SanitizerKind::ShadowCallStack))
-FEATURE(tls, PP.getTargetInfo().isTLSSupported())
-
-// C11 features supported by other languages as extensions.
-EXTENSION(c_alignas, true)
-EXTENSION(c_alignof, true)
-EXTENSION(c_atomic, true)
-EXTENSION(c_generic_selections, true)
-EXTENSION(c_static_assert, true)
-EXTENSION(c_thread_local, PP.getTargetInfo().isTLSSupported())
-// Miscellaneous language extensions
-EXTENSION(overloadable_unmarked, true)
 
 #undef EXTENSION
 #undef FEATURE

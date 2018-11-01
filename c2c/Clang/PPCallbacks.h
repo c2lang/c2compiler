@@ -128,23 +128,7 @@ public:
                                   const FileEntry *File,
                                   StringRef SearchPath,
                                   StringRef RelativePath,
-                                  const Module *Imported,
                                   SrcMgr::CharacteristicKind FileType) {
-  }
-
-  /// Callback invoked whenever there was an explicit module-import
-  /// syntax.
-  ///
-  /// \param ImportLoc The location of import directive token.
-  ///
-  /// \param Path The identifiers (and their locations) of the module
-  /// "path", e.g., "std.vector" would be split into "std" and "vector".
-  ///
-  /// \param Imported The imported module; can be null if importing failed.
-  ///
-  virtual void moduleImport(SourceLocation ImportLoc,
-                            ModuleIdPath Path,
-                            const Module *Imported) {
   }
 
   /// Callback invoked when the end of the main file is reached.
@@ -371,21 +355,15 @@ public:
                           StringRef FileName, bool IsAngled,
                           CharSourceRange FilenameRange, const FileEntry *File,
                           StringRef SearchPath, StringRef RelativePath,
-                          const Module *Imported,
                           SrcMgr::CharacteristicKind FileType) override {
     First->InclusionDirective(HashLoc, IncludeTok, FileName, IsAngled,
                               FilenameRange, File, SearchPath, RelativePath,
-                              Imported, FileType);
+                              FileType);
     Second->InclusionDirective(HashLoc, IncludeTok, FileName, IsAngled,
                                FilenameRange, File, SearchPath, RelativePath,
-                               Imported, FileType);
+                               FileType);
   }
 
-  void moduleImport(SourceLocation ImportLoc, ModuleIdPath Path,
-                    const Module *Imported) override {
-    First->moduleImport(ImportLoc, Path, Imported);
-    Second->moduleImport(ImportLoc, Path, Imported);
-  }
 
   void EndOfMainFile() override {
     First->EndOfMainFile();

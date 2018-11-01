@@ -65,11 +65,7 @@ bool Builtin::Context::builtinIsSupported(const Builtin::Info &BuiltinInfo,
   bool MathBuiltinsUnsupported =
     LangOpts.NoMathBuiltin && BuiltinInfo.HeaderName &&
     llvm::StringRef(BuiltinInfo.HeaderName).equals("math.h");
-  bool GnuModeUnsupported = !LangOpts.GNUMode && (BuiltinInfo.Langs & GNU_LANG);
-  bool OpenMPUnsupported = !LangOpts.OpenMP && BuiltinInfo.Langs == OMP_LANG;
-  return !BuiltinsUnsupported && !MathBuiltinsUnsupported
-         && !OpenMPUnsupported &&
-         !GnuModeUnsupported;
+  return !BuiltinsUnsupported && !MathBuiltinsUnsupported;
 }
 
 /// initializeBuiltins - Mark the identifiers for all the builtins with their

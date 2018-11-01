@@ -321,29 +321,10 @@ bool TargetInfo::isTypeSigned(IntType T) {
 /// language options which change the target configuration and adjust
 /// the language based on the target options where applicable.
 void TargetInfo::adjust(LangOptions &Opts) {
-  if (Opts.NoBitFieldTypeAlign)
-    UseBitFieldTypeAlignment = false;
 
-  switch (Opts.WCharSize) {
-  default: llvm_unreachable("invalid wchar_t width");
-  case 0: break;
-  case 1: WCharType = Opts.WCharIsSigned ? SignedChar : UnsignedChar; break;
-  case 2: WCharType = Opts.WCharIsSigned ? SignedShort : UnsignedShort; break;
-  case 4: WCharType = Opts.WCharIsSigned ? SignedInt : UnsignedInt; break;
-  }
-
-  if (Opts.AlignDouble) {
-    DoubleAlign = LongLongAlign = 64;
-    LongDoubleAlign = 64;
-  }
-
-
-  if (Opts.NewAlignOverride)
-    NewAlign = Opts.NewAlignOverride * getCharWidth();
 
   // Each unsigned fixed point type has the same number of fractional bits as
   // its corresponding signed type.
-  PaddingOnUnsignedFixedPoint |= Opts.PaddingOnUnsignedFixedPoint;
   CheckFixedPointBits();
 }
 

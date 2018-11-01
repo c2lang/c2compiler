@@ -79,15 +79,18 @@ LLVM_INSTANTIATE_REGISTRY(PragmaHandlerRegistry)
 ExternalPreprocessorSource::~ExternalPreprocessorSource() = default;
 
 Preprocessor::Preprocessor(std::shared_ptr<PreprocessorOptions> PPOpts,
-                           DiagnosticsEngine &diags, LangOptions &opts,
-                           SourceManager &SM, MemoryBufferCache &PCMCache,
-                           HeaderSearch &Headers, ModuleLoader &TheModuleLoader,
-                           IdentifierInfoLookup *IILookup, bool OwnsHeaders,
+                           DiagnosticsEngine &diags,
+                           LangOptions &opts,
+                           SourceManager &SM,
+                           MemoryBufferCache &PCMCache,
+                           HeaderSearch &Headers,
+                           IdentifierInfoLookup *IILookup,
+                           bool OwnsHeaders,
                            TranslationUnitKind TUKind)
     : PPOpts(std::move(PPOpts)), Diags(&diags), LangOpts(opts),
       FileMgr(Headers.getFileMgr()), SourceMgr(SM), PCMCache(PCMCache),
       ScratchBuf(new ScratchBuffer(SourceMgr)), HeaderInfo(Headers),
-      TheModuleLoader(TheModuleLoader), ExternalSource(nullptr),
+      ExternalSource(nullptr),
       // As the language options may have not been loaded yet (when
       // deserializing an ASTUnit), adding keywords to the identifier table is
       // deferred to Preprocessor::Initialize().
@@ -181,7 +184,6 @@ void Preprocessor::Initialize(const TargetInfo &Target,
 
   // Initialize information about built-ins.
   BuiltinInfo.InitializeTarget(Target, AuxTarget);
-  HeaderInfo.setTarget(Target);
 
   // Populate the identifier table with info about keywords for the current language.
   Identifiers.AddKeywords(LangOpts);
@@ -294,8 +296,6 @@ Preprocessor::macro_begin(bool IncludeExternalMacros) const {
   }
 
   // Make sure we cover all macros in visible modules.
-  for (const ModuleMacro &Macro : ModuleMacros)
-    CurSubmoduleState->Macros.insert(std::make_pair(Macro.II, MacroState()));
 
   return CurSubmoduleState->Macros.begin();
 }
@@ -785,24 +785,6 @@ bool Preprocessor::HandleIdentifier(Token &Identifier) {
   if (II.isExtensionToken() && !DisableMacroExpansion)
     Diag(Identifier, diag::ext_token_used);
 
-  // If this is the 'import' contextual keyword following an '@', note
-  // that the next token indicates a module name.
-  //
-  // Note that we do not treat 'import' as a contextual
-  // keyword when we're in a caching lexer, because caching lexers only get
-  // used in contexts where import declarations are disallowed.
-  //
-  // Likewise if this is the C++ Modules TS import keyword.
-  if (((LastTokenWasAt && II.isModulesImport()) ||
-       Identifier.is(tok::kw_import)) &&
-      !InMacroArgs && !DisableMacroExpansion &&
-      (getLangOpts().Modules || getLangOpts().DebuggerSupport) &&
-      CurLexerKind != CLK_CachingLexer) {
-    ModuleImportLoc = Identifier.getLocation();
-    ModuleImportPath.clear();
-    ModuleImportExpectsIdentifier = true;
-    CurLexerKind = CLK_LexAfterModuleImport;
-  }
   return true;
 }
 
@@ -824,10 +806,6 @@ void Preprocessor::Lex(Token &Result) {
       CachingLex(Result);
       ReturnedToken = true;
       break;
-    case CLK_LexAfterModuleImport:
-      LexAfterModuleImport(Result);
-      ReturnedToken = true;
-      break;
     }
   } while (!ReturnedToken);
 
@@ -842,89 +820,6 @@ void Preprocessor::Lex(Token &Result) {
   LastTokenWasAt = Result.is(tok::at);
 }
 
-/// Lex a token following the 'import' contextual keyword.
-///
-void Preprocessor::LexAfterModuleImport(Token &Result) {
-  // Figure out what kind of lexer we actually have.
-  recomputeCurLexerKind();
-
-  // Lex the next token.
-  Lex(Result);
-
-  // The token sequence
-  //
-  //   import identifier (. identifier)*
-  //
-  // indicates a module import directive. We already saw the 'import'
-  // contextual keyword, so now we're looking for the identifiers.
-  if (ModuleImportExpectsIdentifier && Result.getKind() == tok::identifier) {
-    // We expected to see an identifier here, and we did; continue handling
-    // identifiers.
-    ModuleImportPath.push_back(std::make_pair(Result.getIdentifierInfo(),
-                                              Result.getLocation()));
-    ModuleImportExpectsIdentifier = false;
-    CurLexerKind = CLK_LexAfterModuleImport;
-    return;
-  }
-
-  // If we're expecting a '.' or a ';', and we got a '.', then wait until we
-  // see the next identifier. (We can also see a '[[' that begins an
-  // attribute-specifier-seq here under the C++ Modules TS.)
-  if (!ModuleImportExpectsIdentifier && Result.getKind() == tok::period) {
-    ModuleImportExpectsIdentifier = true;
-    CurLexerKind = CLK_LexAfterModuleImport;
-    return;
-  }
-
-  // If we have a non-empty module path, load the named module.
-  if (!ModuleImportPath.empty()) {
-    // Under the Modules TS, the dot is just part of the module name, and not
-    // a real hierarachy separator. Flatten such module names now.
-    //
-    // FIXME: Is this the right level to be performing this transformation?
-    std::string FlatModuleName;
-    if (getLangOpts().ModulesTS) {
-      for (auto &Piece : ModuleImportPath) {
-        if (!FlatModuleName.empty())
-          FlatModuleName += ".";
-        FlatModuleName += Piece.first->getName();
-      }
-      SourceLocation FirstPathLoc = ModuleImportPath[0].second;
-      ModuleImportPath.clear();
-      ModuleImportPath.push_back(
-          std::make_pair(getIdentifierInfo(FlatModuleName), FirstPathLoc));
-    }
-
-    Module *Imported = nullptr;
-    if (getLangOpts().Modules) {
-      Imported = TheModuleLoader.loadModule(ModuleImportLoc,
-                                            ModuleImportPath,
-                                            Module::Hidden,
-                                            /*IsIncludeDirective=*/false);
-      if (Imported)
-        makeModuleVisible(Imported, ModuleImportLoc);
-    }
-    if (Callbacks && (getLangOpts().Modules || getLangOpts().DebuggerSupport))
-      Callbacks->moduleImport(ModuleImportLoc, ModuleImportPath, Imported);
-  }
-}
-
-void Preprocessor::makeModuleVisible(Module *M, SourceLocation Loc) {
-  CurSubmoduleState->VisibleModules.setVisible(
-      M, Loc, [](Module *) {},
-      [&](ArrayRef<Module *> Path, Module *Conflict, StringRef Message) {
-        // FIXME: Include the path in the diagnostic.
-        // FIXME: Include the import location for the conflicting module.
-        Diag(ModuleImportLoc, diag::warn_module_conflict)
-            << Path[0]->getFullModuleName()
-            << Conflict->getFullModuleName()
-            << Message;
-      });
-
-  // Add this module to the imports list of the currently-built submodule.
-  if (!BuildingSubmoduleStack.empty() && M != BuildingSubmoduleStack.back().M)
-    BuildingSubmoduleStack.back().M->Imports.insert(M);
-}
 
 bool Preprocessor::FinishLexStringLiteral(Token &Result, std::string &String,
                                           const char *DiagnosticTag,
