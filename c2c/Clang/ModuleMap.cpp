@@ -523,18 +523,6 @@ void ModuleMap::diagnoseHeaderInclusion(Module *RequestingModule,
 
   // At this point, only non-modular includes remain.
 
-  if (LangOpts.ModulesStrictDeclUse) {
-    Diags.Report(FilenameLoc, diag::err_undeclared_use_of_module)
-        << RequestingModule->getTopLevelModule()->Name << Filename;
-  } else if (RequestingModule && RequestingModuleIsModuleInterface &&
-             LangOpts.isCompilingModule()) {
-    // Do not diagnose when we are not compiling a module.
-    diag::kind DiagID = RequestingModule->getTopLevelModule()->IsFramework ?
-        diag::warn_non_modular_include_in_framework_module :
-        diag::warn_non_modular_include_in_module;
-    Diags.Report(FilenameLoc, DiagID) << RequestingModule->getFullModuleName()
-        << File->getName();
-  }
 }
 
 static bool isBetterKnownHeader(const ModuleMap::KnownHeader &New,
@@ -1152,13 +1140,11 @@ void ModuleMap::addHeader(Module *Mod, Module::Header Header,
   HeaderList.push_back(KH);
   Mod->Headers[headerRoleToKind(Role)].push_back(Header);
 
-  bool isCompilingModuleHeader =
-      LangOpts.isCompilingModule() && Mod->getTopLevelModule() == SourceModule;
-  if (!Imported || isCompilingModuleHeader) {
+  if (!Imported) {
     // When we import HeaderFileInfo, the external source is expected to
     // set the isModuleHeader flag itself.
     HeaderInfo.MarkFileModuleHeader(Header.Entry, Role,
-                                    isCompilingModuleHeader);
+                                    0);
   }
 
   // Notify callbacks that we just added a new header.

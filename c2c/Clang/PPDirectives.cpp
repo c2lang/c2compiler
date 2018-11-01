@@ -25,8 +25,6 @@
 #include "Clang/LexDiagnostic.h"
 #include "Clang/LiteralSupport.h"
 #include "Clang/MacroInfo.h"
-#include "Clang/ModuleLoader.h"
-#include "Clang/ModuleMap.h"
 #include "Clang/PPCallbacks.h"
 #include "Clang/Pragma.h"
 #include "Clang/Preprocessor.h"
@@ -753,7 +751,7 @@ const FileEntry *Preprocessor::LookupFile(
     if (!FileEnt) {
       if (FID == SourceMgr.getMainFileID() && MainFileDir) {
         Includers.push_back(std::make_pair(nullptr, MainFileDir));
-        BuildSystemModule = getCurrentModule()->IsSystem;
+        BuildSystemModule = nullptr;
       } else if ((FileEnt =
                     SourceMgr.getFileEntryForID(SourceMgr.getMainFileID())))
         Includers.push_back(std::make_pair(FileEnt, FileMgr.getDirectory(".")));

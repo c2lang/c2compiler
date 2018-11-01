@@ -23,7 +23,6 @@
 #include "Clang/HeaderMap.h"
 #include "Clang/HeaderSearchOptions.h"
 #include "Clang/LexDiagnostic.h"
-#include "Clang/ModuleMap.h"
 #include "Clang/Preprocessor.h"
 #include <llvm/ADT/APInt.h>
 #include <llvm/ADT/Hashing.h>

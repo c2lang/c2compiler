@@ -567,17 +567,6 @@ bool Preprocessor::HandleEndOfFile(Token &Result, bool isEndOfMacro) {
       Diag(*I, diag::pp_macro_not_used);
   }
 
-  // If we are building a module that has an umbrella header, make sure that
-  // each of the headers within the directory, including all submodules, is
-  // covered by the umbrella header was actually included by the umbrella
-  // header.
-  if (Module *Mod = getCurrentModule()) {
-    llvm::SmallVector<const Module *, 4> AllMods;
-    collectAllSubModulesWithUmbrellaHeader(*Mod, AllMods);
-    for (auto *M : AllMods)
-      diagnoseMissingHeaderInUmbrellaDir(*M);
-  }
-
   return true;
 }
 
@@ -740,18 +729,6 @@ void Preprocessor::EnterSubmodule(Module *M, SourceLocation ImportLoc,
     makeModuleVisible(M, ImportLoc);
 }
 
-bool Preprocessor::needModuleMacros() const {
-  // If we're not within a submodule, we never need to create ModuleMacros.
-  if (BuildingSubmoduleStack.empty())
-    return false;
-  // If we are tracking module macro visibility even for textually-included
-  // headers, we need ModuleMacros.
-  if (getLangOpts().ModulesLocalVisibility)
-    return true;
-  // Otherwise, we only need module macros if we're actually compiling a module
-  // interface.
-  return getLangOpts().isCompilingModule();
-}
 
 Module *Preprocessor::LeaveSubmodule(bool ForPragma) {
   if (BuildingSubmoduleStack.empty() ||
@@ -765,9 +742,7 @@ Module *Preprocessor::LeaveSubmodule(bool ForPragma) {
   Module *LeavingMod = Info.M;
   SourceLocation ImportLoc = Info.ImportLoc;
 
-  if (!needModuleMacros() ||
-      (!getLangOpts().ModulesLocalVisibility &&
-       LeavingMod->getTopLevelModuleName() != getLangOpts().CurrentModule)) {
+  if ((LeavingMod->getTopLevelModuleName() != getLangOpts().CurrentModule)) {
     // If we don't need module macros, or this is not a module for which we
     // are tracking macro visibility, don't build any, and preserve the list
     // of pending names for the surrounding submodule.

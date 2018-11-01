@@ -18,7 +18,6 @@
 #include "Clang/DiagnosticIDs.h"
 #include "Clang/SourceLocation.h"
 #include "Clang/SourceManager.h"
-#include "Clang/ModuleLoader.h"
 #include "Clang/Pragma.h"
 #include <llvm/ADT/StringRef.h>
 

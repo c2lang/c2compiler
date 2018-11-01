@@ -820,10 +820,6 @@ void TextDiagnostic::emitDiagnosticLoc(FullSourceLoc Loc, PresumedLoc PLoc,
     if (unsigned ColNo = PLoc.getColumn()) {
       if (DiagOpts->getFormat() == DiagnosticOptions::MSVC) {
         OS << ',';
-        // Visual Studio 2010 or earlier expects column number to be off by one
-        if (LangOpts.MSCompatibilityVersion &&
-            !LangOpts.isCompatibleWithMSVC(LangOptions::MSVC2012))
-          ColNo--;
       } else
         OS << ':';
       OS << ColNo;
@@ -835,9 +831,6 @@ void TextDiagnostic::emitDiagnosticLoc(FullSourceLoc Loc, PresumedLoc PLoc,
     // MSVC2013 and before print 'file(4) : error'. MSVC2015 gets rid of the
     // space and prints 'file(4): error'.
     OS << ')';
-    if (LangOpts.MSCompatibilityVersion &&
-        !LangOpts.isCompatibleWithMSVC(LangOptions::MSVC2015))
-      OS << ' ';
     OS << ": ";
     break;
   }

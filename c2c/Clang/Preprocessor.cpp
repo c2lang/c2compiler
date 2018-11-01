@@ -493,13 +493,6 @@ SourceLocation Preprocessor::SplitToken(SourceLocation Loc, unsigned Length) {
   return SM.createTokenSplitLoc(Spelling, Loc, Loc.getLocWithOffset(Length));
 }
 
-Module *Preprocessor::getCurrentModule() {
-  if (!getLangOpts().isCompilingModule())
-    return nullptr;
-
-  return getHeaderSearchInfo().lookupModule(getLangOpts().CurrentModule);
-}
-
 //===----------------------------------------------------------------------===//
 // Preprocessor Initialization Methods
 //===----------------------------------------------------------------------===//

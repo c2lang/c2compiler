@@ -27,7 +27,6 @@
 #include "Clang/Lexer.h"
 #include "Clang/LiteralSupport.h"
 #include "Clang/MacroInfo.h"
-#include "Clang/ModuleLoader.h"
 #include "Clang/PPCallbacks.h"
 #include "Clang/Preprocessor.h"
 #include "Clang/PreprocessorLexer.h"
