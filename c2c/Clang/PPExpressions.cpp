@@ -369,7 +369,7 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
     if (Literal.isWide())
       Val.setIsUnsigned(!TargetInfo::isTypeSigned(TI.getWCharType()));
     else if (!Literal.isUTF16() && !Literal.isUTF32())
-      Val.setIsUnsigned(!PP.getLangOpts().CharIsSigned);
+      Val.setIsUnsigned(true);
 
     if (Result.Val.getBitWidth() > Val.getBitWidth()) {
       Result.Val = Val.extend(Result.Val.getBitWidth());

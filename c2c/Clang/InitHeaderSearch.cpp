@@ -563,8 +563,6 @@ void c2lang::ApplyHeaderSearchOptions(HeaderSearch &HS,
     // Set up the builtin include directory in the module map.
     SmallString<128> P = StringRef(HSOpts.ResourceDir);
     llvm::sys::path::append(P, "include");
-    if (const DirectoryEntry *Dir = HS.getFileMgr().getDirectory(P))
-      HS.getModuleMap().setBuiltinIncludeDir(Dir);
   }
 
   Init.Realize(Lang);

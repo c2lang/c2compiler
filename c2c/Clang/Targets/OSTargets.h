@@ -579,8 +579,6 @@ protected:
     if (Opts.Bool)
       Builder.defineMacro("__BOOL_DEFINED");
 
-    if (!Opts.CharIsSigned)
-      Builder.defineMacro("_CHAR_UNSIGNED");
 
     // FIXME: POSIXThreads isn't exactly the option this should be defined for,
     //        but it works for now.

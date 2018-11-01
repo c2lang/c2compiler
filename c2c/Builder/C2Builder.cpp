@@ -75,7 +75,6 @@ using c2lang::FileSystemOptions;
 using c2lang::HeaderSearch;
 using c2lang::HeaderSearchOptions;
 using c2lang::LangOptions;
-using c2lang::ModuleLoader;
 using c2lang::Preprocessor;
 using c2lang::PreprocessorOptions;
 using c2lang::SourceManager;
@@ -90,50 +89,6 @@ using namespace c2lang;
 #define BUILD_DIR  "build/"
 
 namespace C2 {
-class DummyLoader : public ModuleLoader {
-public:
-    DummyLoader() {}
-    virtual ~DummyLoader () {}
-
-    virtual ModuleLoadResult loadModule(SourceLocation ImportLoc,
-                                        ModuleIdPath Path,
-                                        c2lang::Module::NameVisibilityKind Visibility,
-                                        bool IsInclusionDirective)
-    {
-        fprintf(stderr, "MODULE LOADER: loadModule\n");
-        return ModuleLoadResult();
-    }
-    virtual void loadModuleFromSource(SourceLocation Loc,
-                                      StringRef ModuleName,
-                                      StringRef Source)
-    {
-        fprintf(stderr, "MODULE LOADER: loadModuleFromSource\n");
-    }
-
-
-    virtual void makeModuleVisible(c2lang::Module *Mod,
-                                   c2lang::Module::NameVisibilityKind Visibility,
-                                   SourceLocation ImportLoc)
-    {
-        fprintf(stderr, "MODULE LOADER: make visible\n");
-    }
-
-    virtual GlobalModuleIndex* loadGlobalModuleIndex(SourceLocation TriggerLoc)
-    {
-        fprintf(stderr, "MODULE LOADER: loadGlobalModuleIndex\n");
-        return 0;
-    }
-
-    virtual bool lookupMissingImports(StringRef Name,
-                                      SourceLocation TriggerLoc)
-    {
-        fprintf(stderr, "MODULE LOADER: lookupMissingImports\n");
-        return false;
-    }
-private:
-    DummyLoader(const DummyLoader& rhs);
-    DummyLoader& operator= (const DummyLoader& rhs);
-};
 
 class ParseHelper {
 public:
@@ -160,10 +115,9 @@ public:
     bool parse(Component& component, Module* existingMod, const std::string& filename, bool printAST) {
         // NOTE: seems to get deleted by Preprocessor,
         HeaderSearch* Headers = new HeaderSearch(HSOpts, SM, Diags, LangOpts, pti);
-        DummyLoader loader;
 
         std::shared_ptr<PreprocessorOptions> PPOpts(new PreprocessorOptions());
-        Preprocessor PP(PPOpts, Diags, LangOpts, SM, PCMCache, *Headers, loader);
+        Preprocessor PP(PPOpts, Diags, LangOpts, SM, PCMCache, *Headers);
 
         ApplyHeaderSearchOptions(PP.getHeaderSearchInfo(), *HSOpts, LangOpts, pti->getTriple());
         PP.setPredefines(configs);
@@ -284,9 +238,7 @@ int C2Builder::build() {
     uint64_t t1_build = Utils::getCurrentTime();
     // LangOptions
     LangOptions LangOpts;
-    LangOpts.C2 = 1;
     LangOpts.Bool = 1;
-    LangOpts.LineComment = 1;
 
     // Diagnostics
     // NOTE: DiagOpts is somehow deleted by Diags/TextDiagnosticPrinter below?

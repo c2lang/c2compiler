@@ -237,18 +237,17 @@ class Token;
     /// This is a value of type InclusionKind.
     unsigned Kind : 2;
 
-    /// Whether the inclusion directive was automatically turned into
-    /// a module import.
-    unsigned ImportedModule : 1;
 
     /// The file that was included.
     const FileEntry *File;
 
   public:
     InclusionDirective(PreprocessingRecord &PPRec,
-                       InclusionKind Kind, StringRef FileName,
-                       bool InQuotes, bool ImportedModule,
-                       const FileEntry *File, SourceRange Range);
+                           InclusionKind Kind,
+                           StringRef FileName,
+                           bool InQuotes,
+                           const FileEntry *File,
+                           SourceRange Range);
 
     /// Determine what kind of inclusion directive this is.
     InclusionKind getKind() const { return static_cast<InclusionKind>(Kind); }
@@ -260,9 +259,6 @@ class Token;
     /// otherwise, it was written in angle brackets.
     bool wasInQuotes() const { return InQuotes; }
 
-    /// Determine whether the inclusion directive was automatically
-    /// turned into a module import.
-    bool importedModule() const { return ImportedModule; }
 
     /// Retrieve the file entry for the actual file that was included
     /// by this directive.
@@ -528,12 +524,15 @@ class Token;
     void MacroDefined(const Token &Id, const MacroDirective *MD) override;
     void MacroUndefined(const Token &Id, const MacroDefinition &MD,
                         const MacroDirective *Undef) override;
-    void InclusionDirective(SourceLocation HashLoc, const Token &IncludeTok,
-                            StringRef FileName, bool IsAngled,
-                            CharSourceRange FilenameRange,
-                            const FileEntry *File, StringRef SearchPath,
-                            StringRef RelativePath, const Module *Imported,
-                            SrcMgr::CharacteristicKind FileType) override;
+    void InclusionDirective(SourceLocation HashLoc,
+                                const Token &IncludeTok,
+                                StringRef FileName,
+                                bool IsAngled,
+                                CharSourceRange FilenameRange,
+                                const FileEntry *File,
+                                StringRef SearchPath,
+                                StringRef RelativePath,
+                                SrcMgr::CharacteristicKind FileType) override;
     void Ifdef(SourceLocation Loc, const Token &MacroNameTok,
                const MacroDefinition &MD) override;
     void Ifndef(SourceLocation Loc, const Token &MacroNameTok,

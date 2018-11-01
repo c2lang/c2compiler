@@ -146,10 +146,7 @@ Lexer::Lexer(FileID FID, const llvm::MemoryBuffer *FromFile,
 
 void Lexer::resetExtendedTokenMode() {
   assert(PP && "Cannot reset token mode without a preprocessor");
-  if (LangOpts.TraditionalCPP)
-    SetKeepWhitespaceMode(true);
-  else
-    SetCommentRetentionState(PP->getCommentRetentionState());
+  SetCommentRetentionState(PP->getCommentRetentionState());
 }
 
 /// Create_PragmaLexer: Lexer constructor - Create a new lexer object for
@@ -1021,7 +1018,7 @@ StringRef Lexer::getImmediateMacroNameForDiagnostics(
 }
 
 bool Lexer::isIdentifierBodyChar(char c, const LangOptions &LangOpts) {
-  return isIdentifierBody(c, LangOpts.DollarIdents);
+  return isIdentifierBody(c, false);
 }
 
 bool Lexer::isNewLineEscaped(const char *BufferStart, const char *Str) {
@@ -1143,24 +1140,6 @@ static char GetTrigraphCharForLetter(char Letter) {
   }
 }
 
-/// DecodeTrigraphChar - If the specified character is a legal trigraph when
-/// prefixed with ??, emit a trigraph warning.  If trigraphs are enabled,
-/// return the result character.  Finally, emit a warning about trigraph use
-/// whether trigraphs are enabled or not.
-static char DecodeTrigraphChar(const char *CP, Lexer *L) {
-  char Res = GetTrigraphCharForLetter(*CP);
-  if (!Res || !L) return Res;
-
-  if (!L->getLangOpts().Trigraphs) {
-    if (!L->isLexingRawMode())
-      L->Diag(CP-2, diag::trigraph_ignored);
-    return 0;
-  }
-
-  if (!L->isLexingRawMode())
-    L->Diag(CP-2, diag::trigraph_converted) << StringRef(&Res, 1);
-  return Res;
-}
 
 /// getEscapedNewLineSize - Return the size of the specified escaped newline,
 /// or 0 if it is not an escaped newline. P[-1] is known to be a "\" or a
@@ -1321,20 +1300,6 @@ Slash:
     return '\\';
   }
 
-  // If this is a trigraph, process it.
-  if (Ptr[0] == '?' && Ptr[1] == '?') {
-    // If this is actually a legal trigraph (not something like "??x"), emit
-    // a trigraph warning.  If so, and if trigraphs are enabled, return it.
-    if (char C = DecodeTrigraphChar(Ptr+2, Tok ? this : nullptr)) {
-      // Remember that this token needs to be cleaned.
-      if (Tok) Tok->setFlag(Token::NeedsCleaning);
-
-      Ptr += 3;
-      Size += 3;
-      if (C == '\\') goto Slash;
-      return C;
-    }
-  }
 
   // If this is neither, return a single character.
   ++Size;
@@ -1371,17 +1336,6 @@ Slash:
     return '\\';
   }
 
-  // If this is a trigraph, process it.
-  if (LangOpts.Trigraphs && Ptr[0] == '?' && Ptr[1] == '?') {
-    // If this is actually a legal trigraph (not something like "??x"), return
-    // it.
-    if (char C = GetTrigraphCharForLetter(Ptr[2])) {
-      Ptr += 3;
-      Size += 3;
-      if (C == '\\') goto Slash;
-      return C;
-    }
-  }
 
   // If this is neither, return a single character.
   ++Size;
@@ -1595,8 +1549,7 @@ bool Lexer::LexIdentifier(Token &Result, const char *CurPtr) {
   //
   // TODO: Could merge these checks into an InfoTable flag to make the
   // comparison cheaper
-  if (isASCII(C) && C != '\\' && C != '?' &&
-      (C != '$' || !LangOpts.DollarIdents)) {
+  if (isASCII(C) && C != '\\' && C != '?') {
 FinishIdentifier:
     const char *IdStart = BufferPtr;
     FormTokenWithChars(Result, CurPtr, tok::raw_identifier);
@@ -1651,14 +1604,7 @@ FinishIdentifier:
   while (true) {
     if (C == '$') {
       // If we hit a $ and they are not supported in identifiers, we are done.
-      if (!LangOpts.DollarIdents) goto FinishIdentifier;
-
-      // Otherwise, emit a diagnostic and continue.
-      if (!isLexingRawMode())
-        Diag(CurPtr, diag::ext_dollar_in_identifier);
-      CurPtr = ConsumeChar(CurPtr, Size, Result);
-      C = getCharAndSize(CurPtr, Size);
-      continue;
+      goto FinishIdentifier;
     } else if (C == '\\' && tryConsumeIdentifierUCN(CurPtr, Size, Result)) {
       C = getCharAndSize(CurPtr, Size);
       continue;
@@ -2043,15 +1989,6 @@ bool Lexer::SkipWhitespace(Token &Result, const char *CurPtr,
 /// some tokens, this will store the first token and return true.
 bool Lexer::SkipLineComment(Token &Result, const char *CurPtr,
                             bool &TokAtPhysicalStartOfLine) {
-  // If Line comments aren't explicitly enabled for this language, emit an
-  // extension warning.
-  if (!LangOpts.LineComment && !isLexingRawMode()) {
-    Diag(BufferPtr, diag::ext_line_comment);
-
-    // Mark them enabled so we only emit one warning for this translation
-    // unit.
-    LangOpts.LineComment = true;
-  }
 
   // Scan over the body of the comment.  The common case, when scanning, is that
   // the comment contains normal ascii characters with nothing interesting in
@@ -2080,10 +2017,6 @@ bool Lexer::SkipLineComment(Token &Result, const char *CurPtr,
       if (*EscapePtr == '\\')
         // Escaped newline.
         CurPtr = EscapePtr;
-      else if (EscapePtr[0] == '/' && EscapePtr[-1] == '?' &&
-               EscapePtr[-2] == '?' && LangOpts.Trigraphs)
-        // Trigraph-escaped newline.
-        CurPtr = EscapePtr-2;
       else
         break; // This is a newline, we're done.
 
@@ -2248,13 +2181,10 @@ static bool isEndOfBlockCommentWithEscapedNewLine(const char *CurPtr,
 
     // If no trigraphs are enabled, warn that we ignored this trigraph and
     // ignore this * character.
-    if (!L->getLangOpts().Trigraphs) {
-      if (!L->isLexingRawMode())
-        L->Diag(CurPtr, diag::trigraph_ignored_block_comment);
+    {
+      if (!L->isLexingRawMode()) L->Diag(CurPtr, diag::trigraph_ignored_block_comment);
       return false;
     }
-    if (!L->isLexingRawMode())
-      L->Diag(CurPtr, diag::trigraph_ends_block_comment);
   }
 
   // Warn about having an escaped newline between the */ characters.
@@ -3057,8 +2987,7 @@ LexNextToken:
 
     // If the next token is obviously a // or /* */ comment, skip it efficiently
     // too (without going through the big switch stmt).
-    if (CurPtr[0] == '/' && CurPtr[1] == '/' && !inKeepCommentMode() &&
-        LangOpts.LineComment) {
+    if (CurPtr[0] == '/' && CurPtr[1] == '/' && !inKeepCommentMode()) {
       if (SkipLineComment(Result, CurPtr+2, TokAtPhysicalStartOfLine))
         return true; // There is a token to return.
       goto SkipIgnoredUnits;
@@ -3177,14 +3106,6 @@ LexNextToken:
     return LexIdentifier(Result, CurPtr);
 
   case '$':   // $ in identifiers.
-    if (LangOpts.DollarIdents) {
-      if (!isLexingRawMode())
-        Diag(CurPtr-1, diag::ext_dollar_in_identifier);
-      // Notify MIOpt that we read a non-whitespace/non-comment token.
-      MIOpt.ReadToken();
-      return LexIdentifier(Result, CurPtr);
-    }
-
     Kind = tok::unknown;
     break;
 
@@ -3347,26 +3268,6 @@ LexNextToken:
     if (Char == '=') {
       Kind = tok::percentequal;
       CurPtr = ConsumeChar(CurPtr, SizeTmp, Result);
-    } else if (LangOpts.Digraphs && Char == '>') {
-      Kind = tok::r_brace;                             // '%>' -> '}'
-      CurPtr = ConsumeChar(CurPtr, SizeTmp, Result);
-    } else if (LangOpts.Digraphs && Char == ':') {
-      CurPtr = ConsumeChar(CurPtr, SizeTmp, Result);
-      Char = getCharAndSize(CurPtr, SizeTmp);
-      if (Char == '%' && getCharAndSize(CurPtr+SizeTmp, SizeTmp2) == ':') {
-        Kind = tok::hashhash;                          // '%:%:' -> '##'
-        CurPtr = ConsumeChar(ConsumeChar(CurPtr, SizeTmp, Result),
-                             SizeTmp2, Result);
-      } else {                                         // '%:' -> '#'
-        // We parsed a # character.  If this occurs at the start of the line,
-        // it's actually the start of a preprocessing directive.  Callback to
-        // the preprocessor to handle it.
-        // TODO: -fpreprocessed mode??
-        if (TokAtPhysicalStartOfLine && !LexingRawMode && !Is_PragmaLexer)
-          goto HandleDirective;
-
-        Kind = tok::hash;
-      }
     } else {
       Kind = tok::percent;
     }
@@ -3389,10 +3290,6 @@ LexNextToken:
         // If this is '<<<<' and we're in a Perforce-style conflict marker,
         // ignore it.
         goto LexNextToken;
-      } else if (LangOpts.CUDA && After == '<') {
-        Kind = tok::lesslessless;
-        CurPtr = ConsumeChar(ConsumeChar(CurPtr, SizeTmp, Result),
-                             SizeTmp2, Result);
       } else {
         CurPtr = ConsumeChar(CurPtr, SizeTmp, Result);
         Kind = tok::lessless;
@@ -3401,12 +3298,6 @@ LexNextToken:
       char After = getCharAndSize(CurPtr+SizeTmp, SizeTmp2);
       CurPtr = ConsumeChar(CurPtr, SizeTmp, Result);
       Kind = tok::lessequal;
-    } else if (LangOpts.Digraphs && Char == ':') {     // '<:' -> '['
-      CurPtr = ConsumeChar(CurPtr, SizeTmp, Result);
-      Kind = tok::l_square;
-    } else if (LangOpts.Digraphs && Char == '%') {     // '<%' -> '{'
-      CurPtr = ConsumeChar(CurPtr, SizeTmp, Result);
-      Kind = tok::l_brace;
     } else if (Char == '#' && /*Not a trigraph*/ SizeTmp == 1 &&
                lexEditorPlaceholder(Result, CurPtr)) {
       return true;
@@ -3432,10 +3323,6 @@ LexNextToken:
       } else if (After == '>' && HandleEndOfConflictMarker(CurPtr-1)) {
         // If this is '>>>>>>>' and we're in a conflict marker, ignore it.
         goto LexNextToken;
-      } else if (LangOpts.CUDA && After == '>') {
-        Kind = tok::greatergreatergreater;
-        CurPtr = ConsumeChar(ConsumeChar(CurPtr, SizeTmp, Result),
-                             SizeTmp2, Result);
       } else {
         CurPtr = ConsumeChar(CurPtr, SizeTmp, Result);
         Kind = tok::greatergreater;
@@ -3470,12 +3357,7 @@ LexNextToken:
     break;
   case ':':
     Char = getCharAndSize(CurPtr, SizeTmp);
-    if (LangOpts.Digraphs && Char == '>') {
-      Kind = tok::r_square; // ':>' -> ']'
-      CurPtr = ConsumeChar(CurPtr, SizeTmp, Result);
-    } else {
-      Kind = tok::colon;
-    }
+    Kind = tok::colon;
     break;
   case ';':
     Kind = tok::semi;
@@ -3606,11 +3488,6 @@ HandleDirective:
   FormTokenWithChars(Result, CurPtr, tok::hash);
   PP->HandleDirective(Result);
 
-  if (PP->hadModuleLoaderFatalFailure()) {
-    // With a fatal failure in the module loader, we abort parsing.
-    assert(Result.is(tok::eof) && "Preprocessor did not set tok:eof");
-    return true;
-  }
 
   // We parsed the directive; lex a token with the new state.
   return false;

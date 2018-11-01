@@ -43,8 +43,7 @@ void DefineStd(MacroBuilder &Builder, StringRef MacroName,
 
   // If in GNU mode (e.g. -std=gnu99 but not -std=c99) define the raw identifier
   // in the user's namespace.
-  if (Opts.GNUMode)
-    Builder.defineMacro(MacroName);
+  Builder.defineMacro(MacroName);
 
   // Define __unix.
   Builder.defineMacro("__" + MacroName);

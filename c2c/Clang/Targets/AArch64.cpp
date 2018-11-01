@@ -161,13 +161,11 @@ void AArch64TargetInfo::getTargetDefines(const LangOptions &Opts,
   Builder.defineMacro("__ARM_FP16_FORMAT_IEEE", "1");
   Builder.defineMacro("__ARM_FP16_ARGS", "1");
 
-  if (Opts.UnsafeFPMath)
-    Builder.defineMacro("__ARM_FP_FAST", "1");
 
   Builder.defineMacro("__ARM_SIZEOF_WCHAR_T",
-                      Twine(Opts.WCharSize ? Opts.WCharSize : 4));
+                      Twine(4));
 
-  Builder.defineMacro("__ARM_SIZEOF_MINIMAL_ENUM", Opts.ShortEnums ? "1" : "4");
+  Builder.defineMacro("__ARM_SIZEOF_MINIMAL_ENUM", "4");
 
   if (FPU & NeonMode) {
     Builder.defineMacro("__ARM_NEON", "1");

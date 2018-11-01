@@ -71,8 +71,7 @@ void MipsTargetInfo::getTargetDefines(const LangOptions &Opts,
 
   Builder.defineMacro("__mips__");
   Builder.defineMacro("_mips");
-  if (Opts.GNUMode)
-    Builder.defineMacro("mips");
+  Builder.defineMacro("mips");
 
   if (ABI == "o32") {
     Builder.defineMacro("__mips", "32");

@@ -30,7 +30,6 @@ namespace c2lang {
 
 class DefMacroDirective;
 class IdentifierInfo;
-class Module;
 class Preprocessor;
 class SourceManager;
 
@@ -402,7 +401,7 @@ public:
   static bool classof(const MacroDirective *) { return true; }
 };
 
-/// A directive for a defined macro or a macro imported from a module.
+/// A directive for a defined macro
 class DefMacroDirective : public MacroDirective {
   MacroInfo *Info;
 
@@ -478,84 +477,6 @@ MacroDirective::DefInfo::getPreviousDefinition() {
   return DefDirective->getPrevious()->getDefinition();
 }
 
-/// Represents a macro directive exported by a module.
-///
-/// There's an instance of this class for every macro #define or #undef that is
-/// the final directive for a macro name within a module. These entities also
-/// represent the macro override graph.
-///
-/// These are stored in a FoldingSet in the preprocessor.
-class ModuleMacro : public llvm::FoldingSetNode {
-  friend class Preprocessor;
-
-  /// The name defined by the macro.
-  IdentifierInfo *II;
-
-  /// The body of the #define, or nullptr if this is a #undef.
-  MacroInfo *Macro;
-
-  /// The module that exports this macro.
-  Module *OwningModule;
-
-  /// The number of module macros that override this one.
-  unsigned NumOverriddenBy = 0;
-
-  /// The number of modules whose macros are directly overridden by this one.
-  unsigned NumOverrides;
-
-  ModuleMacro(Module *OwningModule, IdentifierInfo *II, MacroInfo *Macro,
-              ArrayRef<ModuleMacro *> Overrides)
-      : II(II), Macro(Macro), OwningModule(OwningModule),
-        NumOverrides(Overrides.size()) {
-    std::copy(Overrides.begin(), Overrides.end(),
-              reinterpret_cast<ModuleMacro **>(this + 1));
-  }
-
-public:
-  static ModuleMacro *create(Preprocessor &PP, Module *OwningModule,
-                             IdentifierInfo *II, MacroInfo *Macro,
-                             ArrayRef<ModuleMacro *> Overrides);
-
-  void Profile(llvm::FoldingSetNodeID &ID) const {
-    return Profile(ID, OwningModule, II);
-  }
-
-  static void Profile(llvm::FoldingSetNodeID &ID, Module *OwningModule,
-                      IdentifierInfo *II) {
-    ID.AddPointer(OwningModule);
-    ID.AddPointer(II);
-  }
-
-  /// Get the name of the macro.
-  IdentifierInfo *getName() const { return II; }
-
-  /// Get the ID of the module that exports this macro.
-  Module *getOwningModule() const { return OwningModule; }
-
-  /// Get definition for this exported #define, or nullptr if this
-  /// represents a #undef.
-  MacroInfo *getMacroInfo() const { return Macro; }
-
-  /// Iterators over the overridden module IDs.
-  /// \{
-  using overrides_iterator = ModuleMacro *const *;
-
-  overrides_iterator overrides_begin() const {
-    return reinterpret_cast<overrides_iterator>(this + 1);
-  }
-
-  overrides_iterator overrides_end() const {
-    return overrides_begin() + NumOverrides;
-  }
-
-  ArrayRef<ModuleMacro *> overrides() const {
-    return llvm::makeArrayRef(overrides_begin(), overrides_end());
-  }
-  /// \}
-
-  /// Get the number of macros that override this one.
-  unsigned getNumOverridingMacros() const { return NumOverriddenBy; }
-};
 
 /// A description of the current definition of a macro.
 ///
@@ -563,23 +484,20 @@ public:
 /// entities, which are either local MacroDirectives or imported ModuleMacros.
 class MacroDefinition {
   llvm::PointerIntPair<DefMacroDirective *, 1, bool> LatestLocalAndAmbiguous;
-  ArrayRef<ModuleMacro *> ModuleMacros;
 
 public:
   MacroDefinition() = default;
-  MacroDefinition(DefMacroDirective *MD, ArrayRef<ModuleMacro *> MMs,
+  MacroDefinition(DefMacroDirective *MD,
                   bool IsAmbiguous)
-      : LatestLocalAndAmbiguous(MD, IsAmbiguous), ModuleMacros(MMs) {}
+      : LatestLocalAndAmbiguous(MD, IsAmbiguous) {}
 
   /// Determine whether there is a definition of this macro.
   explicit operator bool() const {
-    return getLocalDirective() || !ModuleMacros.empty();
+    return getLocalDirective();
   }
 
   /// Get the MacroInfo that should be used for this definition.
   MacroInfo *getMacroInfo() const {
-    if (!ModuleMacros.empty())
-      return ModuleMacros.back()->getMacroInfo();
     if (auto *MD = getLocalDirective())
       return MD->getMacroInfo();
     return nullptr;
@@ -594,14 +512,10 @@ public:
     return LatestLocalAndAmbiguous.getPointer();
   }
 
-  /// Get the active module macros for this macro.
-  ArrayRef<ModuleMacro *> getModuleMacros() const { return ModuleMacros; }
 
   template <typename Fn> void forAllDefinitions(Fn F) const {
     if (auto *MD = getLocalDirective())
       F(MD->getMacroInfo());
-    for (auto *MM : getModuleMacros())
-      F(MM->getMacroInfo());
   }
 };
 

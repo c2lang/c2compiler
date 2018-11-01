@@ -41,11 +41,13 @@ ExternalPreprocessingRecordSource::~ExternalPreprocessingRecordSource() =
     default;
 
 InclusionDirective::InclusionDirective(PreprocessingRecord &PPRec,
-                                       InclusionKind Kind, StringRef FileName,
-                                       bool InQuotes, bool ImportedModule,
-                                       const FileEntry *File, SourceRange Range)
+                                       InclusionKind Kind,
+                                       StringRef FileName,
+                                       bool InQuotes,
+                                       const FileEntry *File,
+                                       SourceRange Range)
     : PreprocessingDirective(InclusionDirectiveKind, Range), InQuotes(InQuotes),
-      Kind(Kind), ImportedModule(ImportedModule), File(File) {
+      Kind(Kind), File(File) {
   char *Memory = (char *)PPRec.Allocate(FileName.size() + 1, alignof(char));
   memcpy(Memory, FileName.data(), FileName.size());
   Memory[FileName.size()] = 0;
@@ -462,17 +464,15 @@ void PreprocessingRecord::MacroUndefined(const Token &Id,
   MD.forAllDefinitions([&](MacroInfo *MI) { MacroDefinitions.erase(MI); });
 }
 
-void PreprocessingRecord::InclusionDirective(
-    SourceLocation HashLoc,
-    const Token &IncludeTok,
-    StringRef FileName,
-    bool IsAngled,
-    CharSourceRange FilenameRange,
-    const FileEntry *File,
-    StringRef SearchPath,
-    StringRef RelativePath,
-    const Module *Imported,
-    SrcMgr::CharacteristicKind FileType) {
+void PreprocessingRecord::InclusionDirective(SourceLocation HashLoc,
+                                             const Token &IncludeTok,
+                                             StringRef FileName,
+                                             bool IsAngled,
+                                             CharSourceRange FilenameRange,
+                                             const FileEntry *File,
+                                             StringRef SearchPath,
+                                             StringRef RelativePath,
+                                             SrcMgr::CharacteristicKind FileType) {
   InclusionDirective::InclusionKind Kind = InclusionDirective::Include;
 
   switch (IncludeTok.getIdentifierInfo()->getPPKeywordID()) {
@@ -501,10 +501,12 @@ void PreprocessingRecord::InclusionDirective(
       EndLoc = EndLoc.getLocWithOffset(-1); // the InclusionDirective expects
                                             // a token range.
   }
-  c2lang::InclusionDirective *ID =
-      new (*this) c2lang::InclusionDirective(*this, Kind, FileName, !IsAngled,
-                                            (bool)Imported, File,
-                                            SourceRange(HashLoc, EndLoc));
+  c2lang::InclusionDirective *ID = new(*this) c2lang::InclusionDirective(*this,
+                                                                         Kind,
+                                                                         FileName,
+                                                                         !IsAngled,
+                                                                         File,
+                                                                         SourceRange(HashLoc, EndLoc));
   addPreprocessedEntity(ID);
 }
 

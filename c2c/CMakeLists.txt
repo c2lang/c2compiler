@@ -64,8 +64,6 @@ add_library(c2core
     Clang/MacroArgs.cpp
     Clang/MacroInfo.cpp
     Clang/MemoryBufferCache.cpp
-    Clang/Module.cpp
-    Clang/ModuleMap.cpp
     Clang/PPCaching.cpp
     Clang/PPCallbacks.cpp
     Clang/PPConditionalDirectiveRecord.cpp

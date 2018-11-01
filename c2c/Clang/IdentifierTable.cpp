@@ -151,10 +151,6 @@ void IdentifierTable::AddKeywords(const LangOptions &LangOpts) {
 #define TESTING_KEYWORD(NAME, FLAGS)
 #include "Clang/TokenKinds.def"
 
-  if (LangOpts.ParseUnknownAnytype)
-    AddKeyword("__unknown_anytype", tok::kw___unknown_anytype, KEYALL,
-               LangOpts, *this);
-
 
   // Add the '_experimental_modules_import' contextual keyword.
   get("import").setModulesImport(true);

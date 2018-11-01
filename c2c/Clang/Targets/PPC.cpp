@@ -434,8 +434,6 @@ void PPCTargetInfo::fillValidCPUList(SmallVectorImpl<StringRef> &Values) const {
 }
 
 void PPCTargetInfo::adjust(LangOptions &Opts) {
-  if (HasAltivec)
-    Opts.AltiVec = 1;
   TargetInfo::adjust(Opts);
 }
 
