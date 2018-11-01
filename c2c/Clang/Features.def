@@ -31,12 +31,6 @@
 #define EXTENSION(Name, Predicate)
 #endif
 
-FEATURE(address_sanitizer,
-        LangOpts.Sanitize.hasOneOf(SanitizerKind::Address |
-                                   SanitizerKind::KernelAddress))
-FEATURE(hwaddress_sanitizer,
-        LangOpts.Sanitize.hasOneOf(SanitizerKind::HWAddress |
-                                   SanitizerKind::KernelHWAddress))
 FEATURE(assume_nonnull, true)
 FEATURE(attribute_analyzer_noreturn, true)
 FEATURE(attribute_availability, true)
@@ -66,12 +60,6 @@ FEATURE(attribute_diagnose_if_objc, true)
 FEATURE(enumerator_attributes, true)
 FEATURE(nullability, true)
 FEATURE(nullability_on_arrays, true)
-FEATURE(memory_sanitizer, LangOpts.Sanitize.has(SanitizerKind::Memory))
-FEATURE(thread_sanitizer, LangOpts.Sanitize.has(SanitizerKind::Thread))
-FEATURE(dataflow_sanitizer, LangOpts.Sanitize.has(SanitizerKind::DataFlow))
-FEATURE(efficiency_sanitizer,
-        LangOpts.Sanitize.hasOneOf(SanitizerKind::Efficiency))
-FEATURE(scudo, LangOpts.Sanitize.hasOneOf(SanitizerKind::Scudo))
 
 #undef EXTENSION
 #undef FEATURE

@@ -236,8 +236,6 @@ protected:
     Builder.defineMacro("__FreeBSD_kernel__");
     Builder.defineMacro("__GLIBC__");
     Builder.defineMacro("__ELF__");
-    if (Opts.POSIXThreads)
-      Builder.defineMacro("_REENTRANT");
   }
 
 public:
@@ -312,8 +310,6 @@ protected:
       if (Maj)
         Builder.defineMacro("__ANDROID_API__", Twine(Maj));
     }
-    if (Opts.POSIXThreads)
-      Builder.defineMacro("_REENTRANT");
     if (this->HasFloat128)
       Builder.defineMacro("__FLOAT128__");
   }
@@ -358,8 +354,6 @@ protected:
     Builder.defineMacro("__NetBSD__");
     Builder.defineMacro("__unix__");
     Builder.defineMacro("__ELF__");
-    if (Opts.POSIXThreads)
-      Builder.defineMacro("_REENTRANT");
   }
 
 public:
@@ -380,8 +374,6 @@ protected:
     Builder.defineMacro("__OpenBSD__");
     DefineStd(Builder, "unix", Opts);
     Builder.defineMacro("__ELF__");
-    if (Opts.POSIXThreads)
-      Builder.defineMacro("_REENTRANT");
     if (this->HasFloat128)
       Builder.defineMacro("__FLOAT128__");
   }
@@ -540,8 +532,6 @@ protected:
     Builder.defineMacro("_LARGEFILE_SOURCE");
     Builder.defineMacro("_LARGEFILE64_SOURCE");
     Builder.defineMacro("__EXTENSIONS__");
-    if (Opts.POSIXThreads)
-      Builder.defineMacro("_REENTRANT");
     if (this->HasFloat128)
       Builder.defineMacro("__FLOAT128__");
   }
@@ -576,16 +566,6 @@ protected:
   }
   void getVisualStudioDefines(const LangOptions &Opts,
                               MacroBuilder &Builder) const {
-    if (Opts.Bool)
-      Builder.defineMacro("__BOOL_DEFINED");
-
-
-    // FIXME: POSIXThreads isn't exactly the option this should be defined for,
-    //        but it works for now.
-    if (Opts.POSIXThreads)
-      Builder.defineMacro("_MT");
-
-
     Builder.defineMacro("_INTEGRAL_MAX_BITS", "64");
   }
 
@@ -601,8 +581,6 @@ class LLVM_LIBRARY_VISIBILITY NaClTargetInfo : public OSTargetInfo<Target> {
 protected:
   void getOSDefines(const LangOptions &Opts, const llvm::Triple &Triple,
                     MacroBuilder &Builder) const override {
-    if (Opts.POSIXThreads)
-      Builder.defineMacro("_REENTRANT");
 
     DefineStd(Builder, "unix", Opts);
     Builder.defineMacro("__ELF__");
@@ -651,8 +629,6 @@ protected:
                     MacroBuilder &Builder) const override {
     Builder.defineMacro("__Fuchsia__");
     Builder.defineMacro("__ELF__");
-    if (Opts.POSIXThreads)
-      Builder.defineMacro("_REENTRANT");
     // Required by the libc++ locale support.
   }
 
@@ -670,8 +646,6 @@ class LLVM_LIBRARY_VISIBILITY WebAssemblyOSTargetInfo
   void getOSDefines(const LangOptions &Opts, const llvm::Triple &Triple,
                     MacroBuilder &Builder) const final {
     // A common platform macro.
-    if (Opts.POSIXThreads)
-      Builder.defineMacro("_REENTRANT");
     // Follow g++ convention and predefine _GNU_SOURCE for C++.
   }
 

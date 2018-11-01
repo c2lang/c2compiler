@@ -348,19 +348,6 @@ TargetInfo::getCallingConvKind(bool ClangABICompat4) const {
   return CCK_Default;
 }
 
-LangAS TargetInfo::getOpenCLTypeAddrSpace(OpenCLTypeKind TK) const {
-  switch (TK) {
-  case OCLTK_Image:
-  case OCLTK_Pipe:
-    return LangAS::opencl_global;
-
-  case OCLTK_Sampler:
-    return LangAS::opencl_constant;
-
-  default:
-    return LangAS::Default;
-  }
-}
 
 //===----------------------------------------------------------------------===//
 

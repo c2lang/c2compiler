@@ -17,7 +17,6 @@
 
 #include <string>
 #include <vector>
-#include "Clang/OpenCLOptions.h"
 #include <llvm/Target/TargetOptions.h>
 
 namespace c2lang {
@@ -54,12 +53,6 @@ public:
   /// be a list of strings starting with by '+' or '-'.
   std::vector<std::string> Features;
 
-  /// Supported OpenCL extensions and optional core features.
-  OpenCLOptions SupportedOpenCLOptions;
-
-  /// The list of OpenCL extensions to enable or disable, as written on
-  /// the command line.
-  std::vector<std::string> OpenCLExtensionsAsWritten;
 
   /// If given, enables support for __int128_t and __uint128_t types.
   bool ForceEnableInt128 = false;

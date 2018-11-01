@@ -27,14 +27,8 @@ void getDarwinDefines(MacroBuilder &Builder, const LangOptions &Opts,
   Builder.defineMacro("__APPLE__");
   Builder.defineMacro("__STDC_NO_THREADS__");
   Builder.defineMacro("OBJC_NEW_PROPERTIES");
-  // AddressSanitizer doesn't play well with source fortification, which is on
-  // by default on Darwin.
-  if (Opts.Sanitize.has(SanitizerKind::Address))
-    Builder.defineMacro("_FORTIFY_SOURCE", "0");
 
 
-  if (Opts.POSIXThreads)
-    Builder.defineMacro("_REENTRANT");
 
   // Get the platform type and version number from the triple.
   unsigned Maj, Min, Rev;

@@ -46,7 +46,6 @@ static bool IsStringPrefix(StringRef Str, bool CPlusPlus11) {
 /// IsIdentifierStringPrefix - Return true if the spelling of the token
 /// is literally 'L', 'u', 'U', or 'u8'. Including raw versions.
 bool TokenConcatenation::IsIdentifierStringPrefix(const Token &Tok) const {
-  const LangOptions &LangOpts = PP.getLangOpts();
 
   if (!Tok.needsCleaning()) {
     if (Tok.getLength() < 1 || Tok.getLength() > 3)

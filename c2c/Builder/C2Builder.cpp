@@ -238,7 +238,6 @@ int C2Builder::build() {
     uint64_t t1_build = Utils::getCurrentTime();
     // LangOptions
     LangOptions LangOpts;
-    LangOpts.Bool = 1;
 
     // Diagnostics
     // NOTE: DiagOpts is somehow deleted by Diags/TextDiagnosticPrinter below?
