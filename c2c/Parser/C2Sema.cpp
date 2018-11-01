@@ -122,9 +122,6 @@ static inline UnaryOperatorKind ConvertTokenKindToUnaryOpcode(
     case tok::minus:        Opc = UO_Minus; break;
     case tok::tilde:        Opc = UO_Not; break;
     case tok::exclaim:      Opc = UO_LNot; break;
-    case tok::kw___real:    Opc = UO_Real; break;
-    case tok::kw___imag:    Opc = UO_Imag; break;
-    case tok::kw___extension__: Opc = UO_Extension; break;
     }
     return Opc;
 }

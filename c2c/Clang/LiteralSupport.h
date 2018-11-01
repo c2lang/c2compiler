@@ -93,9 +93,8 @@ public:
     return SuffixBegin - ThisTokBegin;
   }
 
-  static bool isValidUDSuffix(const LangOptions &LangOpts, StringRef Suffix);
 
-  unsigned getRadix() const { return radix; }
+    unsigned getRadix() const { return radix; }
 
   /// GetIntegerValue - Convert this numeric literal value to an APInt that
   /// matches Val's input width.  If there is an overflow (i.e., if the unsigned

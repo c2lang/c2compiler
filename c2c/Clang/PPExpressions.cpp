@@ -248,7 +248,7 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
       if (II->isStr("defined"))
         return EvaluateDefined(Result, PeekTok, DT, ValueLive, PP);
 
-      if (!II->isCPlusPlusOperatorKeyword()) {
+      {
         // If this identifier isn't 'defined' or one of the special
         // preprocessor keywords and it wasn't macro expanded, it turns
         // into a simple 0
@@ -293,13 +293,8 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
       PP.Diag(PeekTok, diag::err_pp_invalid_udl) << /*integer*/1;
 
     // 'long long' is a C99 or C++11 feature.
-    if (!PP.getLangOpts().C99 && Literal.isLongLong) {
-      if (PP.getLangOpts().CPlusPlus)
-        PP.Diag(PeekTok,
-             PP.getLangOpts().CPlusPlus11 ?
-             diag::warn_cxx98_compat_longlong : diag::ext_cxx11_longlong);
-      else
-        PP.Diag(PeekTok, diag::ext_c99_longlong);
+    if (Literal.isLongLong) {
+      PP.Diag(PeekTok, diag::ext_c99_longlong);
     }
 
     // Parse the integer literal into Result.
@@ -757,7 +752,7 @@ static bool EvaluateDirectiveSubExpr(PPValue &LHS, unsigned MinPrec,
     case tok::comma:
       // Comma is invalid in pp expressions in c89/c++ mode, but is valid in C99
       // if not being evaluated.
-      if (!PP.getLangOpts().C99 || ValueLive)
+      if (ValueLive)
         PP.Diag(OpLoc, diag::ext_pp_comma_expr)
           << LHS.getRange() << RHS.getRange();
       Res = RHS.Val; // LHS = LHS,RHS -> RHS.

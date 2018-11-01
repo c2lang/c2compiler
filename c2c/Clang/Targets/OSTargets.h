@@ -238,8 +238,6 @@ protected:
     Builder.defineMacro("__ELF__");
     if (Opts.POSIXThreads)
       Builder.defineMacro("_REENTRANT");
-    if (Opts.CPlusPlus)
-      Builder.defineMacro("_GNU_SOURCE");
   }
 
 public:
@@ -316,8 +314,6 @@ protected:
     }
     if (Opts.POSIXThreads)
       Builder.defineMacro("_REENTRANT");
-    if (Opts.CPlusPlus)
-      Builder.defineMacro("_GNU_SOURCE");
     if (this->HasFloat128)
       Builder.defineMacro("__FLOAT128__");
   }
@@ -501,8 +497,6 @@ protected:
 
     Builder.defineMacro("__rtems__");
     Builder.defineMacro("__ELF__");
-    if (Opts.CPlusPlus)
-      Builder.defineMacro("_GNU_SOURCE");
   }
 
 public:
@@ -542,12 +536,7 @@ protected:
     // newer, but to 500 for everything else.  feature_test.h has a check to
     // ensure that you are not using C99 with an old version of X/Open or C89
     // with a new version.
-    if (Opts.C99)
-      Builder.defineMacro("_XOPEN_SOURCE", "600");
-    else
-      Builder.defineMacro("_XOPEN_SOURCE", "500");
-    if (Opts.CPlusPlus)
-      Builder.defineMacro("__C99FEATURES__");
+    Builder.defineMacro("_XOPEN_SOURCE", "600");
     Builder.defineMacro("_LARGEFILE_SOURCE");
     Builder.defineMacro("_LARGEFILE64_SOURCE");
     Builder.defineMacro("__EXTENSIONS__");
@@ -587,14 +576,6 @@ protected:
   }
   void getVisualStudioDefines(const LangOptions &Opts,
                               MacroBuilder &Builder) const {
-    if (Opts.CPlusPlus) {
-      if (Opts.RTTIData)
-        Builder.defineMacro("_CPPRTTI");
-
-      if (Opts.CXXExceptions)
-        Builder.defineMacro("_CPPUNWIND");
-    }
-
     if (Opts.Bool)
       Builder.defineMacro("__BOOL_DEFINED");
 
@@ -606,35 +587,6 @@ protected:
     if (Opts.POSIXThreads)
       Builder.defineMacro("_MT");
 
-    if (Opts.MSCompatibilityVersion) {
-      Builder.defineMacro("_MSC_VER",
-                          Twine(Opts.MSCompatibilityVersion / 100000));
-      Builder.defineMacro("_MSC_FULL_VER", Twine(Opts.MSCompatibilityVersion));
-      // FIXME We cannot encode the revision information into 32-bits
-      Builder.defineMacro("_MSC_BUILD", Twine(1));
-
-      if (Opts.CPlusPlus11 && Opts.isCompatibleWithMSVC(LangOptions::MSVC2015))
-        Builder.defineMacro("_HAS_CHAR16_T_LANGUAGE_SUPPORT", Twine(1));
-
-      if (Opts.isCompatibleWithMSVC(LangOptions::MSVC2015)) {
-        if (Opts.CPlusPlus2a)
-          Builder.defineMacro("_MSVC_LANG", "201704L");
-        else if (Opts.CPlusPlus17)
-          Builder.defineMacro("_MSVC_LANG", "201703L");
-        else if (Opts.CPlusPlus14)
-          Builder.defineMacro("_MSVC_LANG", "201402L");
-      }
-    }
-
-    if (Opts.MicrosoftExt) {
-      Builder.defineMacro("_MSC_EXTENSIONS");
-
-      if (Opts.CPlusPlus11) {
-        Builder.defineMacro("_RVALUE_REFERENCES_V2_SUPPORTED");
-        Builder.defineMacro("_RVALUE_REFERENCES_SUPPORTED");
-        Builder.defineMacro("_NATIVE_NULLPTR_SUPPORTED");
-      }
-    }
 
     Builder.defineMacro("_INTEGRAL_MAX_BITS", "64");
   }
@@ -653,8 +605,6 @@ protected:
                     MacroBuilder &Builder) const override {
     if (Opts.POSIXThreads)
       Builder.defineMacro("_REENTRANT");
-    if (Opts.CPlusPlus)
-      Builder.defineMacro("_GNU_SOURCE");
 
     DefineStd(Builder, "unix", Opts);
     Builder.defineMacro("__ELF__");
@@ -706,8 +656,6 @@ protected:
     if (Opts.POSIXThreads)
       Builder.defineMacro("_REENTRANT");
     // Required by the libc++ locale support.
-    if (Opts.CPlusPlus)
-      Builder.defineMacro("_GNU_SOURCE");
   }
 
 public:
@@ -727,8 +675,6 @@ class LLVM_LIBRARY_VISIBILITY WebAssemblyOSTargetInfo
     if (Opts.POSIXThreads)
       Builder.defineMacro("_REENTRANT");
     // Follow g++ convention and predefine _GNU_SOURCE for C++.
-    if (Opts.CPlusPlus)
-      Builder.defineMacro("_GNU_SOURCE");
   }
 
 public:

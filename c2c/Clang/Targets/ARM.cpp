@@ -1011,8 +1011,6 @@ void ItaniumWindowsARMleTargetInfo::getTargetDefines(
     const LangOptions &Opts, MacroBuilder &Builder) const {
   WindowsARMTargetInfo::getTargetDefines(Opts, Builder);
 
-  if (Opts.MSVCCompat)
-    WindowsARMTargetInfo::getVisualStudioDefines(Opts, Builder);
 }
 
 // Windows ARM, MS (C++) ABI
@@ -1056,8 +1054,6 @@ void CygwinARMTargetInfo::getTargetDefines(const LangOptions &Opts,
   Builder.defineMacro("__CYGWIN__");
   Builder.defineMacro("__CYGWIN32__");
   DefineStd(Builder, "unix", Opts);
-  if (Opts.CPlusPlus)
-    Builder.defineMacro("_GNU_SOURCE");
 }
 
 DarwinARMTargetInfo::DarwinARMTargetInfo(const llvm::Triple &Triple,
@@ -1074,7 +1070,6 @@ DarwinARMTargetInfo::DarwinARMTargetInfo(const llvm::Triple &Triple,
     TheCXXABI.set(TargetCXXABI::WatchOS);
 
     // BOOL should be a real boolean on the new ABI
-    UseSignedCharForObjCBool = false;
   } else
     TheCXXABI.set(TargetCXXABI::iOS);
 }

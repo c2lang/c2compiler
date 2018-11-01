@@ -209,14 +209,7 @@ private:
   /// return preexpanded tokens from Tokens.
   void ExpandFunctionArguments();
 
-  /// HandleMicrosoftCommentPaste - In microsoft compatibility mode, /##/ pastes
-  /// together to form a comment that comments out everything in the current
-  /// macro, other active macros, and anything left on the current physical
-  /// source line of the expanded buffer.  Handle this by returning the
-  /// first token on the next line.
-  void HandleMicrosoftCommentPaste(Token &Tok, SourceLocation OpLoc);
-
-  /// If \p loc is a FileID and points inside the current macro
+    /// If \p loc is a FileID and points inside the current macro
   /// definition, returns the appropriate source location pointing at the
   /// macro expansion source location entry.
   SourceLocation getExpansionLocForMacroDefLoc(SourceLocation loc) const;

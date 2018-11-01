@@ -229,16 +229,6 @@ class Preprocessor {
   /// the program, including program keywords.
   mutable IdentifierTable Identifiers;
 
-  /// This table contains all the selectors in the program.
-  ///
-  /// Unlike IdentifierTable above, this table *isn't* populated by the
-  /// preprocessor. It is declared/expanded here because its role/lifetime is
-  /// conceptually similar to the IdentifierTable. In addition, the current
-  /// control flow (in c2lang::ParseAST()), make it convenient to put here.
-  ///
-  /// FIXME: Make sure the lifetime of Identifiers/Selectors *isn't* tied to
-  /// the lifetime of the preprocessor.
-  SelectorTable Selectors;
 
   /// Information about builtins.
   Builtin::Context BuiltinInfo;
@@ -828,7 +818,6 @@ public:
 
   IdentifierTable &getIdentifierTable() { return Identifiers; }
   const IdentifierTable &getIdentifierTable() const { return Identifiers; }
-  SelectorTable &getSelectorTable() { return Selectors; }
   Builtin::Context &getBuiltinInfo() { return BuiltinInfo; }
   llvm::BumpPtrAllocator &getPreprocessorAllocator() { return BP; }
 
@@ -2101,8 +2090,6 @@ private:
                               bool isImport = false);
   void HandleIncludeNextDirective(SourceLocation HashLoc, Token &Tok);
   void HandleIncludeMacrosDirective(SourceLocation HashLoc, Token &Tok);
-  void HandleImportDirective(SourceLocation HashLoc, Token &Tok);
-  void HandleMicrosoftImportDirective(Token &Tok);
 
 public:
   /// Check that the given module is available, producing a diagnostic if not.

@@ -33,12 +33,6 @@ void getDarwinDefines(MacroBuilder &Builder, const LangOptions &Opts,
     Builder.defineMacro("_FORTIFY_SOURCE", "0");
 
   // Darwin defines __weak, __strong, and __unsafe_unretained even in C mode.
-  if (!Opts.ObjC1) {
-    // __weak is always defined, for use in blocks and with objc pointers.
-    Builder.defineMacro("__weak", "__attribute__((objc_gc(weak)))");
-    Builder.defineMacro("__strong", "");
-    Builder.defineMacro("__unsafe_unretained", "");
-  }
 
   if (Opts.Static)
     Builder.defineMacro("__STATIC__");

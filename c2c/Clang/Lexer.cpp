@@ -54,23 +54,6 @@ using namespace c2lang;
 // Token Class Implementation
 //===----------------------------------------------------------------------===//
 
-/// isObjCAtKeyword - Return true if we have an ObjC keyword identifier.
-bool Token::isObjCAtKeyword(tok::ObjCKeywordKind objcKey) const {
-  if (isAnnotation())
-    return false;
-  if (IdentifierInfo *II = getIdentifierInfo())
-    return II->getObjCKeywordID() == objcKey;
-  return false;
-}
-
-/// getObjCKeywordID - Return the ObjC keyword kind.
-tok::ObjCKeywordKind Token::getObjCKeywordID() const {
-  if (isAnnotation())
-    return tok::objc_not_keyword;
-  IdentifierInfo *specId = getIdentifierInfo();
-  return specId ? specId->getObjCKeywordID() : tok::objc_not_keyword;
-}
-
 //===----------------------------------------------------------------------===//
 // Lexer Class Implementation
 //===----------------------------------------------------------------------===//
@@ -1424,31 +1407,17 @@ void Lexer::SetByteOffset(unsigned Offset, bool StartOfLine) {
 static bool isAllowedIDChar(uint32_t C, const LangOptions &LangOpts) {
   if (LangOpts.AsmPreprocessor) {
     return false;
-  } else if (LangOpts.CPlusPlus11 || LangOpts.C11) {
-    static const llvm::sys::UnicodeCharSet C11AllowedIDChars(
-        C11AllowedIDCharRanges);
-    return C11AllowedIDChars.contains(C);
-  } else if (LangOpts.CPlusPlus) {
-    static const llvm::sys::UnicodeCharSet CXX03AllowedIDChars(
-        CXX03AllowedIDCharRanges);
-    return CXX03AllowedIDChars.contains(C);
-  } else {
+  }
     static const llvm::sys::UnicodeCharSet C99AllowedIDChars(
         C99AllowedIDCharRanges);
-    return C99AllowedIDChars.contains(C);
-  }
+
+  return C99AllowedIDChars.contains(C);
 }
 
 static bool isAllowedInitiallyIDChar(uint32_t C, const LangOptions &LangOpts) {
   assert(isAllowedIDChar(C, LangOpts));
   if (LangOpts.AsmPreprocessor) {
     return false;
-  } else if (LangOpts.CPlusPlus11 || LangOpts.C11) {
-    static const llvm::sys::UnicodeCharSet C11DisallowedInitialIDChars(
-        C11DisallowedInitialIDCharRanges);
-    return !C11DisallowedInitialIDChars.contains(C);
-  } else if (LangOpts.CPlusPlus) {
-    return true;
   } else {
     static const llvm::sys::UnicodeCharSet C99DisallowedInitialIDChars(
         C99DisallowedInitialIDCharRanges);
@@ -1739,7 +1708,7 @@ bool Lexer::LexNumericConstant(Token &Result, const char *CurPtr) {
   if ((C == '-' || C == '+') && (PrevCh == 'E' || PrevCh == 'e')) {
     // If we are in Microsoft mode, don't continue if the constant is hex.
     // For example, MSVC will accept the following as 3 tokens: 0x1234567e+1
-    if (!LangOpts.MicrosoftExt || !isHexaLiteral(BufferPtr, LangOpts))
+    if (!isHexaLiteral(BufferPtr, LangOpts))
       return LexNumericConstant(Result, ConsumeChar(CurPtr, Size, Result));
   }
 
@@ -1749,19 +1718,11 @@ bool Lexer::LexNumericConstant(Token &Result, const char *CurPtr) {
     // not-quite-conforming extension. Only do so if this looks like it's
     // actually meant to be a hexfloat, and not if it has a ud-suffix.
     bool IsHexFloat = true;
-    if (!LangOpts.C99) {
-      if (!isHexaLiteral(BufferPtr, LangOpts))
-        IsHexFloat = false;
-      else if (!getLangOpts().CPlusPlus17 &&
-               std::find(BufferPtr, CurPtr, '_') != CurPtr)
-        IsHexFloat = false;
-    }
-    if (IsHexFloat)
-      return LexNumericConstant(Result, ConsumeChar(CurPtr, Size, Result));
+    return LexNumericConstant(Result, ConsumeChar(CurPtr, Size, Result));
   }
 
   // If we have a digit separator, continue.
-  if (C == '\'' && getLangOpts().CPlusPlus14) {
+  if (C == '_') {
     unsigned NextSize;
     char Next = getCharAndSizeNoWarn(CurPtr + Size, NextSize, getLangOpts());
     if (isIdentifierBody(Next)) {
@@ -1786,96 +1747,6 @@ bool Lexer::LexNumericConstant(Token &Result, const char *CurPtr) {
   return true;
 }
 
-/// LexUDSuffix - Lex the ud-suffix production for user-defined literal suffixes
-/// in C++11, or warn on a ud-suffix in C++98.
-const char *Lexer::LexUDSuffix(Token &Result, const char *CurPtr,
-                               bool IsStringLiteral) {
-  assert(getLangOpts().CPlusPlus);
-
-  // Maximally munch an identifier.
-  unsigned Size;
-  char C = getCharAndSize(CurPtr, Size);
-  bool Consumed = false;
-
-  if (!isIdentifierHead(C)) {
-    if (C == '\\' && tryConsumeIdentifierUCN(CurPtr, Size, Result))
-      Consumed = true;
-    else if (!isASCII(C) && tryConsumeIdentifierUTF8Char(CurPtr))
-      Consumed = true;
-    else
-      return CurPtr;
-  }
-
-  if (!getLangOpts().CPlusPlus11) {
-    if (!isLexingRawMode())
-      Diag(CurPtr,
-           C == '_' ? diag::warn_cxx11_compat_user_defined_literal
-                    : diag::warn_cxx11_compat_reserved_user_defined_literal)
-        << FixItHint::CreateInsertion(getSourceLocation(CurPtr), " ");
-    return CurPtr;
-  }
-
-  // C++11 [lex.ext]p10, [usrlit.suffix]p1: A program containing a ud-suffix
-  // that does not start with an underscore is ill-formed. As a conforming
-  // extension, we treat all such suffixes as if they had whitespace before
-  // them. We assume a suffix beginning with a UCN or UTF-8 character is more
-  // likely to be a ud-suffix than a macro, however, and accept that.
-  if (!Consumed) {
-    bool IsUDSuffix = false;
-    if (C == '_')
-      IsUDSuffix = true;
-    else if (IsStringLiteral && getLangOpts().CPlusPlus14) {
-      // In C++1y, we need to look ahead a few characters to see if this is a
-      // valid suffix for a string literal or a numeric literal (this could be
-      // the 'operator""if' defining a numeric literal operator).
-      const unsigned MaxStandardSuffixLength = 3;
-      char Buffer[MaxStandardSuffixLength] = { C };
-      unsigned Consumed = Size;
-      unsigned Chars = 1;
-      while (true) {
-        unsigned NextSize;
-        char Next = getCharAndSizeNoWarn(CurPtr + Consumed, NextSize,
-                                         getLangOpts());
-        if (!isIdentifierBody(Next)) {
-          // End of suffix. Check whether this is on the whitelist.
-          const StringRef CompleteSuffix(Buffer, Chars);
-          IsUDSuffix = StringLiteralParser::isValidUDSuffix(getLangOpts(),
-                                                            CompleteSuffix);
-          break;
-        }
-
-        if (Chars == MaxStandardSuffixLength)
-          // Too long: can't be a standard suffix.
-          break;
-
-        Buffer[Chars++] = Next;
-        Consumed += NextSize;
-      }
-    }
-
-    if (!IsUDSuffix) {
-      if (!isLexingRawMode())
-        Diag(CurPtr, getLangOpts().MSVCCompat
-                         ? diag::ext_ms_reserved_user_defined_literal
-                         : diag::ext_reserved_user_defined_literal)
-          << FixItHint::CreateInsertion(getSourceLocation(CurPtr), " ");
-      return CurPtr;
-    }
-
-    CurPtr = ConsumeChar(CurPtr, Size, Result);
-  }
-
-  Result.setFlag(Token::HasUDSuffix);
-  while (true) {
-    C = getCharAndSize(CurPtr, Size);
-    if (isIdentifierBody(C)) { CurPtr = ConsumeChar(CurPtr, Size, Result); }
-    else if (C == '\\' && tryConsumeIdentifierUCN(CurPtr, Size, Result)) {}
-    else if (!isASCII(C) && tryConsumeIdentifierUTF8Char(CurPtr)) {}
-    else break;
-  }
-
-  return CurPtr;
-}
 
 /// LexStringLiteral - Lex the remainder of a string literal, after having lexed
 /// either " or L" or u8" or u" or U".
@@ -1888,9 +1759,7 @@ bool Lexer::LexStringLiteral(Token &Result, const char *CurPtr,
       (Kind == tok::utf8_string_literal ||
        Kind == tok::utf16_string_literal ||
        Kind == tok::utf32_string_literal))
-    Diag(BufferPtr, getLangOpts().CPlusPlus
-           ? diag::warn_cxx98_compat_unicode_literal
-           : diag::warn_c99_compat_unicode_literal);
+    Diag(BufferPtr, diag::warn_c99_compat_unicode_literal);
 
   char C = getAndAdvanceChar(CurPtr, Result);
   while (C != '"') {
@@ -1920,9 +1789,6 @@ bool Lexer::LexStringLiteral(Token &Result, const char *CurPtr,
     C = getAndAdvanceChar(CurPtr, Result);
   }
 
-  // If we are in C++11, lex the optional ud-suffix.
-  if (getLangOpts().CPlusPlus)
-    CurPtr = LexUDSuffix(Result, CurPtr, true);
 
   // If a nul character existed in the string, warn about it.
   if (NulCharacter && !isLexingRawMode())
@@ -2004,9 +1870,6 @@ bool Lexer::LexRawStringLiteral(Token &Result, const char *CurPtr,
     }
   }
 
-  // If we are in C++11, lex the optional ud-suffix.
-  if (getLangOpts().CPlusPlus)
-    CurPtr = LexUDSuffix(Result, CurPtr, true);
 
   // Update the location of token as well as BufferPtr.
   const char *TokStart = BufferPtr;
@@ -2063,9 +1926,7 @@ bool Lexer::LexCharConstant(Token &Result, const char *CurPtr,
 
   if (!isLexingRawMode()) {
     if (Kind == tok::utf16_char_constant || Kind == tok::utf32_char_constant)
-      Diag(BufferPtr, getLangOpts().CPlusPlus
-                          ? diag::warn_cxx98_compat_unicode_literal
-                          : diag::warn_c99_compat_unicode_literal);
+      Diag(BufferPtr, diag::warn_c99_compat_unicode_literal);
     else if (Kind == tok::utf8_char_constant)
       Diag(BufferPtr, diag::warn_cxx14_compat_u8_character_literal);
   }
@@ -2105,8 +1966,6 @@ bool Lexer::LexCharConstant(Token &Result, const char *CurPtr,
   }
 
   // If we are in C++11, lex the optional ud-suffix.
-  if (getLangOpts().CPlusPlus)
-    CurPtr = LexUDSuffix(Result, CurPtr, false);
 
   // If a nul character existed in the character, warn about it.
   if (NulCharacter && !isLexingRawMode())
@@ -2695,18 +2554,7 @@ bool Lexer::LexEndOfFile(Token &Result, const char *CurPtr) {
     SourceLocation EndLoc = getSourceLocation(BufferEnd);
     unsigned DiagID;
 
-    if (LangOpts.CPlusPlus11) {
-      // C++11 [lex.phases] 2.2 p2
-      // Prefer the C++98 pedantic compatibility warning over the generic,
-      // non-extension, user-requested "missing newline at EOF" warning.
-      if (!Diags.isIgnored(diag::warn_cxx98_compat_no_newline_eof, EndLoc)) {
-        DiagID = diag::warn_cxx98_compat_no_newline_eof;
-      } else {
-        DiagID = diag::warn_no_newline_eof;
-      }
-    } else {
-      DiagID = diag::ext_no_newline_eof;
-    }
+    DiagID = diag::ext_no_newline_eof;
 
     Diag(BufferEnd, DiagID)
       << FixItHint::CreateInsertion(EndLoc, "\n");
@@ -2913,11 +2761,6 @@ uint32_t Lexer::tryReadUCN(const char *&StartPtr, const char *SlashLoc,
   else
     return 0;
 
-  if (!LangOpts.CPlusPlus && !LangOpts.C99) {
-    if (Result && !isLexingRawMode())
-      Diag(SlashLoc, diag::warn_ucn_not_valid_in_c89);
-    return 0;
-  }
 
   const char *CurPtr = StartPtr + CharSize;
   const char *KindLoc = &CurPtr[-1];
@@ -3000,10 +2843,7 @@ uint32_t Lexer::tryReadUCN(const char *&StartPtr, const char *SlashLoc,
     // We don't use isLexingRawMode() here because we need to diagnose bad
     // UCNs even when skipping preprocessing tokens in a #if block.
     if (Result && PP) {
-      if (LangOpts.CPlusPlus && !LangOpts.CPlusPlus11)
-        Diag(BufferPtr, diag::warn_ucn_escape_surrogate);
-      else
-        Diag(BufferPtr, diag::err_ucn_escape_invalid);
+      Diag(BufferPtr, diag::err_ucn_escape_invalid);
     }
     return 0;
   }
@@ -3166,12 +3006,6 @@ LexNextToken:
     goto LexNextToken;
 
   case 26:  // DOS & CP/M EOF: "^Z".
-    // If we're in Microsoft extensions mode, treat this as end of file.
-    if (LangOpts.MicrosoftExt) {
-      if (!isLexingRawMode())
-        Diag(CurPtr-1, diag::ext_ctrl_z_eof_microsoft);
-      return LexEndOfFile(Result, CurPtr-1);
-    }
 
     // If Microsoft extensions are disabled, this is just random garbage.
     Kind = tok::unknown;
@@ -3224,8 +3058,7 @@ LexNextToken:
     // If the next token is obviously a // or /* */ comment, skip it efficiently
     // too (without going through the big switch stmt).
     if (CurPtr[0] == '/' && CurPtr[1] == '/' && !inKeepCommentMode() &&
-        LangOpts.LineComment &&
-        (LangOpts.CPlusPlus || !LangOpts.TraditionalCPP)) {
+        LangOpts.LineComment) {
       if (SkipLineComment(Result, CurPtr+2, TokAtPhysicalStartOfLine))
         return true; // There is a token to return.
       goto SkipIgnoredUnits;
@@ -3252,7 +3085,7 @@ LexNextToken:
     // Notify MIOpt that we read a non-whitespace/non-comment token.
     MIOpt.ReadToken();
 
-    if (LangOpts.CPlusPlus11 || LangOpts.C11) {
+    {
       Char = getCharAndSize(CurPtr, SizeTmp);
 
       // UTF-16 string literal
@@ -3266,13 +3099,6 @@ LexNextToken:
                                tok::utf16_char_constant);
 
       // UTF-16 raw string literal
-      if (Char == 'R' && LangOpts.CPlusPlus11 &&
-          getCharAndSize(CurPtr + SizeTmp, SizeTmp2) == '"')
-        return LexRawStringLiteral(Result,
-                               ConsumeChar(ConsumeChar(CurPtr, SizeTmp, Result),
-                                           SizeTmp2, Result),
-                               tok::utf16_string_literal);
-
       if (Char == '8') {
         char Char2 = getCharAndSize(CurPtr + SizeTmp, SizeTmp2);
 
@@ -3282,24 +3108,6 @@ LexNextToken:
                                ConsumeChar(ConsumeChar(CurPtr, SizeTmp, Result),
                                            SizeTmp2, Result),
                                tok::utf8_string_literal);
-        if (Char2 == '\'' && LangOpts.CPlusPlus17)
-          return LexCharConstant(
-              Result, ConsumeChar(ConsumeChar(CurPtr, SizeTmp, Result),
-                                  SizeTmp2, Result),
-              tok::utf8_char_constant);
-
-        if (Char2 == 'R' && LangOpts.CPlusPlus11) {
-          unsigned SizeTmp3;
-          char Char3 = getCharAndSize(CurPtr + SizeTmp + SizeTmp2, SizeTmp3);
-          // UTF-8 raw string literal
-          if (Char3 == '"') {
-            return LexRawStringLiteral(Result,
-                   ConsumeChar(ConsumeChar(ConsumeChar(CurPtr, SizeTmp, Result),
-                                           SizeTmp2, Result),
-                               SizeTmp3, Result),
-                   tok::utf8_string_literal);
-          }
-        }
       }
     }
 
@@ -3310,7 +3118,7 @@ LexNextToken:
     // Notify MIOpt that we read a non-whitespace/non-comment token.
     MIOpt.ReadToken();
 
-    if (LangOpts.CPlusPlus11 || LangOpts.C11) {
+    {
       Char = getCharAndSize(CurPtr, SizeTmp);
 
       // UTF-32 string literal
@@ -3323,13 +3131,6 @@ LexNextToken:
         return LexCharConstant(Result, ConsumeChar(CurPtr, SizeTmp, Result),
                                tok::utf32_char_constant);
 
-      // UTF-32 raw string literal
-      if (Char == 'R' && LangOpts.CPlusPlus11 &&
-          getCharAndSize(CurPtr + SizeTmp, SizeTmp2) == '"')
-        return LexRawStringLiteral(Result,
-                               ConsumeChar(ConsumeChar(CurPtr, SizeTmp, Result),
-                                           SizeTmp2, Result),
-                               tok::utf32_string_literal);
     }
 
     // treat U like the start of an identifier.
@@ -3339,14 +3140,6 @@ LexNextToken:
     // Notify MIOpt that we read a non-whitespace/non-comment token.
     MIOpt.ReadToken();
 
-    if (LangOpts.CPlusPlus11) {
-      Char = getCharAndSize(CurPtr, SizeTmp);
-
-      if (Char == '"')
-        return LexRawStringLiteral(Result,
-                                   ConsumeChar(CurPtr, SizeTmp, Result),
-                                   tok::string_literal);
-    }
 
     // treat R like the start of an identifier.
     return LexIdentifier(Result, CurPtr);
@@ -3361,13 +3154,6 @@ LexNextToken:
       return LexStringLiteral(Result, ConsumeChar(CurPtr, SizeTmp, Result),
                               tok::wide_string_literal);
 
-    // Wide raw string literal.
-    if (LangOpts.CPlusPlus11 && Char == 'R' &&
-        getCharAndSize(CurPtr + SizeTmp, SizeTmp2) == '"')
-      return LexRawStringLiteral(Result,
-                               ConsumeChar(ConsumeChar(CurPtr, SizeTmp, Result),
-                                           SizeTmp2, Result),
-                               tok::wide_string_literal);
 
     // Wide character constant.
     if (Char == '\'')
@@ -3443,9 +3229,6 @@ LexNextToken:
       MIOpt.ReadToken();
 
       return LexNumericConstant(Result, ConsumeChar(CurPtr, SizeTmp, Result));
-    } else if (LangOpts.CPlusPlus && Char == '*') {
-      Kind = tok::periodstar;
-      CurPtr += SizeTmp;
     } else if (Char == '.' &&
                getCharAndSize(CurPtr+SizeTmp, SizeTmp2) == '.') {
       Kind = tok::ellipsis;
@@ -3492,11 +3275,6 @@ LexNextToken:
     if (Char == '-') {      // --
       CurPtr = ConsumeChar(CurPtr, SizeTmp, Result);
       Kind = tok::minusminus;
-    } else if (Char == '>' && LangOpts.CPlusPlus &&
-               getCharAndSize(CurPtr+SizeTmp, SizeTmp2) == '*') {  // C++ ->*
-      CurPtr = ConsumeChar(ConsumeChar(CurPtr, SizeTmp, Result),
-                           SizeTmp2, Result);
-      Kind = tok::arrowstar;
     } else if (Char == '>') {   // ->
       CurPtr = ConsumeChar(CurPtr, SizeTmp, Result);
       Kind = tok::arrow;
@@ -3530,8 +3308,7 @@ LexNextToken:
       // "foo".  Check to see if the character after the second slash is a '*'.
       // If so, we will lex that as a "/" instead of the start of a comment.
       // However, we never do this if we are just preprocessing.
-      bool TreatAsComment = LangOpts.LineComment &&
-                            (LangOpts.CPlusPlus || !LangOpts.TraditionalCPP);
+      bool TreatAsComment = true;
       if (!TreatAsComment)
         if (!(PP && PP->isPreprocessedOutput()))
           TreatAsComment = getCharAndSize(CurPtr+SizeTmp, SizeTmp2) != '*';
@@ -3580,11 +3357,6 @@ LexNextToken:
         Kind = tok::hashhash;                          // '%:%:' -> '##'
         CurPtr = ConsumeChar(ConsumeChar(CurPtr, SizeTmp, Result),
                              SizeTmp2, Result);
-      } else if (Char == '@' && LangOpts.MicrosoftExt) {// %:@ -> #@ -> Charize
-        CurPtr = ConsumeChar(CurPtr, SizeTmp, Result);
-        if (!isLexingRawMode())
-          Diag(BufferPtr, diag::ext_charize_microsoft);
-        Kind = tok::hashat;
       } else {                                         // '%:' -> '#'
         // We parsed a # character.  If this occurs at the start of the line,
         // it's actually the start of a preprocessing directive.  Callback to
@@ -3627,43 +3399,9 @@ LexNextToken:
       }
     } else if (Char == '=') {
       char After = getCharAndSize(CurPtr+SizeTmp, SizeTmp2);
-      if (After == '>') {
-        if (getLangOpts().CPlusPlus2a) {
-          if (!isLexingRawMode())
-            Diag(BufferPtr, diag::warn_cxx17_compat_spaceship);
-          CurPtr = ConsumeChar(ConsumeChar(CurPtr, SizeTmp, Result),
-                               SizeTmp2, Result);
-          Kind = tok::spaceship;
-          break;
-        }
-        // Suggest adding a space between the '<=' and the '>' to avoid a
-        // change in semantics if this turns up in C++ <=17 mode.
-        if (getLangOpts().CPlusPlus && !isLexingRawMode()) {
-          Diag(BufferPtr, diag::warn_cxx2a_compat_spaceship)
-            << FixItHint::CreateInsertion(
-                   getSourceLocation(CurPtr + SizeTmp, SizeTmp2), " ");
-        }
-      }
       CurPtr = ConsumeChar(CurPtr, SizeTmp, Result);
       Kind = tok::lessequal;
     } else if (LangOpts.Digraphs && Char == ':') {     // '<:' -> '['
-      if (LangOpts.CPlusPlus11 &&
-          getCharAndSize(CurPtr + SizeTmp, SizeTmp2) == ':') {
-        // C++0x [lex.pptoken]p3:
-        //  Otherwise, if the next three characters are <:: and the subsequent
-        //  character is neither : nor >, the < is treated as a preprocessor
-        //  token by itself and not as the first character of the alternative
-        //  token <:.
-        unsigned SizeTmp3;
-        char After = getCharAndSize(CurPtr + SizeTmp + SizeTmp2, SizeTmp3);
-        if (After != ':' && After != '>') {
-          Kind = tok::less;
-          if (!isLexingRawMode())
-            Diag(BufferPtr, diag::warn_cxx98_compat_less_colon_colon);
-          break;
-        }
-      }
-
       CurPtr = ConsumeChar(CurPtr, SizeTmp, Result);
       Kind = tok::l_square;
     } else if (LangOpts.Digraphs && Char == '%') {     // '<%' -> '{'
@@ -3711,9 +3449,6 @@ LexNextToken:
     if (Char == '=') {
       CurPtr = ConsumeChar(CurPtr, SizeTmp, Result);
       Kind = tok::caretequal;
-    } else if (LangOpts.OpenCL && Char == '^') {
-      CurPtr = ConsumeChar(CurPtr, SizeTmp, Result);
-      Kind = tok::caretcaret;
     } else {
       Kind = tok::caret;
     }
@@ -3737,11 +3472,6 @@ LexNextToken:
     Char = getCharAndSize(CurPtr, SizeTmp);
     if (LangOpts.Digraphs && Char == '>') {
       Kind = tok::r_square; // ':>' -> ']'
-      CurPtr = ConsumeChar(CurPtr, SizeTmp, Result);
-    } else if ((LangOpts.CPlusPlus ||
-                LangOpts.DoubleSquareBracketAttributes) &&
-               Char == ':') {
-      Kind = tok::coloncolon;
       CurPtr = ConsumeChar(CurPtr, SizeTmp, Result);
     } else {
       Kind = tok::colon;
@@ -3771,11 +3501,6 @@ LexNextToken:
     if (Char == '#') {
       Kind = tok::hashhash;
       CurPtr = ConsumeChar(CurPtr, SizeTmp, Result);
-    } else if (Char == '@' && LangOpts.MicrosoftExt) {  // #@ -> Charize
-      Kind = tok::hashat;
-      if (!isLexingRawMode())
-        Diag(BufferPtr, diag::ext_charize_microsoft);
-      CurPtr = ConsumeChar(CurPtr, SizeTmp, Result);
     } else {
       // We parsed a # character.  If this occurs at the start of the line,
       // it's actually the start of a preprocessing directive.  Callback to
@@ -3790,7 +3515,7 @@ LexNextToken:
 
   case '@':
     // Objective C and C2 support.
-    if (CurPtr[-1] == '@' && (LangOpts.ObjC1 || LangOpts.C2))
+    if (CurPtr[-1] == '@')
       Kind = tok::at;
     else
       Kind = tok::unknown;

@@ -229,10 +229,6 @@ public:
     return getSignedOverflowBehavior() == SOB_Defined;
   }
 
-  bool isSubscriptPointerArithmetic() const {
-    return ObjCRuntime.isSubscriptPointerArithmetic() &&
-           !ObjCSubscriptingLegacyRuntime;
-  }
 
   bool isCompatibleWithMSVC(MSVCMajorVersion MajorVersion) const {
     return MSCompatibilityVersion >= MajorVersion * 10000000U;
@@ -246,17 +242,7 @@ public:
   /// builtin because a -fno-builtin-* option has been specified?
   bool isNoBuiltinFunc(StringRef Name) const;
 
-  /// True if any ObjC types may have non-trivial lifetime qualifiers.
-  bool allowsNonTrivialObjCLifetimeQualifiers() const {
-    return ObjCAutoRefCount || ObjCWeak;
-  }
 
-  bool assumeFunctionsAreConvergent() const {
-    return (CUDA && CUDAIsDevice) || OpenCL;
-  }
-
-  /// Return the OpenCL C or C++ version as a VersionTuple.
-  VersionTuple getOpenCLVersionTuple() const;
 };
 
 /// Floating point control options

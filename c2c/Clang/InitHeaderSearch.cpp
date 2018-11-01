@@ -88,13 +88,7 @@ public:
   void AddDefaultCIncludePaths(const llvm::Triple &triple,
                                const HeaderSearchOptions &HSOpts);
 
-  // AddDefaultCPlusPlusIncludePaths -  Add paths that should be searched when
-  //  compiling c++.
-  void AddDefaultCPlusPlusIncludePaths(const LangOptions &LangOpts,
-                                       const llvm::Triple &triple,
-                                       const HeaderSearchOptions &HSOpts);
-
-  /// AddDefaultSystemIncludePaths - Adds the default system include paths so
+    /// AddDefaultSystemIncludePaths - Adds the default system include paths so
   ///  that e.g. stdio.h is found.
   void AddDefaultIncludePaths(const LangOptions &Lang,
                               const llvm::Triple &triple,
@@ -358,95 +352,6 @@ void InitHeaderSearch::AddDefaultCIncludePaths(const llvm::Triple &triple,
   }
 }
 
-void InitHeaderSearch::AddDefaultCPlusPlusIncludePaths(
-    const LangOptions &LangOpts, const llvm::Triple &triple,
-    const HeaderSearchOptions &HSOpts) {
-  llvm::Triple::OSType os = triple.getOS();
-  // FIXME: temporary hack: hard-coded paths.
-
-  if (triple.isOSDarwin()) {
-    bool IsBaseFound = true;
-    switch (triple.getArch()) {
-    default: break;
-
-    case llvm::Triple::ppc:
-    case llvm::Triple::ppc64:
-      IsBaseFound = AddGnuCPlusPlusIncludePaths("/usr/include/c++/4.2.1",
-                                                "powerpc-apple-darwin10", "",
-                                                "ppc64", triple);
-      IsBaseFound |= AddGnuCPlusPlusIncludePaths("/usr/include/c++/4.0.0",
-                                                 "powerpc-apple-darwin10", "",
-                                                 "ppc64", triple);
-      break;
-
-    case llvm::Triple::x86:
-    case llvm::Triple::x86_64:
-      IsBaseFound = AddGnuCPlusPlusIncludePaths("/usr/include/c++/4.2.1",
-                                                "i686-apple-darwin10", "",
-                                                "x86_64", triple);
-      IsBaseFound |= AddGnuCPlusPlusIncludePaths(
-          "/usr/include/c++/4.0.0", "i686-apple-darwin8", "", "", triple);
-      break;
-
-    case llvm::Triple::arm:
-    case llvm::Triple::thumb:
-      IsBaseFound = AddGnuCPlusPlusIncludePaths(
-          "/usr/include/c++/4.2.1", "arm-apple-darwin10", "v7", "", triple);
-      IsBaseFound |= AddGnuCPlusPlusIncludePaths(
-          "/usr/include/c++/4.2.1", "arm-apple-darwin10", "v6", "", triple);
-      break;
-
-    case llvm::Triple::aarch64:
-      IsBaseFound = AddGnuCPlusPlusIncludePaths(
-          "/usr/include/c++/4.2.1", "arm64-apple-darwin10", "", "", triple);
-      break;
-    }
-    // Warn when compiling pure C++ / Objective-C++ only.
-    if (!IsBaseFound &&
-        !(LangOpts.CUDA || LangOpts.OpenCL || LangOpts.RenderScript)) {
-      Headers.getDiags().Report(SourceLocation(),
-                                diag::warn_stdlibcxx_not_found);
-    }
-    return;
-  }
-
-  switch (os) {
-  case llvm::Triple::Linux:
-  case llvm::Triple::Solaris:
-    llvm_unreachable("Include management is handled in the driver.");
-    break;
-  case llvm::Triple::Win32:
-    switch (triple.getEnvironment()) {
-    default: llvm_unreachable("Include management is handled in the driver.");
-    case llvm::Triple::Cygnus:
-      // Cygwin-1.7
-      AddMinGWCPlusPlusIncludePaths("/usr/lib/gcc", "i686-pc-cygwin", "4.7.3");
-      AddMinGWCPlusPlusIncludePaths("/usr/lib/gcc", "i686-pc-cygwin", "4.5.3");
-      AddMinGWCPlusPlusIncludePaths("/usr/lib/gcc", "i686-pc-cygwin", "4.3.4");
-      // g++-4 / Cygwin-1.5
-      AddMinGWCPlusPlusIncludePaths("/usr/lib/gcc", "i686-pc-cygwin", "4.3.2");
-      break;
-    }
-    break;
-  case llvm::Triple::DragonFly:
-    AddPath("/usr/include/c++/5.0", CXXSystem, false);
-    break;
-  case llvm::Triple::OpenBSD: {
-    std::string t = triple.getTriple();
-    if (t.substr(0, 6) == "x86_64")
-      t.replace(0, 6, "amd64");
-    AddGnuCPlusPlusIncludePaths("/usr/include/g++",
-                                t, "", "", triple);
-    break;
-  }
-  case llvm::Triple::Minix:
-    AddGnuCPlusPlusIncludePaths("/usr/gnu/include/c++/4.4.3",
-                                "", "", "", triple);
-    break;
-  default:
-    break;
-  }
-}
 
 void InitHeaderSearch::AddDefaultIncludePaths(const LangOptions &Lang,
                                               const llvm::Triple &triple,
@@ -470,30 +375,6 @@ void InitHeaderSearch::AddDefaultIncludePaths(const LangOptions &Lang,
     break;
   }
 
-  if (Lang.CPlusPlus && !Lang.AsmPreprocessor &&
-      HSOpts.UseStandardCXXIncludes && HSOpts.UseStandardSystemIncludes) {
-    if (HSOpts.UseLibcxx) {
-      if (triple.isOSDarwin()) {
-        // On Darwin, libc++ may be installed alongside the compiler in
-        // include/c++/v1.
-        if (!HSOpts.ResourceDir.empty()) {
-          // Remove version from foo/lib/clang/version
-          StringRef NoVer = llvm::sys::path::parent_path(HSOpts.ResourceDir);
-          // Remove clang from foo/lib/clang
-          StringRef Lib = llvm::sys::path::parent_path(NoVer);
-          // Remove lib from foo/lib
-          SmallString<128> P = llvm::sys::path::parent_path(Lib);
-
-          // Get foo/include/c++/v1
-          llvm::sys::path::append(P, "include", "c++", "v1");
-          AddUnmappedPath(P, CXXSystem, false);
-        }
-      }
-      AddPath("/usr/include/c++/v1", CXXSystem, false);
-    } else {
-      AddDefaultCPlusPlusIncludePaths(Lang, triple, HSOpts);
-    }
-  }
 
   AddDefaultCIncludePaths(triple, HSOpts);
 
@@ -616,11 +497,7 @@ void InitHeaderSearch::Realize(const LangOptions &Lang) {
 
   for (auto &Include : IncludePath)
     if (Include.first == System || Include.first == ExternCSystem ||
-        (!Lang.ObjC1 && !Lang.CPlusPlus && Include.first == CSystem) ||
-        (/*FIXME !Lang.ObjC1 && */ Lang.CPlusPlus &&
-         Include.first == CXXSystem) ||
-        (Lang.ObjC1 && !Lang.CPlusPlus && Include.first == ObjCSystem) ||
-        (Lang.ObjC1 && Lang.CPlusPlus && Include.first == ObjCXXSystem))
+        (Include.first == CSystem))
       SearchList.push_back(Include.second);
 
   for (auto &Include : IncludePath)

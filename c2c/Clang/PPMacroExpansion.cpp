@@ -342,26 +342,15 @@ void Preprocessor::RegisterBuiltinMacros() {
   Ident__COUNTER__ = RegisterBuiltinMacro(*this, "__COUNTER__");
   Ident_Pragma  = RegisterBuiltinMacro(*this, "_Pragma");
 
-  // C++ Standing Document Extensions.
-  if (LangOpts.CPlusPlus)
-    Ident__has_cpp_attribute =
-        RegisterBuiltinMacro(*this, "__has_cpp_attribute");
-  else
-    Ident__has_cpp_attribute = nullptr;
+  Ident__has_cpp_attribute = nullptr;
 
   // GCC Extensions.
   Ident__BASE_FILE__     = RegisterBuiltinMacro(*this, "__BASE_FILE__");
   Ident__INCLUDE_LEVEL__ = RegisterBuiltinMacro(*this, "__INCLUDE_LEVEL__");
   Ident__TIMESTAMP__     = RegisterBuiltinMacro(*this, "__TIMESTAMP__");
 
-  // Microsoft Extensions.
-  if (LangOpts.MicrosoftExt) {
-    Ident__identifier = RegisterBuiltinMacro(*this, "__identifier");
-    Ident__pragma = RegisterBuiltinMacro(*this, "__pragma");
-  } else {
-    Ident__identifier = nullptr;
-    Ident__pragma = nullptr;
-  }
+  Ident__identifier = nullptr;
+  Ident__pragma = nullptr;
 
   // Clang Extensions.
   Ident__has_feature      = RegisterBuiltinMacro(*this, "__has_feature");
@@ -873,12 +862,6 @@ MacroArgs *Preprocessor::ReadMacroCallArgumentList(Token &MacroName,
         TooManyArgsLoc = ArgStartLoc;
     }
 
-    // Empty arguments are standard in C99 and C++0x, and are supported as an
-    // extension in other modes.
-    if (ArgTokens.size() == ArgTokenStart && !LangOpts.C99)
-      Diag(Tok, LangOpts.CPlusPlus11 ?
-           diag::warn_cxx98_compat_empty_fnmacro_arg :
-           diag::ext_empty_fnmacro_arg);
 
     // Add a marker EOF token to the end of the token list for this argument.
     Token EOFTok;
@@ -1119,7 +1102,6 @@ static bool HasExtension(const Preprocessor &PP, StringRef Extension) {
       diag::Severity::Error)
     return false;
 
-  const LangOptions &LangOpts = PP.getLangOpts();
 
   // Normalize the extension name, __foo__ becomes foo.
   if (Extension.startswith("__") && Extension.endswith("__") &&
@@ -1464,8 +1446,6 @@ void Preprocessor::ExpandBuiltinMacro(Token &Tok) {
   // invoke the pragma handler, then lex the token after it.
   if (II == Ident_Pragma)
     return Handle_Pragma(Tok);
-  else if (II == Ident__pragma) // in non-MS mode this is null
-    return HandleMicrosoft__pragma(Tok);
 
   ++NumBuiltinMacroExpanded;
 
@@ -1608,21 +1588,8 @@ void Preprocessor::ExpandBuiltinMacro(Token &Tok) {
         const LangOptions &LangOpts = getLangOpts();
         if (!II)
           return false;
-        else if (II->getBuiltinID() != 0) {
-          switch (II->getBuiltinID()) {
-          case Builtin::BI__builtin_operator_new:
-          case Builtin::BI__builtin_operator_delete:
-            // denotes date of behavior change to support calling arbitrary
-            // usual allocation and deallocation functions. Required by libc++
-            return 201802;
-          default:
-            return true;
-          }
-          return true;
-        } else {
+        else  {
           return llvm::StringSwitch<bool>(II->getName())
-                      .Case("__make_integer_seq", LangOpts.CPlusPlus)
-                      .Case("__type_pack_element", LangOpts.CPlusPlus)
                       .Case("__builtin_available", true)
                       .Case("__is_target_arch", true)
                       .Case("__is_target_vendor", true)

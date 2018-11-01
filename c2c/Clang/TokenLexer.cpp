@@ -141,16 +141,7 @@ bool TokenLexer::MaybeRemoveCommaBeforeVaArgs(
   // In Microsoft-compatibility mode, a comma is removed in the expansion
   // of " ... , __VA_ARGS__ " if __VA_ARGS__ is empty.  This extension is
   // not supported by gcc.
-  if (!HasPasteOperator && !PP.getLangOpts().MSVCCompat)
-    return false;
-
-  // GCC removes the comma in the expansion of " ... , ## __VA_ARGS__ " if
-  // __VA_ARGS__ is empty, but not in strict C99 mode where there are no
-  // named arguments, where it remains.  In all other modes, including C99
-  // with GNU extensions, it is removed regardless of named arguments.
-  // Microsoft also appears to support this extension, unofficially.
-  if (PP.getLangOpts().C99 && !PP.getLangOpts().GNUMode
-        && Macro->getNumParams() < 2)
+  if (!HasPasteOperator)
     return false;
 
   // Is a comma available to be removed?
@@ -442,13 +433,6 @@ void TokenLexer::ExpandFunctionArguments() {
         unsigned NumToks = MacroArgs::getArgLength(ResultArgToks);
         ResultToks.append(ResultArgToks, ResultArgToks+NumToks);
 
-        // In Microsoft-compatibility mode, we follow MSVC's preprocessing
-        // behavior by not considering single commas from nested macro
-        // expansions as argument separators. Set a flag on the token so we can
-        // test for this later when the macro expansion is processed.
-        if (PP.getLangOpts().MSVCCompat && NumToks == 1 &&
-            ResultToks.back().is(tok::comma))
-          ResultToks.back().setFlag(Token::IgnoredComma);
 
         // If the '##' came from expanding an argument, turn it into 'unknown'
         // to avoid pasting.
@@ -612,12 +596,7 @@ bool TokenLexer::Lex(Token &Tok) {
   // If this token is followed by a token paste (##) operator, paste the tokens!
   // Note that ## is a normal token when not expanding a macro.
   if (!isAtEnd() && Macro &&
-      (Tokens[CurTokenIdx].is(tok::hashhash) ||
-       // Special processing of L#x macros in -fms-compatibility mode.
-       // Microsoft compiler is able to form a wide string literal from
-       // 'L#macro_arg' construct in a function-like macro.
-       (PP.getLangOpts().MSVCCompat &&
-        isWideStringLiteralFromMacro(Tok, Tokens[CurTokenIdx])))) {
+      (Tokens[CurTokenIdx].is(tok::hashhash))) {
     // When handling the microsoft /##/ extension, the final token is
     // returned by pasteTokens, not the pasted token.
     if (pasteTokens(Tok))
@@ -703,9 +682,6 @@ bool TokenLexer::pasteTokens(Token &LHSTok, ArrayRef<Token> TokenStream,
   // MSVC: If previous token was pasted, this must be a recovery from an invalid
   // paste operation. Ignore spaces before this token to mimic MSVC output.
   // Required for generating valid UUID strings in some MS headers.
-  if (PP.getLangOpts().MicrosoftExt && (CurIdx >= 2) &&
-      TokenStream[CurIdx - 2].is(tok::hashhash))
-    LHSTok.clearFlag(Token::LeadingSpace);
 
   SmallString<128> Buffer;
   const char *ResultTokStrPtr = nullptr;
@@ -814,21 +790,10 @@ bool TokenLexer::pasteTokens(Token &LHSTok, ArrayRef<Token> TokenStream,
         SourceLocation Loc =
           SM.createExpansionLoc(PasteOpLoc, ExpandLocStart, ExpandLocEnd, 2);
 
-        // Test for the Microsoft extension of /##/ turning into // here on the
-        // error path.
-        if (PP.getLangOpts().MicrosoftExt && LHSTok.is(tok::slash) &&
-            RHS.is(tok::slash)) {
-          HandleMicrosoftCommentPaste(LHSTok, Loc);
-          return true;
-        }
 
         // Do not emit the error when preprocessing assembler code.
         if (!PP.getLangOpts().AsmPreprocessor) {
-          // If we're in microsoft extensions mode, downgrade this from a hard
-          // error to an extension that defaults to an error.  This allows
-          // disabling it.
-          PP.Diag(Loc, PP.getLangOpts().MicrosoftExt ? diag::ext_pp_bad_paste_ms
-                                                     : diag::err_pp_bad_paste)
+          PP.Diag(Loc, diag::err_pp_bad_paste)
               << Buffer;
         }
 
@@ -899,24 +864,6 @@ bool TokenLexer::isParsingPreprocessorDirective() const {
   return Tokens[NumTokens-1].is(tok::eod) && !isAtEnd();
 }
 
-/// HandleMicrosoftCommentPaste - In microsoft compatibility mode, /##/ pastes
-/// together to form a comment that comments out everything in the current
-/// macro, other active macros, and anything left on the current physical
-/// source line of the expanded buffer.  Handle this by returning the
-/// first token on the next line.
-void TokenLexer::HandleMicrosoftCommentPaste(Token &Tok, SourceLocation OpLoc) {
-  PP.Diag(OpLoc, diag::ext_comment_paste_microsoft);
-
-  // We 'comment out' the rest of this macro by just ignoring the rest of the
-  // tokens that have not been lexed yet, if any.
-
-  // Since this must be a macro, mark the macro enabled now that it is no longer
-  // being expanded.
-  assert(Macro && "Token streams can't paste comments");
-  Macro->EnableMacro();
-
-  PP.HandleMicrosoftCommentPaste(Tok);
-}
 
 /// If \arg loc is a file ID and points inside the current macro
 /// definition, returns the appropriate source location pointing at the
