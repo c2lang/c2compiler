@@ -17,7 +17,6 @@
 namespace c2lang {
 
 class IdentifierInfo;
-class Module;
 
 /// Abstract interface for external sources of preprocessor
 /// information.
@@ -39,8 +38,6 @@ public:
   /// The ID 0 is associated with the NULL identifier.
   virtual IdentifierInfo *GetIdentifier(unsigned ID) = 0;
 
-  /// Map a module ID to a module.
-  virtual Module *getModule(unsigned ModuleID) = 0;
 };
 
 }

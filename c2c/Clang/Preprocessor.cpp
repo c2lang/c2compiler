@@ -31,7 +31,6 @@
 #include "Clang/IdentifierTable.h"
 #include "Clang/LLVM.h"
 #include "Clang/LangOptions.h"
-#include "Clang/Module.h"
 #include "Clang/SourceLocation.h"
 #include "Clang/SourceManager.h"
 #include "Clang/TargetInfo.h"
@@ -43,7 +42,6 @@
 #include "Clang/LiteralSupport.h"
 #include "Clang/MacroArgs.h"
 #include "Clang/MacroInfo.h"
-#include "Clang/ModuleLoader.h"
 #include "Clang/PTHLexer.h"
 #include "Clang/PTHManager.h"
 #include "Clang/Pragma.h"
@@ -542,8 +540,7 @@ void Preprocessor::EnterMainSourceFile() {
     const FileEntry *File = LookupFile(
         SourceLocation(), PPOpts->PCHThroughHeader,
         /*isAngled=*/false, /*FromDir=*/nullptr, /*FromFile=*/nullptr, CurDir,
-        /*SearchPath=*/nullptr, /*RelativePath=*/nullptr,
-        /*SuggestedModule=*/nullptr, /*IsMapped=*/nullptr);
+        /*SearchPath=*/nullptr, /*RelativePath=*/nullptr, /*IsMapped=*/nullptr);
     if (!File) {
       Diag(SourceLocation(), diag::err_pp_through_header_not_found)
           << PPOpts->PCHThroughHeader;
@@ -908,7 +905,6 @@ bool Preprocessor::HandleComment(Token &result, SourceRange Comment) {
   return true;
 }
 
-ModuleLoader::~ModuleLoader() = default;
 
 CommentHandler::~CommentHandler() = default;
 

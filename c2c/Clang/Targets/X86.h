@@ -324,9 +324,6 @@ public:
 
   bool hasSjLjLowering() const override { return true; }
 
-  void setSupportedOpenCLOpts() override {
-    getSupportedOpenCLOpts().supportAll();
-  }
 };
 
 // X86-32 generic target

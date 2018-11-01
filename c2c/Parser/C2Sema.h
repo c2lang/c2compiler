@@ -48,6 +48,7 @@ class ASTContext;
 class Component;
 class Module;
 class TargetInfo;
+class Module;
 
 typedef std::vector<Decl*> DeclList;
 typedef std::vector<VarDecl*> VarDeclList;

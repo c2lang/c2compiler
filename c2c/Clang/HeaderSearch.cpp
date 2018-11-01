@@ -15,7 +15,6 @@
 #include "Clang/Diagnostic.h"
 #include "Clang/FileManager.h"
 #include "Clang/IdentifierTable.h"
-#include "Clang/Module.h"
 #include "Clang/SourceManager.h"
 #include "Clang/VirtualFileSystem.h"
 #include "Clang/DirectoryLookup.h"
@@ -224,61 +223,7 @@ const FileEntry *DirectoryLookup::LookupFile(StringRef &Filename,
   return Result;
 }
 
-/// Given a framework directory, find the top-most framework directory.
-///
-/// \param FileMgr The file manager to use for directory lookups.
-/// \param DirName The name of the framework directory.
-/// \param SubmodulePath Will be populated with the submodule path from the
-/// returned top-level module to the originally named framework.
-static const DirectoryEntry *
-getTopFrameworkDir(FileManager &FileMgr, StringRef DirName,
-                   SmallVectorImpl<std::string> &SubmodulePath) {
-  assert(llvm::sys::path::extension(DirName) == ".framework" &&
-         "Not a framework directory");
 
-  // Note: as an egregious but useful hack we use the real path here, because
-  // frameworks moving between top-level frameworks to embedded frameworks tend
-  // to be symlinked, and we base the logical structure of modules on the
-  // physical layout. In particular, we need to deal with crazy includes like
-  //
-  //   #include <Foo/Frameworks/Bar.framework/Headers/Wibble.h>
-  //
-  // where 'Bar' used to be embedded in 'Foo', is now a top-level framework
-  // which one should access with, e.g.,
-  //
-  //   #include <Bar/Wibble.h>
-  //
-  // Similar issues occur when a top-level framework has moved into an
-  // embedded framework.
-  const DirectoryEntry *TopFrameworkDir = FileMgr.getDirectory(DirName);
-  DirName = FileMgr.getCanonicalName(TopFrameworkDir);
-  do {
-    // Get the parent directory name.
-    DirName = llvm::sys::path::parent_path(DirName);
-    if (DirName.empty())
-      break;
-
-    // Determine whether this directory exists.
-    const DirectoryEntry *Dir = FileMgr.getDirectory(DirName);
-    if (!Dir)
-      break;
-
-    // If this is a framework directory, then we're a subframework of this
-    // framework.
-    if (llvm::sys::path::extension(DirName) == ".framework") {
-      SubmodulePath.push_back(llvm::sys::path::stem(DirName));
-      TopFrameworkDir = Dir;
-    }
-  } while (true);
-
-  return TopFrameworkDir;
-}
-
-static bool needModuleLookup(Module *RequestingModule,
-                             bool HasSuggestedModule) {
-  return HasSuggestedModule ||
-         (RequestingModule && RequestingModule->NoUndeclaredIncludes);
-}
 
 /// DoFrameworkLookup - Do a lookup of the specified file in the current
 /// DirectoryLookup, which is a framework directory.

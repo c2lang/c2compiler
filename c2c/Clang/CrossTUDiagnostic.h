@@ -14,6 +14,7 @@
 
 namespace c2lang {
 namespace diag {
+
 enum {
 #define DIAG(ENUM, FLAGS, DEFAULT_MAPPING, DESC, GROUP, SFINAE, NOWERROR,      \
              SHOWINSYSHEADER, CATEGORY)                                        \

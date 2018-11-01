@@ -80,20 +80,15 @@
 #endif
 
 // FIXME: A lot of the BENIGN_ options should be COMPATIBLE_ instead.
-LANGOPT(Bool              , 1, 0, "bool, true, and false keywords")
-LANGOPT(DeclSpecKeyword   , 1, 0, "__declspec keyword")
 BENIGN_LANGOPT(AsmPreprocessor, 1, 0, "preprocessor in asm mode")
 LANGOPT(Freestanding, 1, 0, "freestanding implementation")
 LANGOPT(NoBuiltin         , 1, 0, "disable builtin functions")
 LANGOPT(NoMathBuiltin     , 1, 0, "disable math builtin functions")
 LANGOPT(GNUAsm            , 1, 1, "GNU-style inline assembly")
 BENIGN_LANGOPT(ThreadsafeStatics , 1, 1, "thread-safe static initializers")
-LANGOPT(POSIXThreads      , 1, 0, "POSIX thread support")
 LANGOPT(Blocks            , 1, 0, "blocks extension to C")
 LANGOPT(MathErrno         , 1, 1, "errno in math functions")
 
-LANGOPT(HIP               , 1, 0, "HIP")
-LANGOPT(SinglePrecisionConstants , 1, 0, "treating double-precision floating point constants as single precision constants")
 BENIGN_LANGOPT(ArrowDepth, 32, 256,
                "maximum number of operator->s to follow")
 BENIGN_LANGOPT(BracketDepth, 32, 256,
@@ -106,12 +101,6 @@ LANGOPT(RetainCommentsFromSystemHeaders, 1, 0, "retain documentation comments fr
 
 BENIGN_LANGOPT(AllowEditorPlaceholders, 1, 0,
                "allow editor placeholders in source")
-
-ENUM_LANGOPT(ClangABICompat, ClangABI, 4, ClangABI::Latest,
-             "version of Clang that we should attempt to be ABI-compatible "
-             "with")
-
-COMPATIBLE_VALUE_LANGOPT(FunctionAlignment, 5, 0, "Default alignment for functions")
 
 LANGOPT(FixedPoint, 1, 0, "fixed point types")
 

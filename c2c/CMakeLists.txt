@@ -44,7 +44,6 @@ add_library(c2core
     Clang/Attributes.cpp
     Clang/Builtins.cpp
     Clang/CharInfo.cpp
-    Clang/CodeGenOptions.cpp
     Clang/Commit.cpp
     Clang/Diagnostic.cpp
     Clang/DiagnosticIDs.cpp
@@ -75,8 +74,6 @@ add_library(c2core
     Clang/PreprocessingRecord.cpp
     Clang/Preprocessor.cpp
     Clang/PreprocessorLexer.cpp
-    Clang/SanitizerBlacklist.cpp
-    Clang/SanitizerSpecialCaseList.cpp
     Clang/ScratchBuffer.cpp
     Clang/SourceLocation.cpp
     Clang/SourceManager.cpp
@@ -87,10 +84,7 @@ add_library(c2core
     Clang/TokenConcatenation.cpp
     Clang/TokenKinds.cpp
     Clang/TokenLexer.cpp
-    Clang/Version.cpp
     Clang/VirtualFileSystem.cpp
-    Clang/XRayInstr.cpp    
-    Clang/XRayLists.cpp
     AST/AST.cpp
     AST/Decl.cpp
     AST/Expr.cpp

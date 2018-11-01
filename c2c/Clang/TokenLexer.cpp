@@ -558,13 +558,6 @@ void TokenLexer::ExpandFunctionArguments() {
   }
 }
 
-/// Checks if two tokens form wide string literal.
-static bool isWideStringLiteralFromMacro(const Token &FirstTok,
-                                         const Token &SecondTok) {
-  return FirstTok.is(tok::identifier) &&
-         FirstTok.getIdentifierInfo()->isStr("L") && SecondTok.isLiteral() &&
-         SecondTok.stringifiedInMacro();
-}
 
 /// Lex - Lex and return a token from this macro stream.
 bool TokenLexer::Lex(Token &Tok) {

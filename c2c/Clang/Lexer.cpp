@@ -1119,26 +1119,6 @@ DiagnosticBuilder Lexer::Diag(const char *Loc, unsigned DiagID) const {
   return PP->Diag(getSourceLocation(Loc), DiagID);
 }
 
-//===----------------------------------------------------------------------===//
-// Trigraph and Escaped Newline Handling Code.
-//===----------------------------------------------------------------------===//
-
-/// GetTrigraphCharForLetter - Given a character that occurs after a ?? pair,
-/// return the decoded trigraph letter it corresponds to, or '\0' if nothing.
-static char GetTrigraphCharForLetter(char Letter) {
-  switch (Letter) {
-  default:   return 0;
-  case '=':  return '#';
-  case ')':  return ']';
-  case '(':  return '[';
-  case '!':  return '|';
-  case '\'': return '^';
-  case '>':  return '}';
-  case '/':  return '\\';
-  case '<':  return '{';
-  case '-':  return '~';
-  }
-}
 
 
 /// getEscapedNewLineSize - Return the size of the specified escaped newline,
@@ -1274,7 +1254,6 @@ char Lexer::getCharAndSizeSlow(const char *Ptr, unsigned &Size,
   if (Ptr[0] == '\\') {
     ++Size;
     ++Ptr;
-Slash:
     // Common case, backslash-char where the char is not whitespace.
     if (!isWhitespace(Ptr[0])) return '\\';
 
@@ -1318,7 +1297,6 @@ char Lexer::getCharAndSizeSlowNoWarn(const char *Ptr, unsigned &Size,
   if (Ptr[0] == '\\') {
     ++Size;
     ++Ptr;
-Slash:
     // Common case, backslash-char where the char is not whitespace.
     if (!isWhitespace(Ptr[0])) return '\\';
 
@@ -1660,10 +1638,6 @@ bool Lexer::LexNumericConstant(Token &Result, const char *CurPtr) {
 
   // If we have a hex FP constant, continue.
   if ((C == '-' || C == '+') && (PrevCh == 'P' || PrevCh == 'p')) {
-    // Outside C99 and C++17, we accept hexadecimal floating point numbers as a
-    // not-quite-conforming extension. Only do so if this looks like it's
-    // actually meant to be a hexfloat, and not if it has a ud-suffix.
-    bool IsHexFloat = true;
     return LexNumericConstant(Result, ConsumeChar(CurPtr, Size, Result));
   }
 
@@ -2480,7 +2454,6 @@ bool Lexer::LexEndOfFile(Token &Result, const char *CurPtr) {
   // C99 5.1.1.2p2: If the file is non-empty and didn't end in a newline, issue
   // a pedwarn.
   if (CurPtr != BufferStart && (CurPtr[-1] != '\n' && CurPtr[-1] != '\r')) {
-    DiagnosticsEngine &Diags = PP->getDiagnostics();
     SourceLocation EndLoc = getSourceLocation(BufferEnd);
     unsigned DiagID;
 
@@ -3295,7 +3268,6 @@ LexNextToken:
         Kind = tok::lessless;
       }
     } else if (Char == '=') {
-      char After = getCharAndSize(CurPtr+SizeTmp, SizeTmp2);
       CurPtr = ConsumeChar(CurPtr, SizeTmp, Result);
       Kind = tok::lessequal;
     } else if (Char == '#' && /*Not a trigraph*/ SizeTmp == 1 &&
