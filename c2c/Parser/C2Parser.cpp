@@ -857,9 +857,6 @@ C2::ExprResult C2Parser::ParseCastExpression(bool isUnaryExpression,
         Res = Actions.ActOnCharacterConstant(Tok);
         ConsumeToken();
         break;
-    case tok::kw___func__:
-        ConsumeToken();
-        break;
     case tok::kw_nil:
     {
         SourceLocation Loc = ConsumeToken();

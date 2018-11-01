@@ -337,40 +337,6 @@ void TargetInfo::adjust(LangOptions &Opts) {
     LongDoubleAlign = 64;
   }
 
-  if (Opts.OpenCL) {
-    // OpenCL C requires specific widths for types, irrespective of
-    // what these normally are for the target.
-    // We also define long long and long double here, although the
-    // OpenCL standard only mentions these as "reserved".
-    IntWidth = IntAlign = 32;
-    LongWidth = LongAlign = 64;
-    LongLongWidth = LongLongAlign = 128;
-    HalfWidth = HalfAlign = 16;
-    FloatWidth = FloatAlign = 32;
-
-    // Embedded 32-bit targets (OpenCL EP) might have double C type
-    // defined as float. Let's not override this as it might lead
-    // to generating illegal code that uses 64bit doubles.
-    if (DoubleWidth != FloatWidth) {
-      DoubleWidth = DoubleAlign = 64;
-      DoubleFormat = &llvm::APFloat::IEEEdouble();
-    }
-    LongDoubleWidth = LongDoubleAlign = 128;
-
-    unsigned MaxPointerWidth = getMaxPointerWidth();
-    assert(MaxPointerWidth == 32 || MaxPointerWidth == 64);
-    bool Is32BitArch = MaxPointerWidth == 32;
-    SizeType = Is32BitArch ? UnsignedInt : UnsignedLong;
-    PtrDiffType = Is32BitArch ? SignedInt : SignedLong;
-    IntPtrType = Is32BitArch ? SignedInt : SignedLong;
-
-    IntMaxType = SignedLongLong;
-    Int64Type = SignedLong;
-
-    HalfFormat = &llvm::APFloat::IEEEhalf();
-    FloatFormat = &llvm::APFloat::IEEEsingle();
-    LongDoubleFormat = &llvm::APFloat::IEEEquad();
-  }
 
   if (Opts.NewAlignOverride)
     NewAlign = Opts.NewAlignOverride * getCharWidth();

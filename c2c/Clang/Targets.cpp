@@ -15,28 +15,13 @@
 #include "Targets.h"
 
 #include "Targets/AArch64.h"
-#include "Targets/AMDGPU.h"
 #include "Targets/ARM.h"
-#include "Targets/AVR.h"
-#include "Targets/BPF.h"
-#include "Targets/Hexagon.h"
-#include "Targets/Lanai.h"
-#include "Targets/Le64.h"
-#include "Targets/MSP430.h"
 #include "Targets/Mips.h"
-#include "Targets/NVPTX.h"
-#include "Targets/Nios2.h"
 #include "Targets/OSTargets.h"
-#include "Targets/PNaCl.h"
+#include "Targets/WebAssembly.h"
 #include "Targets/PPC.h"
 #include "Targets/RISCV.h"
-#include "Targets/SPIR.h"
-#include "Targets/Sparc.h"
-#include "Targets/SystemZ.h"
-#include "Targets/TCE.h"
-#include "Targets/WebAssembly.h"
 #include "Targets/X86.h"
-#include "Targets/XCore.h"
 #include "Clang/Diagnostic.h"
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/ADT/Triple.h>
@@ -79,12 +64,9 @@ void addCygMingDefines(const LangOptions &Opts, MacroBuilder &Builder) {
   // Mingw and cygwin define __declspec(a) to __attribute__((a)).  Clang
   // supports __declspec natively under -fms-extensions, but we define a no-op
   // __declspec macro anyway for pre-processor compatibility.
-  if (Opts.MicrosoftExt)
-    Builder.defineMacro("__declspec", "__declspec");
-  else
-    Builder.defineMacro("__declspec(a)", "__attribute__((a))");
+  Builder.defineMacro("__declspec(a)", "__attribute__((a))");
 
-  if (!Opts.MicrosoftExt) {
+  if (1) {
     // Provide macros for all the calling convention keywords.  Provide both
     // single and double underscore prefixed variants.  These are available on
     // x64 as well as x86, even though they have no effect.
@@ -124,14 +106,7 @@ TargetInfo *AllocateTarget(const llvm::Triple &Triple,
   default:
     return nullptr;
 
-  case llvm::Triple::xcore:
-    return new XCoreTargetInfo(Triple, Opts);
 
-  case llvm::Triple::hexagon:
-    return new HexagonTargetInfo(Triple, Opts);
-
-  case llvm::Triple::lanai:
-    return new LanaiTargetInfo(Triple, Opts);
 
   case llvm::Triple::aarch64:
     if (Triple.isOSDarwin())
@@ -234,18 +209,6 @@ TargetInfo *AllocateTarget(const llvm::Triple &Triple,
       return new ARMbeTargetInfo(Triple, Opts);
     }
 
-  case llvm::Triple::avr:
-    return new AVRTargetInfo(Triple, Opts);
-  case llvm::Triple::bpfeb:
-  case llvm::Triple::bpfel:
-    return new BPFTargetInfo(Triple, Opts);
-
-  case llvm::Triple::msp430:
-    return new MSP430TargetInfo(Triple, Opts);
-
-  case llvm::Triple::nios2:
-    return new LinuxTargetInfo<Nios2TargetInfo>(Triple, Opts);
-
   case llvm::Triple::mips:
     switch (os) {
     case llvm::Triple::Linux:
@@ -270,8 +233,6 @@ TargetInfo *AllocateTarget(const llvm::Triple &Triple,
       return new FreeBSDTargetInfo<MipsTargetInfo>(Triple, Opts);
     case llvm::Triple::NetBSD:
       return new NetBSDTargetInfo<MipsTargetInfo>(Triple, Opts);
-    case llvm::Triple::NaCl:
-      return new NaClTargetInfo<NaClMips32TargetInfo>(Triple, Opts);
     default:
       return new MipsTargetInfo(Triple, Opts);
     }
@@ -308,16 +269,6 @@ TargetInfo *AllocateTarget(const llvm::Triple &Triple,
       return new MipsTargetInfo(Triple, Opts);
     }
 
-  case llvm::Triple::le32:
-    switch (os) {
-    case llvm::Triple::NaCl:
-      return new NaClTargetInfo<PNaClTargetInfo>(Triple, Opts);
-    default:
-      return nullptr;
-    }
-
-  case llvm::Triple::le64:
-    return new Le64TargetInfo(Triple, Opts);
 
   case llvm::Triple::ppc:
     if (Triple.isOSDarwin())
@@ -363,14 +314,6 @@ TargetInfo *AllocateTarget(const llvm::Triple &Triple,
       return new PPC64TargetInfo(Triple, Opts);
     }
 
-  case llvm::Triple::nvptx:
-    return new NVPTXTargetInfo(Triple, Opts, /*TargetPointerWidth=*/32);
-  case llvm::Triple::nvptx64:
-    return new NVPTXTargetInfo(Triple, Opts, /*TargetPointerWidth=*/64);
-
-  case llvm::Triple::amdgcn:
-  case llvm::Triple::r600:
-    return new AMDGPUTargetInfo(Triple, Opts);
 
   case llvm::Triple::riscv32:
     // TODO: add cases for FreeBSD, NetBSD, RTEMS once tested.
@@ -383,66 +326,8 @@ TargetInfo *AllocateTarget(const llvm::Triple &Triple,
       return new LinuxTargetInfo<RISCV64TargetInfo>(Triple, Opts);
     return new RISCV64TargetInfo(Triple, Opts);
 
-  case llvm::Triple::sparc:
-    switch (os) {
-    case llvm::Triple::Linux:
-      return new LinuxTargetInfo<SparcV8TargetInfo>(Triple, Opts);
-    case llvm::Triple::Solaris:
-      return new SolarisTargetInfo<SparcV8TargetInfo>(Triple, Opts);
-    case llvm::Triple::NetBSD:
-      return new NetBSDTargetInfo<SparcV8TargetInfo>(Triple, Opts);
-    case llvm::Triple::OpenBSD:
-      return new OpenBSDTargetInfo<SparcV8TargetInfo>(Triple, Opts);
-    case llvm::Triple::RTEMS:
-      return new RTEMSTargetInfo<SparcV8TargetInfo>(Triple, Opts);
-    default:
-      return new SparcV8TargetInfo(Triple, Opts);
-    }
 
-  // The 'sparcel' architecture copies all the above cases except for Solaris.
-  case llvm::Triple::sparcel:
-    switch (os) {
-    case llvm::Triple::Linux:
-      return new LinuxTargetInfo<SparcV8elTargetInfo>(Triple, Opts);
-    case llvm::Triple::NetBSD:
-      return new NetBSDTargetInfo<SparcV8elTargetInfo>(Triple, Opts);
-    case llvm::Triple::OpenBSD:
-      return new OpenBSDTargetInfo<SparcV8elTargetInfo>(Triple, Opts);
-    case llvm::Triple::RTEMS:
-      return new RTEMSTargetInfo<SparcV8elTargetInfo>(Triple, Opts);
-    default:
-      return new SparcV8elTargetInfo(Triple, Opts);
-    }
 
-  case llvm::Triple::sparcv9:
-    switch (os) {
-    case llvm::Triple::Linux:
-      return new LinuxTargetInfo<SparcV9TargetInfo>(Triple, Opts);
-    case llvm::Triple::Solaris:
-      return new SolarisTargetInfo<SparcV9TargetInfo>(Triple, Opts);
-    case llvm::Triple::NetBSD:
-      return new NetBSDTargetInfo<SparcV9TargetInfo>(Triple, Opts);
-    case llvm::Triple::OpenBSD:
-      return new OpenBSDTargetInfo<SparcV9TargetInfo>(Triple, Opts);
-    case llvm::Triple::FreeBSD:
-      return new FreeBSDTargetInfo<SparcV9TargetInfo>(Triple, Opts);
-    default:
-      return new SparcV9TargetInfo(Triple, Opts);
-    }
-
-  case llvm::Triple::systemz:
-    switch (os) {
-    case llvm::Triple::Linux:
-      return new LinuxTargetInfo<SystemZTargetInfo>(Triple, Opts);
-    default:
-      return new SystemZTargetInfo(Triple, Opts);
-    }
-
-  case llvm::Triple::tce:
-    return new TCETargetInfo(Triple, Opts);
-
-  case llvm::Triple::tcele:
-    return new TCELETargetInfo(Triple, Opts);
 
   case llvm::Triple::x86:
     if (Triple.isOSDarwin())
@@ -551,18 +436,6 @@ TargetInfo *AllocateTarget(const llvm::Triple &Triple,
       return new X86_64TargetInfo(Triple, Opts);
     }
 
-  case llvm::Triple::spir: {
-    if (Triple.getOS() != llvm::Triple::UnknownOS ||
-        Triple.getEnvironment() != llvm::Triple::UnknownEnvironment)
-      return nullptr;
-    return new SPIR32TargetInfo(Triple, Opts);
-  }
-  case llvm::Triple::spir64: {
-    if (Triple.getOS() != llvm::Triple::UnknownOS ||
-        Triple.getEnvironment() != llvm::Triple::UnknownEnvironment)
-      return nullptr;
-    return new SPIR64TargetInfo(Triple, Opts);
-  }
   case llvm::Triple::wasm32:
     if (Triple.getSubArch() != llvm::Triple::NoSubArch ||
         Triple.getVendor() != llvm::Triple::UnknownVendor ||

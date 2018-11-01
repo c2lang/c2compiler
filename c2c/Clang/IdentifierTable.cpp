@@ -45,7 +45,6 @@ IdentifierInfo::IdentifierInfo() {
   IsExtension = false;
   IsFutureCompatKeyword = false;
   IsPoisoned = false;
-  IsCPPOperatorKeyword = false;
   NeedsHandleIdentifier = false;
   IsFromAST = false;
   ChangedAfterLoad = false;
@@ -99,34 +98,7 @@ IdentifierTable::IdentifierTable(const LangOptions &LangOpts,
 namespace {
 
   enum {
-    KEYC99 = 0x1,
-    KEYCXX = 0x2,
-    KEYCXX11 = 0x4,
-    KEYGNU = 0x8,
-    KEYMS = 0x10,
-    BOOLSUPPORT = 0x20,
-    KEYALTIVEC = 0x40,
-    KEYNOCXX = 0x80,
-    KEYBORLAND = 0x100,
-    KEYOPENCLC = 0x200,
-    KEYC11 = 0x400,
-    KEYARC = 0x800,
-    KEYNOMS18 = 0x01000,
-    KEYNOOPENCL = 0x02000,
-    WCHARSUPPORT = 0x04000,
-    HALFSUPPORT = 0x08000,
-    CHAR8SUPPORT = 0x10000,
-    KEYCONCEPTS = 0x20000,
-    KEYOBJC2    = 0x40000,
-    KEYZVECTOR  = 0x80000,
-    KEYCOROUTINES = 0x100000,
-    KEYMODULES = 0x200000,
-    KEYCXX2A = 0x400000,
-    KEYOPENCLCXX = 0x800000,
-    KEYALLCXX = KEYCXX | KEYCXX11 | KEYCXX2A,
-    KEYC2       = 0x1000000,
-    KEYALL = (0xffffff & ~KEYNOMS18 & ~KEYC2 &
-              ~KEYNOOPENCL) // KEYNOMS18 and KEYNOOPENCL are used to exclude.
+    KEYALL = (0xffffff)
   };
 
   /// How a keyword is treated in the selected standard.
@@ -144,32 +116,6 @@ namespace {
 static KeywordStatus getKeywordStatus(const LangOptions &LangOpts,
                                       unsigned Flags) {
   if (Flags == KEYALL) return KS_Enabled;
-  if (LangOpts.CPlusPlus && (Flags & KEYCXX)) return KS_Enabled;
-  if (LangOpts.CPlusPlus11 && (Flags & KEYCXX11)) return KS_Enabled;
-  if (LangOpts.CPlusPlus2a && (Flags & KEYCXX2A)) return KS_Enabled;
-  if (LangOpts.C99 && (Flags & KEYC99)) return KS_Enabled;
-  if (LangOpts.C2 && (Flags & KEYC2)) return KS_Enabled;
-  if (LangOpts.GNUKeywords && (Flags & KEYGNU)) return KS_Extension;
-  if (LangOpts.MicrosoftExt && (Flags & KEYMS)) return KS_Extension;
-  if (LangOpts.Borland && (Flags & KEYBORLAND)) return KS_Extension;
-  if (LangOpts.Bool && (Flags & BOOLSUPPORT)) return KS_Enabled;
-  if (LangOpts.Half && (Flags & HALFSUPPORT)) return KS_Enabled;
-  if (LangOpts.WChar && (Flags & WCHARSUPPORT)) return KS_Enabled;
-  if (LangOpts.Char8 && (Flags & CHAR8SUPPORT)) return KS_Enabled;
-  if (LangOpts.AltiVec && (Flags & KEYALTIVEC)) return KS_Enabled;
-  if (LangOpts.OpenCL && !LangOpts.OpenCLCPlusPlus && (Flags & KEYOPENCLC))
-    return KS_Enabled;
-  if (LangOpts.OpenCLCPlusPlus && (Flags & KEYOPENCLCXX)) return KS_Enabled;
-  if (!LangOpts.CPlusPlus && (Flags & KEYNOCXX)) return KS_Enabled;
-  if (LangOpts.C11 && (Flags & KEYC11)) return KS_Enabled;
-  // We treat bridge casts as objective-C keywords so we can warn on them
-  // in non-arc mode.
-  if (LangOpts.ObjC2 && (Flags & KEYARC)) return KS_Enabled;
-  if (LangOpts.ObjC2 && (Flags & KEYOBJC2)) return KS_Enabled;
-  if (LangOpts.ConceptsTS && (Flags & KEYCONCEPTS)) return KS_Enabled;
-  if (LangOpts.CoroutinesTS && (Flags & KEYCOROUTINES)) return KS_Enabled;
-  if (LangOpts.ModulesTS && (Flags & KEYMODULES)) return KS_Enabled;
-  if (LangOpts.CPlusPlus && (Flags & KEYALLCXX)) return KS_Future;
   return KS_Disabled;
 }
 
@@ -181,19 +127,6 @@ static void AddKeyword(StringRef Keyword,
                        const LangOptions &LangOpts, IdentifierTable &Table) {
   KeywordStatus AddResult = getKeywordStatus(LangOpts, Flags);
 
-  if (LangOpts.C2) {
-    if ((Flags & (KEYC2|BOOLSUPPORT)) == 0) return;
-  }
-
-  // Don't add this keyword under MSVCCompat.
-  if (LangOpts.MSVCCompat && (Flags & KEYNOMS18) &&
-      !LangOpts.isCompatibleWithMSVC(LangOptions::MSVC2015))
-    return;
-
-  // Don't add this keyword under OpenCL.
-  if (LangOpts.OpenCL && (Flags & KEYNOOPENCL))
-    return;
-
   // Don't add this keyword if disabled in this language.
   if (AddResult == KS_Disabled) return;
 
@@ -203,22 +136,7 @@ static void AddKeyword(StringRef Keyword,
   Info.setIsFutureCompatKeyword(AddResult == KS_Future);
 }
 
-/// AddCXXOperatorKeyword - Register a C++ operator keyword alternative
-/// representations.
-static void AddCXXOperatorKeyword(StringRef Keyword,
-                                  tok::TokenKind TokenCode,
-                                  IdentifierTable &Table) {
-  IdentifierInfo &Info = Table.get(Keyword, TokenCode);
-  Info.setIsCPlusPlusOperatorKeyword();
-}
 
-/// AddObjCKeyword - Register an Objective-C \@keyword like "class" "selector"
-/// or "property".
-static void AddObjCKeyword(StringRef Name,
-                           tok::ObjCKeywordKind ObjCID,
-                           IdentifierTable &Table) {
-  Table.get(Name).setObjCKeywordID(ObjCID);
-}
 
 /// AddKeywords - Add all keywords to the symbol table.
 ///
@@ -230,15 +148,6 @@ void IdentifierTable::AddKeywords(const LangOptions &LangOpts) {
 #define ALIAS(NAME, TOK, FLAGS) \
   AddKeyword(StringRef(NAME), tok::kw_ ## TOK,  \
              FLAGS, LangOpts, *this);
-#define CXX_KEYWORD_OPERATOR(NAME, ALIAS) \
-  if (LangOpts.CXXOperatorNames)          \
-    AddCXXOperatorKeyword(StringRef(#NAME), tok::ALIAS, *this);
-#define OBJC1_AT_KEYWORD(NAME) \
-  if (LangOpts.ObjC1)          \
-    AddObjCKeyword(StringRef(#NAME), tok::objc_##NAME, *this);
-#define OBJC2_AT_KEYWORD(NAME) \
-  if (LangOpts.ObjC2)          \
-    AddObjCKeyword(StringRef(#NAME), tok::objc_##NAME, *this);
 #define TESTING_KEYWORD(NAME, FLAGS)
 #include "Clang/TokenKinds.def"
 
@@ -246,8 +155,6 @@ void IdentifierTable::AddKeywords(const LangOptions &LangOpts) {
     AddKeyword("__unknown_anytype", tok::kw___unknown_anytype, KEYALL,
                LangOpts, *this);
 
-  if (LangOpts.DeclSpecKeyword)
-    AddKeyword("__declspec", tok::kw___declspec, KEYALL, LangOpts, *this);
 
   // Add the '_experimental_modules_import' contextual keyword.
   get("import").setModulesImport(true);
@@ -278,19 +185,6 @@ bool IdentifierInfo::isKeyword(const LangOptions &LangOpts) const {
   }
 }
 
-/// Returns true if the identifier represents a C++ keyword in the
-/// specified language.
-bool IdentifierInfo::isCPlusPlusKeyword(const LangOptions &LangOpts) const {
-  if (!LangOpts.CPlusPlus || !isKeyword(LangOpts))
-    return false;
-  // This is a C++ keyword if this identifier is not a keyword when checked
-  // using LangOptions without C++ support.
-  LangOptions LangOptsNoCPP = LangOpts;
-  LangOptsNoCPP.CPlusPlus = false;
-  LangOptsNoCPP.CPlusPlus11 = false;
-  LangOptsNoCPP.CPlusPlus2a = false;
-  return !isKeyword(LangOptsNoCPP);
-}
 
 tok::PPKeywordKind IdentifierInfo::getPPKeywordID() const {
   // We use a perfect hash function here involving the length of the keyword,
@@ -323,7 +217,6 @@ tok::PPKeywordKind IdentifierInfo::getPPKeywordID() const {
   CASE( 6, 'a', 's', assert);
   CASE( 6, 'd', 'f', define);
   CASE( 6, 'i', 'n', ifndef);
-  CASE( 6, 'i', 'p', import);
   CASE( 6, 'p', 'a', pragma);
 
   CASE( 7, 'd', 'f', defined);
@@ -382,321 +275,9 @@ void IdentifierTable::PrintStats() const {
 // SelectorTable Implementation
 //===----------------------------------------------------------------------===//
 
-unsigned llvm::DenseMapInfo<c2lang::Selector>::getHashValue(c2lang::Selector S) {
-  return DenseMapInfo<void*>::getHashValue(S.getAsOpaquePtr());
-}
 
-namespace c2lang {
 
-/// MultiKeywordSelector - One of these variable length records is kept for each
-/// selector containing more than one keyword. We use a folding set
-/// to unique aggregate names (keyword selectors in ObjC parlance). Access to
-/// this class is provided strictly through Selector.
-class MultiKeywordSelector
-  : public DeclarationNameExtra, public llvm::FoldingSetNode {
-  MultiKeywordSelector(unsigned nKeys) {
-    ExtraKindOrNumArgs = NUM_EXTRA_KINDS + nKeys;
-  }
 
-public:
-  // Constructor for keyword selectors.
-  MultiKeywordSelector(unsigned nKeys, IdentifierInfo **IIV) {
-    assert((nKeys > 1) && "not a multi-keyword selector");
-    ExtraKindOrNumArgs = NUM_EXTRA_KINDS + nKeys;
-
-    // Fill in the trailing keyword array.
-    IdentifierInfo **KeyInfo = reinterpret_cast<IdentifierInfo **>(this+1);
-    for (unsigned i = 0; i != nKeys; ++i)
-      KeyInfo[i] = IIV[i];
-  }
-
-  // getName - Derive the full selector name and return it.
-  std::string getName() const;
-
-  unsigned getNumArgs() const { return ExtraKindOrNumArgs - NUM_EXTRA_KINDS; }
-
-  using keyword_iterator = IdentifierInfo *const *;
-
-  keyword_iterator keyword_begin() const {
-    return reinterpret_cast<keyword_iterator>(this+1);
-  }
-
-  keyword_iterator keyword_end() const {
-    return keyword_begin()+getNumArgs();
-  }
-
-  IdentifierInfo *getIdentifierInfoForSlot(unsigned i) const {
-    assert(i < getNumArgs() && "getIdentifierInfoForSlot(): illegal index");
-    return keyword_begin()[i];
-  }
-
-  static void Profile(llvm::FoldingSetNodeID &ID,
-                      keyword_iterator ArgTys, unsigned NumArgs) {
-    ID.AddInteger(NumArgs);
-    for (unsigned i = 0; i != NumArgs; ++i)
-      ID.AddPointer(ArgTys[i]);
-  }
-
-  void Profile(llvm::FoldingSetNodeID &ID) {
-    Profile(ID, keyword_begin(), getNumArgs());
-  }
-};
-
-} // namespace c2lang.
-
-unsigned Selector::getNumArgs() const {
-  unsigned IIF = getIdentifierInfoFlag();
-  if (IIF <= ZeroArg)
-    return 0;
-  if (IIF == OneArg)
-    return 1;
-  // We point to a MultiKeywordSelector.
-  MultiKeywordSelector *SI = getMultiKeywordSelector();
-  return SI->getNumArgs();
-}
-
-IdentifierInfo *Selector::getIdentifierInfoForSlot(unsigned argIndex) const {
-  if (getIdentifierInfoFlag() < MultiArg) {
-    assert(argIndex == 0 && "illegal keyword index");
-    return getAsIdentifierInfo();
-  }
-
-  // We point to a MultiKeywordSelector.
-  MultiKeywordSelector *SI = getMultiKeywordSelector();
-  return SI->getIdentifierInfoForSlot(argIndex);
-}
-
-StringRef Selector::getNameForSlot(unsigned int argIndex) const {
-  IdentifierInfo *II = getIdentifierInfoForSlot(argIndex);
-  return II? II->getName() : StringRef();
-}
-
-std::string MultiKeywordSelector::getName() const {
-  SmallString<256> Str;
-  llvm::raw_svector_ostream OS(Str);
-  for (keyword_iterator I = keyword_begin(), E = keyword_end(); I != E; ++I) {
-    if (*I)
-      OS << (*I)->getName();
-    OS << ':';
-  }
-
-  return OS.str();
-}
-
-std::string Selector::getAsString() const {
-  if (InfoPtr == 0)
-    return "<null selector>";
-
-  if (getIdentifierInfoFlag() < MultiArg) {
-    IdentifierInfo *II = getAsIdentifierInfo();
-
-    if (getNumArgs() == 0) {
-      assert(II && "If the number of arguments is 0 then II is guaranteed to "
-                   "not be null.");
-      return II->getName();
-    }
-
-    if (!II)
-      return ":";
-
-    return II->getName().str() + ":";
-  }
-
-  // We have a multiple keyword selector.
-  return getMultiKeywordSelector()->getName();
-}
-
-void Selector::print(llvm::raw_ostream &OS) const {
-  OS << getAsString();
-}
-
-LLVM_DUMP_METHOD void Selector::dump() const { print(llvm::errs()); }
-
-/// Interpreting the given string using the normal CamelCase
-/// conventions, determine whether the given string starts with the
-/// given "word", which is assumed to end in a lowercase letter.
-static bool startsWithWord(StringRef name, StringRef word) {
-  if (name.size() < word.size()) return false;
-  return ((name.size() == word.size() || !isLowercase(name[word.size()])) &&
-          name.startswith(word));
-}
-
-ObjCMethodFamily Selector::getMethodFamilyImpl(Selector sel) {
-  IdentifierInfo *first = sel.getIdentifierInfoForSlot(0);
-  if (!first) return OMF_None;
-
-  StringRef name = first->getName();
-  if (sel.isUnarySelector()) {
-    if (name == "autorelease") return OMF_autorelease;
-    if (name == "dealloc") return OMF_dealloc;
-    if (name == "finalize") return OMF_finalize;
-    if (name == "release") return OMF_release;
-    if (name == "retain") return OMF_retain;
-    if (name == "retainCount") return OMF_retainCount;
-    if (name == "self") return OMF_self;
-    if (name == "initialize") return OMF_initialize;
-  }
-
-  if (name == "performSelector" || name == "performSelectorInBackground" ||
-      name == "performSelectorOnMainThread")
-    return OMF_performSelector;
-
-  // The other method families may begin with a prefix of underscores.
-  while (!name.empty() && name.front() == '_')
-    name = name.substr(1);
-
-  if (name.empty()) return OMF_None;
-  switch (name.front()) {
-  case 'a':
-    if (startsWithWord(name, "alloc")) return OMF_alloc;
-    break;
-  case 'c':
-    if (startsWithWord(name, "copy")) return OMF_copy;
-    break;
-  case 'i':
-    if (startsWithWord(name, "init")) return OMF_init;
-    break;
-  case 'm':
-    if (startsWithWord(name, "mutableCopy")) return OMF_mutableCopy;
-    break;
-  case 'n':
-    if (startsWithWord(name, "new")) return OMF_new;
-    break;
-  default:
-    break;
-  }
-
-  return OMF_None;
-}
-
-ObjCInstanceTypeFamily Selector::getInstTypeMethodFamily(Selector sel) {
-  IdentifierInfo *first = sel.getIdentifierInfoForSlot(0);
-  if (!first) return OIT_None;
-
-  StringRef name = first->getName();
-
-  if (name.empty()) return OIT_None;
-  switch (name.front()) {
-    case 'a':
-      if (startsWithWord(name, "array")) return OIT_Array;
-      break;
-    case 'd':
-      if (startsWithWord(name, "default")) return OIT_ReturnsSelf;
-      if (startsWithWord(name, "dictionary")) return OIT_Dictionary;
-      break;
-    case 's':
-      if (startsWithWord(name, "shared")) return OIT_ReturnsSelf;
-      if (startsWithWord(name, "standard")) return OIT_Singleton;
-      break;
-    case 'i':
-      if (startsWithWord(name, "init")) return OIT_Init;
-    default:
-      break;
-  }
-  return OIT_None;
-}
-
-ObjCStringFormatFamily Selector::getStringFormatFamilyImpl(Selector sel) {
-  IdentifierInfo *first = sel.getIdentifierInfoForSlot(0);
-  if (!first) return SFF_None;
-
-  StringRef name = first->getName();
-
-  switch (name.front()) {
-    case 'a':
-      if (name == "appendFormat") return SFF_NSString;
-      break;
-
-    case 'i':
-      if (name == "initWithFormat") return SFF_NSString;
-      break;
-
-    case 'l':
-      if (name == "localizedStringWithFormat") return SFF_NSString;
-      break;
-
-    case 's':
-      if (name == "stringByAppendingFormat" ||
-          name == "stringWithFormat") return SFF_NSString;
-      break;
-  }
-  return SFF_None;
-}
-
-namespace {
-
-struct SelectorTableImpl {
-  llvm::FoldingSet<MultiKeywordSelector> Table;
-  llvm::BumpPtrAllocator Allocator;
-};
-
-} // namespace
-
-static SelectorTableImpl &getSelectorTableImpl(void *P) {
-  return *static_cast<SelectorTableImpl*>(P);
-}
-
-SmallString<64>
-SelectorTable::constructSetterName(StringRef Name) {
-  SmallString<64> SetterName("set");
-  SetterName += Name;
-  SetterName[3] = toUppercase(SetterName[3]);
-  return SetterName;
-}
-
-Selector
-SelectorTable::constructSetterSelector(IdentifierTable &Idents,
-                                       SelectorTable &SelTable,
-                                       const IdentifierInfo *Name) {
-  IdentifierInfo *SetterName =
-    &Idents.get(constructSetterName(Name->getName()));
-  return SelTable.getUnarySelector(SetterName);
-}
-
-std::string SelectorTable::getPropertyNameFromSetterSelector(Selector Sel) {
-  StringRef Name = Sel.getNameForSlot(0);
-  assert(Name.startswith("set") && "invalid setter name");
-  return (Twine(toLowercase(Name[3])) + Name.drop_front(4)).str();
-}
-
-size_t SelectorTable::getTotalMemory() const {
-  SelectorTableImpl &SelTabImpl = getSelectorTableImpl(Impl);
-  return SelTabImpl.Allocator.getTotalMemory();
-}
-
-Selector SelectorTable::getSelector(unsigned nKeys, IdentifierInfo **IIV) {
-  if (nKeys < 2)
-    return Selector(IIV[0], nKeys);
-
-  SelectorTableImpl &SelTabImpl = getSelectorTableImpl(Impl);
-
-  // Unique selector, to guarantee there is one per name.
-  llvm::FoldingSetNodeID ID;
-  MultiKeywordSelector::Profile(ID, IIV, nKeys);
-
-  void *InsertPos = nullptr;
-  if (MultiKeywordSelector *SI =
-        SelTabImpl.Table.FindNodeOrInsertPos(ID, InsertPos))
-    return Selector(SI);
-
-  // MultiKeywordSelector objects are not allocated with new because they have a
-  // variable size array (for parameter types) at the end of them.
-  unsigned Size = sizeof(MultiKeywordSelector) + nKeys*sizeof(IdentifierInfo *);
-  MultiKeywordSelector *SI =
-      (MultiKeywordSelector *)SelTabImpl.Allocator.Allocate(
-          Size, alignof(MultiKeywordSelector));
-  new (SI) MultiKeywordSelector(nKeys, IIV);
-  SelTabImpl.Table.InsertNode(SI, InsertPos);
-  return Selector(SI);
-}
-
-SelectorTable::SelectorTable() {
-  Impl = new SelectorTableImpl();
-}
-
-SelectorTable::~SelectorTable() {
-  delete &getSelectorTableImpl(Impl);
-}
 
 const char *c2lang::getOperatorSpelling(OverloadedOperatorKind Operator) {
   switch (Operator) {

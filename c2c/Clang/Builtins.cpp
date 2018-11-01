@@ -66,19 +66,10 @@ bool Builtin::Context::builtinIsSupported(const Builtin::Info &BuiltinInfo,
     LangOpts.NoMathBuiltin && BuiltinInfo.HeaderName &&
     llvm::StringRef(BuiltinInfo.HeaderName).equals("math.h");
   bool GnuModeUnsupported = !LangOpts.GNUMode && (BuiltinInfo.Langs & GNU_LANG);
-  bool MSModeUnsupported =
-      !LangOpts.MicrosoftExt && (BuiltinInfo.Langs & MS_LANG);
-  bool ObjCUnsupported = !LangOpts.ObjC1 && BuiltinInfo.Langs == OBJC_LANG;
-  bool OclC1Unsupported = (LangOpts.OpenCLVersion / 100) != 1 &&
-                          (BuiltinInfo.Langs & ALL_OCLC_LANGUAGES ) ==  OCLC1X_LANG;
-  bool OclC2Unsupported = LangOpts.OpenCLVersion != 200 &&
-                          (BuiltinInfo.Langs & ALL_OCLC_LANGUAGES) == OCLC20_LANG;
-  bool OclCUnsupported = !LangOpts.OpenCL &&
-                         (BuiltinInfo.Langs & ALL_OCLC_LANGUAGES);
   bool OpenMPUnsupported = !LangOpts.OpenMP && BuiltinInfo.Langs == OMP_LANG;
-  return !BuiltinsUnsupported && !MathBuiltinsUnsupported && !OclCUnsupported &&
-         !OclC1Unsupported && !OclC2Unsupported && !OpenMPUnsupported &&
-         !GnuModeUnsupported && !MSModeUnsupported && !ObjCUnsupported;
+  return !BuiltinsUnsupported && !MathBuiltinsUnsupported
+         && !OpenMPUnsupported &&
+         !GnuModeUnsupported;
 }
 
 /// initializeBuiltins - Mark the identifiers for all the builtins with their

@@ -34,28 +34,13 @@ include_directories("/usr/include/i386-linux-gnu/c++/4.8/")
 
 add_library(c2core
     Clang/Targets/AArch64.cpp
-    Clang/Targets/AMDGPU.cpp
     Clang/Targets/ARM.cpp
-    Clang/Targets/AVR.cpp
-    Clang/Targets/BPF.cpp
-    Clang/Targets/Hexagon.cpp
-    Clang/Targets/Lanai.cpp
-    Clang/Targets/Le64.cpp
-    Clang/Targets/MSP430.cpp
     Clang/Targets/Mips.cpp
-    Clang/Targets/NVPTX.cpp
-    Clang/Targets/Nios2.cpp
     Clang/Targets/OSTargets.cpp
-    Clang/Targets/PNaCl.cpp
     Clang/Targets/PPC.cpp
     Clang/Targets/RISCV.cpp
-    Clang/Targets/SPIR.cpp
-    Clang/Targets/Sparc.cpp
-    Clang/Targets/SystemZ.cpp
-    Clang/Targets/TCE.cpp
     Clang/Targets/WebAssembly.cpp
     Clang/Targets/X86.cpp
-    Clang/Targets/XCore.cpp
     Clang/Attributes.cpp
     Clang/Builtins.cpp
     Clang/CharInfo.cpp

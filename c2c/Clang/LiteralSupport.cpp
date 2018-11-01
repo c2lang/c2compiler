@@ -317,7 +317,7 @@ static bool ProcessUCNEscape(const char *ThisTokBegin, const char *&ThisTokBuf,
   // characters inside character and string literals
   if (UcnVal < 0xa0 &&
       (UcnVal != 0x24 && UcnVal != 0x40 && UcnVal != 0x60)) {  // $, @, `
-    bool IsError = (!Features.CPlusPlus11 || !in_char_string_literal);
+    bool IsError = true;
     if (Diags) {
       char BasicSCSChar = UcnVal;
       if (UcnVal >= 0x20 && UcnVal < 0x7f)
@@ -333,10 +333,6 @@ static bool ProcessUCNEscape(const char *ThisTokBegin, const char *&ThisTokBuf,
     if (IsError)
       return false;
   }
-
-  if (!Features.CPlusPlus && !Features.C99 && Diags)
-    Diag(Diags, Features, Loc, ThisTokBegin, UcnBegin, ThisTokBuf,
-         diag::warn_ucn_not_valid_in_c89_literal);
 
   return true;
 }
@@ -655,44 +651,6 @@ NumericLiteralParser::NumericLiteralParser(StringRef TokSpelling,
       continue;  // Success.
     case 'i':
     case 'I':
-      if (PP.getLangOpts().MicrosoftExt) {
-        if (isLong || isLongLong || MicrosoftInteger)
-          break;
-
-        if (!isFPConstant) {
-          // Allow i8, i16, i32, and i64.
-          switch (s[1]) {
-          case '8':
-            s += 2; // i8 suffix
-            MicrosoftInteger = 8;
-            break;
-          case '1':
-            if (s[2] == '6') {
-              s += 3; // i16 suffix
-              MicrosoftInteger = 16;
-            }
-            break;
-          case '3':
-            if (s[2] == '2') {
-              s += 3; // i32 suffix
-              MicrosoftInteger = 32;
-            }
-            break;
-          case '6':
-            if (s[2] == '4') {
-              s += 3; // i64 suffix
-              MicrosoftInteger = 64;
-            }
-            break;
-          default:
-            break;
-          }
-        }
-        if (MicrosoftInteger) {
-          assert(s <= ThisTokEnd && "didn't maximally munch?");
-          break;
-        }
-      }
       // fall through.
     case 'j':
     case 'J':
@@ -708,26 +666,6 @@ NumericLiteralParser::NumericLiteralParser(StringRef TokSpelling,
   if (s != ThisTokEnd || isImaginary) {
     // FIXME: Don't bother expanding UCNs if !tok.hasUCN().
     expandUCNs(UDSuffixBuf, StringRef(SuffixBegin, ThisTokEnd - SuffixBegin));
-    if (isValidUDSuffix(PP.getLangOpts(), UDSuffixBuf)) {
-      if (!isImaginary) {
-        // Any suffix pieces we might have parsed are actually part of the
-        // ud-suffix.
-        isLong = false;
-        isUnsigned = false;
-        isLongLong = false;
-        isFloat = false;
-        isFloat16 = false;
-        isHalf = false;
-        isImaginary = false;
-        MicrosoftInteger = 0;
-        saw_fixed_point_suffix = false;
-        isFract = false;
-        isAccum = false;
-      }
-
-      saw_ud_suffix = true;
-      return;
-    }
 
     if (s != ThisTokEnd) {
       // Report an error if there are any.
@@ -751,8 +689,7 @@ void NumericLiteralParser::ParseDecimalOrOctalCommon(SourceLocation TokLoc){
 
   // If we have a hex digit other than 'e' (which denotes a FP exponent) then
   // the code is using an incorrect base.
-  if (isHexDigit(*s) && *s != 'e' && *s != 'E' &&
-      !isValidUDSuffix(PP.getLangOpts(), StringRef(s, ThisTokEnd - s))) {
+  if (isHexDigit(*s) && *s != 'e' && *s != 'E') {
     PP.Diag(PP.AdvanceToTokenCharacter(TokLoc, s-ThisTokBegin),
             diag::err_invalid_digit) << StringRef(s, 1) << (radix == 8 ? 1 : 0);
     hadError = true;
@@ -789,32 +726,6 @@ void NumericLiteralParser::ParseDecimalOrOctalCommon(SourceLocation TokLoc){
   }
 }
 
-/// Determine whether a suffix is a valid ud-suffix. We avoid treating reserved
-/// suffixes as ud-suffixes, because the diagnostic experience is better if we
-/// treat it as an invalid suffix.
-bool NumericLiteralParser::isValidUDSuffix(const LangOptions &LangOpts,
-                                           StringRef Suffix) {
-  if (!LangOpts.CPlusPlus11 || Suffix.empty())
-    return false;
-
-  // By C++11 [lex.ext]p10, ud-suffixes starting with an '_' are always valid.
-  if (Suffix[0] == '_')
-    return true;
-
-  // In C++11, there are no library suffixes.
-  if (!LangOpts.CPlusPlus14)
-    return false;
-
-  // In C++14, "s", "h", "min", "ms", "us", and "ns" are used in the library.
-  // Per tweaked N3660, "il", "i", and "if" are also used in the library.
-  // In C++2a "d" and "y" are used in the library.
-  return llvm::StringSwitch<bool>(Suffix)
-      .Cases("h", "min", "s", true)
-      .Cases("ms", "us", "ns", true)
-      .Cases("il", "i", "if", true)
-      .Cases("d", "y", LangOpts.CPlusPlus2a)
-      .Default(false);
-}
 
 void NumericLiteralParser::checkSeparator(SourceLocation TokLoc,
                                           const char *Pos,
@@ -869,7 +780,7 @@ void NumericLiteralParser::ParseNumberStartingWithZero(SourceLocation TokLoc) {
     if (!HasSignificandDigits) {
       PP.Diag(PP.AdvanceToTokenCharacter(TokLoc, s - ThisTokBegin),
               diag::err_hex_constant_requires)
-          << PP.getLangOpts().CPlusPlus << 1;
+          << 0 << 1;
       hadError = true;
       return;
     }
@@ -894,16 +805,11 @@ void NumericLiteralParser::ParseNumberStartingWithZero(SourceLocation TokLoc) {
       checkSeparator(TokLoc, s, CSK_BeforeDigits);
       s = first_non_digit;
 
-      if (!PP.getLangOpts().HexFloats)
-        PP.Diag(TokLoc, PP.getLangOpts().CPlusPlus
-                            ? diag::ext_hex_literal_invalid
-                            : diag::ext_hex_constant_invalid);
-      else if (PP.getLangOpts().CPlusPlus17)
-        PP.Diag(TokLoc, diag::warn_cxx17_hex_literal);
+      PP.Diag(TokLoc, diag::warn_cxx17_hex_literal);
     } else if (saw_period) {
       PP.Diag(PP.AdvanceToTokenCharacter(TokLoc, s - ThisTokBegin),
               diag::err_hex_constant_requires)
-          << PP.getLangOpts().CPlusPlus << 0;
+          << 1 << 0;
       hadError = true;
     }
     return;
@@ -912,12 +818,7 @@ void NumericLiteralParser::ParseNumberStartingWithZero(SourceLocation TokLoc) {
   // Handle simple binary numbers 0b01010
   if ((c1 == 'b' || c1 == 'B') && (s[1] == '0' || s[1] == '1')) {
     // 0b101010 is a C++1y / GCC extension.
-    PP.Diag(TokLoc,
-            PP.getLangOpts().CPlusPlus14
-              ? diag::warn_cxx11_compat_binary_literal
-              : PP.getLangOpts().CPlusPlus
-                ? diag::ext_binary_literal_cxx14
-                : diag::ext_binary_literal);
+    PP.Diag(TokLoc, diag::ext_binary_literal);
     ++s;
     assert(s < ThisTokEnd && "didn't maximally munch?");
     radix = 2;
@@ -925,9 +826,7 @@ void NumericLiteralParser::ParseNumberStartingWithZero(SourceLocation TokLoc) {
     s = SkipBinaryDigits(s);
     if (s == ThisTokEnd) {
       // Done.
-    } else if (isHexDigit(*s) &&
-               !isValidUDSuffix(PP.getLangOpts(),
-                                StringRef(s, ThisTokEnd - s))) {
+    } else if (isHexDigit(*s)) {
       PP.Diag(PP.AdvanceToTokenCharacter(TokLoc, s-ThisTokBegin),
               diag::err_invalid_digit) << StringRef(s, 1) << 2;
       hadError = true;
@@ -1729,13 +1628,13 @@ void StringLiteralParser::init(ArrayRef<Token> StringToks){
     }
   } else if (Diags) {
     // Complain if this string literal has too many characters.
-    unsigned MaxChars = Features.CPlusPlus? 65536 : Features.C99 ? 4095 : 509;
+    unsigned MaxChars = 4095;
 
     if (GetNumStringChars() > MaxChars)
       Diags->Report(StringToks.front().getLocation(),
                     diag::ext_string_too_long)
         << GetNumStringChars() << MaxChars
-        << (Features.CPlusPlus ? 2 : Features.C99 ? 1 : 0)
+        << 1
         << SourceRange(StringToks.front().getLocation(),
                        StringToks.back().getLocation());
   }
@@ -1883,11 +1782,3 @@ unsigned StringLiteralParser::getOffsetOfStringByte(const Token &Tok,
   return SpellingPtr-SpellingStart;
 }
 
-/// Determine whether a suffix is a valid ud-suffix. We avoid treating reserved
-/// suffixes as ud-suffixes, because the diagnostic experience is better if we
-/// treat it as an invalid suffix.
-bool StringLiteralParser::isValidUDSuffix(const LangOptions &LangOpts,
-                                          StringRef Suffix) {
-  return NumericLiteralParser::isValidUDSuffix(LangOpts, Suffix) ||
-         Suffix == "sv";
-}

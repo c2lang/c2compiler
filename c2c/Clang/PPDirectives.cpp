@@ -108,10 +108,6 @@ static bool isReservedId(StringRef Text, const LangOptions &Lang) {
   // C++ [global.names]
   // Each name that contains a double underscore ... is reserved to the
   // implementation for any use.
-  if (Lang.CPlusPlus) {
-    if (Text.find("__") != StringRef::npos)
-      return true;
-  }
   return false;
 }
 
@@ -140,8 +136,6 @@ static MacroDiag shouldWarnOnMacroDef(Preprocessor &PP, IdentifierInfo *II) {
   if (isReservedId(Text, Lang))
     return MD_ReservedMacro;
   if (II->isKeyword(Lang))
-    return MD_KeywordDef;
-  if (Lang.CPlusPlus11 && (Text.equals("override") || Text.equals("final")))
     return MD_KeywordDef;
   return MD_NoWarn;
 }
@@ -243,16 +237,6 @@ bool Preprocessor::CheckMacroName(Token &MacroNameTok, MacroUse isDefineUndef,
   if (!II)
     return Diag(MacroNameTok, diag::err_pp_macro_not_identifier);
 
-  if (II->isCPlusPlusOperatorKeyword()) {
-    // C++ 2.5p2: Alternative tokens behave the same as its primary token
-    // except for their spellings.
-    Diag(MacroNameTok, getLangOpts().MicrosoftExt
-                           ? diag::ext_pp_operator_used_as_macro_name
-                           : diag::err_pp_operator_used_as_macro_name)
-        << II << MacroNameTok.getKind();
-    // Allow #defining |and| and friends for Microsoft compatibility or
-    // recovery when legacy C headers are included in C++.
-  }
 
   if ((isDefineUndef != MU_Other) && II->getPPKeywordID() == tok::pp_defined) {
     // Error if defining "defined": C99 6.10.8/4, C++ [cpp.predefined]p4.
@@ -353,9 +337,9 @@ void Preprocessor::CheckEndOfDirective(const char *DirType, bool EnableMacros) {
     // trouble than it is worth to insert /**/ and check that there is no /**/
     // in the range also.
     FixItHint Hint;
-    if ((LangOpts.GNUMode || LangOpts.C99 || LangOpts.CPlusPlus) &&
-        !CurTokenLexer)
-      Hint = FixItHint::CreateInsertion(Tmp.getLocation(),"//");
+    if (!CurTokenLexer) {
+        Hint = FixItHint::CreateInsertion(Tmp.getLocation(), "//");
+    }
     Diag(Tmp, diag::ext_pp_extra_tokens_at_eol) << DirType << Hint;
     DiscardUntilEndOfDirective();
   }
@@ -690,8 +674,6 @@ Preprocessor::getModuleHeaderToIncludeForDiagnostics(SourceLocation IncLoc,
 
   // If we have a module import syntax, we shouldn't include a header to
   // make a particular module visible.
-  if (getLangOpts().ObjC2)
-    return nullptr;
 
   Module *TopM = M->getTopLevelModule();
   Module *IncM = getModuleForLocation(IncLoc);
@@ -779,16 +761,6 @@ const FileEntry *Preprocessor::LookupFile(
       Includers.push_back(std::make_pair(FileEnt, FileEnt->getDir()));
     }
 
-    // MSVC searches the current include stack from top to bottom for
-    // headers included by quoted include directives.
-    // See: http://msdn.microsoft.com/en-us/library/36k2cdd4.aspx
-    if (LangOpts.MSVCCompat && !isAngled) {
-      for (IncludeStackInfo &ISEntry : llvm::reverse(IncludeMacroStack)) {
-        if (IsFileLexer(ISEntry))
-          if ((FileEnt = ISEntry.ThePPLexer->getFileEntry()))
-            Includers.push_back(std::make_pair(FileEnt, FileEnt->getDir()));
-      }
-    }
   }
 
   CurDir = CurDirLookup;
@@ -946,7 +918,6 @@ void Preprocessor::HandleDirective(Token &Result) {
     if (IdentifierInfo *II = Result.getIdentifierInfo()) {
       switch (II->getPPKeywordID()) {
       case tok::pp_include:
-      case tok::pp_import:
       case tok::pp_include_next:
       case tok::pp___include_macros:
       case tok::pp_pragma:
@@ -1030,8 +1001,6 @@ void Preprocessor::HandleDirective(Token &Result) {
       return HandlePragmaDirective(SavedHash.getLocation(), PIK_HashPragma);
 
     // GNU Extensions.
-    case tok::pp_import:
-      return HandleImportDirective(SavedHash.getLocation(), Result);
     case tok::pp_include_next:
       return HandleIncludeNextDirective(SavedHash.getLocation(), Result);
 
@@ -1170,13 +1139,10 @@ void Preprocessor::HandleLineDirective() {
 
   // Enforce C99 6.10.4p3: "The digit sequence shall not specify ... a
   // number greater than 2147483647".  C90 requires that the line # be <= 32767.
-  unsigned LineLimit = 32768U;
-  if (LangOpts.C99 || LangOpts.CPlusPlus11)
-    LineLimit = 2147483648U;
-  if (LineNo >= LineLimit)
-    Diag(DigitTok, diag::ext_pp_line_too_big) << LineLimit;
-  else if (LangOpts.CPlusPlus11 && LineNo >= 32768U)
-    Diag(DigitTok, diag::warn_cxx98_compat_pp_line_too_big);
+  unsigned LineLimit = 2147483648U;
+  if (LineNo >= LineLimit) {
+      Diag(DigitTok, diag::ext_pp_line_too_big) << LineLimit;
+  }
 
   int FilenameID = -1;
   Token StrTok;
@@ -1612,50 +1578,6 @@ void Preprocessor::EnterAnnotationToken(SourceRange Range,
   EnterTokenStream(std::move(Tok), 1, true);
 }
 
-/// Produce a diagnostic informing the user that a #include or similar
-/// was implicitly treated as a module import.
-static void diagnoseAutoModuleImport(
-    Preprocessor &PP, SourceLocation HashLoc, Token &IncludeTok,
-    ArrayRef<std::pair<IdentifierInfo *, SourceLocation>> Path,
-    SourceLocation PathEnd) {
-  assert(PP.getLangOpts().ObjC2 && "no import syntax available");
-
-  SmallString<128> PathString;
-  for (size_t I = 0, N = Path.size(); I != N; ++I) {
-    if (I)
-      PathString += '.';
-    PathString += Path[I].first->getName();
-  }
-  int IncludeKind = 0;
-
-  switch (IncludeTok.getIdentifierInfo()->getPPKeywordID()) {
-  case tok::pp_include:
-    IncludeKind = 0;
-    break;
-
-  case tok::pp_import:
-    IncludeKind = 1;
-    break;
-
-  case tok::pp_include_next:
-    IncludeKind = 2;
-    break;
-
-  case tok::pp___include_macros:
-    IncludeKind = 3;
-    break;
-
-  default:
-    llvm_unreachable("unknown include directive kind");
-  }
-
-  CharSourceRange ReplaceRange(SourceRange(HashLoc, PathEnd),
-                               /*IsTokenRange=*/false);
-  PP.Diag(HashLoc, diag::warn_auto_module_import)
-      << IncludeKind << PathString
-      << FixItHint::CreateReplacement(ReplaceRange,
-                                      ("@import " + PathString + ";").str());
-}
 
 // Given a vector of path components and a string containing the real
 // path to the file, build a properly-cased replacement in the vector,
@@ -1766,7 +1688,7 @@ void Preprocessor::HandleIncludeDirective(SourceLocation HashLoc,
     = CharSourceRange::getCharRange(FilenameTok.getLocation(), CharEnd);
   StringRef OriginalFilename = Filename;
   bool isAngled =
-    GetIncludeFilenameSpelling(FilenameTok.getLocation(), Filename);
+  GetIncludeFilenameSpelling(FilenameTok.getLocation(), Filename);
   // If GetIncludeFilenameSpelling set the start ptr to null, there was an
   // error.
   if (Filename.empty()) {
@@ -1822,15 +1744,8 @@ void Preprocessor::HandleIncludeDirective(SourceLocation HashLoc,
   // the path.
   ModuleMap::KnownHeader SuggestedModule;
   SourceLocation FilenameLoc = FilenameTok.getLocation();
-  SmallString<128> NormalizedPath;
-  if (LangOpts.MSVCCompat) {
-    NormalizedPath = Filename.str();
-#ifndef _WIN32
-    llvm::sys::path::native(NormalizedPath);
-#endif
-  }
   const FileEntry *File = LookupFile(
-      FilenameLoc, LangOpts.MSVCCompat ? NormalizedPath.c_str() : Filename,
+      FilenameLoc, Filename,
       isAngled, LookupFrom, LookupFromFile, CurDir,
       Callbacks ? &SearchPath : nullptr, Callbacks ? &RelativePath : nullptr,
       &SuggestedModule, &IsMapped);
@@ -1848,7 +1763,7 @@ void Preprocessor::HandleIncludeDirective(SourceLocation HashLoc,
           // Try the lookup again, skipping the cache.
           File = LookupFile(
               FilenameLoc,
-              LangOpts.MSVCCompat ? NormalizedPath.c_str() : Filename, isAngled,
+              Filename, isAngled,
               LookupFrom, LookupFromFile, CurDir, nullptr, nullptr,
               &SuggestedModule, &IsMapped, /*SkipCache*/ true);
         }
@@ -1862,7 +1777,7 @@ void Preprocessor::HandleIncludeDirective(SourceLocation HashLoc,
       if (isAngled) {
         File = LookupFile(
             FilenameLoc,
-            LangOpts.MSVCCompat ? NormalizedPath.c_str() : Filename, false,
+            Filename, false,
             LookupFrom, LookupFromFile, CurDir,
             Callbacks ? &SearchPath : nullptr,
             Callbacks ? &RelativePath : nullptr, &SuggestedModule, &IsMapped);
@@ -1930,10 +1845,6 @@ void Preprocessor::HandleIncludeDirective(SourceLocation HashLoc,
                                     FilenameTok.getLocation()));
     std::reverse(Path.begin(), Path.end());
 
-    // Warn that we're replacing the include/import with a module import.
-    // We only do this in Objective-C, where we have a module-import syntax.
-    if (getLangOpts().ObjC2)
-      diagnoseAutoModuleImport(*this, HashLoc, IncludeTok, Path, CharEnd);
 
     // Load the module to import its macros. We'll make the declarations
     // visible when the parser gets here.
@@ -1997,7 +1908,7 @@ void Preprocessor::HandleIncludeDirective(SourceLocation HashLoc,
     // Notify the callback object that we've seen an inclusion directive.
     Callbacks->InclusionDirective(
         HashLoc, IncludeTok,
-        LangOpts.MSVCCompat ? NormalizedPath.c_str() : Filename, isAngled,
+        Filename, isAngled,
         FilenameRange, File, SearchPath, RelativePath,
         ShouldEnter ? nullptr : SuggestedModule.getModule(), FileCharacter);
     if (SkipHeader && !SuggestedModule.getModule())
@@ -2016,7 +1927,7 @@ void Preprocessor::HandleIncludeDirective(SourceLocation HashLoc,
       !IsMapped && File && !File->tryGetRealPathName().empty();
 
   if (CheckIncludePathPortability) {
-    StringRef Name = LangOpts.MSVCCompat ? NormalizedPath.str() : Filename;
+    StringRef Name = Filename;
     StringRef RealPathName = File->tryGetRealPathName();
     SmallVector<StringRef, 16> Components(llvm::sys::path::begin(Name),
                                           llvm::sys::path::end(Name));
@@ -2151,31 +2062,7 @@ void Preprocessor::HandleIncludeNextDirective(SourceLocation HashLoc,
                                 LookupFromFile);
 }
 
-/// HandleMicrosoftImportDirective - Implements \#import for Microsoft Mode
-void Preprocessor::HandleMicrosoftImportDirective(Token &Tok) {
-  // The Microsoft #import directive takes a type library and generates header
-  // files from it, and includes those.  This is beyond the scope of what c2lang
-  // does, so we ignore it and error out.  However, #import can optionally have
-  // trailing attributes that span multiple lines.  We're going to eat those
-  // so we can continue processing from there.
-  Diag(Tok, diag::err_pp_import_directive_ms );
 
-  // Read tokens until we get to the end of the directive.  Note that the
-  // directive can be split over multiple lines using the backslash character.
-  DiscardUntilEndOfDirective();
-}
-
-/// HandleImportDirective - Implements \#import.
-///
-void Preprocessor::HandleImportDirective(SourceLocation HashLoc,
-                                         Token &ImportTok) {
-  if (!LangOpts.ObjC1) {  // #import is standard for ObjC.
-    if (LangOpts.MSVCCompat)
-      return HandleMicrosoftImportDirective(ImportTok);
-    Diag(ImportTok, diag::ext_pp_import_directive);
-  }
-  return HandleIncludeDirective(HashLoc, ImportTok, nullptr, nullptr, true);
-}
 
 /// HandleIncludeMacrosDirective - The -imacros command line option turns into a
 /// pseudo directive in the predefines buffer.  This handles it by sucking all
@@ -2226,16 +2113,7 @@ bool Preprocessor::ReadMacroParameterList(MacroInfo *MI, Token &Tok) {
       Diag(Tok, diag::err_pp_expected_ident_in_arg_list);
       return true;
     case tok::ellipsis:  // #define X(... -> C99 varargs
-      if (!LangOpts.C99)
-        Diag(Tok, LangOpts.CPlusPlus11 ?
-             diag::warn_cxx98_compat_variadic_macro :
-             diag::ext_variadic_macro);
 
-      // OpenCL v1.2 s6.9.e: variadic macros are not supported.
-      if (LangOpts.OpenCL) {
-        Diag(Tok, diag::err_pp_opencl_variadic_macros);
-        return true;
-      }
 
       // Lex the token after the identifier.
       LexUnexpandedToken(Tok);
@@ -2340,8 +2218,7 @@ static bool isConfigurationPattern(Token &MacroName, MacroInfo *MI,
   }
 
   // #define inline
-  return MacroName.isOneOf(tok::kw_extern, tok::kw_inline, tok::kw_static,
-                           tok::kw_const) &&
+  return MacroName.is(tok::kw_const) &&
          MI->getNumTokens() == 0;
 }
 
@@ -2402,30 +2279,10 @@ MacroInfo *Preprocessor::ReadOptionalMacroParameterListAndBody(
 
     // Read the first token after the arg list for down below.
     LexUnexpandedToken(Tok);
-  } else if (LangOpts.C99 || LangOpts.CPlusPlus11) {
+  } else  {
     // C99 requires whitespace between the macro definition and the body.  Emit
     // a diagnostic for something like "#define X+".
     Diag(Tok, diag::ext_c99_whitespace_required_after_macro_name);
-  } else {
-    // C90 6.8 TC1 says: "In the definition of an object-like macro, if the
-    // first character of a replacement list is not a character required by
-    // subclause 5.2.1, then there shall be white-space separation between the
-    // identifier and the replacement list.".  5.2.1 lists this set:
-    //   "A-Za-z0-9!"#%&'()*+,_./:;<=>?[\]^_{|}~" as well as whitespace, which
-    // is irrelevant here.
-    bool isInvalid = false;
-    if (Tok.is(tok::at)) // @ is not in the list above.
-      isInvalid = true;
-    else if (Tok.is(tok::unknown)) {
-      // If we have an unknown token, it is something strange like "`".  Since
-      // all of valid characters would have lexed into a single character
-      // token of some sort, we know this is not a valid case.
-      isInvalid = true;
-    }
-    if (isInvalid)
-      Diag(Tok, diag::ext_missing_whitespace_after_macro_name);
-    else
-      Diag(Tok, diag::warn_missing_whitespace_after_macro_name);
   }
 
   if (!Tok.is(tok::eod))
@@ -2493,17 +2350,7 @@ MacroInfo *Preprocessor::ReadOptionalMacroParameterListAndBody(
         continue;
       }
 
-      // If we're in -traditional mode, then we should ignore stringification
-      // and token pasting. Mark the tokens as unknown so as not to confuse
-      // things.
-      if (getLangOpts().TraditionalCPP) {
-        Tok.setKind(tok::unknown);
-        MI->AddTokenToBody(Tok);
 
-        // Get the next token of the macro.
-        LexUnexpandedToken(Tok);
-        continue;
-      }
 
       if (Tok.is(tok::hashhash)) {
         // If we see token pasting, check if it looks like the gcc comma
@@ -2622,7 +2469,7 @@ void Preprocessor::HandleDefineDirective(
   if (SkippingUntilPCHThroughHeader) {
     const MacroInfo *OtherMI = getMacroInfo(MacroNameTok.getIdentifierInfo());
     if (!OtherMI || !MI->isIdenticalTo(*OtherMI, *this,
-                             /*Syntactic=*/LangOpts.MicrosoftExt))
+                             /*Syntactic=*/0))
       Diag(MI->getDefinitionLoc(), diag::warn_pp_macro_def_mismatch_with_pch)
           << MacroNameTok.getIdentifierInfo();
     return;
@@ -2631,29 +2478,6 @@ void Preprocessor::HandleDefineDirective(
   // Finally, if this identifier already had a macro defined for it, verify that
   // the macro bodies are identical, and issue diagnostics if they are not.
   if (const MacroInfo *OtherMI=getMacroInfo(MacroNameTok.getIdentifierInfo())) {
-    // In Objective-C, ignore attempts to directly redefine the builtin
-    // definitions of the ownership qualifiers.  It's still possible to
-    // #undef them.
-    auto isObjCProtectedMacro = [](const IdentifierInfo *II) -> bool {
-      return II->isStr("__strong") ||
-             II->isStr("__weak") ||
-             II->isStr("__unsafe_unretained") ||
-             II->isStr("__autoreleasing");
-    };
-   if (getLangOpts().ObjC1 &&
-        SourceMgr.getFileID(OtherMI->getDefinitionLoc())
-          == getPredefinesFileID() &&
-        isObjCProtectedMacro(MacroNameTok.getIdentifierInfo())) {
-      // Warn if it changes the tokens.
-      if ((!getDiagnostics().getSuppressSystemWarnings() ||
-           !SourceMgr.isInSystemHeader(DefineTok.getLocation())) &&
-          !MI->isIdenticalTo(*OtherMI, *this,
-                             /*Syntactic=*/LangOpts.MicrosoftExt)) {
-        Diag(MI->getDefinitionLoc(), diag::warn_pp_objc_macro_redef_ignored);
-      }
-      assert(!OtherMI->isWarnIfUnused());
-      return;
-    }
 
     // It is very common for system headers to have tons of macro redefinitions
     // and for warnings to be disabled in system headers.  If this is the case,
@@ -2670,7 +2494,7 @@ void Preprocessor::HandleDefineDirective(
       // Macros must be identical.  This means all tokens and whitespace
       // separation must be the same.  C99 6.10.3p2.
       else if (!OtherMI->isAllowRedefinitionsWithoutWarning() &&
-               !MI->isIdenticalTo(*OtherMI, *this, /*Syntactic=*/LangOpts.MicrosoftExt)) {
+               !MI->isIdenticalTo(*OtherMI, *this, /*Syntactic=*/0)) {
         Diag(MI->getDefinitionLoc(), diag::ext_pp_macro_redef)
           << MacroNameTok.getIdentifierInfo();
         Diag(OtherMI->getDefinitionLoc(), diag::note_previous_definition);

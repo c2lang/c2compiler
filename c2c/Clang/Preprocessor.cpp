@@ -118,12 +118,7 @@ Preprocessor::Preprocessor(std::shared_ptr<PreprocessorOptions> PPOpts,
   // a macro. They get unpoisoned where it is allowed.
   (Ident__VA_ARGS__ = getIdentifierInfo("__VA_ARGS__"))->setIsPoisoned();
   SetPoisonReason(Ident__VA_ARGS__,diag::ext_pp_bad_vaargs_use);
-  if (getLangOpts().CPlusPlus2a) {
-    (Ident__VA_OPT__ = getIdentifierInfo("__VA_OPT__"))->setIsPoisoned();
-    SetPoisonReason(Ident__VA_OPT__,diag::ext_pp_bad_vaopt_use);
-  } else {
-    Ident__VA_OPT__ = nullptr;
-  }
+  Ident__VA_OPT__ = nullptr;
 
   // Initialize the pragma handlers.
   RegisterBuiltinPragmas();
@@ -131,17 +126,7 @@ Preprocessor::Preprocessor(std::shared_ptr<PreprocessorOptions> PPOpts,
   // Initialize builtin macros like __LINE__ and friends.
   RegisterBuiltinMacros();
 
-  if(LangOpts.Borland) {
-    Ident__exception_info        = getIdentifierInfo("_exception_info");
-    Ident___exception_info       = getIdentifierInfo("__exception_info");
-    Ident_GetExceptionInfo       = getIdentifierInfo("GetExceptionInformation");
-    Ident__exception_code        = getIdentifierInfo("_exception_code");
-    Ident___exception_code       = getIdentifierInfo("__exception_code");
-    Ident_GetExceptionCode       = getIdentifierInfo("GetExceptionCode");
-    Ident__abnormal_termination  = getIdentifierInfo("_abnormal_termination");
-    Ident___abnormal_termination = getIdentifierInfo("__abnormal_termination");
-    Ident_AbnormalTermination    = getIdentifierInfo("AbnormalTermination");
-  } else {
+  {
     Ident__exception_info = Ident__exception_code = nullptr;
     Ident__abnormal_termination = Ident___exception_info = nullptr;
     Ident___exception_code = Ident___abnormal_termination = nullptr;
@@ -678,11 +663,7 @@ IdentifierInfo *Preprocessor::LookUpIdentifierInfo(Token &Identifier) const {
 
   // Update the token info (identifier info and appropriate token kind).
   Identifier.setIdentifierInfo(II);
-  if (getLangOpts().MSVCCompat && II->isCPlusPlusOperatorKeyword() &&
-      getSourceManager().isInSystemHeader(Identifier.getLocation()))
-    Identifier.setKind(tok::identifier);
-  else
-    Identifier.setKind(II->getTokenID());
+  Identifier.setKind(II->getTokenID());
 
   return II;
 }
@@ -722,14 +703,6 @@ static diag::kind getFutureCompatDiagKind(const IdentifierInfo &II,
                                           const LangOptions &LangOpts) {
   assert(II.isFutureCompatKeyword() && "diagnostic should not be needed");
 
-  if (LangOpts.CPlusPlus)
-    return llvm::StringSwitch<diag::kind>(II.getName())
-#define CXX11_KEYWORD(NAME, FLAGS)                                             \
-        .Case(#NAME, diag::warn_cxx11_keyword)
-#define CXX2A_KEYWORD(NAME, FLAGS)                                             \
-        .Case(#NAME, diag::warn_cxx2a_keyword)
-#include "Clang/TokenKinds.def"
-        ;
 
   llvm_unreachable(
       "Keyword not known to come from a newer Standard or proposed Standard");

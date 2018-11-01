@@ -1214,26 +1214,6 @@ void X86TargetInfo::getTargetDefines(const LangOptions &Opts,
     break;
   }
 
-  if (Opts.MicrosoftExt && getTriple().getArch() == llvm::Triple::x86) {
-    switch (SSELevel) {
-    case AVX512F:
-    case AVX2:
-    case AVX:
-    case SSE42:
-    case SSE41:
-    case SSSE3:
-    case SSE3:
-    case SSE2:
-      Builder.defineMacro("_M_IX86_FP", Twine(2));
-      break;
-    case SSE1:
-      Builder.defineMacro("_M_IX86_FP", Twine(1));
-      break;
-    default:
-      Builder.defineMacro("_M_IX86_FP", Twine(0));
-      break;
-    }
-  }
 
   // Each case falls through to the previous one here.
   switch (MMX3DNowLevel) {
