@@ -71,8 +71,6 @@ class FileManager;
 class HeaderSearch;
 class MacroArgs;
 class MemoryBufferCache;
-class PragmaHandler;
-class PragmaNamespace;
 class PreprocessingRecord;
 class PreprocessorLexer;
 class PreprocessorOptions;
@@ -154,7 +152,6 @@ class Preprocessor {
   IdentifierInfo *Ident__BASE_FILE__;              // __BASE_FILE__
   IdentifierInfo *Ident__TIMESTAMP__;              // __TIMESTAMP__
   IdentifierInfo *Ident__COUNTER__;                // __COUNTER__
-  IdentifierInfo *Ident_Pragma, *Ident__pragma;    // _Pragma, __pragma
   IdentifierInfo *Ident__identifier;               // __identifier
   IdentifierInfo *Ident__VA_ARGS__;                // __VA_ARGS__
   IdentifierInfo *Ident__VA_OPT__;                 // __VA_OPT__
@@ -229,13 +226,6 @@ class Preprocessor {
   /// Information about builtins.
   Builtin::Context BuiltinInfo;
 
-  /// Tracks all of the pragmas that the client registered
-  /// with this preprocessor.
-  std::unique_ptr<PragmaNamespace> PragmaHandlers;
-
-  /// Pragma handlers of the original source is stored here during the
-  /// parsing of a model file.
-  std::unique_ptr<PragmaNamespace> PragmaHandlersBackup;
 
   /// Tracks all of the comment handlers that the client registered
   /// with this preprocessor.
@@ -273,13 +263,6 @@ class Preprocessor {
   bool LastTokenWasAt = false;
 
 
-  /// The source location of the currently-active
-  /// \#pragma clang arc_cf_code_audited begin.
-  SourceLocation PragmaARCCFCodeAuditedLoc;
-
-  /// The source location of the currently-active
-  /// \#pragma clang assume_nonnull begin.
-  SourceLocation PragmaAssumeNonNullLoc;
 
   /// True if we hit the code-completion point.
   bool CodeCompletionReached = false;
@@ -900,29 +883,8 @@ public:
     return &Identifiers.get(Name);
   }
 
-  /// Add the specified pragma handler to this preprocessor.
-  ///
-  /// If \p Namespace is non-null, then it is a token required to exist on the
-  /// pragma line before the pragma string starts, e.g. "STDC" or "GCC".
-  void AddPragmaHandler(StringRef Namespace, PragmaHandler *Handler);
-  void AddPragmaHandler(PragmaHandler *Handler) {
-    AddPragmaHandler(StringRef(), Handler);
-  }
 
-  /// Remove the specific pragma handler from this preprocessor.
-  ///
-  /// If \p Namespace is non-null, then it should be the namespace that
-  /// \p Handler was added to. It is an error to remove a handler that
-  /// has not been registered.
-  void RemovePragmaHandler(StringRef Namespace, PragmaHandler *Handler);
-  void RemovePragmaHandler(PragmaHandler *Handler) {
-    RemovePragmaHandler(StringRef(), Handler);
-  }
-
-  /// Install empty handlers for all pragmas (making them ignored).
-  void IgnorePragmas();
-
-  /// Add the specified comment handler to the preprocessor.
+    /// Add the specified comment handler to the preprocessor.
   void addCommentHandler(CommentHandler *Handler);
 
   /// Remove the specified comment handler.
@@ -1300,34 +1262,6 @@ public:
     CodeCompletionReached = true;
     // Silence any diagnostics that occur after we hit the code-completion.
     getDiagnostics().setSuppressAllDiagnostics(true);
-  }
-
-  /// The location of the currently-active \#pragma clang
-  /// arc_cf_code_audited begin.
-  ///
-  /// Returns an invalid location if there is no such pragma active.
-  SourceLocation getPragmaARCCFCodeAuditedLoc() const {
-    return PragmaARCCFCodeAuditedLoc;
-  }
-
-  /// Set the location of the currently-active \#pragma clang
-  /// arc_cf_code_audited begin.  An invalid location ends the pragma.
-  void setPragmaARCCFCodeAuditedLoc(SourceLocation Loc) {
-    PragmaARCCFCodeAuditedLoc = Loc;
-  }
-
-  /// The location of the currently-active \#pragma clang
-  /// assume_nonnull begin.
-  ///
-  /// Returns an invalid location if there is no such pragma active.
-  SourceLocation getPragmaAssumeNonNullLoc() const {
-    return PragmaAssumeNonNullLoc;
-  }
-
-  /// Set the location of the currently-active \#pragma clang
-  /// assume_nonnull begin.  An invalid location ends the pragma.
-  void setPragmaAssumeNonNullLoc(SourceLocation Loc) {
-    PragmaAssumeNonNullLoc = Loc;
   }
 
   /// Set the directory in which the main file should be considered
@@ -1785,11 +1719,7 @@ private:
   /// If the expression is equivalent to "!defined(X)" return X in IfNDefMacro.
   DirectiveEvalResult EvaluateDirectiveExpression(IdentifierInfo *&IfNDefMacro);
 
-  /// Install the standard preprocessor pragmas:
-  /// \#pragma GCC poison/system_header/dependency and \#pragma once.
-  void RegisterBuiltinPragmas();
-
-  /// Register builtin macros such as __LINE__ with the identifier table.
+    /// Register builtin macros such as __LINE__ with the identifier table.
   void RegisterBuiltinMacros();
 
   /// If an identifier token is read that is to be expanded as a macro, handle
@@ -1820,16 +1750,6 @@ private:
   /// If an identifier token is read that is to be expanded
   /// as a builtin macro, handle it and return the next token as 'Tok'.
   void ExpandBuiltinMacro(Token &Tok);
-
-  /// Read a \c _Pragma directive, slice it up, process it, then
-  /// return the first token after the directive.
-  /// This assumes that the \c _Pragma token has just been read into \p Tok.
-  void Handle_Pragma(Token &Tok);
-
-  /// Like Handle_Pragma except the pragma text is not enclosed within
-  /// a string literal.
-  void HandleMicrosoft__pragma(Token &Tok);
-
   /// Add a lexer to the top of the include stack and
   /// start lexing tokens from it instead of the current buffer.
   void EnterSourceFileWithLexer(Lexer *TheLexer, const DirectoryLookup *Dir);
@@ -1852,7 +1772,7 @@ private:
   /// Returns true if we are lexing from a file and not a
   /// pragma or a macro.
   static bool IsFileLexer(const Lexer* L, const PreprocessorLexer* P) {
-    return L ? !L->isPragmaLexer() : P != nullptr;
+    return L ? true : P != nullptr;
   }
 
   static bool IsFileLexer(const IncludeStackInfo& I) {
@@ -1952,20 +1872,7 @@ private:
   void HandleElseDirective(Token &Tok, const Token &HashToken);
   void HandleElifDirective(Token &Tok, const Token &HashToken);
 
-  // Pragmas.
-  void HandlePragmaDirective(SourceLocation IntroducerLoc,
-                             PragmaIntroducerKind Introducer);
-
 public:
-  void HandlePragmaOnce(Token &OnceTok);
-  void HandlePragmaMark();
-  void HandlePragmaPoison();
-  void HandlePragmaSystemHeader(Token &SysHeaderTok);
-  void HandlePragmaDependency(Token &DependencyTok);
-  void HandlePragmaPushMacro(Token &Tok);
-  void HandlePragmaPopMacro(Token &Tok);
-  void HandlePragmaIncludeAlias(Token &Tok);
-  IdentifierInfo *ParsePragmaPushOrPopMacro(Token &Tok);
 
   // Return true and store the first token only if any CommentHandler
   // has inserted some tokens and getCommentRetentionState() is false.
@@ -1987,8 +1894,6 @@ public:
   virtual bool HandleComment(Preprocessor &PP, SourceRange Comment) = 0;
 };
 
-/// Registry of pragma handlers added by plugins
-using PragmaHandlerRegistry = llvm::Registry<PragmaHandler>;
 
 } // namespace c2lang
 

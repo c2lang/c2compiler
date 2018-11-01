@@ -25,7 +25,6 @@
 #include "Clang/LiteralSupport.h"
 #include "Clang/MacroInfo.h"
 #include "Clang/PPCallbacks.h"
-#include "Clang/Pragma.h"
 #include "Clang/Preprocessor.h"
 #include "Clang/PreprocessorOptions.h"
 #include "Clang/PTHLexer.h"
@@ -815,7 +814,6 @@ void Preprocessor::HandleDirective(Token &Result) {
       case tok::pp_include:
       case tok::pp_include_next:
       case tok::pp___include_macros:
-      case tok::pp_pragma:
         Diag(Result, diag::err_embedded_directive) << II->getName();
         DiscardUntilEndOfDirective();
         return;
@@ -891,9 +889,6 @@ void Preprocessor::HandleDirective(Token &Result) {
     case tok::pp_error:
       return HandleUserDiagnosticDirective(Result, false);
 
-    // C99 6.10.6 - Pragma Directive.
-    case tok::pp_pragma:
-      return HandlePragmaDirective(SavedHash.getLocation(), PIK_HashPragma);
 
     // GNU Extensions.
     case tok::pp_include_next:
@@ -1569,23 +1564,7 @@ void Preprocessor::HandleIncludeDirective(SourceLocation HashLoc,
     return;
   }
 
-  // Complain about attempts to #include files in an audit pragma.
-  if (PragmaARCCFCodeAuditedLoc.isValid()) {
-    Diag(HashLoc, diag::err_pp_include_in_arc_cf_code_audited);
-    Diag(PragmaARCCFCodeAuditedLoc, diag::note_pragma_entered_here);
 
-    // Immediately leave the pragma.
-    PragmaARCCFCodeAuditedLoc = SourceLocation();
-  }
-
-  // Complain about attempts to #include files in an assume-nonnull pragma.
-  if (PragmaAssumeNonNullLoc.isValid()) {
-    Diag(HashLoc, diag::err_pp_include_in_assume_nonnull);
-    Diag(PragmaAssumeNonNullLoc, diag::note_pragma_entered_here);
-
-    // Immediately leave the pragma.
-    PragmaAssumeNonNullLoc = SourceLocation();
-  }
 
   if (HeaderInfo.HasIncludeAliasMap()) {
     // Map the filename with the brackets still attached.  If the name doesn't
