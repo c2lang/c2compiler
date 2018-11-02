@@ -310,7 +310,7 @@ void CodeGenFunction::EmitBranchOnBoolExpr(const Expr *Cond,
     //Cond = Cond->IgnoreParens();
     if (const BinaryOperator *CondBOp = cast<BinaryOperator>(Cond)) {
         // Handle X && Y in a condition.
-        if (CondBOp->getOpcode() == BO_LAnd) {
+        if (CondBOp->getOpcode() == BINOP_LAnd) {
 #if 0
             // If we have "1 && X", simplify the code.  "0 && X" would have constant
             // folded if the case was simple enough.
@@ -345,7 +345,7 @@ void CodeGenFunction::EmitBranchOnBoolExpr(const Expr *Cond,
 
             return;
         }
-        if (CondBOp->getOpcode() == BO_LOr) {
+        if (CondBOp->getOpcode() == BINOP_LOr) {
 #if 0
             // If we have "0 || X", simplify the code.  "1 || X" would have constant
             // folded if the case was simple enough.
@@ -660,68 +660,66 @@ llvm::Value* CodeGenFunction::EmitBinaryOperator(const BinaryOperator* B) {
     // TEMP only handle Integer values for now
 
     switch (B->getOpcode()) {
-    case BO_PtrMemD:
-    case BO_PtrMemI:
-        break;
-    case BO_Mul:
+    case BINOP_Mul:
         return Builder.CreateMul(L, R, "mul");
         //return Builder.CreateFMul(L, R, "multmp");
-    case BO_Div:
+    case BINOP_Div:
+        TODO;
         break;
-    case BO_Rem:
+    case BINOP_Rem:
         return Builder.CreateSRem(L, R, "rem");
-    case BO_Add:
+    case BINOP_Add:
         return Builder.CreateAdd(L, R, "add");
         //return Builder.CreateFAdd(L, R, "addtmp");    // for Floating point
-    case BO_Sub:
+    case BINOP_Sub:
         return Builder.CreateSub(L, R, "sub");
         //return Builder.CreateFSub(L, R, "subtmp");    // for Floating point
-    case BO_Shl:
-    case BO_Shr:
+    case BINOP_Shl:
+    case BINOP_Shr:
+        TODO;
         break;
-    case BO_Cmp:
-        FATAL_ERROR("unhandled binary operator type");
-        break;
-    case BO_LT:
+    case BINOP_LT:
         return Builder.CreateICmpULT(L, R, "cmp");
         //L = Builder.CreateFCmpULT(L, R, "cmptmp");
         // convert bool 0/1 to double 0.0 or 1.0
         //return Builder.CreateUIToFP(L, llvm::Type::getDoubleTy(context), "booltmp");
-    case BO_GT:
+    case BINOP_GT:
         // TODO UGT for unsigned, SGT for signed?
         return Builder.CreateICmpSGT(L, R, "cmp");
         //return Builder.CreateICmpUGT(L, R, "cmp");
-    case BO_LE:
+    case BINOP_LE:
         return Builder.CreateICmpULE(L, R, "cmp");
-    case BO_GE:
+    case BINOP_GE:
         return Builder.CreateICmpUGE(L, R, "cmp");
-    case BO_EQ:
+    case BINOP_EQ:
         return Builder.CreateICmpEQ(L, R, "eq");
-    case BO_NE:
+    case BINOP_NE:
         return Builder.CreateICmpNE(L, R, "neq");
-    case BO_And:
-    case BO_Xor:
-    case BO_Or:
-    case BO_LAnd:
-    case BO_LOr:
+    case BINOP_And:
+    case BINOP_Xor:
+    case BINOP_Or:
+    case BINOP_LAnd:
+    case BINOP_LOr:
+        TODO;
         break;
-    case BO_Assign:
+    case BINOP_Assign:
     {
         // TODO correct volatileQualified
         return Builder.CreateStore(R, L, false);
         //return Builder.CreateStore(R, L, qt.isVolatileQualified());
     }
-    case BO_MulAssign:
-    case BO_DivAssign:
-    case BO_RemAssign:
-    case BO_AddAssign:
-    case BO_SubAssign:
-    case BO_ShlAssign:
-    case BO_ShrAssign:
-    case BO_AndAssign:
-    case BO_XorAssign:
-    case BO_OrAssign:
-    case BO_Comma:
+    case BINOP_MulAssign:
+    case BINOP_DivAssign:
+    case BINOP_RemAssign:
+    case BINOP_AddAssign:
+    case BINOP_SubAssign:
+    case BINOP_ShlAssign:
+    case BINOP_ShrAssign:
+    case BINOP_AndAssign:
+    case BINOP_XorAssign:
+    case BINOP_OrAssign:
+    case BINOP_Comma:
+        TODO;
         break;
     }
     B->dump();

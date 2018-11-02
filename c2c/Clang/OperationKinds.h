@@ -24,7 +24,7 @@ enum CastKind {
 };
 
 enum BinaryOperatorKind {
-#define BINARY_OPERATION(Name, Spelling) BO_##Name,
+#define BINARY_OPERATION(Name, Spelling) BINOP_##Name,
 #include "Clang/OperationKinds.def"
 };
 

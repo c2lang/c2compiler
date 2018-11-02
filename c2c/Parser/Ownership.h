@@ -232,8 +232,8 @@ namespace c2lang {
 
   /// An opaque type for threading parsed type information through the
   /// parser.
-  typedef OpaquePtr<QualType> ParsedType;
-  typedef UnionOpaquePtr<QualType> UnionParsedType;
+  typedef OpaquePtr<C2::QualType> ParsedType;
+  typedef UnionOpaquePtr<C2::QualType> UnionParsedType;
 
   // We can re-use the low bit of expression, statement, base, and
   // member-initializer pointers for the "invalid" flag of

@@ -43,7 +43,6 @@ class IdentifierInfo;
 class LangOptions;
 class Module;
 class Preprocessor;
-class TargetInfo;
 
 /// The preprocessor keeps track of this information for each
 /// file that is \#included.
@@ -244,8 +243,9 @@ class HeaderSearch {
 
 public:
   HeaderSearch(std::shared_ptr<HeaderSearchOptions> HSOpts,
-               SourceManager &SourceMgr, DiagnosticsEngine &Diags,
-               const LangOptions &LangOpts, const TargetInfo *Target);
+                 SourceManager &SourceMgr,
+                 DiagnosticsEngine &Diags,
+                 const LangOptions &LangOpts);
   HeaderSearch(const HeaderSearch &) = delete;
   HeaderSearch &operator=(const HeaderSearch &) = delete;
   ~HeaderSearch();

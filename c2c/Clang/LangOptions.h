@@ -15,7 +15,6 @@
 #ifndef LLVM_CLANG_BASIC_LANGOPTIONS_H
 #define LLVM_CLANG_BASIC_LANGOPTIONS_H
 
-#include "Clang/CommentOptions.h"
 #include "Clang/LLVM.h"
 #include "Clang/Visibility.h"
 #include <llvm/ADT/StringRef.h>
@@ -49,43 +48,10 @@ class LangOptions : public LangOptionsBase {
 public:
   using Visibility = c2lang::Visibility;
 
-  enum StackProtectorMode { SSPOff, SSPOn, SSPStrong, SSPReq };
-
-  enum SignedOverflowBehaviorTy {
-    // Default C standard behavior.
-    SOB_Undefined,
-
-    // -fwrapv
-    SOB_Defined,
-
-    // -ftrapv
-    SOB_Trapping
-  };
-
-
-  enum DefaultCallingConvention {
-    DCC_None,
-    DCC_CDecl,
-    DCC_FastCall,
-    DCC_StdCall,
-    DCC_VectorCall,
-    DCC_RegCall
-  };
-
-  enum AddrSpaceMapMangling { ASMM_Target, ASMM_On, ASMM_Off };
 
 
 
-  enum FPContractModeKind {
-    // Form fused FP ops only where result will not be affected.
-    FPC_Off,
 
-    // Form fused FP ops according to FP_CONTRACT rules.
-    FPC_On,
-
-    // Aggressively fuse FP ops (E.g. FMA).
-    FPC_Fast
-  };
 
 public:
 
@@ -104,8 +70,6 @@ public:
   /// changes during compilation to reflect the current module.
   std::string CurrentModule;
 
-  /// Options for parsing comments.
-  CommentOptions CommentOpts;
 
   /// A list of all -fno-builtin-* function names (e.g., memset).
   std::vector<std::string> NoBuiltinFuncs;

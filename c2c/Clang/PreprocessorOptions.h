@@ -27,16 +27,6 @@ class MemoryBuffer;
 
 namespace c2lang {
 
-/// Enumerate the kinds of standard library that
-enum ObjCXXARCStandardLibraryKind {
-  ARCXX_nolib,
-
-  /// libc++
-  ARCXX_libcxx,
-
-  /// libstdc++
-  ARCXX_libstdcxx
-};
 
 /// PreprocessorOptions - This class is used for passing the various options
 /// used in preprocessor initialization to InitializePreprocessor().
@@ -140,32 +130,9 @@ public:
   /// compiler invocation and its buffers will be reused.
   bool RetainRemappedFileBuffers = false;
 
-  /// The Objective-C++ ARC standard library that we should support,
-  /// by providing appropriate definitions to retrofit the standard library
-  /// with support for lifetime-qualified pointers.
-  ObjCXXARCStandardLibraryKind ObjCXXARCStandardLibrary = ARCXX_nolib;
 
-  /// Records the set of modules
-  class FailedModulesSet {
-    llvm::StringSet<> Failed;
 
   public:
-    bool hasAlreadyFailed(StringRef module) {
-      return Failed.count(module) > 0;
-    }
-
-    void addFailed(StringRef module) {
-      Failed.insert(module);
-    }
-  };
-
-  /// The set of modules that failed to build.
-  ///
-  /// This pointer will be shared among all of the compiler instances created
-  /// to (re)build modules, so that once a module fails to build anywhere,
-  /// other instances will see that the module has failed and won't try to
-  /// build it again.
-  std::shared_ptr<FailedModulesSet> FailedModules;
 
 public:
   PreprocessorOptions() : PrecompiledPreambleBytes(0, false) {}
@@ -186,22 +153,6 @@ public:
     RemappedFileBuffers.clear();
   }
 
-  /// Reset any options that are not considered when building a
-  /// module.
-  void resetNonModularOptions() {
-    Includes.clear();
-    MacroIncludes.clear();
-    ChainedIncludes.clear();
-    DumpDeserializedPCHDecls = false;
-    ImplicitPCHInclude.clear();
-    ImplicitPTHInclude.clear();
-    TokenCache.clear();
-    SingleFileParseMode = false;
-    LexEditorPlaceholders = true;
-    RetainRemappedFileBuffers = true;
-    PrecompiledPreambleBytes.first = 0;
-    PrecompiledPreambleBytes.second = false;
-  }
 };
 
 } // namespace c2lang

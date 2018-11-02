@@ -33,7 +33,6 @@
 #include "Clang/LangOptions.h"
 #include "Clang/SourceLocation.h"
 #include "Clang/SourceManager.h"
-#include "Clang/TargetInfo.h"
 #include "Clang/CodeCompletionHandler.h"
 #include "Clang/ExternalPreprocessorSource.h"
 #include "Clang/HeaderSearch.h"
@@ -44,7 +43,6 @@
 #include "Clang/MacroInfo.h"
 #include "Clang/PTHLexer.h"
 #include "Clang/PTHManager.h"
-#include "Clang/PreprocessingRecord.h"
 #include "Clang/PreprocessorLexer.h"
 #include "Clang/PreprocessorOptions.h"
 #include "Clang/ScratchBuffer.h"
@@ -165,8 +163,8 @@ Preprocessor::~Preprocessor() {
     delete &HeaderInfo;
 }
 
-void Preprocessor::Initialize(const TargetInfo &Target,
-                              const TargetInfo *AuxTarget) {
+void Preprocessor::Initialize(const C2::TargetInfo &Target,
+                              const C2::TargetInfo *AuxTarget) {
   assert((!this->Target || this->Target == &Target) &&
          "Invalid override of target information");
   this->Target = &Target;
@@ -175,8 +173,6 @@ void Preprocessor::Initialize(const TargetInfo &Target,
          "Invalid override of aux target information.");
   this->AuxTarget = AuxTarget;
 
-  // Initialize information about built-ins.
-  BuiltinInfo.InitializeTarget(Target, AuxTarget);
 
   // Populate the identifier table with info about keywords for the current language.
   Identifiers.AddKeywords(LangOpts);
@@ -604,8 +600,6 @@ void Preprocessor::replayPreambleConditionalStack() {
 
 void Preprocessor::EndSourceFile() {
   // Notify the client that we reached the end of the source file.
-  if (Callbacks)
-    Callbacks->EndOfMainFile();
 }
 
 //===----------------------------------------------------------------------===//
@@ -896,10 +890,3 @@ CommentHandler::~CommentHandler() = default;
 
 CodeCompletionHandler::~CodeCompletionHandler() = default;
 
-void Preprocessor::createPreprocessingRecord() {
-  if (Record)
-    return;
-
-  Record = new PreprocessingRecord(getSourceManager());
-  addPPCallbacks(std::unique_ptr<PPCallbacks>(Record));
-}

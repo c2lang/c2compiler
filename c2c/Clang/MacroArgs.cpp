@@ -236,7 +236,6 @@ Token MacroArgs::StringifyArgument(const Token *ArgToks,
     // by 6.10.3.2p2.
     if (tok::isStringLiteral(Tok.getKind()) || // "foo", u8R"x(foo)x"_bar, etc.
         Tok.is(tok::char_constant) ||          // 'x'
-        Tok.is(tok::wide_char_constant) ||     // L'x'.
         Tok.is(tok::utf8_char_constant) ||     // u8'x'.
         Tok.is(tok::utf16_char_constant) ||    // u'x'.
         Tok.is(tok::utf32_char_constant)) {    // U'x'.

@@ -20,7 +20,6 @@
 namespace c2lang {
 
 class LangOptions;
-class PPConditionalDirectiveRecord;
 class SourceManager;
 
 namespace edit {
@@ -52,7 +51,6 @@ public:
 private:
   const SourceManager &SourceMgr;
   const LangOptions &LangOpts;
-  const PPConditionalDirectiveRecord *PPRec;
   EditedSource *Editor = nullptr;
 
   bool IsCommitable = true;
@@ -62,9 +60,8 @@ private:
 
 public:
   explicit Commit(EditedSource &Editor);
-  Commit(const SourceManager &SM, const LangOptions &LangOpts,
-         const PPConditionalDirectiveRecord *PPRec = nullptr)
-      : SourceMgr(SM), LangOpts(LangOpts), PPRec(PPRec) {}
+  Commit(const SourceManager &SM, const LangOptions &LangOpts)
+      : SourceMgr(SM), LangOpts(LangOpts) {}
 
   bool isCommitable() const { return IsCommitable; }
 

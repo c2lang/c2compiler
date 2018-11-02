@@ -12,13 +12,11 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "Clang/Attributes.h"
 #include "Clang/FileManager.h"
 #include "Clang/IdentifierTable.h"
 #include "Clang/LLVM.h"
 #include "Clang/LangOptions.h"
 #include "Clang/SourceLocation.h"
-#include "Clang/TargetInfo.h"
 #include "Clang/CodeCompletionHandler.h"
 #include "Clang/DirectoryLookup.h"
 #include "Clang/ExternalPreprocessorSource.h"
@@ -78,8 +76,6 @@ void Preprocessor::appendMacroDirective(IdentifierInfo *II, MacroDirective *MD){
   II->setHasMacroDefinition(true);
   if (!MD->isDefined())
     II->setHasMacroDefinition(false);
-  if (II->isFromAST())
-    II->setChangedSinceDeserialization();
 }
 
 void Preprocessor::setLoadedMacroDirective(IdentifierInfo *II,
@@ -162,7 +158,6 @@ void Preprocessor::RegisterBuiltinMacros() {
   Ident__TIME__ = RegisterBuiltinMacro(*this, "__TIME__");
   Ident__COUNTER__ = RegisterBuiltinMacro(*this, "__COUNTER__");
 
-  Ident__has_cpp_attribute = nullptr;
 
   // GCC Extensions.
   Ident__BASE_FILE__     = RegisterBuiltinMacro(*this, "__BASE_FILE__");
@@ -172,28 +167,8 @@ void Preprocessor::RegisterBuiltinMacros() {
   Ident__identifier = nullptr;
 
   // Clang Extensions.
-  Ident__has_feature      = RegisterBuiltinMacro(*this, "__has_feature");
-  Ident__has_extension    = RegisterBuiltinMacro(*this, "__has_extension");
-  Ident__has_builtin      = RegisterBuiltinMacro(*this, "__has_builtin");
-  Ident__has_attribute    = RegisterBuiltinMacro(*this, "__has_attribute");
-  Ident__has_c_attribute  = RegisterBuiltinMacro(*this, "__has_c_attribute");
-  Ident__has_declspec = RegisterBuiltinMacro(*this, "__has_declspec_attribute");
-  Ident__has_include      = RegisterBuiltinMacro(*this, "__has_include");
-  Ident__has_include_next = RegisterBuiltinMacro(*this, "__has_include_next");
-  Ident__has_warning      = RegisterBuiltinMacro(*this, "__has_warning");
-  Ident__is_identifier    = RegisterBuiltinMacro(*this, "__is_identifier");
-  Ident__is_target_arch   = RegisterBuiltinMacro(*this, "__is_target_arch");
-  Ident__is_target_vendor = RegisterBuiltinMacro(*this, "__is_target_vendor");
-  Ident__is_target_os     = RegisterBuiltinMacro(*this, "__is_target_os");
-  Ident__is_target_environment =
       RegisterBuiltinMacro(*this, "__is_target_environment");
 
-  // Modules.
-  Ident__building_module  = RegisterBuiltinMacro(*this, "__building_module");
-  if (!LangOpts.CurrentModule.empty())
-    Ident__MODULE__ = RegisterBuiltinMacro(*this, "__MODULE__");
-  else
-    Ident__MODULE__ = nullptr;
 }
 
 /// isTrivialSingleTokenExpansion - Return true if MI, which has a single token
@@ -283,9 +258,6 @@ bool Preprocessor::HandleMacroExpandedIdentifier(Token &Identifier,
 
   // If this is a builtin macro, like __LINE__ or _Pragma, handle it specially.
   if (MI->isBuiltinMacro()) {
-    if (Callbacks)
-      Callbacks->MacroExpands(Identifier, M, Identifier.getLocation(),
-                              /*Args=*/nullptr);
     ExpandBuiltinMacro(Identifier);
     return true;
   }
@@ -325,26 +297,6 @@ bool Preprocessor::HandleMacroExpandedIdentifier(Token &Identifier,
   SourceLocation ExpandLoc = Identifier.getLocation();
   SourceRange ExpansionRange(ExpandLoc, ExpansionEnd);
 
-  if (Callbacks) {
-    if (InMacroArgs) {
-      // We can have macro expansion inside a conditional directive while
-      // reading the function macro arguments. To ensure, in that case, that
-      // MacroExpands callbacks still happen in source order, queue this
-      // callback to have it happen after the function macro callback.
-      DelayedMacroExpandsCallbacks.push_back(
-          MacroExpandsInfo(Identifier, M, ExpansionRange));
-    } else {
-      Callbacks->MacroExpands(Identifier, M, ExpansionRange, Args);
-      if (!DelayedMacroExpandsCallbacks.empty()) {
-        for (const MacroExpandsInfo &Info : DelayedMacroExpandsCallbacks) {
-          // FIXME: We lose macro args info with delayed callback.
-          Callbacks->MacroExpands(Info.Tok, Info.MD, Info.Range,
-                                  /*Args=*/nullptr);
-        }
-        DelayedMacroExpandsCallbacks.clear();
-      }
-    }
-  }
 
   // If the macro definition is ambiguous, complain.
   if (M.isAmbiguous()) {
@@ -892,360 +844,6 @@ static void ComputeDATE_TIME(SourceLocation &DATELoc, SourceLocation &TIMELoc,
   }
 }
 
-/// HasFeature - Return true if we recognize and implement the feature
-/// specified by the identifier as a standard language feature.
-static bool HasFeature(const Preprocessor &PP, StringRef Feature) {
-
-  // Normalize the feature name, __foo__ becomes foo.
-  if (Feature.startswith("__") && Feature.endswith("__") && Feature.size() >= 4)
-    Feature = Feature.substr(2, Feature.size() - 4);
-
-#define FEATURE(Name, Predicate) .Case(#Name, Predicate)
-  return llvm::StringSwitch<bool>(Feature)
-#include "Clang/Features.def"
-      .Default(false);
-#undef FEATURE
-}
-
-/// HasExtension - Return true if we recognize and implement the feature
-/// specified by the identifier, either as an extension or a standard language
-/// feature.
-static bool HasExtension(const Preprocessor &PP, StringRef Extension) {
-  if (HasFeature(PP, Extension))
-    return true;
-
-  // If the use of an extension results in an error diagnostic, extensions are
-  // effectively unavailable, so just return false here.
-  if (PP.getDiagnostics().getExtensionHandlingBehavior() >=
-      diag::Severity::Error)
-    return false;
-
-
-  // Normalize the extension name, __foo__ becomes foo.
-  if (Extension.startswith("__") && Extension.endswith("__") &&
-      Extension.size() >= 4)
-    Extension = Extension.substr(2, Extension.size() - 4);
-
-    // Because we inherit the feature list from HasFeature, this string switch
-    // must be less restrictive than HasFeature's.
-#define EXTENSION(Name, Predicate) .Case(#Name, Predicate)
-  return llvm::StringSwitch<bool>(Extension)
-#include "Clang/Features.def"
-      .Default(false);
-#undef EXTENSION
-}
-
-/// EvaluateHasIncludeCommon - Process a '__has_include("path")'
-/// or '__has_include_next("path")' expression.
-/// Returns true if successful.
-static bool EvaluateHasIncludeCommon(Token &Tok,
-                                     IdentifierInfo *II, Preprocessor &PP,
-                                     const DirectoryLookup *LookupFrom,
-                                     const FileEntry *LookupFromFile) {
-  // Save the location of the current token.  If a '(' is later found, use
-  // that location.  If not, use the end of this location instead.
-  SourceLocation LParenLoc = Tok.getLocation();
-
-  // These expressions are only allowed within a preprocessor directive.
-  if (!PP.isParsingIfOrElifDirective()) {
-    PP.Diag(LParenLoc, diag::err_pp_directive_required) << II;
-    // Return a valid identifier token.
-    assert(Tok.is(tok::identifier));
-    Tok.setIdentifierInfo(II);
-    return false;
-  }
-
-  // Get '('.
-  PP.LexNonComment(Tok);
-
-  // Ensure we have a '('.
-  if (Tok.isNot(tok::l_paren)) {
-    // No '(', use end of last token.
-    LParenLoc = PP.getLocForEndOfToken(LParenLoc);
-    PP.Diag(LParenLoc, diag::err_pp_expected_after) << II << tok::l_paren;
-    // If the next token looks like a filename or the start of one,
-    // assume it is and process it as such.
-    if (!Tok.is(tok::angle_string_literal) && !Tok.is(tok::string_literal) &&
-        !Tok.is(tok::less))
-      return false;
-  } else {
-    // Save '(' location for possible missing ')' message.
-    LParenLoc = Tok.getLocation();
-
-    if (PP.getCurrentLexer()) {
-      // Get the file name.
-      PP.getCurrentLexer()->LexIncludeFilename(Tok);
-    } else {
-      // We're in a macro, so we can't use LexIncludeFilename; just
-      // grab the next token.
-      PP.Lex(Tok);
-    }
-  }
-
-  // Reserve a buffer to get the spelling.
-  SmallString<128> FilenameBuffer;
-  StringRef Filename;
-  SourceLocation EndLoc;
-
-  switch (Tok.getKind()) {
-  case tok::eod:
-    // If the token kind is EOD, the error has already been diagnosed.
-    return false;
-
-  case tok::angle_string_literal:
-  case tok::string_literal: {
-    bool Invalid = false;
-    Filename = PP.getSpelling(Tok, FilenameBuffer, &Invalid);
-    if (Invalid)
-      return false;
-    break;
-  }
-
-  case tok::less:
-    // This could be a <foo/bar.h> file coming from a macro expansion.  In this
-    // case, glue the tokens together into FilenameBuffer and interpret those.
-    FilenameBuffer.push_back('<');
-    if (PP.ConcatenateIncludeName(FilenameBuffer, EndLoc)) {
-      // Let the caller know a <eod> was found by changing the Token kind.
-      Tok.setKind(tok::eod);
-      return false;   // Found <eod> but no ">"?  Diagnostic already emitted.
-    }
-    Filename = FilenameBuffer;
-    break;
-  default:
-    PP.Diag(Tok.getLocation(), diag::err_pp_expects_filename);
-    return false;
-  }
-
-  SourceLocation FilenameLoc = Tok.getLocation();
-
-  // Get ')'.
-  PP.LexNonComment(Tok);
-
-  // Ensure we have a trailing ).
-  if (Tok.isNot(tok::r_paren)) {
-    PP.Diag(PP.getLocForEndOfToken(FilenameLoc), diag::err_pp_expected_after)
-        << II << tok::r_paren;
-    PP.Diag(LParenLoc, diag::note_matching) << tok::l_paren;
-    return false;
-  }
-
-  bool isAngled = PP.GetIncludeFilenameSpelling(Tok.getLocation(), Filename);
-  // If GetIncludeFilenameSpelling set the start ptr to null, there was an
-  // error.
-  if (Filename.empty())
-    return false;
-
-  // Search include directories.
-  const DirectoryLookup *CurDir;
-  const FileEntry *File =
-      PP.LookupFile(FilenameLoc, Filename, isAngled, LookupFrom, LookupFromFile,
-                    CurDir, nullptr, nullptr, nullptr);
-
-  // Get the result value.  A result of true means the file exists.
-  return File != nullptr;
-}
-
-/// EvaluateHasInclude - Process a '__has_include("path")' expression.
-/// Returns true if successful.
-static bool EvaluateHasInclude(Token &Tok, IdentifierInfo *II,
-                               Preprocessor &PP) {
-  return EvaluateHasIncludeCommon(Tok, II, PP, nullptr, nullptr);
-}
-
-/// EvaluateHasIncludeNext - Process '__has_include_next("path")' expression.
-/// Returns true if successful.
-static bool EvaluateHasIncludeNext(Token &Tok,
-                                   IdentifierInfo *II, Preprocessor &PP) {
-  // __has_include_next is like __has_include, except that we start
-  // searching after the current found directory.  If we can't do this,
-  // issue a diagnostic.
-  // FIXME: Factor out duplication with
-  // Preprocessor::HandleIncludeNextDirective.
-  const DirectoryLookup *Lookup = PP.GetCurDirLookup();
-  const FileEntry *LookupFromFile = nullptr;
-  if (PP.isInPrimaryFile() && PP.getLangOpts().IsHeaderFile) {
-    // If the main file is a header, then it's either for PCH/AST generation,
-    // or libc2lang opened it. Either way, handle it as a normal include below
-    // and do not complain about __has_include_next.
-  } else if (PP.isInPrimaryFile()) {
-    Lookup = nullptr;
-    PP.Diag(Tok, diag::pp_include_next_in_primary);
-  } else if (!Lookup) {
-    PP.Diag(Tok, diag::pp_include_next_absolute_path);
-  } else {
-    // Start looking up in the next directory.
-    ++Lookup;
-  }
-
-  return EvaluateHasIncludeCommon(Tok, II, PP, Lookup, LookupFromFile);
-}
-
-/// Process single-argument builtin feature-like macros that return
-/// integer values.
-static void EvaluateFeatureLikeBuiltinMacro(llvm::raw_svector_ostream& OS,
-                                            Token &Tok, IdentifierInfo *II,
-                                            Preprocessor &PP,
-                                            llvm::function_ref<
-                                              int(Token &Tok,
-                                                  bool &HasLexedNextTok)> Op) {
-  // Parse the initial '('.
-  PP.LexUnexpandedToken(Tok);
-  if (Tok.isNot(tok::l_paren)) {
-    PP.Diag(Tok.getLocation(), diag::err_pp_expected_after) << II
-                                                            << tok::l_paren;
-
-    // Provide a dummy '0' value on output stream to elide further errors.
-    if (!Tok.isOneOf(tok::eof, tok::eod)) {
-      OS << 0;
-      Tok.setKind(tok::numeric_constant);
-    }
-    return;
-  }
-
-  unsigned ParenDepth = 1;
-  SourceLocation LParenLoc = Tok.getLocation();
-  llvm::Optional<int> Result;
-
-  Token ResultTok;
-  bool SuppressDiagnostic = false;
-  while (true) {
-    // Parse next token.
-    PP.LexUnexpandedToken(Tok);
-
-already_lexed:
-    switch (Tok.getKind()) {
-      case tok::eof:
-      case tok::eod:
-        // Don't provide even a dummy value if the eod or eof marker is
-        // reached.  Simply provide a diagnostic.
-        PP.Diag(Tok.getLocation(), diag::err_unterm_macro_invoc);
-        return;
-
-      case tok::comma:
-        if (!SuppressDiagnostic) {
-          PP.Diag(Tok.getLocation(), diag::err_too_many_args_in_macro_invoc);
-          SuppressDiagnostic = true;
-        }
-        continue;
-
-      case tok::l_paren:
-        ++ParenDepth;
-        if (Result.hasValue())
-          break;
-        if (!SuppressDiagnostic) {
-          PP.Diag(Tok.getLocation(), diag::err_pp_nested_paren) << II;
-          SuppressDiagnostic = true;
-        }
-        continue;
-
-      case tok::r_paren:
-        if (--ParenDepth > 0)
-          continue;
-
-        // The last ')' has been reached; return the value if one found or
-        // a diagnostic and a dummy value.
-        if (Result.hasValue())
-          OS << Result.getValue();
-        else {
-          OS << 0;
-          if (!SuppressDiagnostic)
-            PP.Diag(Tok.getLocation(), diag::err_too_few_args_in_macro_invoc);
-        }
-        Tok.setKind(tok::numeric_constant);
-        return;
-
-      default: {
-        // Parse the macro argument, if one not found so far.
-        if (Result.hasValue())
-          break;
-
-        bool HasLexedNextToken = false;
-        Result = Op(Tok, HasLexedNextToken);
-        ResultTok = Tok;
-        if (HasLexedNextToken)
-          goto already_lexed;
-        continue;
-      }
-    }
-
-    // Diagnose missing ')'.
-    if (!SuppressDiagnostic) {
-      if (auto Diag = PP.Diag(Tok.getLocation(), diag::err_pp_expected_after)) {
-        if (IdentifierInfo *LastII = ResultTok.getIdentifierInfo())
-          Diag << LastII;
-        else
-          Diag << ResultTok.getKind();
-        Diag << tok::r_paren << ResultTok.getLocation();
-      }
-      PP.Diag(LParenLoc, diag::note_matching) << tok::l_paren;
-      SuppressDiagnostic = true;
-    }
-  }
-}
-
-/// Helper function to return the IdentifierInfo structure of a Token
-/// or generate a diagnostic if none available.
-static IdentifierInfo *ExpectFeatureIdentifierInfo(Token &Tok,
-                                                   Preprocessor &PP,
-                                                   signed DiagID) {
-  IdentifierInfo *II;
-  if (!Tok.isAnnotation() && (II = Tok.getIdentifierInfo()))
-    return II;
-
-  PP.Diag(Tok.getLocation(), DiagID);
-  return nullptr;
-}
-
-/// Implements the __is_target_arch builtin macro.
-static bool isTargetArch(const TargetInfo &TI, const IdentifierInfo *II) {
-  std::string ArchName = II->getName().lower() + "--";
-  llvm::Triple Arch(ArchName);
-  const llvm::Triple &TT = TI.getTriple();
-  if (TT.isThumb()) {
-    // arm matches thumb or thumbv7. armv7 matches thumbv7.
-    if ((Arch.getSubArch() == llvm::Triple::NoSubArch ||
-         Arch.getSubArch() == TT.getSubArch()) &&
-        ((TT.getArch() == llvm::Triple::thumb &&
-          Arch.getArch() == llvm::Triple::arm) ||
-         (TT.getArch() == llvm::Triple::thumbeb &&
-          Arch.getArch() == llvm::Triple::armeb)))
-      return true;
-  }
-  // Check the parsed arch when it has no sub arch to allow Clang to
-  // match thumb to thumbv7 but to prohibit matching thumbv6 to thumbv7.
-  return (Arch.getSubArch() == llvm::Triple::NoSubArch ||
-          Arch.getSubArch() == TT.getSubArch()) &&
-         Arch.getArch() == TT.getArch();
-}
-
-/// Implements the __is_target_vendor builtin macro.
-static bool isTargetVendor(const TargetInfo &TI, const IdentifierInfo *II) {
-  StringRef VendorName = TI.getTriple().getVendorName();
-  if (VendorName.empty())
-    VendorName = "unknown";
-  return VendorName.equals_lower(II->getName());
-}
-
-/// Implements the __is_target_os builtin macro.
-static bool isTargetOS(const TargetInfo &TI, const IdentifierInfo *II) {
-  std::string OSName =
-      (llvm::Twine("unknown-unknown-") + II->getName().lower()).str();
-  llvm::Triple OS(OSName);
-  if (OS.getOS() == llvm::Triple::Darwin) {
-    // Darwin matches macos, ios, etc.
-    return TI.getTriple().isOSDarwin();
-  }
-  return TI.getTriple().getOS() == OS.getOS();
-}
-
-/// Implements the __is_target_environment builtin macro.
-static bool isTargetEnvironment(const TargetInfo &TI,
-                                const IdentifierInfo *II) {
-  std::string EnvName = (llvm::Twine("---") + II->getName().lower()).str();
-  llvm::Triple Env(EnvName);
-  return TI.getTriple().getEnvironment() == Env.getEnvironment();
-}
 
 /// ExpandBuiltinMacro - If an identifier token is read that is to be expanded
 /// as a builtin macro, handle it and return the next token as 'Tok'.
@@ -1374,146 +972,6 @@ void Preprocessor::ExpandBuiltinMacro(Token &Tok) {
     // __COUNTER__ expands to a simple numeric value.
     OS << CounterValue++;
     Tok.setKind(tok::numeric_constant);
-  } else if (II == Ident__has_feature) {
-    EvaluateFeatureLikeBuiltinMacro(OS, Tok, II, *this,
-      [this](Token &Tok, bool &HasLexedNextToken) -> int {
-        IdentifierInfo *II = ExpectFeatureIdentifierInfo(Tok, *this,
-                                           diag::err_feature_check_malformed);
-        return II && HasFeature(*this, II->getName());
-      });
-  } else if (II == Ident__has_extension) {
-    EvaluateFeatureLikeBuiltinMacro(OS, Tok, II, *this,
-      [this](Token &Tok, bool &HasLexedNextToken) -> int {
-        IdentifierInfo *II = ExpectFeatureIdentifierInfo(Tok, *this,
-                                           diag::err_feature_check_malformed);
-        return II && HasExtension(*this, II->getName());
-      });
-  } else if (II == Ident__has_builtin) {
-    EvaluateFeatureLikeBuiltinMacro(OS, Tok, II, *this,
-      [this](Token &Tok, bool &HasLexedNextToken) -> int {
-        IdentifierInfo *II = ExpectFeatureIdentifierInfo(Tok, *this,
-                                           diag::err_feature_check_malformed);
-        if (!II)
-          return false;
-        else  {
-          return llvm::StringSwitch<bool>(II->getName())
-                      .Case("__builtin_available", true)
-                      .Case("__is_target_arch", true)
-                      .Case("__is_target_vendor", true)
-                      .Case("__is_target_os", true)
-                      .Case("__is_target_environment", true)
-                      .Default(false);
-        }
-      });
-  } else if (II == Ident__is_identifier) {
-    EvaluateFeatureLikeBuiltinMacro(OS, Tok, II, *this,
-      [](Token &Tok, bool &HasLexedNextToken) -> int {
-        return Tok.is(tok::identifier);
-      });
-  } else if (II == Ident__has_attribute) {
-    EvaluateFeatureLikeBuiltinMacro(OS, Tok, II, *this,
-      [this](Token &Tok, bool &HasLexedNextToken) -> int {
-        IdentifierInfo *II = ExpectFeatureIdentifierInfo(Tok, *this,
-                                           diag::err_feature_check_malformed);
-        return II ? hasAttribute(AttrSyntax::GNU, nullptr, II,
-                                 getTargetInfo(), getLangOpts()) : 0;
-      });
-  } else if (II == Ident__has_declspec) {
-    EvaluateFeatureLikeBuiltinMacro(OS, Tok, II, *this,
-      [this](Token &Tok, bool &HasLexedNextToken) -> int {
-        IdentifierInfo *II = ExpectFeatureIdentifierInfo(Tok, *this,
-                                           diag::err_feature_check_malformed);
-        return II ? hasAttribute(AttrSyntax::Declspec, nullptr, II,
-                                 getTargetInfo(), getLangOpts()) : 0;
-      });
-  } else if (II == Ident__has_cpp_attribute ||
-             II == Ident__has_c_attribute) {
-    bool IsCXX = II == Ident__has_cpp_attribute;
-    EvaluateFeatureLikeBuiltinMacro(
-        OS, Tok, II, *this, [&](Token &Tok, bool &HasLexedNextToken) -> int {
-          IdentifierInfo *ScopeII = nullptr;
-          IdentifierInfo *II = ExpectFeatureIdentifierInfo(
-              Tok, *this, diag::err_feature_check_malformed);
-          if (!II)
-            return false;
-
-          // It is possible to receive a scope token.  Read the "::", if it is
-          // available, and the subsequent identifier.
-          LexUnexpandedToken(Tok);
-          if (Tok.isNot(tok::coloncolon))
-            HasLexedNextToken = true;
-          else {
-            ScopeII = II;
-            LexUnexpandedToken(Tok);
-            II = ExpectFeatureIdentifierInfo(Tok, *this,
-                                             diag::err_feature_check_malformed);
-          }
-
-          AttrSyntax Syntax = IsCXX ? AttrSyntax::CXX : AttrSyntax::C;
-          return II ? hasAttribute(Syntax, ScopeII, II, getTargetInfo(),
-                                   getLangOpts())
-                    : 0;
-        });
-  } else if (II == Ident__has_include ||
-             II == Ident__has_include_next) {
-    // The argument to these two builtins should be a parenthesized
-    // file name string literal using angle brackets (<>) or
-    // double-quotes ("").
-    bool Value;
-    if (II == Ident__has_include)
-      Value = EvaluateHasInclude(Tok, II, *this);
-    else
-      Value = EvaluateHasIncludeNext(Tok, II, *this);
-
-    if (Tok.isNot(tok::r_paren))
-      return;
-    OS << (int)Value;
-    Tok.setKind(tok::numeric_constant);
-  } else if (II == Ident__has_warning) {
-    // The argument should be a parenthesized string literal.
-    EvaluateFeatureLikeBuiltinMacro(OS, Tok, II, *this,
-      [this](Token &Tok, bool &HasLexedNextToken) -> int {
-        std::string WarningName;
-        SourceLocation StrStartLoc = Tok.getLocation();
-
-        HasLexedNextToken = Tok.is(tok::string_literal);
-        if (!FinishLexStringLiteral(Tok, WarningName, "'__has_warning'",
-                                    /*MacroExpansion=*/false))
-          return false;
-
-        // FIXME: Should we accept "-R..." flags here, or should that be
-        // handled by a separate __has_remark?
-        if (WarningName.size() < 3 || WarningName[0] != '-' ||
-            WarningName[1] != 'W') {
-          Diag(StrStartLoc, diag::warn_has_warning_invalid_option);
-          return false;
-        }
-
-        // Finally, check if the warning flags maps to a diagnostic group.
-        // We construct a SmallVector here to talk to getDiagnosticIDs().
-        // Although we don't use the result, this isn't a hot path, and not
-        // worth special casing.
-        SmallVector<diag::kind, 10> Diags;
-        return !getDiagnostics().getDiagnosticIDs()->
-                getDiagnosticsInGroup(diag::Flavor::WarningOrError,
-                                      WarningName.substr(2), Diags);
-      });
-  } else if (II == Ident__building_module) {
-    // The argument to this builtin should be an identifier. The
-    // builtin evaluates to 1 when that identifier names the module we are
-    // currently building.
-    EvaluateFeatureLikeBuiltinMacro(OS, Tok, II, *this,
-      [this](Token &Tok, bool &HasLexedNextToken) -> int {
-        ExpectFeatureIdentifierInfo(Tok, *this,
-                                       diag::err_expected_id_building_module);
-        return false;
-      });
-  } else if (II == Ident__MODULE__) {
-    // The current module as an identifier.
-    OS << getLangOpts().CurrentModule;
-    IdentifierInfo *ModuleII = getIdentifierInfo(getLangOpts().CurrentModule);
-    Tok.setIdentifierInfo(ModuleII);
-    Tok.setKind(ModuleII->getTokenID());
   } else if (II == Ident__identifier) {
     SourceLocation Loc = Tok.getLocation();
 
@@ -1552,34 +1010,6 @@ void Preprocessor::ExpandBuiltinMacro(Token &Tok) {
       Diag(LParenLoc, diag::note_matching) << tok::l_paren;
     }
     return;
-  } else if (II == Ident__is_target_arch) {
-    EvaluateFeatureLikeBuiltinMacro(
-        OS, Tok, II, *this, [this](Token &Tok, bool &HasLexedNextToken) -> int {
-          IdentifierInfo *II = ExpectFeatureIdentifierInfo(
-              Tok, *this, diag::err_feature_check_malformed);
-          return II && isTargetArch(getTargetInfo(), II);
-        });
-  } else if (II == Ident__is_target_vendor) {
-    EvaluateFeatureLikeBuiltinMacro(
-        OS, Tok, II, *this, [this](Token &Tok, bool &HasLexedNextToken) -> int {
-          IdentifierInfo *II = ExpectFeatureIdentifierInfo(
-              Tok, *this, diag::err_feature_check_malformed);
-          return II && isTargetVendor(getTargetInfo(), II);
-        });
-  } else if (II == Ident__is_target_os) {
-    EvaluateFeatureLikeBuiltinMacro(
-        OS, Tok, II, *this, [this](Token &Tok, bool &HasLexedNextToken) -> int {
-          IdentifierInfo *II = ExpectFeatureIdentifierInfo(
-              Tok, *this, diag::err_feature_check_malformed);
-          return II && isTargetOS(getTargetInfo(), II);
-        });
-  } else if (II == Ident__is_target_environment) {
-    EvaluateFeatureLikeBuiltinMacro(
-        OS, Tok, II, *this, [this](Token &Tok, bool &HasLexedNextToken) -> int {
-          IdentifierInfo *II = ExpectFeatureIdentifierInfo(
-              Tok, *this, diag::err_feature_check_malformed);
-          return II && isTargetEnvironment(getTargetInfo(), II);
-        });
   } else {
     llvm_unreachable("Unknown identifier!");
   }

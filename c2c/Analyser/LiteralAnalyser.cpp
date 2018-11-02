@@ -370,14 +370,14 @@ APSInt LiteralAnalyser::checkUnaryLiterals(const Expr* Right) {
 static inline int evaluateBinaryComparison(APSInt &lhs, APSInt &rhs, c2lang::BinaryOperatorKind opcode)
 {
     switch (opcode) {
-        case BO_LT: return lhs < rhs;
-        case BO_GT: return lhs > rhs;
-        case BO_LE: return lhs <= rhs;
-        case BO_GE: return lhs >= rhs;
-        case BO_EQ: return lhs == rhs;
-        case BO_NE: return lhs != rhs;
-        case BO_LAnd: return !(lhs == 0 || rhs == 0);
-        case BO_LOr: return !(lhs == 0 && rhs == 0);
+        case BINOP_LT: return lhs < rhs;
+        case BINOP_GT: return lhs > rhs;
+        case BINOP_LE: return lhs <= rhs;
+        case BINOP_GE: return lhs >= rhs;
+        case BINOP_EQ: return lhs == rhs;
+        case BINOP_NE: return lhs != rhs;
+        case BINOP_LAnd: return !(lhs == 0 || rhs == 0);
+        case BINOP_LOr: return !(lhs == 0 && rhs == 0);
         default: FATAL_ERROR("Unreachable statement");
     }
 }
@@ -385,9 +385,9 @@ static inline int evaluateBinaryComparison(APSInt &lhs, APSInt &rhs, c2lang::Bin
 static inline APSInt evaluateBinaryBitwiseOp(APSInt &lhs, APSInt &rhs, c2lang::BinaryOperatorKind opcode)
 {
     switch (opcode) {
-        case BO_And: return lhs & rhs;
-        case BO_Xor: return lhs ^ rhs;
-        case BO_Or: return lhs | rhs;
+        case BINOP_And: return lhs & rhs;
+        case BINOP_Xor: return lhs ^ rhs;
+        case BINOP_Or: return lhs | rhs;
         default: FATAL_ERROR("Unreachable statement");
     }
 }
@@ -403,29 +403,25 @@ APSInt LiteralAnalyser::checkBinaryLiterals(const Expr *Right) {
 
     switch (binop->getOpcode()) {
 
-    case BO_PtrMemD:
-    case BO_PtrMemI:
-        // TODO
-        break;
-    case BO_Mul:
+    case BINOP_Mul:
         return L * R;
-    case BO_Div:
+    case BINOP_Div:
         if (R == 0) {
             Diags.Report(rhs->getLocation(), diag::warn_remainder_division_by_zero) << 1;
             break;
         }
         return L / R;
-    case BO_Rem:
+    case BINOP_Rem:
         if (R == 0) {
             Diags.Report(rhs->getLocation(), diag::warn_remainder_division_by_zero) << 0;
             break;
         }
         return L % R;
-    case BO_Add:
+    case BINOP_Add:
         return L + R;
-    case BO_Sub:
+    case BINOP_Sub:
         return L - R;
-    case BO_Shl:
+    case BINOP_Shl:
         if (L.isNegative()) {
             Diags.Report(lhs->getLocation(), diag::warn_shift_lhs_negative) << 0;
             break;
@@ -436,7 +432,7 @@ APSInt LiteralAnalyser::checkBinaryLiterals(const Expr *Right) {
         }
         // TODO warn about overflow in the correct manner.
         return L << R.getExtValue();
-    case BO_Shr:
+    case BINOP_Shr:
         if (L.isNegative()) {
             Diags.Report(lhs->getLocation(), diag::warn_shift_lhs_negative) << 0;
             break;
@@ -453,38 +449,35 @@ APSInt LiteralAnalyser::checkBinaryLiterals(const Expr *Right) {
             }
             return L >> rightHandSide;
         }
-    case BO_LT:
-    case BO_GT:
-    case BO_LE:
-    case BO_GE:
-    case BO_EQ:
-    case BO_LAnd:
-    case BO_LOr:
-    case BO_NE: {
+    case BINOP_LT:
+    case BINOP_GT:
+    case BINOP_LE:
+    case BINOP_GE:
+    case BINOP_EQ:
+    case BINOP_LAnd:
+    case BINOP_LOr:
+    case BINOP_NE: {
         APSInt result(std::max(L.getBitWidth(), R.getBitWidth()), false);
         result = evaluateBinaryComparison(L, R, binop->getOpcode());
         return result;
     }
-    case BO_And:
-    case BO_Xor:
-    case BO_Or:
+    case BINOP_And:
+    case BINOP_Xor:
+    case BINOP_Or:
         return evaluateBinaryBitwiseOp(L, R, binop->getOpcode());
-    case BO_Comma:
+    case BINOP_Comma:
         return R;
-    case BO_Cmp:
-        FATAL_ERROR("Not used");
-        break;
-    case BO_Assign:
-    case BO_MulAssign:
-    case BO_DivAssign:
-    case BO_RemAssign:
-    case BO_AddAssign:
-    case BO_SubAssign:
-    case BO_ShlAssign:
-    case BO_ShrAssign:
-    case BO_AndAssign:
-    case BO_XorAssign:
-    case BO_OrAssign:
+    case BINOP_Assign:
+    case BINOP_MulAssign:
+    case BINOP_DivAssign:
+    case BINOP_RemAssign:
+    case BINOP_AddAssign:
+    case BINOP_SubAssign:
+    case BINOP_ShlAssign:
+    case BINOP_ShrAssign:
+    case BINOP_AndAssign:
+    case BINOP_XorAssign:
+    case BINOP_OrAssign:
         Diags.Report(lhs->getLocation(), diag::err_typecheck_expression_not_modifiable_lvalue);
         break;
     }

@@ -66,9 +66,9 @@ HeaderFileInfo::getControllingMacro(ExternalPreprocessorSource *External) {
 ExternalHeaderFileInfoSource::~ExternalHeaderFileInfoSource() = default;
 
 HeaderSearch::HeaderSearch(std::shared_ptr<HeaderSearchOptions> HSOpts,
-                           SourceManager &SourceMgr, DiagnosticsEngine &Diags,
-                           const LangOptions &LangOpts,
-                           const TargetInfo *Target)
+                           SourceManager &SourceMgr,
+                           DiagnosticsEngine &Diags,
+                           const LangOptions &LangOpts)
     : HSOpts(std::move(HSOpts)), Diags(Diags),
       FileMgr(SourceMgr.getFileManager()), FrameworkMap(64) {}
 
