@@ -16,7 +16,6 @@
 #include "Clang/CharInfo.h"
 #include "Clang/LangOptions.h"
 #include "Clang/SourceLocation.h"
-#include "Clang/TargetInfo.h"
 #include "Clang/LexDiagnostic.h"
 #include "Clang/Lexer.h"
 #include "Clang/Preprocessor.h"
@@ -36,23 +35,22 @@
 
 using namespace c2lang;
 
-static unsigned getCharWidth(tok::TokenKind kind, const TargetInfo &Target) {
+static unsigned int getCharWidth(tok::TokenKind kind) {
   switch (kind) {
   default: llvm_unreachable("Unknown token type!");
   case tok::char_constant:
   case tok::string_literal:
   case tok::utf8_char_constant:
   case tok::utf8_string_literal:
-    return Target.getCharWidth();
-  case tok::wide_char_constant:
+    return 8;
   case tok::wide_string_literal:
-    return Target.getWCharWidth();
+    return 32;
   case tok::utf16_char_constant:
   case tok::utf16_string_literal:
-    return Target.getChar16Width();
+    return 16;
   case tok::utf32_char_constant:
   case tok::utf32_string_literal:
-    return Target.getChar32Width();
+    return 32;
   }
 }
 
@@ -1157,10 +1155,7 @@ CharLiteralParser::CharLiteralParser(const char *begin, const char *end,
   // represented in a single code unit are disallowed in character literals
   // by this implementation.
   uint32_t largest_character_for_kind;
-  if (tok::wide_char_constant == Kind) {
-    largest_character_for_kind =
-        0xFFFFFFFFu >> (32-PP.getTargetInfo().getWCharWidth());
-  } else if (tok::utf8_char_constant == Kind) {
+  if (tok::utf8_char_constant == Kind) {
     largest_character_for_kind = 0x7F;
   } else if (tok::utf16_char_constant == Kind) {
     largest_character_for_kind = 0xFFFF;
@@ -1227,7 +1222,7 @@ CharLiteralParser::CharLiteralParser(const char *begin, const char *end,
       ++buffer_begin;
       continue;
     }
-    unsigned CharWidth = getCharWidth(Kind, PP.getTargetInfo());
+    unsigned CharWidth = getCharWidth(Kind);
     uint64_t result =
       ProcessCharEscape(TokBegin, begin, end, HadError,
                         FullSourceLoc(Loc,PP.getSourceManager()),
@@ -1238,9 +1233,7 @@ CharLiteralParser::CharLiteralParser(const char *begin, const char *end,
   unsigned NumCharsSoFar = buffer_begin - &codepoint_buffer.front();
 
   if (NumCharsSoFar > 1) {
-    if (isWide())
-      PP.Diag(Loc, diag::warn_extraneous_char_constant);
-    else if (isAscii() && NumCharsSoFar == 4)
+    if (isAscii() && NumCharsSoFar == 4)
       PP.Diag(Loc, diag::ext_four_char_character_literal);
     else if (isAscii())
       PP.Diag(Loc, diag::ext_multichar_character_literal);
@@ -1251,7 +1244,7 @@ CharLiteralParser::CharLiteralParser(const char *begin, const char *end,
     IsMultiChar = false;
   }
 
-  llvm::APInt LitVal(PP.getTargetInfo().getIntWidth(), 0);
+  llvm::APInt LitVal(32, 0);
 
   // Narrow character literals act as though their value is concatenated
   // in this implementation, but warn on overflow.
@@ -1395,7 +1388,7 @@ void StringLiteralParser::init(ArrayRef<Token> StringToks){
   // TODO: K&R warning: "traditional C rejects string constant concatenation"
 
   // Get the width in bytes of char/wchar_t/char16_t/char32_t
-  CharByteWidth = getCharWidth(Kind, Target);
+  CharByteWidth = getCharWidth(Kind);
   assert((CharByteWidth & 7) == 0 && "Assumes character size is byte multiple");
   CharByteWidth /= 8;
 

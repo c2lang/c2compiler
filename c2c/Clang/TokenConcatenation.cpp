@@ -199,7 +199,6 @@ bool TokenConcatenation::AvoidConcat(const Token &PrevPrevTok,
   case tok::utf16_string_literal:
   case tok::utf32_string_literal:
   case tok::char_constant:
-  case tok::wide_char_constant:
   case tok::utf8_char_constant:
   case tok::utf16_char_constant:
   case tok::utf32_char_constant:
@@ -212,7 +211,7 @@ bool TokenConcatenation::AvoidConcat(const Token &PrevPrevTok,
     if (Tok.getIdentifierInfo() ||
         Tok.isOneOf(tok::wide_string_literal, tok::utf8_string_literal,
                     tok::utf16_string_literal, tok::utf32_string_literal,
-                    tok::wide_char_constant, tok::utf8_char_constant,
+                    tok::utf8_char_constant,
                     tok::utf16_char_constant, tok::utf32_char_constant))
       return true;
 

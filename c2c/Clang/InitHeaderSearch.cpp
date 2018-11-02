@@ -537,10 +537,7 @@ void InitHeaderSearch::Realize(const LangOptions &Lang) {
   }
 }
 
-void c2lang::ApplyHeaderSearchOptions(HeaderSearch &HS,
-                                     const HeaderSearchOptions &HSOpts,
-                                     const LangOptions &Lang,
-                                     const llvm::Triple &Triple) {
+void c2lang::ApplyHeaderSearchOptions(HeaderSearch &HS, const HeaderSearchOptions &HSOpts, const LangOptions &Lang) {
   InitHeaderSearch Init(HS, HSOpts.Verbose, HSOpts.Sysroot);
 
   // Add the user defined entries.
@@ -553,7 +550,6 @@ void c2lang::ApplyHeaderSearchOptions(HeaderSearch &HS,
     }
   }
 
-  Init.AddDefaultIncludePaths(Lang, Triple, HSOpts);
 
   for (unsigned i = 0, e = HSOpts.SystemHeaderPrefixes.size(); i != e; ++i)
     Init.AddSystemHeaderPrefix(HSOpts.SystemHeaderPrefixes[i].Prefix,

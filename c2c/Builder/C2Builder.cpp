@@ -33,7 +33,6 @@
 #include "Clang/MacroBuilder.h"
 #include "Clang/LangOptions.h"
 #include "Clang/SourceManager.h"
-#include "Clang/TargetInfo.h"
 #include "Clang/TargetOptions.h"
 #include "Clang/MemoryBufferCache.h"
 #include "Clang/TextDiagnosticPrinter.h"
@@ -92,18 +91,16 @@ namespace C2 {
 
 class ParseHelper {
 public:
-    ParseHelper(DiagnosticsEngine& Diags_,
-                LangOptions& LangOpts_,
-                c2lang::TargetInfo* pti_,
-                std::shared_ptr<HeaderSearchOptions> HSOpts_,
-                SourceManager& SM_,
-                FileManager& FileMgr_,
-                MemoryBufferCache& PCMCache_,
-                const std::string& configs_,
-                const TargetInfo& ti)
+    ParseHelper(DiagnosticsEngine &Diags_,
+                    LangOptions &LangOpts_,
+                    std::shared_ptr<HeaderSearchOptions> HSOpts_,
+                    SourceManager &SM_,
+                    FileManager &FileMgr_,
+                    MemoryBufferCache &PCMCache_,
+                    const std::string &configs_,
+                    const TargetInfo &ti)
         : Diags(Diags_)
         , LangOpts(LangOpts_)
-        , pti(pti_)
         , HSOpts(HSOpts_)
         , SM(SM_)
         , FileMgr(FileMgr_)
@@ -114,14 +111,14 @@ public:
 
     bool parse(Component& component, Module* existingMod, const std::string& filename, bool printAST) {
         // NOTE: seems to get deleted by Preprocessor,
-        HeaderSearch* Headers = new HeaderSearch(HSOpts, SM, Diags, LangOpts, pti);
+        HeaderSearch* Headers = new HeaderSearch(HSOpts, SM, Diags, LangOpts);
 
         std::shared_ptr<PreprocessorOptions> PPOpts(new PreprocessorOptions());
         Preprocessor PP(PPOpts, Diags, LangOpts, SM, PCMCache, *Headers);
 
-        ApplyHeaderSearchOptions(PP.getHeaderSearchInfo(), *HSOpts, LangOpts, pti->getTriple());
+        ApplyHeaderSearchOptions(PP.getHeaderSearchInfo(), *HSOpts, LangOpts);
         PP.setPredefines(configs);
-        PP.Initialize(*pti);
+        PP.Initialize(targetInfo);
 
         // File stuff
         const FileEntry *pFile = FileMgr.getFile(filename);
@@ -162,7 +159,6 @@ public:
 
     DiagnosticsEngine& Diags;
     LangOptions& LangOpts;
-    c2lang::TargetInfo* pti;
     std::shared_ptr<HeaderSearchOptions> HSOpts;
     SourceManager& SM;
     FileManager& FileMgr;
@@ -316,8 +312,6 @@ int C2Builder::build() {
     // TargetInfo
     std::shared_ptr<TargetOptions> to(new TargetOptions());
     to->Triple = llvm::sys::getDefaultTargetTriple();
-    c2lang::TargetInfo *pti = c2lang::TargetInfo::CreateTargetInfo(Diags, to);
-    IntrusiveRefCntPtr<c2lang::TargetInfo> Target(pti);
 
     std::shared_ptr<HeaderSearchOptions> HSOpts(new HeaderSearchOptions());
     // add current directory (=project root) to #include path
@@ -355,8 +349,7 @@ int C2Builder::build() {
         libLoader.addDep(mainComponent, recipe.libraries[i].name, recipe.libraries[i].type);
     }
 
-    ParseHelper helper(Diags, LangOpts, pti, HSOpts, SM, FileMgr, PCMCache,
-            PredefineBuffer, targetInfo);
+    ParseHelper helper(Diags, LangOpts, HSOpts, SM, FileMgr, PCMCache, PredefineBuffer, targetInfo);
     // phase 1a: parse and local analyse
     uint64_t t1_parse = Utils::getCurrentTime();
     unsigned errors = 0;

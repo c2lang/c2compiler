@@ -15,19 +15,11 @@
 #include "Clang/Targets.h"
 #include "Clang/Builtins.h"
 #include "Clang/Diagnostic.h"
-#include "Clang/TargetBuiltins.h"
 #include <llvm/ADT/StringSwitch.h>
 
 using namespace c2lang;
 using namespace c2lang::targets;
 
-const Builtin::Info WebAssemblyTargetInfo::BuiltinInfo[] = {
-#define BUILTIN(ID, TYPE, ATTRS)                                               \
-  {#ID, TYPE, ATTRS, nullptr, ALL_LANGUAGES, nullptr},
-#define LIBBUILTIN(ID, TYPE, ATTRS, HEADER)                                    \
-  {#ID, TYPE, ATTRS, HEADER, ALL_LANGUAGES, nullptr},
-#include "Clang/BuiltinsWebAssembly.def"
-};
 
 static constexpr llvm::StringLiteral ValidCPUNames[] = {
     {"mvp"}, {"bleeding-edge"}, {"generic"}};

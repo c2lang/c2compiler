@@ -39,7 +39,6 @@ using namespace c2lang;
 
 IdentifierInfo::IdentifierInfo() {
   TokenID = tok::identifier;
-  ObjCOrBuiltinID = 0;
   HasMacro = false;
   HadMacro = false;
   IsExtension = false;
@@ -47,11 +46,7 @@ IdentifierInfo::IdentifierInfo() {
   IsPoisoned = false;
   NeedsHandleIdentifier = false;
   IsFromAST = false;
-  ChangedAfterLoad = false;
-  FEChangedAfterLoad = false;
-  RevertedTokenID = false;
   OutOfDate = false;
-  IsModulesImport = false;
 }
 
 //===----------------------------------------------------------------------===//
@@ -152,8 +147,6 @@ void IdentifierTable::AddKeywords(const LangOptions &LangOpts) {
 #include "Clang/TokenKinds.def"
 
 
-  // Add the '_experimental_modules_import' contextual keyword.
-  get("import").setModulesImport(true);
 }
 
 /// Checks if the specified token kind represents a keyword in the

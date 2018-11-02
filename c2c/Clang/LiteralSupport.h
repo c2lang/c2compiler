@@ -15,6 +15,7 @@
 #ifndef LLVM_CLANG_LEX_LITERALSUPPORT_H
 #define LLVM_CLANG_LEX_LITERALSUPPORT_H
 
+#include "Utils/TargetInfo.h"
 #include "Clang/CharInfo.h"
 #include "Clang/LLVM.h"
 #include "Clang/TokenKinds.h"
@@ -186,8 +187,9 @@ public:
 
   bool hadError() const { return HadError; }
   bool isAscii() const { return Kind == tok::char_constant; }
-  bool isWide() const { return Kind == tok::wide_char_constant; }
-  bool isUTF8() const { return Kind == tok::utf8_char_constant; }
+
+
+    bool isUTF8() const { return Kind == tok::utf8_char_constant; }
   bool isUTF16() const { return Kind == tok::utf16_char_constant; }
   bool isUTF32() const { return Kind == tok::utf32_char_constant; }
   bool isMultiChar() const { return IsMultiChar; }
@@ -205,7 +207,7 @@ public:
 class StringLiteralParser {
   const SourceManager &SM;
   const LangOptions &Features;
-  const TargetInfo &Target;
+  const C2::TargetInfo &Target;
   DiagnosticsEngine *Diags;
 
   unsigned MaxTokenLength;
@@ -222,7 +224,7 @@ public:
                       Preprocessor &PP, bool Complain = true);
   StringLiteralParser(ArrayRef<Token> StringToks,
                       const SourceManager &sm, const LangOptions &features,
-                      const TargetInfo &target,
+                      const C2::TargetInfo &target,
                       DiagnosticsEngine *diags = nullptr)
     : SM(sm), Features(features), Target(target), Diags(diags),
       MaxTokenLength(0), SizeBound(0), CharByteWidth(0), Kind(tok::unknown),

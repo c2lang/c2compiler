@@ -15,7 +15,7 @@
 #ifndef LLVM_CLANG_LEX_PREPROCESSOR_H
 #define LLVM_CLANG_LEX_PREPROCESSOR_H
 
-#include "Clang/Builtins.h"
+#include "Utils/TargetInfo.h"
 #include "Clang/Diagnostic.h"
 #include "Clang/IdentifierTable.h"
 #include "Clang/LLVM.h"
@@ -25,7 +25,6 @@
 #include "Clang/TokenKinds.h"
 #include "Clang/Lexer.h"
 #include "Clang/MacroInfo.h"
-#include "Clang/PPCallbacks.h"
 #include "Clang/PTHLexer.h"
 #include "Clang/Token.h"
 #include "Clang/TokenLexer.h"
@@ -71,7 +70,6 @@ class FileManager;
 class HeaderSearch;
 class MacroArgs;
 class MemoryBufferCache;
-class PreprocessingRecord;
 class PreprocessorLexer;
 class PreprocessorOptions;
 class PTHManager;
@@ -126,8 +124,8 @@ class Preprocessor {
   std::shared_ptr<PreprocessorOptions> PPOpts;
   DiagnosticsEngine        *Diags;
   LangOptions       &LangOpts;
-  const TargetInfo *Target = nullptr;
-  const TargetInfo *AuxTarget = nullptr;
+  const C2::TargetInfo *Target = nullptr;
+  const C2::TargetInfo *AuxTarget = nullptr;
   FileManager       &FileMgr;
   SourceManager     &SourceMgr;
   MemoryBufferCache &PCMCache;
@@ -155,23 +153,6 @@ class Preprocessor {
   IdentifierInfo *Ident__identifier;               // __identifier
   IdentifierInfo *Ident__VA_ARGS__;                // __VA_ARGS__
   IdentifierInfo *Ident__VA_OPT__;                 // __VA_OPT__
-  IdentifierInfo *Ident__has_feature;              // __has_feature
-  IdentifierInfo *Ident__has_extension;            // __has_extension
-  IdentifierInfo *Ident__has_builtin;              // __has_builtin
-  IdentifierInfo *Ident__has_attribute;            // __has_attribute
-  IdentifierInfo *Ident__has_include;              // __has_include
-  IdentifierInfo *Ident__has_include_next;         // __has_include_next
-  IdentifierInfo *Ident__has_warning;              // __has_warning
-  IdentifierInfo *Ident__is_identifier;            // __is_identifier
-  IdentifierInfo *Ident__building_module;          // __building_module
-  IdentifierInfo *Ident__MODULE__;                 // __MODULE__
-  IdentifierInfo *Ident__has_cpp_attribute;        // __has_cpp_attribute
-  IdentifierInfo *Ident__has_c_attribute;          // __has_c_attribute
-  IdentifierInfo *Ident__has_declspec;             // __has_declspec_attribute
-  IdentifierInfo *Ident__is_target_arch;           // __is_target_arch
-  IdentifierInfo *Ident__is_target_vendor;         // __is_target_vendor
-  IdentifierInfo *Ident__is_target_os;             // __is_target_os
-  IdentifierInfo *Ident__is_target_environment;    // __is_target_environment
 
   SourceLocation DATELoc, TIMELoc;
 
@@ -223,8 +204,6 @@ class Preprocessor {
   mutable IdentifierTable Identifiers;
 
 
-  /// Information about builtins.
-  Builtin::Context BuiltinInfo;
 
 
   /// Tracks all of the comment handlers that the client registered
@@ -414,9 +393,6 @@ private:
   };
   std::vector<IncludeStackInfo> IncludeMacroStack;
 
-  /// Actions invoked when some preprocessor activity is
-  /// encountered (e.g. a file is \#included, etc).
-  std::unique_ptr<PPCallbacks> Callbacks;
 
   struct MacroExpandsInfo {
     Token Tok;
@@ -541,7 +517,6 @@ private:
   unsigned NumDirectives = 0;
   unsigned NumDefined = 0;
   unsigned NumUndefined = 0;
-  unsigned NumPragma = 0;
   unsigned NumIf = 0;
   unsigned NumElse = 0;
   unsigned NumEndif = 0;
@@ -583,12 +558,6 @@ private:
   SmallVector<Token, 16> MacroExpandedTokens;
   std::vector<std::pair<TokenLexer *, size_t>> MacroExpandingLexersStack;
 
-  /// A record of the macro definitions and expansions that
-  /// occurred during preprocessing.
-  ///
-  /// This is an optional side structure that can be enabled with
-  /// \c createPreprocessingRecord() prior to preprocessing.
-  PreprocessingRecord *Record = nullptr;
 
   /// Cached tokens state.
   using CachedTokensTy = SmallVector<Token, 1>;
@@ -639,8 +608,8 @@ public:
   /// lifetime of the preprocessor.
   /// \param AuxTarget is owned by the caller and must remain valid for
   /// the lifetime of the preprocessor.
-  void Initialize(const TargetInfo &Target,
-                  const TargetInfo *AuxTarget = nullptr);
+  void Initialize(const C2::TargetInfo &Target,
+                  const C2::TargetInfo *AuxTarget = nullptr);
 
   /// Initialize the preprocessor to parse a model file
   ///
@@ -661,8 +630,8 @@ public:
   void setDiagnostics(DiagnosticsEngine &D) { Diags = &D; }
 
   const LangOptions &getLangOpts() const { return LangOpts; }
-  const TargetInfo &getTargetInfo() const { return *Target; }
-  const TargetInfo *getAuxTargetInfo() const { return AuxTarget; }
+  const C2::TargetInfo &getTargetInfo() const { return *Target; }
+  const C2::TargetInfo *getAuxTargetInfo() const { return AuxTarget; }
   FileManager &getFileManager() const { return FileMgr; }
   SourceManager &getSourceManager() const { return SourceMgr; }
   MemoryBufferCache &getPCMCache() const { return PCMCache; }
@@ -670,7 +639,6 @@ public:
 
   IdentifierTable &getIdentifierTable() { return Identifiers; }
   const IdentifierTable &getIdentifierTable() const { return Identifiers; }
-  Builtin::Context &getBuiltinInfo() { return BuiltinInfo; }
   llvm::BumpPtrAllocator &getPreprocessorAllocator() { return BP; }
 
   void setPTHManager(PTHManager* pm);
@@ -741,19 +709,7 @@ public:
   /// Returns the FileID for the preprocessor predefines.
   FileID getPredefinesFileID() const { return PredefinesFileID; }
 
-  /// \{
-  /// Accessors for preprocessor callbacks.
-  ///
-  /// Note that this class takes ownership of any PPCallbacks object given to
-  /// it.
-  PPCallbacks *getPPCallbacks() const { return Callbacks.get(); }
-  void addPPCallbacks(std::unique_ptr<PPCallbacks> C) {
-    if (Callbacks)
-      C = llvm::make_unique<PPChainedCallbacks>(std::move(C),
-                                                std::move(Callbacks));
-    Callbacks = std::move(C);
-  }
-  /// \}
+    /// \}
 
   bool isMacroDefined(StringRef Id) {
     return isMacroDefined(&Identifiers.get(Id));
@@ -923,15 +879,8 @@ public:
     return {};
   }
 
-  /// Retrieve the preprocessing record, or NULL if there is no
-  /// preprocessing record.
-  PreprocessingRecord *getPreprocessingRecord() const { return Record; }
 
-  /// Create a new preprocessing record, which will keep track of
-  /// all macro expansions, macro definitions, etc.
-  void createPreprocessingRecord();
-
-  /// Returns true if the FileEntry is the PCH through header.
+    /// Returns true if the FileEntry is the PCH through header.
   bool isPCHThroughHeader(const FileEntry *File);
 
   /// True if creating a PCH with a through header.

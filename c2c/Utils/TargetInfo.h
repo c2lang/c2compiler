@@ -42,6 +42,7 @@ public:
     Vendor vendor;
     Abi abi;
 
+    unsigned intWidth;
     static void getNative(TargetInfo& info);
     static bool fromString(TargetInfo& info, const std::string& triple);
 

@@ -25,7 +25,6 @@
 namespace c2lang {
 
 class LangOptions;
-class PPConditionalDirectiveRecord;
 class SourceManager;
 
 namespace edit {
@@ -36,7 +35,6 @@ class EditsReceiver;
 class EditedSource {
   const SourceManager &SourceMgr;
   const LangOptions &LangOpts;
-  const PPConditionalDirectiveRecord *PPRec;
 
   struct FileEdit {
     StringRef Text;
@@ -71,16 +69,13 @@ class EditedSource {
   llvm::BumpPtrAllocator StrAlloc;
 
 public:
-  EditedSource(const SourceManager &SM, const LangOptions &LangOpts,
-               const PPConditionalDirectiveRecord *PPRec = nullptr)
-      : SourceMgr(SM), LangOpts(LangOpts), PPRec(PPRec), IdentTable(LangOpts) {}
+  EditedSource(const SourceManager &SM, const LangOptions &LangOpts
+               )
+      : SourceMgr(SM), LangOpts(LangOpts),  IdentTable(LangOpts) {}
 
   const SourceManager &getSourceManager() const { return SourceMgr; }
   const LangOptions &getLangOpts() const { return LangOpts; }
 
-  const PPConditionalDirectiveRecord *getPPCondDirectiveRecord() const {
-    return PPRec;
-  }
 
   bool canInsertInOffset(SourceLocation OrigLoc, FileOffset Offs);
 

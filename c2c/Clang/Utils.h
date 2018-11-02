@@ -60,10 +60,7 @@ class PreprocessorOptions;
 class PreprocessorOutputOptions;
 
 /// Apply the header search options to get given HeaderSearch object.
-void ApplyHeaderSearchOptions(HeaderSearch &HS,
-                              const HeaderSearchOptions &HSOpts,
-                              const LangOptions &Lang,
-                              const llvm::Triple &triple);
+void ApplyHeaderSearchOptions(HeaderSearch &HS, const HeaderSearchOptions &HSOpts, const LangOptions &Lang);
 
 /// InitializePreprocessor - Initialize the preprocessor getting it and the
 /// environment ready to process a single file.

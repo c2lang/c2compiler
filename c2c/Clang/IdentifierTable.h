@@ -36,7 +36,6 @@ namespace c2lang {
 
 class IdentifierInfo;
 class LangOptions;
-class MultiKeywordSelector;
 class SourceLocation;
 
 /// A simple pair of identifier info and location.
@@ -51,10 +50,6 @@ class IdentifierInfo {
   friend class IdentifierTable;
 
   unsigned TokenID            : 9; // Front-end token ID or tok::identifier.
-  // Objective-C keyword ('protocol' in '@protocol') or builtin (__builtin_inf).
-  // First NUM_OBJC_KEYWORDS values are for Objective-C, the remaining values
-  // are for builtins.
-  unsigned ObjCOrBuiltinID    :13;
   bool HasMacro               : 1; // True if there is a #define for this.
   bool HadMacro               : 1; // True if there was a #define for this.
   bool IsExtension            : 1; // True if identifier is a lang extension.
@@ -64,22 +59,11 @@ class IdentifierInfo {
   bool NeedsHandleIdentifier  : 1; // See "RecomputeNeedsHandleIdentifier".
   bool IsFromAST              : 1; // True if identifier was loaded (at least
                                    // partially) from an AST file.
-  bool ChangedAfterLoad       : 1; // True if identifier has changed from the
-                                   // definition loaded from an AST file.
-  bool FEChangedAfterLoad     : 1; // True if identifier's frontend information
-                                   // has changed from the definition loaded
-                                   // from an AST file.
-  bool RevertedTokenID        : 1; // True if revertTokenIDToIdentifier was
-                                   // called.
   bool OutOfDate              : 1; // True if there may be additional
                                    // information about this identifier
                                    // stored externally.
-  bool IsModulesImport        : 1; // True if this is the 'import' contextual
-                                   // keyword.
   // 29 bit left in 64-bit word.
 
-  // Managed by the language front-end.
-  void *FETokenInfo = nullptr;
 
   llvm::StringMapEntry<IdentifierInfo *> *Entry = nullptr;
 
@@ -170,31 +154,8 @@ public:
   /// For example, "define" will return tok::pp_define.
   tok::PPKeywordKind getPPKeywordID() const;
 
-  /// True if setNotBuiltin() was called.
-  bool hasRevertedBuiltin() const {
-    return ObjCOrBuiltinID == 0;
-  }
 
-    /// Revert the identifier to a non-builtin identifier. We do this if
-  /// the name of a known builtin library function is used to declare that
-  /// function, but an unexpected type is specified.
-  void revertBuiltin() {
-    setBuiltinID(0);
-  }
-
-  /// Return a value indicating whether this is a builtin function.
-  ///
-  /// 0 is not-built-in. 1+ are specific builtin functions.
-  unsigned getBuiltinID() const { return ObjCOrBuiltinID; }
-
-  void setBuiltinID(unsigned ID) {
-    ObjCOrBuiltinID = ID;
-  }
-
-  unsigned getObjCOrBuiltinID() const { return ObjCOrBuiltinID; }
-  void setObjCOrBuiltinID(unsigned ID) { ObjCOrBuiltinID = ID; }
-
-  /// get/setExtension - Initialize information about whether or not this
+    /// get/setExtension - Initialize information about whether or not this
   /// language token is an extension.  This controls extension warnings, and is
   /// only valid if a custom token ID is set.
   bool isExtensionToken() const { return IsExtension; }
@@ -239,11 +200,6 @@ public:
   bool isKeyword(const LangOptions &LangOpts) const;
 
 
-    /// getFETokenInfo/setFETokenInfo - The language front-end is allowed to
-  /// associate arbitrary metadata with this token.
-  template<typename T>
-  T *getFETokenInfo() const { return static_cast<T*>(FETokenInfo); }
-  void setFETokenInfo(void *T) { FETokenInfo = T; }
 
   /// Return true if the Preprocessor::HandleIdentifier must be called
   /// on a token of this identifier.
@@ -256,72 +212,13 @@ public:
   /// from an AST file.
   bool isFromAST() const { return IsFromAST; }
 
-  void setIsFromAST() { IsFromAST = true; }
 
-  /// Determine whether this identifier has changed since it was loaded
-  /// from an AST file.
-  bool hasChangedSinceDeserialization() const {
-    return ChangedAfterLoad;
-  }
-
-  /// Note that this identifier has changed since it was loaded from
-  /// an AST file.
-  void setChangedSinceDeserialization() {
-    ChangedAfterLoad = true;
-  }
-
-  /// Determine whether the frontend token information for this
-  /// identifier has changed since it was loaded from an AST file.
-  bool hasFETokenInfoChangedSinceDeserialization() const {
-    return FEChangedAfterLoad;
-  }
-
-  /// Note that the frontend token information for this identifier has
-  /// changed since it was loaded from an AST file.
-  void setFETokenInfoChangedSinceDeserialization() {
-    FEChangedAfterLoad = true;
-  }
-
-  /// Determine whether the information for this identifier is out of
+    /// Determine whether the information for this identifier is out of
   /// date with respect to the external source.
   bool isOutOfDate() const { return OutOfDate; }
 
-  /// Set whether the information for this identifier is out of
-  /// date with respect to the external source.
-  void setOutOfDate(bool OOD) {
-    OutOfDate = OOD;
-    if (OOD)
-      NeedsHandleIdentifier = true;
-    else
-      RecomputeNeedsHandleIdentifier();
-  }
 
-  /// Determine whether this is the contextual keyword \c import.
-  bool isModulesImport() const { return IsModulesImport; }
-
-  /// Set whether this identifier is the contextual keyword \c import.
-  void setModulesImport(bool I) {
-    IsModulesImport = I;
-    if (I)
-      NeedsHandleIdentifier = true;
-    else
-      RecomputeNeedsHandleIdentifier();
-  }
-
-  /// Return true if this identifier is an editor placeholder.
-  ///
-  /// Editor placeholders are produced by the code-completion engine and are
-  /// represented as characters between '<#' and '#>' in the source code. An
-  /// example of auto-completed call with a placeholder parameter is shown
-  /// below:
-  /// \code
-  ///   function(<#int x#>);
-  /// \endcode
-  bool isEditorPlaceholder() const {
-    return getName().startswith("<#") && getName().endswith("#>");
-  }
-
-  /// Provide less than operator for lexicographical sorting.
+    /// Provide less than operator for lexicographical sorting.
   bool operator<(const IdentifierInfo &RHS) const {
     return getName() < RHS.getName();
   }
@@ -336,28 +233,7 @@ private:
   void RecomputeNeedsHandleIdentifier() {
     NeedsHandleIdentifier = isPoisoned() || hasMacroDefinition() ||
                             isExtensionToken() || isFutureCompatKeyword() ||
-                            isOutOfDate() || isModulesImport();
-  }
-};
-
-/// An RAII object for [un]poisoning an identifier within a scope.
-///
-/// \p II is allowed to be null, in which case objects of this type have
-/// no effect.
-class PoisonIdentifierRAIIObject {
-  IdentifierInfo *const II;
-  const bool OldValue;
-
-public:
-  PoisonIdentifierRAIIObject(IdentifierInfo *II, bool NewValue)
-    : II(II), OldValue(II ? II->isPoisoned() : false) {
-    if(II)
-      II->setIsPoisoned(NewValue);
-  }
-
-  ~PoisonIdentifierRAIIObject() {
-    if(II)
-      II->setIsPoisoned(OldValue);
+                            isOutOfDate();
   }
 };
 
@@ -436,17 +312,8 @@ public:
   explicit IdentifierTable(const LangOptions &LangOpts,
                            IdentifierInfoLookup *ExternalLookup = nullptr);
 
-  /// Set the external identifier lookup mechanism.
-  void setExternalIdentifierLookup(IdentifierInfoLookup *IILookup) {
-    ExternalLookup = IILookup;
-  }
 
-  /// Retrieve the external identifier lookup object, if any.
-  IdentifierInfoLookup *getExternalIdentifierLookup() const {
-    return ExternalLookup;
-  }
-
-  llvm::BumpPtrAllocator& getAllocator() {
+    llvm::BumpPtrAllocator& getAllocator() {
     return HashTable.getAllocator();
   }
 
@@ -504,9 +371,6 @@ public:
     // contents.
     II->Entry = &Entry;
 
-    // If this is the 'import' contextual keyword, mark it as such.
-    if (Name.equals("import"))
-      II->setModulesImport(true);
 
     return *II;
   }

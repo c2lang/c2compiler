@@ -3056,10 +3056,6 @@ LexNextToken:
                               tok::wide_string_literal);
 
 
-    // Wide character constant.
-    if (Char == '\'')
-      return LexCharConstant(Result, ConsumeChar(CurPtr, SizeTmp, Result),
-                             tok::wide_char_constant);
     // FALL THROUGH, treating L like the start of an identifier.
     LLVM_FALLTHROUGH;
 

@@ -33,16 +33,6 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
 include_directories("/usr/include/i386-linux-gnu/c++/4.8/")
 
 add_library(c2core
-    Clang/Targets/AArch64.cpp
-    Clang/Targets/ARM.cpp
-    Clang/Targets/Mips.cpp
-    Clang/Targets/OSTargets.cpp
-    Clang/Targets/PPC.cpp
-    Clang/Targets/RISCV.cpp
-    Clang/Targets/WebAssembly.cpp
-    Clang/Targets/X86.cpp
-    Clang/Attributes.cpp
-    Clang/Builtins.cpp
     Clang/CharInfo.cpp
     Clang/Commit.cpp
     Clang/Diagnostic.cpp
@@ -63,21 +53,16 @@ add_library(c2core
     Clang/MacroInfo.cpp
     Clang/MemoryBufferCache.cpp
     Clang/PPCaching.cpp
-    Clang/PPCallbacks.cpp
-    Clang/PPConditionalDirectiveRecord.cpp
     Clang/PPDirectives.cpp
     Clang/PPExpressions.cpp
     Clang/PPLexerChange.cpp
     Clang/PPMacroExpansion.cpp
     Clang/PTHLexer.cpp
-    Clang/PreprocessingRecord.cpp
     Clang/Preprocessor.cpp
     Clang/PreprocessorLexer.cpp
     Clang/ScratchBuffer.cpp
     Clang/SourceLocation.cpp
     Clang/SourceManager.cpp
-    Clang/TargetInfo.cpp
-    Clang/Targets.cpp
     Clang/TextDiagnostic.cpp
     Clang/TextDiagnosticPrinter.cpp
     Clang/TokenConcatenation.cpp

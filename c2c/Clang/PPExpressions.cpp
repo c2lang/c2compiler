@@ -16,17 +16,16 @@
 //
 //===----------------------------------------------------------------------===//
 
+
 #include "Clang/Preprocessor.h"
 #include "Clang/IdentifierTable.h"
 #include "Clang/SourceLocation.h"
 #include "Clang/SourceManager.h"
-#include "Clang/TargetInfo.h"
 #include "Clang/TokenKinds.h"
 #include "Clang/CodeCompletionHandler.h"
 #include "Clang/LexDiagnostic.h"
 #include "Clang/LiteralSupport.h"
 #include "Clang/MacroInfo.h"
-#include "Clang/PPCallbacks.h"
 #include "Clang/Token.h"
 #include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/SmallString.h>
@@ -205,11 +204,6 @@ static bool EvaluateDefined(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
       PP.Diag(beginLoc, diag::warn_defined_in_object_type_macro);
   }
 
-  // Invoke the 'defined' callback.
-  if (PPCallbacks *Callbacks = PP.getPPCallbacks()) {
-    Callbacks->Defined(macroToken, Macro,
-                       SourceRange(beginLoc, PeekTok.getLocation()));
-  }
 
   // Success, remember that we saw defined(X).
   DT.State = DefinedTracker::DefinedMacro;
@@ -328,7 +322,6 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
     return false;
   }
   case tok::char_constant:          // 'x'
-  case tok::wide_char_constant:     // L'x'
   case tok::utf8_char_constant:     // u8'x'
   case tok::utf16_char_constant:    // u'x'
   case tok::utf32_char_constant: {  // U'x'
@@ -348,27 +341,22 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
       return true;  // A diagnostic was already emitted.
 
     // Character literals are always int or wchar_t, expand to intmax_t.
-    const TargetInfo &TI = PP.getTargetInfo();
     unsigned NumBits;
     if (Literal.isMultiChar())
-      NumBits = TI.getIntWidth();
-    else if (Literal.isWide())
-      NumBits = TI.getWCharWidth();
+      NumBits = 32;
     else if (Literal.isUTF16())
-      NumBits = TI.getChar16Width();
+      NumBits = 16;
     else if (Literal.isUTF32())
-      NumBits = TI.getChar32Width();
+      NumBits = 32;
     else // char or char8_t
-      NumBits = TI.getCharWidth();
+      NumBits = 8;
 
     // Set the width.
     llvm::APSInt Val(NumBits);
     // Set the value.
     Val = Literal.getValue();
     // Set the signedness. UTF-16 and UTF-32 are always unsigned
-    if (Literal.isWide())
-      Val.setIsUnsigned(!TargetInfo::isTypeSigned(TI.getWCharType()));
-    else if (!Literal.isUTF16() && !Literal.isUTF32())
+    if (!Literal.isUTF16() && !Literal.isUTF32())
       Val.setIsUnsigned(true);
 
     if (Result.Val.getBitWidth() > Val.getBitWidth()) {
@@ -833,7 +821,7 @@ Preprocessor::EvaluateDirectiveExpression(IdentifierInfo *&IfNDefMacro) {
   LexNonComment(Tok);
 
   // C99 6.10.1p3 - All expressions are evaluated as intmax_t or uintmax_t.
-  unsigned BitWidth = getTargetInfo().getIntMaxTWidth();
+  unsigned BitWidth = 64;
 
   PPValue ResVal(BitWidth);
   DefinedTracker DT;

@@ -24,7 +24,6 @@
 #include "Clang/LexDiagnostic.h"
 #include "Clang/LiteralSupport.h"
 #include "Clang/MacroInfo.h"
-#include "Clang/PPCallbacks.h"
 #include "Clang/Preprocessor.h"
 #include "Clang/PreprocessorOptions.h"
 #include "Clang/PTHLexer.h"
@@ -461,8 +460,6 @@ void Preprocessor::SkipExcludedConditionalBlock(SourceLocation HashTokenLoc,
           CurPPLexer->LexingRawMode = false;
           CheckEndOfDirective("endif");
           CurPPLexer->LexingRawMode = true;
-          if (Callbacks)
-            Callbacks->Endif(Tok.getLocation(), CondInfo.IfLoc);
           break;
         } else {
           DiscardUntilEndOfDirective();
@@ -488,8 +485,6 @@ void Preprocessor::SkipExcludedConditionalBlock(SourceLocation HashTokenLoc,
           CurPPLexer->LexingRawMode = false;
           CheckEndOfDirective("else");
           CurPPLexer->LexingRawMode = true;
-          if (Callbacks)
-            Callbacks->Else(Tok.getLocation(), CondInfo.IfLoc);
           break;
         } else {
           DiscardUntilEndOfDirective();  // C99 6.10p4.
@@ -513,12 +508,6 @@ void Preprocessor::SkipExcludedConditionalBlock(SourceLocation HashTokenLoc,
           IdentifierInfo *IfNDefMacro = nullptr;
           const bool CondValue = EvaluateDirectiveExpression(IfNDefMacro).Conditional;
           CurPPLexer->LexingRawMode = true;
-          if (Callbacks) {
-            const SourceLocation CondEnd = CurPPLexer->getSourceLocation();
-            Callbacks->Elif(Tok.getLocation(),
-                            SourceRange(CondBegin, CondEnd),
-                            (CondValue ? PPCallbacks::CVK_True : PPCallbacks::CVK_False), CondInfo.IfLoc);
-          }
           // If this condition is true, enter it!
           if (CondValue) {
             CondInfo.FoundNonSkip = true;
@@ -538,12 +527,7 @@ void Preprocessor::SkipExcludedConditionalBlock(SourceLocation HashTokenLoc,
   // the #if block.
   CurPPLexer->LexingRawMode = false;
 
-  // The last skipped range isn't actually skipped yet if it's truncated
-  // by the end of the preamble; we'll resume parsing after the preamble.
-  if (Callbacks && (Tok.isNot(tok::eof) || !isRecordingPreamble()))
-    Callbacks->SourceRangeSkipped(
-        SourceRange(HashTokenLoc, CurPPLexer->getSourceLocation()),
-        Tok.getLocation());
+
 }
 
 void Preprocessor::PTHSkipExcludedConditionalBlock() {
@@ -1067,9 +1051,6 @@ void Preprocessor::HandleLineDirective() {
   SourceMgr.AddLineNote(DigitTok.getLocation(), LineNo, FilenameID, false,
                         false, FileKind);
 
-  if (Callbacks)
-    Callbacks->FileChanged(CurPPLexer->getSourceLocation(),
-                           PPCallbacks::RenameFile, FileKind);
 }
 
 /// ReadLineMarkerFlags - Parse and validate any flags at the end of a GNU line
@@ -1205,18 +1186,7 @@ void Preprocessor::HandleDigitDirective(Token &DigitTok) {
   SourceMgr.AddLineNote(DigitTok.getLocation(), LineNo, FilenameID, IsFileEntry,
                         IsFileExit, FileKind);
 
-  // If the preprocessor has callbacks installed, notify them of the #line
-  // change.  This is used so that the line marker comes out in -E mode for
-  // example.
-  if (Callbacks) {
-    PPCallbacks::FileChangeReason Reason = PPCallbacks::RenameFile;
-    if (IsFileEntry)
-      Reason = PPCallbacks::EnterFile;
-    else if (IsFileExit)
-      Reason = PPCallbacks::ExitFile;
 
-    Callbacks->FileChanged(CurPPLexer->getSourceLocation(), Reason, FileKind);
-  }
 }
 
 /// HandleUserDiagnosticDirective - Handle a #warning or #error directive.
@@ -1272,12 +1242,6 @@ void Preprocessor::HandleIdentSCCSDirective(Token &Tok) {
   // Verify that there is nothing after the string, other than EOD.
   CheckEndOfDirective("ident");
 
-  if (Callbacks) {
-    bool Invalid = false;
-    std::string Str = getSpelling(StrTok, &Invalid);
-    if (!Invalid)
-      Callbacks->Ident(Tok.getLocation(), Str);
-  }
 }
 
 /// Handle a #public directive.
@@ -1586,28 +1550,11 @@ void Preprocessor::HandleIncludeDirective(SourceLocation HashLoc,
   const FileEntry *File = LookupFile(
       FilenameLoc, Filename,
       isAngled, LookupFrom, LookupFromFile, CurDir,
-      Callbacks ? &SearchPath : nullptr, Callbacks ? &RelativePath : nullptr,
+      nullptr, nullptr,
       &IsMapped);
 
   if (!File) {
-    if (Callbacks) {
-      // Give the clients a chance to recover.
-      SmallString<128> RecoveryPath;
-      if (Callbacks->FileNotFound(Filename, RecoveryPath)) {
-        if (const DirectoryEntry *DE = FileMgr.getDirectory(RecoveryPath)) {
-          // Add the recovery path to the list of search paths.
-          DirectoryLookup DL(DE, SrcMgr::C_User, false);
-          HeaderInfo.AddSearchPath(DL, isAngled);
 
-          // Try the lookup again, skipping the cache.
-          File = LookupFile(
-              FilenameLoc,
-              Filename, isAngled,
-              LookupFrom, LookupFromFile, CurDir, nullptr, nullptr,
-              &IsMapped, /*SkipCache*/ true);
-        }
-      }
-    }
 
     if (!SuppressIncludeNotFoundError) {
       // If the file could not be located and it was included via angle
@@ -1618,8 +1565,8 @@ void Preprocessor::HandleIncludeDirective(SourceLocation HashLoc,
             FilenameLoc,
             Filename, false,
             LookupFrom, LookupFromFile, CurDir,
-            Callbacks ? &SearchPath : nullptr,
-            Callbacks ? &RelativePath : nullptr, &IsMapped);
+            nullptr,
+            nullptr, &IsMapped);
         if (File) {
           SourceRange Range(FilenameTok.getLocation(), CharEnd);
           Diag(FilenameTok, diag::err_pp_file_not_found_not_fatal) <<
@@ -1674,15 +1621,6 @@ void Preprocessor::HandleIncludeDirective(SourceLocation HashLoc,
     SkipHeader = true;
   }
 
-  if (Callbacks) {
-    // Notify the callback object that we've seen an inclusion directive.
-    Callbacks->InclusionDirective(
-        HashLoc, IncludeTok,
-        Filename, isAngled,
-        FilenameRange, File, SearchPath, RelativePath, FileCharacter);
-    if (SkipHeader)
-      Callbacks->FileSkipped(*File, FilenameTok, FileCharacter);
-  }
 
   if (!File)
     return;
@@ -2228,9 +2166,6 @@ void Preprocessor::HandleDefineDirective(
     WarnUnusedMacroLocs.insert(MI->getDefinitionLoc());
   }
 
-  // If the callbacks want to know, tell them about the macro definition.
-  if (Callbacks)
-    Callbacks->MacroDefined(MacroNameTok, MD);
 }
 
 /// HandleUndefDirective - Implements \#undef.
@@ -2264,10 +2199,6 @@ void Preprocessor::HandleUndefDirective() {
     Undef = AllocateUndefMacroDirective(MacroNameTok.getLocation());
   }
 
-  // If the callbacks want to know, tell them about the macro #undef.
-  // Note: no matter if the macro was defined or not.
-  if (Callbacks)
-    Callbacks->MacroUndefined(MacroNameTok, MD, Undef);
 
   if (Undef)
     appendMacroDirective(II, Undef);
@@ -2325,12 +2256,6 @@ void Preprocessor::HandleIfdefDirective(Token &Result,
   if (MI)  // Mark it used.
     markMacroAsUsed(MI);
 
-  if (Callbacks) {
-    if (isIfndef)
-      Callbacks->Ifndef(DirectiveTok.getLocation(), MacroNameTok, MD);
-    else
-      Callbacks->Ifdef(DirectiveTok.getLocation(), MacroNameTok, MD);
-  }
 
   // Should we include the stuff contained by this directive?
   if (PPOpts->SingleFileParseMode && !MI) {
@@ -2362,10 +2287,10 @@ void Preprocessor::HandleIfDirective(Token &IfToken,
 
   // Parse and evaluate the conditional expression.
   IdentifierInfo *IfNDefMacro = nullptr;
-  const SourceLocation ConditionalBegin = CurPPLexer->getSourceLocation();
+  CurPPLexer->getSourceLocation();
   const DirectiveEvalResult DER = EvaluateDirectiveExpression(IfNDefMacro);
   const bool ConditionalTrue = DER.Conditional;
-  const SourceLocation ConditionalEnd = CurPPLexer->getSourceLocation();
+  CurPPLexer->getSourceLocation();
 
   // If this condition is equivalent to #ifndef X, and if this is the first
   // directive seen, handle it for the multiple-include optimization.
@@ -2377,10 +2302,6 @@ void Preprocessor::HandleIfDirective(Token &IfToken,
       CurPPLexer->MIOpt.EnterTopLevelConditional();
   }
 
-  if (Callbacks)
-    Callbacks->If(IfToken.getLocation(),
-                  SourceRange(ConditionalBegin, ConditionalEnd),
-                  (ConditionalTrue ? PPCallbacks::CVK_True : PPCallbacks::CVK_False));
 
   // Should we include the stuff contained by this directive?
   if (PPOpts->SingleFileParseMode && DER.IncludedUndefinedIds) {
@@ -2422,8 +2343,6 @@ void Preprocessor::HandleEndifDirective(Token &EndifToken) {
   assert(!CondInfo.WasSkipping && !CurPPLexer->LexingRawMode &&
          "This code should only be reachable in the non-skipping case!");
 
-  if (Callbacks)
-    Callbacks->Endif(EndifToken.getLocation(), CondInfo.IfLoc);
 }
 
 /// HandleElseDirective - Implements the \#else directive.
@@ -2447,8 +2366,6 @@ void Preprocessor::HandleElseDirective(Token &Result, const Token &HashToken) {
   // If this is a #else with a #else before it, report the error.
   if (CI.FoundElse) Diag(Result, diag::pp_err_else_after_else);
 
-  if (Callbacks)
-    Callbacks->Else(Result.getLocation(), CI.IfLoc);
 
   if (PPOpts->SingleFileParseMode && !CI.FoundNonSkip) {
     // In 'single-file-parse mode' undefined identifiers trigger parsing of all
@@ -2473,7 +2390,7 @@ void Preprocessor::HandleElifDirective(Token &ElifToken,
   // #elif directive in a non-skipping conditional... start skipping.
   // We don't care what the condition is, because we will always skip it (since
   // the block immediately before it was included).
-  const SourceLocation ConditionalBegin = CurPPLexer->getSourceLocation();
+  CurPPLexer->getSourceLocation();
   DiscardUntilEndOfDirective();
   const SourceLocation ConditionalEnd = CurPPLexer->getSourceLocation();
 
@@ -2490,10 +2407,6 @@ void Preprocessor::HandleElifDirective(Token &ElifToken,
   // If this is a #elif with a #else before it, report the error.
   if (CI.FoundElse) Diag(ElifToken, diag::pp_err_elif_after_else);
 
-  if (Callbacks)
-    Callbacks->Elif(ElifToken.getLocation(),
-                    SourceRange(ConditionalBegin, ConditionalEnd),
-                    PPCallbacks::CVK_NotEvaluated, CI.IfLoc);
 
   if (PPOpts->SingleFileParseMode && !CI.FoundNonSkip) {
     // In 'single-file-parse mode' undefined identifiers trigger parsing of all
