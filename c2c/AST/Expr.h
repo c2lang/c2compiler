@@ -98,6 +98,11 @@ public:
     bool hasImpCast() const {
         return getImpCast() != BuiltinType::Void;
     }
+
+    bool isFloat() const {
+        return QT.isFloatType();
+    }
+
     BuiltinType::Kind getImpCast() const {
         return static_cast<BuiltinType::Kind>(exprBits.ImpCast);
     }

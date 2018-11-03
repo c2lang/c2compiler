@@ -48,7 +48,6 @@ private:
     bool verbose;
 
     typedef std::vector<FileAnalyser*> Analysers;
-    typedef Analysers::iterator AnalysersIter;
     Analysers analysers;
 
     ComponentAnalyser(const ComponentAnalyser&);

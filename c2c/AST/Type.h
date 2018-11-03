@@ -97,6 +97,7 @@ public:
     bool isArithmeticType() const;
     bool isScalarType() const;
     bool isIncompleteType() const;
+    bool isFloatType() const;
 
     bool isConstant() const;    // NOTE: not is const!
 
@@ -547,6 +548,7 @@ inline bool Type::isSubscriptable() const {
     assert(canonicalType.isValid());
     return isa<PointerType>(canonicalType) || isa<ArrayType>(canonicalType);
 }
+
 
 }
 

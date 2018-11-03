@@ -140,7 +140,7 @@ void CodeGenModule::generate() {
 }
 
 bool CodeGenModule::verify() {
-    if (verifyModule(*module)) {
+    if (verifyModule(*module, &errs())) {
         errs() << "Error in Module!\n";
         return false;
     }

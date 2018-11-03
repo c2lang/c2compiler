@@ -128,13 +128,14 @@ void FunctionAnalyser::check(FunctionDecl* func) {
 
     // check labels
     for (LabelsIter iter = labels.begin(); iter != labels.end(); ++iter) {
-        LabelDecl* LD = *iter;
+        LabelDecl *LD = *iter;
         if (LD->getStmt()) {    // have label part
             if (!LD->isUsed()) {
                 Diag(LD->getLocation(), diag::warn_unused_label) << LD->DiagName();
             }
-        } else {    // only have goto part
-            Diag(LD->getLocation(), diag:: err_undeclared_label_use) << LD->DiagName();
+        }
+        else {    // only have goto part
+            Diag(LD->getLocation(), diag::err_undeclared_label_use) << LD->DiagName();
         }
     }
     labels.clear();
@@ -1022,7 +1023,7 @@ void FunctionAnalyser::analyseSizeOfExpr(BuiltinExpr* B) {
         return;
     case EXPR_UNARYOP:
         // some allowed (&)?
-        // TODO
+        TODO;
         return;
     case EXPR_BUILTIN:
         FATAL_ERROR("Unreachable");

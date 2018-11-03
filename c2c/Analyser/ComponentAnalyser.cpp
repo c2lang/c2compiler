@@ -45,49 +45,55 @@ ComponentAnalyser::ComponentAnalyser(Component& C,
 }
 
 ComponentAnalyser::~ComponentAnalyser() {
-    for (unsigned i=0; i<analysers.size(); i++) {
-        delete analysers[i];
+    for (auto &analyser : analysers) {
+        delete analyser;
     }
 }
 
 unsigned ComponentAnalyser::analyse(bool print1, bool print2, bool print3, bool printLib) {
     unsigned errors = 0;
-    const size_t count = analysers.size();
 
-    for (unsigned i=0; i<count; i++) {
-        analysers[i]->addImports();
+    for (auto &analyser : analysers) {
+        analyser->addImports();
     }
 
-    for (unsigned i=0; i<count; i++) {
-        analysers[i]->resolveTypes();
+    for (auto &analyser : analysers) {
+        analyser->resolveTypes();
     }
+
     if (Diags.hasErrorOccurred()) return 1;
 
-    for (unsigned i=0; i<count; i++) {
-        errors += analysers[i]->resolveTypeCanonicals();
+    for (auto &analyser : analysers) {
+        errors += analyser->resolveTypeCanonicals();
     }
+
     if (errors) return errors;
 
-    for (unsigned i=0; i<count; i++) {
-        errors += analysers[i]->resolveStructMembers();
+    for (auto &analyser : analysers) {
+        errors += analyser->resolveStructMembers();
     }
+
     if (print1) printASTs(printLib);
     if (errors) return errors;
 
-    for (unsigned i=0; i<count; i++) {
-        errors += analysers[i]->resolveVars();
+    for (auto &analyser : analysers) {
+        errors += analyser->resolveVars();
     }
+
     if (errors) return errors;
 
-    for (unsigned i=0; i<count; i++) {
-        errors += analysers[i]->resolveEnumConstants();
+    for (auto &analyser : analysers) {
+        errors += analyser->resolveEnumConstants();
     }
+
     if (errors) return errors;
 
     IncrementalArrayVals ia_values;
-    for (unsigned i=0; i<count; i++) {
-        errors += analysers[i]->checkArrayValues(ia_values);
+
+    for (auto &analyser : analysers) {
+        errors += analyser->checkArrayValues(ia_values);
     }
+
     if (errors) return errors;
 
     // Set ArrayValues
@@ -107,9 +113,11 @@ unsigned ComponentAnalyser::analyse(bool print1, bool print2, bool print3, bool 
     ia_values.clear();
 
     StructFunctionList structFuncs;
-    for (unsigned i=0; i<count; i++) {
-        errors += analysers[i]->checkFunctionProtos(structFuncs);
+
+    for (auto &analyser : analysers) {
+        errors += analyser->checkFunctionProtos(structFuncs);
     }
+
     if (errors) return errors;
     // Set StructFunctions
     // NOTE: since these are linked anyways, just use special ASTContext from Builder
@@ -122,19 +130,21 @@ unsigned ComponentAnalyser::analyse(bool print1, bool print2, bool print3, bool 
         S->setStructFuncs(funcs, numFuncs);
     }
 
-    for (unsigned i=0; i<count; i++) {
-        analysers[i]->checkVarInits();
+    for (auto &analyser : analysers) {
+        analyser->checkVarInits();
     }
+
     if (print2) printASTs(printLib);
     if (Diags.hasErrorOccurred()) return 1;
 
-    for (unsigned i=0; i<count; i++) {
-        analysers[i]->checkFunctionBodies();
+
+    for (auto &analyser : analysers) {
+        analyser->checkFunctionBodies();
     }
     if (Diags.hasErrorOccurred()) return 1;
 
-    for (unsigned i=0; i<count; i++) {
-        analysers[i]->checkDeclsForUsed();
+    for (auto &analyser : analysers) {
+        analyser->checkDeclsForUsed();
     }
 
     if (print3) printASTs(printLib);

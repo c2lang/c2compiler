@@ -53,6 +53,7 @@ CodeGenFunction::CodeGenFunction(CodeGenModule& CGM_, FunctionDecl* Func_)
     , context(CGM.getContext())
     , module(CGM.getModule())
     , Builder(context)
+    , breakContinueStack()
 {}
 
 llvm::Function* CodeGenFunction::generateProto(const std::string& modName) {
@@ -139,9 +140,11 @@ void CodeGenFunction::EmitStmt(const Stmt* S) {
     case STMT_IF:
         EmitIfStmt(cast<IfStmt>(S));
         break;
+    case STMT_FOR:
+        EmitForStmt(cast<ForStmt>(S));
+        break;
     case STMT_WHILE:
     case STMT_DO:
-    case STMT_FOR:
     case STMT_SWITCH:
     case STMT_CASE:
     case STMT_DEFAULT:
@@ -260,6 +263,11 @@ void CodeGenFunction::EmitIfStmt(const IfStmt* S) {
     EmitBlock(ContBlock, true);
 }
 
+void CodeGenFunction::EmitForStmt(const ForStmt *S) {
+    LOG_FUNC
+    TODO;
+}
+
 void CodeGenFunction::EmitBlock(llvm::BasicBlock *BB, bool IsFinished) {
     LOG_FUNC
     llvm::BasicBlock *CurBB = Builder.GetInsertBlock();
@@ -274,14 +282,16 @@ void CodeGenFunction::EmitBlock(llvm::BasicBlock *BB, bool IsFinished) {
 
     // Place the block after the current block, if possible, or else at
     // the end of the function.
-    if (CurBB && CurBB->getParent())
+    if (CurBB && CurBB->getParent()) {
         CurFn->getBasicBlockList().insertAfter(CurBB->getIterator(), BB);
-    else
+    } else {
         CurFn->getBasicBlockList().push_back(BB);
+    }
     Builder.SetInsertPoint(BB);
 }
 
 void CodeGenFunction::EmitBranch(llvm::BasicBlock *Target) {
+
     LOG_FUNC
     // Emit a branch from the current block to the target one if this
     // was a real block.  If this was just a fall-through block after a
@@ -469,22 +479,30 @@ llvm::Value* CodeGenFunction::EmitExprNoImpCast(const Expr* E) {
     case EXPR_IDENTIFIER:
         return EmitIdentifierExpr(cast<IdentifierExpr>(E));
     case EXPR_INITLIST:
+        E->dump();
+        TODO;
     case EXPR_DESIGNATOR_INIT:
+        E->dump();
+        TODO;
     case EXPR_TYPE:
         break;
     case EXPR_BINOP:
         return EmitBinaryOperator(cast<BinaryOperator>(E));
     case EXPR_CONDOP:
+        E->dump();
+        TODO;
     case EXPR_UNARYOP:
-        break;
+        return EmitUnaryOperator(cast<UnaryOperator>(E));
     case EXPR_BUILTIN:
         return EmitBuiltinExpr(cast<BuiltinExpr>(E));
     case EXPR_ARRAYSUBSCRIPT:
         break;
     case EXPR_MEMBER:
     {
+        TODO;
         assert(cast<MemberExpr>(E)->isModulePrefix() && "TODO not-prefix members");
-        // TODO
+        E->dump();
+        TODO;
         break;
     }
     case EXPR_PAREN:
@@ -493,10 +511,14 @@ llvm::Value* CodeGenFunction::EmitExprNoImpCast(const Expr* E) {
         return EmitExpr(P->getExpr());
     }
     case EXPR_BITOFFSET:
+        E->dump();
+        TODO;
+        break;
     case EXPR_CAST:
+        E->dump();
+        TODO;
         break;
     }
-    E->dump();
     TODO;
     return 0;
 }
@@ -532,7 +554,7 @@ llvm::Value* CodeGenFunction::EmitCallExpr(const CallExpr* E) {
     }
     break;
     default:
-        assert(0 && "TODO unsupported call type");
+        printf("TODO unsupported call type\n");
         TODO;
         return 0;
     };
@@ -588,7 +610,7 @@ llvm::Value* CodeGenFunction::EmitCallExpr(const CallExpr* E) {
 llvm::Value* CodeGenFunction::EmitIdentifierExpr(const IdentifierExpr* E) {
     LOG_FUNC
     Decl* D = E->getDecl();
-    assert(D);
+    assert(D && "Declaration missing");
     switch (D->getKind()) {
     case DECL_FUNC:
         FATAL_ERROR("Unexpected declaration");
@@ -653,6 +675,7 @@ void CodeGenFunction::EmitVarDecl(const VarDecl* D) {
 
 llvm::Value* CodeGenFunction::EmitBinaryOperator(const BinaryOperator* B) {
     LOG_FUNC
+
     Value* L = EmitExpr(B->getLHS());
     Value* R = EmitExpr(B->getRHS());
     if (L == 0 || R == 0) return 0;
@@ -727,6 +750,29 @@ llvm::Value* CodeGenFunction::EmitBinaryOperator(const BinaryOperator* B) {
     return 0;
 }
 
+llvm::Value* CodeGenFunction::EmitUnaryOperator(const UnaryOperator* unaryOperator) {
+    LOG_FUNC
+    Expr *expression = unaryOperator->getExpr();
+    switch (unaryOperator->getOpcode()) {
+        case UO_Not:
+            return Builder.CreateNot(EmitExpr(expression), "not");
+        case UO_Plus:
+            return EmitExpr(expression);
+        case UO_Minus:
+            return expression->isFloat()
+                   ? Builder.CreateFNeg(EmitExpr(expression), "fneg")
+                   : Builder.CreateNeg(EmitExpr(expression), "neg");
+        case UO_LNot:break;
+        case UO_Deref:break;
+        case UO_PostInc:break;
+        case UO_PostDec:break;
+        case UO_PreInc:break;
+        case UO_PreDec:break;
+        case UO_AddrOf: break;
+    }
+    TODO;
+}
+
 llvm::Value *CodeGenFunction::EvaluateExprAsBool(const Expr *E) {
     if (const IntegerLiteral* N = dyncast<IntegerLiteral>(E)) {
         return llvm::ConstantInt::get(llvm::Type::getInt1Ty(context), N->Value.getSExtValue(), true);
@@ -735,7 +781,7 @@ llvm::Value *CodeGenFunction::EvaluateExprAsBool(const Expr *E) {
     if (const IdentifierExpr* I = dyncast<IdentifierExpr>(E)) {
         // TODO for now only support identifier to base type
         Decl* D = I->getDecl();
-        assert(D);
+        assert(D && "No declaration found");
         assert(D->getKind() == DECL_VAR && "TODO only support ref to vardecl, need anything else?");
         VarDecl* VD = cast<VarDecl>(D);
 
