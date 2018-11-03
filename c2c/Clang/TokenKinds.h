@@ -83,15 +83,6 @@ inline bool isLiteral(TokenKind K) {
          isStringLiteral(K) || K == tok::angle_string_literal;
 }
 
-/// Return true if this is any of tok::annot_* kinds.
-inline bool isAnnotation(TokenKind K) {
-#define ANNOTATION(NAME) \
-  if (K == tok::annot_##NAME) \
-    return true;
-#include "Clang/TokenKinds.def"
-  return false;
-}
-
 }  // end namespace tok
 }  // end namespace c2lang
 

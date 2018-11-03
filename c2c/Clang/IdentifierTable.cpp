@@ -212,13 +212,6 @@ tok::PPKeywordKind IdentifierInfo::getPPKeywordID() const {
   CASE( 7, 'w', 'r', warning);
 
   CASE( 8, 'u', 'a', unassert);
-  CASE(12, 'i', 'c', include_next);
-
-  CASE(14, '_', 'p', __public_macro);
-
-  CASE(15, '_', 'p', __private_macro);
-
-  CASE(16, '_', 'i', __include_macros);
 #undef CASE
 #undef HASH
   }
@@ -281,17 +274,3 @@ const char *c2lang::getOperatorSpelling(OverloadedOperatorKind Operator) {
   llvm_unreachable("Invalid OverloadedOperatorKind!");
 }
 
-StringRef c2lang::getNullabilitySpelling(NullabilityKind kind,
-                                        bool isContextSensitive) {
-  switch (kind) {
-  case NullabilityKind::NonNull:
-    return isContextSensitive ? "nonnull" : "_Nonnull";
-
-  case NullabilityKind::Nullable:
-    return isContextSensitive ? "nullable" : "_Nullable";
-
-  case NullabilityKind::Unspecified:
-    return isContextSensitive ? "null_unspecified" : "_Null_unspecified";
-  }
-  llvm_unreachable("Unknown nullability kind.");
-}

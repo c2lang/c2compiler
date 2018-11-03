@@ -69,7 +69,6 @@ PPKEYWORD(defined)
 
 // C99 6.10.2 - Source File Inclusion.
 PPKEYWORD(include)
-PPKEYWORD(__include_macros)
 
 // C99 6.10.3 - Macro Replacement.
 PPKEYWORD(define)
@@ -82,16 +81,12 @@ PPKEYWORD(line)
 PPKEYWORD(error)
 
 // GNU Extensions.
-PPKEYWORD(include_next)
 PPKEYWORD(warning)
 PPKEYWORD(ident)
 PPKEYWORD(sccs)
 PPKEYWORD(assert)
 PPKEYWORD(unassert)
 
-// Clang extensions
-PPKEYWORD(__public_macro)
-PPKEYWORD(__private_macro)
 
 //===----------------------------------------------------------------------===//
 // Language keywords.
@@ -189,8 +184,6 @@ PUNCTUATOR(hashhash,            "##")
 PUNCTUATOR(hashat,              "#@")
 
 // C++ Support
-PUNCTUATOR(periodstar,          ".*")
-PUNCTUATOR(arrowstar,           "->*")
 PUNCTUATOR(coloncolon,          "::")
 
 // Objective C support.
@@ -200,8 +193,6 @@ PUNCTUATOR(at,                  "@")
 PUNCTUATOR(lesslessless,          "<<<")
 PUNCTUATOR(greatergreatergreater, ">>>")
 
-// CL support
-PUNCTUATOR(caretcaret,            "^^")
 
 // C99 6.4.1: Keywords.  These turn into kw_* tokens.
 // Flags allowed:

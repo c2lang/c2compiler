@@ -108,72 +108,14 @@ public:
   /// etc.).
   std::string ResourceDir;
 
-  /// The directory used for the module cache.
-  std::string ModuleCachePath;
 
-  /// The directory used for a user build.
-  std::string ModuleUserBuildPath;
-
-  /// The mapping of module names to prebuilt module files.
-  std::map<std::string, std::string> PrebuiltModuleFiles;
-
-  /// The directories used to load prebuilt module files.
-  std::vector<std::string> PrebuiltModulePaths;
-
-  /// The module/pch container format.
-  std::string ModuleFormat;
-
-  /// Whether we should disable the use of the hash string within the
-  /// module cache.
-  ///
-  /// Note: Only used for testing!
-  unsigned DisableModuleHash : 1;
-
-  /// Implicit module maps.  This option is enabld by default when
-  /// modules is enabled.
-  unsigned ImplicitModuleMaps : 1;
-
-  /// Set the 'home directory' of a module map file to the current
-  /// working directory (or the home directory of the module map file that
-  /// contained the 'extern module' directive importing this module map file
-  /// if any) rather than the directory containing the module map file.
-  //
-  /// The home directory is where we look for files named in the module map
-  /// file.
-  unsigned ModuleMapFileHomeIsCwd : 1;
-
-  /// The interval (in seconds) between pruning operations.
-  ///
-  /// This operation is expensive, because it requires Clang to walk through
-  /// the directory structure of the module cache, stat()'ing and removing
-  /// files.
-  ///
-  /// The default value is large, e.g., the operation runs once a week.
-  unsigned ModuleCachePruneInterval = 7 * 24 * 60 * 60;
-
-  /// The time (in seconds) after which an unused module file will be
-  /// considered unused and will, therefore, be pruned.
-  ///
-  /// When the module cache is pruned, any module file that has not been
-  /// accessed in this many seconds will be removed. The default value is
-  /// large, e.g., a month, to avoid forcing infrequently-used modules to be
-  /// regenerated often.
-  unsigned ModuleCachePruneAfter = 31 * 24 * 60 * 60;
-
-  /// The time in seconds when the build session started.
+    /// The time in seconds when the build session started.
   ///
   /// This time is used by other optimizations in header search and module
   /// loading.
   uint64_t BuildSessionTimestamp = 0;
 
-  /// The set of macro names that should be ignored for the purposes
-  /// of computing the module hash.
-  llvm::SmallSetVector<llvm::CachedHashString, 16> ModulesIgnoreMacros;
-
-  /// The set of user-provided virtual filesystem overlay files.
-  std::vector<std::string> VFSOverlayFiles;
-
-  /// Include the compiler builtin includes.
+    /// Include the compiler builtin includes.
   unsigned UseBuiltinIncludes : 1;
 
   /// Include the system standard include search directories.
@@ -188,29 +130,15 @@ public:
   /// Whether header search information should be output as for -v.
   unsigned Verbose : 1;
 
-  /// If true, skip verifying input files used by modules if the
-  /// module was already verified during this build session (see
-  /// \c BuildSessionTimestamp).
-  unsigned ModulesValidateOncePerBuildSession : 1;
-
-  /// Whether to validate system input files when a module is loaded.
-  unsigned ModulesValidateSystemHeaders : 1;
 
   /// Whether the module includes debug information (-gmodules).
   unsigned UseDebugInfo : 1;
 
-  unsigned ModulesValidateDiagnosticOptions : 1;
-
-  unsigned ModulesHashContent : 1;
 
   HeaderSearchOptions(StringRef _Sysroot = "/")
-      : Sysroot(_Sysroot), ModuleFormat("raw"), DisableModuleHash(false),
-        ImplicitModuleMaps(false), ModuleMapFileHomeIsCwd(false),
+      : Sysroot(_Sysroot),
         UseBuiltinIncludes(true), UseStandardSystemIncludes(true),
-        UseStandardCXXIncludes(true), UseLibcxx(false), Verbose(false),
-        ModulesValidateOncePerBuildSession(false),
-        ModulesValidateSystemHeaders(false), UseDebugInfo(false),
-        ModulesValidateDiagnosticOptions(true), ModulesHashContent(false) {}
+        UseStandardCXXIncludes(true), UseLibcxx(false), Verbose(false), UseDebugInfo(false) {}
 
   /// AddPath - Add the \p Path path to the specified \p Group list.
   void AddPath(StringRef Path, frontend::IncludeDirGroup Group,
@@ -218,20 +146,6 @@ public:
     UserEntries.emplace_back(Path, Group, IsFramework, IgnoreSysRoot);
   }
 
-  /// AddSystemHeaderPrefix - Override whether \#include directives naming a
-  /// path starting with \p Prefix should be considered as naming a system
-  /// header.
-  void AddSystemHeaderPrefix(StringRef Prefix, bool IsSystemHeader) {
-    SystemHeaderPrefixes.emplace_back(Prefix, IsSystemHeader);
-  }
-
-  void AddVFSOverlayFile(StringRef Name) {
-    VFSOverlayFiles.push_back(Name);
-  }
-
-  void AddPrebuiltModulePath(StringRef Name) {
-    PrebuiltModulePaths.push_back(Name);
-  }
 };
 
 } // namespace c2lang

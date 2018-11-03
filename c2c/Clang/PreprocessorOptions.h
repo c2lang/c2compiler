@@ -33,45 +33,9 @@ namespace c2lang {
 class PreprocessorOptions {
 public:
   std::vector<std::pair<std::string, bool/*isUndef*/>> Macros;
-  std::vector<std::string> Includes;
-  std::vector<std::string> MacroIncludes;
 
-  /// Initialize the preprocessor with the compiler and target specific
-  /// predefines.
-  bool UsePredefines = true;
 
-  /// Whether we should maintain a detailed record of all macro
-  /// definitions and expansions.
-  bool DetailedRecord = false;
-
-  /// If non-empty, the filename used in an #include directive in the primary
-  /// source file (or command-line preinclude) that is used to implement
-  /// MSVC-style precompiled headers. When creating a PCH, after the #include
-  /// of this header, the PCH generation stops. When using a PCH, tokens are
-  /// skipped until after an #include of this header is seen.
-  std::string PCHThroughHeader;
-
-  /// The implicit PCH included at the start of the translation unit, or empty.
-  std::string ImplicitPCHInclude;
-
-  /// Headers that will be converted to chained PCHs in memory.
-  std::vector<std::string> ChainedIncludes;
-
-  /// When true, disables most of the normal validation performed on
-  /// precompiled headers.
-  bool DisablePCHValidation = false;
-
-  /// When true, a PCH with compiler errors will not be rejected.
-  bool AllowPCHWithCompilerErrors = false;
-
-  /// Dump declarations that are deserialized from PCH, for testing.
-  bool DumpDeserializedPCHDecls = false;
-
-  /// This is a set of names for decls that we do not want to be
-  /// deserialized, and we emit an error if they are; for testing purposes.
-  std::set<std::string> DeserializedPCHDeclsToErrorOn;
-
-  /// If non-zero, the implicit PCH include is actually a precompiled
+    /// If non-zero, the implicit PCH include is actually a precompiled
   /// preamble that covers this number of bytes in the main source file.
   ///
   /// The boolean indicates whether the preamble ends at the start of a new
@@ -85,19 +49,7 @@ public:
   /// processing the rest of the file.
   bool GeneratePreamble = false;
 
-  /// Whether to write comment locations into the PCH when building it.
-  /// Reading the comments from the PCH can be a performance hit even if the
-  /// clients don't use them.
-  bool WriteCommentListToPCH = true;
-
-  /// The implicit PTH input included at the start of the translation unit, or
-  /// empty.
-  std::string ImplicitPTHInclude;
-
-  /// If given, a PTH cache file to use for speeding up header parsing.
-  std::string TokenCache;
-
-  /// When enabled, preprocessor is in a mode for parsing a single file only.
+    /// When enabled, preprocessor is in a mode for parsing a single file only.
   ///
   /// Disables #includes of other files and if there are unresolved identifiers
   /// in preprocessor directive conditions it causes all blocks to be parsed so

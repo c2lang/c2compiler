@@ -126,28 +126,6 @@ const Token &Preprocessor::PeekAhead(unsigned N) {
   return CachedTokens.back();
 }
 
-void Preprocessor::AnnotatePreviousCachedTokens(const Token &Tok) {
-  assert(Tok.isAnnotation() && "Expected annotation token");
-  assert(CachedLexPos != 0 && "Expected to have some cached tokens");
-  assert(CachedTokens[CachedLexPos-1].getLastLoc() == Tok.getAnnotationEndLoc()
-         && "The annotation should be until the most recent cached token");
-
-  // Start from the end of the cached tokens list and look for the token
-  // that is the beginning of the annotation token.
-  for (CachedTokensTy::size_type i = CachedLexPos; i != 0; --i) {
-    CachedTokensTy::iterator AnnotBegin = CachedTokens.begin() + i-1;
-    if (AnnotBegin->getLocation() == Tok.getLocation()) {
-      assert((BacktrackPositions.empty() || BacktrackPositions.back() <= i) &&
-             "The backtrack pos points inside the annotated tokens!");
-      // Replace the cached tokens with the single annotation token.
-      if (i < CachedLexPos)
-        CachedTokens.erase(AnnotBegin + 1, CachedTokens.begin() + CachedLexPos);
-      *AnnotBegin = Tok;
-      CachedLexPos = i;
-      return;
-    }
-  }
-}
 
 bool Preprocessor::IsPreviousCachedToken(const Token &Tok) const {
   // There's currently no cached token...

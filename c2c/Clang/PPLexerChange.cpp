@@ -19,7 +19,7 @@
 #include "Clang/HeaderSearch.h"
 #include "Clang/LexDiagnostic.h"
 #include "Clang/MacroInfo.h"
-#include "Clang/PTHManager.h"
+#include "Utils/Errors.h"
 #include <llvm/ADT/StringSwitch.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/MemoryBuffer.h>
@@ -75,13 +75,6 @@ bool Preprocessor::EnterSourceFile(FileID FID, const DirectoryLookup *CurDir,
   if (MaxIncludeStackDepth < IncludeMacroStack.size())
     MaxIncludeStackDepth = IncludeMacroStack.size();
 
-  if (PTH) {
-    if (PTHLexer *PL = PTH->CreateLexer(FID)) {
-      EnterSourceFileWithPTH(PL, CurDir);
-      return false;
-    }
-  }
-
   // Get the MemoryBuffer for this FID, if it fails, we fail.
   bool Invalid = false;
   const llvm::MemoryBuffer *InputFile =
@@ -121,21 +114,6 @@ void Preprocessor::EnterSourceFileWithLexer(Lexer *TheLexer,
   // Notify the client, if desired, that we are in a new source file.
 }
 
-/// EnterSourceFileWithPTH - Add a source file to the top of the include stack
-/// and start getting tokens from it using the PTH cache.
-void Preprocessor::EnterSourceFileWithPTH(PTHLexer *PL,
-                                          const DirectoryLookup *CurDir) {
-
-  if (CurPPLexer || CurTokenLexer)
-    PushIncludeMacroStack();
-
-  CurDirLookup = CurDir;
-  CurPTHLexer.reset(PL);
-  CurPPLexer = CurPTHLexer.get();
-  CurLexerKind = CLK_PTHLexer;
-
-  // Notify the client, if desired, that we are in a new source file.
-}
 
 /// EnterMacro - Add a Macro to the top of the include stack and start lexing
 /// tokens from it instead of the current buffer.
@@ -298,7 +276,6 @@ bool Preprocessor::HandleEndOfFile(Token &Result, bool isEndOfMacro) {
   }
 
 
-  bool LeavingPCHThroughHeader = false;
 
   // If this is a #include'd file, pop it off the include stack and continue
   // lexing the #includer file.
@@ -313,9 +290,7 @@ bool Preprocessor::HandleEndOfFile(Token &Result, bool isEndOfMacro) {
         CurLexer->FormTokenWithChars(Result, CurLexer->BufferEnd, tok::eof);
         CurLexer.reset();
       } else {
-        assert(CurPTHLexer && "Got EOF but no current lexer set!");
-        CurPTHLexer->getEOF(Result);
-        CurPTHLexer.reset();
+        FATAL_ERROR("Got EOF but no current lexer set!");
       }
 
       CurPPLexer = nullptr;
@@ -344,11 +319,6 @@ bool Preprocessor::HandleEndOfFile(Token &Result, bool isEndOfMacro) {
     }
 
 
-    bool FoundPCHThroughHeader = false;
-    if (CurPPLexer && creatingPCHWithThroughHeader() &&
-        isPCHThroughHeader(
-            SourceMgr.getFileEntryForID(CurPPLexer->getFileID())))
-      FoundPCHThroughHeader = true;
 
     // We're done with the #included file.
     RemoveTopOfLexerStack();
@@ -362,16 +332,7 @@ bool Preprocessor::HandleEndOfFile(Token &Result, bool isEndOfMacro) {
     if (ExitedFromPredefinesFile)
       replayPreambleConditionalStack();
 
-    if (!isEndOfMacro && CurPPLexer && FoundPCHThroughHeader &&
-        (isInPrimaryFile() ||
-         CurPPLexer->getFileID() == getPredefinesFileID())) {
-      // Leaving the through header. Continue directly to end of main file
-      // processing.
-      LeavingPCHThroughHeader = true;
-    } else {
-      // Client should lex another token unless we generated an EOM.
-      return false;
-    }
+    return false;
   }
 
   // If this is the end of the main file, form an EOF token.
@@ -392,19 +353,12 @@ bool Preprocessor::HandleEndOfFile(Token &Result, bool isEndOfMacro) {
         Result.setLocation(Result.getLocation().getLocWithOffset(-1));
     }
 
-    if (creatingPCHWithThroughHeader() && !LeavingPCHThroughHeader) {
-      // Reached the end of the compilation without finding the through header.
-      Diag(CurLexer->getFileLoc(), diag::err_pp_through_header_not_seen)
-          << PPOpts->PCHThroughHeader << 0;
-    }
 
     if (!isIncrementalProcessingEnabled())
       // We're done with lexing.
       CurLexer.reset();
   } else {
-    assert(CurPTHLexer && "Got EOF but no current lexer set!");
-    CurPTHLexer->getEOF(Result);
-    CurPTHLexer.reset();
+    FATAL_ERROR("Got EOF but no current lexer set!");
   }
 
   if (!isIncrementalProcessingEnabled())

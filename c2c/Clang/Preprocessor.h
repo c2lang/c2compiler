@@ -25,7 +25,6 @@
 #include "Clang/TokenKinds.h"
 #include "Clang/Lexer.h"
 #include "Clang/MacroInfo.h"
-#include "Clang/PTHLexer.h"
 #include "Clang/Token.h"
 #include "Clang/TokenLexer.h"
 #include <llvm/ADT/ArrayRef.h>
@@ -88,7 +87,6 @@ public:
     assert(Kind != tok::identifier &&
            "Identifiers should be created by TokenValue(IdentifierInfo *)");
     assert(!tok::isLiteral(Kind) && "Literals are not supported.");
-    assert(!tok::isAnnotation(Kind) && "Annotations are not supported.");
   }
 
   TokenValue(IdentifierInfo *II) : Kind(tok::identifier), II(II) {}
@@ -135,9 +133,6 @@ class Preprocessor {
   /// External source of macros.
   ExternalPreprocessorSource *ExternalSource;
 
-  /// An optional PTHManager object used for getting tokens from
-  /// a token cache rather than lexing the original source file.
-  std::unique_ptr<PTHManager> PTH;
 
   /// A BumpPtrAllocator object used to quickly allocate and release
   /// objects internal to the Preprocessor.
@@ -279,8 +274,7 @@ public:
   };
 
 private:
-  friend class ASTReader;
-  friend class MacroArgs;
+    friend class MacroArgs;
 
   class PreambleConditionalStackStore {
     enum State {
@@ -332,11 +326,6 @@ private:
   /// Only one of CurLexer, CurPTHLexer, or CurTokenLexer will be non-null.
   std::unique_ptr<Lexer> CurLexer;
 
-  /// The current top of stack that we're lexing from if
-  /// not expanding from a macro and we are lexing from a PTH cache.
-  ///
-  /// Only one of CurLexer, CurPTHLexer, or CurTokenLexer will be non-null.
-  std::unique_ptr<PTHLexer> CurPTHLexer;
 
   /// The current top of the stack what we're lexing from
   /// if not expanding a macro.
@@ -359,7 +348,6 @@ private:
   /// The kind of lexer we're currently working with.
   enum CurLexerKind {
     CLK_Lexer,
-    CLK_PTHLexer,
     CLK_TokenLexer,
     CLK_CachingLexer,
   } CurLexerKind = CLK_Lexer;
@@ -371,7 +359,6 @@ private:
   struct IncludeStackInfo {
     enum CurLexerKind           CurLexerKind;
     std::unique_ptr<Lexer>      TheLexer;
-    std::unique_ptr<PTHLexer>   ThePTHLexer;
     PreprocessorLexer          *ThePPLexer;
     std::unique_ptr<TokenLexer> TheTokenLexer;
     const DirectoryLookup      *TheDirLookup;
@@ -380,13 +367,11 @@ private:
     // versions, only needed to pacify MSVC.
     IncludeStackInfo(enum CurLexerKind CurLexerKind,
                      std::unique_ptr<Lexer> &&TheLexer,
-                     std::unique_ptr<PTHLexer> &&ThePTHLexer,
                      PreprocessorLexer *ThePPLexer,
                      std::unique_ptr<TokenLexer> &&TheTokenLexer,
                      const DirectoryLookup *TheDirLookup)
         : CurLexerKind(std::move(CurLexerKind)),
           TheLexer(std::move(TheLexer)),
-          ThePTHLexer(std::move(ThePTHLexer)),
           ThePPLexer(std::move(ThePPLexer)),
           TheTokenLexer(std::move(TheTokenLexer)),
           TheDirLookup(std::move(TheDirLookup)) {}
@@ -537,13 +522,7 @@ private:
   /// The file ID for the preprocessor predefines.
   FileID PredefinesFileID;
 
-  /// The file ID for the PCH through header.
-  FileID PCHThroughHeaderFileID;
-
-  /// Whether tokens are being skipped until the through header is seen.
-  bool SkippingUntilPCHThroughHeader = false;
-
-  /// \{
+    /// \{
   /// Cache of macro expanders to reduce malloc traffic.
   enum { TokenLexerCacheSize = 8 };
   unsigned NumCachedTokenLexers;
@@ -641,11 +620,8 @@ public:
   const IdentifierTable &getIdentifierTable() const { return Identifiers; }
   llvm::BumpPtrAllocator &getPreprocessorAllocator() { return BP; }
 
-  void setPTHManager(PTHManager* pm);
 
-  PTHManager *getPTHManager() { return PTH.get(); }
-
-  void setExternalSource(ExternalPreprocessorSource *Source) {
+    void setExternalSource(ExternalPreprocessorSource *Source) {
     ExternalSource = Source;
   }
 
@@ -880,19 +856,7 @@ public:
   }
 
 
-    /// Returns true if the FileEntry is the PCH through header.
-  bool isPCHThroughHeader(const FileEntry *File);
-
-  /// True if creating a PCH with a through header.
-  bool creatingPCHWithThroughHeader();
-
-  /// True if using a PCH with a through header.
-  bool usingPCHWithThroughHeader();
-
-  /// Skip tokens until after the #include of the through header.
-  void SkipTokensUntilPCHThroughHeader();
-
-  /// Process directives while skipping until the through header is found.
+    /// Process directives while skipping until the through header is found.
   void HandleSkippedThroughHeaderDirective(Token &Result,
                                            SourceLocation HashLoc);
 
@@ -1097,21 +1061,8 @@ public:
     CachedTokens.insert(CachedTokens.begin()+CachedLexPos, Tok);
   }
 
-  /// We notify the Preprocessor that if it is caching tokens (because
-  /// backtrack is enabled) it should replace the most recent cached tokens
-  /// with the given annotation token. This function has no effect if
-  /// backtracking is not enabled.
-  ///
-  /// Note that the use of this function is just for optimization, so that the
-  /// cached tokens doesn't get re-parsed and re-resolved after a backtrack is
-  /// invoked.
-  void AnnotateCachedTokens(const Token &Tok) {
-    assert(Tok.isAnnotation() && "Expected annotation token");
-    if (CachedLexPos != 0 && isBacktrackEnabled())
-      AnnotatePreviousCachedTokens(Tok);
-  }
 
-  /// Get the location of the last cached token, suitable for setting the end
+    /// Get the location of the last cached token, suitable for setting the end
   /// location of an annotation token.
   SourceLocation getLastCachedTokenLocation() const {
     assert(CachedLexPos != 0);
@@ -1129,25 +1080,8 @@ public:
   /// most recent token must to be updated to reflect that.
   void ReplacePreviousCachedToken(ArrayRef<Token> NewToks);
 
-  /// Replace the last token with an annotation token.
-  ///
-  /// Like AnnotateCachedTokens(), this routine replaces an
-  /// already-parsed (and resolved) token with an annotation
-  /// token. However, this routine only replaces the last token with
-  /// the annotation token; it does not affect any other cached
-  /// tokens. This function has no effect if backtracking is not
-  /// enabled.
-  void ReplaceLastTokenWithAnnotation(const Token &Tok) {
-    assert(Tok.isAnnotation() && "Expected annotation token");
-    if (CachedLexPos != 0 && isBacktrackEnabled())
-      CachedTokens[CachedLexPos-1] = Tok;
-  }
 
-  /// Enter an annotation token into the token stream.
-  void EnterAnnotationToken(SourceRange Range, tok::TokenKind Kind,
-                            void *AnnotationVal);
-
-  /// Update the current token to represent the provided
+    /// Update the current token to represent the provided
   /// identifier, in order to cache an action performed by typo correction.
   void TypoCorrectToken(const Token &Tok) {
     assert(Tok.getIdentifierInfo() && "Expected identifier token");
@@ -1580,7 +1514,7 @@ private:
   void PushIncludeMacroStack() {
     assert(CurLexerKind != CLK_CachingLexer && "cannot push a caching lexer");
     IncludeMacroStack.emplace_back(CurLexerKind,
-                                   std::move(CurLexer), std::move(CurPTHLexer),
+                                   std::move(CurLexer),
                                    CurPPLexer, std::move(CurTokenLexer),
                                    CurDirLookup);
     CurPPLexer = nullptr;
@@ -1588,7 +1522,6 @@ private:
 
   void PopIncludeMacroStack() {
     CurLexer = std::move(IncludeMacroStack.back().TheLexer);
-    CurPTHLexer = std::move(IncludeMacroStack.back().ThePTHLexer);
     CurPPLexer = IncludeMacroStack.back().ThePPLexer;
     CurTokenLexer = std::move(IncludeMacroStack.back().TheTokenLexer);
     CurDirLookup  = IncludeMacroStack.back().TheDirLookup;
@@ -1649,10 +1582,7 @@ private:
                                     bool FoundNonSkipPortion, bool FoundElse,
                                     SourceLocation ElseLoc = SourceLocation());
 
-  /// A fast PTH version of SkipExcludedConditionalBlock.
-  void PTHSkipExcludedConditionalBlock();
-
-  /// Information about the result for evaluating an expression for a
+    /// Information about the result for evaluating an expression for a
   /// preprocessor directive.
   struct DirectiveEvalResult {
     /// Whether the expression was evaluated as true or not.
@@ -1703,10 +1633,6 @@ private:
   /// start lexing tokens from it instead of the current buffer.
   void EnterSourceFileWithLexer(Lexer *TheLexer, const DirectoryLookup *Dir);
 
-  /// Add a lexer to the top of the include stack and
-  /// start getting tokens from it using the PTH cache.
-  void EnterSourceFileWithPTH(PTHLexer *PL, const DirectoryLookup *Dir);
-
 public:
   /// Set the FileID for the preprocessor predefines.
   void setPredefinesFileID(FileID FID) {
@@ -1715,10 +1641,7 @@ public:
   }
 private:
 
-  /// Set the FileID for the PCH through header.
-  void setPCHThroughHeaderFileID(FileID FID);
-
-  /// Returns true if we are lexing from a file and not a
+    /// Returns true if we are lexing from a file and not a
   /// pragma or a macro.
   static bool IsFileLexer(const Lexer* L, const PreprocessorLexer* P) {
     return L ? true : P != nullptr;
@@ -1739,7 +1662,7 @@ private:
   bool InCachingLexMode() const {
     // If the Lexer pointers are 0 and IncludeMacroStack is empty, it means
     // that we are past EOF, not that we are in CachingLex mode.
-    return !CurPPLexer && !CurTokenLexer && !CurPTHLexer &&
+    return !CurPPLexer && !CurTokenLexer &&
            !IncludeMacroStack.empty();
   }
 
@@ -1751,9 +1674,8 @@ private:
   }
 
   const Token &PeekAhead(unsigned N);
-  void AnnotatePreviousCachedTokens(const Token &Tok);
 
-  //===--------------------------------------------------------------------===//
+    //===--------------------------------------------------------------------===//
   /// Handle*Directive - implement the various preprocessor directives.  These
   /// should side-effect the current preprocessor object so that the next call
   /// to Lex() will return the appropriate token next.

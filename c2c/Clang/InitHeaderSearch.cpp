@@ -71,20 +71,8 @@ public:
     SystemHeaderPrefixes.emplace_back(Prefix, IsSystemHeader);
   }
 
-  /// AddGnuCPlusPlusIncludePaths - Add the necessary paths to support a gnu
-  ///  libstdc++.
-  /// Returns true if the \p Base path was found, false if it does not exist.
-  bool AddGnuCPlusPlusIncludePaths(StringRef Base, StringRef ArchDir,
-                                   StringRef Dir32, StringRef Dir64,
-                                   const llvm::Triple &triple);
 
-  /// AddMinGWCPlusPlusIncludePaths - Add the necessary paths to support a MinGW
-  ///  libstdc++.
-  void AddMinGWCPlusPlusIncludePaths(StringRef Base,
-                                     StringRef Arch,
-                                     StringRef Version);
-
-  // AddDefaultCIncludePaths - Add paths that should always be searched.
+    // AddDefaultCIncludePaths - Add paths that should always be searched.
   void AddDefaultCIncludePaths(const llvm::Triple &triple,
                                const HeaderSearchOptions &HSOpts);
 
@@ -169,37 +157,6 @@ bool InitHeaderSearch::AddUnmappedPath(const Twine &Path, IncludeDirGroup Group,
   return false;
 }
 
-bool InitHeaderSearch::AddGnuCPlusPlusIncludePaths(StringRef Base,
-                                                   StringRef ArchDir,
-                                                   StringRef Dir32,
-                                                   StringRef Dir64,
-                                                   const llvm::Triple &triple) {
-  // Add the base dir
-  bool IsBaseFound = AddPath(Base, CXXSystem, false);
-
-  // Add the multilib dirs
-  llvm::Triple::ArchType arch = triple.getArch();
-  bool is64bit = arch == llvm::Triple::ppc64 || arch == llvm::Triple::x86_64;
-  if (is64bit)
-    AddPath(Base + "/" + ArchDir + "/" + Dir64, CXXSystem, false);
-  else
-    AddPath(Base + "/" + ArchDir + "/" + Dir32, CXXSystem, false);
-
-  // Add the backward dir
-  AddPath(Base + "/backward", CXXSystem, false);
-  return IsBaseFound;
-}
-
-void InitHeaderSearch::AddMinGWCPlusPlusIncludePaths(StringRef Base,
-                                                     StringRef Arch,
-                                                     StringRef Version) {
-  AddPath(Base + "/" + Arch + "/" + Version + "/include/c++",
-          CXXSystem, false);
-  AddPath(Base + "/" + Arch + "/" + Version + "/include/c++/" + Arch,
-          CXXSystem, false);
-  AddPath(Base + "/" + Arch + "/" + Version + "/include/c++/backward",
-          CXXSystem, false);
-}
 
 void InitHeaderSearch::AddDefaultCIncludePaths(const llvm::Triple &triple,
                                             const HeaderSearchOptions &HSOpts) {
