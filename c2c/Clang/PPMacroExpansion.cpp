@@ -25,7 +25,6 @@
 #include "Clang/MacroInfo.h"
 #include "Clang/Preprocessor.h"
 #include "Clang/PreprocessorLexer.h"
-#include "Clang/PTHLexer.h"
 #include "Clang/Token.h"
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/DenseMap.h>
@@ -211,8 +210,6 @@ bool Preprocessor::isNextPPTokenLParen() {
   unsigned Val;
   if (CurLexer)
     Val = CurLexer->isNextPPTokenLParen();
-  else if (CurPTHLexer)
-    Val = CurPTHLexer->isNextPPTokenLParen();
   else
     Val = CurTokenLexer->isNextTokenLParen();
 
@@ -225,8 +222,6 @@ bool Preprocessor::isNextPPTokenLParen() {
     for (const IncludeStackInfo &Entry : llvm::reverse(IncludeMacroStack)) {
       if (Entry.TheLexer)
         Val = Entry.TheLexer->isNextPPTokenLParen();
-      else if (Entry.ThePTHLexer)
-        Val = Entry.ThePTHLexer->isNextPPTokenLParen();
       else
         Val = Entry.TheTokenLexer->isNextTokenLParen();
 
@@ -596,7 +591,7 @@ MacroArgs *Preprocessor::ReadMacroCallArgumentList(Token &MacroName,
         // If this is a comment token in the argument list and we're just in
         // -C mode (not -CC mode), discard the comment.
         continue;
-      } else if (!Tok.isAnnotation() && Tok.getIdentifierInfo() != nullptr) {
+      } else if (Tok.getIdentifierInfo() != nullptr) {
         // Reading macro arguments can cause macros that we are currently
         // expanding from to be popped off the expansion stack.  Doing so causes
         // them to be reenabled for expansion.  Here we record whether any
@@ -983,7 +978,7 @@ void Preprocessor::ExpandBuiltinMacro(Token &Tok) {
       Diag(getLocForEndOfToken(Loc), diag::err_pp_expected_after)
         << II << tok::l_paren;
       // If the next token isn't valid as our argument, we can't recover.
-      if (!Tok.isAnnotation() && Tok.getIdentifierInfo())
+      if (Tok.getIdentifierInfo())
         Tok.setKind(tok::identifier);
       return;
     }
@@ -991,13 +986,13 @@ void Preprocessor::ExpandBuiltinMacro(Token &Tok) {
     SourceLocation LParenLoc = Tok.getLocation();
     LexNonComment(Tok);
 
-    if (!Tok.isAnnotation() && Tok.getIdentifierInfo())
+    if (Tok.getIdentifierInfo())
       Tok.setKind(tok::identifier);
     else {
       Diag(Tok.getLocation(), diag::err_pp_identifier_arg_not_identifier)
         << Tok.getKind();
       // Don't walk past anything that's not a real token.
-      if (Tok.isOneOf(tok::eof, tok::eod) || Tok.isAnnotation())
+      if (Tok.isOneOf(tok::eof, tok::eod))
         return;
     }
 

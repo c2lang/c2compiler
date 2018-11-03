@@ -57,7 +57,6 @@ add_library(c2core
     Clang/PPExpressions.cpp
     Clang/PPLexerChange.cpp
     Clang/PPMacroExpansion.cpp
-    Clang/PTHLexer.cpp
     Clang/Preprocessor.cpp
     Clang/PreprocessorLexer.cpp
     Clang/ScratchBuffer.cpp

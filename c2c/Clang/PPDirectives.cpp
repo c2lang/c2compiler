@@ -26,7 +26,6 @@
 #include "Clang/MacroInfo.h"
 #include "Clang/Preprocessor.h"
 #include "Clang/PreprocessorOptions.h"
-#include "Clang/PTHLexer.h"
 #include "Clang/Token.h"
 #include "Clang/VariadicMacroSupport.h"
 #include <llvm/ADT/ArrayRef.h>
@@ -343,10 +342,6 @@ void Preprocessor::SkipExcludedConditionalBlock(SourceLocation HashTokenLoc,
     CurPPLexer->pushConditionalLevel(IfTokenLoc, /*isSkipping*/ false,
                                      FoundNonSkipPortion, FoundElse);
 
-  if (CurPTHLexer) {
-    PTHSkipExcludedConditionalBlock();
-    return;
-  }
 
   // Enter raw mode to disable identifier lookup (and thus macro expansion),
   // disabling warnings, etc.
@@ -500,7 +495,7 @@ void Preprocessor::SkipExcludedConditionalBlock(SourceLocation HashTokenLoc,
         if (CondInfo.WasSkipping || CondInfo.FoundNonSkip) {
           DiscardUntilEndOfDirective();
         } else {
-          const SourceLocation CondBegin = CurPPLexer->getSourceLocation();
+          CurPPLexer->getSourceLocation();
           // Restore the value of LexingRawMode so that identifiers are
           // looked up, etc, inside the #elif expression.
           assert(CurPPLexer->LexingRawMode && "We have to be skipping here!");
@@ -528,83 +523,6 @@ void Preprocessor::SkipExcludedConditionalBlock(SourceLocation HashTokenLoc,
   CurPPLexer->LexingRawMode = false;
 
 
-}
-
-void Preprocessor::PTHSkipExcludedConditionalBlock() {
-  while (true) {
-    assert(CurPTHLexer);
-    assert(CurPTHLexer->LexingRawMode == false);
-
-    // Skip to the next '#else', '#elif', or #endif.
-    if (CurPTHLexer->SkipBlock()) {
-      // We have reached an #endif.  Both the '#' and 'endif' tokens
-      // have been consumed by the PTHLexer.  Just pop off the condition level.
-      PPConditionalInfo CondInfo;
-      bool InCond = CurPTHLexer->popConditionalLevel(CondInfo);
-      (void)InCond;  // Silence warning in no-asserts mode.
-      assert(!InCond && "Can't be skipping if not in a conditional!");
-      break;
-    }
-
-    // We have reached a '#else' or '#elif'.  Lex the next token to get
-    // the directive flavor.
-    Token Tok;
-    LexUnexpandedToken(Tok);
-
-    // We can actually look up the IdentifierInfo here since we aren't in
-    // raw mode.
-    tok::PPKeywordKind K = Tok.getIdentifierInfo()->getPPKeywordID();
-
-    if (K == tok::pp_else) {
-      // #else: Enter the else condition.  We aren't in a nested condition
-      //  since we skip those. We're always in the one matching the last
-      //  blocked we skipped.
-      PPConditionalInfo &CondInfo = CurPTHLexer->peekConditionalLevel();
-      // Note that we've seen a #else in this conditional.
-      CondInfo.FoundElse = true;
-
-      // If the #if block wasn't entered then enter the #else block now.
-      if (!CondInfo.FoundNonSkip) {
-        CondInfo.FoundNonSkip = true;
-
-        // Scan until the eod token.
-        CurPTHLexer->ParsingPreprocessorDirective = true;
-        DiscardUntilEndOfDirective();
-        CurPTHLexer->ParsingPreprocessorDirective = false;
-
-        break;
-      }
-
-      // Otherwise skip this block.
-      continue;
-    }
-
-    assert(K == tok::pp_elif);
-    PPConditionalInfo &CondInfo = CurPTHLexer->peekConditionalLevel();
-
-    // If this is a #elif with a #else before it, report the error.
-    if (CondInfo.FoundElse)
-      Diag(Tok, diag::pp_err_elif_after_else);
-
-    // If this is in a skipping block or if we're already handled this #if
-    // block, don't bother parsing the condition.  We just skip this block.
-    if (CondInfo.FoundNonSkip)
-      continue;
-
-    // Evaluate the condition of the #elif.
-    IdentifierInfo *IfNDefMacro = nullptr;
-    CurPTHLexer->ParsingPreprocessorDirective = true;
-    bool ShouldEnter = EvaluateDirectiveExpression(IfNDefMacro).Conditional;
-    CurPTHLexer->ParsingPreprocessorDirective = false;
-
-    // If this condition is true, enter it!
-    if (ShouldEnter) {
-      CondInfo.FoundNonSkip = true;
-      break;
-    }
-
-    // Otherwise, skip this block and go to the next one.
-  }
 }
 
 
@@ -796,8 +714,6 @@ void Preprocessor::HandleDirective(Token &Result) {
     if (IdentifierInfo *II = Result.getIdentifierInfo()) {
       switch (II->getPPKeywordID()) {
       case tok::pp_include:
-      case tok::pp_include_next:
-      case tok::pp___include_macros:
         Diag(Result, diag::err_embedded_directive) << II->getName();
         DiscardUntilEndOfDirective();
         return;
@@ -812,8 +728,6 @@ void Preprocessor::HandleDirective(Token &Result) {
   // and reset to previous state when returning from this function.
   ResetMacroExpansionHelper helper(this);
 
-  if (SkippingUntilPCHThroughHeader)
-    return HandleSkippedThroughHeaderDirective(Result, SavedHash.getLocation());
 
   switch (Result.getKind()) {
   case tok::eod:
@@ -855,9 +769,6 @@ void Preprocessor::HandleDirective(Token &Result) {
     case tok::pp_include:
       // Handle #include.
       return HandleIncludeDirective(SavedHash.getLocation(), Result);
-    case tok::pp___include_macros:
-      // Handle -imacros.
-      return HandleIncludeMacrosDirective(SavedHash.getLocation(), Result);
 
     // C99 6.10.3 - Macro Replacement.
     case tok::pp_define:
@@ -874,9 +785,6 @@ void Preprocessor::HandleDirective(Token &Result) {
       return HandleUserDiagnosticDirective(Result, false);
 
 
-    // GNU Extensions.
-    case tok::pp_include_next:
-      return HandleIncludeNextDirective(SavedHash.getLocation(), Result);
 
     case tok::pp_warning:
       Diag(Result, diag::ext_pp_warning_directive);
@@ -1193,9 +1101,6 @@ void Preprocessor::HandleDigitDirective(Token &DigitTok) {
 ///
 void Preprocessor::HandleUserDiagnosticDirective(Token &Tok,
                                                  bool isWarning) {
-  // PTH doesn't emit #warning or #error directives.
-  if (CurPTHLexer)
-    return CurPTHLexer->DiscardToEndOfLine();
 
   // Read the rest of the line raw.  We do this because we don't want macros
   // to be expanded and we don't require that the tokens be valid preprocessing
@@ -1408,21 +1313,6 @@ bool Preprocessor::ConcatenateIncludeName(SmallString<128> &FilenameBuffer,
   return true;
 }
 
-/// Push a token onto the token stream containing an annotation.
-void Preprocessor::EnterAnnotationToken(SourceRange Range,
-                                        tok::TokenKind Kind,
-                                        void *AnnotationVal) {
-  // FIXME: Produce this as the current token directly, rather than
-  // allocating a new token for it.
-  auto Tok = llvm::make_unique<Token[]>(1);
-  Tok[0].startToken();
-  Tok[0].setKind(Kind);
-  Tok[0].setLocation(Range.getBegin());
-  Tok[0].setAnnotationEndLoc(Range.getEnd());
-  Tok[0].setAnnotationValue(AnnotationVal);
-  EnterTokenStream(std::move(Tok), 1, true);
-}
-
 
 // Given a vector of path components and a string containing the real
 // path to the file, build a properly-cased replacement in the vector,
@@ -1582,11 +1472,6 @@ void Preprocessor::HandleIncludeDirective(SourceLocation HashLoc,
     }
   }
 
-  if (usingPCHWithThroughHeader() && SkippingUntilPCHThroughHeader) {
-    if (isPCHThroughHeader(File))
-      SkippingUntilPCHThroughHeader = false;
-    return;
-  }
 
   // Should we enter the source file? Set to false if either the source file is
   // known to have no effect beyond its effect on module visibility -- that is,
@@ -2115,15 +2000,6 @@ void Preprocessor::HandleDefineDirective(
     }
   }
 
-  // When skipping just warn about macros that do not match.
-  if (SkippingUntilPCHThroughHeader) {
-    const MacroInfo *OtherMI = getMacroInfo(MacroNameTok.getIdentifierInfo());
-    if (!OtherMI || !MI->isIdenticalTo(*OtherMI, *this,
-                             /*Syntactic=*/0))
-      Diag(MI->getDefinitionLoc(), diag::warn_pp_macro_def_mismatch_with_pch)
-          << MacroNameTok.getIdentifierInfo();
-    return;
-  }
 
   // Finally, if this identifier already had a macro defined for it, verify that
   // the macro bodies are identical, and issue diagnostics if they are not.
@@ -2154,8 +2030,7 @@ void Preprocessor::HandleDefineDirective(
       WarnUnusedMacroLocs.erase(OtherMI->getDefinitionLoc());
   }
 
-  DefMacroDirective *MD =
-      appendDefMacroDirective(MacroNameTok.getIdentifierInfo(), MI);
+  appendDefMacroDirective(MacroNameTok.getIdentifierInfo(), MI);
 
   assert(!MI->isUsed());
   // If we need warning for not using the macro, add its location in the
@@ -2392,7 +2267,7 @@ void Preprocessor::HandleElifDirective(Token &ElifToken,
   // the block immediately before it was included).
   CurPPLexer->getSourceLocation();
   DiscardUntilEndOfDirective();
-  const SourceLocation ConditionalEnd = CurPPLexer->getSourceLocation();
+  CurPPLexer->getSourceLocation();
 
   PPConditionalInfo CI;
   if (CurPPLexer->popConditionalLevel(CI)) {

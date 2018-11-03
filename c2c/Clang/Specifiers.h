@@ -300,11 +300,8 @@ namespace c2lang {
     return uint8_t(L) > uint8_t(R);
   }
 
-  /// Retrieve the spelling of the given nullability kind.
-  llvm::StringRef getNullabilitySpelling(NullabilityKind kind,
-                                         bool isContextSensitive = false);
 
-  /// Kinds of parameter ABI.
+/// Kinds of parameter ABI.
   enum class ParameterABI {
     /// This parameter uses ordinary ABI rules for its type.
     Ordinary,

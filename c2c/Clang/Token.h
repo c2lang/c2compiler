@@ -114,43 +114,34 @@ public:
     return tok::isLiteral(getKind());
   }
 
-  /// Return true if this is any of tok::annot_* kind tokens.
-  bool isAnnotation() const {
-    return tok::isAnnotation(getKind());
-  }
 
-  /// Return a source location identifier for the specified
+    /// Return a source location identifier for the specified
   /// offset in the current file.
   SourceLocation getLocation() const {
     return SourceLocation::getFromRawEncoding(Loc);
   }
   unsigned getLength() const {
-    assert(!isAnnotation() && "Annotation tokens have no length field");
     return UintData;
   }
 
   void setLocation(SourceLocation L) { Loc = L.getRawEncoding(); }
   void setLength(unsigned Len) {
-    assert(!isAnnotation() && "Annotation tokens have no length field");
     UintData = Len;
   }
 
   SourceLocation getAnnotationEndLoc() const {
-    assert(isAnnotation() && "Used AnnotEndLocID on non-annotation token");
     return SourceLocation::getFromRawEncoding(UintData ? UintData : Loc);
   }
   void setAnnotationEndLoc(SourceLocation L) {
-    assert(isAnnotation() && "Used AnnotEndLocID on non-annotation token");
     UintData = L.getRawEncoding();
   }
 
   SourceLocation getLastLoc() const {
-    return isAnnotation() ? getAnnotationEndLoc() : getLocation();
+    return getLocation();
   }
 
   SourceLocation getEndLoc() const {
-    return isAnnotation() ? getAnnotationEndLoc()
-                          : getLocation().getLocWithOffset(getLength());
+    return getLocation().getLocWithOffset(getLength());
   }
 
   /// SourceRange of the group of tokens that this annotation token
@@ -177,8 +168,6 @@ public:
   IdentifierInfo *getIdentifierInfo() const {
     assert(isNot(tok::raw_identifier) &&
            "getIdentifierInfo() on a tok::raw_identifier token!");
-    assert(!isAnnotation() &&
-           "getIdentifierInfo() on an annotation token!");
     if (isLiteral()) return nullptr;
     if (is(tok::eof)) return nullptr;
     return (IdentifierInfo*) PtrData;
@@ -221,16 +210,8 @@ public:
     PtrData = const_cast<char*>(Ptr);
   }
 
-  void *getAnnotationValue() const {
-    assert(isAnnotation() && "Used AnnotVal on non-annotation token");
-    return PtrData;
-  }
-  void setAnnotationValue(void *val) {
-    assert(isAnnotation() && "Used AnnotVal on non-annotation token");
-    PtrData = val;
-  }
 
-  /// Set the specified flag.
+    /// Set the specified flag.
   void setFlag(TokenFlags Flag) {
     Flags |= Flag;
   }

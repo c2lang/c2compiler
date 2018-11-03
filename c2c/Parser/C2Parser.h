@@ -54,7 +54,6 @@ namespace prec {
     Bitwise         = 7,    // ^, |, &
     Shift           = 8,    // <<, >>
     Multiplicative  = 9,    // *, /, %
-    PointerToMember = 10    // .*, ->*
   };
 }
 

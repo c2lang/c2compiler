@@ -634,7 +634,7 @@ bool TokenLexer::Lex(Token &Tok) {
   HasLeadingSpace = false;
 
   // Handle recursive expansion!
-  if (!Tok.isAnnotation() && Tok.getIdentifierInfo() != nullptr) {
+  if (Tok.getIdentifierInfo() != nullptr) {
     // Change the kind of this identifier to the appropriate token kind, e.g.
     // turning "for" into a keyword.
     IdentifierInfo *II = Tok.getIdentifierInfo();
