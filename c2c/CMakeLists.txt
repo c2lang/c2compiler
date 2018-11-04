@@ -64,7 +64,6 @@ add_library(c2core
     Clang/SourceManager.cpp
     Clang/TextDiagnostic.cpp
     Clang/TextDiagnosticPrinter.cpp
-    Clang/TokenConcatenation.cpp
     Clang/TokenKinds.cpp
     Clang/TokenLexer.cpp
     Clang/VirtualFileSystem.cpp

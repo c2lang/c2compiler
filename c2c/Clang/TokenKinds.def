@@ -65,27 +65,12 @@ PPKEYWORD(ifndef)
 PPKEYWORD(elif)
 PPKEYWORD(else)
 PPKEYWORD(endif)
-PPKEYWORD(defined)
 
-// C99 6.10.2 - Source File Inclusion.
-PPKEYWORD(include)
 
 // C99 6.10.3 - Macro Replacement.
 PPKEYWORD(define)
 PPKEYWORD(undef)
 
-// C99 6.10.4 - Line Control.
-PPKEYWORD(line)
-
-// C99 6.10.5 - Error Directive.
-PPKEYWORD(error)
-
-// GNU Extensions.
-PPKEYWORD(warning)
-PPKEYWORD(ident)
-PPKEYWORD(sccs)
-PPKEYWORD(assert)
-PPKEYWORD(unassert)
 
 
 //===----------------------------------------------------------------------===//

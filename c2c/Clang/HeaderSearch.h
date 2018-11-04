@@ -109,12 +109,8 @@ struct HeaderFileInfo {
         External(false),
         Resolved(false), IndexHeaderMapHeader(false), IsValid(false)  {}
 
-  /// Retrieve the controlling macro for this header file, if
-  /// any.
-  const IdentifierInfo *
-  getControllingMacro(ExternalPreprocessorSource *External);
 
-  /// Determine whether this is a non-default header file info, e.g.,
+    /// Determine whether this is a non-default header file info, e.g.,
   /// it corresponds to an actual header we've included or tried to include.
   bool isNonDefault() const {
     return isImport || isPragmaOnce || NumIncludes || ControllingMacro ||
@@ -227,13 +223,6 @@ class HeaderSearch {
   /// headers were included as framework headers.
   llvm::StringSet<llvm::BumpPtrAllocator> FrameworkNames;
 
-  /// Entity used to resolve the identifier IDs of controlling
-  /// macros into IdentifierInfo pointers, and keep the identifire up to date,
-  /// as needed.
-  ExternalPreprocessorSource *ExternalLookup = nullptr;
-
-  /// Entity used to look up stored header file information.
-  ExternalHeaderFileInfoSource *ExternalSource = nullptr;
 
   // Various statistics we track for performance analysis.
   unsigned NumIncluded = 0;
@@ -271,16 +260,8 @@ public:
     //LookupFileCache.clear();
   }
 
-  /// Add an additional search path.
-  void AddSearchPath(const DirectoryLookup &dir, bool isAngled) {
-    unsigned idx = isAngled ? SystemDirIdx : AngledDirIdx;
-    SearchDirs.insert(SearchDirs.begin() + idx, dir);
-    if (!isAngled)
-      AngledDirIdx++;
-    SystemDirIdx++;
-  }
 
-  /// Set the list of system header prefixes.
+    /// Set the list of system header prefixes.
   void SetSystemHeaderPrefixes(ArrayRef<std::pair<std::string, bool>> P) {
     SystemHeaderPrefixes.assign(P.begin(), P.end());
   }
@@ -318,114 +299,8 @@ public:
     FileInfo.clear();
   }
 
-  void SetExternalLookup(ExternalPreprocessorSource *EPS) {
-    ExternalLookup = EPS;
-  }
 
-  ExternalPreprocessorSource *getExternalLookup() const {
-    return ExternalLookup;
-  }
-
-  /// Set the external source of header information.
-  void SetExternalSource(ExternalHeaderFileInfoSource *ES) {
-    ExternalSource = ES;
-  }
-
-
-    /// Given a "foo" or \<foo> reference, look up the indicated file,
-  /// return null on failure.
-  ///
-  /// \returns If successful, this returns 'UsedDir', the DirectoryLookup member
-  /// the file was found in, or null if not applicable.
-  ///
-  /// \param IncludeLoc Used for diagnostics if valid.
-  ///
-  /// \param isAngled indicates whether the file reference is a <> reference.
-  ///
-  /// \param CurDir If non-null, the file was found in the specified directory
-  /// search location.  This is used to implement \#include_next.
-  ///
-  /// \param Includers Indicates where the \#including file(s) are, in case
-  /// relative searches are needed. In reverse order of inclusion.
-  ///
-  /// \param SearchPath If non-null, will be set to the search path relative
-  /// to which the file was found. If the include path is absolute, SearchPath
-  /// will be set to an empty string.
-  ///
-  /// \param RelativePath If non-null, will be set to the path relative to
-  /// SearchPath at which the file was found. This only differs from the
-  /// Filename for framework includes.
-  ///
-  /// \param SuggestedModule If non-null, and the file found is semantically
-  /// part of a known module, this will be set to the module that should
-  /// be imported instead of preprocessing/parsing the file found.
-  ///
-  /// \param IsMapped If non-null, and the search involved header maps, set to
-  /// true.
-    const FileEntry *LookupFile(StringRef Filename,
-                                  SourceLocation IncludeLoc,
-                                  bool isAngled,
-                                  const DirectoryLookup *FromDir,
-                                  const DirectoryLookup *&CurDir,
-                                  ArrayRef <std::pair<const FileEntry *, const DirectoryEntry *>> Includers,
-                                  SmallVectorImpl<char> *SearchPath,
-                                  SmallVectorImpl<char> *RelativePath,
-                                  bool *IsMapped,
-                                  bool SkipCache);
-
-  /// Look up a subframework for the specified \#include file.
-  ///
-  /// For example, if \#include'ing <HIToolbox/HIToolbox.h> from
-  /// within ".../Carbon.framework/Headers/Carbon.h", check to see if
-  /// HIToolbox is a subframework within Carbon.framework.  If so, return
-  /// the FileEntry for the designated file, otherwise return null.
-  const FileEntry *LookupSubframeworkHeader(StringRef Filename,
-                                            const FileEntry *RelativeFileEnt,
-                                            SmallVectorImpl<char> *SearchPath,
-                                            SmallVectorImpl<char> *RelativePath);
-
-  /// Look up the specified framework name in our framework cache.
-  /// \returns The DirectoryEntry it is in if we know, null otherwise.
-  FrameworkCacheEntry &LookupFrameworkCache(StringRef FWName) {
-    return FrameworkMap[FWName];
-  }
-
-  /// Mark the specified file as a target of a \#include,
-  /// \#include_next, or \#import directive.
-  ///
-  /// \return false if \#including the file will have no effect or true
-  /// if we should include it.
-  bool ShouldEnterIncludeFile(Preprocessor &PP, const FileEntry *File,
-                              bool isImport);
-
-  /// Return whether the specified file is a normal header,
-  /// a system header, or a C++ friendly system header.
-  SrcMgr::CharacteristicKind getFileDirFlavor(const FileEntry *File) {
-    return (SrcMgr::CharacteristicKind)getFileInfo(File).DirInfo;
-  }
-
-  /// Mark the specified file as a "once only" file, e.g. due to
-  /// \#pragma once.
-  void MarkFileIncludeOnce(const FileEntry *File) {
-    HeaderFileInfo &FI = getFileInfo(File);
-    FI.isImport = true;
-    FI.isPragmaOnce = true;
-  }
-
-  /// Mark the specified file as a system header, e.g. due to
-  /// \#pragma GCC system_header.
-  void MarkFileSystemHeader(const FileEntry *File) {
-    getFileInfo(File).DirInfo = SrcMgr::C_System;
-  }
-
-
-    /// Increment the count for the number of times the specified
-  /// FileEntry has been entered.
-  void IncrementIncludeCount(const FileEntry *File) {
-    ++getFileInfo(File).NumIncludes;
-  }
-
-  /// Mark the specified file as having a controlling macro.
+    /// Mark the specified file as having a controlling macro.
   ///
   /// This is used by the multiple-include optimization to eliminate
   /// no-op \#includes.
@@ -439,49 +314,22 @@ public:
     return getFileInfo(File).NumIncludes == 1;
   }
 
-  /// Determine whether this file is intended to be safe from
-  /// multiple inclusions, e.g., it has \#pragma once or a controlling
-  /// macro.
-  ///
-  /// This routine does not consider the effect of \#import
-  bool isFileMultipleIncludeGuarded(const FileEntry *File);
 
-  /// CreateHeaderMap - This method returns a HeaderMap for the specified
+    /// CreateHeaderMap - This method returns a HeaderMap for the specified
   /// FileEntry, uniquing them through the 'HeaderMaps' datastructure.
   const HeaderMap *CreateHeaderMap(const FileEntry *FE);
-
-  /// Get filenames for all registered header maps.
-  void getHeaderMapFileNames(SmallVectorImpl<std::string> &Names) const;
 
 
     void IncrementFrameworkLookupCount() { ++NumFrameworkLookups; }
 
 
-private:
-
-    /// Look up the file with the specified name and determine its owning
-  /// module.
-  const FileEntry *getFile(StringRef FileName,
-                           SourceLocation IncludeLoc,
-                           const DirectoryEntry *Dir,
-                           bool IsSystemHeaderDir);
-
 public:
 
-    unsigned header_file_size() const { return FileInfo.size(); }
-
-  /// Return the HeaderFileInfo structure for the specified FileEntry,
+    /// Return the HeaderFileInfo structure for the specified FileEntry,
   /// in preparation for updating it in some way.
   HeaderFileInfo &getFileInfo(const FileEntry *FE);
 
-  /// Return the HeaderFileInfo structure for the specified FileEntry,
-  /// if it has ever been filled in.
-  /// \param WantExternal Whether the caller wants purely-external header file
-  ///        info (where \p External is true).
-  const HeaderFileInfo *getExistingFileInfo(const FileEntry *FE,
-                                            bool WantExternal = true) const;
-
-  // Used by external tools
+    // Used by external tools
   using search_dir_iterator = std::vector<DirectoryLookup>::const_iterator;
 
   search_dir_iterator search_dir_begin() const { return SearchDirs.begin(); }
@@ -510,29 +358,8 @@ public:
 
   search_dir_iterator system_dir_end() const { return SearchDirs.end(); }
 
-  /// Retrieve a uniqued framework name.
-  StringRef getUniqueFrameworkName(StringRef Framework);
 
     void PrintStats();
-
-  size_t getTotalMemory() const;
-
-private:
-  /// Describes what happened when we tried to load a module map file.
-  enum LoadModuleMapResult {
-    /// The module map file had already been loaded.
-    LMM_AlreadyLoaded,
-
-    /// The module map file was loaded by this invocation.
-    LMM_NewlyLoaded,
-
-    /// There is was directory with the given name.
-    LMM_NoDirectory,
-
-    /// There was either no module map file or the module map file was
-    /// invalid.
-    LMM_InvalidModuleMap
-  };
 
 };
 

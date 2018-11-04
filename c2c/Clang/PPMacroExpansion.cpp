@@ -19,7 +19,6 @@
 #include "Clang/SourceLocation.h"
 #include "Clang/CodeCompletionHandler.h"
 #include "Clang/DirectoryLookup.h"
-#include "Clang/ExternalPreprocessorSource.h"
 #include "Clang/LexDiagnostic.h"
 #include "Clang/MacroArgs.h"
 #include "Clang/MacroInfo.h"
@@ -77,63 +76,6 @@ void Preprocessor::appendMacroDirective(IdentifierInfo *II, MacroDirective *MD){
     II->setHasMacroDefinition(false);
 }
 
-void Preprocessor::setLoadedMacroDirective(IdentifierInfo *II,
-                                           MacroDirective *ED,
-                                           MacroDirective *MD) {
-  // Normally, when a macro is defined, it goes through appendMacroDirective()
-  // above, which chains a macro to previous defines, undefs, etc.
-  // However, in a pch, the whole macro history up to the end of the pch is
-  // stored, so ASTReader goes through this function instead.
-  // However, built-in macros are already registered in the Preprocessor
-  // ctor, and ASTWriter stops writing the macro chain at built-in macros,
-  // so in that case the chain from the pch needs to be spliced to the existing
-  // built-in.
-
-  assert(II && MD);
-  MacroState &StoredMD = CurSubmoduleState->Macros[II];
-
-  if (auto *OldMD = StoredMD.getLatest()) {
-    // shouldIgnoreMacro() in ASTWriter also stops at macros from the
-    // predefines buffer in module builds. However, in module builds, modules
-    // are loaded completely before predefines are processed, so StoredMD
-    // will be nullptr for them when they're loaded. StoredMD should only be
-    // non-nullptr for builtins read from a pch file.
-    assert(OldMD->getMacroInfo()->isBuiltinMacro() &&
-           "only built-ins should have an entry here");
-    assert(!OldMD->getPrevious() && "builtin should only have a single entry");
-    ED->setPrevious(OldMD);
-    StoredMD.setLatest(MD);
-  } else {
-    StoredMD = MD;
-  }
-
-  // Setup the identifier as having associated macro history.
-  II->setHasMacroDefinition(true);
-  if (!MD->isDefined())
-    II->setHasMacroDefinition(false);
-}
-
-
-void Preprocessor::dumpMacroInfo(const IdentifierInfo *II) {
-  const MacroState *State = nullptr;
-  auto Pos = CurSubmoduleState->Macros.find(II);
-  if (Pos != CurSubmoduleState->Macros.end())
-    State = &Pos->second;
-
-  llvm::errs() << "MacroState " << State << " " << II->getNameStart();
-  if (State && State->isAmbiguous(*this, II))
-    llvm::errs() << " ambiguous";
-  llvm::errs() << "\n";
-
-  // Dump local macro directives.
-  for (auto *MD = State ? State->getLatest() : nullptr; MD;
-       MD = MD->getPrevious()) {
-    llvm::errs() << " ";
-    MD->dump();
-  }
-
-
-}
 
 /// RegisterBuiltinMacro - Register the specified identifier in the identifier
 /// table and mark it as a builtin macro to be expanded.
@@ -180,10 +122,6 @@ static bool isTrivialSingleTokenExpansion(const MacroInfo *MI,
   // If the token isn't an identifier, it's always literally expanded.
   if (!II) return true;
 
-  // If the information about this identifier is out of date, update it from
-  // the external source.
-  if (II->isOutOfDate())
-    PP.getExternalSource()->updateOutOfDateIdentifier(*II);
 
   // If the identifier is a macro, and if that macro is enabled, it may be
   // expanded so it's not a trivial expansion.

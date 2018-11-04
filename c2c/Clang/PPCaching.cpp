@@ -15,18 +15,6 @@
 #include "Clang/Preprocessor.h"
 using namespace c2lang;
 
-// EnableBacktrackAtThisPos - From the point that this method is called, and
-// until CommitBacktrackedTokens() or Backtrack() is called, the Preprocessor
-// keeps track of the lexed tokens so that a subsequent Backtrack() call will
-// make the Preprocessor re-lex the same tokens.
-//
-// Nested backtracks are allowed, meaning that EnableBacktrackAtThisPos can
-// be called multiple times and CommitBacktrackedTokens/Backtrack calls will
-// be combined with the EnableBacktrackAtThisPos calls in reverse order.
-void Preprocessor::EnableBacktrackAtThisPos() {
-  BacktrackPositions.push_back(CachedLexPos);
-  EnterCachingLexMode();
-}
 
 // Disable the last EnableBacktrackAtThisPos call.
 void Preprocessor::CommitBacktrackedTokens() {
@@ -35,11 +23,6 @@ void Preprocessor::CommitBacktrackedTokens() {
   BacktrackPositions.pop_back();
 }
 
-Preprocessor::CachedTokensRange Preprocessor::LastCachedTokenRange() {
-  assert(isBacktrackEnabled());
-  auto PrevCachedLexPos = BacktrackPositions.back();
-  return CachedTokensRange{PrevCachedLexPos, CachedLexPos};
-}
 
 void Preprocessor::EraseCachedTokens(CachedTokensRange TokenRange) {
   assert(TokenRange.Begin <= TokenRange.End);

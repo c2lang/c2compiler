@@ -176,27 +176,7 @@ public:
               IntrusiveRefCntPtr<vfs::FileSystem> FS = nullptr);
   ~FileManager();
 
-  /// Installs the provided FileSystemStatCache object within
-  /// the FileManager.
-  ///
-  /// Ownership of this object is transferred to the FileManager.
-  ///
-  /// \param statCache the new stat cache to install. Ownership of this
-  /// object is transferred to the FileManager.
-  ///
-  /// \param AtBeginning whether this new stat cache must be installed at the
-  /// beginning of the chain of stat caches. Otherwise, it will be added to
-  /// the end of the chain.
-  void addStatCache(std::unique_ptr<FileSystemStatCache> statCache,
-                    bool AtBeginning = false);
-
-  /// Removes the specified FileSystemStatCache object from the manager.
-  void removeStatCache(FileSystemStatCache *statCache);
-
-  /// Removes all FileSystemStatCache objects from the manager.
-  void clearStatCaches();
-
-  /// Lookup, cache, and verify the specified directory (real or
+    /// Lookup, cache, and verify the specified directory (real or
   /// virtual).
   ///
   /// This returns NULL if the directory doesn't exist.
@@ -218,63 +198,20 @@ public:
   const FileEntry *getFile(StringRef Filename, bool OpenFile = false,
                            bool CacheFailure = true);
 
-  /// Returns the current file system options
-  FileSystemOptions &getFileSystemOpts() { return FileSystemOpts; }
-  const FileSystemOptions &getFileSystemOpts() const { return FileSystemOpts; }
 
-  IntrusiveRefCntPtr<vfs::FileSystem> getVirtualFileSystem() const {
-    return FS;
-  }
-
-  /// Retrieve a file entry for a "virtual" file that acts as
-  /// if there were a file with the given name on disk.
-  ///
-  /// The file itself is not accessed.
-  const FileEntry *getVirtualFile(StringRef Filename, off_t Size,
-                                  time_t ModificationTime);
-
-  /// Open the specified file as a MemoryBuffer, returning a new
+    /// Open the specified file as a MemoryBuffer, returning a new
   /// MemoryBuffer if successful, otherwise returning null.
   llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>>
   getBufferForFile(const FileEntry *Entry, bool isVolatile = false,
                    bool ShouldCloseOpenFile = true);
-  llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>>
-  getBufferForFile(StringRef Filename, bool isVolatile = false);
 
-  /// Get the 'stat' information for the given \p Path.
-  ///
-  /// If the path is relative, it will be resolved against the WorkingDir of the
-  /// FileManager's FileSystemOptions.
-  ///
-  /// \returns false on success, true on error.
-  bool getNoncachedStatValue(StringRef Path,
-                             vfs::Status &Result);
-
-  /// Remove the real file \p Entry from the cache.
-  void invalidateCache(const FileEntry *Entry);
-
-  /// If path is not absolute and FileSystemOptions set the working
+    /// If path is not absolute and FileSystemOptions set the working
   /// directory, the path is modified to be relative to the given
   /// working directory.
   /// \returns true if \c path changed.
   bool FixupRelativePath(SmallVectorImpl<char> &path) const;
 
-  /// Makes \c Path absolute taking into account FileSystemOptions and the
-  /// working directory option.
-  /// \returns true if \c Path changed to absolute.
-  bool makeAbsolutePath(SmallVectorImpl<char> &Path) const;
-
-  /// Produce an array mapping from the unique IDs assigned to each
-  /// file to the corresponding FileEntry pointer.
-  void GetUniqueIDMapping(
-                    SmallVectorImpl<const FileEntry *> &UIDToFiles) const;
-
-  /// Modifies the size and modification time of a previously created
-  /// FileEntry. Use with caution.
-  static void modifyFileEntry(FileEntry *File, off_t Size,
-                              time_t ModificationTime);
-
-  /// Retrieve the canonical name for a given directory.
+    /// Retrieve the canonical name for a given directory.
   ///
   /// This is a very expensive operation, despite its results being cached,
   /// and should only be used when the physical layout of the file system is

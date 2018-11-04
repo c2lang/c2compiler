@@ -195,23 +195,14 @@ tok::PPKeywordKind IdentifierInfo::getPPKeywordID() const {
   CASE( 2, 'i', '\0', if);
   CASE( 4, 'e', 'i', elif);
   CASE( 4, 'e', 's', else);
-  CASE( 4, 'l', 'n', line);
-  CASE( 4, 's', 'c', sccs);
   CASE( 5, 'e', 'd', endif);
-  CASE( 5, 'e', 'r', error);
-  CASE( 5, 'i', 'e', ident);
   CASE( 5, 'i', 'd', ifdef);
   CASE( 5, 'u', 'd', undef);
 
-  CASE( 6, 'a', 's', assert);
   CASE( 6, 'd', 'f', define);
   CASE( 6, 'i', 'n', ifndef);
 
-  CASE( 7, 'd', 'f', defined);
-  CASE( 7, 'i', 'c', include);
-  CASE( 7, 'w', 'r', warning);
 
-  CASE( 8, 'u', 'a', unassert);
 #undef CASE
 #undef HASH
   }

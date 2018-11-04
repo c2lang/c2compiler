@@ -124,14 +124,11 @@ class Preprocessor {
   LangOptions       &LangOpts;
   const C2::TargetInfo *Target = nullptr;
   const C2::TargetInfo *AuxTarget = nullptr;
-  FileManager       &FileMgr;
   SourceManager     &SourceMgr;
   MemoryBufferCache &PCMCache;
   std::unique_ptr<ScratchBuffer> ScratchBuf;
   HeaderSearch      &HeaderInfo;
 
-  /// External source of macros.
-  ExternalPreprocessorSource *ExternalSource;
 
 
   /// A BumpPtrAllocator object used to quickly allocate and release
@@ -154,12 +151,7 @@ class Preprocessor {
   // Next __COUNTER__ value, starts at 0.
   unsigned CounterValue = 0;
 
-  enum {
-    /// Maximum depth of \#includes.
-    MaxAllowedIncludeStackDepth = 200
-  };
-
-  // State that is set before the preprocessor begins.
+    // State that is set before the preprocessor begins.
   bool KeepComments : 1;
   bool KeepMacroComments : 1;
   bool SuppressIncludeNotFoundError : 1;
@@ -179,7 +171,7 @@ class Preprocessor {
 
   class ResetMacroExpansionHelper;
 
-  /// Whether we have already loaded macros from the external source.
+    /// Whether we have already loaded macros from the external source.
   mutable bool ReadMacrosFromExternalSource : 1;
 
   /// True if pragmas are enabled.
@@ -387,21 +379,8 @@ private:
     MacroExpandsInfo(Token Tok, MacroDefinition MD, SourceRange Range)
         : Tok(Tok), MD(MD), Range(Range) {}
   };
-  SmallVector<MacroExpandsInfo, 2> DelayedMacroExpandsCallbacks;
 
-  /// Information about a name that has been used to define a module macro.
-  struct ModuleMacroInfo {
-    /// The most recent macro directive for this identifier.
-    MacroDirective *MD;
-
-
-    /// Whether this macro name is ambiguous.
-    bool IsAmbiguous = false;
-
-
-  };
-
-  /// The state of a macro for an identifier.
+    /// The state of a macro for an identifier.
   class MacroState {
     MacroDirective * State;
 
@@ -493,12 +472,7 @@ private:
   /// reused for quick allocation.
   MacroArgs *MacroArgCache = nullptr;
 
-  /// For each IdentifierInfo used in a \#pragma push_macro directive,
-  /// we keep a MacroInfo stack used to restore the previous macro value.
-  llvm::DenseMap<IdentifierInfo *, std::vector<MacroInfo *>>
-      PragmaPushMacroInfo;
-
-  // Various statistics we track for performance analysis.
+    // Various statistics we track for performance analysis.
   unsigned NumDirectives = 0;
   unsigned NumDefined = 0;
   unsigned NumUndefined = 0;
@@ -568,8 +542,6 @@ private:
   /// of that list.
   MacroInfoChain *MIChainHead = nullptr;
 
-  void updateOutOfDateIdentifier(IdentifierInfo &II) const;
-
 public:
   Preprocessor(std::shared_ptr<PreprocessorOptions> PPOpts,
                DiagnosticsEngine &diags, LangOptions &opts, SourceManager &SM,
@@ -590,118 +562,53 @@ public:
   void Initialize(const C2::TargetInfo &Target,
                   const C2::TargetInfo *AuxTarget = nullptr);
 
-  /// Initialize the preprocessor to parse a model file
-  ///
-  /// To parse model files the preprocessor of the original source is reused to
-  /// preserver the identifier table. However to avoid some duplicate
-  /// information in the preprocessor some cleanup is needed before it is used
-  /// to parse model files. This method does that cleanup.
-  void InitializeForModelFile();
 
-  /// Cleanup after model file parsing
-  void FinalizeForModelFile();
-
-  /// Retrieve the preprocessor options used to initialize this
+    /// Retrieve the preprocessor options used to initialize this
   /// preprocessor.
   PreprocessorOptions &getPreprocessorOpts() const { return *PPOpts; }
 
   DiagnosticsEngine &getDiagnostics() const { return *Diags; }
-  void setDiagnostics(DiagnosticsEngine &D) { Diags = &D; }
 
-  const LangOptions &getLangOpts() const { return LangOpts; }
+
+    const LangOptions &getLangOpts() const { return LangOpts; }
   const C2::TargetInfo &getTargetInfo() const { return *Target; }
-  const C2::TargetInfo *getAuxTargetInfo() const { return AuxTarget; }
-  FileManager &getFileManager() const { return FileMgr; }
-  SourceManager &getSourceManager() const { return SourceMgr; }
-  MemoryBufferCache &getPCMCache() const { return PCMCache; }
-  HeaderSearch &getHeaderSearchInfo() const { return HeaderInfo; }
+
+
+    SourceManager &getSourceManager() const { return SourceMgr; }
+
+
+    HeaderSearch &getHeaderSearchInfo() const { return HeaderInfo; }
 
   IdentifierTable &getIdentifierTable() { return Identifiers; }
   const IdentifierTable &getIdentifierTable() const { return Identifiers; }
-  llvm::BumpPtrAllocator &getPreprocessorAllocator() { return BP; }
 
 
-    void setExternalSource(ExternalPreprocessorSource *Source) {
-    ExternalSource = Source;
-  }
-
-  ExternalPreprocessorSource *getExternalSource() const {
-    return ExternalSource;
-  }
 
 
-  /// True if we are currently preprocessing a #if or #elif directive
-  bool isParsingIfOrElifDirective() const {
-    return ParsingIfOrElifDirective;
-  }
 
-  /// Control whether the preprocessor retains comments in output.
-  void SetCommentRetentionState(bool KeepComments, bool KeepMacroComments) {
-    this->KeepComments = KeepComments | KeepMacroComments;
-    this->KeepMacroComments = KeepMacroComments;
-  }
+    bool getCommentRetentionState() const { return KeepComments; }
 
-  bool getCommentRetentionState() const { return KeepComments; }
 
-  void setPragmasEnabled(bool Enabled) { PragmasEnabled = Enabled; }
-  bool getPragmasEnabled() const { return PragmasEnabled; }
-
-  void SetSuppressIncludeNotFoundError(bool Suppress) {
-    SuppressIncludeNotFoundError = Suppress;
-  }
-
-  bool GetSuppressIncludeNotFoundError() {
-    return SuppressIncludeNotFoundError;
-  }
-
-  /// Sets whether the preprocessor is responsible for producing output or if
-  /// it is producing tokens to be consumed by Parse and Sema.
-  void setPreprocessedOutput(bool IsPreprocessedOutput) {
-    PreprocessedOutput = IsPreprocessedOutput;
-  }
-
-  /// Returns true if the preprocessor is responsible for generating output,
+    /// Returns true if the preprocessor is responsible for generating output,
   /// false if it is producing tokens to be consumed by Parse and Sema.
   bool isPreprocessedOutput() const { return PreprocessedOutput; }
 
-  /// Return true if we are lexing directly from the specified lexer.
-  bool isCurrentLexer(const PreprocessorLexer *L) const {
-    return CurPPLexer == L;
-  }
 
-  /// Return the current lexer being lexed from.
-  ///
-  /// Note that this ignores any potentially active macro expansions and _Pragma
-  /// expansions going on at the time.
-  PreprocessorLexer *getCurrentLexer() const { return CurPPLexer; }
-
-  /// Return the current file lexer being lexed from.
+    /// Return the current file lexer being lexed from.
   ///
   /// Note that this ignores any potentially active macro expansions and _Pragma
   /// expansions going on at the time.
   PreprocessorLexer *getCurrentFileLexer() const;
 
 
-  /// Returns the FileID for the preprocessor predefines.
-  FileID getPredefinesFileID() const { return PredefinesFileID; }
-
     /// \}
 
-  bool isMacroDefined(StringRef Id) {
-    return isMacroDefined(&Identifiers.get(Id));
-  }
-  bool isMacroDefined(const IdentifierInfo *II) {
+    bool isMacroDefined(const IdentifierInfo *II) {
     return II->hasMacroDefinition();
   }
 
-  /// Determine whether II is defined as a macro within the module M,
-  /// if that is a module that we've already preprocessed. Does not check for
-  /// macros imported into M.
-  bool isMacroDefinedInLocalModule(const IdentifierInfo *II) {
-      return II->hasMacroDefinition();
-  }
 
-  MacroDefinition getMacroDefinition(const IdentifierInfo *II) {
+    MacroDefinition getMacroDefinition(const IdentifierInfo *II) {
     if (!II->hasMacroDefinition())
       return {};
 
@@ -744,7 +651,7 @@ public:
     return const_cast<Preprocessor*>(this)->getMacroInfo(II);
   }
 
-  MacroInfo *getMacroInfo(const IdentifierInfo *II) {
+    MacroInfo *getMacroInfo(const IdentifierInfo *II) {
     if (!II->hasMacroDefinition())
       return nullptr;
     if (auto MD = getMacroDefinition(II))
@@ -772,12 +679,8 @@ public:
     return appendDefMacroDirective(II, MI, MI->getDefinitionLoc());
   }
 
-  /// Set a MacroDirective that was loaded from a PCH file.
-  void setLoadedMacroDirective(IdentifierInfo *II, MacroDirective *ED,
-                               MacroDirective *MD);
 
-
-  /// \{
+    /// \{
   /// Iterators for the macro history table. Currently defined macros have
   /// IdentifierInfo::hasMacroDefinition() set and an empty
   /// MacroInfo::getUndefLoc() at the head of the list.
@@ -795,19 +698,7 @@ public:
 
   /// \}
 
-  /// Return the name of the macro defined before \p Loc that has
-  /// spelling \p Tokens.  If there are multiple macros with same spelling,
-  /// return the last one defined.
-  StringRef getLastMacroWithSpelling(SourceLocation Loc,
-                                     ArrayRef<TokenValue> Tokens) const;
-
-  const std::string &getPredefines() const { return Predefines; }
-
-  /// Set the predefines for this Preprocessor.
-  ///
-  /// These predefines are automatically injected when parsing the main file.
-  void setPredefines(const char *P) { Predefines = P; }
-  void setPredefines(StringRef P) { Predefines = P; }
+    void setPredefines(StringRef P) { Predefines = P; }
 
   /// Return information about the specified preprocessor
   /// identifier token.
@@ -816,30 +707,13 @@ public:
   }
 
 
-    /// Add the specified comment handler to the preprocessor.
-  void addCommentHandler(CommentHandler *Handler);
-
-  /// Remove the specified comment handler.
-  ///
-  /// It is an error to remove a handler that has not been registered.
-  void removeCommentHandler(CommentHandler *Handler);
-
-  /// Set the code completion handler to the given object.
-  void setCodeCompletionHandler(CodeCompletionHandler &Handler) {
-    CodeComplete = &Handler;
-  }
-
-  /// Retrieve the current code-completion handler.
+    /// Retrieve the current code-completion handler.
   CodeCompletionHandler *getCodeCompletionHandler() const {
     return CodeComplete;
   }
 
-  /// Clear out the code completion handler.
-  void clearCodeCompletionHandler() {
-    CodeComplete = nullptr;
-  }
 
-  /// Hook used by the lexer to invoke the "natural language" code
+    /// Hook used by the lexer to invoke the "natural language" code
   /// completion point.
   void CodeCompleteNaturalLanguage();
 
@@ -864,7 +738,7 @@ public:
   /// which implicitly adds the builtin defines etc.
   void EnterMainSourceFile();
 
-  /// Inform the preprocessor callbacks that processing is complete.
+    /// Inform the preprocessor callbacks that processing is complete.
   void EndSourceFile();
 
   /// Add a source file to the top of the include stack and
@@ -908,7 +782,7 @@ public:
     EnterTokenStream(Toks.data(), Toks.size(), DisableMacroExpansion, false);
   }
 
-  /// Pop the current lexer/macro exp off the top of the lexer stack.
+    /// Pop the current lexer/macro exp off the top of the lexer stack.
   ///
   /// This should only be used in situations where the current state of the
   /// top-of-stack lexer is known.
@@ -929,7 +803,7 @@ public:
   ///
   void EnableBacktrackAtThisPos();
 
-  /// Disable the last EnableBacktrackAtThisPos call.
+    /// Disable the last EnableBacktrackAtThisPos call.
   void CommitBacktrackedTokens();
 
   struct CachedTokensRange {
@@ -946,7 +820,7 @@ public:
   /// EnableBacktrackAtThisPos() was previously called.
   CachedTokensRange LastCachedTokenRange();
 
-  /// Erase the range of cached tokens that were lexed since
+    /// Erase the range of cached tokens that were lexed since
   /// EnableBacktrackAtThisPos() was previously called.
   void EraseCachedTokens(CachedTokensRange TokenRange);
 
@@ -1020,7 +894,6 @@ public:
   /// Disables macro expansion everywhere except for preprocessor directives.
   void SetMacroExpansionOnlyInDirectives() {
     DisableMacroExpansion = true;
-    MacroExpansionInDirectivesOverride = true;
   }
 
   /// Peeks ahead N tokens and returns that token without consuming any
@@ -1250,17 +1123,6 @@ public:
     return *SourceMgr.getCharacterData(Tok.getLocation(), Invalid);
   }
 
-  /// Retrieve the name of the immediate macro expansion.
-  ///
-  /// This routine starts from a source location, and finds the name of the
-  /// macro responsible for its immediate expansion. It looks through any
-  /// intervening macro argument expansions to compute this. It returns a
-  /// StringRef that refers to the SourceManager-owned buffer of the source
-  /// where that macro name is spelled. Thus, the result shouldn't out-live
-  /// the SourceManager.
-  StringRef getImmediateMacroName(SourceLocation Loc) {
-    return Lexer::getImmediateMacroName(Loc, SourceMgr, getLangOpts());
-  }
 
   /// Plop the specified string into a scratch buffer and set the
   /// specified token's location and length to it.
@@ -1271,12 +1133,8 @@ public:
                     SourceLocation ExpansionLocStart = SourceLocation(),
                     SourceLocation ExpansionLocEnd = SourceLocation());
 
-  /// Split the first Length characters out of the token starting at TokLoc
-  /// and return a location pointing to the split token. Re-lexing from the
-  /// split token will return the split token rather than the original.
-  SourceLocation SplitToken(SourceLocation TokLoc, unsigned Length);
 
-  /// Computes the source location just past the end of the
+    /// Computes the source location just past the end of the
   /// token at this source location.
   ///
   /// This routine can be used to produce a source location that
@@ -1320,9 +1178,9 @@ public:
   void DumpToken(const Token &Tok, bool DumpFlags = false) const;
   void DumpLocation(SourceLocation Loc) const;
   void DumpMacro(const MacroInfo &MI) const;
-  void dumpMacroInfo(const IdentifierInfo *II);
 
-  /// Given a location that specifies the start of a
+
+    /// Given a location that specifies the start of a
   /// token, return a new location that specifies a character within the token.
   SourceLocation AdvanceToTokenCharacter(SourceLocation TokStart,
                                          unsigned Char) const {
@@ -1398,7 +1256,7 @@ private:
   const char *getCurLexerEndPos();
 
 public:
-  void PoisonSEHIdentifiers(bool Poison = true); // Borland
+    // Borland
 
   /// Callback invoked when the lexer reads an identifier and has
   /// filled in the tokens IdentifierInfo member.
@@ -1462,19 +1320,8 @@ public:
   /// in ""'s.
   bool GetIncludeFilenameSpelling(SourceLocation Loc,StringRef &Filename);
 
-  /// Given a "foo" or \<foo> reference, look up the indicated file.
-  ///
-  /// Returns null on failure.  \p isAngled indicates whether the file
-  /// reference is for system \#include's or not (i.e. using <> instead of "").
-  const FileEntry *LookupFile(SourceLocation FilenameLoc, StringRef Filename,
-                              bool isAngled, const DirectoryLookup *FromDir,
-                              const FileEntry *FromFile,
-                              const DirectoryLookup *&CurDir,
-                              SmallVectorImpl<char> *SearchPath,
-                              SmallVectorImpl<char> *RelativePath,
-                              bool *IsMapped, bool SkipCache = false);
 
-  /// Get the DirectoryLookup structure used to find the current
+    /// Get the DirectoryLookup structure used to find the current
   /// FileEntry, if CurLexer is non-null and if applicable.
   ///
   /// This allows us to implement \#include_next and find directory-specific

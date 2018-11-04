@@ -32,11 +32,6 @@ enum IncludeDirGroup {
   /// '\#include ""' paths, added by 'gcc -iquote'.
   Quoted = 0,
 
-  /// Paths for '\#include <>' added by '-I'.
-  Angled,
-
-  /// Like Angled, but marks header maps used when building frameworks.
-  IndexHeaderMap,
 
   /// Like Angled, but marks system directories.
   System,
@@ -47,17 +42,6 @@ enum IncludeDirGroup {
   /// Like System, but only used for C.
   CSystem,
 
-  /// Like System, but only used for C++.
-  CXXSystem,
-
-  /// Like System, but only used for ObjC.
-  ObjCSystem,
-
-  /// Like System, but only used for ObjC++.
-  ObjCXXSystem,
-
-  /// Like System, but searched after the system directories.
-  After
 };
 
 } // namespace frontend
@@ -109,25 +93,7 @@ public:
   std::string ResourceDir;
 
 
-    /// The time in seconds when the build session started.
-  ///
-  /// This time is used by other optimizations in header search and module
-  /// loading.
-  uint64_t BuildSessionTimestamp = 0;
-
-    /// Include the compiler builtin includes.
-  unsigned UseBuiltinIncludes : 1;
-
-  /// Include the system standard include search directories.
-  unsigned UseStandardSystemIncludes : 1;
-
-  /// Include the system standard C++ library include search directories.
-  unsigned UseStandardCXXIncludes : 1;
-
-  /// Use libc++ instead of the default libstdc++.
-  unsigned UseLibcxx : 1;
-
-  /// Whether header search information should be output as for -v.
+    /// Whether header search information should be output as for -v.
   unsigned Verbose : 1;
 
 
@@ -136,9 +102,7 @@ public:
 
 
   HeaderSearchOptions(StringRef _Sysroot = "/")
-      : Sysroot(_Sysroot),
-        UseBuiltinIncludes(true), UseStandardSystemIncludes(true),
-        UseStandardCXXIncludes(true), UseLibcxx(false), Verbose(false), UseDebugInfo(false) {}
+      : Sysroot(_Sysroot), Verbose(false), UseDebugInfo(false) {}
 
   /// AddPath - Add the \p Path path to the specified \p Group list.
   void AddPath(StringRef Path, frontend::IncludeDirGroup Group,

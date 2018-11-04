@@ -34,7 +34,6 @@
 #include "Clang/SourceLocation.h"
 #include "Clang/SourceManager.h"
 #include "Clang/CodeCompletionHandler.h"
-#include "Clang/ExternalPreprocessorSource.h"
 #include "Clang/HeaderSearch.h"
 #include "Clang/LexDiagnostic.h"
 #include "Clang/Lexer.h"
@@ -68,7 +67,6 @@
 using namespace c2lang;
 
 
-ExternalPreprocessorSource::~ExternalPreprocessorSource() = default;
 
 Preprocessor::Preprocessor(std::shared_ptr<PreprocessorOptions> PPOpts,
                            DiagnosticsEngine &diags,
@@ -80,9 +78,8 @@ Preprocessor::Preprocessor(std::shared_ptr<PreprocessorOptions> PPOpts,
                            bool OwnsHeaders,
                            TranslationUnitKind TUKind)
     : PPOpts(std::move(PPOpts)), Diags(&diags), LangOpts(opts),
-      FileMgr(Headers.getFileMgr()), SourceMgr(SM), PCMCache(PCMCache),
+      SourceMgr(SM), PCMCache(PCMCache),
       ScratchBuf(new ScratchBuffer(SourceMgr)), HeaderInfo(Headers),
-      ExternalSource(nullptr),
       // As the language options may have not been loaded yet (when
       // deserializing an ASTUnit), adding keywords to the identifier table is
       // deferred to Preprocessor::Initialize().
@@ -98,8 +95,7 @@ Preprocessor::Preprocessor(std::shared_ptr<PreprocessorOptions> PPOpts,
 
   // Macro expansion is enabled.
   DisableMacroExpansion = false;
-  MacroExpansionInDirectivesOverride = false;
-  InMacroArgs = false;
+    InMacroArgs = false;
   InMacroArgPreExpansion = false;
   NumCachedTokenLexers = 0;
   ParsingIfOrElifDirective = false;
@@ -170,19 +166,6 @@ void Preprocessor::Initialize(const C2::TargetInfo &Target,
 
   // Populate the identifier table with info about keywords for the current language.
   Identifiers.AddKeywords(LangOpts);
-}
-
-void Preprocessor::InitializeForModelFile() {
-  NumEnteredSourceFiles = 0;
-
-
-  // Reset PredefinesFileID
-  PredefinesFileID = FileID();
-}
-
-void Preprocessor::FinalizeForModelFile() {
-  NumEnteredSourceFiles = 1;
-
 }
 
 
@@ -260,11 +243,6 @@ void Preprocessor::PrintStats() {
 
 Preprocessor::macro_iterator
 Preprocessor::macro_begin(bool IncludeExternalMacros) const {
-  if (IncludeExternalMacros && ExternalSource &&
-      !ReadMacrosFromExternalSource) {
-    ReadMacrosFromExternalSource = true;
-    ExternalSource->ReadDefinedMacros();
-  }
 
   // Make sure we cover all macros in visible modules.
 
@@ -284,48 +262,10 @@ size_t Preprocessor::getTotalMemory() const {
 
 Preprocessor::macro_iterator
 Preprocessor::macro_end(bool IncludeExternalMacros) const {
-  if (IncludeExternalMacros && ExternalSource &&
-      !ReadMacrosFromExternalSource) {
-    ReadMacrosFromExternalSource = true;
-    ExternalSource->ReadDefinedMacros();
-  }
 
   return CurSubmoduleState->Macros.end();
 }
 
-/// Compares macro tokens with a specified token value sequence.
-static bool MacroDefinitionEquals(const MacroInfo *MI,
-                                  ArrayRef<TokenValue> Tokens) {
-  return Tokens.size() == MI->getNumTokens() &&
-      std::equal(Tokens.begin(), Tokens.end(), MI->tokens_begin());
-}
-
-StringRef Preprocessor::getLastMacroWithSpelling(
-                                    SourceLocation Loc,
-                                    ArrayRef<TokenValue> Tokens) const {
-  SourceLocation BestLocation;
-  StringRef BestSpelling;
-  for (Preprocessor::macro_iterator I = macro_begin(), E = macro_end();
-       I != E; ++I) {
-    const MacroDirective::DefInfo
-      Def = I->second.findDirectiveAtLoc(Loc, SourceMgr);
-    if (!Def || !Def.getMacroInfo())
-      continue;
-    if (!Def.getMacroInfo()->isObjectLike())
-      continue;
-    if (!MacroDefinitionEquals(Def.getMacroInfo(), Tokens))
-      continue;
-    SourceLocation Location = Def.getLocation();
-    // Choose the macro defined latest.
-    if (BestLocation.isInvalid() ||
-        (Location.isValid() &&
-         SourceMgr.isBeforeInTranslationUnit(BestLocation, Location))) {
-      BestLocation = Location;
-      BestSpelling = I->first->getName();
-    }
-  }
-  return BestSpelling;
-}
 
 void Preprocessor::recomputeCurLexerKind() {
   if (CurLexer)
@@ -445,66 +385,9 @@ void Preprocessor::CreateString(StringRef Str, Token &Tok,
     Tok.setLiteralData(DestPtr);
 }
 
-SourceLocation Preprocessor::SplitToken(SourceLocation Loc, unsigned Length) {
-  auto &SM = getSourceManager();
-  SourceLocation SpellingLoc = SM.getSpellingLoc(Loc);
-  std::pair<FileID, unsigned> LocInfo = SM.getDecomposedLoc(SpellingLoc);
-  bool Invalid = false;
-  StringRef Buffer = SM.getBufferData(LocInfo.first, &Invalid);
-  if (Invalid)
-    return SourceLocation();
-
-  // FIXME: We could consider re-using spelling for tokens we see repeatedly.
-  const char *DestPtr;
-  SourceLocation Spelling =
-      ScratchBuf->getToken(Buffer.data() + LocInfo.second, Length, DestPtr);
-  return SM.createTokenSplitLoc(Spelling, Loc, Loc.getLocWithOffset(Length));
-}
-
 //===----------------------------------------------------------------------===//
 // Preprocessor Initialization Methods
 //===----------------------------------------------------------------------===//
-
-/// EnterMainSourceFile - Enter the specified FileID as the main source file,
-/// which implicitly adds the builtin defines etc.
-void Preprocessor::EnterMainSourceFile() {
-  // We do not allow the preprocessor to reenter the main file.  Doing so will
-  // cause FileID's to accumulate information from both runs (e.g. #line
-  // information) and predefined macros aren't guaranteed to be set properly.
-  assert(NumEnteredSourceFiles == 0 && "Cannot reenter the main file!");
-  FileID MainFileID = SourceMgr.getMainFileID();
-
-  // If MainFileID is loaded it means we loaded an AST file, no need to enter
-  // a main file.
-  if (!SourceMgr.isLoadedFileID(MainFileID)) {
-    // Enter the main file source buffer.
-    EnterSourceFile(MainFileID, nullptr, SourceLocation());
-
-    // If we've been asked to skip bytes in the main file (e.g., as part of a
-    // precompiled preamble), do so now.
-    if (SkipMainFilePreamble.first > 0)
-      CurLexer->SetByteOffset(SkipMainFilePreamble.first,
-                              SkipMainFilePreamble.second);
-
-    // Tell the header info that the main file was entered.  If the file is later
-    // #imported, it won't be re-entered.
-    if (const FileEntry *FE = SourceMgr.getFileEntryForID(MainFileID))
-      HeaderInfo.IncrementIncludeCount(FE);
-  }
-
-  // Preprocess Predefines to populate the initial preprocessor state.
-  std::unique_ptr<llvm::MemoryBuffer> SB =
-    llvm::MemoryBuffer::getMemBufferCopy(Predefines, "<built-in>");
-  assert(SB && "Cannot create predefined source buffer");
-  FileID FID = SourceMgr.createFileID(std::move(SB));
-  assert(FID.isValid() && "Could not create FileID for predefines?");
-  setPredefinesFileID(FID);
-
-  // Start parsing the predefines.
-  EnterSourceFile(FID, nullptr, SourceLocation());
-
-
-}
 
 
 void Preprocessor::replayPreambleConditionalStack() {
@@ -568,19 +451,6 @@ void Preprocessor::SetPoisonReason(IdentifierInfo *II, unsigned DiagID) {
   PoisonReasons[II] = DiagID;
 }
 
-void Preprocessor::PoisonSEHIdentifiers(bool Poison) {
-  assert(Ident__exception_code && Ident__exception_info);
-  assert(Ident___exception_code && Ident___exception_info);
-  Ident__exception_code->setIsPoisoned(Poison);
-  Ident___exception_code->setIsPoisoned(Poison);
-  Ident_GetExceptionCode->setIsPoisoned(Poison);
-  Ident__exception_info->setIsPoisoned(Poison);
-  Ident___exception_info->setIsPoisoned(Poison);
-  Ident_GetExceptionInfo->setIsPoisoned(Poison);
-  Ident__abnormal_termination->setIsPoisoned(Poison);
-  Ident___abnormal_termination->setIsPoisoned(Poison);
-  Ident_AbnormalTermination->setIsPoisoned(Poison);
-}
 
 void Preprocessor::HandlePoisonedIdentifier(Token & Identifier) {
   assert(Identifier.getIdentifierInfo() &&
@@ -604,10 +474,6 @@ static diag::kind getFutureCompatDiagKind(const IdentifierInfo &II,
       "Keyword not known to come from a newer Standard or proposed Standard");
 }
 
-void Preprocessor::updateOutOfDateIdentifier(IdentifierInfo &II) const {
-  assert(II.isOutOfDate() && "not out of date");
-  getExternalSource()->updateOutOfDateIdentifier(II);
-}
 
 /// HandleIdentifier - This callback is invoked when the lexer reads an
 /// identifier.  This callback looks up the identifier in the map and/or
@@ -635,7 +501,6 @@ bool Preprocessor::HandleIdentifier(Token &Identifier) {
     if (IsSpecialVariadicMacro)
       CurrentIsPoisoned = II.isPoisoned();
 
-    updateOutOfDateIdentifier(II);
     Identifier.setKind(II.getTokenID());
 
     if (IsSpecialVariadicMacro)
@@ -780,19 +645,6 @@ bool Preprocessor::parseSimpleIntegerLiteral(Token &Tok, uint64_t &Value) {
   return true;
 }
 
-void Preprocessor::addCommentHandler(CommentHandler *Handler) {
-  assert(Handler && "NULL comment handler");
-  assert(std::find(CommentHandlers.begin(), CommentHandlers.end(), Handler) ==
-         CommentHandlers.end() && "Comment handler already registered");
-  CommentHandlers.push_back(Handler);
-}
-
-void Preprocessor::removeCommentHandler(CommentHandler *Handler) {
-  std::vector<CommentHandler *>::iterator Pos =
-      std::find(CommentHandlers.begin(), CommentHandlers.end(), Handler);
-  assert(Pos != CommentHandlers.end() && "Comment handler not registered");
-  CommentHandlers.erase(Pos);
-}
 
 bool Preprocessor::HandleComment(Token &result, SourceRange Comment) {
   bool AnyPendingTokens = false;
