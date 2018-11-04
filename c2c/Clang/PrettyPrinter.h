@@ -15,11 +15,9 @@
 #define LLVM_CLANG_AST_PRETTYPRINTER_H
 
 #include "Clang/LLVM.h"
-#include "Clang/LangOptions.h"
 
 namespace c2lang {
 
-class LangOptions;
 class SourceManager;
 class Stmt;
 class TagDecl;
@@ -37,7 +35,7 @@ public:
 /// It is very frequently copied.
 struct PrintingPolicy {
   /// Create a default printing policy for the specified language.
-  PrintingPolicy(const LangOptions &LO)
+  PrintingPolicy()
     : Indentation(2), SuppressSpecifiers(false),
       SuppressTagKeyword(LO.CPlusPlus),
       IncludeTagDefinition(false), SuppressScope(false),

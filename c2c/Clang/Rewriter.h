@@ -24,7 +24,6 @@
 
 namespace c2lang {
 
-class LangOptions;
 class SourceManager;
 
 /// Rewriter - This is the main interface to the rewrite buffers.  Its primary
@@ -32,7 +31,6 @@ class SourceManager;
 /// are involved.
 class Rewriter {
   SourceManager *SourceMgr = nullptr;
-  const LangOptions *LangOpts = nullptr;
   std::map<FileID, RewriteBuffer> RewriteBuffers;
 
 public:
@@ -56,16 +54,14 @@ public:
   using const_buffer_iterator = std::map<FileID, RewriteBuffer>::const_iterator;
 
   explicit Rewriter() = default;
-  explicit Rewriter(SourceManager &SM, const LangOptions &LO)
-      : SourceMgr(&SM), LangOpts(&LO) {}
+  explicit Rewriter(SourceManager &SM)
+      : SourceMgr(&SM) {}
 
-  void setSourceMgr(SourceManager &SM, const LangOptions &LO) {
+  void setSourceMgr(SourceManager &SM) {
     SourceMgr = &SM;
-    LangOpts = &LO;
   }
 
   SourceManager &getSourceMgr() const { return *SourceMgr; }
-  const LangOptions &getLangOpts() const { return *LangOpts; }
 
   /// isRewritable - Return true if this location is a raw file location, which
   /// is rewritable.  Locations from macros, etc are not rewritable.

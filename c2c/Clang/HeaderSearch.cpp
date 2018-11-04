@@ -47,8 +47,7 @@ ExternalHeaderFileInfoSource::~ExternalHeaderFileInfoSource() = default;
 
 HeaderSearch::HeaderSearch(std::shared_ptr<HeaderSearchOptions> HSOpts,
                            SourceManager &SourceMgr,
-                           DiagnosticsEngine &Diags,
-                           const LangOptions &LangOpts)
+                           DiagnosticsEngine &Diags)
     : HSOpts(std::move(HSOpts)), Diags(Diags),
       FileMgr(SourceMgr.getFileManager()), FrameworkMap(64) {}
 

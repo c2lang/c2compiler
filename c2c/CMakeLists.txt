@@ -46,17 +46,13 @@ add_library(c2core
     Clang/HeaderSearch.cpp
     Clang/IdentifierTable.cpp
     Clang/InitHeaderSearch.cpp
-    Clang/LangOptions.cpp
     Clang/Lexer.cpp
     Clang/LiteralSupport.cpp
     Clang/MacroArgs.cpp
     Clang/MacroInfo.cpp
     Clang/MemoryBufferCache.cpp
     Clang/PPCaching.cpp
-    Clang/PPDirectives.cpp
     Clang/PPExpressions.cpp
-    Clang/PPLexerChange.cpp
-    Clang/PPMacroExpansion.cpp
     Clang/Preprocessor.cpp
     Clang/PreprocessorLexer.cpp
     Clang/ScratchBuffer.cpp

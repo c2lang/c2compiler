@@ -14,7 +14,6 @@
 
 #include "Clang/IdentifierTable.h"
 #include "Clang/CharInfo.h"
-#include "Clang/LangOptions.h"
 #include "Clang/OperatorKinds.h"
 #include "Clang/Specifiers.h"
 #include "Clang/TokenKinds.h"
@@ -55,34 +54,18 @@ IdentifierInfo::IdentifierInfo() {
 
 IdentifierIterator::~IdentifierIterator() = default;
 
-IdentifierInfoLookup::~IdentifierInfoLookup() = default;
-
 namespace {
 
-/// A simple identifier lookup iterator that represents an
-/// empty sequence of identifiers.
-class EmptyLookupIterator : public IdentifierIterator
-{
-public:
-  StringRef Next() override { return StringRef(); }
-};
 
 } // namespace
 
-IdentifierIterator *IdentifierInfoLookup::getIdentifiers() {
-  return new EmptyLookupIterator();
-}
 
-IdentifierTable::IdentifierTable(IdentifierInfoLookup *ExternalLookup)
-    : HashTable(8192), // Start with space for 8K identifiers.
-      ExternalLookup(ExternalLookup) {}
-
-IdentifierTable::IdentifierTable(const LangOptions &LangOpts,
-                                 IdentifierInfoLookup *ExternalLookup)
-    : IdentifierTable(ExternalLookup) {
+IdentifierTable::IdentifierTable()
+    : HashTable(8192) // Start with space for 8K identifiers.
+       {
   // Populate the identifier table with info about keywords for the current
   // language.
-  AddKeywords(LangOpts);
+  AddKeywords();
 }
 
 //===----------------------------------------------------------------------===//
@@ -108,8 +91,7 @@ namespace {
 
 /// Translates flags as specified in TokenKinds.def into keyword status
 /// in the given language standard.
-static KeywordStatus getKeywordStatus(const LangOptions &LangOpts,
-                                      unsigned Flags) {
+static KeywordStatus getKeywordStatus(unsigned Flags) {
   if (Flags == KEYALL) return KS_Enabled;
   return KS_Disabled;
 }
@@ -119,8 +101,8 @@ static KeywordStatus getKeywordStatus(const LangOptions &LangOpts,
 /// automatically map matching identifiers to specialized token codes.
 static void AddKeyword(StringRef Keyword,
                        tok::TokenKind TokenCode, unsigned Flags,
-                       const LangOptions &LangOpts, IdentifierTable &Table) {
-  KeywordStatus AddResult = getKeywordStatus(LangOpts, Flags);
+                       IdentifierTable &Table) {
+  KeywordStatus AddResult = getKeywordStatus(Flags);
 
   // Don't add this keyword if disabled in this language.
   if (AddResult == KS_Disabled) return;
@@ -135,14 +117,14 @@ static void AddKeyword(StringRef Keyword,
 
 /// AddKeywords - Add all keywords to the symbol table.
 ///
-void IdentifierTable::AddKeywords(const LangOptions &LangOpts) {
+void IdentifierTable::AddKeywords() {
   // Add keywords and tokens for the current language.
 #define KEYWORD(NAME, FLAGS) \
   AddKeyword(StringRef(#NAME), tok::kw_ ## NAME,  \
-             FLAGS, LangOpts, *this);
+             FLAGS, *this);
 #define ALIAS(NAME, TOK, FLAGS) \
   AddKeyword(StringRef(NAME), tok::kw_ ## TOK,  \
-             FLAGS, LangOpts, *this);
+             FLAGS, *this);
 #define TESTING_KEYWORD(NAME, FLAGS)
 #include "Clang/TokenKinds.def"
 
@@ -152,11 +134,10 @@ void IdentifierTable::AddKeywords(const LangOptions &LangOpts) {
 /// Checks if the specified token kind represents a keyword in the
 /// specified language.
 /// \returns Status of the keyword in the language.
-static KeywordStatus getTokenKwStatus(const LangOptions &LangOpts,
-                                      tok::TokenKind K) {
+static KeywordStatus getTokenKwStatus(tok::TokenKind K) {
   switch (K) {
 #define KEYWORD(NAME, FLAGS) \
-  case tok::kw_##NAME: return getKeywordStatus(LangOpts, FLAGS);
+  case tok::kw_##NAME: return getKeywordStatus(FLAGS);
 #include "Clang/TokenKinds.def"
   default: return KS_Disabled;
   }
@@ -164,8 +145,8 @@ static KeywordStatus getTokenKwStatus(const LangOptions &LangOpts,
 
 /// Returns true if the identifier represents a keyword in the
 /// specified language.
-bool IdentifierInfo::isKeyword(const LangOptions &LangOpts) const {
-  switch (getTokenKwStatus(LangOpts, getTokenID())) {
+bool IdentifierInfo::isKeyword() const {
+  switch (getTokenKwStatus(getTokenID())) {
   case KS_Enabled:
   case KS_Extension:
     return true;

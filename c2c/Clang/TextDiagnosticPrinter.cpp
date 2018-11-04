@@ -34,10 +34,9 @@ TextDiagnosticPrinter::~TextDiagnosticPrinter() {
     delete &OS;
 }
 
-void TextDiagnosticPrinter::BeginSourceFile(const LangOptions &LO,
-                                            const Preprocessor *PP) {
+void TextDiagnosticPrinter::BeginSourceFile(const Preprocessor *PP) {
   // Build the TextDiagnostic utility.
-  TextDiag.reset(new TextDiagnostic(OS, LO, &*DiagOpts));
+  TextDiag.reset(new TextDiagnostic(OS, &*DiagOpts));
 }
 
 void TextDiagnosticPrinter::EndSourceFile() {

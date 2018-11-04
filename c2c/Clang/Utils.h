@@ -47,13 +47,12 @@ class DiagnosticsEngine;
 class FrontendOptions;
 class HeaderSearch;
 class HeaderSearchOptions;
-class LangOptions;
 class PCHContainerReader;
 class Preprocessor;
 class PreprocessorOptions;
 
 /// Apply the header search options to get given HeaderSearch object.
-void ApplyHeaderSearchOptions(HeaderSearch &HS, const HeaderSearchOptions &HSOpts, const LangOptions &Lang);
+void ApplyHeaderSearchOptions(HeaderSearch &HS, const HeaderSearchOptions &HSOpts);
 
 /// InitializePreprocessor - Initialize the preprocessor getting it and the
 /// environment ready to process a single file.

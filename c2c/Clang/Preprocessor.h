@@ -19,7 +19,6 @@
 #include "Clang/Diagnostic.h"
 #include "Clang/IdentifierTable.h"
 #include "Clang/LLVM.h"
-#include "Clang/LangOptions.h"
 #include "Clang/SourceLocation.h"
 #include "Clang/SourceManager.h"
 #include "Clang/TokenKinds.h"
@@ -121,7 +120,6 @@ class Preprocessor {
 
   std::shared_ptr<PreprocessorOptions> PPOpts;
   DiagnosticsEngine        *Diags;
-  LangOptions       &LangOpts;
   const C2::TargetInfo *Target = nullptr;
   const C2::TargetInfo *AuxTarget = nullptr;
   SourceManager     &SourceMgr;
@@ -171,11 +169,6 @@ class Preprocessor {
 
   class ResetMacroExpansionHelper;
 
-    /// Whether we have already loaded macros from the external source.
-  mutable bool ReadMacrosFromExternalSource : 1;
-
-  /// True if pragmas are enabled.
-  bool PragmasEnabled : 1;
 
   /// True if the current build action is a preprocessing action.
   bool PreprocessedOutput : 1;
@@ -190,9 +183,6 @@ class Preprocessor {
   /// the program, including program keywords.
   mutable IdentifierTable Identifiers;
 
-
-
-
   /// Tracks all of the comment handlers that the client registered
   /// with this preprocessor.
   std::vector<CommentHandler *> CommentHandlers;
@@ -201,8 +191,6 @@ class Preprocessor {
   /// avoid tearing the Lexer and etc. down).
   bool IncrementalProcessing = false;
 
-  /// The kind of translation unit we are processing.
-  TranslationUnitKind TUKind;
 
   /// The code-completion handler.
   CodeCompletionHandler *CodeComplete = nullptr;
@@ -237,10 +225,6 @@ class Preprocessor {
   /// on the stem that is to be code completed.
   IdentifierInfo *CodeCompletionII = nullptr;
 
-  /// The directory that the main file should be considered to occupy,
-  /// if it does not correspond to a real file (as happens when building a
-  /// module).
-  const DirectoryEntry *MainFileDir = nullptr;
 
   /// The number of bytes that we will initially skip when entering the
   /// main file, along with a flag that indicates whether skipping this number
@@ -544,12 +528,11 @@ private:
 
 public:
   Preprocessor(std::shared_ptr<PreprocessorOptions> PPOpts,
-               DiagnosticsEngine &diags, LangOptions &opts, SourceManager &SM,
-               MemoryBufferCache &PCMCache,
-               HeaderSearch &Headers,
-               IdentifierInfoLookup *IILookup = nullptr,
-               bool OwnsHeaderSearch = false,
-               TranslationUnitKind TUKind = TU_Complete);
+                 DiagnosticsEngine &diags,
+                 SourceManager &SM,
+                 MemoryBufferCache &PCMCache,
+                 HeaderSearch &Headers,
+                 bool OwnsHeaderSearch = false);
 
   ~Preprocessor();
 
@@ -570,7 +553,6 @@ public:
   DiagnosticsEngine &getDiagnostics() const { return *Diags; }
 
 
-    const LangOptions &getLangOpts() const { return LangOpts; }
   const C2::TargetInfo &getTargetInfo() const { return *Target; }
 
 
@@ -1020,11 +1002,6 @@ public:
     getDiagnostics().setSuppressAllDiagnostics(true);
   }
 
-  /// Set the directory in which the main file should be considered
-  /// to have been found, if it is not a real file.
-  void setMainFileDir(const DirectoryEntry *Dir) {
-    MainFileDir = Dir;
-  }
 
   /// Instruct the preprocessor to skip part of the main source file.
   ///
@@ -1058,7 +1035,7 @@ public:
   StringRef getSpelling(SourceLocation loc,
                         SmallVectorImpl<char> &buffer,
                         bool *invalid = nullptr) const {
-    return Lexer::getSpelling(loc, buffer, SourceMgr, LangOpts, invalid);
+    return Lexer::getSpelling(loc, buffer, SourceMgr, invalid);
   }
 
   /// Return the 'spelling' of the Tok token.
@@ -1070,7 +1047,7 @@ public:
   ///
   /// \param Invalid If non-null, will be set \c true if an error occurs.
   std::string getSpelling(const Token &Tok, bool *Invalid = nullptr) const {
-    return Lexer::getSpelling(Tok, SourceMgr, LangOpts, Invalid);
+    return Lexer::getSpelling(Tok, SourceMgr, Invalid);
   }
 
   /// Get the spelling of a token into a preallocated buffer, instead
@@ -1087,7 +1064,7 @@ public:
   /// if an internal buffer is returned.
   unsigned getSpelling(const Token &Tok, const char *&Buffer,
                        bool *Invalid = nullptr) const {
-    return Lexer::getSpelling(Tok, Buffer, SourceMgr, LangOpts, Invalid);
+    return Lexer::getSpelling(Tok, Buffer, SourceMgr, Invalid);
   }
 
   /// Get the spelling of a token into a SmallVector.
@@ -1102,7 +1079,7 @@ public:
   /// \returns true if there was a failure, false on success.
   bool getRawToken(SourceLocation Loc, Token &Result,
                    bool IgnoreWhiteSpace = false) {
-    return Lexer::getRawToken(Loc, Result, SourceMgr, LangOpts, IgnoreWhiteSpace);
+    return Lexer::getRawToken(Loc, Result, SourceMgr, IgnoreWhiteSpace);
   }
 
   /// Given a Token \p Tok that is a numeric constant with length 1,
@@ -1150,7 +1127,7 @@ public:
   /// location pointing just past the end of the token; an offset of 1 produces
   /// a source location pointing to the last character in the token, etc.
   SourceLocation getLocForEndOfToken(SourceLocation Loc, unsigned Offset = 0) {
-    return Lexer::getLocForEndOfToken(Loc, Offset, SourceMgr, LangOpts);
+    return Lexer::getLocForEndOfToken(Loc, Offset, SourceMgr);
   }
 
   /// Returns true if the given MacroID location points at the first
@@ -1160,8 +1137,7 @@ public:
   /// begin location of the macro.
   bool isAtStartOfMacroExpansion(SourceLocation loc,
                                  SourceLocation *MacroBegin = nullptr) const {
-    return Lexer::isAtStartOfMacroExpansion(loc, SourceMgr, LangOpts,
-                                            MacroBegin);
+    return Lexer::isAtStartOfMacroExpansion(loc, SourceMgr, MacroBegin);
   }
 
   /// Returns true if the given MacroID location points at the last
@@ -1171,7 +1147,7 @@ public:
   /// end location of the macro.
   bool isAtEndOfMacroExpansion(SourceLocation loc,
                                SourceLocation *MacroEnd = nullptr) const {
-    return Lexer::isAtEndOfMacroExpansion(loc, SourceMgr, LangOpts, MacroEnd);
+    return Lexer::isAtEndOfMacroExpansion(loc, SourceMgr, MacroEnd);
   }
 
   /// Print the token to stderr, used for debugging.
@@ -1184,7 +1160,7 @@ public:
   /// token, return a new location that specifies a character within the token.
   SourceLocation AdvanceToTokenCharacter(SourceLocation TokStart,
                                          unsigned Char) const {
-    return Lexer::AdvanceToTokenCharacter(TokStart, Char, SourceMgr, LangOpts);
+    return Lexer::AdvanceToTokenCharacter(TokStart, Char, SourceMgr);
   }
 
   /// Increment the counters for the number of token paste operations
@@ -1522,25 +1498,6 @@ private:
 
   const Token &PeekAhead(unsigned N);
 
-    //===--------------------------------------------------------------------===//
-  /// Handle*Directive - implement the various preprocessor directives.  These
-  /// should side-effect the current preprocessor object so that the next call
-  /// to Lex() will return the appropriate token next.
-  void HandleLineDirective();
-  void HandleDigitDirective(Token &Tok);
-  void HandleUserDiagnosticDirective(Token &Tok, bool isWarning);
-  void HandleIdentSCCSDirective(Token &Tok);
-  void HandleMacroPublicDirective(Token &Tok);
-  void HandleMacroPrivateDirective();
-
-  // File inclusion.
-  void HandleIncludeDirective(SourceLocation HashLoc,
-                              Token &Tok,
-                              const DirectoryLookup *LookupFrom = nullptr,
-                              const FileEntry *LookupFromFile = nullptr,
-                              bool isImport = false);
-  void HandleIncludeNextDirective(SourceLocation HashLoc, Token &Tok);
-  void HandleIncludeMacrosDirective(SourceLocation HashLoc, Token &Tok);
 
 public:
 
@@ -1549,28 +1506,11 @@ public:
     return PreambleConditionalStack.isRecording();
   }
 
-  bool hasRecordedPreamble() const {
-    return PreambleConditionalStack.hasRecordedPreamble();
-  }
 
-  ArrayRef<PPConditionalInfo> getPreambleConditionalStack() const {
-      return PreambleConditionalStack.getStack();
-  }
-
-  void setRecordedPreambleConditionalStack(ArrayRef<PPConditionalInfo> s) {
+    void setRecordedPreambleConditionalStack(ArrayRef<PPConditionalInfo> s) {
     PreambleConditionalStack.setStack(s);
   }
 
-  void setReplayablePreambleConditionalStack(ArrayRef<PPConditionalInfo> s,
-                                             llvm::Optional<PreambleSkipInfo> SkipInfo) {
-    PreambleConditionalStack.startReplaying();
-    PreambleConditionalStack.setStack(s);
-    PreambleConditionalStack.SkipInfo = SkipInfo;
-  }
-
-  llvm::Optional<PreambleSkipInfo> getPreambleSkipInfo() const {
-    return PreambleConditionalStack.SkipInfo;
-  }
 
 private:
   /// After processing predefined file, initialize the conditional stack from

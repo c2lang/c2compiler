@@ -12,7 +12,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "Clang/FileManager.h"
-#include "Clang/LangOptions.h"
 #include "Clang/config.h" // C_INCLUDE_DIRS
 #include "Clang/FrontendDiagnostic.h"
 #include "Clang/Utils.h"
@@ -74,7 +73,7 @@ public:
 
     /// Realize - Merges all search path lists into one list and send it to
   /// HeaderSearch.
-  void Realize(const LangOptions &Lang);
+  void Realize();
 };
 
 }  // end anonymous namespace.
@@ -235,7 +234,7 @@ static unsigned RemoveDuplicates(std::vector<DirectoryLookup> &SearchList,
 }
 
 
-void InitHeaderSearch::Realize(const LangOptions &Lang) {
+void InitHeaderSearch::Realize() {
   // Concatenate ANGLE+SYSTEM+AFTER chains together into SearchList.
   std::vector<DirectoryLookup> SearchList;
   SearchList.reserve(IncludePath.size());
@@ -291,7 +290,7 @@ void InitHeaderSearch::Realize(const LangOptions &Lang) {
   }
 }
 
-void c2lang::ApplyHeaderSearchOptions(HeaderSearch &HS, const HeaderSearchOptions &HSOpts, const LangOptions &Lang) {
+void c2lang::ApplyHeaderSearchOptions(HeaderSearch &HS, const HeaderSearchOptions &HSOpts) {
   InitHeaderSearch Init(HS, HSOpts.Verbose, HSOpts.Sysroot);
 
   // Add the user defined entries.
@@ -315,5 +314,5 @@ void c2lang::ApplyHeaderSearchOptions(HeaderSearch &HS, const HeaderSearchOption
     llvm::sys::path::append(P, "include");
   }
 
-  Init.Realize(Lang);
+  Init.Realize();
 }

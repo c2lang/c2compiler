@@ -43,7 +43,6 @@ class DeclContext;
 class DiagnosticBuilder;
 class DiagnosticConsumer;
 class IdentifierInfo;
-class LangOptions;
 class Preprocessor;
 class SourceManager;
 class StoredDiagnostic;
@@ -1508,8 +1507,7 @@ public:
   /// \param LangOpts The language options for the source file being processed.
   /// \param PP The preprocessor object being used for the source; this is
   /// optional, e.g., it may not be present when processing AST source files.
-  virtual void BeginSourceFile(const LangOptions &LangOpts,
-                               const Preprocessor *PP = nullptr) {}
+  virtual void BeginSourceFile(const Preprocessor *PP = nullptr) {}
 
   /// Callback to inform the diagnostic client that processing
   /// of a source file has ended.

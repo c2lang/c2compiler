@@ -19,7 +19,6 @@
 
 namespace c2lang {
 
-class LangOptions;
 class SourceManager;
 
 namespace edit {
@@ -50,7 +49,6 @@ public:
 
 private:
   const SourceManager &SourceMgr;
-  const LangOptions &LangOpts;
   EditedSource *Editor = nullptr;
 
   bool IsCommitable = true;
@@ -60,8 +58,7 @@ private:
 
 public:
   explicit Commit(EditedSource &Editor);
-  Commit(const SourceManager &SM, const LangOptions &LangOpts)
-      : SourceMgr(SM), LangOpts(LangOpts) {}
+  Commit(const SourceManager &SM) : SourceMgr(SM) {}
 
   bool isCommitable() const { return IsCommitable; }
 

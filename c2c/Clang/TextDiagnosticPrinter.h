@@ -22,7 +22,6 @@
 
 namespace c2lang {
 class DiagnosticOptions;
-class LangOptions;
 class TextDiagnostic;
 
 class TextDiagnosticPrinter : public DiagnosticConsumer {
@@ -47,7 +46,7 @@ public:
   /// used.
   void setPrefix(std::string Value) { Prefix = std::move(Value); }
 
-  void BeginSourceFile(const LangOptions &LO, const Preprocessor *PP) override;
+  void BeginSourceFile(const Preprocessor *PP) override;
   void EndSourceFile() override;
   void HandleDiagnostic(DiagnosticsEngine::Level Level,
                         const Diagnostic &Info) override;

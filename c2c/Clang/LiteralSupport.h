@@ -33,7 +33,6 @@ class Token;
 class SourceLocation;
 class TargetInfo;
 class SourceManager;
-class LangOptions;
 
 /// Copy characters from Input to Buf, expanding any UCNs.
 void expandUCNs(SmallVectorImpl<char> &Buf, StringRef Input);
@@ -206,8 +205,7 @@ public:
 /// literals) (C99 5.1.1.2p1).
 class StringLiteralParser {
   const SourceManager &SM;
-  const LangOptions &Features;
-  const C2::TargetInfo &Target;
+    const C2::TargetInfo &Target;
   DiagnosticsEngine *Diags;
 
   unsigned MaxTokenLength;
@@ -222,11 +220,11 @@ class StringLiteralParser {
 public:
   StringLiteralParser(ArrayRef<Token> StringToks,
                       Preprocessor &PP, bool Complain = true);
-  StringLiteralParser(ArrayRef<Token> StringToks,
-                      const SourceManager &sm, const LangOptions &features,
-                      const C2::TargetInfo &target,
-                      DiagnosticsEngine *diags = nullptr)
-    : SM(sm), Features(features), Target(target), Diags(diags),
+  StringLiteralParser(ArrayRef <Token> StringToks,
+                        const SourceManager &sm,
+                        const C2::TargetInfo &target,
+                        DiagnosticsEngine *diags)
+    : SM(sm), Target(target), Diags(diags),
       MaxTokenLength(0), SizeBound(0), CharByteWidth(0), Kind(tok::unknown),
       ResultPtr(ResultBuf.data()), hadError(false), Pascal(false) {
     init(StringToks);
@@ -272,7 +270,7 @@ public:
     return UDSuffixOffset;
   }
 
-  static bool isValidUDSuffix(const LangOptions &LangOpts, StringRef Suffix);
+  static bool isValidUDSuffix(StringRef Suffix);
 
 private:
   void init(ArrayRef<Token> StringToks);

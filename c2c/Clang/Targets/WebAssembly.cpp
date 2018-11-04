@@ -42,8 +42,7 @@ void WebAssemblyTargetInfo::fillValidCPUList(
   Values.append(std::begin(ValidCPUNames), std::end(ValidCPUNames));
 }
 
-void WebAssemblyTargetInfo::getTargetDefines(const LangOptions &Opts,
-                                             MacroBuilder &Builder) const {
+void WebAssemblyTargetInfo::getTargetDefines(MacroBuilder &Builder) const {
   defineCPUMacros(Builder, "wasm", /*Tuning=*/false);
   if (SIMDLevel >= SIMD128)
     Builder.defineMacro("__wasm_simd128__");
@@ -97,14 +96,12 @@ ArrayRef<Builtin::Info> WebAssemblyTargetInfo::getTargetBuiltins() const {
                                              Builtin::FirstTSBuiltin);
 }
 
-void WebAssembly32TargetInfo::getTargetDefines(const LangOptions &Opts,
-                                               MacroBuilder &Builder) const {
+void WebAssembly32TargetInfo::getTargetDefines(MacroBuilder &Builder) const {
   WebAssemblyTargetInfo::getTargetDefines(Opts, Builder);
   defineCPUMacros(Builder, "wasm32", /*Tuning=*/false);
 }
 
-void WebAssembly64TargetInfo::getTargetDefines(const LangOptions &Opts,
-                                               MacroBuilder &Builder) const {
+void WebAssembly64TargetInfo::getTargetDefines(MacroBuilder &Builder) const {
   WebAssemblyTargetInfo::getTargetDefines(Opts, Builder);
   defineCPUMacros(Builder, "wasm64", /*Tuning=*/false);
 }

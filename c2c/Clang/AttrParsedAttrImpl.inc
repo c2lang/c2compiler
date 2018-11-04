@@ -31,7 +31,7 @@ static bool checkAMDGPUFlatWorkGroupSizeAppertainsTo(Sema &S, const ParsedAttr &
   return true;
 }
 
-static void matchRulesForAMDGPUFlatWorkGroupSize(llvm::SmallVectorImpl<std::pair<attr::SubjectMatchRule, bool>> &MatchRules, const LangOptions &LangOpts) {
+static void matchRulesForAMDGPUFlatWorkGroupSize(llvm::SmallVectorImpl<std::pair<attr::SubjectMatchRule, bool>> &MatchRules) {
   MatchRules.push_back(std::make_pair(attr::SubjectMatchRule_function, /*IsSupported=*/true));
 }
 
@@ -44,7 +44,7 @@ static bool checkAMDGPUNumSGPRAppertainsTo(Sema &S, const ParsedAttr &Attr, cons
   return true;
 }
 
-static void matchRulesForAMDGPUNumSGPR(llvm::SmallVectorImpl<std::pair<attr::SubjectMatchRule, bool>> &MatchRules, const LangOptions &LangOpts) {
+static void matchRulesForAMDGPUNumSGPR(llvm::SmallVectorImpl<std::pair<attr::SubjectMatchRule, bool>> &MatchRules) {
   MatchRules.push_back(std::make_pair(attr::SubjectMatchRule_function, /*IsSupported=*/true));
 }
 

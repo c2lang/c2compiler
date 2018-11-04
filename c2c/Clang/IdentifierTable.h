@@ -35,7 +35,6 @@
 namespace c2lang {
 
 class IdentifierInfo;
-class LangOptions;
 class SourceLocation;
 
 /// A simple pair of identifier info and location.
@@ -197,7 +196,7 @@ public:
 
 
     /// Return true if this token is a keyword in the specified language.
-  bool isKeyword(const LangOptions &LangOpts) const;
+  bool isKeyword() const;
 
 
 
@@ -265,30 +264,6 @@ public:
   virtual StringRef Next() = 0;
 };
 
-/// Provides lookups to, and iteration over, IdentiferInfo objects.
-class IdentifierInfoLookup {
-public:
-  virtual ~IdentifierInfoLookup();
-
-  /// Return the IdentifierInfo for the specified named identifier.
-  ///
-  /// Unlike the version in IdentifierTable, this returns a pointer instead
-  /// of a reference.  If the pointer is null then the IdentifierInfo cannot
-  /// be found.
-  virtual IdentifierInfo* get(StringRef Name) = 0;
-
-  /// Retrieve an iterator into the set of all identifiers
-  /// known to this identifier lookup source.
-  ///
-  /// This routine provides access to all of the identifiers known to
-  /// the identifier lookup, allowing access to the contents of the
-  /// identifiers without introducing the overhead of constructing
-  /// IdentifierInfo objects for each.
-  ///
-  /// \returns A new iterator into the set of known identifiers. The
-  /// caller is responsible for deleting this iterator.
-  virtual IdentifierIterator *getIdentifiers();
-};
 
 /// Implements an efficient mapping from strings to IdentifierInfo nodes.
 ///
@@ -301,16 +276,12 @@ class IdentifierTable {
   using HashTableTy = llvm::StringMap<IdentifierInfo *, llvm::BumpPtrAllocator>;
   HashTableTy HashTable;
 
-  IdentifierInfoLookup* ExternalLookup;
 
 public:
-  /// Create the identifier table.
-  explicit IdentifierTable(IdentifierInfoLookup *ExternalLookup = nullptr);
 
   /// Create the identifier table, populating it with info about the
   /// language keywords for the language specified by \p LangOpts.
-  explicit IdentifierTable(const LangOptions &LangOpts,
-                           IdentifierInfoLookup *ExternalLookup = nullptr);
+  explicit IdentifierTable();
 
 
     llvm::BumpPtrAllocator& getAllocator() {
@@ -325,12 +296,6 @@ public:
     IdentifierInfo *&II = Entry.second;
     if (II) return *II;
 
-    // No entry; if we have an external lookup, look there first.
-    if (ExternalLookup) {
-      II = ExternalLookup->get(Name);
-      if (II)
-        return *II;
-    }
 
     // Lookups failed, make a new IdentifierInfo.
     void *Mem = getAllocator().Allocate<IdentifierInfo>();
@@ -388,7 +353,7 @@ public:
 
   /// Populate the identifier table with info about the language keywords
   /// for the language specified by \p LangOpts.
-  void AddKeywords(const LangOptions &LangOpts);
+  void AddKeywords();
 };
 
 

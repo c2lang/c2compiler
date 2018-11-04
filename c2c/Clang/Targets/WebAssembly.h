@@ -55,8 +55,7 @@ public:
   }
 
 protected:
-  void getTargetDefines(const LangOptions &Opts,
-                        MacroBuilder &Builder) const override;
+  void getTargetDefines(MacroBuilder &Builder) const override;
 
 private:
   bool
@@ -127,8 +126,7 @@ public:
   }
 
 protected:
-  void getTargetDefines(const LangOptions &Opts,
-                        MacroBuilder &Builder) const override;
+  void getTargetDefines(MacroBuilder &Builder) const override;
 };
 
 class LLVM_LIBRARY_VISIBILITY WebAssembly64TargetInfo
@@ -146,8 +144,7 @@ public:
   }
 
 protected:
-  void getTargetDefines(const LangOptions &Opts,
-                        MacroBuilder &Builder) const override;
+  void getTargetDefines(MacroBuilder &Builder) const override;
 };
 } // namespace targets
 } // namespace c2lang

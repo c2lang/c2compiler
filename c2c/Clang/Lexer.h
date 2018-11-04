@@ -14,7 +14,6 @@
 #ifndef LLVM_CLANG_LEX_LEXER_H
 #define LLVM_CLANG_LEX_LEXER_H
 
-#include "Clang/LangOptions.h"
 #include "Clang/SourceLocation.h"
 #include "Clang/TokenKinds.h"
 #include "Clang/PreprocessorLexer.h"
@@ -91,8 +90,6 @@ class Lexer : public PreprocessorLexer {
   // Location for start of file.
   SourceLocation FileLoc;
 
-  // LangOpts enabled by this language (cache).
-  LangOptions LangOpts;
 
   // True if lexer for _Pragma handling.
   bool Is_PragmaLexer;
@@ -144,14 +141,14 @@ public:
   /// Lexer constructor - Create a new raw lexer object.  This object is only
   /// suitable for calls to 'LexFromRawLexer'.  This lexer assumes that the
   /// text range will outlive it, so it doesn't take ownership of it.
-  Lexer(SourceLocation FileLoc, const LangOptions &LangOpts,
+  Lexer(SourceLocation FileLoc,
         const char *BufStart, const char *BufPtr, const char *BufEnd);
 
   /// Lexer constructor - Create a new raw lexer object.  This object is only
   /// suitable for calls to 'LexFromRawLexer'.  This lexer assumes that the
   /// text range will outlive it, so it doesn't take ownership of it.
   Lexer(FileID FID, const llvm::MemoryBuffer *InputBuffer,
-        const SourceManager &SM, const LangOptions &LangOpts);
+        const SourceManager &SM);
 
   Lexer(const Lexer &) = delete;
   Lexer &operator=(const Lexer &) = delete;
@@ -164,9 +161,6 @@ public:
                                    SourceLocation ExpansionLocEnd,
                                    unsigned TokLen, Preprocessor &PP);
 
-  /// getLangOpts - Return the language features currently enabled.
-  /// NOTE: this lexer modifies features as a file is parsed!
-  const LangOptions &getLangOpts() const { return LangOpts; }
 
   /// getFileLoc - Return the File Location for the file we are lexing out of.
   /// The physical location encodes the location where the characters come from,
@@ -211,7 +205,7 @@ public:
   /// SetKeepWhitespaceMode - This method lets clients enable or disable
   /// whitespace retention mode.
   void SetKeepWhitespaceMode(bool Val) {
-    assert((!Val || LexingRawMode || LangOpts.TraditionalCPP) &&
+    assert((!Val || LexingRawMode) &&
            "Can only retain whitespace in raw mode or -traditional-cpp");
     ExtendedTokenMode = Val ? 2 : 0;
   }
@@ -285,10 +279,7 @@ public:
   /// to point to a constant buffer with the data already in it (avoiding a
   /// copy).  The caller is not allowed to modify the returned buffer pointer
   /// if an internal buffer is returned.
-  static unsigned getSpelling(const Token &Tok, const char *&Buffer,
-                              const SourceManager &SourceMgr,
-                              const LangOptions &LangOpts,
-                              bool *Invalid = nullptr);
+  static unsigned int getSpelling(const Token &Tok, const char *&Buffer, const SourceManager &SourceMgr, bool *Invalid);
 
   /// getSpelling() - Return the 'spelling' of the Tok token.  The spelling of a
   /// token is the characters used to represent the token in the source file
@@ -297,7 +288,6 @@ public:
   /// UCNs, etc.
   static std::string getSpelling(const Token &Tok,
                                  const SourceManager &SourceMgr,
-                                 const LangOptions &LangOpts,
                                  bool *Invalid = nullptr);
 
   /// getSpelling - This method is used to get the spelling of the
@@ -311,47 +301,36 @@ public:
   static StringRef getSpelling(SourceLocation loc,
                                SmallVectorImpl<char> &buffer,
                                const SourceManager &SourceMgr,
-                               const LangOptions &LangOpts,
                                bool *invalid = nullptr);
 
   /// MeasureTokenLength - Relex the token at the specified location and return
   /// its length in bytes in the input file.  If the token needs cleaning (e.g.
   /// includes a trigraph or an escaped newline) then this count includes bytes
   /// that are part of that.
-  static unsigned MeasureTokenLength(SourceLocation Loc,
-                                     const SourceManager &SM,
-                                     const LangOptions &LangOpts);
+  static unsigned int MeasureTokenLength(SourceLocation Loc, const SourceManager &SM);
 
   /// Relex the token at the specified location.
   /// \returns true if there was a failure, false on success.
-  static bool getRawToken(SourceLocation Loc, Token &Result,
-                          const SourceManager &SM,
-                          const LangOptions &LangOpts,
-                          bool IgnoreWhiteSpace = false);
+  static bool getRawToken(SourceLocation Loc, Token &Result, const SourceManager &SM, bool IgnoreWhiteSpace);
 
   /// Given a location any where in a source buffer, find the location
   /// that corresponds to the beginning of the token in which the original
   /// source location lands.
   static SourceLocation GetBeginningOfToken(SourceLocation Loc,
-                                            const SourceManager &SM,
-                                            const LangOptions &LangOpts);
+                                            const SourceManager &SM);
 
   /// Get the physical length (including trigraphs and escaped newlines) of the
   /// first \p Characters characters of the token starting at TokStart.
   static unsigned getTokenPrefixLength(SourceLocation TokStart,
                                        unsigned Characters,
-                                       const SourceManager &SM,
-                                       const LangOptions &LangOpts);
+                                       const SourceManager &SM);
 
   /// AdvanceToTokenCharacter - If the current SourceLocation specifies a
   /// location at the start of a token, return a new location that specifies a
   /// character within the token.  This handles trigraphs and escaped newlines.
-  static SourceLocation AdvanceToTokenCharacter(SourceLocation TokStart,
-                                                unsigned Characters,
-                                                const SourceManager &SM,
-                                                const LangOptions &LangOpts) {
+  static SourceLocation AdvanceToTokenCharacter(SourceLocation TokStart, unsigned Characters, const SourceManager &SM) {
     return TokStart.getLocWithOffset(
-        getTokenPrefixLength(TokStart, Characters, SM, LangOpts));
+        getTokenPrefixLength(TokStart, Characters, SM));
   }
 
   /// Computes the source location just past the end of the
@@ -369,27 +348,23 @@ public:
   /// location should refer to. The default offset (0) produces a source
   /// location pointing just past the end of the token; an offset of 1 produces
   /// a source location pointing to the last character in the token, etc.
-  static SourceLocation getLocForEndOfToken(SourceLocation Loc, unsigned Offset,
-                                            const SourceManager &SM,
-                                            const LangOptions &LangOpts);
+  static SourceLocation getLocForEndOfToken(SourceLocation Loc, unsigned Offset, const SourceManager &SM);
 
   /// Given a token range, produce a corresponding CharSourceRange that
   /// is not a token range. This allows the source range to be used by
   /// components that don't have access to the lexer and thus can't find the
   /// end of the range for themselves.
   static CharSourceRange getAsCharRange(SourceRange Range,
-                                        const SourceManager &SM,
-                                        const LangOptions &LangOpts) {
-    SourceLocation End = getLocForEndOfToken(Range.getEnd(), 0, SM, LangOpts);
+                                        const SourceManager &SM) {
+    SourceLocation End = getLocForEndOfToken(Range.getEnd(), 0, SM);
     return End.isInvalid() ? CharSourceRange()
                            : CharSourceRange::getCharRange(
                                  Range.getBegin(), End.getLocWithOffset(-1));
   }
   static CharSourceRange getAsCharRange(CharSourceRange Range,
-                                        const SourceManager &SM,
-                                        const LangOptions &LangOpts) {
+                                        const SourceManager &SM) {
     return Range.isTokenRange()
-               ? getAsCharRange(Range.getAsRange(), SM, LangOpts)
+               ? getAsCharRange(Range.getAsRange(), SM)
                : Range;
   }
 
@@ -398,20 +373,14 @@ public:
   ///
   /// \param MacroBegin If non-null and function returns true, it is set to
   /// begin location of the macro.
-  static bool isAtStartOfMacroExpansion(SourceLocation loc,
-                                        const SourceManager &SM,
-                                        const LangOptions &LangOpts,
-                                        SourceLocation *MacroBegin = nullptr);
+  static bool isAtStartOfMacroExpansion(SourceLocation loc, const SourceManager &SM, SourceLocation *MacroBegin);
 
   /// Returns true if the given MacroID location points at the last
   /// token of the macro expansion.
   ///
   /// \param MacroEnd If non-null and function returns true, it is set to
   /// end location of the macro.
-  static bool isAtEndOfMacroExpansion(SourceLocation loc,
-                                      const SourceManager &SM,
-                                      const LangOptions &LangOpts,
-                                      SourceLocation *MacroEnd = nullptr);
+  static bool isAtEndOfMacroExpansion(SourceLocation loc, const SourceManager &SM, SourceLocation *MacroEnd);
 
   /// Accepts a range and returns a character range with file locations.
   ///
@@ -439,14 +408,11 @@ public:
   /// inside the macro arguments.
   /// if you have range [a, 2], the function will return the file range
   /// "FM(a b M)" since the range includes all of the macro expansion.
-  static CharSourceRange makeFileCharRange(CharSourceRange Range,
-                                           const SourceManager &SM,
-                                           const LangOptions &LangOpts);
+  static CharSourceRange makeFileCharRange(CharSourceRange Range, const SourceManager &SM);
 
   /// Returns a string for the source that the range encompasses.
   static StringRef getSourceText(CharSourceRange Range,
                                  const SourceManager &SM,
-                                 const LangOptions &LangOpts,
                                  bool *Invalid = nullptr);
 
   /// Retrieve the name of the immediate macro expansion.
@@ -457,8 +423,7 @@ public:
   /// refers to the SourceManager-owned buffer of the source where that macro
   /// name is spelled. Thus, the result shouldn't out-live that SourceManager.
   static StringRef getImmediateMacroName(SourceLocation Loc,
-                                         const SourceManager &SM,
-                                         const LangOptions &LangOpts);
+                                         const SourceManager &SM);
 
   /// Retrieve the name of the immediate macro expansion.
   ///
@@ -478,7 +443,7 @@ public:
   /// for location of 'foo' token, this function will return "MAC1" while
   /// Lexer::getImmediateMacroName will return "MAC2".
   static StringRef getImmediateMacroNameForDiagnostics(
-      SourceLocation Loc, const SourceManager &SM, const LangOptions &LangOpts);
+      SourceLocation Loc, const SourceManager &SM);
 
   /// Compute the preamble of the given file.
   ///
@@ -496,15 +461,13 @@ public:
   /// of the file begins along with a boolean value indicating whether
   /// the preamble ends at the beginning of a new line.
   static PreambleBounds ComputePreamble(StringRef Buffer,
-                                        const LangOptions &LangOpts,
                                         unsigned MaxLines = 0);
 
   /// Finds the token that comes right after the given location.
   ///
   /// Returns the next token, or none if the location is inside a macro.
   static Optional<Token> findNextToken(SourceLocation Loc,
-                                       const SourceManager &SM,
-                                       const LangOptions &LangOpts);
+                                       const SourceManager &SM);
 
   /// Checks that the given token is the first token that occurs after
   /// the given location (this excludes comments and whitespace). Returns the
@@ -514,11 +477,10 @@ public:
   static SourceLocation findLocationAfterToken(SourceLocation loc,
                                          tok::TokenKind TKind,
                                          const SourceManager &SM,
-                                         const LangOptions &LangOpts,
                                          bool SkipTrailingWhitespaceAndNewLine);
 
   /// Returns true if the given character could appear in an identifier.
-  static bool isIdentifierBodyChar(char c, const LangOptions &LangOpts);
+  static bool isIdentifierBodyChar(char c);
 
   /// Checks whether new line pointed by Str is preceded by escape
   /// sequence.
@@ -526,8 +488,7 @@ public:
 
   /// getCharAndSizeNoWarn - Like the getCharAndSize method, but does not ever
   /// emit a warning.
-  static inline char getCharAndSizeNoWarn(const char *Ptr, unsigned &Size,
-                                          const LangOptions &LangOpts) {
+  static inline char getCharAndSizeNoWarn(const char *Ptr, unsigned &Size) {
     // If this is not a trigraph and not a UCN or escaped newline, return
     // quickly.
     if (isObviouslySimpleCharacter(Ptr[0])) {
@@ -536,7 +497,7 @@ public:
     }
 
     Size = 0;
-    return getCharAndSizeSlowNoWarn(Ptr, Size, LangOpts);
+    return getCharAndSizeSlowNoWarn(Ptr, Size);
   }
 
   /// Returns the leading whitespace for line that corresponds to the given
@@ -669,8 +630,7 @@ private:
 
   /// getCharAndSizeSlowNoWarn - Same as getCharAndSizeSlow, but never emits a
   /// diagnostic.
-  static char getCharAndSizeSlowNoWarn(const char *Ptr, unsigned &Size,
-                                       const LangOptions &LangOpts);
+  static char getCharAndSizeSlowNoWarn(const char *Ptr, unsigned &Size);
 
   //===--------------------------------------------------------------------===//
   // Other lexer functions.
@@ -709,7 +669,7 @@ private:
   bool isCodeCompletionPoint(const char *CurPtr) const;
   void cutOffLexing() { BufferPtr = BufferEnd; }
 
-  bool isHexaLiteral(const char *Start, const LangOptions &LangOpts);
+  bool isHexaLiteral(const char *Start);
 
 
   /// Read a universal character name.

@@ -701,12 +701,10 @@ C2::ExprResult C2Parser::ParseRHSOfBinaryExpression(ExprResult LHS, prec::Level 
         ExprResult RHS;
         bool RHSIsInitList = false;
 #if 0
-        if (getLangOpts().CPlusPlus0x && Tok.is(tok::l_brace)) {
+        if (Tok.is(tok::l_brace)) {
             RHS = ParseBraceInitializer();
             RHSIsInitList = true;
-        } else if (getLangOpts().CPlusPlus && NextTokPrec <= prec::Conditional)
-            RHS = ParseAssignmentExpression();
-        else
+        } else {
 #endif
             RHS = ParseCastExpression(false);
 

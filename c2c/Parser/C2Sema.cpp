@@ -1456,8 +1456,7 @@ C2::ExprResult C2Sema::ActOnNumericConstant(const Token& Tok) {
             if (Width == 0) {
                 if (ResultVal.isIntN(64)) {
 #if 0
-                    if (!Literal.isUnsigned && (ResultVal[LongLongSize-1] == 0 ||
-                                                (getLangOpts().MicrosoftExt && Literal.isLongLong)))
+                    if (!Literal.isUnsigned && (ResultVal[LongLongSize-1] == 0))
                         Ty = Context.LongLongTy;
                     else if (AllowUnsigned)
                         Ty = Context.UnsignedLongLongTy;
