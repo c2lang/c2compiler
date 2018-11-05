@@ -172,8 +172,7 @@ class FileManager : public RefCountedBase<FileManager> {
   void addAncestorsAsVirtualDirs(StringRef Path);
 
 public:
-  FileManager(const FileSystemOptions &FileSystemOpts,
-              IntrusiveRefCntPtr<vfs::FileSystem> FS = nullptr);
+  FileManager(const FileSystemOptions &FileSystemOpts);
   ~FileManager();
 
     /// Lookup, cache, and verify the specified directory (real or

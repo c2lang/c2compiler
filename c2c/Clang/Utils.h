@@ -44,21 +44,13 @@ namespace opt {
 namespace c2lang {
 
 class DiagnosticsEngine;
-class FrontendOptions;
 class HeaderSearch;
 class HeaderSearchOptions;
-class PCHContainerReader;
 class Preprocessor;
 class PreprocessorOptions;
 
 /// Apply the header search options to get given HeaderSearch object.
 void ApplyHeaderSearchOptions(HeaderSearch &HS, const HeaderSearchOptions &HSOpts);
-
-/// InitializePreprocessor - Initialize the preprocessor getting it and the
-/// environment ready to process a single file.
-void InitializePreprocessor(Preprocessor &PP, const PreprocessorOptions &PPOpts,
-                            const PCHContainerReader &PCHContainerRdr,
-                            const FrontendOptions &FEOpts);
 
 // Frontend timing utils
 

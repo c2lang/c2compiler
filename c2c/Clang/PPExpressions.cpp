@@ -113,12 +113,6 @@ static bool EvaluateDefined(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
     PP.LexUnexpandedNonComment(PeekTok);
   }
 
-  if (PeekTok.is(tok::code_completion)) {
-    if (PP.getCodeCompletionHandler())
-      PP.getCodeCompletionHandler()->CodeCompleteMacroName(false);
-    PP.setCodeCompletionReached();
-    PP.LexUnexpandedNonComment(PeekTok);
-  }
 
   // If we don't have a pp-identifier now, this is an error.
   if (PP.CheckMacroName(PeekTok, MU_Other))
@@ -223,12 +217,6 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
 
   Result.setIdentifier(nullptr);
 
-  if (PeekTok.is(tok::code_completion)) {
-    if (PP.getCodeCompletionHandler())
-      PP.getCodeCompletionHandler()->CodeCompletePreprocessorExpression();
-    PP.setCodeCompletionReached();
-    PP.LexNonComment(PeekTok);
-  }
 
   switch (PeekTok.getKind()) {
   default:

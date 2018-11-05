@@ -22,7 +22,6 @@
 #include "Clang/LiteralSupport.h"
 #include "Clang/MultipleIncludeOpt.h"
 #include "Clang/Preprocessor.h"
-#include "Clang/PreprocessorOptions.h"
 #include "Clang/Token.h"
 #include "Clang/Diagnostic.h"
 #include "Clang/LLVM.h"
@@ -1505,29 +1504,6 @@ FinishIdentifier:
     // Note that we have to call PP->LookUpIdentifierInfo() even for code
     // completion, it writes IdentifierInfo into Result, and callers rely on it.
 
-    // If the completion point is at the end of an identifier, we want to treat
-    // the identifier as incomplete even if it resolves to a macro or a keyword.
-    // This allows e.g. 'class^' to complete to 'classifier'.
-    if (isCodeCompletionPoint(CurPtr)) {
-      // Return the code-completion token.
-      Result.setKind(tok::code_completion);
-      // Skip the code-completion char and all immediate identifier characters.
-      // This ensures we get consistent behavior when completing at any point in
-      // an identifier (i.e. at the start, in the middle, at the end). Note that
-      // only simple cases (i.e. [a-zA-Z0-9_]) are supported to keep the code
-      // simpler.
-      assert(*CurPtr == 0 && "Completion character must be 0");
-      ++CurPtr;
-      // Note that code completion token is not added as a separate character
-      // when the completion point is at the end of the buffer. Therefore, we need
-      // to check if the buffer has ended.
-      if (CurPtr < BufferEnd) {
-        while (isIdentifierBody(*CurPtr))
-          ++CurPtr;
-      }
-      BufferPtr = CurPtr;
-      return true;
-    }
 
     // Finally, now that we know we have an identifier, pass this off to the
     // preprocessor, which may macro expand it or something.
@@ -1658,12 +1634,6 @@ bool Lexer::LexStringLiteral(Token &Result, const char *CurPtr,
     }
 
     if (C == 0) {
-      if (isCodeCompletionPoint(CurPtr-1)) {
-        PP->CodeCompleteNaturalLanguage();
-        FormTokenWithChars(Result, CurPtr-1, tok::unknown);
-        cutOffLexing();
-        return true;
-      }
 
       NulCharacter = CurPtr-1;
     }
@@ -1773,8 +1743,8 @@ bool Lexer::LexAngledStringLiteral(Token &Result, const char *CurPtr) {
       C = getAndAdvanceChar(CurPtr, Result);
 
     if (C == '\n' || C == '\r' ||             // Newline.
-        (C == 0 && (CurPtr-1 == BufferEnd ||  // End of file.
-                    isCodeCompletionPoint(CurPtr-1)))) {
+        (C == 0 && (CurPtr-1 == BufferEnd  // End of file.
+                    ))) {
       // If the filename is unterminated, then it must just be a lone <
       // character.  Return this as such.
       FormTokenWithChars(Result, AfterLessPos, tok::less);
@@ -1834,12 +1804,6 @@ bool Lexer::LexCharConstant(Token &Result, const char *CurPtr,
     }
 
     if (C == 0) {
-      if (isCodeCompletionPoint(CurPtr-1)) {
-        PP->CodeCompleteNaturalLanguage();
-        FormTokenWithChars(Result, CurPtr-1, tok::unknown);
-        cutOffLexing();
-        return true;
-      }
 
       NulCharacter = CurPtr-1;
     }
@@ -2005,11 +1969,6 @@ bool Lexer::SkipLineComment(Token &Result, const char *CurPtr,
       break;
     }
 
-    if (C == '\0' && isCodeCompletionPoint(CurPtr-1)) {
-      PP->CodeCompleteNaturalLanguage();
-      cutOffLexing();
-      return false;
-    }
   }
 
   // Found but did not consume the newline.  Notify comment handlers about the
@@ -2186,10 +2145,7 @@ bool Lexer::SkipBlockComment(Token &Result, const char *CurPtr,
   while (true) {
     // Skip over all non-interesting characters until we find end of buffer or a
     // (probably ending) '/' character.
-    if (CurPtr + 24 < BufferEnd &&
-        // If there is a code-completion point avoid the fast scan because it
-        // doesn't check for '\0'.
-        !(PP && PP->getCodeCompletionFileLoc() == FileLoc)) {
+    if (CurPtr + 24 < BufferEnd) {
       // While not aligned to a 16-byte boundary.
       while (C != '/' && ((intptr_t)CurPtr & 0x0F) != 0)
         C = *CurPtr++;
@@ -2273,10 +2229,6 @@ bool Lexer::SkipBlockComment(Token &Result, const char *CurPtr,
 
       BufferPtr = CurPtr;
       return false;
-    } else if (C == '\0' && isCodeCompletionPoint(CurPtr-1)) {
-      PP->CodeCompleteNaturalLanguage();
-      cutOffLexing();
-      return false;
     }
 
     C = *CurPtr++;
@@ -2334,11 +2286,6 @@ void Lexer::ReadToEndOfLine(SmallVectorImpl<char> *Result) {
     case 0:  // Null.
       // Found end of file?
       if (CurPtr-1 != BufferEnd) {
-        if (isCodeCompletionPoint(CurPtr-1)) {
-          PP->CodeCompleteNaturalLanguage();
-          cutOffLexing();
-          return;
-        }
 
         // Nope, normal character, continue.
         if (Result)
@@ -2355,11 +2302,6 @@ void Lexer::ReadToEndOfLine(SmallVectorImpl<char> *Result) {
 
       // Next, lex the character, which should handle the EOD transition.
       Lex(Tmp);
-      if (Tmp.is(tok::code_completion)) {
-        if (PP)
-          PP->CodeCompleteNaturalLanguage();
-        Lex(Tmp);
-      }
       assert(Tmp.is(tok::eod) && "Unexpected token!");
 
       // Finally, we're done;
@@ -2397,17 +2339,12 @@ bool Lexer::LexEndOfFile(Token &Result, const char *CurPtr) {
     return true;
   }
 
-  if (PP->isRecordingPreamble() && PP->isInPrimaryFile()) {
-    PP->setRecordedPreambleConditionalStack(ConditionalStack);
-    ConditionalStack.clear();
-  }
 
   // Issue diagnostics for unterminated #if and missing newline.
 
   // If we are in a #if directive, emit an error.
   while (!ConditionalStack.empty()) {
-    if (PP->getCodeCompletionFileLoc() != FileLoc)
-      PP->Diag(ConditionalStack.back().IfLoc,
+    PP->Diag(ConditionalStack.back().IfLoc,
                diag::err_pp_unterminated_conditional);
     ConditionalStack.pop_back();
   }
@@ -2586,7 +2523,7 @@ static const char *findPlaceholderEnd(const char *CurPtr,
 
 bool Lexer::lexEditorPlaceholder(Token &Result, const char *CurPtr) {
   assert(CurPtr[-1] == '<' && CurPtr[0] == '#' && "Not a placeholder!");
-  if (!PP || !PP->getPreprocessorOpts().LexEditorPlaceholders || LexingRawMode)
+  if (!PP || /*!PP->getPreprocessorOpts().LexEditorPlaceholders || */ LexingRawMode)
     return false;
   const char *End = findPlaceholderEnd(CurPtr + 1, BufferEnd);
   if (!End)
@@ -2601,14 +2538,6 @@ bool Lexer::lexEditorPlaceholder(Token &Result, const char *CurPtr) {
   return true;
 }
 
-bool Lexer::isCodeCompletionPoint(const char *CurPtr) const {
-  if (PP && PP->isCodeCompletionEnabled()) {
-    SourceLocation Loc = FileLoc.getLocWithOffset(CurPtr-BufferStart);
-    return Loc == PP->getCodeCompletionLoc();
-  }
-
-  return false;
-}
 
 uint32_t Lexer::tryReadUCN(const char *&StartPtr, const char *SlashLoc,
                            Token *Result) {
@@ -2845,13 +2774,6 @@ LexNextToken:
     if (CurPtr-1 == BufferEnd)
       return LexEndOfFile(Result, CurPtr-1);
 
-    // Check if we are performing code completion.
-    if (isCodeCompletionPoint(CurPtr-1)) {
-      // Return the code-completion token.
-      Result.startToken();
-      FormTokenWithChars(Result, CurPtr, tok::code_completion);
-      return true;
-    }
 
     if (!isLexingRawMode())
       Diag(CurPtr-1, diag::null_in_file);

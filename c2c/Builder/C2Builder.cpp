@@ -33,13 +33,11 @@
 #include "Clang/MacroBuilder.h"
 #include "Clang/SourceManager.h"
 #include "Clang/TargetOptions.h"
-#include "Clang/MemoryBufferCache.h"
 #include "Clang/TextDiagnosticPrinter.h"
 #include "Clang/Utils.h"
 #include "Clang/HeaderSearch.h"
 #include "Clang/HeaderSearchOptions.h"
 #include "Clang/Preprocessor.h"
-#include "Clang/PreprocessorOptions.h"
 #include "Clang/SemaDiagnostic.h"
 // for Rewriter
 #include "Clang/Rewriter.h"
@@ -73,7 +71,6 @@ using c2lang::FileSystemOptions;
 using c2lang::HeaderSearch;
 using c2lang::HeaderSearchOptions;
 using c2lang::Preprocessor;
-using c2lang::PreprocessorOptions;
 using c2lang::SourceManager;
 using c2lang::TargetInfo;
 using c2lang::TargetOptions;
@@ -93,24 +90,22 @@ public:
                     std::shared_ptr<HeaderSearchOptions> HSOpts_,
                     SourceManager &SM_,
                     FileManager &FileMgr_,
-                    MemoryBufferCache &PCMCache_,
                     const std::string &configs_,
                     const TargetInfo &ti)
         : Diags(Diags_)
         , HSOpts(HSOpts_)
         , SM(SM_)
         , FileMgr(FileMgr_)
-        , PCMCache(PCMCache_)
         , configs(configs_)
         , targetInfo(ti)
     {}
 
     bool parse(Component& component, Module* existingMod, const std::string& filename, bool printAST) {
+
         // NOTE: seems to get deleted by Preprocessor,
         HeaderSearch* Headers = new HeaderSearch(HSOpts, SM, Diags);
 
-        std::shared_ptr<PreprocessorOptions> PPOpts(new PreprocessorOptions());
-        Preprocessor PP(PPOpts, Diags, SM, PCMCache, *Headers);
+        Preprocessor PP(Diags, SM, *Headers);
 
         ApplyHeaderSearchOptions(PP.getHeaderSearchInfo(), *HSOpts);
         PP.setPredefines(configs);
@@ -157,7 +152,6 @@ public:
     std::shared_ptr<HeaderSearchOptions> HSOpts;
     SourceManager& SM;
     FileManager& FileMgr;
-    MemoryBufferCache& PCMCache;
     const std::string& configs;
     const TargetInfo& targetInfo;
 };
@@ -329,7 +323,6 @@ int C2Builder::build() {
     FileSystemOptions FileSystemOpts;
     FileManager FileMgr(FileSystemOpts);
     SourceManager SM(Diags, FileMgr);
-    MemoryBufferCache PCMCache;
 
     // create main Component
     mainComponent = new Component(recipe.name, "TODO", recipe.type, false, false, recipe.getExports());
@@ -342,7 +335,7 @@ int C2Builder::build() {
         libLoader.addDep(mainComponent, recipe.libraries[i].name, recipe.libraries[i].type);
     }
 
-    ParseHelper helper(Diags, HSOpts, SM, FileMgr, PCMCache, PredefineBuffer, targetInfo);
+    ParseHelper helper(Diags, HSOpts, SM, FileMgr, PredefineBuffer, targetInfo);
     // phase 1a: parse and local analyse
     uint64_t t1_parse = Utils::getCurrentTime();
     unsigned errors = 0;

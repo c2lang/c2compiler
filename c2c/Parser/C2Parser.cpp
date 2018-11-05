@@ -1000,8 +1000,6 @@ C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
     SourceLocation Loc;
     while (1) {
         switch (Tok.getKind()) {
-        case tok::code_completion:
-            FATAL_ERROR("Should not occure");
         case tok::identifier:
             // Fall through; this isn't a message send.
         default:  // Not a postfix-expression suffix.
@@ -2621,7 +2619,7 @@ bool C2Parser::ExpectIdentifier(const char *Msg) {
 
 bool C2Parser::ExpectAndConsume(tok::TokenKind ExpectedTok, unsigned DiagID,
                                 const char* Msg) {
-    if (Tok.is(ExpectedTok) || Tok.is(tok::code_completion)) {
+    if (Tok.is(ExpectedTok)) {
         ConsumeAnyToken();
         return false;
     }
@@ -2667,7 +2665,7 @@ bool C2Parser::ExpectAndConsume(tok::TokenKind ExpectedTok, unsigned DiagID,
 }
 
 bool C2Parser::ExpectAndConsumeSemi(unsigned DiagID) {
-    if (Tok.is(tok::semi) || Tok.is(tok::code_completion)) {
+    if (Tok.is(tok::semi)) {
         ConsumeToken();
         return false;
     }
@@ -2739,16 +2737,6 @@ bool C2Parser::SkipUntil(ArrayRef<tok::TokenKind> Toks, SkipUntilFlags Flags) {
         case tok::eof:
             // Ran out of tokens.
             return false;
-
-
-        case tok::code_completion:
-#if 0
-            if (!HasFlagsSet(Flags, StopAtCodeCompletion))
-                handleUnexpectedCodeCompletionToken();
-#endif
-            TODO;
-            return false;
-
         case tok::l_paren:
             // Recursively skip properly-nested parens.
             ConsumeParen();

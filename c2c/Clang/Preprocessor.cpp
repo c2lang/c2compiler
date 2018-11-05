@@ -41,7 +41,6 @@
 #include "Clang/MacroArgs.h"
 #include "Clang/MacroInfo.h"
 #include "Clang/PreprocessorLexer.h"
-#include "Clang/PreprocessorOptions.h"
 #include "Clang/ScratchBuffer.h"
 #include "Clang/Token.h"
 #include "Clang/TokenLexer.h"
@@ -83,22 +82,23 @@
 
 using namespace c2lang;
 
+// TODO evaluate. Setting this to true breaks tests.
+static bool singleFile = false;
 
 
-Preprocessor::Preprocessor(std::shared_ptr<PreprocessorOptions> PPOpts,
-                           DiagnosticsEngine &diags,
+
+
+Preprocessor::Preprocessor(DiagnosticsEngine &diags,
                            SourceManager &SM,
-                           MemoryBufferCache &PCMCache,
                            HeaderSearch &Headers,
                            bool OwnsHeaders)
-    : PPOpts(std::move(PPOpts)), Diags(&diags),
-      SourceMgr(SM), PCMCache(PCMCache),
+    : Diags(&diags),
+      SourceMgr(SM),
       ScratchBuf(new ScratchBuffer(SourceMgr)), HeaderInfo(Headers),
       // As the language options may have not been loaded yet (when
       // deserializing an ASTUnit), adding keywords to the identifier table is
       // deferred to Preprocessor::Initialize().
       Identifiers(),
-      SkipMainFilePreamble(0, true),
       CurSubmoduleState(&NullSubmoduleState) {
   OwnsHeaderSearch = OwnsHeaders;
 
@@ -135,8 +135,6 @@ Preprocessor::Preprocessor(std::shared_ptr<PreprocessorOptions> PPOpts,
   }
 
 
-  if (this->PPOpts->GeneratePreamble)
-    PreambleConditionalStack.startRecording();
 }
 
 Preprocessor::~Preprocessor() {
@@ -288,69 +286,6 @@ void Preprocessor::recomputeCurLexerKind() {
     CurLexerKind = CLK_CachingLexer;
 }
 
-bool Preprocessor::SetCodeCompletionPoint(const FileEntry *File,
-                                          unsigned CompleteLine,
-                                          unsigned CompleteColumn) {
-  assert(File);
-  assert(CompleteLine && CompleteColumn && "Starts from 1:1");
-  assert(!CodeCompletionFile && "Already set");
-
-  using llvm::MemoryBuffer;
-
-  // Load the actual file's contents.
-  bool Invalid = false;
-  const MemoryBuffer *Buffer = SourceMgr.getMemoryBufferForFile(File, &Invalid);
-  if (Invalid)
-    return true;
-
-  // Find the byte position of the truncation point.
-  const char *Position = Buffer->getBufferStart();
-  for (unsigned Line = 1; Line < CompleteLine; ++Line) {
-    for (; *Position; ++Position) {
-      if (*Position != '\r' && *Position != '\n')
-        continue;
-
-      // Eat \r\n or \n\r as a single line.
-      if ((Position[1] == '\r' || Position[1] == '\n') &&
-          Position[0] != Position[1])
-        ++Position;
-      ++Position;
-      break;
-    }
-  }
-
-  Position += CompleteColumn - 1;
-
-  // If pointing inside the preamble, adjust the position at the beginning of
-  // the file after the preamble.
-  if (SkipMainFilePreamble.first &&
-      SourceMgr.getFileEntryForID(SourceMgr.getMainFileID()) == File) {
-    if (Position - Buffer->getBufferStart() < SkipMainFilePreamble.first)
-      Position = Buffer->getBufferStart() + SkipMainFilePreamble.first;
-  }
-
-  if (Position > Buffer->getBufferEnd())
-    Position = Buffer->getBufferEnd();
-
-  CodeCompletionFile = File;
-  CodeCompletionOffset = Position - Buffer->getBufferStart();
-
-  auto NewBuffer = llvm::WritableMemoryBuffer::getNewUninitMemBuffer(
-      Buffer->getBufferSize() + 1, Buffer->getBufferIdentifier());
-  char *NewBuf = NewBuffer->getBufferStart();
-  char *NewPos = std::copy(Buffer->getBufferStart(), Position, NewBuf);
-  *NewPos = '\0';
-  std::copy(Position, Buffer->getBufferEnd(), NewPos+1);
-  SourceMgr.overrideFileContents(File, std::move(NewBuffer));
-
-  return false;
-}
-
-void Preprocessor::CodeCompleteNaturalLanguage() {
-  if (CodeComplete)
-    CodeComplete->CodeCompleteNaturalLanguage();
-  setCodeCompletionReached();
-}
 
 /// getSpelling - This method is used to get the spelling of a token into a
 /// SmallVector. Note that the returned StringRef may not point to the
@@ -401,23 +336,6 @@ void Preprocessor::CreateString(StringRef Str, Token &Tok,
 // Preprocessor Initialization Methods
 //===----------------------------------------------------------------------===//
 
-
-void Preprocessor::replayPreambleConditionalStack() {
-  // Restore the conditional stack from the preamble, if there is one.
-  if (PreambleConditionalStack.isReplaying()) {
-    assert(CurPPLexer &&
-           "CurPPLexer is null when calling replayPreambleConditionalStack.");
-    CurPPLexer->setConditionalLevels(PreambleConditionalStack.getStack());
-    PreambleConditionalStack.doneReplaying();
-    if (PreambleConditionalStack.reachedEOFWhileSkipping())
-      SkipExcludedConditionalBlock(
-          PreambleConditionalStack.SkipInfo->HashTokenLoc,
-          PreambleConditionalStack.SkipInfo->IfTokenLoc,
-          PreambleConditionalStack.SkipInfo->FoundNonSkipPortion,
-          PreambleConditionalStack.SkipInfo->FoundElse,
-          PreambleConditionalStack.SkipInfo->ElseLoc);
-  }
-}
 
 void Preprocessor::EndSourceFile() {
   // Notify the client that we reached the end of the source file.
@@ -585,13 +503,6 @@ void Preprocessor::Lex(Token &Result) {
     }
   } while (!ReturnedToken);
 
-  if (Result.is(tok::code_completion) && Result.getIdentifierInfo()) {
-    // Remember the identifier before code completion token.
-    setCodeCompletionIdentifierInfo(Result.getIdentifierInfo());
-    // Set IdenfitierInfo to null to avoid confusing code that handles both
-    // identifiers and completion tokens.
-    Result.setIdentifierInfo(nullptr);
-  }
 
   LastTokenWasAt = Result.is(tok::at);
 }
@@ -733,13 +644,6 @@ bool Preprocessor::EnterSourceFile(FileID FID, const DirectoryLookup *CurDir,
     Diag(Loc, diag::err_pp_error_opening_file)
       << std::string(SourceMgr.getBufferName(FileStart)) << "";
     return true;
-  }
-
-  if (isCodeCompletionEnabled() &&
-      SourceMgr.getFileEntryForID(FID) == CodeCompletionFile) {
-    CodeCompletionFileLoc = SourceMgr.getLocForStartOfFile(FID);
-    CodeCompletionLoc =
-        CodeCompletionFileLoc.getLocWithOffset(CodeCompletionOffset);
   }
 
   EnterSourceFileWithLexer(new Lexer(FID, InputFile, *this), CurDir);
@@ -930,22 +834,6 @@ bool Preprocessor::HandleEndOfFile(Token &Result, bool isEndOfMacro) {
   // lexing the #includer file.
   if (!IncludeMacroStack.empty()) {
 
-    // If we lexed the code-completion file, act as if we reached EOF.
-    if (isCodeCompletionEnabled() && CurPPLexer &&
-        SourceMgr.getLocForStartOfFile(CurPPLexer->getFileID()) ==
-            CodeCompletionFileLoc) {
-      if (CurLexer) {
-        Result.startToken();
-        CurLexer->FormTokenWithChars(Result, CurLexer->BufferEnd, tok::eof);
-        CurLexer.reset();
-      } else {
-        FATAL_ERROR("Got EOF but no current lexer set!");
-      }
-
-      CurPPLexer = nullptr;
-      recomputeCurLexerKind();
-      return true;
-    }
 
     if (!isEndOfMacro && CurPPLexer &&
         SourceMgr.getIncludeLoc(CurPPLexer->getFileID()).isValid()) {
@@ -978,8 +866,6 @@ bool Preprocessor::HandleEndOfFile(Token &Result, bool isEndOfMacro) {
 
     // Restore conditional stack from the preamble right after exiting from the
     // predefines file.
-    if (ExitedFromPredefinesFile)
-      replayPreambleConditionalStack();
 
     return false;
   }
@@ -991,16 +877,6 @@ bool Preprocessor::HandleEndOfFile(Token &Result, bool isEndOfMacro) {
     CurLexer->BufferPtr = EndPos;
     CurLexer->FormTokenWithChars(Result, EndPos, tok::eof);
 
-    if (isCodeCompletionEnabled()) {
-      // Inserting the code-completion point increases the source buffer by 1,
-      // but the main FileID was created before inserting the point.
-      // Compensate by reducing the EOF location by 1, otherwise the location
-      // will point to the next FileID.
-      // FIXME: This is hacky, the code-completion point should probably be
-      // inserted before the main FileID is created.
-      if (CurLexer->getFileLoc() == CodeCompletionFileLoc)
-        Result.setLocation(Result.getLocation().getLocWithOffset(-1));
-    }
 
 
     if (!isIncrementalProcessingEnabled())
@@ -1263,12 +1139,6 @@ void Preprocessor::ReadMacroName(Token &MacroNameTok, MacroUse isDefineUndef,
   // Read the token, don't allow macro expansion on it.
   LexUnexpandedToken(MacroNameTok);
 
-  if (MacroNameTok.is(tok::code_completion)) {
-    if (CodeComplete)
-      CodeComplete->CodeCompleteMacroName(isDefineUndef == MU_Define);
-    setCodeCompletionReached();
-    LexUnexpandedToken(MacroNameTok);
-  }
 
   if (!CheckMacroName(MacroNameTok, isDefineUndef, ShadowFlag))
     return;
@@ -1330,10 +1200,7 @@ void Preprocessor::SkipExcludedConditionalBlock(SourceLocation HashTokenLoc,
   ++NumSkipped;
   assert(!CurTokenLexer && CurPPLexer && "Lexing a macro, not a file?");
 
-  if (PreambleConditionalStack.reachedEOFWhileSkipping())
-    PreambleConditionalStack.clearSkipInfo();
-  else
-    CurPPLexer->pushConditionalLevel(IfTokenLoc, /*isSkipping*/ false,
+  CurPPLexer->pushConditionalLevel(IfTokenLoc, /*isSkipping*/ false,
                                      FoundNonSkipPortion, FoundElse);
 
 
@@ -1344,23 +1211,8 @@ void Preprocessor::SkipExcludedConditionalBlock(SourceLocation HashTokenLoc,
   while (true) {
     CurLexer->Lex(Tok);
 
-    if (Tok.is(tok::code_completion)) {
-      if (CodeComplete)
-        CodeComplete->CodeCompleteInConditionalExclusion();
-      setCodeCompletionReached();
-      continue;
-    }
 
     // If this is the end of the buffer, we have an error.
-    if (Tok.is(tok::eof)) {
-      // We don't emit errors for unterminated conditionals here,
-      // Lexer::LexEndOfFile can do that propertly.
-      // Just return and let the caller lex after this #include.
-      if (PreambleConditionalStack.isRecording())
-        PreambleConditionalStack.SkipInfo.emplace(
-            HashTokenLoc, IfTokenLoc, FoundNonSkipPortion, FoundElse, ElseLoc);
-      break;
-    }
 
     // If this token is not a preprocessor directive, just skip it.
     if (Tok.isNot(tok::hash) || !Tok.isAtStartOfLine())
@@ -1524,23 +1376,6 @@ void Preprocessor::SkipExcludedConditionalBlock(SourceLocation HashTokenLoc,
 // Preprocessor Directive Handling.
 //===----------------------------------------------------------------------===//
 
-class Preprocessor::ResetMacroExpansionHelper {
-public:
-  ResetMacroExpansionHelper(Preprocessor *pp)
-    : PP(pp), save(pp->DisableMacroExpansion) {
-    if (pp->MacroExpansionInDirectivesOverride)
-      pp->DisableMacroExpansion = false;
-  }
-
-  ~ResetMacroExpansionHelper() {
-    PP->DisableMacroExpansion = save;
-  }
-
-private:
-  Preprocessor *PP;
-  bool save;
-};
-
 
 /// HandleDirective - This callback is invoked when the lexer sees a # token
 /// at the start of a line.  This consumes the directive, modifies the
@@ -1593,12 +1428,6 @@ void Preprocessor::HandleDirective(Token &Result) {
   switch (Result.getKind()) {
   case tok::eod:
     return;   // null directive.
-  case tok::code_completion:
-    if (CodeComplete)
-      CodeComplete->CodeCompleteDirective(
-                                    CurPPLexer->getConditionalStackDepth() > 0);
-    setCodeCompletionReached();
-    return;
   default:
     IdentifierInfo *II = Result.getIdentifierInfo();
     if (!II) break; // Not an identifier.
@@ -2143,7 +1972,7 @@ void Preprocessor::HandleIfdefDirective(Token &Result,
 
 
   // Should we include the stuff contained by this directive?
-  if (PPOpts->SingleFileParseMode && !MI) {
+  if (singleFile && !MI) {
     // In 'single-file-parse mode' undefined identifiers trigger parsing of all
     // the directive blocks.
     CurPPLexer->pushConditionalLevel(DirectiveTok.getLocation(),
@@ -2189,7 +2018,7 @@ void Preprocessor::HandleIfDirective(Token &IfToken,
 
 
   // Should we include the stuff contained by this directive?
-  if (PPOpts->SingleFileParseMode && DER.IncludedUndefinedIds) {
+  if (singleFile && DER.IncludedUndefinedIds) {
     // In 'single-file-parse mode' undefined identifiers trigger parsing of all
     // the directive blocks.
     CurPPLexer->pushConditionalLevel(IfToken.getLocation(), /*wasskip*/false,
@@ -2252,7 +2081,7 @@ void Preprocessor::HandleElseDirective(Token &Result, const Token &HashToken) {
   if (CI.FoundElse) Diag(Result, diag::pp_err_else_after_else);
 
 
-  if (PPOpts->SingleFileParseMode && !CI.FoundNonSkip) {
+  if (singleFile && !CI.FoundNonSkip) {
     // In 'single-file-parse mode' undefined identifiers trigger parsing of all
     // the directive blocks.
     CurPPLexer->pushConditionalLevel(CI.IfLoc, /*wasskip*/false,
@@ -2293,7 +2122,7 @@ void Preprocessor::HandleElifDirective(Token &ElifToken,
   if (CI.FoundElse) Diag(ElifToken, diag::pp_err_elif_after_else);
 
 
-  if (PPOpts->SingleFileParseMode && !CI.FoundNonSkip) {
+  if (singleFile && !CI.FoundNonSkip) {
     // In 'single-file-parse mode' undefined identifiers trigger parsing of all
     // the directive blocks.
     CurPPLexer->pushConditionalLevel(ElifToken.getLocation(), /*wasskip*/false,
@@ -2718,15 +2547,12 @@ MacroArgs *Preprocessor::ReadMacroCallArgumentList(Token &MacroName,
   // argument is separated by an EOF token.  Use a SmallVector so we can avoid
   // heap allocations in the common case.
   SmallVector<Token, 64> ArgTokens;
-  bool ContainsCodeCompletionTok = false;
   bool FoundElidedComma = false;
 
   SourceLocation TooManyArgsLoc;
 
   unsigned NumActuals = 0;
   while (Tok.isNot(tok::r_paren)) {
-    if (ContainsCodeCompletionTok && Tok.isOneOf(tok::eof, tok::eod))
-      break;
 
     assert(Tok.isOneOf(tok::l_paren, tok::comma) &&
            "only expect argument separators here");
@@ -2744,19 +2570,12 @@ MacroArgs *Preprocessor::ReadMacroCallArgumentList(Token &MacroName,
       LexUnexpandedToken(Tok);
 
       if (Tok.isOneOf(tok::eof, tok::eod)) { // "#if f(<eof>" & "#if f(\n"
-        if (!ContainsCodeCompletionTok) {
-          Diag(MacroName, diag::err_unterm_macro_invoc);
-          Diag(MI->getDefinitionLoc(), diag::note_macro_here)
-            << MacroName.getIdentifierInfo();
-          // Do not lose the EOF/EOD.  Return it to the client.
-          MacroName = Tok;
-          return nullptr;
-        }
-        // Do not lose the EOF/EOD.
-        auto Toks = llvm::make_unique<Token[]>(1);
-        Toks[0] = Tok;
-        EnterTokenStream(std::move(Toks), 1, true);
-        break;
+        Diag(MacroName, diag::err_unterm_macro_invoc);
+        Diag(MI->getDefinitionLoc(), diag::note_macro_here)
+          << MacroName.getIdentifierInfo();
+        // Do not lose the EOF/EOD.  Return it to the client.
+        MacroName = Tok;
+        return nullptr;
       } else if (Tok.is(tok::r_paren)) {
         // If we found the ) token, the macro arg list is done.
         if (NumParens-- == 0) {
@@ -2795,14 +2614,6 @@ MacroArgs *Preprocessor::ReadMacroCallArgumentList(Token &MacroName,
         if (MacroInfo *MI = getMacroInfo(Tok.getIdentifierInfo()))
           if (!MI->isEnabled())
             Tok.setFlag(Token::DisableExpand);
-      } else if (Tok.is(tok::code_completion)) {
-        ContainsCodeCompletionTok = true;
-        if (CodeComplete)
-          CodeComplete->CodeCompleteMacroArgument(MacroName.getIdentifierInfo(),
-                                                  MI, NumActuals);
-        // Don't mark that we reached the code-completion point because the
-        // parser is going to handle the token and there will be another
-        // code-completion callback.
       }
 
       ArgTokens.push_back(Tok);
@@ -2831,7 +2642,7 @@ MacroArgs *Preprocessor::ReadMacroCallArgumentList(Token &MacroName,
     EOFTok.setLength(0);
     ArgTokens.push_back(EOFTok);
     ++NumActuals;
-    if (!ContainsCodeCompletionTok && NumFixedArgsLeft != 0)
+    if (NumFixedArgsLeft != 0)
       --NumFixedArgsLeft;
   }
 
@@ -2841,8 +2652,7 @@ MacroArgs *Preprocessor::ReadMacroCallArgumentList(Token &MacroName,
 
   // If this is not a variadic macro, and too many args were specified, emit
   // an error.
-  if (!isVariadic && NumActuals > MinArgsExpected &&
-      !ContainsCodeCompletionTok) {
+  if (!isVariadic && NumActuals > MinArgsExpected) {
     // Emit the diagnostic at the macro name in case there is a missing ).
     // Emitting it at the , could be far away from the macro name.
     Diag(TooManyArgsLoc, diag::err_too_many_args_in_macro_invoc);
@@ -2883,16 +2693,6 @@ MacroArgs *Preprocessor::ReadMacroCallArgumentList(Token &MacroName,
   // See MacroArgs instance var for description of this.
   bool isVarargsElided = false;
 
-  if (ContainsCodeCompletionTok) {
-    // Recover from not-fully-formed macro invocation during code-completion.
-    Token EOFTok;
-    EOFTok.startToken();
-    EOFTok.setKind(tok::eof);
-    EOFTok.setLocation(Tok.getLocation());
-    EOFTok.setLength(0);
-    for (; NumActuals < MinArgsExpected; ++NumActuals)
-      ArgTokens.push_back(EOFTok);
-  }
 
   if (NumActuals < MinArgsExpected) {
     // There are several cases where too few arguments is ok, handle them now.
@@ -2925,12 +2725,6 @@ MacroArgs *Preprocessor::ReadMacroCallArgumentList(Token &MacroName,
       //   #define C(...) blah(a, ## __VA_ARGS__)
       //  A(x) B(x) C()
       isVarargsElided = true;
-    } else if (!ContainsCodeCompletionTok) {
-      // Otherwise, emit the error.
-      Diag(Tok, diag::err_too_few_args_in_macro_invoc);
-      Diag(MI->getDefinitionLoc(), diag::note_macro_here)
-        << MacroName.getIdentifierInfo();
-      return nullptr;
     }
 
     // Add a marker EOF token to the end of the token list for this argument.
@@ -2945,8 +2739,7 @@ MacroArgs *Preprocessor::ReadMacroCallArgumentList(Token &MacroName,
     if (NumActuals == 0 && MinArgsExpected == 2)
       ArgTokens.push_back(Tok);
 
-  } else if (NumActuals > MinArgsExpected && !MI->isVariadic() &&
-             !ContainsCodeCompletionTok) {
+  } else if (NumActuals > MinArgsExpected && !MI->isVariadic()) {
     // Emit the diagnostic at the macro name in case there is a missing ).
     // Emitting it at the , could be far away from the macro name.
     Diag(MacroName, diag::err_too_many_args_in_macro_invoc);

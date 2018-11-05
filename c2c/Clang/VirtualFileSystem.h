@@ -192,10 +192,8 @@ class recursive_directory_iterator {
   std::shared_ptr<IterState> State; // Input iterator semantics on copy.
 
 public:
-  recursive_directory_iterator(FileSystem &FS, const Twine &Path,
-                               std::error_code &EC);
 
-  /// Construct an 'end' iterator.
+    /// Construct an 'end' iterator.
   recursive_directory_iterator() = default;
 
   /// Equivalent to operator++, with an error code.
@@ -257,196 +255,12 @@ public:
   /// Check whether a file exists. Provided for convenience.
   bool exists(const Twine &Path);
 
-  /// Make \a Path an absolute path.
-  ///
-  /// Makes \a Path absolute using the current directory if it is not already.
-  /// An empty \a Path will result in the current directory.
-  ///
-  /// /absolute/path   => /absolute/path
-  /// relative/../path => <current-directory>/relative/../path
-  ///
-  /// \param Path A path that is modified to be an absolute path.
-  /// \returns success if \a path has been made absolute, otherwise a
-  ///          platform-specific error_code.
-  std::error_code makeAbsolute(SmallVectorImpl<char> &Path) const;
 };
 
 /// Gets an \p vfs::FileSystem for the 'real' file system, as seen by
 /// the operating system.
 IntrusiveRefCntPtr<FileSystem> getRealFileSystem();
 
-/// A file system that allows overlaying one \p AbstractFileSystem on top
-/// of another.
-///
-/// Consists of a stack of >=1 \p FileSystem objects, which are treated as being
-/// one merged file system. When there is a directory that exists in more than
-/// one file system, the \p OverlayFileSystem contains a directory containing
-/// the union of their contents.  The attributes (permissions, etc.) of the
-/// top-most (most recently added) directory are used.  When there is a file
-/// that exists in more than one file system, the file in the top-most file
-/// system overrides the other(s).
-class OverlayFileSystem : public FileSystem {
-  using FileSystemList = SmallVector<IntrusiveRefCntPtr<FileSystem>, 1>;
-
-  /// The stack of file systems, implemented as a list in order of
-  /// their addition.
-  FileSystemList FSList;
-
-public:
-  OverlayFileSystem(IntrusiveRefCntPtr<FileSystem> Base);
-
-  /// Pushes a file system on top of the stack.
-  void pushOverlay(IntrusiveRefCntPtr<FileSystem> FS);
-
-  llvm::ErrorOr<Status> status(const Twine &Path) override;
-  llvm::ErrorOr<std::unique_ptr<File>>
-  openFileForRead(const Twine &Path) override;
-  directory_iterator dir_begin(const Twine &Dir, std::error_code &EC) override;
-  llvm::ErrorOr<std::string> getCurrentWorkingDirectory() const override;
-  std::error_code setCurrentWorkingDirectory(const Twine &Path) override;
-  std::error_code getRealPath(const Twine &Path,
-                              SmallVectorImpl<char> &Output) const override;
-
-  using iterator = FileSystemList::reverse_iterator;
-  using const_iterator = FileSystemList::const_reverse_iterator;
-
-  /// Get an iterator pointing to the most recently added file system.
-  iterator overlays_begin() { return FSList.rbegin(); }
-  const_iterator overlays_begin() const { return FSList.rbegin(); }
-
-  /// Get an iterator pointing one-past the least recently added file
-  /// system.
-  iterator overlays_end() { return FSList.rend(); }
-  const_iterator overlays_end() const { return FSList.rend(); }
-};
-
-namespace detail {
-
-class InMemoryDirectory;
-
-} // namespace detail
-
-/// An in-memory file system.
-class InMemoryFileSystem : public FileSystem {
-  std::unique_ptr<detail::InMemoryDirectory> Root;
-  std::string WorkingDirectory;
-  bool UseNormalizedPaths = true;
-
-public:
-  explicit InMemoryFileSystem(bool UseNormalizedPaths = true);
-  ~InMemoryFileSystem() override;
-
-  /// Add a file containing a buffer or a directory to the VFS with a
-  /// path. The VFS owns the buffer.  If present, User, Group, Type
-  /// and Perms apply to the newly-created file or directory.
-  /// \return true if the file or directory was successfully added,
-  /// false if the file or directory already exists in the file system with
-  /// different contents.
-  bool addFile(const Twine &Path, time_t ModificationTime,
-               std::unique_ptr<llvm::MemoryBuffer> Buffer,
-               Optional<uint32_t> User = None, Optional<uint32_t> Group = None,
-               Optional<llvm::sys::fs::file_type> Type = None,
-               Optional<llvm::sys::fs::perms> Perms = None);
-
-  /// Add a buffer to the VFS with a path. The VFS does not own the buffer.
-  /// If present, User, Group, Type and Perms apply to the newly-created file
-  /// or directory.
-  /// \return true if the file or directory was successfully added,
-  /// false if the file or directory already exists in the file system with
-  /// different contents.
-  bool addFileNoOwn(const Twine &Path, time_t ModificationTime,
-                    llvm::MemoryBuffer *Buffer,
-                    Optional<uint32_t> User = None,
-                    Optional<uint32_t> Group = None,
-                    Optional<llvm::sys::fs::file_type> Type = None,
-                    Optional<llvm::sys::fs::perms> Perms = None);
-
-  std::string toString() const;
-
-  /// Return true if this file system normalizes . and .. in paths.
-  bool useNormalizedPaths() const { return UseNormalizedPaths; }
-
-  llvm::ErrorOr<Status> status(const Twine &Path) override;
-  llvm::ErrorOr<std::unique_ptr<File>>
-  openFileForRead(const Twine &Path) override;
-  directory_iterator dir_begin(const Twine &Dir, std::error_code &EC) override;
-
-  llvm::ErrorOr<std::string> getCurrentWorkingDirectory() const override {
-    return WorkingDirectory;
-  }
-  /// Canonicalizes \p Path by combining with the current working
-  /// directory and normalizing the path (e.g. remove dots). If the current
-  /// working directory is not set, this returns errc::operation_not_permitted.
-  ///
-  /// This doesn't resolve symlinks as they are not supported in in-memory file
-  /// system.
-  std::error_code getRealPath(const Twine &Path,
-                              SmallVectorImpl<char> &Output) const override;
-
-  std::error_code setCurrentWorkingDirectory(const Twine &Path) override;
-};
-
-/// Get a globally unique ID for a virtual file or directory.
-llvm::sys::fs::UniqueID getNextVirtualUniqueID();
-
-/// Gets a \p FileSystem for a virtual file system described in YAML
-/// format.
-IntrusiveRefCntPtr<FileSystem>
-getVFSFromYAML(std::unique_ptr<llvm::MemoryBuffer> Buffer,
-               llvm::SourceMgr::DiagHandlerTy DiagHandler,
-               StringRef YAMLFilePath,
-               void *DiagContext = nullptr,
-               IntrusiveRefCntPtr<FileSystem> ExternalFS = getRealFileSystem());
-
-struct YAMLVFSEntry {
-  template <typename T1, typename T2> YAMLVFSEntry(T1 &&VPath, T2 &&RPath)
-      : VPath(std::forward<T1>(VPath)), RPath(std::forward<T2>(RPath)) {}
-  std::string VPath;
-  std::string RPath;
-};
-
-/// Collect all pairs of <virtual path, real path> entries from the
-/// \p YAMLFilePath. This is used by the module dependency collector to forward
-/// the entries into the reproducer output VFS YAML file.
-void collectVFSFromYAML(
-    std::unique_ptr<llvm::MemoryBuffer> Buffer,
-    llvm::SourceMgr::DiagHandlerTy DiagHandler, StringRef YAMLFilePath,
-    SmallVectorImpl<YAMLVFSEntry> &CollectedEntries,
-    void *DiagContext = nullptr,
-    IntrusiveRefCntPtr<FileSystem> ExternalFS = getRealFileSystem());
-
-class YAMLVFSWriter {
-  std::vector<YAMLVFSEntry> Mappings;
-  Optional<bool> IsCaseSensitive;
-  Optional<bool> IsOverlayRelative;
-  Optional<bool> UseExternalNames;
-  Optional<bool> IgnoreNonExistentContents;
-  std::string OverlayDir;
-
-public:
-  YAMLVFSWriter() = default;
-
-  void addFileMapping(StringRef VirtualPath, StringRef RealPath);
-
-  void setCaseSensitivity(bool CaseSensitive) {
-    IsCaseSensitive = CaseSensitive;
-  }
-
-  void setUseExternalNames(bool UseExtNames) {
-    UseExternalNames = UseExtNames;
-  }
-
-  void setIgnoreNonExistentContents(bool IgnoreContents) {
-    IgnoreNonExistentContents = IgnoreContents;
-  }
-
-  void setOverlayDir(StringRef OverlayDirectory) {
-    IsOverlayRelative = true;
-    OverlayDir.assign(OverlayDirectory.str());
-  }
-
-  void write(llvm::raw_ostream &OS);
-};
 
 } // namespace vfs
 } // namespace c2lang

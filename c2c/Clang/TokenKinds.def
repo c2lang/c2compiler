@@ -83,7 +83,6 @@ TOK(unknown)             // Not a token.
 TOK(eof)                 // End of file.
 TOK(eod)                 // End of preprocessing directive (end of line inside a
                          // directive).
-TOK(code_completion)     // Code completion marker
 
 // C99 6.4.9: Comments.
 TOK(comment)             // Comment (only in -E -C[C] mode)

@@ -48,17 +48,15 @@ using namespace c2lang;
 // Common logic.
 //===----------------------------------------------------------------------===//
 
-FileManager::FileManager(const FileSystemOptions &FSO,
-                         IntrusiveRefCntPtr<vfs::FileSystem> FS)
-    : FS(std::move(FS)), FileSystemOpts(FSO), SeenDirEntries(64),
+FileManager::FileManager(const FileSystemOptions &FSO)
+    : FileSystemOpts(FSO), SeenDirEntries(64),
       SeenFileEntries(64), NextFileUID(0) {
   NumDirLookups = NumFileLookups = 0;
   NumDirCacheMisses = NumFileCacheMisses = 0;
 
   // If the caller doesn't provide a virtual file system, just grab the real
   // file system.
-  if (!this->FS)
-    this->FS = vfs::getRealFileSystem();
+  this->FS = vfs::getRealFileSystem();
 }
 
 FileManager::~FileManager() = default;

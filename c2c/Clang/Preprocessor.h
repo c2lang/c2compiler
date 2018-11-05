@@ -58,7 +58,6 @@ template<unsigned InternalLen> class SmallString;
 
 namespace c2lang {
 
-class CodeCompletionHandler;
 class CommentHandler;
 class DirectoryEntry;
 class DirectoryLookup;
@@ -69,7 +68,6 @@ class HeaderSearch;
 class MacroArgs;
 class MemoryBufferCache;
 class PreprocessorLexer;
-class PreprocessorOptions;
 class PTHManager;
 class ScratchBuffer;
 class TargetInfo;
@@ -118,12 +116,10 @@ class Preprocessor {
   friend class VAOptDefinitionContext;
   friend class VariadicMacroScopeGuard;
 
-  std::shared_ptr<PreprocessorOptions> PPOpts;
   DiagnosticsEngine        *Diags;
   const C2::TargetInfo *Target = nullptr;
   const C2::TargetInfo *AuxTarget = nullptr;
   SourceManager     &SourceMgr;
-  MemoryBufferCache &PCMCache;
   std::unique_ptr<ScratchBuffer> ScratchBuf;
   HeaderSearch      &HeaderInfo;
 
@@ -167,8 +163,6 @@ class Preprocessor {
   /// when parsing preprocessor directives.
   bool MacroExpansionInDirectivesOverride : 1;
 
-  class ResetMacroExpansionHelper;
-
 
   /// True if the current build action is a preprocessing action.
   bool PreprocessedOutput : 1;
@@ -192,109 +186,15 @@ class Preprocessor {
   bool IncrementalProcessing = false;
 
 
-  /// The code-completion handler.
-  CodeCompletionHandler *CodeComplete = nullptr;
-
-  /// The file that we're performing code-completion for, if any.
-  const FileEntry *CodeCompletionFile = nullptr;
-
-  /// The offset in file for the code-completion point.
-  unsigned CodeCompletionOffset = 0;
-
-  /// The location for the code-completion point. This gets instantiated
-  /// when the CodeCompletionFile gets \#include'ed for preprocessing.
-  SourceLocation CodeCompletionLoc;
-
-  /// The start location for the file of the code-completion point.
-  ///
-  /// This gets instantiated when the CodeCompletionFile gets \#include'ed
-  /// for preprocessing.
-  SourceLocation CodeCompletionFileLoc;
-
 
 
   /// Whether the last token we lexed was an '@'.
   bool LastTokenWasAt = false;
 
 
-
-  /// True if we hit the code-completion point.
-  bool CodeCompletionReached = false;
-
-  /// The code completion token containing the information
-  /// on the stem that is to be code completed.
-  IdentifierInfo *CodeCompletionII = nullptr;
-
-
-  /// The number of bytes that we will initially skip when entering the
-  /// main file, along with a flag that indicates whether skipping this number
-  /// of bytes will place the lexer at the start of a line.
-  ///
-  /// This is used when loading a precompiled preamble.
-  std::pair<int, bool> SkipMainFilePreamble;
-
-public:
-  struct PreambleSkipInfo {
-    SourceLocation HashTokenLoc;
-    SourceLocation IfTokenLoc;
-    bool FoundNonSkipPortion;
-    bool FoundElse;
-    SourceLocation ElseLoc;
-
-    PreambleSkipInfo(SourceLocation HashTokenLoc, SourceLocation IfTokenLoc,
-                     bool FoundNonSkipPortion, bool FoundElse,
-                     SourceLocation ElseLoc)
-        : HashTokenLoc(HashTokenLoc), IfTokenLoc(IfTokenLoc),
-          FoundNonSkipPortion(FoundNonSkipPortion), FoundElse(FoundElse),
-          ElseLoc(ElseLoc) {}
-  };
-
 private:
     friend class MacroArgs;
 
-  class PreambleConditionalStackStore {
-    enum State {
-      Off = 0,
-      Recording = 1,
-      Replaying = 2,
-    };
-
-  public:
-    PreambleConditionalStackStore() = default;
-
-    void startRecording() { ConditionalStackState = Recording; }
-    void startReplaying() { ConditionalStackState = Replaying; }
-    bool isRecording() const { return ConditionalStackState == Recording; }
-    bool isReplaying() const { return ConditionalStackState == Replaying; }
-
-    ArrayRef<PPConditionalInfo> getStack() const {
-      return ConditionalStack;
-    }
-
-    void doneReplaying() {
-      ConditionalStack.clear();
-      ConditionalStackState = Off;
-    }
-
-    void setStack(ArrayRef<PPConditionalInfo> s) {
-      if (!isRecording() && !isReplaying())
-        return;
-      ConditionalStack.clear();
-      ConditionalStack.append(s.begin(), s.end());
-    }
-
-    bool hasRecordedPreamble() const { return !ConditionalStack.empty(); }
-
-    bool reachedEOFWhileSkipping() const { return SkipInfo.hasValue(); }
-
-    void clearSkipInfo() { SkipInfo.reset(); }
-
-    llvm::Optional<PreambleSkipInfo> SkipInfo;
-
-  private:
-    SmallVector<PPConditionalInfo, 4> ConditionalStack;
-    State ConditionalStackState = Off;
-  } PreambleConditionalStack;
 
   /// The current top of the stack that we're lexing from if
   /// not expanding a macro and we are lexing directly from source code.
@@ -354,6 +254,23 @@ private:
   };
   std::vector<IncludeStackInfo> IncludeMacroStack;
 
+
+    class ResetMacroExpansionHelper {
+    public:
+      ResetMacroExpansionHelper(Preprocessor *pp)
+        : PP(pp), save(pp->DisableMacroExpansion) {
+        if (pp->MacroExpansionInDirectivesOverride)
+          pp->DisableMacroExpansion = false;
+      }
+
+      ~ResetMacroExpansionHelper() {
+        PP->DisableMacroExpansion = save;
+      }
+
+    private:
+      Preprocessor *PP;
+      bool save;
+    };
 
   struct MacroExpandsInfo {
     Token Tok;
@@ -527,10 +444,8 @@ private:
   MacroInfoChain *MIChainHead = nullptr;
 
 public:
-  Preprocessor(std::shared_ptr<PreprocessorOptions> PPOpts,
-                 DiagnosticsEngine &diags,
+  Preprocessor(  DiagnosticsEngine &diags,
                  SourceManager &SM,
-                 MemoryBufferCache &PCMCache,
                  HeaderSearch &Headers,
                  bool OwnsHeaderSearch = false);
 
@@ -545,10 +460,6 @@ public:
   void Initialize(const C2::TargetInfo &Target,
                   const C2::TargetInfo *AuxTarget = nullptr);
 
-
-    /// Retrieve the preprocessor options used to initialize this
-  /// preprocessor.
-  PreprocessorOptions &getPreprocessorOpts() const { return *PPOpts; }
 
   DiagnosticsEngine &getDiagnostics() const { return *Diags; }
 
@@ -689,37 +600,6 @@ public:
   }
 
 
-    /// Retrieve the current code-completion handler.
-  CodeCompletionHandler *getCodeCompletionHandler() const {
-    return CodeComplete;
-  }
-
-
-    /// Hook used by the lexer to invoke the "natural language" code
-  /// completion point.
-  void CodeCompleteNaturalLanguage();
-
-  /// Set the code completion token for filtering purposes.
-  void setCodeCompletionIdentifierInfo(IdentifierInfo *Filter) {
-    CodeCompletionII = Filter;
-  }
-
-  /// Get the code completion token for filtering purposes.
-  StringRef getCodeCompletionFilter() {
-    if (CodeCompletionII)
-      return CodeCompletionII->getName();
-    return {};
-  }
-
-
-    /// Process directives while skipping until the through header is found.
-  void HandleSkippedThroughHeaderDirective(Token &Result,
-                                           SourceLocation HashLoc);
-
-  /// Enter the specified FileID as the main source file,
-  /// which implicitly adds the builtin defines etc.
-  void EnterMainSourceFile();
-
     /// Inform the preprocessor callbacks that processing is complete.
   void EndSourceFile();
 
@@ -770,21 +650,6 @@ public:
   /// top-of-stack lexer is known.
   void RemoveTopOfLexerStack();
 
-  /// From the point that this method is called, and until
-  /// CommitBacktrackedTokens() or Backtrack() is called, the Preprocessor
-  /// keeps track of the lexed tokens so that a subsequent Backtrack() call will
-  /// make the Preprocessor re-lex the same tokens.
-  ///
-  /// Nested backtracks are allowed, meaning that EnableBacktrackAtThisPos can
-  /// be called multiple times and CommitBacktrackedTokens/Backtrack calls will
-  /// be combined with the EnableBacktrackAtThisPos calls in reverse order.
-  ///
-  /// NOTE: *DO NOT* forget to call either CommitBacktrackedTokens or Backtrack
-  /// at some point after EnableBacktrackAtThisPos. If you don't, caching of
-  /// tokens will continue indefinitely.
-  ///
-  void EnableBacktrackAtThisPos();
-
     /// Disable the last EnableBacktrackAtThisPos call.
   void CommitBacktrackedTokens();
 
@@ -798,9 +663,6 @@ private:
   Optional<CachedTokensRange> CachedTokenRangeToErase;
 
 public:
-  /// Returns the range of cached tokens that were lexed since
-  /// EnableBacktrackAtThisPos() was previously called.
-  CachedTokensRange LastCachedTokenRange();
 
     /// Erase the range of cached tokens that were lexed since
   /// EnableBacktrackAtThisPos() was previously called.
@@ -956,65 +818,10 @@ public:
     IncrementalProcessing = value;
   }
 
-  /// Specify the point at which code-completion will be performed.
-  ///
-  /// \param File the file in which code completion should occur. If
-  /// this file is included multiple times, code-completion will
-  /// perform completion the first time it is included. If NULL, this
-  /// function clears out the code-completion point.
-  ///
-  /// \param Line the line at which code completion should occur
-  /// (1-based).
-  ///
-  /// \param Column the column at which code completion should occur
-  /// (1-based).
-  ///
-  /// \returns true if an error occurred, false otherwise.
-  bool SetCodeCompletionPoint(const FileEntry *File,
-                              unsigned Line, unsigned Column);
-
-  /// Determine if we are performing code completion.
-  bool isCodeCompletionEnabled() const { return CodeCompletionFile != nullptr; }
-
-  /// Returns the location of the code-completion point.
-  ///
-  /// Returns an invalid location if code-completion is not enabled or the file
-  /// containing the code-completion point has not been lexed yet.
-  SourceLocation getCodeCompletionLoc() const { return CodeCompletionLoc; }
-
-  /// Returns the start location of the file of code-completion point.
-  ///
-  /// Returns an invalid location if code-completion is not enabled or the file
-  /// containing the code-completion point has not been lexed yet.
-  SourceLocation getCodeCompletionFileLoc() const {
-    return CodeCompletionFileLoc;
-  }
-
-  /// Returns true if code-completion is enabled and we have hit the
-  /// code-completion point.
-  bool isCodeCompletionReached() const { return CodeCompletionReached; }
-
-  /// Note that we hit the code-completion point.
-  void setCodeCompletionReached() {
-    assert(isCodeCompletionEnabled() && "Code-completion not enabled!");
-    CodeCompletionReached = true;
-    // Silence any diagnostics that occur after we hit the code-completion.
-    getDiagnostics().setSuppressAllDiagnostics(true);
-  }
 
 
-  /// Instruct the preprocessor to skip part of the main source file.
-  ///
-  /// \param Bytes The number of bytes in the preamble to skip.
-  ///
-  /// \param StartOfLine Whether skipping these bytes puts the lexer at the
-  /// start of a line.
-  void setSkipMainFilePreamble(unsigned Bytes, bool StartOfLine) {
-    SkipMainFilePreamble.first = Bytes;
-    SkipMainFilePreamble.second = StartOfLine;
-  }
 
-  /// Forwarding function for diagnostics.  This emits a diagnostic at
+    /// Forwarding function for diagnostics.  This emits a diagnostic at
   /// the specified Token's location, translating the token's start
   /// position in the current buffer into a SourcePosition object for rendering.
   DiagnosticBuilder Diag(SourceLocation Loc, unsigned DiagID) const {
@@ -1502,22 +1309,11 @@ private:
 public:
 
 
-  bool isRecordingPreamble() const {
-    return PreambleConditionalStack.isRecording();
-  }
-
-
-    void setRecordedPreambleConditionalStack(ArrayRef<PPConditionalInfo> s) {
-    PreambleConditionalStack.setStack(s);
-  }
 
 
 private:
-  /// After processing predefined file, initialize the conditional stack from
-  /// the preamble.
-  void replayPreambleConditionalStack();
 
-  // Macro handling.
+    // Macro handling.
   void HandleDefineDirective(Token &Tok, bool ImmediatelyAfterTopLevelIfndef);
   void HandleUndefDirective();
 

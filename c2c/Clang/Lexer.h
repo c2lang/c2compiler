@@ -666,8 +666,8 @@ private:
 
   bool lexEditorPlaceholder(Token &Result, const char *CurPtr);
 
-  bool isCodeCompletionPoint(const char *CurPtr) const;
-  void cutOffLexing() { BufferPtr = BufferEnd; }
+
+    void cutOffLexing() { BufferPtr = BufferEnd; }
 
   bool isHexaLiteral(const char *Start);
 

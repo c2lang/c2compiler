@@ -1819,11 +1819,8 @@ public:
 /// in-memorty file.
 class SourceManagerForFile {
 public:
-  /// Creates SourceManager and necessary depdencies (e.g. VFS, FileManager).
-  /// The main file in the SourceManager will be \p FileName with \p Content.
-  SourceManagerForFile(StringRef FileName, StringRef Content);
 
-  SourceManager &get() {
+    SourceManager &get() {
     assert(SourceMgr);
     return *SourceMgr;
   }
