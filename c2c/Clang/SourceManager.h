@@ -76,18 +76,14 @@ namespace SrcMgr {
   /// system_header is seen or in various other cases.
   ///
   enum CharacteristicKind {
-    C_User, C_System, C_ExternCSystem, C_User_ModuleMap, C_System_ModuleMap
+    C_User, C_System, C_ExternCSystem
   };
 
   /// Determine whether a file / directory characteristic is for system code.
   inline bool isSystem(CharacteristicKind CK) {
-    return CK != C_User && CK != C_User_ModuleMap;
+    return CK != C_User;
   }
 
-  /// Determine whether a file characteristic is for a module map.
-  inline bool isModuleMap(CharacteristicKind CK) {
-    return CK == C_User_ModuleMap || CK == C_System_ModuleMap;
-  }
 
   /// One instance of this struct is kept for every file loaded or used.
   ///
@@ -243,8 +239,6 @@ namespace SrcMgr {
   ///
   class FileInfo {
     friend class c2lang::SourceManager;
-    friend class c2lang::ASTWriter;
-    friend class c2lang::ASTReader;
 
     /// The location of the \#include that brought in this file.
     ///
@@ -257,8 +251,6 @@ namespace SrcMgr {
     /// Zero means the preprocessor didn't provide such info for this SLocEntry.
     unsigned NumCreatedFIDs : 31;
 
-    /// Whether this FileInfo has any \#line directives.
-    unsigned HasLineDirectives : 1;
 
     /// The content cache and the characteristic of the file.
     llvm::PointerIntPair<const ContentCache*, 3, CharacteristicKind>
@@ -271,7 +263,6 @@ namespace SrcMgr {
       FileInfo X;
       X.IncludeLoc = IL.getRawEncoding();
       X.NumCreatedFIDs = 0;
-      X.HasLineDirectives = false;
       X.ContentAndKind.setPointer(Con);
       X.ContentAndKind.setInt(FileCharacter);
       return X;
@@ -290,14 +281,7 @@ namespace SrcMgr {
       return ContentAndKind.getInt();
     }
 
-    /// Return true if this FileID has \#line directives in it.
-    bool hasLineDirectives() const { return HasLineDirectives; }
 
-    /// Set the flag that indicates that this FileID has
-    /// line table entries associated with it.
-    void setHasLineDirectives() {
-      HasLineDirectives = true;
-    }
   };
 
   /// Each ExpansionInfo encodes the expansion location - where
@@ -469,23 +453,6 @@ namespace SrcMgr {
 
 } // namespace SrcMgr
 
-/// External source of source location entries.
-class ExternalSLocEntrySource {
-public:
-  virtual ~ExternalSLocEntrySource();
-
-  /// Read the source location entry with index ID, which will always be
-  /// less than -1.
-  ///
-  /// \returns true if an error occurred that prevented the source-location
-  /// entry from being loaded.
-  virtual bool ReadSLocEntry(int ID) = 0;
-
-  /// Retrieve the module import location and name for the given ID, if
-  /// in fact it was loaded from a module (rather than, say, a precompiled
-  /// header).
-  virtual std::pair<SourceLocation, StringRef> getModuleImportLoc(int ID) = 0;
-};
 
 /// Holds the cache used by isBeforeInTranslationUnit.
 ///
@@ -666,8 +633,6 @@ class SourceManager : public RefCountedBase<SourceManager> {
   /// Same indexing as LoadedSLocEntryTable.
   llvm::BitVector SLocEntryLoaded;
 
-  /// An external source for source location entries.
-  ExternalSLocEntrySource *ExternalSLocEntries = nullptr;
 
   /// A one-entry cache to speed up getFileID.
   ///
@@ -675,10 +640,6 @@ class SourceManager : public RefCountedBase<SourceManager> {
   /// is very common to look up many tokens from the same file.
   mutable FileID LastFileIDLookup;
 
-  /// Holds information for \#line directives.
-  ///
-  /// This is referenced by indices from SLocEntryTable.
-  LineTableInfo *LineTable = nullptr;
 
   /// These ivars serve as a cache used in the getLineNumber
   /// method which is used to speedup getLineNumber calls to nearby locations.
@@ -769,23 +730,8 @@ public:
   /// (likely to change while trying to use them).
   bool userFilesAreVolatile() const { return UserFilesAreVolatile; }
 
-  /// Retrieve the module build stack.
-  ModuleBuildStack getModuleBuildStack() const {
-    return StoredModuleBuildStack;
-  }
 
-  /// Set the module build stack.
-  void setModuleBuildStack(ModuleBuildStack stack) {
-    StoredModuleBuildStack.clear();
-    StoredModuleBuildStack.append(stack.begin(), stack.end());
-  }
-
-  /// Push an entry to the module build stack.
-  void pushModuleBuildStack(StringRef moduleName, FullSourceLoc importLoc) {
-    StoredModuleBuildStack.push_back(std::make_pair(moduleName.str(),importLoc));
-  }
-
-  //===--------------------------------------------------------------------===//
+    //===--------------------------------------------------------------------===//
   // MainFileID creation and querying methods.
   //===--------------------------------------------------------------------===//
 
@@ -878,13 +824,7 @@ public:
                                     int LoadedID = 0,
                                     unsigned LoadedOffset = 0);
 
-  /// Return a new SourceLocation that encodes that the token starting
-  /// at \p TokenStart ends prematurely at \p TokenEnd.
-  SourceLocation createTokenSplitLoc(SourceLocation SpellingLoc,
-                                     SourceLocation TokenStart,
-                                     SourceLocation TokenEnd);
-
-  /// Retrieve the memory buffer associated with the given file.
+    /// Retrieve the memory buffer associated with the given file.
   ///
   /// \param Invalid If non-NULL, will be set \c true if an error
   /// occurs while retrieving the memory buffer.
@@ -908,43 +848,8 @@ public:
     overrideFileContents(SourceFile, Buffer.release(), /*DoNotFree*/ false);
   }
 
-  /// Override the given source file with another one.
-  ///
-  /// \param SourceFile the source file which will be overridden.
-  ///
-  /// \param NewFile the file whose contents will be used as the
-  /// data instead of the contents of the given source file.
-  void overrideFileContents(const FileEntry *SourceFile,
-                            const FileEntry *NewFile);
 
-  /// Returns true if the file contents have been overridden.
-  bool isFileOverridden(const FileEntry *File) const {
-    if (OverriddenFilesInfo) {
-      if (OverriddenFilesInfo->OverriddenFilesWithBuffer.count(File))
-        return true;
-      if (OverriddenFilesInfo->OverriddenFiles.find(File) !=
-          OverriddenFilesInfo->OverriddenFiles.end())
-        return true;
-    }
-    return false;
-  }
-
-  /// Disable overridding the contents of a file, previously enabled
-  /// with #overrideFileContents.
-  ///
-  /// This should be called before parsing has begun.
-  void disableFileContentsOverride(const FileEntry *File);
-
-  /// Specify that a file is transient.
-  void setFileIsTransient(const FileEntry *SourceFile);
-
-  /// Specify that all files that are read during this compilation are
-  /// transient.
-  void setAllFilesAreTransient(bool Transient) {
-    FilesAreTransient = Transient;
-  }
-
-  //===--------------------------------------------------------------------===//
+    //===--------------------------------------------------------------------===//
   // FileID manipulation methods.
   //===--------------------------------------------------------------------===//
 
@@ -1096,22 +1001,8 @@ public:
     return Entry.getFile().getIncludeLoc();
   }
 
-  // Returns the import location if the given source location is
-  // located within a module, or an invalid location if the source location
-  // is within the current translation unit.
-  std::pair<SourceLocation, StringRef>
-  getModuleImportLoc(SourceLocation Loc) const {
-    FileID FID = getFileID(Loc);
 
-    // Positive file IDs are in the current translation unit, and -1 is a
-    // placeholder.
-    if (FID.ID >= -1)
-      return std::make_pair(SourceLocation(), "");
-
-    return ExternalSLocEntries->getModuleImportLoc(FID.ID);
-  }
-
-  /// Given a SourceLocation object \p Loc, return the expansion
+    /// Given a SourceLocation object \p Loc, return the expansion
   /// location referenced by the ID.
   SourceLocation getExpansionLoc(SourceLocation Loc) const {
     // Handle the non-mapped case inline, defer to out of line code to handle
@@ -1400,8 +1291,7 @@ public:
   /// presumed location cannot be calculated (e.g., because \p Loc is invalid
   /// or the file containing \p Loc has changed on disk), returns an invalid
   /// presumed location.
-  PresumedLoc getPresumedLoc(SourceLocation Loc,
-                             bool UseLineDirectives = true) const;
+  PresumedLoc getPresumedLoc(SourceLocation Loc) const;
 
   /// Returns whether the PresumedLoc for a given SourceLocation is
   /// in the main file.
@@ -1465,24 +1355,9 @@ public:
   // Line Table Manipulation Routines
   //===--------------------------------------------------------------------===//
 
-  /// Return the uniqued ID for the specified filename.
-  unsigned getLineTableFilenameID(StringRef Str);
 
-  /// Add a line note to the line table for the FileID and offset
-  /// specified by Loc.
-  ///
-  /// If FilenameID is -1, it is considered to be unspecified.
-  void AddLineNote(SourceLocation Loc, unsigned LineNo, int FilenameID,
-                   bool IsFileEntry, bool IsFileExit,
-                   SrcMgr::CharacteristicKind FileKind);
 
-  /// Determine if the source manager has a line table.
-  bool hasLineTable() const { return LineTable != nullptr; }
-
-  /// Retrieve the stored line table.
-  LineTableInfo &getLineTable();
-
-  //===--------------------------------------------------------------------===//
+    //===--------------------------------------------------------------------===//
   // Queries for performance analysis.
   //===--------------------------------------------------------------------===//
 
@@ -1500,26 +1375,11 @@ public:
       : malloc_bytes(malloc_bytes), mmap_bytes(mmap_bytes) {}
   };
 
-  /// Return the amount of memory used by memory buffers, breaking down
-  /// by heap-backed versus mmap'ed memory.
-  MemoryBufferSizes getMemoryBufferSizes() const;
-
-  /// Return the amount of memory used for various side tables and
-  /// data structures in the SourceManager.
-  size_t getDataStructureSizes() const;
-
-  //===--------------------------------------------------------------------===//
+    //===--------------------------------------------------------------------===//
   // Other miscellaneous methods.
   //===--------------------------------------------------------------------===//
 
-  /// Get the source location for the given file:line:col triplet.
-  ///
-  /// If the source file is included multiple times, the source location will
-  /// be based upon the first inclusion.
-  SourceLocation translateFileLineCol(const FileEntry *SourceFile,
-                                      unsigned Line, unsigned Col) const;
-
-  /// Get the FileID for the given file.
+    /// Get the FileID for the given file.
   ///
   /// If the source file is included multiple times, the FileID will be the
   /// first inclusion.
@@ -1633,13 +1493,8 @@ public:
 
   unsigned getNextLocalOffset() const { return NextLocalOffset; }
 
-  void setExternalSLocEntrySource(ExternalSLocEntrySource *Source) {
-    assert(LoadedSLocEntryTable.empty() &&
-           "Invalidating existing loaded entries");
-    ExternalSLocEntries = Source;
-  }
 
-  /// Allocate a number of loaded SLocEntries, which will be actually
+    /// Allocate a number of loaded SLocEntries, which will be actually
   /// loaded on demand from the external source.
   ///
   /// NumSLocEntries will be allocated, which occupy a total of TotalSize space

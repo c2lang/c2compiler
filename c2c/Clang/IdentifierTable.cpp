@@ -14,7 +14,6 @@
 
 #include "Clang/IdentifierTable.h"
 #include "Clang/CharInfo.h"
-#include "Clang/OperatorKinds.h"
 #include "Clang/Specifiers.h"
 #include "Clang/TokenKinds.h"
 #include "llvm/ADT/DenseMapInfo.h"
@@ -223,26 +222,3 @@ void IdentifierTable::PrintStats() const {
   // Compute statistics about the memory allocated for identifiers.
   HashTable.getAllocator().PrintStats();
 }
-
-//===----------------------------------------------------------------------===//
-// SelectorTable Implementation
-//===----------------------------------------------------------------------===//
-
-
-
-
-
-const char *c2lang::getOperatorSpelling(OverloadedOperatorKind Operator) {
-  switch (Operator) {
-  case OO_None:
-  case NUM_OVERLOADED_OPERATORS:
-    return nullptr;
-
-#define OVERLOADED_OPERATOR(Name,Spelling,Token,Unary,Binary,MemberOnly) \
-  case OO_##Name: return Spelling;
-#include "Clang/OperatorKinds.def"
-  }
-
-  llvm_unreachable("Invalid OverloadedOperatorKind!");
-}
-

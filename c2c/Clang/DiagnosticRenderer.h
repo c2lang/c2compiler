@@ -102,10 +102,7 @@ private:
   void emitIncludeStack(FullSourceLoc Loc, PresumedLoc PLoc,
                         DiagnosticsEngine::Level Level);
   void emitIncludeStackRecursively(FullSourceLoc Loc);
-  void emitImportStack(FullSourceLoc Loc);
-  void emitImportStackRecursively(FullSourceLoc Loc, StringRef ModuleName);
-  void emitModuleBuildStack(const SourceManager &SM);
-  void emitCaret(FullSourceLoc Loc, DiagnosticsEngine::Level Level,
+    void emitCaret(FullSourceLoc Loc, DiagnosticsEngine::Level Level,
                  ArrayRef<CharSourceRange> Ranges, ArrayRef<FixItHint> Hints);
   void emitSingleMacroExpansion(FullSourceLoc Loc,
                                 DiagnosticsEngine::Level Level,
