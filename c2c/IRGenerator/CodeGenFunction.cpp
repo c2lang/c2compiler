@@ -53,6 +53,7 @@ CodeGenFunction::CodeGenFunction(CodeGenModule& CGM_, FunctionDecl* Func_)
     , context(CGM.getContext())
     , module(CGM.getModule())
     , Builder(context)
+    , breakContinueStack()
 {}
 
 llvm::Function* CodeGenFunction::generateProto(const std::string& modName) {
@@ -139,9 +140,11 @@ void CodeGenFunction::EmitStmt(const Stmt* S) {
     case STMT_IF:
         EmitIfStmt(cast<IfStmt>(S));
         break;
+    case STMT_FOR:
+        EmitForStmt(cast<ForStmt>(S));
+        break;
     case STMT_WHILE:
     case STMT_DO:
-    case STMT_FOR:
     case STMT_SWITCH:
     case STMT_CASE:
     case STMT_DEFAULT:
@@ -260,6 +263,11 @@ void CodeGenFunction::EmitIfStmt(const IfStmt* S) {
     EmitBlock(ContBlock, true);
 }
 
+void CodeGenFunction::EmitForStmt(const ForStmt *S) {
+    LOG_FUNC
+    TODO;
+}
+
 void CodeGenFunction::EmitBlock(llvm::BasicBlock *BB, bool IsFinished) {
     LOG_FUNC
     llvm::BasicBlock *CurBB = Builder.GetInsertBlock();
@@ -274,10 +282,11 @@ void CodeGenFunction::EmitBlock(llvm::BasicBlock *BB, bool IsFinished) {
 
     // Place the block after the current block, if possible, or else at
     // the end of the function.
-    if (CurBB && CurBB->getParent())
+    if (CurBB && CurBB->getParent()) {
         CurFn->getBasicBlockList().insertAfter(CurBB->getIterator(), BB);
-    else
+    } else {
         CurFn->getBasicBlockList().push_back(BB);
+    }
     Builder.SetInsertPoint(BB);
 }
 
@@ -428,6 +437,52 @@ llvm::Value* CodeGenFunction::EmitExpr(const Expr* E) {
     return V;
 }
 
+llvm::Value *CodeGenFunction::castIfNecessary(llvm::Type *targetType, const QualType &astTargetType, llvm::Value *value, const QualType &valueType) {
+
+    llvm::Type *currType = value->getType();
+    if (targetType == currType)
+    {
+        return value;
+    }
+    if (targetType->isFloatingPointTy())
+    {
+        if (currType->isIntegerTy()) {
+            return valueType.isUnsignedType()
+                   ? Builder.CreateUIToFP(value, targetType, "uitofp-cast")
+                   : Builder.CreateSIToFP(value, targetType, "sitofp-cast");
+        }
+        if (currType->isFloatingPointTy()) {
+            if (currType->getPrimitiveSizeInBits() >= targetType->getPrimitiveSizeInBits()) return value;
+            return Builder.CreateFPExt(value, targetType, "fpext-cast");
+        }
+        FATAL_ERROR("Unexpected type!");
+    }
+    if (targetType->isIntegerTy())
+    {
+        if (currType->isIntegerTy()) {
+            if (currType->getPrimitiveSizeInBits() > targetType->getPrimitiveSizeInBits())
+            {
+                return value;
+            }
+            return Builder.CreateZExt(value, targetType, "extend");
+        }
+        // Float "wins"
+        if (currType->isFloatingPointTy()) return value;
+    }
+    FATAL_ERROR("Unexpected type!");
+}
+
+
+
+void CodeGenFunction::promoteCast(llvm::Value **lhs, const QualType &lhsType, llvm::Value **rhs, const QualType &rhsType)
+{
+    llvm::Type *rType = (*rhs)->getType();
+    llvm::Type *lType = (*lhs)->getType();
+    *rhs = castIfNecessary(lType, lhsType, *rhs, rhsType);
+    *lhs = castIfNecessary(rType, rhsType, *lhs, lhsType);
+}
+
+
 llvm::Value* CodeGenFunction::EmitExprNoImpCast(const Expr* E) {
     LOG_FUNC
 
@@ -469,22 +524,30 @@ llvm::Value* CodeGenFunction::EmitExprNoImpCast(const Expr* E) {
     case EXPR_IDENTIFIER:
         return EmitIdentifierExpr(cast<IdentifierExpr>(E));
     case EXPR_INITLIST:
+        E->dump();
+        TODO;
     case EXPR_DESIGNATOR_INIT:
+        E->dump();
+        TODO;
     case EXPR_TYPE:
         break;
     case EXPR_BINOP:
         return EmitBinaryOperator(cast<BinaryOperator>(E));
     case EXPR_CONDOP:
+        E->dump();
+        TODO;
     case EXPR_UNARYOP:
-        break;
+        return EmitUnaryOperator(cast<UnaryOperator>(E));
     case EXPR_BUILTIN:
         return EmitBuiltinExpr(cast<BuiltinExpr>(E));
     case EXPR_ARRAYSUBSCRIPT:
         break;
     case EXPR_MEMBER:
     {
+        TODO;
         assert(cast<MemberExpr>(E)->isModulePrefix() && "TODO not-prefix members");
-        // TODO
+        E->dump();
+        TODO;
         break;
     }
     case EXPR_PAREN:
@@ -493,10 +556,14 @@ llvm::Value* CodeGenFunction::EmitExprNoImpCast(const Expr* E) {
         return EmitExpr(P->getExpr());
     }
     case EXPR_BITOFFSET:
+        E->dump();
+        TODO;
+        break;
     case EXPR_CAST:
+    E->dump();
+        TODO;
         break;
     }
-    E->dump();
     TODO;
     return 0;
 }
@@ -532,7 +599,7 @@ llvm::Value* CodeGenFunction::EmitCallExpr(const CallExpr* E) {
     }
     break;
     default:
-        assert(0 && "TODO unsupported call type");
+        printf("TODO unsupported call type\n");
         TODO;
         return 0;
     };
@@ -588,7 +655,7 @@ llvm::Value* CodeGenFunction::EmitCallExpr(const CallExpr* E) {
 llvm::Value* CodeGenFunction::EmitIdentifierExpr(const IdentifierExpr* E) {
     LOG_FUNC
     Decl* D = E->getDecl();
-    assert(D);
+    assert(D && "Declaration missing");
     switch (D->getKind()) {
     case DECL_FUNC:
         FATAL_ERROR("Unexpected declaration");
@@ -651,38 +718,50 @@ void CodeGenFunction::EmitVarDecl(const VarDecl* D) {
     }
 }
 
+
+
 llvm::Value* CodeGenFunction::EmitBinaryOperator(const BinaryOperator* B) {
     LOG_FUNC
     Value* L = EmitExpr(B->getLHS());
     Value* R = EmitExpr(B->getRHS());
     if (L == 0 || R == 0) return 0;
 
-    // TEMP only handle Integer values for now
+    // Note that I'm not sure whether this is good.
+    // Basically at this point the AST still code lite i32-expr * f32-expr
+    // Instead of doing a (desperate) cast here, I think the AST
+    // should have generated all implicit casts already.
+    // At that point this method can completely go away.
+    promoteCast(&L, B->getLHS()->getType(), &R, B->getRHS()->getType());
 
     switch (B->getOpcode()) {
     case BINOP_Mul:
-        return Builder.CreateMul(L, R, "mul");
-        //return Builder.CreateFMul(L, R, "multmp");
+        return L->getType()->isFloatingPointTy()
+               ? Builder.CreateFMul(L, R, "fmul")
+               : Builder.CreateMul(L, R, "mul");
     case BINOP_Div:
         TODO;
         break;
     case BINOP_Rem:
+        // (a) Handle this for floats as well
+        // (b) Handle this for unsigned
         return Builder.CreateSRem(L, R, "rem");
     case BINOP_Add:
-        return Builder.CreateAdd(L, R, "add");
-        //return Builder.CreateFAdd(L, R, "addtmp");    // for Floating point
+        return L->getType()->isFloatingPointTy()
+               ? Builder.CreateFAdd(L, R, "fadd")
+               : Builder.CreateAdd(L, R, "add");
     case BINOP_Sub:
-        return Builder.CreateSub(L, R, "sub");
-        //return Builder.CreateFSub(L, R, "subtmp");    // for Floating point
+        return L->getType()->isFloatingPointTy()
+               ? Builder.CreateFSub(L, R, "fsub")
+               : Builder.CreateSub(L, R, "sub");
     case BINOP_Shl:
     case BINOP_Shr:
         TODO;
         break;
     case BINOP_LT:
-        return Builder.CreateICmpULT(L, R, "cmp");
-        //L = Builder.CreateFCmpULT(L, R, "cmptmp");
-        // convert bool 0/1 to double 0.0 or 1.0
-        //return Builder.CreateUIToFP(L, llvm::Type::getDoubleTy(context), "booltmp");
+        // Check signed here.
+        return L->getType()->isFloatingPointTy()
+               ? Builder.CreateICmpULT(L, R, "icmp")
+               : Builder.CreateFCmpULT(L, R, "fcmpult");
     case BINOP_GT:
         // TODO UGT for unsigned, SGT for signed?
         return Builder.CreateICmpSGT(L, R, "cmp");
@@ -696,8 +775,11 @@ llvm::Value* CodeGenFunction::EmitBinaryOperator(const BinaryOperator* B) {
     case BINOP_NE:
         return Builder.CreateICmpNE(L, R, "neq");
     case BINOP_And:
+        return Builder.CreateAnd(L, R, "and");
     case BINOP_Xor:
+        return Builder.CreateXor(L, R, "xor");
     case BINOP_Or:
+        return Builder.CreateOr(L, R, "or");
     case BINOP_LAnd:
     case BINOP_LOr:
         TODO;
@@ -727,6 +809,38 @@ llvm::Value* CodeGenFunction::EmitBinaryOperator(const BinaryOperator* B) {
     return 0;
 }
 
+llvm::Value* CodeGenFunction::EmitUnaryOperator(const UnaryOperator* unaryOperator) {
+    LOG_FUNC
+    Expr *expression = unaryOperator->getExpr();
+    switch (unaryOperator->getOpcode()) {
+        case UO_Not:
+            return Builder.CreateNot(EmitExpr(expression), "not");
+        case UO_Plus:
+            return EmitExpr(expression);
+        case UO_Minus:
+            return expression->isFloat()
+                   ? Builder.CreateFNeg(EmitExpr(expression), "fneg")
+                   : Builder.CreateNeg(EmitExpr(expression), "neg");
+        case UO_LNot:
+        {
+            Value *rhs = EmitExpr(expression);
+            return expression->isFloat()
+                   ? Builder.CreateFCmp(CmpInst::Predicate::FCMP_OEQ, rhs,
+                                        llvm::ConstantFP::get(rhs->getType(), 0.0))
+                   : Builder.CreateICmp(CmpInst::Predicate::ICMP_EQ, EmitExpr(expression),
+                                       llvm::ConstantInt::get(rhs->getType(), 0, false));
+
+        }
+        case UO_Deref:break;
+        case UO_PostInc:break;
+        case UO_PostDec:break;
+        case UO_PreInc:break;
+        case UO_PreDec:break;
+        case UO_AddrOf: break;
+    }
+    TODO;
+}
+
 llvm::Value *CodeGenFunction::EvaluateExprAsBool(const Expr *E) {
     if (const IntegerLiteral* N = dyncast<IntegerLiteral>(E)) {
         return llvm::ConstantInt::get(llvm::Type::getInt1Ty(context), N->Value.getSExtValue(), true);
@@ -735,7 +849,7 @@ llvm::Value *CodeGenFunction::EvaluateExprAsBool(const Expr *E) {
     if (const IdentifierExpr* I = dyncast<IdentifierExpr>(E)) {
         // TODO for now only support identifier to base type
         Decl* D = I->getDecl();
-        assert(D);
+        assert(D && "No declaration found");
         assert(D->getKind() == DECL_VAR && "TODO only support ref to vardecl, need anything else?");
         VarDecl* VD = cast<VarDecl>(D);
 
@@ -758,5 +872,7 @@ llvm::AllocaInst *CodeGenFunction::CreateTempAlloca(llvm::Type *Ty,
         const Twine &Name) {
     return new llvm::AllocaInst(Ty, 0, Name, AllocaInsertPt);
 }
+
+
 
 

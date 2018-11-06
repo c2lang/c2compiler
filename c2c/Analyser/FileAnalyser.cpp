@@ -56,8 +56,15 @@ void FileAnalyser::printAST(bool printInterface) const {
     ast.print(true);
 }
 
+void FileAnalyser::beginNewPass(FileAnalyserPass newPass)
+{
+    assert(((int)currentPass == (int)newPass - 1) && "Incorrect ordering of passes");
+    currentPass = newPass;
+}
+
 void FileAnalyser::addImports() {
     LOG_FUNC
+    beginNewPass(FileAnalyserPass::ADD_IMPORTS);
     for (unsigned i=0; i<ast.numImports(); i++) {
         globals->addImportDecl(ast.getImport(i));
     }
@@ -65,6 +72,7 @@ void FileAnalyser::addImports() {
 
 void FileAnalyser::resolveTypes() {
     LOG_FUNC
+    beginNewPass(FileAnalyserPass::RESOLVE_TYPES);
     if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
     for (unsigned i=0; i<ast.numTypes(); i++) {
         TypeDecl* T = ast.getType(i);
@@ -75,6 +83,7 @@ void FileAnalyser::resolveTypes() {
 
 unsigned FileAnalyser::resolveTypeCanonicals() {
     LOG_FUNC
+    beginNewPass(FileAnalyserPass::RESOLVE_TYPE_CANONICALS);
     if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
     unsigned errors = 0;
     for (unsigned i=0; i<ast.numTypes(); i++) {
@@ -120,6 +129,7 @@ unsigned FileAnalyser::resolveTypeCanonicals() {
 
 unsigned FileAnalyser::resolveStructMembers() {
     LOG_FUNC
+    beginNewPass(FileAnalyserPass::RESOLVE_STRUCT_MEMBERS);
     if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
     unsigned errors = 0;
     for (unsigned i=0; i<ast.numTypes(); i++) {
@@ -133,6 +143,7 @@ unsigned FileAnalyser::resolveStructMembers() {
 
 unsigned FileAnalyser::resolveVars() {
     LOG_FUNC
+    beginNewPass(FileAnalyserPass::RESOLVE_VARS);
     if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
     unsigned errors = 0;
     for (unsigned i=0; i<ast.numVars(); i++) {
@@ -149,6 +160,7 @@ unsigned FileAnalyser::resolveVars() {
 
 unsigned FileAnalyser::checkArrayValues(IncrementalArrayVals& values) {
     LOG_FUNC
+    beginNewPass(FileAnalyserPass::CHECK_ARRAY_VALUES);
     if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
     unsigned errors = 0;
     for (unsigned i=0; i<ast.numArrayValues(); i++) {
@@ -159,6 +171,7 @@ unsigned FileAnalyser::checkArrayValues(IncrementalArrayVals& values) {
 
 void FileAnalyser::checkVarInits() {
     LOG_FUNC
+    beginNewPass(FileAnalyserPass::CHECK_VAR_INITS);
     if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
     for (unsigned i=0; i<ast.numVars(); i++) {
         VarDecl* V = ast.getVar(i);
@@ -181,6 +194,7 @@ void FileAnalyser::checkVarInits() {
 
 unsigned FileAnalyser::resolveEnumConstants() {
     LOG_FUNC
+    beginNewPass(FileAnalyserPass::RESOLVE_ENUM_CONSTANTS);
     if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
     unsigned errors = 0;
     for (unsigned i=0; i<ast.numTypes(); i++) {
@@ -220,6 +234,7 @@ unsigned FileAnalyser::resolveEnumConstants() {
 
 unsigned FileAnalyser::checkFunctionProtos(StructFunctionList& structFuncs) {
     LOG_FUNC
+    beginNewPass(FileAnalyserPass::CHECK_FUNCTION_PROTOS);
     if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
     unsigned errors = 0;
     for (unsigned i=0; i<ast.numFunctions(); i++) {
@@ -245,6 +260,7 @@ unsigned FileAnalyser::checkFunctionProtos(StructFunctionList& structFuncs) {
 
 void FileAnalyser::checkFunctionBodies() {
     LOG_FUNC
+    beginNewPass(FileAnalyserPass::CHECK_FUNCTION_BODIES);
     if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
     for (unsigned i=0; i<ast.numFunctions(); i++) {
         functionAnalyser.check(ast.getFunction(i));
@@ -252,9 +268,9 @@ void FileAnalyser::checkFunctionBodies() {
 }
 
 void FileAnalyser::checkDeclsForUsed() {
-    if (ast.isInterface()) return;
-
     LOG_FUNC
+    beginNewPass(FileAnalyserPass::CHECK_DECLS_FOR_USED);
+    if (ast.isInterface()) return;
     if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
 
     // checkfor unused uses
@@ -326,6 +342,7 @@ void FileAnalyser::checkDeclsForUsed() {
 }
 
 void FileAnalyser::checkStructMembersForUsed(const StructTypeDecl* S) {
+    assert(currentPass == FileAnalyserPass::CHECK_DECLS_FOR_USED);
     for (unsigned j=0; j<S->numMembers(); j++) {
         Decl* M = S->getMember(j);
         if (!M->isUsed() && !M->hasEmptyName()) {   // dont warn for anonymous structs/unions
@@ -340,6 +357,8 @@ void FileAnalyser::checkStructMembersForUsed(const StructTypeDecl* S) {
 
 unsigned FileAnalyser::checkTypeDecl(TypeDecl* D) {
     LOG_FUNC
+    assert(currentPass == FileAnalyserPass::RESOLVE_TYPES);
+
     // check generic type
     unsigned errors = TR->checkType(D->getType(), D->isPublic());
 
@@ -392,6 +411,7 @@ unsigned FileAnalyser::checkTypeDecl(TypeDecl* D) {
 }
 
 void FileAnalyser::checkStructFunction(FunctionDecl* F, StructFunctionList& structFuncs) {
+    assert(currentPass == FileAnalyserPass::CHECK_FUNCTION_PROTOS);
     IdentifierExpr* structName = F->getStructName();
     Decl* D = globals->findSymbolInModule(structName->getName(), structName->getLocation(), F->getModule());
     if (!D) return;
@@ -415,6 +435,7 @@ void FileAnalyser::checkStructFunction(FunctionDecl* F, StructFunctionList& stru
 }
 
 void FileAnalyser::analyseStructNames(const StructTypeDecl* S, Names& names, bool isStruct) {
+    assert(currentPass == FileAnalyserPass::RESOLVE_TYPES);
     typedef Names::iterator NamesIter;
     for (unsigned i=0; i<S->numMembers(); i++) {
         const Decl* member = S->getMember(i);
@@ -442,6 +463,8 @@ void FileAnalyser::analyseStructNames(const StructTypeDecl* S, Names& names, boo
 
 unsigned FileAnalyser::checkStructTypeDecl(StructTypeDecl* D) {
     LOG_FUNC
+    assert(currentPass == FileAnalyserPass::RESOLVE_STRUCT_MEMBERS);
+
     if (!D->isGlobal() && !ast.isInterface() && !D->hasEmptyName() && !islower(D->getName()[0])) {
         Diags.Report(D->getLocation(), diag::err_var_casing);
     }
@@ -469,6 +492,11 @@ unsigned FileAnalyser::checkStructTypeDecl(StructTypeDecl* D) {
 
 unsigned FileAnalyser::resolveVarDecl(VarDecl* D) {
     LOG_FUNC
+    assert(currentPass == FileAnalyserPass::RESOLVE_VARS ||
+           currentPass == FileAnalyserPass::RESOLVE_STRUCT_MEMBERS ||
+           currentPass == FileAnalyserPass::RESOLVE_TYPE_CANONICALS ||
+           currentPass == FileAnalyserPass::CHECK_FUNCTION_PROTOS);
+
     // TODO duplicate code with FileAnalyser::analyseDeclExpr()
     QualType Q = TR->resolveType(D->getType(), D->isPublic());
     if (!Q.isValid()) return 1;
@@ -510,6 +538,9 @@ unsigned FileAnalyser::resolveVarDecl(VarDecl* D) {
 
 unsigned FileAnalyser::resolveFunctionDecl(FunctionDecl* D, bool checkArgs) {
     LOG_FUNC
+    assert(currentPass == FileAnalyserPass::RESOLVE_TYPE_CANONICALS ||
+           currentPass == FileAnalyserPass::CHECK_FUNCTION_PROTOS);
+
     unsigned errors = 0;
     // return type
     QualType Q = TR->resolveType(D->getReturnType(), D->isPublic());
@@ -535,6 +566,8 @@ unsigned FileAnalyser::resolveFunctionDecl(FunctionDecl* D, bool checkArgs) {
 
 unsigned FileAnalyser::checkArrayValue(ArrayValueDecl* D, IncrementalArrayVals& values) {
     LOG_FUNC
+    assert(currentPass == FileAnalyserPass::CHECK_ARRAY_VALUES);
+
     // find decl
     Decl* found = globals->findSymbolInModule(D->getName(), D->getLocation(), D->getModule());
     if (!found) return 1;
@@ -575,6 +608,7 @@ unsigned FileAnalyser::checkArrayValue(ArrayValueDecl* D, IncrementalArrayVals& 
 
 void FileAnalyser::checkVarDeclAttributes(VarDecl* D) {
     LOG_FUNC
+    assert(currentPass == FileAnalyserPass::RESOLVE_VARS);
     if (!D->hasAttributes()) return;
     checkAttributes(D);
 
@@ -607,6 +641,10 @@ void FileAnalyser::checkVarDeclAttributes(VarDecl* D) {
 
 void FileAnalyser::checkAttributes(Decl* D) {
     LOG_FUNC
+    assert(currentPass == FileAnalyserPass::RESOLVE_TYPES ||
+           currentPass == FileAnalyserPass::CHECK_FUNCTION_PROTOS ||
+           currentPass == FileAnalyserPass::RESOLVE_VARS);
+
     if (!D->hasAttributes()) return;
 
     const AttrList& AL = D->getAttributes();

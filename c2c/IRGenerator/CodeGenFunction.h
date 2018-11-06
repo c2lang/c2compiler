@@ -29,6 +29,7 @@ class Twine;
 }
 
 namespace C2 {
+class QualType;
 class CodeGenModule;
 class FunctionDecl;
 class Stmt;
@@ -36,10 +37,12 @@ class CompoundStmt;
 class ReturnStmt;
 class IfStmt;
 class Expr;
+class ForStmt;
 class CallExpr;
 class IdentifierExpr;
 class VarDecl;
 class BinaryOperator;
+class UnaryOperator;
 class BuiltinExpr;
 
 // This class organizes the per-function state that is used
@@ -56,6 +59,7 @@ private:
     void EmitCompoundStmt(const CompoundStmt* S);
     void EmitReturnStmt(const ReturnStmt* S);
     void EmitIfStmt(const IfStmt* S);
+    void EmitForStmt(const ForStmt *S);
 
     llvm::Value* EmitExpr(const Expr* E);
     llvm::Value* EmitExprNoImpCast(const Expr* E);
@@ -64,6 +68,10 @@ private:
     llvm::Value* EmitBuiltinExpr(const BuiltinExpr* E);
     void EmitVarDecl(const VarDecl* D);
     llvm::Value* EmitBinaryOperator(const BinaryOperator* E);
+    llvm::Value* EmitUnaryOperator(const UnaryOperator* E);
+
+    void promoteCast(llvm::Value **lhs, const QualType &lhsType, llvm::Value **rhs, const QualType &rhsType);
+    llvm::Value *castIfNecessary(llvm::Type *targetType, const QualType &astTargetType, llvm::Value *value, const QualType &valueType);
 
     llvm::BasicBlock* createBasicBlock(const llvm::Twine &name = "",
                                       llvm::Function* parent = 0,
@@ -133,6 +141,11 @@ private:
   };
 
 
+  struct BreakContinue {
+      llvm::BasicBlock *breakJump;
+      llvm::BasicBlock *continueJump;
+  };
+
     CodeGenModule& CGM;
     FunctionDecl* FuncDecl;
     llvm::Function* CurFn;      // only set for generateBody() not generateProto()
@@ -140,6 +153,8 @@ private:
     llvm::LLVMContext& context;
     llvm::Module* module;
     llvm::IRBuilder<> Builder;  // NOTE: do we really need to create a new builder?
+
+    std::vector<BreakContinue> breakContinueStack;
 
     /// AllocaInsertPoint - This is an instruction in the entry block before which
     /// we prefer to insert allocas.
