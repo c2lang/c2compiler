@@ -5,15 +5,7 @@ set -e
 git clone git://github.com/c2lang/llvm.git
 cd llvm/
 git checkout -b release_70 origin/release_70
-cd projects
-git clone git://github.com/c2lang/compiler-rt.git
-cd compiler-rt
-git checkout -b release_70 origin/release_70
-cd ../../tools
-git clone git://github.com/c2lang/clang.git
-cd clang
-git checkout -b c2master_70 origin/c2master_70
-cd ../../..
+cd ..
 
 mkdir llvm_build
 cd llvm_build

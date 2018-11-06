@@ -26,8 +26,6 @@ execute_process(
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
-set(CLANG_LIBS "-lclangFrontend -lclangEdit -lclangLex -lclangBasic -lclangRewrite")
-
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
 #line below is needed for Ubuntu 13.04 32 bit
 include_directories("/usr/include/i386-linux-gnu/c++/4.8/")
@@ -126,7 +124,7 @@ set_target_properties(c2core PROPERTIES COMPILE_FLAGS "${LLVM_CXXFLAGS}")
 add_executable(c2c
     main.cpp
 )
-target_link_libraries(c2c c2core ${LLVM_LDFLAGS} ${CLANG_LIBS} ${LLVM_LIBS} ${LLVM_SYSTEM_LIBS})
+target_link_libraries(c2c c2core ${LLVM_LDFLAGS} ${LLVM_LIBS} ${LLVM_SYSTEM_LIBS})
 
 
 if(APPLE OR CYGWIN)

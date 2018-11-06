@@ -130,9 +130,6 @@ QualType TypeFinder::getUnaryOpType(const UnaryOperator* unaryop) {
     case UO_LNot:
         // should be bool already
         break;
-    default:
-        TODO;
-        break;
     }
     return unaryop->getType();
 }

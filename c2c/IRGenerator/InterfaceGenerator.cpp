@@ -344,8 +344,6 @@ void InterfaceGenerator::EmitUnaryOperator(const Expr* E) {
         iface << UnaryOperator::OpCode2str(U->getOpcode());
         EmitExpr(U->getExpr());
         break;
-    default:
-        FATAL_ERROR("Unreachable");
     }
 }
 

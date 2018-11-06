@@ -416,8 +416,6 @@ void CCodeGenerator::EmitUnaryOperator(const Expr* E, StringBuilder& output) {
         output << UnaryOperator::OpCode2str(U->getOpcode());
         EmitExpr(U->getExpr(), output);
         break;
-    default:
-        FATAL_ERROR("Unreachable");
     }
 }
 

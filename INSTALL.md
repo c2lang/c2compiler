@@ -1,12 +1,12 @@
 ## Installation of LLVM/Clang (C2 version)
-C2 is based on LLVM 7.0 and some parts of Clang 7.0.
+C2 is based on LLVM 7.0.
 To install C2, follow the steps below. The example shows
 how to install in **$HOME/llvm-c2**, but any other dir should work.
 
 Note that all OS-specific instructions include the Generic section
 
 ### Ubuntu 14.04
-LLVM/Clang 7.0 needs cmake 3.4.3 or higher, since Ubuntu does not have
+LLVM 7.0 needs cmake 3.4.3 or higher, since Ubuntu does not have
 this natively, just install it from a binary package:
 (installed here in $HOME/progs)
 ```bash
@@ -48,19 +48,9 @@ There is a convenience script: *clang\_build.sh* that runs the commands below.
 git clone git://github.com/c2lang/llvm.git
 cd llvm/
 git checkout -b release_70 origin/release_70
-cd projects
-git clone git://github.com/c2lang/compiler-rt.git
-cd compiler-rt
-git checkout -b release_70 origin/release_70
-cd ../../tools
-git clone git://github.com/c2lang/clang.git
-cd clang
-git checkout -b c2master_70 origin/c2master_70
-cd ../../..
-
+cd ..
 mkdir llvm_build
 cd llvm_build
-
 
 cmake -G "Unix Makefiles" \
     -DCMAKE_BUILD_TYPE="Release" \
@@ -72,6 +62,7 @@ cmake -G "Unix Makefiles" \
 make -j4
 make install
 ```
+
 ### OS X (Yosemite/El Capitan) (after building LLVM/Clang)
 You might need to create a link for your new clang to find the C++ headers.
 Since this uses the toolchain that comes with XCode, XCode will have to be installed.

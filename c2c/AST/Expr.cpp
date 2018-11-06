@@ -627,8 +627,6 @@ const char* UnaryOperator::OpCode2str(c2lang::UnaryOperatorKind opc_) {
     case UO_Minus:      return "-";
     case UO_Not:        return "~";
     case UO_LNot:       return "!";
-    default:
-        FATAL_ERROR("should not come here");
     }
 }
 

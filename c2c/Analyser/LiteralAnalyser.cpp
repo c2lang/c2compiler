@@ -360,9 +360,6 @@ APSInt LiteralAnalyser::checkUnaryLiterals(const Expr* Right) {
     }
     case UO_LNot:
         return ~checkLiterals(unaryop->getExpr());
-    default:
-        TODO;
-        break;
     }
     return APSInt();
 }

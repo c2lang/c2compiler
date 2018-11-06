@@ -1433,9 +1433,6 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
         LType = Type::Bool();
         expr->setType(LType);
         break;
-    default:
-        TODO;
-        break;
     }
     return LType;
 }

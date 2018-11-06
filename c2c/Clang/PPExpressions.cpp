@@ -135,9 +135,6 @@ static bool EvaluateDefined(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
   if (Result.Val != 0 && ValueLive)
     PP.markMacroAsUsed(Macro.getMacroInfo());
 
-  // Save macro token for callback.
-  Token macroToken(PeekTok);
-
   // If we are in parens, ensure we have a trailing ).
   if (LParenLoc.isValid()) {
     // Consume identifier.
