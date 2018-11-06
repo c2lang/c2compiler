@@ -834,6 +834,7 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
         assert(STD->isStruct() && "TEMP only support structs for now");
         bool constant = true;
         // ether init whole struct with field designators, or don't use any (no mixing allowed)
+        // NOTE: using different type for anonymous sub-union is allowed
         if (numValues!=0 && isa<DesignatedInitExpr>(values[0])) {
             haveDesignators = true;
         }
@@ -856,6 +857,7 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
                     return;
                 }
                 IdentifierExpr* field = D->getField();
+                // TODO can by member of anonymous sub-struct/union
                 int memberIndex = STD->findIndex(field->getName());
                 if (memberIndex == -1) {
                     // TODO use Helper to add surrounding ''
