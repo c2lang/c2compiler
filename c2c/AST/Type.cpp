@@ -63,6 +63,23 @@ bool QualType::isIntegerType() const {
     }
     return false;
 }
+
+bool QualType::isFloatType() const {
+    QualType Canon = getTypePtr()->getCanonicalType();
+    if (BuiltinType* BI = dyncast<BuiltinType>(Canon.getTypePtr())) {
+        return BI->isFloatingPoint();
+    }
+    return false;
+}
+
+bool QualType::isUnsignedType() const {
+    QualType Canon = getTypePtr()->getCanonicalType();
+    if (BuiltinType* BI = dyncast<BuiltinType>(Canon.getTypePtr())) {
+        return BI->isUnsignedInteger();
+    }
+    return false;
+}
+
 bool QualType::isArithmeticType() const {
     QualType Canon = getTypePtr()->getCanonicalType();
     if (BuiltinType* BI = dyncast<BuiltinType>(Canon.getTypePtr())) {

@@ -45,8 +45,8 @@ ComponentAnalyser::ComponentAnalyser(Component& C,
 }
 
 ComponentAnalyser::~ComponentAnalyser() {
-    for (unsigned i=0; i<analysers.size(); i++) {
-        delete analysers[i];
+    for (auto &analyser : analysers) {
+        delete analyser;
     }
 }
 
