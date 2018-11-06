@@ -1022,7 +1022,7 @@ void FunctionAnalyser::analyseSizeOfExpr(BuiltinExpr* B) {
         return;
     case EXPR_UNARYOP:
         // some allowed (&)?
-        // TODO
+        TODO;
         return;
     case EXPR_BUILTIN:
         FATAL_ERROR("Unreachable");

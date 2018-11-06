@@ -97,6 +97,8 @@ public:
     bool isArithmeticType() const;
     bool isScalarType() const;
     bool isIncompleteType() const;
+    bool isFloatType() const;
+    bool isUnsignedType() const;
 
     bool isConstant() const;    // NOTE: not is const!
 

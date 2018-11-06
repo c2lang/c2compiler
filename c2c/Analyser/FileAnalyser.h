@@ -49,6 +49,21 @@ typedef StructFunctionList::const_iterator StructFunctionListIter;
 typedef std::map<VarDecl*, ExprList> IncrementalArrayVals;
 typedef IncrementalArrayVals::const_iterator IncrementalArrayValsIter;
 
+enum class FileAnalyserPass {
+    NOT_STARTED,
+    ADD_IMPORTS,
+    RESOLVE_TYPES,
+    RESOLVE_TYPE_CANONICALS,
+    RESOLVE_STRUCT_MEMBERS,
+    RESOLVE_VARS,
+    RESOLVE_ENUM_CONSTANTS,
+    CHECK_ARRAY_VALUES,
+    CHECK_FUNCTION_PROTOS,
+    CHECK_VAR_INITS,
+    CHECK_FUNCTION_BODIES,
+    CHECK_DECLS_FOR_USED
+};
+
 class FileAnalyser {
 public:
     FileAnalyser(const Module& module_, const Modules& modules,
@@ -71,6 +86,7 @@ public:
     void checkDeclsForUsed();
 
 private:
+    void beginNewPass(FileAnalyserPass newPass);
     unsigned checkTypeDecl(TypeDecl* D);
     unsigned checkStructTypeDecl(StructTypeDecl* D);
     unsigned resolveVarDecl(VarDecl* D);
@@ -90,7 +106,7 @@ private:
     c2lang::DiagnosticsEngine& Diags;
     FunctionAnalyser functionAnalyser;
     bool verbose;
-
+    FileAnalyserPass currentPass = FileAnalyserPass::NOT_STARTED;
     FileAnalyser(const FileAnalyser&);
     FileAnalyser& operator= (const FileAnalyser&);
 };

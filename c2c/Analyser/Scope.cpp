@@ -52,9 +52,15 @@ Scope::Scope(const std::string& name_, const Modules& modules_, c2lang::Diagnost
 }
 
 void Scope::addImportDecl(ImportDecl* importDecl) {
-    assert(importDecl->getModule());
+    assert(importDecl->getModule() && "Module missing");
+
+    // Store module as local.
     if (importDecl->isLocal()) locals.push_back(importDecl->getModule());
+
+    // Add module to imports.
     importedModules[importDecl->getName()] = importDecl;
+
+    // Link the name to the declaration in the symbol cache.
     symbolCache[importDecl->getName()] = importDecl;
 }
 
