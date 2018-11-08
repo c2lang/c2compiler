@@ -1569,19 +1569,17 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
 
 
 
-QualType FunctionAnalyser::analyseStaticStructFunction(QualType T, MemberExpr *M, const StructTypeDecl *S, unsigned side)
+QualType FunctionAnalyser::analyseStaticStructFunction(QualType T, MemberExpr* M, const StructTypeDecl* S, unsigned side)
 {
-    IdentifierExpr *member = M->getMember();
-
-    // This is the right hand side.
-    FunctionDecl *match = S->findFunction(member->getName());
+    IdentifierExpr* member = M->getMember();
 
     // Analyzed as static & struct function.
      M->setIsStructFunction();
      M->setIsStaticStructFunction();
 
+    // This is the right hand side.
+    FunctionDecl* match = S->findFunction(member->getName());
     if (!match) {
-
         outputStructDiagnostics(T, member, diag::err_no_struct_func);
         return QualType();
     }
@@ -1610,7 +1608,7 @@ QualType FunctionAnalyser::analyseStaticStructFunction(QualType T, MemberExpr *M
     return match->getType();
 }
 
-void FunctionAnalyser::outputStructDiagnostics(QualType T, IdentifierExpr *member, unsigned msg)
+void FunctionAnalyser::outputStructDiagnostics(QualType T, IdentifierExpr* member, unsigned msg)
 {
     char temp1[MAX_LEN_TYPENAME];
     StringBuilder buf1(MAX_LEN_TYPENAME, temp1);
@@ -1624,18 +1622,18 @@ void FunctionAnalyser::outputStructDiagnostics(QualType T, IdentifierExpr *membe
 // T is the type of the struct
 // M the whole expression
 // isStatic is true for Foo.myFunction(...)
-QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr *M, unsigned side, bool isStatic) {
+QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr* M, unsigned side, bool isStatic) {
     LOG_FUNC
     assert(M && "Expression missing");
-    const StructType *ST = cast<StructType>(T);
-    const StructTypeDecl *S = ST->getDecl();
+    const StructType* ST = cast<StructType>(T);
+    const StructTypeDecl* S = ST->getDecl();
 
     if (isStatic) return analyseStaticStructFunction(T, M, S, side);
 
     assert(CurrentFunction);
 
-    IdentifierExpr *member = M->getMember();
-    Decl *match = S->find(member->getName());
+    IdentifierExpr* member = M->getMember();
+    Decl* match = S->find(member->getName());
 
     if (!match) {
         outputStructDiagnostics(T, member, diag::err_no_member_struct_func);
@@ -1643,7 +1641,7 @@ QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr *M, unsign
     }
 
     IdentifierExpr::RefType ref = IdentifierExpr::REF_STRUCT_MEMBER;
-    FunctionDecl *func = dyncast<FunctionDecl>(match);
+    FunctionDecl* func = dyncast<FunctionDecl>(match);
 
     if (func) {
         scope.checkAccess(func, member->getLocation());
@@ -1840,9 +1838,9 @@ QualType FunctionAnalyser::analyseExplicitCastExpr(Expr* expr) {
 }
 
 
-QualType FunctionAnalyser::analyseCall(Expr *expr) {
+QualType FunctionAnalyser::analyseCall(Expr* expr) {
     LOG_FUNC
-    CallExpr *call = cast<CallExpr>(expr);
+    CallExpr* call = cast<CallExpr>(expr);
     // analyse function
 
     // First check that we haven't exceeded the
@@ -1857,7 +1855,7 @@ QualType FunctionAnalyser::analyseCall(Expr *expr) {
     callStack.push();
     QualType LType = analyseExpr(call->getFn(), RHS);
     // Pop the null struct function off the callstack
-    Expr *structFunction = callStack.pop();
+    Expr* structFunction = callStack.pop();
     if (LType.isNull()) return QualType();      // already handled
 
     if (!LType.isFunctionType()) {
@@ -1868,8 +1866,8 @@ QualType FunctionAnalyser::analyseCall(Expr *expr) {
         return QualType();
     }
 
-    const FunctionType *FT = cast<FunctionType>(LType);
-    FunctionDecl *func = FT->getDecl();
+    const FunctionType* FT = cast<FunctionType>(LType);
+    FunctionDecl* func = FT->getDecl();
     func->setUsed();
     call->setType(func->getReturnType());
     if (structFunction) call->setIsStructFunction();
@@ -1878,7 +1876,7 @@ QualType FunctionAnalyser::analyseCall(Expr *expr) {
 }
 
 
-bool FunctionAnalyser::checkCallArgs(FunctionDecl *func, CallExpr *call, Expr *structFunction) {
+bool FunctionAnalyser::checkCallArgs(FunctionDecl* func, CallExpr* call, Expr* structFunction) {
     LOG_FUNC
     unsigned funcArgs = func->numArgs();
     unsigned callArgs = call->numArgs();
@@ -1901,10 +1899,10 @@ bool FunctionAnalyser::checkCallArgs(FunctionDecl *func, CallExpr *call, Expr *s
     unsigned minArgs = MIN(funcArgs, callArgs);
 
     for (unsigned i = 0; i < minArgs; i++) {
-        Expr *callArg = call->getArg(callIndex);
+        Expr* callArg = call->getArg(callIndex);
         QualType callArgType = analyseExpr(callArg, RHS);
         if (callArgType.isValid()) {
-            VarDecl *funcArg = func->getArg(funcIndex);
+            VarDecl* funcArg = func->getArg(funcIndex);
             QualType funcArgType = funcArg->getType();
             assert(funcArgType.isValid());
             EA.check(funcArgType, callArg);
@@ -1915,14 +1913,14 @@ bool FunctionAnalyser::checkCallArgs(FunctionDecl *func, CallExpr *call, Expr *s
     if (callArgs > funcArgs) {
         // more args given, check if function is variadic
         if (!func->isVariadic()) {
-            Expr *arg = call->getArg(callIndex);
+            Expr* arg = call->getArg(callIndex);
             unsigned msg = diag::err_typecheck_call_too_many_args;
             if (func->hasDefaultArgs()) msg = diag::err_typecheck_call_too_many_args_at_most;
             Diag(arg->getLocation(), msg) << diagIndex << funcArgs << callArgs;
             return false;
         }
         for (unsigned i = minArgs; i < callArgs; i++) {
-            Expr *callArg = call->getArg(callIndex);
+            Expr* callArg = call->getArg(callIndex);
             QualType callArgType = analyseExpr(callArg, RHS);
             // TODO use canonical
             if (callArgType == Type::Void()) {
@@ -1937,7 +1935,7 @@ bool FunctionAnalyser::checkCallArgs(FunctionDecl *func, CallExpr *call, Expr *s
     else if (callArgs < funcArgs) {
         // less args given, check for default argument values
         for (unsigned i = minArgs; i < funcArgs; i++) {
-            VarDecl *arg = func->getArg(funcIndex++);
+            VarDecl* arg = func->getArg(funcIndex++);
             if (!arg->getInitValue()) {
                 unsigned msg = diag::err_typecheck_call_too_few_args;
                 if (func->hasDefaultArgs()) {
