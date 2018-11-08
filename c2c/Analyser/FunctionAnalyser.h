@@ -47,6 +47,9 @@ class CallExpr;
 class BuiltinExpr;
 class ASTContext;
 
+
+constexpr size_t MAX_STRUCT_INDIRECTION_DEPTH = 256;
+
 class FunctionAnalyser {
 public:
     FunctionAnalyser(Scope& scope_,
@@ -98,7 +101,7 @@ private:
     QualType analyseBitOffsetExpr(Expr* expr, QualType BaseType, c2lang::SourceLocation base);
     QualType analyseExplicitCastExpr(Expr* expr);
     QualType analyseCall(Expr* expr);
-    bool checkCallArgs(FunctionDecl* func, CallExpr* call);
+    bool checkCallArgs(FunctionDecl* func, CallExpr* call, Expr *structFunction);
     Decl* analyseIdentifier(IdentifierExpr* expr);
 
     void analyseInitExpr(Expr* expr, QualType expectedType);
@@ -139,6 +142,9 @@ private:
     QualType getStructType(QualType T) const;
     QualType getConditionType(const Stmt* C) const;
 
+    void outputStructDiagnostics(QualType T, IdentifierExpr *member, unsigned msg);
+    QualType analyseStaticStructFunction(QualType T, MemberExpr *M, const StructTypeDecl *S, unsigned side);
+
     // conversions
     QualType UsualUnaryConversions(Expr* expr) const;
 
@@ -155,8 +161,18 @@ private:
     bool inConstExpr;
     bool usedPublicly;
     bool isInterface;
-    bool inCallExpr;
-    Expr* structFunctionArg;
+
+    // Our callstack (statically allocated)
+    struct CallStack {
+        Expr *structFunction[MAX_STRUCT_INDIRECTION_DEPTH];
+        unsigned callDepth;
+        void push() { structFunction[callDepth++] = 0; }
+        Expr *pop() { return structFunction[--callDepth]; }
+        bool reachedMax() { return callDepth == MAX_STRUCT_INDIRECTION_DEPTH; };
+        void setStructFunction(Expr* expr) { structFunction[callDepth - 1] = expr; }
+    };
+
+    CallStack callStack;
 
     typedef std::vector<LabelDecl*> Labels;
     typedef Labels::iterator LabelsIter;

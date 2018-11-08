@@ -39,6 +39,7 @@ using namespace c2lang;
 //#define ANALYSER_DEBUG
 
 #ifdef ANALYSER_DEBUG
+#include "Utils/color.h"
 #include <iostream>
 #define LOG_FUNC std::cerr << ANSI_MAGENTA << __func__ << "()" << ANSI_NORMAL << "\n";
 #else
@@ -106,9 +107,9 @@ FunctionAnalyser::FunctionAnalyser(Scope& scope_,
     , inConstExpr(false)
     , usedPublicly(false)
     , isInterface(isInterface_)
-    , inCallExpr(false)
-    , structFunctionArg(0)
-{}
+{
+    callStack.callDepth = 0;
+}
 
 void FunctionAnalyser::check(FunctionDecl* func) {
     // check argument inits
@@ -1566,81 +1567,119 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
     return QualType();
 }
 
-QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr* M, unsigned side, bool isStatic) {
-    assert(M);
-    LOG_FUNC
-    const StructType* ST = cast<StructType>(T);
-    const StructTypeDecl* S = ST->getDecl();
-    unsigned msg = 0;
-    IdentifierExpr* member = M->getMember();
 
-    if (isStatic) {
-        M->setIsStructFunction();
-        M->setIsStaticStructFunction();
-        FunctionDecl* match = S->findFunction(member->getName());
-        if (match) {
-            // NOTE: static struct-functions are allowed outside call expr
-            scope.checkAccess(match, member->getLocation());
 
-            structFunctionArg = M->getBase();
-            if (side & RHS) match->setUsed();
-            M->setDecl(match);
-            M->setType(match->getType());
-            member->setDecl(match, IdentifierExpr::REF_STRUCT_FUNC);
-            member->setType(match->getType());
-            SetConstantFlags(match, M);
-            return match->getType();
-        }
-        msg = diag::err_no_struct_func;
-    } else {
-        assert(CurrentFunction);
-        Decl* match = S->find(member->getName());
-        if (match) {
-            IdentifierExpr::RefType ref = IdentifierExpr::REF_STRUCT_MEMBER;
-            FunctionDecl* func = dyncast<FunctionDecl>(match);
+QualType FunctionAnalyser::analyseStaticStructFunction(QualType T, MemberExpr *M, const StructTypeDecl *S, unsigned side)
+{
+    IdentifierExpr *member = M->getMember();
 
-            if (func) {
-                scope.checkAccess(func, member->getLocation());
+    // This is the right hand side.
+    FunctionDecl *match = S->findFunction(member->getName());
 
-                if (!checkStructTypeArg(T, func)) {
-                    Diag(member->getLocation(), diag::err_static_struct_func_notype);// << func->DiagName();
-                    return QualType();
-                }
-                M->setIsStructFunction();
-                ref = IdentifierExpr::REF_STRUCT_FUNC;
-                structFunctionArg = M->getBase();
-                if (!inCallExpr) {
-                    Diag(member->getLocation(), diag::err_non_static_struct_func_usage) << M->getBase()->getSourceRange();
-                    return QualType();
-                }
-            } else {
-                // NOTE: access of struct-function is not a dereference
-                if (CurrentFunction->getModule() != S->getModule() && S->hasAttribute(ATTR_OPAQUE)) {
-                    Diag(M->getLocation(), diag::err_deref_opaque) << S->isStruct() << S->DiagName();
-                    return QualType();
-                }
-            }
+    // Analyzed as static & struct function.
+     M->setIsStructFunction();
+     M->setIsStaticStructFunction();
 
-            if (side & RHS) match->setUsed();
-            M->setDecl(match);
-            M->setType(match->getType());
-            member->setDecl(match, ref);
-            member->setType(match->getType());
-            return match->getType();
-        }
-        msg = diag::err_no_member_struct_func;
+    if (!match) {
+
+        outputStructDiagnostics(T, member, diag::err_no_struct_func);
+        return QualType();
     }
 
+    // NOTE: static struct-functions are allowed outside call expr
+    scope.checkAccess(match, member->getLocation());
+
+    // The struct function can either be used as the pointer to
+    // a function or a member call. Consequently simply
+    // skip the call stack here.
+    if (callStack.callDepth > 0) {
+        callStack.setStructFunction(M->getBase());
+    }
+
+    // If right hand side of an expression, mark as used.
+    if (side & RHS) match->setUsed();
+
+    // Setup from function
+    M->setDecl(match);
+    M->setType(match->getType());
+
+    // Set the member part as the function call.
+    member->setDecl(match, IdentifierExpr::REF_STRUCT_FUNC);
+    member->setType(match->getType());
+    SetConstantFlags(match, M);
+    return match->getType();
+}
+
+void FunctionAnalyser::outputStructDiagnostics(QualType T, IdentifierExpr *member, unsigned msg)
+{
     char temp1[MAX_LEN_TYPENAME];
     StringBuilder buf1(MAX_LEN_TYPENAME, temp1);
     T->DiagName(buf1);
-
     char temp2[MAX_LEN_VARNAME];
     StringBuilder buf2(MAX_LEN_VARNAME, temp2);
     buf2 << '\'' << member->getName() << '\'';
     Diag(member->getLocation(), msg) << temp2 << temp1;
-    return QualType();
 }
+
+// T is the type of the struct
+// M the whole expression
+// isStatic is true for Foo.myFunction(...)
+QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr *M, unsigned side, bool isStatic) {
+    LOG_FUNC
+    assert(M && "Expression missing");
+    const StructType *ST = cast<StructType>(T);
+    const StructTypeDecl *S = ST->getDecl();
+
+    if (isStatic) return analyseStaticStructFunction(T, M, S, side);
+
+    assert(CurrentFunction);
+
+    IdentifierExpr *member = M->getMember();
+    Decl *match = S->find(member->getName());
+
+    if (!match) {
+        outputStructDiagnostics(T, member, diag::err_no_member_struct_func);
+        return QualType();
+    }
+
+    IdentifierExpr::RefType ref = IdentifierExpr::REF_STRUCT_MEMBER;
+    FunctionDecl *func = dyncast<FunctionDecl>(match);
+
+    if (func) {
+        scope.checkAccess(func, member->getLocation());
+
+        if (!checkStructTypeArg(T, func)) {
+            Diag(member->getLocation(), diag::err_static_struct_func_notype);// << func->DiagName();
+            return QualType();
+        }
+        M->setIsStructFunction();
+        ref = IdentifierExpr::REF_STRUCT_FUNC;
+
+        // Is this a simple member access? If so
+        // disallow this (we don't have closures!)
+        if (callStack.callDepth == 0) {
+            Diag(member->getLocation(), diag::err_non_static_struct_func_usage)
+                << M->getBase()->getSourceRange();
+            return QualType();
+        }
+        callStack.setStructFunction(M->getBase());
+    }
+    else {
+        // NOTE: access of struct-function is not a dereference
+        if (CurrentFunction->getModule() != S->getModule() && S->hasAttribute(ATTR_OPAQUE)) {
+            Diag(M->getLocation(), diag::err_deref_opaque) << S->isStruct() << S->DiagName();
+            return QualType();
+        }
+    }
+
+    if (side & RHS) match->setUsed();
+    M->setDecl(match);
+    M->setType(match->getType());
+    member->setDecl(match, ref);
+    member->setType(match->getType());
+    return match->getType();
+}
+
 
 bool FunctionAnalyser::checkStructTypeArg(QualType T,  FunctionDecl* func) const {
     if (func->numArgs() == 0) return false;
@@ -1800,14 +1839,25 @@ QualType FunctionAnalyser::analyseExplicitCastExpr(Expr* expr) {
     return outerType.isValid() ? outerType : QualType();
 }
 
-QualType FunctionAnalyser::analyseCall(Expr* expr) {
+
+QualType FunctionAnalyser::analyseCall(Expr *expr) {
     LOG_FUNC
-    CallExpr* call = cast<CallExpr>(expr);
+    CallExpr *call = cast<CallExpr>(expr);
     // analyse function
-    structFunctionArg = 0;
-    inCallExpr = true;
+
+    // First check that we haven't exceeded the
+    // max depth (should be reeeally hard to do)
+    if (callStack.reachedMax()) {
+        // Bas, we probably want diagnostics here
+        // instead of a fatal error...
+        // TODO
+        FATAL_ERROR("Reached max indirection depth");
+    }
+    // Push a null struct function on the callstack.
+    callStack.push();
     QualType LType = analyseExpr(call->getFn(), RHS);
-    inCallExpr = false;
+    // Pop the null struct function off the callstack
+    Expr *structFunction = callStack.pop();
     if (LType.isNull()) return QualType();      // already handled
 
     if (!LType.isFunctionType()) {
@@ -1818,17 +1868,17 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
         return QualType();
     }
 
-    const FunctionType* FT = cast<FunctionType>(LType);
-    FunctionDecl* func = FT->getDecl();
+    const FunctionType *FT = cast<FunctionType>(LType);
+    FunctionDecl *func = FT->getDecl();
     func->setUsed();
     call->setType(func->getReturnType());
-    if (structFunctionArg) call->setIsStructFunction();
-
-    if (!checkCallArgs(func, call)) return QualType();
+    if (structFunction) call->setIsStructFunction();
+    if (!checkCallArgs(func, call, structFunction)) return QualType();
     return func->getReturnType();
 }
 
-bool FunctionAnalyser::checkCallArgs(FunctionDecl* func, CallExpr* call) {
+
+bool FunctionAnalyser::checkCallArgs(FunctionDecl *func, CallExpr *call, Expr *structFunction) {
     LOG_FUNC
     unsigned funcArgs = func->numArgs();
     unsigned callArgs = call->numArgs();
@@ -1836,12 +1886,13 @@ bool FunctionAnalyser::checkCallArgs(FunctionDecl* func, CallExpr* call) {
     unsigned funcIndex = 0;
     unsigned callIndex = 0;
 
-    const bool isStructFunction = (structFunctionArg != 0);
+    const bool isStructFunction = (structFunction != nullptr);
     unsigned diagIndex = 0;
     if (isStructFunction) {
-        if (exprIsType(structFunctionArg)) {
+        if (exprIsType(structFunction)) {
             diagIndex = 5;
-        } else {
+        }
+        else {
             diagIndex = 4;
             funcArgs--;
             funcIndex = 1;
@@ -1849,11 +1900,11 @@ bool FunctionAnalyser::checkCallArgs(FunctionDecl* func, CallExpr* call) {
     }
     unsigned minArgs = MIN(funcArgs, callArgs);
 
-    for (unsigned i=0; i<minArgs; i++) {
-        Expr* callArg = call->getArg(callIndex);
+    for (unsigned i = 0; i < minArgs; i++) {
+        Expr *callArg = call->getArg(callIndex);
         QualType callArgType = analyseExpr(callArg, RHS);
         if (callArgType.isValid()) {
-            VarDecl* funcArg = func->getArg(funcIndex);
+            VarDecl *funcArg = func->getArg(funcIndex);
             QualType funcArgType = funcArg->getType();
             assert(funcArgType.isValid());
             EA.check(funcArgType, callArg);
@@ -1864,15 +1915,14 @@ bool FunctionAnalyser::checkCallArgs(FunctionDecl* func, CallExpr* call) {
     if (callArgs > funcArgs) {
         // more args given, check if function is variadic
         if (!func->isVariadic()) {
-            Expr* arg = call->getArg(callIndex);
+            Expr *arg = call->getArg(callIndex);
             unsigned msg = diag::err_typecheck_call_too_many_args;
             if (func->hasDefaultArgs()) msg = diag::err_typecheck_call_too_many_args_at_most;
-            Diag(arg->getLocation(), msg)
-                    << diagIndex << funcArgs << callArgs;
+            Diag(arg->getLocation(), msg) << diagIndex << funcArgs << callArgs;
             return false;
         }
-        for (unsigned i=minArgs; i<callArgs; i++) {
-            Expr* callArg = call->getArg(callIndex);
+        for (unsigned i = minArgs; i < callArgs; i++) {
+            Expr *callArg = call->getArg(callIndex);
             QualType callArgType = analyseExpr(callArg, RHS);
             // TODO use canonical
             if (callArgType == Type::Void()) {
@@ -1883,10 +1933,11 @@ bool FunctionAnalyser::checkCallArgs(FunctionDecl* func, CallExpr* call) {
             }
             callIndex++;
         }
-    } else if (callArgs < funcArgs) {
+    }
+    else if (callArgs < funcArgs) {
         // less args given, check for default argument values
-        for (unsigned i=minArgs; i<funcArgs; i++) {
-            VarDecl* arg = func->getArg(funcIndex++);
+        for (unsigned i = minArgs; i < funcArgs; i++) {
+            VarDecl *arg = func->getArg(funcIndex++);
             if (!arg->getInitValue()) {
                 unsigned msg = diag::err_typecheck_call_too_few_args;
                 if (func->hasDefaultArgs()) {
