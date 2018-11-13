@@ -123,6 +123,7 @@ private:
   /// A SmallVector of expressions, with stack size 12 (the maximum used.)
   typedef SmallVector<Expr*, 12> ExprVector;
 
+    StmtResult ParseDeferStatement();
     StmtResult ParseCompoundStatement();
     StmtResult ParseStatement();
     StmtResult ParseAsmStatement();

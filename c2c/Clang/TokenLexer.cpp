@@ -665,9 +665,7 @@ bool TokenLexer::pasteTokens(Token &Tok) {
 bool TokenLexer::pasteTokens(Token &LHSTok, ArrayRef<Token> TokenStream,
                              unsigned int &CurIdx) {
   assert(CurIdx > 0 && "## can not be the first token within tokens");
-  assert((TokenStream[CurIdx].is(tok::hashhash) ||
-         (false &&
-          isWideStringLiteralFromMacro(LHSTok, TokenStream[CurIdx]))) &&
+  assert(TokenStream[CurIdx].is(tok::hashhash) &&
              "Token at this Index must be ## or part of the MSVC 'L "
              "#macro-arg' pasting pair");
 

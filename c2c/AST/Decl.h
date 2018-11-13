@@ -39,6 +39,7 @@ class CompoundStmt;
 class LabelStmt;
 class Module;
 class ASTContext;
+class DeferStmt;
 
 enum DeclKind {
     DECL_FUNC = 0,
@@ -161,6 +162,13 @@ protected:
         unsigned IsLocal : 1;
     };
 
+    class LabelDeclBits {
+        friend class LabelDecl;
+        unsigned : NumDeclBits;
+
+        unsigned inDefer : 16;
+    };
+
     union {
         DeclBitfields declBits;
         VarDeclBits varDeclBits;
@@ -168,6 +176,7 @@ protected:
         EnumTypeDeclBits enumTypeDeclBits;
         FunctionDeclBits functionDeclBits;
         ImportDeclBits importDeclBits;
+        LabelDeclBits labelDeclBits;
     };
     SourceLocation loc;
     QualType type;
@@ -218,7 +227,6 @@ private:
     mutable llvm::Value* IRValue;
 };
 
-
 class FunctionDecl : public Decl {
 public:
     FunctionDecl(const char* name_, SourceLocation loc_,
@@ -240,6 +248,8 @@ public:
         args = args_;
         functionDeclBits.numArgs = numArgs_;
     }
+    void setDefers(DeferStmt** defers_) { defers = defers_; }
+    DeferStmt** getDefers() const { return defers; }
     VarDecl* getArg(unsigned i) const { return args[i]; }
     unsigned numArgs() const { return functionDeclBits.numArgs; }
     unsigned minArgs() const;
@@ -260,6 +270,7 @@ public:
     QualType getOrigReturnType() const { return origRType; }
     void setReturnType(QualType rt) { rtype = rt; }
 
+    DeferStmt* deferById(unsigned short deferId) const { return deferId ? defers[deferId - 1] : nullptr; }
     static bool sameProto(const FunctionDecl* lhs, const FunctionDecl* rhs);
 
     // for codegen
@@ -274,6 +285,7 @@ private:
     VarDecl** args;
     CompoundStmt* body;
     mutable llvm::Function* IRProto;
+    DeferStmt** defers;
 };
 
 
@@ -469,6 +481,9 @@ public:
         return D->getKind() == DECL_LABEL;
     }
     void print(StringBuilder& buffer, unsigned indent) const;
+
+    unsigned inDefer() const { return labelDeclBits.inDefer; }
+    void setInDefer(unsigned deferId) { labelDeclBits.inDefer = deferId; }
 
     LabelStmt* getStmt() const { return TheStmt; }
     void setStmt(LabelStmt* S) { TheStmt = S; }

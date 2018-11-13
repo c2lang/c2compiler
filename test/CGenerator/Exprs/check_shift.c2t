@@ -16,9 +16,9 @@ public func i32 main(i32 argc, const i8*[] argv) {
 
 int32_t main(int32_t argc, const char* argv[]) {
 
-    int32_t a = ((1 << 2) + 1);
-    int32_t b = (((1 << 2)) + 1);
-		int32_t c = (((1 >> 2)) + 1);
+    int32_t a = (1 << 2) + 1;
+    int32_t b = (1 << 2) + 1;
+		int32_t c = (1 >> 2) + 1;
 
     return 0;
 }

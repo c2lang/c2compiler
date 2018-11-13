@@ -18,11 +18,11 @@ func i32 sum(i32 c, i32 d) {
 
 // @expect{atleast, build/mod1.c}
 static int32_t mod1_sum(int32_t a, int32_t b) {
-    return (a + b);
+    return a + b;
 }
 
 // @expect{atleast, build/mod2.c}
 static int32_t mod2_sum(int32_t c, int32_t d) {
-    return (c + d);
+    return c + d;
 }
 

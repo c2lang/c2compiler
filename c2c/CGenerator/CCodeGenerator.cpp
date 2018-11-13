@@ -220,7 +220,7 @@ void CCodeGenerator::createLibHeader(bool printCode, const std::string& outputDi
     FileUtils::writeFile(outputDir.c_str(), outputDir + hfilename, hbuf);
 }
 
-void CCodeGenerator::EmitExpr(const Expr* E, StringBuilder& output) {
+void CCodeGenerator::EmitExpr(const Expr* E, StringBuilder& output, bool alreadyHasParens) {
     LOG_FUNC
     switch (E->getKind()) {
     case EXPR_INTEGER_LITERAL:
@@ -285,13 +285,13 @@ void CCodeGenerator::EmitExpr(const Expr* E, StringBuilder& output) {
         const DesignatedInitExpr* D = cast<DesignatedInitExpr>(E);
         if (D->getDesignatorKind() == DesignatedInitExpr::ARRAY_DESIGNATOR) {
             output << '[';
-            EmitExpr(D->getDesignator(), output);
+            EmitExpr(D->getDesignator(), output, true);
             output << "] = ";
         } else {
             const IdentifierExpr* field = D->getField();
             output << '.' << field->getName() << " = ";
         }
-        EmitExpr(D->getInitValue(), output);
+        EmitExpr(D->getInitValue(), output, true);
         return;
     }
     case EXPR_TYPE:
@@ -302,7 +302,7 @@ void CCodeGenerator::EmitExpr(const Expr* E, StringBuilder& output) {
         return;
     }
     case EXPR_BINOP:
-        EmitBinaryOperator(E, output);
+        EmitBinaryOperator(E, output, alreadyHasParens);
         return;
     case EXPR_CONDOP:
         EmitConditionalOperator(E, output);
@@ -321,7 +321,7 @@ void CCodeGenerator::EmitExpr(const Expr* E, StringBuilder& output) {
         } else {
             EmitExpr(A->getBase(), output);
             output << '[';
-            EmitExpr(A->getIndex(), output);
+            EmitExpr(A->getIndex(), output, true);
             output << ']';
         }
         return;
@@ -333,7 +333,7 @@ void CCodeGenerator::EmitExpr(const Expr* E, StringBuilder& output) {
     {
         const ParenExpr* P = cast<ParenExpr>(E);
         output << '(';
-        EmitExpr(P->getExpr(), output);
+        EmitExpr(P->getExpr(), output, true);
         output << ')';
         return;
     }
@@ -347,7 +347,7 @@ void CCodeGenerator::EmitExpr(const Expr* E, StringBuilder& output) {
         EmitTypePreName(ECE->getDestType(), output);
         EmitTypePostName(ECE->getDestType(), output);
         output << ")(";
-        EmitExpr(ECE->getInner(), output);
+        EmitExpr(ECE->getInner(), output, true);
         output << ')';
         return;
     }
@@ -364,7 +364,7 @@ void CCodeGenerator::EmitBuiltinExpr(const Expr* E, StringBuilder& output) {
         if (B->getValue().getZExtValue() > 0) {
             output << B->getValue().toString(10);
         } else {
-            EmitExpr(B->getExpr(), output);
+            EmitExpr(B->getExpr(), output, true);
         }
         output << ')';
         break;
@@ -376,25 +376,25 @@ void CCodeGenerator::EmitBuiltinExpr(const Expr* E, StringBuilder& output) {
     }
 }
 
-void CCodeGenerator::EmitBinaryOperator(const Expr* E, StringBuilder& output) {
+void CCodeGenerator::EmitBinaryOperator(const Expr* E, StringBuilder& output, bool alreadyHasParens) {
     LOG_FUNC
     const BinaryOperator* B = cast<BinaryOperator>(E);
-    bool requiresParens = B->requiresParensForC();
+    bool requiresParens = !alreadyHasParens && B->requiresParensForC();
     if (requiresParens) output << '(';
-    EmitExpr(B->getLHS(), output);
+    EmitExpr(B->getLHS(), output, !B->requiresParensForC());
     output << ' ' << BinaryOperator::OpCode2str(B->getOpcode()) << ' ';
-    EmitExpr(B->getRHS(), output);
+    EmitExpr(B->getRHS(), output, !B->requiresParensForC());
     if (requiresParens) output << ')';
 }
 
 void CCodeGenerator::EmitConditionalOperator(const Expr* E, StringBuilder& output) {
     LOG_FUNC
     const ConditionalOperator* C = cast<ConditionalOperator>(E);
-    EmitExpr(C->getCond(), output);
+    EmitExpr(C->getCond(), output, true);
     output << " ? ";
-    EmitExpr(C->getLHS(), output);
+    EmitExpr(C->getLHS(), output, true);
     output << " : ";
-    EmitExpr(C->getRHS(), output);
+    EmitExpr(C->getRHS(), output, true);
 
 }
 
@@ -405,7 +405,7 @@ void CCodeGenerator::EmitUnaryOperator(const Expr* E, StringBuilder& output) {
     switch (U->getOpcode()) {
     case UO_PostInc:
     case UO_PostDec:
-        EmitExpr(U->getExpr(), output);
+        EmitExpr(U->getExpr(), output, true);
         output << UnaryOperator::OpCode2str(U->getOpcode());
         break;
     case UO_PreInc:
@@ -417,7 +417,7 @@ void CCodeGenerator::EmitUnaryOperator(const Expr* E, StringBuilder& output) {
     case UO_LNot:
         //output.indent(indent);
         output << UnaryOperator::OpCode2str(U->getOpcode());
-        EmitExpr(U->getExpr(), output);
+        EmitExpr(U->getExpr(), output, true);
         break;
     }
 }
@@ -439,7 +439,7 @@ void CCodeGenerator::EmitMemberExpr(const Expr* E, StringBuilder& output) {
         EmitEnumConstant(cast<EnumConstantDecl>(M->getDecl()), ETD->getName(), output);
     } else {
         // A.B where A is decl of struct/union type
-        EmitExpr(M->getBase(), cbuf);
+        EmitExpr(M->getBase(), cbuf, true);
         QualType LType = M->getBase()->getType();
         if (LType.isPointerType()) cbuf << "->";
         else cbuf << '.';
@@ -463,16 +463,16 @@ void CCodeGenerator::EmitCallExpr(const Expr* E, StringBuilder& output) {
         if (!M->isStaticStructFunction()) {
             QualType arg1Type = M->getBase()->getType();
             if (!arg1Type.isPointerType()) output << '&';
-            EmitExpr(M->getBase(), output);
+            EmitExpr(M->getBase(), output, true);
             hasArg = true;
         }
     } else {
-        EmitExpr(F, output);
+        EmitExpr(F, output, true);
         output << '(';
     }
     for (unsigned i=0; i<C->numArgs(); i++) {
         if (i != 0 || hasArg) output << ", ";
-        EmitExpr(C->getArg(i), output);
+        EmitExpr(C->getArg(i), output, true);
     }
     const FunctionType* FT = cast<FunctionType>(F->getType());
     const FunctionDecl* func = FT->getDecl();
@@ -483,7 +483,7 @@ void CCodeGenerator::EmitCallExpr(const Expr* E, StringBuilder& output) {
             if (i != 0 || hasArg) output << ", ";
             VarDecl* arg = func->getArg(i);
             assert(arg->getInitValue());
-            EmitExpr(arg->getInitValue(), output);
+            EmitExpr(arg->getInitValue(), output, true);
         }
     }
     output << ')';
@@ -668,9 +668,23 @@ void CCodeGenerator::EmitFunction(const FunctionDecl* F) {
     bool hasAttr = EmitAttributes(F, cbuf, false);
     if (hasAttr) cbuf << ' ';
     EmitFunctionProto(F, cbuf);
-    cbuf << ' ';
-    EmitCompoundStmt(F->getBody(), 0, false);
-    cbuf << '\n';
+    cbuf << " {\n";
+
+    currentFunction = F;
+    // Emit conditional defers if any.
+    DeferStmt **defers = F->getDefers();
+    if (defers) {
+        while (*defers) {
+            if ((*defers)->shouldEmitBoolean()) {
+                cbuf.indent(INDENT);
+                cbuf << "char __defer_cond_" << (*defers)->deferId() << " = 0;\n";
+            }
+            defers++;
+        }
+    }
+
+    EmitCompoundStmt(F->getBody(), 0, true);
+    cbuf << "}\n";
 }
 
 void CCodeGenerator::EmitFunctionArgs(const FunctionDecl* F, StringBuilder& output) {
@@ -749,7 +763,7 @@ void CCodeGenerator::EmitGlobalVariable(const VarDecl* V) {
     EmitAttributes(V, cbuf, true);
     cbuf << " = ";
     if (V->getInitValue()) {
-        EmitExpr(V->getInitValue(), cbuf);
+        EmitExpr(V->getInitValue(), cbuf, true);
     } else {
         // always generate initialization
         if (V->getType().isPointerType()) {
@@ -864,7 +878,7 @@ void CCodeGenerator::EmitEnumType(const EnumTypeDecl* E, StringBuilder& output) 
         EmitEnumConstant(C, E->getName(), output);
         if (C->getInitValue()) {
             output << " = ";
-            EmitExpr(C->getInitValue(), output);
+            EmitExpr(C->getInitValue(), output, true);
         }
         output << ",\n";
     }
@@ -912,7 +926,7 @@ void CCodeGenerator::EmitVarDecl(const VarDecl* D, StringBuilder& output, unsign
     EmitTypePostName(D->getType(), output);
     if (D->getInitValue()) {
         output << " = ";
-        EmitExpr(D->getInitValue(), output);
+        EmitExpr(D->getInitValue(), output, true);
     }
 }
 
@@ -922,11 +936,33 @@ void CCodeGenerator::EmitStmt(const Stmt* S, unsigned indent) {
     case STMT_RETURN:
     {
         const ReturnStmt* R = cast<ReturnStmt>(S);
+        // The hard way, we need to introduce a temp.
+        if (R->deferTop && R->getExpr() && !R->getExpr()->isConstant()) {
+            cbuf.indent(indent);
+            cbuf << "{\n";
+            indent += INDENT;
+            cbuf.indent(indent);
+            EmitTypePreName(R->getExpr()->getType(), cbuf);
+            cbuf << " __defer_ret";
+
+            EmitTypePostName(R->getExpr()->getType(), cbuf);
+            cbuf << " = ";
+            EmitExpr(R->getExpr(), cbuf, true);
+            cbuf << ";\n";
+            EmitDefers(R->deferTop, (DeferId)0, indent);
+            cbuf.indent(indent);
+            cbuf << "return __defer_ret;\n";
+            cbuf.indent(indent - INDENT);
+            cbuf << "}\n";
+            return;
+        }
+
+        EmitDefers(R->deferTop, (DeferId)0, indent);
         cbuf.indent(indent);
         cbuf << "return";
         if (R->getExpr()) {
             cbuf << ' ';
-            EmitExpr(R->getExpr(), cbuf);
+            EmitExpr(R->getExpr(), cbuf, true);
         }
         cbuf << ";\n";
         return;
@@ -935,7 +971,7 @@ void CCodeGenerator::EmitStmt(const Stmt* S, unsigned indent) {
     {
         const Expr* E = cast<Expr>(S);
         cbuf.indent(indent);
-        EmitExpr(E, cbuf);
+        EmitExpr(E, cbuf, true);
         cbuf << ";\n";
         return;
     }
@@ -959,17 +995,19 @@ void CCodeGenerator::EmitStmt(const Stmt* S, unsigned indent) {
         FATAL_ERROR("Should already be generated");
         break;
     case STMT_BREAK:
-        cbuf.indent(indent);
-        cbuf << "break;\n";
+        EmitBreakStmt(cast<BreakStmt>(S), indent);
         return;
     case STMT_CONTINUE:
-        cbuf.indent(indent);
-        cbuf << "continue;\n";
+        EmitContinueStmt(cast<ContinueStmt>(S), indent);
         return;
     case STMT_LABEL:
     {
         const LabelStmt* L = cast<LabelStmt>(S);
         cbuf << L->getName();
+        if (L->inDefer()) {
+            cbuf << "__defer_";
+            cbuf << L->inDefer();
+        }
         cbuf << ":\n";
         EmitStmt(L->getSubStmt(), indent);
         return;
@@ -977,12 +1015,24 @@ void CCodeGenerator::EmitStmt(const Stmt* S, unsigned indent) {
     case STMT_GOTO:
     {
         const GotoStmt* G = cast<GotoStmt>(S);
+        EmitDefers(G->deferList, indent);
         cbuf.indent(indent);
-        cbuf << "goto " << G->getLabel()->getName() << ";\n";
+        cbuf << "goto " << G->getLabel()->getName();
+        if (G->inDefer()) {
+            cbuf << "__defer_";
+            cbuf << G->inDefer();
+        }
+        cbuf << ";\n";
         return;
     }
     case STMT_COMPOUND:
-        EmitCompoundStmt(cast<CompoundStmt>(S), indent, true);
+        EmitCompoundStmt(cast<CompoundStmt>(S), indent, false);
+        return;
+    case STMT_DEFER_RELEASED:
+        EmitDeferReleased(cast<DeferReleasedStmt>(S), indent);
+        return;
+    case STMT_DEFER:
+        EmitDeferStmt(cast<DeferStmt>(S), indent);
         return;
     case STMT_DECL:
         EmitDeclStmt(cast<DeclStmt>(S), indent);
@@ -993,16 +1043,22 @@ void CCodeGenerator::EmitStmt(const Stmt* S, unsigned indent) {
     }
 }
 
-void CCodeGenerator::EmitCompoundStmt(const CompoundStmt* C, unsigned indent, bool startOnNewLine) {
+void CCodeGenerator::EmitCompoundStmt(const CompoundStmt* C, unsigned indent, bool skipBraces) {
     LOG_FUNC
-    if (startOnNewLine) cbuf.indent(indent);
-    cbuf << "{\n";
+    if (!skipBraces)
+    {
+        cbuf.indent(indent);
+        cbuf << "{\n";
+    }
     Stmt** stmts = C->getStmts();
     for (unsigned i=0; i<C->numStmts(); i++) {
         EmitStmt(stmts[i], indent + INDENT);
     }
-    cbuf.indent(indent);
-    cbuf << "}\n";
+    EmitDefers(C->deferList, indent + INDENT);
+    if (!skipBraces) {
+        cbuf.indent(indent);
+        cbuf << "}\n";
+    }
 }
 
 void CCodeGenerator::EmitIfStmt(const Stmt* S, unsigned indent) {
@@ -1017,16 +1073,12 @@ void CCodeGenerator::EmitIfStmt(const Stmt* S, unsigned indent) {
     if (isa<CompoundStmt>(I->getThen())) {
         cbuf << '\n';
         EmitStmt(I->getThen(), indent);
-    } else if (isa<IfStmt>(I->getThen())) {
+    } else {
         cbuf << " {\n";
-        EmitStmt(I->getThen(), indent+INDENT);
+        EmitStmt(I->getThen(), indent + INDENT);
         cbuf.indent(indent);
         cbuf << "}\n";
-    } else {
-        cbuf << ' ';
-        EmitStmt(I->getThen(), 0);
     }
-
     if (I->getElse()) {
         cbuf.indent(indent);
         cbuf << "else";
@@ -1034,8 +1086,10 @@ void CCodeGenerator::EmitIfStmt(const Stmt* S, unsigned indent) {
             cbuf << '\n';
             EmitStmt(I->getElse(), indent);
         } else {
-            cbuf << ' ';
-            EmitStmt(I->getElse(), 0);
+            cbuf << " {\n";
+            EmitStmt(I->getElse(), indent + INDENT);
+            cbuf.indent(indent);
+            cbuf << "}\n";
         }
     }
 }
@@ -1047,35 +1101,44 @@ void CCodeGenerator::EmitWhileStmt(const Stmt* S, unsigned indent) {
     cbuf.indent(indent);
     cbuf << "while (";
     EmitConditionPost(W->getCond());
-    cbuf << ") ";
+    cbuf << ") {\n";
     Stmt* Body = W->getBody();
     if (Body->getKind() == STMT_COMPOUND) {
         CompoundStmt* C = cast<CompoundStmt>(Body);
-        EmitCompoundStmt(C, indent, false);
+        EmitCompoundStmt(C, indent, true);
     } else {
-        EmitStmt(Body, 0);
+        EmitStmt(Body, indent + INDENT);
     }
+    cbuf.indent(indent);
+    cbuf << "}\n";
+
 }
 
 void CCodeGenerator::EmitDoStmt(const Stmt* S, unsigned indent) {
     LOG_FUNC
     const DoStmt* D = cast<DoStmt>(S);
     cbuf.indent(indent);
-    cbuf << "do ";
+    cbuf << "do {\n";
     Stmt* Body = D->getBody();
     if (Body->getKind() == STMT_COMPOUND) {
         CompoundStmt* C = cast<CompoundStmt>(Body);
-        EmitCompoundStmt(C, indent, false);
+        EmitCompoundStmt(C, indent, true);
     } else {
-        EmitStmt(Body, 0);
+        EmitStmt(Body, indent + INDENT);
     }
-    cbuf.indent(indent);
-    // TODO add after '}'
-    cbuf << "while (";
+    cbuf << "} while (";
     // TEMP, assume Expr
     Expr* E = cast<Expr>(D->getCond());
-    EmitExpr(E, cbuf);
+    EmitExpr(E, cbuf, true);
     cbuf << ");\n";
+}
+
+void CCodeGenerator::EmitDeferStmt(const DeferStmt* defer, unsigned int indent) {
+    LOG_FUNC
+    if (defer->shouldEmitBoolean()) {
+        cbuf.indent(indent);
+        cbuf << "__defer_cond_" << defer->deferId() << " = 1;\n";
+    }
 }
 
 void CCodeGenerator::EmitForStmt(const Stmt* S, unsigned indent) {
@@ -1094,23 +1157,25 @@ void CCodeGenerator::EmitForStmt(const Stmt* S, unsigned indent) {
     Expr* Cond = F->getCond();
     if (Cond) {
         cbuf << ' ';
-        EmitExpr(Cond, cbuf);
+        EmitExpr(Cond, cbuf, true);
     }
     cbuf << ';';
 
     Expr* Incr = F->getIncr();
     if (Incr) {
         cbuf << ' ';
-        EmitExpr(Incr, cbuf);
+        EmitExpr(Incr, cbuf, true);
     }
 
-    cbuf << ") ";
+    cbuf << ") {\n";
     Stmt* Body = F->getBody();
     if (Body->getKind() == STMT_COMPOUND) {
-        EmitCompoundStmt(cast<CompoundStmt>(Body), indent, false);
+        EmitCompoundStmt(cast<CompoundStmt>(Body), indent, true);
     } else {
-        EmitStmt(Body, 0);
+        EmitStmt(Body, indent + INDENT);
     }
+    cbuf.indent(indent);
+    cbuf << "}\n";
 }
 
 void CCodeGenerator::EmitSwitchStmt(const Stmt* S, unsigned indent) {
@@ -1131,14 +1196,17 @@ void CCodeGenerator::EmitSwitchStmt(const Stmt* S, unsigned indent) {
             CaseStmt* C = cast<CaseStmt>(Case);
             cbuf.indent(indent + INDENT);
             cbuf << "case ";
-            EmitExpr(C->getCond(), cbuf);
+            EmitExpr(C->getCond(), cbuf, true);
             cbuf << ':';
             if (C->hasDecls()) cbuf << " {";
             cbuf << '\n';
             Stmt** stmts = C->getStmts();
+            Stmt* last = nullptr;
             for (unsigned s=0; s<C->numStmts(); s++) {
                 EmitStmt(stmts[s], indent + INDENT + INDENT);
+                last = stmts[s];
             }
+            EmitDefers(C->deferList, indent + INDENT + INDENT);
             if (C->hasDecls()) {
                 cbuf.indent(indent + INDENT);
                 cbuf << "}\n";
@@ -1183,7 +1251,7 @@ void CCodeGenerator::EmitDeclStmt(const Stmt* S, unsigned indent) {
     EmitTypePostName(VD->getType(), cbuf);
     if (VD->getInitValue()) {
         cbuf << " = ";
-        EmitExpr(VD->getInitValue(), cbuf);
+        EmitExpr(VD->getInitValue(), cbuf, true);
     }
     cbuf << ";\n";
 }
@@ -1208,7 +1276,7 @@ void CCodeGenerator::EmitAsmOperand(const char* name, const StringLiteral* c, co
     c->printLiteral(cbuf);
     cbuf << ' ';
     cbuf << '(';
-    EmitExpr(e, cbuf);
+    EmitExpr(e, cbuf, true);
     cbuf << ')';
 }
 
@@ -1341,7 +1409,7 @@ void CCodeGenerator::EmitTypePostName(QualType type, StringBuilder& output) {
         EmitTypePostName(A->getElementType(), output);
         output << '[';
         if (A->getSizeExpr()) {
-            EmitExpr(A->getSizeExpr(), output);
+            EmitExpr(A->getSizeExpr(), output, true);
         }
         output << ']';
     }
@@ -1362,7 +1430,7 @@ void CCodeGenerator::EmitConditionPost(const Stmt* S) {
         cbuf << DS->getDecl()->getName();
     } else {
         assert(isa<Expr>(S));
-        EmitExpr(cast<Expr>(S), cbuf);
+        EmitExpr(cast<Expr>(S), cbuf, true);
     }
 
 }
@@ -1437,4 +1505,59 @@ bool CCodeGenerator::EmitAsDefine(const VarDecl* V) const {
     }
     return false;
 }
+
+
+
+void CCodeGenerator::EmitSingleDefer(DeferStmt* stmt, unsigned indent) {
+    if (stmt->shouldEmitBoolean()) {
+        cbuf.indent(indent);
+        cbuf << "if (__defer_cond_" << stmt->deferId() << ") {\n";
+        indent += INDENT;
+    }
+    if (stmt->shouldEmitDoWhile()) {
+        cbuf.indent(indent);
+        cbuf << "do {\n";
+        EmitStmt(stmt->getDefer(), indent + INDENT);
+        cbuf.indent(indent);
+        cbuf << "} while(0);\n";
+    } else {
+        EmitStmt(stmt->getDefer(), indent);
+    }
+    if (stmt->shouldEmitBoolean()) {
+        cbuf.indent(indent - INDENT);
+        cbuf << "}\n";
+    }
+}
+
+
+void CCodeGenerator::EmitDefers(DeferId deferStart, DeferId end, unsigned indent) {
+    if (!deferStart) return;
+    DeferStmt *stmt = currentFunction->deferById(deferStart);
+    DeferStmt *deferEnd = currentFunction->deferById(end);
+    while (stmt != deferEnd) {
+        EmitSingleDefer(stmt, indent);
+        stmt = stmt->PrevDefer;
+    }
+}
+
+void CCodeGenerator::EmitDeferReleased(const C2::DeferReleasedStmt* stmt, unsigned int indent) {
+    EmitStmt(stmt->getStmt(), indent);
+    EmitDefers(stmt->deferList, indent);
+}
+
+void CCodeGenerator::EmitBreakStmt(const BreakStmt* breakStmt, unsigned indent) {
+    EmitDefers(breakStmt->deferList, indent);
+    cbuf.indent(indent);
+    cbuf << "break;\n";
+}
+
+void CCodeGenerator::EmitContinueStmt(const ContinueStmt* continueStmt, unsigned indent) {
+    EmitDefers(continueStmt->deferList, indent);
+    cbuf.indent(indent);
+    cbuf << "continue;\n";
+}
+
+
+
+
 

@@ -3,6 +3,7 @@ __PARSESTART = DIAG_START_PARSE,
 #undef PARSESTART
 #endif
 
+DIAG(err_defer_in_defer, CLASS_ERROR, (unsigned)diag::Severity::Error, "'defer' cannot appear inside another defer", 0, SFINAE_Report, false, true, 4)
 DIAG(err_access_specifier_interface, CLASS_ERROR, (unsigned)diag::Severity::Error, "interface types cannot specify '%select{private|protected}0' access", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(err_address_of_label_outside_fn, CLASS_ERROR, (unsigned)diag::Severity::Error, "use of address-of-label extension outside of a function body", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(err_alias_declaration_not_identifier, CLASS_ERROR, (unsigned)diag::Severity::Error, "name defined in alias declaration must be an identifier", 0, SFINAE_SubstitutionFailure, false, true, 4)

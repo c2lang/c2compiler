@@ -21,10 +21,14 @@
 #include "CGenerator/TypeSorter.h"
 #include "AST/Module.h"
 #include "Utils/StringBuilder.h"
+#include "AST/DeferList.h"
 
 namespace C2 {
 
 class Decl;
+class ContinueStmt;
+class DeferReleasedStmt;
+class DeferStmt;
 class VarDecl;
 class TypeDecl;
 class FunctionDecl;
@@ -39,6 +43,8 @@ class CompoundStmt;
 class AsmStmt;
 class HeaderNamer;
 class TargetInfo;
+class BreakStmt;
+
 
 // generates LLVM Module from (multiple) Module(s)
 class CCodeGenerator : public CTypeWriter {
@@ -77,7 +83,7 @@ private:
     void EmitVarDecl(const VarDecl* D, StringBuilder& output, unsigned indent);
 
     void EmitStmt(const Stmt* S, unsigned indent);
-    void EmitCompoundStmt(const CompoundStmt* C, unsigned indent, bool startOnNewLine);
+    void EmitCompoundStmt(const CompoundStmt* C, unsigned indent, bool skipBraces);
     void EmitIfStmt(const Stmt* S, unsigned indent);
     void EmitWhileStmt(const Stmt* S, unsigned indent);
     void EmitDoStmt(const Stmt* S, unsigned indent);
@@ -88,9 +94,9 @@ private:
     void EmitAsmPart(bool multiline, unsigned indent);
     void EmitAsmOperand(const char* name, const StringLiteral* c, const Expr* e);
 
-    void EmitExpr(const Expr* E, StringBuilder& output);
+    void EmitExpr(const Expr* E, StringBuilder& output, bool alreadyHasParens = false);
     void EmitBuiltinExpr(const Expr* E, StringBuilder& output);
-    void EmitBinaryOperator(const Expr* E, StringBuilder& output);
+    void EmitBinaryOperator(const Expr* E, StringBuilder& output, bool alreadyHasParens = false);
     void EmitConditionalOperator(const Expr* E, StringBuilder& output);
     void EmitUnaryOperator(const Expr* E, StringBuilder& output);
     void EmitMemberExpr(const Expr* E, StringBuilder& output);
@@ -109,6 +115,12 @@ private:
     void EmitConditionPost(const Stmt* S);
     bool EmitAttributes(const Decl* D, StringBuilder& output, bool addStartSpace);
 
+    void EmitSingleDefer(DeferStmt* defer, unsigned indent);
+    void EmitDefers(DeferId deferStart, DeferId end, unsigned indent);
+    inline void EmitDefers(const DeferList &deferList, unsigned indent) {
+        EmitDefers(deferList.start, deferList.end, indent);
+    }
+
     bool EmitAsStatic(const Decl* D) const;
     bool EmitAsDefine(const VarDecl* V) const;
 
@@ -120,6 +132,7 @@ private:
     const ModuleList& mods;
     const HeaderNamer& headerNamer;
     const TargetInfo& targetInfo;
+    const FunctionDecl* currentFunction;
 
     StringBuilder cbuf;
     StringBuilder hbuf;
@@ -128,6 +141,10 @@ private:
 
     CCodeGenerator(const CCodeGenerator&);
     CCodeGenerator& operator= (const CCodeGenerator&);
+    void EmitDeferStmt(const DeferStmt* defer, unsigned indent);
+    void EmitBreakStmt(const BreakStmt* breakStmt, unsigned indent);
+    void EmitContinueStmt(const ContinueStmt* continueStmt, unsigned indent);
+    void EmitDeferReleased(const C2::DeferReleasedStmt* stmt, unsigned int indent);
 };
 
 }

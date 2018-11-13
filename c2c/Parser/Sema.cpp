@@ -143,7 +143,7 @@ Sema::Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, c2lang::Preprocessor& 
 
     checkSize(Decl, 32);
     checkSize(VarDecl, 56);
-    checkSize(FunctionDecl, 80);
+    checkSize(FunctionDecl, 88);
     checkSize(EnumConstantDecl, 56);
     checkSize(ArrayValueDecl, 40);
     checkSize(ImportDecl, 48);
@@ -167,18 +167,19 @@ Sema::Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, c2lang::Preprocessor& 
 	checkSize(ModuleType, 24);
 
     checkSize(Stmt, 8);
-    checkSize(ReturnStmt, 16);
+    checkSize(ReturnStmt, 24);
     checkSize(IfStmt, 48);
     checkSize(WhileStmt, 24);
     checkSize(DoStmt, 24);
+    checkSize(DeferStmt, 24);
     checkSize(ForStmt, 40);
     checkSize(SwitchStmt, 24);
-    checkSize(CaseStmt, 24);
-    checkSize(DefaultStmt, 16);
-    checkSize(BreakStmt, 8);
-    checkSize(ContinueStmt, 8);
-    checkSize(LabelStmt, 24);
-    checkSize(GotoStmt, 24);
+    checkSize(CaseStmt, 32);
+    checkSize(DefaultStmt, 24);
+    checkSize(BreakStmt, 16);
+    checkSize(ContinueStmt, 16);
+    checkSize(LabelStmt, 32);
+    checkSize(GotoStmt, 32);
     checkSize(CompoundStmt, 24);
     checkSize(DeclStmt, 16);
 
@@ -635,6 +636,17 @@ C2::StmtResult Sema::ActOnDoStmt(SourceLocation loc, ExprResult Cond, StmtResult
     MEM_STMT(STMT_DO);
     return StmtResult(new (Context) DoStmt(loc, Cond.get(), Then.get()));
 }
+
+C2::StmtResult Sema::ActOnDeferStmt(SourceLocation loc, StmtResult deferStmt) {
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: defer statement at ";
+    loc.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    MEM_STMT(STMT_DEFER);
+    return StmtResult(new (Context) DeferStmt(loc, deferStmt.get()));
+}
+
 
 C2::StmtResult Sema::ActOnForStmt(SourceLocation loc, Stmt* Init, Expr* Cond, Expr* Incr, Stmt* Body) {
 #ifdef SEMA_DEBUG

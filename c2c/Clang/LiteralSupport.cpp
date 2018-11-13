@@ -1129,6 +1129,7 @@ CharLiteralParser::CharLiteralParser(const char *begin, const char *end,
   // FIXME: The "Value" is an uint64_t so we can handle char literals of
   // up to 64-bits.
   // FIXME: This extensively assumes that 'char' is 8-bits.
+  /*
   assert(PP.getTargetInfo().getCharWidth() == 8 &&
          "Assumes char is 8 bits");
   assert(PP.getTargetInfo().getIntWidth() <= 64 &&
@@ -1136,7 +1137,7 @@ CharLiteralParser::CharLiteralParser(const char *begin, const char *end,
          "Assumes sizeof(int) on target is <= 64 and a multiple of char");
   assert(PP.getTargetInfo().getWCharWidth() <= 64 &&
          "Assumes sizeof(wchar) on target is <= 64");
-
+*/
   SmallVector<uint32_t, 4> codepoint_buffer;
   codepoint_buffer.resize(end - begin);
   uint32_t *buffer_begin = &codepoint_buffer.front();

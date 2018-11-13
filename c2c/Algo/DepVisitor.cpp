@@ -163,6 +163,12 @@ void DepVisitor::checkStmt(const Stmt* S) {
         checkStmt(D->getBody());
         break;
     }
+    case STMT_DEFER:
+        checkStmt(cast<DeferStmt>(S)->getDefer());
+        break;
+    case STMT_DEFER_RELEASED:
+        checkStmt(cast<DeferReleasedStmt>(S)->getStmt());
+        break;
     case STMT_FOR:
     {
         const ForStmt* F = cast<ForStmt>(S);

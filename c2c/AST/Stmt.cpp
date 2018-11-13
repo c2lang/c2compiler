@@ -68,6 +68,10 @@ void Stmt::print(StringBuilder& buffer, unsigned indent) const {
         return cast<DeclStmt>(this)->print(buffer, indent);
     case STMT_ASM:
         return cast<AsmStmt>(this)->print(buffer, indent);
+    case STMT_DEFER:
+        return cast<DeferStmt>(this)->print(buffer, indent);
+    case STMT_DEFER_RELEASED:
+        return cast<DeferReleasedStmt>(this)->print(buffer, indent);
     }
 }
 
@@ -105,6 +109,10 @@ SourceLocation Stmt::getLocation() const {
         return cast<DeclStmt>(this)->getLocation();
     case STMT_ASM:
         return cast<AsmStmt>(this)->getLocation();
+    case STMT_DEFER:
+        return cast<DeferStmt>(this)->getLocation();
+    case STMT_DEFER_RELEASED:
+        return cast<DeferReleasedStmt>(this)->getLocation();
     }
 }
 
@@ -119,6 +127,7 @@ ReturnStmt::ReturnStmt(SourceLocation loc, Expr* value_)
     : Stmt(STMT_RETURN)
     , RetLoc(loc)
     , value(value_)
+    , deferTop(0)
 {}
 
 void ReturnStmt::print(StringBuilder& buffer, unsigned indent) const {
@@ -130,6 +139,20 @@ void ReturnStmt::print(StringBuilder& buffer, unsigned indent) const {
     }
 }
 
+DeferReleasedStmt::DeferReleasedStmt(Stmt *stmt_, DeferList deferList_)
+    : Stmt(STMT_DEFER_RELEASED)
+    , stmt(stmt_)
+    , deferList(deferList_)
+{}
+
+void DeferReleasedStmt::print(StringBuilder& buffer, unsigned indent) const {
+    buffer.indent(indent);
+    buffer.setColor(COL_STMT);
+    buffer << "DeferReleasedStmt " << deferList.start << "-" << deferList.end << "\n";
+    if (stmt) {
+        stmt->print(buffer, indent + INDENT);
+    }
+}
 
 IfStmt::IfStmt(SourceLocation ifLoc,
                Stmt* condition, Stmt* thenStmt,
@@ -193,6 +216,18 @@ void DoStmt::print(StringBuilder& buffer, unsigned indent) const {
     Then->print(buffer, indent + INDENT);
 }
 
+DeferStmt::DeferStmt(SourceLocation Loc_, Stmt* Defer_)
+    : Stmt(STMT_DEFER)
+    , Loc(Loc_)
+    , Defer(Defer_)
+{}
+
+void DeferStmt::print(StringBuilder& buffer, unsigned indent) const {
+    buffer.indent(indent);
+    buffer.setColor(COL_STMT);
+    buffer << "DeferStmt\n";
+    Defer->print(buffer, indent + INDENT);
+}
 
 ForStmt::ForStmt(SourceLocation Loc_, Stmt* Init_, Expr* Cond_, Expr* Incr_, Stmt* Body_)
     : Stmt(STMT_FOR)
@@ -239,6 +274,7 @@ CaseStmt::CaseStmt(SourceLocation Loc_, Expr* Cond_, Stmt** stmts_, unsigned num
     , Loc(Loc_)
     , Cond(Cond_)
     , stmts(stmts_)
+    , deferList()
 {
     caseStmtBits.numStmts = numStmts_;
 }
@@ -258,6 +294,7 @@ DefaultStmt::DefaultStmt(SourceLocation Loc_, Stmt** stmts_, unsigned numStmts_)
     : Stmt(STMT_DEFAULT)
     , Loc(Loc_)
     , stmts(stmts_)
+    , deferList()
 {
     defaultStmtBits.numStmts = numStmts_;
 }
@@ -275,18 +312,26 @@ void DefaultStmt::print(StringBuilder& buffer, unsigned indent) const {
 BreakStmt::BreakStmt(SourceLocation Loc_)
     : Stmt(STMT_BREAK)
     , Loc(Loc_)
-{}
+    , deferList()
+{
+    setInDefer(0);
+}
 
 void BreakStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
-    buffer << "BreakStmt\n";
+    buffer << "BreakStmt";
+    if (inDefer()) {
+         buffer << " (in defer: " << inDefer() << ')';
+    }
+    buffer << "\n";
 }
 
 
 ContinueStmt::ContinueStmt(SourceLocation Loc_)
     : Stmt(STMT_CONTINUE)
     , Loc(Loc_)
+    , deferList()
 {}
 
 void ContinueStmt::print(StringBuilder& buffer, unsigned indent) const {
@@ -301,14 +346,24 @@ LabelStmt::LabelStmt(const char* name_, SourceLocation Loc_, Stmt* subStmt_)
     , Loc(Loc_)
     , name(name_)
     , subStmt(subStmt_)
-{}
+    , deferTop(0)
+{
+    setInDefer(0);
+}
 
 void LabelStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
     buffer << "LabelStmt ";
     buffer.setColor(COL_VALUE);
-    buffer << name << '\n';
+    buffer << name;
+    if (inDefer()) {
+        buffer.setColor(COL_STMT);
+        buffer << " (in defer: " << inDefer() << ")";
+    }
+
+    buffer << "\n";
+
     subStmt->print(buffer, indent + INDENT);
 }
 
@@ -317,18 +372,25 @@ GotoStmt::GotoStmt(IdentifierExpr* label_, SourceLocation GotoLoc_)
     : Stmt(STMT_GOTO)
     , label(label_)
     , GotoLoc(GotoLoc_)
-{}
+    , deferList()
+{
+    setInDefer(0);
+}
 
 void GotoStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
     buffer << "GotoStmt ";
+    if (inDefer()) {
+        buffer << "(in defer: " << inDefer() << ") ";
+    }
     label->print(buffer, indent + INDENT);
 }
 
 
 CompoundStmt::CompoundStmt(SourceLocation l, SourceLocation r, Stmt** stmts_, unsigned numStmts_)
     : Stmt(STMT_COMPOUND)
+    , deferList()
     , Left(l)
     , Right(r)
     , stmts(stmts_)

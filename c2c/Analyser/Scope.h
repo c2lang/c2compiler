@@ -20,7 +20,7 @@
 #include <string>
 #include <vector>
 #include "Clang/Diagnostic.h"
-
+#include "AST/DeferList.h"
 #include "AST/Module.h"
 
 #define MAX_SCOPE_DEPTH 15
@@ -34,6 +34,9 @@ namespace C2 {
 class Decl;
 class VarDecl;
 class ImportDecl;
+class DeferStmt;
+class Stmt;
+
 
 struct DynamicScope {
     DynamicScope(c2lang::DiagnosticsEngine& Diags_);
@@ -44,11 +47,14 @@ struct DynamicScope {
     c2lang::DiagnosticErrorTrap ErrorTrap;
 
     unsigned Flags;
+    unsigned FlagsCreated;
 
     // local decls (in scope), no ownership
     typedef std::vector<VarDecl*> Decls;
     typedef Decls::const_iterator DeclsConstIter;
+
     Decls decls;
+    DeferStmt *lastDefer;
 };
 
 
@@ -82,11 +88,18 @@ public:
         /// the FnScope and DeclScope flags set as well.
         BlockScope = 0x40,
 
+        // Prevent break, continue, return
+        DeferScope = 0x80,
+
         /// SwitchScope - This is a scope that corresponds to a switch statement.
         SwitchScope = 0x800,
 
         // HasDecls, set during analysis if there are decls
         HasDecls = 0x800000,
+
+        // HasBreaks, set during analysis if there are breaks
+        HasBreaks = 0x1000000,
+
     };
 
     Scope(const std::string& name_, const Modules& modules_, c2lang::DiagnosticsEngine& Diags_);
@@ -95,22 +108,28 @@ public:
     void addImportDecl(ImportDecl* importDecl);
     bool checkScopedSymbol(const VarDecl* V) const;
     void addScopedSymbol(VarDecl* V);
-
     // searching
     const Module* findUsedModule(const std::string& name, c2lang::SourceLocation loc, bool usedPublic) const;
     Decl* findSymbol(const std::string& name, c2lang::SourceLocation loc, bool isType, bool usedPublic) const;
     Decl* findSymbolInModule(const std::string& name, c2lang::SourceLocation loc, const Module* mod) const;
     void checkAccess(Decl* D, c2lang::SourceLocation loc) const;
+    void pushDefer(DeferStmt *defer);
 
     // Scopes
     void EnterScope(unsigned flags);
-    void ExitScope();
-
+    void ExitScope(ASTContext &context, Stmt** stmtRef);
+    DeferStmt* deferTop();
+    DeferList exitScopeDefers(unsigned flags);
     void inline setHasDecls() const { curScope->Flags |= HasDecls; }
+    void setHasBreaks();
     bool inline hasErrorOccurred() const { return curScope->hasErrorOccurred(); }
     bool inline allowBreak()    const { return curScope->Flags & BreakScope; }
     bool inline allowContinue() const { return curScope->Flags & ContinueScope; }
     bool inline hasDecls() const { return curScope->Flags & HasDecls; }
+    bool inline hasBreaks() const { return curScope->Flags & HasBreaks; }
+    bool inline allowScopeExit() const { return (curScope->Flags & DeferScope) == 0; }
+    bool inline isDeferScope() const { return (curScope->Flags & DeferScope) != 0; }
+    bool inline isControlScope() const { return (curScope->Flags & ControlScope) != 0; }
 
     bool isExternal(const Module* mod) const {
         return (mod && mod != myModule);
@@ -130,6 +149,8 @@ private:
     typedef std::vector<const Module*> Locals;
     typedef Locals::const_iterator LocalsConstIter;
     Locals locals;
+
+    DeferStmt* deferForScopeIndex(unsigned index);
 
     // used Modules (use <as>)
     typedef std::map<std::string, ImportDecl*> Imports;

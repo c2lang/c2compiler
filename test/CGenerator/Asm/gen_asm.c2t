@@ -66,7 +66,7 @@ __inline__ static uint64_t test_rdtsc() {
   uint32_t hi;
   __asm__ volatile ("rdtsc" : "=a" (lo), "=d" (hi));
   uint32_t res = hi;
-  (res << 32);
+  res << 32;
   res |= lo;
   return res;
 }

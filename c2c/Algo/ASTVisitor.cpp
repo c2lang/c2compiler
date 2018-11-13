@@ -165,6 +165,9 @@ void ASTVisitor::checkStmt(const Stmt* S) {
         checkStmt(D->getBody());
         break;
     }
+    case STMT_DEFER:
+       checkStmt(cast<DeferStmt>(S)->getDefer());
+       break;
     case STMT_FOR:
     {
         const ForStmt* F = cast<ForStmt>(S);
@@ -203,6 +206,9 @@ void ASTVisitor::checkStmt(const Stmt* S) {
         }
         break;
     }
+    case STMT_DEFER_RELEASED:
+       checkStmt(cast<DeferReleasedStmt>(S)->getStmt());
+       break;
     case STMT_BREAK:
     case STMT_CONTINUE:
     case STMT_LABEL:

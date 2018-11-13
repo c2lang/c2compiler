@@ -1,0 +1,48 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c
+
+// @file{file1}
+module test;
+import stdio local;
+
+public func i32 main(i32 argc, const i8*[] argv) {
+	i32 a = 0;
+	if (argc == 0) goto label1;
+	defer printf("A");
+	label1:
+	printf("1");
+	if (argc == 1) goto label2;
+	defer printf("B");
+	label2:
+	printf("2");
+  return 1;
+}
+
+// @expect{atleast, build/test.c}
+
+
+int32_t main(int32_t argc, const char* argv[]) {
+  char __defer_cond_1 = 0;
+  char __defer_cond_2 = 0;
+  int32_t a = 0;
+  if (argc == 0) {
+    goto label1;
+  }
+  __defer_cond_1 = 1;
+label1:
+  printf("1");
+  if (argc == 1) {
+    goto label2;
+  }
+  __defer_cond_2 = 1;
+label2:
+  printf("2");
+  if (__defer_cond_2) {
+    printf("B");
+  }
+  if (__defer_cond_1) {
+    printf("A");
+  }
+  return 1;
+}

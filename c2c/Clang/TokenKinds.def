@@ -246,6 +246,7 @@ KEYWORD(public                      , KEYALL)
 KEYWORD(true                        , KEYALL)
 KEYWORD(module, KEYALL)
 KEYWORD(import, KEYALL)
+KEYWORD(defer, KEYALL)
 // For consideration:
 /*
 KEYWORD(f16, KEYALL)

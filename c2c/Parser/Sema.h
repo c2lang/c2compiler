@@ -103,6 +103,7 @@ public:
                             unsigned NumOutputs, unsigned NumInputs,
                             IdentifierInfo** Names, MultiExprArg constraints,
                             MultiExprArg Exprs, Expr* asmString, MultiExprArg clobbers);
+    StmtResult ActOnDeferStmt(SourceLocation loc, StmtResult deferStmt);
 
     // expressions
     ExprResult ActOnBooleanConstant(const Token& Tok);

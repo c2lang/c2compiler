@@ -1,0 +1,44 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c
+
+// @file{file1}
+module test;
+import stdio local;
+
+public func i32 main(i32 argc, const i8*[] argv) {
+	i32 a = 0;
+    while (a) {
+	    defer printf("2");
+	    defer {
+	       printf("A");
+	       printf("B");
+	    }
+        if (argc == 1) break;
+        printf("3");
+    }
+    return 0;
+}
+
+// @expect{atleast, build/test.c}
+
+int32_t main(int32_t argc, const char* argv[]) {
+    int32_t a = 0;
+    while (a) {
+        if (argc == 1) {
+            {
+                printf("A");
+                printf("B");
+            }
+            printf("2");
+            break;
+        }
+        printf("3");
+        {
+            printf("A");
+            printf("B");
+        }
+        printf("2");
+    }
+    return 0;
+}

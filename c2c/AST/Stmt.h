@@ -20,7 +20,7 @@
 #include "Utils/Errors.h"
 
 #include "Clang/SourceLocation.h"
-
+#include "AST/DeferList.h"
 
 using c2lang::SourceLocation;
 
@@ -32,6 +32,8 @@ class VarDecl;
 class ASTContext;
 class IdentifierExpr;
 class StringLiteral;
+class DeferStmt;
+class LabelDecl;
 
 enum StmtKind {
     STMT_RETURN = 0,
@@ -50,6 +52,8 @@ enum StmtKind {
     STMT_COMPOUND,
     STMT_DECL,
     STMT_ASM,
+    STMT_DEFER,
+    STMT_DEFER_RELEASED,
 };
 
 
@@ -94,6 +98,36 @@ protected:
         unsigned : NumStmtBits;
 
         unsigned numCases : 32 - NumStmtBits;
+    };
+
+
+    class BreakStmtBitfields {
+        friend class BreakStmt;
+        unsigned : NumStmtBits;
+        unsigned inDefer : 16;
+    };
+
+    class LabelStmtBitfields {
+        friend class LabelStmt;
+        unsigned : NumStmtBits;
+        unsigned inDefer : 16;
+    };
+
+
+
+    class DeferStmtBitfields {
+        friend class DeferStmt;
+        unsigned : NumStmtBits;
+        unsigned deferId : 16;
+        unsigned emitBoolean : 1;
+        unsigned emitDoWhile : 1;
+    };
+
+    class GotoStmtBitfields {
+        friend class GotoStmt;
+        unsigned : NumStmtBits;
+        unsigned inDefer : 16;
+        unsigned gotoBack : 1;
     };
 
     class CaseStmtBitfields {
@@ -227,6 +261,10 @@ protected:
         DefaultStmtBitfields defaultStmtBits;
         CompoundStmtBitfields compoundStmtBits;
         AsmStmtBitFields asmStmtBits;
+        GotoStmtBitfields gotoStmtBits;
+        BreakStmtBitfields breakStmtBits;
+        DeferStmtBitfields deferStmtBits;
+        LabelStmtBitfields labelStmtBits;
 
         ExprBitfields exprBits;
         IdentifierExprBitfields identifierExprBits;
@@ -263,6 +301,25 @@ public:
 private:
     SourceLocation RetLoc;
     Expr* value;
+public:
+    DeferId deferTop;
+};
+
+class DeferReleasedStmt : public Stmt {
+public:
+    DeferReleasedStmt(Stmt *stmt, DeferList deferList);
+    static bool classof(const Stmt* S) {
+        return S->getKind() == STMT_DEFER_RELEASED;
+    }
+
+    void print(StringBuilder& buffer, unsigned indent) const;
+    SourceLocation getLocation() const { return stmt->getLocation(); }
+
+    inline Stmt* getStmt() const { return stmt; }
+private:
+    Stmt* stmt;
+public:
+    DeferList deferList;
 };
 
 
@@ -283,10 +340,13 @@ public:
     Stmt* getCond() const { return SubExprs[COND]; }
     Stmt* getThen() const { return SubExprs[THEN]; }
     Stmt* getElse() const { return SubExprs[ELSE]; }
+    Stmt** getCondRef() { return &SubExprs[COND]; }
+    Stmt** getThenRef() { return &SubExprs[THEN]; }
+    Stmt** getElseRef() { return &SubExprs[ELSE]; }
+
 private:
     enum { VAR, COND, THEN, ELSE, END_EXPR };
     Stmt* SubExprs[END_EXPR];
-
     SourceLocation IfLoc;
     SourceLocation ElseLoc;
 };
@@ -304,6 +364,7 @@ public:
 
     Stmt* getCond() const { return Cond; }
     Stmt* getBody() const { return Then; }
+    Stmt** getBodyRef() { return &Then; }
 private:
     SourceLocation Loc;
     Stmt* Cond;
@@ -323,6 +384,7 @@ public:
 
     Stmt* getCond() const { return Cond; }
     Stmt* getBody() const { return Then; }
+    Stmt** getBodyRef() { return &Then; }
 private:
     SourceLocation Loc;
     Stmt* Cond;
@@ -344,6 +406,7 @@ public:
     Expr* getCond() const { return Cond; }
     Expr* getIncr() const { return Incr; }
     Stmt* getBody() const { return Body; }
+    Stmt** getBodyRef() { return &Body; }
 private:
     SourceLocation Loc;
     Stmt* Init;
@@ -386,13 +449,18 @@ public:
     Expr* getCond() const { return Cond; }
     unsigned numStmts() const { return caseStmtBits.numStmts; }
     Stmt** getStmts() const { return stmts; }
-
+    Stmt* getLastStmt() const {
+        return caseStmtBits.numStmts > 0 ? stmts[caseStmtBits.numStmts - 1] : nullptr;
+    }
     void setHasDecls(bool has) { caseStmtBits.hasDecls = has; }
     bool hasDecls() const { return caseStmtBits.hasDecls; }
 private:
     SourceLocation Loc;
     Expr* Cond;
     Stmt** stmts;
+public:
+    DeferList deferList;
+
 };
 
 
@@ -408,12 +476,17 @@ public:
 
     unsigned numStmts() const { return defaultStmtBits.numStmts; }
     Stmt** getStmts() const { return stmts; }
+    Stmt* getLastStmt() const {
+        return defaultStmtBits.numStmts > 0 ? stmts[defaultStmtBits.numStmts - 1] : nullptr;
+    }
 
     void setHasDecls(bool has) { defaultStmtBits.hasDecls = has; }
     bool hasDecls() const { return defaultStmtBits.hasDecls; }
 private:
     SourceLocation Loc;
     Stmt** stmts;
+public:
+    DeferList deferList;
 };
 
 
@@ -423,11 +496,15 @@ public:
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_BREAK;
     }
+    DeferId inDefer() const { return (DeferId)breakStmtBits.inDefer; }
+    void setInDefer(DeferId deferId) { breakStmtBits.inDefer = deferId; }
 
     void print(StringBuilder& buffer, unsigned indent) const;
     SourceLocation getLocation() const { return Loc; }
 private:
     SourceLocation Loc;
+public:
+    DeferList deferList;
 };
 
 
@@ -442,6 +519,8 @@ public:
     SourceLocation getLocation() const { return Loc; }
 private:
     SourceLocation Loc;
+public:
+    DeferList deferList;
 };
 
 
@@ -454,12 +533,19 @@ public:
 
     void print(StringBuilder& buffer, unsigned indent) const;
     SourceLocation getLocation() const { return Loc; }
+
+
+    DeferId inDefer() const { return (DeferId)labelStmtBits.inDefer; }
+    void setInDefer(DeferId deferId) { labelStmtBits.inDefer = deferId; }
+
     Stmt* getSubStmt() const { return subStmt; }
     const char* getName() const { return name; }
 private:
     SourceLocation Loc;
     const char* name;
     Stmt* subStmt;
+public:
+    DeferId deferTop;
 };
 
 
@@ -470,12 +556,19 @@ public:
         return S->getKind() == STMT_GOTO;
     }
 
+    DeferId inDefer() const { return (DeferId)gotoStmtBits.inDefer; }
+    void setInDefer(DeferId deferId) { gotoStmtBits.inDefer = deferId; }
+    void setGotoBack() { gotoStmtBits.gotoBack = true; }
+    bool isGotoBack() { return gotoStmtBits.gotoBack; }
     void print(StringBuilder& buffer, unsigned indent) const;
     SourceLocation getLocation() const { return GotoLoc; }
     IdentifierExpr* getLabel() const { return label; }
 private:
     IdentifierExpr* label;
     SourceLocation GotoLoc;
+public:
+    DeferList deferList;
+    LabelDecl* labelDecl {};
 };
 
 
@@ -494,6 +587,7 @@ public:
 
     Stmt* getLastStmt() const;
     SourceLocation getRight() const { return Right; }
+    DeferList deferList;
 private:
     SourceLocation Left;
     SourceLocation Right;
@@ -516,6 +610,33 @@ private:
     VarDecl* decl;
 };
 
+
+class DeferStmt : public Stmt {
+public:
+    DeferStmt(SourceLocation Loc_, Stmt* Defer_);
+    static bool classof(const Stmt* S) {
+        return S->getKind() == STMT_DEFER;
+    }
+
+    void print(StringBuilder& buffer, unsigned indent) const;
+    SourceLocation getLocation() const { return Loc; }
+
+    DeferId deferId() const { return (DeferId)deferStmtBits.deferId; }
+    void setDeferId(DeferId id) { deferStmtBits.deferId = id; }
+
+    void setEmitBoolean(bool emit) { deferStmtBits.emitBoolean = emit; };
+    bool shouldEmitBoolean() const { return deferStmtBits.emitBoolean; }
+
+    void setEmitDoWhile(bool emit) { deferStmtBits.emitDoWhile = emit; };
+    bool shouldEmitDoWhile() const { return deferStmtBits.emitDoWhile; }
+
+    Stmt* getDefer() const { return Defer; }
+private:
+    SourceLocation Loc;
+    Stmt* Defer;
+public:
+    DeferStmt *PrevDefer {};
+};
 
 class AsmStmt : public Stmt {
 public:

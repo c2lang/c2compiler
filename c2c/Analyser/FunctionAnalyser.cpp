@@ -29,6 +29,7 @@
 #include "AST/Expr.h"
 #include "Utils/color.h"
 #include "Utils/StringBuilder.h"
+#include "FunctionAnalyser.h"
 
 using namespace C2;
 using namespace c2lang;
@@ -47,6 +48,10 @@ using namespace c2lang;
 
 #define LHS 0x01
 #define RHS 0x02
+
+static inline DeferId deferId(DeferStmt *stmt) {
+    return stmt ? stmt->deferId() : (DeferId)0;
+}
 
 static void SetConstantFlags(Decl* D, Expr* expr) {
     switch (D->getKind()) {
@@ -104,6 +109,9 @@ FunctionAnalyser::FunctionAnalyser(Scope& scope_,
     , inConstExpr(false)
     , usedPublicly(false)
     , isInterface(isInterface_)
+    , labels()
+    , gotos()
+    , defers()
     , allowStaticMember(false)
 {
     callStack.callDepth = 0;
@@ -119,25 +127,50 @@ void FunctionAnalyser::check(FunctionDecl* func) {
     }
 
     CurrentFunction = func;
+    gotos.clear();
+    defers.clear();
+
     scope.EnterScope(Scope::FnScope | Scope::DeclScope);
 
     checkFunction(func);
 
-    scope.ExitScope();
+    Stmt *stmt = func->getBody();
+    scope.ExitScope(Context, &stmt);
 
+    bool runGotoCheck = true;
     // check labels
     for (LabelsIter iter = labels.begin(); iter != labels.end(); ++iter) {
         LabelDecl* LD = *iter;
-        if (LD->getStmt()) {    // have label part
-            if (!LD->isUsed()) {
-                Diag(LD->getLocation(), diag::warn_unused_label) << LD->DiagName();
-            }
-        } else {    // only have goto part
-            Diag(LD->getLocation(), diag:: err_undeclared_label_use) << LD->DiagName();
+        if (!LD->getStmt()) {
+            // Missing label, so don't do the goto check.
+            runGotoCheck = false;
+            Diag(LD->getLocation(), diag::err_undeclared_label_use) << LD->DiagName();
+            continue;
         }
+        if (!LD->isUsed()) {
+            Diag(LD->getLocation(), diag::warn_unused_label) << LD->DiagName();
+        }
+        LD->getStmt()->setInDefer(LD->inDefer());
     }
-    labels.clear();
 
+    if (runGotoCheck) {
+        analyseDeferGoto();
+    }
+
+    // We need to add a list of defer variables in the beginning of the function.
+    size_t defersFound = defers.size();
+    if (defersFound > 0) {
+        DeferStmt** deferPointers = (DeferStmt**)Context.Allocate(sizeof(DeferStmt*) * (defersFound + 1));
+        memcpy(deferPointers, &(defers[0]), sizeof(DeferStmt*) * defersFound);
+        deferPointers[defersFound] = 0;
+        func->setDefers(deferPointers);
+    } else {
+        func->setDefers(nullptr);
+    }
+
+    labels.clear();
+    gotos.clear();
+    defers.clear();
     CurrentFunction = 0;
 }
 
@@ -163,6 +196,11 @@ void FunctionAnalyser::checkArraySizeExpr(VarDecl* V) {
     usedPublicly = false;
 
     CurrentVarDecl = 0;
+}
+
+DeferStmt *FunctionAnalyser::deferById(DeferId deferId) {
+    if (!deferId) return nullptr;
+    return defers[deferId - 1];
 }
 
 unsigned FunctionAnalyser::checkEnumValue(EnumConstantDecl* E, llvm::APSInt& nextValue) {
@@ -197,6 +235,13 @@ unsigned FunctionAnalyser::checkEnumValue(EnumConstantDecl* E, llvm::APSInt& nex
     return 0;
 }
 
+static inline bool lastStatementHadReturn(Stmt *lastStatement)
+{
+    if (!lastStatement) return false;
+    if (lastStatement->getKind() == STMT_RETURN) return true;
+    return false;
+}
+
 void FunctionAnalyser::checkFunction(FunctionDecl* func) {
     LOG_FUNC
     bool no_unused_params = func->hasAttribute(ATTR_UNUSED_PARAMS);
@@ -225,11 +270,8 @@ void FunctionAnalyser::checkFunction(FunctionDecl* func) {
     // check for return statement of return value is required
     QualType rtype = func->getReturnType();
     bool need_rvalue = (rtype.getTypePtr() != BuiltinType::get(BuiltinType::Void));
-    if (need_rvalue && body) {
-        Stmt* lastStmt = body->getLastStmt();
-        if (!lastStmt || lastStmt->getKind() != STMT_RETURN) {
-            Diag(body->getRight(), diag::warn_falloff_nonvoid_function);
-        }
+    if (need_rvalue && body && !lastStatementHadReturn(body->getLastStmt())) {
+        Diag(body->getRight(), diag::warn_falloff_nonvoid_function);
     }
 }
 
@@ -276,7 +318,9 @@ void FunctionAnalyser::analyseStmt(Stmt* S, bool haveScope) {
     case STMT_COMPOUND:
         if (!haveScope) scope.EnterScope(Scope::DeclScope);
         analyseCompoundStmt(S);
-        if (!haveScope) scope.ExitScope();
+        if (!haveScope) {
+            scope.ExitScope(Context, &S);
+        }
         break;
     case STMT_DECL:
         analyseDeclStmt(S);
@@ -284,7 +328,13 @@ void FunctionAnalyser::analyseStmt(Stmt* S, bool haveScope) {
     case STMT_ASM:
         analyseAsmStmt(S);
         break;
+    case STMT_DEFER:
+        analyseDeferStmt(S);
+        break;
+        case STMT_DEFER_RELEASED:
+            FATAL_ERROR("Synthetic stmt, should not be encountered");
     }
+
 }
 
 void FunctionAnalyser::analyseCompoundStmt(Stmt* stmt) {
@@ -304,37 +354,70 @@ void FunctionAnalyser::analyseIfStmt(Stmt* stmt) {
 
     scope.EnterScope(Scope::DeclScope);
     analyseCondition(I->getCond());
-
     scope.EnterScope(Scope::DeclScope);
     analyseStmt(I->getThen(), true);
-    scope.ExitScope();
-
+    scope.ExitScope(Context, I->getThenRef());
     if (I->getElse()) {
         scope.EnterScope(Scope::DeclScope);
         analyseStmt(I->getElse(), true);
-        scope.ExitScope();
+        scope.ExitScope(Context, I->getElseRef());
     }
-    scope.ExitScope();
+    scope.ExitScope(Context, I->getCondRef());
 }
 
 void FunctionAnalyser::analyseWhileStmt(Stmt* stmt) {
     LOG_FUNC
     WhileStmt* W = cast<WhileStmt>(stmt);
-    scope.EnterScope(Scope::DeclScope);
+    scope.EnterScope(Scope::DeclScope | Scope::ControlScope);
     analyseStmt(W->getCond());
-    scope.EnterScope(Scope::BreakScope | Scope::ContinueScope | Scope::DeclScope | Scope::ControlScope);
+    scope.EnterScope(Scope::BreakScope | Scope::ContinueScope | Scope::DeclScope);
     analyseStmt(W->getBody(), true);
-    scope.ExitScope();
-    scope.ExitScope();
+    scope.ExitScope(Context, W->getBodyRef());
+    // Control scope will prevent defer.
+    scope.ExitScope(Context, nullptr);
 }
 
 void FunctionAnalyser::analyseDoStmt(Stmt* stmt) {
     LOG_FUNC
     DoStmt* D = cast<DoStmt>(stmt);
+
     scope.EnterScope(Scope::BreakScope | Scope::ContinueScope | Scope::DeclScope);
     analyseStmt(D->getBody());
-    scope.ExitScope();
+    scope.ExitScope(Context, D->getBodyRef());
+
+    scope.EnterScope(Scope::DeclScope | Scope::ControlScope);
     analyseStmt(D->getCond());
+    scope.ExitScope(Context, nullptr);
+}
+
+void FunctionAnalyser::analyseDeferStmt(Stmt* stmt) {
+    LOG_FUNC
+    if (scope.isDeferScope()) {
+        Diag(stmt->getLocation(), diag::err_defer_in_defer);
+        return;
+    }
+
+    if (scope.isControlScope()) {
+        // TODO change message
+        Diag(stmt->getLocation(), diag::err_defer_in_defer);
+        return;
+    }
+
+    DeferStmt* D = cast<DeferStmt>(stmt);
+
+    // Set the defer id, this is used to track goto/labels to detect goto/label out and into
+    // the defer. To allow gotos with defers.
+    defers.push_back(D);
+    D->setDeferId(defers.size());
+
+    // Defer allows break but not continue.
+    scope.EnterScope(Scope::DeferScope | Scope::BreakScope);
+    analyseStmt(D->getDefer());
+    if (scope.hasBreaks()) {
+        D->setEmitDoWhile(true);
+    }
+    scope.ExitScope(Context, nullptr);
+    scope.pushDefer(D);
 }
 
 void FunctionAnalyser::analyseForStmt(Stmt* stmt) {
@@ -351,15 +434,19 @@ void FunctionAnalyser::analyseForStmt(Stmt* stmt) {
         }
     }
     if (F->getIncr()) analyseExpr(F->getIncr(), RHS);
+
+    // We need to introduce a new scope for defer to work correctly.
+    scope.EnterScope(Scope::DeclScope);
     analyseStmt(F->getBody(), true);
-    scope.ExitScope();
+    scope.ExitScope(Context, F->getBodyRef());
+    scope.ExitScope(Context, nullptr);
 }
 
 void FunctionAnalyser::analyseSwitchStmt(Stmt* stmt) {
     LOG_FUNC
     SwitchStmt* S = cast<SwitchStmt>(stmt);
 
-    scope.EnterScope(Scope::DeclScope);
+    scope.EnterScope(Scope::DeclScope | Scope::ControlScope);
     if (!analyseCondition(S->getCond())) return;
 
     unsigned numCases = S->numCases();
@@ -391,30 +478,36 @@ void FunctionAnalyser::analyseSwitchStmt(Stmt* stmt) {
         checkEnumCases(S, ET);
     }
 
-    scope.ExitScope();
-    scope.ExitScope();
+    // Since we have scopes for each statment, we know this is empty of defers.
+    scope.ExitScope(Context, nullptr);
+    // Since we have control scope, we know this is empty of defers.
+    scope.ExitScope(Context, nullptr);
 }
 
 void FunctionAnalyser::analyseBreakStmt(Stmt* stmt) {
     LOG_FUNC
+    BreakStmt* B = cast<BreakStmt>(stmt);
     if (!scope.allowBreak()) {
-        BreakStmt* B = cast<BreakStmt>(stmt);
         Diag(B->getLocation(), diag::err_break_not_in_loop_or_switch);
+        return;
     }
+    scope.setHasBreaks();
+    B->deferList = scope.exitScopeDefers(Scope::BreakScope);
 }
 
 void FunctionAnalyser::analyseContinueStmt(Stmt* stmt) {
     LOG_FUNC
+    ContinueStmt* C = cast<ContinueStmt>(stmt);
     if (!scope.allowContinue()) {
-        ContinueStmt* C = cast<ContinueStmt>(stmt);
         Diag(C->getLocation(), diag::err_continue_not_in_loop);
+        return;
     }
+    C->deferList = scope.exitScopeDefers(Scope::ContinueScope);
 }
 
 void FunctionAnalyser::analyseLabelStmt(Stmt* S) {
     LOG_FUNC
     LabelStmt* L = cast<LabelStmt>(S);
-
     LabelDecl* LD = LookupOrCreateLabel(L->getName(), L->getLocation());
     if (LD->getStmt()) {
         Diag(L->getLocation(), diag::err_redefinition_of_label) <<  LD->DiagName();
@@ -422,6 +515,27 @@ void FunctionAnalyser::analyseLabelStmt(Stmt* S) {
     } else {
         LD->setStmt(L);
         LD->setLocation(L->getLocation());
+    }
+    L->deferTop = deferId(scope.deferTop());
+
+    unsigned short deferIdExpected = (DeferId)(scope.isDeferScope() ? defers.size() : 0);
+
+    // If we already reached this label, check with the previously set value
+    if (LD->isUsed()) {
+        if (LD->inDefer() != deferIdExpected) {
+            GotoStmt *gotoStmtFound = nullptr;
+            for (GotoStmt *gotoStmt : gotos) {
+                LabelDecl* otherLD = LookupOrCreateLabel(gotoStmt->getLabel()->getName(), gotoStmt->getLabel()->getLocation());
+                if (otherLD == LD) {
+                    gotoStmtFound = gotoStmt;
+                    break;
+                }
+            }
+            assert(gotoStmtFound && "This cannot happen");
+            reportGotoDeferError(gotoStmtFound, LD);
+        }
+    } else {
+        LD->setInDefer(deferIdExpected);
     }
 
     analyseStmt(L->getSubStmt());
@@ -435,9 +549,27 @@ void FunctionAnalyser::analyseLabelStmt(Stmt* S) {
 void FunctionAnalyser::analyseGotoStmt(Stmt* S) {
     LOG_FUNC
     GotoStmt* G = cast<GotoStmt>(S);
+    gotos.push_back(G);
+    if (scope.isDeferScope()) {
+        // This will always be true since we set the defer just before analysing the defer statement;
+        G->setInDefer((unsigned short)defers.size());
+    }
+    G->deferList.start = deferId(scope.deferTop());
     IdentifierExpr* label = G->getLabel();
     LabelDecl* LD = LookupOrCreateLabel(label->getName(), label->getLocation());
+    G->labelDecl = LD;
+    // Mark this as a jump back if the label was already defined.
+    if (LD->getStmt()) G->setGotoBack();
     label->setDecl(LD, IdentifierExpr::REF_LABEL);
+    // We do a check here if deferIds match
+    if (LD->getStmt() || LD->isUsed()) {
+        if (LD->inDefer() != G->inDefer()) {
+            reportGotoDeferError(G, LD);
+        }
+    } else {
+        // Otherwise just copy.
+        LD->setInDefer(G->inDefer());
+    }
     LD->setUsed();
 }
 
@@ -451,7 +583,7 @@ void FunctionAnalyser::analyseCaseStmt(Stmt* stmt) {
         analyseStmt(stmts[i]);
     }
     C->setHasDecls(scope.hasDecls());
-    scope.ExitScope();
+    scope.ExitScope(Context, &stmt);
 }
 
 void FunctionAnalyser::analyseDefaultStmt(Stmt* stmt) {
@@ -463,12 +595,16 @@ void FunctionAnalyser::analyseDefaultStmt(Stmt* stmt) {
         analyseStmt(stmts[i]);
     }
     D->setHasDecls(scope.hasDecls());
-    scope.ExitScope();
+    scope.ExitScope(Context, &stmt);
 }
 
 void FunctionAnalyser::analyseReturnStmt(Stmt* stmt) {
     LOG_FUNC
     ReturnStmt* ret = cast<ReturnStmt>(stmt);
+    if (!scope.allowScopeExit()) {
+        Diag(ret->getLocation(), diag::err_defer_has_return);
+        return;
+    }
     Expr* value = ret->getExpr();
     QualType rtype = CurrentFunction->getReturnType();
     bool no_rvalue = (rtype.getTypePtr() == Type::Void());
@@ -487,6 +623,7 @@ void FunctionAnalyser::analyseReturnStmt(Stmt* stmt) {
             Diag(ret->getLocation(), diag::ext_return_missing_expr) << CurrentFunction->getName() << 0;
         }
     }
+    ret->deferTop = deferId(scope.deferTop());
 }
 
 void FunctionAnalyser::analyseDeclStmt(Stmt* stmt) {
@@ -910,10 +1047,8 @@ void FunctionAnalyser::analyseInitListStruct(InitListExpr* expr, QualType Q, uns
     LOG_FUNC
     bool haveDesignators = false;
     expr->setType(Q);
-    // TODO use helper function
     StructType* TT = cast<StructType>(Q.getCanonicalType().getTypePtr());
     StructTypeDecl* STD = TT->getDecl();
-    assert(STD->isStruct() && "TEMP only support structs for now");
     bool constant = true;
     // ether init whole struct with field designators, or don't use any (no mixing allowed)
     // NOTE: using different type for anonymous sub-union is allowed
@@ -2313,5 +2448,89 @@ QualType FunctionAnalyser::UsualUnaryConversions(Expr* expr) const {
     }
 
     return expr->getType();
+}
+
+
+static inline unsigned deferDepth(DeferStmt *stmt) {
+    unsigned depth = 0;
+    while (stmt) {
+        stmt = stmt->PrevDefer;
+        depth++;
+    }
+    return depth;
+}
+
+void FunctionAnalyser::analyseDeferGoto() {
+    LOG_FUNC
+    for (GotoStmt* gotoStmt : gotos) {
+
+        DeferStmt* labelDeferTop = deferById(gotoStmt->labelDecl->getStmt()->deferTop);
+        DeferStmt* gotoDeferTop = deferById(gotoStmt->deferList.start);
+
+        // First we need to search for the common depth.
+        unsigned labelDepth = deferDepth(labelDeferTop);
+        unsigned gotoDepth = deferDepth(gotoDeferTop);
+
+        DeferStmt *commonDepthLabel = labelDeferTop;
+        DeferStmt *commonDepthGoto = gotoDeferTop;
+        if (labelDepth > gotoDepth)
+        {
+            for (unsigned i = 0; i < labelDepth - gotoDepth; i++) {
+                commonDepthLabel = commonDepthLabel->PrevDefer;
+            }
+        } else {
+            for (unsigned i = 0; i < gotoDepth - labelDepth; i++) {
+                commonDepthGoto = commonDepthGoto->PrevDefer;
+            }
+        }
+
+        // We will jump up to this level, so we're fine.
+        gotoStmt->deferList.end = deferId(commonDepthGoto);
+
+        // The simple case is jumping back, this is just
+        // like doing a break.
+        // label1:
+        // defer do_a();
+        // {
+        //    defer do_b();
+        // }
+        // {
+        //    defer do_c();
+        //    goto label1; // defer list = do_c() -> do_a() -> null
+        // }
+        if (gotoStmt->isGotoBack()) {
+            continue;
+        }
+
+        // In the second case we might pass over some defers.
+        // goto label1: // defer list = null
+        // defer do_a();
+        // {
+        //    defer do_b();
+        // }
+        // {
+        //    defer do_c();
+        //    label1: // defer list = do_c() -> do_a() -> null
+        //    print_something()
+        // }
+
+        // We do a sweep and mark defers as conditional.
+        while (labelDeferTop != commonDepthGoto) {
+            if (!labelDeferTop->shouldEmitBoolean()) {
+                labelDeferTop->setEmitBoolean(true);
+            }
+            labelDeferTop = labelDeferTop->PrevDefer;
+        }
+    }
+}
+
+
+void FunctionAnalyser::reportGotoDeferError(GotoStmt* gotoStmt, LabelDecl* labelDecl) {
+    // Use this even when jumping from one defer to another.
+    if (gotoStmt->inDefer() > 0) {
+        Diag(gotoStmt->getLocation(), diag::err_defer_goto_exit);
+        return;
+    }
+    Diag(gotoStmt->getLocation(), diag::err_defer_goto_entry);
 }
 

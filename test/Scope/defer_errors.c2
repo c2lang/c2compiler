@@ -1,0 +1,116 @@
+// @warnings{no-unused}
+module test;
+
+public func void test1a() {
+    i32 a = 0;
+    {
+        defer { a++; 
+            goto label1; // @error{'goto' may not jump out of a defer}
+        }
+        label1:
+        a = a + 1;
+    }
+}
+
+public func void test1b() {
+    i32 a = 0;
+    {
+        defer { a++;
+            goto label1; // @error{'goto' may not jump out of a defer}
+        }
+        defer {
+            a++;
+            label1:
+            a++;
+        }
+        a = a + 1;
+    }
+}
+
+public func void test1c() {
+    i32 a = 0;
+    {
+        goto label1; // @error{'goto' may not jump into a defer}
+        defer {
+            a++;
+            label1:
+            a++;
+        }
+        a = a + 1;
+    }
+}
+
+// This is fine
+public func void test1d() {
+    i32 a = 0;
+    {
+        defer {
+            a++;
+            label1:
+            a++;
+            goto label1;
+            goto label2;
+            label2:
+            a++;
+        }
+        a = a + 1;
+    }
+}
+
+public func void test2() {
+    i32 a = 0;
+    defer { 
+        a++; 
+        goto label1; // Allowed!
+        a += 2;
+        label1:
+        a += 3;
+    }
+}
+
+public func void test3() {
+    i32 a = 0;
+    defer {
+        a++;
+        return; // @error{'return' is not allowed inside of a defer}
+    }
+}
+
+public func void test4() {
+    while (0)
+    {
+        defer {              
+            continue; // @error{'continue' statement not in loop statement}
+        }            
+    }
+}
+
+public func void test5() {
+    while (0)
+    {
+        defer { 
+            while (1) {
+                continue; // This is allowed                    
+            }
+        }
+    }
+}
+
+
+public func void test6() {
+    while (0)
+    {
+        defer {
+            defer { while(1) {} } // @error{'defer' cannot appear inside another defer}
+        }
+    }
+}
+
+public func void test7() {
+    while (0)
+    {
+        defer {
+            break; // Allowed
+        }
+    }
+}

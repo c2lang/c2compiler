@@ -22,6 +22,7 @@
 #include "Clang/SourceLocation.h"
 #include "AST/Type.h"
 #include "Analyser/ExprTypeAnalyser.h"
+#include "AST/DeferList.h"
 
 namespace c2lang {
 class DiagnosticsEngine;
@@ -37,9 +38,13 @@ class VarDecl;
 class FunctionDecl;
 class EnumConstantDecl;
 class LabelDecl;
+class BreakStmt;
+class ContinueStmt;
 class DesignatedInitExpr;
 class Stmt;
+class LabelStmt;
 class SwitchStmt;
+class DeferStmt;
 class Expr;
 class IdentifierExpr;
 class InitListExpr;
@@ -47,7 +52,8 @@ class MemberExpr;
 class CallExpr;
 class BuiltinExpr;
 class ASTContext;
-
+class GotoStmt;
+class ReturnStmt;
 
 constexpr size_t MAX_STRUCT_INDIRECTION_DEPTH = 256;
 
@@ -82,6 +88,7 @@ private:
     void analyseReturnStmt(Stmt* stmt);
     void analyseDeclStmt(Stmt* stmt);
     void analyseAsmStmt(Stmt* stmt);
+    void analyseDeferStmt(Stmt* stmt);
     bool analyseCondition(Stmt* stmt);
     void analyseStmtExpr(Stmt* stmt);
 
@@ -121,6 +128,7 @@ private:
     QualType analyseEnumMinMaxExpr(BuiltinExpr* B, bool isMin);
     void analyseArrayType(VarDecl* V, QualType T);
     void analyseArraySizeExpr(ArrayType* AT);
+    DeferStmt *deferById(DeferId deferId);
 
     c2lang::DiagnosticBuilder Diag(c2lang::SourceLocation Loc, unsigned DiagID) const;
     void pushMode(unsigned DiagID);
@@ -171,6 +179,7 @@ private:
     bool usedPublicly;
     bool isInterface;
 
+
     // Our callstack (statically allocated)
     struct CallStack {
         Expr *structFunction[MAX_STRUCT_INDIRECTION_DEPTH];
@@ -181,15 +190,28 @@ private:
         void setStructFunction(Expr* expr) { structFunction[callDepth - 1] = expr; }
     };
 
-    CallStack callStack;
+
+    CallStack callStack {};
     bool allowStaticMember;
 
     typedef std::vector<LabelDecl*> Labels;
     typedef Labels::iterator LabelsIter;
     Labels labels;
+    typedef std::vector<GotoStmt*> Gotos;
+    Gotos gotos;
+
+    std::vector<DeferStmt*> defers;
 
     FunctionAnalyser(const FunctionAnalyser&);
     FunctionAnalyser& operator= (const FunctionAnalyser&);
+    void analyseDeferGoto();
+    void analyseDeferGotoForward(unsigned gotoIndex, unsigned labelIndex);
+    void analyseDeferGotoBack(unsigned gotoIndex, unsigned labelIndex);
+    void analyseDeferGoto(unsigned i);
+    void analyseDeferBreak(unsigned i);
+    void analyseDeferContinue(unsigned i);
+    void analyseDeferReturn(unsigned i);
+    void reportGotoDeferError(GotoStmt* gotoStmt, LabelDecl* labelDecl);
 };
 
 }

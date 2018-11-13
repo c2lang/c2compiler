@@ -20,10 +20,10 @@ public func i32 main(i32 argc, const i8*[] argv) {
 
 int32_t main(int32_t argc, const char* argv[]) {
     int32_t a = 0;
-    for (a = 0; (a < 10); a++) {
+    for (a = 0; a < 10; a++) {
     }
 
-    for (int32_t b = 0; (b < 10); b++) {
+    for (int32_t b = 0; b < 10; b++) {
     }
 
     for (;;) {

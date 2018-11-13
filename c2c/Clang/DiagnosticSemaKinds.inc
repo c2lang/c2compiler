@@ -3,6 +3,10 @@ __SEMASTART = DIAG_START_SEMA,
 #undef SEMASTART
 #endif
 
+
+DIAG(err_defer_goto_exit, CLASS_ERROR, (unsigned)diag::Severity::Error, "'goto' may not jump out of a defer", 0, SFINAE_Report, false, true, 2)
+DIAG(err_defer_goto_entry, CLASS_ERROR, (unsigned)diag::Severity::Error, "'goto' may not jump into a defer", 0, SFINAE_Report, false, true, 2)
+DIAG(err_defer_has_return, CLASS_ERROR, (unsigned)diag::Severity::Error, "'return' is not allowed inside of a defer", 0, SFINAE_Report, false, true, 2)
 DIAG(err_32_bit_builtin_64_bit_tgt, CLASS_ERROR, (unsigned)diag::Severity::Error, "this builtin is only available on 32-bit targets", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_64_bit_builtin_32_bit_tgt, CLASS_ERROR, (unsigned)diag::Severity::Error, "this builtin is only available on 64-bit targets", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_abi_tag_on_redeclaration, CLASS_ERROR, (unsigned)diag::Severity::Error, "cannot add 'abi_tag' attribute in a redeclaration", 0, SFINAE_SubstitutionFailure, false, true, 2)

@@ -1678,6 +1678,8 @@ C2::StmtResult Parser::ParseStatement() {
         Diag(Tok, diag::err_default_not_in_switch);
         return StmtError();
         // all basic types
+    case tok::kw_defer:
+        return ParseDeferStatement();
     case tok::kw_u8:
     case tok::kw_u16:
     case tok::kw_u32:
@@ -1894,6 +1896,16 @@ C2::StmtResult Parser::ParseReturnStatement() {
 
     if (ExpectAndConsume(tok::semi, diag::err_expected_after, "return")) return StmtError();
     return Actions.ActOnReturnStmt(loc, result.get());
+}
+
+// Syntax: defer statement ';'
+C2::StmtResult C2Parser::ParseDeferStatement() {
+    LOG_FUNC
+    assert(Tok.is(tok::kw_defer) && "Not a defer stmt!");
+    SourceLocation Loc = ConsumeToken();
+    StmtResult defer = ParseStatement();
+    if (defer.isInvalid()) return StmtError();
+    return Actions.ActOnDeferStmt(Loc, defer);
 }
 
 /// ParseIfStatement

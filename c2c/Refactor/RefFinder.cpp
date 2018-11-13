@@ -68,6 +68,18 @@ void RefFinder::searchStmt(const Stmt* S) {
         searchStmt(D->getBody());
         break;
     }
+    case STMT_DEFER:
+    {
+        const DeferStmt* D = cast<DeferStmt>(S);
+        searchStmt(D->getDefer());
+        break;
+    }
+    case STMT_DEFER_RELEASED:
+    {
+        const DeferReleasedStmt* D = cast<DeferReleasedStmt>(S);
+        searchStmt(D->getStmt());
+        break;
+    }
     case STMT_FOR:
     {
         const ForStmt* F = cast<ForStmt>(S);
