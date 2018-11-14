@@ -31,6 +31,9 @@ type stat struct {
 }
 
 func c_int fstat(c_int fd, stat* buf);
+// NOTE: cannot have stat function also... (clashes with stat struct)
+func c_int lstat(const c_char* pathname, stat* buf);
+
 
 const u32 S_IFMT =  00170000;
 const u32 S_IFSOCK = 0140000;
