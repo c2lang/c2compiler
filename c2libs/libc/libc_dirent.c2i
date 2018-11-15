@@ -12,6 +12,15 @@ func c_int closedir(DIR* dirp);
 
 func dirent *readdir(DIR *dirp);
 
+type FilterFn func c_int(const dirent*);
+type CompareFn func c_int(const dirent**, const dirent**);
+
+func c_int scandir(const c_char* dirp, dirent*** namelist,
+                   FilterFn filter, CompareFn compar);
+
+func c_int alphasort(const dirent**, const dirent**);
+func c_int versionsort(const dirent**, const dirent**);
+
 type dirent struct {
    c_ulonglong  d_ino;
    c_longlong   d_off;
