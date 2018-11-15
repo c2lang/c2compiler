@@ -35,6 +35,9 @@ name = "regex"
 name = "ctype"
 
 [[module]]
+name = "libc_dirent"
+
+[[module]]
 name = "stdarg"
 
 [[module]]

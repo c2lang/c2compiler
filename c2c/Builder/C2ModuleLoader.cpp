@@ -32,6 +32,8 @@ struct CTypes {
 // NOTE: hardcoded for x86_64 architecture
 static CTypes ctypes[] = {
     { "c_char",      Type::Int8() },
+    { "c_ushort",    Type::UInt16() },
+    { "c_short",     Type::Int16() },
     { "c_int",       Type::Int32() },
     { "c_uint",      Type::UInt32() },
     { "c_long",      Type::Int64() },

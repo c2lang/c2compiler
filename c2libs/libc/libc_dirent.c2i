@@ -1,0 +1,22 @@
+module libc_dirent;
+
+import c2 local;
+
+type DIR struct {
+} @(opaque)
+
+func DIR* opendir(const c_char* name);
+func DIR* fdopendir(c_int fd);
+
+func c_int closedir(DIR* dirp);
+
+func dirent *readdir(DIR *dirp);
+
+type dirent struct {
+   c_ulonglong  d_ino;
+   c_longlong   d_off;
+   c_ushort     d_reclen;
+   u8           d_type;
+   char[256]    d_name;
+}
+
