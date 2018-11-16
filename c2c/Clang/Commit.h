@@ -44,8 +44,6 @@ public:
     bool BeforePrev;
 
     SourceLocation getFileLocation(SourceManager &SM) const;
-    CharSourceRange getFileRange(SourceManager &SM) const;
-    CharSourceRange getInsertFromRange(SourceManager &SM) const;
   };
 
 private:
@@ -68,53 +66,22 @@ public:
   bool insert(SourceLocation loc, StringRef text, bool afterToken = false,
               bool beforePreviousInsertions = false);
 
-  bool insertAfterToken(SourceLocation loc, StringRef text,
-                        bool beforePreviousInsertions = false) {
-    return insert(loc, text, /*afterToken=*/true, beforePreviousInsertions);
-  }
 
-  bool insertBefore(SourceLocation loc, StringRef text) {
-    return insert(loc, text, /*afterToken=*/false,
-                  /*beforePreviousInsertions=*/true);
-  }
-
-  bool insertFromRange(SourceLocation loc, CharSourceRange range,
+    bool insertFromRange(SourceLocation loc, CharSourceRange range,
                        bool afterToken = false,
                        bool beforePreviousInsertions = false);
-  bool insertWrap(StringRef before, CharSourceRange range, StringRef after);
 
-  bool remove(CharSourceRange range);
+    bool remove(CharSourceRange range);
 
   bool replace(CharSourceRange range, StringRef text);
-  bool replaceWithInner(CharSourceRange range, CharSourceRange innerRange);
-  bool replaceText(SourceLocation loc, StringRef text,
-                   StringRef replacementText);
 
-  bool insertFromRange(SourceLocation loc, SourceRange TokenRange,
-                       bool afterToken = false,
-                       bool beforePreviousInsertions = false) {
-    return insertFromRange(loc, CharSourceRange::getTokenRange(TokenRange),
-                           afterToken, beforePreviousInsertions);
-  }
 
-  bool insertWrap(StringRef before, SourceRange TokenRange, StringRef after) {
-    return insertWrap(before, CharSourceRange::getTokenRange(TokenRange), after);
-  }
-
-  bool remove(SourceRange TokenRange) {
+    bool remove(SourceRange TokenRange) {
     return remove(CharSourceRange::getTokenRange(TokenRange));
   }
 
-  bool replace(SourceRange TokenRange, StringRef text) {
-    return replace(CharSourceRange::getTokenRange(TokenRange), text);
-  }
 
-  bool replaceWithInner(SourceRange TokenRange, SourceRange TokenInnerRange) {
-    return replaceWithInner(CharSourceRange::getTokenRange(TokenRange),
-                            CharSourceRange::getTokenRange(TokenInnerRange));
-  }
-
-  using edit_iterator = SmallVectorImpl<Edit>::const_iterator;
+    using edit_iterator = SmallVectorImpl<Edit>::const_iterator;
 
   edit_iterator edit_begin() const { return CachedEdits.begin(); }
   edit_iterator edit_end() const { return CachedEdits.end(); }

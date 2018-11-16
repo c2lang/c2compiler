@@ -110,7 +110,6 @@ private:
     bool checkModuleImports(ParseHelper& helper, Component* component, Module* module, ImportsQueue& queue, const LibInfo* lib = 0);
     void createC2Module();
 
-    void rewriterTest(c2lang::SourceManager& SM, c2lang::LangOptions& LangOpts);
     void generateOptionalDeps();
     void generateOptionalTags(const c2lang::SourceManager& SM) const;
     void generateInterface() const;

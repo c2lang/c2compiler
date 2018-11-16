@@ -16,7 +16,6 @@
 #define LLVM_CLANG_BASIC_LANGOPTIONS_H
 
 #include "Clang/LLVM.h"
-#include "Clang/Visibility.h"
 #include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/Triple.h>
 #include <string>
@@ -46,7 +45,6 @@ protected:
 /// enabled, which controls the dialect of C or C++ that is accepted.
 class LangOptions : public LangOptionsBase {
 public:
-  using Visibility = c2lang::Visibility;
 
 
 

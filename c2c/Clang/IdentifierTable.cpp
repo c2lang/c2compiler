@@ -16,7 +16,6 @@
 #include "Clang/CharInfo.h"
 #include "Clang/LangOptions.h"
 #include "Clang/OperatorKinds.h"
-#include "Clang/Specifiers.h"
 #include "Clang/TokenKinds.h"
 #include "llvm/ADT/DenseMapInfo.h"
 #include "llvm/ADT/FoldingSet.h"
