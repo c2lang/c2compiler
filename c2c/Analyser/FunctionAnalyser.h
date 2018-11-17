@@ -37,6 +37,7 @@ class VarDecl;
 class FunctionDecl;
 class EnumConstantDecl;
 class LabelDecl;
+class DesignatedInitExpr;
 class Stmt;
 class SwitchStmt;
 class Expr;
@@ -106,7 +107,12 @@ private:
 
     void analyseInitExpr(Expr* expr, QualType expectedType);
     void analyseInitList(InitListExpr* expr, QualType expectedType);
+    void analyseInitListArray(InitListExpr* expr, QualType expectedType, unsigned numValues, Expr** values);
+    void analyseInitListStruct(InitListExpr* expr, QualType expectedType, unsigned numValues, Expr** values);
     void analyseDesignatorInitExpr(Expr* expr, QualType expectedType);
+    typedef std::vector<Expr*> Fields;
+    bool analyseDesignatedInitExprInList(DesignatedInitExpr* expr, StructTypeDecl* std, QualType Q, Fields &fields, Expr* value);
+
     void analyseSizeOfExpr(BuiltinExpr* expr);
     QualType analyseElemsOfExpr(BuiltinExpr* B);
     QualType analyseEnumMinMaxExpr(BuiltinExpr* B, bool isMin);
