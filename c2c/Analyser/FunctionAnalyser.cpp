@@ -26,10 +26,7 @@
 #include "Analyser/LiteralAnalyser.h"
 #include "Analyser/Scope.h"
 #include "Analyser/AnalyserConstants.h"
-#include "AST/Decl.h"
 #include "AST/Expr.h"
-#include "AST/Stmt.h"
-#include "AST/ASTContext.h"
 #include "Utils/color.h"
 #include "Utils/StringBuilder.h"
 
@@ -39,7 +36,7 @@ using namespace c2lang;
 //#define ANALYSER_DEBUG
 
 #ifdef ANALYSER_DEBUG
-#include "Utils/color.h"
+
 #include <iostream>
 #define LOG_FUNC std::cerr << ANSI_MAGENTA << __func__ << "()" << ANSI_NORMAL << "\n";
 #else
@@ -776,129 +773,161 @@ static IdentifierExpr::RefType globalDecl2RefType(const Decl* D) {
     }
 }
 
-void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
+void FunctionAnalyser::analyseInitListArray(InitListExpr* expr, QualType Q, unsigned numValues, Expr** values) {
     LOG_FUNC
-    Expr** values = expr->getValues();
-    unsigned numValues = expr->numValues();
     bool haveDesignators = false;
-    if (Q.isArrayType()) {
-        bool haveErrors = false;
-        // TODO use helper function
-        ArrayType* AT = cast<ArrayType>(Q.getCanonicalType().getTypePtr());
-        QualType ET = AT->getElementType();
-        bool constant = true;
-        for (unsigned i=0; i<numValues; i++) {
-            analyseInitExpr(values[i], ET);
-            if (DesignatedInitExpr* D = dyncast<DesignatedInitExpr>(values[i])) {
-                haveDesignators = true;
-                if (D->getDesignatorKind() != DesignatedInitExpr::ARRAY_DESIGNATOR) {
-                    StringBuilder buf;
-                    Q.DiagName(buf);
-                    Diag(D->getLocation(), diag::err_field_designator_non_aggr) << 0 << buf;
-                    haveErrors = true;
-                    continue;
-                }
-            }
-            if (!values[i]->isConstant()) constant = false;
-        }
-        if (constant) expr->setConstant();
-        if (haveDesignators) expr->setDesignators();
-        // determine real array size
-        llvm::APInt initSize(64, 0, false);
-        if (haveDesignators && !haveErrors) {
-            int64_t arraySize = -1;
-            if (AT->getSizeExpr()) {    // size determined by expr
-                arraySize = AT->getSize().getZExtValue();
-            } //else, size determined by designators
-            checkArrayDesignators(expr, &arraySize);
-            initSize = arraySize;
-        } else {
-            if (AT->getSizeExpr()) {    // size determined by expr
-                initSize = AT->getSize();
-                uint64_t arraySize = AT->getSize().getZExtValue();
-                if (numValues > arraySize) {
-                    int firstExceed = AT->getSize().getZExtValue();
-                    Diag(values[firstExceed]->getLocation(), diag::err_excess_initializers) << 0;
-                }
-            } else {    // size determined from #elems in initializer list
-                initSize = numValues;
-            }
-        }
-        AT->setSize(initSize);
-        expr->setType(Q);
-    } else if (Q.isStructType()) {
-        expr->setType(Q);
-        // TODO use helper function
-        StructType* TT = cast<StructType>(Q.getCanonicalType().getTypePtr());
-        StructTypeDecl* STD = TT->getDecl();
-        assert(STD->isStruct() && "TEMP only support structs for now");
-        bool constant = true;
-        // ether init whole struct with field designators, or don't use any (no mixing allowed)
-        // NOTE: using different type for anonymous sub-union is allowed
-        if (numValues!=0 && isa<DesignatedInitExpr>(values[0])) {
+    bool haveErrors = false;
+    // TODO use helper function
+    ArrayType* AT = cast<ArrayType>(Q.getCanonicalType().getTypePtr());
+    QualType ET = AT->getElementType();
+    bool constant = true;
+    for (unsigned i=0; i<numValues; i++) {
+        analyseInitExpr(values[i], ET);
+        if (DesignatedInitExpr* D = dyncast<DesignatedInitExpr>(values[i])) {
             haveDesignators = true;
+            if (D->getDesignatorKind() != DesignatedInitExpr::ARRAY_DESIGNATOR) {
+                StringBuilder buf;
+                Q.DiagName(buf);
+                Diag(D->getLocation(), diag::err_field_designator_non_aggr) << 0 << buf;
+                haveErrors = true;
+                continue;
+            }
         }
-        // TODO cleanup this code (after unit-tests) Split into field-designator / non-designator init
-        typedef std::vector<Expr*> Fields;
-        Fields fields;
-        fields.resize(STD->numMembers());
-        for (unsigned i=0; i<numValues; i++) {
-            if (i >= STD->numMembers()) {
-                // note: 0 for array, 2 for scalar, 3 for union, 4 for structs
-                Diag(values[STD->numMembers()]->getLocation(), diag::err_excess_initializers)
-                        << 4;
+        if (!values[i]->isConstant()) constant = false;
+    }
+    if (constant) expr->setConstant();
+    if (haveDesignators) expr->setDesignators();
+    // determine real array size
+    llvm::APInt initSize(64, 0, false);
+    if (haveDesignators && !haveErrors) {
+        int64_t arraySize = -1;
+        if (AT->getSizeExpr()) {    // size determined by expr
+            arraySize = AT->getSize().getZExtValue();
+        } //else, size determined by designators
+        checkArrayDesignators(expr, &arraySize);
+        initSize = arraySize;
+    } else {
+        if (AT->getSizeExpr()) {    // size determined by expr
+            initSize = AT->getSize();
+            uint64_t arraySize = AT->getSize().getZExtValue();
+            if (numValues > arraySize) {
+                int firstExceed = AT->getSize().getZExtValue();
+                Diag(values[firstExceed]->getLocation(), diag::err_excess_initializers) << 0;
+            }
+        } else {    // size determined from #elems in initializer list
+            initSize = numValues;
+        }
+    }
+    AT->setSize(initSize);
+    expr->setType(Q);
+}
+
+static inline StringBuilder &quotedField(StringBuilder &builder, IdentifierExpr *field) {
+    return builder << '\'' << field->getName() << '\'';
+}
+
+// Return true to continue analysis, false to exit.
+bool FunctionAnalyser::analyseDesignatedInitExprInList(DesignatedInitExpr* D,
+    StructTypeDecl* STD, QualType Q, Fields &fields, Expr* value) {
+
+    if (D->getDesignatorKind() != DesignatedInitExpr::FIELD_DESIGNATOR) {
+        StringBuilder buf;
+        Q.DiagName(buf);
+        Diag(D->getLocation(), diag::err_array_designator_non_array) << buf;
+        return 1;
+    }
+
+    IdentifierExpr* field = D->getField();
+    // TODO can by member of anonymous sub-struct/union
+    int memberIndex = STD->findIndex(field->getName());
+    if (memberIndex == -1) {
+        // TODO use Helper to add surrounding ''
+        StringBuilder fname(MAX_LEN_VARNAME);
+        quotedField(fname, field);
+        StringBuilder tname(MAX_LEN_TYPENAME);
+        Q.DiagName(tname);
+        Diag(D->getLocation(), diag::err_field_designator_unknown) << fname << tname;
+        return true;
+    }
+    Expr* existing = fields[memberIndex];
+    if (existing) {
+        StringBuilder fname(MAX_LEN_VARNAME);
+        quotedField(fname, field);
+        Diag(D->getLocation(), diag::err_duplicate_field_init) << fname;
+        Diag(existing->getLocation(), diag::note_previous_initializer) << 0 << 0;
+        return true;
+    }
+    fields[memberIndex] = value;
+    assert(STD->getMember(memberIndex));
+    VarDecl* VD = dyncast<VarDecl>(STD->getMember(memberIndex));
+    assert(VD && "TEMP don't support sub-struct member inits");
+    field->setDecl(VD, globalDecl2RefType(VD));
+    analyseInitExpr(D->getInitValue(), VD->getType());
+    if (isa<DesignatedInitExpr>(values[i]) != haveDesignators) {
+        Diag(values[i]->getLocation(), diag::err_mixed_field_designator);
+        return false;
+    }
+    return true;
+}
+
+void FunctionAnalyser::analyseInitListStruct(InitListExpr* expr, QualType Q, unsigned numValues, Expr** values) {
+    LOG_FUNC
+    bool haveDesignators = false;
+    expr->setType(Q);
+    // TODO use helper function
+    StructType* TT = cast<StructType>(Q.getCanonicalType().getTypePtr());
+    StructTypeDecl* STD = TT->getDecl();
+    assert(STD->isStruct() && "TEMP only support structs for now");
+    bool constant = true;
+    // ether init whole struct with field designators, or don't use any (no mixing allowed)
+    // NOTE: using different type for anonymous sub-union is allowed
+    if (numValues != 0 && isa<DesignatedInitExpr>(values[0])) {
+        haveDesignators = true;
+    }
+    // TODO cleanup this code (after unit-tests) Split into field-designator / non-designator init
+    Fields fields;
+    fields.resize(STD->numMembers());
+    for (unsigned i = 0; i < numValues; i++) {
+        if (i >= STD->numMembers()) {
+            // note: 0 for array, 2 for scalar, 3 for union, 4 for structs
+            Diag(values[STD->numMembers()]->getLocation(), diag::err_excess_initializers)
+                << 4;
+            return;
+        }
+        if (DesignatedInitExpr* D = dyncast<DesignatedInitExpr>(values[i]))
+        {
+            if (!analyseDesignatedInitExprInList(D, STD, Q, fields, values[i])) {
                 return;
             }
-            if (DesignatedInitExpr* D = dyncast<DesignatedInitExpr>(values[i])) {
-                if (D->getDesignatorKind() != DesignatedInitExpr::FIELD_DESIGNATOR) {
-                    StringBuilder buf;
-                    Q.DiagName(buf);
-                    Diag(D->getLocation(), diag::err_array_designator_non_array) << buf;
-                    return;
-                }
-                IdentifierExpr* field = D->getField();
-                // TODO can by member of anonymous sub-struct/union
-                int memberIndex = STD->findIndex(field->getName());
-                if (memberIndex == -1) {
-                    // TODO use Helper to add surrounding ''
-                    StringBuilder fname(MAX_LEN_VARNAME);
-                    fname << '\'' << field->getName() << '\'';
-                    StringBuilder tname(MAX_LEN_TYPENAME);
-                    Q.DiagName(tname);
-                    Diag(D->getLocation(), diag::err_field_designator_unknown) << fname << tname;
-                    continue;
-                }
-                Expr* existing = fields[memberIndex];
-                if (existing) {
-                    StringBuilder fname(MAX_LEN_VARNAME);
-                    fname << '\'' << field->getName() << '\'';
-                    Diag(D->getLocation(), diag::err_duplicate_field_init) << fname;
-                    Diag(existing->getLocation(), diag::note_previous_initializer) << 0 << 0;
-                    continue;
-                }
-                fields[memberIndex] = values[i];
-                assert(STD->getMember(memberIndex));
-                VarDecl* VD = dyncast<VarDecl>(STD->getMember(i));
-                assert(VD && "TEMP don't support sub-struct member inits");
-                field->setDecl(VD, globalDecl2RefType(VD));
-                analyseInitExpr(D->getInitValue(), VD->getType());
-            } else {
+        } else {
                 VarDecl* VD = dyncast<VarDecl>(STD->getMember(i));
                 assert(VD && "TEMP don't support sub-struct member inits");
                 analyseInitExpr(values[i], VD->getType());
-                if (!values[i]->isConstant()) constant = false;
-            }
+            if (!values[i]->isConstant()) constant = false;
             if (isa<DesignatedInitExpr>(values[i]) != haveDesignators) {
                 Diag(values[i]->getLocation(), diag::err_mixed_field_designator);
                 return;
             }
-
         }
-        if (constant) expr->setConstant();
-    } else {
-        // TODO always give error like case 1?
-        // only allow 1
-        switch (numValues) {
+
+    }
+    if (constant) expr->setConstant();
+}
+
+void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
+    Expr** values = expr->getValues();
+    unsigned numValues = expr->numValues();
+    if (Q.isArrayType()) {
+        analyseInitListArray(expr, Q, numValues, values);
+        return;
+    }
+    if (Q.isStructType()) {
+        analyseInitListStruct(expr, Q, numValues, values);
+        return;
+    }
+    // TODO always give error like case 1?
+    // only allow 1
+    switch (numValues) {
         case 0:
             fprintf(stderr, "TODO ERROR: scalar initializer cannot be empty\n");
             TODO;
@@ -913,9 +942,8 @@ void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
         default:
             Diag(values[1]->getLocation(), diag::err_excess_initializers) << 2;
             break;
-        }
-        return;
     }
+    return;
 }
 
 void FunctionAnalyser::analyseDesignatorInitExpr(Expr* expr, QualType expectedType) {
