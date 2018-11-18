@@ -826,22 +826,40 @@ static inline StringBuilder &quotedField(StringBuilder &builder, IdentifierExpr 
     return builder << '\'' << field->getName() << '\'';
 }
 
+
+
+
+// We have an expression of the type .foo (note that .foo.bar is handled elsewhere!)
 // Return true to continue analysis, false to exit.
-bool FunctionAnalyser::analyseDesignatedInitExprInList(DesignatedInitExpr* D,
-    StructTypeDecl* STD, QualType Q, Fields &fields, Expr* value) {
+bool FunctionAnalyser::analyseFieldInDesignatedInitExpr(DesignatedInitExpr* D,
+                                                        StructTypeDecl* STD,
+                                                        QualType Q,
+                                                        Fields &fields,
+                                                        Expr* value,
+                                                        bool &haveDesignators) {
 
-    if (D->getDesignatorKind() != DesignatedInitExpr::FIELD_DESIGNATOR) {
-        StringBuilder buf;
-        Q.DiagName(buf);
-        Diag(D->getLocation(), diag::err_array_designator_non_array) << buf;
-        return 1;
-    }
-
-    IdentifierExpr* field = D->getField();
+    IdentifierExpr* field = cast<IdentifierExpr>(D->getField());
     // TODO can by member of anonymous sub-struct/union
     int memberIndex = STD->findIndex(field->getName());
+    int anonUnionIndex = -1;
+    StructTypeDecl *anonUnionDecl;
+    // Check for matching a sub field of an anonymous union.
     if (memberIndex == -1) {
-        // TODO use Helper to add surrounding ''
+        // Let's get the anon field if available.
+        memberIndex = STD->findIndex("");
+        if (memberIndex > -1) {
+            // Goto analysis of sub field.
+            anonUnionDecl = dyncast<StructTypeDecl>(STD->getMember((unsigned)memberIndex));
+            if (anonUnionDecl) {
+                anonUnionIndex = anonUnionDecl->findIndex(field->getName());
+            } else {
+                memberIndex = -1;
+            }
+        }
+    }
+
+    // No match of direct value or anon union.
+    if (memberIndex == -1) {
         StringBuilder fname(MAX_LEN_VARNAME);
         quotedField(fname, field);
         StringBuilder tname(MAX_LEN_TYPENAME);
@@ -849,6 +867,8 @@ bool FunctionAnalyser::analyseDesignatedInitExprInList(DesignatedInitExpr* D,
         Diag(D->getLocation(), diag::err_field_designator_unknown) << fname << tname;
         return true;
     }
+
+
     Expr* existing = fields[memberIndex];
     if (existing) {
         StringBuilder fname(MAX_LEN_VARNAME);
@@ -858,13 +878,21 @@ bool FunctionAnalyser::analyseDesignatedInitExprInList(DesignatedInitExpr* D,
         return true;
     }
     fields[memberIndex] = value;
-    assert(STD->getMember(memberIndex));
-    VarDecl* VD = dyncast<VarDecl>(STD->getMember(memberIndex));
-    assert(VD && "TEMP don't support sub-struct member inits");
+    VarDecl* VD;
+    if (anonUnionIndex > -1) {
+        field->setDecl(anonUnionDecl, globalDecl2RefType(anonUnionDecl));
+        VD = dyncast<VarDecl>(anonUnionDecl->getMember((unsigned)anonUnionIndex));
+    } else {
+        VD = dyncast<VarDecl>(STD->getMember((unsigned)memberIndex));
+    }
+    if (!VD) {
+        TODO;
+        assert(VD && "TEMP don't support sub-struct member inits");
+    }
     field->setDecl(VD, globalDecl2RefType(VD));
     analyseInitExpr(D->getInitValue(), VD->getType());
-    if (isa<DesignatedInitExpr>(values[i]) != haveDesignators) {
-        Diag(values[i]->getLocation(), diag::err_mixed_field_designator);
+    if (anonUnionIndex < 0 && isa<DesignatedInitExpr>(value) != haveDesignators) {
+        Diag(value->getLocation(), diag::err_mixed_field_designator);
         return false;
     }
     return true;
@@ -894,22 +922,32 @@ void FunctionAnalyser::analyseInitListStruct(InitListExpr* expr, QualType Q, uns
                 << 4;
             return;
         }
-        if (DesignatedInitExpr* D = dyncast<DesignatedInitExpr>(values[i]))
-        {
-            if (!analyseDesignatedInitExprInList(D, STD, Q, fields, values[i])) {
-                return;
+        DesignatedInitExpr* D = dyncast<DesignatedInitExpr>(values[i]);
+        if (!D) {
+            VarDecl* VD = dyncast<VarDecl>(STD->getMember(i));
+            if (!VD) {
+                TODO;
             }
-        } else {
-                VarDecl* VD = dyncast<VarDecl>(STD->getMember(i));
-                assert(VD && "TEMP don't support sub-struct member inits");
-                analyseInitExpr(values[i], VD->getType());
+            analyseInitExpr(values[i], VD->getType());
             if (!values[i]->isConstant()) constant = false;
             if (isa<DesignatedInitExpr>(values[i]) != haveDesignators) {
                 Diag(values[i]->getLocation(), diag::err_mixed_field_designator);
                 return;
             }
+            continue;
         }
-
+        switch (D->getDesignatorKind()) {
+            case DesignatedInitExpr::ARRAY_DESIGNATOR:
+            {
+                StringBuilder buf;
+                Q.DiagName(buf);
+                Diag(D->getLocation(), diag::err_array_designator_non_array) << buf;
+                return;
+            }
+            case DesignatedInitExpr::FIELD_DESIGNATOR:
+                if (!analyseFieldInDesignatedInitExpr(D, STD, Q, fields, values[i], haveDesignators)) return;
+                break;
+        }
     }
     if (constant) expr->setConstant();
 }
