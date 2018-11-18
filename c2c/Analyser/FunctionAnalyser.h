@@ -111,7 +111,12 @@ private:
     void analyseInitListStruct(InitListExpr* expr, QualType expectedType, unsigned numValues, Expr** values);
     void analyseDesignatorInitExpr(Expr* expr, QualType expectedType);
     typedef std::vector<Expr*> Fields;
-    bool analyseDesignatedInitExprInList(DesignatedInitExpr* expr, StructTypeDecl* std, QualType Q, Fields &fields, Expr* value);
+    bool analyseFieldInDesignatedInitExpr(DesignatedInitExpr* expr,
+                                          StructTypeDecl* std,
+                                          QualType Q,
+                                          Fields &fields,
+                                          Expr* value,
+                                          bool &haveDesignators);
 
     void analyseSizeOfExpr(BuiltinExpr* expr);
     QualType analyseElemsOfExpr(BuiltinExpr* B);

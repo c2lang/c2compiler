@@ -686,6 +686,7 @@ DIAG(err_fallthrough_attr_outside_switch, CLASS_ERROR, (unsigned)diag::Severity:
 DIAG(err_fallthrough_attr_wrong_target, CLASS_ERROR, (unsigned)diag::Severity::Error, "%0 attribute is only allowed on empty statements", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_field_declared_as_function, CLASS_ERROR, (unsigned)diag::Severity::Error, "field %0 declared as a function", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_field_designator_non_aggr, CLASS_ERROR, (unsigned)diag::Severity::Error, "field designator cannot initialize a %select{non-struct, non-union|non-class}0 type %1", 0, SFINAE_SubstitutionFailure, false, true, 2)
+DIAG(err_field_designator_required_union, CLASS_ERROR, (unsigned)diag::Severity::Error, "union member initializer needs field designator", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_field_designator_nonfield, CLASS_ERROR, (unsigned)diag::Severity::Error, "field designator %0 does not refer to a non-static data member", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_field_designator_unknown, CLASS_ERROR, (unsigned)diag::Severity::Error, "field designator %0 does not refer to any field in type %1", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_field_designator_unknown_suggest, CLASS_ERROR, (unsigned)diag::Severity::Error, "field designator %0 does not refer to any field in type %1; did you mean %2?", 0, SFINAE_SubstitutionFailure, false, true, 2)
