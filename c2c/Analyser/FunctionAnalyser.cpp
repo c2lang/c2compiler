@@ -829,7 +829,7 @@ static inline StringBuilder &quotedField(StringBuilder &builder, IdentifierExpr 
 
 
 
-// We have an expression of the type .foo (note that .foo.bar is handled elsewhere!)
+// We have an expression of the type .foo
 // Return true to continue analysis, false to exit.
 bool FunctionAnalyser::analyseFieldInDesignatedInitExpr(DesignatedInitExpr* D,
                                                         StructTypeDecl* STD,
@@ -912,6 +912,13 @@ void FunctionAnalyser::analyseInitListStruct(InitListExpr* expr, QualType Q, uns
     if (numValues != 0 && isa<DesignatedInitExpr>(values[0])) {
         haveDesignators = true;
     }
+
+    // Check if this is a union, if so then we need designators when initializing.
+    if (numValues > 0 && !haveDesignators && !STD->isStruct()) {
+        Diag(values[0]->getLocation(), diag::err_field_designator_required_union);
+        return;
+    }
+
     // TODO cleanup this code (after unit-tests) Split into field-designator / non-designator init
     Fields fields;
     fields.resize(STD->numMembers());
