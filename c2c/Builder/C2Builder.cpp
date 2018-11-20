@@ -42,8 +42,6 @@
 #include "Clang/Preprocessor.h"
 #include "Clang/PreprocessorOptions.h"
 #include "Clang/SemaDiagnostic.h"
-// for Rewriter
-#include "Clang/Rewriter.h"
 
 #include "Builder/C2Builder.h"
 #include "Builder/Recipe.h"
@@ -395,8 +393,6 @@ int C2Builder::build() {
 
     if (!checkExportedPackages()) goto out;
 
-    rewriterTest(SM, LangOpts);
-
     generateOptionalDeps();
 
     generateOptionalTags(SM);
@@ -600,73 +596,6 @@ bool C2Builder::checkExportedPackages() const {
     return true;
 }
 
-void C2Builder::rewriterTest(SourceManager& SM, LangOptions& LangOpts) {
-#if 0
-    // FOR TESTING rename global test.aa -> bb
-    const std::string modName = "test";
-    const std::string oldName = "aa";
-    const std::string newName = "bb";
-
-    // Step 1a: find Module
-    const Module* M = 0;
-    const Module* mod = findModule(modName);
-    assert(M && "unknown module");
-    assert(!M->isExternal() && "cannot replace symbol in external module");
-
-    // Step 1b: find Decl
-    Decl* D = M->findSymbol(oldName);
-    assert(D && "unknown decl");
-
-    // Step 2a: replace Decl itself
-    Rewriter rewriter;
-    rewriter.setSourceMgr(SM, LangOpts);
-    rewriter.ReplaceText(D->getLocation(), oldName.size(), newName);
-
-    // Step 2b: replace all references
-    // TODO only in mainComponent
-    const ModuleList& mods = mainComponent->getModules();
-    for (unsigned m=0; m<mods.size(); m++) {
-        const AstList& files = mods[m]->getFiles();
-        for (unsigned a=0; a<files.size(); a++) {
-            AST* ast = files[a];
-
-            RefFinder finder(*ast, D);
-            unsigned count = finder.find();
-            if (count) printf("replaced %d references in %s\n", count, files[i]->getFileName().c_str());
-            for (unsigned i=0; i<count; i++) {
-                std::string temp = finder.locs[i].printToString(SM);
-                printf("loc %d -> %s\n", finder.locs[i].getRawEncoding(), temp.c_str());
-                PresumedLoc loc = SM.getPresumedLoc(finder.locs[i]);
-                assert(!loc.isInvalid() && "Invalid location");
-                printf(" -> %s:%d:%d\n", loc.getFilename(), loc.getLine(), loc.getColumn());
-                std::pair<FileID, unsigned> Off = SM.getDecomposedExpansionLoc(finder.locs[i]);
-                printf("-> offset %d\n", Off.second);
-                rewriter.ReplaceText(finder.locs[i], oldName.size(), newName);
-            }
-        }
-    }
-
-    // Step 3: reparse and check
-    // TODO
-
-    // print output
-    for (unsigned m=0; m<mods.size(); m++) {
-        const AstList& files = mods[m]->getFiles();
-        for (unsigned a=0; a<files.size(); a++) {
-            AST* ast = files[a];
-            const RewriteBuffer *RewriteBuf =
-                rewriter.getRewriteBufferFor(ast->fileID);
-            if (RewriteBuf) {
-                printf("====== %s ======\n", ast->getFileName().c_str());
-                llvm::outs() << std::string(RewriteBuf->begin(), RewriteBuf->end());
-            }
-        }
-    }
-    // also works!
-    //bool err = rewriter.overwriteChangedFiles();
-    //printf("errors = %d\n", err);
-#endif
-}
 
 void C2Builder::generateOptionalDeps() {
     if (!options.printDependencies && !recipe.generateDeps) return;

@@ -28,17 +28,6 @@ SourceLocation Commit::Edit::getFileLocation(SourceManager &SM) const {
   return Loc;
 }
 
-CharSourceRange Commit::Edit::getFileRange(SourceManager &SM) const {
-  SourceLocation Loc = getFileLocation(SM);
-  return CharSourceRange::getCharRange(Loc, Loc.getLocWithOffset(Length));
-}
-
-CharSourceRange Commit::Edit::getInsertFromRange(SourceManager &SM) const {
-  SourceLocation Loc = SM.getLocForStartOfFile(InsertFromRangeOffs.getFID());
-  Loc = Loc.getLocWithOffset(InsertFromRangeOffs.getOffset());
-  assert(Loc.isFileID());
-  return CharSourceRange::getCharRange(Loc, Loc.getLocWithOffset(Length));
-}
 
 Commit::Commit(EditedSource &Editor)
     : SourceMgr(Editor.getSourceManager()), LangOpts(Editor.getLangOpts()),
@@ -94,18 +83,6 @@ bool Commit::remove(CharSourceRange range) {
   return true;
 }
 
-bool Commit::insertWrap(StringRef before, CharSourceRange range,
-                        StringRef after) {
-  bool commitableBefore = insert(range.getBegin(), before, /*afterToken=*/false,
-                                 /*beforePreviousInsertions=*/true);
-  bool commitableAfter;
-  if (range.isTokenRange())
-    commitableAfter = insertAfterToken(range.getEnd(), after);
-  else
-    commitableAfter = insert(range.getEnd(), after);
-
-  return commitableBefore && commitableAfter;
-}
 
 bool Commit::replace(CharSourceRange range, StringRef text) {
   if (text.empty())
@@ -123,55 +100,6 @@ bool Commit::replace(CharSourceRange range, StringRef text) {
   return true;
 }
 
-bool Commit::replaceWithInner(CharSourceRange range,
-                              CharSourceRange replacementRange) {
-  FileOffset OuterBegin;
-  unsigned OuterLen;
-  if (!canRemoveRange(range, OuterBegin, OuterLen)) {
-    IsCommitable = false;
-    return false;
-  }
-
-  FileOffset InnerBegin;
-  unsigned InnerLen;
-  if (!canRemoveRange(replacementRange, InnerBegin, InnerLen)) {
-    IsCommitable = false;
-    return false;
-  }
-
-  FileOffset OuterEnd = OuterBegin.getWithOffset(OuterLen);
-  FileOffset InnerEnd = InnerBegin.getWithOffset(InnerLen);
-  if (OuterBegin.getFID() != InnerBegin.getFID() ||
-      InnerBegin < OuterBegin ||
-      InnerBegin > OuterEnd ||
-      InnerEnd > OuterEnd) {
-    IsCommitable = false;
-    return false;
-  }
-
-  addRemove(range.getBegin(),
-            OuterBegin, InnerBegin.getOffset() - OuterBegin.getOffset());
-  addRemove(replacementRange.getEnd(),
-            InnerEnd, OuterEnd.getOffset() - InnerEnd.getOffset());
-  return true;
-}
-
-bool Commit::replaceText(SourceLocation loc, StringRef text,
-                         StringRef replacementText) {
-  if (text.empty() || replacementText.empty())
-    return true;
-
-  FileOffset Offs;
-  unsigned Len;
-  if (!canReplaceText(loc, replacementText, Offs, Len)) {
-    IsCommitable = false;
-    return false;
-  }
-
-  addRemove(loc, Offs, Len);
-  addInsert(loc, Offs, text, false);
-  return true;
-}
 
 void Commit::addInsert(SourceLocation OrigLoc, FileOffset Offs, StringRef text,
                        bool beforePreviousInsertions) {

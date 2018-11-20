@@ -127,7 +127,7 @@ void ExprTypeAnalyser::check(QualType TLeft, const Expr* expr) {
         TODO;
         return;
     case EXPR_CAST:
-        TODO;
+        //TODO;
         return;
     }
     FATAL_ERROR("Unreachable");
