@@ -69,7 +69,6 @@ class HeaderSearch;
 class MacroArgs;
 class MemoryBufferCache;
 class PreprocessorLexer;
-class PreprocessorOptions;
 class PTHManager;
 class ScratchBuffer;
 class TargetInfo;
@@ -118,7 +117,6 @@ class Preprocessor {
   friend class VAOptDefinitionContext;
   friend class VariadicMacroScopeGuard;
 
-  std::shared_ptr<PreprocessorOptions> PPOpts;
   DiagnosticsEngine        *Diags;
   LangOptions       &LangOpts;
   const C2::TargetInfo *Target = nullptr;
@@ -159,8 +157,6 @@ class Preprocessor {
   };
 
   // State that is set before the preprocessor begins.
-  bool KeepComments : 1;
-  bool KeepMacroComments : 1;
   bool SuppressIncludeNotFoundError : 1;
 
   // State that changes while the preprocessor runs:
@@ -478,8 +474,7 @@ private:
   MacroInfoChain *MIChainHead = nullptr;
 
 public:
-  Preprocessor(std::shared_ptr<PreprocessorOptions> PPOpts,
-               DiagnosticsEngine &diags, LangOptions &opts, SourceManager &SM,
+  Preprocessor(DiagnosticsEngine &diags, LangOptions &opts, SourceManager &SM,
                MemoryBufferCache &PCMCache,
                HeaderSearch &Headers,
                IdentifierInfoLookup *IILookup = nullptr,
@@ -508,9 +503,6 @@ public:
   /// Cleanup after model file parsing
   void FinalizeForModelFile();
 
-  /// Retrieve the preprocessor options used to initialize this
-  /// preprocessor.
-  PreprocessorOptions &getPreprocessorOpts() const { return *PPOpts; }
 
   DiagnosticsEngine &getDiagnostics() const { return *Diags; }
   void setDiagnostics(DiagnosticsEngine &D) { Diags = &D; }
@@ -538,18 +530,8 @@ public:
     return ParsingIfOrElifDirective;
   }
 
-  /// Control whether the preprocessor retains comments in output.
-  void SetCommentRetentionState(bool KeepComments, bool KeepMacroComments) {
-    this->KeepComments = KeepComments | KeepMacroComments;
-    this->KeepMacroComments = KeepMacroComments;
-  }
 
-  bool getCommentRetentionState() const { return KeepComments; }
-
-  void setPragmasEnabled(bool Enabled) { PragmasEnabled = Enabled; }
-  bool getPragmasEnabled() const { return PragmasEnabled; }
-
-  void SetSuppressIncludeNotFoundError(bool Suppress) {
+    void SetSuppressIncludeNotFoundError(bool Suppress) {
     SuppressIncludeNotFoundError = Suppress;
   }
 
@@ -584,11 +566,6 @@ public:
   /// expansions going on at the time.
   PreprocessorLexer *getCurrentFileLexer() const;
 
-
-  /// Returns the FileID for the preprocessor predefines.
-  FileID getPredefinesFileID() const { return PredefinesFileID; }
-
-    /// \}
 
   bool isMacroDefined(StringRef Id) {
     return isMacroDefined(&Identifiers.get(Id));

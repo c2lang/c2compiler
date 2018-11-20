@@ -40,7 +40,6 @@
 #include "Clang/HeaderSearch.h"
 #include "Clang/HeaderSearchOptions.h"
 #include "Clang/Preprocessor.h"
-#include "Clang/PreprocessorOptions.h"
 #include "Clang/SemaDiagnostic.h"
 
 #include "Builder/C2Builder.h"
@@ -73,7 +72,6 @@ using c2lang::HeaderSearch;
 using c2lang::HeaderSearchOptions;
 using c2lang::LangOptions;
 using c2lang::Preprocessor;
-using c2lang::PreprocessorOptions;
 using c2lang::SourceManager;
 using c2lang::TargetInfo;
 using c2lang::TargetOptions;
@@ -111,8 +109,7 @@ public:
         // NOTE: seems to get deleted by Preprocessor,
         HeaderSearch* Headers = new HeaderSearch(HSOpts, SM, Diags, LangOpts);
 
-        std::shared_ptr<PreprocessorOptions> PPOpts(new PreprocessorOptions());
-        Preprocessor PP(PPOpts, Diags, LangOpts, SM, PCMCache, *Headers);
+        Preprocessor PP(Diags, LangOpts, SM, PCMCache, *Headers);
 
         ApplyHeaderSearchOptions(PP.getHeaderSearchInfo(), *HSOpts, LangOpts);
         PP.setPredefines(configs);

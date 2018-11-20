@@ -23,7 +23,6 @@
 #include "Clang/LiteralSupport.h"
 #include "Clang/MultipleIncludeOpt.h"
 #include "Clang/Preprocessor.h"
-#include "Clang/PreprocessorOptions.h"
 #include "Clang/Token.h"
 #include "Clang/Diagnostic.h"
 #include "Clang/LLVM.h"
@@ -146,7 +145,7 @@ Lexer::Lexer(FileID FID, const llvm::MemoryBuffer *FromFile,
 
 void Lexer::resetExtendedTokenMode() {
   assert(PP && "Cannot reset token mode without a preprocessor");
-  SetCommentRetentionState(PP->getCommentRetentionState());
+  SetCommentRetentionState(false);
 }
 
 /// Create_PragmaLexer: Lexer constructor - Create a new lexer object for
@@ -2406,37 +2405,6 @@ bool Lexer::HandleEndOfConflictMarker(const char *CurPtr) {
   return false;
 }
 
-static const char *findPlaceholderEnd(const char *CurPtr,
-                                      const char *BufferEnd) {
-  if (CurPtr == BufferEnd)
-    return nullptr;
-  BufferEnd -= 1; // Scan until the second last character.
-  for (; CurPtr != BufferEnd; ++CurPtr) {
-    if (CurPtr[0] == '#' && CurPtr[1] == '>')
-      return CurPtr + 2;
-  }
-  return nullptr;
-}
-
-bool Lexer::lexEditorPlaceholder(Token &Result, const char *CurPtr) {
-  assert(CurPtr[-1] == '<' && CurPtr[0] == '#' && "Not a placeholder!");
-  if (!PP || !PP->getPreprocessorOpts().LexEditorPlaceholders || LexingRawMode)
-    return false;
-  const char *End = findPlaceholderEnd(CurPtr + 1, BufferEnd);
-  if (!End)
-    return false;
-  const char *Start = CurPtr - 1;
-  if (!LangOpts.AllowEditorPlaceholders)
-    Diag(Start, diag::err_placeholder_in_source);
-  Result.startToken();
-  FormTokenWithChars(Result, End, tok::raw_identifier);
-  Result.setRawIdentifierData(Start);
-  PP->LookUpIdentifierInfo(Result);
-  Result.setFlag(Token::IsEditorPlaceholder);
-  BufferPtr = End;
-  return true;
-}
-
 
 uint32_t Lexer::tryReadUCN(const char *&StartPtr, const char *SlashLoc,
                            Token *Result) {
@@ -3046,9 +3014,6 @@ LexNextToken:
     } else if (Char == '=') {
       CurPtr = ConsumeChar(CurPtr, SizeTmp, Result);
       Kind = tok::lessequal;
-    } else if (Char == '#' && /*Not a trigraph*/ SizeTmp == 1 &&
-               lexEditorPlaceholder(Result, CurPtr)) {
-      return true;
     } else {
       Kind = tok::less;
     }

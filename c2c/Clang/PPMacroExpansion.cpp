@@ -571,7 +571,7 @@ MacroArgs *Preprocessor::ReadMacroCallArgumentList(Token &MacroName,
         if (!isVariadic) break;
         if (NumFixedArgsLeft > 1)
           break;
-      } else if (Tok.is(tok::comment) && !KeepMacroComments) {
+      } else if (Tok.is(tok::comment)) {
         // If this is a comment token in the argument list and we're just in
         // -C mode (not -CC mode), discard the comment.
         continue;
