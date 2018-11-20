@@ -33,7 +33,6 @@
 #include "Clang/LangOptions.h"
 #include "Clang/SourceLocation.h"
 #include "Clang/SourceManager.h"
-#include "Clang/CodeCompletionHandler.h"
 #include "Clang/ExternalPreprocessorSource.h"
 #include "Clang/HeaderSearch.h"
 #include "Clang/LexDiagnostic.h"
@@ -82,12 +81,11 @@ Preprocessor::Preprocessor(std::shared_ptr<PreprocessorOptions> PPOpts,
     : PPOpts(std::move(PPOpts)), Diags(&diags), LangOpts(opts),
       FileMgr(Headers.getFileMgr()), SourceMgr(SM), PCMCache(PCMCache),
       ScratchBuf(new ScratchBuffer(SourceMgr)), HeaderInfo(Headers),
-      ExternalSource(nullptr),
       // As the language options may have not been loaded yet (when
       // deserializing an ASTUnit), adding keywords to the identifier table is
       // deferred to Preprocessor::Initialize().
       Identifiers(IILookup),
-      TUKind(TUKind), SkipMainFilePreamble(0, true),
+      TUKind(TUKind),
       CurSubmoduleState(&NullSubmoduleState) {
   OwnsHeaderSearch = OwnsHeaders;
 
@@ -104,9 +102,6 @@ Preprocessor::Preprocessor(std::shared_ptr<PreprocessorOptions> PPOpts,
   NumCachedTokenLexers = 0;
   ParsingIfOrElifDirective = false;
   PreprocessedOutput = false;
-
-  // We haven't read anything from the external source.
-  ReadMacrosFromExternalSource = false;
 
   // "Poison" __VA_ARGS__, __VA_OPT__ which can only appear in the expansion of
   // a macro. They get unpoisoned where it is allowed.
@@ -260,11 +255,6 @@ void Preprocessor::PrintStats() {
 
 Preprocessor::macro_iterator
 Preprocessor::macro_begin(bool IncludeExternalMacros) const {
-  if (IncludeExternalMacros && ExternalSource &&
-      !ReadMacrosFromExternalSource) {
-    ReadMacrosFromExternalSource = true;
-    ExternalSource->ReadDefinedMacros();
-  }
 
   // Make sure we cover all macros in visible modules.
 
@@ -284,48 +274,11 @@ size_t Preprocessor::getTotalMemory() const {
 
 Preprocessor::macro_iterator
 Preprocessor::macro_end(bool IncludeExternalMacros) const {
-  if (IncludeExternalMacros && ExternalSource &&
-      !ReadMacrosFromExternalSource) {
-    ReadMacrosFromExternalSource = true;
-    ExternalSource->ReadDefinedMacros();
-  }
 
   return CurSubmoduleState->Macros.end();
 }
 
-/// Compares macro tokens with a specified token value sequence.
-static bool MacroDefinitionEquals(const MacroInfo *MI,
-                                  ArrayRef<TokenValue> Tokens) {
-  return Tokens.size() == MI->getNumTokens() &&
-      std::equal(Tokens.begin(), Tokens.end(), MI->tokens_begin());
-}
 
-StringRef Preprocessor::getLastMacroWithSpelling(
-                                    SourceLocation Loc,
-                                    ArrayRef<TokenValue> Tokens) const {
-  SourceLocation BestLocation;
-  StringRef BestSpelling;
-  for (Preprocessor::macro_iterator I = macro_begin(), E = macro_end();
-       I != E; ++I) {
-    const MacroDirective::DefInfo
-      Def = I->second.findDirectiveAtLoc(Loc, SourceMgr);
-    if (!Def || !Def.getMacroInfo())
-      continue;
-    if (!Def.getMacroInfo()->isObjectLike())
-      continue;
-    if (!MacroDefinitionEquals(Def.getMacroInfo(), Tokens))
-      continue;
-    SourceLocation Location = Def.getLocation();
-    // Choose the macro defined latest.
-    if (BestLocation.isInvalid() ||
-        (Location.isValid() &&
-         SourceMgr.isBeforeInTranslationUnit(BestLocation, Location))) {
-      BestLocation = Location;
-      BestSpelling = I->first->getName();
-    }
-  }
-  return BestSpelling;
-}
 
 void Preprocessor::recomputeCurLexerKind() {
   if (CurLexer)
@@ -336,69 +289,7 @@ void Preprocessor::recomputeCurLexerKind() {
     CurLexerKind = CLK_CachingLexer;
 }
 
-bool Preprocessor::SetCodeCompletionPoint(const FileEntry *File,
-                                          unsigned CompleteLine,
-                                          unsigned CompleteColumn) {
-  assert(File);
-  assert(CompleteLine && CompleteColumn && "Starts from 1:1");
-  assert(!CodeCompletionFile && "Already set");
 
-  using llvm::MemoryBuffer;
-
-  // Load the actual file's contents.
-  bool Invalid = false;
-  const MemoryBuffer *Buffer = SourceMgr.getMemoryBufferForFile(File, &Invalid);
-  if (Invalid)
-    return true;
-
-  // Find the byte position of the truncation point.
-  const char *Position = Buffer->getBufferStart();
-  for (unsigned Line = 1; Line < CompleteLine; ++Line) {
-    for (; *Position; ++Position) {
-      if (*Position != '\r' && *Position != '\n')
-        continue;
-
-      // Eat \r\n or \n\r as a single line.
-      if ((Position[1] == '\r' || Position[1] == '\n') &&
-          Position[0] != Position[1])
-        ++Position;
-      ++Position;
-      break;
-    }
-  }
-
-  Position += CompleteColumn - 1;
-
-  // If pointing inside the preamble, adjust the position at the beginning of
-  // the file after the preamble.
-  if (SkipMainFilePreamble.first &&
-      SourceMgr.getFileEntryForID(SourceMgr.getMainFileID()) == File) {
-    if (Position - Buffer->getBufferStart() < SkipMainFilePreamble.first)
-      Position = Buffer->getBufferStart() + SkipMainFilePreamble.first;
-  }
-
-  if (Position > Buffer->getBufferEnd())
-    Position = Buffer->getBufferEnd();
-
-  CodeCompletionFile = File;
-  CodeCompletionOffset = Position - Buffer->getBufferStart();
-
-  auto NewBuffer = llvm::WritableMemoryBuffer::getNewUninitMemBuffer(
-      Buffer->getBufferSize() + 1, Buffer->getBufferIdentifier());
-  char *NewBuf = NewBuffer->getBufferStart();
-  char *NewPos = std::copy(Buffer->getBufferStart(), Position, NewBuf);
-  *NewPos = '\0';
-  std::copy(Position, Buffer->getBufferEnd(), NewPos+1);
-  SourceMgr.overrideFileContents(File, std::move(NewBuffer));
-
-  return false;
-}
-
-void Preprocessor::CodeCompleteNaturalLanguage() {
-  if (CodeComplete)
-    CodeComplete->CodeCompleteNaturalLanguage();
-  setCodeCompletionReached();
-}
 
 /// getSpelling - This method is used to get the spelling of a token into a
 /// SmallVector. Note that the returned StringRef may not point to the
@@ -480,11 +371,6 @@ void Preprocessor::EnterMainSourceFile() {
     // Enter the main file source buffer.
     EnterSourceFile(MainFileID, nullptr, SourceLocation());
 
-    // If we've been asked to skip bytes in the main file (e.g., as part of a
-    // precompiled preamble), do so now.
-    if (SkipMainFilePreamble.first > 0)
-      CurLexer->SetByteOffset(SkipMainFilePreamble.first,
-                              SkipMainFilePreamble.second);
 
     // Tell the header info that the main file was entered.  If the file is later
     // #imported, it won't be re-entered.
@@ -604,10 +490,6 @@ static diag::kind getFutureCompatDiagKind(const IdentifierInfo &II,
       "Keyword not known to come from a newer Standard or proposed Standard");
 }
 
-void Preprocessor::updateOutOfDateIdentifier(IdentifierInfo &II) const {
-  assert(II.isOutOfDate() && "not out of date");
-  getExternalSource()->updateOutOfDateIdentifier(II);
-}
 
 /// HandleIdentifier - This callback is invoked when the lexer reads an
 /// identifier.  This callback looks up the identifier in the map and/or
@@ -622,25 +504,6 @@ bool Preprocessor::HandleIdentifier(Token &Identifier) {
          "Can't handle identifiers without identifier info!");
 
   IdentifierInfo &II = *Identifier.getIdentifierInfo();
-
-  // If the information about this identifier is out of date, update it from
-  // the external source.
-  // We have to treat __VA_ARGS__ in a special way, since it gets
-  // serialized with isPoisoned = true, but our preprocessor may have
-  // unpoisoned it if we're defining a C99 macro.
-  if (II.isOutOfDate()) {
-    bool CurrentIsPoisoned = false;
-    const bool IsSpecialVariadicMacro =
-        &II == Ident__VA_ARGS__ || &II == Ident__VA_OPT__;
-    if (IsSpecialVariadicMacro)
-      CurrentIsPoisoned = II.isPoisoned();
-
-    updateOutOfDateIdentifier(II);
-    Identifier.setKind(II.getTokenID());
-
-    if (IsSpecialVariadicMacro)
-      II.setIsPoisoned(CurrentIsPoisoned);
-  }
 
   // If this identifier was poisoned, and if it was not produced from a macro
   // expansion, emit an error.
@@ -709,13 +572,6 @@ void Preprocessor::Lex(Token &Result) {
     }
   } while (!ReturnedToken);
 
-  if (Result.is(tok::code_completion) && Result.getIdentifierInfo()) {
-    // Remember the identifier before code completion token.
-    setCodeCompletionIdentifierInfo(Result.getIdentifierInfo());
-    // Set IdenfitierInfo to null to avoid confusing code that handles both
-    // identifiers and completion tokens.
-    Result.setIdentifierInfo(nullptr);
-  }
 
   LastTokenWasAt = Result.is(tok::at);
 }
@@ -811,5 +667,4 @@ bool Preprocessor::HandleComment(Token &result, SourceRange Comment) {
 
 CommentHandler::~CommentHandler() = default;
 
-CodeCompletionHandler::~CodeCompletionHandler() = default;
 

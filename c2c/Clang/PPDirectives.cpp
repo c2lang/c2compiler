@@ -19,7 +19,6 @@
 #include "Clang/SourceLocation.h"
 #include "Clang/SourceManager.h"
 #include "Clang/TokenKinds.h"
-#include "Clang/CodeCompletionHandler.h"
 #include "Clang/HeaderSearch.h"
 #include "Clang/LexDiagnostic.h"
 #include "Clang/LiteralSupport.h"
@@ -269,12 +268,6 @@ void Preprocessor::ReadMacroName(Token &MacroNameTok, MacroUse isDefineUndef,
   // Read the token, don't allow macro expansion on it.
   LexUnexpandedToken(MacroNameTok);
 
-  if (MacroNameTok.is(tok::code_completion)) {
-    if (CodeComplete)
-      CodeComplete->CodeCompleteMacroName(isDefineUndef == MU_Define);
-    setCodeCompletionReached();
-    LexUnexpandedToken(MacroNameTok);
-  }
 
   if (!CheckMacroName(MacroNameTok, isDefineUndef, ShadowFlag))
     return;
@@ -350,12 +343,6 @@ void Preprocessor::SkipExcludedConditionalBlock(SourceLocation HashTokenLoc,
   while (true) {
     CurLexer->Lex(Tok);
 
-    if (Tok.is(tok::code_completion)) {
-      if (CodeComplete)
-        CodeComplete->CodeCompleteInConditionalExclusion();
-      setCodeCompletionReached();
-      continue;
-    }
 
     // If this is the end of the buffer, we have an error.
     if (Tok.is(tok::eof)) {
@@ -732,12 +719,6 @@ void Preprocessor::HandleDirective(Token &Result) {
   switch (Result.getKind()) {
   case tok::eod:
     return;   // null directive.
-  case tok::code_completion:
-    if (CodeComplete)
-      CodeComplete->CodeCompleteDirective(
-                                    CurPPLexer->getConditionalStackDepth() > 0);
-    setCodeCompletionReached();
-    return;
   case tok::numeric_constant:  // # 7  GNU line marker directive.
     if (getLangOpts().AsmPreprocessor)
       break;  // # 4 is not a preprocessor directive in .S files.
@@ -1272,13 +1253,6 @@ bool Preprocessor::ConcatenateIncludeName(SmallString<128> &FilenameBuffer,
   Lex(CurTok);
   while (CurTok.isNot(tok::eod)) {
     End = CurTok.getLocation();
-
-    // FIXME: Provide code completion for #includes.
-    if (CurTok.is(tok::code_completion)) {
-      setCodeCompletionReached();
-      Lex(CurTok);
-      continue;
-    }
 
     // Append the spelling of this token to the buffer. If there was a space
     // before it, add it now.

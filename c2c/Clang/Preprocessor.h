@@ -59,7 +59,6 @@ template<unsigned InternalLen> class SmallString;
 
 namespace c2lang {
 
-class CodeCompletionHandler;
 class CommentHandler;
 class DirectoryEntry;
 class DirectoryLookup;
@@ -179,9 +178,6 @@ class Preprocessor {
 
   class ResetMacroExpansionHelper;
 
-  /// Whether we have already loaded macros from the external source.
-  mutable bool ReadMacrosFromExternalSource : 1;
-
   /// True if pragmas are enabled.
   bool PragmasEnabled : 1;
 
@@ -212,24 +208,7 @@ class Preprocessor {
   /// The kind of translation unit we are processing.
   TranslationUnitKind TUKind;
 
-  /// The code-completion handler.
-  CodeCompletionHandler *CodeComplete = nullptr;
 
-  /// The file that we're performing code-completion for, if any.
-  const FileEntry *CodeCompletionFile = nullptr;
-
-  /// The offset in file for the code-completion point.
-  unsigned CodeCompletionOffset = 0;
-
-  /// The location for the code-completion point. This gets instantiated
-  /// when the CodeCompletionFile gets \#include'ed for preprocessing.
-  SourceLocation CodeCompletionLoc;
-
-  /// The start location for the file of the code-completion point.
-  ///
-  /// This gets instantiated when the CodeCompletionFile gets \#include'ed
-  /// for preprocessing.
-  SourceLocation CodeCompletionFileLoc;
 
 
 
@@ -238,24 +217,10 @@ class Preprocessor {
 
 
 
-  /// True if we hit the code-completion point.
-  bool CodeCompletionReached = false;
-
-  /// The code completion token containing the information
-  /// on the stem that is to be code completed.
-  IdentifierInfo *CodeCompletionII = nullptr;
-
   /// The directory that the main file should be considered to occupy,
   /// if it does not correspond to a real file (as happens when building a
   /// module).
   const DirectoryEntry *MainFileDir = nullptr;
-
-  /// The number of bytes that we will initially skip when entering the
-  /// main file, along with a flag that indicates whether skipping this number
-  /// of bytes will place the lexer at the start of a line.
-  ///
-  /// This is used when loading a precompiled preamble.
-  std::pair<int, bool> SkipMainFilePreamble;
 
 public:
   struct PreambleSkipInfo {
@@ -568,8 +533,6 @@ private:
   /// of that list.
   MacroInfoChain *MIChainHead = nullptr;
 
-  void updateOutOfDateIdentifier(IdentifierInfo &II) const;
-
 public:
   Preprocessor(std::shared_ptr<PreprocessorOptions> PPOpts,
                DiagnosticsEngine &diags, LangOptions &opts, SourceManager &SM,
@@ -621,11 +584,7 @@ public:
   llvm::BumpPtrAllocator &getPreprocessorAllocator() { return BP; }
 
 
-    void setExternalSource(ExternalPreprocessorSource *Source) {
-    ExternalSource = Source;
-  }
-
-  ExternalPreprocessorSource *getExternalSource() const {
+    ExternalPreprocessorSource *getExternalSource() const {
     return ExternalSource;
   }
 
@@ -795,13 +754,7 @@ public:
 
   /// \}
 
-  /// Return the name of the macro defined before \p Loc that has
-  /// spelling \p Tokens.  If there are multiple macros with same spelling,
-  /// return the last one defined.
-  StringRef getLastMacroWithSpelling(SourceLocation Loc,
-                                     ArrayRef<TokenValue> Tokens) const;
-
-  const std::string &getPredefines() const { return Predefines; }
+    const std::string &getPredefines() const { return Predefines; }
 
   /// Set the predefines for this Preprocessor.
   ///
@@ -824,36 +777,7 @@ public:
   /// It is an error to remove a handler that has not been registered.
   void removeCommentHandler(CommentHandler *Handler);
 
-  /// Set the code completion handler to the given object.
-  void setCodeCompletionHandler(CodeCompletionHandler &Handler) {
-    CodeComplete = &Handler;
-  }
 
-  /// Retrieve the current code-completion handler.
-  CodeCompletionHandler *getCodeCompletionHandler() const {
-    return CodeComplete;
-  }
-
-  /// Clear out the code completion handler.
-  void clearCodeCompletionHandler() {
-    CodeComplete = nullptr;
-  }
-
-  /// Hook used by the lexer to invoke the "natural language" code
-  /// completion point.
-  void CodeCompleteNaturalLanguage();
-
-  /// Set the code completion token for filtering purposes.
-  void setCodeCompletionIdentifierInfo(IdentifierInfo *Filter) {
-    CodeCompletionII = Filter;
-  }
-
-  /// Get the code completion token for filtering purposes.
-  StringRef getCodeCompletionFilter() {
-    if (CodeCompletionII)
-      return CodeCompletionII->getName();
-    return {};
-  }
 
 
     /// Process directives while skipping until the through header is found.
@@ -1101,51 +1025,8 @@ public:
     IncrementalProcessing = value;
   }
 
-  /// Specify the point at which code-completion will be performed.
-  ///
-  /// \param File the file in which code completion should occur. If
-  /// this file is included multiple times, code-completion will
-  /// perform completion the first time it is included. If NULL, this
-  /// function clears out the code-completion point.
-  ///
-  /// \param Line the line at which code completion should occur
-  /// (1-based).
-  ///
-  /// \param Column the column at which code completion should occur
-  /// (1-based).
-  ///
-  /// \returns true if an error occurred, false otherwise.
-  bool SetCodeCompletionPoint(const FileEntry *File,
-                              unsigned Line, unsigned Column);
 
-  /// Determine if we are performing code completion.
-  bool isCodeCompletionEnabled() const { return CodeCompletionFile != nullptr; }
 
-  /// Returns the location of the code-completion point.
-  ///
-  /// Returns an invalid location if code-completion is not enabled or the file
-  /// containing the code-completion point has not been lexed yet.
-  SourceLocation getCodeCompletionLoc() const { return CodeCompletionLoc; }
-
-  /// Returns the start location of the file of code-completion point.
-  ///
-  /// Returns an invalid location if code-completion is not enabled or the file
-  /// containing the code-completion point has not been lexed yet.
-  SourceLocation getCodeCompletionFileLoc() const {
-    return CodeCompletionFileLoc;
-  }
-
-  /// Returns true if code-completion is enabled and we have hit the
-  /// code-completion point.
-  bool isCodeCompletionReached() const { return CodeCompletionReached; }
-
-  /// Note that we hit the code-completion point.
-  void setCodeCompletionReached() {
-    assert(isCodeCompletionEnabled() && "Code-completion not enabled!");
-    CodeCompletionReached = true;
-    // Silence any diagnostics that occur after we hit the code-completion.
-    getDiagnostics().setSuppressAllDiagnostics(true);
-  }
 
   /// Set the directory in which the main file should be considered
   /// to have been found, if it is not a real file.
@@ -1153,18 +1034,8 @@ public:
     MainFileDir = Dir;
   }
 
-  /// Instruct the preprocessor to skip part of the main source file.
-  ///
-  /// \param Bytes The number of bytes in the preamble to skip.
-  ///
-  /// \param StartOfLine Whether skipping these bytes puts the lexer at the
-  /// start of a line.
-  void setSkipMainFilePreamble(unsigned Bytes, bool StartOfLine) {
-    SkipMainFilePreamble.first = Bytes;
-    SkipMainFilePreamble.second = StartOfLine;
-  }
 
-  /// Forwarding function for diagnostics.  This emits a diagnostic at
+    /// Forwarding function for diagnostics.  This emits a diagnostic at
   /// the specified Token's location, translating the token's start
   /// position in the current buffer into a SourcePosition object for rendering.
   DiagnosticBuilder Diag(SourceLocation Loc, unsigned DiagID) const {

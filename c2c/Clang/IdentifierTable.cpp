@@ -45,7 +45,6 @@ IdentifierInfo::IdentifierInfo() {
   IsPoisoned = false;
   NeedsHandleIdentifier = false;
   IsFromAST = false;
-  OutOfDate = false;
 }
 
 //===----------------------------------------------------------------------===//

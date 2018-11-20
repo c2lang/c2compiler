@@ -17,7 +17,6 @@
 #include "Clang/LLVM.h"
 #include "Clang/LangOptions.h"
 #include "Clang/SourceLocation.h"
-#include "Clang/CodeCompletionHandler.h"
 #include "Clang/DirectoryLookup.h"
 #include "Clang/ExternalPreprocessorSource.h"
 #include "Clang/LexDiagnostic.h"
@@ -179,11 +178,6 @@ static bool isTrivialSingleTokenExpansion(const MacroInfo *MI,
 
   // If the token isn't an identifier, it's always literally expanded.
   if (!II) return true;
-
-  // If the information about this identifier is out of date, update it from
-  // the external source.
-  if (II->isOutOfDate())
-    PP.getExternalSource()->updateOutOfDateIdentifier(*II);
 
   // If the identifier is a macro, and if that macro is enabled, it may be
   // expanded so it's not a trivial expansion.
@@ -524,16 +518,12 @@ MacroArgs *Preprocessor::ReadMacroCallArgumentList(Token &MacroName,
   // argument is separated by an EOF token.  Use a SmallVector so we can avoid
   // heap allocations in the common case.
   SmallVector<Token, 64> ArgTokens;
-  bool ContainsCodeCompletionTok = false;
   bool FoundElidedComma = false;
 
   SourceLocation TooManyArgsLoc;
 
   unsigned NumActuals = 0;
   while (Tok.isNot(tok::r_paren)) {
-    if (ContainsCodeCompletionTok && Tok.isOneOf(tok::eof, tok::eod))
-      break;
-
     assert(Tok.isOneOf(tok::l_paren, tok::comma) &&
            "only expect argument separators here");
 
@@ -550,19 +540,13 @@ MacroArgs *Preprocessor::ReadMacroCallArgumentList(Token &MacroName,
       LexUnexpandedToken(Tok);
 
       if (Tok.isOneOf(tok::eof, tok::eod)) { // "#if f(<eof>" & "#if f(\n"
-        if (!ContainsCodeCompletionTok) {
           Diag(MacroName, diag::err_unterm_macro_invoc);
           Diag(MI->getDefinitionLoc(), diag::note_macro_here)
-            << MacroName.getIdentifierInfo();
+              << MacroName.getIdentifierInfo();
           // Do not lose the EOF/EOD.  Return it to the client.
           MacroName = Tok;
           return nullptr;
-        }
-        // Do not lose the EOF/EOD.
-        auto Toks = llvm::make_unique<Token[]>(1);
-        Toks[0] = Tok;
-        EnterTokenStream(std::move(Toks), 1, true);
-        break;
+
       } else if (Tok.is(tok::r_paren)) {
         // If we found the ) token, the macro arg list is done.
         if (NumParens-- == 0) {
@@ -601,14 +585,6 @@ MacroArgs *Preprocessor::ReadMacroCallArgumentList(Token &MacroName,
         if (MacroInfo *MI = getMacroInfo(Tok.getIdentifierInfo()))
           if (!MI->isEnabled())
             Tok.setFlag(Token::DisableExpand);
-      } else if (Tok.is(tok::code_completion)) {
-        ContainsCodeCompletionTok = true;
-        if (CodeComplete)
-          CodeComplete->CodeCompleteMacroArgument(MacroName.getIdentifierInfo(),
-                                                  MI, NumActuals);
-        // Don't mark that we reached the code-completion point because the
-        // parser is going to handle the token and there will be another
-        // code-completion callback.
       }
 
       ArgTokens.push_back(Tok);
@@ -637,7 +613,7 @@ MacroArgs *Preprocessor::ReadMacroCallArgumentList(Token &MacroName,
     EOFTok.setLength(0);
     ArgTokens.push_back(EOFTok);
     ++NumActuals;
-    if (!ContainsCodeCompletionTok && NumFixedArgsLeft != 0)
+    if (NumFixedArgsLeft != 0)
       --NumFixedArgsLeft;
   }
 
@@ -647,8 +623,7 @@ MacroArgs *Preprocessor::ReadMacroCallArgumentList(Token &MacroName,
 
   // If this is not a variadic macro, and too many args were specified, emit
   // an error.
-  if (!isVariadic && NumActuals > MinArgsExpected &&
-      !ContainsCodeCompletionTok) {
+  if (!isVariadic && NumActuals > MinArgsExpected) {
     // Emit the diagnostic at the macro name in case there is a missing ).
     // Emitting it at the , could be far away from the macro name.
     Diag(TooManyArgsLoc, diag::err_too_many_args_in_macro_invoc);
@@ -689,16 +664,6 @@ MacroArgs *Preprocessor::ReadMacroCallArgumentList(Token &MacroName,
   // See MacroArgs instance var for description of this.
   bool isVarargsElided = false;
 
-  if (ContainsCodeCompletionTok) {
-    // Recover from not-fully-formed macro invocation during code-completion.
-    Token EOFTok;
-    EOFTok.startToken();
-    EOFTok.setKind(tok::eof);
-    EOFTok.setLocation(Tok.getLocation());
-    EOFTok.setLength(0);
-    for (; NumActuals < MinArgsExpected; ++NumActuals)
-      ArgTokens.push_back(EOFTok);
-  }
 
   if (NumActuals < MinArgsExpected) {
     // There are several cases where too few arguments is ok, handle them now.
@@ -731,7 +696,7 @@ MacroArgs *Preprocessor::ReadMacroCallArgumentList(Token &MacroName,
       //   #define C(...) blah(a, ## __VA_ARGS__)
       //  A(x) B(x) C()
       isVarargsElided = true;
-    } else if (!ContainsCodeCompletionTok) {
+    } else  {
       // Otherwise, emit the error.
       Diag(Tok, diag::err_too_few_args_in_macro_invoc);
       Diag(MI->getDefinitionLoc(), diag::note_macro_here)
@@ -751,8 +716,7 @@ MacroArgs *Preprocessor::ReadMacroCallArgumentList(Token &MacroName,
     if (NumActuals == 0 && MinArgsExpected == 2)
       ArgTokens.push_back(Tok);
 
-  } else if (NumActuals > MinArgsExpected && !MI->isVariadic() &&
-             !ContainsCodeCompletionTok) {
+  } else if (NumActuals > MinArgsExpected && !MI->isVariadic()) {
     // Emit the diagnostic at the macro name in case there is a missing ).
     // Emitting it at the , could be far away from the macro name.
     Diag(MacroName, diag::err_too_many_args_in_macro_invoc);
