@@ -468,21 +468,21 @@ static unsigned getPrecedence(tok::TokenKind Kind) {
   default: return ~0U;
   case tok::percent:
   case tok::slash:
-  case tok::star:                 return 14;
-  case tok::plus:
-  case tok::minus:                return 13;
+  case tok::star:                 return 10;
   case tok::lessless:
-  case tok::greatergreater:       return 12;
+  case tok::greatergreater:       return 9;
+  case tok::amp:
+  case tok::caret:
+  case tok::pipe:                 return 8;
+  case tok::plus:
+  case tok::minus:                return 7;
   case tok::lessequal:
   case tok::less:
   case tok::greaterequal:
-  case tok::greater:              return 11;
+  case tok::greater:
   case tok::exclaimequal:
-  case tok::equalequal:           return 10;
-  case tok::amp:                  return 9;
-  case tok::caret:                return 8;
-  case tok::pipe:                 return 7;
-  case tok::ampamp:               return 6;
+  case tok::equalequal:           return 6;
+  case tok::ampamp:
   case tok::pipepipe:             return 5;
   case tok::question:             return 4;
   case tok::comma:                return 3;
