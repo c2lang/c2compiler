@@ -24,7 +24,6 @@
 #include "Clang/LiteralSupport.h"
 #include "Clang/MacroInfo.h"
 #include "Clang/Preprocessor.h"
-#include "Clang/PreprocessorOptions.h"
 #include "Clang/Token.h"
 #include "Clang/VariadicMacroSupport.h"
 #include <llvm/ADT/ArrayRef.h>
@@ -1447,8 +1446,6 @@ void Preprocessor::HandleIncludeDirective(SourceLocation HashLoc,
   // we've imported or already built.
   bool ShouldEnter = true;
 
-  if (PPOpts->SingleFileParseMode)
-    ShouldEnter = false;
 
   // Any diagnostics after the fatal error will not be visible. As the
   // compilation failed already and errors in subsequently included files won't
@@ -1941,9 +1938,7 @@ void Preprocessor::HandleDefineDirective(
   if (MacroNameTok.is(tok::eod))
     return;
 
-  // If we are supposed to keep comments in #defines, reenable comment saving
-  // mode.
-  if (CurLexer) CurLexer->SetCommentRetentionState(KeepMacroComments);
+  if (CurLexer) CurLexer->SetCommentRetentionState(false);
 
   MacroInfo *const MI = ReadOptionalMacroParameterListAndBody(
       MacroNameTok, ImmediatelyAfterHeaderGuard);
@@ -2101,13 +2096,7 @@ void Preprocessor::HandleIfdefDirective(Token &Result,
 
 
   // Should we include the stuff contained by this directive?
-  if (PPOpts->SingleFileParseMode && !MI) {
-    // In 'single-file-parse mode' undefined identifiers trigger parsing of all
-    // the directive blocks.
-    CurPPLexer->pushConditionalLevel(DirectiveTok.getLocation(),
-                                     /*wasskip*/false, /*foundnonskip*/false,
-                                     /*foundelse*/false);
-  } else if (!MI == isIfndef) {
+  if (!MI == isIfndef) {
     // Yes, remember that we are inside a conditional, then lex the next token.
     CurPPLexer->pushConditionalLevel(DirectiveTok.getLocation(),
                                      /*wasskip*/false, /*foundnonskip*/true,
@@ -2147,12 +2136,7 @@ void Preprocessor::HandleIfDirective(Token &IfToken,
 
 
   // Should we include the stuff contained by this directive?
-  if (PPOpts->SingleFileParseMode && DER.IncludedUndefinedIds) {
-    // In 'single-file-parse mode' undefined identifiers trigger parsing of all
-    // the directive blocks.
-    CurPPLexer->pushConditionalLevel(IfToken.getLocation(), /*wasskip*/false,
-                                     /*foundnonskip*/false, /*foundelse*/false);
-  } else if (ConditionalTrue) {
+  if (ConditionalTrue) {
     // Yes, remember that we are inside a conditional, then lex the next token.
     CurPPLexer->pushConditionalLevel(IfToken.getLocation(), /*wasskip*/false,
                                    /*foundnonskip*/true, /*foundelse*/false);
@@ -2210,13 +2194,6 @@ void Preprocessor::HandleElseDirective(Token &Result, const Token &HashToken) {
   if (CI.FoundElse) Diag(Result, diag::pp_err_else_after_else);
 
 
-  if (PPOpts->SingleFileParseMode && !CI.FoundNonSkip) {
-    // In 'single-file-parse mode' undefined identifiers trigger parsing of all
-    // the directive blocks.
-    CurPPLexer->pushConditionalLevel(CI.IfLoc, /*wasskip*/false,
-                                     /*foundnonskip*/false, /*foundelse*/true);
-    return;
-  }
 
   // Finally, skip the rest of the contents of this block.
   SkipExcludedConditionalBlock(HashToken.getLocation(), CI.IfLoc,
@@ -2251,13 +2228,6 @@ void Preprocessor::HandleElifDirective(Token &ElifToken,
   if (CI.FoundElse) Diag(ElifToken, diag::pp_err_elif_after_else);
 
 
-  if (PPOpts->SingleFileParseMode && !CI.FoundNonSkip) {
-    // In 'single-file-parse mode' undefined identifiers trigger parsing of all
-    // the directive blocks.
-    CurPPLexer->pushConditionalLevel(ElifToken.getLocation(), /*wasskip*/false,
-                                     /*foundnonskip*/false, /*foundelse*/false);
-    return;
-  }
 
   // Finally, skip the rest of the contents of this block.
   SkipExcludedConditionalBlock(

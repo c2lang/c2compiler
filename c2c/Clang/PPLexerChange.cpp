@@ -13,7 +13,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "Clang/Preprocessor.h"
-#include "Clang/PreprocessorOptions.h"
 #include "Clang/FileManager.h"
 #include "Clang/SourceManager.h"
 #include "Clang/HeaderSearch.h"

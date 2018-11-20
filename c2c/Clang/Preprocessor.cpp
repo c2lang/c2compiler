@@ -41,7 +41,6 @@
 #include "Clang/MacroArgs.h"
 #include "Clang/MacroInfo.h"
 #include "Clang/PreprocessorLexer.h"
-#include "Clang/PreprocessorOptions.h"
 #include "Clang/ScratchBuffer.h"
 #include "Clang/Token.h"
 #include "Clang/TokenLexer.h"
@@ -69,8 +68,7 @@ using namespace c2lang;
 
 ExternalPreprocessorSource::~ExternalPreprocessorSource() = default;
 
-Preprocessor::Preprocessor(std::shared_ptr<PreprocessorOptions> PPOpts,
-                           DiagnosticsEngine &diags,
+Preprocessor::Preprocessor(DiagnosticsEngine &diags,
                            LangOptions &opts,
                            SourceManager &SM,
                            MemoryBufferCache &PCMCache,
@@ -78,7 +76,7 @@ Preprocessor::Preprocessor(std::shared_ptr<PreprocessorOptions> PPOpts,
                            IdentifierInfoLookup *IILookup,
                            bool OwnsHeaders,
                            TranslationUnitKind TUKind)
-    : PPOpts(std::move(PPOpts)), Diags(&diags), LangOpts(opts),
+    : Diags(&diags), LangOpts(opts),
       FileMgr(Headers.getFileMgr()), SourceMgr(SM), PCMCache(PCMCache),
       ScratchBuf(new ScratchBuffer(SourceMgr)), HeaderInfo(Headers),
       // As the language options may have not been loaded yet (when
@@ -89,9 +87,6 @@ Preprocessor::Preprocessor(std::shared_ptr<PreprocessorOptions> PPOpts,
       CurSubmoduleState(&NullSubmoduleState) {
   OwnsHeaderSearch = OwnsHeaders;
 
-  // Default to discarding comments.
-  KeepComments = false;
-  KeepMacroComments = false;
   SuppressIncludeNotFoundError = false;
 
   // Macro expansion is enabled.
@@ -640,7 +635,7 @@ bool Preprocessor::HandleComment(Token &result, SourceRange Comment) {
     if ((*H)->HandleComment(*this, Comment))
       AnyPendingTokens = true;
   }
-  if (!AnyPendingTokens || getCommentRetentionState())
+  if (!AnyPendingTokens)
     return false;
   Lex(result);
   return true;
