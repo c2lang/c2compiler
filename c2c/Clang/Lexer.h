@@ -53,22 +53,6 @@ enum ConflictMarkerKind {
   CMK_Perforce
 };
 
-/// Describes the bounds (start, size) of the preamble and a flag required by
-/// PreprocessorOptions::PrecompiledPreambleBytes.
-/// The preamble includes the BOM, if any.
-struct PreambleBounds {
-  /// Size of the preamble in bytes.
-  unsigned Size;
-
-  /// Whether the preamble ends at the start of a new line.
-  ///
-  /// Used to inform the lexer as to whether it's starting at the beginning of
-  /// a line after skipping the preamble.
-  bool PreambleEndsAtStartOfLine;
-
-  PreambleBounds(unsigned Size, bool PreambleEndsAtStartOfLine)
-      : Size(Size), PreambleEndsAtStartOfLine(PreambleEndsAtStartOfLine) {}
-};
 
 /// Lexer - This provides a simple interface that turns a text buffer into a
 /// stream of tokens.  This provides no support for file reading or buffering,
@@ -480,24 +464,6 @@ public:
   static StringRef getImmediateMacroNameForDiagnostics(
       SourceLocation Loc, const SourceManager &SM, const LangOptions &LangOpts);
 
-  /// Compute the preamble of the given file.
-  ///
-  /// The preamble of a file contains the initial comments, include directives,
-  /// and other preprocessor directives that occur before the code in this
-  /// particular file actually begins. The preamble of the main source file is
-  /// a potential prefix header.
-  ///
-  /// \param Buffer The memory buffer containing the file's contents.
-  ///
-  /// \param MaxLines If non-zero, restrict the length of the preamble
-  /// to fewer than this number of lines.
-  ///
-  /// \returns The offset into the file where the preamble ends and the rest
-  /// of the file begins along with a boolean value indicating whether
-  /// the preamble ends at the beginning of a new line.
-  static PreambleBounds ComputePreamble(StringRef Buffer,
-                                        const LangOptions &LangOpts,
-                                        unsigned MaxLines = 0);
 
   /// Finds the token that comes right after the given location.
   ///

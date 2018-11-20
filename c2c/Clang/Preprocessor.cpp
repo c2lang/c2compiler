@@ -122,8 +122,6 @@ Preprocessor::Preprocessor(std::shared_ptr<PreprocessorOptions> PPOpts,
   }
 
 
-  if (this->PPOpts->GeneratePreamble)
-    PreambleConditionalStack.startRecording();
 }
 
 Preprocessor::~Preprocessor() {
@@ -393,22 +391,6 @@ void Preprocessor::EnterMainSourceFile() {
 }
 
 
-void Preprocessor::replayPreambleConditionalStack() {
-  // Restore the conditional stack from the preamble, if there is one.
-  if (PreambleConditionalStack.isReplaying()) {
-    assert(CurPPLexer &&
-           "CurPPLexer is null when calling replayPreambleConditionalStack.");
-    CurPPLexer->setConditionalLevels(PreambleConditionalStack.getStack());
-    PreambleConditionalStack.doneReplaying();
-    if (PreambleConditionalStack.reachedEOFWhileSkipping())
-      SkipExcludedConditionalBlock(
-          PreambleConditionalStack.SkipInfo->HashTokenLoc,
-          PreambleConditionalStack.SkipInfo->IfTokenLoc,
-          PreambleConditionalStack.SkipInfo->FoundNonSkipPortion,
-          PreambleConditionalStack.SkipInfo->FoundElse,
-          PreambleConditionalStack.SkipInfo->ElseLoc);
-  }
-}
 
 void Preprocessor::EndSourceFile() {
   // Notify the client that we reached the end of the source file.

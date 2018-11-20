@@ -223,67 +223,11 @@ class Preprocessor {
   const DirectoryEntry *MainFileDir = nullptr;
 
 public:
-  struct PreambleSkipInfo {
-    SourceLocation HashTokenLoc;
-    SourceLocation IfTokenLoc;
-    bool FoundNonSkipPortion;
-    bool FoundElse;
-    SourceLocation ElseLoc;
 
-    PreambleSkipInfo(SourceLocation HashTokenLoc, SourceLocation IfTokenLoc,
-                     bool FoundNonSkipPortion, bool FoundElse,
-                     SourceLocation ElseLoc)
-        : HashTokenLoc(HashTokenLoc), IfTokenLoc(IfTokenLoc),
-          FoundNonSkipPortion(FoundNonSkipPortion), FoundElse(FoundElse),
-          ElseLoc(ElseLoc) {}
-  };
 
 private:
     friend class MacroArgs;
 
-  class PreambleConditionalStackStore {
-    enum State {
-      Off = 0,
-      Recording = 1,
-      Replaying = 2,
-    };
-
-  public:
-    PreambleConditionalStackStore() = default;
-
-    void startRecording() { ConditionalStackState = Recording; }
-    void startReplaying() { ConditionalStackState = Replaying; }
-    bool isRecording() const { return ConditionalStackState == Recording; }
-    bool isReplaying() const { return ConditionalStackState == Replaying; }
-
-    ArrayRef<PPConditionalInfo> getStack() const {
-      return ConditionalStack;
-    }
-
-    void doneReplaying() {
-      ConditionalStack.clear();
-      ConditionalStackState = Off;
-    }
-
-    void setStack(ArrayRef<PPConditionalInfo> s) {
-      if (!isRecording() && !isReplaying())
-        return;
-      ConditionalStack.clear();
-      ConditionalStack.append(s.begin(), s.end());
-    }
-
-    bool hasRecordedPreamble() const { return !ConditionalStack.empty(); }
-
-    bool reachedEOFWhileSkipping() const { return SkipInfo.hasValue(); }
-
-    void clearSkipInfo() { SkipInfo.reset(); }
-
-    llvm::Optional<PreambleSkipInfo> SkipInfo;
-
-  private:
-    SmallVector<PPConditionalInfo, 4> ConditionalStack;
-    State ConditionalStackState = Off;
-  } PreambleConditionalStack;
 
   /// The current top of the stack that we're lexing from if
   /// not expanding a macro and we are lexing directly from source code.
@@ -1569,37 +1513,8 @@ private:
 public:
 
 
-  bool isRecordingPreamble() const {
-    return PreambleConditionalStack.isRecording();
-  }
-
-  bool hasRecordedPreamble() const {
-    return PreambleConditionalStack.hasRecordedPreamble();
-  }
-
-  ArrayRef<PPConditionalInfo> getPreambleConditionalStack() const {
-      return PreambleConditionalStack.getStack();
-  }
-
-  void setRecordedPreambleConditionalStack(ArrayRef<PPConditionalInfo> s) {
-    PreambleConditionalStack.setStack(s);
-  }
-
-  void setReplayablePreambleConditionalStack(ArrayRef<PPConditionalInfo> s,
-                                             llvm::Optional<PreambleSkipInfo> SkipInfo) {
-    PreambleConditionalStack.startReplaying();
-    PreambleConditionalStack.setStack(s);
-    PreambleConditionalStack.SkipInfo = SkipInfo;
-  }
-
-  llvm::Optional<PreambleSkipInfo> getPreambleSkipInfo() const {
-    return PreambleConditionalStack.SkipInfo;
-  }
 
 private:
-  /// After processing predefined file, initialize the conditional stack from
-  /// the preamble.
-  void replayPreambleConditionalStack();
 
   // Macro handling.
   void HandleDefineDirective(Token &Tok, bool ImmediatelyAfterTopLevelIfndef);

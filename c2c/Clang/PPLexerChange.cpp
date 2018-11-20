@@ -305,10 +305,6 @@ bool Preprocessor::HandleEndOfFile(Token &Result, bool isEndOfMacro) {
     PropagateLineStartLeadingSpaceInfo(Result);
 
 
-    // Restore conditional stack from the preamble right after exiting from the
-    // predefines file.
-    if (ExitedFromPredefinesFile)
-      replayPreambleConditionalStack();
 
     return false;
   }

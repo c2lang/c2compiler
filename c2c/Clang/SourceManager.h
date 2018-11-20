@@ -690,8 +690,6 @@ class SourceManager : public RefCountedBase<SourceManager> {
   /// The file ID for the main source file of the translation unit.
   FileID MainFileID;
 
-  /// The file ID for the precompiled preamble there is one.
-  FileID PreambleFileID;
 
   // Statistics for -print-stats.
   mutable unsigned NumLinearScans = 0;
@@ -797,14 +795,6 @@ public:
     MainFileID = FID;
   }
 
-  /// Set the file ID for the precompiled preamble.
-  void setPreambleFileID(FileID Preamble) {
-    assert(PreambleFileID.isInvalid() && "PreambleFileID already set!");
-    PreambleFileID = Preamble;
-  }
-
-  /// Get the file ID for the precompiled preamble if there is one.
-  FileID getPreambleFileID() const { return PreambleFileID; }
 
   //===--------------------------------------------------------------------===//
   // Methods to create new FileID's and macro expansions.

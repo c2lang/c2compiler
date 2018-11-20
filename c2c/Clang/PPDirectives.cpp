@@ -329,9 +329,6 @@ void Preprocessor::SkipExcludedConditionalBlock(SourceLocation HashTokenLoc,
   ++NumSkipped;
   assert(!CurTokenLexer && CurPPLexer && "Lexing a macro, not a file?");
 
-  if (PreambleConditionalStack.reachedEOFWhileSkipping())
-    PreambleConditionalStack.clearSkipInfo();
-  else
     CurPPLexer->pushConditionalLevel(IfTokenLoc, /*isSkipping*/ false,
                                      FoundNonSkipPortion, FoundElse);
 
@@ -349,9 +346,6 @@ void Preprocessor::SkipExcludedConditionalBlock(SourceLocation HashTokenLoc,
       // We don't emit errors for unterminated conditionals here,
       // Lexer::LexEndOfFile can do that propertly.
       // Just return and let the caller lex after this #include.
-      if (PreambleConditionalStack.isRecording())
-        PreambleConditionalStack.SkipInfo.emplace(
-            HashTokenLoc, IfTokenLoc, FoundNonSkipPortion, FoundElse, ElseLoc);
       break;
     }
 

@@ -35,20 +35,6 @@ public:
   std::vector<std::pair<std::string, bool/*isUndef*/>> Macros;
 
 
-    /// If non-zero, the implicit PCH include is actually a precompiled
-  /// preamble that covers this number of bytes in the main source file.
-  ///
-  /// The boolean indicates whether the preamble ends at the start of a new
-  /// line.
-  std::pair<unsigned, bool> PrecompiledPreambleBytes;
-
-  /// True indicates that a preamble is being generated.
-  ///
-  /// When the lexer is done, one of the things that need to be preserved is the
-  /// conditional #if stack, so the ASTWriter/ASTReader can save/restore it when
-  /// processing the rest of the file.
-  bool GeneratePreamble = false;
-
     /// When enabled, preprocessor is in a mode for parsing a single file only.
   ///
   /// Disables #includes of other files and if there are unresolved identifiers
@@ -87,7 +73,7 @@ public:
   public:
 
 public:
-  PreprocessorOptions() : PrecompiledPreambleBytes(0, false) {}
+  PreprocessorOptions()  {}
 
   void addMacroDef(StringRef Name) { Macros.emplace_back(Name, false); }
   void addMacroUndef(StringRef Name) { Macros.emplace_back(Name, true); }
