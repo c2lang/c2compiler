@@ -363,8 +363,7 @@ public:
   PresumedLoc getPresumedLoc(bool UseLineDirectives = true) const;
   bool isMacroArgExpansion(FullSourceLoc *StartLoc = nullptr) const;
   FullSourceLoc getImmediateMacroCallerLoc() const;
-  std::pair<FullSourceLoc, StringRef> getModuleImportLoc() const;
-  unsigned getFileOffset() const;
+    unsigned getFileOffset() const;
 
   unsigned getExpansionLineNumber(bool *Invalid = nullptr) const;
   unsigned getExpansionColumnNumber(bool *Invalid = nullptr) const;

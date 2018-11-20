@@ -359,33 +359,6 @@ void SourceManager::clearIDTables() {
   createExpansionLoc(SourceLocation(), SourceLocation(), SourceLocation(), 1);
 }
 
-void SourceManager::initializeForReplay(const SourceManager &Old) {
-  assert(MainFileID.isInvalid() && "expected uninitialized SourceManager");
-
-  auto CloneContentCache = [&](const ContentCache *Cache) -> ContentCache * {
-    auto *Clone = new (ContentCacheAlloc.Allocate<ContentCache>()) ContentCache;
-    Clone->OrigEntry = Cache->OrigEntry;
-    Clone->ContentsEntry = Cache->ContentsEntry;
-    Clone->BufferOverridden = Cache->BufferOverridden;
-    Clone->IsSystemFile = Cache->IsSystemFile;
-    Clone->IsTransient = Cache->IsTransient;
-    Clone->replaceBuffer(Cache->getRawBuffer(), /*DoNotFree*/true);
-    return Clone;
-  };
-
-  // Ensure all SLocEntries are loaded from the external source.
-  for (unsigned I = 0, N = Old.LoadedSLocEntryTable.size(); I != N; ++I)
-    if (!Old.SLocEntryLoaded[I])
-      Old.loadSLocEntry(I, nullptr);
-
-  // Inherit any content cache data from the old source manager.
-  for (auto &FileInfo : Old.FileInfos) {
-    SrcMgr::ContentCache *&Slot = FileInfos[FileInfo.first];
-    if (Slot)
-      continue;
-    Slot = CloneContentCache(FileInfo.second);
-  }
-}
 
 /// getOrCreateContentCache - Create or return a cached ContentCache for the
 /// specified file.
@@ -620,53 +593,6 @@ SourceManager::createExpansionLocImpl(const ExpansionInfo &Info,
   return SourceLocation::getMacroLoc(NextLocalOffset - (TokLength + 1));
 }
 
-llvm::MemoryBuffer *SourceManager::getMemoryBufferForFile(const FileEntry *File,
-                                                          bool *Invalid) {
-  const SrcMgr::ContentCache *IR = getOrCreateContentCache(File);
-  assert(IR && "getOrCreateContentCache() cannot return NULL");
-  return IR->getBuffer(Diag, *this, SourceLocation(), Invalid);
-}
-
-void SourceManager::overrideFileContents(const FileEntry *SourceFile,
-                                         llvm::MemoryBuffer *Buffer,
-                                         bool DoNotFree) {
-  const SrcMgr::ContentCache *IR = getOrCreateContentCache(SourceFile);
-  assert(IR && "getOrCreateContentCache() cannot return NULL");
-
-  const_cast<SrcMgr::ContentCache *>(IR)->replaceBuffer(Buffer, DoNotFree);
-  const_cast<SrcMgr::ContentCache *>(IR)->BufferOverridden = true;
-
-  getOverriddenFilesInfo().OverriddenFilesWithBuffer.insert(SourceFile);
-}
-
-void SourceManager::overrideFileContents(const FileEntry *SourceFile,
-                                         const FileEntry *NewFile) {
-  assert(SourceFile->getSize() == NewFile->getSize() &&
-         "Different sizes, use the FileManager to create a virtual file with "
-         "the correct size");
-  assert(FileInfos.count(SourceFile) == 0 &&
-         "This function should be called at the initialization stage, before "
-         "any parsing occurs.");
-  getOverriddenFilesInfo().OverriddenFiles[SourceFile] = NewFile;
-}
-
-void SourceManager::disableFileContentsOverride(const FileEntry *File) {
-  if (!isFileOverridden(File))
-    return;
-
-  const SrcMgr::ContentCache *IR = getOrCreateContentCache(File);
-  const_cast<SrcMgr::ContentCache *>(IR)->replaceBuffer(nullptr);
-  const_cast<SrcMgr::ContentCache *>(IR)->ContentsEntry = IR->OrigEntry;
-
-  assert(OverriddenFilesInfo);
-  OverriddenFilesInfo->OverriddenFiles.erase(File);
-  OverriddenFilesInfo->OverriddenFilesWithBuffer.erase(File);
-}
-
-void SourceManager::setFileIsTransient(const FileEntry *File) {
-  const SrcMgr::ContentCache *CC = getOrCreateContentCache(File);
-  const_cast<SrcMgr::ContentCache *>(CC)->IsTransient = true;
-}
 
 StringRef SourceManager::getBufferData(FileID FID, bool *Invalid) const {
   bool MyInvalid = false;

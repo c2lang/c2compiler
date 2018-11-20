@@ -562,11 +562,6 @@ public:
   }
 };
 
-/// The stack used when building modules on demand, which is used
-/// to provide a link between the source managers of the different compiler
-/// instances.
-using ModuleBuildStack = ArrayRef<std::pair<std::string, FullSourceLoc>>;
-
 /// This class handles loading and caching of source files into memory.
 ///
 /// This object owns the MemoryBuffer objects for all of the loaded
@@ -730,15 +725,6 @@ class SourceManager : public RefCountedBase<SourceManager> {
   mutable llvm::DenseMap<FileID, std::unique_ptr<MacroArgsMap>>
       MacroArgsCacheMap;
 
-  /// The stack of modules being built, which is used to detect
-  /// cycles in the module dependency graph as modules are being built, as
-  /// well as to describe why we're rebuilding a particular module.
-  ///
-  /// There is no way to set this value from the command line. If we ever need
-  /// to do so (e.g., if on-demand module construction moves out-of-process),
-  /// we can add a cc1-level option to do so.
-  SmallVector<std::pair<std::string, FullSourceLoc>, 2> StoredModuleBuildStack;
-
 public:
   SourceManager(DiagnosticsEngine &Diag, FileManager &FileMgr,
                 bool UserFilesAreVolatile = false);
@@ -748,40 +734,16 @@ public:
 
   void clearIDTables();
 
-  /// Initialize this source manager suitably to replay the compilation
-  /// described by \p Old. Requires that \p Old outlive \p *this.
-  void initializeForReplay(const SourceManager &Old);
 
-  DiagnosticsEngine &getDiagnostics() const { return Diag; }
+    DiagnosticsEngine &getDiagnostics() const { return Diag; }
 
   FileManager &getFileManager() const { return FileMgr; }
 
-  /// Set true if the SourceManager should report the original file name
-  /// for contents of files that were overridden by other files. Defaults to
-  /// true.
-  void setOverridenFilesKeepOriginalName(bool value) {
-    OverridenFilesKeepOriginalName = value;
-  }
 
-  /// True if non-system source files should be treated as volatile
+    /// True if non-system source files should be treated as volatile
   /// (likely to change while trying to use them).
   bool userFilesAreVolatile() const { return UserFilesAreVolatile; }
 
-  /// Retrieve the module build stack.
-  ModuleBuildStack getModuleBuildStack() const {
-    return StoredModuleBuildStack;
-  }
-
-  /// Set the module build stack.
-  void setModuleBuildStack(ModuleBuildStack stack) {
-    StoredModuleBuildStack.clear();
-    StoredModuleBuildStack.append(stack.begin(), stack.end());
-  }
-
-  /// Push an entry to the module build stack.
-  void pushModuleBuildStack(StringRef moduleName, FullSourceLoc importLoc) {
-    StoredModuleBuildStack.push_back(std::make_pair(moduleName.str(),importLoc));
-  }
 
   //===--------------------------------------------------------------------===//
   // MainFileID creation and querying methods.
@@ -874,40 +836,8 @@ public:
                                      SourceLocation TokenStart,
                                      SourceLocation TokenEnd);
 
-  /// Retrieve the memory buffer associated with the given file.
-  ///
-  /// \param Invalid If non-NULL, will be set \c true if an error
-  /// occurs while retrieving the memory buffer.
-  llvm::MemoryBuffer *getMemoryBufferForFile(const FileEntry *File,
-                                             bool *Invalid = nullptr);
 
-  /// Override the contents of the given source file by providing an
-  /// already-allocated buffer.
-  ///
-  /// \param SourceFile the source file whose contents will be overridden.
-  ///
-  /// \param Buffer the memory buffer whose contents will be used as the
-  /// data in the given source file.
-  ///
-  /// \param DoNotFree If true, then the buffer will not be freed when the
-  /// source manager is destroyed.
-  void overrideFileContents(const FileEntry *SourceFile,
-                            llvm::MemoryBuffer *Buffer, bool DoNotFree);
-  void overrideFileContents(const FileEntry *SourceFile,
-                            std::unique_ptr<llvm::MemoryBuffer> Buffer) {
-    overrideFileContents(SourceFile, Buffer.release(), /*DoNotFree*/ false);
-  }
-
-  /// Override the given source file with another one.
-  ///
-  /// \param SourceFile the source file which will be overridden.
-  ///
-  /// \param NewFile the file whose contents will be used as the
-  /// data instead of the contents of the given source file.
-  void overrideFileContents(const FileEntry *SourceFile,
-                            const FileEntry *NewFile);
-
-  /// Returns true if the file contents have been overridden.
+    /// Returns true if the file contents have been overridden.
   bool isFileOverridden(const FileEntry *File) const {
     if (OverriddenFilesInfo) {
       if (OverriddenFilesInfo->OverriddenFilesWithBuffer.count(File))
@@ -919,22 +849,8 @@ public:
     return false;
   }
 
-  /// Disable overridding the contents of a file, previously enabled
-  /// with #overrideFileContents.
-  ///
-  /// This should be called before parsing has begun.
-  void disableFileContentsOverride(const FileEntry *File);
 
-  /// Specify that a file is transient.
-  void setFileIsTransient(const FileEntry *SourceFile);
-
-  /// Specify that all files that are read during this compilation are
-  /// transient.
-  void setAllFilesAreTransient(bool Transient) {
-    FilesAreTransient = Transient;
-  }
-
-  //===--------------------------------------------------------------------===//
+    //===--------------------------------------------------------------------===//
   // FileID manipulation methods.
   //===--------------------------------------------------------------------===//
 
@@ -985,16 +901,8 @@ public:
     return Content->OrigEntry;
   }
 
-  /// Returns the FileEntry record for the provided SLocEntry.
-  const FileEntry *getFileEntryForSLocEntry(const SrcMgr::SLocEntry &sloc) const
-  {
-    const SrcMgr::ContentCache *Content = sloc.getFile().getContentCache();
-    if (!Content)
-      return nullptr;
-    return Content->OrigEntry;
-  }
 
-  /// Return a StringRef to the source buffer data for the
+    /// Return a StringRef to the source buffer data for the
   /// specified FileID.
   ///
   /// \param FID The file ID whose contents will be returned.
@@ -1024,7 +932,7 @@ public:
     const_cast<SrcMgr::FileInfo &>(Entry.getFile()).NumCreatedFIDs = NumFIDs;
   }
 
-  //===--------------------------------------------------------------------===//
+    //===--------------------------------------------------------------------===//
   // SourceLocation manipulation methods.
   //===--------------------------------------------------------------------===//
 
@@ -1051,7 +959,7 @@ public:
     return StringRef();
   }
 
-  /// Return the source location corresponding to the first byte of
+    /// Return the source location corresponding to the first byte of
   /// the specified file.
   SourceLocation getLocForStartOfFile(FileID FID) const {
     bool Invalid = false;
@@ -1101,7 +1009,7 @@ public:
     return ExternalSLocEntries->getModuleImportLoc(FID.ID);
   }
 
-  /// Given a SourceLocation object \p Loc, return the expansion
+    /// Given a SourceLocation object \p Loc, return the expansion
   /// location referenced by the ID.
   SourceLocation getExpansionLoc(SourceLocation Loc) const {
     // Handle the non-mapped case inline, defer to out of line code to handle

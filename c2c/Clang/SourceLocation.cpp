@@ -120,15 +120,6 @@ FullSourceLoc FullSourceLoc::getImmediateMacroCallerLoc() const {
   return FullSourceLoc(SrcMgr->getImmediateMacroCallerLoc(*this), *SrcMgr);
 }
 
-std::pair<FullSourceLoc, StringRef> FullSourceLoc::getModuleImportLoc() const {
-  if (!isValid())
-    return std::make_pair(FullSourceLoc(), StringRef());
-
-  std::pair<SourceLocation, StringRef> ImportLoc =
-      SrcMgr->getModuleImportLoc(*this);
-  return std::make_pair(FullSourceLoc(ImportLoc.first, *SrcMgr),
-                        ImportLoc.second);
-}
 
 unsigned FullSourceLoc::getFileOffset() const {
   assert(isValid());
