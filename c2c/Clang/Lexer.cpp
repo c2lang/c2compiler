@@ -544,148 +544,9 @@ SourceLocation Lexer::GetBeginningOfToken(SourceLocation Loc,
 
 namespace {
 
-enum PreambleDirectiveKind {
-  PDK_Skipped,
-  PDK_Unknown
-};
 
 } // namespace
 
-PreambleBounds Lexer::ComputePreamble(StringRef Buffer,
-                                      const LangOptions &LangOpts,
-                                      unsigned MaxLines) {
-  // Create a lexer starting at the beginning of the file. Note that we use a
-  // "fake" file source location at offset 1 so that the lexer will track our
-  // position within the file.
-  const unsigned StartOffset = 1;
-  SourceLocation FileLoc = SourceLocation::getFromRawEncoding(StartOffset);
-  Lexer TheLexer(FileLoc, LangOpts, Buffer.begin(), Buffer.begin(),
-                 Buffer.end());
-  TheLexer.SetCommentRetentionState(true);
-
-  bool InPreprocessorDirective = false;
-  Token TheTok;
-  SourceLocation ActiveCommentLoc;
-
-  unsigned MaxLineOffset = 0;
-  if (MaxLines) {
-    const char *CurPtr = Buffer.begin();
-    unsigned CurLine = 0;
-    while (CurPtr != Buffer.end()) {
-      char ch = *CurPtr++;
-      if (ch == '\n') {
-        ++CurLine;
-        if (CurLine == MaxLines)
-          break;
-      }
-    }
-    if (CurPtr != Buffer.end())
-      MaxLineOffset = CurPtr - Buffer.begin();
-  }
-
-  do {
-    TheLexer.LexFromRawLexer(TheTok);
-
-    if (InPreprocessorDirective) {
-      // If we've hit the end of the file, we're done.
-      if (TheTok.getKind() == tok::eof) {
-        break;
-      }
-
-      // If we haven't hit the end of the preprocessor directive, skip this
-      // token.
-      if (!TheTok.isAtStartOfLine())
-        continue;
-
-      // We've passed the end of the preprocessor directive, and will look
-      // at this token again below.
-      InPreprocessorDirective = false;
-    }
-
-    // Keep track of the # of lines in the preamble.
-    if (TheTok.isAtStartOfLine()) {
-      unsigned TokOffset = TheTok.getLocation().getRawEncoding() - StartOffset;
-
-      // If we were asked to limit the number of lines in the preamble,
-      // and we're about to exceed that limit, we're done.
-      if (MaxLineOffset && TokOffset >= MaxLineOffset)
-        break;
-    }
-
-    // Comments are okay; skip over them.
-    if (TheTok.getKind() == tok::comment) {
-      if (ActiveCommentLoc.isInvalid())
-        ActiveCommentLoc = TheTok.getLocation();
-      continue;
-    }
-
-    if (TheTok.isAtStartOfLine() && TheTok.getKind() == tok::hash) {
-      // This is the start of a preprocessor directive.
-      Token HashTok = TheTok;
-      InPreprocessorDirective = true;
-      ActiveCommentLoc = SourceLocation();
-
-      // Figure out which directive this is. Since we're lexing raw tokens,
-      // we don't have an identifier table available. Instead, just look at
-      // the raw identifier to recognize and categorize preprocessor directives.
-      TheLexer.LexFromRawLexer(TheTok);
-      if (TheTok.getKind() == tok::raw_identifier && !TheTok.needsCleaning()) {
-        StringRef Keyword = TheTok.getRawIdentifier();
-        PreambleDirectiveKind PDK
-          = llvm::StringSwitch<PreambleDirectiveKind>(Keyword)
-              .Case("include", PDK_Skipped)
-              .Case("__include_macros", PDK_Skipped)
-              .Case("define", PDK_Skipped)
-              .Case("undef", PDK_Skipped)
-              .Case("line", PDK_Skipped)
-              .Case("error", PDK_Skipped)
-              .Case("import", PDK_Skipped)
-              .Case("include_next", PDK_Skipped)
-              .Case("warning", PDK_Skipped)
-              .Case("ident", PDK_Skipped)
-              .Case("sccs", PDK_Skipped)
-              .Case("assert", PDK_Skipped)
-              .Case("unassert", PDK_Skipped)
-              .Case("if", PDK_Skipped)
-              .Case("ifdef", PDK_Skipped)
-              .Case("ifndef", PDK_Skipped)
-              .Case("elif", PDK_Skipped)
-              .Case("else", PDK_Skipped)
-              .Case("endif", PDK_Skipped)
-              .Default(PDK_Unknown);
-
-        switch (PDK) {
-        case PDK_Skipped:
-          continue;
-
-        case PDK_Unknown:
-          // We don't know what this directive is; stop at the '#'.
-          break;
-        }
-      }
-
-      // We only end up here if we didn't recognize the preprocessor
-      // directive or it was one that can't occur in the preamble at this
-      // point. Roll back the current token to the location of the '#'.
-      InPreprocessorDirective = false;
-      TheTok = HashTok;
-    }
-
-    // We hit a token that we don't recognize as being in the
-    // "preprocessing only" part of the file, so we're no longer in
-    // the preamble.
-    break;
-  } while (true);
-
-  SourceLocation End;
-  if (ActiveCommentLoc.isValid())
-    End = ActiveCommentLoc; // don't truncate a decl comment.
-  else
-    End = TheTok.getLocation();
-
-  return PreambleBounds(End.getRawEncoding() - FileLoc.getRawEncoding(),
-                        TheTok.isAtStartOfLine());
-}
 
 unsigned Lexer::getTokenPrefixLength(SourceLocation TokStart, unsigned CharNo,
                                      const SourceManager &SM,
@@ -2375,10 +2236,6 @@ bool Lexer::LexEndOfFile(Token &Result, const char *CurPtr) {
     return true;
   }
 
-  if (PP->isRecordingPreamble() && PP->isInPrimaryFile()) {
-    PP->setRecordedPreambleConditionalStack(ConditionalStack);
-    ConditionalStack.clear();
-  }
 
   // Issue diagnostics for unterminated #if and missing newline.
 

@@ -81,7 +81,6 @@ DIAG(err_drv_omp_host_target_not_supported, CLASS_ERROR, (unsigned)diag::Severit
 DIAG(err_drv_optimization_remark_pattern, CLASS_ERROR, (unsigned)diag::Severity::Error, "%0 in '%1'", 0, SFINAE_SubstitutionFailure, false, true, 0)
 DIAG(err_drv_out_file_argument_with_multiple_sources, CLASS_ERROR, (unsigned)diag::Severity::Error, "cannot specify '%0%1' when compiling multiple source files", 0, SFINAE_SubstitutionFailure, false, true, 0)
 DIAG(err_drv_output_argument_with_multiple_files, CLASS_ERROR, (unsigned)diag::Severity::Error, "cannot specify -o when generating multiple output files", 0, SFINAE_SubstitutionFailure, false, true, 0)
-DIAG(err_drv_preamble_format, CLASS_ERROR, (unsigned)diag::Severity::Error, "incorrect format for -preamble-bytes=N,END", 0, SFINAE_SubstitutionFailure, false, true, 0)
 DIAG(err_drv_ropi_incompatible_with_cxx, CLASS_ERROR, (unsigned)diag::Severity::Error, "ROPI is not compatible with c++", 0, SFINAE_SubstitutionFailure, false, true, 0)
 DIAG(err_drv_ropi_rwpi_incompatible_with_pic, CLASS_ERROR, (unsigned)diag::Severity::Error, "embedded and GOT-based position independence are incompatible", 0, SFINAE_SubstitutionFailure, false, true, 0)
 DIAG(err_drv_unable_to_remove_file, CLASS_ERROR, (unsigned)diag::Severity::Error, "unable to remove file: %0", 0, SFINAE_SubstitutionFailure, false, true, 0)
