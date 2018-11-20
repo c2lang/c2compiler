@@ -59,9 +59,6 @@ class IdentifierInfo {
   bool NeedsHandleIdentifier  : 1; // See "RecomputeNeedsHandleIdentifier".
   bool IsFromAST              : 1; // True if identifier was loaded (at least
                                    // partially) from an AST file.
-  bool OutOfDate              : 1; // True if there may be additional
-                                   // information about this identifier
-                                   // stored externally.
   // 29 bit left in 64-bit word.
 
 
@@ -212,12 +209,6 @@ public:
   /// from an AST file.
   bool isFromAST() const { return IsFromAST; }
 
-
-    /// Determine whether the information for this identifier is out of
-  /// date with respect to the external source.
-  bool isOutOfDate() const { return OutOfDate; }
-
-
     /// Provide less than operator for lexicographical sorting.
   bool operator<(const IdentifierInfo &RHS) const {
     return getName() < RHS.getName();
@@ -232,8 +223,7 @@ private:
   /// change to it should be reflected here.
   void RecomputeNeedsHandleIdentifier() {
     NeedsHandleIdentifier = isPoisoned() || hasMacroDefinition() ||
-                            isExtensionToken() || isFutureCompatKeyword() ||
-                            isOutOfDate();
+                            isExtensionToken() || isFutureCompatKeyword();
   }
 };
 

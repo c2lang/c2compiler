@@ -678,15 +678,6 @@ C2::ExprResult C2Parser::ParseRHSOfBinaryExpression(ExprResult LHS, prec::Level 
         }
 #endif
 
-#if 0
-        // Code completion for the right-hand side of an assignment expression
-        // goes through a special hook that takes the left-hand side into account.
-        if (Tok.is(tok::code_completion) && NextTokPrec == prec::Assignment) {
-            Actions.CodeCompleteAssignmentRHS(getCurScope(), LHS.get());
-            cutOffParsing();
-            return ExprError();
-        }
-#endif
 
         // Parse another leaf here for the RHS of the operator.
         // ParseCastExpression works here because all RHS expressions in C have it
@@ -1002,8 +993,6 @@ C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
     SourceLocation Loc;
     while (1) {
         switch (Tok.getKind()) {
-        case tok::code_completion:
-            FATAL_ERROR("Should not occure");
         case tok::identifier:
             // Fall through; this isn't a message send.
         default:  // Not a postfix-expression suffix.
@@ -2623,7 +2612,7 @@ bool C2Parser::ExpectIdentifier(const char *Msg) {
 
 bool C2Parser::ExpectAndConsume(tok::TokenKind ExpectedTok, unsigned DiagID,
                                 const char* Msg) {
-    if (Tok.is(ExpectedTok) || Tok.is(tok::code_completion)) {
+    if (Tok.is(ExpectedTok)) {
         ConsumeAnyToken();
         return false;
     }
@@ -2669,7 +2658,7 @@ bool C2Parser::ExpectAndConsume(tok::TokenKind ExpectedTok, unsigned DiagID,
 }
 
 bool C2Parser::ExpectAndConsumeSemi(unsigned DiagID) {
-    if (Tok.is(tok::semi) || Tok.is(tok::code_completion)) {
+    if (Tok.is(tok::semi)) {
         ConsumeToken();
         return false;
     }
@@ -2730,8 +2719,7 @@ bool C2Parser::SkipUntil(ArrayRef<tok::TokenKind> Toks, SkipUntilFlags Flags) {
         // skip the rest of the file. Do this without recursing, since we can
         // get here precisely because the caller detected too much recursion.
         if (Toks.size() == 1 && Toks[0] == tok::eof &&
-                !HasFlagsSet(Flags, StopAtSemi) &&
-                !HasFlagsSet(Flags, StopAtCodeCompletion)) {
+                !HasFlagsSet(Flags, StopAtSemi)) {
             while (Tok.isNot(tok::eof))
                 ConsumeAnyToken();
             return true;
@@ -2741,39 +2729,19 @@ bool C2Parser::SkipUntil(ArrayRef<tok::TokenKind> Toks, SkipUntilFlags Flags) {
         case tok::eof:
             // Ran out of tokens.
             return false;
-
-
-        case tok::code_completion:
-#if 0
-            if (!HasFlagsSet(Flags, StopAtCodeCompletion))
-                handleUnexpectedCodeCompletionToken();
-#endif
-            TODO;
-            return false;
-
         case tok::l_paren:
             // Recursively skip properly-nested parens.
-            ConsumeParen();
-            if (HasFlagsSet(Flags, StopAtCodeCompletion))
-                SkipUntil(tok::r_paren, StopAtCodeCompletion);
-            else
-                SkipUntil(tok::r_paren);
+            SkipUntil(tok::r_paren);
             break;
         case tok::l_square:
             // Recursively skip properly-nested square brackets.
             ConsumeBracket();
-            if (HasFlagsSet(Flags, StopAtCodeCompletion))
-                SkipUntil(tok::r_square, StopAtCodeCompletion);
-            else
-                SkipUntil(tok::r_square);
+            SkipUntil(tok::r_square);
             break;
         case tok::l_brace:
             // Recursively skip properly-nested braces.
             ConsumeBrace();
-            if (HasFlagsSet(Flags, StopAtCodeCompletion))
-                SkipUntil(tok::r_brace, StopAtCodeCompletion);
-            else
-                SkipUntil(tok::r_brace);
+            SkipUntil(tok::r_brace);
             break;
 
             // Okay, we found a ']' or '}' or ')', which we think should be balanced.

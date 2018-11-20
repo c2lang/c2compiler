@@ -86,12 +86,6 @@ bool Preprocessor::EnterSourceFile(FileID FID, const DirectoryLookup *CurDir,
     return true;
   }
 
-  if (isCodeCompletionEnabled() &&
-      SourceMgr.getFileEntryForID(FID) == CodeCompletionFile) {
-    CodeCompletionFileLoc = SourceMgr.getLocForStartOfFile(FID);
-    CodeCompletionLoc =
-        CodeCompletionFileLoc.getLocWithOffset(CodeCompletionOffset);
-  }
 
   EnterSourceFileWithLexer(new Lexer(FID, InputFile, *this), CurDir);
   return false;
@@ -281,22 +275,6 @@ bool Preprocessor::HandleEndOfFile(Token &Result, bool isEndOfMacro) {
   // lexing the #includer file.
   if (!IncludeMacroStack.empty()) {
 
-    // If we lexed the code-completion file, act as if we reached EOF.
-    if (isCodeCompletionEnabled() && CurPPLexer &&
-        SourceMgr.getLocForStartOfFile(CurPPLexer->getFileID()) ==
-            CodeCompletionFileLoc) {
-      if (CurLexer) {
-        Result.startToken();
-        CurLexer->FormTokenWithChars(Result, CurLexer->BufferEnd, tok::eof);
-        CurLexer.reset();
-      } else {
-        FATAL_ERROR("Got EOF but no current lexer set!");
-      }
-
-      CurPPLexer = nullptr;
-      recomputeCurLexerKind();
-      return true;
-    }
 
     if (!isEndOfMacro && CurPPLexer &&
         SourceMgr.getIncludeLoc(CurPPLexer->getFileID()).isValid()) {
@@ -342,16 +320,6 @@ bool Preprocessor::HandleEndOfFile(Token &Result, bool isEndOfMacro) {
     CurLexer->BufferPtr = EndPos;
     CurLexer->FormTokenWithChars(Result, EndPos, tok::eof);
 
-    if (isCodeCompletionEnabled()) {
-      // Inserting the code-completion point increases the source buffer by 1,
-      // but the main FileID was created before inserting the point.
-      // Compensate by reducing the EOF location by 1, otherwise the location
-      // will point to the next FileID.
-      // FIXME: This is hacky, the code-completion point should probably be
-      // inserted before the main FileID is created.
-      if (CurLexer->getFileLoc() == CodeCompletionFileLoc)
-        Result.setLocation(Result.getLocation().getLocWithOffset(-1));
-    }
 
 
     if (!isIncrementalProcessingEnabled())

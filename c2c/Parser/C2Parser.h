@@ -308,8 +308,6 @@ private:
   /// \brief Abruptly cut off parsing; mainly used when we have reached the
   /// code-completion point.
   void cutOffParsing() {
-    if (PP.isCodeCompletionEnabled())
-      PP.setCodeCompletionReached();
     // Cut off parsing by acting as if we reached the end-of-file.
     Tok.setKind(tok::eof);
   }
@@ -344,7 +342,7 @@ private:
   /// isTokenSpecial - True if this token requires special consumption methods.
   bool isTokenSpecial() const {
     return isTokenStringLiteral() || isTokenParen() || isTokenBracket() ||
-           isTokenBrace() || Tok.is(tok::code_completion);
+           isTokenBrace();
   }
 
     bool ExpectIdentifier(const char *Msg = "");
@@ -373,7 +371,6 @@ public:
     StopAtSemi = 1 << 0,  ///< Stop skipping at semicolon
     /// \brief Stop skipping at specified token, but don't skip the token itself
     StopBeforeMatch = 1 << 1,
-    StopAtCodeCompletion = 1 << 2 ///< Stop at code completion
   };
 
   friend constexpr SkipUntilFlags operator|(SkipUntilFlags L,
