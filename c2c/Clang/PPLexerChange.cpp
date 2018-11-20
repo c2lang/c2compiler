@@ -336,10 +336,10 @@ bool Preprocessor::HandleEndOfFile(Token &Result, bool isEndOfMacro) {
     // This is the end of the top-level file. 'WarnUnusedMacroLocs' has
     // collected all macro locations that we need to warn because they are not
     // used.
-    for (WarnUnusedMacroLocsTy::iterator
-           I=WarnUnusedMacroLocs.begin(), E=WarnUnusedMacroLocs.end();
-           I!=E; ++I)
-      Diag(*I, diag::pp_macro_not_used);
+  for (WarnUnusedMacroLocsTy::iterator
+         I=WarnUnusedMacroLocs.begin(), E=WarnUnusedMacroLocs.end();
+         I!=E; ++I)
+    Diag(*I, diag::pp_macro_not_used);
   }
 
   return true;

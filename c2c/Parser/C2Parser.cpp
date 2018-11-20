@@ -55,9 +55,6 @@ static prec::Level getBinOpPrecedence(tok::TokenKind Kind) {
     case tok::question:             return prec::Conditional;
     case tok::pipepipe:
     case tok::ampamp:               return prec::LogicalAndOr;
-    case tok::pipe:
-    case tok::caret:
-    case tok::amp:                  return prec::Bitwise;
     case tok::exclaimequal:
     case tok::equalequal:
     case tok::lessequal:
@@ -66,6 +63,9 @@ static prec::Level getBinOpPrecedence(tok::TokenKind Kind) {
     case tok::greaterequal:         return prec::Relational;
     case tok::plus:
     case tok::minus:                return prec::Additive;
+    case tok::pipe:
+    case tok::caret:
+    case tok::amp:                  return prec::Bitwise;
     case tok::lessless:
     case tok::greatergreater:       return prec::Shift;
     case tok::percent:
