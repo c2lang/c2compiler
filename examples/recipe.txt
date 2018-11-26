@@ -12,6 +12,12 @@ executable multi_file
     multi_file2.c2
 end
 
+executable bigint
+    $warnings no-unused
+    $generate-c single-module
+    bigint.c2
+end
+
 executable opaque_example
     $warnings no-unused
     $refs
