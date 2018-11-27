@@ -2065,7 +2065,7 @@ void FunctionAnalyser::checkDeclAssignment(Decl* decl, Expr* expr) {
         break;
     case DECL_IMPORT:
     case DECL_LABEL:
-        FATAL_ERROR("Unreachable");
+        Diag(expr->getLocation(), diag::err_typecheck_expression_not_modifiable_lvalue);
         break;
     }
 }
