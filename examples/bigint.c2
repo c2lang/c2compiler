@@ -27,8 +27,7 @@ public func void BigInt.initFromString(BigInt* bigInt, char* str)
    u32 size = cast<u32>(strlen(str));
    //assert(size > 0);
    bigInt.sign = 1;
-   switch (str[0])
-   {
+   switch (str[0]) {
        case '-':
            bigInt.sign = -1;
            size--;
@@ -42,8 +41,7 @@ public func void BigInt.initFromString(BigInt* bigInt, char* str)
            break;
    }
    char* res = malloc(size);
-   for (i32 i = 0; i < size; i++)
-   {
+   for (i32 i = 0; i < size; i++) {
        res[i] = str[size - i - 1] - '0';
    }
    bigInt.number = res;
@@ -77,31 +75,23 @@ func void BigInt.addIgnoreSign(BigInt* a, BigInt* b, BigInt* result)
    i8 carry = 0;
    BigInt* x;
    BigInt* y;
-   if (a.length > b.length)
-   {
+   if (a.length > b.length) {
       x = a;
       y = b;
-   }
-   else
-   {
+   } else {
       x = b;
       y = a;
    }
 
-   for (i32 i = 0; i < length; i++)
-   {
-      if (i >= y.length)
-      {
+   for (i32 i = 0; i < length; i++) {
+      if (i >= y.length) {
          res[i] = carry + (i >= x.length ? 0 : x.number[i]);
-      }
-      else
-      {
+      } else {
          res[i] = x.number[i] + y.number[i] + carry;
       }
 
       carry = 0;
-      if (res[i] > 9)
-      {
+      if (res[i] > 9) {
          carry = 1;
          res[i] -= 10;
       }
@@ -113,10 +103,8 @@ func void BigInt.addIgnoreSign(BigInt* a, BigInt* b, BigInt* result)
 
 public func void BigInt.getMaxVal(BigInt *bigInt, u32* pos, i8* val)
 {
-   for (u32 i = bigInt.length; i > 0; i++)
-   {
-      if (bigInt.number[i] != 0)
-      {
+   for (u32 i = bigInt.length; i > 0; i++) {
+      if (bigInt.number[i] != 0) {
          *pos = i;
          *val = bigInt.number[i];
          return;
@@ -166,31 +154,24 @@ func void BigInt.subIgnoreSign(BigInt* a, BigInt* b, BigInt* result)
 
    BigInt* x;
    BigInt* y;
-   if (a.compareNoSign(b) < 0)
-   {
+   if (a.compareNoSign(b) < 0) {
       result.sign = -1;
       x = b;
       y = a;
-   }
-   else
-   {
+   } else {
       result.sign = 1;
       x = a;
       y = b;
    }
 
    i8 borrow = 0;
-   for (i32 i = 0; i < length; i++)
-   {
+   for (i32 i = 0; i < length; i++) {
       i8 aValue = i >= x.length ? 0 : x.number[i];
       i8 bValue = borrow + (i >= y.length ? 0 : y.number[i]);
-      if (bValue > aValue)
-      {
+      if (bValue > aValue) {
          borrow = 1;
          aValue += 10;
-      }
-      else
-      {
+      } else {
          borrow = 0;
       }
       res[i] = aValue - bValue;
@@ -202,27 +183,18 @@ func void BigInt.subIgnoreSign(BigInt* a, BigInt* b, BigInt* result)
 
 public func void BigInt.add(BigInt* a, BigInt* b, BigInt* result)
 {
-   if (a.sign < 0)
-   {
-      if (b.sign < 0)
-      {
+   if (a.sign < 0) {
+      if (b.sign < 0) {
          a.addIgnoreSign(b, result);
          result.sign = -1;
-      }
-      else
-      {
+      } else {
          b.subIgnoreSign(a, result);
          result.sign = -result.sign;
       }
-   }
-   else
-   {
-      if (b.sign < 0)
-      {
+   } else {
+      if (b.sign < 0) {
          a.subIgnoreSign(b, result);
-      }
-      else
-      {
+      } else {
          a.addIgnoreSign(b, result);
       }
    }
@@ -234,14 +206,12 @@ public func char* BigInt.toCharArray(BigInt* bigInt)
    char* out = malloc(charLen);
    out[charLen - 1] = '\0';
    char* start = out;
-   if (bigInt.sign < 0)
-   {
+   if (bigInt.sign < 0) {
       out[0] = '-';
       start++;
    }
    bool nonZeroFound = false;
-   for (u32 i = bigInt.length; i > 0; i--)
-   {
+   for (u32 i = bigInt.length; i > 0; i--) {
       char digit = bigInt.number[i - 1];
       if (i > 1 && !nonZeroFound && digit == 0) continue;
       nonZeroFound = true;
@@ -277,8 +247,7 @@ public func i32 main(i32 size, char** args)
    minus1.initFromString("1");
    current.initFromString("0");
 
-   for (i32 i = 1; i <= 500; i++)
-   {
+   for (i32 i = 1; i <= 500; i++) {
       minus1.add(&minus2, &current);
       printf("%d : ", i);
       current.print();
