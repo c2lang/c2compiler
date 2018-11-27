@@ -954,7 +954,7 @@ DIAG(err_main_global_variable, CLASS_ERROR, (unsigned)diag::Severity::Error, "ma
 DIAG(err_main_missing, CLASS_ERROR, (unsigned)diag::Severity::Error, "no 'main' function defined", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_main_non_public, CLASS_ERROR, (unsigned)diag::Severity::Error, "function 'main' should be declared public", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_main_returns_nonint, CLASS_ERROR, (unsigned)diag::Severity::Error, "'main' must return 'int'", 0, SFINAE_SubstitutionFailure, false, true, 2)
-DIAG(err_main_returns_nonint32, CLASS_ERROR, (unsigned)diag::Severity::Error, "'main' must return 'int32'", 0, SFINAE_SubstitutionFailure, false, true, 2)
+DIAG(err_main_returns_nonint32, CLASS_ERROR, (unsigned)diag::Severity::Error, "'main' must return 'i32'", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_main_surplus_args, CLASS_ERROR, (unsigned)diag::Severity::Error, "too many parameters (%0) for 'main': must be 0, 2, or 3", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_mainlike_template_decl, CLASS_ERROR, (unsigned)diag::Severity::Error, "%0 cannot be a template", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_malformed_std_coroutine_handle, CLASS_ERROR, (unsigned)diag::Severity::Error, "std::experimental::coroutine_handle must be a class template", 0, SFINAE_SubstitutionFailure, false, true, 14)
