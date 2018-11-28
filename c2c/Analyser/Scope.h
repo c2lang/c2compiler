@@ -84,6 +84,9 @@ public:
 
         /// SwitchScope - This is a scope that corresponds to a switch statement.
         SwitchScope = 0x800,
+
+        // HasDecls, set during analysis if there are decls
+        HasDecls = 0x800000,
     };
 
     Scope(const std::string& name_, const Modules& modules_, c2lang::DiagnosticsEngine& Diags_);
@@ -103,10 +106,11 @@ public:
     void EnterScope(unsigned flags);
     void ExitScope();
 
-    bool hasErrorOccurred() const { return curScope->hasErrorOccurred(); }
-
-    bool allowBreak()    const { return curScope->Flags & BreakScope; }
-    bool allowContinue() const { return curScope->Flags & ContinueScope; }
+    void inline setHasDecls() const { curScope->Flags |= HasDecls; }
+    bool inline hasErrorOccurred() const { return curScope->hasErrorOccurred(); }
+    bool inline allowBreak()    const { return curScope->Flags & BreakScope; }
+    bool inline allowContinue() const { return curScope->Flags & ContinueScope; }
+    bool inline hasDecls() const { return curScope->Flags & HasDecls; }
 
     bool isExternal(const Module* mod) const {
         return (mod && mod != myModule);

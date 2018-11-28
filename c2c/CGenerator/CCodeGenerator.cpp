@@ -1102,10 +1102,16 @@ void CCodeGenerator::EmitSwitchStmt(const Stmt* S, unsigned indent) {
             cbuf.indent(indent + INDENT);
             cbuf << "case ";
             EmitExpr(C->getCond(), cbuf);
-            cbuf << ":\n";
+            cbuf << ':';
+            if (C->hasDecls()) cbuf << " {";
+            cbuf << '\n';
             Stmt** stmts = C->getStmts();
             for (unsigned s=0; s<C->numStmts(); s++) {
                 EmitStmt(stmts[s], indent + INDENT + INDENT);
+            }
+            if (C->hasDecls()) {
+                cbuf.indent(indent + INDENT);
+                cbuf << "}\n";
             }
             break;
         }
@@ -1113,10 +1119,16 @@ void CCodeGenerator::EmitSwitchStmt(const Stmt* S, unsigned indent) {
         {
             DefaultStmt* D = cast<DefaultStmt>(Case);
             cbuf.indent(indent + INDENT);
-            cbuf << "default:\n";
+            cbuf << "default:";
+            if (D->hasDecls()) cbuf << " {";
+            cbuf << '\n';
             Stmt** stmts = D->getStmts();
             for (unsigned s=0; s<D->numStmts(); s++) {
                 EmitStmt(stmts[s], indent + INDENT + INDENT);
+            }
+            if (D->hasDecls()) {
+                cbuf.indent(indent + INDENT);
+                cbuf << "}\n";
             }
             break;
         }

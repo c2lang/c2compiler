@@ -100,14 +100,16 @@ protected:
         friend class CaseStmt;
         unsigned : NumStmtBits;
 
-        unsigned numStmts : 32 - NumStmtBits;
+        unsigned hasDecls : 1;
+        unsigned numStmts : 31 - NumStmtBits;
     };
 
     class DefaultStmtBitfields {
         friend class DefaultStmt;
         unsigned : NumStmtBits;
 
-        unsigned numStmts : 32 - NumStmtBits;
+        unsigned hasDecls : 1;
+        unsigned numStmts : 31 - NumStmtBits;
     };
 
     class CompoundStmtBitfields {
@@ -392,6 +394,9 @@ public:
     Expr* getCond() const { return Cond; }
     unsigned numStmts() const { return caseStmtBits.numStmts; }
     Stmt** getStmts() const { return stmts; }
+
+    void setHasDecls(bool has) { caseStmtBits.hasDecls = has; }
+    bool hasDecls() const { return caseStmtBits.hasDecls; }
 private:
     SourceLocation Loc;
     Expr* Cond;
@@ -411,6 +416,9 @@ public:
 
     unsigned numStmts() const { return defaultStmtBits.numStmts; }
     Stmt** getStmts() const { return stmts; }
+
+    void setHasDecls(bool has) { defaultStmtBits.hasDecls = has; }
+    bool hasDecls() const { return defaultStmtBits.hasDecls; }
 private:
     SourceLocation Loc;
     Stmt** stmts;

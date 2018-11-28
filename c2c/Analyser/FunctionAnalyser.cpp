@@ -442,21 +442,27 @@ void FunctionAnalyser::analyseGotoStmt(Stmt* S) {
 
 void FunctionAnalyser::analyseCaseStmt(Stmt* stmt) {
     LOG_FUNC
+    scope.EnterScope(Scope::DeclScope);
     CaseStmt* C = cast<CaseStmt>(stmt);
     analyseExpr(C->getCond(), RHS);
     Stmt** stmts = C->getStmts();
     for (unsigned i=0; i<C->numStmts(); i++) {
         analyseStmt(stmts[i]);
     }
+    C->setHasDecls(scope.hasDecls());
+    scope.ExitScope();
 }
 
 void FunctionAnalyser::analyseDefaultStmt(Stmt* stmt) {
     LOG_FUNC
+    scope.EnterScope(Scope::DeclScope);
     DefaultStmt* D = cast<DefaultStmt>(stmt);
     Stmt** stmts = D->getStmts();
     for (unsigned i=0; i<D->numStmts(); i++) {
         analyseStmt(stmts[i]);
     }
+    D->setHasDecls(scope.hasDecls());
+    scope.ExitScope();
 }
 
 void FunctionAnalyser::analyseReturnStmt(Stmt* stmt) {
@@ -487,6 +493,7 @@ void FunctionAnalyser::analyseDeclStmt(Stmt* stmt) {
     DeclStmt* DS = cast<DeclStmt>(stmt);
     VarDecl* decl = DS->getDecl();
 
+    scope.setHasDecls();
     bool haveError = false;
     QualType Q = TR.resolveType(decl->getType(), decl->isPublic());
     if (Q.isValid()) {
