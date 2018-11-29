@@ -308,6 +308,7 @@ DIAG(err_templated_invalid_declaration, CLASS_ERROR, (unsigned)diag::Severity::E
 DIAG(err_templated_using_directive_declaration, CLASS_ERROR, (unsigned)diag::Severity::Error, "cannot template a using %select{directive|declaration}0", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(err_this_captured_by_reference, CLASS_ERROR, (unsigned)diag::Severity::Error, "'this' cannot be captured by reference", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(err_two_right_angle_brackets_need_space, CLASS_ERROR, (unsigned)diag::Severity::Error, "a space is required between consecutive right angle brackets (use '> >')", 0, SFINAE_SubstitutionFailure, false, true, 4)
+DIAG(err_identifier_too_long, CLASS_ERROR, (unsigned)diag::Severity::Error, "identifier too long (max 31 chars)", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(err_type_casing, CLASS_ERROR, (unsigned)diag::Severity::Error, "a type name must start with an upper case character", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(err_type_safety_unknown_flag, CLASS_ERROR, (unsigned)diag::Severity::Error, "invalid comparison flag %0; use 'layout_compatible' or 'must_be_null'", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(err_type_trait_arity, CLASS_ERROR, (unsigned)diag::Severity::Error, "type trait requires %0%select{| or more}1 argument%select{|s}2; have %3 argument%s3", 0, SFINAE_SubstitutionFailure, false, true, 4)

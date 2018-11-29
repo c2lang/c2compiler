@@ -37,6 +37,8 @@ using namespace c2lang;
 #define LOG_FUNC
 #endif
 
+#define MAX_IDENTIFIER 31
+
 /// \brief Return the precedence of the specified binary operator token.
 static prec::Level getBinOpPrecedence(tok::TokenKind Kind) {
     switch (Kind) {
@@ -132,7 +134,7 @@ void C2Parser::ParseModule() {
 
     IdentifierInfo* Mod = Tok.getIdentifierInfo();
     SourceLocation ModLoc = ConsumeToken();
-
+    if (tooLong(Mod, ModLoc)) return;
 
     if (ExpectAndConsume(tok::semi, diag::err_expected_after, "module name")) return;
 
@@ -148,6 +150,7 @@ void C2Parser::ParseImports() {
         if (ExpectIdentifier()) return;
         IdentifierInfo* Mod = Tok.getIdentifierInfo();
         SourceLocation ModLoc = ConsumeToken();
+        if (tooLong(Mod, ModLoc)) return;
         Token AliasToken;
         AliasToken.startToken();
         if (Tok.is(tok::kw_as)) {
@@ -222,6 +225,7 @@ void C2Parser::ParseTypeDef(bool is_public) {
     if (ExpectIdentifier()) return;
     IdentifierInfo* id = Tok.getIdentifierInfo();
     SourceLocation idLoc = ConsumeToken();
+    if (tooLong(id, idLoc)) return;
 
     if (!isupper(id->getNameStart()[0]) && !isInterface) {
         Diag(idLoc, diag::err_type_casing);
@@ -288,6 +292,7 @@ void C2Parser::ParseStructBlock(StructTypeDecl* S) {
                 IdentifierInfo* id = Tok.getIdentifierInfo();
                 name = id->getNameStart();
                 idLoc = ConsumeToken();
+                if (tooLong(id, idLoc)) return;
             } else {
                 idLoc = Tok.getLocation();
             }
@@ -303,6 +308,7 @@ void C2Parser::ParseStructBlock(StructTypeDecl* S) {
             if (ExpectIdentifier()) return;
             IdentifierInfo* id = Tok.getIdentifierInfo();
             SourceLocation idLoc = ConsumeToken();
+            if (tooLong(id, idLoc)) return;
 
             if (ExpectAndConsume(tok::semi, diag::err_expected_after, "member")) return;
             Decl* member = Actions.ActOnStructVar(S, id->getNameStart(), idLoc, type.get(), 0);
@@ -370,6 +376,7 @@ void C2Parser::ParseEnumType(const char* id, SourceLocation idLoc, bool is_publi
         while (Tok.is(tok::identifier)) {
             IdentifierInfo* Ident = Tok.getIdentifierInfo();
             SourceLocation IdentLoc = ConsumeToken();
+            if (tooLong(Ident, IdentLoc)) return;
 
             ExprResult Value;
             if (Tok.is(tok::equal)) {
@@ -500,6 +507,7 @@ C2::VarDeclResult C2Parser::ParseParamDecl(FunctionDecl* func, bool allow_defaul
         IdentifierInfo* id = Tok.getIdentifierInfo();
         name = id->getNameStart();
         idLoc = ConsumeToken();
+        if (tooLong(id, idLoc)) return VarDeclError();
     } else
         idLoc = Tok.getLocation();
 
@@ -1079,6 +1087,7 @@ C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
 
             if (ExpectIdentifier()) return ExprError();
             ExprResult rhs = ParseIdentifier();
+            if (rhs.isInvalid()) return ExprError();
             LHS = Actions.ActOnMemberExpr(LHS.get(), rhs.get());
             break;
         }
@@ -1454,6 +1463,7 @@ C2::ExprResult C2Parser::ParseElemsof()
         return ExprError();
     }
     ExprResult Res = ParseIdentifier();
+    if (Res.isInvalid()) return Res;
     Res = ParsePostfixExpressionSuffix(Res);
     if (ExpectAndConsume(tok::r_paren)) return ExprError();
     return Actions.ActOnBuiltinExpression(Loc, Res.get(), BuiltinExpr::BUILTIN_ELEMSOF);
@@ -1475,6 +1485,7 @@ C2::ExprResult C2Parser::ParseEnumMinMax(bool isMin)
     }
     // TODO support FullIdentifier (that's not always a Type)
     ExprResult Res = ParseIdentifier();
+    if (Res.isInvalid()) return Res;
     if (ExpectAndConsume(tok::r_paren)) return ExprError();
     return Actions.ActOnBuiltinExpression(Loc, Res.get(),
         isMin ? BuiltinExpr::BUILTIN_ENUM_MIN : BuiltinExpr::BUILTIN_ENUM_MAX);
@@ -1488,6 +1499,7 @@ C2::ExprResult C2Parser::ParseIdentifier() {
 
     IdentifierInfo* symII = Tok.getIdentifierInfo();
     SourceLocation symLoc = ConsumeToken();
+    if (tooLong(symII, symLoc)) return ExprError();
     return Actions.ActOnIdExpression(*symII, symLoc);
 }
 
@@ -1499,6 +1511,7 @@ C2::ExprResult C2Parser::ParseFullIdentifier() {
 
     ExprResult tName = ParseIdentifier();
     ExprResult mName;
+    if (tName.isInvalid()) return ExprError();
 
     if (Tok.is(tok::period)) {
         ConsumeToken(); // consume the '.'
@@ -1506,6 +1519,7 @@ C2::ExprResult C2Parser::ParseFullIdentifier() {
         // type is a modules
         mName = tName;
         tName = ParseIdentifier();
+        if (tName.isInvalid()) return ExprError();
     }
 
     return Actions.ActOnUserType(mName.get(), tName.get());
@@ -1527,6 +1541,8 @@ void C2Parser::ParseFuncDef(bool is_public) {
     if (ExpectIdentifier()) return;
     IdentifierInfo* func_id = Tok.getIdentifierInfo();
     SourceLocation func_loc = ConsumeToken();
+    if (tooLong(func_id, func_loc)) return;
+
 
     // struct-function: Foo.bar()
     ExprResult typeId;
@@ -1709,7 +1725,8 @@ bool C2Parser::ParseAsmOperandsOpt(SmallVectorImpl<IdentifierInfo*> &Names,
                 return true;
             }
             IdentifierInfo* II = Tok.getIdentifierInfo();
-            ConsumeToken();
+            SourceLocation loc = ConsumeToken();
+            if (tooLong(II, loc)) return false;
             Names.push_back(II);
             ExpectAndConsume(tok::r_square);
         } else
@@ -2186,6 +2203,7 @@ C2::StmtResult C2Parser::ParseDeclaration(bool checkSemi) {
     if (ExpectIdentifier()) return StmtError();
     IdentifierInfo* id = Tok.getIdentifierInfo();
     SourceLocation idLoc = ConsumeToken();
+    if (tooLong(id, idLoc)) return StmtError();
 
     // NOTE: same as ParseVarDef(), TODO refactor?
     bool need_semi = true;
@@ -2280,6 +2298,7 @@ C2::StmtResult C2Parser::ParseLabeledStatement() {
 
     IdentifierInfo* id = Tok.getIdentifierInfo();
     SourceLocation LabelLoc = ConsumeToken();
+    if (tooLong(id, LabelLoc)) return StmtError();
 
     assert(Tok.is(tok::colon) && "Not a label!");
 
@@ -2412,6 +2431,7 @@ void C2Parser::ParseVarDef(bool is_public) {
     if (ExpectIdentifier()) return;
     IdentifierInfo* id = Tok.getIdentifierInfo();
     SourceLocation idLoc = ConsumeToken();
+    if (tooLong(id, idLoc)) return;
 
     VarDecl* VD = Actions.ActOnVarDef(id->getNameStart(), idLoc, is_public, type.get());
 
@@ -2466,6 +2486,7 @@ C2::ExprResult C2Parser::ParseFieldDesignator(bool* need_semi) {
 
     if (ExpectIdentifier()) return ExprError();
     ExprResult field = ParseIdentifier();
+    if (field.isInvalid()) return ExprError();
 
     if (ExpectAndConsume(tok::equal, diag::err_expected_after, "field designator")) return ExprError();
 
@@ -2544,6 +2565,7 @@ void C2Parser::ParseArrayEntry() {
     assert(Tok.is(tok::identifier) && "Not an identifier!");
     IdentifierInfo* id = Tok.getIdentifierInfo();
     SourceLocation idLoc = ConsumeToken();
+    if (tooLong(id, idLoc)) return;
 
     assert(Tok.is(tok::plusequal) && "Not a plusequal!");
     ConsumeToken();
@@ -2784,6 +2806,15 @@ bool C2Parser::SkipUntil(ArrayRef<tok::TokenKind> Toks, SkipUntilFlags Flags) {
         }
         isFirstTokenSkipped = false;
     }
+}
+
+bool C2Parser::tooLong(IdentifierInfo* I, SourceLocation loc) {
+    size_t len = strlen(I->getNameStart());
+    if (len > MAX_IDENTIFIER) {
+        Diag(loc, diag::err_identifier_too_long);
+        return true;
+    }
+    return false;
 }
 
 C2::ExprResult C2Parser::ExprError() {

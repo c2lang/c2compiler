@@ -74,6 +74,7 @@ private:
     DiagnosticsEngine& Diags;
     bool isInterface;
 
+    bool tooLong(IdentifierInfo* I, SourceLocation loc);
     ExprResult ExprError();
     StmtResult StmtError();
     DeclResult DeclError();

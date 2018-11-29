@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+type T123456789012345678901234567890 struct {
+    i32 x;
+}
+
+type thirty_two_is_too_long_for_an_id struct {  // @error{identifier too long (max 31 chars)}
+    i32 x;
+}
+
