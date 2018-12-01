@@ -1032,97 +1032,100 @@ void FunctionAnalyser::analyseDesignatorInitExpr(Expr* expr, QualType expectedTy
     D->setType(expectedType);
 }
 
-void FunctionAnalyser::analyseSizeOfExpr(BuiltinExpr* B) {
+static uint64_t sizeOfType(QualType type) {
+
+    // TODO not a constant.
+    constexpr unsigned POINTER_SIZE = 8;
+
+    if (type.isNull()) return 0;
+
+    type = type.getCanonicalType();
+    switch (type->getTypeClass()) {
+    case TC_UNRESOLVED:
+    case TC_ALIAS:
+        FATAL_ERROR("Should be resolved");
+        return 1;
+    case TC_BUILTIN:
+        return (cast<BuiltinType>(type.getTypePtr())->getWidth() + 7) / 8;
+    case TC_POINTER:
+        return POINTER_SIZE;
+    case TC_ARRAY:
+    {
+        ArrayType *arrayType = cast<ArrayType>(type.getTypePtr());
+        return sizeOfType(arrayType->getElementType()) * arrayType->getSize().getZExtValue();
+    }
+    case TC_STRUCT:
+        // TODO
+        return 0;
+    case TC_ENUM:
+        // TODO
+        return 0;
+    case TC_FUNCTION:
+        return POINTER_SIZE;
+    case TC_MODULE:
+        FATAL_ERROR("Cannot occur here");
+    }
+}
+bool FunctionAnalyser::analyseSizeOfExpr(BuiltinExpr* B) {
     LOG_FUNC
 
+    // Consider 128 for certain architectures. TODO
+    // Also, elsewhere this is assumed to be 4!
+    static constexpr unsigned FLOAT_SIZE_DEFAULT = 8;
+
+    uint64_t width;
+
     Expr* expr = B->getExpr();
-    while (ParenExpr* P = dyncast<ParenExpr>(expr)) {
-        expr = P->getExpr();
-    }
 
     switch (expr->getKind()) {
-    case EXPR_INTEGER_LITERAL:
     case EXPR_FLOAT_LITERAL:
-    case EXPR_BOOL_LITERAL:
-    case EXPR_CHAR_LITERAL:
-    case EXPR_STRING_LITERAL:
-    case EXPR_NIL:
-        // ok
-        return;
-    case EXPR_CALL:
-        // not allowed
-        TODO; // assert(0 && "TODO good error");
-        return;
-    case EXPR_IDENTIFIER:
-    {
-        // TODO extract to function (duplicated code)
-        IdentifierExpr* id = cast<IdentifierExpr>(expr);
-        Decl* D = analyseIdentifier(id);
-        if (!D) return;
-        TR.checkOpaqueType(id->getLocation(), false, D->getType());
-
-        switch (D->getKind()) {
-        case DECL_FUNC:
-            // Q: allow?
-        case DECL_VAR:
-        case DECL_ENUMVALUE:
-        case DECL_ALIASTYPE:
-        case DECL_STRUCTTYPE:
-        case DECL_ENUMTYPE:
-        case DECL_FUNCTIONTYPE:
-            // ok
-            return;
-        case DECL_ARRAYVALUE:
-            FATAL_ERROR("Unreachable");
-            break;
-        case DECL_IMPORT:
-            Diag(id->getLocation(), diag::err_is_a_module) << id->getName();
-            return;
-        case DECL_LABEL:
-            TODO;
-            break;
-        }
+        width = FLOAT_SIZE_DEFAULT;
         break;
-    }
     case EXPR_INITLIST:
     case EXPR_DESIGNATOR_INIT:
         TODO; // Good error
-        return;
+        return false;
     case EXPR_TYPE:
     {
         // TODO can be public?
         QualType Q = TR.resolveType(expr->getType(), false);
-        if (Q.isValid()) {
-            expr->setType(Q);
-        }
-        return;
+        if (Q.isValid()) expr->setType(Q);
+        // TODO here we want to use expr->getLocation()
+        // But that does not properly find the right location!
+        TR.checkOpaqueType(B->getLocation(), false, Q);
+        expr->setType(Q);
+        width = sizeOfType(Q);
+        break;
     }
+    case EXPR_INTEGER_LITERAL:
+    case EXPR_BOOL_LITERAL:
+    case EXPR_CHAR_LITERAL:
+    case EXPR_STRING_LITERAL:
+    case EXPR_NIL:
+    case EXPR_CALL:
     case EXPR_BINOP:
-        // not allowed
-        TODO; // good error
     case EXPR_CONDOP:
-        TODO; // TODO allow?
-        return;
     case EXPR_UNARYOP:
-        // some allowed (&)?
-        TODO;
-        return;
-    case EXPR_BUILTIN:
-        FATAL_ERROR("Unreachable");
-        return;
     case EXPR_ARRAYSUBSCRIPT:
     case EXPR_MEMBER:
-        // allowed
-        TODO;
-        return;
+    case EXPR_IDENTIFIER:
+    case EXPR_CAST: {
+        QualType type = analyseExpr(expr, RHS);
+        if (!type.isValid()) return false;
+        TR.checkOpaqueType(expr->getLocation(), true, type);
+        width = sizeOfType(type);
+        break;
+    }
+    case EXPR_BUILTIN:
+        FATAL_ERROR("Unreachable");
+        return false;
     case EXPR_PAREN:
     case EXPR_BITOFFSET:
         FATAL_ERROR("Unreachable");
-        break;
-    case EXPR_CAST:
-        TODO;
-        break;
-    }
+        return false;
+}
+    B->setValue(llvm::APSInt::getUnsigned(width));
+    return true;
 }
 
 QualType FunctionAnalyser::analyseElemsOfExpr(BuiltinExpr* B) {
@@ -1526,7 +1529,7 @@ QualType FunctionAnalyser::analyseBuiltinExpr(Expr* expr) {
     expr->setType(Type::UInt32());
     switch (B->getBuiltinKind()) {
     case BuiltinExpr::BUILTIN_SIZEOF:
-        analyseSizeOfExpr(B);
+        if (!analyseSizeOfExpr(B)) return QualType();
         break;
     case BuiltinExpr::BUILTIN_ELEMSOF:
         return analyseElemsOfExpr(B);
@@ -1654,6 +1657,31 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
 QualType FunctionAnalyser::analyseStaticStructFunction(QualType T, MemberExpr* M, const StructTypeDecl* S, unsigned side)
 {
     IdentifierExpr* member = M->getMember();
+
+    // Let's return the field if we find it.
+    Decl *field = S->findMember(member->getName());
+    if (field) {
+
+        // TODO maybe check opaque?
+        //if (CurrentFunction->getModule() != S->getModule() && S->hasAttribute(ATTR_OPAQUE)) {
+        //    Diag(S->getLocation(), diag::err_deref_opaque) << S->isStruct() << S->DiagName();
+        //   return QualType();
+        //}
+
+        field->setUsed();
+
+        // Setup from function
+        M->setDecl(field);
+        M->setType(field->getType());
+
+        // TODO should we set something like this?
+        // M->setIsStaticStructFunction();
+
+        member->setDecl(field, IdentifierExpr::REF_STRUCT_MEMBER);
+        member->setType(field->getType());
+
+        return field->getType();
+    }
 
     // Analyzed as static & struct function.
      M->setIsStructFunction();

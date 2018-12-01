@@ -118,7 +118,7 @@ private:
                                           Expr* value,
                                           bool &haveDesignators);
 
-    void analyseSizeOfExpr(BuiltinExpr* expr);
+    bool analyseSizeOfExpr(BuiltinExpr* expr);
     QualType analyseElemsOfExpr(BuiltinExpr* B);
     QualType analyseEnumMinMaxExpr(BuiltinExpr* B, bool isMin);
     void analyseArrayType(VarDecl* V, QualType T);

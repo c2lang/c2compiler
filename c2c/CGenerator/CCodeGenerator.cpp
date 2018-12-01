@@ -361,7 +361,11 @@ void CCodeGenerator::EmitBuiltinExpr(const Expr* E, StringBuilder& output) {
     case BuiltinExpr::BUILTIN_SIZEOF:
         // TODO for now generate external sizeof() instead of number (need StructSizer)
         output << "sizeof(";
-        EmitExpr(B->getExpr(), output);
+        if (B->getValue().getZExtValue() > 0) {
+            output << B->getValue().toString(10);
+        } else {
+            EmitExpr(B->getExpr(), output);
+        }
         output << ')';
         break;
     case BuiltinExpr::BUILTIN_ELEMSOF:
