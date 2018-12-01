@@ -330,6 +330,21 @@ Decl* StructTypeDecl::find(const char* name_) const {
     return findFunction(name_);
 }
 
+Decl* StructTypeDecl::findMember(const char* name_) const {
+    // normal members
+    for (unsigned i=0; i<numMembers(); i++) {
+        Decl* D = members[i];
+        if (strcmp(D->getName(), name_) == 0) return D;
+        if (D->hasEmptyName()) {      // empty string
+            assert(isa<StructTypeDecl>(D));
+            StructTypeDecl* sub = cast<StructTypeDecl>(D);
+            D = sub->find(name_);
+            if (D) return D;
+        }
+    }
+    return nullptr;
+}
+
 FunctionDecl* StructTypeDecl::findFunction(const char* name_) const {
     // struct-functions
     for (unsigned i=0; i<numStructFunctions(); i++) {

@@ -6,6 +6,6 @@ type Type struct {
 }
 
 func void myfunc() {
-    i32 a = Type.member;      // @error{type '(struct)Type' has no struct-function 'member'}
+    i32 a = Type.member;      // @error{type 'i32' cannot be assigned to a variable}
 }
 

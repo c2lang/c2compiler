@@ -354,6 +354,7 @@ public:
     unsigned numStructFunctions() const { return structTypeDeclBits.numStructFunctions; }
     Decl* getMember(unsigned index) const { return members[index]; }
     Decl* find(const char* name_) const;
+    Decl* findMember(const char* name_) const;
     FunctionDecl* findFunction(const char* name_) const;
     int findIndex(const char*  name_) const;
     void setOpaqueMembers();

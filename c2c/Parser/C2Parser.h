@@ -203,7 +203,7 @@ private:
     int SkipArray(int lookahead);
     unsigned ParseOptionalTypeQualifier();
     bool ParseOptionalAccessSpecifier();
-
+    bool canBeParsedAsStructType();
     const Token& getCurToken() const { return Tok; }
 
     SourceLocation ConsumeToken() {

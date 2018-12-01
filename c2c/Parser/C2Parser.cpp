@@ -544,7 +544,7 @@ C2::ExprResult C2Parser::ParseSingleTypeSpecifier(bool allow_qualifier) {
     if (allow_qualifier) type_qualifier = ParseOptionalTypeQualifier();
 
     ExprResult base;
-    // first part is always a base type or identifier(::identifier)
+    // first part is always a base type or identifier(.identifier)
     switch (Tok.getKind()) {
     case tok::kw_u8:
     case tok::kw_u16:
@@ -1407,6 +1407,27 @@ C2::ExprResult C2Parser::ParseArray(ExprResult base) {
     return Actions.ActOnArrayType(base.get(), E.get(), false);
 }
 
+static bool isTypeIdent(const Token &token) {
+    assert(token.getKind() == tok::identifier && "Valid for identifiers only");
+    char firstCharacter = token.getIdentifierInfo()->getNameStart()[0];
+    return firstCharacter >= 'A' && firstCharacter <= 'Z';
+}
+
+bool C2Parser::canBeParsedAsStructType()
+{
+    if (!isTypeIdent(Tok))
+    {
+        return
+            PP.LookAhead(0).getKind() == tok::period
+            && isTypeIdent(PP.LookAhead(1))
+            && PP.LookAhead(2).getKind() != tok::period;
+    }
+    // Now we need to look for foo.Bar!
+    // We start with Foo, but if we have Foo.xxxx then
+    // it's actually referencing a field or a function.
+    return PP.LookAhead(0).getKind() != tok::period;
+}
+
 /// Syntax:
 ///  'sizeof' '(' var-name ')'
 ///  'sizeof' '(' type-name ')'
@@ -1419,15 +1440,6 @@ C2::ExprResult C2Parser::ParseSizeof()
     ExprResult Res;
 
     switch (Tok.getKind()) {
-    case tok::identifier:
-        // identifier might be followed by * or [..]
-        if (NextToken().is(tok::r_paren)) {
-            Res = ParseIdentifier();
-        } else {
-            Res = ParseTypeSpecifier(false);
-        }
-        break;
-        // all basic types
     case tok::kw_u8:
     case tok::kw_u16:
     case tok::kw_u32:
@@ -1442,17 +1454,17 @@ C2::ExprResult C2Parser::ParseSizeof()
     case tok::kw_char:
         Res = ParseTypeSpecifier(false);
         break;
-    case tok::kw_const:
-    case tok::kw_volatile:
-    case tok::kw_local:
-        //Diag(Tok, diag::err_no_qualifier_allowed_here); // TODO why is this commented out?
-        fprintf(stderr, "Not type qualifier allowed here\n");
-        return ExprError();
+    case tok::identifier:
+        if (canBeParsedAsStructType()) {
+            Res = ParseTypeSpecifier(false);
+            break;
+        }
+        // fallthrough;
     default:
-        //Diag(Tok, diag::err_expected type or symbol name); // TODO why is this commented out?
-        fprintf(stderr, "Expected Type or Symbol name\n");
-        return ExprError();
+        Res = ParseExpression();
+        break;
     }
+
     if (Res.isInvalid()) return ExprError();
 
     if (ExpectAndConsume(tok::r_paren)) return ExprError();
