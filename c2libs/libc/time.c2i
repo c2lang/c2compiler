@@ -2,7 +2,7 @@ module time;
 
 import c2 local;
 
-type tm struct {
+type Tm struct {
    c_int tm_sec;    /* Seconds (0-60) */
    c_int tm_min;    /* Minutes (0-59) */
    c_int tm_hour;   /* Hours (0-23) */
@@ -16,6 +16,6 @@ type tm struct {
 
 type time_t c_long;
 
-func tm* localtime(const time_t* timep);
-func tm* localtime_r(const time_t* timep, tm* result);
+func Tm* localtime(const time_t* timep);
+func Tm* localtime_r(const time_t* timep, Tm* result);
 

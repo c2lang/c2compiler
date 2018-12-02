@@ -634,6 +634,10 @@ void FileAnalyser::checkVarDeclAttributes(VarDecl* D) {
             case ATTR_OPAQUE:
                 Diags.Report(A->getLocation(), diag::err_attribute_invalid_constants) << A->kind2str() << A->getRange();
                 break;
+            case ATTR_CNAME:
+            case ATTR_NO_TYPEDEF:
+                // should not happen?
+                break;
             }
         }
     }
@@ -713,6 +717,21 @@ void FileAnalyser::checkAttributes(Decl* D) {
                 Diags.Report(A->getLocation(), diag::err_attr_opaque_non_public) << A->getRange();
             }
             break;
+        case ATTR_CNAME:
+        case ATTR_NO_TYPEDEF:
+        {
+            if (!ast.isInterface()) {
+                Diags.Report(A->getLocation(), diag::err_attribute_non_interface) << A->kind2str() << A->getRange();
+            }
+            StructTypeDecl* S = dyncast<StructTypeDecl>(D);
+            if (S) {
+                if (A->getKind() == ATTR_CNAME) S->setHasCName();
+                if (A->getKind() == ATTR_NO_TYPEDEF) S->setNoTypedef();
+            } else {
+                Diags.Report(A->getLocation(), diag::err_attribute_non_struct) << A->kind2str() << A->getRange();
+            }
+            break;
+        }
         }
     }
 }

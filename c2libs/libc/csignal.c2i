@@ -50,12 +50,12 @@ const c_int SIGSYS      = 31;
 const c_int SIGUNUSED   = 31;
 
 type SigactionHandler func void(c_int);
-type SigActionAction func void(c_int, siginfo_t*, void*);
+type SigActionAction func void(c_int, Siginfo_t*, void*);
 type SigActionRestorer func void();
 
-type siginfo_t struct {
+type Siginfo_t struct {
     char[128] data; // for 64-bit
-}
+} @(cname="siginfo_t")
 
 type Sigaction struct {
     SigactionHandler sa_handler;

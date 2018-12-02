@@ -5,7 +5,7 @@ import stdarg local;
 
 func void log(const char* fmt, ...) {
     char[80] buffer;
-    va_list args;
+    Va_list args;
     va_start(args, fmt);
     vsprintf(buffer, fmt, args);
     va_end(args);

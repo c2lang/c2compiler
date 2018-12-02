@@ -26,6 +26,7 @@ DIAG(err_attribute_export_non_public, CLASS_ERROR, (unsigned)diag::Severity::Err
 DIAG(err_attribute_invalid_constants, CLASS_ERROR, (unsigned)diag::Severity::Error, "attribute '%0' cannot be applied to constants", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(err_attribute_invalid_decl, CLASS_ERROR, (unsigned)diag::Severity::Error, "attribute '%0' cannot be applied to %select{type|function|variable}1 declarations", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(err_attribute_non_struct, CLASS_ERROR, (unsigned)diag::Severity::Error, "attribute '%0' can only be applied to struct/union types", 0, SFINAE_SubstitutionFailure, false, true, 4)
+DIAG(err_attribute_non_interface, CLASS_ERROR, (unsigned)diag::Severity::Error, "attribute '%0' can only be used in interface files", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(err_attribute_not_import_attr, CLASS_ERROR, (unsigned)diag::Severity::Error, "%0 attribute cannot be applied to a module import", 0, SFINAE_SubstitutionFailure, false, true, 13)
 DIAG(err_attribute_not_module_attr, CLASS_ERROR, (unsigned)diag::Severity::Error, "%0 attribute cannot be applied to a module", 0, SFINAE_SubstitutionFailure, false, true, 13)
 DIAG(err_attribute_requires_arguments, CLASS_ERROR, (unsigned)diag::Severity::Error, "parentheses must be omitted if %0 attribute's argument list is empty", 0, SFINAE_SubstitutionFailure, false, true, 4)

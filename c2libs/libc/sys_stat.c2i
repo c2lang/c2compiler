@@ -3,7 +3,7 @@ module sys_stat;
 import c2 local;
 
 // Version for Ubuntu 18.04
-type stat struct {
+type Stat struct {
     c_ulong st_dev;
     c_ulong st_ino;
     // NOTE: some libc versions have st_nlink and st_mode switched!
@@ -28,11 +28,12 @@ type stat struct {
     c_uint  __unused4;
     c_uint  __unused5;
 	c_long[2] reserved;
-}
+} @(cname="stat", no_typedef)
 
-func c_int fstat(c_int fd, stat* buf);
+func c_int fstat(c_int fd, Stat* buf);
 // NOTE: cannot have stat function also... (clashes with stat struct)
-func c_int lstat(const c_char* pathname, stat* buf);
+func c_int lstat(const c_char* pathname, Stat* buf);
+func c_int stat(const c_char* pathname, Stat* buf);
 
 
 const u32 S_IFMT =  00170000;

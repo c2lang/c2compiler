@@ -10,24 +10,24 @@ func DIR* fdopendir(c_int fd);
 
 func c_int closedir(DIR* dirp);
 
-func dirent *readdir(DIR *dirp);
+func Dirent *readdir(DIR *dirp);
 
-type FilterFn func c_int(const dirent*);
-type CompareFn func c_int(const dirent**, const dirent**);
+type FilterFn func c_int(const Dirent*);
+type CompareFn func c_int(const Dirent**, const Dirent**);
 
-func c_int scandir(const c_char* dirp, dirent*** namelist,
+func c_int scandir(const c_char* dirp, Dirent*** namelist,
                    FilterFn filter, CompareFn compar);
 
-func c_int alphasort(const dirent**, const dirent**);
-func c_int versionsort(const dirent**, const dirent**);
+func c_int alphasort(const Dirent**, const Dirent**);
+func c_int versionsort(const Dirent**, const Dirent**);
 
-type dirent struct {
+type Dirent struct {
    c_ulonglong  d_ino;
    c_longlong   d_off;
    c_ushort     d_reclen;
    u8           d_type;
    char[256]    d_name;
-}
+} @(cname="dirent")
 
 const c_int DT_UNKNOWN = 0;
 const c_int DT_FIFO = 1;

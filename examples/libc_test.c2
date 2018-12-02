@@ -58,7 +58,7 @@ func void test_ctype() {
 }
 
 func void test_regex() {
-    regex.regex_t rx;
+    regex.Regex_t rx;
     i32 result;
 
     if (regex.regcomp(&rx, "^a[[:alnum:]]", 0)) {

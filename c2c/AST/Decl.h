@@ -354,12 +354,23 @@ public:
     FunctionDecl* findFunction(const char* name_) const;
     int findIndex(const char*  name_) const;
     void setOpaqueMembers();
+    void setNoTypedef() { extraBits.hasTypedef = 0; }
+    void setHasCName() { extraBits.hasCName = 1; }
 
     bool isStruct() const { return structTypeDeclBits.IsStruct; }
     bool isGlobal() const { return structTypeDeclBits.IsGlobal; }
+    bool hasTypedef() const { return extraBits.hasTypedef; }
+    bool hasCName() const { return extraBits.hasCName; }
 private:
     Decl** members;
     FunctionDecl** structFunctions;
+
+    class ExtraBits {
+        friend class StructTypeDecl;
+        unsigned hasTypedef : 1;
+        unsigned hasCName : 1;
+    };
+    ExtraBits extraBits;
 };
 
 class EnumTypeDecl : public TypeDecl {

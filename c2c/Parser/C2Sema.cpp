@@ -152,7 +152,7 @@ C2Sema::C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, c2lang::Preprocess
 
     checkSize(TypeDecl, 32);
     checkSize(AliasTypeDecl, 40);
-    checkSize(StructTypeDecl, 48);
+    checkSize(StructTypeDecl, 56);
     checkSize(EnumTypeDecl, 48);
     checkSize(FunctionTypeDecl, 40);
 

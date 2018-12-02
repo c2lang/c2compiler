@@ -2,15 +2,15 @@ module stdlib;
 
 import c2 local;
 
-type div_t struct {
+type Div_t struct {
     c_int quot;
     c_int rem;
-}
+} @(cname="div_t")
 
-type ldiv_t struct {
+type Ldiv_t struct {
     c_long quot;
     c_long rem;
-}
+} @(cname="Ldiv_t")
 
 const c_int RAND_MAX = 2147483647;      // same as Int32_max
 
@@ -48,12 +48,12 @@ func void srandom(c_uint __seed);
 func c_char* initstate(c_uint __seed, c_char* __statebuf, c_size __statelen);
 func c_char* setstate(c_char* __statebuf);
 
-type random_data struct {} @(opaque)
+type Random_data struct {} @(opaque, cname="random_data")
 
-func c_int random_r(random_data* __buf, c_int* __result);
-func c_int srandom_r(c_uint __seed, random_data* __buf);
-func c_int initstate_r(c_uint __seed, c_char* __statebuf, c_size __statelen, random_data* __buf);
-func c_int setstate_r(c_char* __statebuf, random_data* __buf);
+func c_int random_r(Random_data* __buf, c_int* __result);
+func c_int srandom_r(c_uint __seed, Random_data* __buf);
+func c_int initstate_r(c_uint __seed, c_char* __statebuf, c_size __statelen, Random_data* __buf);
+func c_int setstate_r(c_char* __statebuf, Random_data* __buf);
 func c_int rand();
 func void srand(c_uint __seed);
 func c_int rand_r(c_uint* __seed);
@@ -67,17 +67,17 @@ func void srand48(c_long __seedval);
 func u16* seed48(u16* __seed16v);
 func void lcong48(u16* __param);
 
-type drand48_data struct {} @(opaque)
+type Drand48_data struct {} @(opaque, cname="drand48_data")
 
-func c_int drand48_r(drand48_data* __buffer, c_double* __result);
-func c_int erand48_r(u16* __xsubi, drand48_data* __buffer, c_double* __result);
-func c_int lrand48_r(drand48_data* __buffer, c_long* __result);
-func c_int nrand48_r(u16* __xsubi, drand48_data* __buffer, c_long* __result);
-func c_int mrand48_r(drand48_data* __buffer, c_long* __result);
-func c_int jrand48_r(u16* __xsubi, drand48_data* __buffer, c_long* __result);
-func c_int srand48_r(c_long __seedval, drand48_data* __buffer);
-func c_int seed48_r(u16* __seed16v, drand48_data* __buffer);
-func c_int lcong48_r(u16* __param, drand48_data* __buffer);
+func c_int drand48_r(Drand48_data* __buffer, c_double* __result);
+func c_int erand48_r(u16* __xsubi, Drand48_data* __buffer, c_double* __result);
+func c_int lrand48_r(Drand48_data* __buffer, c_long* __result);
+func c_int nrand48_r(u16* __xsubi, Drand48_data* __buffer, c_long* __result);
+func c_int mrand48_r(Drand48_data* __buffer, c_long* __result);
+func c_int jrand48_r(u16* __xsubi, Drand48_data* __buffer, c_long* __result);
+func c_int srand48_r(c_long __seedval, Drand48_data* __buffer);
+func c_int seed48_r(u16* __seed16v, Drand48_data* __buffer);
+func c_int lcong48_r(u16* __param, Drand48_data* __buffer);
 
 func c_int posix_memalign(void** __memptr, c_size __alignment, c_size __size);
 func void* aligned_alloc(c_int __alignment, c_size __size);
@@ -111,8 +111,8 @@ func void qsort(void* __base, c_size __nmemb, c_size __size, __compar_fn_t __com
 
 func c_int abs(c_int __x);
 func c_long labs(c_long __x);
-func div_t div(c_int __numer, c_int __denom);
-func ldiv_t ldiv(c_long __numer, c_long __denom);
+func Div_t div(c_int __numer, c_int __denom);
+func Ldiv_t ldiv(c_long __numer, c_long __denom);
 
 func c_char* ecvt(c_double __value, c_int __ndigit, c_int* __decpt, c_int* __sign);
 func c_char* fcvt(c_double __value, c_int __ndigit, c_int* __decpt, c_int* __sign);

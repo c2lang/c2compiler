@@ -639,6 +639,9 @@ void InterfaceGenerator::EmitAttributes(const Decl* D) {
             }
             first = false;
             break;
+        case ATTR_CNAME:
+        case ATTR_NO_TYPEDEF:
+            break;
         }
     }
     if (!first) iface << ")";

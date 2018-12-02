@@ -33,6 +33,8 @@ static const AttrInfo attrInfo[] {
     { ATTR_ALIGNED,       "aligned",       true,  ATTR_TYPE | ATTR_FUNC | ATTR_VAR },
     { ATTR_WEAK,          "weak",          false,             ATTR_FUNC | ATTR_VAR },
     { ATTR_OPAQUE,        "opaque",        false, ATTR_TYPE },
+    { ATTR_CNAME,         "cname",         true,  ATTR_TYPE | ATTR_FUNC | ATTR_VAR },
+    { ATTR_NO_TYPEDEF,    "no_typedef",    false, ATTR_TYPE },
 };
 
 const char* Attr::kind2str() const {
@@ -48,6 +50,8 @@ const char* Attr::kind2str() const {
     case ATTR_ALIGNED:       return "aligned";
     case ATTR_WEAK:          return "weak";
     case ATTR_OPAQUE:        return "opaque";
+    case ATTR_CNAME:         return "cname";
+    case ATTR_NO_TYPEDEF:    return "no_typedef";
     }
     return "?";
 }

@@ -515,6 +515,23 @@ void CCodeGenerator::EmitBitOffsetExpr(const Expr* Base, Expr* E, StringBuilder&
     output << ')';
 }
 
+static const char* getCName(const Decl* D) {
+    if (!D->hasAttributes()) return D->getName();
+    const StructTypeDecl* S = dyncast<StructTypeDecl>(D);
+    if (!S || !S->hasCName()) return D->getName();
+
+    const AttrList& AL = D->getAttributes();
+    for (AttrListConstIter iter = AL.begin(); iter != AL.end(); ++iter) {
+        const Attr* A = *iter;
+        const Expr* Arg = A->getArg();
+        if (A->getKind() == ATTR_CNAME) {
+            const C2::StringLiteral* S = cast<C2::StringLiteral>(Arg);
+            return S->getValue();
+        }
+    }
+    return D->getName();
+}
+
 void CCodeGenerator::EmitDecl(const Decl* D, StringBuilder& output) {
     assert(D);
 
@@ -526,11 +543,19 @@ void CCodeGenerator::EmitDecl(const Decl* D, StringBuilder& output) {
             cname << structName->getName() << '_' << F->getMemberName();
             GenUtils::addName(D->getModule()->getCName(), cname.c_str(), output);
         } else {
-            GenUtils::addName(D->getModule()->getCName(), D->getName(), output);
+            const char* cname = getCName(D);
+            GenUtils::addName(D->getModule()->getCName(), cname, output);
         }
     } else {
         output << D->getName();
     }
+}
+
+void CCodeGenerator::EmitStructDecl(const StructTypeDecl* D, StringBuilder& output) {
+    assert(D->getModule());
+    if (!D->hasTypedef()) output << "struct ";
+    const char* cname = getCName(D);
+    GenUtils::addName(D->getModule()->getCName(), cname, output);
 }
 
 void CCodeGenerator::EmitEnumConstant(const EnumConstantDecl* D, const char* typeName, StringBuilder& output) {
@@ -780,6 +805,8 @@ void CCodeGenerator::EmitForwardTypeDecl(const TypeDecl* D) {
 
     const StructTypeDecl* S = cast<StructTypeDecl>(D);
 
+    if (!S->hasTypedef()) return;
+
     StringBuilder* out = &cbuf;
     if (mode != SINGLE_FILE && D->isPublic()) out = &hbuf;
 
@@ -800,7 +827,8 @@ void CCodeGenerator::EmitStructType(const StructTypeDecl* S, StringBuilder& out,
     out << (S->isStruct() ? "struct " : "union ");
     if (!S->hasEmptyName() && S->isGlobal()) {
         EmitDecl(S, out);
-        out << "_ ";
+        if (S->hasTypedef()) out << '_';  // either generate 'struct stat_' or 'struct stat'
+        out << ' ';
     }
     out << "{\n";
     for (unsigned i=0; i<S->numMembers(); i++) {
@@ -1288,7 +1316,7 @@ void CCodeGenerator::EmitTypePreName(QualType type, StringBuilder& output) {
         EmitTypePreName(cast<AliasType>(T)->getRefType(), output);
         break;
     case TC_STRUCT:
-        EmitDecl(cast<StructType>(T)->getDecl(), output);
+        EmitStructDecl(cast<StructType>(T)->getDecl(), output);
         break;
     case TC_ENUM:
         EmitDecl(cast<EnumType>(T)->getDecl(), output);
@@ -1378,6 +1406,8 @@ bool CCodeGenerator::EmitAttributes(const Decl* D, StringBuilder& output, bool a
             first = false;
             break;
         case ATTR_OPAQUE:
+        case ATTR_CNAME:
+        case ATTR_NO_TYPEDEF:
             // dont emit
             break;
         }

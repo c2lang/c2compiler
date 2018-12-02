@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+public type Foo struct {
+    i32 a;
+} @(cname="foo")    // @error{attribute 'cname' can only be used in interface files}
+

@@ -310,6 +310,8 @@ StructTypeDecl::StructTypeDecl(const char* name_, SourceLocation loc_,
     structTypeDeclBits.numStructFunctions = 0;
     structTypeDeclBits.IsStruct = is_struct;
     structTypeDeclBits.IsGlobal = is_global;
+    extraBits.hasTypedef = 1;
+    extraBits.hasCName = 0;
 }
 
 Decl* StructTypeDecl::find(const char* name_) const {

@@ -32,24 +32,24 @@ const c_int SO_BROADCAST = 6;
 
 type sa_family_t u16;
 
-type sockaddr struct {
+type Sockaddr struct {
     sa_family_t sa_family;
     char[14] sa_data;
-}
+} @(cname="sockaddr")
 
 type in_port_t u16;
 type in_addr_t u32;
-type in_addr struct {
+type In_addr struct {
     in_addr_t s_addr;
-}
+} @(cname="in_addr")
 
-type sockaddr_in struct {
+type Sockaddr_in struct {
     sa_family_t sin_family;
     in_port_t sin_port;
-    in_addr sin_addr;
+    In_addr sin_addr;
 
     u8[8] sin_zero; // on 64-bit Ubuntu
-}
+} @(cname="sockaddr_in")
 
 const u32 INADDR_ANY       = 0x00000000;
 const u32 INADDR_BROADCAST = 0xffffffff;
@@ -58,13 +58,13 @@ const u32 INADDR_NONE      = 0xffffffff;
 func c_int getsockopt(c_int sockfd, c_int level, c_int optname, void* optval, u32 optlen);
 func c_int setsockopt(c_int sockfd, c_int level, c_int optname, const void* optval, u32 optlen);
 
-func c_int bind(c_int sockfd, const sockaddr* addr, u32 addrlen);
+func c_int bind(c_int sockfd, const Sockaddr* addr, u32 addrlen);
 
 func c_int listen(c_int sockfd, c_int backlog);
 
-func c_int accept4(c_int sockfd, sockaddr* addr, u32* addrlen, c_int flags);
+func c_int accept4(c_int sockfd, Sockaddr* addr, u32* addrlen, c_int flags);
 
-func char* inet_ntoa(in_addr in);
+func char* inet_ntoa(In_addr in);
 
 // should be in arpa/inet.h
 func u32 htonl(u32 hostlong);
