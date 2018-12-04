@@ -41,6 +41,7 @@ Decl::Decl(DeclKind k, const char* name_, SourceLocation loc_, QualType type_, b
     declBits.IsUsed = 0;
     declBits.IsUsedPublic = 0;
     declBits.HasAttributes = 0;
+    declBits.hasCName = 0;
 }
 
 void Decl::fullName(StringBuilder& output) const {
@@ -311,7 +312,6 @@ StructTypeDecl::StructTypeDecl(const char* name_, SourceLocation loc_,
     structTypeDeclBits.IsStruct = is_struct;
     structTypeDeclBits.IsGlobal = is_global;
     extraBits.hasTypedef = 1;
-    extraBits.hasCName = 0;
 }
 
 Decl* StructTypeDecl::find(const char* name_) const {

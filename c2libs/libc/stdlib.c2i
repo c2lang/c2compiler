@@ -105,9 +105,9 @@ func c_int system(const c_char* __command);
 func c_char* realpath(const c_char* __name, c_char* __resolved);
 func c_char* mktemp(c_char* __template);
 
-type __compar_fn_t func c_int(const void*, const void*);
-func void* bsearch(const void* __key, const void* __base, c_size __nmemb, c_size __size, __compar_fn_t __compar);
-func void qsort(void* __base, c_size __nmemb, c_size __size, __compar_fn_t __compar);
+type CompareFn func c_int(const void*, const void*) @(cname="__compar_fn_t");
+func void* bsearch(const void* __key, const void* __base, c_size __nmemb, c_size __size, CompareFn __compar);
+func void qsort(void* __base, c_size __nmemb, c_size __size, CompareFn __compar);
 
 func c_int abs(c_int __x);
 func c_long labs(c_long __x);

@@ -649,6 +649,10 @@ void FileAnalyser::checkAttributes(Decl* D) {
            currentPass == FileAnalyserPass::CHECK_FUNCTION_PROTOS ||
            currentPass == FileAnalyserPass::RESOLVE_VARS);
 
+    // For FunctionTypeDecl, use FunctionDecl itself
+    FunctionTypeDecl* FTD = dyncast<FunctionTypeDecl>(D);
+    if (FTD) D = FTD->getDecl();
+
     if (!D->hasAttributes()) return;
 
     const AttrList& AL = D->getAttributes();
@@ -718,18 +722,24 @@ void FileAnalyser::checkAttributes(Decl* D) {
             }
             break;
         case ATTR_CNAME:
+            if (!ast.isInterface()) {
+                Diags.Report(A->getLocation(), diag::err_attribute_non_interface) << A->kind2str() << A->getRange();
+                break;
+            }
+            D->setHasCName();
+            break;
         case ATTR_NO_TYPEDEF:
         {
             if (!ast.isInterface()) {
                 Diags.Report(A->getLocation(), diag::err_attribute_non_interface) << A->kind2str() << A->getRange();
+                break;
             }
             StructTypeDecl* S = dyncast<StructTypeDecl>(D);
-            if (S) {
-                if (A->getKind() == ATTR_CNAME) S->setHasCName();
-                if (A->getKind() == ATTR_NO_TYPEDEF) S->setNoTypedef();
-            } else {
+            if (!S) {
                 Diags.Report(A->getLocation(), diag::err_attribute_non_struct) << A->kind2str() << A->getRange();
+                break;
             }
+            S->setNoTypedef();
             break;
         }
         }

@@ -2,12 +2,12 @@ module sys_time;
 
 import c2 local;
 
-type time_t c_long;
-type suseconds_t c_long;
+type Time c_long @(cname="time_t");
+type SuSeconds c_long @(cname="suseconds_t");
 
 type Timeval struct {
-    time_t tv_sec;
-    suseconds_t tv_usec;
+    Time tv_sec;
+    SuSeconds tv_usec;
 } @(cname="timeval")
 
 type Timezone struct {

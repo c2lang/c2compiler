@@ -516,9 +516,7 @@ void CCodeGenerator::EmitBitOffsetExpr(const Expr* Base, Expr* E, StringBuilder&
 }
 
 static const char* getCName(const Decl* D) {
-    if (!D->hasAttributes()) return D->getName();
-    const StructTypeDecl* S = dyncast<StructTypeDecl>(D);
-    if (!S || !S->hasCName()) return D->getName();
+    if (!D->hasCName()) return D->getName();
 
     const AttrList& AL = D->getAttributes();
     for (AttrListConstIter iter = AL.begin(); iter != AL.end(); ++iter) {
@@ -529,6 +527,7 @@ static const char* getCName(const Decl* D) {
             return S->getValue();
         }
     }
+    // should not come here
     return D->getName();
 }
 
@@ -883,7 +882,7 @@ void CCodeGenerator::EmitFunctionType(const FunctionTypeDecl* FTD, StringBuilder
     EmitDecl(F, output);
     output << ')';
     EmitFunctionArgs(F, output);
-    EmitAttributes(FTD, output, true);
+    EmitAttributes(F, output, true);
     output << ";\n\n";
 }
 

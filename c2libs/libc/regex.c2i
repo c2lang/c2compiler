@@ -8,12 +8,12 @@ type Regex_t struct {
     c_size re_erroffset;
 } @(cname="regex_t")
 
-type regoff_t c_int;
+type RegOff c_int @(cname="regoff_t");
 
 type Regmatch_t struct
 {
-	regoff_t rm_so;
-	regoff_t rm_eo;
+	RegOff rm_so;
+	RegOff rm_eo;
 } @(cname="regmatch_t")
 
 /* regcomp() flags */

@@ -6,7 +6,7 @@ const c_int AF_INET = 2;
 
 const c_int IPPROTO_TCP = 6;
 
-type __socket_type enum u32 {
+type SocketType enum u32 {
   SOCK_STREAM    = 1,   /* Sequenced, reliable, connection-based byte streams.  */
   SOCK_DGRAM     = 2,   /* Connectionless, unreliable datagrams of fixed maximum length.  */
   SOCK_RAW       = 3,   /* Raw protocol interface.  */
@@ -19,7 +19,7 @@ type __socket_type enum u32 {
      used for the flags parameter of paccept.  */
   SOCK_CLOEXEC   = 02000000,  /* Atomically set close-on-exec flag for the new descriptor(s).  */
   SOCK_NONBLOCK  = 00004000  /* Atomically mark descriptor(s) as non-blocking.  */
-}
+} @(cname="__socket_type")
 
 func c_int socket(c_int domain, c_int type_, c_int protocol);
 
@@ -30,22 +30,22 @@ const c_int SO_DEBUG     = 1;
 const c_int SO_REUSEADDR = 2;
 const c_int SO_BROADCAST = 6;
 
-type sa_family_t u16;
+type SaFamily u16 @(cname="sa_family_t");
 
 type Sockaddr struct {
-    sa_family_t sa_family;
+    SaFamily sa_family;
     char[14] sa_data;
 } @(cname="sockaddr")
 
-type in_port_t u16;
-type in_addr_t u32;
+type InPort u16 @(cname="in_port_t");
+type InAddr u32 @(cname="in_addr_t");
 type In_addr struct {
-    in_addr_t s_addr;
+    InAddr s_addr;
 } @(cname="in_addr")
 
 type Sockaddr_in struct {
-    sa_family_t sin_family;
-    in_port_t sin_port;
+    SaFamily sin_family;
+    InPort sin_port;
     In_addr sin_addr;
 
     u8[8] sin_zero; // on 64-bit Ubuntu

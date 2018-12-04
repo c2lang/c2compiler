@@ -18,15 +18,15 @@ const u8 SEEK_HOLE = 4;  // Seek to next hole.
 #endif
 
 // from libio.h
-type _IO_marker struct {
-    _IO_marker* next;
+type IO_marker struct {
+    IO_marker* next;
     FILE* sbuf;
     i32 _pos;
-}
+} @(cname="_IO_marker")
 
 type FILE struct {} @(opaque)
 
-type off_t u64;
+type Offset u64 @(cname="off_t");
 
 //NOTE: _G_fpos_t is some struct(_G_fpos_t.h)
 //type fpos_t _G_fpos_t;
@@ -85,8 +85,8 @@ func c_size fwrite(const void* __ptr, c_size __size, c_size __n, FILE* __s);
 func c_int fseek(FILE* __stream, c_long __off, c_int __whence);
 func c_long ftell(FILE* __stream);
 func void rewind(FILE* __stream);
-func c_int fseeko(FILE* __stream, off_t __off, c_int __whence);
-func off_t ftello(FILE* __stream);
+func c_int fseeko(FILE* __stream, Offset __off, c_int __whence);
+func Offset ftello(FILE* __stream);
 //func c_int fgetpos(FILE* __stream, fpos_t* __pos);
 //func c_int fsetpos(FILE* __stream, const fpos_t* __pos);
 func void clearerr(FILE* __stream);

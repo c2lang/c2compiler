@@ -14,8 +14,8 @@ type Tm struct {
    c_int tm_isdst;  /* Daylight saving time */
 }
 
-type time_t c_long;
+type Time c_long @(cname="time_t");
 
-func Tm* localtime(const time_t* timep);
-func Tm* localtime_r(const time_t* timep, Tm* result);
+func Tm* localtime(const Time* timep);
+func Tm* localtime_r(const Time* timep, Tm* result);
 

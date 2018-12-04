@@ -2,9 +2,9 @@ module sys_mman;
 
 import c2 local;
 
-type off_t u64;
+type Offset u64 @(cname="off_t");
 
-func void* mmap(void* addr, c_size length, c_int prot, c_int flags, c_int fd, off_t offset);
+func void* mmap(void* addr, c_size length, c_int prot, c_int flags, c_int fd, Offset offset);
 
 func c_int munmap(void* addr, c_size length);
 

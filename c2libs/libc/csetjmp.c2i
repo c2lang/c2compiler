@@ -2,19 +2,19 @@ module csetjmp;
 
 import c2 local;
 
-type __jmp_buf_tag struct {
+type JmpBufTag struct {
     char[200] data; // for 64-bit
-}
+} @(cname="__jmp_buf_tag")
 
-type jmp_buf __jmp_buf_tag[1];
+type JmpBuf JmpBufTag[1] @(cname="jmp_buf");
 
 // TODO alias setjmp -> _setjmp
-func i32 setjmp(__jmp_buf_tag[1] __env);
+func i32 setjmp(JmpBufTag[1] __env);
 
-func i32 _setjmp(__jmp_buf_tag[1] __env);
+func i32 _setjmp(JmpBufTag[1] __env);
 
 
-func void longjmp(__jmp_buf_tag[1] __env, i32 __val);  // attribute(no_return)
+func void longjmp(JmpBufTag[1] __env, i32 __val);  // attribute(no_return)
 
 func c_uint sleep(c_uint __seconds);
 func c_char* getcwd(char* buf, c_size size);

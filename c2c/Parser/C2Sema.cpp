@@ -350,7 +350,7 @@ void C2Sema::ActOnModule(const char* name_, SourceLocation loc) {
         Diag(loc, diag::err_invalid_symbol_name) << name_;
         return;
     }
-    if (!islower(name_[0]) && !ast.isInterface()) {
+    if (!islower(name_[0])) {
         Diag(loc, diag::err_module_casing);
         return;
     }
@@ -415,7 +415,7 @@ void C2Sema::ActOnImport(const char* moduleName_, SourceLocation loc, Token& ali
             Diag(aliasTok.getLocation(), diag::err_alias_same_as_module);
             return;
         }
-        if (!islower(name[0]) && !ast.isInterface()) {
+        if (!islower(name[0])) {
             Diag(aliasTok.getLocation(), diag::err_module_casing);
             return;
         }
@@ -1314,6 +1314,10 @@ void C2Sema::ActOnAttr(Decl* D, const char* name, SourceRange range, Expr* arg) 
             return;
         }
     }
+
+    // For FunctionTypeDecls, store Attributes with FunctionDecl
+    FunctionTypeDecl* FTD = dyncast<FunctionTypeDecl>(D);
+    if (FTD) D = FTD->getDecl();
 
     // check for duplicates
     if (module->hasAttribute(D, kind)) {

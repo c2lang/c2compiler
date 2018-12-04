@@ -39,6 +39,12 @@ using namespace c2lang;
 
 #define MAX_IDENTIFIER 31
 
+static bool checkName(char c, bool isInterface) {
+    if (islower(c)) return true;
+    if (c == '_' && isInterface) return true;
+    return false;
+}
+
 /// \brief Return the precedence of the specified binary operator token.
 static prec::Level getBinOpPrecedence(tok::TokenKind Kind) {
     switch (Kind) {
@@ -227,7 +233,8 @@ void C2Parser::ParseTypeDef(bool is_public) {
     SourceLocation idLoc = ConsumeToken();
     if (tooLong(id, idLoc)) return;
 
-    if (!isupper(id->getNameStart()[0]) && !isInterface) {
+    if (!isupper(id->getNameStart()[0])) {
+    //if (!isupper(id->getNameStart()[0]) && !isInterface) {
         Diag(idLoc, diag::err_type_casing);
         return;
     }
@@ -1554,7 +1561,7 @@ void C2Parser::ParseFuncDef(bool is_public) {
         func_loc = ConsumeToken();
     }
 
-    if (!islower(func_id->getNameStart()[0]) && !isInterface) {
+    if (!checkName(func_id->getNameStart()[0], isInterface)) {
         Diag(func_loc, diag::err_func_casing);
         return;
     }

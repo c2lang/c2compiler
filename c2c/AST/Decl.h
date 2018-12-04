@@ -82,6 +82,8 @@ public:
     bool hasAttributes() const { return declBits.HasAttributes; }
     bool hasAttribute(AttrKind kind) const;
     const AttrList& getAttributes() const;
+    bool hasCName() const { return declBits.hasCName; }
+    void setHasCName() { declBits.hasCName = 1; }
 
     void setModule(const Module* mod_) { mod = mod_; }
     const Module* getModule() const { return mod; }
@@ -111,6 +113,7 @@ protected:
         unsigned IsUsed : 1;
         unsigned IsUsedPublic : 1;
         unsigned HasAttributes : 1;
+        unsigned hasCName : 1;
     };
     enum { NumDeclBits = 16 };
 
@@ -355,12 +358,10 @@ public:
     int findIndex(const char*  name_) const;
     void setOpaqueMembers();
     void setNoTypedef() { extraBits.hasTypedef = 0; }
-    void setHasCName() { extraBits.hasCName = 1; }
 
     bool isStruct() const { return structTypeDeclBits.IsStruct; }
     bool isGlobal() const { return structTypeDeclBits.IsGlobal; }
     bool hasTypedef() const { return extraBits.hasTypedef; }
-    bool hasCName() const { return extraBits.hasCName; }
 private:
     Decl** members;
     FunctionDecl** structFunctions;
@@ -368,7 +369,6 @@ private:
     class ExtraBits {
         friend class StructTypeDecl;
         unsigned hasTypedef : 1;
-        unsigned hasCName : 1;
     };
     ExtraBits extraBits;
 };

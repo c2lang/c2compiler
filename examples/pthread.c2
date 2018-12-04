@@ -27,7 +27,7 @@ func void* startThread2(void*) {
 }
 
 public func i32 main() {
-    pthread_t[2] threads;
+    Pthread[2] threads;
     i32 rc = pthread_create(&threads[0], nil, startThread1, nil);
     if (rc != 0) {
         io.perror("pthread_create");
