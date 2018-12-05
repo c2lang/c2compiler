@@ -336,7 +336,6 @@ void InterfaceGenerator::EmitUnaryOperator(const Expr* E) {
     case UO_PreDec:
     case UO_AddrOf:
     case UO_Deref:
-    case UO_Plus:
     case UO_Minus:
     case UO_Not:
     case UO_LNot:

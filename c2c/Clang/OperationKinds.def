@@ -270,7 +270,6 @@ UNARY_OPERATION(PreDec, "--")
 UNARY_OPERATION(AddrOf, "&")
 UNARY_OPERATION(Deref, "*")
 // [C99 6.5.3.3] Unary arithmetic
-UNARY_OPERATION(Plus, "+")
 UNARY_OPERATION(Minus, "-")
 UNARY_OPERATION(Not, "~")
 UNARY_OPERATION(LNot, "!")

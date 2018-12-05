@@ -890,8 +890,11 @@ C2::ExprResult C2Parser::ParseCastExpression(bool isUnaryExpression,
             Res = Actions.ActOnUnaryOp(SavedLoc, SavedKind, Res.get());
         return Res;
     }
-    case tok::star:          // unary-expression: '*' cast-expression
     case tok::plus:          // unary-expression: '+' cast-expression
+        // We let unary + be a no-op.
+        ConsumeToken();
+        return ParseCastExpression(false);
+    case tok::star:          // unary-expression: '*' cast-expression
     case tok::minus:         // unary-expression: '-' cast-expression
     case tok::tilde:         // unary-expression: '~' cast-expression
     case tok::exclaim:       // unary-expression: '!' cast-expression
