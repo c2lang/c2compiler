@@ -116,7 +116,6 @@ static inline UnaryOperatorKind ConvertTokenKindToUnaryOpcode(
     case tok::minusminus:   Opc = UO_PreDec; break;
     case tok::amp:          Opc = UO_AddrOf; break;
     case tok::star:         Opc = UO_Deref; break;
-    case tok::plus:         Opc = UO_Plus; break;
     case tok::minus:        Opc = UO_Minus; break;
     case tok::tilde:        Opc = UO_Not; break;
     case tok::exclaim:      Opc = UO_LNot; break;
@@ -1244,6 +1243,7 @@ C2::ExprResult C2Sema::ActOnUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, E
 #endif
     UnaryOperatorKind Opc = ConvertTokenKindToUnaryOpcode(Kind);
     MEM_EXPR(EXPR_UNARYOP);
+
     return ExprResult(new (Context) UnaryOperator(OpLoc, Opc, Input));
 }
 

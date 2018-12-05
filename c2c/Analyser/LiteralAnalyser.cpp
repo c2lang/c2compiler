@@ -347,7 +347,6 @@ APSInt LiteralAnalyser::checkUnaryLiterals(const Expr* Right) {
         break;
     case UO_AddrOf:
     case UO_Deref:
-    case UO_Plus:
         TODO;
         break;
     case UO_Minus:

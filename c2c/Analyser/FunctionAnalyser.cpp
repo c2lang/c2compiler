@@ -1495,7 +1495,6 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
             return P->getPointeeType();
         }
         break;
-    case UO_Plus:
     case UO_Minus:
     case UO_Not:
         LType = analyseExpr(SubExpr, side | RHS);

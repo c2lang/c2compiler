@@ -815,8 +815,6 @@ llvm::Value* CodeGenFunction::EmitUnaryOperator(const UnaryOperator* unaryOperat
     switch (unaryOperator->getOpcode()) {
         case UO_Not:
             return Builder.CreateNot(EmitExpr(expression), "not");
-        case UO_Plus:
-            return EmitExpr(expression);
         case UO_Minus:
             return expression->isFloat()
                    ? Builder.CreateFNeg(EmitExpr(expression), "fneg")

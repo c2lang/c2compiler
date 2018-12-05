@@ -123,7 +123,6 @@ QualType TypeFinder::getUnaryOpType(const UnaryOperator* unaryop) {
         // just return type
         break;
     case UO_Deref:
-    case UO_Plus:
     case UO_Minus:
     case UO_Not:
         return findType(unaryop->getExpr());
