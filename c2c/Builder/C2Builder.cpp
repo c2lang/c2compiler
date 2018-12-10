@@ -31,7 +31,6 @@
 #include "Clang/FileManager.h"
 #include "Clang/FileSystemOptions.h"
 #include "Clang/MacroBuilder.h"
-#include "Clang/LangOptions.h"
 #include "Clang/SourceManager.h"
 #include "Clang/TargetOptions.h"
 #include "Clang/MemoryBufferCache.h"
@@ -70,7 +69,6 @@ using c2lang::FileManager;
 using c2lang::FileSystemOptions;
 using c2lang::HeaderSearch;
 using c2lang::HeaderSearchOptions;
-using c2lang::LangOptions;
 using c2lang::Preprocessor;
 using c2lang::SourceManager;
 using c2lang::TargetInfo;
@@ -88,7 +86,6 @@ namespace C2 {
 class ParseHelper {
 public:
     ParseHelper(DiagnosticsEngine &Diags_,
-                    LangOptions &LangOpts_,
                     std::shared_ptr<HeaderSearchOptions> HSOpts_,
                     SourceManager &SM_,
                     FileManager &FileMgr_,
@@ -96,7 +93,6 @@ public:
                     const std::string &configs_,
                     const TargetInfo &ti)
         : Diags(Diags_)
-        , LangOpts(LangOpts_)
         , HSOpts(HSOpts_)
         , SM(SM_)
         , FileMgr(FileMgr_)
@@ -107,11 +103,11 @@ public:
 
     bool parse(Component& component, Module* existingMod, const std::string& filename, bool printAST) {
         // NOTE: seems to get deleted by Preprocessor,
-        HeaderSearch* Headers = new HeaderSearch(HSOpts, SM, Diags, LangOpts);
+        HeaderSearch* Headers = new HeaderSearch(HSOpts, SM, Diags);
 
-        Preprocessor PP(Diags, LangOpts, SM, PCMCache, *Headers);
+        Preprocessor PP(Diags, SM, PCMCache, *Headers);
 
-        ApplyHeaderSearchOptions(PP.getHeaderSearchInfo(), *HSOpts, LangOpts);
+        ApplyHeaderSearchOptions(PP.getHeaderSearchInfo(), *HSOpts);
         PP.setPredefines(configs);
         PP.Initialize(targetInfo);
 
@@ -135,7 +131,7 @@ public:
         PP.setPredefinesFileID(FID);
         PP.EnterSourceFile(FID, nullptr, SourceLocation());
 
-        Diags.getClient()->BeginSourceFile(LangOpts, 0);
+        Diags.getClient()->BeginSourceFile(0);
 
         C2Sema sema(SM, Diags, PP, component, existingMod, filename, targetInfo);
         C2Parser parser(PP, sema, component.isExternal());
@@ -153,7 +149,6 @@ public:
     }
 
     DiagnosticsEngine& Diags;
-    LangOptions& LangOpts;
     std::shared_ptr<HeaderSearchOptions> HSOpts;
     SourceManager& SM;
     FileManager& FileMgr;
@@ -227,8 +222,6 @@ int C2Builder::build() {
     log(ANSI_GREEN, "building target %s", recipe.name.c_str());
 
     uint64_t t1_build = Utils::getCurrentTime();
-    // LangOptions
-    LangOptions LangOpts;
 
     // Diagnostics
     // NOTE: DiagOpts is somehow deleted by Diags/TextDiagnosticPrinter below?
@@ -314,7 +307,7 @@ int C2Builder::build() {
     if (getcwd(pwd, 512) == 0) {
         FATAL_ERROR("Failed to get current directory");
     }
-    HSOpts->AddPath(pwd, c2lang::frontend::Quoted, false, false);
+    HSOpts->AddPath(pwd, c2lang::frontend::Quoted);
 
     // set definitions from recipe
     std::string PredefineBuffer;
@@ -344,7 +337,7 @@ int C2Builder::build() {
         libLoader.addDep(mainComponent, recipe.libraries[i].name, recipe.libraries[i].type);
     }
 
-    ParseHelper helper(Diags, LangOpts, HSOpts, SM, FileMgr, PCMCache, PredefineBuffer, targetInfo);
+    ParseHelper helper(Diags, HSOpts, SM, FileMgr, PCMCache, PredefineBuffer, targetInfo);
     // phase 1a: parse and local analyse
     uint64_t t1_parse = Utils::getCurrentTime();
     unsigned errors = 0;

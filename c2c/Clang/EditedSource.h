@@ -24,7 +24,6 @@
 
 namespace c2lang {
 
-class LangOptions;
 class SourceManager;
 
 namespace edit {
@@ -34,7 +33,6 @@ class EditsReceiver;
 
 class EditedSource {
   const SourceManager &SourceMgr;
-  const LangOptions &LangOpts;
 
   struct FileEdit {
     StringRef Text;
@@ -69,12 +67,11 @@ class EditedSource {
   llvm::BumpPtrAllocator StrAlloc;
 
 public:
-  EditedSource(const SourceManager &SM, const LangOptions &LangOpts
+  EditedSource(const SourceManager &SM
                )
-      : SourceMgr(SM), LangOpts(LangOpts),  IdentTable(LangOpts) {}
+      : SourceMgr(SM),  IdentTable() {}
 
   const SourceManager &getSourceManager() const { return SourceMgr; }
-  const LangOptions &getLangOpts() const { return LangOpts; }
 
 
   bool canInsertInOffset(SourceLocation OrigLoc, FileOffset Offs);

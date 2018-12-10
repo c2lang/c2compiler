@@ -41,12 +41,11 @@ namespace c2lang {
 class DiagnosticsEngine;
 class HeaderSearch;
 class HeaderSearchOptions;
-class LangOptions;
 class Preprocessor;
 class PreprocessorOptions;
 
 /// Apply the header search options to get given HeaderSearch object.
-void ApplyHeaderSearchOptions(HeaderSearch &HS, const HeaderSearchOptions &HSOpts, const LangOptions &Lang);
+void ApplyHeaderSearchOptions(HeaderSearch &HS, const HeaderSearchOptions &HSOpts);
 
 // Frontend timing utils
 

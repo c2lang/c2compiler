@@ -44,15 +44,6 @@ LLVM_READNONE inline bool isASCII(char c) {
   return static_cast<unsigned char>(c) <= 127;
 }
 
-/// Returns true if this is a valid first character of a C identifier,
-/// which is [a-zA-Z_].
-LLVM_READONLY inline bool isIdentifierHead(unsigned char c,
-                                           bool AllowDollar = false) {
-  using namespace charinfo;
-  if (InfoTable[c] & (CHAR_UPPER|CHAR_LOWER|CHAR_UNDER))
-    return true;
-  return AllowDollar && c == '$';
-}
 
 /// Returns true if this is a body character of a C identifier,
 /// which is [a-zA-Z0-9_].
@@ -108,17 +99,6 @@ LLVM_READONLY inline bool isUppercase(unsigned char c) {
   return (InfoTable[c] & CHAR_UPPER) != 0;
 }
 
-/// Return true if this character is an ASCII letter: [a-zA-Z]
-LLVM_READONLY inline bool isLetter(unsigned char c) {
-  using namespace charinfo;
-  return (InfoTable[c] & (CHAR_UPPER|CHAR_LOWER)) != 0;
-}
-
-/// Return true if this character is an ASCII letter or digit: [a-zA-Z0-9]
-LLVM_READONLY inline bool isAlphanumeric(unsigned char c) {
-  using namespace charinfo;
-  return (InfoTable[c] & (CHAR_DIGIT|CHAR_UPPER|CHAR_LOWER)) != 0;
-}
 
 /// Return true if this character is an ASCII hex digit: [0-9a-fA-F]
 LLVM_READONLY inline bool isHexDigit(unsigned char c) {
@@ -151,12 +131,6 @@ LLVM_READONLY inline bool isPreprocessingNumberBody(unsigned char c) {
           (CHAR_UPPER|CHAR_LOWER|CHAR_DIGIT|CHAR_UNDER|CHAR_PERIOD)) != 0;
 }
 
-/// Return true if this is the body character of a C++ raw string delimiter.
-LLVM_READONLY inline bool isRawStringDelimBody(unsigned char c) {
-  using namespace charinfo;
-  return (InfoTable[c] & (CHAR_UPPER|CHAR_LOWER|CHAR_PERIOD|
-                          CHAR_DIGIT|CHAR_UNDER|CHAR_RAWDEL)) != 0;
-}
 
 
 /// Converts the given ASCII character to its lowercase equivalent.
@@ -168,31 +142,6 @@ LLVM_READONLY inline char toLowercase(char c) {
   return c;
 }
 
-/// Converts the given ASCII character to its uppercase equivalent.
-///
-/// If the character is not a lowercase character, it is returned as is.
-LLVM_READONLY inline char toUppercase(char c) {
-  if (isLowercase(c))
-    return c + 'A' - 'a';
-  return c;
-}
-
-
-/// Return true if this is a valid ASCII identifier.
-///
-/// Note that this is a very simple check; it does not accept UCNs as valid
-/// identifier characters.
-LLVM_READONLY inline bool isValidIdentifier(StringRef S,
-                                            bool AllowDollar = false) {
-  if (S.empty() || !isIdentifierHead(S[0], AllowDollar))
-    return false;
-
-  for (StringRef::iterator I = S.begin(), E = S.end(); I != E; ++I)
-    if (!isIdentifierBody(*I, AllowDollar))
-      return false;
-
-  return true;
-}
 
 } // end namespace c2lang
 

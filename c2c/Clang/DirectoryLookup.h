@@ -31,7 +31,6 @@ class DirectoryLookup {
 public:
   enum LookupType_t {
     LT_NormalDir,
-    LT_Framework,
     LT_HeaderMap
   };
 private:
@@ -60,10 +59,9 @@ private:
 public:
   /// DirectoryLookup ctor - Note that this ctor *does not take ownership* of
   /// 'dir'.
-  DirectoryLookup(const DirectoryEntry *dir, SrcMgr::CharacteristicKind DT,
-                  bool isFramework)
+  DirectoryLookup(const DirectoryEntry *dir, SrcMgr::CharacteristicKind DT)
     : DirCharacteristic(DT),
-      LookupType(isFramework ? LT_Framework : LT_NormalDir),
+      LookupType(LT_NormalDir),
       IsIndexHeaderMap(false) {
     u.Dir = dir;
   }
@@ -91,12 +89,6 @@ public:
     return isNormalDir() ? u.Dir : nullptr;
   }
 
-  /// getFrameworkDir - Return the directory that this framework refers to.
-  ///
-  const DirectoryEntry *getFrameworkDir() const {
-    return isFramework() ? u.Dir : nullptr;
-  }
-
   /// getHeaderMap - Return the directory that this entry refers to.
   ///
   const HeaderMap *getHeaderMap() const {
@@ -105,10 +97,6 @@ public:
 
   /// isNormalDir - Return true if this is a normal directory, not a header map.
   bool isNormalDir() const { return getLookupType() == LT_NormalDir; }
-
-  /// isFramework - True if this is a framework directory.
-  ///
-  bool isFramework() const { return getLookupType() == LT_Framework; }
 
   /// isHeaderMap - Return true if this is a header map, not a normal directory.
   bool isHeaderMap() const { return getLookupType() == LT_HeaderMap; }
@@ -168,13 +156,6 @@ public:
                               bool &InUserSpecifiedSystemFramework,
                               bool &HasBeenMapped,
                               SmallVectorImpl<char> &MappedName) const;
-
-private:
-  const FileEntry *DoFrameworkLookup(
-      StringRef Filename, HeaderSearch &HS,
-      SmallVectorImpl<char> *SearchPath,
-      SmallVectorImpl<char> *RelativePath,
-      bool &InUserSpecifiedSystemHeader) const;
 
 };
 

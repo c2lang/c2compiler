@@ -40,7 +40,6 @@ class FileManager;
 class HeaderMap;
 class HeaderSearchOptions;
 class IdentifierInfo;
-class LangOptions;
 class Module;
 class Preprocessor;
 
@@ -244,8 +243,7 @@ class HeaderSearch {
 public:
   HeaderSearch(std::shared_ptr<HeaderSearchOptions> HSOpts,
                  SourceManager &SourceMgr,
-                 DiagnosticsEngine &Diags,
-                 const LangOptions &LangOpts);
+                 DiagnosticsEngine &Diags);
   HeaderSearch(const HeaderSearch &) = delete;
   HeaderSearch &operator=(const HeaderSearch &) = delete;
   ~HeaderSearch();

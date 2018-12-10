@@ -15,7 +15,6 @@
 #include "Clang/FileManager.h"
 #include "Clang/IdentifierTable.h"
 #include "Clang/LLVM.h"
-#include "Clang/LangOptions.h"
 #include "Clang/SourceLocation.h"
 #include "Clang/DirectoryLookup.h"
 #include "Clang/ExternalPreprocessorSource.h"

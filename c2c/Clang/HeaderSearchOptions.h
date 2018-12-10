@@ -47,14 +47,6 @@ enum IncludeDirGroup {
   /// Like System, but only used for C.
   CSystem,
 
-  /// Like System, but only used for C++.
-  CXXSystem,
-
-  /// Like System, but only used for ObjC.
-  ObjCSystem,
-
-  /// Like System, but only used for ObjC++.
-  ObjCXXSystem,
 
   /// Like System, but searched after the system directories.
   After
@@ -69,30 +61,11 @@ public:
   struct Entry {
     std::string Path;
     frontend::IncludeDirGroup Group;
-    unsigned IsFramework : 1;
 
-    /// IgnoreSysRoot - This is false if an absolute path should be treated
-    /// relative to the sysroot, or true if it should always be the absolute
-    /// path.
-    unsigned IgnoreSysRoot : 1;
-
-    Entry(StringRef path, frontend::IncludeDirGroup group, bool isFramework,
-          bool ignoreSysRoot)
-        : Path(path), Group(group), IsFramework(isFramework),
-          IgnoreSysRoot(ignoreSysRoot) {}
+    Entry(StringRef path, frontend::IncludeDirGroup group)
+        : Path(path), Group(group) {}
   };
 
-  struct SystemHeaderPrefix {
-    /// A prefix to be matched against paths in \#include directives.
-    std::string Prefix;
-
-    /// True if paths beginning with this prefix should be treated as system
-    /// headers.
-    bool IsSystemHeader;
-
-    SystemHeaderPrefix(StringRef Prefix, bool IsSystemHeader)
-        : Prefix(Prefix), IsSystemHeader(IsSystemHeader) {}
-  };
 
   /// If non-empty, the directory to use as a "virtual system root" for include
   /// paths.
@@ -101,19 +74,12 @@ public:
   /// User specified include entries.
   std::vector<Entry> UserEntries;
 
-  /// User-specified system header prefixes.
-  std::vector<SystemHeaderPrefix> SystemHeaderPrefixes;
 
   /// The directory which holds the compiler resource files (builtin includes,
   /// etc.).
   std::string ResourceDir;
 
 
-    /// The time in seconds when the build session started.
-  ///
-  /// This time is used by other optimizations in header search and module
-  /// loading.
-  uint64_t BuildSessionTimestamp = 0;
 
     /// Include the compiler builtin includes.
   unsigned UseBuiltinIncludes : 1;
@@ -121,11 +87,7 @@ public:
   /// Include the system standard include search directories.
   unsigned UseStandardSystemIncludes : 1;
 
-  /// Include the system standard C++ library include search directories.
-  unsigned UseStandardCXXIncludes : 1;
 
-  /// Use libc++ instead of the default libstdc++.
-  unsigned UseLibcxx : 1;
 
   /// Whether header search information should be output as for -v.
   unsigned Verbose : 1;
@@ -137,13 +99,11 @@ public:
 
   HeaderSearchOptions(StringRef _Sysroot = "/")
       : Sysroot(_Sysroot),
-        UseBuiltinIncludes(true), UseStandardSystemIncludes(true),
-        UseStandardCXXIncludes(true), UseLibcxx(false), Verbose(false), UseDebugInfo(false) {}
+        UseBuiltinIncludes(true), UseStandardSystemIncludes(true), Verbose(false), UseDebugInfo(false) {}
 
   /// AddPath - Add the \p Path path to the specified \p Group list.
-  void AddPath(StringRef Path, frontend::IncludeDirGroup Group,
-               bool IsFramework, bool IgnoreSysRoot) {
-    UserEntries.emplace_back(Path, Group, IsFramework, IgnoreSysRoot);
+  void AddPath(StringRef Path, frontend::IncludeDirGroup Group) {
+    UserEntries.emplace_back(Path, Group);
   }
 
 };
