@@ -1,0 +1,53 @@
+// @recipe bin
+    $warnings no-unused
+    $generate-c
+
+// @file{file1}
+module test;
+
+type Handle i32;
+
+type Foo struct {
+  i32 a;
+  i64 b;
+  union {
+     i32 c;
+     f64 d;
+  }
+}
+public func i32 main(i32 argc, const i8*[] argv) {
+    i32 a = sizeof(i32*);
+    i32 b = sizeof(a);
+    i32 c = sizeof(&a);
+    i32 d = sizeof(Handle);
+    i32 e = sizeof(Handle*);
+    i32 f = sizeof(Handle[3]);
+    i32 g = sizeof(Foo);
+    i32 h = sizeof(Foo.a);
+    i32 i = sizeof(Foo.d);
+    i32 j = sizeof(test.Foo);
+    i32 k = sizeof(test.Foo.a);
+    i32 l = sizeof(test.Foo.d);
+    return 0;
+}
+
+
+// @expect{atleast, build/test.c}
+
+int32_t main(int32_t argc, const char* argv[]) {
+    int32_t a = sizeof(8);
+    int32_t b = sizeof(4);
+    int32_t c = sizeof(8);
+    int32_t d = sizeof(4);
+    int32_t e = sizeof(8);
+    int32_t f = sizeof(int32_t[3]);
+    int32_t g = sizeof(test_Foo);
+    int32_t h = sizeof(4);
+    int32_t i = sizeof(8);
+    int32_t j = sizeof(test_Foo);
+    int32_t k = sizeof(4);
+    int32_t l = sizeof(8);
+
+    return 0;
+}
+
