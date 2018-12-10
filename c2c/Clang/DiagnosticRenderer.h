@@ -27,7 +27,6 @@
 
 namespace c2lang {
 
-class LangOptions;
 class SourceManager;
 
 using DiagOrStoredDiag =
@@ -47,7 +46,6 @@ using DiagOrStoredDiag =
 /// class.
 class DiagnosticRenderer {
 protected:
-  const LangOptions &LangOpts;
   IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts;
 
   /// The location of the previous diagnostic if known.
@@ -69,8 +67,7 @@ protected:
   /// which change the amount of information displayed.
   DiagnosticsEngine::Level LastLevel = DiagnosticsEngine::Ignored;
 
-  DiagnosticRenderer(const LangOptions &LangOpts,
-                     DiagnosticOptions *DiagOpts);
+  DiagnosticRenderer(DiagnosticOptions *DiagOpts);
 
   virtual ~DiagnosticRenderer();
 
@@ -139,9 +136,8 @@ public:
 /// notes.  It is up to subclasses to further define the behavior.
 class DiagnosticNoteRenderer : public DiagnosticRenderer {
 public:
-  DiagnosticNoteRenderer(const LangOptions &LangOpts,
-                         DiagnosticOptions *DiagOpts)
-      : DiagnosticRenderer(LangOpts, DiagOpts) {}
+  DiagnosticNoteRenderer(DiagnosticOptions *DiagOpts)
+      : DiagnosticRenderer(DiagOpts) {}
 
   ~DiagnosticNoteRenderer() override;
 

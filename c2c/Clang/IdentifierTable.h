@@ -35,7 +35,6 @@
 namespace c2lang {
 
 class IdentifierInfo;
-class LangOptions;
 class SourceLocation;
 
 /// A simple pair of identifier info and location.
@@ -194,7 +193,7 @@ public:
 
 
     /// Return true if this token is a keyword in the specified language.
-  bool isKeyword(const LangOptions &LangOpts) const;
+  bool isKeyword() const;
 
 
 
@@ -297,10 +296,6 @@ public:
   /// Create the identifier table.
   explicit IdentifierTable(IdentifierInfoLookup *ExternalLookup = nullptr);
 
-  /// Create the identifier table, populating it with info about the
-  /// language keywords for the language specified by \p LangOpts.
-  explicit IdentifierTable(const LangOptions &LangOpts,
-                           IdentifierInfoLookup *ExternalLookup = nullptr);
 
 
     llvm::BumpPtrAllocator& getAllocator() {
@@ -378,7 +373,7 @@ public:
 
   /// Populate the identifier table with info about the language keywords
   /// for the language specified by \p LangOpts.
-  void AddKeywords(const LangOptions &LangOpts);
+  void AddKeywords();
 };
 
 

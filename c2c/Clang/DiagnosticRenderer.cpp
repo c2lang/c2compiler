@@ -31,9 +31,8 @@
 
 using namespace c2lang;
 
-DiagnosticRenderer::DiagnosticRenderer(const LangOptions &LangOpts,
-                                       DiagnosticOptions *DiagOpts)
-    : LangOpts(LangOpts), DiagOpts(DiagOpts), LastLevel() {}
+DiagnosticRenderer::DiagnosticRenderer(DiagnosticOptions *DiagOpts)
+    : DiagOpts(DiagOpts), LastLevel() {}
 
 DiagnosticRenderer::~DiagnosticRenderer() = default;
 
@@ -58,9 +57,9 @@ public:
 } // namespace
 
 static void mergeFixits(ArrayRef<FixItHint> FixItHints,
-                        const SourceManager &SM, const LangOptions &LangOpts,
+                        const SourceManager &SM,
                         SmallVectorImpl<FixItHint> &MergedFixits) {
-  edit::Commit commit(SM, LangOpts);
+  edit::Commit commit(SM);
   for (const auto &Hint : FixItHints)
     if (Hint.CodeToInsert.empty()) {
       if (Hint.InsertFromRange.isValid())
@@ -78,7 +77,7 @@ static void mergeFixits(ArrayRef<FixItHint> FixItHints,
                     /*afterToken=*/false, Hint.BeforePreviousInsertions);
     }
 
-  edit::EditedSource Editor(SM, LangOpts);
+  edit::EditedSource Editor(SM);
   if (Editor.commit(commit)) {
     FixitReceiver Rec(MergedFixits);
     Editor.applyRewrites(Rec);
@@ -105,7 +104,7 @@ void DiagnosticRenderer::emitDiagnostic(FullSourceLoc Loc,
 
     SmallVector<FixItHint, 8> MergedFixits;
     if (!FixItHints.empty()) {
-      mergeFixits(FixItHints, Loc.getManager(), LangOpts, MergedFixits);
+      mergeFixits(FixItHints, Loc.getManager(), MergedFixits);
       FixItHints = MergedFixits;
     }
 
@@ -386,7 +385,7 @@ void DiagnosticRenderer::emitSingleMacroExpansion(
   SmallString<100> MessageStorage;
   llvm::raw_svector_ostream Message(MessageStorage);
   StringRef MacroName = Lexer::getImmediateMacroNameForDiagnostics(
-      Loc, Loc.getManager(), LangOpts);
+      Loc, Loc.getManager());
   if (MacroName.empty())
     Message << "expanded from here";
   else

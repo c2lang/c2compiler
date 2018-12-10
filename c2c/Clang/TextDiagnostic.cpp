@@ -666,9 +666,8 @@ static bool printWordWrapped(raw_ostream &OS, StringRef Str,
 }
 
 TextDiagnostic::TextDiagnostic(raw_ostream &OS,
-                               const LangOptions &LangOpts,
                                DiagnosticOptions *DiagOpts)
-  : DiagnosticRenderer(LangOpts, DiagOpts), OS(OS) {}
+  : DiagnosticRenderer(DiagOpts), OS(OS) {}
 
 TextDiagnostic::~TextDiagnostic() {}
 
@@ -863,7 +862,7 @@ void TextDiagnostic::emitDiagnosticLoc(FullSourceLoc Loc, PresumedLoc PLoc,
       // tokens.
       unsigned TokSize = 0;
       if (IsTokenRange)
-        TokSize = Lexer::MeasureTokenLength(E, SM, LangOpts);
+        TokSize = Lexer::MeasureTokenLength(E, SM);
 
       FullSourceLoc BF(B, SM), EF(E, SM);
       OS << '{'
@@ -961,8 +960,7 @@ static void highlightRange(const CharSourceRange &R,
                            unsigned LineNo, FileID FID,
                            const SourceColumnMap &map,
                            std::string &CaretLine,
-                           const SourceManager &SM,
-                           const LangOptions &LangOpts) {
+                           const SourceManager &SM) {
   if (!R.isValid()) return;
 
   SourceLocation Begin = R.getBegin();
@@ -993,7 +991,7 @@ static void highlightRange(const CharSourceRange &R,
       // Add in the length of the token, so that we cover multi-char tokens if
       // this is a token range.
       if (R.isTokenRange())
-        EndColNo += Lexer::MeasureTokenLength(End, SM, LangOpts);
+        EndColNo += Lexer::MeasureTokenLength(End, SM);
     } else {
       EndColNo = CaretLine.size();
     }
@@ -1197,7 +1195,7 @@ void TextDiagnostic::emitSnippetAndCaret(
     for (SmallVectorImpl<CharSourceRange>::iterator I = Ranges.begin(),
                                                     E = Ranges.end();
          I != E; ++I)
-      highlightRange(*I, LineNo, FID, sourceColMap, CaretLine, SM, LangOpts);
+      highlightRange(*I, LineNo, FID, sourceColMap, CaretLine, SM);
 
     // Next, insert the caret itself.
     if (CaretLineNo == LineNo) {
@@ -1318,7 +1316,7 @@ void TextDiagnostic::emitParseableFixits(ArrayRef<FixItHint> Hints,
 
     // Adjust for token ranges.
     if (I->RemoveRange.isTokenRange())
-      EInfo.second += Lexer::MeasureTokenLength(ELoc, SM, LangOpts);
+      EInfo.second += Lexer::MeasureTokenLength(ELoc, SM);
 
     // We specifically do not do word-wrapping or tab-expansion here,
     // because this is supposed to be easy to parse.

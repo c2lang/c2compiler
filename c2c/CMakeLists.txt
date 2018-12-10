@@ -44,7 +44,6 @@ add_library(c2core
     Clang/HeaderSearch.cpp
     Clang/IdentifierTable.cpp
     Clang/InitHeaderSearch.cpp
-    Clang/LangOptions.cpp
     Clang/Lexer.cpp
     Clang/LiteralSupport.cpp
     Clang/MacroArgs.cpp

@@ -15,7 +15,6 @@
 #include "Clang/CharInfo.h"
 #include "Clang/FileManager.h"
 #include "Clang/IdentifierTable.h"
-#include "Clang/LangOptions.h"
 #include "Clang/SourceLocation.h"
 #include "Clang/SourceManager.h"
 #include "Clang/TokenKinds.h"
@@ -90,7 +89,7 @@ enum MacroDiag {
 /// Checks if the specified identifier is reserved in the specified
 /// language.
 /// This function does not check if the identifier is a keyword.
-static bool isReservedId(StringRef Text, const LangOptions &Lang) {
+static bool isReservedId(StringRef Text) {
   // C++ [macro.names], C11 7.1.3:
   // All identifiers that begin with an underscore and either an uppercase
   // letter or another underscore are always reserved for any use.
@@ -104,20 +103,18 @@ static bool isReservedId(StringRef Text, const LangOptions &Lang) {
 }
 
 static MacroDiag shouldWarnOnMacroDef(Preprocessor &PP, IdentifierInfo *II) {
-  const LangOptions &Lang = PP.getLangOpts();
   StringRef Text = II->getName();
-  if (isReservedId(Text, Lang))
+  if (isReservedId(Text))
     return MD_ReservedMacro;
-  if (II->isKeyword(Lang))
+  if (II->isKeyword())
     return MD_KeywordDef;
   return MD_NoWarn;
 }
 
 static MacroDiag shouldWarnOnMacroUndef(Preprocessor &PP, IdentifierInfo *II) {
-  const LangOptions &Lang = PP.getLangOpts();
   StringRef Text = II->getName();
   // Do not warn on keyword undef.  It is generally harmless and widely used.
-  if (isReservedId(Text, Lang))
+  if (isReservedId(Text))
     return MD_ReservedMacro;
   return MD_NoWarn;
 }
@@ -712,10 +709,6 @@ void Preprocessor::HandleDirective(Token &Result) {
   switch (Result.getKind()) {
   case tok::eod:
     return;   // null directive.
-  case tok::numeric_constant:  // # 7  GNU line marker directive.
-    if (getLangOpts().AsmPreprocessor)
-      break;  // # 4 is not a preprocessor directive in .S files.
-    return HandleDigitDirective(Result);
   default:
     IdentifierInfo *II = Result.getIdentifierInfo();
     if (!II) break; // Not an identifier.
@@ -750,10 +743,6 @@ void Preprocessor::HandleDirective(Token &Result) {
     case tok::pp_undef:
       return HandleUndefDirective();
 
-    // C99 6.10.4 - Line Control.
-    case tok::pp_line:
-      return HandleLineDirective();
-
     // C99 6.10.5 - Error Directive.
     case tok::pp_error:
       return HandleUserDiagnosticDirective(Result, false);
@@ -778,27 +767,6 @@ void Preprocessor::HandleDirective(Token &Result) {
     break;
   }
 
-  // If this is a .S file, treat unknown # directives as non-preprocessor
-  // directives.  This is important because # may be a comment or introduce
-  // various pseudo-ops.  Just return the # token and push back the following
-  // token to be lexed next time.
-  if (getLangOpts().AsmPreprocessor) {
-    auto Toks = llvm::make_unique<Token[]>(2);
-    // Return the # and the token after it.
-    Toks[0] = SavedHash;
-    Toks[1] = Result;
-
-    // If the second token is a hashhash token, then we need to translate it to
-    // unknown so the token lexer doesn't try to perform token pasting.
-    if (Result.is(tok::hashhash))
-      Toks[1].setKind(tok::unknown);
-
-    // Enter this token stream so that we re-lex the tokens.  Make sure to
-    // enable macro expansion, in case the token after the # is an identifier
-    // that is expanded.
-    EnterTokenStream(std::move(Toks), 2, false);
-    return;
-  }
 
   // If we reached here, the preprocessing token is not valid!
   Diag(Result, diag::err_pp_invalid_directive);
@@ -809,267 +777,7 @@ void Preprocessor::HandleDirective(Token &Result) {
   // Okay, we're done parsing the directive.
 }
 
-/// GetLineValue - Convert a numeric token into an unsigned value, emitting
-/// Diagnostic DiagID if it is invalid, and returning the value in Val.
-static bool GetLineValue(Token &DigitTok, unsigned &Val,
-                         unsigned DiagID, Preprocessor &PP,
-                         bool IsGNULineDirective=false) {
-  if (DigitTok.isNot(tok::numeric_constant)) {
-    PP.Diag(DigitTok, DiagID);
 
-    if (DigitTok.isNot(tok::eod))
-      PP.DiscardUntilEndOfDirective();
-    return true;
-  }
-
-  SmallString<64> IntegerBuffer;
-  IntegerBuffer.resize(DigitTok.getLength());
-  const char *DigitTokBegin = &IntegerBuffer[0];
-  bool Invalid = false;
-  unsigned ActualLength = PP.getSpelling(DigitTok, DigitTokBegin, &Invalid);
-  if (Invalid)
-    return true;
-
-  // Verify that we have a simple digit-sequence, and compute the value.  This
-  // is always a simple digit string computed in decimal, so we do this manually
-  // here.
-  Val = 0;
-  for (unsigned i = 0; i != ActualLength; ++i) {
-    // C++1y [lex.fcon]p1:
-    //   Optional separating single quotes in a digit-sequence are ignored
-    if (DigitTokBegin[i] == '\'')
-      continue;
-
-    if (!isDigit(DigitTokBegin[i])) {
-      PP.Diag(PP.AdvanceToTokenCharacter(DigitTok.getLocation(), i),
-              diag::err_pp_line_digit_sequence) << IsGNULineDirective;
-      PP.DiscardUntilEndOfDirective();
-      return true;
-    }
-
-    unsigned NextVal = Val*10+(DigitTokBegin[i]-'0');
-    if (NextVal < Val) { // overflow.
-      PP.Diag(DigitTok, DiagID);
-      PP.DiscardUntilEndOfDirective();
-      return true;
-    }
-    Val = NextVal;
-  }
-
-  if (DigitTokBegin[0] == '0' && Val)
-    PP.Diag(DigitTok.getLocation(), diag::warn_pp_line_decimal)
-      << IsGNULineDirective;
-
-  return false;
-}
-
-/// Handle a \#line directive: C99 6.10.4.
-///
-/// The two acceptable forms are:
-/// \verbatim
-///   # line digit-sequence
-///   # line digit-sequence "s-char-sequence"
-/// \endverbatim
-void Preprocessor::HandleLineDirective() {
-  // Read the line # and string argument.  Per C99 6.10.4p5, these tokens are
-  // expanded.
-  Token DigitTok;
-  Lex(DigitTok);
-
-  // Validate the number and convert it to an unsigned.
-  unsigned LineNo;
-  if (GetLineValue(DigitTok, LineNo, diag::err_pp_line_requires_integer,*this))
-    return;
-
-  if (LineNo == 0)
-    Diag(DigitTok, diag::ext_pp_line_zero);
-
-  // Enforce C99 6.10.4p3: "The digit sequence shall not specify ... a
-  // number greater than 2147483647".  C90 requires that the line # be <= 32767.
-  unsigned LineLimit = 2147483648U;
-  if (LineNo >= LineLimit) {
-      Diag(DigitTok, diag::ext_pp_line_too_big) << LineLimit;
-  }
-
-  int FilenameID = -1;
-  Token StrTok;
-  Lex(StrTok);
-
-  // If the StrTok is "eod", then it wasn't present.  Otherwise, it must be a
-  // string followed by eod.
-  if (StrTok.is(tok::eod))
-    ; // ok
-  else if (StrTok.isNot(tok::string_literal)) {
-    Diag(StrTok, diag::err_pp_line_invalid_filename);
-    return DiscardUntilEndOfDirective();
-  } else if (StrTok.hasUDSuffix()) {
-    Diag(StrTok, diag::err_invalid_string_udl);
-    return DiscardUntilEndOfDirective();
-  } else {
-    // Parse and validate the string, converting it into a unique ID.
-    StringLiteralParser Literal(StrTok, *this);
-    assert(Literal.isAscii() && "Didn't allow wide strings in");
-    if (Literal.hadError)
-      return DiscardUntilEndOfDirective();
-    if (Literal.Pascal) {
-      Diag(StrTok, diag::err_pp_linemarker_invalid_filename);
-      return DiscardUntilEndOfDirective();
-    }
-    FilenameID = SourceMgr.getLineTableFilenameID(Literal.GetString());
-
-    // Verify that there is nothing after the string, other than EOD.  Because
-    // of C99 6.10.4p5, macros that expand to empty tokens are ok.
-    CheckEndOfDirective("line", true);
-  }
-
-  // Take the file kind of the file containing the #line directive. #line
-  // directives are often used for generated sources from the same codebase, so
-  // the new file should generally be classified the same way as the current
-  // file. This is visible in GCC's pre-processed output, which rewrites #line
-  // to GNU line markers.
-  SrcMgr::CharacteristicKind FileKind =
-      SourceMgr.getFileCharacteristic(DigitTok.getLocation());
-
-  SourceMgr.AddLineNote(DigitTok.getLocation(), LineNo, FilenameID, false,
-                        false, FileKind);
-
-}
-
-/// ReadLineMarkerFlags - Parse and validate any flags at the end of a GNU line
-/// marker directive.
-static bool ReadLineMarkerFlags(bool &IsFileEntry, bool &IsFileExit,
-                                SrcMgr::CharacteristicKind &FileKind,
-                                Preprocessor &PP) {
-  unsigned FlagVal;
-  Token FlagTok;
-  PP.Lex(FlagTok);
-  if (FlagTok.is(tok::eod)) return false;
-  if (GetLineValue(FlagTok, FlagVal, diag::err_pp_linemarker_invalid_flag, PP))
-    return true;
-
-  if (FlagVal == 1) {
-    IsFileEntry = true;
-
-    PP.Lex(FlagTok);
-    if (FlagTok.is(tok::eod)) return false;
-    if (GetLineValue(FlagTok, FlagVal, diag::err_pp_linemarker_invalid_flag,PP))
-      return true;
-  } else if (FlagVal == 2) {
-    IsFileExit = true;
-
-    SourceManager &SM = PP.getSourceManager();
-    // If we are leaving the current presumed file, check to make sure the
-    // presumed include stack isn't empty!
-    FileID CurFileID =
-      SM.getDecomposedExpansionLoc(FlagTok.getLocation()).first;
-    PresumedLoc PLoc = SM.getPresumedLoc(FlagTok.getLocation());
-    if (PLoc.isInvalid())
-      return true;
-
-    // If there is no include loc (main file) or if the include loc is in a
-    // different physical file, then we aren't in a "1" line marker flag region.
-    SourceLocation IncLoc = PLoc.getIncludeLoc();
-    if (IncLoc.isInvalid() ||
-        SM.getDecomposedExpansionLoc(IncLoc).first != CurFileID) {
-      PP.Diag(FlagTok, diag::err_pp_linemarker_invalid_pop);
-      PP.DiscardUntilEndOfDirective();
-      return true;
-    }
-
-    PP.Lex(FlagTok);
-    if (FlagTok.is(tok::eod)) return false;
-    if (GetLineValue(FlagTok, FlagVal, diag::err_pp_linemarker_invalid_flag,PP))
-      return true;
-  }
-
-  // We must have 3 if there are still flags.
-  if (FlagVal != 3) {
-    PP.Diag(FlagTok, diag::err_pp_linemarker_invalid_flag);
-    PP.DiscardUntilEndOfDirective();
-    return true;
-  }
-
-  FileKind = SrcMgr::C_System;
-
-  PP.Lex(FlagTok);
-  if (FlagTok.is(tok::eod)) return false;
-  if (GetLineValue(FlagTok, FlagVal, diag::err_pp_linemarker_invalid_flag, PP))
-    return true;
-
-  // We must have 4 if there is yet another flag.
-  if (FlagVal != 4) {
-    PP.Diag(FlagTok, diag::err_pp_linemarker_invalid_flag);
-    PP.DiscardUntilEndOfDirective();
-    return true;
-  }
-
-  FileKind = SrcMgr::C_ExternCSystem;
-
-  PP.Lex(FlagTok);
-  if (FlagTok.is(tok::eod)) return false;
-
-  // There are no more valid flags here.
-  PP.Diag(FlagTok, diag::err_pp_linemarker_invalid_flag);
-  PP.DiscardUntilEndOfDirective();
-  return true;
-}
-
-/// HandleDigitDirective - Handle a GNU line marker directive, whose syntax is
-/// one of the following forms:
-///
-///     # 42
-///     # 42 "file" ('1' | '2')?
-///     # 42 "file" ('1' | '2')? '3' '4'?
-///
-void Preprocessor::HandleDigitDirective(Token &DigitTok) {
-  // Validate the number and convert it to an unsigned.  GNU does not have a
-  // line # limit other than it fit in 32-bits.
-  unsigned LineNo;
-  if (GetLineValue(DigitTok, LineNo, diag::err_pp_linemarker_requires_integer,
-                   *this, true))
-    return;
-
-  Token StrTok;
-  Lex(StrTok);
-
-  bool IsFileEntry = false, IsFileExit = false;
-  int FilenameID = -1;
-  SrcMgr::CharacteristicKind FileKind = SrcMgr::C_User;
-
-  // If the StrTok is "eod", then it wasn't present.  Otherwise, it must be a
-  // string followed by eod.
-  if (StrTok.is(tok::eod)) {
-    // Treat this like "#line NN", which doesn't change file characteristics.
-    FileKind = SourceMgr.getFileCharacteristic(DigitTok.getLocation());
-  } else if (StrTok.isNot(tok::string_literal)) {
-    Diag(StrTok, diag::err_pp_linemarker_invalid_filename);
-    return DiscardUntilEndOfDirective();
-  } else if (StrTok.hasUDSuffix()) {
-    Diag(StrTok, diag::err_invalid_string_udl);
-    return DiscardUntilEndOfDirective();
-  } else {
-    // Parse and validate the string, converting it into a unique ID.
-    StringLiteralParser Literal(StrTok, *this);
-    assert(Literal.isAscii() && "Didn't allow wide strings in");
-    if (Literal.hadError)
-      return DiscardUntilEndOfDirective();
-    if (Literal.Pascal) {
-      Diag(StrTok, diag::err_pp_linemarker_invalid_filename);
-      return DiscardUntilEndOfDirective();
-    }
-    FilenameID = SourceMgr.getLineTableFilenameID(Literal.GetString());
-
-    // If a filename was present, read any flags that are present.
-    if (ReadLineMarkerFlags(IsFileEntry, IsFileExit, FileKind, *this))
-      return;
-  }
-
-  // Create a line note with this information.
-  SourceMgr.AddLineNote(DigitTok.getLocation(), LineNo, FilenameID, IsFileEntry,
-                        IsFileExit, FileKind);
-
-
-}
 
 /// HandleUserDiagnosticDirective - Handle a #warning or #error directive.
 ///
@@ -1544,7 +1252,7 @@ void Preprocessor::HandleIncludeNextDirective(SourceLocation HashLoc,
   // diagnostic.
   const DirectoryLookup *Lookup = CurDirLookup;
   const FileEntry *LookupFromFile = nullptr;
-  if (isInPrimaryFile() && LangOpts.IsHeaderFile) {
+  if (isInPrimaryFile()) {
     // If the main file is a header, then it's either for PCH/AST generation,
     // or libc2lang opened it. Either way, handle it as a normal include below
     // and do not complain about include_next.
@@ -1681,8 +1389,7 @@ bool Preprocessor::ReadMacroParameterList(MacroInfo *MI, Token &Tok) {
   }
 }
 
-static bool isConfigurationPattern(Token &MacroName, MacroInfo *MI,
-                                   const LangOptions &LOptions) {
+static bool isConfigurationPattern(Token &MacroName, MacroInfo *MI) {
   if (MI->getNumTokens() == 1) {
     const Token &Value = MI->getReplacementToken(0);
 
@@ -1697,7 +1404,7 @@ static bool isConfigurationPattern(Token &MacroName, MacroInfo *MI,
     //    #define inline _inline (in MS compatibility mode)
     StringRef MacroText = MacroName.getIdentifierInfo()->getName();
     if (IdentifierInfo *II = Value.getIdentifierInfo()) {
-      if (!II->isKeyword(LOptions))
+      if (!II->isKeyword())
         return false;
       StringRef ValueText = II->getName();
       StringRef TrimmedValue = ValueText;
@@ -1884,19 +1591,9 @@ MacroInfo *Preprocessor::ReadOptionalMacroParameterListAndBody(
           (Tok.getIdentifierInfo() == nullptr ||
            MI->getParameterNum(Tok.getIdentifierInfo()) == -1)) {
 
-        // If this is assembler-with-cpp mode, we accept random gibberish after
-        // the '#' because '#' is often a comment character.  However, change
-        // the kind of the token to tok::unknown so that the preprocessor isn't
-        // confused.
-        if (getLangOpts().AsmPreprocessor && Tok.isNot(tok::eod)) {
-          LastTok.setKind(tok::unknown);
-          MI->AddTokenToBody(LastTok);
-          continue;
-        } else {
-          Diag(Tok, diag::err_pp_stringize_not_parameter)
+        Diag(Tok, diag::err_pp_stringize_not_parameter)
             << LastTok.is(tok::hashat);
-          return nullptr;
-        }
+        return nullptr;
       }
 
       // Things look ok, add the '#' and param name tokens to the macro.
@@ -1946,7 +1643,7 @@ void Preprocessor::HandleDefineDirective(
   if (!MI) return;
 
   if (MacroShadowsKeyword &&
-      !isConfigurationPattern(MacroNameTok, MI, getLangOpts())) {
+      !isConfigurationPattern(MacroNameTok, MI)) {
     Diag(MacroNameTok, diag::warn_pp_macro_hides_keyword);
   }
   // Check that there is no paste (##) operator at the beginning or end of the

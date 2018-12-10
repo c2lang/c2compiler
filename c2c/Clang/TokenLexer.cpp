@@ -14,7 +14,6 @@
 #include "Clang/TokenLexer.h"
 #include "Clang/Diagnostic.h"
 #include "Clang/IdentifierTable.h"
-#include "Clang/LangOptions.h"
 #include "Clang/SourceLocation.h"
 #include "Clang/SourceManager.h"
 #include "Clang/TokenKinds.h"
@@ -667,7 +666,7 @@ bool TokenLexer::pasteTokens(Token &LHSTok, ArrayRef<Token> TokenStream,
                              unsigned int &CurIdx) {
   assert(CurIdx > 0 && "## can not be the first token within tokens");
   assert((TokenStream[CurIdx].is(tok::hashhash) ||
-         (PP.getLangOpts().MSVCCompat &&
+         (false &&
           isWideStringLiteralFromMacro(LHSTok, TokenStream[CurIdx]))) &&
              "Token at this Index must be ## or part of the MSVC 'L "
              "#macro-arg' pasting pair");
@@ -760,7 +759,7 @@ bool TokenLexer::pasteTokens(Token &LHSTok, ArrayRef<Token> TokenStream,
       // Make a lexer to lex this string from.  Lex just this one token.
       // Make a lexer object so that we lex and expand the paste result.
       Lexer TL(SourceMgr.getLocForStartOfFile(LocFileID),
-               PP.getLangOpts(), ScratchBufStart,
+               ScratchBufStart,
                ResultTokStrPtr, ResultTokStrPtr+LHSLen+RHSLen);
 
       // Lex a token in raw mode.  This way it won't look up identifiers
@@ -784,11 +783,8 @@ bool TokenLexer::pasteTokens(Token &LHSTok, ArrayRef<Token> TokenStream,
           SM.createExpansionLoc(PasteOpLoc, ExpandLocStart, ExpandLocEnd, 2);
 
 
-        // Do not emit the error when preprocessing assembler code.
-        if (!PP.getLangOpts().AsmPreprocessor) {
-          PP.Diag(Loc, diag::err_pp_bad_paste)
-              << Buffer;
-        }
+        PP.Diag(Loc, diag::err_pp_bad_paste)
+            << Buffer;
 
         // An error has occurred so exit loop.
         break;

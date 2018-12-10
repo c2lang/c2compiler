@@ -61,8 +61,7 @@ ExternalHeaderFileInfoSource::~ExternalHeaderFileInfoSource() = default;
 
 HeaderSearch::HeaderSearch(std::shared_ptr<HeaderSearchOptions> HSOpts,
                            SourceManager &SourceMgr,
-                           DiagnosticsEngine &Diags,
-                           const LangOptions &LangOpts)
+                           DiagnosticsEngine &Diags)
     : HSOpts(std::move(HSOpts)), Diags(Diags),
       FileMgr(SourceMgr.getFileManager()), FrameworkMap(64) {}
 
@@ -132,8 +131,6 @@ void HeaderSearch::getHeaderMapFileNames(
 StringRef DirectoryLookup::getName() const {
   if (isNormalDir())
     return getDir()->getName();
-  if (isFramework())
-    return getFrameworkDir()->getName();
   assert(isHeaderMap() && "Unknown DirectoryLookup");
   return getHeaderMap()->getFileName();
 }
@@ -178,8 +175,6 @@ const FileEntry *DirectoryLookup::LookupFile(StringRef &Filename,
     return HS.getFile(TmpDir, IncludeLoc, getDir(), isSystemHeaderDirectory());
   }
 
-  if (isFramework())
-    return DoFrameworkLookup(Filename, HS, SearchPath, RelativePath, InUserSpecifiedSystemFramework);
 
   assert(isHeaderMap() && "Unknown directory lookup");
   const HeaderMap *HM = getHeaderMap();
@@ -218,102 +213,6 @@ const FileEntry *DirectoryLookup::LookupFile(StringRef &Filename,
 }
 
 
-
-/// DoFrameworkLookup - Do a lookup of the specified file in the current
-/// DirectoryLookup, which is a framework directory.
-const FileEntry *DirectoryLookup::DoFrameworkLookup(
-    StringRef Filename, HeaderSearch &HS, SmallVectorImpl<char> *SearchPath,
-    SmallVectorImpl<char> *RelativePath,
-    bool &InUserSpecifiedSystemFramework) const {
-  FileManager &FileMgr = HS.getFileMgr();
-
-  // Framework names must have a '/' in the filename.
-  size_t SlashPos = Filename.find('/');
-  if (SlashPos == StringRef::npos) return nullptr;
-
-  // Find out if this is the home for the specified framework, by checking
-  // HeaderSearch.  Possible answers are yes/no and unknown.
-  HeaderSearch::FrameworkCacheEntry &CacheEntry =
-    HS.LookupFrameworkCache(Filename.substr(0, SlashPos));
-
-  // If it is known and in some other directory, fail.
-  if (CacheEntry.Directory && CacheEntry.Directory != getFrameworkDir())
-    return nullptr;
-
-  // Otherwise, construct the path to this framework dir.
-
-  // FrameworkName = "/System/Library/Frameworks/"
-  SmallString<1024> FrameworkName;
-  FrameworkName += getFrameworkDir()->getName();
-  if (FrameworkName.empty() || FrameworkName.back() != '/')
-    FrameworkName.push_back('/');
-
-  // FrameworkName = "/System/Library/Frameworks/Cocoa"
-  StringRef ModuleName(Filename.begin(), SlashPos);
-  FrameworkName += ModuleName;
-
-  // FrameworkName = "/System/Library/Frameworks/Cocoa.framework/"
-  FrameworkName += ".framework/";
-
-  // If the cache entry was unresolved, populate it now.
-  if (!CacheEntry.Directory) {
-    HS.IncrementFrameworkLookupCount();
-
-    // If the framework dir doesn't exist, we fail.
-    const DirectoryEntry *Dir = FileMgr.getDirectory(FrameworkName);
-    if (!Dir) return nullptr;
-
-    // Otherwise, if it does, remember that this is the right direntry for this
-    // framework.
-    CacheEntry.Directory = getFrameworkDir();
-
-    // If this is a user search directory, check if the framework has been
-    // user-specified as a system framework.
-    if (getDirCharacteristic() == SrcMgr::C_User) {
-      SmallString<1024> SystemFrameworkMarker(FrameworkName);
-      SystemFrameworkMarker += ".system_framework";
-      if (llvm::sys::fs::exists(SystemFrameworkMarker)) {
-        CacheEntry.IsUserSpecifiedSystemFramework = true;
-      }
-    }
-  }
-
-  // Set the 'user-specified system framework' flag.
-  InUserSpecifiedSystemFramework = CacheEntry.IsUserSpecifiedSystemFramework;
-
-  if (RelativePath) {
-    RelativePath->clear();
-    RelativePath->append(Filename.begin()+SlashPos+1, Filename.end());
-  }
-
-  // Check "/System/Library/Frameworks/Cocoa.framework/Headers/file.h"
-  unsigned OrigSize = FrameworkName.size();
-
-  FrameworkName += "Headers/";
-
-  if (SearchPath) {
-    SearchPath->clear();
-    // Without trailing '/'.
-    SearchPath->append(FrameworkName.begin(), FrameworkName.end()-1);
-  }
-
-  FrameworkName.append(Filename.begin()+SlashPos+1, Filename.end());
-  const FileEntry *FE = FileMgr.getFile(FrameworkName,
-                                        /*openFile=*/true);
-  if (!FE) {
-    // Check "/System/Library/Frameworks/Cocoa.framework/PrivateHeaders/file.h"
-    const char *Private = "Private";
-    FrameworkName.insert(FrameworkName.begin()+OrigSize, Private,
-                         Private+strlen(Private));
-    if (SearchPath)
-      SearchPath->insert(SearchPath->begin()+OrigSize, Private,
-                         Private+strlen(Private));
-
-    FE = FileMgr.getFile(FrameworkName, /*openFile=*/true);
-  }
-
-  return FE;
-}
 
 //===----------------------------------------------------------------------===//
 // Header File Location.

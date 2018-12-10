@@ -19,7 +19,6 @@
 #include "Clang/Diagnostic.h"
 #include "Clang/IdentifierTable.h"
 #include "Clang/LLVM.h"
-#include "Clang/LangOptions.h"
 #include "Clang/SourceLocation.h"
 #include "Clang/SourceManager.h"
 #include "Clang/TokenKinds.h"
@@ -118,7 +117,6 @@ class Preprocessor {
   friend class VariadicMacroScopeGuard;
 
   DiagnosticsEngine        *Diags;
-  LangOptions       &LangOpts;
   const C2::TargetInfo *Target = nullptr;
   const C2::TargetInfo *AuxTarget = nullptr;
   FileManager       &FileMgr;
@@ -200,11 +198,6 @@ class Preprocessor {
   /// True if we want to ignore EOF token and continue later on (thus
   /// avoid tearing the Lexer and etc. down).
   bool IncrementalProcessing = false;
-
-  /// The kind of translation unit we are processing.
-  TranslationUnitKind TUKind;
-
-
 
 
 
@@ -474,12 +467,11 @@ private:
   MacroInfoChain *MIChainHead = nullptr;
 
 public:
-  Preprocessor(DiagnosticsEngine &diags, LangOptions &opts, SourceManager &SM,
+  Preprocessor(DiagnosticsEngine &diags, SourceManager &SM,
                MemoryBufferCache &PCMCache,
                HeaderSearch &Headers,
                IdentifierInfoLookup *IILookup = nullptr,
-               bool OwnsHeaderSearch = false,
-               TranslationUnitKind TUKind = TU_Complete);
+               bool OwnsHeaderSearch = false);
 
   ~Preprocessor();
 
@@ -507,7 +499,6 @@ public:
   DiagnosticsEngine &getDiagnostics() const { return *Diags; }
   void setDiagnostics(DiagnosticsEngine &D) { Diags = &D; }
 
-  const LangOptions &getLangOpts() const { return LangOpts; }
   const C2::TargetInfo &getTargetInfo() const { return *Target; }
   const C2::TargetInfo *getAuxTargetInfo() const { return AuxTarget; }
   FileManager &getFileManager() const { return FileMgr; }
@@ -977,7 +968,7 @@ public:
   StringRef getSpelling(SourceLocation loc,
                         SmallVectorImpl<char> &buffer,
                         bool *invalid = nullptr) const {
-    return Lexer::getSpelling(loc, buffer, SourceMgr, LangOpts, invalid);
+    return Lexer::getSpelling(loc, buffer, SourceMgr, invalid);
   }
 
   /// Return the 'spelling' of the Tok token.
@@ -989,7 +980,7 @@ public:
   ///
   /// \param Invalid If non-null, will be set \c true if an error occurs.
   std::string getSpelling(const Token &Tok, bool *Invalid = nullptr) const {
-    return Lexer::getSpelling(Tok, SourceMgr, LangOpts, Invalid);
+    return Lexer::getSpelling(Tok, SourceMgr, Invalid);
   }
 
   /// Get the spelling of a token into a preallocated buffer, instead
@@ -1006,7 +997,7 @@ public:
   /// if an internal buffer is returned.
   unsigned getSpelling(const Token &Tok, const char *&Buffer,
                        bool *Invalid = nullptr) const {
-    return Lexer::getSpelling(Tok, Buffer, SourceMgr, LangOpts, Invalid);
+    return Lexer::getSpelling(Tok, Buffer, SourceMgr, Invalid);
   }
 
   /// Get the spelling of a token into a SmallVector.
@@ -1021,7 +1012,7 @@ public:
   /// \returns true if there was a failure, false on success.
   bool getRawToken(SourceLocation Loc, Token &Result,
                    bool IgnoreWhiteSpace = false) {
-    return Lexer::getRawToken(Loc, Result, SourceMgr, LangOpts, IgnoreWhiteSpace);
+    return Lexer::getRawToken(Loc, Result, SourceMgr, IgnoreWhiteSpace);
   }
 
   /// Given a Token \p Tok that is a numeric constant with length 1,
@@ -1051,7 +1042,7 @@ public:
   /// where that macro name is spelled. Thus, the result shouldn't out-live
   /// the SourceManager.
   StringRef getImmediateMacroName(SourceLocation Loc) {
-    return Lexer::getImmediateMacroName(Loc, SourceMgr, getLangOpts());
+    return Lexer::getImmediateMacroName(Loc, SourceMgr);
   }
 
   /// Plop the specified string into a scratch buffer and set the
@@ -1084,7 +1075,7 @@ public:
   /// location pointing just past the end of the token; an offset of 1 produces
   /// a source location pointing to the last character in the token, etc.
   SourceLocation getLocForEndOfToken(SourceLocation Loc, unsigned Offset = 0) {
-    return Lexer::getLocForEndOfToken(Loc, Offset, SourceMgr, LangOpts);
+    return Lexer::getLocForEndOfToken(Loc, Offset, SourceMgr);
   }
 
   /// Returns true if the given MacroID location points at the first
@@ -1094,7 +1085,7 @@ public:
   /// begin location of the macro.
   bool isAtStartOfMacroExpansion(SourceLocation loc,
                                  SourceLocation *MacroBegin = nullptr) const {
-    return Lexer::isAtStartOfMacroExpansion(loc, SourceMgr, LangOpts,
+    return Lexer::isAtStartOfMacroExpansion(loc, SourceMgr,
                                             MacroBegin);
   }
 
@@ -1105,7 +1096,7 @@ public:
   /// end location of the macro.
   bool isAtEndOfMacroExpansion(SourceLocation loc,
                                SourceLocation *MacroEnd = nullptr) const {
-    return Lexer::isAtEndOfMacroExpansion(loc, SourceMgr, LangOpts, MacroEnd);
+    return Lexer::isAtEndOfMacroExpansion(loc, SourceMgr, MacroEnd);
   }
 
   /// Print the token to stderr, used for debugging.
@@ -1118,7 +1109,7 @@ public:
   /// token, return a new location that specifies a character within the token.
   SourceLocation AdvanceToTokenCharacter(SourceLocation TokStart,
                                          unsigned Char) const {
-    return Lexer::AdvanceToTokenCharacter(TokStart, Char, SourceMgr, LangOpts);
+    return Lexer::AdvanceToTokenCharacter(TokStart, Char, SourceMgr);
   }
 
   /// Increment the counters for the number of token paste operations

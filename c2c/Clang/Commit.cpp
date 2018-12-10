@@ -21,16 +21,9 @@
 using namespace c2lang;
 using namespace edit;
 
-SourceLocation Commit::Edit::getFileLocation(SourceManager &SM) const {
-  SourceLocation Loc = SM.getLocForStartOfFile(Offset.getFID());
-  Loc = Loc.getLocWithOffset(Offset.getOffset());
-  assert(Loc.isFileID());
-  return Loc;
-}
-
 
 Commit::Commit(EditedSource &Editor)
-    : SourceMgr(Editor.getSourceManager()), LangOpts(Editor.getLangOpts()),
+    : SourceMgr(Editor.getSourceManager()),
       Editor(&Editor) {}
 
 bool Commit::insert(SourceLocation loc, StringRef text,
@@ -175,7 +168,7 @@ bool Commit::canInsertAfterToken(SourceLocation loc, FileOffset &offs,
     return false;
 
   SourceLocation spellLoc = SourceMgr.getSpellingLoc(loc);
-  unsigned tokLen = Lexer::MeasureTokenLength(spellLoc, SourceMgr, LangOpts);
+  unsigned tokLen = Lexer::MeasureTokenLength(spellLoc, SourceMgr);
   AfterLoc = loc.getLocWithOffset(tokLen);
 
   if (loc.isMacroID())
@@ -191,7 +184,7 @@ bool Commit::canInsertAfterToken(SourceLocation loc, FileOffset &offs,
   if (SM.isInSystemHeader(loc))
     return false;
 
-  loc = Lexer::getLocForEndOfToken(loc, 0, SourceMgr, LangOpts);
+  loc = Lexer::getLocForEndOfToken(loc, 0, SourceMgr);
   if (loc.isInvalid())
     return false;
 
@@ -218,7 +211,7 @@ bool Commit::canInsertInOffset(SourceLocation OrigLoc, FileOffset Offs) {
 bool Commit::canRemoveRange(CharSourceRange range,
                             FileOffset &Offs, unsigned &Len) {
   const SourceManager &SM = SourceMgr;
-  range = Lexer::makeFileCharRange(range, SM, LangOpts);
+  range = Lexer::makeFileCharRange(range, SM);
   if (range.isInvalid())
     return false;
 
@@ -259,10 +252,10 @@ bool Commit::canReplaceText(SourceLocation loc, StringRef text,
 
 bool Commit::isAtStartOfMacroExpansion(SourceLocation loc,
                                        SourceLocation *MacroBegin) const {
-  return Lexer::isAtStartOfMacroExpansion(loc, SourceMgr, LangOpts, MacroBegin);
+  return Lexer::isAtStartOfMacroExpansion(loc, SourceMgr, MacroBegin);
 }
 
 bool Commit::isAtEndOfMacroExpansion(SourceLocation loc,
                                      SourceLocation *MacroEnd) const {
-  return Lexer::isAtEndOfMacroExpansion(loc, SourceMgr, LangOpts, MacroEnd);
+  return Lexer::isAtEndOfMacroExpansion(loc, SourceMgr, MacroEnd);
 }

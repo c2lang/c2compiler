@@ -28,7 +28,6 @@
 namespace c2lang {
 class DiagnosticsEngine;
 class SourceManager;
-class LangOptions;
 }
 
 namespace C2 {

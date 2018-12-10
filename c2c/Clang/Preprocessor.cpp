@@ -30,7 +30,6 @@
 #include "Clang/FileSystemStatCache.h"
 #include "Clang/IdentifierTable.h"
 #include "Clang/LLVM.h"
-#include "Clang/LangOptions.h"
 #include "Clang/SourceLocation.h"
 #include "Clang/SourceManager.h"
 #include "Clang/ExternalPreprocessorSource.h"
@@ -69,21 +68,18 @@ using namespace c2lang;
 ExternalPreprocessorSource::~ExternalPreprocessorSource() = default;
 
 Preprocessor::Preprocessor(DiagnosticsEngine &diags,
-                           LangOptions &opts,
                            SourceManager &SM,
                            MemoryBufferCache &PCMCache,
                            HeaderSearch &Headers,
                            IdentifierInfoLookup *IILookup,
-                           bool OwnsHeaders,
-                           TranslationUnitKind TUKind)
-    : Diags(&diags), LangOpts(opts),
+                           bool OwnsHeaders)
+    : Diags(&diags),
       FileMgr(Headers.getFileMgr()), SourceMgr(SM), PCMCache(PCMCache),
       ScratchBuf(new ScratchBuffer(SourceMgr)), HeaderInfo(Headers),
       // As the language options may have not been loaded yet (when
       // deserializing an ASTUnit), adding keywords to the identifier table is
       // deferred to Preprocessor::Initialize().
       Identifiers(IILookup),
-      TUKind(TUKind),
       CurSubmoduleState(&NullSubmoduleState) {
   OwnsHeaderSearch = OwnsHeaders;
 
@@ -157,7 +153,7 @@ void Preprocessor::Initialize(const C2::TargetInfo &Target,
 
 
   // Populate the identifier table with info about keywords for the current language.
-  Identifiers.AddKeywords(LangOpts);
+  Identifiers.AddKeywords();
 }
 
 void Preprocessor::InitializeForModelFile() {
@@ -458,8 +454,7 @@ void Preprocessor::HandlePoisonedIdentifier(Token & Identifier) {
 
 /// Returns a diagnostic message kind for reporting a future keyword as
 /// appropriate for the identifier and specified language.
-static diag::kind getFutureCompatDiagKind(const IdentifierInfo &II,
-                                          const LangOptions &LangOpts) {
+static diag::kind getFutureCompatDiagKind(const IdentifierInfo &II) {
   assert(II.isFutureCompatKeyword() && "diagnostic should not be needed");
 
 
@@ -515,7 +510,7 @@ bool Preprocessor::HandleIdentifier(Token &Identifier) {
   // FIXME: This warning is disabled in cases where it shouldn't be, like
   //   "#define constexpr constexpr", "int constexpr;"
   if (II.isFutureCompatKeyword() && !DisableMacroExpansion) {
-    Diag(Identifier, getFutureCompatDiagKind(II, getLangOpts()))
+    Diag(Identifier, getFutureCompatDiagKind(II))
         << II.getName();
     // Don't diagnose this keyword again in this translation unit.
     II.setIsFutureCompatKeyword(false);

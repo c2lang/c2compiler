@@ -74,8 +74,6 @@ PPKEYWORD(include)
 PPKEYWORD(define)
 PPKEYWORD(undef)
 
-// C99 6.10.4 - Line Control.
-PPKEYWORD(line)
 
 // C99 6.10.5 - Error Directive.
 PPKEYWORD(error)

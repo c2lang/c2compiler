@@ -46,7 +46,7 @@ void EditedSource::deconstructMacroArgLoc(SourceLocation Loc,
         SourceMgr.getImmediateExpansionRange(ExpansionLoc).getBegin();
   SmallString<20> Buf;
   StringRef ArgName = Lexer::getSpelling(SourceMgr.getSpellingLoc(DefArgLoc),
-                                         Buf, SourceMgr, LangOpts);
+                                         Buf, SourceMgr);
   ArgUse = MacroArgUse{nullptr, SourceLocation(), SourceLocation()};
   if (!ArgName.empty())
     ArgUse = {&IdentTable.get(ArgName), ImmediateExpansionLoc,
@@ -312,22 +312,21 @@ bool EditedSource::commit(const Commit &commit) {
 }
 
 // Returns true if it is ok to make the two given characters adjacent.
-static bool canBeJoined(char left, char right, const LangOptions &LangOpts) {
+static bool canBeJoined(char left, char right) {
   // FIXME: Should use TokenConcatenation to make sure we don't allow stuff like
   // making two '<' adjacent.
-  return !(Lexer::isIdentifierBodyChar(left, LangOpts) &&
-           Lexer::isIdentifierBodyChar(right, LangOpts));
+  return !(Lexer::isIdentifierBodyChar(left) &&
+           Lexer::isIdentifierBodyChar(right));
 }
 
 /// Returns true if it is ok to eliminate the trailing whitespace between
 /// the given characters.
-static bool canRemoveWhitespace(char left, char beforeWSpace, char right,
-                                const LangOptions &LangOpts) {
-  if (!canBeJoined(left, right, LangOpts))
+static bool canRemoveWhitespace(char left, char beforeWSpace, char right) {
+  if (!canBeJoined(left, right))
     return false;
   if (isWhitespace(left) || isWhitespace(right))
     return true;
-  if (canBeJoined(beforeWSpace, right, LangOpts))
+  if (canBeJoined(beforeWSpace, right))
     return false; // the whitespace was intentional, keep it.
   return true;
 }
@@ -335,11 +334,11 @@ static bool canRemoveWhitespace(char left, char beforeWSpace, char right,
 /// Check the range that we are going to remove and:
 /// -Remove any trailing whitespace if possible.
 /// -Insert a space if removing the range is going to mess up the source tokens.
-static void adjustRemoval(const SourceManager &SM, const LangOptions &LangOpts,
+static void adjustRemoval(const SourceManager &SM,
                           SourceLocation Loc, FileOffset offs,
                           unsigned &len, StringRef &text) {
   assert(len && text.empty());
-  SourceLocation BeginTokLoc = Lexer::GetBeginningOfToken(Loc, SM, LangOpts);
+  SourceLocation BeginTokLoc = Lexer::GetBeginningOfToken(Loc, SM);
   if (BeginTokLoc != Loc)
     return; // the range is not at the beginning of a token, keep the range.
 
@@ -370,19 +369,19 @@ static void adjustRemoval(const SourceManager &SM, const LangOptions &LangOpts,
            "buffer not zero-terminated!");
     if (canRemoveWhitespace(/*left=*/buffer[begin-1],
                             /*beforeWSpace=*/buffer[end-1],
-                            /*right=*/buffer.data()[end + 1], // zero-terminated
-                            LangOpts))
+                            /*right=*/buffer.data()[end + 1] // zero-terminated
+                            ))
       ++len;
     return;
   }
 
-  if (!canBeJoined(buffer[begin-1], buffer[end], LangOpts))
+  if (!canBeJoined(buffer[begin-1], buffer[end]))
     text = " ";
 }
 
 static void applyRewrite(EditsReceiver &receiver,
                          StringRef text, FileOffset offs, unsigned len,
-                         const SourceManager &SM, const LangOptions &LangOpts,
+                         const SourceManager &SM,
                          bool shouldAdjustRemovals) {
   assert(offs.getFID().isValid());
   SourceLocation Loc = SM.getLocForStartOfFile(offs.getFID());
@@ -390,7 +389,7 @@ static void applyRewrite(EditsReceiver &receiver,
   assert(Loc.isFileID());
 
   if (text.empty() && shouldAdjustRemovals)
-    adjustRemoval(SM, LangOpts, Loc, offs, len, text);
+    adjustRemoval(SM, Loc, offs, len, text);
 
   CharSourceRange range = CharSourceRange::getCharRange(Loc,
                                                      Loc.getLocWithOffset(len));
@@ -435,7 +434,7 @@ void EditedSource::applyRewrites(EditsReceiver &receiver,
       continue;
     }
 
-    applyRewrite(receiver, StrVec, CurOffs, CurLen, SourceMgr, LangOpts,
+    applyRewrite(receiver, StrVec, CurOffs, CurLen, SourceMgr,
                  shouldAdjustRemovals);
     CurOffs = offs;
     StrVec = act.Text;
@@ -443,7 +442,7 @@ void EditedSource::applyRewrites(EditsReceiver &receiver,
     CurEnd = CurOffs.getWithOffset(CurLen);
   }
 
-  applyRewrite(receiver, StrVec, CurOffs, CurLen, SourceMgr, LangOpts,
+  applyRewrite(receiver, StrVec, CurOffs, CurLen, SourceMgr,
                shouldAdjustRemovals);
 }
 
@@ -462,7 +461,7 @@ StringRef EditedSource::getSourceText(FileOffset BeginOffs, FileOffset EndOffs,
   SourceLocation
     ELoc = BLoc.getLocWithOffset(EndOffs.getOffset() - BeginOffs.getOffset());
   return Lexer::getSourceText(CharSourceRange::getCharRange(BLoc, ELoc),
-                              SourceMgr, LangOpts, &Invalid);
+                              SourceMgr, &Invalid);
 }
 
 EditedSource::FileEditsTy::iterator
