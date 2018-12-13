@@ -1068,6 +1068,8 @@ DIAG(err_no_matching_local_friend_suggest, CLASS_ERROR, (unsigned)diag::Severity
 DIAG(err_no_member, CLASS_ERROR, (unsigned)diag::Severity::Error, "no member named %0 in %1", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_no_member_overloaded_arrow, CLASS_ERROR, (unsigned)diag::Severity::Error, "no member named %0 in %1; did you mean to use '->' instead of '.'?", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_no_member_struct_func, CLASS_ERROR, (unsigned)diag::Severity::Error, "no member/struct-function named %0 in %1", 0, SFINAE_SubstitutionFailure, false, true, 2)
+DIAG(err_static_use_nonstatic_member, CLASS_ERROR, (unsigned)diag::Severity::Error, "member %0 cannot be used without instance", 0, SFINAE_SubstitutionFailure, false, true, 2)
+DIAG(err_invalid_use_nonstatic_struct_func, CLASS_ERROR, (unsigned)diag::Severity::Error, "invalid use of non-static struct-function %0", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_no_member_suggest, CLASS_ERROR, (unsigned)diag::Severity::Error, "no member named %0 in %1; did you mean %select{|simply }2%3?", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_no_member_template, CLASS_ERROR, (unsigned)diag::Severity::Error, "no template named %0 in %1", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_no_member_template_suggest, CLASS_ERROR, (unsigned)diag::Severity::Error, "no template named %0 in %1; did you mean %select{|simply }2%3?", 0, SFINAE_SubstitutionFailure, false, true, 2)

@@ -104,6 +104,7 @@ FunctionAnalyser::FunctionAnalyser(Scope& scope_,
     , inConstExpr(false)
     , usedPublicly(false)
     , isInterface(isInterface_)
+    , allowStaticMember(false)
 {
     callStack.callDepth = 0;
 }
@@ -1069,11 +1070,10 @@ static uint64_t sizeOfType(QualType type) {
 bool FunctionAnalyser::analyseSizeOfExpr(BuiltinExpr* B) {
     LOG_FUNC
 
-    // Consider 128 for certain architectures. TODO
-    // Also, elsewhere this is assumed to be 4!
     static constexpr unsigned FLOAT_SIZE_DEFAULT = 8;
 
     uint64_t width;
+    allowStaticMember = true;
 
     Expr* expr = B->getExpr();
 
@@ -1084,6 +1084,7 @@ bool FunctionAnalyser::analyseSizeOfExpr(BuiltinExpr* B) {
     case EXPR_INITLIST:
     case EXPR_DESIGNATOR_INIT:
         TODO; // Good error
+        allowStaticMember = false;
         return false;
     case EXPR_TYPE:
     {
@@ -1111,20 +1112,26 @@ bool FunctionAnalyser::analyseSizeOfExpr(BuiltinExpr* B) {
     case EXPR_IDENTIFIER:
     case EXPR_CAST: {
         QualType type = analyseExpr(expr, RHS);
-        if (!type.isValid()) return false;
+        if (!type.isValid()) {
+            allowStaticMember = false;
+            return false;
+        }
         TR.checkOpaqueType(expr->getLocation(), true, type);
         width = sizeOfType(type);
         break;
     }
     case EXPR_BUILTIN:
         FATAL_ERROR("Unreachable");
+        allowStaticMember = false;
         return false;
     case EXPR_PAREN:
     case EXPR_BITOFFSET:
         FATAL_ERROR("Unreachable");
+        allowStaticMember = false;
         return false;
 }
     B->setValue(llvm::APSInt::getUnsigned(width));
+    allowStaticMember = false;
     return true;
 }
 
@@ -1653,71 +1660,42 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
 
 
 
-QualType FunctionAnalyser::analyseStaticStructFunction(QualType T, MemberExpr* M, const StructTypeDecl* S, unsigned side)
+QualType FunctionAnalyser::analyseStaticStructMember(QualType T, MemberExpr* M, const StructTypeDecl* S, unsigned side)
 {
+    LOG_FUNC
     IdentifierExpr* member = M->getMember();
 
-    // Let's return the field if we find it.
     Decl *field = S->findMember(member->getName());
-    if (field) {
+    FunctionDecl* sfunc = S->findFunction(member->getName());
 
-        // TODO maybe check opaque?
-        //if (CurrentFunction->getModule() != S->getModule() && S->hasAttribute(ATTR_OPAQUE)) {
-        //    Diag(S->getLocation(), diag::err_deref_opaque) << S->isStruct() << S->DiagName();
-        //   return QualType();
-        //}
+    Decl* d = field ? field : sfunc;
+    if (!d) return outputStructDiagnostics(T, member, diag::err_no_member_struct_func);
 
-        field->setUsed();
-
-        // Setup from function
-        M->setDecl(field);
-        M->setType(field->getType());
-
-        // TODO should we set something like this?
-        // M->setIsStaticStructFunction();
-
-        member->setDecl(field, IdentifierExpr::REF_STRUCT_MEMBER);
-        member->setType(field->getType());
-
-        return field->getType();
+    scope.checkAccess(d, member->getLocation());
+    if (side & RHS) d->setUsed();
+    M->setDecl(d);
+    M->setType(d->getType());
+    if (field) member->setDecl(d, IdentifierExpr::REF_STRUCT_MEMBER);
+    else {
+        member->setDecl(d, IdentifierExpr::REF_STRUCT_FUNC);
+        M->setIsStructFunction();
+        if (sfunc->isStaticStructFunc()) M->setIsStaticStructFunction();
     }
+    member->setType(d->getType());
+    SetConstantFlags(d, M);
 
-    // Analyzed as static & struct function.
-     M->setIsStructFunction();
-     M->setIsStaticStructFunction();
-
-    // This is the right hand side.
-    FunctionDecl* match = S->findFunction(member->getName());
-    if (!match) {
-        outputStructDiagnostics(T, member, diag::err_no_struct_func);
-        return QualType();
+    if (!allowStaticMember) {
+        if (sfunc) {
+            // TBD: allow non-static use of struct functions?
+            //if (!sfunc->isStaticStructFunc()) return outputStructDiagnostics(T, member, diag::err_invalid_use_nonstatic_struct_func);
+        } else {
+            return outputStructDiagnostics(T, member, diag::err_static_use_nonstatic_member);
+        }
     }
-
-    // NOTE: static struct-functions are allowed outside call expr
-    scope.checkAccess(match, member->getLocation());
-
-    // The struct function can either be used as the pointer to
-    // a function or a member call. Consequently simply
-    // skip the call stack here.
-    if (callStack.callDepth > 0) {
-        callStack.setStructFunction(M->getBase());
-    }
-
-    // If right hand side of an expression, mark as used.
-    if (side & RHS) match->setUsed();
-
-    // Setup from function
-    M->setDecl(match);
-    M->setType(match->getType());
-
-    // Set the member part as the function call.
-    member->setDecl(match, IdentifierExpr::REF_STRUCT_FUNC);
-    member->setType(match->getType());
-    SetConstantFlags(match, M);
-    return match->getType();
+    return d->getType();
 }
 
-void FunctionAnalyser::outputStructDiagnostics(QualType T, IdentifierExpr* member, unsigned msg)
+QualType FunctionAnalyser::outputStructDiagnostics(QualType T, IdentifierExpr* member, unsigned msg)
 {
     char temp1[MAX_LEN_TYPENAME];
     StringBuilder buf1(MAX_LEN_TYPENAME, temp1);
@@ -1726,6 +1704,7 @@ void FunctionAnalyser::outputStructDiagnostics(QualType T, IdentifierExpr* membe
     StringBuilder buf2(MAX_LEN_VARNAME, temp2);
     buf2 << '\'' << member->getName() << '\'';
     Diag(member->getLocation(), msg) << temp2 << temp1;
+    return QualType();
 }
 
 // T is the type of the struct
@@ -1737,7 +1716,7 @@ QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr* M, unsign
     const StructType* ST = cast<StructType>(T);
     const StructTypeDecl* S = ST->getDecl();
 
-    if (isStatic) return analyseStaticStructFunction(T, M, S, side);
+    if (isStatic) return analyseStaticStructMember(T, M, S, side);
 
     assert(CurrentFunction);
 
@@ -1755,7 +1734,7 @@ QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr* M, unsign
     if (func) {
         scope.checkAccess(func, member->getLocation());
 
-        if (!checkStructTypeArg(T, func)) {
+        if (func->isStaticStructFunc()) {
             Diag(member->getLocation(), diag::err_static_struct_func_notype);// << func->DiagName();
             return QualType();
         }
@@ -1785,30 +1764,6 @@ QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr* M, unsign
     member->setDecl(match, ref);
     member->setType(match->getType());
     return match->getType();
-}
-
-
-bool FunctionAnalyser::checkStructTypeArg(QualType T,  FunctionDecl* func) const {
-    if (func->numArgs() == 0) return false;
-
-    VarDecl* functionArg = func->getArg(0);
-    Decl* functionArgDecl = getStructDecl(functionArg->getType());
-
-    // might be done more effictien by not creating PointerType first
-    QualType callArgType = Context.getPointerType(T);
-    Decl* callArgDecl = getStructDecl(callArgType);
-    return (functionArgDecl == callArgDecl);
-}
-
-Decl* FunctionAnalyser::getStructDecl(QualType T) const {
-    // try to convert QualType(Struct*) -> StructDecl
-    const PointerType* pt = dyncast<PointerType>(T);
-    if (!pt) return 0;
-
-    const StructType* st = dyncast<StructType>(pt->getPointeeType());
-    if (!st) return 0;
-
-    return st->getDecl();
 }
 
 bool FunctionAnalyser::exprIsType(const Expr* E) const {

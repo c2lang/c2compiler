@@ -1,0 +1,23 @@
+// @warnings{no-unused}
+module test;
+
+type Type struct {
+    i32 member;
+}
+
+func Type* Type.create() {
+    return nil;
+}
+
+func void Type.init(Type* t) {
+    t.member = 0;
+}
+
+func void test1() {
+    i32 a = sizeof(Type.create);
+    i32 b = sizeof(Type.init);
+}
+
+public func i32 main() {
+    return 0;
+}

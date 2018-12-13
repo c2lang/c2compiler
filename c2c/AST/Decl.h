@@ -147,10 +147,11 @@ protected:
         friend class FunctionDecl;
         unsigned : NumDeclBits;
 
-        unsigned StructFuncNameOffset : 8;
+        unsigned StructFuncNameOffset : 7;
         unsigned numArgs : 6;
         unsigned IsVariadic : 1;
         unsigned HasDefaultArgs : 1;
+        unsigned isStaticStructFunc : 1;
     };
 
     class ImportDeclBits {
@@ -249,6 +250,8 @@ public:
 
     void setStructInfo(IdentifierExpr* structName_);
     bool isStructFunction() const { return structName != 0; }
+    void setIsStaticStructFunc(bool s) { functionDeclBits.isStaticStructFunc = s; }
+    bool isStaticStructFunc() const { return functionDeclBits.isStaticStructFunc; }
     IdentifierExpr* getStructName() const { return structName; }
     const char* getMemberName() const { return &name[functionDeclBits.StructFuncNameOffset]; }
 

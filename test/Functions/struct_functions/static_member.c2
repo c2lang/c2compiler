@@ -6,6 +6,6 @@ type Type struct {
 }
 
 func void myfunc() {
-    i32 a = Type.member;      // @error{type 'i32' cannot be assigned to a variable}
+    i32 a = Type.member;      // @error{member 'member' cannot be used without instance}
 }
 

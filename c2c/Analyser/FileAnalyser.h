@@ -98,6 +98,8 @@ private:
     void checkVarDeclAttributes(VarDecl* D);
     void checkAttributes(Decl* D);
     void checkStructMembersForUsed(const StructTypeDecl* S);
+    bool isStaticStructFunc(QualType T,  FunctionDecl* func) const;
+    Decl* getStructDecl(QualType T) const;
 
     AST& ast;
     const Module& module;

@@ -175,7 +175,9 @@ void FunctionDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer << ' ' << name;
     if (isStructFunction()) {
         buffer.setColor(COL_ATTRIBUTES);
-        buffer << ' ' << "SF";
+        buffer << ' ';
+        if (isStaticStructFunc()) buffer << "static";
+        buffer << "SF";
     }
     buffer << '\n';
     for (unsigned i=0; i<numArgs(); i++) {

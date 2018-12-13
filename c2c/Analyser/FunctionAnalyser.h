@@ -94,8 +94,6 @@ private:
     QualType analyseArraySubscript(Expr* expr, unsigned side);
     QualType analyseMemberExpr(Expr* expr, unsigned side);
     QualType analyseStructMember(QualType T, MemberExpr* M, unsigned side, bool isStatic);
-    bool checkStructTypeArg(QualType T,  FunctionDecl* func) const;
-    Decl* getStructDecl(QualType T) const;
     bool exprIsType(const Expr* E) const;
     QualType analyseParenExpr(Expr* expr);
     bool analyseBitOffsetIndex(Expr* expr, llvm::APSInt* Result, BuiltinType* BaseType);
@@ -153,8 +151,8 @@ private:
     QualType getStructType(QualType T) const;
     QualType getConditionType(const Stmt* C) const;
 
-    void outputStructDiagnostics(QualType T, IdentifierExpr *member, unsigned msg);
-    QualType analyseStaticStructFunction(QualType T, MemberExpr *M, const StructTypeDecl *S, unsigned side);
+    QualType outputStructDiagnostics(QualType T, IdentifierExpr *member, unsigned msg);
+    QualType analyseStaticStructMember(QualType T, MemberExpr *M, const StructTypeDecl *S, unsigned side);
 
     // conversions
     QualType UsualUnaryConversions(Expr* expr) const;
@@ -184,6 +182,7 @@ private:
     };
 
     CallStack callStack;
+    bool allowStaticMember;
 
     typedef std::vector<LabelDecl*> Labels;
     typedef Labels::iterator LabelsIter;

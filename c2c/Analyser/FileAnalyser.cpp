@@ -430,8 +430,32 @@ void FileAnalyser::checkStructFunction(FunctionDecl* F, StructFunctionList& stru
         Diags.Report(match->getLocation(), diag::err_struct_function_conflict) << match->DiagName() << F->DiagName();
         Diags.Report(F->getLocation(), diag::note_previous_declaration);
     } else {
+        F->setIsStaticStructFunc(isStaticStructFunc(S->getType(), F));
         structFuncs[S].push_back(F);
     }
+}
+
+bool FileAnalyser::isStaticStructFunc(QualType T,  FunctionDecl* func) const {
+    if (func->numArgs() == 0) return true;
+
+    VarDecl* functionArg = func->getArg(0);
+    Decl* functionArgDecl = getStructDecl(functionArg->getType());
+
+    // might be done more efficiently by not creating PointerType first
+    QualType callArgType = ast.getASTContext().getPointerType(T);
+    Decl* callArgDecl = getStructDecl(callArgType);
+    return (functionArgDecl != callArgDecl);
+}
+
+Decl* FileAnalyser::getStructDecl(QualType T) const {
+    // try to convert QualType(Struct*) -> StructDecl
+    const PointerType* pt = dyncast<PointerType>(T);
+    if (!pt) return 0;
+
+    const StructType* st = dyncast<StructType>(pt->getPointeeType());
+    if (!st) return 0;
+
+    return st->getDecl();
 }
 
 void FileAnalyser::analyseStructNames(const StructTypeDecl* S, Names& names, bool isStruct) {

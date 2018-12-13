@@ -9,6 +9,6 @@ func void Type.create(Type* t) {
 }
 
 func void myfunc() {
-    Type.create();      // @error{too few arguments to static struct-function call, expected 1, have 0}
+    Type.create();      // @error{too few arguments to function call, expected 1, have 0}
 }
 

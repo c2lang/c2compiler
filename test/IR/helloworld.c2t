@@ -8,7 +8,7 @@ module hello;
 
 import stdio local;
 
-public func int32 main(int32 argc, int8*[] argv) {
+public func i32 main(i32 argc, i8*[] argv) {
     printf("Hello World!\n");
     return 0;
 }
