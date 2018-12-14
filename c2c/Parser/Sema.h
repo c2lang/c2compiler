@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef PARSER_C2SEMA_H
-#define PARSER_C2SEMA_H
+#ifndef PARSER_SEMA_H
+#define PARSER_SEMA_H
 
 #include "Clang/SourceLocation.h"
 #include <vector>
@@ -53,12 +53,12 @@ class Module;
 typedef std::vector<Decl*> DeclList;
 typedef std::vector<VarDecl*> VarDeclList;
 
-class C2Sema {
+class Sema {
 public:
-    C2Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, c2lang::Preprocessor& PP_,
+    Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, c2lang::Preprocessor& PP_,
            Component& comp_, Module* existingMod, const std::string& filename_,
            const TargetInfo& ti);
-    ~C2Sema();
+    ~Sema();
 
     void printAST() const;
 
@@ -168,8 +168,8 @@ private:
 
     Symbols enumConstants;
 
-    C2Sema(const C2Sema&);
-    C2Sema& operator= (const C2Sema&);
+    Sema(const Sema&);
+    Sema& operator= (const Sema&);
 };
 
 }

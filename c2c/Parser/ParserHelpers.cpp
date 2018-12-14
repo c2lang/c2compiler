@@ -34,7 +34,7 @@ bool BalancedDelimiterTracker::expectAndConsume(unsigned DiagID,
     LOpen = P.Tok.getLocation();
     if (P.ExpectAndConsume(Kind, DiagID, Msg)) {
         if (SkipToTok != tok::unknown)
-            P.SkipUntil(SkipToTok, C2Parser::StopAtSemi);
+            P.SkipUntil(SkipToTok, Parser::StopAtSemi);
         return true;
     }
 
@@ -55,14 +55,14 @@ bool BalancedDelimiterTracker::diagnoseMissingClose() {
     if (P.Tok.isNot(tok::r_paren) && P.Tok.isNot(tok::r_brace) &&
             P.Tok.isNot(tok::r_square) &&
             P.SkipUntil(Close, FinalToken,
-                        C2Parser::StopAtSemi | C2Parser::StopBeforeMatch) &&
+                        Parser::StopAtSemi | Parser::StopBeforeMatch) &&
             P.Tok.is(Close))
         LClose = P.ConsumeAnyToken();
     return true;
 }
 
 void BalancedDelimiterTracker::skipToEnd() {
-    P.SkipUntil(Close, C2Parser::StopBeforeMatch);
+    P.SkipUntil(Close, Parser::StopBeforeMatch);
     consumeClose();
 }
 

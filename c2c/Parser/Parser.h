@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef PARSER_C2PARSER_H
-#define PARSER_C2PARSER_H
+#ifndef PARSER_PARSER_H
+#define PARSER_PARSER_H
 
 #include "Clang/Preprocessor.h"
 #include "Parser/Ownership.h"
@@ -32,7 +32,7 @@ using namespace c2lang;
 
 namespace C2 {
 
-class C2Sema;
+class Sema;
 class Decl;
 class Expr;
 class FunctionDecl;
@@ -57,12 +57,12 @@ namespace prec {
   };
 }
 
-class C2Parser {
+class Parser {
 public:
     friend class BalancedDelimiterTracker;
 
-    C2Parser(c2lang::Preprocessor& pp, C2Sema& sema, bool isInterface_);
-    ~C2Parser();
+    Parser(c2lang::Preprocessor& pp, Sema& sema, bool isInterface_);
+    ~Parser();
 
     bool Parse();
 private:
@@ -70,7 +70,7 @@ private:
     Token Tok;
     SourceLocation PrevTokLocation;
     unsigned short ParenCount, BracketCount, BraceCount;
-    C2Sema& Actions;
+    Sema& Actions;
     DiagnosticsEngine& Diags;
     bool isInterface;
 
@@ -406,8 +406,8 @@ public:
                  SkipUntilFlags Flags = static_cast<SkipUntilFlags>(0));
 
 private:
-    C2Parser(const C2Parser&);
-    C2Parser& operator= (const C2Parser&);
+    Parser(const Parser&);
+    Parser& operator= (const Parser&);
 };
 
 }

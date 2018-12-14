@@ -74,9 +74,9 @@ add_library(c2core
     AST/Attr.cpp
     AST/ASTContext.cpp
     AST/Component.cpp
-    Parser/C2Parser.cpp
+    Parser/Parser.cpp
     Parser/ParserHelpers.cpp
-    Parser/C2Sema.cpp
+    Parser/Sema.cpp
     Analyser/AnalyserUtils.cpp
     Analyser/Scope.cpp
     Analyser/TypeResolver.cpp

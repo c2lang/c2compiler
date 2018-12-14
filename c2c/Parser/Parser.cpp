@@ -21,8 +21,8 @@
 #include "Clang/SemaDiagnostic.h"
 #include "Clang/SourceLocation.h"
 
-#include "Parser/C2Parser.h"
-#include "Parser/C2Sema.h"
+#include "Parser/Parser.h"
+#include "Parser/Sema.h"
 #include "AST/Decl.h"
 #include "AST/Expr.h"
 
@@ -98,7 +98,7 @@ static C2::VarDecl* findDecl(VarDeclList decls, const char* name_) {
 }
 
 
-C2Parser::C2Parser(Preprocessor& pp, C2Sema& sema, bool isInterface_)
+Parser::Parser(Preprocessor& pp, Sema& sema, bool isInterface_)
     : PP(pp)
     , ParenCount(0)
     , BracketCount(0)
@@ -111,9 +111,9 @@ C2Parser::C2Parser(Preprocessor& pp, C2Sema& sema, bool isInterface_)
     Tok.setKind(tok::eof);
 }
 
-C2Parser::~C2Parser() {}
+Parser::~Parser() {}
 
-bool C2Parser::Parse() {
+bool Parser::Parse() {
     LOG_FUNC
     // Prime the lexer look-ahead.
     ConsumeToken();
@@ -133,7 +133,7 @@ bool C2Parser::Parse() {
     return true;
 }
 
-void C2Parser::ParseModule() {
+void Parser::ParseModule() {
     LOG_FUNC
     if (ExpectAndConsume(tok::kw_module)) return;
     if (ExpectIdentifier()) return;
@@ -147,7 +147,7 @@ void C2Parser::ParseModule() {
     Actions.ActOnModule(Mod->getNameStart(), ModLoc);
 }
 
-void C2Parser::ParseImports() {
+void Parser::ParseImports() {
     LOG_FUNC
     while (1) {
         if (Tok.isNot(tok::kw_import)) break;
@@ -188,7 +188,7 @@ void C2Parser::ParseImports() {
         <public> type_qualifier ..
         identifier += init_value
 */
-bool C2Parser::ParseTopLevel() {
+bool Parser::ParseTopLevel() {
     LOG_FUNC
 
     if (Tok.getKind() == tok::identifier && NextToken().getKind() == tok::plusequal) {
@@ -223,7 +223,7 @@ type_def ::= TYPE IDENTIFIER STRUCT LBRACE struct_block RBRACE.
 type_def ::= TYPE IDENTIFIER UNION LBRACE struct_block RBRACE.
 type_def ::= TYPE IDENTIFIER ENUM LBRACE enum_block RBRACE.
 */
-void C2Parser::ParseTypeDef(bool is_public) {
+void Parser::ParseTypeDef(bool is_public) {
     LOG_FUNC
     assert(Tok.is(tok::kw_type) && "Expected type keyword");
     ConsumeToken();
@@ -265,7 +265,7 @@ void C2Parser::ParseTypeDef(bool is_public) {
 }
 
 // syntax: { <struct_block> } <attributes>
-void C2Parser::ParseStructType(bool is_struct, const char* id, SourceLocation idLoc, bool is_public) {
+void Parser::ParseStructType(bool is_struct, const char* id, SourceLocation idLoc, bool is_public) {
     LOG_FUNC
     StructTypeDecl* S = Actions.ActOnStructType(id, idLoc, is_struct, is_public, true);
     ParseStructBlock(S);
@@ -274,7 +274,7 @@ void C2Parser::ParseStructType(bool is_struct, const char* id, SourceLocation id
 }
 
 // Syntax: { <struct_block> } etc
-void C2Parser::ParseStructBlock(StructTypeDecl* S) {
+void Parser::ParseStructBlock(StructTypeDecl* S) {
     LOG_FUNC
     // clang: ca70f4fa1c4eae6a47c97c773b8e63803a43a90c
     //        af9a02c0cdaafab155de9b2f43bfad33a28429c3
@@ -337,7 +337,7 @@ void C2Parser::ParseStructBlock(StructTypeDecl* S) {
     enum_member ::= IDENTIFIER.
     enum_member ::= IDENTIFIER EQUALS constant_expression.
 */
-void C2Parser::ParseEnumType(const char* id, SourceLocation idLoc, bool is_public) {
+void Parser::ParseEnumType(const char* id, SourceLocation idLoc, bool is_public) {
     LOG_FUNC
     assert(Tok.is(tok::kw_enum) && "Expected keyword 'enum'");
     ConsumeToken();
@@ -414,7 +414,7 @@ void C2Parser::ParseEnumType(const char* id, SourceLocation idLoc, bool is_publi
     Syntax:
      alias_type ::= type_qualifier single_type_specifier <attributes> SEMICOLON
 */
-void C2Parser::ParseAliasType(const char* id, SourceLocation idLoc, bool is_public) {
+void Parser::ParseAliasType(const char* id, SourceLocation idLoc, bool is_public) {
     LOG_FUNC
     ExprResult type = ParseTypeSpecifier(true);
     if (!type.isUsable()) return;
@@ -427,7 +427,7 @@ void C2Parser::ParseAliasType(const char* id, SourceLocation idLoc, bool is_publ
    Syntax:
     func_type ::= FUNC type_qualifier single_type_specifier LPAREN full_param_list RPAREN <attributes>.
 */
-void C2Parser::ParseFuncType(IdentifierInfo* id, SourceLocation& idLoc, bool is_public) {
+void Parser::ParseFuncType(IdentifierInfo* id, SourceLocation& idLoc, bool is_public) {
     LOG_FUNC
     assert(Tok.is(tok::kw_func) && "Expected keyword 'func'");
     ConsumeToken();
@@ -452,7 +452,7 @@ void C2Parser::ParseFuncType(IdentifierInfo* id, SourceLocation& idLoc, bool is_
     param_list ::= param_declaration.
     param_list ::= param_list COMMA param_declaration.
 */
-bool C2Parser::ParseFunctionParams(FunctionDecl* func, bool allow_defaults) {
+bool Parser::ParseFunctionParams(FunctionDecl* func, bool allow_defaults) {
     LOG_FUNC
     if (ExpectAndConsume(tok::l_paren)) return false;
     // fast path for "()"
@@ -502,7 +502,7 @@ bool C2Parser::ParseFunctionParams(FunctionDecl* func, bool allow_defaults) {
     param_declaration ::= type_qualifier type_specifier IDENTIFIER param_default.
     param_default ::= EQUALS constant_expression.
 */
-C2::VarDeclResult C2Parser::ParseParamDecl(FunctionDecl* func, bool allow_defaults) {
+C2::VarDeclResult Parser::ParseParamDecl(FunctionDecl* func, bool allow_defaults) {
     LOG_FUNC
 
     ExprResult type = ParseTypeSpecifier(true);
@@ -536,7 +536,7 @@ C2::VarDeclResult C2Parser::ParseParamDecl(FunctionDecl* func, bool allow_defaul
     type_specifier ::= single_type_specifier.
     type_specifier ::= type_specifier array_specifier.
 */
-C2::ExprResult C2Parser::ParseSingleTypeSpecifier(bool allow_qualifier) {
+C2::ExprResult Parser::ParseSingleTypeSpecifier(bool allow_qualifier) {
     LOG_FUNC
 
     unsigned type_qualifier = 0;
@@ -579,7 +579,7 @@ C2::ExprResult C2Parser::ParseSingleTypeSpecifier(bool allow_qualifier) {
 }
 
 // Syntax: TODO
-C2::ExprResult C2Parser::ParseTypeSpecifier(bool allow_qualifier) {
+C2::ExprResult Parser::ParseTypeSpecifier(bool allow_qualifier) {
     LOG_FUNC
     ExprResult type = ParseSingleTypeSpecifier(allow_qualifier);
     if (type.isInvalid()) return ExprError();
@@ -593,13 +593,13 @@ C2::ExprResult C2Parser::ParseTypeSpecifier(bool allow_qualifier) {
     return type;
 }
 
-C2::ExprResult C2Parser::ParseExpression(TypeCastState isTypeCast) {
+C2::ExprResult Parser::ParseExpression(TypeCastState isTypeCast) {
     LOG_FUNC
     ExprResult LHS(ParseAssignmentExpression(isTypeCast));
     return ParseRHSOfBinaryExpression(LHS, prec::Comma);
 }
 
-C2::ExprResult C2Parser::ParseAssignmentExpression(TypeCastState isTypeCast) {
+C2::ExprResult Parser::ParseAssignmentExpression(TypeCastState isTypeCast) {
     LOG_FUNC
     ExprResult LHS = ParseCastExpression(/*isUnaryExpression=*/false,
                      /*isAddressOfOperand=*/false,
@@ -607,7 +607,7 @@ C2::ExprResult C2Parser::ParseAssignmentExpression(TypeCastState isTypeCast) {
     return ParseRHSOfBinaryExpression(LHS, prec::Assignment);
 }
 
-C2::ExprResult C2Parser::ParseRHSOfBinaryExpression(ExprResult LHS, prec::Level MinPrec) {
+C2::ExprResult Parser::ParseRHSOfBinaryExpression(ExprResult LHS, prec::Level MinPrec) {
     LOG_FUNC
     prec::Level NextTokPrec = getBinOpPrecedence(Tok.getKind());
 
@@ -793,7 +793,7 @@ C2::ExprResult C2Parser::ParseRHSOfBinaryExpression(ExprResult LHS, prec::Level 
 }
 
 // NOTE: this is the C-style cast expression that's not used anymore for actual casting
-C2::ExprResult C2Parser::ParseCastExpression(bool isUnaryExpression,
+C2::ExprResult Parser::ParseCastExpression(bool isUnaryExpression,
         bool isAddressOfOperand,
         bool &NotCastExpr,
         TypeCastState isTypeCast) {
@@ -926,7 +926,7 @@ C2::ExprResult C2Parser::ParseCastExpression(bool isUnaryExpression,
     return ParsePostfixExpressionSuffix(Res);
 }
 
-C2::ExprResult C2Parser::ParseCastExpression(bool isUnaryExpression,
+C2::ExprResult Parser::ParseCastExpression(bool isUnaryExpression,
         bool isAddressOfOperand,
         TypeCastState isTypeCast) {
     //LOG_FUNC
@@ -940,7 +940,7 @@ C2::ExprResult C2Parser::ParseCastExpression(bool isUnaryExpression,
 }
 
 //Syntax: cast<type>(expr)
-C2::ExprResult C2Parser::ParseExplicitCastExpression() {
+C2::ExprResult Parser::ParseExplicitCastExpression() {
     LOG_FUNC
     assert(Tok.is(tok::kw_cast) && "Not an explicit cast expr!");
 
@@ -968,7 +968,7 @@ C2::ExprResult C2Parser::ParseExplicitCastExpression() {
 ///       primary-expression: [C99 6.5.1]
 ///         string-literal
 /// \verbatim
-C2::ExprResult C2Parser::ParseStringLiteralExpression(bool AllowUserDefinedLiteral) {
+C2::ExprResult Parser::ParseStringLiteralExpression(bool AllowUserDefinedLiteral) {
     LOG_FUNC
     assert(isTokenStringLiteral() && "Not a string literal!");
 
@@ -1004,7 +1004,7 @@ C2::ExprResult C2Parser::ParseStringLiteralExpression(bool AllowUserDefinedLiter
 ///         argument-expression ...[opt]
 ///         argument-expression-list ',' assignment-expression ...[opt]
 /// \endverbatim
-C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
+C2::ExprResult Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
     LOG_FUNC
     // Now that the primary-expression piece of the postfix-expression has been
     // parsed, see if there are any postfix-expression pieces here.
@@ -1134,7 +1134,7 @@ C2::ExprResult C2Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
 /// [C++0x]   assignment-expression
 /// [C++0x]   braced-init-list
 /// \endverbatim
-bool C2Parser::ParseExpressionList(SmallVectorImpl<Expr*> &Exprs,
+bool Parser::ParseExpressionList(SmallVectorImpl<Expr*> &Exprs,
                                    SmallVectorImpl<SourceLocation> &CommaLocs)
 {
     LOG_FUNC
@@ -1178,7 +1178,7 @@ bool C2Parser::ParseExpressionList(SmallVectorImpl<Expr*> &Exprs,
 ///         '(' type-name ')' cast-expression
 /// \endverbatim
 C2::ExprResult
-C2Parser::ParseParenExpression(ParenParseOption &ExprType, bool stopIfCastExpr,
+Parser::ParseParenExpression(ParenParseOption &ExprType, bool stopIfCastExpr,
                                bool isTypeCast, SourceLocation &RParenLoc)
 {
     LOG_FUNC
@@ -1273,7 +1273,7 @@ C2Parser::ParseParenExpression(ParenParseOption &ExprType, bool stopIfCastExpr,
         a.b->.. -> no
     // NOTE: Tok is first identifier
 */
-bool C2Parser::isTypeSpec() {
+bool Parser::isTypeSpec() {
     assert(Tok.is(tok::identifier) && "Not an identifier!");
 
     int lookahead = 1;
@@ -1317,7 +1317,7 @@ type_done:
     return (t2.is(tok::identifier));
 }
 
-bool C2Parser::isDeclaration() {
+bool Parser::isDeclaration() {
     switch (Tok.getKind()) {
     case tok::identifier:
         return isTypeSpec();
@@ -1347,7 +1347,7 @@ bool C2Parser::isDeclaration() {
 // NOTE: current token is '['
 // will skip until token is after ']'
 // skip until ']' (keep track of other braces)
-int C2Parser::SkipArray(int lookahead) {
+int Parser::SkipArray(int lookahead) {
     assert(GetLookAheadToken(lookahead).is(tok::l_square) && "Expected '['");
     lookahead++;
 
@@ -1372,14 +1372,14 @@ int C2Parser::SkipArray(int lookahead) {
 }
 
 // Syntax: TODO
-C2::ExprResult C2Parser::ParseConstantExpression() {
+C2::ExprResult Parser::ParseConstantExpression() {
     LOG_FUNC
     // we cannot evaluate here, so treat as normal expr and check constness later
     return ParseExpression();
 }
 
 // Syntax: [],  [<numeric_constant>]
-C2::ExprResult C2Parser::ParseArray(ExprResult base) {
+C2::ExprResult Parser::ParseArray(ExprResult base) {
     LOG_FUNC
     assert(Tok.is(tok::l_square) && "Expected '['");
     ConsumeToken();
@@ -1413,7 +1413,7 @@ static bool isTypeIdent(const Token &token) {
     return firstCharacter >= 'A' && firstCharacter <= 'Z';
 }
 
-bool C2Parser::canBeParsedAsStructType()
+bool Parser::canBeParsedAsStructType()
 {
     if (!isTypeIdent(Tok))
     {
@@ -1431,7 +1431,7 @@ bool C2Parser::canBeParsedAsStructType()
 /// Syntax:
 ///  'sizeof' '(' var-name ')'
 ///  'sizeof' '(' type-name ')'
-C2::ExprResult C2Parser::ParseSizeof()
+C2::ExprResult Parser::ParseSizeof()
 {
     LOG_FUNC
     SourceLocation Loc = ConsumeToken();
@@ -1473,7 +1473,7 @@ C2::ExprResult C2Parser::ParseSizeof()
 
 /// Syntax:
 ///  'elemsof' '(' type-name ')'
-C2::ExprResult C2Parser::ParseElemsof()
+C2::ExprResult Parser::ParseElemsof()
 {
     LOG_FUNC
     SourceLocation Loc = ConsumeToken();
@@ -1494,7 +1494,7 @@ C2::ExprResult C2Parser::ParseElemsof()
 /// Syntax:
 ///  'enum_min' '(' type-name ')'
 ///  'enum_max' '(' type-name ')'
-C2::ExprResult C2Parser::ParseEnumMinMax(bool isMin)
+C2::ExprResult Parser::ParseEnumMinMax(bool isMin)
 {
     LOG_FUNC
     SourceLocation Loc = ConsumeToken();
@@ -1515,7 +1515,7 @@ C2::ExprResult C2Parser::ParseEnumMinMax(bool isMin)
 
 // Syntax:
 // identifier
-C2::ExprResult C2Parser::ParseIdentifier() {
+C2::ExprResult Parser::ParseIdentifier() {
     LOG_FUNC
     assert(Tok.is(tok::identifier) && "Not an identifier!");
 
@@ -1527,7 +1527,7 @@ C2::ExprResult C2Parser::ParseIdentifier() {
 
 // identifier
 // identifier.identifier
-C2::ExprResult C2Parser::ParseFullIdentifier() {
+C2::ExprResult Parser::ParseFullIdentifier() {
     LOG_FUNC
     assert(Tok.is(tok::identifier) && "Not an identifier!");
 
@@ -1552,7 +1552,7 @@ C2::ExprResult C2Parser::ParseFullIdentifier() {
     func_def ::= FUNC type_qualifier single_type_specifier IDENTIFIER LPAREN full_param_list RPAREN <attributes> compound_statement SEMICOLON.
     func_def ::= FUNC type_qualifier single_type_specifier IDENTIFIER.IDENTIFIER LPAREN full_param_list RPAREN <attributes> compound_statement SEMICOLON.
 */
-void C2Parser::ParseFuncDef(bool is_public) {
+void Parser::ParseFuncDef(bool is_public) {
     LOG_FUNC
     assert(Tok.is(tok::kw_func) && "Expected func keyword");
     ConsumeToken();
@@ -1608,7 +1608,7 @@ void C2Parser::ParseFuncDef(bool is_public) {
     statement_list ::= statement.
     statement_list ::= statement_list statement.
 */
-C2::StmtResult C2Parser::ParseCompoundStatement() {
+C2::StmtResult Parser::ParseCompoundStatement() {
     LOG_FUNC
     if (Tok.isNot(tok::l_brace)) {
         Diag(Tok, diag::err_expected) << tok::l_brace;
@@ -1639,7 +1639,7 @@ C2::StmtResult C2Parser::ParseCompoundStatement() {
 }
 
 // TODO see Parser::ParseStatementOrDeclaration
-C2::StmtResult C2Parser::ParseStatement() {
+C2::StmtResult Parser::ParseStatement() {
     LOG_FUNC
     switch (Tok.getKind()) {
     case tok::kw_if:
@@ -1701,7 +1701,7 @@ C2::StmtResult C2Parser::ParseStatement() {
     }
 }
 
-C2::ExprResult C2Parser::ParseAsmStringLiteral() {
+C2::ExprResult Parser::ParseAsmStringLiteral() {
     if (!isTokenStringLiteral()) {
         Diag(Tok, diag::err_expected_string_literal) << 0 << "'asm'";
         return ExprError();
@@ -1730,7 +1730,7 @@ C2::ExprResult C2Parser::ParseAsmStringLiteral() {
 //      asm-string_literal '(' expression ')'
 //      '[' identifier ']' asm-string_literal '(' expression ')'
 //
-bool C2Parser::ParseAsmOperandsOpt(SmallVectorImpl<IdentifierInfo*> &Names,
+bool Parser::ParseAsmOperandsOpt(SmallVectorImpl<IdentifierInfo*> &Names,
                                    SmallVectorImpl<Expr*> &Constraints,
                                    SmallVectorImpl<Expr*> &Exprs) {
     // 'asm-operands' isn't present
@@ -1797,7 +1797,7 @@ bool C2Parser::ParseAsmOperandsOpt(SmallVectorImpl<IdentifierInfo*> &Names,
 //      asm-string-literal
 //      asm-clobbers ',' asm-string-literal
 //
-C2::StmtResult C2Parser::ParseAsmStatement() {
+C2::StmtResult Parser::ParseAsmStatement() {
     LOG_FUNC
     assert(Tok.is(tok::kw_asm) && "Not an asm stmt");
     SourceLocation loc = ConsumeToken();
@@ -1875,7 +1875,7 @@ C2::StmtResult C2Parser::ParseAsmStatement() {
 }
 
 // Syntax: return <expression>
-C2::StmtResult C2Parser::ParseReturnStatement() {
+C2::StmtResult Parser::ParseReturnStatement() {
     LOG_FUNC
     assert(Tok.is(tok::kw_return) && "Not a return stmt!");
     SourceLocation loc = ConsumeToken();
@@ -1895,7 +1895,7 @@ C2::StmtResult C2Parser::ParseReturnStatement() {
 ///       if-statement: [C99 6.8.4.1]
 ///         'if' '(' expression ')' statement
 ///         'if' '(' expression ')' statement 'else' statement
-C2::StmtResult C2Parser::ParseIfStatement() {
+C2::StmtResult Parser::ParseIfStatement() {
     LOG_FUNC
     assert(Tok.is(tok::kw_if) && "Not an if stmt!");
 
@@ -1958,7 +1958,7 @@ C2::StmtResult C2Parser::ParseIfStatement() {
 /// ParseSwitchStatement
 ///       switch-statement:
 ///         'switch' '(' expression ')' statement
-C2::StmtResult C2Parser::ParseSwitchStatement() {
+C2::StmtResult Parser::ParseSwitchStatement() {
     LOG_FUNC
     assert(Tok.is(tok::kw_switch) && "Not a switch stmt!");
     SourceLocation Loc = ConsumeToken();
@@ -2000,7 +2000,7 @@ C2::StmtResult C2Parser::ParseSwitchStatement() {
 /// ParseWhileStatement
 ///       while-statement: [C99 6.8.5.1]
 ///         'while' '(' expression ')' statement
-C2::StmtResult C2Parser::ParseWhileStatement() {
+C2::StmtResult Parser::ParseWhileStatement() {
     LOG_FUNC
     assert(Tok.is(tok::kw_while) && "Not a while stmt!");
     SourceLocation Loc = ConsumeToken();
@@ -2019,7 +2019,7 @@ C2::StmtResult C2Parser::ParseWhileStatement() {
 ///       do-statement: [C99 6.8.5.2]
 ///         'do' statement 'while' '(' expression ')' ';'
 /// Note: this lets the caller parse the end ';'.
-C2::StmtResult C2Parser::ParseDoStatement() {
+C2::StmtResult Parser::ParseDoStatement() {
     LOG_FUNC
     assert(Tok.is(tok::kw_do) && "Not a do stmt!");
     SourceLocation Loc = ConsumeToken();
@@ -2055,7 +2055,7 @@ C2::StmtResult C2Parser::ParseDoStatement() {
 /// [C++]   simple-declaration
 //statement ::= FOR LPAREN expression_statement expression_statement RPAREN statement.
 //statement ::= FOR LPAREN expression_statement expression_statement expression RPAREN statement.
-C2::StmtResult C2Parser::ParseForStatement() {
+C2::StmtResult Parser::ParseForStatement() {
     LOG_FUNC
     assert(Tok.is(tok::kw_for) && "Not a for stmt!");
     SourceLocation Loc = ConsumeToken();
@@ -2105,7 +2105,7 @@ C2::StmtResult C2Parser::ParseForStatement() {
 /// ParseGotoStatement
 ///       jump-statement:
 ///         'goto' identifier ';'
-C2::StmtResult C2Parser::ParseGotoStatement() {
+C2::StmtResult Parser::ParseGotoStatement() {
     LOG_FUNC
     assert(Tok.is(tok::kw_goto) && "Not a goto stmt!");
     SourceLocation GotoLoc = ConsumeToken();  // eat the 'goto'.
@@ -2126,7 +2126,7 @@ C2::StmtResult C2Parser::ParseGotoStatement() {
 /// ParseContinueStatement
 ///       jump-statement:
 ///         'continue' ';'
-C2::StmtResult C2Parser::ParseContinueStatement() {
+C2::StmtResult Parser::ParseContinueStatement() {
     LOG_FUNC
     assert(Tok.is(tok::kw_continue) && "Not a continue stmt!");
     SourceLocation Loc = ConsumeToken();
@@ -2139,7 +2139,7 @@ C2::StmtResult C2Parser::ParseContinueStatement() {
 /// ParseBreakStatement
 ///       jump-statement:
 ///         'break' ';'
-C2::StmtResult C2Parser::ParseBreakStatement() {
+C2::StmtResult Parser::ParseBreakStatement() {
     LOG_FUNC
     assert(Tok.is(tok::kw_break) && "Not a break stmt!");
     SourceLocation Loc = ConsumeToken();
@@ -2160,7 +2160,7 @@ C2::StmtResult C2Parser::ParseBreakStatement() {
     id:             // id = label
 */
 // TODO see Parser::ParseStatementOrDeclarationAfterAttributes()
-C2::StmtResult C2Parser::ParseDeclOrStatement() {
+C2::StmtResult Parser::ParseDeclOrStatement() {
     LOG_FUNC
     assert(Tok.is(tok::identifier) && "Not an identifier!");
 
@@ -2215,7 +2215,7 @@ C2::StmtResult C2Parser::ParseDeclOrStatement() {
 }
 
 //Syntax: declaration ::= type_qualifier type_specifier IDENTIFIER var_initialization.
-C2::StmtResult C2Parser::ParseDeclaration(bool checkSemi) {
+C2::StmtResult Parser::ParseDeclaration(bool checkSemi) {
     LOG_FUNC
 
     ExprResult type = ParseTypeSpecifier(true);
@@ -2248,7 +2248,7 @@ C2::StmtResult C2Parser::ParseDeclaration(bool checkSemi) {
 ///       labeled-statement:
 ///         'case' constant-expression ':' statement
 /// [GNU]   'case' constant-expression '...' constant-expression ':' statement
-C2::StmtResult C2Parser::ParseCaseStatement() {
+C2::StmtResult Parser::ParseCaseStatement() {
     LOG_FUNC
     assert(Tok.is(tok::kw_case) && "Not a case stmt!");
     SourceLocation Loc = ConsumeToken();
@@ -2283,7 +2283,7 @@ C2::StmtResult C2Parser::ParseCaseStatement() {
 ///       labeled-statement:
 ///         'default' ':' statement
 /// Note that this does not parse the 'statement' at the end.
-C2::StmtResult C2Parser::ParseDefaultStatement() {
+C2::StmtResult Parser::ParseDefaultStatement() {
     LOG_FUNC
     assert(Tok.is(tok::kw_default) && "Not a default stmt!");
     SourceLocation Loc = ConsumeToken();
@@ -2314,7 +2314,7 @@ C2::StmtResult C2Parser::ParseDefaultStatement() {
 ///
 ///       labeled-statement:
 ///         identifier ':' statement
-C2::StmtResult C2Parser::ParseLabeledStatement() {
+C2::StmtResult Parser::ParseLabeledStatement() {
     LOG_FUNC
     assert(Tok.is(tok::identifier) && Tok.getIdentifierInfo() && "Not an identifier!");
 
@@ -2339,7 +2339,7 @@ C2::StmtResult C2Parser::ParseLabeledStatement() {
     return Actions.ActOnLabelStmt(id->getNameStart(), LabelLoc, SubStmt.get());
 }
 
-C2::StmtResult C2Parser::ParseExprStatement() {
+C2::StmtResult Parser::ParseExprStatement() {
     LOG_FUNC
     ExprResult Expr(ParseExpression());
     if (Expr.isInvalid()) {
@@ -2358,7 +2358,7 @@ C2::StmtResult C2Parser::ParseExprStatement() {
 // ParseCondition - A condition is used inside If/While/Switch statemnts
 //   and can be either a VarDecl (wrapped in DeclStmt) or an Expr
 //   returns false on error. See clang ParseCXXCondition()
-bool C2Parser::ParseCondition(C2::StmtResult& Res) {
+bool Parser::ParseCondition(C2::StmtResult& Res) {
     LOG_FUNC
     if (ExpectAndConsume(tok::l_paren)) return false;
 
@@ -2394,7 +2394,7 @@ bool C2Parser::ParseCondition(C2::StmtResult& Res) {
 //                Attr
 // Attr       ::= name
 //                name="value"
-bool C2Parser::ParseAttributes(Decl* D) {
+bool Parser::ParseAttributes(Decl* D) {
     LOG_FUNC
 
     if (Tok.isNot(tok::at)) return true;
@@ -2443,7 +2443,7 @@ bool C2Parser::ParseAttributes(Decl* D) {
    Syntax:
     var_def ::= type_qualifier type_specifier IDENTIFIER <attributes> var_initialization SEMICOLON.
 */
-void C2Parser::ParseVarDef(bool is_public) {
+void Parser::ParseVarDef(bool is_public) {
     LOG_FUNC
 
     // TODO dont allow local keyword (check in actions)
@@ -2481,7 +2481,7 @@ void C2Parser::ParseVarDef(bool is_public) {
     Syntax:
      [<constant expr>] = init_value
 */
-C2::ExprResult C2Parser::ParseArrayDesignator(bool* need_semi) {
+C2::ExprResult Parser::ParseArrayDesignator(bool* need_semi) {
     LOG_FUNC
     SourceLocation L = ConsumeToken();
     ExprResult Designator = ParseAssignmentExpression();
@@ -2501,7 +2501,7 @@ C2::ExprResult C2Parser::ParseArrayDesignator(bool* need_semi) {
 /*
     Syntax: .identifier = <init_value>
 */
-C2::ExprResult C2Parser::ParseFieldDesignator(bool* need_semi) {
+C2::ExprResult Parser::ParseFieldDesignator(bool* need_semi) {
     LOG_FUNC
     assert(Tok.is(tok::period) && "Expected '.'");
     ConsumeToken();
@@ -2523,7 +2523,7 @@ C2::ExprResult C2Parser::ParseFieldDesignator(bool* need_semi) {
     init_value ::= LBRACE init_values RBRACE.
     init_value ::= DOT identifier = init_value.
 */
-C2::ExprResult C2Parser::ParseInitValue(bool* need_semi, bool allow_designator) {
+C2::ExprResult Parser::ParseInitValue(bool* need_semi, bool allow_designator) {
     LOG_FUNC
     if (Tok.is(tok::l_brace)) {
         // Syntax: { <init_values> }
@@ -2554,7 +2554,7 @@ C2::ExprResult C2Parser::ParseInitValue(bool* need_semi, bool allow_designator) 
     init_values ::= init_values COMMA.
     init_values ::= init_value.
 */
-C2::ExprResult C2Parser::ParseInitValues() {
+C2::ExprResult Parser::ParseInitValues() {
     LOG_FUNC
     assert(Tok.is(tok::l_brace) && "Expected '{'");
     SourceLocation left = ConsumeToken();
@@ -2582,7 +2582,7 @@ C2::ExprResult C2Parser::ParseInitValues() {
 }
 
 // Syntax: identifier += <init_value>
-void C2Parser::ParseArrayEntry() {
+void Parser::ParseArrayEntry() {
     LOG_FUNC
     assert(Tok.is(tok::identifier) && "Not an identifier!");
     IdentifierInfo* id = Tok.getIdentifierInfo();
@@ -2604,7 +2604,7 @@ void C2Parser::ParseArrayEntry() {
 }
 
 // Syntax: const | volatile | local | local const
-unsigned C2Parser::ParseOptionalTypeQualifier() {
+unsigned Parser::ParseOptionalTypeQualifier() {
     // TODO consume all const/volatile/local tokens (can give errors)
     LOG_FUNC
     switch (Tok.getKind()) {
@@ -2628,7 +2628,7 @@ unsigned C2Parser::ParseOptionalTypeQualifier() {
 }
 
 // Syntax: public
-bool C2Parser::ParseOptionalAccessSpecifier() {
+bool Parser::ParseOptionalAccessSpecifier() {
     LOG_FUNC
     if (Tok.is(tok::kw_public)) {
         ConsumeToken();
@@ -2638,7 +2638,7 @@ bool C2Parser::ParseOptionalAccessSpecifier() {
 }
 
 // Syntax foo, bar10
-bool C2Parser::ExpectIdentifier(const char *Msg) {
+bool Parser::ExpectIdentifier(const char *Msg) {
     if (Tok.is(tok::identifier)) return false;
 
     const char *Spelling = 0;
@@ -2654,7 +2654,7 @@ bool C2Parser::ExpectIdentifier(const char *Msg) {
     return true;
 }
 
-bool C2Parser::ExpectAndConsume(tok::TokenKind ExpectedTok, unsigned DiagID,
+bool Parser::ExpectAndConsume(tok::TokenKind ExpectedTok, unsigned DiagID,
                                 const char* Msg) {
     if (Tok.is(ExpectedTok)) {
         ConsumeAnyToken();
@@ -2701,7 +2701,7 @@ bool C2Parser::ExpectAndConsume(tok::TokenKind ExpectedTok, unsigned DiagID,
     return true;
 }
 
-bool C2Parser::ExpectAndConsumeSemi(unsigned DiagID) {
+bool Parser::ExpectAndConsumeSemi(unsigned DiagID) {
     if (Tok.is(tok::semi)) {
         ConsumeToken();
         return false;
@@ -2719,11 +2719,11 @@ bool C2Parser::ExpectAndConsumeSemi(unsigned DiagID) {
     return ExpectAndConsume(tok::semi, DiagID);
 }
 
-DiagnosticBuilder C2Parser::Diag(SourceLocation Loc, unsigned DiagID) {
+DiagnosticBuilder Parser::Diag(SourceLocation Loc, unsigned DiagID) {
     return Diags.Report(Loc, DiagID);
 }
 
-DiagnosticBuilder C2Parser::Diag(const Token &T, unsigned DiagID) {
+DiagnosticBuilder Parser::Diag(const Token &T, unsigned DiagID) {
     return Diag(T.getLocation(), DiagID);
 }
 
@@ -2731,7 +2731,7 @@ DiagnosticBuilder C2Parser::Diag(const Token &T, unsigned DiagID) {
 // Error recovery.
 //===----------------------------------------------------------------------===//
 
-static bool HasFlagsSet(C2Parser::SkipUntilFlags L, C2Parser::SkipUntilFlags R) {
+static bool HasFlagsSet(Parser::SkipUntilFlags L, Parser::SkipUntilFlags R) {
     return (static_cast<unsigned>(L) & static_cast<unsigned>(R)) != 0;
 }
 /// SkipUntil - Read tokens until we get to the specified token, then consume
@@ -2742,7 +2742,7 @@ static bool HasFlagsSet(C2Parser::SkipUntilFlags L, C2Parser::SkipUntilFlags R) 
 ///
 /// If SkipUntil finds the specified token, it returns true, otherwise it
 /// returns false.
-bool C2Parser::SkipUntil(ArrayRef<tok::TokenKind> Toks, SkipUntilFlags Flags) {
+bool Parser::SkipUntil(ArrayRef<tok::TokenKind> Toks, SkipUntilFlags Flags) {
     // We always want this function to skip at least one token if the first token
     // isn't T and if not at EOF.
     bool isFirstTokenSkipped = true;
@@ -2830,7 +2830,7 @@ bool C2Parser::SkipUntil(ArrayRef<tok::TokenKind> Toks, SkipUntilFlags Flags) {
     }
 }
 
-bool C2Parser::tooLong(IdentifierInfo* I, SourceLocation loc) {
+bool Parser::tooLong(IdentifierInfo* I, SourceLocation loc) {
     size_t len = strlen(I->getNameStart());
     if (len > MAX_IDENTIFIER) {
         Diag(loc, diag::err_identifier_too_long);
@@ -2839,15 +2839,15 @@ bool C2Parser::tooLong(IdentifierInfo* I, SourceLocation loc) {
     return false;
 }
 
-C2::ExprResult C2Parser::ExprError() {
+C2::ExprResult Parser::ExprError() {
     return C2::ExprResult(true);
 }
 
-C2::StmtResult C2Parser::StmtError() {
+C2::StmtResult Parser::StmtError() {
     return C2::StmtResult(true);
 }
 
-C2::DeclResult C2Parser::DeclError() {
+C2::DeclResult Parser::DeclError() {
     return C2::DeclResult(true);
 }
 

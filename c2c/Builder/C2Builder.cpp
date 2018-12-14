@@ -48,8 +48,8 @@
 #include "AST/AST.h"
 #include "AST/Module.h"
 #include "AST/Decl.h"
-#include "Parser/C2Parser.h"
-#include "Parser/C2Sema.h"
+#include "Parser/Parser.h"
+#include "Parser/Sema.h"
 #include "Analyser/ComponentAnalyser.h"
 #include "Algo/DepGenerator.h"
 #include "Algo/TagWriter.h"
@@ -133,8 +133,8 @@ public:
 
         Diags.getClient()->BeginSourceFile(0);
 
-        C2Sema sema(SM, Diags, PP, component, existingMod, filename, targetInfo);
-        C2Parser parser(PP, sema, component.isExternal());
+        Sema sema(SM, Diags, PP, component, existingMod, filename, targetInfo);
+        Parser parser(PP, sema, component.isExternal());
         bool ok = parser.Parse();
         if (printAST) sema.printAST();
 #if 0

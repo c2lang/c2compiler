@@ -16,17 +16,17 @@
 #ifndef PARSER_HELPERS_H
 #define PARSER_HELPERS_H
 
-#include "Parser/C2Parser.h"
+#include "Parser/Parser.h"
 
 namespace C2 {
 
-class C2Parser;
+class Parser;
 
 class BalancedDelimiterTracker {
 private:
-    C2Parser& P;
+    Parser& P;
     tok::TokenKind Kind, Close, FinalToken;
-    SourceLocation (C2Parser::*Consumer)();
+    SourceLocation (Parser::*Consumer)();
     SourceLocation LOpen, LClose;
 
     unsigned short &getDepth() {
@@ -44,7 +44,7 @@ private:
     bool diagnoseMissingClose();
 
     public:
-    BalancedDelimiterTracker(C2Parser& p, tok::TokenKind k,
+    BalancedDelimiterTracker(Parser& p, tok::TokenKind k,
                              tok::TokenKind FinalToken_ = tok::semi)
         :P(p), Kind(k), FinalToken(FinalToken_)
     {
@@ -52,15 +52,15 @@ private:
         default: llvm_unreachable("Unexpected balanced token");
         case tok::l_brace:
             Close = tok::r_brace;
-            Consumer = &C2Parser::ConsumeBrace;
+            Consumer = &Parser::ConsumeBrace;
             break;
         case tok::l_paren:
             Close = tok::r_paren;
-            Consumer = &C2Parser::ConsumeParen;
+            Consumer = &Parser::ConsumeParen;
             break;
         case tok::l_square:
             Close = tok::r_square;
-            Consumer = &C2Parser::ConsumeBracket;
+            Consumer = &Parser::ConsumeBracket;
             break;
         }
     }
