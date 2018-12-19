@@ -154,14 +154,17 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
                 break;
             case '-':
                 if (strcmp(&arg[2], "about") == 0) {
-                    fprintf(stderr, "The C2 Compiler by Bas van den Berg\n");
-                    fprintf(stderr, "\nC2 is a programming language aiming to keep the good of C and remove/improve its\n");
-                    fprintf(stderr, "bad parts. It provides stricter syntax, great tooling, better compilation times\n");
-                    fprintf(stderr, "than C, easy debugging, smart integrated build system, friendly and readable\n");
-                    fprintf(stderr, "syntax, requires less typing than C and allows higher development speed.\n");
-                    fprintf(stderr, " Its aim is to be used for problems where currently C would be used. So low-\n");
-                    fprintf(stderr, "level programs, like bootloaders, kernels, drivers and system-level tooling.\n");
-                    fprintf(stderr, "\nC2 is based on LLVM+Clang.\nSee c2lang.org for more information\n");
+                    fprintf(stderr, "The C2 Compiler by Bas van den Berg\n\n");
+                    
+                    fprintf(stderr, "C2 is a programming language that aims to keep the good parts of C and remove/improve");
+                    fprintf(stderr, "the bad parts. C2 provides stricter and cleaner syntax, better compilation times,\n");
+                    fprintf(stderr, "great tooling and a smart build system among other things.\n\n");
+                    
+                    fprintf(stderr, "C2 aims to be the direct successor to C, replacing it in domains currently dominated\n");
+                    fprintf(stderr, "by C, like bootloaders, kernels, drivers and system-level tooling.\n\n");
+                    
+                    fprintf(stderr, "C2 is based on LLVM and Clang.\n");
+                    fprintf(stderr, "See c2lang.org for more information.\n");
                     exit(0);
                 }
                 if (strcmp(&arg[2], "test") == 0) {
