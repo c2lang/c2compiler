@@ -163,7 +163,7 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
                     
                     fprintf(stderr, "C2 aims to be the direct successor to C, replacing it in \n");
                     fprintf(stderr, "domains currently dominated by C, like bootloaders, kernels, \n");
-                    fprintf(stderr, "drivers and system-level tooling. \n");
+                    fprintf(stderr, "drivers and system-level tooling. \n\n");
                     
                     fprintf(stderr, "C2 is based on LLVM and Clang. \n");
                     fprintf(stderr, "See c2lang.org for more information. \n");
