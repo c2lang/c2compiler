@@ -155,16 +155,16 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
             case '-':
                 if (strcmp(&arg[2], "about") == 0) {
                     fprintf(stderr, "The C2 Compiler by Bas van den Berg\n\n");
-                    
+
                     fprintf(stderr, "C2 is a programming language that aims to keep the good parts \n");
                     fprintf(stderr, "of C and remove/improve the bad parts. C2 provides stricter \n");
                     fprintf(stderr, "and cleaner syntax, better compilation times, great tooling \n");
                     fprintf(stderr, "and a smart build system among other things. \n\n");
-                    
+
                     fprintf(stderr, "C2 aims to be the direct successor to C, replacing it in \n");
                     fprintf(stderr, "domains currently dominated by C, like bootloaders, kernels, \n");
                     fprintf(stderr, "drivers and system-level tooling. \n\n");
-                    
+
                     fprintf(stderr, "C2 is based on LLVM and Clang. \n");
                     fprintf(stderr, "See c2lang.org for more information. \n");
                     exit(0);
