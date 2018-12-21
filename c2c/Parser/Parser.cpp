@@ -2774,6 +2774,7 @@ bool Parser::SkipUntil(ArrayRef<tok::TokenKind> Toks, SkipUntilFlags Flags) {
             // Ran out of tokens.
             return false;
         case tok::l_paren:
+            ConsumeToken();
             // Recursively skip properly-nested parens.
             SkipUntil(tok::r_paren);
             break;
