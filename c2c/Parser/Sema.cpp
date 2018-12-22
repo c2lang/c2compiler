@@ -336,7 +336,7 @@ Sema::~Sema() {
 
 void Sema::printAST() const {
     ast.print(true);
-    module->printAttributes(true);
+    if (module) module->printAttributes(true);
 }
 
 void Sema::ActOnModule(const char* name_, SourceLocation loc) {
