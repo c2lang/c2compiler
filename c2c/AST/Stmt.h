@@ -168,13 +168,6 @@ protected:
         unsigned Value : 1;
     };
 
-    class TypeExprBitfields {
-        friend class TypeExpr;
-        unsigned : NumExprBits;
-
-        unsigned IsLocal : 1;
-    };
-
     class BinaryOperatorBitfields {
         friend class BinaryOperator;
         unsigned : NumExprBits;
@@ -240,7 +233,6 @@ protected:
         CallExprBitfields callExprBits;
         IntegerLiteralBitfields integerLiteralBits;
         BooleanLiteralBitfields booleanLiteralBits;
-        TypeExprBitfields typeExprBits;
         BinaryOperatorBitfields binaryOperatorBits;
         UnaryOperatorBitfields unaryOperatorBits;
         BuiltinExprBitfields builtinExprBits;

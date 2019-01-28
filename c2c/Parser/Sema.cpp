@@ -441,9 +441,6 @@ C2::Decl* Sema::ActOnAliasType(const char* name_, SourceLocation loc, Expr* type
         is_public = true;
     }
     TypeExpr* typeExpr = cast<TypeExpr>(type);
-    if (typeExpr->hasLocalQualifier()) {
-        Diag(loc, diag::err_invalid_local_typedef);
-    }
     const char* name = Context.addIdentifier(name_, strlen(name_));
     MEM_DECL(DECL_ALIASTYPE);
     AliasTypeDecl* T = new (Context) AliasTypeDecl(name, loc, typeExpr->getType(), is_public);
@@ -462,9 +459,6 @@ C2::VarDecl* Sema::ActOnVarDef(const char* name, SourceLocation loc, bool is_pub
     std::cerr << ANSI_NORMAL"\n";
 #endif
     TypeExpr* typeExpr = cast<TypeExpr>(type);
-    if (typeExpr->hasLocalQualifier()) {
-        Diag(loc, diag::err_invalid_local_globalvar);
-    }
     if (ast.isInterface()) {
         if (is_public) Diag(loc, diag::err_public_in_interface);
         is_public = true;
@@ -479,11 +473,6 @@ C2::FunctionDecl* Sema::createFuncDecl(const char* name_, SourceLocation loc,
         bool is_public, Expr* rtype) {
     assert(rtype);
     TypeExpr* typeExpr = cast<TypeExpr>(rtype);
-    if (typeExpr->hasLocalQualifier()) {
-        // TODO let Parser check this (need extra arg for ParseSingleTypeSpecifier())
-        // TODO need local's location
-        Diag(loc, diag::err_invalid_local_returntype);
-    }
     MEM_DECL(DECL_FUNC);
     const char* name = Context.addIdentifier(name_, strlen(name_));
     FunctionDecl* D = new (Context) FunctionDecl(name, loc, is_public, typeExpr->getType());
@@ -562,9 +551,6 @@ C2::VarDeclResult Sema::ActOnFunctionArg(FunctionDecl* func, const char* name, S
 #endif
     // first create VarDecl
     TypeExpr* typeExpr = cast<TypeExpr>(type);
-    if (typeExpr->hasLocalQualifier()) {
-        Diag(loc, diag::err_invalid_local_functionargument);
-    }
     VarDecl* var = createVarDecl(VARDECL_PARAM, name, loc, typeExpr, InitValue, func->isPublic());
 
     // check if already have default args
@@ -756,7 +742,7 @@ C2::StmtResult Sema::ActOnCompoundStmt(SourceLocation L, SourceLocation R, StmtL
     return StmtResult(new (Context) CompoundStmt(L, R, stmts, numStmts));
 }
 
-C2::StmtResult Sema::ActOnDeclaration(const char* name_, SourceLocation loc, Expr* type, Expr* InitValue) {
+C2::StmtResult Sema::ActOnDeclaration(const char* name_, SourceLocation loc, Expr* type, Expr* InitValue, bool hasLocal) {
     assert(type);
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: decl at ";
@@ -769,7 +755,6 @@ C2::StmtResult Sema::ActOnDeclaration(const char* name_, SourceLocation loc, Exp
     }
     // TEMP extract here to Type and delete rtype Expr
     TypeExpr* typeExpr = cast<TypeExpr>(type);
-    bool hasLocal = typeExpr->hasLocalQualifier();
     VarDecl* V = createVarDecl(VARDECL_LOCAL, name_, loc, typeExpr, InitValue, false);
     if (hasLocal) V->setLocalQualifier();
     MEM_STMT(STMT_DECL);
@@ -993,8 +978,6 @@ C2::ExprResult Sema::ActOnPointerType(Expr* base, unsigned qualifier) {
     if (qualifier) {
         if (qualifier & TYPE_CONST) qt.addConst();
         if (qualifier & TYPE_VOLATILE) qt.addVolatile();
-        // HMM local keyword is lost? -> TODO propagate to outer type
-        if (qualifier & TYPE_LOCAL) typeExpr->setLocalQualifier();
     }
     typeExpr->setType(Context.getPointerType(qt));
     return ExprResult(base);
@@ -1080,9 +1063,6 @@ C2::Decl* Sema::ActOnStructVar(StructTypeDecl* S, const char* name_, SourceLocat
     std::cerr << ANSI_NORMAL"\n";
 #endif
     TypeExpr* typeExpr = cast<TypeExpr>(type);
-    if (typeExpr->hasLocalQualifier()) {
-        Diag(loc, diag::err_invalid_local_structmember) << (S->isStruct() ? 0 : 1);
-    }
     return createVarDecl(VARDECL_MEMBER, name_, loc, typeExpr, InitValue, S->isPublic());
 }
 
@@ -1169,7 +1149,6 @@ C2::ExprResult Sema::ActOnTypeQualifier(ExprResult R, unsigned qualifier) {
         QualType qt = typeExpr->getType();
         if (qualifier & TYPE_CONST) qt.addConst();
         if (qualifier & TYPE_VOLATILE) qt.addVolatile();
-        if (qualifier & TYPE_LOCAL) typeExpr->setLocalQualifier();
         typeExpr->setType(qt);
     }
     return R;
@@ -1268,10 +1247,6 @@ C2::ExprResult Sema::ActOnExplicitCast(SourceLocation castLoc, Expr* type, Expr*
     std::cerr << ANSI_NORMAL"\n";
 #endif
     TypeExpr* typeExpr = cast<TypeExpr>(type);
-    if (typeExpr->hasLocalQualifier()) {
-        // TODO correct error message: cannot use keyword local with cast type
-        Diag(castLoc, diag::err_invalid_local_typedef);
-    }
     MEM_EXPR(EXPR_CAST);
     ExplicitCastExpr* E = new (Context) ExplicitCastExpr(castLoc, typeExpr->getType(), expr);
     Context.freeTypeExpr(typeExpr);

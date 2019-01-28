@@ -98,7 +98,7 @@ public:
     StmtResult ActOnLabelStmt(const char* name, SourceLocation loc, Stmt* subStmt);
     StmtResult ActOnGotoStmt(IdentifierInfo& symII, SourceLocation symLoc, SourceLocation GotoLoc);
     StmtResult ActOnCompoundStmt(SourceLocation L, SourceLocation R, StmtList& stmts);
-    StmtResult ActOnDeclaration(const char* name, SourceLocation loc, Expr* type, Expr* InitValue);
+    StmtResult ActOnDeclaration(const char* name, SourceLocation loc, Expr* type, Expr* InitValue, bool hasLocal);
     StmtResult ActOnAsmStmt(SourceLocation AsmLoc, bool isBasic, bool isVolatile,
                             unsigned NumOutputs, unsigned NumInputs,
                             IdentifierInfo** Names, MultiExprArg constraints,

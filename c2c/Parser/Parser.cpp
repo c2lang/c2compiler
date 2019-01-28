@@ -505,6 +505,11 @@ bool Parser::ParseFunctionParams(FunctionDecl* func, bool allow_defaults) {
 C2::VarDeclResult Parser::ParseParamDecl(FunctionDecl* func, bool allow_defaults) {
     LOG_FUNC
 
+    if (Tok.is(tok::kw_local)) {
+        SourceLocation loc = ConsumeToken();
+        Diag(loc, diag::err_invalid_local);
+    }
+
     ExprResult type = ParseTypeSpecifier(true);
     if (type.isInvalid()) return VarDeclError();
 
@@ -1689,7 +1694,7 @@ C2::StmtResult Parser::ParseStatement() {
     case tok::kw_const:
     case tok::kw_volatile:
     case tok::kw_local:
-        return ParseDeclaration(true);
+        return ParseDeclaration(true, true);
     case tok::star:
         return ParseExprStatement();
     default:
@@ -2071,7 +2076,7 @@ C2::StmtResult Parser::ParseForStatement() {
         bool isDecl = isDeclaration();
         if (Diags.hasErrorOccurred()) return StmtError();
         if (isDecl) {
-            Init = ParseDeclaration(true);
+            Init = ParseDeclaration(true, false);
         } else {
             Init = ParseExprStatement();
         }
@@ -2167,7 +2172,7 @@ C2::StmtResult Parser::ParseDeclOrStatement() {
     bool isDecl = isTypeSpec();
     if (Diags.hasErrorOccurred()) return StmtError();
     // case 1: declaration
-    if (isDecl) return ParseDeclaration(true);
+    if (isDecl) return ParseDeclaration(true, true);
 
     int lookahead = 1;
     // Note: making copies otherwise const error
@@ -2214,9 +2219,19 @@ C2::StmtResult Parser::ParseDeclOrStatement() {
     return Res;
 }
 
-//Syntax: declaration ::= type_qualifier type_specifier IDENTIFIER var_initialization.
-C2::StmtResult Parser::ParseDeclaration(bool checkSemi) {
+//Syntax: declaration ::= [kw_local] type_qualifier type_specifier IDENTIFIER var_initialization.
+C2::StmtResult Parser::ParseDeclaration(bool checkSemi, bool allowLocal) {
     LOG_FUNC
+
+    // TODO allow local
+    bool hasLocal = false;
+    if (Tok.is(tok::kw_local)) {
+        SourceLocation loc = ConsumeToken();
+        if (!allowLocal) {
+            Diag(loc, diag::err_invalid_local);
+        }
+        hasLocal = true;
+    }
 
     ExprResult type = ParseTypeSpecifier(true);
     if (type.isInvalid()) return StmtError();
@@ -2235,7 +2250,7 @@ C2::StmtResult Parser::ParseDeclaration(bool checkSemi) {
         InitValue = ParseInitValue(&need_semi, false);
         if (InitValue.isInvalid()) return StmtError();
     }
-    StmtResult Res = Actions.ActOnDeclaration(id->getNameStart(), idLoc, type.get(), InitValue.get());
+    StmtResult Res = Actions.ActOnDeclaration(id->getNameStart(), idLoc, type.get(), InitValue.get(), hasLocal);
 
     if (checkSemi && need_semi) {
         if (ExpectAndConsume(tok::semi, diag::err_expected_after, "declaration")) return StmtError();
@@ -2364,7 +2379,7 @@ bool Parser::ParseCondition(C2::StmtResult& Res) {
 
     bool isDecl = isDeclaration();
     if (isDecl) {
-        Res = ParseDeclaration(false);
+        Res = ParseDeclaration(false, false);
         if (Res.isInvalid()) return false;
         // must have initializer
         assert(dyncast<DeclStmt>(Res.get()) && "expect DeclStmt");
@@ -2372,10 +2387,6 @@ bool Parser::ParseCondition(C2::StmtResult& Res) {
         VarDecl* VD = DS->getDecl();
         if (!VD->getInitValue()) {
             Diag(Tok, diag::err_expected_init_in_condition);
-            return false;
-        }
-        if (VD->hasLocalQualifier()) {
-            Diag(VD->getLocation(), diag::err_invalid_local_condition_decl);
             return false;
         }
     } else {
@@ -2446,7 +2457,11 @@ bool Parser::ParseAttributes(Decl* D) {
 void Parser::ParseVarDef(bool is_public) {
     LOG_FUNC
 
-    // TODO dont allow local keyword (check in actions)
+    if (Tok.is(tok::kw_local)) {
+        SourceLocation loc = ConsumeToken();
+        Diag(loc, diag::err_invalid_local);
+    }
+
     ExprResult type = ParseTypeSpecifier(true);
     if (type.isInvalid()) return;
 
@@ -2603,9 +2618,9 @@ void Parser::ParseArrayEntry() {
     }
 }
 
-// Syntax: const | volatile | local | local const
+// Syntax: const | volatile
 unsigned Parser::ParseOptionalTypeQualifier() {
-    // TODO consume all const/volatile/local tokens (can give errors)
+    // TODO consume all const/volatile tokens (can give errors)
     LOG_FUNC
     switch (Tok.getKind()) {
     case tok::kw_const:
@@ -2614,13 +2629,6 @@ unsigned Parser::ParseOptionalTypeQualifier() {
     case tok::kw_volatile:
         ConsumeToken();
         return TYPE_VOLATILE;
-    case tok::kw_local:
-        ConsumeToken();
-        if (Tok.is(tok::kw_const)) {
-            ConsumeToken();
-            return TYPE_LOCAL | TYPE_CONST;
-        }
-        else return TYPE_LOCAL;
     default:
         break;
     }

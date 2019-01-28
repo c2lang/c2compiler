@@ -1,4 +1,4 @@
 module test;
 
-func local i32 test1() {}    // @error{cannot use keyword local for function return types}
+func local i32 test1() {}    // @error{expected type specifier}
 

@@ -21,7 +21,6 @@
 
 #define TYPE_CONST      (1<<1)
 #define TYPE_VOLATILE   (1<<2)
-#define TYPE_LOCAL      (1<<3)
 
 namespace C2 {
 

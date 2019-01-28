@@ -3,10 +3,6 @@ module test;
 
 type Point struct {
     i32 x;
-    local i32 y;        // @error{cannot use keyword local for struct members}
-    union {
-        i32 a;
-        local i32 b;        // @error{cannot use keyword local for union members}
-    }
+    local i32 y;        // @error{expected type specifier}
 }
 

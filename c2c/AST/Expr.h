@@ -320,15 +320,12 @@ public:
     TypeExpr(QualType QT_)
         : Expr(EXPR_TYPE, SourceLocation(), true)
     {
-        typeExprBits.IsLocal = 0;
         setType(QT_);
     }
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_TYPE;
     }
     void print(StringBuilder& buffer, unsigned indent) const;
-    void setLocalQualifier() { typeExprBits.IsLocal = true; }
-    bool hasLocalQualifier() const { return typeExprBits.IsLocal; }
 };
 
 
