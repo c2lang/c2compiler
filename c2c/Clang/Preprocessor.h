@@ -61,14 +61,11 @@ namespace c2lang {
 class CommentHandler;
 class DirectoryEntry;
 class DirectoryLookup;
-class ExternalPreprocessorSource;
 class FileEntry;
 class FileManager;
 class HeaderSearch;
 class MacroArgs;
-class MemoryBufferCache;
 class PreprocessorLexer;
-class PTHManager;
 class ScratchBuffer;
 class TargetInfo;
 
@@ -121,12 +118,9 @@ class Preprocessor {
   const C2::TargetInfo *AuxTarget = nullptr;
   FileManager       &FileMgr;
   SourceManager     &SourceMgr;
-  MemoryBufferCache &PCMCache;
   std::unique_ptr<ScratchBuffer> ScratchBuf;
   HeaderSearch      &HeaderInfo;
 
-  /// External source of macros.
-  ExternalPreprocessorSource *ExternalSource;
 
 
   /// A BumpPtrAllocator object used to quickly allocate and release
@@ -467,11 +461,7 @@ private:
   MacroInfoChain *MIChainHead = nullptr;
 
 public:
-  Preprocessor(DiagnosticsEngine &diags, SourceManager &SM,
-               MemoryBufferCache &PCMCache,
-               HeaderSearch &Headers,
-               IdentifierInfoLookup *IILookup = nullptr,
-               bool OwnsHeaderSearch = false);
+  Preprocessor(DiagnosticsEngine &diags, SourceManager &SM, HeaderSearch &Headers, bool OwnsHeaderSearch = false);
 
   ~Preprocessor();
 
@@ -503,7 +493,6 @@ public:
   const C2::TargetInfo *getAuxTargetInfo() const { return AuxTarget; }
   FileManager &getFileManager() const { return FileMgr; }
   SourceManager &getSourceManager() const { return SourceMgr; }
-  MemoryBufferCache &getPCMCache() const { return PCMCache; }
   HeaderSearch &getHeaderSearchInfo() const { return HeaderInfo; }
 
   IdentifierTable &getIdentifierTable() { return Identifiers; }
@@ -511,9 +500,6 @@ public:
   llvm::BumpPtrAllocator &getPreprocessorAllocator() { return BP; }
 
 
-    ExternalPreprocessorSource *getExternalSource() const {
-    return ExternalSource;
-  }
 
 
   /// True if we are currently preprocessing a #if or #elif directive

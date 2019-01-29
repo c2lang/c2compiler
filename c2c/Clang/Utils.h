@@ -42,7 +42,6 @@ class DiagnosticsEngine;
 class HeaderSearch;
 class HeaderSearchOptions;
 class Preprocessor;
-class PreprocessorOptions;
 
 /// Apply the header search options to get given HeaderSearch object.
 void ApplyHeaderSearchOptions(HeaderSearch &HS, const HeaderSearchOptions &HSOpts);

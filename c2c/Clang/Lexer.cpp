@@ -146,55 +146,7 @@ void Lexer::resetExtendedTokenMode() {
   SetCommentRetentionState(false);
 }
 
-/// Create_PragmaLexer: Lexer constructor - Create a new lexer object for
-/// _Pragma expansion.  This has a variety of magic semantics that this method
-/// sets up.  It returns a new'd Lexer that must be delete'd when done.
-///
-/// On entrance to this routine, TokStartLoc is a macro location which has a
-/// spelling loc that indicates the bytes to be lexed for the token and an
-/// expansion location that indicates where all lexed tokens should be
-/// "expanded from".
-///
-/// TODO: It would really be nice to make _Pragma just be a wrapper around a
-/// normal lexer that remaps tokens as they fly by.  This would require making
-/// Preprocessor::Lex virtual.  Given that, we could just dump in a magic lexer
-/// interface that could handle this stuff.  This would pull GetMappedTokenLoc
-/// out of the critical path of the lexer!
-///
-Lexer *Lexer::Create_PragmaLexer(SourceLocation SpellingLoc,
-                                 SourceLocation ExpansionLocStart,
-                                 SourceLocation ExpansionLocEnd,
-                                 unsigned TokLen, Preprocessor &PP) {
-  SourceManager &SM = PP.getSourceManager();
 
-  // Create the lexer as if we were going to lex the file normally.
-  FileID SpellingFID = SM.getFileID(SpellingLoc);
-  const llvm::MemoryBuffer *InputFile = SM.getBuffer(SpellingFID);
-  Lexer *L = new Lexer(SpellingFID, InputFile, PP);
-
-  // Now that the lexer is created, change the start/end locations so that we
-  // just lex the subsection of the file that we want.  This is lexing from a
-  // scratch buffer.
-  const char *StrData = SM.getCharacterData(SpellingLoc);
-
-  L->BufferPtr = StrData;
-  L->BufferEnd = StrData+TokLen;
-  assert(L->BufferEnd[0] == 0 && "Buffer is not nul terminated!");
-
-  // Set the SourceLocation with the remapping information.  This ensures that
-  // GetMappedTokenLoc will remap the tokens as they are lexed.
-  L->FileLoc = SM.createExpansionLoc(SM.getLocForStartOfFile(SpellingFID),
-                                     ExpansionLocStart,
-                                     ExpansionLocEnd, TokLen);
-
-  // Ensure that the lexer thinks it is inside a directive, so that end \n will
-  // return an EOD token.
-  L->ParsingPreprocessorDirective = true;
-
-  // This lexer really is for _Pragma.
-  L->Is_PragmaLexer = true;
-  return L;
-}
 
 template <typename T> static void StringifyImpl(T &Str, char Quote) {
   typename T::size_type i = 0, e = Str.size();
