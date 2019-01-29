@@ -107,7 +107,7 @@ bool InitHeaderSearch::AddUnmappedPath(const Twine &Path, IncludeDirGroup Group)
 
   // Compute the DirectoryLookup type.
   SrcMgr::CharacteristicKind Type;
-  if (Group == Quoted || Group == Angled || Group == IndexHeaderMap) {
+  if (Group == Quoted || Group == Angled) {
     Type = SrcMgr::C_User;
   } else if (Group == ExternCSystem) {
     Type = SrcMgr::C_ExternCSystem;
@@ -122,17 +122,6 @@ bool InitHeaderSearch::AddUnmappedPath(const Twine &Path, IncludeDirGroup Group)
     return true;
   }
 
-  // Check to see if this is an apple-style headermap (which are not allowed to
-  // be frameworks).
-  if (const FileEntry *FE = FM.getFile(MappedPathStr)) {
-    if (const HeaderMap *HM = Headers.CreateHeaderMap(FE)) {
-      // It is a headermap, add it to the search path.
-      IncludePath.push_back(
-        std::make_pair(Group,
-                       DirectoryLookup(HM, Type, Group == IndexHeaderMap)));
-      return true;
-    }
-  }
 
   if (Verbose)
     llvm::errs() << "ignoring nonexistent directory \""
@@ -155,16 +144,8 @@ static unsigned RemoveDuplicates(std::vector<DirectoryLookup> &SearchList,
 
     const DirectoryLookup &CurEntry = SearchList[i];
 
-    if (CurEntry.isNormalDir()) {
-      // If this isn't the first time we've seen this dir, remove it.
-      if (SeenDirs.insert(CurEntry.getDir()).second)
-        continue;
-    } else {
-      assert(CurEntry.isHeaderMap() && "Not a headermap or normal dir?");
-      // If this isn't the first time we've seen this headermap, remove it.
-      if (SeenHeaderMaps.insert(CurEntry.getHeaderMap()).second)
-        continue;
-    }
+    // If this isn't the first time we've seen this dir, remove it.
+    if (SeenDirs.insert(CurEntry.getDir()).second) continue;
 
     // If we have a normal #include dir/framework/headermap that is shadowed
     // later in the chain by a system include location, we actually want to
@@ -181,20 +162,8 @@ static unsigned RemoveDuplicates(std::vector<DirectoryLookup> &SearchList,
 
         const DirectoryLookup &SearchEntry = SearchList[FirstDir];
 
-        // If these are different lookup types, then they can't be the dupe.
-        if (SearchEntry.getLookupType() != CurEntry.getLookupType())
-          continue;
 
-        bool isSame;
-        if (CurEntry.isNormalDir())
-          isSame = SearchEntry.getDir() == CurEntry.getDir();
-        else {
-          assert(CurEntry.isHeaderMap() && "Not a headermap or normal dir?");
-          isSame = SearchEntry.getHeaderMap() == CurEntry.getHeaderMap();
-        }
-
-        if (isSame)
-          break;
+        if (SearchEntry.getDir() == CurEntry.getDir()) break;
       }
 
       // If the first dir in the search path is a non-system dir, zap it
@@ -237,7 +206,7 @@ void InitHeaderSearch::Realize() {
   unsigned NumQuoted = SearchList.size();
 
   for (auto &Include : IncludePath)
-    if (Include.first == Angled || Include.first == IndexHeaderMap)
+    if (Include.first == Angled)
       SearchList.push_back(Include.second);
 
   RemoveDuplicates(SearchList, NumQuoted, Verbose);
@@ -270,14 +239,7 @@ void InitHeaderSearch::Realize() {
       if (i == NumQuoted)
         llvm::errs() << "#include <...> search starts here:\n";
       StringRef Name = SearchList[i].getName();
-      const char *Suffix;
-      if (SearchList[i].isNormalDir())
-        Suffix = "";
-      else {
-        assert(SearchList[i].isHeaderMap() && "Unknown DirectoryLookup");
-        Suffix = " (headermap)";
-      }
-      llvm::errs() << " " << Name << Suffix << "\n";
+      llvm::errs() << " " << Name << "\n";
     }
     llvm::errs() << "End of search list.\n";
   }

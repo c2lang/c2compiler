@@ -48,7 +48,6 @@ add_library(c2core
     Clang/LiteralSupport.cpp
     Clang/MacroArgs.cpp
     Clang/MacroInfo.cpp
-    Clang/MemoryBufferCache.cpp
     Clang/PPCaching.cpp
     Clang/PPDirectives.cpp
     Clang/PPExpressions.cpp

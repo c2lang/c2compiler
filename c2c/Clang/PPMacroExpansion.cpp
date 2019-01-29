@@ -17,7 +17,6 @@
 #include "Clang/LLVM.h"
 #include "Clang/SourceLocation.h"
 #include "Clang/DirectoryLookup.h"
-#include "Clang/ExternalPreprocessorSource.h"
 #include "Clang/LexDiagnostic.h"
 #include "Clang/MacroArgs.h"
 #include "Clang/MacroInfo.h"

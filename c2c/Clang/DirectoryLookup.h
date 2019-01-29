@@ -28,11 +28,7 @@ class HeaderSearch;
 /// represents either a directory, a framework, or a headermap.
 ///
 class DirectoryLookup {
-public:
-  enum LookupType_t {
-    LT_NormalDir,
-    LT_HeaderMap
-  };
+
 private:
   union {  // This union is discriminated by isHeaderMap.
     /// Dir - This is the actual directory that we're referring to for a normal
@@ -48,36 +44,17 @@ private:
   /// SrcMgr::CharacteristicKind.
   unsigned DirCharacteristic : 2;
 
-  /// LookupType - This indicates whether this DirectoryLookup object is a
-  /// normal directory, a framework, or a headermap.
-  unsigned LookupType : 2;
-
-  /// Whether this is a header map used when building a framework.
-  unsigned IsIndexHeaderMap : 1;
 
 
 public:
   /// DirectoryLookup ctor - Note that this ctor *does not take ownership* of
   /// 'dir'.
   DirectoryLookup(const DirectoryEntry *dir, SrcMgr::CharacteristicKind DT)
-    : DirCharacteristic(DT),
-      LookupType(LT_NormalDir),
-      IsIndexHeaderMap(false) {
+    : DirCharacteristic(DT) {
     u.Dir = dir;
   }
 
-  /// DirectoryLookup ctor - Note that this ctor *does not take ownership* of
-  /// 'map'.
-  DirectoryLookup(const HeaderMap *map, SrcMgr::CharacteristicKind DT,
-                  bool isIndexHeaderMap)
-    : DirCharacteristic(DT), LookupType(LT_HeaderMap),
-      IsIndexHeaderMap(isIndexHeaderMap) {
-    u.Map = map;
-  }
 
-  /// getLookupType - Return the kind of directory lookup that this is: either a
-  /// normal directory, a framework path, or a HeaderMap.
-  LookupType_t getLookupType() const { return (LookupType_t)LookupType; }
 
   /// getName - Return the directory or filename corresponding to this lookup
   /// object.
@@ -86,20 +63,8 @@ public:
   /// getDir - Return the directory that this entry refers to.
   ///
   const DirectoryEntry *getDir() const {
-    return isNormalDir() ? u.Dir : nullptr;
+    return u.Dir;
   }
-
-  /// getHeaderMap - Return the directory that this entry refers to.
-  ///
-  const HeaderMap *getHeaderMap() const {
-    return isHeaderMap() ? u.Map : nullptr;
-  }
-
-  /// isNormalDir - Return true if this is a normal directory, not a header map.
-  bool isNormalDir() const { return getLookupType() == LT_NormalDir; }
-
-  /// isHeaderMap - Return true if this is a header map, not a normal directory.
-  bool isHeaderMap() const { return getLookupType() == LT_HeaderMap; }
 
 
     /// DirCharacteristic - The type of directory this is, one of the DirType enum
@@ -113,10 +78,7 @@ public:
     return getDirCharacteristic() != SrcMgr::C_User;
   }
 
-  /// Whether this header map is building a framework or not.
-  bool isIndexHeaderMap() const {
-    return isHeaderMap() && IsIndexHeaderMap;
-  }
+
 
   /// LookupFile - Lookup the specified file in this search path, returning it
   /// if it exists or returning null if not.

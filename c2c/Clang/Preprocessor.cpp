@@ -32,7 +32,6 @@
 #include "Clang/LLVM.h"
 #include "Clang/SourceLocation.h"
 #include "Clang/SourceManager.h"
-#include "Clang/ExternalPreprocessorSource.h"
 #include "Clang/HeaderSearch.h"
 #include "Clang/LexDiagnostic.h"
 #include "Clang/Lexer.h"
@@ -65,21 +64,14 @@
 using namespace c2lang;
 
 
-ExternalPreprocessorSource::~ExternalPreprocessorSource() = default;
-
-Preprocessor::Preprocessor(DiagnosticsEngine &diags,
-                           SourceManager &SM,
-                           MemoryBufferCache &PCMCache,
-                           HeaderSearch &Headers,
-                           IdentifierInfoLookup *IILookup,
-                           bool OwnsHeaders)
+Preprocessor::Preprocessor(DiagnosticsEngine &diags, SourceManager &SM, HeaderSearch &Headers, bool OwnsHeaders)
     : Diags(&diags),
-      FileMgr(Headers.getFileMgr()), SourceMgr(SM), PCMCache(PCMCache),
+      FileMgr(Headers.getFileMgr()), SourceMgr(SM),
       ScratchBuf(new ScratchBuffer(SourceMgr)), HeaderInfo(Headers),
       // As the language options may have not been loaded yet (when
       // deserializing an ASTUnit), adding keywords to the identifier table is
       // deferred to Preprocessor::Initialize().
-      Identifiers(IILookup),
+      Identifiers(nullptr),
       CurSubmoduleState(&NullSubmoduleState) {
   OwnsHeaderSearch = OwnsHeaders;
 
