@@ -32,7 +32,7 @@ using namespace c2lang;
 
 namespace C2 {
 
-class Sema;
+class ASTBuilder;
 class Decl;
 class Expr;
 class FunctionDecl;
@@ -61,7 +61,7 @@ class Parser {
 public:
     friend class BalancedDelimiterTracker;
 
-    Parser(c2lang::Preprocessor& pp, Sema& sema, bool isInterface_);
+    Parser(c2lang::Preprocessor& pp, ASTBuilder& astBuilder, bool isInterface_);
     ~Parser();
 
     bool Parse();
@@ -70,7 +70,7 @@ private:
     Token Tok;
     SourceLocation PrevTokLocation;
     unsigned short ParenCount, BracketCount, BraceCount;
-    Sema& Actions;
+    ASTBuilder& Actions;
     DiagnosticsEngine& Diags;
     bool isInterface;
 

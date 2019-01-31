@@ -21,7 +21,7 @@
 #include "Clang/SemaDiagnostic.h"
 #include "Clang/LiteralSupport.h"
 
-#include "Parser/Sema.h"
+#include "Parser/ASTBuilder.h"
 #include "AST/AST.h"
 #include "AST/Attr.h"
 #include "AST/Component.h"
@@ -123,7 +123,7 @@ static inline UnaryOperatorKind ConvertTokenKindToUnaryOpcode(
     return Opc;
 }
 
-Sema::Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, c2lang::Preprocessor& PP_,
+ASTBuilder::ASTBuilder(SourceManager& sm_, DiagnosticsEngine& Diags_, c2lang::Preprocessor& PP_,
                Component& component_, Module* existingMod, const std::string& filename_,
                const TargetInfo& ti)
     : SourceMgr(sm_)
@@ -274,7 +274,7 @@ Sema::Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, c2lang::Preprocessor& 
 #endif
 }
 
-Sema::~Sema() {
+ASTBuilder::~ASTBuilder() {
 #if 0
     printf("%u  BuiltinType\n", (int)sizeof(BuiltinType));
     printf("%u  PointerType\n", (int)sizeof(PointerType));
@@ -334,12 +334,12 @@ Sema::~Sema() {
 #endif
 }
 
-void Sema::printAST() const {
+void ASTBuilder::printAST() const {
     ast.print(true);
     if (module) module->printAttributes(true);
 }
 
-void Sema::ActOnModule(const char* name_, SourceLocation loc) {
+void ASTBuilder::ActOnModule(const char* name_, SourceLocation loc) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA << "SEMA: module " << name_ << " at ";
     loc.dump(SourceMgr);
@@ -385,7 +385,7 @@ void Sema::ActOnModule(const char* name_, SourceLocation loc) {
     addSymbol(U);
 }
 
-void Sema::ActOnImport(const char* moduleName_, SourceLocation loc, Token& aliasTok, bool isLocal) {
+void ASTBuilder::ActOnImport(const char* moduleName_, SourceLocation loc, Token& aliasTok, bool isLocal) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: import " << moduleName_ << " at ";
     loc.dump(SourceMgr);
@@ -428,7 +428,7 @@ void Sema::ActOnImport(const char* moduleName_, SourceLocation loc, Token& alias
     addSymbol(U);
 }
 
-C2::Decl* Sema::ActOnAliasType(const char* name_, SourceLocation loc, Expr* type, bool is_public) {
+C2::Decl* ASTBuilder::ActOnAliasType(const char* name_, SourceLocation loc, Expr* type, bool is_public) {
     assert(name_);
     assert(type);
 #ifdef SEMA_DEBUG
@@ -452,7 +452,7 @@ C2::Decl* Sema::ActOnAliasType(const char* name_, SourceLocation loc, Expr* type
     return T;
 }
 
-C2::VarDecl* Sema::ActOnVarDef(const char* name, SourceLocation loc, bool is_public, Expr* type) {
+C2::VarDecl* ASTBuilder::ActOnVarDef(const char* name, SourceLocation loc, bool is_public, Expr* type) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: VarDef " << name << " at ";
     loc.dump(SourceMgr);
@@ -469,7 +469,7 @@ C2::VarDecl* Sema::ActOnVarDef(const char* name, SourceLocation loc, bool is_pub
     return V;
 }
 
-C2::FunctionDecl* Sema::createFuncDecl(const char* name_, SourceLocation loc,
+C2::FunctionDecl* ASTBuilder::createFuncDecl(const char* name_, SourceLocation loc,
         bool is_public, Expr* rtype) {
     assert(rtype);
     TypeExpr* typeExpr = cast<TypeExpr>(rtype);
@@ -483,7 +483,7 @@ C2::FunctionDecl* Sema::createFuncDecl(const char* name_, SourceLocation loc,
 }
 
 // NOTE: takes Type* from typeExpr and deletes typeExpr;
-C2::VarDecl* Sema::createVarDecl(VarDeclKind k, const char* name_, SourceLocation loc, TypeExpr* typeExpr, Expr* InitValue, bool is_public) {
+C2::VarDecl* ASTBuilder::createVarDecl(VarDeclKind k, const char* name_, SourceLocation loc, TypeExpr* typeExpr, Expr* InitValue, bool is_public) {
     // TODO check that type is not pre-fixed with own module
     // globals, function params, struct members
 
@@ -494,7 +494,7 @@ C2::VarDecl* Sema::createVarDecl(VarDeclKind k, const char* name_, SourceLocatio
     return V;
 }
 
-C2::FunctionDecl* Sema::ActOnFuncDecl(const char* func_name_, SourceLocation loc, Expr* structId, bool is_public, Expr* rtype) {
+C2::FunctionDecl* ASTBuilder::ActOnFuncDecl(const char* func_name_, SourceLocation loc, Expr* structId, bool is_public, Expr* rtype) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: func decl " << func_name_ << " at ";
     loc.dump(SourceMgr);
@@ -522,7 +522,7 @@ C2::FunctionDecl* Sema::ActOnFuncDecl(const char* func_name_, SourceLocation loc
     return D;
 }
 
-C2::FunctionTypeDecl* Sema::ActOnFuncTypeDecl(const char* name_, SourceLocation loc,
+C2::FunctionTypeDecl* ASTBuilder::ActOnFuncTypeDecl(const char* name_, SourceLocation loc,
         bool is_public, Expr* rtype) {
 #ifdef SEMA_DEBUG
     assert(name_);
@@ -542,7 +542,7 @@ C2::FunctionTypeDecl* Sema::ActOnFuncTypeDecl(const char* name_, SourceLocation 
     return FTD;
 }
 
-C2::VarDeclResult Sema::ActOnFunctionArg(FunctionDecl* func, const char* name, SourceLocation loc, Expr* type, Expr* InitValue) {
+C2::VarDeclResult ASTBuilder::ActOnFunctionArg(FunctionDecl* func, const char* name, SourceLocation loc, Expr* type, Expr* InitValue) {
 #ifdef SEMA_DEBUG
     assert(name);
     std::cerr << COL_SEMA"SEMA: function arg" << name << " at ";
@@ -569,19 +569,19 @@ C2::VarDeclResult Sema::ActOnFunctionArg(FunctionDecl* func, const char* name, S
     return VarDeclResult(var);
 }
 
-void Sema::ActOnFinishFunctionArgs(FunctionDecl* func, VarDeclList& args_) {
+void ASTBuilder::ActOnFinishFunctionArgs(FunctionDecl* func, VarDeclList& args_) {
     unsigned numArgs = args_.size();
     VarDecl** args = (VarDecl**)Context.Allocate(sizeof(VarDecl*)*numArgs);
     memcpy(args, &args_[0], sizeof(VarDecl*)*numArgs);
     func->setArgs(args, numArgs);
 }
 
-void Sema::ActOnFinishFunctionBody(FunctionDecl* func, Stmt* body) {
+void ASTBuilder::ActOnFinishFunctionBody(FunctionDecl* func, Stmt* body) {
     CompoundStmt* C = cast<CompoundStmt>(body);
     func->setBody(C);
 }
 
-void Sema::ActOnArrayValue(const char* name_, SourceLocation loc, Expr* Value) {
+void ASTBuilder::ActOnArrayValue(const char* name_, SourceLocation loc, Expr* Value) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: arrayvalue at ";
     loc.dump(SourceMgr);
@@ -594,7 +594,7 @@ void Sema::ActOnArrayValue(const char* name_, SourceLocation loc, Expr* Value) {
     ast.addArrayValue(decl);
 }
 
-C2::StmtResult Sema::ActOnReturnStmt(SourceLocation loc, Expr* value) {
+C2::StmtResult ASTBuilder::ActOnReturnStmt(SourceLocation loc, Expr* value) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: return at ";
     loc.dump(SourceMgr);
@@ -604,7 +604,7 @@ C2::StmtResult Sema::ActOnReturnStmt(SourceLocation loc, Expr* value) {
     return StmtResult(new (Context) ReturnStmt(loc, value));
 }
 
-C2::StmtResult Sema::ActOnIfStmt(SourceLocation ifLoc,
+C2::StmtResult ASTBuilder::ActOnIfStmt(SourceLocation ifLoc,
                                    Stmt* condition, StmtResult thenStmt,
                                    SourceLocation elseLoc, StmtResult elseStmt) {
 #ifdef SEMA_DEBUG
@@ -616,7 +616,7 @@ C2::StmtResult Sema::ActOnIfStmt(SourceLocation ifLoc,
     return StmtResult(new (Context) IfStmt(ifLoc, condition, thenStmt.get(), elseLoc, elseStmt.get()));
 }
 
-C2::StmtResult Sema::ActOnWhileStmt(SourceLocation loc, Stmt* Cond, StmtResult Then) {
+C2::StmtResult ASTBuilder::ActOnWhileStmt(SourceLocation loc, Stmt* Cond, StmtResult Then) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: while statement at ";
     loc.dump(SourceMgr);
@@ -626,7 +626,7 @@ C2::StmtResult Sema::ActOnWhileStmt(SourceLocation loc, Stmt* Cond, StmtResult T
     return StmtResult(new (Context) WhileStmt(loc, Cond, Then.get()));
 }
 
-C2::StmtResult Sema::ActOnDoStmt(SourceLocation loc, ExprResult Cond, StmtResult Then) {
+C2::StmtResult ASTBuilder::ActOnDoStmt(SourceLocation loc, ExprResult Cond, StmtResult Then) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: do statement at ";
     loc.dump(SourceMgr);
@@ -636,7 +636,7 @@ C2::StmtResult Sema::ActOnDoStmt(SourceLocation loc, ExprResult Cond, StmtResult
     return StmtResult(new (Context) DoStmt(loc, Cond.get(), Then.get()));
 }
 
-C2::StmtResult Sema::ActOnForStmt(SourceLocation loc, Stmt* Init, Expr* Cond, Expr* Incr, Stmt* Body) {
+C2::StmtResult ASTBuilder::ActOnForStmt(SourceLocation loc, Stmt* Init, Expr* Cond, Expr* Incr, Stmt* Body) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: for statement at ";
     loc.dump(SourceMgr);
@@ -646,7 +646,7 @@ C2::StmtResult Sema::ActOnForStmt(SourceLocation loc, Stmt* Init, Expr* Cond, Ex
     return StmtResult(new (Context) ForStmt(loc, Init, Cond, Incr, Body));
 }
 
-C2::StmtResult Sema::ActOnSwitchStmt(SourceLocation loc, Stmt* Cond, StmtList& cases_) {
+C2::StmtResult ASTBuilder::ActOnSwitchStmt(SourceLocation loc, Stmt* Cond, StmtList& cases_) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: switch statement at ";
     loc.dump(SourceMgr);
@@ -659,7 +659,7 @@ C2::StmtResult Sema::ActOnSwitchStmt(SourceLocation loc, Stmt* Cond, StmtList& c
     return StmtResult(new (Context) SwitchStmt(loc, Cond, cases, numCases));
 }
 
-C2::StmtResult Sema::ActOnCaseStmt(SourceLocation loc, Expr* Cond, StmtList& stmts_) {
+C2::StmtResult ASTBuilder::ActOnCaseStmt(SourceLocation loc, Expr* Cond, StmtList& stmts_) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: case statement at ";
     loc.dump(SourceMgr);
@@ -672,7 +672,7 @@ C2::StmtResult Sema::ActOnCaseStmt(SourceLocation loc, Expr* Cond, StmtList& stm
     return StmtResult(new (Context) CaseStmt(loc, Cond, stmts, numStmts));
 }
 
-C2::StmtResult Sema::ActOnDefaultStmt(SourceLocation loc, StmtList& stmts_) {
+C2::StmtResult ASTBuilder::ActOnDefaultStmt(SourceLocation loc, StmtList& stmts_) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: default statement at ";
     loc.dump(SourceMgr);
@@ -685,7 +685,7 @@ C2::StmtResult Sema::ActOnDefaultStmt(SourceLocation loc, StmtList& stmts_) {
     return StmtResult(new (Context) DefaultStmt(loc, stmts, numStmts));
 }
 
-C2::StmtResult Sema::ActOnBreakStmt(SourceLocation loc) {
+C2::StmtResult ASTBuilder::ActOnBreakStmt(SourceLocation loc) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: break statement at ";
     loc.dump(SourceMgr);
@@ -695,7 +695,7 @@ C2::StmtResult Sema::ActOnBreakStmt(SourceLocation loc) {
     return StmtResult(new (Context) BreakStmt(loc));
 }
 
-C2::StmtResult Sema::ActOnContinueStmt(SourceLocation loc) {
+C2::StmtResult ASTBuilder::ActOnContinueStmt(SourceLocation loc) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: continue statement at ";
     loc.dump(SourceMgr);
@@ -705,7 +705,7 @@ C2::StmtResult Sema::ActOnContinueStmt(SourceLocation loc) {
     return StmtResult(new (Context) ContinueStmt(loc));
 }
 
-C2::StmtResult Sema::ActOnLabelStmt(const char* name_, SourceLocation loc, Stmt* subStmt) {
+C2::StmtResult ASTBuilder::ActOnLabelStmt(const char* name_, SourceLocation loc, Stmt* subStmt) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: label statement at ";
     loc.dump(SourceMgr);
@@ -716,7 +716,7 @@ C2::StmtResult Sema::ActOnLabelStmt(const char* name_, SourceLocation loc, Stmt*
     return StmtResult(new (Context) LabelStmt(name, loc, subStmt));
 }
 
-C2::StmtResult Sema::ActOnGotoStmt(IdentifierInfo& symII, SourceLocation symLoc, SourceLocation GotoLoc) {
+C2::StmtResult ASTBuilder::ActOnGotoStmt(IdentifierInfo& symII, SourceLocation symLoc, SourceLocation GotoLoc) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: goto statement at ";
     GotoLoc.dump(SourceMgr);
@@ -729,7 +729,7 @@ C2::StmtResult Sema::ActOnGotoStmt(IdentifierInfo& symII, SourceLocation symLoc,
     return StmtResult(new (Context) GotoStmt(id, GotoLoc));
 }
 
-C2::StmtResult Sema::ActOnCompoundStmt(SourceLocation L, SourceLocation R, StmtList& stmts_) {
+C2::StmtResult ASTBuilder::ActOnCompoundStmt(SourceLocation L, SourceLocation R, StmtList& stmts_) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: compound statement at ";
     L.dump(SourceMgr);
@@ -742,7 +742,7 @@ C2::StmtResult Sema::ActOnCompoundStmt(SourceLocation L, SourceLocation R, StmtL
     return StmtResult(new (Context) CompoundStmt(L, R, stmts, numStmts));
 }
 
-C2::StmtResult Sema::ActOnDeclaration(const char* name_, SourceLocation loc, Expr* type, Expr* InitValue, bool hasLocal) {
+C2::StmtResult ASTBuilder::ActOnDeclaration(const char* name_, SourceLocation loc, Expr* type, Expr* InitValue, bool hasLocal) {
     assert(type);
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: decl at ";
@@ -761,7 +761,7 @@ C2::StmtResult Sema::ActOnDeclaration(const char* name_, SourceLocation loc, Exp
     return StmtResult(new (Context) DeclStmt(V));
 }
 
-C2::StmtResult Sema::ActOnAsmStmt(SourceLocation AsmLoc, bool isBasic,
+C2::StmtResult ASTBuilder::ActOnAsmStmt(SourceLocation AsmLoc, bool isBasic,
                                     bool isVolatile, unsigned NumOutputs, unsigned NumInputs,
                                     IdentifierInfo** Names, MultiExprArg constraints,
                                     MultiExprArg exprs, Expr* asmString, MultiExprArg clobbers) {
@@ -845,7 +845,7 @@ C2::StmtResult Sema::ActOnAsmStmt(SourceLocation AsmLoc, bool isBasic,
             NumOutputs, NumInputs, names, constraints_, exprs_, NumClobbers, clobbers_));
 }
 
-C2::ExprResult Sema::ActOnCallExpr(Expr* Fn, Expr** args_, unsigned numArgs, SourceLocation RParenLoc) {
+C2::ExprResult ASTBuilder::ActOnCallExpr(Expr* Fn, Expr** args_, unsigned numArgs, SourceLocation RParenLoc) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: call to " << "TODO Fn" << " at " << "TODO Fn";
     //expr2loc(Fn).dump(SourceMgr);
@@ -858,7 +858,7 @@ C2::ExprResult Sema::ActOnCallExpr(Expr* Fn, Expr** args_, unsigned numArgs, Sou
     return ExprResult(call);
 }
 
-C2::ExprResult Sema::ActOnIdExpression(IdentifierInfo& symII, SourceLocation symLoc) {
+C2::ExprResult ASTBuilder::ActOnIdExpression(IdentifierInfo& symII, SourceLocation symLoc) {
     const char* name = Context.addIdentifier(symII.getNameStart(), symII.getLength());
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: identifier " << name << " at ";
@@ -869,7 +869,7 @@ C2::ExprResult Sema::ActOnIdExpression(IdentifierInfo& symII, SourceLocation sym
     return ExprResult(new (Context) IdentifierExpr(symLoc, name));
 }
 
-C2::ExprResult Sema::ActOnParenExpr(SourceLocation L, SourceLocation R, Expr* E) {
+C2::ExprResult ASTBuilder::ActOnParenExpr(SourceLocation L, SourceLocation R, Expr* E) {
     assert(E && "missing expr");
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: paren expr at ";
@@ -880,7 +880,7 @@ C2::ExprResult Sema::ActOnParenExpr(SourceLocation L, SourceLocation R, Expr* E)
     return ExprResult(new (Context) ParenExpr(L, R, E));
 }
 
-C2::ExprResult Sema::ActOnNil(SourceLocation L) {
+C2::ExprResult ASTBuilder::ActOnNil(SourceLocation L) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: nil expr at ";
     L.dump(SourceMgr);
@@ -891,7 +891,7 @@ C2::ExprResult Sema::ActOnNil(SourceLocation L) {
 }
 
 
-C2::ExprResult Sema::ActOnBinOp(SourceLocation opLoc, tok::TokenKind Kind, Expr* LHS, Expr* RHS) {
+C2::ExprResult ASTBuilder::ActOnBinOp(SourceLocation opLoc, tok::TokenKind Kind, Expr* LHS, Expr* RHS) {
     assert(LHS);
     assert(RHS);
 #ifdef SEMA_DEBUG
@@ -909,7 +909,7 @@ C2::ExprResult Sema::ActOnBinOp(SourceLocation opLoc, tok::TokenKind Kind, Expr*
 }
 
 // see clang, some GCC extension allows LHS to be null (C2 doesn't?)
-C2::ExprResult Sema::ActOnConditionalOp(SourceLocation QuestionLoc, SourceLocation ColonLoc,
+C2::ExprResult ASTBuilder::ActOnConditionalOp(SourceLocation QuestionLoc, SourceLocation ColonLoc,
         Expr* CondExpr, Expr* LHSExpr, Expr* RHSExpr) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: CondOp at ";
@@ -920,7 +920,7 @@ C2::ExprResult Sema::ActOnConditionalOp(SourceLocation QuestionLoc, SourceLocati
     return ExprResult(new (Context) ConditionalOperator(QuestionLoc, ColonLoc, CondExpr, LHSExpr, RHSExpr));
 }
 
-C2::ExprResult Sema::ActOnInitList(SourceLocation left_, SourceLocation right_, ExprList& vals) {
+C2::ExprResult ASTBuilder::ActOnInitList(SourceLocation left_, SourceLocation right_, ExprList& vals) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: initlist at ";
     left_.dump(SourceMgr);
@@ -934,7 +934,7 @@ C2::ExprResult Sema::ActOnInitList(SourceLocation left_, SourceLocation right_, 
     return ExprResult(new (Context) InitListExpr(left_, right_, values, numValues));
 }
 
-C2::ExprResult Sema::ActOnArrayDesignatorExpr(SourceLocation left, ExprResult Designator, ExprResult InitValue) {
+C2::ExprResult ASTBuilder::ActOnArrayDesignatorExpr(SourceLocation left, ExprResult Designator, ExprResult InitValue) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: ArrayDesignatorExpr at ";
     left.dump(SourceMgr);
@@ -944,7 +944,7 @@ C2::ExprResult Sema::ActOnArrayDesignatorExpr(SourceLocation left, ExprResult De
     return ExprResult(new (Context) DesignatedInitExpr(left, Designator.get(), InitValue.get()));
 }
 
-C2::ExprResult Sema::ActOnFieldDesignatorExpr(Expr* field, ExprResult InitValue) {
+C2::ExprResult ASTBuilder::ActOnFieldDesignatorExpr(Expr* field, ExprResult InitValue) {
     assert(field);
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: FieldDesignatorExpr at ";
@@ -957,7 +957,7 @@ C2::ExprResult Sema::ActOnFieldDesignatorExpr(Expr* field, ExprResult InitValue)
     return ExprResult(new (Context) DesignatedInitExpr(I, InitValue.get()));
 }
 
-C2::ExprResult Sema::ActOnArrayType(Expr* base, Expr* size, bool isIncremental) {
+C2::ExprResult ASTBuilder::ActOnArrayType(Expr* base, Expr* size, bool isIncremental) {
 #ifdef SEMA_DEBUGG
     std::cerr << COL_SEMA << "SEMA: Array Type" << ANSI_NORMAL"\n";
 #endif
@@ -968,7 +968,7 @@ C2::ExprResult Sema::ActOnArrayType(Expr* base, Expr* size, bool isIncremental) 
     return ExprResult(base);
 }
 
-C2::ExprResult Sema::ActOnPointerType(Expr* base, unsigned qualifier) {
+C2::ExprResult ASTBuilder::ActOnPointerType(Expr* base, unsigned qualifier) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA << "SEMA: Pointer Type" << ANSI_NORMAL"\n";
 #endif
@@ -983,7 +983,7 @@ C2::ExprResult Sema::ActOnPointerType(Expr* base, unsigned qualifier) {
     return ExprResult(base);
 }
 
-C2::ExprResult Sema::ActOnUserType(Expr* mName_, Expr* tName_) {
+C2::ExprResult ASTBuilder::ActOnUserType(Expr* mName_, Expr* tName_) {
     assert(isa<IdentifierExpr>(tName_));
     IdentifierExpr* tName = cast<IdentifierExpr>(tName_);
     IdentifierExpr* mName = 0;
@@ -1005,7 +1005,7 @@ C2::ExprResult Sema::ActOnUserType(Expr* mName_, Expr* tName_) {
     return ExprResult(te);
 }
 
-C2::ExprResult Sema::ActOnBuiltinType(tok::TokenKind k) {
+C2::ExprResult ASTBuilder::ActOnBuiltinType(tok::TokenKind k) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA << "SEMA: Builtin Type" << ANSI_NORMAL"\n";
 #endif
@@ -1033,7 +1033,7 @@ C2::ExprResult Sema::ActOnBuiltinType(tok::TokenKind k) {
     return ExprResult(te);
 }
 
-StructTypeDecl* Sema::ActOnStructType(const char* name_, SourceLocation loc,
+StructTypeDecl* ASTBuilder::ActOnStructType(const char* name_, SourceLocation loc,
                                         bool isStruct, bool is_public, bool is_global) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA << "SEMA: Struct/Union Type '" << (name_ ? name_ : "<anonymous>");
@@ -1056,7 +1056,7 @@ StructTypeDecl* Sema::ActOnStructType(const char* name_, SourceLocation loc,
     return S;
 }
 
-C2::Decl* Sema::ActOnStructVar(StructTypeDecl* S, const char* name_, SourceLocation loc, Expr* type, Expr* InitValue) {
+C2::Decl* ASTBuilder::ActOnStructVar(StructTypeDecl* S, const char* name_, SourceLocation loc, Expr* type, Expr* InitValue) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA << "SEMA: struct var " << name_ << " at ";
     loc.dump(SourceMgr);
@@ -1066,7 +1066,7 @@ C2::Decl* Sema::ActOnStructVar(StructTypeDecl* S, const char* name_, SourceLocat
     return createVarDecl(VARDECL_MEMBER, name_, loc, typeExpr, InitValue, S->isPublic());
 }
 
-void Sema::ActOnStructMembers(StructTypeDecl* S, DeclList& members_) {
+void ASTBuilder::ActOnStructMembers(StructTypeDecl* S, DeclList& members_) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA << "SEMA: struct member" << ANSI_NORMAL << '\n';
 #endif
@@ -1076,7 +1076,7 @@ void Sema::ActOnStructMembers(StructTypeDecl* S, DeclList& members_) {
     S->setMembers(members, numMembers);
 }
 
-EnumTypeDecl* Sema::ActOnEnumType(const char* name_, SourceLocation loc, Expr* implType, bool is_public, bool is_incr) {
+EnumTypeDecl* ASTBuilder::ActOnEnumType(const char* name_, SourceLocation loc, Expr* implType, bool is_public, bool is_incr) {
     assert(implType);
     TypeExpr* T = cast<TypeExpr>(implType);
     QualType impl = T->getType();
@@ -1101,7 +1101,7 @@ EnumTypeDecl* Sema::ActOnEnumType(const char* name_, SourceLocation loc, Expr* i
     return E;
 }
 
-C2::EnumConstantDecl* Sema::ActOnEnumConstant(EnumTypeDecl* Enum, IdentifierInfo* symII,
+C2::EnumConstantDecl* ASTBuilder::ActOnEnumConstant(EnumTypeDecl* Enum, IdentifierInfo* symII,
         SourceLocation symLoc, Expr* Value) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA << "SEMA: enum constant" << ANSI_NORMAL"\n";
@@ -1128,7 +1128,7 @@ C2::EnumConstantDecl* Sema::ActOnEnumConstant(EnumTypeDecl* Enum, IdentifierInfo
     return D;
 }
 
-void Sema::ActOnEnumTypeFinished(EnumTypeDecl* Enum, EnumConstantDecl** constants_, unsigned numConstants) {
+void ASTBuilder::ActOnEnumTypeFinished(EnumTypeDecl* Enum, EnumConstantDecl** constants_, unsigned numConstants) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA << "SEMA: enum finished" << ANSI_NORMAL"\n";
 #endif
@@ -1138,7 +1138,7 @@ void Sema::ActOnEnumTypeFinished(EnumTypeDecl* Enum, EnumConstantDecl** constant
     enumConstants.clear();
 }
 
-C2::ExprResult Sema::ActOnTypeQualifier(ExprResult R, unsigned qualifier) {
+C2::ExprResult ASTBuilder::ActOnTypeQualifier(ExprResult R, unsigned qualifier) {
     assert(R.get());
     if (qualifier) {
 #ifdef SEMA_DEBUG
@@ -1154,7 +1154,7 @@ C2::ExprResult Sema::ActOnTypeQualifier(ExprResult R, unsigned qualifier) {
     return R;
 }
 
-C2::ExprResult Sema::ActOnBuiltinExpression(SourceLocation Loc, Expr* expr, BuiltinExpr::BuiltinKind kind_) {
+C2::ExprResult ASTBuilder::ActOnBuiltinExpression(SourceLocation Loc, Expr* expr, BuiltinExpr::BuiltinKind kind_) {
     assert(expr);
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA << "SEMA: " << BuiltinExpr::Str(kind_) << " at ";
@@ -1165,7 +1165,7 @@ C2::ExprResult Sema::ActOnBuiltinExpression(SourceLocation Loc, Expr* expr, Buil
     return ExprResult(new (Context) BuiltinExpr(Loc, expr, kind_));
 }
 
-C2::ExprResult Sema::ActOnArraySubScriptExpr(SourceLocation RLoc, Expr* Base, Expr* Idx) {
+C2::ExprResult ASTBuilder::ActOnArraySubScriptExpr(SourceLocation RLoc, Expr* Base, Expr* Idx) {
     assert(Base);
     assert(Idx);
 #ifdef SEMA_DEBUG
@@ -1177,7 +1177,7 @@ C2::ExprResult Sema::ActOnArraySubScriptExpr(SourceLocation RLoc, Expr* Base, Ex
     return ExprResult(new (Context) ArraySubscriptExpr(RLoc, Base, Idx));
 }
 
-C2::ExprResult Sema::ActOnMemberExpr(Expr* Base, Expr* member) {
+C2::ExprResult ASTBuilder::ActOnMemberExpr(Expr* Base, Expr* member) {
     assert(Base);
     assert(member);
     IdentifierExpr* I = dyncast<IdentifierExpr>(member);
@@ -1190,7 +1190,7 @@ C2::ExprResult Sema::ActOnMemberExpr(Expr* Base, Expr* member) {
     return ExprResult(new (Context) MemberExpr(Base, I));
 }
 
-C2::ExprResult Sema::ActOnPostfixUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Expr* Input) {
+C2::ExprResult ASTBuilder::ActOnPostfixUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Expr* Input) {
     assert(Input);
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA << "SEMA: postop at ";
@@ -1213,7 +1213,7 @@ C2::ExprResult Sema::ActOnPostfixUnaryOp(SourceLocation OpLoc, tok::TokenKind Ki
     return ExprResult(new (Context) UnaryOperator(OpLoc, Opc, Input));
 }
 
-C2::ExprResult Sema::ActOnUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Expr* Input) {
+C2::ExprResult ASTBuilder::ActOnUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Expr* Input) {
     assert(Input);
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA << "SEMA: unary op at ";
@@ -1226,7 +1226,7 @@ C2::ExprResult Sema::ActOnUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Exp
     return ExprResult(new (Context) UnaryOperator(OpLoc, Opc, Input));
 }
 
-C2::ExprResult Sema::ActOnBitOffset(SourceLocation colLoc, Expr* LHS, Expr* RHS) {
+C2::ExprResult ASTBuilder::ActOnBitOffset(SourceLocation colLoc, Expr* LHS, Expr* RHS) {
     assert(LHS);
     assert(RHS);
 #ifdef SEMA_DEBUG
@@ -1238,7 +1238,7 @@ C2::ExprResult Sema::ActOnBitOffset(SourceLocation colLoc, Expr* LHS, Expr* RHS)
     return ExprResult(new (Context) BitOffsetExpr(LHS, RHS, colLoc));
 }
 
-C2::ExprResult Sema::ActOnExplicitCast(SourceLocation castLoc, Expr* type, Expr* expr) {
+C2::ExprResult ASTBuilder::ActOnExplicitCast(SourceLocation castLoc, Expr* type, Expr* expr) {
     assert(type);
     assert(expr);
 #ifdef SEMA_DEBUG
@@ -1253,7 +1253,7 @@ C2::ExprResult Sema::ActOnExplicitCast(SourceLocation castLoc, Expr* type, Expr*
     return ExprResult(E);
 }
 
-void Sema::ActOnAttr(Decl* D, const char* name, SourceRange range, Expr* arg) {
+void ASTBuilder::ActOnAttr(Decl* D, const char* name, SourceRange range, Expr* arg) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA << "SEMA: attribute " << name << ANSI_NORMAL"\n";
 #endif
@@ -1311,7 +1311,7 @@ void Sema::ActOnAttr(Decl* D, const char* name, SourceRange range, Expr* arg) {
     }
 }
 
-C2::ExprResult Sema::ActOnIntegerConstant(SourceLocation Loc, uint64_t Val) {
+C2::ExprResult ASTBuilder::ActOnIntegerConstant(SourceLocation Loc, uint64_t Val) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA << "SEMA: integer constant" << ANSI_NORMAL"\n";
 #endif
@@ -1322,7 +1322,7 @@ C2::ExprResult Sema::ActOnIntegerConstant(SourceLocation Loc, uint64_t Val) {
     return ExprResult(new (Context) IntegerLiteral(Loc, ResultValue, radix));
 }
 
-C2::ExprResult Sema::ActOnBooleanConstant(const Token& Tok) {
+C2::ExprResult ASTBuilder::ActOnBooleanConstant(const Token& Tok) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA << "SEMA: boolean constant" << ANSI_NORMAL"\n";
 #endif
@@ -1330,7 +1330,7 @@ C2::ExprResult Sema::ActOnBooleanConstant(const Token& Tok) {
     return ExprResult(new (Context) BooleanLiteral(Tok.getLocation(), Tok.is(tok::kw_true)));
 }
 
-C2::ExprResult Sema::ActOnNumericConstant(const Token& Tok) {
+C2::ExprResult ASTBuilder::ActOnNumericConstant(const Token& Tok) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA << "SEMA: numeric constant" << ANSI_NORMAL"\n";
 #endif
@@ -1364,7 +1364,7 @@ C2::ExprResult Sema::ActOnNumericConstant(const Token& Tok) {
     Expr* Res;
 
     if (Literal.isFloatingLiteral()) {
-        // clang::Sema::BuildFloatingLiteral()
+        // clang::ASTBuilder::BuildFloatingLiteral()
         // TEMP Hardcoded
         const llvm::fltSemantics& Format = llvm::APFloat::IEEEsingle();
         APFloat Val(Format);
@@ -1463,7 +1463,7 @@ C2::ExprResult Sema::ActOnNumericConstant(const Token& Tok) {
 }
 
 
-C2::ExprResult Sema::ActOnStringLiteral(ArrayRef<Token> StringToks) {
+C2::ExprResult ASTBuilder::ActOnStringLiteral(ArrayRef<Token> StringToks) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA << "SEMA: string literal" << ANSI_NORMAL"\n";
 #endif
@@ -1476,7 +1476,7 @@ C2::ExprResult Sema::ActOnStringLiteral(ArrayRef<Token> StringToks) {
     return ExprResult(new (Context) StringLiteral(StringToks[0].getLocation(), text, ref.size()));
 }
 
-C2::ExprResult Sema::ActOnCharacterConstant(const Token& Tok) {
+C2::ExprResult ASTBuilder::ActOnCharacterConstant(const Token& Tok) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA << "SEMA: char constant at ";
     Tok.getLocation().dump(SourceMgr);
@@ -1496,11 +1496,11 @@ C2::ExprResult Sema::ActOnCharacterConstant(const Token& Tok) {
     return ExprResult(new (Context) CharacterLiteral(Tok.getLocation(), Literal.getValue()));
 }
 
-DiagnosticBuilder Sema::Diag(SourceLocation Loc, unsigned DiagID) {
+DiagnosticBuilder ASTBuilder::Diag(SourceLocation Loc, unsigned DiagID) {
     return Diags.Report(Loc, DiagID);
 }
 
-void Sema::addSymbol(Decl* d, bool isStructFunction) {
+void ASTBuilder::addSymbol(Decl* d, bool isStructFunction) {
     Decl* Old = findSymbol(d->getName());
     if (Old) {
         Diag(d->getLocation(), diag::err_redefinition) << d->getName();
@@ -1516,14 +1516,14 @@ void Sema::addSymbol(Decl* d, bool isStructFunction) {
     }
 }
 
-C2::Decl* Sema::findSymbol(const char* name) const {
+C2::Decl* ASTBuilder::findSymbol(const char* name) const {
     SymbolsConstIter iter = imports.find(name);
     if (iter != imports.end()) return iter->second;
 
     return module->findSymbolOrStructFunc(name);
 }
 
-const C2::ImportDecl* Sema::findModule(const char* name_) const {
+const C2::ImportDecl* ASTBuilder::findModule(const char* name_) const {
     for (unsigned i=0; i<ast.numImports(); i++) {
         ImportDecl* D = ast.getImport(i);
         if (strcmp(D->getModuleName(), name_) == 0) return D;
@@ -1531,7 +1531,7 @@ const C2::ImportDecl* Sema::findModule(const char* name_) const {
     return 0;
 }
 
-C2::ExprResult Sema::ExprError() {
+C2::ExprResult ASTBuilder::ExprError() {
     return C2::ExprResult(true);
 }
 

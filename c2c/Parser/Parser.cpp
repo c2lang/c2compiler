@@ -22,7 +22,7 @@
 #include "Clang/SourceLocation.h"
 
 #include "Parser/Parser.h"
-#include "Parser/Sema.h"
+#include "Parser/ASTBuilder.h"
 #include "AST/Decl.h"
 #include "AST/Expr.h"
 
@@ -98,12 +98,12 @@ static C2::VarDecl* findDecl(VarDeclList decls, const char* name_) {
 }
 
 
-Parser::Parser(Preprocessor& pp, Sema& sema, bool isInterface_)
+Parser::Parser(Preprocessor& pp, ASTBuilder& astBuilder, bool isInterface_)
     : PP(pp)
     , ParenCount(0)
     , BracketCount(0)
     , BraceCount(0)
-    , Actions(sema)
+    , Actions(astBuilder)
     , Diags(PP.getDiagnostics())
     , isInterface(isInterface_)
 {

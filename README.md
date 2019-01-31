@@ -18,7 +18,7 @@ Have fun! (and code..)
 
 ## Generic
 C2 is based on LLVM 7.0 and some parts of Clang 7.0. The design of C2C's
-C2Parser and C2Sema class are heavily based on clang's Parser and Sema class,
+Parser and ASTBuilder classes are heavily based on clang's Parser and Sema class,
 so hereby my thanks to the Clang folks!
 
 

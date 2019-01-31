@@ -53,12 +53,12 @@ class Module;
 typedef std::vector<Decl*> DeclList;
 typedef std::vector<VarDecl*> VarDeclList;
 
-class Sema {
+class ASTBuilder {
 public:
-    Sema(SourceManager& sm_, DiagnosticsEngine& Diags_, c2lang::Preprocessor& PP_,
+    ASTBuilder(SourceManager& sm_, DiagnosticsEngine& Diags_, c2lang::Preprocessor& PP_,
            Component& comp_, Module* existingMod, const std::string& filename_,
            const TargetInfo& ti);
-    ~Sema();
+    ~ASTBuilder();
 
     void printAST() const;
 
@@ -168,8 +168,8 @@ private:
 
     Symbols enumConstants;
 
-    Sema(const Sema&);
-    Sema& operator= (const Sema&);
+    ASTBuilder(const ASTBuilder&);
+    ASTBuilder& operator= (const ASTBuilder&);
 };
 
 }

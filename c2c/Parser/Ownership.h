@@ -40,7 +40,7 @@ namespace c2lang {
   ///               a pointer.
   ///
   /// This is a very simple POD type that wraps a pointer that the Parser
-  /// doesn't know about but that Sema or another client does.  The PtrTy
+  /// doesn't know about but that ASTBuilder or another client does.  The PtrTy
   /// template argument is used to make sure that "Decl" pointers are not
   /// compatible with "Type" pointers for example.
   template <class PtrTy>

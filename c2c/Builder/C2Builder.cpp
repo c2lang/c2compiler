@@ -49,7 +49,7 @@
 #include "AST/Module.h"
 #include "AST/Decl.h"
 #include "Parser/Parser.h"
-#include "Parser/Sema.h"
+#include "Parser/ASTBuilder.h"
 #include "Analyser/ComponentAnalyser.h"
 #include "Algo/DepGenerator.h"
 #include "Algo/TagWriter.h"
@@ -133,10 +133,10 @@ public:
 
         Diags.getClient()->BeginSourceFile(0);
 
-        Sema sema(SM, Diags, PP, component, existingMod, filename, targetInfo);
-        Parser parser(PP, sema, component.isExternal());
+        ASTBuilder astBuilder(SM, Diags, PP, component, existingMod, filename, targetInfo);
+        Parser parser(PP, astBuilder, component.isExternal());
         bool ok = parser.Parse();
-        if (printAST) sema.printAST();
+        if (printAST) astBuilder.printAST();
 #if 0
         PP.EndSourceFile();
 
