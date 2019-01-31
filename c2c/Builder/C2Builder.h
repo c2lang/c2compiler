@@ -38,28 +38,6 @@ class ParseHelper;
 class BuildFile;
 
 struct BuildOptions {
-    BuildOptions()
-        : printAST0(false)
-        , printAST1(false)
-        , printAST2(false)
-        , printAST3(false)
-        , printASTLib(false)
-        , printTiming(false)
-        , printSymbols(false)
-        , printLibSymbols(false)
-        , generateIR(false)
-        , printIR(false)
-        , generateC(false)
-        , printC(false)
-        , checkOnly(false)
-        , showLibs(false)
-        , printModules(false)
-        , printDependencies(false)
-        , generateRefs(false)
-        , verbose(false)
-        , testMode(false)
-        , libdir(0)
-    {}
     bool printAST0;
     bool printAST1;
     bool printAST2;
@@ -86,7 +64,7 @@ struct BuildOptions {
 
 class C2Builder {
 public:
-    C2Builder(const Recipe& recipe_, const BuildFile* buildFile_, const BuildOptions& opts);
+    C2Builder(const Recipe& recipe_, const BuildFile* buildFile_);
     ~C2Builder();
 
     int checkFiles();
@@ -98,7 +76,6 @@ public:
 private:
     Module* findModule(const std::string& name) const;
     bool checkImports(ParseHelper& helper);
-    unsigned analyse();
     void printSymbols(bool printLibs) const;
     void printComponents() const;
     void log(const char* color, const char* format, ...) const;
@@ -117,7 +94,6 @@ private:
 
     const Recipe& recipe;
     const BuildFile* buildFile;
-    BuildOptions options;
     TargetInfo targetInfo;
     std::string outputDir;
 
@@ -136,6 +112,8 @@ private:
 };
 
 }
+
+extern C2::BuildOptions build_options;
 
 #endif
 

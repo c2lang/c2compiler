@@ -70,7 +70,7 @@ static void usage(const char* name) {
     exit(EXIT_FAILURE);
 }
 
-static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
+static void parse_arguments(int argc, const char* argv[]) {
     for (int i=1; i<argc; i++) {
         const char* arg = argv[i];
         if (arg[0] == '-') {
@@ -78,19 +78,19 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
             case 'a':
                 switch (arg[2]) {
                 case '0':
-                    opts.printAST0 = true;
+                    build_options.printAST0 = true;
                     break;
                 case '1':
-                    opts.printAST1 = true;
+                    build_options.printAST1 = true;
                     break;
                 case '2':
-                    opts.printAST2 = true;
+                    build_options.printAST2 = true;
                     break;
                 case '3':
-                    opts.printAST3 = true;
+                    build_options.printAST3 = true;
                     break;
                 case 'L':
-                    opts.printASTLib = true;
+                    build_options.printASTLib = true;
                     break;
                 default:
                     usage(argv[0]);
@@ -106,11 +106,11 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
                 build_file = argv[i];
                 break;
             case 'c':
-                opts.generateC = true;
+                build_options.generateC = true;
                 break;
             case 'C':
-                opts.generateC = true;
-                opts.printC = true;
+                build_options.generateC = true;
+                build_options.printC = true;
                 break;
             case 'd':
                 if (i==argc-1) {
@@ -127,30 +127,30 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
                 usage(argv[0]);
                 break;
             case 'i':
-                opts.generateIR = true;
+                build_options.generateIR = true;
                 break;
             case 'I':
-                opts.generateIR = true;
-                opts.printIR = true;
+                build_options.generateIR = true;
+                    build_options.printIR = true;
                 break;
             case 'l':
                 print_targets = true;
                 break;
             case 'p':
-                opts.printModules = true;
+                build_options.printModules = true;
                 break;
             case 's':
-                opts.printSymbols = true;
+                build_options.printSymbols = true;
                 break;
             case 'S':
-                opts.printSymbols = true;
-                opts.printLibSymbols = true;
+                build_options.printSymbols = true;
+                    build_options.printLibSymbols = true;
                 break;
             case 't':
-                opts.printTiming = true;
+                build_options.printTiming = true;
                 break;
             case 'v':
-                opts.verbose = true;
+                build_options.verbose = true;
                 break;
             case '-':
                 if (strcmp(&arg[2], "about") == 0) {
@@ -170,23 +170,23 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
                     exit(0);
                 }
                 if (strcmp(&arg[2], "test") == 0) {
-                    opts.testMode = true;
+                    build_options.testMode = true;
                     continue;
                 }
                 if (strcmp(&arg[2], "deps") == 0) {
-                    opts.printDependencies = true;
+                    build_options.printDependencies = true;
                     continue;
                 }
                 if (strcmp(&arg[2], "refs") == 0) {
-                    opts.generateRefs = true;
+                    build_options.generateRefs = true;
                     continue;
                 }
                 if (strcmp(&arg[2], "check") == 0) {
-                    opts.checkOnly = true;
+                    build_options.checkOnly = true;
                     continue;
                 }
                 if (strcmp(&arg[2], "showlibs") == 0) {
-                    opts.showLibs = true;
+                    build_options.showLibs = true;
                     continue;
                 }
                 usage(argv[0]);
@@ -219,11 +219,10 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
 int main(int argc, const char *argv[])
 {
     uint64_t t1 = Utils::getCurrentTime();
-    BuildOptions opts;
-    parse_arguments(argc, argv, opts);
+    parse_arguments(argc, argv);
 
-    opts.libdir = getenv("C2_LIBDIR");
-    if (!opts.libdir) printf("Warning: environment variable C2_LIBDIR not set!\n");
+    build_options.libdir = getenv("C2_LIBDIR");
+    if (!build_options.libdir) printf("Warning: environment variable C2_LIBDIR not set!\n");
 
     if (other_dir) {
         if (chdir(other_dir)) {
@@ -236,7 +235,7 @@ int main(int argc, const char *argv[])
         // NOTE: don't support build file in this mode
         Recipe dummy("dummy", Component::EXECUTABLE);
         dummy.addFile(targetFilter);
-        C2Builder builder(dummy, 0, opts);
+        C2Builder builder(dummy, 0);
         int errors = builder.checkFiles();
         if (!errors) errors = builder.build();
         return errors ? EXIT_FAILURE : EXIT_SUCCESS;
@@ -268,7 +267,7 @@ int main(int argc, const char *argv[])
     for (int i=0; i<reader.count(); i++) {
         const Recipe& recipe = reader.get(i);
         if (targetFilter && recipe.name != targetFilter) continue;
-        C2Builder builder(recipe, buildFilePtr, opts);
+        C2Builder builder(recipe, buildFilePtr);
         int errors = builder.checkFiles();
         if (!errors) errors = builder.build();
         if (errors) hasErrors = true;
@@ -278,7 +277,7 @@ int main(int argc, const char *argv[])
         fprintf(stderr, "error: unknown target '%s'\n", targetFilter);
         return EXIT_FAILURE;
     }
-    if (opts.printTiming) {
+    if (build_options.printTiming) {
         uint64_t t2 = Utils::getCurrentTime();
         printf(COL_TIME"total building time: %" PRIu64" usec" ANSI_NORMAL"\n", t2 - t1);
     }

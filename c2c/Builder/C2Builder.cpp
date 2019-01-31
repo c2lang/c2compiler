@@ -160,10 +160,9 @@ public:
 }
 
 
-C2Builder::C2Builder(const Recipe& recipe_, const BuildFile* buildFile_, const BuildOptions& opts)
+C2Builder::C2Builder(const Recipe& recipe_, const BuildFile* buildFile_)
     : recipe(recipe_)
     , buildFile(buildFile_)
-    , options(opts)
     , c2Mod(0)
     , mainComponent(0)
     , libLoader(components, modules, recipe.getExports())
@@ -189,10 +188,10 @@ C2Builder::C2Builder(const Recipe& recipe_, const BuildFile* buildFile_, const B
             }
         }
     } else {
-        if (opts.libdir) libLoader.addDir(opts.libdir);
+        if (build_options.libdir) libLoader.addDir(build_options.libdir);
         TargetInfo::getNative(targetInfo);
     }
-    if (options.verbose) log(COL_VERBOSE, "Target: %s", Str(targetInfo));
+    if (build_options.verbose) log(COL_VERBOSE, "Target: %s", Str(targetInfo));
     if (!isatty(1)) useColors = false;
 }
 
@@ -226,7 +225,7 @@ int C2Builder::build() {
     // Diagnostics
     // NOTE: DiagOpts is somehow deleted by Diags/TextDiagnosticPrinter below?
     DiagnosticOptions* DiagOpts = new DiagnosticOptions();
-    if (!options.testMode && isatty(2)) DiagOpts->ShowColors = true;
+    if (!build_options.testMode && isatty(2)) DiagOpts->ShowColors = true;
     IntrusiveRefCntPtr<DiagnosticIDs> DiagID(new DiagnosticIDs());
     DiagnosticsEngine Diags(DiagID, DiagOpts,
                             // NOTE: setting ShouldOwnClient to true causes crash??
@@ -344,12 +343,12 @@ int C2Builder::build() {
     for (unsigned i=0; i<recipe.size(); i++) {
         const std::string& filename = recipe.get(i);
 
-        if (options.verbose) log(COL_VERBOSE, "parsing (%s) %s", mainComponent->getName().c_str(), filename.c_str());
-        bool ok = helper.parse(*mainComponent, 0, filename, options.printAST0);
+        if (build_options.verbose) log(COL_VERBOSE, "parsing (%s) %s", mainComponent->getName().c_str(), filename.c_str());
+        bool ok = helper.parse(*mainComponent, 0, filename, build_options.printAST0);
         errors += !ok;
     }
     uint64_t t2_parse = Utils::getCurrentTime();
-    if (options.printTiming) log(COL_TIME, "parsing took %" PRIu64" usec", t2_parse - t1_parse);
+    if (build_options.printTiming) log(COL_TIME, "parsing took %" PRIu64" usec", t2_parse - t1_parse);
     if (client->getNumErrors()) goto out;
 
     uint64_t t1_analyse, t2_analyse;
@@ -357,25 +356,25 @@ int C2Builder::build() {
     {
         uint64_t t1_parse_libs = Utils::getCurrentTime();
         if (!libLoader.scan()) goto out;
-        if (options.showLibs) libLoader.showLibs(useColors);
+        if (build_options.showLibs) libLoader.showLibs(useColors);
         bool ok = checkImports(helper);
         uint64_t t2_parse_libs = Utils::getCurrentTime();
-        if (options.printTiming) log(COL_TIME, "parsing libs took %" PRIu64" usec", t2_parse_libs - t1_parse_libs);
+        if (build_options.printTiming) log(COL_TIME, "parsing libs took %" PRIu64" usec", t2_parse_libs - t1_parse_libs);
         if (!ok) goto out;
     }
 
     // phase 2: analyse all files
     t1_analyse = Utils::getCurrentTime();
     for (unsigned c=0; c<components.size(); c++) {
-        if (options.verbose) log(COL_VERBOSE, "analysing component %s", components[c]->getName().c_str());
-        ComponentAnalyser analyser(*components[c], modules, Diags, context, options.verbose);
-        errors += analyser.analyse(options.printAST1, options.printAST2, options.printAST3, options.printASTLib);
+        if (build_options.verbose) log(COL_VERBOSE, "analysing component %s", components[c]->getName().c_str());
+        ComponentAnalyser analyser(*components[c], modules, Diags, context, build_options.verbose);
+        errors += analyser.analyse(build_options.printAST1, build_options.printAST2, build_options.printAST3, build_options.printASTLib);
     }
     t2_analyse = Utils::getCurrentTime();
-    if (options.printTiming) log(COL_TIME, "analysis took %" PRIu64" usec", t2_analyse - t1_analyse);
+    if (build_options.printTiming) log(COL_TIME, "analysis took %" PRIu64" usec", t2_analyse - t1_analyse);
 
-    if (options.printModules) printComponents();
-    if (options.printSymbols) printSymbols(options.printLibSymbols);
+    if (build_options.printModules) printComponents();
+    if (build_options.printSymbols) printSymbols(build_options.printLibSymbols);
 
     if (client->getNumErrors()) goto out;
 
@@ -393,11 +392,11 @@ int C2Builder::build() {
 
     generateOptionalIR();
 
-    if (options.verbose) log(COL_VERBOSE, "done");
+    if (build_options.verbose) log(COL_VERBOSE, "done");
 out:
     //SM.PrintStats();
     uint64_t t2_build = Utils::getCurrentTime();
-    if (options.printTiming) log(COL_TIME, "total build took %" PRIu64" usec", t2_build - t1_build);
+    if (build_options.printTiming) log(COL_TIME, "total build took %" PRIu64" usec", t2_build - t1_build);
     raw_ostream &OS = llvm::errs();
     unsigned NumWarnings = client->getNumWarnings();
     unsigned NumErrors = client->getNumErrors();
@@ -436,12 +435,12 @@ bool C2Builder::checkImports(ParseHelper& helper) {
 bool C2Builder::checkModuleImports(ParseHelper& helper, Component* component, Module* module, ImportsQueue& queue, const LibInfo* lib) {
     if (!module->isLoaded()) {
         assert(lib);
-        if (options.verbose) log(COL_VERBOSE, "parsing (%s) %s", component->getName().c_str(), lib->c2file.c_str());
-        if (!helper.parse(*component, module, lib->c2file, (options.printAST0 && options.printASTLib))) {
+        if (build_options.verbose) log(COL_VERBOSE, "parsing (%s) %s", component->getName().c_str(), lib->c2file.c_str());
+        if (!helper.parse(*component, module, lib->c2file, (build_options.printAST0 && build_options.printASTLib))) {
             return false;
         }
     }
-    if (options.verbose) log(COL_VERBOSE, "checking imports for module (%s) %s", component->getName().c_str(), module->getName().c_str());
+    if (build_options.verbose) log(COL_VERBOSE, "checking imports for module (%s) %s", component->getName().c_str(), module->getName().c_str());
     bool ok = true;
     const AstList& files = module->getFiles();
     for (unsigned a=0; a<files.size(); a++) {
@@ -481,7 +480,7 @@ bool C2Builder::checkModuleImports(ParseHelper& helper, Component* component, Mo
 
 void C2Builder::createC2Module() {
     if (!c2Mod) {
-        if (options.verbose) log(COL_VERBOSE, "generating module c2");
+        if (build_options.verbose) log(COL_VERBOSE, "generating module c2");
         c2Mod = new Module("c2", true, false);
         modules["c2"] = c2Mod;
         C2ModuleLoader::load(c2Mod);
@@ -555,7 +554,7 @@ bool C2Builder::checkMainFunction(DiagnosticsEngine& Diags) {
 
     if (recipe.type == Component::EXECUTABLE) {
         // bin: must have main
-        if (options.testMode) return true;
+        if (build_options.testMode) return true;
         if (!mainDecl) {
             Diags.Report(diag::err_main_missing);
             return false;
@@ -588,9 +587,9 @@ bool C2Builder::checkExportedPackages() const {
 
 
 void C2Builder::generateOptionalDeps() {
-    if (!options.printDependencies && !recipe.generateDeps) return;
+    if (!build_options.printDependencies && !recipe.generateDeps) return;
 
-    if (options.verbose) log(COL_VERBOSE, "generating dependencies");
+    if (build_options.verbose) log(COL_VERBOSE, "generating dependencies");
 
     uint64_t t1 = Utils::getCurrentTime();
     bool showFiles = false;
@@ -604,7 +603,7 @@ void C2Builder::generateOptionalDeps() {
 
     generateDeps(showFiles, showPrivate, showExternals, outputDir);
     uint64_t t2 = Utils::getCurrentTime();
-    if (options.printTiming) log(COL_TIME, "dep generation took %" PRIu64" usec", t2 - t1);
+    if (build_options.printTiming) log(COL_TIME, "dep generation took %" PRIu64" usec", t2 - t1);
 }
 
 void C2Builder::generateDeps(bool showFiles, bool showPrivate, bool showExternals, const std::string& path) const {
@@ -613,31 +612,31 @@ void C2Builder::generateDeps(bool showFiles, bool showPrivate, bool showExternal
 }
 
 void C2Builder::generateOptionalTags(const SourceManager& SM) const {
-    if (!options.generateRefs && !recipe.generateRefs) return;
+    if (!build_options.generateRefs && !recipe.generateRefs) return;
 
-    if (options.verbose) log(COL_VERBOSE, "generating refs");
+    if (build_options.verbose) log(COL_VERBOSE, "generating refs");
 
     uint64_t t1 = Utils::getCurrentTime();
     TagWriter generator(SM, components);
     generator.write(recipe.name, outputDir);
     uint64_t t2 = Utils::getCurrentTime();
-    if (options.printTiming) log(COL_TIME, "refs generation took %" PRIu64" usec", t2 - t1);
+    if (build_options.printTiming) log(COL_TIME, "refs generation took %" PRIu64" usec", t2 - t1);
 }
 
 void C2Builder::generateInterface() const {
-    if (options.checkOnly) return;
-    if (!options.generateC && !recipe.generateCCode &&
-            !options.generateIR && !recipe.generateIR) return;
+    if (build_options.checkOnly) return;
+    if (!build_options.generateC && !recipe.generateCCode &&
+            !build_options.generateIR && !recipe.generateIR) return;
     if (!recipe.needsInterface()) return;
 
-    if (options.verbose) log(COL_VERBOSE, "generating c2 interfaces");
+    if (build_options.verbose) log(COL_VERBOSE, "generating c2 interfaces");
 
     const ModuleList& mods = mainComponent->getModules();
-    for (unsigned m=0; m<mods.size(); m++) {
+    for (unsigned m = 0; m < mods.size(); m++) {
         const Module* M = mods[m];
         if (!M->isExported()) continue;
         InterfaceGenerator gen(*M);
-        gen.write(outputDir, options.printC);
+        gen.write(outputDir, build_options.printC);
     }
 
     ManifestWriter manifest(*mainComponent);
@@ -645,8 +644,8 @@ void C2Builder::generateInterface() const {
 }
 
 void C2Builder::generateOptionalC() {
-    if (options.checkOnly) return;
-    if (!options.generateC && !recipe.generateCCode) return;
+    if (build_options.checkOnly) return;
+    if (!build_options.generateC && !recipe.generateCCode) return;
 
     uint64_t t1 = Utils::getCurrentTime();
     bool single_module = false;
@@ -663,38 +662,38 @@ void C2Builder::generateOptionalC() {
 
     CGenerator::Options cgen_options(outputDir, BUILD_DIR);
     cgen_options.single_module = single_module;
-    cgen_options.printC = options.printC;
+    cgen_options.printC = build_options.printC;
     CGenerator cgen(*mainComponent, modules, libLoader, cgen_options, targetInfo, buildFile);
 
     // generate headers for external libraries
-    if (options.verbose) log(COL_VERBOSE, "generating external headers");
+    if (build_options.verbose) log(COL_VERBOSE, "generating external headers");
     cgen.generateExternalHeaders();
 
     // generate C interface files
     if (recipe.needsInterface()) {
-        if (options.verbose) log(COL_VERBOSE, "generating interface headers");
+        if (build_options.verbose) log(COL_VERBOSE, "generating interface headers");
         cgen.generateInterfaceFiles();
     }
 
     // use C-backend
-    if (options.verbose) log(COL_VERBOSE, "generating C code");
+    if (build_options.verbose) log(COL_VERBOSE, "generating C code");
     cgen.generate();
 
     uint64_t t2 = Utils::getCurrentTime();
-    if (options.printTiming) log(COL_TIME, "C code generation took %" PRIu64" usec", t2 - t1);
+    if (build_options.printTiming) log(COL_TIME, "C code generation took %" PRIu64" usec", t2 - t1);
 
     if (!no_build) {
-        if (options.verbose) log(COL_VERBOSE, "building C code");
+        if (build_options.verbose) log(COL_VERBOSE, "building C code");
         uint64_t t3 = Utils::getCurrentTime();
         cgen.build();
         uint64_t t4 = Utils::getCurrentTime();
-        if (options.printTiming) log(COL_TIME, "C code compilation took %" PRIu64" usec", t4 - t3);
+        if (build_options.printTiming) log(COL_TIME, "C code compilation took %" PRIu64" usec", t4 - t3);
     }
 }
 
 void C2Builder::generateOptionalIR() {
-    if (options.checkOnly) return;
-    if (!options.generateIR && !recipe.generateIR) return;
+    if (build_options.checkOnly) return;
+    if (!build_options.generateIR && !recipe.generateIR) return;
 
     bool single_module = false;
     for (unsigned i=0; i<recipe.genConfigs.size(); i++) {
@@ -716,32 +715,33 @@ void C2Builder::generateOptionalIR() {
     if (single_module) {
         uint64_t t1 = Utils::getCurrentTime();
         std::string filename = recipe.name;
-        if (options.verbose) log(COL_VERBOSE, "generating IR for single module %s", filename.c_str());
+        if (build_options.verbose) log(COL_VERBOSE, "generating IR for single module %s", filename.c_str());
         CodeGenModule cgm(filename, true, mods, context);
         cgm.generate();
         uint64_t t2 = Utils::getCurrentTime();
-        if (options.printTiming) log(COL_TIME, "IR generation took %" PRIu64" usec", t2 - t1);
-        if (options.printIR) cgm.dump();
+        if (build_options.printTiming) log(COL_TIME, "IR generation took %" PRIu64" usec", t2 - t1);
+        if (build_options.printIR) cgm.dump();
         bool ok = cgm.verify();
         if (ok) cgm.write(buildDir, filename);
     } else {
-        for (unsigned m=0; m<mods.size(); m++) {
+        for (unsigned m = 0; m < mods.size(); m++) {
             Module* M = mods[m];
             uint64_t t1 = Utils::getCurrentTime();
             if (M->isPlainC()) continue;
             if (M->getName() == "c2") continue;
 
-            if (options.verbose) log(COL_VERBOSE, "generating IR for module %s", M->getName().c_str());
+            if (build_options.verbose) log(COL_VERBOSE, "generating IR for module %s", M->getName().c_str());
             ModuleList single;
             single.push_back(M);
             CodeGenModule cgm(M->getName(), false, single, context);
             cgm.generate();
             uint64_t t2 = Utils::getCurrentTime();
-            if (options.printTiming) log(COL_TIME, "IR generation took %" PRIu64" usec", t2 - t1);
-            if (options.printIR) cgm.dump();
+            if (build_options.printTiming) log(COL_TIME, "IR generation took %" PRIu64" usec", t2 - t1);
+            if (build_options.printIR) cgm.dump();
             bool ok = cgm.verify();
             if (ok) cgm.write(buildDir, M->getName());
         }
     }
 }
 
+C2::BuildOptions build_options {};
