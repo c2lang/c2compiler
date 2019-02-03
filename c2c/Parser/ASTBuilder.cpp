@@ -1040,7 +1040,7 @@ StructTypeDecl* ASTBuilder::ActOnStructType(const char* name_, SourceLocation lo
     std::cerr << ANSI_NORMAL << '\n';
 #endif
     if (ast.isInterface()) {
-        if (is_public) Diag(loc, diag::err_public_in_interface);
+        if (is_public && is_global) Diag(loc, diag::err_public_in_interface);
         is_public = true;
     }
     QualType qt = Context.getStructType();
