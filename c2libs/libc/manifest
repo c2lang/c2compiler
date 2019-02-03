@@ -17,6 +17,9 @@ name = "libc_poll"
 name = "libc_fcntl"
 
 [[module]]
+name = "net_if"
+
+[[module]]
 name = "stdlib"
 
 [[module]]
