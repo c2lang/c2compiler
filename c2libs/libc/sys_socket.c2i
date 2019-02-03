@@ -2,9 +2,12 @@ module sys_socket;
 
 import c2 local;
 
-const c_int AF_INET = 2;
+const c_int AF_INET    =  2;
+const c_int AF_NETLINK = 16;
+const c_int AF_PACKET  = 17;
 
-const c_int IPPROTO_TCP = 6;
+const c_int IPPROTO_TCP =  6;
+const c_int IPPROTO_UDP = 22;
 
 type SocketType enum u32 {
   SOCK_STREAM    = 1,   /* Sequenced, reliable, connection-based byte streams.  */
