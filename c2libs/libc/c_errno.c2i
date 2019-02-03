@@ -6,4 +6,6 @@ import c2 local;
 // #define errno *errno_location()
 
 c_int errno;
+func c_int* __errno_location();
 
+func c_int* errno2() @(cname="__errno_location");
