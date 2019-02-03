@@ -1,0 +1,6 @@
+module sys_ioctl;
+
+import c2 local;
+
+func c_int ioctl(c_int __fd, c_ulong __request, ...);
+

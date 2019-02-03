@@ -41,10 +41,16 @@ name = "ctype"
 name = "libc_dirent"
 
 [[module]]
+name = "linux_sockios"
+
+[[module]]
 name = "stdarg"
 
 [[module]]
 name = "sys_mman"
+
+[[module]]
+name = "sys_ioctl"
 
 [[module]]
 name = "sys_socket"

@@ -1,0 +1,133 @@
+module linux_sockios;
+
+import c2 local;
+
+/* Linux-specific socket ioctls */
+//#define SIOCINQ		FIONREAD
+//#define SIOCOUTQ	TIOCOUTQ        /* output queue size (not sent + not acked) */
+
+//#define SOCK_IOC_TYPE	0x89
+
+/* Routing table calls. */
+const u32 SIOCADDRT	= 0x890B;		/* add routing table entry	*/
+const u32 SIOCDELRT	= 0x890C;		/* delete routing table entry	*/
+const u32 SIOCRTMSG	= 0x890D;		/* unused			*/
+
+/* Socket configuration controls. */
+const u32 SIOCGIFNAME	= 0x8910;		/* get iface name		*/
+const u32 SIOCSIFLINK	= 0x8911;		/* set iface channel		*/
+const u32 SIOCGIFCONF	= 0x8912;		/* get iface list		*/
+const u32 SIOCGIFFLAGS	= 0x8913;		/* get flags			*/
+const u32 SIOCSIFFLAGS	= 0x8914;		/* set flags			*/
+const u32 SIOCGIFADDR	= 0x8915;		/* get PA address		*/
+const u32 SIOCSIFADDR	= 0x8916;		/* set PA address		*/
+const u32 SIOCGIFDSTADDR	= 0x8917;		/* get remote PA address	*/
+const u32 SIOCSIFDSTADDR	= 0x8918;		/* set remote PA address	*/
+const u32 SIOCGIFBRDADDR	= 0x8919;		/* get broadcast PA address	*/
+const u32 SIOCSIFBRDADDR	= 0x891a;		/* set broadcast PA address	*/
+const u32 SIOCGIFNETMASK	= 0x891b;		/* get network PA mask		*/
+const u32 SIOCSIFNETMASK	= 0x891c;		/* set network PA mask		*/
+const u32 SIOCGIFMETRIC	= 0x891d;		/* get metric			*/
+const u32 SIOCSIFMETRIC	= 0x891e;		/* set metric			*/
+const u32 SIOCGIFMEM	= 0x891f;		/* get memory address (BSD)	*/
+const u32 SIOCSIFMEM	= 0x8920;		/* set memory address (BSD)	*/
+const u32 SIOCGIFMTU	= 0x8921;		/* get MTU size			*/
+const u32 SIOCSIFMTU	= 0x8922;		/* set MTU size			*/
+const u32 SIOCSIFNAME	= 0x8923;		/* set interface name */
+const u32 SIOCSIFHWADDR	= 0x8924;		/* set hardware address 	*/
+const u32 SIOCGIFENCAP	= 0x8925;		/* get/set encapsulations       */
+const u32 SIOCSIFENCAP	= 0x8926;
+const u32 SIOCGIFHWADDR	= 0x8927;		/* Get hardware address		*/
+const u32 SIOCGIFSLAVE	= 0x8929;		/* Driver slaving support	*/
+const u32 SIOCSIFSLAVE	= 0x8930;
+const u32 SIOCADDMULTI	= 0x8931;		/* Multicast address lists	*/
+const u32 SIOCDELMULTI	= 0x8932;
+const u32 SIOCGIFINDEX	= 0x8933;		/* name -> if_index mapping	*/
+const u32 SIOCSIFPFLAGS	= 0x8934;		/* set/get extended flags set	*/
+const u32 SIOCGIFPFLAGS	= 0x8935;
+const u32 SIOCDIFADDR	= 0x8936;		/* delete PA address		*/
+const u32 SIOCSIFHWBROADCAST	= 0x8937;	/* set hardware broadcast addr	*/
+const u32 SIOCGIFCOUNT	= 0x8938;		/* get number of devices */
+
+const u32 SIOCGIFBR	= 0x8940;		/* Bridging support		*/
+const u32 SIOCSIFBR	= 0x8941;		/* Set bridging options 	*/
+
+const u32 SIOCGIFTXQLEN	= 0x8942;		/* Get the tx queue length	*/
+const u32 SIOCSIFTXQLEN	= 0x8943;		/* Set the tx queue length 	*/
+
+/* SIOCGIFDIVERT was:	0x8944		Frame diversion support */
+/* SIOCSIFDIVERT was:	0x8945		Set frame diversion options */
+
+const u32 SIOCETHTOOL	= 0x8946;		/* Ethtool interface		*/
+
+const u32 SIOCGMIIPHY	= 0x8947;		/* Get address of MII PHY in use. */
+const u32 SIOCGMIIREG	= 0x8948;		/* Read MII PHY register.	*/
+const u32 SIOCSMIIREG	= 0x8949;		/* Write MII PHY register.	*/
+
+const u32 SIOCWANDEV	= 0x894A;		/* get/set netdev parameters	*/
+
+const u32 SIOCOUTQNSD	= 0x894B;		/* output queue size (not sent only) */
+const u32 SIOCGSKNS	= 0x894C;		/* get socket network namespace */
+
+/* ARP cache control calls. */
+		    /*  0x8950 - 0x8952  * obsolete calls, don't re-use */
+const u32 SIOCDARP	= 0x8953;		/* delete ARP table entry	*/
+const u32 SIOCGARP	= 0x8954;		/* get ARP table entry		*/
+const u32 SIOCSARP	= 0x8955;		/* set ARP table entry		*/
+
+/* RARP cache control calls. */
+const u32 SIOCDRARP	= 0x8960;		/* delete RARP table entry	*/
+const u32 SIOCGRARP	= 0x8961;		/* get RARP table entry		*/
+const u32 SIOCSRARP	= 0x8962;		/* set RARP table entry		*/
+
+/* Driver configuration calls */
+
+const u32 SIOCGIFMAP	= 0x8970;		/* Get device parameters	*/
+const u32 SIOCSIFMAP	= 0x8971;		/* Set device parameters	*/
+
+/* DLCI configuration calls */
+
+const u32 SIOCADDDLCI	= 0x8980;		/* Create new DLCI device	*/
+const u32 SIOCDELDLCI	= 0x8981;		/* Delete DLCI device		*/
+
+const u32 SIOCGIFVLAN	= 0x8982;		/* 802.1Q VLAN support		*/
+const u32 SIOCSIFVLAN	= 0x8983;		/* Set 802.1Q VLAN options 	*/
+
+/* bonding calls */
+
+const u32 SIOCBONDENSLAVE	= 0x8990;		/* enslave a device to the bond */
+const u32 SIOCBONDRELEASE = 0x8991;		/* release a slave from the bond*/
+const u32 SIOCBONDSETHWADDR      = 0x8992;	/* set the hw addr of the bond  */
+const u32 SIOCBONDSLAVEINFOQUERY = 0x8993;   /* rtn info about slave state   */
+const u32 SIOCBONDINFOQUERY      = 0x8994;	/* rtn info about bond state    */
+const u32 SIOCBONDCHANGEACTIVE   = 0x8995;   /* update to a new active slave */
+
+/* bridge calls */
+const u32 SIOCBRADDBR     = 0x89a0;		/* create new bridge device     */
+const u32 SIOCBRDELBR     = 0x89a1;		/* remove bridge device         */
+const u32 SIOCBRADDIF	= 0x89a2;		/* add interface to bridge      */
+const u32 SIOCBRDELIF	= 0x89a3;		/* remove interface from bridge */
+
+/* hardware time stamping: parameters in linux/net_tstamp.h */
+const u32 SIOCSHWTSTAMP	= 0x89b0;		/* set and get config		*/
+const u32 SIOCGHWTSTAMP	= 0x89b1;		/* get config			*/
+
+/* Device private ioctl calls */
+
+/*
+ *	These 16 ioctls are available to devices via the do_ioctl() device
+ *	vector. Each device should include this file and redefine these names
+ *	as their own. Because these are device dependent it is a good idea
+ *	_NOT_ to issue them to random objects and hope.
+ *
+ *	THESE IOCTLS ARE _DEPRECATED_ AND WILL DISAPPEAR IN 2.5.X -DaveM
+ */
+
+const u32 SIOCDEVPRIVATE	= 0x89F0;	/* to 89FF */
+
+/*
+ *	These 16 ioctl calls are protocol private
+ */
+
+const u32 SIOCPROTOPRIVATE = 0x89E0; /* to 89EF */
+
