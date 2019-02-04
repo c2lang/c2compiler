@@ -75,3 +75,14 @@ func u16 htons(u16 hostshort);
 func u32 ntohl(u32 netlong);
 func u16 ntohs(u16 netshort);
 
+// From linux/if_packet.h
+type Sockaddr_ll struct {
+    c_ushort sll_family;
+    c_ushort sll_protocol;   // Big-Endian!
+    c_int sll_ifindex;
+    c_ushort sll_hatype;
+    c_uchar sll_pkttype;
+    c_uchar sll_halen;
+    c_uchar[8] sll_addr;
+} @(cname="sockaddr_ll")
+
