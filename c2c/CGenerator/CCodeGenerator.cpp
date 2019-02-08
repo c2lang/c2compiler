@@ -1427,14 +1427,17 @@ bool CCodeGenerator::EmitAsStatic(const Decl* D) const {
 
 bool CCodeGenerator::EmitAsDefine(const VarDecl* V) const {
     QualType type = V->getType();
+    if (type.isArrayType()) return false;
+
     // convert const integer literals to define
     if (type.isBuiltinType() && type.isConstQualified()) return true;
-    // convert const char[] and const char[x] to define
+#if 0
     if (type.isArrayType()) {
         const ArrayType* AT = cast<ArrayType>(type.getTypePtr());
         QualType ET = AT->getElementType();
         if (!AT->isIncremental() && ET.isBuiltinType() && ET.isConstQualified()) return true;
     }
+#endif
     return false;
 }
 
