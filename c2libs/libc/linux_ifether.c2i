@@ -1,0 +1,12 @@
+module linux_ifether;
+
+import c2 local;
+
+const u32 ETH_ALEN = 6;
+
+type Hdr struct {
+    c_uchar[ETH_ALEN] h_dest;
+    c_uchar[ETH_ALEN] h_source;
+    c_ushort h_proto;    // Big-Endian
+} @(cname="ethhdr", packed)
+

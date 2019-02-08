@@ -44,6 +44,9 @@ name = "libc_dirent"
 name = "linux_sockios"
 
 [[module]]
+name = "linux_ifether"
+
+[[module]]
 name = "stdarg"
 
 [[module]]
