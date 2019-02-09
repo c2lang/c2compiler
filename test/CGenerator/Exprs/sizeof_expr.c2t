@@ -15,6 +15,11 @@ type Foo struct {
      f64 d;
   }
 }
+
+u8[10] aa;
+u16[10] bb;
+u32[10] cc;
+
 public func i32 main(i32 argc, const i8*[] argv) {
     i32 a = sizeof(i32*);
     i32 b = sizeof(a);
@@ -28,6 +33,9 @@ public func i32 main(i32 argc, const i8*[] argv) {
     i32 j = sizeof(test.Foo);
     i32 k = sizeof(test.Foo.a);
     i32 l = sizeof(test.Foo.d);
+    i32 o1 = sizeof(aa);
+    i32 o2 = sizeof(bb);
+    i32 o3 = sizeof(cc);
     return 0;
 }
 
@@ -35,18 +43,21 @@ public func i32 main(i32 argc, const i8*[] argv) {
 // @expect{atleast, build/test.c}
 
 int32_t main(int32_t argc, const char* argv[]) {
-    int32_t a = sizeof(8);
-    int32_t b = sizeof(4);
-    int32_t c = sizeof(8);
-    int32_t d = sizeof(4);
-    int32_t e = sizeof(8);
+    int32_t a = 8;
+    int32_t b = 4;
+    int32_t c = 8;
+    int32_t d = 4;
+    int32_t e = 8;
     int32_t f = sizeof(int32_t[3]);
     int32_t g = sizeof(test_Foo);
-    int32_t h = sizeof(4);
-    int32_t i = sizeof(8);
+    int32_t h = 4;
+    int32_t i = 8;
     int32_t j = sizeof(test_Foo);
-    int32_t k = sizeof(4);
-    int32_t l = sizeof(8);
+    int32_t k = 4;
+    int32_t l = 8;
+    int32_t o1 = 10;
+    int32_t o2 = 20;
+    int32_t o3 = 40;
 
     return 0;
 }

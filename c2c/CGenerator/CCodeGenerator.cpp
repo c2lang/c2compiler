@@ -360,13 +360,14 @@ void CCodeGenerator::EmitBuiltinExpr(const Expr* E, StringBuilder& output) {
     switch (B->getBuiltinKind()) {
     case BuiltinExpr::BUILTIN_SIZEOF:
         // TODO for now generate external sizeof() instead of number (need StructSizer)
-        output << "sizeof(";
+        // We need to know the ARCH (32/64 bit to generate the sizeof correctly)
         if (B->getValue().getZExtValue() > 0) {
             output << B->getValue().toString(10);
         } else {
+            output << "sizeof(";
             EmitExpr(B->getExpr(), output);
+            output << ')';
         }
-        output << ')';
         break;
     case BuiltinExpr::BUILTIN_ELEMSOF:
     case BuiltinExpr::BUILTIN_ENUM_MIN:
