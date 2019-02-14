@@ -1428,7 +1428,19 @@ bool CCodeGenerator::EmitAsStatic(const Decl* D) const {
 
 bool CCodeGenerator::EmitAsDefine(const VarDecl* V) const {
     QualType type = V->getType();
-    if (type.isArrayType()) return false;
+    if (type.isArrayType()) {
+        // convert const char[] and const char[x] to define.
+        const ArrayType* AT = cast<ArrayType>(type.getTypePtr());
+        QualType ET = AT->getElementType();
+        if (!ET.isBuiltinType()) return false;
+        if (!ET.isConstQualified()) return false;
+        const Expr* init = V->getInitValue();
+        if (!init) return false;
+        if (isa<StringLiteral>(init)) return true;
+
+        return false;
+
+    }
 
     // convert const integer literals to define
     if (type.isBuiltinType() && type.isConstQualified()) return true;

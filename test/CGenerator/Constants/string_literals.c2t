@@ -37,8 +37,8 @@ public char* iii;
 
 // @expect{atleast, build/test2.h}
 
-extern const char test2_AAA[];
-extern const char test2_BBB[3];
+#define test2_AAA "aaa"
+#define test2_BBB "bbb"
 extern const char* test2_ccc;
 extern char test2_ddd[];
 
@@ -52,8 +52,6 @@ extern char* test2_iii;
 // @expect{atleast, build/test2.c}
 #include "test2.h"
 
-const char test2_AAA[] = "aaa";
-const char test2_BBB[3] = "bbb";
 const char* test2_ccc = "ccc";
 char test2_ddd[] = "ddd";
 char test2_eee[3] = "eee";
