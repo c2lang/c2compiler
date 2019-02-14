@@ -1236,6 +1236,7 @@ void FunctionAnalyser::analyseArraySizeExpr(ArrayType* AT) {
         Diag(E->getLocation(), diag::err_vla_decl_in_file_scope) << E->getSourceRange();
         return;
     }
+
     // check if type is integer
     QualType CT = T.getCanonicalType();
     if (!CT.isBuiltinType() || !cast<BuiltinType>(CT)->isInteger()) {
@@ -2022,6 +2023,9 @@ Decl* FunctionAnalyser::analyseIdentifier(IdentifierExpr* id) {
         id->setDecl(D, globalDecl2RefType(D));
         id->setType(D->getType());
         SetConstantFlags(D, id);
+    }
+    if (usedPublicly && !D->isPublic()) {
+        Diag(id->getLocation(), diag::err_non_public_constant) << D->DiagName();
     }
     return D;
 }

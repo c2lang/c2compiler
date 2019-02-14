@@ -211,6 +211,7 @@ DIAG(err_multiple_template_declarators, CLASS_ERROR, (unsigned)diag::Severity::E
 DIAG(err_namespace_nonnamespace_scope, CLASS_ERROR, (unsigned)diag::Severity::Error, "namespaces can only be defined in global or namespace scope", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(err_no_matching_param, CLASS_ERROR, (unsigned)diag::Severity::Error, "parameter named %0 is missing", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(err_non_public_type, CLASS_ERROR, (unsigned)diag::Severity::Error, "public declaration using non-public type %0", 0, SFINAE_SubstitutionFailure, false, true, 4)
+DIAG(err_non_public_constant, CLASS_ERROR, (unsigned)diag::Severity::Error, "public declaration using non-public constant %0", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(err_not_a_typename, CLASS_ERROR, (unsigned)diag::Severity::Error, "%0 is not a type name", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(err_not_public, CLASS_ERROR, (unsigned)diag::Severity::Error, "symbol %0 is not public", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(err_nsnumber_nonliteral_unary, CLASS_ERROR, (unsigned)diag::Severity::Error, "@%0 must be followed by a number to form an NSNumber object", 0, SFINAE_SubstitutionFailure, false, true, 4)

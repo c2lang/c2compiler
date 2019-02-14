@@ -381,6 +381,7 @@ void ASTBuilder::ActOnModule(const char* name_, SourceLocation loc) {
     ImportDecl* U = new (Context) ImportDecl(name, loc, true, name, SourceLocation());
     U->setType(Context.getModuleType(U));
     U->setUsed();
+    U->setPublic(true);
     ast.addImport(U);
     addSymbol(U);
 }
@@ -424,6 +425,7 @@ void ASTBuilder::ActOnImport(const char* moduleName_, SourceLocation loc, Token&
     MEM_DECL(DECL_IMPORT);
     ImportDecl* U = new (Context) ImportDecl(name, realLoc, isLocal, moduleName, aliasTok.getLocation());
     U->setType(Context.getModuleType(U));
+    U->setPublic(true);
     ast.addImport(U);
     addSymbol(U);
 }

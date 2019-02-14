@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+module test;
+
+const u32 Max = 10;
+
+public func void test1(u32 a = Max) { // @error{public declaration using non-public constant 'test.Max'}
+}
+
