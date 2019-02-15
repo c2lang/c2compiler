@@ -99,6 +99,7 @@ public:
     bool isIncompleteType() const;
     bool isFloatType() const;
     bool isUnsignedType() const;
+    bool isVoidType() const;
 
     bool isConstant() const;    // NOTE: not is const!
 

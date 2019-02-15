@@ -1465,22 +1465,41 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
     LOG_FUNC
     UnaryOperator* unaryop = cast<UnaryOperator>(expr);
     Expr* SubExpr = unaryop->getExpr();
-    QualType LType;
+
+    switch (unaryop->getOpcode()) {
+    case UO_PostInc:
+    case UO_PostDec:
+    case UO_PreInc:
+    case UO_PreDec:
+        side |= LHS;
+        break;
+    case UO_AddrOf:
+    case UO_Deref:
+    case UO_Minus:
+    case UO_Not:
+    case UO_LNot:
+        side |= RHS;
+        break;
+    }
+
+    QualType LType = analyseExpr(SubExpr, side);
+    if (LType.isNull()) return QualType();
+    if (LType.isVoidType()) {
+        Diag(unaryop->getOpLoc(), diag::err_typecheck_unary_expr) << "'void'" << SubExpr->getSourceRange();
+        return QualType();
+    }
+
     // TODO cleanup, always break and do common stuff at end
     switch (unaryop->getOpcode()) {
     case UO_PostInc:
     case UO_PostDec:
     case UO_PreInc:
     case UO_PreDec:
-        LType = analyseExpr(SubExpr, side | LHS);
-        if (LType.isNull()) return 0;
         checkAssignment(SubExpr, LType);
         expr->setType(LType);
         break;
     case UO_AddrOf:
     {
-        LType = analyseExpr(SubExpr, side | RHS);
-        if (LType.isNull()) return 0;
         QualType Q = Context.getPointerType(LType);
         expr->setType(Q);
         expr->setConstant();
@@ -1489,15 +1508,13 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
         return Q;
     }
     case UO_Deref:
-        LType = analyseExpr(SubExpr, side | RHS);
-        if (LType.isNull()) return 0;
         if (!LType.isPointerType()) {
             char typeName[MAX_LEN_TYPENAME];
             StringBuilder buf(MAX_LEN_TYPENAME, typeName);
             LType.DiagName(buf);
             Diag(unaryop->getOpLoc(), diag::err_typecheck_indirection_requires_pointer)
                     << buf;
-            return 0;
+            return QualType();
         } else {
             // TEMP use CanonicalType to avoid Unresolved types etc
             QualType Q = LType.getCanonicalType();
@@ -1508,20 +1525,16 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
         break;
     case UO_Minus:
     case UO_Not:
-        LType = analyseExpr(SubExpr, side | RHS);
         unaryop->setCTC(SubExpr->getCTC());
         if (SubExpr->isConstant()) unaryop->setConstant();
-        if (LType.isNull()) return 0;
         expr->setType(UsualUnaryConversions(SubExpr));
         break;
     case UO_LNot:
         // TODO first cast expr to bool, then invert here, return type bool
         // TODO extract to function
-        LType = analyseExpr(SubExpr, side | RHS);
         // TODO check conversion to bool here!!
         unaryop->setCTC(SubExpr->getCTC());
         // Also set type?
-        if (LType.isNull()) return 0;
         //UsualUnaryConversions(SubExpr);
         LType = Type::Bool();
         expr->setType(LType);

@@ -80,6 +80,14 @@ bool QualType::isUnsignedType() const {
     return false;
 }
 
+bool QualType::isVoidType() const {
+    QualType Canon = getTypePtr()->getCanonicalType();
+    if (BuiltinType* BI = dyncast<BuiltinType>(Canon.getTypePtr())) {
+        return BI->isVoid();
+    }
+    return false;
+}
+
 bool QualType::isArithmeticType() const {
     QualType Canon = getTypePtr()->getCanonicalType();
     if (BuiltinType* BI = dyncast<BuiltinType>(Canon.getTypePtr())) {
