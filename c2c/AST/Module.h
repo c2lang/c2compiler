@@ -52,7 +52,6 @@ public:
     void setExported() { m_isExported = true; }
     bool isLoaded() const { return files.size() != 0; }
 
-    void dump() const;
     void printFiles(StringBuilder& output) const;
     void printSymbols(StringBuilder& output) const;
     void print(StringBuilder& output) const;

@@ -1,0 +1,13 @@
+// @warnings{no-unused}
+module test;
+
+type Type union {
+    u32 x;
+    u32 y;
+    u32 z;
+}
+
+func void test1() {
+    u32 off = offsetof(Type, z);
+}
+

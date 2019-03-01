@@ -1,0 +1,49 @@
+// @warnings{no-unused}
+module test;
+
+type Invalid i32;
+
+type Enum enum u8 { AA }
+
+type S2 struct {
+    u32 a;
+}
+
+type Struct struct {
+    u32 m;
+    struct sub {
+        u32 m2;
+    }
+    struct {
+        u32 m3;
+    }
+    S2 s2;
+}
+
+func void Struct.func1() {}
+
+u32 test1 = 0;
+
+u32 ok1 = offsetof(Struct, m);
+u32 ok2 = offsetof(test.Struct, m);
+u32 ok3 = offsetof(Struct, sub);
+u32 ok4 = offsetof(Struct, sub.m2);
+u32 ok5 = offsetof(Struct, m3);
+u32 ok6 = offsetof(Struct, s2.a);
+
+// lhs
+u32 o1 = offsetof(Invalid, a);      // @error{offsetof requires struct or union type, Invalid invalid}
+u32 o2 = offsetof(Enum, a);         // @error{offsetof requires struct or union type, Enum invalid}
+u32 o3 = offsetof(Unknown, a);      // @error{use of undeclared identifier Unknown}
+u32 o4 = offsetof(unknown.Bar, a);  // @error{use of undeclared identifier unknown}
+u32 o5 = offsetof(test1.Bar, a);    // @error{unknown module: test1}
+u32 o6 = offsetof(test.Unknown, a); // @error{module test has no symbol Unknown}
+
+// rhs
+u32 o7 = offsetof(Struct, unknown);     // @error{no member named 'unknown' in '(struct)Struct'}
+u32 o8 = offsetof(Struct, sub.unknown); // @error{no member named 'unknown' in '(struct)sub'}
+u32 o9 = offsetof(Struct, m.a);         // @error{member reference base type 'u32' is not a structure or union}
+u32 o10 = offsetof(Struct, sub.m2.a);   // @error{member reference base type 'u32' is not a structure or union}
+u32 o11 = offsetof(Struct, func1);      // @error{no member named 'func1' in '(struct)Struct'}
+u32 o12 = offsetof(Struct, s2.b);       // @error{no member named 'b' in '(struct)S2'}
+

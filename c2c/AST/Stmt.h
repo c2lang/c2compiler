@@ -186,7 +186,7 @@ protected:
         friend class BuiltinExpr;
         unsigned : NumExprBits;
 
-        unsigned builtinKind: 2;
+        unsigned builtinKind: 3;
     };
 
     class MemberExprBitfields {

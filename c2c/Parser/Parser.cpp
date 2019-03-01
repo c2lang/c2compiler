@@ -568,7 +568,7 @@ C2::ExprResult Parser::ParseSingleTypeSpecifier(bool allow_qualifier) {
         ConsumeToken();
         break;
     case tok::identifier:
-        base = ParseFullIdentifier();
+        base = ParseFullTypeIdentifier();
         break;
     default:
         Diag(Tok, diag::err_expected_type_spec);
@@ -879,6 +879,8 @@ C2::ExprResult Parser::ParseCastExpression(bool isUnaryExpression,
         return ParseEnumMinMax(true);
     case tok::kw_enum_max:
         return ParseEnumMinMax(false);
+    case tok::kw_offsetof:
+        return ParseOffsetof();
     case tok::kw_cast:
         return ParseExplicitCastExpression();
     case tok::plusplus:      // unary-expression: '++' unary-expression [C99]
@@ -1476,8 +1478,8 @@ C2::ExprResult Parser::ParseSizeof()
     return Actions.ActOnBuiltinExpression(Loc, Res.get(), BuiltinExpr::BUILTIN_SIZEOF);
 }
 
-/// Syntax:
-///  'elemsof' '(' type-name ')'
+// Syntax:
+//  'elemsof' '(' type-name ')'
 C2::ExprResult Parser::ParseElemsof()
 {
     LOG_FUNC
@@ -1519,6 +1521,29 @@ C2::ExprResult Parser::ParseEnumMinMax(bool isMin)
 }
 
 // Syntax:
+//  'offsetof' ( full-identifier, full-identifier )
+C2::ExprResult Parser::ParseOffsetof()
+{
+    LOG_FUNC
+    SourceLocation Loc = ConsumeToken();
+
+    if (ExpectAndConsume(tok::l_paren)) return ExprError();
+
+    ExprResult structExpr = ParseFullIdentifier();
+    if (structExpr.isInvalid()) return ExprError();
+
+    if (ExpectAndConsume(tok::comma)) return ExprError();
+
+    // TODO support array subscripts (ie. offsetof(a, b[3]) )
+    ExprResult memberExpr = ParseFullIdentifier();
+    if (memberExpr.isInvalid()) return ExprError();
+
+    if (ExpectAndConsume(tok::r_paren)) return ExprError();
+
+    return Actions.ActOnOffsetof(Loc, structExpr.get(), memberExpr.get());
+}
+
+// Syntax:
 // identifier
 C2::ExprResult Parser::ParseIdentifier() {
     LOG_FUNC
@@ -1533,6 +1558,35 @@ C2::ExprResult Parser::ParseIdentifier() {
 // identifier
 // identifier.identifier
 C2::ExprResult Parser::ParseFullIdentifier() {
+    LOG_FUNC
+
+    if (Tok.isNot(tok::identifier)) {
+        Diag(Tok, diag::err_expected) << tok::identifier;
+        return ExprError();
+    }
+
+    ExprResult result = ParseIdentifier();
+    if (result.isInvalid()) return ExprError();
+
+    while (Tok.is(tok::period)) {
+        ConsumeToken(); // consume the '.'
+
+        if (Tok.isNot(tok::identifier)) {
+            Diag(Tok, diag::err_expected) << tok::identifier;
+            return ExprError();
+        }
+        ExprResult member = ParseIdentifier();
+        if (member.isInvalid()) return ExprError();
+
+        result = Actions.ActOnMemberExpr(result.get(), member.get());
+    }
+
+    return result;
+}
+
+// identifier
+// identifier.identifier
+C2::ExprResult Parser::ParseFullTypeIdentifier() {
     LOG_FUNC
     assert(Tok.is(tok::identifier) && "Not an identifier!");
 

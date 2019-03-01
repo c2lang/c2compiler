@@ -537,6 +537,7 @@ private:
 //   elemsof(type/var)
 //   enum_min(type/var)
 //   enum_max(type/var)
+//   offsetof(type, var)
 class BuiltinExpr : public Expr {
 public:
     enum BuiltinKind {
@@ -544,15 +545,26 @@ public:
         BUILTIN_ELEMSOF,
         BUILTIN_ENUM_MIN,
         BUILTIN_ENUM_MAX,
+        BUILTIN_OFFSETOF,
     };
     static const char* Str(BuiltinKind kind);
 
     BuiltinExpr(SourceLocation loc_, Expr* expr_, BuiltinKind kind_)
         : Expr(EXPR_BUILTIN, loc_, true)
         , expr(expr_)
+        , member(0)
         , value(64, false)
     {
         builtinExprBits.builtinKind = kind_;
+        setCTC(CTC_FULL);
+    }
+    BuiltinExpr(SourceLocation loc_, Expr* structExpr_, Expr* memberExpr_)
+        : Expr(EXPR_BUILTIN, loc_, true)
+        , expr(structExpr_)
+        , member(memberExpr_)
+        , value(64, false)
+    {
+        builtinExprBits.builtinKind = BUILTIN_OFFSETOF;
         setCTC(CTC_FULL);
     }
     static bool classof(const Expr* E) {
@@ -561,6 +573,8 @@ public:
     void print(StringBuilder& buffer, unsigned indent) const;
 
     Expr* getExpr() const { return expr; }
+    Expr* getMember() const { return member; }
+
     BuiltinKind getBuiltinKind() const {
         return static_cast<BuiltinKind>(builtinExprBits.builtinKind);
     }
@@ -572,6 +586,7 @@ public:
     }
 private:
     Expr* expr;
+    Expr* member;     // only for offsetof. Identifier/Member expr
     llvm::APSInt value;
 };
 

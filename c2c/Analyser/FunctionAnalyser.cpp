@@ -1186,6 +1186,146 @@ QualType FunctionAnalyser::analyseEnumMinMaxExpr(BuiltinExpr* B, bool isMin) {
     return decl->getType();
 }
 
+QualType FunctionAnalyser::findStructMember(QualType T, IdentifierExpr* member) {
+    assert(T.isStructType());
+    LOG_FUNC;
+
+    const StructType* ST = cast<StructType>(T);
+    StructTypeDecl* S = ST->getDecl();
+
+    Decl* match = S->findMember(member->getName());
+    if (!match) {
+        char temp1[MAX_LEN_TYPENAME];
+        StringBuilder buf1(MAX_LEN_TYPENAME, temp1);
+        T->DiagName(buf1);
+
+        char temp2[MAX_LEN_VARNAME];
+        StringBuilder buf2(MAX_LEN_VARNAME, temp2);
+        buf2 << '\'' << member->getName() << '\'';
+        Diag(member->getLocation(), diag::err_no_member) << temp2 << temp1;
+        return QualType();
+
+    }
+
+    IdentifierExpr::RefType ref = IdentifierExpr::REF_STRUCT_MEMBER;
+
+    // NOTE: access of struct-function is not a dereference
+    // TODO
+    //if (CurrentFunction->getModule() != S->getModule() && S->hasAttribute(ATTR_OPAQUE)) {
+    //    Diag(S->getLocation(), diag::err_deref_opaque) << S->isStruct() << S->DiagName();
+    //   return QualType();
+    //}
+
+    match->setUsed();
+    member->setDecl(match, ref);
+    member->setType(match->getType());
+    return match->getType();
+}
+
+void FunctionAnalyser::analyseOffsetof(BuiltinExpr* B) {
+    LOG_FUNC
+
+    Expr* structExpr = B->getExpr();
+    Decl* structDecl = 0;
+    IdentifierExpr* I = dyncast<IdentifierExpr>(structExpr);
+    if (I) {
+        structDecl = analyseIdentifier(I);
+        if (!structDecl) return;
+    } else {    // MemberExpr: module.StructType
+        assert(isa<memberExpr>(structExpr));
+        MemberExpr* M = cast<MemberExpr>(structExpr);
+        Expr* base = M->getBase();
+        IdentifierExpr* B = dyncast<IdentifierExpr>(base);
+        assert(B);  // Don't allow substructs as type
+        Decl* D = analyseIdentifier(B);
+        if (!D) return;
+
+        ImportDecl* ID = dyncast<ImportDecl>(D);
+        if (!ID) {
+            Diag(B->getLocation(), diag::err_unknown_module) << B->getName() << B->getSourceRange();
+            return;
+        }
+        M->setModulePrefix();
+        I = M->getMember();
+        structDecl = scope.findSymbolInModule(I->getName(), I->getLocation(), ID->getModule());
+        if (!structDecl) return;
+
+        M->setDecl(structDecl);
+        M->setType(D->getType());
+        SetConstantFlags(structDecl, M);
+        QualType Q = structDecl->getType();
+        I->setType(Q);
+        I->setDecl(structDecl, globalDecl2RefType(structDecl));
+    }
+    structDecl->setUsed();
+
+    StructTypeDecl* std = dyncast<StructTypeDecl>(structDecl);
+    if (!std) {
+        Diag(I->getLocation(), diag::err_offsetof_non_struct_union) << I->getName();
+        return;
+    }
+    //scope.checkAccess(std, structExpr->getLocation());
+    const Module* currentModule = 0;
+    if (CurrentFunction) CurrentFunction->getModule();
+    if (CurrentVarDecl) CurrentVarDecl->getModule();
+    assert(currentModule);
+    if (currentModule != std->getModule() && std->hasAttribute(ATTR_OPAQUE)) {
+        Diag(structExpr->getLocation(), diag::err_deref_opaque) << std->isStruct() << std->DiagName() << structExpr->getSourceRange();
+        return;
+    }
+    analyseStructMemberOffset(B, std, B->getMember());
+}
+
+Decl* FunctionAnalyser::analyseStructMemberOffset(BuiltinExpr* expr, StructTypeDecl* S, Expr* member) {
+    LOG_FUNC
+
+    IdentifierExpr* I = dyncast<IdentifierExpr>(member);
+    if (I) {
+        Decl *field = S->findMember(I->getName());
+        if (!field) {
+            outputStructDiagnostics(S->getType(), I, diag::err_no_member);
+            return 0;
+        }
+        field->setUsed();
+        I->setType(field->getType());
+        I->setDecl(field, IdentifierExpr::REF_STRUCT_MEMBER);
+        return field;
+    }
+
+    assert(isa<MemberExpr>(member));
+    MemberExpr* M = cast<MemberExpr>(member);
+
+    Decl* subStruct = analyseStructMemberOffset(expr, S, M->getBase());
+    if (!subStruct) return 0;
+    StructTypeDecl* sub = dyncast<StructTypeDecl>(subStruct);
+    if (!sub) {
+        // Can also be variable of another struct type
+        VarDecl* var = dyncast<VarDecl>(subStruct);
+        if (var) {
+            QualType T = var->getType();
+            if (T.isStructType()) {
+                const StructType* ST = cast<StructType>(T);
+                sub = ST->getDecl();
+            }
+        }
+
+        if (!sub) {
+            StringBuilder buf(MAX_LEN_TYPENAME);
+            QualType LType = subStruct->getType();
+            LType.DiagName(buf);
+            Diag(M->getLocation(), diag::err_typecheck_member_reference_struct_union)
+                    << buf << M->getSourceRange() << M->getMember()->getLocation();
+            return 0;
+        }
+    }
+    Decl* field = analyseStructMemberOffset(expr, sub, M->getMember());
+    if (field) {
+        M->setDecl(field);
+        M->setType(field->getType());
+    }
+    return field;
+}
+
 // sets ArrayType sizes recursively if sizeExpr is constant
 // NOTE: doesn't check any initExpr itself
 void FunctionAnalyser::analyseArrayType(VarDecl* V, QualType T) {
@@ -1557,6 +1697,9 @@ QualType FunctionAnalyser::analyseBuiltinExpr(Expr* expr) {
         return analyseEnumMinMaxExpr(B, true);
     case BuiltinExpr::BUILTIN_ENUM_MAX:
         return analyseEnumMinMaxExpr(B, false);
+    case BuiltinExpr::BUILTIN_OFFSETOF:
+        analyseOffsetof(B);
+        break;
     }
 
     return Type::UInt32();

@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+type Struct struct {
+    i32 x;
+}
+
+func void test1(Struct* s) {
+    u32 off = offsetof(Struct);     // @error{expected ','}
+}
+

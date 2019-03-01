@@ -101,6 +101,8 @@ void CCodeGenerator::generate(bool printCode, const std::string& outputDir) {
     out << '\n';
     out << "#ifdef __cplusplus\nextern \"C\" {\n#endif\n\n";
     out << "#define NULL ((void*)0)\n";
+    out << "#define offsetof(TYPE, MEMBER) ((unsigned long) &((TYPE *)0)->MEMBER)\n";
+
     out << '\n';
     // NOTE: 64-bit only for now
     out << "typedef signed char int8_t;\n";
@@ -373,6 +375,14 @@ void CCodeGenerator::EmitBuiltinExpr(const Expr* E, StringBuilder& output) {
     case BuiltinExpr::BUILTIN_ENUM_MIN:
     case BuiltinExpr::BUILTIN_ENUM_MAX:
         output.number(10, B->getValue().getSExtValue());
+        break;
+    case BuiltinExpr::BUILTIN_OFFSETOF:
+        // TODO need to include <stddef.h>
+        output << "offsetof(";
+        EmitExpr(B->getExpr(), output);
+        output << ", ";
+        EmitExpr(B->getMember(), output);
+        output << ')';
         break;
     }
 }

@@ -130,6 +130,7 @@ public:
     EnumConstantDecl* ActOnEnumConstant(EnumTypeDecl* Enum, IdentifierInfo* symII, SourceLocation symLoc, Expr* Value);
     ExprResult ActOnTypeQualifier(ExprResult R, unsigned qualifier);
     ExprResult ActOnBuiltinExpression(SourceLocation Loc, Expr* expr, BuiltinExpr::BuiltinKind kind_);
+    ExprResult ActOnOffsetof(SourceLocation Loc, Expr* structExpr, Expr* memberExpr);
     ExprResult ActOnArraySubScriptExpr(SourceLocation RLoc, Expr* Base, Expr* Idx);
     ExprResult ActOnMemberExpr(Expr* Base, Expr* member);
     ExprResult ActOnPostfixUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Expr* Input);

@@ -113,8 +113,10 @@ private:
     ExprResult ParseSizeof();
     ExprResult ParseElemsof();
     ExprResult ParseEnumMinMax(bool isMin);
+    ExprResult ParseOffsetof();
     ExprResult ParseIdentifier();
     ExprResult ParseFullIdentifier();
+    ExprResult ParseFullTypeIdentifier();
     ExprResult ParseAsmStringLiteral();
 
   //===--------------------------------------------------------------------===//

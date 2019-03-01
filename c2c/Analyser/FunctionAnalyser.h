@@ -93,6 +93,7 @@ private:
     QualType analyseBuiltinExpr(Expr* expr);
     QualType analyseArraySubscript(Expr* expr, unsigned side);
     QualType analyseMemberExpr(Expr* expr, unsigned side);
+    Decl* analyseStructMemberOffset(BuiltinExpr* expr, StructTypeDecl* S, Expr* member);
     QualType analyseStructMember(QualType T, MemberExpr* M, unsigned side, bool isStatic);
     bool exprIsType(const Expr* E) const;
     QualType analyseParenExpr(Expr* expr);
@@ -119,6 +120,8 @@ private:
     bool analyseSizeOfExpr(BuiltinExpr* expr);
     QualType analyseElemsOfExpr(BuiltinExpr* B);
     QualType analyseEnumMinMaxExpr(BuiltinExpr* B, bool isMin);
+    QualType findStructMember(QualType T, IdentifierExpr* I);
+    void analyseOffsetof(BuiltinExpr* expr);
     void analyseArrayType(VarDecl* V, QualType T);
     void analyseArraySizeExpr(ArrayType* AT);
 

@@ -664,6 +664,11 @@ void BuiltinExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.number(10, value.getSExtValue());
     buffer << '\n';
     expr->print(buffer, indent + INDENT);
+    if (getBuiltinKind() == BUILTIN_OFFSETOF) {
+        buffer.indent(indent + INDENT);
+        buffer << "Member: \n";
+        member->print(buffer, indent + INDENT);
+    }
 }
 
 const char* BuiltinExpr::Str(BuiltinExpr::BuiltinKind kind) {
@@ -672,6 +677,7 @@ const char* BuiltinExpr::Str(BuiltinExpr::BuiltinKind kind) {
     case BUILTIN_ELEMSOF:       return "elemsof";
     case BUILTIN_ENUM_MIN:      return "enum_min";
     case BUILTIN_ENUM_MAX:      return "enum_max";
+    case BUILTIN_OFFSETOF:      return "offsetof";
     }
     return "";
 }
