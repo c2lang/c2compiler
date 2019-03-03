@@ -728,53 +728,56 @@ llvm::Value* CodeGenFunction::EmitBinaryOperator(const BinaryOperator* B) {
 
     // Note that I'm not sure whether this is good.
     // Basically at this point the AST still code lite i32-expr * f32-expr
-    // Instead of doing a (desperate) cast here, I think the AST
+    // Instead of doing a (desperate) cast here, The AST
     // should have generated all implicit casts already.
-    // At that point this method can completely go away.
+    // At that point this method will completely go away.
     promoteCast(&L, B->getLHS()->getType(), &R, B->getRHS()->getType());
+
+    // At this point this is not quite correct due to implicits casts not done in the AST.
+    bool is_float = B->getLHS()->getType().isFloatType();
+    bool is_unsigned_int = !is_float && B->getLHS()->getType().isUnsignedType();
 
     switch (B->getOpcode()) {
     case BINOP_Mul:
-        return L->getType()->isFloatingPointTy()
-               ? Builder.CreateFMul(L, R, "fmul")
-               : Builder.CreateMul(L, R, "mul");
+        return is_float ? Builder.CreateFMul(L, R, "") : Builder.CreateMul(L, R, "");
     case BINOP_Div:
-        TODO;
-        break;
+        if (is_float) return Builder.CreateFDiv(L, R, "");
+        return is_unsigned_int ? Builder.CreateUDiv(L, R, "") : Builder.CreateSDiv(L, R, "");
     case BINOP_Rem:
-        // (a) Handle this for floats as well
-        // (b) Handle this for unsigned
-        return Builder.CreateSRem(L, R, "rem");
+        if (is_float) return Builder.CreateFRem(L, R, "");
+        return is_unsigned_int ? Builder.CreateURem(L, R, "") : Builder.CreateSRem(L, R, "");
     case BINOP_Add:
-        return L->getType()->isFloatingPointTy()
+        return is_float
                ? Builder.CreateFAdd(L, R, "fadd")
                : Builder.CreateAdd(L, R, "add");
     case BINOP_Sub:
-        return L->getType()->isFloatingPointTy()
+        return is_float
                ? Builder.CreateFSub(L, R, "fsub")
                : Builder.CreateSub(L, R, "sub");
     case BINOP_Shl:
+        assert(!is_float);
+        return Builder.CreateShl(L, R, "");
     case BINOP_Shr:
-        TODO;
-        break;
+        assert(!is_float);
+        return is_unsigned_int ? Builder.CreateLShr(L, R, "") : Builder.CreateAShr(L, R, "");
     case BINOP_LT:
-        // Check signed here.
-        return L->getType()->isFloatingPointTy()
-               ? Builder.CreateICmpULT(L, R, "icmp")
-               : Builder.CreateFCmpULT(L, R, "fcmpult");
+        if (is_float) return Builder.CreateFCmpOLT(L, R, "");
+        return is_unsigned_int ? Builder.CreateICmpULT(L, R) : Builder.CreateICmpSLT(L, R);
     case BINOP_GT:
-        // TODO UGT for unsigned, SGT for signed?
-        return Builder.CreateICmpSGT(L, R, "cmp");
-        //return Builder.CreateICmpUGT(L, R, "cmp");
+        if (is_float) return Builder.CreateFCmpOGT(L, R, "");
+        return is_unsigned_int ? Builder.CreateICmpUGT(L, R) : Builder.CreateICmpSGT(L, R);
     case BINOP_LE:
-        return Builder.CreateICmpULE(L, R, "cmp");
+        if (is_float) return Builder.CreateFCmpOLE(L, R, "");
+        return is_unsigned_int ? Builder.CreateICmpULE(L, R) : Builder.CreateICmpSLE(L, R);
     case BINOP_GE:
-        return Builder.CreateICmpUGE(L, R, "cmp");
+        if (is_float) return Builder.CreateFCmpOGE(L, R, "");
+        return is_unsigned_int ? Builder.CreateICmpUGE(L, R) : Builder.CreateICmpSGE(L, R);
     case BINOP_EQ:
-        return Builder.CreateICmpEQ(L, R, "eq");
+        return is_float ? Builder.CreateFCmpOEQ(L, R, "") : Builder.CreateICmpEQ(L, R);
     case BINOP_NE:
-        return Builder.CreateICmpNE(L, R, "neq");
+        return is_float ? Builder.CreateFCmpONE(L, R, "") : Builder.CreateICmpNE(L, R);
     case BINOP_And:
+        assert(!is_float);
         return Builder.CreateAnd(L, R, "and");
     case BINOP_Xor:
         return Builder.CreateXor(L, R, "xor");
@@ -812,17 +815,22 @@ llvm::Value* CodeGenFunction::EmitBinaryOperator(const BinaryOperator* B) {
 llvm::Value* CodeGenFunction::EmitUnaryOperator(const UnaryOperator* unaryOperator) {
     LOG_FUNC
     Expr *expression = unaryOperator->getExpr();
+
+    // At this point this is not quite correct due to implicits casts not done in the AST yet.
+    bool is_float = expression->getType().isFloatType();
+
     switch (unaryOperator->getOpcode()) {
         case UO_Not:
             return Builder.CreateNot(EmitExpr(expression), "not");
         case UO_Minus:
-            return expression->isFloat()
-                   ? Builder.CreateFNeg(EmitExpr(expression), "fneg")
-                   : Builder.CreateNeg(EmitExpr(expression), "neg");
+            assert(!is_unsigned_int);
+            return is_float
+                ? Builder.CreateFNeg(EmitExpr(expression), "fneg")
+                : Builder.CreateNeg(EmitExpr(expression), "neg");
         case UO_LNot:
         {
             Value *rhs = EmitExpr(expression);
-            return expression->isFloat()
+            return is_float
                    ? Builder.CreateFCmp(CmpInst::Predicate::FCMP_OEQ, rhs,
                                         llvm::ConstantFP::get(rhs->getType(), 0.0))
                    : Builder.CreateICmp(CmpInst::Predicate::ICMP_EQ, EmitExpr(expression),
