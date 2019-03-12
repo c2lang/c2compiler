@@ -29,12 +29,14 @@ class FileAnalyser;
 class AST;
 class ASTContext;
 class Component;
+class TargetInfo;
 
 class ComponentAnalyser {
 public:
     ComponentAnalyser(Component& C,
                       const Modules& modules_,
                       c2lang::DiagnosticsEngine& Diags_,
+                      const TargetInfo& target_,
                       ASTContext& context_,
                       bool verbose_);
     ~ComponentAnalyser();

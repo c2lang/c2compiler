@@ -32,7 +32,7 @@ class TargetInfo {
 public:
 	virtual ~TargetInfo();
 
-    enum Arch { ARCH_UNKNOWN, ARCH_I686, ARCH_X86_64, ARCH_ARM };
+    enum Arch { ARCH_UNKNOWN, ARCH_I686, ARCH_ARM, ARCH_X86_64, ARCH_ARM_64 };
     enum System { SYS_UNKNOWN, SYS_LINUX, SYS_DARWIN, SYS_CYGWIN };
     enum Vendor { VENDOR_UNKNOWN, VENDOR_APPLE };
     enum Abi { ABI_UNKNOWN, ABI_GNU, ABI_GNUEABI, ABI_MACHO, ABI_WIN32 };
@@ -160,6 +160,8 @@ public:
     bool validateOutputConstraint(ConstraintInfo& Info) const;
     //bool validateInputConstraint(MutableArrayRef<ConstaintInfo> OutputConstraints, ConstraintInfo& Info) const;
     bool validateInputConstraint(ConstraintInfo& Info) const;
+private:
+    void init();
 #if 0
 protected:
 	TargetInfo(const llvm::Triple& T);

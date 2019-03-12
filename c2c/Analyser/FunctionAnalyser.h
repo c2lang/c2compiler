@@ -47,6 +47,7 @@ class MemberExpr;
 class CallExpr;
 class BuiltinExpr;
 class ASTContext;
+class TargetInfo;
 
 
 constexpr size_t MAX_STRUCT_INDIRECTION_DEPTH = 256;
@@ -57,6 +58,7 @@ public:
                     TypeResolver& typeRes_,
                     ASTContext& context_,
                     c2lang::DiagnosticsEngine& Diags_,
+                    const TargetInfo& target_,
                     bool isInterface_);
 
     void check(FunctionDecl* F);
@@ -166,6 +168,7 @@ private:
     ExprTypeAnalyser EA;
 
     c2lang::DiagnosticsEngine& Diags;
+    const TargetInfo& target;
 
     FunctionDecl* CurrentFunction;
     VarDecl* CurrentVarDecl;

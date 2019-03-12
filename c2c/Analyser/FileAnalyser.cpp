@@ -41,13 +41,13 @@ using namespace llvm;
 #endif
 
 FileAnalyser::FileAnalyser(const Module& module_, const Modules& modules,
-                           DiagnosticsEngine& Diags_, AST& ast_, bool verbose_)
+                           DiagnosticsEngine& Diags_, const TargetInfo& target_, AST& ast_, bool verbose_)
     : ast(ast_)
     , module(module_)
     , globals(new Scope(ast_.getModuleName(), modules, Diags_))
     , TR(new TypeResolver(*globals, Diags_, ast.getASTContext()))
     , Diags(Diags_)
-    , functionAnalyser(*globals, *TR, ast.getASTContext(), Diags_, ast.isInterface())
+    , functionAnalyser(*globals, *TR, ast.getASTContext(), Diags_, target_, ast.isInterface())
     , verbose(verbose_)
 {}
 

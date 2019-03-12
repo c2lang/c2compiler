@@ -368,7 +368,7 @@ int C2Builder::build() {
     t1_analyse = Utils::getCurrentTime();
     for (unsigned c=0; c<components.size(); c++) {
         if (options.verbose) log(COL_VERBOSE, "analysing component %s", components[c]->getName().c_str());
-        ComponentAnalyser analyser(*components[c], modules, Diags, context, options.verbose);
+        ComponentAnalyser analyser(*components[c], modules, Diags, targetInfo, context, options.verbose);
         errors += analyser.analyse(options.printAST1, options.printAST2, options.printAST3, options.printASTLib);
     }
     t2_analyse = Utils::getCurrentTime();

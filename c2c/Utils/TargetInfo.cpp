@@ -35,8 +35,9 @@ struct ArchList {
 static ArchList archList[] = {
     { TargetInfo::ARCH_UNKNOWN,   "unknown" },
     { TargetInfo::ARCH_I686,      "i686" },
-    { TargetInfo::ARCH_X86_64,    "x86_64" },
     { TargetInfo::ARCH_ARM,       "arm" },
+    { TargetInfo::ARCH_X86_64,    "x86_64" },
+    { TargetInfo::ARCH_ARM_64,    "arm_64" },
 };
 
 //TargetInfo::TargetInfo(const llvm::Triple& T)
@@ -173,6 +174,7 @@ void TargetInfo::getNative(TargetInfo& info) {
         fprintf(stderr, "unsupported arch: %s\n", un.machine);
         exit(EXIT_FAILURE);
     }
+    info.init();
 }
 
 bool TargetInfo::fromString(TargetInfo& info, const std::string& triple) {
@@ -224,6 +226,7 @@ bool TargetInfo::fromString(TargetInfo& info, const std::string& triple) {
         fprintf(stderr, "unsupported ABI: %s\n", abi_str);
         return false;
     }
+    info.init();
     return true;
 }
 
@@ -314,5 +317,21 @@ bool TargetInfo::validateOutputConstraint(ConstraintInfo& Info) const
 bool TargetInfo::validateInputConstraint(ConstraintInfo& Info) const
 {
     return true;
+}
+
+void TargetInfo::init() {
+    switch (arch) {
+    case ARCH_UNKNOWN:
+        intWidth = 64;
+        break;
+    case ARCH_I686:
+    case ARCH_ARM:
+        intWidth = 32;
+        break;
+    case ARCH_X86_64:
+    case ARCH_ARM_64:
+        intWidth = 64;
+        break;
+    }
 }
 

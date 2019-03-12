@@ -28,6 +28,7 @@ using namespace C2;
 ComponentAnalyser::ComponentAnalyser(Component& C,
                                      const Modules& modules_,
                                      c2lang::DiagnosticsEngine& Diags_,
+                                     const TargetInfo& target_,
                                      ASTContext& context_,
                                      bool verbose_)
     : Diags(Diags_)
@@ -39,7 +40,7 @@ ComponentAnalyser::ComponentAnalyser(Component& C,
         const Module* M = mods[m];
         const AstList& files = M->getFiles();
         for (unsigned f=0; f<files.size(); f++) {
-            analysers.push_back(new FileAnalyser(*M, modules_, Diags, *files[f], verbose));
+            analysers.push_back(new FileAnalyser(*M, modules_, Diags, target_, *files[f], verbose));
         }
     }
 }

@@ -41,6 +41,7 @@ class StructTypeDecl;
 class ArrayValueDecl;
 class AST;
 class TypeResolver;
+class TargetInfo;
 
 typedef std::vector<FunctionDecl*> StructFunctionEntries;
 typedef std::map<StructTypeDecl*, StructFunctionEntries> StructFunctionList;
@@ -66,8 +67,12 @@ enum class FileAnalyserPass {
 
 class FileAnalyser {
 public:
-    FileAnalyser(const Module& module_, const Modules& modules,
-                 c2lang::DiagnosticsEngine& Diags_, AST& ast_, bool verbose);
+    FileAnalyser(const Module& module_,
+                 const Modules& modules,
+                 c2lang::DiagnosticsEngine& Diags_,
+                 const TargetInfo& target_,
+                 AST& ast_,
+                 bool verbose);
     ~FileAnalyser() {}
 
     void printAST(bool printInterface) const;

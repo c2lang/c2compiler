@@ -28,6 +28,7 @@ class Expr;
 class ExplicitCastExpr;
 class BinaryOperator;
 class QualType;
+class TargetInfo;
 
 /*
  *  ExprTypeAnalyser checks each sub-expression that is CTC_FULL or
@@ -38,7 +39,7 @@ class QualType;
 */
 class ExprTypeAnalyser {
 public:
-    ExprTypeAnalyser(c2lang::DiagnosticsEngine& Diags_);
+    ExprTypeAnalyser(c2lang::DiagnosticsEngine& Diags_, const TargetInfo& target_);
 
     void check(QualType Tleft, const Expr* expr);
     bool checkExplicitCast(const ExplicitCastExpr* cast, QualType TLeft, QualType TRight);
@@ -50,6 +51,7 @@ private:
     bool checkBuiltin(QualType left, QualType right, const Expr* expr, bool first) const;
     bool checkPointer(QualType left, QualType right, const Expr* expr) const;
     bool checkFunction(QualType left, const Expr* expr) const;
+    bool checkWidth(QualType type, c2lang::SourceLocation loc, int msg);
 
     bool checkNonPointerCast(const ExplicitCastExpr* expr, QualType DestType, QualType SrcType);
     bool checkBuiltinCast(const ExplicitCastExpr* expr, QualType DestType, QualType SrcType);
@@ -57,6 +59,7 @@ private:
     bool checkFunctionCast(const ExplicitCastExpr* expr, QualType DestType, QualType SrcType);
 
     c2lang::DiagnosticsEngine& Diags;
+    const TargetInfo& target;
 
     ExprTypeAnalyser(const ExprTypeAnalyser&);
     ExprTypeAnalyser& operator= (const ExprTypeAnalyser&);

@@ -28,6 +28,7 @@
 #include "Analyser/AnalyserConstants.h"
 #include "AST/Expr.h"
 #include "Utils/color.h"
+#include "Utils/TargetInfo.h"
 #include "Utils/StringBuilder.h"
 
 using namespace C2;
@@ -92,12 +93,14 @@ FunctionAnalyser::FunctionAnalyser(Scope& scope_,
                                    TypeResolver& typeRes_,
                                    ASTContext& context_,
                                    c2lang::DiagnosticsEngine& Diags_,
+                                   const TargetInfo& target_,
                                    bool isInterface_)
     : scope(scope_)
     , TR(typeRes_)
     , Context(context_)
-    , EA(Diags_)
+    , EA(Diags_, target_)
     , Diags(Diags_)
+    , target(target_)
     , CurrentFunction(0)
     , CurrentVarDecl(0)
     , constDiagID(0)
@@ -2468,8 +2471,7 @@ QualType FunctionAnalyser::UsualUnaryConversions(Expr* expr) const {
     }
 
     if (canon->isPointerType()) {
-        // TODO use TargetInfo to check if 32-bit
-        return Type::UInt64();
+        return (target.intWidth == 64) ? Type::UInt64() : Type::UInt32();
     }
 
     return expr->getType();

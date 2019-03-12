@@ -24,6 +24,7 @@
 #include "AST/Expr.h"
 #include "AST/Type.h"
 #include "Utils/StringBuilder.h"
+#include "Utils/TargetInfo.h"
 #include "Utils/Errors.h"
 
 using namespace C2;
@@ -66,8 +67,9 @@ static int type_conversions[14][14] = {
 
 
 
-ExprTypeAnalyser::ExprTypeAnalyser(c2lang::DiagnosticsEngine& Diags_)
+ExprTypeAnalyser::ExprTypeAnalyser(c2lang::DiagnosticsEngine& Diags_, const TargetInfo& target_)
     : Diags(Diags_)
+    , target(target_)
 {}
 
 void ExprTypeAnalyser::check(QualType TLeft, const Expr* expr) {
@@ -155,27 +157,11 @@ bool ExprTypeAnalyser::checkExplicitCast(const ExplicitCastExpr* expr, QualType 
             // allow all pointer casts
             return true;
         } else {
-            // only allow cast to pointer from uint32/64 (pointer size)
-            const BuiltinType* BT = dyncast<BuiltinType>(SrcType.getCanonicalType());
-            // TODO use TargetInfo to check if 32-bit
-            if (BT && BT->getKind() == BuiltinType::UInt64) return true;
-
-            QualType expected = Type::UInt64();
-            StringBuilder buf1(MAX_LEN_TYPENAME);
-            expected.DiagName(buf1);
-            Diags.Report(expr->getLocation(), diag::err_cast_nonword_to_pointer) << buf1;
+            return checkWidth(SrcType.getCanonicalType(), expr->getLocation(), diag::err_cast_nonword_to_pointer);
         }
     } else {
         if (SrcType.isPointerType()) {
-            // only allow cast to uint32/64 (pointer size)
-            const BuiltinType* BT = dyncast<BuiltinType>(DestType.getCanonicalType());
-            // TODO use TargetInfo to check if 32-bit
-            if (BT && BT->getKind() == BuiltinType::UInt64) return true;
-
-            QualType expected = Type::UInt64();
-            StringBuilder buf1(MAX_LEN_TYPENAME);
-            expected.DiagName(buf1);
-            Diags.Report(expr->getLocation(), diag::err_cast_pointer_to_nonword) << buf1;
+            return checkWidth(DestType.getCanonicalType(), expr->getLocation(), diag::err_cast_pointer_to_nonword);
         } else {
             // check non-pointer to non-pointer type
             // TODO make this top level function? (switch on src-type)
@@ -273,8 +259,8 @@ bool ExprTypeAnalyser::checkBuiltinCast(const ExplicitCastExpr* expr, QualType D
         return false;
     case TC_FUNCTION:
         // only allow if uint32/64 (ptr size)
-        // TODO use TargetInfo to check if 32-bit
-        if (Right->getKind() != BuiltinType::UInt64) {
+        if (((target.intWidth == 64) && (Right->getKind() != BuiltinType::UInt64)) ||
+            ((target.intWidth == 32) && (Right->getKind() != BuiltinType::UInt32))) {
             StringBuilder buf1(MAX_LEN_TYPENAME);
             SrcType.DiagName(buf1);
             StringBuilder buf2(MAX_LEN_TYPENAME);
@@ -322,20 +308,8 @@ bool ExprTypeAnalyser::checkEnumCast(const ExplicitCastExpr* expr, QualType Dest
 bool ExprTypeAnalyser::checkFunctionCast(const ExplicitCastExpr* expr, QualType DestType, QualType SrcType) {
     switch (DestType->getTypeClass()) {
     case TC_BUILTIN:
-    {
-        // TODO duplicate code
-        // only allow cast to uint32/64 (pointer size)
-        const BuiltinType* BT = dyncast<BuiltinType>(DestType.getCanonicalType());
-        // TODO use TargetInfo to check if 32-bit
-        if (BT && BT->getKind() == BuiltinType::UInt64) return true;
-
-        QualType expected = Type::UInt64();
-        StringBuilder buf1(MAX_LEN_TYPENAME);
-        expected.DiagName(buf1);
         // TODO use  warn_int_to_void_pointer_cast, remove err_cast_pointer_to_nonword
-        Diags.Report(expr->getLocation(), diag::err_cast_pointer_to_nonword) << buf1;
-        return false;
-    }
+        return checkWidth(DestType.getCanonicalType(), expr->getLocation(), diag::err_cast_pointer_to_nonword);
     case TC_POINTER:
     case TC_ARRAY:
     case TC_UNRESOLVED:
@@ -557,6 +531,21 @@ bool ExprTypeAnalyser::checkFunction(QualType L, const Expr* expr) const {
     // TODO compare
 #endif
     return true;
+}
+
+bool ExprTypeAnalyser::checkWidth(QualType type, SourceLocation loc, int msg) {
+    // only allow cast to pointer from uint32/64 (pointer size)
+    const BuiltinType* BT = dyncast<BuiltinType>(type);
+    if (BT) {
+        if (target.intWidth == 32 && BT->getKind() == BuiltinType::UInt32) return true;
+        if (target.intWidth == 64 && BT->getKind() == BuiltinType::UInt64) return true;
+    }
+
+    QualType expected = target.intWidth == 64 ? Type::UInt64() : Type::UInt32();
+    StringBuilder buf1(MAX_LEN_TYPENAME);
+    expected.DiagName(buf1);
+    Diags.Report(loc, msg) << buf1;
+    return false;
 }
 
 void ExprTypeAnalyser::error(SourceLocation loc, QualType left, QualType right) const {
