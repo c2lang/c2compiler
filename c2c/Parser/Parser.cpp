@@ -349,10 +349,12 @@ void Parser::ParseEnumType(const char* id, SourceLocation idLoc, bool is_public)
     case tok::kw_u16:
     case tok::kw_u32:
     case tok::kw_u64:
+    case tok::kw_usize:
     case tok::kw_i8:
     case tok::kw_i16:
     case tok::kw_i32:
     case tok::kw_i64:
+    case tok::kw_isize:
     case tok::kw_char:
     case tok::kw_bool:
         implType = Actions.ActOnBuiltinType(Tok.getKind());
@@ -555,10 +557,12 @@ C2::ExprResult Parser::ParseSingleTypeSpecifier(bool allow_qualifier) {
     case tok::kw_u16:
     case tok::kw_u32:
     case tok::kw_u64:
+    case tok::kw_usize:
     case tok::kw_i8:
     case tok::kw_i16:
     case tok::kw_i32:
     case tok::kw_i64:
+    case tok::kw_isize:
     case tok::kw_f32:
     case tok::kw_f64:
     case tok::kw_char:
@@ -1333,10 +1337,12 @@ bool Parser::isDeclaration() {
     case tok::kw_u16:
     case tok::kw_u32:
     case tok::kw_u64:
+    case tok::kw_usize:
     case tok::kw_i8:
     case tok::kw_i16:
     case tok::kw_i32:
     case tok::kw_i64:
+    case tok::kw_isize:
     case tok::kw_f32:
     case tok::kw_f64:
     case tok::kw_void:
@@ -1451,10 +1457,12 @@ C2::ExprResult Parser::ParseSizeof()
     case tok::kw_u16:
     case tok::kw_u32:
     case tok::kw_u64:
+    case tok::kw_usize:
     case tok::kw_i8:
     case tok::kw_i16:
     case tok::kw_i32:
     case tok::kw_i64:
+    case tok::kw_isize:
     case tok::kw_f32:
     case tok::kw_f64:
     case tok::kw_void:
@@ -1736,10 +1744,12 @@ C2::StmtResult Parser::ParseStatement() {
     case tok::kw_u16:
     case tok::kw_u32:
     case tok::kw_u64:
+    case tok::kw_usize:
     case tok::kw_i8:
     case tok::kw_i16:
     case tok::kw_i32:
     case tok::kw_i64:
+    case tok::kw_isize:
     case tok::kw_f32:
     case tok::kw_f64:
     case tok::kw_void:

@@ -24,7 +24,7 @@ class Module;
 
 class C2ModuleLoader {
 public:
-    static void load(Module* c2mod);
+    static void load(Module* c2mod, bool is32bit);
 };
 
 }

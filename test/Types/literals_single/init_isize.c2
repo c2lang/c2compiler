@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+module test;
+
+func void test1() {
+    isize a = 0;
+    isize b = -9223372036854775807;
+    isize c = 9223372036854775807;
+}
+

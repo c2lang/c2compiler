@@ -39,15 +39,15 @@ static CTypes ctypes[] = {
     { "c_uint",      Type::UInt32() },
     { "c_long",      Type::Int64() },
     { "c_ulong",     Type::UInt64() },
-    { "c_size",      Type::UInt64() },
-    { "c_ssize",     Type::Int64() },
+    { "c_size",      Type::UInt64() },  // TODO make arch dependent
+    { "c_ssize",     Type::Int64() },   // TODO make arch dependent
     { "c_longlong",  Type::Int64() },
     { "c_ulonglong", Type::UInt64() },
     { "c_float",     Type::Float32() },
     { "c_double",    Type::Float64() },
 };
 
-void C2ModuleLoader::load(C2::Module* c2Mod) {
+void C2ModuleLoader::load(C2::Module* c2Mod, bool is32bit) {
     c2lang::SourceLocation loc;
 
     AST* ast = new AST("<generated>", false);
@@ -277,6 +277,78 @@ void C2ModuleLoader::load(C2::Module* c2Mod) {
         init->setConstant();
         init->setType(QT);
         VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "max_u64", loc, QT, init, true);
+        var->setType(QT);
+        ast->addVar(var);
+        c2Mod->addSymbol(var);
+    }
+    // int32/64 min_isize
+    {
+        QualType QT = Type::Int32();
+        Expr* init;
+        if (is32bit) {
+            init = new (Context) IntegerLiteral(loc, llvm::APInt(64, -2147483648, true));
+        } else {
+            QT = Type::Int64();
+            init = new (Context) IntegerLiteral(loc, llvm::APInt(64, -9223372036854775807ll, true));
+        }
+        QT.addConst();
+        init->setCTC(CTC_FULL);
+        init->setConstant();
+        init->setType(QT);
+        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "min_isize", loc, QT, init, true);
+        var->setType(QT);
+        ast->addVar(var);
+        c2Mod->addSymbol(var);
+    }
+    // int32/64 max_isize
+    {
+        QualType QT = Type::Int32();
+        Expr* init;
+        if (is32bit) {
+            init = new (Context) IntegerLiteral(loc, llvm::APInt(64, 2147483647, true));
+        } else {
+            QT = Type::Int64();
+            init = new (Context) IntegerLiteral(loc, llvm::APInt(64, 9223372036854775807ll, true));
+        }
+        QT.addConst();
+        init->setCTC(CTC_FULL);
+        init->setConstant();
+        init->setType(QT);
+        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "max_isize", loc, QT, init, true);
+        var->setType(QT);
+        ast->addVar(var);
+        c2Mod->addSymbol(var);
+    }
+    // uint32/64 min_usize
+    {
+        QualType QT = Type::UInt32();
+        Expr* init = new (Context) IntegerLiteral(loc, llvm::APInt(64, 0, false));
+        if (!is32bit) QT = Type::UInt64();
+        QT.addConst();
+        init->setCTC(CTC_FULL);
+        init->setConstant();
+        init->setType(QT);
+        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "min_usize", loc, QT, init, true);
+        var->setType(QT);
+        ast->addVar(var);
+        c2Mod->addSymbol(var);
+    }
+    // uint32/64 max_usize
+    {
+        QualType QT = Type::UInt32();
+        Expr* init;
+        if (is32bit) {
+            init = new (Context) IntegerLiteral(loc, llvm::APInt(64, 4294967295, false));
+        } else {
+            QT = Type::UInt64();
+            init = new (Context) IntegerLiteral(loc, llvm::APInt(64, 18446744073709551615llu, false));
+        }
+        QT.addConst();
+        // NOTE: capped to -1 since APInt is always signed?
+        init->setCTC(CTC_FULL);
+        init->setConstant();
+        init->setType(QT);
+        VarDecl* var = new (Context) VarDecl(VARDECL_GLOBAL, "max_usize", loc, QT, init, true);
         var->setType(QT);
         ast->addVar(var);
         c2Mod->addSymbol(var);

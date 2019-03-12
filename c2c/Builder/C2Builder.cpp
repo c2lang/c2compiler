@@ -484,7 +484,7 @@ void C2Builder::createC2Module() {
         if (options.verbose) log(COL_VERBOSE, "generating module c2");
         c2Mod = new Module("c2", true, false);
         modules["c2"] = c2Mod;
-        C2ModuleLoader::load(c2Mod);
+        C2ModuleLoader::load(c2Mod, targetInfo.intWidth == 32);
     }
 }
 
