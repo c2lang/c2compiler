@@ -6,6 +6,8 @@ import c2 local;
 func void* memcpy(void* dst, const void* src, c_size n);
 func void* memccpy(void* dest, const void* src, c_int c, c_size n);
 
+func c_int memcmp(const void* s1, const void* s2, c_size n);
+
 func void* memset(void *b, c_int c, c_size len);
 
 func c_char* strcpy(c_char* dest, const c_char* src);
