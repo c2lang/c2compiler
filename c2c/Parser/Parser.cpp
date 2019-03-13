@@ -15,7 +15,6 @@
 
 #include <stdio.h>
 #include <ctype.h>
-#include <vector>
 
 #include "Clang/ParseDiagnostic.h"
 #include "Clang/SemaDiagnostic.h"
