@@ -20,6 +20,7 @@
 #include <string>
 
 #include "Builder/LibraryLoader.h"
+#include "Builder/BuildOptions.h"
 #include "AST/Module.h"
 #include "AST/ASTContext.h"
 #include "AST/Component.h"
@@ -32,57 +33,9 @@ class SourceManager;
 
 namespace C2 {
 
-class AST;
 class Recipe;
 class ParseHelper;
 class BuildFile;
-
-struct BuildOptions {
-    BuildOptions()
-        : printAST0(false)
-        , printAST1(false)
-        , printAST2(false)
-        , printAST3(false)
-        , printASTLib(false)
-        , printTiming(false)
-        , printSymbols(false)
-        , printLibSymbols(false)
-        , generateIR(false)
-        , printIR(false)
-        , generateC(false)
-        , printC(false)
-        , checkOnly(false)
-        , showLibs(false)
-        , printModules(false)
-        , printDependencies(false)
-        , generateRefs(false)
-        , verbose(false)
-        , testMode(false)
-        , libdir(0)
-    {}
-    bool printAST0;
-    bool printAST1;
-    bool printAST2;
-    bool printAST3;
-    bool printASTLib;
-    bool printTiming;
-    bool printSymbols;
-    bool printLibSymbols;
-    bool generateIR;
-    bool printIR;
-    bool generateC;
-    bool printC;
-    bool checkOnly;
-    bool showLibs;
-    bool printModules;
-    bool printDependencies;
-    bool generateRefs;
-    bool verbose;
-    bool testMode;
-
-    const char* libdir;
-};
-
 
 class C2Builder {
 public:

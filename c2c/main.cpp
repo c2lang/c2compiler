@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include <string>
 #include "Builder/C2Builder.h"
+#include "Builder/BuildOptions.h"
 #include "Builder/Recipe.h"
 #include "Builder/RootFinder.h"
 #include "Builder/RecipeReader.h"
