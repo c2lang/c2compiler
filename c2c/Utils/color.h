@@ -16,6 +16,7 @@
 #ifndef UTILS_COLOR_H
 #define UTILS_COLOR_H
 
+// clang-format off
 #define ANSI_BLACK    "\033[0;30m"
 #define ANSI_RED      "\033[0;31m"
 #define ANSI_GREEN    "\033[0;32m"
@@ -35,7 +36,8 @@
 #define ANSI_NORMAL   "\033[0m"
 
 // erase whole screen
-#define ANSI_CLEAR "\033[2J"
+#define ANSI_CLEAR    "\033[2J"
+// clang-format on
 
 // erase current line
 #define ANSI_CLEAR_LINE "\033[2K"

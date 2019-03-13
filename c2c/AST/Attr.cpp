@@ -22,6 +22,7 @@
 
 using namespace C2;
 
+// clang-format off
 static const AttrInfo attrInfo[] {
     { ATTR_EXPORT,        "export",        false, ATTR_TYPE | ATTR_FUNC | ATTR_VAR },
     { ATTR_PACKED,        "packed",        false, ATTR_TYPE },
@@ -55,6 +56,7 @@ const char* Attr::kind2str() const {
     }
     return "?";
 }
+// clang-format on
 
 AttrKind Attr::name2kind(const char* name) {
     unsigned count = sizeof(attrInfo) / sizeof(attrInfo[0]);

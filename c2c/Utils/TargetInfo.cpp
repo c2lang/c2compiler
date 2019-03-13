@@ -32,13 +32,15 @@ struct ArchList {
     const char* name;
 };
 
+// clang-format off
 static ArchList archList[] = {
     { TargetInfo::ARCH_UNKNOWN,   "unknown" },
-    { TargetInfo::ARCH_I686,      "i686" },
-    { TargetInfo::ARCH_ARM,       "arm" },
-    { TargetInfo::ARCH_X86_64,    "x86_64" },
-    { TargetInfo::ARCH_ARM_64,    "arm_64" },
+    { TargetInfo::ARCH_I686,      "i686"    },
+    { TargetInfo::ARCH_ARM,       "arm"     },
+    { TargetInfo::ARCH_X86_64,    "x86_64"  },
+    { TargetInfo::ARCH_ARM_64,    "arm_64"  },
 };
+// clang-format on
 
 //TargetInfo::TargetInfo(const llvm::Triple& T)
 
@@ -65,10 +67,12 @@ struct VendorList {
     const char* name;
 };
 
+// clang-format off
 static VendorList vendorList[] = {
     { TargetInfo::VENDOR_UNKNOWN,    "unknown" },
-    { TargetInfo::VENDOR_APPLE,      "apple" },
+    { TargetInfo::VENDOR_APPLE,      "apple"   },
 };
+// clang-format on
 
 const char* C2::Str(TargetInfo::Vendor vendor) {
     for (unsigned i=0; i<ARRAY_SIZE(vendorList); i++) {
@@ -91,12 +95,14 @@ struct SystemList {
     const char* name;
 };
 
+// clang-format off
 static SystemList sysList[] = {
     { TargetInfo::SYS_UNKNOWN, "unknown" },
-    { TargetInfo::SYS_LINUX,   "linux" },
-    { TargetInfo::SYS_DARWIN,  "darwin" },
-    { TargetInfo::SYS_CYGWIN,  "cygwin" },
+    { TargetInfo::SYS_LINUX,   "linux"   },
+    { TargetInfo::SYS_DARWIN,  "darwin"  },
+    { TargetInfo::SYS_CYGWIN,  "cygwin"  },
 };
+// clang-format on
 
 const char* C2::Str(TargetInfo::System sys) {
     for (unsigned i=0; i<ARRAY_SIZE(sysList); i++) {
@@ -119,13 +125,15 @@ struct AbiList {
     const char* name;
 };
 
+// clang-format off
 static AbiList abiList[] = {
     { TargetInfo::ABI_UNKNOWN,   "unknown" },
-    { TargetInfo::ABI_GNU,        "gnu" },
-    { TargetInfo::ABI_GNUEABI,    "gnueabi" },
-    { TargetInfo::ABI_MACHO,      "macho" },
-    { TargetInfo::ABI_WIN32,      "win32" },
+    { TargetInfo::ABI_GNU,       "gnu"     },
+    { TargetInfo::ABI_GNUEABI,   "gnueabi" },
+    { TargetInfo::ABI_MACHO,     "macho"   },
+    { TargetInfo::ABI_WIN32,     "win32"   },
 };
+// clang-format on
 
 const char* C2::Str(TargetInfo::Abi abi) {
     for (unsigned i=0; i<ARRAY_SIZE(abiList); i++) {

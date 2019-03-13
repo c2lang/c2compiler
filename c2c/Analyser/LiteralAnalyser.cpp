@@ -41,6 +41,7 @@ struct Limit {
 };
 }
 
+// clang-format off
 static const Limit limits [] = {
     // bool
     {         0,          1,           "0",         "1" },
@@ -62,6 +63,7 @@ static const Limit limits [] = {
     // uint64
     {                   0,  18446744073709551615llu, "0", "18446744073709551615" },
 };
+// clang-format on
 
 static const Limit* getLimit(int width) {
     switch (width) {

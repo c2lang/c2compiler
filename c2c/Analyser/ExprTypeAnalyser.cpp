@@ -31,6 +31,8 @@ using namespace C2;
 using namespace llvm;
 using namespace c2lang;
 
+// clang-format off
+
 // 0 = ok,
 // 1 = loss of integer precision,
 // 2 = sign-conversion,
@@ -64,7 +66,7 @@ static int type_conversions[14][14] = {
     // VOID ->
     {  4,    4,   4,   4,  4,   4,   4,   4,   4,   4,    4,    0},
 };
-
+// clang-format on
 
 
 ExprTypeAnalyser::ExprTypeAnalyser(c2lang::DiagnosticsEngine& Diags_, const TargetInfo& target_)

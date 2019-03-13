@@ -1428,13 +1428,14 @@ static bool isTypeIdent(const Token &token) {
 
 bool Parser::canBeParsedAsStructType()
 {
-    if (!isTypeIdent(Tok))
-    {
-        return
-            PP.LookAhead(0).getKind() == tok::period
-            && isTypeIdent(PP.LookAhead(1))
-            && PP.LookAhead(2).getKind() != tok::period;
+// clang-format off
+    if (!isTypeIdent(Tok)) {
+        return PP.LookAhead(0).getKind() == tok::period
+               && isTypeIdent(PP.LookAhead(1))
+               && PP.LookAhead(2).getKind() != tok::period;
     }
+// clang-format on
+
     // Now we need to look for foo.Bar!
     // We start with Foo, but if we have Foo.xxxx then
     // it's actually referencing a field or a function.

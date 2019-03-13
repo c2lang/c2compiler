@@ -29,6 +29,7 @@ struct CTypes {
     QualType type;
 };
 
+// clang-format off
 // NOTE: hardcoded for x86_64 architecture
 static CTypes ctypes[] = {
     { "c_char",      Type::Int8() },
@@ -46,6 +47,7 @@ static CTypes ctypes[] = {
     { "c_float",     Type::Float32() },
     { "c_double",    Type::Float64() },
 };
+// clang-format on
 
 void C2ModuleLoader::load(C2::Module* c2Mod, bool is32bit) {
     c2lang::SourceLocation loc;
