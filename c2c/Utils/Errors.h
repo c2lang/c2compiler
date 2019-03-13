@@ -1,4 +1,4 @@
-/* Copyright 2018 Christoffer Lernö
+/* Copyright 2018-2019 Christoffer Lernö
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,3 +22,4 @@
       __LINE__, __func__, __VA_ARGS__); exit(-1); } while (0)
 
 #define TODO do { fprintf(stderr, "Exit due to TODO in %s:%d:%s()\n", __FILE__, __LINE__, __func__); exit(-2); } while (0)
+
