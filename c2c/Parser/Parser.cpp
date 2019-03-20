@@ -1196,6 +1196,22 @@ Parser::ParseParenExpression(ParenParseOption &ExprType, bool stopIfCastExpr,
     assert(Tok.is(tok::l_paren) && "Not a paren expr!");
     SourceLocation OpenLoc = ConsumeToken();
 
+#if 1
+    ExprType = SimpleExpr; // TODO remove type (not needed in C2)
+    ExprResult Result = ParseExpression();
+    if (Result.isInvalid()) {
+        SkipUntil(tok::r_paren);
+        return ExprError();
+    }
+
+    // Match the ')'.
+    if (Tok.is(tok::r_paren)) {
+        Result = Actions.ActOnParenExpr(OpenLoc, Tok.getLocation(), Result.get());
+    }
+    RParenLoc = Tok.getLocation();
+    ExpectAndConsume(tok::r_paren);
+#else
+    // NOTE: this is the Clang C parsing, where () can also be casts etc
     ExprResult Result(true);
 
     // None of these cases should fall through with an invalid Result
@@ -1216,6 +1232,7 @@ Parser::ParseParenExpression(ParenParseOption &ExprType, bool stopIfCastExpr,
             Actions.ActOnStmtExprError();
         }
 #endif
+    // TODO remove this. C-style casts
     } else if (ExprType >= CompoundLiteral && isDeclaration()) {
         // Otherwise, this is a compound literal expression or cast expression.
         ExprResult type = ParseTypeSpecifier(true);
@@ -1261,6 +1278,7 @@ Parser::ParseParenExpression(ParenParseOption &ExprType, bool stopIfCastExpr,
 
     RParenLoc = Tok.getLocation();
     ExpectAndConsume(tok::r_paren);
+#endif
 
     return Result;
 }
