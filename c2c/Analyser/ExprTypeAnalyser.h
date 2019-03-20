@@ -26,6 +26,7 @@ namespace C2 {
 
 class Expr;
 class ExplicitCastExpr;
+class UnaryOperator;
 class BinaryOperator;
 class QualType;
 class TargetInfo;
@@ -45,6 +46,7 @@ public:
     bool checkExplicitCast(const ExplicitCastExpr* cast, QualType TLeft, QualType TRight);
 private:
     void error(c2lang::SourceLocation loc, QualType left, QualType right) const;
+    void checkUnaryOp(QualType TLeft, const UnaryOperator* op);
     void checkBinOp(QualType TLeft, const BinaryOperator* binop);
 
     bool checkCompatible(QualType left, const Expr* expr) const;

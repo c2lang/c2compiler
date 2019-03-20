@@ -116,7 +116,8 @@ void ExprTypeAnalyser::check(QualType TLeft, const Expr* expr) {
         return;
     }
     case EXPR_UNARYOP:
-        break;
+        checkUnaryOp(TLeft, cast<UnaryOperator>(expr));
+        return;
     case EXPR_BUILTIN:
         // always CTC_FULL
     case EXPR_ARRAYSUBSCRIPT:
@@ -345,6 +346,22 @@ bool ExprTypeAnalyser::checkFunctionCast(const ExplicitCastExpr* expr, QualType 
     Diags.Report(expr->getLocation(), diag::err_illegal_cast)
             << buf1 << buf2 << expr->getSourceRange();
     return false;
+}
+
+void ExprTypeAnalyser::checkUnaryOp(QualType TLeft, const UnaryOperator* op) {
+        switch (op->getOpcode()) {
+        case c2lang::UO_PostInc:
+        case c2lang::UO_PostDec:
+        case c2lang::UO_PreInc:
+        case c2lang::UO_PreDec:
+        case c2lang::UO_AddrOf:
+        case c2lang::UO_Deref:
+        case c2lang::UO_Minus:
+        case c2lang::UO_Not:
+        case c2lang::UO_LNot:
+            // TODO
+            break;
+        }
 }
 
 void ExprTypeAnalyser::checkBinOp(QualType TLeft, const BinaryOperator* binop) {
