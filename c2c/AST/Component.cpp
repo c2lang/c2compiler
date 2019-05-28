@@ -14,7 +14,6 @@
  */
 
 #include "AST/Component.h"
-#include "AST/AST.h"
 #include "Utils/StringBuilder.h"
 #include "Utils/color.h"
 

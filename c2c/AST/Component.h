@@ -24,7 +24,6 @@
 
 namespace C2 {
 
-class AST;
 class StringBuilder;
 
 class Component {
