@@ -407,6 +407,7 @@ void ExprTypeAnalyser::checkBinOp(QualType TLeft, const BinaryOperator* binop) {
     }
 }
 
+// TODO change return type to void, it's never used
 bool ExprTypeAnalyser::checkCompatible(QualType left, const Expr* expr) const {
     QualType right = expr->getType();
     //right = TypeFinder::findType(expr);
@@ -525,8 +526,21 @@ bool ExprTypeAnalyser::checkBuiltin(QualType left, QualType right, const Expr* e
 }
 
 bool ExprTypeAnalyser::checkPointer(QualType left, QualType right, const Expr* expr) const {
+    QualType LP = cast<PointerType>(left)->getPointeeType();
+
     if (right->isPointerType()) {
-        // TODO
+        QualType RP = cast<PointerType>(right)->getPointeeType();
+        if (RP.isConstQualified() && !LP.isConstQualified()) {
+            // TODO need to know what error is:
+            // TODO the ExprTypeAnalyser should return a ConversionType (clang AssignConvertType)
+            //initializing 'S *' with an expression of type 'const S *' discards qualifiers
+            //assigning to 'S *' from 'const S *' discards qualifiers
+            //NOTE: also needs args
+            error2(expr->getLocation(), left, right, diag::ext_typecheck_convert_discards_qualifiers);
+            return false;
+        }
+
+        // TODO check if allowed (either same or to/from void* etc)
         return true;
     }
     if (right->isArrayType()) {
@@ -581,5 +595,14 @@ void ExprTypeAnalyser::error(SourceLocation loc, QualType left, QualType right) 
     // TODO error msg depends on conv type (see clang errors)
     Diags.Report(loc, diag::err_illegal_type_conversion)
             << buf1 << buf2;
+}
+
+void ExprTypeAnalyser::error2(SourceLocation loc, QualType left, QualType right, unsigned msg) const {
+    StringBuilder buf1(MAX_LEN_TYPENAME);
+    StringBuilder buf2(MAX_LEN_TYPENAME);
+    right.DiagName(buf1);
+    left.DiagName(buf2);
+
+    Diags.Report(loc, msg) << buf1 << buf2;
 }
 

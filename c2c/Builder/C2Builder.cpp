@@ -243,6 +243,7 @@ int C2Builder::build() {
     Diags.setSeverity(diag::warn_shift_lhs_negative, diag::Severity::Error, SourceLocation());
     Diags.setSeverity(diag::warn_shift_negative, diag::Severity::Error, SourceLocation());
     Diags.setSeverity(diag::warn_shift_gt_typewidth, diag::Severity::Error, SourceLocation());
+    Diags.setSeverity(diag::ext_typecheck_convert_discards_qualifiers, diag::Severity::Error, SourceLocation());
 
     // set recipe warning options
     for (unsigned i=0; i<recipe.silentWarnings.size(); i++) {

@@ -60,6 +60,8 @@ private:
     bool checkEnumCast(const ExplicitCastExpr* expr, QualType DestType, QualType SrcType);
     bool checkFunctionCast(const ExplicitCastExpr* expr, QualType DestType, QualType SrcType);
 
+    void error2(c2lang::SourceLocation loc, QualType left, QualType right, unsigned msg) const;
+
     c2lang::DiagnosticsEngine& Diags;
     const TargetInfo& target;
 
