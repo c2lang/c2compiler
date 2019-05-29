@@ -104,7 +104,7 @@ public:
     bool isConstant() const;    // NOTE: not is const!
 
     // for Debug/Diagnostic messages
-    void DiagName(StringBuilder& buffer) const;
+    void DiagName(StringBuilder& buffer, bool showQualifiers = true) const;
     void printName(StringBuilder& buffer) const;
     void print(StringBuilder& buffer) const;   // with ''
     void debugPrint(StringBuilder& buffer) const;   // no ''
@@ -164,7 +164,6 @@ public:
     bool hasCanonicalType() const { return canonicalType.isValid(); }
     void setCanonicalType(QualType qt) const;
 
-    void DiagName(StringBuilder& buffer) const;
     void dump() const;
 
     bool isBuiltinType() const;

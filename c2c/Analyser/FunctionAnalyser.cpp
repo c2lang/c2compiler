@@ -1203,7 +1203,7 @@ QualType FunctionAnalyser::findStructMember(QualType T, IdentifierExpr* member) 
     if (!match) {
         char temp1[MAX_LEN_TYPENAME];
         StringBuilder buf1(MAX_LEN_TYPENAME, temp1);
-        T->DiagName(buf1);
+        T.DiagName(buf1);
 
         char temp2[MAX_LEN_VARNAME];
         StringBuilder buf2(MAX_LEN_VARNAME, temp2);
@@ -1231,7 +1231,7 @@ QualType FunctionAnalyser::findStructMember(QualType T, IdentifierExpr* member) 
 StructTypeDecl* FunctionAnalyser::builtinExprToStructTypeDecl(BuiltinExpr* B) {
     Expr* structExpr = B->getExpr();
     Decl* structDecl = 0;
-    // TODO BB scope.checkAccess(std, structExpr->getLocation());
+    // TODO scope.checkAccess(std, structExpr->getLocation());
 
     IdentifierExpr* I = dyncast<IdentifierExpr>(structExpr);
     if (I) {
@@ -1271,6 +1271,12 @@ StructTypeDecl* FunctionAnalyser::builtinExprToStructTypeDecl(BuiltinExpr* B) {
         Diag(I->getLocation(), diag::err_builtin_non_struct_union) << idx << I->getName();
         return 0;
     }
+
+    if (currentModule() != std->getModule() && std->hasAttribute(ATTR_OPAQUE)) {
+        Expr* structExpr = B->getExpr();
+        Diag(structExpr->getLocation(), diag::err_deref_opaque) << std->isStruct() << std->DiagName() << structExpr->getSourceRange();
+        return 0;
+    }
     return std;
 }
 
@@ -1281,13 +1287,6 @@ QualType FunctionAnalyser::analyseOffsetof(BuiltinExpr* B) {
     StructTypeDecl* std = builtinExprToStructTypeDecl(B);
     if (!std) return QualType();
 
-    //scope.checkAccess(std, structExpr->getLocation());
-    // TODO BB extract below to function to re-use in analyseToContainer()
-    if (currentModule() != std->getModule() && std->hasAttribute(ATTR_OPAQUE)) {
-        Expr* structExpr = B->getExpr();
-        Diag(structExpr->getLocation(), diag::err_deref_opaque) << std->isStruct() << std->DiagName() << structExpr->getSourceRange();
-        return QualType();
-    }
     analyseStructMemberOffset(B, std, B->getMember());
     return Type::UInt32();
 }
@@ -1306,7 +1305,7 @@ QualType FunctionAnalyser::analyseToContainer(BuiltinExpr* B) {
     IdentifierExpr* member = dyncast<IdentifierExpr>(memberExpr);
     if (!member) { TODO; } // TODO support sub-member (memberExpr)
 
-    Decl* match = std->find(member->getName());
+    Decl* match = std->findMember(member->getName());
     if (!match) {
         outputStructDiagnostics(ST, member, diag::err_no_member);
         return QualType();
@@ -1442,7 +1441,7 @@ void FunctionAnalyser::analyseArraySizeExpr(ArrayType* AT) {
     QualType CT = T.getCanonicalType();
     if (!CT.isBuiltinType() || !cast<BuiltinType>(CT)->isInteger()) {
         StringBuilder buf;
-        T.DiagName(buf);
+        T.DiagName(buf, false);
         Diag(E->getLocation(), diag::err_array_size_non_int) << buf << E->getSourceRange();
         return;
     }
@@ -1914,7 +1913,7 @@ QualType FunctionAnalyser::outputStructDiagnostics(QualType T, IdentifierExpr* m
 {
     char temp1[MAX_LEN_TYPENAME];
     StringBuilder buf1(MAX_LEN_TYPENAME, temp1);
-    T->DiagName(buf1);
+    T.DiagName(buf1);
     char temp2[MAX_LEN_VARNAME];
     StringBuilder buf2(MAX_LEN_VARNAME, temp2);
     buf2 << '\'' << member->getName() << '\'';
@@ -2019,7 +2018,7 @@ bool FunctionAnalyser::analyseBitOffsetIndex(Expr* expr, llvm::APSInt* Result, B
 
     if (!T.getCanonicalType().isIntegerType()) {
         StringBuilder buf;
-        T.DiagName(buf);
+        T.DiagName(buf, false);
         Diag(expr->getLocation(), diag::err_bitoffset_index_non_int)
                 << buf << expr->getSourceRange();
         return false;
@@ -2425,7 +2424,8 @@ void FunctionAnalyser::checkEnumCases(const SwitchStmt* SS, const EnumType* ET) 
             }
         }
         StringBuilder buf(64);
-        ET->DiagName(buf);
+        QualType Q((Type*)ET, 0);
+        Q.DiagName(buf);
         Diag(cond->getLocation(), diag::warn_not_in_enum) << buf << cond->getSourceRange();
     }
 
@@ -2515,7 +2515,7 @@ void FunctionAnalyser::popMode() {
 const Module* FunctionAnalyser::currentModule() const {
     const Module* mod = 0;
     if (CurrentFunction) mod = CurrentFunction->getModule();
-    if (CurrentVarDecl) mod = CurrentVarDecl->getModule();
+    if (!mod && CurrentVarDecl) mod = CurrentVarDecl->getModule();
     assert(mod);
     return mod;
 }

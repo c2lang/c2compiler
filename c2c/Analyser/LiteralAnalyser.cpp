@@ -120,7 +120,7 @@ void LiteralAnalyser::check(QualType TLeft, const Expr* Right) {
     int availableWidth = 0;
     if (!calcWidth(TLeft, Right, &availableWidth)) return;
     StringBuilder tname(128);
-    TLeft->DiagName(tname);
+    TLeft.DiagName(tname, false);
     const Limit* L = getLimit(availableWidth);
 
     checkWidth(availableWidth, L, Right, tname);
@@ -180,10 +180,10 @@ bool LiteralAnalyser::calcWidth(QualType TLeft, const Expr* Right, int* availabl
         // dont ask for pointer, replace with uint32 here.
     } else {
         StringBuilder t1name(128);
-        Right->getType().DiagName(t1name);
+        Right->getType().DiagName(t1name, false);
         // Q: allow FuncPtr to return 0? (or nil?)
         StringBuilder t2name(128);
-        TLeft->DiagName(t2name);
+        TLeft.DiagName(t2name, false);
         Diags.Report(Right->getLocation(), diag::err_typecheck_convert_incompatible) << t1name << t2name << 2 << 0 << 0;
         return false;
         //QT.dump();
@@ -316,7 +316,7 @@ bool LiteralAnalyser::checkRange(QualType TLeft, const Expr* Right, c2lang::Sour
         Result.toString(ss, 10, true);
 
         StringBuilder buf1;
-        TLeft->DiagName(buf1);
+        TLeft.DiagName(buf1, false);
 
         if (Right) {
             Diags.Report(Right->getLocStart(), diag::err_literal_outofbounds)

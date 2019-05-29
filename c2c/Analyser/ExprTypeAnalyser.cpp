@@ -145,8 +145,8 @@ bool ExprTypeAnalyser::checkExplicitCast(const ExplicitCastExpr* expr, QualType 
         // Dont allow any cast to non-scalar
         StringBuilder buf1(MAX_LEN_TYPENAME);
         StringBuilder buf2(MAX_LEN_TYPENAME);
-        DestType.DiagName(buf1);
-        SrcType.DiagName(buf2);
+        DestType.DiagName(buf1, true);
+        SrcType.DiagName(buf2, true);
         Diags.Report(expr->getLocation(), diag::err_typecheck_cond_expect_scalar)
                 << buf1 << buf2 << expr->getSourceRange();
         return false;
@@ -208,8 +208,8 @@ bool ExprTypeAnalyser::checkNonPointerCast(const ExplicitCastExpr* expr, QualTyp
     // TODO refactor duplicate code (after completion)
     StringBuilder buf1(MAX_LEN_TYPENAME);
     StringBuilder buf2(MAX_LEN_TYPENAME);
-    SrcType.DiagName(buf1);
-    DestType.DiagName(buf2);
+    SrcType.DiagName(buf1, true);
+    DestType.DiagName(buf2, true);
     Diags.Report(expr->getLocation(), diag::err_illegal_cast)
             << buf1 << buf2 << expr->getSourceRange();
     return false;
@@ -235,8 +235,8 @@ bool ExprTypeAnalyser::checkBuiltinCast(const ExplicitCastExpr* expr, QualType D
         {
             StringBuilder buf1(MAX_LEN_TYPENAME);
             StringBuilder buf2(MAX_LEN_TYPENAME);
-            DestType.DiagName(buf1);
-            SrcType.DiagName(buf2);
+            DestType.DiagName(buf1, true);
+            SrcType.DiagName(buf2, true);
             Diags.Report(expr->getLocation(), diag::err_illegal_cast)
                     << buf1 << buf2 << expr->getSourceRange();
             return false;
@@ -265,9 +265,9 @@ bool ExprTypeAnalyser::checkBuiltinCast(const ExplicitCastExpr* expr, QualType D
         if (((target.intWidth == 64) && (Right->getKind() != BuiltinType::UInt64)) ||
             ((target.intWidth == 32) && (Right->getKind() != BuiltinType::UInt32))) {
             StringBuilder buf1(MAX_LEN_TYPENAME);
-            SrcType.DiagName(buf1);
+            SrcType.DiagName(buf1, true);
             StringBuilder buf2(MAX_LEN_TYPENAME);
-            DestType.DiagName(buf2);
+            DestType.DiagName(buf2, true);
             Diags.Report(expr->getLocation(), diag::warn_int_to_pointer_cast) << buf1 << buf2;
             return false;
         }
@@ -301,8 +301,8 @@ bool ExprTypeAnalyser::checkEnumCast(const ExplicitCastExpr* expr, QualType Dest
     }
     StringBuilder buf1(MAX_LEN_TYPENAME);
     StringBuilder buf2(MAX_LEN_TYPENAME);
-    SrcType.DiagName(buf1);
-    DestType.DiagName(buf2);
+    SrcType.DiagName(buf1, true);
+    DestType.DiagName(buf2, true);
     Diags.Report(expr->getLocation(), diag::err_illegal_cast)
             << buf1 << buf2 << expr->getSourceRange();
     return false;
@@ -341,8 +341,8 @@ bool ExprTypeAnalyser::checkFunctionCast(const ExplicitCastExpr* expr, QualType 
     }
     StringBuilder buf1(MAX_LEN_TYPENAME);
     StringBuilder buf2(MAX_LEN_TYPENAME);
-    SrcType.DiagName(buf1);
-    DestType.DiagName(buf2);
+    SrcType.DiagName(buf1, true);
+    DestType.DiagName(buf2, true);
     Diags.Report(expr->getLocation(), diag::err_illegal_cast)
             << buf1 << buf2 << expr->getSourceRange();
     return false;
@@ -441,6 +441,7 @@ bool ExprTypeAnalyser::checkBuiltin(QualType left, QualType right, const Expr* e
     const BuiltinType* Left = cast<BuiltinType>(left.getCanonicalType());
 
     // left is builtin
+    bool showQualifiers = true;
     QualType C = right.getCanonicalType();
     switch (C->getTypeClass()) {
     case TC_BUILTIN:
@@ -470,18 +471,22 @@ bool ExprTypeAnalyser::checkBuiltin(QualType left, QualType right, const Expr* e
             return true;
         case 1: // loss of precision
             errorMsg = diag::warn_impcast_integer_precision;
+            showQualifiers = false;
             break;
         case 2: // sign-conversion
             errorMsg = diag::warn_impcast_integer_sign;
+            showQualifiers = false;
             break;
         case 3: // float->integer
             errorMsg = diag::warn_impcast_float_integer;
+            showQualifiers = false;
             break;
         case 4: // incompatible
             errorMsg = diag::err_illegal_type_conversion;
             break;
         case 5: // loss of fp-precision
             errorMsg = diag::warn_impcast_float_precision;
+            showQualifiers = false;
             break;
         default:
             FATAL_ERROR("Unreachable");
@@ -489,8 +494,8 @@ bool ExprTypeAnalyser::checkBuiltin(QualType left, QualType right, const Expr* e
         }
         StringBuilder buf1(MAX_LEN_TYPENAME);
         StringBuilder buf2(MAX_LEN_TYPENAME);
-        right.DiagName(buf1);
-        left.DiagName(buf2);
+        right.DiagName(buf1, showQualifiers);
+        left.DiagName(buf2, showQualifiers);
         // TODO error msg depends on conv type (see clang errors)
         Diags.Report(expr->getLocation(), errorMsg) << buf1 << buf2
                 << expr->getSourceRange();
@@ -562,7 +567,7 @@ bool ExprTypeAnalyser::checkWidth(QualType type, SourceLocation loc, int msg) {
 
     QualType expected = target.intWidth == 64 ? Type::UInt64() : Type::UInt32();
     StringBuilder buf1(MAX_LEN_TYPENAME);
-    expected.DiagName(buf1);
+    expected.DiagName(buf1, false);
     Diags.Report(loc, msg) << buf1;
     return false;
 }
@@ -572,6 +577,7 @@ void ExprTypeAnalyser::error(SourceLocation loc, QualType left, QualType right) 
     StringBuilder buf2(MAX_LEN_TYPENAME);
     right.DiagName(buf1);
     left.DiagName(buf2);
+
     // TODO error msg depends on conv type (see clang errors)
     Diags.Report(loc, diag::err_illegal_type_conversion)
             << buf1 << buf2;

@@ -146,11 +146,25 @@ bool QualType::isConstant() const {
 
 }
 
-void QualType::DiagName(StringBuilder& buffer) const {
+void QualType::DiagName(StringBuilder& buf, bool showQualifiers) const {
     if (isNull()) {
-        buffer << "NULL";
+        buf << "NULL";
     } else {
-        getTypePtr()->DiagName(buffer);
+        Type* T = getTypePtr();
+        buf << '\'';
+        if (showQualifiers) printQualifiers(buf);
+        T->printName(buf);
+        buf << '\'';
+        if (T->canonicalType.isNull()) {
+            buf << " canonical?";
+        } else {
+            const Type* canon = T->canonicalType.getTypePtr();
+            if (T != canon) {
+                buf << " (aka '";
+                canon->printName(buf);
+                buf << "')";
+            }
+        }
     }
 }
 
@@ -304,22 +318,6 @@ void Type::debugPrint(StringBuilder& buffer) const {
     }
 }
 
-void Type::DiagName(StringBuilder& buf) const {
-    buf << '\'';
-    printName(buf);
-    buf << '\'';
-    if (canonicalType.isNull()) {
-        buf << " canonical?";
-    } else {
-        const Type* canon = canonicalType.getTypePtr();
-        if (this != canon) {
-            buf << " (aka '";
-            canon->printName(buf);
-            buf << "')";
-        }
-    }
-
-}
 #if 0
 void Type::debugPrint(StringBuilder& buffer) const {
     // NOTE: never used
