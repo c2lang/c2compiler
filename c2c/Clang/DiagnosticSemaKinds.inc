@@ -625,7 +625,7 @@ DIAG(err_dynamic_property_ivar_decl, CLASS_ERROR, (unsigned)diag::Severity::Erro
 DIAG(err_dynamic_var_init, CLASS_ERROR, (unsigned)diag::Severity::Error, "dynamic initialization is not supported for __device__, __constant__, and __shared__ variables.", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_early_catch_all, CLASS_ERROR, (unsigned)diag::Severity::Error, "catch-all handler must come last", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_elemsof_no_array, CLASS_ERROR, (unsigned)diag::Severity::Error, "elemsof can only be used on arrays", 0, SFINAE_SubstitutionFailure, false, true, 2)
-DIAG(err_offsetof_non_struct_union, CLASS_ERROR, (unsigned)diag::Severity::Error, "offsetof requires struct or union type, %0 invalid", 0, SFINAE_SubstitutionFailure, false, true, 2)
+DIAG(err_builtin_non_struct_union, CLASS_ERROR, (unsigned)diag::Severity::Error, "%select{offsetof|to_container}0 requires struct or union type, %1 invalid", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_ellipsis_first_param, CLASS_ERROR, (unsigned)diag::Severity::Error, "ISO C requires a named parameter before '...'", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_ellipsis_in_declarator_not_parameter, CLASS_ERROR, (unsigned)diag::Severity::Error, "only function and template parameters can be parameter packs", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_empty_scalar_initializer, CLASS_ERROR, (unsigned)diag::Severity::Error, "scalar initializer cannot be empty", 0, SFINAE_SubstitutionFailure, false, true, 2)

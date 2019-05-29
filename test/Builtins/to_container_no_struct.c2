@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+type Enum enum u8 {
+    A
+}
+func void test1() {
+    to_container(Enum, test1, nil); // @error{to_container requires struct or union type, Enum invalid}
+}
+

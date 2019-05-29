@@ -48,7 +48,7 @@ class CallExpr;
 class BuiltinExpr;
 class ASTContext;
 class TargetInfo;
-
+class Module;
 
 constexpr size_t MAX_STRUCT_INDIRECTION_DEPTH = 256;
 
@@ -119,12 +119,12 @@ private:
                                           Expr* value,
                                           bool &haveDesignators);
 
-    bool analyseSizeOfExpr(BuiltinExpr* expr);
+    QualType analyseSizeOfExpr(BuiltinExpr* expr);
     QualType analyseElemsOfExpr(BuiltinExpr* B);
     QualType analyseEnumMinMaxExpr(BuiltinExpr* B, bool isMin);
     QualType findStructMember(QualType T, IdentifierExpr* I);
     StructTypeDecl* builtinExprToStructTypeDecl(BuiltinExpr* B);
-    void analyseOffsetof(BuiltinExpr* expr);
+    QualType analyseOffsetof(BuiltinExpr* expr);
     QualType analyseToContainer(BuiltinExpr* expr);
     void analyseArrayType(VarDecl* V, QualType T);
     void analyseArraySizeExpr(ArrayType* AT);
@@ -132,6 +132,7 @@ private:
     c2lang::DiagnosticBuilder Diag(c2lang::SourceLocation Loc, unsigned DiagID) const;
     void pushMode(unsigned DiagID);
     void popMode();
+    const Module* currentModule() const;
 
     class ConstModeSetter {
     public:

@@ -1070,7 +1070,7 @@ static uint64_t sizeOfType(QualType type) {
         FATAL_ERROR("Cannot occur here");
     }
 }
-bool FunctionAnalyser::analyseSizeOfExpr(BuiltinExpr* B) {
+QualType FunctionAnalyser::analyseSizeOfExpr(BuiltinExpr* B) {
     LOG_FUNC
 
     static constexpr unsigned FLOAT_SIZE_DEFAULT = 8;
@@ -1089,7 +1089,7 @@ bool FunctionAnalyser::analyseSizeOfExpr(BuiltinExpr* B) {
     case EXPR_DESIGNATOR_INIT:
         TODO; // Good error
         allowStaticMember = false;
-        return false;
+        return QualType();
     case EXPR_TYPE:
     {
         // TODO can be public?
@@ -1118,7 +1118,7 @@ bool FunctionAnalyser::analyseSizeOfExpr(BuiltinExpr* B) {
         QualType type = analyseExpr(expr, RHS);
         if (!type.isValid()) {
             allowStaticMember = false;
-            return false;
+            return QualType();
         }
         TR.checkOpaqueType(expr->getLocation(), true, type);
         width = sizeOfType(type);
@@ -1127,16 +1127,16 @@ bool FunctionAnalyser::analyseSizeOfExpr(BuiltinExpr* B) {
     case EXPR_BUILTIN:
         FATAL_ERROR("Unreachable");
         allowStaticMember = false;
-        return false;
+        return QualType();
     case EXPR_PAREN:
     case EXPR_BITOFFSET:
         FATAL_ERROR("Unreachable");
         allowStaticMember = false;
-        return false;
+        return QualType();
 }
     B->setValue(llvm::APSInt::getUnsigned(width));
     allowStaticMember = false;
-    return true;
+    return Type::UInt32();
 }
 
 QualType FunctionAnalyser::analyseElemsOfExpr(BuiltinExpr* B) {
@@ -1217,7 +1217,7 @@ QualType FunctionAnalyser::findStructMember(QualType T, IdentifierExpr* member) 
 
     // NOTE: access of struct-function is not a dereference
     // TODO
-    //if (CurrentFunction->getModule() != S->getModule() && S->hasAttribute(ATTR_OPAQUE)) {
+    //if (currentModule() != S->getModule() && S->hasAttribute(ATTR_OPAQUE)) {
     //    Diag(S->getLocation(), diag::err_deref_opaque) << S->isStruct() << S->DiagName();
     //   return QualType();
     //}
@@ -1267,32 +1267,29 @@ StructTypeDecl* FunctionAnalyser::builtinExprToStructTypeDecl(BuiltinExpr* B) {
 
     StructTypeDecl* std = dyncast<StructTypeDecl>(structDecl);
     if (!std) {
-        // TODO BB add offsetof / to_container as argument
-        Diag(I->getLocation(), diag::err_offsetof_non_struct_union) << I->getName();
+        int idx = (B->getBuiltinKind() == BuiltinExpr::BUILTIN_OFFSETOF) ? 0 : 1;
+        Diag(I->getLocation(), diag::err_builtin_non_struct_union) << idx << I->getName();
         return 0;
     }
     return std;
 }
 
-void FunctionAnalyser::analyseOffsetof(BuiltinExpr* B) {
+QualType FunctionAnalyser::analyseOffsetof(BuiltinExpr* B) {
     LOG_FUNC
 
     B->setType(Type::UInt32());
     StructTypeDecl* std = builtinExprToStructTypeDecl(B);
-    if (!std) return;
+    if (!std) return QualType();
 
     //scope.checkAccess(std, structExpr->getLocation());
     // TODO BB extract below to function to re-use in analyseToContainer()
-    const Module* currentModule = 0;
-    if (CurrentFunction) currentModule = CurrentFunction->getModule();
-    if (CurrentVarDecl) currentModule = CurrentVarDecl->getModule();
-    assert(currentModule);
-    if (currentModule != std->getModule() && std->hasAttribute(ATTR_OPAQUE)) {
+    if (currentModule() != std->getModule() && std->hasAttribute(ATTR_OPAQUE)) {
         Expr* structExpr = B->getExpr();
         Diag(structExpr->getLocation(), diag::err_deref_opaque) << std->isStruct() << std->DiagName() << structExpr->getSourceRange();
-        return;
+        return QualType();
     }
     analyseStructMemberOffset(B, std, B->getMember());
+    return Type::UInt32();
 }
 
 QualType FunctionAnalyser::analyseToContainer(BuiltinExpr* B) {
@@ -1752,8 +1749,7 @@ QualType FunctionAnalyser::analyseBuiltinExpr(Expr* expr) {
     BuiltinExpr* B = cast<BuiltinExpr>(expr);
     switch (B->getBuiltinKind()) {
     case BuiltinExpr::BUILTIN_SIZEOF:
-        if (!analyseSizeOfExpr(B)) return QualType();
-        break;
+        return analyseSizeOfExpr(B);
     case BuiltinExpr::BUILTIN_ELEMSOF:
         return analyseElemsOfExpr(B);
     case BuiltinExpr::BUILTIN_ENUM_MIN:
@@ -1761,13 +1757,10 @@ QualType FunctionAnalyser::analyseBuiltinExpr(Expr* expr) {
     case BuiltinExpr::BUILTIN_ENUM_MAX:
         return analyseEnumMinMaxExpr(B, false);
     case BuiltinExpr::BUILTIN_OFFSETOF:
-        analyseOffsetof(B);
-        break;
+        return analyseOffsetof(B);
     case BuiltinExpr::BUILTIN_TO_CONTAINER:
         return analyseToContainer(B);
     }
-
-    return Type::UInt32();
 }
 
 QualType FunctionAnalyser::analyseArraySubscript(Expr* expr, unsigned side) {
@@ -1974,7 +1967,7 @@ QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr* M, unsign
     }
     else {
         // NOTE: access of struct-function is not a dereference
-        if (CurrentFunction->getModule() != S->getModule() && S->hasAttribute(ATTR_OPAQUE)) {
+        if (currentModule() != S->getModule() && S->hasAttribute(ATTR_OPAQUE)) {
             Diag(M->getLocation(), diag::err_deref_opaque) << S->isStruct() << S->DiagName();
             return QualType();
         }
@@ -2517,6 +2510,14 @@ void FunctionAnalyser::popMode() {
     LOG_FUNC
     inConstExpr = false;
     constDiagID = 0;
+}
+
+const Module* FunctionAnalyser::currentModule() const {
+    const Module* mod = 0;
+    if (CurrentFunction) mod = CurrentFunction->getModule();
+    if (CurrentVarDecl) mod = CurrentVarDecl->getModule();
+    assert(mod);
+    return mod;
 }
 
 // Convert smaller types to int, others remain the same
