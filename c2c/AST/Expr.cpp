@@ -658,16 +658,28 @@ void BuiltinExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.setColor(COL_EXPR);
     buffer << "BuiltinExpr ";
     Expr::print(buffer);
-    buffer.setColor(COL_ATTR);
+    buffer.setColor(COL_INFO);
     buffer << ' ' << Str(getBuiltinKind());
+    buffer.setColor(COL_ATTR);
     buffer << " value=";
     buffer.number(10, value.getSExtValue());
     buffer << '\n';
     expr->print(buffer, indent + INDENT);
     if (getBuiltinKind() == BUILTIN_OFFSETOF) {
+        buffer.setColor(COL_ATTR);
         buffer.indent(indent + INDENT);
         buffer << "Member: \n";
         member->print(buffer, indent + INDENT);
+    }
+    if (getBuiltinKind() == BUILTIN_TO_CONTAINER) {
+        buffer.indent(indent + INDENT);
+        buffer.setColor(COL_ATTR);
+        buffer << "Member: \n";
+        member->print(buffer, indent + INDENT);
+        buffer.indent(indent + INDENT);
+        buffer.setColor(COL_ATTR);
+        buffer << "ptr: \n";
+        pointer->print(buffer, indent + INDENT);
     }
 }
 
@@ -678,6 +690,7 @@ const char* BuiltinExpr::Str(BuiltinExpr::BuiltinKind kind) {
     case BUILTIN_ENUM_MIN:      return "enum_min";
     case BUILTIN_ENUM_MAX:      return "enum_max";
     case BUILTIN_OFFSETOF:      return "offsetof";
+    case BUILTIN_TO_CONTAINER:  return "to_container";
     }
     return "";
 }

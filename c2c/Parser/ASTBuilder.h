@@ -131,6 +131,7 @@ public:
     ExprResult ActOnTypeQualifier(ExprResult R, unsigned qualifier);
     ExprResult ActOnBuiltinExpression(SourceLocation Loc, Expr* expr, BuiltinExpr::BuiltinKind kind_);
     ExprResult ActOnOffsetof(SourceLocation Loc, Expr* structExpr, Expr* memberExpr);
+    ExprResult ActOnToContainer(SourceLocation Loc, Expr* structExpr, Expr* memberExpr, Expr* ptrExpr);
     ExprResult ActOnArraySubScriptExpr(SourceLocation RLoc, Expr* Base, Expr* Idx);
     ExprResult ActOnMemberExpr(Expr* Base, Expr* member);
     ExprResult ActOnPostfixUnaryOp(SourceLocation OpLoc, tok::TokenKind Kind, Expr* Input);

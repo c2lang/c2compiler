@@ -575,5 +575,5 @@ void ExprTypeAnalyser::error(SourceLocation loc, QualType left, QualType right) 
     // TODO error msg depends on conv type (see clang errors)
     Diags.Report(loc, diag::err_illegal_type_conversion)
             << buf1 << buf2;
-
 }
+

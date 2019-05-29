@@ -197,7 +197,7 @@ ASTBuilder::ASTBuilder(SourceManager& sm_, DiagnosticsEngine& Diags_, c2lang::Pr
 	checkSize(BinaryOperator, 32);
 	checkSize(ConditionalOperator, 48);
 	checkSize(UnaryOperator, 24);
-	checkSize(BuiltinExpr, 48);
+	checkSize(BuiltinExpr, 56);
 	checkSize(ArraySubscriptExpr, 32);
 	checkSize(MemberExpr, 40);
 	checkSize(ParenExpr, 32);
@@ -1185,6 +1185,20 @@ C2::ExprResult ASTBuilder::ActOnOffsetof(SourceLocation Loc, Expr* structExpr, E
 #endif
     MEM_EXPR(EXPR_BUILTIN);
     BuiltinExpr* B = new (Context) BuiltinExpr(Loc, structExpr, memberExpr);
+    return ExprResult(B);
+}
+
+C2::ExprResult ASTBuilder::ActOnToContainer(SourceLocation Loc, Expr* structExpr, Expr* memberExpr, Expr* ptrExpr) {
+    assert(structExpr);
+    assert(memberExpr);
+    assert(ptrExpr);
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA << "SEMA: to_container at ";
+    Loc.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    MEM_EXPR(EXPR_BUILTIN);
+    BuiltinExpr* B = new (Context) BuiltinExpr(Loc, structExpr, memberExpr, ptrExpr);
     return ExprResult(B);
 }
 

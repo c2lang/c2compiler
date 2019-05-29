@@ -44,8 +44,8 @@ public:
 
     void check(QualType Tleft, const Expr* expr);
     bool checkExplicitCast(const ExplicitCastExpr* cast, QualType TLeft, QualType TRight);
-private:
     void error(c2lang::SourceLocation loc, QualType left, QualType right) const;
+private:
     void checkUnaryOp(QualType TLeft, const UnaryOperator* op);
     void checkBinOp(QualType TLeft, const BinaryOperator* binop);
 

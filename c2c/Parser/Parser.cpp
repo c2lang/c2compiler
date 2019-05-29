@@ -886,6 +886,8 @@ C2::ExprResult Parser::ParseCastExpression(bool isUnaryExpression,
         return ParseOffsetof();
     case tok::kw_cast:
         return ParseExplicitCastExpression();
+    case tok::kw_to_container:
+        return ParseToContainer();
     case tok::plusplus:      // unary-expression: '++' unary-expression [C99]
     case tok::minusminus:    // unary-expression: '--' unary-expression [C99]
     {
@@ -1567,6 +1569,41 @@ C2::ExprResult Parser::ParseOffsetof()
     if (ExpectAndConsume(tok::r_paren)) return ExprError();
 
     return Actions.ActOnOffsetof(Loc, structExpr.get(), memberExpr.get());
+}
+
+// Syntax:
+//  'to_container' ( full-identifier, full-identifier, expr )
+C2::ExprResult Parser::ParseToContainer()
+{
+    LOG_FUNC
+    SourceLocation Loc = ConsumeToken();
+
+    if (ExpectAndConsume(tok::l_paren)) return ExprError();
+
+    ExprResult structExpr = ParseFullIdentifier();
+    if (structExpr.isInvalid()) return ExprError();
+
+    if (ExpectAndConsume(tok::comma)) return ExprError();
+
+    // TODO support array subscripts (ie. offsetof(a, b[3]) )
+    ExprResult memberExpr = ParseFullIdentifier();
+    if (memberExpr.isInvalid()) return ExprError();
+
+    if (ExpectAndConsume(tok::comma)) return ExprError();
+
+    ExprResult ptr = ParseExpression();
+    if (ptr.isInvalid()) {
+        // If the expression is invalid, skip ahead to the next semicolon or '}'.
+        // Not doing this opens us up to the possibility of infinite loops if
+        // ParseExpression does not consume any tokens.
+        SkipUntil(tok::r_brace, StopAtSemi | StopBeforeMatch);
+        if (Tok.is(tok::semi)) ConsumeToken();
+        return ExprError();
+    }
+
+    if (ExpectAndConsume(tok::r_paren)) return ExprError();
+
+    return Actions.ActOnToContainer(Loc, structExpr.get(), memberExpr.get(), ptr.get());
 }
 
 // Syntax:

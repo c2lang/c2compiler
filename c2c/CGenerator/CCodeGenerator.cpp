@@ -101,7 +101,10 @@ void CCodeGenerator::generate(bool printCode, const std::string& outputDir) {
     out << '\n';
     out << "#ifdef __cplusplus\nextern \"C\" {\n#endif\n\n";
     out << "#define NULL ((void*)0)\n";
+    // NOTE: might change for 32 bit?
     out << "#define offsetof(TYPE, MEMBER) ((unsigned long) &((TYPE *)0)->MEMBER)\n";
+    out << "#define to_container(type, member, ptr) ((type *)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))\n";
+
 
     out << '\n';
     // NOTE: 64-bit only for now
@@ -382,6 +385,15 @@ void CCodeGenerator::EmitBuiltinExpr(const Expr* E, StringBuilder& output) {
         EmitExpr(B->getExpr(), output);
         output << ", ";
         EmitExpr(B->getMember(), output);
+        output << ')';
+        break;
+    case BuiltinExpr::BUILTIN_TO_CONTAINER:
+        output << "to_container(";
+        EmitExpr(B->getExpr(), output);
+        output << ", ";
+        EmitExpr(B->getMember(), output);
+        output << ", ";
+        EmitExpr(B->getPointer(), output);
         output << ')';
         break;
     }

@@ -287,8 +287,13 @@ void DepVisitor::checkExpr(const Expr* E) {
         checkExpr(cast<UnaryOperator>(E)->getExpr());
         break;
     case EXPR_BUILTIN:
-        checkExpr(cast<BuiltinExpr>(E)->getExpr());
+    {
+        const BuiltinExpr* B = cast<BuiltinExpr>(E);
+        checkExpr(B->getExpr());
+        if (B->getMember()) checkExpr(B->getMember());
+        if (B->getPointer()) checkExpr(B->getPointer());
         break;
+    }
     case EXPR_ARRAYSUBSCRIPT:
     {
         const ArraySubscriptExpr* A = cast<ArraySubscriptExpr>(E);

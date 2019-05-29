@@ -262,6 +262,9 @@ void InterfaceGenerator::EmitExpr(const Expr* E) {
         case BuiltinExpr::BUILTIN_OFFSETOF:
             assert(0 && "TODO");
             break;
+        case BuiltinExpr::BUILTIN_TO_CONTAINER:
+            TODO;
+            break;
         }
         return;
     }

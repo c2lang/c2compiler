@@ -302,6 +302,7 @@ void ASTVisitor::checkExpr(const Expr* E) {
         const BuiltinExpr* B = cast<BuiltinExpr>(E);
         checkExpr(B->getExpr());
         if (B->getMember()) checkExpr(B->getMember());
+        if (B->getPointer()) checkExpr(B->getPointer());
         break;
     }
     case EXPR_ARRAYSUBSCRIPT:

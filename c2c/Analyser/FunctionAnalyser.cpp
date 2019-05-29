@@ -1074,6 +1074,7 @@ bool FunctionAnalyser::analyseSizeOfExpr(BuiltinExpr* B) {
     LOG_FUNC
 
     static constexpr unsigned FLOAT_SIZE_DEFAULT = 8;
+    B->setType(Type::UInt32());
 
     uint64_t width;
     allowStaticMember = true;
@@ -1141,6 +1142,7 @@ bool FunctionAnalyser::analyseSizeOfExpr(BuiltinExpr* B) {
 QualType FunctionAnalyser::analyseElemsOfExpr(BuiltinExpr* B) {
     LOG_FUNC
 
+    B->setType(Type::UInt32());
     Expr* E = B->getExpr();
     QualType T = analyseExpr(E, RHS);
     const ArrayType* AT = dyncast<ArrayType>(T.getCanonicalType());
@@ -1154,6 +1156,7 @@ QualType FunctionAnalyser::analyseElemsOfExpr(BuiltinExpr* B) {
 
 QualType FunctionAnalyser::analyseEnumMinMaxExpr(BuiltinExpr* B, bool isMin) {
     LOG_FUNC
+    B->setType(Type::UInt32());
     Expr* E = B->getExpr();
     // TODO support memberExpr (module.Type)
     assert(isa<IdentifierExpr>(E));
@@ -1225,15 +1228,15 @@ QualType FunctionAnalyser::findStructMember(QualType T, IdentifierExpr* member) 
     return match->getType();
 }
 
-void FunctionAnalyser::analyseOffsetof(BuiltinExpr* B) {
-    LOG_FUNC
-
+StructTypeDecl* FunctionAnalyser::builtinExprToStructTypeDecl(BuiltinExpr* B) {
     Expr* structExpr = B->getExpr();
     Decl* structDecl = 0;
+    // TODO BB scope.checkAccess(std, structExpr->getLocation());
+
     IdentifierExpr* I = dyncast<IdentifierExpr>(structExpr);
     if (I) {
         structDecl = analyseIdentifier(I);
-        if (!structDecl) return;
+        if (!structDecl) return 0;
     } else {    // MemberExpr: module.StructType
         assert(isa<memberExpr>(structExpr));
         MemberExpr* M = cast<MemberExpr>(structExpr);
@@ -1241,17 +1244,17 @@ void FunctionAnalyser::analyseOffsetof(BuiltinExpr* B) {
         IdentifierExpr* B = dyncast<IdentifierExpr>(base);
         assert(B);  // Don't allow substructs as type
         Decl* D = analyseIdentifier(B);
-        if (!D) return;
+        if (!D) return 0;
 
         ImportDecl* ID = dyncast<ImportDecl>(D);
         if (!ID) {
             Diag(B->getLocation(), diag::err_unknown_module) << B->getName() << B->getSourceRange();
-            return;
+            return 0;
         }
         M->setModulePrefix();
         I = M->getMember();
         structDecl = scope.findSymbolInModule(I->getName(), I->getLocation(), ID->getModule());
-        if (!structDecl) return;
+        if (!structDecl) return 0;
 
         M->setDecl(structDecl);
         M->setType(D->getType());
@@ -1264,19 +1267,77 @@ void FunctionAnalyser::analyseOffsetof(BuiltinExpr* B) {
 
     StructTypeDecl* std = dyncast<StructTypeDecl>(structDecl);
     if (!std) {
+        // TODO BB add offsetof / to_container as argument
         Diag(I->getLocation(), diag::err_offsetof_non_struct_union) << I->getName();
-        return;
+        return 0;
     }
+    return std;
+}
+
+void FunctionAnalyser::analyseOffsetof(BuiltinExpr* B) {
+    LOG_FUNC
+
+    B->setType(Type::UInt32());
+    StructTypeDecl* std = builtinExprToStructTypeDecl(B);
+    if (!std) return;
+
     //scope.checkAccess(std, structExpr->getLocation());
+    // TODO BB extract below to function to re-use in analyseToContainer()
     const Module* currentModule = 0;
-    if (CurrentFunction) CurrentFunction->getModule();
-    if (CurrentVarDecl) CurrentVarDecl->getModule();
+    if (CurrentFunction) currentModule = CurrentFunction->getModule();
+    if (CurrentVarDecl) currentModule = CurrentVarDecl->getModule();
     assert(currentModule);
     if (currentModule != std->getModule() && std->hasAttribute(ATTR_OPAQUE)) {
+        Expr* structExpr = B->getExpr();
         Diag(structExpr->getLocation(), diag::err_deref_opaque) << std->isStruct() << std->DiagName() << structExpr->getSourceRange();
         return;
     }
     analyseStructMemberOffset(B, std, B->getMember());
+}
+
+QualType FunctionAnalyser::analyseToContainer(BuiltinExpr* B) {
+    LOG_FUNC
+
+    // check struct type
+    StructTypeDecl* std = builtinExprToStructTypeDecl(B);
+    if (!std) return QualType();
+    QualType ST = std->getType();
+
+    // check member
+    // TODO try re-using code with analyseMemberExpr() or analyseStructMember()
+    Expr* memberExpr = B->getMember();
+    IdentifierExpr* member = dyncast<IdentifierExpr>(memberExpr);
+    if (!member) { TODO; } // TODO support sub-member (memberExpr)
+
+    Decl* match = std->find(member->getName());
+    if (!match) {
+        outputStructDiagnostics(ST, member, diag::err_no_member);
+        return QualType();
+    }
+    member->setDecl(match, IdentifierExpr::REF_STRUCT_MEMBER);
+    QualType MT = match->getType();
+    member->setType(MT);
+
+    // check ptr
+    Expr* ptrExpr = B->getPointer();
+    QualType ptrType = analyseExpr(ptrExpr, RHS);
+    if (!ptrType.isPointerType()) {
+        EA.error(ptrExpr->getLocation(), Context.getPointerType(member->getType()), ptrType);
+        return QualType();
+    }
+    QualType PT = cast<PointerType>(ptrType)->getPointeeType();
+    // TODO BB allow conversion from void*
+    // TODO BB use ExprTypeAnalyser to do and insert casts etc
+    if (PT != MT) {
+        EA.error(ptrExpr->getLocation(), Context.getPointerType(member->getType()), ptrType);
+        return QualType();
+    }
+
+    // if ptr is const qualified, tehn so should resulting Type (const Type*)
+    if (PT.isConstQualified()) ST.addConst();
+    QualType Q = Context.getPointerType(ST);
+    B->setType(Q);
+    return Q;
 }
 
 Decl* FunctionAnalyser::analyseStructMemberOffset(BuiltinExpr* expr, StructTypeDecl* S, Expr* member) {
@@ -1689,7 +1750,6 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
 QualType FunctionAnalyser::analyseBuiltinExpr(Expr* expr) {
     LOG_FUNC
     BuiltinExpr* B = cast<BuiltinExpr>(expr);
-    expr->setType(Type::UInt32());
     switch (B->getBuiltinKind()) {
     case BuiltinExpr::BUILTIN_SIZEOF:
         if (!analyseSizeOfExpr(B)) return QualType();
@@ -1703,6 +1763,8 @@ QualType FunctionAnalyser::analyseBuiltinExpr(Expr* expr) {
     case BuiltinExpr::BUILTIN_OFFSETOF:
         analyseOffsetof(B);
         break;
+    case BuiltinExpr::BUILTIN_TO_CONTAINER:
+        return analyseToContainer(B);
     }
 
     return Type::UInt32();

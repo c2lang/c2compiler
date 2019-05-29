@@ -88,7 +88,8 @@ void MakefileGenerator::write(const std::string& path) {
         //cflags << " -Werror";
     }
     if (component.isSharedLib()) cflags << " -fPIC";
-    cflags << " -pipe -O2 -std=c99"; // fixed CFLAGS
+    cflags << " -pipe -O2 -std=c99";
+    cflags << " -Wno-missing-field-initializers";
     out << "CFLAGS=" << cflags.c_str() << '\n';
 
     // LDFLAGS
