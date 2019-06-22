@@ -55,14 +55,15 @@ static void usage(const char* name) {
     fprintf(stderr, "   -i            - generate LLVM IR code\n");
     fprintf(stderr, "   -I            - generate + print LLVM IR code\n");
     fprintf(stderr, "   -l            - list targets\n");
-    fprintf(stderr, "   -p            - print all modules\n");
+    fprintf(stderr, "   -m            - print modules (excluding library modules)\n");
+    fprintf(stderr, "   -M            - print modules (including library modules)\n");
     fprintf(stderr, "   -s            - print symbols (excluding library symbols)\n");
     fprintf(stderr, "   -S            - print symbols (including library symbols)\n");
     fprintf(stderr, "   -t            - print timing\n");
     fprintf(stderr, "   -v            - verbose logging\n");
     fprintf(stderr, "   --about       - print information about C2 and c2c\n");
     fprintf(stderr, "   --test        - test mode (don't check for main())\n");
-    fprintf(stderr, "   --deps        - print module dependencies\n");
+    fprintf(stderr, "   --deps        - generate module dependencies\n");
     fprintf(stderr, "   --refs        - generate c2tags file\n");
     fprintf(stderr, "   --check       - only parse + analyse\n");
     fprintf(stderr, "   --showlibs    - print available libraries\n");
@@ -135,8 +136,12 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
             case 'l':
                 print_targets = true;
                 break;
-            case 'p':
+            case 'm':
                 opts.printModules = true;
+                break;
+            case 'M':
+                opts.printModules = true;
+                opts.printLibModules = true;
                 break;
             case 's':
                 opts.printSymbols = true;
@@ -236,8 +241,7 @@ int main(int argc, const char *argv[])
         Recipe dummy("dummy", Component::EXECUTABLE);
         dummy.addFile(targetFilter);
         C2Builder builder(dummy, 0, opts);
-        int errors = builder.checkFiles();
-        if (!errors) errors = builder.build();
+        int errors = builder.build();
         return errors ? EXIT_FAILURE : EXIT_SUCCESS;
     }
 
@@ -252,9 +256,9 @@ int main(int argc, const char *argv[])
 
     BuildFile buildFile;
     BuildFile* buildFilePtr = NULL;
-    BuildFileReader buildReader(buildFile);
     if (!build_file) build_file = finder.getBuildFile();
     if (build_file) {
+        BuildFileReader buildReader(buildFile);
         if (!buildReader.parse(build_file)) {
             fprintf(stderr, "Error reading %s: %s\n", build_file, buildReader.getErrorMsg());
             return EXIT_FAILURE;
@@ -268,8 +272,7 @@ int main(int argc, const char *argv[])
         const Recipe& recipe = reader.get(i);
         if (targetFilter && recipe.name != targetFilter) continue;
         C2Builder builder(recipe, buildFilePtr, opts);
-        int errors = builder.checkFiles();
-        if (!errors) errors = builder.build();
+        int errors = builder.build();
         if (errors) hasErrors = true;
         count++;
     }

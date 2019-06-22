@@ -29,6 +29,7 @@
 namespace c2lang {
 class DiagnosticsEngine;
 class SourceManager;
+class DiagnosticConsumer;
 }
 
 namespace C2 {
@@ -42,7 +43,6 @@ public:
     C2Builder(const Recipe& recipe_, const BuildFile* buildFile_, const BuildOptions& opts);
     ~C2Builder();
 
-    int checkFiles();
     int build();
     void generateDeps(bool showFiles, bool showPrivate, bool showExternals, const std::string& path) const;
 
@@ -50,16 +50,17 @@ public:
     const Components& getComponents() const { return components; }
 private:
     Module* findModule(const std::string& name) const;
+    void configDiagnostics(c2lang::DiagnosticsEngine &Diags, const StringList& silentWarnings);
     bool checkImports(ParseHelper& helper);
     unsigned analyse();
     void printSymbols(bool printLibs) const;
-    void printComponents() const;
+    void printComponents(bool printLibs) const;
     void log(const char* color, const char* format, ...) const;
+    int report(c2lang::DiagnosticConsumer* client, uint64_t t1_build);
 
-    bool checkMainFunction(c2lang::DiagnosticsEngine& Diags);
     bool checkExportedPackages() const;
-    typedef std::deque<std::string> ImportsQueue;
-    bool checkModuleImports(ParseHelper& helper, Component* component, Module* module, ImportsQueue& queue, const LibInfo* lib = 0);
+    typedef std::deque<const LibInfo*> ImportsQueue;
+    bool checkModuleImports(ParseHelper& helper, ImportsQueue& queue, const LibInfo* lib);
     void createC2Module();
 
     void generateOptionalDeps();

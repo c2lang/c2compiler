@@ -51,6 +51,11 @@ public:
     bool isExported() const { return m_isExported; }
     void setExported() { m_isExported = true; }
     bool isLoaded() const { return files.size() != 0; }
+    bool isUsed() const { return m_isUsed; }
+    void setUsed() { m_isUsed = true; }
+
+    bool hasMain() const { return m_hasMain; }
+    void setMain() { m_hasMain = true; }
 
     void printFiles(StringBuilder& output) const;
     void printSymbols(StringBuilder& output) const;
@@ -75,6 +80,8 @@ private:
     bool m_isExternal;       // not a module in current target
     bool m_isCLib;           // not a C2 module, but used C library
     bool m_isExported;       // symbols should be exported (in recipe)
+    bool m_isUsed;           // used for external module, if they needs to be loaded
+    bool m_hasMain;          // set if this module contains main function
 
     Symbols symbols;
     AttrMap declAttrs;

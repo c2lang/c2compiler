@@ -5,6 +5,10 @@ language = "C"
 type = [ "static", "dynamic" ]
 linkname = "m"
 
+[[deps]]
+name = "libc"
+type = "dynamic"
+
 [[module]]
 name = "math"
 

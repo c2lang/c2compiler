@@ -14,6 +14,7 @@
  */
 
 #include "Builder/ManifestReader.h"
+#include "Builder/Manifest.h"
 #include "FileUtils/TomlReader.h"
 #include "AST/Component.h"
 
@@ -29,18 +30,18 @@ static Component::Type str2dep(const char* type) {
 bool ManifestReader::parse()
 {
     TomlReader reader;
-    if (!reader.parse(filename.c_str())) return false;
+    if (!reader.parse(manifest.filename.c_str())) return false;
 
     const char* lang = reader.getValue("library.language");
     if (!lang) {
-        printf("%s: missing library.language\n", filename.c_str());
+        printf("%s: missing library.language\n", manifest.filename.c_str());
         return false;
     }
-    isNative_ = (strcmp(lang, "C2") == 0);
+    manifest.isNative = (strcmp(lang, "C2") == 0);
 
     // optional
     const char* linkname = reader.getValue("library.linkname");
-    if (linkname) linkName = linkname;
+    if (linkname) manifest.linkName = linkname;
 
     // required
     TomlReader::ValueIter typeIter = reader.getValueIter("library.type");
@@ -48,17 +49,17 @@ bool ManifestReader::parse()
         const char* typeStr = typeIter.getValue();
         Component::Type type = str2dep(typeStr);
         if ((int)type == -1) {
-            printf("%s: invalid dep type '%s'\n", filename.c_str(), typeStr);
+            printf("%s: invalid dep type '%s'\n", manifest.filename.c_str(), typeStr);
             return false;
         }
         switch (type) {
         case Component::EXECUTABLE:
             break;
         case Component::SHARED_LIB:
-            hasDynamicLib = true;
+            manifest.hasDynamicLib = true;
             break;
         case Component::STATIC_LIB:
-            hasStaticLib = true;
+            manifest.hasStaticLib = true;
             break;
         }
         typeIter.next();
@@ -69,22 +70,22 @@ bool ManifestReader::parse()
         const char* depName = depsIter.getValue("name");
         const char* depType = depsIter.getValue("type");
         if (!depName || !depType) {
-            printf("%s: dependency needs name and type\n", filename.c_str());
+            printf("%s: dependency needs name and type\n", manifest.filename.c_str());
             return false;
         }
         Component::Type type = str2dep(depType);
         if ((int)type == -1) {
-            printf("%s: invalid dep type '%s'\n", filename.c_str(), depType);
+            printf("%s: invalid dep type '%s'\n", manifest.filename.c_str(), depType);
             return false;
         }
-        for (unsigned i=0; i<deps.size(); i++) {
-            if (deps[i] == depName) {
+        for (unsigned i=0; i<manifest.deps.size(); i++) {
+            if (manifest.deps[i] == depName) {
                 sprintf(errorMsg, "duplicate dependency on '%s'", depName);
                 return false;
             }
         }
         // TODO also store/use deps type
-        deps.push_back(depName);
+        manifest.deps.push_back(depName);
         depsIter.next();
     }
 
@@ -92,10 +93,10 @@ bool ManifestReader::parse()
     while (!moduleIter.done()) {
         const char* name = moduleIter.getValue("name");
         if (!name) {
-            printf("%s: missing module name\n", filename.c_str());
+            printf("%s: missing module name\n", manifest.filename.c_str());
             return false;
         }
-        entries.push_back(ManifestEntry(name));
+        manifest.modules.push_back(name);
         moduleIter.next();
     }
     return true;

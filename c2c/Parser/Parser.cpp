@@ -148,8 +148,7 @@ void Parser::ParseModule() {
 
 void Parser::ParseImports() {
     LOG_FUNC
-    while (1) {
-        if (Tok.isNot(tok::kw_import)) break;
+    while (Tok.is(tok::kw_import)) {
         // Syntax: import [identifier] <as identifier> <local>
         ConsumeToken();
         if (ExpectIdentifier()) return;

@@ -24,53 +24,51 @@
 #include "CGenerator/HeaderNamer.h"
 #include "Utils/StringList.h"
 
-struct dirent;
-
 namespace C2 {
 
+class Recipe;
 class Module;
 
 struct LibInfo {
-    LibInfo(const std::string& h, const std::string& f, Component* c, Module* m, bool isClib_)
-        : headerLibInfo(h), c2file(f), component(c), module(m), isClib(isClib_)
+    LibInfo(const std::string& h, const std::string& f, Component* c, Module* m)
+        : headerLibInfo(h), c2file(f), component(c), module(m)
     {}
     std::string headerLibInfo;
     std::string c2file;
     Component* component;
     Module* module;
-    bool isClib;
 };
 
 class LibraryLoader : public HeaderNamer {
 public:
     LibraryLoader(Components& components_,
                   Modules& modules_,
-                  const StringList& exportList_)
-        : components(components_)
+                  const Recipe& recipe_)
+        : mainComponent(0)
+        , components(components_)
         , modules(modules_)
-        , exportList(exportList_)
+        , recipe(recipe_)
     {}
-    ~LibraryLoader();
+    virtual ~LibraryLoader();
 
     void addDir(const std::string& libdir);
 
-    void addDep(Component* src, const std::string& dest, Component::Type type);
+    bool createComponents();
+    Component* getMainComponent() const { return mainComponent; }
 
-    bool scan();
-    void showLibs(bool useColors) const;
+    // for mainComponent
+    const LibInfo* addModule(Component* C, Module* M, const std::string& header, const std::string& file);
+
+    void showLibs(bool useColors, bool showModules) const;
 
     virtual const std::string& getIncludeName(const std::string& modName) const;
 
     const LibInfo* findModuleLib(const std::string& moduleName) const;
 private:
-    struct Dependency {
-        Dependency(Component* s, const std::string& n, Component::Type t)
-            : src(s), name(n), type(t)
-        {}
-        Component* src;
-        std::string name;
-        Component::Type type;
-    };
+    void createMainComponent();
+    bool loadExternals();
+    void addDep(Component* src, const std::string& dest, Component::Type type);
+
     Component* findComponent(const std::string& name) const;
     Component* createComponent(const std::string& name,
                                const std::string& path,
@@ -78,24 +76,25 @@ private:
                                Component::Type type);
     Component* findModuleComponent(const std::string& moduleName) const;
     bool findComponentDir(const std::string& name, char* dirname) const;
-    bool checkLibrary(const Dependency& dep);
-    void addDependencies(const Component* C);
-    void showLib(StringBuilder& out, const std::string& libdir, bool useColors) const;
+
+    void showLib(StringBuilder& out, const std::string& libdir, bool useColors, bool showModules) const;
+
+    bool checkComponent(Component* C);
+    void checkLibDirs();
 
     StringList libraryDirs;
 
+    Component* mainComponent;
     Components& components;
     Modules& modules;
 
+    // TODO BB: merge this into Modules?
     typedef std::map<std::string, LibInfo*> Libraries; // moduleName -> LibInfo
     typedef Libraries::const_iterator LibrariesConstIter;
     typedef Libraries::iterator LibrariesIter;
     Libraries libs;
 
-    const StringList& exportList;
-
-    typedef std::deque<Dependency> Queue;
-    Queue deps;
+    const Recipe& recipe;
 };
 
 }

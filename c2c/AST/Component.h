@@ -54,8 +54,10 @@ public:
     bool isSharedLib() const { return type == SHARED_LIB; }
     bool isStaticLib() const { return type == STATIC_LIB; }
 
-    void setLinkName(const std::string& name_) {
+    void updateFields(bool isClib_, const std::string& path_, const std::string& name_) {
+        path = path_;
         linkName = name_;
+        is_clib = isClib_;
     }
 
     void print(StringBuilder& output) const;
@@ -76,6 +78,7 @@ public:
         if (b->hasDep(a)) return true;
         return true;
     }
+
 private:
     bool isExported(const std::string& moduleName) const;
 

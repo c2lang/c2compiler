@@ -1,4 +1,5 @@
 // @recipe bin
+   $warnings no-unused-module
 
 // @file{file1}
 module foo;

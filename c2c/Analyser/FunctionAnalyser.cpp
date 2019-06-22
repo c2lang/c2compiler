@@ -2236,9 +2236,10 @@ Decl* FunctionAnalyser::analyseIdentifier(IdentifierExpr* id) {
         id->setDecl(D, globalDecl2RefType(D));
         id->setType(D->getType());
         SetConstantFlags(D, id);
-    }
-    if (usedPublicly && !D->isPublic()) {
-        Diag(id->getLocation(), diag::err_non_public_constant) << D->DiagName();
+
+        if (usedPublicly && !D->isPublic()) {
+            Diag(id->getLocation(), diag::err_non_public_constant) << D->DiagName();
+        }
     }
     return D;
 }

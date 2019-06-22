@@ -14,8 +14,10 @@
  */
 
 #include "Builder/LibraryLoader.h"
+#include "Builder/Manifest.h"
 #include "Builder/ManifestReader.h"
 #include "Builder/BuilderConstants.h"
+#include "Builder/Recipe.h"
 #include "AST/Module.h"
 #include "Utils/Utils.h"
 #include "Utils/StringBuilder.h"
@@ -41,21 +43,19 @@ void LibraryLoader::addDir(const std::string& libdir) {
 }
 
 void LibraryLoader::addDep(Component* src, const std::string& dest, Component::Type type) {
-    deps.push_back(Dependency(src, dest, type));
+    Component* C = findComponent(dest);
+    if (C) {
+        if (C->getType() != type) {
+            fprintf(stderr, "c2c: error: different library types needed for %s\n", dest.c_str());
+            TODO;
+        }
+    } else {
+        C = createComponent(dest, "", true, type);
+    }
+    src->addDep(C);
 }
 
-bool LibraryLoader::scan() {
-    assert(components.size() == 1);     // only main component
-    Component* C = components[0];
-    // create libs entry for MainComponent
-    const ModuleList& mainMods = C->getModules();
-    for (unsigned i=0; i<mainMods.size(); i++) {
-        Module* M = mainMods[i];
-        modules[M->getName()] = M;
-        libs[M->getName()] = new LibInfo("", "", C, M, true);
-    }
-    // Dependencies for main component have already been added
-
+void LibraryLoader::checkLibDirs() {
     for (StringListConstIter iter = libraryDirs.begin(); iter != libraryDirs.end(); ++iter) {
         const std::string& libdir = *iter;
         struct stat statbuf;
@@ -65,29 +65,115 @@ bool LibraryLoader::scan() {
             // just continue to get 'cannot find library X' errors
         }
     }
+}
 
-    bool hasErrors = false;
-    while (!deps.empty()) {
-        Dependency dep = deps.front();
-        deps.pop_front();
-        hasErrors |= checkLibrary(dep);
+bool LibraryLoader::createComponents() {
+    createMainComponent();
+    checkLibDirs();
+    return loadExternals();
+}
+
+void LibraryLoader::createMainComponent() {
+    mainComponent = new Component(recipe.name, "TODO", recipe.type, false, false, recipe.getExports());
+    components.push_back(mainComponent);
+
+    if (!recipe.noLibC) {
+        // NOTE: libc always SHARED_LIB for now
+        addDep(mainComponent, "libc", Component::SHARED_LIB);
     }
-    if (!hasErrors) {
+    for (unsigned i=0; i<recipe.libraries.size(); i++) {
+        addDep(mainComponent, recipe.libraries[i].name, recipe.libraries[i].type);
+    }
+}
+
+bool LibraryLoader::loadExternals() {
+    bool hasErrors = false;
+    unsigned i = 1; // skip main component
+    while (i < components.size()) {
+        hasErrors |= checkComponent(components[i]);
+        i++;
+    }
+
 #if 0
         printf("before\n");
-        for (unsigned i=0; i<components.size(); i++) { printf("  %s\n", components[i]->name.c_str()); }
+        for (i=0; i<components.size(); i++) { printf("  %s\n", components[i]->name.c_str()); }
 #endif
         // sort Components by dep, bottom->top
         std::sort(components.begin(), components.end(), Component::compareDeps);
 #if 0
         printf("after\n");
-        for (unsigned i=0; i<components.size(); i++) { printf("  %s\n", components[i]->name.c_str()); }
+        for (i=0; i<components.size(); i++) { printf("  %s\n", components[i]->name.c_str()); }
 #endif
-    }
     return !hasErrors;
 }
 
-void LibraryLoader::showLib(StringBuilder& out, const std::string& libdir, bool useColors) const {
+const LibInfo* LibraryLoader::addModule(Component* C, Module* M, const std::string& header, const std::string& file) {
+    modules[M->getName()] = M;
+    LibInfo* L = new LibInfo(header, file, C, M);
+    libs[M->getName()] = L;
+    return L;
+}
+
+bool LibraryLoader::checkComponent(Component* C) {
+    const std::string& name = C->getName();
+
+    // search all libDirs until file is found
+    char componentDir[512];
+    if (!findComponentDir(name, componentDir)) {
+        fprintf(stderr, "c2c: error: cannot find library '%s'\n", name.c_str());
+        return true;
+    }
+    //printf("LIBS: found %s in %s\n", name.c_str(), componentDir);
+    char fullname[512];
+    sprintf(fullname, "%s/%s", componentDir, MANIFEST_FILE);
+
+    Manifest manifest(fullname);
+    ManifestReader reader(manifest);
+    if (!reader.parse()) {
+        fprintf(stderr, "c2c: error: %s: %s\n", fullname, reader.getErrorMsg());
+        return true;
+    }
+    bool hasErrors = false;
+    if (C->getType() == Component::SHARED_LIB && !manifest.hasDynamicLib) {
+        fprintf(stderr, "c2c: error: '%s' is not available as shared library in %s\n",
+            name.c_str(), fullname);
+        hasErrors = true;
+    }
+    if (C->getType() == Component::STATIC_LIB && !manifest.hasStaticLib) {
+        fprintf(stderr, "c2c: error: '%s' is not available as static library in %s\n",
+            name.c_str(), fullname);
+        hasErrors = true;
+    }
+
+    C->updateFields(!manifest.isNative, componentDir, manifest.linkName);
+
+    const StringList& libDeps = manifest.deps;
+    for (unsigned i=0; i<libDeps.size(); i++) {
+        addDep(C, libDeps[i], Component::SHARED_LIB);
+    }
+
+    for (unsigned i=0; i<manifest.modules.size(); i++) {
+        const std::string& moduleName = manifest.modules[i];
+
+        ModulesConstIter iter = modules.find(moduleName);
+        if (iter != modules.end()) {
+            const Component* other = findModuleComponent(moduleName);
+            assert(other);
+            fprintf(stderr, "c2c: error: module-name '%s' is used in %s and %s\n",
+                moduleName.c_str(), C->getName().c_str(), other->getName().c_str());
+            hasErrors = true;
+        } else {
+            Module* M = C->getModule(moduleName);
+
+            StringBuilder c2file(512);
+            c2file << componentDir << '/' << moduleName << ".c2i";
+            addModule(C, M, moduleName + ".h", c2file.c_str());
+        }
+    }
+    return hasErrors;
+}
+
+void LibraryLoader::showLib(StringBuilder& out, const std::string& libdir, bool useColors, bool showModules) const {
     out << "  ";
     out.setColor(ANSI_BLUE);
     out << libdir;
@@ -111,20 +197,21 @@ void LibraryLoader::showLib(StringBuilder& out, const std::string& libdir, bool 
             if (err) goto next;
             out << "    " << entry->d_name;
             {
-                ManifestReader manifest(fullname);
-                if (!manifest.parse()) {
-                    fprintf(stderr, "c2c: error: %s: %s\n", fullname, manifest.getErrorMsg());
+                Manifest manifest(fullname);
+                ManifestReader reader(manifest);
+                if (!reader.parse()) {
+                    fprintf(stderr, "c2c: error: %s: %s\n", fullname, reader.getErrorMsg());
                     goto next;
                 }
                 out << "  ";
                 out.setColor(ANSI_YELLOW);
-                if (manifest.hasStatic()) out << "static";
-                if (manifest.hasDynamic()) {
-                    if (manifest.hasStatic()) out << '|';
+                if (manifest.hasStaticLib) out << "static";
+                if (manifest.hasDynamicLib) {
+                    if (manifest.hasStaticLib) out << '|';
                     out << "dynamic";
                 }
                 out << "  ";
-                const StringList& deps = manifest.getDeps();
+                const StringList& deps = manifest.deps;
                 if (!deps.empty()) {
                     out.setColor(ANSI_MAGENTA);
                     out << "requires: ";
@@ -136,9 +223,10 @@ void LibraryLoader::showLib(StringBuilder& out, const std::string& libdir, bool 
                 out.setColor(ANSI_NORMAL);
                 out << '\n';
 
-                for (unsigned e=0; e<manifest.numEntries(); e++) {
-                    const ManifestEntry& entry2 = manifest.get(e);
-                    out << "      " << entry2.name << '\n';
+                if (showModules) {
+                    for (unsigned i=0; i<manifest.modules.size(); i++) {
+                        out << "      " << manifest.modules[i] << '\n';
+                    }
                 }
             }
         }
@@ -147,14 +235,14 @@ next:
     }
 }
 
-void LibraryLoader::showLibs(bool useColors) const {
+void LibraryLoader::showLibs(bool useColors, bool showModules) const {
     StringBuilder out(8192);
     out.enableColor(useColors);
     out << "libraries:\n";
 
     for (StringListConstIter iter = libraryDirs.begin(); iter != libraryDirs.end(); ++iter) {
         std::string libdir = *iter;
-        showLib(out, *iter, useColors);
+        showLib(out, *iter, useColors, showModules);
     }
     puts(out);
 }
@@ -181,7 +269,7 @@ Component* LibraryLoader::findComponent(const std::string& name) const {
 }
 
 Component* LibraryLoader::createComponent(const std::string& name, const std::string& path, bool isCLib, Component::Type type) {
-    Component* C = new Component(name, path, type, true, isCLib, exportList);
+    Component* C = new Component(name, path, type, true, isCLib, recipe.getExports());
     components.push_back(C);
     return C;
 }
@@ -207,74 +295,5 @@ bool LibraryLoader::findComponentDir(const std::string& name, char* dirname) con
     }
     dirname[0] = 0;
     return false;
-}
-
-bool LibraryLoader::checkLibrary(const Dependency& dep) {
-    bool hasErrors = false;
-    const std::string& componentName = dep.name;
-
-    Component* C = findComponent(componentName);
-    if (C) {
-        dep.src->addDep(C);
-        return false;
-    }
-
-    // TODO search all libDirs until file is found
-    char componentDir[512];
-    if (!findComponentDir(componentName, componentDir)) {
-        fprintf(stderr, "c2c: error: cannot find library '%s'\n", componentName.c_str());
-        return true;
-    }
-    //printf("LIBS: found %s in %s\n", componentName.c_str(), componentDir);
-    char fullname[512];
-    sprintf(fullname, "%s/%s", componentDir, MANIFEST_FILE);
-
-    ManifestReader manifest(fullname);
-    if (!manifest.parse()) {
-        fprintf(stderr, "c2c: error: %s: %s\n", fullname, manifest.getErrorMsg());
-        return true;
-    }
-
-    if (dep.type == Component::SHARED_LIB && !manifest.hasDynamic()) {
-        fprintf(stderr, "c2c: error: '%s' is not available as shared library in %s\n",
-            componentName.c_str(), fullname);
-        hasErrors = true;
-    }
-    if (dep.type == Component::STATIC_LIB && !manifest.hasStatic()) {
-        fprintf(stderr, "c2c: error: '%s' is not available as static library in %s\n",
-            componentName.c_str(), fullname);
-        hasErrors = true;
-    }
-
-    C = createComponent(componentName, componentDir, !manifest.isNative(), dep.type);
-    dep.src->addDep(C);
-    C->setLinkName(manifest.getLinkName());
-    const StringList& libDeps = manifest.getDeps();
-    for (unsigned i=0; i<libDeps.size(); i++) {
-        addDep(C, libDeps[i], dep.type);
-    }
-
-    for (unsigned e=0; e<manifest.numEntries(); e++) {
-        const ManifestEntry& entry = manifest.get(e);
-        const std::string& moduleName = entry.name;
-        Module* M = C->getModule(moduleName);
-
-        ModulesConstIter iter = modules.find(moduleName);
-        if (iter != modules.end()) {
-            const Component* other = findModuleComponent(moduleName);
-            assert(other);
-            fprintf(stderr, "c2c: error: module-name '%s' is used in %s and %s\n",
-                moduleName.c_str(), C->getName().c_str(), other->getName().c_str());
-            hasErrors = true;
-        } else {
-            modules[moduleName] = M;
-        }
-
-        StringBuilder c2file(512);
-        c2file << componentDir << '/' << moduleName << ".c2i";
-
-        libs[moduleName] = new LibInfo(moduleName + ".h", c2file.c_str(), C, M, !manifest.isNative());
-    }
-    return hasErrors;
 }
 

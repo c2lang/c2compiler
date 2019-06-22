@@ -1,4 +1,6 @@
 module multi;
+import stdio;
+import stdlib;
 
 public func i32 main() {
     i32 a = getNumber2();

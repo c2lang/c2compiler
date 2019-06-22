@@ -13,28 +13,33 @@
  * limitations under the License.
  */
 
-#ifndef BUILDER_MANIFEST_READER_H
-#define BUILDER_MANIFEST_READER_H
+#ifndef BUILDER_MANIFEST_H
+#define BUILDER_MANIFEST_H
 
 #include <string>
+#include <vector>
+#include "Utils/StringList.h"
 
 namespace C2 {
 
-class Manifest;
-
-class ManifestReader {
+class Manifest {
 public:
-    ManifestReader(Manifest& manifest_)
-        : manifest(manifest_)
+    Manifest(const char* filename_)
+        : filename(filename_)
+        , isNative(false)
+        , hasStaticLib(false)
+        , hasDynamicLib(false)
     {}
-    ~ManifestReader() {}
+    ~Manifest() {}
 
-    bool parse();
-    const char* getErrorMsg() const { return errorMsg; }
+    std::string filename;
+    std::string linkName;
+    bool isNative;
+    bool hasStaticLib;
+    bool hasDynamicLib;
+    StringList deps;
+    StringList modules;
 
-private:
-    Manifest& manifest;
-    char errorMsg[256];
 };
 
 }

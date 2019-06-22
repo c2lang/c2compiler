@@ -28,14 +28,17 @@ Generate LLVM IR.
 .BR \-I\fR
 Print generated LLVM IR.
 .TP
-.BR \-p\fR
-Print a list of modules.
+.BR \-m\fR
+Print a list of modules (excluding library modules).
+.TP
+.BR \-M\fR
+Print a list of modules (including library modules).
 .TP
 .BR \-s\fR
-Print symbols from modules, but not library symbols.
+Print symbols from modules (excluding library symbols).
 .TP
 .BR \-S\fR
-Print symbols from both modules and libraries.
+Print symbols from modules (including library symbols).
 .TP
 .BR \-t\fR
 Print compilation timing.

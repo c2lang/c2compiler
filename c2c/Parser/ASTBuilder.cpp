@@ -518,7 +518,6 @@ C2::FunctionDecl* ASTBuilder::ActOnFuncDecl(const char* func_name_, SourceLocati
     FunctionDecl* D = createFuncDecl(fullname, loc, is_public, rtype);
 
     if (ID) D->setStructInfo(ID);
-    if (strcmp(D->getName(), "main") == 0) D->setExported();
     ast.addFunction(D);
     addSymbol(D, ID);
     return D;
@@ -1544,8 +1543,8 @@ void ASTBuilder::addSymbol(Decl* d, bool isStructFunction) {
         Diag(Old->getLocation(), diag::note_previous_definition);
     } else {
         if (isa<ImportDecl>(d)) {
-            imports[d->getName()]  = d;
-            d->setModule(module);   // Will be changed if it points external
+            imports[d->getName()] = d;
+            d->setModule(module); // Will be changed if it points external
         } else {
             if (d->isPublic() && module->isExported()) d->setExported();
             module->addSymbol(d, isStructFunction);

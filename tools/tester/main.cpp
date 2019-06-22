@@ -883,9 +883,9 @@ bool IssueDb::parse() {
         const char* end = cp + file.size;
         const char* line_start = cp;
         recipe << "executable test\n";
-        if (single) {
-            recipe << current_file << '\n';
-        }
+        recipe << "  $warnings no-unused-module\n";
+        recipe << "  " << current_file << '\n';
+
         bool hasSkip = (strncmp(cp, "// @skip", 8) == 0);
         if (runSkipped != hasSkip) return true;
         while (cp != end) {

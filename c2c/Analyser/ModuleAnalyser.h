@@ -13,9 +13,10 @@
  * limitations under the License.
  */
 
-#ifndef ANALYSER_COMPONENT_ANALYSER_H
-#define ANALYSER_COMPONENT_ANALYSER_H
+#ifndef ANALYSER_MODULE_ANALYSER_H
+#define ANALYSER_MODULE_ANALYSER_H
 
+#include <vector>
 #include "AST/Module.h"
 
 namespace c2lang {
@@ -25,31 +26,34 @@ class DiagnosticsEngine;
 namespace C2 {
 
 class ASTContext;
-class Component;
 class TargetInfo;
-class ModuleAnalyser;
+class FileAnalyser;
 
-class ComponentAnalyser {
+class ModuleAnalyser {
 public:
-    ComponentAnalyser(Component& C,
-                      const Modules& allModules,
-                      c2lang::DiagnosticsEngine& Diags,
-                      const TargetInfo& target_,
-                      ASTContext& context_,
-                      bool verbose,
-                      bool testMode);
-    ~ComponentAnalyser();
+    ModuleAnalyser(Module& m_,
+                   const Modules& allModules,
+                   c2lang::DiagnosticsEngine& Diags_,
+                   const TargetInfo& target_,
+                   ASTContext& context_,
+                   bool verbose_);
+    ~ModuleAnalyser();
 
     unsigned analyse(bool print1, bool print2, bool print3, bool printLib);
+    void checkUnused();
 private:
-    bool checkMainFunction(bool testMode, c2lang::DiagnosticsEngine& Diags);
+    void printASTs(bool printLib) const;
 
-    Component& component;
-    typedef std::vector<ModuleAnalyser*> Analysers;
+    typedef std::vector<FileAnalyser*> Analysers;
     Analysers analysers;
 
-    ComponentAnalyser(const ComponentAnalyser&);
-    ComponentAnalyser& operator= (const ComponentAnalyser&);
+    Module& module;
+    c2lang::DiagnosticsEngine& Diags;
+    ASTContext& context;
+    bool verbose;
+
+    ModuleAnalyser(const ModuleAnalyser&);
+    ModuleAnalyser& operator= (const ModuleAnalyser&);
 };
 
 }

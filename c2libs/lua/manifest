@@ -6,6 +6,10 @@ type = [ "static", "dynamic" ]
 linkname = "lua"
 
 [[deps]]
+name = "libc"
+type = "dynamic"
+
+[[deps]]
 name = "math"
 type = "dynamic"
 

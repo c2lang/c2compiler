@@ -108,7 +108,7 @@ public:
         const FileEntry *pFile = FileMgr.getFile(filename);
         if (pFile == 0) {
             fprintf(stderr, "Error opening file: '%s'\n", filename.c_str());
-            exit(-1);
+            exit(EXIT_FAILURE);
         }
         FileID id = SM.createFileID(pFile, SourceLocation(), SrcMgr::C_User);
         PP.EnterSourceFile(id, nullptr, SourceLocation());
@@ -158,7 +158,7 @@ C2Builder::C2Builder(const Recipe& recipe_, const BuildFile* buildFile_, const B
     , options(opts)
     , c2Mod(0)
     , mainComponent(0)
-    , libLoader(components, modules, recipe.getExports())
+    , libLoader(components, modules, recipe)
     , useColors(true)
 {
     if (buildFile && !buildFile->outputDir.empty()) {
@@ -196,25 +196,21 @@ C2Builder::~C2Builder()
     delete c2Mod;
 }
 
-int C2Builder::checkFiles() {
-    int errors = 0;
-    for (unsigned i=0; i<recipe.size(); i++) {
-        const std::string& filename = recipe.get(i);
-        struct stat buf;
-        if (stat(filename.c_str(), &buf)) {
-            fprintf(stderr, "c2c: error: %s: '%s'\n", strerror(errno), filename.c_str());
-            errors++;
-        }
-    }
-    return errors;
-}
-
 int C2Builder::build() {
-    // TODO refactor this function to 'Work'-framework
     log(ANSI_GREEN, "building target %s", recipe.name.c_str());
 
     uint64_t t1_build = Utils::getCurrentTime();
 
+    // Step 1 - create all components, read manifests, create external modules
+    if (!libLoader.createComponents()) return 1;
+    mainComponent = libLoader.getMainComponent();
+
+    if (options.showLibs) {
+        libLoader.showLibs(useColors, false);
+        return 0;
+    }
+
+    // Step 2 - parse sources
     // Diagnostics
     // NOTE: DiagOpts is somehow deleted by Diags/TextDiagnosticPrinter below?
     DiagnosticOptions* DiagOpts = new DiagnosticOptions();
@@ -224,7 +220,117 @@ int C2Builder::build() {
                             // NOTE: setting ShouldOwnClient to true causes crash??
                             new TextDiagnosticPrinter(llvm::errs(), DiagOpts), false);
     DiagnosticConsumer* client = Diags.getClient();
+    configDiagnostics(Diags, recipe.silentWarnings);
 
+    // TargetInfo
+    std::shared_ptr<TargetOptions> to(new TargetOptions());
+    to->Triple = llvm::sys::getDefaultTargetTriple();
+
+    std::shared_ptr<HeaderSearchOptions> HSOpts(new HeaderSearchOptions());
+    // add current directory (=project root) to #include path
+    char pwd[512];
+    if (getcwd(pwd, 512) == 0) {
+        FATAL_ERROR("Failed to get current directory");
+    }
+    HSOpts->AddPath(pwd, c2lang::frontend::Quoted);
+
+    // set definitions from recipe
+    std::string PredefineBuffer;
+    if (!recipe.configs.empty()) {
+        PredefineBuffer.reserve(4080);
+        llvm::raw_string_ostream Predefines(PredefineBuffer);
+        MacroBuilder mbuilder(Predefines);
+        for (unsigned i=0; i<recipe.configs.size(); i++) {
+            mbuilder.defineMacro(recipe.configs[i]);
+        }
+    }
+
+    // FileManager
+    FileSystemOptions FileSystemOpts;
+    FileManager FileMgr(FileSystemOpts);
+    SourceManager SM(Diags, FileMgr);
+
+    ParseHelper helper(Diags, HSOpts, SM, FileMgr, PredefineBuffer,
+                       targetInfo);
+
+    // Step 2A - parse main component sources + analyse imports
+    uint64_t t1_parse = Utils::getCurrentTime();
+    unsigned errors = 0;
+    for (unsigned i=0; i<recipe.size(); i++) {
+        const std::string& filename = recipe.get(i);
+
+        if (options.verbose) log(COL_VERBOSE, "parsing (%s) %s", mainComponent->getName().c_str(), filename.c_str());
+        bool ok = helper.parse(*mainComponent, 0, filename, options.printAST0);
+        errors += !ok;
+    }
+    uint64_t t2_parse = Utils::getCurrentTime();
+    if (options.printTiming) log(COL_TIME, "parsing took %" PRIu64" usec", t2_parse - t1_parse);
+    if (client->getNumErrors()) return report(client, t1_build);
+
+    // Step 2B - analyse imports of all internal modules, parse (+ analyse imports of ) used external modules
+    uint64_t t1_parse_libs = Utils::getCurrentTime();
+    bool ok = checkImports(helper);
+    if (!ok) return report(client, t1_build);
+    uint64_t t2_parse_libs = Utils::getCurrentTime();
+    if (options.printTiming) log(COL_TIME, "parsing libs took %" PRIu64" usec", t2_parse_libs - t1_parse_libs);
+
+    if (options.printModules) {
+        printComponents(options.printLibModules);
+        return report(client, t1_build);
+    }
+
+    // Step 3 - analyze everything
+    uint64_t t1_analyse = Utils::getCurrentTime();
+    // components should be ordered bottom-up
+    for (unsigned c=0; c<components.size(); c++) {
+        if (options.verbose) log(COL_VERBOSE, "analysing component %s", components[c]->getName().c_str());
+        ComponentAnalyser analyser(*components[c], modules, Diags, targetInfo, context, options.verbose, options.testMode);
+        errors += analyser.analyse(options.printAST1, options.printAST2, options.printAST3, options.printASTLib);
+    }
+    uint64_t t2_analyse = Utils::getCurrentTime();
+    if (options.printTiming) log(COL_TIME, "analysis took %" PRIu64" usec", t2_analyse - t1_analyse);
+
+    if (options.printSymbols) printSymbols(options.printLibSymbols);
+
+    if (client->getNumErrors()) return report(client, t1_build);
+
+    if (!checkExportedPackages()) return report(client, t1_build);
+
+    // Step 4 - generation
+    generateOptionalDeps();
+
+    generateOptionalTags(SM);
+
+    generateInterface();
+
+    generateOptionalC();
+
+    generateOptionalIR();
+
+    if (options.verbose) log(COL_VERBOSE, "done");
+
+    return report(client, t1_build);
+}
+
+int C2Builder::report(DiagnosticConsumer* client, uint64_t t1_build) {
+    //SM.PrintStats();
+    uint64_t t2_build = Utils::getCurrentTime();
+    if (options.printTiming) log(COL_TIME, "total build took %" PRIu64" usec", t2_build - t1_build);
+    raw_ostream &OS = llvm::errs();
+    unsigned NumWarnings = client->getNumWarnings();
+    unsigned NumErrors = client->getNumErrors();
+    if (NumWarnings)
+        OS << NumWarnings << " warning" << (NumWarnings == 1 ? "" : "s");
+    if (NumWarnings && NumErrors)
+        OS << " and ";
+    if (NumErrors)
+        OS << NumErrors << " error" << (NumErrors == 1 ? "" : "s");
+    if (NumWarnings || NumErrors)
+        OS << " generated.\n";
+    return NumErrors;
+}
+
+void C2Builder::configDiagnostics(DiagnosticsEngine &Diags, const StringList& silentWarnings) {
     // add these diagnostic groups by default
     Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "conversion", diag::Severity::Warning);
     Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "all", diag::Severity::Warning);
@@ -287,146 +393,33 @@ int C2Builder::build() {
             continue;
         }
         fprintf(stderr, "recipe: unknown warning: '%s'\n", conf.c_str());
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
-
-    // TargetInfo
-    std::shared_ptr<TargetOptions> to(new TargetOptions());
-    to->Triple = llvm::sys::getDefaultTargetTriple();
-
-    std::shared_ptr<HeaderSearchOptions> HSOpts(new HeaderSearchOptions());
-    // add current directory (=project root) to #include path
-    char pwd[512];
-    if (getcwd(pwd, 512) == 0) {
-        FATAL_ERROR("Failed to get current directory");
-    }
-    HSOpts->AddPath(pwd, c2lang::frontend::Quoted);
-
-    // set definitions from recipe
-    std::string PredefineBuffer;
-    if (!recipe.configs.empty()) {
-        PredefineBuffer.reserve(4080);
-        llvm::raw_string_ostream Predefines(PredefineBuffer);
-        MacroBuilder mbuilder(Predefines);
-        for (unsigned i=0; i<recipe.configs.size(); i++) {
-            mbuilder.defineMacro(recipe.configs[i]);
-        }
-    }
-
-    // FileManager
-    FileSystemOptions FileSystemOpts;
-    FileManager FileMgr(FileSystemOpts);
-    SourceManager SM(Diags, FileMgr);
-
-    // create main Component
-    mainComponent = new Component(recipe.name, "TODO", recipe.type, false, false, recipe.getExports());
-    components.push_back(mainComponent);
-    // NOTE: libc always SHARED_LIB for now
-    if (!recipe.noLibC) {
-        libLoader.addDep(mainComponent, "libc", Component::SHARED_LIB);
-    }
-    for (unsigned i=0; i<recipe.libraries.size(); i++) {
-        libLoader.addDep(mainComponent, recipe.libraries[i].name, recipe.libraries[i].type);
-    }
-
-    ParseHelper helper(Diags, HSOpts, SM, FileMgr, PredefineBuffer,
-                       targetInfo);
-    // phase 1a: parse and local analyse
-    uint64_t t1_parse = Utils::getCurrentTime();
-    unsigned errors = 0;
-    for (unsigned i=0; i<recipe.size(); i++) {
-        const std::string& filename = recipe.get(i);
-
-        if (options.verbose) log(COL_VERBOSE, "parsing (%s) %s", mainComponent->getName().c_str(), filename.c_str());
-        bool ok = helper.parse(*mainComponent, 0, filename, options.printAST0);
-        errors += !ok;
-    }
-    uint64_t t2_parse = Utils::getCurrentTime();
-    if (options.printTiming) log(COL_TIME, "parsing took %" PRIu64" usec", t2_parse - t1_parse);
-    if (client->getNumErrors()) goto out;
-
-    uint64_t t1_analyse, t2_analyse;
-    // phase 1b: load required external Components/Modules
-    {
-        uint64_t t1_parse_libs = Utils::getCurrentTime();
-        if (!libLoader.scan()) goto out;
-        if (options.showLibs) libLoader.showLibs(useColors);
-        bool ok = checkImports(helper);
-        uint64_t t2_parse_libs = Utils::getCurrentTime();
-        if (options.printTiming) log(COL_TIME, "parsing libs took %" PRIu64" usec", t2_parse_libs - t1_parse_libs);
-        if (!ok) goto out;
-    }
-
-    // phase 2: analyse all files
-    t1_analyse = Utils::getCurrentTime();
-    for (unsigned c=0; c<components.size(); c++) {
-        if (options.verbose) log(COL_VERBOSE, "analysing component %s", components[c]->getName().c_str());
-        ComponentAnalyser analyser(*components[c], modules, Diags, targetInfo, context, options.verbose);
-        errors += analyser.analyse(options.printAST1, options.printAST2, options.printAST3, options.printASTLib);
-    }
-    t2_analyse = Utils::getCurrentTime();
-    if (options.printTiming) log(COL_TIME, "analysis took %" PRIu64" usec", t2_analyse - t1_analyse);
-
-    if (options.printModules) printComponents();
-    if (options.printSymbols) printSymbols(options.printLibSymbols);
-
-    if (client->getNumErrors()) goto out;
-
-    if (!checkMainFunction(Diags)) goto out;
-
-    if (!checkExportedPackages()) goto out;
-
-    generateOptionalDeps();
-
-    generateOptionalTags(SM);
-
-    generateInterface();
-
-    generateOptionalC();
-
-    generateOptionalIR();
-
-    if (options.verbose) log(COL_VERBOSE, "done");
-out:
-    //SM.PrintStats();
-    uint64_t t2_build = Utils::getCurrentTime();
-    if (options.printTiming) log(COL_TIME, "total build took %" PRIu64" usec", t2_build - t1_build);
-    raw_ostream &OS = llvm::errs();
-    unsigned NumWarnings = client->getNumWarnings();
-    unsigned NumErrors = client->getNumErrors();
-    if (NumWarnings)
-        OS << NumWarnings << " warning" << (NumWarnings == 1 ? "" : "s");
-    if (NumWarnings && NumErrors)
-        OS << " and ";
-    if (NumErrors)
-        OS << NumErrors << " error" << (NumErrors == 1 ? "" : "s");
-    if (NumWarnings || NumErrors)
-        OS << " generated.\n";
-    return NumErrors;
 }
 
 bool C2Builder::checkImports(ParseHelper& helper) {
+
     ImportsQueue queue;
 
-    bool ok = true;
+    // add main modules to libLoader, queue for import analysis
     const ModuleList& mainModules = mainComponent->getModules();
     for (unsigned i=0; i<mainModules.size(); i++) {
-        ok &= checkModuleImports(helper, mainComponent, mainModules[i], queue);
+        const LibInfo* lib = libLoader.addModule(mainComponent, mainModules[i], "", "");
+        queue.push_back(lib);
     }
-    if (!ok) return false;
 
+    bool ok = true;
     while (!queue.empty()) {
-        std::string currentModuleName = queue.front();
+        const LibInfo* lib = queue.front();
         queue.pop_front();
-        const LibInfo* lib = libLoader.findModuleLib(currentModuleName);
-        assert(lib);
-
-        ok &= checkModuleImports(helper, lib->component, lib->module, queue, lib);
+        ok &= checkModuleImports(helper, queue, lib);
     }
     return ok;
 }
 
-bool C2Builder::checkModuleImports(ParseHelper& helper, Component* component, Module* module, ImportsQueue& queue, const LibInfo* lib) {
+bool C2Builder::checkModuleImports(ParseHelper& helper, ImportsQueue& queue, const LibInfo* lib) {
+    Component* component = lib->component;
+    Module* module = lib->module;
     if (!module->isLoaded()) {
         assert(lib);
         if (options.verbose) log(COL_VERBOSE, "parsing (%s) %s", component->getName().c_str(), lib->c2file.c_str());
@@ -465,8 +458,10 @@ bool C2Builder::checkModuleImports(ParseHelper& helper, Component* component, Mo
                 }
             }
 
-            if (target->module->isLoaded()) continue;
-            queue.push_back(targetModuleName);
+            if (!target->module->isUsed()) {
+                target->module->setUsed();
+                queue.push_back(target);
+            }
         }
     }
     return ok;
@@ -505,15 +500,16 @@ void C2Builder::printSymbols(bool printLibs) const {
     printf("%s\n", (const char*)output);
 }
 
-void C2Builder::printComponents() const {
+void C2Builder::printComponents(bool printLibs) const {
     StringBuilder output;
     output.enableColor(true);
-    if (c2Mod) {
+    if (c2Mod && printLibs) {
         output << "Component <internal>\n";
         c2Mod->printFiles(output);
     }
     for (unsigned i=0; i<components.size(); i++) {
-        components[i]->print(output);
+        const Component* C = components[i];
+        if (printLibs || !C->isExternal()) C->print(output);
     }
     printf("%s\n", (const char*)output);
 }
@@ -527,40 +523,6 @@ void C2Builder::log(const char* color, const char* format, ...) const {
 
     if (useColors) printf("%s%s" ANSI_NORMAL "\n", color, buffer);
     else printf("%s\n", buffer);
-}
-
-bool C2Builder::checkMainFunction(DiagnosticsEngine& Diags) {
-    assert(mainComponent);
-
-    Decl* mainDecl = 0;
-    const ModuleList& mods = mainComponent->getModules();
-    for (unsigned m=0; m<mods.size(); m++) {
-        const Module* M = mods[m];
-        Decl* decl = M->findSymbol("main");
-        if (decl) {
-            if (mainDecl) {
-                // TODO multiple main functions
-            } else {
-                mainDecl = decl;
-            }
-        }
-    }
-
-    if (recipe.type == Component::EXECUTABLE) {
-        // bin: must have main
-        if (options.testMode) return true;
-        if (!mainDecl) {
-            Diags.Report(diag::err_main_missing);
-            return false;
-        }
-    } else {
-        // lib: cannot have main
-        if (mainDecl) {
-            Diags.Report(mainDecl->getLocation(), diag::err_lib_has_main);
-            return false;
-        }
-    }
-    return true;
 }
 
 bool C2Builder::checkExportedPackages() const {

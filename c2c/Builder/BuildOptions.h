@@ -35,6 +35,7 @@ struct BuildOptions {
         , checkOnly(false)
         , showLibs(false)
         , printModules(false)
+        , printLibModules(false)
         , printDependencies(false)
         , generateRefs(false)
         , verbose(false)
@@ -56,6 +57,7 @@ struct BuildOptions {
     bool checkOnly;
     bool showLibs;
     bool printModules;
+    bool printLibModules;
     bool printDependencies;
     bool generateRefs;
     bool verbose;
