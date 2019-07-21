@@ -47,63 +47,66 @@ ModuleAnalyser::~ModuleAnalyser() {
 }
 
 unsigned ModuleAnalyser::analyse(bool print1, bool print2, bool print3, bool printLib) {
-    unsigned errors = 0;
     const size_t count = analysers.size();
 
     // analyse globals
-    for (unsigned i=0; i<count; i++) {
-        analysers[i]->resolveTypes();
-    }
-    if (Diags.hasErrorOccurred()) return 1;
 
-    for (unsigned i=0; i<count; i++) {
-        errors += analysers[i]->resolveTypeCanonicals();
-    }
-    if (errors) return errors;
+    // collect incremental arrays
+    {
+        IncrementalArrayVals ia_values;
+        IncrementalEnums enums;
+        for (unsigned i=0; i<count; i++) {
+            if (!analysers[i]->collectIncrementals(ia_values, enums)) return 1;
+        }
 
-    for (unsigned i=0; i<count; i++) {
-        errors += analysers[i]->resolveStructMembers();
+        for (IncrementalArrayValsIter iter = ia_values.begin(); iter != ia_values.end(); ++iter) {
+            VarDecl* D = iter->first;
+            unsigned numValues = iter->second.size();
+            assert(numValues);
+            Expr* I = D->getInitValue();
+            assert(I);
+            assert(dyncast<InitListExpr>(I));
+            InitListExpr* ILE = cast<InitListExpr>(I);
+            Expr** values = (Expr**)context.Allocate(sizeof(Expr*)*numValues);
+            memcpy(values, &iter->second[0], sizeof(Expr*)*numValues);
+            ILE->setValues(values, numValues);
+        }
+        ia_values.clear();
+
+        for (IncrementalEnumsIter iter = enums.begin(); iter != enums.end(); ++iter) {
+            EnumTypeDecl* ETD = iter->first;
+            unsigned newValues = iter->second.size();
+            unsigned oldValues = ETD->numConstants();
+
+            unsigned total = oldValues + newValues;
+            EnumConstantDecl** constants = (EnumConstantDecl**)context.Allocate(sizeof(EnumConstantDecl*)*total);
+            if (oldValues) {
+                EnumConstantDecl** old = ETD->getConstants();
+                memcpy(&constants[0], old, sizeof(EnumConstantDecl*)*oldValues);
+                // NOTE: dont free old, since cannot free in AST
+            }
+            memcpy(&constants[oldValues], &iter->second[0], sizeof(EnumConstantDecl*)*newValues);
+            ETD->setConstants(constants, total);
+        }
+        enums.clear();
     }
+
+    // resolve types
+    for (unsigned i=0; i<count; i++) {
+        if (!analysers[i]->analyseTypes()) return 1;
+    }
+
     if (print1) printASTs(printLib);
-    if (errors) return errors;
 
     for (unsigned i=0; i<count; i++) {
-        errors += analysers[i]->resolveVars();
+        if (!analysers[i]->analyseVars()) return 1;
     }
-    if (errors) return errors;
-
-    for (unsigned i=0; i<count; i++) {
-        errors += analysers[i]->resolveEnumConstants();
-    }
-    if (errors) return errors;
-
-    IncrementalArrayVals ia_values;
-    for (unsigned i=0; i<count; i++) {
-        errors += analysers[i]->checkArrayValues(ia_values);
-    }
-    if (errors) return errors;
-
-    // Set ArrayValues
-    for (IncrementalArrayValsIter iter = ia_values.begin(); iter != ia_values.end(); ++iter) {
-        VarDecl* D = iter->first;
-        unsigned numValues = iter->second.size();
-        assert(numValues);
-        // NOTE: incremenal array is given InitListExpr in resolveVars()
-        Expr* I = D->getInitValue();
-        assert(I);
-        assert(dyncast<InitListExpr>(I));
-        InitListExpr* ILE = cast<InitListExpr>(I);
-        Expr** values = (Expr**)context.Allocate(sizeof(Expr*)*numValues);
-        memcpy(values, &iter->second[0], sizeof(Expr*)*numValues);
-        ILE->setValues(values, numValues);
-    }
-    ia_values.clear();
 
     StructFunctionList structFuncs;
     for (unsigned i=0; i<count; i++) {
-        errors += analysers[i]->checkFunctionProtos(structFuncs);
+        if (!analysers[i]->analyseFunctionProtos(structFuncs)) return 1;
     }
-    if (errors) return errors;
+
     // Set StructFunctions
     // NOTE: since these are linked anyways, just use special ASTContext from Builder
     for (StructFunctionListIter iter = structFuncs.begin(); iter != structFuncs.end(); ++iter) {
@@ -115,26 +118,21 @@ unsigned ModuleAnalyser::analyse(bool print1, bool print2, bool print3, bool pri
         S->setStructFuncs(funcs, numFuncs);
     }
 
-    for (unsigned i=0; i<count; i++) {
-        analysers[i]->checkVarInits();
-    }
-    // NOTE: printASTs will be different, since a whole module is analysed at a time
     if (print2) printASTs(printLib);
     if (Diags.hasErrorOccurred()) return 1;
 
     // function bodies
     for (unsigned i=0; i<count; i++) {
-        analysers[i]->checkFunctionBodies();
+        analysers[i]->analyseFunctionBodies();
     }
-    if (Diags.hasErrorOccurred()) return 1;
-
     if (print3) printASTs(printLib);
+    if (Diags.hasErrorOccurred()) return 1;
     return 0;
 }
 
 void ModuleAnalyser::checkUnused() {
     for (unsigned i=0; i<analysers.size(); i++) {
-        analysers[i]->checkDeclsForUsed();
+        analysers[i]->checkUnusedDecls();
     }
 }
 

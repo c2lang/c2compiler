@@ -1,6 +1,0 @@
-// @warnings{no-unused}
-module test;
-
-i32[-1] a;      // @error{array size is negative}
-i32[10-20] b;   // @error{array size is negative}
-

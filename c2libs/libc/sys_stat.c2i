@@ -27,7 +27,7 @@ type Stat struct {
     c_ulong st_ctime_nsec;
     c_uint  __unused4;
     c_uint  __unused5;
-	c_long[2] reserved;
+    c_long[2] reserved;
 } @(cname="stat", no_typedef)
 
 func c_int fstat(c_int fd, Stat* buf);

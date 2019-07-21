@@ -49,8 +49,8 @@ unsigned TypeResolver::checkType(QualType Q, bool used_public) {
         return checkType(cast<PointerType>(T)->getPointeeType(), used_public);
     case TC_ARRAY:
         return checkType(cast<ArrayType>(T)->getElementType(), used_public);
-    case TC_UNRESOLVED:
-        return checkUnresolvedType(cast<UnresolvedType>(T), used_public);
+    case TC_REF:
+        return checkRefType(cast<RefType>(T), used_public);
     case TC_ALIAS:
         return checkType(cast<AliasType>(T)->getRefType(), used_public);
     case TC_STRUCT:
@@ -65,7 +65,7 @@ unsigned TypeResolver::checkType(QualType Q, bool used_public) {
     FATAL_ERROR("Unreachable");
 }
 
-unsigned TypeResolver::checkUnresolvedType(const UnresolvedType* type, bool used_public) {
+unsigned TypeResolver::checkRefType(const RefType* type, bool used_public) {
     IdentifierExpr* moduleName = type->getModuleName();
     IdentifierExpr* typeName = type->getTypeName();
     SourceLocation tLoc = typeName->getLocation();
@@ -131,9 +131,9 @@ QualType TypeResolver::resolveUnresolved(QualType Q) const {
         return Context.getArrayType(Result, A->getSizeExpr(), A->isIncremental());
 
     }
-    case TC_UNRESOLVED:
+    case TC_REF:
     {
-        const UnresolvedType* U = cast<UnresolvedType>(T);
+        const RefType* U = cast<RefType>(T);
         TypeDecl* TD = U->getDecl();
         assert(TD);
         QualType result = TD->getType();
@@ -171,22 +171,25 @@ QualType TypeResolver::resolveType(QualType Q, bool usedPublic) {
     return resolved;
 }
 
-void TypeResolver::checkOpaqueType(SourceLocation loc, bool isPublic, QualType Q) {
+bool TypeResolver::checkOpaqueType(SourceLocation loc, bool isPublic, QualType Q) {
     const StructType* ST = dyncast<StructType>(Q);
-    if (!ST) return;
+    if (!ST) return true;
 
     const StructTypeDecl* S = ST->getDecl();
-    if (!S->hasAttribute(ATTR_OPAQUE)) return;
+    if (!S->hasAttribute(ATTR_OPAQUE)) return true;
 
     // if S is not in same Module, give 'used by value' error
     // if S is in same module, and used in public interface, give error: 'public decl with opaque..'
     if (globals.isExternal(S->getModule())) {
         Diags.Report(loc, diag::err_opaque_used_by_value) << S->DiagName();
+        return false;
     } else {
         if (isPublic) {
             Diags.Report(loc, diag::err_opaque_used_by_value_public_decl) << S->DiagName();
+            return false;
         }
     }
+    return true;
 }
 
 bool TypeResolver::requireCompleteType(SourceLocation loc, QualType Q, int msg) {
@@ -210,7 +213,7 @@ QualType TypeResolver::checkCanonicals(Decls& decls, QualType Q, bool set) const
     {
         const PointerType* P = cast<PointerType>(T);
         QualType t1 = P->getPointeeType();
-        // Pointee will always be in same ASTContext (file), since it's either built-in or UnresolvedType
+        // Pointee will always be in same ASTContext (file), since it's either built-in or RefType
         QualType t2 = checkCanonicals(decls, t1, set);
         if (!t2.isValid()) return t2;
         QualType canon;
@@ -241,9 +244,9 @@ QualType TypeResolver::checkCanonicals(Decls& decls, QualType Q, bool set) const
         if (set) A->setCanonicalType(canon);
         return canon;
     }
-    case TC_UNRESOLVED:
+    case TC_REF:
     {
-        const UnresolvedType* U = cast<UnresolvedType>(T);
+        const RefType* U = cast<RefType>(T);
         TypeDecl* TD = U->getDecl();
         assert(TD);
         // check if exists
@@ -290,7 +293,7 @@ QualType TypeResolver::resolveCanonical(QualType Q) const {
     {
         const PointerType* P = cast<PointerType>(T);
         QualType t1 = P->getPointeeType();
-        // Pointee will always be in same ASTContext (file), since it's either built-in or UnresolvedType
+        // Pointee will always be in same ASTContext (file), since it's either built-in or RefType
         QualType t2 = resolveCanonical(t1);
         assert(t2.isValid());
         if (t1 == t2) {
@@ -321,7 +324,7 @@ QualType TypeResolver::resolveCanonical(QualType Q) const {
             return Canon;
         }
     }
-    case TC_UNRESOLVED:
+    case TC_REF:
         FATAL_ERROR("Unreachable");
         return QualType();
     case TC_ALIAS:

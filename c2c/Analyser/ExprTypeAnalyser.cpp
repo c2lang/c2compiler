@@ -187,12 +187,13 @@ bool ExprTypeAnalyser::checkNonPointerCast(const ExplicitCastExpr* expr, QualTyp
     case TC_ARRAY:
         TODO;
         break;
-    case TC_UNRESOLVED:
+    case TC_REF:
         TODO;
         break;
     case TC_ALIAS:
-        TODO;
-        break;
+        C.dump();
+        FATAL_ERROR("Unreachable");
+        return false;
     case TC_STRUCT:
         // no casts allowed
         break;
@@ -254,7 +255,7 @@ bool ExprTypeAnalyser::checkBuiltinCast(const ExplicitCastExpr* expr, QualType D
     case TC_ARRAY:
         TODO;
         break;
-    case TC_UNRESOLVED:
+    case TC_REF:
     case TC_ALIAS:
     case TC_STRUCT:
     case TC_ENUM:
@@ -286,7 +287,7 @@ bool ExprTypeAnalyser::checkEnumCast(const ExplicitCastExpr* expr, QualType Dest
         return true;    // allow
     case TC_POINTER:
     case TC_ARRAY:
-    case TC_UNRESOLVED:
+    case TC_REF:
     case TC_ALIAS:
     case TC_STRUCT:
         FATAL_ERROR("Unreachable");
@@ -315,7 +316,7 @@ bool ExprTypeAnalyser::checkFunctionCast(const ExplicitCastExpr* expr, QualType 
         return checkWidth(DestType.getCanonicalType(), expr->getLocation(), diag::err_cast_pointer_to_nonword);
     case TC_POINTER:
     case TC_ARRAY:
-    case TC_UNRESOLVED:
+    case TC_REF:
     case TC_ALIAS:
     case TC_STRUCT:
         FATAL_ERRORF("Test %d", 1);
@@ -421,7 +422,7 @@ bool ExprTypeAnalyser::checkCompatible(QualType left, const Expr* expr) const {
         return checkPointer(left, right, expr);
     case TC_ARRAY:
         break;
-    case TC_UNRESOLVED:
+    case TC_REF:
         break;
     case TC_ALIAS:
         break;
@@ -447,7 +448,7 @@ bool ExprTypeAnalyser::checkBuiltin(QualType left, QualType right, const Expr* e
     switch (C->getTypeClass()) {
     case TC_BUILTIN:
     {
-        // NOTE: canonical is builtin, var itself my be UnresolvedType etc
+        // NOTE: canonical is builtin, var itself my be RefType etc
         const BuiltinType* Right = cast<BuiltinType>(right.getCanonicalType());
         int rule = type_conversions[Right->getKind()][Left->getKind()];
         // 0 = ok, 1 = loss of precision, 2 sign-conversion, 3=float->integer, 4 incompatible, 5 loss of FP prec.
@@ -508,7 +509,7 @@ bool ExprTypeAnalyser::checkBuiltin(QualType left, QualType right, const Expr* e
         break;
     case TC_ARRAY:
         break;
-    case TC_UNRESOLVED:
+    case TC_REF:
         break;
     case TC_ALIAS:
         break;

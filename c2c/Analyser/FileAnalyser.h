@@ -42,6 +42,7 @@ class ArrayValueDecl;
 class AST;
 class TypeResolver;
 class TargetInfo;
+class RefType;
 
 typedef std::vector<FunctionDecl*> StructFunctionEntries;
 typedef std::map<StructTypeDecl*, StructFunctionEntries> StructFunctionList;
@@ -49,6 +50,10 @@ typedef StructFunctionList::const_iterator StructFunctionListIter;
 
 typedef std::map<VarDecl*, ExprList> IncrementalArrayVals;
 typedef IncrementalArrayVals::const_iterator IncrementalArrayValsIter;
+
+typedef std::vector<C2::EnumConstantDecl*> EnumConstants;
+typedef std::map<EnumTypeDecl*, EnumConstants> IncrementalEnums;
+typedef IncrementalEnums::const_iterator IncrementalEnumsIter;
 
 class FileAnalyser {
 public:
@@ -61,31 +66,69 @@ public:
     ~FileAnalyser() {}
 
     // call in this order
-    void resolveTypes();
-    unsigned resolveTypeCanonicals();
-    unsigned resolveStructMembers();
-    unsigned resolveVars();
-    unsigned checkArrayValues(IncrementalArrayVals& values);
-    unsigned checkFunctionProtos(StructFunctionList& structFuncs);
-    void checkVarInits();
-    unsigned resolveEnumConstants();
-    void checkFunctionBodies();
-    void checkDeclsForUsed();
+    bool collectIncrementals(IncrementalArrayVals& values, IncrementalEnums& enums);
+    bool analyseTypes();
+    bool analyseVars();
+    bool analyseFunctionProtos(StructFunctionList& structFuncs);
+    void analyseFunctionBodies();
+    void checkUnusedDecls();
 
 private:
-    unsigned checkTypeDecl(TypeDecl* D);
-    unsigned checkStructTypeDecl(StructTypeDecl* D);
-    unsigned resolveVarDecl(VarDecl* D);
-    unsigned resolveFunctionDecl(FunctionDecl* D, bool checkArgs);
-    unsigned checkArrayValue(ArrayValueDecl* D, IncrementalArrayVals& values);
+    bool pushCheck(Decl* d);
+    void popCheck();
+    bool isTop(Decl* d);
+
+    bool collectIncremental(ArrayValueDecl* D, IncrementalArrayVals& values, IncrementalEnums& enums);
+
+    // Decls
+    bool analyseDecl(Decl* D);
+    bool analyseVarDecl(VarDecl* D);
+    bool analyseTypeDecl(TypeDecl* D);
+    bool analyseStructTypeDecl(StructTypeDecl* D);
+    bool analyseStructMember(QualType T, MemberExpr* M, bool isStatic);
+    bool analyseFunctionDecl(FunctionDecl* D);
+    bool analyseEnumConstants(EnumTypeDecl* ETD);
+    QualType analyseType(QualType Q, SourceLocation loc, bool usedPublic, bool full);
+    QualType analyseRefType(QualType Q, bool usedPublic, bool full);
+
+    // Expressions
+    bool analyseExpr(Expr* expr, bool usedPublic);
+    bool analyseIntegerLiteral(Expr* expr);
+    bool analyseBuiltinExpr(Expr* expr, bool usedPublic);
+    bool analyseElemsOfExpr(BuiltinExpr* B, bool usedPublic);
+    bool analyseBinaryOperator(Expr* expr, bool usedPublic);
+    bool analyseUnaryOperator(Expr* expr, bool usedPublic);
+    bool analyseMemberExpr(Expr* expr, bool usedPublic);
+    Decl* analyseIdentifier(IdentifierExpr* id, bool usedPublic);
+
+    // Init expressions
+    bool analyseInitExpr(Expr* expr, QualType expectedType, bool usedPublic);
+    bool analyseInitList(InitListExpr* expr, QualType Q, bool usedPublic);
+    bool analyseInitListArray(InitListExpr* expr, QualType Q, unsigned numValues, Expr** values, bool usedPublic);
+    bool analyseInitListStruct(InitListExpr* expr, QualType Q, unsigned numValues, Expr** values, bool usedPublic);
+    bool checkArrayDesignators(InitListExpr* expr, int64_t* size);
+    bool analyseDesignatorInitExpr(Expr* expr, QualType expectedType, bool usedPublic);
+    typedef std::vector<Expr*> Fields;
+    bool analyseFieldInDesignatedInitExpr(DesignatedInitExpr* D,
+                                                        StructTypeDecl* STD,
+                                                        QualType Q,
+                                                        Fields &fields,
+                                                        Expr* value,
+                                                        bool &haveDesignators,
+                                                        bool usedPublic);
     typedef std::map<const std::string, const Decl*> Names;
-    void checkStructFunction(FunctionDecl* F, StructFunctionList& structFuncs);
-    void analyseStructNames(const StructTypeDecl* S, Names& names, bool isStruct);
-    void checkVarDeclAttributes(VarDecl* D);
-    void checkAttributes(Decl* D);
-    void checkStructMembersForUsed(const StructTypeDecl* S);
+    bool checkStructFunction(FunctionDecl* F, StructFunctionList& structFuncs);
+    bool analyseStructNames(const StructTypeDecl* S, Names& names, bool isStruct);
+    bool checkVarDeclAttributes(VarDecl* D);
+    bool checkAttributes(Decl* D);
+    bool analyseStaticStructMember(QualType T, MemberExpr* M, const StructTypeDecl* S);
+    bool outputStructDiagnostics(QualType T, IdentifierExpr* member, unsigned msg);
     bool isStaticStructFunc(QualType T,  FunctionDecl* func) const;
     Decl* getStructDecl(QualType T) const;
+
+    void checkStructMembersForUsed(const StructTypeDecl* S);
+
+    c2lang::DiagnosticBuilder Diag(SourceLocation Loc, unsigned DiagID) const;
 
     AST& ast;
     const Module& module;
@@ -93,6 +136,10 @@ private:
     std::unique_ptr<TypeResolver> TR;
     c2lang::DiagnosticsEngine& Diags;
     FunctionAnalyser functionAnalyser;
+    // TEMP array with index
+    Decl* checkStack[8];
+    unsigned checkIndex;
+
     bool verbose;
     FileAnalyser(const FileAnalyser&);
     FileAnalyser& operator= (const FileAnalyser&);

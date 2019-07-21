@@ -1330,10 +1330,10 @@ void CCodeGenerator::EmitTypePreName(QualType type, StringBuilder& output) {
         // TODO handle Qualifiers
         EmitTypePreName(cast<ArrayType>(T)->getElementType(), output);
         break;
-    case TC_UNRESOLVED:
+    case TC_REF:
         // TODO handle Qualifiers?
     {
-        const UnresolvedType* U = cast<UnresolvedType>(T);
+        const RefType* U = cast<RefType>(T);
         U->printLiteral(output);
     }
     break;

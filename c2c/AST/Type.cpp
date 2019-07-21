@@ -127,7 +127,7 @@ bool QualType::isConstant() const {
         return isConstQualified() && cast<PointerType>(T)->getPointeeType().isConstQualified();
     case TC_ARRAY:
         return cast<ArrayType>(T)->getElementType().isConstant();
-    case TC_UNRESOLVED:
+    case TC_REF:
     case TC_ALIAS:
         FATAL_ERROR("Unreachable");
         break;
@@ -251,6 +251,7 @@ void* Type::operator new(size_t bytes, const C2::ASTContext& C, unsigned alignme
 
 void Type::setCanonicalType(QualType qt) const {
     assert(canonicalType.isNull());
+    if (!canonicalType.isNull()) FATAL_ERROR("already have canonical");
     canonicalType = qt;
 }
 
@@ -265,8 +266,8 @@ void Type::printName(StringBuilder& buffer) const {
     case TC_ARRAY:
         cast<ArrayType>(this)->printName(buffer);
         break;
-    case TC_UNRESOLVED:
-        cast<UnresolvedType>(this)->printName(buffer);
+    case TC_REF:
+        cast<RefType>(this)->printName(buffer);
         break;
     case TC_ALIAS:
         cast<AliasType>(this)->printName(buffer);
@@ -297,8 +298,8 @@ void Type::debugPrint(StringBuilder& buffer) const {
     case TC_ARRAY:
         cast<ArrayType>(this)->debugPrint(buffer);
         break;
-    case TC_UNRESOLVED:
-        cast<UnresolvedType>(this)->debugPrint(buffer);
+    case TC_REF:
+        cast<RefType>(this)->debugPrint(buffer);
         break;
     case TC_ALIAS:
         cast<AliasType>(this)->debugPrint(buffer);
@@ -352,8 +353,8 @@ void Type::fullDebug(StringBuilder& buffer, int indent) const {
     case TC_ARRAY:
         cast<ArrayType>(this)->fullDebugImpl(buffer, indent);
         break;
-    case TC_UNRESOLVED:
-        cast<UnresolvedType>(this)->fullDebugImpl(buffer, indent);
+    case TC_REF:
+        cast<RefType>(this)->fullDebugImpl(buffer, indent);
         break;
     case TC_ALIAS:
         cast<AliasType>(this)->fullDebugImpl(buffer, indent);
@@ -731,7 +732,8 @@ void ArrayType::fullDebugImpl(StringBuilder& buffer, int indent) const {
 void ArrayType::setSize(const llvm::APInt& value) {
     Size = value;
     arrayTypeBits.hasSize = 1;
-    // also set on Canonical
+#if 0
+    // also set on Canonical?
     QualType canonical = getCanonicalType();
     assert(canonical.isValid());
     Type* T = canonical.getTypePtr();
@@ -739,27 +741,28 @@ void ArrayType::setSize(const llvm::APInt& value) {
         ArrayType* AT = cast<ArrayType>(T);
         AT->setSize(value);
     }
+#endif
 }
 
 
-TypeDecl* UnresolvedType::getDecl() const {
+TypeDecl* RefType::getDecl() const {
     Decl* decl = typeName->getDecl();
     if (!decl) return 0;
     assert(isa<TypeDecl>(decl));
     return cast<TypeDecl>(decl);
 }
 
-void UnresolvedType::printName(StringBuilder& buffer) const {
+void RefType::printName(StringBuilder& buffer) const {
     const Decl* decl = typeName->getDecl();
     if (decl) {
         buffer << decl->getName();
     } else {
-        buffer << "(UnresolvedType)";
+        buffer << "(RefType)";
         printLiteral(buffer);
     }
 }
 
-void UnresolvedType::debugPrint(StringBuilder& buffer) const {
+void RefType::debugPrint(StringBuilder& buffer) const {
     const Decl* decl = typeName->getDecl();
     if (decl) {
         buffer << "(Unresolved)" << decl->getName();
@@ -770,10 +773,10 @@ void UnresolvedType::debugPrint(StringBuilder& buffer) const {
 }
 
 #ifdef TYPE_DEBUG
-void UnresolvedType::fullDebugImpl(StringBuilder& buffer, int indent) const {
+void RefType::fullDebugImpl(StringBuilder& buffer, int indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
-    buffer << "[UnresolvedType] " << (void*)this << '\n';
+    buffer << "[RefType] " << (void*)this << '\n';
     buffer.indent(indent);
     buffer.setColor(COL_ATTR);
     buffer << "decl=";
@@ -790,7 +793,7 @@ void UnresolvedType::fullDebugImpl(StringBuilder& buffer, int indent) const {
     buffer << '\n';
 }
 #endif
-void UnresolvedType::printLiteral(StringBuilder& output) const {
+void RefType::printLiteral(StringBuilder& output) const {
     if (moduleName) {
         moduleName->printLiteral(output);
         output << '.';
@@ -848,7 +851,13 @@ void StructType::debugPrint(StringBuilder& buffer) const {
 void StructType::fullDebugImpl(StringBuilder& buffer, int indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
-    buffer << "[StructType] " << (void*)this << " TODO" << '\n';
+    buffer << "[StructType] " << (void*)this << ' ';
+    if (decl) {
+        buffer << decl->getName();
+    } else {
+        buffer << "NULL";
+    }
+    buffer << '\n';
     Type::fullDebugImpl(buffer, indent);
 }
 #endif
@@ -895,8 +904,10 @@ void FunctionType::debugPrint(StringBuilder& buffer) const {
 void FunctionType::fullDebugImpl(StringBuilder& buffer, int indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
-    buffer << "[FunctionType] " << (void*)this << '\n';
-    buffer << "TODO\n";
+    buffer << "[FunctionType] " << (void*)this << ' ';
+    if (func) buffer << func->getName();
+    else buffer << "NULL";
+    buffer << '\n';
     Type::fullDebugImpl(buffer, indent);
 }
 #endif

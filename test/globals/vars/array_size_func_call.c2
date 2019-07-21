@@ -1,0 +1,6 @@
+// @warnings{no-unused}
+module test;
+
+func i32 foo() { return 10; }
+i32[foo()] c;            // @error{non constant array size}
+

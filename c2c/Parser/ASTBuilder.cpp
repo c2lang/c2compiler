@@ -132,7 +132,7 @@ ASTBuilder::ASTBuilder(SourceManager& sm_, DiagnosticsEngine& Diags_, c2lang::Pr
     , component(component_)
     , module(existingMod)
     , ast(*new AST(filename_, component.isExternal()))
-    , Context(ast.getASTContext())
+    , Context(ast.getContext())
     , targetInfo(ti)
 {
 #define checkSize(x, s) static_assert(sizeof(x) == s,  #x" size changed")
@@ -159,7 +159,7 @@ ASTBuilder::ASTBuilder(SourceManager& sm_, DiagnosticsEngine& Diags_, c2lang::Pr
 	checkSize(BuiltinType, 16);
 	checkSize(PointerType, 24);
 	checkSize(ArrayType, 48);
-	checkSize(UnresolvedType, 32);
+	checkSize(RefType, 32);
 	checkSize(AliasType, 32);
 	checkSize(StructType, 24);
 	checkSize(EnumType, 24);
@@ -279,7 +279,7 @@ ASTBuilder::~ASTBuilder() {
     printf("%u  BuiltinType\n", (int)sizeof(BuiltinType));
     printf("%u  PointerType\n", (int)sizeof(PointerType));
     printf("%u  ArrayType\n", (int)sizeof(ArrayType));
-    printf("%u  UnresolvedType\n", (int)sizeof(UnresolvedType));
+    printf("%u  RefType\n", (int)sizeof(RefType));
     printf("%u  AliasType\n", (int)sizeof(AliasType));
     printf("%u  StructType\n", (int)sizeof(StructType));
     printf("%u  EnumType\n", (int)sizeof(EnumType));
@@ -1001,7 +1001,7 @@ C2::ExprResult ASTBuilder::ActOnUserType(Expr* mName_, Expr* tName_) {
     tName->getLocation().dump(SourceMgr);
     std::cerr << ANSI_NORMAL << '\n';
 #endif
-    QualType qt = Context.getUnresolvedType(mName, tName);
+    QualType qt = Context.getRefType(mName, tName);
     TypeExpr* te = new (Context.allocTypeExpr())TypeExpr(qt);
     return ExprResult(te);
 }

@@ -277,7 +277,7 @@ public:
         REF_STRUCT_MEMBER,
         REF_STRUCT_FUNC,
         REF_LABEL,
-    } RefType;
+    } RefKind;
     IdentifierExpr(SourceLocation loc_, const char* name_)
         : Expr(EXPR_IDENTIFIER, loc_, false)
         , name(name_)
@@ -288,7 +288,7 @@ public:
         return E->getKind() == EXPR_IDENTIFIER;
     }
 
-    RefType getRefType() const { return static_cast<RefType>(identifierExprBits.refType); }
+    RefKind getRefType() const { return static_cast<RefKind>(identifierExprBits.refType); }
     bool isStructFunction() const { return getRefType() == REF_STRUCT_FUNC; }
     bool isType() const { return getRefType() == REF_TYPE; }
 
@@ -297,7 +297,7 @@ public:
 
     const char* getName() const;
 
-    void setDecl(Decl* decl_, RefType ref) {
+    void setDecl(Decl* decl_, RefKind ref) {
         assert(ref != REF_UNRESOLVED);
         decl = decl_;
         identifierExprBits.refType = ref;

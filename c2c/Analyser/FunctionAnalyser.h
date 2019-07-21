@@ -61,10 +61,9 @@ public:
                     const TargetInfo& target_,
                     bool isInterface_);
 
+    // TODO remove all functions used only by FileAnalyser
     void check(FunctionDecl* F);
     void checkVarInit(VarDecl* V);
-    void checkArraySizeExpr(VarDecl* V);
-    unsigned checkEnumValue(EnumConstantDecl* E, llvm::APSInt& nextValue);
 private:
     void checkFunction(FunctionDecl* F);
 
@@ -161,9 +160,6 @@ private:
 
     QualType outputStructDiagnostics(QualType T, IdentifierExpr *member, unsigned msg);
     QualType analyseStaticStructMember(QualType T, MemberExpr *M, const StructTypeDecl *S, unsigned side);
-
-    // conversions
-    QualType UsualUnaryConversions(Expr* expr) const;
 
     Scope& scope;
     TypeResolver& TR;

@@ -45,12 +45,12 @@ public:
     // resolving of other Types (after Type Analysis phase)
     QualType resolveType(QualType Q, bool usedPublic);
 
-    void checkOpaqueType(SourceLocation loc, bool isPublic, QualType Q);
+    bool checkOpaqueType(SourceLocation loc, bool isPublic, QualType Q);
 
     bool requireCompleteType(SourceLocation loc, QualType Q, int msg);
 private:
     QualType resolveCanonical(QualType Q) const;
-    unsigned checkUnresolvedType(const UnresolvedType* type, bool used_public);
+    unsigned checkRefType(const RefType* type, bool used_public);
 
     typedef std::vector<const Decl*> Decls;
     typedef Decls::iterator DeclsIter;

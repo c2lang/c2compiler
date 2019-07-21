@@ -381,7 +381,7 @@ void NilExpr::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 
-static const char* reftype2str(IdentifierExpr::RefType ref) {
+static const char* refkind2str(IdentifierExpr::RefKind ref) {
     switch(ref) {
     case IdentifierExpr::REF_UNRESOLVED:    return "unresolved";
     case IdentifierExpr::REF_MODULE:        return "module";
@@ -411,7 +411,7 @@ void IdentifierExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer << ' ' << getName();
     if (getRefType() == REF_UNRESOLVED) buffer.setColor(COL_INVALID);
     else buffer.setColor(COL_INFO);
-    buffer << ' ' << reftype2str(getRefType());
+    buffer << ' ' << refkind2str(getRefType());
     buffer << '\n';
 }
 

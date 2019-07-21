@@ -338,6 +338,8 @@ DIAG(err_using_attribute_ns_conflict, CLASS_ERROR, (unsigned)diag::Severity::Err
 DIAG(err_using_namespace_in_class, CLASS_ERROR, (unsigned)diag::Severity::Error, "'using namespace' is not allowed in classes", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(err_var_casing, CLASS_ERROR, (unsigned)diag::Severity::Error, "a variable name must start with a lower case character", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(err_var_self_init, CLASS_ERROR, (unsigned)diag::Severity::Error, "cannot initialize %0 with itself", 0, SFINAE_SubstitutionFailure, false, true, 4)
+DIAG(err_circular_type_decl, CLASS_ERROR, (unsigned)diag::Severity::Error, "circular type declaration", 0, SFINAE_SubstitutionFailure, false, true, 4)
+DIAG(err_circular_module_dependency, CLASS_ERROR, (unsigned)diag::Severity::Error, "circular dependency between modules", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(err_zero_version, CLASS_ERROR, (unsigned)diag::Severity::Error, "version number must have non-zero major, minor, or sub-minor version", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(ext_abstract_pack_declarator_parens, CLASS_EXTENSION, (unsigned)diag::Severity::Warning, "ISO C++11 requires a parenthesized pack declaration to have a name", 22, SFINAE_Suppress, false, false, 4)
 DIAG(ext_alias_declaration, CLASS_EXTENSION, (unsigned)diag::Severity::Warning, "alias declarations are a C++11 extension", 78, SFINAE_Suppress, false, false, 4)

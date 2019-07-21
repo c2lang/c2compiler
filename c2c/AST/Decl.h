@@ -53,6 +53,12 @@ enum DeclKind {
     DECL_LABEL
 };
 
+enum CheckState {
+    CHECK_UNCHECKED = 0,
+    CHECK_IN_PROGRESS,         // only used for EnumConstantDecls and Incremental Arrays/Enums
+    CHECK_DONE,
+};
+
 class alignas(void*) Decl {
 public:
     Decl(DeclKind k, const char* name_, SourceLocation loc_,
@@ -70,6 +76,10 @@ public:
     SourceLocation getLocation() const { return loc; }
 
     DeclKind getKind() const { return static_cast<DeclKind>(declBits.dKind); }
+    CheckState getCheckState() const { return static_cast<CheckState>(declBits.cState); }
+    void setCheckState(CheckState s) { declBits.cState = s; }
+    bool isChecked() const { return getCheckState() == CHECK_DONE; }
+
     bool isExported() const { return declBits.IsExported; }
     void setExported() { declBits.IsExported = true; }
     bool isPublic() const { return declBits.IsPublic; }
@@ -103,11 +113,14 @@ protected:
     }
 
     void printPublic(StringBuilder& buffer) const;
+    void printChecked(StringBuilder& buffer) const;
+    void printCommon(StringBuilder& buffer, unsigned indent, const char* title) const;
 
     class DeclBitfields {
         friend class Decl;
 
         unsigned dKind : 4;
+        unsigned cState : 2;
         unsigned IsExported: 1;
         unsigned IsPublic : 1;
         unsigned IsUsed : 1;
@@ -398,6 +411,7 @@ public:
         constants = constants_;
         enumTypeDeclBits.numConstants = numConstants_;
     }
+    EnumConstantDecl** getConstants() const { return constants; }
     unsigned numConstants() const { return enumTypeDeclBits.numConstants; }
     EnumConstantDecl* getConstant(unsigned i) const { return constants[i]; }
     EnumConstantDecl* findConstant(const char* name_) const;

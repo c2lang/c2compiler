@@ -53,7 +53,7 @@ void C2ModuleLoader::load(C2::Module* c2Mod, bool is32bit) {
     c2lang::SourceLocation loc;
 
     AST* ast = new AST("<generated>", false);
-    ASTContext& Context = ast->getASTContext();
+    ASTContext& Context = ast->getContext();
     ast->setName("c2", loc);
     c2Mod->addAST(ast);
 
@@ -378,6 +378,16 @@ void C2ModuleLoader::load(C2::Module* c2Mod, bool is32bit) {
         T->setType(A);
         ast->addType(T);
         c2Mod->addSymbol(T);
+    }
+
+    // mark all Decls as checked
+    for (unsigned i=0; i<ast->numTypes(); i++) {
+        TypeDecl* T = ast->getType(i);
+        T->setCheckState(CHECK_DONE);
+    }
+    for (unsigned i=0; i<ast->numVars(); i++) {
+        VarDecl* V = ast->getVar(i);
+        V->setCheckState(CHECK_DONE);
     }
 }
 

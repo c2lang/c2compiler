@@ -36,6 +36,7 @@ Decl::Decl(DeclKind k, const char* name_, SourceLocation loc_, QualType type_, b
     , mod(0)
 {
     declBits.dKind = k;
+    declBits.cState = CHECK_UNCHECKED;
     declBits.IsExported = 0;
     declBits.IsPublic = is_public;
     declBits.IsUsed = 0;
@@ -134,6 +135,18 @@ void Decl::printPublic(StringBuilder& buffer) const {
     }
 }
 
+void Decl::printChecked(StringBuilder& buffer) const {
+    buffer.setColor(COL_ATTR);
+    if (isChecked()) buffer << " checked";
+    else buffer << " unchecked";
+}
+
+void Decl::printCommon(StringBuilder& buffer, unsigned indent, const char* title) const {
+    buffer.indent(indent);
+    buffer.setColor(COL_DECL);
+    buffer << title << ' ';
+}
+
 bool Decl::hasAttribute(AttrKind kind) const {
     if (!hasAttributes()) return false;
     const AttrList& AL = getAttributes();
@@ -166,11 +179,10 @@ FunctionDecl::FunctionDecl(const char* name_, SourceLocation loc_,
 }
 
 void FunctionDecl::print(StringBuilder& buffer, unsigned indent) const {
-    buffer.indent(indent);
-    buffer.setColor(COL_DECL);
-    buffer << "FunctionDecl ";
+    printCommon(buffer, indent, "FunctionDecl");
     type.print(buffer);
     printPublic(buffer);
+    printChecked(buffer);
     buffer.setColor(COL_VALUE);
     buffer << ' ' << name;
     if (isStructFunction()) {
@@ -240,13 +252,12 @@ VarDecl::VarDecl(VarDeclKind k_, const char* name_, SourceLocation loc_,
 }
 
 void VarDecl::print(StringBuilder& buffer, unsigned indent) const {
-    buffer.indent(indent);
-    buffer.setColor(COL_DECL);
-    buffer << "VarDecl ";
+    printCommon(buffer, indent, "VarDecl");
     type.print(buffer);
     buffer.setColor(COL_ATTR);
     buffer << ' ' << VarDeclKind2Str(getVarKind());
     printPublic(buffer);
+    printChecked(buffer);
     buffer.setColor(COL_VALUE);
     buffer << ' ' << name << '\n';
     printAttributes(buffer, indent + INDENT);
@@ -266,12 +277,11 @@ EnumConstantDecl::EnumConstantDecl(const char* name_, SourceLocation loc_,
 {}
 
 void EnumConstantDecl::print(StringBuilder& buffer, unsigned indent) const {
-    buffer.indent(indent);
-    buffer.setColor(COL_DECL);
-    buffer << "EnumConstantDecl ";
+    printCommon(buffer, indent, "EnumConstantDecl");
     buffer.setColor(COL_VALUE);
     buffer << name;
-    buffer.setColor(COL_ATTR);
+    printChecked(buffer);
+    buffer.setColor(COL_VALUE);
     buffer << ' ' << Val.getSExtValue() << '\n';
     if (InitVal) InitVal->print(buffer, indent+INDENT);
 }
@@ -290,10 +300,10 @@ TypeDecl::TypeDecl(DeclKind k, const char* name_, SourceLocation loc_, QualType 
 
 
 void AliasTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
-    buffer.setColor(COL_DECL);
-    buffer << "AliasTypeDecl ";
+    printCommon(buffer, indent, "AliasTypeDecl");
     type.print(buffer);
     printPublic(buffer);
+    printChecked(buffer);
     buffer.setColor(COL_VALUE);
     buffer << ' ' << name;
     buffer.setColor(COL_ATTR); buffer << " refType: "; refType.print(buffer);
@@ -374,13 +384,13 @@ void StructTypeDecl::setOpaqueMembers() {
 }
 
 void StructTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
-    buffer.indent(indent);
-    buffer.setColor(COL_DECL);
-    buffer << "StructTypeDecl (";
+    printCommon(buffer, indent, "StructTypeDecl");
+    buffer.setColor(COL_ATTR);
+
     if (isStruct()) buffer << "struct";
     else buffer << "union";
-    buffer << ")";
     printPublic(buffer);
+    printChecked(buffer);
     buffer.setColor(COL_VALUE);
     buffer << ' ';
     if (name[0] != 0) buffer << name;
@@ -411,6 +421,7 @@ void EnumTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer << "EnumTypeDecl ";
     type.print(buffer);
     printPublic(buffer);
+    printChecked(buffer);
     buffer.setColor(COL_VALUE);
     buffer << ' ' << name;
     if (isIncremental()) buffer << " incremental";

@@ -130,7 +130,9 @@ TagWriter::TagWriter(const c2lang::SourceManager& SM_, const Components& compone
     for (unsigned c=0; c<components.size(); c++) {
         const ModuleList& mods = components[c]->getModules();
         for (unsigned m=0; m<mods.size(); m++) {
-            const AstList& modFiles = mods[m]->getFiles();
+            const Module* M = mods[m];
+            if (!M->isLoaded()) continue;
+            const AstList& modFiles = M->getFiles();
             for (unsigned i=0; i<modFiles.size(); i++) {
                 analyse(*modFiles[i]);
             }

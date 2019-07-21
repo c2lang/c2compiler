@@ -67,7 +67,7 @@ public:
     }
     const std::string& getModuleName() const { return modName; }
     const std::string& getFileName() const { return filename; }
-    ASTContext& getASTContext() { return astContext; }
+    ASTContext& getContext() { return astContext; }
     bool isInterface() const { return m_isInterface; }
 private:
     AST(const AST&);

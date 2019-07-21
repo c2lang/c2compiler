@@ -29,6 +29,14 @@
 using namespace C2;
 using namespace std;
 
+//#define GENERATOR_DEBUG
+
+#ifdef GENERATOR_DEBUG
+#include <iostream>
+#define LOG_FUNC(x) std::cerr << __func__ << "() " << x << "\n";
+#else
+#define LOG_FUNC(x) do {} while(0);
+#endif
 
 void DepGenerator::write(const Components& components, const std::string& title, const std::string& path) const {
     StringBuilder output;
@@ -50,7 +58,8 @@ void DepGenerator::write(const Components& components, const std::string& title,
         indent += INDENT;
         const ModuleList& mods = C->getModules();
         for (unsigned m=0; m<mods.size(); m++) {
-            writeModule(*mods[m], output, indent);
+            const Module& M = *mods[m];
+            if (M.isLoaded()) writeModule(M, output, indent);
         }
         indent -= INDENT;
 
@@ -68,6 +77,8 @@ void DepGenerator::write(const Components& components, const std::string& title,
 }
 
 void DepGenerator::writeModule(const Module& M, StringBuilder& output, unsigned indent) const {
+    LOG_FUNC(M.getName())
+
     output.indent(indent);
     output << "<group name='" << M.getName() << "' full='module:" << M.getName() << "' collapsed='1'>\n";
     indent += INDENT;
@@ -97,6 +108,7 @@ void DepGenerator::writeModule(const Module& M, StringBuilder& output, unsigned 
 }
 
 void DepGenerator::writeAST(const AST& ast, StringBuilder& output, unsigned indent, bool isExternal) const {
+    LOG_FUNC(ast.getFileName())
     for (unsigned i=0; i<ast.numTypes(); i++) {
         const Decl* D = ast.getType(i);
         if (isExternal && !D->isUsed()) continue;

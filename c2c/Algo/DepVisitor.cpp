@@ -108,8 +108,8 @@ void DepVisitor::checkType(QualType Q, bool isFullDep) {
         if (A->getSizeExpr()) checkExpr(A->getSizeExpr());
         break;
     }
-    case TC_UNRESOLVED:
-        addDep(cast<UnresolvedType>(T)->getDecl(), isFullDep);
+    case TC_REF:
+        addDep(cast<RefType>(T)->getDecl(), isFullDep);
         break;
     case TC_ALIAS:
         addDep(cast<AliasType>(T)->getDecl(), isFullDep);

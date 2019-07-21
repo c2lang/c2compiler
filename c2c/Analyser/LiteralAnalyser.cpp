@@ -307,10 +307,12 @@ bool LiteralAnalyser::checkRange(QualType TLeft, const Expr* Right, c2lang::Sour
         const int64_t limit = L->minVal;
         if (value < limit) overflow = true;
     } else {
-        const int64_t limit = (int64_t)L->maxVal;
+        int64_t limit = (int64_t)L->maxVal;
+        if ((int64_t)L->maxVal == -1) { // for 64-bit, TEMP just use max int64
+            limit = 9223372036854775807llu;
+        }
         if (value > limit) overflow = true;
     }
-    //fprintf(stderr, "VAL=%lld  width=%d signed=%d\n", value, availableWidth, Result.isSigned());
     if (overflow) {
         SmallString<20> ss;
         Result.toString(ss, 10, true);

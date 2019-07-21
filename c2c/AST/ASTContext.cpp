@@ -42,12 +42,13 @@ QualType ASTContext::getPointerType(QualType ref) {
 
 QualType ASTContext::getArrayType(QualType element, Expr* size, bool isIncremental) {
     Type* N = new (*this) ArrayType(element, size, isIncremental);
-    if (element->hasCanonicalType()) N->setCanonicalType(N);
+    // TODO may setCanonical if size Expr is CTC_FULL? (like number)
+    //if (element->hasCanonicalType()) N->setCanonicalType(N);
     return add(N);
 }
 
-QualType ASTContext::getUnresolvedType(IdentifierExpr* moduleName, IdentifierExpr* typeName) {
-    return add(new (*this) UnresolvedType(moduleName, typeName));
+QualType ASTContext::getRefType(IdentifierExpr* moduleName, IdentifierExpr* typeName) {
+    return add(new (*this) RefType(moduleName, typeName));
 }
 
 QualType ASTContext::getAliasType(AliasTypeDecl* A, QualType refType) {

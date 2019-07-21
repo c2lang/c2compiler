@@ -19,6 +19,7 @@
 #include "Analyser/ModuleAnalyser.h"
 #include "AST/Component.h"
 
+#include "Clang/ParseDiagnostic.h"
 #include "Clang/Diagnostic.h"
 #include "Clang/SemaDiagnostic.h"
 
@@ -200,9 +201,8 @@ ComponentAnalyser::ComponentAnalyser(Component& C,
         ModElem* node = todo.popFront();
         if (node->depth > max_depth) {
             todo.addFront(node);
-            printf("error: module dependency loop found\n");
-            TODO;
-            break;
+            Diags.Report(SourceLocation(), diag::err_circular_module_dependency);
+            return;
         }
         done.addTail(node);
 
@@ -290,7 +290,6 @@ bool ComponentAnalyser::checkMainFunction(bool testMode, c2lang::DiagnosticsEngi
 
 unsigned ComponentAnalyser::analyse(bool print1, bool print2, bool print3, bool printLib) {
     for (unsigned i=0; i<analysers.size(); i++) {
-        // TODO BB we can continue if there are errors in function bodies (show more errors at once)
         if (analysers[i]->analyse(print1, print2, print3, printLib)) return 1;
     }
 

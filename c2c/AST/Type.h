@@ -125,7 +125,7 @@ enum TypeClass {
     TC_BUILTIN = 0,
     TC_POINTER,
     TC_ARRAY,
-    TC_UNRESOLVED,
+    TC_REF,
     TC_ALIAS,
     TC_STRUCT,
     TC_ENUM,
@@ -355,14 +355,14 @@ private:
 
 
 // Represents symbols that refer to user type (eg 'Point')
-class UnresolvedType : public Type {
+class RefType : public Type {
 public:
-    UnresolvedType(IdentifierExpr* moduleName_, IdentifierExpr* typeName_)
-        : Type(TC_UNRESOLVED, QualType())
+    RefType(IdentifierExpr* moduleName_, IdentifierExpr* typeName_)
+        : Type(TC_REF, QualType())
         , moduleName(moduleName_)
         , typeName(typeName_)
     {}
-    static bool classof(const Type* T) { return T->getTypeClass() == TC_UNRESOLVED; }
+    static bool classof(const Type* T) { return T->getTypeClass() == TC_REF; }
 
     IdentifierExpr* getModuleName() const { return moduleName; }
     IdentifierExpr* getTypeName() const { return typeName; }

@@ -17,12 +17,25 @@
 #define ANALYSER_UTILS_H
 
 #include <string>
+#include "AST/Type.h"
+#include "AST/Expr.h"
 
 namespace C2 {
+
+class Decl;
+class StringBuilder;
 
 class AnalyserUtils {
 public:
     static const char* fullName(const std::string& modName, const char* symname);
+
+    static QualType getStructType(QualType Q);
+    static bool exprIsType(const Expr* E);
+    static QualType UsualUnaryConversions(Expr* expr);
+    static void SetConstantFlags(Decl* D, Expr* expr);
+    static ExprCTC combineCtc(Expr* Result, const Expr* L, const Expr* R);
+    static bool isConstantBitOffset(const Expr* E);
+    static StringBuilder& quotedField(StringBuilder &builder, IdentifierExpr *field);
 };
 
 }

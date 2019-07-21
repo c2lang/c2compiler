@@ -261,7 +261,7 @@ unsigned CodeGenModule::getAlignment(QualType Q) const {
         return 4; // TEMP
     case TC_ARRAY:
         return getAlignment(cast<ArrayType>(T)->getElementType());
-    case TC_UNRESOLVED:
+    case TC_REF:
     case TC_ALIAS:
         FATAL_ERROR("No alignment");
         break;
@@ -317,7 +317,7 @@ llvm::Type* CodeGenModule::ConvertType(QualType Q) {
         llvm::Type* tt = ConvertType(cast<ArrayType>(canon)->getElementType().getTypePtr());
         return tt->getPointerTo();
     }
-    case TC_UNRESOLVED:
+    case TC_REF:
     case TC_ALIAS:
         FATAL_ERROR("should be resolved");
         break;
@@ -448,7 +448,7 @@ llvm::Constant* CodeGenModule::EmitDefaultInit(QualType Q) {
     }
     case TC_ARRAY:
         return EmitArrayInit(cast<ArrayType>(T), 0, 0);
-    case TC_UNRESOLVED:
+    case TC_REF:
     case TC_ALIAS:
         FATAL_ERROR("Unexpected type");
         break;

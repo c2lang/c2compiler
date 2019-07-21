@@ -26,6 +26,7 @@
 #include "Analyser/LiteralAnalyser.h"
 #include "Analyser/Scope.h"
 #include "Analyser/AnalyserConstants.h"
+#include "Analyser/AnalyserUtils.h"
 #include "AST/Expr.h"
 #include "Utils/color.h"
 #include "Utils/TargetInfo.h"
@@ -48,46 +49,6 @@ using namespace c2lang;
 
 #define LHS 0x01
 #define RHS 0x02
-
-static void SetConstantFlags(Decl* D, Expr* expr) {
-    switch (D->getKind()) {
-    case DECL_FUNC:
-        expr->setConstant();
-        break;
-    case DECL_VAR:
-    {
-        VarDecl* VD = cast<VarDecl>(D);
-        QualType T = VD->getType();
-        if (T.isConstQualified()) {
-            Expr* Init = VD->getInitValue();
-            if (Init) {
-                // Copy CTC status of Init Expr
-                expr->setCTC(Init->getCTC());
-            }
-            expr->setConstant();
-            return;
-        }
-        break;
-    }
-    case DECL_ENUMVALUE:
-        expr->setCTC(CTC_FULL);
-        expr->setConstant();
-        return;
-    case DECL_ALIASTYPE:
-    case DECL_STRUCTTYPE:
-    case DECL_ENUMTYPE:
-    case DECL_FUNCTIONTYPE:
-        expr->setConstant();
-        break;
-    case DECL_ARRAYVALUE:
-    case DECL_IMPORT:
-    case DECL_LABEL:
-        break;
-    }
-    // TODO needed?
-    expr->setCTC(CTC_NONE);
-}
-
 
 FunctionAnalyser::FunctionAnalyser(Scope& scope_,
                                    TypeResolver& typeRes_,
@@ -156,18 +117,7 @@ void FunctionAnalyser::checkVarInit(VarDecl* V) {
     CurrentVarDecl = 0;
 }
 
-void FunctionAnalyser::checkArraySizeExpr(VarDecl* V) {
-    LOG_FUNC
-    CurrentVarDecl = V;
-
-    ConstModeSetter cms(*this, diag::err_init_element_not_constant);
-    usedPublicly = V->isPublic();
-    analyseArrayType(V, V->getType());
-    usedPublicly = false;
-
-    CurrentVarDecl = 0;
-}
-
+#if 0
 unsigned FunctionAnalyser::checkEnumValue(EnumConstantDecl* E, llvm::APSInt& nextValue) {
     LOG_FUNC;
 
@@ -199,6 +149,7 @@ unsigned FunctionAnalyser::checkEnumValue(EnumConstantDecl* E, llvm::APSInt& nex
 
     return 0;
 }
+#endif
 
 void FunctionAnalyser::checkFunction(FunctionDecl* func) {
     LOG_FUNC
@@ -766,7 +717,8 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
     }
 }
 
-static IdentifierExpr::RefType globalDecl2RefType(const Decl* D) {
+// TODO refactor to remove duplicates
+static IdentifierExpr::RefKind globalDecl2RefKind(const Decl* D) {
     switch (D->getKind()) {
     case DECL_FUNC:         return IdentifierExpr::REF_FUNC;
     case DECL_VAR:          return IdentifierExpr::REF_VAR;
@@ -833,13 +785,6 @@ void FunctionAnalyser::analyseInitListArray(InitListExpr* expr, QualType Q, unsi
     expr->setType(Q);
 }
 
-static inline StringBuilder &quotedField(StringBuilder &builder, IdentifierExpr *field) {
-    return builder << '\'' << field->getName() << '\'';
-}
-
-
-
-
 // We have an expression of the type .foo
 // Return true to continue analysis, false to exit.
 bool FunctionAnalyser::analyseFieldInDesignatedInitExpr(DesignatedInitExpr* D,
@@ -872,7 +817,7 @@ bool FunctionAnalyser::analyseFieldInDesignatedInitExpr(DesignatedInitExpr* D,
     // No match of direct value or anon union.
     if (memberIndex == -1) {
         StringBuilder fname(MAX_LEN_VARNAME);
-        quotedField(fname, field);
+        AnalyserUtils::quotedField(fname, field);
         StringBuilder tname(MAX_LEN_TYPENAME);
         Q.DiagName(tname);
         Diag(D->getLocation(), diag::err_field_designator_unknown) << fname << tname;
@@ -883,7 +828,7 @@ bool FunctionAnalyser::analyseFieldInDesignatedInitExpr(DesignatedInitExpr* D,
     Expr* existing = fields[memberIndex];
     if (existing) {
         StringBuilder fname(MAX_LEN_VARNAME);
-        quotedField(fname, field);
+        AnalyserUtils::quotedField(fname, field);
         Diag(D->getLocation(), diag::err_duplicate_field_init) << fname;
         Diag(existing->getLocation(), diag::note_previous_initializer) << 0 << 0;
         return true;
@@ -891,7 +836,7 @@ bool FunctionAnalyser::analyseFieldInDesignatedInitExpr(DesignatedInitExpr* D,
     fields[memberIndex] = value;
     VarDecl* VD;
     if (anonUnionIndex > -1) {
-        field->setDecl(anonUnionDecl, globalDecl2RefType(anonUnionDecl));
+        field->setDecl(anonUnionDecl, globalDecl2RefKind(anonUnionDecl));
         VD = dyncast<VarDecl>(anonUnionDecl->getMember((unsigned)anonUnionIndex));
     } else {
         VD = dyncast<VarDecl>(STD->getMember((unsigned)memberIndex));
@@ -900,7 +845,7 @@ bool FunctionAnalyser::analyseFieldInDesignatedInitExpr(DesignatedInitExpr* D,
         TODO;
         assert(VD && "TEMP don't support sub-struct member inits");
     }
-    field->setDecl(VD, globalDecl2RefType(VD));
+    field->setDecl(VD, globalDecl2RefKind(VD));
     analyseInitExpr(D->getInitValue(), VD->getType());
     if (anonUnionIndex < 0 && isa<DesignatedInitExpr>(value) != haveDesignators) {
         Diag(value->getLocation(), diag::err_mixed_field_designator);
@@ -1045,7 +990,7 @@ static uint64_t sizeOfType(QualType type) {
 
     type = type.getCanonicalType();
     switch (type->getTypeClass()) {
-    case TC_UNRESOLVED:
+    case TC_REF:
     case TC_ALIAS:
         FATAL_ERROR("Should be resolved");
         return 1;
@@ -1213,7 +1158,7 @@ QualType FunctionAnalyser::findStructMember(QualType T, IdentifierExpr* member) 
 
     }
 
-    IdentifierExpr::RefType ref = IdentifierExpr::REF_STRUCT_MEMBER;
+    IdentifierExpr::RefKind ref = IdentifierExpr::REF_STRUCT_MEMBER;
 
     // NOTE: access of struct-function is not a dereference
     // TODO
@@ -1258,10 +1203,10 @@ StructTypeDecl* FunctionAnalyser::builtinExprToStructTypeDecl(BuiltinExpr* B) {
 
         M->setDecl(structDecl);
         M->setType(D->getType());
-        SetConstantFlags(structDecl, M);
+        AnalyserUtils::SetConstantFlags(structDecl, M);
         QualType Q = structDecl->getType();
         I->setType(Q);
-        I->setDecl(structDecl, globalDecl2RefType(structDecl));
+        I->setDecl(structDecl, globalDecl2RefKind(structDecl));
     }
     structDecl->setUsed();
 
@@ -1407,7 +1352,7 @@ void FunctionAnalyser::analyseArrayType(VarDecl* V, QualType T) {
         analyseArrayType(V, AT->getElementType());
         break;
     }
-    case TC_UNRESOLVED:
+    case TC_REF:
         FATAL_ERROR("Unreachable");
         break;
     case TC_ALIAS:
@@ -1450,31 +1395,11 @@ void FunctionAnalyser::analyseArraySizeExpr(ArrayType* AT) {
         LiteralAnalyser LA(Diags);
         llvm::APSInt Result = LA.checkLiterals(E);
         if (Result.isSigned() && Result.isNegative()) {
-            Diag(E->getLocation(), diag::err_typecheck_negative_array_size) << E->getSourceRange();
+            Diag(E->getLocation(), diag::err_typecheck_negative_array_size) << Result.toString(10) << E->getSourceRange();
         } else {
             AT->setSize(Result);
         }
     }
-}
-
-static ExprCTC combineCtc(Expr* Result, const Expr* L, const Expr* R) {
-    const ExprCTC left =  L->getCTC();
-    const ExprCTC right = R->getCTC();
-    switch (left + right) {
-    case 0:
-        Result->setCTC(CTC_NONE);
-        return CTC_NONE;
-    case 1:
-    case 2:
-    case 3:
-        Result->setCTC(CTC_PARTIAL);
-        return CTC_PARTIAL;
-    case 4:
-        Result->setCTC(CTC_FULL);
-        return CTC_FULL;
-    }
-    FATAL_ERROR("Unreachable");
-    return CTC_NONE;
 }
 
 QualType FunctionAnalyser::analyseIntegerLiteral(Expr* expr) {
@@ -1492,15 +1417,6 @@ QualType FunctionAnalyser::analyseIntegerLiteral(Expr* expr) {
     if (numbits <= 32) return Type::Int32();
     expr->setType(Type::Int64());
     return Type::Int64();
-}
-
-static bool isConstantBitOffset(const Expr* E) {
-    if (const ArraySubscriptExpr* A = dyncast<ArraySubscriptExpr>(E)) {
-        if (const BitOffsetExpr* B = dyncast<BitOffsetExpr>(A->getIndex())) {
-            return B->isConstant();
-        }
-    }
-    return false;
 }
 
 QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
@@ -1521,7 +1437,7 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
         // RHS, RHS
         TLeft = analyseExpr(Left, RHS);
         TRight = analyseExpr(Right, RHS);
-        combineCtc(expr, Left, Right);
+        AnalyserUtils::combineCtc(expr, Left, Right);
         if (Left->isConstant() && Right->isConstant()) expr->setConstant();
         break;
     case BINOP_LE:
@@ -1545,7 +1461,7 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
         // RHS, RHS
         TLeft = analyseExpr(Left, RHS);
         TRight = analyseExpr(Right, RHS);
-        combineCtc(expr, Left, Right);
+        AnalyserUtils::combineCtc(expr, Left, Right);
         if (Left->isConstant() && Right->isConstant()) expr->setConstant();
         break;
     case BINOP_Assign:
@@ -1585,8 +1501,8 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
         // TODO apply UsualArithmeticConversions() to L + R
         // TEMP for now just return Right side
         // TEMP use UnaryConversion
-        Result = UsualUnaryConversions(Left);
-        UsualUnaryConversions(Right);
+        Result = AnalyserUtils::UsualUnaryConversions(Left);
+        AnalyserUtils::UsualUnaryConversions(Right);
         break;
     case BINOP_Shl:
     case BINOP_Shr:
@@ -1613,7 +1529,7 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     {
         assert(TRight.isValid());
         // special case for a[4:2] = b
-        if (isConstantBitOffset(Left) && Right->isConstant()) {
+        if (AnalyserUtils::isConstantBitOffset(Left) && Right->isConstant()) {
             LiteralAnalyser LA(Diags);
             LA.checkBitOffset(Left, Right);
         } else {
@@ -1727,7 +1643,7 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
     case UO_Not:
         unaryop->setCTC(SubExpr->getCTC());
         if (SubExpr->isConstant()) unaryop->setConstant();
-        expr->setType(UsualUnaryConversions(SubExpr));
+        expr->setType(AnalyserUtils::UsualUnaryConversions(SubExpr));
         break;
     case UO_LNot:
         // TODO first cast expr to bool, then invert here, return type bool
@@ -1735,7 +1651,7 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
         // TODO check conversion to bool here!!
         unaryop->setCTC(SubExpr->getCTC());
         // Also set type?
-        //UsualUnaryConversions(SubExpr);
+        //AnalyserUtils::UsualUnaryConversions(SubExpr);
         LType = Type::Bool();
         expr->setType(LType);
         break;
@@ -1775,7 +1691,7 @@ QualType FunctionAnalyser::analyseArraySubscript(Expr* expr, unsigned side) {
         }
         QualType T = analyseBitOffsetExpr(sub->getIndex(), LType, sub->getLocation());
         expr->setType(T);
-        combineCtc(expr, sub->getBase(), sub->getIndex());
+        AnalyserUtils::combineCtc(expr, sub->getBase(), sub->getIndex());
         // dont analyse partial BitOffset expressions per part
         if (expr->getCTC() == CTC_PARTIAL) expr->setCTC(CTC_NONE);
         return T;
@@ -1824,11 +1740,11 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
         if (D) {
             if (side & RHS) D->setUsed();
             M->setDecl(D);
-            SetConstantFlags(D, M);
+            AnalyserUtils::SetConstantFlags(D, M);
             QualType Q = D->getType();
             expr->setType(Q);
             member->setType(Q);
-            member->setDecl(D, globalDecl2RefType(D));
+            member->setDecl(D, globalDecl2RefKind(D));
             return Q;
         }
     } else if (isa<EnumType>(LType)) {
@@ -1846,11 +1762,11 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
         M->setDecl(ECD);
         M->setType(Q);
         M->setIsEnumConstant();
-        SetConstantFlags(ECD, M);
+        AnalyserUtils::SetConstantFlags(ECD, M);
         member->setCTC(CTC_FULL);
         member->setConstant();
         member->setType(Q);
-        member->setDecl(ECD, globalDecl2RefType(ECD));
+        member->setDecl(ECD, globalDecl2RefKind(ECD));
         return Q;
     } else {
         // dereference pointer
@@ -1859,7 +1775,7 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
             const PointerType* PT = cast<PointerType>(LType.getTypePtr());
             LType = PT->getPointeeType();
         }
-        QualType S = getStructType(LType);
+        QualType S = AnalyserUtils::getStructType(LType);
         if (!S.isValid()) {
             StringBuilder buf(MAX_LEN_TYPENAME);
             LType.DiagName(buf);
@@ -1867,7 +1783,7 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
                     << buf << M->getSourceRange() << member->getLocation();
             return QualType();
         }
-        return analyseStructMember(S, M, side, exprIsType(M->getBase()));
+        return analyseStructMember(S, M, side, AnalyserUtils::exprIsType(M->getBase()));
     }
     return QualType();
 }
@@ -1896,7 +1812,7 @@ QualType FunctionAnalyser::analyseStaticStructMember(QualType T, MemberExpr* M, 
         if (sfunc->isStaticStructFunc()) M->setIsStaticStructFunction();
     }
     member->setType(d->getType());
-    SetConstantFlags(d, M);
+    AnalyserUtils::SetConstantFlags(d, M);
 
     if (!allowStaticMember) {
         if (sfunc) {
@@ -1942,7 +1858,7 @@ QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr* M, unsign
         return QualType();
     }
 
-    IdentifierExpr::RefType ref = IdentifierExpr::REF_STRUCT_MEMBER;
+    IdentifierExpr::RefKind ref = IdentifierExpr::REF_STRUCT_MEMBER;
     FunctionDecl* func = dyncast<FunctionDecl>(match);
 
     if (func) {
@@ -1978,25 +1894,6 @@ QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr* M, unsign
     member->setDecl(match, ref);
     member->setType(match->getType());
     return match->getType();
-}
-
-bool FunctionAnalyser::exprIsType(const Expr* E) const {
-    // can be IdentifierExpr or MemberExpr
-    switch (E->getKind()) {
-    case EXPR_IDENTIFIER:
-    {
-        const IdentifierExpr* I = cast<IdentifierExpr>(E);
-        return I->isType();
-    }
-    case EXPR_MEMBER:
-    {
-        const MemberExpr* M = cast<MemberExpr>(E);
-        return M->getMember()->isType();
-    }
-    default:
-        break;
-    }
-    return false;
 }
 
 QualType FunctionAnalyser::analyseParenExpr(Expr* expr) {
@@ -2087,7 +1984,7 @@ QualType FunctionAnalyser::analyseBitOffsetExpr(Expr* expr, QualType BaseType, S
     }
 
     if (B->getLHS()->isConstant() && B->getRHS()->isConstant()) B->setConstant();
-    combineCtc(B, B->getLHS(), B->getRHS());
+    AnalyserUtils::combineCtc(B, B->getLHS(), B->getRHS());
 
     return B->getType();
 }
@@ -2165,7 +2062,7 @@ bool FunctionAnalyser::checkCallArgs(FunctionDecl* func, CallExpr* call, Expr* s
     const bool isStructFunction = (structFunction != nullptr);
     unsigned diagIndex = 0;
     if (isStructFunction) {
-        if (exprIsType(structFunction)) {
+        if (AnalyserUtils::exprIsType(structFunction)) {
             diagIndex = 5;
         }
         else {
@@ -2233,9 +2130,9 @@ Decl* FunctionAnalyser::analyseIdentifier(IdentifierExpr* id) {
     LOG_FUNC
     Decl* D = scope.findSymbol(id->getName(), id->getLocation(), false, false);
     if (D) {
-        id->setDecl(D, globalDecl2RefType(D));
+        id->setDecl(D, globalDecl2RefKind(D));
         id->setType(D->getType());
-        SetConstantFlags(D, id);
+        AnalyserUtils::SetConstantFlags(D, id);
 
         if (usedPublicly && !D->isPublic()) {
             Diag(id->getLocation(), diag::err_non_public_constant) << D->DiagName();
@@ -2453,39 +2350,6 @@ void FunctionAnalyser::checkEnumCases(const SwitchStmt* SS, const EnumType* ET) 
     }
 }
 
-QualType FunctionAnalyser::getStructType(QualType Q) const {
-    // Q: use CanonicalType to get rid of AliasTypes?
-
-    Type* T = Q.getTypePtr();
-    switch (T->getTypeClass()) {
-    case TC_BUILTIN:
-        return QualType();
-    case TC_POINTER:
-    {
-        // Could be pointer to structtype
-        PointerType* PT = cast<PointerType>(T);
-        return getStructType(PT->getPointeeType());
-    }
-    case TC_ARRAY:
-        return QualType();
-    case TC_UNRESOLVED:
-        FATAL_ERROR("Unreachable");
-        return QualType();
-    case TC_ALIAS:
-    {
-        AliasType* AT = cast<AliasType>(T);
-        return getStructType(AT->getRefType());
-    }
-    case TC_STRUCT:
-        return Q;
-    case TC_ENUM:
-    case TC_FUNCTION:
-    case TC_MODULE:
-        return QualType();
-    }
-    FATAL_ERROR("Unreachable");
-}
-
 QualType FunctionAnalyser::getConditionType(const Stmt* C) const {
     if (const Expr* E = dyncast<Expr>(C)) {
         return E->getType();
@@ -2519,25 +2383,5 @@ const Module* FunctionAnalyser::currentModule() const {
     if (!mod && CurrentVarDecl) mod = CurrentVarDecl->getModule();
     assert(mod);
     return mod;
-}
-
-// Convert smaller types to int, others remain the same
-// This function should only be called if Expr's type is ok for unary operator
-QualType FunctionAnalyser::UsualUnaryConversions(Expr* expr) const {
-    const Type* canon = expr->getType().getCanonicalType();
-
-    if (const BuiltinType* BI = cast<BuiltinType>(canon)) {
-        if (BI->isPromotableIntegerType()) {
-            // TODO keep flags (const, etc)?
-            expr->setImpCast(BuiltinType::Int32);
-            return Type::Int32();
-        }
-    }
-
-    if (canon->isPointerType()) {
-        return (target.intWidth == 64) ? Type::UInt64() : Type::UInt32();
-    }
-
-    return expr->getType();
 }
 

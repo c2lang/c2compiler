@@ -549,7 +549,7 @@ void InterfaceGenerator::EmitType(QualType type) {
         iface << ']';
         break;
     }
-    case TC_UNRESOLVED:
+    case TC_REF:
         TODO; // assert(0 && "should be resolved");
         break;
     case TC_ALIAS:

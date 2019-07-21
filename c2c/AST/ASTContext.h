@@ -43,7 +43,7 @@ public:
     // For Types
     QualType getPointerType(QualType ref);
     QualType getArrayType(QualType element, Expr* size, bool isIncremental);
-    QualType getUnresolvedType(IdentifierExpr* moduleName, IdentifierExpr* typeName);
+    QualType getRefType(IdentifierExpr* moduleName, IdentifierExpr* typeName);
     QualType getAliasType(AliasTypeDecl* A, QualType ref);
     QualType getStructType();
     QualType getEnumType();

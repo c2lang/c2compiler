@@ -25,7 +25,7 @@
 using namespace C2;
 
 void ASTVisitor::run() {
-    //fprintf(stderr, "CHECKING %s\n", decl->getName().c_str());
+    //printf("CHECKING %s\n", decl->getName());
     checkDecl(decl);
 }
 
@@ -112,9 +112,9 @@ void ASTVisitor::checkType(QualType Q, bool isFull) {
         if (A->getSizeExpr()) checkExpr(A->getSizeExpr());
         break;
     }
-    case TC_UNRESOLVED:
+    case TC_REF:
     {
-        const UnresolvedType* U = cast<UnresolvedType>(T);
+        const RefType* U = cast<RefType>(T);
         const IdentifierExpr* moduleName = U->getModuleName();
         if (moduleName) visitIdentifierExpr(moduleName);
         visitIdentifierExpr(U->getTypeName());
