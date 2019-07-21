@@ -311,13 +311,17 @@ bool FileAnalyser::analyseDecl(Decl* D) {
         ok = analyseTypeDecl(cast<TypeDecl>(D));
         break;
     case DECL_ARRAYVALUE:
+        FATAL_ERROR("should not come here");
+        break;
     case DECL_IMPORT:
+        ok = true;
+        break;
     case DECL_LABEL:
+        D->dump();
         FATAL_ERROR("should not come here");
         break;
     }
     if (ok) D->setCheckState(CHECK_DONE);
-    // TODO also set CHECK_DONE on inner? (FTD -> FD)?
     popCheck();
     return ok;
 }
@@ -339,12 +343,14 @@ bool FileAnalyser::analyseVarDecl(VarDecl* V) {
     // INIT
     Expr* init = V->getInitValue();
     if (init) {
+#if 0
         // TODO FIX on collecting entries, a ILE is created! so this gives an error
         const ArrayType* AT = dyncast<ArrayType>(Q);
         if (AT && AT->isIncremental()) {
             Diags.Report(init->getLocation(),  diag::err_incremental_array_initlist);
             return false;
         }
+#endif
 
         if (!analyseInitExpr(init, Q, V->isPublic())) return false;
 
@@ -580,16 +586,13 @@ bool FileAnalyser::analyseBuiltinExpr(Expr* expr, bool usedPublic) {
     BuiltinExpr* B = cast<BuiltinExpr>(expr);
     switch (B->getBuiltinKind()) {
     case BuiltinExpr::BUILTIN_SIZEOF:
-        //return analyseSizeOfExpr(B);
-        break;
+        return analyseSizeOfExpr(B, usedPublic);
     case BuiltinExpr::BUILTIN_ELEMSOF:
         return analyseElemsOfExpr(B, usedPublic);
     case BuiltinExpr::BUILTIN_ENUM_MIN:
-        //return analyseEnumMinMaxExpr(B, true);
-        break;
+        return analyseEnumMinMaxExpr(B, true, usedPublic);
     case BuiltinExpr::BUILTIN_ENUM_MAX:
-        //return analyseEnumMinMaxExpr(B, false);
-        break;
+        return analyseEnumMinMaxExpr(B, false, usedPublic);
     case BuiltinExpr::BUILTIN_OFFSETOF:
         //return analyseOffsetof(B);
         break;
@@ -599,6 +602,108 @@ bool FileAnalyser::analyseBuiltinExpr(Expr* expr, bool usedPublic) {
     }
     TODO;
     return false;
+}
+
+bool FileAnalyser::analyseSizeOfExpr(BuiltinExpr* B, bool usedPublic) {
+    LOG_FUNC
+
+    static constexpr unsigned FLOAT_SIZE_DEFAULT = 8;
+    B->setType(Type::UInt32());
+
+    uint64_t width;
+    //allowStaticMember = true;
+
+    Expr* expr = B->getExpr();
+
+    switch (expr->getKind()) {
+    case EXPR_FLOAT_LITERAL:
+        width = FLOAT_SIZE_DEFAULT;
+        break;
+    case EXPR_INITLIST:
+    case EXPR_DESIGNATOR_INIT:
+        TODO; // Good error
+        //allowStaticMember = false;
+        return false;
+    case EXPR_TYPE:
+    {
+        // TODO use stack?
+        QualType Q = analyseType(expr->getType(), expr->getLocation(), usedPublic, true);
+        if (!Q.isValid()) return false;
+        TR->checkOpaqueType(B->getLocation(), usedPublic, Q);
+        expr->setType(Q);
+        width = AnalyserUtils::sizeOfType(Q);
+        break;
+    }
+    case EXPR_INTEGER_LITERAL:
+    case EXPR_BOOL_LITERAL:
+    case EXPR_CHAR_LITERAL:
+    case EXPR_STRING_LITERAL:
+    case EXPR_NIL:
+    case EXPR_CALL:
+    case EXPR_BINOP:
+    case EXPR_CONDOP:
+    case EXPR_UNARYOP:
+    case EXPR_ARRAYSUBSCRIPT:
+    case EXPR_MEMBER:
+    case EXPR_IDENTIFIER:
+    case EXPR_CAST: {
+        if (!analyseExpr(expr, usedPublic)) return false;
+        QualType type = expr->getType();
+        TR->checkOpaqueType(expr->getLocation(), usedPublic, type);
+        width = AnalyserUtils::sizeOfType(type);
+        break;
+    }
+    case EXPR_BUILTIN:
+        FATAL_ERROR("Unreachable");
+        //allowStaticMember = false;
+        return false;
+    case EXPR_PAREN:
+    case EXPR_BITOFFSET:
+        FATAL_ERROR("Unreachable");
+        //allowStaticMember = false;
+        return false;
+    }
+    B->setValue(llvm::APSInt::getUnsigned(width));
+    //allowStaticMember = false;
+    return true;
+}
+
+bool FileAnalyser::analyseEnumMinMaxExpr(BuiltinExpr* B, bool isMin, bool usedPublic) {
+    LOG_FUNC
+    B->setType(Type::UInt32());
+    Expr* E = B->getExpr();
+    // TODO support memberExpr (module.Type)
+    assert(isa<IdentifierExpr>(E));
+    IdentifierExpr* I = cast<IdentifierExpr>(E);
+    Decl* decl = analyseIdentifier(I, usedPublic);
+    if (!decl) return false;
+
+    EnumTypeDecl* Enum = 0;
+    decl->setUsed();
+
+    // = Type::UInt32();
+    switch (decl->getKind()) {
+    case DECL_VAR:
+        if (const EnumType* ET = dyncast<EnumType>(decl->getType())) {
+            Enum = ET->getDecl();
+        }
+        break;
+    case DECL_ENUMTYPE:
+        Enum = cast<EnumTypeDecl>(decl);
+        break;
+    default:
+        break;
+    }
+
+    if (!Enum) {
+        Diag(E->getLocation(), diag::err_enum_minmax_no_enum) << (isMin ? 0 : 1) << E->getSourceRange();
+        return false;
+    }
+
+    if (isMin) B->setValue(Enum->getMinValue());
+    else B->setValue(Enum->getMaxValue());
+
+    return true;
 }
 
 bool FileAnalyser::analyseElemsOfExpr(BuiltinExpr* B, bool usedPublic) {
@@ -843,6 +948,7 @@ bool FileAnalyser::analyseMemberExpr(Expr* expr, bool usedPublic) {
     } else if (isa<EnumType>(LType)) {
         EnumType* ET = cast<EnumType>(LType.getTypePtr());
         EnumTypeDecl* ETD = ET->getDecl();
+        ETD->setUsed();
         EnumConstantDecl* ECD = ETD->findConstant(member->getName());
         if (!ECD) {
             StringBuilder buf(MAX_LEN_TYPENAME);
@@ -1062,9 +1168,14 @@ QualType FileAnalyser::analyseRefType(QualType Q, bool usedPublic, bool full) {
 bool FileAnalyser::analyseTypeDecl(TypeDecl* D) {
     LOG_FUNC
 
+    //printf("BEFORE %s\n", D->getName());
+    //D->getType().dump();
     QualType Q = analyseType(D->getType(), D->getLocation(), D->isPublic(), true);
+    //printf("AFTER %s\n", D->getName());
+    //D->getType().dump();
+
     if (!Q.isValid()) return false;
-    D->setType(Q);
+    //D->setType(Q);    // NOTE: does not seem needed
 
     // check extra stuff depending on subclass
     switch (D->getKind()) {
@@ -1074,11 +1185,6 @@ bool FileAnalyser::analyseTypeDecl(TypeDecl* D) {
         FATAL_ERROR("Cannot have type");
         break;
     case DECL_ALIASTYPE:
-        {
-            AliasType* A = cast<AliasType>(D->getType().getTypePtr());
-            A->updateRefType(Q.getCanonicalType());
-            //D->getType()->setCanonicalType(Q.getCanonicalType());
-        }
         break;
     case DECL_STRUCTTYPE:
     {
@@ -1569,12 +1675,13 @@ QualType FileAnalyser::analyseType(QualType Q, SourceLocation loc, bool usedPubl
 
     if (Q->hasCanonicalType()) return Q;    // should be ok already
 
-    QualType resolved = Q;
+    QualType resolved;
     Type* T = Q.getTypePtr();
 
     switch (T->getTypeClass()) {
     case TC_BUILTIN:
-        break; // ok
+        FATAL_ERROR("should not come here");
+        break;
     case TC_POINTER:
     {
         // Dont return new type if not needed
@@ -1582,8 +1689,12 @@ QualType FileAnalyser::analyseType(QualType Q, SourceLocation loc, bool usedPubl
         QualType t1 = P->getPointeeType();
         QualType Result = analyseType(t1, loc, usedPublic, false);
         if (!Result.isValid()) return QualType();
-        if (t1 == Result) resolved = Q;
-        else resolved = ast.getContext().getPointerType(Result);
+        if (t1 == Result) {
+            resolved = Q;
+            Q->setCanonicalType(Q);
+        } else {
+            resolved = ast.getContext().getPointerType(Result);
+        }
         break;
     }
     case TC_ARRAY:
@@ -1608,8 +1719,10 @@ QualType FileAnalyser::analyseType(QualType Q, SourceLocation loc, bool usedPubl
             }
             AT->setSize(value);
         }
-        if (ET == AT->getElementType()) resolved = Q;   // TODO BB why?
-        else {
+        if (ET == AT->getElementType()) {
+            resolved = Q;
+            Q->setCanonicalType(Q);
+        } else {
             resolved = ast.getContext().getArrayType(ET, AT->getSizeExpr(), AT->isIncremental());
             resolved->setCanonicalType(resolved);
             if (sizeExpr) {
@@ -1637,9 +1750,17 @@ QualType FileAnalyser::analyseType(QualType Q, SourceLocation loc, bool usedPubl
         break;
     }
 
-    if (!resolved.isValid()) return QualType();
+    // NOTE: CanonicalType is always resolved (ie will not point to another AliasType, but to its Canonicaltype)
+    if (!Q->hasCanonicalType()) {
+        if (!resolved.isValid()) return QualType();
 
-    Q->setCanonicalType(resolved);
+        if (resolved.getCanonicalType().getTypePtrOrNull() == NULL) {
+            resolved.dump();
+            FATAL_ERROR("missing canonical on resolved");
+        }
+
+        Q->setCanonicalType(resolved.getCanonicalType());
+    }
 
     if (resolved.isIncompleteType()) {
         StringBuilder name;

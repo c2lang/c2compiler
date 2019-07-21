@@ -8,20 +8,7 @@ type Enum enum i8 {
     D,
 }
 
-type Struct struct {
-    i32 x;
-}
-
-func void test2() {}
-
 Enum ee;
 i32 ok1 = enum_min(ee);
 i32 ok2 = enum_min(Enum);
-
-i32 a = enum_min(test);   // @error{enum_min can only be used on enum types}
-i32 b = enum_max(test);   // @error{enum_max can only be used on enum types}
-
-i32 c = enum_min(test2);  // @error{enum_min can only be used on enum types}
-i32 d = enum_min(a);      // @error{enum_min can only be used on enum types}
-i32 e = enum_min(Struct); // @error{enum_min can only be used on enum types}
 

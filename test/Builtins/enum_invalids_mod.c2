@@ -1,0 +1,4 @@
+// @warnings{no-unused}
+module test;
+
+i32 a = enum_min(test);   // @error{enum_min can only be used on enum types}

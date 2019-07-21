@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+type State enum i8 {
+    A = true,
+}
+

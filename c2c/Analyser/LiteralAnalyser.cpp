@@ -202,8 +202,14 @@ APSInt LiteralAnalyser::checkLiterals(const Expr* Right) {
     case EXPR_INTEGER_LITERAL:
         return checkIntegerLiterals(Right);
     case EXPR_FLOAT_LITERAL:
-    case EXPR_BOOL_LITERAL:
+        TODO;
         break;
+    case EXPR_BOOL_LITERAL:
+    {
+        const BooleanLiteral* B = cast<BooleanLiteral>(Right);
+        result = B->getValue();
+        break;
+    }
     case EXPR_CHAR_LITERAL:
     {
         const CharacterLiteral* C = cast<CharacterLiteral>(Right);

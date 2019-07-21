@@ -95,6 +95,8 @@ private:
     bool analyseExpr(Expr* expr, bool usedPublic);
     bool analyseIntegerLiteral(Expr* expr);
     bool analyseBuiltinExpr(Expr* expr, bool usedPublic);
+    bool analyseSizeOfExpr(BuiltinExpr* B, bool usedPublic);
+    bool analyseEnumMinMaxExpr(BuiltinExpr* B, bool isMin, bool usedPublic);
     bool analyseElemsOfExpr(BuiltinExpr* B, bool usedPublic);
     bool analyseBinaryOperator(Expr* expr, bool usedPublic);
     bool analyseUnaryOperator(Expr* expr, bool usedPublic);

@@ -174,6 +174,38 @@ StringBuilder& AnalyserUtils::quotedField(StringBuilder &builder, IdentifierExpr
     return builder << '\'' << field->getName() << '\'';
 }
 
+uint64_t AnalyserUtils::sizeOfType(QualType type) {
 
+    // TODO not a constant.
+    constexpr unsigned POINTER_SIZE = 8;
 
+    if (type.isNull()) return 0;
+
+    type = type.getCanonicalType();
+    switch (type->getTypeClass()) {
+    case TC_REF:
+    case TC_ALIAS:
+        FATAL_ERROR("Should be resolved");
+        return 1;
+    case TC_BUILTIN:
+        return (cast<BuiltinType>(type.getTypePtr())->getWidth() + 7) / 8;
+    case TC_POINTER:
+        return POINTER_SIZE;
+    case TC_ARRAY:
+    {
+        ArrayType *arrayType = cast<ArrayType>(type.getTypePtr());
+        return sizeOfType(arrayType->getElementType()) * arrayType->getSize().getZExtValue();
+    }
+    case TC_STRUCT:
+        // TODO
+        return 0;
+    case TC_ENUM:
+        // TODO
+        return 0;
+    case TC_FUNCTION:
+        return POINTER_SIZE;
+    case TC_MODULE:
+        FATAL_ERROR("Cannot occur here");
+    }
+}
 

@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+module test;
+
+type Enum2 enum u32 {
+    EE = 300,
+}
+
+const i8 C = enum_min(Enum2);    // @error{constant value 300 out-of-bounds for type 'i8', range [-128, 127]}
+
