@@ -597,11 +597,119 @@ bool FileAnalyser::analyseBuiltinExpr(Expr* expr, bool usedPublic) {
         //return analyseOffsetof(B);
         break;
     case BuiltinExpr::BUILTIN_TO_CONTAINER:
-        //return analyseToContainer(B);
-        break;
+        return analyseToContainer(B, usedPublic);
     }
     TODO;
     return false;
+}
+
+StructTypeDecl* FileAnalyser::builtinExprToStructTypeDecl(BuiltinExpr* B, bool usedPublic) {
+    Expr* structExpr = B->getExpr();
+    Decl* structDecl = 0;
+    // TODO scope.checkAccess(std, structExpr->getLocation());
+
+    IdentifierExpr* I = dyncast<IdentifierExpr>(structExpr);
+    if (I) {
+        structDecl = analyseIdentifier(I, usedPublic);
+        if (!structDecl) return 0;
+    } else {    // MemberExpr: module.StructType
+        assert(isa<memberExpr>(structExpr));
+        MemberExpr* M = cast<MemberExpr>(structExpr);
+        Expr* base = M->getBase();
+        IdentifierExpr* B = dyncast<IdentifierExpr>(base);
+        assert(B);  // Don't allow substructs as type
+        Decl* D = analyseIdentifier(B, usedPublic);
+        if (!D) return 0;
+
+        ImportDecl* ID = dyncast<ImportDecl>(D);
+        if (!ID) {
+            Diag(B->getLocation(), diag::err_unknown_module) << B->getName() << B->getSourceRange();
+            return 0;
+        }
+        M->setModulePrefix();
+        I = M->getMember();
+        structDecl = scope->findSymbolInModule(I->getName(), I->getLocation(), ID->getModule());
+        if (!structDecl) return 0;
+
+        M->setDecl(structDecl);
+        M->setType(D->getType());
+        AnalyserUtils::SetConstantFlags(structDecl, M);
+        QualType Q = structDecl->getType();
+        I->setType(Q);
+        I->setDecl(structDecl, globalDecl2RefKind(structDecl));
+    }
+    structDecl->setUsed();
+
+    StructTypeDecl* std = dyncast<StructTypeDecl>(structDecl);
+    if (!std) {
+        int idx = (B->getBuiltinKind() == BuiltinExpr::BUILTIN_OFFSETOF) ? 0 : 1;
+        Diag(I->getLocation(), diag::err_builtin_non_struct_union) << idx << I->getName();
+        return 0;
+    }
+
+    if (&module != std->getModule() && std->hasAttribute(ATTR_OPAQUE)) {
+        Expr* structExpr = B->getExpr();
+        Diag(structExpr->getLocation(), diag::err_deref_opaque) << std->isStruct() << std->DiagName() << structExpr->getSourceRange();
+        return 0;
+    }
+    return std;
+}
+
+void FileAnalyser::error(SourceLocation loc, QualType left, QualType right) const {
+    StringBuilder buf1(MAX_LEN_TYPENAME);
+    StringBuilder buf2(MAX_LEN_TYPENAME);
+    right.DiagName(buf1);
+    left.DiagName(buf2);
+
+    // TODO error msg depends on conv type (see clang errors)
+    Diags.Report(loc, diag::err_illegal_type_conversion)
+            << buf1 << buf2;
+}
+
+bool FileAnalyser::analyseToContainer(BuiltinExpr* B, bool usedPublic) {
+    LOG_FUNC
+
+    // check struct type
+    StructTypeDecl* std = builtinExprToStructTypeDecl(B, usedPublic);
+    if (!std) return false;
+    QualType ST = std->getType();
+
+    // check member
+    // TODO try re-using code with analyseMemberExpr() or analyseStructMember()
+    Expr* memberExpr = B->getMember();
+    IdentifierExpr* member = dyncast<IdentifierExpr>(memberExpr);
+    if (!member) { TODO; } // TODO support sub-member (memberExpr)
+
+    Decl* match = std->findMember(member->getName());
+    if (!match) {
+        outputStructDiagnostics(ST, member, diag::err_no_member);
+        return false;
+    }
+    member->setDecl(match, IdentifierExpr::REF_STRUCT_MEMBER);
+    QualType MT = match->getType();
+    member->setType(MT);
+
+    // check ptr
+    Expr* ptrExpr = B->getPointer();
+    if (!analyseExpr(ptrExpr, usedPublic)) return false;
+    QualType ptrType = ptrExpr->getType();
+    if (!ptrType.isPointerType()) {
+        error(ptrExpr->getLocation(), ast.getContext().getPointerType(member->getType()), ptrType);
+        return false;
+    }
+    QualType PT = cast<PointerType>(ptrType)->getPointeeType();
+    // TODO BB allow conversion from void*
+    // TODO BB use ExprTypeAnalyser to do and insert casts etc
+    if (PT != MT) {
+        error(ptrExpr->getLocation(), ast.getContext().getPointerType(member->getType()), ptrType);
+        return false;
+    }
+
+    // if ptr is const qualified, tehn so should resulting Type (const Type*)
+    if (PT.isConstQualified()) ST.addConst();
+    QualType Q = ast.getContext().getPointerType(ST);
+    B->setType(Q);
+    return true;
 }
 
 bool FileAnalyser::analyseSizeOfExpr(BuiltinExpr* B, bool usedPublic) {

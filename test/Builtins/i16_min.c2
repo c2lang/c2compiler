@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+import c2 local;
+
+i16 e = min_i16 - 1; // @error{constant value -32769 out-of-bounds for type 'i16', range [-32768, 32767]}
+

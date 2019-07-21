@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+import c2 local;
+
+u32 a = max_u32 + 1; // @error{constant value 4294967296 out-of-bounds for type 'u32', range [0, 4294967295]}
+

@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+import c2 local;
+
+i64 n = max_i64 + 1; // @error{constant value -9223372036854775808 out-of-bounds for type 'i64', range [-9223372036854775808, 9223372036854775807]}
+

@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+import c2 local;
+
+i8  b = max_i8 + 1; // @error{constant value 128 out-of-bounds for type 'i8', range [-128, 127]}
+
