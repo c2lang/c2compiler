@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+i32[] a = { 1, 2 }
+
+i32[] c = a;    // @error{array initializer must be an initializer list}
+

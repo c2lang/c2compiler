@@ -91,6 +91,25 @@ unsigned ModuleAnalyser::analyse(bool print1, bool print2, bool print3, bool pri
         enums.clear();
     }
 
+    // collect struct functions
+    {
+        StructFunctionList structFuncs;
+        for (unsigned i=0; i<count; i++) {
+            if (!analysers[i]->collectStructFunctions(structFuncs)) return 1;
+        }
+        // Set StructFunctions
+        // NOTE: since these are linked anyways, just use special ASTContext from Builder
+        for (StructFunctionListIter iter = structFuncs.begin(); iter != structFuncs.end(); ++iter) {
+            StructTypeDecl* S = iter->first;
+            const StructFunctionEntries& entries = iter->second;
+            unsigned numFuncs = entries.size();
+            FunctionDecl** funcs = (FunctionDecl**)context.Allocate(sizeof(FunctionDecl*)*numFuncs);
+            memcpy(funcs, &entries[0], sizeof(FunctionDecl*)*numFuncs);
+            S->setStructFuncs(funcs, numFuncs);
+        }
+        structFuncs.clear();
+    }
+
     // resolve types
     for (unsigned i=0; i<count; i++) {
         if (!analysers[i]->analyseTypes()) return 1;
@@ -102,20 +121,8 @@ unsigned ModuleAnalyser::analyse(bool print1, bool print2, bool print3, bool pri
         if (!analysers[i]->analyseVars()) return 1;
     }
 
-    StructFunctionList structFuncs;
     for (unsigned i=0; i<count; i++) {
-        if (!analysers[i]->analyseFunctionProtos(structFuncs)) return 1;
-    }
-
-    // Set StructFunctions
-    // NOTE: since these are linked anyways, just use special ASTContext from Builder
-    for (StructFunctionListIter iter = structFuncs.begin(); iter != structFuncs.end(); ++iter) {
-        StructTypeDecl* S = iter->first;
-        const StructFunctionEntries& entries = iter->second;
-        unsigned numFuncs = entries.size();
-        FunctionDecl** funcs = (FunctionDecl**)context.Allocate(sizeof(FunctionDecl*)*numFuncs);
-        memcpy(funcs, &entries[0], sizeof(FunctionDecl*)*numFuncs);
-        S->setStructFuncs(funcs, numFuncs);
+        if (!analysers[i]->analyseFunctionProtos()) return 1;
     }
 
     if (print2) printASTs(printLib);

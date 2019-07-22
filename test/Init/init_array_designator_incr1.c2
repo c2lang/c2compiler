@@ -1,0 +1,18 @@
+// @warnings{no-unused}
+module test;
+
+type Types enum i8 {
+    Foo = 2,
+    Bar = 5,
+}
+
+i32[] array = {
+    [Types.Bar] = 5,  // @note{previous initialization is here}
+    0,
+    1,
+    [Types.Foo] = 2,
+    3,
+    4,
+    5,  // @error{duplicate initialization of array index}
+}
+

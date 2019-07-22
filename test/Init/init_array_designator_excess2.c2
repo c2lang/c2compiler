@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+module test;
+
+i32[4] array2 = {
+    0,
+    [3] = 3,
+    4,          // @error{excess elements in array initializer}
+}
+

@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+module test;
+
+func void foo() {}
+
+i32[] array = {
+    [foo] = 4,  // @error{array subscript is not an integer}
+}
+

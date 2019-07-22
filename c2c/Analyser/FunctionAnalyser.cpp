@@ -117,40 +117,6 @@ void FunctionAnalyser::checkVarInit(VarDecl* V) {
     CurrentVarDecl = 0;
 }
 
-#if 0
-unsigned FunctionAnalyser::checkEnumValue(EnumConstantDecl* E, llvm::APSInt& nextValue) {
-    LOG_FUNC;
-
-    LiteralAnalyser LA(Diags);
-    Expr* Init = E->getInitValue();
-    if (Init) {
-        usedPublicly = E->isPublic();
-        QualType T = analyseExpr(Init, RHS);
-        usedPublicly = false;
-        if (!T.isValid()) return 1;
-
-        if (!Init->isConstant()) {
-            Diag(Init->getLocation(), diag::err_expr_not_ice) << 0 << Init->getSourceRange();
-            return 1;
-        }
-        // TODO refactor duplicate code with analyseArraySizeExpr()
-        QualType CT = T.getCanonicalType();
-        if (!CT.isBuiltinType() || !cast<BuiltinType>(CT)->isInteger()) {
-            Diag(Init->getLocation(), diag::err_expr_not_ice) << 0 << Init->getSourceRange();
-            return 1;
-        }
-        assert(Init->getCTC() == CTC_FULL);
-        llvm::APSInt V = LA.checkLiterals(Init);
-        nextValue = V;
-    }
-    E->setValue(nextValue);
-    ++nextValue;
-    if (!LA.checkRange(E->getType(), Init, E->getLocation(), E->getValue())) return 1;
-
-    return 0;
-}
-#endif
-
 void FunctionAnalyser::checkFunction(FunctionDecl* func) {
     LOG_FUNC
     bool no_unused_params = func->hasAttribute(ATTR_UNUSED_PARAMS);

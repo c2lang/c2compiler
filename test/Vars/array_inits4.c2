@@ -1,0 +1,4 @@
+// @warnings{no-unused}
+module test;
+
+i8[]  d = 20;  // @error{array initializer must be an initializer list or string literal}

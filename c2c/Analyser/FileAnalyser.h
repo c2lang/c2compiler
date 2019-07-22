@@ -19,12 +19,13 @@
 #include <memory>
 #include <map>
 #include <string>
-#include "Analyser/FunctionAnalyser.h"
 #include "AST/Type.h"
 #include "AST/Module.h"
 #include "AST/Expr.h"
 #include "Analyser/Scope.h"
+#include "Analyser/FunctionAnalyser.h"
 #include "Analyser/TypeResolver.h"
+#include "Analyser/ExprTypeAnalyser.h"
 
 namespace c2lang {
 class DiagnosticsEngine;
@@ -67,9 +68,10 @@ public:
 
     // call in this order
     bool collectIncrementals(IncrementalArrayVals& values, IncrementalEnums& enums);
+    bool collectStructFunctions(StructFunctionList& structFuncs);
     bool analyseTypes();
     bool analyseVars();
-    bool analyseFunctionProtos(StructFunctionList& structFuncs);
+    bool analyseFunctionProtos();
     void analyseFunctionBodies();
     void checkUnusedDecls();
 
@@ -79,6 +81,7 @@ private:
     bool isTop(Decl* d);
 
     bool collectIncremental(ArrayValueDecl* D, IncrementalArrayVals& values, IncrementalEnums& enums);
+    bool collectStructFunction(FunctionDecl* F, StructFunctionList& structFuncs);
 
     // Decls
     bool analyseDecl(Decl* D);
@@ -87,6 +90,7 @@ private:
     bool analyseStructTypeDecl(StructTypeDecl* D);
     bool analyseStructMember(QualType T, MemberExpr* M, bool isStatic);
     bool analyseFunctionDecl(FunctionDecl* D);
+    bool checkIfStaticStructFunction(FunctionDecl* F) const;
     bool analyseEnumConstants(EnumTypeDecl* ETD);
     QualType analyseType(QualType Q, SourceLocation loc, bool usedPublic, bool full);
     QualType analyseRefType(QualType Q, bool usedPublic, bool full);
@@ -102,6 +106,7 @@ private:
     bool analyseElemsOfExpr(BuiltinExpr* B, bool usedPublic);
     bool analyseBinaryOperator(Expr* expr, bool usedPublic);
     bool analyseUnaryOperator(Expr* expr, bool usedPublic);
+    bool analyseParenExpr(Expr* expr, bool usedPublic);
     bool analyseMemberExpr(Expr* expr, bool usedPublic);
     Decl* analyseIdentifier(IdentifierExpr* id, bool usedPublic);
 
@@ -121,14 +126,11 @@ private:
                                                         bool &haveDesignators,
                                                         bool usedPublic);
     typedef std::map<const std::string, const Decl*> Names;
-    bool checkStructFunction(FunctionDecl* F, StructFunctionList& structFuncs);
     bool analyseStructNames(const StructTypeDecl* S, Names& names, bool isStruct);
     bool checkVarDeclAttributes(VarDecl* D);
     bool checkAttributes(Decl* D);
     bool analyseStaticStructMember(QualType T, MemberExpr* M, const StructTypeDecl* S);
     bool outputStructDiagnostics(QualType T, IdentifierExpr* member, unsigned msg);
-    bool isStaticStructFunc(QualType T,  FunctionDecl* func) const;
-    Decl* getStructDecl(QualType T) const;
 
     void checkStructMembersForUsed(const StructTypeDecl* S);
 
@@ -140,6 +142,7 @@ private:
     std::unique_ptr<Scope> scope;
     std::unique_ptr<TypeResolver> TR;
     c2lang::DiagnosticsEngine& Diags;
+    ExprTypeAnalyser EA;
     FunctionAnalyser functionAnalyser;
     // TEMP array with index
     Decl* checkStack[8];

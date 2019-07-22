@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+type Point struct {
+    i32 x;
+    const i8* y;
+}
+
+Point b = { 10, .y = "hello" }  // @error{mixing field designator with non-field designators}
+

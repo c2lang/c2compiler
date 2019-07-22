@@ -1,0 +1,6 @@
+// @warnings{no-unused}
+module test;
+
+u32 a = 0;
+u32 b = -1;           // @error{constant value -1 out-of-bounds for type 'u32', range [0, 4294967295]}
+

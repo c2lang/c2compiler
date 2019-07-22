@@ -53,6 +53,7 @@ FileAnalyser::FileAnalyser(const Module& module_,
     , scope(new Scope(ast_.getModuleName(), allModules, Diags_))
     , TR(new TypeResolver(*scope, Diags_, ast.getContext()))
     , Diags(Diags_)
+    , EA(Diags_, target_)
     , functionAnalyser(*scope, *TR, ast.getContext(), Diags_, target_, ast.isInterface())
     , checkIndex(0)
     , verbose(verbose_)
@@ -124,6 +125,20 @@ bool FileAnalyser::collectIncremental(ArrayValueDecl* D, IncrementalArrayVals& v
     return false;
 }
 
+bool FileAnalyser::collectStructFunctions(StructFunctionList& structFuncs) {
+    LOG_FUNC
+    if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
+
+    bool ok = true;
+    for (unsigned i=0; i<ast.numFunctions(); i++) {
+        FunctionDecl* F = ast.getFunction(i);
+        if (F->isStructFunction()) {
+            ok |= collectStructFunction(F, structFuncs);
+        }
+    }
+    return ok;
+}
+
 bool FileAnalyser::analyseTypes() {
     LOG_FUNC
     if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
@@ -146,7 +161,7 @@ bool FileAnalyser::analyseVars() {
     return true;
 }
 
-bool FileAnalyser::analyseFunctionProtos(StructFunctionList& structFuncs) {
+bool FileAnalyser::analyseFunctionProtos() {
     LOG_FUNC
     if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
 
@@ -168,9 +183,6 @@ bool FileAnalyser::analyseFunctionProtos(StructFunctionList& structFuncs) {
             }
             //if (!F->getReturnType().isBuiltinType() || cast<BuiltinType>(F->getReturnType()).getKind() == BuiltinType::Int32) {
             // }
-        }
-        if (F->isStructFunction()) {
-            ok |= checkStructFunction(F, structFuncs);
         }
         if (!ok) return false;
     }
@@ -198,12 +210,11 @@ bool FileAnalyser::pushCheck(Decl* d) {
     for (unsigned i=0; i<checkIndex; i++) {
         if (checkStack[i] == d) {
             // TODO need sourcelocation of ref!
-            printf("ERROR CIRCULAR DEP %s\n", d->getName());
+            Diag(SourceLocation(), diag::err_circular_type_decl);
             for (unsigned j=0; j<checkIndex; j++) {
                 // TODO create Diag(sizeExpr->getLocation(), diag::err_circular_decl_dependency);
                 printf("STACK[%u] = %s\n", j, checkStack[j]->getName());
             }
-            exit(EXIT_FAILURE);
             return false;
         }
     }
@@ -217,7 +228,6 @@ void FileAnalyser::popCheck() {
     assert(checkIndex != 0);
     checkIndex--;
     //printf("pop  [%d] %s\n", checkIndex, checkStack[checkIndex]->getName());
-
 }
 
 bool FileAnalyser::analyseEnumConstants(EnumTypeDecl* ETD) {
@@ -237,6 +247,11 @@ bool FileAnalyser::analyseEnumConstants(EnumTypeDecl* ETD) {
         if (init) {
             ECD->setCheckState(CHECK_IN_PROGRESS);
             if (!analyseExpr(init, ETD->isPublic())) return false;
+
+            if (init->getCTC() != CTC_FULL) {
+                Diag(init->getLocation(), diag::err_expr_not_ice) << 0 << init->getSourceRange();
+                return false;
+            }
             value = LA.checkLiterals(init);
         }
         //printf("ENUM [%s] -> %ld\n", ECD->getName(), value.getSExtValue());
@@ -282,7 +297,9 @@ static IdentifierExpr::RefKind globalDecl2RefKind(const Decl* D) {
 
 bool FileAnalyser::analyseDecl(Decl* D) {
     LOG_FUNC
-
+#ifdef ANALYSER_DEBUG
+    printf("DECL %s\n", D->getName());
+#endif
     if (D->isChecked()) return true;
     if (isTop(D) && (isa<EnumTypeDecl>(D) || isa<StructTypeDecl>(D))) {
         // Only allow for enums? or also push Enum Constants? (for self-ref check?)
@@ -333,6 +350,13 @@ bool FileAnalyser::analyseVarDecl(VarDecl* V) {
     QualType Q = analyseType(V->getType(), V->getLocation(), V->isPublic(), true);
     if (!Q.isValid()) return false;
 
+    if (Q.isIncompleteType()) {
+        StringBuilder name;
+        Q.DiagName(name);
+        Diags.Report(V->getLocation(), diag::err_typecheck_decl_incomplete_type) << name;
+        return QualType();
+    }
+
     V->setType(Q);
     // TODO should be inside analyseType
     TR->checkOpaqueType(V->getLocation(), V->isPublic(), Q);
@@ -352,16 +376,18 @@ bool FileAnalyser::analyseVarDecl(VarDecl* V) {
         }
 #endif
 
-        if (!analyseInitExpr(init, Q, V->isPublic())) return false;
+        // if VarDecl is not an array and not const, the init is not public
+        bool usedPublicly = (V->isPublic() && (!V->isGlobal() || V->getType().isConstQualified()));
+        if (!analyseInitExpr(init, Q, usedPublicly)) return false;
 
 /*
-    // TODO move this inside analyseInitExpr
-            QualType RT = analyseExpr(init);
-            if (!RT.isValid()) return 1;
-            LiteralAnalyser LA(Diags);
-            APSInt result = LA.checkLiterals(init);
+        // TODO move this inside analyseInitExpr
+        QualType RT = analyseExpr(init);
+        if (!RT.isValid()) return 1;
+        LiteralAnalyser LA(Diags);
+        APSInt result = LA.checkLiterals(init);
 
-            printf("INIT VALUE of %s is %ld\n", V->getName(), result.getSExtValue());
+        printf("INIT VALUE of %s is %ld\n", V->getName(), result.getSExtValue());
 */
     } else {
         QualType T = V->getType();
@@ -424,18 +450,18 @@ Decl* FileAnalyser::analyseIdentifier(IdentifierExpr* id, bool usedPublic) {
     Decl* D = scope->findSymbol(id->getName(), id->getLocation(), false, usedPublic);
     if (D) {
         id->setDecl(D, globalDecl2RefKind(D));
+        // TODO after analysing D?
         id->setType(D->getType());
         if (!D->isChecked()) {
             if (!isTop(D)) D->setUsed();
             //printf("RECURSE INTO %s\n", D->getName());
-            // TODO also do checks below (usedPublicly, etc)
             if (!analyseDecl(D)) return 0;
         }
         AnalyserUtils::SetConstantFlags(D, id);
 
-        //if (usedPublicly && !D->isPublic()) {
-        //    Diag(id->getLocation(), diag::err_non_public_constant) << D->DiagName();
-        //}
+        if (usedPublic && !D->isPublic()) {
+            Diag(id->getLocation(), diag::err_non_public_constant) << D->DiagName();
+        }
     }
     return D;
 }
@@ -492,14 +518,13 @@ bool FileAnalyser::analyseExpr(Expr* expr, bool usedPublic) {
         return true;
     }
     case EXPR_CALL:
-        Diag(expr->getLocation(), diag::err_array_size_non_const);
+        Diag(expr->getLocation(), diag::err_expr_not_ice) << 0 << expr->getSourceRange();
         return false;
     case EXPR_IDENTIFIER:
     {
         IdentifierExpr* id = cast<IdentifierExpr>(expr);
         Decl* D = analyseIdentifier(id, usedPublic);
         if (!D) return false;
-        return true;
 #if 0
         if (D == CurrentVarDecl) {
             Diag(id->getLocation(), diag::err_var_self_init) << D->getName();
@@ -536,15 +561,10 @@ bool FileAnalyser::analyseExpr(Expr* expr, bool usedPublic) {
             TODO;
             break;
         }
-        if (side & RHS) {
-            D->setUsed();
-            if (usedPublicly) D->setUsedPublic();
-        }
-        QualType T = D->getType();
-        expr->setType(T);
-        return T;
 #endif
-        break;
+        D->setUsed();
+        if (usedPublic) D->setUsedPublic();
+        return true;
     }
     case EXPR_INITLIST:
     case EXPR_DESIGNATOR_INIT:
@@ -567,8 +587,7 @@ bool FileAnalyser::analyseExpr(Expr* expr, bool usedPublic) {
     case EXPR_MEMBER:
         return analyseMemberExpr(expr, usedPublic);
     case EXPR_PAREN:
-        //return analyseParenExpr(expr);
-        break;
+        return analyseParenExpr(expr, usedPublic);
     case EXPR_BITOFFSET:
         FATAL_ERROR("Should not come here");
         break;
@@ -579,6 +598,19 @@ bool FileAnalyser::analyseExpr(Expr* expr, bool usedPublic) {
     expr->dump();
     TODO;
     return QualType();
+}
+
+bool FileAnalyser::analyseParenExpr(Expr* expr, bool usedPublic) {
+    LOG_FUNC
+    ParenExpr* P = cast<ParenExpr>(expr);
+    Expr* inner = P->getExpr();
+    if (!analyseExpr(inner, usedPublic)) return false;
+    QualType Q = inner->getType();
+
+    expr->setCTC(inner->getCTC());
+    if (inner->isConstant()) expr->setConstant();
+    expr->setType(Q);
+    return true;
 }
 
 bool FileAnalyser::analyseBuiltinExpr(Expr* expr, bool usedPublic) {
@@ -981,7 +1013,7 @@ bool FileAnalyser::analyseUnaryOperator(Expr* expr, bool usedPublic) {
         expr->setType(Q);
         expr->setConstant();
         // TODO use return type
-        // TODO use analyseType?
+        // TODO BB use analyseType?
         TR->resolveCanonicals(0, Q, true);
         break;
     }
@@ -1134,8 +1166,12 @@ bool FileAnalyser::analyseStaticStructMember(QualType T, MemberExpr* M, const St
     d->setUsed();
     M->setDecl(d);
     M->setType(d->getType());
-    if (field) member->setDecl(d, IdentifierExpr::REF_STRUCT_MEMBER);
+    if (field) {
+        assert(field->isChecked());
+        member->setDecl(d, IdentifierExpr::REF_STRUCT_MEMBER);
+    }
     else {
+        if (!analyseDecl(sfunc)) return false;
         member->setDecl(d, IdentifierExpr::REF_STRUCT_FUNC);
         M->setIsStructFunction();
         if (sfunc->isStaticStructFunc()) M->setIsStaticStructFunction();
@@ -1169,6 +1205,7 @@ bool FileAnalyser::analyseStructMember(QualType T, MemberExpr* M, bool isStatic)
 
     assert(CurrentFunction);
 
+    FATAL_ERROR("CANNOT HAPPEN AT GLOBAL SCOPE?");
     IdentifierExpr* member = M->getMember();
     Decl* match = S->find(member->getName());
 
@@ -1176,10 +1213,13 @@ bool FileAnalyser::analyseStructMember(QualType T, MemberExpr* M, bool isStatic)
         return outputStructDiagnostics(T, member, diag::err_no_member_struct_func);
     }
 
+
     IdentifierExpr::RefKind ref = IdentifierExpr::REF_STRUCT_MEMBER;
     FunctionDecl* func = dyncast<FunctionDecl>(match);
 
     if (func) {
+        // cannot happen at global scope?
+        // TODO recurse into function as well
         scope->checkAccess(func, member->getLocation());
 
         if (func->isStaticStructFunc()) {
@@ -1261,7 +1301,7 @@ QualType FileAnalyser::analyseRefType(QualType Q, bool usedPublic, bool full) {
         return QualType();
     }
 
-    if (!analyseDecl(D)) return QualType();
+    if (full && !analyseDecl(D)) return QualType();
 
     D->setUsed();
     if (usedPublic || external) D->setUsedPublic();
@@ -1329,57 +1369,6 @@ bool FileAnalyser::analyseTypeDecl(TypeDecl* D) {
     }
     if (!checkAttributes(D)) return false;
     return true;
-}
-
-bool FileAnalyser::checkStructFunction(FunctionDecl* F, StructFunctionList& structFuncs) {
-    LOG_FUNC
-    IdentifierExpr* structName = F->getStructName();
-    Decl* D = scope->findSymbolInModule(structName->getName(), structName->getLocation(), F->getModule());
-    if (!D) return false;
-
-    structName->setDecl(D, IdentifierExpr::REF_STRUCT_FUNC);
-    StructTypeDecl* S = dyncast<StructTypeDecl>(D);
-    if (!S) {
-        Diags.Report(structName->getLocation(), diag::err_typecheck_member_reference_struct_union)
-                << structName->getName() << structName->getLocation();
-        return false;
-    }
-
-    const char* memberName = F->getMemberName();
-    Decl* match = S->find(memberName);
-    if (match) {
-        Diags.Report(match->getLocation(), diag::err_struct_function_conflict) << match->DiagName() << F->DiagName();
-        Diags.Report(F->getLocation(), diag::note_previous_declaration);
-        return false;
-    }
-
-    F->setIsStaticStructFunc(isStaticStructFunc(S->getType(), F));
-    structFuncs[S].push_back(F);
-    return true;
-}
-
-bool FileAnalyser::isStaticStructFunc(QualType T,  FunctionDecl* func) const {
-    if (func->numArgs() == 0) return true;
-
-    VarDecl* functionArg = func->getArg(0);
-    Decl* functionArgDecl = getStructDecl(functionArg->getType());
-
-    // might be done more efficiently by not creating PointerType first
-    QualType callArgType = ast.getContext().getPointerType(T);
-    Decl* callArgDecl = getStructDecl(callArgType);
-    return (functionArgDecl != callArgDecl);
-}
-
-Decl* FileAnalyser::getStructDecl(QualType T) const {
-    LOG_FUNC
-    // try to convert QualType(Struct*) -> StructDecl
-    const PointerType* pt = dyncast<PointerType>(T);
-    if (!pt) return 0;
-
-    const StructType* st = dyncast<StructType>(pt->getPointeeType());
-    if (!st) return 0;
-
-    return st->getDecl();
 }
 
 bool FileAnalyser::analyseStructNames(const StructTypeDecl* S, Names& names, bool isStruct) {
@@ -1759,22 +1748,20 @@ bool FileAnalyser::analyseInitExpr(Expr* expr, QualType expectedType, bool usedP
         return false;
     }
 
-    // check range if builtin type (TODO if builtin)
-    if (expectedType.isIntegerType()) {
-        LiteralAnalyser LA(Diags);
-        APSInt value = LA.checkLiterals(expr);
-        if (!LA.checkRange(expectedType, expr, expr->getLocation(), value)) return false;
+    if (AT) {
+        if (AT->getSizeExpr()) {
+            // it should be char array type already and expr is string literal
+            assert(isa<StringLiteral>(expr));
+            const StringLiteral* S = cast<StringLiteral>(expr);
+            if (S->getByteLength() > (int)AT->getSize().getZExtValue()) {
+                Diag(S->getLocation(), diag::err_initializer_string_for_char_array_too_long) << S->getSourceRange();
+                return false;
+            }
+        }
+    } else {
+        EA.check(expectedType, expr);
     }
 
-    if (AT && AT->getSizeExpr()) {
-        // it should be char array type already and expr is string literal
-        assert(isa<StringLiteral>(expr));
-        const StringLiteral* S = cast<StringLiteral>(expr);
-        if (S->getByteLength() > (int)AT->getSize().getZExtValue()) {
-            Diag(S->getLocation(), diag::err_initializer_string_for_char_array_too_long) << S->getSourceRange();
-            return false;
-        }
-    }
     return true;
 }
 
@@ -1870,13 +1857,6 @@ QualType FileAnalyser::analyseType(QualType Q, SourceLocation loc, bool usedPubl
         Q->setCanonicalType(resolved.getCanonicalType());
     }
 
-    if (resolved.isIncompleteType()) {
-        StringBuilder name;
-        Q.DiagName(name);
-        Diags.Report(loc, diag::err_typecheck_decl_incomplete_type) << name;
-        return QualType();
-    }
-
     return resolved;
 }
 
@@ -1899,7 +1879,66 @@ bool FileAnalyser::analyseFunctionDecl(FunctionDecl* F) {
     }
     if (!ok) return false;
 
+    if (F->isStructFunction() && checkIfStaticStructFunction(F)) {
+        F->setIsStaticStructFunc(true);
+    }
+
     if (!checkAttributes(F)) return false;
+    return true;
+}
+
+static Decl* getStructDecl(QualType T) {
+    // try to convert QualType(Struct*) -> StructDecl
+    const PointerType* pt = dyncast<PointerType>(T);
+    if (!pt) return 0;
+
+    const StructType* st = dyncast<StructType>(pt->getPointeeType());
+    if (!st) return 0;
+
+    return st->getDecl();
+}
+
+bool FileAnalyser::checkIfStaticStructFunction(FunctionDecl* F) const {
+    // first argument for static struct functions will be (const)Type*  where Type is RefType
+    LOG_FUNC
+    if (F->numArgs() == 0) return true;
+
+    VarDecl* arg1 = F->getArg(0);
+    Decl* argDecl = getStructDecl(arg1->getType());
+
+    IdentifierExpr* i = F->getStructName();
+    Decl* structDecl = i->getDecl();
+    assert(structDecl);
+
+    return (argDecl != structDecl);
+}
+
+bool FileAnalyser::collectStructFunction(FunctionDecl* F, StructFunctionList& structFuncs) {
+    LOG_FUNC
+    // NOTE: dont use analyseIdentifier() here, since it well analyse recursively
+    IdentifierExpr* id = F->getStructName();
+    Decl* D = scope->findSymbolInModule(id->getName(), id->getLocation(), F->getModule());
+    if (!D) return false;
+
+    id->setDecl(D, IdentifierExpr::REF_STRUCT_FUNC);
+    id->setType(D->getType());
+
+    StructTypeDecl* S = dyncast<StructTypeDecl>(D);
+    if (!S) {
+        Diags.Report(id->getLocation(), diag::err_typecheck_member_reference_struct_union)
+                << id->getName() << id->getLocation();
+        return false;
+    }
+
+    const char* memberName = F->getMemberName();
+    Decl* match = S->find(memberName);
+    if (match) {
+        Diags.Report(match->getLocation(), diag::err_struct_function_conflict) << match->DiagName() << F->DiagName();
+        Diags.Report(F->getLocation(), diag::note_previous_declaration);
+        return false;
+    }
+
+    structFuncs[S].push_back(F);
     return true;
 }
 
