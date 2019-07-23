@@ -100,6 +100,7 @@ private:
     bool analyseIntegerLiteral(Expr* expr);
     bool analyseBuiltinExpr(Expr* expr, bool usedPublic);
     bool analyseToContainer(BuiltinExpr* B, bool usedPublic);
+    bool analyseOffsetof(BuiltinExpr* B, bool usedPublic);
     StructTypeDecl* builtinExprToStructTypeDecl(BuiltinExpr* B, bool usedPublic);
     bool analyseSizeOfExpr(BuiltinExpr* B, bool usedPublic);
     bool analyseEnumMinMaxExpr(BuiltinExpr* B, bool isMin, bool usedPublic);
@@ -109,6 +110,7 @@ private:
     bool analyseParenExpr(Expr* expr, bool usedPublic);
     bool analyseMemberExpr(Expr* expr, bool usedPublic);
     Decl* analyseIdentifier(IdentifierExpr* id, bool usedPublic);
+    Decl* analyseStructMemberOffset(BuiltinExpr* expr, StructTypeDecl* S, Expr* member);
 
     // Init expressions
     bool analyseInitExpr(Expr* expr, QualType expectedType, bool usedPublic);

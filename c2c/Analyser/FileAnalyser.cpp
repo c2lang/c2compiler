@@ -626,13 +626,70 @@ bool FileAnalyser::analyseBuiltinExpr(Expr* expr, bool usedPublic) {
     case BuiltinExpr::BUILTIN_ENUM_MAX:
         return analyseEnumMinMaxExpr(B, false, usedPublic);
     case BuiltinExpr::BUILTIN_OFFSETOF:
-        //return analyseOffsetof(B);
-        break;
+        return analyseOffsetof(B, usedPublic);
     case BuiltinExpr::BUILTIN_TO_CONTAINER:
         return analyseToContainer(B, usedPublic);
     }
-    TODO;
-    return false;
+}
+
+Decl* FileAnalyser::analyseStructMemberOffset(BuiltinExpr* expr, StructTypeDecl* S, Expr* member) {
+    LOG_FUNC
+
+    IdentifierExpr* I = dyncast<IdentifierExpr>(member);
+    if (I) {
+        Decl *field = S->findMember(I->getName());
+        if (!field) {
+            outputStructDiagnostics(S->getType(), I, diag::err_no_member);
+            return 0;
+        }
+        field->setUsed();
+        I->setType(field->getType());
+        I->setDecl(field, IdentifierExpr::REF_STRUCT_MEMBER);
+        return field;
+    }
+
+    assert(isa<MemberExpr>(member));
+    MemberExpr* M = cast<MemberExpr>(member);
+
+    Decl* subStruct = analyseStructMemberOffset(expr, S, M->getBase());
+    if (!subStruct) return 0;
+    StructTypeDecl* sub = dyncast<StructTypeDecl>(subStruct);
+    if (!sub) {
+        // Can also be variable of another struct type
+        VarDecl* var = dyncast<VarDecl>(subStruct);
+        if (var) {
+            QualType T = var->getType();
+            if (T.isStructType()) {
+                const StructType* ST = cast<StructType>(T);
+                sub = ST->getDecl();
+            }
+        }
+
+        if (!sub) {
+            StringBuilder buf(MAX_LEN_TYPENAME);
+            QualType LType = subStruct->getType();
+            LType.DiagName(buf);
+            Diag(M->getLocation(), diag::err_typecheck_member_reference_struct_union)
+                    << buf << M->getSourceRange() << M->getMember()->getLocation();
+            return 0;
+        }
+    }
+    Decl* field = analyseStructMemberOffset(expr, sub, M->getMember());
+    if (field) {
+        M->setDecl(field);
+        M->setType(field->getType());
+    }
+    return field;
+}
+
+bool FileAnalyser::analyseOffsetof(BuiltinExpr* B, bool usedPublic) {
+    LOG_FUNC
+
+    B->setType(Type::UInt32());
+    StructTypeDecl* std = builtinExprToStructTypeDecl(B, usedPublic);
+    if (!std) return false;
+
+    return analyseStructMemberOffset(B, std, B->getMember()) != 0;
 }
 
 StructTypeDecl* FileAnalyser::builtinExprToStructTypeDecl(BuiltinExpr* B, bool usedPublic) {
