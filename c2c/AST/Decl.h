@@ -219,6 +219,7 @@ public:
     bool hasLocalQualifier() const { return varDeclBits.HasLocalQualifier; }
     bool isParameter() const { return getVarKind() == VARDECL_PARAM; }
     bool isGlobal() const { return getVarKind() == VARDECL_GLOBAL; }
+    bool isField() const { return getVarKind() == VARDECL_MEMBER; }
     VarDeclKind getVarKind() const { return static_cast<VarDeclKind>(varDeclBits.Kind); }
     QualType getOrigType() const { return origType; }
 

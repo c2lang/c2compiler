@@ -2,6 +2,6 @@
 module test;
 
 type Struct struct {
-    Struct s;       // @error{circular type declaration}
+    Struct s;       // @error{circular declaration}
 }
 

@@ -63,7 +63,6 @@ public:
 
     // TODO remove all functions used only by FileAnalyser
     void check(FunctionDecl* F);
-    void checkVarInit(VarDecl* V);
 private:
     void checkFunction(FunctionDecl* F);
 

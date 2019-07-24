@@ -1331,15 +1331,17 @@ void CCodeGenerator::EmitTypePreName(QualType type, StringBuilder& output) {
         EmitTypePreName(cast<ArrayType>(T)->getElementType(), output);
         break;
     case TC_REF:
-        // TODO handle Qualifiers?
     {
-        const RefType* U = cast<RefType>(T);
-        U->printLiteral(output);
+        // TODO handle Qualifiers?
+        const RefType* rt = cast<RefType>(T);
+        EmitDecl(rt->getDecl(), output);
+        break;
     }
-    break;
     case TC_ALIAS:
+    {
         EmitTypePreName(cast<AliasType>(T)->getRefType(), output);
         break;
+    }
     case TC_STRUCT:
         EmitStructDecl(cast<StructType>(T)->getDecl(), output);
         break;

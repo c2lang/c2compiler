@@ -44,15 +44,16 @@ public:
 
     void check(QualType Tleft, const Expr* expr);
     bool checkExplicitCast(const ExplicitCastExpr* cast, QualType TLeft, QualType TRight);
-    void error(c2lang::SourceLocation loc, QualType left, QualType right) const;
+    void error(c2lang::SourceLocation loc, QualType left, QualType right);
+    bool hasError() const { return m_hasError; }
 private:
     void checkUnaryOp(QualType TLeft, const UnaryOperator* op);
     void checkBinOp(QualType TLeft, const BinaryOperator* binop);
 
-    bool checkCompatible(QualType left, const Expr* expr) const;
-    bool checkBuiltin(QualType left, QualType right, const Expr* expr, bool first) const;
-    bool checkPointer(QualType left, QualType right, const Expr* expr) const;
-    bool checkFunction(QualType left, const Expr* expr) const;
+    bool checkCompatible(QualType left, const Expr* expr);
+    bool checkBuiltin(QualType left, QualType right, const Expr* expr, bool first);
+    bool checkPointer(QualType left, QualType right, const Expr* expr);
+    bool checkFunction(QualType left, const Expr* expr);
     bool checkWidth(QualType type, c2lang::SourceLocation loc, int msg);
 
     bool checkNonPointerCast(const ExplicitCastExpr* expr, QualType DestType, QualType SrcType);
@@ -60,10 +61,11 @@ private:
     bool checkEnumCast(const ExplicitCastExpr* expr, QualType DestType, QualType SrcType);
     bool checkFunctionCast(const ExplicitCastExpr* expr, QualType DestType, QualType SrcType);
 
-    void error2(c2lang::SourceLocation loc, QualType left, QualType right, unsigned msg) const;
+    void error2(c2lang::SourceLocation loc, QualType left, QualType right, unsigned msg);
 
     c2lang::DiagnosticsEngine& Diags;
     const TargetInfo& target;
+    bool m_hasError;
 
     ExprTypeAnalyser(const ExprTypeAnalyser&);
     ExprTypeAnalyser& operator= (const ExprTypeAnalyser&);

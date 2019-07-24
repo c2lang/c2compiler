@@ -40,5 +40,5 @@ struct test_A_ {
     test_B b;
 };
 
-typedef test_B test_E;
+typedef test_C test_E;
 

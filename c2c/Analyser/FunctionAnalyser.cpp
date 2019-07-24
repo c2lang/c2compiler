@@ -74,14 +74,6 @@ FunctionAnalyser::FunctionAnalyser(Scope& scope_,
 }
 
 void FunctionAnalyser::check(FunctionDecl* func) {
-    // check argument inits
-    for (unsigned i=0; i<func->numArgs(); i++) {
-        VarDecl* Arg = func->getArg(i);
-        if (Arg->getInitValue()) {
-            checkVarInit(Arg);
-        }
-    }
-
     CurrentFunction = func;
     scope.EnterScope(Scope::FnScope | Scope::DeclScope);
 
@@ -103,18 +95,6 @@ void FunctionAnalyser::check(FunctionDecl* func) {
     labels.clear();
 
     CurrentFunction = 0;
-}
-
-void FunctionAnalyser::checkVarInit(VarDecl* V) {
-    LOG_FUNC
-    CurrentVarDecl = V;
-
-    ConstModeSetter cms(*this, diag::err_init_element_not_constant);
-    usedPublicly = (V->isPublic() && (!V->isGlobal() || V->getType().isConstQualified()));
-    analyseInitExpr(V->getInitValue(), V->getType());
-    usedPublicly = false;
-    // TODO if type is array, update type of VarDecl? (add size)
-    CurrentVarDecl = 0;
 }
 
 void FunctionAnalyser::checkFunction(FunctionDecl* func) {
@@ -1322,11 +1302,14 @@ void FunctionAnalyser::analyseArraySizeExpr(ArrayType* AT) {
         Diag(E->getLocation(), diag::err_array_size_non_int) << buf << E->getSourceRange();
         return;
     }
+
     // check if negative
     if (E->getCTC() == CTC_FULL) {
         LiteralAnalyser LA(Diags);
         llvm::APSInt Result = LA.checkLiterals(E);
-        if (Result.isSigned() && Result.isNegative()) {
+        if (Result == 0) {
+            Diag(E->getLocation(), diag::err_array_size_zero);
+        } else if (Result.isSigned() && Result.isNegative()) {
             Diag(E->getLocation(), diag::err_typecheck_negative_array_size) << Result.toString(10) << E->getSourceRange();
         } else {
             AT->setSize(Result);

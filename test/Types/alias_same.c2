@@ -1,5 +1,5 @@
 // @warnings{no-unused}
 module test;
 
-type Number Number;     // @error{circular type declaration}
+type Number Number;     // @error{circular declaration}
 

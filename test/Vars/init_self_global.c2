@@ -1,5 +1,5 @@
 // @warnings{no-unused-variable}
 module test;
 
-i32 a = a;  // @error{cannot initialize a with itself}
+i32 a = a;  // @error{circular declaration}
 

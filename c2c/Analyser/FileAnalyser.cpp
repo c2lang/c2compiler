@@ -209,11 +209,8 @@ bool FileAnalyser::pushCheck(Decl* d) {
     assert(checkIndex != sizeof(checkStack) / sizeof(checkStack[0]));
     for (unsigned i=0; i<checkIndex; i++) {
         if (checkStack[i] == d) {
-            // TODO need sourcelocation of ref!
-            Diag(SourceLocation(), diag::err_circular_type_decl);
-            for (unsigned j=0; j<checkIndex; j++) {
-                // TODO create Diag(sizeExpr->getLocation(), diag::err_circular_decl_dependency);
-                printf("STACK[%u] = %s\n", j, checkStack[j]->getName());
+            for (unsigned j=i; j<checkIndex; j++) {
+                Diag(checkStack[j]->getLocation(), diag::err_circular_decl);
             }
             return false;
         }
@@ -353,7 +350,10 @@ bool FileAnalyser::analyseVarDecl(VarDecl* V) {
     if (Q.isIncompleteType()) {
         StringBuilder name;
         Q.DiagName(name);
-        Diags.Report(V->getLocation(), diag::err_typecheck_decl_incomplete_type) << name;
+        uint32_t msg = diag::err_typecheck_decl_incomplete_type;
+        if (V->isField()) msg = diag::err_field_incomplete;
+        if (V->isParameter()) msg = diag::err_argument_incomplete;
+        Diags.Report(V->getLocation(), msg) << name;
         return QualType();
     }
 
@@ -391,7 +391,7 @@ bool FileAnalyser::analyseVarDecl(VarDecl* V) {
 */
     } else {
         QualType T = V->getType();
-        if (T.isConstQualified() && V->getVarKind() == VARDECL_GLOBAL) {
+        if (T.isConstQualified() && V->isGlobal()) {
             Diags.Report(V->getLocation(), diag::err_uninitialized_const_var) << V->getName();
             return false;
         }
@@ -401,7 +401,7 @@ bool FileAnalyser::analyseVarDecl(VarDecl* V) {
 
             // NOTE: only struct members may have array size 0
             const Expr* sizeExpr = AT->getSizeExpr();
-            if (sizeExpr && AT->getSize() == 0 && V->getVarKind() != VARDECL_MEMBER) {
+            if (sizeExpr && AT->getSize() == 0 && !V->isField()) {
                 // TODO: range not displayed correctly
                 Diag(sizeExpr->getLocation(), diag::err_array_size_zero); // << sizeExpr->getSourceRange();
                 return false;
@@ -518,27 +518,30 @@ bool FileAnalyser::analyseExpr(Expr* expr, bool usedPublic) {
         return true;
     }
     case EXPR_CALL:
-        Diag(expr->getLocation(), diag::err_expr_not_ice) << 0 << expr->getSourceRange();
+        Diag(expr->getLocation(), diag::err_init_element_not_constant) << expr->getSourceRange();
         return false;
     case EXPR_IDENTIFIER:
     {
         IdentifierExpr* id = cast<IdentifierExpr>(expr);
         Decl* D = analyseIdentifier(id, usedPublic);
         if (!D) return false;
-#if 0
+#if 1
+        // use checkStack()
+/*
         if (D == CurrentVarDecl) {
             Diag(id->getLocation(), diag::err_var_self_init) << D->getName();
             return QualType();
         }
+*/
         switch (D->getKind()) {
         case DECL_FUNC:
-            expr->setConstant();
+            //expr->setConstant();
             break;
         case DECL_VAR:
             break;
         case DECL_ENUMVALUE:
-            expr->setCTC(CTC_FULL);
-            expr->setConstant();
+            //expr->setCTC(CTC_FULL);
+            //expr->setConstant();
             break;
         case DECL_STRUCTTYPE:
             // Type.func is allowed as init
@@ -547,15 +550,15 @@ bool FileAnalyser::analyseExpr(Expr* expr, bool usedPublic) {
         case DECL_ALIASTYPE:
         case DECL_FUNCTIONTYPE:
             Diag(id->getLocation(), diag::err_unexpected_typedef) << id->getName();
-            expr->setConstant();
+            //expr->setConstant();
             break;
         case DECL_ENUMTYPE:
-            expr->setConstant();
+            //expr->setConstant();
             break;
         case DECL_ARRAYVALUE:
             break;
         case DECL_IMPORT:
-            expr->setConstant();
+            //expr->setConstant();
             break;
         case DECL_LABEL:
             TODO;
@@ -1260,9 +1263,6 @@ bool FileAnalyser::analyseStructMember(QualType T, MemberExpr* M, bool isStatic)
 
     if (isStatic) return analyseStaticStructMember(T, M, S);
 
-    assert(CurrentFunction);
-
-    FATAL_ERROR("CANNOT HAPPEN AT GLOBAL SCOPE?");
     IdentifierExpr* member = M->getMember();
     Decl* match = S->find(member->getName());
 
@@ -1354,7 +1354,7 @@ QualType FileAnalyser::analyseRefType(QualType Q, bool usedPublic, bool full) {
     }
 
     if (full && D->getCheckState() == CHECK_IN_PROGRESS) {
-        Diag(tLoc, diag::err_circular_type_decl);
+        Diag(tLoc, diag::err_circular_decl);
         return QualType();
     }
 
@@ -1530,36 +1530,38 @@ bool FileAnalyser::checkArrayDesignators(InitListExpr* expr, int64_t* size) {
 bool FileAnalyser::analyseInitListArray(InitListExpr* expr, QualType Q, unsigned numValues, Expr** values, bool usedPublic) {
     LOG_FUNC
     bool haveDesignators = false;
-    bool haveErrors = false;
+    bool ok = true;
     // TODO use helper function
     ArrayType* AT = cast<ArrayType>(Q.getCanonicalType().getTypePtr());
     QualType ET = AT->getElementType();
     bool constant = true;
     for (unsigned i=0; i<numValues; i++) {
-        analyseInitExpr(values[i], ET, usedPublic);
+        ok |= analyseInitExpr(values[i], ET, usedPublic);
         if (DesignatedInitExpr* D = dyncast<DesignatedInitExpr>(values[i])) {
             haveDesignators = true;
             if (D->getDesignatorKind() != DesignatedInitExpr::ARRAY_DESIGNATOR) {
                 StringBuilder buf;
                 Q.DiagName(buf);
                 Diag(D->getLocation(), diag::err_field_designator_non_aggr) << 0 << buf;
-                haveErrors = true;
+                ok = false;
                 continue;
             }
         }
         // TODO BB remove, just give error if not constant (already given?)
         if (!values[i]->isConstant()) constant = false;
     }
+    if (!ok) return false;
+
     if (constant) expr->setConstant();
     if (haveDesignators) expr->setDesignators();
     // determine real array size
     llvm::APInt initSize(64, 0, false);
-    if (haveDesignators && !haveErrors) {
+    if (haveDesignators && ok) {
         int64_t arraySize = -1;
         if (AT->getSizeExpr()) {    // size determined by expr
             arraySize = AT->getSize().getZExtValue();
         } //else, size determined by designators
-        haveErrors |= !checkArrayDesignators(expr, &arraySize);
+        ok |= checkArrayDesignators(expr, &arraySize);
         initSize = arraySize;
     } else {
         if (AT->getSizeExpr()) {    // size determined by expr
@@ -1568,6 +1570,7 @@ bool FileAnalyser::analyseInitListArray(InitListExpr* expr, QualType Q, unsigned
             if (numValues > arraySize) {
                 int firstExceed = AT->getSize().getZExtValue();
                 Diag(values[firstExceed]->getLocation(), diag::err_excess_initializers) << 0;
+                return false;
             }
         } else {    // size determined from #elems in initializer list
             initSize = numValues;
@@ -1575,7 +1578,7 @@ bool FileAnalyser::analyseInitListArray(InitListExpr* expr, QualType Q, unsigned
     }
     AT->setSize(initSize);
     expr->setType(Q);
-    return !haveErrors;
+    return ok;
 }
 
 bool FileAnalyser::analyseInitListStruct(InitListExpr* expr, QualType Q, unsigned numValues, Expr** values, bool usedPublic) {
@@ -1776,7 +1779,6 @@ bool FileAnalyser::analyseDesignatorInitExpr(Expr* expr, QualType expectedType, 
 bool FileAnalyser::analyseInitExpr(Expr* expr, QualType expectedType, bool usedPublic) {
     LOG_FUNC
     InitListExpr* ILE = dyncast<InitListExpr>(expr);
-    // FIXME: expectedType has no canonicalType yet!
     const ArrayType* AT = dyncast<ArrayType>(expectedType.getCanonicalType());
     if (AT) {
         const QualType ET = AT->getElementType().getCanonicalType();
@@ -1800,11 +1802,6 @@ bool FileAnalyser::analyseInitExpr(Expr* expr, QualType expectedType, bool usedP
 
     if (!analyseExpr(expr, usedPublic)) return false;
 
-    if (!expr->isConstant()) {
-        Diag(expr->getLocation(), diag::err_init_element_not_constant) << expr->getSourceRange();
-        return false;
-    }
-
     if (AT) {
         if (AT->getSizeExpr()) {
             // it should be char array type already and expr is string literal
@@ -1817,6 +1814,12 @@ bool FileAnalyser::analyseInitExpr(Expr* expr, QualType expectedType, bool usedP
         }
     } else {
         EA.check(expectedType, expr);
+        if (EA.hasError()) return false;
+    }
+
+    if (!expr->isConstant()) {
+        Diag(expr->getLocation(), diag::err_init_element_not_constant) << expr->getSourceRange();
+        return false;
     }
 
     return true;

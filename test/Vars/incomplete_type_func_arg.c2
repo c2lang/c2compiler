@@ -2,5 +2,5 @@
 
 module test;
 
-func void myfunc(void a) {} // @error{variable has incomplete type 'void'}
+func void myfunc(void a) {} // @error{argument has incomplete type 'void'}
 

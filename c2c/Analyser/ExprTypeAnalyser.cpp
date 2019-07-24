@@ -72,9 +72,11 @@ static int type_conversions[14][14] = {
 ExprTypeAnalyser::ExprTypeAnalyser(c2lang::DiagnosticsEngine& Diags_, const TargetInfo& target_)
     : Diags(Diags_)
     , target(target_)
+    , m_hasError(false)
 {}
 
 void ExprTypeAnalyser::check(QualType TLeft, const Expr* expr) {
+    m_hasError = false;
     switch (expr->getCTC()) {
     case CTC_NONE:
         checkCompatible(TLeft, expr);
@@ -84,6 +86,7 @@ void ExprTypeAnalyser::check(QualType TLeft, const Expr* expr) {
     case CTC_FULL:
         LiteralAnalyser LA(Diags);
         LA.check(TLeft, expr);
+        // TODO add if (!LA.hasError()) m_hasError = true;
         return;
     }
 
@@ -139,6 +142,7 @@ void ExprTypeAnalyser::check(QualType TLeft, const Expr* expr) {
 }
 
 bool ExprTypeAnalyser::checkExplicitCast(const ExplicitCastExpr* expr, QualType DestType, QualType SrcType) {
+    m_hasError = false;
     // C99 6.5.4p2: the cast type needs to be void or scalar and the expression
 
     if (!DestType.isScalarType()) {
@@ -149,6 +153,7 @@ bool ExprTypeAnalyser::checkExplicitCast(const ExplicitCastExpr* expr, QualType 
         SrcType.DiagName(buf2, true);
         Diags.Report(expr->getLocation(), diag::err_typecheck_cond_expect_scalar)
                 << buf1 << buf2 << expr->getSourceRange();
+        m_hasError = true;
         return false;
     }
 
@@ -213,6 +218,7 @@ bool ExprTypeAnalyser::checkNonPointerCast(const ExplicitCastExpr* expr, QualTyp
     DestType.DiagName(buf2, true);
     Diags.Report(expr->getLocation(), diag::err_illegal_cast)
             << buf1 << buf2 << expr->getSourceRange();
+    m_hasError = true;
     return false;
 }
 
@@ -240,6 +246,7 @@ bool ExprTypeAnalyser::checkBuiltinCast(const ExplicitCastExpr* expr, QualType D
             SrcType.DiagName(buf2, true);
             Diags.Report(expr->getLocation(), diag::err_illegal_cast)
                     << buf1 << buf2 << expr->getSourceRange();
+            m_hasError = true;
             return false;
         }
         case 5: // loss of fp-precision
@@ -270,6 +277,7 @@ bool ExprTypeAnalyser::checkBuiltinCast(const ExplicitCastExpr* expr, QualType D
             StringBuilder buf2(MAX_LEN_TYPENAME);
             DestType.DiagName(buf2, true);
             Diags.Report(expr->getLocation(), diag::warn_int_to_pointer_cast) << buf1 << buf2;
+            m_hasError = true;
             return false;
         }
         break;
@@ -306,6 +314,7 @@ bool ExprTypeAnalyser::checkEnumCast(const ExplicitCastExpr* expr, QualType Dest
     DestType.DiagName(buf2, true);
     Diags.Report(expr->getLocation(), diag::err_illegal_cast)
             << buf1 << buf2 << expr->getSourceRange();
+    m_hasError = true;
     return false;
 }
 
@@ -346,6 +355,7 @@ bool ExprTypeAnalyser::checkFunctionCast(const ExplicitCastExpr* expr, QualType 
     DestType.DiagName(buf2, true);
     Diags.Report(expr->getLocation(), diag::err_illegal_cast)
             << buf1 << buf2 << expr->getSourceRange();
+    m_hasError = true;
     return false;
 }
 
@@ -409,7 +419,7 @@ void ExprTypeAnalyser::checkBinOp(QualType TLeft, const BinaryOperator* binop) {
 }
 
 // TODO change return type to void, it's never used
-bool ExprTypeAnalyser::checkCompatible(QualType left, const Expr* expr) const {
+bool ExprTypeAnalyser::checkCompatible(QualType left, const Expr* expr) {
     QualType right = expr->getType();
     //right = TypeFinder::findType(expr);
     assert(left.isValid());
@@ -439,7 +449,7 @@ bool ExprTypeAnalyser::checkCompatible(QualType left, const Expr* expr) const {
     return false;
 }
 
-bool ExprTypeAnalyser::checkBuiltin(QualType left, QualType right, const Expr* expr, bool first) const {
+bool ExprTypeAnalyser::checkBuiltin(QualType left, QualType right, const Expr* expr, bool first) {
     const BuiltinType* Left = cast<BuiltinType>(left.getCanonicalType());
 
     // left is builtin
@@ -501,6 +511,7 @@ bool ExprTypeAnalyser::checkBuiltin(QualType left, QualType right, const Expr* e
         // TODO error msg depends on conv type (see clang errors)
         Diags.Report(expr->getLocation(), errorMsg) << buf1 << buf2
                 << expr->getSourceRange();
+        m_hasError = true;
         return false;
     }
     case TC_POINTER:
@@ -526,7 +537,7 @@ bool ExprTypeAnalyser::checkBuiltin(QualType left, QualType right, const Expr* e
     return false;
 }
 
-bool ExprTypeAnalyser::checkPointer(QualType left, QualType right, const Expr* expr) const {
+bool ExprTypeAnalyser::checkPointer(QualType left, QualType right, const Expr* expr) {
     QualType LP = cast<PointerType>(left)->getPointeeType();
 
     if (right->isPointerType()) {
@@ -552,7 +563,7 @@ bool ExprTypeAnalyser::checkPointer(QualType left, QualType right, const Expr* e
     return false;
 }
 
-bool ExprTypeAnalyser::checkFunction(QualType L, const Expr* expr) const {
+bool ExprTypeAnalyser::checkFunction(QualType L, const Expr* expr) {
     QualType R = expr->getType();
 
     if (isa<NilExpr>(expr)) return true;
@@ -584,10 +595,11 @@ bool ExprTypeAnalyser::checkWidth(QualType type, SourceLocation loc, int msg) {
     StringBuilder buf1(MAX_LEN_TYPENAME);
     expected.DiagName(buf1, false);
     Diags.Report(loc, msg) << buf1;
+    m_hasError = true;
     return false;
 }
 
-void ExprTypeAnalyser::error(SourceLocation loc, QualType left, QualType right) const {
+void ExprTypeAnalyser::error(SourceLocation loc, QualType left, QualType right) {
     StringBuilder buf1(MAX_LEN_TYPENAME);
     StringBuilder buf2(MAX_LEN_TYPENAME);
     right.DiagName(buf1);
@@ -596,14 +608,16 @@ void ExprTypeAnalyser::error(SourceLocation loc, QualType left, QualType right) 
     // TODO error msg depends on conv type (see clang errors)
     Diags.Report(loc, diag::err_illegal_type_conversion)
             << buf1 << buf2;
+    m_hasError = true;
 }
 
-void ExprTypeAnalyser::error2(SourceLocation loc, QualType left, QualType right, unsigned msg) const {
+void ExprTypeAnalyser::error2(SourceLocation loc, QualType left, QualType right, unsigned msg) {
     StringBuilder buf1(MAX_LEN_TYPENAME);
     StringBuilder buf2(MAX_LEN_TYPENAME);
     right.DiagName(buf1);
     left.DiagName(buf2);
 
     Diags.Report(loc, msg) << buf1 << buf2;
+    m_hasError = true;
 }
 
