@@ -181,6 +181,7 @@ protected:
         EnumTypeDeclBits enumTypeDeclBits;
         FunctionDeclBits functionDeclBits;
         ImportDeclBits importDeclBits;
+        uint32_t bits;
     };
     SourceLocation loc;
     QualType type;

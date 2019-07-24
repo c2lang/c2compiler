@@ -240,6 +240,8 @@ protected:
         InitListExprBitfields initListExprBits;
         DesignatedInitExprBitfields designatedInitExprBits;
         BitOffsetExprBitfields bitOffsetExprBits;
+
+        unsigned bits;
     };
 private:
     Stmt(const Stmt&);

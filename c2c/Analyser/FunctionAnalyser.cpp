@@ -133,12 +133,11 @@ void FunctionAnalyser::checkFunction(FunctionDecl* func) {
     }
 }
 
-void FunctionAnalyser::analyseStmt(Stmt* S, bool haveScope) {
+bool FunctionAnalyser::analyseStmt(Stmt* S, bool haveScope) {
     LOG_FUNC
     switch (S->getKind()) {
     case STMT_RETURN:
-        analyseReturnStmt(S);
-        break;
+        return analyseReturnStmt(S);
     case STMT_EXPR:
         analyseStmtExpr(S);
         break;
@@ -162,14 +161,11 @@ void FunctionAnalyser::analyseStmt(Stmt* S, bool haveScope) {
         FATAL_ERROR("Unreachable"); // Done at other place.
         break;
     case STMT_BREAK:
-        analyseBreakStmt(S);
-        break;
+        return analyseBreakStmt(S);
     case STMT_CONTINUE:
-        analyseContinueStmt(S);
-        break;
+        return analyseContinueStmt(S);
     case STMT_LABEL:
-        analyseLabelStmt(S);
-        break;
+        return analyseLabelStmt(S);
     case STMT_GOTO:
         analyseGotoStmt(S);
         break;
@@ -185,6 +181,7 @@ void FunctionAnalyser::analyseStmt(Stmt* S, bool haveScope) {
         analyseAsmStmt(S);
         break;
     }
+    return true;
 }
 
 void FunctionAnalyser::analyseCompoundStmt(Stmt* stmt) {
@@ -295,23 +292,27 @@ void FunctionAnalyser::analyseSwitchStmt(Stmt* stmt) {
     scope.ExitScope();
 }
 
-void FunctionAnalyser::analyseBreakStmt(Stmt* stmt) {
+bool FunctionAnalyser::analyseBreakStmt(Stmt* stmt) {
     LOG_FUNC
     if (!scope.allowBreak()) {
         BreakStmt* B = cast<BreakStmt>(stmt);
         Diag(B->getLocation(), diag::err_break_not_in_loop_or_switch);
+        return false;
     }
+    return true;
 }
 
-void FunctionAnalyser::analyseContinueStmt(Stmt* stmt) {
+bool FunctionAnalyser::analyseContinueStmt(Stmt* stmt) {
     LOG_FUNC
     if (!scope.allowContinue()) {
         ContinueStmt* C = cast<ContinueStmt>(stmt);
         Diag(C->getLocation(), diag::err_continue_not_in_loop);
+        return false;
     }
+    return true;
 }
 
-void FunctionAnalyser::analyseLabelStmt(Stmt* S) {
+bool FunctionAnalyser::analyseLabelStmt(Stmt* S) {
     LOG_FUNC
     LabelStmt* L = cast<LabelStmt>(S);
 
@@ -319,17 +320,20 @@ void FunctionAnalyser::analyseLabelStmt(Stmt* S) {
     if (LD->getStmt()) {
         Diag(L->getLocation(), diag::err_redefinition_of_label) <<  LD->DiagName();
         Diag(LD->getLocation(), diag::note_previous_definition);
+        return false;
     } else {
         LD->setStmt(L);
         LD->setLocation(L->getLocation());
     }
 
-    analyseStmt(L->getSubStmt());
+    if (!analyseStmt(L->getSubStmt())) return false;
     // substmt cannot be declaration
 
     if (isa<DeclStmt>(L->getSubStmt())) {
         Diag(L->getSubStmt()->getLocation(), diag::err_decl_after_label);
+        return false;
     }
+    return true;
 }
 
 void FunctionAnalyser::analyseGotoStmt(Stmt* S) {
@@ -366,7 +370,7 @@ void FunctionAnalyser::analyseDefaultStmt(Stmt* stmt) {
     scope.ExitScope();
 }
 
-void FunctionAnalyser::analyseReturnStmt(Stmt* stmt) {
+bool FunctionAnalyser::analyseReturnStmt(Stmt* stmt) {
     LOG_FUNC
     ReturnStmt* ret = cast<ReturnStmt>(stmt);
     Expr* value = ret->getExpr();
@@ -377,16 +381,20 @@ void FunctionAnalyser::analyseReturnStmt(Stmt* stmt) {
         if (no_rvalue) {
             Diag(ret->getLocation(), diag::ext_return_has_expr) << CurrentFunction->getName() << 0
                     << value->getSourceRange();
+            return false;
         } else {
             if (type.isValid()) {
                 EA.check(rtype, value);
+                if (EA.hasError()) return false;
             }
         }
     } else {
         if (!no_rvalue) {
             Diag(ret->getLocation(), diag::ext_return_missing_expr) << CurrentFunction->getName() << 0;
+            return false;
         }
     }
+    return true;
 }
 
 void FunctionAnalyser::analyseDeclStmt(Stmt* stmt) {
@@ -1760,8 +1768,6 @@ QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr* M, unsign
     const StructTypeDecl* S = ST->getDecl();
 
     if (isStatic) return analyseStaticStructMember(T, M, S, side);
-
-    assert(CurrentFunction);
 
     IdentifierExpr* member = M->getMember();
     Decl* match = S->find(member->getName());

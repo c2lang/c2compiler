@@ -66,20 +66,20 @@ public:
 private:
     void checkFunction(FunctionDecl* F);
 
-    void analyseStmt(Stmt* stmt, bool haveScope = false);
+    bool analyseStmt(Stmt* stmt, bool haveScope = false);
     void analyseCompoundStmt(Stmt* stmt);
     void analyseIfStmt(Stmt* stmt);
     void analyseWhileStmt(Stmt* stmt);
     void analyseDoStmt(Stmt* stmt);
     void analyseForStmt(Stmt* stmt);
     void analyseSwitchStmt(Stmt* stmt);
-    void analyseBreakStmt(Stmt* S);
-    void analyseContinueStmt(Stmt* S);
-    void analyseLabelStmt(Stmt* S);
+    bool analyseBreakStmt(Stmt* S);
+    bool analyseContinueStmt(Stmt* S);
+    bool analyseLabelStmt(Stmt* S);
     void analyseGotoStmt(Stmt* S);
     void analyseCaseStmt(Stmt* stmt);
     void analyseDefaultStmt(Stmt* stmt);
-    void analyseReturnStmt(Stmt* stmt);
+    bool analyseReturnStmt(Stmt* stmt);
     void analyseDeclStmt(Stmt* stmt);
     void analyseAsmStmt(Stmt* stmt);
     bool analyseCondition(Stmt* stmt);

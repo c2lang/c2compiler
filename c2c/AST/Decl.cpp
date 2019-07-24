@@ -30,19 +30,15 @@ using namespace std;
 
 
 Decl::Decl(DeclKind k, const char* name_, SourceLocation loc_, QualType type_, bool is_public)
-    : loc(loc_)
+    : bits(0)
+    , loc(loc_)
     , type(type_)
     , name(name_)
     , mod(0)
 {
     declBits.dKind = k;
     declBits.cState = CHECK_UNCHECKED;
-    declBits.IsExported = 0;
     declBits.IsPublic = is_public;
-    declBits.IsUsed = 0;
-    declBits.IsUsedPublic = 0;
-    declBits.HasAttributes = 0;
-    declBits.hasCName = 0;
 }
 
 void Decl::fullName(StringBuilder& output) const {
@@ -171,12 +167,7 @@ FunctionDecl::FunctionDecl(const char* name_, SourceLocation loc_,
     , args(0)
     , body(0)
     , IRProto(0)
-{
-    functionDeclBits.StructFuncNameOffset = 0;
-    functionDeclBits.numArgs = 0;
-    functionDeclBits.IsVariadic = 0;
-    functionDeclBits.HasDefaultArgs = 0;
-}
+{}
 
 void FunctionDecl::print(StringBuilder& buffer, unsigned indent) const {
     printCommon(buffer, indent, "FunctionDecl");
@@ -248,7 +239,6 @@ VarDecl::VarDecl(VarDeclKind k_, const char* name_, SourceLocation loc_,
     , IRValue(0)
 {
     varDeclBits.Kind = k_;
-    varDeclBits.HasLocalQualifier = 0;
 }
 
 void VarDecl::print(StringBuilder& buffer, unsigned indent) const {
@@ -319,8 +309,6 @@ StructTypeDecl::StructTypeDecl(const char* name_, SourceLocation loc_,
     , members(0)
     , structFunctions(0)
 {
-    structTypeDeclBits.numMembers = 0;
-    structTypeDeclBits.numStructFunctions = 0;
     structTypeDeclBits.IsStruct = is_struct;
     structTypeDeclBits.IsGlobal = is_global;
     extraBits.hasTypedef = 1;
@@ -470,8 +458,7 @@ llvm::APSInt EnumTypeDecl::getMaxValue() const {
 FunctionTypeDecl::FunctionTypeDecl(FunctionDecl* F)
     : TypeDecl(DECL_FUNCTIONTYPE, F->getName(), F->getLocation(), F->getType(), F->isPublic())
     , func(F)
-{
-}
+{}
 
 void FunctionTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);

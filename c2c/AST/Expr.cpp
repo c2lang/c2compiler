@@ -33,7 +33,6 @@ Expr::Expr(ExprKind k, c2lang::SourceLocation loc_, bool isConstant_)
 {
     exprBits.eKind = k;
     exprBits.ImpCast = BuiltinType::Void;
-    exprBits.IsCTC = 0;
     exprBits.IsConstant = isConstant_;
 }
 
@@ -450,7 +449,6 @@ InitListExpr::InitListExpr(SourceLocation left, SourceLocation right, Expr** val
     , rightBrace(right)
     , values(values_)
 {
-    initListExprBits.HasDesignators = 0;
     numValues_ = num;
 }
 

@@ -26,7 +26,9 @@
 using namespace C2;
 using namespace std;
 
-Stmt::Stmt(StmtKind k) {
+Stmt::Stmt(StmtKind k)
+    : bits(0)
+{
     stmtBits.sKind = k;
 }
 

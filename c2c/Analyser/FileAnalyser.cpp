@@ -1267,7 +1267,6 @@ bool FileAnalyser::analyseStructMember(QualType T, MemberExpr* M, bool isStatic)
         return outputStructDiagnostics(T, member, diag::err_no_member_struct_func);
     }
 
-
     IdentifierExpr::RefKind ref = IdentifierExpr::REF_STRUCT_MEMBER;
     FunctionDecl* func = dyncast<FunctionDecl>(match);
 
