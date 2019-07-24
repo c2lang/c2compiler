@@ -37,18 +37,14 @@ class TypeResolver {
 public:
     TypeResolver(Scope& g, c2lang::DiagnosticsEngine& Diags_, ASTContext& ctx_);
 
-    // resolving of TypeDecls (during Type Analysis phase)
-    unsigned checkType(QualType Q, bool used_public);
-    QualType resolveUnresolved(QualType Q) const;
-    QualType resolveCanonicals(const Decl* D, QualType Q, bool set) const;
-
-    // resolving of other Types (after Type Analysis phase)
     QualType resolveType(QualType Q, bool usedPublic);
 
     bool checkOpaqueType(SourceLocation loc, bool isPublic, QualType Q);
 
     bool requireCompleteType(SourceLocation loc, QualType Q, int msg);
 private:
+    unsigned checkType(QualType Q, bool used_public);
+    QualType resolveUnresolved(QualType Q) const;
     QualType resolveCanonical(QualType Q) const;
     unsigned checkRefType(const RefType* type, bool used_public);
 

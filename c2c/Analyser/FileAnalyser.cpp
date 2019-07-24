@@ -358,7 +358,7 @@ bool FileAnalyser::analyseVarDecl(VarDecl* V) {
     }
 
     V->setType(Q);
-    // TODO should be inside analyseType
+    // TODO should be inside analyseType (needs inner/outer function)
     TR->checkOpaqueType(V->getLocation(), V->isPublic(), Q);
 
     // ATTR
@@ -1069,12 +1069,9 @@ bool FileAnalyser::analyseUnaryOperator(Expr* expr, bool usedPublic) {
         break;
     case UO_AddrOf:
     {
-        QualType Q = ast.getContext().getPointerType(LType);
+        QualType Q = ast.getContext().getPointerType(LType.getCanonicalType());
         expr->setType(Q);
         expr->setConstant();
-        // TODO use return type
-        // TODO BB use analyseType?
-        TR->resolveCanonicals(0, Q, true);
         break;
     }
     case UO_Deref:

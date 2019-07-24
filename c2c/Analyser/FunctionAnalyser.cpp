@@ -1531,11 +1531,9 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
         break;
     case UO_AddrOf:
     {
-        QualType Q = Context.getPointerType(LType);
+        QualType Q = Context.getPointerType(LType.getCanonicalType());
         expr->setType(Q);
         expr->setConstant();
-        // TODO use return type
-        TR.resolveCanonicals(0, Q, true);
         return Q;
     }
     case UO_Deref:

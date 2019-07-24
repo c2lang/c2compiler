@@ -153,17 +153,9 @@ QualType TypeResolver::resolveUnresolved(QualType Q) const {
     return Q;
 }
 
-QualType TypeResolver::resolveCanonicals(const Decl* D, QualType Q, bool set) const {
-    Decls decls;
-    if (D != 0 && !isa<AliasTypeDecl>(D)) decls.push_back(D);
-    return checkCanonicals(decls, Q, set);
-}
-
-
 QualType TypeResolver::resolveType(QualType Q, bool usedPublic) {
     if (Q->hasCanonicalType()) return Q;    // should be ok already
 
-    // basic resolving of Unresolved
     if (checkType(Q, usedPublic)) return QualType();
     QualType resolved = resolveUnresolved(Q);
 
