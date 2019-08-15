@@ -29,7 +29,6 @@ export CXX=clang++
 ### Arch
 ```bash
 pacman -S cmake ncurses-dev clang
-yaourt -S libtinfo
 ```
 
 ### OS X (Yosemite/El Capitan)
