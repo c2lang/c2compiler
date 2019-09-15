@@ -73,3 +73,6 @@ name = "csetjmp"
 [[module]]
 name = "csignal"
 
+[[module]]
+name = "ctermios"
+
