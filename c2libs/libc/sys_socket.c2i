@@ -63,11 +63,19 @@ func c_int setsockopt(c_int sockfd, c_int level, c_int optname, const void* optv
 
 func c_int bind(c_int sockfd, const Sockaddr* addr, u32 addrlen);
 
+func c_int connect(c_int sockfd, const Sockaddr* addr, u32 addrlen);
+
 func c_int listen(c_int sockfd, c_int backlog);
 
 func c_int accept4(c_int sockfd, Sockaddr* addr, u32* addrlen, c_int flags);
 
+// NOTE: some c-prototypes need to be converted
+//int inet_aton(const char *cp, struct in_addr *inp);
+func InAddr inet_addr(const c_char* cp);
 func char* inet_ntoa(In_addr in);
+//struct in_addr inet_makeaddr(in_addr_t net, in_addr_t host);
+//in_addr_t inet_lnaof(struct in_addr in);
+//in_addr_t inet_netof(struct in_addr in);
 
 // should be in arpa/inet.h
 func u32 htonl(u32 hostlong);
