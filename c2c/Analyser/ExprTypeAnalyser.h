@@ -52,6 +52,7 @@ private:
 
     bool checkCompatible(QualType left, const Expr* expr);
     bool checkBuiltin(QualType left, QualType right, const Expr* expr, bool first);
+    bool checkStruct(QualType left, QualType right, const Expr* expr);
     bool checkPointer(QualType left, QualType right, const Expr* expr);
     bool checkFunction(QualType left, const Expr* expr);
     bool checkWidth(QualType type, c2lang::SourceLocation loc, int msg);

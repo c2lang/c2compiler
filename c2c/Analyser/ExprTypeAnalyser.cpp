@@ -437,7 +437,7 @@ bool ExprTypeAnalyser::checkCompatible(QualType left, const Expr* expr) {
     case TC_ALIAS:
         break;
     case TC_STRUCT:
-        break;
+        return checkStruct(left, right, expr);
     case TC_ENUM:
         break;
     case TC_FUNCTION:
@@ -530,6 +530,27 @@ bool ExprTypeAnalyser::checkBuiltin(QualType left, QualType right, const Expr* e
         break;
     case TC_FUNCTION:
         break;
+    case TC_MODULE:
+        break;
+    }
+    error(expr->getLocation(), left, right);
+    return false;
+}
+
+bool ExprTypeAnalyser::checkStruct(QualType left, QualType right, const Expr* expr) {
+    QualType C = right.getCanonicalType();
+    switch (C->getTypeClass()) {
+    case TC_BUILTIN:
+    case TC_POINTER:
+    case TC_ARRAY:
+    case TC_REF:
+    case TC_ALIAS:
+        break;
+    case TC_STRUCT:
+        // TODO check if same struct
+        return true;
+    case TC_ENUM:
+    case TC_FUNCTION:
     case TC_MODULE:
         break;
     }
