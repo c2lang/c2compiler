@@ -65,7 +65,7 @@ name = "sys_stat"
 name = "sys_time"
 
 [[module]]
-name = "time"
+name = "libc_time"
 
 [[module]]
 name = "csetjmp"
