@@ -2,6 +2,7 @@ module sys_socket;
 
 import c2 local;
 
+const c_int AF_UNIX    =  1;
 const c_int AF_INET    =  2;
 const c_int AF_NETLINK = 16;
 const c_int AF_PACKET  = 17;
@@ -94,3 +95,9 @@ type Sockaddr_ll struct {
     c_uchar[8] sll_addr;
 } @(cname="sockaddr_ll")
 
+const u32 UNIX_PATH_MAX = 108;
+
+type Sockaddr_un struct {
+    SaFamily sun_family;
+    char[UNIX_PATH_MAX] sun_path;
+} @(cname="sockaddr_un")

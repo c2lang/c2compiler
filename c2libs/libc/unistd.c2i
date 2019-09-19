@@ -27,3 +27,9 @@ func c_int pipe(c_int[2] pipefd);
 //#ifdef_GNU_SOURCE             /* See feature_test_macros(7) */
 func c_int pipe2(c_int[2] pipefd, c_int flags);
 
+func c_int unlink(const char* name);
+
+func c_int rmdir(const char* path);
+
+
+

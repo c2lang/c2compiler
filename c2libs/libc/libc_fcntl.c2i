@@ -23,7 +23,3 @@ const u32 F_SETFL = 4;
 
 func c_int open(const char* __file, c_int __oflag, ...);
 
-// TODO use mode_t for 2nd argument
-func c_int mkdir(const char* __file, c_int mode);
-
-

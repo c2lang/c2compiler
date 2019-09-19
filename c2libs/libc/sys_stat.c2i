@@ -48,5 +48,20 @@ const u32 S_ISUID  = 0004000;
 const u32 S_ISGID  = 0002000;
 const u32 S_ISVTX  = 0001000;
 
+type Mode c_uint;
+
+func c_int chmod(const char* file, Mode mode);
+func c_int lchmod(const char* file, Mode mode);
+func c_int fchmod(c_int fd, const char* file, Mode mode, c_int flag);
+
+func Mode umask(Mode mask);
+func Mode getumask();
+
+func c_int mkdir(const char* __file, c_uint mode);
+
+
+
+
+
 // TODO other functions
 
