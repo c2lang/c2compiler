@@ -67,11 +67,11 @@ void Component::print(StringBuilder& out) const {
     }
 }
 
-void Component::printSymbols(StringBuilder& out) const {
+void Component::printSymbols(StringBuilder& out, bool printNonPublic) const {
     out << "Component " << name << '\n';
     for (unsigned i=0; i<modules.size(); i++) {
         if (!modules[i]->isLoaded()) continue;
-        modules[i]->printSymbols(out);
+        modules[i]->printSymbols(out, printNonPublic);
     }
 }
 

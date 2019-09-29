@@ -28,6 +28,7 @@ struct BuildOptions {
         , printTiming(false)
         , printSymbols(false)
         , printLibSymbols(false)
+        , printNonPublic(false)
         , generateIR(false)
         , printIR(false)
         , generateC(false)
@@ -50,6 +51,7 @@ struct BuildOptions {
     bool printTiming;
     bool printSymbols;
     bool printLibSymbols;
+    bool printNonPublic;
     bool generateIR;
     bool printIR;
     bool generateC;

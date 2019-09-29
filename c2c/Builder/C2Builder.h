@@ -53,7 +53,7 @@ private:
     void configDiagnostics(c2lang::DiagnosticsEngine &Diags, const StringList& silentWarnings);
     bool checkImports(ParseHelper& helper);
     unsigned analyse();
-    void printSymbols(bool printLibs) const;
+    void printSymbols(bool printLibs, bool printNonPublic) const;
     void printComponents(bool printLibs) const;
     void log(const char* color, const char* format, ...) const;
     int report(c2lang::DiagnosticConsumer* client, uint64_t t1_build);

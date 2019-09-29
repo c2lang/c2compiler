@@ -58,7 +58,7 @@ public:
     void setMain() { m_hasMain = true; }
 
     void printFiles(StringBuilder& output) const;
-    void printSymbols(StringBuilder& output) const;
+    void printSymbols(StringBuilder& output, bool printNonPublic) const;
     void print(StringBuilder& output) const;
 
     typedef std::map<std::string, Decl*> Symbols;

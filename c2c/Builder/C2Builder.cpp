@@ -290,7 +290,7 @@ int C2Builder::build() {
     uint64_t t2_analyse = Utils::getCurrentTime();
     if (options.printTiming) log(COL_TIME, "analysis took %" PRIu64" usec", t2_analyse - t1_analyse);
 
-    if (options.printSymbols) printSymbols(options.printLibSymbols);
+    if (options.printSymbols) printSymbols(options.printLibSymbols, options.printNonPublic);
 
     if (client->getNumErrors()) return report(client, t1_build);
 
@@ -482,20 +482,20 @@ C2::Module* C2Builder::findModule(const std::string& name) const {
     else return iter->second;
 }
 
-void C2Builder::printSymbols(bool printLibs) const {
+void C2Builder::printSymbols(bool printLibs, bool printNonPublic) const {
     assert(mainComponent);
     StringBuilder output;
     output.enableColor(true);
     if (printLibs) {
         if (c2Mod) {
             output << "Component <internal>\n";
-            c2Mod->printSymbols(output);
+            c2Mod->printSymbols(output, false);
         }
         for (unsigned i=0; i<components.size(); i++) {
-            components[i]->printSymbols(output);
+            components[i]->printSymbols(output, false);
         }
     } else {
-        mainComponent->printSymbols(output);
+        mainComponent->printSymbols(output, printNonPublic);
     }
     printf("%s\n", (const char*)output);
 }

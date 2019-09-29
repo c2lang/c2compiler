@@ -57,6 +57,7 @@ static void usage(const char* name) {
     fprintf(stderr, "   -l            - list targets\n");
     fprintf(stderr, "   -m            - print modules (excluding library modules)\n");
     fprintf(stderr, "   -M            - print modules (including library modules)\n");
+    fprintf(stderr, "   -p            - print public symbols (excluding library symbols)\n");
     fprintf(stderr, "   -s            - print symbols (excluding library symbols)\n");
     fprintf(stderr, "   -S            - print symbols (including library symbols)\n");
     fprintf(stderr, "   -t            - print timing\n");
@@ -143,12 +144,19 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
                 opts.printModules = true;
                 opts.printLibModules = true;
                 break;
+            case 'p':
+                opts.printSymbols = true;
+                opts.printNonPublic = false;
+                opts.printLibSymbols = false;
+                break;
             case 's':
                 opts.printSymbols = true;
+                opts.printNonPublic = true;
                 break;
             case 'S':
                 opts.printSymbols = true;
                 opts.printLibSymbols = true;
+                opts.printNonPublic = true;
                 break;
             case 't':
                 opts.printTiming = true;

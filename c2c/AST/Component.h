@@ -61,8 +61,7 @@ public:
     }
 
     void print(StringBuilder& output) const;
-    void printSymbols(StringBuilder& output) const;
-
+    void printSymbols(StringBuilder& out, bool printNonPublic) const;
 
     Module* getModule(const std::string& name_);
     const ModuleList& getModules() const { return modules; }

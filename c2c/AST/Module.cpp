@@ -107,11 +107,13 @@ void Module::printDecl(StringBuilder& out, const Decl* D, unsigned indent) const
     }
 }
 
-void Module::printSymbols(StringBuilder& out) const {
+void Module::printSymbols(StringBuilder& out, bool printNonPublic) const {
     out.indent(2);
     out << "module " << name << '\n';
     for (SymbolsConstIter iter = symbols.begin(); iter != symbols.end(); ++iter) {
-        printDecl(out, iter->second, 4);
+        const Decl* d = iter->second;
+        if (!d->isPublic() && !printNonPublic) continue;
+        printDecl(out, d, 4);
     }
 }
 
