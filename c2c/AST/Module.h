@@ -74,7 +74,7 @@ public:
 
     const AstList& getFiles() const { return files; }
 private:
-    void printDecl(StringBuilder& out, const Decl* D, unsigned indent) const;
+    void printDecl(StringBuilder& out, const Decl* D, unsigned indent, bool printNonPublic) const;
 
     const std::string name;
     bool m_isExternal;       // not a module in current target

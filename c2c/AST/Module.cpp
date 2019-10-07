@@ -67,7 +67,8 @@ Decl* Module::findSymbolOrStructFunc(const std::string& name_) const
     else return iter->second;
 }
 
-void Module::printDecl(StringBuilder& out, const Decl* D, unsigned indent) const {
+void Module::printDecl(StringBuilder& out, const Decl* D, unsigned indent, bool printNonPublic) const {
+    if (!D->isPublic() && !printNonPublic) return;
     out.indent(indent);
     out << D->getName() << "    ";// << '\n';
     out.setColor(COL_ATTRIBUTES);
@@ -102,7 +103,7 @@ void Module::printDecl(StringBuilder& out, const Decl* D, unsigned indent) const
     if (S) {
         FunctionDecl** funcs = S->getStructFuncs();
         for (unsigned i=0; i<S->numStructFunctions(); i++) {
-            printDecl(out, funcs[i], indent+2);
+            printDecl(out, funcs[i], indent+2, printNonPublic);
         }
     }
 }
@@ -112,8 +113,7 @@ void Module::printSymbols(StringBuilder& out, bool printNonPublic) const {
     out << "module " << name << '\n';
     for (SymbolsConstIter iter = symbols.begin(); iter != symbols.end(); ++iter) {
         const Decl* d = iter->second;
-        if (!d->isPublic() && !printNonPublic) continue;
-        printDecl(out, d, 4);
+        printDecl(out, d, 4, printNonPublic);
     }
 }
 
