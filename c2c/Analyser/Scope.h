@@ -23,7 +23,7 @@
 
 #include "AST/Module.h"
 
-#define MAX_SCOPE_DEPTH 15
+#define MAX_SCOPE_DEPTH 32
 
 namespace c2lang {
 class DiagnosticsEngine;

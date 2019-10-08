@@ -1,0 +1,25 @@
+// @warnings{no-unused}
+module test;
+
+import string local;
+
+public func void test1(const char* name) {
+    if (strcmp(name, "a") == 0) {
+    } else if (strcmp(name, "b") == 0) {
+    } else if (strcmp(name, "c") == 0) {
+    } else if (strcmp(name, "d") == 0) {
+    } else if (strcmp(name, "e") == 0) {
+    } else if (strcmp(name, "f") == 0) {
+    } else if (strcmp(name, "g") == 0) {
+    } else if (strcmp(name, "h") == 0) {
+    } else if (strcmp(name, "i") == 0) {
+    } else if (strcmp(name, "j") == 0) {
+    } else if (strcmp(name, "k") == 0) {
+    } else if (strcmp(name, "l") == 0) {
+    } else if (strcmp(name, "m") == 0) {
+    } else if (strcmp(name, "n") == 0) {
+    } else if (strcmp(name, "o") == 0) {
+    } else {
+    }
+}
+
