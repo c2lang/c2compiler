@@ -41,6 +41,7 @@ enum StmtKind {
     STMT_DO,
     STMT_FOR,
     STMT_SWITCH,
+    STMT_MATCH,
     STMT_CASE,
     STMT_DEFAULT,
     STMT_BREAK,
@@ -91,6 +92,7 @@ protected:
 
     class SwitchStmtBitfields {
         friend class SwitchStmt;
+        friend class MatchStmt;
         unsigned : NumStmtBits;
 
         unsigned numCases : 32 - NumStmtBits;
@@ -371,6 +373,26 @@ public:
 private:
     SourceLocation Loc;
     Stmt* Cond;
+    Stmt** cases;
+};
+
+
+class MatchStmt : public Stmt {
+public:
+    MatchStmt(SourceLocation Loc_, Expr* Cond_, Stmt** cases_, unsigned numCases_);
+    static bool classof(const Stmt* S) {
+        return S->getKind() == STMT_SWITCH;
+    }
+
+    void print(StringBuilder& buffer, unsigned indent) const;
+    SourceLocation getLocation() const { return Loc; }
+
+    Expr* getCond() const { return Cond; }
+    unsigned numCases() const { return switchStmtBits.numCases; }
+    Stmt** getCases() const { return cases; }
+private:
+    SourceLocation Loc;
+    Expr* Cond;
     Stmt** cases;
 };
 

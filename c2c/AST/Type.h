@@ -96,6 +96,7 @@ public:
     bool isIntegerType() const;
     bool isArithmeticType() const;
     bool isScalarType() const;
+    bool isCharType() const;
     bool isIncompleteType() const;
     bool isFloatType() const;
     bool isUnsignedType() const;

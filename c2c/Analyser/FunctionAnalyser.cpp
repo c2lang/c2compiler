@@ -156,6 +156,9 @@ bool FunctionAnalyser::analyseStmt(Stmt* S, bool haveScope) {
     case STMT_SWITCH:
         analyseSwitchStmt(S);
         break;
+    case STMT_MATCH:
+        analyseMatchStmt(S);
+        break;
     case STMT_CASE:
     case STMT_DEFAULT:
         FATAL_ERROR("Unreachable"); // Done at other place.
@@ -272,21 +275,86 @@ void FunctionAnalyser::analyseSwitchStmt(Stmt* stmt) {
         case STMT_DEFAULT:
             if (defaultStmt) {
                 Diag(C->getLocation(), diag::err_multiple_default_labels_defined);
-                Diag(defaultStmt->getLocation(), diag::note_duplicate_case_prev);
+                //Diag(defaultStmt->getLocation(), diag::note_duplicate_case_prev);
             } else {
                 defaultStmt = C;
             }
             analyseDefaultStmt(C);
+            if (i + 1 != numCases) {
+                Diag(C->getLocation(), diag::err_case_default_not_last) << 0;
+            }
             break;
         default:
             FATAL_ERROR("Unreachable");
         }
     }
 
+    if (S->numCases() == 0) {
+        Diag(S->getLocation(), diag::err_empty_switch);
+    }
     QualType QT = getConditionType(S->getCond());
     if (const EnumType* ET = dyncast<EnumType>(QT)) {
         checkEnumCases(S, ET);
     }
+
+    scope.ExitScope();
+    scope.ExitScope();
+}
+
+static bool isCharPtr(QualType t) {
+    QualType Q = t.getCanonicalType();
+    const PointerType* pt = dyncast<PointerType>(Q);
+    if (!pt) return false;
+    const QualType inner = pt->getPointeeType();
+    return inner.isCharType();
+}
+
+void FunctionAnalyser::analyseMatchStmt(Stmt* stmt) {
+    LOG_FUNC
+    MatchStmt* S = cast<MatchStmt>(stmt);
+
+    Expr* cond = S->getCond();
+    if (!analyseExpr(cond, RHS)) return;
+    if (!isCharPtr(cond->getType())) {
+        StringBuilder buf1(MAX_LEN_TYPENAME);
+        cond->getType().DiagName(buf1);
+        Diags.Report(cond->getLocation(), diag::err_illegal_type_conversion) << buf1 << "'i8*'";
+        return;
+    }
+
+    scope.EnterScope(Scope::DeclScope);
+
+    unsigned numCases = S->numCases();
+    Stmt** cases = S->getCases();
+    Stmt* defaultStmt = 0;
+    scope.EnterScope(Scope::BreakScope | Scope::SwitchScope);
+    for (unsigned i=0; i<numCases; i++) {
+        Stmt* C = cases[i];
+        switch (C->getKind()) {
+        case STMT_CASE:
+            analyseMatchCaseStmt(C);
+            break;
+        case STMT_DEFAULT:
+            if (defaultStmt) {
+                Diag(C->getLocation(), diag::err_match_multiple_default_labels_defined);
+                //Diag(defaultStmt->getLocation(), diag::note_duplicate_case_prev);
+            } else {
+                defaultStmt = C;
+            }
+            analyseDefaultStmt(C);
+            if (i + 1 != numCases) {
+                Diag(C->getLocation(), diag::err_case_default_not_last) << 1;
+            }
+            break;
+        default:
+            FATAL_ERROR("Unreachable");
+        }
+    }
+
+    if (S->numCases() == 0) {
+        Diag(S->getLocation(), diag::err_empty_match);
+    }
+    // TODO check for duplicates (strings + nils)
 
     scope.ExitScope();
     scope.ExitScope();
@@ -350,6 +418,29 @@ void FunctionAnalyser::analyseCaseStmt(Stmt* stmt) {
     scope.EnterScope(Scope::DeclScope);
     CaseStmt* C = cast<CaseStmt>(stmt);
     analyseExpr(C->getCond(), RHS);
+    Stmt** stmts = C->getStmts();
+    for (unsigned i=0; i<C->numStmts(); i++) {
+        analyseStmt(stmts[i]);
+    }
+    C->setHasDecls(scope.hasDecls());
+    scope.ExitScope();
+}
+
+void FunctionAnalyser::analyseMatchCaseStmt(Stmt* stmt) {
+    LOG_FUNC
+    CaseStmt* C = cast<CaseStmt>(stmt);
+
+    Expr* cond = C->getCond();
+    switch (cond->getKind()) {
+    case EXPR_STRING_LITERAL:
+    case EXPR_NIL:
+        break;
+    default:
+        Diag(cond->getLocation(), diag::err_match_case_no_string);
+        return;
+    }
+
+    scope.EnterScope(Scope::DeclScope);
     Stmt** stmts = C->getStmts();
     for (unsigned i=0; i<C->numStmts(); i++) {
         analyseStmt(stmts[i]);

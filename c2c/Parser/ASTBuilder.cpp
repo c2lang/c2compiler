@@ -660,6 +660,19 @@ C2::StmtResult ASTBuilder::ActOnSwitchStmt(SourceLocation loc, Stmt* Cond, StmtL
     return StmtResult(new (Context) SwitchStmt(loc, Cond, cases, numCases));
 }
 
+C2::StmtResult ASTBuilder::ActOnMatchStmt(SourceLocation loc, Expr* expr, StmtList& cases_) {
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: match statement at ";
+    loc.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    MEM_STMT(STMT_MATCH);
+    unsigned numCases = cases_.size();
+    Stmt** cases = (Stmt**)Context.Allocate(sizeof(Stmt*)*numCases);
+    memcpy(cases, &cases_[0], sizeof(Stmt*)*numCases);
+    return StmtResult(new (Context) MatchStmt(loc, expr, cases, numCases));
+}
+
 C2::StmtResult ASTBuilder::ActOnCaseStmt(SourceLocation loc, Expr* Cond, StmtList& stmts_) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: case statement at ";

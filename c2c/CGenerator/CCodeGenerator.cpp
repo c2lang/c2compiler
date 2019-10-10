@@ -977,6 +977,9 @@ void CCodeGenerator::EmitStmt(const Stmt* S, unsigned indent) {
     case STMT_SWITCH:
         EmitSwitchStmt(S, indent);
         return;
+    case STMT_MATCH:
+        EmitMatchStmt(S, indent);
+        return;
     case STMT_CASE:
     case STMT_DEFAULT:
         FATAL_ERROR("Should already be generated");
@@ -1192,6 +1195,78 @@ void CCodeGenerator::EmitSwitchStmt(const Stmt* S, unsigned indent) {
 
     cbuf.indent(indent);
     cbuf << "}\n";
+}
+
+void CCodeGenerator::EmitMatchStmt(const Stmt* S, unsigned indent) {
+    LOG_FUNC
+    const MatchStmt* M = cast<MatchStmt>(S);
+
+    cbuf.indent(indent);
+    cbuf << "do {\n";
+    indent += INDENT;
+
+    // TODO create proper tmp var name (per function)
+    cbuf.indent(indent);
+    cbuf << "const char* _tmp = ";
+    EmitExpr(M->getCond(), cbuf);
+    cbuf << ";\n";
+
+    Stmt** cases = M->getCases();
+    bool need_end = false;
+    for (unsigned i=0; i<M->numCases(); i++) {
+        Stmt* Case = cases[i];
+        switch (Case->getKind()) {
+        case STMT_CASE:
+        {
+            CaseStmt* C = cast<CaseStmt>(Case);
+            cbuf.indent(indent);
+            if (i == 0) {
+                cbuf << "if (";
+            } else {
+                cbuf << "} else if (";
+            }
+            // TODO if argument = NIL, generate (tmp == nil)
+            const Expr* cond = C->getCond();
+            const StringLiteral* S = dyncast<StringLiteral>(cond);
+            if (S) { // string literal
+                cbuf << "strcmp(_tmp, ";
+                S->printLiteral(cbuf);
+                cbuf << ") == 0) {\n";
+            } else { // nil
+                cbuf << "_tmp == NULL) {\n";
+            }
+            Stmt** stmts = C->getStmts();
+            for (unsigned s=0; s<C->numStmts(); s++) {
+                EmitStmt(stmts[s], indent + INDENT);
+            }
+            need_end = true;
+            break;
+        }
+        case STMT_DEFAULT:
+        {
+            if (i != 0) {
+                cbuf.indent(indent);
+                cbuf << "} else {\n";
+                need_end = true;
+            }
+            DefaultStmt* D = cast<DefaultStmt>(Case);
+            Stmt** stmts = D->getStmts();
+            for (unsigned s=0; s<D->numStmts(); s++) {
+                EmitStmt(stmts[s], indent + INDENT + INDENT);
+            }
+            break;
+        }
+        default:
+            FATAL_ERROR("Unreachable");
+        }
+    }
+    if (need_end) {
+        cbuf.indent(indent);
+        cbuf << "}\n";
+    }
+    indent -= INDENT;
+    cbuf.indent(indent);
+    cbuf << "} while (0);\n";
 }
 
 void CCodeGenerator::EmitDeclStmt(const Stmt* S, unsigned indent) {

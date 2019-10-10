@@ -132,6 +132,7 @@ private:
     StmtResult ParseReturnStatement();
     StmtResult ParseIfStatement();
     StmtResult ParseSwitchStatement();
+    StmtResult ParseMatchStatement();
     StmtResult ParseWhileStatement();
     StmtResult ParseDoStatement();
     StmtResult ParseForStatement();

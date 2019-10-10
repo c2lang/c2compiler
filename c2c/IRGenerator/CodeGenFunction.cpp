@@ -146,6 +146,7 @@ void CodeGenFunction::EmitStmt(const Stmt* S) {
     case STMT_WHILE:
     case STMT_DO:
     case STMT_SWITCH:
+    case STMT_MATCH:
     case STMT_CASE:
     case STMT_DEFAULT:
     case STMT_BREAK:

@@ -52,6 +52,8 @@ void Stmt::print(StringBuilder& buffer, unsigned indent) const {
         return cast<ForStmt>(this)->print(buffer, indent);
     case STMT_SWITCH:
         return cast<SwitchStmt>(this)->print(buffer, indent);
+    case STMT_MATCH:
+        return cast<MatchStmt>(this)->print(buffer, indent);
     case STMT_CASE:
         return cast<CaseStmt>(this)->print(buffer, indent);
     case STMT_DEFAULT:
@@ -89,6 +91,8 @@ SourceLocation Stmt::getLocation() const {
         return cast<ForStmt>(this)->getLocation();
     case STMT_SWITCH:
         return cast<SwitchStmt>(this)->getLocation();
+    case STMT_MATCH:
+        return cast<MatchStmt>(this)->getLocation();
     case STMT_CASE:
         return cast<CaseStmt>(this)->getLocation();
     case STMT_DEFAULT:
@@ -229,6 +233,26 @@ void SwitchStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
     buffer << "SwitchStmt\n";
+    Cond->print(buffer, indent + INDENT);
+    for (unsigned i=0; i<numCases(); i++) {
+        cases[i]->print(buffer, indent + INDENT);
+    }
+}
+
+
+MatchStmt::MatchStmt(SourceLocation Loc_, Expr* Cond_, Stmt** cases_, unsigned numCases_)
+    : Stmt(STMT_MATCH)
+    , Loc(Loc_)
+    , Cond(Cond_)
+    , cases(cases_)
+{
+    switchStmtBits.numCases = numCases_;
+}
+
+void MatchStmt::print(StringBuilder& buffer, unsigned indent) const {
+    buffer.indent(indent);
+    buffer.setColor(COL_STMT);
+    buffer << "MatchStmt\n";
     Cond->print(buffer, indent + INDENT);
     for (unsigned i=0; i<numCases(); i++) {
         cases[i]->print(buffer, indent + INDENT);

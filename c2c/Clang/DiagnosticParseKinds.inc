@@ -77,6 +77,7 @@ DIAG(err_enumerator_unnamed_no_def, CLASS_ERROR, (unsigned)diag::Severity::Error
 DIAG(err_except_spec_unparsed, CLASS_ERROR, (unsigned)diag::Severity::Error, "unexpected end of exception specification", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(err_expected_capture, CLASS_ERROR, (unsigned)diag::Severity::Error, "expected variable name or 'this' in lambda capture list", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(err_expected_case_before_expression, CLASS_ERROR, (unsigned)diag::Severity::Error, "expected 'case' keyword before expression", 0, SFINAE_SubstitutionFailure, false, true, 4)
+DIAG(err_expected_case_or_default, CLASS_ERROR, (unsigned)diag::Severity::Error, "expected 'case' or 'default' keyword", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(err_expected_catch, CLASS_ERROR, (unsigned)diag::Severity::Error, "expected catch", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(err_expected_class_name, CLASS_ERROR, (unsigned)diag::Severity::Error, "expected class name", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(err_expected_class_name_not_template, CLASS_ERROR, (unsigned)diag::Severity::Error, "'typename' is redundant; base classes are implicitly types", 0, SFINAE_SubstitutionFailure, false, true, 4)

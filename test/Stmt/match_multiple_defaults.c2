@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+func void test1() {
+    match ("text") {
+    default:    // @error{default case must be last in match}
+    default:    // @error{multiple default labels in one match}
+    }
+}
+

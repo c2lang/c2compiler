@@ -87,6 +87,16 @@ void RefFinder::searchStmt(const Stmt* S) {
         }
         break;
     }
+    case STMT_MATCH:
+    {
+        const MatchStmt* M = cast<MatchStmt>(S);
+        searchExpr(M->getCond());
+        Stmt** Cases = M->getCases();
+        for (unsigned i=0; i<M->numCases(); i++) {
+            searchStmt(Cases[i]);
+        }
+        break;
+    }
     case STMT_CASE:
     {
         const CaseStmt* C = cast<CaseStmt>(S);

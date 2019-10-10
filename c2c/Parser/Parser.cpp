@@ -1767,6 +1767,8 @@ C2::StmtResult Parser::ParseStatement() {
         return ParseIfStatement();
     case tok::kw_switch:
         return ParseSwitchStatement();
+    case tok::kw_match:
+        return ParseMatchStatement();
     case tok::kw_while:
         return ParseWhileStatement();
     case tok::kw_do:
@@ -2080,7 +2082,7 @@ C2::StmtResult Parser::ParseIfStatement() {
 
 /// ParseSwitchStatement
 ///       switch-statement:
-///         'switch' '(' expression ')' statement
+///         'switch' '(' condition ')' statement
 C2::StmtResult Parser::ParseSwitchStatement() {
     LOG_FUNC
     assert(Tok.is(tok::kw_switch) && "Not a switch stmt!");
@@ -2107,8 +2109,7 @@ C2::StmtResult Parser::ParseSwitchStatement() {
             done = true;
             continue;
         default:
-            // TODO Diag expected case/default statement
-            fprintf(stderr, "UNEXPECTED TOKEN IN SWITCH\n");
+            Diag(Tok, diag::err_expected_case_or_default);
             return StmtError();
         }
         if (Res.isUsable()) Cases.push_back(Res.get());
@@ -2118,6 +2119,48 @@ C2::StmtResult Parser::ParseSwitchStatement() {
     if (ExpectAndConsume(tok::r_brace)) return StmtError();
 
     return Actions.ActOnSwitchStmt(Loc, CondStmt.get(), Cases);
+}
+
+// ParseMatchStatement
+///       match-statement:
+///         'match' '(' expression ')' statement
+C2::StmtResult Parser::ParseMatchStatement() {
+    LOG_FUNC
+    assert(Tok.is(tok::kw_match) && "Not a match stmt!");
+    SourceLocation loc = ConsumeToken();
+
+    if (ExpectAndConsume(tok::l_paren)) return StmtError();
+    ExprResult E = ParseExpression();
+    if (E.isInvalid()) return StmtError();
+    if (ExpectAndConsume(tok::r_paren)) return StmtError();
+
+    if (ExpectAndConsume(tok::l_brace)) return StmtError();
+
+    StmtList cases;
+    bool done = false;
+    while (!done) {
+        StmtResult Res;
+        switch (Tok.getKind()) {
+        case tok::kw_case:
+            Res = ParseCaseStatement();
+            break;
+        case tok::kw_default:
+            Res = ParseDefaultStatement();
+            break;
+        case tok::r_brace:
+            done = true;
+            continue;
+        default:
+            Diag(Tok, diag::err_expected_case_or_default);
+            return StmtError();
+        }
+        if (Res.isUsable()) cases.push_back(Res.get());
+        else return StmtError();
+    }
+
+    if (ExpectAndConsume(tok::r_brace)) return StmtError();
+
+    return Actions.ActOnMatchStmt(loc, E.get(), cases);
 }
 
 /// ParseWhileStatement

@@ -83,6 +83,7 @@ private:
     void EmitDoStmt(const Stmt* S, unsigned indent);
     void EmitForStmt(const Stmt* S, unsigned indent);
     void EmitSwitchStmt(const Stmt* S, unsigned indent);
+    void EmitMatchStmt(const Stmt* S, unsigned indent);
     void EmitDeclStmt(const Stmt* S, unsigned indent);
     void EmitAsmStmt(const AsmStmt* S, unsigned indent);
     void EmitAsmPart(bool multiline, unsigned indent);

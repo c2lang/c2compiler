@@ -95,6 +95,7 @@ bool QualType::isArithmeticType() const {
     }
     return false;
 }
+
 bool QualType::isScalarType() const {
     QualType Canon = getTypePtr()->getCanonicalType();
     if (Canon == Type::Bool()) return true;
@@ -102,6 +103,14 @@ bool QualType::isScalarType() const {
     if (isPointerType()) return true;
     if (isFunctionType()) return true;
     if (isa<EnumType>(Canon)) return true;
+    return false;
+}
+
+bool QualType::isCharType() const {
+    QualType Canon = getTypePtr()->getCanonicalType();
+    if (BuiltinType* BI = dyncast<BuiltinType>(Canon.getTypePtr())) {
+        return BI->getKind() == BuiltinType::Int8;
+    }
     return false;
 }
 

@@ -182,6 +182,16 @@ void DepVisitor::checkStmt(const Stmt* S) {
         }
         break;
     }
+    case STMT_MATCH:
+    {
+        const MatchStmt* M = cast<MatchStmt>(S);
+        checkExpr(M->getCond());
+        Stmt** cases = M->getCases();
+        for (unsigned i=0; i<M->numCases(); i++) {
+            checkStmt(cases[i]);
+        }
+        break;
+    }
     case STMT_CASE:
     {
         const CaseStmt* C = cast<CaseStmt>(S);
