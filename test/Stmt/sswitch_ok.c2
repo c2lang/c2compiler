@@ -3,7 +3,7 @@ module test;
 
 func i32 test_const_char_ptr(const char* str) {
     i32 a = 10;
-    match (str) {
+    sswitch (str) {
     case "foo":
         return 10;
     case "bar":     // NOTE: no fallthrough!
@@ -20,34 +20,34 @@ func i32 test_const_char_ptr(const char* str) {
 }
 
 func void test_char_ptr(char* str) {
-    match (str) {
+    sswitch (str) {
     case nil:
     default:
     }
 }
 
 func void test_literal() {
-    match ("literal") {
+    sswitch ("literal") {
     case "aa":
     case "bb":
     }
 }
 
 func void test_nil() {
-    match ("literal") {
+    sswitch ("literal") {
     case "aa":
     case nil:
     }
 }
 
 func void test_only_default() {
-    match ("literal") {
+    sswitch ("literal") {
     default:
     }
 }
 
 func void test_only_nil() {
-    match ("literal") {
+    sswitch ("literal") {
     case nil:
     }
 }

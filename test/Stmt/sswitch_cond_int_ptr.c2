@@ -3,7 +3,7 @@ module test;
 
 func void test_int() {
     i32 a = 10;
-    match (a) { // @error{invalid type conversion from 'i32' to 'i8*'}
+    sswitch (&a) { // @error{invalid type conversion from 'i32*' to 'i8*'}
     case nil:
     }
 }

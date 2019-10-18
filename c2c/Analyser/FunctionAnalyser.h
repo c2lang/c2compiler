@@ -73,13 +73,13 @@ private:
     void analyseDoStmt(Stmt* stmt);
     void analyseForStmt(Stmt* stmt);
     void analyseSwitchStmt(Stmt* stmt);
-    void analyseMatchStmt(Stmt* stmt);
+    void analyseSSwitchStmt(Stmt* stmt);
     bool analyseBreakStmt(Stmt* S);
     bool analyseContinueStmt(Stmt* S);
     bool analyseLabelStmt(Stmt* S);
     void analyseGotoStmt(Stmt* S);
     void analyseCaseStmt(Stmt* stmt);
-    void analyseMatchCaseStmt(Stmt* stmt);
+    void analyseSSwitchCaseStmt(Stmt* stmt);
     void analyseDefaultStmt(Stmt* stmt);
     bool analyseReturnStmt(Stmt* stmt);
     void analyseDeclStmt(Stmt* stmt);

@@ -6,7 +6,7 @@
 module test;
 
 func i32 test1(const char* str) {
-    match (str) {
+    sswitch (str) {
     case "foo":
         return 10;
     case "bar":
@@ -23,34 +23,34 @@ func i32 test1(const char* str) {
 }
 
 func void test2(char* str) {
-    match (str) {
+    sswitch (str) {
     case nil:
     default:
     }
 }
 
 func void test3() {
-    match ("literal") {
+    sswitch ("literal") {
     case "aa":
     case nil:
     }
 }
 
 func void test4() {
-    match ("literal") {
+    sswitch ("literal") {
     case "aa":
     case "bb":
     }
 }
 
 func void test5() {
-    match ("literal") {
+    sswitch ("literal") {
     default:
     }
 }
 
 func void test6() {
-    match ("literal") {
+    sswitch ("literal") {
     case nil:
     }
 }

@@ -977,8 +977,8 @@ void CCodeGenerator::EmitStmt(const Stmt* S, unsigned indent) {
     case STMT_SWITCH:
         EmitSwitchStmt(S, indent);
         return;
-    case STMT_MATCH:
-        EmitMatchStmt(S, indent);
+    case STMT_SSWITCH:
+        EmitSSwitchStmt(S, indent);
         return;
     case STMT_CASE:
     case STMT_DEFAULT:
@@ -1197,9 +1197,9 @@ void CCodeGenerator::EmitSwitchStmt(const Stmt* S, unsigned indent) {
     cbuf << "}\n";
 }
 
-void CCodeGenerator::EmitMatchStmt(const Stmt* S, unsigned indent) {
+void CCodeGenerator::EmitSSwitchStmt(const Stmt* S, unsigned indent) {
     LOG_FUNC
-    const MatchStmt* M = cast<MatchStmt>(S);
+    const SSwitchStmt* M = cast<SSwitchStmt>(S);
 
     cbuf.indent(indent);
     cbuf << "do {\n";

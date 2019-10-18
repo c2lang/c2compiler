@@ -156,8 +156,8 @@ bool FunctionAnalyser::analyseStmt(Stmt* S, bool haveScope) {
     case STMT_SWITCH:
         analyseSwitchStmt(S);
         break;
-    case STMT_MATCH:
-        analyseMatchStmt(S);
+    case STMT_SSWITCH:
+        analyseSSwitchStmt(S);
         break;
     case STMT_CASE:
     case STMT_DEFAULT:
@@ -309,9 +309,9 @@ static bool isCharPtr(QualType t) {
     return inner.isCharType();
 }
 
-void FunctionAnalyser::analyseMatchStmt(Stmt* stmt) {
+void FunctionAnalyser::analyseSSwitchStmt(Stmt* stmt) {
     LOG_FUNC
-    MatchStmt* S = cast<MatchStmt>(stmt);
+    SSwitchStmt* S = cast<SSwitchStmt>(stmt);
 
     Expr* cond = S->getCond();
     if (!analyseExpr(cond, RHS)) return;
@@ -332,11 +332,11 @@ void FunctionAnalyser::analyseMatchStmt(Stmt* stmt) {
         Stmt* C = cases[i];
         switch (C->getKind()) {
         case STMT_CASE:
-            analyseMatchCaseStmt(C);
+            analyseSSwitchCaseStmt(C);
             break;
         case STMT_DEFAULT:
             if (defaultStmt) {
-                Diag(C->getLocation(), diag::err_match_multiple_default_labels_defined);
+                Diag(C->getLocation(), diag::err_sswitch_multiple_default_labels_defined);
                 //Diag(defaultStmt->getLocation(), diag::note_duplicate_case_prev);
             } else {
                 defaultStmt = C;
@@ -352,7 +352,7 @@ void FunctionAnalyser::analyseMatchStmt(Stmt* stmt) {
     }
 
     if (S->numCases() == 0) {
-        Diag(S->getLocation(), diag::err_empty_match);
+        Diag(S->getLocation(), diag::err_empty_sswitch);
     }
     // TODO check for duplicates (strings + nils)
 
@@ -426,7 +426,7 @@ void FunctionAnalyser::analyseCaseStmt(Stmt* stmt) {
     scope.ExitScope();
 }
 
-void FunctionAnalyser::analyseMatchCaseStmt(Stmt* stmt) {
+void FunctionAnalyser::analyseSSwitchCaseStmt(Stmt* stmt) {
     LOG_FUNC
     CaseStmt* C = cast<CaseStmt>(stmt);
 
@@ -436,7 +436,7 @@ void FunctionAnalyser::analyseMatchCaseStmt(Stmt* stmt) {
     case EXPR_NIL:
         break;
     default:
-        Diag(cond->getLocation(), diag::err_match_case_no_string);
+        Diag(cond->getLocation(), diag::err_sswitch_case_no_string);
         return;
     }
 

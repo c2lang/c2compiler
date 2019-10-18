@@ -2,7 +2,7 @@
 module test;
 
 func void test_empty() {
-    match ("test") {    // @error{match without cases or default}
+    sswitch ("test") {    // @error{sswitch without cases or default}
     }
 }
 

@@ -1767,8 +1767,8 @@ C2::StmtResult Parser::ParseStatement() {
         return ParseIfStatement();
     case tok::kw_switch:
         return ParseSwitchStatement();
-    case tok::kw_match:
-        return ParseMatchStatement();
+    case tok::kw_sswitch:
+        return ParseSSwitchStatement();
     case tok::kw_while:
         return ParseWhileStatement();
     case tok::kw_do:
@@ -2121,12 +2121,12 @@ C2::StmtResult Parser::ParseSwitchStatement() {
     return Actions.ActOnSwitchStmt(Loc, CondStmt.get(), Cases);
 }
 
-// ParseMatchStatement
+// ParseSSwitchStatement
 ///       match-statement:
-///         'match' '(' expression ')' statement
-C2::StmtResult Parser::ParseMatchStatement() {
+///         'sswitch' '(' expression ')' statement
+C2::StmtResult Parser::ParseSSwitchStatement() {
     LOG_FUNC
-    assert(Tok.is(tok::kw_match) && "Not a match stmt!");
+    assert(Tok.is(tok::kw_sswitch) && "Not a sswitch stmt!");
     SourceLocation loc = ConsumeToken();
 
     if (ExpectAndConsume(tok::l_paren)) return StmtError();
@@ -2160,7 +2160,7 @@ C2::StmtResult Parser::ParseMatchStatement() {
 
     if (ExpectAndConsume(tok::r_brace)) return StmtError();
 
-    return Actions.ActOnMatchStmt(loc, E.get(), cases);
+    return Actions.ActOnSSwitchStmt(loc, E.get(), cases);
 }
 
 /// ParseWhileStatement

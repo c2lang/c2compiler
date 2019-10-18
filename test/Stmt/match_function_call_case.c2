@@ -1,9 +1,0 @@
-// @warnings{no-unused}
-module test;
-
-func void test1(const char* str) {
-    match (str) {
-    case test1(nil):  // @error{match case can only have a string literal or nil as argument}
-    }
-}
-
