@@ -86,6 +86,7 @@ private:
     void ParseTypeDef(bool is_public);
     void ParseVarDef(bool is_public);
     void ParseFuncDef(bool is_public);
+    void ParseStaticAssert();
 
     // Type def
     void ParseStructType(bool is_struct, const char* id, SourceLocation idLoc, bool is_public);

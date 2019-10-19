@@ -1,0 +1,27 @@
+// @warnings{no-unused}
+module test;
+
+static_assert(8, 8);
+static_assert(8, 4+4);
+static_assert(2+2*3, 4+4);
+static_assert(true, true);
+static_assert(false, false);
+static_assert(1, true);
+static_assert(true, 1);
+static_assert('c', 0x63);
+
+type Struct struct {
+    i32 a;
+    i8 b;
+}
+static_assert(8, sizeof(Struct));
+
+i32[+] numbers;
+numbers += 1;
+numbers += 2;
+numbers += 3;
+static_assert(3, elemsof(numbers));
+
+const i32 A = 123;
+static_assert(123, A);
+

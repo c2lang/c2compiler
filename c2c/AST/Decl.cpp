@@ -111,6 +111,9 @@ void Decl::print(StringBuilder& buffer, unsigned indent) const {
     case DECL_LABEL:
         cast<LabelDecl>(this)->print(buffer, indent);
         break;
+    case DECL_STATIC_ASSERT:
+        cast<StaticAssertDecl>(this)->print(buffer, indent);
+        break;
     }
 }
 
@@ -308,6 +311,8 @@ StructTypeDecl::StructTypeDecl(const char* name_, SourceLocation loc_,
     : TypeDecl(DECL_STRUCTTYPE, name_, loc_, type_, is_public)
     , members(0)
     , structFunctions(0)
+    , size(0)
+    , alignment(0)
 {
     structTypeDeclBits.IsStruct = is_struct;
     structTypeDeclBits.IsGlobal = is_global;
@@ -371,6 +376,30 @@ void StructTypeDecl::setOpaqueMembers() {
     }
 }
 
+bool StructTypeDecl::isPacked() const {
+    if (!hasAttributes()) return false;
+    assert(getModule());
+    const AttrList& AL = getModule()->getAttributes(this);
+    for (AttrListConstIter iter = AL.begin(); iter != AL.end(); ++iter) {
+        const Attr* attr = *iter;
+        if (attr->getKind() == ATTR_PACKED) return true;
+    }
+    return false;
+}
+
+uint32_t StructTypeDecl::getAttrAlignment() const {
+    if (!hasAttributes()) return 1;
+    assert(getModule());
+    const AttrList& AL = getModule()->getAttributes(this);
+    for (AttrListConstIter iter = AL.begin(); iter != AL.end(); ++iter) {
+        const Attr* attr = *iter;
+        if (attr->getKind() == ATTR_ALIGNED) {
+            const IntegerLiteral* I = cast<IntegerLiteral>(attr->getArg());
+            return I->Value.getZExtValue();
+        }
+    }
+    return 1;
+}
 void StructTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
     printCommon(buffer, indent, "StructTypeDecl");
     buffer.setColor(COL_ATTR);
@@ -522,5 +551,18 @@ void LabelDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.setColor(COL_VALUE);
     buffer << name << '\n';
     if (TheStmt) TheStmt->print(buffer, indent+INDENT);
+}
+
+StaticAssertDecl::StaticAssertDecl(SourceLocation loc_, Expr* lhs_, Expr* rhs_)
+    : Decl(DECL_STATIC_ASSERT, "", loc_, QualType(), false)
+    , lhs(lhs_)
+    , rhs(rhs_)
+{}
+
+void StaticAssertDecl::print(StringBuilder& buffer, unsigned indent) const {
+    buffer.setColor(COL_DECL);
+    buffer << "StaticAssertDecl\n";
+    lhs->print(buffer, indent + INDENT);
+    rhs->print(buffer, indent + INDENT);
 }
 

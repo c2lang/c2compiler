@@ -249,8 +249,10 @@ KEYWORD(bool                        , KEYALL)
 KEYWORD(false                       , KEYALL)
 KEYWORD(public                      , KEYALL)
 KEYWORD(true                        , KEYALL)
-KEYWORD(module, KEYALL)
-KEYWORD(import, KEYALL)
+KEYWORD(module                      , KEYALL)
+KEYWORD(import                      , KEYALL)
+KEYWORD(static_assert               , KEYALL)
+
 // For consideration:
 /*
 KEYWORD(f16, KEYALL)

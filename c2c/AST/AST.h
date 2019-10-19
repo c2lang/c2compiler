@@ -61,6 +61,11 @@ public:
     unsigned numArrayValues() const { return arrayValues.size(); }
     ArrayValueDecl* getArrayValue(unsigned i) const { return arrayValues[i]; }
 
+    // StaticAssertDecl
+    void addStaticAssert(StaticAssertDecl* d) { staticAsserts.push_back(d); }
+    unsigned numStaticAsserts() const { return staticAsserts.size(); }
+    StaticAssertDecl* getStaticAssert(unsigned i) const { return staticAsserts[i]; }
+
     void setName(const std::string& name, c2lang::SourceLocation loc) {
         modName = name;
         modLoc = loc;
@@ -92,6 +97,9 @@ private:
 
     typedef std::vector<ArrayValueDecl*> ArrayValues;
     ArrayValues arrayValues;
+
+    typedef std::vector<StaticAssertDecl*> StaticAsserts;
+    StaticAsserts staticAsserts;
 
     ASTContext astContext;
 

@@ -688,6 +688,7 @@ llvm::Value* CodeGenFunction::EmitIdentifierExpr(const IdentifierExpr* E) {
     case DECL_ARRAYVALUE:
     case DECL_IMPORT:
     case DECL_LABEL:
+    case DECL_STATIC_ASSERT:
         break;
     }
     TODO;

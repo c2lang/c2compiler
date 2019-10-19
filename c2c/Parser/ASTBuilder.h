@@ -66,6 +66,7 @@ public:
     void ActOnModule(const char* name, SourceLocation loc);
     void ActOnImport(const char* name, SourceLocation loc, Token& aliasTok, bool isLocal);
     VarDecl* ActOnVarDef(const char* name, SourceLocation loc, bool is_public, Expr* type);
+    void ActOnStaticAssert(SourceLocation loc, Expr* lhs, Expr* rhs);
 
     // function decls
     FunctionDecl* ActOnFuncDecl(const char* func_name_, SourceLocation loc, Expr* structId, bool is_public, Expr* rtype);

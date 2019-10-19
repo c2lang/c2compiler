@@ -161,6 +161,10 @@ void TagWriter::analyse(const AST& ast) {
         TagVisitor visitor(*this, ast.getFunction(i), SM);
         visitor.run();
     }
+    for (unsigned i=0; i<ast.numStaticAsserts(); i++) {
+        TagVisitor visitor(*this, ast.getStaticAssert(i), SM);
+        visitor.run();
+    }
     // TODO TypeDecls ArrayValueDecls
 }
 

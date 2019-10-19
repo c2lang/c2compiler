@@ -52,6 +52,11 @@ void AST::print(bool colors) const {
         functionList[i]->print(buffer, 0);
         buffer << '\n';
     }
+    // StaticAssertDecls
+    for (unsigned i=0; i<staticAsserts.size(); i++) {
+        staticAsserts[i]->print(buffer, 0);
+        buffer << '\n';
+    }
 
     buffer.setColor(COL_NORM);
     buffer << '\n';

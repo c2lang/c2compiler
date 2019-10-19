@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+static_assert("foo", 4);    // @error{expression is not an integer constant expression}
+

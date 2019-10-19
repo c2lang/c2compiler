@@ -576,6 +576,7 @@ llvm::Constant* CodeGenModule::EmitConstantDecl(const Decl* D) {
     case DECL_ARRAYVALUE:
     case DECL_IMPORT:
     case DECL_LABEL:
+    case DECL_STATIC_ASSERT:
         FATAL_ERROR("Never constant");
         break;
     }

@@ -38,6 +38,7 @@ public:
         {}
         bool single_module;
         bool printC;
+        bool generateChecks;
         std::string outputDir;
         std::string buildDir;
     };

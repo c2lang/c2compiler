@@ -207,6 +207,9 @@ bool Parser::ParseTopLevel() {
     case tok::kw_func:
         ParseFuncDef(is_public);
         break;
+    case tok::kw_static_assert:
+        ParseStaticAssert();
+        break;
     default:
         ParseVarDef(is_public);
         break;
@@ -1721,6 +1724,26 @@ void Parser::ParseFuncDef(bool is_public) {
     Actions.ActOnFinishFunctionBody(func, FnBody.get());
 }
 
+// Syntax: static_assert ( <expr> , <expr> )
+void Parser::ParseStaticAssert() {
+    LOG_FUNC
+    SourceLocation loc = ConsumeToken();
+
+    if (ExpectAndConsume(tok::l_paren)) return;
+
+    ExprResult lhs = ParseExpression();
+
+    if (ExpectAndConsume(tok::comma)) return;
+
+    ExprResult rhs = ParseExpression();
+
+    if (ExpectAndConsume(tok::r_paren)) return;
+
+    if (ExpectAndConsume(tok::semi, diag::err_expected_semi_after_stmt, "static_assert")) return;
+
+    Actions.ActOnStaticAssert(loc, lhs.get(), rhs.get());
+}
+
 /*
    Syntax:
     compound_statement ::= LBRACE RBRACE.
@@ -1817,6 +1840,9 @@ C2::StmtResult Parser::ParseStatement() {
         return ParseDeclaration(true, true);
     case tok::star:
         return ParseExprStatement();
+    case tok::kw_static_assert:
+        Diag(Tok, diag::err_static_assert_in_function);
+        return StmtError();
     default:
         if (Tok.is(tok::r_brace)) {
             Diag(Tok, diag::err_expected_statement);

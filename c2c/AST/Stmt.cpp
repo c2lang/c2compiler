@@ -496,3 +496,4 @@ SourceLocation AsmStmt::getLocation() const {
     return asmloc;
 }
 
+

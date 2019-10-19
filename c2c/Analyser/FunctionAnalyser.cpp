@@ -675,7 +675,8 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
             expr->setConstant();
             break;
         case DECL_LABEL:
-            TODO;
+        case DECL_STATIC_ASSERT:
+            FATAL_ERROR("Unreachable");
             break;
         }
         if (side & RHS) {
@@ -778,6 +779,8 @@ static IdentifierExpr::RefKind globalDecl2RefKind(const Decl* D) {
     case DECL_IMPORT:
                             return IdentifierExpr::REF_MODULE;
     case DECL_LABEL:        return IdentifierExpr::REF_LABEL;
+    case DECL_STATIC_ASSERT:
+        FATAL_ERROR("Unreachable");
     }
 }
 
@@ -1055,7 +1058,8 @@ QualType FunctionAnalyser::analyseSizeOfExpr(BuiltinExpr* B) {
         // But that does not properly find the right location!
         TR.checkOpaqueType(B->getLocation(), false, Q);
         expr->setType(Q);
-        width = AnalyserUtils::sizeOfType(Q);
+        unsigned align;
+        width = AnalyserUtils::sizeOfType(Q, &align);
         break;
     }
     case EXPR_INTEGER_LITERAL:
@@ -1077,7 +1081,8 @@ QualType FunctionAnalyser::analyseSizeOfExpr(BuiltinExpr* B) {
             return QualType();
         }
         TR.checkOpaqueType(expr->getLocation(), true, type);
-        width = AnalyserUtils::sizeOfType(type);
+        unsigned align;
+        width = AnalyserUtils::sizeOfType(type, &align);
         break;
     }
     case EXPR_BUILTIN:
@@ -2252,6 +2257,7 @@ void FunctionAnalyser::checkDeclAssignment(Decl* decl, Expr* expr) {
         break;
     case DECL_IMPORT:
     case DECL_LABEL:
+    case DECL_STATIC_ASSERT:
         Diag(expr->getLocation(), diag::err_typecheck_expression_not_modifiable_lvalue);
         break;
     }

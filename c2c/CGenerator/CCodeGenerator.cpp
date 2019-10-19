@@ -60,10 +60,12 @@ CCodeGenerator::CCodeGenerator(const std::string& filename_,
                                const Modules& modules_,
                                const ModuleList& mods_,
                                const HeaderNamer& namer_,
-                               const TargetInfo& targetInfo_)
+                               const TargetInfo& targetInfo_,
+                               bool genChecks_)
     : filename(filename_)
     , mode(mode_)
     , inInterface(false)
+    , generateChecks(genChecks_)
     , modules(modules_)
     , mods(mods_)
     , headerNamer(namer_)
@@ -364,7 +366,7 @@ void CCodeGenerator::EmitBuiltinExpr(const Expr* E, StringBuilder& output) {
     const BuiltinExpr* B = cast<BuiltinExpr>(E);
     switch (B->getBuiltinKind()) {
     case BuiltinExpr::BUILTIN_SIZEOF:
-        // TODO for now generate external sizeof() instead of number (need StructSizer)
+        // TODO for now generate external sizeof() instead of number
         // We need to know the ARCH (32/64 bit to generate the sizeof correctly)
         if (B->getValue().getZExtValue() > 0) {
             output << B->getValue().toString(10);
@@ -819,6 +821,7 @@ void CCodeGenerator::EmitTypeDecl(const TypeDecl* T) {
     case DECL_ARRAYVALUE:
     case DECL_IMPORT:
     case DECL_LABEL:
+    case DECL_STATIC_ASSERT:
         FATAL_ERROR("Unreachable");
         break;
     }
@@ -875,6 +878,15 @@ void CCodeGenerator::EmitStructType(const StructTypeDecl* S, StringBuilder& out,
     }
     EmitAttributes(S, out, true);
     out << ";\n";
+
+    if (generateChecks && S->isGlobal()) {
+        uint64_t size = S->getSize();
+        out << "_Static_assert(sizeof(struct ";
+        EmitDecl(S, out);
+        if (S->hasTypedef()) out << '_';
+        out << ") == " << size << ", \"size incorrect\");\n";
+    }
+
     if (S->isGlobal()) out << '\n';
 }
 

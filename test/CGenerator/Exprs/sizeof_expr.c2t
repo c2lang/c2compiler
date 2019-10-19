@@ -49,10 +49,10 @@ int32_t main(int32_t argc, const char* argv[]) {
     int32_t d = 4;
     int32_t e = 8;
     int32_t f = sizeof(int32_t[3]);
-    int32_t g = sizeof(test_Foo);
+    int32_t g = 24;
     int32_t h = 4;
     int32_t i = 8;
-    int32_t j = sizeof(test_Foo);
+    int32_t j = 24;
     int32_t k = 4;
     int32_t l = 8;
     int32_t o1 = 10;

@@ -72,6 +72,13 @@ void ASTVisitor::checkDecl(const Decl* D) {
     case DECL_IMPORT:
     case DECL_LABEL:
         break;
+    case DECL_STATIC_ASSERT:
+    {
+        const StaticAssertDecl* S = cast<StaticAssertDecl>(D);
+        checkExpr(S->getLHS());
+        checkExpr(S->getRHS());
+        break;
+    }
     }
 }
 
@@ -258,8 +265,13 @@ void ASTVisitor::checkExpr(const Expr* E) {
         visitIdentifierExpr(cast<IdentifierExpr>(E));
         break;
     case EXPR_TYPE:
-        // only in sizeof(int), so no need to check here
+    {
+        // Issue, don't have IdentifierExpr anymore
+        //QualType Q = E->getType();
+        //Q.dump();
+        //const TypeExpr* T = cast<TypeExpr>(E);
         break;
+    }
     case EXPR_CALL:
     {
         const CallExpr* C = cast<CallExpr>(E);

@@ -36,7 +36,10 @@ public:
     static ExprCTC combineCtc(Expr* Result, const Expr* L, const Expr* R);
     static bool isConstantBitOffset(const Expr* E);
     static StringBuilder& quotedField(StringBuilder &builder, IdentifierExpr *field);
-    static uint64_t sizeOfType(QualType type);
+
+    static uint64_t sizeOfStruct(StructTypeDecl* S, uint32_t* align);
+    static uint64_t sizeOfUnion(StructTypeDecl* S, uint32_t* align);
+    static uint64_t sizeOfType(QualType type, unsigned* alignment);
 };
 
 }

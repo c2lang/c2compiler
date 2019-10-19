@@ -50,7 +50,8 @@ enum DeclKind {
     DECL_FUNCTIONTYPE,
     DECL_ARRAYVALUE,
     DECL_IMPORT,
-    DECL_LABEL
+    DECL_LABEL,
+    DECL_STATIC_ASSERT,
 };
 
 enum CheckState {
@@ -381,6 +382,12 @@ public:
     bool isStruct() const { return structTypeDeclBits.IsStruct; }
     bool isGlobal() const { return structTypeDeclBits.IsGlobal; }
     bool hasTypedef() const { return extraBits.hasTypedef; }
+    bool isPacked() const;
+    uint32_t getAttrAlignment() const;
+
+    uint64_t getSize() const { return size; }
+    uint32_t getAlignment() const { return alignment; }
+    void setInfo(uint64_t s, uint32_t a) { size = s; alignment = a; }
 private:
     Decl** members;
     FunctionDecl** structFunctions;
@@ -390,6 +397,8 @@ private:
         unsigned hasTypedef : 1;
     };
     ExtraBits extraBits;
+    uint64_t size;
+    uint32_t alignment; // NOT attribute alignment
 };
 
 class EnumTypeDecl : public TypeDecl {
@@ -491,6 +500,22 @@ public:
     void setLocation(SourceLocation loc_) { loc = loc_; }
 private:
     LabelStmt* TheStmt;
+};
+
+
+class StaticAssertDecl : public Decl {
+public:
+    StaticAssertDecl(SourceLocation loc_, Expr* lhs_, Expr* rhs_);
+    static bool classof(const Decl* D) {
+        return D->getKind() == DECL_STATIC_ASSERT;
+    }
+    void print(StringBuilder& buffer, unsigned indent) const;
+
+    Expr* getLHS() const { return lhs; }
+    Expr* getRHS() const { return rhs; }
+private:
+    Expr* lhs;
+    Expr* rhs;
 };
 
 

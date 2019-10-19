@@ -122,6 +122,10 @@ unsigned ModuleAnalyser::analyse(bool print1, bool print2, bool print3, bool pri
     }
 
     for (unsigned i=0; i<count; i++) {
+        if (!analysers[i]->analyseStaticAsserts()) return 1;
+    }
+
+    for (unsigned i=0; i<count; i++) {
         if (!analysers[i]->analyseFunctionProtos()) return 1;
     }
 

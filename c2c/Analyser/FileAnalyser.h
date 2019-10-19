@@ -71,6 +71,7 @@ public:
     bool collectStructFunctions(StructFunctionList& structFuncs);
     bool analyseTypes();
     bool analyseVars();
+    bool analyseStaticAsserts();
     bool analyseFunctionProtos();
     void analyseFunctionBodies();
     void checkUnusedDecls();
@@ -84,6 +85,10 @@ private:
     bool collectStructFunction(FunctionDecl* F, StructFunctionList& structFuncs);
 
     // Decls
+    bool analyseStaticAssertInteger(const Expr* lhs, const Expr* rhs);
+    //bool analyseStaticAssertString(const Expr* lhs, const Expr* rhs);
+    bool analyseStaticAssert(StaticAssertDecl* D);
+
     bool analyseDecl(Decl* D);
     bool analyseVarDecl(VarDecl* D);
     bool analyseTypeDecl(TypeDecl* D);

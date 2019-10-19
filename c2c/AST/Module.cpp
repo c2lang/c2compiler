@@ -91,6 +91,7 @@ void Module::printDecl(StringBuilder& out, const Decl* D, unsigned indent, bool 
     case DECL_ARRAYVALUE:
     case DECL_IMPORT:
     case DECL_LABEL:
+    case DECL_STATIC_ASSERT:
         // never symbol
         break;
     }

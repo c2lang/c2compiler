@@ -161,6 +161,17 @@ bool FileAnalyser::analyseVars() {
     return true;
 }
 
+bool FileAnalyser::analyseStaticAsserts() {
+    LOG_FUNC
+    if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
+
+    for (unsigned i=0; i<ast.numStaticAsserts(); i++) {
+        StaticAssertDecl* D = ast.getStaticAssert(i);
+        if (!analyseStaticAssert(D)) return false;
+    }
+    return true;
+}
+
 bool FileAnalyser::analyseFunctionProtos() {
     LOG_FUNC
     if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
@@ -227,6 +238,77 @@ void FileAnalyser::popCheck() {
     //printf("pop  [%d] %s\n", checkIndex, checkStack[checkIndex]->getName());
 }
 
+bool FileAnalyser::analyseStaticAssertInteger(const Expr* lhs, const Expr* rhs) {
+    LOG_FUNC
+
+    LiteralAnalyser LA(Diags);
+    llvm::APSInt L = LA.checkLiterals(lhs);
+    llvm::APSInt R = LA.checkLiterals(rhs);
+    if (L != R) {
+        Diag(rhs->getLocation(), diag::err_static_assert_not_same) << L.toString(10) << R.toString(10);
+        return false;
+    }
+    return true;
+}
+
+#if 0
+bool FileAnalyser::analyseStaticAssertString(const Expr* lhs, const Expr* rhs) {
+    LOG_FUNC
+
+    // must be stringLiteral
+    const StringLiteral* l = dyncast<StringLiteral>(lhs);
+    const StringLiteral* r = dyncast<StringLiteral>(rhs);
+    if (!l || !r) {
+        // TODO BB
+        fprintf(stderr, "Both arguments must be string literals\n");
+        return false;
+    }
+
+    if (strcmp(l->getValue(), r->getValue()) != 0) {
+        Diag(rhs->getLocation(), diag::err_static_assert_not_same_str) << l->getValue() << r->getValue();
+        return false;
+    }
+    return true;
+}
+#endif
+
+bool FileAnalyser::analyseStaticAssert(StaticAssertDecl* D) {
+    LOG_FUNC
+
+    // TODO or use side=0 (not marked with used then)
+    Expr* lhs = D->getLHS();
+    if (!analyseExpr(lhs, false)) return false;
+    if (lhs->getCTC() != CTC_FULL) {
+        Diag(lhs->getLocation(), diag::err_expr_not_ice) << 0 << lhs->getSourceRange();
+        return false;
+    }
+
+    Expr* rhs = D->getRHS();
+    if (!analyseExpr(rhs, false)) return false;
+    if (rhs->getCTC() != CTC_FULL) {
+        Diag(rhs->getLocation(), diag::err_expr_not_ice) << 0 << rhs->getSourceRange();
+        return false;
+    }
+
+    QualType lhsType = lhs->getType();
+    switch (lhsType.getTypePtr()->getTypeClass()) {
+    case TC_BUILTIN:
+        return analyseStaticAssertInteger(lhs, rhs);
+    case TC_POINTER:
+        //return analyseStaticAssertString(lhs, rhs);
+    case TC_ARRAY:
+    case TC_REF:
+    case TC_ALIAS:
+    case TC_STRUCT:
+    case TC_ENUM:
+    case TC_FUNCTION:
+    case TC_MODULE:
+        TODO;
+        break;
+    }
+    return false;
+}
+
 bool FileAnalyser::analyseEnumConstants(EnumTypeDecl* ETD) {
     LOG_FUNC
     APSInt value(64, false);
@@ -289,6 +371,8 @@ static IdentifierExpr::RefKind globalDecl2RefKind(const Decl* D) {
     case DECL_IMPORT:
                             return IdentifierExpr::REF_MODULE;
     case DECL_LABEL:        return IdentifierExpr::REF_LABEL;
+    case DECL_STATIC_ASSERT:
+        FATAL_ERROR("cannot come here");
     }
 }
 
@@ -331,6 +415,7 @@ bool FileAnalyser::analyseDecl(Decl* D) {
         ok = true;
         break;
     case DECL_LABEL:
+    case DECL_STATIC_ASSERT:
         D->dump();
         FATAL_ERROR("should not come here");
         break;
@@ -561,6 +646,7 @@ bool FileAnalyser::analyseExpr(Expr* expr, bool usedPublic) {
             //expr->setConstant();
             break;
         case DECL_LABEL:
+        case DECL_STATIC_ASSERT:
             TODO;
             break;
         }
@@ -583,7 +669,6 @@ bool FileAnalyser::analyseExpr(Expr* expr, bool usedPublic) {
         return analyseUnaryOperator(expr, usedPublic);
     case EXPR_BUILTIN:
         return analyseBuiltinExpr(expr, usedPublic);
-        break;
     case EXPR_ARRAYSUBSCRIPT:
         //return analyseArraySubscript(expr, side);
         break;
@@ -831,7 +916,8 @@ bool FileAnalyser::analyseSizeOfExpr(BuiltinExpr* B, bool usedPublic) {
         if (!Q.isValid()) return false;
         TR->checkOpaqueType(B->getLocation(), usedPublic, Q);
         expr->setType(Q);
-        width = AnalyserUtils::sizeOfType(Q);
+        unsigned align;
+        width = AnalyserUtils::sizeOfType(Q, &align);
         break;
     }
     case EXPR_INTEGER_LITERAL:
@@ -850,7 +936,8 @@ bool FileAnalyser::analyseSizeOfExpr(BuiltinExpr* B, bool usedPublic) {
         if (!analyseExpr(expr, usedPublic)) return false;
         QualType type = expr->getType();
         TR->checkOpaqueType(expr->getLocation(), usedPublic, type);
-        width = AnalyserUtils::sizeOfType(type);
+        unsigned align;
+        width = AnalyserUtils::sizeOfType(type, &align);
         break;
     }
     case EXPR_BUILTIN:
@@ -1417,6 +1504,7 @@ bool FileAnalyser::analyseTypeDecl(TypeDecl* D) {
     case DECL_ARRAYVALUE:
     case DECL_IMPORT:
     case DECL_LABEL:
+    case DECL_STATIC_ASSERT:
         FATAL_ERROR("Cannot have type decl");
         break;
     }
@@ -1475,6 +1563,10 @@ bool FileAnalyser::analyseStructTypeDecl(StructTypeDecl* D) {
             if (!analyseStructTypeDecl(cast<StructTypeDecl>(M))) return false;
         }
     }
+
+    unsigned alignment = 0;
+    uint64_t size = AnalyserUtils::sizeOfStruct(D, &alignment);
+    D->setInfo(size, alignment);
     return true;
 }
 

@@ -71,6 +71,13 @@ void DepVisitor::checkDecl(const Decl* D) {
     case DECL_IMPORT:
     case DECL_LABEL:
         break;
+    case DECL_STATIC_ASSERT:
+    {
+        const StaticAssertDecl* S = cast<StaticAssertDecl>(D);
+        checkExpr(S->getLHS());
+        checkExpr(S->getRHS());
+        break;
+    }
     }
 }
 

@@ -250,6 +250,7 @@ void InterfaceGenerator::EmitExpr(const Expr* E) {
             case DECL_ARRAYVALUE:
             case DECL_IMPORT:
             case DECL_LABEL:
+            case DECL_STATIC_ASSERT:
                 FATAL_ERROR("Unreachable");
                 break;
             }
@@ -420,6 +421,7 @@ void InterfaceGenerator::EmitTypeDecl(const TypeDecl* T) {
     case DECL_ARRAYVALUE:
     case DECL_IMPORT:
     case DECL_LABEL:
+    case DECL_STATIC_ASSERT:
         FATAL_ERROR("Unreachable");
         break;
     }

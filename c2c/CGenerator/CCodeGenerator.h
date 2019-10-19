@@ -49,7 +49,8 @@ public:
                    const Modules& modules_,
                    const ModuleList& mods_,
                    const HeaderNamer& namer_,
-                   const TargetInfo& targetInfo_);
+                   const TargetInfo& targetInfo_,
+                   bool genChecks_);
     ~CCodeGenerator();
 
     void generate(bool printCode, const std::string& outputDir);
@@ -116,6 +117,7 @@ private:
     const std::string& filename;
     Mode mode;
     bool inInterface;
+    bool generateChecks;
 
     const Modules& modules;
     const ModuleList& mods;

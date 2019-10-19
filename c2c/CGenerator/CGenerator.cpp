@@ -51,14 +51,14 @@ void CGenerator::generate() {
 
     // generate code
     if (options.single_module) {
-        CCodeGenerator gen(component.getName(), CCodeGenerator::SINGLE_FILE, moduleMap, mods, includeNamer, targetInfo);
+        CCodeGenerator gen(component.getName(), CCodeGenerator::SINGLE_FILE, moduleMap, mods, includeNamer, targetInfo, options.generateChecks);
         gen.generate(options.printC, outdir);
     } else {
         for (unsigned m=0; m<mods.size(); m++) {
             Module* M = mods[m];
             ModuleList single;
             single.push_back(M);
-            CCodeGenerator gen(M->getName(), CCodeGenerator::MULTI_FILE, moduleMap, single, includeNamer, targetInfo);
+            CCodeGenerator gen(M->getName(), CCodeGenerator::MULTI_FILE, moduleMap, single, includeNamer, targetInfo, options.generateChecks);
             gen.generate(options.printC, outdir);
         }
     }
@@ -109,7 +109,7 @@ void CGenerator::generateExternalHeaders() {
         if (!M->isExternal()) continue;
         ModuleList single;
         single.push_back(M);
-        CCodeGenerator gen(M->getName(), CCodeGenerator::MULTI_FILE, moduleMap, single, includeNamer, targetInfo);
+        CCodeGenerator gen(M->getName(), CCodeGenerator::MULTI_FILE, moduleMap, single, includeNamer, targetInfo, false);
         gen.createLibHeader(options.printC, options.outputDir + options.buildDir);
     }
 }
@@ -122,7 +122,7 @@ void CGenerator::generateInterfaceFiles() {
         if (!M->isExported()) continue;
         ModuleList single;
         single.push_back(M);
-        CCodeGenerator gen(M->getName(), CCodeGenerator::MULTI_FILE, moduleMap, single, includeNamer, targetInfo);
+        CCodeGenerator gen(M->getName(), CCodeGenerator::MULTI_FILE, moduleMap, single, includeNamer, targetInfo, false);
         gen.createLibHeader(options.printC, options.outputDir);
     }
 }

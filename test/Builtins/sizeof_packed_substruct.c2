@@ -1,0 +1,48 @@
+// @warnings{no-unused}
+
+module test;
+import stdio local;
+
+type S1 struct {
+    i8 a;
+}
+
+type S2 struct {
+    i16 a;
+    i8 b;
+}
+
+type S2_packed struct {
+    i16 a;
+    i8 b;
+} @(packed)
+
+type S3 struct {
+    i8 b;
+    i16 a;
+}
+
+type S3_packed struct {
+    i8 b;
+    i16 a;
+} @(packed)
+
+type S4 struct {
+    i8 a;
+    S2_packed b;
+    S1 c;
+}
+static_assert(5, sizeof(S4));
+
+type S5 struct {
+    i8 a;
+    S3 b;
+}
+static_assert(6, sizeof(S5));
+
+type S6 struct {
+    i8 a;
+    S3_packed b;
+}
+static_assert(4, sizeof(S6));
+

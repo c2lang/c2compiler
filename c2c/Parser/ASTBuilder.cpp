@@ -151,7 +151,7 @@ ASTBuilder::ASTBuilder(SourceManager& sm_, DiagnosticsEngine& Diags_, c2lang::Pr
 
     checkSize(TypeDecl, 32);
     checkSize(AliasTypeDecl, 40);
-    checkSize(StructTypeDecl, 56);
+    checkSize(StructTypeDecl, 72);
     checkSize(EnumTypeDecl, 48);
     checkSize(FunctionTypeDecl, 40);
 
@@ -471,6 +471,16 @@ C2::VarDecl* ASTBuilder::ActOnVarDef(const char* name, SourceLocation loc, bool 
     return V;
 }
 
+void ASTBuilder::ActOnStaticAssert(SourceLocation loc, Expr* lhs, Expr* rhs) {
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: static_assert at ";
+    loc.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    MEM_DECL(DECL_STATIC_ASSERT);
+    ast.addStaticAssert(new (Context) StaticAssertDecl(loc, lhs, rhs));
+}
+
 C2::FunctionDecl* ASTBuilder::createFuncDecl(const char* name_, SourceLocation loc,
         bool is_public, Expr* rtype) {
     assert(rtype);
@@ -782,7 +792,7 @@ C2::StmtResult ASTBuilder::ActOnAsmStmt(SourceLocation AsmLoc, bool isBasic,
     assert(asmString);
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: asm at ";
-    loc.dump(SourceMgr);
+    AsmLoc.dump(SourceMgr);
     std::cerr << ANSI_NORMAL"\n";
 #endif
     unsigned NumClobbers = clobbers.size();
@@ -1058,7 +1068,7 @@ C2::ExprResult ASTBuilder::ActOnBuiltinType(tok::TokenKind k) {
 StructTypeDecl* ASTBuilder::ActOnStructType(const char* name_, SourceLocation loc,
                                         bool isStruct, bool is_public, bool is_global) {
 #ifdef SEMA_DEBUG
-    std::cerr << COL_SEMA << "SEMA: Struct/Union Type '" << (name_ ? name_ : "<anonymous>");
+    std::cerr << COL_SEMA << "SEMA: Struct/Union Type '" << (name_ ? name_ : "<anonymous>") << "'";
     std::cerr << ANSI_NORMAL << '\n';
 #endif
     if (ast.isInterface()) {
