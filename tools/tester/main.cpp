@@ -39,6 +39,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <pthread.h>
 #include <map>
 #include <list>
 #include <vector>
@@ -54,20 +55,79 @@
 #define COL_DEBUG ANSI_BMAGENTA
 
 #define MAX_LINE 512
+#define MAX_THREADS 16
 
 //#define DEBUG
 
 using namespace C2;
 
-static unsigned numtests;
-static unsigned numerrors;
-static unsigned numskipped;
-
 static int color_output = 1;
 static const char* c2c_cmd = "build/c2c/c2c";
-static const char* test_root = "/tmp/tester";
 static char* cwd;
 static bool runSkipped;
+
+class Test {
+public:
+    Test(const char* filename_)
+        : filename(strdup(filename_))
+        , next(0)
+    {}
+    ~Test() { free(filename); }
+
+    char* filename;
+    Test* next;
+};
+
+class TestQueue {
+public:
+    TestQueue()
+        : head(0)
+        , tail(0)
+        , cur(0)
+    {
+        pthread_mutex_init(&lock, 0);
+    }
+    ~TestQueue() {
+        while (head) {
+            Test* next = head->next;
+            delete head;
+            head = next;
+        }
+    }
+
+    void add(const char* filename) {
+        Test* t = new Test(filename);
+        pthread_mutex_lock(&lock);
+        if (tail) {
+            tail->next = t;
+        } else {
+            head = t;
+            cur = t;
+        }
+        tail = t;
+        count++;
+        pthread_mutex_unlock(&lock);
+    }
+    const char* get() {
+        const char* filename = 0;
+        pthread_mutex_lock(&lock);
+        if (cur) {
+            filename = cur->filename;
+            cur = cur->next;
+        }
+        pthread_mutex_unlock(&lock);
+        return filename;
+    }
+    void dump() const {
+        printf("%u tests\n", count);
+    }
+private:
+    pthread_mutex_t lock;
+    Test* head;
+    Test* tail;
+    Test* cur;
+    unsigned count;
+};
 
 #ifdef DEBUG
 static void debug(const char* format, ...) {
@@ -102,6 +162,16 @@ static void color_print(const char* color, const char* format, ...) {
     else printf("%s\n", buffer);
 }
 
+static void color_print2(StringBuilder& output ,const char* color, const char* format, ...) {
+    char buffer[1024];
+    va_list(Args);
+    va_start(Args, format);
+    vsnprintf(buffer, sizeof(buffer), format, Args);
+    va_end(Args);
+
+    if (color_output) output.print("%s%s" ANSI_NORMAL"\n", color, buffer);
+    else output.print("%s\n", buffer);
+}
 
 static uint64_t getCurrentTime() {
     struct timeval now;
@@ -128,22 +198,6 @@ static const char* find(const char* start, const char* end, const char* text) {
     return 0;
 }
 
-static void writeFile(const char* name, const char* content, unsigned size) {
-    char fullname[128];
-    sprintf(fullname, "%s/%s", test_root, name);
-    int fd = open(fullname, O_WRONLY | O_CREAT, 0660);
-    if (fd == -1) {
-        perror("open");
-        exit(-1);
-    }
-    ssize_t written = write(fd, content, size);
-    if (written != (ssize_t)size) {
-        perror("write");
-        exit(-1);
-    }
-    close(fd);
-}
-
 class ExpectFile {
 public:
     enum Mode {
@@ -159,17 +213,17 @@ public:
 
         skipWhitespace(&start, end);
         // TODO strip trailing whitespace
-        std::string line(start, end);
-        lines.push_back(line);
+        std::string line_str(start, end);
+        lines.push_back(line_str);
     }
-    bool check(const std::string& basedir) {
+    bool check(StringBuilder& output, const std::string& basedir) {
         debug("checking %s %s\n", basedir.c_str(), filename.c_str());
         std::string fullname = basedir + filename;
         // check if file exists
         struct stat statbuf;
         int err = stat(fullname.c_str(), &statbuf);
         if (err) {
-            color_print(COL_ERROR, "  missing expected file '%s' (%s)",
+            color_print2(output, COL_ERROR, "  missing expected file '%s' (%s)",
                         filename.c_str(), fullname.c_str());
             return false;
         }
@@ -183,7 +237,7 @@ public:
         unsigned expIndex = 0;
         const char* expectedLine = lines[expIndex].c_str();
 #ifdef DEBUG
-        color_print(ANSI_GREEN, "exp '%s'", expectedLine);
+        color_print2(output, ANSI_GREEN, "exp '%s'", expectedLine);
 #endif
         while (1) {
             // find next real line
@@ -192,35 +246,35 @@ public:
             if (line[0] == 0) continue;     // ignore empty lines
             if (line[0] == '/' && line[1] == '/') continue; // ignore comments
 #ifdef DEBUG
-            color_print(ANSI_YELLOW, "got '%s'", line);
+            color_print2(output, ANSI_YELLOW, "got '%s'", line);
 #endif
 
             if (!expectedLine) {
-                color_print(COL_ERROR, "  in file %s: unexpected line '%s'", filename.c_str(), line);
+                color_print2(output, COL_ERROR, "  in file %s: unexpected line '%s'", filename.c_str(), line);
                 return false;
             }
 
             // TODO dont copy in nextRealLine, but do memcmp on substring
             if (strcmp(expectedLine, line) == 0) {
 #ifdef DEBUG
-                color_print(ANSI_CYAN, "match");
+                color_print2(output, ANSI_CYAN, "match");
 #endif
                 expIndex++;
                 if (expIndex == lines.size()) expectedLine = 0;
                 else expectedLine = lines[expIndex].c_str();
 #ifdef DEBUG
-                color_print(ANSI_GREEN, "exp '%s'", expectedLine ? expectedLine : "<none>");
+                color_print2(output, ANSI_GREEN, "exp '%s'", expectedLine ? expectedLine : "<none>");
 #endif
                 if (!expectedLine && mode != COMPLETE) return true;
             } else {
                 if (mode == COMPLETE) {
-                    color_print(COL_ERROR, "  in file %s:\n  expected '%s'\n       got '%s'", filename.c_str(), expectedLine, line);
+                    color_print2(output, COL_ERROR, "  in file %s:\n  expected '%s'\n       got '%s'", filename.c_str(), expectedLine, line);
                     return false;
                 }
             }
         }
         if (expectedLine != 0) {
-            color_print(COL_ERROR, "  in file %s: expected '%s'", filename.c_str(), expectedLine);
+            color_print2(output, COL_ERROR, "  in file %s: expected '%s'", filename.c_str(), expectedLine);
             return false;
         }
         return true;
@@ -228,7 +282,6 @@ public:
 private:
     const char* nextRealLine() {
         assert(lineStart);
-        static char line[MAX_LINE];
         if (lineEnd == 0) {
             lineEnd = lineStart;
         } else {
@@ -244,16 +297,17 @@ private:
         skipWhitespace(&lineStart, lineEnd);
         int size = lineEnd - lineStart;
         assert(size < MAX_LINE);
-        memcpy(line, lineStart, size);
-        while (isblank(line[size-1])) size--;
-        line[size] = 0;
-        return line;
+        memcpy(line_buf, lineStart, size);
+        while (isblank(line_buf[size-1])) size--;
+        line_buf[size] = 0;
+        return line_buf;
     }
 
     std::string filename;
     Mode mode;
     const char* lineStart;
     const char* lineEnd;
+    char line_buf[MAX_LINE];
 
     typedef std::vector<std::string> Lines;
     Lines lines;
@@ -262,9 +316,10 @@ private:
 
 class IssueDb {
 public:
-    IssueDb(File& file_, bool single_)
+    IssueDb(StringBuilder& output_, File& file_, bool single_, const char* tmp_dir_)
         : file(file_)
         , currentExpect(0)
+        , output(output_)
         , single(single_)
         , line_nr(0)
         , mode(OUTSIDE)
@@ -274,6 +329,7 @@ public:
         , hasErrors(false)
         , skip(false)
         , cur(0)
+        , tmp_dir(tmp_dir_)
     {
         if (single) {
             current_file = cwd;
@@ -289,23 +345,24 @@ public:
         return hasErrors;
     }
 
-    void showNotes() const {
-        for (IssuesConstIter iter = notes.begin(); iter != notes.end(); ++iter) {
-            color_print(COL_ERROR, "  expected note '%s' at %s:%d",
-                        iter->msg.c_str(), iter->filename.c_str(), iter->line_nr);
-        }
-    }
-    void showWarnings() const {
-        for (IssuesConstIter iter = warnings.begin(); iter != warnings.end(); ++iter) {
-            color_print(COL_ERROR, "  expected warning '%s' at %s:%d",
-                        iter->msg.c_str(), iter->filename.c_str(), iter->line_nr);
-        }
-    }
-
-    void showErrors() const {
+    void printIssues() const {
         for (IssuesConstIter iter = errors.begin(); iter != errors.end(); ++iter) {
-            color_print(COL_ERROR, "  expected error '%s' at %s:%d",
+            output.setColor(COL_ERROR);
+            output.print("  expected error '%s' at %s:%d",
                         iter->msg.c_str(), iter->filename.c_str(), iter->line_nr);
+            output.setColor(COL_NORM);
+        }
+        for (IssuesConstIter iter = warnings.begin(); iter != warnings.end(); ++iter) {
+            output.setColor(COL_ERROR);
+            output.print("  expected warning '%s' at %s:%d",
+                        iter->msg.c_str(), iter->filename.c_str(), iter->line_nr);
+            output.setColor(COL_NORM);
+        }
+        for (IssuesConstIter iter = notes.begin(); iter != notes.end(); ++iter) {
+            output.setColor(COL_ERROR);
+            output.print("  expected note '%s' at %s:%d",
+                        iter->msg.c_str(), iter->filename.c_str(), iter->line_nr);
+            output.setColor(COL_NORM);
         }
     }
 private:
@@ -323,14 +380,31 @@ private:
     const char* readLine();
     const char* readUntil(char delim);
 
+
     // OLD API
     void parseLineOutside(const char* start, const char* end);
     void parseLineFile(const char* start, const char* end);
     void parseLineExpect(const char* start, const char* end);
     void parseTags(const char* start, const char* end);
 
+    void writeFile(const char* name, const char* content, unsigned size) {
+        char fullname[128];
+        sprintf(fullname, "%s/%s", tmp_dir, name);
+        int fd = open(fullname, O_WRONLY | O_CREAT, 0660);
+        if (fd == -1) {
+            perror("open");
+            exit(EXIT_FAILURE);
+        }
+        ssize_t written = write(fd, content, size);
+        if (written != (ssize_t)size) {
+            perror("write");
+            exit(EXIT_FAILURE);
+        }
+        close(fd);
+    }
+
     void error(const char* msg) {
-        color_print(ANSI_BRED, "%s:%d: %s", file.filename.c_str(), line_nr, msg);
+        color_print2(output, ANSI_BRED, "%s:%d: %s", file.filename.c_str(), line_nr, msg);
         hasErrors = true;
     }
 
@@ -343,9 +417,9 @@ private:
             if (iter->line_nr != linenr) continue;
             if (iter->filename == filename) {
                 if (iter->msg != msg) {
-                    color_print(COL_ERROR, "  wrong note at %s:%d:", filename, linenr);
-                    color_print(COL_ERROR, "     expected: %s", iter->msg.c_str());
-                    color_print(COL_ERROR, "     got: %s", msg);
+                    color_print2(output, COL_ERROR, "  wrong note at %s:%d:", filename, linenr);
+                    color_print2(output, COL_ERROR, "     expected: %s", iter->msg.c_str());
+                    color_print2(output, COL_ERROR, "     got: %s", msg);
                     hasErrors = true;
                 }
                 notes.erase(iter);
@@ -353,7 +427,7 @@ private:
             }
         }
         // not expected
-        color_print(COL_ERROR, "  unexpected note on line %d: %s", linenr, msg);
+        color_print2(output, COL_ERROR, "  unexpected note on line %d: %s", linenr, msg);
         hasErrors = true;
     }
 
@@ -362,9 +436,9 @@ private:
             if (iter->line_nr != linenr) continue;
             if (iter->filename == filename) {
                 if (iter->msg != msg) {
-                    color_print(COL_ERROR, "  wrong warning at %s:%d:", filename, linenr);
-                    color_print(COL_ERROR, "     expected: %s", iter->msg.c_str());
-                    color_print(COL_ERROR, "     got: %s", msg);
+                    color_print2(output, COL_ERROR, "  wrong warning at %s:%d:", filename, linenr);
+                    color_print2(output, COL_ERROR, "     expected: %s", iter->msg.c_str());
+                    color_print2(output, COL_ERROR, "     got: %s", msg);
                     hasErrors = true;
                 }
                 warnings.erase(iter);
@@ -372,7 +446,7 @@ private:
             }
         }
         // not expected
-        color_print(COL_ERROR, "  unexpected warning on line %d: %s", linenr, msg);
+        color_print2(output, COL_ERROR, "  unexpected warning on line %d: %s", linenr, msg);
         hasErrors = true;
     }
 
@@ -381,9 +455,9 @@ private:
             if (iter->line_nr != linenr) continue;
             if (iter->filename == filename) {
                 if (iter->msg != msg) {
-                    color_print(COL_ERROR, "  wrong error at %s:%d:", filename, linenr);
-                    color_print(COL_ERROR, "     expected: %s", iter->msg.c_str());
-                    color_print(COL_ERROR, "     got: %s", msg);
+                    color_print2(output, COL_ERROR, "  wrong error at %s:%d:", filename, linenr);
+                    color_print2(output, COL_ERROR, "     expected: %s", iter->msg.c_str());
+                    color_print2(output, COL_ERROR, "     got: %s", msg);
                     hasErrors = true;
                 }
                 errors.erase(iter);
@@ -391,7 +465,7 @@ private:
             }
         }
         // not expected
-        color_print(COL_ERROR, "  unexpected error on line %d: %s", linenr, msg);
+        color_print2(output, COL_ERROR, "  unexpected error on line %d: %s", linenr, msg);
         fflush(stdout);
         hasErrors = true;
     }
@@ -419,6 +493,7 @@ private:
     ExpectFiles expectedFiles;
     ExpectFile* currentExpect;
 
+    StringBuilder& output;
     bool single;
     unsigned line_nr;
     enum Mode { OUTSIDE, INFILE, INEXPECTFILE };
@@ -431,6 +506,11 @@ private:
     bool skip;
     const char* cur;
     StringBuilder errorMsg;
+    const char* tmp_dir;
+
+    char word_buffer[32];
+    char line_buffer[MAX_LINE];
+    char until_buffer[128];
 };
 
 void IssueDb::parseLineExpect(const char* start, const char* end) {
@@ -498,7 +578,7 @@ parse_msg:
     while (*cp != '}') {
         if (cp == end) {
             error("missing '}'");
-            exit(-1);
+            exit(EXIT_FAILURE);
         }
         cp++;
     }
@@ -548,7 +628,7 @@ void IssueDb::parseLineOutside(const char* start, const char* end) {
             while (*cp != '}') {
                 if (cp == end) {
                     error("missing '}'");
-                    exit(-1);
+                    exit(EXIT_FAILURE);
                 }
                 cp++;
             }
@@ -565,7 +645,7 @@ void IssueDb::parseLineOutside(const char* start, const char* end) {
             while (*cp != '}') {
                 if (cp == end) {
                     error("missing '}'");
-                    exit(-1);
+                    exit(EXIT_FAILURE);
                 }
                 cp++;
             }
@@ -587,7 +667,7 @@ void IssueDb::parseLineOutside(const char* start, const char* end) {
             while (*cp != '}') {
                 if (cp == end) {
                     error("missing '}'");
-                    exit(-1);
+                    exit(EXIT_FAILURE);
                 }
                 cp++;
             }
@@ -802,33 +882,30 @@ const char* IssueDb::findEndOfLine() {
 }
 
 const char* IssueDb::readWord() {
-    static char buffer[32];
     const char* cp = cur;
     while (*cp != 0 && cp - cur < 31) {
         if ((*cp < 'a' || *cp > 'z') && *cp != '-' && *cp != '_') break;
         cp++;
     }
     int len = cp - cur;
-    memcpy(buffer, cur, len);
-    buffer[len] = 0;
-    return buffer;
+    memcpy(word_buffer, cur, len);
+    word_buffer[len] = 0;
+    return word_buffer;
 }
 
 const char* IssueDb::readLine() {
-    static char buffer[MAX_LINE];
     const char* cp = cur;
     while (*cp != 0 && cp - cur < MAX_LINE) {
         if (*cp == 0 || *cp == '\n') break;
         cp++;
     }
     int len = cp - cur;
-    memcpy(buffer, cur, len);
-    buffer[len] = 0;
-    return buffer;
+    memcpy(line_buffer, cur, len);
+    line_buffer[len] = 0;
+    return line_buffer;
 }
 
 const char* IssueDb::readUntil(char delim) {
-    static char buffer[128];
     const char* cp = cur;
     while (1) {
         if (*cp == 0) return 0;
@@ -837,9 +914,9 @@ const char* IssueDb::readUntil(char delim) {
         cp++;
     }
     int len = cp - cur;
-    memcpy(buffer, cur, len);
-    buffer[len] = 0;
-    return buffer;
+    memcpy(until_buffer, cur, len);
+    until_buffer[len] = 0;
+    return until_buffer;
 }
 
 // returns if OK
@@ -941,7 +1018,7 @@ void IssueDb::testFile() {
         while ((dup2(pipe_stderr[1], STDERR_FILENO) == -1) && (errno == EINTR)) {}
         close(pipe_stderr[1]);
         close(pipe_stderr[0]);
-        execl(c2c_cmd, "c2c", "-d", test_root, "--test", 0);
+        execl(c2c_cmd, "c2c", "-d", tmp_dir, "--test", 0);
         perror("execl");
         exit(127); /* only if execv fails */
     }
@@ -952,15 +1029,18 @@ void IssueDb::testFile() {
         waitpid(pid, &status, 0);
         if (!WIFEXITED(status)) { // child exited abnormally
             // TODO print pipe_stderr
-            color_print(COL_ERROR, "c2c crashed!");
-            numerrors++;
+            output.setColor(COL_ERROR);
+            output << "c2c crashed!";
+            output.setColor(COL_NORM);
+            output << '\n';
+            hasErrors = true;
             return;
         }
         // check return code
         int retcode = WEXITSTATUS(status);
         if (retcode == 127) {
-            color_print(COL_ERROR, "Error spawning compiler '%s'", c2c_cmd);
-            exit(-1);
+            color_print2(output, COL_ERROR, "Error spawning compiler '%s'", c2c_cmd);
+            exit(EXIT_FAILURE);
         }
         // check output
         char buffer[1024*1024];
@@ -972,7 +1052,7 @@ void IssueDb::testFile() {
                 exit(1);
             }
             if (count == 0) break;
-            if (count == sizeof(buffer)-1) color_print(COL_ERROR, "Too many error messages for single read!");
+            if (count == sizeof(buffer)-1) color_print2(output, COL_ERROR, "Too many error messages for single read!");
             buffer[count] = 0;
             checkErrors(buffer, count);
         }
@@ -1066,64 +1146,19 @@ void IssueDb::checkErrors(const char* buffer, unsigned size) {
 
 void IssueDb::checkExpectedFiles() {
     StringBuilder basedir;
-    basedir << test_root << "/output/test/";
+    basedir << tmp_dir << "/output/test/";
     for (unsigned i=0; i<expectedFiles.size(); ++i) {
         ExpectFile* E = expectedFiles[i];
-        if (!E->check((const char*)basedir)) hasErrors = true;
+        if (!E->check(output, (const char*)basedir)) hasErrors = true;
     }
 }
 
-static void handle_file(const char* filename) {
-    debug("%s() %s", __func__, filename);
-    bool single = true;
-    if (endsWith(filename, ".c2")) {
-        single = true;
-    } else if (endsWith(filename, ".c2t")) {
-        single = false;
-    } else {
-        return;
-    }
-
-    // setup dir
-    // temp, just delete this way
-    int err = system("rm -rf /tmp/tester/");
-    if (err != 0) {
-        perror("system");
-        exit(-1);
-    }
-    // create test dir
-    err = mkdir(test_root, 0777);
-    if (err) {
-        perror("mkdir");
-        exit(-1);
-    }
-
-    numtests++;
-    FileMap file(filename);
-    file.open();
-    IssueDb db(file, single);
-
-    bool skip = db.parse();
-    if (skip) {
-        numskipped++;
-        printf(COL_SKIP"%s SKIPPED" ANSI_NORMAL"\n", filename);
-        return;
-    } else {
-        printf("%s\n", filename);
-    }
-    if (db.haveErrors()) goto out;
-
-    db.testFile();
-    db.showErrors();
-    db.showWarnings();
-    db.showNotes();
-out:
-    if (db.haveErrors()) {
-        numerrors++;
-    }
+static void handle_file(TestQueue& queue, const char* filename) {
+    // TODO filter on .c2 and .c2t
+    queue.add(filename);
 }
 
-static void handle_dir(const char* path) {
+static void handle_dir(TestQueue& queue, const char* path) {
     debug("%s() %s", __func__, path);
     DIR* dir = opendir(path);
     if (dir == 0) {
@@ -1136,11 +1171,11 @@ static void handle_dir(const char* path) {
         sprintf(temp, "%s/%s", path, dir2->d_name);
         switch (dir2->d_type) {
         case DT_REG:
-            handle_file(temp);
+            handle_file(queue, temp);
             break;
         case DT_DIR:
             if (strcmp(dir2->d_name, ".") != 0 && strcmp(dir2->d_name, "..") != 0) {
-                handle_dir(temp);
+                handle_dir(queue, temp);
             }
             break;
         default:
@@ -1151,20 +1186,134 @@ static void handle_dir(const char* path) {
     closedir(dir);
 }
 
+
+class Tester {
+public:
+    unsigned numtests;
+    unsigned numerrors;
+    unsigned numskipped;
+
+    Tester(unsigned idx, TestQueue& queue_)
+        : numtests(0)
+        , numerrors(0)
+        , numskipped(0)
+        , index(idx)
+        , queue(queue_)
+    {
+        sprintf(tmp_dir, "/tmp/tester%u", index);
+        pthread_create(&thread, 0, thread_main, this);
+    }
+    ~Tester() {}
+
+    void join() {
+        pthread_join(thread, 0);
+    }
+private:
+    void run_test(const char* filename) {
+        debug("[%u] %s() %s", index, __func__, filename);
+        bool single = true;
+        if (endsWith(filename, ".c2")) {
+            single = true;
+        } else if (endsWith(filename, ".c2t")) {
+            single = false;
+        } else {
+            return;
+        }
+
+        // setup dir
+        // temp, just delete this way
+        char cmd[64];
+        sprintf(cmd, "rm -rf %s", tmp_dir);
+        int err = system(cmd);
+        if (err != 0 && errno != 10) {
+            int saved = errno;
+            fprintf(stderr, "Error running '%s': %s, %d\n", cmd, strerror(errno), saved);
+            exit(EXIT_FAILURE);
+        }
+        // create test dir
+        err = mkdir(tmp_dir, 0777);
+        if (err) {
+            perror("mkdir");
+            exit(EXIT_FAILURE);
+        }
+
+        numtests++;
+
+        StringBuilder buf(4096);
+        buf.enableColor(true);
+        buf.print("[%02u] %s ", index, filename);
+        FileMap file(filename);
+        file.open();
+        IssueDb db(buf, file, single, tmp_dir);
+
+        bool skip = db.parse();
+        if (skip) {
+            numskipped++;
+            buf.clear();
+            color_print2(buf, COL_SKIP, "[%02u] %s SKIPPED", index, filename);
+            printf("%s", buf.c_str());
+            return;
+        }
+
+        buf << '\n';
+
+        if (!db.haveErrors()) {
+            db.testFile();
+            db.printIssues();
+        }
+        printf("%s", buf.c_str());
+
+        if (db.haveErrors()) {
+            numerrors++;
+        }
+    }
+    void run() {
+        while (1) {
+            const char* filename = queue.get();
+            if (!filename) break;
+            run_test(filename);
+        }
+    }
+    static void* thread_main(void* arg) {
+        Tester* tester = reinterpret_cast<Tester*>(arg);
+        tester->run();
+        return 0;
+    }
+
+    unsigned index;
+    TestQueue& queue;
+    pthread_t thread;
+    char tmp_dir[32];
+};
+
+static int online_cpus()
+{
+    long ncpus = sysconf(_SC_NPROCESSORS_ONLN);
+    if (ncpus > 0) return (int)ncpus;
+    return 1;
+}
+
 static void usage(const char* name) {
     printf("Usage: %s [file/dir] <options>\n", name);
     printf("    -s    only run skipped tests\n");
-    exit(-1);
+    printf("    -n    no multi-threading\n");
+    exit(EXIT_FAILURE);
 }
 
 int main(int argc, const char *argv[])
 {
+    unsigned num_threads = MAX_THREADS; // TODO how does git determine this?
+    num_threads = online_cpus();
+    if (num_threads > MAX_THREADS) num_threads = MAX_THREADS;
+
     if (argc == 1 || argc > 3) usage(argv[0]);
     const char* target = argv[1];
 
     if (argc == 3) {
         if (strcmp(argv[2], "-s") == 0) {
             runSkipped = true;
+        } else if (strcmp(argv[2], "-n") == 0) {
+            num_threads = 1;
         } else {
             usage(argv[0]);
         }
@@ -1187,21 +1336,45 @@ int main(int argc, const char *argv[])
     cwd = getcwd(0, 0);
     if (cwd == 0) {
         perror("getcwd");
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
+
+    TestQueue queue;
 
     uint64_t t1 = getCurrentTime();
     if (S_ISREG(statbuf.st_mode)) {
-        handle_file(target);
+        num_threads = 1;
+        handle_file(queue, target);
     } else if (S_ISDIR(statbuf.st_mode)) {
         // TODO strip off optional trailing '/'
-        handle_dir(target);
+        handle_dir(queue, target);
     } else {
         usage(argv[0]);
     }
+
+    Tester* testers[MAX_THREADS] = { 0 };
+    for (unsigned i=0; i<num_threads; i++) {
+        testers[i] = new Tester(i+1, queue);
+    }
+    // TODO handle ctrl-c
+
+    unsigned numtests = 0;
+    unsigned numerrors = 0;
+    unsigned numskipped = 0;
+
+    for (unsigned i=0; i<num_threads; i++) {
+        Tester* t = testers[i];
+        t->join();
+        numtests += t->numtests;
+        numerrors += t->numerrors;
+        numskipped += t->numskipped;
+        delete testers[i];
+    }
+
     uint64_t t2 = getCurrentTime();
     const char* color = (numerrors ? COL_ERROR : COL_OK);
-    color_print(color, "RESULTS: %u test%s (%u ok, %u failed, %u skipped) ran in %llu ms", numtests, numtests == 1 ? "" : "s", numtests - (numerrors+numskipped), numerrors, numskipped, (t2-t1)/1000);
+    color_print(color, "RESULTS: %u test%s, %u threads (%u ok, %u failed, %u skipped) ran in %llu ms",
+        numtests, numtests == 1 ? "" : "s", num_threads, numtests - (numerrors+numskipped), numerrors, numskipped, (t2-t1)/1000);
 
     return 0;
 }

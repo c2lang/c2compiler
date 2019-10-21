@@ -54,7 +54,7 @@ FileMap::~FileMap() {
 }
 
 void FileMap::open() {
-    int fd = ::open(filename.c_str(), O_RDONLY);
+    int fd = ::open(filename.c_str(), O_RDONLY | O_CLOEXEC);
     if (fd == -1) {
         fprintf(stderr, "error opening '%s': %s\n", filename.c_str(), strerror(errno));
         exit(-1);
@@ -65,7 +65,7 @@ void FileMap::open() {
         perror("mmap");
         exit(-1);
     }
-    ::close (fd);
+    ::close(fd);
     write_cache = true;
 }
 

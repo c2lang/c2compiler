@@ -16,6 +16,8 @@ add_executable(tester
     ${CMAKE_SOURCE_DIR}/c2c/FileUtils/FileMap.cpp
     ${CMAKE_SOURCE_DIR}/c2c/Utils/StringBuilder.cpp
 )
+target_link_libraries(tester pthread)
+
 
 install(TARGETS c2tags DESTINATION ${DESTDIR}/)
 
