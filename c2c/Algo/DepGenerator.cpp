@@ -143,6 +143,7 @@ void DepGenerator::writeDecl(const Decl* D, StringBuilder& output, unsigned inde
         // syntax: <dep dest='G1/B' str='1'/>
         const Decl* dep = visitor.getDep(i);
         if (!showPrivate && !dep->isPublic()) continue;
+        if (!dep->getModule()) continue;    // struct members;
         if (!showExternals && dep->getModule()->isExternal()) continue;
         output.indent(indent);
         output << "<dep dest='";
