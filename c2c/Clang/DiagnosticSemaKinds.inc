@@ -1652,6 +1652,7 @@ DIAG(err_switch_explicit_conversion, CLASS_ERROR, (unsigned)diag::Severity::Erro
 DIAG(err_switch_incomplete_class_type, CLASS_ERROR, (unsigned)diag::Severity::Error, "switch condition has incomplete class type %0", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_switch_into_protected_scope, CLASS_ERROR, (unsigned)diag::Severity::Error, "cannot jump from switch statement to this case label", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_switch_multiple_conversions, CLASS_ERROR, (unsigned)diag::Severity::Error, "multiple conversions from switch condition type %0 to an integral or enumeration type", 0, SFINAE_SubstitutionFailure, false, true, 2)
+DIAG(err_switch_sswitch_suggest, CLASS_ERROR, (unsigned)diag::Severity::Error, "cannot use switch with char* type, did you mean sswitch?", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_sswitch_case_no_string, CLASS_ERROR, (unsigned)diag::Severity::Error, "sswitch case can only have a string literal or nil as argument", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_synthesize_category_decl, CLASS_ERROR, (unsigned)diag::Severity::Error, "@synthesize not allowed in a category's implementation", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_synthesize_on_class_property, CLASS_ERROR, (unsigned)diag::Severity::Error, "@synthesize not allowed on a class property %0", 0, SFINAE_SubstitutionFailure, false, true, 2)

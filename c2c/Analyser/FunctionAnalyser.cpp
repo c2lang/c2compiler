@@ -50,6 +50,14 @@ using namespace c2lang;
 #define LHS 0x01
 #define RHS 0x02
 
+static bool isCharPtr(QualType t) {
+    QualType Q = t.getCanonicalType();
+    const PointerType* pt = dyncast<PointerType>(Q);
+    if (!pt) return false;
+    const QualType inner = pt->getPointeeType();
+    return inner.isCharType();
+}
+
 FunctionAnalyser::FunctionAnalyser(Scope& scope_,
                                    TypeResolver& typeRes_,
                                    ASTContext& context_,
@@ -262,6 +270,22 @@ void FunctionAnalyser::analyseSwitchStmt(Stmt* stmt) {
     scope.EnterScope(Scope::DeclScope);
     if (!analyseCondition(S->getCond())) return;
 
+    QualType ct;
+    Stmt* c = S->getCond();
+    if (isa<DeclStmt>(c)) {
+        DeclStmt* DS = cast<DeclStmt>(c);
+        VarDecl* decl = DS->getDecl();
+        ct = decl->getType();
+    } else {
+        Expr* e = dyncast<Expr>(c);
+        assert(e);
+        ct = e->getType();
+    }
+    if (isCharPtr(ct)) {
+        Diags.Report(c->getLocation(), diag::err_switch_sswitch_suggest);
+        return;
+    }
+
     unsigned numCases = S->numCases();
     Stmt** cases = S->getCases();
     Stmt* defaultStmt = 0;
@@ -299,14 +323,6 @@ void FunctionAnalyser::analyseSwitchStmt(Stmt* stmt) {
 
     scope.ExitScope();
     scope.ExitScope();
-}
-
-static bool isCharPtr(QualType t) {
-    QualType Q = t.getCanonicalType();
-    const PointerType* pt = dyncast<PointerType>(Q);
-    if (!pt) return false;
-    const QualType inner = pt->getPointeeType();
-    return inner.isCharType();
 }
 
 void FunctionAnalyser::analyseSSwitchStmt(Stmt* stmt) {
