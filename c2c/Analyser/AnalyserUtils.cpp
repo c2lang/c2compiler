@@ -264,6 +264,7 @@ uint64_t AnalyserUtils::sizeOfType(QualType type, unsigned* alignment) {
         return size;
     }
     case TC_POINTER:
+        *alignment = POINTER_SIZE;
         return POINTER_SIZE;
     case TC_ARRAY:
     {

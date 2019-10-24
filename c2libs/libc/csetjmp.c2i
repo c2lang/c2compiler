@@ -4,7 +4,7 @@ import c2 local;
 
 type JmpBufTag struct {
     char[200] data; // for 64-bit
-} @(cname="__jmp_buf_tag")
+} @(cname="__jmp_buf_tag", aligned=8)
 
 type JmpBuf JmpBufTag[1] @(cname="jmp_buf");
 
