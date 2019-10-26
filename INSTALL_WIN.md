@@ -18,13 +18,13 @@ written below.
 C2 is based on LLVM 7.0 and some parts of a modified Clang 7.0,
 so we will need to build it first.
 
-As this installation is counting with installation into **$HOME/llvm-c2**, you can start by creating
+As this installation is counting with installation into **$HOME/llvm-70**, you can start by creating
 the folder and navigating to it:
 
 ```bash
 cd $HOME
-mkdir llvm-c2
-cd llvm-c2
+mkdir llvm-70
+cd llvm-70
 ```
 
 The git provided with Cygwin automatically changes LF line-endings (standard on Unix-based systems)
@@ -61,7 +61,7 @@ source env.sh
 
 This is because otherwise the script would be ran in a subshell and it wouldn't have been
 able to change, albeit temporarily, the environment variables. Alternatively, if you don't use
-a bash-compatible shell or if you installed LLVM into a different directory than **$HOME/llvm-c2**
+a bash-compatible shell or if you installed LLVM into a different directory than **$HOME/llvm-70**
 you can do it by hand:
 ```bash
 alias c2c=$(pwd)/build/c2c/c2c

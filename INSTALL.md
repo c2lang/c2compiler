@@ -1,7 +1,7 @@
 ## Installation of LLVM/Clang (C2 version)
 C2 is based on LLVM 7.0.
 To install C2, follow the steps below. The example shows
-how to install in **$HOME/llvm-c2**, but any other dir should work.
+how to install in **$HOME/llvm-70**, but any other dir should work.
 
 Note that all OS-specific instructions include the Generic section
 
@@ -54,7 +54,7 @@ cd llvm_build
 cmake -G "Unix Makefiles" \
     -DCMAKE_BUILD_TYPE="Release" \
     -DLLVM_ENABLE_ASSERTIONS=ON \
-    -DCMAKE_INSTALL_PREFIX=$HOME/llvm-c2 \
+    -DCMAKE_INSTALL_PREFIX=$HOME/llvm-70 \
     -DLLVM_ENABLE_PEDANTIC=OFF \
     ../llvm
 
@@ -66,8 +66,8 @@ make install
 You might need to create a link for your new clang to find the C++ headers.
 Since this uses the toolchain that comes with XCode, XCode will have to be installed.
 ```
-mkdir -p ~/llvm-c2/include/c++
-ln -s /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1 ~/llvm-c2/include/c++/v1
+mkdir -p ~/llvm-70/include/c++
+ln -s /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1 ~/llvm-70/include/c++/v1
 ```
 
 ## Downloading C2C
@@ -78,7 +78,7 @@ git clone git://github.com/c2lang/c2compiler.git
 ## Building C2C
 ```bash
 cd c2compiler
-source ./env.sh  (this assumes LLvm/Clang are installed to $HOME/llvm-c2)
+source ./env.sh  (this assumes LLvm/Clang are installed to $HOME/llvm-70)
 mkdir build
 cd build
 cmake . ..
@@ -96,7 +96,7 @@ If all goes well, the **c2c** executable should appear in the build/c2c/ directo
 If you get an error with some Clang/C2-related errors, try updating your clang C2 archive.
 
 The env.sh script sets some some environment variables that c2c requires to work
-like *C2_LIBDIR*. It will also add $HOME/llvm-c2/bin to the $PATH
+like *C2_LIBDIR*. It will also add $HOME/llvm-70/bin to the $PATH
 
 
 ## Running the tests
