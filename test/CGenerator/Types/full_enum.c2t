@@ -24,7 +24,7 @@ func void test1() {
 typedef enum {
     file1_State_A,
     file1_State_B,
-} file1_State;
+} __attribute__((packed)) file1_State;
 
 // @expect{atleast, build/file2.c}
 

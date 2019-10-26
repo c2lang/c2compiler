@@ -259,7 +259,8 @@ uint64_t AnalyserUtils::sizeOfType(QualType type, unsigned* alignment) {
     case TC_BUILTIN:
     {
         const BuiltinType* BI = cast<BuiltinType>(type.getTypePtr());
-        unsigned size = (BI->getWidth() + 7) / 8;
+        // NOTE: alignment is also size
+        unsigned size = BI->getAlignment();
         *alignment = size;
         return size;
     }
@@ -280,7 +281,7 @@ uint64_t AnalyserUtils::sizeOfType(QualType type, unsigned* alignment) {
         return D->getSize();
     }
     case TC_ENUM:
-        // TODO
+        FATAL_ERROR("Cannot come here");
         return 0;
     case TC_FUNCTION:
         *alignment = POINTER_SIZE;  // TODO arch dependent

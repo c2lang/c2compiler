@@ -884,29 +884,61 @@ void CCodeGenerator::EmitStructType(const StructTypeDecl* S, StringBuilder& out,
         out << "_Static_assert(sizeof(struct ";
         EmitDecl(S, out);
         if (S->hasTypedef()) out << '_';
-        out << ") == " << size << ", \"size incorrect\");\n";
+        out << ") == " << size << ", \"sizeof(" << S->getName() << ")\");\n";
     }
 
     if (S->isGlobal()) out << '\n';
 }
 
-void CCodeGenerator::EmitEnumType(const EnumTypeDecl* E, StringBuilder& output) {
+void CCodeGenerator::EmitEnumType(const EnumTypeDecl* E, StringBuilder& out) {
     LOG_DECL(E)
-    output << "typedef enum {\n";
+
+    const BuiltinType* BI = cast<BuiltinType>(E->getImplType().getTypePtr());
+    unsigned size = BI->getAlignment();
+
+    out << "typedef enum {\n";
     for (unsigned i=0; i<E->numConstants(); i++) {
         EnumConstantDecl* C = E->getConstant(i);
-        output.indent(INDENT);
-        EmitEnumConstant(C, E->getName(), output);
+        out.indent(INDENT);
+        EmitEnumConstant(C, E->getName(), out);
         if (C->getInitValue()) {
-            output << " = ";
-            EmitExpr(C->getInitValue(), output);
+            out << " = ";
+            EmitExpr(C->getInitValue(), out);
         }
-        output << ",\n";
+        out << ",\n";
     }
-    output << "} ";
-    EmitDecl(E, output);
-    EmitAttributes(E, output, true);
-    output << ";\n\n";
+    // emit max value to force size
+    {
+        // NOTE: only valid for unsigned implemenation types
+        out.indent(INDENT);
+        out << '_' << E->getName() << "_max = ";
+        switch (size) {
+        case 1:
+            out << 255;
+            break;
+        case 2:
+            out << (uint16_t)-1;
+            break;
+        case 4:
+            out << (uint32_t)-1;
+            break;
+        case 8:
+            out << ((uint64_t)-1)/4;    // avoid unsigned 64-bit warnings in GCC
+            break;
+        }
+        out << '\n';
+    }
+    out << "} __attribute__((packed)) ";
+    EmitDecl(E, out);
+    EmitAttributes(E, out, true);
+    out << ";\n";
+
+    if (generateChecks) {
+        out << "_Static_assert(sizeof(";
+        EmitDecl(E, out);
+        out << ") == " << size << ", \"sizeof(" << E->getName() << ")\");\n";
+    }
+    out << '\n';
 }
 
 // output: typedef void (*name)(args);

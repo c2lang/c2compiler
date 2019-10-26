@@ -26,5 +26,5 @@ typedef enum {
   test_State_A,
   test_State_B,
   test_State_C,
-} test_State;
+} __attribute__((packed)) test_State;
 

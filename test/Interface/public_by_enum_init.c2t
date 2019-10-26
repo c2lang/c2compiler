@@ -27,5 +27,5 @@ type BB enum i8 {
 #include "aa.h"
 typedef enum {
       bb_BB_BB1 = aa_AA,
-} bb_BB;
+} __attribute__((packed)) bb_BB;
 

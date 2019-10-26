@@ -617,6 +617,8 @@ void C2Builder::generateOptionalC() {
             fprintf(stderr, ANSI_RED"invalid c-generation argument '%s'" ANSI_NORMAL"\n", conf.c_str());
         }
     }
+    // TEMP
+    genChecks = true;
 
     CGenerator::Options cgen_options(outputDir, BUILD_DIR);
     cgen_options.single_module = single_module;

@@ -1,0 +1,28 @@
+// @warnings{no-unused}
+module test;
+
+type E8 enum u8 {
+    A,
+}
+static_assert(1, sizeof(E8));
+
+type S1 struct {
+    E8 e;
+    u8 a;
+    u8 b;
+    u8 c;
+}
+static_assert(4, sizeof(S1));
+
+type S2 struct {
+    S1[25] s1;
+}
+static_assert(100, sizeof(S2));
+
+type S3 struct {
+    S1[5*5] s1;
+    i32 a;
+    i32 b;
+}
+static_assert(108, sizeof(S3));
+
