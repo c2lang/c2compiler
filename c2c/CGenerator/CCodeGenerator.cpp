@@ -1420,7 +1420,7 @@ static const char* builtin2cname(BuiltinType::Kind kind) {
     case BuiltinType::UInt64:   return "uint64_t";
     case BuiltinType::Float32:  return "float";
     case BuiltinType::Float64:  return "double";
-    case BuiltinType::Bool:     return "int";
+    case BuiltinType::Bool:     return "char";
     case BuiltinType::Void:     return "void";
     }
     FATAL_ERROR("Unreachable");

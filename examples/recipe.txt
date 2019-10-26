@@ -214,7 +214,7 @@ end
 executable puzzle
     $deps show-files show-externals
     $refs
-    $generate-c single-module
+    $generate-c single-module check
     puzzle.c2
     puzzle2.c2
 end
@@ -222,7 +222,7 @@ end
 executable snake
     $deps show-files show-externals
     $refs
-    $generate-c single-module
+    $generate-c single-module check
     snake.c2
 end
 
@@ -230,6 +230,6 @@ executable big
     $warnings no-unused
     $refs
     $deps show-files show-externals
-    $generate-c single-module
+    $generate-c single-module check
     big.c2
 end

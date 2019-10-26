@@ -555,7 +555,7 @@ const char* BuiltinType::getCName() const {
     case UInt64:    return "unsigned long long";
     case Float32:   return "float";
     case Float64:   return "double";
-    case Bool:      return "int";
+    case Bool:      return "char";
     case Void:      return "void";
     }
     return "";      // to satisfy compiler
