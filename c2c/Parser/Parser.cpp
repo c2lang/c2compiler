@@ -271,7 +271,6 @@ void Parser::ParseStructType(bool is_struct, const char* id, SourceLocation idLo
     StructTypeDecl* S = Actions.ActOnStructType(id, idLoc, is_struct, is_public, true);
     ParseStructBlock(S);
     ParseAttributes(S);
-    // TODO parse semi?
 }
 
 // Syntax: { <struct_block> } etc

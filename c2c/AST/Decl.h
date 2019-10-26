@@ -129,7 +129,7 @@ protected:
         unsigned HasAttributes : 1;
         unsigned hasCName : 1;
     };
-    enum { NumDeclBits = 16 };
+    enum { NumDeclBits = 15 };
 
     class VarDeclBits {
         friend class VarDecl;
@@ -147,6 +147,7 @@ protected:
         unsigned numStructFunctions : 6;
         unsigned IsStruct : 1;
         unsigned IsGlobal : 1;
+        unsigned IsPacked : 1;  // cached from Attributes
     };
 
     class EnumTypeDeclBits {
@@ -384,6 +385,7 @@ public:
     bool hasTypedef() const { return extraBits.hasTypedef; }
     bool isPacked() const;
     uint32_t getAttrAlignment() const;
+    void setIsPacked() { structTypeDeclBits.IsPacked = true; }
 
     uint64_t getSize() const { return size; }
     uint32_t getAlignment() const { return alignment; }

@@ -1549,6 +1549,8 @@ bool FileAnalyser::analyseStructTypeDecl(StructTypeDecl* D) {
         return false;
     }
 
+    bool isPacked = D->isPacked();
+    if (isPacked) D->setIsPacked();
     for (unsigned i=0; i<D->numMembers(); i++) {
         Decl* M = D->getMember(i);
         if (isa<VarDecl>(M)) {
@@ -1558,9 +1560,10 @@ bool FileAnalyser::analyseStructTypeDecl(StructTypeDecl* D) {
             V->setCheckState(CHECK_IN_PROGRESS);   // manually set
             if (!analyseVarDecl(V)) return false;
             V->setCheckState(CHECK_DONE);   // manually set
-        }
-        if (isa<StructTypeDecl>(M)) {
-            if (!analyseStructTypeDecl(cast<StructTypeDecl>(M))) return false;
+        } else if (isa<StructTypeDecl>(M)) {
+            StructTypeDecl* sub = cast<StructTypeDecl>(M);
+            if (isPacked) sub->setIsPacked();
+            if (!analyseStructTypeDecl(sub)) return false;
         }
     }
 

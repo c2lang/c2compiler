@@ -377,6 +377,7 @@ void StructTypeDecl::setOpaqueMembers() {
 }
 
 bool StructTypeDecl::isPacked() const {
+    if (structTypeDeclBits.IsPacked) return true;
     if (!hasAttributes()) return false;
     assert(getModule());
     const AttrList& AL = getModule()->getAttributes(this);
