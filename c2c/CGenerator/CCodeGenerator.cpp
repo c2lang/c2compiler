@@ -911,7 +911,7 @@ void CCodeGenerator::EmitEnumType(const EnumTypeDecl* E, StringBuilder& out) {
     {
         // NOTE: only valid for unsigned implemenation types
         out.indent(INDENT);
-        out << '_' << E->getName() << "_max = ";
+        out << '_' << E->getModule()->getCName() << '_' << E->getName() << "_max = ";
         switch (size) {
         case 1:
             out << 255;
