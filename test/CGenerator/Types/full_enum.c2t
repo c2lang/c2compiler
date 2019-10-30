@@ -6,7 +6,7 @@
 module file1;
 
 public type State enum u8 {
-    A, B,
+    A, B, C=State.A+3
 }
 
 // @file{file2}
@@ -24,6 +24,7 @@ func void test1() {
 typedef enum {
     file1_State_A,
     file1_State_B,
+    file1_State_C = (file1_State_A + 3),
     _file1_State_max = 255
 } __attribute__((packed)) file1_State;
 

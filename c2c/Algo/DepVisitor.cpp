@@ -351,6 +351,7 @@ void DepVisitor::checkExpr(const Expr* E) {
 }
 
 void DepVisitor::addDep(const Decl* D, bool isFullDep) {
+    if (D == decl && isFullDep) return;
     assert(D);
 
     // Skip local VarDecls

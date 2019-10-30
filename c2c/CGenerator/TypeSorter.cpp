@@ -67,7 +67,6 @@ void TypeSorter::add(const Decl* decl) {
     visitor.run();
     // TODO just swap visitor.deps..
     for (unsigned i=0; i<visitor.getNumDeps(); ++i) {
-        // TODO only add Type Deps (not constants in enums)
         dd->addDep(visitor.getDep(i), visitor.isFull(i));
     }
     depmap.push_back(dd);
