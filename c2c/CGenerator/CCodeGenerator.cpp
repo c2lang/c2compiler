@@ -618,6 +618,29 @@ void CCodeGenerator::EmitIncludeGuard() {
     hbuf << '\n';
 }
 
+struct IncludeEntry {
+    std::string name;
+    bool isSystem;
+    bool usedPublic;
+};
+typedef std::vector<IncludeEntry> Includes;
+
+static void addInclude(Includes& includes, IncludeEntry& ie) {
+    IncludeEntry* existing = 0;
+    for (unsigned i=0; i<includes.size(); i++) {
+        IncludeEntry* cur = &includes[i];
+        if (cur->name == ie.name) {
+            existing = cur;
+            break;
+        }
+    }
+    if (existing) {
+        existing->usedPublic |= ie.usedPublic;   // possibly upgrade non-public to public
+    } else {
+        includes.push_back(ie);
+    }
+}
+
 void CCodeGenerator::EmitIncludes() {
     LOG_FUNC
     {
@@ -626,12 +649,6 @@ void CCodeGenerator::EmitIncludes() {
         (*out) << "#include \"c2types.h\"\n";
     }
 
-    struct IncludeEntry {
-        std::string name;
-        bool isSystem;
-        bool usedPublic;
-    };
-    typedef std::vector<IncludeEntry> Includes;
     Includes includes;
 
     // filter out unique entries, split into system and local includes and .c/.h
@@ -647,37 +664,27 @@ void CCodeGenerator::EmitIncludes() {
                 IncludeEntry ie;
                 ie.isSystem = false;
                 ie.usedPublic = D->isUsedPublic();
-                // TODO filter/change duplicates (now both includes are done)
-                // TODO it might be needed to change current entry to set isUsedPublic
                 if (M->isPlainC()) {
                     ie.name = headerNamer.getIncludeName(M->getName());
                     ie.isSystem = true;
-                    includes.push_back(ie);
+                    addInclude(includes, ie);
                 } else if (mode == MULTI_FILE) {
                     ie.name = M->getName();
-                    includes.push_back(ie);
+                    addInclude(includes, ie);
                 }
             }
         }
     }
-    // TODO merge system + other includes into one loop (only .h differs)
+
     // write system includes
     for (unsigned i=0; i<includes.size(); ++i) {
         const IncludeEntry& entry = includes[i];
-        if (!entry.isSystem) continue;
         StringBuilder* out = &cbuf;
         if (entry.usedPublic) out = &hbuf;
-        (*out) << "#include \"" << entry.name << "\"\n";
-    }
-    hbuf << '\n';
-    cbuf << '\n';
-    // write local includes
-    for (unsigned i=0; i<includes.size(); ++i) {
-        const IncludeEntry& entry = includes[i];
-        if (entry.isSystem) continue;
-        StringBuilder* out = &cbuf;
-        if (entry.usedPublic) out = &hbuf;
-        (*out) << "#include \"" << entry.name << ".h\"\n";
+        (*out) << "#include \"" << entry.name;
+        if (!entry.isSystem) (*out) << ".h";
+        (*out) << "\"\n";
+
     }
     hbuf << '\n';
     cbuf << '\n';
