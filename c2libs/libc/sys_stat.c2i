@@ -21,9 +21,9 @@ type Stat struct {
     c_long  st_blocks;
     c_long  st_atime;
     c_ulong st_atime_nsec;
-    c_long  st_mtime;
+    c_ulong  st_mtime;
     c_ulong st_mtime_nsec;
-    c_long  st_ctime;
+    c_ulong  st_ctime;
     c_ulong st_ctime_nsec;
     c_uint  __unused4;
     c_uint  __unused5;

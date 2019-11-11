@@ -226,6 +226,11 @@ executable snake
     snake.c2
 end
 
+executable time
+    $generate-c single-module check
+    time.c2
+end
+
 executable big
     $warnings no-unused
     $refs
