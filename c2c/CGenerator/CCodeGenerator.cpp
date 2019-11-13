@@ -587,7 +587,9 @@ void CCodeGenerator::EmitDecl(const Decl* D, StringBuilder& output) {
 
 void CCodeGenerator::EmitStructDecl(const StructTypeDecl* D, StringBuilder& output) {
     assert(D->getModule());
-    if (!D->hasTypedef()) output << "struct ";
+    if (!D->hasTypedef()) {
+        output << (D->isStruct() ? "struct " : "union ");
+    }
     const char* cname = getCName(D);
     GenUtils::addName(D->getModule()->getCName(), cname, output);
 }
@@ -898,7 +900,8 @@ void CCodeGenerator::EmitStructType(const StructTypeDecl* S, StringBuilder& out,
 
     if (generateChecks && S->isGlobal()) {
         uint64_t size = S->getSize();
-        out << "_Static_assert(sizeof(struct ";
+        out << "_Static_assert(sizeof(";
+        out << (S->isStruct() ? "struct " : "union ");
         EmitDecl(S, out);
         if (S->hasTypedef()) out << '_';
         out << ") == " << size << ", \"sizeof(" << S->getName() << ")\");\n";
