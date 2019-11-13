@@ -680,7 +680,8 @@ void CCodeGenerator::EmitIncludes() {
     for (unsigned i=0; i<includes.size(); ++i) {
         const IncludeEntry& entry = includes[i];
         StringBuilder* out = &cbuf;
-        if (entry.usedPublic) out = &hbuf;
+        // dont put in header if no header is generated
+        if (mode != SINGLE_FILE && entry.usedPublic) out = &hbuf;
         (*out) << "#include \"" << entry.name;
         if (!entry.isSystem) (*out) << ".h";
         (*out) << "\"\n";
