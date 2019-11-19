@@ -41,6 +41,7 @@ class DesignatedInitExpr;
 class Stmt;
 class SwitchStmt;
 class Expr;
+class FallthroughStmt;
 class IdentifierExpr;
 class InitListExpr;
 class MemberExpr;
@@ -75,6 +76,7 @@ private:
     void analyseSwitchStmt(Stmt* stmt);
     void analyseSSwitchStmt(Stmt* stmt);
     bool analyseBreakStmt(Stmt* S);
+    bool analyseFallthroughStmt(Stmt* S);
     bool analyseContinueStmt(Stmt* S);
     bool analyseLabelStmt(Stmt* S);
     void analyseGotoStmt(Stmt* S);
@@ -176,6 +178,7 @@ private:
     bool inConstExpr;
     bool usedPublicly;
     bool isInterface;
+    FallthroughStmt* fallthrough;
 
     // Our callstack (statically allocated)
     struct CallStack {

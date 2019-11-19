@@ -138,7 +138,7 @@ static void debug(const char* format, ...) {
     vsprintf(buffer, format, Args);
     //(void*)len; // silence warning
     va_end(Args);
-    if (color_output) fprintf(stderr, COL_DEBUG"%s"ANSI_NORMAL"\n", buffer);
+    if (color_output) fprintf(stderr, COL_DEBUG"%s" ANSI_NORMAL"\n", buffer);
     else printf("%s\n", buffer);
 }
 #else
@@ -588,19 +588,19 @@ parse_msg:
     switch (type) {
     case ERROR:
 #ifdef DEBUG
-        printf(ANSI_BLUE"  expecting error '%s' at %d"ANSI_NORMAL"\n", msg, line_nr - line_offset);
+        printf(ANSI_BLUE"  expecting error '%s' at %d" ANSI_NORMAL"\n", msg, line_nr - line_offset);
 #endif
         errors.push_back(Issue(current_file, line_nr - line_offset, msg));
         break;
     case WARNING:
 #ifdef DEBUG
-        printf(ANSI_BLUE"  expecting warning '%s' at %d "ANSI_NORMAL"\n", msg, line_nr - line_offset);
+        printf(ANSI_BLUE"  expecting warning '%s' at %d " ANSI_NORMAL"\n", msg, line_nr - line_offset);
 #endif
         warnings.push_back(Issue(current_file, line_nr - line_offset, msg));
         break;
     case NOTE:
 #ifdef DEBUG
-        printf(ANSI_BLUE"  expecting note '%s' at %d"ANSI_NORMAL"\n", msg, line_nr - line_offset);
+        printf(ANSI_BLUE"  expecting note '%s' at %d" ANSI_NORMAL"\n", msg, line_nr - line_offset);
 #endif
         notes.push_back(Issue(current_file, line_nr - line_offset, msg));
         break;
@@ -1066,7 +1066,7 @@ void IssueDb::testFile() {
 
 void IssueDb::checkDiagnosticLine(const char* line) {
 #ifdef DEBUG
-    printf(ANSI_WHITE"line: '%s'"ANSI_NORMAL"\n", line);
+    printf(ANSI_WHITE"line: '%s'" ANSI_NORMAL"\n", line);
 #endif
     // line syntax: '<filename>.c2:<linenr>:<offset>: error/warning/note: <msg>\n'
     char filename[128];
@@ -1082,7 +1082,7 @@ void IssueDb::checkDiagnosticLine(const char* line) {
 #ifdef DEBUG
         printf(ANSI_CYAN"%s", filename);
         printf("  %d:%d", error_line, col);
-        printf("  '%s'"ANSI_NORMAL"\n", msg);
+        printf("  '%s'" ANSI_NORMAL"\n", msg);
 #endif
         matchError(filename, error_line, msg);
     } else {
@@ -1092,7 +1092,7 @@ void IssueDb::checkDiagnosticLine(const char* line) {
 #ifdef DEBUG
             printf(ANSI_CYAN"%s", filename);
             printf("  %d:%d", error_line, col);
-            printf("  '%s'"ANSI_NORMAL"\n", msg);
+            printf("  '%s'" ANSI_NORMAL"\n", msg);
 #endif
             matchWarning(filename, error_line, msg);
         } else {
@@ -1102,7 +1102,7 @@ void IssueDb::checkDiagnosticLine(const char* line) {
 #ifdef DEBUG
                 printf(ANSI_CYAN"%s", filename);
                 printf("  %d:%d", error_line, col);
-                printf("  '%s'"ANSI_NORMAL"\n", msg);
+                printf("  '%s'" ANSI_NORMAL"\n", msg);
 #endif
                 matchNote(filename, error_line, msg);
             }
@@ -1119,7 +1119,7 @@ void IssueDb::checkDiagnosticLine(const char* line) {
 
 void IssueDb::checkErrors(const char* buffer, unsigned size) {
 #ifdef DEBUG
-    printf(ANSI_MAGENTA"stderr:\n%s"ANSI_NORMAL"\n", buffer);
+    printf(ANSI_MAGENTA"stderr:\n%s" ANSI_NORMAL"\n", buffer);
 #endif
     const char* cp = buffer;
     const char* end = cp + size;

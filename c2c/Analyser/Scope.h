@@ -110,6 +110,7 @@ public:
     bool inline hasErrorOccurred() const { return curScope->hasErrorOccurred(); }
     bool inline allowBreak()    const { return curScope->Flags & BreakScope; }
     bool inline allowContinue() const { return curScope->Flags & ContinueScope; }
+    bool inline allowFallthrough() const { return curScope->Flags & SwitchScope; }
     bool inline hasDecls() const { return curScope->Flags & HasDecls; }
 
     bool isExternal(const Module* mod) const {

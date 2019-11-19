@@ -76,6 +76,7 @@ FunctionAnalyser::FunctionAnalyser(Scope& scope_,
     , inConstExpr(false)
     , usedPublicly(false)
     , isInterface(isInterface_)
+    , fallthrough(0)
     , allowStaticMember(false)
 {
     callStack.callDepth = 0;
@@ -175,6 +176,8 @@ bool FunctionAnalyser::analyseStmt(Stmt* S, bool haveScope) {
         return analyseBreakStmt(S);
     case STMT_CONTINUE:
         return analyseContinueStmt(S);
+    case STMT_FALLTHROUGH:
+        return analyseFallthroughStmt(S);
     case STMT_LABEL:
         return analyseLabelStmt(S);
     case STMT_GOTO:
@@ -286,6 +289,7 @@ void FunctionAnalyser::analyseSwitchStmt(Stmt* stmt) {
         return;
     }
 
+    fallthrough = 0;
     unsigned numCases = S->numCases();
     Stmt** cases = S->getCases();
     Stmt* defaultStmt = 0;
@@ -301,6 +305,7 @@ void FunctionAnalyser::analyseSwitchStmt(Stmt* stmt) {
                 Diag(C->getLocation(), diag::err_multiple_default_labels_defined);
                 //Diag(defaultStmt->getLocation(), diag::note_duplicate_case_prev);
             } else {
+                fallthrough = 0;
                 defaultStmt = C;
             }
             analyseDefaultStmt(C);
@@ -313,6 +318,11 @@ void FunctionAnalyser::analyseSwitchStmt(Stmt* stmt) {
         }
     }
 
+    if (fallthrough) {
+        Diag(fallthrough->getLocation(), diag::err_fallthrough_last_case);
+    }
+
+    fallthrough = 0;
     if (S->numCases() == 0) {
         Diag(S->getLocation(), diag::err_empty_switch);
     }
@@ -396,6 +406,19 @@ bool FunctionAnalyser::analyseContinueStmt(Stmt* stmt) {
     return true;
 }
 
+bool FunctionAnalyser::analyseFallthroughStmt(Stmt* stmt) {
+    LOG_FUNC
+    FallthroughStmt* B = cast<FallthroughStmt>(stmt);
+    if (fallthrough) return false;
+
+    if (!scope.allowFallthrough()) {
+        Diag(B->getLocation(), diag::err_fallthrough_not_in_switch);
+        return false;
+    }
+    fallthrough = B;
+    return true;
+}
+
 bool FunctionAnalyser::analyseLabelStmt(Stmt* S) {
     LOG_FUNC
     LabelStmt* L = cast<LabelStmt>(S);
@@ -431,12 +454,16 @@ void FunctionAnalyser::analyseGotoStmt(Stmt* S) {
 
 void FunctionAnalyser::analyseCaseStmt(Stmt* stmt) {
     LOG_FUNC
-    scope.EnterScope(Scope::DeclScope);
+    scope.EnterScope(Scope::DeclScope | Scope::SwitchScope);
     CaseStmt* C = cast<CaseStmt>(stmt);
     analyseExpr(C->getCond(), RHS);
     Stmt** stmts = C->getStmts();
+    fallthrough = 0;
     for (unsigned i=0; i<C->numStmts(); i++) {
         analyseStmt(stmts[i]);
+    }
+    if (fallthrough && stmts[C->numStmts() -1] != fallthrough) {
+        Diag(fallthrough->getLocation(), diag::err_fallthrough_not_last);
     }
     C->setHasDecls(scope.hasDecls());
     scope.ExitScope();
