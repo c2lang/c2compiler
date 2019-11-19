@@ -5,6 +5,35 @@
 // @file{file1}
 module test;
 
+func void test1(i32 i) {
+    switch (i) {
+    case 1:
+        i += 1;
+    case 2:
+        i += 2;
+        fallthrough;
+    case 3:
+        i += 3;
+    case 4:
+        i += 4;
+        break;
+    case 5:
+        return;
+    default:
+        i += 10;
+    }
+}
+
+func void test2(i32 i) {
+    while (1) {
+        switch (i) {
+        case 1:
+            continue;
+        default:
+        }
+    }
+}
+
 public func i32 main(i32 argc, const i8*[] argv) {
     i32 a = 0;
     switch (a) {
@@ -12,13 +41,51 @@ public func i32 main(i32 argc, const i8*[] argv) {
     }
 
     switch (i32 b = 10) {
-    default: break;
+    default:
     }
 
+    switch (i32 c = 20) {
+    default:
+        break;
+    }
     return 0;
 }
 
 // @expect{atleast, build/test.c}
+
+
+static void test_test1(int32_t i) {
+    switch (i) {
+    case 1:
+        i += 1;
+        break;
+    case 2:
+        i += 2;
+        __attribute__((fallthrough));
+    case 3:
+        i += 3;
+        break;
+    case 4:
+        i += 4;
+        break;
+    case 5:
+        return;
+    default:
+        i += 10;
+        break;
+    }
+}
+
+static void test_test2(int32_t i) {
+    while (1) {
+        switch (i) {
+        case 1:
+            continue;
+        default:
+            break;
+        }
+    }
+}
 
 int32_t main(int32_t argc, const char* argv[]) {
     int32_t a = 0;
@@ -29,6 +96,12 @@ int32_t main(int32_t argc, const char* argv[]) {
 
     int32_t b = 10;
     switch (b) {
+    default:
+        break;
+    }
+
+    int32_t c = 20;
+    switch (c) {
     default:
         break;
     }

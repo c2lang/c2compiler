@@ -1056,6 +1056,10 @@ void CCodeGenerator::EmitStmt(const Stmt* S, unsigned indent) {
         cbuf.indent(indent);
         cbuf << "continue;\n";
         return;
+    case STMT_FALLTHROUGH:
+        cbuf.indent(indent);
+        cbuf << "__attribute__((fallthrough));\n";
+        break;
     case STMT_LABEL:
     {
         const LabelStmt* L = cast<LabelStmt>(S);
@@ -1229,6 +1233,13 @@ void CCodeGenerator::EmitSwitchStmt(const Stmt* S, unsigned indent) {
             for (unsigned s=0; s<C->numStmts(); s++) {
                 EmitStmt(stmts[s], indent + INDENT + INDENT);
             }
+            if (C->numStmts()) {
+                const Stmt* last = stmts[C->numStmts() -1];
+                EmitLastCaseStmt(last, indent);
+            } else {
+                cbuf.indent(indent + INDENT + INDENT);
+                cbuf << "break;\n";
+            }
             if (C->hasDecls()) {
                 cbuf.indent(indent + INDENT);
                 cbuf << "}\n";
@@ -1246,6 +1257,13 @@ void CCodeGenerator::EmitSwitchStmt(const Stmt* S, unsigned indent) {
             for (unsigned s=0; s<D->numStmts(); s++) {
                 EmitStmt(stmts[s], indent + INDENT + INDENT);
             }
+            if (D->numStmts()) {
+                const Stmt* last = stmts[D->numStmts() -1];
+                EmitLastCaseStmt(last, indent);
+            } else {
+                cbuf.indent(indent + INDENT + INDENT);
+                cbuf << "break;\n";
+            }
             if (D->hasDecls()) {
                 cbuf.indent(indent + INDENT);
                 cbuf << "}\n";
@@ -1259,6 +1277,21 @@ void CCodeGenerator::EmitSwitchStmt(const Stmt* S, unsigned indent) {
 
     cbuf.indent(indent);
     cbuf << "}\n";
+}
+
+void CCodeGenerator::EmitLastCaseStmt(const Stmt* last, unsigned indent) {
+    switch (last->getKind()) {
+    case STMT_RETURN:
+    case STMT_BREAK:
+    case STMT_CONTINUE:
+    case STMT_FALLTHROUGH:
+        // nothing to do
+        break;
+    default:
+        cbuf.indent(indent + INDENT + INDENT);
+        cbuf << "break;\n";
+        break;
+    }
 }
 
 void CCodeGenerator::EmitSSwitchStmt(const Stmt* S, unsigned indent) {
