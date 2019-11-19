@@ -118,6 +118,7 @@ void RefFinder::searchStmt(const Stmt* S) {
     }
     case STMT_BREAK:
     case STMT_CONTINUE:
+    case STMT_FALLTHROUGH:
     case STMT_LABEL:
     case STMT_GOTO:
         break;

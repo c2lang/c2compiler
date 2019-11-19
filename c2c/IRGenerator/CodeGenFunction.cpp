@@ -151,6 +151,7 @@ void CodeGenFunction::EmitStmt(const Stmt* S) {
     case STMT_DEFAULT:
     case STMT_BREAK:
     case STMT_CONTINUE:
+    case STMT_FALLTHROUGH:
     case STMT_LABEL:
     case STMT_GOTO:
         S->dump();
