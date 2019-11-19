@@ -729,6 +729,16 @@ C2::StmtResult ASTBuilder::ActOnContinueStmt(SourceLocation loc) {
     return StmtResult(new (Context) ContinueStmt(loc));
 }
 
+C2::StmtResult ASTBuilder::ActOnFallthroughStmt(SourceLocation loc) {
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: fallthrough statement at ";
+    loc.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    MEM_STMT(STMT_FALLTHROUGH);
+    return StmtResult(new (Context) FallthroughStmt(loc));
+}
+
 C2::StmtResult ASTBuilder::ActOnLabelStmt(const char* name_, SourceLocation loc, Stmt* subStmt) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA"SEMA: label statement at ";

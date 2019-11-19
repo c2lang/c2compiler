@@ -97,6 +97,7 @@ public:
     StmtResult ActOnDefaultStmt(SourceLocation loc, StmtList& stmts);
     StmtResult ActOnBreakStmt(SourceLocation loc);
     StmtResult ActOnContinueStmt(SourceLocation loc);
+    StmtResult ActOnFallthroughStmt(SourceLocation loc);
     StmtResult ActOnLabelStmt(const char* name, SourceLocation loc, Stmt* subStmt);
     StmtResult ActOnGotoStmt(IdentifierInfo& symII, SourceLocation symLoc, SourceLocation GotoLoc);
     StmtResult ActOnCompoundStmt(SourceLocation L, SourceLocation R, StmtList& stmts);

@@ -1803,6 +1803,8 @@ C2::StmtResult Parser::ParseStatement() {
         return ParseContinueStatement();
     case tok::kw_break:
         return ParseBreakStatement();
+    case tok::kw_fallthrough:
+        return ParseFallthroughStatement();
     case tok::kw_return:
         return ParseReturnStatement();
     case tok::l_brace:
@@ -2340,6 +2342,18 @@ C2::StmtResult Parser::ParseBreakStatement() {
     return Res;
 }
 
+/// ParseFallthroughStatement
+///       jump-statement:
+///         'fallthrough' ';'
+C2::StmtResult Parser::ParseFallthroughStatement() {
+    LOG_FUNC
+    assert(Tok.is(tok::kw_break) && "Not a fallthrough stmt!");
+    SourceLocation Loc = ConsumeToken();
+
+    StmtResult Res = Actions.ActOnFallthroughStmt(Loc);
+    if (ExpectAndConsume(tok::semi, diag::err_expected_after, "fallthrough")) return StmtError();
+    return Res;
+}
 /*
   Syntax:
     Number num = .     // id = type
