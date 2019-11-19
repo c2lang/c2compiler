@@ -10,7 +10,6 @@ public func void foo() {
     switch (f) {
     case Foo.A:
     case Foo.A:         // @error{duplicate case value 'A'}
-        break;
     }
 }
 

@@ -62,6 +62,8 @@ void Stmt::print(StringBuilder& buffer, unsigned indent) const {
         return cast<BreakStmt>(this)->print(buffer, indent);
     case STMT_CONTINUE:
         return cast<ContinueStmt>(this)->print(buffer, indent);
+    case STMT_FALLTHROUGH:
+        return cast<FallthroughStmt>(this)->print(buffer, indent);
     case STMT_LABEL:
         return cast<LabelStmt>(this)->print(buffer, indent);
     case STMT_GOTO:
@@ -101,6 +103,8 @@ SourceLocation Stmt::getLocation() const {
         return cast<BreakStmt>(this)->getLocation();
     case STMT_CONTINUE:
         return cast<ContinueStmt>(this)->getLocation();
+    case STMT_FALLTHROUGH:
+        return cast<FallthroughStmt>(this)->getLocation();
     case STMT_LABEL:
         return cast<LabelStmt>(this)->getLocation();
     case STMT_GOTO:
@@ -319,6 +323,18 @@ void ContinueStmt::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent);
     buffer.setColor(COL_STMT);
     buffer << "ContinueStmt\n";
+}
+
+
+FallthroughStmt::FallthroughStmt(SourceLocation Loc_)
+    : Stmt(STMT_FALLTHROUGH)
+    , Loc(Loc_)
+{}
+
+void FallthroughStmt::print(StringBuilder& buffer, unsigned indent) const {
+    buffer.indent(indent);
+    buffer.setColor(COL_STMT);
+    buffer << "FallthroughStmt\n";
 }
 
 

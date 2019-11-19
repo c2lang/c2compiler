@@ -20,7 +20,7 @@
 #include "Parser/Ownership.h"
 #include "Parser/ParserTypes.h"
 
-//#define PARSER_DEBUG
+#define PARSER_DEBUG
 
 #ifdef PARSER_DEBUG
 #include <iostream>

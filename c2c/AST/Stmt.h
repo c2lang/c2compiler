@@ -46,6 +46,7 @@ enum StmtKind {
     STMT_DEFAULT,
     STMT_BREAK,
     STMT_CONTINUE,
+    STMT_FALLTHROUGH,
     STMT_LABEL,
     STMT_GOTO,
     STMT_COMPOUND,
@@ -460,6 +461,20 @@ public:
     ContinueStmt(SourceLocation Loc_);
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_CONTINUE;
+    }
+
+    void print(StringBuilder& buffer, unsigned indent) const;
+    SourceLocation getLocation() const { return Loc; }
+private:
+    SourceLocation Loc;
+};
+
+
+class FallthroughStmt : public Stmt {
+public:
+    FallthroughStmt(SourceLocation Loc_);
+    static bool classof(const Stmt* S) {
+        return S->getKind() == STMT_FALLTHROUGH;
     }
 
     void print(StringBuilder& buffer, unsigned indent) const;

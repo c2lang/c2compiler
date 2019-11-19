@@ -13,7 +13,6 @@ Foo f = Foo.A;
 func void test1() {
     switch (f) {    // @error{4 enumeration values not handled in switch: B, C, D...}
     case Foo.A:
-        break;
     }
 }
 
@@ -21,7 +20,6 @@ func void test2() {
     switch (f) { // @error{enumeration values B, D, and E not handled in switch}
     case Foo.A:
     case Foo.C:
-        break;
     }
 }
 
@@ -30,7 +28,6 @@ func void test3() {
     case Foo.A:
     case Foo.C:
     case Foo.D:
-        break;
     }
 }
 
@@ -40,7 +37,6 @@ func void test4() {
     case Foo.B:
     case Foo.C:
     case Foo.D:
-        break;
     }
 }
 
@@ -51,14 +47,11 @@ func void test5() {
     case Foo.C:
     case Foo.D:
     case Foo.E:
-        break;
     default:    // @warning{default label in switch which covers all enumeration values}
-        break;
     }
 
     switch (f) {
     default:
-        break;
     }
 }
 

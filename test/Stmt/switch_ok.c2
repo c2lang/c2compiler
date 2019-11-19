@@ -1,0 +1,27 @@
+// @warnings{no-unused}
+
+module test;
+
+func void foo(i32 a) {
+    while (1) {
+        switch (a) {
+        case 1:
+            break;
+        }
+    }
+
+    switch (a) {
+    case 1: fallthrough;
+    case 2: fallthrough;
+    case 3:
+        break;
+    }
+
+    switch (a) {
+    case 1: fallthrough;
+    case 2:
+        if (a == 2) break;
+    default:
+    }
+}
+
