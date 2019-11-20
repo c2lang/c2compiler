@@ -308,7 +308,7 @@ void FunctionAnalyser::analyseSwitchStmt(Stmt* stmt) {
                 fallthrough = 0;
                 defaultStmt = C;
             }
-            analyseDefaultStmt(C);
+            analyseDefaultStmt(C, true);
             if (i + 1 != numCases) {
                 Diag(C->getLocation(), diag::err_case_default_not_last) << 0;
             }
@@ -367,7 +367,7 @@ void FunctionAnalyser::analyseSSwitchStmt(Stmt* stmt) {
             } else {
                 defaultStmt = C;
             }
-            analyseDefaultStmt(C);
+            analyseDefaultStmt(C, false);
             if (i + 1 != numCases) {
                 Diag(C->getLocation(), diag::err_case_default_not_last) << 1;
             }
@@ -452,6 +452,18 @@ void FunctionAnalyser::analyseGotoStmt(Stmt* S) {
     LD->setUsed();
 }
 
+static bool isCaseTerminator(const Stmt* S) {
+    switch (S->getKind()) {
+    case STMT_RETURN:
+    case STMT_BREAK:
+    case STMT_CONTINUE:
+    case STMT_FALLTHROUGH:
+        return true;
+    default:
+        return false;
+    }
+}
+
 void FunctionAnalyser::analyseCaseStmt(Stmt* stmt) {
     LOG_FUNC
     scope.EnterScope(Scope::DeclScope | Scope::SwitchScope);
@@ -462,8 +474,12 @@ void FunctionAnalyser::analyseCaseStmt(Stmt* stmt) {
     for (unsigned i=0; i<C->numStmts(); i++) {
         analyseStmt(stmts[i]);
     }
-    if (fallthrough && stmts[C->numStmts() -1] != fallthrough) {
+    const Stmt* last = 0;
+    if (C->numStmts()) last = stmts[C->numStmts() -1];
+    if (fallthrough && last != fallthrough) {
         Diag(fallthrough->getLocation(), diag::err_fallthrough_not_last);
+    } else if (!last || !isCaseTerminator(last)) {
+        Diag(last ? last->getLocation() : C->getLocation(), diag::err_switch_case_no_termination) << 0;
     }
     C->setHasDecls(scope.hasDecls());
     scope.ExitScope();
@@ -492,13 +508,20 @@ void FunctionAnalyser::analyseSSwitchCaseStmt(Stmt* stmt) {
     scope.ExitScope();
 }
 
-void FunctionAnalyser::analyseDefaultStmt(Stmt* stmt) {
+void FunctionAnalyser::analyseDefaultStmt(Stmt* stmt, bool isSwitch) {
     LOG_FUNC
     scope.EnterScope(Scope::DeclScope);
     DefaultStmt* D = cast<DefaultStmt>(stmt);
     Stmt** stmts = D->getStmts();
     for (unsigned i=0; i<D->numStmts(); i++) {
         analyseStmt(stmts[i]);
+    }
+    if (isSwitch) {
+        const Stmt* last = 0;
+        if (D->numStmts()) last = stmts[D->numStmts() -1];
+        if (!last || !isCaseTerminator(last)) {
+            Diag(last ? last->getLocation() : D->getLocation(), diag::err_switch_case_no_termination) << 1;
+        }
     }
     D->setHasDecls(scope.hasDecls());
     scope.ExitScope();

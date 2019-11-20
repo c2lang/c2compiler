@@ -348,6 +348,7 @@ DIAG(err_box_literal_collection, CLASS_ERROR, (unsigned)diag::Severity::Error, "
 DIAG(err_break_not_in_loop_or_switch, CLASS_ERROR, (unsigned)diag::Severity::Error, "'break' statement not in loop or switch statement", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_fallthrough_not_in_switch, CLASS_ERROR, (unsigned)diag::Severity::Error, "'fallthrough' statement not in top-level of switch case statement", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_fallthrough_not_last, CLASS_ERROR, (unsigned)diag::Severity::Error, "'fallthrough' statement must be last statement in case", 0, SFINAE_SubstitutionFailure, false, true, 2)
+DIAG(err_switch_case_no_termination, CLASS_ERROR, (unsigned)diag::Severity::Error, "no terminating statement (break|fallthrough|return|continue) at end of %select{case|default case}0", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_fallthrough_last_case, CLASS_ERROR, (unsigned)diag::Severity::Error, "'fallthrough' statement in last case", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_builtin_annotation_first_arg, CLASS_ERROR, (unsigned)diag::Severity::Error, "first argument to __builtin_annotation must be an integer", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_builtin_annotation_second_arg, CLASS_ERROR, (unsigned)diag::Severity::Error, "second argument to __builtin_annotation must be a non-wide string constant", 0, SFINAE_SubstitutionFailure, false, true, 2)

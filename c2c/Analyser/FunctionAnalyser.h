@@ -82,7 +82,7 @@ private:
     void analyseGotoStmt(Stmt* S);
     void analyseCaseStmt(Stmt* stmt);
     void analyseSSwitchCaseStmt(Stmt* stmt);
-    void analyseDefaultStmt(Stmt* stmt);
+    void analyseDefaultStmt(Stmt* stmt, bool isSwitch);
     bool analyseReturnStmt(Stmt* stmt);
     void analyseDeclStmt(Stmt* stmt);
     void analyseAsmStmt(Stmt* stmt);
