@@ -7,6 +7,7 @@ func void foo(i32 a) {
         fallthrough;    // @error{'fallthrough' statement must be last statement in case}
         fallthrough;
     case 2:
+        break;
     }
 }
 

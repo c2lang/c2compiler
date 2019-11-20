@@ -15,8 +15,11 @@ public func void foo() {
     switch (f) {
     case Foo.A:
     case 1:         // @error{case value not in enumerated type '(enum)Foo' (aka 'i8')}
+        break;
     case bar:         // @error{case value not in enumerated type '(enum)Foo' (aka 'i8')}
+        break;
     case Bar.C:         // @error{case value not in enumerated type '(enum)Foo' (aka 'i8')}
+        break;
     }
 }
 

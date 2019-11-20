@@ -10,7 +10,9 @@ public func void foo() {
     i32 bar = 1;
     switch (bar) {
     case 10:
+        break;
     case 10:        // @error{duplicate case value '10'}
+        break;
     }
 }
 

@@ -6,6 +6,12 @@ func void foo(i32 a) {
     while (1) {
         switch (a) {
         case 1:
+            continue;
+        case 2:
+            return;
+        case 3:
+            fallthrough;
+        case 4:
             break;
         }
     }
@@ -21,7 +27,9 @@ func void foo(i32 a) {
     case 1: fallthrough;
     case 2:
         if (a == 2) break;
+        break;
     default:
+        break;
     }
 }
 

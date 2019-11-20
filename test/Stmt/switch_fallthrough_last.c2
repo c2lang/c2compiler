@@ -4,6 +4,7 @@ module test;
 func void foo(i32 a) {
     switch (a) {
     case 1:
+        break;
     case 2: fallthrough;    // @error{'fallthrough' statement in last case}
     }
 }

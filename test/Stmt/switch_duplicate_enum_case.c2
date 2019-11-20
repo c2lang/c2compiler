@@ -9,7 +9,9 @@ public func void foo() {
     Foo f = Foo.A;
     switch (f) {
     case Foo.A:
+        break;
     case Foo.A:         // @error{duplicate case value 'A'}
+        break;
     }
 }
 
