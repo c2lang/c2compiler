@@ -262,7 +262,6 @@ func void Board.print(Board* b) {
                 cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
                 break;
             default:
-            {
                 i32 flags = field.flags;
                 if (field.expected) {
                     cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, flags2char(field.expected));
@@ -273,7 +272,6 @@ func void Board.print(Board* b) {
                 *cp++ = flags2char(flags);
                 cp += io.sprintf(cp, ANSI_NORMAL);
                 break;
-            }
             }
         }
         *cp++ = '|';

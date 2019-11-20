@@ -6,6 +6,7 @@ func void call(i32 a) {
     switch (1) {
     case 0:
         stdio.printf("hallo");
+        break;
     }
 }
 
@@ -19,6 +20,7 @@ func void test2() {
         break;
     default:
         call(3);
+        break;
     }
 }
 

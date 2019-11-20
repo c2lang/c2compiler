@@ -257,7 +257,6 @@ func void aaa_board_print() {
                 cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
                 break;
             default:
-            {
                 i32 flags = field.flags;
                 if (field.expected) {
                     cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, aaa_flags2char(field.expected));
@@ -268,7 +267,6 @@ func void aaa_board_print() {
                 *cp++ = aaa_flags2char(flags);
                 cp += io.sprintf(cp, ANSI_NORMAL);
                 break;
-            }
             }
         }
         *cp++ = '|';
@@ -645,7 +643,6 @@ func void bbb_board_print() {
                 cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
                 break;
             default:
-            {
                 i32 flags = field.flags;
                 if (field.expected) {
                     cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, bbb_flags2char(field.expected));
@@ -656,7 +653,6 @@ func void bbb_board_print() {
                 *cp++ = bbb_flags2char(flags);
                 cp += io.sprintf(cp, ANSI_NORMAL);
                 break;
-            }
             }
         }
         *cp++ = '|';
@@ -1033,7 +1029,6 @@ func void ccc_board_print() {
                 cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
                 break;
             default:
-            {
                 i32 flags = field.flags;
                 if (field.expected) {
                     cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, ccc_flags2char(field.expected));
@@ -1044,7 +1039,6 @@ func void ccc_board_print() {
                 *cp++ = ccc_flags2char(flags);
                 cp += io.sprintf(cp, ANSI_NORMAL);
                 break;
-            }
             }
         }
         *cp++ = '|';
@@ -1421,7 +1415,6 @@ func void ddd_board_print() {
                 cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
                 break;
             default:
-            {
                 i32 flags = field.flags;
                 if (field.expected) {
                     cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, ddd_flags2char(field.expected));
@@ -1432,7 +1425,6 @@ func void ddd_board_print() {
                 *cp++ = ddd_flags2char(flags);
                 cp += io.sprintf(cp, ANSI_NORMAL);
                 break;
-            }
             }
         }
         *cp++ = '|';
@@ -1809,7 +1801,6 @@ func void eee_board_print() {
                 cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
                 break;
             default:
-            {
                 i32 flags = field.flags;
                 if (field.expected) {
                     cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, eee_flags2char(field.expected));
@@ -1820,7 +1811,6 @@ func void eee_board_print() {
                 *cp++ = eee_flags2char(flags);
                 cp += io.sprintf(cp, ANSI_NORMAL);
                 break;
-            }
             }
         }
         *cp++ = '|';
@@ -2197,7 +2187,6 @@ func void fff_board_print() {
                 cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
                 break;
             default:
-            {
                 i32 flags = field.flags;
                 if (field.expected) {
                     cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, fff_flags2char(field.expected));
@@ -2208,7 +2197,6 @@ func void fff_board_print() {
                 *cp++ = fff_flags2char(flags);
                 cp += io.sprintf(cp, ANSI_NORMAL);
                 break;
-            }
             }
         }
         *cp++ = '|';
@@ -2585,7 +2573,6 @@ func void ggg_board_print() {
                 cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
                 break;
             default:
-            {
                 i32 flags = field.flags;
                 if (field.expected) {
                     cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, ggg_flags2char(field.expected));
@@ -2596,7 +2583,6 @@ func void ggg_board_print() {
                 *cp++ = ggg_flags2char(flags);
                 cp += io.sprintf(cp, ANSI_NORMAL);
                 break;
-            }
             }
         }
         *cp++ = '|';
@@ -2973,7 +2959,6 @@ func void hhh_board_print() {
                 cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
                 break;
             default:
-            {
                 i32 flags = field.flags;
                 if (field.expected) {
                     cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, hhh_flags2char(field.expected));
@@ -2984,7 +2969,6 @@ func void hhh_board_print() {
                 *cp++ = hhh_flags2char(flags);
                 cp += io.sprintf(cp, ANSI_NORMAL);
                 break;
-            }
             }
         }
         *cp++ = '|';
@@ -3362,7 +3346,6 @@ func void iii_board_print() {
                 cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
                 break;
             default:
-            {
                 i32 flags = field.flags;
                 if (field.expected) {
                     cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, iii_flags2char(field.expected));
@@ -3373,7 +3356,6 @@ func void iii_board_print() {
                 *cp++ = iii_flags2char(flags);
                 cp += io.sprintf(cp, ANSI_NORMAL);
                 break;
-            }
             }
         }
         *cp++ = '|';
@@ -3750,7 +3732,6 @@ func void jjj_board_print() {
                 cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
                 break;
             default:
-            {
                 i32 flags = field.flags;
                 if (field.expected) {
                     cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, jjj_flags2char(field.expected));
@@ -3761,7 +3742,6 @@ func void jjj_board_print() {
                 *cp++ = jjj_flags2char(flags);
                 cp += io.sprintf(cp, ANSI_NORMAL);
                 break;
-            }
             }
         }
         *cp++ = '|';
@@ -4138,7 +4118,6 @@ func void kkk_board_print() {
                 cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
                 break;
             default:
-            {
                 i32 flags = field.flags;
                 if (field.expected) {
                     cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, kkk_flags2char(field.expected));
@@ -4149,7 +4128,6 @@ func void kkk_board_print() {
                 *cp++ = kkk_flags2char(flags);
                 cp += io.sprintf(cp, ANSI_NORMAL);
                 break;
-            }
             }
         }
         *cp++ = '|';
@@ -4526,7 +4504,6 @@ func void lll_board_print() {
                 cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
                 break;
             default:
-            {
                 i32 flags = field.flags;
                 if (field.expected) {
                     cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, lll_flags2char(field.expected));
@@ -4537,7 +4514,6 @@ func void lll_board_print() {
                 *cp++ = lll_flags2char(flags);
                 cp += io.sprintf(cp, ANSI_NORMAL);
                 break;
-            }
             }
         }
         *cp++ = '|';
@@ -4914,7 +4890,6 @@ func void mmm_board_print() {
                 cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
                 break;
             default:
-            {
                 i32 flags = field.flags;
                 if (field.expected) {
                     cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, mmm_flags2char(field.expected));
@@ -4925,7 +4900,6 @@ func void mmm_board_print() {
                 *cp++ = mmm_flags2char(flags);
                 cp += io.sprintf(cp, ANSI_NORMAL);
                 break;
-            }
             }
         }
         *cp++ = '|';
@@ -5302,7 +5276,6 @@ func void nnn_board_print() {
                 cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
                 break;
             default:
-            {
                 i32 flags = field.flags;
                 if (field.expected) {
                     cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, nnn_flags2char(field.expected));
@@ -5313,7 +5286,6 @@ func void nnn_board_print() {
                 *cp++ = nnn_flags2char(flags);
                 cp += io.sprintf(cp, ANSI_NORMAL);
                 break;
-            }
             }
         }
         *cp++ = '|';
@@ -5690,7 +5662,6 @@ func void ooo_board_print() {
                 cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
                 break;
             default:
-            {
                 i32 flags = field.flags;
                 if (field.expected) {
                     cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, ooo_flags2char(field.expected));
@@ -5701,7 +5672,6 @@ func void ooo_board_print() {
                 *cp++ = ooo_flags2char(flags);
                 cp += io.sprintf(cp, ANSI_NORMAL);
                 break;
-            }
             }
         }
         *cp++ = '|';
@@ -6078,7 +6048,6 @@ func void ppp_board_print() {
                 cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
                 break;
             default:
-            {
                 i32 flags = field.flags;
                 if (field.expected) {
                     cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, ppp_flags2char(field.expected));
@@ -6089,7 +6058,6 @@ func void ppp_board_print() {
                 *cp++ = ppp_flags2char(flags);
                 cp += io.sprintf(cp, ANSI_NORMAL);
                 break;
-            }
             }
         }
         *cp++ = '|';
@@ -6466,7 +6434,6 @@ func void qqq_board_print() {
                 cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
                 break;
             default:
-            {
                 i32 flags = field.flags;
                 if (field.expected) {
                     cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, qqq_flags2char(field.expected));
@@ -6477,7 +6444,6 @@ func void qqq_board_print() {
                 *cp++ = qqq_flags2char(flags);
                 cp += io.sprintf(cp, ANSI_NORMAL);
                 break;
-            }
             }
         }
         *cp++ = '|';
@@ -6854,7 +6820,6 @@ func void rrr_board_print() {
                 cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
                 break;
             default:
-            {
                 i32 flags = field.flags;
                 if (field.expected) {
                     cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, rrr_flags2char(field.expected));
@@ -6865,7 +6830,6 @@ func void rrr_board_print() {
                 *cp++ = rrr_flags2char(flags);
                 cp += io.sprintf(cp, ANSI_NORMAL);
                 break;
-            }
             }
         }
         *cp++ = '|';
@@ -7242,7 +7206,6 @@ func void sss_board_print() {
                 cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
                 break;
             default:
-            {
                 i32 flags = field.flags;
                 if (field.expected) {
                     cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, sss_flags2char(field.expected));
@@ -7253,7 +7216,6 @@ func void sss_board_print() {
                 *cp++ = sss_flags2char(flags);
                 cp += io.sprintf(cp, ANSI_NORMAL);
                 break;
-            }
             }
         }
         *cp++ = '|';
@@ -7630,7 +7592,6 @@ func void ttt_board_print() {
                 cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
                 break;
             default:
-            {
                 i32 flags = field.flags;
                 if (field.expected) {
                     cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, ttt_flags2char(field.expected));
@@ -7641,7 +7602,6 @@ func void ttt_board_print() {
                 *cp++ = ttt_flags2char(flags);
                 cp += io.sprintf(cp, ANSI_NORMAL);
                 break;
-            }
             }
         }
         *cp++ = '|';
@@ -8018,7 +7978,6 @@ func void uuu_board_print() {
                 cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
                 break;
             default:
-            {
                 i32 flags = field.flags;
                 if (field.expected) {
                     cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, uuu_flags2char(field.expected));
@@ -8029,7 +7988,6 @@ func void uuu_board_print() {
                 *cp++ = uuu_flags2char(flags);
                 cp += io.sprintf(cp, ANSI_NORMAL);
                 break;
-            }
             }
         }
         *cp++ = '|';
@@ -8406,7 +8364,6 @@ func void vvv_board_print() {
                 cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
                 break;
             default:
-            {
                 i32 flags = field.flags;
                 if (field.expected) {
                     cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, vvv_flags2char(field.expected));
@@ -8417,7 +8374,6 @@ func void vvv_board_print() {
                 *cp++ = vvv_flags2char(flags);
                 cp += io.sprintf(cp, ANSI_NORMAL);
                 break;
-            }
             }
         }
         *cp++ = '|';
@@ -8794,7 +8750,6 @@ func void www_board_print() {
                 cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
                 break;
             default:
-            {
                 i32 flags = field.flags;
                 if (field.expected) {
                     cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, www_flags2char(field.expected));
@@ -8805,7 +8760,6 @@ func void www_board_print() {
                 *cp++ = www_flags2char(flags);
                 cp += io.sprintf(cp, ANSI_NORMAL);
                 break;
-            }
             }
         }
         *cp++ = '|';
@@ -9182,7 +9136,6 @@ func void xxx_board_print() {
                 cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
                 break;
             default:
-            {
                 i32 flags = field.flags;
                 if (field.expected) {
                     cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, xxx_flags2char(field.expected));
@@ -9193,7 +9146,6 @@ func void xxx_board_print() {
                 *cp++ = xxx_flags2char(flags);
                 cp += io.sprintf(cp, ANSI_NORMAL);
                 break;
-            }
             }
         }
         *cp++ = '|';
@@ -9570,7 +9522,6 @@ func void yyy_board_print() {
                 cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
                 break;
             default:
-            {
                 i32 flags = field.flags;
                 if (field.expected) {
                     cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, yyy_flags2char(field.expected));
@@ -9581,7 +9532,6 @@ func void yyy_board_print() {
                 *cp++ = yyy_flags2char(flags);
                 cp += io.sprintf(cp, ANSI_NORMAL);
                 break;
-            }
             }
         }
         *cp++ = '|';
@@ -9958,7 +9908,6 @@ func void zzz_board_print() {
                 cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
                 break;
             default:
-            {
                 i32 flags = field.flags;
                 if (field.expected) {
                     cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, zzz_flags2char(field.expected));
@@ -9969,7 +9918,6 @@ func void zzz_board_print() {
                 *cp++ = zzz_flags2char(flags);
                 cp += io.sprintf(cp, ANSI_NORMAL);
                 break;
-            }
             }
         }
         *cp++ = '|';
