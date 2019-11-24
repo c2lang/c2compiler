@@ -31,6 +31,7 @@ const char* AnalyserUtils::fullName(const std::string& modName, const char* symn
 QualType AnalyserUtils::getStructType(QualType Q) {
     // Q: use CanonicalType to get rid of AliasTypes?
 
+    // TODO pass const?
     Type* T = Q.getTypePtr();
     switch (T->getTypeClass()) {
     case TC_BUILTIN:

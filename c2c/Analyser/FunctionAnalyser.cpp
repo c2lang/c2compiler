@@ -1960,8 +1960,7 @@ QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr* M, unsign
             return QualType();
         }
         callStack.setStructFunction(M->getBase());
-    }
-    else {
+    } else {
         // NOTE: access of struct-function is not a dereference
         if (currentModule() != S->getModule() && S->hasAttribute(ATTR_OPAQUE)) {
             Diag(M->getLocation(), diag::err_deref_opaque) << S->isStruct() << S->DiagName();
@@ -1974,7 +1973,9 @@ QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr* M, unsign
     M->setType(match->getType());
     member->setDecl(match, ref);
     member->setType(match->getType());
-    return match->getType();
+    QualType result = match->getType();
+    if (T.isConstQualified()) result.addConst();
+    return result;
 }
 
 QualType FunctionAnalyser::analyseParenExpr(Expr* expr) {
