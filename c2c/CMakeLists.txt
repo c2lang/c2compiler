@@ -63,7 +63,6 @@ add_library(c2core
     Clang/TokenConcatenation.cpp
     Clang/TokenKinds.cpp
     Clang/TokenLexer.cpp
-    Clang/VirtualFileSystem.cpp
     AST/AST.cpp
     AST/Decl.cpp
     AST/Expr.cpp

@@ -16,7 +16,7 @@
 
 #include "Clang/Diagnostic.h"
 #include "Clang/LLVM.h"
-#include "Clang/VirtualFileSystem.h"
+#include <llvm/Support/VirtualFileSystem.h>
 #include <llvm/ADT/IntrusiveRefCntPtr.h>
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/StringMap.h>

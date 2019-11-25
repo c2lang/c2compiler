@@ -111,6 +111,6 @@ private:
 
 } // namespace edit
 
-} // namespace clang
+} // namespace c2lang
 
 #endif // LLVM_CLANG_EDIT_COMMIT_H

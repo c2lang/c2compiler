@@ -16,7 +16,6 @@
 #include "Clang/FileManager.h"
 #include "Clang/IdentifierTable.h"
 #include "Clang/SourceManager.h"
-#include "Clang/VirtualFileSystem.h"
 #include "Clang/DirectoryLookup.h"
 #include "Clang/HeaderMap.h"
 #include "Clang/HeaderSearchOptions.h"
@@ -31,6 +30,7 @@
 #include <llvm/Support/Capacity.h>
 #include <llvm/Support/ErrorHandling.h>
 #include <llvm/Support/FileSystem.h>
+#include <llvm/Support/VirtualFileSystem.h>
 #include <llvm/Support/Path.h>
 #include <algorithm>
 #include <cassert>

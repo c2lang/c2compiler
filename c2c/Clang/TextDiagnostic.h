@@ -109,6 +109,6 @@ private:
   void emitParseableFixits(ArrayRef<FixItHint> Hints, const SourceManager &SM);
 };
 
-} // end namespace clang
+} // end namespace c2lang
 
 #endif
