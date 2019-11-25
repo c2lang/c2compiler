@@ -1,12 +1,12 @@
 ## Installation of LLVM/Clang (C2 version)
-C2 is based on LLVM 8.0.
+C2 is based on LLVM 9.0.
 To install C2, follow the steps below. The example shows
-how to install in **$HOME/llvm-80**, but any other dir should work.
+how to install in **$HOME/llvm-90**, but any other dir should work.
 
 Note that all OS-specific instructions include the Generic section
 
 ### Ubuntu 14.04
-LLVM 8.0 needs cmake 3.4.3 or higher, since Ubuntu does not have
+LLVM 9.0 needs cmake 3.4.3 or higher, since Ubuntu does not have
 this natively, just install it from a binary package:
 (installed here in $HOME/progs)
 ```bash
@@ -43,10 +43,12 @@ fully compatible with the original one (ie. it can compile C/C++ just as well).
 
 There is a convenience script: *clang\_build.sh* that runs the commands below.
 
+NOTE: C2 now uses the new LLVM mono-repository, not the separate repos!
+
 ```bash
-git clone git://github.com/c2lang/llvm.git
-cd llvm/
-git checkout -b release_80 origin/release_80
+git clone https://github.com/llvm/llvm-project.git
+cd llvm-project/
+git checkout -b c2master llvmorg-9.0.0
 cd ..
 mkdir llvm_build
 cd llvm_build
@@ -54,11 +56,11 @@ cd llvm_build
 cmake -G "Unix Makefiles" \
     -DCMAKE_BUILD_TYPE="Release" \
     -DLLVM_ENABLE_ASSERTIONS=ON \
-    -DCMAKE_INSTALL_PREFIX=$HOME/llvm-80 \
+    -DCMAKE_INSTALL_PREFIX=$HOME/llvm-90 \
     -DLLVM_ENABLE_PEDANTIC=OFF \
-    ../llvm
+    ../llvm-project/llvm
 
-make -j4
+make -j16
 make install
 ```
 
@@ -66,8 +68,8 @@ make install
 You might need to create a link for your new clang to find the C++ headers.
 Since this uses the toolchain that comes with XCode, XCode will have to be installed.
 ```
-mkdir -p ~/llvm-80/include/c++
-ln -s /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1 ~/llvm-80/include/c++/v1
+mkdir -p ~/llvm-90/include/c++
+ln -s /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1 ~/llvm-90/include/c++/v1
 ```
 
 ## Downloading C2C
@@ -78,7 +80,7 @@ git clone git://github.com/c2lang/c2compiler.git
 ## Building C2C
 ```bash
 cd c2compiler
-source ./env.sh  (this assumes LLvm/Clang are installed to $HOME/llvm-80)
+source ./env.sh  (this assumes LLvm/Clang are installed to $HOME/llvm-90)
 mkdir build
 cd build
 cmake . ..
@@ -96,7 +98,7 @@ If all goes well, the **c2c** executable should appear in the build/c2c/ directo
 If you get an error with some Clang/C2-related errors, try updating your clang C2 archive.
 
 The env.sh script sets some some environment variables that c2c requires to work
-like *C2_LIBDIR*. It will also add $HOME/llvm-80/bin to the $PATH
+like *C2_LIBDIR*. It will also add $HOME/llvm-90/bin to the $PATH
 
 
 ## Running the tests

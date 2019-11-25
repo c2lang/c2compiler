@@ -3,4 +3,4 @@ alias c2c=$PWD/build/c2c/c2c
 export C2_LIBDIR=$PWD/c2libs
 export CC=clang
 export CXX=clang++
-export PATH=$HOME/llvm-80/bin:$PATH
+export PATH=$HOME/llvm-90/bin:$PATH

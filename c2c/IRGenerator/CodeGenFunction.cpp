@@ -711,7 +711,7 @@ void CodeGenFunction::EmitVarDecl(const VarDecl* D) {
     D->setIRValue(inst);
 
     // set alignment
-    if (!D->isParameter()) inst->setAlignment(CGM.getAlignment(qt));
+    //if (!D->isParameter()) inst->setAlignment(CGM.getAlignment(qt));
 
     const Expr* I = D->getInitValue();
     // NOTE: for function params, we do this during Body generation
