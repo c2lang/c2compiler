@@ -1,0 +1,16 @@
+// @warnings{no-unused}
+module test;
+
+type Y struct {
+    i32 z;
+}
+
+type X struct {
+    Y* y;
+}
+
+func void test1(const X* x) {
+    x.y.z = 10;     // allowed
+    x.y = nil;      // @error{read-only variable is not assignable}
+}
+
