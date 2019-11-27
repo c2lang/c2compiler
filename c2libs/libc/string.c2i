@@ -18,6 +18,8 @@ func c_char* strncat(c_char* dest, const c_char* src, c_size n);
 
 func c_int strcmp(const c_char* s1, const c_char* s2);
 func c_int strncmp(const c_char* s1, const c_char* s2, c_size n);
+func c_int strcasecmp(const c_char* s1, const c_char* s2);
+func c_int strncasecmp(const c_char* s1, const c_char* s2, c_size n);
 
 func c_int strcoll(const c_char* s1, const c_char* s2);
 
