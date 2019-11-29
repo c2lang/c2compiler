@@ -263,7 +263,6 @@ APSInt LiteralAnalyser::checkLiterals(const Expr* Right) {
         APSInt Result = checkLiterals(E->getInner());
         SmallString<20> ss;
         Result.toString(ss, 10, true);
-        fprintf(stderr, "Original %s\n", ss.c_str());
         return truncateLiteral(E->getDestType(), Right, Result);
     }
     }

@@ -56,6 +56,9 @@ name = "sys_mman"
 name = "sys_ioctl"
 
 [[module]]
+name = "sys_sendfile"
+
+[[module]]
 name = "sys_socket"
 
 [[module]]
