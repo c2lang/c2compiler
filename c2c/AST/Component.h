@@ -65,6 +65,9 @@ public:
 
     Module* getModule(const std::string& name_);
     const ModuleList& getModules() const { return modules; }
+    void updateModules(const ModuleList& mods) {
+        modules = mods;
+    }
     Module* findModule(const std::string& name_) const;
 
     typedef std::vector<Component*> Dependencies;

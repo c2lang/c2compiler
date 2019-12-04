@@ -236,13 +236,20 @@ ComponentAnalyser::ComponentAnalyser(Component& C,
     }
 
     // remove walk Modules and create ModuleAnalysers (bottom up, unused last)
+    // also update list in component to be in same order
+    ModuleList sorted_mods;
     cur = all.prev;
     while (cur != &all) {
         if (cur->m->isLoaded()) {
             ModuleAnalyser* ma = new ModuleAnalyser(*cur->m, allModules, Diags, target_, context_, verbose);
             analysers.push_back(ma);
+            sorted_mods.push_back(cur->m);
         }
         cur = cur->prev;
+    }
+    if (!sorted_mods.empty()) {
+        assert(mods.size() == sorted_mods.size());
+        component.updateModules(sorted_mods);
     }
 
     all.freeList();

@@ -23,10 +23,16 @@ public func void pub2() {}
 func void nonpub2() {}
 
 // @expect{atleast, build/test.c}
-static void test1_pub1();
-static void test1_nonpub1();
 static void test2_pub2();
 static void test2_nonpub2();
+static void test1_pub1();
+static void test1_nonpub1();
+
+static void test2_pub2() {
+}
+
+static void test2_nonpub2() {
+}
 
 static void test1_pub1() {
 }
@@ -38,9 +44,4 @@ int32_t main(int32_t argc, const char* argv[]) {
     return 0;
 }
 
-static void test2_pub2() {
-}
-
-static void test2_nonpub2() {
-}
 
