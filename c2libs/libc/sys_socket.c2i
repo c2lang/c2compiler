@@ -2,7 +2,9 @@ module sys_socket;
 
 import c2 local;
 
-const c_int AF_UNIX    =  1;
+const c_int PF_UNIX     =  1;
+
+const c_int AF_UNIX    =  PF_UNIX;
 const c_int AF_INET    =  2;
 const c_int AF_NETLINK = 16;
 const c_int AF_PACKET  = 17;
