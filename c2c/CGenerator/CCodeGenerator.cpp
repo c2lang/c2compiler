@@ -655,7 +655,8 @@ void CCodeGenerator::EmitIncludes() {
 
     // filter out unique entries, split into system and local includes and .c/.h
     for (unsigned m=0; m<mods.size(); m++) {
-        const AstList& files = mods[m]->getFiles();
+        Module* cur = mods[m];
+        const AstList& files = cur->getFiles();
         for (unsigned a=0; a<files.size(); a++) {
             const AST* ast = files[a];
             for (unsigned i=0; i<ast->numImports(); i++) {
@@ -663,6 +664,7 @@ void CCodeGenerator::EmitIncludes() {
                 ModulesConstIter iter = modules.find(D->getModuleName());
                 assert(iter != modules.end());
                 const Module* M = iter->second;
+                if (M == cur) continue; // never include self
                 IncludeEntry ie;
                 ie.isSystem = false;
                 ie.usedPublic = D->isUsedPublic();
@@ -676,13 +678,21 @@ void CCodeGenerator::EmitIncludes() {
                 }
             }
         }
+        // always add include to own header
+        if (mode == MULTI_FILE) {
+            IncludeEntry ie = { cur->getName() };
+            ie.name = cur->getName();
+            ie.isSystem = false;
+            ie.usedPublic = false;
+            addInclude(includes, ie);
+        }
     }
 
-    // write system includes
     for (unsigned i=0; i<includes.size(); ++i) {
         const IncludeEntry& entry = includes[i];
         StringBuilder* out = &cbuf;
         // dont put in header if no header is generated
+
         if (mode != SINGLE_FILE && entry.usedPublic) out = &hbuf;
         (*out) << "#include \"" << entry.name;
         if (!entry.isSystem) (*out) << ".h";
