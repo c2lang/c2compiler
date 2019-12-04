@@ -51,8 +51,9 @@ const u32 S_ISVTX  = 0001000;
 type Mode c_uint;
 
 func c_int chmod(const char* file, Mode mode);
-func c_int lchmod(const char* file, Mode mode);
-func c_int fchmod(c_int fd, const char* file, Mode mode, c_int flag);
+//func c_int lchmod(const char* file, Mode mode);
+func c_int fchmod(c_int fd, Mode mode);
+func c_int fchmodat(c_int dirfd, const char* pathname, Mode mode, c_int flag);
 
 func Mode umask(Mode mask);
 func Mode getumask();
