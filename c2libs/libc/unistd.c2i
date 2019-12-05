@@ -32,4 +32,10 @@ func c_int unlink(const char* name);
 func c_int rmdir(const char* path);
 
 
+func c_int getopt(i32 argc, char*[] argv, const char* optstring);
+
+char* optarg;
+c_int optind;
+c_int opterr;
+c_int optopt;
 
