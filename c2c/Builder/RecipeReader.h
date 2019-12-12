@@ -18,6 +18,7 @@
 
 #include <stdarg.h>
 #include <vector>
+#include "Utils/StringList.h"
 
 namespace C2 {
 
@@ -32,6 +33,7 @@ public:
     const Recipe& get(int i) const;
     void print() const;
 private:
+    void startNewRecipe();
     void findTopDir();
     void readRecipeFile();
     void handleLine(char* line);
@@ -42,10 +44,13 @@ private:
     typedef std::vector<Recipe*> Recipes;
     Recipes recipes;
     Recipe* current;
+    StringList globalConfigs;
 
     int line_nr;
     enum State { START=0, INSIDE_TARGET };
     State state;
+    bool has_targets;
+
 
     char buffer[256];
     char* token_ptr;

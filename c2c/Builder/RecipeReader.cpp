@@ -20,8 +20,8 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#include "Builder/Recipe.h"
 #include "Builder/RecipeReader.h"
+#include "Builder/Recipe.h"
 #include "Builder/BuilderConstants.h"
 
 #include "FileUtils/FileMap.h"
@@ -33,6 +33,7 @@ RecipeReader::RecipeReader()
     : current(0)
     , line_nr(1)
     , state(START)
+    , has_targets(false)
     , token_ptr(0)
 {
     readRecipeFile();
@@ -49,6 +50,7 @@ void RecipeReader::readRecipeFile() {
     file.open();
     const char* cp = (char*)file.region;
     state = START;
+    has_targets = false;
     line_nr = 1;
     const char* end = (const char*)file.region + file.size;
     while (cp < end) {
@@ -69,8 +71,17 @@ void RecipeReader::readRecipeFile() {
     }
 }
 
+void RecipeReader::startNewRecipe() {
+    recipes.push_back(current);
+    state = INSIDE_TARGET;
+    has_targets = true;
+    for (unsigned i=0; i<globalConfigs.size(); i++) {
+        current->addConfig(globalConfigs[i]);
+    }
+}
+
 void RecipeReader::handleLine(char* line) {
-    if (line[0] == '#') return; // skip comments
+if (line[0] == '#') return; // skip comments
 
     switch (state) {
     case START:
@@ -81,8 +92,7 @@ void RecipeReader::handleLine(char* line) {
                 const char* target_name = get_token();
                 if (target_name == 0) error("expected executable name");
                 current = new Recipe(target_name, Component::EXECUTABLE);
-                recipes.push_back(current);
-                state = INSIDE_TARGET;
+                startNewRecipe();
             } else if (strcmp(kw, "lib") == 0) {
                 const char* target_name = get_token();
                 if (target_name == 0) error("expected library name");
@@ -98,8 +108,18 @@ void RecipeReader::handleLine(char* line) {
                     error("unknown library type '%s'", type_name);
                 }
                 current = new Recipe(target_name, type);
-                recipes.push_back(current);
-                state = INSIDE_TARGET;
+                startNewRecipe();
+            } else if (strcmp(kw, "config") == 0) {
+                // Only allow before targets
+                if (has_targets) {
+                    error("global configs only allowed before executable/lib targets");
+                }
+                while (1) {
+                    const char* tok2 = get_token();
+                    if (!tok2) break;
+                    // TODO check duplicate configs
+                    globalConfigs.push_back(tok2);
+                }
             } else {
                 error("expected keyword executable|lib");
             }
