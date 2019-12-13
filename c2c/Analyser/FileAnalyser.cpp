@@ -1156,6 +1156,7 @@ bool FileAnalyser::analyseUnaryOperator(Expr* expr, bool usedPublic) {
         break;
     case UO_AddrOf:
     {
+        if (!checkAddressOfOperand(SubExpr)) return false;
         QualType Q = ast.getContext().getPointerType(LType.getCanonicalType());
         expr->setType(Q);
         expr->setConstant();
@@ -1193,6 +1194,53 @@ bool FileAnalyser::analyseUnaryOperator(Expr* expr, bool usedPublic) {
         expr->setType(LType);
         break;
     }
+    return true;
+}
+
+bool FileAnalyser::checkAddressOfOperand(Expr* expr) {
+    expr = AnalyserUtils::getInnerExprAddressOf(expr);
+    IdentifierExpr* I = dyncast<IdentifierExpr>(expr);
+    if (!I) {
+        StringBuilder buf(MAX_LEN_TYPENAME);
+        expr->getType().DiagName(buf);
+        Diag(expr->getLocation(), diag::err_typecheck_invalid_lvalue_addrof) << buf;
+        return false;
+    }
+    IdentifierExpr::RefKind ref = I->getRefType();
+    switch (ref) {
+        case IdentifierExpr::REF_UNRESOLVED:
+            FATAL_ERROR("should not come here");
+            return false;
+        case IdentifierExpr::REF_MODULE:
+            Diag(expr->getLocation(), diag::err_typecheck_invalid_addrof) << "a module";
+            return false;
+        case IdentifierExpr::REF_FUNC:
+            // NOTE: C2 does not allow address of function like C
+            Diag(expr->getLocation(), diag::err_typecheck_invalid_addrof) << "a function";
+            return false;
+        case IdentifierExpr::REF_TYPE:
+            Diag(expr->getLocation(), diag::err_typecheck_invalid_addrof) << "a type";
+            return false;
+        case IdentifierExpr::REF_VAR:
+            return true;
+        case IdentifierExpr::REF_ENUM_CONSTANT:
+            Diag(expr->getLocation(), diag::err_typecheck_invalid_addrof) << "an enum constant";
+            return false;
+        case IdentifierExpr::REF_STRUCT_MEMBER:
+            // TODO not if on type! (only on instance)
+            // ok
+            return true;
+        case IdentifierExpr::REF_STRUCT_FUNC:
+            Diag(expr->getLocation(), diag::err_typecheck_invalid_addrof) << "a function";
+            return false;
+        case IdentifierExpr::REF_LABEL:
+            Diag(expr->getLocation(), diag::err_typecheck_invalid_addrof) << "a label";
+            return false;
+    }
+
+    // NOTE: C also allow funcions, C2 not? (no just use function itself)
+    // actually it should be an IdentifierExpr pointing to a VarDecl?
+    // Must be IdentifierExpr that points to VarDecl?
     return true;
 }
 

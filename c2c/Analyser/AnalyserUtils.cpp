@@ -292,3 +292,58 @@ uint64_t AnalyserUtils::sizeOfType(QualType type, unsigned* alignment) {
     }
 }
 
+Expr* AnalyserUtils::getInnerExprAddressOf(Expr* expr) {
+    // TODO can be MemberExpr with ArraySubScript: &foo[1].x
+    // TODO can also be ArraySubScript with emberExpr with: &foo.x[2]
+    // strip MemberExpr, ArraySubscriptExpr and Paren
+    while (1) {
+        switch (expr->getKind()) {
+        case EXPR_INTEGER_LITERAL:
+        case EXPR_FLOAT_LITERAL:
+        case EXPR_BOOL_LITERAL:
+        case EXPR_CHAR_LITERAL:
+        case EXPR_STRING_LITERAL:
+        case EXPR_NIL:
+        case EXPR_IDENTIFIER:
+        case EXPR_TYPE:
+        case EXPR_CALL:
+        case EXPR_INITLIST:
+        case EXPR_DESIGNATOR_INIT:
+            return expr;
+        case EXPR_BINOP:
+            // TODO
+            return expr;
+        case EXPR_CONDOP:
+            // TODO
+            return expr;
+        case EXPR_UNARYOP:
+            // TODO
+            return expr;
+        case EXPR_BUILTIN:
+            return expr;
+        case EXPR_ARRAYSUBSCRIPT:
+        {
+            ArraySubscriptExpr* sub = cast<ArraySubscriptExpr>(expr);
+            expr = sub->getBase();
+            break;
+        }
+        case EXPR_MEMBER:
+        {
+            MemberExpr* member = cast<MemberExpr>(expr);
+            return member->getMember();
+        }
+        case EXPR_PAREN:
+        {
+            ParenExpr* paren = cast<ParenExpr>(expr);
+            expr = paren->getExpr();
+            break;
+        }
+        case EXPR_BITOFFSET:
+        case EXPR_CAST:
+            TODO;
+            return expr;
+        }
+    }
+    return expr;
+}
+

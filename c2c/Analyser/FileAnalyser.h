@@ -140,6 +140,7 @@ private:
     bool outputStructDiagnostics(QualType T, IdentifierExpr* member, unsigned msg);
 
     void checkStructMembersForUsed(const StructTypeDecl* S);
+    bool checkAddressOfOperand(Expr* expr);
 
     void error(SourceLocation loc, QualType left, QualType right) const;
     c2lang::DiagnosticBuilder Diag(SourceLocation Loc, unsigned DiagID) const;

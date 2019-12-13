@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+void* a = &test;        // @error{cannot take the address of a module}
+

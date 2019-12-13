@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+module test;
+
+type Type struct {
+    i32 x;
+}
+
+void* a = &Type;        // @error{cannot take the address of a type}
+
