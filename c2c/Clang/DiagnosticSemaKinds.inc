@@ -1832,6 +1832,7 @@ DIAG(err_typecheck_incomplete_type_not_modifiable_lvalue, CLASS_ERROR, (unsigned
 DIAG(err_typecheck_indirection_requires_pointer, CLASS_ERROR, (unsigned)diag::Severity::Error, "indirection requires pointer operand (%0 invalid)", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_typecheck_invalid_lvalue_addrof, CLASS_ERROR, (unsigned)diag::Severity::Error, "cannot take the address of an rvalue of type %0", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_typecheck_invalid_lvalue_addrof_addrof_function, CLASS_ERROR, (unsigned)diag::Severity::Error, "extra '&' taking address of overloaded function", 0, SFINAE_SubstitutionFailure, false, true, 2)
+DIAG(err_typecheck_invalid_addrof, CLASS_ERROR, (unsigned)diag::Severity::Error, "cannot take the address of %0", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_typecheck_invalid_operands, CLASS_ERROR, (unsigned)diag::Severity::Error, "invalid operands to binary expression (%0 and %1)", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_typecheck_invalid_restrict_invalid_pointee, CLASS_ERROR, (unsigned)diag::Severity::Error, "pointer to function type %0 may not be 'restrict' qualified", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_typecheck_invalid_restrict_not_pointer, CLASS_ERROR, (unsigned)diag::Severity::Error, "restrict requires a pointer or reference (%0 is invalid)", 0, SFINAE_SubstitutionFailure, false, true, 2)

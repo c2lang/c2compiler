@@ -1701,6 +1701,7 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
         break;
     case UO_AddrOf:
     {
+        if (!checkAddressOfOperand(SubExpr)) return QualType();
         QualType Q = Context.getPointerType(LType.getCanonicalType());
         expr->setType(Q);
         expr->setConstant();
@@ -1740,6 +1741,108 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
         break;
     }
     return LType;
+}
+
+static Expr* getInnerExprAddressOf(Expr* expr) {
+    // TODO can be MemberExpr with ArraySubScript: &foo[1].x
+    // TODO can also be ArraySubScript with emberExpr with: &foo.x[2]
+    // strip MemberExpr, ArraySubscriptExpr and Paren
+    while (1) {
+        switch (expr->getKind()) {
+        case EXPR_INTEGER_LITERAL:
+        case EXPR_FLOAT_LITERAL:
+        case EXPR_BOOL_LITERAL:
+        case EXPR_CHAR_LITERAL:
+        case EXPR_STRING_LITERAL:
+        case EXPR_NIL:
+        case EXPR_IDENTIFIER:
+        case EXPR_TYPE:
+        case EXPR_CALL:
+        case EXPR_INITLIST:
+        case EXPR_DESIGNATOR_INIT:
+            return expr;
+        case EXPR_BINOP:
+            // TODO
+            return expr;
+        case EXPR_CONDOP:
+            // TODO
+            return expr;
+        case EXPR_UNARYOP:
+            // TODO
+            return expr;
+        case EXPR_BUILTIN:
+            return expr;
+        case EXPR_ARRAYSUBSCRIPT:
+        {
+            ArraySubscriptExpr* sub = cast<ArraySubscriptExpr>(expr);
+            expr = sub->getBase();
+            break;
+        }
+        case EXPR_MEMBER:
+        {
+            MemberExpr* member = cast<MemberExpr>(expr);
+            return member->getMember();
+        }
+        case EXPR_PAREN:
+        {
+            ParenExpr* paren = cast<ParenExpr>(expr);
+            expr = paren->getExpr();
+            break;
+        }
+        case EXPR_BITOFFSET:
+        case EXPR_CAST:
+            TODO;
+            return expr;
+        }
+    }
+    return expr;
+}
+
+bool FunctionAnalyser::checkAddressOfOperand(Expr* expr) {
+    expr = getInnerExprAddressOf(expr);
+    IdentifierExpr* I = dyncast<IdentifierExpr>(expr);
+    if (!I) {
+        StringBuilder buf(MAX_LEN_TYPENAME);
+        expr->getType().DiagName(buf);
+        Diag(expr->getLocation(), diag::err_typecheck_invalid_lvalue_addrof) << buf;
+        return false;
+    }
+    IdentifierExpr::RefKind ref = I->getRefType();
+    switch (ref) {
+        case IdentifierExpr::REF_UNRESOLVED:
+            FATAL_ERROR("should not come here");
+            return false;
+        case IdentifierExpr::REF_MODULE:
+            Diag(expr->getLocation(), diag::err_typecheck_invalid_addrof) << "a module";
+            return false;
+        case IdentifierExpr::REF_FUNC:
+            // NOTE: C2 does not allow address of function like C
+            Diag(expr->getLocation(), diag::err_typecheck_invalid_addrof) << "a function";
+            return false;
+        case IdentifierExpr::REF_TYPE:
+            Diag(expr->getLocation(), diag::err_typecheck_invalid_addrof) << "a type";
+            return false;
+        case IdentifierExpr::REF_VAR:
+            return true;
+        case IdentifierExpr::REF_ENUM_CONSTANT:
+            Diag(expr->getLocation(), diag::err_typecheck_invalid_addrof) << "an enum constant";
+            return false;
+        case IdentifierExpr::REF_STRUCT_MEMBER:
+            // TODO not if on type! (only on instance)
+            // ok
+            return true;
+        case IdentifierExpr::REF_STRUCT_FUNC:
+            Diag(expr->getLocation(), diag::err_typecheck_invalid_addrof) << "a function";
+            return false;
+        case IdentifierExpr::REF_LABEL:
+            Diag(expr->getLocation(), diag::err_typecheck_invalid_addrof) << "a label";
+            return false;
+    }
+
+    // NOTE: C also allow funcions, C2 not? (no just use function itself)
+    // actually it should be an IdentifierExpr pointing to a VarDecl?
+    // Must be IdentifierExpr that points to VarDecl?
+    return true;
 }
 
 QualType FunctionAnalyser::analyseBuiltinExpr(Expr* expr) {

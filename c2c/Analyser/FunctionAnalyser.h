@@ -120,6 +120,7 @@ private:
                                           Fields &fields,
                                           Expr* value,
                                           bool &haveDesignators);
+    bool checkAddressOfOperand(Expr* expr);
 
     QualType analyseSizeOfExpr(BuiltinExpr* expr);
     QualType analyseElemsOfExpr(BuiltinExpr* B);
