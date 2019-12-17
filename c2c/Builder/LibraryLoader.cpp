@@ -166,7 +166,12 @@ bool LibraryLoader::checkComponent(Component* C) {
             Module* M = C->getModule(moduleName);
 
             StringBuilder c2file(512);
-            c2file << componentDir << '/' << moduleName << ".c2i";
+            c2file << componentDir << '/' << moduleName;
+            if (manifest.hasSourceLib) {
+                c2file << ".c2";
+            } else {
+                c2file << ".c2i";
+            }
             addModule(C, M, moduleName + ".h", c2file.c_str());
         }
     }
@@ -205,10 +210,20 @@ void LibraryLoader::showLib(StringBuilder& out, const std::string& libdir, bool 
                 }
                 out << "  ";
                 out.setColor(ANSI_YELLOW);
-                if (manifest.hasStaticLib) out << "static";
+                bool first = true;
+                if (manifest.hasStaticLib) {
+                    out << "static";
+                    first = false;
+                }
                 if (manifest.hasDynamicLib) {
-                    if (manifest.hasStaticLib) out << '|';
+                    if (!first) out << '|';
                     out << "dynamic";
+                    first = false;
+                }
+                if (manifest.hasSourceLib) {
+                    if (!first) out << '|';
+                    out << "source";
+                    first = false;
                 }
                 out << "  ";
                 const StringList& deps = manifest.deps;

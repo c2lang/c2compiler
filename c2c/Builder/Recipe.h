@@ -55,6 +55,8 @@ public:
         case Component::SHARED_LIB:
         case Component::STATIC_LIB:
             return true;
+        case Component::SOURCE_LIB:
+            return false;
         }
         return false;
     }

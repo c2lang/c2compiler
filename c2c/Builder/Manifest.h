@@ -29,6 +29,7 @@ public:
         , isNative(false)
         , hasStaticLib(false)
         , hasDynamicLib(false)
+        , hasSourceLib(false)
     {}
     ~Manifest() {}
 
@@ -37,6 +38,7 @@ public:
     bool isNative;
     bool hasStaticLib;
     bool hasDynamicLib;
+    bool hasSourceLib;
     StringList deps;
     StringList modules;
 

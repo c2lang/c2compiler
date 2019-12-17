@@ -104,6 +104,8 @@ if (line[0] == '#') return; // skip comments
                     type = Component::SHARED_LIB;
                 } else if (strcmp(type_name, "static") == 0) {
                     type = Component::STATIC_LIB;
+                } else if (strcmp(type_name, "source") == 0) {
+                    type = Component::SOURCE_LIB;
                 } else {
                     error("unknown library type '%s'", type_name);
                 }
@@ -194,6 +196,8 @@ if (line[0] == '#') return; // skip comments
                         libtype = Component::STATIC_LIB;
                     } else if (strcmp(tok3, "dynamic") == 0) {
                         libtype = Component::SHARED_LIB;
+                    } else if (strcmp(tok3, "source") == 0) {
+                        libtype = Component::SOURCE_LIB;
                     } else {
                         error("unknown library type '%s'", tok3);
                     }
@@ -285,6 +289,9 @@ void RecipeReader::checkCurrent() {
     case Component::SHARED_LIB:
     case Component::STATIC_LIB:
         needExport = true;
+        break;
+    case Component::SOURCE_LIB:
+        needExport = false;
         break;
     }
     if (needExport && current->exported.size() == 0) {

@@ -94,6 +94,7 @@ const char* C2::Str(Component::Type type) {
     case Component::EXECUTABLE:    return "executable";
     case Component::SHARED_LIB:    return "shared";
     case Component::STATIC_LIB:    return "static";
+    case Component::SOURCE_LIB:    return "source";
     }
     return "";
 }

@@ -22,8 +22,9 @@ using namespace C2;
 
 // TODO move to Component
 static Component::Type str2dep(const char* type) {
-    if (strcmp("static", type) == 0) return Component::STATIC_LIB;
+    if (strcmp("static", type) == 0)  return Component::STATIC_LIB;
     if (strcmp("dynamic", type) == 0) return Component::SHARED_LIB;
+    if (strcmp("source", type) == 0)  return Component::SOURCE_LIB;
     return (Component::Type)-1;
 }
 
@@ -60,6 +61,9 @@ bool ManifestReader::parse()
             break;
         case Component::STATIC_LIB:
             manifest.hasStaticLib = true;
+            break;
+        case Component::SOURCE_LIB:
+            manifest.hasSourceLib = true;
             break;
         }
         typeIter.next();

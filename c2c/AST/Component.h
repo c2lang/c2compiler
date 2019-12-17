@@ -28,7 +28,7 @@ class StringBuilder;
 
 class Component {
 public:
-    enum Type { EXECUTABLE=0, SHARED_LIB, STATIC_LIB };
+    enum Type { EXECUTABLE=0, SHARED_LIB, STATIC_LIB, SOURCE_LIB };
 
     Component(const std::string& name_,
             const std::string& path_,
