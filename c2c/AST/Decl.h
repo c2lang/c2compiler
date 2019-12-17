@@ -264,6 +264,7 @@ public:
     bool isVariadic() const { return functionDeclBits.IsVariadic; }
     void setDefaultArgs() { functionDeclBits.HasDefaultArgs = true; }
     bool hasDefaultArgs() const { return functionDeclBits.HasDefaultArgs; }
+    bool hasNoReturnAttr() const;
 
     void setStructInfo(IdentifierExpr* structName_);
     bool isStructFunction() const { return structName != 0; }

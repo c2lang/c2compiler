@@ -14,7 +14,7 @@ func i32 setjmp(JmpBufTag[1] __env);
 func i32 _setjmp(JmpBufTag[1] __env);
 
 
-func void longjmp(JmpBufTag[1] __env, i32 __val);  // attribute(no_return)
+func void longjmp(JmpBufTag[1] __env, i32 __val) @(noreturn);
 
 func c_uint sleep(c_uint __seconds);
 func c_char* getcwd(char* buf, c_size size);

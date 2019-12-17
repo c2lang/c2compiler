@@ -2,6 +2,8 @@
 
 module test;
 
+func void on_error() @(noreturn) {}
+
 func void foo(i32 a) {
     while (1) {
         switch (a) {
@@ -13,6 +15,8 @@ func void foo(i32 a) {
             fallthrough;
         case 4:
             break;
+        case 5:
+            on_error();
         }
     }
 

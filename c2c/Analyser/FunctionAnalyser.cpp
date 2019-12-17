@@ -455,6 +455,18 @@ void FunctionAnalyser::analyseGotoStmt(Stmt* S) {
 static bool isCaseTerminator(const Stmt* S) {
     switch (S->getKind()) {
     case STMT_RETURN:
+        return true;
+    case STMT_EXPR:
+    {
+        const Expr* E = cast<Expr>(S);
+        const CallExpr* C = dyncast<CallExpr>(E);
+        if (!C) return false;
+        const FunctionType* FT = cast<FunctionType>(C->getFn()->getType().getTypePtr());
+        const FunctionDecl* FD = FT->getDecl();
+        if (FD->hasNoReturnAttr()) return true;
+        if (!FD->hasAttributes()) return false;
+        return false;
+    }
     case STMT_BREAK:
     case STMT_CONTINUE:
     case STMT_FALLTHROUGH:

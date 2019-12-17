@@ -198,6 +198,17 @@ void FunctionDecl::setStructInfo(IdentifierExpr* structName_) {
     structName = structName_;
 }
 
+bool FunctionDecl::hasNoReturnAttr() const {
+    if (!hasAttributes()) return false;
+    assert(mod);
+    const AttrList& AL = getModule()->getAttributes(this);
+    for (AttrListConstIter iter = AL.begin(); iter != AL.end(); ++iter) {
+        const Attr* A = *iter;
+        if (A->getKind() == ATTR_NORETURN) return true;
+    }
+    return false;
+}
+
 unsigned FunctionDecl::minArgs() const {
     if (!hasDefaultArgs()) return numArgs();
 
