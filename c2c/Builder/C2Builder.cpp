@@ -84,8 +84,12 @@ namespace C2 {
 
 class ParseHelper {
 public:
-    ParseHelper(DiagnosticsEngine &Diags_, std::shared_ptr<HeaderSearchOptions> HSOpts_, SourceManager &SM_,
-                    FileManager &FileMgr_, const std::string &configs_, const TargetInfo &ti)
+    ParseHelper(DiagnosticsEngine &Diags_,
+                std::shared_ptr<HeaderSearchOptions> HSOpts_,
+                SourceManager &SM_,
+                FileManager &FileMgr_,
+                const std::string &configs_,
+                const TargetInfo &ti)
         : Diags(Diags_)
         , HSOpts(HSOpts_)
         , SM(SM_)
@@ -99,9 +103,11 @@ public:
         HeaderSearch* Headers = new HeaderSearch(SM, Diags);
 
         Preprocessor PP(Diags, SM, *Headers);
+        std::string config = configs;
+        if (component.isExternal()) config = "";
 
         ApplyHeaderSearchOptions(PP.getHeaderSearchInfo(), *HSOpts);
-        PP.setPredefines(configs);
+        PP.setPredefines(config);
         PP.Initialize(targetInfo);
 
         // File stuff
@@ -116,7 +122,7 @@ public:
         // TEMP rewriter test
         //ast.fileID = id;
         // Manually set predefines (normally done in EnterMainSourceFile())
-        std::unique_ptr<llvm::MemoryBuffer> SB = llvm::MemoryBuffer::getMemBufferCopy(configs, "<built-in>");
+        std::unique_ptr<llvm::MemoryBuffer> SB = llvm::MemoryBuffer::getMemBufferCopy(config, "<built-in>");
         assert(SB && "Cannot create predefined source buffer");
         FileID FID = SM.createFileID(std::move(SB));
 
@@ -250,8 +256,7 @@ int C2Builder::build() {
     FileManager FileMgr(FileSystemOpts);
     SourceManager SM(Diags, FileMgr);
 
-    ParseHelper helper(Diags, HSOpts, SM, FileMgr, PredefineBuffer,
-                       targetInfo);
+    ParseHelper helper(Diags, HSOpts, SM, FileMgr, PredefineBuffer, targetInfo);
 
     // Step 2A - parse main component sources + analyse imports
     uint64_t t1_parse = Utils::getCurrentTime();

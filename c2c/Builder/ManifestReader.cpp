@@ -30,12 +30,13 @@ static Component::Type str2dep(const char* type) {
 
 bool ManifestReader::parse()
 {
+    errorMsg[0] = 0;
     TomlReader reader;
     if (!reader.parse(manifest.filename.c_str())) return false;
 
     const char* lang = reader.getValue("library.language");
     if (!lang) {
-        printf("%s: missing library.language\n", manifest.filename.c_str());
+        sprintf(errorMsg, "missing library.language");
         return false;
     }
     manifest.isNative = (strcmp(lang, "C2") == 0);
@@ -50,7 +51,7 @@ bool ManifestReader::parse()
         const char* typeStr = typeIter.getValue();
         Component::Type type = str2dep(typeStr);
         if ((int)type == -1) {
-            printf("%s: invalid dep type '%s'\n", manifest.filename.c_str(), typeStr);
+            sprintf(errorMsg, "invalid dep type '%s'", typeStr);
             return false;
         }
         switch (type) {
@@ -63,6 +64,14 @@ bool ManifestReader::parse()
             manifest.hasStaticLib = true;
             break;
         case Component::SOURCE_LIB:
+            if (!manifest.isNative) {
+                sprintf(errorMsg, "language must be C2 for source libraries");
+                return false;
+            }
+            if (manifest.hasDynamicLib || manifest.hasStaticLib) {
+                sprintf(errorMsg, "source library type cannot be combined with shared or static one");
+                return false;
+            }
             manifest.hasSourceLib = true;
             break;
         }
@@ -74,12 +83,12 @@ bool ManifestReader::parse()
         const char* depName = depsIter.getValue("name");
         const char* depType = depsIter.getValue("type");
         if (!depName || !depType) {
-            printf("%s: dependency needs name and type\n", manifest.filename.c_str());
+            sprintf(errorMsg, "dependency needs name and type");
             return false;
         }
         Component::Type type = str2dep(depType);
         if ((int)type == -1) {
-            printf("%s: invalid dep type '%s'\n", manifest.filename.c_str(), depType);
+            sprintf(errorMsg, "invalid dep type '%s'", depType);
             return false;
         }
         for (unsigned i=0; i<manifest.deps.size(); i++) {
@@ -97,7 +106,7 @@ bool ManifestReader::parse()
     while (!moduleIter.done()) {
         const char* name = moduleIter.getValue("name");
         if (!name) {
-            printf("%s: missing module name\n", manifest.filename.c_str());
+            sprintf(errorMsg, "missing module name");
             return false;
         }
         manifest.modules.push_back(name);
