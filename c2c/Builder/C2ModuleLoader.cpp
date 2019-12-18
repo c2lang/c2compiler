@@ -52,7 +52,7 @@ static CTypes ctypes[] = {
 void C2ModuleLoader::load(C2::Module* c2Mod, bool is32bit) {
     c2lang::SourceLocation loc;
 
-    AST* ast = new AST("<generated>", false);
+    AST* ast = new AST("<generated>", false, false);
     ASTContext& Context = ast->getContext();
     ast->setName("c2", loc);
     c2Mod->addAST(ast);

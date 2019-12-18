@@ -28,9 +28,10 @@ namespace C2 {
 
 class AST {
 public:
-    AST(const std::string& filename_, bool isInterface_)
+    AST(const std::string& filename_, bool isInterface_, bool isExternal_)
         : filename(filename_)
         , m_isInterface(isInterface_)
+        , m_isExternal(isExternal_)
     {}
     ~AST() {}
 
@@ -74,6 +75,7 @@ public:
     const std::string& getFileName() const { return filename; }
     ASTContext& getContext() { return astContext; }
     bool isInterface() const { return m_isInterface; }
+    bool isExternal() const { return m_isExternal; }
 private:
     AST(const AST&);
     void operator=(const AST&);
@@ -82,6 +84,7 @@ private:
     std::string modName;
     c2lang::SourceLocation modLoc;
     bool m_isInterface;       // set for .c2i files
+    bool m_isExternal;        // if not in main component
 
     typedef std::vector<ImportDecl*> ImportList;
     ImportList importList;

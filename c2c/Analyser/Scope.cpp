@@ -314,7 +314,7 @@ void Scope::EnterScope(unsigned flags) {
 void Scope::ExitScope() {
     for (unsigned i=0; i<curScope->decls.size(); i++) {
         VarDecl* D = curScope->decls[i];
-        if (!D->isUsed() && !curScope->hasErrorOccurred()) {
+        if (!D->isUsed() && !curScope->hasErrorOccurred() && !myModule->isExternal()) {
             unsigned msg = diag::warn_unused_variable;
             if (D->isParameter()) msg = diag::warn_unused_parameter;
             Diags.Report(D->getLocation(), msg) << D->DiagName();

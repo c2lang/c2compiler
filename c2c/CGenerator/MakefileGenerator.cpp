@@ -64,6 +64,9 @@ void MakefileGenerator::write(const std::string& path) {
     case Component::STATIC_LIB:
         targetname += "lib" + target + ".a";
         break;
+    case Component::SOURCE_LIB:
+        // nothing to do
+        break;
     }
 
     StringBuilder out;

@@ -2288,7 +2288,7 @@ bool FileAnalyser::checkAttributes(Decl* D) {
 
 void FileAnalyser::checkUnusedDecls() {
     LOG_FUNC
-    if (ast.isInterface()) return;
+    if (ast.isExternal()) return;
     if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
 
     // checkfor unused uses
