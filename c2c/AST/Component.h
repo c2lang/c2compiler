@@ -34,12 +34,14 @@ public:
             const std::string& path_,
             Type type_,
             bool isExternal_,
+            bool isInterface_,
             bool isCLib_,
             const StringList& exportList_)
         : name(name_)
         , path(path_)
         , type(type_)
         , is_external(isExternal_)
+        , is_interface(isInterface_)
         , is_clib(isCLib_)
         , exportList(exportList_)
     {}
@@ -50,6 +52,7 @@ public:
     const std::string& getLinkName() const { return linkName; }
     Type getType() const { return type; }
     bool isExternal() const { return is_external; }
+    bool isInterface() const { return is_interface; }
     bool isCLib() const { return is_clib; }
     bool isSharedLib() const { return type == SHARED_LIB; }
     bool isStaticLib() const { return type == STATIC_LIB; }
@@ -90,6 +93,7 @@ private:
     std::string linkName;       // used for external libs (-l..)
     Type type;
     bool is_external;
+    bool is_interface;
     bool is_clib;
 
     ModuleList modules;

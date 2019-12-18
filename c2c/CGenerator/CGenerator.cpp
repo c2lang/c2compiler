@@ -45,17 +45,29 @@ CGenerator::CGenerator(const Component& component_,
     , buildFile(buildFile_)
 {}
 
+void CGenerator::addSourceLib(const Component& lib) {
+    const ModuleList& mods = lib.getModules();
+
+    for (unsigned m=0; m<mods.size(); m++) {
+        code_mods.push_back(mods[m]);
+    }
+}
+
 void CGenerator::generate() {
     std::string outdir = options.outputDir + options.buildDir;
     const ModuleList& mods = component.getModules();
 
+    for (unsigned m=0; m<mods.size(); m++) {
+        code_mods.push_back(mods[m]);
+    }
+
     // generate code
     if (options.single_module) {
-        CCodeGenerator gen(component.getName(), CCodeGenerator::SINGLE_FILE, moduleMap, mods, includeNamer, targetInfo, options.generateChecks);
+        CCodeGenerator gen(component.getName(), CCodeGenerator::SINGLE_FILE, moduleMap, code_mods, includeNamer, targetInfo, options.generateChecks);
         gen.generate(options.printC, outdir);
     } else {
-        for (unsigned m=0; m<mods.size(); m++) {
-            Module* M = mods[m];
+        for (unsigned m=0; m<code_mods.size(); m++) {
+            Module* M = code_mods[m];
             ModuleList single;
             single.push_back(M);
             CCodeGenerator gen(M->getName(), CCodeGenerator::MULTI_FILE, moduleMap, single, includeNamer, targetInfo, options.generateChecks);
@@ -106,7 +118,7 @@ void CGenerator::generateExternalHeaders() {
     for (ModulesConstIter iter = moduleMap.begin(); iter != moduleMap.end(); ++iter) {
         Module* M = iter->second;
         if (!M->isLoaded()) continue;
-        if (!M->isExternal()) continue;
+        if (!M->isInterface()) continue;
         ModuleList single;
         single.push_back(M);
         CCodeGenerator gen(M->getName(), CCodeGenerator::MULTI_FILE, moduleMap, single, includeNamer, targetInfo, false);

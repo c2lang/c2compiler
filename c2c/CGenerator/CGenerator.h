@@ -50,6 +50,8 @@ public:
                const TargetInfo& targetInfo_,
                const BuildFile* buildFile_);
 
+    void addSourceLib(const Component& lib);
+
     void generate();
     void build();
     void generateExternalHeaders();
@@ -57,6 +59,7 @@ public:
 private:
     const Component& component;
     const Modules& moduleMap;
+    ModuleList code_mods;   // module to generate code for
     const HeaderNamer& includeNamer;
     const Options& options;
     const TargetInfo& targetInfo;

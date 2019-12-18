@@ -36,7 +36,7 @@ class AST;
 
 class Module {
 public:
-    Module(const std::string& name_, bool isExternal_, bool isCLib_);
+    Module(const std::string& name_, bool isExternal_, bool isInterface_, bool isCLib_);
     ~Module();
 
     void addAST(AST* ast) { files.push_back(ast); }
@@ -48,6 +48,7 @@ public:
     const std::string& getCName() const;
     bool isPlainC() const { return m_isCLib; }
     bool isExternal() const { return m_isExternal; }
+    bool isInterface() const { return m_isInterface; }
     bool isExported() const { return m_isExported; }
     void setExported() { m_isExported = true; }
     bool isLoaded() const { return files.size() != 0; }
@@ -78,6 +79,7 @@ private:
 
     const std::string name;
     bool m_isExternal;       // not a module in current target
+    bool m_isInterface;
     bool m_isCLib;           // not a C2 module, but used C library
     bool m_isExported;       // symbols should be exported (in recipe)
     bool m_isUsed;           // used for external module, if they needs to be loaded

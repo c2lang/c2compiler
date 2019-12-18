@@ -29,7 +29,7 @@ Module* Component::getModule(const std::string& name_) {
     for (unsigned i=0; i<modules.size(); i++) {
         if (modules[i]->getName() == name_) { return modules[i]; }
     }
-    Module* module = new Module(name_, is_external, is_clib);
+    Module* module = new Module(name_, is_external, is_interface, is_clib);
     if (isExported(name_)) module->setExported();
     modules.push_back(module);
     return module;

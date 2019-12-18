@@ -127,7 +127,7 @@ public:
         Diags.getClient()->BeginSourceFile(0);
 
         ASTBuilder astBuilder(SM, Diags, PP, component, existingMod, filename, targetInfo);
-        Parser parser(PP, astBuilder, component.isExternal());
+        Parser parser(PP, astBuilder, component.isInterface());
         bool ok = parser.Parse();
         if (printAST) astBuilder.printAST();
 #if 0
@@ -470,7 +470,7 @@ bool C2Builder::checkModuleImports(ParseHelper& helper, ImportsQueue& queue, con
 void C2Builder::createC2Module() {
     if (!c2Mod) {
         if (options.verbose) log(COL_VERBOSE, "generating module c2");
-        c2Mod = new Module("c2", true, false);
+        c2Mod = new Module("c2", true, true, false);
         modules["c2"] = c2Mod;
         C2ModuleLoader::load(c2Mod, targetInfo.intWidth == 32);
     }
@@ -623,6 +623,10 @@ void C2Builder::generateOptionalC() {
     cgen_options.printC = options.printC;
     cgen_options.generateChecks = genChecks;
     CGenerator cgen(*mainComponent, modules, libLoader, cgen_options, targetInfo, buildFile);
+    for (unsigned i=0; i<components.size(); i++) {
+        Component* c = components[i];
+        if (c->getType() == Component::SOURCE_LIB) cgen.addSourceLib(*c);
+    }
 
     // generate headers for external libraries
     if (options.verbose) log(COL_VERBOSE, "generating external headers");

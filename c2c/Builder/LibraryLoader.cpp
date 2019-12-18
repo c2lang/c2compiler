@@ -74,7 +74,7 @@ bool LibraryLoader::createComponents() {
 }
 
 void LibraryLoader::createMainComponent() {
-    mainComponent = new Component(recipe.name, "TODO", recipe.type, false, false, recipe.getExports());
+    mainComponent = new Component(recipe.name, "TODO", recipe.type, false, false, false, recipe.getExports());
     components.push_back(mainComponent);
 
     if (!recipe.noLibC) {
@@ -284,7 +284,8 @@ Component* LibraryLoader::findComponent(const std::string& name) const {
 }
 
 Component* LibraryLoader::createComponent(const std::string& name, const std::string& path, bool isCLib, Component::Type type) {
-    Component* C = new Component(name, path, type, true, isCLib, recipe.getExports());
+    bool isInterface = (type != Component::SOURCE_LIB);
+    Component* C = new Component(name, path, type, true, isInterface, isCLib, recipe.getExports());
     components.push_back(C);
     return C;
 }

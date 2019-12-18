@@ -131,7 +131,7 @@ ASTBuilder::ASTBuilder(SourceManager& sm_, DiagnosticsEngine& Diags_, c2lang::Pr
     , PP(PP_)
     , component(component_)
     , module(existingMod)
-    , ast(*new AST(filename_, component.isExternal()))
+    , ast(*new AST(filename_, component.isInterface()))
     , Context(ast.getContext())
     , targetInfo(ti)
 {

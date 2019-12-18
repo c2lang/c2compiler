@@ -25,9 +25,10 @@ using namespace C2;
 
 static std::string empty = "";
 
-Module::Module(const std::string& name_, bool isExternal_, bool isCLib_)
+Module::Module(const std::string& name_, bool isExternal_, bool isInterface_, bool isCLib_)
     : name(name_)
     , m_isExternal(isExternal_)
+    , m_isInterface(isInterface_)
     , m_isCLib(isCLib_)
     , m_isExported(false)
     , m_isUsed(!isExternal_)    // internal modules are used by default
