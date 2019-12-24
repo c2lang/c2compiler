@@ -156,6 +156,8 @@ void MakefileGenerator::write(const std::string& path) {
             out << ' ' << *iter << ".o";
         }
         break;
+    case Component::SOURCE_LIB:
+        break;
     }
     out << '\n';
     out << '\n';
