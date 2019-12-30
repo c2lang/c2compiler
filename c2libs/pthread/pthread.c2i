@@ -2,6 +2,7 @@ module pthread;
 
 import c2 local;
 
+// -------- pthread --------
 type Pthread c_ulong @(cname="pthread_t");
 
 type PthreadAttr struct {
@@ -17,3 +18,53 @@ func c_int pthread_create(Pthread* __newthread,
                           void* __arg);
 
 func c_int pthread_join(Pthread thread, void** value_ptr);
+
+
+// -------- mutex --------
+// NOTE: depends on architecture
+const u32 SIZEOF_PTHREAD_MUTEX_T = 40;
+const u32 SIZEOF_PTHREAD_MUTEXATTR_T = 4;
+
+type Mutex union {
+    //struct __pthread_mutex_s __data;
+    char[SIZEOF_PTHREAD_MUTEX_T] size;
+    c_long align;
+} @(cname="pthread_mutex_t")
+
+type MutexAttr union {
+    char[SIZEOF_PTHREAD_MUTEXATTR_T] size;
+    c_int align;
+} @(cname="pthread_mutexattr_t")
+
+func c_int pthread_mutex_init(Mutex* mutex, const MutexAttr* attr);
+func c_int pthread_mutex_destroy(Mutex* mutex);
+
+func c_int pthread_mutex_lock(Mutex* mutex);
+func c_int pthread_mutex_trylock(Mutex* mutex);
+func c_int pthread_mutex_unlock(Mutex* mutex);
+
+
+// -------- cond --------
+// NOTE: depends on architecture
+const u32 SIZEOF_PTHREAD_COND_T = 48;
+const u32 SIZEOF_PTHREAD_CONDATTR_T = 4;
+
+type Cond union {
+    //struct __pthread_mutex_s __data;
+    char[SIZEOF_PTHREAD_COND_T] size;
+    c_long align;
+} @(cname="pthread_cond_t")
+
+type CondAttr union {
+    char[SIZEOF_PTHREAD_CONDATTR_T] size;
+    c_int align;
+} @(cname="pthread_condattr_t")
+
+func c_int pthread_cond_init(Cond* cond, const CondAttr* attr);
+func c_int pthread_cond_destroy(Cond* cond);
+
+func c_int pthread_cond_signal(Cond* cond);
+func c_int pthread_cond_broadcast(Cond* cond);
+
+func c_int pthread_cond_wait(Cond* cond, Mutex* mutex);
+
