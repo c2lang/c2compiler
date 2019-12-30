@@ -55,9 +55,13 @@ typedef std::vector<VarDecl*> VarDeclList;
 
 class ASTBuilder {
 public:
-    ASTBuilder(SourceManager& sm_, DiagnosticsEngine& Diags_, c2lang::Preprocessor& PP_,
-           Component& comp_, Module* existingMod, const std::string& filename_,
-           const TargetInfo& ti);
+    ASTBuilder(SourceManager& sm_,
+               DiagnosticsEngine& Diags_,
+               c2lang::Preprocessor& PP_,
+               Component& comp_,
+               Module* existingMod,
+               const std::string& filename_,
+               const TargetInfo& ti);
     ~ASTBuilder();
 
     void printAST() const;

@@ -63,6 +63,7 @@ public:
 
     virtual const std::string& getIncludeName(const std::string& modName) const;
 
+    bool checkMainModule(const Module* m) const;
     const LibInfo* findModuleLib(const std::string& moduleName) const;
 private:
     void createMainComponent();

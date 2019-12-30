@@ -107,6 +107,17 @@ bool LibraryLoader::loadExternals() {
     return !hasErrors;
 }
 
+bool LibraryLoader::checkMainModule(const Module* m) const {
+    ModulesConstIter iter = modules.find(m->getName());
+    if (iter != modules.end()) {
+        const Component* c = findModuleComponent(m->getName());
+        assert(c);
+        fprintf(stderr, "c2c: error: module %s already exists in external component %s\n", m->getName().c_str(), c->getName().c_str());
+        return false;
+    }
+    return true;
+}
+
 const LibInfo* LibraryLoader::addModule(Component* C, Module* M, const std::string& header, const std::string& file) {
     modules[M->getName()] = M;
     LibInfo* L = new LibInfo(header, file, C, M);

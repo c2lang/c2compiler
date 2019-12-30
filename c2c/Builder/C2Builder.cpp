@@ -407,13 +407,17 @@ bool C2Builder::checkImports(ParseHelper& helper) {
     ImportsQueue queue;
 
     // add main modules to libLoader, queue for import analysis
+    bool ok = true;
     const ModuleList& mainModules = mainComponent->getModules();
     for (unsigned i=0; i<mainModules.size(); i++) {
-        const LibInfo* lib = libLoader.addModule(mainComponent, mainModules[i], "", "");
+        Module* m = mainModules[i];
+        ok &= libLoader.checkMainModule(m);
+        const LibInfo* lib = libLoader.addModule(mainComponent, m, "", "");
         queue.push_back(lib);
     }
 
-    bool ok = true;
+    if (!ok) return false;
+
     while (!queue.empty()) {
         const LibInfo* lib = queue.front();
         queue.pop_front();

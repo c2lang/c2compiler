@@ -123,9 +123,13 @@ static inline UnaryOperatorKind ConvertTokenKindToUnaryOpcode(
     return Opc;
 }
 
-ASTBuilder::ASTBuilder(SourceManager& sm_, DiagnosticsEngine& Diags_, c2lang::Preprocessor& PP_,
-               Component& component_, Module* existingMod, const std::string& filename_,
-               const TargetInfo& ti)
+ASTBuilder::ASTBuilder(SourceManager& sm_,
+                       DiagnosticsEngine& Diags_,
+                       c2lang::Preprocessor& PP_,
+                       Component& component_,
+                       Module* existingMod,
+                       const std::string& filename_,
+                       const TargetInfo& ti)
     : SourceMgr(sm_)
     , Diags(Diags_)
     , PP(PP_)
