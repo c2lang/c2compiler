@@ -358,8 +358,8 @@ void CCodeGenerator::EmitExpr(const Expr* E, StringBuilder& output) {
     {
         const ExplicitCastExpr* ECE = cast<ExplicitCastExpr>(E);
         output << '(';
-        EmitTypePreName(ECE->getDestType(), output);
-        EmitTypePostName(ECE->getDestType(), output);
+        EmitTypePreName(ECE->getType(), output);
+        EmitTypePostName(ECE->getType(), output);
         output << ")(";
         EmitExpr(ECE->getInner(), output);
         output << ')';

@@ -2138,7 +2138,6 @@ QualType FunctionAnalyser::analyseExplicitCastExpr(Expr* expr) {
     QualType outerType = TR.resolveType(E->getDestType(), false);
     if (outerType.isValid()) {
         E->setType(outerType);
-        E->setDestType(outerType);
     }
 
     QualType innerType = analyseExpr(E->getInner(), RHS);
