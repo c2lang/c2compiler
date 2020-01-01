@@ -304,7 +304,7 @@ int C2Builder::build() {
     // Step 4 - generation
     generateOptionalDeps();
 
-    generateOptionalTags(SM);
+    generateOptionalRefs(SM);
 
     generateInterface();
 
@@ -576,7 +576,7 @@ void C2Builder::generateDeps(bool showFiles, bool showPrivate, bool showExternal
     generator.write(components, recipe.name, path);
 }
 
-void C2Builder::generateOptionalTags(const SourceManager& SM) const {
+void C2Builder::generateOptionalRefs(const SourceManager& SM) const {
     if (!options.generateRefs && !recipe.generateRefs) return;
 
     if (options.verbose) log(COL_VERBOSE, "generating refs");

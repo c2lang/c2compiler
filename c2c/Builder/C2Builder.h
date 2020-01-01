@@ -64,7 +64,7 @@ private:
     void createC2Module();
 
     void generateOptionalDeps();
-    void generateOptionalTags(const c2lang::SourceManager& SM) const;
+    void generateOptionalRefs(const c2lang::SourceManager& SM) const;
     void generateInterface() const;
     void generateOptionalC();
     void generateOptionalIR();
