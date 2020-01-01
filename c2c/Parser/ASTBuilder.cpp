@@ -194,7 +194,7 @@ ASTBuilder::ASTBuilder(SourceManager& sm_,
 	checkSize(StringLiteral, 32);
 	checkSize(NilExpr, 16);
 	checkSize(IdentifierExpr, 24);
-	checkSize(TypeExpr, 16);
+	checkSize(TypeExpr, 24);
 	checkSize(CallExpr, 32);
 	checkSize(InitListExpr, 40);
 	checkSize(DesignatedInitExpr, 56);

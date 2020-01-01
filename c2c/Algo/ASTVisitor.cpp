@@ -267,10 +267,8 @@ void ASTVisitor::checkExpr(const Expr* E) {
         break;
     case EXPR_TYPE:
     {
-        // Issue, don't have IdentifierExpr anymore
-        //QualType Q = E->getType();
-        //Q.dump();
-        //const TypeExpr* T = cast<TypeExpr>(E);
+        const TypeExpr* TE = cast<TypeExpr>(E);
+        checkType(TE->getOrigType());
         break;
     }
     case EXPR_CALL:

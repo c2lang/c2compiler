@@ -679,6 +679,7 @@ void BuiltinExpr::print(StringBuilder& buffer, unsigned indent) const {
         buffer << "ptr: \n";
         pointer->print(buffer, indent + INDENT);
     }
+    buffer << '\n';
 }
 
 const char* BuiltinExpr::Str(BuiltinExpr::BuiltinKind kind) {

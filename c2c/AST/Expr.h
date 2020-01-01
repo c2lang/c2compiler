@@ -319,6 +319,7 @@ class TypeExpr : public Expr {
 public:
     TypeExpr(QualType QT_)
         : Expr(EXPR_TYPE, SourceLocation(), true)
+        , origType(QT_)
     {
         setType(QT_);
     }
@@ -326,6 +327,9 @@ public:
         return E->getKind() == EXPR_TYPE;
     }
     void print(StringBuilder& buffer, unsigned indent) const;
+    QualType getOrigType() const { return origType; }
+private:
+    QualType origType;
 };
 
 
