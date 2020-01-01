@@ -571,7 +571,7 @@ void CCodeGenerator::EmitDecl(const Decl* D, StringBuilder& output) {
 
     if (D->getModule()) {
         const FunctionDecl* F = dyncast<FunctionDecl>(D);
-        if (F && F->isStructFunction()) {
+        if (F && F->isStructFunction() && !D->hasCName()) {
             StringBuilder cname(128);
             const IdentifierExpr* structName = F->getStructName();
             cname << structName->getName() << '_' << F->getMemberName();

@@ -36,12 +36,12 @@ type MutexAttr union {
     c_int align;
 } @(cname="pthread_mutexattr_t")
 
-func c_int mutex_init(Mutex* mutex, const MutexAttr* attr) @(cname="pthread_mutex_init");
-func c_int mutex_destroy(Mutex* mutex) @(cname="pthread_mutex_destroy");
+func c_int Mutex.init(Mutex* mutex, const MutexAttr* attr) @(cname="pthread_mutex_init");
+func c_int Mutex.destroy(Mutex* mutex) @(cname="pthread_mutex_destroy");
 
-func c_int mutex_lock(Mutex* mutex) @(cname="pthread_mutex_lock");
-func c_int mutex_trylock(Mutex* mutex) @(cname="pthread_mutex_trylock");
-func c_int mutex_unlock(Mutex* mutex) @(cname="pthread_mutex_unlock");
+func c_int Mutex.lock(Mutex* mutex) @(cname="pthread_mutex_lock");
+func c_int Mutex.trylock(Mutex* mutex) @(cname="pthread_mutex_trylock");
+func c_int Mutex.unlock(Mutex* mutex) @(cname="pthread_mutex_unlock");
 
 
 // -------- cond --------
@@ -60,11 +60,11 @@ type CondAttr union {
     c_int align;
 } @(cname="pthread_condattr_t")
 
-func c_int cond_init(Cond* cond, const CondAttr* attr) @(cname="pthread_cond_init");
-func c_int cond_destroy(Cond* cond) @(cname="pthread_cond_destroy");
+func c_int Cond.init(Cond* cond, const CondAttr* attr) @(cname="pthread_cond_init");
+func c_int Cond.destroy(Cond* cond) @(cname="pthread_cond_destroy");
 
-func c_int cond_signal(Cond* cond) @(cname="pthread_cond_signal");
-func c_int cond_broadcast(Cond* cond) @(cname="pthread_cond_broadcast");
+func c_int Cond.signal(Cond* cond) @(cname="pthread_cond_signal");
+func c_int Cond.broadcast(Cond* cond) @(cname="pthread_cond_broadcast");
 
-func c_int cond_wait(Cond* cond, Mutex* mutex) @(cname="pthread_cond_wait");
+func c_int Cond.wait(Cond* cond, Mutex* mutex) @(cname="pthread_cond_wait");
 
