@@ -48,10 +48,6 @@ bool Recipe::hasLibrary(const std::string& lib_) const {
     return false;
 }
 
-void Recipe::silenceWarning(const std::string& warn_) {
-    silentWarnings.push_back(warn_);
-}
-
 const std::string& Recipe::get(int i) const {
     return files[i];
 }

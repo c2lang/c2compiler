@@ -41,6 +41,7 @@ private:
     void error(const char *fmt, ...);
     void checkCurrent();
     void handleCConfigs();
+    void handleWarnings();
 
     typedef std::vector<Recipe*> Recipes;
     Recipes recipes;

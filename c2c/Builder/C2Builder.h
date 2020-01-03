@@ -50,7 +50,7 @@ public:
     const Components& getComponents() const { return components; }
 private:
     Module* findModule(const std::string& name) const;
-    void configDiagnostics(c2lang::DiagnosticsEngine &Diags, const StringList& silentWarnings);
+    void configDiagnostics(c2lang::DiagnosticsEngine &Diags);
     bool checkImports(ParseHelper& helper);
     unsigned analyse();
     void printSymbols(bool printLibs, bool printNonPublic) const;

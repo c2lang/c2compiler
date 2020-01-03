@@ -226,7 +226,7 @@ int C2Builder::build() {
                             // NOTE: setting ShouldOwnClient to true causes crash??
                             new TextDiagnosticPrinter(llvm::errs(), DiagOpts), false);
     DiagnosticConsumer* client = Diags.getClient();
-    configDiagnostics(Diags, recipe.silentWarnings);
+    configDiagnostics(Diags);
 
     // TargetInfo
     std::shared_ptr<TargetOptions> to(new TargetOptions());
@@ -335,7 +335,7 @@ int C2Builder::report(DiagnosticConsumer* client, uint64_t t1_build) {
     return NumErrors;
 }
 
-void C2Builder::configDiagnostics(DiagnosticsEngine &Diags, const StringList& silentWarnings) {
+void C2Builder::configDiagnostics(DiagnosticsEngine &Diags) {
     // add these diagnostic groups by default
     Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "conversion", diag::Severity::Warning);
     Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "all", diag::Severity::Warning);
@@ -357,48 +357,33 @@ void C2Builder::configDiagnostics(DiagnosticsEngine &Diags, const StringList& si
     Diags.setSeverity(diag::ext_typecheck_convert_discards_qualifiers, diag::Severity::Error, SourceLocation());
 
     // set recipe warning options
-    for (unsigned i=0; i<recipe.silentWarnings.size(); i++) {
-        const std::string& conf = recipe.silentWarnings[i];
-
-        if (conf == "no-unused") {
-            Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "unused", diag::Severity::Ignored);
-            Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "unused-parameter", diag::Severity::Ignored);
-            continue;
-        }
-        if (conf == "no-unused-variable") {
-            Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "unused-variable", diag::Severity::Ignored);
-            continue;
-        }
-        if (conf == "no-unused-function") {
-            Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "unused-function", diag::Severity::Ignored);
-            continue;
-        }
-        if (conf == "no-unused-parameter") {
-            Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "unused-parameter", diag::Severity::Ignored);
-            continue;
-        }
-        if (conf == "no-unused-type") {
-            Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "unused-type", diag::Severity::Ignored);
-            continue;
-        }
-        if (conf == "no-unused-module") {
-            Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "unused-module", diag::Severity::Ignored);
-            continue;
-        }
-        if (conf == "no-unused-import") {
-            Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "unused-import", diag::Severity::Ignored);
-            continue;
-        }
-        if (conf == "no-unused-public") {
-            Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "unused-public", diag::Severity::Ignored);
-            continue;
-        }
-        if (conf == "no-unused-label") {
-            Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "unused-label", diag::Severity::Ignored);
-            continue;
-        }
-        fprintf(stderr, "recipe: unknown warning: '%s'\n", conf.c_str());
-        exit(EXIT_FAILURE);
+    if (recipe.WarningFlags.no_unused) {
+        Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "unused", diag::Severity::Ignored);
+        Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "unused-parameter", diag::Severity::Ignored);
+    }
+    if (recipe.WarningFlags.no_unused_variable) {
+        Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "unused-variable", diag::Severity::Ignored);
+    }
+    if (recipe.WarningFlags.no_unused_function) {
+        Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "unused-function", diag::Severity::Ignored);
+    }
+    if (recipe.WarningFlags.no_unused_parameter) {
+        Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "unused-parameter", diag::Severity::Ignored);
+    }
+    if (recipe.WarningFlags.no_unused_type) {
+        Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "unused-type", diag::Severity::Ignored);
+    }
+    if (recipe.WarningFlags.no_unused_module) {
+        Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "unused-module", diag::Severity::Ignored);
+    }
+    if (recipe.WarningFlags.no_unused_import) {
+        Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "unused-import", diag::Severity::Ignored);
+    }
+    if (recipe.WarningFlags.no_unused_public) {
+        Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "unused-public", diag::Severity::Ignored);
+    }
+    if (recipe.WarningFlags.no_unused_label) {
+        Diags.setSeverityForGroup(diag::Flavor::WarningOrError, "unused-label", diag::Severity::Ignored);
     }
 }
 

@@ -164,12 +164,7 @@ if (line[0] == '#') return; // skip comments
                         current->addCodeGenConfig(tok2);
                     }
                 } else if (strcmp(tok, "warnings") == 0) {
-                    while (1) {
-                        const char* tok2 = get_token();
-                        if (!tok2) break;
-                        // TODO check duplicate silence?
-                        current->silenceWarning(tok2);
-                    }
+                    handleWarnings();
                 } else if (strcmp(tok, "deps") == 0) {
                     current->generateDeps = true;
                     while (1) {
@@ -247,6 +242,35 @@ void RecipeReader::handleCConfigs() {
             current->CGenFlags.gen_checks = true;
         } else {
             error("unknown c generation flag '%s'", flag);
+        }
+    }
+}
+
+void RecipeReader::handleWarnings() {
+    while (1) {
+        const char* flag = get_token();
+        if (!flag) break;
+
+        if (strcmp(flag, "no-unused") == 0) {
+            current->WarningFlags.no_unused = true;
+        } else if (strcmp(flag, "no-unused-variable") == 0) {
+            current->WarningFlags.no_unused_variable = true;
+        } else if (strcmp(flag, "no-unused-function") == 0) {
+            current->WarningFlags.no_unused_function = true;
+        } else if (strcmp(flag, "no-unused-parameter") == 0) {
+            current->WarningFlags.no_unused_parameter = true;
+        } else if (strcmp(flag, "no-unused-type") == 0) {
+            current->WarningFlags.no_unused_type = true;
+        } else if (strcmp(flag, "no-unused-module") == 0) {
+            current->WarningFlags.no_unused_module = true;
+        } else if (strcmp(flag, "no-unused-import") == 0) {
+            current->WarningFlags.no_unused_import = true;
+        } else if (strcmp(flag, "no-unused-public") == 0) {
+            current->WarningFlags.no_unused_public = true;
+        } else if (strcmp(flag, "no-unused-label") == 0) {
+            current->WarningFlags.no_unused_label = true;
+        } else {
+            error("unknown warning '%s'", flag);
         }
     }
 }

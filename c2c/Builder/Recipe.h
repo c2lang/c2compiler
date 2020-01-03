@@ -35,6 +35,16 @@ public:
         CGenFlags.single_module = false;
         CGenFlags.no_build = false;
         CGenFlags.gen_checks = false;
+
+        WarningFlags.no_unused = false;
+        WarningFlags.no_unused_variable = false;
+        WarningFlags.no_unused_function = false;
+        WarningFlags.no_unused_parameter = false;
+        WarningFlags.no_unused_type = false;
+        WarningFlags.no_unused_module = false;
+        WarningFlags.no_unused_import = false;
+        WarningFlags.no_unused_public = false;
+        WarningFlags.no_unused_label = false;
     }
     ~Recipe() {}
 
@@ -45,7 +55,6 @@ public:
     void addDepsConfig(const std::string& config_);
     void addLibrary(const std::string& lib_, Component::Type type_);
     bool hasLibrary(const std::string& lib_) const;
-    void silenceWarning(const std::string& warn_);
 
     unsigned size() const { return files.size(); }
     const std::string& get(int i) const;
@@ -79,6 +88,18 @@ public:
         bool gen_checks;
     } CGenFlags;
 
+    struct {
+        bool no_unused;
+        bool no_unused_variable;
+        bool no_unused_function;
+        bool no_unused_parameter;
+        bool no_unused_type;
+        bool no_unused_module;
+        bool no_unused_import;
+        bool no_unused_public;
+        bool no_unused_label;
+    } WarningFlags;
+
     StringList files;
     StringList configs;
     StringList exported;
@@ -96,7 +117,6 @@ public:
     typedef std::vector<Dependency> Dependencies;
     Dependencies libraries;
 
-    StringList silentWarnings;
 private:
     Recipe(const Recipe&);
     Recipe& operator= (const Recipe&);
