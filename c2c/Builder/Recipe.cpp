@@ -33,10 +33,6 @@ void Recipe::addCodeGenConfig(const std::string& config_) {
     genConfigs.push_back(config_);
 }
 
-void Recipe::addDepsConfig(const std::string& config_) {
-    depConfigs.push_back(config_);
-}
-
 void Recipe::addLibrary(const std::string& lib_, Component::Type type_) {
     libraries.push_back(Dependency(lib_, type_));
 }

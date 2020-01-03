@@ -42,6 +42,7 @@ private:
     void checkCurrent();
     void handleCConfigs();
     void handleWarnings();
+    void handleDepflags();
 
     typedef std::vector<Recipe*> Recipes;
     Recipes recipes;

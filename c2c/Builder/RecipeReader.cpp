@@ -166,13 +166,7 @@ if (line[0] == '#') return; // skip comments
                 } else if (strcmp(tok, "warnings") == 0) {
                     handleWarnings();
                 } else if (strcmp(tok, "deps") == 0) {
-                    current->generateDeps = true;
-                    while (1) {
-                        const char* tok2 = get_token();
-                        if (!tok2) break;
-                        // TODO check duplicate configs
-                        current->addDepsConfig(tok2);
-                    }
+                    handleDepflags();
                 } else if (strcmp(tok, "refs") == 0) {
                     current->generateRefs = true;
                 } else if (strcmp(tok, "nolibc") == 0) {
@@ -271,6 +265,23 @@ void RecipeReader::handleWarnings() {
             current->WarningFlags.no_unused_label = true;
         } else {
             error("unknown warning '%s'", flag);
+        }
+    }
+}
+
+void RecipeReader::handleDepflags() {
+    current->generateDeps = true;
+
+    while (1) {
+        const char* flag = get_token();
+        if (!flag) break;
+
+        if (strcmp(flag, "show-files") == 0) {
+            current->DepFlags.showFiles = true;
+        } else if (strcmp(flag, "show-externals") == 0) {
+            current->DepFlags.showExternals = true;
+        } else {
+            error("unknown dep flag '%s'", flag);
         }
     }
 }

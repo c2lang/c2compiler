@@ -542,16 +542,8 @@ void C2Builder::generateOptionalDeps() {
     if (options.verbose) log(COL_VERBOSE, "generating dependencies");
 
     uint64_t t1 = Utils::getCurrentTime();
-    bool showFiles = false;
-    bool showExternals = false;
     bool showPrivate = true;
-    for (unsigned i=0; i<recipe.depConfigs.size(); i++) {
-        const std::string& conf = recipe.depConfigs[i];
-        if (conf == "show-files") showFiles = true;
-        if (conf == "show-externals") showExternals = true;
-    }
-
-    generateDeps(showFiles, showPrivate, showExternals, outputDir);
+    generateDeps(recipe.DepFlags.showFiles, showPrivate, recipe.DepFlags.showExternals, outputDir);
     uint64_t t2 = Utils::getCurrentTime();
     if (options.printTiming) log(COL_TIME, "dep generation took %" PRIu64" usec", t2 - t1);
 }
