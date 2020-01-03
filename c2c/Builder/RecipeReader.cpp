@@ -156,13 +156,7 @@ if (line[0] == '#') return; // skip comments
                     current->CGenFlags.single_module = false;
                     handleCConfigs();
                 } else if (strcmp(tok, "generate-ir") == 0) {
-                    current->generateIR = true;
-                    while (1) {
-                        const char* tok2 = get_token();
-                        if (!tok2) break;
-                        // TODO check duplicate configs
-                        current->addCodeGenConfig(tok2);
-                    }
+                    handleIrGenFlags();
                 } else if (strcmp(tok, "warnings") == 0) {
                     handleWarnings();
                 } else if (strcmp(tok, "deps") == 0) {
@@ -265,6 +259,21 @@ void RecipeReader::handleWarnings() {
             current->WarningFlags.no_unused_label = true;
         } else {
             error("unknown warning '%s'", flag);
+        }
+    }
+}
+
+void RecipeReader::handleIrGenFlags() {
+    current->generateIR = true;
+
+    while (1) {
+        const char* flag = get_token();
+        if (!flag) break;
+
+        if (strcmp(flag, "single-module") == 0) {
+            current->IrGenFlags.single_module = true;
+        } else {
+            error("unknown IR generation flag '%s'", flag);
         }
     }
 }

@@ -17,22 +17,6 @@
 
 using namespace C2;
 
-void Recipe::addFile(const std::string& name_) {
-    files.push_back(name_);
-}
-
-void Recipe::addConfig(const std::string& config_) {
-    configs.push_back(config_);
-}
-
-void Recipe::addExported(const std::string& mod_) {
-    exported.push_back(mod_);
-}
-
-void Recipe::addCodeGenConfig(const std::string& config_) {
-    genConfigs.push_back(config_);
-}
-
 void Recipe::addLibrary(const std::string& lib_, Component::Type type_) {
     libraries.push_back(Dependency(lib_, type_));
 }

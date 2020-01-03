@@ -631,16 +631,6 @@ void C2Builder::generateOptionalIR() {
     if (options.checkOnly) return;
     if (!options.generateIR && !recipe.generateIR) return;
 
-    bool single_module = false;
-    for (unsigned i=0; i<recipe.genConfigs.size(); i++) {
-        const std::string& conf = recipe.genConfigs[i];
-        // TODO just pass struct with bools?
-        if (conf == "single-module") single_module = true;
-        else {
-            fprintf(stderr, ANSI_RED"invalid code generation argument '%s'" ANSI_NORMAL"\n", conf.c_str());
-        }
-    }
-
     std::string buildDir = outputDir + BUILD_DIR;
 
     // TODO move all this to some generic Codegen class
@@ -648,7 +638,7 @@ void C2Builder::generateOptionalIR() {
     llvm::LLVMContext context;
 
     const ModuleList& mods = mainComponent->getModules();
-    if (single_module) {
+    if (recipe.IrGenFlags.single_module) {
         uint64_t t1 = Utils::getCurrentTime();
         std::string filename = recipe.name;
         if (options.verbose) log(COL_VERBOSE, "generating IR for single module %s", filename.c_str());

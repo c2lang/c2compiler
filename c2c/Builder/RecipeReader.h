@@ -43,6 +43,7 @@ private:
     void handleCConfigs();
     void handleWarnings();
     void handleDepflags();
+    void handleIrGenFlags();
 
     typedef std::vector<Recipe*> Recipes;
     Recipes recipes;

@@ -32,6 +32,8 @@ public:
         , generateCCode(false)
         , noLibC(false)
     {
+        IrGenFlags.single_module = false;
+
         CGenFlags.single_module = false;
         CGenFlags.no_build = false;
         CGenFlags.gen_checks = false;
@@ -45,13 +47,21 @@ public:
         WarningFlags.no_unused_import = false;
         WarningFlags.no_unused_public = false;
         WarningFlags.no_unused_label = false;
+
+        DepFlags.showFiles = false;
+        DepFlags.showExternals = false;
     }
     ~Recipe() {}
 
-    void addFile(const std::string& name_);
-    void addConfig(const std::string& config_);
-    void addExported(const std::string& mod_);
-    void addCodeGenConfig(const std::string& config_);
+    void addFile(const std::string& name_) {
+        files.push_back(name_);
+    }
+    void addConfig(const std::string& config_) {
+        configs.push_back(config_);
+    }
+    void addExported(const std::string& mod_) {
+        exported.push_back(mod_);
+    }
     void addLibrary(const std::string& lib_, Component::Type type_);
     bool hasLibrary(const std::string& lib_) const;
 
@@ -83,6 +93,10 @@ public:
 
     struct {
         bool single_module;
+    } IrGenFlags;
+
+    struct {
+        bool single_module;
         bool no_build;
         bool gen_checks;
     } CGenFlags;
@@ -107,7 +121,6 @@ public:
     StringList files;
     StringList configs;
     StringList exported;
-    StringList genConfigs;
 
     struct Dependency {
         Dependency(const std::string& n, Component::Type t)
