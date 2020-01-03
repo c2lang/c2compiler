@@ -29,10 +29,6 @@ void Recipe::addExported(const std::string& mod_) {
     exported.push_back(mod_);
 }
 
-void Recipe::addAnsiCConfig(const std::string& config_) {
-    cConfigs.push_back(config_);
-}
-
 void Recipe::addCodeGenConfig(const std::string& config_) {
     genConfigs.push_back(config_);
 }

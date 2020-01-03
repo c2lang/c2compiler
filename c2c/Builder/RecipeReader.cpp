@@ -78,6 +78,8 @@ void RecipeReader::startNewRecipe() {
     for (unsigned i=0; i<globalConfigs.size(); i++) {
         current->addConfig(globalConfigs[i]);
     }
+    current->generateCCode = true;
+    current->CGenFlags.single_module = true;
 }
 
 void RecipeReader::handleLine(char* line) {
@@ -151,12 +153,8 @@ if (line[0] == '#') return; // skip comments
                     }
                 } else if (strcmp(tok, "generate-c") == 0) {
                     current->generateCCode = true;
-                    while (1) {
-                        const char* tok2 = get_token();
-                        if (!tok2) break;
-                        // TODO check duplicate configs
-                        current->addAnsiCConfig(tok2);
-                    }
+                    current->CGenFlags.single_module = false;
+                    handleCConfigs();
                 } else if (strcmp(tok, "generate-ir") == 0) {
                     current->generateIR = true;
                     while (1) {
@@ -229,6 +227,27 @@ if (line[0] == '#') return; // skip comments
             }
         }
         break;
+    }
+}
+
+void RecipeReader::handleCConfigs() {
+    while (1) {
+        const char* flag = get_token();
+        if (!flag) break;
+
+        if (strcmp(flag, "single-module") == 0) {
+            current->CGenFlags.single_module = true;
+        } else if (strcmp(flag, "multi-module") == 0) {
+            current->CGenFlags.single_module = false;
+        } else if (strcmp(flag, "no-build") == 0) {
+            current->CGenFlags.no_build = true;
+        } else if (strcmp(flag, "skip") == 0) {
+            current->generateCCode = false;
+        } else if (strcmp(flag, "check") == 0) {
+            current->CGenFlags.gen_checks = true;
+        } else {
+            error("unknown c generation flag '%s'", flag);
+        }
     }
 }
 

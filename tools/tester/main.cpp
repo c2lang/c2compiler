@@ -961,6 +961,7 @@ bool IssueDb::parse() {
         const char* line_start = cp;
         recipe << "executable test\n";
         recipe << "  $warnings no-unused-module\n";
+        recipe << "  $generate-c skip\n";
         recipe << "  " << current_file << '\n';
 
         bool hasSkip = (strncmp(cp, "// @skip", 8) == 0);

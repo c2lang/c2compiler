@@ -40,6 +40,7 @@ private:
     char* get_token();
     void error(const char *fmt, ...);
     void checkCurrent();
+    void handleCConfigs();
 
     typedef std::vector<Recipe*> Recipes;
     Recipes recipes;

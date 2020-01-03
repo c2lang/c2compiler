@@ -613,24 +613,11 @@ void C2Builder::generateOptionalC() {
     if (!options.generateC && !recipe.generateCCode) return;
 
     uint64_t t1 = Utils::getCurrentTime();
-    bool single_module = false;
-    bool no_build = false;
-    bool genChecks = false;
-    for (unsigned i=0; i<recipe.cConfigs.size(); i++) {
-        const std::string& conf = recipe.cConfigs[i];
-        // TODO just pass struct with bools?
-        if (conf == "single-module") single_module = true;
-        else if (conf == "no-build") no_build = true;
-        else if (conf == "check") genChecks = true;
-        else {
-            fprintf(stderr, ANSI_RED"invalid c-generation argument '%s'" ANSI_NORMAL"\n", conf.c_str());
-        }
-    }
 
     CGenerator::Options cgen_options(outputDir, BUILD_DIR);
-    cgen_options.single_module = single_module;
+    cgen_options.single_module = recipe.CGenFlags.single_module;
     cgen_options.printC = options.printC;
-    cgen_options.generateChecks = genChecks;
+    cgen_options.generateChecks = recipe.CGenFlags.gen_checks;
     CGenerator cgen(*mainComponent, modules, libLoader, cgen_options, targetInfo, buildFile);
     for (unsigned i=0; i<components.size(); i++) {
         Component* c = components[i];
@@ -654,7 +641,7 @@ void C2Builder::generateOptionalC() {
     uint64_t t2 = Utils::getCurrentTime();
     if (options.printTiming) log(COL_TIME, "C code generation took %" PRIu64" usec", t2 - t1);
 
-    if (!no_build) {
+    if (!recipe.CGenFlags.no_build) {
         if (options.verbose) log(COL_VERBOSE, "building C code");
         uint64_t t3 = Utils::getCurrentTime();
         cgen.build();
