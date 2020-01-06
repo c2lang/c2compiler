@@ -45,3 +45,7 @@ const u32 EPIPE       = 32;  /* Broken pipe */
 const u32 EDOM        = 33;  /* Math argument out of domain of func */
 const u32 ERANGE      = 34;  /* Math result not representable */
 
+const u32 EALREADY    = 114; /* Operation already in progress */
+const u32 EINPROGRESS = 115; /* Operation now in progress */
+const u32 ESTALE      = 116; /* Stale file handle */
+

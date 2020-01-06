@@ -34,7 +34,20 @@ const c_int SOL_SOCKET = 1;
 
 const c_int SO_DEBUG     = 1;
 const c_int SO_REUSEADDR = 2;
+const c_int SO_ERROR     = 4;
+const c_int SO_DONTROUTE = 5;
 const c_int SO_BROADCAST = 6;
+const c_int SO_SNDBUF    = 7;
+const c_int SO_RCVBUF    = 8;
+const c_int SO_KEEPALIVE = 9;
+const c_int SO_OOBINLINE = 10;
+const c_int SO_NO_CHECK  = 11;
+const c_int SO_PRIORITY  = 12;
+const c_int SO_LINGER    = 13;
+const c_int SO_BSDCOMPAT = 14;
+const c_int SO_REUSEPORT = 15;
+
+
 
 type SaFamily u16 @(cname="sa_family_t");
 
@@ -61,7 +74,7 @@ const u32 INADDR_ANY       = 0x00000000;
 const u32 INADDR_BROADCAST = 0xffffffff;
 const u32 INADDR_NONE      = 0xffffffff;
 
-func c_int getsockopt(c_int sockfd, c_int level, c_int optname, void* optval, u32 optlen);
+func c_int getsockopt(c_int sockfd, c_int level, c_int optname, void* optval, u32* optlen);
 func c_int setsockopt(c_int sockfd, c_int level, c_int optname, const void* optval, u32 optlen);
 
 func c_int bind(c_int sockfd, const Sockaddr* addr, u32 addrlen);
