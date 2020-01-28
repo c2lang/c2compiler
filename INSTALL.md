@@ -80,7 +80,7 @@ git clone git://github.com/c2lang/c2compiler.git
 ## Building C2C
 ```bash
 cd c2compiler
-source ./env.sh  (this assumes LLvm/Clang are installed to $HOME/llvm-90)
+source ./env.sh  (this assumes LLVM is installed to $HOME/llvm-90)
 mkdir build
 cd build
 cmake . ..
