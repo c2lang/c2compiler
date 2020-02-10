@@ -1242,7 +1242,7 @@ private:
 
         StringBuilder buf(4096);
         buf.enableColor(true);
-        buf.print("[%02u] %s ", index, filename);
+        buf.print("%s ", filename);
         FileMap file(filename);
         file.open();
         IssueDb db(buf, file, single, tmp_dir);
