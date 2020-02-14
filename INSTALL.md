@@ -46,7 +46,7 @@ There is a convenience script: *clang\_build.sh* that runs the commands below.
 NOTE: C2 now uses the new LLVM mono-repository, not the separate repos!
 
 ```bash
-git clone https://github.com/llvm/llvm-project.git
+https://github.com/c2lang/llvm-project.git
 cd llvm-project/
 git checkout -b c2master llvmorg-9.0.0
 cd ..
@@ -63,6 +63,9 @@ cmake -G "Unix Makefiles" \
 make -j16
 make install
 ```
+
+Or if you want to build with Ninja replace 'Unix makefiles' with 'Ninja'
+
 
 ### OS X (Yosemite/El Capitan) (after building LLVM/Clang)
 You might need to create a link for your new clang to find the C++ headers.
