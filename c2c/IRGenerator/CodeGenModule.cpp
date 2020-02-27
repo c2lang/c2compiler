@@ -381,6 +381,11 @@ llvm::Constant* CodeGenModule::EvaluateExprAsConstant(const Expr *E) {
             return EmitStructInit(cast<StructType>(Q.getTypePtr()), Vals, I->numValues());
         }
     }
+    case EXPR_PAREN:
+    {
+        const ParenExpr* P = cast<ParenExpr>(E);
+        return EvaluateExprAsConstant(P->getExpr());
+    }
     default:
         E->dump();
         TODO;
