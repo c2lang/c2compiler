@@ -865,7 +865,7 @@ static IdentifierExpr::RefKind globalDecl2RefKind(const Decl* D) {
 void FunctionAnalyser::analyseInitListArray(InitListExpr* expr, QualType Q, unsigned numValues, Expr** values) {
     LOG_FUNC
     bool haveDesignators = false;
-    bool haveErrors = false;
+    bool ok = true;
     // TODO use helper function
     ArrayType* AT = cast<ArrayType>(Q.getCanonicalType().getTypePtr());
     QualType ET = AT->getElementType();
@@ -878,17 +878,18 @@ void FunctionAnalyser::analyseInitListArray(InitListExpr* expr, QualType Q, unsi
                 StringBuilder buf;
                 Q.DiagName(buf);
                 Diag(D->getLocation(), diag::err_field_designator_non_aggr) << 0 << buf;
-                haveErrors = true;
+                ok = false;
                 continue;
             }
         }
         if (!values[i]->isConstant()) constant = false;
     }
+
     if (constant) expr->setConstant();
     if (haveDesignators) expr->setDesignators();
     // determine real array size
     llvm::APInt initSize(64, 0, false);
-    if (haveDesignators && !haveErrors) {
+    if (haveDesignators && ok) {
         int64_t arraySize = -1;
         if (AT->getSizeExpr()) {    // size determined by expr
             arraySize = AT->getSize().getZExtValue();
@@ -1042,6 +1043,7 @@ void FunctionAnalyser::analyseInitListStruct(InitListExpr* expr, QualType Q, uns
 }
 
 void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
+    LOG_FUNC
     Expr** values = expr->getValues();
     unsigned numValues = expr->numValues();
     if (Q.isArrayType()) {
