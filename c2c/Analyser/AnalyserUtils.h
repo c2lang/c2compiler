@@ -41,6 +41,8 @@ public:
     static uint64_t sizeOfUnion(StructTypeDecl* S, uint32_t* align);
     static uint64_t sizeOfType(QualType type, unsigned* alignment);
 
+    static uint64_t offsetOfStructMember(const StructTypeDecl* S, unsigned index);
+
     static Expr* getInnerExprAddressOf(Expr* expr);
 };
 

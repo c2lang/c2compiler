@@ -389,12 +389,7 @@ void CCodeGenerator::EmitBuiltinExpr(const Expr* E, StringBuilder& output) {
         output.number(10, B->getValue().getSExtValue());
         break;
     case BuiltinExpr::BUILTIN_OFFSETOF:
-        // TODO need to include <stddef.h>
-        output << "offsetof(";
-        EmitExpr(B->getExpr(), output);
-        output << ", ";
-        EmitExpr(B->getMember(), output);
-        output << ')';
+        output << B->getValue().toString(10);
         break;
     case BuiltinExpr::BUILTIN_TO_CONTAINER:
         output << "to_container(";

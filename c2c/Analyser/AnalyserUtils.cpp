@@ -292,6 +292,41 @@ uint64_t AnalyserUtils::sizeOfType(QualType type, unsigned* alignment) {
     }
 }
 
+uint64_t AnalyserUtils::offsetOfStructMember(const StructTypeDecl* S, unsigned index) {
+    if (S->isUnion()) return 0;
+    if (index == 0) return 0;
+
+    uint32_t alignment = S->getAttrAlignment();
+    uint64_t offset = 0;
+
+    if (S->isPacked()) {
+        for (unsigned i=0; i<index; i++) {
+            const Decl* D = S->getMember(i);
+            unsigned m_align = 0;
+            uint64_t m_size = AnalyserUtils::sizeOfType(D->getType(), &m_align);
+            offset += m_size;
+        }
+    } else {
+        for (unsigned i=0; i<=index; i++) {
+            const Decl* D = S->getMember(i);
+            unsigned m_align = 0;
+            uint64_t m_size = AnalyserUtils::sizeOfType(D->getType(), &m_align);
+            if (m_align != 1) {
+                if (m_align > alignment) alignment = m_align;
+                unsigned rest = offset % m_align;
+                if (rest != 0) {
+                    unsigned pad = m_align - rest;
+                    offset += pad;
+                }
+            }
+            //printf("  @%03lu member %s   size %lu  align = %u\n", offset, D->getName(), m_size, m_align);
+            if (i == index) return offset;
+            offset += m_size;
+        }
+    }
+    return offset;
+}
+
 Expr* AnalyserUtils::getInnerExprAddressOf(Expr* expr) {
     // TODO can be MemberExpr with ArraySubScript: &foo[1].x
     // TODO can also be ArraySubScript with emberExpr with: &foo.x[2]

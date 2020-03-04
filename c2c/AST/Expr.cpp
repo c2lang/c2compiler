@@ -660,6 +660,7 @@ void BuiltinExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer << ' ' << Str(getBuiltinKind());
     buffer.setColor(COL_ATTR);
     buffer << " value=";
+    buffer.setColor(COL_VALUE);
     buffer.number(10, value.getSExtValue());
     buffer << '\n';
     expr->print(buffer, indent + INDENT);

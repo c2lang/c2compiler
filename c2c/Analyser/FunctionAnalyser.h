@@ -97,7 +97,6 @@ private:
     QualType analyseBuiltinExpr(Expr* expr);
     QualType analyseArraySubscript(Expr* expr, unsigned side);
     QualType analyseMemberExpr(Expr* expr, unsigned side);
-    Decl* analyseStructMemberOffset(BuiltinExpr* expr, StructTypeDecl* S, Expr* member);
     QualType analyseStructMember(QualType T, MemberExpr* M, unsigned side, bool isStatic);
     bool exprIsType(const Expr* E) const;
     QualType analyseParenExpr(Expr* expr);
@@ -162,7 +161,6 @@ private:
     QualType getStructType(QualType T) const;
     QualType getConditionType(const Stmt* C) const;
 
-    QualType outputStructDiagnostics(QualType T, IdentifierExpr *member, unsigned msg);
     QualType analyseStaticStructMember(QualType T, MemberExpr *M, const StructTypeDecl *S, unsigned side);
 
     Scope& scope;

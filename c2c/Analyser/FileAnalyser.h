@@ -115,7 +115,6 @@ private:
     bool analyseParenExpr(Expr* expr, bool usedPublic);
     bool analyseMemberExpr(Expr* expr, bool usedPublic);
     Decl* analyseIdentifier(IdentifierExpr* id, bool usedPublic);
-    Decl* analyseStructMemberOffset(BuiltinExpr* expr, StructTypeDecl* S, Expr* member);
 
     // Init expressions
     bool analyseInitExpr(Expr* expr, QualType expectedType, bool usedPublic);
@@ -137,7 +136,6 @@ private:
     bool checkVarDeclAttributes(VarDecl* D);
     bool checkAttributes(Decl* D);
     bool analyseStaticStructMember(QualType T, MemberExpr* M, const StructTypeDecl* S);
-    bool outputStructDiagnostics(QualType T, IdentifierExpr* member, unsigned msg);
 
     void checkStructMembersForUsed(const StructTypeDecl* S);
     bool checkAddressOfOperand(Expr* expr);

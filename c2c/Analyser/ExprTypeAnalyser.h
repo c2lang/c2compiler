@@ -25,11 +25,15 @@ class DiagnosticsEngine;
 namespace C2 {
 
 class Expr;
+class BuiltinExpr;
 class ExplicitCastExpr;
+class IdentifierExpr;
 class UnaryOperator;
 class BinaryOperator;
 class QualType;
 class TargetInfo;
+class Decl;
+class StructTypeDecl;
 
 /*
  *  ExprTypeAnalyser checks each sub-expression that is CTC_FULL or
@@ -45,6 +49,10 @@ public:
     void check(QualType Tleft, const Expr* expr);
     bool checkExplicitCast(const ExplicitCastExpr* cast, QualType TLeft, QualType TRight);
     void error(c2lang::SourceLocation loc, QualType left, QualType right);
+    bool outputStructDiagnostics(QualType T, IdentifierExpr* member, unsigned msg);
+
+    Decl* analyseOffsetOf(BuiltinExpr* expr, const StructTypeDecl* S, Expr* member, uint64_t* off);
+
     bool hasError() const { return m_hasError; }
 private:
     void checkUnaryOp(QualType TLeft, const UnaryOperator* op);

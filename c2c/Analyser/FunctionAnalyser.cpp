@@ -1328,7 +1328,8 @@ QualType FunctionAnalyser::analyseOffsetof(BuiltinExpr* B) {
     StructTypeDecl* std = builtinExprToStructTypeDecl(B);
     if (!std) return QualType();
 
-    analyseStructMemberOffset(B, std, B->getMember());
+    uint64_t off = 0;
+    EA.analyseOffsetOf(B, std, B->getMember(), &off);
     return Type::UInt32();
 }
 
@@ -1348,7 +1349,7 @@ QualType FunctionAnalyser::analyseToContainer(BuiltinExpr* B) {
 
     Decl* match = std->findMember(member->getName());
     if (!match) {
-        outputStructDiagnostics(ST, member, diag::err_no_member);
+        EA.outputStructDiagnostics(ST, member, diag::err_no_member);
         return QualType();
     }
     member->setDecl(match, IdentifierExpr::REF_STRUCT_MEMBER);
@@ -1375,56 +1376,6 @@ QualType FunctionAnalyser::analyseToContainer(BuiltinExpr* B) {
     QualType Q = Context.getPointerType(ST);
     B->setType(Q);
     return Q;
-}
-
-Decl* FunctionAnalyser::analyseStructMemberOffset(BuiltinExpr* expr, StructTypeDecl* S, Expr* member) {
-    LOG_FUNC
-
-    IdentifierExpr* I = dyncast<IdentifierExpr>(member);
-    if (I) {
-        Decl *field = S->findMember(I->getName());
-        if (!field) {
-            outputStructDiagnostics(S->getType(), I, diag::err_no_member);
-            return 0;
-        }
-        field->setUsed();
-        I->setType(field->getType());
-        I->setDecl(field, IdentifierExpr::REF_STRUCT_MEMBER);
-        return field;
-    }
-
-    assert(isa<MemberExpr>(member));
-    MemberExpr* M = cast<MemberExpr>(member);
-
-    Decl* subStruct = analyseStructMemberOffset(expr, S, M->getBase());
-    if (!subStruct) return 0;
-    StructTypeDecl* sub = dyncast<StructTypeDecl>(subStruct);
-    if (!sub) {
-        // Can also be variable of another struct type
-        VarDecl* var = dyncast<VarDecl>(subStruct);
-        if (var) {
-            QualType T = var->getType();
-            if (T.isStructType()) {
-                const StructType* ST = cast<StructType>(T);
-                sub = ST->getDecl();
-            }
-        }
-
-        if (!sub) {
-            StringBuilder buf(MAX_LEN_TYPENAME);
-            QualType LType = subStruct->getType();
-            LType.DiagName(buf);
-            Diag(M->getLocation(), diag::err_typecheck_member_reference_struct_union)
-                    << buf << M->getSourceRange() << M->getMember()->getLocation();
-            return 0;
-        }
-    }
-    Decl* field = analyseStructMemberOffset(expr, sub, M->getMember());
-    if (field) {
-        M->setDecl(field);
-        M->setType(field->getType());
-    }
-    return field;
 }
 
 // sets ArrayType sizes recursively if sizeExpr is constant
@@ -1944,7 +1895,10 @@ QualType FunctionAnalyser::analyseStaticStructMember(QualType T, MemberExpr* M, 
     FunctionDecl* sfunc = S->findFunction(member->getName());
 
     Decl* d = field ? field : sfunc;
-    if (!d) return outputStructDiagnostics(T, member, diag::err_no_member_struct_func);
+    if (!d) {
+        EA.outputStructDiagnostics(T, member, diag::err_no_member_struct_func);
+        return QualType();
+    }
 
     scope.checkAccess(d, member->getLocation());
     if (side & RHS) d->setUsed();
@@ -1962,24 +1916,13 @@ QualType FunctionAnalyser::analyseStaticStructMember(QualType T, MemberExpr* M, 
     if (!allowStaticMember) {
         if (sfunc) {
             // TBD: allow non-static use of struct functions?
-            //if (!sfunc->isStaticStructFunc()) return outputStructDiagnostics(T, member, diag::err_invalid_use_nonstatic_struct_func);
+            //if (!sfunc->isStaticStructFunc()) return EA.outputStructDiagnostics(T, member, diag::err_invalid_use_nonstatic_struct_func);
         } else {
-            return outputStructDiagnostics(T, member, diag::err_static_use_nonstatic_member);
+            EA.outputStructDiagnostics(T, member, diag::err_static_use_nonstatic_member);
+            return QualType();
         }
     }
     return d->getType();
-}
-
-QualType FunctionAnalyser::outputStructDiagnostics(QualType T, IdentifierExpr* member, unsigned msg)
-{
-    char temp1[MAX_LEN_TYPENAME];
-    StringBuilder buf1(MAX_LEN_TYPENAME, temp1);
-    T.DiagName(buf1);
-    char temp2[MAX_LEN_VARNAME];
-    StringBuilder buf2(MAX_LEN_VARNAME, temp2);
-    buf2 << '\'' << member->getName() << '\'';
-    Diag(member->getLocation(), msg) << temp2 << temp1;
-    return QualType();
 }
 
 // T is the type of the struct
@@ -1997,7 +1940,7 @@ QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr* M, unsign
     Decl* match = S->find(member->getName());
 
     if (!match) {
-        outputStructDiagnostics(T, member, diag::err_no_member_struct_func);
+        EA.outputStructDiagnostics(T, member, diag::err_no_member_struct_func);
         return QualType();
     }
 

@@ -376,12 +376,14 @@ public:
     Decl* getMember(unsigned index) const { return members[index]; }
     Decl* find(const char* name_) const;
     Decl* findMember(const char* name_) const;
+    int findMemberIndex(const char* name_) const;
     FunctionDecl* findFunction(const char* name_) const;
     int findIndex(const char*  name_) const;
     void setOpaqueMembers();
     void setNoTypedef() { extraBits.hasTypedef = 0; }
 
     bool isStruct() const { return structTypeDeclBits.IsStruct; }
+    bool isUnion() const { return !structTypeDeclBits.IsStruct; }
     bool isGlobal() const { return structTypeDeclBits.IsGlobal; }
     bool hasTypedef() const { return extraBits.hasTypedef; }
     bool isPacked() const;

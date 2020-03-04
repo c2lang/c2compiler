@@ -21,7 +21,9 @@
 #include "Analyser/LiteralAnalyser.h"
 #include "Analyser/TypeFinder.h"
 #include "Analyser/AnalyserConstants.h"
+#include "Analyser/AnalyserUtils.h"
 #include "AST/Expr.h"
+#include "AST/Decl.h"
 #include "AST/Type.h"
 #include "Utils/StringBuilder.h"
 #include "Utils/TargetInfo.h"
@@ -632,6 +634,18 @@ void ExprTypeAnalyser::error(SourceLocation loc, QualType left, QualType right) 
     m_hasError = true;
 }
 
+bool ExprTypeAnalyser::outputStructDiagnostics(QualType T, IdentifierExpr* member, unsigned msg)
+{
+    char temp1[MAX_LEN_TYPENAME];
+    StringBuilder buf1(MAX_LEN_TYPENAME, temp1);
+    T.DiagName(buf1);
+    char temp2[MAX_LEN_VARNAME];
+    StringBuilder buf2(MAX_LEN_VARNAME, temp2);
+    buf2 << '\'' << member->getName() << '\'';
+    Diags.Report(member->getLocation(), msg) << temp2 << temp1;
+    return false;
+}
+
 void ExprTypeAnalyser::error2(SourceLocation loc, QualType left, QualType right, unsigned msg) {
     StringBuilder buf1(MAX_LEN_TYPENAME);
     StringBuilder buf2(MAX_LEN_TYPENAME);
@@ -640,5 +654,68 @@ void ExprTypeAnalyser::error2(SourceLocation loc, QualType left, QualType right,
 
     Diags.Report(loc, msg) << buf1 << buf2;
     m_hasError = true;
+}
+
+Decl* ExprTypeAnalyser::analyseOffsetOf(BuiltinExpr* expr, const StructTypeDecl* S, Expr* member, uint64_t* off) {
+    IdentifierExpr* I = dyncast<IdentifierExpr>(member);
+    if (I) {
+        int index = S->findMemberIndex(I->getName());
+        if (index == -1) {
+            outputStructDiagnostics(S->getType(), I, diag::err_no_member);
+            return 0;
+        }
+        Decl* field = S->getMember(index);
+        uint64_t offset = AnalyserUtils::offsetOfStructMember(S, index);
+        if (field->hasEmptyName()) {    // anonymous sub-struct/union
+            const StructTypeDecl* anon = cast<StructTypeDecl>(field);
+            int sub_index = anon->findMemberIndex(I->getName());
+            uint64_t sub_offset = AnalyserUtils::offsetOfStructMember(anon, sub_index);
+            offset += sub_offset;
+        }
+
+        expr->setValue(llvm::APSInt::getUnsigned(offset));
+        *off = offset;
+        field->setUsed();
+        I->setType(field->getType());
+        I->setDecl(field, IdentifierExpr::REF_STRUCT_MEMBER);
+        return field;
+    }
+
+    assert(isa<MemberExpr>(member));
+    MemberExpr* M = cast<MemberExpr>(member);
+
+    uint64_t offset = 0;
+    Decl* subStruct = analyseOffsetOf(expr, S, M->getBase(), &offset);
+    if (!subStruct) return 0;
+    StructTypeDecl* sub = dyncast<StructTypeDecl>(subStruct);
+    if (!sub) {
+        // Can also be variable of another struct type
+        VarDecl* var = dyncast<VarDecl>(subStruct);
+        if (var) {
+            QualType T = var->getType();
+            if (T.isStructType()) {
+                const StructType* ST = cast<StructType>(T);
+                sub = ST->getDecl();
+            }
+        }
+
+        if (!sub) {
+            StringBuilder buf(MAX_LEN_TYPENAME);
+            QualType LType = subStruct->getType();
+            LType.DiagName(buf);
+            Diags.Report(M->getLocation(), diag::err_typecheck_member_reference_struct_union)
+                        << buf << M->getSourceRange() << M->getMember()->getLocation();
+            return 0;
+        }
+    }
+    uint64_t offset2 = 0;
+    Decl* field = analyseOffsetOf(expr, sub, M->getMember(), &offset2);
+    if (field) {
+        M->setDecl(field);
+        M->setType(field->getType());
+        expr->setValue(llvm::APSInt::getUnsigned(offset + offset2));
+        *off = offset + offset2;
+    }
+    return field;
 }
 
