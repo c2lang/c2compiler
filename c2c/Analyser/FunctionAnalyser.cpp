@@ -1365,7 +1365,7 @@ QualType FunctionAnalyser::analyseToContainer(BuiltinExpr* B) {
     }
     QualType PT = cast<PointerType>(ptrType)->getPointeeType();
     // TODO BB allow conversion from void*
-    // TODO BB use ExprTypeAnalyser to do and insert casts etc
+    // TODO BB use ExprAnalyser to do and insert casts etc
     if (PT != MT) {
         EA.error(ptrExpr->getLocation(), Context.getPointerType(member->getType()), ptrType);
         return QualType();
@@ -1623,7 +1623,7 @@ QualType FunctionAnalyser::analyseConditionalOperator(Expr* expr) {
     QualType TRight = analyseExpr(condop->getRHS(), RHS);
     if (!TRight.isValid()) return QualType();
 
-    expr->setCTC(CTC_PARTIAL);  // always set to Partial for ExprTypeAnalyser
+    expr->setCTC(CTC_PARTIAL);  // always set to Partial for ExprAnalyser
     return TLeft;
 }
 

@@ -25,7 +25,7 @@
 #include "Analyser/Scope.h"
 #include "Analyser/FunctionAnalyser.h"
 #include "Analyser/TypeResolver.h"
-#include "Analyser/ExprTypeAnalyser.h"
+#include "Analyser/ExprAnalyser.h"
 
 namespace c2lang {
 class DiagnosticsEngine;
@@ -148,7 +148,7 @@ private:
     std::unique_ptr<Scope> scope;
     std::unique_ptr<TypeResolver> TR;
     c2lang::DiagnosticsEngine& Diags;
-    ExprTypeAnalyser EA;
+    ExprAnalyser EA;
     FunctionAnalyser functionAnalyser;
     // TEMP array with index
     Decl* checkStack[8];

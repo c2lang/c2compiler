@@ -828,7 +828,7 @@ bool FileAnalyser::analyseToContainer(BuiltinExpr* B, bool usedPublic) {
     }
     QualType PT = cast<PointerType>(ptrType)->getPointeeType();
     // TODO BB allow conversion from void*
-    // TODO BB use ExprTypeAnalyser to do and insert casts etc
+    // TODO BB use ExprAnalyser to do and insert casts etc
     if (PT != MT) {
         error(ptrExpr->getLocation(), ast.getContext().getPointerType(member->getType()), ptrType);
         return false;

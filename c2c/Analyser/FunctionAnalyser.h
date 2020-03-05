@@ -21,7 +21,7 @@
 #include <llvm/ADT/APSInt.h>
 #include "Clang/SourceLocation.h"
 #include "AST/Type.h"
-#include "Analyser/ExprTypeAnalyser.h"
+#include "Analyser/ExprAnalyser.h"
 
 namespace c2lang {
 class DiagnosticsEngine;
@@ -166,7 +166,7 @@ private:
     Scope& scope;
     TypeResolver& TR;
     ASTContext& Context;
-    ExprTypeAnalyser EA;
+    ExprAnalyser EA;
 
     c2lang::DiagnosticsEngine& Diags;
     const TargetInfo& target;

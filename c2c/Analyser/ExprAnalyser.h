@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef ANALYSER_EXPR_TYPE_ANALYSER_H
-#define ANALYSER_EXPR_TYPE_ANALYSER_H
+#ifndef ANALYSER_EXPR_ANALYSER_H
+#define ANALYSER_EXPR_ANALYSER_H
 
 #include "Clang/SourceLocation.h"
 
@@ -36,15 +36,15 @@ class Decl;
 class StructTypeDecl;
 
 /*
- *  ExprTypeAnalyser checks each sub-expression that is CTC_FULL or
+ *  ExprAnalyser checks each sub-expression that is CTC_FULL or
  *  CTC_NONE with the other checkers separately.
  *  It checks Literals for Range and Symbols for Type
  *  For CTC_PARTIAL expressions (eg. 10 + a), each sub-expression
  *  should fit the LHS type.
 */
-class ExprTypeAnalyser {
+class ExprAnalyser {
 public:
-    ExprTypeAnalyser(c2lang::DiagnosticsEngine& Diags_, const TargetInfo& target_);
+    ExprAnalyser(c2lang::DiagnosticsEngine& Diags_, const TargetInfo& target_);
 
     void check(QualType Tleft, const Expr* expr);
     bool checkExplicitCast(const ExplicitCastExpr* cast, QualType TLeft, QualType TRight);
@@ -76,8 +76,8 @@ private:
     const TargetInfo& target;
     bool m_hasError;
 
-    ExprTypeAnalyser(const ExprTypeAnalyser&);
-    ExprTypeAnalyser& operator= (const ExprTypeAnalyser&);
+    ExprAnalyser(const ExprAnalyser&);
+    ExprAnalyser& operator= (const ExprAnalyser&);
 };
 
 }

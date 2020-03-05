@@ -17,7 +17,7 @@
 #include "Clang/ParseDiagnostic.h"
 #include "Clang/SemaDiagnostic.h"
 
-#include "Analyser/ExprTypeAnalyser.h"
+#include "Analyser/ExprAnalyser.h"
 #include "Analyser/LiteralAnalyser.h"
 #include "Analyser/TypeFinder.h"
 #include "Analyser/AnalyserConstants.h"
@@ -71,13 +71,13 @@ static int type_conversions[14][14] = {
 // clang-format on
 
 
-ExprTypeAnalyser::ExprTypeAnalyser(c2lang::DiagnosticsEngine& Diags_, const TargetInfo& target_)
+ExprAnalyser::ExprAnalyser(c2lang::DiagnosticsEngine& Diags_, const TargetInfo& target_)
     : Diags(Diags_)
     , target(target_)
     , m_hasError(false)
 {}
 
-void ExprTypeAnalyser::check(QualType TLeft, const Expr* expr) {
+void ExprAnalyser::check(QualType TLeft, const Expr* expr) {
     m_hasError = false;
     switch (expr->getCTC()) {
     case CTC_NONE:
@@ -143,7 +143,7 @@ void ExprTypeAnalyser::check(QualType TLeft, const Expr* expr) {
     FATAL_ERROR("Unreachable");
 }
 
-bool ExprTypeAnalyser::checkExplicitCast(const ExplicitCastExpr* expr, QualType DestType, QualType SrcType) {
+bool ExprAnalyser::checkExplicitCast(const ExplicitCastExpr* expr, QualType DestType, QualType SrcType) {
     m_hasError = false;
     // C99 6.5.4p2: the cast type needs to be void or scalar and the expression
 
@@ -181,7 +181,7 @@ bool ExprTypeAnalyser::checkExplicitCast(const ExplicitCastExpr* expr, QualType 
     return false;
 }
 
-bool ExprTypeAnalyser::checkNonPointerCast(const ExplicitCastExpr* expr, QualType DestType, QualType SrcType) {
+bool ExprAnalyser::checkNonPointerCast(const ExplicitCastExpr* expr, QualType DestType, QualType SrcType) {
     // by now: DestType isScalar(): Bool, Arithmetic, Function or Enum
 
     QualType C = SrcType.getCanonicalType();
@@ -224,7 +224,7 @@ bool ExprTypeAnalyser::checkNonPointerCast(const ExplicitCastExpr* expr, QualTyp
     return false;
 }
 
-bool ExprTypeAnalyser::checkBuiltinCast(const ExplicitCastExpr* expr, QualType DestType, QualType SrcType) {
+bool ExprAnalyser::checkBuiltinCast(const ExplicitCastExpr* expr, QualType DestType, QualType SrcType) {
     // by now: DestType isScalar(): Bool, Arithmetic, Function or Enum
     const BuiltinType* Right = cast<BuiltinType>(SrcType.getCanonicalType());
 
@@ -290,7 +290,7 @@ bool ExprTypeAnalyser::checkBuiltinCast(const ExplicitCastExpr* expr, QualType D
     return true;
 }
 
-bool ExprTypeAnalyser::checkEnumCast(const ExplicitCastExpr* expr, QualType DestType, QualType SrcType) {
+bool ExprAnalyser::checkEnumCast(const ExplicitCastExpr* expr, QualType DestType, QualType SrcType) {
     // by now: DestType is: Bool, Integer, Function or Enum
     switch (DestType->getTypeClass()) {
     case TC_BUILTIN:
@@ -320,7 +320,7 @@ bool ExprTypeAnalyser::checkEnumCast(const ExplicitCastExpr* expr, QualType Dest
     return false;
 }
 
-bool ExprTypeAnalyser::checkFunctionCast(const ExplicitCastExpr* expr, QualType DestType, QualType SrcType) {
+bool ExprAnalyser::checkFunctionCast(const ExplicitCastExpr* expr, QualType DestType, QualType SrcType) {
     switch (DestType->getTypeClass()) {
     case TC_BUILTIN:
         // TODO use  warn_int_to_void_pointer_cast, remove err_cast_pointer_to_nonword
@@ -361,7 +361,7 @@ bool ExprTypeAnalyser::checkFunctionCast(const ExplicitCastExpr* expr, QualType 
     return false;
 }
 
-void ExprTypeAnalyser::checkUnaryOp(QualType TLeft, const UnaryOperator* op) {
+void ExprAnalyser::checkUnaryOp(QualType TLeft, const UnaryOperator* op) {
         switch (op->getOpcode()) {
         case c2lang::UO_PostInc:
         case c2lang::UO_PostDec:
@@ -377,7 +377,7 @@ void ExprTypeAnalyser::checkUnaryOp(QualType TLeft, const UnaryOperator* op) {
         }
 }
 
-void ExprTypeAnalyser::checkBinOp(QualType TLeft, const BinaryOperator* binop) {
+void ExprAnalyser::checkBinOp(QualType TLeft, const BinaryOperator* binop) {
     // NOTE we check Left / Right separately if CTC's are not the same
     switch (binop->getOpcode()) {
     case BINOP_Mul:
@@ -421,7 +421,7 @@ void ExprTypeAnalyser::checkBinOp(QualType TLeft, const BinaryOperator* binop) {
 }
 
 // TODO change return type to void, it's never used
-bool ExprTypeAnalyser::checkCompatible(QualType left, const Expr* expr) {
+bool ExprAnalyser::checkCompatible(QualType left, const Expr* expr) {
     QualType right = expr->getType();
     //right = TypeFinder::findType(expr);
     assert(left.isValid());
@@ -451,7 +451,7 @@ bool ExprTypeAnalyser::checkCompatible(QualType left, const Expr* expr) {
     return false;
 }
 
-bool ExprTypeAnalyser::checkBuiltin(QualType left, QualType right, const Expr* expr, bool first) {
+bool ExprAnalyser::checkBuiltin(QualType left, QualType right, const Expr* expr, bool first) {
     const BuiltinType* Left = cast<BuiltinType>(left.getCanonicalType());
 
     // left is builtin
@@ -539,7 +539,7 @@ bool ExprTypeAnalyser::checkBuiltin(QualType left, QualType right, const Expr* e
     return false;
 }
 
-bool ExprTypeAnalyser::checkStruct(QualType left, QualType right, const Expr* expr) {
+bool ExprAnalyser::checkStruct(QualType left, QualType right, const Expr* expr) {
     QualType C = right.getCanonicalType();
     switch (C->getTypeClass()) {
     case TC_BUILTIN:
@@ -560,14 +560,14 @@ bool ExprTypeAnalyser::checkStruct(QualType left, QualType right, const Expr* ex
     return false;
 }
 
-bool ExprTypeAnalyser::checkPointer(QualType left, QualType right, const Expr* expr) {
+bool ExprAnalyser::checkPointer(QualType left, QualType right, const Expr* expr) {
     QualType LP = cast<PointerType>(left)->getPointeeType();
 
     if (right->isPointerType()) {
         QualType RP = cast<PointerType>(right)->getPointeeType();
         if (RP.isConstQualified() && !LP.isConstQualified()) {
             // TODO need to know what error is:
-            // TODO the ExprTypeAnalyser should return a ConversionType (clang AssignConvertType)
+            // TODO the ExprAnalyser should return a ConversionType (clang AssignConvertType)
             //initializing 'S *' with an expression of type 'const S *' discards qualifiers
             //assigning to 'S *' from 'const S *' discards qualifiers
             //NOTE: also needs args
@@ -586,7 +586,7 @@ bool ExprTypeAnalyser::checkPointer(QualType left, QualType right, const Expr* e
     return false;
 }
 
-bool ExprTypeAnalyser::checkFunction(QualType L, const Expr* expr) {
+bool ExprAnalyser::checkFunction(QualType L, const Expr* expr) {
     QualType R = expr->getType();
 
     if (isa<NilExpr>(expr)) return true;
@@ -606,7 +606,7 @@ bool ExprTypeAnalyser::checkFunction(QualType L, const Expr* expr) {
     return true;
 }
 
-bool ExprTypeAnalyser::checkWidth(QualType type, SourceLocation loc, int msg) {
+bool ExprAnalyser::checkWidth(QualType type, SourceLocation loc, int msg) {
     // only allow cast to pointer from uint32/64 (pointer size)
     const BuiltinType* BT = dyncast<BuiltinType>(type);
     if (BT) {
@@ -622,7 +622,7 @@ bool ExprTypeAnalyser::checkWidth(QualType type, SourceLocation loc, int msg) {
     return false;
 }
 
-void ExprTypeAnalyser::error(SourceLocation loc, QualType left, QualType right) {
+void ExprAnalyser::error(SourceLocation loc, QualType left, QualType right) {
     StringBuilder buf1(MAX_LEN_TYPENAME);
     StringBuilder buf2(MAX_LEN_TYPENAME);
     right.DiagName(buf1);
@@ -634,7 +634,7 @@ void ExprTypeAnalyser::error(SourceLocation loc, QualType left, QualType right) 
     m_hasError = true;
 }
 
-bool ExprTypeAnalyser::outputStructDiagnostics(QualType T, IdentifierExpr* member, unsigned msg)
+bool ExprAnalyser::outputStructDiagnostics(QualType T, IdentifierExpr* member, unsigned msg)
 {
     char temp1[MAX_LEN_TYPENAME];
     StringBuilder buf1(MAX_LEN_TYPENAME, temp1);
@@ -646,7 +646,7 @@ bool ExprTypeAnalyser::outputStructDiagnostics(QualType T, IdentifierExpr* membe
     return false;
 }
 
-void ExprTypeAnalyser::error2(SourceLocation loc, QualType left, QualType right, unsigned msg) {
+void ExprAnalyser::error2(SourceLocation loc, QualType left, QualType right, unsigned msg) {
     StringBuilder buf1(MAX_LEN_TYPENAME);
     StringBuilder buf2(MAX_LEN_TYPENAME);
     right.DiagName(buf1);
@@ -656,7 +656,7 @@ void ExprTypeAnalyser::error2(SourceLocation loc, QualType left, QualType right,
     m_hasError = true;
 }
 
-Decl* ExprTypeAnalyser::analyseOffsetOf(BuiltinExpr* expr, const StructTypeDecl* S, Expr* member, uint64_t* off) {
+Decl* ExprAnalyser::analyseOffsetOf(BuiltinExpr* expr, const StructTypeDecl* S, Expr* member, uint64_t* off) {
     IdentifierExpr* I = dyncast<IdentifierExpr>(member);
     if (I) {
         int index = S->findMemberIndex(I->getName());
