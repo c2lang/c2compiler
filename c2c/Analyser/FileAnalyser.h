@@ -102,10 +102,9 @@ private:
 
     // Expressions
     bool analyseExpr(Expr* expr, bool usedPublic);
-    bool analyseIntegerLiteral(Expr* expr);
     bool analyseBuiltinExpr(Expr* expr, bool usedPublic);
     bool analyseToContainer(BuiltinExpr* B, bool usedPublic);
-    bool analyseOffsetof(BuiltinExpr* B, bool usedPublic);
+    bool analyseOffsetOf(BuiltinExpr* B, bool usedPublic);
     StructTypeDecl* builtinExprToStructTypeDecl(BuiltinExpr* B, bool usedPublic);
     bool analyseSizeOfExpr(BuiltinExpr* B, bool usedPublic);
     bool analyseEnumMinMaxExpr(BuiltinExpr* B, bool isMin, bool usedPublic);

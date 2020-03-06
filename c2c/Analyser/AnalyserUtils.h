@@ -44,6 +44,8 @@ public:
     static uint64_t offsetOfStructMember(const StructTypeDecl* S, unsigned index);
 
     static Expr* getInnerExprAddressOf(Expr* expr);
+
+    static IdentifierExpr::RefKind globalDecl2RefKind(const Decl* D);
 };
 
 }

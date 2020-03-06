@@ -24,7 +24,6 @@
 #include "Analyser/AnalyserUtils.h"
 #include "AST/Expr.h"
 #include "AST/Decl.h"
-#include "AST/Type.h"
 #include "Utils/StringBuilder.h"
 #include "Utils/TargetInfo.h"
 #include "Utils/Errors.h"
@@ -717,5 +716,22 @@ Decl* ExprAnalyser::analyseOffsetOf(BuiltinExpr* expr, const StructTypeDecl* S, 
         *off = offset + offset2;
     }
     return field;
+}
+
+QualType ExprAnalyser::analyseIntegerLiteral(Expr* expr) {
+    IntegerLiteral* I = cast<IntegerLiteral>(expr);
+    // Fit smallest Type: int32 > uint32 > int64 > uint64
+    // TODO unsigned types
+
+    // TEMP for now assume signed
+    // Q: we can determine size, but don't know if we need signed/unsigned
+    //unsigned numbits = I->Value.getMinSignedBits();  // signed
+    unsigned numbits = I->Value.getActiveBits();   // unsigned
+    //if (numbits <= 8) return Type::Int8();
+    //if (numbits <= 16) return Type::Int16();
+    expr->setType(Type::Int32());
+    if (numbits <= 32) return Type::Int32();
+    expr->setType(Type::Int64());
+    return Type::Int64();
 }
 

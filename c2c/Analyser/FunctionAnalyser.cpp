@@ -686,7 +686,7 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
 
     switch (expr->getKind()) {
     case EXPR_INTEGER_LITERAL:
-        return analyseIntegerLiteral(expr);
+        return EA.analyseIntegerLiteral(expr);
     case EXPR_FLOAT_LITERAL:
         // For now always return type float
         expr->setType(Type::Float32());
@@ -841,27 +841,6 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
     }
 }
 
-// TODO refactor to remove duplicates
-static IdentifierExpr::RefKind globalDecl2RefKind(const Decl* D) {
-    switch (D->getKind()) {
-    case DECL_FUNC:         return IdentifierExpr::REF_FUNC;
-    case DECL_VAR:          return IdentifierExpr::REF_VAR;
-    case DECL_ENUMVALUE:    return IdentifierExpr::REF_ENUM_CONSTANT;
-    case DECL_ALIASTYPE:
-    case DECL_STRUCTTYPE:
-    case DECL_ENUMTYPE:
-    case DECL_FUNCTIONTYPE:
-                            return IdentifierExpr::REF_TYPE;
-    case DECL_ARRAYVALUE:
-                            return IdentifierExpr::REF_VAR;
-    case DECL_IMPORT:
-                            return IdentifierExpr::REF_MODULE;
-    case DECL_LABEL:        return IdentifierExpr::REF_LABEL;
-    case DECL_STATIC_ASSERT:
-        FATAL_ERROR("Unreachable");
-    }
-}
-
 void FunctionAnalyser::analyseInitListArray(InitListExpr* expr, QualType Q, unsigned numValues, Expr** values) {
     LOG_FUNC
     bool haveDesignators = false;
@@ -963,7 +942,7 @@ bool FunctionAnalyser::analyseFieldInDesignatedInitExpr(DesignatedInitExpr* D,
     fields[memberIndex] = value;
     VarDecl* VD;
     if (anonUnionIndex > -1) {
-        field->setDecl(anonUnionDecl, globalDecl2RefKind(anonUnionDecl));
+        field->setDecl(anonUnionDecl, AnalyserUtils::globalDecl2RefKind(anonUnionDecl));
         VD = dyncast<VarDecl>(anonUnionDecl->getMember((unsigned)anonUnionIndex));
     } else {
         VD = dyncast<VarDecl>(STD->getMember((unsigned)memberIndex));
@@ -972,7 +951,7 @@ bool FunctionAnalyser::analyseFieldInDesignatedInitExpr(DesignatedInitExpr* D,
         TODO;
         assert(VD && "TEMP don't support sub-struct member inits");
     }
-    field->setDecl(VD, globalDecl2RefKind(VD));
+    field->setDecl(VD, AnalyserUtils::globalDecl2RefKind(VD));
     analyseInitExpr(D->getInitValue(), VD->getType());
     if (anonUnionIndex < 0 && isa<DesignatedInitExpr>(value) != haveDesignators) {
         Diag(value->getLocation(), diag::err_mixed_field_designator);
@@ -1302,7 +1281,7 @@ StructTypeDecl* FunctionAnalyser::builtinExprToStructTypeDecl(BuiltinExpr* B) {
         AnalyserUtils::SetConstantFlags(structDecl, M);
         QualType Q = structDecl->getType();
         I->setType(Q);
-        I->setDecl(structDecl, globalDecl2RefKind(structDecl));
+        I->setDecl(structDecl, AnalyserUtils::globalDecl2RefKind(structDecl));
     }
     structDecl->setUsed();
 
@@ -1321,7 +1300,7 @@ StructTypeDecl* FunctionAnalyser::builtinExprToStructTypeDecl(BuiltinExpr* B) {
     return std;
 }
 
-QualType FunctionAnalyser::analyseOffsetof(BuiltinExpr* B) {
+QualType FunctionAnalyser::analyseOffsetOf(BuiltinExpr* B) {
     LOG_FUNC
 
     B->setType(Type::UInt32());
@@ -1450,23 +1429,6 @@ void FunctionAnalyser::analyseArraySizeExpr(ArrayType* AT) {
             AT->setSize(Result);
         }
     }
-}
-
-QualType FunctionAnalyser::analyseIntegerLiteral(Expr* expr) {
-    IntegerLiteral* I = cast<IntegerLiteral>(expr);
-    // Fit smallest Type: int32 > uint32 > int64 > uint64
-    // TODO unsigned types
-
-    // TEMP for now assume signed
-    // Q: we can determine size, but don't know if we need signed/unsigned
-    //unsigned numbits = I->Value.getMinSignedBits();  // signed
-    unsigned numbits = I->Value.getActiveBits();   // unsigned
-    //if (numbits <= 8) return Type::Int8();
-    //if (numbits <= 16) return Type::Int16();
-    expr->setType(Type::Int32());
-    if (numbits <= 32) return Type::Int32();
-    expr->setType(Type::Int64());
-    return Type::Int64();
 }
 
 QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
@@ -1768,7 +1730,7 @@ QualType FunctionAnalyser::analyseBuiltinExpr(Expr* expr) {
     case BuiltinExpr::BUILTIN_ENUM_MAX:
         return analyseEnumMinMaxExpr(B, false);
     case BuiltinExpr::BUILTIN_OFFSETOF:
-        return analyseOffsetof(B);
+        return analyseOffsetOf(B);
     case BuiltinExpr::BUILTIN_TO_CONTAINER:
         return analyseToContainer(B);
     }
@@ -1840,7 +1802,7 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
             QualType Q = D->getType();
             expr->setType(Q);
             member->setType(Q);
-            member->setDecl(D, globalDecl2RefKind(D));
+            member->setDecl(D, AnalyserUtils::globalDecl2RefKind(D));
             return Q;
         }
     } else if (isa<EnumType>(LType)) {
@@ -1862,7 +1824,7 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
         member->setCTC(CTC_FULL);
         member->setConstant();
         member->setType(Q);
-        member->setDecl(ECD, globalDecl2RefKind(ECD));
+        member->setDecl(ECD, AnalyserUtils::globalDecl2RefKind(ECD));
         return Q;
     } else {
         // dereference pointer
@@ -2216,7 +2178,7 @@ Decl* FunctionAnalyser::analyseIdentifier(IdentifierExpr* id) {
     LOG_FUNC
     Decl* D = scope.findSymbol(id->getName(), id->getLocation(), false, false);
     if (D) {
-        id->setDecl(D, globalDecl2RefKind(D));
+        id->setDecl(D, AnalyserUtils::globalDecl2RefKind(D));
         id->setType(D->getType());
         AnalyserUtils::SetConstantFlags(D, id);
 

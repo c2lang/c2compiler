@@ -355,27 +355,6 @@ bool FileAnalyser::analyseEnumConstants(EnumTypeDecl* ETD) {
     return true;
 }
 
-// TODO refactor to remove duplicates
-static IdentifierExpr::RefKind globalDecl2RefKind(const Decl* D) {
-    switch (D->getKind()) {
-    case DECL_FUNC:         return IdentifierExpr::REF_FUNC;
-    case DECL_VAR:          return IdentifierExpr::REF_VAR;
-    case DECL_ENUMVALUE:    return IdentifierExpr::REF_ENUM_CONSTANT;
-    case DECL_ALIASTYPE:
-    case DECL_STRUCTTYPE:
-    case DECL_ENUMTYPE:
-    case DECL_FUNCTIONTYPE:
-                            return IdentifierExpr::REF_TYPE;
-    case DECL_ARRAYVALUE:
-                            return IdentifierExpr::REF_VAR;
-    case DECL_IMPORT:
-                            return IdentifierExpr::REF_MODULE;
-    case DECL_LABEL:        return IdentifierExpr::REF_LABEL;
-    case DECL_STATIC_ASSERT:
-        FATAL_ERROR("cannot come here");
-    }
-}
-
 bool FileAnalyser::analyseDecl(Decl* D) {
     LOG_FUNC
 #ifdef ANALYSER_DEBUG
@@ -534,12 +513,10 @@ Decl* FileAnalyser::analyseIdentifier(IdentifierExpr* id, bool usedPublic) {
     LOG_FUNC
     Decl* D = scope->findSymbol(id->getName(), id->getLocation(), false, usedPublic);
     if (D) {
-        id->setDecl(D, globalDecl2RefKind(D));
-        // TODO after analysing D?
+        id->setDecl(D, AnalyserUtils::globalDecl2RefKind(D));
         id->setType(D->getType());
         if (!D->isChecked()) {
             if (!isTop(D)) D->setUsed();
-            //printf("RECURSE INTO %s\n", D->getName());
             if (!analyseDecl(D)) return 0;
         }
         AnalyserUtils::SetConstantFlags(D, id);
@@ -551,31 +528,14 @@ Decl* FileAnalyser::analyseIdentifier(IdentifierExpr* id, bool usedPublic) {
     return D;
 }
 
-bool FileAnalyser::analyseIntegerLiteral(Expr* expr) {
-    LOG_FUNC
-    IntegerLiteral* I = cast<IntegerLiteral>(expr);
-    // Fit smallest Type: int32 > uint32 > int64 > uint64
-    // TODO unsigned types
-
-    // TEMP for now assume signed
-    // Q: we can determine size, but don't know if we need signed/unsigned
-    //unsigned numbits = I->Value.getMinSignedBits();  // signed
-    unsigned numbits = I->Value.getActiveBits();   // unsigned
-    //if (numbits <= 8) return Type::Int8();
-    //if (numbits <= 16) return Type::Int16();
-
-    if (numbits <= 32) expr->setType(Type::Int32());
-    else expr->setType(Type::Int64());
-    return true;
-}
-
 // Q: maybe pass r/lvalue usage?
 bool FileAnalyser::analyseExpr(Expr* expr, bool usedPublic) {
     LOG_FUNC
 
     switch (expr->getKind()) {
     case EXPR_INTEGER_LITERAL:
-        return analyseIntegerLiteral(expr);
+        EA.analyseIntegerLiteral(expr);
+        return true;
     case EXPR_FLOAT_LITERAL:
         // For now always return type float
         expr->setType(Type::Float32());
@@ -714,13 +674,13 @@ bool FileAnalyser::analyseBuiltinExpr(Expr* expr, bool usedPublic) {
     case BuiltinExpr::BUILTIN_ENUM_MAX:
         return analyseEnumMinMaxExpr(B, false, usedPublic);
     case BuiltinExpr::BUILTIN_OFFSETOF:
-        return analyseOffsetof(B, usedPublic);
+        return analyseOffsetOf(B, usedPublic);
     case BuiltinExpr::BUILTIN_TO_CONTAINER:
         return analyseToContainer(B, usedPublic);
     }
 }
 
-bool FileAnalyser::analyseOffsetof(BuiltinExpr* B, bool usedPublic) {
+bool FileAnalyser::analyseOffsetOf(BuiltinExpr* B, bool usedPublic) {
     LOG_FUNC
 
     B->setType(Type::UInt32());
@@ -765,7 +725,7 @@ StructTypeDecl* FileAnalyser::builtinExprToStructTypeDecl(BuiltinExpr* B, bool u
         AnalyserUtils::SetConstantFlags(structDecl, M);
         QualType Q = structDecl->getType();
         I->setType(Q);
-        I->setDecl(structDecl, globalDecl2RefKind(structDecl));
+        I->setDecl(structDecl, AnalyserUtils::globalDecl2RefKind(structDecl));
     }
     structDecl->setUsed();
 
@@ -1226,7 +1186,7 @@ bool FileAnalyser::analyseMemberExpr(Expr* expr, bool usedPublic) {
             QualType Q = D->getType();
             expr->setType(Q);
             member->setType(Q);
-            member->setDecl(D, globalDecl2RefKind(D));
+            member->setDecl(D, AnalyserUtils::globalDecl2RefKind(D));
             return true;
         }
     } else if (isa<EnumType>(LType)) {
@@ -1261,7 +1221,7 @@ bool FileAnalyser::analyseMemberExpr(Expr* expr, bool usedPublic) {
         member->setCTC(CTC_FULL);
         member->setConstant();
         member->setType(Q);
-        member->setDecl(ECD, globalDecl2RefKind(ECD));
+        member->setDecl(ECD, AnalyserUtils::globalDecl2RefKind(ECD));
         return true;
     } else {
         // dereference pointer
@@ -1774,7 +1734,7 @@ bool FileAnalyser::analyseFieldInDesignatedInitExpr(DesignatedInitExpr* D,
     fields[memberIndex] = value;
     VarDecl* VD;
     if (anonUnionIndex > -1) {
-        field->setDecl(anonUnionDecl, globalDecl2RefKind(anonUnionDecl));
+        field->setDecl(anonUnionDecl, AnalyserUtils::globalDecl2RefKind(anonUnionDecl));
         VD = dyncast<VarDecl>(anonUnionDecl->getMember((unsigned)anonUnionIndex));
     } else {
         VD = dyncast<VarDecl>(STD->getMember((unsigned)memberIndex));
@@ -1783,7 +1743,7 @@ bool FileAnalyser::analyseFieldInDesignatedInitExpr(DesignatedInitExpr* D,
         TODO;
         assert(VD && "TEMP don't support sub-struct member inits");
     }
-    field->setDecl(VD, globalDecl2RefKind(VD));
+    field->setDecl(VD, AnalyserUtils::globalDecl2RefKind(VD));
     analyseInitExpr(D->getInitValue(), VD->getType(), usedPublic);
     if (anonUnionIndex < 0 && isa<DesignatedInitExpr>(value) != haveDesignators) {
         Diag(value->getLocation(), diag::err_mixed_field_designator);

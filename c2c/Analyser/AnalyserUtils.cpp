@@ -382,3 +382,24 @@ Expr* AnalyserUtils::getInnerExprAddressOf(Expr* expr) {
     return expr;
 }
 
+// TODO refactor to remove duplicates
+IdentifierExpr::RefKind AnalyserUtils::globalDecl2RefKind(const Decl* D) {
+    switch (D->getKind()) {
+    case DECL_FUNC:         return IdentifierExpr::REF_FUNC;
+    case DECL_VAR:          return IdentifierExpr::REF_VAR;
+    case DECL_ENUMVALUE:    return IdentifierExpr::REF_ENUM_CONSTANT;
+    case DECL_ALIASTYPE:
+    case DECL_STRUCTTYPE:
+    case DECL_ENUMTYPE:
+    case DECL_FUNCTIONTYPE:
+                            return IdentifierExpr::REF_TYPE;
+    case DECL_ARRAYVALUE:
+                            return IdentifierExpr::REF_VAR;
+    case DECL_IMPORT:
+                            return IdentifierExpr::REF_MODULE;
+    case DECL_LABEL:        return IdentifierExpr::REF_LABEL;
+    case DECL_STATIC_ASSERT:
+        FATAL_ERROR("cannot come here");
+    }
+}
+

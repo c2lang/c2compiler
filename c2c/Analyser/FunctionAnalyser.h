@@ -90,7 +90,6 @@ private:
     void analyseStmtExpr(Stmt* stmt);
 
     QualType analyseExpr(Expr* expr, unsigned side);
-    QualType analyseIntegerLiteral(Expr* expr);
     QualType analyseBinaryOperator(Expr* expr, unsigned side);
     QualType analyseConditionalOperator(Expr* expr);
     QualType analyseUnaryOperator(Expr* expr, unsigned side);
@@ -126,7 +125,7 @@ private:
     QualType analyseEnumMinMaxExpr(BuiltinExpr* B, bool isMin);
     QualType findStructMember(QualType T, IdentifierExpr* I);
     StructTypeDecl* builtinExprToStructTypeDecl(BuiltinExpr* B);
-    QualType analyseOffsetof(BuiltinExpr* expr);
+    QualType analyseOffsetOf(BuiltinExpr* expr);
     QualType analyseToContainer(BuiltinExpr* expr);
     void analyseArrayType(VarDecl* V, QualType T);
     void analyseArraySizeExpr(ArrayType* AT);

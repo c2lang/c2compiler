@@ -17,6 +17,7 @@
 #define ANALYSER_EXPR_ANALYSER_H
 
 #include "Clang/SourceLocation.h"
+#include "AST/Type.h"
 
 namespace c2lang {
 class DiagnosticsEngine;
@@ -30,7 +31,6 @@ class ExplicitCastExpr;
 class IdentifierExpr;
 class UnaryOperator;
 class BinaryOperator;
-class QualType;
 class TargetInfo;
 class Decl;
 class StructTypeDecl;
@@ -52,6 +52,7 @@ public:
     bool outputStructDiagnostics(QualType T, IdentifierExpr* member, unsigned msg);
 
     Decl* analyseOffsetOf(BuiltinExpr* expr, const StructTypeDecl* S, Expr* member, uint64_t* off);
+    QualType analyseIntegerLiteral(Expr* expr);
 
     bool hasError() const { return m_hasError; }
 private:
