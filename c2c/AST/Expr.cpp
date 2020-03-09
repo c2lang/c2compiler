@@ -89,7 +89,7 @@ void Expr::print(StringBuilder& buffer, unsigned indent) const {
         return cast<ParenExpr>(this)->print(buffer, indent);
     case EXPR_BITOFFSET:
         return cast<BitOffsetExpr>(this)->print(buffer, indent);
-    case EXPR_CAST:
+    case EXPR_EXPL_CAST:
         return cast<ExplicitCastExpr>(this)->print(buffer, indent);
     }
 }
@@ -128,7 +128,7 @@ void Expr::printLiteral(StringBuilder& buffer) const {
         break;
     case EXPR_BITOFFSET:
         return cast<BitOffsetExpr>(this)->printLiteral(buffer);
-    case EXPR_CAST:
+    case EXPR_EXPL_CAST:
         break;
     }
 }
@@ -164,7 +164,7 @@ SourceLocation Expr::getLocation() const {
     case EXPR_PAREN:
         return cast<ParenExpr>(this)->getLocation();
     case EXPR_BITOFFSET:
-    case EXPR_CAST:
+    case EXPR_EXPL_CAST:
         return exprLoc;
     }
 }
@@ -202,7 +202,7 @@ SourceLocation Expr::getLocStart() const {
         return cast<ParenExpr>(this)->getLocStart();
     case EXPR_BITOFFSET:
         return cast<BitOffsetExpr>(this)->getLocStart();
-    case EXPR_CAST:
+    case EXPR_EXPL_CAST:
         break;
     }
     return getLocation();
@@ -241,7 +241,7 @@ SourceLocation Expr::getLocEnd() const {
         return cast<ParenExpr>(this)->getLocEnd();
     case EXPR_BITOFFSET:
         return cast<BitOffsetExpr>(this)->getLocEnd();
-    case EXPR_CAST:
+    case EXPR_EXPL_CAST:
         return cast<ExplicitCastExpr>(this)->getLocEnd();
     }
     return getLocation();

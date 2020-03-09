@@ -52,6 +52,7 @@ class TargetInfo;
 class Module;
 
 constexpr size_t MAX_STRUCT_INDIRECTION_DEPTH = 256;
+constexpr size_t MAX_EXPR_DEPTH = 64;
 
 class FunctionAnalyser {
 public:
@@ -194,6 +195,17 @@ private:
     typedef std::vector<LabelDecl*> Labels;
     typedef Labels::iterator LabelsIter;
     Labels labels;
+
+    struct ParentStack {
+        Stmt** stack[MAX_EXPR_DEPTH];   // points to where parent stores child
+        unsigned depth;
+        void push(Stmt** s) { stack[depth++] = s; }
+        void pop() { depth--; }
+        bool hasParent() { return depth != 0; }
+        void replaceChild(Expr* child);
+        void dump();
+    };
+    ParentStack parents;
 
     FunctionAnalyser(const FunctionAnalyser&);
     FunctionAnalyser& operator= (const FunctionAnalyser&);

@@ -80,6 +80,7 @@ FunctionAnalyser::FunctionAnalyser(Scope& scope_,
     , allowStaticMember(false)
 {
     callStack.callDepth = 0;
+    parents.depth = 0;
 }
 
 void FunctionAnalyser::check(FunctionDecl* func) {
@@ -546,16 +547,27 @@ bool FunctionAnalyser::analyseReturnStmt(Stmt* stmt) {
     QualType rtype = CurrentFunction->getReturnType();
     bool no_rvalue = (rtype.getTypePtr() == Type::Void());
     if (value) {
+        parents.push(ret->childAddr());
         QualType type = analyseExpr(value, RHS);
+#if 0
+        // AST modification DEMO: always wrap value in ParenExpr
+        {
+            ParenExpr* P = new (Context) ParenExpr(SourceLocation(), SourceLocation(), value);
+            P->setCTC(value->getCTC());
+            if (value->isConstant()) P->setConstant();
+            P->setType(type);
+            parents.replaceChild(P);
+        }
+#endif
+        parents.pop();
         if (no_rvalue) {
             Diag(ret->getLocation(), diag::ext_return_has_expr) << CurrentFunction->getName() << 0
                     << value->getSourceRange();
             return false;
-        } else {
-            if (type.isValid()) {
-                EA.check(rtype, value);
-                if (EA.hasError()) return false;
-            }
+        }
+        if (type.isValid()) {
+            EA.check(rtype, value);
+            if (EA.hasError()) return false;
         }
     } else {
         if (!no_rvalue) {
@@ -788,7 +800,7 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
     case EXPR_BITOFFSET:
         FATAL_ERROR("Unreachable");
         break;
-    case EXPR_CAST:
+    case EXPR_EXPL_CAST:
         return analyseExplicitCastExpr(expr);
     }
     return QualType();
@@ -1133,7 +1145,7 @@ QualType FunctionAnalyser::analyseSizeOfExpr(BuiltinExpr* B) {
     case EXPR_ARRAYSUBSCRIPT:
     case EXPR_MEMBER:
     case EXPR_IDENTIFIER:
-    case EXPR_CAST: {
+    case EXPR_EXPL_CAST: {
         QualType type = analyseExpr(expr, RHS);
         if (!type.isValid()) {
             allowStaticMember = false;
@@ -1948,7 +1960,9 @@ QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr* M, unsign
 QualType FunctionAnalyser::analyseParenExpr(Expr* expr) {
     LOG_FUNC
     ParenExpr* P = cast<ParenExpr>(expr);
+    parents.push(P->childAddr());
     QualType Q = analyseExpr(P->getExpr(), RHS);
+    parents.pop();
 
     expr->setCTC(P->getExpr()->getCTC());
     if (P->getExpr()->isConstant()) expr->setConstant();
@@ -2239,7 +2253,7 @@ bool FunctionAnalyser::checkAssignee(Expr* expr) const {
     case EXPR_BITOFFSET:
         // ok
         return true;
-    case EXPR_CAST:
+    case EXPR_EXPL_CAST:
         TODO;
         break;
     }
@@ -2432,5 +2446,22 @@ const Module* FunctionAnalyser::currentModule() const {
     if (!mod && CurrentVarDecl) mod = CurrentVarDecl->getModule();
     assert(mod);
     return mod;
+}
+
+void FunctionAnalyser::ParentStack::dump() {
+    StringBuilder buffer;
+    buffer << "Parents:\n";
+    for (unsigned i=0; i<depth; i++) {
+        buffer << '[' << i << "] ";
+
+        (*stack[i])->print(buffer, 0);
+    }
+    fprintf(stderr, "%s\n", buffer.c_str());
+}
+
+void FunctionAnalyser::ParentStack::replaceChild(Expr* child) {
+    assert(depth > 0);
+    Stmt** parent = stack[depth-1];
+    *parent = child;
 }
 

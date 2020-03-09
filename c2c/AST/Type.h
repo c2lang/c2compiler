@@ -67,6 +67,9 @@ public:
         // Q: use Type equal operator?
         return Value == rhs.Value;
     }
+    bool same_base_type(const QualType& rhs) const {
+        return getTypePtrOrNull() == rhs.getTypePtrOrNull();
+    }
     bool isNull() const { return getTypePtrOrNull() == 0; }
     bool isValid() const { return getTypePtrOrNull() != 0; }
     bool isConstQualified() const { return (Value & QUAL_CONST); }

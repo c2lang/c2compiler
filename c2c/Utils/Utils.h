@@ -36,6 +36,8 @@ public:
     static bool endsWith(const char* text, const char* tail);
     // return pointer to filename after last '/'
     static const char* getFileName(const std::string& s);
+
+    static unsigned online_cpus();
 };
 
 }

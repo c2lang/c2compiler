@@ -13,17 +13,15 @@
  * limitations under the License.
  */
 
-#ifndef UTILS_PROCESS_UTILS_H
-#define UTILS_PROCESS_UTILS_H
-
-#include <string>
+#ifndef UTILS_LOG_H
+#define UTILS_LOG_H
 
 namespace C2 {
 
-class ProcessUtils {
+class Log {
 public:
-    static int run(const std::string& path, const std::string& cmd, const std::string& logfile);
-    static int run_args(const std::string& path, const std::string& cmd, const std::string& logfile, const char* args);
+    static void init(bool useColors_);
+    static void log(const char* color, const char* format, ...);
 };
 
 }

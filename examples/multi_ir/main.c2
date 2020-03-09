@@ -1,0 +1,60 @@
+module test;
+
+import stdio local;
+import mod1;
+import mod2;
+import mod3;
+import mod4;
+import mod5;
+import mod6;
+import mod7;
+import mod8;
+import mod9;
+import mod10;
+import mod11;
+import mod12;
+import mod13;
+import mod14;
+import mod15;
+
+public func i32 main() {
+    printf("Hello multi!\n");
+    mod1.func1();
+    mod2.func1();
+    mod3.func1();
+    mod4.func1();
+    mod5.func1();
+    mod6.func1();
+    mod7.func1();
+    mod8.func1();
+    mod9.func1();
+    mod10.func1();
+    mod11.func1();
+    mod12.func1();
+    mod13.func1();
+    mod14.func1();
+    mod15.func1();
+
+    mod1.func2();
+    mod2.func2();
+    mod3.func2();
+    mod4.func2();
+    mod5.func2();
+    mod6.func2();
+    mod7.func2();
+    mod8.func2();
+
+    printf("answer1 = %d\n", mod1.func3(10, 10));
+    printf("answer2 = %d\n", mod2.func3(20, 20));
+    printf("answer3 = %d\n", mod3.func3(30, 30));
+    printf("answer4 = %d\n", mod4.func3(40, 40));
+    printf("answer5 = %d\n", mod5.func3(50, 50));
+    printf("answer6 = %d\n", mod6.func3(60, 60));
+    printf("answer7 = %d\n", mod6.func3(70, 70));
+    printf("answer8 = %d\n", mod6.func3(80, 80));
+
+    printf("Goodbye!\n");
+    return 0;
+}
+
+

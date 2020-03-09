@@ -15,11 +15,14 @@
 
 #define FATAL_ERROR(fmt) \
   do { fprintf(stderr, "FATAL ERROR in %s:%d:%s(): " fmt "\n", __FILE__, \
-      __LINE__, __func__); exit(-1); } while (0)
+      __LINE__, __func__); exit(-2); } while (0)
 
 #define FATAL_ERRORF(fmt, ...) \
   do { fprintf(stderr, "FATAL ERROR in %s:%d:%s(): " fmt "\n", __FILE__, \
-      __LINE__, __func__, __VA_ARGS__); exit(-1); } while (0)
+      __LINE__, __func__, __VA_ARGS__); exit(-2); } while (0)
 
-#define TODO do { fprintf(stderr, "Exit due to TODO in %s:%d:%s()\n", __FILE__, __LINE__, __func__); exit(-2); } while (0)
+#define TODO do { \
+    fprintf(stderr, "Exit due to TODO in %s:%d:%s()\n", __FILE__, __LINE__, __func__); \
+    exit(-2); \
+    } while (0)
 

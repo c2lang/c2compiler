@@ -96,7 +96,7 @@ void LiteralAnalyser::check(QualType TLeft, const Expr* Right) {
     // special case for assignments to enums
     if (TLeft.isEnumType()) {
         // dont check value if right is also same enum type
-        if (TLeft == Right->getType()) return;
+        if (TLeft.same_base_type(Right->getType())) return;
 
         // TODO should be done elsewhere (checking if conversion is allowed)
         fprintf(stderr, "TODO refactor checking!!, type conversion not allowed\n");
@@ -256,7 +256,7 @@ APSInt LiteralAnalyser::checkLiterals(const Expr* Right) {
     case EXPR_BITOFFSET:
         TODO;
         break;
-    case EXPR_CAST:
+    case EXPR_EXPL_CAST:
     {
         // a cast may change the value without warning
         const ExplicitCastExpr* E = cast<ExplicitCastExpr>(Right);

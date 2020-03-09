@@ -55,7 +55,6 @@ private:
     unsigned analyse();
     void printSymbols(bool printLibs, bool printNonPublic) const;
     void printComponents(bool printLibs) const;
-    void log(const char* color, const char* format, ...) const;
     int report(c2lang::DiagnosticConsumer* client, uint64_t t1_build);
 
     bool checkExportedPackages() const;

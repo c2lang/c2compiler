@@ -51,9 +51,9 @@ static uint64_t stmtCounters[STMT_DECL+1];
 static uint32_t stmtSizes[STMT_DECL+1];
 static const char* stmtNames[STMT_DECL+1];
 
-static uint64_t exprCounters[EXPR_CAST+1];
-static uint32_t exprSizes[EXPR_CAST+1];
-static const char* exprNames[EXPR_CAST+1];
+static uint64_t exprCounters[EXPR_EXPL_CAST+1];
+static uint32_t exprSizes[EXPR_EXPL_CAST+1];
+static const char* exprNames[EXPR_EXPL_CAST+1];
 
 // TODO attributes
 // TODO types
@@ -272,7 +272,7 @@ ASTBuilder::ASTBuilder(SourceManager& sm_,
         EXPR_INIT(EXPR_MEMBER, MemberExpr);
         EXPR_INIT(EXPR_PAREN, ParenExpr);
         EXPR_INIT(EXPR_BITOFFSET, BitOffsetExpr);
-        EXPR_INIT(EXPR_CAST, CastExpr);
+        EXPR_INIT(EXPR_EXPL_CAST, CastExpr);
     }
     counter++;
 #endif
@@ -470,6 +470,7 @@ C2::VarDecl* ASTBuilder::ActOnVarDef(const char* name, SourceLocation loc, bool 
         is_public = true;
     }
     VarDecl* V = createVarDecl(VARDECL_GLOBAL, name, loc, typeExpr, 0, is_public);
+    if (module->isExternal()) V->setExternal();
     ast.addVar(V);
     addSymbol(V);
     return V;
@@ -530,6 +531,7 @@ C2::FunctionDecl* ASTBuilder::ActOnFuncDecl(const char* func_name_, SourceLocati
     }
     const char* fullname = Context.addIdentifier(fullname_, fullname_.size());
     FunctionDecl* D = createFuncDecl(fullname, loc, is_public, rtype);
+    if (module->isExternal()) D->setExternal();
 
     if (ID) D->setStructInfo(ID);
     ast.addFunction(D);
@@ -1320,7 +1322,7 @@ C2::ExprResult ASTBuilder::ActOnExplicitCast(SourceLocation castLoc, Expr* type,
     std::cerr << ANSI_NORMAL"\n";
 #endif
     TypeExpr* typeExpr = cast<TypeExpr>(type);
-    MEM_EXPR(EXPR_CAST);
+    MEM_EXPR(EXPR_EXPL_CAST);
     ExplicitCastExpr* E = new (Context) ExplicitCastExpr(castLoc, typeExpr->getType(), expr);
     Context.freeTypeExpr(typeExpr);
     return ExprResult(E);

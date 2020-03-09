@@ -34,6 +34,28 @@ executable multi_mod
     multi_mod2.c2
 end
 
+executable multi_ir
+    $warnings no-unused
+    $generate-c skip
+    $generate-ir
+    multi_ir/mod1.c2
+    multi_ir/mod2.c2
+    multi_ir/mod3.c2
+    multi_ir/mod4.c2
+    multi_ir/mod5.c2
+    multi_ir/mod6.c2
+    multi_ir/mod7.c2
+    multi_ir/mod8.c2
+    multi_ir/mod9.c2
+    multi_ir/mod10.c2
+    multi_ir/mod11.c2
+    multi_ir/mod12.c2
+    multi_ir/mod13.c2
+    multi_ir/mod14.c2
+    multi_ir/mod15.c2
+    multi_ir/main.c2
+end
+
 executable layer
     $warnings no-unused
     layer1.c2
@@ -53,7 +75,8 @@ end
 
 executable hello
     $warnings no-unused
-    $generate-ir
+    $generate-c skip
+    $generate-ir single-module
     helloworld.c2
 end
 

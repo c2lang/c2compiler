@@ -21,13 +21,14 @@
 
 #include <llvm/IR/GlobalValue.h>
 #include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/LLVMContext.h>
 #include "AST/Module.h"
 #include "AST/Type.h"
 #include "AST/Expr.h"
+#include "Utils/StringList.h"
 
 namespace llvm {
 class Module;
-class LLVMContext;
 class Type;
 class Function;
 }
@@ -39,26 +40,43 @@ class VarDecl;
 class Type;
 class StringLiteral;
 
+enum OptimizationLevel {
+    O0,
+    O1,
+    O2,
+    O3,
+    Os,
+    Oz,
+};
+
 // generates LLVM Module from (multiple) Module(s)
 class CodeGenModule {
 public:
-    CodeGenModule(const std::string& name_, bool single, const ModuleList& mods_, llvm::LLVMContext& context_);
+    CodeGenModule(const std::string& name_,
+                  const std::string& dir_,
+                  bool single,
+                  const ModuleList& mods_);
     ~CodeGenModule();
 
     void generate();
     bool verify();
-    void write(const std::string& outputDir, const std::string& name_);
+    void write();
+    bool optimize(OptimizationLevel opt) const;
+    bool compile() const;
+    static bool link(const std::string& outputDir, const std::string& binary, const StringList& objects);
+    void remove_tmp() const;
     void dump();
 
     llvm::Type* ConvertType(BuiltinType::Kind K);
     llvm::Type* ConvertType(QualType Q);
     llvm::PointerType* getVoidPtrType();
     llvm::Function* createExternal(const C2::Module* P, const std::string& name_);
-    llvm::GlobalValue::LinkageTypes getLinkage(bool isPublic);
+    llvm::GlobalValue::LinkageTypes getLinkage(const Decl* D);
 
     const std::string& getName() const { return name; }
     llvm::Module* getModule() const { return module; }
-    llvm::LLVMContext& getContext() const { return context; }
+    llvm::LLVMContext& getContext() { return context; }
+    // TODO pass ref?
     llvm::IRBuilder<> getBuilder() const { return builder; }
 
     unsigned getAlignment(QualType Q) const;
@@ -73,11 +91,13 @@ private:
     llvm::Constant* EmitArrayInit(const ArrayType *AT, Expr** Vals, unsigned numValues);
     llvm::Constant* EmitConstantDecl(const Decl* D);
 
-    const std::string name;
-    bool single_module;     // multiple modules in single module
-    const ModuleList& mods;
+    const std::string& name; // of object file without .o
+    const std::string& outputDir;
+    bool single_module;      // multiple modules in single module
+    const ModuleList mods;
 
-    llvm::LLVMContext& context;
+    // TODO only keep context when needed (so at max 1 for each thread)
+    llvm::LLVMContext context;
     llvm::Module* module;
     llvm::IRBuilder<> builder;
 

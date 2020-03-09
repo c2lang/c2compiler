@@ -16,6 +16,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "Utils/Utils.h"
 
@@ -59,3 +60,8 @@ const char* Utils::getFileName(const std::string& s) {
     return cp;
 }
 
+unsigned Utils::online_cpus() {
+    long ncpus = sysconf(_SC_NPROCESSORS_ONLN);
+    if (ncpus > 0) return (unsigned)ncpus;
+    return 1;
+}

@@ -13,20 +13,28 @@
  * limitations under the License.
  */
 
-#ifndef UTILS_PROCESS_UTILS_H
-#define UTILS_PROCESS_UTILS_H
+#include <stdio.h>
+#include <stdarg.h>
 
-#include <string>
+#include "Utils/Log.h"
+#include <Utils/color.h>
 
-namespace C2 {
+using namespace C2;
 
-class ProcessUtils {
-public:
-    static int run(const std::string& path, const std::string& cmd, const std::string& logfile);
-    static int run_args(const std::string& path, const std::string& cmd, const std::string& logfile, const char* args);
-};
+static bool useColors = true;
 
+void Log::init(bool useColors_) {
+    useColors = useColors_;
 }
 
-#endif
+void Log::log(const char* color, const char* format, ...) {
+    char buffer[256];
+    va_list(Args);
+    va_start(Args, format);
+    vsprintf(buffer, format, Args);
+    va_end(Args);
+
+    if (useColors) printf("%s%s" ANSI_NORMAL "\n", color, buffer);
+    else printf("%s\n", buffer);
+}
 

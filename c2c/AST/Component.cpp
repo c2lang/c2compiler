@@ -68,7 +68,13 @@ void Component::print(StringBuilder& out) const {
 }
 
 void Component::printSymbols(StringBuilder& out, bool printNonPublic) const {
-    out << "Component " << name << '\n';
+    out << "Component " << name;
+    if (is_external) {
+        out.setColor(COL_ATTRIBUTES);
+        out << " external";
+        out.setColor(ANSI_NORMAL);
+    }
+    out << '\n';
     for (unsigned i=0; i<modules.size(); i++) {
         if (!modules[i]->isLoaded()) continue;
         modules[i]->printSymbols(out, printNonPublic);

@@ -351,7 +351,7 @@ void ASTVisitor::checkExpr(const Expr* E) {
         break;
     }
     break;
-    case EXPR_CAST:
+    case EXPR_EXPL_CAST:
     {
         const ExplicitCastExpr* ECE = cast<ExplicitCastExpr>(E);
         checkExpr(ECE->getInner());

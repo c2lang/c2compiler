@@ -55,7 +55,7 @@
 #define COL_DEBUG ANSI_BMAGENTA
 
 #define MAX_LINE 512
-#define MAX_THREADS 16
+#define MAX_THREADS 32
 
 //#define DEBUG
 
@@ -1043,6 +1043,14 @@ void IssueDb::testFile() {
             color_print2(output, COL_ERROR, "Error spawning compiler '%s'", c2c_cmd);
             exit(EXIT_FAILURE);
         }
+        if (retcode == 254) { // from TODO/FATAL_ERROR macros
+            output.setColor(COL_ERROR);
+            output << "c2c returned error";
+            output.setColor(COL_NORM);
+            output << '\n';
+            hasErrors = true;
+            return;
+        }
         // check output
         char buffer[1024*1024];
         while (1) {
@@ -1303,7 +1311,7 @@ static void usage(const char* name) {
 
 int main(int argc, const char *argv[])
 {
-    unsigned num_threads = MAX_THREADS; // TODO how does git determine this?
+    unsigned num_threads = MAX_THREADS;
     num_threads = online_cpus();
     if (num_threads > MAX_THREADS) num_threads = MAX_THREADS;
 

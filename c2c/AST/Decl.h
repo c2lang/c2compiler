@@ -83,6 +83,8 @@ public:
 
     bool isExported() const { return declBits.IsExported; }
     void setExported() { declBits.IsExported = true; }
+    bool isExternal() const { return declBits.IsExternal; }
+    void setExternal() { declBits.IsExternal = true; }
     bool isPublic() const { return declBits.IsPublic; }
     void setPublic(bool isPublic) { declBits.IsPublic = isPublic; }
     bool isUsed() const { return declBits.IsUsed; }
@@ -114,6 +116,7 @@ protected:
     }
 
     void printPublic(StringBuilder& buffer) const;
+    void printExternal(StringBuilder& buffer) const;
     void printChecked(StringBuilder& buffer) const;
     void printCommon(StringBuilder& buffer, unsigned indent, const char* title) const;
 
@@ -122,7 +125,8 @@ protected:
 
         unsigned dKind : 4;
         unsigned cState : 2;
-        unsigned IsExported: 1;
+        unsigned IsExported: 1; // needs to be visible in symbol table
+        unsigned IsExternal: 1; // comes from library (not source, so only linked in)
         unsigned IsPublic : 1;
         unsigned IsUsed : 1;
         unsigned IsUsedPublic : 1;

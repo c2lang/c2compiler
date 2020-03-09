@@ -80,6 +80,9 @@ void RecipeReader::startNewRecipe() {
     }
     current->generateCCode = true;
     current->CGenFlags.single_module = true;
+    current->IrGenFlags.single_module = false;
+    current->IrGenFlags.single_threaded = false;
+    current->IrGenFlags.keep_intermediates = false;
 }
 
 void RecipeReader::handleLine(char* line) {
@@ -272,6 +275,10 @@ void RecipeReader::handleIrGenFlags() {
 
         if (strcmp(flag, "single-module") == 0) {
             current->IrGenFlags.single_module = true;
+        } else if (strcmp(flag, "single-threaded") == 0) {
+            current->IrGenFlags.single_threaded = true;
+        } else if (strcmp(flag, "keep-intermediates") == 0) {
+            current->IrGenFlags.keep_intermediates = true;
         } else {
             error("unknown IR generation flag '%s'", flag);
         }

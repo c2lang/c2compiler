@@ -33,6 +33,7 @@ public:
         , noLibC(false)
     {
         IrGenFlags.single_module = false;
+        IrGenFlags.single_threaded = false;
 
         CGenFlags.single_module = false;
         CGenFlags.no_build = false;
@@ -93,6 +94,8 @@ public:
 
     struct {
         bool single_module;
+        bool single_threaded;
+        bool keep_intermediates;
     } IrGenFlags;
 
     struct {

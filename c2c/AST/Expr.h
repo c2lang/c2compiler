@@ -53,7 +53,7 @@ enum ExprKind {
     EXPR_MEMBER,
     EXPR_PAREN,
     EXPR_BITOFFSET,
-    EXPR_CAST
+    EXPR_EXPL_CAST
 };
 
 enum ExprCTC {
@@ -466,6 +466,10 @@ public:
     bool requiresParensForC() const;
 
     void printLiteral(StringBuilder& buffer) const;
+
+    // for parents
+    Stmt** lhsAddr() { return (Stmt**)&lhs; }
+    Stmt** rhsAddr() { return (Stmt**)&rhs; }
 private:
     Expr* lhs;
     Expr* rhs;
@@ -485,6 +489,11 @@ public:
     Expr* getCond() const { return cond; }
     Expr* getLHS() const { return lhs; }
     Expr* getRHS() const { return rhs; }
+
+    // for parents
+    Stmt** condAddr() { return (Stmt**)&cond; }
+    Stmt** lhsAddr() { return (Stmt**)&lhs; }
+    Stmt** rhsAddr() { return (Stmt**)&rhs; }
 private:
     SourceLocation QuestionLoc;
     SourceLocation ColonLoc;
@@ -531,6 +540,9 @@ public:
     Expr* getExpr() const { return val; }
     Opcode getOpcode() const { return static_cast<Opcode>(unaryOperatorBits.opcode); }
     SourceLocation getOpLoc() const { return exprLoc; }
+
+    // for parents
+    Stmt** valAddr() { return (Stmt**)&val; }
 private:
     Expr* val;
 };
@@ -698,6 +710,9 @@ public:
     SourceLocation getRParen() const { return R; }
     SourceLocation getLocStart() const { return L; }
     SourceLocation getLocEnd() const { return R; }
+
+    // for parents
+    Stmt** childAddr() { return (Stmt**)&Val; }
 private:
     SourceLocation L, R;
     Expr* Val;
@@ -736,12 +751,12 @@ private:
 class ExplicitCastExpr : public Expr {
 public:
     ExplicitCastExpr(SourceLocation loc_, QualType type, Expr* expr_)
-        : Expr(EXPR_CAST, loc_, false)
+        : Expr(EXPR_EXPL_CAST, loc_, false)
         , destType(type)
         , inner(expr_)
     {}
     static bool classof(const Expr* E) {
-        return E->getKind() == EXPR_CAST;
+        return E->getKind() == EXPR_EXPL_CAST;
     }
     void print(StringBuilder& buffer, unsigned indent) const;
     SourceLocation getLocEnd() const { return inner->getLocEnd(); }

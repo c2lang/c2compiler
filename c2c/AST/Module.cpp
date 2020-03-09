@@ -98,6 +98,7 @@ void Module::printDecl(StringBuilder& out, const Decl* D, unsigned indent, bool 
     }
     if (D->isPublic()) out << " public";
     if (D->isExported()) out << " exported";
+    if (D->isExternal()) out << " external";
     out.setColor(COL_NORM);
     out << '\n';
 

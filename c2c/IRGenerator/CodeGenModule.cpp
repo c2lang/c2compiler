@@ -15,12 +15,13 @@
 
 #include <vector>
 #include <system_error>
-// TODO REMOVE
+#include <unistd.h>
+#ifdef DEBUG_CODEGEN
 #include <stdio.h>
+#endif
 
 #include <llvm/IR/Module.h>
 #include <llvm/ADT/ArrayRef.h>
-#include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Constants.h>
@@ -40,6 +41,8 @@
 #include "AST/AST.h"
 #include "AST/Decl.h"
 #include "Utils/StringBuilder.h"
+#include "Utils/ProcessUtils.h"
+#include "Utils/color.h"
 #include "Utils/GenUtils.h"
 
 //#define DEBUG_CODEGEN
@@ -50,11 +53,26 @@
 using namespace C2;
 using namespace llvm;
 
-CodeGenModule::CodeGenModule(const std::string& name_, bool single, const ModuleList& mods_, llvm::LLVMContext& context_)
+static const char* opt2str(OptimizationLevel opt) {
+    switch (opt) {
+    case O0: return "O0";
+    case O1: return "O1";
+    case O2: return "O2";
+    case O3: return "O3";
+    case Os: return "Os";
+    case Oz: return "Oz";
+    }
+    return "O0";
+}
+
+CodeGenModule::CodeGenModule(const std::string& name_,
+                             const std::string& dir_,
+                             bool single,
+                             const ModuleList& mods_)
     : name(name_)
+    , outputDir(dir_)
     , single_module(single)
     , mods(mods_)
-    , context(context_)
     , module(new llvm::Module(name, context))
     , builder(context)
 {
@@ -152,7 +170,7 @@ void CodeGenModule::dump() {
     module->print(llvm::outs(), 0);
 }
 
-void CodeGenModule::write(const std::string& outputDir, const std::string& name_) {
+void CodeGenModule::write() {
     // write IR Module to <outputDir>/<module>.ll
     StringBuilder filename;
     filename << outputDir;
@@ -164,7 +182,7 @@ void CodeGenModule::write(const std::string& outputDir, const std::string& name_
         return;
     }
 
-    filename << name_ << ".ll";
+    filename << name << ".ll";
     std::error_code EC;
     llvm::raw_fd_ostream OS((const char*)filename, EC, sys::fs::F_None);
     if (EC) {
@@ -172,32 +190,73 @@ void CodeGenModule::write(const std::string& outputDir, const std::string& name_
         return;
     }
     module->print(OS, 0);
-#if 0
-    // print to binary file
-    {
-        std::string ErrInfo;
-        StringBuilder filename;
-        filename << outputDir << name_;
-        const char* outfile = (const char*)filename;
-        tool_output_file Out(outfile, ErrInfo, raw_fd_ostream::F_Binary);
-        if (!ErrInfo.empty()) {
-            fprintf(stderr, "Could not open file %s\n", outfile);
-            return;
-        }
-        llvm::WriteBitcodeToFile(module, Out.os());
-        Out.os().close();
-        if (Out.os().has_error()) {
-            fprintf(stderr, "Error writing file %s\n", outfile);
-        }
-        Out.keep();
-        printf("written %s\n", outfile);
+}
+
+bool CodeGenModule::optimize(OptimizationLevel opt) const {
+    std::string logfile = name + ".log";
+    StringBuilder args(512);
+    args << name << ".ll -o " << name << ".bc --" << opt2str(opt);
+
+    int retval = ProcessUtils::run_args(outputDir, "opt", logfile, args.c_str());
+    if (retval != 0) {
+        fprintf(stderr, ANSI_RED"error during LLVM optimization" ANSI_NORMAL"\n");
+        fprintf(stderr, "see %s%s for details\n", outputDir.c_str(), logfile.c_str());
+        return false;
     }
-#endif
+    return true;
+}
+
+bool CodeGenModule::compile() const {
+    std::string logfile = name + ".log";
+    StringBuilder args(512);
+    args << name << ".bc --filetype=obj --relocation-model=pic --O2";
+    int retval = ProcessUtils::run_args(outputDir, "llc", logfile, args.c_str());
+    if (retval != 0) {
+        fprintf(stderr, ANSI_RED"error during LLVM compilation" ANSI_NORMAL"\n");
+        fprintf(stderr, "see %s%s for details\n", outputDir.c_str(), logfile.c_str());
+        return false;
+    }
+    return true;
+}
+
+bool CodeGenModule::link(const std::string& outputDir, const std::string& binary, const StringList& objects) {
+    std::string logfile = "link.log";
+    StringBuilder args;
+    args << "-o " << binary;
+    for (unsigned i=0; i<objects.size(); ++i) {
+        args << ' ' << objects[i] << ".o";
+    }
+    int retval = ProcessUtils::run_args(outputDir, "clang", logfile, args.c_str());
+    if (retval != 0) {
+        fprintf(stderr, ANSI_RED"error during linking" ANSI_NORMAL"\n");
+        fprintf(stderr, "see %s%s for details\n", outputDir.c_str(), logfile.c_str());
+        return false;
+    }
+
+    StringBuilder filename(512);
+    filename << outputDir << logfile;
+    if (unlink(filename.c_str()) != 0) fprintf(stderr, "Cannot remove %s\n", filename.c_str());
+    return true;
+}
+
+void CodeGenModule::remove_tmp() const {
+    StringBuilder filename(512);
+
+    filename << outputDir << name << ".ll";
+    if (unlink(filename.c_str()) != 0) fprintf(stderr, "Cannot remove %s\n", filename.c_str());
+
+    filename.clear();
+    filename << outputDir << name << ".bc";
+    if (unlink(filename.c_str()) != 0) fprintf(stderr, "Cannot remove %s\n", filename.c_str());
+
+    filename.clear();
+    filename << outputDir << name << ".log";
+    if (unlink(filename.c_str()) != 0) fprintf(stderr, "Cannot remove %s\n", filename.c_str());
 }
 
 void CodeGenModule::EmitGlobalVariable(VarDecl* Var) {
     bool constant = false;
-    llvm::GlobalValue::LinkageTypes ltype = getLinkage(Var->isPublic());
+    llvm::GlobalValue::LinkageTypes ltype = getLinkage(Var);
 
     const Expr* I = Var->getInitValue();
     llvm::Constant* init;
@@ -343,6 +402,7 @@ llvm::PointerType* CodeGenModule::getVoidPtrType() {
 }
 
 llvm::Function* CodeGenModule::createExternal(const C2::Module* P, const std::string& name_) {
+    // TODO why search again here? caller already has Decl*
     Decl* D = P->findSymbol(name_);
     assert(D);
     FunctionDecl* F = cast<FunctionDecl>(D);
@@ -351,9 +411,11 @@ llvm::Function* CodeGenModule::createExternal(const C2::Module* P, const std::st
     return proto;
 }
 
-llvm::GlobalValue::LinkageTypes CodeGenModule::getLinkage(bool isPublic) {
-    if (isPublic && !single_module) return llvm::GlobalValue::ExternalLinkage;
-    else return llvm::GlobalValue::InternalLinkage;
+llvm::GlobalValue::LinkageTypes CodeGenModule::getLinkage(const Decl* decl) {
+    if (decl->isExternal()) return llvm::GlobalValue::ExternalLinkage;
+    if (decl->isPublic() && !single_module) return llvm::GlobalValue::ExternalLinkage;
+
+    return llvm::GlobalValue::InternalLinkage;
 }
 
 llvm::Constant* CodeGenModule::EvaluateExprAsConstant(const Expr *E) {

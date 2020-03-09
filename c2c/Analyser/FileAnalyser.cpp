@@ -639,7 +639,7 @@ bool FileAnalyser::analyseExpr(Expr* expr, bool usedPublic) {
     case EXPR_BITOFFSET:
         FATAL_ERROR("Should not come here");
         break;
-    case EXPR_CAST:
+    case EXPR_EXPL_CAST:
         //return analyseExplicitCastExpr(expr);
         break;
     }
@@ -844,7 +844,7 @@ bool FileAnalyser::analyseSizeOfExpr(BuiltinExpr* B, bool usedPublic) {
     case EXPR_ARRAYSUBSCRIPT:
     case EXPR_MEMBER:
     case EXPR_IDENTIFIER:
-    case EXPR_CAST: {
+    case EXPR_EXPL_CAST: {
         if (!analyseExpr(expr, usedPublic)) return false;
         QualType type = expr->getType();
         TR->checkOpaqueType(expr->getLocation(), usedPublic, type);

@@ -25,7 +25,6 @@
 #include "Clang/Token.h"
 #include "Clang/Diagnostic.h"
 #include "Clang/LLVM.h"
-#include "Clang/TokenKinds.h"
 #include <llvm/ADT/None.h>
 #include <llvm/ADT/Optional.h>
 #include <llvm/ADT/StringExtras.h>

@@ -354,7 +354,7 @@ void CCodeGenerator::EmitExpr(const Expr* E, StringBuilder& output) {
     case EXPR_BITOFFSET:
         FATAL_ERROR("should not happen");
         break;
-    case EXPR_CAST:
+    case EXPR_EXPL_CAST:
     {
         const ExplicitCastExpr* ECE = cast<ExplicitCastExpr>(E);
         output << '(';

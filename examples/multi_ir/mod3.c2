@@ -1,0 +1,16 @@
+module mod3;
+
+import stdio local;
+
+public func void func1() {
+    printf("mod3.func1()\n");
+}
+
+public func void func2() {
+    printf("mod3.func2()\n");
+}
+
+public func i32 func3(i32 a, i32 b) {
+    return a * b;
+}
+

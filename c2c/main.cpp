@@ -27,6 +27,7 @@
 #include "Builder/BuildFileReader.h"
 #include "AST/Component.h"
 #include "Utils/BuildFile.h"
+#include "Utils/Log.h"
 #include "Utils/Utils.h"
 #include "Utils/color.h"
 
@@ -230,6 +231,8 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
 
 int main(int argc, const char *argv[])
 {
+    Log::init(isatty(1));
+
     uint64_t t1 = Utils::getCurrentTime();
     BuildOptions opts;
     parse_arguments(argc, argv, opts);
@@ -247,6 +250,7 @@ int main(int argc, const char *argv[])
     if (!use_recipe) {
         // NOTE: don't support build file in this mode
         Recipe dummy("dummy", Component::EXECUTABLE);
+        dummy.IrGenFlags.single_module = true;
         dummy.addFile(targetFilter);
         C2Builder builder(dummy, 0, opts);
         int errors = builder.build();

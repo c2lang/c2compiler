@@ -374,7 +374,7 @@ Expr* AnalyserUtils::getInnerExprAddressOf(Expr* expr) {
             break;
         }
         case EXPR_BITOFFSET:
-        case EXPR_CAST:
+        case EXPR_EXPL_CAST:
             TODO;
             return expr;
         }

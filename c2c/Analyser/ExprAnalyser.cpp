@@ -135,7 +135,7 @@ void ExprAnalyser::check(QualType TLeft, const Expr* expr) {
     case EXPR_BITOFFSET:
         TODO;
         return;
-    case EXPR_CAST:
+    case EXPR_EXPL_CAST:
         //TODO;
         return;
     }

@@ -78,7 +78,7 @@ llvm::Function* CodeGenFunction::generateProto(const std::string& modName) {
     StringBuilder buffer;
     GenUtils::addName(modName, FuncDecl->getName(), buffer);
 
-    llvm::GlobalValue::LinkageTypes ltype = CGM.getLinkage(FuncDecl->isPublic());
+    llvm::GlobalValue::LinkageTypes ltype = CGM.getLinkage(FuncDecl);
     // override for main
     if (strcmp(FuncDecl->getName(), "main") == 0) ltype = llvm::GlobalValue::ExternalLinkage;
 
@@ -561,7 +561,7 @@ llvm::Value* CodeGenFunction::EmitExprNoImpCast(const Expr* E) {
         E->dump();
         TODO;
         break;
-    case EXPR_CAST:
+    case EXPR_EXPL_CAST:
     E->dump();
         TODO;
         break;
@@ -708,16 +708,18 @@ void CodeGenFunction::EmitVarDecl(const VarDecl* D) {
     name << D->getName();
     if (D->isParameter()) name << ".addr";
     llvm::AllocaInst *inst = CreateTempAlloca(CGM.ConvertType(qt), (const char*)name);
+    // set alignment
+    if (!D->isParameter()) inst->setAlignment(CGM.getAlignment(qt));
     D->setIRValue(inst);
 
-    // set alignment
-    //if (!D->isParameter()) inst->setAlignment(CGM.getAlignment(qt));
 
     const Expr* I = D->getInitValue();
     // NOTE: for function params, we do this during Body generation
     if (I && !D->isParameter()) {
         llvm::Value* val = EmitExpr(I);
         Builder.CreateStore(val, inst, qt.isVolatileQualified());
+        //StoreInst* s = Builder.CreateStore(val, inst, qt.isVolatileQualified());
+        //s->setAlignment(4);   // TODO unknown if needed
     }
 }
 
@@ -877,8 +879,7 @@ llvm::Value *CodeGenFunction::EvaluateExprAsBool(const Expr *E) {
 
 /// CreateTempAlloca - This creates a alloca and inserts it into the entry
 /// block.
-llvm::AllocaInst *CodeGenFunction::CreateTempAlloca(llvm::Type *Ty,
-        const Twine &Name) {
+llvm::AllocaInst *CodeGenFunction::CreateTempAlloca(llvm::Type *Ty, const Twine &Name) {
     return new llvm::AllocaInst(Ty, 0, Name, AllocaInsertPt);
 }
 

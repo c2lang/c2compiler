@@ -265,6 +265,9 @@ public:
     SourceLocation getLocation() const { return RetLoc; }
 
     Expr* getExpr() const { return value; }
+
+    // for parents
+    Stmt** childAddr() { return (Stmt**)&value; }
 private:
     SourceLocation RetLoc;
     Expr* value;
@@ -288,6 +291,9 @@ public:
     Stmt* getCond() const { return SubExprs[COND]; }
     Stmt* getThen() const { return SubExprs[THEN]; }
     Stmt* getElse() const { return SubExprs[ELSE]; }
+
+    // for parents
+    Stmt** condAddr() { return (Stmt**)&SubExprs[COND]; }
 private:
     enum { VAR, COND, THEN, ELSE, END_EXPR };
     Stmt* SubExprs[END_EXPR];
@@ -309,6 +315,10 @@ public:
 
     Stmt* getCond() const { return Cond; }
     Stmt* getBody() const { return Then; }
+
+    // for parents
+    Stmt** condAddr() { return (Stmt**)&Cond; }
+    Stmt** thenAddr() { return (Stmt**)&Then; }
 private:
     SourceLocation Loc;
     Stmt* Cond;
@@ -328,6 +338,10 @@ public:
 
     Stmt* getCond() const { return Cond; }
     Stmt* getBody() const { return Then; }
+
+    // for parents
+    Stmt** condAddr() { return (Stmt**)&Cond; }
+    Stmt** bodyAddr() { return (Stmt**)&Then; }
 private:
     SourceLocation Loc;
     Stmt* Cond;
@@ -349,6 +363,12 @@ public:
     Expr* getCond() const { return Cond; }
     Expr* getIncr() const { return Incr; }
     Stmt* getBody() const { return Body; }
+
+    // for parents
+    Stmt** initAddr() { return (Stmt**)&Init; }
+    Stmt** condAddr() { return (Stmt**)&Cond; }
+    Stmt** incrAddr() { return (Stmt**)&Incr; }
+    Stmt** bodyAddr() { return (Stmt**)&Body; }
 private:
     SourceLocation Loc;
     Stmt* Init;
@@ -371,6 +391,9 @@ public:
     Stmt* getCond() const { return Cond; }
     unsigned numCases() const { return switchStmtBits.numCases; }
     Stmt** getCases() const { return cases; }
+
+    // for parents
+    Stmt** condAddr() { return (Stmt**)&Cond; }
 private:
     SourceLocation Loc;
     Stmt* Cond;
@@ -391,6 +414,9 @@ public:
     Expr* getCond() const { return Cond; }
     unsigned numCases() const { return switchStmtBits.numCases; }
     Stmt** getCases() const { return cases; }
+
+    // for parents
+    Stmt** condAddr() { return (Stmt**)&Cond; }
 private:
     SourceLocation Loc;
     Expr* Cond;
@@ -414,6 +440,9 @@ public:
 
     void setHasDecls(bool has) { caseStmtBits.hasDecls = has; }
     bool hasDecls() const { return caseStmtBits.hasDecls; }
+
+    // for parents
+    Stmt** condAddr() { return (Stmt**)&Cond; }
 private:
     SourceLocation Loc;
     Expr* Cond;
@@ -495,6 +524,9 @@ public:
     SourceLocation getLocation() const { return Loc; }
     Stmt* getSubStmt() const { return subStmt; }
     const char* getName() const { return name; }
+
+    // for parents
+    Stmt** subAddr() { return (Stmt**)&subStmt; }
 private:
     SourceLocation Loc;
     const char* name;

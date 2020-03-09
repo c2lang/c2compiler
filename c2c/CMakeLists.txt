@@ -92,6 +92,7 @@ add_library(c2core
     IRGenerator/CodeGenFunction.cpp
     IRGenerator/CodeGenModule.cpp
     IRGenerator/InterfaceGenerator.cpp
+    IRGenerator/IRGenerator.cpp
     CGenerator/CCodeGenerator.cpp
     CGenerator/MakefileGenerator.cpp
     CGenerator/TypeSorter.cpp
@@ -112,6 +113,7 @@ add_library(c2core
     FileUtils/TomlReader.cpp
     Utils/StringBuilder.cpp
     Utils/Utils.cpp
+    Utils/Log.cpp
     Utils/GenUtils.cpp
     Utils/BuildFile.cpp
     Utils/TargetInfo.cpp

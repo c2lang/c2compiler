@@ -134,6 +134,12 @@ void Decl::printPublic(StringBuilder& buffer) const {
     }
 }
 
+void Decl::printExternal(StringBuilder& buffer) const {
+    if (isExternal()) {
+        buffer.setColor(COL_ATTR);
+        buffer << " external";
+    }
+}
 void Decl::printChecked(StringBuilder& buffer) const {
     buffer.setColor(COL_ATTR);
     if (isChecked()) buffer << " checked";
@@ -176,6 +182,7 @@ void FunctionDecl::print(StringBuilder& buffer, unsigned indent) const {
     printCommon(buffer, indent, "FunctionDecl");
     type.print(buffer);
     printPublic(buffer);
+    printExternal(buffer);
     printChecked(buffer);
     buffer.setColor(COL_VALUE);
     buffer << ' ' << name;
@@ -261,6 +268,7 @@ void VarDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer.setColor(COL_ATTR);
     buffer << ' ' << VarDeclKind2Str(getVarKind());
     printPublic(buffer);
+    printExternal(buffer);
     printChecked(buffer);
     buffer.setColor(COL_VALUE);
     buffer << ' ' << name << '\n';
@@ -307,6 +315,7 @@ void AliasTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
     printCommon(buffer, indent, "AliasTypeDecl");
     type.print(buffer);
     printPublic(buffer);
+    printExternal(buffer);
     printChecked(buffer);
     buffer.setColor(COL_VALUE);
     buffer << ' ' << name;
@@ -434,6 +443,7 @@ void StructTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
     if (isStruct()) buffer << "struct";
     else buffer << "union";
     printPublic(buffer);
+    printExternal(buffer);
     printChecked(buffer);
     buffer.setColor(COL_VALUE);
     buffer << ' ';
@@ -465,6 +475,7 @@ void EnumTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer << "EnumTypeDecl ";
     type.print(buffer);
     printPublic(buffer);
+    printExternal(buffer);
     printChecked(buffer);
     buffer.setColor(COL_VALUE);
     buffer << ' ' << name;

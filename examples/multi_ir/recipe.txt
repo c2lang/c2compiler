@@ -1,0 +1,25 @@
+
+executable test
+    $warnings no-unused
+    $generate-c skip
+#    $generate-ir keep-intermediates
+    $generate-ir
+#    $generate-ir single-threaded
+    mod1.c2
+    mod2.c2
+    mod3.c2
+    mod4.c2
+    mod5.c2
+    mod6.c2
+    mod7.c2
+    mod8.c2
+    mod9.c2
+    mod10.c2
+    mod11.c2
+    mod12.c2
+    mod13.c2
+    mod14.c2
+    mod15.c2
+    main.c2
+end
+
