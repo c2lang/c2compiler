@@ -30,7 +30,6 @@ struct CTypes {
 };
 
 // clang-format off
-// NOTE: hardcoded for x86_64 architecture
 static CTypes ctypes[] = {
     { "c_char",      Type::Int8() },
     { "c_uchar",     Type::UInt8() },
@@ -40,8 +39,8 @@ static CTypes ctypes[] = {
     { "c_uint",      Type::UInt32() },
     { "c_long",      Type::Int64() },
     { "c_ulong",     Type::UInt64() },
-    { "c_size",      Type::UInt64() },  // TODO make arch dependent
-    { "c_ssize",     Type::Int64() },   // TODO make arch dependent
+    { "c_size",      Type::UInt64() },
+    { "c_ssize",     Type::Int64() },
     { "c_longlong",  Type::Int64() },
     { "c_ulonglong", Type::UInt64() },
     { "c_float",     Type::Float32() },
@@ -50,6 +49,18 @@ static CTypes ctypes[] = {
 // clang-format on
 
 void C2ModuleLoader::load(C2::Module* c2Mod, bool is32bit) {
+    if (is32bit) {
+        ctypes[6].type = Type::Int32();
+        ctypes[7].type = Type::UInt32();
+        ctypes[8].type = Type::UInt32();
+        ctypes[9].type = Type::Int32();
+    } else {
+        ctypes[6].type = Type::Int64();
+        ctypes[7].type = Type::UInt64();
+        ctypes[8].type = Type::UInt64();
+        ctypes[9].type = Type::Int64();
+    }
+
     c2lang::SourceLocation loc;
 
     AST* ast = new AST("<generated>", false, false);

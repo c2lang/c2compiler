@@ -24,9 +24,11 @@ namespace C2 {
 
 class Decl;
 class StringBuilder;
+class TargetInfo;
 
 class AnalyserUtils {
 public:
+    static void init(const TargetInfo& target_);
     static const char* fullName(const std::string& modName, const char* symname);
 
     static QualType getStructType(QualType Q);

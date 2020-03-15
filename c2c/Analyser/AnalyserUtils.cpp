@@ -19,8 +19,17 @@
 #include "Analyser/AnalyserUtils.h"
 #include "AST/Decl.h"
 #include "Utils/StringBuilder.h"
+#include "Utils/TargetInfo.h"
 
 using namespace C2;
+
+static const TargetInfo* target;
+static unsigned POINTER_SIZE = 8;
+
+void AnalyserUtils::init(const TargetInfo& target_) {
+    target = &target_;
+    POINTER_SIZE = target->intWidth / 8;
+}
 
 const char* AnalyserUtils::fullName(const std::string& modName, const char* symname) {
     static char buffer[128];
@@ -95,9 +104,7 @@ QualType AnalyserUtils::UsualUnaryConversions(Expr* expr) {
     }
 
     if (canon->isPointerType()) {
-        // TODO need targetInfo
-        //return (target.intWidth == 64) ? Type::UInt64() : Type::UInt32();
-        return Type::UInt64();
+        return (target->intWidth == 64) ? Type::UInt64() : Type::UInt32();
     }
 
     return expr->getType();
@@ -245,8 +252,6 @@ uint64_t AnalyserUtils::sizeOfStruct(StructTypeDecl* S, uint32_t* align) {
 
 uint64_t AnalyserUtils::sizeOfType(QualType type, unsigned* alignment) {
 
-    // TODO not a constant.
-    constexpr unsigned POINTER_SIZE = 8;
     *alignment = 1;
 
     if (type.isNull()) return 0;
@@ -285,7 +290,7 @@ uint64_t AnalyserUtils::sizeOfType(QualType type, unsigned* alignment) {
         FATAL_ERROR("Cannot come here");
         return 0;
     case TC_FUNCTION:
-        *alignment = POINTER_SIZE;  // TODO arch dependent
+        *alignment = POINTER_SIZE;
         return POINTER_SIZE;
     case TC_MODULE:
         FATAL_ERROR("Cannot occur here");

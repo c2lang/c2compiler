@@ -44,6 +44,7 @@
 #include "Parser/Parser.h"
 #include "Parser/ASTBuilder.h"
 #include "Analyser/ComponentAnalyser.h"
+#include "Analyser/AnalyserUtils.h"
 #include "Algo/DepGenerator.h"
 #include "Algo/TagWriter.h"
 #include "IRGenerator/IRGenerator.h"
@@ -186,6 +187,8 @@ C2Builder::C2Builder(const Recipe& recipe_, const BuildFile* buildFile_, const B
         TargetInfo::getNative(targetInfo);
     }
     if (options.verbose) Log::log(COL_VERBOSE, "Target: %s", Str(targetInfo));
+
+    AnalyserUtils::init(targetInfo);
 }
 
 C2Builder::~C2Builder()
