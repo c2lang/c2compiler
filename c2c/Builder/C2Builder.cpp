@@ -243,8 +243,8 @@ int C2Builder::build() {
         PredefineBuffer.reserve(4080);
         llvm::raw_string_ostream Predefines(PredefineBuffer);
         MacroBuilder mbuilder(Predefines);
-        for (unsigned i=0; i<recipe.configs.size(); i++) {
-            mbuilder.defineMacro(recipe.configs[i]);
+        for (ConfigsIter iter = recipe.configs.begin(); iter != recipe.configs.end(); ++iter) {
+            mbuilder.defineMacro(iter->first, iter->second);
         }
     }
 

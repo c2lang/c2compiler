@@ -21,6 +21,10 @@
 
 namespace C2 {
 
+typedef std::pair<std::string, std::string> Config;
+typedef std::vector<Config> ConfigList;
+typedef ConfigList::const_iterator ConfigsIter;
+
 class Recipe {
 public:
     Recipe(const std::string& name_, Component::Type type_)
@@ -57,7 +61,7 @@ public:
     void addFile(const std::string& name_) {
         files.push_back(name_);
     }
-    void addConfig(const std::string& config_) {
+    void addConfig(const Config& config_) {
         configs.push_back(config_);
     }
     void addExported(const std::string& mod_) {
@@ -122,7 +126,7 @@ public:
     } WarningFlags;
 
     StringList files;
-    StringList configs;
+    ConfigList configs;
     StringList exported;
 
     struct Dependency {

@@ -17,8 +17,9 @@
 #define BUILDER_RECIPE_READER_H
 
 #include <stdarg.h>
+#include <string>
 #include <vector>
-#include "Utils/StringList.h"
+#include "Builder/Recipe.h"
 
 namespace C2 {
 
@@ -48,7 +49,7 @@ private:
     typedef std::vector<Recipe*> Recipes;
     Recipes recipes;
     Recipe* current;
-    StringList globalConfigs;
+    ConfigList globalConfigs;
 
     int line_nr;
     enum State { START=0, INSIDE_TARGET };

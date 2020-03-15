@@ -21,7 +21,6 @@
 #include <stdlib.h>
 
 #include "Builder/RecipeReader.h"
-#include "Builder/Recipe.h"
 #include "Builder/BuilderConstants.h"
 
 #include "FileUtils/FileMap.h"
@@ -121,12 +120,15 @@ if (line[0] == '#') return; // skip comments
                 if (has_targets) {
                     error("global configs only allowed before executable/lib targets");
                 }
-                while (1) {
-                    const char* tok2 = get_token();
-                    if (!tok2) break;
-                    // TODO check duplicate configs
-                    globalConfigs.push_back(tok2);
-                }
+                const char* tok2 = get_token();
+                if (!tok2) error("missing config name");
+                std::string name = tok2;
+                std::string value = "1";
+                tok2 = get_token();
+                if (tok2) value = tok2;
+                // TODO check duplicate configs
+                globalConfigs.push_back(Config(name, value));
+                if (get_token()) error("expected end of line");
             } else {
                 error("expected keyword executable|lib");
             }
@@ -139,12 +141,15 @@ if (line[0] == '#') return; // skip comments
             if (tok[0] == '$') {
                 tok++;
                 if (strcmp(tok, "config") == 0) {
-                    while (1) {
-                        const char* tok2 = get_token();
-                        if (!tok2) break;
-                        // TODO check duplicate configs
-                        current->addConfig(tok2);
-                    }
+                    const char* tok2 = get_token();
+                    if (!tok2) error("missing config name");
+                    std::string name = tok2;
+                    std::string value = "1";
+                    tok2 = get_token();
+                    if (tok2) value = tok2;
+                    // TODO check duplicate configs
+                    current->addConfig(Config(name, value));
+                    if (get_token()) error("expected end of line");
                 } else if (strcmp(tok, "export") == 0) {
                     while (1) {
                         const char* tok2 = get_token();
