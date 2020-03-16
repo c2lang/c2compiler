@@ -32,7 +32,7 @@ class TargetInfo {
 public:
 	virtual ~TargetInfo();
 
-    enum Arch { ARCH_UNKNOWN, ARCH_I686, ARCH_ARM, ARCH_X86_64, ARCH_ARM_64 };
+    enum Arch { ARCH_UNKNOWN, ARCH_I686, ARCH_ARM, ARCH_X86_64, ARCH_ARM_64, ARCH_RISCV_32 };
     enum System { SYS_UNKNOWN, SYS_LINUX, SYS_DARWIN, SYS_CYGWIN };
     enum Vendor { VENDOR_UNKNOWN, VENDOR_APPLE };
     enum Abi { ABI_UNKNOWN, ABI_GNU, ABI_GNUEABI, ABI_MACHO, ABI_WIN32 };

@@ -39,6 +39,7 @@ static ArchList archList[] = {
     { TargetInfo::ARCH_ARM,       "arm"     },
     { TargetInfo::ARCH_X86_64,    "x86_64"  },
     { TargetInfo::ARCH_ARM_64,    "arm_64"  },
+    { TargetInfo::ARCH_RISCV_32,  "riscv"  },
 };
 // clang-format on
 
@@ -339,6 +340,9 @@ void TargetInfo::init() {
     case ARCH_X86_64:
     case ARCH_ARM_64:
         intWidth = 64;
+        break;
+    case ARCH_RISCV_32:
+        intWidth = 32;
         break;
     }
 }
