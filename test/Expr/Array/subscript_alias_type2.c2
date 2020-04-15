@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+type Array2Dim char[50][50];
+
+func void test1() {
+    Array2Dim array2par;
+    i32 intloc = 4;
+    char c = array2par[3][intloc];
+}
+

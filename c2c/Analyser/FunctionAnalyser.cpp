@@ -1769,6 +1769,11 @@ QualType FunctionAnalyser::analyseArraySubscript(Expr* expr, unsigned side) {
 
     analyseExpr(sub->getIndex(), RHS);
 
+    // Deference alias types
+    if (isa<AliasType>(LType)) {
+        LType = cast<AliasType>(LType)->getRefType();
+    }
+
     if (!LType.isSubscriptable()) {
         Diag(expr->getLocation(), diag::err_typecheck_subscript);
         return 0;
