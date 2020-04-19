@@ -534,9 +534,9 @@ inline bool Type::isArrayType() const {
     return isa<ArrayType>(canonicalType);
 }
 
+// TODO the canonicalType is never an AliasType!
 inline bool Type::isAliasType() const {
-    assert(canonicalType.isValid());
-    return isa<AliasType>(canonicalType);
+    return isa<AliasType>(this);
 }
 
 inline bool Type::isStructType() const {

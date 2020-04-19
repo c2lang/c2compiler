@@ -54,8 +54,10 @@ QualType AnalyserUtils::getStructType(QualType Q) {
     case TC_ARRAY:
         return QualType();
     case TC_REF:
-        FATAL_ERROR("Unreachable");
-        return QualType();
+    {
+        RefType* RT = cast<RefType>(T);
+        return RT->getDecl()->getType();
+    }
     case TC_ALIAS:
     {
         AliasType* AT = cast<AliasType>(T);
