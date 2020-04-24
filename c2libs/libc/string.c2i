@@ -3,8 +3,10 @@ module string;
 import c2 local;
 
 // TODO restrict, size_t
-func void* memcpy(void* dst, const void* src, c_size n);
+func void* memcpy(void* dest, const void* src, c_size n);
 func void* memccpy(void* dest, const void* src, c_int c, c_size n);
+
+func void* memmove(void* dest, const void* src, c_size n);
 
 func c_int memcmp(const void* s1, const void* s2, c_size n);
 
