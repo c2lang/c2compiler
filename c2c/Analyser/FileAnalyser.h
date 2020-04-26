@@ -102,6 +102,7 @@ private:
 
     // Expressions
     bool analyseExpr(Expr* expr, bool usedPublic);
+    bool analyseArraySubscript(Expr* expr, bool usedPublic);
     bool analyseBuiltinExpr(Expr* expr, bool usedPublic);
     bool analyseToContainer(BuiltinExpr* B, bool usedPublic);
     bool analyseOffsetOf(BuiltinExpr* B, bool usedPublic);

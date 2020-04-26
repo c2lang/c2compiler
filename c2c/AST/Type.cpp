@@ -700,6 +700,7 @@ void ArrayType::printName(StringBuilder& buffer) const {
 
 void ArrayType::debugPrint(StringBuilder& buffer) const {
     ElementType.debugPrint(buffer);
+    buffer.setColor(COL_TYPE);
     buffer << '[';
     if (arrayTypeBits.hasSize) {
         buffer << (unsigned)Size.getZExtValue();
@@ -711,6 +712,7 @@ void ArrayType::debugPrint(StringBuilder& buffer) const {
             sizeExpr->printLiteral(buffer);
         }
     }
+    buffer.setColor(COL_TYPE);
     buffer << ']';
 }
 #ifdef TYPE_DEBUG

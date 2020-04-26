@@ -630,8 +630,7 @@ bool FileAnalyser::analyseExpr(Expr* expr, bool usedPublic) {
     case EXPR_BUILTIN:
         return analyseBuiltinExpr(expr, usedPublic);
     case EXPR_ARRAYSUBSCRIPT:
-        //return analyseArraySubscript(expr, side);
-        break;
+        return analyseArraySubscript(expr, usedPublic);
     case EXPR_MEMBER:
         return analyseMemberExpr(expr, usedPublic);
     case EXPR_PAREN:
@@ -646,6 +645,45 @@ bool FileAnalyser::analyseExpr(Expr* expr, bool usedPublic) {
     expr->dump();
     TODO;
     return QualType();
+}
+
+bool FileAnalyser::analyseArraySubscript(Expr* expr, bool usedPublic) {
+    LOG_FUNC
+    ArraySubscriptExpr* sub = cast<ArraySubscriptExpr>(expr);
+    if (!analyseExpr(sub->getBase(), usedPublic)) return false;
+    QualType LType = sub->getBase()->getType();
+
+#if 0
+    if (BitOffsetExpr* BO = dyncast<BitOffsetExpr>(sub->getIndex())) {
+        QualType T = analyseBitOffsetExpr(sub->getIndex(), LType, sub->getLocation());
+        expr->setType(T);
+        AnalyserUtils::combineCtc(expr, sub->getBase(), sub->getIndex());
+        // dont analyse partial BitOffset expressions per part
+        if (expr->getCTC() == CTC_PARTIAL) expr->setCTC(CTC_NONE);
+        return T;
+    }
+#endif
+
+    // Deference alias types
+    if (isa<AliasType>(LType)) {
+        LType = cast<AliasType>(LType)->getRefType();
+    }
+
+    if (!LType.isSubscriptable()) {
+        Diag(expr->getLocation(), diag::err_typecheck_subscript);
+        return false;
+    }
+
+    if (!analyseExpr(sub->getIndex(), usedPublic)) return false;
+
+    QualType Result;
+    if (isa<PointerType>(LType)) {
+        Result = cast<PointerType>(LType)->getPointeeType();
+    } else if (isa<ArrayType>(LType)) {
+        Result = cast<ArrayType>(LType)->getElementType();
+    }
+    expr->setType(Result);
+    return true;
 }
 
 bool FileAnalyser::analyseParenExpr(Expr* expr, bool usedPublic) {
