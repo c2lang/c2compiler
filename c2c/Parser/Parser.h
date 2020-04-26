@@ -110,7 +110,7 @@ private:
     // generic
     ExprResult ParseSingleTypeSpecifier(bool allow_qualifier);
     ExprResult ParseTypeSpecifier(bool allow_qualifier);
-    ExprResult ParseArray(ExprResult base);
+    ExprResult ParseOptionalArray(ExprResult base);
     ExprResult ParseSizeof();
     ExprResult ParseElemsof();
     ExprResult ParseEnumMinMax(bool isMin);

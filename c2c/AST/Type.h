@@ -347,7 +347,11 @@ public:
     void setSize(const llvm::APInt& value);
 
     void printName(StringBuilder& buffer) const;
+    void printPreName(StringBuilder& buffer) const;
+    void printPostName(StringBuilder& buffer) const;
     void debugPrint(StringBuilder& buffer) const;
+    void debugPreName(StringBuilder& buffer) const;
+    void debugPostName(StringBuilder& buffer) const;
 #ifdef TYPE_DEBUG
     void fullDebugImpl(StringBuilder& buffer, int indent) const;
 #endif

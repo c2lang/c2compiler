@@ -1511,12 +1511,12 @@ void CCodeGenerator::EmitTypePostName(QualType type, StringBuilder& output) {
         // TEMP, use canonical type, since type can be AliasType
         type = type.getCanonicalType();
         const ArrayType* A = cast<ArrayType>(type);
-        EmitTypePostName(A->getElementType(), output);
         output << '[';
         if (A->getSizeExpr()) {
             EmitExpr(A->getSizeExpr(), output);
         }
         output << ']';
+        EmitTypePostName(A->getElementType(), output);
     }
 }
 

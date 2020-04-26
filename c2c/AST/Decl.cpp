@@ -274,7 +274,6 @@ void VarDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer << ' ' << name << '\n';
     printAttributes(buffer, indent + INDENT);
 
-    if (hasLocalQualifier()) buffer << " LOCAL";
     indent += INDENT;
     if (initValue) initValue->print(buffer, indent);
 }

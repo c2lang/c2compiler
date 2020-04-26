@@ -593,13 +593,8 @@ C2::ExprResult Parser::ParseTypeSpecifier(bool allow_qualifier) {
     ExprResult type = ParseSingleTypeSpecifier(allow_qualifier);
     if (type.isInvalid()) return ExprError();
 
-    // Syntax: array types
-    while (Tok.is(tok::l_square)) {
-        type = ParseArray(type);
-        if (type.isInvalid()) return ExprError();
-    }
-
-    return type;
+    if (Tok.isNot(tok::l_square)) return type;
+    return ParseOptionalArray(type);
 }
 
 C2::ExprResult Parser::ParseExpression(TypeCastState isTypeCast) {
@@ -1412,32 +1407,38 @@ C2::ExprResult Parser::ParseConstantExpression() {
 }
 
 // Syntax: [],  [<numeric_constant>]
-C2::ExprResult Parser::ParseArray(ExprResult base) {
+C2::ExprResult Parser::ParseOptionalArray(ExprResult base) {
     LOG_FUNC
-    assert(Tok.is(tok::l_square) && "Expected '['");
+    if (Tok.isNot(tok::l_square)) return base;
+
     ConsumeToken();
-    // fast path for "[]"
+
+    // NOTE: 'inverse' order, so char[2][4] -> 2 x ( 4 x char )
+    bool isIncremental = false;
+    Expr* size = 0;
     if (Tok.is(tok::r_square)) {
+        // fast path for "[]"
         ConsumeToken();
-        return Actions.ActOnArrayType(base.get(), 0, false);
-    }
-    // fast path for "[10]"
-    if (Tok.is(tok::numeric_constant) && NextToken().is(tok::r_square)) {
+    } else if (Tok.is(tok::numeric_constant) && NextToken().is(tok::r_square)) {
+        // fast path for "[10]"
         ExprResult E = Actions.ActOnNumericConstant(Tok);
         ConsumeToken(); // consume number
         ConsumeToken(); // consume ']'
-        return Actions.ActOnArrayType(base.get(), E.get(), false);
-    }
-    // incremental arrays "[+]"
-    if (Tok.is(tok::plus) && NextToken().is(tok::r_square)) {
+        size = E.get();
+    } else if (Tok.is(tok::plus) && NextToken().is(tok::r_square)) {
+        // incremental arrays "[+]"
         ConsumeToken(); // consume '+'
         ConsumeToken(); // consume ']'
-        return Actions.ActOnArrayType(base.get(), 0, true);
+        isIncremental = true;
+    } else {
+        ExprResult E = ParseConstantExpression();
+        if (E.isInvalid()) return ExprError();
+        ExpectAndConsume(tok::r_square);
+        size = E.get();
     }
-    ExprResult E = ParseConstantExpression();
-    if (E.isInvalid()) return ExprError();
-    ExpectAndConsume(tok::r_square);
-    return Actions.ActOnArrayType(base.get(), E.get(), false);
+    base = ParseOptionalArray(base);
+    if (base.isInvalid()) return ExprError();
+    return Actions.ActOnArrayType(base.get(), size, isIncremental);
 }
 
 static bool isTypeIdent(const Token &token) {

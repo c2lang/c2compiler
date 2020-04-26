@@ -692,15 +692,40 @@ void PointerType::fullDebugImpl(StringBuilder& buffer, int indent) const {
 
 
 void ArrayType::printName(StringBuilder& buffer) const {
+    ArrayType* AT = dyncast<ArrayType>(ElementType.getTypePtr());
+    if (AT) AT->printPreName(buffer);
+    else ElementType.printName(buffer);
+
+    printPostName(buffer);
+
+    if (AT) AT->printPostName(buffer);
+}
+
+void ArrayType::printPreName(StringBuilder& buffer) const {
     ElementType.printName(buffer);
+}
+
+void ArrayType::printPostName(StringBuilder& buffer) const {
     buffer << '[';
     if (arrayTypeBits.hasSize) buffer << (unsigned)Size.getZExtValue();
     buffer << ']';
 }
 
 void ArrayType::debugPrint(StringBuilder& buffer) const {
+    ArrayType* AT = dyncast<ArrayType>(ElementType.getTypePtr());
+    if (AT) AT->debugPreName(buffer);
+    else ElementType.debugPrint(buffer);
+
+    debugPostName(buffer);
+
+    if (AT) AT->debugPostName(buffer);
+}
+
+void ArrayType::debugPreName(StringBuilder& buffer) const {
     ElementType.debugPrint(buffer);
-    buffer.setColor(COL_TYPE);
+}
+
+void ArrayType::debugPostName(StringBuilder& buffer) const {
     buffer << '[';
     if (arrayTypeBits.hasSize) {
         buffer << (unsigned)Size.getZExtValue();
@@ -708,13 +733,13 @@ void ArrayType::debugPrint(StringBuilder& buffer) const {
         if (arrayTypeBits.incremental) buffer << '+';
         if (sizeExpr) {
             buffer.setColor(COL_ATTR);
-            buffer << "(expr)";
             sizeExpr->printLiteral(buffer);
         }
     }
     buffer.setColor(COL_TYPE);
     buffer << ']';
 }
+
 #ifdef TYPE_DEBUG
 void ArrayType::fullDebugImpl(StringBuilder& buffer, int indent) const {
     buffer.indent(indent);

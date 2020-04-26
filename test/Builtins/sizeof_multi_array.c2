@@ -2,8 +2,9 @@
 
 module test;
 
-u8[20][4] array1;
+u8[4][20] array1;
 
 static_assert(80, sizeof(array1));
 static_assert(20, sizeof(array1[0]));
+static_assert(1, sizeof(array1[0][0]));
 
