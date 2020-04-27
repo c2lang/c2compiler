@@ -13,7 +13,7 @@ func i32 bar() @(inline) {
     return 2;
 }
 
-public func i32 main(i32 argc, const i8*[] argv)
+public func i32 main(i32 argc, const i8** argv)
 {
     return 0;
 }

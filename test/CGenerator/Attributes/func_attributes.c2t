@@ -12,7 +12,7 @@ public func i32 foo() @(section="ctest") {
 func i32 bar() @(section="ctest") {
     return 2;
 }
-public func i32 main(i32 argc, const i8*[] argv)
+public func i32 main(i32 argc, const i8** argv)
 {
     return 0;
 }

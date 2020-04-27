@@ -482,7 +482,8 @@ bool FileAnalyser::analyseVarDecl(VarDecl* V) {
                 FATAL_ERROR("should not come here");
                 break;
             case VARDECL_PARAM:
-                break;
+                Diags.Report(V->getLocation(), diag::err_param_array);
+                return false;
             case VARDECL_MEMBER:
                 if (!AT->getSizeExpr()) {
                     Diags.Report(V->getLocation(), diag::err_array_struct_member_needs_size);

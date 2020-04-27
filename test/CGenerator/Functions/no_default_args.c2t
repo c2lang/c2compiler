@@ -11,7 +11,7 @@ func void bar(i32 a, i32 b = 22) {}
 
 func void faa(i32 a = 11, i32 b = 22) {}
 
-public func i32 main(i32 argc, const i8*[] argv) {
+public func i32 main(i32 argc, const i8** argv) {
     foo();
     foo(1);
 
@@ -29,7 +29,7 @@ static void test_foo(int32_t a);
 static void test_bar(int32_t a, int32_t b);
 static void test_faa(int32_t a, int32_t b);
 
-int32_t main(int32_t argc, const char* argv[]) {
+int32_t main(int32_t argc, const char** argv) {
     test_foo(11);
     test_foo(1);
     test_bar(10, 22);

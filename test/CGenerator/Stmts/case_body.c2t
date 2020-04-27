@@ -5,7 +5,7 @@
 // @file{file1}
 module test;
 
-public func i32 main(i32 argc, const i8*[] argv) {
+public func i32 main(i32 argc, const i8** argv) {
     switch (argc) {
     case 1:
         i32 a = 10;
@@ -47,7 +47,7 @@ func void nested_body(i32 arg) {
 
 // @expect{atleast, build/test.c}
 
-int32_t main(int32_t argc, const char* argv[]) {
+int32_t main(int32_t argc, const char** argv) {
     switch (argc) {
     case 1: {
         int32_t a = 10;

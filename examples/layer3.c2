@@ -6,7 +6,7 @@ public type Layer3 struct {
     layer2.Layer2 l2;
 }
 
-public func i32 main(i32 argc, i8*[] argv) {
+public func i32 main(i32 argc, i8** argv) {
     layer2.count = 20;
     return 0;
 }

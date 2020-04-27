@@ -20,7 +20,7 @@ u8[10] aa;
 u16[10] bb;
 u32[10] cc;
 
-public func i32 main(i32 argc, const i8*[] argv) {
+public func i32 main(i32 argc, const i8** argv) {
     i32 a = sizeof(i32*);
     i32 b = sizeof(a);
     i32 c = sizeof(&a);
@@ -42,7 +42,7 @@ public func i32 main(i32 argc, const i8*[] argv) {
 
 // @expect{atleast, build/test.c}
 
-int32_t main(int32_t argc, const char* argv[]) {
+int32_t main(int32_t argc, const char** argv) {
     int32_t a = 8;
     int32_t b = 4;
     int32_t c = 8;

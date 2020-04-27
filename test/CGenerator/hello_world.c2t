@@ -7,7 +7,7 @@ module test;
 
 import stdio;
 
-public func i32 main(i32 argc, const i8*[] argv) {
+public func i32 main(i32 argc, const i8** argv) {
     stdio.printf("Hello World!\n");
     return 0;
 }
@@ -15,7 +15,7 @@ public func i32 main(i32 argc, const i8*[] argv) {
 // @expect{atleast, build/test.c}
 #include "stdio.h"
 
-int32_t main(int32_t argc, const char* argv[]) {
+int32_t main(int32_t argc, const char** argv) {
     printf("Hello World!\n");
     return 0;
 }

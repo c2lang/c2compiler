@@ -13,7 +13,7 @@ public func void myfunction() {
 
 type Number i32;
 
-public func i32 main(i32 argc, i8*[] argv) {
+public func i32 main(i32 argc, i8** argv) {
     i32 a = 123;
     i32 b = 456;
     f32 pi = 3.1415926;

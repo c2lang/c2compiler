@@ -38,7 +38,7 @@ func void test2(i32 i) {
     }
 }
 
-public func i32 main(i32 argc, const i8*[] argv) {
+public func i32 main(i32 argc, const i8** argv) {
     i32 a = 0;
     switch (a) {
     default:
@@ -93,7 +93,7 @@ static void test_test2(int32_t i) {
     }
 }
 
-int32_t main(int32_t argc, const char* argv[]) {
+int32_t main(int32_t argc, const char** argv) {
     int32_t a = 0;
     switch (a) {
     default:

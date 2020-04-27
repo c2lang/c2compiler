@@ -6,15 +6,15 @@ type JmpBufTag struct {
     char[200] data; // for 64-bit
 } @(cname="__jmp_buf_tag", aligned=8)
 
-type JmpBuf JmpBufTag[1] @(cname="jmp_buf");
+type JmpBuf JmpBufTag* @(cname="jmp_buf");
 
 // TODO alias setjmp -> _setjmp
-func i32 setjmp(JmpBufTag[1] __env);
+func i32 setjmp(JmpBuf __env);
 
-func i32 _setjmp(JmpBufTag[1] __env);
+func i32 _setjmp(JmpBuf __env);
 
 
-func void longjmp(JmpBufTag[1] __env, i32 __val) @(noreturn);
+func void longjmp(JmpBuf __env, i32 __val) @(noreturn);
 
 func c_uint sleep(c_uint __seconds);
 func c_char* getcwd(char* buf, c_size size);

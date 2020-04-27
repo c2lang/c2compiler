@@ -58,7 +58,7 @@ const c_int REG_LARGE = 01000;
 const c_int REG_BACKR = 02000;
 
 func c_int regcomp(Regex_t* preg, const c_char* pattern, c_int cflags);
-func c_int regexec(const Regex_t* preg, const c_char* string, c_size nmatch, Regmatch_t[] pmatch, c_int eflags);
+func c_int regexec(const Regex_t* preg, const c_char* string, c_size nmatch, Regmatch_t* pmatch, c_int eflags);
 func c_size regerror(c_int errcode, const Regex_t* preg, c_char* errbuf, c_size errbuf_size);
 func void regfree(Regex_t* preg);
 

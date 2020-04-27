@@ -16,11 +16,11 @@ func void printf(i32 argc, const char* text, ...) {}
 
 type Coor i32;  // temp until we support multi-module
 
-func utils.Coor getCoor(i32 argc, char*[] argv) {
+func utils.Coor getCoor(i32 argc, char** argv) {
     return 0;
 }
 
-func void needed(char*[] data) {}
+func void needed(char** data) {}
 
 func void doThing2(i32* result = 0) {}
 

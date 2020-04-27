@@ -18,7 +18,7 @@ points += { 6, 4 }
 points += { 8, 1 }
 */
 
-public func i32 main(i32 argc, i8*[] argv) {
+public func i32 main(i32 argc, i8** argv) {
     func1();
     func2();
     return ccode2.myfunction();

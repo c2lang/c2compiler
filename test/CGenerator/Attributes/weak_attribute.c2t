@@ -10,7 +10,7 @@ public i32 x @(weak) = 123;
 
 public func void foo() @(weak) {}
 
-public func i32 main(i32 argc, const i8*[] argv)
+public func i32 main(i32 argc, const i8** argv)
 {
     return 0;
 }

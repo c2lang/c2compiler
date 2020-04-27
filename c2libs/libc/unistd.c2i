@@ -22,17 +22,17 @@ func c_int isatty(c_int fd);
 
 func c_ssize write(c_int fd, const void* buf, c_size count);
 
-func c_int pipe(c_int[2] pipefd);
+func c_int pipe(c_int* pipefd);
 
 //#ifdef_GNU_SOURCE             /* See feature_test_macros(7) */
-func c_int pipe2(c_int[2] pipefd, c_int flags);
+func c_int pipe2(c_int* pipefd, c_int flags);
 
 func c_int unlink(const char* name);
 
 func c_int rmdir(const char* path);
 
 
-func c_int getopt(i32 argc, char*[] argv, const char* optstring);
+func c_int getopt(i32 argc, char** argv, const char* optstring);
 
 char* optarg;
 c_int optind;

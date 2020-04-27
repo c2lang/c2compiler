@@ -52,6 +52,7 @@ DIAG(err_c11_noreturn_misplaced, CLASS_ERROR, (unsigned)diag::Severity::Error, "
 DIAG(err_class_on_template_template_param, CLASS_ERROR, (unsigned)diag::Severity::Error, "template template parameter requires 'class' after the parameter list", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(err_upper_casing, CLASS_ERROR, (unsigned)diag::Severity::Error, "%select{a parameter|a variable|a function|a module|a struct/union member}0 name must start with a lower case character", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(err_lower_casing, CLASS_ERROR, (unsigned)diag::Severity::Error, "%select{a global constant|an enum constant|a type}0 name must start with an upper case character", 0, SFINAE_SubstitutionFailure, false, true, 4)
+DIAG(err_param_array, CLASS_ERROR, (unsigned)diag::Severity::Error, "function parameter cannot be of type array", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(err_constructor_bad_name, CLASS_ERROR, (unsigned)diag::Severity::Error, "missing return type for function %0; did you mean the constructor name %1?", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(err_ctor_init_missing_comma, CLASS_ERROR, (unsigned)diag::Severity::Error, "missing ',' between base or member initializers", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(err_cxx11_attribute_forbids_arguments, CLASS_ERROR, (unsigned)diag::Severity::Error, "attribute %0 cannot have an argument list", 0, SFINAE_SubstitutionFailure, false, true, 4)

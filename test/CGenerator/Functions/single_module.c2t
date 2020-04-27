@@ -11,7 +11,7 @@ public func void pub1() {}
 
 func void nonpub1() {}
 
-public func i32 main(i32 argc, const i8*[] argv) {
+public func i32 main(i32 argc, const i8** argv) {
     return 0;
 }
 
@@ -40,7 +40,7 @@ static void test1_pub1() {
 static void test1_nonpub1() {
 }
 
-int32_t main(int32_t argc, const char* argv[]) {
+int32_t main(int32_t argc, const char** argv) {
     return 0;
 }
 

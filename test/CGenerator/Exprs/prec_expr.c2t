@@ -5,7 +5,7 @@
 // @file{file1}
 module test;
 
-public func i32 main(i32 argc, const i8*[] argv) {
+public func i32 main(i32 argc, const i8** argv) {
     i32 a = 1 << 2 + 3;
 		a = 1 ^ 2 | 3 & 4;
 		a = 1 && 2 || 3 && 4 || 5;
@@ -15,7 +15,7 @@ public func i32 main(i32 argc, const i8*[] argv) {
 
 // @expect{atleast, build/test.c}
 
-int32_t main(int32_t argc, const char* argv[]) {
+int32_t main(int32_t argc, const char** argv) {
 
     int32_t a = ((1 << 2) + 3);
 //  int32_t a = (1 << (2 + 3)); C99

@@ -95,7 +95,7 @@ func i32 printPath(i32 idx) {
 
 }
 
-public func i32 main(i32, const i8*[]) {
+public func i32 main() {
     // initialize paths
     for (i32 p=0; p<Point.MAX; p++) {
         for (i32 d=0; d<DEPTH_MAX; d++) {
