@@ -1,0 +1,14 @@
+// @warnings{no-unused}
+
+module test;
+
+u8[4][20] array1;
+
+static_assert(4, elemsof(array1));
+static_assert(20, elemsof(array1[0]));
+
+u8[][2] array2 = { { 1, 2 }, { 3, 4 }, { 5, 6 }, { 7, 8 }, { 9, 10} }
+
+static_assert(5, elemsof(array2));
+static_assert(2, elemsof(array2[0]));
+
