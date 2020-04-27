@@ -15,7 +15,7 @@ func void test3() {
 }
 
 func void test4() {
-    const i32[10] Array = {0}
-    Array[0] = 1;   // @error{read-only variable is not assignable}
+    const i32[10] array = {0}
+    array[0] = 1;   // @error{read-only variable is not assignable}
 }
 

@@ -7,7 +7,7 @@ func void test1() {
 }
 
 func void test2() {
-    const bool B = true;
-    i32[B] c;      // @error{size of array has non-integer type 'bool'}
+    const bool b = true;
+    i32[b] c;      // @error{size of array has non-integer type 'bool'}
 }
 

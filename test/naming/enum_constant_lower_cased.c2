@@ -3,6 +3,6 @@ module test;
 
 type State enum i8 {
     Foo,
-    bar, // @error{an enum constant must start with an upper case character}
+    bar, // @error{an enum constant name must start with an upper case character}
 }
 

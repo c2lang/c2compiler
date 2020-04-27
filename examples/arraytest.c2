@@ -9,7 +9,7 @@ func i32 test_##x()
 type TestFunc func i32 ();
 
 type Element struct {
-    const char[16] Name;
+    const char[16] name;
     i32 value;
     TestFunc function;
 }
@@ -46,12 +46,12 @@ i32[Const_a] buf1;   // ok
 
 public func i32 main() {
     for (i32 i=0; i<elemsof(elems); i++) {
-        io.printf("[%2d] %16s\n", i, elems[i].Name);
+        io.printf("[%2d] %16s\n", i, elems[i].name);
     }
     Element e;
-    e.Name;
+    e.name;
     Element* pe;
-    pe.Name;
+    pe.name;
     return 0;
 }
 

@@ -235,8 +235,7 @@ void Parser::ParseTypeDef(bool is_public) {
     if (tooLong(id, idLoc)) return;
 
     if (!isupper(id->getNameStart()[0])) {
-    //if (!isupper(id->getNameStart()[0]) && !isInterface) {
-        Diag(idLoc, diag::err_type_casing);
+        Diag(idLoc, diag::err_lower_casing) << 2;
         return;
     }
 
@@ -1701,7 +1700,7 @@ void Parser::ParseFuncDef(bool is_public) {
     }
 
     if (!checkName(func_id->getNameStart()[0], isInterface)) {
-        Diag(func_loc, diag::err_func_casing);
+        Diag(func_loc, diag::err_upper_casing) << 2;
         return;
     }
 

@@ -19,7 +19,7 @@ func void test1() {
         Enum.A,
     }
 
-    const Enum[] L2 = {
+    const Enum[] l2 = {
         Enum.A,
     }
 }

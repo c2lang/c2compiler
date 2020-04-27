@@ -494,16 +494,30 @@ bool FileAnalyser::analyseVarDecl(VarDecl* V) {
     }
 
     if (!ast.isInterface() && !V->hasEmptyName()) {
-        if (Q.isConstant()) {
-            if (!isupper(V->getName()[0])) {
-                Diags.Report(V->getLocation(), diag::err_const_casing);
-                return false;
+        char first = V->getName()[0];
+        switch (V->getVarKind()) {
+        case VARDECL_GLOBAL:
+            if (Q.isConstant()) {
+                if (!isupper(first)) {
+                    Diags.Report(V->getLocation(), diag::err_lower_casing) << 0;
+                    return false;
+                }
+            } else {
+                if (!islower(first)) {
+                    Diags.Report(V->getLocation(), diag::err_upper_casing) << 1;
+                    return false;
+                }
             }
-        } else {
-            if (!islower(V->getName()[0])) {
-                Diags.Report(V->getLocation(), diag::err_var_casing);
-                return false;
-            }
+            break;
+        case VARDECL_LOCAL:
+            FATAL_ERROR("should not come here");
+            break;
+        case VARDECL_PARAM:
+            if (!islower(first)) Diags.Report(V->getLocation(), diag::err_upper_casing) << 0;
+            break;
+        case VARDECL_MEMBER:
+            if (!islower(first)) Diags.Report(V->getLocation(), diag::err_upper_casing) << 4;
+            break;
         }
     }
     return true;
@@ -1442,12 +1456,7 @@ QualType FileAnalyser::analyseRefType(QualType Q, bool usedPublic, bool full) {
 bool FileAnalyser::analyseTypeDecl(TypeDecl* D) {
     LOG_FUNC
 
-    //printf("BEFORE %s\n", D->getName());
-    //D->getType().dump();
     QualType Q = analyseType(D->getType(), D->getLocation(), D->isPublic(), true);
-    //printf("AFTER %s\n", D->getName());
-    //D->getType().dump();
-
     if (!Q.isValid()) return false;
     //D->setType(Q);    // NOTE: does not seem needed
 
@@ -1531,7 +1540,7 @@ bool FileAnalyser::analyseStructTypeDecl(StructTypeDecl* D) {
     LOG_FUNC
 
     if (!D->isGlobal() && !ast.isInterface() && !D->hasEmptyName() && !islower(D->getName()[0])) {
-        Diags.Report(D->getLocation(), diag::err_var_casing);
+        Diags.Report(D->getLocation(), diag::err_upper_casing) << 4;
         return false;
     }
 

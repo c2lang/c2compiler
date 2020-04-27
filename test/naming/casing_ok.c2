@@ -1,0 +1,39 @@
+// @warnings{no-unused}
+module test;
+
+type Struct struct {
+    char* a;
+    const char* b;
+    i32 c;
+    const i32 d;
+
+    struct inner {
+        i32 x;
+    }
+}
+
+type Enum enum u8 {
+    Foo,
+    Bar,
+    Faa,
+}
+
+i32 a;
+const i32 B = 1;
+
+char* c;
+const char* d;
+const Struct* e;
+
+char[] f = "abcd";
+const char[] G = "efgh";
+const Struct[] H = { { nil, nil, 1, 2 }, { nil, nil, 3, 4 } }
+
+func void test1(i32 arg1, const i32 arg2, const char* arg3) {
+    const i32 local1 = 2;
+    const char* local2 = "";
+
+    i32[4] local3;
+    const i32[] local4 = { 1, 2, 3, 4 }
+}
+

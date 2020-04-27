@@ -6,7 +6,7 @@ type Outer struct {
     struct {
         i32 y;
     }
-    struct Inner { // @error{a variable name must start with a lower case character}
+    struct Inner { // @error{a struct/union member name must start with a lower case character}
         i32 z;
     }
 }

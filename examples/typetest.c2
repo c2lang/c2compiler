@@ -53,7 +53,7 @@ type S2 struct {
         i32 a;
     }
     volatile u32 count;
-    const i32 D;
+    const i32 d;
 }
 
 type Data union {

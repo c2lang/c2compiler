@@ -354,7 +354,7 @@ void ASTBuilder::ActOnModule(const char* name_, SourceLocation loc) {
         return;
     }
     if (!islower(name_[0])) {
-        Diag(loc, diag::err_module_casing);
+        Diag(loc, diag::err_upper_casing) << 3;
         return;
     }
 
@@ -420,7 +420,7 @@ void ASTBuilder::ActOnImport(const char* moduleName_, SourceLocation loc, Token&
             return;
         }
         if (!islower(name[0])) {
-            Diag(aliasTok.getLocation(), diag::err_module_casing);
+            Diag(aliasTok.getLocation(), diag::err_upper_casing) << 3;
             return;
         }
         realLoc = aliasTok.getLocation();
@@ -1171,7 +1171,7 @@ C2::EnumConstantDecl* ASTBuilder::ActOnEnumConstant(EnumTypeDecl* Enum, Identifi
         D->setModule(module);
     }
     if (!isupper(name[0]) && !ast.isInterface()) {
-        Diag(symLoc, diag::err_enumconst_casing);
+        Diag(symLoc, diag::err_lower_casing) << 1;
     }
     return D;
 }

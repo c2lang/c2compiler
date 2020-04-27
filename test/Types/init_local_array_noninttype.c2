@@ -4,7 +4,7 @@ module test;
 type PTR const i8*;
 
 func void test1() {
-    const PTR Size2 = 20;   // TODO constant?
-    i32[Size2] b;      // @error{size of array has non-integer type 'PTR' (aka 'i8*')}
+    const PTR size2 = 20;
+    i32[size2] b;      // @error{size of array has non-integer type 'PTR' (aka 'i8*')}
 }
 

@@ -10,8 +10,8 @@ type Point struct {
 // CHECK: @__test_test1.P = internal constant %struct.__test_Point { i32 5, i32 6 }, align 4
 
 func i32 test1() {
-    const Point P = { 5, 6 }
-    return P.y;
+    const Point p = { 5, 6 }
+    return p.y;
     // CHECK: %0 = load i32* getelementptr inbounds (%struct.__test_Point* @__test_test1.P, i32 0, i32 1), align 4
     // CHECK: ret i32 %0
 }

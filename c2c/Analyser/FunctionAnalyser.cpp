@@ -590,14 +590,8 @@ void FunctionAnalyser::analyseDeclStmt(Stmt* stmt) {
         decl->setType(Q);
 
         if (!isInterface) {
-            if (Q.isConstant()) {
-                if (!isupper(decl->getName()[0])) {
-                    Diags.Report(decl->getLocation(), diag::err_const_casing);
-                }
-            } else {
-                if (!islower(decl->getName()[0])) {
-                    Diags.Report(decl->getLocation(), diag::err_var_casing);
-                }
+            if (!islower(decl->getName()[0])) {
+                Diags.Report(decl->getLocation(), diag::err_upper_casing) << 1;
             }
         }
 

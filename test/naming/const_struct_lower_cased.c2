@@ -6,7 +6,7 @@ type Point struct {
 }
 
 func void test2() {
-    const Point p = { 1 }   // @error{a constant name must start with an upper case character}
+    const Point P = { 1 }   // @error{a variable name must start with a lower case character}
 
 }
 

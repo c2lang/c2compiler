@@ -4,8 +4,8 @@ module test;
 func i32 foo() { return 10; }
 
 func void test1() {
-    const i32 Constant = 1;
-    i32[Constant] a;
+    const i32 constant = 1;
+    i32[constant] a;
 
     i32 non_constant = 10;
     i32[non_constant] b;
