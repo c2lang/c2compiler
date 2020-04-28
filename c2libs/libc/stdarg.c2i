@@ -12,3 +12,4 @@ func void va_end(Va_list ap);
 // should actually be in stdio, but more convenient here
 func c_int vdprintf(c_int __fd, const c_char* __fmt, Va_list __arg);
 func c_int vsprintf(c_char* str, const c_char *format, Va_list __ap);
+func c_int vsnprintf(c_char* str, c_size size, const c_char *format, Va_list __ap);
