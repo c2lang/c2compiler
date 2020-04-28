@@ -4,12 +4,12 @@ module test;
 import csetjmp local;
 
 type T1 struct {
-    JmpBuf buf;
+    JmpBufTag buf;
 }
 static_assert(200, sizeof(T1));
 
 type T2 struct {
-    JmpBuf buf;
+    JmpBufTag buf;
     char c;
 }
 static_assert(208, sizeof(T2));
