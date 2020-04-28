@@ -219,6 +219,7 @@ void CCodeGenerator::createLibHeader(bool printCode, const std::string& outputDi
 
         hbuf << "int32_t vdprintf(int32_t __fd, const char* __fmt, va_list __arg);\n";
         hbuf << "int32_t vsprintf(char* str, const char* format, va_list __ap);\n";
+        hbuf << "int32_t vsnprintf(char* str, uint64_t size, const char* format, va_list __ap);\n";
         hbuf << '\n';
 
         hbuf << "#ifdef __cplusplus\n}\n#endif\n\n";

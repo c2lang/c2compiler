@@ -2,6 +2,8 @@ module stdarg;
 
 import c2 local;
 
+// NOTE: because of va_list we generate the C file for this manually in C-generator!
+
 type Va_list struct {
     c_char[24] pad;
 } @(cname="va_list")
