@@ -39,7 +39,7 @@ static ArchList archList[] = {
     { TargetInfo::ARCH_ARM,       "arm"     },
     { TargetInfo::ARCH_X86_64,    "x86_64"  },
     { TargetInfo::ARCH_ARM_64,    "arm_64"  },
-    { TargetInfo::ARCH_RISCV_32,  "riscv"  },
+    { TargetInfo::ARCH_RISCV_32,  "riscv32"  },
 };
 // clang-format on
 
@@ -133,6 +133,7 @@ static AbiList abiList[] = {
     { TargetInfo::ABI_GNUEABI,   "gnueabi" },
     { TargetInfo::ABI_MACHO,     "macho"   },
     { TargetInfo::ABI_WIN32,     "win32"   },
+    { TargetInfo::ABI_RV32G,     "rv32"   },
 };
 // clang-format on
 
@@ -227,8 +228,7 @@ bool TargetInfo::fromString(TargetInfo& info, const std::string& triple) {
     info.vendor = str2vendor(vendor_str);
     info.sys = str2sys(sys_str);
     if (info.sys == SYS_UNKNOWN) {
-        fprintf(stderr, "unsupported system: %s\n", sys_str);
-        return false;
+        //fprintf(stderr, "unknown vendor: %s\n", sys_str);
     }
     info.abi = str2abi(abi_str);
     if (info.abi == ABI_UNKNOWN) {
