@@ -1069,6 +1069,22 @@ C2::ExprResult ASTBuilder::ActOnBuiltinType(tok::TokenKind k) {
         break;
     case tok::kw_f32:       qt = Type::Float32(); break;
     case tok::kw_f64:       qt = Type::Float64(); break;
+    case tok::kw_reg8:
+        qt = Type::UInt8();
+        qt.addVolatile();
+        break;
+    case tok::kw_reg16:
+        qt = Type::UInt16();
+        qt.addVolatile();
+        break;
+    case tok::kw_reg32:
+        qt = Type::UInt32();
+        qt.addVolatile();
+        break;
+    case tok::kw_reg64:
+        qt = Type::UInt64();
+        qt.addVolatile();
+        break;
     case tok::kw_char:      qt = Type::Int8(); break;
     case tok::kw_bool:      qt = Type::Bool(); break;
     case tok::kw_void:      qt = Type::Void(); break;

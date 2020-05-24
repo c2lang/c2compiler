@@ -1457,31 +1457,27 @@ static const char* builtin2cname(BuiltinType::Kind kind) {
     return 0;
 }
 
-
 void CCodeGenerator::EmitTypePreName(QualType type, StringBuilder& output) {
     LOG_FUNC
     if (type.isConstQualified()) output << "const ";
+    if (type.isVolatileQualified()) output << "volatile ";
     const Type* T = type.getTypePtr();
     switch (T->getTypeClass()) {
     case TC_BUILTIN:
     {
-        // TODO handle Qualifiers
         const BuiltinType* BI = cast<BuiltinType>(T);
         output << builtin2cname(BI->getKind());
         break;
     }
     case TC_POINTER:
-        // TODO handle Qualifiers
         EmitTypePreName(cast<PointerType>(T)->getPointeeType(), output);
         output << '*';
         break;
     case TC_ARRAY:
-        // TODO handle Qualifiers
         EmitTypePreName(cast<ArrayType>(T)->getElementType(), output);
         break;
     case TC_REF:
     {
-        // TODO handle Qualifiers?
         const RefType* rt = cast<RefType>(T);
         EmitDecl(rt->getDecl(), output);
         break;
@@ -1606,6 +1602,7 @@ bool CCodeGenerator::EmitAsDefine(const VarDecl* V) const {
         const ArrayType* AT = cast<ArrayType>(type.getTypePtr());
         QualType ET = AT->getElementType();
         if (!ET.isBuiltinType()) return false;
+        if (ET.isVolatileQualified()) return false;
         if (!ET.isConstQualified()) return false;
         const Expr* init = V->getInitValue();
         if (!init) return false;
@@ -1615,6 +1612,7 @@ bool CCodeGenerator::EmitAsDefine(const VarDecl* V) const {
 
     }
 
+    if (type.isVolatileQualified()) return false;
     // convert const integer literals to define
     if (type.isBuiltinType() && type.isConstQualified()) return true;
 #if 0

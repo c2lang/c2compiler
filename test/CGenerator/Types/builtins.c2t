@@ -15,6 +15,10 @@ type S struct {
     u16  u_16;
     u32  u_32;
     u64  u_64;
+    reg8 r_8;
+    reg16 r_16;
+    reg32 r_32;
+    reg64 r_64;
 }
 
 // @expect{atleast, build/test.c}
@@ -30,5 +34,9 @@ struct test_S_ {
     uint16_t u_16;
     uint32_t u_32;
     uint64_t u_64;
+    volatile unsigned char r_8;
+    volatile uint16_t r_16;
+    volatile uint32_t r_32;
+    volatile uint64_t r_64;
 };
 

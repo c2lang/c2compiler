@@ -354,6 +354,10 @@ void Parser::ParseEnumType(const char* id, SourceLocation idLoc, bool is_public)
     case tok::kw_i32:
     case tok::kw_i64:
     case tok::kw_isize:
+    case tok::kw_reg8:
+    case tok::kw_reg16:
+    case tok::kw_reg32:
+    case tok::kw_reg64:
     case tok::kw_char:
     case tok::kw_bool:
         implType = Actions.ActOnBuiltinType(Tok.getKind());
@@ -564,6 +568,10 @@ C2::ExprResult Parser::ParseSingleTypeSpecifier(bool allow_qualifier) {
     case tok::kw_isize:
     case tok::kw_f32:
     case tok::kw_f64:
+    case tok::kw_reg8:
+    case tok::kw_reg16:
+    case tok::kw_reg32:
+    case tok::kw_reg64:
     case tok::kw_char:
     case tok::kw_void:
     case tok::kw_bool:
@@ -1359,6 +1367,10 @@ bool Parser::isDeclaration() {
     case tok::kw_isize:
     case tok::kw_f32:
     case tok::kw_f64:
+    case tok::kw_reg8:
+    case tok::kw_reg16:
+    case tok::kw_reg32:
+    case tok::kw_reg64:
     case tok::kw_void:
     case tok::kw_char:
     case tok::kw_const:
@@ -1486,6 +1498,10 @@ C2::ExprResult Parser::ParseSizeof()
     case tok::kw_isize:
     case tok::kw_f32:
     case tok::kw_f64:
+    case tok::kw_reg8:
+    case tok::kw_reg16:
+    case tok::kw_reg32:
+    case tok::kw_reg64:
     case tok::kw_void:
     case tok::kw_char:
         Res = ParseTypeSpecifier(false);
@@ -1832,6 +1848,10 @@ C2::StmtResult Parser::ParseStatement() {
     case tok::kw_isize:
     case tok::kw_f32:
     case tok::kw_f64:
+    case tok::kw_reg8:
+    case tok::kw_reg16:
+    case tok::kw_reg32:
+    case tok::kw_reg64:
     case tok::kw_void:
     case tok::kw_char:
     case tok::kw_bool:
@@ -2822,17 +2842,17 @@ void Parser::ParseArrayEntry() {
 unsigned Parser::ParseOptionalTypeQualifier() {
     // TODO consume all const/volatile tokens (can give errors)
     LOG_FUNC
-    switch (Tok.getKind()) {
-    case tok::kw_const:
+    unsigned qualifiers = 0;
+    // Note: only allow 'const volatile' not 'volatile const'
+    if (Tok.is(tok::kw_const)) {
         ConsumeToken();
-        return TYPE_CONST;
-    case tok::kw_volatile:
-        ConsumeToken();
-        return TYPE_VOLATILE;
-    default:
-        break;
+        qualifiers |= TYPE_CONST;
     }
-    return 0;
+    if (Tok.is(tok::kw_volatile)) {
+        ConsumeToken();
+        qualifiers |= TYPE_VOLATILE;
+    }
+    return qualifiers;
 }
 
 // Syntax: public
