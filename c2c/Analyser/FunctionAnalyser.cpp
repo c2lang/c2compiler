@@ -584,8 +584,9 @@ void FunctionAnalyser::analyseDeclStmt(Stmt* stmt) {
     VarDecl* decl = DS->getDecl();
 
     scope.setHasDecls();
+    // TODO refactor haveError to return
     bool haveError = false;
-    QualType Q = TR.resolveType(decl->getType(), decl->isPublic());
+    QualType Q = analyseType(decl->getType(), decl->getLocation());
     if (Q.isValid()) {
         decl->setType(Q);
 
@@ -600,16 +601,12 @@ void FunctionAnalyser::analyseDeclStmt(Stmt* stmt) {
             ArrayType* AT = cast<ArrayType>(Q.getTypePtr());
             Expr* sizeExpr = AT->getSizeExpr();
             if (sizeExpr) {
-                analyseArraySizeExpr(AT);
                 if (sizeExpr->getCTC() != CTC_FULL && decl->getInitValue()) {
                     Diag(decl->getLocation(), diag::err_vla_with_init_value) << decl->getInitValue()->getLocation();
                     haveError = true;
                 }
             } else {
-                if (AT->isIncremental()) {
-                    Diag(decl->getLocation(), diag::err_incremental_array_function_scope);
-                    haveError = true;
-                } else if (!decl->getInitValue()) {
+                if (!decl->getInitValue()) {
                     Diag(decl->getLocation(), diag::err_typecheck_incomplete_array_needs_initializer);
                     haveError = true;
                 }
@@ -617,10 +614,11 @@ void FunctionAnalyser::analyseDeclStmt(Stmt* stmt) {
         }
         TR.checkOpaqueType(decl->getLocation(), false, Q);
 
-        if (!haveError) {
-            if (!TR.requireCompleteType(decl->getLocation(), Q, diag::err_typecheck_decl_incomplete_type)) {
-                haveError = true;
-            }
+        if (!haveError && Q.isIncompleteType()) {
+            StringBuilder name;
+            Q.DiagName(name);
+            Diag(decl->getLocation(), diag::err_typecheck_decl_incomplete_type) << name;
+            haveError = true;
         }
     } else {
         haveError = true;
@@ -1117,8 +1115,9 @@ QualType FunctionAnalyser::analyseSizeOfExpr(BuiltinExpr* B) {
     case EXPR_TYPE:
     {
         // TODO can be public?
-        QualType Q = TR.resolveType(expr->getType(), false);
-        if (Q.isValid()) expr->setType(Q);
+        QualType Q = analyseType(expr->getType(), expr->getLocation());
+        if (!Q.isValid()) return QualType();
+        expr->setType(Q);
         // TODO here we want to use expr->getLocation()
         // But that does not properly find the right location!
         TR.checkOpaqueType(B->getLocation(), false, Q);
@@ -1363,56 +1362,139 @@ QualType FunctionAnalyser::analyseToContainer(BuiltinExpr* B) {
     return Q;
 }
 
-// sets ArrayType sizes recursively if sizeExpr is constant
-// NOTE: doesn't check any initExpr itself
-void FunctionAnalyser::analyseArrayType(VarDecl* V, QualType T) {
+QualType FunctionAnalyser::analyseType(QualType Q, SourceLocation loc) {
+    // NOTE: almost same as FileAnalyser::analyseType()
     LOG_FUNC
-    // TODO V not needed? (or move more diags here from checkVarInits)
-    if (!T.isArrayType()) return;
+
+    if (Q->hasCanonicalType()) return Q;    // should be ok already
+
+    QualType resolved;
+    Type* T = Q.getTypePtr();
 
     switch (T->getTypeClass()) {
     case TC_BUILTIN:
-        FATAL_ERROR("Unreachable");
+        FATAL_ERROR("should not come here");
         break;
     case TC_POINTER:
-        analyseArrayType(V, cast<PointerType>(T)->getPointeeType());
+    {
+        // Dont return new type if not needed
+        const PointerType* P = cast<PointerType>(T);
+        QualType t1 = P->getPointeeType();
+        QualType Result = analyseType(t1, loc);
+        if (!Result.isValid()) return QualType();
+        if (t1 == Result) {
+            resolved = Q;
+            Q->setCanonicalType(Q);
+        } else {
+            resolved = Context.getPointerType(Result);
+        }
         break;
+    }
     case TC_ARRAY:
     {
-        ArrayType* AT = cast<ArrayType>(T.getTypePtr());
-        analyseArraySizeExpr(AT);
-        analyseArrayType(V, AT->getElementType());
+        ArrayType* AT = cast<ArrayType>(T);
+        if (AT->isIncremental()) {
+            Diag(loc, diag::err_incremental_array_function_scope);
+            return QualType();
+        }
+        QualType ET = analyseType(AT->getElementType(), loc);
+        if (!ET.isValid()) return QualType();
+
+        Expr* sizeExpr = AT->getSizeExpr();
+        if (!analyseArraySizeExpr(AT)) return QualType();
+
+        if (ET == AT->getElementType()) {
+            resolved = Q;
+            Q->setCanonicalType(Q);
+        } else {
+            resolved = Context.getArrayType(ET, AT->getSizeExpr(), AT->isIncremental());
+            resolved->setCanonicalType(resolved);
+            if (sizeExpr) {
+                ArrayType* RA = cast<ArrayType>(resolved.getTypePtr());
+                RA->setSize(AT->getSize());
+            }
+        }
+
+        // TODO qualifiers
         break;
     }
     case TC_REF:
-        FATAL_ERROR("Unreachable");
+        resolved = analyseRefType(Q);
         break;
     case TC_ALIAS:
-        analyseArrayType(V, cast<AliasType>(T)->getRefType());
+        resolved = analyseType(cast<AliasType>(T)->getRefType(), loc);
         break;
     case TC_STRUCT:
     case TC_ENUM:
     case TC_FUNCTION:
-        FATAL_ERROR("Unreachable");
-        break;
     case TC_MODULE:
-        TODO;
+        FATAL_ERROR("should not come here");
         break;
     }
+
+    // NOTE: CanonicalType is always resolved (ie will not point to another AliasType, but to its Canonicaltype)
+    if (!Q->hasCanonicalType()) {
+        if (!resolved.isValid()) return QualType();
+
+        if (resolved.getCanonicalType().getTypePtrOrNull() == NULL) {
+            resolved.dump();
+            FATAL_ERROR("missing canonical on resolved");
+        }
+
+        Q->setCanonicalType(resolved.getCanonicalType());
+    }
+
+    return resolved;
 }
 
-void FunctionAnalyser::analyseArraySizeExpr(ArrayType* AT) {
+QualType FunctionAnalyser::analyseRefType(QualType Q) {
+    LOG_FUNC
+
+    const Type* T = Q.getTypePtr();
+    const RefType* RT = cast<RefType>(T);
+    IdentifierExpr* moduleName = RT->getModuleName();
+    IdentifierExpr* typeName = RT->getTypeName();
+    SourceLocation tLoc = typeName->getLocation();
+    const std::string& tName = typeName->getName();
+
+    Decl* D = 0;
+    if (moduleName) { // mod.type
+        const std::string& mName = moduleName->getName();
+        const Module* mod = scope.findUsedModule(mName, moduleName->getLocation(), false);
+        if (!mod) return QualType();
+        Decl* modDecl = scope.findSymbol(mName, moduleName->getLocation(), true, false);
+        assert(modDecl);
+        moduleName->setDecl(modDecl, IdentifierExpr::REF_MODULE);
+
+        D =  scope.findSymbolInModule(tName, tLoc, mod);
+    } else { // type
+        D = scope.findSymbol(tName, tLoc, true, false);
+    }
+    if (!D) return QualType();
+    TypeDecl* TD = dyncast<TypeDecl>(D);
+    if (!TD) {
+        StringBuilder name;
+        RT->printLiteral(name);
+        Diags.Report(tLoc, diag::err_not_a_typename) << name.c_str();
+        return QualType();
+    }
+
+    D->setUsed();
+    typeName->setDecl(TD, IdentifierExpr::REF_TYPE);
+
+    QualType result = TD->getType();
+    if (Q.isConstQualified()) result.addConst();
+    if (Q.isVolatileQualified()) result.addVolatile();
+    return result;
+}
+
+bool FunctionAnalyser::analyseArraySizeExpr(ArrayType* AT) {
     LOG_FUNC
     Expr* E = AT->getSizeExpr();
-    if (!E) return;
+    if (!E) return true;
 
     QualType T = analyseExpr(E, RHS);
-    if (!T.isValid()) return;
-
-    if (inConstExpr && !E->isConstant()) {
-        Diag(E->getLocation(), diag::err_vla_decl_in_file_scope) << E->getSourceRange();
-        return;
-    }
+    if (!T.isValid()) return false;
 
     // check if type is integer
     QualType CT = T.getCanonicalType();
@@ -1420,7 +1502,7 @@ void FunctionAnalyser::analyseArraySizeExpr(ArrayType* AT) {
         StringBuilder buf;
         T.DiagName(buf, false);
         Diag(E->getLocation(), diag::err_array_size_non_int) << buf << E->getSourceRange();
-        return;
+        return false;
     }
 
     // check if negative
@@ -1429,12 +1511,15 @@ void FunctionAnalyser::analyseArraySizeExpr(ArrayType* AT) {
         llvm::APSInt Result = LA.checkLiterals(E);
         if (Result == 0) {
             Diag(E->getLocation(), diag::err_array_size_zero);
-        } else if (Result.isSigned() && Result.isNegative()) {
-            Diag(E->getLocation(), diag::err_typecheck_negative_array_size) << Result.toString(10) << E->getSourceRange();
-        } else {
-            AT->setSize(Result);
+            return false;
         }
+        if (Result.isSigned() && Result.isNegative()) {
+            Diag(E->getLocation(), diag::err_typecheck_negative_array_size) << Result.toString(10) << E->getSourceRange();
+            return false;
+        }
+        AT->setSize(Result);
     }
+    return true;
 }
 
 QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
@@ -2055,10 +2140,8 @@ QualType FunctionAnalyser::analyseExplicitCastExpr(Expr* expr) {
     LOG_FUNC
     ExplicitCastExpr* E = cast<ExplicitCastExpr>(expr);
 
-    QualType outerType = TR.resolveType(E->getDestType(), false);
-    if (outerType.isValid()) {
-        E->setType(outerType);
-    }
+    QualType outerType = analyseType(E->getDestType(), expr->getLocation());
+    if (outerType.isValid()) E->setType(outerType);
 
     QualType innerType = analyseExpr(E->getInner(), RHS);
     if (innerType.isValid()) {

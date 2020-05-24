@@ -51,7 +51,7 @@ FileAnalyser::FileAnalyser(const Module& module_,
     : ast(ast_)
     , module(module_)
     , scope(new Scope(ast_.getModuleName(), allModules, Diags_))
-    , TR(new TypeResolver(*scope, Diags_, ast.getContext()))
+    , TR(new TypeResolver(*scope, Diags_))
     , Diags(Diags_)
     , EA(Diags_, target_)
     , functionAnalyser(*scope, *TR, ast.getContext(), Diags_, target_, ast.isInterface())

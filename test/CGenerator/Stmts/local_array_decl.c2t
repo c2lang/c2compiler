@@ -20,11 +20,11 @@ public func i32 main() {
 
 #define test_Size 20
 
-static void test_update();
+static void test_func1();
 
 static int32_t test_board[test_Size][test_Size] = { };
 
-static void test_update() {
+static void test_func1() {
   int32_t board2[test_Size][test_Size];
 }
 

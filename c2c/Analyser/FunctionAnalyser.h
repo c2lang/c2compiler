@@ -128,8 +128,9 @@ private:
     StructTypeDecl* builtinExprToStructTypeDecl(BuiltinExpr* B);
     QualType analyseOffsetOf(BuiltinExpr* expr);
     QualType analyseToContainer(BuiltinExpr* expr);
-    void analyseArrayType(VarDecl* V, QualType T);
-    void analyseArraySizeExpr(ArrayType* AT);
+    QualType analyseType(QualType Q, c2lang::SourceLocation loc);
+    QualType analyseRefType(QualType Q);
+    bool analyseArraySizeExpr(ArrayType* AT);
 
     c2lang::DiagnosticBuilder Diag(c2lang::SourceLocation Loc, unsigned DiagID) const;
     void pushMode(unsigned DiagID);

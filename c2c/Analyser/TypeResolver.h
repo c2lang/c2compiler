@@ -16,8 +16,6 @@
 #ifndef ANALYSER_TYPE_RESOLVER_H
 #define ANALYSER_TYPE_RESOLVER_H
 
-#include <vector>
-
 #include "AST/Type.h"
 #include "Clang/SourceLocation.h"
 
@@ -31,31 +29,15 @@ namespace C2 {
 
 class Decl;
 class Scope;
-class ASTContext;
 
 class TypeResolver {
 public:
-    TypeResolver(Scope& g, c2lang::DiagnosticsEngine& Diags_, ASTContext& ctx_);
-
-    QualType resolveType(QualType Q, bool usedPublic);
+    TypeResolver(Scope& g, c2lang::DiagnosticsEngine& Diags_);
 
     bool checkOpaqueType(SourceLocation loc, bool isPublic, QualType Q);
-
-    bool requireCompleteType(SourceLocation loc, QualType Q, int msg);
 private:
-    unsigned checkType(QualType Q, bool used_public);
-    QualType resolveUnresolved(QualType Q) const;
-    QualType resolveCanonical(QualType Q) const;
-    unsigned checkRefType(const RefType* type, bool used_public);
-
-    typedef std::vector<const Decl*> Decls;
-    typedef Decls::iterator DeclsIter;
-    QualType checkCanonicals(Decls& decls, QualType Q, bool set) const;
-    bool checkDecls(Decls& decls, const Decl* D) const;
-
     Scope& globals;
     c2lang::DiagnosticsEngine& Diags;
-    ASTContext& Context;
 };
 
 }
