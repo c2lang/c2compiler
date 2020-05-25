@@ -1,4 +1,5 @@
 // @warnings{no-unused}
+// @target{arm-unknown-linux-gnueabi}
 
 module test;
 import stdio local;
@@ -114,5 +115,5 @@ type S12 struct {
     u32 c;
     void* b;
 }
-static_assert(24, sizeof(S12));
+static_assert(12, sizeof(S12));
 

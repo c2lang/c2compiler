@@ -18,6 +18,7 @@
     .c2:
         (optional) // @warnings{..}
         (optional) // @skip
+        (optional) // @target{target-triplet}
     .c2t:
         (required) // @recipe bin/lib shared/static
         (optional) // @skip
@@ -502,6 +503,7 @@ private:
     const char* file_start;
     unsigned line_offset;
     StringBuilder recipe;
+    std::string target;
     bool hasErrors;
     bool skip;
     const char* cur;
@@ -634,6 +636,23 @@ void IssueDb::parseLineOutside(const char* start, const char* end) {
             }
             std::string name(name_start, cp-name_start);
             recipe << "    $warnings " << name << '\n';
+        } else if (strncmp(cp, "target{", 7) == 0) {
+            if (!single) {
+                error("keyword 'target' only allowed in .c2 files");
+                return;
+            }
+            cp += 7;
+
+            const char* target_start = cp;
+            while (*cp != '}') {
+                if (cp == end) {
+                    error("missing '}'");
+                    exit(EXIT_FAILURE);
+                }
+                cp++;
+            }
+            std::string target_(target_start, cp-target_start);
+            target = target_;
         } else if (strncmp(cp, "file{", 5) == 0) {
             if (single) {
                 error("invalid @file tag in single test");
@@ -978,6 +997,13 @@ bool IssueDb::parse() {
                 const char* file_end = cp;
                 writeFile(current_file.c_str(), file_start, file_end- file_start);
             }
+        }
+        if (target[0] != 0) {
+            StringBuilder build;
+            build << "target = \"" << target << "\"\n";
+            build << "[[libdir]]\n";
+            build << "dir = \"$C2_LIBDIR\"\n";
+            writeFile("build.toml", build, build.size());
         }
         recipe << "end\n";
         writeFile("recipe.txt", recipe, recipe.size());
