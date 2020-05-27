@@ -1,4 +1,6 @@
 // @warnings{no-unused}
+// @target{arm-unknown-linux-gnueabi}
+
 module test;
 
 type S1 struct {
@@ -28,8 +30,8 @@ static_assert(0, offsetof(S2, f1));
 static_assert(2, offsetof(S2, f2));
 static_assert(4, offsetof(S2, f3));
 static_assert(8, offsetof(S2, f4));
-static_assert(16, offsetof(S2, f5));
-static_assert(20, offsetof(S2, f6));
+static_assert(12, offsetof(S2, f5));
+static_assert(16, offsetof(S2, f6));
 
 type S2p struct {
     u8 f1;
@@ -44,8 +46,8 @@ static_assert(0, offsetof(S2p, f1));
 static_assert(1, offsetof(S2p, f2));
 static_assert(3, offsetof(S2p, f3));
 static_assert(7, offsetof(S2p, f4));
-static_assert(15, offsetof(S2p, f5));
-static_assert(18, offsetof(S2p, f6));
+static_assert(11, offsetof(S2p, f5));
+static_assert(14, offsetof(S2p, f6));
 
 type S3 struct {
     u32[10] array1;
@@ -97,4 +99,15 @@ type S6 struct {
 static_assert(6, sizeof(S6));
 static_assert(2, offsetof(S6, m2));
 static_assert(4, offsetof(S6, m3));
+
+type S7 struct {
+    u8 m;
+    struct {
+        void* m2;
+        u16 m3;
+    }
+}
+static_assert(12, sizeof(S7));
+static_assert(4, offsetof(S7, m2));
+static_assert(8, offsetof(S7, m3));
 
