@@ -268,7 +268,7 @@ void CodeGenModule::EmitGlobalVariable(VarDecl* Var) {
     }
     assert(init);
     llvm::GlobalVariable* GV = new llvm::GlobalVariable(*module, init->getType(), constant, ltype, init, Var->getName());
-    GV->setAlignment(getAlignment(Var->getType()));
+    GV->setAlignment(MaybeAlign(getAlignment(Var->getType())));
     GV->setConstant(Var->getType().isConstant());
 }
 

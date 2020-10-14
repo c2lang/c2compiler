@@ -15,16 +15,16 @@ Once your Cygwin is ready, start its shell where you will enter the commands
 written below.
 
 ## Installation of LLVM/Clang (C2 version)
-C2 is based on LLVM 9.0 and some parts of a modified Clang 9.0,
+C2 is based on LLVM 10.0 and some parts of a modified Clang 10.0,
 so we will need to build it first.
 
-As this installation is counting with installation into **$HOME/llvm-90**, you can start by creating
+As this installation is counting with installation into **$HOME/llvm-10**, you can start by creating
 the folder and navigating to it:
 
 ```bash
 cd $HOME
-mkdir llvm-90
-cd llvm-90
+mkdir llvm-10
+cd llvm-10
 ```
 
 The git provided with Cygwin automatically changes LF line-endings (standard on Unix-based systems)
@@ -61,7 +61,7 @@ source env.sh
 
 This is because otherwise the script would be ran in a subshell and it wouldn't have been
 able to change, albeit temporarily, the environment variables. Alternatively, if you don't use
-a bash-compatible shell or if you installed LLVM into a different directory than **$HOME/llvm-90**
+a bash-compatible shell or if you installed LLVM into a different directory than **$HOME/llvm-10**
 you can do it by hand:
 ```bash
 alias c2c=$(pwd)/build/c2c/c2c

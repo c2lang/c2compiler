@@ -1,12 +1,13 @@
 ## Installation of LLVM/Clang (C2 version)
-C2 is based on LLVM 9.0.
+The latest C2 version is based on LLVM 10.0 (but older versions
+have been based on version 3.3, 4, 5, 6, 7, 8 and 9).
 To install C2, follow the steps below. The example shows
-how to install in **$HOME/llvm-90**, but any other dir should work.
+how to install in **$HOME/llvm-10**, but any other dir should work.
 
 Note that all OS-specific instructions include the Generic section
 
 ### Ubuntu 14.04
-LLVM 9.0 needs cmake 3.4.3 or higher, since Ubuntu does not have
+LLVM 10.0 needs cmake 3.4.3 or higher, since Ubuntu does not have
 this natively, just install it from a binary package:
 (installed here in $HOME/progs)
 ```bash
@@ -19,7 +20,7 @@ export CC=clang-3.5
 export CXX=clang++-3.5
 ```
 
-### Ubuntu 16.04 / 18.04
+### Ubuntu 16.04 / 18.04 / 20.04
 ```bash
 sudo apt-get install clang cmake ncurses-dev
 export CC=clang
@@ -48,7 +49,7 @@ NOTE: C2 now uses the new LLVM mono-repository, not the separate repos!
 ```bash
 https://github.com/c2lang/llvm-project.git
 cd llvm-project/
-git checkout -b c2master llvmorg-9.0.0
+git checkout -b c2master llvmorg-10.0.0
 cd ..
 mkdir llvm_build
 cd llvm_build
@@ -56,7 +57,7 @@ cd llvm_build
 cmake -G "Unix Makefiles" \
     -DCMAKE_BUILD_TYPE="Release" \
     -DLLVM_ENABLE_ASSERTIONS=ON \
-    -DCMAKE_INSTALL_PREFIX=$HOME/llvm-90 \
+    -DCMAKE_INSTALL_PREFIX=$HOME/llvm-10 \
     -DLLVM_ENABLE_PEDANTIC=OFF \
     ../llvm-project/llvm
 
@@ -71,8 +72,8 @@ Or if you want to build with Ninja replace 'Unix makefiles' with 'Ninja'
 You might need to create a link for your new clang to find the C++ headers.
 Since this uses the toolchain that comes with XCode, XCode will have to be installed.
 ```
-mkdir -p ~/llvm-90/include/c++
-ln -s /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1 ~/llvm-90/include/c++/v1
+mkdir -p ~/llvm-10/include/c++
+ln -s /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1 ~/llvm-10/include/c++/v1
 ```
 
 ## Downloading C2C
@@ -83,7 +84,7 @@ git clone git://github.com/c2lang/c2compiler.git
 ## Building C2C
 ```bash
 cd c2compiler
-source ./env.sh  (this assumes LLVM is installed to $HOME/llvm-90)
+source ./env.sh  (this assumes LLVM is installed to $HOME/llvm-10)
 mkdir build
 cd build
 cmake . ..
@@ -101,7 +102,7 @@ If all goes well, the **c2c** executable should appear in the build/c2c/ directo
 If you get an error with some Clang/C2-related errors, try updating your clang C2 archive.
 
 The env.sh script sets some some environment variables that c2c requires to work
-like *C2_LIBDIR*. It will also add $HOME/llvm-90/bin to the $PATH
+like *C2_LIBDIR*. It will also add $HOME/llvm-10/bin to the $PATH
 
 
 ## Running the tests

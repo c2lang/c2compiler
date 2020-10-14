@@ -709,7 +709,7 @@ void CodeGenFunction::EmitVarDecl(const VarDecl* D) {
     if (D->isParameter()) name << ".addr";
     llvm::AllocaInst *inst = CreateTempAlloca(CGM.ConvertType(qt), (const char*)name);
     // set alignment
-    if (!D->isParameter()) inst->setAlignment(CGM.getAlignment(qt));
+    if (!D->isParameter()) inst->setAlignment(MaybeAlign(CGM.getAlignment(qt)));
     D->setIRValue(inst);
 
 
