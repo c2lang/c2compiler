@@ -387,9 +387,9 @@ static const char* refkind2str(IdentifierExpr::RefKind ref) {
     case IdentifierExpr::REF_FUNC:          return "func";
     case IdentifierExpr::REF_TYPE:          return "type";
     case IdentifierExpr::REF_VAR:           return "var";
-    case IdentifierExpr::REF_ENUM_CONSTANT: return "enum_constant";
-    case IdentifierExpr::REF_STRUCT_MEMBER: return "struct_mem";
-    case IdentifierExpr::REF_STRUCT_FUNC:   return "struct_func";
+    case IdentifierExpr::REF_ENUM_CONSTANT: return "enum-constant";
+    case IdentifierExpr::REF_STRUCT_MEMBER: return "struct-mem";
+    case IdentifierExpr::REF_STRUCT_FUNC:   return "struct-func";
     case IdentifierExpr::REF_LABEL:         return "label";
     }
     FATAL_ERROR("should not come here");
