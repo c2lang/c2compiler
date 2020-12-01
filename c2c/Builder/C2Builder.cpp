@@ -227,7 +227,7 @@ int C2Builder::build() {
 
     // TargetInfo
     std::shared_ptr<TargetOptions> to(new TargetOptions());
-    to->Triple = llvm::sys::getDefaultTargetTriple();
+    //to->Triple = llvm::sys::getDefaultTargetTriple();
 
     std::shared_ptr<HeaderSearchOptions> HSOpts(new HeaderSearchOptions());
     // add current directory (=project root) to #include path

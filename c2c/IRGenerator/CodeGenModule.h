@@ -76,8 +76,6 @@ public:
     const std::string& getName() const { return name; }
     llvm::Module* getModule() const { return module; }
     llvm::LLVMContext& getContext() { return context; }
-    // TODO pass ref?
-    llvm::IRBuilder<> getBuilder() const { return builder; }
 
     unsigned getAlignment(QualType Q) const;
 private:

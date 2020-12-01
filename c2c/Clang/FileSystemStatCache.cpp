@@ -24,7 +24,7 @@ void FileSystemStatCache::anchor() {}
 
 static void copyStatusToFileData(const llvm::vfs::Status &Status,
                                  FileData &Data) {
-  Data.Name = Status.getName();
+  Data.Name = std::string(Status.getName());
   Data.Size = Status.getSize();
   Data.ModTime = llvm::sys::toTimeT(Status.getLastModificationTime());
   Data.UniqueID = Status.getUniqueID();
