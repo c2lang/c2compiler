@@ -286,7 +286,7 @@ public:
            "Too many arguments to diagnostic!");
     DiagStorage->DiagArgumentsKind[DiagStorage->NumDiagArgs]
       = DiagnosticsEngine::ak_std_string;
-    DiagStorage->DiagArgumentsStr[DiagStorage->NumDiagArgs++] = V;
+    DiagStorage->DiagArgumentsStr[DiagStorage->NumDiagArgs++] = V.str();
   }
 
   void Emit(const DiagnosticBuilder &DB) const {

@@ -93,7 +93,7 @@ public:
     FixItHint Hint;
     Hint.RemoveRange =
       CharSourceRange::getCharRange(InsertionLoc, InsertionLoc);
-    Hint.CodeToInsert = Code;
+    Hint.CodeToInsert = Code.str();
     Hint.BeforePreviousInsertions = BeforePreviousInsertions;
     return Hint;
   }
@@ -128,7 +128,7 @@ public:
                                      StringRef Code) {
     FixItHint Hint;
     Hint.RemoveRange = RemoveRange;
-    Hint.CodeToInsert = Code;
+    Hint.CodeToInsert = Code.str();
     return Hint;
   }
 
@@ -1147,7 +1147,7 @@ public:
     assert(NumArgs < DiagnosticsEngine::MaxArguments &&
            "Too many arguments to diagnostic!");
     DiagObj->DiagArgumentsKind[NumArgs] = DiagnosticsEngine::ak_std_string;
-    DiagObj->DiagArgumentsStr[NumArgs++] = S;
+    DiagObj->DiagArgumentsStr[NumArgs++] = S.str();
   }
 
   void AddTaggedVal(intptr_t V, DiagnosticsEngine::ArgumentKind Kind) const {
@@ -1169,7 +1169,7 @@ public:
       DiagObj->DiagFixItHints.push_back(Hint);
   }
 
-  void addFlagValue(StringRef V) const { DiagObj->FlagValue = V; }
+  void addFlagValue(StringRef V) const { DiagObj->FlagValue = V.str(); }
 };
 
 struct AddFlagValue {

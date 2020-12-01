@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include <assert.h>
 
+#include <llvm/Support/Host.h>
 #include <llvm/ADT/IntrusiveRefCntPtr.h>
 #include <llvm/Support/MemoryBuffer.h>
 #include <llvm/Support/raw_ostream.h>
@@ -227,6 +228,7 @@ int C2Builder::build() {
 
     // TargetInfo
     std::shared_ptr<TargetOptions> to(new TargetOptions());
+
     to->Triple = llvm::sys::getDefaultTargetTriple();
 
     std::shared_ptr<HeaderSearchOptions> HSOpts(new HeaderSearchOptions());

@@ -671,7 +671,7 @@ llvm::Value* CodeGenFunction::EmitIdentifierExpr(const IdentifierExpr* E) {
         //assert(VD->getIRValue());
         //return VD->getIRValue();
         // for LHS:
-        return new LoadInst(VD->getIRValue(), "", false, CurBB);
+        return new LoadInst(CGM.ConvertType(VD->getType()), VD->getIRValue(), "", false, CurBB);
     }
     case DECL_ENUMVALUE:
     {
@@ -709,7 +709,8 @@ void CodeGenFunction::EmitVarDecl(const VarDecl* D) {
     if (D->isParameter()) name << ".addr";
     llvm::AllocaInst *inst = CreateTempAlloca(CGM.ConvertType(qt), (const char*)name);
     // set alignment
-    if (!D->isParameter()) inst->setAlignment(MaybeAlign(CGM.getAlignment(qt)));
+    unsigned alignment = CGM.getAlignment(qt);
+    if (!D->isParameter() && alignment) inst->setAlignment(Align(alignment));
     D->setIRValue(inst);
 
 
@@ -866,7 +867,7 @@ llvm::Value *CodeGenFunction::EvaluateExprAsBool(const Expr *E) {
 
         llvm::BasicBlock *CurBB = Builder.GetInsertBlock();
         assert(CurBB);
-        Value* load = new LoadInst(VD->getIRValue(), "", false, CurBB);
+        Value* load = new LoadInst(CGM.ConvertType(VD->getType()), VD->getIRValue(), "", false, CurBB);
         return Builder.CreateIsNotNull(load, "tobool");
     }
     if (const BinaryOperator* BinOp = dyncast<BinaryOperator>(E)) {

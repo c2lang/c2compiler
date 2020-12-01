@@ -77,7 +77,7 @@ public:
     llvm::Module* getModule() const { return module; }
     llvm::LLVMContext& getContext() { return context; }
     // TODO pass ref?
-    llvm::IRBuilder<> getBuilder() const { return builder; }
+    const llvm::IRBuilder<> &getBuilder() const { return builder; }
 
     unsigned getAlignment(QualType Q) const;
 private:
