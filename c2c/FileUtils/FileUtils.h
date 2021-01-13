@@ -25,6 +25,7 @@ class StringBuilder;
 class FileUtils {
 public:
     static void writeFile(const char* pathstr, const std::string& filename, const StringBuilder& content);
+    static bool fileExists(const char* filename);
 };
 
 }

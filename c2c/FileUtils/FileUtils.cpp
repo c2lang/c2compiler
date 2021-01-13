@@ -42,3 +42,9 @@ void FileUtils::writeFile(const char* pathstr, const std::string& filename, cons
     OS << content;
 }
 
+bool FileUtils::fileExists(const char* filename) {
+    llvm::sys::fs::file_status status;
+    std::error_code ec = llvm::sys::fs::status(filename, status);
+    return exists(status);
+}
+

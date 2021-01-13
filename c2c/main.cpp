@@ -26,7 +26,9 @@
 #include "Builder/RecipeReader.h"
 #include "Builder/BuildFileReader.h"
 #include "AST/Component.h"
+#include "FileUtils/FileUtils.h"
 #include "Utils/BuildFile.h"
+#include "Utils/StringBuilder.h"
 #include "Utils/Log.h"
 #include "Utils/Utils.h"
 #include "Utils/color.h"
@@ -39,36 +41,64 @@ static const char* build_file;
 static bool print_targets = false;
 static bool use_recipe = true;
 
+static void create_project(const char* name) {
+    if (FileUtils::fileExists("main.c") || FileUtils::fileExists("recipe.txt")) {
+        printf("main.c2 and/or recipe.txt already exist\n");
+        exit(EXIT_FAILURE);
+    }
+    StringBuilder s;
+    s.print("module %s_main;\n\n", name);
+    s << "public func i32 main(i32 argc, char** argv) {\n";
+    s << "\n";
+    s << "\treturn 0;\n";
+    s << "}\n";
+    FileUtils::writeFile(".", "main.c2", s);
+
+    s.clear();
+    s.print("\nexecutable %s\n", name);
+    s << "\t$warnings no-unused\n";
+    s << "\t$refs\n";
+    s << "#\t$deps\n";
+    s << "\t$generate-c single-module\n";
+    s << "\tmain.c2\n";
+    s << "end\n";
+    FileUtils::writeFile(".", "recipe.txt", s);
+
+    printf("created new project files\n");
+    exit(EXIT_SUCCESS);
+}
+
 static void usage(const char* name) {
     fprintf(stderr, "Usage: %s <options> <target>\n", name);
     fprintf(stderr, "Options:\n");
-    fprintf(stderr, "   -a0           - print AST after parsing\n");
-    fprintf(stderr, "   -a1           - print AST after analysis 1\n");
-    fprintf(stderr, "   -a2           - print AST after analysis 2\n");
-    fprintf(stderr, "   -a3           - print AST after analysis 3 (final)\n");
-    fprintf(stderr, "   -aL           - also print library AST\n");
-    fprintf(stderr, "   -b <file>     - use specified build file\n");
-    fprintf(stderr, "   -c            - generate C code\n");
-    fprintf(stderr, "   -C            - generate + print C code\n");
-    fprintf(stderr, "   -d <dir>      - change directory first\n");
-    fprintf(stderr, "   -f <file>     - compile single file without recipe\n");
-    fprintf(stderr, "   -h            - show this help\n");
-    fprintf(stderr, "   -i            - generate LLVM IR code\n");
-    fprintf(stderr, "   -I            - generate + print LLVM IR code\n");
-    fprintf(stderr, "   -l            - list targets\n");
-    fprintf(stderr, "   -m            - print modules (excluding library modules)\n");
-    fprintf(stderr, "   -M            - print modules (including library modules)\n");
-    fprintf(stderr, "   -p            - print public symbols (excluding library symbols)\n");
-    fprintf(stderr, "   -s            - print symbols (excluding library symbols)\n");
-    fprintf(stderr, "   -S            - print symbols (including library symbols)\n");
-    fprintf(stderr, "   -t            - print timing\n");
-    fprintf(stderr, "   -v            - verbose logging\n");
-    fprintf(stderr, "   --about       - print information about C2 and c2c\n");
-    fprintf(stderr, "   --test        - test mode (don't check for main())\n");
-    fprintf(stderr, "   --deps        - generate module dependencies\n");
-    fprintf(stderr, "   --refs        - generate c2tags file\n");
-    fprintf(stderr, "   --check       - only parse + analyse\n");
-    fprintf(stderr, "   --showlibs    - print available libraries\n");
+    fprintf(stderr, "   -a0              - print AST after parsing\n");
+    fprintf(stderr, "   -a1              - print AST after analysis 1\n");
+    fprintf(stderr, "   -a2              - print AST after analysis 2\n");
+    fprintf(stderr, "   -a3              - print AST after analysis 3 (final)\n");
+    fprintf(stderr, "   -aL              - also print library AST\n");
+    fprintf(stderr, "   -b <file>        - use specified build file\n");
+    fprintf(stderr, "   -c               - generate C code\n");
+    fprintf(stderr, "   -C               - generate + print C code\n");
+    fprintf(stderr, "   -d <dir>         - change directory first\n");
+    fprintf(stderr, "   -f <file>        - compile single file without recipe\n");
+    fprintf(stderr, "   -h               - show this help\n");
+    fprintf(stderr, "   -i               - generate LLVM IR code\n");
+    fprintf(stderr, "   -I               - generate + print LLVM IR code\n");
+    fprintf(stderr, "   -l               - list targets\n");
+    fprintf(stderr, "   -m               - print modules (excluding library modules)\n");
+    fprintf(stderr, "   -M               - print modules (including library modules)\n");
+    fprintf(stderr, "   -p               - print public symbols (excluding library symbols)\n");
+    fprintf(stderr, "   -s               - print symbols (excluding library symbols)\n");
+    fprintf(stderr, "   -S               - print symbols (including library symbols)\n");
+    fprintf(stderr, "   -t               - print timing\n");
+    fprintf(stderr, "   -v               - verbose logging\n");
+    fprintf(stderr, "   --about          - print information about C2 and c2c\n");
+    fprintf(stderr, "   --test           - test mode (don't check for main())\n");
+    fprintf(stderr, "   --deps           - generate module dependencies\n");
+    fprintf(stderr, "   --refs           - generate c2tags file\n");
+    fprintf(stderr, "   --check          - only parse + analyse\n");
+    fprintf(stderr, "   --create <name>  - create new project main.c2 + recipe.txt\n");
+    fprintf(stderr, "   --showlibs       - print available libraries\n");
     exit(EXIT_FAILURE);
 }
 
@@ -197,6 +227,16 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
                 if (strcmp(&arg[2], "check") == 0) {
                     opts.checkOnly = true;
                     continue;
+                }
+                if (strcmp(&arg[2], "create") == 0) {
+                    if (i==argc-1) {
+                        fprintf(stderr, "error: --create needs an argument\n");
+                        exit(EXIT_FAILURE);
+                    }
+                    i++;
+                    build_file = argv[i];
+                    create_project(argv[i]);
+                    break;
                 }
                 if (strcmp(&arg[2], "showlibs") == 0) {
                     opts.showLibs = true;
