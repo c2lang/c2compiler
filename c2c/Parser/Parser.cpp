@@ -1170,8 +1170,11 @@ bool Parser::ParseExpressionList(SmallVectorImpl<Expr*> &Exprs,
             Diag(Tok, diag::err_expected) << tok::r_paren;
             return true;
         }
-        if (Tok.isNot(tok::comma))
-            return false;
+        if (Tok.is(tok::r_paren)) return false;
+        if (Tok.isNot(tok::comma)) {
+            Diag(Tok, diag::err_expected) << tok::r_paren;
+            return true;
+        }
         // Move to the next argument, remember where the comma was.
         CommaLocs.push_back(ConsumeToken());
     }
