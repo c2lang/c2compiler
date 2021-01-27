@@ -28,7 +28,8 @@ public:
     std::string target;
     std::string cc;
     std::string cflags;
-    std::string ldflags;
+    std::string ldflags;    // before other flags
+    std::string ldflags2;   // after other flags
     //std::string path;
     StringList libDirs;
 

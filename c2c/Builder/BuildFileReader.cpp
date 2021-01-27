@@ -48,6 +48,9 @@ bool BuildFileReader::parse(const std::string& filename)
     const char* ldflags = reader.getValue("toolchain.ldflags");
     build.ldflags = expandEnvVar(filename, ldflags);
 
+    const char* ldflags2 = reader.getValue("toolchain.ldflags2");
+    build.ldflags2 = expandEnvVar(filename, ldflags2);
+
     TomlReader::NodeIter iter = reader.getNodeIter("libdir");
     while (!iter.done()) {
         // dir is required

@@ -102,6 +102,12 @@ void MakefileGenerator::write(const std::string& path) {
         out << "LDFLAGS=\n";
     }
 
+    // LDFLAGS2
+    if (buildFile && !buildFile->ldflags2.empty()) {
+        out << "LDFLAGS2=" << buildFile->ldflags2 << '\n';
+    } else {
+        out << "LDFLAGS2=\n";
+    }
     out << '\n';
 
     // all target
@@ -133,6 +139,8 @@ void MakefileGenerator::write(const std::string& path) {
         for (unsigned i=0; i<sorter.numComps(); ++i) {
             addLinkFlags(sorter.getComp(i), out);
         }
+
+        out << " $(LDFLAGS2)";
         break;
     }
     case Component::SHARED_LIB:
@@ -149,6 +157,7 @@ void MakefileGenerator::write(const std::string& path) {
         out << " -shared -o " << targetname << " -Wl,-soname," << libname << ".1";
         out << " -Wl,--version-script=exports.version";
 #endif
+        out << " $(LDFLAGS2)";
         break;
     case Component::STATIC_LIB:
         out << "\tar rcs " << targetname;
