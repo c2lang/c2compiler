@@ -30,9 +30,9 @@ typedef enum {
 
 // @expect{atleast, build/file2.c}
 
-static void file2_test1();
+static void file2_test1(void);
 
-static void file2_test1() {
+static void file2_test1(void) {
     file1_State a = file1_State_A;
     file1_State b = file1_State_B;
 }

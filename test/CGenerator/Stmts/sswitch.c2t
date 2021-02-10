@@ -89,7 +89,7 @@ static void test_test2(char* str) {
     } while (0);
 }
 
-static void test_test3() {
+static void test_test3(void) {
     do {
         const char* _tmp = "literal";
         if (strcmp(_tmp, "aa") == 0) {
@@ -98,7 +98,7 @@ static void test_test3() {
     } while (0);
 }
 
-static void test_test4() {
+static void test_test4(void) {
     do {
         const char* _tmp = "literal";
         if (strcmp(_tmp, "aa") == 0) {
@@ -107,12 +107,12 @@ static void test_test4() {
     } while (0);
 }
 
-static void test_test5() {
+static void test_test5(void) {
     do {
     } while (0);
 }
 
-static void test_test6() {
+static void test_test6(void) {
     do {
         const char* _tmp = "literal";
         if (_tmp == NULL) {
@@ -120,7 +120,7 @@ static void test_test6() {
     } while (0);
 }
 
-int32_t main() {
+int32_t main(void) {
     return 0;
 }
 

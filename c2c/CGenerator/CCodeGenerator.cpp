@@ -735,6 +735,7 @@ void CCodeGenerator::EmitFunctionArgs(const FunctionDecl* F, StringBuilder& outp
         count--;
     }
     if (F->isVariadic()) output << "...";
+    if (F->numArgs() == 0 && !F->isVariadic()) output << "void";
     output << ')';
 }
 

@@ -26,7 +26,7 @@ struct test_Type_ {
     test_Func init;
 };
 
-int32_t main() {
+int32_t main(void) {
   test_Type t;
   t.init(1);
   return 0;

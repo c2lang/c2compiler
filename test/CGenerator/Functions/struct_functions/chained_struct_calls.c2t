@@ -52,7 +52,7 @@ struct test_C_ {
 static uint32_t test_A_run(test_A* a);
 static test_A* test_B_getA(test_B* b);
 static test_B* test_C_getB(test_C* c);
-static void test_test1();
+static void test_test1(void);
 
 static uint32_t test_A_run(test_A* a) {
   return 10;
@@ -66,7 +66,7 @@ static test_B* test_C_getB(test_C* c) {
   return &c->b;
 }
 
-static void test_test1() {
+static void test_test1(void) {
   test_C c;
   uint32_t n = test_A_run(test_B_getA(test_C_getB(&c)));
 }

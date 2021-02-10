@@ -27,7 +27,7 @@ func void bar();
 extern "C" {
 #endif
 
-void foo_bar();
+void foo_bar(void);
 
 #ifdef __cplusplus
 }

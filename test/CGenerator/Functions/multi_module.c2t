@@ -24,17 +24,17 @@ func void nonpub2() {}
 
 // @expect{atleast, build/test1.h}
 
-void test1_pub1();
+void test1_pub1(void);
 
 // @expect{atleast, build/test1.c}
 #include "test1.h"
 
-static void test1_nonpub1();
+static void test1_nonpub1(void);
 
-void test1_pub1() {
+void test1_pub1(void) {
 }
 
-static void test1_nonpub1() {
+static void test1_nonpub1(void) {
 }
 
 int32_t main(int32_t argc, const char** argv) {
@@ -43,16 +43,16 @@ int32_t main(int32_t argc, const char** argv) {
 
 // @expect{atleast, build/test2.h}
 
-void test2_pub2();
+void test2_pub2(void);
 
 // @expect{atleast, build/test2.c}
 #include "test2.h"
 
-static void test2_nonpub2();
+static void test2_nonpub2(void);
 
-void test2_pub2() {
+void test2_pub2(void) {
 }
 
-static void test2_nonpub2() {
+static void test2_nonpub2(void) {
 }
 

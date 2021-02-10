@@ -23,10 +23,10 @@ struct test_Type_ {
   int32_t member;
 };
 
-static void test_Type_init() {
+static void test_Type_init(void) {
 }
 
-int32_t main() {
+int32_t main(void) {
   test_Type_init();
   return 0;
 }

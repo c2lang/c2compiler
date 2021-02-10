@@ -41,9 +41,9 @@ func void basic_asm() {
 
 // @expect{atleast, build/test.c}
 static int32_t test_add(int32_t x, int32_t y);
-static void test_clobbers();
-__inline__ static uint64_t test_rdtsc();
-static void test_basic_asm();
+static void test_clobbers(void);
+__inline__ static uint64_t test_rdtsc(void);
+static void test_basic_asm(void);
 
 static int32_t test_add(int32_t x, int32_t y) {
   int32_t result;
@@ -51,7 +51,7 @@ static int32_t test_add(int32_t x, int32_t y) {
   return result;
 }
 
-static void test_clobbers() {
+static void test_clobbers(void) {
   int32_t from;
   int32_t to;
   int32_t count;
@@ -61,7 +61,7 @@ static void test_clobbers() {
             : "r0", "r1", "r2", "r3", "r4", "r5", "memory");
 }
 
-__inline__ static uint64_t test_rdtsc() {
+__inline__ static uint64_t test_rdtsc(void) {
   uint32_t lo;
   uint32_t hi;
   __asm__ volatile ("rdtsc" : "=a" (lo), "=d" (hi));
@@ -71,7 +71,7 @@ __inline__ static uint64_t test_rdtsc() {
   return res;
 }
 
-static void test_basic_asm() {
+static void test_basic_asm(void) {
   __asm__ ("movl %ecx %eax");
 }
 

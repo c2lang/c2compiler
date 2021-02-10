@@ -30,7 +30,7 @@ static void test_Type_init(test_Type* _arg0);
 static void test_Type_init(test_Type* _arg0) {
 }
 
-int32_t main() {
+int32_t main(void) {
   test_Type* t;
   test_Type_init(t);
   return 0;

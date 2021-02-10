@@ -28,5 +28,5 @@ func aa.AA b();
 // @expect{atleast, bb.h}
 #include "aa.h"
 
-aa_AA bb_b();
+aa_AA bb_b(void);
 

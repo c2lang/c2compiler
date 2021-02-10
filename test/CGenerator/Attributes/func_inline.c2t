@@ -19,14 +19,14 @@ public func i32 main(i32 argc, const i8** argv)
 }
 
 // @expect{atleast, build/test.h}
-__inline__ int32_t test_foo();
+__inline__ int32_t test_foo(void);
 
 // @expect{atleast, build/test.c}
-__inline__ int32_t test_foo() {
+__inline__ int32_t test_foo(void) {
     return 1;
 }
 
-__inline__ static int32_t test_bar() {
+__inline__ static int32_t test_bar(void) {
     return 2;
 }
 

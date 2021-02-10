@@ -11,7 +11,7 @@ func void test1() {
 
 // @expect{atleast, build/test.c}
 
-static void test_test1() {
+static void test_test1(void) {
     static int32_t a = 10;
 }
 

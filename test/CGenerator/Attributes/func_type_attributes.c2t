@@ -15,10 +15,10 @@ public func i32 main(i32 argc, const i8** argv)
 }
 
 // @expect{atleast, build/test.c}
-typedef void (*test_Func1)() __attribute__((unused));
-typedef void (*test_Func3)() __attribute__((aligned(16)));
+typedef void (*test_Func1)(void) __attribute__((unused));
+typedef void (*test_Func3)(void) __attribute__((aligned(16)));
 
 // @expect{atleast, build/test.h}
 
-typedef void (*test_Func2)();
+typedef void (*test_Func2)(void);
 

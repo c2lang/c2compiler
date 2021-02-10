@@ -54,7 +54,7 @@ struct aa_AA_ {
     int32_t x;
 };
 
-void aa_foo();
+void aa_foo(void);
 
 // @expect{atleast, bb.h}
 

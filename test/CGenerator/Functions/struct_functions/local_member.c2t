@@ -28,7 +28,7 @@ typedef struct test_Type_ test_Type;
 static void test_Type_init(test_Type* _arg0) {
 }
 
-int32_t main() {
+int32_t main(void) {
   test_Outer o;
   test_Type_init(&o.t);
   return 0;

@@ -34,7 +34,7 @@ static void test_Type_init(test_Type* _arg0);
 static void test_Type_init(test_Type* _arg0) {
 }
 
-int32_t main() {
+int32_t main(void) {
   test_Func f = test_Type_init;
   f = test_Type_init;
   return 0;

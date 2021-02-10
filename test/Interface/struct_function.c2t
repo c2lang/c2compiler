@@ -29,7 +29,7 @@ func void Struct.test2(Struct* s);
 
 typedef struct test_Struct_ test_Struct;
 
-void test_Struct_test1();
+void test_Struct_test1(void);
 
 void test_Struct_test2(test_Struct* s);
 

@@ -45,7 +45,7 @@ struct foo_Type_ {
 
 static void foo_Type_internal(foo_Type* t);
 
-foo_Type* foo_Type_create() {
+foo_Type* foo_Type_create(void) {
   foo_Type* t = NULL;
   return t;
 }
@@ -59,7 +59,7 @@ void foo_Type_init(foo_Type* t) {
 }
 
 // @expect{atleast, build/bar.c}
-int32_t main() {
+int32_t main(void) {
   foo_Type* t = foo_Type_create();
   foo_Type_init(t);
   return 0;

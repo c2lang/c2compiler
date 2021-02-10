@@ -18,5 +18,5 @@ struct test_Struct_ {
   int32_t x;
 };
 
-typedef test_Struct (*test_Callback)();
+typedef test_Struct (*test_Callback)(void);
 

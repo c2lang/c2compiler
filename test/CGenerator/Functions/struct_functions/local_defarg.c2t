@@ -31,7 +31,7 @@ static void test_Type_init(test_Type* _arg0, int32_t n);
 static void test_Type_init(test_Type* _arg0, int32_t n) {
 }
 
-int32_t main() {
+int32_t main(void) {
   test_Type t;
   test_Type_init(&t, 10);
   test_Type_init(&t, 20);
