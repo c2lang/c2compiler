@@ -5,25 +5,7 @@ module big;
 
 import stdio as io;
 import string local;
-
-#define ANSI_BLACK    "\033[0;30m"
-#define ANSI_RED      "\033[0;31m"
-#define ANSI_GREEN    "\033[0;32m"
-#define ANSI_YELLOW   "\033[0;33m"
-#define ANSI_BLUE     "\033[0;34m"
-#define ANSI_MAGENTA  "\033[0;35m"
-#define ANSI_CYAN     "\033[0;36m"
-#define ANSI_GREY     "\033[0;37m"
-#define ANSI_DARKGREY "\033[01;30m"
-#define ANSI_BRED     "\033[01;31m"
-#define ANSI_BGREEN   "\033[01;32m"
-#define ANSI_BYELLOW  "\033[01;33m"
-#define ANSI_BBLUE    "\033[01;34m"
-#define ANSI_BMAGENTA "\033[01;35m"
-#define ANSI_BCYAN    "\033[01;36m"
-#define ANSI_WHITE    "\033[01;37m"
-#define ANSI_NORMAL   "\033[0m"
-
+import color;
 
 public func i32 main() {
     aaa_calculate_rotations();
@@ -246,7 +228,7 @@ func void aaa_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, aaa_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, aaa_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -254,18 +236,18 @@ func void aaa_board_print() {
                 *cp++ = ' ';
                 break;
             case FieldStatus.Blocked:
-                cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
+                cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, aaa_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, aaa_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
-                cp += io.sprintf(cp, ANSI_GREEN"%c", '0' + field.piece_id);
+                cp += io.sprintf(cp, "%s%c", color.Green, '0' + field.piece_id);
                 *cp++ = aaa_flags2char(flags);
-                cp += io.sprintf(cp, ANSI_NORMAL);
+                cp += io.sprintf(cp, "%s", color.Normal);
                 break;
             }
         }
@@ -632,7 +614,7 @@ func void bbb_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, bbb_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, bbb_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -640,18 +622,18 @@ func void bbb_board_print() {
                 *cp++ = ' ';
                 break;
             case FieldStatus.Blocked:
-                cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
+                cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, bbb_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, bbb_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
-                cp += io.sprintf(cp, ANSI_GREEN"%c", '0' + field.piece_id);
+                cp += io.sprintf(cp, "%s%c", color.Green, '0' + field.piece_id);
                 *cp++ = bbb_flags2char(flags);
-                cp += io.sprintf(cp, ANSI_NORMAL);
+                cp += io.sprintf(cp, "%s", color.Normal);
                 break;
             }
         }
@@ -1018,7 +1000,7 @@ func void ccc_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, ccc_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, ccc_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -1026,18 +1008,18 @@ func void ccc_board_print() {
                 *cp++ = ' ';
                 break;
             case FieldStatus.Blocked:
-                cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
+                cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, ccc_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, ccc_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
-                cp += io.sprintf(cp, ANSI_GREEN"%c", '0' + field.piece_id);
+                cp += io.sprintf(cp, "%s%c", color.Green, '0' + field.piece_id);
                 *cp++ = ccc_flags2char(flags);
-                cp += io.sprintf(cp, ANSI_NORMAL);
+                cp += io.sprintf(cp, "%s", color.Normal);
                 break;
             }
         }
@@ -1404,7 +1386,7 @@ func void ddd_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, ddd_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, ddd_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -1412,18 +1394,18 @@ func void ddd_board_print() {
                 *cp++ = ' ';
                 break;
             case FieldStatus.Blocked:
-                cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
+                cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, ddd_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, ddd_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
-                cp += io.sprintf(cp, ANSI_GREEN"%c", '0' + field.piece_id);
+                cp += io.sprintf(cp, "%s%c", color.Green, '0' + field.piece_id);
                 *cp++ = ddd_flags2char(flags);
-                cp += io.sprintf(cp, ANSI_NORMAL);
+                cp += io.sprintf(cp, "%s", color.Normal);
                 break;
             }
         }
@@ -1790,7 +1772,7 @@ func void eee_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, eee_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, eee_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -1798,18 +1780,18 @@ func void eee_board_print() {
                 *cp++ = ' ';
                 break;
             case FieldStatus.Blocked:
-                cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
+                cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, eee_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, eee_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
-                cp += io.sprintf(cp, ANSI_GREEN"%c", '0' + field.piece_id);
+                cp += io.sprintf(cp, "%s%c", color.Green, '0' + field.piece_id);
                 *cp++ = eee_flags2char(flags);
-                cp += io.sprintf(cp, ANSI_NORMAL);
+                cp += io.sprintf(cp, "%s", color.Normal);
                 break;
             }
         }
@@ -2176,7 +2158,7 @@ func void fff_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, fff_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, fff_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -2184,18 +2166,18 @@ func void fff_board_print() {
                 *cp++ = ' ';
                 break;
             case FieldStatus.Blocked:
-                cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
+                cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, fff_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, fff_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
-                cp += io.sprintf(cp, ANSI_GREEN"%c", '0' + field.piece_id);
+                cp += io.sprintf(cp, "%s%c", color.Green, '0' + field.piece_id);
                 *cp++ = fff_flags2char(flags);
-                cp += io.sprintf(cp, ANSI_NORMAL);
+                cp += io.sprintf(cp, "%s", color.Normal);
                 break;
             }
         }
@@ -2562,7 +2544,7 @@ func void ggg_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, ggg_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, ggg_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -2570,18 +2552,18 @@ func void ggg_board_print() {
                 *cp++ = ' ';
                 break;
             case FieldStatus.Blocked:
-                cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
+                cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, ggg_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, ggg_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
-                cp += io.sprintf(cp, ANSI_GREEN"%c", '0' + field.piece_id);
+                cp += io.sprintf(cp, "%s%c", color.Green, '0' + field.piece_id);
                 *cp++ = ggg_flags2char(flags);
-                cp += io.sprintf(cp, ANSI_NORMAL);
+                cp += io.sprintf(cp, "%s", color.Normal);
                 break;
             }
         }
@@ -2948,7 +2930,7 @@ func void hhh_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, hhh_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, hhh_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -2956,18 +2938,18 @@ func void hhh_board_print() {
                 *cp++ = ' ';
                 break;
             case FieldStatus.Blocked:
-                cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
+                cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, hhh_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, hhh_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
-                cp += io.sprintf(cp, ANSI_GREEN"%c", '0' + field.piece_id);
+                cp += io.sprintf(cp, "%s%c", color.Green, '0' + field.piece_id);
                 *cp++ = hhh_flags2char(flags);
-                cp += io.sprintf(cp, ANSI_NORMAL);
+                cp += io.sprintf(cp, "%s", color.Normal);
                 break;
             }
         }
@@ -3335,7 +3317,7 @@ func void iii_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, iii_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, iii_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -3343,18 +3325,18 @@ func void iii_board_print() {
                 *cp++ = ' ';
                 break;
             case FieldStatus.Blocked:
-                cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
+                cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, iii_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, iii_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
-                cp += io.sprintf(cp, ANSI_GREEN"%c", '0' + field.piece_id);
+                cp += io.sprintf(cp, "%s%c", color.Green, '0' + field.piece_id);
                 *cp++ = iii_flags2char(flags);
-                cp += io.sprintf(cp, ANSI_NORMAL);
+                cp += io.sprintf(cp, "%s", color.Normal);
                 break;
             }
         }
@@ -3721,7 +3703,7 @@ func void jjj_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, jjj_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, jjj_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -3729,18 +3711,18 @@ func void jjj_board_print() {
                 *cp++ = ' ';
                 break;
             case FieldStatus.Blocked:
-                cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
+                cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, jjj_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, jjj_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
-                cp += io.sprintf(cp, ANSI_GREEN"%c", '0' + field.piece_id);
+                cp += io.sprintf(cp, "%s%c", color.Green, '0' + field.piece_id);
                 *cp++ = jjj_flags2char(flags);
-                cp += io.sprintf(cp, ANSI_NORMAL);
+                cp += io.sprintf(cp, "%s", color.Normal);
                 break;
             }
         }
@@ -4107,7 +4089,7 @@ func void kkk_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, kkk_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, kkk_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -4115,18 +4097,18 @@ func void kkk_board_print() {
                 *cp++ = ' ';
                 break;
             case FieldStatus.Blocked:
-                cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
+                cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, kkk_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, kkk_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
-                cp += io.sprintf(cp, ANSI_GREEN"%c", '0' + field.piece_id);
+                cp += io.sprintf(cp, "%s%c", color.Green, '0' + field.piece_id);
                 *cp++ = kkk_flags2char(flags);
-                cp += io.sprintf(cp, ANSI_NORMAL);
+                cp += io.sprintf(cp, "%s", color.Normal);
                 break;
             }
         }
@@ -4493,7 +4475,7 @@ func void lll_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, lll_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, lll_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -4501,18 +4483,18 @@ func void lll_board_print() {
                 *cp++ = ' ';
                 break;
             case FieldStatus.Blocked:
-                cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
+                cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, lll_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, lll_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
-                cp += io.sprintf(cp, ANSI_GREEN"%c", '0' + field.piece_id);
+                cp += io.sprintf(cp, "%s%c", color.Green, '0' + field.piece_id);
                 *cp++ = lll_flags2char(flags);
-                cp += io.sprintf(cp, ANSI_NORMAL);
+                cp += io.sprintf(cp, "%s", color.Normal);
                 break;
             }
         }
@@ -4879,7 +4861,7 @@ func void mmm_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, mmm_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, mmm_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -4887,18 +4869,18 @@ func void mmm_board_print() {
                 *cp++ = ' ';
                 break;
             case FieldStatus.Blocked:
-                cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
+                cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, mmm_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, mmm_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
-                cp += io.sprintf(cp, ANSI_GREEN"%c", '0' + field.piece_id);
+                cp += io.sprintf(cp, "%s%c", color.Green, '0' + field.piece_id);
                 *cp++ = mmm_flags2char(flags);
-                cp += io.sprintf(cp, ANSI_NORMAL);
+                cp += io.sprintf(cp, "%s", color.Normal);
                 break;
             }
         }
@@ -5265,7 +5247,7 @@ func void nnn_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, nnn_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, nnn_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -5273,18 +5255,18 @@ func void nnn_board_print() {
                 *cp++ = ' ';
                 break;
             case FieldStatus.Blocked:
-                cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
+                cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, nnn_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, nnn_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
-                cp += io.sprintf(cp, ANSI_GREEN"%c", '0' + field.piece_id);
+                cp += io.sprintf(cp, "%s%c", color.Green, '0' + field.piece_id);
                 *cp++ = nnn_flags2char(flags);
-                cp += io.sprintf(cp, ANSI_NORMAL);
+                cp += io.sprintf(cp, "%s", color.Normal);
                 break;
             }
         }
@@ -5651,7 +5633,7 @@ func void ooo_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, ooo_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, ooo_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -5659,18 +5641,18 @@ func void ooo_board_print() {
                 *cp++ = ' ';
                 break;
             case FieldStatus.Blocked:
-                cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
+                cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, ooo_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, ooo_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
-                cp += io.sprintf(cp, ANSI_GREEN"%c", '0' + field.piece_id);
+                cp += io.sprintf(cp, "%s%c", color.Green, '0' + field.piece_id);
                 *cp++ = ooo_flags2char(flags);
-                cp += io.sprintf(cp, ANSI_NORMAL);
+                cp += io.sprintf(cp, "%s", color.Normal);
                 break;
             }
         }
@@ -6037,7 +6019,7 @@ func void ppp_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, ppp_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, ppp_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -6045,18 +6027,18 @@ func void ppp_board_print() {
                 *cp++ = ' ';
                 break;
             case FieldStatus.Blocked:
-                cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
+                cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, ppp_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, ppp_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
-                cp += io.sprintf(cp, ANSI_GREEN"%c", '0' + field.piece_id);
+                cp += io.sprintf(cp, "%s%c", color.Green, '0' + field.piece_id);
                 *cp++ = ppp_flags2char(flags);
-                cp += io.sprintf(cp, ANSI_NORMAL);
+                cp += io.sprintf(cp, "%s", color.Normal);
                 break;
             }
         }
@@ -6423,7 +6405,7 @@ func void qqq_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, qqq_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, qqq_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -6431,18 +6413,18 @@ func void qqq_board_print() {
                 *cp++ = ' ';
                 break;
             case FieldStatus.Blocked:
-                cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
+                cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, qqq_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, qqq_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
-                cp += io.sprintf(cp, ANSI_GREEN"%c", '0' + field.piece_id);
+                cp += io.sprintf(cp, "%s%c", color.Green, '0' + field.piece_id);
                 *cp++ = qqq_flags2char(flags);
-                cp += io.sprintf(cp, ANSI_NORMAL);
+                cp += io.sprintf(cp, "%s", color.Normal);
                 break;
             }
         }
@@ -6809,7 +6791,7 @@ func void rrr_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, rrr_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, rrr_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -6817,18 +6799,18 @@ func void rrr_board_print() {
                 *cp++ = ' ';
                 break;
             case FieldStatus.Blocked:
-                cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
+                cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, rrr_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, rrr_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
-                cp += io.sprintf(cp, ANSI_GREEN"%c", '0' + field.piece_id);
+                cp += io.sprintf(cp, "%s%c", color.Green, '0' + field.piece_id);
                 *cp++ = rrr_flags2char(flags);
-                cp += io.sprintf(cp, ANSI_NORMAL);
+                cp += io.sprintf(cp, "%s", color.Normal);
                 break;
             }
         }
@@ -7195,7 +7177,7 @@ func void sss_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, sss_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, sss_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -7203,18 +7185,18 @@ func void sss_board_print() {
                 *cp++ = ' ';
                 break;
             case FieldStatus.Blocked:
-                cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
+                cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, sss_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, sss_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
-                cp += io.sprintf(cp, ANSI_GREEN"%c", '0' + field.piece_id);
+                cp += io.sprintf(cp, "%s%c", color.Green, '0' + field.piece_id);
                 *cp++ = sss_flags2char(flags);
-                cp += io.sprintf(cp, ANSI_NORMAL);
+                cp += io.sprintf(cp, "%s", color.Normal);
                 break;
             }
         }
@@ -7581,7 +7563,7 @@ func void ttt_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, ttt_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, ttt_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -7589,18 +7571,18 @@ func void ttt_board_print() {
                 *cp++ = ' ';
                 break;
             case FieldStatus.Blocked:
-                cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
+                cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, ttt_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, ttt_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
-                cp += io.sprintf(cp, ANSI_GREEN"%c", '0' + field.piece_id);
+                cp += io.sprintf(cp, "%s%c", color.Green, '0' + field.piece_id);
                 *cp++ = ttt_flags2char(flags);
-                cp += io.sprintf(cp, ANSI_NORMAL);
+                cp += io.sprintf(cp, "%s", color.Normal);
                 break;
             }
         }
@@ -7967,7 +7949,7 @@ func void uuu_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, uuu_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, uuu_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -7975,18 +7957,18 @@ func void uuu_board_print() {
                 *cp++ = ' ';
                 break;
             case FieldStatus.Blocked:
-                cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
+                cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, uuu_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, uuu_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
-                cp += io.sprintf(cp, ANSI_GREEN"%c", '0' + field.piece_id);
+                cp += io.sprintf(cp, "%s%c", color.Green, '0' + field.piece_id);
                 *cp++ = uuu_flags2char(flags);
-                cp += io.sprintf(cp, ANSI_NORMAL);
+                cp += io.sprintf(cp, "%s", color.Normal);
                 break;
             }
         }
@@ -8353,7 +8335,7 @@ func void vvv_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, vvv_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, vvv_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -8361,18 +8343,18 @@ func void vvv_board_print() {
                 *cp++ = ' ';
                 break;
             case FieldStatus.Blocked:
-                cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
+                cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, vvv_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, vvv_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
-                cp += io.sprintf(cp, ANSI_GREEN"%c", '0' + field.piece_id);
+                cp += io.sprintf(cp, "%s%c", color.Green, '0' + field.piece_id);
                 *cp++ = vvv_flags2char(flags);
-                cp += io.sprintf(cp, ANSI_NORMAL);
+                cp += io.sprintf(cp, "%s", color.Normal);
                 break;
             }
         }
@@ -8739,7 +8721,7 @@ func void www_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, www_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, www_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -8747,18 +8729,18 @@ func void www_board_print() {
                 *cp++ = ' ';
                 break;
             case FieldStatus.Blocked:
-                cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
+                cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, www_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, www_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
-                cp += io.sprintf(cp, ANSI_GREEN"%c", '0' + field.piece_id);
+                cp += io.sprintf(cp, "%s%c", color.Green, '0' + field.piece_id);
                 *cp++ = www_flags2char(flags);
-                cp += io.sprintf(cp, ANSI_NORMAL);
+                cp += io.sprintf(cp, "%s", color.Normal);
                 break;
             }
         }
@@ -9125,7 +9107,7 @@ func void xxx_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, xxx_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, xxx_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -9133,18 +9115,18 @@ func void xxx_board_print() {
                 *cp++ = ' ';
                 break;
             case FieldStatus.Blocked:
-                cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
+                cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, xxx_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, xxx_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
-                cp += io.sprintf(cp, ANSI_GREEN"%c", '0' + field.piece_id);
+                cp += io.sprintf(cp, "%s%c", color.Green, '0' + field.piece_id);
                 *cp++ = xxx_flags2char(flags);
-                cp += io.sprintf(cp, ANSI_NORMAL);
+                cp += io.sprintf(cp, "%s", color.Normal);
                 break;
             }
         }
@@ -9511,7 +9493,7 @@ func void yyy_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, yyy_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, yyy_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -9519,18 +9501,18 @@ func void yyy_board_print() {
                 *cp++ = ' ';
                 break;
             case FieldStatus.Blocked:
-                cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
+                cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, yyy_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, yyy_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
-                cp += io.sprintf(cp, ANSI_GREEN"%c", '0' + field.piece_id);
+                cp += io.sprintf(cp, "%s%c", color.Green, '0' + field.piece_id);
                 *cp++ = yyy_flags2char(flags);
-                cp += io.sprintf(cp, ANSI_NORMAL);
+                cp += io.sprintf(cp, "%s", color.Normal);
                 break;
             }
         }
@@ -9897,7 +9879,7 @@ func void zzz_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, zzz_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, zzz_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -9905,18 +9887,18 @@ func void zzz_board_print() {
                 *cp++ = ' ';
                 break;
             case FieldStatus.Blocked:
-                cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
+                cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, zzz_flags2char(field.expected));
+                    cp += io.sprintf(cp, "%s%s%s", color.Red, zzz_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
-                cp += io.sprintf(cp, ANSI_GREEN"%c", '0' + field.piece_id);
+                cp += io.sprintf(cp, "%s%c", color.Green, '0' + field.piece_id);
                 *cp++ = zzz_flags2char(flags);
-                cp += io.sprintf(cp, ANSI_NORMAL);
+                cp += io.sprintf(cp, "%s", color.Normal);
                 break;
             }
         }

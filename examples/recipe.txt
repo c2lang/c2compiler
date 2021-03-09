@@ -259,5 +259,6 @@ executable big
     $refs
     $deps show-files show-externals
     $generate-c single-module check
+    color.c2
     big.c2
 end
