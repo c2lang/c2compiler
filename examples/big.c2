@@ -42,12 +42,12 @@ u32 aaa_found;
 u64 aaa_tried;
 
 type AaaField struct {
-#if 0
+/*
     FieldStatus status : 2;
     u32 piece_id : 4;
     u32 flags : 3;
     u32 expected : 3;  // set by other pieces
-#endif
+*/
     FieldStatus status;
     u8 piece_id;
     u8 flags;
@@ -329,7 +329,7 @@ func void aaa_board_add(const AaaOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         AaaField field = aaa_board_get(xx, yy);
-        //assert(field.status == FieldStatus.Free);
+        // assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -428,12 +428,12 @@ u32 bbb_found;
 u64 bbb_tried;
 
 type BbbField struct {
-#if 0
+/*
     FieldStatus status : 2;
     u32 piece_id : 4;
     u32 flags : 3;
     u32 expected : 3;  // set by other pieces
-#endif
+*/
     FieldStatus status;
     u8 piece_id;
     u8 flags;
@@ -715,7 +715,7 @@ func void bbb_board_add(const BbbOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         BbbField field = bbb_board_get(xx, yy);
-        //assert(field.status == FieldStatus.Free);
+        // assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -814,12 +814,12 @@ u32 ccc_found;
 u64 ccc_tried;
 
 type CccField struct {
-#if 0
+/*
     FieldStatus status : 2;
     u32 piece_id : 4;
     u32 flags : 3;
     u32 expected : 3;  // set by other pieces
-#endif
+*/
     FieldStatus status;
     u8 piece_id;
     u8 flags;
@@ -1101,7 +1101,7 @@ func void ccc_board_add(const CccOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         CccField field = ccc_board_get(xx, yy);
-        //assert(field.status == FieldStatus.Free);
+        // assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -1200,12 +1200,12 @@ u32 ddd_found;
 u64 ddd_tried;
 
 type DddField struct {
-#if 0
+/*
     FieldStatus status : 2;
     u32 piece_id : 4;
     u32 flags : 3;
     u32 expected : 3;  // set by other pieces
-#endif
+*/
     FieldStatus status;
     u8 piece_id;
     u8 flags;
@@ -1487,7 +1487,7 @@ func void ddd_board_add(const DddOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         DddField field = ddd_board_get(xx, yy);
-        //assert(field.status == FieldStatus.Free);
+        // assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -1586,12 +1586,12 @@ u32 eee_found;
 u64 eee_tried;
 
 type EeeField struct {
-#if 0
+/*
     FieldStatus status : 2;
     u32 piece_id : 4;
     u32 flags : 3;
     u32 expected : 3;  // set by other pieces
-#endif
+*/
     FieldStatus status;
     u8 piece_id;
     u8 flags;
@@ -1873,7 +1873,7 @@ func void eee_board_add(const EeeOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         EeeField field = eee_board_get(xx, yy);
-        //assert(field.status == FieldStatus.Free);
+        // assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -1972,12 +1972,12 @@ u32 fff_found;
 u64 fff_tried;
 
 type FffField struct {
-#if 0
+/*
     FieldStatus status : 2;
     u32 piece_id : 4;
     u32 flags : 3;
     u32 expected : 3;  // set by other pieces
-#endif
+*/
     FieldStatus status;
     u8 piece_id;
     u8 flags;
@@ -2259,7 +2259,7 @@ func void fff_board_add(const FffOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         FffField field = fff_board_get(xx, yy);
-        //assert(field.status == FieldStatus.Free);
+        // assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -2358,12 +2358,12 @@ u32 ggg_found;
 u64 ggg_tried;
 
 type GggField struct {
-#if 0
+/*
     FieldStatus status : 2;
     u32 piece_id : 4;
     u32 flags : 3;
     u32 expected : 3;  // set by other pieces
-#endif
+*/
     FieldStatus status;
     u8 piece_id;
     u8 flags;
@@ -2645,7 +2645,7 @@ func void ggg_board_add(const GggOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         GggField field = ggg_board_get(xx, yy);
-        //assert(field.status == FieldStatus.Free);
+        // assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -2744,12 +2744,12 @@ u32 hhh_found;
 u64 hhh_tried;
 
 type HhhField struct {
-#if 0
+/*
     FieldStatus status : 2;
     u32 piece_id : 4;
     u32 flags : 3;
     u32 expected : 3;  // set by other pieces
-#endif
+*/
     FieldStatus status;
     u8 piece_id;
     u8 flags;
@@ -3031,7 +3031,7 @@ func void hhh_board_add(const HhhOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         HhhField field = hhh_board_get(xx, yy);
-        //assert(field.status == FieldStatus.Free);
+        // assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -3131,12 +3131,12 @@ u32 iii_found;
 u64 iii_tried;
 
 type IiiField struct {
-#if 0
+/*
     FieldStatus status : 2;
     u32 piece_id : 4;
     u32 flags : 3;
     u32 expected : 3;  // set by other pieces
-#endif
+*/
     FieldStatus status;
     u8 piece_id;
     u8 flags;
@@ -3418,7 +3418,7 @@ func void iii_board_add(const IiiOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         IiiField field = iii_board_get(xx, yy);
-        //assert(field.status == FieldStatus.Free);
+        // assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -3517,12 +3517,12 @@ u32 jjj_found;
 u64 jjj_tried;
 
 type JjjField struct {
-#if 0
+/*
     FieldStatus status : 2;
     u32 piece_id : 4;
     u32 flags : 3;
     u32 expected : 3;  // set by other pieces
-#endif
+*/
     FieldStatus status;
     u8 piece_id;
     u8 flags;
@@ -3804,7 +3804,7 @@ func void jjj_board_add(const JjjOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         JjjField field = jjj_board_get(xx, yy);
-        //assert(field.status == FieldStatus.Free);
+        // assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -3903,12 +3903,12 @@ u32 kkk_found;
 u64 kkk_tried;
 
 type KkkField struct {
-#if 0
+/*
     FieldStatus status : 2;
     u32 piece_id : 4;
     u32 flags : 3;
     u32 expected : 3;  // set by other pieces
-#endif
+*/
     FieldStatus status;
     u8 piece_id;
     u8 flags;
@@ -4190,7 +4190,7 @@ func void kkk_board_add(const KkkOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         KkkField field = kkk_board_get(xx, yy);
-        //assert(field.status == FieldStatus.Free);
+        // assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -4289,12 +4289,12 @@ u32 lll_found;
 u64 lll_tried;
 
 type LllField struct {
-#if 0
+/*
     FieldStatus status : 2;
     u32 piece_id : 4;
     u32 flags : 3;
     u32 expected : 3;  // set by other pieces
-#endif
+*/
     FieldStatus status;
     u8 piece_id;
     u8 flags;
@@ -4576,7 +4576,7 @@ func void lll_board_add(const LllOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         LllField field = lll_board_get(xx, yy);
-        //assert(field.status == FieldStatus.Free);
+        // assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -4675,12 +4675,12 @@ u32 mmm_found;
 u64 mmm_tried;
 
 type MmmField struct {
-#if 0
+/*
     FieldStatus status : 2;
     u32 piece_id : 4;
     u32 flags : 3;
     u32 expected : 3;  // set by other pieces
-#endif
+*/
     FieldStatus status;
     u8 piece_id;
     u8 flags;
@@ -4962,7 +4962,7 @@ func void mmm_board_add(const MmmOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         MmmField field = mmm_board_get(xx, yy);
-        //assert(field.status == FieldStatus.Free);
+        // assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -5061,12 +5061,12 @@ u32 nnn_found;
 u64 nnn_tried;
 
 type NnnField struct {
-#if 0
+/*
     FieldStatus status : 2;
     u32 piece_id : 4;
     u32 flags : 3;
     u32 expected : 3;  // set by other pieces
-#endif
+*/
     FieldStatus status;
     u8 piece_id;
     u8 flags;
@@ -5348,7 +5348,7 @@ func void nnn_board_add(const NnnOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         NnnField field = nnn_board_get(xx, yy);
-        //assert(field.status == FieldStatus.Free);
+        // assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -5447,12 +5447,12 @@ u32 ooo_found;
 u64 ooo_tried;
 
 type OooField struct {
-#if 0
+/*
     FieldStatus status : 2;
     u32 piece_id : 4;
     u32 flags : 3;
     u32 expected : 3;  // set by other pieces
-#endif
+*/
     FieldStatus status;
     u8 piece_id;
     u8 flags;
@@ -5734,7 +5734,7 @@ func void ooo_board_add(const OooOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         OooField field = ooo_board_get(xx, yy);
-        //assert(field.status == FieldStatus.Free);
+        // assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -5833,12 +5833,12 @@ u32 ppp_found;
 u64 ppp_tried;
 
 type PppField struct {
-#if 0
+/*
     FieldStatus status : 2;
     u32 piece_id : 4;
     u32 flags : 3;
     u32 expected : 3;  // set by other pieces
-#endif
+*/
     FieldStatus status;
     u8 piece_id;
     u8 flags;
@@ -6120,7 +6120,7 @@ func void ppp_board_add(const PppOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         PppField field = ppp_board_get(xx, yy);
-        //assert(field.status == FieldStatus.Free);
+        // assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -6219,12 +6219,12 @@ u32 qqq_found;
 u64 qqq_tried;
 
 type QqqField struct {
-#if 0
+/*
     FieldStatus status : 2;
     u32 piece_id : 4;
     u32 flags : 3;
     u32 expected : 3;  // set by other pieces
-#endif
+*/
     FieldStatus status;
     u8 piece_id;
     u8 flags;
@@ -6506,7 +6506,7 @@ func void qqq_board_add(const QqqOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         QqqField field = qqq_board_get(xx, yy);
-        //assert(field.status == FieldStatus.Free);
+        // assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -6605,12 +6605,12 @@ u32 rrr_found;
 u64 rrr_tried;
 
 type RrrField struct {
-#if 0
+/*
     FieldStatus status : 2;
     u32 piece_id : 4;
     u32 flags : 3;
     u32 expected : 3;  // set by other pieces
-#endif
+*/
     FieldStatus status;
     u8 piece_id;
     u8 flags;
@@ -6892,7 +6892,7 @@ func void rrr_board_add(const RrrOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         RrrField field = rrr_board_get(xx, yy);
-        //assert(field.status == FieldStatus.Free);
+        // assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -6991,12 +6991,12 @@ u32 sss_found;
 u64 sss_tried;
 
 type SssField struct {
-#if 0
+/*
     FieldStatus status : 2;
     u32 piece_id : 4;
     u32 flags : 3;
     u32 expected : 3;  // set by other pieces
-#endif
+*/
     FieldStatus status;
     u8 piece_id;
     u8 flags;
@@ -7278,7 +7278,7 @@ func void sss_board_add(const SssOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         SssField field = sss_board_get(xx, yy);
-        //assert(field.status == FieldStatus.Free);
+        // assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -7377,12 +7377,12 @@ u32 ttt_found;
 u64 ttt_tried;
 
 type TttField struct {
-#if 0
+/*
     FieldStatus status : 2;
     u32 piece_id : 4;
     u32 flags : 3;
     u32 expected : 3;  // set by other pieces
-#endif
+*/
     FieldStatus status;
     u8 piece_id;
     u8 flags;
@@ -7664,7 +7664,7 @@ func void ttt_board_add(const TttOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         TttField field = ttt_board_get(xx, yy);
-        //assert(field.status == FieldStatus.Free);
+        // assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -7763,12 +7763,12 @@ u32 uuu_found;
 u64 uuu_tried;
 
 type UuuField struct {
-#if 0
+/*
     FieldStatus status : 2;
     u32 piece_id : 4;
     u32 flags : 3;
     u32 expected : 3;  // set by other pieces
-#endif
+*/
     FieldStatus status;
     u8 piece_id;
     u8 flags;
@@ -8050,7 +8050,7 @@ func void uuu_board_add(const UuuOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         UuuField field = uuu_board_get(xx, yy);
-        //assert(field.status == FieldStatus.Free);
+        // assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -8149,12 +8149,12 @@ u32 vvv_found;
 u64 vvv_tried;
 
 type VvvField struct {
-#if 0
+/*
     FieldStatus status : 2;
     u32 piece_id : 4;
     u32 flags : 3;
     u32 expected : 3;  // set by other pieces
-#endif
+*/
     FieldStatus status;
     u8 piece_id;
     u8 flags;
@@ -8436,7 +8436,7 @@ func void vvv_board_add(const VvvOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         VvvField field = vvv_board_get(xx, yy);
-        //assert(field.status == FieldStatus.Free);
+        // assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -8535,12 +8535,12 @@ u32 www_found;
 u64 www_tried;
 
 type WwwField struct {
-#if 0
+/*
     FieldStatus status : 2;
     u32 piece_id : 4;
     u32 flags : 3;
     u32 expected : 3;  // set by other pieces
-#endif
+*/
     FieldStatus status;
     u8 piece_id;
     u8 flags;
@@ -8822,7 +8822,7 @@ func void www_board_add(const WwwOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         WwwField field = www_board_get(xx, yy);
-        //assert(field.status == FieldStatus.Free);
+        // assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -8921,12 +8921,12 @@ u32 xxx_found;
 u64 xxx_tried;
 
 type XxxField struct {
-#if 0
+/*
     FieldStatus status : 2;
     u32 piece_id : 4;
     u32 flags : 3;
     u32 expected : 3;  // set by other pieces
-#endif
+*/
     FieldStatus status;
     u8 piece_id;
     u8 flags;
@@ -9208,7 +9208,7 @@ func void xxx_board_add(const XxxOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         XxxField field = xxx_board_get(xx, yy);
-        //assert(field.status == FieldStatus.Free);
+        // assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -9307,12 +9307,12 @@ u32 yyy_found;
 u64 yyy_tried;
 
 type YyyField struct {
-#if 0
+/*
     FieldStatus status : 2;
     u32 piece_id : 4;
     u32 flags : 3;
     u32 expected : 3;  // set by other pieces
-#endif
+*/
     FieldStatus status;
     u8 piece_id;
     u8 flags;
@@ -9594,7 +9594,7 @@ func void yyy_board_add(const YyyOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         YyyField field = yyy_board_get(xx, yy);
-        //assert(field.status == FieldStatus.Free);
+        // assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -9693,12 +9693,12 @@ u32 zzz_found;
 u64 zzz_tried;
 
 type ZzzField struct {
-#if 0
+/*
     FieldStatus status : 2;
     u32 piece_id : 4;
     u32 flags : 3;
     u32 expected : 3;  // set by other pieces
-#endif
+*/
     FieldStatus status;
     u8 piece_id;
     u8 flags;
@@ -9980,7 +9980,7 @@ func void zzz_board_add(const ZzzOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         ZzzField field = zzz_board_get(xx, yy);
-        //assert(field.status == FieldStatus.Free);
+        // assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
