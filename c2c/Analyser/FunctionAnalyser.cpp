@@ -471,6 +471,7 @@ static bool isCaseTerminator(const Stmt* S) {
     case STMT_BREAK:
     case STMT_CONTINUE:
     case STMT_FALLTHROUGH:
+    case STMT_GOTO:
         return true;
     default:
         return false;
