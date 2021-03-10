@@ -9,7 +9,7 @@ public func i32 main() {
     a = 10;
 
     const i32 a2 = 20;
-    //volatile i32* b2 = 0x2000;
+    // volatile i32* b2 = 0x2000;
     return 0;
 }
 
