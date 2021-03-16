@@ -71,7 +71,7 @@ make -j16
 make install
 ```
 
-Or if you want to build with Ninja replace 'Unix makefiles' with 'Ninja'
+Or if you want to build with Ninja replace 'Unix Makefiles' with 'Ninja'
 
 
 ### OS X (Yosemite/El Capitan) (after building LLVM/Clang)
