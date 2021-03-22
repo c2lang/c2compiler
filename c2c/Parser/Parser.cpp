@@ -208,6 +208,9 @@ bool Parser::ParseTopLevel() {
         ParseFuncDef(is_public);
         break;
     case tok::kw_static_assert:
+        if (is_public) {
+            // TODO error
+        }
         ParseStaticAssert();
         break;
     default:
@@ -1375,6 +1378,7 @@ bool Parser::isDeclaration() {
     case tok::kw_reg32:
     case tok::kw_reg64:
     case tok::kw_void:
+    case tok::kw_bool:
     case tok::kw_char:
     case tok::kw_const:
     case tok::kw_volatile:
@@ -2348,6 +2352,7 @@ C2::StmtResult Parser::ParseContinueStatement() {
     SourceLocation Loc = ConsumeToken();
 
     StmtResult Res = Actions.ActOnContinueStmt(Loc);
+
     if (ExpectAndConsume(tok::semi, diag::err_expected_after, "continue")) return StmtError();
     return Res;
 }
