@@ -1633,13 +1633,14 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     {
         assert(TRight.isValid());
         // special case for a[4:2] = b
+        checkAssignment(Left, TLeft);
+        if (scope.hasErrorOccurred()) return QualType();
         if (AnalyserUtils::isConstantBitOffset(Left) && Right->isConstant()) {
             LiteralAnalyser LA(Diags);
             LA.checkBitOffset(Left, Right);
         } else {
             EA.check(TLeft, Right);
         }
-        checkAssignment(Left, TLeft);
         Result = TLeft;
         break;
     }
@@ -2351,6 +2352,10 @@ void FunctionAnalyser::checkAssignment(Expr* assignee, QualType TLeft) {
         ArrayType* AT = cast<ArrayType>(TLeft.getTypePtr());
         if (AT->isIncremental()) {
             Diag(assignee->getLocation(), diag::err_incremental_array_value_function_scope);
+        } else {
+            StringBuilder buf1(MAX_LEN_TYPENAME);
+            TLeft.DiagName(buf1);
+            Diag(assignee->getLocation(), diag::err_typecheck_array_not_modifiable_lvalue) << buf1;
         }
     }
     if (TLeft.isConstQualified()) {

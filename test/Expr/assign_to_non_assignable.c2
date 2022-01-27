@@ -23,3 +23,8 @@ func void test5() {
     3.14 = 2.14;    // @error{expression is not assignable}
 }
 
+func void test6() {
+    u8[10] array;
+    array = 10; // @error{array type 'u8[10]' is not assignable}
+}
+
