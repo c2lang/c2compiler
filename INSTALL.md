@@ -53,7 +53,7 @@ There is a convenience script: *clang\_build.sh* that runs the commands below.
 NOTE: C2 now uses the new LLVM mono-repository, not the separate repos!
 
 ```bash
-https://github.com/c2lang/llvm-project.git
+git clone https://github.com/c2lang/llvm-project.git
 cd llvm-project/
 git checkout -b c2master llvmorg-11.0.0
 cd ..
