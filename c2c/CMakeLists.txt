@@ -83,6 +83,7 @@ add_library(c2core
     Analyser/FunctionAnalyser.cpp
     Analyser/TypeFinder.cpp
     Analyser/ExprAnalyser.cpp
+    Analyser/ExprClassifier.cpp
     Analyser/ModuleAnalyser.cpp
     Analyser/ComponentAnalyser.cpp
     Algo/DepVisitor.cpp

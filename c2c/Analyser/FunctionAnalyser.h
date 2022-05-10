@@ -154,8 +154,7 @@ private:
 
     LabelDecl* LookupOrCreateLabel(const char* name, c2lang::SourceLocation loc);
 
-    bool checkAssignee(Expr* expr) const;
-    void checkAssignment(Expr* assignee, QualType TLeft);
+    void checkAssignment(Expr* assignee, QualType TLeft, const char* diag_msg, c2lang::SourceLocation loc);
     void checkDeclAssignment(Decl* decl, Expr* expr);
     void checkArrayDesignators(InitListExpr* expr, int64_t* size);
     void checkEnumCases(const SwitchStmt* SS, const EnumType* ET) const;

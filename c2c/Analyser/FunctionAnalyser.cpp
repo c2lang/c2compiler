@@ -23,6 +23,7 @@
 
 #include "Analyser/FunctionAnalyser.h"
 #include "Analyser/TypeResolver.h"
+#include "Analyser/ExprClassifier.h"
 #include "Analyser/LiteralAnalyser.h"
 #include "Analyser/Scope.h"
 #include "Analyser/AnalyserConstants.h"
@@ -685,9 +686,6 @@ void FunctionAnalyser::analyseStmtExpr(Stmt* stmt) {
 
 C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
     LOG_FUNC
-    if (side & LHS) {
-        if (!checkAssignee(expr)) return QualType();
-    }
 
     switch (expr->getKind()) {
     case EXPR_INTEGER_LITERAL:
@@ -1600,14 +1598,34 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     case BINOP_Div:
     case BINOP_Rem:
     case BINOP_Add:
-    case BINOP_Sub:
-        // TODO return largest witdth of left/right (long*short -> long)
-        // TODO apply UsualArithmeticConversions() to L + R
-        // TEMP for now just return Right side
-        // TEMP use UnaryConversion
-        Result = AnalyserUtils::UsualUnaryConversions(Left);
-        AnalyserUtils::UsualUnaryConversions(Right);
+    case BINOP_Sub: {
+        bool left_is_ptr = TLeft->isPointerType();
+        bool right_is_ptr = TRight->isPointerType();
+        if (left_is_ptr || right_is_ptr) {
+            // Type remains the same for pointer arithmetic
+            if (left_is_ptr && right_is_ptr) {
+                StringBuilder buf1(MAX_LEN_TYPENAME);
+                TLeft.DiagName(buf1);
+                StringBuilder buf2(MAX_LEN_TYPENAME);
+                TRight.DiagName(buf2);
+                Diag(binop->getLocation(), diag::err_typecheck_invalid_operands) << buf1 << buf2;
+                return QualType();
+            }
+            if (left_is_ptr) {
+                Result = TLeft;
+            } else {
+                Result = TRight;
+            }
+        } else {
+            // TODO return largest witdth of left/right (long*short -> long)
+            // TODO apply UsualArithmeticConversions() to L + R
+            // TEMP for now just return Right side
+            // TEMP use UnaryConversion
+            Result = AnalyserUtils::UsualUnaryConversions(Left);
+            AnalyserUtils::UsualUnaryConversions(Right);
+        }
         break;
+    }
     case BINOP_Shl:
     case BINOP_Shr:
         Result = TLeft;
@@ -1633,7 +1651,7 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     {
         assert(TRight.isValid());
         // special case for a[4:2] = b
-        checkAssignment(Left, TLeft);
+        checkAssignment(Left, TLeft, "left operand of assignment", binop->getLocation());
         if (scope.hasErrorOccurred()) return QualType();
         if (AnalyserUtils::isConstantBitOffset(Left) && Right->isConstant()) {
             LiteralAnalyser LA(Diags);
@@ -1654,7 +1672,7 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     case BINOP_AndAssign:
     case BINOP_XorAssign:
     case BINOP_OrAssign:
-        checkAssignment(Left, TLeft);
+        checkAssignment(Left, TLeft, "left operand of assignment", binop->getLocation());
         Result = TLeft;
         break;
     case BINOP_Comma:
@@ -1713,10 +1731,19 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
     // TODO cleanup, always break and do common stuff at end
     switch (unaryop->getOpcode()) {
     case UO_PostInc:
+        checkAssignment(SubExpr, LType, "increment operand", unaryop->getLocation());
+        expr->setType(LType);
+        break;
     case UO_PostDec:
+        checkAssignment(SubExpr, LType, "decrement operand", unaryop->getLocation());
+        expr->setType(LType);
+        break;
     case UO_PreInc:
+        checkAssignment(SubExpr, LType, "increment operand", unaryop->getLocation());
+        expr->setType(LType);
+        break;
     case UO_PreDec:
-        checkAssignment(SubExpr, LType);
+        checkAssignment(SubExpr, LType, "decrement operand", unaryop->getLocation());
         expr->setType(LType);
         break;
     case UO_AddrOf:
@@ -2304,50 +2331,13 @@ LabelDecl* FunctionAnalyser::LookupOrCreateLabel(const char* name, SourceLocatio
     return LD;
 }
 
-bool FunctionAnalyser::checkAssignee(Expr* expr) const {
-    switch (expr->getKind()) {
-    case EXPR_INTEGER_LITERAL:
-    case EXPR_FLOAT_LITERAL:
-    case EXPR_BOOL_LITERAL:
-    case EXPR_CHAR_LITERAL:
-    case EXPR_STRING_LITERAL:
-    case EXPR_NIL:
-        break;
-    case EXPR_CALL:
-    case EXPR_IDENTIFIER:
-        // ok
-        return true;
-    case EXPR_INITLIST:
-    case EXPR_DESIGNATOR_INIT:
-    case EXPR_TYPE:
-        break;
-    case EXPR_BINOP:
-        // ok
-        return true;
-    case EXPR_CONDOP:
-        break;
-    case EXPR_UNARYOP:
-        // sometimes... (&)
-        return true;
-    case EXPR_BUILTIN:
-        break;
-    case EXPR_ARRAYSUBSCRIPT:
-    case EXPR_MEMBER:
-    case EXPR_PAREN:
-    case EXPR_BITOFFSET:
-        // ok
-        return true;
-    case EXPR_EXPL_CAST:
-        TODO;
-        break;
+void FunctionAnalyser::checkAssignment(Expr* assignee, QualType TLeft, const char* diag_msg, SourceLocation loc) {
+    ExprValueKind vk = ExprClassifier::classifyExpr(assignee);
+    if (vk != VK_LValue) {
+        Diag(loc, diag::err_expected_lvalue) << diag_msg << assignee->getSourceRange();
+        return;
     }
-    // expr is not assignable
-    // TODO test (also ternary)
-    Diag(expr->getLocation(), diag::err_typecheck_expression_not_modifiable_lvalue);
-    return false;
-}
 
-void FunctionAnalyser::checkAssignment(Expr* assignee, QualType TLeft) {
     if (TLeft.isArrayType()) {
         ArrayType* AT = cast<ArrayType>(TLeft.getTypePtr());
         if (AT->isIncremental()) {

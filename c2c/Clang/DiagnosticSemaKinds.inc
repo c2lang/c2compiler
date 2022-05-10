@@ -336,6 +336,7 @@ DIAG(err_bitoffset_index_too_large, CLASS_ERROR, (unsigned)diag::Severity::Error
 DIAG(err_bitoffset_invalid_order, CLASS_ERROR, (unsigned)diag::Severity::Error, "left bitoffset index is smaller than right index", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_bitoffset_lhs, CLASS_ERROR, (unsigned)diag::Severity::Error, "bitoffset cannot be used as left hand side expression", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_bitoffset_not_unsigned, CLASS_ERROR, (unsigned)diag::Severity::Error, "bit offsets are only allowed on unsigned integer type", 0, SFINAE_SubstitutionFailure, false, true, 2)
+DIAG(err_expected_lvalue, CLASS_ERROR, (unsigned)diag::Severity::Error, "lvalue required as %0", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_block_decl_ref_not_modifiable_lvalue, CLASS_ERROR, (unsigned)diag::Severity::Error, "variable is not assignable (missing __block type specifier)", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_block_extern_cant_init, CLASS_ERROR, (unsigned)diag::Severity::Error, "'extern' variable cannot have an initializer", 0, SFINAE_SubstitutionFailure, false, true, 2)
 DIAG(err_block_on_nonlocal, CLASS_ERROR, (unsigned)diag::Severity::Error, "__block attribute not allowed, only allowed on local variables", 0, SFINAE_SubstitutionFailure, false, true, 2)
