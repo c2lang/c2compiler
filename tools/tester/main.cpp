@@ -71,11 +71,13 @@ class Test {
 public:
     Test(const char* filename_)
         : filename(strdup(filename_))
+        , failed(0)
         , next(0)
     {}
     ~Test() { free(filename); }
 
     char* filename;
+    bool failed;
     Test* next;
 };
 
@@ -109,18 +111,26 @@ public:
         count++;
         pthread_mutex_unlock(&lock);
     }
-    const char* get() {
-        const char* filename = 0;
+    Test* get() {
+        Test* test = NULL;
         pthread_mutex_lock(&lock);
         if (cur) {
-            filename = cur->filename;
+            test = cur;
             cur = cur->next;
         }
         pthread_mutex_unlock(&lock);
-        return filename;
+        return test;
     }
     void dump() const {
         printf("%u tests\n", count);
+    }
+    void summarizeFailed() const {
+        printf("\nFailed test summary:\n");
+        const Test* t = head;
+        while (t) {
+            if (t->failed) printf(COL_ERROR "%s" COL_NORM "\n", t->filename);
+            t = t->next;
+        }
     }
 private:
     pthread_mutex_t lock;
@@ -352,18 +362,21 @@ public:
             output.print("  expected error '%s' at %s:%d",
                         iter->msg.c_str(), iter->filename.c_str(), iter->line_nr);
             output.setColor(COL_NORM);
+            output << '\n';
         }
         for (IssuesConstIter iter = warnings.begin(); iter != warnings.end(); ++iter) {
             output.setColor(COL_ERROR);
             output.print("  expected warning '%s' at %s:%d",
                         iter->msg.c_str(), iter->filename.c_str(), iter->line_nr);
             output.setColor(COL_NORM);
+            output << '\n';
         }
         for (IssuesConstIter iter = notes.begin(); iter != notes.end(); ++iter) {
             output.setColor(COL_ERROR);
             output.print("  expected note '%s' at %s:%d",
                         iter->msg.c_str(), iter->filename.c_str(), iter->line_nr);
             output.setColor(COL_NORM);
+            output << '\n';
         }
     }
 private:
@@ -1244,7 +1257,8 @@ public:
         pthread_join(thread, 0);
     }
 private:
-    void run_test(const char* filename) {
+    void run_test(Test* test) {
+        const char* filename = test->filename;
         debug("[%u] %s() %s", index, __func__, filename);
         bool single = true;
         if (endsWith(filename, ".c2")) {
@@ -1299,14 +1313,15 @@ private:
         printf("%s", buf.c_str());
 
         if (db.haveErrors()) {
+            test->failed = true;
             numerrors++;
         }
     }
     void run() {
         while (1) {
-            const char* filename = queue.get();
-            if (!filename) break;
-            run_test(filename);
+            Test* test = queue.get();
+            if (!test) break;
+            run_test(test);
         }
     }
     static void* thread_main(void* arg) {
@@ -1410,6 +1425,8 @@ int main(int argc, const char *argv[])
     const char* color = (numerrors ? COL_ERROR : COL_OK);
     color_print(color, "RESULTS: %u test%s, %u threads (%u ok, %u failed, %u skipped) ran in %llu ms",
         numtests, numtests == 1 ? "" : "s", num_threads, numtests - (numerrors+numskipped), numerrors, numskipped, (t2-t1)/1000);
+
+    if (numerrors) queue.summarizeFailed();
 
     return 0;
 }
