@@ -2,7 +2,7 @@
 executable c2c
 	$warnings no-unused
 	$refs
-#	$deps
 	$generate-c single-module
+    common/file/reader.c2
 	main.c2
 end

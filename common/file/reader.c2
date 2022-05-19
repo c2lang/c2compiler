@@ -1,0 +1,56 @@
+module file_utils;
+
+import libc_fcntl local;
+import c_errno local;
+import sys_stat local;
+import sys_mman local;
+import unistd local;
+
+u8 empty;
+
+public type Reader struct {
+    void* region;
+    u32 size;
+    i32 errno;
+}
+
+public func bool Reader.open(Reader* file, const char* filename) {
+    i32 fd = open(filename, O_RDONLY);
+    if (fd == -1) {
+        file.errno = *errno2();
+        return false;
+    }
+
+    Stat statbuf;
+    i32 err = fstat(fd, &statbuf);
+    if (err) {
+        file.errno = *errno2();
+        return false;
+    }
+    file.size = cast<u32>(statbuf.st_size);
+
+    if (file.size == 0) {
+        file.region = &empty;
+    } else {
+        file.region = mmap(0, file.size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_POPULATE, fd, 0);
+        if (file.region == MAP_FAILED) {
+            file.errno = *errno2();
+            return false;
+        }
+    }
+	close(fd);
+    return true;
+}
+
+public func void Reader.close(Reader* file) {
+    munmap(file.region, file.size);
+}
+
+public func const u8* Reader.data(Reader* file) {
+    return cast<u8*>(file.region);
+}
+
+public func bool Reader.isEmpty(const Reader* file) {
+    return file.size == 0;
+}
+

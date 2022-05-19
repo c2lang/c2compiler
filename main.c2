@@ -1,6 +1,31 @@
 module c2c_main;
 
+import file_utils;
+import stdio local;
+import string local;
+import c_errno local;
+
+func void parse_file(const char* data) {
+    printf("%s\n", data);
+}
+
 public func i32 main(i32 argc, char** argv) {
+    if (argc != 2) {
+        printf("usage: %s [file]\n", argv[0]);
+        return -1;
+    }
+
+    const char* filename = argv[1];
+
+    file_utils.Reader file;
+    if (!file.open(filename)) {
+        fprintf(stderr, "Error opening file: %s\n", strerror(*errno2()));
+        return -1;
+    }
+
+    parse_file(file.data());
+
+    file.close();
 
 	return 0;
 }

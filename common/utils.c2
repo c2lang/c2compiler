@@ -1,0 +1,39 @@
+module utils;
+
+import stdio local;
+
+const u64 SecondsPerMinute = 60;
+const u64 SecondsPerHour = 60 * SecondsPerMinute;
+const u64 SecondsPerDay = 24 * SecondsPerHour;
+
+public func const char* time2str(u64 seconds) {
+    local char[16] out;
+    u64 days = seconds / SecondsPerDay;
+    seconds -= days * SecondsPerDay;
+    u64 hours = seconds / SecondsPerHour;
+    seconds -= hours * SecondsPerHour;
+    u64 minutes = seconds / SecondsPerMinute;
+    seconds -= minutes * SecondsPerMinute;
+    char* cp = out;
+    if (days) cp += sprintf(cp, "%lud", days);
+    if (hours) cp += sprintf(cp, "%02luh", hours);
+    if (minutes) cp += sprintf(cp, "%02lum", minutes);
+    sprintf(cp, "%02lus", seconds);
+    return out;
+}
+
+const u8 LF = 0x0A;
+const u8 CR = 0x0D;
+
+public func i64 stripNewline(char* buffer, i64 len)
+{
+    if (buffer[len-1] == LF) {
+        buffer[len-1] = 0;
+        len--;
+    }
+    if (buffer[len-1] == CR) {
+        buffer[len-1] = 0;
+        len--;
+    }
+    return len;
+}

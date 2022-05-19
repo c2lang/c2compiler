@@ -1,0 +1,151 @@
+module logger;
+
+import color;
+import stdarg local;
+import string local;
+import stdio local;
+import stdlib local;
+import sys_time local;
+import libc_time;
+
+public type Level enum u8 {
+    Fatal = 0,
+    Error,
+    Warn,
+    Info,
+    Debug,
+}
+
+func const char* level2str(Level lvl) {
+    switch (lvl) {
+    case Level.Fatal: return "Fatal";
+    case Level.Error: return "Error";
+    case Level.Warn:  return "Warn ";
+    case Level.Info:  return "Info ";
+    case Level.Debug: return "Debug";
+    }
+    return nil;
+}
+
+func u64 current_time() {
+   Timeval tv;
+   gettimeofday(&tv, nil);
+   u64 tv64 = cast<u64>(tv.tv_sec);
+   tv64 *= 1000000;
+   tv64 += tv.tv_usec;
+   return tv64;
+}
+
+public type WriteFunc func void(const char* data, u32 len);
+
+public type Base struct {
+    Level defaultLevel;
+    bool useColor;
+    bool relativeTimes;
+    u64 startTime;
+    WriteFunc write;
+}
+
+func void log_stdout(const char* data, u32 len) {
+    printf("%s", data);
+}
+
+public func void Base.init(Base* base, Level lvl_, bool color_, bool relativeTimes_)
+{
+    base.defaultLevel = lvl_;
+    base.useColor = color_;
+    base.relativeTimes = relativeTimes_;
+    base.startTime = current_time();
+    base.write = log_stdout;
+}
+
+public func void Base.destroy(Base* base)
+{
+}
+
+public type Log struct {
+    Base* base;
+    Level level;
+    char[16] name;
+}
+
+public func void Log.init(Log* log, Base* base, const char* name_) {
+    log.base = base;
+    log.level = base.defaultLevel;
+    strncpy(log.name, name_, 16);
+    log.name[15] = 0;
+}
+
+public func void Log.setLevel(Log* log, Level lvl) {
+    log.level = lvl;
+}
+
+public func void Log.debug(Log* log, const char* format, ...) {
+    if (Level.Debug > log.level) return;
+    Va_list args;
+    va_start(args, format);
+    log.internal(Level.Debug, color.Blue, format, args);
+    va_end(args);
+}
+
+public func void Log.info(Log* log, const char* format, ...) {
+    if (Level.Info > log.level) return;
+    Va_list args;
+    va_start(args, format);
+    log.internal(Level.Info, color.White, format, args);
+    va_end(args);
+}
+
+public func void Log.warn(Log* log, const char* format, ...) {
+    if (Level.Warn > log.level) return;
+    Va_list args;
+    va_start(args, format);
+    log.internal(Level.Warn, color.Yellow, format, args);
+    va_end(args);
+}
+
+public func void Log.error(Log* log, const char* format, ...) {
+    if (Level.Error > log.level) return;
+    Va_list args;
+    va_start(args, format);
+    log.internal(Level.Error, color.Red, format, args);
+    va_end(args);
+}
+
+public func void Log.fatal(Log* log, const char* format, ...) {
+    Va_list args;
+    va_start(args, format);
+    log.internal(Level.Fatal, color.Red, format, args);
+    va_end(args);
+    exit(EXIT_FAILURE);
+}
+
+func void Log.internal(Log* log, Level level, const char* color_, const char* format, Va_list args) {
+    char[256] buffer;
+    char* cp = buffer;
+
+    if (log.base.useColor) cp += sprintf(cp, "%s", color_);
+    *cp++ = '[';
+    if (log.base.relativeTimes) {
+        u64 now = current_time();
+        now -= log.base.startTime;
+        u64 subsec = now % 1000000;
+        cp += sprintf(cp, "%04ld.%06ld", now / 1000000, subsec);
+    } else {
+        Timeval tv;
+        gettimeofday(&tv, nil);
+        Time now = tv.tv_sec;
+        libc_time.Tm* now2 = libc_time.localtime(&now);
+        cp += sprintf(cp, "%02d/%02d/%02d %02d:%02d:%02d.%lu",
+            now2.tm_year % 100, now2.tm_mon + 1, now2.tm_mday,
+            now2.tm_hour, now2.tm_min, now2.tm_sec, tv.tv_usec / 1000);
+    }
+    *cp++ = ']';
+    cp += sprintf(cp, " %s %s: ", level2str(level), log.name);
+    cp += vsprintf(cp, format, args);
+    if (log.base.useColor) cp += sprintf(cp, "%s", color.Normal);
+    *cp++ = '\n';
+    *cp = 0;
+    log.base.write(buffer, cast<u32>(cp - buffer));
+}
+
