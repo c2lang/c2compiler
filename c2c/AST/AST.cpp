@@ -27,6 +27,7 @@ void AST::print(bool colors) const {
     StringBuilder buffer(4*1024*1024);
     buffer.enableColor(colors);
     print(buffer);
+    printf("%s", buffer.c_str());
 }
 
 void AST::print(StringBuilder& buffer) const {;
@@ -64,6 +65,5 @@ void AST::print(StringBuilder& buffer) const {;
 
     buffer.setColor(COL_NORM);
     buffer << '\n';
-    printf("%s", buffer.c_str());
 }
 
