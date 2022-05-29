@@ -26,6 +26,10 @@ using namespace C2;
 void AST::print(bool colors) const {
     StringBuilder buffer(4*1024*1024);
     buffer.enableColor(colors);
+    print(buffer);
+}
+
+void AST::print(StringBuilder& buffer) const {;
     buffer << "---- AST " << "(module=" << modName << ") " << filename << " ----\n";
     // ImportDecls
     for (unsigned i=0; i<importList.size(); i++) {

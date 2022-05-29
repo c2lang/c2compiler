@@ -19,12 +19,15 @@
         (optional) // @warnings{..}
         (optional) // @skip
         (optional) // @target{target-triplet}
-    .c2t:
+    .c2t:  test generation of specified files
         (required) // @recipe bin/lib shared/static
         (optional) // @skip
         (required) // @file{filename}
-        (optional) // @expect{filename}
-        (optional) // @expect_lines(filename}
+        (optional) // @expect{atleast/complete, filename}
+    .c2a: test AST of parsed file (no unused)
+        (optional) // @skip
+        (required) // @file{filename}   allowed ONCE
+        (required) // @expect{atleast/complete}  allowed ONCE
 */
 
 #include <assert.h>
@@ -67,16 +70,24 @@ static const char* c2c_cmd = "build/c2c/c2c";
 static char* cwd;
 static bool runSkipped;
 
+enum TestKind {
+    TEST_C2,
+    TEST_C2T,
+    TEST_C2A
+};
+
 class Test {
 public:
-    Test(const char* filename_)
+    Test(const char* filename_, TestKind kind_)
         : filename(strdup(filename_))
+        , kind(kind_)
         , failed(0)
         , next(0)
     {}
     ~Test() { free(filename); }
 
     char* filename;
+    TestKind kind;
     bool failed;
     Test* next;
 };
@@ -98,8 +109,8 @@ public:
         }
     }
 
-    void add(const char* filename) {
-        Test* t = new Test(filename);
+    void add(const char* filename, TestKind kind) {
+        Test* t = new Test(filename, kind);
         pthread_mutex_lock(&lock);
         if (tail) {
             tail->next = t;
@@ -327,11 +338,11 @@ private:
 
 class IssueDb {
 public:
-    IssueDb(StringBuilder& output_, File& file_, bool single_, const char* tmp_dir_)
+    IssueDb(StringBuilder& output_, File& file_, TestKind kind_, const char* tmp_dir_)
         : file(file_)
         , currentExpect(0)
         , output(output_)
-        , single(single_)
+        , kind(kind_)
         , line_nr(0)
         , mode(OUTSIDE)
         , current_file("")
@@ -342,6 +353,19 @@ public:
         , cur(0)
         , tmp_dir(tmp_dir_)
     {
+        bool single = true;
+        switch (kind) {
+        case TEST_C2:
+            single = true;
+            break;
+        case TEST_C2T:
+            single = false;
+            break;
+        case TEST_C2A:
+            single = false;
+            break;
+        }
+
         if (single) {
             current_file = cwd;
             current_file  += '/' + file.filename;
@@ -508,7 +532,7 @@ private:
     ExpectFile* currentExpect;
 
     StringBuilder& output;
-    bool single;
+    TestKind kind;
     unsigned line_nr;
     enum Mode { OUTSIDE, INFILE, INEXPECTFILE };
     Mode mode;
@@ -627,8 +651,8 @@ void IssueDb::parseLineOutside(const char* start, const char* end) {
     skipWhitespace(&cp, end);
     if (cp == end) return;
 
-    // TODO if !single mode, only accept tags or comments
-    if (!single && strncmp(cp, "// ", 3) != 0) {
+    // TODO if .c2t/.cta, only accept tags or comments
+    if (kind != TEST_C2 && strncmp(cp, "// ", 3) != 0) {
         error("unexpected line");
         return;
     }
@@ -650,7 +674,7 @@ void IssueDb::parseLineOutside(const char* start, const char* end) {
             std::string name(name_start, cp-name_start);
             recipe << "    $warnings " << name << '\n';
         } else if (strncmp(cp, "target{", 7) == 0) {
-            if (!single) {
+            if (kind != TEST_C2) {
                 error("keyword 'target' only allowed in .c2 files");
                 return;
             }
@@ -667,8 +691,8 @@ void IssueDb::parseLineOutside(const char* start, const char* end) {
             std::string target_(target_start, cp-target_start);
             target = target_;
         } else if (strncmp(cp, "file{", 5) == 0) {
-            if (single) {
-                error("invalid @file tag in single test");
+            if (kind == TEST_C2) {
+                error("invalid @file tag in .c2 test");
                 return;
             }
             cp += 5;
@@ -689,8 +713,8 @@ void IssueDb::parseLineOutside(const char* start, const char* end) {
             line_offset = line_nr;
             mode = INFILE;
         } else if (strncmp(cp, "expect{", 7) == 0) {
-            if (single) {
-                error("invalid @expect tag in single test");
+            if (kind != TEST_C2T) {
+                error("invalid @expect tag in .c2/.cta test");
                 return;
             }
             cp += 7;
@@ -709,8 +733,8 @@ void IssueDb::parseLineOutside(const char* start, const char* end) {
             expectedFiles.push_back(currentExpect);
             mode = INEXPECTFILE;
         } else if (strncmp(cp, "generate-c", 10) == 0) {
-            if (single) {
-                error("invalid @generate-c tag in single test");
+            if (kind != TEST_C2T) {
+                error("invalid @generate-c tag in .c2/c2a test");
                 return;
             }
             cp += 10;
@@ -871,29 +895,29 @@ bool IssueDb::parseKeyword() {
         if (!runSkipped) skip = true;
         return true;
     } else if (strcmp(keyword, "recipe") == 0) {
-        if (single) {
+        if (kind != TEST_C2T) {
             errorMsg << "keyword 'recipe' only allowed in .c2t files";
             return false;
         }
         cur += 7;
         return parseRecipe();
     } else if (strcmp(keyword, "warnings") == 0) {
-        if (!single) {
+        if (kind != TEST_C2) {
             errorMsg << "keyword 'warnings' only allowed in .c2 files";
             return false;
         }
         recipe << "\t$warnings " << readLine() << '\n';
         skipLine();
     } else if (strcmp(keyword, "file") == 0) {
-        if (single) {
-            errorMsg << "keyword 'file' only allowed in .c2t files";
+        if (kind == TEST_C2) {
+            errorMsg << "keyword 'file' only allowed in .c2t/.c2a files";
             return false;
         }
         cur += 4;
         return parseFile();
     } else if (strcmp(keyword, "expect") == 0) {
-        if (single) {
-            errorMsg << "keyword 'expect' only allowed in .c2t files";
+        if (kind != TEST_C2T && kind != TEST_C2A) {
+            errorMsg << "keyword 'expect' only allowed in .c2t/.c2a files";
             return false;
         }
         cur += 6;
@@ -988,7 +1012,7 @@ bool IssueDb::parse() {
     const char* cp = (const char*) file.region;
     cur = cp;
     line_nr = 1;
-    if (single) {
+    if (kind == TEST_C2) {
         const char* end = cp + file.size;
         const char* line_start = cp;
         recipe << "executable test\n";
@@ -1005,12 +1029,14 @@ bool IssueDb::parse() {
             if (*cp == '\n') cp++;
             line_start = cp;
         }
-        if (!single) {
+/*
+        if (kind != TEST_C2) {
             if (file_start) {
                 const char* file_end = cp;
                 writeFile(current_file.c_str(), file_start, file_end- file_start);
             }
         }
+*/
         if (target[0] != 0) {
             StringBuilder build;
             build << "target = \"" << target << "\"\n";
@@ -1021,16 +1047,27 @@ bool IssueDb::parse() {
         recipe << "end\n";
         writeFile("recipe.txt", recipe, recipe.size());
         return false;
-    } else {
+    } else if (kind == TEST_C2T) {
         if (!parseOuter()) {
             fprintf(stderr, ANSI_BYELLOW"Error in recipe: %s on line %d" ANSI_NORMAL"\n", (const char*)errorMsg, line_nr);
             return false;
         }
         recipe << "end\n";
         writeFile("recipe.txt", recipe, recipe.size());
-        return skip;
+    } else if (kind == TEST_C2A) {
+        recipe << "executable test\n";
+        recipe << "  $warnings no-unused\n";
+        recipe << "  $generate-c skip\n";
+        recipe << "  $write-AST\n";
+        if (!parseOuter()) {
+            fprintf(stderr, ANSI_BYELLOW"Error in recipe: %s on line %d" ANSI_NORMAL"\n", (const char*)errorMsg, line_nr);
+            return false;
+        }
+        //recipe << "  " << current_file << '\n';
+        recipe << "end\n";
+        writeFile("recipe.txt", recipe, recipe.size());
     }
-
+    return skip;
 }
 
 void IssueDb::testFile() {
@@ -1202,8 +1239,18 @@ void IssueDb::checkExpectedFiles() {
 }
 
 static void handle_file(TestQueue& queue, const char* filename) {
-    // TODO filter on .c2 and .c2t
-    queue.add(filename);
+    TestKind kind;
+    if (endsWith(filename, ".c2")) {
+        kind = TEST_C2;
+    } else if (endsWith(filename, ".c2t")) {
+        kind = TEST_C2T;
+    } else if (endsWith(filename, ".c2a")) {
+        kind = TEST_C2A;
+    } else {
+        return;
+    }
+
+    queue.add(filename, kind);
 }
 
 static void handle_dir(TestQueue& queue, const char* path) {
@@ -1260,14 +1307,6 @@ private:
     void run_test(Test* test) {
         const char* filename = test->filename;
         debug("[%u] %s() %s", index, __func__, filename);
-        bool single = true;
-        if (endsWith(filename, ".c2")) {
-            single = true;
-        } else if (endsWith(filename, ".c2t")) {
-            single = false;
-        } else {
-            return;
-        }
 
         // setup dir
         // temp, just delete this way
@@ -1293,7 +1332,7 @@ private:
         buf.print("%s ", filename);
         FileMap file(filename);
         file.open();
-        IssueDb db(buf, file, single, tmp_dir);
+        IssueDb db(buf, file, test->kind, tmp_dir);
 
         bool skip = db.parse();
         if (skip) {

@@ -67,6 +67,7 @@ private:
     void generateInterface() const;
     void generateOptionalC();
     void generateOptionalIR();
+    void writeAST() const;
 
     const Recipe& recipe;
     const BuildFile* buildFile;

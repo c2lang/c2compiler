@@ -26,6 +26,8 @@
 
 namespace C2 {
 
+class StringBuilder;
+
 class AST {
 public:
     AST(const std::string& filename_, bool isInterface_, bool isExternal_)
@@ -36,6 +38,7 @@ public:
     ~AST() {}
 
     void print(bool colors) const;
+    void print(StringBuilder& buffer) const;
 
     // ImportDecls
     void addImport(ImportDecl* d) { importList.push_back(d); }

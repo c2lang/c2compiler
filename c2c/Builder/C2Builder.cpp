@@ -51,6 +51,7 @@
 #include "IRGenerator/InterfaceGenerator.h"
 #include "CGenerator/CGenerator.h"
 #include "Refactor/RefFinder.h"
+#include "FileUtils/FileUtils.h"
 #include "Utils/color.h"
 #include "Utils/Utils.h"
 #include "Utils/Log.h"
@@ -308,6 +309,8 @@ int C2Builder::build() {
     generateOptionalC();
 
     generateOptionalIR();
+
+    if (recipe.writeAST) writeAST();
 
     if (options.verbose) Log::log(COL_VERBOSE, "done");
 
@@ -630,5 +633,18 @@ void C2Builder::generateOptionalIR() {
                    options.printIR,
                    useColors);
     ir.build();
+}
+
+void C2Builder::writeAST() const {
+    const ModuleList& mainModules = mainComponent->getModules();
+    for (unsigned i=0; i<mainModules.size(); i++) {
+        const AstList& files = mainModules[i]->getFiles();
+        for (unsigned f=0; f<files.size(); f++) {
+            const AST* ast = files[f];
+            StringBuilder out;
+            ast->print(out);
+            FileUtils::writeFile(outputDir.c_str(), outputDir + "out.ast", out);
+        }
+    }
 }
 

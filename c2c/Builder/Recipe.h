@@ -34,6 +34,7 @@ public:
         , generateRefs(false)
         , generateIR(false)
         , generateCCode(false)
+        , writeAST(false)
         , noLibC(false)
     {
         IrGenFlags.single_module = false;
@@ -94,6 +95,7 @@ public:
     bool generateRefs;
     bool generateIR;
     bool generateCCode;
+    bool writeAST;
     bool noLibC;
 
     struct {

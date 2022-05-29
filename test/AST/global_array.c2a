@@ -1,0 +1,13 @@
+// @file{input}
+module test;
+
+char[] array = { 1, 2 }
+/*char* cp = array;*/
+
+// @expect{atleast, out.ast}
+
+VarDecl 'i8[2]' global checked array
+  InitListExpr 'i8[2]' ctc=none, constant=1
+    IntegerLiteral 'i32' ctc=full, constant=1, cast=i8 1
+    IntegerLiteral 'i32' ctc=full, constant=1, cast=i8 2
+
