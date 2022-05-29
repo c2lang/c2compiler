@@ -20,6 +20,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "Builder/C2Builder.h"
+#include "Builder/PluginManager.h"
 #include "Builder/BuildOptions.h"
 #include "Builder/Recipe.h"
 #include "Builder/RootFinder.h"
@@ -39,6 +40,7 @@ static const char* targetFilter;
 static const char* other_dir;
 static const char* build_file;
 static bool print_targets = false;
+static bool print_plugins = false;
 static bool use_recipe = true;
 
 static void create_project(const char* name) {
@@ -88,6 +90,7 @@ static void usage(const char* name) {
     fprintf(stderr, "   -m               - print modules (excluding library modules)\n");
     fprintf(stderr, "   -M               - print modules (including library modules)\n");
     fprintf(stderr, "   -p               - print public symbols (excluding library symbols)\n");
+    fprintf(stderr, "   -P               - print available plugins\n");
     fprintf(stderr, "   -s               - print symbols (excluding library symbols)\n");
     fprintf(stderr, "   -S               - print symbols (including library symbols)\n");
     fprintf(stderr, "   -t               - print timing\n");
@@ -180,6 +183,9 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
                 opts.printNonPublic = false;
                 opts.printLibSymbols = false;
                 break;
+            case 'P':
+                print_plugins = true;
+                break;
             case 's':
                 opts.printSymbols = true;
                 opts.printNonPublic = true;
@@ -214,14 +220,6 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
                 }
                 if (strcmp(&arg[2], "test") == 0) {
                     opts.testMode = true;
-                    continue;
-                }
-                if (strcmp(&arg[2], "deps") == 0) {
-                    opts.printDependencies = true;
-                    continue;
-                }
-                if (strcmp(&arg[2], "refs") == 0) {
-                    opts.generateRefs = true;
                     continue;
                 }
                 if (strcmp(&arg[2], "check") == 0) {
@@ -288,11 +286,11 @@ int main(int argc, const char *argv[])
     }
 
     if (!use_recipe) {
-        // NOTE: don't support build file in this mode
-        Recipe dummy("dummy", Component::EXECUTABLE);
+        // NOTE: don't support build file and/or plugins in this mode
+        Recipe dummy("dummy", Component::MAIN_EXECUTABLE);
         dummy.IrGenFlags.single_module = true;
         dummy.addFile(targetFilter);
-        C2Builder builder(dummy, 0, opts);
+        C2Builder builder(dummy, 0, opts, NULL);
         int errors = builder.build();
         return errors ? EXIT_FAILURE : EXIT_SUCCESS;
     }
@@ -318,12 +316,37 @@ int main(int argc, const char *argv[])
         buildFilePtr = &buildFile;
     }
 
+    PluginManager pluginMgr(opts.verbose);
+    if (buildFilePtr) {
+        for (StringListConstIter iter = buildFilePtr->pluginDirs.begin();
+                iter != buildFilePtr->pluginDirs.end(); ++iter) {
+            pluginMgr.addPath(*iter);
+        }
+
+        for (BuildFile::PluginsConstIter iter = buildFilePtr->plugins.begin();
+                iter != buildFilePtr->plugins.end(); ++iter) {
+            if (!pluginMgr.load(iter->first, iter->second, false)) return EXIT_FAILURE;
+        }
+    } else {
+        pluginMgr.addPath(".");
+    }
+    const RecipeReader::Plugins& plugins = reader.getPlugins();
+    for (unsigned i=0; i<plugins.size(); i++) {
+        const RecipeReader::Plugin& p = plugins[i];
+        if (!pluginMgr.load(p.first, p.second, true)) return EXIT_FAILURE;
+    }
+
+    if (print_plugins) {
+        pluginMgr.print();
+        return 0;
+    }
+
     int count = 0;
     bool hasErrors = false;
     for (int i=0; i<reader.count(); i++) {
-        const Recipe& recipe = reader.get(i);
+        Recipe& recipe = reader.get(i);
         if (targetFilter && recipe.name != targetFilter) continue;
-        C2Builder builder(recipe, buildFilePtr, opts);
+        C2Builder builder(recipe, buildFilePtr, opts, &pluginMgr);
         int errors = builder.build();
         if (errors) hasErrors = true;
         count++;

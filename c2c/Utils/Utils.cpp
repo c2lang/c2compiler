@@ -16,6 +16,8 @@
 #include <time.h>
 #include <sys/time.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include "Utils/Utils.h"
@@ -58,6 +60,16 @@ const char* Utils::getFileName(const std::string& s) {
         cp--;
     }
     return cp;
+}
+
+bool Utils::file_exists(const std::string& filename) {
+    struct stat buf;
+    int error = stat(filename.c_str(), &buf);
+    if (error) return false;
+
+    if (!S_ISREG(buf.st_mode)) return false;
+
+    return true;
 }
 
 unsigned Utils::online_cpus() {

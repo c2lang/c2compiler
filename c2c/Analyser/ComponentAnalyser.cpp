@@ -278,7 +278,7 @@ bool ComponentAnalyser::checkMainFunction(bool testMode, c2lang::DiagnosticsEngi
         }
     }
 
-    if (component.getType() == Component::EXECUTABLE) {
+    if (component.getType() == Component::MAIN_EXECUTABLE) {
         // bin: must have main
         if (testMode) return true;
         if (!mainDecl) {

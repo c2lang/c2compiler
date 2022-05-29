@@ -45,6 +45,7 @@ public:
                   Modules& modules_,
                   const Recipe& recipe_)
         : mainComponent(0)
+        , pluginComponent(0)
         , components(components_)
         , modules(modules_)
         , recipe(recipe_)
@@ -55,6 +56,8 @@ public:
 
     bool createComponents();
     Component* getMainComponent() const { return mainComponent; }
+
+    Component* getPluginComponent();
 
     // for mainComponent
     const LibInfo* addModule(Component* C, Module* M, const std::string& header, const std::string& file);
@@ -86,6 +89,7 @@ private:
     StringList libraryDirs;
 
     Component* mainComponent;
+    Component* pluginComponent;
     Components& components;
     Modules& modules;
 

@@ -82,6 +82,7 @@ public:
     }
     void setCTC(ExprCTC ctc) { exprBits.IsCTC = ctc; }
 
+    bool isCTC() const { return static_cast<ExprCTC>(exprBits.IsCTC) == CTC_FULL; }
     bool isConstant() const { return exprBits.IsConstant; }
     void setConstant() { exprBits.IsConstant = true; }
 

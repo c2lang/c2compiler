@@ -1,4 +1,4 @@
-/* Copyright 2013-2022 Bas van den Berg
+/* Copyright 2013-2021 Bas van den Berg
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,31 +13,12 @@
  * limitations under the License.
  */
 
-#ifndef BUILDER_BUILDFILE_READER_H
-#define BUILDER_BUILDFILE_READER_H
+#include "Builder/Plugin.h"
 
-#include <string>
+using namespace C2;
+using namespace std;
 
-namespace C2 {
-
-class BuildFile;
-
-class BuildFileReader {
-public:
-    BuildFileReader(BuildFile& build_);
-    ~BuildFileReader() {}
-
-    bool parse(const std::string& filename);
-    const char* getErrorMsg() const { return errorMsg; }
-private:
-    const char* expandEnvVar(const std::string& filename, const char* raw);
-    bool findPlugin(const std::string& name) const;
-
-    BuildFile& build;
-    char errorMsg[256];
-};
-
-}
-
-#endif
+Plugin::Plugin(const std::string& name_)
+    : name(name_)
+{}
 

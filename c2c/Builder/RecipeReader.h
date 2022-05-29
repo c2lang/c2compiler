@@ -31,15 +31,23 @@ public:
     ~RecipeReader();
 
     int count() const { return recipes.size(); }
-    const Recipe& get(int i) const;
+    Recipe& get(int i) const;
+
+    typedef std::pair<std::string, std::string> Plugin;
+    typedef std::vector<Plugin> Plugins;
+    const Plugins& getPlugins() const { return plugins; }
+
     void print() const;
+
 private:
     void startNewRecipe();
     void findTopDir();
     void readRecipeFile();
     void handleLine(char* line);
+    char* get_options();
     char* get_token();
     void error(const char *fmt, ...);
+    void warn(const char *fmt, ...);
     void checkCurrent();
     void handleCConfigs();
     void handleWarnings();
@@ -51,11 +59,12 @@ private:
     Recipe* current;
     ConfigList globalConfigs;
 
+    Plugins plugins;
+
     int line_nr;
     enum State { START=0, INSIDE_TARGET };
     State state;
     bool has_targets;
-
 
     char buffer[256];
     char* token_ptr;

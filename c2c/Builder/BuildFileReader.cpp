@@ -28,6 +28,13 @@ BuildFileReader::BuildFileReader(BuildFile& build_)
     errorMsg[0] = 0;
 }
 
+bool BuildFileReader::findPlugin(const std::string& name) const {
+    for (BuildFile::PluginsConstIter iter = build.plugins.begin(); iter != build.plugins.end(); ++iter) {
+        if (iter->first == name) return true;
+    }
+    return false;
+}
+
 bool BuildFileReader::parse(const std::string& filename)
 {
     TomlReader reader;
@@ -61,6 +68,39 @@ bool BuildFileReader::parse(const std::string& filename)
         }
         const char* expanded = expandEnvVar(filename, dir);
         if (expanded) build.libDirs.push_back(expanded);
+
+        iter.next();
+    }
+
+    iter = reader.getNodeIter("plugindir");
+    while (!iter.done()) {
+        // dir is required
+        const char* dir = iter.getValue("dir");
+        if (!dir) {
+            sprintf(errorMsg, "%s: error: missing dir entry in [[plugindir]]", filename.c_str());
+            return false;
+        }
+        const char* expanded = expandEnvVar(filename, dir);
+        build.pluginDirs.push_back(expanded);
+
+        iter.next();
+    }
+
+    iter = reader.getNodeIter("plugin");
+    while (!iter.done()) {
+        // dir is required
+        const char* name = iter.getValue("name");
+        if (!name) {
+            sprintf(errorMsg, "%s: error: missing name entry in [[plugin]]", filename.c_str());
+            return false;
+        }
+        const char* expanded = expandEnvVar(filename, name);
+
+        const char* options = iter.getValue("options");
+        if (options) options = expandEnvVar(filename, options);
+
+        // ignore duplicate plugins
+        if (!findPlugin(expanded)) build.plugins.push_back(BuildFile::Plugin(expanded, options));
 
         iter.next();
     }

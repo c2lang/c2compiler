@@ -37,6 +37,8 @@ public:
     // return pointer to filename after last '/'
     static const char* getFileName(const std::string& s);
 
+    static bool file_exists(const std::string& filename);
+
     static unsigned online_cpus();
 };
 

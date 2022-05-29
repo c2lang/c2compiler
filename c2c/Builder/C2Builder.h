@@ -37,17 +37,32 @@ namespace C2 {
 class Recipe;
 class ParseHelper;
 class BuildFile;
+class C2Builder;
+
+class PluginHandler {
+public:
+    virtual ~PluginHandler() {}
+
+    // TODO dont pass C2Builder, in-elegant
+    virtual bool build(C2Builder& builder) = 0;
+    virtual bool generate(C2Builder& builder, const c2lang::SourceManager& src_mgr__) = 0;
+};
 
 class C2Builder {
 public:
-    C2Builder(const Recipe& recipe_, const BuildFile* buildFile_, const BuildOptions& opts);
+    C2Builder(Recipe& recipe_, const BuildFile* buildFile_, const BuildOptions& opts, PluginHandler* pluginHandler_);
     ~C2Builder();
 
     int build();
-    void generateDeps(bool showFiles, bool showPrivate, bool showExternals, const std::string& path) const;
 
     // For external tools
     const Components& getComponents() const { return components; }
+
+    // For plugins
+    Module* addPluginModule(const std::string& name);
+    const std::string& getOutputDir() const { return outputDir; }
+    const std::string& getRecipeName() const;
+    Recipe& getRecipe() const { return recipe; }
 private:
     Module* findModule(const std::string& name) const;
     void configDiagnostics(c2lang::DiagnosticsEngine &Diags);
@@ -62,18 +77,17 @@ private:
     bool checkModuleImports(ParseHelper& helper, ImportsQueue& queue, const LibInfo* lib);
     void createC2Module();
 
-    void generateOptionalDeps();
-    void generateOptionalRefs(const c2lang::SourceManager& SM) const;
     void generateInterface() const;
     void generateOptionalC();
     void generateOptionalIR();
     void writeAST() const;
 
-    const Recipe& recipe;
+    Recipe& recipe;
     const BuildFile* buildFile;
     BuildOptions options;
     TargetInfo targetInfo;
     std::string outputDir;
+    PluginHandler* pluginHandler;
 
     ASTContext context;
     Modules modules;

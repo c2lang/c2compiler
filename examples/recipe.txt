@@ -20,8 +20,6 @@ end
 
 executable opaque_example
     $warnings no-unused
-    $refs
-    $deps show-files show-externals
     $generate-c single-module
     opaque_lib1.c2
     opaque_lib2.c2
@@ -204,14 +202,11 @@ end
 
 executable libc_test
     $warnings no-unused
-    $refs
-    $deps show-files show-externals
     $generate-c
     libc_test.c2
 end
 
 executable incremental
-    $deps show-files show-externals
     $generate-c single-module
     incr1.c2
     incr2.c2
@@ -227,24 +222,18 @@ end
 
 executable pthread_test
     $warnings no-unused
-    $refs
-    $deps show-files show-externals
     $generate-c
     $use pthread dynamic
     pthread.c2
 end
 
 executable puzzle
-    $deps show-files show-externals
-    $refs
     $generate-c single-module check
     puzzle.c2
     puzzle2.c2
 end
 
 executable snake
-    $deps show-files show-externals
-    $refs
     $generate-c single-module check
     snake.c2
 end
@@ -256,8 +245,6 @@ end
 
 executable big
     $warnings no-unused
-    $refs
-    $deps show-files show-externals
     $generate-c single-module check
     color.c2
     big.c2

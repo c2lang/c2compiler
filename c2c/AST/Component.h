@@ -28,7 +28,17 @@ class StringBuilder;
 
 class Component {
 public:
-    enum Type { EXECUTABLE=0, SHARED_LIB, STATIC_LIB, SOURCE_LIB };
+    enum Type {
+        MAIN_EXECUTABLE=0,
+        MAIN_SHARED_LIB,
+        MAIN_STATIC_LIB,
+        MAIN_SOURCE_LIB,
+        EXT_SHARED_LIB,
+        EXT_STATIC_LIB,
+        EXT_SOURCE_LIB,
+        INTERNAL,
+        PLUGIN
+    };
 
     Component(const std::string& name_,
             const std::string& path_,
@@ -53,9 +63,9 @@ public:
     Type getType() const { return type; }
     bool isExternal() const { return is_external; }
     bool isInterface() const { return is_interface; }
-    bool isCLib() const { return is_clib; }
-    bool isSharedLib() const { return type == SHARED_LIB; }
-    bool isStaticLib() const { return type == STATIC_LIB; }
+    bool isSharedLib() const { return type == MAIN_SHARED_LIB; }
+    bool isStaticLib() const { return type == MAIN_STATIC_LIB; }
+    bool isInternalOrPlugin() const { return type == INTERNAL || type == PLUGIN; }
 
     void updateFields(bool isClib_, const std::string& path_, const std::string& name_) {
         path = path_;
@@ -79,6 +89,11 @@ public:
     bool hasDep(const Component* other) const;
 
     static bool compareDeps(const Component* a, const Component* b) {
+        // NOTE: internal components always come first
+        if (a->getType() == Component::INTERNAL) return true;
+        if (b->getType() == Component::INTERNAL) return false;
+        if (a->getType() == Component::PLUGIN) return true;
+        if (b->getType() == Component::PLUGIN) return false;
         if (a->hasDep(b)) return false;
         if (b->hasDep(a)) return true;
         return true;

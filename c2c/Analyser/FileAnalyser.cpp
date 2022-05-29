@@ -598,6 +598,8 @@ bool FileAnalyser::analyseExpr(Expr* expr, bool usedPublic) {
             //expr->setConstant();
             break;
         case DECL_VAR:
+            // note: only if we need address!!
+            //if (cast<VarDecl>(D)->isGlobal()) expr->setCTC(CTC_FULL);
             break;
         case DECL_ENUMVALUE:
             //expr->setCTC(CTC_FULL);
@@ -1695,8 +1697,7 @@ bool FileAnalyser::analyseInitListStruct(InitListExpr* expr, QualType Q, unsigne
     for (unsigned i = 0; i < numValues; i++) {
         if (i >= STD->numMembers()) {
             // note: 0 for array, 2 for scalar, 3 for union, 4 for structs
-            Diag(values[STD->numMembers()]->getLocation(), diag::err_excess_initializers)
-                << 4;
+            Diag(values[STD->numMembers()]->getLocation(), diag::err_excess_initializers) << 4;
             return false;
         }
         DesignatedInitExpr* D = dyncast<DesignatedInitExpr>(values[i]);
@@ -1904,6 +1905,7 @@ bool FileAnalyser::analyseInitExpr(Expr* expr, QualType expectedType, bool usedP
         if (EA.hasError()) return false;
     }
 
+    //if (!expr->isCTC()) {
     if (!expr->isConstant()) {
         Diag(expr->getLocation(), diag::err_init_element_not_constant) << expr->getSourceRange();
         return false;

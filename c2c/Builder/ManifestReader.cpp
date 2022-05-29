@@ -22,9 +22,9 @@ using namespace C2;
 
 // TODO move to Component
 static Component::Type str2dep(const char* type) {
-    if (strcmp("static", type) == 0)  return Component::STATIC_LIB;
-    if (strcmp("dynamic", type) == 0) return Component::SHARED_LIB;
-    if (strcmp("source", type) == 0)  return Component::SOURCE_LIB;
+    if (strcmp("static", type) == 0)  return Component::MAIN_STATIC_LIB;
+    if (strcmp("dynamic", type) == 0) return Component::MAIN_SHARED_LIB;
+    if (strcmp("source", type) == 0)  return Component::MAIN_SOURCE_LIB;
     return (Component::Type)-1;
 }
 
@@ -55,15 +55,15 @@ bool ManifestReader::parse()
             return false;
         }
         switch (type) {
-        case Component::EXECUTABLE:
+        case Component::MAIN_EXECUTABLE:
             break;
-        case Component::SHARED_LIB:
+        case Component::MAIN_SHARED_LIB:
             manifest.hasDynamicLib = true;
             break;
-        case Component::STATIC_LIB:
+        case Component::MAIN_STATIC_LIB:
             manifest.hasStaticLib = true;
             break;
-        case Component::SOURCE_LIB:
+        case Component::MAIN_SOURCE_LIB:
             if (!manifest.isNative) {
                 sprintf(errorMsg, "language must be C2 for source libraries");
                 return false;
@@ -73,6 +73,12 @@ bool ManifestReader::parse()
                 return false;
             }
             manifest.hasSourceLib = true;
+            break;
+        case Component::EXT_SHARED_LIB:
+        case Component::EXT_STATIC_LIB:
+        case Component::EXT_SOURCE_LIB:
+        case Component::INTERNAL:
+        case Component::PLUGIN:
             break;
         }
         typeIter.next();

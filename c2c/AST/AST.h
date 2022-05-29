@@ -79,6 +79,9 @@ public:
     ASTContext& getContext() { return astContext; }
     bool isInterface() const { return m_isInterface; }
     bool isExternal() const { return m_isExternal; }
+
+    // utility functions for plugins
+    void setChecked();
 private:
     AST(const AST&);
     void operator=(const AST&);

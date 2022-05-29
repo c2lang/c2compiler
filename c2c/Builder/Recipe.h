@@ -31,7 +31,6 @@ public:
         : name(name_)
         , type(type_)
         , generateDeps(false)
-        , generateRefs(false)
         , generateIR(false)
         , generateCCode(false)
         , writeAST(false)
@@ -53,9 +52,6 @@ public:
         WarningFlags.no_unused_import = false;
         WarningFlags.no_unused_public = false;
         WarningFlags.no_unused_label = false;
-
-        DepFlags.showFiles = false;
-        DepFlags.showExternals = false;
     }
     ~Recipe() {}
 
@@ -77,12 +73,20 @@ public:
     const StringList& getExports() const { return exported; }
     bool needsInterface() const {
         switch (type) {
-        case Component::EXECUTABLE:
+        case Component::MAIN_EXECUTABLE:
             return false;
-        case Component::SHARED_LIB:
-        case Component::STATIC_LIB:
+        case Component::MAIN_SHARED_LIB:
+        case Component::MAIN_STATIC_LIB:
             return true;
-        case Component::SOURCE_LIB:
+        case Component::MAIN_SOURCE_LIB:
+            return false;
+        case Component::EXT_SHARED_LIB:
+        case Component::EXT_STATIC_LIB:
+        case Component::EXT_SOURCE_LIB:
+            return false;
+        case Component::INTERNAL:
+            return false;
+        case Component::PLUGIN:
             return false;
         }
         return false;
@@ -92,7 +96,6 @@ public:
     Component::Type type;
 
     bool generateDeps;
-    bool generateRefs;
     bool generateIR;
     bool generateCCode;
     bool writeAST;
@@ -109,11 +112,6 @@ public:
         bool no_build;
         bool gen_checks;
     } CGenFlags;
-
-    struct {
-        bool showFiles;
-        bool showExternals;
-    } DepFlags;
 
     struct {
         bool no_unused;

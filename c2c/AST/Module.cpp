@@ -25,11 +25,12 @@ using namespace C2;
 
 static std::string empty = "";
 
-Module::Module(const std::string& name_, bool isExternal_, bool isInterface_, bool isCLib_)
+Module::Module(const std::string& name_, bool isExternal_, bool isInterface_, bool isCLib_, bool isPlugin_)
     : name(name_)
     , m_isExternal(isExternal_)
     , m_isInterface(isInterface_)
     , m_isCLib(isCLib_)
+    , m_isPlugin(isPlugin_)
     , m_isExported(false)
     , m_isUsed(!isExternal_)    // internal modules are used by default
     , m_hasMain(false)
@@ -132,14 +133,16 @@ void Module::print(StringBuilder& output) const {
     }
 }
 
-void Module::printFiles(StringBuilder& out) const {
+void Module::printFiles(StringBuilder& out, bool brief) const {
     out << "  ";
-    if (files.size() == 0) out.setColor(ANSI_GREY);
+    if (brief) out.setColor(ANSI_GREY);
     out << name;
     out.setColor(ANSI_NORMAL);
     out << '\n';
-    for (unsigned i=0; i<files.size(); i++) {
-        out << "    " << files[i]->getFileName() << '\n';
+    if (!brief) {
+        for (unsigned i=0; i<files.size(); i++) {
+            out << "    " << files[i]->getFileName() << '\n';
+        }
     }
 }
 

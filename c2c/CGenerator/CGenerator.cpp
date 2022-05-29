@@ -119,6 +119,12 @@ void CGenerator::generateExternalHeaders() {
         Module* M = iter->second;
         if (!M->isLoaded()) continue;
         if (!M->isInterface()) continue;
+        if (options.single_module && M->isPlugin()) {
+            // TEMP here until refactor C2 as plugin component
+            if (strcmp(M->getName().c_str(),  "c2") != 0) {
+                continue;
+            }
+        }
         ModuleList single;
         single.push_back(M);
         CCodeGenerator gen(M->getName(), CCodeGenerator::MULTI_FILE, moduleMap, single, includeNamer, targetInfo, false);

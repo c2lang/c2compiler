@@ -46,6 +46,7 @@ void LibraryLoader::addDep(Component* src, const std::string& dest, Component::T
     Component* C = findComponent(dest);
     if (C) {
         if (C->getType() != type) {
+            // main shared lib, ext shared lib
             fprintf(stderr, "c2c: error: different library types needed for %s\n", dest.c_str());
             TODO;
         }
@@ -70,7 +71,16 @@ void LibraryLoader::checkLibDirs() {
 bool LibraryLoader::createComponents() {
     createMainComponent();
     checkLibDirs();
+
     return loadExternals();
+}
+
+C2::Component* LibraryLoader::getPluginComponent() {
+    if (!pluginComponent) {
+        pluginComponent = new Component("plugins", "", Component::PLUGIN, true, true, false, recipe.getExports());
+        components.push_back(pluginComponent);
+    }
+    return pluginComponent;
 }
 
 void LibraryLoader::createMainComponent() {
@@ -78,8 +88,8 @@ void LibraryLoader::createMainComponent() {
     components.push_back(mainComponent);
 
     if (!recipe.noLibC) {
-        // NOTE: libc always SHARED_LIB for now
-        addDep(mainComponent, "libc", Component::SHARED_LIB);
+        // NOTE: libc always EXT_SHARED_LIB for now
+        addDep(mainComponent, "libc", Component::EXT_SHARED_LIB);
     }
     for (unsigned i=0; i<recipe.libraries.size(); i++) {
         addDep(mainComponent, recipe.libraries[i].name, recipe.libraries[i].type);
@@ -88,21 +98,19 @@ void LibraryLoader::createMainComponent() {
 
 bool LibraryLoader::loadExternals() {
     bool hasErrors = false;
-    unsigned i = 1; // skip main component
-    while (i < components.size()) {
+    for (unsigned i=0; i<components.size(); i++) {
         hasErrors |= checkComponent(components[i]);
-        i++;
     }
 
 #if 0
-        printf("before\n");
-        for (i=0; i<components.size(); i++) { printf("  %s\n", components[i]->name.c_str()); }
+    printf("before\n");
+    for (unsigned i=0; i<components.size(); i++) { printf("  %s\n", components[i]->getName().c_str()); }
 #endif
-        // sort Components by dep, bottom->top
-        std::sort(components.begin(), components.end(), Component::compareDeps);
+    // sort Components by dep, bottom->top
+    std::sort(components.begin(), components.end(), Component::compareDeps);
 #if 0
-        printf("after\n");
-        for (i=0; i<components.size(); i++) { printf("  %s\n", components[i]->name.c_str()); }
+    printf("after\n");
+    for (unsigned i=0; i<components.size(); i++) { printf("  %s\n", components[i]->getName().c_str()); }
 #endif
     return !hasErrors;
 }
@@ -126,6 +134,9 @@ const LibInfo* LibraryLoader::addModule(Component* C, Module* M, const std::stri
 }
 
 bool LibraryLoader::checkComponent(Component* C) {
+    if (C == mainComponent) return false;   // skip main component
+    if (C->isInternalOrPlugin()) return false;
+
     const std::string& name = C->getName();
 
     // search all libDirs until file is found
@@ -145,12 +156,12 @@ bool LibraryLoader::checkComponent(Component* C) {
         return true;
     }
     bool hasErrors = false;
-    if (C->getType() == Component::SHARED_LIB && !manifest.hasDynamicLib) {
+    if (C->getType() == Component::MAIN_SHARED_LIB && !manifest.hasDynamicLib) {
         fprintf(stderr, "c2c: error: '%s' is not available as shared library in %s\n",
             name.c_str(), fullname);
         hasErrors = true;
     }
-    if (C->getType() == Component::STATIC_LIB && !manifest.hasStaticLib) {
+    if (C->getType() == Component::MAIN_STATIC_LIB && !manifest.hasStaticLib) {
         fprintf(stderr, "c2c: error: '%s' is not available as static library in %s\n",
             name.c_str(), fullname);
         hasErrors = true;
@@ -160,7 +171,7 @@ bool LibraryLoader::checkComponent(Component* C) {
 
     const StringList& libDeps = manifest.deps;
     for (unsigned i=0; i<libDeps.size(); i++) {
-        addDep(C, libDeps[i], Component::SHARED_LIB);
+        addDep(C, libDeps[i], Component::EXT_SHARED_LIB);
     }
 
     for (unsigned i=0; i<manifest.modules.size(); i++) {
@@ -274,6 +285,7 @@ void LibraryLoader::showLibs(bool useColors, bool showModules) const {
 }
 
 const LibInfo* LibraryLoader::findModuleLib(const std::string& moduleName) const {
+    // TODO search plugins as well
     LibrariesConstIter iter = libs.find(moduleName);
     if (iter == libs.end()) return 0;
     return iter->second;
@@ -295,7 +307,7 @@ Component* LibraryLoader::findComponent(const std::string& name) const {
 }
 
 Component* LibraryLoader::createComponent(const std::string& name, const std::string& path, bool isCLib, Component::Type type) {
-    bool isInterface = (type != Component::SOURCE_LIB);
+    bool isInterface = (type != Component::MAIN_SOURCE_LIB);
     Component* C = new Component(name, path, type, true, isInterface, isCLib, recipe.getExports());
     components.push_back(C);
     return C;

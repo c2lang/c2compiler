@@ -67,3 +67,14 @@ void AST::print(StringBuilder& buffer) const {;
     buffer << '\n';
 }
 
+void AST::setChecked() {
+    for (unsigned i=0; i<numTypes(); i++) {
+        TypeDecl* T = getType(i);
+        T->setCheckState(CHECK_DONE);
+    }
+    for (unsigned i=0; i<numVars(); i++) {
+        VarDecl* V = getVar(i);
+        V->setCheckState(CHECK_DONE);
+    }
+}
+

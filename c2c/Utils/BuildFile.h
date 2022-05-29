@@ -32,6 +32,13 @@ public:
     std::string ldflags2;   // after other flags
     //std::string path;
     StringList libDirs;
+    StringList pluginDirs;
+
+    typedef std::pair<std::string, std::string> Plugin;
+    typedef std::vector<Plugin> PluginList;
+    typedef PluginList::const_iterator PluginsConstIter;
+
+    PluginList plugins;
 
     std::string outputDir;
 };

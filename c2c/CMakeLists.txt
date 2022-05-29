@@ -30,7 +30,7 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
 #line below is needed for Ubuntu 13.04 32 bit
 include_directories("/usr/include/i386-linux-gnu/c++/4.8/")
 
-add_library(c2core
+add_executable(c2c
     Clang/CharInfo.cpp
     Clang/Commit.cpp
     Clang/Diagnostic.cpp
@@ -87,9 +87,7 @@ add_library(c2core
     Analyser/ModuleAnalyser.cpp
     Analyser/ComponentAnalyser.cpp
     Algo/DepVisitor.cpp
-    Algo/DepGenerator.cpp
     Algo/ASTVisitor.cpp
-    Algo/TagWriter.cpp
     IRGenerator/CodeGenFunction.cpp
     IRGenerator/CodeGenModule.cpp
     IRGenerator/InterfaceGenerator.cpp
@@ -108,6 +106,8 @@ add_library(c2core
     Builder/RootFinder.cpp
     Builder/Recipe.cpp
     Builder/RecipeReader.cpp
+    Builder/Plugin.cpp
+    Builder/PluginManager.cpp
     Builder/C2Builder.cpp
     FileUtils/FileMap.cpp
     FileUtils/FileUtils.cpp
@@ -119,13 +119,12 @@ add_library(c2core
     Utils/BuildFile.cpp
     Utils/TargetInfo.cpp
     Utils/ProcessUtils.cpp
-)
-set_target_properties(c2core PROPERTIES COMPILE_FLAGS "${LLVM_CXXFLAGS}")
-
-add_executable(c2c
     main.cpp
 )
-target_link_libraries(c2c c2core ${LLVM_LDFLAGS} ${LLVM_LIBS} ${LLVM_SYSTEM_LIBS})
+set_target_properties(c2c PROPERTIES COMPILE_FLAGS "${LLVM_CXXFLAGS}")
+
+set_target_properties(c2c PROPERTIES LINK_FLAGS "-rdynamic -dl -Wl,--export-dynamic")
+target_link_libraries(c2c ${LLVM_LDFLAGS} ${LLVM_LIBS} ${LLVM_SYSTEM_LIBS} )
 
 
 if(APPLE OR CYGWIN)

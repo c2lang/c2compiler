@@ -49,10 +49,10 @@ void MakefileGenerator::write(const std::string& path) {
     std::string targetname = "../";
     std::string libname;
     switch (component.getType()) {
-    case Component::EXECUTABLE:
+    case Component::MAIN_EXECUTABLE:
         targetname += target;
         break;
-    case Component::SHARED_LIB:
+    case Component::MAIN_SHARED_LIB:
 #ifdef __APPLE__
         targetname += "lib" + target + ".dylib";
         libname = "lib" + target + ".dylib";
@@ -61,10 +61,21 @@ void MakefileGenerator::write(const std::string& path) {
         libname = "lib" + target + ".so";
 #endif
         break;
-    case Component::STATIC_LIB:
+    case Component::MAIN_STATIC_LIB:
         targetname += "lib" + target + ".a";
         break;
-    case Component::SOURCE_LIB:
+    case Component::MAIN_SOURCE_LIB:
+        // nothing to do
+        break;
+    case Component::EXT_SHARED_LIB:
+    case Component::EXT_STATIC_LIB:
+    case Component::EXT_SOURCE_LIB:
+        // nothing to do
+        break;
+    case Component::INTERNAL:
+        // nothing to do
+        break;
+    case Component::PLUGIN:
         // nothing to do
         break;
     }
@@ -128,7 +139,7 @@ void MakefileGenerator::write(const std::string& path) {
 
     // link step
     switch (component.getType()) {
-    case Component::EXECUTABLE:
+    case Component::MAIN_EXECUTABLE:
     {
         out << "\t$(CC) $(LDFLAGS) -o " << targetname;
         for (StringListConstIter iter=files.begin(); iter!=files.end(); ++iter) {
@@ -143,7 +154,7 @@ void MakefileGenerator::write(const std::string& path) {
         out << " $(LDFLAGS2)";
         break;
     }
-    case Component::SHARED_LIB:
+    case Component::MAIN_SHARED_LIB:
         out << "#link against with: $(CC) main.c -L. -l<libname> -o test\n";
         out << "\t$(CC) $(LDFLAGS)";
         for (StringListConstIter iter=files.begin(); iter!=files.end(); ++iter) {
@@ -159,13 +170,22 @@ void MakefileGenerator::write(const std::string& path) {
 #endif
         out << " $(LDFLAGS2)";
         break;
-    case Component::STATIC_LIB:
+    case Component::MAIN_STATIC_LIB:
         out << "\tar rcs " << targetname;
         for (StringListConstIter iter=files.begin(); iter!=files.end(); ++iter) {
             out << ' ' << *iter << ".o";
         }
         break;
-    case Component::SOURCE_LIB:
+    case Component::MAIN_SOURCE_LIB:
+        break;
+    case Component::EXT_SHARED_LIB:
+    case Component::EXT_STATIC_LIB:
+    case Component::EXT_SOURCE_LIB:
+        // TODO
+        break;
+    case Component::INTERNAL:
+        break;
+    case Component::PLUGIN:
         break;
     }
     out << '\n';

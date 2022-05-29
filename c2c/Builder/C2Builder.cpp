@@ -45,8 +45,6 @@
 #include "Parser/ASTBuilder.h"
 #include "Analyser/ComponentAnalyser.h"
 #include "Analyser/AnalyserUtils.h"
-#include "Algo/DepGenerator.h"
-#include "Algo/TagWriter.h"
 #include "IRGenerator/IRGenerator.h"
 #include "IRGenerator/InterfaceGenerator.h"
 #include "CGenerator/CGenerator.h"
@@ -155,10 +153,11 @@ public:
 }
 
 
-C2Builder::C2Builder(const Recipe& recipe_, const BuildFile* buildFile_, const BuildOptions& opts)
+C2Builder::C2Builder(Recipe& recipe_, const BuildFile* buildFile_, const BuildOptions& opts, PluginHandler* pluginHandler_)
     : recipe(recipe_)
     , buildFile(buildFile_)
     , options(opts)
+    , pluginHandler(pluginHandler_)
     , c2Mod(0)
     , mainComponent(0)
     , libLoader(components, modules, recipe)
@@ -256,6 +255,11 @@ int C2Builder::build() {
 
     ParseHelper helper(Diags, HSOpts, SM, FileMgr, PredefineBuffer, targetInfo);
 
+    // create output dir here (plugins could generate files)
+    // TODO
+
+    if (pluginHandler) pluginHandler->build(*this);
+
     // Step 2A - parse main component sources + analyse imports
     uint64_t t1_parse = Utils::getCurrentTime();
     unsigned errors = 0;
@@ -286,8 +290,10 @@ int C2Builder::build() {
     uint64_t t1_analyse = Utils::getCurrentTime();
     // components should be ordered bottom-up
     for (unsigned c=0; c<components.size(); c++) {
-        if (options.verbose) Log::log(COL_VERBOSE, "analysing component %s", components[c]->getName().c_str());
-        ComponentAnalyser analyser(*components[c], modules, Diags, targetInfo, context, options.verbose, options.testMode);
+        Component* C = components[c];
+        if (C->getType() == Component::INTERNAL) continue;
+        if (options.verbose) Log::log(COL_VERBOSE, "analysing component %s", C->getName().c_str());
+        ComponentAnalyser analyser(*C, modules, Diags, targetInfo, context, options.verbose, options.testMode);
         errors += analyser.analyse(options.printAST1, options.printAST2, options.printAST3, options.printASTLib);
     }
     uint64_t t2_analyse = Utils::getCurrentTime();
@@ -300,9 +306,7 @@ int C2Builder::build() {
     if (!checkExportedPackages()) return report(client, t1_build);
 
     // Step 4 - generation
-    generateOptionalDeps();
-
-    generateOptionalRefs(SM);
+    if (pluginHandler) pluginHandler->generate(*this, SM);
 
     generateInterface();
 
@@ -444,7 +448,7 @@ bool C2Builder::checkModuleImports(ParseHelper& helper, ImportsQueue& queue, con
             D->setModule(target->module);
             if (target->component != component) {
                 // check that imports are in directly dependent component (no indirect component)
-                if (!component->hasDep(target->component)) {
+                if (!component->hasDep(target->component) && !target->component->isInternalOrPlugin()) {
                     helper.Diags.Report(D->getLocation(), c2lang::diag::err_indirect_component)
                             << component->getName() << target->component->getName() << targetModuleName;
                     ok = false;
@@ -463,11 +467,16 @@ bool C2Builder::checkModuleImports(ParseHelper& helper, ImportsQueue& queue, con
 
 void C2Builder::createC2Module() {
     if (!c2Mod) {
+        // TODO add to internal component
         if (options.verbose) Log::log(COL_VERBOSE, "generating module c2");
-        c2Mod = new Module("c2", true, true, false);
+        c2Mod = new Module("c2", true, true, false, true);
         modules["c2"] = c2Mod;
         C2ModuleLoader::load(c2Mod, targetInfo.intWidth == 32);
     }
+}
+
+const std::string& C2Builder::getRecipeName() const {
+    return recipe.name;
 }
 
 C2::Module* C2Builder::findModule(const std::string& name) const {
@@ -499,7 +508,7 @@ void C2Builder::printComponents(bool printLibs) const {
     output.enableColor(true);
     if (c2Mod && printLibs) {
         output << "Component <internal>\n";
-        c2Mod->printFiles(output);
+        c2Mod->printFiles(output, true);
     }
     for (unsigned i=0; i<components.size(); i++) {
         const Component* C = components[i];
@@ -522,36 +531,6 @@ bool C2Builder::checkExportedPackages() const {
         }
     }
     return true;
-}
-
-
-void C2Builder::generateOptionalDeps() {
-    if (!options.printDependencies && !recipe.generateDeps) return;
-
-    if (options.verbose) Log::log(COL_VERBOSE, "generating dependencies");
-
-    uint64_t t1 = Utils::getCurrentTime();
-    bool showPrivate = true;
-    generateDeps(recipe.DepFlags.showFiles, showPrivate, recipe.DepFlags.showExternals, outputDir);
-    uint64_t t2 = Utils::getCurrentTime();
-    if (options.printTiming) Log::log(COL_TIME, "dep generation took %" PRIu64" usec", t2 - t1);
-}
-
-void C2Builder::generateDeps(bool showFiles, bool showPrivate, bool showExternals, const std::string& path) const {
-    DepGenerator generator(showFiles, showPrivate, showExternals);
-    generator.write(components, recipe.name, path);
-}
-
-void C2Builder::generateOptionalRefs(const SourceManager& SM) const {
-    if (!options.generateRefs && !recipe.generateRefs) return;
-
-    if (options.verbose) Log::log(COL_VERBOSE, "generating refs");
-
-    uint64_t t1 = Utils::getCurrentTime();
-    TagWriter generator(SM, components);
-    generator.write(recipe.name, outputDir);
-    uint64_t t2 = Utils::getCurrentTime();
-    if (options.printTiming) Log::log(COL_TIME, "refs generation took %" PRIu64" usec", t2 - t1);
 }
 
 void C2Builder::generateInterface() const {
@@ -587,7 +566,8 @@ void C2Builder::generateOptionalC() {
     CGenerator cgen(*mainComponent, modules, libLoader, cgen_options, targetInfo, buildFile);
     for (unsigned i=0; i<components.size(); i++) {
         Component* c = components[i];
-        if (c->getType() == Component::SOURCE_LIB) cgen.addSourceLib(*c);
+        if (c->getType() == Component::MAIN_SOURCE_LIB) cgen.addSourceLib(*c);
+        if (c->getType() == Component::PLUGIN) cgen.addSourceLib(*c);
     }
 
     // generate headers for external libraries
@@ -646,5 +626,30 @@ void C2Builder::writeAST() const {
             FileUtils::writeFile(outputDir.c_str(), outputDir + "out.ast", out);
         }
     }
+}
+
+// TODO should know current plugin that calls this code
+C2::Module* C2Builder::addPluginModule(const std::string& name) {
+    Module* old = findModule(name);
+    if (old) {
+        fprintf(stderr, "module %s already exists\n", name.c_str());
+        return NULL;
+    }
+
+
+    Component* pluginComponent = libLoader.getPluginComponent();
+    if (!pluginComponent) {
+        fprintf(stderr, "NO PLUGIN COMPONENT\n");
+        exit(EXIT_FAILURE);
+    }
+
+    Module* m = pluginComponent->getModule(name);
+    if (!m) {
+        fprintf(stderr, "NO PLUGIN MODULE\n");
+        exit(EXIT_FAILURE);
+    }
+    modules[name] = m;
+    libLoader.addModule(pluginComponent, m, "", "");
+    return m;
 }
 

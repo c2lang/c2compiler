@@ -93,10 +93,25 @@ if (line[0] == '#') return; // skip comments
         {
             // line should be 'executable/lib <name>'
             const char* kw = get_token();
-            if (strcmp(kw, "executable") == 0) {
+            if (strcmp(kw, "plugin") == 0) {
+                const char* plugin_name = get_token();
+                if  (!plugin_name) error("expected plugin name");
+                // TODO check for trailing  stuff? (plugin settings?)
+
+                // search for duplicates
+                for (unsigned i=0; i<plugins.size(); i++) {
+                    if (plugins[i].first == plugin_name) {
+                        warn("duplicate plugin %s", plugin_name);
+                        return;
+                    }
+                }
+
+                const char* plugin_config = get_options();
+                plugins.push_back(Plugin(plugin_name, plugin_config ? plugin_config : ""));
+            } else if (strcmp(kw, "executable") == 0) {
                 const char* target_name = get_token();
                 if (target_name == 0) error("expected executable name");
-                current = new Recipe(target_name, Component::EXECUTABLE);
+                current = new Recipe(target_name, Component::MAIN_EXECUTABLE);
                 startNewRecipe();
             } else if (strcmp(kw, "lib") == 0) {
                 const char* target_name = get_token();
@@ -104,13 +119,13 @@ if (line[0] == '#') return; // skip comments
                 const char* type_name = get_token();
                 if (type_name == 0) error("expected library type");
 
-                Component::Type type = Component::SHARED_LIB;
+                Component::Type type = Component::MAIN_SHARED_LIB;
                 if (strcmp(type_name, "shared") == 0) {
-                    type = Component::SHARED_LIB;
+                    type = Component::MAIN_SHARED_LIB;
                 } else if (strcmp(type_name, "static") == 0) {
-                    type = Component::STATIC_LIB;
+                    type = Component::MAIN_STATIC_LIB;
                 } else if (strcmp(type_name, "source") == 0) {
-                    type = Component::SOURCE_LIB;
+                    type = Component::MAIN_SOURCE_LIB;
                 } else {
                     error("unknown library type '%s'", type_name);
                 }
@@ -170,10 +185,6 @@ if (line[0] == '#') return; // skip comments
                     current->writeAST = true;
                 } else if (strcmp(tok, "warnings") == 0) {
                     handleWarnings();
-                } else if (strcmp(tok, "deps") == 0) {
-                    handleDepflags();
-                } else if (strcmp(tok, "refs") == 0) {
-                    current->generateRefs = true;
                 } else if (strcmp(tok, "nolibc") == 0) {
                     current->noLibC = true;
                 } else if (strcmp(tok, "use") == 0) {
@@ -183,13 +194,13 @@ if (line[0] == '#') return; // skip comments
                     std::string libname = tok2;
                     const char* tok3 = get_token();
                     if (!tok3) error("missing library type");
-                    Component::Type libtype = Component::SHARED_LIB;
+                    Component::Type libtype = Component::MAIN_SHARED_LIB;
                     if (strcmp(tok3, "static") == 0) {
-                        libtype = Component::STATIC_LIB;
+                        libtype = Component::MAIN_STATIC_LIB;
                     } else if (strcmp(tok3, "dynamic") == 0) {
-                        libtype = Component::SHARED_LIB;
+                        libtype = Component::MAIN_SHARED_LIB;
                     } else if (strcmp(tok3, "source") == 0) {
-                        libtype = Component::SOURCE_LIB;
+                        libtype = Component::MAIN_SOURCE_LIB;
                     } else {
                         error("unknown library type '%s'", tok3);
                     }
@@ -293,23 +304,30 @@ void RecipeReader::handleIrGenFlags() {
     }
 }
 
-void RecipeReader::handleDepflags() {
-    current->generateDeps = true;
+char* RecipeReader::get_options() {
+    // skip white space
+    while (*token_ptr == ' ' || *token_ptr == '\t' ) token_ptr++;
+    if (*token_ptr == 0) return 0;
 
-    while (1) {
-        const char* flag = get_token();
-        if (!flag) break;
 
-        if (strcmp(flag, "show-files") == 0) {
-            current->DepFlags.showFiles = true;
-        } else if (strcmp(flag, "show-externals") == 0) {
-            current->DepFlags.showExternals = true;
-        } else {
-            error("unknown dep flag '%s'", flag);
-        }
+    // search for [ <options> ]
+
+    // find start [
+    char* cp = token_ptr;
+    if (*cp != '[') return 0;
+    cp++;
+
+    // find end [
+    char* result = cp;
+    while (*cp != 0 && *cp != ']') cp++;
+    if (*cp == 0) { // token ends at end of line
+        error("missing terminating ']'");
     }
-}
 
+    *cp = 0;
+    token_ptr = cp + 1;
+    return result;
+}
 char* RecipeReader::get_token() {
     // skip white space
     while (*token_ptr == ' ' || *token_ptr == '\t' ) token_ptr++;
@@ -345,7 +363,21 @@ void RecipeReader::error(const char* fmt, ...) {
     exit(EXIT_FAILURE);
 }
 
-const Recipe& RecipeReader::get(int i) const {
+void RecipeReader::warn(const char* fmt, ...) {
+    char tmp[256];
+
+    va_list argp;
+    char* cp = tmp;
+
+    cp += sprintf(cp, "recipe: line %d ", line_nr);
+    va_start(argp, fmt);
+    int size = vsprintf(cp, fmt, argp);
+    cp += size;
+    va_end(argp);
+    fprintf(stderr, "Warning: %s\n", tmp);
+}
+
+Recipe& RecipeReader::get(int i) const {
     return *recipes[i];
 }
 
@@ -361,14 +393,21 @@ void RecipeReader::checkCurrent() {
     // lib targets must have export entry
     bool needExport = false;
     switch (current->type) {
-    case Component::EXECUTABLE:
+    case Component::MAIN_EXECUTABLE:
         needExport = false;
         break;
-    case Component::SHARED_LIB:
-    case Component::STATIC_LIB:
+    case Component::MAIN_SHARED_LIB:
+    case Component::MAIN_STATIC_LIB:
         needExport = true;
         break;
-    case Component::SOURCE_LIB:
+    case Component::MAIN_SOURCE_LIB:
+        needExport = false;
+        break;
+    case Component::EXT_SHARED_LIB:
+    case Component::EXT_STATIC_LIB:
+    case Component::EXT_SOURCE_LIB:
+    case Component::INTERNAL:
+    case Component::PLUGIN:
         needExport = false;
         break;
     }

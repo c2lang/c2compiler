@@ -22,8 +22,8 @@
 using namespace C2;
 
 static const char* type2str(Component::Type type) {
-    if (type == Component::SHARED_LIB) return "dynamic";
-    if (type == Component::STATIC_LIB) return "static";
+    if (type == Component::MAIN_SHARED_LIB) return "dynamic";
+    if (type == Component::MAIN_STATIC_LIB) return "static";
     return "";
 }
 

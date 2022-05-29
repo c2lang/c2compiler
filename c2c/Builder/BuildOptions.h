@@ -37,8 +37,6 @@ struct BuildOptions {
         , showLibs(false)
         , printModules(false)
         , printLibModules(false)
-        , printDependencies(false)
-        , generateRefs(false)
         , verbose(false)
         , testMode(false)
         , libdir(0)
@@ -60,8 +58,6 @@ struct BuildOptions {
     bool showLibs;
     bool printModules;
     bool printLibModules;
-    bool printDependencies;
-    bool generateRefs;
     bool verbose;
     bool testMode;
 

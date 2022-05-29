@@ -29,7 +29,7 @@ Module* Component::getModule(const std::string& name_) {
     for (unsigned i=0; i<modules.size(); i++) {
         if (modules[i]->getName() == name_) { return modules[i]; }
     }
-    Module* module = new Module(name_, is_external, is_interface, is_clib);
+    Module* module = new Module(name_, is_external, is_interface, is_clib, type == PLUGIN);
     if (isExported(name_)) module->setExported();
     modules.push_back(module);
     return module;
@@ -61,9 +61,12 @@ void Component::print(StringBuilder& out) const {
         out << ')';
         out.setColor(ANSI_NORMAL);
     }
+    out.setColor(ANSI_NORMAL);
     out << '\n';
     for (unsigned i=0; i<modules.size(); i++) {
-        modules[i]->printFiles(out);
+        bool brief = false;
+        if (isExternal() || isInternalOrPlugin()) brief = true;
+        modules[i]->printFiles(out, brief);
     }
 }
 
@@ -97,10 +100,15 @@ bool Component::hasDep(const Component* other) const {
 
 const char* C2::Str(Component::Type type) {
     switch (type) {
-    case Component::EXECUTABLE:    return "executable";
-    case Component::SHARED_LIB:    return "shared";
-    case Component::STATIC_LIB:    return "static";
-    case Component::SOURCE_LIB:    return "source";
+    case Component::MAIN_EXECUTABLE:    return "executable";
+    case Component::MAIN_SHARED_LIB:    return "main_shared_lib";
+    case Component::MAIN_STATIC_LIB:    return "main_static_lib";
+    case Component::MAIN_SOURCE_LIB:    return "main_source_lib";
+    case Component::EXT_SHARED_LIB:     return "external_shared_lib";
+    case Component::EXT_STATIC_LIB:     return "external_static_lib";
+    case Component::EXT_SOURCE_LIB:     return "external_source_lib";
+    case Component::INTERNAL:      return "internal";
+    case Component::PLUGIN:        return "plugin";
     }
     return "";
 }

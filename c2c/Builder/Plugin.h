@@ -1,4 +1,4 @@
-/* Copyright 2013-2022 Bas van den Berg
+/* Copyright 2013-2021 Bas van den Berg
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,28 +13,29 @@
  * limitations under the License.
  */
 
-#ifndef BUILDER_BUILDFILE_READER_H
-#define BUILDER_BUILDFILE_READER_H
+#ifndef BUILDER_PLUGIN_H
+#define BUILDER_PLUGIN_H
 
 #include <string>
 
+namespace c2lang {
+class SourceManager;
+}
+
 namespace C2 {
 
-class BuildFile;
+class C2Builder;
 
-class BuildFileReader {
+class Plugin {
 public:
-    BuildFileReader(BuildFile& build_);
-    ~BuildFileReader() {}
+    Plugin(const std::string& name_);
+    virtual ~Plugin() {}
 
-    bool parse(const std::string& filename);
-    const char* getErrorMsg() const { return errorMsg; }
+    virtual bool init(bool verbose, const std::string& config)  = 0;
+    virtual void build(C2Builder&) = 0;
+    virtual bool generate(C2Builder& builder, const c2lang::SourceManager& src_mgr) = 0;
 private:
-    const char* expandEnvVar(const std::string& filename, const char* raw);
-    bool findPlugin(const std::string& name) const;
-
-    BuildFile& build;
-    char errorMsg[256];
+    std::string name;
 };
 
 }
