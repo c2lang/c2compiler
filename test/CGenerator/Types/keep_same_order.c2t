@@ -26,5 +26,6 @@ typedef enum {
   test_State_A,
   test_State_B,
   test_State_C,
+  _test_State_max = 255
 } __attribute__((packed)) test_State;
 

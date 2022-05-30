@@ -52,11 +52,8 @@
 #include "FileUtils/FileMap.h"
 #include "Utils/StringBuilder.h"
 #include "Utils/color.h"
-
-#define COL_ERROR ANSI_BRED
-#define COL_SKIP  ANSI_BCYAN
-#define COL_OK    ANSI_GREEN
-#define COL_DEBUG ANSI_BMAGENTA
+#include "ExpectFile.h"
+#include "TestUtils.h"
 
 #define MAX_LINE 512
 #define MAX_THREADS 32
@@ -65,7 +62,7 @@
 
 using namespace C2;
 
-static int color_output = 1;
+int color_output = 1;
 static const char* c2c_cmd = "build/c2c/c2c";
 static char* cwd;
 static bool runSkipped;
@@ -167,34 +164,6 @@ static void debug(const char* format, ...) {
 static void debug(const char* format, ...) {}
 #endif
 
-static void skipWhitespace(const char** start, const char* end) {
-    const char* cp = *start;
-    while (cp != end && isblank(*cp)) cp++;
-    *start = cp;
-}
-
-static void color_print(const char* color, const char* format, ...) {
-    char buffer[1024];
-    va_list(Args);
-    va_start(Args, format);
-    vsnprintf(buffer, sizeof(buffer), format, Args);
-    va_end(Args);
-
-    if (color_output) printf("%s%s" ANSI_NORMAL"\n", color, buffer);
-    else printf("%s\n", buffer);
-}
-
-static void color_print2(StringBuilder& output ,const char* color, const char* format, ...) {
-    char buffer[1024];
-    va_list(Args);
-    va_start(Args, format);
-    vsnprintf(buffer, sizeof(buffer), format, Args);
-    va_end(Args);
-
-    if (color_output) output.print("%s%s" ANSI_NORMAL"\n", color, buffer);
-    else output.print("%s\n", buffer);
-}
-
 static uint64_t getCurrentTime() {
     struct timeval now;
     gettimeofday(&now, 0);
@@ -219,122 +188,6 @@ static const char* find(const char* start, const char* end, const char* text) {
     }
     return 0;
 }
-
-class ExpectFile {
-public:
-    enum Mode {
-        ATLEAST,
-        COMPLETE,
-    };
-    ExpectFile(const std::string& name, Mode m)
-        : filename(name), mode(m)
-        , lineStart(0), lineEnd(0) {}
-
-    void addLine(const char* start, const char* end) {
-        if (strncmp(start, "//", 2) == 0) return;   // ignore comments
-
-        skipWhitespace(&start, end);
-        // TODO strip trailing whitespace
-        std::string line_str(start, end);
-        lines.push_back(line_str);
-    }
-    bool check(StringBuilder& output, const std::string& basedir) {
-        debug("checking %s %s\n", basedir.c_str(), filename.c_str());
-        std::string fullname = basedir + filename;
-        // check if file exists
-        struct stat statbuf;
-        int err = stat(fullname.c_str(), &statbuf);
-        if (err) {
-            color_print2(output, COL_ERROR, "  missing expected file '%s' (%s)",
-                        filename.c_str(), fullname.c_str());
-            return false;
-        }
-        FileMap file(fullname.c_str());
-        file.open();
-
-        if (lines.size() == 0) return true;
-
-        lineStart = (const char*)file.region;
-        lineEnd = 0;
-        unsigned expIndex = 0;
-        const char* expectedLine = lines[expIndex].c_str();
-#ifdef DEBUG
-        color_print2(output, ANSI_GREEN, "exp '%s'", expectedLine);
-#endif
-        while (1) {
-            // find next real line
-            const char* line = nextRealLine();
-            if (line == 0) break;
-            if (line[0] == 0) continue;     // ignore empty lines
-            if (line[0] == '/' && line[1] == '/') continue; // ignore comments
-#ifdef DEBUG
-            color_print2(output, ANSI_YELLOW, "got '%s'", line);
-#endif
-
-            if (!expectedLine) {
-                color_print2(output, COL_ERROR, "  in file %s: unexpected line '%s'", filename.c_str(), line);
-                return false;
-            }
-
-            // TODO dont copy in nextRealLine, but do memcmp on substring
-            if (strcmp(expectedLine, line) == 0) {
-#ifdef DEBUG
-                color_print2(output, ANSI_CYAN, "match");
-#endif
-                expIndex++;
-                if (expIndex == lines.size()) expectedLine = 0;
-                else expectedLine = lines[expIndex].c_str();
-#ifdef DEBUG
-                color_print2(output, ANSI_GREEN, "exp '%s'", expectedLine ? expectedLine : "<none>");
-#endif
-                if (!expectedLine && mode != COMPLETE) return true;
-            } else {
-                if (mode == COMPLETE) {
-                    color_print2(output, COL_ERROR, "  in file %s:\n  expected '%s'\n       got '%s'", filename.c_str(), expectedLine, line);
-                    return false;
-                }
-            }
-        }
-        if (expectedLine != 0) {
-            color_print2(output, COL_ERROR, "  in file %s: expected '%s'", filename.c_str(), expectedLine);
-            return false;
-        }
-        return true;
-    }
-private:
-    const char* nextRealLine() {
-        assert(lineStart);
-        if (lineEnd == 0) {
-            lineEnd = lineStart;
-        } else {
-            if (*lineEnd == 0) return 0;
-            lineStart = lineEnd + 1;
-            lineEnd = lineStart;
-        }
-
-        while (*lineEnd != 0) {
-            if (*lineEnd == '\n') break;
-            lineEnd++;
-        }
-        skipWhitespace(&lineStart, lineEnd);
-        int size = lineEnd - lineStart;
-        assert(size < MAX_LINE);
-        memcpy(line_buf, lineStart, size);
-        while (isblank(line_buf[size-1])) size--;
-        line_buf[size] = 0;
-        return line_buf;
-    }
-
-    std::string filename;
-    Mode mode;
-    const char* lineStart;
-    const char* lineEnd;
-    char line_buf[MAX_LINE];
-
-    typedef std::vector<std::string> Lines;
-    Lines lines;
-};
-
 
 class IssueDb {
 public:
@@ -561,7 +414,7 @@ void IssueDb::parseLineExpect(const char* start, const char* end) {
         return;
     }
     assert(currentExpect);
-    currentExpect->addLine(start, end);
+    currentExpect->addLine(line_nr, start, end);
     // add non-empty lines (stripped of heading+trailing whitespace) to list
     // TODO
 }
@@ -648,7 +501,7 @@ parse_msg:
 
 void IssueDb::parseLineOutside(const char* start, const char* end) {
     const char* cp = start;
-    skipWhitespace(&cp, end);
+    TestUtils::skipInitialWhitespace(&cp, end);
     if (cp == end) return;
 
     // TODO if .c2t/.cta, only accept tags or comments
@@ -863,7 +716,7 @@ bool IssueDb::parseExpect() {
         errorMsg << "expected filename";
         return false;
     }
-    skipLine();
+    skipLine(); // skip rest of the line
 
     currentExpect = new ExpectFile(filename, em);
     // TODO check for name duplicates
@@ -880,7 +733,7 @@ bool IssueDb::parseExpect() {
 
         const char* end = cur;
         while (*end != 0 && *end != '\n') end++;
-        currentExpect->addLine(cur, end);
+        currentExpect->addLine(line_nr, cur, end);
         skipLine();
     }
     currentExpect = 0;

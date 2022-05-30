@@ -21,6 +21,7 @@ func void b(i32 arg1 = aa.AA);
 
 // @expect{atleast, bb.h}
 #include "aa.h"
+
 // note: C does not support default args
 void bb_b(int32_t arg1);
 

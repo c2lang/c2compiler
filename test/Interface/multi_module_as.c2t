@@ -51,5 +51,6 @@ typedef int32_t aa_AA;
 typedef enum {
     bb_Enum_One = aa_FIRST,
     bb_Enum_Two,
+    _bb_Enum_max = 255
 } __attribute__((packed)) bb_Enum;
 

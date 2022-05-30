@@ -68,6 +68,7 @@ static int32_t test_default_body(int32_t arg) {
     default: {
         int32_t a = 10;
         return a;
+     }
     }
     return 0;
 }
