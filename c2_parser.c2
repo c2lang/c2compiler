@@ -43,12 +43,13 @@ public func Parser* create(SourceMgr* sm, i32 file_id) {
     p.sm = sm;
     p.file_id = file_id;
     // TEMP create Builder here
-    //p.builder = Builder.create();
+    p.builder = Builder.create();
 
     return p;
 }
 
 public func void Parser.free(Parser* p) {
+    p.builder.free();
     free(p);
 }
 
@@ -83,7 +84,7 @@ public func bool Parser.parse(Parser* p) {
     }
 */
     } else {
-        printf("ERROR: %s\n", p.error_msg);
+        printf("%s\n", p.error_msg);
         return false;
     }
     u64 t2 = utils.now();
@@ -124,12 +125,12 @@ func void Parser.expectIdentifier(Parser* p) {
 }
 
 func void Parser.error(Parser* p, const char* format, ...) @(noreturn) {
+    char* cp = p.error_msg;
+    cp += sprintf(cp, "%s: error: ", p.sm.loc2str(p.tok.loc));
     Va_list args;
     va_start(args, format);
-    char* cp = p.error_msg;
-    cp += vsnprintf(cp, sizeof(p.error_msg)-1, format, args);
+    vsnprintf(cp, sizeof(p.error_msg)-1, format, args);
     va_end(args);
-    sprintf(cp, " %s", p.sm.loc2str(p.tok.loc));
     longjmp(&p.jmpbuf, 1);
 }
 
@@ -212,7 +213,7 @@ func void Parser.parseTypeDef(Parser* p, bool is_public) {
     u32 type_loc = p.tok.loc;
     p.consumeToken();
 
-    if (!isupper(type_name[0])) p.error("type name must start with upper case character");
+    if (!isupper(type_name[0])) p.error("type name must start with upper-case character");
 
     switch (p.tok.kind) {
     case TokenKind.KW_func:
@@ -233,22 +234,83 @@ func void Parser.parseTypeDef(Parser* p, bool is_public) {
     }
 }
 
-func void Parser.parseFuncType(Parser* p, const char* type_name, u32 type_loc, bool is_public) {
+func void Parser.parseFuncType(Parser* p, const char* name, u32 loc, bool is_public) {
     p.consumeToken();
     // TODO
 }
 
-func void Parser.parseStructType(Parser* p, bool is_struct, const char* type_name, u32 type_loc, bool is_public) {
+func void Parser.parseStructType(Parser* p, bool is_struct, const char* name, u32 loc, bool is_public) {
+    p.consumeToken();
+    //StructTypeDecl* S = p.builder.actOnStructType(name, loc, is_struct, is_public, true);
+    p.builder.actOnStructType(name, loc, is_struct, is_public, true);
+
+    p.parseStructBlock();  // (S)
+    p.parseAttributes(); // (S)
+}
+
+func void Parser.parseStructBlock(Parser* p /*, StructTypeDecl* s*/) {
+    p.expectAndConsume(TokenKind.LBrace);
+
+    //DeclList members
+
+    while (1) {
+        //Syntax:
+        // struct_member ::= type_qualifier type_specifier.
+        // struct_member ::= STRUCT <IDENTIFIER> LBRACE struct_block RBRACE.
+        // struct_member ::= UNION <IDENTIFIER> LBRACE struct_block RBRACE.
+
+        if (p.tok.kind == TokenKind.RBrace) break;
+        if (p.tok.kind == TokenKind.KW_union || p.tok.kind == TokenKind.KW_struct) {
+            bool is_struct = p.tok.kind == TokenKind.KW_struct;
+            p.consumeToken();
+            // name is optional
+            const char* name = nil;
+            u32 loc = 0;
+            if (p.tok.kind == TokenKind.Identifier) {
+                name = p.tok.text_value;
+                loc = p.tok.loc;
+                p.consumeToken();
+            }
+            /*StructTypeDecl* member = */ p.builder.actOnStructType(name, loc, is_struct, true /*S->isPublic()*/, false);
+            // members.push_back(member);
+            p.parseStructBlock(/*member*/);
+        } else {
+            // TODO
+        }
+    }
+}
+
+func void Parser.parseAttributes(Parser* p) {
+    if (p.tok.kind != TokenKind.At) return;
+    p.consumeToken();
+
+    p.expectAndConsume(TokenKind.LParen);
+
+    while (1) {
+        p.expectIdentifier();
+        const char* attr_id = p.tok.text_value;
+        u32 attr_loc = p.tok.loc;
+        p.consumeToken();
+
+        u32 end_loc = attr_loc;
+        if (p.tok.kind == TokenKind.Equal) {
+        }
+
+        p.builder.actOnAttr(/*D,*/ attr_id, attr_loc, end_loc /*, arg.get()*/);
+
+        if (p.tok.kind != TokenKind.Comma) break;
+        p.consumeToken();
+    }
+
+    p.expectAndConsume(TokenKind.RParen);
+}
+
+func void Parser.parseEnumType(Parser* p, const char* name, u32 loc, bool is_public) {
     p.consumeToken();
     // TODO
 }
 
-func void Parser.parseEnumType(Parser* p, const char* type_name, u32 type_loc, bool is_public) {
-    p.consumeToken();
-    // TODO
-}
-
-func void Parser.parseAliasType(Parser* p, const char* type_name, u32 type_loc, bool is_public) {
+func void Parser.parseAliasType(Parser* p, const char* name, u32 loc, bool is_public) {
     // TODO
 }
 
