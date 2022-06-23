@@ -31,6 +31,7 @@ public func i32 main(i32 argc, char** argv) {
             if (!parser.parse()) break;
             break;
         }
+        parser.free();
     }
 
     sm.free();

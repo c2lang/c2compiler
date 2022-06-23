@@ -40,6 +40,10 @@ public func Parser* create(SourceMgr* sm, i32 file_id) {
     return p;
 }
 
+public func void Parser.free(Parser* p) {
+    free(p);
+}
+
 public func bool Parser.parse(Parser* p) {
     Tokenizer tokenizer;
     char[256] error_msg;

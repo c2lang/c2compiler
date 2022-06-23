@@ -1011,6 +1011,8 @@ func void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
         case '\\':
             t.cur++;
             switch (*t.cur) {
+            case '0':
+                break;
             case 'r':
                 break;
             case 'n':
