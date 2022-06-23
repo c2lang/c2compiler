@@ -144,3 +144,14 @@ public func Location SourceMgr.locate(SourceMgr* sm, u32 loc) {
     return l;
 }
 
+public func const char* SourceMgr.loc2str(SourceMgr* sm, u32 src_loc) {
+    local char[256] tmp;
+    if (src_loc == 0) {
+        strcpy(tmp, "-");
+    } else {
+        c2_source_mgr.Location loc = sm.locate(src_loc);
+        sprintf(tmp, "%s:%u:%u", loc.filename, loc.line, loc.column);
+    }
+    return tmp;
+}
+

@@ -604,7 +604,6 @@ public type Tokenizer struct {
 
     Alloc_fn alloc;
     void* alloc_arg;
-    //Data* data;   // TODO for mem-allocs
 }
 
 public func void Tokenizer.init(Tokenizer* t, const char* input, u32 loc_start, /*Data* d,*/ char* error_msg, Alloc_fn alloc, void* arg) {
@@ -613,7 +612,6 @@ public func void Tokenizer.init(Tokenizer* t, const char* input, u32 loc_start, 
     t.input_start = input;
     t.loc_start = loc_start;
     t.error_msg = error_msg;
-    //t.data = d;
     t.alloc = alloc;
     t.alloc_arg = arg;
     t.next.kind = TokenKind.None;

@@ -1,0 +1,100 @@
+module c2_parser;
+
+import c2_source_mgr local;
+import c2_tokenizer local;
+import utils;
+
+import stdlib local;
+import string local;
+// TEMP
+import stdio local;
+import color;
+
+
+// TEMP HERE
+char[1024*1024] alloc_buf;
+u32 alloc_idx;
+
+func const char* alloc(void* arg, const char* value, u32 len) {
+    char* start = alloc_buf + alloc_idx;
+    memcpy(start, value, len);
+    alloc_idx += len;
+    alloc_buf[alloc_idx] = 0;
+    alloc_idx++;
+    return start;
+}
+
+public type Parser struct {
+    char[256] error_msg;
+
+    SourceMgr* sm;
+    i32 file_id;
+
+} @(opaque)
+
+public func Parser* create(SourceMgr* sm, i32 file_id) {
+    Parser* p = calloc(1, sizeof(Parser));
+    p.sm = sm;
+    p.file_id = file_id;
+
+    return p;
+}
+
+public func bool Parser.parse(Parser* p) {
+    Tokenizer tokenizer;
+    char[256] error_msg;
+    error_msg[0] = 0;
+    alloc_idx = 0;
+
+    tokenizer.init(p.sm.get_content(p.file_id), p.sm.get_offset(p.file_id), p.error_msg, alloc, nil);
+    Token tok;
+    tok.init();
+
+    u64 t1 = utils.now();
+    u32 token_count = 0;
+    while (tok.more) {
+        tokenizer.lex(&tok);
+        //dump_token(p.sm, &tok);
+        token_count++;
+    }
+    u64 t2 = utils.now();
+
+    printf("--- %u tokens (%u alloc)  (%llu usec) ---\n", token_count, alloc_idx, t2 - t1);
+
+    if (tok.kind == TokenKind.Error) {
+        c2_source_mgr.Location loc = p.sm.locate(tok.loc);
+        printf("%s:%u:%u: %serror:%s %s\n",  loc.filename, loc.line, loc.column, color.Red, color.Normal, tok.error_msg);
+        return false;
+    }
+    return true;
+}
+
+// TEMP here
+public func void dump_token(SourceMgr* sm, const Token* tok) {
+    if (tok.kind >= TokenKind.KW_as && tok.kind <= TokenKind.KW_while) {
+        printf("%s%10s%s  %s\n", color.Green, tok.str(), color.Normal, sm.loc2str(tok.loc));
+        return;
+    }
+    printf("%10s  %s  ", tok.str(), sm.loc2str(tok.loc));
+    switch (tok.kind) {
+    case TokenKind.Identifier:
+        printf("  %s%s%s", color.Cyan, tok.text_value, color.Normal);
+        break;
+    case TokenKind.NumberLiteral:
+        printf("  %s%s%s", color.Cyan, tok.text_value, color.Normal);
+        break;
+    case TokenKind.CharLiteral:
+        printf("  %s'%c'%s", color.Cyan, tok.char_value, color.Normal);
+        break;
+    case TokenKind.StringLiteral:
+        printf("  %s\"%s\"%s", color.Cyan, tok.text_value, color.Normal);
+        break;
+    case TokenKind.Error:
+        printf("  %s%s%s", color.Red, tok.error_msg, color.Normal);
+        break;
+    default:
+        break;
+    }
+    printf("\n");
+}
+

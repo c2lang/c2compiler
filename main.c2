@@ -2,108 +2,11 @@ module c2c_main;
 
 import c2_tokenizer local;
 import c2_source_mgr local;
+import c2_parser local;
 import color;
 
 import stdio local;
 import string local;
-import sys_time;
-
-// TODO move to utils
-func u64 now() {
-    sys_time.Timeval tv;
-    sys_time.gettimeofday(&tv, nil);
-    u64 now64 = cast<u64>(tv.tv_sec);
-    now64 *= 1000000;
-    now64 += tv.tv_usec;
-    return now64;
-}
-
-// TEMP HERE
-char[1024*1024] alloc_buf;
-u32 alloc_idx;
-
-func const char* alloc(void* arg, const char* value, u32 len) {
-    char* start = alloc_buf + alloc_idx;
-    memcpy(start, value, len);
-    alloc_idx += len;
-    alloc_buf[alloc_idx] = 0;
-    alloc_idx++;
-    return start;
-}
-
-SourceMgr* sm;
-
-func const char* loc2str(u32 src_loc) {
-    local char[256] tmp;
-    if (src_loc == 0) {
-        strcpy(tmp, "-");
-    } else {
-        c2_source_mgr.Location loc = sm.locate(src_loc);
-        sprintf(tmp, "%s:%u:%u", loc.filename, loc.line, loc.column);
-    }
-    return tmp;
-}
-
-public func void dump_token(const Token* tok) {
-    if (tok.kind >= TokenKind.KW_as && tok.kind <= TokenKind.KW_while) {
-        printf("%s%10s%s  %s\n", color.Green, tok.str(), color.Normal, loc2str(tok.loc));
-        return;
-    }
-    printf("%10s  %s  ", tok.str(), loc2str(tok.loc));
-    switch (tok.kind) {
-    case TokenKind.Identifier:
-        printf("  %s%s%s", color.Cyan, tok.text_value, color.Normal);
-        break;
-    case TokenKind.NumberLiteral:
-        printf("  %s%s%s", color.Cyan, tok.text_value, color.Normal);
-        break;
-    case TokenKind.CharLiteral:
-        printf("  %s'%c'%s", color.Cyan, tok.char_value, color.Normal);
-        break;
-    case TokenKind.StringLiteral:
-        printf("  %s\"%s\"%s", color.Cyan, tok.text_value, color.Normal);
-        break;
-    case TokenKind.Error:
-        printf("  %s%s%s", color.Red, tok.error_msg, color.Normal);
-        break;
-    default:
-        break;
-    }
-    printf("\n");
-}
-
-
-func void parse_file(i32 sm_handle) {
-    Tokenizer tokenizer;
-    char[256] error_msg;
-    error_msg[0] = 0;
-    alloc_idx = 0;
-    tokenizer.init(sm.get_content(sm_handle), sm.get_offset(sm_handle), error_msg, alloc, nil);
-    Token tok;
-    tok.init();
-
-    u32[enum_max(TokenKind)] count = { 0 }
-
-    u64 t1 = now();
-    u32 token_count = 0;
-    while (tok.more) {
-        tokenizer.lex(&tok);
-        dump_token(&tok);
-        //count[tok.kind]++;
-        token_count++;
-    }
-    if (tok.kind == TokenKind.Error) {
-        c2_source_mgr.Location loc = sm.locate(tok.loc);
-        printf("%s:%u:%u: %serror:%s %s\n",  loc.filename, loc.line, loc.column, color.Red, color.Normal, tok.error_msg);
-    }
-    u64 t2 = now();
-
-    printf("--- %u tokens (%u alloc)  (%llu usec) ---\n", token_count, alloc_idx, t2 - t1);
-    for (u8 i=0; i<elemsof(count); i++) {
-        if (count[i] == 0) continue;
-        printf("%5u  %10s  %4.1f %%\n", count[i], kind2str(i), count[i] * 100.0 / token_count);
-    }
-}
 
 public func i32 main(i32 argc, char** argv) {
     if (argc < 2) {
@@ -111,7 +14,7 @@ public func i32 main(i32 argc, char** argv) {
         return -1;
     }
 
-    sm = SourceMgr.create();
+    SourceMgr* sm = SourceMgr.create();
 
     for (i32 i=1; i<argc; i++) {
         const char* filename = argv[i];
@@ -123,8 +26,9 @@ public func i32 main(i32 argc, char** argv) {
             return -1;
         }
 
+        Parser* parser = c2_parser.create(sm, file_id);
         for (i32 j=0; j<100; j++) {
-            parse_file(file_id);
+            if (!parser.parse()) break;
             break;
         }
     }
