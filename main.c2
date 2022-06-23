@@ -34,7 +34,7 @@ func void parse_file(const char* data) {
     char[256] error_msg;
     error_msg[0] = 0;
     alloc_idx = 0;
-    tokenizer.init(data, error_msg, alloc, nil);
+    tokenizer.init(data, 0, error_msg, alloc, nil);
     Token tok;
     tok.init();
 
