@@ -8,9 +8,9 @@ import c_errno local;
 // TEMP
 import stdio local;
 
+const u32 InitialMaxFiles = 8;
 
 type File struct {
-    // TODO also add filename
     char* filename;   // malloc'ed
     u32 offset;
     file_utils.Reader file;
@@ -20,24 +20,27 @@ type File struct {
 }
 
 public type SourceMgr struct {
-    // TODO put in vector
-    File*[50] files;
-    i32 num_files;
+    File* files;
+    u32 num_files;
+    u32 max_files;
 
     char[256] error_msg;
 } @(opaque)
 
 public func SourceMgr* SourceMgr.create() {
     SourceMgr* sm = calloc(1, sizeof(SourceMgr));
+    sm.max_files = InitialMaxFiles;
+    sm.files = malloc(sizeof(File) * sm.max_files);
     return sm;
 }
 
 public func void SourceMgr.free(SourceMgr* sm) {
     for (u32 i=0; i<sm.num_files; i++) {
-        File* f = sm.files[i];
+        File* f = &sm.files[i];
         free(f.filename);
         f.file.close();
     }
+    free(sm.files);
     free(sm);
 }
 
@@ -48,8 +51,17 @@ public func i32 SourceMgr.open(SourceMgr* sm, const char* filename) {
         return -1;
     }
 
-    i32 file_id = sm.num_files;
-    File* f = calloc(1, sizeof(File));
+    if (sm.num_files == sm.max_files) {
+        sm.max_files *= 2;
+        File* files2 = malloc(sizeof(File) * sm.max_files);
+        memcpy(files2, sm.files, sm.num_files * sizeof(File));
+        free(sm.files);
+        sm.files = files2;
+    }
+
+    i32 file_id = cast<i32>(sm.num_files);
+    File* f = &sm.files[sm.num_files];
+    memset(f, 0, sizeof(File));
 
     u32 offset = 1;
     if (sm.num_files) offset = sm.files[sm.num_files-1].offset + sm.files[sm.num_files-1].file.size;
@@ -57,7 +69,6 @@ public func i32 SourceMgr.open(SourceMgr* sm, const char* filename) {
     f.offset = offset;
     f.file = file;
 
-    sm.files[sm.num_files] = f;
     sm.num_files++;
     //sm.dump();
     return file_id;
@@ -68,19 +79,17 @@ public func const char* SourceMgr.get_error(SourceMgr* sm) {
 }
 
 public func const char* SourceMgr.get_content(SourceMgr* sm, i32 handle) {
-    // TODO check handle
     return sm.files[handle].file.data();
 }
 
 public func u32 SourceMgr.get_offset(SourceMgr* sm, i32 handle) {
-    // TODO check handle
     return sm.files[handle].offset;
 }
 
 func void SourceMgr.dump(const SourceMgr* sm) {
     printf("SourceMgr  files %u\n", sm.num_files);
     for (u32 i=0; i<sm.num_files; i++) {
-        File* f = sm.files[i];
+        File* f = &sm.files[i];
         printf("  [%2u]  %7u  %7u %s\n", i, f.offset, f.file.size, f.filename);
     }
 }
@@ -93,7 +102,7 @@ public type Location struct {
 
 func File* find_file(const SourceMgr* sm, u32 loc) {
     for (u32 i=0; i<sm.num_files; i++) {
-        File* f = sm.files[i];
+        File* f = &sm.files[i];
         if (loc >= f.offset && loc < f.offset + f.file.size) return f;
     }
     return nil;

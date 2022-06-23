@@ -7,11 +7,11 @@
 + support block comment
 + let error generate line-nr
 + TODO escaped chars in strings (especially \")
-- SourceLoc of EOF (have nil as filename?)
++ SourceLoc of EOF is 0
 
 ## SourceManager
 + reserve location 0
-- remove hardcoded file max
++ remove hardcoded file max
 - close files after use (need indication)
 
 ## Performance
