@@ -33,18 +33,31 @@ func const char* alloc(void* arg, const char* value, u32 len) {
 
 SourceMgr* sm;
 
+func const char* loc2str(u32 src_loc) {
+    local char[256] tmp;
+    c2_source_mgr.Location loc = sm.locate(src_loc);
+    sprintf(tmp, "%s:%u:%u", loc.filename, loc.line, loc.column);
+    return tmp;
+}
+
 public func void dump_token(const Token* tok) {
     if (tok.kind >= TokenKind.KW_as && tok.kind <= TokenKind.KW_while) {
-        printf("%s%10s%s", color.Green, tok.str(), color.Normal);
+        printf("%s%10s%s  %s\n", color.Green, tok.str(), color.Normal, loc2str(tok.loc));
         return;
     }
-    printf("%10s   %u TODO", tok.str(), tok.loc.loc);
+    printf("%10s  %s  ", tok.str(), loc2str(tok.loc));
     switch (tok.kind) {
     case TokenKind.Identifier:
         printf("  %s%s%s", color.Cyan, tok.text_value, color.Normal);
         break;
     case TokenKind.NumberLiteral:
         printf("  %s%s%s", color.Cyan, tok.text_value, color.Normal);
+        break;
+    case TokenKind.CharLiteral:
+        printf("  %s'%c'%s", color.Cyan, tok.char_value, color.Normal);
+        break;
+    case TokenKind.StringLiteral:
+        printf("  %s\"%s\"%s", color.Cyan, tok.text_value, color.Normal);
         break;
     case TokenKind.Error:
         printf("  %s%s%s", color.Red, tok.error_msg, color.Normal);
@@ -71,12 +84,12 @@ func void parse_file(i32 sm_handle) {
     u32 token_count = 0;
     while (tok.more) {
         tokenizer.lex(&tok);
-        //dump_token(&tok);
+        dump_token(&tok);
         //count[tok.kind]++;
         token_count++;
     }
     if (tok.kind == TokenKind.Error) {
-        c2_source_mgr.Location loc = sm.locate(tok.loc.loc);
+        c2_source_mgr.Location loc = sm.locate(tok.loc);
         printf("%s:%u:%u: %serror:%s %s\n",  loc.filename, loc.line, loc.column, color.Red, color.Normal, tok.error_msg);
     }
     u64 t2 = now();
@@ -108,6 +121,7 @@ public func i32 main(i32 argc, char** argv) {
 
         for (i32 j=0; j<100; j++) {
             parse_file(file_id);
+            break;
         }
     }
 

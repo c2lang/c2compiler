@@ -6,6 +6,7 @@
 + faster keyword lookup
 + support block comment
 + let error generate line-nr
+- TODO escaped chars in strings (especially \")
 
 ## SourceManager
 - remove hardcoded file max

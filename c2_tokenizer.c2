@@ -3,17 +3,12 @@ import string local;
 import stdio local;
 import ctype local;
 
-public type Location struct {
-    u32 loc;
-}
-
 type Keyword struct {
     const char* name;
     TokenKind kind;
     u8 len;
 }
 
-// TEMP until C2C allows this
 const Keyword*[] keywords = {
     Keywords_a,
     Keywords_b,
@@ -159,7 +154,6 @@ const Keyword[] Keywords_w = {
     { nil, TokenKind.None, 0 },
 }
 
-// TODO order by frequency
 public type TokenKind enum u8 {
     None,
     Identifier,
@@ -391,6 +385,7 @@ const char*[] token_names = {
 
 //static_assert(elemsof(TokenKind) == elemsof(token_names), "should be the same");
 
+// TODO order by frequency
 type Action enum u8 {
     INVALID = 0,
     TABSPACE,
@@ -546,12 +541,6 @@ public func const char* kind2str(TokenKind kind) {
     return token_names[kind];
 }
 
-func bool identifier_initial_char(char c) {
-    if (c >= 'a' && c <= 'z') return true;
-    if (c >= 'A' && c <= 'Z') return true;
-    return false;
-}
-
 func bool identifier_char(char c) {
     // TODO use lookup table (same as for initial?)
     if (c >= 'a' && c <= 'z') return true;
@@ -572,7 +561,7 @@ func const Keyword* check_keyword(const char* cp) {
             char a = kw[idx];
             char b = word[idx];
             if (a == 0) {
-                if (!isalpha(b)) return &table[i];
+                if (!identifier_char(b)) return &table[i];
                 break;
             }
             if (a != b) {
@@ -588,7 +577,7 @@ func const Keyword* check_keyword(const char* cp) {
 }
 
 public type Token struct {
-    Location loc;
+    u32 loc;
     TokenKind kind;
     union {
         const char* error_msg;  // ERROR
@@ -648,7 +637,7 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
             t.cur++;
             continue;
         case Action.IDENT_OR_KEYWORD:
-            result.loc.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
+            result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             const Keyword* kw = check_keyword(t.cur);
             if (kw) {
                 result.kind = kw.kind;
@@ -664,22 +653,22 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
             t.lex_number(result);
             return;
         case Action.LPAREN:
-            result.loc.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
+            result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             result.kind = TokenKind.LParen;
             t.cur++;
             return;
         case Action.RPAREN:
-            result.loc.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
+            result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             result.kind = TokenKind.RParen;
             t.cur++;
             return;
         case Action.LSQUARE:
-            result.loc.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
+            result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             result.kind = TokenKind.LSquare;
             t.cur++;
             return;
         case Action.RSQUARE:
-            result.loc.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
+            result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             result.kind = TokenKind.RSquare;
             t.cur++;
             return;
@@ -687,7 +676,7 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
             t.cur++;
             continue;
         case Action.EXCLAIM:
-            result.loc.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
+            result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '=') {
                 result.kind = TokenKind.ExclaimEqual;
@@ -703,7 +692,7 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
             t.lex_char_literal(result);
             return;
         case Action.STAR:
-            result.loc.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
+            result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '=') {
                 result.kind = TokenKind.StarEqual;
@@ -713,7 +702,7 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
             }
             return;
         case Action.PLUS:
-            result.loc.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
+            result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '+') {
                 t.cur++;
@@ -728,7 +717,7 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
             result.kind = TokenKind.Plus;
             return;
         case Action.MINUS:
-            result.loc.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
+            result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '-') {
                 t.cur++;
@@ -743,12 +732,12 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
             result.kind = TokenKind.Minus;
             return;
         case Action.COMMA:
-            result.loc.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
+            result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             result.kind = TokenKind.Comma;
             t.cur++;
             return;
         case Action.DOT:
-            result.loc.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
+            result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             t.cur++;
             if (t.cur[0] == '.' && t.cur[1] == '.') {
                 t.cur += 2;
@@ -758,7 +747,7 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
             }
             return;
         case Action.PERCENT:
-            result.loc.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
+            result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '=') {
                 result.kind = TokenKind.PercentEqual;
@@ -768,7 +757,7 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
             result.kind = TokenKind.Percent;
             return;
         case Action.SLASH:
-            result.loc.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
+            result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '=') {
                 result.kind = TokenKind.SlashEqual;
@@ -787,17 +776,17 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
             result.kind = TokenKind.Slash;
             return;
         case Action.COLON:
-            result.loc.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
+            result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             result.kind = TokenKind.Colon;
             t.cur++;
             return;
         case Action.SEMI_COLON:
-            result.loc.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
+            result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             result.kind = TokenKind.Semicolon;
             t.cur++;
             return;
         case Action.LESS:
-            result.loc.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
+            result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '=') {
                 t.cur++;
@@ -816,7 +805,7 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
             result.kind = TokenKind.Less;
             return;
         case Action.EQUAL:
-            result.loc.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
+            result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '=') {
                 result.kind = TokenKind.EqualEqual;
@@ -826,7 +815,7 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
             }
             return;
         case Action.GREATER:
-            result.loc.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
+            result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '=') {
                 t.cur++;
@@ -845,17 +834,17 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
             result.kind = TokenKind.Greater;
             return;
         case Action.QUESTION:
-            result.loc.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
+            result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             result.kind = TokenKind.Question;
             t.cur++;
             return;
         case Action.AT:
-            result.loc.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
+            result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             result.kind = TokenKind.At;
             t.cur++;
             return;
         case Action.AMP:
-            result.loc.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
+            result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '&') {
                 result.kind = TokenKind.AmpAmp;
@@ -870,7 +859,7 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
             result.kind = TokenKind.Amp;
             return;
         case Action.CARET:
-            result.loc.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
+            result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '=') {
                 t.cur++;
@@ -880,17 +869,17 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
             result.kind = TokenKind.Caret;
             return;
         case Action.LBRACE:
-            result.loc.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
+            result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             result.kind = TokenKind.LBrace;
             t.cur++;
             return;
         case Action.RBRACE:
-            result.loc.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
+            result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             result.kind = TokenKind.RBrace;
             t.cur++;
             return;
         case Action.PIPE:
-            result.loc.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
+            result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '|') {
                 result.kind = TokenKind.PipePipe;
@@ -905,7 +894,7 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
             result.kind = TokenKind.Pipe;
             return;
         case Action.TILDE:
-            result.loc.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
+            result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             result.kind = TokenKind.Tilde;
             t.cur++;
             return;
@@ -919,7 +908,7 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
             t.cur++;
             return;
         case Action.EOF:
-            result.loc.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
+            result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             result.kind = TokenKind.Eof;
             result.more = false;
             return;
@@ -934,7 +923,7 @@ public func Token* Tokenizer.lex_next(Tokenizer* t) {
 }
 
 func void Tokenizer.error(Tokenizer* t, Token* result) {
-    result.loc.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
+    result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
     result.kind = TokenKind.Error;
     result.error_msg = t.error_msg;
     result.more = false;
@@ -943,7 +932,7 @@ func void Tokenizer.error(Tokenizer* t, Token* result) {
 func void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
     // NOTE: result.loc are already set
     result.kind = TokenKind.Identifier;
-    result.loc.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
+    result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
     const char* start = t.cur;
     const char* end = t.cur + 1;
     while (identifier_char(*end)) end++;
@@ -955,7 +944,7 @@ func void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
 
 func void Tokenizer.lex_number(Tokenizer* t, Token* result) {
     result.kind = TokenKind.NumberLiteral;
-    result.loc.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
+    result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
     const char* start = t.cur;
     const char* end = t.cur + 1;
     while (isdigit(*end)) end++;
@@ -967,7 +956,7 @@ func void Tokenizer.lex_number(Tokenizer* t, Token* result) {
 
 func void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
     result.kind = TokenKind.CharLiteral;
-    result.loc.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
+    result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
 
     if (t.cur[1] == '\\') {
         t.cur++;
@@ -1007,7 +996,7 @@ func void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
 
 func void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
     result.kind = TokenKind.StringLiteral;
-    result.loc.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
+    result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
     t.cur++;
     const char* start = t.cur;
     u32 len;
@@ -1017,9 +1006,31 @@ func void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
         case 0: fallthrough;
         case '\r': fallthrough;
         case '\n':
+            t.cur--;
             strcpy(t.error_msg, "unterminated string");
             t.error(result);
             return;
+        case '\\':
+            t.cur++;
+            switch (*t.cur) {
+            case 'r':
+                break;
+            case 'n':
+                break;
+            case 't':
+                break;
+            case '"':
+                break;
+            case '\\':
+                break;
+            default:
+                t.cur--;
+                sprintf(t.error_msg, "unknown escape sequence \\%c", *t.cur);
+                t.error(result);
+                return;
+            }
+            t.cur++;
+            break;
         case '"':
             goto out;
             break;
