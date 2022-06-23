@@ -3,8 +3,6 @@ import string local;
 import stdio local;
 import ctype local;
 import color;
-// TEMP
-import stdlib local;
 
 public type Location struct {   // TODO use SourceMgr
     u32 line;
@@ -396,18 +394,22 @@ public func void Token.dump(const Token* tok) {
     printf("\n");
 }
 
+public type Alloc_fn func const char* (void* arg, const char* value, u32 len);
+
 public type Tokenizer struct {
     const char* cur;
     Location loc;
     const char* input_start;
     char* error_msg;
-    i32 cur_indent;
-    //Data* data;   // TODO for mem-allocs
 
     Token next;
+
+    Alloc_fn alloc;
+    void* alloc_arg;
+    //Data* data;   // TODO for mem-allocs
 }
 
-public func void Tokenizer.init(Tokenizer* t, const char* input, /*Data* d,*/ char* error_msg) {
+public func void Tokenizer.init(Tokenizer* t, const char* input, /*Data* d,*/ char* error_msg, Alloc_fn alloc, void* arg) {
     memset(t, 0, sizeof(Tokenizer));
     t.cur = input;
     t.input_start = input;
@@ -415,6 +417,8 @@ public func void Tokenizer.init(Tokenizer* t, const char* input, /*Data* d,*/ ch
     t.loc.column = 1;
     t.error_msg = error_msg;
     //t.data = d;
+    t.alloc = alloc;
+    t.alloc_arg = arg;
     t.next.kind = TokenKind.None;
 }
 
@@ -778,14 +782,6 @@ func void Tokenizer.error(Tokenizer* t, Token* result) {
     result.more = false;
 }
 
-func const char* alloc(const char* text, u32 len) {
-    // TEMP
-    char* r = malloc(len + 1);
-    memcpy(r, text, len);
-    r[len] = 0;
-    return r;
-}
-
 func void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
     // NOTE: result.loc are already set
     result.kind = TokenKind.Identifier;
@@ -797,7 +793,7 @@ func void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
     u32 len = cast<u32>(end - start);
     t.cur += len;
     t.loc.column += len;
-    result.text_value = alloc(start, len);
+    result.text_value = t.alloc(t.alloc_arg, start, len);
 }
 
 func void Tokenizer.lex_number(Tokenizer* t, Token* result) {
@@ -810,7 +806,7 @@ func void Tokenizer.lex_number(Tokenizer* t, Token* result) {
     u32 len = cast<u32>(end - start);
     t.cur += len;
     t.loc.column += len;
-    result.text_value = alloc(start, len);
+    result.text_value = t.alloc(t.alloc_arg, start, len);
 }
 
 func void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
@@ -882,7 +878,7 @@ func void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
 out:
     len = cast<u32>(t.cur - start);
     t.cur++;    // skip end delimiter
-    result.text_value = alloc(start, len);
+    result.text_value = t.alloc(t.alloc_arg, start, len);
     t.loc.column += len + 2;  // add quotes
 }
 

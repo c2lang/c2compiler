@@ -17,11 +17,24 @@ func u64 now() {
     return now64;
 }
 
+char[1024*1024] alloc_buf;
+u32 alloc_idx;
+
+func const char* alloc(void* arg, const char* value, u32 len) {
+    char* start = alloc_buf + alloc_idx;
+    memcpy(start, value, len);
+    alloc_idx += len;
+    alloc_buf[alloc_idx] = 0;
+    alloc_idx++;
+    return start;
+}
+
 func void parse_file(const char* data) {
     Tokenizer tokenizer;
     char[256] error_msg;
     error_msg[0] = 0;
-    tokenizer.init(data, error_msg);
+    alloc_idx = 0;
+    tokenizer.init(data, error_msg, alloc, nil);
     Token tok;
     tok.init();
 
@@ -33,11 +46,11 @@ func void parse_file(const char* data) {
         tokenizer.lex(&tok);
         //tok.dump();
         //count[tok.kind]++;
-        //token_count++;
+        token_count++;
     }
     u64 t2 = now();
 
-    printf("--- %u tokens (%llu usec) ---\n", token_count, t2 - t1);
+    printf("--- %u tokens (%u alloc)  (%llu usec) ---\n", token_count, alloc_idx, t2 - t1);
     for (u8 i=0; i<elemsof(count); i++) {
         if (count[i] == 0) continue;
         printf("%5u  %10s  %4.1f %%\n", count[i], kind2str(i), count[i] * 100.0 / token_count);
