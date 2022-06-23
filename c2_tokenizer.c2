@@ -17,8 +17,72 @@ func const char* Location.str(const Location* loc) {
     return msg;
 }
 
-// TODO keywords
+type Keyword struct {
+    const char* name;
+    TokenKind kind;
+    u8 len;
+}
 
+const Keyword[] Keywords = {
+    { "as", TokenKind.KW_as, 2 },
+    { "asm", TokenKind.KW_asm, 3 },
+    { "auto", TokenKind.KW_auto, 4, },
+    { "bool", TokenKind.KW_bool, 4 },
+    { "break", TokenKind.KW_break, 5 },
+    { "case", TokenKind.KW_case, 4 },
+    { "cast", TokenKind.KW_cast, 4 },
+    { "char", TokenKind.KW_char, 4 },
+    { "const", TokenKind.KW_const, 5 },
+    { "continue", TokenKind.KW_continue, 8 },
+    { "default", TokenKind.KW_default, 8 },
+    { "do", TokenKind.KW_do, 2 },
+    { "elemsof", TokenKind.KW_elemsof, 7 },
+    { "else", TokenKind.KW_else, 4 },
+    { "enum_max", TokenKind.KW_enum_max, 8 },
+    { "enum_min", TokenKind.KW_enum_min, 8 },
+    { "enum", TokenKind.KW_enum, 4 },
+    { "f32", TokenKind.KW_f32, 3 },
+    { "f64", TokenKind.KW_f64, 3 },
+    { "fallthrough", TokenKind.KW_fallthrough, 11 },
+    { "false", TokenKind.KW_false, 5 },
+    { "for", TokenKind.KW_for, 3 },
+    { "func", TokenKind.KW_func, 4 },
+    { "goto", TokenKind.KW_goto, 4 },
+    { "i16", TokenKind.KW_i16, 3 },
+    { "i32", TokenKind.KW_i32, 3 },
+    { "i64", TokenKind.KW_i64, 3 },
+    { "i8", TokenKind.KW_i8, 2 },
+    { "if", TokenKind.KW_if, 2 },
+    { "import", TokenKind.KW_import, 6 },
+    { "isize", TokenKind.KW_isize, 5 },
+    { "local", TokenKind.KW_local, 5 },
+    { "module", TokenKind.KW_module, 6 },
+    { "nil", TokenKind.KW_nil, 3 },
+    { "offsetof", TokenKind.KW_offsetof, 8 },
+    { "public", TokenKind.KW_public, 6 },
+    { "reg16", TokenKind.KW_reg16, 5 },
+    { "reg32", TokenKind.KW_reg32, 5 },
+    { "reg64", TokenKind.KW_reg64, 5 },
+    { "reg8", TokenKind.KW_reg8, 4 },
+    { "return", TokenKind.KW_return, 6 },
+    { "sizeof", TokenKind.KW_sizeof, 6 },
+    { "sswitch", TokenKind.KW_sswitch, 7 },
+    { "static_assert", TokenKind.KW_static_assert, 13 },
+    { "struct", TokenKind.KW_struct, 6 },
+    { "switch", TokenKind.KW_switch, 6 },
+    { "to_container", TokenKind.KW_to_container, 12 },
+    { "true", TokenKind.KW_true, 4 },
+    { "type", TokenKind.KW_type, 4 },
+    { "u16", TokenKind.KW_u16, 3 },
+    { "u32", TokenKind.KW_u32, 3 },
+    { "u64", TokenKind.KW_u64, 3 },
+    { "u8", TokenKind.KW_u8, 2 },
+    { "union", TokenKind.KW_union, 5 },
+    { "usize", TokenKind.KW_usize, 5 },
+    { "void", TokenKind.KW_void, 4 },
+    { "volatile", TokenKind.KW_volatile, 8 },
+    { "while", TokenKind.KW_while, 5 },
+}
 
 // TODO order by frequency
 public type TokenKind enum u8 {
@@ -73,8 +137,64 @@ public type TokenKind enum u8 {
     GreaterGreater,
     GreaterEqual,
     GreaterGreaterEqual,
-    KW_Module,
-    KW_Import,
+    KW_as,
+    KW_asm,
+    KW_auto,
+    KW_bool,
+    KW_break,
+    KW_case,
+    KW_cast,
+    KW_char,
+    KW_const,
+    KW_continue,
+    KW_default,
+    KW_do,
+    KW_elemsof,
+    KW_else,
+    KW_enum_max,
+    KW_enum_min,
+    KW_enum,
+    KW_f32,
+    KW_f64,
+    KW_fallthrough,
+    KW_false,
+    KW_for,
+    KW_func,
+    KW_goto,
+    KW_i16,
+    KW_i32,
+    KW_i64,
+    KW_i8,
+    KW_if,
+    KW_import,
+    KW_isize,
+    KW_local,
+    KW_module,
+    KW_nil,
+    KW_offsetof,
+    KW_public,
+    KW_reg16,
+    KW_reg32,
+    KW_reg64,
+    KW_reg8,
+    KW_return,
+    KW_sizeof,
+    KW_sswitch,
+    KW_static_assert,
+    KW_struct,
+    KW_switch,
+    KW_to_container,
+    KW_true,
+    KW_type,
+    KW_u16,
+    KW_u32,
+    KW_u64,
+    KW_u8,
+    KW_union,
+    KW_usize,
+    KW_void,
+    KW_volatile,
+    KW_while,
     Eof,
     Error,
 }
@@ -132,8 +252,64 @@ const char*[] token_names = {
     ">>",
     ">=",
     ">>=",
-    "module",
+    "as",
+    "asm",
+    "auto",
+    "bool",
+    "break",
+    "case",
+    "cast",
+    "char",
+    "const",
+    "continue",
+    "default",
+    "do",
+    "elemsof",
+    "else",
+    "enum_max",
+    "enum_min",
+    "enum",
+    "f32",
+    "f64",
+    "falltrhough",
+    "false",
+    "for",
+    "func",
+    "goto",
+    "i16",
+    "i32",
+    "i64",
+    "i8",
+    "if",
     "import",
+    "isize",
+    "local",
+    "module",
+    "nil",
+    "offsetof",
+    "public",
+    "reg16",
+    "reg32",
+    "reg64",
+    "reg8",
+    "return",
+    "sizeof",
+    "sswitch",
+    "static_assert",
+    "struct",
+    "switch",
+    "to_container",
+    "true",
+    "type",
+    "u16",
+    "u32",
+    "u64",
+    "u8",
+    "union",
+    "usize",
+    "void",
+    "volatile",
+    "while",
     "eof",
     "error",
 }
@@ -159,14 +335,23 @@ func bool identifier_char(char c) {
     return false;
 }
 
-func TokenKind check_keyword_or_identifier(const char* cur) {
-    if (strncmp(cur, "module", 6) == 0 && !isalpha(cur[6])) {
-        return TokenKind.KW_Module;
+func const Keyword* check_keyword(const char* cp) {
+    // TEMP basic search here
+    for (u32 i=0; i<elemsof(Keywords); i++) {
+        const char* word = cp;
+        const char* kw = Keywords[i].name;
+        u32 idx = 0;
+        while (1) {
+            if (kw[idx] == 0) {
+                if (!isalpha(word[idx])) return &Keywords[i];
+                break;
+            }
+            if (word[idx] != kw[idx]) break;
+            idx++;
+        }
     }
-    if (strncmp(cur, "import", 6) == 0 && !isalpha(cur[6])) {
-        return TokenKind.KW_Import;
-    }
-    return TokenKind.Identifier;
+
+    return nil;
 }
 
 public type Token struct {
@@ -186,6 +371,10 @@ public func void Token.init(Token* tok) {
 }
 
 public func void Token.dump(const Token* tok) {
+    if (tok.kind >= TokenKind.KW_as && tok.kind <= TokenKind.KW_while) {
+        printf("%s%10s%s   %u:%u\n", color.Green, tok.str(), color.Normal, tok.loc.line, tok.loc.column);
+        return;
+    }
     printf("%10s   %u:%u", tok.str(), tok.loc.line, tok.loc.column);
     switch (tok.kind) {
     case TokenKind.Identifier:
@@ -549,22 +738,14 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
         default:
             // TODO create char lookup table with actions (identifier / identifier_or_keyword)
             if (identifier_initial_char(*t.cur)) {
-                result.kind = check_keyword_or_identifier(t.cur);
                 result.loc = t.loc;
-                switch (result.kind) {
-                case TokenKind.Identifier:
+                const Keyword* kw = check_keyword(t.cur);
+                if (kw) {
+                    result.kind = kw.kind;
+                    t.cur += kw.len;
+                    t.loc.column += kw.len;
+                } else {
                     t.lex_identifier(result);
-                    break;
-                case TokenKind.KW_Module:
-                    t.cur += 6;
-                    t.loc.column += 6;
-                    break;
-                case TokenKind.KW_Import:
-                    t.cur += 6;
-                    t.loc.column += 6;
-                    break;
-                default:
-                    break;
                 }
                 return;
             }
@@ -602,7 +783,9 @@ func const char* alloc(const char* text, u32 len) {
 }
 
 func void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
-    // NOTE: result.kind and result.loc are already set
+    // NOTE: result.loc are already set
+    result.kind = TokenKind.Identifier;
+    result.loc = t.loc;
     const char* start = t.cur;
     const char* end = t.cur + 1;
     while (identifier_char(*end)) end++;
