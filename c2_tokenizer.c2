@@ -2,7 +2,6 @@ module c2_tokenizer;
 import string local;
 import stdio local;
 import ctype local;
-import color;
 
 public type Location struct {
     u32 loc;
@@ -610,28 +609,6 @@ public func void Token.init(Token* tok) {
     tok.more = true;
 }
 
-public func void Token.dump(const Token* tok) {
-    if (tok.kind >= TokenKind.KW_as && tok.kind <= TokenKind.KW_while) {
-        printf("%s%10s%s   %u TODO\n", color.Green, tok.str(), color.Normal, tok.loc.loc);
-        return;
-    }
-    printf("%10s   %u TODO", tok.str(), tok.loc.loc);
-    switch (tok.kind) {
-    case TokenKind.Identifier:
-        printf("  %s%s%s", color.Cyan, tok.text_value, color.Normal);
-        break;
-    case TokenKind.NumberLiteral:
-        printf("  %s%s%s", color.Cyan, tok.text_value, color.Normal);
-        break;
-    case TokenKind.Error:
-        printf("  %s%s%s", color.Red, tok.error_msg, color.Normal);
-        break;
-    default:
-        break;
-    }
-    printf("\n");
-}
-
 public type Alloc_fn func const char* (void* arg, const char* value, u32 len);
 
 public type Tokenizer struct {
@@ -1026,7 +1003,7 @@ func void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
     }
 
     if (t.cur[2] != '\'') {
-        strcpy(t.error_msg, "missing terminated ' character");
+        strcpy(t.error_msg, "missing terminating ' character");
         t.error(result);
         return;
     }

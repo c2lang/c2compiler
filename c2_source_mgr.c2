@@ -1,0 +1,122 @@
+module c2_source_mgr;
+
+import file_utils;
+import stdlib local;
+import string local;
+import c_errno local;
+
+// TEMP
+import stdio local;
+
+
+type File struct {
+    // TODO also add filename
+    char* filename;   // malloc'ed
+    u32 offset;
+    file_utils.Reader file;
+}
+
+public type SourceMgr struct {
+    // TODO put in vector
+    File*[50] files;
+    i32 num_files;
+
+    char[256] error_msg;
+} @(opaque)
+
+public func SourceMgr* SourceMgr.create() {
+    SourceMgr* sm = calloc(1, sizeof(SourceMgr));
+    return sm;
+}
+
+public func void SourceMgr.free(SourceMgr* sm) {
+    for (u32 i=0; i<sm.num_files; i++) {
+        File* f = sm.files[i];
+        free(f.filename);
+        f.file.close();
+    }
+    free(sm);
+}
+
+public func i32 SourceMgr.open(SourceMgr* sm, const char* filename) {
+    file_utils.Reader file;
+    if (!file.open(filename)) {
+        strcpy(sm.error_msg, strerror(*errno2()));
+        return -1;
+    }
+
+    i32 handle = sm.num_files;
+    File* f = calloc(1, sizeof(File));
+
+    u32 offset = 0;
+    if (sm.num_files) offset = sm.files[sm.num_files-1].offset + sm.files[sm.num_files-1].file.size;
+    f.filename = strdup(filename);
+    f.offset = offset;
+    f.file = file;
+
+    sm.files[sm.num_files] = f;
+    sm.num_files++;
+    //sm.dump();
+    return handle;
+}
+
+public func const char* SourceMgr.get_error(SourceMgr* sm) {
+    return sm.error_msg;
+}
+
+public func const char* SourceMgr.get_content(SourceMgr* sm, i32 handle) {
+    // TODO check handle
+    return sm.files[handle].file.data();
+}
+
+public func u32 SourceMgr.get_offset(SourceMgr* sm, i32 handle) {
+    // TODO check handle
+    return sm.files[handle].offset;
+}
+
+func void SourceMgr.dump(const SourceMgr* sm) {
+    printf("SourceMgr  files %u\n", sm.num_files);
+    for (u32 i=0; i<sm.num_files; i++) {
+        File* f = sm.files[i];
+        printf("  [%2u]  %7u  %7u %s\n", i, f.offset, f.file.size, f.filename);
+    }
+}
+
+public type Location struct {
+    u32 line;
+    u32 column;
+    const char* filename;   // no ownership
+}
+
+func const File* find_file(const SourceMgr* sm, u32 loc) {
+    for (u32 i=0; i<sm.num_files; i++) {
+        File* f = sm.files[i];
+        if (loc >= f.offset && loc < f.offset + f.file.size) return f;
+    }
+    return nil;
+}
+
+func void find_line_col(const char* data, u32 offset, Location* loc) {
+    const char* line = data;
+    u32 line_nr = 1;
+    for (u32 i=0; i<offset; i++) {
+        if (data[i] == '\n') {
+            line_nr++;
+            line = data + i + 1;
+        }
+    }
+    loc.line = line_nr;
+    loc.column = cast<u32>(&data[offset] - line) + 1;
+}
+
+public func Location SourceMgr.locate(const SourceMgr* sm, u32 loc) {
+    Location l = { 0, 0, "unknown" }
+    const File* f = find_file(sm, loc);
+    if (f) {
+        l.filename = f.filename;
+        u32 offset = loc - f.offset;
+        find_line_col(f.file.data(), offset, &l);
+    }
+    return l;
+}
+

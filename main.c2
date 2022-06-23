@@ -1,13 +1,14 @@
 module c2c_main;
 
-import file_utils;
 import c2_tokenizer local;
+import c2_source_mgr local;
+import color;
 
 import stdio local;
 import string local;
-import c_errno local;
 import sys_time;
 
+// TODO move to utils
 func u64 now() {
     sys_time.Timeval tv;
     sys_time.gettimeofday(&tv, nil);
@@ -17,6 +18,7 @@ func u64 now() {
     return now64;
 }
 
+// TEMP HERE
 char[1024*1024] alloc_buf;
 u32 alloc_idx;
 
@@ -29,12 +31,37 @@ func const char* alloc(void* arg, const char* value, u32 len) {
     return start;
 }
 
-func void parse_file(const char* data) {
+SourceMgr* sm;
+
+public func void dump_token(const Token* tok) {
+    if (tok.kind >= TokenKind.KW_as && tok.kind <= TokenKind.KW_while) {
+        printf("%s%10s%s", color.Green, tok.str(), color.Normal);
+        return;
+    }
+    printf("%10s   %u TODO", tok.str(), tok.loc.loc);
+    switch (tok.kind) {
+    case TokenKind.Identifier:
+        printf("  %s%s%s", color.Cyan, tok.text_value, color.Normal);
+        break;
+    case TokenKind.NumberLiteral:
+        printf("  %s%s%s", color.Cyan, tok.text_value, color.Normal);
+        break;
+    case TokenKind.Error:
+        printf("  %s%s%s", color.Red, tok.error_msg, color.Normal);
+        break;
+    default:
+        break;
+    }
+    printf("\n");
+}
+
+
+func void parse_file(i32 sm_handle) {
     Tokenizer tokenizer;
     char[256] error_msg;
     error_msg[0] = 0;
     alloc_idx = 0;
-    tokenizer.init(data, 0, error_msg, alloc, nil);
+    tokenizer.init(sm.get_content(sm_handle), sm.get_offset(sm_handle), error_msg, alloc, nil);
     Token tok;
     tok.init();
 
@@ -44,9 +71,13 @@ func void parse_file(const char* data) {
     u32 token_count = 0;
     while (tok.more) {
         tokenizer.lex(&tok);
-        //tok.dump();
+        //dump_token(&tok);
         //count[tok.kind]++;
         token_count++;
+    }
+    if (tok.kind == TokenKind.Error) {
+        c2_source_mgr.Location loc = sm.locate(tok.loc.loc);
+        printf("%s:%u:%u: %serror:%s %s\n",  loc.filename, loc.line, loc.column, color.Red, color.Normal, tok.error_msg);
     }
     u64 t2 = now();
 
@@ -63,22 +94,24 @@ public func i32 main(i32 argc, char** argv) {
         return -1;
     }
 
+    sm = SourceMgr.create();
+
     for (i32 i=1; i<argc; i++) {
         const char* filename = argv[i];
         printf("------ %s ------\n", filename);
 
-        file_utils.Reader file;
-        if (!file.open(filename)) {
-            fprintf(stderr, "Error opening file: %s\n", strerror(*errno2()));
+        i32 handle = sm.open(filename);
+        if (handle == -1) {
+            fprintf(stderr, "Error opening file: %s\n", sm.get_error());
             return -1;
         }
 
         for (i32 j=0; j<100; j++) {
-            parse_file(file.data());
+            parse_file(handle);
         }
-
-        file.close();
     }
+
+    sm.free();
 
 	return 0;
 }

@@ -8,5 +8,6 @@ executable c2c
     common/file/reader.c2
     common/color.c2
     c2_tokenizer.c2
+    c2_source_mgr.c2
 	main.c2
 end
