@@ -320,6 +320,10 @@ public func const char* Token.str(const Token* tok) {
     return token_names[tok.kind];
 }
 
+public func const char* kind2str(TokenKind kind) {
+    return token_names[kind];
+}
+
 func bool identifier_initial_char(char c) {
     if (c >= 'a' && c <= 'z') return true;
     if (c >= 'A' && c <= 'Z') return true;

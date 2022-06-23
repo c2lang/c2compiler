@@ -6,6 +6,16 @@ import c2_tokenizer local;
 import stdio local;
 import string local;
 import c_errno local;
+import sys_time;
+
+func u64 now() {
+    sys_time.Timeval tv;
+    sys_time.gettimeofday(&tv, nil);
+    u64 now64 = cast<u64>(tv.tv_sec);
+    now64 *= 1000000;
+    now64 += tv.tv_usec;
+    return now64;
+}
 
 func void parse_file(const char* data) {
     Tokenizer tokenizer;
@@ -14,9 +24,23 @@ func void parse_file(const char* data) {
     tokenizer.init(data, error_msg);
     Token tok;
     tok.init();
+
+    u32[enum_max(TokenKind)] count = { 0 }
+
+    u64 t1 = now();
+    u32 token_count = 0;
     while (tok.more) {
         tokenizer.lex(&tok);
-        tok.dump();
+        //tok.dump();
+        //count[tok.kind]++;
+        //token_count++;
+    }
+    u64 t2 = now();
+
+    printf("--- %u tokens (%llu usec) ---\n", token_count, t2 - t1);
+    for (u8 i=0; i<elemsof(count); i++) {
+        if (count[i] == 0) continue;
+        printf("%5u  %10s  %4.1f %%\n", count[i], kind2str(i), count[i] * 100.0 / token_count);
     }
 }
 
@@ -36,7 +60,9 @@ public func i32 main(i32 argc, char** argv) {
             return -1;
         }
 
-        parse_file(file.data());
+        for (i32 j=0; j<100; j++) {
+            parse_file(file.data());
+        }
 
         file.close();
     }
