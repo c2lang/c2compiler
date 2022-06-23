@@ -1,1 +1,6 @@
-- write tokenizer
+Tokenizer:
+- multi-line comment
+- keywords
+- use lookup table per char
+- use SourceManager (no need to update column + line every time)
+

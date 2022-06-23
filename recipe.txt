@@ -6,6 +6,7 @@ executable c2c
 	$warnings no-unused
 	$generate-c single-module
     common/file/reader.c2
+    common/color.c2
     c2_tokenizer.c2
 	main.c2
 end

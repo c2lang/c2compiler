@@ -2,8 +2,11 @@ module c2_tokenizer;
 import string local;
 import stdio local;
 import ctype local;
+import color;
+// TEMP
+import stdlib local;
 
-type Location struct {
+public type Location struct {   // TODO use SourceMgr
     u32 line;
     u32 column;
 }
@@ -14,18 +17,64 @@ func const char* Location.str(const Location* loc) {
     return msg;
 }
 
-type TokenKind enum u8 {
+// TODO keywords
+
+
+// TODO order by frequency
+public type TokenKind enum u8 {
     None,
-    Plain_Scalar,
-    Single_Quoted_Scalar,
-    Double_Quoted_Scalar,
+    Identifier,
+    NumberLiteral,
+    CharLiteral,
+    StringLiteral,
+    LParen,
+    RParen,
+    LSquare,
+    RSquare,
+    LBrace,
+    RBrace,
+    Exclaim,
+    ExclaimEqual,
+    Star,
+    StarEqual,
+    Amp,
+    AmpAmp,
+    AmpEqual,
+    Pipe,
+    PipePipe,
+    PipeEqual,
+    Equal,
+    EqualEqual,
+    Semicolon,
     Colon,
-    Dash,
-    Indent,
-    Dedent,
-    Doc_Start,
-    Doc_End,
-    Directive,
+    At,
+    Caret,
+    CaretEqual,
+    Question,
+    Dot,
+    Ellipsis,
+    Comma,
+    Plus,
+    PlusPlus,
+    PlusEqual,
+    Minus,
+    MinusMinus,
+    MinusEqual,
+    Tilde,
+    Slash,
+    SlashEqual,
+    Percent,
+    PercentEqual,
+    Less,
+    LessLess,
+    LessEqual,
+    LessLessEqual,
+    Greater,
+    GreaterGreater,
+    GreaterEqual,
+    GreaterGreaterEqual,
+    KW_Module,
+    KW_Import,
     Eof,
     Error,
 }
@@ -33,48 +82,139 @@ type TokenKind enum u8 {
 // NOTE: keep in sync with TokenKind
 const char*[] token_names = {
     "none",
-    "scalar",
-    "'scalar'",
-    "\"scalar\"",
+    "identifier",
+    "number",
+    "char",
+    "string",
+    "(",
+    ")",
+    "[",
+    "]",
+    "{",
+    "}",
+    "!",
+    "!=",
+    "*",
+    "*=",
+    "&",
+    "&&",
+    "&=",
+    "|",
+    "||",
+    "|=",
+    "=",
+    "==",
+    ";",
     ":",
-    "-",
-    "indent",
-    "dedent",
-    "---",
+    "@",
+    "^",
+    "^=",
+    "?",
+    ".",
     "...",
+    ",",
+    "+",
+    "++",
+    "+=",
+    "-",
+    "--",
+    "-=",
+    "~",
+    "/",
+    "/=",
     "%",
+    "%=",
+    "<",
+    "<<",
+    "<=",
+    "<<=",
+    ">",
+    ">>",
+    ">=",
+    ">>=",
+    "module",
+    "import",
     "eof",
     "error",
 }
 
-func const char* Token.str(const Token* tok) {
+//static_assert(elemsof(TokenKind) == elemsof(token_names), "should be the same");
+
+public func const char* Token.str(const Token* tok) {
     return token_names[tok.kind];
 }
 
-type Token struct {
-    Location loc;
-    TokenKind kind;
-    bool same_line;
-    union {
-        const char* error_msg;  // ERROR
-        u32 text_idx;           // SCALAR, DIRECTIVE
-        i32 indent;             // INDENT, DEDENT
-    }
+func bool identifier_initial_char(char c) {
+    if (c >= 'a' && c <= 'z') return true;
+    if (c >= 'A' && c <= 'Z') return true;
+    return false;
 }
 
-type Tokenizer struct {
+func bool identifier_char(char c) {
+    // TODO use lookup table (same as for initial?)
+    if (c >= 'a' && c <= 'z') return true;
+    if (c >= 'A' && c <= 'Z') return true;
+    if (c >= '0' && c <= '9') return true;
+    if (c == '_') return true;
+    return false;
+}
+
+func TokenKind check_keyword_or_identifier(const char* cur) {
+    if (strncmp(cur, "module", 6) == 0 && !isalpha(cur[6])) {
+        return TokenKind.KW_Module;
+    }
+    if (strncmp(cur, "import", 6) == 0 && !isalpha(cur[6])) {
+        return TokenKind.KW_Import;
+    }
+    return TokenKind.Identifier;
+}
+
+public type Token struct {
+    Location loc;
+    TokenKind kind;
+    union {
+        const char* error_msg;  // ERROR
+        const char* text_value; // Identifier, NumberLiteral
+        char char_value; // CharLiteral
+    }
+    bool more;
+}
+
+public func void Token.init(Token* tok) {
+    tok.kind = TokenKind.None;
+    tok.more = true;
+}
+
+public func void Token.dump(const Token* tok) {
+    printf("%10s   %u:%u", tok.str(), tok.loc.line, tok.loc.column);
+    switch (tok.kind) {
+    case TokenKind.Identifier:
+        printf("  %s%s%s", color.Cyan, tok.text_value, color.Normal);
+        break;
+    case TokenKind.NumberLiteral:
+        printf("  %s%s%s", color.Cyan, tok.text_value, color.Normal);
+        break;
+    case TokenKind.Error:
+        printf("  %s%s%s", color.Red, tok.error_msg, color.Normal);
+        break;
+    default:
+        break;
+    }
+    printf("\n");
+}
+
+public type Tokenizer struct {
     const char* cur;
     Location loc;
     const char* input_start;
     char* error_msg;
     i32 cur_indent;
-    bool same_line;
-    //Data* data;
+    //Data* data;   // TODO for mem-allocs
 
     Token next;
 }
 
-func void Tokenizer.init(Tokenizer* t, const char* input, /*Data* d,*/ char* error_msg) {
+public func void Tokenizer.init(Tokenizer* t, const char* input, /*Data* d,*/ char* error_msg) {
     memset(t, 0, sizeof(Tokenizer));
     t.cur = input;
     t.input_start = input;
@@ -85,37 +225,25 @@ func void Tokenizer.init(Tokenizer* t, const char* input, /*Data* d,*/ char* err
     t.next.kind = TokenKind.None;
 }
 
-func void Tokenizer.lex(Tokenizer* t, Token* result) {
+public func void Tokenizer.lex(Tokenizer* t, Token* result) {
     if (t.next.kind != TokenKind.None) {
         memcpy(result, &t.next, sizeof(Token));
         t.next.kind = TokenKind.None;
         return;
     }
 
-    result.same_line = t.same_line;
-    t.same_line = true;
-    result.text_idx = 0;
-
     while (1) {
-        // dont emit Dedent for empty lines
-        if (t.loc.column == 1 && t.cur_indent && *t.cur != ' ' && *t.cur != '\r' && *t.cur != '\n') {
-            result.loc = t.loc;
-            result.kind = TokenKind.Dedent;
-            result.indent = 0;
-            t.cur_indent = 0;
-            t.same_line = false;
-            return;
-        }
-
+        // TODO use jump/lookup table
         switch (*t.cur) {
         case 0:
             result.loc = t.loc;
             result.kind = TokenKind.Eof;
+            result.more = false;
             return;
         case '\t':
-            sprintf(t.error_msg, "file contains TAB characters %s", t.loc.str());
-            t.error(result);
-            return;
+            t.cur++;
+            t.loc.column++;
+            break;
         case '\r':
             t.cur++;
             if (*t.cur != '\n') {
@@ -128,208 +256,461 @@ func void Tokenizer.lex(Tokenizer* t, Token* result) {
             t.cur++;
             t.loc.line++;
             t.loc.column = 1;
-            t.same_line = true;
-            result.same_line = false;
             break;
         case ' ':
-            if (t.loc.column == 1) {
-                if (t.lex_indent(result)) return;
-                break;
-            }
             t.cur++;
             t.loc.column++;
             break;
-        case '"':
-            t.lex_quoted_string(result, '"');
+        case '(':
+            result.loc = t.loc;
+            result.kind = TokenKind.LParen;
+            t.cur++;
+            t.loc.column++;
             return;
-        case '#':
-            t.lex_comment();
-            break;
-        case '%':
-            t.lex_directive(result);
+        case ')':
+            result.loc = t.loc;
+            result.kind = TokenKind.RParen;
+            t.cur++;
+            t.loc.column++;
+            return;
+        case ';':
+            result.loc = t.loc;
+            result.kind = TokenKind.Semicolon;
+            t.cur++;
+            t.loc.column++;
+            return;
+        case ':':
+            result.loc = t.loc;
+            result.kind = TokenKind.Colon;
+            t.cur++;
+            t.loc.column++;
+            return;
+        case '@':
+            result.loc = t.loc;
+            result.kind = TokenKind.At;
+            t.cur++;
+            t.loc.column++;
+            return;
+        case '^':
+            result.loc = t.loc;
+            t.cur++;
+            t.loc.column++;
+            if (*t.cur == '=') {
+                t.cur++;
+                t.loc.column++;
+                result.kind = TokenKind.CaretEqual;
+                return;
+            }
+            result.kind = TokenKind.Caret;
+            return;
+        case '?':
+            result.loc = t.loc;
+            result.kind = TokenKind.Question;
+            t.cur++;
+            t.loc.column++;
+            return;
+        case '.':
+            result.loc = t.loc;
+            t.cur++;
+            t.loc.column++;
+            if (t.cur[0] == '.' && t.cur[1] == '.') {
+                t.cur += 2;
+                t.loc.column += 2;
+                result.kind = TokenKind.Ellipsis;
+            } else {
+                result.kind = TokenKind.Dot;
+            }
             return;
         case '\'':
-            t.lex_quoted_string(result, '\'');
+            t.lex_char_literal(result);
+            return;
+        case '"':
+            t.lex_string_literal(result);
+            return;
+        case ',':
+            result.loc = t.loc;
+            result.kind = TokenKind.Comma;
+            t.cur++;
+            t.loc.column++;
             return;
         case '-':
-            // if followed by SPACE or NEWLINE, it is a dash
-            if (t.cur[1] == ' ' || t.cur[1] == '\r' || t.cur[1] == '\n') {
+            result.loc = t.loc;
+            t.cur++;
+            t.loc.column++;
+            if (*t.cur == '-') {
                 t.cur++;
-                result.loc = t.loc;
-                result.kind = TokenKind.Dash;
+                t.loc.column++;
+                result.kind = TokenKind.MinusMinus;
+                return;
+            }
+            if (*t.cur == '=') {
+                t.cur++;
+                t.loc.column++;
+                result.kind = TokenKind.MinusEqual;
+                return;
+            }
+            result.kind = TokenKind.Minus;
+            return;
+        case '+':
+            result.loc = t.loc;
+            t.cur++;
+            t.loc.column++;
+            if (*t.cur == '+') {
+                t.cur++;
+                t.loc.column++;
+                result.kind = TokenKind.PlusPlus;
+                return;
+            }
+            if (*t.cur == '=') {
+                t.cur++;
+                t.loc.column++;
+                result.kind = TokenKind.PlusEqual;
+                return;
+            }
+            result.kind = TokenKind.Plus;
+            return;
+        case '~':
+            result.loc = t.loc;
+            result.kind = TokenKind.Tilde;
+            t.cur++;
+            t.loc.column++;
+            return;
+        case '*':
+            result.loc = t.loc;
+            t.cur++;
+            t.loc.column++;
+            if (*t.cur == '=') {
+                result.kind = TokenKind.StarEqual;
+                t.cur++;
+                t.loc.column++;
+            } else {
+                result.kind = TokenKind.Star;
+            }
+            return;
+        case '&':
+            result.loc = t.loc;
+            t.cur++;
+            t.loc.column++;
+            if (*t.cur == '&') {
+                result.kind = TokenKind.AmpAmp;
+                t.cur++;
                 t.loc.column++;
                 return;
             }
-
-            if (t.loc.column == 1 && t.cur[1] == '-' && t.cur[2] == '-') {
-                t.cur += 3;
-                result.loc = t.loc;
-                result.kind = TokenKind.Doc_Start;
-                t.loc.column += 3;
+            if (*t.cur == '=') {
+                result.kind = TokenKind.AmpEqual;
+                t.cur++;
+                t.loc.column++;
                 return;
             }
-
-            t.lex_string(result);
+            result.kind = TokenKind.Amp;
             return;
-        case '.':
-            // can be DOCUMENT_END at start, otherwise scalar
-            if (t.loc.column == 1 && t.cur[1] == '.' && t.cur[2] == '.') {
-                result.loc = t.loc;
-                result.kind = TokenKind.Doc_End;
-                t.cur += 3;
-                t.loc.column += 3;
-                return;
-            }
-            t.lex_string(result);
-            return;
-        case ':':
-            t.cur++;
+        case '|':
             result.loc = t.loc;
-            result.kind = TokenKind.Colon;
+            t.cur++;
+            t.loc.column++;
+            if (*t.cur == '|') {
+                result.kind = TokenKind.PipePipe;
+                t.cur++;
+                t.loc.column++;
+                return;
+            }
+            if (*t.cur == '=') {
+                result.kind = TokenKind.PipeEqual;
+                t.cur++;
+                t.loc.column++;
+                return;
+            }
+            result.kind = TokenKind.Pipe;
+            return;
+        case '=':
+            result.loc = t.loc;
+            t.cur++;
+            t.loc.column++;
+            if (*t.cur == '=') {
+                result.kind = TokenKind.EqualEqual;
+                t.cur++;
+                t.loc.column++;
+            } else {
+                result.kind = TokenKind.Equal;
+            }
+            return;
+        case '[':
+            result.loc = t.loc;
+            result.kind = TokenKind.LSquare;
+            t.cur++;
             t.loc.column++;
             return;
-                default:
-            if (is_string(*t.cur)) {
-                t.lex_string(result);
+        case ']':
+            result.loc = t.loc;
+            result.kind = TokenKind.RSquare;
+            t.cur++;
+            t.loc.column++;
+            return;
+        case '{':
+            result.loc = t.loc;
+            result.kind = TokenKind.LBrace;
+            t.cur++;
+            t.loc.column++;
+            return;
+        case '}':
+            result.loc = t.loc;
+            result.kind = TokenKind.RBrace;
+            t.cur++;
+            t.loc.column++;
+            return;
+        case '!':
+            result.loc = t.loc;
+            t.cur++;
+            t.loc.column++;
+            if (*t.cur == '=') {
+                result.kind = TokenKind.ExclaimEqual;
+                t.cur++;
+                t.loc.column++;
+            } else {
+                result.kind = TokenKind.Exclaim;
+            }
+            return;
+        case '<':
+            result.loc = t.loc;
+            t.cur++;
+            t.loc.column++;
+            if (*t.cur == '=') {
+                t.cur++;
+                t.loc.column++;
+                result.kind = TokenKind.LessEqual;
                 return;
             }
-            sprintf(t.error_msg, "unhandled char 0x%02x (%c) %s",
-                *t.cur, isprint(*t.cur) ? *t.cur : ' ', t.loc.str());
+            if (*t.cur == '<') {
+                t.cur++;
+                t.loc.column++;
+                if (*t.cur == '=') {
+                    t.cur++;
+                    t.loc.column++;
+                    result.kind = TokenKind.LessLessEqual;
+                }
+                result.kind = TokenKind.LessLess;
+                return;
+            }
+            result.kind = TokenKind.Less;
+            return;
+        case '>':
+            result.loc = t.loc;
+            t.cur++;
+            t.loc.column++;
+            if (*t.cur == '=') {
+                t.cur++;
+                t.loc.column++;
+                result.kind = TokenKind.GreaterEqual;
+                return;
+            }
+            if (*t.cur == '>') {
+                t.cur++;
+                t.loc.column++;
+                if (*t.cur == '=') {
+                    t.cur++;
+                    t.loc.column++;
+                    result.kind = TokenKind.GreaterGreaterEqual;
+                }
+                result.kind = TokenKind.GreaterGreater;
+                return;
+            }
+            result.kind = TokenKind.Greater;
+            return;
+        case '/':
+            result.loc = t.loc;
+            t.cur++;
+            t.loc.column++;
+            if (*t.cur == '=') {
+                result.kind = TokenKind.SlashEqual;
+                t.cur++;
+                t.loc.column++;
+                return;
+            }
+            if (*t.cur == '/') {
+                t.skip_line_comment();
+                // TODO sometimes have TokenKind.Comment
+                continue;
+            }
+            result.kind = TokenKind.Slash;
+            return;
+        case '%':
+            result.loc = t.loc;
+            t.cur++;
+            t.loc.column++;
+            if (*t.cur == '=') {
+                result.kind = TokenKind.PercentEqual;
+                t.cur++;
+                t.loc.column++;
+                return;
+            }
+            result.kind = TokenKind.Percent;
+            return;
+        default:
+            // TODO create char lookup table with actions (identifier / identifier_or_keyword)
+            if (identifier_initial_char(*t.cur)) {
+                result.kind = check_keyword_or_identifier(t.cur);
+                result.loc = t.loc;
+                switch (result.kind) {
+                case TokenKind.Identifier:
+                    t.lex_identifier(result);
+                    break;
+                case TokenKind.KW_Module:
+                    t.cur += 6;
+                    t.loc.column += 6;
+                    break;
+                case TokenKind.KW_Import:
+                    t.cur += 6;
+                    t.loc.column += 6;
+                    break;
+                default:
+                    break;
+                }
+                return;
+            }
+            if (isdigit(*t.cur)) {
+                t.lex_number(result);
+                return;
+            }
+            sprintf(t.error_msg, "unhandled char '%c' %s", *t.cur, t.loc.str());
             t.error(result);
             return;
         }
     }
 }
 
-func Token* Tokenizer.lex_next(Tokenizer* t) {
+public func Token* Tokenizer.lex_next(Tokenizer* t) {
     if (t.next.kind == TokenKind.None) t.lex(&t.next);
 
     return &t.next;
 }
 
-func bool Tokenizer.lex_indent(Tokenizer* t, Token* result) {
-    const char* start = t.cur;
-    while (*t.cur == ' ') t.cur++;
-
-    i32 indent = cast<i32>(t.cur - start);
-    result.loc = t.loc;
-    t.loc.column += indent;
-    if (t.cur_indent == indent) return false;
-
-    if (t.cur_indent > indent) result.kind = TokenKind.Dedent;
-    else result.kind = TokenKind.Indent;
-
-    result.indent = indent;
-    t.cur_indent = indent;
-    return true;
-
-}
-
-func void Tokenizer.lex_comment(Tokenizer* t) {
-    const char* start = t.cur;
-    t.cur++;
-    while (1) {
-        switch (*t.cur) {
-        case 0: fallthrough;
-        case '\r':  fallthrough;
-        case '\n':
-            t.loc.column += (t.cur - start);
-            return;
-        default:
-            t.cur++;
-            break;
-        }
-    }
-}
-
-func void Tokenizer.lex_directive(Tokenizer* t, Token* result) {
-    t.cur++;
-    const char* start = t.cur;
-    u32 count;
-    while (1) {
-        switch (*t.cur) {
-        case 0: fallthrough;
-        case '\r':  fallthrough;
-        case '\n':
-            goto out;
-        default:
-            t.cur++;
-            break;
-        }
-    }
-out:
-    count = cast<u32>(t.cur - start);
-    t.error_msg[count] = 0; // HUH?
-    result.loc = t.loc;
-    result.kind = TokenKind.Directive;
-    //result.text_idx = t.data.add_text(start, count);
-    t.loc.column += count + 1;
-}
-
-func void Tokenizer.lex_quoted_string(Tokenizer* t, Token* result, char delim) {
-    t.cur++;
-    const char* start = t.cur;
-    u32 count;
-    while (1) {
-        switch (*t.cur) {
-        case 0: fallthrough;
-        case '\r':  fallthrough;
-        case '\n':
-            t.loc.column += (t.cur - start);
-            sprintf(t.error_msg, "unterminated string %s", t.loc.str());
-            t.error(result);
-            return;
-        default:
-            if (*t.cur == delim) goto out;
-            t.cur++;
-            break;
-        }
-    }
-out:
-    count = cast<u32>(t.cur - start);
-    t.cur++;    // skip terminating delimiter
-    result.loc = t.loc;
-    result.kind = (delim == '"') ? TokenKind.Double_Quoted_Scalar : TokenKind.Single_Quoted_Scalar;
-    //result.text_idx = t.data.add_text(start, count);
-    t.loc.column += count + 2;  // add quotes
-}
-
-func bool is_string(char c) {
-    if (isalpha(c) || isdigit(c)
-        || c == '_' || c == '-'
-        || c == '.' || c == '/'
-        || c == '~') {
-        return true;
-    }
-    return false;
-}
-
-func void Tokenizer.lex_string(Tokenizer* t, Token* result) {
-    // NOTE: multiple words with only space in between are merged
-    const char* start = t.cur;
-    t.cur++;
-    while (1) {
-        char c = *t.cur;
-        if (is_string(c)) {
-            t.cur++;
-            continue;
-        }
-        if (c == ' ' && is_string(t.cur[1])) {
-            t.cur += 2;
-            continue;
-        }
-        break;
-    }
-
-    u32 count = cast<u32>(t.cur - start);
-    result.loc = t.loc;
-    result.kind = TokenKind.Plain_Scalar;
-    //result.text_idx = t.data.add_text(start, count);
-    t.loc.column += count;
-}
-
 func void Tokenizer.error(Tokenizer* t, Token* result) {
     result.loc = t.loc;
     result.kind = TokenKind.Error;
+    // TODO end location print here
     result.error_msg = t.error_msg;
+    result.more = false;
 }
+
+func const char* alloc(const char* text, u32 len) {
+    // TEMP
+    char* r = malloc(len + 1);
+    memcpy(r, text, len);
+    r[len] = 0;
+    return r;
+}
+
+func void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
+    // NOTE: result.kind and result.loc are already set
+    const char* start = t.cur;
+    const char* end = t.cur + 1;
+    while (identifier_char(*end)) end++;
+
+    u32 len = cast<u32>(end - start);
+    t.cur += len;
+    t.loc.column += len;
+    result.text_value = alloc(start, len);
+}
+
+func void Tokenizer.lex_number(Tokenizer* t, Token* result) {
+    result.kind = TokenKind.NumberLiteral;
+    result.loc = t.loc;
+    const char* start = t.cur;
+    const char* end = t.cur + 1;
+    while (isdigit(*end)) end++;
+
+    u32 len = cast<u32>(end - start);
+    t.cur += len;
+    t.loc.column += len;
+    result.text_value = alloc(start, len);
+}
+
+func void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
+    result.kind = TokenKind.CharLiteral;
+    result.loc = t.loc;
+
+    if (t.cur[1] == '\\') {
+        t.cur++;
+        t.loc.column++;
+        switch (t.cur[1]) {
+        case 'n':
+            result.char_value = '\n';
+            break;
+        case 'r':
+            result.char_value = '\r';
+            break;
+        case 't':
+            result.char_value = '\t';
+            break;
+        case '\\':
+            result.char_value = '\\';
+            break;
+        case '\'':
+            result.char_value = '\'';
+            break;
+        default:
+            sprintf(t.error_msg, "unknown escape sequence \\%c %s", t.cur[1], t.loc.str());
+            t.error(result);
+            return;
+        }
+    } else {
+        result.char_value = t.cur[1];
+    }
+
+    if (t.cur[2] != '\'') {
+        sprintf(t.error_msg, "missing terminated ' character %s", t.loc.str());
+        t.error(result);
+        return;
+    }
+
+    t.cur += 3;
+    t.loc.column += 3;
+}
+
+func void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
+    result.kind = TokenKind.StringLiteral;
+    result.loc = t.loc;
+    t.cur++;
+    const char* start = t.cur;
+    u32 len;
+
+    while (1) {
+        switch (*t.cur) {
+        case 0: fallthrough;
+        case '\r': fallthrough;
+        case '\n':
+            t.loc.column += (t.cur - start);
+             sprintf(t.error_msg, "unterminated string %s", t.loc.str());
+             t.error(result);
+             return;
+        case '"':
+            goto out;
+            break;
+        default:
+            t.cur++;
+            break;
+        }
+    }
+out:
+    len = cast<u32>(t.cur - start);
+    t.cur++;    // skip end delimiter
+    result.text_value = alloc(start, len);
+    t.loc.column += len + 2;  // add quotes
+}
+
+func void Tokenizer.skip_line_comment(Tokenizer* t) {
+    t.cur += 2;
+
+    const char* start = t.cur;
+    const char* end = start;
+    while (*end) {
+        if (*end == '\r' || *end == '\n') break;
+        end++;
+    }
+
+    u32 len = cast<u32>(end - start);
+    t.cur += len;
+    t.loc.column += len;
+}
+
