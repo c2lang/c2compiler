@@ -21,31 +21,82 @@ type Keyword struct {
     u8 len;
 }
 
-const Keyword[] Keywords = {
+// TEMP until C2C allows this
+const Keyword*[] keywords = {
+    Keywords_a,
+    Keywords_b,
+    Keywords_c,
+    Keywords_d,
+    Keywords_e,
+    Keywords_f,
+    Keywords_g,
+    nil,
+    Keywords_i,
+    nil,
+    nil,
+    Keywords_l,
+    Keywords_m,
+    Keywords_n,
+    Keywords_o,
+    Keywords_p,
+    nil,
+    Keywords_r,
+    Keywords_s,
+    Keywords_t,
+    Keywords_u,
+    Keywords_v,
+    Keywords_w,
+    nil,
+    nil,
+    nil,
+}
+
+const Keyword[] Keywords_a = {
     { "as", TokenKind.KW_as, 2 },
     { "asm", TokenKind.KW_asm, 3 },
     { "auto", TokenKind.KW_auto, 4, },
+    { nil, TokenKind.None, 0 },
+}
+const Keyword[] Keywords_b = {
     { "bool", TokenKind.KW_bool, 4 },
     { "break", TokenKind.KW_break, 5 },
+    { nil, TokenKind.None, 0 },
+}
+const Keyword[] Keywords_c = {
     { "case", TokenKind.KW_case, 4 },
     { "cast", TokenKind.KW_cast, 4 },
     { "char", TokenKind.KW_char, 4 },
     { "const", TokenKind.KW_const, 5 },
     { "continue", TokenKind.KW_continue, 8 },
+    { nil, TokenKind.None, 0 },
+}
+const Keyword[] Keywords_d = {
     { "default", TokenKind.KW_default, 8 },
     { "do", TokenKind.KW_do, 2 },
+    { nil, TokenKind.None, 0 },
+}
+const Keyword[] Keywords_e = {
     { "elemsof", TokenKind.KW_elemsof, 7 },
     { "else", TokenKind.KW_else, 4 },
     { "enum_max", TokenKind.KW_enum_max, 8 },
     { "enum_min", TokenKind.KW_enum_min, 8 },
     { "enum", TokenKind.KW_enum, 4 },
+    { nil, TokenKind.None, 0 },
+}
+const Keyword[] Keywords_f = {
     { "f32", TokenKind.KW_f32, 3 },
     { "f64", TokenKind.KW_f64, 3 },
     { "fallthrough", TokenKind.KW_fallthrough, 11 },
     { "false", TokenKind.KW_false, 5 },
     { "for", TokenKind.KW_for, 3 },
     { "func", TokenKind.KW_func, 4 },
+    { nil, TokenKind.None, 0 },
+}
+const Keyword[] Keywords_g = {
     { "goto", TokenKind.KW_goto, 4 },
+    { nil, TokenKind.None, 0 },
+}
+const Keyword[] Keywords_i = {
     { "i16", TokenKind.KW_i16, 3 },
     { "i32", TokenKind.KW_i32, 3 },
     { "i64", TokenKind.KW_i64, 3 },
@@ -53,33 +104,67 @@ const Keyword[] Keywords = {
     { "if", TokenKind.KW_if, 2 },
     { "import", TokenKind.KW_import, 6 },
     { "isize", TokenKind.KW_isize, 5 },
+    { nil, TokenKind.None, 0 },
+}
+const Keyword[] Keywords_l = {
     { "local", TokenKind.KW_local, 5 },
+    { nil, TokenKind.None, 0 },
+}
+const Keyword[] Keywords_m = {
     { "module", TokenKind.KW_module, 6 },
+    { nil, TokenKind.None, 0 },
+}
+const Keyword[] Keywords_n = {
     { "nil", TokenKind.KW_nil, 3 },
+    { nil, TokenKind.None, 0 },
+}
+const Keyword[] Keywords_o = {
     { "offsetof", TokenKind.KW_offsetof, 8 },
+    { nil, TokenKind.None, 0 },
+}
+const Keyword[] Keywords_p = {
     { "public", TokenKind.KW_public, 6 },
+    { nil, TokenKind.None, 0 },
+}
+const Keyword[] Keywords_r = {
     { "reg16", TokenKind.KW_reg16, 5 },
     { "reg32", TokenKind.KW_reg32, 5 },
     { "reg64", TokenKind.KW_reg64, 5 },
     { "reg8", TokenKind.KW_reg8, 4 },
     { "return", TokenKind.KW_return, 6 },
+    { nil, TokenKind.None, 0 },
+}
+const Keyword[] Keywords_s = {
     { "sizeof", TokenKind.KW_sizeof, 6 },
     { "sswitch", TokenKind.KW_sswitch, 7 },
     { "static_assert", TokenKind.KW_static_assert, 13 },
     { "struct", TokenKind.KW_struct, 6 },
     { "switch", TokenKind.KW_switch, 6 },
+    { nil, TokenKind.None, 0 },
+}
+const Keyword[] Keywords_t = {
     { "to_container", TokenKind.KW_to_container, 12 },
     { "true", TokenKind.KW_true, 4 },
     { "type", TokenKind.KW_type, 4 },
+    { nil, TokenKind.None, 0 },
+}
+const Keyword[] Keywords_u = {
     { "u16", TokenKind.KW_u16, 3 },
     { "u32", TokenKind.KW_u32, 3 },
     { "u64", TokenKind.KW_u64, 3 },
     { "u8", TokenKind.KW_u8, 2 },
     { "union", TokenKind.KW_union, 5 },
     { "usize", TokenKind.KW_usize, 5 },
+    { nil, TokenKind.None, 0 },
+}
+const Keyword[] Keywords_v = {
     { "void", TokenKind.KW_void, 4 },
     { "volatile", TokenKind.KW_volatile, 8 },
+    { nil, TokenKind.None, 0 },
+}
+const Keyword[] Keywords_w = {
     { "while", TokenKind.KW_while, 5 },
+    { nil, TokenKind.None, 0 },
 }
 
 // TODO order by frequency
@@ -485,20 +570,26 @@ func bool identifier_char(char c) {
 }
 
 func const Keyword* check_keyword(const char* cp) {
-    // TEMP basic search here
-    for (u32 i=0; i<elemsof(Keywords); i++) {
+    const Keyword* table = keywords[*cp - 'a'];
+    u32 i = 0;
+    while (table[i].name) {
         const char* word = cp;
-        const char* kw = Keywords[i].name;
+        const char* kw = table[i].name;
         u32 idx = 0;
         while (1) {
-            if (kw[idx] == 0) {
-                if (!isalpha(word[idx])) return &Keywords[i];
+            char a = kw[idx];
+            char b = word[idx];
+            if (a == 0) {
+                if (!isalpha(b)) return &table[i];
                 break;
             }
-            if (word[idx] < kw[idx]) return nil;
-            if (word[idx] != kw[idx]) break;
+            if (a != b) {
+                if (b < a) return nil;
+                break;
+            }
             idx++;
         }
+        i++;
     }
 
     return nil;

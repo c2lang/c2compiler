@@ -2,7 +2,7 @@ Tokenizer:
 + keywords
 + print number of each TokenKind
 + use lookup table per char
-- faster keyword lookup
++ faster keyword lookup
 - use SourceManager (no need to update column + line every time)
     -> for now just pass offset number
 - support multi-line comment
