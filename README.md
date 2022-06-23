@@ -1,11 +1,16 @@
-Tokenizer:
+
+## Tokenizer
 + keywords
 + print number of each TokenKind
 + use lookup table per char
 + faster keyword lookup
 + support block comment
 + let error generate line-nr
-- use SourceManager (no need to update column + line every time)
-    -> for now just pass offset number
+
+## SourceManager
+- remove hardcoded file max
+- close files after use (need indication)
+
+## Performance
 - profile application to see where time is spent
 
