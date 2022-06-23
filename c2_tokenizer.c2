@@ -314,6 +314,153 @@ const char*[] token_names = {
 
 //static_assert(elemsof(TokenKind) == elemsof(token_names), "should be the same");
 
+type Action enum u8 {
+    INVALID = 0,
+    TABSPACE,
+    IDENT_OR_KEYWORD,
+    IDENT,
+    DIGIT,
+    LPAREN,
+    RPAREN,
+    LSQUARE,
+    RSQUARE,
+    NEWLINE,
+    EXCLAIM,
+    DQUOTE,
+    SQUOTE,
+    STAR,
+    PLUS,
+    MINUS,
+    COMMA,
+    DOT,
+    PERCENT,
+    SLASH,
+    COLON,
+    SEMI_COLON,
+    LESS,
+    EQUAL,
+    GREATER,
+    QUESTION,
+    AT,
+    AMP,
+    CARET,
+    LBRACE,
+    RBRACE,
+    PIPE,
+    TILDE,
+    CR,
+    EOF,
+}
+
+u8[128] char_lookup = {
+// 0 - 15
+   [  0]  = Action.EOF,
+   ['\t'] = Action.TABSPACE,
+   ['\n'] = Action.NEWLINE,
+   ['\r'] = Action.CR,
+// 16 - 31
+// 32 - 47
+    [' '] = Action.TABSPACE,
+    ['!'] = Action.EXCLAIM,
+    ['"'] = Action.DQUOTE,
+// #
+    ['%'] = Action.PERCENT,
+    ['&'] = Action.AMP,
+   ['\''] = Action.SQUOTE,
+    ['('] = Action.LPAREN,
+    [')'] = Action.RPAREN,
+    ['*'] = Action.STAR,
+    ['+'] = Action.PLUS,
+    [','] = Action.COMMA,
+    ['-'] = Action.MINUS,
+    ['.'] = Action.DOT,
+    ['/'] = Action.SLASH,
+// 48 - 63
+    ['0'] = Action.DIGIT,
+    ['1'] = Action.DIGIT,
+    ['2'] = Action.DIGIT,
+    ['3'] = Action.DIGIT,
+    ['4'] = Action.DIGIT,
+    ['5'] = Action.DIGIT,
+    ['6'] = Action.DIGIT,
+    ['7'] = Action.DIGIT,
+    ['8'] = Action.DIGIT,
+    ['9'] = Action.DIGIT,
+    [':'] = Action.COLON,
+    [';'] = Action.SEMI_COLON,
+    ['<'] = Action.LESS,
+    ['='] = Action.EQUAL,
+    ['>'] = Action.GREATER,
+    ['?'] = Action.QUESTION,
+// 64 - 79
+    ['@'] = Action.AT,
+    ['A'] = Action.IDENT,
+    ['B'] = Action.IDENT,
+    ['C'] = Action.IDENT,
+    ['D'] = Action.IDENT,
+    ['E'] = Action.IDENT,
+    ['F'] = Action.IDENT,
+    ['G'] = Action.IDENT,
+    ['H'] = Action.IDENT,
+    ['I'] = Action.IDENT,
+    ['J'] = Action.IDENT,
+    ['K'] = Action.IDENT,
+    ['L'] = Action.IDENT,
+    ['M'] = Action.IDENT,
+    ['N'] = Action.IDENT,
+    ['O'] = Action.IDENT,
+// 80 - 95
+    ['P'] = Action.IDENT,
+    ['Q'] = Action.IDENT,
+    ['R'] = Action.IDENT,
+    ['S'] = Action.IDENT,
+    ['T'] = Action.IDENT,
+    ['U'] = Action.IDENT,
+    ['V'] = Action.IDENT,
+    ['W'] = Action.IDENT,
+    ['X'] = Action.IDENT,
+    ['Y'] = Action.IDENT,
+    ['Z'] = Action.IDENT,
+    ['['] = Action.LSQUARE,
+    // '\'
+    [']'] = Action.RSQUARE,
+    ['^'] = Action.CARET,
+    //'_'
+// 96 - 111
+    ['a'] = Action.IDENT_OR_KEYWORD,
+    ['b'] = Action.IDENT_OR_KEYWORD,
+    ['c'] = Action.IDENT_OR_KEYWORD,
+    ['d'] = Action.IDENT_OR_KEYWORD,
+    ['e'] = Action.IDENT_OR_KEYWORD,
+    ['f'] = Action.IDENT_OR_KEYWORD,
+    ['g'] = Action.IDENT_OR_KEYWORD,
+    ['h'] = Action.IDENT,
+    ['i'] = Action.IDENT_OR_KEYWORD,
+    ['j'] = Action.IDENT,
+    ['k'] = Action.IDENT,
+    ['l'] = Action.IDENT_OR_KEYWORD,
+    ['m'] = Action.IDENT_OR_KEYWORD,
+    ['n'] = Action.IDENT_OR_KEYWORD,
+    ['o'] = Action.IDENT_OR_KEYWORD,
+// 112 -] 127
+    ['p'] = Action.IDENT_OR_KEYWORD,
+    ['q'] = Action.IDENT,
+    ['r'] = Action.IDENT_OR_KEYWORD,
+    ['s'] = Action.IDENT_OR_KEYWORD,
+    ['t'] = Action.IDENT_OR_KEYWORD,
+    ['u'] = Action.IDENT_OR_KEYWORD,
+    ['v'] = Action.IDENT_OR_KEYWORD,
+    ['w'] = Action.IDENT_OR_KEYWORD,
+    ['x'] = Action.IDENT,
+    ['y'] = Action.IDENT,
+    ['z'] = Action.IDENT,
+    ['{'] = Action.LBRACE,
+    ['|'] = Action.PIPE,
+    ['}'] = Action.RBRACE,
+    ['~'] = Action.TILDE,
+}
+
+
 public func const char* Token.str(const Token* tok) {
     return token_names[tok.kind];
 }
@@ -430,125 +577,93 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
     }
 
     while (1) {
-        // TODO use jump/lookup table
-        switch (*t.cur) {
-        case 0:
-            result.loc = t.loc;
-            result.kind = TokenKind.Eof;
-            result.more = false;
+        Action act = char_lookup[*t.cur];
+        switch (act) {
+        case Action.INVALID:
+            sprintf(t.error_msg, "invalid char '%c' %s", *t.cur, t.loc.str());
+            t.error(result);
             return;
-        case '\t':
+        case Action.TABSPACE:
             t.cur++;
             t.loc.column++;
-            break;
-        case '\r':
-            t.cur++;
-            if (*t.cur != '\n') {
-                sprintf(t.error_msg, "unexpected char 0x%02X %s", *t.cur, t.loc.str());
-                t.error(result);
-                return;
+            continue;
+        case Action.IDENT_OR_KEYWORD:
+            result.loc = t.loc;
+            const Keyword* kw = check_keyword(t.cur);
+            if (kw) {
+                result.kind = kw.kind;
+                t.cur += kw.len;
+                t.loc.column += kw.len;
+            } else {
+                t.lex_identifier(result);
             }
-            fallthrough;
-        case '\n':
-            t.cur++;
-            t.loc.line++;
-            t.loc.column = 1;
-            break;
-        case ' ':
-            t.cur++;
-            t.loc.column++;
-            break;
-        case '(':
+            return;
+        case Action.IDENT:
+            t.lex_identifier(result);
+            return;
+        case Action.DIGIT:
+            t.lex_number(result);
+            return;
+        case Action.LPAREN:
             result.loc = t.loc;
             result.kind = TokenKind.LParen;
             t.cur++;
             t.loc.column++;
             return;
-        case ')':
+        case Action.RPAREN:
             result.loc = t.loc;
             result.kind = TokenKind.RParen;
             t.cur++;
             t.loc.column++;
             return;
-        case ';':
+        case Action.LSQUARE:
             result.loc = t.loc;
-            result.kind = TokenKind.Semicolon;
+            result.kind = TokenKind.LSquare;
             t.cur++;
             t.loc.column++;
             return;
-        case ':':
+        case Action.RSQUARE:
             result.loc = t.loc;
-            result.kind = TokenKind.Colon;
+            result.kind = TokenKind.RSquare;
             t.cur++;
             t.loc.column++;
             return;
-        case '@':
-            result.loc = t.loc;
-            result.kind = TokenKind.At;
+        case Action.NEWLINE:
             t.cur++;
-            t.loc.column++;
-            return;
-        case '^':
+            t.loc.line++;
+            t.loc.column = 1;
+            continue;
+        case Action.EXCLAIM:
             result.loc = t.loc;
             t.cur++;
             t.loc.column++;
             if (*t.cur == '=') {
+                result.kind = TokenKind.ExclaimEqual;
                 t.cur++;
                 t.loc.column++;
-                result.kind = TokenKind.CaretEqual;
-                return;
-            }
-            result.kind = TokenKind.Caret;
-            return;
-        case '?':
-            result.loc = t.loc;
-            result.kind = TokenKind.Question;
-            t.cur++;
-            t.loc.column++;
-            return;
-        case '.':
-            result.loc = t.loc;
-            t.cur++;
-            t.loc.column++;
-            if (t.cur[0] == '.' && t.cur[1] == '.') {
-                t.cur += 2;
-                t.loc.column += 2;
-                result.kind = TokenKind.Ellipsis;
             } else {
-                result.kind = TokenKind.Dot;
+                result.kind = TokenKind.Exclaim;
             }
             return;
-        case '\'':
-            t.lex_char_literal(result);
-            return;
-        case '"':
+        case Action.DQUOTE:
             t.lex_string_literal(result);
             return;
-        case ',':
-            result.loc = t.loc;
-            result.kind = TokenKind.Comma;
-            t.cur++;
-            t.loc.column++;
+        case Action.SQUOTE:
+            t.lex_char_literal(result);
             return;
-        case '-':
+        case Action.STAR:
             result.loc = t.loc;
             t.cur++;
             t.loc.column++;
-            if (*t.cur == '-') {
-                t.cur++;
-                t.loc.column++;
-                result.kind = TokenKind.MinusMinus;
-                return;
-            }
             if (*t.cur == '=') {
+                result.kind = TokenKind.StarEqual;
                 t.cur++;
                 t.loc.column++;
-                result.kind = TokenKind.MinusEqual;
-                return;
+            } else {
+                result.kind = TokenKind.Star;
             }
-            result.kind = TokenKind.Minus;
             return;
-        case '+':
+        case Action.PLUS:
             result.loc = t.loc;
             t.cur++;
             t.loc.column++;
@@ -566,109 +681,84 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
             }
             result.kind = TokenKind.Plus;
             return;
-        case '~':
+        case Action.MINUS:
             result.loc = t.loc;
-            result.kind = TokenKind.Tilde;
+            t.cur++;
+            t.loc.column++;
+            if (*t.cur == '-') {
+                t.cur++;
+                t.loc.column++;
+                result.kind = TokenKind.MinusMinus;
+                return;
+            }
+            if (*t.cur == '=') {
+                t.cur++;
+                t.loc.column++;
+                result.kind = TokenKind.MinusEqual;
+                return;
+            }
+            result.kind = TokenKind.Minus;
+            return;
+        case Action.COMMA:
+            result.loc = t.loc;
+            result.kind = TokenKind.Comma;
             t.cur++;
             t.loc.column++;
             return;
-        case '*':
+        case Action.DOT:
             result.loc = t.loc;
             t.cur++;
             t.loc.column++;
-            if (*t.cur == '=') {
-                result.kind = TokenKind.StarEqual;
-                t.cur++;
-                t.loc.column++;
+            if (t.cur[0] == '.' && t.cur[1] == '.') {
+                t.cur += 2;
+                t.loc.column += 2;
+                result.kind = TokenKind.Ellipsis;
             } else {
-                result.kind = TokenKind.Star;
+                result.kind = TokenKind.Dot;
             }
             return;
-        case '&':
-            result.loc = t.loc;
-            t.cur++;
-            t.loc.column++;
-            if (*t.cur == '&') {
-                result.kind = TokenKind.AmpAmp;
-                t.cur++;
-                t.loc.column++;
-                return;
-            }
-            if (*t.cur == '=') {
-                result.kind = TokenKind.AmpEqual;
-                t.cur++;
-                t.loc.column++;
-                return;
-            }
-            result.kind = TokenKind.Amp;
-            return;
-        case '|':
-            result.loc = t.loc;
-            t.cur++;
-            t.loc.column++;
-            if (*t.cur == '|') {
-                result.kind = TokenKind.PipePipe;
-                t.cur++;
-                t.loc.column++;
-                return;
-            }
-            if (*t.cur == '=') {
-                result.kind = TokenKind.PipeEqual;
-                t.cur++;
-                t.loc.column++;
-                return;
-            }
-            result.kind = TokenKind.Pipe;
-            return;
-        case '=':
+        case Action.PERCENT:
             result.loc = t.loc;
             t.cur++;
             t.loc.column++;
             if (*t.cur == '=') {
-                result.kind = TokenKind.EqualEqual;
+                result.kind = TokenKind.PercentEqual;
                 t.cur++;
                 t.loc.column++;
-            } else {
-                result.kind = TokenKind.Equal;
+                return;
             }
+            result.kind = TokenKind.Percent;
             return;
-        case '[':
-            result.loc = t.loc;
-            result.kind = TokenKind.LSquare;
-            t.cur++;
-            t.loc.column++;
-            return;
-        case ']':
-            result.loc = t.loc;
-            result.kind = TokenKind.RSquare;
-            t.cur++;
-            t.loc.column++;
-            return;
-        case '{':
-            result.loc = t.loc;
-            result.kind = TokenKind.LBrace;
-            t.cur++;
-            t.loc.column++;
-            return;
-        case '}':
-            result.loc = t.loc;
-            result.kind = TokenKind.RBrace;
-            t.cur++;
-            t.loc.column++;
-            return;
-        case '!':
+        case Action.SLASH:
             result.loc = t.loc;
             t.cur++;
             t.loc.column++;
             if (*t.cur == '=') {
-                result.kind = TokenKind.ExclaimEqual;
+                result.kind = TokenKind.SlashEqual;
                 t.cur++;
                 t.loc.column++;
-            } else {
-                result.kind = TokenKind.Exclaim;
+                return;
             }
+            if (*t.cur == '/') {
+                t.skip_line_comment();
+                // TODO sometimes have TokenKind.Comment
+                continue;
+            }
+            result.kind = TokenKind.Slash;
             return;
-        case '<':
+        case Action.COLON:
+            result.loc = t.loc;
+            result.kind = TokenKind.Colon;
+            t.cur++;
+            t.loc.column++;
+            return;
+        case Action.SEMI_COLON:
+            result.loc = t.loc;
+            result.kind = TokenKind.Semicolon;
+            t.cur++;
+            t.loc.column++;
+            return;
+        case Action.LESS:
             result.loc = t.loc;
             t.cur++;
             t.loc.column++;
@@ -691,7 +781,19 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
             }
             result.kind = TokenKind.Less;
             return;
-        case '>':
+        case Action.EQUAL:
+            result.loc = t.loc;
+            t.cur++;
+            t.loc.column++;
+            if (*t.cur == '=') {
+                result.kind = TokenKind.EqualEqual;
+                t.cur++;
+                t.loc.column++;
+            } else {
+                result.kind = TokenKind.Equal;
+            }
+            return;
+        case Action.GREATER:
             result.loc = t.loc;
             t.cur++;
             t.loc.column++;
@@ -714,55 +816,99 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
             }
             result.kind = TokenKind.Greater;
             return;
-        case '/':
+        case Action.QUESTION:
+            result.loc = t.loc;
+            result.kind = TokenKind.Question;
+            t.cur++;
+            t.loc.column++;
+            return;
+        case Action.AT:
+            result.loc = t.loc;
+            result.kind = TokenKind.At;
+            t.cur++;
+            t.loc.column++;
+            return;
+        case Action.AMP:
             result.loc = t.loc;
             t.cur++;
             t.loc.column++;
-            if (*t.cur == '=') {
-                result.kind = TokenKind.SlashEqual;
+            if (*t.cur == '&') {
+                result.kind = TokenKind.AmpAmp;
                 t.cur++;
                 t.loc.column++;
                 return;
             }
-            if (*t.cur == '/') {
-                t.skip_line_comment();
-                // TODO sometimes have TokenKind.Comment
-                continue;
-            }
-            result.kind = TokenKind.Slash;
-            return;
-        case '%':
-            result.loc = t.loc;
-            t.cur++;
-            t.loc.column++;
             if (*t.cur == '=') {
-                result.kind = TokenKind.PercentEqual;
+                result.kind = TokenKind.AmpEqual;
                 t.cur++;
                 t.loc.column++;
                 return;
             }
-            result.kind = TokenKind.Percent;
+            result.kind = TokenKind.Amp;
             return;
-        default:
-            // TODO create char lookup table with actions (identifier / identifier_or_keyword)
-            if (identifier_initial_char(*t.cur)) {
-                result.loc = t.loc;
-                const Keyword* kw = check_keyword(t.cur);
-                if (kw) {
-                    result.kind = kw.kind;
-                    t.cur += kw.len;
-                    t.loc.column += kw.len;
-                } else {
-                    t.lex_identifier(result);
-                }
+        case Action.CARET:
+            result.loc = t.loc;
+            t.cur++;
+            t.loc.column++;
+            if (*t.cur == '=') {
+                t.cur++;
+                t.loc.column++;
+                result.kind = TokenKind.CaretEqual;
                 return;
             }
-            if (isdigit(*t.cur)) {
-                t.lex_number(result);
+            result.kind = TokenKind.Caret;
+            return;
+        case Action.LBRACE:
+            result.loc = t.loc;
+            result.kind = TokenKind.LBrace;
+            t.cur++;
+            t.loc.column++;
+            return;
+        case Action.RBRACE:
+            result.loc = t.loc;
+            result.kind = TokenKind.RBrace;
+            t.cur++;
+            t.loc.column++;
+            return;
+        case Action.PIPE:
+            result.loc = t.loc;
+            t.cur++;
+            t.loc.column++;
+            if (*t.cur == '|') {
+                result.kind = TokenKind.PipePipe;
+                t.cur++;
+                t.loc.column++;
                 return;
             }
-            sprintf(t.error_msg, "unhandled char '%c' %s", *t.cur, t.loc.str());
-            t.error(result);
+            if (*t.cur == '=') {
+                result.kind = TokenKind.PipeEqual;
+                t.cur++;
+                t.loc.column++;
+                return;
+            }
+            result.kind = TokenKind.Pipe;
+            return;
+        case Action.TILDE:
+            result.loc = t.loc;
+            result.kind = TokenKind.Tilde;
+            t.cur++;
+            t.loc.column++;
+            return;
+        case Action.CR:
+            t.cur++;
+            if (*t.cur != '\n') {
+                sprintf(t.error_msg, "unexpected char 0x%02X %s", *t.cur, t.loc.str());
+                t.error(result);
+                return;
+            }
+            t.cur++;
+            t.loc.line++;
+            t.loc.column = 1;
+            return;
+        case Action.EOF:
+            result.loc = t.loc;
+            result.kind = TokenKind.Eof;
+            result.more = false;
             return;
         }
     }
