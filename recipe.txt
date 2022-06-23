@@ -1,8 +1,11 @@
 
+plugin plugins/deps_generator [all-targets private]
+plugin plugins/refs_generator [all-targets]
+
 executable c2c
 	$warnings no-unused
-	$refs
 	$generate-c single-module
     common/file/reader.c2
+    c2_tokenizer.c2
 	main.c2
 end

@@ -1,6 +1,8 @@
 module c2c_main;
 
 import file_utils;
+import c2_tokenizer;
+
 import stdio local;
 import string local;
 import c_errno local;
