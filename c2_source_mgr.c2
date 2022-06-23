@@ -45,7 +45,7 @@ public func i32 SourceMgr.open(SourceMgr* sm, const char* filename) {
         return -1;
     }
 
-    i32 handle = sm.num_files;
+    i32 file_id = sm.num_files;
     File* f = calloc(1, sizeof(File));
 
     u32 offset = 0;
@@ -57,7 +57,7 @@ public func i32 SourceMgr.open(SourceMgr* sm, const char* filename) {
     sm.files[sm.num_files] = f;
     sm.num_files++;
     //sm.dump();
-    return handle;
+    return file_id;
 }
 
 public func const char* SourceMgr.get_error(SourceMgr* sm) {

@@ -100,14 +100,14 @@ public func i32 main(i32 argc, char** argv) {
         const char* filename = argv[i];
         printf("------ %s ------\n", filename);
 
-        i32 handle = sm.open(filename);
-        if (handle == -1) {
+        i32 file_id = sm.open(filename);
+        if (file_id == -1) {
             fprintf(stderr, "Error opening file: %s\n", sm.get_error());
             return -1;
         }
 
         for (i32 j=0; j<100; j++) {
-            parse_file(handle);
+            parse_file(file_id);
         }
     }
 

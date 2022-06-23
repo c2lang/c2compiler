@@ -7,12 +7,6 @@ public type Location struct {
     u32 loc;
 }
 
-func const char* Location.str(const Location* loc) {
-    local char[32] msg;
-    sprintf(msg, "at line TODO NEED SM %u", loc.loc);
-    return msg;
-}
-
 type Keyword struct {
     const char* name;
     TokenKind kind;
