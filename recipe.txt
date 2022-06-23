@@ -10,6 +10,7 @@ executable c2c
     c2_tokenizer.c2
     c2_source_mgr.c2
     c2_parser.c2
+    c2_ast_builder.c2
     utils.c2
 	main.c2
 end

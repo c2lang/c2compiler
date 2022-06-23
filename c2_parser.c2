@@ -2,13 +2,15 @@ module c2_parser;
 
 import c2_source_mgr local;
 import c2_tokenizer local;
+import c2_ast_builder local;
 import utils;
+import color;
 
+import stdarg local;
 import stdlib local;
 import string local;
-// TEMP
+import csetjmp local;
 import stdio local;
-import color;
 
 
 // TEMP HERE
@@ -25,17 +27,22 @@ func const char* alloc(void* arg, const char* value, u32 len) {
 }
 
 public type Parser struct {
-    char[256] error_msg;
-
+    Tokenizer tokenizer;
+    Token tok;
+    Builder* builder;
     SourceMgr* sm;
     i32 file_id;
 
+    JmpBufTag jmpbuf;
+    char[256] error_msg;
 } @(opaque)
 
 public func Parser* create(SourceMgr* sm, i32 file_id) {
     Parser* p = calloc(1, sizeof(Parser));
     p.sm = sm;
     p.file_id = file_id;
+    // TEMP create Builder here
+    //p.builder = Builder.create();
 
     return p;
 }
@@ -45,32 +52,117 @@ public func void Parser.free(Parser* p) {
 }
 
 public func bool Parser.parse(Parser* p) {
-    Tokenizer tokenizer;
     char[256] error_msg;
     error_msg[0] = 0;
     alloc_idx = 0;
 
-    tokenizer.init(p.sm.get_content(p.file_id), p.sm.get_offset(p.file_id), p.error_msg, alloc, nil);
-    Token tok;
-    tok.init();
-
     u64 t1 = utils.now();
+
+    i32 res = setjmp(&p.jmpbuf);
+    if (res == 0) {
+
+        p.tokenizer.init(p.sm.get_content(p.file_id), p.sm.get_offset(p.file_id), p.error_msg, alloc, nil);
+        p.tok.init();
+
+        p.consumeToken();
+
+        // TODO use longjmp()
+        p.parseModule();
+        p.parseImports();
+/*
     u32 token_count = 0;
     while (tok.more) {
         tokenizer.lex(&tok);
         //dump_token(p.sm, &tok);
         token_count++;
     }
-    u64 t2 = utils.now();
-
-    printf("--- %u tokens (%u alloc)  (%llu usec) ---\n", token_count, alloc_idx, t2 - t1);
-
-    if (tok.kind == TokenKind.Error) {
-        c2_source_mgr.Location loc = p.sm.locate(tok.loc);
-        printf("%s:%u:%u: %serror:%s %s\n",  loc.filename, loc.line, loc.column, color.Red, color.Normal, tok.error_msg);
+*/
+    } else {
+        printf("ERROR: %s\n", p.error_msg);
         return false;
     }
+    u64 t2 = utils.now();
+
+//    printf("--- %u tokens (%u alloc)  (%llu usec) ---\n", token_count, alloc_idx, t2 - t1);
+/*
+    if (p.tok.kind == TokenKind.Error) {
+        c2_source_mgr.Location loc = p.sm.locate(p.tok.loc);
+        printf("%s:%u:%u: %serror:%s %s\n",  loc.filename, loc.line, loc.column, color.Red, color.Normal, p.tok.error_msg);
+        return false;
+    }
+*/
     return true;
+}
+
+func void Parser.consumeToken(Parser* p) {
+    p.tokenizer.lex(&p.tok);
+
+    // TODO dont check here, just jump from inner scope (pass jmpbuf to tokenizer)
+    if (p.tok.kind == TokenKind.Error) {
+        p.error("Tokenizer error");
+    }
+}
+
+func void Parser.expectAndConsume(Parser* p, TokenKind kind) {
+    if (p.tok.kind == kind) {
+        p.consumeToken();
+        return;
+    }
+
+    p.error("expected %s got %s", kind2str(kind), kind2str(p.tok.kind));
+}
+
+func void Parser.expectIdentifier(Parser* p) {
+    if (p.tok.kind == TokenKind.Identifier) return;
+
+    p.error("expected identifier");
+}
+
+func void Parser.error(Parser* p, const char* format, ...) {
+    Va_list args;
+    va_start(args, format);
+    char* cp = p.error_msg;
+    cp += vsnprintf(cp, sizeof(p.error_msg)-1, format, args);
+    va_end(args);
+    sprintf(cp, " %s", p.sm.loc2str(p.tok.loc));
+    longjmp(&p.jmpbuf, 1);
+}
+
+
+func void Parser.parseModule(Parser* p) {
+    p.expectAndConsume(TokenKind.KW_module);
+    p.expectIdentifier();
+
+    p.builder.actOnModule(p.tok.text_value, p.tok.loc);
+    p.consumeToken();
+    p.expectAndConsume(TokenKind.Semicolon);
+}
+
+func void Parser.parseImports(Parser* p) {
+    while (p.tok.kind == TokenKind.KW_import) {
+        p.consumeToken();
+        p.expectIdentifier();
+        const char* mod_name = p.tok.text_value;
+        u32 mod_loc = p.tok.loc;
+
+        const char* alias_name = nil;
+        u32 alias_loc = 0;
+        p.consumeToken();
+        if (p.tok.kind == TokenKind.KW_as) {
+            p.consumeToken();
+            p.expectIdentifier();
+            alias_name = p.tok.text_value;
+            alias_loc = p.tok.loc;
+        }
+        bool islocal = false;
+        if (p.tok.kind == TokenKind.KW_local) {
+            p.consumeToken();
+            islocal = true;
+        }
+        p.expectAndConsume(TokenKind.Semicolon);
+
+        p.builder.actOnImport(mod_name, mod_loc, alias_name, alias_loc, islocal);
+    }
 }
 
 // TEMP here

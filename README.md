@@ -8,6 +8,8 @@
 + let error generate line-nr
 + TODO escaped chars in strings (especially \")
 + SourceLoc of EOF is 0
+- check max identifier Length (31 bytes)
+
 
 ## SourceManager
 + reserve location 0

@@ -1,0 +1,17 @@
+module c2_ast_builder;
+
+import stdio local;
+
+public type Builder struct {
+
+} @(opaque)
+
+
+public func void Builder.actOnModule(Builder* b, const char* mod_name, u32 mod_loc) {
+    printf("MODULE %s\n", mod_name);
+}
+
+public func void Builder.actOnImport(Builder* b, const char* mod_name, u32 mod_loc, const char* alias_name, u32 alias_loc, bool islocal) {
+    printf("IMPORT %s (as %s) %s\n", mod_name, alias_name, islocal ? "local" : "");
+}
+
