@@ -1,7 +1,5 @@
 module utils;
 
-import stdio local;
-import string local;
 import sys_time;
 
 public func u64 now() {

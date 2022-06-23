@@ -1,12 +1,9 @@
 module c2c_main;
 
-import c2_tokenizer local;
 import c2_source_mgr local;
 import c2_parser local;
-import color;
 
 import stdio local;
-import string local;
 
 public func i32 main(i32 argc, char** argv) {
     if (argc < 2) {
