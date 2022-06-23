@@ -6,9 +6,11 @@
 + faster keyword lookup
 + support block comment
 + let error generate line-nr
-- TODO escaped chars in strings (especially \")
++ TODO escaped chars in strings (especially \")
+- SourceLoc of EOF (have nil as filename?)
 
 ## SourceManager
++ reserve location 0
 - remove hardcoded file max
 - close files after use (need indication)
 

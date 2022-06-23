@@ -35,8 +35,12 @@ SourceMgr* sm;
 
 func const char* loc2str(u32 src_loc) {
     local char[256] tmp;
-    c2_source_mgr.Location loc = sm.locate(src_loc);
-    sprintf(tmp, "%s:%u:%u", loc.filename, loc.line, loc.column);
+    if (src_loc == 0) {
+        strcpy(tmp, "-");
+    } else {
+        c2_source_mgr.Location loc = sm.locate(src_loc);
+        sprintf(tmp, "%s:%u:%u", loc.filename, loc.line, loc.column);
+    }
     return tmp;
 }
 

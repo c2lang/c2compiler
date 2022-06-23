@@ -908,7 +908,7 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
             t.cur++;
             return;
         case Action.EOF:
-            result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
+            result.loc = 0; //t.loc_start + cast<u32>(t.cur - t.input_start);
             result.kind = TokenKind.Eof;
             result.more = false;
             return;

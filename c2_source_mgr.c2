@@ -51,7 +51,7 @@ public func i32 SourceMgr.open(SourceMgr* sm, const char* filename) {
     i32 file_id = sm.num_files;
     File* f = calloc(1, sizeof(File));
 
-    u32 offset = 0;
+    u32 offset = 1;
     if (sm.num_files) offset = sm.files[sm.num_files-1].offset + sm.files[sm.num_files-1].file.size;
     f.filename = strdup(filename);
     f.offset = offset;
@@ -118,7 +118,7 @@ func void find_line_col(const char* data, u32 offset, Location* loc, u32 last_of
 }
 
 public func Location SourceMgr.locate(SourceMgr* sm, u32 loc) {
-    Location l = { 1, 1, "unknown" }
+    Location l = { 1, 1, nil }
     File* f = find_file(sm, loc);
     if (f) {
         l.filename = f.filename;
