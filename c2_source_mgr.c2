@@ -14,6 +14,9 @@ type File struct {
     char* filename;   // malloc'ed
     u32 offset;
     file_utils.Reader file;
+
+    u32 last_offset;
+    Location last_loc;
 }
 
 public type SourceMgr struct {
@@ -88,7 +91,7 @@ public type Location struct {
     const char* filename;   // no ownership
 }
 
-func const File* find_file(const SourceMgr* sm, u32 loc) {
+func File* find_file(const SourceMgr* sm, u32 loc) {
     for (u32 i=0; i<sm.num_files; i++) {
         File* f = sm.files[i];
         if (loc >= f.offset && loc < f.offset + f.file.size) return f;
@@ -96,10 +99,16 @@ func const File* find_file(const SourceMgr* sm, u32 loc) {
     return nil;
 }
 
-func void find_line_col(const char* data, u32 offset, Location* loc) {
-    const char* line = data;
-    u32 line_nr = 1;
-    for (u32 i=0; i<offset; i++) {
+func void find_line_col(const char* data, u32 offset, Location* loc, u32 last_offset) {
+    printf("LOOKUP %u   %u (%u / %u)\n", offset, last_offset, loc.line, loc.column);
+    const char* line;
+    u32 line_nr = loc.line;
+    if (last_offset) {
+        line = data + last_offset - loc.column + 1;
+    } else {
+        line = data;
+    }
+    for (u32 i=last_offset; i<offset; i++) {
         if (data[i] == '\n') {
             line_nr++;
             line = data + i + 1;
@@ -109,13 +118,21 @@ func void find_line_col(const char* data, u32 offset, Location* loc) {
     loc.column = cast<u32>(&data[offset] - line) + 1;
 }
 
-public func Location SourceMgr.locate(const SourceMgr* sm, u32 loc) {
-    Location l = { 0, 0, "unknown" }
-    const File* f = find_file(sm, loc);
+public func Location SourceMgr.locate(SourceMgr* sm, u32 loc) {
+    Location l = { 1, 1, "unknown" }
+    File* f = find_file(sm, loc);
     if (f) {
         l.filename = f.filename;
         u32 offset = loc - f.offset;
-        find_line_col(f.file.data(), offset, &l);
+        u32 last_offset = 0;
+        if (f.last_offset != 0 && offset > f.last_offset) {
+            l = f.last_loc;
+            last_offset = f.last_offset;
+        }
+        find_line_col(f.file.data(), offset, &l, last_offset);
+
+        f.last_offset = offset;
+        f.last_loc = l;
     }
     return l;
 }
