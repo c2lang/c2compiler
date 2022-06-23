@@ -5,8 +5,7 @@ import stdlib local;
 import string local;
 import c_errno local;
 
-// TEMP
-import stdio local;
+import stdio local; // for dump()
 
 const u32 InitialMaxFiles = 8;
 
