@@ -54,8 +54,7 @@ public func void Parser.free(Parser* p) {
 }
 
 public func bool Parser.parse(Parser* p) {
-    char[256] error_msg;
-    error_msg[0] = 0;
+    p.error_msg[0] = 0;
     alloc_idx = 0;
 
     u64 t1 = utils.now();

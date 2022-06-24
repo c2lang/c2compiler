@@ -10,7 +10,7 @@
 + SourceLoc of EOF is 0
 + check max identifier Length (31 bytes)
 + support basic feature-selection: (#if [cond], #else, #endif)
-- have error() be like printf
++ have error() be like printf
 - named feature-selection
     #if NAME
 - advanced basic feature-selection: (#if [cond], #else, #endif)

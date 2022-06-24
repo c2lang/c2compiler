@@ -1,7 +1,9 @@
 module c2_tokenizer;
+
 import string local;
 import stdio local;
 import ctype local;
+import stdarg local;
 
 // TODO move somewhere else
 const u32 MaxIdentifierLen = 31;
@@ -644,8 +646,7 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
         Action act = char_lookup[*t.cur];
         switch (act) {
         case Action.INVALID:
-            sprintf(t.error_msg, "invalid char '%c'", *t.cur);
-            t.error(result);
+            t.error(result, "invalid char '%c'", *t.cur);
             return;
         case Action.TABSPACE:
             t.cur++;
@@ -922,8 +923,7 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
         case Action.CR:
             t.cur++;
             if (*t.cur != '\n') {
-                sprintf(t.error_msg, "unexpected char 0x%02X", *t.cur);
-                t.error(result);
+                t.error(result, "unexpected char 0x%02X", *t.cur);
                 return;
             }
             t.cur++;
@@ -943,7 +943,12 @@ public func Token* Tokenizer.lex_next(Tokenizer* t) {
     return &t.next;
 }
 
-func void Tokenizer.error(Tokenizer* t, Token* result) {
+func void Tokenizer.error(Tokenizer* t, Token* result, const char* format, ...) {
+    Va_list args;
+    va_start(args, format);
+    vsnprintf(t.error_msg, sizeof(t.error_msg)-1, format, args);
+    va_end(args);
+
     result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
     result.kind = TokenKind.Error;
     result.error_msg = t.error_msg;
@@ -960,8 +965,7 @@ func void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
 
     u32 len = cast<u32>(end - start);
     if (len > MaxIdentifierLen) {
-        sprintf(t.error_msg, "identifier too long (max %u)", MaxIdentifierLen);
-        t.error(result);
+        t.error(result, "identifier too long (max %u)", MaxIdentifierLen);
         return;
     }
     t.cur += len;
@@ -1003,8 +1007,7 @@ func void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
             result.char_value = '\'';
             break;
         default:
-            sprintf(t.error_msg, "unknown escape sequence \\%c", t.cur[1]);
-            t.error(result);
+            t.error(result, "unknown escape sequence \\%c", t.cur[1]);
             return;
         }
     } else {
@@ -1012,8 +1015,7 @@ func void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
     }
 
     if (t.cur[2] != '\'') {
-        strcpy(t.error_msg, "missing terminating ' character");
-        t.error(result);
+        t.error(result, "missing terminating ' character");
         return;
     }
 
@@ -1033,8 +1035,7 @@ func void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
         case '\r': fallthrough;
         case '\n':
             t.cur--;
-            strcpy(t.error_msg, "unterminated string");
-            t.error(result);
+            t.error(result, "unterminated string");
             return;
         case '\\':
             t.cur++;
@@ -1053,8 +1054,7 @@ func void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
                 break;
             default:
                 t.cur--;
-                sprintf(t.error_msg, "unknown escape sequence \\%c", *t.cur);
-                t.error(result);
+                t.error(result, "unknown escape sequence \\%c", *t.cur);
                 return;
             }
             t.cur++;
@@ -1105,8 +1105,7 @@ func bool Tokenizer.skip_line(Tokenizer* t, Token* result) {
     // only expect whitespace + newline
     while (*t.cur != '\n') {
         if (!isspace(*t.cur)) {
-            sprintf(t.error_msg, "unexpected character '%c'", *t.cur);
-            t.error(result);
+            t.error(result, "unexpected character '%c'", *t.cur);
             return true;
         }
         t.cur++;
@@ -1126,8 +1125,7 @@ func bool compare_word(const char* cur, const char* expect) {
 // return true if we pass result
 func bool Tokenizer.lex_feature(Tokenizer* t, Token* result) {
     if (t.cur != t.line_start) {
-        strcpy(t.error_msg, "#if/#else/#endif must be at start of line");
-        t.error(result);
+        t.error(result, "#if/#else/#endif must be at start of line");
         return true;
     }
 /*
@@ -1155,8 +1153,7 @@ func bool Tokenizer.lex_feature(Tokenizer* t, Token* result) {
         if (t.skip_line(result)) return true;
         if (t.handle_endif(result)) return true;
     } else {
-        strcpy(t.error_msg, "unknown feature-selection command");
-        t.error(result);
+        t.error(result, "unknown feature-selection command");
         return true;
     }
     return false;
@@ -1188,14 +1185,12 @@ func bool Tokenizer.handle_if(Tokenizer* t, Token* result) {
         break;
     default:
         // TODO support features
-        strcpy(t.error_msg, "invalid feature");
-        t.error(result);
+        t.error(result, "invalid feature");
         return true;
     }
 
     if (t.feature_count >= MaxFeatureDepth) {
-        strcpy(t.error_msg, "feature nesting too much");
-        t.error(result);
+        t.error(result, "feature nesting too much");
         return true;
     }
     Feature* next = &t.features[t.feature_count];
@@ -1207,14 +1202,12 @@ func bool Tokenizer.handle_if(Tokenizer* t, Token* result) {
 
 func bool Tokenizer.handle_else(Tokenizer* t, Token* result) {
     if (t.feature_count == 0) {
-        strcpy(t.error_msg, "#else without #if");
-        t.error(result);
+        t.error(result, "#else without #if");
         return true;
     }
     Feature* top = &t.features[t.feature_count-1];
     if (!top.is_if) {
-        strcpy(t.error_msg, "#else in #else");
-        t.error(result);
+        t.error(result, "#else in #else");
         return true;
     }
     top.is_if = false;
@@ -1224,8 +1217,7 @@ func bool Tokenizer.handle_else(Tokenizer* t, Token* result) {
 
 func bool Tokenizer.handle_endif(Tokenizer* t, Token* result) {
     if (t.feature_count == 0) {
-        strcpy(t.error_msg, "#endif without #if/#else");
-        t.error(result);
+        t.error(result, "#endif without #if/#else");
         return true;
     }
     Feature* top = &t.features[t.feature_count-1];
@@ -1238,8 +1230,7 @@ func bool Tokenizer.skip_feature(Tokenizer* t, Token* result) {
         Action act = char_lookup[*t.cur];
         switch (act) {
         case Action.INVALID:
-            sprintf(t.error_msg, "invalid char '%c'", *t.cur);
-            t.error(result);
+            t.error(result, "invalid char '%c'", *t.cur);
             return true;
         case Action.NEWLINE:
             t.cur++;
