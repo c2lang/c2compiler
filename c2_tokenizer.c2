@@ -5,6 +5,7 @@ import ctype local;
 
 // TODO move somewhere else
 const u32 MaxIdentifierLen = 31;
+public const u32 MaxFeatureDepth = 6;
 
 type Keyword struct {
     const char* name;
@@ -403,6 +404,7 @@ type Action enum u8 {
     EXCLAIM,
     DQUOTE,
     SQUOTE,
+    POUND,
     STAR,
     PLUS,
     MINUS,
@@ -438,7 +440,7 @@ u8[128] char_lookup = {
     [' '] = Action.TABSPACE,
     ['!'] = Action.EXCLAIM,
     ['"'] = Action.DQUOTE,
-// #
+    ['#'] = Action.POUND,
     ['%'] = Action.PERCENT,
     ['&'] = Action.AMP,
    ['\''] = Action.SQUOTE,
@@ -597,15 +599,26 @@ public func void Token.init(Token* tok) {
 
 public type Alloc_fn func const char* (void* arg, const char* value, u32 len);
 
+public type Feature struct {
+    bool is_if;
+    bool enabled;
+}
+
 public type Tokenizer struct {
     const char* cur;
     u32 loc_start;
     const char* input_start;
 
     Token next;
+    const char* line_start;
 
     Alloc_fn alloc;
     void* alloc_arg;
+
+    // Feature handling
+    Feature[MaxFeatureDepth] features;
+    u32 feature_count;
+
     char[256] error_msg;
 }
 
@@ -616,6 +629,7 @@ public func void Tokenizer.init(Tokenizer* t, const char* input, u32 loc_start, 
     t.loc_start = loc_start;
     t.alloc = alloc;
     t.alloc_arg = arg;
+    t.line_start = input;
     t.next.kind = TokenKind.None;
 }
 
@@ -674,6 +688,7 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
             return;
         case Action.NEWLINE:
             t.cur++;
+            t.line_start = t.cur;
             continue;
         case Action.EXCLAIM:
             result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
@@ -691,6 +706,12 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
         case Action.SQUOTE:
             t.lex_char_literal(result);
             return;
+        case Action.POUND:
+            if (t.lex_feature(result)) return;
+            if (!t.is_enabled()) {
+                if (t.skip_feature(result)) return;
+            }
+            continue;
         case Action.STAR:
             result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             t.cur++;
@@ -1078,5 +1099,206 @@ func void Tokenizer.skip_block_comment(Tokenizer* t) {
 
     u32 len = cast<u32>(end - start);
     t.cur += len;
+}
+
+func bool Tokenizer.skip_line(Tokenizer* t, Token* result) {
+    // only expect whitespace + newline
+    while (*t.cur != '\n') {
+        if (!isspace(*t.cur)) {
+            sprintf(t.error_msg, "unexpected character '%c'", *t.cur);
+            t.error(result);
+            return true;
+        }
+        t.cur++;
+    }
+    return false;
+}
+
+func bool compare_word(const char* cur, const char* expect) {
+    while (*expect) {
+        if (*cur != *expect) return false;
+        cur++;
+        expect++;
+    }
+    return !identifier_char(*cur);
+}
+
+// return true if we pass result
+func bool Tokenizer.lex_feature(Tokenizer* t, Token* result) {
+    if (t.cur != t.line_start) {
+        strcpy(t.error_msg, "#if/#else/#endif must be at start of line");
+        t.error(result);
+        return true;
+    }
+/*
+    Syntax:
+    #if <selection>
+    #else
+    #endif
+
+    later:
+        AND OR NOT
+        #error "msg"
+        #warn "msg"
+*/
+    t.cur++;    // skip #
+
+    if (compare_word(t.cur, "if")) {
+        t.cur += 2;
+        if (t.handle_if(result)) return true;
+    } else if (compare_word(t.cur, "else")) {
+        t.cur += 4;
+        if (t.skip_line(result)) return true;
+        if (t.handle_else(result)) return true;
+    } else if (compare_word(t.cur, "endif")) {
+        t.cur += 5;
+        if (t.skip_line(result)) return true;
+        if (t.handle_endif(result)) return true;
+    } else {
+        strcpy(t.error_msg, "unknown feature-selection command");
+        t.error(result);
+        return true;
+    }
+    return false;
+}
+
+
+func bool Tokenizer.is_enabled(const Tokenizer* t) @(inline) {
+    for (u32 i=0; i<t.feature_count; i++) {
+        if (!t.features[i].enabled) return false;
+    }
+    return true;
+}
+
+func bool Tokenizer.handle_if(Tokenizer* t, Token* result) {
+    // Syntax: 0 | 1 | FEATURE | FEATURE=<value>
+    // TEMP, just allow 0 | 1
+
+    //t.skip_whitespace();
+    t.cur++;    // just skip space
+
+    bool enabled = false;
+    switch (*t.cur) {
+    case '0':
+        t.cur++;
+        break;
+    case '1':
+        t.cur++;
+        enabled = true;
+        break;
+    default:
+        // TODO support features
+        strcpy(t.error_msg, "invalid feature");
+        t.error(result);
+        return true;
+    }
+
+    if (t.feature_count >= MaxFeatureDepth) {
+        strcpy(t.error_msg, "feature nesting too much");
+        t.error(result);
+        return true;
+    }
+    Feature* next = &t.features[t.feature_count];
+    next.is_if = true;
+    next.enabled = enabled;
+    t.feature_count++;
+    return false;
+}
+
+func bool Tokenizer.handle_else(Tokenizer* t, Token* result) {
+    if (t.feature_count == 0) {
+        strcpy(t.error_msg, "#else without #if");
+        t.error(result);
+        return true;
+    }
+    Feature* top = &t.features[t.feature_count-1];
+    if (!top.is_if) {
+        strcpy(t.error_msg, "#else in #else");
+        t.error(result);
+        return true;
+    }
+    top.is_if = false;
+    top.enabled = !top.enabled;
+    return false;
+}
+
+func bool Tokenizer.handle_endif(Tokenizer* t, Token* result) {
+    if (t.feature_count == 0) {
+        strcpy(t.error_msg, "#endif without #if/#else");
+        t.error(result);
+        return true;
+    }
+    Feature* top = &t.features[t.feature_count-1];
+    t.feature_count--;
+    return false;
+}
+
+func bool Tokenizer.skip_feature(Tokenizer* t, Token* result) {
+    while (1) {
+        Action act = char_lookup[*t.cur];
+        switch (act) {
+        case Action.INVALID:
+            sprintf(t.error_msg, "invalid char '%c'", *t.cur);
+            t.error(result);
+            return true;
+        case Action.NEWLINE:
+            t.cur++;
+            t.line_start = t.cur;
+            break;
+        case Action.DQUOTE:
+            t.skip_string_literal();
+            break;
+        case Action.SQUOTE:
+            t.skip_char_literal();
+            break;
+        case Action.POUND:
+            if (t.lex_feature(result)) return true;
+            if (t.is_enabled()) return false;
+            break;
+        default:
+            t.cur++;
+            break;
+        }
+    }
+    return false;
+}
+
+func void Tokenizer.skip_string_literal(Tokenizer* t) {
+    t.cur++;
+
+    while (1) {
+        switch (*t.cur) {
+        case 0:
+            return;
+        case '\r':
+            t.cur++;
+            return;
+        case '\n':
+            return;
+        case '"':
+            t.cur++;
+            return;
+        default:
+            t.cur++;
+            break;
+        }
+    }
+}
+
+func void Tokenizer.skip_char_literal(Tokenizer* t) {
+    t.cur++;
+
+    while (1) {
+        switch (*t.cur) {
+        case 0:
+            return;
+        case '\'':
+            t.cur++;
+            return;
+        default:
+            t.cur++;
+            break;
+        }
+    }
 }
 

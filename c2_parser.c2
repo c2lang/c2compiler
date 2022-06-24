@@ -59,7 +59,7 @@ public func bool Parser.parse(Parser* p) {
     alloc_idx = 0;
 
     u64 t1 = utils.now();
-
+#if 0
     i32 res = setjmp(&p.jmpbuf);
     if (res == 0) {
 
@@ -68,28 +68,28 @@ public func bool Parser.parse(Parser* p) {
 
         p.consumeToken();
 
-        // TODO use longjmp()
         p.parseModule();
         p.parseImports();
 
         while (p.tok.more) {
             p.parseTopLevel();
         }
-/*
-    u32 token_count = 0;
-    while (tok.more) {
-        tokenizer.lex(&tok);
-        //dump_token(p.sm, &tok);
-        token_count++;
-    }
-*/
     } else {
         printf("%s\n", p.error_msg);
         return false;
     }
+#else
+    p.tokenizer.init(p.sm.get_content(p.file_id), p.sm.get_offset(p.file_id), alloc, nil);
+    p.tok.init();
+    u32 token_count = 0;
+    while (p.tok.more) {
+        p.tokenizer.lex(&p.tok);
+        dump_token(p.sm, &p.tok);
+        token_count++;
+    }
+#endif
     u64 t2 = utils.now();
-
-//    printf("--- %u tokens (%u alloc)  (%llu usec) ---\n", token_count, alloc_idx, t2 - t1);
+    printf("--- %u tokens (%u alloc)  (%llu usec) ---\n", token_count, alloc_idx, t2 - t1);
 /*
     if (p.tok.kind == TokenKind.Error) {
         c2_source_mgr.Location loc = p.sm.locate(p.tok.loc);
