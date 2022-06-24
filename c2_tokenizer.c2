@@ -7,10 +7,11 @@ import stdarg local;
 
 import constants;
 import string_list;
+import tokens local;
 
 type Keyword struct {
     const char* name;
-    TokenKind kind;
+    Kind kind;
     u8 len;
 }
 
@@ -44,353 +45,122 @@ const Keyword*[] keywords = {
 }
 
 const Keyword[] Keywords_a = {
-    { "as", TokenKind.KW_as, 2 },
-    { "asm", TokenKind.KW_asm, 3 },
-    { "auto", TokenKind.KW_auto, 4, },
-    { nil, TokenKind.None, 0 },
+    { "as", Kind.KW_as, 2 },
+    { "asm", Kind.KW_asm, 3 },
+    { "auto", Kind.KW_auto, 4, },
+    { nil, Kind.None, 0 },
 }
 const Keyword[] Keywords_b = {
-    { "bool", TokenKind.KW_bool, 4 },
-    { "break", TokenKind.KW_break, 5 },
-    { nil, TokenKind.None, 0 },
+    { "bool", Kind.KW_bool, 4 },
+    { "break", Kind.KW_break, 5 },
+    { nil, Kind.None, 0 },
 }
 const Keyword[] Keywords_c = {
-    { "case", TokenKind.KW_case, 4 },
-    { "cast", TokenKind.KW_cast, 4 },
-    { "char", TokenKind.KW_char, 4 },
-    { "const", TokenKind.KW_const, 5 },
-    { "continue", TokenKind.KW_continue, 8 },
-    { nil, TokenKind.None, 0 },
+    { "case", Kind.KW_case, 4 },
+    { "cast", Kind.KW_cast, 4 },
+    { "char", Kind.KW_char, 4 },
+    { "const", Kind.KW_const, 5 },
+    { "continue", Kind.KW_continue, 8 },
+    { nil, Kind.None, 0 },
 }
 const Keyword[] Keywords_d = {
-    { "default", TokenKind.KW_default, 8 },
-    { "do", TokenKind.KW_do, 2 },
-    { nil, TokenKind.None, 0 },
+    { "default", Kind.KW_default, 8 },
+    { "do", Kind.KW_do, 2 },
+    { nil, Kind.None, 0 },
 }
 const Keyword[] Keywords_e = {
-    { "elemsof", TokenKind.KW_elemsof, 7 },
-    { "else", TokenKind.KW_else, 4 },
-    { "enum_max", TokenKind.KW_enum_max, 8 },
-    { "enum_min", TokenKind.KW_enum_min, 8 },
-    { "enum", TokenKind.KW_enum, 4 },
-    { nil, TokenKind.None, 0 },
+    { "elemsof", Kind.KW_elemsof, 7 },
+    { "else", Kind.KW_else, 4 },
+    { "enum_max", Kind.KW_enum_max, 8 },
+    { "enum_min", Kind.KW_enum_min, 8 },
+    { "enum", Kind.KW_enum, 4 },
+    { nil, Kind.None, 0 },
 }
 const Keyword[] Keywords_f = {
-    { "f32", TokenKind.KW_f32, 3 },
-    { "f64", TokenKind.KW_f64, 3 },
-    { "fallthrough", TokenKind.KW_fallthrough, 11 },
-    { "false", TokenKind.KW_false, 5 },
-    { "for", TokenKind.KW_for, 3 },
-    { "func", TokenKind.KW_func, 4 },
-    { nil, TokenKind.None, 0 },
+    { "f32", Kind.KW_f32, 3 },
+    { "f64", Kind.KW_f64, 3 },
+    { "fallthrough", Kind.KW_fallthrough, 11 },
+    { "false", Kind.KW_false, 5 },
+    { "for", Kind.KW_for, 3 },
+    { "func", Kind.KW_func, 4 },
+    { nil, Kind.None, 0 },
 }
 const Keyword[] Keywords_g = {
-    { "goto", TokenKind.KW_goto, 4 },
-    { nil, TokenKind.None, 0 },
+    { "goto", Kind.KW_goto, 4 },
+    { nil, Kind.None, 0 },
 }
 const Keyword[] Keywords_i = {
-    { "i16", TokenKind.KW_i16, 3 },
-    { "i32", TokenKind.KW_i32, 3 },
-    { "i64", TokenKind.KW_i64, 3 },
-    { "i8", TokenKind.KW_i8, 2 },
-    { "if", TokenKind.KW_if, 2 },
-    { "import", TokenKind.KW_import, 6 },
-    { "isize", TokenKind.KW_isize, 5 },
-    { nil, TokenKind.None, 0 },
+    { "i16", Kind.KW_i16, 3 },
+    { "i32", Kind.KW_i32, 3 },
+    { "i64", Kind.KW_i64, 3 },
+    { "i8", Kind.KW_i8, 2 },
+    { "if", Kind.KW_if, 2 },
+    { "import", Kind.KW_import, 6 },
+    { "isize", Kind.KW_isize, 5 },
+    { nil, Kind.None, 0 },
 }
 const Keyword[] Keywords_l = {
-    { "local", TokenKind.KW_local, 5 },
-    { nil, TokenKind.None, 0 },
+    { "local", Kind.KW_local, 5 },
+    { nil, Kind.None, 0 },
 }
 const Keyword[] Keywords_m = {
-    { "module", TokenKind.KW_module, 6 },
-    { nil, TokenKind.None, 0 },
+    { "module", Kind.KW_module, 6 },
+    { nil, Kind.None, 0 },
 }
 const Keyword[] Keywords_n = {
-    { "nil", TokenKind.KW_nil, 3 },
-    { nil, TokenKind.None, 0 },
+    { "nil", Kind.KW_nil, 3 },
+    { nil, Kind.None, 0 },
 }
 const Keyword[] Keywords_o = {
-    { "offsetof", TokenKind.KW_offsetof, 8 },
-    { nil, TokenKind.None, 0 },
+    { "offsetof", Kind.KW_offsetof, 8 },
+    { nil, Kind.None, 0 },
 }
 const Keyword[] Keywords_p = {
-    { "public", TokenKind.KW_public, 6 },
-    { nil, TokenKind.None, 0 },
+    { "public", Kind.KW_public, 6 },
+    { nil, Kind.None, 0 },
 }
 const Keyword[] Keywords_r = {
-    { "reg16", TokenKind.KW_reg16, 5 },
-    { "reg32", TokenKind.KW_reg32, 5 },
-    { "reg64", TokenKind.KW_reg64, 5 },
-    { "reg8", TokenKind.KW_reg8, 4 },
-    { "return", TokenKind.KW_return, 6 },
-    { nil, TokenKind.None, 0 },
+    { "reg16", Kind.KW_reg16, 5 },
+    { "reg32", Kind.KW_reg32, 5 },
+    { "reg64", Kind.KW_reg64, 5 },
+    { "reg8", Kind.KW_reg8, 4 },
+    { "return", Kind.KW_return, 6 },
+    { nil, Kind.None, 0 },
 }
 const Keyword[] Keywords_s = {
-    { "sizeof", TokenKind.KW_sizeof, 6 },
-    { "sswitch", TokenKind.KW_sswitch, 7 },
-    { "static_assert", TokenKind.KW_static_assert, 13 },
-    { "struct", TokenKind.KW_struct, 6 },
-    { "switch", TokenKind.KW_switch, 6 },
-    { nil, TokenKind.None, 0 },
+    { "sizeof", Kind.KW_sizeof, 6 },
+    { "sswitch", Kind.KW_sswitch, 7 },
+    { "static_assert", Kind.KW_static_assert, 13 },
+    { "struct", Kind.KW_struct, 6 },
+    { "switch", Kind.KW_switch, 6 },
+    { nil, Kind.None, 0 },
 }
 const Keyword[] Keywords_t = {
-    { "to_container", TokenKind.KW_to_container, 12 },
-    { "true", TokenKind.KW_true, 4 },
-    { "type", TokenKind.KW_type, 4 },
-    { nil, TokenKind.None, 0 },
+    { "to_container", Kind.KW_to_container, 12 },
+    { "true", Kind.KW_true, 4 },
+    { "type", Kind.KW_type, 4 },
+    { nil, Kind.None, 0 },
 }
 const Keyword[] Keywords_u = {
-    { "u16", TokenKind.KW_u16, 3 },
-    { "u32", TokenKind.KW_u32, 3 },
-    { "u64", TokenKind.KW_u64, 3 },
-    { "u8", TokenKind.KW_u8, 2 },
-    { "union", TokenKind.KW_union, 5 },
-    { "usize", TokenKind.KW_usize, 5 },
-    { nil, TokenKind.None, 0 },
+    { "u16", Kind.KW_u16, 3 },
+    { "u32", Kind.KW_u32, 3 },
+    { "u64", Kind.KW_u64, 3 },
+    { "u8", Kind.KW_u8, 2 },
+    { "union", Kind.KW_union, 5 },
+    { "usize", Kind.KW_usize, 5 },
+    { nil, Kind.None, 0 },
 }
 const Keyword[] Keywords_v = {
-    { "void", TokenKind.KW_void, 4 },
-    { "volatile", TokenKind.KW_volatile, 8 },
-    { nil, TokenKind.None, 0 },
+    { "void", Kind.KW_void, 4 },
+    { "volatile", Kind.KW_volatile, 8 },
+    { nil, Kind.None, 0 },
 }
 const Keyword[] Keywords_w = {
-    { "while", TokenKind.KW_while, 5 },
-    { nil, TokenKind.None, 0 },
+    { "while", Kind.KW_while, 5 },
+    { nil, Kind.None, 0 },
 }
 
-public type TokenKind enum u8 {
-    None,
-    Identifier,
-    NumberLiteral,
-    CharLiteral,
-    StringLiteral,
-    LParen,
-    RParen,
-    LSquare,
-    RSquare,
-    LBrace,
-    RBrace,
-    Exclaim,
-    ExclaimEqual,
-    Star,
-    StarEqual,
-    Amp,
-    AmpAmp,
-    AmpEqual,
-    Pipe,
-    PipePipe,
-    PipeEqual,
-    Equal,
-    EqualEqual,
-    Semicolon,
-    Colon,
-    At,
-    Caret,
-    CaretEqual,
-    Question,
-    Dot,
-    Ellipsis,
-    Comma,
-    Plus,
-    PlusPlus,
-    PlusEqual,
-    Minus,
-    MinusMinus,
-    MinusEqual,
-    Tilde,
-    Slash,
-    SlashEqual,
-    Percent,
-    PercentEqual,
-    Less,
-    LessLess,
-    LessEqual,
-    LessLessEqual,
-    Greater,
-    GreaterGreater,
-    GreaterEqual,
-    GreaterGreaterEqual,
-    KW_as,
-    KW_asm,
-    KW_auto,
-    KW_bool,
-    KW_break,
-    KW_case,
-    KW_cast,
-    KW_char,
-    KW_const,
-    KW_continue,
-    KW_default,
-    KW_do,
-    KW_elemsof,
-    KW_else,
-    KW_enum_max,
-    KW_enum_min,
-    KW_enum,
-    KW_f32,
-    KW_f64,
-    KW_fallthrough,
-    KW_false,
-    KW_for,
-    KW_func,
-    KW_goto,
-    KW_i16,
-    KW_i32,
-    KW_i64,
-    KW_i8,
-    KW_if,
-    KW_import,
-    KW_isize,
-    KW_local,
-    KW_module,
-    KW_nil,
-    KW_offsetof,
-    KW_public,
-    KW_reg16,
-    KW_reg32,
-    KW_reg64,
-    KW_reg8,
-    KW_return,
-    KW_sizeof,
-    KW_sswitch,
-    KW_static_assert,
-    KW_struct,
-    KW_switch,
-    KW_to_container,
-    KW_true,
-    KW_type,
-    KW_u16,
-    KW_u32,
-    KW_u64,
-    KW_u8,
-    KW_union,
-    KW_usize,
-    KW_void,
-    KW_volatile,
-    KW_while,
-    Eof,
-    Warning,
-    Error,
-}
-
-// NOTE: keep in sync with TokenKind
-const char*[] token_names = {
-    "none",
-    "identifier",
-    "number",
-    "char",
-    "string",
-    "(",
-    ")",
-    "[",
-    "]",
-    "{",
-    "}",
-    "!",
-    "!=",
-    "*",
-    "*=",
-    "&",
-    "&&",
-    "&=",
-    "|",
-    "||",
-    "|=",
-    "=",
-    "==",
-    ";",
-    ":",
-    "@",
-    "^",
-    "^=",
-    "?",
-    ".",
-    "...",
-    ",",
-    "+",
-    "++",
-    "+=",
-    "-",
-    "--",
-    "-=",
-    "~",
-    "/",
-    "/=",
-    "%",
-    "%=",
-    "<",
-    "<<",
-    "<=",
-    "<<=",
-    ">",
-    ">>",
-    ">=",
-    ">>=",
-    "as",
-    "asm",
-    "auto",
-    "bool",
-    "break",
-    "case",
-    "cast",
-    "char",
-    "const",
-    "continue",
-    "default",
-    "do",
-    "elemsof",
-    "else",
-    "enum_max",
-    "enum_min",
-    "enum",
-    "f32",
-    "f64",
-    "falltrhough",
-    "false",
-    "for",
-    "func",
-    "goto",
-    "i16",
-    "i32",
-    "i64",
-    "i8",
-    "if",
-    "import",
-    "isize",
-    "local",
-    "module",
-    "nil",
-    "offsetof",
-    "public",
-    "reg16",
-    "reg32",
-    "reg64",
-    "reg8",
-    "return",
-    "sizeof",
-    "sswitch",
-    "static_assert",
-    "struct",
-    "switch",
-    "to_container",
-    "true",
-    "type",
-    "u16",
-    "u32",
-    "u64",
-    "u8",
-    "union",
-    "usize",
-    "void",
-    "volatile",
-    "while",
-    "eof",
-    "warning",
-    "error",
-}
-
-//static_assert(elemsof(TokenKind) == elemsof(token_names), "should be the same");
+//static_assert(elemsof(Kind) == elemsof(token_names), "should be the same");
 
 // TODO order by frequency
 type Action enum u8 {
@@ -540,12 +310,9 @@ u8[128] char_lookup = {
     ['~'] = Action.TILDE,
 }
 
+// TODO remove?
 public func const char* Token.str(const Token* tok) @(inline) {
-    return token_names[tok.kind];
-}
-
-public func const char* kind2str(TokenKind kind) @(inline) {
-    return token_names[kind];
+    return kind2str(tok.kind);
 }
 
 func bool identifier_char(char c) @(inline) {
@@ -585,7 +352,7 @@ func const Keyword* check_keyword(const char* cp) {
 
 public type Token struct {
     u32 loc;
-    TokenKind kind;
+    Kind kind;
     union {
         const char* error_msg;  // ERROR
         const char* text_value; // Identifier, NumberLiteral
@@ -595,7 +362,7 @@ public type Token struct {
 }
 
 public func void Token.init(Token* tok) {
-    tok.kind = TokenKind.None;
+    tok.kind = Kind.None;
     tok.more = true;
 }
 
@@ -639,14 +406,14 @@ public func void Tokenizer.init(Tokenizer* t,
     t.alloc = alloc;
     t.alloc_arg = arg;
     t.line_start = input;
-    t.next.kind = TokenKind.None;
+    t.next.kind = Kind.None;
     t.features = features;
 }
 
 public func void Tokenizer.lex(Tokenizer* t, Token* result) {
-    if (t.next.kind != TokenKind.None) {
+    if (t.next.kind != Kind.None) {
         memcpy(result, &t.next, sizeof(Token));
-        t.next.kind = TokenKind.None;
+        t.next.kind = Kind.None;
         return;
     }
 
@@ -677,22 +444,22 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
             return;
         case Action.LPAREN:
             result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
-            result.kind = TokenKind.LParen;
+            result.kind = Kind.LParen;
             t.cur++;
             return;
         case Action.RPAREN:
             result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
-            result.kind = TokenKind.RParen;
+            result.kind = Kind.RParen;
             t.cur++;
             return;
         case Action.LSQUARE:
             result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
-            result.kind = TokenKind.LSquare;
+            result.kind = Kind.LSquare;
             t.cur++;
             return;
         case Action.RSQUARE:
             result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
-            result.kind = TokenKind.RSquare;
+            result.kind = Kind.RSquare;
             t.cur++;
             return;
         case Action.NEWLINE:
@@ -703,10 +470,10 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
             result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '=') {
-                result.kind = TokenKind.ExclaimEqual;
+                result.kind = Kind.ExclaimEqual;
                 t.cur++;
             } else {
-                result.kind = TokenKind.Exclaim;
+                result.kind = Kind.Exclaim;
             }
             return;
         case Action.DQUOTE:
@@ -725,10 +492,10 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
             result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '=') {
-                result.kind = TokenKind.StarEqual;
+                result.kind = Kind.StarEqual;
                 t.cur++;
             } else {
-                result.kind = TokenKind.Star;
+                result.kind = Kind.Star;
             }
             return;
         case Action.PLUS:
@@ -736,34 +503,34 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
             t.cur++;
             if (*t.cur == '+') {
                 t.cur++;
-                result.kind = TokenKind.PlusPlus;
+                result.kind = Kind.PlusPlus;
                 return;
             }
             if (*t.cur == '=') {
                 t.cur++;
-                result.kind = TokenKind.PlusEqual;
+                result.kind = Kind.PlusEqual;
                 return;
             }
-            result.kind = TokenKind.Plus;
+            result.kind = Kind.Plus;
             return;
         case Action.MINUS:
             result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '-') {
                 t.cur++;
-                result.kind = TokenKind.MinusMinus;
+                result.kind = Kind.MinusMinus;
                 return;
             }
             if (*t.cur == '=') {
                 t.cur++;
-                result.kind = TokenKind.MinusEqual;
+                result.kind = Kind.MinusEqual;
                 return;
             }
-            result.kind = TokenKind.Minus;
+            result.kind = Kind.Minus;
             return;
         case Action.COMMA:
             result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
-            result.kind = TokenKind.Comma;
+            result.kind = Kind.Comma;
             t.cur++;
             return;
         case Action.DOT:
@@ -771,48 +538,48 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
             t.cur++;
             if (t.cur[0] == '.' && t.cur[1] == '.') {
                 t.cur += 2;
-                result.kind = TokenKind.Ellipsis;
+                result.kind = Kind.Ellipsis;
             } else {
-                result.kind = TokenKind.Dot;
+                result.kind = Kind.Dot;
             }
             return;
         case Action.PERCENT:
             result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '=') {
-                result.kind = TokenKind.PercentEqual;
+                result.kind = Kind.PercentEqual;
                 t.cur++;
                 return;
             }
-            result.kind = TokenKind.Percent;
+            result.kind = Kind.Percent;
             return;
         case Action.SLASH:
             result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '=') {
-                result.kind = TokenKind.SlashEqual;
+                result.kind = Kind.SlashEqual;
                 t.cur++;
                 return;
             }
             if (*t.cur == '/') {
                 t.skip_line_comment();
-                // TODO sometimes have TokenKind.Comment
+                // TODO sometimes have Kind.Comment
                 continue;
             }
             if (*t.cur == '*') {
                 t.skip_block_comment();
                 continue;
             }
-            result.kind = TokenKind.Slash;
+            result.kind = Kind.Slash;
             return;
         case Action.COLON:
             result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
-            result.kind = TokenKind.Colon;
+            result.kind = Kind.Colon;
             t.cur++;
             return;
         case Action.SEMI_COLON:
             result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
-            result.kind = TokenKind.Semicolon;
+            result.kind = Kind.Semicolon;
             t.cur++;
             return;
         case Action.LESS:
@@ -820,28 +587,28 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
             t.cur++;
             if (*t.cur == '=') {
                 t.cur++;
-                result.kind = TokenKind.LessEqual;
+                result.kind = Kind.LessEqual;
                 return;
             }
             if (*t.cur == '<') {
                 t.cur++;
                 if (*t.cur == '=') {
                     t.cur++;
-                    result.kind = TokenKind.LessLessEqual;
+                    result.kind = Kind.LessLessEqual;
                 }
-                result.kind = TokenKind.LessLess;
+                result.kind = Kind.LessLess;
                 return;
             }
-            result.kind = TokenKind.Less;
+            result.kind = Kind.Less;
             return;
         case Action.EQUAL:
             result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '=') {
-                result.kind = TokenKind.EqualEqual;
+                result.kind = Kind.EqualEqual;
                 t.cur++;
             } else {
-                result.kind = TokenKind.Equal;
+                result.kind = Kind.Equal;
             }
             return;
         case Action.GREATER:
@@ -849,83 +616,83 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
             t.cur++;
             if (*t.cur == '=') {
                 t.cur++;
-                result.kind = TokenKind.GreaterEqual;
+                result.kind = Kind.GreaterEqual;
                 return;
             }
             if (*t.cur == '>') {
                 t.cur++;
                 if (*t.cur == '=') {
                     t.cur++;
-                    result.kind = TokenKind.GreaterGreaterEqual;
+                    result.kind = Kind.GreaterGreaterEqual;
                 }
-                result.kind = TokenKind.GreaterGreater;
+                result.kind = Kind.GreaterGreater;
                 return;
             }
-            result.kind = TokenKind.Greater;
+            result.kind = Kind.Greater;
             return;
         case Action.QUESTION:
             result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
-            result.kind = TokenKind.Question;
+            result.kind = Kind.Question;
             t.cur++;
             return;
         case Action.AT:
             result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
-            result.kind = TokenKind.At;
+            result.kind = Kind.At;
             t.cur++;
             return;
         case Action.AMP:
             result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '&') {
-                result.kind = TokenKind.AmpAmp;
+                result.kind = Kind.AmpAmp;
                 t.cur++;
                 return;
             }
             if (*t.cur == '=') {
-                result.kind = TokenKind.AmpEqual;
+                result.kind = Kind.AmpEqual;
                 t.cur++;
                 return;
             }
-            result.kind = TokenKind.Amp;
+            result.kind = Kind.Amp;
             return;
         case Action.CARET:
             result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '=') {
                 t.cur++;
-                result.kind = TokenKind.CaretEqual;
+                result.kind = Kind.CaretEqual;
                 return;
             }
-            result.kind = TokenKind.Caret;
+            result.kind = Kind.Caret;
             return;
         case Action.LBRACE:
             result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
-            result.kind = TokenKind.LBrace;
+            result.kind = Kind.LBrace;
             t.cur++;
             return;
         case Action.RBRACE:
             result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
-            result.kind = TokenKind.RBrace;
+            result.kind = Kind.RBrace;
             t.cur++;
             return;
         case Action.PIPE:
             result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '|') {
-                result.kind = TokenKind.PipePipe;
+                result.kind = Kind.PipePipe;
                 t.cur++;
                 return;
             }
             if (*t.cur == '=') {
-                result.kind = TokenKind.PipeEqual;
+                result.kind = Kind.PipeEqual;
                 t.cur++;
                 return;
             }
-            result.kind = TokenKind.Pipe;
+            result.kind = Kind.Pipe;
             return;
         case Action.TILDE:
             result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
-            result.kind = TokenKind.Tilde;
+            result.kind = Kind.Tilde;
             t.cur++;
             return;
         case Action.CR:
@@ -938,7 +705,7 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
             return;
         case Action.EOF:
             result.loc = 0; //t.loc_start + cast<u32>(t.cur - t.input_start);
-            result.kind = TokenKind.Eof;
+            result.kind = Kind.Eof;
             result.more = false;
             return;
         }
@@ -946,7 +713,7 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
 }
 
 public func Token* Tokenizer.lex_next(Tokenizer* t) {
-    if (t.next.kind == TokenKind.None) t.lex(&t.next);
+    if (t.next.kind == Kind.None) t.lex(&t.next);
 
     return &t.next;
 }
@@ -958,14 +725,14 @@ func void Tokenizer.error(Tokenizer* t, Token* result, const char* format, ...) 
     va_end(args);
 
     result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
-    result.kind = TokenKind.Error;
+    result.kind = Kind.Error;
     result.error_msg = t.error_msg;
     result.more = false;
 }
 
 func void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
     // NOTE: result.loc are already set
-    result.kind = TokenKind.Identifier;
+    result.kind = Kind.Identifier;
     result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
     const char* start = t.cur;
     const char* end = t.cur + 1;
@@ -981,7 +748,7 @@ func void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
 }
 
 func void Tokenizer.lex_number(Tokenizer* t, Token* result) {
-    result.kind = TokenKind.NumberLiteral;
+    result.kind = Kind.NumberLiteral;
     result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
     const char* start = t.cur;
     const char* end = t.cur + 1;
@@ -993,7 +760,7 @@ func void Tokenizer.lex_number(Tokenizer* t, Token* result) {
 }
 
 func void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
-    result.kind = TokenKind.CharLiteral;
+    result.kind = Kind.CharLiteral;
     result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
 
     if (t.cur[1] == '\\') {
@@ -1031,7 +798,7 @@ func void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
 }
 
 func void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
-    result.kind = TokenKind.StringLiteral;
+    result.kind = Kind.StringLiteral;
     result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
     t.cur++;
     const char* start = t.cur;
@@ -1214,7 +981,7 @@ func bool Tokenizer.parse_error_warn(Tokenizer* t, Token* result, bool is_error)
         } else {
             strcpy(t.error_msg, msg);
             result.loc = t.loc_start + cast<u32>(t.line_start - t.input_start);
-            result.kind = TokenKind.Warning;
+            result.kind = Kind.Warning;
             result.error_msg = t.error_msg;
         }
         return true;

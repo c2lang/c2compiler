@@ -3,6 +3,7 @@ module c2_parser;
 import c2_source_mgr local;
 import c2_tokenizer local;
 import c2_ast_builder local;
+import tokens local;
 import string_list;
 import utils;
 import color;
@@ -13,6 +14,10 @@ import string local;
 import csetjmp local;
 import ctype local;
 import stdio local;
+
+// TODO extract
+const u32 Type_Const    = (1<<1);
+const u32 Type_Volatile = (1<<2);
 
 
 // TEMP HERE
@@ -34,16 +39,18 @@ public type Parser struct {
     Builder* builder;
     SourceMgr* sm;
     i32 file_id;
+    bool is_interface;
 
     JmpBufTag jmpbuf;
     string_list.List* features;
     char[256] error_msg;
 } @(opaque)
 
-public func Parser* create(SourceMgr* sm, i32 file_id, string_list.List* features) {
+public func Parser* create(SourceMgr* sm, i32 file_id, string_list.List* features, bool is_interface) {
     Parser* p = calloc(1, sizeof(Parser));
     p.sm = sm;
     p.file_id = file_id;
+    p.is_interface = is_interface;
     p.features = features;
     // TEMP create Builder here
     p.builder = Builder.create();
@@ -61,11 +68,11 @@ public func bool Parser.parse(Parser* p) {
     alloc_idx = 0;
 
     u64 t1 = utils.now();
-#if 0
+#if 1
     i32 res = setjmp(&p.jmpbuf);
     if (res == 0) {
 
-        p.tokenizer.init(p.sm.get_content(p.file_id), p.sm.get_offset(p.file_id), alloc, nil);
+        p.tokenizer.init(p.sm.get_content(p.file_id), p.sm.get_offset(p.file_id), alloc, nil, p.features);
         p.tok.init();
 
         p.consumeToken();
@@ -89,29 +96,23 @@ public func bool Parser.parse(Parser* p) {
         dump_token(p.sm, &p.tok);
         token_count++;
     }
+    printf("--- %u tokens (%u alloc)  (%llu usec) ---\n", token_count, alloc_idx, t2 - t1);
 #endif
     u64 t2 = utils.now();
-    printf("--- %u tokens (%u alloc)  (%llu usec) ---\n", token_count, alloc_idx, t2 - t1);
-/*
-    if (p.tok.kind == TokenKind.Error) {
-        c2_source_mgr.Location loc = p.sm.locate(p.tok.loc);
-        printf("%s:%u:%u: %serror:%s %s\n",  loc.filename, loc.line, loc.column, color.Red, color.Normal, p.tok.error_msg);
-        return false;
-    }
-*/
     return true;
 }
 
 func void Parser.consumeToken(Parser* p) {
     p.tokenizer.lex(&p.tok);
 
+    dump_token(p.sm, &p.tok);
     // TODO dont check here, just jump from inner scope (pass jmpbuf to tokenizer)?
-    if (p.tok.kind == TokenKind.Error) {
+    if (p.tok.kind == Kind.Error) {
         p.error(p.tok.error_msg);
     }
 }
 
-func void Parser.expectAndConsume(Parser* p, TokenKind kind) {
+func void Parser.expectAndConsume(Parser* p, Kind kind) {
     if (p.tok.kind == kind) {
         p.consumeToken();
         return;
@@ -121,7 +122,7 @@ func void Parser.expectAndConsume(Parser* p, TokenKind kind) {
 }
 
 func void Parser.expectIdentifier(Parser* p) {
-    if (p.tok.kind == TokenKind.Identifier) return;
+    if (p.tok.kind == Kind.Identifier) return;
 
     p.error("expected identifier");
 }
@@ -137,16 +138,16 @@ func void Parser.error(Parser* p, const char* format, ...) @(noreturn) {
 }
 
 func void Parser.parseModule(Parser* p) {
-    p.expectAndConsume(TokenKind.KW_module);
+    p.expectAndConsume(Kind.KW_module);
     p.expectIdentifier();
 
     p.builder.actOnModule(p.tok.text_value, p.tok.loc);
     p.consumeToken();
-    p.expectAndConsume(TokenKind.Semicolon);
+    p.expectAndConsume(Kind.Semicolon);
 }
 
 func void Parser.parseImports(Parser* p) {
-    while (p.tok.kind == TokenKind.KW_import) {
+    while (p.tok.kind == Kind.KW_import) {
         p.consumeToken();
         p.expectIdentifier();
         const char* mod_name = p.tok.text_value;
@@ -155,18 +156,18 @@ func void Parser.parseImports(Parser* p) {
         const char* alias_name = nil;
         u32 alias_loc = 0;
         p.consumeToken();
-        if (p.tok.kind == TokenKind.KW_as) {
+        if (p.tok.kind == Kind.KW_as) {
             p.consumeToken();
             p.expectIdentifier();
             alias_name = p.tok.text_value;
             alias_loc = p.tok.loc;
         }
         bool islocal = false;
-        if (p.tok.kind == TokenKind.KW_local) {
+        if (p.tok.kind == Kind.KW_local) {
             p.consumeToken();
             islocal = true;
         }
-        p.expectAndConsume(TokenKind.Semicolon);
+        p.expectAndConsume(Kind.Semicolon);
 
         p.builder.actOnImport(mod_name, mod_loc, alias_name, alias_loc, islocal);
     }
@@ -177,34 +178,25 @@ func void Parser.parseTopLevel(Parser* p) {
 
     bool is_public = p.parseOptionalAccessSpecifier();
     switch (p.tok.kind) {
-    // TODO order
-    case TokenKind.Eof:
-        break;
-    case TokenKind.KW_import:
-        p.error("import after decls");
-        break;
-    case TokenKind.KW_type:
-        p.parseTypeDef(is_public);
-        break;
-    case TokenKind.KW_func:
+    case Kind.KW_func:
         p.parseFuncDef(is_public);
         break;
-    case TokenKind.KW_static_assert:
+    case Kind.KW_import:
+        p.error("import after decls");
+        break;
+    case Kind.KW_static_assert:
         if (is_public) p.error("static_assert cannot be public");
         p.parseStaticAssert();
+        break;
+    case Kind.KW_type:
+        p.parseTypeDef(is_public);
+        break;
+    case Kind.Eof:
         break;
     default:
         p.parseVarDef(is_public);
         break;
     }
-}
-
-func bool Parser.parseOptionalAccessSpecifier(Parser* p) {
-    if (p.tok.kind == TokenKind.KW_public) {
-        p.consumeToken();
-        return true;
-    }
-    return false;
 }
 
 func void Parser.parseTypeDef(Parser* p, bool is_public) {
@@ -217,16 +209,16 @@ func void Parser.parseTypeDef(Parser* p, bool is_public) {
     if (!isupper(type_name[0])) p.error("type name must start with upper-case character");
 
     switch (p.tok.kind) {
-    case TokenKind.KW_func:
+    case Kind.KW_func:
         p.parseFuncType(type_name, type_loc, is_public);
         break;
-    case TokenKind.KW_struct:
+    case Kind.KW_struct:
         p.parseStructType(true, type_name, type_loc, is_public);
         break;
-    case TokenKind.KW_union:
+    case Kind.KW_union:
         p.parseStructType(false, type_name, type_loc, is_public);
         break;
-    case TokenKind.KW_enum:
+    case Kind.KW_enum:
         p.parseEnumType(type_name, type_loc, is_public);
         break;
     default:
@@ -250,7 +242,7 @@ func void Parser.parseStructType(Parser* p, bool is_struct, const char* name, u3
 }
 
 func void Parser.parseStructBlock(Parser* p /*, StructTypeDecl* s*/) {
-    p.expectAndConsume(TokenKind.LBrace);
+    p.expectAndConsume(Kind.LBrace);
 
     //DeclList members
 
@@ -260,14 +252,14 @@ func void Parser.parseStructBlock(Parser* p /*, StructTypeDecl* s*/) {
         // struct_member ::= STRUCT <IDENTIFIER> LBRACE struct_block RBRACE.
         // struct_member ::= UNION <IDENTIFIER> LBRACE struct_block RBRACE.
 
-        if (p.tok.kind == TokenKind.RBrace) break;
-        if (p.tok.kind == TokenKind.KW_union || p.tok.kind == TokenKind.KW_struct) {
-            bool is_struct = p.tok.kind == TokenKind.KW_struct;
+        if (p.tok.kind == Kind.RBrace) break;
+        if (p.tok.kind == Kind.KW_union || p.tok.kind == Kind.KW_struct) {
+            bool is_struct = p.tok.kind == Kind.KW_struct;
             p.consumeToken();
             // name is optional
             const char* name = nil;
             u32 loc = 0;
-            if (p.tok.kind == TokenKind.Identifier) {
+            if (p.tok.kind == Kind.Identifier) {
                 name = p.tok.text_value;
                 loc = p.tok.loc;
                 p.consumeToken();
@@ -282,10 +274,10 @@ func void Parser.parseStructBlock(Parser* p /*, StructTypeDecl* s*/) {
 }
 
 func void Parser.parseAttributes(Parser* p) {
-    if (p.tok.kind != TokenKind.At) return;
+    if (p.tok.kind != Kind.At) return;
     p.consumeToken();
 
-    p.expectAndConsume(TokenKind.LParen);
+    p.expectAndConsume(Kind.LParen);
 
     while (1) {
         p.expectIdentifier();
@@ -294,16 +286,16 @@ func void Parser.parseAttributes(Parser* p) {
         p.consumeToken();
 
         u32 end_loc = attr_loc;
-        if (p.tok.kind == TokenKind.Equal) {
+        if (p.tok.kind == Kind.Equal) {
         }
 
         p.builder.actOnAttr(/*D,*/ attr_id, attr_loc, end_loc /*, arg.get()*/);
 
-        if (p.tok.kind != TokenKind.Comma) break;
+        if (p.tok.kind != Kind.Comma) break;
         p.consumeToken();
     }
 
-    p.expectAndConsume(TokenKind.RParen);
+    p.expectAndConsume(Kind.RParen);
 }
 
 func void Parser.parseEnumType(Parser* p, const char* name, u32 loc, bool is_public) {
@@ -317,6 +309,73 @@ func void Parser.parseAliasType(Parser* p, const char* name, u32 loc, bool is_pu
 
 func void Parser.parseFuncDef(Parser* p, bool is_public) {
     p.consumeToken();
+
+    /*ExprResult rtype = */ p.parseSingleTypeSpecifier(true);
+    // TODO
+    p.expectIdentifier();
+    const char* func_name = p.tok.text_value;
+    u32 func_loc = p.tok.loc;
+    p.consumeToken();
+
+    if (p.tok.kind == Kind.Dot) {
+        p.consumeToken();
+        p.expectIdentifier();
+
+        p.builder.actOnIdExpression(func_name, func_loc);
+        func_name = p.tok.text_value;
+        func_loc = p.tok.loc;
+        p.consumeToken();
+    }
+
+    if (!checkName(func_name, p.is_interface)) {
+        // TODO pass loc along
+        p.error("TODO");
+    }
+
+    p.builder.actOnFuncDecl(func_name, func_loc, /*typeId..*/ is_public /*, rtype.get()*/);
+
+    p.parseFunctionParams(/*func*/ true);
+}
+
+func void Parser.parseFunctionParams(Parser* p, bool allow_defaults) {
+    p.expectAndConsume(Kind.LParen);
+
+    // fast path for ()
+    if (p.tok.kind == Kind.RParen) {
+        p.consumeToken();
+        return;
+    }
+
+    // VarDeclList args
+    while (1) {
+        /* VarDeclResult decl = */ p.parseParamDecl(/*func, */ allow_defaults);
+
+        // TODO
+    }
+}
+
+/*
+   Syntax:
+    param_declaration ::= type_qualifier type_specifier IDENTIFIER param_default.
+    param_default ::= EQUALS constant_expression.
+*/
+func void Parser.parseParamDecl(Parser* p, bool allow_defaults) {
+    if (p.tok.kind == Kind.KW_local) {
+        p.error("invalid local");
+    }
+
+    /*ExprResult type = */ p.parseTypeSpecifier(true);
+
+    // TODO
+}
+
+func void Parser.parseTypeSpecifier(Parser* p, bool allow_qualifier) {
+    /*type = */ p.parseSingleTypeSpecifier(allow_qualifier);
+    if (p.tok.kind != Kind.LSquare) return; /*type*/
+    /*return*/ p.parseOptionalArray(/*type*/);
+}
+
+func void Parser.parseOptionalArray(Parser* p) {
     // TODO
 }
 
@@ -329,31 +388,101 @@ func void Parser.parseStaticAssert(Parser* p) {
     // TODO
 }
 
+func bool Parser.parseOptionalAccessSpecifier(Parser* p) {
+    if (p.tok.kind == Kind.KW_public) {
+        p.consumeToken();
+        return true;
+    }
+    return false;
+}
+
+func u32 Parser.parseOptionalTypeQualifier(Parser* p) {
+    u32 qualifiers = 0;
+    if (p.tok.kind == Kind.KW_const) {
+        p.consumeToken();
+        qualifiers |= Type_Const;
+    }
+    if (p.tok.kind == Kind.KW_volatile) {
+        p.consumeToken();
+        qualifiers |= Type_Volatile;
+    }
+    return qualifiers;
+}
+
+func void Parser.parseSingleTypeSpecifier(Parser* p, bool allow_qualifier) {
+    // TODO return Expr
+    u32 type_qualifier = 0;
+
+    if (allow_qualifier) type_qualifier = p.parseOptionalTypeQualifier();
+
+    switch (p.tok.kind) {
+    case Kind.KW_u8:   fallthrough;
+    case Kind.KW_u16:  fallthrough;
+    case Kind.KW_u32:  fallthrough;
+    case Kind.KW_u64:  fallthrough;
+    case Kind.KW_usize:  fallthrough;
+    case Kind.KW_i8:  fallthrough;
+    case Kind.KW_i16:  fallthrough;
+    case Kind.KW_i32:  fallthrough;
+    case Kind.KW_i64:  fallthrough;
+    case Kind.KW_isize:  fallthrough;
+    case Kind.KW_f32:  fallthrough;
+    case Kind.KW_f64:  fallthrough;
+    case Kind.KW_reg8:  fallthrough;
+    case Kind.KW_reg16:  fallthrough;
+    case Kind.KW_reg32:  fallthrough;
+    case Kind.KW_reg64:  fallthrough;
+    case Kind.KW_char:  fallthrough;
+    case Kind.KW_void:  fallthrough;
+    case Kind.KW_bool:
+        /* base = */  p.builder.actOnBuiltinType(p.tok.kind);
+        p.consumeToken();
+        break;
+    case Kind.Identifier:
+        /* base = */  p.parseFullTypeIdentifier();
+        break;
+    default:
+        p.error("expected type specifier");
+        break;
+    }
+
+    while (p.tok.kind == Kind.Star) {
+        /* base = */ p.builder.actOnPointerType(/*base.get(),*/ type_qualifier);
+        type_qualifier = 0;
+        p.consumeToken();
+    }
+    // return ..
+    p.builder.actOnTypeQualifier(/* base,*/ type_qualifier);
+}
+
+func void Parser.parseFullTypeIdentifier(Parser* p) {
+}
+
 
 // TEMP here
 public func void dump_token(SourceMgr* sm, const Token* tok) {
-    if (tok.kind >= TokenKind.KW_as && tok.kind <= TokenKind.KW_while) {
+    if (tok.kind >= Kind.KW_as && tok.kind <= Kind.KW_while) {
         printf("%s%10s%s  %s\n", color.Green, tok.str(), color.Normal, sm.loc2str(tok.loc));
         return;
     }
     printf("%10s  %s  ", tok.str(), sm.loc2str(tok.loc));
     switch (tok.kind) {
-    case TokenKind.Identifier:
+    case Kind.Identifier:
         printf("  %s%s%s", color.Cyan, tok.text_value, color.Normal);
         break;
-    case TokenKind.NumberLiteral:
+    case Kind.NumberLiteral:
         printf("  %s%s%s", color.Cyan, tok.text_value, color.Normal);
         break;
-    case TokenKind.CharLiteral:
+    case Kind.CharLiteral:
         printf("  %s'%c'%s", color.Cyan, tok.char_value, color.Normal);
         break;
-    case TokenKind.StringLiteral:
+    case Kind.StringLiteral:
         printf("  %s\"%s\"%s", color.Cyan, tok.text_value, color.Normal);
         break;
-    case TokenKind.Warning:
+    case Kind.Warning:
         printf("  %s%s%s", color.Yellow, tok.error_msg, color.Normal);
         break;
-    case TokenKind.Error:
+    case Kind.Error:
         printf("  %s%s%s", color.Red, tok.error_msg, color.Normal);
         break;
     default:
@@ -361,4 +490,12 @@ public func void dump_token(SourceMgr* sm, const Token* tok) {
     }
     printf("\n");
 }
+
+func bool checkName(const char* name, bool isInterface) {
+    char c = name[0];
+    if (islower(c)) return true;
+    if (c == '_' && isInterface) return true;
+    return false;
+}
+
 

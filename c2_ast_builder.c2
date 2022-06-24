@@ -1,5 +1,7 @@
 module c2_ast_builder;
 
+import tokens;
+
 import stdlib local;
 import stdio local;
 
@@ -33,5 +35,25 @@ public func void Builder.actOnStructType(Builder* b, const char* name, u32 loc, 
 
 public func void Builder.actOnAttr(Builder* b, const char* name, u32 begin_loc, u32 end_loc) {
     printf("ATTR  %s\n", name);
+}
+
+public func void Builder.actOnBuiltinType(Builder* b, tokens.Kind kind) {
+    printf("BUILTIN\n");
+}
+
+public func void Builder.actOnPointerType(Builder* b, /*base.get(),*/ u32 qualifier) {
+    printf("POINTER\n");
+}
+
+public func void Builder.actOnTypeQualifier(Builder* b, u32 qualifier) {
+    printf("QUALIFIER\n");
+}
+
+public func void Builder.actOnIdExpression(Builder* b, const char* name, u32 loc) {
+    printf("ID %s\n", name);
+}
+
+public func void Builder.actOnFuncDecl(Builder* b, const char* name, u32 loc, bool is_public) {
+    printf("FUNC %s %s\n", name, is_public ? "public" : "");
 }
 

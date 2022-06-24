@@ -16,12 +16,24 @@
 - advanced basic feature-selection:
     - NAME=<value> -> value always treated as text
     - OR AND NOT in condition
-    - ()
+    - () to indicate order
 
 ## SourceManager
 + reserve location 0
 + remove hardcoded file max
 - close files after use (need indication)
+
+## Parser
+- put all output through filter for coloring/not
+- parse Types
+- parse Functions
+- parse Varables
+
+## AST
+- create structure
+
+## AST-Builder
+- fill AST
 
 ## Performance
 - profile application to see where time is spent
