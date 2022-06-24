@@ -1,0 +1,46 @@
+module string_list;
+
+import string local;
+
+public const u32 MaxEntries = 16; // TEMP hardcoded
+
+// For now just malloc everything into single buffer
+public type List struct {
+    u16[MaxEntries] indexes;
+    u32 count;
+
+    char[256] buf;
+    u16 buf_size;   // index into buf
+}
+
+public func void List.init(List* sl, u32 size=4) {
+    memset(sl, 0, sizeof(List));
+}
+
+public func void List.clear(List* sl) {
+    sl.count = 0;
+    sl.buf_size = 0;
+}
+
+public func void List.add(List* sl, const char* value) {
+    usize len = strlen(value);
+    if (sl.buf_size + len + 1 >= sizeof(sl.buf)) return; // TODO handle
+    if (sl.count == MaxEntries) return;
+
+    sl.indexes[sl.count] = sl.buf_size;
+    sl.count++;
+
+    memcpy(sl.buf + sl.buf_size, value, len);
+    sl.buf_size += len;
+    sl.buf[sl.buf_size] = 0;
+    sl.buf_size++;  // add 0 terminator
+}
+
+public func bool List.contains(const List* sl, const char* value) {
+    for (u32 i=0; i<sl.count; i++) {
+        const char* entry = &sl.buf[sl.indexes[i]];
+        if (strcmp(entry, value) == 0) return true;
+    }
+    return false;
+}
+

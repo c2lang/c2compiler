@@ -6,6 +6,8 @@ import ctype local;
 import stdarg local;
 
 import constants;
+import string_list;
+
 type Keyword struct {
     const char* name;
     TokenKind kind;
@@ -538,16 +540,15 @@ u8[128] char_lookup = {
     ['~'] = Action.TILDE,
 }
 
-
-public func const char* Token.str(const Token* tok) {
+public func const char* Token.str(const Token* tok) @(inline) {
     return token_names[tok.kind];
 }
 
-public func const char* kind2str(TokenKind kind) {
+public func const char* kind2str(TokenKind kind) @(inline) {
     return token_names[kind];
 }
 
-func bool identifier_char(char c) {
+func bool identifier_char(char c) @(inline) {
     // TODO use lookup table (same as for initial?)
     if (c >= 'a' && c <= 'z') return true;
     if (c >= 'A' && c <= 'Z') return true;
@@ -619,11 +620,18 @@ public type Tokenizer struct {
     // Feature handling
     Feature[constants.MaxFeatureDepth] feature_stack;
     u32 feature_count;
+    const string_list.List* features;
 
     char[256] error_msg;
 }
 
-public func void Tokenizer.init(Tokenizer* t, const char* input, u32 loc_start, Alloc_fn alloc, void* arg) {
+public func void Tokenizer.init(Tokenizer* t,
+                                const char* input,
+                                u32 loc_start,
+                                Alloc_fn alloc,
+                                void* arg,
+                                const string_list.List* features)
+{
     memset(t, 0, sizeof(Tokenizer));
     t.cur = input;
     t.input_start = input;
@@ -632,6 +640,7 @@ public func void Tokenizer.init(Tokenizer* t, const char* input, u32 loc_start, 
     t.alloc_arg = arg;
     t.line_start = input;
     t.next.kind = TokenKind.None;
+    t.features = features;
 }
 
 public func void Tokenizer.lex(Tokenizer* t, Token* result) {
@@ -707,7 +716,7 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
             t.lex_char_literal(result);
             return;
         case Action.POUND:
-            if (t.lex_feature(result)) return;
+            if (t.lex_feature_cmd(result)) return;
             if (!t.is_enabled()) {
                 if (t.skip_feature(result)) return;
             }
@@ -1122,7 +1131,7 @@ func bool compare_word(const char* cur, const char* expect) {
 }
 
 // return true if we pass result
-func bool Tokenizer.lex_feature(Tokenizer* t, Token* result) {
+func bool Tokenizer.lex_feature_cmd(Tokenizer* t, Token* result) {
     if (t.cur != t.line_start) {
         t.error(result, "#if/#else/#endif must be at start of line");
         return true;
@@ -1222,34 +1231,60 @@ func bool Tokenizer.is_enabled(const Tokenizer* t) @(inline) {
 
 func bool Tokenizer.handle_if(Tokenizer* t, Token* result) {
     // Syntax: 0 | 1 | FEATURE | FEATURE=<value>
-    // TEMP, just allow 0 | 1
-
-    //t.skip_whitespace();
-    t.cur++;    // just skip space
-
-    bool enabled = false;
-    switch (*t.cur) {
-    case '0':
-        t.cur++;
-        break;
-    case '1':
-        t.cur++;
-        enabled = true;
-        break;
-    default:
-        // TODO support feature_stack
-        t.error(result, "invalid feature");
-        return true;
-    }
 
     if (t.feature_count >= constants.MaxFeatureDepth) {
         t.error(result, "feature nesting too much");
         return true;
     }
+
+    //t.skip_whitespace();
+    t.cur++;    // just skip space
+
+    bool enabled = false;
+    Action act = char_lookup[*t.cur];
+    switch (act) {
+    case Action.INVALID:
+        t.error(result, "invalid char '%c'", *t.cur);
+        return true;
+    case Action.IDENT_OR_KEYWORD: fallthrough;
+    case Action.IDENT:
+        if (t.parse_feature(result, &enabled)) return true;
+        break;
+    case Action.DIGIT:
+        if (*t.cur != '0') enabled = true;
+        t.cur++;
+        break;
+    case Action.EOF:
+        t.cur--;
+        t.error(result, "expected feature");
+        return true;
+    default:
+        t.error(result, "invalid feature value");
+        return true;
+    }
+
     Feature* next = &t.feature_stack[t.feature_count];
     next.is_if = true;
     next.enabled = enabled;
     t.feature_count++;
+    return false;
+}
+
+func bool Tokenizer.parse_feature(Tokenizer* t, Token* result, bool* enabled) {
+    const char* start = t.cur;
+    while (identifier_char(*t.cur)) t.cur++;
+
+    u32 len = cast<u32>(t.cur - start);
+    if (len > constants.MaxFeatureName) {
+        t.error(result, "feature name too long (max %u)", constants.MaxFeatureName);
+        return true;
+    }
+
+    char[constants.MaxFeatureName+1] name;
+    memcpy(name, start, len);
+    name[len] = 0;
+
+    if (t.features.contains(name)) *enabled = true;
     return false;
 }
 
@@ -1296,7 +1331,7 @@ func bool Tokenizer.skip_feature(Tokenizer* t, Token* result) {
             t.skip_char_literal();
             break;
         case Action.POUND:
-            if (t.lex_feature(result)) return true;
+            if (t.lex_feature_cmd(result)) return true;
             if (t.is_enabled()) return false;
             break;
         default:

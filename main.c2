@@ -2,6 +2,7 @@ module c2c_main;
 
 import c2_source_mgr local;
 import c2_parser local;
+import string_list;
 
 import stdio local;
 
@@ -23,7 +24,11 @@ public func i32 main(i32 argc, char** argv) {
             return -1;
         }
 
-        Parser* parser = c2_parser.create(sm, file_id);
+        string_list.List features;
+        features.init(64);
+        features.add("feature_a");
+
+        Parser* parser = c2_parser.create(sm, file_id, &features);
         for (i32 j=0; j<100; j++) {
             if (!parser.parse()) break;
             break;

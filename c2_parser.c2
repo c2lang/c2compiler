@@ -3,6 +3,7 @@ module c2_parser;
 import c2_source_mgr local;
 import c2_tokenizer local;
 import c2_ast_builder local;
+import string_list;
 import utils;
 import color;
 
@@ -35,13 +36,15 @@ public type Parser struct {
     i32 file_id;
 
     JmpBufTag jmpbuf;
+    string_list.List* features;
     char[256] error_msg;
 } @(opaque)
 
-public func Parser* create(SourceMgr* sm, i32 file_id) {
+public func Parser* create(SourceMgr* sm, i32 file_id, string_list.List* features) {
     Parser* p = calloc(1, sizeof(Parser));
     p.sm = sm;
     p.file_id = file_id;
+    p.features = features;
     // TEMP create Builder here
     p.builder = Builder.create();
 
@@ -78,7 +81,7 @@ public func bool Parser.parse(Parser* p) {
         return false;
     }
 #else
-    p.tokenizer.init(p.sm.get_content(p.file_id), p.sm.get_offset(p.file_id), alloc, nil);
+    p.tokenizer.init(p.sm.get_content(p.file_id), p.sm.get_offset(p.file_id), alloc, nil, p.features);
     p.tok.init();
     u32 token_count = 0;
     while (p.tok.more) {
