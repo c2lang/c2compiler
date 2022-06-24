@@ -347,6 +347,9 @@ public func void dump_token(SourceMgr* sm, const Token* tok) {
     case TokenKind.StringLiteral:
         printf("  %s\"%s\"%s", color.Cyan, tok.text_value, color.Normal);
         break;
+    case TokenKind.Warning:
+        printf("  %s%s%s", color.Yellow, tok.error_msg, color.Normal);
+        break;
     case TokenKind.Error:
         printf("  %s%s%s", color.Red, tok.error_msg, color.Normal);
         break;

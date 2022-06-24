@@ -11,9 +11,7 @@
 + check max identifier Length (31 bytes)
 + support basic feature-selection: (#if [cond], #else, #endif)
 + have error() be like printf
-- error/warn feature
-    + #error "text"
-    - #warn "text" -> hmm how to get warnings out tokenizer? (Warning token)
++ error/warn feature
 - named feature-selection
     #if NAME
 - advanced basic feature-selection:

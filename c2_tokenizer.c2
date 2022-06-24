@@ -272,6 +272,7 @@ public type TokenKind enum u8 {
     KW_volatile,
     KW_while,
     Eof,
+    Warning,
     Error,
 }
 
@@ -387,6 +388,7 @@ const char*[] token_names = {
     "volatile",
     "while",
     "eof",
+    "warning",
     "error",
 }
 
@@ -1155,42 +1157,10 @@ func bool Tokenizer.lex_feature(Tokenizer* t, Token* result) {
         if (t.handle_endif(result)) return true;
     } else if (compare_word(t.cur, "error")) {
         t.cur += 5;
-        t.cur++;    // skip SPACE
-        // NOTE: #error must always have good syntax, even in dis-abled feature!
-        if (*t.cur != '"') {
-            t.error(result, "expect '\"'");
-            return true;
-        }
-        t.cur++;
-        const char* start = t.cur;
-        while (*t.cur != '\"') {
-            switch (*t.cur) {
-            case 0: fallthrough;
-            case '\r': fallthrough;
-            case '\n':
-                t.error(result, "unterminated string");
-                return true;
-            case '\"':
-                break;
-            default:
-                t.cur++;
-                break;
-            }
-        }
-        u32 len = cast<u32>(t.cur - start);
-        if (len > MaxIdentifierLen) {
-            t.error(result, "error msg too long (max %u bytes)", MaxErrorMsgLen);
-            return true;
-        }
-        char[MaxErrorMsgLen+1] msg;
-        memcpy(msg, start, len);
-        msg[len] = 0;
-
-        if (t.is_enabled()) {
-            t.cur = t.line_start;
-            t.error(result, "%s", msg);
-            return true;
-        }
+        return t.parse_error_warn(result, true);
+    } else if (compare_word(t.cur, "warn")) {
+        t.cur += 4;
+        return t.parse_error_warn(result, false);
     } else {
         t.error(result, "unknown feature-selection command");
         return true;
@@ -1198,6 +1168,54 @@ func bool Tokenizer.lex_feature(Tokenizer* t, Token* result) {
     return false;
 }
 
+func bool Tokenizer.parse_error_warn(Tokenizer* t, Token* result, bool is_error) {
+    // NOTE: #warn/#error must always have good syntax, even in dis-abled feature!
+
+    t.cur++;    // skip SPACE
+    if (*t.cur != '"') {
+        t.error(result, "expect '\"'");
+        return true;
+    }
+    t.cur++;
+    const char* start = t.cur;
+    while (*t.cur != '\"') {
+        switch (*t.cur) {
+        case 0: fallthrough;
+        case '\r': fallthrough;
+        case '\n':
+            t.error(result, "unterminated string");
+            return true;
+        case '\"':
+            break;
+        default:
+            t.cur++;
+            break;
+        }
+    }
+    u32 len = cast<u32>(t.cur - start);
+    t.cur++;
+    if (len > MaxIdentifierLen) {
+        t.error(result, "error msg too long (max %u bytes)", MaxErrorMsgLen);
+        return true;
+    }
+    char[MaxErrorMsgLen+1] msg;
+    memcpy(msg, start, len);
+    msg[len] = 0;
+
+    if (t.is_enabled()) {
+        if (is_error) {
+            t.cur = t.line_start;
+            t.error(result, "%s", msg);
+        } else {
+            strcpy(t.error_msg, msg);
+            result.loc = t.loc_start + cast<u32>(t.line_start - t.input_start);
+            result.kind = TokenKind.Warning;
+            result.error_msg = t.error_msg;
+        }
+        return true;
+    }
+    return false;
+}
 
 func bool Tokenizer.is_enabled(const Tokenizer* t) @(inline) {
     for (u32 i=0; i<t.feature_count; i++) {
