@@ -8,6 +8,7 @@ import stdarg local;
 // TODO move somewhere else
 const u32 MaxIdentifierLen = 31;
 public const u32 MaxFeatureDepth = 6;
+public const u32 MaxErrorMsgLen = 31;
 
 type Keyword struct {
     const char* name;
@@ -1130,13 +1131,13 @@ func bool Tokenizer.lex_feature(Tokenizer* t, Token* result) {
     }
 /*
     Syntax:
-    #if <selection>
-    #else
-    #endif
+        #if <selection>
+        #else
+        #endif
+        #error "msg"
 
     later:
         AND OR NOT
-        #error "msg"
         #warn "msg"
 */
     t.cur++;    // skip #
@@ -1152,6 +1153,44 @@ func bool Tokenizer.lex_feature(Tokenizer* t, Token* result) {
         t.cur += 5;
         if (t.skip_line(result)) return true;
         if (t.handle_endif(result)) return true;
+    } else if (compare_word(t.cur, "error")) {
+        t.cur += 5;
+        t.cur++;    // skip SPACE
+        // NOTE: #error must always have good syntax, even in dis-abled feature!
+        if (*t.cur != '"') {
+            t.error(result, "expect '\"'");
+            return true;
+        }
+        t.cur++;
+        const char* start = t.cur;
+        while (*t.cur != '\"') {
+            switch (*t.cur) {
+            case 0: fallthrough;
+            case '\r': fallthrough;
+            case '\n':
+                t.error(result, "unterminated string");
+                return true;
+            case '\"':
+                break;
+            default:
+                t.cur++;
+                break;
+            }
+        }
+        u32 len = cast<u32>(t.cur - start);
+        if (len > MaxIdentifierLen) {
+            t.error(result, "error msg too long (max %u bytes)", MaxErrorMsgLen);
+            return true;
+        }
+        char[MaxErrorMsgLen+1] msg;
+        memcpy(msg, start, len);
+        msg[len] = 0;
+
+        if (t.is_enabled()) {
+            t.cur = t.line_start;
+            t.error(result, "%s", msg);
+            return true;
+        }
     } else {
         t.error(result, "unknown feature-selection command");
         return true;

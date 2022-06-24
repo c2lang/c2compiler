@@ -11,19 +11,15 @@
 + check max identifier Length (31 bytes)
 + support basic feature-selection: (#if [cond], #else, #endif)
 + have error() be like printf
+- error/warn feature
+    + #error "text"
+    - #warn "text" -> hmm how to get warnings out tokenizer? (Warning token)
 - named feature-selection
     #if NAME
-- advanced basic feature-selection: (#if [cond], #else, #endif)
-- error/warn feature
-    #error "text"
-    #warn "text" -> hmm how to get warnings out tokenizer? (Warning token)
-    [cond] can be 0 | 1 | literal (must be known) | literal=<value>
-        -> also allow OR AND NOT
-        -> LATER: () to specify precedence
-        -> literal=<value>   value is treated as text (numbers also)
-        -> ignore extra spaces around
-    -> pass selection to tokenizer at creation
-
+- advanced basic feature-selection:
+    - NAME=<value> -> value always treated as text
+    - OR AND NOT in condition
+    - ()
 
 ## SourceManager
 + reserve location 0
