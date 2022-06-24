@@ -3,6 +3,9 @@ import string local;
 import stdio local;
 import ctype local;
 
+// TODO move somewhere else
+const u32 MaxIdentifierLen = 31;
+
 type Keyword struct {
     const char* name;
     TokenKind kind;
@@ -598,20 +601,19 @@ public type Tokenizer struct {
     const char* cur;
     u32 loc_start;
     const char* input_start;
-    char* error_msg;
 
     Token next;
 
     Alloc_fn alloc;
     void* alloc_arg;
+    char[256] error_msg;
 }
 
-public func void Tokenizer.init(Tokenizer* t, const char* input, u32 loc_start, /*Data* d,*/ char* error_msg, Alloc_fn alloc, void* arg) {
+public func void Tokenizer.init(Tokenizer* t, const char* input, u32 loc_start, Alloc_fn alloc, void* arg) {
     memset(t, 0, sizeof(Tokenizer));
     t.cur = input;
     t.input_start = input;
     t.loc_start = loc_start;
-    t.error_msg = error_msg;
     t.alloc = alloc;
     t.alloc_arg = arg;
     t.next.kind = TokenKind.None;
@@ -936,6 +938,11 @@ func void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
     while (identifier_char(*end)) end++;
 
     u32 len = cast<u32>(end - start);
+    if (len > MaxIdentifierLen) {
+        sprintf(t.error_msg, "identifier too long (max %u)", MaxIdentifierLen);
+        t.error(result);
+        return;
+    }
     t.cur += len;
     result.text_value = t.alloc(t.alloc_arg, start, len);
 }
