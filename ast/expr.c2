@@ -38,11 +38,6 @@ public type Expr struct {
     Stmt stmt;
 } @(opaque)
 
-// TEMP cast needed until Analyser fixed
-public func ExprKind Expr.getKind(const Expr* e) @(inline) { return cast<ExprKind>(e.stmt.exprBits.kind); }
-public func bool expr_is_ctv(const Expr* e) @(inline) { return e.stmt.exprBits.is_ctv; }
-public func bool expr_is_ctc(const Expr* e) @(inline) { return e.stmt.exprBits.is_ctc; }
-
 public func void Expr.init(Expr* e, ExprKind k, bool ctv, bool ctc, bool lvalue) @(inline) {
     e.stmt.init(StmtKind.Expr);
     e.stmt.exprBits.kind = k;
@@ -50,6 +45,13 @@ public func void Expr.init(Expr* e, ExprKind k, bool ctv, bool ctc, bool lvalue)
     e.stmt.exprBits.is_ctc = 1;
     e.stmt.exprBits.is_lvalue = 0;
 }
+
+// TEMP cast needed until Analyser fixed
+public func ExprKind Expr.getKind(const Expr* e) @(inline) { return cast<ExprKind>(e.stmt.exprBits.kind); }
+
+public func bool Expr.isCtv(const Expr* e) @(inline) { return e.stmt.exprBits.is_ctv; }
+
+public func bool Expr.isCtc(const Expr* e) @(inline) { return e.stmt.exprBits.is_ctc; }
 
 public func void Expr.dump(Expr* e) {
     // TODO

@@ -41,13 +41,13 @@ public type Stmt struct {
     }
 } @(opaque)
 
-// TEMP cast needed until Analyser fixed
-public func StmtKind Stmt.getKind(const Stmt* s) @(inline) { return cast<StmtKind>(s.stmtBits.kind); }
-
 func void Stmt.init(Stmt* s, StmtKind k) @(inline) {
     s.bits = 0;
     s.stmtBits.kind = k;
 }
+
+// TEMP cast needed until Analyser fixed
+public func StmtKind Stmt.getKind(const Stmt* s) @(inline) { return cast<StmtKind>(s.stmtBits.kind); }
 
 public func void Stmt.dump(const Stmt* s) {
     switch (s.getKind()) {

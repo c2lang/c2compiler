@@ -20,6 +20,7 @@ executable c2c
     ast/boolean_literal.c2
     ast/decl.c2
     ast/import_decl.c2
+    ast/utils.c2
     context.c2
     tokens.c2
     utils.c2

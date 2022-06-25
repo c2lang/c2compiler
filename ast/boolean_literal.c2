@@ -1,0 +1,19 @@
+module ast;
+
+import ast_context local;
+
+public type BooleanLiteralBits struct {
+    u32 : NumExprBits;
+    u32 value : 1;
+}
+
+public type BooleanLiteral struct {
+    Expr expr;
+} @(opaque)
+
+public func BooleanLiteral* BooleanLiteral.create(Context* c, bool val) @(inline) {
+    BooleanLiteral* b = c.alloc(sizeof(BooleanLiteral));
+    b.expr.init(ExprKind.BoolLiteral, 1, 1, 0);
+    b.expr.stmt.booleanLiteralBits.value = val;
+    return b;
+}

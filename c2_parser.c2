@@ -58,7 +58,7 @@ public func bool Parser.parse(Parser* p) {
     p.error_msg[0] = 0;
 
     u64 t1 = utils.now();
-#if 1
+#if 0
     i32 res = setjmp(&p.jmpbuf);
     if (res == 0) {
 

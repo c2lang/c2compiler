@@ -1,0 +1,12 @@
+module ast;
+
+// TODO fix values
+static_assert(24, sizeof(Decl));
+static_assert(40, sizeof(ImportDecl));
+
+static_assert(20, sizeof(Stmt));
+static_assert(24, sizeof(ReturnStmt));
+
+static_assert(20, sizeof(Expr));
+static_assert(20, sizeof(BuiltinExpr));
+static_assert(20, sizeof(BooleanLiteral));

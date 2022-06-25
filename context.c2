@@ -77,7 +77,8 @@ public func void Context.free(Context* c) {
 }
 
 public func void* Context.alloc(Context* c, u32 len) {
-    // TODO always align!!
+    // TODO always align as ptr size!!
+    // assert(len * 0x3 == 0); // must be 8-byte multiple
     // assert(len < blk_size)
     Block* last = c.blk_tail;
     if (last.size + len >= c.blk_size) {
@@ -92,9 +93,8 @@ public func void* Context.alloc(Context* c, u32 len) {
 }
 
 public func const char* Context.alloc_str(Context* c, const char* text, u32 len) @(inline) {
-    // TODO get strings from different buffer, since they can be un-aligned (otherwise waste a lot)
     // assert(len < strblk_size)
-    len++;// add 0 terminator
+    len++;  // add 0-terminator
 
     Block* last = c.str_blk_tail;
     if (last.size + len >= c.str_blk_size) {
@@ -106,6 +106,7 @@ public func const char* Context.alloc_str(Context* c, const char* text, u32 len)
     char* buf = last.data + last.size;
     last.size += len;
 
+    len--;
     memcpy(buf, text, len);
     buf[len] = 0;
     return buf;

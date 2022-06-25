@@ -17,20 +17,34 @@ public type Decl struct {
         ImportDeclBits importDeclBits;
         u32 bits;
     }
+    u32 loc;
+    const char* name;
+    // QualType q;
+    // Module* mod;
 } @(opaque)
 
-// TEMP cast needed until Analyser fixed
-public func DeclKind Decl.getKind(const Decl* s) @(inline) { return cast<DeclKind>(s.declBits.kind); }
-
-func void Decl.init(Decl* s, DeclKind k) @(inline) {
-    s.bits = 0;
-    s.declBits.kind = k;
+func void Decl.init(Decl* d, DeclKind k, const char* name, u32 loc) @(inline) {
+    d.bits = 0;
+    d.declBits.kind = k;
+    d.name = name;
+    d.loc = loc;
 }
 
-public func void Decl.dump(const Decl* s) {
-    switch (s.getKind()) {
+// TEMP cast needed until Analyser fixed
+public func DeclKind Decl.getKind(const Decl* d) @(inline) { return cast<DeclKind>(d.declBits.kind); }
+
+public func const char* Decl.getName(const Decl* d) @(inline) {
+    return d.name;
+}
+
+public func u32 Decl.getLoc(const Decl* d) @(inline) {
+    return d.loc;
+}
+
+public func void Decl.dump(const Decl* d) {
+    switch (d.getKind()) {
     case DeclKind.Import:
-        ImportDecl.print(cast<ImportDecl*>(s));
+        ImportDecl.print(cast<ImportDecl*>(d));
         break;
     }
 }
