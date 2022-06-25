@@ -30,7 +30,8 @@
 - parse Varables
 
 ## AST
-- create structure
++ create structure
+- create Context (for allocation)
 
 ## AST-Builder
 - fill AST

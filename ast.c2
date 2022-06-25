@@ -1,6 +1,6 @@
 module ast;
 
-type StmtKind enum u8 {
+public type StmtKind enum u8 {
     Return,
     Expr,
     If,
@@ -21,7 +21,7 @@ type StmtKind enum u8 {
     Asm,
 }
 
-type ExprKind enum u8 {
+public type ExprKind enum u8 {
     IntegerLiteral,
     FloatLiteral,
     BoolLiteral,
@@ -47,26 +47,26 @@ type ExprKind enum u8 {
 public type StmtBits struct {
     u32 kind : 8;
 }
-public const u32 numStmtBits = 8;
+public const u32 NumStmtBits = 8;
 
 public type ExprBits struct {
-    u32 : numStmtBits;
+    u32 : NumStmtBits;
     u32 kind : 8;
     u32 is_ctv : 1;
     u32 is_ctc : 1;
     u32 is_lvalue : 1;
 }
-public const u32 numExprBits = numStmtBits + 16;
+public const u32 NumExprBits = NumStmtBits + 16;
 
 public type BuiltinExprBits struct {
-    u32 : numExprBits;
+    u32 : NumExprBits;
     u32 kind : 3;
     u32 other1 : 2;
     u32 other2 : 3;
 }
 
 public type BooleanLiteralBits struct {
-    u32 : numExprBits;
+    u32 : NumExprBits;
     u32 value : 1;
 }
 
@@ -97,9 +97,11 @@ public type BuiltinKind enum u8 {
     Elemsof,
 }
 
-public func StmtKind stmt_getKind(const Stmt* s) @(inline) { return s.stmtBits.kind; }
+// TEMP cast needed until Analyser fixed
+public func StmtKind stmt_getKind(const Stmt* s) @(inline) { return cast<StmtKind>(s.stmtBits.kind); }
 
-public func ExprKind expr_getKind(const Expr* e) @(inline) { return e.stmt.exprBits.kind; }
+// TEMP cast needed until Analyser fixed
+public func ExprKind expr_getKind(const Expr* e) @(inline) { return cast<ExprKind>(e.stmt.exprBits.kind); }
 public func bool expr_is_ctv(const Expr* e) @(inline) { return e.stmt.exprBits.is_ctv; }
 public func bool expr_is_ctc(const Expr* e) @(inline) { return e.stmt.exprBits.is_ctc; }
 
@@ -121,11 +123,11 @@ public func void BooleanLiteral.create(BooleanLiteral* b, bool val) @(inline) {
 }
 
 public func void BuiltinExpr.create(BuiltinExpr* bi) @(inline) {
-    Stmt* S = &bi.expr.stmt;
+    Stmt* s = &bi.expr.stmt;
     bi.expr.init(ExprKind.Builtin, 1, 1, 0);
-    S.builtinExprBits.kind = BuiltinKind.Elemsof;
-    S.builtinExprBits.other1 = 0x3;
-    S.builtinExprBits.other2 = 0x7;
+    s.builtinExprBits.kind = BuiltinKind.Elemsof;
+    s.builtinExprBits.other1 = 0x3;
+    s.builtinExprBits.other2 = 0x7;
 }
 
 
