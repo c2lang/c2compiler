@@ -1,0 +1,66 @@
+module ast;
+
+public type StmtKind enum u8 {
+    Return,
+    Expr,
+    If,
+    While,
+    Do,
+    For,
+    Switch,
+    SSwitch,
+    Case,
+    Default,
+    Break,
+    Continue,
+    Fallthrough,
+    Label,
+    Goto,
+    Compound,
+    Decl,
+    Asm,
+}
+
+public type StmtBits struct {
+    u32 kind : 8;
+}
+public const u32 NumStmtBits = 8;
+
+public type Stmt struct {
+    union {
+        StmtBits stmtBits;
+        ReturnStmtBits returnStmtBits;
+        ExprBits exprBits;
+        BuiltinExprBits builtinExprBits;
+        BooleanLiteralBits booleanLiteralBits;
+        u32 bits;
+    }
+}
+
+// TEMP cast needed until Analyser fixed
+public func StmtKind stmt_getKind(const Stmt* s) @(inline) { return cast<StmtKind>(s.stmtBits.kind); }
+
+public func void Stmt.init(Stmt* s, StmtKind k) @(inline) {
+    s.bits = 0;
+    s.stmtBits.kind = k;
+}
+
+
+public type ReturnStmtBits struct {
+    u32 : NumStmtBits;
+    u32 has_value : 1;
+}
+
+public type ReturnStmt struct {
+    Stmt stmt;
+    Expr*[0] value;
+}
+
+public func void ReturnStmt.create(ReturnStmt* r, Expr* value) @(inline) {
+    r.stmt.init(StmtKind.Return);
+    if (value) {
+        r.stmt.returnStmtBits.has_value = 1;
+        // TODO use tail-alloc for value
+    }
+}
+
