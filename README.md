@@ -32,6 +32,13 @@
 ## AST
 + create structure
 - create Context (for allocation)
+    -> pass Context* to Create functions, to it's very easy to do Tail-allocs
+        ReturnStmt* ReturnStmt.create(Context* c, Expr* val) {
+            u32 size = sizeof(ReturnStmt);
+            if (val) size += sizeof(void*);
+            ReturnStmt* r = c.alloc(size);
+            r.val[0] = val;
+        }
 
 ## AST-Builder
 - fill AST

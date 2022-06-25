@@ -1,16 +1,19 @@
 module c2_ast_builder;
 
 import tokens;
+import ast local;
+import ast_context local;
 
 import stdlib local;
 import stdio local;
 
 public type Builder struct {
-
+    Context* context;
 } @(opaque)
 
-public func Builder* Builder.create() {
+public func Builder* Builder.create(Context* c) {
     Builder* b = calloc(1, sizeof(Builder));
+    b.context = c;
     return b;
 }
 

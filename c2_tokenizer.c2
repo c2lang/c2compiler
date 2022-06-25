@@ -4,6 +4,7 @@ import string local;
 import stdio local;
 import ctype local;
 import stdarg local;
+import ast_context local;
 
 import constants;
 import string_list;
@@ -366,8 +367,6 @@ public func void Token.init(Token* tok) {
     tok.more = true;
 }
 
-public type Alloc_fn func const char* (void* arg, const char* value, u32 len);
-
 public type Feature struct {
     bool is_if;
     bool enabled;
@@ -381,8 +380,7 @@ public type Tokenizer struct {
     Token next;
     const char* line_start;
 
-    Alloc_fn alloc;
-    void* alloc_arg;
+    Context* context;
 
     // Feature handling
     Feature[constants.MaxFeatureDepth] feature_stack;
@@ -393,18 +391,15 @@ public type Tokenizer struct {
 }
 
 public func void Tokenizer.init(Tokenizer* t,
+                                Context* c,
                                 const char* input,
                                 u32 loc_start,
-                                Alloc_fn alloc,
-                                void* arg,
                                 const string_list.List* features)
 {
     memset(t, 0, sizeof(Tokenizer));
     t.cur = input;
     t.input_start = input;
     t.loc_start = loc_start;
-    t.alloc = alloc;
-    t.alloc_arg = arg;
     t.line_start = input;
     t.next.kind = Kind.None;
     t.features = features;
@@ -744,7 +739,7 @@ func void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
         return;
     }
     t.cur += len;
-    result.text_value = t.alloc(t.alloc_arg, start, len);
+    result.text_value = t.context.alloc_str(start, len);
 }
 
 func void Tokenizer.lex_number(Tokenizer* t, Token* result) {
@@ -756,7 +751,7 @@ func void Tokenizer.lex_number(Tokenizer* t, Token* result) {
 
     u32 len = cast<u32>(end - start);
     t.cur += len;
-    result.text_value = t.alloc(t.alloc_arg, start, len);
+    result.text_value = t.context.alloc_str(start, len);
 }
 
 func void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
@@ -845,7 +840,7 @@ func void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
 out:
     len = cast<u32>(t.cur - start);
     t.cur++;    // skip end delimiter
-    result.text_value = t.alloc(t.alloc_arg, start, len);
+    result.text_value = t.context.alloc_str(start, len);
 }
 
 func void Tokenizer.skip_line_comment(Tokenizer* t) {

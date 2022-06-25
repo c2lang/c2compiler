@@ -4,4 +4,5 @@ public const u32 MaxIdentifierLen = 31;
 public const u32 MaxFeatureName = 31;
 public const u32 MaxFeatureDepth = 6;
 public const u32 MaxErrorMsgLen = 31;   // for #error "msg"
+public const u32 ContextBlkSize = 4096;
 

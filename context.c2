@@ -1,0 +1,82 @@
+module ast_context;
+
+import string local;
+import stdlib local;
+// TEMP
+import stdio local;
+
+
+type Block struct {
+    u8* data;
+    u32 size;
+    Block* next;
+}
+
+func Block* Block.create(u32 blk_size) {
+    Block* b = malloc(sizeof(Block));
+    b.data = malloc(blk_size);
+    b.size = 0;
+    b.next = nil;
+    return b;
+}
+
+func Block* Block.free(Block* b) {
+    Block* next = b.next;
+    free(b.data);
+    free(b);
+    return next;
+}
+
+public type Context struct {
+    Block* blk_head;
+    Block* blk_tail;
+    u32 blk_size;
+} @(opaque)
+
+public func Context* Context.create(u32 blk_size) {
+    Context* c = calloc(1, sizeof(Context));
+    c.blk_size = blk_size;
+    // create first block
+    c.blk_head = Block.create(blk_size);
+    return c;
+}
+
+public func void Context.free(Context* c) {
+    Block* blk = c.blk_head;
+    while (blk) blk = blk.free();
+
+    free(c);
+}
+
+public func void* Context.alloc(Context* c, u32 size) {
+
+    return nil;
+}
+
+// TEMP HERE
+char[1024*1024] alloc_buf;
+u32 alloc_idx;
+
+public func char* Context.alloc_str(Context* c, const char* text, u32 len) {
+    char* start = alloc_buf + alloc_idx;
+    memcpy(start, text, len);
+    alloc_idx += len;
+    alloc_buf[alloc_idx] = 0;
+    alloc_idx++;
+    return start;
+}
+
+public func void Context.dump(const Context* c) {
+    printf("Context (blk size %u)\n", c.blk_size);
+    const Block* blk = c.blk_head;
+    while (blk) {
+        printf("  Blk %u / %u\n", blk.size, c.blk_size);
+        blk = blk.next;
+    }
+}
+
+public func u32 Context.get_total(const Context* c) {
+    // TODO
+    return alloc_idx;
+}
+

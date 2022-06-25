@@ -1,5 +1,7 @@
 module ast;
 
+import ast_context local;
+
 public type StmtKind enum u8 {
     Return,
     Expr,
@@ -53,14 +55,20 @@ public type ReturnStmtBits struct {
 
 public type ReturnStmt struct {
     Stmt stmt;
-    Expr*[0] value;
+    Expr*[0] value; // tail-allocated, dependent on returnStmtBits.has_value
 }
 
-public func void ReturnStmt.create(ReturnStmt* r, Expr* value) @(inline) {
+public func ReturnStmt* ReturnStmt.create(Context* c, Expr* value) @(inline) {
+    u32 size = sizeof(ReturnStmt);
+    if (value) size += sizeof(void*);
+
+    ReturnStmt* r = c.alloc(size);
     r.stmt.init(StmtKind.Return);
+
     if (value) {
         r.stmt.returnStmtBits.has_value = 1;
-        // TODO use tail-alloc for value
+        r.value[0] = value;
     }
+    return r;
 }
 

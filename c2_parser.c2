@@ -3,6 +3,8 @@ module c2_parser;
 import c2_source_mgr local;
 import c2_tokenizer local;
 import c2_ast_builder local;
+import ast local;
+import ast_context local;
 import tokens local;
 import string_list;
 import utils;
@@ -20,25 +22,13 @@ const u32 Type_Const    = (1<<1);
 const u32 Type_Volatile = (1<<2);
 
 
-// TEMP HERE
-char[1024*1024] alloc_buf;
-u32 alloc_idx;
-
-func const char* alloc(void* arg, const char* value, u32 len) {
-    char* start = alloc_buf + alloc_idx;
-    memcpy(start, value, len);
-    alloc_idx += len;
-    alloc_buf[alloc_idx] = 0;
-    alloc_idx++;
-    return start;
-}
-
 public type Parser struct {
     Tokenizer tokenizer;
     Token tok;
     Builder* builder;
     SourceMgr* sm;
     i32 file_id;
+    Context* context;
     bool is_interface;
 
     JmpBufTag jmpbuf;
@@ -46,14 +36,15 @@ public type Parser struct {
     char[256] error_msg;
 } @(opaque)
 
-public func Parser* create(SourceMgr* sm, i32 file_id, string_list.List* features, bool is_interface) {
+public func Parser* create(SourceMgr* sm, i32 file_id, Context* c, string_list.List* features, bool is_interface) {
     Parser* p = calloc(1, sizeof(Parser));
     p.sm = sm;
     p.file_id = file_id;
+    p.context = c;
     p.is_interface = is_interface;
     p.features = features;
     // TEMP create Builder here
-    p.builder = Builder.create();
+    p.builder = Builder.create(c);
 
     return p;
 }
@@ -65,14 +56,13 @@ public func void Parser.free(Parser* p) {
 
 public func bool Parser.parse(Parser* p) {
     p.error_msg[0] = 0;
-    alloc_idx = 0;
 
     u64 t1 = utils.now();
-#if 1
+#if 0
     i32 res = setjmp(&p.jmpbuf);
     if (res == 0) {
 
-        p.tokenizer.init(p.sm.get_content(p.file_id), p.sm.get_offset(p.file_id), alloc, nil, p.features);
+        p.tokenizer.init(p.context, p.sm.get_content(p.file_id), p.sm.get_offset(p.file_id), p.features);
         p.tok.init();
 
         p.consumeToken();
@@ -87,8 +77,9 @@ public func bool Parser.parse(Parser* p) {
         printf("%s\n", p.error_msg);
         return false;
     }
+    u64 t2 = utils.now();
 #else
-    p.tokenizer.init(p.sm.get_content(p.file_id), p.sm.get_offset(p.file_id), alloc, nil, p.features);
+    p.tokenizer.init(p.context, p.sm.get_content(p.file_id), p.sm.get_offset(p.file_id), p.features);
     p.tok.init();
     u32 token_count = 0;
     while (p.tok.more) {
@@ -96,9 +87,9 @@ public func bool Parser.parse(Parser* p) {
         dump_token(p.sm, &p.tok);
         token_count++;
     }
-    printf("--- %u tokens (%u alloc)  (%llu usec) ---\n", token_count, alloc_idx, t2 - t1);
-#endif
     u64 t2 = utils.now();
+    printf("--- %u tokens (%u alloc)  (%llu usec) ---\n", token_count, p.context.get_total(), t2 - t1);
+#endif
     return true;
 }
 
