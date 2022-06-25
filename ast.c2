@@ -1,0 +1,132 @@
+module ast;
+
+type StmtKind enum u8 {
+    Return,
+    Expr,
+    If,
+    While,
+    Do,
+    For,
+    Switch,
+    SSwitch,
+    Case,
+    Default,
+    Break,
+    Continue,
+    Fallthrough,
+    Label,
+    Goto,
+    Compound,
+    Decl,
+    Asm,
+}
+
+type ExprKind enum u8 {
+    IntegerLiteral,
+    FloatLiteral,
+    BoolLiteral,
+    CharLiteral,
+    StringLiteral,
+    Nil,
+    Identifier,
+    Type,
+    Call,
+    InitList,
+    DesignatorInit,
+    BinOp,
+    UnaryOp,
+    Builtin,
+    ArraySubscript,
+    Member,
+    Paren,
+    BitOffset,
+    ExplicitCast,
+    ImplicitCast,
+}
+
+public type StmtBits struct {
+    u32 kind : 8;
+}
+public const u32 numStmtBits = 8;
+
+public type ExprBits struct {
+    u32 : numStmtBits;
+    u32 kind : 8;
+    u32 is_ctv : 1;
+    u32 is_ctc : 1;
+    u32 is_lvalue : 1;
+}
+public const u32 numExprBits = numStmtBits + 16;
+
+public type BuiltinExprBits struct {
+    u32 : numExprBits;
+    u32 kind : 3;
+    u32 other1 : 2;
+    u32 other2 : 3;
+}
+
+public type BooleanLiteralBits struct {
+    u32 : numExprBits;
+    u32 value : 1;
+}
+
+public type Stmt struct {
+    union {
+        StmtBits stmtBits;
+        ExprBits exprBits;
+        BuiltinExprBits builtinExprBits;
+        BooleanLiteralBits booleanLiteralBits;
+        u32 bits;
+    }
+}
+
+public type Expr struct {
+    Stmt stmt;
+}
+
+public type BuiltinExpr struct {
+    Expr expr;
+}
+
+public type BooleanLiteral struct {
+    Expr expr;
+}
+
+public type BuiltinKind enum u8 {
+    Sizeof,
+    Elemsof,
+}
+
+public func StmtKind stmt_getKind(const Stmt* s) @(inline) { return s.stmtBits.kind; }
+
+public func ExprKind expr_getKind(const Expr* e) @(inline) { return e.stmt.exprBits.kind; }
+public func bool expr_is_ctv(const Expr* e) @(inline) { return e.stmt.exprBits.is_ctv; }
+public func bool expr_is_ctc(const Expr* e) @(inline) { return e.stmt.exprBits.is_ctc; }
+
+public func void Stmt.init(Stmt* s, StmtKind k) @(inline) {
+    s.stmtBits.kind = k;
+}
+
+public func void Expr.init(Expr* e, ExprKind k, bool ctv, bool ctc, bool lvalue) @(inline) {
+    e.stmt.init(StmtKind.Expr);
+    e.stmt.exprBits.kind = k;
+    e.stmt.exprBits.is_ctv = 1;
+    e.stmt.exprBits.is_ctc = 1;
+    e.stmt.exprBits.is_lvalue = 0;
+}
+
+public func void BooleanLiteral.create(BooleanLiteral* b, bool val) @(inline) {
+    b.expr.init(ExprKind.BoolLiteral, 1, 1, 0);
+    b.expr.stmt.booleanLiteralBits.value = val;
+}
+
+public func void BuiltinExpr.create(BuiltinExpr* bi) @(inline) {
+    Stmt* S = &bi.expr.stmt;
+    bi.expr.init(ExprKind.Builtin, 1, 1, 0);
+    S.builtinExprBits.kind = BuiltinKind.Elemsof;
+    S.builtinExprBits.other1 = 0x3;
+    S.builtinExprBits.other2 = 0x7;
+}
+
+
+
