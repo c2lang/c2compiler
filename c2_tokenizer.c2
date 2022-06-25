@@ -401,6 +401,7 @@ public func void Tokenizer.init(Tokenizer* t,
     t.input_start = input;
     t.loc_start = loc_start;
     t.line_start = input;
+    t.context = c;
     t.next.kind = Kind.None;
     t.features = features;
 }

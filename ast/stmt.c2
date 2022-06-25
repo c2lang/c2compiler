@@ -37,18 +37,18 @@ public type Stmt struct {
         BooleanLiteralBits booleanLiteralBits;
         u32 bits;
     }
-}
+} @(opaque)
 
 // TEMP cast needed until Analyser fixed
 public func StmtKind stmt_getKind(const Stmt* s) @(inline) { return cast<StmtKind>(s.stmtBits.kind); }
 
-public func void Stmt.init(Stmt* s, StmtKind k) @(inline) {
+func void Stmt.init(Stmt* s, StmtKind k) @(inline) {
     s.bits = 0;
     s.stmtBits.kind = k;
 }
 
 
-public type ReturnStmtBits struct {
+type ReturnStmtBits struct {
     u32 : NumStmtBits;
     u32 has_value : 1;
 }
@@ -56,7 +56,7 @@ public type ReturnStmtBits struct {
 public type ReturnStmt struct {
     Stmt stmt;
     Expr*[0] value; // tail-allocated, dependent on returnStmtBits.has_value
-}
+} @(opaque)
 
 public func ReturnStmt* ReturnStmt.create(Context* c, Expr* value) @(inline) {
     u32 size = sizeof(ReturnStmt);

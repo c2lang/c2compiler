@@ -1,5 +1,7 @@
 module ast;
 
+import ast_context local;
+
 public type ExprKind enum u8 {
     IntegerLiteral,
     FloatLiteral,
@@ -35,8 +37,8 @@ public const u32 NumExprBits = NumStmtBits + 16;
 public type BuiltinExprBits struct {
     u32 : NumExprBits;
     u32 kind : 3;
-    u32 other1 : 2;
-    u32 other2 : 3;
+    //u32 other1 : 2;
+    //u32 other2 : 3;
 }
 
 public type BooleanLiteralBits struct {
@@ -46,15 +48,15 @@ public type BooleanLiteralBits struct {
 
 public type Expr struct {
     Stmt stmt;
-}
+} @(opaque)
 
 public type BuiltinExpr struct {
     Expr expr;
-}
+} @(opaque)
 
 public type BooleanLiteral struct {
     Expr expr;
-}
+} @(opaque)
 
 public type BuiltinKind enum u8 {
     Sizeof,
@@ -74,16 +76,20 @@ public func void Expr.init(Expr* e, ExprKind k, bool ctv, bool ctc, bool lvalue)
     e.stmt.exprBits.is_lvalue = 0;
 }
 
-public func void BooleanLiteral.create(BooleanLiteral* b, bool val) @(inline) {
+public func BooleanLiteral* BooleanLiteral.create(Context* c, bool val) @(inline) {
+    BooleanLiteral* b = c.alloc(sizeof(BooleanLiteral));
     b.expr.init(ExprKind.BoolLiteral, 1, 1, 0);
     b.expr.stmt.booleanLiteralBits.value = val;
+    return b;
 }
 
-public func void BuiltinExpr.create(BuiltinExpr* bi) @(inline) {
-    Stmt* s = &bi.expr.stmt;
-    bi.expr.init(ExprKind.Builtin, 1, 1, 0);
+public func BuiltinExpr* BuiltinExpr.create(Context* c) @(inline) {
+    BooleanLiteral* b = c.alloc(sizeof(BuiltinExpr));
+    Stmt* s = &b.expr.stmt;
+    b.expr.init(ExprKind.Builtin, 1, 1, 0);
     s.builtinExprBits.kind = BuiltinKind.Elemsof;
-    s.builtinExprBits.other1 = 0x3;
-    s.builtinExprBits.other2 = 0x7;
+    //s.builtinExprBits.other1 = 0x3;
+    //s.builtinExprBits.other2 = 0x7;
+    return b;
 }
 

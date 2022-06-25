@@ -27,17 +27,45 @@ func Block* Block.free(Block* b) {
     return next;
 }
 
+func u32 Block.count(const Block* b) {
+    u32 total = 0;
+    const Block* blk = b;
+    while (blk) {
+        total ++;
+        blk = blk.next;
+    }
+    return total;
+}
+
+func u32 Block.get_total(const Block* b) {
+    u32 total = 0;
+    const Block* blk = b;
+    while (blk) {
+        total += blk.size;
+        blk = blk.next;
+    }
+    return total;
+}
+
 public type Context struct {
     Block* blk_head;
     Block* blk_tail;
     u32 blk_size;
+
+    Block* str_blk_head;
+    Block* str_blk_tail;
+    u32 str_blk_size;
 } @(opaque)
 
-public func Context* Context.create(u32 blk_size) {
+public func Context* Context.create(u32 blk_size, u32 str_blk_size) {
     Context* c = calloc(1, sizeof(Context));
     c.blk_size = blk_size;
-    // create first block
-    c.blk_head = Block.create(blk_size);
+    c.blk_head = Block.create(c.blk_size);
+    c.blk_tail = c.blk_head;
+
+    c.str_blk_size = str_blk_size;
+    c.str_blk_head = Block.create(c.str_blk_size);
+    c.str_blk_tail = c.str_blk_head;
     return c;
 }
 
@@ -48,35 +76,56 @@ public func void Context.free(Context* c) {
     free(c);
 }
 
-public func void* Context.alloc(Context* c, u32 size) {
+public func void* Context.alloc(Context* c, u32 len) {
+    // TODO always align!!
+    // assert(len < blk_size)
+    Block* last = c.blk_tail;
+    if (last.size + len >= c.blk_size) {
+        c.blk_tail = Block.create(c.blk_size);
+        last.next = c.blk_tail;
+        last = last.next;
+    }
 
-    return nil;
+    void* cur = last.data + last.size;
+    last.size += len;
+    return cur;
 }
 
-// TEMP HERE
-char[1024*1024] alloc_buf;
-u32 alloc_idx;
+public func const char* Context.alloc_str(Context* c, const char* text, u32 len) @(inline) {
+    // TODO get strings from different buffer, since they can be un-aligned (otherwise waste a lot)
+    // assert(len < strblk_size)
+    len++;// add 0 terminator
 
-public func char* Context.alloc_str(Context* c, const char* text, u32 len) {
-    char* start = alloc_buf + alloc_idx;
-    memcpy(start, text, len);
-    alloc_idx += len;
-    alloc_buf[alloc_idx] = 0;
-    alloc_idx++;
-    return start;
+    Block* last = c.str_blk_tail;
+    if (last.size + len >= c.str_blk_size) {
+        c.str_blk_tail = Block.create(c.str_blk_size);
+        last.next = c.str_blk_tail;
+        last = last.next;
+    }
+
+    char* buf = last.data + last.size;
+    last.size += len;
+
+    memcpy(buf, text, len);
+    buf[len] = 0;
+    return buf;
 }
 
 public func void Context.dump(const Context* c) {
-    printf("Context (blk size %u)\n", c.blk_size);
-    const Block* blk = c.blk_head;
-    while (blk) {
-        printf("  Blk %u / %u\n", blk.size, c.blk_size);
-        blk = blk.next;
-    }
+    u32 num = c.blk_head.count();
+    u32 total = c.blk_head.get_total();
+
+    printf("Context:\n");
+    printf("    blk size %u, %u blocks, total %u/%u\n", c.blk_size, num, total, num * c.blk_size);
+
+    u32 str_num = c.str_blk_head.count();
+    u32 str_total = c.str_blk_head.get_total();
+    printf("    blk size %u, %u blocks, total %u/%u\n", c.str_blk_size, str_num, str_total, str_num * c.str_blk_size);
+
+    printf("    total %u\n", total + str_total);
 }
 
 public func u32 Context.get_total(const Context* c) {
-    // TODO
-    return alloc_idx;
+    return c.blk_head.get_total() + c.str_blk_head.get_total();
 }
 
