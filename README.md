@@ -32,10 +32,11 @@
 ## AST
 + create structure
 + create Context (for allocation)
-- remove c2_ast_builder, let Parser call creators directly?
 
 ## AST-Builder
 - fill AST
+- remove c2_ast_builder, let Parser call creators directly?
+    -> KEEP for now (does some parse-time checks)
 
 ## Performance
 - profile application to see where time is spent
