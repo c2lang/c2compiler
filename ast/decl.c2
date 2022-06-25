@@ -1,0 +1,37 @@
+module ast;
+
+import ast_context local;
+
+public type DeclKind enum u8 {
+    Import,
+}
+
+public type DeclBits struct {
+    u32 kind : 8;
+}
+public const u32 NumDeclBits = 8;
+
+public type Decl struct {
+    union {
+        DeclBits declBits;
+        ImportDeclBits importDeclBits;
+        u32 bits;
+    }
+} @(opaque)
+
+// TEMP cast needed until Analyser fixed
+public func DeclKind Decl.getKind(const Decl* s) @(inline) { return cast<DeclKind>(s.declBits.kind); }
+
+func void Decl.init(Decl* s, DeclKind k) @(inline) {
+    s.bits = 0;
+    s.declBits.kind = k;
+}
+
+public func void Decl.dump(const Decl* s) {
+    switch (s.getKind()) {
+    case DeclKind.Import:
+        ImportDecl.print(cast<ImportDecl*>(s));
+        break;
+    }
+}
+

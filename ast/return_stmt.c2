@@ -1,0 +1,43 @@
+module ast;
+
+import ast_context local;
+
+type ReturnStmtBits struct {
+    u32 : NumStmtBits;
+    u32 has_value : 1;
+}
+
+public type ReturnStmt struct {
+    Stmt stmt;
+    Expr*[0] value; // tail-allocated, dependent on returnStmtBits.has_value
+} @(opaque)
+
+public func ReturnStmt* ReturnStmt.create(Context* c, Expr* value) @(inline) {
+    u32 size = sizeof(ReturnStmt);
+    if (value) size += sizeof(Expr*);
+
+    ReturnStmt* r = c.alloc(size);
+    r.stmt.init(StmtKind.Return);
+
+    if (value) {
+        r.stmt.returnStmtBits.has_value = 1;
+        r.value[0] = value;
+    }
+    return r;
+}
+
+public func void ReturnStmt.print(const ReturnStmt* r) {
+    // TODO
+}
+
+public func Expr* ReturnStmt.getValue(const ReturnStmt* r) {
+    if (r.stmt.returnStmtBits.has_value) return r.value[0];
+    return nil;
+}
+
+public func Expr* ReturnStmt.getValue2(ReturnStmt* r) {
+    if (r.stmt.returnStmtBits.has_value) return &r.value[0];
+    return nil;
+}
+
+

@@ -14,7 +14,12 @@ executable c2c
     c2_parser.c2
     c2_ast_builder.c2
     ast/stmt.c2
+    ast/return_stmt.c2
     ast/expr.c2
+    ast/builtin_expr.c2
+    ast/boolean_literal.c2
+    ast/decl.c2
+    ast/import_decl.c2
     context.c2
     tokens.c2
     utils.c2

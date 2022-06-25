@@ -34,37 +34,12 @@ public type ExprBits struct {
 }
 public const u32 NumExprBits = NumStmtBits + 16;
 
-public type BuiltinExprBits struct {
-    u32 : NumExprBits;
-    u32 kind : 3;
-    //u32 other1 : 2;
-    //u32 other2 : 3;
-}
-
-public type BooleanLiteralBits struct {
-    u32 : NumExprBits;
-    u32 value : 1;
-}
-
 public type Expr struct {
     Stmt stmt;
 } @(opaque)
 
-public type BuiltinExpr struct {
-    Expr expr;
-} @(opaque)
-
-public type BooleanLiteral struct {
-    Expr expr;
-} @(opaque)
-
-public type BuiltinKind enum u8 {
-    Sizeof,
-    Elemsof,
-}
-
 // TEMP cast needed until Analyser fixed
-public func ExprKind expr_getKind(const Expr* e) @(inline) { return cast<ExprKind>(e.stmt.exprBits.kind); }
+public func ExprKind Expr.getKind(const Expr* e) @(inline) { return cast<ExprKind>(e.stmt.exprBits.kind); }
 public func bool expr_is_ctv(const Expr* e) @(inline) { return e.stmt.exprBits.is_ctv; }
 public func bool expr_is_ctc(const Expr* e) @(inline) { return e.stmt.exprBits.is_ctc; }
 
@@ -76,20 +51,7 @@ public func void Expr.init(Expr* e, ExprKind k, bool ctv, bool ctc, bool lvalue)
     e.stmt.exprBits.is_lvalue = 0;
 }
 
-public func BooleanLiteral* BooleanLiteral.create(Context* c, bool val) @(inline) {
-    BooleanLiteral* b = c.alloc(sizeof(BooleanLiteral));
-    b.expr.init(ExprKind.BoolLiteral, 1, 1, 0);
-    b.expr.stmt.booleanLiteralBits.value = val;
-    return b;
-}
-
-public func BuiltinExpr* BuiltinExpr.create(Context* c) @(inline) {
-    BooleanLiteral* b = c.alloc(sizeof(BuiltinExpr));
-    Stmt* s = &b.expr.stmt;
-    b.expr.init(ExprKind.Builtin, 1, 1, 0);
-    s.builtinExprBits.kind = BuiltinKind.Elemsof;
-    //s.builtinExprBits.other1 = 0x3;
-    //s.builtinExprBits.other2 = 0x7;
-    return b;
+public func void Expr.dump(Expr* e) {
+    // TODO
 }
 

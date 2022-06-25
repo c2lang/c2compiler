@@ -1,0 +1,57 @@
+module ast;
+
+import ast_context local;
+
+// TEMP
+import stdio local;
+
+type ImportDeclBits struct {
+    u32 : NumDeclBits;
+    u32 is_local : 1;
+}
+
+public type ImportDecl struct {
+    Decl decl;
+    const char* name;
+    const char* alias_name;
+    u32 loc;
+    u32 alias_loc;
+} @(opaque)
+
+public func ImportDecl* ImportDecl.create(Context* c, const char* name, u32 loc, const char* alias_name, u32 alias_loc, bool is_local) @(inline) {
+    ImportDecl* d = c.alloc(sizeof(ImportDecl));
+    d.decl.init(DeclKind.Import);
+    d.decl.importDeclBits.is_local = is_local;
+    d.name = name;
+    d.loc = loc;
+    d.alias_name = alias_name;
+    d.alias_loc = alias_loc;
+    return d;
+}
+
+public func void ImportDecl.print(const ImportDecl* d) {
+    // TODO use-stringbuffer ish
+    printf("ImportDecl");
+    if (d.decl.importDeclBits.is_local) printf(" local");
+    printf(" %s ", d.name);
+    if (d.alias_name) printf(" alias %s", d.alias_name);
+    printf("\n");
+}
+
+public func const char* ImportDecl.getName(const ImportDecl* d) @(inline) {
+    return d.name;
+}
+
+public func u32 ImportDecl.getLoc(const ImportDecl* d) @(inline) {
+    return d.loc;
+}
+
+public func const char* ImportDecl.getAliasName(const ImportDecl* d) @(inline) {
+    return d.alias_name;
+}
+
+public func u32 ImportDecl.getAliasLoc(const ImportDecl* d) @(inline) {
+    return d.alias_loc;
+}
+
+

@@ -6,6 +6,7 @@ public type StmtKind enum u8 {
     Return,
     Expr,
     If,
+/*
     While,
     Do,
     For,
@@ -21,6 +22,7 @@ public type StmtKind enum u8 {
     Compound,
     Decl,
     Asm,
+*/
 }
 
 public type StmtBits struct {
@@ -40,35 +42,24 @@ public type Stmt struct {
 } @(opaque)
 
 // TEMP cast needed until Analyser fixed
-public func StmtKind stmt_getKind(const Stmt* s) @(inline) { return cast<StmtKind>(s.stmtBits.kind); }
+public func StmtKind Stmt.getKind(const Stmt* s) @(inline) { return cast<StmtKind>(s.stmtBits.kind); }
 
 func void Stmt.init(Stmt* s, StmtKind k) @(inline) {
     s.bits = 0;
     s.stmtBits.kind = k;
 }
 
-
-type ReturnStmtBits struct {
-    u32 : NumStmtBits;
-    u32 has_value : 1;
-}
-
-public type ReturnStmt struct {
-    Stmt stmt;
-    Expr*[0] value; // tail-allocated, dependent on returnStmtBits.has_value
-} @(opaque)
-
-public func ReturnStmt* ReturnStmt.create(Context* c, Expr* value) @(inline) {
-    u32 size = sizeof(ReturnStmt);
-    if (value) size += sizeof(void*);
-
-    ReturnStmt* r = c.alloc(size);
-    r.stmt.init(StmtKind.Return);
-
-    if (value) {
-        r.stmt.returnStmtBits.has_value = 1;
-        r.value[0] = value;
+public func void Stmt.dump(const Stmt* s) {
+    switch (s.getKind()) {
+    case StmtKind.Return:
+        ReturnStmt.print(cast<ReturnStmt*>(s));
+        break;
+    case StmtKind.Expr:
+        Expr.dump(cast<Expr*>(s));
+        break;
+    case StmtKind.If:
+        // TODO
+        break;
     }
-    return r;
 }
 

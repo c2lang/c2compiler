@@ -1,0 +1,30 @@
+module ast;
+
+import ast_context local;
+
+public type BuiltinExprBits struct {
+    u32 : NumExprBits;
+    u32 kind : 3;
+    //u32 other1 : 2;
+    //u32 other2 : 3;
+}
+
+public type BuiltinExpr struct {
+    Expr expr;
+} @(opaque)
+
+public type BuiltinKind enum u8 {
+    Sizeof,
+    Elemsof,
+}
+
+public func BuiltinExpr* BuiltinExpr.create(Context* c) @(inline) {
+    BuiltinExpr* b = c.alloc(sizeof(BuiltinExpr));
+    Stmt* s = &b.expr.stmt;
+    b.expr.init(ExprKind.Builtin, 1, 1, 0);
+    s.builtinExprBits.kind = BuiltinKind.Elemsof;
+    //s.builtinExprBits.other1 = 0x3;
+    //s.builtinExprBits.other2 = 0x7;
+    return b;
+}
+
