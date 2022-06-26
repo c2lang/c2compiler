@@ -27,8 +27,9 @@ public func CallExpr* CallExpr.create(Context* c, SrcLoc loc, Expr* fn) @(inline
     return e;
 }
 
-public func void CallExpr.print(const CallExpr* e) {
-    printf("CallExpr\n");
-    e.fn.dump();
+public func void CallExpr.print(const CallExpr* e, StringBuffer* out, u32 indent) {
+    out.indent(indent);
+    out.add("CallExpr\n");
+    e.fn.print(out, indent + 1);
 }
 

@@ -18,7 +18,8 @@ public func NilExpr* NilExpr.create(Context* c, SrcLoc loc) @(inline) {
     return e;
 }
 
-public func void NilExpr.print(const NilExpr* e) {
-    printf("NilExpr\n");
+public func void NilExpr.print(const NilExpr* e, StringBuffer* out, u32 indent) {
+    out.indent(indent);
+    out.add("NilExpr\n");
 }
 

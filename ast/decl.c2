@@ -6,6 +6,8 @@ module ast;
 import ast_context local;
 import utils local;
 
+import stdio local; // TEMP
+
 public type DeclKind enum u8 {
     Function,
     Import,
@@ -49,12 +51,19 @@ public func SrcLoc Decl.getLoc(const Decl* d) @(inline) {
 }
 
 public func void Decl.dump(const Decl* d) {
+    StringBuffer* out = StringBuffer.create(10*4096);
+    d.print(out, 0);
+    printf("%s\n", out.data());
+    out.destroy();
+}
+
+public func void Decl.print(const Decl* d, StringBuffer* out, u32 indent) {
     switch (d.getKind()) {
     case DeclKind.Function:
-        FunctionDecl.print(cast<FunctionDecl*>(d));
+        FunctionDecl.print(cast<FunctionDecl*>(d), out, indent);
         break;
     case DeclKind.Import:
-        ImportDecl.print(cast<ImportDecl*>(d));
+        ImportDecl.print(cast<ImportDecl*>(d), out, indent);
         break;
     }
 }

@@ -4,6 +4,7 @@
 module ast;
 
 import ast_context local;
+import utils local;
 
 public type RefTypeBits struct {
     u32 : NumTypeBits;
@@ -19,26 +20,33 @@ public type RefType struct {
 public func RefType* RefType.create(Context* c, Expr* prefix, Expr* ref) @(inline) {
     u32 size = sizeof(RefType);
     if (prefix) size += sizeof(Expr*);
-    RefType* b = c.alloc(size);
-    b.parent.init(TypeKind.Ref);
-    b.ref = ref;
+    RefType* t = c.alloc(size);
+    t.parent.init(TypeKind.Ref);
+    t.ref = ref;
 
     if (prefix) {
-        b.parent.refTypeBits.have_prefix;
-        b.prefixRef[0] = prefix;
+        t.parent.refTypeBits.have_prefix;
+        t.prefixRef[0] = prefix;
     }
-    return b;
+    return t;
 }
 
-public func Expr* RefType.getRef(const RefType* r) @(inline) {
-    return r.ref;
+public func Expr* RefType.getRef(const RefType* t) @(inline) {
+    return t.ref;
 }
 
-public func Expr** RefType.getRef2(RefType* r) @(inline) {
-    return &r.ref;
+public func Expr** RefType.getRef2(RefType* t) @(inline) {
+    return &t.ref;
 }
 
-public func void RefType.print(const RefType* b) {
+public func void RefType.print(const RefType* t, StringBuffer* out, u32 indent) {
+    out.indent(indent);
+    out.add("RefType\n");
+    t.ref.print(out, indent + 2);
+    if (t.parent.refTypeBits.have_prefix) {
+        t.prefixRef[0].print(out, indent + 2);
+    }
+
     // TODO
 }
 

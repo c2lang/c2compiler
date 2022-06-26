@@ -31,12 +31,13 @@ public func ForStmt* ForStmt.create(Context* c, Stmt* init_, Expr* cond, Expr* i
     return s;
 }
 
-public func void ForStmt.print(const ForStmt* s) {
-    printf("ForStmt\n");
-    if (s.init) s.init.dump();
-    if (s.cond) s.cond.dump();
-    if (s.incr) s.incr.dump();
-    if (s.body) s.body.dump();
+public func void ForStmt.print(const ForStmt* s, StringBuffer* out, u32 indent) {
+    out.indent(indent);
+    out.add("ForStmt\n");
+    if (s.init) s.init.print(out, indent + 2);
+    if (s.cond) s.cond.print(out, indent + 2);
+    if (s.incr) s.incr.print(out, indent + 2);
+    if (s.body) s.body.print(out, indent + 2);
 }
 
 public func Stmt* ForStmt.getInit(const ForStmt* s) @(inline) { return s.init; }

@@ -6,6 +6,8 @@ module ast;
 import ast_context local;
 import utils local;
 
+import stdio local; // TEMP
+
 public type StmtKind enum u8 {
     Return,
     Expr,
@@ -61,27 +63,34 @@ func void Stmt.init(Stmt* s, StmtKind k) @(inline) {
 public func StmtKind Stmt.getKind(const Stmt* s) @(inline) { return cast<StmtKind>(s.stmtBits.kind); }
 
 public func void Stmt.dump(const Stmt* s) {
+    StringBuffer* out = StringBuffer.create(10*4096);
+    s.print(out, 0);
+    printf("%s\n", out.data());
+    out.destroy();
+}
+
+public func void Stmt.print(const Stmt* s, StringBuffer* out, u32 indent) {
     switch (s.getKind()) {
     case StmtKind.Return:
-        ReturnStmt.print(cast<ReturnStmt*>(s));
+        ReturnStmt.print(cast<ReturnStmt*>(s), out, indent);
         break;
     case StmtKind.Expr:
-        Expr.dump(cast<Expr*>(s));
+        Expr.print(cast<Expr*>(s), out, indent);
         break;
     case StmtKind.If:
-        IfStmt.print(cast<IfStmt*>(s));
+        IfStmt.print(cast<IfStmt*>(s), out, indent);
         break;
     case StmtKind.While:
-        WhileStmt.print(cast<WhileStmt*>(s));
+        WhileStmt.print(cast<WhileStmt*>(s), out, indent);
         break;
     case StmtKind.Do:
-        DoStmt.print(cast<DoStmt*>(s));
+        DoStmt.print(cast<DoStmt*>(s), out, indent);
         break;
     case StmtKind.For:
-        ForStmt.print(cast<ForStmt*>(s));
+        ForStmt.print(cast<ForStmt*>(s), out, indent);
         break;
     case StmtKind.Compound:
-        CompoundStmt.print(cast<CompoundStmt*>(s));
+        CompoundStmt.print(cast<CompoundStmt*>(s), out, indent);
         break;
     }
 }

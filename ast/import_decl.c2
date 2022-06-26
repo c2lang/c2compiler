@@ -29,13 +29,13 @@ public func ImportDecl* ImportDecl.create(Context* c, const char* name, SrcLoc l
     return d;
 }
 
-public func void ImportDecl.print(const ImportDecl* d) {
-    // TODO use-stringbuffer ish
-    printf("ImportDecl");
-    if (d.decl.importDeclBits.is_local) printf(" local");
-    printf(" %s ", d.decl.name);
-    if (d.alias_name) printf(" alias %s", d.alias_name);
-    printf("\n");
+public func void ImportDecl.print(const ImportDecl* d, StringBuffer* out, u32 indent) {
+    out.indent(indent);
+    out.add("ImportDecl");
+    if (d.decl.importDeclBits.is_local) out.add(" local");
+    out.print(" %s ", d.decl.name);
+    if (d.alias_name) out.print(" alias %s", d.alias_name);
+    out.add("\n");
 }
 
 public func const char* ImportDecl.getAliasName(const ImportDecl* d) @(inline) {

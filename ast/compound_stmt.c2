@@ -34,12 +34,12 @@ public func CompoundStmt* CompoundStmt.create(Context* c, Stmt** stmts, u32 coun
     return s;
 }
 
-public func void CompoundStmt.print(const CompoundStmt* s) {
+public func void CompoundStmt.print(const CompoundStmt* s, StringBuffer* out, u32 indent) {
     const u32 count = s.stmt.compoundStmtBits.count;
-    printf("CompoundStmt (%u stmts)\n", count);
-
+    out.indent(indent);
+    out.print("CompoundStmt (%u stmts)\n", count);
     for (u32 i=0; i<count; i++) {
-        s.stmts[i].dump();
+        s.stmts[i].print(out, indent + 2);
     }
 }
 

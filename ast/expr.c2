@@ -6,6 +6,8 @@ module ast;
 import ast_context local;
 import utils local;
 
+import stdio local; // TEMP
+
 public type ExprKind enum u8 {
     IntegerLiteral,
 /*
@@ -68,30 +70,37 @@ public func bool Expr.isCtv(const Expr* e) @(inline) { return e.stmt.exprBits.is
 public func bool Expr.isCtc(const Expr* e) @(inline) { return e.stmt.exprBits.is_ctc; }
 
 public func void Expr.dump(Expr* e) {
+    StringBuffer* out = StringBuffer.create(10*4096);
+    e.print(out, 0);
+    printf("%s\n", out.data());
+    out.destroy();
+}
+
+public func void Expr.print(const Expr* e, StringBuffer* out, u32 indent) {
     switch (e.getKind()) {
     case ExprKind.IntegerLiteral:
-        IntegerLiteral.print(cast<IntegerLiteral*>(e));
+        IntegerLiteral.print(cast<IntegerLiteral*>(e), out, indent);
         break;
     case ExprKind.BooleanLiteral:
-        BooleanLiteral.print(cast<BooleanLiteral*>(e));
+        BooleanLiteral.print(cast<BooleanLiteral*>(e), out, indent);
         break;
     case ExprKind.CharLiteral:
-        CharLiteral.print(cast<CharLiteral*>(e));
+        CharLiteral.print(cast<CharLiteral*>(e), out, indent);
         break;
     case ExprKind.StringLiteral:
-        StringLiteral.print(cast<StringLiteral*>(e));
+        StringLiteral.print(cast<StringLiteral*>(e), out, indent);
         break;
     case ExprKind.Nil:
-        NilExpr.print(cast<NilExpr*>(e));
+        NilExpr.print(cast<NilExpr*>(e), out, indent);
         break;
     case ExprKind.Identifier:
-        IdentifierExpr.print(cast<IdentifierExpr*>(e));
+        IdentifierExpr.print(cast<IdentifierExpr*>(e), out, indent);
         break;
     case ExprKind.Call:
-        CallExpr.print(cast<CallExpr*>(e));
+        CallExpr.print(cast<CallExpr*>(e), out, indent);
         break;
     case ExprKind.Builtin:
-        BuiltinExpr.print(cast<BuiltinExpr*>(e));
+        BuiltinExpr.print(cast<BuiltinExpr*>(e), out, indent);
         break;
     }
 }

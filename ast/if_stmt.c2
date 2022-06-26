@@ -36,11 +36,12 @@ public func IfStmt* IfStmt.create(Context* c, Expr* cond, Stmt* then, Stmt* else
     return s;
 }
 
-public func void IfStmt.print(const IfStmt* s) {
-    printf("IfStmt\n");
-    s.cond.dump();
-    s.then.dump();
-    if (s.stmt.ifStmtBits.has_else) s.else_stmt[0].dump();
+public func void IfStmt.print(const IfStmt* s, StringBuffer* out, u32 indent) {
+    out.indent(indent);
+    out.add("IfStmt\n");
+    s.cond.print(out, indent + 2);
+    s.then.print(out, indent + 2);
+    if (s.stmt.ifStmtBits.has_else) s.else_stmt[0].print(out, indent + 2);
 }
 
 public func Expr* IfStmt.getCond(const IfStmt* s) @(inline) {

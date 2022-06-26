@@ -6,6 +6,8 @@ module ast;
 import ast_context local;
 import utils local;
 
+import stdio local;
+
 public type TypeKind enum u8 {
     Builtin,
     // pointer
@@ -27,21 +29,28 @@ public type Type struct {
     }
 } @(opaque)
 
-func void Type.init(Type* d, TypeKind k) @(inline) {
-    d.bits = 0;
-    d.typeBits.kind = k;
+func void Type.init(Type* t, TypeKind k) @(inline) {
+    t.bits = 0;
+    t.typeBits.kind = k;
 }
 
 // TEMP cast needed until Analyser fixed
-public func TypeKind Type.getKind(const Type* d) @(inline) { return cast<TypeKind>(d.typeBits.kind); }
+public func TypeKind Type.getKind(const Type* t) @(inline) { return cast<TypeKind>(t.typeBits.kind); }
 
-public func void Type.dump(const Type* d) {
-    switch (d.getKind()) {
+public func void Type.dump(const Type* t) {
+    StringBuffer* out = StringBuffer.create(10*4096);
+    t.print(out, 0);
+    printf("%s\n", out.data());
+    out.destroy();
+}
+
+public func void Type.print(const Type* t, StringBuffer* out, u32 indent) {
+    switch (t.getKind()) {
     case TypeKind.Builtin:
-        BuiltinType.print(cast<BuiltinType*>(d));
+        BuiltinType.print(cast<BuiltinType*>(t), out, indent);
         break;
     case TypeKind.Ref:
-        RefType.print(cast<RefType*>(d));
+        RefType.print(cast<RefType*>(t), out, indent);
         break;
     }
 }

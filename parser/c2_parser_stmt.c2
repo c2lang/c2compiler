@@ -51,7 +51,6 @@ func Stmt* Parser.parseCompoundStmt(Parser* p) {
     Stmt* s = p.builder.actOnCompoundStmt(stmts.getData(), stmts.getCount());
     stmts.free();
 
-    s.dump();
     return s;
 }
 

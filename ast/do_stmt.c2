@@ -23,10 +23,11 @@ public func DoStmt* DoStmt.create(Context* c, Expr* cond, Stmt* then) @(inline) 
     return s;
 }
 
-public func void DoStmt.print(const DoStmt* s) {
-    printf("DoStmt\n");
-    s.cond.dump();
-    s.then.dump();
+public func void DoStmt.print(const DoStmt* s, StringBuffer* out, u32 indent) {
+    out.indent(indent);
+    out.add("DoStmt\n");
+    s.cond.print(out, indent + 2);
+    s.then.print(out, indent + 2);
 }
 
 public func Expr* DoStmt.getCond(const DoStmt* s) @(inline) {

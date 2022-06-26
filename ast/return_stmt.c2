@@ -34,10 +34,11 @@ public func ReturnStmt* ReturnStmt.create(Context* c, SrcLoc loc, Expr* value) @
     return r;
 }
 
-public func void ReturnStmt.print(const ReturnStmt* r) {
-    printf("ReturnStmt\n");
+public func void ReturnStmt.print(const ReturnStmt* r, StringBuffer* out, u32 indent) {
+    out.indent(indent);
+    out.add("ReturnStmt\n");
     if (r.stmt.returnStmtBits.has_value) {
-        r.value[0].dump();
+        r.value[0].print(out, indent + 2);
     }
 }
 

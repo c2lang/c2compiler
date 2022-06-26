@@ -28,12 +28,13 @@ public func IdentifierExpr* IdentifierExpr.create(Context* c, SrcLoc loc, const 
     return e;
 }
 
-public func void IdentifierExpr.print(const IdentifierExpr* e) {
-    printf("IdentifierExpr", e.name);
+public func void IdentifierExpr.print(const IdentifierExpr* e, StringBuffer* out, u32 indent) {
+    out.indent(indent);
+    out.add("IdentifierExpr");
     if (e.expr.stmt.identifierExprBits.ref_type) {
-        printf(" ref: %s\n", e.decl.getName());
+        out.print(" ref: %s\n", e.decl.getName());
     } else {
-        printf(" name: %s\n", e.name);
+        out.print(" name: %s\n", e.name);
     }
 }
 

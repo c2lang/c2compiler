@@ -84,3 +84,4 @@ public func void StringBuffer.indent(StringBuffer* buf, u32 indent) {
     }
     buf.data_[buf.size_] = 0;
 }
+
