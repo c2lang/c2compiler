@@ -11,3 +11,5 @@ public func u64 now() {
     return now64;
 }
 
+public type SrcLoc u32;
+

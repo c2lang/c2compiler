@@ -1,6 +1,7 @@
 module ast;
 
 import ast_context local;
+import utils local;
 
 // TEMP
 import stdio local;
@@ -13,10 +14,10 @@ type ImportDeclBits struct {
 public type ImportDecl struct {
     Decl decl;
     const char* alias_name;
-    u32 alias_loc;
+    SrcLoc alias_loc;
 } @(opaque)
 
-public func ImportDecl* ImportDecl.create(Context* c, const char* name, u32 loc, const char* alias_name, u32 alias_loc, bool is_local) @(inline) {
+public func ImportDecl* ImportDecl.create(Context* c, const char* name, SrcLoc loc, const char* alias_name, SrcLoc alias_loc, bool is_local) @(inline) {
     ImportDecl* d = c.alloc(sizeof(ImportDecl));
     d.decl.init(DeclKind.Import, name, loc);
     d.decl.importDeclBits.is_local = is_local;
@@ -38,7 +39,7 @@ public func const char* ImportDecl.getAliasName(const ImportDecl* d) @(inline) {
     return d.alias_name;
 }
 
-public func u32 ImportDecl.getAliasLoc(const ImportDecl* d) @(inline) {
+public func SrcLoc ImportDecl.getAliasLoc(const ImportDecl* d) @(inline) {
     return d.alias_loc;
 }
 

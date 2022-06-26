@@ -21,6 +21,7 @@
 ## SourceManager
 + reserve location 0
 + remove hardcoded file max
+- alias-type for SrcLoc
 - close files after use (need indication)
 
 ## Parser
