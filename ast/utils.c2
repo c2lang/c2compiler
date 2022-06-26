@@ -22,15 +22,15 @@ static_assert(40, sizeof(IfStmt));
 static_assert(24, sizeof(ReturnStmt));
 static_assert(40, sizeof(WhileStmt));
 
-static_assert(24, sizeof(Expr));
-static_assert(24, sizeof(BuiltinExpr));
-static_assert(24, sizeof(BooleanLiteral));
-static_assert(24, sizeof(CharLiteral));
-static_assert(32, sizeof(StringLiteral));
-static_assert(24, sizeof(NilExpr));
-static_assert(32, sizeof(IdentifierExpr));
-static_assert(32, sizeof(CallExpr));
-static_assert(32, sizeof(IntegerLiteral));
+static_assert(32, sizeof(Expr));
+static_assert(32, sizeof(BuiltinExpr));
+static_assert(32, sizeof(BooleanLiteral));
+static_assert(32, sizeof(CharLiteral));
+static_assert(40, sizeof(StringLiteral));
+static_assert(32, sizeof(NilExpr));
+static_assert(40, sizeof(IdentifierExpr));
+static_assert(40, sizeof(CallExpr));
+static_assert(40, sizeof(IntegerLiteral));
 
 static_assert(8, sizeof(Type));
 static_assert(8, sizeof(BuiltinType));

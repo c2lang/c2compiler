@@ -1,0 +1,109 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module c2_parser;
+
+import source_mgr local;
+import c2_tokenizer local;
+import ast_builder local;
+import ast_list local;
+import ast local;
+import ast_context local;
+import tokens local;
+import string_list;
+import utils;
+
+import stdarg local;
+import stdlib local;
+import string local;
+import csetjmp local;
+import ctype local;
+import stdio local;
+
+func void Parser.parseTypeDef(Parser* p, bool is_public) {
+    p.consumeToken();
+    p.expectIdentifier();
+    const char* type_name = p.tok.text_value;
+    u32 type_loc = p.tok.loc;
+    p.consumeToken();
+
+    if (!isupper(type_name[0])) p.error("type name must start with upper-case character");
+
+    switch (p.tok.kind) {
+    case Kind.KW_func:
+        p.parseFuncType(type_name, type_loc, is_public);
+        break;
+    case Kind.KW_struct:
+        p.parseStructType(true, type_name, type_loc, is_public);
+        break;
+    case Kind.KW_union:
+        p.parseStructType(false, type_name, type_loc, is_public);
+        break;
+    case Kind.KW_enum:
+        p.parseEnumType(type_name, type_loc, is_public);
+        break;
+    default:
+        p.parseAliasType(type_name, type_loc, is_public);
+        break;
+    }
+}
+
+func void Parser.parseFuncType(Parser* p, const char* name, u32 loc, bool is_public) {
+    p.consumeToken();
+    // TODO
+}
+
+func void Parser.parseStructType(Parser* p, bool is_struct, const char* name, u32 loc, bool is_public) {
+    p.consumeToken();
+    StructTypeDecl* d = p.builder.actOnStructType(name, loc, is_struct, is_public, true);
+
+    p.parseStructBlock(d);
+    p.parseAttributes(); // (d)
+}
+
+func void Parser.parseStructBlock(Parser* p, StructTypeDecl* d) {
+    p.expectAndConsume(Kind.LBrace);
+
+    DeclList members;
+    members.init();
+
+    while (1) {
+        //Syntax:
+        // struct_member ::= type_qualifier type_specifier.
+        // struct_member ::= STRUCT <IDENTIFIER> LBRACE struct_block RBRACE.
+        // struct_member ::= UNION <IDENTIFIER> LBRACE struct_block RBRACE.
+
+        if (p.tok.kind == Kind.RBrace) break;
+        if (p.tok.kind == Kind.KW_union || p.tok.kind == Kind.KW_struct) {
+            bool is_struct = p.tok.kind == Kind.KW_struct;
+            p.consumeToken();
+            // name is optional
+            const char* name = nil;
+            u32 loc = 0;
+            if (p.tok.kind == Kind.Identifier) {
+                name = p.tok.text_value;
+                loc = p.tok.loc;
+                p.consumeToken();
+            }
+            StructTypeDecl* member = p.builder.actOnStructType(name, loc, is_struct, d.asDecl().isPublic(), false);
+            members.add(cast<Decl*>(member));
+            p.parseStructBlock(member);
+        } else {
+            QualType qt = p.parseTypeSpecifier(true);
+            // TODO
+        }
+
+        p.builder.actOnStructMembers(d, members.getDecls(), members.size());
+        members.free();
+    }
+}
+
+func void Parser.parseEnumType(Parser* p, const char* name, u32 loc, bool is_public) {
+    p.consumeToken();
+    // TODO
+}
+
+func void Parser.parseAliasType(Parser* p, const char* name, u32 loc, bool is_public) {
+    // TODO
+}
+

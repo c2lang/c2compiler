@@ -51,6 +51,7 @@ public const u32 NumExprBits = NumStmtBits + 16;
 public type Expr struct {
     Stmt stmt;
     SrcLoc loc;
+    QualType qt;
 } @(opaque)
 
 public func void Expr.init(Expr* e, ExprKind k, SrcLoc loc, bool ctv, bool ctc, bool lvalue) @(inline) {
@@ -60,6 +61,7 @@ public func void Expr.init(Expr* e, ExprKind k, SrcLoc loc, bool ctv, bool ctc, 
     e.stmt.exprBits.is_ctc = 1;
     e.stmt.exprBits.is_lvalue = 0;
     e.loc = loc;
+    e.qt.ptr = 0;
 }
 
 // TEMP cast needed until Analyser fixed

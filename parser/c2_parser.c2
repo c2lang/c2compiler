@@ -194,83 +194,6 @@ func void Parser.parseTopLevel(Parser* p) {
     }
 }
 
-func void Parser.parseTypeDef(Parser* p, bool is_public) {
-    p.consumeToken();
-    p.expectIdentifier();
-    const char* type_name = p.tok.text_value;
-    u32 type_loc = p.tok.loc;
-    p.consumeToken();
-
-    if (!isupper(type_name[0])) p.error("type name must start with upper-case character");
-
-    switch (p.tok.kind) {
-    case Kind.KW_func:
-        p.parseFuncType(type_name, type_loc, is_public);
-        break;
-    case Kind.KW_struct:
-        p.parseStructType(true, type_name, type_loc, is_public);
-        break;
-    case Kind.KW_union:
-        p.parseStructType(false, type_name, type_loc, is_public);
-        break;
-    case Kind.KW_enum:
-        p.parseEnumType(type_name, type_loc, is_public);
-        break;
-    default:
-        p.parseAliasType(type_name, type_loc, is_public);
-        break;
-    }
-}
-
-func void Parser.parseFuncType(Parser* p, const char* name, u32 loc, bool is_public) {
-    p.consumeToken();
-    // TODO
-}
-
-func void Parser.parseStructType(Parser* p, bool is_struct, const char* name, u32 loc, bool is_public) {
-    p.consumeToken();
-    StructTypeDecl* d = p.builder.actOnStructType(name, loc, is_struct, is_public, true);
-
-    p.parseStructBlock(d);
-    p.parseAttributes(); // (d)
-}
-
-func void Parser.parseStructBlock(Parser* p, StructTypeDecl* d) {
-    p.expectAndConsume(Kind.LBrace);
-
-    DeclList members;
-    members.init();
-
-    while (1) {
-        //Syntax:
-        // struct_member ::= type_qualifier type_specifier.
-        // struct_member ::= STRUCT <IDENTIFIER> LBRACE struct_block RBRACE.
-        // struct_member ::= UNION <IDENTIFIER> LBRACE struct_block RBRACE.
-
-        if (p.tok.kind == Kind.RBrace) break;
-        if (p.tok.kind == Kind.KW_union || p.tok.kind == Kind.KW_struct) {
-            bool is_struct = p.tok.kind == Kind.KW_struct;
-            p.consumeToken();
-            // name is optional
-            const char* name = nil;
-            u32 loc = 0;
-            if (p.tok.kind == Kind.Identifier) {
-                name = p.tok.text_value;
-                loc = p.tok.loc;
-                p.consumeToken();
-            }
-            StructTypeDecl* member = p.builder.actOnStructType(name, loc, is_struct, d.asDecl().isPublic(), false);
-            members.add(cast<Decl*>(member));
-            p.parseStructBlock(member);
-        } else {
-            // TODO
-        }
-
-        p.builder.actOnStructMembers(d, members.getDecls(), members.size());
-        members.free();
-    }
-}
-
 func void Parser.parseAttributes(Parser* p) {
     if (p.tok.kind != Kind.At) return;
     p.consumeToken();
@@ -294,15 +217,6 @@ func void Parser.parseAttributes(Parser* p) {
     }
 
     p.expectAndConsume(Kind.RParen);
-}
-
-func void Parser.parseEnumType(Parser* p, const char* name, u32 loc, bool is_public) {
-    p.consumeToken();
-    // TODO
-}
-
-func void Parser.parseAliasType(Parser* p, const char* name, u32 loc, bool is_public) {
-    // TODO
 }
 
 func void Parser.parseFuncDef(Parser* p, bool is_public) {
@@ -373,19 +287,20 @@ func void Parser.parseParamDecl(Parser* p, FunctionDecl* f, bool allow_defaults)
         p.error("invalid local");
     }
 
-    /*ExprResult type = */ p.parseTypeSpecifier(true);
+    QualType qt = p.parseTypeSpecifier(true);
 
     // TODO
 }
 
-func void Parser.parseTypeSpecifier(Parser* p, bool allow_qualifier) {
-    /*type = */ p.parseSingleTypeSpecifier(allow_qualifier);
-    if (p.tok.kind != Kind.LSquare) return; /*type*/
-    /*return*/ p.parseOptionalArray(/*type*/);
+func QualType Parser.parseTypeSpecifier(Parser* p, bool allow_qualifier) {
+    QualType qt = p.parseSingleTypeSpecifier(allow_qualifier);
+    if (p.tok.kind != Kind.LSquare) return qt;
+    return p.parseOptionalArray(qt);
 }
 
-func void Parser.parseOptionalArray(Parser* p) {
+func QualType Parser.parseOptionalArray(Parser* p, QualType qt) {
     // TODO
+    return qt;
 }
 
 func void Parser.parseVarDef(Parser* p, bool is_public) {
@@ -464,6 +379,9 @@ func QualType Parser.parseSingleTypeSpecifier(Parser* p, bool allow_qualifier) {
     return p.builder.actOnTypeQualifier(base, type_qualifier);
 }
 
+// Syntax:
+//   identifier
+//   identifier.identifier
 func QualType Parser.parseFullTypeIdentifier(Parser* p) {
     QualType q;
     // TODO
