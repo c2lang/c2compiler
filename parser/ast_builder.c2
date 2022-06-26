@@ -1,7 +1,7 @@
 /* Copyright 2022 Bas van den Berg
 */
 
-module c2_ast_builder;
+module ast_builder;
 
 import ast local;
 import ast_context local;

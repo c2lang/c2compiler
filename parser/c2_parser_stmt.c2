@@ -3,7 +3,7 @@
 
 module c2_parser;
 
-import c2_ast_builder local;
+import ast_builder local;
 import ast local;
 import tokens local;
 import utils local;
@@ -46,7 +46,10 @@ func Stmt* Parser.parseReturnStmt(Parser* p) {
 
     Expr* ret = nil;
     if (p.tok.kind != Kind.Semicolon) {
+        ret = p.parseExpr();
     }
+
+    p.expectAndConsume(Kind.Semicolon);
     return p.builder.actOnReturnStmt(loc, ret);
 }
 

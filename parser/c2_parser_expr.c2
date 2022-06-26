@@ -1,0 +1,20 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module c2_parser;
+
+import ast_builder local;
+import ast local;
+import tokens local;
+import utils local;
+
+func Expr* Parser.parseExpr(Parser* p) {
+    // NOTE: keep in order
+    switch (p.tok.kind) {
+    default:
+        return nil; // TEMP
+        break;
+    }
+    return nil;
+}
+
