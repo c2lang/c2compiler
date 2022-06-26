@@ -25,6 +25,7 @@ executable c2c
     ast/expr.c2
     ast/builtin_expr.c2
     ast/boolean_literal.c2
+    ast/char_literal.c2
     ast/integer_literal.c2
     ast/decl.c2
     ast/function_decl.c2

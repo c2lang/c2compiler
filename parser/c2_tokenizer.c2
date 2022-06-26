@@ -419,7 +419,7 @@ public type Token struct {
     union {
         const char* error_msg;  // ERROR
         const char* text_value; // Identifier, NumberLiteral
-        char char_value; // CharLiteral
+        u8 char_value; // CharLiteral
     }
     bool more;
 }
@@ -844,7 +844,7 @@ func void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
             return;
         }
     } else {
-        result.char_value = t.cur[1];
+        result.char_value = cast<u8>(t.cur[1]);
     }
 
     if (t.cur[2] != '\'') {

@@ -17,6 +17,8 @@ func Expr* Parser.parseExpr(Parser* p) {
     switch (p.tok.kind) {
     case Kind.NumberLiteral:
         return p.parseNumberLiteral();
+    case Kind.CharLiteral:
+        return p.parseCharLiteral();
     default:
         return nil; // TEMP
         break;
@@ -29,5 +31,11 @@ func Expr* Parser.parseNumberLiteral(Parser* p) {
    Expr* num = p.builder.actOnIntegerLiteral(p.tok.loc, p.tok.text_value);
    p.consumeToken();
    return num;
+}
+
+func Expr* Parser.parseCharLiteral(Parser* p) {
+    Expr* e = p.builder.actOnCharLiteral(p.tok.loc, p.tok.char_value);
+    p.consumeToken();
+    return e;
 }
 

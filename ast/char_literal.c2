@@ -1,0 +1,30 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context local;
+import utils local;
+
+import stdio local; // TEMP
+
+public type CharLiteralBits struct {
+    u32 : NumExprBits;
+    u32 value : 8;
+}
+
+public type CharLiteral struct {
+    Expr expr;
+} @(opaque)
+
+public func CharLiteral* CharLiteral.create(Context* c, SrcLoc loc, u8 val) @(inline) {
+    CharLiteral* b = c.alloc(sizeof(CharLiteral));
+    b.expr.init(ExprKind.CharLiteral, loc, 1, 1, 0);
+    b.expr.stmt.charLiteralBits.value = val;
+    return b;
+}
+
+public func void CharLiteral.print(const CharLiteral* b) {
+    printf("CharLiteral '%c'", b.expr.stmt.charLiteralBits.value);
+}
+

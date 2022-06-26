@@ -12,8 +12,8 @@ public type ExprKind enum u8 {
     FloatLiteral,
 */
     BooleanLiteral,
-/*
     CharLiteral,
+/*
     StringLiteral,
     Nil,
     Identifier,
@@ -72,6 +72,9 @@ public func void Expr.dump(Expr* e) {
         break;
     case ExprKind.BooleanLiteral:
         BooleanLiteral.print(cast<BooleanLiteral*>(e));
+        break;
+    case ExprKind.CharLiteral:
+        CharLiteral.print(cast<CharLiteral*>(e));
         break;
     case ExprKind.Builtin:
         BuiltinExpr.print(cast<BuiltinExpr*>(e));
