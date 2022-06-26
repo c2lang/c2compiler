@@ -63,4 +63,7 @@ func Expr* Parser.parseNilExpr(Parser* p) {
     return e;
 }
 
+func Expr* Parser.parseCallExpr(Parser* p) {
+    return nil;
+}
 
