@@ -3,7 +3,7 @@
 
 module c2_parser;
 
-import c2_source_mgr local;
+import source_mgr local;
 import c2_tokenizer local;
 import ast_builder local;
 import ast local;
@@ -335,6 +335,8 @@ func void Parser.parseFuncDef(Parser* p, bool is_public) {
 
     CompoundStmt* body = p.parseCompoundStmt();
     p.builder.actOnFunctionBody(f, body);
+
+    f.print();
 }
 
 func void Parser.parseFunctionParams(Parser* p, FunctionDecl* f, bool allow_defaults) {

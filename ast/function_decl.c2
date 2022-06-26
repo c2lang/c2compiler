@@ -33,8 +33,10 @@ public func void FunctionDecl.setBody(FunctionDecl* d, CompoundStmt* body) @(inl
 
 public func void FunctionDecl.print(const FunctionDecl* d) {
     // TODO use-stringbuffer ish
-    printf("FunctionDecl");
-    printf(" %s ", d.decl.name);
-    printf("\n");
+    printf("FunctionDecl %s\n", d.decl.name);
+    if (d.body) {
+        d.body.print();
+    }
+
 }
 

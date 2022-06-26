@@ -1,7 +1,7 @@
 /* Copyright 2022 Bas van den Berg
 */
 
-module c2_source_mgr;
+module source_mgr;
 
 import file_utils;
 import stdlib local;
@@ -152,7 +152,7 @@ public func const char* SourceMgr.loc2str(SourceMgr* sm, u32 src_loc) {
     if (src_loc == 0) {
         strcpy(tmp, "-");
     } else {
-        c2_source_mgr.Location loc = sm.locate(src_loc);
+        source_mgr.Location loc = sm.locate(src_loc);
         sprintf(tmp, "%s:%u:%u", loc.filename, loc.line, loc.column);
     }
     return tmp;
