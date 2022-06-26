@@ -917,7 +917,7 @@ func void Tokenizer.skip_line_comment(Tokenizer* t) {
 func void Tokenizer.skip_block_comment(Tokenizer* t) {
     t.cur += 2;
     while (*t.cur) {
-        if (t.cur[0] == '*' || t.cur[1] == '/') break;
+        if (t.cur[0] == '*' && t.cur[1] == '/') break;
         t.cur++;
     }
     t.cur += 2;

@@ -13,6 +13,7 @@
 + have error() be like printf
 + error/warn feature
 + named feature-selection
+- FIX comment
 - support nested /* */ comments
 - Numbers:
     - parse floating points

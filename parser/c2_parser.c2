@@ -100,7 +100,7 @@ public func bool Parser.parse(Parser* p) {
 func void Parser.consumeToken(Parser* p) {
     p.tokenizer.lex(&p.tok);
 
-    //dump_token(p.sm, &p.tok);
+    dump_token(p.sm, &p.tok);
     // TODO dont check here, just jump from inner scope (pass jmpbuf to tokenizer)?
     if (p.tok.kind == Kind.Error) {
         p.error(p.tok.error_msg);
@@ -156,6 +156,7 @@ func void Parser.parseImports(Parser* p) {
             p.expectIdentifier();
             alias_name = p.tok.text_value;
             alias_loc = p.tok.loc;
+            p.consumeToken();
         }
         bool islocal = false;
         if (p.tok.kind == Kind.KW_local) {
