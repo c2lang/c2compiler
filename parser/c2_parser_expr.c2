@@ -23,6 +23,8 @@ func Expr* Parser.parseExpr(Parser* p) {
         return p.parseCharLiteral();
     case Kind.StringLiteral:
         return p.parseStringLiteral();
+    case Kind.LParen:
+        return p.parseParenExpr();
     case Kind.KW_nil:
         return p.parseNilExpr();
     default:
@@ -55,6 +57,16 @@ func Expr* Parser.parseStringLiteral(Parser* p) {
     Expr* e = p.builder.actOnStringLiteral(p.tok.loc, p.tok.text_value);
     p.consumeToken();
     return e;
+}
+
+func Expr* Parser.parseParenExpr(Parser* p) {
+    SrcLoc loc = p.tok.loc;
+    p.consumeToken();
+
+    Expr* inner = p.parseExpr();
+    p.expectAndConsume(Kind.RParen);
+
+    return p.builder.actOnParenExpr(p.tok.loc, inner);
 }
 
 func Expr* Parser.parseNilExpr(Parser* p) {

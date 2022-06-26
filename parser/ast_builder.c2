@@ -238,3 +238,7 @@ public func Expr* Builder.actOnNilExpr(Builder* b, SrcLoc loc) {
     return cast<Expr*>(NilExpr.create(b.context, loc));
 }
 
+public func Expr* Builder.actOnParenExpr(Builder* b, SrcLoc loc, Expr* inner) {
+    return cast<Expr*>(ParenExpr.create(b.context, loc, inner));
+}
+

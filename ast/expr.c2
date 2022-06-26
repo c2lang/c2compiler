@@ -32,7 +32,9 @@ public type ExprKind enum u8 {
 /*
     ArraySubscript,
     Member,
+*/
     Paren,
+/*
     BitOffset,
     ExplicitCast,
     ImplicitCast,
@@ -103,6 +105,9 @@ public func void Expr.print(const Expr* e, StringBuffer* out, u32 indent) {
         break;
     case ExprKind.Builtin:
         BuiltinExpr.print(cast<BuiltinExpr*>(e), out, indent);
+        break;
+    case ExprKind.Paren:
+        ParenExpr.print(cast<ParenExpr*>(e), out, indent);
         break;
     }
 }

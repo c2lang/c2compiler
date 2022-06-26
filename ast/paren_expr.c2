@@ -1,0 +1,28 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context local;
+import utils local;
+
+import stdio local; // TEMP
+
+public type ParenExpr struct {
+    Expr expr;
+    Expr* inner;
+} @(opaque)
+
+public func ParenExpr* ParenExpr.create(Context* c, SrcLoc loc, Expr* inner) @(inline) {
+    ParenExpr* e = c.alloc(sizeof(ParenExpr));
+    e.expr.init(ExprKind.Paren, loc, 0, 0, 0);
+    e.inner = inner;
+    return e;
+}
+
+public func void ParenExpr.print(const ParenExpr* e, StringBuffer* out, u32 indent) {
+    out.indent(indent);
+    out.add("ParenExpr\n");
+    e.inner.print(out, indent + 2);
+}
+
