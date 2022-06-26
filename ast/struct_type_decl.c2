@@ -33,7 +33,7 @@ public func void StructTypeDecl.setMembers(StructTypeDecl* d, Decl** members, u3
     d.members = members;
 }
 
-public func const Decl* StructTypeDecl.asDecl(const StructTypeDecl* d) @(inline) {
+public func Decl* StructTypeDecl.asDecl(StructTypeDecl* d) @(inline) {
     return &d.decl;
 }
 

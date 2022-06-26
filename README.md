@@ -45,4 +45,5 @@
 
 ## Performance
 - profile application to see where time is spent
+- try building as 32-bit application, measure mem + speed
 

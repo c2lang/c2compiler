@@ -51,7 +51,7 @@ public func void Builder.actOnImport(Builder* b, const char* mod_name, SrcLoc mo
 
 public func StructTypeDecl* Builder.actOnStructType(Builder* b, const char* name, SrcLoc loc, bool is_public, bool is_struct, bool is_global) {
     StructTypeDecl* d = StructTypeDecl.create(b.context, name, loc, is_public, is_struct, is_global);
-    //b.ast.addType(cast<Type*>(d));
+    b.ast.addTypeDecl(d.asDecl());
     return d;
 }
 

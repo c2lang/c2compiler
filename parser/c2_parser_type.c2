@@ -118,6 +118,9 @@ func void Parser.parseStructBlock(Parser* p, StructTypeDecl* d) {
             p.expectAndConsume(Kind.Semicolon);
         }
     }
+
+    p.expectAndConsume(Kind.RBrace);
+
     p.builder.actOnStructMembers(d, members.getDecls(), members.size());
     members.free();
 }

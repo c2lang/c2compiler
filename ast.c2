@@ -10,6 +10,7 @@ import stdio local;
 public type AST struct {
 
     ImportDeclList imports;
+    DeclList types;
     FunctionDeclList functions;
 
 } @(opaque)
@@ -31,6 +32,10 @@ public func void AST.addFunc(AST* a, FunctionDecl* d) @(inline) {
     a.functions.add(d);
 }
 
+public func void AST.addTypeDecl(AST* a, Decl* d) @(inline) {
+    a.types.add(d);
+}
+
 public func void AST.print(const AST* a) {
     StringBuffer* out = StringBuffer.create(1024*1024);
 
@@ -41,7 +46,13 @@ public func void AST.print(const AST* a) {
     }
 
     out.add("\n");
+    const Decl** types = a.types.getDecls();
+    for (u32 i=0; i<a.types.size(); i++) {
+        types[i].print(out, 0);
+        out.add("\n");
+    }
 
+    out.add("\n");
     const FunctionDecl** functions = a.functions.getDecls();
     for (u32 i=0; i<a.functions.size(); i++) {
         functions[i].print(out, 0);
