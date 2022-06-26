@@ -199,6 +199,10 @@ public func Stmt* Builder.actOnCaseStmt(Builder* b, SrcLoc loc, Expr* cond, Stmt
     return cast<Stmt*>(CaseStmt.create(b.context, loc, cond, stmts, num_stmts));
 }
 
+public func Stmt* Builder.actOnBreakStmt(Builder* b, SrcLoc loc) {
+    return cast<Stmt*>(BreakStmt.create(b.context, loc));
+}
+
 public func Expr* Builder.actOnIdentifier(Builder* b, SrcLoc loc, const char* name) {
     return cast<Expr*>(IdentifierExpr.create(b.context, loc, name));
 }

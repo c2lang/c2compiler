@@ -69,7 +69,7 @@ const Keyword[] Keywords_c = {
     { nil, Kind.None, 0 },
 }
 const Keyword[] Keywords_d = {
-    { "default", Kind.KW_default, 8 },
+    { "default", Kind.KW_default, 7 },
     { "do", Kind.KW_do, 2 },
     { nil, Kind.None, 0 },
 }
