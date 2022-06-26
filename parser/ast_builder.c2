@@ -207,6 +207,10 @@ public func Stmt* Builder.actOnContinueStmt(Builder* b, SrcLoc loc) {
     return cast<Stmt*>(ContinueStmt.create(b.context, loc));
 }
 
+public func Stmt* Builder.actOnFallthroughStmt(Builder* b, SrcLoc loc) {
+    return cast<Stmt*>(FallthroughStmt.create(b.context, loc));
+}
+
 public func Expr* Builder.actOnIdentifier(Builder* b, SrcLoc loc, const char* name) {
     return cast<Expr*>(IdentifierExpr.create(b.context, loc, name));
 }

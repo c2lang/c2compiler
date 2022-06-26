@@ -29,6 +29,7 @@ executable c2c
     ast/default_stmt.c2
     ast/break_stmt.c2
     ast/continue_stmt.c2
+    ast/fallthrough_stmt.c2
     ast/while_stmt.c2
 
     ast/expr.c2

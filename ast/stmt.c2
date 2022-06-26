@@ -23,8 +23,8 @@ public type StmtKind enum u8 {
     Default,
     Break,
     Continue,
-/*
     Fallthrough,
+/*
     Label,
     Goto,
 */
@@ -108,6 +108,9 @@ public func void Stmt.print(const Stmt* s, StringBuffer* out, u32 indent) {
         break;
     case StmtKind.Continue:
         ContinueStmt.print(cast<ContinueStmt*>(s), out, indent);
+        break;
+    case StmtKind.Fallthrough:
+        FallthroughStmt.print(cast<FallthroughStmt*>(s), out, indent);
         break;
     case StmtKind.Compound:
         CompoundStmt.print(cast<CompoundStmt*>(s), out, indent);

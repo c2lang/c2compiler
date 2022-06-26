@@ -1,0 +1,27 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context local;
+import utils local;
+
+import stdio local; // TEMP
+
+public type FallthroughStmt struct {
+    Stmt stmt;
+    SrcLoc loc;
+} @(opaque)
+
+public func FallthroughStmt* FallthroughStmt.create(Context* c, SrcLoc loc) @(inline) {
+    FallthroughStmt* s = c.alloc(sizeof(FallthroughStmt));
+    s.stmt.init(StmtKind.Fallthrough);
+    s.loc = loc;
+    return s;
+}
+
+public func void FallthroughStmt.print(const FallthroughStmt* s, StringBuffer* out, u32 indent) {
+    out.indent(indent);
+    out.add("FallthroughStmt\n");
+}
+
