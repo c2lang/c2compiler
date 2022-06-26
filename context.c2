@@ -60,12 +60,8 @@ public type Context struct {
 public func Context* Context.create(u32 blk_size, u32 str_blk_size) {
     Context* c = calloc(1, sizeof(Context));
     c.blk_size = blk_size;
-    c.blk_head = Block.create(c.blk_size);
-    c.blk_tail = c.blk_head;
-
     c.str_blk_size = str_blk_size;
-    c.str_blk_head = Block.create(c.str_blk_size);
-    c.str_blk_tail = c.str_blk_head;
+    c.init();
     return c;
 }
 
@@ -74,6 +70,21 @@ public func void Context.free(Context* c) {
     while (blk) blk = blk.free();
 
     free(c);
+}
+
+func void Context.init(Context* c) {
+    c.blk_head = Block.create(c.blk_size);
+    c.blk_tail = c.blk_head;
+
+    c.str_blk_head = Block.create(c.str_blk_size);
+    c.str_blk_tail = c.str_blk_head;
+}
+
+public func void Context.clear(Context* c) {
+    Block* blk = c.blk_head;
+    while (blk) blk = blk.free();
+
+    c.init();
 }
 
 public func void* Context.alloc(Context* c, u32 len) {

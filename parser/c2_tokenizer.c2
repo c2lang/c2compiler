@@ -203,7 +203,7 @@ type Action enum u8 {
     EOF,
 }
 
-u8[128] char_lookup = {
+const u8[128] Char_lookup = {
 // 0 - 15
    [  0]  = Action.EOF,
    ['\t'] = Action.TABSPACE,
@@ -316,13 +316,71 @@ public func const char* Token.str(const Token* tok) @(inline) {
     return kind2str(tok.kind);
 }
 
-func bool identifier_char(char c) @(inline) {
-    // TODO use lookup table (same as for initial?)
-    if (c >= 'a' && c <= 'z') return true;
-    if (c >= 'A' && c <= 'Z') return true;
-    if (c >= '0' && c <= '9') return true;
-    if (c == '_') return true;
-    return false;
+
+const u8[128] Identifier_char = {
+    ['0'] = 1,
+    ['1'] = 1,
+    ['2'] = 1,
+    ['3'] = 1,
+    ['4'] = 1,
+    ['5'] = 1,
+    ['6'] = 1,
+    ['7'] = 1,
+    ['8'] = 1,
+    ['9'] = 1,
+    ['A'] = 1,
+    ['B'] = 1,
+    ['C'] = 1,
+    ['D'] = 1,
+    ['E'] = 1,
+    ['F'] = 1,
+    ['G'] = 1,
+    ['H'] = 1,
+    ['I'] = 1,
+    ['J'] = 1,
+    ['K'] = 1,
+    ['L'] = 1,
+    ['M'] = 1,
+    ['N'] = 1,
+    ['O'] = 1,
+    ['P'] = 1,
+    ['Q'] = 1,
+    ['R'] = 1,
+    ['S'] = 1,
+    ['T'] = 1,
+    ['U'] = 1,
+    ['V'] = 1,
+    ['W'] = 1,
+    ['X'] = 1,
+    ['Y'] = 1,
+    ['Z'] = 1,
+    ['_'] = 1,
+    ['a'] = 1,
+    ['b'] = 1,
+    ['c'] = 1,
+    ['d'] = 1,
+    ['e'] = 1,
+    ['f'] = 1,
+    ['g'] = 1,
+    ['h'] = 1,
+    ['i'] = 1,
+    ['j'] = 1,
+    ['k'] = 1,
+    ['l'] = 1,
+    ['m'] = 1,
+    ['n'] = 1,
+    ['o'] = 1,
+    ['p'] = 1,
+    ['q'] = 1,
+    ['r'] = 1,
+    ['s'] = 1,
+    ['t'] = 1,
+    ['u'] = 1,
+    ['v'] = 1,
+    ['w'] = 1,
+    ['x'] = 1,
+    ['y'] = 1,
+    ['z'] = 1,
 }
 
 func const Keyword* check_keyword(const char* cp) {
@@ -336,7 +394,7 @@ func const Keyword* check_keyword(const char* cp) {
             char a = kw[idx];
             char b = word[idx];
             if (a == 0) {
-                if (!identifier_char(b)) return &table[i];
+                if (!Identifier_char[b]) return &table[i];
                 break;
             }
             if (a != b) {
@@ -414,7 +472,7 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
     }
 
     while (1) {
-        Action act = char_lookup[*t.cur];
+        Action act = Char_lookup[*t.cur];
         switch (act) {
         case Action.INVALID:
             t.error(result, "invalid char '%c'", *t.cur);
@@ -732,7 +790,7 @@ func void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
     result.loc = t.loc_start + cast<u32>(t.cur - t.input_start);
     const char* start = t.cur;
     const char* end = t.cur + 1;
-    while (identifier_char(*end)) end++;
+    while (Identifier_char[*end]) end++;
 
     u32 len = cast<u32>(end - start);
     if (len > constants.MaxIdentifierLen) {
@@ -890,7 +948,7 @@ func bool compare_word(const char* cur, const char* expect) {
         cur++;
         expect++;
     }
-    return !identifier_char(*cur);
+    return !Identifier_char[*cur];
 }
 
 // return true if we pass result
@@ -1004,7 +1062,7 @@ func bool Tokenizer.handle_if(Tokenizer* t, Token* result) {
     t.cur++;    // just skip space
 
     bool enabled = false;
-    Action act = char_lookup[*t.cur];
+    Action act = Char_lookup[*t.cur];
     switch (act) {
     case Action.INVALID:
         t.error(result, "invalid char '%c'", *t.cur);
@@ -1035,7 +1093,7 @@ func bool Tokenizer.handle_if(Tokenizer* t, Token* result) {
 
 func bool Tokenizer.parse_feature(Tokenizer* t, Token* result, bool* enabled) {
     const char* start = t.cur;
-    while (identifier_char(*t.cur)) t.cur++;
+    while (Identifier_char[*t.cur]) t.cur++;
 
     u32 len = cast<u32>(t.cur - start);
     if (len > constants.MaxFeatureName) {
@@ -1078,7 +1136,7 @@ func bool Tokenizer.handle_endif(Tokenizer* t, Token* result) {
 
 func bool Tokenizer.skip_feature(Tokenizer* t, Token* result) {
     while (1) {
-        Action act = char_lookup[*t.cur];
+        Action act = Char_lookup[*t.cur];
         switch (act) {
         case Action.INVALID:
             t.error(result, "invalid char '%c'", *t.cur);
