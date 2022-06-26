@@ -18,8 +18,8 @@ public type StmtKind enum u8 {
     Switch,
 /*
     SSwitch,
-    Case,
 */
+    Case,
     Default,
 /*
     Break,
@@ -45,6 +45,7 @@ public type Stmt struct {
         StmtBits stmtBits;
         ReturnStmtBits returnStmtBits;
         SwitchStmtBits switchStmtBits;
+        CaseStmtBits caseStmtBits;
         DefaultStmtBits defaultStmtBits;
         CompoundStmtBits compoundStmtBits;
 
@@ -95,6 +96,9 @@ public func void Stmt.print(const Stmt* s, StringBuffer* out, u32 indent) {
         break;
     case StmtKind.Switch:
         SwitchStmt.print(cast<SwitchStmt*>(s), out, indent);
+        break;
+    case StmtKind.Case:
+        CaseStmt.print(cast<CaseStmt*>(s), out, indent);
         break;
     case StmtKind.Default:
         DefaultStmt.print(cast<DefaultStmt*>(s), out, indent);

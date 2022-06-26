@@ -104,10 +104,10 @@ func Stmt* Parser.parseSwitchStmt(Parser* p) {
         Stmt* c;
         switch (p.tok.kind) {
         case Kind.KW_case:
-            //c = p.parseCaseStmt();
+            c = p.parseCaseStmt();
             break;
         case Kind.KW_default:
-            c = p.parseDefaultStatement();
+            c = p.parseDefaultStmt();
             break;
         default:
             p.error("expected case or default");
@@ -123,7 +123,37 @@ func Stmt* Parser.parseSwitchStmt(Parser* p) {
     return s;
 }
 
-func Stmt* Parser.parseDefaultStatement(Parser* p) {
+func Stmt* Parser.parseCaseStmt(Parser* p) {
+    SrcLoc loc = p.tok.loc;
+    p.consumeToken();
+
+    Expr* cond = p.parseExpr();
+
+    p.expectAndConsume(Kind.Colon);
+
+    StmtList stmts;
+    stmts.init();
+
+    bool more = true;
+    while (more) {
+        switch (p.tok.kind) {
+        case Kind.RBrace: fallthrough;
+        case Kind.KW_case:  fallthrough;
+        case Kind.KW_default:
+            more = false;
+            break;
+        default:
+            stmts.add(p.parseStmt());
+            break;
+        }
+    }
+
+    Stmt* s = p.builder.actOnCaseStmt(loc, cond, stmts.getData(), stmts.size());
+    stmts.free();
+    return s;
+}
+
+func Stmt* Parser.parseDefaultStmt(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 

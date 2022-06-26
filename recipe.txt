@@ -25,6 +25,7 @@ executable c2c
     ast/if_stmt.c2
     ast/return_stmt.c2
     ast/switch_stmt.c2
+    ast/case_stmt.c2
     ast/default_stmt.c2
     ast/while_stmt.c2
 

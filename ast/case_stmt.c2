@@ -1,0 +1,42 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context local;
+import utils local;
+
+import string local;
+import stdio local; // TEMP
+
+type CaseStmtBits struct {
+    u32 : NumStmtBits;
+    u32 num_stmts : 10;
+}
+
+public type CaseStmt struct {
+    Stmt stmt;
+    SrcLoc loc;
+    Expr* cond;
+    Stmt*[0] stmts; // tail-allocated
+} @(opaque)
+
+public func CaseStmt* CaseStmt.create(Context* c, SrcLoc loc, Expr* cond, Stmt** stmts, u32 numStmts) @(inline) {
+    u32 size = sizeof(CaseStmt) + numStmts * sizeof(Stmt*);
+    CaseStmt* s = c.alloc(size);
+    s.stmt.init(StmtKind.Case);
+    s.stmt.caseStmtBits.num_stmts = numStmts;
+    s.cond = cond;
+    memcpy(cast<void*>(s.stmts), cast<void*>(stmts), numStmts * sizeof(Stmt*));
+    return s;
+}
+
+public func void CaseStmt.print(const CaseStmt* s, StringBuffer* out, u32 indent) {
+    out.indent(indent);
+    out.add("CaseStmt\n");
+    s.cond.print(out, indent + 2);
+    for (u32 i=0; i<s.stmt.caseStmtBits.num_stmts; i++) {
+        s.stmts[i].print(out, indent + 2);
+    }
+}
+
