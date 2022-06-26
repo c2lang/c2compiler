@@ -15,8 +15,8 @@ public type ExprKind enum u8 {
     CharLiteral,
     StringLiteral,
     Nil,
-/*
     Identifier,
+/*
     Type,
     Call,
     InitList,
@@ -81,6 +81,9 @@ public func void Expr.dump(Expr* e) {
         break;
     case ExprKind.Nil:
         NilExpr.print(cast<NilExpr*>(e));
+        break;
+    case ExprKind.Identifier:
+        IdentifierExpr.print(cast<IdentifierExpr*>(e));
         break;
     case ExprKind.Builtin:
         BuiltinExpr.print(cast<BuiltinExpr*>(e));

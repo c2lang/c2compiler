@@ -12,7 +12,7 @@ public type NilExpr struct {
     Expr expr;
 } @(opaque)
 
-public func NilExpr* NilExpr.create(Context* c, SrcLoc loc, bool val) @(inline) {
+public func NilExpr* NilExpr.create(Context* c, SrcLoc loc) @(inline) {
     NilExpr* e = c.alloc(sizeof(NilExpr));
     e.expr.init(ExprKind.Nil, loc, 1, 1, 0);
     return e;

@@ -1,0 +1,39 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context local;
+import utils local;
+
+import stdio local; // TEMP
+
+public type IdentifierExprBits struct {
+    u32 : NumExprBits;
+    u32 ref_type : 1;
+}
+
+public type IdentifierExpr struct {
+    Expr expr;
+    union {
+        const char* name;
+        Decl* decl;     // set during analysis
+    }
+} @(opaque)
+
+public func IdentifierExpr* IdentifierExpr.create(Context* c, SrcLoc loc, const char* name) @(inline) {
+    IdentifierExpr* e = c.alloc(sizeof(IdentifierExpr));
+    e.expr.init(ExprKind.Identifier, loc, 1, 1, 0);
+    e.name = name;
+    return e;
+}
+
+public func void IdentifierExpr.print(const IdentifierExpr* e) {
+    printf("IdentifierExpr", e.name);
+    if (e.expr.stmt.identifierExprBits.ref_type) {
+        printf(" ref: %s\n", e.decl.getName());
+    } else {
+        printf(" name: %s\n", e.name);
+    }
+}
+

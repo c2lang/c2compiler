@@ -154,6 +154,10 @@ public func Stmt* Builder.actOnForStmt(Builder* b, Stmt* init_, Expr* cond, Expr
     return cast<Stmt*>(ForStmt.create(b.context, init_, cond, incr, body));
 }
 
+public func Expr* Builder.actOnIdentifier(Builder* b, SrcLoc loc, const char* value) {
+    return cast<Expr*>(IdentifierExpr.create(b.context, loc, value));
+}
+
 public func Expr* Builder.actOnIntegerLiteral(Builder* b, SrcLoc loc, const char* text) {
     u64 val;
     if (text[1] == 0) { // fast single digit path
@@ -171,5 +175,9 @@ public func Expr* Builder.actOnCharLiteral(Builder* b, SrcLoc loc, u8 value) {
 
 public func Expr* Builder.actOnStringLiteral(Builder* b, SrcLoc loc, const char* value) {
     return cast<Expr*>(StringLiteral.create(b.context, loc, value));
+}
+
+public func Expr* Builder.actOnNilExpr(Builder* b, SrcLoc loc) {
+    return cast<Expr*>(NilExpr.create(b.context, loc));
 }
 
