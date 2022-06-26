@@ -1,0 +1,46 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context local;
+import utils local;
+
+import string local;
+import stdio local; // TEMP
+
+type SwitchStmtBits struct {
+    u32 : NumStmtBits;
+    u32 num_cases : 10;
+}
+
+public type SwitchStmt struct {
+    Stmt stmt;
+    Expr* cond; // NOTE in c2c, cond is a Stmt!
+    Stmt*[0] cases; // tail-allocated
+} @(opaque)
+
+public func SwitchStmt* SwitchStmt.create(Context* c, Expr* cond, Stmt** cases, u32 numCases) @(inline) {
+    u32 size = sizeof(SwitchStmt) + numCases * sizeof(Stmt*);
+    SwitchStmt* s = c.alloc(size);
+    s.stmt.init(StmtKind.Switch);
+    s.stmt.switchStmtBits.num_cases = numCases;
+    s.cond = cond;
+    memcpy(cast<void*>(s.cases), cast<void*>(cases), numCases * sizeof(Stmt*));
+    return s;
+}
+
+public func void SwitchStmt.print(const SwitchStmt* s, StringBuffer* out, u32 indent) {
+    out.indent(indent);
+    out.add("SwitchStmt\n");
+    s.cond.print(out, indent + 2);
+    for (u32 i=0; i<s.stmt.switchStmtBits.num_cases; i++) {
+        s.cases[i].print(out, indent + 2);
+    }
+}
+
+public func Expr* SwitchStmt.getCond(const SwitchStmt* s) @(inline) { return s.cond; }
+
+public func Expr** SwitchStmt.getCond2(SwitchStmt* s) @(inline) { return s.cond ? &s.cond : nil; }
+
+

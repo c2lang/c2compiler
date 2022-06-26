@@ -24,6 +24,8 @@ func Stmt* Parser.parseStmt(Parser* p) {
         return p.parseIfStmt();
     case Kind.KW_return:
         return p.parseReturnStmt();
+    case Kind.KW_switch:
+        return p.parseSwitchStmt();
     case Kind.KW_while:
         return p.parseWhileStmt();
     default:
@@ -48,7 +50,7 @@ func Stmt* Parser.parseCompoundStmt(Parser* p) {
 
     p.expectAndConsume(Kind.RBrace);
 
-    Stmt* s = p.builder.actOnCompoundStmt(stmts.getData(), stmts.getCount());
+    Stmt* s = p.builder.actOnCompoundStmt(stmts.getData(), stmts.size());
     stmts.free();
 
     return s;
@@ -87,6 +89,66 @@ func Stmt* Parser.parseReturnStmt(Parser* p) {
 
     p.expectAndConsume(Kind.Semicolon);
     return p.builder.actOnReturnStmt(loc, ret);
+}
+
+func Stmt* Parser.parseSwitchStmt(Parser* p) {
+    p.consumeToken();
+    Expr* cond = p.parseCondition();
+
+    p.expectAndConsume(Kind.LBrace);
+
+    StmtList cases;
+    cases.init();
+
+    while (p.tok.kind != Kind.RBrace) {
+        Stmt* c;
+        switch (p.tok.kind) {
+        case Kind.KW_case:
+            //c = p.parseCaseStmt();
+            break;
+        case Kind.KW_default:
+            c = p.parseDefaultStatement();
+            break;
+        default:
+            p.error("expected case or default");
+            break;
+        }
+        cases.add(c);
+    }
+
+    p.expectAndConsume(Kind.RBrace);
+
+    Stmt* s = p.builder.actOnSwitchStmt(cond, cases.getData(), cases.size());
+    cases.free();
+    return s;
+}
+
+func Stmt* Parser.parseDefaultStatement(Parser* p) {
+    SrcLoc loc = p.tok.loc;
+    p.consumeToken();
+
+    p.expectAndConsume(Kind.Colon);
+
+    StmtList stmts;
+    stmts.init();
+
+    bool more = true;
+    while (more) {
+        switch (p.tok.kind) {
+        case Kind.RBrace: fallthrough;
+        case Kind.KW_case:  fallthrough;
+        case Kind.KW_default:
+            more = false;
+            break;
+        default:
+            stmts.add(p.parseStmt());
+            break;
+        }
+    }
+
+    Stmt* s = p.builder.actOnDefaultStmt(loc, stmts.getData(), stmts.size());
+    stmts.free();
+    return s;
 }
 
 func Stmt* Parser.parseDoStmt(Parser* p) {

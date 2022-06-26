@@ -1,0 +1,39 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context local;
+import utils local;
+
+import string local;
+import stdio local; // TEMP
+
+type DefaultStmtBits struct {
+    u32 : NumStmtBits;
+    u32 num_stmts : 10;
+}
+
+public type DefaultStmt struct {
+    Stmt stmt;
+    SrcLoc loc;
+    Stmt*[0] stmts; // tail-allocated
+} @(opaque)
+
+public func DefaultStmt* DefaultStmt.create(Context* c, SrcLoc loc, Stmt** stmts, u32 numStmts) @(inline) {
+    u32 size = sizeof(DefaultStmt) + numStmts * sizeof(Stmt*);
+    DefaultStmt* s = c.alloc(size);
+    s.stmt.init(StmtKind.Default);
+    s.stmt.defaultStmtBits.num_stmts = numStmts;
+    memcpy(cast<void*>(s.stmts), cast<void*>(stmts), numStmts * sizeof(Stmt*));
+    return s;
+}
+
+public func void DefaultStmt.print(const DefaultStmt* s, StringBuffer* out, u32 indent) {
+    out.indent(indent);
+    out.add("DefaultStmt\n");
+    for (u32 i=0; i<s.stmt.defaultStmtBits.num_stmts; i++) {
+        s.stmts[i].print(out, indent + 2);
+    }
+}
+

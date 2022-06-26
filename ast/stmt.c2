@@ -15,11 +15,13 @@ public type StmtKind enum u8 {
     While,
     Do,
     For,
-/*
     Switch,
+/*
     SSwitch,
     Case,
+*/
     Default,
+/*
     Break,
     Continue,
     Fallthrough,
@@ -42,6 +44,8 @@ public type Stmt struct {
     union {
         StmtBits stmtBits;
         ReturnStmtBits returnStmtBits;
+        SwitchStmtBits switchStmtBits;
+        DefaultStmtBits defaultStmtBits;
         CompoundStmtBits compoundStmtBits;
 
         ExprBits exprBits;
@@ -88,6 +92,12 @@ public func void Stmt.print(const Stmt* s, StringBuffer* out, u32 indent) {
         break;
     case StmtKind.For:
         ForStmt.print(cast<ForStmt*>(s), out, indent);
+        break;
+    case StmtKind.Switch:
+        SwitchStmt.print(cast<SwitchStmt*>(s), out, indent);
+        break;
+    case StmtKind.Default:
+        DefaultStmt.print(cast<DefaultStmt*>(s), out, indent);
         break;
     case StmtKind.Compound:
         CompoundStmt.print(cast<CompoundStmt*>(s), out, indent);

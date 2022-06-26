@@ -21,6 +21,8 @@ static_assert(56, sizeof(ForStmt));
 static_assert(40, sizeof(IfStmt));
 static_assert(24, sizeof(ReturnStmt));
 static_assert(40, sizeof(WhileStmt));
+static_assert(32, sizeof(SwitchStmt));
+static_assert(24, sizeof(DefaultStmt));
 
 static_assert(32, sizeof(Expr));
 static_assert(32, sizeof(BuiltinExpr));

@@ -24,6 +24,8 @@ executable c2c
     ast/for_stmt.c2
     ast/if_stmt.c2
     ast/return_stmt.c2
+    ast/switch_stmt.c2
+    ast/default_stmt.c2
     ast/while_stmt.c2
 
     ast/expr.c2
