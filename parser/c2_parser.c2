@@ -101,10 +101,8 @@ func void Parser.consumeToken(Parser* p) {
     p.tokenizer.lex(&p.tok);
 
     dump_token(p.sm, &p.tok);
-    // TODO dont check here, just jump from inner scope (pass jmpbuf to tokenizer)?
-    if (p.tok.kind == Kind.Error) {
-        p.error(p.tok.error_msg);
-    }
+
+    if (p.tok.kind == Kind.Error) p.error(p.tok.error_msg);
 }
 
 func void Parser.expectAndConsume(Parser* p, Kind kind) {
@@ -272,7 +270,7 @@ func void Parser.parseFunctionParams(Parser* p, FunctionDecl* f, bool allow_defa
 
     // VarDeclList args
     while (1) {
-        /* VarDeclResult decl = */ p.parseParamDecl(f, allow_defaults);
+        VarDecl* decl = p.parseParamDecl(f, allow_defaults);
 
         // TODO
     }
@@ -283,7 +281,7 @@ func void Parser.parseFunctionParams(Parser* p, FunctionDecl* f, bool allow_defa
     param_declaration ::= type_qualifier type_specifier IDENTIFIER param_default.
     param_default ::= EQUALS constant_expression.
 */
-func void Parser.parseParamDecl(Parser* p, FunctionDecl* f, bool allow_defaults) {
+func VarDecl* Parser.parseParamDecl(Parser* p, FunctionDecl* f, bool allow_defaults) {
     if (p.tok.kind == Kind.KW_local) {
         p.error("invalid local");
     }
@@ -291,6 +289,7 @@ func void Parser.parseParamDecl(Parser* p, FunctionDecl* f, bool allow_defaults)
     QualType qt = p.parseTypeSpecifier(true);
 
     // TODO
+    return nil;
 }
 
 func QualType Parser.parseTypeSpecifier(Parser* p, bool allow_qualifier) {
