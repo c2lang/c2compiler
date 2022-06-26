@@ -61,7 +61,7 @@ public func bool Parser.parse(Parser* p) {
     p.error_msg[0] = 0;
 
     u64 t1 = utils.now();
-#if 0
+#if 1
     i32 res = setjmp(&p.jmpbuf);
     if (res == 0) {
 
@@ -305,7 +305,6 @@ func void Parser.parseFuncDef(Parser* p, bool is_public) {
     p.consumeToken();
 
     QualType rtype = p.parseSingleTypeSpecifier(true);
-    // TODO
     p.expectIdentifier();
     const char* func_name = p.tok.text_value;
     u32 func_loc = p.tok.loc;
@@ -322,16 +321,28 @@ func void Parser.parseFuncDef(Parser* p, bool is_public) {
     }
 
     if (!checkName(func_name, p.is_interface)) {
-        // TODO pass loc along
+        // TODO pass loc along (current not correct)
         p.error("TODO");
     }
 
-    p.builder.actOnFuncDecl(func_name, func_loc, /*typeId..*/ is_public /*, rtype.get()*/);
+    FunctionDecl* f = p.builder.actOnFuncDecl(func_name, func_loc, is_public, rtype);
 
-    p.parseFunctionParams(/*func*/ true);
+    p.parseFunctionParams(f, true);
+    p.parseAttributes(); // (f)
+
+    if (p.is_interface) {
+        if (p.tok.kind == Kind.LBrace) {
+            p.error("interface functions cannot have a function body");
+        }
+        p.expectAndConsume(Kind.Semicolon);
+        return;
+    }
+
+    CompoundStmt* body = p.parseCompoundStmt();
+    p.builder.actOnFunctionBody(f, body);
 }
 
-func void Parser.parseFunctionParams(Parser* p, bool allow_defaults) {
+func void Parser.parseFunctionParams(Parser* p, FunctionDecl* f, bool allow_defaults) {
     p.expectAndConsume(Kind.LParen);
 
     // fast path for ()
@@ -342,7 +353,7 @@ func void Parser.parseFunctionParams(Parser* p, bool allow_defaults) {
 
     // VarDeclList args
     while (1) {
-        /* VarDeclResult decl = */ p.parseParamDecl(/*func, */ allow_defaults);
+        /* VarDeclResult decl = */ p.parseParamDecl(f, allow_defaults);
 
         // TODO
     }
@@ -353,7 +364,7 @@ func void Parser.parseFunctionParams(Parser* p, bool allow_defaults) {
     param_declaration ::= type_qualifier type_specifier IDENTIFIER param_default.
     param_default ::= EQUALS constant_expression.
 */
-func void Parser.parseParamDecl(Parser* p, bool allow_defaults) {
+func void Parser.parseParamDecl(Parser* p, FunctionDecl* f, bool allow_defaults) {
     if (p.tok.kind == Kind.KW_local) {
         p.error("invalid local");
     }

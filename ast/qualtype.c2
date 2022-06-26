@@ -6,6 +6,9 @@ module ast;
 import ast_context local;
 import utils local;
 
+// TEMP
+import stdio local;
+
 const u32 QualType_Const    = 0x1;
 const u32 QualType_Volatile = 0x2;
 const u32 QualType_Mask     = 0x3;
@@ -41,4 +44,12 @@ public func u32 QualType.getQualifiers(const QualType* qt) @(inline) {
     return qt.ptr & QualType_Mask;
 }
 
+public func void QualType.dump(const QualType* qt) {
+    Type* t = qt.getTypeOrNil();
+    if (t) {
+        t.dump();
+    } else {
+        printf("QualType(nil)\n");
+    }
+}
 // TODO add helper functions

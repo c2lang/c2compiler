@@ -8,8 +8,8 @@ import ast_context local;
 public type StmtKind enum u8 {
     Return,
     Expr,
-    If,
 /*
+    If,
     While,
     Do,
     For,
@@ -22,7 +22,9 @@ public type StmtKind enum u8 {
     Fallthrough,
     Label,
     Goto,
+*/
     Compound,
+/*
     Decl,
     Asm,
 */
@@ -60,8 +62,8 @@ public func void Stmt.dump(const Stmt* s) {
     case StmtKind.Expr:
         Expr.dump(cast<Expr*>(s));
         break;
-    case StmtKind.If:
-        // TODO
+    case StmtKind.Compound:
+        CompoundStmt.print(cast<CompoundStmt*>(s));
         break;
     }
 }

@@ -5,6 +5,9 @@ module ast;
 
 import ast_context local;
 
+// TEMP
+import stdio local;
+
 public type BuiltinTypeKind enum u8 {
     Int8,
     Int16,
@@ -42,6 +45,25 @@ public func BuiltinTypeKind BuiltinType.getKind(const BuiltinType* b) @(inline) 
 }
 
 public func void BuiltinType.print(const BuiltinType* b) {
-    // TODO
+    printf("(BuiltinType) %s\n", b.kind2str());
+}
+
+// TODO convert to enum function
+func const char* BuiltinType.kind2str(const BuiltinType* b) {
+    switch (b.getKind()) {
+    case BuiltinTypeKind.Int8:      return "i8";
+    case BuiltinTypeKind.Int16:     return "i16";
+    case BuiltinTypeKind.Int32:     return "i32";
+    case BuiltinTypeKind.Int64:     return "i64";
+    case BuiltinTypeKind.UInt8:     return "u8";
+    case BuiltinTypeKind.UInt16:    return "u16";
+    case BuiltinTypeKind.UInt32:    return "u32";
+    case BuiltinTypeKind.UInt64:    return "u64";
+    case BuiltinTypeKind.Float32:   return "f32";
+    case BuiltinTypeKind.Float64:   return "f64";
+    case BuiltinTypeKind.Bool:      return "bool";
+    case BuiltinTypeKind.Void:      return "void";
+    }
+    return "?";
 }
 

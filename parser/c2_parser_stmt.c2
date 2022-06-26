@@ -1,0 +1,28 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module c2_parser;
+
+import c2_source_mgr local;
+import c2_tokenizer local;
+import c2_ast_builder local;
+import ast local;
+import ast_context local;
+import tokens local;
+import string_list;
+import utils;
+//import color;
+
+/*
+import stdarg local;
+import stdlib local;
+import string local;
+import csetjmp local;
+import ctype local;
+import stdio local;
+*/
+
+
+func Stmt* Parser.parseCompoundStmt(Parser* p) {
+    return nil;
+}

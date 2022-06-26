@@ -11,14 +11,17 @@ executable c2c
     constants.c2
     parser/c2_tokenizer.c2
     parser/c2_parser.c2
+    parser/c2_parser_stmt.c2
     parser/c2_ast_builder.c2
     parser/tokens.c2
     ast/stmt.c2
+    ast/compound_stmt.c2
     ast/return_stmt.c2
     ast/expr.c2
     ast/builtin_expr.c2
     ast/boolean_literal.c2
     ast/decl.c2
+    ast/function_decl.c2
     ast/import_decl.c2
     ast/utils.c2
     ast/type.c2

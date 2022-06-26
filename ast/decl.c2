@@ -7,13 +7,15 @@ import ast_context local;
 import utils local;
 
 public type DeclKind enum u8 {
+    Function,
     Import,
 }
 
 public type DeclBits struct {
     u32 kind : 8;
+    u32 is_public : 1;
 }
-public const u32 NumDeclBits = 8;
+public const u32 NumDeclBits = 16;
 
 public type Decl struct {
     union {
@@ -27,9 +29,10 @@ public type Decl struct {
     // Module* mod;
 } @(opaque)
 
-func void Decl.init(Decl* d, DeclKind k, const char* name, SrcLoc loc) @(inline) {
+func void Decl.init(Decl* d, DeclKind k, const char* name, SrcLoc loc, bool is_public) @(inline) {
     d.bits = 0;
     d.declBits.kind = k;
+    d.declBits.is_public = is_public;
     d.name = name;
     d.loc = loc;
 }
@@ -47,6 +50,9 @@ public func SrcLoc Decl.getLoc(const Decl* d) @(inline) {
 
 public func void Decl.dump(const Decl* d) {
     switch (d.getKind()) {
+    case DeclKind.Function:
+        FunctionDecl.print(cast<FunctionDecl*>(d));
+        break;
     case DeclKind.Import:
         ImportDecl.print(cast<ImportDecl*>(d));
         break;

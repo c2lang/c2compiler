@@ -119,7 +119,11 @@ public func void Builder.actOnIdExpression(Builder* b, const char* name, u32 loc
     printf("ID %s\n", name);
 }
 
-public func void Builder.actOnFuncDecl(Builder* b, const char* name, u32 loc, bool is_public) {
-    printf("FUNC %s %s\n", name, is_public ? "public" : "");
+public func FunctionDecl* Builder.actOnFuncDecl(Builder* b, const char* name, u32 loc, bool is_public, QualType rtype) {
+    return FunctionDecl.create(b.context, name, loc, is_public, rtype);
+}
+
+public func void Builder.actOnFunctionBody(Builder* b, FunctionDecl* f, CompoundStmt* body) {
+    f.setBody(body);
 }
 

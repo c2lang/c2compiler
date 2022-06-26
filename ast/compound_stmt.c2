@@ -1,0 +1,40 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context local;
+
+// TEMP
+import stdio local;
+
+type CompoundStmtBits struct {
+    u32 : NumStmtBits;
+    u32 has_value : 1;
+}
+
+public type CompoundStmt struct {
+    Stmt stmt;
+    Expr*[0] value; // tail-allocated, dependent on returnStmtBits.has_value
+} @(opaque)
+
+public func CompoundStmt* CompoundStmt.create(Context* c, Expr* value) @(inline) {
+    u32 size = sizeof(CompoundStmt);
+    if (value) size += sizeof(Expr*);
+
+    CompoundStmt* r = c.alloc(size);
+    r.stmt.init(StmtKind.Compound);
+
+    if (value) {
+        r.stmt.returnStmtBits.has_value = 1;
+        r.value[0] = value;
+    }
+    return r;
+}
+
+public func void CompoundStmt.print(const CompoundStmt* r) {
+    printf("CompoundStmt\n");
+    // TODO
+}
+
+
