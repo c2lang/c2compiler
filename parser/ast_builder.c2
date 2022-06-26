@@ -134,8 +134,12 @@ public func CompoundStmt* Builder.actOnCompoundStmt(Builder* b) {
     return nil;
 }
 
-public func ReturnStmt* Builder.actOnReturnStmt(Builder* b, SrcLoc loc, Expr* ret) {
-    return ReturnStmt.create(b.context, loc, ret);
+public func Stmt* Builder.actOnReturnStmt(Builder* b, SrcLoc loc, Expr* ret) {
+    return cast<Stmt*>(ReturnStmt.create(b.context, loc, ret));
+}
+
+public func Stmt* Builder.actOnIfStmt(Builder* b, Expr* cond, Stmt* then, Stmt* else_stmt) {
+    return cast<Stmt*>(IfStmt.create(b.context, cond, then, else_stmt));
 }
 
 public func Expr* Builder.actOnIntegerLiteral(Builder* b, SrcLoc loc, const char* text) {

@@ -9,8 +9,8 @@ import utils local;
 public type StmtKind enum u8 {
     Return,
     Expr,
-/*
     If,
+/*
     While,
     Do,
     For,
@@ -41,6 +41,7 @@ public type Stmt struct {
         StmtBits stmtBits;
         ReturnStmtBits returnStmtBits;
         ExprBits exprBits;
+        IfStmtBits ifStmtBits;
         BuiltinExprBits builtinExprBits;
         BooleanLiteralBits booleanLiteralBits;
         u32 bits;
@@ -62,6 +63,9 @@ public func void Stmt.dump(const Stmt* s) {
         break;
     case StmtKind.Expr:
         Expr.dump(cast<Expr*>(s));
+        break;
+    case StmtKind.If:
+        IfStmt.print(cast<IfStmt*>(s));
         break;
     case StmtKind.Compound:
         CompoundStmt.print(cast<CompoundStmt*>(s));

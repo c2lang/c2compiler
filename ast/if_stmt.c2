@@ -1,0 +1,58 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context local;
+import utils local;
+
+import stdio local; // TEMP
+
+type IfStmtBits struct {
+    u32 : NumStmtBits;
+    u32 has_else : 1;
+}
+
+public type IfStmt struct {
+    Stmt stmt;
+    Expr* cond;
+    Stmt* then;
+    Stmt*[0] else_stmt; // tail-allocated
+} @(opaque)
+
+public func IfStmt* IfStmt.create(Context* c, Expr* cond, Stmt* then, Stmt* else_stmt) @(inline) {
+    u32 size = sizeof(IfStmt);
+    if (else_stmt) size += sizeof(Stmt*);
+
+    IfStmt* s = c.alloc(size);
+    s.stmt.init(StmtKind.If);
+    s.cond = cond;
+    s.then = then;
+
+    if (else_stmt) {
+        s.stmt.ifStmtBits.has_else = 1;
+        s.else_stmt[0] = else_stmt;
+    }
+    return s;
+}
+
+public func void IfStmt.print(const IfStmt* s) {
+    printf("IfStmt\n");
+    s.cond.dump();
+    s.then.dump();
+    if (s.stmt.ifStmtBits.has_else) s.else_stmt[0].dump();
+}
+
+public func Expr* IfStmt.getCond(const IfStmt* s) @(inline) {
+    return s.cond;
+}
+
+public func Stmt* IfStmt.getThen(const IfStmt* s) @(inline) {
+    return s.then;
+}
+
+public func Stmt* IfStmt.getElse(const IfStmt* s) {
+    if (s.stmt.ifStmtBits.has_else) return s.else_stmt[0];
+    return nil;
+}
+

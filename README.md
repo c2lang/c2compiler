@@ -41,6 +41,7 @@
 
 ## AST-Builder
 - fill AST
+- print content
 
 ## Performance
 - profile application to see where time is spent

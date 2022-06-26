@@ -76,6 +76,7 @@ public func bool Parser.parse(Parser* p) {
         return false;
     }
     u64 t2 = utils.now();
+    printf("parsing took %lu usec\n", t2 - t1);
 #else
     p.tokenizer.init(p.context, p.sm.get_content(p.file_id), p.sm.get_offset(p.file_id), p.features);
     p.tok.init();

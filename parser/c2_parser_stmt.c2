@@ -13,6 +13,8 @@ func Stmt* Parser.parseStmt(Parser* p) {
     switch (p.tok.kind) {
     case Kind.LBrace:
         return p.parseCompoundStmt();
+    case Kind.KW_if:
+        return p.parseIfStmt();
     case Kind.KW_return:
         return p.parseReturnStmt();
     default:
@@ -38,6 +40,29 @@ func Stmt* Parser.parseCompoundStmt(Parser* p) {
     p.builder.actOnCompoundStmt(/* stmts */);
 
     return nil;
+}
+
+func Expr* Parser.parseCondition(Parser* p) {
+    p.expectAndConsume(Kind.LParen);
+    Expr* cond = p.parseExpr();
+    p.expectAndConsume(Kind.RParen);
+    return cond;
+}
+
+func Stmt* Parser.parseIfStmt(Parser* p) {
+    p.consumeToken();
+
+    Expr* cond = p.parseCondition();
+
+    Stmt* then = p.parseStmt();
+
+    Stmt* else_stmt = nil;
+    if (p.tok.kind == Kind.KW_else) {
+        p.consumeToken();
+        else_stmt = p.parseStmt();
+    }
+
+    return p.builder.actOnIfStmt(cond, then, else_stmt);
 }
 
 func Stmt* Parser.parseReturnStmt(Parser* p) {
