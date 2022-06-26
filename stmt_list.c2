@@ -1,0 +1,24 @@
+module ast_utils;
+
+import ast local;
+
+import string local;
+import stdio local; // TEMP
+
+public type StmtList struct {
+    u32 count;
+}
+
+public func void StmtList.init(StmtList* l) {
+    memset(l, 0, sizeof(StmtList));
+}
+
+public func void StmtList.add(StmtList* l, Stmt* s) {
+    //s.dump();
+}
+
+public func void StmtList.free(StmtList* l) {
+    // TODO also show
+
+}
+

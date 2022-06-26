@@ -24,6 +24,7 @@ public func WhileStmt* WhileStmt.create(Context* c, Expr* cond, Stmt* then) @(in
 
 public func void WhileStmt.print(const WhileStmt* s) {
     printf("WhileStmt\n");
+    printf("%p  %p\n", s.cond, s.then);
     s.cond.dump();
     s.then.dump();
 }

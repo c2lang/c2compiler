@@ -19,21 +19,17 @@ public type CompoundStmt struct {
     Expr*[0] value; // tail-allocated, dependent on returnStmtBits.has_value
 } @(opaque)
 
-public func CompoundStmt* CompoundStmt.create(Context* c, Expr* value) @(inline) {
+public func CompoundStmt* CompoundStmt.create(Context* c) @(inline) {
     u32 size = sizeof(CompoundStmt);
-    if (value) size += sizeof(Expr*);
+    //if (value) size += sizeof(Expr*);
 
-    CompoundStmt* r = c.alloc(size);
-    r.stmt.init(StmtKind.Compound);
+    CompoundStmt* s = c.alloc(size);
+    s.stmt.init(StmtKind.Compound);
 
-    if (value) {
-        r.stmt.returnStmtBits.has_value = 1;
-        r.value[0] = value;
-    }
-    return r;
+    return s;
 }
 
-public func void CompoundStmt.print(const CompoundStmt* r) {
+public func void CompoundStmt.print(const CompoundStmt* s) {
     printf("CompoundStmt\n");
     // TODO
 }

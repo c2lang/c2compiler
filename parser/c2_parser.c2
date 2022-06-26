@@ -336,8 +336,6 @@ func void Parser.parseFuncDef(Parser* p, bool is_public) {
 
     CompoundStmt* body = p.parseCompoundStmt();
     p.builder.actOnFunctionBody(f, body);
-
-    f.print();
 }
 
 func void Parser.parseFunctionParams(Parser* p, FunctionDecl* f, bool allow_defaults) {

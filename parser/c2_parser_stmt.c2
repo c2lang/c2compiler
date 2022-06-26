@@ -4,9 +4,12 @@
 module c2_parser;
 
 import ast_builder local;
+import ast_utils local;
 import ast local;
 import tokens local;
 import utils local;
+
+import stdio local; // TEMP
 
 func Stmt* Parser.parseStmt(Parser* p) {
     // NOTE: keep in order
@@ -33,19 +36,23 @@ func Stmt* Parser.parseStmt(Parser* p) {
 func Stmt* Parser.parseCompoundStmt(Parser* p) {
     p.expectAndConsume(Kind.LBrace);
 
-    // StmtList stmts;
+    StmtList stmts;
+    stmts.init();   // TODO register somewhere to free memory on error (register handler?)
+
     while (1) {
         if (p.tok.kind == Kind.RBrace) break;
 
         Stmt* s = p.parseStmt();
-        // stmts.add(s);
+        stmts.add(s);
     }
 
     p.expectAndConsume(Kind.RBrace);
 
-    p.builder.actOnCompoundStmt(/* stmts */);
+    //p.builder.actOnCompoundStmt(&stmts);
+    Stmt* s = p.builder.actOnCompoundStmt();
+    stmts.free();
 
-    return nil;
+    return s;
 }
 
 func Expr* Parser.parseCondition(Parser* p) {

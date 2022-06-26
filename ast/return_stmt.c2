@@ -6,6 +6,8 @@ module ast;
 import ast_context local;
 import utils local;
 
+import stdio local; // TEMP
+
 type ReturnStmtBits struct {
     u32 : NumStmtBits;
     u32 has_value : 1;
@@ -33,7 +35,10 @@ public func ReturnStmt* ReturnStmt.create(Context* c, SrcLoc loc, Expr* value) @
 }
 
 public func void ReturnStmt.print(const ReturnStmt* r) {
-    // TODO
+    printf("ReturnStmt\n");
+    if (r.stmt.returnStmtBits.has_value) {
+        r.value[0].dump();
+    }
 }
 
 public func Expr* ReturnStmt.getValue(const ReturnStmt* r) {

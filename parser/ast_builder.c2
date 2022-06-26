@@ -26,21 +26,22 @@ public func void Builder.free(Builder* b) {
 }
 
 public func void Builder.actOnModule(Builder* b, const char* mod_name, SrcLoc mod_loc) {
-    printf("MODULE %s\n", mod_name);
+    //printf("MODULE %s\n", mod_name);
     // TODO store
 }
 
 public func void Builder.actOnImport(Builder* b, const char* mod_name, SrcLoc mod_loc, const char* alias_name, SrcLoc alias_loc, bool islocal) {
-    ImportDecl.create(b.context, mod_name, mod_loc, alias_name, alias_loc, islocal);
+    ImportDecl* d = ImportDecl.create(b.context, mod_name, mod_loc, alias_name, alias_loc, islocal);
+    //ast.addImport(d);
 }
 
 public func void Builder.actOnStructType(Builder* b, const char* name, SrcLoc loc, bool is_struct, bool is_public, bool is_global) {
-    printf("%s %s  %s %s\n", is_struct ? "STRUCT" : "UNION", name, is_public ? "public" : "", is_global ? "global" : "");
+    //printf("%s %s  %s %s\n", is_struct ? "STRUCT" : "UNION", name, is_public ? "public" : "", is_global ? "global" : "");
     // TODO store
 }
 
 public func void Builder.actOnAttr(Builder* b, const char* name, SrcLoc begin_loc, SrcLoc end_loc) {
-    printf("ATTR  %s\n", name);
+    //printf("ATTR  %s\n", name);
 }
 
 public func QualType Builder.actOnBuiltinType(Builder* b, tokens.Kind kind) {
@@ -105,7 +106,7 @@ public func QualType Builder.actOnBuiltinType(Builder* b, tokens.Kind kind) {
 }
 
 public func QualType Builder.actOnPointerType(Builder* b, QualType qt, u32 qualifier) {
-    printf("POINTER\n");
+    //printf("POINTER\n");
     // TODO
     return qt;
 
@@ -117,7 +118,7 @@ public func QualType Builder.actOnTypeQualifier(Builder* b, QualType qt, u32 qua
 }
 
 public func void Builder.actOnIdExpression(Builder* b, const char* name, SrcLoc loc) {
-    printf("ID %s\n", name);
+    //printf("ID %s\n", name);
 }
 
 public func FunctionDecl* Builder.actOnFuncDecl(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType rtype) {
@@ -129,9 +130,10 @@ public func void Builder.actOnFunctionBody(Builder* b, FunctionDecl* f, Compound
 }
 
 // TODO extract Decl, Stmt parts to own file
-public func CompoundStmt* Builder.actOnCompoundStmt(Builder* b) {
+public func Stmt* Builder.actOnCompoundStmt(Builder* b) {
+    CompoundStmt* s = CompoundStmt.create(b.context);
     // TODO
-    return nil;
+    return cast<Stmt*>(s);
 }
 
 public func Stmt* Builder.actOnReturnStmt(Builder* b, SrcLoc loc, Expr* ret) {
