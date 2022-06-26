@@ -3,9 +3,12 @@ module ast;
 import ast_context local;
 
 public type ExprKind enum u8 {
+/*
     IntegerLiteral,
     FloatLiteral,
-    BoolLiteral,
+*/
+    BooleanLiteral,
+/*
     CharLiteral,
     StringLiteral,
     Nil,
@@ -16,13 +19,16 @@ public type ExprKind enum u8 {
     DesignatorInit,
     BinOp,
     UnaryOp,
+*/
     Builtin,
+/*
     ArraySubscript,
     Member,
     Paren,
     BitOffset,
     ExplicitCast,
     ImplicitCast,
+*/
 }
 
 public type ExprBits struct {
@@ -54,6 +60,13 @@ public func bool Expr.isCtv(const Expr* e) @(inline) { return e.stmt.exprBits.is
 public func bool Expr.isCtc(const Expr* e) @(inline) { return e.stmt.exprBits.is_ctc; }
 
 public func void Expr.dump(Expr* e) {
-    // TODO
+    switch (e.getKind()) {
+    case ExprKind.BooleanLiteral:
+        BooleanLiteral.print(cast<BooleanLiteral*>(e));
+        break;
+    case ExprKind.Builtin:
+        BuiltinExpr.print(cast<BuiltinExpr*>(e));
+        break;
+    }
 }
 

@@ -1,0 +1,38 @@
+module ast;
+
+import ast_context local;
+import utils local;
+
+public type TypeKind enum u8 {
+    Builtin,
+}
+
+public type TypeBits struct {
+    u32 kind : 8;
+}
+public const u32 NumTypeBits = 8;
+
+public type Type struct {
+    union {
+        TypeBits typeBits;
+        BuiltinTypeBits builtinTypeBits;
+        u32 bits;
+    }
+} @(opaque)
+
+func void Type.init(Type* d, TypeKind k) @(inline) {
+    d.bits = 0;
+    d.typeBits.kind = k;
+}
+
+// TEMP cast needed until Analyser fixed
+public func TypeKind Type.getKind(const Type* d) @(inline) { return cast<TypeKind>(d.typeBits.kind); }
+
+public func void Type.dump(const Type* d) {
+    switch (d.getKind()) {
+    case TypeKind.Builtin:
+        BuiltinType.print(cast<BuiltinType*>(d));
+        break;
+    }
+}
+

@@ -1,0 +1,43 @@
+module ast;
+
+import ast_context local;
+
+public type BuiltinTypeKind enum u8 {
+    Int8,
+    Int16,
+    Int32,
+    Int64,
+    UInt8,
+    UInt16,
+    UInt32,
+    UInt64,
+    Float32,
+    Float64,
+    Bool,
+    Void,
+}
+
+public type BuiltinTypeBits struct {
+    u32 : NumTypeBits;
+    u32 kind : 3;
+}
+
+public type BuiltinType struct {
+    Type parent;
+} @(opaque)
+
+public func BuiltinType* BuiltinType.create(Context* c, BuiltinTypeKind kind) @(inline) {
+    BuiltinType* b = c.alloc(sizeof(BuiltinType));
+    b.parent.init(TypeKind.Builtin);
+    b.parent.builtinTypeBits.kind = kind;
+    return b;
+}
+
+// TEMP cast needed until Analyser fixed
+public func BuiltinTypeKind BuiltinType.getKind(const BuiltinType* b) @(inline) {
+    return cast<BuiltinTypeKind>(b.parent.builtinTypeBits.kind);
+}
+
+public func void BuiltinType.print(const BuiltinType* b) {
+    // TODO
+}
