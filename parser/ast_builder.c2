@@ -139,7 +139,13 @@ public func ReturnStmt* Builder.actOnReturnStmt(Builder* b, SrcLoc loc, Expr* re
 }
 
 public func Expr* Builder.actOnIntegerLiteral(Builder* b, SrcLoc loc, const char* text) {
-    u64 val = atoll(text);
+    u64 val;
+    if (text[1] == 0) { // fast single digit path
+        // TEMP
+        val = cast<u64>(text[0] - '0');
+    } else {
+        val = strtoull(text, nil, 10);
+    }
     return IntegerLiteral.create(b.context, loc, val);
 }
 
