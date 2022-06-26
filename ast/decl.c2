@@ -12,6 +12,7 @@ public type DeclKind enum u8 {
     Function,
     Import,
     StructType,
+    Var,
 }
 
 public type DeclBits struct {
@@ -25,6 +26,7 @@ public type Decl struct {
         DeclBits declBits;
         ImportDeclBits importDeclBits;
         StructTypeDeclBits structTypeDeclBits;
+        VarDeclBits varDeclBits;
         u32 bits;
     }
     SrcLoc loc;
@@ -73,6 +75,9 @@ public func void Decl.print(const Decl* d, StringBuffer* out, u32 indent) {
         break;
     case DeclKind.StructType:
         StructTypeDecl.print(cast<StructTypeDecl*>(d), out, indent);
+        break;
+    case DeclKind.Var:
+        VarDecl.print(cast<VarDecl*>(d), out, indent);
         break;
     }
 }

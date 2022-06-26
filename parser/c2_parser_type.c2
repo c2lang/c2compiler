@@ -11,7 +11,7 @@ import ast local;
 import ast_context local;
 import tokens local;
 import string_list;
-import utils;
+import utils local;
 
 import stdarg local;
 import stdlib local;
@@ -67,6 +67,8 @@ func void Parser.parseStructBlock(Parser* p, StructTypeDecl* d) {
     DeclList members;
     members.init();
 
+    const bool is_public = d.asDecl().isPublic();
+
     while (1) {
         //Syntax:
         // struct_member ::= type_qualifier type_specifier.
@@ -85,17 +87,39 @@ func void Parser.parseStructBlock(Parser* p, StructTypeDecl* d) {
                 loc = p.tok.loc;
                 p.consumeToken();
             }
-            StructTypeDecl* member = p.builder.actOnStructType(name, loc, is_struct, d.asDecl().isPublic(), false);
+            StructTypeDecl* member = p.builder.actOnStructType(name, loc, is_struct, is_public, false);
             members.add(cast<Decl*>(member));
             p.parseStructBlock(member);
         } else {
             QualType qt = p.parseTypeSpecifier(true);
-            // TODO
-        }
 
-        p.builder.actOnStructMembers(d, members.getDecls(), members.size());
-        members.free();
+            const char* name = nil;
+            SrcLoc loc;
+            if (p.tok.kind == Kind.Colon) { // anonymous bitfield
+                loc = p.tok.loc;
+            } else {
+                p.expectIdentifier();
+                name = p.tok.text_value;
+                loc = p.tok.loc;
+                p.consumeToken();
+            }
+
+            VarDecl* member = p.builder.actOnStructVar(name, loc, is_public, qt, nil);
+            members.add(member.asDecl());
+
+/*
+            if (p.tok.kind == Kind.Colon) {
+                p.consumeToken();
+                Expr** bitField_ptr = p.builder.actOnTailAllocBitField();
+                // TODO
+
+            }
+*/
+            p.expectAndConsume(Kind.Semicolon);
+        }
     }
+    p.builder.actOnStructMembers(d, members.getDecls(), members.size());
+    members.free();
 }
 
 func void Parser.parseEnumType(Parser* p, const char* name, u32 loc, bool is_public) {

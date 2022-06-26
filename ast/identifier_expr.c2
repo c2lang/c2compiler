@@ -11,6 +11,7 @@ import stdio local; // TEMP
 public type IdentifierExprBits struct {
     u32 : NumExprBits;
     u32 ref_type : 1;
+    // TODO add kind: Type, Var, Module, etc
 }
 
 public type IdentifierExpr struct {

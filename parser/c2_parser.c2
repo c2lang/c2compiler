@@ -11,7 +11,7 @@ import ast local;
 import ast_context local;
 import tokens local;
 import string_list;
-import utils;
+import utils local;
 import color;
 
 import stdarg local;
@@ -100,7 +100,7 @@ public func bool Parser.parse(Parser* p) {
 func void Parser.consumeToken(Parser* p) {
     p.tokenizer.lex(&p.tok);
 
-    //dump_token(p.sm, &p.tok);
+    dump_token(p.sm, &p.tok);
     // TODO dont check here, just jump from inner scope (pass jmpbuf to tokenizer)?
     if (p.tok.kind == Kind.Error) {
         p.error(p.tok.error_msg);
@@ -383,11 +383,21 @@ func QualType Parser.parseSingleTypeSpecifier(Parser* p, bool allow_qualifier) {
 //   identifier
 //   identifier.identifier
 func QualType Parser.parseFullTypeIdentifier(Parser* p) {
-    QualType q;
-    // TODO
-    return q;
-}
 
+    Expr* id = p.builder.actOnIdentifier(p.tok.loc, p.tok.text_value);
+    p.consumeToken();
+
+    Expr* prefix = nil;
+
+    if (p.tok.kind == Kind.Dot) {
+        p.consumeToken();
+        p.expectIdentifier();
+        prefix = id;
+        id = p.builder.actOnIdentifier(p.tok.loc, p.tok.text_value);
+        p.consumeToken();
+    }
+    return p.builder.actOnRefType(id, prefix);
+}
 
 // TEMP here
 public func void dump_token(SourceMgr* sm, const Token* tok) {
