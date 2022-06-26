@@ -3,10 +3,19 @@ module ast_utils;
 import ast local;
 
 import string local;
+import stdlib local;
 import stdio local; // TEMP
+
+// Use stack for small lists, heap for larger ones
+
+const u32 InitialHeapSize = 8;
+public const u32 StackSize = 4;
 
 public type StmtList struct {
     u32 count;
+    u32 capacity;       // only in heap mode
+    Stmt*[StackSize] stack;   // in heap mode, stack[0] contains pointer to heap
+    Stmt** heap;
 }
 
 public func void StmtList.init(StmtList* l) {
@@ -14,11 +23,47 @@ public func void StmtList.init(StmtList* l) {
 }
 
 public func void StmtList.add(StmtList* l, Stmt* s) {
-    //s.dump();
+    if (l.count < StackSize) { // use stack
+        l.stack[l.count] = s;
+    } else if (l.count > StackSize) { // use heap
+        if (l.count == l.capacity) {
+            l.capacity *= 2;
+            Stmt** heap2 = malloc(l.capacity * sizeof(Stmt*));
+            memcpy(cast<void*>(heap2), cast<void*>(l.heap), l.count * sizeof(Stmt*));
+            free(cast<void*>(l.heap));
+            l.heap = heap2;
+        }
+
+        l.heap[l.count] = s;
+    } else {
+        l.capacity = InitialHeapSize;
+        l.heap = malloc(l.capacity * sizeof(Stmt*));
+        memcpy(cast<void*>(l.heap), cast<void*>(l.stack), StackSize * sizeof(Stmt*));
+
+        l.heap[l.count] = s;
+    }
+    l.count++;
+}
+
+public func void StmtList.dump(const StmtList* l) {
+    printf("StmtList %u/%u\n", l.count, l.capacity);
+    Stmt** stmts = l.stack;
+    if (l.capacity) stmts = l.heap;
+    for (u32 i=0; i<l.count; i++) {
+        printf("  [%u]  %p\n", i, stmts[i]);
+    }
 }
 
 public func void StmtList.free(StmtList* l) {
-    // TODO also show
+    if (l.heap) free(cast<void*>(l.heap));
+}
 
+public func u32 StmtList.getCount(const StmtList* l) {
+    return l.count;
+}
+
+public func Stmt** StmtList.getData(const StmtList* l) {
+    if (l.heap) return l.heap;
+    return l.stack;
 }
 

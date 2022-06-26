@@ -25,6 +25,6 @@ public func CharLiteral* CharLiteral.create(Context* c, SrcLoc loc, u8 val) @(in
 }
 
 public func void CharLiteral.print(const CharLiteral* b) {
-    printf("CharLiteral '%c'", b.expr.stmt.charLiteralBits.value);
+    printf("CharLiteral '%c'\n", b.expr.stmt.charLiteralBits.value);
 }
 

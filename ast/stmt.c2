@@ -40,6 +40,8 @@ public type Stmt struct {
     union {
         StmtBits stmtBits;
         ReturnStmtBits returnStmtBits;
+        CompoundStmtBits compoundStmtBits;
+
         ExprBits exprBits;
         IfStmtBits ifStmtBits;
         BuiltinExprBits builtinExprBits;

@@ -6,32 +6,41 @@ module ast;
 import ast_context local;
 import utils local;
 
+import string local;
 // TEMP
 import stdio local;
 
 type CompoundStmtBits struct {
     u32 : NumStmtBits;
-    u32 has_value : 1;
+    u32 count : 32 - NumStmtBits;
 }
 
 public type CompoundStmt struct {
     Stmt stmt;
-    Expr*[0] value; // tail-allocated, dependent on returnStmtBits.has_value
+    Stmt*[0] stmts; // tail-allocated
 } @(opaque)
 
-public func CompoundStmt* CompoundStmt.create(Context* c) @(inline) {
-    u32 size = sizeof(CompoundStmt);
-    //if (value) size += sizeof(Expr*);
+public func CompoundStmt* CompoundStmt.create(Context* c, Stmt** stmts, u32 count) @(inline) {
+    // assert(count < 65556);
+    u32 size = sizeof(CompoundStmt) + count * sizeof(Stmt**);
 
     CompoundStmt* s = c.alloc(size);
     s.stmt.init(StmtKind.Compound);
+    s.stmt.compoundStmtBits.count = count;
 
+    if (count) {
+        memcpy(cast<void*>(s.stmts), cast<void*>(stmts), count * sizeof(Stmt*));
+    }
     return s;
 }
 
 public func void CompoundStmt.print(const CompoundStmt* s) {
-    printf("CompoundStmt\n");
-    // TODO
+    const u32 count = s.stmt.compoundStmtBits.count;
+    printf("CompoundStmt (%u stmts)\n", count);
+
+    for (u32 i=0; i<count; i++) {
+        s.stmts[i].dump();
+    }
 }
 
 

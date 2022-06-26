@@ -130,10 +130,8 @@ public func void Builder.actOnFunctionBody(Builder* b, FunctionDecl* f, Compound
 }
 
 // TODO extract Decl, Stmt parts to own file
-public func Stmt* Builder.actOnCompoundStmt(Builder* b) {
-    CompoundStmt* s = CompoundStmt.create(b.context);
-    // TODO
-    return cast<Stmt*>(s);
+public func Stmt* Builder.actOnCompoundStmt(Builder* b, Stmt** stmts, u32 count) {
+    return cast<Stmt*>(CompoundStmt.create(b.context, stmts, count));
 }
 
 public func Stmt* Builder.actOnReturnStmt(Builder* b, SrcLoc loc, Expr* ret) {

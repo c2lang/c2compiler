@@ -48,10 +48,10 @@ func Stmt* Parser.parseCompoundStmt(Parser* p) {
 
     p.expectAndConsume(Kind.RBrace);
 
-    //p.builder.actOnCompoundStmt(&stmts);
-    Stmt* s = p.builder.actOnCompoundStmt();
+    Stmt* s = p.builder.actOnCompoundStmt(stmts.getData(), stmts.getCount());
     stmts.free();
 
+    s.dump();
     return s;
 }
 
