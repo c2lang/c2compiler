@@ -169,3 +169,7 @@ public func Expr* Builder.actOnCharLiteral(Builder* b, SrcLoc loc, u8 value) {
     return cast<Expr*>(CharLiteral.create(b.context, loc, value));
 }
 
+public func Expr* Builder.actOnStringLiteral(Builder* b, SrcLoc loc, const char* value) {
+    return cast<Expr*>(StringLiteral.create(b.context, loc, value));
+}
+

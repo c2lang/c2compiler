@@ -1,0 +1,26 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context local;
+import utils local;
+
+import stdio local; // TEMP
+
+public type StringLiteral struct {
+    Expr expr;
+    const char* value;
+} @(opaque)
+
+public func StringLiteral* StringLiteral.create(Context* c, SrcLoc loc, const char* value) @(inline) {
+    StringLiteral* e = c.alloc(sizeof(StringLiteral));
+    e.expr.init(ExprKind.StringLiteral, loc, 1, 1, 0);
+    e.value = value;
+    return e;
+}
+
+public func void StringLiteral.print(const StringLiteral* e) {
+    printf("StringLiteral \"%s\"", e.value);
+}
+
