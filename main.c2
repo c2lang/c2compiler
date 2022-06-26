@@ -8,6 +8,7 @@ import c2_parser local;
 import string_list;
 import constants;
 import ast_context local;
+import ast;
 
 import stdio local;
 
@@ -18,6 +19,9 @@ public func i32 main(i32 argc, char** argv) {
     }
 
     SourceMgr* sm = SourceMgr.create();
+
+    Context* typeContext = Context.create(1024, 0);
+    ast.init(typeContext);
 
     for (i32 i=1; i<argc; i++) {
         const char* filename = argv[i];
@@ -47,6 +51,7 @@ public func i32 main(i32 argc, char** argv) {
         context.free();
     }
 
+    typeContext.free();
     sm.free();
 
 	return 0;

@@ -3,9 +3,9 @@
 
 module c2_ast_builder;
 
-import tokens;
 import ast local;
 import ast_context local;
+import tokens local;
 
 import stdlib local;
 import stdio local;
@@ -42,16 +42,77 @@ public func void Builder.actOnAttr(Builder* b, const char* name, u32 begin_loc, 
     printf("ATTR  %s\n", name);
 }
 
-public func void Builder.actOnBuiltinType(Builder* b, tokens.Kind kind) {
-    printf("BUILTIN\n");
+public func QualType Builder.actOnBuiltinType(Builder* b, tokens.Kind kind) {
+    Type* t;
+    // TODO optimize (table?) -> fill in init with correct width for usize/isize, fill with QualType
+    switch (kind) {
+    case Kind.KW_u8:
+        t = cast<Type*>(g_u8);
+        break;
+    case Kind.KW_u16:
+        t = cast<Type*>(g_u16);
+        break;
+    case Kind.KW_u32:
+        t = cast<Type*>(g_u32);
+        break;
+    case Kind.KW_u64:
+        t = cast<Type*>(g_u64);
+        break;
+    case Kind.KW_usize:
+        // TODO targetInfo.intWidth
+        t = cast<Type*>(g_u64);
+        break;
+    case Kind.KW_i8:
+        t = cast<Type*>(g_i8);
+        break;
+    case Kind.KW_i16:
+        t = cast<Type*>(g_i16);
+        break;
+    case Kind.KW_i32:
+        t = cast<Type*>(g_i32);
+        break;
+    case Kind.KW_i64:
+        t = cast<Type*>(g_i64);
+        break;
+    case Kind.KW_isize:
+        // TODO targetInfo.intWidth
+        t = cast<Type*>(g_i64);
+        break;
+/*
+    case Kind.KW_f32:
+    case Kind.KW_f64:
+    case Kind.KW_reg8:
+    case Kind.KW_reg16:
+    case Kind.KW_reg32:
+    case Kind.KW_reg64:
+*/
+    case Kind.KW_char:
+        t = cast<Type*>(g_i8);
+        break;
+    case Kind.KW_void:
+        t = cast<Type*>(g_void);
+        break;
+    case Kind.KW_bool:
+        t = cast<Type*>(g_bool);
+        break;
+    default:
+        // fatal error
+        break;
+    }
+
+    return QualType.init2(t);
 }
 
-public func void Builder.actOnPointerType(Builder* b, /*base.get(),*/ u32 qualifier) {
+public func QualType Builder.actOnPointerType(Builder* b, QualType qt, u32 qualifier) {
     printf("POINTER\n");
+    // TODO
+    return qt;
+
 }
 
-public func void Builder.actOnTypeQualifier(Builder* b, u32 qualifier) {
+public func QualType Builder.actOnTypeQualifier(Builder* b, QualType qt, u32 qualifier) {
     printf("QUALIFIER\n");
+    return qt;
 }
 
 public func void Builder.actOnIdExpression(Builder* b, const char* name, u32 loc) {

@@ -304,7 +304,7 @@ func void Parser.parseAliasType(Parser* p, const char* name, u32 loc, bool is_pu
 func void Parser.parseFuncDef(Parser* p, bool is_public) {
     p.consumeToken();
 
-    /*ExprResult rtype = */ p.parseSingleTypeSpecifier(true);
+    QualType rtype = p.parseSingleTypeSpecifier(true);
     // TODO
     p.expectIdentifier();
     const char* func_name = p.tok.text_value;
@@ -403,11 +403,12 @@ func u32 Parser.parseOptionalTypeQualifier(Parser* p) {
     return qualifiers;
 }
 
-func void Parser.parseSingleTypeSpecifier(Parser* p, bool allow_qualifier) {
-    // TODO return Expr
+func QualType Parser.parseSingleTypeSpecifier(Parser* p, bool allow_qualifier) {
     u32 type_qualifier = 0;
 
     if (allow_qualifier) type_qualifier = p.parseOptionalTypeQualifier();
+
+    QualType base;
 
     switch (p.tok.kind) {
     case Kind.KW_u8:   fallthrough;
@@ -429,11 +430,11 @@ func void Parser.parseSingleTypeSpecifier(Parser* p, bool allow_qualifier) {
     case Kind.KW_char:  fallthrough;
     case Kind.KW_void:  fallthrough;
     case Kind.KW_bool:
-        /* base = */  p.builder.actOnBuiltinType(p.tok.kind);
+        base = p.builder.actOnBuiltinType(p.tok.kind);
         p.consumeToken();
         break;
     case Kind.Identifier:
-        /* base = */  p.parseFullTypeIdentifier();
+        base = p.parseFullTypeIdentifier();
         break;
     default:
         p.error("expected type specifier");
@@ -441,15 +442,17 @@ func void Parser.parseSingleTypeSpecifier(Parser* p, bool allow_qualifier) {
     }
 
     while (p.tok.kind == Kind.Star) {
-        /* base = */ p.builder.actOnPointerType(/*base.get(),*/ type_qualifier);
+        base = p.builder.actOnPointerType(base, type_qualifier);
         type_qualifier = 0;
         p.consumeToken();
     }
-    // return ..
-    p.builder.actOnTypeQualifier(/* base,*/ type_qualifier);
+    return p.builder.actOnTypeQualifier(base, type_qualifier);
 }
 
-func void Parser.parseFullTypeIdentifier(Parser* p) {
+func QualType Parser.parseFullTypeIdentifier(Parser* p) {
+    QualType q;
+    // TODO
+    return q;
 }
 
 

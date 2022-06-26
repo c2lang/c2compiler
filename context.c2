@@ -68,10 +68,16 @@ public func Context* Context.create(u32 blk_size, u32 str_blk_size) {
     return c;
 }
 
-public func void Context.free(Context* c) {
+func void Context.freeBlocks(Context* c) {
     Block* blk = c.blk_head;
     while (blk) blk = blk.free();
 
+    blk = c.str_blk_head;
+    while (blk) blk = blk.free();
+}
+
+public func void Context.free(Context* c) {
+    c.freeBlocks();
     free(c);
 }
 
@@ -79,18 +85,19 @@ func void Context.init(Context* c) {
     c.blk_head = Block.create(c.blk_size);
     c.blk_tail = c.blk_head;
 
-    c.str_blk_head = Block.create(c.str_blk_size);
-    c.str_blk_tail = c.str_blk_head;
+    if (c.str_blk_size) {
+        c.str_blk_head = Block.create(c.str_blk_size);
+        c.str_blk_tail = c.str_blk_head;
+    }
 }
 
 public func void Context.clear(Context* c) {
-    Block* blk = c.blk_head;
-    while (blk) blk = blk.free();
-
+    c.freeBlocks();
     c.init();
 }
 
 public func void* Context.alloc(Context* c, u32 len) {
+    // assert(c.blk_head);
     // TODO always align as ptr size!!
     // assert(len * 0x3 == 0); // must be 8-byte multiple
     // assert(len < blk_size)
@@ -107,6 +114,7 @@ public func void* Context.alloc(Context* c, u32 len) {
 }
 
 public func const char* Context.alloc_str(Context* c, const char* text, u32 len) @(inline) {
+    // assert(c.str_blk_head);
     // assert(len < strblk_size)
     len++;  // add 0-terminator
 

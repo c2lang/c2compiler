@@ -22,6 +22,7 @@ executable c2c
     ast/import_decl.c2
     ast/utils.c2
     ast/type.c2
+    ast/qualtype.c2
     ast/builtin_type.c2
     ast/ref_type.c2
     c2_source_mgr.c2
