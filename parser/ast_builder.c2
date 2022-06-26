@@ -10,6 +10,7 @@ import tokens local;
 import utils local;
 
 import stdlib local;
+import string local;
 import stdio local;
 
 public type Builder struct {
@@ -48,9 +49,15 @@ public func void Builder.actOnImport(Builder* b, const char* mod_name, SrcLoc mo
     b.ast.addImport(d);
 }
 
-public func void Builder.actOnStructType(Builder* b, const char* name, SrcLoc loc, bool is_struct, bool is_public, bool is_global) {
-    //printf("%s %s  %s %s\n", is_struct ? "STRUCT" : "UNION", name, is_public ? "public" : "", is_global ? "global" : "");
-    // TODO store
+public func StructTypeDecl* Builder.actOnStructType(Builder* b, const char* name, SrcLoc loc, bool is_public, bool is_struct, bool is_global) {
+    StructTypeDecl* d = StructTypeDecl.create(b.context, name, loc, is_public, is_struct, is_global);
+    //b.ast.addType(cast<Type*>(d));
+    return d;
+}
+public func void Builder.actOnStructMembers(Builder* b, StructTypeDecl* d, Decl** members, u32 count) {
+    void* buf = b.context.alloc(count * sizeof(Decl*));
+    memcpy(buf, cast<void*>(members), count * sizeof(Decl*));
+    d.setMembers(buf, count);
 }
 
 public func void Builder.actOnAttr(Builder* b, const char* name, SrcLoc begin_loc, SrcLoc end_loc) {

@@ -6,6 +6,7 @@ module c2_parser;
 import source_mgr local;
 import c2_tokenizer local;
 import ast_builder local;
+import ast_list local;
 import ast local;
 import ast_context local;
 import tokens local;
@@ -228,17 +229,17 @@ func void Parser.parseFuncType(Parser* p, const char* name, u32 loc, bool is_pub
 
 func void Parser.parseStructType(Parser* p, bool is_struct, const char* name, u32 loc, bool is_public) {
     p.consumeToken();
-    //StructTypeDecl* S = p.builder.actOnStructType(name, loc, is_struct, is_public, true);
-    p.builder.actOnStructType(name, loc, is_struct, is_public, true);
+    StructTypeDecl* d = p.builder.actOnStructType(name, loc, is_struct, is_public, true);
 
-    p.parseStructBlock();  // (S)
-    p.parseAttributes(); // (S)
+    p.parseStructBlock(d);
+    p.parseAttributes(); // (d)
 }
 
-func void Parser.parseStructBlock(Parser* p /*, StructTypeDecl* s*/) {
+func void Parser.parseStructBlock(Parser* p, StructTypeDecl* d) {
     p.expectAndConsume(Kind.LBrace);
 
-    //DeclList members
+    DeclList members;
+    members.init();
 
     while (1) {
         //Syntax:
@@ -258,12 +259,15 @@ func void Parser.parseStructBlock(Parser* p /*, StructTypeDecl* s*/) {
                 loc = p.tok.loc;
                 p.consumeToken();
             }
-            /*StructTypeDecl* member = */ p.builder.actOnStructType(name, loc, is_struct, true /*S->isPublic()*/, false);
-            // members.push_back(member);
-            p.parseStructBlock(/*member*/);
+            StructTypeDecl* member = p.builder.actOnStructType(name, loc, is_struct, d.asDecl().isPublic(), false);
+            members.add(cast<Decl*>(member));
+            p.parseStructBlock(member);
         } else {
             // TODO
         }
+
+        p.builder.actOnStructMembers(d, members.getDecls(), members.size());
+        members.free();
     }
 }
 

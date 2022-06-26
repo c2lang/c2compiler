@@ -37,7 +37,7 @@ func u32 ImportDeclList.size(const ImportDeclList* l) {
     return l.count;
 }
 
-func ImportDecl**  ImportDeclList.getDecls(const ImportDeclList* l) {
+func ImportDecl** ImportDeclList.getDecls(const ImportDeclList* l) {
     return l.decls;
 }
 
@@ -75,7 +75,44 @@ func u32 FunctionDeclList.size(const FunctionDeclList* l) {
     return l.count;
 }
 
-func FunctionDecl**  FunctionDeclList.getDecls(const FunctionDeclList* l) {
+func FunctionDecl** FunctionDeclList.getDecls(const FunctionDeclList* l) {
+    return l.decls;
+}
+
+// TODO own file
+public type DeclList struct {
+    u32 count;
+    u32 capacity;
+    Decl** decls;
+}
+
+public func void DeclList.init(DeclList* l) {
+    memset(l, 0, sizeof(DeclList));
+}
+
+public func void DeclList.free(DeclList* l) {
+    if (l.decls) free(cast<void*>(l.decls));
+}
+
+public func void DeclList.add(DeclList* l, Decl* d) {
+    if (l.count >= l.capacity) {
+        l.capacity += 4;
+        void* old = cast<void*>(l.decls);
+        void* decls2 = malloc(l.capacity * sizeof(Decl*));
+        memcpy(decls2, old, l.count * sizeof(Decl*));
+        free(old);
+        l.decls = decls2;
+    }
+
+    l.decls[l.count] = d;
+    l.count++;
+}
+
+public func u32 DeclList.size(const DeclList* l) {
+    return l.count;
+}
+
+public func Decl** DeclList.getDecls(const DeclList* l) {
     return l.decls;
 }
 

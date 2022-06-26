@@ -26,7 +26,7 @@
 ## SourceManager
 + reserve location 0
 + remove hardcoded file max
-- alias-type for SrcLoc
++ alias-type for SrcLoc
 - close files after use (need indication)
 
 ## Parser
@@ -40,8 +40,8 @@
 + create Context (for allocation)
 
 ## AST-Builder
-- fill AST
-- print content
++ fill AST
++ print content
 
 ## Performance
 - profile application to see where time is spent

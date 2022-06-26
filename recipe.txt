@@ -38,6 +38,7 @@ executable c2c
     ast/decl.c2
     ast/function_decl.c2
     ast/import_decl.c2
+    ast/struct_type_decl.c2
 
     ast/utils.c2
     ast/type.c2
