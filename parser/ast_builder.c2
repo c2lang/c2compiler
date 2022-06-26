@@ -142,6 +142,10 @@ public func Stmt* Builder.actOnIfStmt(Builder* b, Expr* cond, Stmt* then, Stmt* 
     return cast<Stmt*>(IfStmt.create(b.context, cond, then, else_stmt));
 }
 
+public func Stmt* Builder.actOnDoStmt(Builder* b, Expr* cond, Stmt* then) {
+    return cast<Stmt*>(DoStmt.create(b.context, cond, then));
+}
+
 public func Stmt* Builder.actOnWhileStmt(Builder* b, Expr* cond, Stmt* then) {
     return cast<Stmt*>(WhileStmt.create(b.context, cond, then));
 }

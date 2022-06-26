@@ -13,6 +13,8 @@ func Stmt* Parser.parseStmt(Parser* p) {
     switch (p.tok.kind) {
     case Kind.LBrace:
         return p.parseCompoundStmt();
+    case Kind.KW_do:
+        return p.parseDoStmt();
     case Kind.KW_if:
         return p.parseIfStmt();
     case Kind.KW_return:
@@ -77,6 +79,17 @@ func Stmt* Parser.parseReturnStmt(Parser* p) {
 
     p.expectAndConsume(Kind.Semicolon);
     return p.builder.actOnReturnStmt(loc, ret);
+}
+
+func Stmt* Parser.parseDoStmt(Parser* p) {
+    p.consumeToken();
+
+    Stmt* then = p.parseStmt();
+    p.expectAndConsume(Kind.KW_while);
+    Expr* cond = p.parseCondition();
+
+    p.expectAndConsume(Kind.Semicolon);
+    return p.builder.actOnDoStmt(cond, then);
 }
 
 func Stmt* Parser.parseWhileStmt(Parser* p) {

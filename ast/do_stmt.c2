@@ -1,0 +1,39 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context local;
+import utils local;
+
+import stdio local; // TEMP
+
+public type DoStmt struct {
+    Stmt stmt;
+    Expr* cond;
+    Stmt* then;
+} @(opaque)
+
+// NOTE: merge with while? (only need single bit to differentiate)
+public func DoStmt* DoStmt.create(Context* c, Expr* cond, Stmt* then) @(inline) {
+    DoStmt* s = c.alloc(sizeof(DoStmt));
+    s.stmt.init(StmtKind.Do);
+    s.cond = cond;
+    s.then = then;
+    return s;
+}
+
+public func void DoStmt.print(const DoStmt* s) {
+    printf("DoStmt\n");
+    s.cond.dump();
+    s.then.dump();
+}
+
+public func Expr* DoStmt.getCond(const DoStmt* s) @(inline) {
+    return s.cond;
+}
+
+public func Stmt* DoStmt.getThen(const DoStmt* s) @(inline) {
+    return s.then;
+}
+
