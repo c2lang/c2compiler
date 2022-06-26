@@ -1,3 +1,6 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
 module ast;
 
 import ast_context local;
@@ -39,5 +42,4 @@ public func Expr* ReturnStmt.getValue2(ReturnStmt* r) {
     if (r.stmt.returnStmtBits.has_value) return &r.value[0];
     return nil;
 }
-
 

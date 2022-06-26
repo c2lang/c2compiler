@@ -1,3 +1,6 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
 module file_utils;
 
 import stdio local;

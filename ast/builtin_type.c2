@@ -1,3 +1,6 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
 module ast;
 
 import ast_context local;
@@ -41,3 +44,4 @@ public func BuiltinTypeKind BuiltinType.getKind(const BuiltinType* b) @(inline) 
 public func void BuiltinType.print(const BuiltinType* b) {
     // TODO
 }
+
