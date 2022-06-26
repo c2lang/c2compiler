@@ -39,6 +39,7 @@
 ## AST
 + create structure
 + create Context (for allocation)
+- FIX object sizes (Stmt should be 4 bytes, not aligned yet)
 
 ## AST-Builder
 + fill AST

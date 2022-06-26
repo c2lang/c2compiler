@@ -18,6 +18,8 @@ func Stmt* Parser.parseStmt(Parser* p) {
         return p.parseCompoundStmt();
     case Kind.KW_break:
         return p.parseBreakStmt();
+    case Kind.KW_continue:
+        return p.parseContinueStmt();
     case Kind.KW_do:
         return p.parseDoStmt();
     case Kind.KW_for:
@@ -64,6 +66,14 @@ func Stmt* Parser.parseBreakStmt(Parser* p) {
 
     p.expectAndConsume(Kind.Semicolon);
     return p.builder.actOnBreakStmt(loc);
+}
+
+func Stmt* Parser.parseContinueStmt(Parser* p) {
+    SrcLoc loc = p.tok.loc;
+    p.consumeToken();
+
+    p.expectAndConsume(Kind.Semicolon);
+    return p.builder.actOnContinueStmt(loc);
 }
 
 func Expr* Parser.parseCondition(Parser* p) {

@@ -1,0 +1,27 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context local;
+import utils local;
+
+import stdio local; // TEMP
+
+public type ContinueStmt struct {
+    Stmt stmt;
+    SrcLoc loc;
+} @(opaque)
+
+public func ContinueStmt* ContinueStmt.create(Context* c, SrcLoc loc) @(inline) {
+    ContinueStmt* s = c.alloc(sizeof(ContinueStmt));
+    s.stmt.init(StmtKind.Continue);
+    s.loc = loc;
+    return s;
+}
+
+public func void ContinueStmt.print(const ContinueStmt* s, StringBuffer* out, u32 indent) {
+    out.indent(indent);
+    out.add("ContinueStmt\n");
+}
+
