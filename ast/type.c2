@@ -8,6 +8,9 @@ import utils local;
 
 public type TypeKind enum u8 {
     Builtin,
+    // pointer
+    // array
+    Ref,
 }
 
 public type TypeBits struct {
@@ -19,6 +22,7 @@ public type Type struct {
     union {
         TypeBits typeBits;
         BuiltinTypeBits builtinTypeBits;
+        RefTypeBits refTypeBits;
         u32 bits;
     }
 } @(opaque)
@@ -35,6 +39,9 @@ public func void Type.dump(const Type* d) {
     switch (d.getKind()) {
     case TypeKind.Builtin:
         BuiltinType.print(cast<BuiltinType*>(d));
+        break;
+    case TypeKind.Ref:
+        RefType.print(cast<RefType*>(d));
         break;
     }
 }

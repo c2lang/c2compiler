@@ -23,6 +23,7 @@ executable c2c
     ast/utils.c2
     ast/type.c2
     ast/builtin_type.c2
+    ast/ref_type.c2
     c2_source_mgr.c2
     context.c2
     utils.c2

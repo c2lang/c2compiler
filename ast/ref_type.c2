@@ -1,0 +1,44 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context local;
+
+public type RefTypeBits struct {
+    u32 : NumTypeBits;
+    u32 have_prefix : 1;
+}
+
+public type RefType struct {
+    Type parent;
+    Expr* ref;
+    Expr*[0] prefixRef; // tail-allocated
+} @(opaque)
+
+public func RefType* RefType.create(Context* c, Expr* prefix, Expr* ref) @(inline) {
+    u32 size = sizeof(RefType);
+    if (prefix) size += sizeof(Expr*);
+    RefType* b = c.alloc(size);
+    b.parent.init(TypeKind.Ref);
+    b.ref = ref;
+
+    if (prefix) {
+        b.parent.refTypeBits.have_prefix;
+        b.prefixRef[0] = prefix;
+    }
+    return b;
+}
+
+public func Expr* RefType.getRef(const RefType* r) @(inline) {
+    return r.ref;
+}
+
+public func Expr** RefType.getRef2(RefType* r) @(inline) {
+    return &r.ref;
+}
+
+public func void RefType.print(const RefType* b) {
+    // TODO
+}
+
