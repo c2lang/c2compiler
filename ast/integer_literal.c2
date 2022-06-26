@@ -1,0 +1,33 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context local;
+import utils local;
+
+// TEMP
+import stdio local;
+
+public type IntegerLiteralBits struct {
+    u32 : NumExprBits;
+    //u32 radix : 4;
+    //u32 signed : 1;
+}
+
+public type IntegerLiteral struct {
+    Expr expr;
+    u64 val;
+} @(opaque)
+
+public func IntegerLiteral* IntegerLiteral.create(Context* c, SrcLoc loc, u64 val) @(inline) {
+    IntegerLiteral* i = c.alloc(sizeof(IntegerLiteral));
+    i.expr.init(ExprKind.IntegerLiteral, loc, 1, 1, 0);
+    i.val = val;
+    return i;
+}
+
+public func void IntegerLiteral.print(const IntegerLiteral* i) {
+    printf("IntegerLiteral %lu\n", i.val);
+}
+

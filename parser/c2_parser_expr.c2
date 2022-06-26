@@ -9,12 +9,25 @@ import tokens local;
 import utils local;
 
 func Expr* Parser.parseExpr(Parser* p) {
+    // parseAssignmentExpression()
+    // parseRHSOfBinaryExpression()
+
+    // TEMP
     // NOTE: keep in order
     switch (p.tok.kind) {
+    case Kind.NumberLiteral:
+        return p.parseNumberLiteral();
     default:
         return nil; // TEMP
         break;
     }
     return nil;
+}
+
+func Expr* Parser.parseNumberLiteral(Parser* p) {
+    // TODO pass radix, base, etc
+   Expr* num = p.builder.actOnIntegerLiteral(p.tok.loc, p.tok.text_value);
+   p.consumeToken();
+   return num;
 }
 

@@ -138,3 +138,8 @@ public func ReturnStmt* Builder.actOnReturnStmt(Builder* b, SrcLoc loc, Expr* re
     return ReturnStmt.create(b.context, loc, ret);
 }
 
+public func Expr* Builder.actOnIntegerLiteral(Builder* b, SrcLoc loc, const char* text) {
+    u64 val = atoll(text);
+    return IntegerLiteral.create(b.context, loc, val);
+}
+

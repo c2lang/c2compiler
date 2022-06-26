@@ -14,6 +14,10 @@
 + error/warn feature
 + named feature-selection
 - support nested /* */ comments
+- Numbers:
+    - parse floating points
+    - parse hexadecimal
+    - note radix in token
 - advanced basic feature-selection:
     - NAME=<value> -> value always treated as text
     - OR AND NOT in condition

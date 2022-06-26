@@ -7,8 +7,8 @@ import ast_context local;
 import utils local;
 
 public type ExprKind enum u8 {
-/*
     IntegerLiteral,
+/*
     FloatLiteral,
 */
     BooleanLiteral,
@@ -67,6 +67,9 @@ public func bool Expr.isCtc(const Expr* e) @(inline) { return e.stmt.exprBits.is
 
 public func void Expr.dump(Expr* e) {
     switch (e.getKind()) {
+    case ExprKind.IntegerLiteral:
+        IntegerLiteral.print(cast<IntegerLiteral*>(e));
+        break;
     case ExprKind.BooleanLiteral:
         BooleanLiteral.print(cast<BooleanLiteral*>(e));
         break;
