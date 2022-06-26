@@ -17,6 +17,8 @@ func Stmt* Parser.parseStmt(Parser* p) {
         return p.parseIfStmt();
     case Kind.KW_return:
         return p.parseReturnStmt();
+    case Kind.KW_while:
+        return p.parseWhileStmt();
     default:
         return nil; // TEMP
         break;
@@ -53,7 +55,6 @@ func Stmt* Parser.parseIfStmt(Parser* p) {
     p.consumeToken();
 
     Expr* cond = p.parseCondition();
-
     Stmt* then = p.parseStmt();
 
     Stmt* else_stmt = nil;
@@ -76,5 +77,14 @@ func Stmt* Parser.parseReturnStmt(Parser* p) {
 
     p.expectAndConsume(Kind.Semicolon);
     return p.builder.actOnReturnStmt(loc, ret);
+}
+
+func Stmt* Parser.parseWhileStmt(Parser* p) {
+    p.consumeToken();
+
+    Expr* cond = p.parseCondition();
+    Stmt* then = p.parseStmt();
+
+    return p.builder.actOnWhileStmt(cond, then);
 }
 

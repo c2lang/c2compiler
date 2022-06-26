@@ -1,0 +1,38 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context local;
+import utils local;
+
+import stdio local; // TEMP
+
+public type WhileStmt struct {
+    Stmt stmt;
+    Expr* cond;
+    Stmt* then;
+} @(opaque)
+
+public func WhileStmt* WhileStmt.create(Context* c, Expr* cond, Stmt* then) @(inline) {
+    WhileStmt* s = c.alloc(sizeof(WhileStmt));
+    s.stmt.init(StmtKind.While);
+    s.cond = cond;
+    s.then = then;
+    return s;
+}
+
+public func void WhileStmt.print(const WhileStmt* s) {
+    printf("WhileStmt\n");
+    s.cond.dump();
+    s.then.dump();
+}
+
+public func Expr* WhileStmt.getCond(const WhileStmt* s) @(inline) {
+    return s.cond;
+}
+
+public func Stmt* WhileStmt.getThen(const WhileStmt* s) @(inline) {
+    return s.then;
+}
+

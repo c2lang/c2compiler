@@ -18,6 +18,7 @@ executable c2c
     ast/stmt.c2
     ast/compound_stmt.c2
     ast/if_stmt.c2
+    ast/while_stmt.c2
     ast/return_stmt.c2
     ast/expr.c2
     ast/builtin_expr.c2
