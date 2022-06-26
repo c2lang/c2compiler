@@ -13,6 +13,7 @@
 + have error() be like printf
 + error/warn feature
 + named feature-selection
+- support nested /* */ comments
 - advanced basic feature-selection:
     - NAME=<value> -> value always treated as text
     - OR AND NOT in condition

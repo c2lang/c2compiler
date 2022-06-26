@@ -922,16 +922,11 @@ func void Tokenizer.skip_line_comment(Tokenizer* t) {
 
 func void Tokenizer.skip_block_comment(Tokenizer* t) {
     t.cur += 2;
-    const char* start = t.cur;
-    const char* end = start;
-
-    while (*end) {
-        if (end[0] == '*' || end[1] == '/') break;
-        end++;
+    while (*t.cur) {
+        if (t.cur[0] == '*' || t.cur[1] == '/') break;
+        t.cur++;
     }
-
-    u32 len = cast<u32>(end - start);
-    t.cur += len;
+    t.cur += 2;
 }
 
 func bool Tokenizer.skip_line(Tokenizer* t, Token* result) {
