@@ -15,6 +15,8 @@ func Stmt* Parser.parseStmt(Parser* p) {
         return p.parseCompoundStmt();
     case Kind.KW_do:
         return p.parseDoStmt();
+    case Kind.KW_for:
+        return p.parseForStmt();
     case Kind.KW_if:
         return p.parseIfStmt();
     case Kind.KW_return:
@@ -90,6 +92,38 @@ func Stmt* Parser.parseDoStmt(Parser* p) {
 
     p.expectAndConsume(Kind.Semicolon);
     return p.builder.actOnDoStmt(cond, then);
+}
+
+func Stmt* Parser.parseForStmt(Parser* p) {
+    p.consumeToken();
+
+    p.expectAndConsume(Kind.LParen);
+
+    // init
+    Stmt* init_ = nil;
+    if (p.tok.kind != Kind.Semicolon) {
+        // TODO check if declaration
+        init_ = p.parseExpr();
+    }
+    p.expectAndConsume(Kind.Semicolon);
+
+    // cond
+    Expr* cond = nil;
+    if (p.tok.kind != Kind.Semicolon) {
+        cond = p.parseExpr();
+    }
+    p.expectAndConsume(Kind.Semicolon);
+
+    // incr
+    Expr* incr = nil;
+    if (p.tok.kind != Kind.RParen) {
+        incr = p.parseExpr();
+    }
+    p.expectAndConsume(Kind.RParen);
+
+    Stmt* body = p.parseStmt();
+
+    return p.builder.actOnForStmt(init_, cond, incr, body);
 }
 
 func Stmt* Parser.parseWhileStmt(Parser* p) {

@@ -1,0 +1,51 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context local;
+import utils local;
+
+import stdio local; // TEMP
+
+type ForStmtBits struct {
+    u32 : NumStmtBits;
+    u32 has_else : 1;
+}
+
+public type ForStmt struct {
+    Stmt stmt;
+    Stmt* init;
+    Expr* cond;
+    Expr* incr;
+    Stmt* body;
+} @(opaque)
+
+public func ForStmt* ForStmt.create(Context* c, Stmt* init_, Expr* cond, Expr* incr, Stmt* body) @(inline) {
+    ForStmt* s = c.alloc(sizeof(ForStmt));
+    s.stmt.init(StmtKind.For);
+    s.init = init_;
+    s.cond = cond;
+    s.incr = incr;
+    s.body = body;
+    return s;
+}
+
+public func void ForStmt.print(const ForStmt* s) {
+    printf("ForStmt\n");
+    if (s.init) s.init.dump();
+    if (s.cond) s.cond.dump();
+    if (s.incr) s.incr.dump();
+    if (s.body) s.body.dump();
+}
+
+public func Stmt* ForStmt.getInit(const ForStmt* s) @(inline) { return s.init; }
+public func Expr* ForStmt.getCond(const ForStmt* s) @(inline) { return s.cond; }
+public func Expr* ForStmt.getIncr(const ForStmt* s) @(inline) { return s.incr; }
+public func Stmt* ForStmt.getBody(const ForStmt* s) @(inline) { return s.body; }
+
+public func Stmt* ForStmt.getInit2(ForStmt* s) @(inline) { return s.init ? &s.init : nil; }
+public func Expr* ForStmt.getCond2(ForStmt* s) @(inline) { return s.cond ? &s.cond : nil; }
+public func Expr* ForStmt.getIncr2(ForStmt* s) @(inline) { return s.incr ? &s.init : nil; }
+public func Stmt* ForStmt.getBody2(ForStmt* s) @(inline) { return s.body ? &s.body : nil; }
+

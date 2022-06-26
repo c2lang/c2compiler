@@ -12,8 +12,8 @@ public type StmtKind enum u8 {
     If,
     While,
     Do,
-/*
     For,
+/*
     Switch,
     SSwitch,
     Case,
@@ -72,6 +72,9 @@ public func void Stmt.dump(const Stmt* s) {
         break;
     case StmtKind.Do:
         DoStmt.print(cast<DoStmt*>(s));
+        break;
+    case StmtKind.For:
+        ForStmt.print(cast<ForStmt*>(s));
         break;
     case StmtKind.Compound:
         CompoundStmt.print(cast<CompoundStmt*>(s));

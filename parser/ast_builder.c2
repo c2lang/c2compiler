@@ -150,6 +150,10 @@ public func Stmt* Builder.actOnWhileStmt(Builder* b, Expr* cond, Stmt* then) {
     return cast<Stmt*>(WhileStmt.create(b.context, cond, then));
 }
 
+public func Stmt* Builder.actOnForStmt(Builder* b, Stmt* init_, Expr* cond, Expr* incr, Stmt* body) {
+    return cast<Stmt*>(ForStmt.create(b.context, init_, cond, incr, body));
+}
+
 public func Expr* Builder.actOnIntegerLiteral(Builder* b, SrcLoc loc, const char* text) {
     u64 val;
     if (text[1] == 0) { // fast single digit path
