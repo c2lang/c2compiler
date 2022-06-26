@@ -10,27 +10,44 @@ import stdio local;
 public type AST struct {
 
     ImportDeclList imports;
+    FunctionDeclList functions;
 
 } @(opaque)
 
 public func AST* AST.create() {
     AST* a = calloc(1, sizeof(AST));
     a.imports.init();
+    a.functions.init();
     return a;
 }
 
-public func void AST.addImport(AST* a, ImportDecl* d) {
+// TODO AST.free() needed?
+
+public func void AST.addImport(AST* a, ImportDecl* d) @(inline) {
     a.imports.add(d);
+}
+
+public func void AST.addFunc(AST* a, FunctionDecl* d) @(inline) {
+    a.functions.add(d);
 }
 
 public func void AST.print(const AST* a) {
     StringBuffer* out = StringBuffer.create(1024*1024);
 
     out.add("---- AST ----\n");
-    ImportDecl** decls = a.imports.getDecls();
+    const ImportDecl** imports = a.imports.getDecls();
     for (u32 i=0; i<a.imports.size(); i++) {
-        decls[i].print(out, 0);
+        imports[i].print(out, 0);
     }
+
+    out.add("\n");
+
+    const FunctionDecl** functions = a.functions.getDecls();
+    for (u32 i=0; i<a.functions.size(); i++) {
+        functions[i].print(out, 0);
+        out.add("\n");
+    }
+
 
     printf("%s\n", out.data());
     out.free();

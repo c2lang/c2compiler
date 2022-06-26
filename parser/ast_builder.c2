@@ -34,14 +34,16 @@ public func void Builder.dump(const Builder* b) {
 }
 
 public func void Builder.actOnModule(Builder* b, const char* mod_name, SrcLoc mod_loc) {
-    // TEMP always create a new AST
-
-    //printf("MODULE %s\n", mod_name);
-    // TODO store
     // TODO get AST, Module
+
+    // NOTE: make special ImportDecl to add own symbols
+    ImportDecl* d = ImportDecl.create(b.context, mod_name, mod_loc, nil, 0, true);
+    b.ast.addImport(d);
 }
 
 public func void Builder.actOnImport(Builder* b, const char* mod_name, SrcLoc mod_loc, const char* alias_name, SrcLoc alias_loc, bool islocal) {
+    // TODO check for duplicates
+
     ImportDecl* d = ImportDecl.create(b.context, mod_name, mod_loc, alias_name, alias_loc, islocal);
     b.ast.addImport(d);
 }
@@ -133,7 +135,9 @@ public func void Builder.actOnIdExpression(Builder* b, const char* name, SrcLoc 
 }
 
 public func FunctionDecl* Builder.actOnFuncDecl(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType rtype) {
-    return FunctionDecl.create(b.context, name, loc, is_public, rtype);
+    FunctionDecl* f = FunctionDecl.create(b.context, name, loc, is_public, rtype);
+    b.ast.addFunc(f);
+    return f;
 }
 
 public func void Builder.actOnFunctionBody(Builder* b, FunctionDecl* f, CompoundStmt* body) {

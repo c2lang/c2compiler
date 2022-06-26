@@ -41,3 +41,41 @@ func ImportDecl**  ImportDeclList.getDecls(const ImportDeclList* l) {
     return l.decls;
 }
 
+
+// TODO own file?
+type FunctionDeclList struct {
+    u32 count;
+    u32 capacity;
+    FunctionDecl** decls;
+}
+
+func void FunctionDeclList.init(FunctionDeclList* l) {
+    memset(l, 0, sizeof(FunctionDeclList));
+}
+
+func void FunctionDeclList.free(FunctionDeclList* l) {
+    if (l.decls) free(cast<void*>(l.decls));
+}
+
+func void FunctionDeclList.add(FunctionDeclList* l, FunctionDecl* d) {
+    if (l.count >= l.capacity) {
+        l.capacity += 4;
+        void* old = cast<void*>(l.decls);
+        void* decls2 = malloc(l.capacity * sizeof(FunctionDecl*));
+        memcpy(decls2, old, l.count * sizeof(FunctionDecl*));
+        free(old);
+        l.decls = decls2;
+    }
+
+    l.decls[l.count] = d;
+    l.count++;
+}
+
+func u32 FunctionDeclList.size(const FunctionDeclList* l) {
+    return l.count;
+}
+
+func FunctionDecl**  FunctionDeclList.getDecls(const FunctionDeclList* l) {
+    return l.decls;
+}
+
