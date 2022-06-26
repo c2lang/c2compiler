@@ -52,6 +52,10 @@ public func void Parser.free(Parser* p) {
     free(p);
 }
 
+public func void Parser.dump(const Parser* p) {
+    p.builder.dump();
+}
+
 public func bool Parser.parse(Parser* p) {
     p.error_msg[0] = 0;
 

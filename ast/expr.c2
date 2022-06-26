@@ -73,7 +73,7 @@ public func void Expr.dump(Expr* e) {
     StringBuffer* out = StringBuffer.create(10*4096);
     e.print(out, 0);
     printf("%s\n", out.data());
-    out.destroy();
+    out.free();
 }
 
 public func void Expr.print(const Expr* e, StringBuffer* out, u32 indent) {

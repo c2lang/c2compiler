@@ -41,7 +41,7 @@ public func void Type.dump(const Type* t) {
     StringBuffer* out = StringBuffer.create(10*4096);
     t.print(out, 0);
     printf("%s\n", out.data());
-    out.destroy();
+    out.free();
 }
 
 public func void Type.print(const Type* t, StringBuffer* out, u32 indent) {

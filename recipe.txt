@@ -45,6 +45,8 @@ executable c2c
     ast/builtin_type.c2
     ast/ref_type.c2
 
+    ast.c2
+    ast_list.c2
     stmt_list.c2
     constants.c2
     source_mgr.c2

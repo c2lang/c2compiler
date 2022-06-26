@@ -54,7 +54,7 @@ public func void Decl.dump(const Decl* d) {
     StringBuffer* out = StringBuffer.create(10*4096);
     d.print(out, 0);
     printf("%s\n", out.data());
-    out.destroy();
+    out.free();
 }
 
 public func void Decl.print(const Decl* d, StringBuffer* out, u32 indent) {

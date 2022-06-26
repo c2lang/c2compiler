@@ -1,0 +1,38 @@
+module ast_list;
+
+import ast local;
+import utils local;
+
+import stdlib local;
+import string local;
+import stdio local;
+
+public type AST struct {
+
+    ImportDeclList imports;
+
+} @(opaque)
+
+public func AST* AST.create() {
+    AST* a = calloc(1, sizeof(AST));
+    a.imports.init();
+    return a;
+}
+
+public func void AST.addImport(AST* a, ImportDecl* d) {
+    a.imports.add(d);
+}
+
+public func void AST.print(const AST* a) {
+    StringBuffer* out = StringBuffer.create(1024*1024);
+
+    out.add("---- AST ----\n");
+    ImportDecl** decls = a.imports.getDecls();
+    for (u32 i=0; i<a.imports.size(); i++) {
+        decls[i].print(out, 0);
+    }
+
+    printf("%s\n", out.data());
+    out.free();
+}
+

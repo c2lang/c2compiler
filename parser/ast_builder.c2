@@ -5,6 +5,7 @@ module ast_builder;
 
 import ast local;
 import ast_context local;
+import ast_list;
 import tokens local;
 import utils local;
 
@@ -13,11 +14,14 @@ import stdio local;
 
 public type Builder struct {
     Context* context;
+    ast_list.AST* ast;
 } @(opaque)
 
 public func Builder* Builder.create(Context* c) {
     Builder* b = calloc(1, sizeof(Builder));
     b.context = c;
+    // TEMP create AST here
+    b.ast = ast_list.AST.create();
     return b;
 }
 
@@ -25,14 +29,21 @@ public func void Builder.free(Builder* b) {
     free(b);
 }
 
+public func void Builder.dump(const Builder* b) {
+    b.ast.print();
+}
+
 public func void Builder.actOnModule(Builder* b, const char* mod_name, SrcLoc mod_loc) {
+    // TEMP always create a new AST
+
     //printf("MODULE %s\n", mod_name);
     // TODO store
+    // TODO get AST, Module
 }
 
 public func void Builder.actOnImport(Builder* b, const char* mod_name, SrcLoc mod_loc, const char* alias_name, SrcLoc alias_loc, bool islocal) {
     ImportDecl* d = ImportDecl.create(b.context, mod_name, mod_loc, alias_name, alias_loc, islocal);
-    //ast.addImport(d);
+    b.ast.addImport(d);
 }
 
 public func void Builder.actOnStructType(Builder* b, const char* name, SrcLoc loc, bool is_struct, bool is_public, bool is_global) {

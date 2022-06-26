@@ -24,7 +24,7 @@ public func StringBuffer* StringBuffer.create(u32 capacity)
     return buf;
 }
 
-public func void StringBuffer.destroy(StringBuffer* buf)
+public func void StringBuffer.free(StringBuffer* buf)
 {
     free(buf.data_);
     free(buf);
