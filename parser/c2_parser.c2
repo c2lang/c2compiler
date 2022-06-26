@@ -402,10 +402,10 @@ func QualType Parser.parseFullTypeIdentifier(Parser* p) {
 // TEMP here
 public func void dump_token(SourceMgr* sm, const Token* tok) {
     if (tok.kind >= Kind.KW_as && tok.kind <= Kind.KW_while) {
-        printf("%s%10s%s  %s\n", color.Green, tok.str(), color.Normal, sm.loc2str(tok.loc));
+        printf("%s%10s%s  %s\n", color.Green, kind2str(tok.kind), color.Normal, sm.loc2str(tok.loc));
         return;
     }
-    printf("%10s  %s  ", tok.str(), sm.loc2str(tok.loc));
+    printf("%10s  %s  ", kind2str(tok.kind), sm.loc2str(tok.loc));
     switch (tok.kind) {
     case Kind.Identifier:
         printf("  %s%s%s", color.Cyan, tok.text_value, color.Normal);

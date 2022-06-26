@@ -315,12 +315,6 @@ const u8[128] Char_lookup = {
     ['~'] = Action.TILDE,
 }
 
-// TODO remove?
-public func const char* Token.str(const Token* tok) @(inline) {
-    return kind2str(tok.kind);
-}
-
-
 const u8[128] Identifier_char = {
     ['0'] = 1,
     ['1'] = 1,
