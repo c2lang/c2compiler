@@ -6,6 +6,7 @@ module c2_ast_builder;
 import ast local;
 import ast_context local;
 import tokens local;
+import utils local;
 
 import stdlib local;
 import stdio local;
@@ -24,21 +25,21 @@ public func void Builder.free(Builder* b) {
     free(b);
 }
 
-public func void Builder.actOnModule(Builder* b, const char* mod_name, u32 mod_loc) {
+public func void Builder.actOnModule(Builder* b, const char* mod_name, SrcLoc mod_loc) {
     printf("MODULE %s\n", mod_name);
     // TODO store
 }
 
-public func void Builder.actOnImport(Builder* b, const char* mod_name, u32 mod_loc, const char* alias_name, u32 alias_loc, bool islocal) {
+public func void Builder.actOnImport(Builder* b, const char* mod_name, SrcLoc mod_loc, const char* alias_name, SrcLoc alias_loc, bool islocal) {
     ImportDecl.create(b.context, mod_name, mod_loc, alias_name, alias_loc, islocal);
 }
 
-public func void Builder.actOnStructType(Builder* b, const char* name, u32 loc, bool is_struct, bool is_public, bool is_global) {
+public func void Builder.actOnStructType(Builder* b, const char* name, SrcLoc loc, bool is_struct, bool is_public, bool is_global) {
     printf("%s %s  %s %s\n", is_struct ? "STRUCT" : "UNION", name, is_public ? "public" : "", is_global ? "global" : "");
     // TODO store
 }
 
-public func void Builder.actOnAttr(Builder* b, const char* name, u32 begin_loc, u32 end_loc) {
+public func void Builder.actOnAttr(Builder* b, const char* name, SrcLoc begin_loc, SrcLoc end_loc) {
     printf("ATTR  %s\n", name);
 }
 
@@ -111,19 +112,29 @@ public func QualType Builder.actOnPointerType(Builder* b, QualType qt, u32 quali
 }
 
 public func QualType Builder.actOnTypeQualifier(Builder* b, QualType qt, u32 qualifier) {
-    printf("QUALIFIER\n");
-    return qt;
+    QualType res = { qt.ptr | (qualifier & QualType_Mask) }
+    return res;
 }
 
-public func void Builder.actOnIdExpression(Builder* b, const char* name, u32 loc) {
+public func void Builder.actOnIdExpression(Builder* b, const char* name, SrcLoc loc) {
     printf("ID %s\n", name);
 }
 
-public func FunctionDecl* Builder.actOnFuncDecl(Builder* b, const char* name, u32 loc, bool is_public, QualType rtype) {
+public func FunctionDecl* Builder.actOnFuncDecl(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType rtype) {
     return FunctionDecl.create(b.context, name, loc, is_public, rtype);
 }
 
 public func void Builder.actOnFunctionBody(Builder* b, FunctionDecl* f, CompoundStmt* body) {
     f.setBody(body);
+}
+
+// TODO extract Decl, Stmt parts to own file
+public func CompoundStmt* Builder.actOnCompoundStmt(Builder* b) {
+    // TODO
+    return nil;
+}
+
+public func ReturnStmt* Builder.actOnReturnStmt(Builder* b, SrcLoc loc, Expr* ret) {
+    return ReturnStmt.create(b.context, loc, ret);
 }
 

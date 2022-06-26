@@ -4,6 +4,7 @@
 module ast;
 
 import ast_context local;
+import utils local;
 
 type ReturnStmtBits struct {
     u32 : NumStmtBits;
@@ -12,15 +13,17 @@ type ReturnStmtBits struct {
 
 public type ReturnStmt struct {
     Stmt stmt;
+    SrcLoc loc;
     Expr*[0] value; // tail-allocated, dependent on returnStmtBits.has_value
 } @(opaque)
 
-public func ReturnStmt* ReturnStmt.create(Context* c, Expr* value) @(inline) {
+public func ReturnStmt* ReturnStmt.create(Context* c, SrcLoc loc, Expr* value) @(inline) {
     u32 size = sizeof(ReturnStmt);
     if (value) size += sizeof(Expr*);
 
     ReturnStmt* r = c.alloc(size);
     r.stmt.init(StmtKind.Return);
+    r.loc = loc;
 
     if (value) {
         r.stmt.returnStmtBits.has_value = 1;

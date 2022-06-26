@@ -4,6 +4,7 @@
 module ast;
 
 import ast_context local;
+import utils local;
 
 public type BuiltinExprBits struct {
     u32 : NumExprBits;
@@ -19,10 +20,10 @@ public type BuiltinExprKind enum u8 {
     Elemsof,
 }
 
-public func BuiltinExpr* BuiltinExpr.create(Context* c) @(inline) {
+public func BuiltinExpr* BuiltinExpr.create(Context* c, SrcLoc loc) @(inline) {
     BuiltinExpr* b = c.alloc(sizeof(BuiltinExpr));
     Stmt* s = &b.expr.stmt;
-    b.expr.init(ExprKind.Builtin, 1, 1, 0);
+    b.expr.init(ExprKind.Builtin, loc, 1, 1, 0);
     s.builtinExprBits.kind = BuiltinExprKind.Elemsof;
     return b;
 }

@@ -4,6 +4,7 @@
 module ast;
 
 import ast_context local;
+import utils local;
 
 public type ExprKind enum u8 {
 /*
@@ -45,14 +46,16 @@ public const u32 NumExprBits = NumStmtBits + 16;
 
 public type Expr struct {
     Stmt stmt;
+    SrcLoc loc;
 } @(opaque)
 
-public func void Expr.init(Expr* e, ExprKind k, bool ctv, bool ctc, bool lvalue) @(inline) {
+public func void Expr.init(Expr* e, ExprKind k, SrcLoc loc, bool ctv, bool ctc, bool lvalue) @(inline) {
     e.stmt.init(StmtKind.Expr);
     e.stmt.exprBits.kind = k;
     e.stmt.exprBits.is_ctv = 1;
     e.stmt.exprBits.is_ctc = 1;
     e.stmt.exprBits.is_lvalue = 0;
+    e.loc = loc;
 }
 
 // TEMP cast needed until Analyser fixed

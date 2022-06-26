@@ -12,9 +12,9 @@ static_assert(40, sizeof(ImportDecl));
 static_assert(20, sizeof(Stmt));
 static_assert(24, sizeof(ReturnStmt));
 
-static_assert(20, sizeof(Expr));
-static_assert(20, sizeof(BuiltinExpr));
-static_assert(20, sizeof(BooleanLiteral));
+static_assert(24, sizeof(Expr));
+static_assert(24, sizeof(BuiltinExpr));
+static_assert(24, sizeof(BooleanLiteral));
 
 static_assert(8, sizeof(Type));
 static_assert(8, sizeof(BuiltinType));

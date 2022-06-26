@@ -4,6 +4,7 @@
 module ast;
 
 import ast_context local;
+import utils local;
 
 // TEMP
 import stdio local;

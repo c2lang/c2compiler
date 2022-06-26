@@ -20,11 +20,6 @@ import csetjmp local;
 import ctype local;
 import stdio local;
 
-// TODO extract
-const u32 Type_Const    = (1<<1);
-const u32 Type_Volatile = (1<<2);
-
-
 public type Parser struct {
     Tokenizer tokenizer;
     Token tok;
@@ -405,11 +400,11 @@ func u32 Parser.parseOptionalTypeQualifier(Parser* p) {
     u32 qualifiers = 0;
     if (p.tok.kind == Kind.KW_const) {
         p.consumeToken();
-        qualifiers |= Type_Const;
+        qualifiers |= QualType_Const;
     }
     if (p.tok.kind == Kind.KW_volatile) {
         p.consumeToken();
-        qualifiers |= Type_Volatile;
+        qualifiers |= QualType_Volatile;
     }
     return qualifiers;
 }

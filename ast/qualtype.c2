@@ -9,9 +9,9 @@ import utils local;
 // TEMP
 import stdio local;
 
-const u32 QualType_Const    = 0x1;
-const u32 QualType_Volatile = 0x2;
-const u32 QualType_Mask     = 0x3;
+public const u32 QualType_Const    = 0x1;
+public const u32 QualType_Volatile = 0x2;
+public const u32 QualType_Mask     = 0x3;
 
 public type QualType struct {
     usize ptr;
