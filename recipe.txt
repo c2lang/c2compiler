@@ -9,10 +9,10 @@ executable c2c
     common/color.c2
     common/string_list.c2
     constants.c2
-    c2_tokenizer.c2
-    c2_source_mgr.c2
-    c2_parser.c2
-    c2_ast_builder.c2
+    parser/c2_tokenizer.c2
+    parser/c2_parser.c2
+    parser/c2_ast_builder.c2
+    parser/tokens.c2
     ast/stmt.c2
     ast/return_stmt.c2
     ast/expr.c2
@@ -21,8 +21,8 @@ executable c2c
     ast/decl.c2
     ast/import_decl.c2
     ast/utils.c2
+    c2_source_mgr.c2
     context.c2
-    tokens.c2
     utils.c2
 	main.c2
 end
