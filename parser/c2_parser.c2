@@ -251,9 +251,14 @@ func void Parser.parseFuncDef(Parser* p, bool is_public) {
         p.error("TODO");
     }
 
-    FunctionDecl* f = p.builder.actOnFuncDecl(func_name, func_loc, is_public, rtype);
 
-    p.parseFunctionParams(f, true);
+    DeclList params;
+    params.init(4);
+
+    bool is_variadic = p.parseFunctionParams(&params, true);
+    FunctionDecl* f = p.builder.actOnFuncDecl(func_name, func_loc, is_public, rtype, params.getDecls(), params.size(), is_variadic);
+    params.free();
+
     p.parseOptionalAttributes(); // (f)
 
     if (p.is_interface) {
@@ -268,24 +273,38 @@ func void Parser.parseFuncDef(Parser* p, bool is_public) {
     p.builder.actOnFunctionBody(f, body);
 }
 
-func void Parser.parseFunctionParams(Parser* p, FunctionDecl* f, bool allow_defaults) {
+func bool Parser.parseFunctionParams(Parser* p, DeclList* params, bool allow_defaults) {
 #if DebugParser
     printf("parseFunctionParams\n");
 #endif
     p.expectAndConsume(Kind.LParen);
 
+    bool is_variadic = false;
+
     // fast path for ()
     if (p.tok.kind == Kind.RParen) {
         p.consumeToken();
-        return;
+        return is_variadic;
     }
 
     // VarDeclList args
     while (1) {
-        VarDecl* decl = p.parseParamDecl(f, allow_defaults);
+        VarDecl* decl = p.parseParamDecl(nil, allow_defaults);
+        params.add(decl);
 
-        // TODO
+        // TODO check for duplicate names here (if name not empty)
+        if (p.tok.kind != Kind.Comma) break;
+        p.consumeToken();
+
+        if (p.tok.kind == Kind.Ellipsis) {
+            is_variadic = true;
+            p.consumeToken();
+            break;
+        }
     }
+
+    p.expectAndConsume(Kind.RParen);
+    return is_variadic;
 }
 
 /*

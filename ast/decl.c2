@@ -25,6 +25,7 @@ public type Decl struct {
     union {
         DeclBits declBits;
         ImportDeclBits importDeclBits;
+        FunctionDeclBits functionDeclBits;
         StructTypeDeclBits structTypeDeclBits;
         EnumTypeDeclBits enumTypeDeclBits;
         EnumConstantDeclBits enumConstantDeclBits;

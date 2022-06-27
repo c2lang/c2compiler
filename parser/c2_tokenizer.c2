@@ -787,7 +787,7 @@ func void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
     const char* end = t.cur + 1;
     while (Identifier_char[*end]) end++;
 
-    u32 len = cast<u32>(end - start);
+    usize len = cast<usize>(end - start);
     if (len > constants.MaxIdentifierLen) {
         t.error(result, "identifier too long (max %u)", constants.MaxIdentifierLen);
         return;
@@ -803,7 +803,7 @@ func void Tokenizer.lex_number(Tokenizer* t, Token* result) {
     const char* end = t.cur + 1;
     while (isdigit(*end)) end++;
 
-    u32 len = cast<u32>(end - start);
+    usize len = cast<usize>(end - start);
     t.cur += len;
     result.text_value = t.context.alloc_str(start, len);
 }
@@ -851,7 +851,7 @@ func void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
     result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
     t.cur++;
     const char* start = t.cur;
-    u32 len;
+    usize len;
 
     while (1) {
         switch (*t.cur) {
@@ -907,7 +907,7 @@ func void Tokenizer.skip_line_comment(Tokenizer* t) {
         end++;
     }
 
-    u32 len = cast<u32>(end - start);
+    usize len = cast<usize>(end - start);
     t.cur += len;
 }
 
@@ -1008,7 +1008,7 @@ func bool Tokenizer.parse_error_warn(Tokenizer* t, Token* result, bool is_error)
             break;
         }
     }
-    u32 len = cast<u32>(t.cur - start);
+    usize len = cast<usize>(t.cur - start);
     t.cur++;
     if (len > constants.MaxIdentifierLen) {
         t.error(result, "error msg too long (max %u bytes)", constants.MaxErrorMsgLen);
@@ -1085,7 +1085,7 @@ func bool Tokenizer.parse_feature(Tokenizer* t, Token* result, bool* enabled) {
     const char* start = t.cur;
     while (Identifier_char[*t.cur]) t.cur++;
 
-    u32 len = cast<u32>(t.cur - start);
+    usize len = cast<usize>(t.cur - start);
     if (len > constants.MaxFeatureName) {
         t.error(result, "feature name too long (max %u)", constants.MaxFeatureName);
         return true;

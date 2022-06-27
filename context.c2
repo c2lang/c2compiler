@@ -113,7 +113,7 @@ public func void* Context.alloc(Context* c, u32 len) {
     return cur;
 }
 
-public func const char* Context.alloc_str(Context* c, const char* text, u32 len) @(inline) {
+public func const char* Context.alloc_str(Context* c, const char* text, usize len) @(inline) {
     // assert(c.str_blk_head);
     // assert(len < strblk_size)
     len++;  // add 0-terminator

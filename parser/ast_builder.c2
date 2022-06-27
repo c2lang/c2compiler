@@ -156,8 +156,9 @@ public func void Builder.actOnIdExpression(Builder* b, const char* name, SrcLoc 
     //printf("ID %s\n", name);
 }
 
-public func FunctionDecl* Builder.actOnFuncDecl(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType rtype) {
-    FunctionDecl* f = FunctionDecl.create(b.context, name, loc, is_public, rtype);
+public func FunctionDecl* Builder.actOnFuncDecl(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType rtype,
+                                                VarDecl** params, u32 num_params, bool is_variadic) {
+    FunctionDecl* f = FunctionDecl.create(b.context, name, loc, is_public, rtype, params, num_params, is_variadic);
     b.ast.addFunc(f);
     return f;
 }

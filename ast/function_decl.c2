@@ -5,22 +5,33 @@ module ast;
 
 import ast_context;
 import utils local;
+import string;
 
 type FunctionDeclBits struct {
     u32 : NumDeclBits;
-    u32 is_local : 1;
+    u32 is_variadic : 1;
+    u32 num_params : 5;
+
 }
 
 public type FunctionDecl struct {
     Decl decl;
     QualType rtype;
-    CompoundStmt* body; // Q :tail allocate for interfaces?
+    CompoundStmt* body;
+    VarDecl*[0] params; // tail-allocated;
 } @(opaque)
 
-public func FunctionDecl* FunctionDecl.create(ast_context.Context* c, const char* name, SrcLoc loc, bool is_public, QualType rtype) @(inline) {
-    FunctionDecl* d = c.alloc(sizeof(FunctionDecl));
+public func FunctionDecl* FunctionDecl.create(ast_context.Context* c, const char* name, SrcLoc loc, bool is_public, QualType rtype,
+                                              VarDecl** params, u32 num_params, bool is_variadic) @(inline) {
+    const u32 size = sizeof(FunctionDecl) + num_params * sizeof(VarDecl*);
+    FunctionDecl* d = c.alloc(size);
     d.decl.init(DeclKind.Function, name, loc, is_public);
+    d.decl.functionDeclBits.is_variadic = is_variadic;
+    d.decl.functionDeclBits.num_params = num_params;
     d.body = nil;
+    if (num_params) {
+        string.memcpy(cast<void*>(d.params), cast<void*>(params), num_params * sizeof(VarDecl*));
+    }
     return d;
 }
 
@@ -30,10 +41,15 @@ public func void FunctionDecl.setBody(FunctionDecl* d, CompoundStmt* body) @(inl
 
 public func void FunctionDecl.print(const FunctionDecl* d, StringBuffer* out, u32 indent) {
     out.indent(indent);
-    out.print("FunctionDecl %s\n", d.decl.name);
-    //d.rtype.print(out, indent + 2);
+    out.print("FunctionDecl %s", d.decl.name);
+    if (d.decl.functionDeclBits.is_variadic) out.add(" ...");
+    out.add("\n");
+    d.rtype.print(out, indent + 2);
+    for (u32 i=0; i<d.decl.functionDeclBits.num_params; i++) {
+    }
     if (d.body) {
         d.body.print(out, indent + 2);
     }
+
 }
 
