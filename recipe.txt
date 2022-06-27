@@ -67,6 +67,7 @@ executable c2c
     ast/builtin_type.c2
     ast/ref_type.c2
     ast/pointer_type.c2
+    ast/array_type.c2
 
     ast.c2
     ast_list.c2

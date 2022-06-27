@@ -9,7 +9,7 @@ import stdio;
 public type TypeKind enum u8 {
     Builtin,
     Pointer,
-    // array
+    Array,
     Ref,
 }
 
@@ -22,6 +22,7 @@ public type Type struct {
     union {
         TypeBits typeBits;
         BuiltinTypeBits builtinTypeBits;
+        ArrayTypeBits arrayTypeBits;
         RefTypeBits refTypeBits;
         u32 bits;
     }
@@ -49,6 +50,9 @@ public func void Type.print(const Type* t, StringBuffer* out, u32 indent) {
         break;
     case TypeKind.Pointer:
         PointerType.print(cast<PointerType*>(t), out, indent);
+        break;
+    case TypeKind.Array:
+        ArrayType.print(cast<ArrayType*>(t), out, indent);
         break;
     case TypeKind.Ref:
         RefType.print(cast<RefType*>(t), out, indent);

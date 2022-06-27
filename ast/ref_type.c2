@@ -46,7 +46,5 @@ public func void RefType.print(const RefType* t, utils.StringBuffer* out, u32 in
     if (t.parent.refTypeBits.have_prefix) {
         t.prefixRef[0].print(out, indent + 2);
     }
-
-    // TODO
 }
 

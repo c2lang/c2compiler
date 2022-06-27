@@ -362,7 +362,7 @@ func QualType Parser.parseOptionalArray(Parser* p, QualType base) {
     // TODO
 
     base = p.parseOptionalArray(base);
-    return p.builder.actOnArrayType(base, size, is_incremental);
+    return p.builder.actOnArrayType(base, is_incremental, size);
 }
 
 func void Parser.parseVarDef(Parser* p, bool is_public) {

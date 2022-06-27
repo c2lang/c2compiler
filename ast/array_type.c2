@@ -1,0 +1,44 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context;
+import utils;
+
+public type ArrayTypeBits struct {
+    u32 : NumTypeBits;
+    u32 have_size : 1;
+}
+
+public type ArrayType struct {
+    Type parent;
+    QualType elem;
+    Expr*[0] sizeExpr; // tail-allocated
+} @(opaque)
+
+public func ArrayType* ArrayType.create(ast_context.Context* c, QualType elem, bool is_incremental, Expr* sizeExpr) @(inline) {
+    u32 size = sizeof(ArrayType);
+    if (sizeExpr) size += sizeof(Expr*);
+    ArrayType* t = c.alloc(size);
+    t.parent.init(TypeKind.Array);
+    t.elem = elem;
+
+    if (sizeExpr) {
+        t.parent.arrayTypeBits.have_size = 1;
+        t.sizeExpr[0] = sizeExpr;
+    }
+    return t;
+}
+
+public func Type* ArrayType.asType(ArrayType* t) @(inline) { return &t.parent; }
+
+public func void ArrayType.print(const ArrayType* t, utils.StringBuffer* out, u32 indent) {
+    out.indent(indent);
+    out.add("ArrayType\n");
+    t.elem.print(out, indent + 2);
+    if (t.parent.arrayTypeBits.have_size) {
+        t.sizeExpr[0].print(out, indent + 2);
+    }
+}
+

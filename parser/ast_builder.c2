@@ -145,10 +145,11 @@ public func QualType Builder.actOnPointerType(Builder* b, QualType inner, u32 qu
     return QualType.init(t.asType(), qualifiers);
 }
 
-public func QualType Builder.actOnArrayType(Builder* b, QualType base, Expr* size, bool is_incremental) {
-    // NOTE: Context doesn't know AST/Types, just allocates!
+public func QualType Builder.actOnArrayType(Builder* b, QualType elem, bool is_incremental, Expr* sizeExpr) {
     // TODO get from TypeContext?
-    return base;
+    ArrayType* t = ArrayType.create(b.context, elem, is_incremental, sizeExpr);
+    // NOTE: Context doesn't know AST/Types, just allocates!
+    return QualType.init2(t.asType());
 }
 
 public func QualType Builder.actOnTypeQualifier(Builder* b, QualType qt, u32 qualifier) {
