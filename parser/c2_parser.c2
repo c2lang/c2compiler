@@ -344,13 +344,25 @@ func QualType Parser.parseTypeSpecifier(Parser* p, bool allow_qualifier) {
     printf("parseTypeSpecifier\n");
 #endif
     QualType qt = p.parseSingleTypeSpecifier(allow_qualifier);
-    if (p.tok.kind != Kind.LSquare) return qt;
     return p.parseOptionalArray(qt);
 }
 
-func QualType Parser.parseOptionalArray(Parser* p, QualType qt) {
+func QualType Parser.parseOptionalArray(Parser* p, QualType base) {
+    if (p.tok.kind != Kind.LSquare) return base;
+    p.consumeToken();
+
+    bool is_incremental = false;
+
+    // NOTE: 'inverse' order, so char[2][4] -> 2 x ( 4 x char )
+
+    Expr* size = nil;
+    if (p.tok.kind == Kind.RSquare) {
+        // "[]"
+    } else if (p.tok.kind == Kind.NumberLiteral) /* TODO && nextToken().is(Kind.RSquare) */
     // TODO
-    return qt;
+
+    base = p.parseOptionalArray(base);
+    return p.builder.actOnArrayType(base, size, is_incremental);
 }
 
 func void Parser.parseVarDef(Parser* p, bool is_public) {

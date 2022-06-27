@@ -48,6 +48,7 @@
 ## AST-Builder
 + fill AST
 + print content
+- use RB-tree to put all Type* to get pointer-types etc, program-wide!
 
 ## Performance
 - profile application to see where time is spent

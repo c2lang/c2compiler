@@ -140,10 +140,15 @@ public func QualType Builder.actOnRefType(Builder* b, Expr* id, Expr* prefix) {
 }
 
 public func QualType Builder.actOnPointerType(Builder* b, QualType qt, u32 qualifier) {
-    //printf("POINTER\n");
-    // TODO
+    // TODO lookup in TypeContext -> (not a normal Context)
     return qt;
 
+}
+
+public func QualType Builder.actOnArrayType(Builder* b, QualType base, Expr* size, bool is_incremental) {
+    // NOTE: Context doesn't know AST/Types, just allocates!
+    // TODO get from TypeContext?
+    return base;
 }
 
 public func QualType Builder.actOnTypeQualifier(Builder* b, QualType qt, u32 qualifier) {
