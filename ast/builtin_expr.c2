@@ -20,22 +20,21 @@ public type BuiltinExprKind enum u8 {
     Elemsof,
 }
 
-public func BuiltinExpr* BuiltinExpr.create(Context* c, SrcLoc loc) @(inline) {
-    BuiltinExpr* b = c.alloc(sizeof(BuiltinExpr));
-    Stmt* s = &b.expr.stmt;
-    b.expr.init(ExprKind.Builtin, loc, 1, 1, 0);
-    s.builtinExprBits.kind = BuiltinExprKind.Elemsof;
-    return b;
+public func BuiltinExpr* BuiltinExpr.create(Context* c, SrcLoc loc, BuiltinExprKind kind) @(inline) {
+    BuiltinExpr* e = c.alloc(sizeof(BuiltinExpr));
+    e.expr.init(ExprKind.Builtin, loc, 1, 1, 0);
+    e.expr.stmt.builtinExprBits.kind = kind;
+    return e;
 }
 
-public func BuiltinExprKind BuiltinExpr.getKind(const BuiltinExpr* b) {
-    return cast<BuiltinExprKind>(b.expr.stmt.builtinExprBits.kind);
+public func BuiltinExprKind BuiltinExpr.getKind(const BuiltinExpr* e) {
+    return cast<BuiltinExprKind>(e.expr.stmt.builtinExprBits.kind);
 }
 
-public func void BuiltinExpr.print(const BuiltinExpr* b, StringBuffer* out, u32 indent) {
+public func void BuiltinExpr.print(const BuiltinExpr* e, StringBuffer* out, u32 indent) {
     out.indent(indent);
     out.add("BuiltinExpr ");
-    switch (b.getKind()) {
+    switch (e.getKind()) {
     case BuiltinExprKind.Sizeof:
         out.add("sizeof");
         break;

@@ -42,6 +42,7 @@ executable c2c
     ast/identifier_expr.c2
     ast/call_expr.c2
     ast/paren_expr.c2
+    ast/unary_operator.c2
 
     ast/decl.c2
     ast/function_decl.c2

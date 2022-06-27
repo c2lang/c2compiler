@@ -55,6 +55,7 @@ public type Stmt struct {
         BooleanLiteralBits booleanLiteralBits;
         CharLiteralBits charLiteralBits;
         IdentifierExprBits identifierExprBits;
+        UnaryOperatorBits unaryOperatorBits;
         u32 bits;
     }
 } @(opaque)

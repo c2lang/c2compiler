@@ -26,8 +26,8 @@ public type ExprKind enum u8 {
     InitList,
     DesignatorInit,
     BinOp,
-    UnaryOp,
 */
+    UnaryOperator,
     Builtin,
 /*
     ArraySubscript,
@@ -102,6 +102,9 @@ public func void Expr.print(const Expr* e, StringBuffer* out, u32 indent) {
         break;
     case ExprKind.Call:
         CallExpr.print(cast<CallExpr*>(e), out, indent);
+        break;
+    case ExprKind.UnaryOperator:
+        UnaryOperator.print(cast<UnaryOperator*>(e), out, indent);
         break;
     case ExprKind.Builtin:
         BuiltinExpr.print(cast<BuiltinExpr*>(e), out, indent);
