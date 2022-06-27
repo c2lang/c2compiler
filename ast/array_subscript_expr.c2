@@ -1,0 +1,35 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context local;
+import utils local;
+
+public type ArraySubscriptExpr struct {
+    Expr expr;
+    Expr* base;
+    Expr* idx;
+} @(opaque)
+
+public func ArraySubscriptExpr* ArraySubscriptExpr.create(Context* c, SrcLoc loc, Expr* base, Expr* idx) @(inline) {
+    ArraySubscriptExpr* e = c.alloc(sizeof(ArraySubscriptExpr));
+    e.expr.init(ExprKind.ArraySubscript, loc, 0, 0, 0);
+    e.base = base;
+    e.idx = idx;
+    return e;
+}
+
+public func Expr* ArraySubscriptExpr.getBase(ArraySubscriptExpr* e) { return e.base; }
+public func Expr** ArraySubscriptExpr.getBase2(ArraySubscriptExpr* e) { return &e.base; }
+
+public func Expr* ArraySubscriptExpr.getIndex(ArraySubscriptExpr* e) { return e.idx; }
+public func Expr** ArraySubscriptExpr.getIndex2(ArraySubscriptExpr* e) { return &e.idx; }
+
+public func void ArraySubscriptExpr.print(const ArraySubscriptExpr* e, StringBuffer* out, u32 indent) {
+    out.indent(indent);
+    out.add("ArraySubscriptExpr\n");
+    e.base.print(out, indent + 2);
+    e.idx.print(out, indent + 2);
+}
+

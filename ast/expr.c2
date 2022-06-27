@@ -27,8 +27,8 @@ public type ExprKind enum u8 {
     BinaryOperator,
     UnaryOperator,
     Builtin,
-/*
     ArraySubscript,
+/*
     Member,
 */
     Paren,
@@ -112,6 +112,9 @@ public func void Expr.print(const Expr* e, StringBuffer* out, u32 indent) {
         break;
     case ExprKind.Builtin:
         BuiltinExpr.print(cast<BuiltinExpr*>(e), out, indent);
+        break;
+    case ExprKind.ArraySubscript:
+        ArraySubscriptExpr.print(cast<ArraySubscriptExpr*>(e), out, indent);
         break;
     case ExprKind.Paren:
         ParenExpr.print(cast<ParenExpr*>(e), out, indent);

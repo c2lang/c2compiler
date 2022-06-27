@@ -155,8 +155,9 @@ func Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs) {
                 // TODO need colLoc?
                 idx = p.builder.actOnBitOffsetExpr(colLoc, idx, rhs);
             }
+            SrcLoc rloc = p.tok.loc;
             p.expectAndConsume(Kind.RSquare);
-            //lhs = p.builder.actOnArraySubscriptExpr(lhs, idx);
+            lhs = p.builder.actOnArraySubscriptExpr(rloc, lhs, idx);
             break;
         default:
             return lhs;

@@ -300,3 +300,6 @@ public func Expr* Builder.actOnBitOffsetExpr(Builder* b, SrcLoc loc, Expr* lhs, 
     return cast<Expr*>(BitOffsetExpr.create(b.context, loc, lhs, rhs));
 }
 
+public func Expr* Builder.actOnArraySubscriptExpr(Builder* b, SrcLoc loc, Expr* base, Expr* idx) {
+    return cast<Expr*>(ArraySubscriptExpr.create(b.context, loc, base, idx));
+}
