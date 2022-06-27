@@ -365,3 +365,7 @@ public func Expr* Builder.actOnInitList(Builder* b, SrcLoc left, SrcLoc right, E
     return cast<Expr*>(InitListExpr.create(b.context, left, right, values, num_values));
 }
 
+public func Expr* Builder.actOnFieldDesignatedInit(Builder* b, const char* field, SrcLoc loc, Expr* initValue) {
+    return cast<Expr*>(FieldDesignatedInitExpr.create(b.context, field, loc, initValue));
+}
+

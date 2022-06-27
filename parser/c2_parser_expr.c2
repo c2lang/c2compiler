@@ -426,8 +426,16 @@ func Expr* Parser.parseInitList(Parser* p) {
 }
 
 func Expr* Parser.parseFieldDesignator(Parser* p, bool* need_semi) {
-    p.error("TODO FieldDesignator");
-    return nil;
+    p.consumeToken();   // .
+    p.expectIdentifier();
+    const char* field = p.tok.text_value;
+    SrcLoc loc = p.tok.loc;
+    p.consumeToken();
+
+    p.expectAndConsume(Kind.Equal);
+    Expr* value = p.parseInitValue(need_semi, false);
+
+    return p.builder.actOnFieldDesignatedInit(field, loc, value);
 }
 
 func Expr* Parser.parseArrayDesignator(Parser* p, bool* need_semi) {
