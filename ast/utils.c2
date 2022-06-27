@@ -36,6 +36,7 @@ static_assert(40, sizeof(StringLiteral));
 static_assert(32, sizeof(NilExpr));
 static_assert(40, sizeof(IdentifierExpr));
 static_assert(40, sizeof(CallExpr));
+static_assert(40, sizeof(InitListExpr));
 static_assert(40, sizeof(IntegerLiteral));
 static_assert(40, sizeof(ParenExpr));
 static_assert(48, sizeof(MemberExpr));

@@ -248,9 +248,8 @@ func void Parser.parseFuncDef(Parser* p, bool is_public) {
 
     if (!checkName(func_name, p.is_interface)) {
         // TODO pass loc along (current not correct)
-        p.error("TODO");
+        p.error("TODO checkname");
     }
-
 
     DeclList params;
     params.init(4);
@@ -402,7 +401,7 @@ func void Parser.parseVarDef(Parser* p, bool is_public) {
 
 func void Parser.parseStaticAssert(Parser* p) {
     p.consumeToken();
-    // TODO
+    p.error("TODO StaticAssert");
 }
 
 func bool Parser.parseOptionalAccessSpecifier(Parser* p) {

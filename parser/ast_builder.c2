@@ -361,3 +361,7 @@ public func Expr* Builder.actOnMemberExpr(Builder* b, SrcLoc loc, Expr* base, Id
     return cast<Expr*>(MemberExpr.create(b.context, loc, base, member));
 }
 
+public func Expr* Builder.actOnInitList(Builder* b, SrcLoc left, SrcLoc right, Expr** values, u32 num_values) {
+    return cast<Expr*>(InitListExpr.create(b.context, left, right, values, num_values));
+}
+

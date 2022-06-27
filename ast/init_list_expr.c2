@@ -1,0 +1,42 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context;
+import utils local;
+import string;
+
+public type InitListExprBits struct {
+    u32 : NumExprBits;
+    u32 num_values : 32 - NumExprBits;
+}
+
+public type InitListExpr struct {
+    Expr expr;
+    SrcLoc right;
+    Expr*[0] values; // tail-allocated
+} @(opaque)
+
+public func InitListExpr* InitListExpr.create(ast_context.Context* c, SrcLoc left, SrcLoc right, Expr** values, u32 num_values) @(inline) {
+    u32 size = sizeof(InitListExpr) + num_values * sizeof(Expr*);
+    InitListExpr* e = c.alloc(size);
+    e.expr.init(ExprKind.InitList, left, 0, 0, 0);
+    e.expr.stmt.initListExprBits.num_values = num_values;
+    e.right = right;
+    string.memcpy(cast<void*>(e.values), cast<void*>(values), num_values * sizeof(Expr*));
+    return e;
+}
+
+public func u32 InitListExpr.getNumValues(const InitListExpr* e) @(inline) {
+    return e.expr.stmt.initListExprBits.num_values;
+}
+
+public func void InitListExpr.print(const InitListExpr* e, StringBuffer* out, u32 indent) {
+    out.indent(indent);
+    out.add("InitListExpr\n");
+    for (u32 i=0; i<e.getNumValues(); i++) {
+        e.values[i].print(out, indent + 2);
+    }
+}
+

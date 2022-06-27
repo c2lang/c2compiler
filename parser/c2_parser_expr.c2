@@ -284,7 +284,7 @@ func Expr* Parser.parseCallExpr(Parser* p, Expr* fn) {
     p.consumeToken(); // '('
 
     ast_list.ExprList args;
-    args.init();
+    args.init(4);
 
     while (p.tok.kind != Kind.RParen) {
 
@@ -383,6 +383,55 @@ func Expr* Parser.parseElemsof(Parser* p) {
 }
 
 func Expr* Parser.parseInitValue(Parser* p, bool* need_semi, bool allow_designators) {
+    switch (p.tok.kind) {
+    case Kind.LBrace:
+        *need_semi = false;
+        return p.parseInitList();
+    case Kind.Dot:
+        if (!allow_designators) p.error("designator not allowed here");
+        return p.parseFieldDesignator(need_semi);
+    case Kind.LSquare:
+        if (!allow_designators) p.error("designator not allowed here");
+        return p.parseArrayDesignator(need_semi);
+    default:
+        break;
+    }
+    *need_semi = true;
+    return p.parseAssignmentExpression();
+}
+
+func Expr* Parser.parseInitList(Parser* p) {
+    SrcLoc left = p.tok.loc;
+    p.expectAndConsume(Kind.LBrace);
+
+    ast_list.ExprList values;
+    values.init(8);
+
+    while (p.tok.kind != Kind.RBrace) {
+        bool unused;
+        Expr* e = p.parseInitValue(&unused, true);
+        values.add(e);
+        if (p.tok.kind == Kind.Comma) {
+            p.consumeToken();
+        } else {
+            break;
+        }
+    }
+
+    SrcLoc right = p.tok.loc;
+    p.expectAndConsume(Kind.RBrace);
+    Expr* e = p.builder.actOnInitList(left, right, values.getExprs(), values.size());
+    values.free();
+    return e;
+}
+
+func Expr* Parser.parseFieldDesignator(Parser* p, bool* need_semi) {
+    p.error("TODO FieldDesignator");
+    return nil;
+}
+
+func Expr* Parser.parseArrayDesignator(Parser* p, bool* need_semi) {
+    p.error("TODO ArrayDesignator");
     return nil;
 }
 

@@ -45,6 +45,7 @@ executable c2c
     ast/nil_expr.c2
     ast/identifier_expr.c2
     ast/call_expr.c2
+    ast/init_list_expr.c2
     ast/paren_expr.c2
     ast/unary_operator.c2
     ast/binary_operator.c2
