@@ -81,7 +81,7 @@ public func const char* SourceMgr.get_error(SourceMgr* sm) {
 }
 
 public func const char* SourceMgr.get_content(SourceMgr* sm, i32 handle) {
-    return sm.files[handle].file.data();
+    return cast<char*>(sm.files[handle].file.data());
 }
 
 public func u32 SourceMgr.get_offset(SourceMgr* sm, i32 handle) {
@@ -139,7 +139,7 @@ public func Location SourceMgr.locate(SourceMgr* sm, u32 loc) {
             l = f.last_loc;
             last_offset = f.last_offset;
         }
-        find_line_col(f.file.data(), offset, &l, last_offset);
+        find_line_col(cast<char*>(f.file.data()), offset, &l, last_offset);
 
         f.last_offset = offset;
         f.last_loc = l;

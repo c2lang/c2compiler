@@ -40,20 +40,20 @@ public func void AST.print(const AST* a) {
     StringBuffer* out = StringBuffer.create(1024*1024);
 
     out.add("---- AST ----\n");
-    const ImportDecl** imports = a.imports.getDecls();
+    ImportDecl** imports = a.imports.getDecls();
     for (u32 i=0; i<a.imports.size(); i++) {
         imports[i].print(out, 0);
     }
 
     out.add("\n");
-    const Decl** types = a.types.getDecls();
+    Decl** types = a.types.getDecls();
     for (u32 i=0; i<a.types.size(); i++) {
         types[i].print(out, 0);
         out.add("\n");
     }
 
     out.add("\n");
-    const FunctionDecl** functions = a.functions.getDecls();
+    FunctionDecl** functions = a.functions.getDecls();
     for (u32 i=0; i<a.functions.size(); i++) {
         functions[i].print(out, 0);
         out.add("\n");

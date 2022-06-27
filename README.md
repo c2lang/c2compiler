@@ -56,6 +56,7 @@
 ## General
 - remove unused import
 - dont import local, (for single printf)
+- check clang build warnings
 
 
 Parse Expr:

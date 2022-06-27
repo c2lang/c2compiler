@@ -30,7 +30,7 @@ public func Type* QualType.getType(QualType* qt) @(inline) {
     return t;
 }
 
-public func Type* QualType.getTypeOrNil(QualType* qt) @(inline) {
+public func Type* QualType.getTypeOrNil(const QualType* qt) @(inline) {
     usize temp = qt.ptr & ~QualType_Mask;
     return cast<Type*>(temp);
     // TODO fix in C2C

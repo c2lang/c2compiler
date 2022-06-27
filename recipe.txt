@@ -10,13 +10,13 @@ executable c2c
     common/string_list.c2
     common/string_buffer.c2
 
+    parser/tokens.c2
     parser/c2_tokenizer.c2
     parser/c2_parser.c2
     parser/c2_parser_type.c2
     parser/c2_parser_stmt.c2
     parser/c2_parser_expr.c2
     parser/ast_builder.c2
-    parser/tokens.c2
 
     ast/stmt.c2
     ast/compound_stmt.c2

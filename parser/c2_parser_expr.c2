@@ -14,7 +14,7 @@ import utils local;
 /// Bitwise is directly after shift and equality and relational have
 /// the same precedence.
 
-type PrecLevel enum u8 {
+type Prec enum u8 {
     Unknown         = 0,    // Not binary operator.
     Comma           = 1,    // ,
     Assignment      = 2,    // =, *=, /=, %=, +=, -=, <<=, >>=, &=, ^=, |=
@@ -29,16 +29,74 @@ type PrecLevel enum u8 {
 
 func Expr* Parser.parseExpr(Parser* p) {
     Expr* lhs = p.parseAssignmentExpression();
-    return p.parseRHSOfBinaryExpression(lhs, PrecLevel.Comma);
+    return p.parseRHSOfBinaryExpression(lhs, Prec.Comma);
 }
 
 func Expr* Parser.parseAssignmentExpression(Parser* p) {
     Expr* lhs = p.parseCastExpr(false, false);
-    return p.parseRHSOfBinaryExpression(lhs, PrecLevel.Assignment);
+    return p.parseRHSOfBinaryExpression(lhs, Prec.Assignment);
 }
 
-func Expr* Parser.parseRHSOfBinaryExpression(Parser* p, Expr* lhs, PrecLevel minPrec) {
-    // TODO
+func Prec getBinOpPrecedence(Kind kind) {
+    // TODO use lookup table
+    switch (kind) {
+    case Kind.Comma:
+        return Prec.Comma;
+    case Kind.Equal: fallthrough;
+    case Kind.StarEqual:  fallthrough;
+    case Kind.SlashEqual:  fallthrough;
+    case Kind.PercentEqual:  fallthrough;
+    case Kind.PlusEqual:  fallthrough;
+    case Kind.MinusEqual:  fallthrough;
+    case Kind.LessLessEqual:  fallthrough;
+    case Kind.GreaterGreaterEqual:  fallthrough;
+    case Kind.AmpEqual:  fallthrough;
+    case Kind.CaretEqual:  fallthrough;
+    case Kind.PipeEqual:
+        return Prec.Assignment;
+    case Kind.Question:
+        return Prec.Conditional;
+    case Kind.PipePipe:  fallthrough;
+    case Kind.AmpAmp:
+        return Prec.LogicalAndOr;
+    case Kind.ExclaimEqual:  fallthrough;
+    case Kind.EqualEqual:  fallthrough;
+    case Kind.LessEqual:  fallthrough;
+    case Kind.Less:  fallthrough;
+    case Kind.Greater:  fallthrough;
+    case Kind.GreaterEqual:
+        return Prec.Relational;
+    case Kind.Plus:  fallthrough;
+    case Kind.Minus:
+        return Prec.Additive;
+    case Kind.Pipe:  fallthrough;
+    case Kind.Caret:  fallthrough;
+    case Kind.Amp:
+        return Prec.Bitwise;
+    case Kind.LessLess:  fallthrough;
+    case Kind.GreaterGreater:
+        return Prec.Shift;
+    case Kind.Percent:  fallthrough;
+    case Kind.Slash:  fallthrough;
+    case Kind.Star:
+    return Prec.Multiplicative;
+    default:
+        return Prec.Unknown;
+    }
+    return Prec.Unknown;
+}
+
+func Expr* Parser.parseRHSOfBinaryExpression(Parser* p, Expr* lhs, Prec minPrec) {
+    Prec nextTokPrec = getBinOpPrecedence(p.tok.kind);
+
+    while (1) {
+        if (nextTokPrec < minPrec) return lhs;
+
+        if (p.tok.kind == Kind.Comma) return lhs;
+
+        Token opToken = p.tok;
+        p.consumeToken();
+    }
     return nil;
 }
 
@@ -166,7 +224,7 @@ func Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs) {
             p.consumeToken();
             p.expectIdentifier();
             Expr* rhs = p.parseIdentifier();
-            lhs = p.builder.actOnMemberExpr(dot_loc, lhs, rhs);
+            lhs = p.builder.actOnMemberExpr(dot_loc, lhs, cast<IdentifierExpr*>(rhs));
             break;
         case Kind.PlusPlus: fallthrough;
         case Kind.MinusMinus:

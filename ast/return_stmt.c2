@@ -45,7 +45,7 @@ public func Expr* ReturnStmt.getValue(const ReturnStmt* r) {
     return nil;
 }
 
-public func Expr* ReturnStmt.getValue2(ReturnStmt* r) {
+public func Expr** ReturnStmt.getValue2(ReturnStmt* r) {
     if (r.stmt.returnStmtBits.has_value) return &r.value[0];
     return nil;
 }

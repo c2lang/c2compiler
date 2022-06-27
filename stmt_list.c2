@@ -45,15 +45,6 @@ public func void StmtList.add(StmtList* l, Stmt* s) {
     l.count++;
 }
 
-public func void StmtList.dump(const StmtList* l) {
-    printf("StmtList %u/%u\n", l.count, l.capacity);
-    Stmt** stmts = l.stack;
-    if (l.capacity) stmts = l.heap;
-    for (u32 i=0; i<l.count; i++) {
-        printf("  [%u]  %p\n", i, stmts[i]);
-    }
-}
-
 public func void StmtList.free(StmtList* l) {
     if (l.heap) free(cast<void*>(l.heap));
 }
@@ -62,7 +53,7 @@ public func u32 StmtList.size(const StmtList* l) {
     return l.count;
 }
 
-public func Stmt** StmtList.getData(const StmtList* l) {
+public func Stmt** StmtList.getData(StmtList* l) {
     if (l.heap) return l.heap;
     return l.stack;
 }

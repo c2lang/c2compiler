@@ -36,7 +36,7 @@ public func bool Reader.open(Reader* file, const char* filename) {
         file.region = &empty;
     } else {
         file.region = mmap(0, file.size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_POPULATE, fd, 0);
-        if (file.region == MAP_FAILED) {
+        if (file.region == cast<void*>(MAP_FAILED)) {
             file.errno = *errno2();
             return false;
         }

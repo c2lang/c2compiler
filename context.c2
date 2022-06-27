@@ -125,7 +125,7 @@ public func const char* Context.alloc_str(Context* c, const char* text, u32 len)
         last = last.next;
     }
 
-    char* buf = last.data + last.size;
+    char* buf = cast<char*>(last.data + last.size);
     last.size += len;
 
     len--;

@@ -15,7 +15,7 @@ func Stmt* Parser.parseStmt(Parser* p) {
     // NOTE: keep in order
     switch (p.tok.kind) {
     case Kind.LBrace:
-        return p.parseCompoundStmt();
+        return cast<Stmt*>(p.parseCompoundStmt());
     case Kind.KW_break:
         return p.parseBreakStmt();
     case Kind.KW_continue:
@@ -41,7 +41,7 @@ func Stmt* Parser.parseStmt(Parser* p) {
     return nil;
 }
 
-func Stmt* Parser.parseCompoundStmt(Parser* p) {
+func CompoundStmt* Parser.parseCompoundStmt(Parser* p) {
     p.expectAndConsume(Kind.LBrace);
 
     StmtList stmts;
@@ -56,7 +56,7 @@ func Stmt* Parser.parseCompoundStmt(Parser* p) {
 
     p.expectAndConsume(Kind.RBrace);
 
-    Stmt* s = p.builder.actOnCompoundStmt(stmts.getData(), stmts.size());
+    CompoundStmt* s = p.builder.actOnCompoundStmt(stmts.getData(), stmts.size());
     stmts.free();
 
     return s;
@@ -231,7 +231,7 @@ func Stmt* Parser.parseForStmt(Parser* p) {
     Stmt* init_ = nil;
     if (p.tok.kind != Kind.Semicolon) {
         // TODO check if declaration
-        init_ = p.parseExpr();
+        init_ = p.parseStmt();
     }
     p.expectAndConsume(Kind.Semicolon);
 

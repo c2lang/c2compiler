@@ -45,6 +45,6 @@ public func Stmt* ForStmt.getBody(const ForStmt* s) @(inline) { return s.body; }
 
 public func Stmt** ForStmt.getInit2(ForStmt* s) @(inline) { return s.init ? &s.init : nil; }
 public func Expr** ForStmt.getCond2(ForStmt* s) @(inline) { return s.cond ? &s.cond : nil; }
-public func Expr** ForStmt.getIncr2(ForStmt* s) @(inline) { return s.incr ? &s.init : nil; }
+public func Expr** ForStmt.getIncr2(ForStmt* s) @(inline) { return s.incr ? &s.incr : nil; }
 public func Stmt** ForStmt.getBody2(ForStmt* s) @(inline) { return s.body ? &s.body : nil; }
 

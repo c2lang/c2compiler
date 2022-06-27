@@ -165,8 +165,6 @@ const Keyword[] Keywords_w = {
     { nil, Kind.None, 0 },
 }
 
-//static_assert(elemsof(Kind) == elemsof(token_names), "should be the same");
-
 // TODO order by frequency
 type Action enum u8 {
     INVALID = 0,
@@ -407,22 +405,6 @@ func const Keyword* check_keyword(const char* cp) {
     return nil;
 }
 
-public type Token struct {
-    SrcLoc loc;
-    Kind kind;
-    union {
-        const char* error_msg;  // ERROR
-        const char* text_value; // Identifier, NumberLiteral
-        u8 char_value; // CharLiteral
-    }
-    bool more;
-}
-
-public func void Token.init(Token* tok) {
-    tok.kind = Kind.None;
-    tok.more = true;
-}
-
 public type Feature struct {
     bool is_if;
     bool enabled;
@@ -615,7 +597,6 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
             }
             if (*t.cur == '/') {
                 t.skip_line_comment();
-                // TODO sometimes have Kind.Comment
                 continue;
             }
             if (*t.cur == '*') {

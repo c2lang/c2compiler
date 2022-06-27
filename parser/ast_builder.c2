@@ -163,8 +163,8 @@ public func void Builder.actOnFunctionBody(Builder* b, FunctionDecl* f, Compound
 }
 
 // TODO extract Decl, Stmt parts to own file
-public func Stmt* Builder.actOnCompoundStmt(Builder* b, Stmt** stmts, u32 count) {
-    return cast<Stmt*>(CompoundStmt.create(b.context, stmts, count));
+public func CompoundStmt* Builder.actOnCompoundStmt(Builder* b, Stmt** stmts, u32 count) {
+    return CompoundStmt.create(b.context, stmts, count);
 }
 
 public func Stmt* Builder.actOnReturnStmt(Builder* b, SrcLoc loc, Expr* ret) {
@@ -187,7 +187,7 @@ public func Stmt* Builder.actOnForStmt(Builder* b, Stmt* init_, Expr* cond, Expr
     return cast<Stmt*>(ForStmt.create(b.context, init_, cond, incr, body));
 }
 
-public func Stmt* Builder.actOnSwitchStmt(Builder* b, Expr* cond, Decl** cases, u32 num_cases) {
+public func Stmt* Builder.actOnSwitchStmt(Builder* b, Expr* cond, Stmt** cases, u32 num_cases) {
     return cast<Stmt*>(SwitchStmt.create(b.context, cond, cases, num_cases));
 }
 
@@ -269,20 +269,44 @@ public func Expr* Builder.actOnPostFixUnaryOperator(Builder* b, SrcLoc loc, Kind
     return cast<Expr*>(UnaryOperator.create(b.context, loc, opcode, inner));
 }
 
-func UnaryOpcode convertTokenToBinaryOpcode(Kind kind) {
+func BinaryOpcode convertTokenToBinaryOpcode(Kind kind) {
+    // TODO use lookup table (or single table with multiple entries for conversions?)
     switch (kind) {
-    case Kind.Exclaim: return UnaryOpcode.LNot;
-    case Kind.Star: return UnaryOpcode.Deref;
-    case Kind.Amp: return UnaryOpcode.AddrOf;
-    case Kind.PlusPlus:   return UnaryOpcode.PreInc;
-    case Kind.Minus: return UnaryOpcode.Minus;
-    case Kind.MinusMinus: return UnaryOpcode.PreDec;
-    case Kind.Tilde: return UnaryOpcode.Not;
+    case Kind.Star: return BinaryOpcode.Multiply;
+    case Kind.Slash: return BinaryOpcode.Divide;
+    case Kind.Percent: return BinaryOpcode.Reminder;
+    case Kind.Plus: return BinaryOpcode.Add;
+    case Kind.Minus: return BinaryOpcode.Subtract;
+    case Kind.LessLess: return BinaryOpcode.ShiftLeft;
+    case Kind.GreaterGreater: return BinaryOpcode.ShiftRight;
+    case Kind.Less: return BinaryOpcode.LessThan;
+    case Kind.Greater: return BinaryOpcode.GreaterThan;
+    case Kind.LessEqual: return BinaryOpcode.LessEqual;
+    case Kind.GreaterEqual: return BinaryOpcode.GreaterEqual;
+    case Kind.EqualEqual: return BinaryOpcode.Equal;
+    case Kind.ExclaimEqual: return BinaryOpcode.NotEqual;
+    case Kind.Amp: return BinaryOpcode.And;
+    case Kind.Caret: return BinaryOpcode.Xor;
+    case Kind.Pipe: return BinaryOpcode.Or;
+    case Kind.AmpAmp: return BinaryOpcode.LAnd;
+    case Kind.PipePipe: return BinaryOpcode.LOr;
+    case Kind.Equal: return BinaryOpcode.Assign;
+    case Kind.StarEqual: return BinaryOpcode.MulAssign;
+    case Kind.SlashEqual: return BinaryOpcode.DivAssign;
+    case Kind.PercentEqual: return BinaryOpcode.RemAssign;
+    case Kind.PlusEqual: return BinaryOpcode.AddAssign;
+    case Kind.MinusEqual: return BinaryOpcode.SubASsign;
+    case Kind.LessLessEqual: return BinaryOpcode.ShlAssign;
+    case Kind.GreaterGreaterEqual: return BinaryOpcode.ShrASsign;
+    case Kind.AmpEqual: return BinaryOpcode.AndAssign;
+    case Kind.CaretEqual: return BinaryOpcode.XorAssign;
+    case Kind.PipeEqual: return BinaryOpcode.OrAssign;
+    //case Kind.Comma: return BinaryOpcode.Comma;
     default:
         break;
     }
     // TODO fatal error
-    return UnaryOpcode.PreInc;
+    return BinaryOpcode.Multiply;
 }
 
 public func Expr* Builder.actOnBinaryOperator(Builder* b, SrcLoc loc, Kind kind, Expr* lhs, Expr* rhs) {
