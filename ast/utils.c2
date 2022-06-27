@@ -29,6 +29,7 @@ static_assert(24, sizeof(ContinueStmt));
 static_assert(24, sizeof(FallthroughStmt));
 
 static_assert(32, sizeof(Expr));
+static_assert(40, sizeof(TypeExpr));
 static_assert(40, sizeof(BuiltinExpr));
 static_assert(32, sizeof(BooleanLiteral));
 static_assert(32, sizeof(CharLiteral));

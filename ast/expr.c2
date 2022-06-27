@@ -18,9 +18,7 @@ public type ExprKind enum u8 {
     StringLiteral,
     Nil,
     Identifier,
-/*
     Type,
-*/
     Call,
 /*
     InitList,
@@ -99,6 +97,9 @@ public func void Expr.print(const Expr* e, StringBuffer* out, u32 indent) {
         break;
     case ExprKind.Identifier:
         IdentifierExpr.print(cast<IdentifierExpr*>(e), out, indent);
+        break;
+    case ExprKind.Type:
+        TypeExpr.print(cast<TypeExpr*>(e), out, indent);
         break;
     case ExprKind.Call:
         CallExpr.print(cast<CallExpr*>(e), out, indent);

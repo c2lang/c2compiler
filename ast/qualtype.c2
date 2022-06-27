@@ -52,4 +52,10 @@ public func void QualType.dump(const QualType* qt) {
         printf("QualType(nil)\n");
     }
 }
+
+public func void QualType.print(const QualType* qt, StringBuffer* out, u32 indent) {
+    out.indent(indent);
+    out.add("QualType\n");
+    // TODO
+}
 // TODO add helper functions

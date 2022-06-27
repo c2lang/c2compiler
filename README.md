@@ -49,4 +49,9 @@
 - profile application to see where time is spent
 - try building as 32-bit application, measure mem + speed
     add -m32 to CFLAGS + LDFLAGS
+- check how other Compilers (easier ones) parse Expr
+    cproc -> see expr.c:1311 -> expr()
 
+## General
+- remove unused import
+- dont import local, (for single printf)

@@ -292,3 +292,7 @@ public func Expr* Builder.actOnBuiltinExpr(Builder* b, SrcLoc loc, Expr* inner, 
     return cast<Expr*>(BuiltinExpr.create(b.context, loc, inner, kind));
 }
 
+public func Expr* Builder.actOnTypeExpr(Builder* b, SrcLoc loc, QualType qt) {
+    return cast<Expr*>(TypeExpr.create(b.context, loc, qt));
+}
+

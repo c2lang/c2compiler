@@ -1,0 +1,26 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context local;
+import utils local;
+
+public type TypeExpr struct {
+    Expr expr;
+    QualType qt;
+} @(opaque)
+
+public func TypeExpr* TypeExpr.create(Context* c, SrcLoc loc, QualType qt) @(inline) {
+    TypeExpr* e = c.alloc(sizeof(TypeExpr));
+    e.expr.init(ExprKind.Type, loc, 0, 0, 0);
+    e.qt = qt;
+    return e;
+}
+
+public func void TypeExpr.print(const TypeExpr* e, StringBuffer* out, u32 indent) {
+    out.indent(indent);
+    out.add("TypeExpr\n");
+    //e.qt.print(out, indent + 1);
+}
+

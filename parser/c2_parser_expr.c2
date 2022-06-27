@@ -83,12 +83,15 @@ func Expr* Parser.parseCastExpr(Parser* p, bool isUnaryExpr, bool isAddrOfOp) {
     case Kind.LParen:
         res = p.parseParenExpr();
         break;
-    case Kind.KW_nil:
-        res = p.builder.actOnNilExpr(p.tok.loc);
-        p.consumeToken();
+    case Kind.KW_elemsof:
+        res = p.parseElemsof();
         break;
     case Kind.KW_false:
         res = p.builder.actOnBooleanConstant(p.tok.loc, false);
+        p.consumeToken();
+        break;
+    case Kind.KW_nil:
+        res = p.builder.actOnNilExpr(p.tok.loc);
         p.consumeToken();
         break;
     case Kind.KW_sizeof:
@@ -131,10 +134,10 @@ func Expr* Parser.parseParenExpr(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
-    Expr* inner = p.parseExpr();
+    Expr* res = p.parseExpr();
     p.expectAndConsume(Kind.RParen);
 
-    return p.builder.actOnParenExpr(p.tok.loc, inner);
+    return p.builder.actOnParenExpr(p.tok.loc, res);
 }
 
 func Expr* Parser.parseSizeof(Parser* p) {
@@ -143,9 +146,59 @@ func Expr* Parser.parseSizeof(Parser* p) {
 
     p.expectAndConsume(Kind.LParen);
 
-    Expr* inner = nil;
-    // TODO
+    Expr* res = nil;
+
+    switch (p.tok.kind) {
+    case Kind.Identifier:
+/*
+    if (canBeParsedAsStructType()) {
+            Res = ParseTypeSpecifier(false);
+            break;
+        }
+    }
+*/
+        fallthrough;
+    case Kind.KW_char: fallthrough;
+    case Kind.KW_f32: fallthrough;
+    case Kind.KW_f64: fallthrough;
+    case Kind.KW_i8:  fallthrough;
+    case Kind.KW_i16: fallthrough;
+    case Kind.KW_i32: fallthrough;
+    case Kind.KW_i64: fallthrough;
+    case Kind.KW_isize: fallthrough;
+    case Kind.KW_reg8:  fallthrough;
+    case Kind.KW_reg16: fallthrough;
+    case Kind.KW_reg32: fallthrough;
+    case Kind.KW_reg64: fallthrough;
+    case Kind.KW_u8:  fallthrough;
+    case Kind.KW_u16: fallthrough;
+    case Kind.KW_u32: fallthrough;
+    case Kind.KW_u64: fallthrough;
+    case Kind.KW_usize: fallthrough;
+    case Kind.KW_void:
+        res = p.builder.actOnTypeExpr(p.tok.loc, p.parseTypeSpecifier(false));
+        break;
+    default:
+        res = p.parseExpr();
+        break;
+    }
 
     p.expectAndConsume(Kind.RParen);
-    return p.builder.actOnBuiltinExpr(loc, inner, BuiltinExprKind.Sizeof);
+    return p.builder.actOnBuiltinExpr(loc, res, BuiltinExprKind.Sizeof);
 }
+
+func Expr* Parser.parseElemsof(Parser* p) {
+    SrcLoc loc = p.tok.loc;
+    p.consumeToken();
+
+    p.expectAndConsume(Kind.LParen);
+
+    p.expectIdentifier();
+
+    Expr* res = p.parseIdentifier();
+    res = p.parsePostfixExprSuffix(res);
+
+    p.expectAndConsume(Kind.RParen);
+    return p.builder.actOnBuiltinExpr(loc, res, BuiltinExprKind.Elemsof);
+}
+
