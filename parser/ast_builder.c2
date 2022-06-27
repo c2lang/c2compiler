@@ -62,13 +62,11 @@ public func void Builder.actOnStructMembers(Builder* b, StructTypeDecl* d, Decl*
 }
 
 public func VarDecl* Builder.actOnStructVar(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType qt, Expr* initValue) {
-    // TODO set vardecl type as StructMember
-    // TODO add VarDecl Kind (StructMember)
-    return VarDecl.create(b.context, name, loc, is_public, qt, initValue);
+    return VarDecl.create(b.context, VarDeclKind.StructMember, name, loc, is_public, qt, initValue);
 }
 
 public func void Builder.actOnGlobalVarDecl(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType qt, Expr* initValue) {
-    VarDecl* d = VarDecl.create(b.context, name, loc, is_public, qt, initValue);
+    VarDecl* d = VarDecl.create(b.context, VarDeclKind.GlobalVar, name, loc, is_public, qt, initValue);
     b.ast.addVarDecl(d);
 }
 
