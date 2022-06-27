@@ -5,7 +5,7 @@ plugin plugins/refs_generator [all-targets]
 executable c2c
 	$warnings no-unused
 	$generate-c single-module
-#    $config DebugParser
+    $config DebugParser
 
 
     common/file/reader.c2

@@ -18,6 +18,8 @@ func Stmt* Parser.parseStmt(Parser* p) {
     // TODO use Jump Table (combined one for multiple purposes?)
     // TODO also jump to Expr part, since most entries use parseExprStmt (dont lookup again in Expr)
     switch (p.tok.kind) {
+    case Kind.Identifier:
+        return p.parseDeclOrStmt();
     case Kind.LBrace:
         return cast<Stmt*>(p.parseCompoundStmt());
     case Kind.RBrace:
@@ -67,6 +69,48 @@ func Stmt* Parser.parseStmt(Parser* p) {
     default:
         return p.parseExprStmt();
     }
+    return nil;
+}
+
+/*
+    Declarations (type + name)
+        a* b <init> -> yes
+        a[] b <init> -> yes
+        a[10] b -> yes
+        a*[] b <init> -> yes
+        a b <init> -> yes
+        a.b c -> yes
+    Assignments/Function calls
+        a = ..     -> no
+        a *= .. etc -> no
+        a() -> no
+        a[10] = .. -> no
+        a.b.c .. -> no
+        a->b -> no
+        a.b->.. -> no
+    // NOTE: Tok is first identifier
+*/
+func bool Parser.isTypeSpec(Parser* p) {
+    p.error("TODO isTypeSpec");
+    return true; // TEMP HARCDODE
+}
+
+/*
+  Syntax:
+    Number num = .     // id = type
+    Utils.Type t = .  // id = module.type
+    myfunc()        // id = func
+    Mod.func()     // id = module.func
+    count =         // id = var
+    Mod.var =      // id = module.var
+    id:             // id = label
+*/
+func Stmt* Parser.parseDeclOrStmt(Parser* p) {
+    bool isDecl = p.isTypeSpec();
+
+    if (isDecl) return p.parseDeclStmt(true, true);
+
+    p.error("TODO parseDeclOrStmt");
     return nil;
 }
 
