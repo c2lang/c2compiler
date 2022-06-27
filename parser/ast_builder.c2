@@ -71,7 +71,7 @@ public func void Builder.actOnAttr(Builder* b, const char* name, SrcLoc begin_lo
 }
 
 public func QualType Builder.actOnBuiltinType(Builder* b, tokens.Kind kind) {
-    Type* t;
+    Type* t = nil;
     // TODO optimize (table?) -> fill in init with correct width for usize/isize, fill with QualType
     switch (kind) {
     case Kind.KW_u8:

@@ -163,7 +163,7 @@ func Stmt* Parser.parseSwitchStmt(Parser* p) {
     cases.init();
 
     while (p.tok.kind != Kind.RBrace) {
-        Stmt* c;
+        Stmt* c = nil;
         switch (p.tok.kind) {
         case Kind.KW_case:
             c = p.parseCaseStmt();
