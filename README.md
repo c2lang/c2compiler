@@ -15,6 +15,9 @@
 + named feature-selection
 - FIX comment
 - support nested /* */ comments
+- replace __file__ and __line__ with string-literal / number?
+    Q: how to do __func__??
+        -> emit FuncNameToken? (let analyser fill it in)
 - Numbers:
     - parse floating points
     - parse hexadecimal
@@ -57,6 +60,7 @@
 - remove unused import
 - dont import local, (for single printf)
 - check clang build warnings
+- add Trace option to instrument all functions?
 
 
 Parse Expr:

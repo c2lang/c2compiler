@@ -9,6 +9,9 @@ import ast local;
 import ast_list;
 import tokens local;
 import utils local;
+#if DebugParser
+import stdio local;
+#endif
 
 /// PrecedenceLevels - These have been altered from C99 to C2
 /// In particular, addition now comes after bitwise and shifts
@@ -29,11 +32,17 @@ type Prec enum u8 {
 }
 
 func Expr* Parser.parseExpr(Parser* p) {
+#if DebugParser
+    printf("parseExpr\n");
+#endif
     Expr* lhs = p.parseAssignmentExpression();
     return p.parseRHSOfBinaryExpression(lhs, Prec.Comma);
 }
 
 func Expr* Parser.parseAssignmentExpression(Parser* p) {
+#if DebugParser
+    printf("parseAssignmentExpression\n");
+#endif
     Expr* lhs = p.parseCastExpr(false, false);
     return p.parseRHSOfBinaryExpression(lhs, Prec.Assignment);
 }
@@ -88,6 +97,9 @@ func Prec getBinOpPrecedence(Kind kind) {
 }
 
 func Expr* Parser.parseRHSOfBinaryExpression(Parser* p, Expr* lhs, Prec minPrec) {
+#if DebugParser
+    printf("parseRHSOfBinaryExpression\n");
+#endif
     Prec nextTokPrec = getBinOpPrecedence(p.tok.kind);
 
     while (1) {
@@ -97,12 +109,34 @@ func Expr* Parser.parseRHSOfBinaryExpression(Parser* p, Expr* lhs, Prec minPrec)
 
         Token opToken = p.tok;
         p.consumeToken();
+
+        Expr* ternaryMiddle = nil;
+        if (nextTokPrec == Prec.Conditional) {
+            if (p.tok.kind == Kind.Colon) p.error("TODO conditional expr");
+            ternaryMiddle = p.parseExpr();
+        }
+
+        Expr* rhs = p.parseCastExpr(false, false);
+
+        Prec thisPrec = nextTokPrec;
+        nextTokPrec = getBinOpPrecedence(p.tok.kind);
+
+        bool isRightAssoc = (thisPrec == Prec.Conditional || thisPrec == Prec.Assignment);
+
+        if (thisPrec < nextTokPrec || (thisPrec == nextTokPrec && isRightAssoc)) {
+            rhs = p.parseRHSOfBinaryExpression(rhs, thisPrec + !isRightAssoc);
+
+            nextTokPrec = getBinOpPrecedence(p.tok.kind);
+        }
     }
     return nil;
 }
 
 // NotCastExpr?
 func Expr* Parser.parseCastExpr(Parser* p, bool isUnaryExpr, bool isAddrOfOp) {
+#if DebugParser
+    printf("parseCastExpression\n");
+#endif
     // This handles all of cast-expression, unary-expression, postfix-expression,
     // and primary-expression.  We handle them together like this for efficiency
     // and to simplify handling of an expression starting with a '(' token: which
@@ -196,6 +230,9 @@ func Expr* Parser.parseCastExpr(Parser* p, bool isUnaryExpr, bool isAddrOfOp) {
 }
 
 func Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs) {
+#if DebugParser
+    printf("parsePostfixExprSuffix\n");
+#endif
 
     while (1) {
         switch (p.tok.kind) {
@@ -241,6 +278,9 @@ func Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs) {
 }
 
 func Expr* Parser.parseCallExpr(Parser* p, Expr* fn) {
+#if DebugParser
+    printf("parseCallExpr\n");
+#endif
     p.consumeToken(); // '('
 
     ast_list.ExprList args;

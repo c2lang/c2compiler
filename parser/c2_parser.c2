@@ -100,7 +100,7 @@ public func bool Parser.parse(Parser* p) {
 func void Parser.consumeToken(Parser* p) {
     p.tokenizer.lex(&p.tok);
 
-    dump_token(p.sm, &p.tok);
+    //dump_token(p.sm, &p.tok);
 
     if (p.tok.kind == Kind.Error) p.error(p.tok.error_msg);
 }
@@ -168,6 +168,9 @@ func void Parser.parseImports(Parser* p) {
 }
 
 func void Parser.parseTopLevel(Parser* p) {
+#if DebugParser
+    printf("parseTopLevel\n");
+#endif
     // TODO need next-token for array-entry
 
     bool is_public = p.parseOptionalAccessSpecifier();
@@ -193,7 +196,10 @@ func void Parser.parseTopLevel(Parser* p) {
     }
 }
 
-func void Parser.parseAttributes(Parser* p) {
+func void Parser.parseOptionalAttributes(Parser* p) {
+#if DebugParser
+    printf("parseOptionalAttributes\n");
+#endif
     if (p.tok.kind != Kind.At) return;
     p.consumeToken();
 
@@ -219,6 +225,9 @@ func void Parser.parseAttributes(Parser* p) {
 }
 
 func void Parser.parseFuncDef(Parser* p, bool is_public) {
+#if DebugParser
+    printf("parseFuncDef\n");
+#endif
     p.consumeToken();
 
     QualType rtype = p.parseSingleTypeSpecifier(true);
@@ -245,7 +254,7 @@ func void Parser.parseFuncDef(Parser* p, bool is_public) {
     FunctionDecl* f = p.builder.actOnFuncDecl(func_name, func_loc, is_public, rtype);
 
     p.parseFunctionParams(f, true);
-    p.parseAttributes(); // (f)
+    p.parseOptionalAttributes(); // (f)
 
     if (p.is_interface) {
         if (p.tok.kind == Kind.LBrace) {
@@ -260,6 +269,9 @@ func void Parser.parseFuncDef(Parser* p, bool is_public) {
 }
 
 func void Parser.parseFunctionParams(Parser* p, FunctionDecl* f, bool allow_defaults) {
+#if DebugParser
+    printf("parseFunctionParams\n");
+#endif
     p.expectAndConsume(Kind.LParen);
 
     // fast path for ()
@@ -282,6 +294,9 @@ func void Parser.parseFunctionParams(Parser* p, FunctionDecl* f, bool allow_defa
     param_default ::= EQUALS constant_expression.
 */
 func VarDecl* Parser.parseParamDecl(Parser* p, FunctionDecl* f, bool allow_defaults) {
+#if DebugParser
+    printf("parseParamDecl\n");
+#endif
     if (p.tok.kind == Kind.KW_local) {
         p.error("invalid local");
     }
@@ -293,6 +308,9 @@ func VarDecl* Parser.parseParamDecl(Parser* p, FunctionDecl* f, bool allow_defau
 }
 
 func QualType Parser.parseTypeSpecifier(Parser* p, bool allow_qualifier) {
+#if DebugParser
+    printf("parseTypeSpecifier\n");
+#endif
     QualType qt = p.parseSingleTypeSpecifier(allow_qualifier);
     if (p.tok.kind != Kind.LSquare) return qt;
     return p.parseOptionalArray(qt);

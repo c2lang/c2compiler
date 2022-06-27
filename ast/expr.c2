@@ -60,6 +60,8 @@ public func void Expr.init(Expr* e, ExprKind k, SrcLoc loc, bool ctv, bool ctc, 
     e.qt.ptr = 0;
 }
 
+public func Stmt* Expr.asStmt(Expr* e) @(inline) { return &e.stmt; }
+
 // TEMP cast needed until Analyser fixed
 public func ExprKind Expr.getKind(const Expr* e) @(inline) { return cast<ExprKind>(e.stmt.exprBits.kind); }
 

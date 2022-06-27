@@ -12,10 +12,16 @@ import utils local;
 import stdio local; // TEMP
 
 func Stmt* Parser.parseStmt(Parser* p) {
-    // NOTE: keep in order
+#if DebugParser
+    printf("parseStmt\n");
+#endif
+    // TODO use Jump Table (combined one for multiple purposes?)
     switch (p.tok.kind) {
     case Kind.LBrace:
         return cast<Stmt*>(p.parseCompoundStmt());
+    case Kind.RBrace:
+        p.error("expected stmt");
+        break;
     case Kind.KW_break:
         return p.parseBreakStmt();
     case Kind.KW_continue:
@@ -32,16 +38,41 @@ func Stmt* Parser.parseStmt(Parser* p) {
         return p.parseReturnStmt();
     case Kind.KW_switch:
         return p.parseSwitchStmt();
+    case Kind.KW_bool:   fallthrough;
+    case Kind.KW_char:   fallthrough;
+    case Kind.KW_const:   fallthrough;
+    case Kind.KW_i8:    fallthrough;
+    case Kind.KW_i16:   fallthrough;
+    case Kind.KW_i32:   fallthrough;
+    case Kind.KW_i64:   fallthrough;
+    case Kind.KW_isize:   fallthrough;
+    case Kind.KW_f32:   fallthrough;
+    case Kind.KW_f64:   fallthrough;
+    case Kind.KW_local:   fallthrough;
+    case Kind.KW_reg8:    fallthrough;
+    case Kind.KW_reg16:   fallthrough;
+    case Kind.KW_reg32:   fallthrough;
+    case Kind.KW_reg64:   fallthrough;
+    case Kind.KW_u8:    fallthrough;
+    case Kind.KW_u16:   fallthrough;
+    case Kind.KW_u32:   fallthrough;
+    case Kind.KW_u64:   fallthrough;
+    case Kind.KW_usize:   fallthrough;
+    case Kind.KW_volatile:   fallthrough;
+    case Kind.KW_void:
+        return p.parseDeclStmt(true, true);
     case Kind.KW_while:
         return p.parseWhileStmt();
     default:
-        return nil; // TEMP
-        break;
+        return p.parseExprStmt();
     }
     return nil;
 }
 
 func CompoundStmt* Parser.parseCompoundStmt(Parser* p) {
+#if DebugParser
+    printf("parseCompoundStmt\n");
+#endif
     p.expectAndConsume(Kind.LBrace);
 
     StmtList stmts;
@@ -261,5 +292,19 @@ func Stmt* Parser.parseWhileStmt(Parser* p) {
     Stmt* then = p.parseStmt();
 
     return p.builder.actOnWhileStmt(cond, then);
+}
+
+func Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal) {
+#if DebugParser
+    printf("parseDeclStmt\n");
+#endif
+    p.error("TODO parseDeclStmt");
+    return nil;
+}
+
+func Stmt* Parser.parseExprStmt(Parser* p) {
+    Expr* e = p.parseExpr();
+    p.expectAndConsume(Kind.Semicolon);
+    return e.asStmt();
 }
 

@@ -58,7 +58,7 @@ func void Parser.parseStructType(Parser* p, bool is_struct, const char* name, u3
     StructTypeDecl* d = p.builder.actOnStructType(name, loc, is_struct, is_public, true);
 
     p.parseStructBlock(d);
-    p.parseAttributes(); // (d)
+    p.parseOptionalAttributes(); // (d)
 }
 
 func void Parser.parseStructBlock(Parser* p, StructTypeDecl* d) {
