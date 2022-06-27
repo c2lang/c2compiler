@@ -49,6 +49,7 @@ static_assert(48, sizeof(BinaryOperator));
 
 static_assert(8, sizeof(Type));
 static_assert(8, sizeof(BuiltinType));
+static_assert(16, sizeof(PointerType));
 static_assert(16, sizeof(RefType));
 
 static_assert(8, sizeof(QualType));

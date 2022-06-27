@@ -8,7 +8,7 @@ import stdio;
 
 public type TypeKind enum u8 {
     Builtin,
-    // pointer
+    Pointer,
     // array
     Ref,
 }
@@ -46,6 +46,9 @@ public func void Type.print(const Type* t, StringBuffer* out, u32 indent) {
     switch (t.getKind()) {
     case TypeKind.Builtin:
         BuiltinType.print(cast<BuiltinType*>(t), out, indent);
+        break;
+    case TypeKind.Pointer:
+        PointerType.print(cast<PointerType*>(t), out, indent);
         break;
     case TypeKind.Ref:
         RefType.print(cast<RefType*>(t), out, indent);

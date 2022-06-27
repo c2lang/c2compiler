@@ -44,6 +44,7 @@
 + create Context (for allocation)
 - FIX object sizes (Stmt should be 4 bytes, not aligned yet)
 - move SrcLoc to ast_helper?
+- use common/pointer-map
 
 ## AST-Builder
 + fill AST

@@ -12,6 +12,7 @@ executable c2c
     common/color.c2
     common/string_list.c2
     common/string_buffer.c2
+    common/pointer_map.c2
 
     parser/tokens.c2
     parser/c2_tokenizer.c2
@@ -65,6 +66,7 @@ executable c2c
     ast/qualtype.c2
     ast/builtin_type.c2
     ast/ref_type.c2
+    ast/pointer_type.c2
 
     ast.c2
     ast_list.c2
