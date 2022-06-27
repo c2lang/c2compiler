@@ -3,11 +3,10 @@
 
 module ast;
 
-import ast_context local;
+import ast_context;
 import utils local;
 
-import string local;
-import stdio local; // TEMP
+import string;
 
 type DefaultStmtBits struct {
     u32 : NumStmtBits;
@@ -20,12 +19,12 @@ public type DefaultStmt struct {
     Stmt*[0] stmts; // tail-allocated
 } @(opaque)
 
-public func DefaultStmt* DefaultStmt.create(Context* c, SrcLoc loc, Stmt** stmts, u32 numStmts) @(inline) {
+public func DefaultStmt* DefaultStmt.create(ast_context.Context* c, SrcLoc loc, Stmt** stmts, u32 numStmts) @(inline) {
     u32 size = sizeof(DefaultStmt) + numStmts * sizeof(Stmt*);
     DefaultStmt* s = c.alloc(size);
     s.stmt.init(StmtKind.Default);
     s.stmt.defaultStmtBits.num_stmts = numStmts;
-    memcpy(cast<void*>(s.stmts), cast<void*>(stmts), numStmts * sizeof(Stmt*));
+    string.memcpy(cast<void*>(s.stmts), cast<void*>(stmts), numStmts * sizeof(Stmt*));
     return s;
 }
 

@@ -3,10 +3,8 @@
 
 module ast;
 
-import ast_context local;
+import ast_context;
 import utils local;
-
-import stdio local; // TEMP
 
 public type BooleanLiteralBits struct {
     u32 : NumExprBits;
@@ -17,7 +15,7 @@ public type BooleanLiteral struct {
     Expr expr;
 } @(opaque)
 
-public func BooleanLiteral* BooleanLiteral.create(Context* c, SrcLoc loc, bool val) @(inline) {
+public func BooleanLiteral* BooleanLiteral.create(ast_context.Context* c, SrcLoc loc, bool val) @(inline) {
     BooleanLiteral* e = c.alloc(sizeof(BooleanLiteral));
     e.expr.init(ExprKind.BooleanLiteral, loc, 1, 1, 0);
     e.expr.stmt.booleanLiteralBits.value = val;

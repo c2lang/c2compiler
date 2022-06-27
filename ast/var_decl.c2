@@ -3,10 +3,8 @@
 
 module ast;
 
-import ast_context local;
+import ast_context;
 import utils local;
-
-import stdio local; // TEMP
 
 type VarDeclBits struct {
     u32 : NumDeclBits;
@@ -18,7 +16,7 @@ public type VarDecl struct {
     Expr*[0] init;  // tail-allocated
 } @(opaque)
 
-public func VarDecl* VarDecl.create(Context* c, const char* name, SrcLoc loc, bool is_public, QualType qt, Expr* initValue) @(inline) {
+public func VarDecl* VarDecl.create(ast_context.Context* c, const char* name, SrcLoc loc, bool is_public, QualType qt, Expr* initValue) @(inline) {
     u32 size = sizeof(VarDecl);
     if (initValue) size += sizeof(Expr*);
     VarDecl* d = c.alloc(size);

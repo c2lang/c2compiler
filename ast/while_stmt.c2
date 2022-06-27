@@ -3,10 +3,8 @@
 
 module ast;
 
-import ast_context local;
+import ast_context;
 import utils local;
-
-import stdio local; // TEMP
 
 public type WhileStmt struct {
     Stmt stmt;
@@ -14,7 +12,7 @@ public type WhileStmt struct {
     Stmt* then;
 } @(opaque)
 
-public func WhileStmt* WhileStmt.create(Context* c, Expr* cond, Stmt* then) @(inline) {
+public func WhileStmt* WhileStmt.create(ast_context.Context* c, Expr* cond, Stmt* then) @(inline) {
     WhileStmt* s = c.alloc(sizeof(WhileStmt));
     s.stmt.init(StmtKind.While);
     s.cond = cond;

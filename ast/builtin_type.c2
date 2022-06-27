@@ -3,11 +3,8 @@
 
 module ast;
 
-import ast_context local;
+import ast_context;
 import utils local;
-
-// TEMP
-import stdio local;
 
 public type BuiltinTypeKind enum u8 {
     Int8,
@@ -33,7 +30,7 @@ public type BuiltinType struct {
     Type parent;
 } @(opaque)
 
-public func BuiltinType* BuiltinType.create(Context* c, BuiltinTypeKind kind) @(inline) {
+public func BuiltinType* BuiltinType.create(ast_context.Context* c, BuiltinTypeKind kind) @(inline) {
     BuiltinType* b = c.alloc(sizeof(BuiltinType));
     b.parent.init(TypeKind.Builtin);
     b.parent.builtinTypeBits.kind = kind;

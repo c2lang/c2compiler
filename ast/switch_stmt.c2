@@ -3,11 +3,9 @@
 
 module ast;
 
-import ast_context local;
+import ast_context;
 import utils local;
-
-import string local;
-import stdio local; // TEMP
+import string;
 
 type SwitchStmtBits struct {
     u32 : NumStmtBits;
@@ -20,13 +18,13 @@ public type SwitchStmt struct {
     Stmt*[0] cases; // tail-allocated
 } @(opaque)
 
-public func SwitchStmt* SwitchStmt.create(Context* c, Expr* cond, Stmt** cases, u32 numCases) @(inline) {
+public func SwitchStmt* SwitchStmt.create(ast_context.Context* c, Expr* cond, Stmt** cases, u32 numCases) @(inline) {
     u32 size = sizeof(SwitchStmt) + numCases * sizeof(Stmt*);
     SwitchStmt* s = c.alloc(size);
     s.stmt.init(StmtKind.Switch);
     s.stmt.switchStmtBits.num_cases = numCases;
     s.cond = cond;
-    memcpy(cast<void*>(s.cases), cast<void*>(cases), numCases * sizeof(Stmt*));
+    string.memcpy(cast<void*>(s.cases), cast<void*>(cases), numCases * sizeof(Stmt*));
     return s;
 }
 

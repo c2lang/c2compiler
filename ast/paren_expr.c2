@@ -3,17 +3,15 @@
 
 module ast;
 
-import ast_context local;
+import ast_context;
 import utils local;
-
-import stdio local; // TEMP
 
 public type ParenExpr struct {
     Expr expr;
     Expr* inner;
 } @(opaque)
 
-public func ParenExpr* ParenExpr.create(Context* c, SrcLoc loc, Expr* inner) @(inline) {
+public func ParenExpr* ParenExpr.create(ast_context.Context* c, SrcLoc loc, Expr* inner) @(inline) {
     ParenExpr* e = c.alloc(sizeof(ParenExpr));
     e.expr.init(ExprKind.Paren, loc, 0, 0, 0);
     e.inner = inner;

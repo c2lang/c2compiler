@@ -3,11 +3,8 @@
 
 module ast;
 
-import ast_context local;
+import ast_context;
 import utils local;
-
-// TEMP
-import stdio local;
 
 type FunctionDeclBits struct {
     u32 : NumDeclBits;
@@ -20,7 +17,7 @@ public type FunctionDecl struct {
     CompoundStmt* body; // Q :tail allocate for interfaces?
 } @(opaque)
 
-public func FunctionDecl* FunctionDecl.create(Context* c, const char* name, SrcLoc loc, bool is_public, QualType rtype) @(inline) {
+public func FunctionDecl* FunctionDecl.create(ast_context.Context* c, const char* name, SrcLoc loc, bool is_public, QualType rtype) @(inline) {
     FunctionDecl* d = c.alloc(sizeof(FunctionDecl));
     d.decl.init(DeclKind.Function, name, loc, is_public);
     d.body = nil;

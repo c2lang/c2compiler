@@ -3,16 +3,14 @@
 
 module ast;
 
-import ast_context local;
+import ast_context;
 import utils local;
-
-import stdio local; // TEMP
 
 public type NilExpr struct {
     Expr expr;
 } @(opaque)
 
-public func NilExpr* NilExpr.create(Context* c, SrcLoc loc) @(inline) {
+public func NilExpr* NilExpr.create(ast_context.Context* c, SrcLoc loc) @(inline) {
     NilExpr* e = c.alloc(sizeof(NilExpr));
     e.expr.init(ExprKind.Nil, loc, 1, 1, 0);
     return e;

@@ -3,12 +3,10 @@
 
 module ast;
 
-import ast_context local;
+import ast_context;
 import utils local;
 
-import string local;
-// TEMP
-import stdio local;
+import string;
 
 type CompoundStmtBits struct {
     u32 : NumStmtBits;
@@ -20,7 +18,7 @@ public type CompoundStmt struct {
     Stmt*[0] stmts; // tail-allocated
 } @(opaque)
 
-public func CompoundStmt* CompoundStmt.create(Context* c, Stmt** stmts, u32 count) @(inline) {
+public func CompoundStmt* CompoundStmt.create(ast_context.Context* c, Stmt** stmts, u32 count) @(inline) {
     // assert(count < 65556);
     u32 size = sizeof(CompoundStmt) + count * sizeof(Stmt**);
 
@@ -29,7 +27,7 @@ public func CompoundStmt* CompoundStmt.create(Context* c, Stmt** stmts, u32 coun
     s.stmt.compoundStmtBits.count = count;
 
     if (count) {
-        memcpy(cast<void*>(s.stmts), cast<void*>(stmts), count * sizeof(Stmt*));
+        string.memcpy(cast<void*>(s.stmts), cast<void*>(stmts), count * sizeof(Stmt*));
     }
     return s;
 }

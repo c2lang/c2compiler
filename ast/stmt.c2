@@ -3,10 +3,8 @@
 
 module ast;
 
-import ast_context local;
-import utils local;
-
-import stdio local; // TEMP
+import utils;
+import stdio;
 
 public type StmtKind enum u8 {
     Return,
@@ -70,13 +68,13 @@ func void Stmt.init(Stmt* s, StmtKind k) @(inline) {
 public func StmtKind Stmt.getKind(const Stmt* s) @(inline) { return cast<StmtKind>(s.stmtBits.kind); }
 
 public func void Stmt.dump(const Stmt* s) {
-    StringBuffer* out = StringBuffer.create(10*4096);
+    utils.StringBuffer* out = utils.StringBuffer.create(10*4096);
     s.print(out, 0);
-    printf("%s\n", out.data());
+    stdio.printf("%s\n", out.data());
     out.free();
 }
 
-public func void Stmt.print(const Stmt* s, StringBuffer* out, u32 indent) {
+public func void Stmt.print(const Stmt* s, utils.StringBuffer* out, u32 indent) {
     switch (s.getKind()) {
     case StmtKind.Return:
         ReturnStmt.print(cast<ReturnStmt*>(s), out, indent);

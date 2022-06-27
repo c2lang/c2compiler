@@ -3,10 +3,8 @@
 
 module ast;
 
-import ast_context local;
+import ast_context;
 import utils local;
-
-import stdio local; // TEMP
 
 type StructTypeDeclBits struct {
     u32 : NumDeclBits;
@@ -20,7 +18,7 @@ public type StructTypeDecl struct {
     Decl** members;
 } @(opaque)
 
-public func StructTypeDecl* StructTypeDecl.create(Context* c, const char* name, SrcLoc loc, bool is_public, bool is_struct, bool is_global) @(inline) {
+public func StructTypeDecl* StructTypeDecl.create(ast_context.Context* c, const char* name, SrcLoc loc, bool is_public, bool is_struct, bool is_global) @(inline) {
     StructTypeDecl* d = c.alloc(sizeof(StructTypeDecl));
     d.decl.init(DeclKind.StructType, name, loc, is_public);
     d.decl.structTypeDeclBits.is_struct = is_struct;

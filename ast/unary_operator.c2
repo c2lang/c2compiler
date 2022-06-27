@@ -3,7 +3,7 @@
 
 module ast;
 
-import ast_context local;
+import ast_context;
 import utils local;
 
 public type UnaryOperatorBits struct {
@@ -28,7 +28,7 @@ public type UnaryOpcode enum u8 {
     LNot,
 }
 
-public func UnaryOperator* UnaryOperator.create(Context* c, SrcLoc loc, UnaryOpcode kind, Expr* inner) @(inline) {
+public func UnaryOperator* UnaryOperator.create(ast_context.Context* c, SrcLoc loc, UnaryOpcode kind, Expr* inner) @(inline) {
     UnaryOperator* e = c.alloc(sizeof(UnaryOperator));
     e.expr.init(ExprKind.UnaryOperator, loc, 0, 0, 0);
     e.expr.stmt.unaryOperatorBits.kind = kind;

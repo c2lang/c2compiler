@@ -3,10 +3,8 @@
 
 module ast;
 
-import ast_context local;
+import ast_context;
 import utils local;
-
-import stdio local; // TEMP
 
 type IfStmtBits struct {
     u32 : NumStmtBits;
@@ -20,7 +18,7 @@ public type IfStmt struct {
     Stmt*[0] else_stmt; // tail-allocated
 } @(opaque)
 
-public func IfStmt* IfStmt.create(Context* c, Expr* cond, Stmt* then, Stmt* else_stmt) @(inline) {
+public func IfStmt* IfStmt.create(ast_context.Context* c, Expr* cond, Stmt* then, Stmt* else_stmt) @(inline) {
     u32 size = sizeof(IfStmt);
     if (else_stmt) size += sizeof(Stmt*);
 

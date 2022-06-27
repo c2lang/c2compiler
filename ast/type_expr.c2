@@ -3,7 +3,7 @@
 
 module ast;
 
-import ast_context local;
+import ast_context;
 import utils local;
 
 public type TypeExpr struct {
@@ -11,7 +11,7 @@ public type TypeExpr struct {
     QualType qt;
 } @(opaque)
 
-public func TypeExpr* TypeExpr.create(Context* c, SrcLoc loc, QualType qt) @(inline) {
+public func TypeExpr* TypeExpr.create(ast_context.Context* c, SrcLoc loc, QualType qt) @(inline) {
     TypeExpr* e = c.alloc(sizeof(TypeExpr));
     e.expr.init(ExprKind.Type, loc, 0, 0, 0);
     e.qt = qt;

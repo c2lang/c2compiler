@@ -3,10 +3,8 @@
 
 module ast;
 
-import ast_context local;
+import ast_context;
 import utils local;
-
-import stdio local; // TEMP
 
 public type IdentifierExprBits struct {
     u32 : NumExprBits;
@@ -22,7 +20,7 @@ public type IdentifierExpr struct {
     }
 } @(opaque)
 
-public func IdentifierExpr* IdentifierExpr.create(Context* c, SrcLoc loc, const char* name) @(inline) {
+public func IdentifierExpr* IdentifierExpr.create(ast_context.Context* c, SrcLoc loc, const char* name) @(inline) {
     IdentifierExpr* e = c.alloc(sizeof(IdentifierExpr));
     e.expr.init(ExprKind.Identifier, loc, 0, 0, 0);
     e.name = name;

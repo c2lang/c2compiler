@@ -3,7 +3,7 @@
 
 module ast;
 
-import ast_context local;
+import ast_context;
 import utils local;
 
 public type BuiltinExprBits struct {
@@ -29,7 +29,7 @@ const char*[] builtin_names = {
 
 static_assert(elemsof(BuiltinExprKind), elemsof(builtin_names));
 
-public func BuiltinExpr* BuiltinExpr.create(Context* c, SrcLoc loc, Expr* inner, BuiltinExprKind kind) @(inline) {
+public func BuiltinExpr* BuiltinExpr.create(ast_context.Context* c, SrcLoc loc, Expr* inner, BuiltinExprKind kind) @(inline) {
     BuiltinExpr* e = c.alloc(sizeof(BuiltinExpr));
     e.expr.init(ExprKind.Builtin, loc, 1, 1, 0);
     e.expr.stmt.builtinExprBits.kind = kind;

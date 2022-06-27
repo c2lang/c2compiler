@@ -3,10 +3,8 @@
 
 module ast;
 
-import ast_context local;
+import ast_context;
 import utils local;
-
-import stdio local; // TEMP
 
 public type DoStmt struct {
     Stmt stmt;
@@ -15,7 +13,7 @@ public type DoStmt struct {
 } @(opaque)
 
 // NOTE: merge with while? (only need single bit to differentiate)
-public func DoStmt* DoStmt.create(Context* c, Expr* cond, Stmt* then) @(inline) {
+public func DoStmt* DoStmt.create(ast_context.Context* c, Expr* cond, Stmt* then) @(inline) {
     DoStmt* s = c.alloc(sizeof(DoStmt));
     s.stmt.init(StmtKind.Do);
     s.cond = cond;

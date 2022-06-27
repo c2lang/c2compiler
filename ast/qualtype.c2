@@ -3,11 +3,8 @@
 
 module ast;
 
-import ast_context local;
-import utils local;
-
-// TEMP
-import stdio local;
+import utils;
+import stdio;
 
 public const u32 QualType_Const    = 0x1;
 public const u32 QualType_Volatile = 0x2;
@@ -49,11 +46,11 @@ public func void QualType.dump(const QualType* qt) {
     if (t) {
         t.dump();
     } else {
-        printf("QualType(nil)\n");
+        stdio.printf("QualType(nil)\n");
     }
 }
 
-public func void QualType.print(const QualType* qt, StringBuffer* out, u32 indent) {
+public func void QualType.print(const QualType* qt, utils.StringBuffer* out, u32 indent) {
     out.indent(indent);
     out.add("QualType\n");
     // TODO

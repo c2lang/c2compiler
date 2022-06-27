@@ -3,10 +3,8 @@
 
 module ast;
 
-import ast_context local;
 import utils local;
-
-import stdio local; // TEMP
+import stdio;
 
 public type DeclKind enum u8 {
     Function,
@@ -61,7 +59,7 @@ public func bool Decl.isPublic(const Decl* d) @(inline) {
 public func void Decl.dump(const Decl* d) {
     StringBuffer* out = StringBuffer.create(10*4096);
     d.print(out, 0);
-    printf("%s\n", out.data());
+    stdio.printf("%s\n", out.data());
     out.free();
 }
 

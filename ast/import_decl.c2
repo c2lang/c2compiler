@@ -3,11 +3,8 @@
 
 module ast;
 
-import ast_context local;
+import ast_context;
 import utils local;
-
-// TEMP
-import stdio local;
 
 type ImportDeclBits struct {
     u32 : NumDeclBits;
@@ -20,7 +17,7 @@ public type ImportDecl struct {
     SrcLoc alias_loc;
 } @(opaque)
 
-public func ImportDecl* ImportDecl.create(Context* c, const char* name, SrcLoc loc, const char* alias_name, SrcLoc alias_loc, bool is_local) @(inline) {
+public func ImportDecl* ImportDecl.create(ast_context.Context* c, const char* name, SrcLoc loc, const char* alias_name, SrcLoc alias_loc, bool is_local) @(inline) {
     ImportDecl* d = c.alloc(sizeof(ImportDecl));
     d.decl.init(DeclKind.Import, name, loc, true);
     d.decl.importDeclBits.is_local = is_local;

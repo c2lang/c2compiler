@@ -116,3 +116,41 @@ public func Decl** DeclList.getDecls(const DeclList* l) {
     return l.decls;
 }
 
+
+// TODO own file
+public type ExprList struct {
+    u32 count;
+    u32 capacity;
+    Expr** exprs;
+}
+
+public func void ExprList.init(ExprList* l) {
+    memset(l, 0, sizeof(ExprList));
+}
+
+public func void ExprList.free(ExprList* l) {
+    if (l.exprs) free(cast<void*>(l.exprs));
+}
+
+public func void ExprList.add(ExprList* l, Expr* d) {
+    if (l.count >= l.capacity) {
+        l.capacity += 4;
+        void* old = cast<void*>(l.exprs);
+        void* exprs2 = malloc(l.capacity * sizeof(Expr*));
+        memcpy(exprs2, old, l.count * sizeof(Expr*));
+        free(old);
+        l.exprs = exprs2;
+    }
+
+    l.exprs[l.count] = d;
+    l.count++;
+}
+
+public func u32 ExprList.size(const ExprList* l) {
+    return l.count;
+}
+
+public func Expr** ExprList.getExprs(const ExprList* l) {
+    return l.exprs;
+}
+

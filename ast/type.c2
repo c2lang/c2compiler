@@ -3,10 +3,8 @@
 
 module ast;
 
-import ast_context local;
 import utils local;
-
-import stdio local;
+import stdio;
 
 public type TypeKind enum u8 {
     Builtin,
@@ -40,7 +38,7 @@ public func TypeKind Type.getKind(const Type* t) @(inline) { return cast<TypeKin
 public func void Type.dump(const Type* t) {
     StringBuffer* out = StringBuffer.create(10*4096);
     t.print(out, 0);
-    printf("%s\n", out.data());
+    stdio.printf("%s\n", out.data());
     out.free();
 }
 

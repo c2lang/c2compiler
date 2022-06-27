@@ -3,7 +3,7 @@
 
 module ast;
 
-import ast_context local;
+import ast_context;
 import utils local;
 
 public type BinaryOperatorBits struct {
@@ -50,7 +50,7 @@ public type BinaryOpcode enum u8 {
 //    Comma, // Q: used?
 }
 
-public func BinaryOperator* BinaryOperator.create(Context* c, SrcLoc loc, BinaryOpcode kind, Expr* lhs, Expr* rhs) @(inline) {
+public func BinaryOperator* BinaryOperator.create(ast_context.Context* c, SrcLoc loc, BinaryOpcode kind, Expr* lhs, Expr* rhs) @(inline) {
     BinaryOperator* e = c.alloc(sizeof(BinaryOperator));
     e.expr.init(ExprKind.BinaryOperator, loc, 0, 0, 0);
     e.expr.stmt.unaryOperatorBits.kind = kind;

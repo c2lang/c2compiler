@@ -3,17 +3,15 @@
 
 module ast;
 
-import ast_context local;
+import ast_context;
 import utils local;
-
-import stdio local; // TEMP
 
 public type ContinueStmt struct {
     Stmt stmt;
     SrcLoc loc;
 } @(opaque)
 
-public func ContinueStmt* ContinueStmt.create(Context* c, SrcLoc loc) @(inline) {
+public func ContinueStmt* ContinueStmt.create(ast_context.Context* c, SrcLoc loc) @(inline) {
     ContinueStmt* s = c.alloc(sizeof(ContinueStmt));
     s.stmt.init(StmtKind.Continue);
     s.loc = loc;

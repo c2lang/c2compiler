@@ -3,7 +3,7 @@
 
 module ast;
 
-import ast_context local;
+import ast_context;
 import utils local;
 
 public type ArraySubscriptExpr struct {
@@ -12,7 +12,7 @@ public type ArraySubscriptExpr struct {
     Expr* idx;
 } @(opaque)
 
-public func ArraySubscriptExpr* ArraySubscriptExpr.create(Context* c, SrcLoc loc, Expr* base, Expr* idx) @(inline) {
+public func ArraySubscriptExpr* ArraySubscriptExpr.create(ast_context.Context* c, SrcLoc loc, Expr* base, Expr* idx) @(inline) {
     ArraySubscriptExpr* e = c.alloc(sizeof(ArraySubscriptExpr));
     e.expr.init(ExprKind.ArraySubscript, loc, 0, 0, 0);
     e.base = base;

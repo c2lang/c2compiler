@@ -3,10 +3,8 @@
 
 module ast;
 
-import ast_context local;
+import ast_context;
 import utils local;
-
-import stdio local; // TEMP
 
 public type CallExprBits struct {
     u32 : NumExprBits;
@@ -19,7 +17,7 @@ public type CallExpr struct {
 } @(opaque)
 
 // TODO args
-public func CallExpr* CallExpr.create(Context* c, SrcLoc loc, Expr* fn) @(inline) {
+public func CallExpr* CallExpr.create(ast_context.Context* c, SrcLoc loc, Expr* fn) @(inline) {
     // assert(fn);
     CallExpr* e = c.alloc(sizeof(CallExpr));
     e.expr.init(ExprKind.Call, loc, 0, 0, 0);

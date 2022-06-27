@@ -3,10 +3,8 @@
 
 module ast;
 
-import ast_context local;
+import ast_context;
 import utils local;
-
-import stdio local; // TEMP
 
 type ForStmtBits struct {
     u32 : NumStmtBits;
@@ -21,7 +19,7 @@ public type ForStmt struct {
     Stmt* body;
 } @(opaque)
 
-public func ForStmt* ForStmt.create(Context* c, Stmt* init_, Expr* cond, Expr* incr, Stmt* body) @(inline) {
+public func ForStmt* ForStmt.create(ast_context.Context* c, Stmt* init_, Expr* cond, Expr* incr, Stmt* body) @(inline) {
     ForStmt* s = c.alloc(sizeof(ForStmt));
     s.stmt.init(StmtKind.For);
     s.init = init_;

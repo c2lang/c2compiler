@@ -3,10 +3,8 @@
 
 module ast;
 
-import ast_context local;
 import utils local;
-
-import stdio local; // TEMP
+import stdio;
 
 public type ExprKind enum u8 {
     IntegerLiteral,
@@ -74,7 +72,7 @@ public func bool Expr.isCtc(const Expr* e) @(inline) { return e.stmt.exprBits.is
 public func void Expr.dump(Expr* e) {
     StringBuffer* out = StringBuffer.create(10*4096);
     e.print(out, 0);
-    printf("%s\n", out.data());
+    stdio.printf("%s\n", out.data());
     out.free();
 }
 
