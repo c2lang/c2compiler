@@ -127,7 +127,80 @@ func void Parser.parseStructBlock(Parser* p, StructTypeDecl* d) {
 
 func void Parser.parseEnumType(Parser* p, const char* name, u32 loc, bool is_public) {
     p.consumeToken();
-    // TODO
+
+    // TODO lookup table (is_type?)
+    switch (p.tok.kind) {
+    case Kind.KW_char:
+        break;
+    case Kind.KW_f32: fallthrough;
+    case Kind.KW_f64:
+        p.error("enum type must be an integer");
+        break;
+    case Kind.KW_i8:  fallthrough;
+    case Kind.KW_i16: fallthrough;
+    case Kind.KW_i32: fallthrough;
+    case Kind.KW_i64: fallthrough;
+    case Kind.KW_isize:
+        break;
+    case Kind.KW_reg8:  fallthrough;
+    case Kind.KW_reg16: fallthrough;
+    case Kind.KW_reg32: fallthrough;
+    case Kind.KW_reg64:
+        p.error("enum type must be an integer");
+        break;
+    case Kind.KW_u8:  fallthrough;
+    case Kind.KW_u16: fallthrough;
+    case Kind.KW_u32: fallthrough;
+    case Kind.KW_u64: fallthrough;
+    case Kind.KW_usize:
+        break;
+    case Kind.KW_void:
+        p.error("enum type must be an integer");
+        break;
+    default:
+        p.error("expected enum type");
+        break;
+    }
+    QualType qt = p.builder.actOnBuiltinType(p.tok.kind);
+    p.consumeToken();
+
+    p.expectAndConsume(Kind.LBrace);
+
+    bool is_incr = false;
+
+    DeclList constants;
+    constants.init(16);
+
+    if (p.tok.kind == Kind.Plus) {
+        is_incr = true;
+        p.consumeToken();
+        p.error("TODO incremental enum");
+    } else {
+
+        while (p.tok.kind == Kind.Identifier) {
+            const char* const_name = p.tok.text_value;
+            SrcLoc const_loc = p.tok.loc;
+            p.consumeToken();
+
+            Expr* initial = nil;
+            if (p.tok.kind == Kind.Equal) {
+                p.consumeToken();
+                initial = p.parseExpr(); // p.parseConstantExpr()
+            }
+
+            EnumConstantDecl* constant = p.builder.actOnEnumConstant(const_name, const_loc, is_public, qt, initial);
+            constants.add(constant.asDecl());
+
+            if (p.tok.kind != Kind.Comma) break;
+            p.consumeToken();
+        }
+    }
+
+    p.expectAndConsume(Kind.RBrace);
+
+    p.builder.actOnEnumTypeDecl(name, loc, is_public, is_incr, qt, cast<EnumConstantDecl**>(constants.getDecls()), constants.size());
+
+    constants.free();
 }
 
 func void Parser.parseAliasType(Parser* p, const char* name, u32 loc, bool is_public) {

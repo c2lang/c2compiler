@@ -16,6 +16,7 @@ func Stmt* Parser.parseStmt(Parser* p) {
     printf("parseStmt\n");
 #endif
     // TODO use Jump Table (combined one for multiple purposes?)
+    // TODO also jump to Expr part, since most entries use parseExprStmt (dont lookup again in Expr)
     switch (p.tok.kind) {
     case Kind.LBrace:
         return cast<Stmt*>(p.parseCompoundStmt());

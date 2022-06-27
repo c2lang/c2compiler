@@ -23,6 +23,7 @@ public func VarDecl* VarDecl.create(ast_context.Context* c, const char* name, Sr
     d.decl.init(DeclKind.Var, name, loc, is_public);
     // TODO put QualType in Decl
     if (initValue) {
+        d.decl.varDeclBits.has_init = 1;
         d.init[0] = initValue;
     }
     return d;

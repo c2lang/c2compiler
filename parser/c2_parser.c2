@@ -100,7 +100,7 @@ public func bool Parser.parse(Parser* p) {
 func void Parser.consumeToken(Parser* p) {
     p.tokenizer.lex(&p.tok);
 
-    //dump_token(p.sm, &p.tok);
+    dump_token(p.sm, &p.tok);
 
     if (p.tok.kind == Kind.Error) p.error(p.tok.error_msg);
 }

@@ -57,6 +57,8 @@ executable c2c
     ast/import_decl.c2
     ast/struct_type_decl.c2
     ast/var_decl.c2
+    ast/enum_type_decl.c2
+    ast/enum_constant_decl.c2
 
     ast/utils.c2
     ast/type.c2

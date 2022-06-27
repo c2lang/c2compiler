@@ -61,6 +61,13 @@
 - dont import local, (for single printf)
 - check clang build warnings
 - add Trace option to instrument all functions?
+- BIG LOOKUP TABLES: per TokenKind
+    -> different tables, better for cache
+    Q: put function-pointers in table? (no need to jump after) -> try speedup
+    - top level
+    - stmt level
+    - expr level
+    - struct body?
 
 
 Parse Expr:

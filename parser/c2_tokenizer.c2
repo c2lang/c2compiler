@@ -76,9 +76,9 @@ const Keyword[] Keywords_d = {
 const Keyword[] Keywords_e = {
     { "elemsof", Kind.KW_elemsof, 7 },
     { "else", Kind.KW_else, 4 },
+    { "enum", Kind.KW_enum, 4 },
     { "enum_max", Kind.KW_enum_max, 8 },
     { "enum_min", Kind.KW_enum_min, 8 },
-    { "enum", Kind.KW_enum, 4 },
     { nil, Kind.None, 0 },
 }
 const Keyword[] Keywords_f = {

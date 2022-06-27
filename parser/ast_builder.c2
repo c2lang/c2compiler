@@ -162,7 +162,16 @@ public func void Builder.actOnFunctionBody(Builder* b, FunctionDecl* f, Compound
     f.setBody(body);
 }
 
-// TODO extract Decl, Stmt parts to own file
+public func EnumConstantDecl* Builder.actOnEnumConstant(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType qt, Expr* initial) {
+    return EnumConstantDecl.create(b.context, name, loc, is_public, qt, initial);
+}
+
+public func void Builder.actOnEnumTypeDecl(Builder* b, const char* name, SrcLoc loc, bool is_public, bool is_incr,
+                                           QualType qt, EnumConstantDecl** constants, u32 num_constants) {
+    EnumTypeDecl* d = EnumTypeDecl.create(b.context, name, loc, is_public, is_incr, constants, num_constants);
+    b.ast.addTypeDecl(d.asDecl());
+}
+
 public func CompoundStmt* Builder.actOnCompoundStmt(Builder* b, Stmt** stmts, u32 count) {
     return CompoundStmt.create(b.context, stmts, count);
 }

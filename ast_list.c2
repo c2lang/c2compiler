@@ -22,10 +22,12 @@ func void ImportDeclList.free(ImportDeclList* l) {
 func void ImportDeclList.add(ImportDeclList* l, ImportDecl* d) {
     if (l.count >= l.capacity) {
         l.capacity += 4;
-        void* old = cast<void*>(l.decls);
         void* decls2 = malloc(l.capacity * sizeof(ImportDecl*));
-        memcpy(decls2, old, l.count * sizeof(ImportDecl*));
-        free(old);
+        void* old = cast<void*>(l.decls);
+        if (old) {
+            memcpy(decls2, old, l.count * sizeof(ImportDecl*));
+            free(old);
+        }
         l.decls = decls2;
     }
 
@@ -60,10 +62,12 @@ func void FunctionDeclList.free(FunctionDeclList* l) {
 func void FunctionDeclList.add(FunctionDeclList* l, FunctionDecl* d) {
     if (l.count >= l.capacity) {
         l.capacity += 4;
-        void* old = cast<void*>(l.decls);
         void* decls2 = malloc(l.capacity * sizeof(FunctionDecl*));
-        memcpy(decls2, old, l.count * sizeof(FunctionDecl*));
-        free(old);
+        void* old = cast<void*>(l.decls);
+        if (old) {
+            memcpy(decls2, old, l.count * sizeof(FunctionDecl*));
+            free(old);
+        }
         l.decls = decls2;
     }
 
@@ -86,8 +90,11 @@ public type DeclList struct {
     Decl** decls;
 }
 
-public func void DeclList.init(DeclList* l) {
+public func void DeclList.init(DeclList* l, u32 initial_size = 0) {
     memset(l, 0, sizeof(DeclList));
+    if (initial_size) {
+
+    }
 }
 
 public func void DeclList.free(DeclList* l) {
@@ -97,10 +104,12 @@ public func void DeclList.free(DeclList* l) {
 public func void DeclList.add(DeclList* l, Decl* d) {
     if (l.count >= l.capacity) {
         l.capacity += 4;
-        void* old = cast<void*>(l.decls);
         void* decls2 = malloc(l.capacity * sizeof(Decl*));
-        memcpy(decls2, old, l.count * sizeof(Decl*));
-        free(old);
+        void* old = cast<void*>(l.decls);
+        if (old) {
+            memcpy(decls2, old, l.count * sizeof(Decl*));
+            free(old);
+        }
         l.decls = decls2;
     }
 
@@ -135,10 +144,12 @@ public func void ExprList.free(ExprList* l) {
 public func void ExprList.add(ExprList* l, Expr* d) {
     if (l.count >= l.capacity) {
         l.capacity += 4;
-        void* old = cast<void*>(l.exprs);
         void* exprs2 = malloc(l.capacity * sizeof(Expr*));
-        memcpy(exprs2, old, l.count * sizeof(Expr*));
-        free(old);
+        void* old = cast<void*>(l.exprs);
+        if (old) {
+            memcpy(exprs2, old, l.count * sizeof(Expr*));
+            free(old);
+        }
         l.exprs = exprs2;
     }
 

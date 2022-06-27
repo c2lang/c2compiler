@@ -1,0 +1,44 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context;
+import utils local;
+
+type EnumConstantDeclBits struct {
+    u32 : NumDeclBits;
+    u32 has_init : 1;
+}
+
+public type EnumConstantDecl struct {
+    Decl decl;
+    u32 value;
+    QualType qt;
+    Expr*[0] init;  // tail-allocated
+} @(opaque)
+
+public func EnumConstantDecl* EnumConstantDecl.create(ast_context.Context* c, const char* name, SrcLoc loc, bool is_public, QualType qt, Expr* initValue) @(inline) {
+    u32 size = sizeof(EnumConstantDecl);
+    if (initValue) size += sizeof(Expr*);
+    EnumConstantDecl* d = c.alloc(size);
+    d.decl.init(DeclKind.EnumConstant, name, loc, is_public);
+    d.value = 0;
+    d.qt = qt;
+    if (initValue) {
+        d.decl.enumConstantDeclBits.has_init = 1;
+        d.init[0] = initValue;
+    }
+    return d;
+}
+
+public func Decl* EnumConstantDecl.asDecl(EnumConstantDecl* d) @(inline) { return &d.decl; }
+
+public func void EnumConstantDecl.print(const EnumConstantDecl* d, StringBuffer* out, u32 indent) {
+    out.indent(indent);
+    // TODO print decl common stuff
+    out.print("EnumConstantDecl %s %u", d.decl.name, d.value);
+    d.qt.print(out, indent + 2);
+    if (d.decl.enumConstantDeclBits.has_init) d.init[0].print(out, indent + 2);
+}
+
