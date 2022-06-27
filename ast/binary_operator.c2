@@ -1,0 +1,114 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context local;
+import utils local;
+
+public type BinaryOperatorBits struct {
+    u32 : NumExprBits;
+    u32 kind : 5;
+}
+
+public type BinaryOperator struct {
+    Expr expr;
+    Expr* lhs;
+    Expr* rhs;
+} @(opaque)
+
+public type BinaryOpcode enum u8 {
+    Multiply,
+    Divide,
+    Reminder,
+    Add,
+    Subtract,
+    ShiftLeft,
+    ShiftRight,
+    LessThan,
+    GreaterThan,
+    LessEqual,
+    GreaterEqual,
+    Equal,
+    NotEqual,
+    And,
+    Xor,
+    Or,
+    LAnd,
+    LOr,
+    Assign,
+    MulAssign,
+    DivAssign,
+    RemAssign,
+    AddAssign,
+    SubASsign,
+    ShlAssign,
+    ShrASsign,
+    AndAssign,
+    XorAssign,
+    OrAssign,
+//    Comma, // Q: used?
+}
+
+public func BinaryOperator* BinaryOperator.create(Context* c, SrcLoc loc, BinaryOpcode kind, Expr* lhs, Expr* rhs) @(inline) {
+    BinaryOperator* e = c.alloc(sizeof(BinaryOperator));
+    e.expr.init(ExprKind.BinaryOperator, loc, 0, 0, 0);
+    e.expr.stmt.unaryOperatorBits.kind = kind;
+    e.lhs = lhs;
+    e.rhs = rhs;
+    return e;
+}
+
+public func BinaryOpcode BinaryOperator.getKind(const BinaryOperator* e) {
+    return cast<BinaryOpcode>(e.expr.stmt.binaryOperatorBits.kind);
+}
+
+public func Expr* BinaryOperator.getLHS(BinaryOperator* e) { return e.lhs; }
+public func Expr** BinaryOperator.getLHS2(BinaryOperator* e) { return &e.lhs; }
+
+public func Expr* BinaryOperator.getRHS(BinaryOperator* e) { return e.rhs; }
+public func Expr** BinaryOperator.getRHS2(BinaryOperator* e) { return &e.rhs; }
+
+public func const char* binaryOpcode2Str(BinaryOpcode k) {
+    switch (k) {
+    case BinaryOpcode.Multiply:     return "*";
+    case BinaryOpcode.Divide:       return "/";
+    case BinaryOpcode.Reminder:     return "%";
+    case BinaryOpcode.Add:          return "+";
+    case BinaryOpcode.Subtract:     return "-";
+    case BinaryOpcode.ShiftLeft:    return "<<";
+    case BinaryOpcode.ShiftRight:   return ">>";
+    case BinaryOpcode.LessThan:     return "<";
+    case BinaryOpcode.GreaterThan:  return ">";
+    case BinaryOpcode.LessEqual:    return "<=";
+    case BinaryOpcode.GreaterEqual: return ">=";
+    case BinaryOpcode.Equal:        return "==";
+    case BinaryOpcode.NotEqual:     return "!=";
+    case BinaryOpcode.And:          return "&";
+    case BinaryOpcode.Xor:          return "^";
+    case BinaryOpcode.Or:           return "|";
+    case BinaryOpcode.LAnd:         return "&&";
+    case BinaryOpcode.LOr:          return "||";
+    case BinaryOpcode.Assign:       return "=";
+    case BinaryOpcode.MulAssign:    return "*=";
+    case BinaryOpcode.DivAssign:    return "/=";
+    case BinaryOpcode.RemAssign:    return "%=";
+    case BinaryOpcode.AddAssign:    return "+=";
+    case BinaryOpcode.SubASsign:    return "-=";
+    case BinaryOpcode.ShlAssign:    return "<<=";
+    case BinaryOpcode.ShrASsign:    return ">>=";
+    case BinaryOpcode.AndAssign:    return "&=";
+    case BinaryOpcode.XorAssign:    return "^=";
+    case BinaryOpcode.OrAssign:     return "|=";
+    //case BinaryOpcode.Comma: return ",";
+    }
+    return "";
+}
+
+public func void BinaryOperator.print(const BinaryOperator* e, StringBuffer* out, u32 indent) {
+    out.indent(indent);
+    out.print("BinaryOperator %s", binaryOpcode2Str(e.getKind()));
+    e.lhs.print(out, indent + 2);
+    e.rhs.print(out, indent + 2);
+}
+
