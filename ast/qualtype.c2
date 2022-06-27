@@ -52,7 +52,14 @@ public func void QualType.dump(const QualType* qt) {
 
 public func void QualType.print(const QualType* qt, utils.StringBuffer* out, u32 indent) {
     out.indent(indent);
-    out.add("QualType\n");
-    // TODO
+    out.add("QualType");
+    const Type* t = qt.getTypeOrNil();
+    u32 quals = qt.getQualifiers();
+    if (!t) out.add(" type=nil");
+    if (quals & QualType_Const) out.add(" const");
+    if (quals & QualType_Volatile) out.add(" volatile");
+    out.add("\n");
+    if (t) {
+        t.print(out, indent + 2);
+    }
 }
-// TODO add helper functions

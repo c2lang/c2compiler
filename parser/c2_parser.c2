@@ -358,10 +358,17 @@ func QualType Parser.parseOptionalArray(Parser* p, QualType base) {
     Expr* size = nil;
     if (p.tok.kind == Kind.RSquare) {
         // "[]"
-    } else if (p.tok.kind == Kind.NumberLiteral) /* TODO && nextToken().is(Kind.RSquare) */
-    // TODO
+    }
+    // TODO fastpath for number + ] (need NextToken)
+    else if (p.tok.kind == Kind.Plus) {
+        p.consumeToken();
+        is_incremental = true;
+    } else {
+        size = p.parseExpr();
+    }
 
     base = p.parseOptionalArray(base);
+    p.expectAndConsume(Kind.RSquare);
     return p.builder.actOnArrayType(base, is_incremental, size);
 }
 

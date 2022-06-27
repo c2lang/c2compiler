@@ -30,6 +30,7 @@ static_assert(elemsof(VarDeclKind), elemsof(varDeclNames));
 
 public type VarDecl struct {
     Decl decl;
+    QualType qt;
     Expr*[0] init;  // tail-allocated
 } @(opaque)
 
@@ -39,7 +40,7 @@ public func VarDecl* VarDecl.create(ast_context.Context* c, VarDeclKind kind, co
     VarDecl* d = c.alloc(size);
     d.decl.init(DeclKind.Var, name, loc, is_public);
     d.decl.varDeclBits.kind = kind;
-    // TODO put QualType in Decl
+    d.qt = qt;
     if (initValue) {
         d.decl.varDeclBits.has_init = 1;
         d.init[0] = initValue;
@@ -54,6 +55,7 @@ public func VarDeclKind VarDecl.getKind(const VarDecl* d) { return cast<VarDeclK
 public func void VarDecl.print(const VarDecl* d, StringBuffer* out, u32 indent) {
     out.indent(indent);
     out.print("VarDecl %s %s\n", d.decl.name, varDeclNames[d.getKind()]);
+    d.qt.print(out, indent + 2);
     if (d.decl.varDeclBits.has_init) d.init[0].print(out, indent + 2);
 }
 
