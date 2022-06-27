@@ -27,8 +27,8 @@ public type StmtKind enum u8 {
     Goto,
 */
     Compound,
-/*
     Decl,
+/*
     Asm,
 */
 }
@@ -116,6 +116,9 @@ public func void Stmt.print(const Stmt* s, utils.StringBuffer* out, u32 indent) 
         break;
     case StmtKind.Compound:
         CompoundStmt.print(cast<CompoundStmt*>(s), out, indent);
+        break;
+    case StmtKind.Decl:
+        DeclStmt.print(cast<DeclStmt*>(s), out, indent);
         break;
     }
 }

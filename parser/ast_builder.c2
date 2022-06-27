@@ -69,6 +69,13 @@ public func VarDecl* Builder.actOnFunctionParam(Builder* b, const char* name, Sr
     return VarDecl.create(b.context, VarDeclKind.FunctionParam, name, loc, is_public, qt, initValue);
 }
 
+public func Stmt* Builder.actOnVarDeclStmt(Builder* b, const char* name, SrcLoc loc, QualType qt, Expr* initValue, bool has_local) {
+    VarDecl* d = VarDecl.create(b.context, VarDeclKind.LocalVar, name, loc, false, qt, initValue);
+    d.setLocal(has_local);
+
+    return cast<Stmt*>(DeclStmt.create(b.context, d));
+}
+
 public func void Builder.actOnAttr(Builder* b, const char* name, SrcLoc begin_loc, SrcLoc end_loc) {
     //printf("ATTR  %s\n", name);
 }

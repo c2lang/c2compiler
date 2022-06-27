@@ -26,6 +26,7 @@ static_assert(24, sizeof(DefaultStmt));
 static_assert(24, sizeof(BreakStmt));
 static_assert(24, sizeof(ContinueStmt));
 static_assert(24, sizeof(FallthroughStmt));
+static_assert(32, sizeof(DeclStmt));
 
 static_assert(32, sizeof(Expr));
 static_assert(40, sizeof(TypeExpr));

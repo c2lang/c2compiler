@@ -9,6 +9,7 @@ import utils local;
 type VarDeclBits struct {
     u32 : NumDeclBits;
     u32 has_init : 1;
+    u32 has_local : 1;
     u32 kind : 3;
 }
 
@@ -51,6 +52,10 @@ public func VarDecl* VarDecl.create(ast_context.Context* c, VarDeclKind kind, co
 public func Decl* VarDecl.asDecl(VarDecl* d) @(inline) { return &d.decl; }
 
 public func VarDeclKind VarDecl.getKind(const VarDecl* d) { return cast<VarDeclKind>(d.decl.varDeclBits.kind); }
+
+public func void VarDecl.setLocal(VarDecl* d, bool has_local) {
+    d.decl.varDeclBits.has_local = has_local;
+}
 
 public func void VarDecl.print(const VarDecl* d, StringBuffer* out, u32 indent) {
     out.indent(indent);

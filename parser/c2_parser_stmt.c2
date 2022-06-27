@@ -299,8 +299,34 @@ func Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal) {
 #if DebugParser
     printf("parseDeclStmt\n");
 #endif
-    p.error("TODO parseDeclStmt");
-    return nil;
+    bool has_local = false;
+    if (p.tok.kind == Kind.KW_local) {
+        has_local = true;
+        if (!allowLocal) p.error("local is not allowed here");
+        p.consumeToken();
+    }
+
+    QualType qt = p.parseTypeSpecifier(true);
+
+    p.expectIdentifier();
+    const char* name = p.tok.text_value;
+    SrcLoc loc = p.tok.loc;
+    p.consumeToken();
+
+    // TODO same as parseVarDef()
+    bool need_semi = true;
+    Expr* initValue = nil;
+    if (p.tok.kind == Kind.Equal) {
+        p.consumeToken();
+        initValue = p.parseInitValue(&need_semi, false);
+    }
+
+    Stmt* s = p.builder.actOnVarDeclStmt(name, loc, qt, initValue, has_local);
+    if (checkSemi && need_semi) {
+        p.expectAndConsume(Kind.Semicolon);
+    }
+
+    return s;
 }
 
 func Stmt* Parser.parseExprStmt(Parser* p) {

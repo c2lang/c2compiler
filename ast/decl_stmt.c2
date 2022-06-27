@@ -1,0 +1,26 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context;
+import utils local;
+
+public type DeclStmt struct {
+    Stmt stmt;
+    VarDecl* decl;
+} @(opaque)
+
+public func DeclStmt* DeclStmt.create(ast_context.Context* c, VarDecl* decl) @(inline) {
+    DeclStmt* s = c.alloc(sizeof(DeclStmt));
+    s.stmt.init(StmtKind.Decl);
+    s.decl = decl;
+    return s;
+}
+
+public func void DeclStmt.print(const DeclStmt* s, StringBuffer* out, u32 indent) {
+    out.indent(indent);
+    out.add("DeclStmt\n");
+    s.decl.print(out, indent + 2);
+}
+
