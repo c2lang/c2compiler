@@ -347,6 +347,9 @@ func QualType Parser.parseTypeSpecifier(Parser* p, bool allow_qualifier) {
 }
 
 func QualType Parser.parseOptionalArray(Parser* p, QualType base) {
+#if DebugParser
+    printf("parseOptionalArray\n");
+#endif
     if (p.tok.kind != Kind.LSquare) return base;
     p.consumeToken();
 
@@ -357,17 +360,19 @@ func QualType Parser.parseOptionalArray(Parser* p, QualType base) {
     Expr* size = nil;
     if (p.tok.kind == Kind.RSquare) {
         // "[]"
+        p.consumeToken();
     }
     // TODO fastpath for number + ] (need NextToken)
     else if (p.tok.kind == Kind.Plus) {
         p.consumeToken();
         is_incremental = true;
+        p.expectAndConsume(Kind.RSquare);
     } else {
         size = p.parseExpr();
+        p.expectAndConsume(Kind.RSquare);
     }
 
     base = p.parseOptionalArray(base);
-    p.expectAndConsume(Kind.RSquare);
     return p.builder.actOnArrayType(base, is_incremental, size);
 }
 
