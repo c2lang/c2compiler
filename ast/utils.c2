@@ -39,6 +39,7 @@ static_assert(40, sizeof(IdentifierExpr));
 static_assert(40, sizeof(CallExpr));
 static_assert(40, sizeof(IntegerLiteral));
 static_assert(40, sizeof(ParenExpr));
+static_assert(48, sizeof(BitOffsetExpr));
 static_assert(40, sizeof(UnaryOperator));
 static_assert(48, sizeof(BinaryOperator));
 

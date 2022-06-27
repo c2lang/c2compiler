@@ -1,0 +1,42 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context local;
+import utils local;
+
+/*
+public type BitOffsetExprBits struct {
+    u32 : NumExprBits;
+    u32 kind : 5;
+}
+*/
+
+public type BitOffsetExpr struct {
+    Expr expr;
+    Expr* lhs;
+    Expr* rhs;
+} @(opaque)
+
+public func BitOffsetExpr* BitOffsetExpr.create(Context* c, SrcLoc loc, Expr* lhs, Expr* rhs) @(inline) {
+    BitOffsetExpr* e = c.alloc(sizeof(BitOffsetExpr));
+    e.expr.init(ExprKind.BitOffset, loc, 0, 0, 0);
+    e.lhs = lhs;
+    e.rhs = rhs;
+    return e;
+}
+
+public func Expr* BitOffsetExpr.getLHS(BitOffsetExpr* e) { return e.lhs; }
+public func Expr** BitOffsetExpr.getLHS2(BitOffsetExpr* e) { return &e.lhs; }
+
+public func Expr* BitOffsetExpr.getRHS(BitOffsetExpr* e) { return e.rhs; }
+public func Expr** BitOffsetExpr.getRHS2(BitOffsetExpr* e) { return &e.rhs; }
+
+public func void BitOffsetExpr.print(const BitOffsetExpr* e, StringBuffer* out, u32 indent) {
+    out.indent(indent);
+    out.add("BitOffsetExpr\n");
+    e.lhs.print(out, indent + 2);
+    e.rhs.print(out, indent + 2);
+}
+

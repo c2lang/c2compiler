@@ -135,9 +135,36 @@ func Expr* Parser.parseCastExpr(Parser* p, bool isUnaryExpr, bool isAddrOfOp) {
     return p.parsePostfixExprSuffix(res);
 }
 
-func Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* res) {
-    // TODO
-    return res;
+func Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs) {
+
+    while (1) {
+        switch (p.tok.kind) {
+        case Kind.Identifier:
+            return lhs;
+        case Kind.LParen:
+            // TODO
+            break;
+        case Kind.LSquare:
+            p.consumeToken();
+            Expr* idx = p.parseExpr();
+            if (p.tok.kind  == Kind.Colon) {
+                // BitOffset <expr> : <expr>
+                SrcLoc colLoc = p.tok.loc;
+                p.consumeToken();
+                Expr* rhs = p.parseExpr();
+                // TODO need colLoc?
+                idx = p.builder.actOnBitOffsetExpr(colLoc, idx, rhs);
+            }
+            p.expectAndConsume(Kind.RSquare);
+            //lhs = p.builder.actOnArraySubscriptExpr(lhs, idx);
+            break;
+        default:
+            return lhs;
+
+
+        }
+    }
+    return lhs;
 }
 
 

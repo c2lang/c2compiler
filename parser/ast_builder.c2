@@ -296,3 +296,7 @@ public func Expr* Builder.actOnTypeExpr(Builder* b, SrcLoc loc, QualType qt) {
     return cast<Expr*>(TypeExpr.create(b.context, loc, qt));
 }
 
+public func Expr* Builder.actOnBitOffsetExpr(Builder* b, SrcLoc loc, Expr* lhs, Expr* rhs) {
+    return cast<Expr*>(BitOffsetExpr.create(b.context, loc, lhs, rhs));
+}
+
