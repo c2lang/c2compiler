@@ -405,6 +405,22 @@ func const Keyword* check_keyword(const char* cp) {
     return nil;
 }
 
+public type Token struct {
+    SrcLoc loc;
+    Kind kind;
+    union {
+        const char* error_msg;  // ERROR
+        const char* text_value; // Identifier, NumberLiteral
+        u8 char_value; // CharLiteral
+    }
+    bool more;
+}
+
+public func void Token.init(Token* tok) {
+    tok.kind = Kind.None;
+    tok.more = true;
+}
+
 public type Feature struct {
     bool is_if;
     bool enabled;
