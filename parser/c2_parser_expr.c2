@@ -382,3 +382,7 @@ func Expr* Parser.parseElemsof(Parser* p) {
     return p.builder.actOnBuiltinExpr(loc, res, BuiltinExprKind.Elemsof);
 }
 
+func Expr* Parser.parseInitValue(Parser* p, bool* need_semi, bool allow_designators) {
+    return nil;
+}
+

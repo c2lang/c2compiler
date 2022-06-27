@@ -322,7 +322,31 @@ func QualType Parser.parseOptionalArray(Parser* p, QualType qt) {
 }
 
 func void Parser.parseVarDef(Parser* p, bool is_public) {
-    // TODO
+#if DebugParser
+    printf("parseVarDef\n");
+#endif
+    if (p.tok.kind == Kind.KW_local) p.error("local cannot be used at file scope");
+
+    QualType qt = p.parseTypeSpecifier(true);
+    p.expectIdentifier();
+
+    const char* name = p.tok.text_value;
+    SrcLoc loc = p.tok.loc;
+    p.consumeToken();
+
+    bool need_semi = true;
+    Expr* initValue = nil;
+
+    p.parseOptionalAttributes(); // TODO need Decl*
+
+    if (p.tok.kind == Kind.Equal) {
+        p.consumeToken();
+        initValue = p.parseInitValue(&need_semi, false);
+    }
+
+    if (need_semi) p.expectAndConsume(Kind.Semicolon);
+
+    p.builder.actOnGlobalVarDecl(p.tok.text_value, p.tok.loc, is_public, qt, initValue);
 }
 
 func void Parser.parseStaticAssert(Parser* p) {

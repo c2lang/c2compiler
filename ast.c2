@@ -11,6 +11,7 @@ public type AST struct {
 
     ImportDeclList imports;
     DeclList types;
+    DeclList variables;
     FunctionDeclList functions;
 
 } @(opaque)
@@ -18,11 +19,11 @@ public type AST struct {
 public func AST* AST.create() {
     AST* a = calloc(1, sizeof(AST));
     a.imports.init();
+    a.types.init();
+    a.variables.init();
     a.functions.init();
     return a;
 }
-
-// TODO AST.free() needed?
 
 public func void AST.addImport(AST* a, ImportDecl* d) @(inline) {
     a.imports.add(d);
@@ -34,6 +35,10 @@ public func void AST.addFunc(AST* a, FunctionDecl* d) @(inline) {
 
 public func void AST.addTypeDecl(AST* a, Decl* d) @(inline) {
     a.types.add(d);
+}
+
+public func void AST.addVarDecl(AST* a, Decl* d) @(inline) {
+    a.variables.add(d);
 }
 
 public func void AST.print(const AST* a) {
@@ -49,6 +54,13 @@ public func void AST.print(const AST* a) {
     Decl** types = a.types.getDecls();
     for (u32 i=0; i<a.types.size(); i++) {
         types[i].print(out, 0);
+        out.add("\n");
+    }
+
+    out.add("\n");
+    Decl** variables = a.variables.getDecls();
+    for (u32 i=0; i<a.variables.size(); i++) {
+        variables[i].print(out, 0);
         out.add("\n");
     }
 
