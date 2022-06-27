@@ -58,8 +58,8 @@ func Expr* Parser.parseCastExpr(Parser* p, bool isUnaryExpr, bool isAddrOfOp) {
     Kind savedKind = p.tok.kind;
     Expr* res = nil;
 
+    // TODO order (or use 2nd jump table?) -> need table, because cannot be in order
     switch (savedKind) {
-    // TODO order (or use 2nd jump table?)
     case Kind.Identifier:
         res = p.parseIdentifier();
 /*
@@ -83,9 +83,36 @@ func Expr* Parser.parseCastExpr(Parser* p, bool isUnaryExpr, bool isAddrOfOp) {
     case Kind.LParen:
         res = p.parseParenExpr();
         break;
+    case Kind.Star: fallthrough;
+    case Kind.Tilde: fallthrough;
+    case Kind.Minus: fallthrough;
+    case Kind.Exclaim:
+        SrcLoc loc = p.tok.loc;
+        p.consumeToken();
+        return p.builder.actOnUnaryOperator(loc, savedKind, res);
+    case Kind.Amp:
+        SrcLoc loc = p.tok.loc;
+        p.consumeToken();
+        res = p.parseCastExpr(false, true);
+        return p.builder.actOnUnaryOperator(loc, savedKind, res);
+    case Kind.Plus:
+        // ignore unary +
+        p.consumeToken();
+        return p.parseCastExpr(false, false);
+    case Kind.PlusPlus: fallthrough;
+    case Kind.MinusMinus:
+        SrcLoc loc = p.tok.loc;
+        p.consumeToken();
+        res = p.parseCastExpr(false, false);
+        return p.builder.actOnUnaryOperator(loc, savedKind, res);
     case Kind.KW_elemsof:
         res = p.parseElemsof();
         break;
+    // TODO KW_enum_min
+    // TODO KW_enum_max
+    // TODO KW_offsetof
+    // TODO KW_cast
+    // TODO KW_to_container
     case Kind.KW_false:
         res = p.builder.actOnBooleanConstant(p.tok.loc, false);
         p.consumeToken();
@@ -100,9 +127,6 @@ func Expr* Parser.parseCastExpr(Parser* p, bool isUnaryExpr, bool isAddrOfOp) {
         res = p.builder.actOnBooleanConstant(p.tok.loc, true);
         p.consumeToken();
         break;
-
-    // TODO more case, keep in correct order!
-
     default:
         p.error("syntax error");
         break;
