@@ -70,6 +70,10 @@ public func void Builder.actOnGlobalVarDecl(Builder* b, const char* name, SrcLoc
     b.ast.addVarDecl(d);
 }
 
+public func VarDecl* Builder.actOnFunctionParam(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType qt, Expr* initValue) {
+    return VarDecl.create(b.context, VarDeclKind.FunctionParam, name, loc, is_public, qt, initValue);
+}
+
 public func void Builder.actOnAttr(Builder* b, const char* name, SrcLoc begin_loc, SrcLoc end_loc) {
     //printf("ATTR  %s\n", name);
 }

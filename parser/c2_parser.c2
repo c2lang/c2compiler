@@ -255,7 +255,7 @@ func void Parser.parseFuncDef(Parser* p, bool is_public) {
     DeclList params;
     params.init(4);
 
-    bool is_variadic = p.parseFunctionParams(&params, true);
+    bool is_variadic = p.parseFunctionParams(&params, is_public, true);
     FunctionDecl* f = p.builder.actOnFuncDecl(func_name, func_loc, is_public, rtype, params.getDecls(), params.size(), is_variadic);
     params.free();
 
@@ -273,7 +273,7 @@ func void Parser.parseFuncDef(Parser* p, bool is_public) {
     p.builder.actOnFunctionBody(f, body);
 }
 
-func bool Parser.parseFunctionParams(Parser* p, DeclList* params, bool allow_defaults) {
+func bool Parser.parseFunctionParams(Parser* p, DeclList* params, bool is_public, bool allow_defaults) {
 #if DebugParser
     printf("parseFunctionParams\n");
 #endif
@@ -289,7 +289,7 @@ func bool Parser.parseFunctionParams(Parser* p, DeclList* params, bool allow_def
 
     // VarDeclList args
     while (1) {
-        VarDecl* decl = p.parseParamDecl(nil, allow_defaults);
+        VarDecl* decl = p.parseParamDecl(is_public, allow_defaults);
         params.add(decl);
 
         // TODO check for duplicate names here (if name not empty)
@@ -312,18 +312,31 @@ func bool Parser.parseFunctionParams(Parser* p, DeclList* params, bool allow_def
     param_declaration ::= type_qualifier type_specifier IDENTIFIER param_default.
     param_default ::= EQUALS constant_expression.
 */
-func VarDecl* Parser.parseParamDecl(Parser* p, FunctionDecl* f, bool allow_defaults) {
+func VarDecl* Parser.parseParamDecl(Parser* p, bool is_public, bool allow_defaults) {
 #if DebugParser
     printf("parseParamDecl\n");
 #endif
-    if (p.tok.kind == Kind.KW_local) {
-        p.error("invalid local");
-    }
+    if (p.tok.kind == Kind.KW_local) p.error("invalid local");
 
     QualType qt = p.parseTypeSpecifier(true);
 
-    // TODO
-    return nil;
+    const char* name;
+    SrcLoc loc = p.tok.loc;
+    if (p.tok.kind == Kind.Identifier) {
+        name = p.tok.text_value;
+        p.consumeToken();
+    } else {
+        name = "";
+    }
+
+    Expr* initValue = nil;
+    if (p.tok.kind == Kind.Equal) {
+        if (!allow_defaults) p.error("parameter with default value not allowed here");
+        p.consumeToken();
+        initValue = p.parseExpr();
+    }
+
+    return p.builder.actOnFunctionParam(name, loc, is_public, qt, initValue);
 }
 
 func QualType Parser.parseTypeSpecifier(Parser* p, bool allow_qualifier) {
