@@ -49,16 +49,11 @@ public func void Builder.actOnImport(Builder* b, const char* mod_name, SrcLoc mo
     b.ast.addImport(d);
 }
 
-public func StructTypeDecl* Builder.actOnStructType(Builder* b, const char* name, SrcLoc loc, bool is_public, bool is_struct, bool is_global) {
-    StructTypeDecl* d = StructTypeDecl.create(b.context, name, loc, is_public, is_struct, is_global);
+public func StructTypeDecl* Builder.actOnStructType(Builder* b, const char* name, SrcLoc loc, bool is_public, bool is_struct, bool is_global,
+                                                    VarDecl** members, u32 num_members) {
+    StructTypeDecl* d = StructTypeDecl.create(b.context, name, loc, is_public, is_struct, is_global, members, num_members);
     b.ast.addTypeDecl(d.asDecl());
     return d;
-}
-
-public func void Builder.actOnStructMembers(Builder* b, StructTypeDecl* d, Decl** members, u32 count) {
-    void* buf = b.context.alloc(count * sizeof(Decl*));
-    memcpy(buf, cast<void*>(members), count * sizeof(Decl*));
-    d.setMembers(buf, count);
 }
 
 public func VarDecl* Builder.actOnStructVar(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType qt, Expr* initValue) {
@@ -67,7 +62,7 @@ public func VarDecl* Builder.actOnStructVar(Builder* b, const char* name, SrcLoc
 
 public func void Builder.actOnGlobalVarDecl(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType qt, Expr* initValue) {
     VarDecl* d = VarDecl.create(b.context, VarDeclKind.GlobalVar, name, loc, is_public, qt, initValue);
-    b.ast.addVarDecl(d);
+    b.ast.addVarDecl(d.asDecl());
 }
 
 public func VarDecl* Builder.actOnFunctionParam(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType qt, Expr* initValue) {

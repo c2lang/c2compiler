@@ -56,20 +56,17 @@ func void Parser.parseFuncType(Parser* p, const char* name, u32 loc, bool is_pub
 func void Parser.parseStructType(Parser* p, bool is_struct, const char* name, u32 loc, bool is_public) {
     p.consumeToken();
 
-    // TODO create struct after Block, so that we can add members immediately
-    StructTypeDecl* d = p.builder.actOnStructType(name, loc, is_struct, is_public, true);
+    DeclList members;
+    members.init(8);
+    p.parseStructBlock(&members, is_public);
+    StructTypeDecl* d = p.builder.actOnStructType(name, loc, is_struct, is_public, true, cast<VarDecl**>(members.getDecls()), members.size());
+    members.free();
 
-    p.parseStructBlock(d);
     p.parseOptionalAttributes(); // (d)
 }
 
-func void Parser.parseStructBlock(Parser* p, StructTypeDecl* d) {
+func void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
     p.expectAndConsume(Kind.LBrace);
-
-    DeclList members;
-    members.init();
-
-    const bool is_public = d.asDecl().isPublic();
 
     while (1) {
         //Syntax:
@@ -89,9 +86,14 @@ func void Parser.parseStructBlock(Parser* p, StructTypeDecl* d) {
                 loc = p.tok.loc;
                 p.consumeToken();
             }
-            StructTypeDecl* member = p.builder.actOnStructType(name, loc, is_struct, is_public, false);
-            members.add(cast<Decl*>(member));
-            p.parseStructBlock(member);
+
+            DeclList sub_members;
+            sub_members.init(4);
+
+            p.parseStructBlock(&sub_members, is_public);
+            StructTypeDecl* member = p.builder.actOnStructType(name, loc, is_struct, is_public, false, cast<VarDecl**>(sub_members.getDecls()), sub_members.size());
+            sub_members.free();
+            members.add(member.asDecl());
         } else {
             QualType qt = p.parseTypeSpecifier(true);
 
@@ -122,9 +124,6 @@ func void Parser.parseStructBlock(Parser* p, StructTypeDecl* d) {
     }
 
     p.expectAndConsume(Kind.RBrace);
-
-    p.builder.actOnStructMembers(d, members.getDecls(), members.size());
-    members.free();
 }
 
 func void Parser.parseEnumType(Parser* p, const char* name, u32 loc, bool is_public) {

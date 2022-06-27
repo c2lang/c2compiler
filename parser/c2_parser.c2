@@ -256,7 +256,7 @@ func void Parser.parseFuncDef(Parser* p, bool is_public) {
     params.init(4);
 
     bool is_variadic = p.parseFunctionParams(&params, is_public, true);
-    FunctionDecl* f = p.builder.actOnFuncDecl(func_name, func_loc, is_public, rtype, params.getDecls(), params.size(), is_variadic);
+    FunctionDecl* f = p.builder.actOnFuncDecl(func_name, func_loc, is_public, rtype, cast<VarDecl**>(params.getDecls()), params.size(), is_variadic);
     params.free();
 
     p.parseOptionalAttributes(); // (f)
@@ -290,7 +290,7 @@ func bool Parser.parseFunctionParams(Parser* p, DeclList* params, bool is_public
     // VarDeclList args
     while (1) {
         VarDecl* decl = p.parseParamDecl(is_public, allow_defaults);
-        params.add(decl);
+        params.add(decl.asDecl());
 
         // TODO check for duplicate names here (if name not empty)
         if (p.tok.kind != Kind.Comma) break;

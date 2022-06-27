@@ -5,30 +5,33 @@ module ast;
 
 import ast_context;
 import utils local;
+import string;
 
 type StructTypeDeclBits struct {
     u32 : NumDeclBits;
     u32 is_struct : 1;
     u32 is_global : 1;
-    u32 num_members : 12;
+    u32 num_members : 10;
 }
 
 public type StructTypeDecl struct {
     Decl decl;
-    Decl** members;
+    Decl*[0] members;   // tail-allocated
 } @(opaque)
 
-public func StructTypeDecl* StructTypeDecl.create(ast_context.Context* c, const char* name, SrcLoc loc, bool is_public, bool is_struct, bool is_global) @(inline) {
-    StructTypeDecl* d = c.alloc(sizeof(StructTypeDecl));
+public func StructTypeDecl* StructTypeDecl.create(ast_context.Context* c, const char* name, SrcLoc loc, bool is_public, bool is_struct,
+                                                  bool is_global, VarDecl** members, u32 num_members) @(inline)
+{
+    u32 size = sizeof(StructTypeDecl) + num_members * sizeof(VarDecl*);
+    StructTypeDecl* d = c.alloc(size);
     d.decl.init(DeclKind.StructType, name, loc, is_public);
     d.decl.structTypeDeclBits.is_struct = is_struct;
     d.decl.structTypeDeclBits.is_global = is_global;
+    d.decl.structTypeDeclBits.num_members = num_members;
+    if (num_members) {
+        string.memcpy(cast<void*>(d.members), cast<void*>(members), num_members * sizeof(VarDecl*));
+    }
     return d;
-}
-
-public func void StructTypeDecl.setMembers(StructTypeDecl* d, Decl** members, u32 count) {
-    d.decl.structTypeDeclBits.num_members = count;
-    d.members = members;
 }
 
 public func Decl* StructTypeDecl.asDecl(StructTypeDecl* d) @(inline) {

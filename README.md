@@ -59,7 +59,7 @@
 ## General
 - remove unused import
 - dont import local, (for single printf)
-- check clang build warnings
+- CHECK  all DeclList / StmtList etc to see if they are freed
 - add Trace option to instrument all functions?
 - BIG LOOKUP TABLES: per TokenKind
     -> different tables, better for cache
