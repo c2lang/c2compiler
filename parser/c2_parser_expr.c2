@@ -8,47 +8,115 @@ import ast local;
 import tokens local;
 import utils local;
 
-func Expr* Parser.parseExpr(Parser* p) {
-    // parseAssignmentExpression()
-    // parseRHSOfBinaryExpression()
+/// PrecedenceLevels - These have been altered from C99 to C2
+/// In particular, addition now comes after bitwise and shifts
+/// Bitwise is directly after shift and equality and relational have
+/// the same precedence.
 
-    // TEMP
-    // NOTE: keep in order
-    switch (p.tok.kind) {
-    case Kind.Identifier:
-        return p.parseIdentifier();
-    case Kind.NumberLiteral:
-        return p.parseNumberLiteral();
-    case Kind.CharLiteral:
-        return p.parseCharLiteral();
-    case Kind.StringLiteral:
-        return p.parseStringLiteral();
-    case Kind.LParen:
-        return p.parseParenExpr();
-    case Kind.KW_nil:
-        return p.parseNilExpr();
-    default:
-        return nil; // TEMP
-        break;
-    }
+type PrecLevel enum u8 {
+    Unknown         = 0,    // Not binary operator.
+    Comma           = 1,    // ,
+    Assignment      = 2,    // =, *=, /=, %=, +=, -=, <<=, >>=, &=, ^=, |=
+    Conditional     = 3,    // ?
+    LogicalAndOr    = 4,    // &&, ||
+    Relational      = 5,    // ==, !=, >=, <=, >, <
+    Additive        = 6,    // -, +
+    Bitwise         = 7,    // ^, |, &
+    Shift           = 8,    // <<, >>
+    Multiplicative  = 9,    // *, /, %
+}
+
+func Expr* Parser.parseExpr(Parser* p) {
+    Expr* lhs = p.parseAssignmentExpression();
+    return p.parseRHSOfBinaryExpression(lhs, PrecLevel.Comma);
+}
+
+func Expr* Parser.parseAssignmentExpression(Parser* p) {
+    Expr* lhs = p.parseCastExpr(false, false);
+    return p.parseRHSOfBinaryExpression(lhs, PrecLevel.Assignment);
+}
+
+func Expr* Parser.parseRHSOfBinaryExpression(Parser* p, Expr* lhs, PrecLevel minPrec) {
+    // TODO
     return nil;
 }
 
+// NotCastExpr?
+func Expr* Parser.parseCastExpr(Parser* p, bool isUnaryExpr, bool isAddrOfOp) {
+    // This handles all of cast-expression, unary-expression, postfix-expression,
+    // and primary-expression.  We handle them together like this for efficiency
+    // and to simplify handling of an expression starting with a '(' token: which
+    // may be one of a parenthesized expression, cast-expression, compound literal
+    // expression, or statement expression.
+    //
+    // If the parsed tokens consist of a primary-expression, the cases below
+    // break out of the switch;  at the end we call ParsePostfixExpressionSuffix
+    // to handle the postfix expression suffixes.  Cases that cannot be followed
+    // by postfix exprs should return without invoking
+    // ParsePostfixExpressionSuffix.
+
+    Kind savedKind = p.tok.kind;
+    Expr* res = nil;
+
+    switch (savedKind) {
+    // TODO order (or use 2nd jump table?)
+    case Kind.Identifier:
+        res = p.parseIdentifier();
+/*
+        // Make sure to pass down the right value for isAddressOfOperand.
+        if (isAddressOfOperand && isPostfixExpressionSuffixStart())
+            isAddressOfOperand = false;
+*/
+        break;
+    case Kind.NumberLiteral:
+        // TODO pass radix, base, etc
+        res = p.builder.actOnIntegerLiteral(p.tok.loc, p.tok.text_value);
+        p.consumeToken();
+        break;
+    case Kind.CharLiteral:
+        res = p.builder.actOnCharLiteral(p.tok.loc, p.tok.char_value);
+        p.consumeToken();
+        break;
+    case Kind.StringLiteral:
+        res = p.parseStringLiteral();
+        break;
+    case Kind.LParen:
+        res = p.parseParenExpr();
+        break;
+    case Kind.KW_nil:
+        res = p.builder.actOnNilExpr(p.tok.loc);
+        p.consumeToken();
+        break;
+    case Kind.KW_false:
+        res = p.builder.actOnBooleanConstant(p.tok.loc, false);
+        p.consumeToken();
+        break;
+    case Kind.KW_sizeof:
+        return p.parseSizeof();
+    case Kind.KW_true:
+        res = p.builder.actOnBooleanConstant(p.tok.loc, true);
+        p.consumeToken();
+        break;
+
+    // TODO more case, keep in correct order!
+
+    default:
+        p.error("syntax error");
+        break;
+    }
+
+    return p.parsePostfixExprSuffix(res);
+}
+
+func Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* res) {
+    // TODO
+    return res;
+}
+
+
+
 func Expr* Parser.parseIdentifier(Parser* p) {
     Expr* e = p.builder.actOnIdentifier(p.tok.loc, p.tok.text_value);
-    p.consumeToken();
-    return e;
-}
-
-func Expr* Parser.parseNumberLiteral(Parser* p) {
-    // TODO pass radix, base, etc
-   Expr* num = p.builder.actOnIntegerLiteral(p.tok.loc, p.tok.text_value);
-   p.consumeToken();
-   return num;
-}
-
-func Expr* Parser.parseCharLiteral(Parser* p) {
-    Expr* e = p.builder.actOnCharLiteral(p.tok.loc, p.tok.char_value);
     p.consumeToken();
     return e;
 }
@@ -69,13 +137,15 @@ func Expr* Parser.parseParenExpr(Parser* p) {
     return p.builder.actOnParenExpr(p.tok.loc, inner);
 }
 
-func Expr* Parser.parseNilExpr(Parser* p) {
-    Expr* e = p.builder.actOnNilExpr(p.tok.loc);
+func Expr* Parser.parseSizeof(Parser* p) {
+    SrcLoc loc = p.tok.loc;
     p.consumeToken();
-    return e;
-}
 
-func Expr* Parser.parseCallExpr(Parser* p) {
-    return nil;
-}
+    p.expectAndConsume(Kind.LParen);
 
+    Expr* inner = nil;
+    // TODO
+
+    p.expectAndConsume(Kind.RParen);
+    return p.builder.actOnBuiltinExpr(loc, inner, BuiltinExprKind.Sizeof);
+}

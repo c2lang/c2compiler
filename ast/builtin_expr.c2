@@ -13,6 +13,7 @@ public type BuiltinExprBits struct {
 
 public type BuiltinExpr struct {
     Expr expr;
+    Expr* inner;
 } @(opaque)
 
 public type BuiltinExprKind enum u8 {
@@ -20,10 +21,19 @@ public type BuiltinExprKind enum u8 {
     Elemsof,
 }
 
-public func BuiltinExpr* BuiltinExpr.create(Context* c, SrcLoc loc, BuiltinExprKind kind) @(inline) {
+// Keep in sync
+const char*[] builtin_names = {
+    "sizeof",
+    "elemsof",
+}
+
+static_assert(elemsof(BuiltinExprKind), elemsof(builtin_names));
+
+public func BuiltinExpr* BuiltinExpr.create(Context* c, SrcLoc loc, Expr* inner, BuiltinExprKind kind) @(inline) {
     BuiltinExpr* e = c.alloc(sizeof(BuiltinExpr));
     e.expr.init(ExprKind.Builtin, loc, 1, 1, 0);
     e.expr.stmt.builtinExprBits.kind = kind;
+    e.inner = inner;
     return e;
 }
 
@@ -33,15 +43,6 @@ public func BuiltinExprKind BuiltinExpr.getKind(const BuiltinExpr* e) {
 
 public func void BuiltinExpr.print(const BuiltinExpr* e, StringBuffer* out, u32 indent) {
     out.indent(indent);
-    out.add("BuiltinExpr ");
-    switch (e.getKind()) {
-    case BuiltinExprKind.Sizeof:
-        out.add("sizeof");
-        break;
-    case BuiltinExprKind.Elemsof:
-        out.add("elemsof");
-        break;
-    }
-    out.add("\n");
+    out.print("BuiltinExpr %s\n", builtin_names[e.getKind()]);
 }
 

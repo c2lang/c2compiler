@@ -283,3 +283,12 @@ public func Expr* Builder.actOnBinaryOperator(Builder* b, SrcLoc loc, Kind kind,
     BinaryOpcode opcode = convertTokenToBinaryOpcode(kind);
     return cast<Expr*>(BinaryOperator.create(b.context, loc, opcode, lhs, rhs));
 }
+
+public func Expr* Builder.actOnBooleanConstant(Builder* b, SrcLoc loc, bool value) {
+    return cast<Expr*>(BooleanLiteral.create(b.context, loc, value));
+}
+
+public func Expr* Builder.actOnBuiltinExpr(Builder* b, SrcLoc loc, Expr* inner, BuiltinExprKind kind) {
+    return cast<Expr*>(BuiltinExpr.create(b.context, loc, inner, kind));
+}
+
