@@ -1,0 +1,36 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context;
+import utils local;
+
+public type ConditionalOperator struct {
+    Expr expr;
+    SrcLoc colonLoc;
+    Expr* cond;
+    Expr* lhs;
+    Expr* rhs;
+} @(opaque)
+
+public func ConditionalOperator* ConditionalOperator.create(ast_context.Context* c, SrcLoc questionLoc, SrcLoc colonLoc,
+        Expr* cond, Expr* lhs, Expr* rhs) @(inline)
+{
+    ConditionalOperator* e = c.alloc(sizeof(ConditionalOperator));
+    e.expr.init(ExprKind.ConditionalOperator, questionLoc, 0, 0, 0);
+    e.colonLoc = colonLoc;
+    e.cond = cond;
+    e.lhs = lhs;
+    e.rhs = rhs;
+    return e;
+}
+
+public func void ConditionalOperator.print(const ConditionalOperator* e, StringBuffer* out, u32 indent) {
+    out.indent(indent);
+    out.add("ConditionalOperator\n");
+    e.cond.print(out, indent + 2);
+    e.lhs.print(out, indent + 2);
+    e.rhs.print(out, indent + 2);
+}
+

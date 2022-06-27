@@ -340,6 +340,10 @@ public func Expr* Builder.actOnBinaryOperator(Builder* b, SrcLoc loc, Kind kind,
     return cast<Expr*>(BinaryOperator.create(b.context, loc, opcode, lhs, rhs));
 }
 
+public func Expr* Builder.actOnConditionalOperator(Builder* b, SrcLoc questionLoc, SrcLoc colonLoc, Expr* lhs, Expr* ternaryMiddle, Expr* rhs) {
+    return nil;
+}
+
 public func Expr* Builder.actOnBooleanConstant(Builder* b, SrcLoc loc, bool value) {
     return cast<Expr*>(BooleanLiteral.create(b.context, loc, value));
 }

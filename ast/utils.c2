@@ -45,6 +45,7 @@ static_assert(48, sizeof(MemberExpr));
 static_assert(48, sizeof(BitOffsetExpr));
 static_assert(48, sizeof(ArraySubscriptExpr));
 static_assert(40, sizeof(UnaryOperator));
+static_assert(64, sizeof(ConditionalOperator));
 static_assert(48, sizeof(BinaryOperator));
 
 static_assert(8, sizeof(Type));

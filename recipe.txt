@@ -49,6 +49,7 @@ executable c2c
     ast/field_designated_init_expr.c2
     ast/paren_expr.c2
     ast/unary_operator.c2
+    ast/conditional_operator.c2
     ast/binary_operator.c2
     ast/type_expr.c2
     ast/bitoffset_expr.c2
