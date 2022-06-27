@@ -1,0 +1,35 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context;
+import utils local;
+
+public type MemberExpr struct {
+    Expr expr;
+    Expr* base;
+    IdentifierExpr* member;
+} @(opaque)
+
+public func MemberExpr* MemberExpr.create(ast_context.Context* c, SrcLoc loc, Expr* base, IdentifierExpr* member) @(inline) {
+    MemberExpr* e = c.alloc(sizeof(MemberExpr));
+    e.expr.init(ExprKind.Member, loc, 0, 0, 0);
+    e.base = base;
+    e.member = member;
+    return e;
+}
+
+public func Expr* MemberExpr.getBase(MemberExpr* e) { return e.base; }
+public func Expr** MemberExpr.getBase2(MemberExpr* e) { return &e.base; }
+
+public func IdentifierExpr* MemberExpr.getIndex(MemberExpr* e) { return e.member; }
+public func IdentifierExpr** MemberExpr.getIndex2(MemberExpr* e) { return &e.member; }
+
+public func void MemberExpr.print(const MemberExpr* e, StringBuffer* out, u32 indent) {
+    out.indent(indent);
+    out.add("MemberExpr\n");
+    e.base.print(out, indent + 2);
+    e.member.print(out, indent + 2);
+}
+

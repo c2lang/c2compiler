@@ -263,6 +263,12 @@ public func Expr* Builder.actOnUnaryOperator(Builder* b, SrcLoc loc, Kind kind, 
     return cast<Expr*>(UnaryOperator.create(b.context, loc, opcode, inner));
 }
 
+public func Expr* Builder.actOnPostFixUnaryOperator(Builder* b, SrcLoc loc, Kind kind, Expr* inner) {
+    // can only be PlusPlus / MinusMinus
+    UnaryOpcode opcode = (kind == Kind.PlusPlus) ? UnaryOpcode.PostInc : UnaryOpcode.PostDec;
+    return cast<Expr*>(UnaryOperator.create(b.context, loc, opcode, inner));
+}
+
 func UnaryOpcode convertTokenToBinaryOpcode(Kind kind) {
     switch (kind) {
     case Kind.Exclaim: return UnaryOpcode.LNot;
@@ -303,3 +309,12 @@ public func Expr* Builder.actOnBitOffsetExpr(Builder* b, SrcLoc loc, Expr* lhs, 
 public func Expr* Builder.actOnArraySubscriptExpr(Builder* b, SrcLoc loc, Expr* base, Expr* idx) {
     return cast<Expr*>(ArraySubscriptExpr.create(b.context, loc, base, idx));
 }
+
+public func Expr* Builder.actOnCallExpr(Builder* b, Expr* fn, Expr** args, u32 num_args) {
+    return cast<Expr*>(CallExpr.create(b.context, fn, args, num_args));
+}
+
+public func Expr* Builder.actOnMemberExpr(Builder* b, SrcLoc loc, Expr* base, IdentifierExpr* member) {
+    return cast<Expr*>(MemberExpr.create(b.context, loc, base, member));
+}
+

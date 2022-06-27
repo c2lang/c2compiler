@@ -55,6 +55,7 @@ public type Stmt struct {
         IdentifierExprBits identifierExprBits;
         UnaryOperatorBits unaryOperatorBits;
         BinaryOperatorBits binaryOperatorBits;
+        CallExprBits callExprBits;
         u32 bits;
     }
 } @(opaque)

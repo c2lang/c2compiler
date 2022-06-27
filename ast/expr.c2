@@ -26,9 +26,7 @@ public type ExprKind enum u8 {
     UnaryOperator,
     Builtin,
     ArraySubscript,
-/*
     Member,
-*/
     Paren,
     BitOffset,
 /*
@@ -68,6 +66,8 @@ public func ExprKind Expr.getKind(const Expr* e) @(inline) { return cast<ExprKin
 public func bool Expr.isCtv(const Expr* e) @(inline) { return e.stmt.exprBits.is_ctv; }
 
 public func bool Expr.isCtc(const Expr* e) @(inline) { return e.stmt.exprBits.is_ctc; }
+
+public func SrcLoc Expr.getLoc(const Expr* e) @(inline) { return e.loc; }
 
 public func void Expr.dump(Expr* e) {
     StringBuffer* out = StringBuffer.create(10*4096);
@@ -113,6 +113,9 @@ public func void Expr.print(const Expr* e, StringBuffer* out, u32 indent) {
         break;
     case ExprKind.ArraySubscript:
         ArraySubscriptExpr.print(cast<ArraySubscriptExpr*>(e), out, indent);
+        break;
+    case ExprKind.Member:
+        MemberExpr.print(cast<MemberExpr*>(e), out, indent);
         break;
     case ExprKind.Paren:
         ParenExpr.print(cast<ParenExpr*>(e), out, indent);

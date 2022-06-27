@@ -5,29 +5,40 @@ module ast;
 
 import ast_context;
 import utils local;
+import string;
 
 public type CallExprBits struct {
     u32 : NumExprBits;
-    u32 ref_type : 1;
+    u32 num_args : 5;
 }
 
 public type CallExpr struct {
     Expr expr;
     Expr* fn;
+    Expr*[0] args; // tail-allocated
 } @(opaque)
 
-// TODO args
-public func CallExpr* CallExpr.create(ast_context.Context* c, SrcLoc loc, Expr* fn) @(inline) {
-    // assert(fn);
-    CallExpr* e = c.alloc(sizeof(CallExpr));
-    e.expr.init(ExprKind.Call, loc, 0, 0, 0);
+public func CallExpr* CallExpr.create(ast_context.Context* c, Expr* fn, Expr** args, u32 num_args) @(inline) {
+    // TODO check max args
+    u32 size = sizeof(CallExpr) + num_args * sizeof(Expr*);
+    CallExpr* e = c.alloc(size);
+    e.expr.init(ExprKind.Call, fn.getLoc(), 0, 0, 0);
+    e.expr.stmt.callExprBits.num_args = num_args;
     e.fn = fn;
+    string.memcpy(cast<void*>(e.args), cast<void*>(args), num_args * sizeof(Expr*));
     return e;
+}
+
+public func u32 CallExpr.getNumArgs(const CallExpr* e) @(inline) {
+    return e.expr.stmt.callExprBits.num_args;
 }
 
 public func void CallExpr.print(const CallExpr* e, StringBuffer* out, u32 indent) {
     out.indent(indent);
     out.add("CallExpr\n");
     e.fn.print(out, indent + 1);
+    for (u32 i=0; i<e.getNumArgs(); i++) {
+        e.args[i].print(out, indent + 2);
+    }
 }
 

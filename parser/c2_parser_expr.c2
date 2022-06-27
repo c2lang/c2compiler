@@ -161,13 +161,24 @@ func Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs) {
             p.expectAndConsume(Kind.RSquare);
             lhs = p.builder.actOnArraySubscriptExpr(rloc, lhs, idx);
             break;
+        case Kind.Dot:
+            SrcLoc dot_loc = p.tok.loc;
+            p.consumeToken();
+            p.expectIdentifier();
+            Expr* rhs = p.parseIdentifier();
+            lhs = p.builder.actOnMemberExpr(dot_loc, lhs, rhs);
+            break;
+        case Kind.PlusPlus: fallthrough;
+        case Kind.MinusMinus:
+            lhs = p.builder.actOnPostFixUnaryOperator(p.tok.loc, p.tok.kind, lhs);
+            p.consumeToken();
+            break;
         default:
             return lhs;
-
-
         }
     }
-    return lhs;
+    // TODO should not come here
+    return nil;
 }
 
 func Expr* Parser.parseCallExpr(Parser* p, Expr* fn) {
@@ -175,17 +186,16 @@ func Expr* Parser.parseCallExpr(Parser* p, Expr* fn) {
 
     ast_list.ExprList args;
     args.init();
-    bool has_ellipsis = false;
 
     while (p.tok.kind != Kind.RParen) {
-        Expr* arg = p.parseExpr();
+
+        args.add(p.parseExpr());
 
         if (p.tok.kind == Kind.RParen) break;
         p.expectAndConsume(Kind.Comma);
     }
     p.expectAndConsume(Kind.RParen);
-    // return p.builder.actOnCallExpr(fn, has_ellipsis, args.getData(), args.size());
-    return fn;
+    return p.builder.actOnCallExpr(fn, args.getExprs(), args.size());
 }
 
 
