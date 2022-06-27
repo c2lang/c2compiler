@@ -53,7 +53,7 @@ public type BinaryOpcode enum u8 {
 public func BinaryOperator* BinaryOperator.create(ast_context.Context* c, SrcLoc loc, BinaryOpcode kind, Expr* lhs, Expr* rhs) @(inline) {
     BinaryOperator* e = c.alloc(sizeof(BinaryOperator));
     e.expr.init(ExprKind.BinaryOperator, loc, 0, 0, 0);
-    e.expr.stmt.unaryOperatorBits.kind = kind;
+    e.expr.stmt.binaryOperatorBits.kind = kind;
     e.lhs = lhs;
     e.rhs = rhs;
     return e;
@@ -107,7 +107,7 @@ public func const char* binaryOpcode2Str(BinaryOpcode k) {
 
 public func void BinaryOperator.print(const BinaryOperator* e, StringBuffer* out, u32 indent) {
     out.indent(indent);
-    out.print("BinaryOperator %s", binaryOpcode2Str(e.getKind()));
+    out.print("BinaryOperator %s\n", binaryOpcode2Str(e.getKind()));
     e.lhs.print(out, indent + 2);
     e.rhs.print(out, indent + 2);
 }
