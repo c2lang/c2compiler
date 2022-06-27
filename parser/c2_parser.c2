@@ -122,7 +122,7 @@ func void Parser.expectIdentifier(Parser* p) {
 
 func void Parser.error(Parser* p, const char* format, ...) @(noreturn) {
     char* cp = p.error_msg;
-    cp += sprintf(cp, "%s: error: ", p.sm.loc2str(p.tok.loc));
+    cp += sprintf(cp, "%s: %serror:%s ", p.sm.loc2str(p.tok.loc), color.Red, color.Normal);
     Va_list args;
     va_start(args, format);
     vsnprintf(cp, sizeof(p.error_msg)-1, format, args);
