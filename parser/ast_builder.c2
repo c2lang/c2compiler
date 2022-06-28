@@ -241,6 +241,10 @@ public func Stmt* Builder.actOnLabelStmt(Builder* b, const char* name, SrcLoc lo
     return cast<Stmt*>(LabelStmt.create(b.context, name, loc));
 }
 
+public func Stmt* Builder.actOnGotoStmt(Builder* b, const char* name, SrcLoc loc) {
+    return cast<Stmt*>(GotoStmt.create(b.context, name, loc));
+}
+
 public func Expr* Builder.actOnIdentifier(Builder* b, SrcLoc loc, const char* name) {
     return cast<Expr*>(IdentifierExpr.create(b.context, loc, name));
 }

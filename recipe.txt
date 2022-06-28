@@ -36,6 +36,7 @@ executable c2c
     ast/fallthrough_stmt.c2
     ast/while_stmt.c2
     ast/label_stmt.c2
+    ast/goto_stmt.c2
 
     ast/expr.c2
     ast/builtin_expr.c2

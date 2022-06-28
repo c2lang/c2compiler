@@ -37,7 +37,7 @@ func Stmt* Parser.parseStmt(Parser* p) {
     case Kind.KW_for:
         return p.parseForStmt();
     case Kind.KW_goto:
-        p.error("TODO GOTO");
+        return p.parseGotoStmt();
     case Kind.KW_if:
         return p.parseIfStmt();
     case Kind.KW_return:
@@ -424,7 +424,18 @@ func Stmt* Parser.parseLabelStmt(Parser* p) {
     const char* name =  p.tok.text_value;
     SrcLoc loc = p.tok.loc;
     p.consumeToken(); // identifier
-    p.expectAndConsume(Kind.Semicolon);
+    p.expectAndConsume(Kind.Colon);
     return p.builder.actOnLabelStmt(name, loc);
+}
+
+func Stmt* Parser.parseGotoStmt(Parser* p) {
+#if DebugParser
+    printf("parseLabelStmt\n");
+#endif
+    p.consumeToken();
+    p.expectIdentifier();
+    const char* name =  p.tok.text_value;
+    SrcLoc loc = p.tok.loc;
+    return p.builder.actOnGotoStmt(name, loc);
 }
 
