@@ -36,6 +36,8 @@ func Stmt* Parser.parseStmt(Parser* p) {
         return p.parseFallthroughStmt();
     case Kind.KW_for:
         return p.parseForStmt();
+    case Kind.KW_goto:
+        p.error("TODO GOTO");
     case Kind.KW_if:
         return p.parseIfStmt();
     case Kind.KW_return:
