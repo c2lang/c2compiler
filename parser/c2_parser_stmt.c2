@@ -98,27 +98,33 @@ func bool Parser.isTypeSpec(Parser* p) {
 
     // State: 0 = ID1, 1 = ID2, 2 = pointers, 3 = arrays
     u32 state = 0;
-    u32 count = 1;
+    u32 lookahead = 1;
     while (1) {
-        Token t2 = p.tokenizer.lookahead(count);
+        Token t2 = p.tokenizer.lookahead(lookahead);
         switch (t2.kind) {
+        case Kind.Identifier:
+            goto type_done;
+        case Kind.LSquare:
+            lookahead = p.skipArray(lookahead);
+            state = 3;
+            break;
+        case Kind.Star:
+            if (state == 3) return false; // a[1] * ..
+            state = 2;
+            lookahead++;
+            break;
         case Kind.Dot:
             if (state == 0) {
-                Token t3 = p.tokenizer.lookahead(count+1);
+                Token t3 = p.tokenizer.lookahead(lookahead+1);
                 if (t3.kind != Kind.Identifier) {
                     // syntax error
                     return false;
                 }
                 state = 2;
-                count += 2;
+                lookahead += 2;
             } else {
                 return false; // a.b.c
             }
-            break;
-        case Kind.Identifier:
-            goto type_done;
-        case Kind.Star:
-        // TODO
             break;
         default:
             goto type_done;
@@ -126,8 +132,33 @@ func bool Parser.isTypeSpec(Parser* p) {
     }
 type_done:
     // if token after type is identifier, it's a decl, otherwise it's not
-    t = p.tokenizer.lookahead(count);
+    t = p.tokenizer.lookahead(lookahead);
     return t.kind == Kind.Identifier;
+}
+
+func u32 Parser.skipArray(Parser* p, u32 lookahead) {
+    lookahead++;
+
+    u32 depth =1;
+    while (depth) {
+        Token next = p.tokenizer.lookahead(lookahead);
+        switch (next.kind) {
+        case Kind.LSquare:
+            depth++;
+            break;
+        case Kind.RSquare:
+            depth--;
+            break;
+        case Kind.Eof:
+            p.error("unexpected end-of-file");
+            break;
+        default:
+            break;
+        }
+        lookahead++;
+    }
+
+    return lookahead;
 }
 
 /*
@@ -400,13 +431,11 @@ func Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal) {
 
     QualType qt = p.parseTypeSpecifier(true);
 
-    printf("AA\n");
     p.expectIdentifier();
 
     const char* name = p.tok.text_value;
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
-    printf("BB\n");
 
     // TODO same as parseVarDef()
     bool need_semi = true;

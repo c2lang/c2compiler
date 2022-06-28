@@ -13,7 +13,7 @@ import string;
 import ctype local;
 import stdarg local;
 
-public const u32 MaxLookahead = 4;  // must be multiple of 2
+public const u32 MaxLookahead = 16;  // must be multiple of 2
 
 type Keyword struct {
     const char* name;
@@ -432,6 +432,7 @@ public type Tokenizer struct {
     SrcLoc loc_start;
     const char* input_start;
 
+    // TODO move this to Parser?
     Token[MaxLookahead] next;
     u32 next_count;
     u32 next_head;  // index of next token (circular index into next)
