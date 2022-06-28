@@ -8,6 +8,9 @@ import stdlib local;
 // TEMP
 import stdio local;
 
+#if ContextDebug
+u32 str_allocs;
+#endif
 
 type Block struct {
     u8* data;
@@ -117,6 +120,9 @@ public func const char* Context.alloc_str(Context* c, const char* text, usize le
     // assert(c.str_blk_head);
     // assert(len < strblk_size)
     len++;  // add 0-terminator
+#if ContextDebug
+    str_allocs++;
+#endif
 
     Block* last = c.str_blk_tail;
     if (last.size + len >= c.str_blk_size) {
@@ -139,11 +145,15 @@ public func void Context.dump(const Context* c) {
     u32 total = c.blk_head.get_total();
 
     printf("Context:\n");
-    printf("    blk size %u, %u blocks, total %u/%u\n", c.blk_size, num, total, num * c.blk_size);
+    printf("    AST blk size %u, %u blocks, total %u/%u\n", c.blk_size, num, total, num * c.blk_size);
 
     u32 str_num = c.str_blk_head.count();
     u32 str_total = c.str_blk_head.get_total();
-    printf("    blk size %u, %u blocks, total %u/%u\n", c.str_blk_size, str_num, str_total, str_num * c.str_blk_size);
+    printf("    STR blk size %u, %u blocks, total %u/%u\n", c.str_blk_size, str_num, str_total, str_num * c.str_blk_size);
+
+#if ContextDebug
+    printf("   %u STR allocs (avg %u bytes)\n", str_allocs, str_total / str_allocs);
+#endif
 
     printf("    total %u\n", total + str_total);
 }

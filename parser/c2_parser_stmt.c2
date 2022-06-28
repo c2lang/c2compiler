@@ -13,7 +13,7 @@ import utils local;
 import stdio local; // TEMP
 
 func Stmt* Parser.parseStmt(Parser* p) {
-#if DebugParser
+#if ParserDebug
     printf("parseStmt\n");
 #endif
     // TODO use Jump Table (combined one for multiple purposes?)
@@ -184,7 +184,7 @@ func Stmt* Parser.parseDeclOrStmt(Parser* p) {
 }
 
 func CompoundStmt* Parser.parseCompoundStmt(Parser* p) {
-#if DebugParser
+#if ParserDebug
     printf("parseCompoundStmt\n");
 #endif
     p.expectAndConsume(Kind.LBrace);
@@ -420,7 +420,7 @@ func Stmt* Parser.parseWhileStmt(Parser* p) {
 }
 
 func Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal) {
-#if DebugParser
+#if ParserDebug
     printf("parseDeclStmt\n");
 #endif
     bool has_local = false;
@@ -461,7 +461,7 @@ func Stmt* Parser.parseExprStmt(Parser* p) {
 }
 
 func Stmt* Parser.parseLabelStmt(Parser* p) {
-#if DebugParser
+#if ParserDebug
     printf("parseLabelStmt\n");
 #endif
     const char* name =  p.tok.text_value;
@@ -472,7 +472,7 @@ func Stmt* Parser.parseLabelStmt(Parser* p) {
 }
 
 func Stmt* Parser.parseGotoStmt(Parser* p) {
-#if DebugParser
+#if ParserDebug
     printf("parseLabelStmt\n");
 #endif
     p.consumeToken();

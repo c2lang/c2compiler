@@ -9,7 +9,7 @@ import ast local;
 import ast_list;
 import tokens local;
 import utils local;
-#if DebugParser
+#if ParserDebug
 import stdio local;
 #endif
 
@@ -32,7 +32,7 @@ type Prec enum u8 {
 }
 
 func Expr* Parser.parseExpr(Parser* p) {
-#if DebugParser
+#if ParserDebug
     printf("parseExpr\n");
 #endif
     Expr* lhs = p.parseAssignmentExpression();
@@ -40,7 +40,7 @@ func Expr* Parser.parseExpr(Parser* p) {
 }
 
 func Expr* Parser.parseAssignmentExpression(Parser* p) {
-#if DebugParser
+#if ParserDebug
     printf("parseAssignmentExpression\n");
 #endif
     Expr* lhs = p.parseCastExpr(false, false);
@@ -97,7 +97,7 @@ func Prec getBinOpPrecedence(Kind kind) {
 }
 
 func Expr* Parser.parseRHSOfBinaryExpression(Parser* p, Expr* lhs, Prec minPrec) {
-#if DebugParser
+#if ParserDebug
     printf("parseRHSOfBinaryExpression\n");
 #endif
     Prec nextTokPrec = getBinOpPrecedence(p.tok.kind);
@@ -149,7 +149,7 @@ func Expr* Parser.parseRHSOfBinaryExpression(Parser* p, Expr* lhs, Prec minPrec)
 
 // NotCastExpr?
 func Expr* Parser.parseCastExpr(Parser* p, bool isUnaryExpr, bool isAddrOfOp) {
-#if DebugParser
+#if ParserDebug
     printf("parseCastExpression\n");
 #endif
     // This handles all of cast-expression, unary-expression, postfix-expression,
@@ -251,7 +251,7 @@ func Expr* Parser.parseCastExpr(Parser* p, bool isUnaryExpr, bool isAddrOfOp) {
 }
 
 func Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs) {
-#if DebugParser
+#if ParserDebug
     printf("parsePostfixExprSuffix\n");
 #endif
 
@@ -299,7 +299,7 @@ func Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs) {
 }
 
 func Expr* Parser.parseCallExpr(Parser* p, Expr* fn) {
-#if DebugParser
+#if ParserDebug
     printf("parseCallExpr\n");
 #endif
     p.consumeToken(); // '('

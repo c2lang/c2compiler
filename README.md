@@ -23,6 +23,11 @@
     - parse hexadecimal
     + parse octal
 - pass Numbers as number? (no need to alloc str then)
+- TRY filtering duplicate strings, measure mem + speed changes
+    -> during analysis, all string compares can be pointer compares!
+    -> filter in Context
+    -> need a LOT of pointer size!!
+    -> have some sort of tree (use u16 indexes, not pointers)
 - advanced basic feature-selection:
     - NAME=<value> -> value always treated as text
     - OR AND NOT in condition
@@ -48,7 +53,7 @@
 + create Context (for allocation)
 - FIX object sizes (Stmt should be 4 bytes, not aligned yet)
 - move SrcLoc to ast_helper?
-- use common/pointer-map
+- use common/pointer-map, or put ptr* in each Type? (pointers are very common, so could be efficient)
 
 ## AST-Builder
 + fill AST

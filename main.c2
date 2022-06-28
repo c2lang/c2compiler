@@ -43,7 +43,7 @@ public func i32 main(i32 argc, char** argv) {
         bool ok = parser.parse();
 #if DumpTokens
 #else
-        //context.dump();
+        context.dump();
         //if (ok) parser.dump();
 #endif
         parser.free();
