@@ -17,6 +17,7 @@
 - replace __file__ and __line__ with string-literal / number?
     Q: how to do __func__??
         -> emit FuncNameToken? (let analyser fill it in)
+- give error on un-terminated #if/#else
 + Numbers: hex, octal, pass radix
 - parse floating points
     - parse hexadecimal
@@ -37,6 +38,7 @@
 + parse Types
 + parse Functions
 + parse Varables
+- TEST many unterminated things (unexpected EOF)
 - use lookup tables to speedup
 - move Lookahead feature from Tokenizer to Parser (on lookahead with error, just stop parser also)
 - put all output through filter for coloring/not

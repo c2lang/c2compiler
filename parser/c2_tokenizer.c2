@@ -828,7 +828,9 @@ func void Tokenizer.lex_number(Tokenizer* t, Token* result) {
     const char* orig = t.cur;
     const char* start;
     // special case for hex numbers
-    if (t.cur[0] == '0') {
+    // NOTE: only 0 is still radix 10
+
+    if (t.cur[0] == '0' && (t.cur[1] == 'x' || is_octal(t.cur[1]))) {
         if (t.cur[1] == 'x') {
             result.radix = 16;
             start = t.cur + 2;
