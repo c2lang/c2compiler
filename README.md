@@ -34,6 +34,7 @@
 - close files after use (need indication)
 
 ## Parser
+- move Lookahead feature from Tokenizer to Parser (on lookahead with error, just stop parser also)
 - put all output through filter for coloring/not
 - parse Types
 - parse Functions
