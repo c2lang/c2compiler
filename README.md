@@ -17,10 +17,11 @@
 - replace __file__ and __line__ with string-literal / number?
     Q: how to do __func__??
         -> emit FuncNameToken? (let analyser fill it in)
-- Numbers:
-    - parse floating points
++ Numbers: hex, octal, pass radix
+- parse floating points
     - parse hexadecimal
-    - note radix in token
+    + parse octal
+- pass Numbers as number? (no need to alloc str then)
 - advanced basic feature-selection:
     - NAME=<value> -> value always treated as text
     - OR AND NOT in condition

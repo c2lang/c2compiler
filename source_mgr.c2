@@ -49,7 +49,11 @@ public func void SourceMgr.free(SourceMgr* sm) {
 public func i32 SourceMgr.open(SourceMgr* sm, const char* filename) {
     file_utils.Reader file;
     if (!file.open(filename)) {
-        strcpy(sm.error_msg, strerror(*errno2()));
+        if (file.errno == file_utils.Err_not_a_file) {
+            strcpy(sm.error_msg, "not a regular file");
+        } else {
+            strcpy(sm.error_msg, strerror(file.errno));
+        }
         return -1;
     }
 

@@ -410,6 +410,7 @@ public type Token struct {
     SrcLoc loc;
     Kind kind;
     bool more;
+    u8 radix;   // for NumberLiteral
     union {
         const char* error_msg;  // ERROR
         const char* text_value; // Identifier, NumberLiteral
@@ -817,15 +818,39 @@ func void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
     result.text_value = t.context.alloc_str(start, len);
 }
 
+func bool is_octal(char c) {
+    return (c >= '0' && c <= '7');
+}
+
 func void Tokenizer.lex_number(Tokenizer* t, Token* result) {
     result.kind = Kind.NumberLiteral;
     result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
-    const char* start = t.cur;
-    const char* end = t.cur + 1;
-    while (isdigit(*end)) end++;
+    const char* orig = t.cur;
+    const char* start;
+    // special case for hex numbers
+    if (t.cur[0] == '0') {
+        if (t.cur[1] == 'x') {
+            result.radix = 16;
+            start = t.cur + 2;
+            t.cur += 2;
+            while (isxdigit(*t.cur)) t.cur++;
+        } else {
+            start = t.cur + 1;
+            t.cur++;
+            result.radix = 8;
+            while (is_octal(*t.cur)) t.cur++;
+            if (isxdigit(*t.cur)) {
+                t.error(result, "invalid digit '%c' in octal constant", *t.cur);
+                return;
+            }
+        }
+    } else {
+        result.radix = 10;
+        start = t.cur;
+        while (isdigit(*t.cur)) t.cur++;
+    }
 
-    usize len = cast<usize>(end - start);
-    t.cur += len;
+    usize len = cast<usize>(t.cur - start);
     result.text_value = t.context.alloc_str(start, len);
 }
 

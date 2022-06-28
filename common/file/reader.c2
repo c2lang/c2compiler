@@ -11,6 +11,8 @@ import unistd local;
 
 u8 empty;
 
+public const i32 Err_not_a_file = 2001;
+
 public type Reader struct {
     void* region;
     u32 size;
@@ -30,6 +32,13 @@ public func bool Reader.open(Reader* file, const char* filename) {
         file.errno = *errno2();
         return false;
     }
+
+    if (statbuf.st_mode & S_IFMT != S_IFREG) {
+        close(fd);
+        file.errno = Err_not_a_file;
+        return false;
+    }
+
     file.size = cast<u32>(statbuf.st_size);
 
     if (file.size == 0) {

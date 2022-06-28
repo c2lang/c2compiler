@@ -516,7 +516,7 @@ public func void dump_token(SourceMgr* sm, const Token* tok) {
         printf("  %s%s%s", color.Cyan, tok.text_value, color.Normal);
         break;
     case Kind.NumberLiteral:
-        printf("  %s%s%s", color.Cyan, tok.text_value, color.Normal);
+        printf("  (%u) %s%s%s %u", tok.radix, color.Cyan, tok.text_value, color.Normal);
         break;
     case Kind.CharLiteral:
         printf("  %s'%c'%s", color.Cyan, tok.char_value, color.Normal);
