@@ -205,6 +205,8 @@ func Expr* Parser.parseCastExpr(Parser* p, bool isUnaryExpr, bool isAddrOfOp) {
         p.consumeToken();
         res = p.parseCastExpr(false, true);
         return p.builder.actOnUnaryOperator(loc, savedKind, res);
+    case Kind.KW_cast:
+        return p.parseExplicitCastExpr();
     case Kind.Plus:
         // ignore unary +
         p.consumeToken();
@@ -221,7 +223,6 @@ func Expr* Parser.parseCastExpr(Parser* p, bool isUnaryExpr, bool isAddrOfOp) {
     // TODO KW_enum_min
     // TODO KW_enum_max
     // TODO KW_offsetof
-    // TODO KW_cast
     // TODO KW_to_container
     case Kind.KW_false:
         res = p.builder.actOnBooleanConstant(p.tok.loc, false);
@@ -457,5 +458,20 @@ func Expr* Parser.parseFieldDesignator(Parser* p, bool* need_semi) {
 func Expr* Parser.parseArrayDesignator(Parser* p, bool* need_semi) {
     p.error("TODO ArrayDesignator");
     return nil;
+}
+
+func Expr* Parser.parseExplicitCastExpr(Parser* p) {
+    SrcLoc loc = p.tok.loc;
+    p.consumeToken();
+
+    p.expectAndConsume(Kind.Less);
+    QualType qt = p.parseTypeSpecifier(true);
+    p.expectAndConsume(Kind.Greater);
+
+    p.expectAndConsume(Kind.LParen);
+    Expr* expr = p.parseExpr();
+    p.expectAndConsume(Kind.RParen);
+
+    return p.builder.actOnExplicitCast(loc, qt, expr);
 }
 

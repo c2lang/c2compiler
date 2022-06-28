@@ -1,0 +1,29 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context;
+import utils local;
+
+public type ExplicitCastExpr struct {
+    Expr expr;
+    QualType dest;
+    Expr* inner;
+} @(opaque)
+
+public func ExplicitCastExpr* ExplicitCastExpr.create(ast_context.Context* c, SrcLoc loc, QualType qt, Expr* inner) @(inline) {
+    ExplicitCastExpr* e = c.alloc(sizeof(ExplicitCastExpr));
+    e.expr.init(ExprKind.ExplicitCast, loc, 0, 0, 0);
+    e.dest = qt;
+    e.inner = inner;
+    return e;
+}
+
+public func void ExplicitCastExpr.print(const ExplicitCastExpr* e, StringBuffer* out, u32 indent) {
+    out.indent(indent);
+    out.add("ExplicitCastExpr\n");
+    e.dest.print(out, indent + 2);
+    e.inner.print(out, indent + 2);
+}
+

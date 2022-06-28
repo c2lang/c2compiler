@@ -376,6 +376,10 @@ public func Expr* Builder.actOnCallExpr(Builder* b, Expr* fn, Expr** args, u32 n
     return cast<Expr*>(CallExpr.create(b.context, fn, args, num_args));
 }
 
+public func Expr* Builder.actOnExplicitCast(Builder* b, SrcLoc loc, QualType qt, Expr* inner) {
+    return cast<Expr*>(ExplicitCastExpr.create(b.context, loc, qt, inner));
+}
+
 public func Expr* Builder.actOnMemberExpr(Builder* b, SrcLoc loc, Expr* base, IdentifierExpr* member) {
     return cast<Expr*>(MemberExpr.create(b.context, loc, base, member));
 }
