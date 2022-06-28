@@ -100,7 +100,7 @@ public func bool Parser.parse(Parser* p) {
 func void Parser.consumeToken(Parser* p) {
     p.tokenizer.lex(&p.tok);
 
-    dump_token(p.sm, &p.tok);
+    //dump_token(p.sm, &p.tok);
 
     if (p.tok.kind == Kind.Error) p.error(p.tok.error_msg);
 }
@@ -481,7 +481,7 @@ func QualType Parser.parseSingleTypeSpecifier(Parser* p, bool allow_qualifier) {
 //   identifier.identifier
 func QualType Parser.parseFullTypeIdentifier(Parser* p) {
 
-    Expr* id = p.builder.actOnIdentifier(p.tok.loc, p.tok.text_value);
+    Expr* id = p.builder.actOnIdentifier(p.tok.loc, p.tok.text_value).asExpr();
     p.consumeToken();
 
     Expr* prefix = nil;
@@ -490,7 +490,7 @@ func QualType Parser.parseFullTypeIdentifier(Parser* p) {
         p.consumeToken();
         p.expectIdentifier();
         prefix = id;
-        id = p.builder.actOnIdentifier(p.tok.loc, p.tok.text_value);
+        id = p.builder.actOnIdentifier(p.tok.loc, p.tok.text_value).asExpr();
         p.consumeToken();
     }
     return p.builder.actOnRefType(id, prefix);

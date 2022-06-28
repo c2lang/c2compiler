@@ -67,6 +67,7 @@ executable c2c
     ast/enum_type_decl.c2
     ast/enum_constant_decl.c2
     ast/decl_stmt.c2
+    ast/alias_type_decl.c2
 
     ast/utils.c2
     ast/type.c2

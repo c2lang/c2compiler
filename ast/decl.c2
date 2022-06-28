@@ -12,6 +12,7 @@ public type DeclKind enum u8 {
     StructType,
     EnumType,
     EnumConstant,
+    AliasType,
     Var,
 }
 
@@ -84,6 +85,9 @@ public func void Decl.print(const Decl* d, StringBuffer* out, u32 indent) {
         break;
     case DeclKind.EnumConstant:
         EnumConstantDecl.print(cast<EnumConstantDecl*>(d), out, indent);
+        break;
+    case DeclKind.AliasType:
+        AliasTypeDecl.print(cast<AliasTypeDecl*>(d), out, indent);
         break;
     case DeclKind.Var:
         VarDecl.print(cast<VarDecl*>(d), out, indent);

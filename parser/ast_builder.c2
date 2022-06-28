@@ -49,6 +49,12 @@ public func void Builder.actOnImport(Builder* b, const char* mod_name, SrcLoc mo
     b.ast.addImport(d);
 }
 
+public func Decl* Builder.actOnAliasType(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType qt) {
+    AliasTypeDecl* d = AliasTypeDecl.create(b.context, name, loc, is_public, qt);
+    b.ast.addTypeDecl(d.asDecl());
+    return d.asDecl();
+}
+
 public func StructTypeDecl* Builder.actOnStructType(Builder* b, const char* name, SrcLoc loc, bool is_public, bool is_struct, bool is_global,
                                                     VarDecl** members, u32 num_members) {
     StructTypeDecl* d = StructTypeDecl.create(b.context, name, loc, is_public, is_struct, is_global, members, num_members);

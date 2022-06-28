@@ -237,6 +237,7 @@ func Stmt* Parser.parseCondition(Parser* p) {
     Stmt* s;
     if (p.isDeclaration()) {
         p.error("TODO parseCondition");
+        s = nil;
     } else {
         Expr* cond = p.parseExpr();
         s = cond.asStmt();
