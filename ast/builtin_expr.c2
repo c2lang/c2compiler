@@ -19,12 +19,16 @@ public type BuiltinExpr struct {
 public type BuiltinExprKind enum u8 {
     Sizeof,
     Elemsof,
+    EnumMin,
+    EnumMax,
 }
 
 // Keep in sync
 const char*[] builtin_names = {
     "sizeof",
     "elemsof",
+    "enum_min",
+    "enum_max",
 }
 
 static_assert(elemsof(BuiltinExprKind), elemsof(builtin_names));

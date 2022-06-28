@@ -220,10 +220,10 @@ func Expr* Parser.parseCastExpr(Parser* p, bool isUnaryExpr, bool isAddrOfOp) {
     case Kind.KW_elemsof:
         res = p.parseElemsof();
         break;
-    // TODO KW_enum_min
-    // TODO KW_enum_max
-    // TODO KW_offsetof
-    // TODO KW_to_container
+    case Kind.KW_enum_min:
+        return p.parseEnumMinMax(true);
+    case Kind.KW_enum_max:
+        return p.parseEnumMinMax(false);
     case Kind.KW_false:
         res = p.builder.actOnBooleanConstant(p.tok.loc, false);
         p.consumeToken();
@@ -232,8 +232,12 @@ func Expr* Parser.parseCastExpr(Parser* p, bool isUnaryExpr, bool isAddrOfOp) {
         res = p.builder.actOnNilExpr(p.tok.loc);
         p.consumeToken();
         break;
+    case Kind.KW_offsetof:
+        p.error("TODO offsetof");
     case Kind.KW_sizeof:
         return p.parseSizeof();
+    case Kind.KW_to_container:
+        p.error("TODO to_container");
     case Kind.KW_true:
         res = p.builder.actOnBooleanConstant(p.tok.loc, true);
         p.consumeToken();
@@ -473,5 +477,20 @@ func Expr* Parser.parseExplicitCastExpr(Parser* p) {
     p.expectAndConsume(Kind.RParen);
 
     return p.builder.actOnExplicitCast(loc, qt, expr);
+}
+
+/// Syntax:
+///  'enum_min' '(' type-name ')'
+///  'enum_max' '(' type-name ')'
+func Expr* Parser.parseEnumMinMax(Parser* p, bool is_min) {
+    SrcLoc loc = p.tok.loc;
+    p.consumeToken();
+    p.expectAndConsume(Kind.LParen);
+
+    p.expectIdentifier();
+    Expr* expr = p.parseExpr();
+    p.expectAndConsume(Kind.RParen);
+
+    return p.builder.actOnBuiltinExpr(loc, expr, is_min ? BuiltinExprKind.EnumMin : BuiltinExprKind.EnumMax);
 }
 
