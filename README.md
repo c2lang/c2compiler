@@ -17,7 +17,7 @@
 - replace __file__ and __line__ with string-literal / number?
     Q: how to do __func__??
         -> emit FuncNameToken? (let analyser fill it in)
-- give error on un-terminated #if/#else
+- give error on un-terminated #if/#else -> on EOF
 + Numbers: hex, octal, pass radix
 - parse floating points
     - parse hexadecimal

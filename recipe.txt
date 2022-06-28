@@ -6,7 +6,7 @@ executable c2c
 	$warnings no-unused
 	$generate-c single-module
 #    $config DebugParser
-    $config DumpTokens
+#    $config DumpTokens
 
     common/file/reader.c2
     common/color.c2

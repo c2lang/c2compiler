@@ -13,6 +13,8 @@ import string;
 import ctype local;
 import stdarg local;
 
+import stdio; // TEMP
+
 public const u32 MaxLookahead = 16;  // must be multiple of 2
 
 type Keyword struct {
@@ -279,7 +281,7 @@ const u8[128] Char_lookup = {
     // '\'
     [']'] = Action.RSQUARE,
     ['^'] = Action.CARET,
-    //'_'
+    ['_'] = Action.IDENT,   // for parsing libs
 // 96 - 111
     ['a'] = Action.IDENT_OR_KEYWORD,
     ['b'] = Action.IDENT_OR_KEYWORD,
@@ -1184,7 +1186,7 @@ func bool Tokenizer.skip_feature(Tokenizer* t, Token* result) {
         Action act = Char_lookup[*t.cur];
         switch (act) {
         case Action.INVALID:
-            t.error(result, "invalid char '%c'", *t.cur);
+            t.error(result, "invalid char [skip] '%c'", *t.cur);
             return true;
         case Action.NEWLINE:
             t.cur++;
@@ -1200,6 +1202,11 @@ func bool Tokenizer.skip_feature(Tokenizer* t, Token* result) {
             if (t.lex_feature_cmd(result)) return true;
             if (t.is_enabled()) return false;
             break;
+        case Action.EOF:
+            t.cur--;
+            Feature* top = &t.feature_stack[t.feature_count-1];
+            t.error(result, "un-terminated #%s", top.is_if ? "if" : "else");
+            return true;
         default:
             t.cur++;
             break;
