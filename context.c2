@@ -10,6 +10,7 @@ import stdio local;
 
 #if ContextDebug
 u32 str_allocs;
+u32 ast_allocs;
 #endif
 
 type Block struct {
@@ -100,6 +101,9 @@ public func void Context.clear(Context* c) {
 }
 
 public func void* Context.alloc(Context* c, u32 len) {
+#if ContextDebug
+    ast_allocs++;
+#endif
     // assert(c.blk_head);
     // TODO always align as ptr size!!
     // assert(len * 0x3 == 0); // must be 8-byte multiple
@@ -142,20 +146,23 @@ public func const char* Context.alloc_str(Context* c, const char* text, usize le
 
 public func void Context.dump(const Context* c) {
     u32 num = c.blk_head.count();
-    u32 total = c.blk_head.get_total();
+    u32 ast_total = c.blk_head.get_total();
 
     printf("Context:\n");
-    printf("    AST blk size %u, %u blocks, total %u/%u\n", c.blk_size, num, total, num * c.blk_size);
+    printf("    AST blk size %u, %u blocks, total %u/%u\n", c.blk_size, num, ast_total, num * c.blk_size);
+#if ContextDebug
+    printf("    %u AST allocs (avg %u bytes)\n", ast_allocs, ast_total / ast_allocs);
+#endif
 
     u32 str_num = c.str_blk_head.count();
     u32 str_total = c.str_blk_head.get_total();
     printf("    STR blk size %u, %u blocks, total %u/%u\n", c.str_blk_size, str_num, str_total, str_num * c.str_blk_size);
 
 #if ContextDebug
-    printf("   %u STR allocs (avg %u bytes)\n", str_allocs, str_total / str_allocs);
+    printf("    %u STR allocs (avg %u bytes)\n", str_allocs, str_total / str_allocs);
 #endif
 
-    printf("    total %u\n", total + str_total);
+    printf("    total %u\n", ast_total + str_total);
 }
 
 public func u32 Context.get_total(const Context* c) {
