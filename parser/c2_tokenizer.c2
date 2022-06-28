@@ -860,6 +860,7 @@ func void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
 
     if (t.cur[1] == '\\') {
         t.cur++;
+        // TODO  merge with other escape sequence check below
         switch (t.cur[1]) {
         case 'n':
             result.char_value = '\n';
@@ -876,10 +877,14 @@ func void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
         case '\'':
             result.char_value = '\'';
             break;
+        case '"':
+            result.char_value = '"';
+            break;
         default:
-            t.error(result, "unknown escape sequence \\%c", t.cur[1]);
+            t.error(result, "unknown escape sequence '\\%c'", t.cur[1]);
             return;
         }
+
     } else {
         result.char_value = cast<u8>(t.cur[1]);
     }
@@ -922,9 +927,11 @@ func void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
                 break;
             case '\\':
                 break;
+            case '\'':
+                break;
             default:
                 t.cur--;
-                t.error(result, "unknown escape sequence \\%c", *t.cur);
+                t.error(result, "unknown escape sequence '\\%c'", *t.cur);
                 return;
             }
             t.cur++;
