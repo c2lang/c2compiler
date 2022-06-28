@@ -245,8 +245,8 @@ public func Stmt* Builder.actOnGotoStmt(Builder* b, const char* name, SrcLoc loc
     return cast<Stmt*>(GotoStmt.create(b.context, name, loc));
 }
 
-public func Expr* Builder.actOnIdentifier(Builder* b, SrcLoc loc, const char* name) {
-    return cast<Expr*>(IdentifierExpr.create(b.context, loc, name));
+public func IdentifierExpr* Builder.actOnIdentifier(Builder* b, SrcLoc loc, const char* name) {
+    return IdentifierExpr.create(b.context, loc, name);
 }
 
 public func Expr* Builder.actOnIntegerLiteral(Builder* b, SrcLoc loc, const char* text) {
@@ -358,6 +358,14 @@ public func Expr* Builder.actOnBooleanConstant(Builder* b, SrcLoc loc, bool valu
 
 public func Expr* Builder.actOnBuiltinExpr(Builder* b, SrcLoc loc, Expr* inner, BuiltinExprKind kind) {
     return cast<Expr*>(BuiltinExpr.create(b.context, loc, inner, kind));
+}
+
+public func Expr* Builder.actOnOffsetOfExpr(Builder* b, SrcLoc loc, Expr* structExpr, Expr* member) {
+    return cast<Expr*>(BuiltinExpr.createOffsetOf(b.context, loc, structExpr, member));
+}
+
+public func Expr* Builder.actOnToContainerExpr(Builder* b, SrcLoc loc, Expr* structExpr, Expr* member, Expr* pointer) {
+    return cast<Expr*>(BuiltinExpr.createToContainer(b.context, loc, structExpr, member, pointer));
 }
 
 public func Expr* Builder.actOnTypeExpr(Builder* b, SrcLoc loc, QualType qt) {

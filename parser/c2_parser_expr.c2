@@ -170,7 +170,7 @@ func Expr* Parser.parseCastExpr(Parser* p, bool isUnaryExpr, bool isAddrOfOp) {
     // TODO order (or use 2nd jump table?) -> need table, because cannot be in order
     switch (savedKind) {
     case Kind.Identifier:
-        res = p.parseIdentifier();
+        res = p.parseIdentifier().asExpr();
 /*
         // Make sure to pass down the right value for isAddressOfOperand.
         if (isAddressOfOperand && isPostfixExpressionSuffixStart())
@@ -233,11 +233,11 @@ func Expr* Parser.parseCastExpr(Parser* p, bool isUnaryExpr, bool isAddrOfOp) {
         p.consumeToken();
         break;
     case Kind.KW_offsetof:
-        p.error("TODO offsetof");
+        return p.parseOffsetOfExpr();
     case Kind.KW_sizeof:
         return p.parseSizeof();
     case Kind.KW_to_container:
-        p.error("TODO to_container");
+        return p.parseToContainerExpr();
     case Kind.KW_true:
         res = p.builder.actOnBooleanConstant(p.tok.loc, true);
         p.consumeToken();
@@ -282,8 +282,8 @@ func Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs) {
             SrcLoc dot_loc = p.tok.loc;
             p.consumeToken();
             p.expectIdentifier();
-            Expr* rhs = p.parseIdentifier();
-            lhs = p.builder.actOnMemberExpr(dot_loc, lhs, cast<IdentifierExpr*>(rhs));
+            IdentifierExpr* rhs = p.parseIdentifier();
+            lhs = p.builder.actOnMemberExpr(dot_loc, lhs, rhs);
             break;
         case Kind.PlusPlus: fallthrough;
         case Kind.MinusMinus:
@@ -319,8 +319,8 @@ func Expr* Parser.parseCallExpr(Parser* p, Expr* fn) {
 }
 
 
-func Expr* Parser.parseIdentifier(Parser* p) {
-    Expr* e = p.builder.actOnIdentifier(p.tok.loc, p.tok.text_value);
+func IdentifierExpr* Parser.parseIdentifier(Parser* p) {
+    IdentifierExpr* e = p.builder.actOnIdentifier(p.tok.loc, p.tok.text_value);
     p.consumeToken();
     return e;
 }
@@ -396,7 +396,7 @@ func Expr* Parser.parseElemsof(Parser* p) {
 
     p.expectIdentifier();
 
-    Expr* res = p.parseIdentifier();
+    Expr* res = p.parseIdentifier().asExpr();
     res = p.parsePostfixExprSuffix(res);
 
     p.expectAndConsume(Kind.RParen);
@@ -479,9 +479,9 @@ func Expr* Parser.parseExplicitCastExpr(Parser* p) {
     return p.builder.actOnExplicitCast(loc, qt, expr);
 }
 
-/// Syntax:
-///  'enum_min' '(' type-name ')'
-///  'enum_max' '(' type-name ')'
+// Syntax:
+//   'enum_min' '(' type-name ')'
+//   'enum_max' '(' type-name ')'
 func Expr* Parser.parseEnumMinMax(Parser* p, bool is_min) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
@@ -492,5 +492,60 @@ func Expr* Parser.parseEnumMinMax(Parser* p, bool is_min) {
     p.expectAndConsume(Kind.RParen);
 
     return p.builder.actOnBuiltinExpr(loc, expr, is_min ? BuiltinExprKind.EnumMin : BuiltinExprKind.EnumMax);
+}
+
+func Expr* Parser.parseOffsetOfExpr(Parser* p) {
+    SrcLoc loc = p.tok.loc;
+    p.consumeToken();
+    p.expectAndConsume(Kind.LParen);
+
+    Expr* structExpr = p.parseFullIdentifier();
+
+    p.expectAndConsume(Kind.Comma);
+
+    Expr* member = p.parseFullIdentifier();
+
+    p.expectAndConsume(Kind.RParen);
+
+    return p.builder.actOnOffsetOfExpr(loc, structExpr, member);
+}
+
+func Expr* Parser.parseToContainerExpr(Parser* p) {
+    SrcLoc loc = p.tok.loc;
+    p.consumeToken();
+    p.expectAndConsume(Kind.LParen);
+
+    Expr* structExpr = p.parseFullIdentifier();
+
+    p.expectAndConsume(Kind.Comma);
+
+    Expr* member = p.parseFullIdentifier();
+
+    p.expectAndConsume(Kind.Comma);
+
+    Expr* pointer = p.parseExpr();
+
+    p.expectAndConsume(Kind.RParen);
+
+    return p.builder.actOnToContainerExpr(loc, structExpr, member, pointer);
+}
+
+// Syntax:
+//   identifier
+//   identifier.identifier
+//   identifier.identifier.identifier etc
+func Expr* Parser.parseFullIdentifier(Parser* p) {
+    p.expectIdentifier();
+    Expr* res = p.parseIdentifier().asExpr();
+
+    while (p.tok.kind == Kind.Dot) {
+        SrcLoc dot_loc = p.tok.loc;
+        p.consumeToken();
+        p.expectIdentifier();
+        IdentifierExpr* rhs = p.parseIdentifier();
+
+        res = p.builder.actOnMemberExpr(dot_loc, res, rhs);
+    }
+    return res;
 }
 

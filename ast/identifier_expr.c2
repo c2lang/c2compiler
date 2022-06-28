@@ -27,6 +27,8 @@ public func IdentifierExpr* IdentifierExpr.create(ast_context.Context* c, SrcLoc
     return e;
 }
 
+public func Expr* IdentifierExpr.asExpr(IdentifierExpr* e) @(inline) { return &e.expr; }
+
 public func void IdentifierExpr.print(const IdentifierExpr* e, StringBuffer* out, u32 indent) {
     out.indent(indent);
     out.add("IdentifierExpr");
