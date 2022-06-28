@@ -19,7 +19,7 @@ public type DeclBits struct {
     u32 kind : 8;
     u32 is_public : 1;
 }
-public const u32 NumDeclBits = 16;
+public const u32 NumDeclBits = 9;
 
 public type Decl struct {
     union {

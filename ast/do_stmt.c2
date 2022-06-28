@@ -8,12 +8,12 @@ import utils local;
 
 public type DoStmt struct {
     Stmt stmt;
-    Expr* cond;
+    Stmt* cond;
     Stmt* then;
 } @(opaque)
 
 // NOTE: merge with while? (only need single bit to differentiate)
-public func DoStmt* DoStmt.create(ast_context.Context* c, Expr* cond, Stmt* then) @(inline) {
+public func DoStmt* DoStmt.create(ast_context.Context* c, Stmt* cond, Stmt* then) @(inline) {
     DoStmt* s = c.alloc(sizeof(DoStmt));
     s.stmt.init(StmtKind.Do);
     s.cond = cond;
@@ -28,11 +28,7 @@ public func void DoStmt.print(const DoStmt* s, StringBuffer* out, u32 indent) {
     s.then.print(out, indent + 2);
 }
 
-public func Expr* DoStmt.getCond(const DoStmt* s) @(inline) {
-    return s.cond;
-}
+public func Stmt* DoStmt.getCond(const DoStmt* s) @(inline) { return s.cond; }
 
-public func Stmt* DoStmt.getThen(const DoStmt* s) @(inline) {
-    return s.then;
-}
+public func Stmt* DoStmt.getThen(const DoStmt* s) @(inline) { return s.then; }
 

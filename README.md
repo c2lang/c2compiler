@@ -59,6 +59,9 @@
 - check how other Compilers (easier ones) parse Expr
     cproc -> see expr.c:1311 -> expr()
 
+## Language
+- Dont allow Declaration in Condition of if stmt?
+
 ## General
 - remove unused import
 - dont import local, (for single printf)

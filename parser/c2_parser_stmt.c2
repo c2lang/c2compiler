@@ -200,17 +200,24 @@ func Stmt* Parser.parseFallthroughStmt(Parser* p) {
     return p.builder.actOnFallthroughStmt(loc);
 }
 
-func Expr* Parser.parseCondition(Parser* p) {
+func Stmt* Parser.parseCondition(Parser* p) {
     p.expectAndConsume(Kind.LParen);
-    Expr* cond = p.parseExpr();
+
+    Stmt* s;
+    if (p.isDeclaration()) {
+        p.error("TODO parseCondition");
+    } else {
+        Expr* cond = p.parseExpr();
+        s = cond.asStmt();
+    }
     p.expectAndConsume(Kind.RParen);
-    return cond;
+    return s;
 }
 
 func Stmt* Parser.parseIfStmt(Parser* p) {
     p.consumeToken();
 
-    Expr* cond = p.parseCondition();
+    Stmt* cond = p.parseCondition();
     Stmt* then = p.parseStmt();
 
     Stmt* else_stmt = nil;
@@ -237,7 +244,7 @@ func Stmt* Parser.parseReturnStmt(Parser* p) {
 
 func Stmt* Parser.parseSwitchStmt(Parser* p) {
     p.consumeToken();
-    Expr* cond = p.parseCondition();
+    Stmt* cond = p.parseCondition();
 
     p.expectAndConsume(Kind.LBrace);
 
@@ -330,7 +337,7 @@ func Stmt* Parser.parseDoStmt(Parser* p) {
 
     Stmt* then = p.parseStmt();
     p.expectAndConsume(Kind.KW_while);
-    Expr* cond = p.parseCondition();
+    Stmt* cond = p.parseCondition();
 
     p.expectAndConsume(Kind.Semicolon);
     return p.builder.actOnDoStmt(cond, then);
@@ -344,15 +351,18 @@ func Stmt* Parser.parseForStmt(Parser* p) {
     // init
     Stmt* init_ = nil;
     if (p.tok.kind != Kind.Semicolon) {
-        // TODO check if declaration
-        init_ = p.parseStmt();
+        if (p.isDeclaration()) {
+            init_ = p.parseDeclStmt(false, false);
+        } else {
+            init_ = p.parseExprStmt();
+        }
     }
     p.expectAndConsume(Kind.Semicolon);
 
     // cond
-    Expr* cond = nil;
+    Stmt* cond = nil;
     if (p.tok.kind != Kind.Semicolon) {
-        cond = p.parseExpr();
+        cond = p.parseExpr().asStmt();
     }
     p.expectAndConsume(Kind.Semicolon);
 
@@ -371,7 +381,7 @@ func Stmt* Parser.parseForStmt(Parser* p) {
 func Stmt* Parser.parseWhileStmt(Parser* p) {
     p.consumeToken();
 
-    Expr* cond = p.parseCondition();
+    Stmt* cond = p.parseCondition();
     Stmt* then = p.parseStmt();
 
     return p.builder.actOnWhileStmt(cond, then);
@@ -390,10 +400,13 @@ func Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal) {
 
     QualType qt = p.parseTypeSpecifier(true);
 
+    printf("AA\n");
     p.expectIdentifier();
+
     const char* name = p.tok.text_value;
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
+    printf("BB\n");
 
     // TODO same as parseVarDef()
     bool need_semi = true;
@@ -437,5 +450,38 @@ func Stmt* Parser.parseGotoStmt(Parser* p) {
     const char* name =  p.tok.text_value;
     SrcLoc loc = p.tok.loc;
     return p.builder.actOnGotoStmt(name, loc);
+}
+
+func bool Parser.isDeclaration(Parser* p) {
+    switch (p.tok.kind) {
+    case Kind.Identifier:
+        return p.isTypeSpec();
+    case Kind.KW_bool:   fallthrough;
+    case Kind.KW_char:   fallthrough;
+    case Kind.KW_const:   fallthrough;
+    case Kind.KW_i8:    fallthrough;
+    case Kind.KW_i16:   fallthrough;
+    case Kind.KW_i32:   fallthrough;
+    case Kind.KW_i64:   fallthrough;
+    case Kind.KW_isize:   fallthrough;
+    case Kind.KW_f32:   fallthrough;
+    case Kind.KW_f64:   fallthrough;
+    case Kind.KW_local:   fallthrough;
+    case Kind.KW_reg8:    fallthrough;
+    case Kind.KW_reg16:   fallthrough;
+    case Kind.KW_reg32:   fallthrough;
+    case Kind.KW_reg64:   fallthrough;
+    case Kind.KW_u8:    fallthrough;
+    case Kind.KW_u16:   fallthrough;
+    case Kind.KW_u32:   fallthrough;
+    case Kind.KW_u64:   fallthrough;
+    case Kind.KW_usize:   fallthrough;
+    case Kind.KW_volatile:   fallthrough;
+    case Kind.KW_void:
+        return true;
+    default:
+        break;
+    }
+    return false;
 }
 

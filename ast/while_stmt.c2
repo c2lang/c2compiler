@@ -8,11 +8,11 @@ import utils local;
 
 public type WhileStmt struct {
     Stmt stmt;
-    Expr* cond;
+    Stmt* cond;
     Stmt* then;
 } @(opaque)
 
-public func WhileStmt* WhileStmt.create(ast_context.Context* c, Expr* cond, Stmt* then) @(inline) {
+public func WhileStmt* WhileStmt.create(ast_context.Context* c, Stmt* cond, Stmt* then) @(inline) {
     WhileStmt* s = c.alloc(sizeof(WhileStmt));
     s.stmt.init(StmtKind.While);
     s.cond = cond;
@@ -27,11 +27,7 @@ public func void WhileStmt.print(const WhileStmt* s, StringBuffer* out, u32 inde
     s.then.print(out, indent + 2);
 }
 
-public func Expr* WhileStmt.getCond(const WhileStmt* s) @(inline) {
-    return s.cond;
-}
+public func Stmt* WhileStmt.getCond(const WhileStmt* s) @(inline) { return s.cond; }
 
-public func Stmt* WhileStmt.getThen(const WhileStmt* s) @(inline) {
-    return s.then;
-}
+public func Stmt* WhileStmt.getThen(const WhileStmt* s) @(inline) { return s.then; }
 
