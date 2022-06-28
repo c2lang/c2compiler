@@ -44,7 +44,7 @@ public func i32 main(i32 argc, char** argv) {
 #if DumpTokens
 #else
         //context.dump();
-        if (ok) parser.dump();
+        //if (ok) parser.dump();
 #endif
         parser.free();
         context.free();

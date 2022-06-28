@@ -13,7 +13,6 @@
 + have error() be like printf
 + error/warn feature
 + named feature-selection
-- FIX comment
 - support nested /* */ comments
 - replace __file__ and __line__ with string-literal / number?
     Q: how to do __func__??
@@ -34,11 +33,12 @@
 - close files after use (need indication)
 
 ## Parser
++ parse Types
++ parse Functions
++ parse Varables
+- use lookup tables to speedup
 - move Lookahead feature from Tokenizer to Parser (on lookahead with error, just stop parser also)
 - put all output through filter for coloring/not
-- parse Types
-- parse Functions
-- parse Varables
 
 ## AST
 + create structure

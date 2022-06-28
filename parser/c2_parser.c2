@@ -69,14 +69,6 @@ public func bool Parser.parse(Parser* p) {
         p.tokenizer.lex(&p.tok);
         dump_token(p.sm, &p.tok);
         token_count++;
-#if 0
-    // Test lookahead
-    // TODO make stack of max 4 lookahead
-    // TODO dont allow look_ahead(0)
-    Token n1 = p.tokenizer.lookahead(3);
-    printf("[3] ");
-    dump_token(p.sm, &n1);
-#endif
     }
     u64 t2 = utils.now();
     printf("--- %u tokens (%u alloc)  (%llu usec) ---\n", token_count, p.context.get_total(), t2 - t1);
