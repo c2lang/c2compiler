@@ -12,7 +12,11 @@ public type FieldDesignatedInitExpr struct {
     Expr* initValue;
 } @(opaque)
 
-public func FieldDesignatedInitExpr* FieldDesignatedInitExpr.create(ast_context.Context* c, const char* field, SrcLoc loc, Expr* initValue) @(inline) {
+public func FieldDesignatedInitExpr* FieldDesignatedInitExpr.create(ast_context.Context* c,
+                                                                    const char* field,
+                                                                    SrcLoc loc,
+                                                                    Expr* initValue) @(inline)
+{
     FieldDesignatedInitExpr* e = c.alloc(sizeof(FieldDesignatedInitExpr));
     e.expr.init(ExprKind.FieldDesignatedInit, loc, 0, 0, 0);
     e.field = field;

@@ -460,8 +460,15 @@ func Expr* Parser.parseFieldDesignator(Parser* p, bool* need_semi) {
 }
 
 func Expr* Parser.parseArrayDesignator(Parser* p, bool* need_semi) {
-    p.error("TODO ArrayDesignator");
-    return nil;
+    SrcLoc loc = p.tok.loc;
+    p.consumeToken();   // '['
+
+    Expr* designator = p.parseAssignmentExpression();
+    p.expectAndConsume(Kind.RSquare);
+    p.expectAndConsume(Kind.Equal);
+
+    Expr* initValue = p.parseInitValue(need_semi, false);
+    return p.builder.actOnArrayDesignatedInit(loc, designator, initValue);
 }
 
 func Expr* Parser.parseExplicitCastExpr(Parser* p) {

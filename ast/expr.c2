@@ -20,7 +20,7 @@ public type ExprKind enum u8 {
     Call,
     InitList,
     FieldDesignatedInit,
-    // ArrayDesignatedInit
+    ArrayDesignatedInit,
     BinaryOperator,
     UnaryOperator,
     ConditionalOperator,
@@ -109,6 +109,9 @@ public func void Expr.print(const Expr* e, StringBuffer* out, u32 indent) {
         break;
     case ExprKind.FieldDesignatedInit:
         FieldDesignatedInitExpr.print(cast<FieldDesignatedInitExpr*>(e), out, indent);
+        break;
+    case ExprKind.ArrayDesignatedInit:
+        ArrayDesignatedInitExpr.print(cast<ArrayDesignatedInitExpr*>(e), out, indent);
         break;
     case ExprKind.BinaryOperator:
         BinaryOperator.print(cast<BinaryOperator*>(e), out, indent);

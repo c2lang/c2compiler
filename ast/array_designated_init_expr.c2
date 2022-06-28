@@ -1,0 +1,34 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context;
+import utils local;
+
+public type ArrayDesignatedInitExpr struct {
+    Expr expr;
+    Expr* designator;
+    Expr* initValue;
+    // TODO value during analysis
+} @(opaque)
+
+public func ArrayDesignatedInitExpr* ArrayDesignatedInitExpr.create(ast_context.Context* c,
+                                                                    SrcLoc loc,
+                                                                    Expr* designator,
+                                                                    Expr* initValue) @(inline)
+{
+    ArrayDesignatedInitExpr* e = c.alloc(sizeof(ArrayDesignatedInitExpr));
+    e.expr.init(ExprKind.ArrayDesignatedInit, loc, 0, 0, 0);
+    e.designator = designator;
+    e.initValue = initValue;
+    return e;
+}
+
+public func void ArrayDesignatedInitExpr.print(const ArrayDesignatedInitExpr* e, StringBuffer* out, u32 indent) {
+    out.indent(indent);
+    out.add("ArrayDesignatedInitExpr\n");
+    e.designator.print(out, indent + 2);
+    e.initValue.print(out, indent + 2);
+}
+
