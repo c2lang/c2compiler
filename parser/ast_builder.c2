@@ -62,6 +62,10 @@ public func StructTypeDecl* Builder.actOnStructType(Builder* b, const char* name
     return d;
 }
 
+public func VarDecl* Builder.actOnStructMember(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType qt, Expr* bitfield) {
+    return VarDecl.createStructMember(b.context, name, loc, is_public, qt, bitfield);
+}
+
 public func VarDecl* Builder.actOnStructVar(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType qt, Expr* initValue) {
     return VarDecl.create(b.context, VarDeclKind.StructMember, name, loc, is_public, qt, initValue);
 }

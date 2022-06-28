@@ -99,7 +99,7 @@ func void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) 
 
             const char* name = nil;
             SrcLoc loc;
-            if (p.tok.kind == Kind.Colon) { // anonymous bitfield
+            if (p.tok.kind == Kind.Colon) { // anonymous bit-field
                 loc = p.tok.loc;
             } else {
                 p.expectIdentifier();
@@ -108,17 +108,14 @@ func void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) 
                 p.consumeToken();
             }
 
-            VarDecl* member = p.builder.actOnStructVar(name, loc, is_public, qt, nil);
-            members.add(member.asDecl());
-
-/*
+            Expr* bitfield = nil;
             if (p.tok.kind == Kind.Colon) {
                 p.consumeToken();
-                Expr** bitField_ptr = p.builder.actOnTailAllocBitField();
-                // TODO
-
+                bitfield = p.parseExpr();
             }
-*/
+            VarDecl* member = p.builder.actOnStructMember(name, loc, is_public, qt, bitfield);
+            members.add(member.asDecl());
+
             p.expectAndConsume(Kind.Semicolon);
         }
     }
