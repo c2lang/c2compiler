@@ -61,7 +61,26 @@ public func bool Parser.parse(Parser* p) {
     p.error_msg[0] = 0;
 
     u64 t1 = utils.now();
-#if 1
+#if DumpTokens
+    p.tokenizer.init(p.context, p.sm.get_content(p.file_id), p.sm.get_offset(p.file_id), p.features);
+    p.tok.init();
+    u32 token_count = 0;
+    while (p.tok.more) {
+        p.tokenizer.lex(&p.tok);
+        dump_token(p.sm, &p.tok);
+        token_count++;
+#if 0
+    // Test lookahead
+    // TODO make stack of max 4 lookahead
+    // TODO dont allow look_ahead(0)
+    Token n1 = p.tokenizer.lookahead(3);
+    printf("[3] ");
+    dump_token(p.sm, &n1);
+#endif
+    }
+    u64 t2 = utils.now();
+    printf("--- %u tokens (%u alloc)  (%llu usec) ---\n", token_count, p.context.get_total(), t2 - t1);
+#else
     i32 res = setjmp(&p.jmpbuf);
     if (res == 0) {
 
@@ -82,17 +101,6 @@ public func bool Parser.parse(Parser* p) {
     }
     u64 t2 = utils.now();
     printf("parsing took %lu usec\n", t2 - t1);
-#else
-    p.tokenizer.init(p.context, p.sm.get_content(p.file_id), p.sm.get_offset(p.file_id), p.features);
-    p.tok.init();
-    u32 token_count = 0;
-    while (p.tok.more) {
-        p.tokenizer.lex(&p.tok);
-        dump_token(p.sm, &p.tok);
-        token_count++;
-    }
-    u64 t2 = utils.now();
-    printf("--- %u tokens (%u alloc)  (%llu usec) ---\n", token_count, p.context.get_total(), t2 - t1);
 #endif
     return true;
 }

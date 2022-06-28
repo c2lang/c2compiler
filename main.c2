@@ -41,8 +41,11 @@ public func i32 main(i32 argc, char** argv) {
 
         Parser* parser = c2_parser.create(sm, file_id, context, &features, false);
         bool ok = parser.parse();
+#if DumpTokens
+#else
         //context.dump();
         if (ok) parser.dump();
+#endif
         parser.free();
         context.free();
     }

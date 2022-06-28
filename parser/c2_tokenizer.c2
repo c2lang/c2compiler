@@ -3,16 +3,17 @@
 
 module c2_tokenizer;
 
-import string local;
-import stdio local;
-import ctype local;
-import stdarg local;
-import ast_context local;
-
+import ast_context;
 import constants;
 import string_list;
 import tokens local;
 import utils local;
+
+import string;
+import ctype local;
+import stdarg local;
+
+public const u32 MaxLookahead = 4;  // must be multiple of 2
 
 type Keyword struct {
     const char* name;
@@ -408,16 +409,16 @@ func const Keyword* check_keyword(const char* cp) {
 public type Token struct {
     SrcLoc loc;
     Kind kind;
+    bool more;
     union {
         const char* error_msg;  // ERROR
         const char* text_value; // Identifier, NumberLiteral
         u8 char_value; // CharLiteral
     }
-    bool more;
 }
 
 public func void Token.init(Token* tok) {
-    tok.kind = Kind.None;
+    string.memset(tok, 0, sizeof(Token));
     tok.more = true;
 }
 
@@ -431,10 +432,12 @@ public type Tokenizer struct {
     SrcLoc loc_start;
     const char* input_start;
 
-    Token next;
+    Token[MaxLookahead] next;
+    u32 next_count;
+    u32 next_head;  // index of next token (circular index into next)
     const char* line_start;
 
-    Context* context;
+    ast_context.Context* context;
 
     // Feature handling
     Feature[constants.MaxFeatureDepth] feature_stack;
@@ -445,27 +448,37 @@ public type Tokenizer struct {
 }
 
 public func void Tokenizer.init(Tokenizer* t,
-                                Context* c,
+                                ast_context.Context* c,
                                 const char* input,
                                 SrcLoc loc_start,
                                 const string_list.List* features)
 {
-    memset(t, 0, sizeof(Tokenizer));
+    string.memset(t, 0, sizeof(Tokenizer));
     t.cur = input;
     t.input_start = input;
     t.loc_start = loc_start;
     t.line_start = input;
     t.context = c;
-    t.next.kind = Kind.None;
     t.features = features;
+    for (u32 i=0; i<MaxLookahead; i++) {
+        t.next[i].init();
+    }
 }
 
 public func void Tokenizer.lex(Tokenizer* t, Token* result) {
-    if (t.next.kind != Kind.None) {
-        memcpy(result, &t.next, sizeof(Token));
-        t.next.kind = Kind.None;
+    if (t.next_count) {
+        string.memcpy(result, &t.next[t.next_head], sizeof(Token));
+
+        t.next_head = (t.next_head + 1) % MaxLookahead;
+        t.next_count--;
         return;
     }
+    t.lex_internal(result);
+}
+
+
+func  void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
+    // TODO if end/error stop (dont retry) (t.done = 1)
 
     while (1) {
         Action act = Char_lookup[*t.cur];
@@ -761,10 +774,17 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
     }
 }
 
-public func Token* Tokenizer.lex_next(Tokenizer* t) {
-    if (t.next.kind == Kind.None) t.lex(&t.next);
+public func Token Tokenizer.lookahead(Tokenizer* t, u32 n) {
+    // assert(n > 0);
+    // assert(n <= MaxLookahead);
+    while (t.next_count < n) {
+        const u32 slot = (t.next_head + t.next_count) % MaxLookahead;
+        t.lex_internal(&t.next[slot]);
+        t.next_count++;
+    }
 
-    return &t.next;
+    u32 slot = (t.next_head + n - 1) % MaxLookahead;
+    return t.next[slot];
 }
 
 func void Tokenizer.error(Tokenizer* t, Token* result, const char* format, ...) {
@@ -1015,7 +1035,7 @@ func bool Tokenizer.parse_error_warn(Tokenizer* t, Token* result, bool is_error)
         return true;
     }
     char[constants.MaxErrorMsgLen+1] msg;
-    memcpy(msg, start, len);
+    string.memcpy(msg, start, len);
     msg[len] = 0;
 
     if (t.is_enabled()) {
@@ -1023,7 +1043,7 @@ func bool Tokenizer.parse_error_warn(Tokenizer* t, Token* result, bool is_error)
             t.cur = t.line_start;
             t.error(result, "%s", msg);
         } else {
-            strcpy(t.error_msg, msg);
+            string.strcpy(t.error_msg, msg);
             result.loc = t.loc_start + cast<SrcLoc>(t.line_start - t.input_start);
             result.kind = Kind.Warning;
             result.error_msg = t.error_msg;
@@ -1092,7 +1112,7 @@ func bool Tokenizer.parse_feature(Tokenizer* t, Token* result, bool* enabled) {
     }
 
     char[constants.MaxFeatureName+1] name;
-    memcpy(name, start, len);
+    string.memcpy(name, start, len);
     name[len] = 0;
 
     if (t.features.contains(name)) *enabled = true;
