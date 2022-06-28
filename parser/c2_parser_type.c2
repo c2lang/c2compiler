@@ -31,7 +31,7 @@ func void Parser.parseTypeDef(Parser* p, bool is_public) {
 
     switch (p.tok.kind) {
     case Kind.KW_func:
-        p.parseFuncType(type_name, type_loc, is_public);
+        p.parseFunctionType(type_name, type_loc, is_public);
         break;
     case Kind.KW_struct:
         p.parseStructType(true, type_name, type_loc, is_public);
@@ -48,7 +48,7 @@ func void Parser.parseTypeDef(Parser* p, bool is_public) {
     }
 }
 
-func void Parser.parseFuncType(Parser* p, const char* name, u32 loc, bool is_public) {
+func void Parser.parseFunctionType(Parser* p, const char* name, u32 loc, bool is_public) {
     p.consumeToken(); // func
 
     QualType rtype = p.parseSingleTypeSpecifier(true);
@@ -60,6 +60,7 @@ func void Parser.parseFuncType(Parser* p, const char* name, u32 loc, bool is_pub
     FunctionDecl* f = p.builder.actOnFuncTypeDecl(name, loc, is_public, rtype, cast<VarDecl**>(params.getDecls()), params.size(), is_variadic);
     p.parseOptionalAttributes();
     params.free();
+    p.expectAndConsume(Kind.Semicolon);
 }
 
 func void Parser.parseStructType(Parser* p, bool is_struct, const char* name, u32 loc, bool is_public) {
