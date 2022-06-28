@@ -406,3 +406,8 @@ public func Expr* Builder.actOnFieldDesignatedInit(Builder* b, const char* field
     return cast<Expr*>(FieldDesignatedInitExpr.create(b.context, field, loc, initValue));
 }
 
+public func void Builder.actOnStaticAssert(Builder* b, SrcLoc loc, Expr* lhs, Expr* rhs) {
+    StaticAssertDecl* d = StaticAssertDecl.create(b.context, loc, lhs, rhs);
+    b.ast.addStaticAssert(d);
+}
+

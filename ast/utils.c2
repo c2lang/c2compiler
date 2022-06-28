@@ -14,6 +14,7 @@ static_assert(32, sizeof(EnumTypeDecl));
 static_assert(48, sizeof(EnumConstantDecl));
 static_assert(40, sizeof(VarDecl));
 static_assert(40, sizeof(AliasTypeDecl));
+static_assert(48, sizeof(StaticAssertDecl));
 
 static_assert(20, sizeof(Stmt));
 static_assert(24, sizeof(CompoundStmt));

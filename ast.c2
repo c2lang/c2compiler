@@ -13,6 +13,7 @@ public type AST struct {
     DeclList types;
     DeclList variables;
     FunctionDeclList functions;
+    DeclList static_asserts;
 
 } @(opaque)
 
@@ -22,6 +23,7 @@ public func AST* AST.create() {
     a.types.init();
     a.variables.init();
     a.functions.init();
+    a.static_asserts.init();
     return a;
 }
 
@@ -41,8 +43,12 @@ public func void AST.addVarDecl(AST* a, Decl* d) @(inline) {
     a.variables.add(d);
 }
 
+public func void AST.addStaticAssert(AST* a, StaticAssertDecl* d) @(inline) {
+    a.static_asserts.add(d);
+}
+
 public func void AST.print(const AST* a) {
-    StringBuffer* out = StringBuffer.create(1024*1024);
+    StringBuffer* out = StringBuffer.create(4*1024*1024);
 
     out.add("---- AST ----\n");
     ImportDecl** imports = a.imports.getDecls();
@@ -71,6 +77,12 @@ public func void AST.print(const AST* a) {
         out.add("\n");
     }
 
+    out.add("\n");
+    Decl** asserts = a.static_asserts.getDecls();
+    for (u32 i=0; i<a.static_asserts.size(); i++) {
+        asserts[i].print(out, 0);
+        out.add("\n");
+    }
 
     printf("%s\n", out.data());
     out.free();

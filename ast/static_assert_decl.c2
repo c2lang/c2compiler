@@ -1,0 +1,31 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context;
+import utils local;
+
+public type StaticAssertDecl struct {
+    Decl decl;
+    Expr* lhs;
+    Expr* rhs;
+} @(opaque)
+
+public func StaticAssertDecl* StaticAssertDecl.create(ast_context.Context* c, SrcLoc loc, Expr* lhs, Expr* rhs) @(inline) {
+    StaticAssertDecl* d = c.alloc(sizeof(StaticAssertDecl));
+    d.decl.init(DeclKind.StaticAssert, "", loc, false);
+    d.lhs = lhs;
+    d.rhs = rhs;
+    return d;
+}
+
+public func Decl* StaticAssertDecl.asDecl(StaticAssertDecl* d) @(inline) { return &d.decl; }
+
+public func void StaticAssertDecl.print(const StaticAssertDecl* d, StringBuffer* out, u32 indent) {
+    out.indent(indent);
+    out.print("StaticAssert\n");
+    d.lhs.print(out, indent + 2);
+    d.rhs.print(out, indent + 2);
+}
+

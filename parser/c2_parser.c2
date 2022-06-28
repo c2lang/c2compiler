@@ -405,8 +405,16 @@ func void Parser.parseVarDef(Parser* p, bool is_public) {
 }
 
 func void Parser.parseStaticAssert(Parser* p) {
+    SrcLoc loc = p.tok.loc;
     p.consumeToken();
-    p.error("TODO StaticAssert");
+
+    p.expectAndConsume(Kind.LParen);
+    Expr* lhs = p.parseExpr();
+    p.expectAndConsume(Kind.Comma);
+    Expr* rhs = p.parseExpr();
+    p.expectAndConsume(Kind.RParen);
+    p.expectAndConsume(Kind.Semicolon);
+    p.builder.actOnStaticAssert(loc, lhs, rhs);
 }
 
 func bool Parser.parseOptionalAccessSpecifier(Parser* p) {

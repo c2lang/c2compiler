@@ -14,6 +14,7 @@ public type DeclKind enum u8 {
     EnumConstant,
     AliasType,
     Var,
+    StaticAssert,
 }
 
 public type DeclBits struct {
@@ -91,6 +92,9 @@ public func void Decl.print(const Decl* d, StringBuffer* out, u32 indent) {
         break;
     case DeclKind.Var:
         VarDecl.print(cast<VarDecl*>(d), out, indent);
+        break;
+    case DeclKind.StaticAssert:
+        StaticAssertDecl.print(cast<StaticAssertDecl*>(d), out, indent);
         break;
     }
 }
