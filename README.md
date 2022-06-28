@@ -26,6 +26,7 @@
 - TRY filtering duplicate strings, measure mem + speed changes
     -> during analysis, all string compares can be pointer compares!
     -> filter in Context
+        -> allow specify whether to search duplicates (not needed for string constants, etc)
     -> need a LOT of pointer size!!
     -> have some sort of tree (use u16 indexes, not pointers)
 - advanced basic feature-selection:
