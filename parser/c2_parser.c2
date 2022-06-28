@@ -1,5 +1,5 @@
 /* Copyright 2022 Bas van den Berg
-*/
+ */
 
 module c2_parser;
 
@@ -175,24 +175,24 @@ func void Parser.parseTopLevel(Parser* p) {
 
     bool is_public = p.parseOptionalAccessSpecifier();
     switch (p.tok.kind) {
-    case Kind.KW_func:
-        p.parseFuncDef(is_public);
-        break;
-    case Kind.KW_import:
-        p.error("import after decls");
-        break;
-    case Kind.KW_static_assert:
-        if (is_public) p.error("static_assert cannot be public");
-        p.parseStaticAssert();
-        break;
-    case Kind.KW_type:
-        p.parseTypeDef(is_public);
-        break;
-    case Kind.Eof:
-        break;
-    default:
-        p.parseVarDef(is_public);
-        break;
+        case Kind.KW_func:
+            p.parseFuncDef(is_public);
+            break;
+        case Kind.KW_import:
+            p.error("import after decls");
+            break;
+        case Kind.KW_static_assert:
+            if (is_public) p.error("static_assert cannot be public");
+            p.parseStaticAssert();
+            break;
+        case Kind.KW_type:
+            p.parseTypeDef(is_public);
+            break;
+        case Kind.Eof:
+            break;
+        default:
+            p.parseVarDef(is_public);
+            break;
     }
 }
 
@@ -231,16 +231,18 @@ func void Parser.parseFuncDef(Parser* p, bool is_public) {
     p.consumeToken();
 
     QualType rtype = p.parseSingleTypeSpecifier(true);
+
     p.expectIdentifier();
     const char* func_name = p.tok.text_value;
     u32 func_loc = p.tok.loc;
     p.consumeToken();
 
+    IdentifierExpr* prefix = nil;
     if (p.tok.kind == Kind.Dot) {
         p.consumeToken();
         p.expectIdentifier();
 
-        p.builder.actOnIdExpression(func_name, func_loc);
+        prefix = p.builder.actOnIdentifier(func_loc, func_name);
         func_name = p.tok.text_value;
         func_loc = p.tok.loc;
         p.consumeToken();
@@ -255,7 +257,7 @@ func void Parser.parseFuncDef(Parser* p, bool is_public) {
     params.init(4);
 
     bool is_variadic = p.parseFunctionParams(&params, is_public, true);
-    FunctionDecl* f = p.builder.actOnFuncDecl(func_name, func_loc, is_public, rtype, cast<VarDecl**>(params.getDecls()), params.size(), is_variadic);
+    FunctionDecl* f = p.builder.actOnFuncDecl(func_name, func_loc, is_public, rtype, prefix, cast<VarDecl**>(params.getDecls()), params.size(), is_variadic);
     params.free();
 
     p.parseOptionalAttributes(); // (f)

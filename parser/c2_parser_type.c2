@@ -49,8 +49,17 @@ func void Parser.parseTypeDef(Parser* p, bool is_public) {
 }
 
 func void Parser.parseFuncType(Parser* p, const char* name, u32 loc, bool is_public) {
-    p.consumeToken();
-    p.error("TODO FuncType");
+    p.consumeToken(); // func
+
+    QualType rtype = p.parseSingleTypeSpecifier(true);
+
+    DeclList params;
+    params.init(4);
+
+    bool is_variadic = p.parseFunctionParams(&params, is_public, false);
+    FunctionDecl* f = p.builder.actOnFuncTypeDecl(name, loc, is_public, rtype, cast<VarDecl**>(params.getDecls()), params.size(), is_variadic);
+    p.parseOptionalAttributes();
+    params.free();
 }
 
 func void Parser.parseStructType(Parser* p, bool is_struct, const char* name, u32 loc, bool is_public) {

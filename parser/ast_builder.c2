@@ -55,6 +55,15 @@ public func Decl* Builder.actOnAliasType(Builder* b, const char* name, SrcLoc lo
     return d.asDecl();
 }
 
+public func Decl* Builder.actOnFuncTypeDecl(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType rtype,
+                                                VarDecl** params, u32 num_params, bool is_variadic) {
+    FunctionDecl* fn = FunctionDecl.create(b.context, name, loc, is_public, rtype, nil, params, num_params, is_variadic);
+
+    FunctionDecl* d = FunctionTypeDecl.create(b.context, is_public, fn);
+    b.ast.addTypeDecl(d.asDecl());
+    return d;
+}
+
 public func StructTypeDecl* Builder.actOnStructType(Builder* b, const char* name, SrcLoc loc, bool is_public, bool is_struct, bool is_global,
                                                     VarDecl** members, u32 num_members) {
     StructTypeDecl* d = StructTypeDecl.create(b.context, name, loc, is_public, is_struct, is_global, members, num_members);
@@ -174,13 +183,17 @@ public func QualType Builder.actOnTypeQualifier(Builder* b, QualType qt, u32 qua
     return res;
 }
 
-public func void Builder.actOnIdExpression(Builder* b, const char* name, SrcLoc loc) {
-    //printf("ID %s\n", name);
-}
-
-public func FunctionDecl* Builder.actOnFuncDecl(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType rtype,
-                                                VarDecl** params, u32 num_params, bool is_variadic) {
-    FunctionDecl* f = FunctionDecl.create(b.context, name, loc, is_public, rtype, params, num_params, is_variadic);
+public func FunctionDecl* Builder.actOnFuncDecl(Builder* b,
+                                                const char* name,
+                                                SrcLoc loc,
+                                                bool is_public,
+                                                QualType rtype,
+                                                IdentifierExpr* prefix,
+                                                VarDecl** params,
+                                                u32 num_params,
+                                                bool is_variadic)
+{
+    FunctionDecl* f = FunctionDecl.create(b.context, name, loc, is_public, rtype, prefix, params, num_params, is_variadic);
     b.ast.addFunc(f);
     return f;
 }

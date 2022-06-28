@@ -22,6 +22,18 @@ executable c2c
     parser/c2_parser_expr.c2
     parser/ast_builder.c2
 
+    ast/decl.c2
+    ast/function_decl.c2
+    ast/import_decl.c2
+    ast/struct_type_decl.c2
+    ast/var_decl.c2
+    ast/enum_type_decl.c2
+    ast/enum_constant_decl.c2
+    ast/decl_stmt.c2
+    ast/alias_type_decl.c2
+    ast/static_assert_decl.c2
+    ast/function_type_decl.c2
+
     ast/stmt.c2
     ast/compound_stmt.c2
     ast/do_stmt.c2
@@ -58,17 +70,6 @@ executable c2c
     ast/array_subscript_expr.c2
     ast/member_expr.c2
     ast/explicit_cast_expr.c2
-
-    ast/decl.c2
-    ast/function_decl.c2
-    ast/import_decl.c2
-    ast/struct_type_decl.c2
-    ast/var_decl.c2
-    ast/enum_type_decl.c2
-    ast/enum_constant_decl.c2
-    ast/decl_stmt.c2
-    ast/alias_type_decl.c2
-    ast/static_assert_decl.c2
 
     ast/utils.c2
     ast/type.c2
