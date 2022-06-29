@@ -50,11 +50,14 @@
 - FIX object sizes (Stmt should be 4 bytes, not aligned yet)
 - move SrcLoc to ast_helper?
 - use common/pointer-map, or put ptr* in each Type? (pointers are very common, so could be efficient)
+    - or use RB-tree to put all Type* to get pointer-types etc, program-wide?
 
 ## AST-Builder
 + fill AST
 + print content
-- use RB-tree to put all Type* to get pointer-types etc, program-wide!
+- parse recipe
+- parse all files in recipe
+- create Modules (during parsing)
 
 ## Performance
 - profile application to see where time is spent
