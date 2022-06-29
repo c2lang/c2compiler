@@ -115,9 +115,9 @@ public func void Pool.dump(const Pool* c) {
     u32 total = c.blk_head.get_total();
 
     printf("Pool:\n");
-    printf("    AST blk size %u, %u blocks, total %u/%u\n", c.blk_size, num, total, num * c.blk_size);
+    printf("    blk size %u, %u blocks, total %u/%u\n", c.blk_size, num, total, num * c.blk_size);
 #if ContextDebug
-    printf("    %u AST allocs (avg %u bytes)\n", num_allocs, total / num_allocs);
+    printf("    %u allocs (avg %u bytes)\n", num_allocs, total / num_allocs);
 #endif
 }
 
