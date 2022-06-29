@@ -3,7 +3,7 @@
 
 module c2_tokenizer;
 
-import ast_context;
+import string_pool;
 import constants;
 import string_list;
 import tokens local;
@@ -441,7 +441,7 @@ public type Tokenizer struct {
     u32 next_head;  // index of next token (circular index into next)
     const char* line_start;
 
-    ast_context.Context* context;
+    string_pool.Pool* pool;
 
     // Feature handling
     Feature[constants.MaxFeatureDepth] feature_stack;
@@ -452,7 +452,7 @@ public type Tokenizer struct {
 }
 
 public func void Tokenizer.init(Tokenizer* t,
-                                ast_context.Context* c,
+                                string_pool.Pool* pool,
                                 const char* input,
                                 SrcLoc loc_start,
                                 const string_list.List* features)
@@ -462,7 +462,7 @@ public func void Tokenizer.init(Tokenizer* t,
     t.input_start = input;
     t.loc_start = loc_start;
     t.line_start = input;
-    t.context = c;
+    t.pool = pool;
     t.features = features;
     for (u32 i=0; i<MaxLookahead; i++) {
         t.next[i].init();
@@ -817,7 +817,7 @@ func void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
         return;
     }
     t.cur += len;
-    result.text_value = t.context.alloc_str(start, len);
+    result.text_value = t.pool.alloc(start, len, true);
 }
 
 func bool is_octal(char c) {
@@ -855,7 +855,7 @@ func void Tokenizer.lex_number(Tokenizer* t, Token* result) {
     }
 
     usize len = cast<usize>(t.cur - start);
-    result.text_value = t.context.alloc_str(start, len);
+    result.text_value = t.pool.alloc(start, len, true);
 }
 
 func void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
@@ -951,7 +951,7 @@ func void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
 out:
     len = cast<u32>(t.cur - start);
     t.cur++;    // skip end delimiter
-    result.text_value = t.context.alloc_str(start, len);
+    result.text_value = t.pool.alloc(start, len, false);
 }
 
 func void Tokenizer.skip_line_comment(Tokenizer* t) {

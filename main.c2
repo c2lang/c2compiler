@@ -8,6 +8,7 @@ import c2_parser local;
 import string_list;
 import constants;
 import ast_context local;
+import string_pool;
 import ast;
 
 import stdio local;
@@ -20,7 +21,7 @@ public func i32 main(i32 argc, char** argv) {
 
     SourceMgr* sm = SourceMgr.create();
 
-    Context* typeContext = Context.create(1024, 0);
+    Context* typeContext = Context.create(1024);
     ast.init(typeContext);
 
     for (i32 i=1; i<argc; i++) {
@@ -37,9 +38,10 @@ public func i32 main(i32 argc, char** argv) {
         features.init(64);
         features.add("feature_a");
 
-        Context* context = Context.create(constants.ContextBlkSize, constants.ContextStrBlkSize);
+        Context* context = Context.create(constants.ContextBlkSize);
+        string_pool.Pool* pool = string_pool.Pool.create(constants.StringPoolSize);
 
-        Parser* parser = c2_parser.create(sm, file_id, context, &features, false);
+        Parser* parser = c2_parser.create(sm, file_id, context, pool, &features, false);
         bool ok = parser.parse();
 #if DumpTokens
 #else
@@ -47,6 +49,7 @@ public func i32 main(i32 argc, char** argv) {
         //if (ok) parser.dump();
 #endif
         parser.free();
+        pool.free();
         context.free();
     }
 

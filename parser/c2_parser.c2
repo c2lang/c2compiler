@@ -8,7 +8,8 @@ import c2_tokenizer local;
 import ast_builder local;
 import ast_list local;
 import ast local;
-import ast_context local;
+import ast_context;
+import string_pool;
 import tokens local;
 import string_list;
 import utils local;
@@ -27,7 +28,8 @@ public type Parser struct {
     Builder* builder;
     SourceMgr* sm;
     i32 file_id;
-    Context* context;
+    ast_context.Context* context;
+    string_pool.Pool* pool;
     bool is_interface;
 
     JmpBufTag jmpbuf;
@@ -35,11 +37,12 @@ public type Parser struct {
     char[256] error_msg;
 } @(opaque)
 
-public func Parser* create(SourceMgr* sm, i32 file_id, Context* c, string_list.List* features, bool is_interface) {
+public func Parser* create(SourceMgr* sm, i32 file_id, ast_context.Context* c, string_pool.Pool* pool, string_list.List* features, bool is_interface) {
     Parser* p = calloc(1, sizeof(Parser));
     p.sm = sm;
     p.file_id = file_id;
     p.context = c;
+    p.pool = pool;
     p.is_interface = is_interface;
     p.features = features;
     // TEMP create Builder here
@@ -62,7 +65,7 @@ public func bool Parser.parse(Parser* p) {
 
     u64 t1 = utils.now();
 #if DumpTokens
-    p.tokenizer.init(p.context, p.sm.get_content(p.file_id), p.sm.get_offset(p.file_id), p.features);
+    p.tokenizer.init(p.pool, p.sm.get_content(p.file_id), p.sm.get_offset(p.file_id), p.features);
     p.tok.init();
     u32 token_count = 0;
     while (p.tok.more) {
@@ -76,7 +79,7 @@ public func bool Parser.parse(Parser* p) {
     i32 res = setjmp(&p.jmpbuf);
     if (res == 0) {
 
-        p.tokenizer.init(p.context, p.sm.get_content(p.file_id), p.sm.get_offset(p.file_id), p.features);
+        p.tokenizer.init(p.pool, p.sm.get_content(p.file_id), p.sm.get_offset(p.file_id), p.features);
         p.tok.init();
 
         p.consumeToken();

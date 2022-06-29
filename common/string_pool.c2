@@ -1,7 +1,7 @@
 /* Copyright 2022 Bas van den Berg
 */
 
-module ast_context;
+module string_pool;
 
 import string local;
 import stdlib local;
@@ -53,47 +53,47 @@ func u32 Block.get_total(const Block* b) {
     return total;
 }
 
-public type Context struct {
+public type Pool struct {
     Block* blk_head;
     Block* blk_tail;
     u32 blk_size;
 } @(opaque)
 
-public func Context* Context.create(u32 blk_size) {
-    Context* c = calloc(1, sizeof(Context));
+public func Pool* Pool.create(u32 blk_size) {
+    Pool* c = calloc(1, sizeof(Pool));
     c.blk_size = blk_size;
     c.init();
     return c;
 }
 
-func void Context.freeBlocks(Context* c) {
+func void Pool.freeBlocks(Pool* c) {
     Block* blk = c.blk_head;
     while (blk) blk = blk.free();
 }
 
-public func void Context.free(Context* c) {
+public func void Pool.free(Pool* c) {
     c.freeBlocks();
     free(c);
 }
 
-func void Context.init(Context* c) {
+func void Pool.init(Pool* c) {
     c.blk_head = Block.create(c.blk_size);
     c.blk_tail = c.blk_head;
 }
 
-public func void Context.clear(Context* c) {
+public func void Pool.clear(Pool* c) {
     c.freeBlocks();
     c.init();
 }
 
-public func void* Context.alloc(Context* c, u32 len) {
+public func const char* Pool.alloc(Pool* c, const char* text, usize len, bool filter) @(inline) {
+    // assert(c.str_blk_head);
+    // assert(len < strblk_size)
+    len++;  // add 0-terminator
 #if ContextDebug
     num_allocs++;
 #endif
-    // assert(c.blk_head);
-    // TODO always align as ptr size!!
-    // assert(len * 0x3 == 0); // must be 8-byte multiple
-    // assert(len < blk_size)
+
     Block* last = c.blk_tail;
     if (last.size + len >= c.blk_size) {
         c.blk_tail = Block.create(c.blk_size);
@@ -101,19 +101,27 @@ public func void* Context.alloc(Context* c, u32 len) {
         last = last.next;
     }
 
-    void* cur = last.data + last.size;
+    char* buf = cast<char*>(last.data + last.size);
     last.size += len;
-    return cur;
+
+    len--;
+    memcpy(buf, text, len);
+    buf[len] = 0;
+    return buf;
 }
 
-public func void Context.dump(const Context* c) {
+public func void Pool.dump(const Pool* c) {
     u32 num = c.blk_head.count();
     u32 total = c.blk_head.get_total();
 
-    printf("Context:\n");
+    printf("Pool:\n");
     printf("    AST blk size %u, %u blocks, total %u/%u\n", c.blk_size, num, total, num * c.blk_size);
 #if ContextDebug
     printf("    %u AST allocs (avg %u bytes)\n", num_allocs, total / num_allocs);
 #endif
+}
+
+public func u32 Pool.get_total(const Pool* c) {
+    return c.blk_head.get_total() + c.blk_head.get_total();
 }
 

@@ -13,6 +13,7 @@ executable c2c
     common/color.c2
     common/string_list.c2
     common/string_buffer.c2
+    common/string_pool.c2
     common/pointer_map.c2
 
     parser/tokens.c2

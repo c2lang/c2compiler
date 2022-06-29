@@ -23,6 +23,7 @@
     - parse hexadecimal
     + parse octal
 - pass Numbers as number? (no need to alloc str then)
+- Context: split Context into Context and StringPool (only used by Tokenizer)
 - TRY filtering duplicate strings, measure mem + speed changes
     -> during analysis, all string compares can be pointer compares!
     -> filter in Context
