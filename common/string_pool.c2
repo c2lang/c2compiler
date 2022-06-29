@@ -139,40 +139,61 @@ Case_I56:
     return;
 }
 
+// NOTE: right is NOT 0-terminated!
+// 0 left
+// 1 right
+// 2 =
+func u32 compare(const char* left, const char* right, usize rlen) @(inline) {
+    while (rlen) {
+        char l = *left;
+        char r = *right;
+        if (l > r) return 0;
+        if (l < r) return 1;
+        left++;
+        right++;
+        rlen--;
+    }
+    if (*left == 0) return 2;
+    return 0;
+}
+
 public func const char* Pool.add(Pool* pool, const char* text, usize len, bool filter) {
+    // NOTE: text is not 0-terminated!! len is strlen(text)
 #if StringPoolDebug
     pool.num_adds++;
     pool.total_size += len;
 #endif
     if (filter) {
+        Node* parent;
         Node* n = pool.root;
         Dir dir = Dir.Left;
         while (n) {
             const char* word = pool.data + n.word_idx;
-            // NOTE: strcmp seems a bit faster than memcmp!!
-            //i32 result = string.strcmp(word, text);
-            i32 result = string.memcmp(word, text, len);
-            if (result > 0) {
+            switch (compare(word, text, len)) {
+            case 0: // left
                 if (n.child[Dir.Left]) {
                     n = pool.nodes + n.child[Dir.Left];
                     continue;
                 } else {
                     n.child[Dir.Left] = pool.node_count;
-                    break;
+                    goto after_loop;
                 }
-            }
-            if (result < 0) {
+                break;
+            case 1: // right
                 if (n.child[Dir.Right]) {
                     n = pool.nodes + n.child[Dir.Right];
                     continue;
                 } else {
                     n.child[Dir.Right] = pool.node_count;
-                    break;
+                    goto after_loop;
                 }
+                break;
+            case 2: // ==
+                return word;
             }
-            return word;
         }
-        Node* parent = n;
+after_loop:
+        parent = n;
         u16 parent_idx = cast<u16>(n ? cast<u16>(n - pool.nodes) : 0);
         // fill new node
         //assert(pool.node_count < pool.node_capacity);
@@ -187,9 +208,10 @@ public func const char* Pool.add(Pool* pool, const char* text, usize len, bool f
     }
 
     char* dest = pool.data + pool.size;
-    pool.size += len;
-    //assert(pool.size < pool.data_capacity);
     string.memcpy(dest, text, len);
+    dest[len] = 0;
+    pool.size += len + 1;
+    //assert(pool.size < pool.data_capacity);
     return dest;
 }
 
