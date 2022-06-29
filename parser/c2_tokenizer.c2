@@ -853,7 +853,7 @@ func void Tokenizer.lex_number(Tokenizer* t, Token* result) {
     }
 
     usize len = cast<usize>(t.cur - start);
-    result.text_value = t.pool.add(start, len, true);
+    result.text_value = t.pool.add(start, len, false);
 }
 
 func void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
