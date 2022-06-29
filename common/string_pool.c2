@@ -144,18 +144,19 @@ Case_I56:
 // 1 right
 // 2 =
 func u32 compare(const char* left, const char* right, usize rlen) @(inline) {
-    while (rlen) {
-        char l = *left;
-        char r = *right;
-        if (l > r) return 0;
-        if (l < r) return 1;
-        left++;
-        right++;
-        rlen--;
+    u32 i = 0;
+    while (i < rlen) {
+        char l = left[i];
+        char r = right[i];
+        char c = l - r;
+        if (c < 0) return 1;
+        if (c > 0) return 0;
+        i++;
     }
-    if (*left == 0) return 2;
+    if (left[rlen] == 0) return 2;
     return 0;
 }
+
 
 public func const char* Pool.add(Pool* pool, const char* text, usize len, bool filter) {
     // NOTE: text is not 0-terminated!! len is strlen(text)
