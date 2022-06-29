@@ -3,10 +3,8 @@
 
 module ast_context;
 
-import string local;
 import stdlib local;
-// TEMP
-import stdio local;
+import stdio local; // TEMP
 
 type Block struct {
     u8* data;

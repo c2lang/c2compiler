@@ -53,9 +53,9 @@ public type Expr struct {
 public func void Expr.init(Expr* e, ExprKind k, SrcLoc loc, bool ctv, bool ctc, bool lvalue) @(inline) {
     e.stmt.init(StmtKind.Expr);
     e.stmt.exprBits.kind = k;
-    e.stmt.exprBits.is_ctv = 1;
-    e.stmt.exprBits.is_ctc = 1;
-    e.stmt.exprBits.is_lvalue = 0;
+    e.stmt.exprBits.is_ctv = ctv;
+    e.stmt.exprBits.is_ctc = ctc;
+    e.stmt.exprBits.is_lvalue = lvalue;
     e.loc = loc;
     e.qt.ptr = 0;
 }

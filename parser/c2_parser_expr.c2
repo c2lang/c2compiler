@@ -4,7 +4,7 @@
 module c2_parser;
 
 import c2_tokenizer local;
-import ast_builder local;
+import ast_builder local;   // is used!!
 import ast local;
 import ast_list;
 import tokens local;
@@ -346,7 +346,7 @@ func Expr* Parser.parseParenExpr(Parser* p) {
     Expr* res = p.parseExpr();
     p.expectAndConsume(Kind.RParen);
 
-    return p.builder.actOnParenExpr(p.tok.loc, res);
+    return p.builder.actOnParenExpr(loc, res);
 }
 
 func Expr* Parser.parseSizeof(Parser* p) {

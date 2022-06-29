@@ -24,5 +24,6 @@ public func Decl* FunctionTypeDecl.asDecl(FunctionTypeDecl* t) @(inline) { retur
 public func void FunctionTypeDecl.print(const FunctionTypeDecl* d, utils.StringBuffer* out, u32 indent) {
     out.indent(indent);
     out.add("FunctionTypeDecl\n");
+    d.fn.print(out, indent + 2 );
 }
 

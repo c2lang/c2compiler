@@ -167,7 +167,6 @@ public func const char* Pool.add(Pool* pool, const char* text, usize len, bool f
     if (filter) {
         Node* parent;
         Node* n = pool.root;
-        Dir dir = Dir.Left;
         while (n) {
             const char* word = pool.data + n.word_idx;
             switch (compare(word, text, len)) {

@@ -21,6 +21,6 @@ public func TypeExpr* TypeExpr.create(ast_context.Context* c, SrcLoc loc, QualTy
 public func void TypeExpr.print(const TypeExpr* e, StringBuffer* out, u32 indent) {
     out.indent(indent);
     out.add("TypeExpr\n");
-    //e.qt.print(out, indent + 1);
+    e.qt.print(out, indent + 2);
 }
 

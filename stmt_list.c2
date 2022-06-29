@@ -4,7 +4,6 @@ import ast local;
 
 import string local;
 import stdlib local;
-import stdio local; // TEMP
 
 // Use stack for small lists, heap for larger ones
 

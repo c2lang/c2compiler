@@ -10,8 +10,6 @@ import tokens local;
 import utils local;
 
 import stdlib local;
-import string local;
-import stdio local;
 
 public type Builder struct {
     Context* context;
@@ -206,8 +204,15 @@ public func EnumConstantDecl* Builder.actOnEnumConstant(Builder* b, const char* 
     return EnumConstantDecl.create(b.context, name, loc, is_public, qt, initial);
 }
 
-public func void Builder.actOnEnumTypeDecl(Builder* b, const char* name, SrcLoc loc, bool is_public, bool is_incr,
-                                           QualType qt, EnumConstantDecl** constants, u32 num_constants) {
+public func void Builder.actOnEnumTypeDecl(Builder* b,
+                                           const char* name,
+                                           SrcLoc loc,
+                                           bool is_public,
+                                           bool is_incr,
+                                           QualType qt,
+                                           EnumConstantDecl** constants,
+                                           u32 num_constants)
+{
     EnumTypeDecl* d = EnumTypeDecl.create(b.context, name, loc, is_public, is_incr, constants, num_constants);
     b.ast.addTypeDecl(d.asDecl());
 }
@@ -371,8 +376,8 @@ public func Expr* Builder.actOnBinaryOperator(Builder* b, SrcLoc loc, Kind kind,
     return cast<Expr*>(BinaryOperator.create(b.context, loc, opcode, lhs, rhs));
 }
 
-public func Expr* Builder.actOnConditionalOperator(Builder* b, SrcLoc questionLoc, SrcLoc colonLoc, Expr* lhs, Expr* ternaryMiddle, Expr* rhs) {
-    return nil;
+public func Expr* Builder.actOnConditionalOperator(Builder* b, SrcLoc questionLoc, SrcLoc colonLoc, Expr* cond, Expr* lhs, Expr* rhs) {
+    return cast<Expr*>(ConditionalOperator.create(b.context, questionLoc, colonLoc, cond, lhs, rhs));
 }
 
 public func Expr* Builder.actOnBooleanConstant(Builder* b, SrcLoc loc, bool value) {

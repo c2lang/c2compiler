@@ -14,8 +14,12 @@ public type ConditionalOperator struct {
     Expr* rhs;
 } @(opaque)
 
-public func ConditionalOperator* ConditionalOperator.create(ast_context.Context* c, SrcLoc questionLoc, SrcLoc colonLoc,
-        Expr* cond, Expr* lhs, Expr* rhs) @(inline)
+public func ConditionalOperator* ConditionalOperator.create(ast_context.Context* c,
+                                                            SrcLoc questionLoc,
+                                                            SrcLoc colonLoc,
+                                                            Expr* cond,
+                                                            Expr* lhs,
+                                                            Expr* rhs) @(inline)
 {
     ConditionalOperator* e = c.alloc(sizeof(ConditionalOperator));
     e.expr.init(ExprKind.ConditionalOperator, questionLoc, 0, 0, 0);

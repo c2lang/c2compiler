@@ -3,7 +3,6 @@
 
 module c2_parser;
 
-import ast_builder local;
 import c2_tokenizer local;
 import ast_utils local;
 import ast local;

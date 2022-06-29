@@ -9,6 +9,7 @@ import utils;
 public type ArrayTypeBits struct {
     u32 : NumTypeBits;
     u32 have_size : 1;
+    u32 is_incremental : 1;
 }
 
 public type ArrayType struct {
@@ -22,6 +23,7 @@ public func ArrayType* ArrayType.create(ast_context.Context* c, QualType elem, b
     if (sizeExpr) size += sizeof(Expr*);
     ArrayType* t = c.alloc(size);
     t.parent.init(TypeKind.Array);
+    t.parent.arrayTypeBits.is_incremental = is_incremental;
     t.elem = elem;
 
     if (sizeExpr) {

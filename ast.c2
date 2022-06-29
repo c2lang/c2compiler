@@ -3,9 +3,8 @@ module ast_list;
 import ast local;
 import utils local;
 
-import stdlib local;
-import string local;
-import stdio local;
+import stdlib;
+import stdio;
 
 public type AST struct {
 
@@ -18,7 +17,7 @@ public type AST struct {
 } @(opaque)
 
 public func AST* AST.create() {
-    AST* a = calloc(1, sizeof(AST));
+    AST* a = stdlib.calloc(1, sizeof(AST));
     a.imports.init();
     a.types.init();
     a.variables.init();
@@ -84,7 +83,7 @@ public func void AST.print(const AST* a) {
         out.add("\n");
     }
 
-    printf("%s\n", out.data());
+    stdio.printf("%s\n", out.data());
     out.free();
 }
 

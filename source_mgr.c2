@@ -6,7 +6,6 @@ module source_mgr;
 import file_utils;
 import stdlib local;
 import string local;
-import c_errno local;
 
 import stdio local; // for dump()
 
@@ -100,7 +99,7 @@ func void SourceMgr.dump(const SourceMgr* sm) {
     }
 }
 
-public type Location struct {
+type Location struct {
     u32 line;
     u32 column;
     const char* filename;   // no ownership
@@ -132,7 +131,7 @@ func void find_line_col(const char* data, u32 offset, Location* loc, u32 last_of
     loc.column = cast<u32>(&data[offset] - line) + 1;
 }
 
-public func Location SourceMgr.locate(SourceMgr* sm, u32 loc) {
+func Location SourceMgr.locate(SourceMgr* sm, u32 loc) {
     Location l = { 1, 1, nil }
     File* f = find_file(sm, loc);
     if (f) {

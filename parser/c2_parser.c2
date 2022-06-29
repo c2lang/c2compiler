@@ -17,7 +17,6 @@ import color;
 
 import stdarg local;
 import stdlib local;
-import string local;
 import csetjmp local;
 import ctype local;
 import stdio local;
@@ -28,7 +27,6 @@ public type Parser struct {
     Builder* builder;
     SourceMgr* sm;
     i32 file_id;
-    ast_context.Context* context;
     string_pool.Pool* pool;
     bool is_interface;
 
@@ -41,7 +39,6 @@ public func Parser* create(SourceMgr* sm, i32 file_id, ast_context.Context* c, s
     Parser* p = calloc(1, sizeof(Parser));
     p.sm = sm;
     p.file_id = file_id;
-    p.context = c;
     p.pool = pool;
     p.is_interface = is_interface;
     p.features = features;
