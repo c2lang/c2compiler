@@ -1,127 +1,243 @@
-/* Copyright 2022 Bas van den Berg
-*/
-
 module string_pool;
 
-import string local;
-import stdlib local;
-// TEMP
-import stdio local;
+import string;
+import stdlib;
+import stdio;
 
-#if ContextDebug
-u32 num_allocs;
-#endif
+/*
+    Make Nodes resizable (start at 2000)
+    Make data resizable?
+        . can we put blocks underneath (block vector, each 16Kb)
+*/
 
-type Block struct {
-    u8* data;
-    u32 size;
-    Block* next;
-}
+type Color enum u8 { Black, Red }
+type Dir enum u8 { Left, Right }
 
-func Block* Block.create(u32 blk_size) {
-    Block* b = malloc(sizeof(Block));
-    b.data = malloc(blk_size);
-    b.size = 0;
-    b.next = nil;
-    return b;
-}
-
-func Block* Block.free(Block* b) {
-    Block* next = b.next;
-    free(b.data);
-    free(b);
-    return next;
-}
-
-func u32 Block.count(const Block* b) {
-    u32 total = 0;
-    const Block* blk = b;
-    while (blk) {
-        total ++;
-        blk = blk.next;
-    }
-    return total;
-}
-
-func u32 Block.get_total(const Block* b) {
-    u32 total = 0;
-    const Block* blk = b;
-    while (blk) {
-        total += blk.size;
-        blk = blk.next;
-    }
-    return total;
+type Node struct {
+    u16[2] child;
+    u32 word_idx;
+    u16 parent;
+    Color color;
 }
 
 public type Pool struct {
-    Block* blk_head;
-    Block* blk_tail;
-    u32 blk_size;
+    u32 size; // rename dataSize
+    u32 data_capacity;
+    char* data;
+    Node* nodes;
+    u16 node_capacity;
+    u16 node_count;
+    Node* root;
 } @(opaque)
 
-public func Pool* Pool.create(u32 blk_size) {
-    Pool* c = calloc(1, sizeof(Pool));
-    c.blk_size = blk_size;
-    c.init();
-    return c;
+public func Pool* Pool.create(u32 data_capacity, u16 node_capacity) {
+    Pool* p = stdlib.calloc(1, sizeof(Pool));
+    //p.size = 1; // skip first to mark as unused, still needed?
+    p.data_capacity = data_capacity;
+    p.node_capacity = node_capacity;
+    p.data = stdlib.malloc(p.data_capacity);
+    p.nodes = stdlib.malloc(p.node_capacity * sizeof(Node));
+    p.node_count = 1; // skip node 1
+    return p;
 }
 
-func void Pool.freeBlocks(Pool* c) {
-    Block* blk = c.blk_head;
-    while (blk) blk = blk.free();
+public func void Pool.free(Pool* p) {
+    stdlib.free(p.data);
+    stdlib.free(p.nodes);
+    stdlib.free(p);
 }
 
-public func void Pool.free(Pool* c) {
-    c.freeBlocks();
-    free(c);
+func Node* Pool.getChild(Pool* pool, Node* x, Dir dir) @(inline) {
+    // assert(x);
+    u16 idx = x.child[dir];
+    if (idx) return pool.nodes + idx;
+    return nil;
 }
 
-func void Pool.init(Pool* c) {
-    c.blk_head = Block.create(c.blk_size);
-    c.blk_tail = c.blk_head;
+func u16 Pool.toIndex(Pool* pool, Node* x) @(inline) {
+    return cast<u16>(x - pool.nodes);
 }
 
-public func void Pool.clear(Pool* c) {
-    c.freeBlocks();
-    c.init();
+func void Pool.rotate(Pool* pool, Node* p, Dir dir) {
+    Dir rdir = 1-dir;
+    u16 g = p.parent;
+    u16 s = p.child[rdir];
+    u16 c = pool.nodes[s].child[dir];
+    p.child[rdir] = c;
+    u16 p_idx = pool.toIndex(p);
+    if (c) pool.nodes[c].parent = p_idx;
+    pool.nodes[s].child[dir] = p_idx;
+    p.parent = s;
+    pool.nodes[s].parent = g;
+    if (g) {
+        pool.nodes[g].child[p_idx == pool.nodes[g].child[Dir.Right] ? Dir.Right : Dir.Left] = s;
+    } else {
+        pool.root = &pool.nodes[s];
+    }
 }
 
-public func const char* Pool.add(Pool* c, const char* text, usize len, bool filter) @(inline) {
-    // assert(c.str_blk_head);
-    // assert(len < strblk_size)
-    len++;  // add 0-terminator
-#if ContextDebug
-    num_allocs++;
-#endif
+func void Pool.insert(Pool* pool, Node* n, Node* p) {
+    n.color = Color.Red;
+    // Note left+right+ parent already set
 
-    Block* last = c.blk_tail;
-    if (last.size + len >= c.blk_size) {
-        c.blk_tail = Block.create(c.blk_size);
-        last.next = c.blk_tail;
-        last = last.next;
+    if (p == nil) {
+        pool.root = n;
+        return;
+    }
+    //p.child[dir] = n; . already done
+
+    Node* g;
+    Dir dir;
+    Dir rdir;
+    do {
+        if (p.color == Color.Black) return;  // case I1 (P black);
+
+        // From now on P is red
+        if (p.parent == 0) goto Case_I4;
+
+        g = pool.nodes + p.parent;
+        dir = (p == (pool.nodes + g.child[Dir.Right])) ? Dir.Right : Dir.Left; // the side of parent G on which node P is located
+        rdir = 1-dir;
+        u16 u_idx = g.child[rdir]; // uncle
+        if (u_idx == 0) goto Case_I56;
+        Node* u = pool.nodes + u_idx;
+        if (u.color == Color.Black) goto Case_I56;
+
+        // Case_I2 (P+U red):
+        p.color = Color.Black;
+        u.color = Color.Black;
+        g.color = Color.Red;
+        n = g;  // new current node;
+        // iterate 1 black level higher (= 2 tree levels)
+
+        if (n.parent == 0) break;
+        p = pool.nodes + n.parent;
+    } while (1);
+
+    // Case_I3: N is the root and red
+    return;
+Case_I4:
+    p.color = Color.Black;
+    return;
+Case_I56:
+    if (n == pool.getChild(p, rdir)) {
+        // Case-I5 (P red && U black && N inner grandchild of G):
+        pool.rotate(p, dir);
+        n = p;   // new current node
+        p = pool.nodes + g.child[dir]; // new parent of N
+        //fall through to Case_I6
+    }
+    // Case_I6 (P red && U black && N outer grandchild of G):
+    pool.rotate(g, rdir); // G may be the root
+    p.color = Color.Black;
+    g.color = Color.Red;
+    return;
+}
+
+public func const char* Pool.add(Pool* pool, const char* text, usize len, bool filter) {
+    if (filter) {
+        Node* n = pool.root;
+        Dir dir = Dir.Left;
+        while (n) {
+            const char* word = pool.data + n.word_idx;
+            // NOTE: strcmp seems a bit faster than memcmp!!
+            //i32 result = string.strcmp(word, text);
+            i32 result = string.memcmp(word, text, len);
+            if (result > 0) {
+                if (n.child[Dir.Left]) {
+                    n = pool.nodes + n.child[Dir.Left];
+                    continue;
+                } else {
+                    n.child[Dir.Left] = pool.node_count;
+                    break;
+                }
+            }
+            if (result < 0) {
+                if (n.child[Dir.Right]) {
+                    n = pool.nodes + n.child[Dir.Right];
+                    continue;
+                } else {
+                    n.child[Dir.Right] = pool.node_count;
+                    break;
+                }
+            }
+            return word;
+        }
+        Node* parent = n;
+        u16 parent_idx = cast<u16>(n ? cast<u16>(n - pool.nodes) : 0);
+        // fill new node
+        //assert(pool.node_count < pool.node_capacity);
+        n = pool.nodes + pool.node_count;
+        n.parent = parent_idx;
+        pool.node_count++;
+        n.word_idx = pool.size;
+        n.child[Dir.Left] = 0;
+        n.child[Dir.Right] = 0;
+
+        pool.insert(n, parent);
     }
 
-    char* buf = cast<char*>(last.data + last.size);
-    last.size += len;
-
-    len--;
-    memcpy(buf, text, len);
-    buf[len] = 0;
-    return buf;
+    char* dest = pool.data + pool.size;
+    pool.size += len;
+    //assert(pool.size < pool.data_capacity);
+    string.memcpy(dest, text, len);
+    return dest;
 }
 
-public func void Pool.dump(const Pool* c) {
-    u32 num = c.blk_head.count();
-    u32 total = c.blk_head.get_total();
+#if 0
+func u32 tree_size(const Node* n) {
+    u32 size = 1;
+    if (n.child[Dir.Left]) size += tree_size(pool.nodes + n.child[Dir.Left]);
+    if (n.child[Dir.Right]) size += tree_size(pool.nodes + n.child[Dir.Right]);
+    return size;
+}
 
-    printf("Pool:\n");
-    printf("    blk size %u, %u blocks, total %u/%u\n", c.blk_size, num, total, num * c.blk_size);
-#if ContextDebug
-    printf("    %u allocs (avg %u bytes)\n", num_allocs, total / num_allocs);
+static void iterate(const Node* n) {
+    if (n.child[Dir.Left]) iterate(pool.nodes + n.child[Dir.Left]);
+    printf("%s\n", pool.data + n.word_idx);
+    if (n.child[Dir.Right]) iterate(pool.nodes + n.child[Dir.Right]);
+}
+
+#define LINE_LEN 200
+#define NUM_LINES 40
+static char lines[NUM_LINES][LINE_LEN];
+static u32 max_depth = 1;
+
+static void find_depth(const Node* n, u32 depth) {
+    if (depth > max_depth) max_depth = depth;
+    if (n.child[Dir.Left]) find_depth(pool.nodes + n.child[Dir.Left], depth + 1);
+    if (n.child[Dir.Right]) find_depth(pool.nodes + n.child[Dir.Right], depth + 1);
+}
+
+static void print2(const Node* n, u32 depth, u32 center) {
+    lines[depth][center] = 'X';
+    if (n.child[Dir.Left]) print2(pool.nodes + n.child[Dir.Left], depth + 1, (center + 2)/ 2);
+    if (n.child[Dir.Right]) print2(pool.nodes + n.child[Dir.Right], depth + 1, (LINE_LEN + center - 3) / 2);
+}
+
+static void nice_print(void) {
+    if (pool.root) find_depth(pool.root, 1);
+    printf("Max depth: %u\n", max_depth);
+
+    memset(lines, ' ', sizeof(lines));
+    for (u32 i=0; i<NUM_LINES; i++) {
+        lines[i][LINE_LEN-1] = 0;
+        lines[i][LINE_LEN-2] = '|';
+        sprintf(lines[i], "%02d", i+1);
+        lines[i][2] = ' ';
+    }
+    if (pool.root) print2(pool.root, 0, LINE_LEN / 2);
+    for (u32 i=0; i<max_depth; i++) {
+        printf("%s\n", lines[i]);
+    }
+}
 #endif
-}
 
-public func u32 Pool.get_total(const Pool* c) {
-    return c.blk_head.get_total() + c.blk_head.get_total();
+public func void Pool.dump(const Pool* pool) {
+    stdio.printf("Pool: %u words, data %u bytes\n", pool.node_count - 1, pool.size);
+    u32 index_size =  pool.node_count * sizeof(Node);
+    stdio.printf("Pool: index size %u, total size %u\n", index_size, index_size + pool.size);
+    //if (pool.root) iterate(pool.root);
+    //nice_print();
 }
 

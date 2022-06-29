@@ -39,7 +39,7 @@ public func i32 main(i32 argc, char** argv) {
         features.add("feature_a");
 
         Context* context = Context.create(constants.ContextBlkSize);
-        string_pool.Pool* pool = string_pool.Pool.create(constants.StringPoolSize);
+        string_pool.Pool* pool = string_pool.Pool.create(constants.StringPoolSize, constants.StringPoolWords);
 
         Parser* parser = c2_parser.create(sm, file_id, context, pool, &features, false);
         bool ok = parser.parse();
