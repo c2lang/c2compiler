@@ -47,60 +47,53 @@ func Expr* Parser.parseAssignmentExpression(Parser* p) {
     return p.parseRHSOfBinaryExpression(lhs, Prec.Assignment);
 }
 
-func Prec getBinOpPrecedence(Kind kind) {
-    // TODO use lookup table
-    switch (kind) {
-    case Kind.Comma:
-        return Prec.Comma;
-    case Kind.Equal: fallthrough;
-    case Kind.StarEqual:  fallthrough;
-    case Kind.SlashEqual:  fallthrough;
-    case Kind.PercentEqual:  fallthrough;
-    case Kind.PlusEqual:  fallthrough;
-    case Kind.MinusEqual:  fallthrough;
-    case Kind.LessLessEqual:  fallthrough;
-    case Kind.GreaterGreaterEqual:  fallthrough;
-    case Kind.AmpEqual:  fallthrough;
-    case Kind.CaretEqual:  fallthrough;
-    case Kind.PipeEqual:
-        return Prec.Assignment;
-    case Kind.Question:
-        return Prec.Conditional;
-    case Kind.PipePipe:  fallthrough;
-    case Kind.AmpAmp:
-        return Prec.LogicalAndOr;
-    case Kind.ExclaimEqual:  fallthrough;
-    case Kind.EqualEqual:  fallthrough;
-    case Kind.LessEqual:  fallthrough;
-    case Kind.Less:  fallthrough;
-    case Kind.Greater:  fallthrough;
-    case Kind.GreaterEqual:
-        return Prec.Relational;
-    case Kind.Plus:  fallthrough;
-    case Kind.Minus:
-        return Prec.Additive;
-    case Kind.Pipe:  fallthrough;
-    case Kind.Caret:  fallthrough;
-    case Kind.Amp:
-        return Prec.Bitwise;
-    case Kind.LessLess:  fallthrough;
-    case Kind.GreaterGreater:
-        return Prec.Shift;
-    case Kind.Percent:  fallthrough;
-    case Kind.Slash:  fallthrough;
-    case Kind.Star:
-    return Prec.Multiplicative;
-    default:
-        return Prec.Unknown;
-    }
-    return Prec.Unknown;
+const u8[128] BinOpPrecLookup = {
+    [Kind.Comma] = Prec.Comma,
+
+    [Kind.Equal] = Prec.Assignment,
+    [Kind.StarEqual] = Prec.Assignment,
+    [Kind.SlashEqual] = Prec.Assignment,
+    [Kind.PercentEqual] = Prec.Assignment,
+    [Kind.PlusEqual] = Prec.Assignment,
+    [Kind.MinusEqual] = Prec.Assignment,
+    [Kind.LessLessEqual] = Prec.Assignment,
+    [Kind.GreaterGreaterEqual] = Prec.Assignment,
+    [Kind.AmpEqual] = Prec.Assignment,
+    [Kind.CaretEqual] = Prec.Assignment,
+    [Kind.PipeEqual] = Prec.Assignment,
+
+    [Kind.Question] = Prec.Conditional,
+
+    [Kind.PipePipe] = Prec.LogicalAndOr,
+    [Kind.AmpAmp] = Prec.LogicalAndOr,
+
+    [Kind.ExclaimEqual] = Prec.Relational,
+    [Kind.EqualEqual] = Prec.Relational,
+    [Kind.LessEqual] = Prec.Relational,
+    [Kind.Less] = Prec.Relational,
+    [Kind.Greater] = Prec.Relational,
+    [Kind.GreaterEqual] = Prec.Relational,
+
+    [Kind.Plus] = Prec.Additive,
+    [Kind.Minus] = Prec.Additive,
+
+    [Kind.Pipe] = Prec.Bitwise,
+    [Kind.Caret] = Prec.Bitwise,
+    [Kind.Amp] = Prec.Bitwise,
+
+    [Kind.LessLess] = Prec.Shift,
+    [Kind.GreaterGreater] = Prec.Shift,
+
+    [Kind.Percent] = Prec.Multiplicative,
+    [Kind.Slash] = Prec.Multiplicative,
+    [Kind.Star] = Prec.Multiplicative,
 }
 
 func Expr* Parser.parseRHSOfBinaryExpression(Parser* p, Expr* lhs, Prec minPrec) {
 #if ParserDebug
     printf("parseRHSOfBinaryExpression\n");
 #endif
-    Prec nextTokPrec = getBinOpPrecedence(p.tok.kind);
+    Prec nextTokPrec = BinOpPrecLookup[p.tok.kind];
 
     SrcLoc colonLoc = 0;
     while (1) {
@@ -128,14 +121,14 @@ func Expr* Parser.parseRHSOfBinaryExpression(Parser* p, Expr* lhs, Prec minPrec)
         Expr* rhs = p.parseCastExpr(false, false);
 
         Prec thisPrec = nextTokPrec;
-        nextTokPrec = getBinOpPrecedence(p.tok.kind);
+        nextTokPrec = BinOpPrecLookup[p.tok.kind];
 
         bool isRightAssoc = (thisPrec == Prec.Conditional || thisPrec == Prec.Assignment);
 
         if (thisPrec < nextTokPrec || (thisPrec == nextTokPrec && isRightAssoc)) {
             rhs = p.parseRHSOfBinaryExpression(rhs, thisPrec + !isRightAssoc);
 
-            nextTokPrec = getBinOpPrecedence(p.tok.kind);
+            nextTokPrec = BinOpPrecLookup[p.tok.kind];
         }
 
         if (ternaryMiddle) {
@@ -147,7 +140,34 @@ func Expr* Parser.parseRHSOfBinaryExpression(Parser* p, Expr* lhs, Prec minPrec)
     return nil;
 }
 
-// NotCastExpr?
+const u8[128] CastExprTokenLookup = {
+    // TODO order actions by frequency (less jump)
+    //[Kind.Comma] = Prec.Comma,
+    [Kind.Identifier] = 1,
+    [Kind.NumberLiteral] = 2,
+    [Kind.CharLiteral] = 3,
+    [Kind.StringLiteral] = 4,
+    [Kind.LParen] = 5,
+    [Kind.Star] = 6,
+    [Kind.Tilde] = 6,
+    [Kind.Minus] = 6,
+    [Kind.Exclaim] = 6,
+    [Kind.Amp] = 7,
+    [Kind.KW_cast] = 8,
+    [Kind.Plus] = 9,
+    [Kind.PlusPlus] = 10,
+    [Kind.MinusMinus] = 10,
+    [Kind.KW_elemsof] = 11,
+    [Kind.KW_enum_min] = 12,
+    [Kind.KW_enum_max] = 12,
+    [Kind.KW_false] = 13,
+    [Kind.KW_true] = 13,
+    [Kind.KW_nil] = 14,
+    [Kind.KW_offsetof] = 15,
+    [Kind.KW_sizeof] = 16,
+    [Kind.KW_to_container] = 17,
+}
+
 func Expr* Parser.parseCastExpr(Parser* p, bool isUnaryExpr, bool isAddrOfOp) {
 #if ParserDebug
     printf("parseCastExpression\n");
@@ -167,9 +187,11 @@ func Expr* Parser.parseCastExpr(Parser* p, bool isUnaryExpr, bool isAddrOfOp) {
     Kind savedKind = p.tok.kind;
     Expr* res = nil;
 
-    // TODO order (or use 2nd jump table?) -> need table, because cannot be in order
-    switch (savedKind) {
-    case Kind.Identifier:
+    switch (CastExprTokenLookup[savedKind]) {
+    case 0:
+        p.error("syntax error");
+        break;
+    case 1:
         res = p.parseIdentifier().asExpr();
 /*
         // Make sure to pass down the right value for isAddressOfOperand.
@@ -177,76 +199,62 @@ func Expr* Parser.parseCastExpr(Parser* p, bool isUnaryExpr, bool isAddrOfOp) {
             isAddressOfOperand = false;
 */
         break;
-    case Kind.NumberLiteral:
+    case 2:
         // TODO pass radix, base, etc
         res = p.builder.actOnIntegerLiteral(p.tok.loc, p.tok.text_value);
         p.consumeToken();
         break;
-    case Kind.CharLiteral:
+    case 3:
         res = p.builder.actOnCharLiteral(p.tok.loc, p.tok.char_value);
         p.consumeToken();
         break;
-    case Kind.StringLiteral:
+    case 4:
         res = p.parseStringLiteral();
         break;
-    case Kind.LParen:
+    case 5:
         res = p.parseParenExpr();
         break;
-    case Kind.Star: fallthrough;
-    case Kind.Tilde: fallthrough;
-    case Kind.Minus: fallthrough;
-    case Kind.Exclaim:
+    case 6:
         SrcLoc loc = p.tok.loc;
         p.consumeToken();
         res = p.parseCastExpr(false, false);
         return p.builder.actOnUnaryOperator(loc, savedKind, res);
-    case Kind.Amp:
+    case 7:
         SrcLoc loc = p.tok.loc;
         p.consumeToken();
         res = p.parseCastExpr(false, true);
         return p.builder.actOnUnaryOperator(loc, savedKind, res);
-    case Kind.KW_cast:
+    case 8:
         return p.parseExplicitCastExpr();
-    case Kind.Plus:
+    case 9:
         // ignore unary +
         p.consumeToken();
         return p.parseCastExpr(false, false);
-    case Kind.PlusPlus: fallthrough;
-    case Kind.MinusMinus:
+    case 10:
         SrcLoc loc = p.tok.loc;
         p.consumeToken();
         res = p.parseCastExpr(false, false);
         return p.builder.actOnUnaryOperator(loc, savedKind, res);
-    case Kind.KW_elemsof:
+    case 11:
         res = p.parseElemsof();
-        break;
-    case Kind.KW_enum_min:
-        return p.parseEnumMinMax(true);
-    case Kind.KW_enum_max:
-        return p.parseEnumMinMax(false);
-    case Kind.KW_false:
-        res = p.builder.actOnBooleanConstant(p.tok.loc, false);
+        break; // TODO not return?
+    case 12:
+        return p.parseEnumMinMax(savedKind == Kind.KW_enum_min);
+    case 13:
+        res = p.builder.actOnBooleanConstant(p.tok.loc, savedKind == Kind.KW_true);
         p.consumeToken();
         break;
-    case Kind.KW_nil:
+    case 14:
         res = p.builder.actOnNilExpr(p.tok.loc);
         p.consumeToken();
         break;
-    case Kind.KW_offsetof:
+    case 15:
         return p.parseOffsetOfExpr();
-    case Kind.KW_sizeof:
+    case 16:
         return p.parseSizeof();
-    case Kind.KW_to_container:
+    case 17:
         return p.parseToContainerExpr();
-    case Kind.KW_true:
-        res = p.builder.actOnBooleanConstant(p.tok.loc, true);
-        p.consumeToken();
-        break;
-    default:
-        p.error("syntax error");
-        break;
     }
-
     return p.parsePostfixExprSuffix(res);
 }
 

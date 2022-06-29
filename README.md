@@ -1,27 +1,9 @@
 
 ## Tokenizer
-+ keywords
-+ print number of each TokenKind
-+ use lookup table per char
-+ faster keyword lookup
-+ support block comment
-+ let error generate line-nr
-+ TODO escaped chars in strings (especially \")
-+ SourceLoc of EOF is 0
-+ check max identifier Length (31 bytes)
-+ support basic feature-selection: (#if [cond], #else, #endif)
-+ have error() be like printf
-+ error/warn feature
-+ named feature-selection
-+ support nested /* */ comments -> no error if another /*
+- parse floating points
 - replace __file__ and __line__ with string-literal / number?
     Q: how to do __func__??
         -> emit FuncNameToken? (let analyser fill it in)
-- give error on un-terminated #if/#else -> on EOF
-+ Numbers: hex, octal, pass radix
-- parse floating points
-    - parse hexadecimal
-    + parse octal
 - pass Numbers as number? (no need to alloc str then) -> just pass as u64?
 - Move context to common?
 - advanced basic feature-selection:
@@ -30,37 +12,39 @@
     - () to indicate order
 
 ## SourceManager
-+ reserve location 0
-+ remove hardcoded file max
-+ alias-type for SrcLoc
 - close files after use (need indication)
 
 ## Parser
-+ parse Types
-+ parse Functions
-+ parse Varables
 - TEST many unterminated things (unexpected EOF)
 - use lookup tables to speedup
 - move Lookahead feature from Tokenizer to Parser (on lookahead with error, just stop parser also)
 - put all output through filter for coloring/not
 
 ## AST
-+ create structure
-+ create Context (for allocation)
-- FIX object sizes (Stmt should be 4 bytes, not aligned yet)
+- C2C: FIX object sizes (Stmt should be 4 bytes, not aligned yet)
+    ast_Stmt = 4
+    ast_IfStmt = 24
+    ast_Expr = 16
+    ast_ParenExpr = 24
+    -> type must be u32 or i32 (C99)
+    -> keep track of how many bits are left. If the field doesn't fit, a next one is created (no straddling)
+    -> if followed by a non-bitfield, left = 0;
+    -> add a lot of unit tests
+    -> ini combination with packed?
 - move SrcLoc to ast_helper?
 - use common/pointer-map, or put ptr* in each Type? (pointers are very common, so could be efficient)
     - or use RB-tree to put all Type* to get pointer-types etc, program-wide?
 
 ## AST-Builder
-+ fill AST
-+ print content
 - parse recipe
 - parse all files in recipe
 - create Modules (during parsing)
 
 ## Performance
 - profile application to see where time is spent
+    add -pg to CFLAGS + LDFLAGS
+    run c2c
+    -> gmon.out is created
 - try building as 32-bit application, measure mem + speed
     add -m32 to CFLAGS + LDFLAGS
 - check how other Compilers (easier ones) parse Expr
