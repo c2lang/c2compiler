@@ -633,7 +633,7 @@ func  void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
                 continue;
             }
             if (*t.cur == '*') {
-                t.skip_block_comment();
+                if (t.skip_block_comment(result)) return;
                 continue;
             }
             result.kind = Kind.Slash;
@@ -968,13 +968,32 @@ func void Tokenizer.skip_line_comment(Tokenizer* t) {
     t.cur += len;
 }
 
-func void Tokenizer.skip_block_comment(Tokenizer* t) {
+func bool Tokenizer.skip_block_comment(Tokenizer* t, Token* result) {
     t.cur += 2;
-    while (*t.cur) {
-        if (t.cur[0] == '*' && t.cur[1] == '/') break;
+    while (1) {
+        switch (*t.cur) {
+        case 0:
+            t.cur--;
+            t.error(result, "un-terminated block comment");
+            return true;
+        case '/':
+            if (t.cur[1] == '*') {
+                t.error(result, "'/*' within block comment");
+                return true;
+            }
+            break;
+        case '*':
+            if (t.cur[1] == '/') {
+                t.cur += 2;
+                return false;
+            }
+            break;
+        default:
+            break;
+        }
         t.cur++;
     }
-    t.cur += 2;
+    return false;
 }
 
 func bool Tokenizer.skip_line(Tokenizer* t, Token* result) {

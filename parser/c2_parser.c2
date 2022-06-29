@@ -74,7 +74,7 @@ public func bool Parser.parse(Parser* p) {
         token_count++;
     }
     u64 t2 = utils.now();
-    printf("--- %u tokens (%u alloc)  (%llu usec) ---\n", token_count, p.context.get_total(), t2 - t1);
+    printf("--- %u tokens (%llu usec) ---\n", token_count, t2 - t1);
 #else
     i32 res = setjmp(&p.jmpbuf);
     if (res == 0) {

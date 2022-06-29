@@ -8,7 +8,7 @@ executable c2c
     $config ContextDebug
     $config StringPoolDebug
 #    $config ParserDebug
-#    $config DumpTokens
+    $config DumpTokens
 
     common/file/reader.c2
     common/color.c2

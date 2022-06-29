@@ -13,7 +13,7 @@
 + have error() be like printf
 + error/warn feature
 + named feature-selection
-- support nested /* */ comments
++ support nested /* */ comments -> no error if another /*
 - replace __file__ and __line__ with string-literal / number?
     Q: how to do __func__??
         -> emit FuncNameToken? (let analyser fill it in)
