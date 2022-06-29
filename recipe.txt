@@ -5,7 +5,8 @@ plugin plugins/refs_generator [all-targets]
 executable c2c
 	$warnings no-unused
 	$generate-c single-module
-#    $config ContextDebug
+    $config ContextDebug
+    $config StringPoolDebug
 #    $config ParserDebug
 #    $config DumpTokens
 

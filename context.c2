@@ -8,10 +8,6 @@ import stdlib local;
 // TEMP
 import stdio local;
 
-#if ContextDebug
-u32 num_allocs;
-#endif
-
 type Block struct {
     u8* data;
     u32 size;
@@ -57,6 +53,10 @@ public type Context struct {
     Block* blk_head;
     Block* blk_tail;
     u32 blk_size;
+#if ContextDebug
+    u32 num_allocs;
+#endif
+
 } @(opaque)
 
 public func Context* Context.create(u32 blk_size) {
@@ -88,7 +88,7 @@ public func void Context.clear(Context* c) {
 
 public func void* Context.alloc(Context* c, u32 len) {
 #if ContextDebug
-    num_allocs++;
+    c.num_allocs++;
 #endif
     // assert(c.blk_head);
     // TODO always align as ptr size!!
@@ -110,10 +110,11 @@ public func void Context.dump(const Context* c) {
     u32 num = c.blk_head.count();
     u32 total = c.blk_head.get_total();
 
-    printf("Context:\n");
-    printf("    blk size %u, %u blocks, total %u/%u\n", c.blk_size, num, total, num * c.blk_size);
 #if ContextDebug
-    printf("    %u AST allocs (avg %u bytes)\n", num_allocs, total / num_allocs);
+    printf("Context: %u allocs (avg %u bytes),  %u blocks (%u), total %u Kb\n",
+        c.num_allocs, total / c.num_allocs, num, c.blk_size, (total / 1024) + 1);
+#else
+    //printf("Context: blk size %u, %u blocks, total %u/%u\n", c.blk_size, num, total, num * c.blk_size);
 #endif
 }
 

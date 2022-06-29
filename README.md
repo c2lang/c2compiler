@@ -22,14 +22,8 @@
 - parse floating points
     - parse hexadecimal
     + parse octal
-- pass Numbers as number? (no need to alloc str then)
-- Context: split Context into Context and StringPool (only used by Tokenizer)
-- TRY filtering duplicate strings, measure mem + speed changes
-    -> during analysis, all string compares can be pointer compares!
-    -> filter in Context
-        -> allow specify whether to search duplicates (not needed for string constants, etc)
-    -> need a LOT of pointer size!!
-    -> have some sort of tree (use u16 indexes, not pointers)
+- pass Numbers as number? (no need to alloc str then) -> just pass as u64?
+- Move context to common?
 - advanced basic feature-selection:
     - NAME=<value> -> value always treated as text
     - OR AND NOT in condition

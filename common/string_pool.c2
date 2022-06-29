@@ -28,6 +28,11 @@ public type Pool struct {
     u16 node_capacity;
     u16 node_count;
     Node* root;
+#if StringPoolDebug
+    u32 num_adds;
+    u32 total_size;
+#endif
+
 } @(opaque)
 
 public func Pool* Pool.create(u32 data_capacity, u16 node_capacity) {
@@ -135,6 +140,10 @@ Case_I56:
 }
 
 public func const char* Pool.add(Pool* pool, const char* text, usize len, bool filter) {
+#if StringPoolDebug
+    pool.num_adds++;
+    pool.total_size += len;
+#endif
     if (filter) {
         Node* n = pool.root;
         Dir dir = Dir.Left;
@@ -184,60 +193,15 @@ public func const char* Pool.add(Pool* pool, const char* text, usize len, bool f
     return dest;
 }
 
-#if 0
-func u32 tree_size(const Node* n) {
-    u32 size = 1;
-    if (n.child[Dir.Left]) size += tree_size(pool.nodes + n.child[Dir.Left]);
-    if (n.child[Dir.Right]) size += tree_size(pool.nodes + n.child[Dir.Right]);
-    return size;
-}
-
-static void iterate(const Node* n) {
-    if (n.child[Dir.Left]) iterate(pool.nodes + n.child[Dir.Left]);
-    printf("%s\n", pool.data + n.word_idx);
-    if (n.child[Dir.Right]) iterate(pool.nodes + n.child[Dir.Right]);
-}
-
-#define LINE_LEN 200
-#define NUM_LINES 40
-static char lines[NUM_LINES][LINE_LEN];
-static u32 max_depth = 1;
-
-static void find_depth(const Node* n, u32 depth) {
-    if (depth > max_depth) max_depth = depth;
-    if (n.child[Dir.Left]) find_depth(pool.nodes + n.child[Dir.Left], depth + 1);
-    if (n.child[Dir.Right]) find_depth(pool.nodes + n.child[Dir.Right], depth + 1);
-}
-
-static void print2(const Node* n, u32 depth, u32 center) {
-    lines[depth][center] = 'X';
-    if (n.child[Dir.Left]) print2(pool.nodes + n.child[Dir.Left], depth + 1, (center + 2)/ 2);
-    if (n.child[Dir.Right]) print2(pool.nodes + n.child[Dir.Right], depth + 1, (LINE_LEN + center - 3) / 2);
-}
-
-static void nice_print(void) {
-    if (pool.root) find_depth(pool.root, 1);
-    printf("Max depth: %u\n", max_depth);
-
-    memset(lines, ' ', sizeof(lines));
-    for (u32 i=0; i<NUM_LINES; i++) {
-        lines[i][LINE_LEN-1] = 0;
-        lines[i][LINE_LEN-2] = '|';
-        sprintf(lines[i], "%02d", i+1);
-        lines[i][2] = ' ';
-    }
-    if (pool.root) print2(pool.root, 0, LINE_LEN / 2);
-    for (u32 i=0; i<max_depth; i++) {
-        printf("%s\n", lines[i]);
-    }
-}
-#endif
-
 public func void Pool.dump(const Pool* pool) {
-    stdio.printf("Pool: %u words, data %u bytes\n", pool.node_count - 1, pool.size);
-    u32 index_size =  pool.node_count * sizeof(Node);
-    stdio.printf("Pool: index size %u, total size %u\n", index_size, index_size + pool.size);
-    //if (pool.root) iterate(pool.root);
-    //nice_print();
+    u32 index_used = pool.node_count * sizeof(Node);
+    u32 index_size = pool.node_capacity * sizeof(Node);
+    index_used = (index_used + 1023) / 1024;
+    index_size = (index_size + 1023) / 1024;
+#if StringPoolDebug
+    stdio.printf("StringPool: %u/%u words, data %u/%u bytes, index %u/%u Kb\n", pool.node_count - 1, pool.num_adds, pool.size, pool.total_size, index_used, index_size);
+#else
+    stdio.printf("StringPool: %u words, data %u bytes, index %u/%u Kb\n", pool.node_count - 1, pool.size, index_used, index_size);
+#endif
 }
 
