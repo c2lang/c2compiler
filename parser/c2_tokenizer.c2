@@ -817,7 +817,7 @@ func void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
         return;
     }
     t.cur += len;
-    result.text_value = t.pool.alloc(start, len, true);
+    result.text_value = t.pool.add(start, len, true);
 }
 
 func bool is_octal(char c) {
@@ -855,7 +855,7 @@ func void Tokenizer.lex_number(Tokenizer* t, Token* result) {
     }
 
     usize len = cast<usize>(t.cur - start);
-    result.text_value = t.pool.alloc(start, len, true);
+    result.text_value = t.pool.add(start, len, true);
 }
 
 func void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
@@ -951,7 +951,7 @@ func void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
 out:
     len = cast<u32>(t.cur - start);
     t.cur++;    // skip end delimiter
-    result.text_value = t.pool.alloc(start, len, false);
+    result.text_value = t.pool.add(start, len, false);
 }
 
 func void Tokenizer.skip_line_comment(Tokenizer* t) {

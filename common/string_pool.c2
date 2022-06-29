@@ -86,7 +86,7 @@ public func void Pool.clear(Pool* c) {
     c.init();
 }
 
-public func const char* Pool.alloc(Pool* c, const char* text, usize len, bool filter) @(inline) {
+public func const char* Pool.add(Pool* c, const char* text, usize len, bool filter) @(inline) {
     // assert(c.str_blk_head);
     // assert(len < strblk_size)
     len++;  // add 0-terminator
