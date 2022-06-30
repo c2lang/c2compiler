@@ -41,8 +41,7 @@ public type Pool struct {
 public func Pool* Pool.create(u32 data_capacity, u16 node_capacity) {
     Pool* p = stdlib.calloc(1, sizeof(Pool));
     p.resize_data(data_capacity);
-    p.node_capacity = node_capacity;
-    p.nodes = stdlib.malloc(p.node_capacity * sizeof(Node));
+    p.resize_nodes(node_capacity);
     p.node_count = 1; // skip node 1
     return p;
 }
@@ -82,7 +81,7 @@ func void Pool.rotate(Pool* pool, Node* p, Dir dir) {
     }
 }
 
-func void Pool.insert(Pool* pool, Node* n, Node* p) {
+func void Pool.balance(Pool* pool, Node* n, Node* p) {
     n.color = Color.Red;
     // Note left+right+ parent already set
 
@@ -196,8 +195,10 @@ public func const char* Pool.add(Pool* pool, const char* text, usize len, bool f
 after_loop:
         parent = n;
         u16 parent_idx = cast<u16>(n ? cast<u16>(n - pool.nodes) : 0);
+        if (pool.node_count == pool.node_capacity) {
+            pool.resize_nodes(pool.node_capacity * 2);
+        }
         // fill new node
-        //assert(pool.node_count < pool.node_capacity);
         n = pool.nodes + pool.node_count;
         n.parent = parent_idx;
         pool.node_count++;
@@ -205,7 +206,7 @@ after_loop:
         n.child[Dir.Left] = 0;
         n.child[Dir.Right] = 0;
 
-        pool.insert(n, parent);
+        pool.balance(n, parent);
     }
 
     if (pool.size + len + 1 > pool.data_capacity) {
@@ -227,6 +228,19 @@ public func void Pool.resize_data(Pool* p, u32 capacity) {
         stdlib.free(p.data);
     }
     p.data = buf;
+}
+
+public func void Pool.resize_nodes(Pool* p, u16 capacity) {
+    p.node_capacity = capacity;
+    Node* nodes = stdlib.malloc(p.node_capacity * sizeof(Node));
+    if (p.nodes) {
+        //assert(p.root);
+        u32 root_idx = cast<u32>(p.root - p.nodes);
+        string.memcpy(nodes, p.nodes, p.node_count * sizeof(Node));
+        stdlib.free(p.nodes);
+        p.root = &nodes[root_idx];
+    }
+    p.nodes = nodes;
 }
 
 public func void Pool.dump(const Pool* pool) {

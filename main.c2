@@ -62,8 +62,8 @@ public func i32 main(i32 argc, char** argv) {
         features.init(64);
         features.add("feature_a");
 
-        Context* context = Context.create(constants.ContextBlkSize);
-        string_pool.Pool* pool = string_pool.Pool.create(constants.StringPoolSize, constants.StringPoolWords);
+        Context* context = Context.create(16*1024);
+        string_pool.Pool* pool = string_pool.Pool.create(8*1024, 2048);
 
         u64 total_time = 0;
         for (u32 j=0; j<target.numFiles(); j++) {

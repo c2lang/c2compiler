@@ -7,9 +7,5 @@ public const u32 MaxIdentifierLen = 31;
 public const u32 MaxFeatureName = 31;
 public const u32 MaxFeatureDepth = 6;
 public const u32 MaxErrorMsgLen = 31;   // for #error "msg"
-public const u32 ContextBlkSize = 16*1024;
-
-public const u32 StringPoolSize = 256*1024;
-public const u32 StringPoolWords = 2048;
 
 public const char* recipe_name = "recipe.txt";
