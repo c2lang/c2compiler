@@ -35,6 +35,7 @@ public func CompoundStmt* CompoundStmt.create(ast_context.Context* c, Stmt** stm
 
 public func void CompoundStmt.print(const CompoundStmt* s, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
+    out.color(col_Stmt);
     out.print("CompoundStmt\n");
     const u32 count = s.stmt.compoundStmtBits.count;
     for (u32 i=0; i<count; i++) {

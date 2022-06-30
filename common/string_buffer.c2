@@ -11,16 +11,18 @@ public type Buf struct {
     u32 capacity;
     u32 size_;
     char* data_;
+    bool colors;
 }
 
-static_assert(16, sizeof(Buf));
+static_assert(24, sizeof(Buf));
 
-public func Buf* create(u32 capacity)
+public func Buf* create(u32 capacity, bool colors = true)
 {
     Buf* buf = malloc(sizeof(Buf));
     buf.capacity = capacity;
     buf.size_ = 0;
     buf.data_ = malloc(capacity);
+    buf.colors = colors;
     return buf;
 }
 
@@ -45,6 +47,13 @@ public func void Buf.clear(Buf* buf)
     buf.size_ = 0;
 }
 
+public func void Buf.color(Buf* buf, const char* color) {
+    if (!buf.colors) return;
+
+    u32 len = cast<u32>(strlen(color));
+    buf.add2(color, len);
+}
+
 public func void Buf.add(Buf* buf, const char* text)
 {
     u32 len = cast<u32>(strlen(text));
@@ -52,7 +61,7 @@ public func void Buf.add(Buf* buf, const char* text)
 }
 
 // len = strlen(text)
-public func void Buf.add2(Buf* buf, const char* text, u32 len)
+public func void Buf.add2(Buf* buf, const char* text, u32 len) @(inline)
 {
     if (buf.size_ + len + 1 > buf.capacity) {
         buf.resize(buf.capacity * 2);

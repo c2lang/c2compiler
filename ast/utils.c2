@@ -3,6 +3,7 @@
 
 module ast;
 
+import color;
 import ast_context local;
 
 // TODO fix values (sizeof bitfields)
@@ -88,3 +89,4 @@ public func void init(Context* c) {
     g_bool = BuiltinType.create(c, BuiltinTypeKind.Bool);
 }
 
+const char* col_Stmt = color.Bmagenta;
