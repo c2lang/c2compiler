@@ -125,7 +125,7 @@ func void Parser.parseModule(Parser* p) {
     p.expectAndConsume(Kind.KW_module);
     p.expectIdentifier();
 
-    p.builder.actOnModule(p.tok.text_value, p.tok.loc);
+    p.builder.actOnModule(p.tok.text_value, p.tok.loc, p.sm.getFileName(p.file_id));
     p.consumeToken();
     p.expectAndConsume(Kind.Semicolon);
 }

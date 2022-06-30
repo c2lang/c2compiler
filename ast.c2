@@ -64,12 +64,12 @@ public func void AST.addStaticAssert(AST* a, StaticAssertDecl* d) @(inline) {
     a.static_asserts.add(d.asDecl());
 }
 
-public func void AST.print(const AST* a, string_buffer.StringBuffer* out) {
+public func void AST.print(const AST* a, string_buffer.Buf* out) {
     out.print("    %s\n", a.filename);
 }
 
 public func void AST.dump(const AST* a) {
-    string_buffer.StringBuffer* out = string_buffer.create(4*1024*1024);
+    string_buffer.Buf* out = string_buffer.create(4*1024*1024);
 
     out.add("---- AST ----\n");
     ImportDecl** imports = a.imports.getDecls();

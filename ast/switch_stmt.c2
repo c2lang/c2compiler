@@ -4,7 +4,7 @@
 module ast;
 
 import ast_context;
-import string_buffer local;
+import string_buffer;
 import utils local;
 import string;
 
@@ -29,7 +29,7 @@ public func SwitchStmt* SwitchStmt.create(ast_context.Context* c, Stmt* cond, St
     return s;
 }
 
-public func void SwitchStmt.print(const SwitchStmt* s, StringBuffer* out, u32 indent) {
+public func void SwitchStmt.print(const SwitchStmt* s, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
     out.add("SwitchStmt\n");
     s.cond.print(out, indent + 2);

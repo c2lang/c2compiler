@@ -4,7 +4,7 @@
 module ast;
 
 import utils local;
-import string_buffer local;
+import string_buffer;
 import stdio;
 
 public type DeclKind enum u8 {
@@ -66,13 +66,13 @@ public func bool Decl.isPublic(const Decl* d) @(inline) {
 }
 
 public func void Decl.dump(const Decl* d) {
-    StringBuffer* out = string_buffer.create(10*4096);
+    string_buffer.Buf* out = string_buffer.create(10*4096);
     d.print(out, 0);
     stdio.printf("%s\n", out.data());
     out.free();
 }
 
-public func void Decl.print(const Decl* d, StringBuffer* out, u32 indent) {
+public func void Decl.print(const Decl* d, string_buffer.Buf* out, u32 indent) {
     switch (d.getKind()) {
     case DeclKind.Function:
         FunctionDecl.print(cast<FunctionDecl*>(d), out, indent);

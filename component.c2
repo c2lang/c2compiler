@@ -60,7 +60,7 @@ public func Module* Component.getModule(Component* c, const char* modname) {
 }
 
 public func void Component.dump(const Component* c) {
-    string_buffer.StringBuffer* out = string_buffer.create(64*1024);
+    string_buffer.Buf* out = string_buffer.create(64*1024);
     out.print("Component\n");
     for (u32 i=0; i<c.num_mods; i++) {
         c.mods[i].print(out);

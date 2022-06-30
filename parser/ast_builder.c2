@@ -32,9 +32,9 @@ public func void Builder.free(Builder* b) {
     free(b);
 }
 
-public func void Builder.actOnModule(Builder* b, const char* mod_name, SrcLoc mod_loc) {
+public func void Builder.actOnModule(Builder* b, const char* mod_name, SrcLoc mod_loc, const char* filename) {
     b.mod = b.comp.getModule(mod_name);
-    b.ast = b.mod.add("todo");
+    b.ast = b.mod.add(filename);
 
     // NOTE: make special ImportDecl to add own symbols
     ImportDecl* d = ImportDecl.create(b.context, mod_name, mod_loc, nil, 0, true);

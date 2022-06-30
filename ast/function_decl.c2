@@ -5,7 +5,7 @@ module ast;
 
 import ast_context;
 import utils local;
-import string_buffer local;
+import string_buffer;
 import string;
 
 type FunctionDeclBits struct {
@@ -58,7 +58,7 @@ public func void FunctionDecl.setBody(FunctionDecl* d, CompoundStmt* body) @(inl
 public func Decl* FunctionDecl.asDecl(FunctionDecl* d) @(inline) { return &d.decl; }
 
 
-public func void FunctionDecl.print(const FunctionDecl* d, StringBuffer* out, u32 indent) {
+public func void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
     out.print("FunctionDecl %s", d.decl.name);
     if (d.decl.functionDeclBits.is_variadic) out.add(" ...");

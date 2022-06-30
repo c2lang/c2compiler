@@ -69,13 +69,13 @@ func void Stmt.init(Stmt* s, StmtKind k) @(inline) {
 public func StmtKind Stmt.getKind(const Stmt* s) @(inline) { return cast<StmtKind>(s.stmtBits.kind); }
 
 public func void Stmt.dump(const Stmt* s) {
-    string_buffer.StringBuffer* out = string_buffer.create(10*4096);
+    string_buffer.Buf* out = string_buffer.create(10*4096);
     s.print(out, 0);
     stdio.printf("%s\n", out.data());
     out.free();
 }
 
-public func void Stmt.print(const Stmt* s, string_buffer.StringBuffer* out, u32 indent) {
+public func void Stmt.print(const Stmt* s, string_buffer.Buf* out, u32 indent) {
     switch (s.getKind()) {
     case StmtKind.Return:
         ReturnStmt.print(cast<ReturnStmt*>(s), out, indent);

@@ -4,7 +4,7 @@
 module ast;
 
 import ast_context;
-import string_buffer local;
+import string_buffer;
 import utils local;
 
 public type FieldDesignatedInitExpr struct {
@@ -25,7 +25,7 @@ public func FieldDesignatedInitExpr* FieldDesignatedInitExpr.create(ast_context.
     return e;
 }
 
-public func void FieldDesignatedInitExpr.print(const FieldDesignatedInitExpr* e, StringBuffer* out, u32 indent) {
+public func void FieldDesignatedInitExpr.print(const FieldDesignatedInitExpr* e, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
     out.print("FieldDesignatedInitExpr %s\n", e.field);
     e.initValue.print(out, indent + 2);

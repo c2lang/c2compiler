@@ -4,7 +4,7 @@
 module ast;
 
 import ast_context;
-import string_buffer local;
+import string_buffer;
 import utils local;
 
 public type MemberExpr struct {
@@ -27,7 +27,7 @@ public func Expr** MemberExpr.getBase2(MemberExpr* e) { return &e.base; }
 public func IdentifierExpr* MemberExpr.getIndex(MemberExpr* e) { return e.member; }
 public func IdentifierExpr** MemberExpr.getIndex2(MemberExpr* e) { return &e.member; }
 
-public func void MemberExpr.print(const MemberExpr* e, StringBuffer* out, u32 indent) {
+public func void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
     out.add("MemberExpr\n");
     e.base.print(out, indent + 2);

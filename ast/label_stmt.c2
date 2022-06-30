@@ -4,7 +4,7 @@
 module ast;
 
 import ast_context;
-import string_buffer local;
+import string_buffer;
 import utils local;
 
 public type LabelStmt struct {
@@ -21,7 +21,7 @@ public func LabelStmt* LabelStmt.create(ast_context.Context* c, const char* name
     return s;
 }
 
-public func void LabelStmt.print(const LabelStmt* s, StringBuffer* out, u32 indent) {
+public func void LabelStmt.print(const LabelStmt* s, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
     out.print("LabelStmt %s\n", s.name);
 }

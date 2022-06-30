@@ -22,7 +22,7 @@ public func FunctionTypeDecl* FunctionTypeDecl.create(ast_context.Context* c, bo
 
 public func Decl* FunctionTypeDecl.asDecl(FunctionTypeDecl* t) @(inline) { return &t.decl; }
 
-public func void FunctionTypeDecl.print(const FunctionTypeDecl* d, string_buffer.StringBuffer* out, u32 indent) {
+public func void FunctionTypeDecl.print(const FunctionTypeDecl* d, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
     out.add("FunctionTypeDecl\n");
     d.fn.print(out, indent + 2 );

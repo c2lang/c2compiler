@@ -58,11 +58,10 @@ public func AST* Module.add(Module* m, const char* filename) {
     return ast;
 }
 
-public func void Module.print(const Module* m, string_buffer.StringBuffer* out) {
+public func void Module.print(const Module* m, string_buffer.Buf* out) {
     out.print("  module %s\n", m.name);
     for (u32 i=0; i<m.num_files; i++) {
         m.files[i].print(out);
     }
-    free(cast<void*>(m.files));
 }
 

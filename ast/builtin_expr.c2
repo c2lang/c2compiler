@@ -4,7 +4,7 @@
 module ast;
 
 import ast_context;
-import string_buffer local;
+import string_buffer;
 import utils local;
 
 public type BuiltinExprBits struct {
@@ -82,7 +82,7 @@ public func BuiltinExprKind BuiltinExpr.getKind(const BuiltinExpr* e) {
     return cast<BuiltinExprKind>(e.expr.stmt.builtinExprBits.kind);
 }
 
-public func void BuiltinExpr.print(const BuiltinExpr* e, StringBuffer* out, u32 indent) {
+public func void BuiltinExpr.print(const BuiltinExpr* e, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
     out.print("BuiltinExpr %s\n", builtin_names[e.getKind()]);
     switch (e.getKind()) {
