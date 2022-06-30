@@ -4,6 +4,7 @@
 module ast_list;
 
 import ast local;
+import string_buffer;
 import utils local;
 
 import stdlib;
@@ -64,7 +65,7 @@ public func void AST.addStaticAssert(AST* a, StaticAssertDecl* d) @(inline) {
 }
 
 public func void AST.print(const AST* a) {
-    StringBuffer* out = StringBuffer.create(4*1024*1024);
+    string_buffer.StringBuffer* out = string_buffer.create(4*1024*1024);
 
     out.add("---- AST ----\n");
     ImportDecl** imports = a.imports.getDecls();

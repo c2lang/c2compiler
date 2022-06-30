@@ -4,6 +4,7 @@
 module ast;
 
 import ast_context;
+import string_buffer local;
 import utils local;
 
 public type FallthroughStmt struct {

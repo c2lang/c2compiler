@@ -4,6 +4,7 @@
 module ast;
 
 import utils local;
+import string_buffer local;
 import stdio;
 
 public type ExprKind enum u8 {
@@ -72,7 +73,7 @@ public func bool Expr.isCtc(const Expr* e) @(inline) { return e.stmt.exprBits.is
 public func SrcLoc Expr.getLoc(const Expr* e) @(inline) { return e.loc; }
 
 public func void Expr.dump(Expr* e) {
-    StringBuffer* out = StringBuffer.create(10*4096);
+    StringBuffer* out = string_buffer.create(10*4096);
     e.print(out, 0);
     stdio.printf("%s\n", out.data());
     out.free();

@@ -4,6 +4,7 @@
 module ast;
 
 import utils local;
+import string_buffer local;
 import stdio;
 
 public type TypeKind enum u8 {
@@ -37,7 +38,7 @@ func void Type.init(Type* t, TypeKind k) @(inline) {
 public func TypeKind Type.getKind(const Type* t) @(inline) { return cast<TypeKind>(t.typeBits.kind); }
 
 public func void Type.dump(const Type* t) {
-    StringBuffer* out = StringBuffer.create(10*4096);
+    StringBuffer* out = string_buffer.create(10*4096);
     t.print(out, 0);
     stdio.printf("%s\n", out.data());
     out.free();

@@ -4,6 +4,7 @@
 module ast;
 
 import utils;
+import string_buffer;
 import stdio;
 
 public const u32 QualType_Const    = 0x1;
@@ -50,7 +51,7 @@ public func void QualType.dump(const QualType* qt) {
     }
 }
 
-public func void QualType.print(const QualType* qt, utils.StringBuffer* out, u32 indent) {
+public func void QualType.print(const QualType* qt, string_buffer.StringBuffer* out, u32 indent) {
     out.indent(indent);
     out.add("QualType");
     const Type* t = qt.getTypeOrNil();

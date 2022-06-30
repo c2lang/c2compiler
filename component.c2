@@ -58,3 +58,5 @@ public func Module* Component.getModule(Component* c, const char* modname) {
     return m;
 }
 
+//public func void Component.dump(const Component* c, StringBuffer* out) {
+//

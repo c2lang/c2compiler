@@ -23,6 +23,7 @@
 - put all output through filter for coloring/not
 
 ## AST
+- improve AST print, like c2c
 - C2C: FIX object sizes (Stmt should be 4 bytes, not aligned yet)
     ast_Stmt = 4
     ast_IfStmt = 24
@@ -55,6 +56,8 @@
 - Dont allow Declaration in Condition of if stmt?
 
 ## General
+- Compent dump
+- TypePtr
 -> If fixed size StringPool becomes an issues, users could increase it in the recipe/build file
 - convert files to relative path in findProjectDir(), to Vim understands errors
 - add option to print all configs in code
@@ -70,3 +73,4 @@ cproc
 
 c2c
     NEW (without C cast)
+

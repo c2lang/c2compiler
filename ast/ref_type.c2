@@ -4,6 +4,7 @@
 module ast;
 
 import ast_context;
+import string_buffer;
 import utils;
 
 public type RefTypeBits struct {
@@ -39,7 +40,7 @@ public func Expr** RefType.getRef2(RefType* t) @(inline) {
     return &t.ref;
 }
 
-public func void RefType.print(const RefType* t, utils.StringBuffer* out, u32 indent) {
+public func void RefType.print(const RefType* t, string_buffer.StringBuffer* out, u32 indent) {
     out.indent(indent);
     out.add("RefType\n");
     t.ref.print(out, indent + 2);

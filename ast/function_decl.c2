@@ -5,6 +5,7 @@ module ast;
 
 import ast_context;
 import utils local;
+import string_buffer local;
 import string;
 
 type FunctionDeclBits struct {

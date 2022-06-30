@@ -4,6 +4,7 @@
 module ast;
 
 import ast_context;
+import string_buffer local;
 import utils;
 
 public type PointerType struct {
@@ -20,7 +21,7 @@ public func PointerType* PointerType.create(ast_context.Context* c, QualType inn
 
 public func Type* PointerType.asType(PointerType* t) @(inline) { return &t.parent; }
 
-public func void PointerType.print(const PointerType* t, utils.StringBuffer* out, u32 indent) {
+public func void PointerType.print(const PointerType* t, string_buffer.StringBuffer* out, u32 indent) {
     out.indent(indent);
     out.add("PointerType\n");
     t.inner.print(out, indent + 2);

@@ -1,7 +1,7 @@
 /* Copyright 2022 Bas van den Berg
 */
 
-module utils;
+module string_buffer;
 
 import stdarg local;
 import stdlib local;
@@ -15,7 +15,7 @@ public type StringBuffer struct {
 
 static_assert(16, sizeof(StringBuffer));
 
-public func StringBuffer* StringBuffer.create(u32 capacity)
+public func StringBuffer* create(u32 capacity)
 {
     StringBuffer* buf = malloc(sizeof(StringBuffer));
     buf.capacity = capacity;
