@@ -38,6 +38,10 @@
 - move SrcLoc to ast_helper?
 - use common/pointer-map, or put ptr* in each Type? (pointers are very common, so could be efficient)
     - or use RB-tree to put all Type* to get pointer-types etc, program-wide?
+- IDEA: store u32 name_idx in AST, instead of name*.
+    -> smaller
+    -> allows resizing of string_pool
+    -> but would required a string_pool* to convert to char*
 
 ## Builder
 - create Modules (during parsing)

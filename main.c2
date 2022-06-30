@@ -28,7 +28,7 @@ public func i32 main(i32 argc, char** argv) {
     if (argc > 1) single_file = true;
 
     // note: auxPool is used by recipe and build-file
-    string_pool.Pool* auxPool = string_pool.create(1024, 0);
+    string_pool.Pool* auxPool = string_pool.create(64*1024, 0);
 
     source_mgr.SourceMgr* sm = source_mgr.create();
 
@@ -66,7 +66,7 @@ public func i32 main(i32 argc, char** argv) {
         printf("building %s\n", target.getName());
 
         ast_context.Context* context = ast_context.create(16*1024);
-        string_pool.Pool* pool = string_pool.create(8*1024, 2048);
+        string_pool.Pool* pool = string_pool.create(1024*1024, 2048);
         component.Component* comp = component.create();
         ast_builder.Builder* builder = ast_builder.create(context, comp);
 

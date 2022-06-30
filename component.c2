@@ -45,7 +45,6 @@ func void Component.resize(Component* m, u32 cap) {
 public func Module* Component.getModule(Component* c, const char* modname) {
     for (u32 i=0; i<c.num_mods; i++) {
         Module* m = c.mods[i];
-        printf("  %s\n", m.getName());
         // Note: can do a pointer compare
         if (m.getName() == modname) return m;
     }
