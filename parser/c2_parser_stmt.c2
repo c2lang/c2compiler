@@ -9,65 +9,6 @@ import ast local;
 import tokens local;
 import utils local;
 
-#if 0
-const u8[] StmtLookup[] = {
-    switch (p.tok.kind) {
-    case Kind.Identifier:
-        return p.parseDeclOrStmt();
-    case Kind.LBrace:
-        return cast<Stmt*>(p.parseCompoundStmt());
-    case Kind.RBrace:
-        p.error("expected stmt");
-        break;
-    case Kind.KW_break:
-        return p.parseBreakStmt();
-    case Kind.KW_continue:
-        return p.parseContinueStmt();
-    case Kind.KW_do:
-        return p.parseDoStmt();
-    case Kind.KW_fallthrough:
-        return p.parseFallthroughStmt();
-    case Kind.KW_for:
-        return p.parseForStmt();
-    case Kind.KW_goto:
-        return p.parseGotoStmt();
-    case Kind.KW_if:
-        return p.parseIfStmt();
-    case Kind.KW_return:
-        return p.parseReturnStmt();
-    case Kind.KW_switch:
-        return p.parseSwitchStmt();
-    case Kind.KW_bool:   fallthrough;
-    case Kind.KW_char:   fallthrough;
-    case Kind.KW_const:   fallthrough;
-    case Kind.KW_i8:    fallthrough;
-    case Kind.KW_i16:   fallthrough;
-    case Kind.KW_i32:   fallthrough;
-    case Kind.KW_i64:   fallthrough;
-    case Kind.KW_isize:   fallthrough;
-    case Kind.KW_f32:   fallthrough;
-    case Kind.KW_f64:   fallthrough;
-    case Kind.KW_local:   fallthrough;
-    case Kind.KW_reg8:    fallthrough;
-    case Kind.KW_reg16:   fallthrough;
-    case Kind.KW_reg32:   fallthrough;
-    case Kind.KW_reg64:   fallthrough;
-    case Kind.KW_u8:    fallthrough;
-    case Kind.KW_u16:   fallthrough;
-    case Kind.KW_u32:   fallthrough;
-    case Kind.KW_u64:   fallthrough;
-    case Kind.KW_usize:   fallthrough;
-    case Kind.KW_volatile:   fallthrough;
-    case Kind.KW_void:
-        return p.parseDeclStmt(true, true);
-    case Kind.KW_while:
-        return p.parseWhileStmt();
-    default:
-        return p.parseExprStmt();
-    }
-}
-#endif
-
 func Stmt* Parser.parseStmt(Parser* p) {
 #if ParserDebug
     printf("parseStmt\n");
@@ -442,7 +383,7 @@ func Stmt* Parser.parseForStmt(Parser* p) {
         if (p.isDeclaration()) {
             init_ = p.parseDeclStmt(false, false);
         } else {
-            init_ = p.parseExprStmt();
+            init_ = p.parseExpr().asStmt();
         }
     }
     p.expectAndConsume(Kind.Semicolon);
