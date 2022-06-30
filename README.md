@@ -60,6 +60,7 @@
 - Dont allow Declaration in Condition of if stmt?
 
 ## General
+- convert files to relative path in findProjectDir(), to Vim understands errors
 - add option to print all configs in code
 - CHECK  all DeclList / StmtList etc to see if they are freed
 - add Trace option to instrument all functions?

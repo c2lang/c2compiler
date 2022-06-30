@@ -44,7 +44,13 @@ public func i32 main(i32 argc, char** argv) {
         const char* filename = argv[1]; // TODO parse
         recipe.addDummyTarget(filename);
     } else {
-        // TODO search for recipe file
+        if (!utils.findProjectDir()) {
+            fprintf(stderr, "c2c: error: cannot find C2 root dir\n");
+            fprintf(stderr, "c2c requires a %s file in the project root\n", constants.recipe_name);
+            fprintf(stderr, "Use argument -h for a list of available options and usage of c2c\n");
+            return -1;
+        }
+
         recipe_id = sm.open(constants.recipe_name, 0);
         if (recipe_id == -1) return -1;
         if (!recipe.parse(recipe_id)) return -1;

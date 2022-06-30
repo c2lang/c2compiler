@@ -3,40 +3,61 @@
 
 module utils;
 
+import constants;
+import sys_time;
+import unistd local;
 import stdio local;
+import sys_stat local;
+import c_errno local;
+import string local;
 
-const u64 SecondsPerMinute = 60;
-const u64 SecondsPerHour = 60 * SecondsPerMinute;
-const u64 SecondsPerDay = 24 * SecondsPerHour;
-
-public func const char* time2str(u64 seconds) {
-    local char[16] out;
-    u64 days = seconds / SecondsPerDay;
-    seconds -= days * SecondsPerDay;
-    u64 hours = seconds / SecondsPerHour;
-    seconds -= hours * SecondsPerHour;
-    u64 minutes = seconds / SecondsPerMinute;
-    seconds -= minutes * SecondsPerMinute;
-    char* cp = out;
-    if (days) cp += sprintf(cp, "%lud", days);
-    if (hours) cp += sprintf(cp, "%02luh", hours);
-    if (minutes) cp += sprintf(cp, "%02lum", minutes);
-    sprintf(cp, "%02lus", seconds);
-    return out;
+public func u64 now() {
+    sys_time.Timeval tv;
+    sys_time.gettimeofday(&tv, nil);
+    u64 now64 = cast<u64>(tv.tv_sec);
+    now64 *= 1000000;
+    now64 += tv.tv_usec;
+    return now64;
 }
 
-const u8 LF = 0x0A;
-const u8 CR = 0x0D;
+public type SrcLoc u32;
 
-public func i64 stripNewline(char* buffer, i64 len)
-{
-    if (buffer[len-1] == LF) {
-        buffer[len-1] = 0;
-        len--;
+public func bool findProjectDir() {
+    char[constants.Max_path] base_path;
+    char[constants.Max_path] rel_path;
+    char* path_prefix = nil;
+
+    char* path = getcwd(base_path, constants.Max_path);
+    char[constants.Max_path] buffer;
+    while (1) {
+        path = getcwd(buffer, constants.Max_path);
+        if (path == 0) {
+            perror("getcwd");
+            return false;
+        }
+        Stat buf;
+        i32 error = stat(constants.recipe_name, &buf);
+        if (error) {
+            if (buffer[0] == '/' && buffer[1] == 0) return false;
+            if (*errno2() != ENOENT) {
+                perror("stat");
+                return false;
+            }
+        } else {
+            // must be file, not dir
+            if (buf.st_mode & S_IFMT == S_IFREG) {
+                path_prefix = base_path + strlen(buffer);
+                if (*path_prefix == '/') path_prefix++;
+                return true;
+            }
+        }
+        error = chdir("..");
+        if (error) {
+            perror("chdir");
+            return false;
+        }
+        strcat(rel_path, "../");
     }
-    if (buffer[len-1] == CR) {
-        buffer[len-1] = 0;
-        len--;
-    }
-    return len;
+    return true;
 }
+
