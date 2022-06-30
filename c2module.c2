@@ -17,6 +17,7 @@ public type Module struct {
     u32 max_files;
 } @(opaque)
 
+// Note: name must be allocated in target StringPool
 public func Module* create(const char* name) {
     Module* m = calloc(1, sizeof(Module));
     m.name = name;
@@ -25,6 +26,10 @@ public func Module* create(const char* name) {
 }
 
 public func void Module.free(Module* m) {
+    for (u32 i=0; i<m.num_files; i++) {
+        m.files[i].free();
+    }
+    free(cast<void*>(m.files));
     free(m);
 }
 
@@ -39,4 +44,14 @@ func void Module.resize(Module* m, u32 cap) {
     m.files = buf;
 }
 
+// Note: filename must be allocated in StringPool
+public func AST* Module.add(Module* m, const char* filename) {
+    AST* ast = AST.create(filename);
+
+    if (m.num_files == m.max_files) m.resize(m.max_files * 2);
+
+    m.files[m.num_files] = ast;
+    m.num_files++;
+    return ast;
+}
 

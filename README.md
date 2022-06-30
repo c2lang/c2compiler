@@ -42,6 +42,7 @@
 ## Builder
 - create Modules (during parsing)
 - store ASTs (inside module)
+- extract AST builder creation from Parser and only create once (per target?)
 
 ## Performance
 - profile application to see where time is spent

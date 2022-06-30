@@ -20,7 +20,7 @@ public func Builder* Builder.create(Context* c) {
     Builder* b = calloc(1, sizeof(Builder));
     b.context = c;
     // TEMP create AST here
-    b.ast = ast_list.AST.create();
+    b.ast = ast_list.AST.create("todo");
     return b;
 }
 

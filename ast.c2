@@ -13,6 +13,7 @@ import stdio;
     Represents a single file with all its imports, decls, etc
 */
 public type AST struct {
+    const char* filename;   // no ownership
 
     ImportDeclList imports;
     DeclList types;
@@ -22,14 +23,24 @@ public type AST struct {
 
 } @(opaque)
 
-public func AST* AST.create() {
+public func AST* AST.create(const char* filename) {
     AST* a = stdlib.calloc(1, sizeof(AST));
+    a.filename = filename;
     a.imports.init();
     a.types.init();
     a.variables.init();
     a.functions.init();
     a.static_asserts.init();
     return a;
+}
+
+public func void AST.free(AST* a) {
+    a.imports.free();
+    a.types.free();
+    a.variables.free();
+    a.functions.free();
+    a.static_asserts.free();
+    stdlib.free(a);
 }
 
 public func void AST.addImport(AST* a, ImportDecl* d) @(inline) {

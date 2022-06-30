@@ -80,9 +80,15 @@ public func i32 main(i32 argc, char** argv) {
             Parser* parser = c2_parser.create(sm, file_id, context, pool, &features, false);
             u64 t1 = utils.now();
             bool ok = parser.parse();
+/*
+    parser parses file
+    - builder get actOnModule()
+        -> it gets module
+        -> ast = module.createAST(filename, ..)
+*/
             u64 t2 = utils.now();
             total_time += (t2 - t1);
-            if (ok) parser.dump();
+            //if (ok) parser.dump();
             //printf("parsing %s took %lu usec\n", sm.getFileName(file_id), t2 - t1);
 
             parser.free();
