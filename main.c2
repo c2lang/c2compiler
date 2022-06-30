@@ -81,7 +81,7 @@ public func i32 main(i32 argc, char** argv) {
             if (file_id == -1) return -1;   // note: error already printed
 
             const char* filename = sm.getFileName(file_id);
-            printf("parsing %s\n", filename);
+            //printf("parsing %s\n", filename);
 
 
             c2_parser.Parser* parser = c2_parser.create(sm, file_id, builder, pool, &features, false);
