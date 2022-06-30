@@ -482,10 +482,10 @@ func QualType Parser.parseSingleTypeSpecifier(Parser* p, bool allow_qualifier) {
 //   identifier.identifier
 func QualType Parser.parseFullTypeIdentifier(Parser* p) {
 
-    Expr* id = p.builder.actOnIdentifier(p.tok.loc, p.tok.text_value).asExpr();
+    IdentifierExpr* id = p.builder.actOnIdentifier(p.tok.loc, p.tok.text_value);
     p.consumeToken();
 
-    Expr* prefix = nil;
+    IdentifierExpr* prefix = nil;
 
     if (p.tok.kind == Kind.Dot) {
         p.consumeToken();

@@ -57,8 +57,8 @@ static_assert(64, sizeof(ConditionalOperator));
 static_assert(48, sizeof(BinaryOperator));
 static_assert(48, sizeof(ExplicitCastExpr));
 
-static_assert(12, sizeof(Type));
-static_assert(12, sizeof(BuiltinType));
+static_assert(16, sizeof(Type));
+static_assert(16, sizeof(BuiltinType));
 static_assert(24, sizeof(PointerType));
 static_assert(24, sizeof(ArrayType));
 static_assert(24, sizeof(RefType));
@@ -91,6 +91,10 @@ public func void init(Context* c) {
 
 const char* col_Stmt = color.Bmagenta;
 const char* col_Decl = color.Bgreen;
+const char* col_Expr = color.Bmagenta;
 const char* col_Attr = color.Blue;
+const char* col_Type = color.Green;
 const char* col_Value = color.Bcyan;
+const char* col_Error = color.Red;
+const char* col_Normal = color.Normal;
 

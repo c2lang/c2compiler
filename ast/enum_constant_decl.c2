@@ -39,7 +39,7 @@ public func void EnumConstantDecl.print(const EnumConstantDecl* d, string_buffer
     out.indent(indent);
     // TODO print decl common stuff
     out.print("EnumConstantDecl %s %u", d.decl.name, d.value);
-    d.qt.print(out, indent + 2);
+    d.qt.print(out);
     if (d.decl.enumConstantDeclBits.has_init) d.init[0].print(out, indent + 2);
 }
 

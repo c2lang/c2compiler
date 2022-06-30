@@ -22,6 +22,24 @@ public type BuiltinTypeKind enum u8 {
     Void,
 }
 
+const char*[] builtinType_names = {
+    "i8",
+    "i16",
+    "i32",
+    "i64",
+    "u8",
+    "u16",
+    "u32",
+    "u64",
+    "f32",
+    "f64",
+    "bool",
+    "void",
+}
+
+
+static_assert(elemsof(BuiltinTypeKind), elemsof(builtinType_names));
+
 public type BuiltinTypeBits struct {
     u32 : NumTypeBits;
     u32 kind : 3;
@@ -43,9 +61,12 @@ public func BuiltinTypeKind BuiltinType.getKind(const BuiltinType* b) @(inline) 
     return cast<BuiltinTypeKind>(b.parent.builtinTypeBits.kind);
 }
 
-public func void BuiltinType.print(const BuiltinType* b, string_buffer.Buf* out, u32 indent) {
-    out.indent(indent);
+public func void BuiltinType.print(const BuiltinType* b, string_buffer.Buf* out) {
     out.print("(BuiltinType) %s\n", b.kind2str());
+}
+
+func void BuiltinType.debugPrint(const BuiltinType* b, string_buffer.Buf* out) {
+    out.add(builtinType_names[b.getKind()]);
 }
 
 // TODO convert to enum function

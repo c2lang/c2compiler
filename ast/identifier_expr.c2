@@ -7,10 +7,37 @@ import ast_context;
 import string_buffer;
 import utils local;
 
+public type IdentifierKind enum u8 {
+    Unresolved,
+    Module,
+    Function,
+    Type,
+    Var,
+    EnumConstant,
+    StructMember,
+    StructFunction,
+    Label,
+}
+
+const char*[] identifierKind_names = {
+    "Unresolved",
+    "Module",
+    "Function",
+    "Type",
+    "Var",
+    "EnumConstant",
+    "StructMember",
+    "StructFunction",
+    "Label",
+}
+
+static_assert(elemsof(IdentifierKind), elemsof(identifierKind_names));
+
 public type IdentifierExprBits struct {
     u32 : NumExprBits;
     u32 ref_type : 1;
-    // TODO add kind: Type, Var, Module, etc
+    u32 kind : 4;   // IdentifierKind
+    // TODO add Type, Var, Module, etc
 }
 
 public type IdentifierExpr struct {
@@ -32,6 +59,7 @@ public func Expr* IdentifierExpr.asExpr(IdentifierExpr* e) @(inline) { return &e
 
 public func void IdentifierExpr.print(const IdentifierExpr* e, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
+    out.color(col_Expr);
     out.add("IdentifierExpr");
     if (e.expr.stmt.identifierExprBits.ref_type) {
         out.print(" ref: %s\n", e.decl.getName());

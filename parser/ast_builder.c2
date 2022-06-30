@@ -160,7 +160,7 @@ public func QualType Builder.actOnBuiltinType(Builder* b, tokens.Kind kind) {
     return QualType.init2(t);
 }
 
-public func QualType Builder.actOnRefType(Builder* b, Expr* id, Expr* prefix) {
+public func QualType Builder.actOnRefType(Builder* b, IdentifierExpr* id, IdentifierExpr* prefix) {
     RefType* t = RefType.create(b.context, prefix, id);
     return QualType.init2(cast<Type*>(t));
 }

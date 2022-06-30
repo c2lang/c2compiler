@@ -14,11 +14,11 @@ public type RefTypeBits struct {
 
 public type RefType struct {
     Type parent;
-    Expr* ref;
-    Expr*[0] prefixRef; // tail-allocated
+    IdentifierExpr* ref;
+    IdentifierExpr*[0] prefixRef; // tail-allocated
 } @(opaque)
 
-public func RefType* RefType.create(ast_context.Context* c, Expr* prefix, Expr* ref) @(inline) {
+public func RefType* RefType.create(ast_context.Context* c, IdentifierExpr* prefix, IdentifierExpr* ref) @(inline) {
     u32 size = sizeof(RefType);
     if (prefix) size += sizeof(Expr*);
     RefType* t = c.alloc(size);
@@ -40,12 +40,15 @@ public func Expr** RefType.getRef2(RefType* t) @(inline) {
     return &t.ref;
 }
 
-public func void RefType.print(const RefType* t, string_buffer.Buf* out, u32 indent) {
-    out.indent(indent);
+public func void RefType.print(const RefType* t, string_buffer.Buf* out) {
     out.add("RefType\n");
-    t.ref.print(out, indent + 2);
+    t.ref.print(out, 0);
     if (t.parent.refTypeBits.have_prefix) {
-        t.prefixRef[0].print(out, indent + 2);
+        t.prefixRef[0].print(out, 0);
     }
+}
+
+func void RefType.debugPrint(const RefType* t, string_buffer.Buf* out) {
+    // TODO
 }
 

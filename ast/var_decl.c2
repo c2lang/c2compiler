@@ -74,9 +74,11 @@ public func void VarDecl.setLocal(VarDecl* d, bool has_local) {
 
 public func void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
     d.decl.printCommon(out, indent, "VarDecl");
-    d.qt.print(out, 0); // TODO remove from type
+    d.qt.print(out);
     out.color(col_Attr);
     VarDeclKind k = d.getKind();
+    out.add(" ");
+    // TODO VarDeclNames for local variable is local, which is confusing
     out.add(varDeclNames[k]);
     if (k == VarDeclKind.StructMember && d.decl.varDeclBits.has_init_or_bitfield) out.add(" bitfield");
     d.decl.printBits(out);

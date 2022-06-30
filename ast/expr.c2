@@ -144,3 +144,11 @@ public func void Expr.print(const Expr* e, string_buffer.Buf* out, u32 indent) {
     }
 }
 
+public func void Expr.printCommon(const Expr* e, string_buffer.Buf* out) {
+    e.qt.print(out);
+    out.color(col_Attr);
+    if (e.stmt.exprBits.is_ctv) out.add(" CTV");
+    if (e.stmt.exprBits.is_ctc) out.add(" CTC");
+    if (e.stmt.exprBits.is_lvalue) out.add(" lvalue");
+}
+

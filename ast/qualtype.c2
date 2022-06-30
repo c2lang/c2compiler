@@ -51,16 +51,29 @@ public func void QualType.dump(const QualType* qt) {
     }
 }
 
-public func void QualType.print(const QualType* qt, string_buffer.Buf* out, u32 indent) {
-    out.indent(indent);
-    out.add("QualType");
+func void QualType.debugPrint(const QualType* qt, string_buffer.Buf* out) {
     const Type* t = qt.getTypeOrNil();
-    u32 quals = qt.getQualifiers();
-    if (!t) out.add(" type=nil");
-    if (quals & QualType_Const) out.add(" const");
-    if (quals & QualType_Volatile) out.add(" volatile");
-    out.add("\n");
     if (t) {
-        t.print(out, indent + 2);
+        u32 quals = qt.getQualifiers();
+        if (!t) out.add(" type=nil");
+        if (quals & QualType_Const) out.add(" const");
+        if (quals & QualType_Volatile) out.add(" volatile");
+        t.debugPrint(out);
+    } else {
+        out.color(col_Error);
+        out.add("NIL");
+        out.color(col_Normal);
     }
+}
+
+public func void QualType.print(const QualType* qt, string_buffer.Buf* out) {
+    out.color(col_Type);
+    out.add("'");
+    // TODO
+    qt.debugPrint(out);
+    out.color(col_Type);
+    out.add("'");
+
+    //const Type* t = qt.getTypeOrNil();
+    // TODO canonicalType? if present
 }
