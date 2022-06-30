@@ -40,12 +40,8 @@
     - or use RB-tree to put all Type* to get pointer-types etc, program-wide?
 
 ## AST-Builder
-- Use another StringPool for the recipe and the buildfile
-- Use SourceMgr for recipe + buildfile.
-    - create 1 srcmgr in total. Reset it after each target to only keep recipe + build
-    - keep track of src locs for better diags
-- parse all files in recipe
 - create Modules (during parsing)
+- store ASTs (inside module)
 
 ## Builder
 - search for c2recipe.txt
@@ -64,7 +60,6 @@
 - Dont allow Declaration in Condition of if stmt?
 
 ## General
-- auto-resize StringPool
 - add option to print all configs in code
 - CHECK  all DeclList / StmtList etc to see if they are freed
 - add Trace option to instrument all functions?

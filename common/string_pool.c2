@@ -40,9 +40,8 @@ public type Pool struct {
 
 public func Pool* Pool.create(u32 data_capacity, u16 node_capacity) {
     Pool* p = stdlib.calloc(1, sizeof(Pool));
-    p.data_capacity = data_capacity;
+    p.resize_data(data_capacity);
     p.node_capacity = node_capacity;
-    p.data = stdlib.malloc(p.data_capacity);
     p.nodes = stdlib.malloc(p.node_capacity * sizeof(Node));
     p.node_count = 1; // skip node 1
     return p;
@@ -209,12 +208,25 @@ after_loop:
         pool.insert(n, parent);
     }
 
+    if (pool.size + len + 1 > pool.data_capacity) {
+        pool.resize_data(pool.data_capacity * 2);
+    }
     char* dest = pool.data + pool.size;
     string.memcpy(dest, text, len);
     dest[len] = 0;
     pool.size += len + 1;
     //assert(pool.size < pool.data_capacity);
     return dest;
+}
+
+public func void Pool.resize_data(Pool* p, u32 capacity) {
+    p.data_capacity = capacity;
+    char* buf = stdlib.malloc(p.data_capacity);
+    if (p.data) {
+        string.memcpy(buf, p.data, p.size);
+        stdlib.free(p.data);
+    }
+    p.data = buf;
 }
 
 public func void Pool.dump(const Pool* pool) {
