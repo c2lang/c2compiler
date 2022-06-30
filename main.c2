@@ -82,9 +82,11 @@ public func i32 main(i32 argc, char** argv) {
             bool ok = parser.parse();
             u64 t2 = utils.now();
             total_time += (t2 - t1);
+            if (ok) parser.dump();
             //printf("parsing %s took %lu usec\n", sm.getFileName(file_id), t2 - t1);
 
             parser.free();
+            // Q: stop if !ok (or just parse all files)
         }
         printf("parsing took %lu usec\n", total_time);
 #if DumpTokens

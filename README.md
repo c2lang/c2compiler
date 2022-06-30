@@ -39,12 +39,9 @@
 - use common/pointer-map, or put ptr* in each Type? (pointers are very common, so could be efficient)
     - or use RB-tree to put all Type* to get pointer-types etc, program-wide?
 
-## AST-Builder
+## Builder
 - create Modules (during parsing)
 - store ASTs (inside module)
-
-## Builder
-- search for c2recipe.txt
 
 ## Performance
 - profile application to see where time is spent

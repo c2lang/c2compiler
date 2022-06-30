@@ -9,6 +9,9 @@ import utils local;
 import stdlib;
 import stdio;
 
+/*
+    Represents a single file with all its imports, decls, etc
+*/
 public type AST struct {
 
     ImportDeclList imports;

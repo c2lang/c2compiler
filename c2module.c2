@@ -1,0 +1,42 @@
+module c2module;
+
+import ast_list local;
+import stdlib local;
+import string;
+
+/*
+    Used to:
+    - store ASTs
+*/
+
+public type Module struct {
+    const char* name;       // no ownership
+
+    AST** files;
+    u32 num_files;
+    u32 max_files;
+} @(opaque)
+
+public func Module* create(const char* name) {
+    Module* m = calloc(1, sizeof(Module));
+    m.name = name;
+    m.resize(1);
+    return m;
+}
+
+public func void Module.free(Module* m) {
+    free(m);
+}
+
+func void Module.resize(Module* m, u32 cap) {
+    m.max_files = cap;
+    void* buf = malloc(m.max_files * sizeof(AST*));
+    if (m.files) {
+        void* old = cast<void*>(m.files);
+        string.memcpy(buf, old, m.num_files * sizeof(AST*));
+        free(old);
+    }
+    m.files = buf;
+}
+
+
