@@ -7,6 +7,7 @@ executable c2c
 	$generate-c single-module
     $config ContextDebug
     $config StringPoolDebug
+#    $config RecipeDebug
 #    $config ParserDebug
 #    $config DumpTokens
 
@@ -87,9 +88,11 @@ executable c2c
     ast_list.c2
     stmt_list.c2
     c2recipe.c2
+    c2recipe_parser.c2
     constants.c2
     source_mgr.c2
     context.c2
     utils.c2
 	main.c2
 end
+

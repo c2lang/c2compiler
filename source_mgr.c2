@@ -49,12 +49,12 @@ public func i32 SourceMgr.open(SourceMgr* sm, const char* filename, utils.SrcLoc
     if (!file.open(filename)) {
         char[256] error_msg;
         if (file.errno == file_utils.Err_not_a_file) {
-            sprintf(error_msg, "cannot open %s: %s", filename, "not a regular file");
+            sprintf(error_msg, "cannot open %s: %s\n", filename, "not a regular file");
         } else {
-            sprintf(error_msg, "cannot open %s: %s", filename, string.strerror(file.errno));
+            sprintf(error_msg, "cannot open %s: %s\n", filename, string.strerror(file.errno));
         }
         if (loc) {
-            fprintf(stderr, "%s: %serror:%s %s", sm.loc2str(loc), color.Red, color.Normal, error_msg);
+            fprintf(stderr, "%s: %serror:%s %s\n", sm.loc2str(loc), color.Red, color.Normal, error_msg);
         } else {
             fprintf(stderr, "%serror%s: %s\n", color.Red, color.Normal, error_msg);
         }

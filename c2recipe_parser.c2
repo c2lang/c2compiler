@@ -1,0 +1,447 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module c2recipe;
+
+import string_pool;
+import source_mgr;
+import utils local;
+import ctype;
+import color;
+
+import stdlib;
+import stdarg local;
+import string;
+import stdio local;
+import csetjmp local;
+
+type Kind enum u8 {
+    // global
+    Plugin,
+    PluginOptions,
+    Text,
+    Executable,
+    Lib,
+    File,
+    End,
+    Warnings,
+    GenerateC,
+    GenerateIR,
+    NoLibc,
+    Config,
+    Export,
+    Use,
+    Eof,
+}
+
+const char*[] kind_names = {
+    "plugin",
+    "[plugin_options]",
+    "text",
+    "executable",
+    "lib",
+    "file",
+    "end",
+    "$warnings",
+    "$generate-c",
+    "$generate-ir",
+    "$nolibc",
+    "$config",
+    "$export",
+    "$use",
+    "eof",
+}
+
+static_assert(elemsof(Kind), elemsof(kind_names));
+
+type Token struct {
+    Kind kind;
+    SrcLoc loc;
+    bool more;
+    const char* value;  // allocated in StringPool
+}
+
+func void Token.init(Token* t) {
+    string.memset(t, 0, sizeof(Token));
+    t.more = true;
+}
+
+type Parser struct {
+    Recipe* recipe;
+    string_pool.Pool* pool;
+    source_mgr.SourceMgr* sm;
+
+    const char* input_start;
+    const char* cur;
+    SrcLoc loc_start;
+    JmpBufTag jmpbuf;
+    Token token;
+    bool new_line;
+    Target* target;
+}
+
+func bool Parser.parse(Recipe* recipe, string_pool.Pool* pool, source_mgr.SourceMgr* sm, i32 file_id) {
+    const char* data = sm.get_content(file_id);
+    Parser p = { 0 }
+    p.recipe = recipe;
+    p.pool = pool;
+    p.sm = sm;
+    p.input_start = data;
+    p.cur = data;
+    p.loc_start = sm.get_offset(file_id);
+    p.new_line = true;
+
+    p.token.init();
+
+#if 0
+    while (p.token.more) {
+        p.consumeToken();
+    }
+#else
+    i32 res = setjmp(&p.jmpbuf);
+    if (res == 0) {
+        p.consumeToken();
+        p.parseTop();
+    } else {
+        return false;
+    }
+#endif
+
+    return true;
+}
+
+func void Parser.error(Parser* p, const char* format, ...) @(noreturn) {
+    char[128] msg;
+    Va_list args;
+    va_start(args, format);
+    vsnprintf(msg, sizeof(msg)-1, format, args);
+    va_end(args);
+
+    fprintf(stderr, "%s: %serror:%s %s\n", p.sm.loc2str(p.token.loc), color.Red, color.Normal, msg);
+    longjmp(&p.jmpbuf, 1);
+}
+
+func void Parser.consumeToken(Parser* p) {
+    p.lex(&p.token);
+#if 0
+    printf("  %s   %s", p.sm.loc2str(p.token.loc), kind_names[p.token.kind]);
+    switch (p.token.kind) {
+    case Kind.PluginOptions: fallthrough;
+    case Kind.Text: fallthrough;
+    case Kind.File:
+        printf("  %s", p.token.value);
+        break;
+    default:
+        break;
+    }
+    printf("\n");
+#endif
+}
+
+func void Parser.expect(Parser* p, Kind kind, const char* msg) {
+    if (p.token.kind != kind) p.error(msg);
+}
+
+func void Parser.lex(Parser* p, Token* result) {
+    while (1) {
+        //printf("%c\n", *p.cur);
+        switch (*p.cur) {
+        case 0:
+            p.cur--;
+            result.loc = p.loc_start + cast<SrcLoc>(p.cur - p.input_start);
+            result.kind = Kind.Eof;
+            result.more = false;
+            return;
+        case ' ':   fallthrough;
+        case '\t':  fallthrough;
+        case '\r':
+            p.cur++;
+            break;
+        case '\n':
+            p.cur++;
+            p.new_line = true;
+            break;
+        case '#':
+            p.skip_comments();
+            break;
+        case '[':
+            p.lex_plugin_options(result);
+            p.new_line = false;
+            return;
+        case '$':
+            p.lex_option(result);
+            p.new_line = false;
+            return;
+        default:
+            if (ctype.isalpha(*p.cur)) {
+                result.loc = p.loc_start + cast<SrcLoc>(p.cur - p.input_start);
+                if (string.memcmp(p.cur, "plugin ", 7) == 0) {
+                    result.kind = Kind.Plugin;
+                    p.cur += 7;
+                    p.new_line = false;
+                    return;
+                }
+                if (string.memcmp(p.cur, "executable ", 11) == 0) {
+                    result.kind = Kind.Executable;
+                    p.cur += 11;
+                    p.new_line = false;
+                    return;
+                }
+                if (string.memcmp(p.cur, "lib ", 4) == 0) {
+                    result.kind = Kind.Lib;
+                    p.cur += 4;
+                    p.new_line = false;
+                    return;
+                }
+                if (string.memcmp(p.cur, "end", 3) == 0) {
+                    result.kind = Kind.End;
+                    p.cur += 3;
+                    p.new_line = false;
+                    return;
+                }
+
+                // lex until whitespace
+                const char* start = p.cur;
+                while (*p.cur && !ctype.isspace(*p.cur)) p.cur++;
+                // TODO check EOF
+                result.kind = p.new_line ? Kind.File : Kind.Text;
+                p.new_line = false;
+                u32 len = cast<u32>(p.cur - start);
+                result.value = p.pool.add(start, len, false);
+                return;
+            }
+            result.loc = p.loc_start + cast<SrcLoc>(p.cur - p.input_start);
+            p.error("unexpected input");
+            return;
+        }
+    }
+}
+
+
+func void Parser.lex_plugin_options(Parser* p, Token* result) {
+    p.cur++;
+    const char* start = p.cur;
+    while (1) {
+        if (*p.cur == 0) {
+            // TODO give error
+            return;
+        }
+        if (*p.cur == ']') {
+            u32 len = cast<u32>(p.cur - start);
+            result.loc = p.loc_start + cast<SrcLoc>(start - p.input_start);
+            result.kind = Kind.PluginOptions;
+            result.value = p.pool.add(start, len, false);
+            p.cur++;
+            return;
+        }
+        p.cur++;
+    }
+}
+
+func void Parser.lex_option(Parser* p, Token* result) {
+    p.cur++;
+
+    result.loc = p.loc_start + cast<SrcLoc>(p.cur - p.input_start);
+
+    //const char* start = p.cur;
+
+    const char* end = p.cur;
+    while (*end && !ctype.isspace(*end)) end++;
+
+    u32 len = cast<u32>(end - p.cur);
+    if (len >= 20) p.error("unknown option");
+
+    char[24] option;
+    string.memcpy(option, p.cur, len);
+    option[len] = 0;
+
+
+    if (string.strcmp(option, "warnings") == 0) {
+        result.kind = Kind.Warnings;
+        p.cur += 8;
+        return;
+    }
+    if (string.strcmp(option, "generate-c") == 0) {
+        result.kind = Kind.GenerateC;
+        p.cur += 10;
+        return;
+    }
+    if (string.strcmp(option, "nolibc") == 0) {
+        result.kind = Kind.NoLibc;
+        p.cur += 6;
+        return;
+    }
+    if (string.strcmp(option, "config") == 0) {
+        result.kind = Kind.Config;
+        p.cur += 6;
+        return;
+    }
+    if (string.strcmp(option, "export") == 0) {
+        result.kind = Kind.Export;
+        p.cur += 6;
+        return;
+    }
+    if (string.strcmp(option, "plugin") == 0) {
+        result.kind = Kind.Plugin;
+        p.cur += 6;
+        return;
+    }
+    if (string.strcmp(option, "generate-ir") == 0) {
+        result.kind = Kind.GenerateIR;
+        p.cur += 6;
+        return;
+    }
+    if (string.strcmp(option, "use") == 0) {
+        result.kind = Kind.GenerateC;
+        p.cur += 3;
+        return;
+    }
+
+    p.error("unknown option '%s'", option);
+}
+
+func void Parser.skip_comments(Parser* p) {
+    while (*p.cur) {
+        if (*p.cur == '\n') return;
+        p.cur++;
+    }
+}
+
+func void Parser.parseTop(Parser* p) {
+    while (1) {
+        switch (p.token.kind) {
+        case Kind.Plugin:
+            p.parsePlugin();
+            break;
+        case Kind.PluginOptions:
+            break;
+        case Kind.Text:
+            break;
+        case Kind.Executable:
+            p.parseExecutable();
+            break;
+        case Kind.Lib:
+            p.parseLibrary();
+            break;
+        case Kind.File:
+            break;
+        case Kind.End:
+            break;
+        case Kind.Warnings:    fallthrough;
+        case Kind.GenerateC:   fallthrough;
+        case Kind.GenerateIR:  fallthrough;
+        case Kind.NoLibc:      fallthrough;
+        case Kind.Config:      fallthrough;
+        case Kind.Export:      fallthrough;
+        case Kind.Use:
+            p.error("must be inside target");
+            break;
+        case Kind.Eof:
+            return;
+        }
+    }
+}
+
+func void Parser.parsePlugin(Parser* p) {
+    p.consumeToken();
+    p.expect(Kind.Text, "expect plugin name");
+    // TODO store;
+    p.consumeToken();
+
+    if (p.token.kind == Kind.PluginOptions) {
+        p.consumeToken();
+    }
+}
+
+func void Parser.parseExecutable(Parser* p) {
+    p.consumeToken();
+    p.expect(Kind.Text, "expect target name");
+    // TODO set kind executable
+    p.target = p.recipe.addTarget(p.token.value, p.token.loc);
+    p.consumeToken();
+
+    p.parseTarget();
+}
+
+func void Parser.parseLibrary(Parser* p) {
+    p.consumeToken();
+    p.expect(Kind.Text, "expect target name");
+    // TODO set kind lib (combine with option below)
+    const char* name = p.token.value;
+    SrcLoc loc = p.token.loc;
+    p.consumeToken();
+    p.expect(Kind.Text, "expect lib type");
+    p.consumeToken(); // TODO check options
+    p.target = p.recipe.addTarget(name, loc);
+
+    p.parseTarget();
+}
+
+func void Parser.parseTarget(Parser* p) {
+    bool files_started = false;
+    while (1) {
+        switch (p.token.kind) {
+        case Kind.Plugin:
+            p.parsePlugin();
+            break;
+        case Kind.PluginOptions: fallthrough;
+        case Kind.Text: fallthrough;
+        case Kind.Executable: fallthrough;
+        case Kind.Lib:
+            p.error("syntax error");
+            break;
+        case Kind.File:
+            files_started = true;
+            p.target.addFile(p.token.value, p.token.loc);
+            p.consumeToken();
+            break;
+        case Kind.End:
+            p.consumeToken();
+            p.target = nil;
+            return;
+        case Kind.Warnings:
+            if (files_started) p.error("$options must come before files");
+            p.consumeToken();
+            p.expect(Kind.Text, "expect options");
+            p.consumeToken();
+            break;
+        case Kind.GenerateC:
+            if (files_started) p.error("$options must come before files");
+            p.consumeToken();
+            while (p.token.kind == Kind.Text) {
+                p.consumeToken();
+            }
+            break;
+        case Kind.GenerateIR:
+            if (files_started) p.error("$options must come before files");
+            p.consumeToken();
+            while (p.token.kind == Kind.Text) p.consumeToken();
+            break;
+        case Kind.NoLibc:
+            if (files_started) p.error("$options must come before files");
+            p.consumeToken();
+            while (p.token.kind == Kind.Text) p.consumeToken();
+            break;
+        case Kind.Config:
+            if (files_started) p.error("$options must come before files");
+            p.consumeToken();
+            p.expect(Kind.Text, "expect config");
+            p.consumeToken();
+            break;
+        case Kind.Export:
+            if (files_started) p.error("$options must come before files");
+            p.consumeToken();
+            while (p.token.kind == Kind.Text) p.consumeToken();
+            break;
+        case Kind.Use:
+            if (files_started) p.error("$options must come before files");
+            p.consumeToken();
+            while (p.token.kind == Kind.Text) p.consumeToken();
+            break;
+        case Kind.Eof:
+            p.error("un-terminated target");
+            return;
+        }
+    }
+}
+

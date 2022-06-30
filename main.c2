@@ -15,13 +15,17 @@ import ast;
 import stdio local;
 
 public func i32 main(i32 argc, char** argv) {
-    if (argc < 2) {
-        printf("usage: %s [file]\n", argv[0]);
+    bool single_file = false; // TODO parse
+
+    if (argc > 2) {
+        printf("usage: %s <file>\n", argv[0]);
         return -1;
     }
 
+    if (argc > 1) single_file = true;
+
     // note: auxPool is used by recipe and build-file
-    string_pool.Pool* auxPool = string_pool.Pool.create(1024, 0);
+    string_pool.Pool* auxPool = string_pool.Pool.create(1024+2000, 0);
 
     SourceMgr* sm = SourceMgr.create();
 
@@ -33,7 +37,6 @@ public func i32 main(i32 argc, char** argv) {
 
     c2recipe.Recipe* recipe = c2recipe.create(sm, auxPool);
 
-    bool single_file = true; // TODO parse
     i32 recipe_id = -1;
 
     if (single_file) {
@@ -69,14 +72,14 @@ public func i32 main(i32 argc, char** argv) {
             Parser* parser = c2_parser.create(sm, file_id, context, pool, &features, false);
             bool ok = parser.parse();
 
+            parser.free();
+        }
 #if DumpTokens
 #else
             context.dump();
             pool.dump();
             //if (ok) parser.dump();
 #endif
-            parser.free();
-        }
         pool.free();
         context.free();
         // TODO sm clear files upto recipe_id / build_file_id
