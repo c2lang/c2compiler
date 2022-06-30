@@ -59,9 +59,35 @@ public func const char* unaryOpcode2Str(UnaryOpcode k) {
     return "";
 }
 
+func bool UnaryOperator.isBefore(const UnaryOperator* e) {
+    switch (e.getKind()) {
+    case UnaryOpcode.PostInc: return false;
+    case UnaryOpcode.PostDec: return false;
+    case UnaryOpcode.PreInc:  return true;
+    case UnaryOpcode.PreDec:  return true;
+    case UnaryOpcode.AddrOf:  return true;
+    case UnaryOpcode.Deref:   return true;
+    case UnaryOpcode.Minus:   return true;
+    case UnaryOpcode.Not:     return true;
+    case UnaryOpcode.LNot:    return true;
+    }
+    return true;
+}
+
 public func void UnaryOperator.print(const UnaryOperator* e, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
     out.print("UnaryOperator %s\n", unaryOpcode2Str(e.getKind()));
     e.inner.print(out, indent + 2);
+}
+
+public func void UnaryOperator.printLiteral(const UnaryOperator* e, string_buffer.Buf* out) {
+    const char* opcode = unaryOpcode2Str(e.getKind());
+    if (e.isBefore()) {
+        out.add(opcode);
+        e.inner.printLiteral(out);
+    } else {
+        e.inner.printLiteral(out);
+        out.add(opcode);
+    }
 }
 

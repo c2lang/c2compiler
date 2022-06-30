@@ -25,3 +25,9 @@ public func void ParenExpr.print(const ParenExpr* e, string_buffer.Buf* out, u32
     e.inner.print(out, indent + 2);
 }
 
+public func void ParenExpr.printLiteral(const ParenExpr* e, string_buffer.Buf* out) {
+    out.add("(");
+    e.inner.printLiteral(out);
+    out.add("(");
+}
+

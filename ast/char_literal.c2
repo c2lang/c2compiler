@@ -28,3 +28,7 @@ public func void CharLiteral.print(const CharLiteral* b, string_buffer.Buf* out,
     out.print("CharLiteral '%c'\n", b.expr.stmt.charLiteralBits.value);
 }
 
+public func void CharLiteral.printLiteral(const CharLiteral* b, string_buffer.Buf* out) {
+    out.print("'%c'", b.expr.stmt.charLiteralBits.value);
+}
+

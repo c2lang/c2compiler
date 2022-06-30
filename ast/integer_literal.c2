@@ -30,3 +30,6 @@ public func void IntegerLiteral.print(const IntegerLiteral* i, string_buffer.Buf
     out.print("IntegerLiteral %lu\n", i.val);
 }
 
+func void IntegerLiteral.printLiteral(const IntegerLiteral* e, string_buffer.Buf* out) {
+    out.print("%lu", e.val);
+}

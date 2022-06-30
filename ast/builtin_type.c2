@@ -62,7 +62,7 @@ public func BuiltinTypeKind BuiltinType.getKind(const BuiltinType* b) @(inline) 
 }
 
 public func void BuiltinType.print(const BuiltinType* b, string_buffer.Buf* out) {
-    out.print("(BuiltinType) %s\n", b.kind2str());
+    out.add(builtinType_names[b.getKind()]);
 }
 
 func void BuiltinType.debugPrint(const BuiltinType* b, string_buffer.Buf* out) {

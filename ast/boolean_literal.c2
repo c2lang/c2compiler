@@ -28,3 +28,7 @@ public func void BooleanLiteral.print(const BooleanLiteral* e, string_buffer.Buf
     out.print("BooleanLiteral %d\n", e.expr.stmt.booleanLiteralBits.value);
 }
 
+func void BooleanLiteral.printLiteral(const BooleanLiteral* e, string_buffer.Buf* out) {
+    out.add(e.expr.stmt.booleanLiteralBits.value ? "true" : "false");
+}
+

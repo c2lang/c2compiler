@@ -38,13 +38,14 @@ func void Type.init(Type* t, TypeKind k) @(inline) {
 public func TypeKind Type.getKind(const Type* t) @(inline) { return cast<TypeKind>(t.typeBits.kind); }
 
 public func void Type.dump(const Type* t) {
-    string_buffer.Buf* out = string_buffer.create(10*4096);
+    string_buffer.Buf* out = string_buffer.create(256);
     t.print(out);
     stdio.printf("%s\n", out.data());
     out.free();
 }
 
 public func void Type.print(const Type* t, string_buffer.Buf* out) {
+    out.color(col_Type);
     switch (t.getKind()) {
     case TypeKind.Builtin:
         BuiltinType.print(cast<BuiltinType*>(t), out);

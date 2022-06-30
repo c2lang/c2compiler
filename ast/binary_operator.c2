@@ -126,3 +126,9 @@ public func void BinaryOperator.print(const BinaryOperator* e, string_buffer.Buf
     e.rhs.print(out, indent + 2);
 }
 
+public func void BinaryOperator.printLiteral(const BinaryOperator* e, string_buffer.Buf* out) {
+    e.lhs.printLiteral(out);
+    out.add(binaryOpcode_names[e.getKind()]);
+    e.rhs.printLiteral(out);
+}
+

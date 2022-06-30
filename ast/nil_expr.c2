@@ -22,3 +22,7 @@ public func void NilExpr.print(const NilExpr* e, string_buffer.Buf* out, u32 ind
     out.add("NilExpr\n");
 }
 
+public func void NilExpr.printLiteral(const NilExpr* e, string_buffer.Buf* out) {
+    out.add("nil");
+}
+

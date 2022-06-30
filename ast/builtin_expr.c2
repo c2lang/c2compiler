@@ -104,3 +104,28 @@ public func void BuiltinExpr.print(const BuiltinExpr* e, string_buffer.Buf* out,
     }
 }
 
+public func void BuiltinExpr.printLiteral(const BuiltinExpr* e, string_buffer.Buf* out) {
+    out.add(builtin_names[e.getKind()]);
+    out.add("(");
+    out.add(")");
+    switch (e.getKind()) {
+    case BuiltinExprKind.Sizeof:
+        break;
+    case BuiltinExprKind.Elemsof:
+        break;
+    case BuiltinExprKind.EnumMin:
+        break;
+    case BuiltinExprKind.EnumMax:
+        break;
+    case BuiltinExprKind.OffsetOf:
+        // TODO
+        //e.offset[0].member.print(out, indent + 2);
+        break;
+    case BuiltinExprKind.ToContainer:
+        // TODO
+        //e.container[0].member.print(out, indent + 2);
+        //e.container[0].pointer.print(out, indent + 2);
+        break;
+    }
+}
+

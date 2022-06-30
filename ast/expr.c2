@@ -144,7 +144,7 @@ public func void Expr.print(const Expr* e, string_buffer.Buf* out, u32 indent) {
     }
 }
 
-public func void Expr.printCommon(const Expr* e, string_buffer.Buf* out) {
+func void Expr.printCommon(const Expr* e, string_buffer.Buf* out) {
     e.qt.print(out);
     out.color(col_Attr);
     if (e.stmt.exprBits.is_ctv) out.add(" CTV");
@@ -152,3 +152,61 @@ public func void Expr.printCommon(const Expr* e, string_buffer.Buf* out) {
     if (e.stmt.exprBits.is_lvalue) out.add(" lvalue");
 }
 
+func void Expr.printLiteral(const Expr* e, string_buffer.Buf* out) {
+    switch (e.getKind()) {
+    case ExprKind.IntegerLiteral:
+        IntegerLiteral.printLiteral(cast<IntegerLiteral*>(e), out);
+        return;
+    case ExprKind.BooleanLiteral:
+        BooleanLiteral.printLiteral(cast<BooleanLiteral*>(e), out);
+        return;
+    case ExprKind.CharLiteral:
+        CharLiteral.printLiteral(cast<CharLiteral*>(e), out);
+        return;
+    case ExprKind.StringLiteral:
+        // can happen?
+        break;
+    case ExprKind.Nil:
+        NilExpr.printLiteral(cast<NilExpr*>(e), out);
+        return;
+    case ExprKind.Identifier:
+        IdentifierExpr.printLiteral(cast<IdentifierExpr*>(e), out);
+        return;
+    case ExprKind.Type:
+        // can happen? array[enum_max(Enum)} ?
+        break;
+    case ExprKind.Call:
+        break;
+    case ExprKind.InitList:
+        break;
+    case ExprKind.FieldDesignatedInit:
+        break;
+    case ExprKind.ArrayDesignatedInit:
+        break;
+    case ExprKind.BinaryOperator:
+        BinaryOperator.printLiteral(cast<BinaryOperator*>(e), out);
+        return;
+    case ExprKind.UnaryOperator:
+        UnaryOperator.printLiteral(cast<UnaryOperator*>(e), out);
+        return;
+    case ExprKind.ConditionalOperator:
+        break;
+    case ExprKind.Builtin:
+        BuiltinExpr.printLiteral(cast<BuiltinExpr*>(e), out);
+        return;
+    case ExprKind.ArraySubscript:
+        // can happen?
+        break;
+    case ExprKind.Member:
+        MemberExpr.printLiteral(cast<MemberExpr*>(e), out);
+        return;
+    case ExprKind.Paren:
+        ParenExpr.printLiteral(cast<ParenExpr*>(e), out);
+        return;
+    case ExprKind.BitOffset:
+        break;
+    case ExprKind.ExplicitCast:
+        break;
+    }
+    out.print("?? kind=%u", e.getKind());
+}

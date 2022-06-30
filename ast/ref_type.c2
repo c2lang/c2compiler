@@ -41,10 +41,16 @@ public func Expr** RefType.getRef2(RefType* t) @(inline) {
 }
 
 public func void RefType.print(const RefType* t, string_buffer.Buf* out) {
-    out.add("RefType\n");
-    t.ref.print(out, 0);
-    if (t.parent.refTypeBits.have_prefix) {
-        t.prefixRef[0].print(out, 0);
+    const Decl* d = t.ref.getDecl();
+    if (d) {
+    } else {
+        out.color(col_Error);
+        if (t.parent.refTypeBits.have_prefix) {
+            t.prefixRef[0].printLiteral(out);
+            out.add(".");
+        }
+        t.ref.printLiteral(out);
+        out.add(" => ??");
     }
 }
 

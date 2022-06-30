@@ -38,34 +38,20 @@ public func ArrayType* ArrayType.create(ast_context.Context* c, QualType elem, b
 public func Type* ArrayType.asType(ArrayType* t) @(inline) { return &t.parent; }
 
 public func void ArrayType.print(const ArrayType* t, string_buffer.Buf* out) {
-    out.add("ArrayType\n");
     t.elem.print(out);
-    if (t.parent.arrayTypeBits.has_size) {
-        t.sizeExpr[0].print(out, 0);
+    out.add("[");
+    if (t.parent.arrayTypeBits.value_set) {
+        // print value
+    } else if (t.parent.arrayTypeBits.is_incremental) {
+        out.add("+");
+    } else if (t.parent.arrayTypeBits.has_size) {
+        t.sizeExpr[0].printLiteral(out);
     }
+    out.add("]");
+    // TODO use printPost()  printPre()
 }
 
 func void ArrayType.debugPrint(const ArrayType* t, string_buffer.Buf* out) {
-    out.add("ArrayType\n");
-    // TODO check if elems is also array
-    // if (AT) TODO
-    // else
-    t.elem.debugPrint(out);
-
-    out.add("[");
-    //NOTE
-    if (t.parent.arrayTypeBits.value_set) {
-        // TODO print value?
-        //t.sizeExpr[0].print(out, 0);
-    } else {
-        if (t.parent.arrayTypeBits.is_incremental) out.add("+");
-            // TODO
-            //t.sizeExpr[0].printLiteral(out);
-        if (t.parent.arrayTypeBits.has_size) {
-        }
-    }
-    out.add("]");
-
-    // if (AT) AT->debugPostName()
+    out.add("ArrayType TODO\n");
 }
 
