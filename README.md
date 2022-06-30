@@ -10,6 +10,7 @@
     - NAME=<value> -> value always treated as text
     - OR AND NOT in condition
     - () to indicate order
+- check AVL trees to have better performance than RB trees
 
 ## SourceManager
 - close files after use (need indication)
@@ -31,12 +32,18 @@
     -> if followed by a non-bitfield, left = 0;
     -> add a lot of unit tests
     -> ini combination with packed?
+    TEMP: try reverting c2c to generate sizeof(x) instead of number
+        -> big.c2 -> 309 ipv 488 blocks!
 - move SrcLoc to ast_helper?
 - use common/pointer-map, or put ptr* in each Type? (pointers are very common, so could be efficient)
     - or use RB-tree to put all Type* to get pointer-types etc, program-wide?
 
 ## AST-Builder
+- Use another StringPool for the recipe and the buildfile
+- Use SourceMgr for recipe + buildfile.
+    - create 1 srcmgr in total. Reset it after each target to only keep recipe + build
 - parse recipe
+    - keep track of src locs for better diags
 - parse all files in recipe
 - create Modules (during parsing)
 
