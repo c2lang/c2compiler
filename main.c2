@@ -100,8 +100,8 @@ public func i32 main(i32 argc, char** argv) {
 #else
         context.dump();
         pool.dump();
-        //if (ok) parser.dump();
 #endif
+        comp.dump();
         builder.free();
         comp.free();
         pool.free();

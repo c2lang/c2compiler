@@ -1,6 +1,7 @@
 module c2module;
 
 import ast_list local;
+import string_buffer;
 import stdlib local;
 import string;
 
@@ -55,5 +56,13 @@ public func AST* Module.add(Module* m, const char* filename) {
     m.files[m.num_files] = ast;
     m.num_files++;
     return ast;
+}
+
+public func void Module.print(const Module* m, string_buffer.StringBuffer* out) {
+    out.print("  module %s\n", m.name);
+    for (u32 i=0; i<m.num_files; i++) {
+        m.files[i].print(out);
+    }
+    free(cast<void*>(m.files));
 }
 

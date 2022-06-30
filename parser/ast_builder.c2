@@ -32,10 +32,6 @@ public func void Builder.free(Builder* b) {
     free(b);
 }
 
-public func void Builder.dump(const Builder* b) {
-    b.ast.print();
-}
-
 public func void Builder.actOnModule(Builder* b, const char* mod_name, SrcLoc mod_loc) {
     b.mod = b.comp.getModule(mod_name);
     b.ast = b.mod.add("todo");
