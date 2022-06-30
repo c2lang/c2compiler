@@ -13,7 +13,6 @@ type FunctionDeclBits struct {
     u32 is_variadic : 1;
     u32 has_prefix : 1;
     u32 num_params : 5;
-
 }
 
 public type FunctionDecl struct {
@@ -59,22 +58,34 @@ public func Decl* FunctionDecl.asDecl(FunctionDecl* d) @(inline) { return &d.dec
 
 
 public func void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 indent) {
-    out.indent(indent);
-    out.print("FunctionDecl %s", d.decl.name);
-    if (d.decl.functionDeclBits.is_variadic) out.add(" ...");
+    d.decl.printCommon(out, indent, "FunctionDecl");
+    // TODO print type (not rtype, that's shown in type)
+    d.decl.printBits(out);
+    d.decl.printName(out);
+
+    if (d.decl.functionDeclBits.is_variadic) {
+        out.color(col_Attr);
+        out.add(" ...");
+    }
+    if (d.decl.functionDeclBits.has_prefix) {
+        out.color(col_Attr);
+        out.add(" ");
+        // TODO static struct function
+        out.add("SF");
+    }
     out.add("\n");
+
     u32 params_offset = 0;
     if (d.decl.functionDeclBits.has_prefix) {
         d.prefix[0].print(out, indent + 2);
         params_offset = 1;
     }
-    d.rtype.print(out, indent + 2);
+    //d.rtype.print(out, indent + 2);
     for (u32 i=0; i<d.decl.functionDeclBits.num_params; i++) {
         d.params[params_offset + i].print(out, indent + 2);
     }
     if (d.body) {
         d.body.print(out, indent + 2);
     }
-
 }
 

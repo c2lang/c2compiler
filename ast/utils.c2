@@ -90,3 +90,7 @@ public func void init(Context* c) {
 }
 
 const char* col_Stmt = color.Bmagenta;
+const char* col_Decl = color.Bgreen;
+const char* col_Attr = color.Blue;
+const char* col_Value = color.Bcyan;
+
