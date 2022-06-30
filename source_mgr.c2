@@ -92,6 +92,10 @@ public func u32 SourceMgr.get_offset(SourceMgr* sm, i32 handle) {
     return sm.files[handle].offset;
 }
 
+public func const char* SourceMgr.getFileName(SourceMgr* sm, i32 handle) {
+    return sm.files[handle].filename;
+}
+
 func void SourceMgr.dump(const SourceMgr* sm) {
     printf("SourceMgr  files %u\n", sm.num_files);
     for (u32 i=0; i<sm.num_files; i++) {

@@ -61,7 +61,6 @@ public func void Parser.dump(const Parser* p) {
 public func bool Parser.parse(Parser* p) {
     p.error_msg[0] = 0;
 
-    u64 t1 = utils.now();
 #if DumpTokens
     p.tokenizer.init(p.pool, p.sm.get_content(p.file_id), p.sm.get_offset(p.file_id), p.features);
     p.tok.init();
@@ -92,8 +91,6 @@ public func bool Parser.parse(Parser* p) {
         printf("%s\n", p.error_msg);
         return false;
     }
-    u64 t2 = utils.now();
-    printf("parsing took %lu usec\n", t2 - t1);
 #endif
     return true;
 }

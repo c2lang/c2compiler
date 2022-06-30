@@ -49,8 +49,6 @@
 
 ## Builder
 - search for c2recipe.txt
-- parse c2recipe.txt into Recipe
-- have single recipe, pass target idx to Builder
 
 ## Performance
 - profile application to see where time is spent

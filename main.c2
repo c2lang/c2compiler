@@ -11,6 +11,7 @@ import constants;
 import ast_context local;
 import string_pool;
 import ast;
+import utils;
 
 import stdio local;
 
@@ -64,16 +65,22 @@ public func i32 main(i32 argc, char** argv) {
         Context* context = Context.create(constants.ContextBlkSize);
         string_pool.Pool* pool = string_pool.Pool.create(constants.StringPoolSize, constants.StringPoolWords);
 
+        u64 total_time = 0;
         for (u32 j=0; j<target.numFiles(); j++) {
             i32 file_id = target.openFile(j);
             if (file_id == -1) return -1;   // note: error already printed
 
             //const char* filename = target.getFilename(j);
             Parser* parser = c2_parser.create(sm, file_id, context, pool, &features, false);
+            u64 t1 = utils.now();
             bool ok = parser.parse();
+            u64 t2 = utils.now();
+            total_time += (t2 - t1);
+            //printf("parsing %s took %lu usec\n", sm.getFileName(file_id), t2 - t1);
 
             parser.free();
         }
+        printf("parsing took %lu usec\n", total_time);
 #if DumpTokens
 #else
             context.dump();
