@@ -106,7 +106,7 @@ public func i32 main(i32 argc, char** argv) {
         comp.free();
         pool.free();
         context.free();
-        // TODO sm clear files upto recipe_id / build_file_id
+        sm.clear(recipe_id);
     }
 
     recipe.free();

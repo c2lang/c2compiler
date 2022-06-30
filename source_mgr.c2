@@ -44,6 +44,15 @@ public func void SourceMgr.free(SourceMgr* sm) {
     stdlib.free(sm);
 }
 
+// Note closes all files above the handle (excluding the handle)
+public func void SourceMgr.clear(SourceMgr* sm, i32 handle = -1) {
+    for (i32 i=handle+1; i<sm.num_files; i++) {
+        File* f = &sm.files[i];
+        f.file.close();
+    }
+    sm.num_files = cast<u32>(handle + 1);
+}
+
 public func i32 SourceMgr.open(SourceMgr* sm, const char* filename, utils.SrcLoc loc) {
     file_utils.Reader file;
     if (!file.open(filename)) {
@@ -98,10 +107,13 @@ public func const char* SourceMgr.getFileName(SourceMgr* sm, i32 handle) {
 
 func void SourceMgr.dump(const SourceMgr* sm) {
     printf("SourceMgr  files %u\n", sm.num_files);
+    u32 total_size = 0;
     for (u32 i=0; i<sm.num_files; i++) {
         File* f = &sm.files[i];
+        total_size += f.file.size;
         printf("  [%2u]  %7u  %7u %s\n", i, f.offset, f.file.size, f.filename);
     }
+    printf("Total size %u\n", total_size);
 }
 
 type Location struct {

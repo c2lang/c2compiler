@@ -40,9 +40,6 @@
     - or use RB-tree to put all Type* to get pointer-types etc, program-wide?
 
 ## Builder
-- create Modules (during parsing)
-- store ASTs (inside module)
-- extract AST builder creation from Parser and only create once (per target?)
 
 ## Performance
 - profile application to see where time is spent
@@ -58,6 +55,7 @@
 - Dont allow Declaration in Condition of if stmt?
 
 ## General
+-> If fixed size StringPool becomes an issues, users could increase it in the recipe/build file
 - convert files to relative path in findProjectDir(), to Vim understands errors
 - add option to print all configs in code
 - CHECK  all DeclList / StmtList etc to see if they are freed
