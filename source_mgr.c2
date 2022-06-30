@@ -28,7 +28,7 @@ public type SourceMgr struct {
     u32 max_files;
 } @(opaque)
 
-public func SourceMgr* SourceMgr.create() {
+public func SourceMgr* create() {
     SourceMgr* sm = stdlib.calloc(1, sizeof(SourceMgr));
     sm.max_files = InitialMaxFiles;
     sm.files = stdlib.malloc(sizeof(File) * sm.max_files);

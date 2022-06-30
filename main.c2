@@ -3,12 +3,13 @@
 
 module c2c_main;
 
-import source_mgr local;
-import c2_parser local;
+import source_mgr;
+import c2_parser;
 import string_list;
 import c2recipe;
 import constants;
-import ast_context local;
+import ast_context;
+import ast_builder;
 import component;
 import string_pool;
 import ast;
@@ -27,11 +28,11 @@ public func i32 main(i32 argc, char** argv) {
     if (argc > 1) single_file = true;
 
     // note: auxPool is used by recipe and build-file
-    string_pool.Pool* auxPool = string_pool.Pool.create(1024, 0);
+    string_pool.Pool* auxPool = string_pool.create(1024, 0);
 
-    SourceMgr* sm = SourceMgr.create();
+    source_mgr.SourceMgr* sm = source_mgr.create();
 
-    Context* typeContext = Context.create(1024);
+    ast_context.Context* typeContext = ast_context.create(1024);
     ast.init(typeContext);
 
 
@@ -64,24 +65,26 @@ public func i32 main(i32 argc, char** argv) {
 
         printf("building %s\n", target.getName());
 
-        // TODO store component somewhere
+        ast_context.Context* context = ast_context.create(16*1024);
+        string_pool.Pool* pool = string_pool.create(8*1024, 2048);
         component.Component* comp = component.create();
+        ast_builder.Builder* builder = ast_builder.create(context, comp);
 
         // TODO get from recipe/target
         string_list.List features;
         features.init(64);
         features.add("feature_a");
 
-        Context* context = Context.create(16*1024);
-        string_pool.Pool* pool = string_pool.Pool.create(8*1024, 2048);
-
         u64 total_time = 0;
         for (u32 j=0; j<target.numFiles(); j++) {
             i32 file_id = target.openFile(j);
             if (file_id == -1) return -1;   // note: error already printed
 
-            //const char* filename = target.getFilename(j);
-            Parser* parser = c2_parser.create(sm, file_id, context, pool, &features, false);
+            const char* filename = sm.getFileName(file_id);
+            printf("parsing %s\n", filename);
+
+
+            c2_parser.Parser* parser = c2_parser.create(sm, file_id, builder, pool, &features, false);
             u64 t1 = utils.now();
             bool ok = parser.parse();
             u64 t2 = utils.now();
@@ -99,9 +102,10 @@ public func i32 main(i32 argc, char** argv) {
         pool.dump();
         //if (ok) parser.dump();
 #endif
+        builder.free();
+        comp.free();
         pool.free();
         context.free();
-        comp.free();
         // TODO sm clear files upto recipe_id / build_file_id
     }
 

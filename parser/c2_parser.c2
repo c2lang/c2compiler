@@ -8,7 +8,6 @@ import c2_tokenizer local;
 import ast_builder local;
 import ast_list local;
 import ast local;
-import ast_context;
 import string_pool;
 import tokens local;
 import string_list;
@@ -24,11 +23,12 @@ import stdio local;
 public type Parser struct {
     Tokenizer tokenizer;
     Token tok;
-    Builder* builder;
     SourceMgr* sm;
     i32 file_id;
+    Builder* builder;
     string_pool.Pool* pool;
-    bool is_interface;
+
+    bool is_interface; // TODO query component for this
 
     JmpBufTag jmpbuf;
     string_list.List* features;
@@ -36,21 +36,18 @@ public type Parser struct {
     char[256] error_msg;
 } @(opaque)
 
-public func Parser* create(SourceMgr* sm, i32 file_id, ast_context.Context* c, string_pool.Pool* pool, string_list.List* features, bool is_interface) {
+public func Parser* create(SourceMgr* sm, i32 file_id, ast_builder.Builder* builder, string_pool.Pool* pool, string_list.List* features, bool is_interface) {
     Parser* p = calloc(1, sizeof(Parser));
     p.sm = sm;
+    p.builder = builder;
     p.file_id = file_id;
     p.pool = pool;
     p.is_interface = is_interface;
     p.features = features;
-    // TEMP create Builder here
-    p.builder = Builder.create(c);
-
     return p;
 }
 
 public func void Parser.free(Parser* p) {
-    p.builder.free();
     free(p);
 }
 

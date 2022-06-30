@@ -4,6 +4,7 @@ import c2module local;
 import stdlib local;
 import string;
 
+import stdio local; // TEMP
 /*
     Represents a library or the main-component
 
@@ -41,7 +42,14 @@ func void Component.resize(Component* m, u32 cap) {
     m.mods = buf;
 }
 
-public func Module* Component.add(Component* c, const char* modname) {
+public func Module* Component.getModule(Component* c, const char* modname) {
+    for (u32 i=0; i<c.num_mods; i++) {
+        Module* m = c.mods[i];
+        printf("  %s\n", m.getName());
+        // Note: can do a pointer compare
+        if (m.getName() == modname) return m;
+    }
+
     Module* m = c2module.create(modname);
 
     if (c.num_mods == c.max_mods) c.resize(c.max_mods * 2);

@@ -126,10 +126,10 @@ public func void Recipe.dump(const Recipe* r) {
     printf("Recipe:\n");
     for (u32 i=0; i<r.num_targets; i++) {
         const Target* t = r.targets[i];
-        printf("  target %s (%u)\n", t.name, t.loc);
+        printf("  target %s\n", t.name);
         for (u32 j=0; j<t.num_files; j++) {
             File* f = &t.files[j];
-            printf("    %s (%u)\n", f.name, f.loc);
+            printf("    %s\n", f.name);
         }
     }
 }

@@ -38,7 +38,7 @@ public type Pool struct {
 
 } @(opaque)
 
-public func Pool* Pool.create(u32 data_capacity, u16 node_capacity) {
+public func Pool* create(u32 data_capacity, u16 node_capacity) {
     Pool* p = stdlib.calloc(1, sizeof(Pool));
     p.resize_data(data_capacity);
     p.resize_nodes(node_capacity);

@@ -6,6 +6,8 @@ module ast_builder;
 import ast local;
 import ast_context local;
 import ast_list;
+import component;
+import c2module;
 import tokens local;
 import utils local;
 
@@ -13,14 +15,16 @@ import stdlib local;
 
 public type Builder struct {
     Context* context;
+    component.Component* comp;
+    c2module.Module* mod;
     ast_list.AST* ast;
 } @(opaque)
 
-public func Builder* Builder.create(Context* c) {
+public func Builder* create(Context* context, component.Component* comp) {
     Builder* b = calloc(1, sizeof(Builder));
-    b.context = c;
-    // TEMP create AST here
-    b.ast = ast_list.AST.create("todo");
+    b.context = context;
+    b.comp = comp;
+
     return b;
 }
 
@@ -33,7 +37,8 @@ public func void Builder.dump(const Builder* b) {
 }
 
 public func void Builder.actOnModule(Builder* b, const char* mod_name, SrcLoc mod_loc) {
-    // TODO get AST, Module
+    b.mod = b.comp.getModule(mod_name);
+    b.ast = b.mod.add("todo");
 
     // NOTE: make special ImportDecl to add own symbols
     ImportDecl* d = ImportDecl.create(b.context, mod_name, mod_loc, nil, 0, true);

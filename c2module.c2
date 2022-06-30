@@ -33,6 +33,8 @@ public func void Module.free(Module* m) {
     free(m);
 }
 
+public func const char* Module.getName(const Module* m) @(inline) { return m.name; }
+
 func void Module.resize(Module* m, u32 cap) {
     m.max_files = cap;
     void* buf = malloc(m.max_files * sizeof(AST*));
