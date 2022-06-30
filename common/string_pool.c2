@@ -1,3 +1,6 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
 module string_pool;
 
 import string;
@@ -37,7 +40,6 @@ public type Pool struct {
 
 public func Pool* Pool.create(u32 data_capacity, u16 node_capacity) {
     Pool* p = stdlib.calloc(1, sizeof(Pool));
-    //p.size = 1; // skip first to mark as unused, still needed?
     p.data_capacity = data_capacity;
     p.node_capacity = node_capacity;
     p.data = stdlib.malloc(p.data_capacity);

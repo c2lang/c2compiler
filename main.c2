@@ -6,6 +6,7 @@ module c2c_main;
 import source_mgr local;
 import c2_parser local;
 import string_list;
+import c2recipe;
 import constants;
 import ast_context local;
 import string_pool;
@@ -19,21 +20,40 @@ public func i32 main(i32 argc, char** argv) {
         return -1;
     }
 
+    // note: auxPool is used by recipe and build-file
+    string_pool.Pool* auxPool = string_pool.Pool.create(1024, 0);
+
     SourceMgr* sm = SourceMgr.create();
 
     Context* typeContext = Context.create(1024);
     ast.init(typeContext);
 
-    for (i32 i=1; i<argc; i++) {
-        const char* filename = argv[i];
-        printf("------ %s ------\n", filename);
 
-        i32 file_id = sm.open(filename);
-        if (file_id == -1) {
-            fprintf(stderr, "Error opening file: %s\n", sm.get_error());
-            return -1;
-        }
+    // TODO add -f option. Still has recipe, only adds 1 target + file
 
+    c2recipe.Recipe* recipe = c2recipe.create(sm, auxPool);
+
+    bool single_file = true; // TODO parse
+    i32 recipe_id = -1;
+
+    if (single_file) {
+        const char* filename = argv[1]; // TODO parse
+        recipe.addDummyTarget(filename);
+    } else {
+        // TODO search for recipe file
+        recipe_id = sm.open(constants.recipe_name, 0);
+        if (recipe_id == -1) return -1;
+        if (!recipe.parse(recipe_id)) return -1;
+    }
+
+    //recipe.dump();
+
+    for (u32 i=0; i<recipe.numTargets(); i++) {
+        c2recipe.Target* target = recipe.getTarget(i);
+
+        printf("building %s\n", target.getName());
+
+        // TODO get from recipe/target
         string_list.List features;
         features.init(64);
         features.add("feature_a");
@@ -41,19 +61,29 @@ public func i32 main(i32 argc, char** argv) {
         Context* context = Context.create(constants.ContextBlkSize);
         string_pool.Pool* pool = string_pool.Pool.create(constants.StringPoolSize, constants.StringPoolWords);
 
-        Parser* parser = c2_parser.create(sm, file_id, context, pool, &features, false);
-        bool ok = parser.parse();
+        for (u32 j=0; j<target.numFiles(); j++) {
+            i32 file_id = target.openFile(j);
+            if (file_id == -1) return -1;   // note: error already printed
+
+            //const char* filename = target.getFilename(j);
+            Parser* parser = c2_parser.create(sm, file_id, context, pool, &features, false);
+            bool ok = parser.parse();
+
 #if DumpTokens
 #else
-        context.dump();
-        pool.dump();
-        //if (ok) parser.dump();
+            context.dump();
+            pool.dump();
+            //if (ok) parser.dump();
 #endif
-        parser.free();
+            parser.free();
+        }
         pool.free();
         context.free();
+        // TODO sm clear files upto recipe_id / build_file_id
     }
 
+    recipe.free();
+    auxPool.free();
     typeContext.free();
     sm.free();
 

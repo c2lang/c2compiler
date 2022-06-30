@@ -14,6 +14,7 @@
 
 ## SourceManager
 - close files after use (need indication)
+- clear files up to certain index (all except recipe + build-file before each target)
 
 ## Parser
 - TEST many unterminated things (unexpected EOF)
@@ -42,10 +43,14 @@
 - Use another StringPool for the recipe and the buildfile
 - Use SourceMgr for recipe + buildfile.
     - create 1 srcmgr in total. Reset it after each target to only keep recipe + build
-- parse recipe
     - keep track of src locs for better diags
 - parse all files in recipe
 - create Modules (during parsing)
+
+## Builder
+- search for c2recipe.txt
+- parse c2recipe.txt into Recipe
+- have single recipe, pass target idx to Builder
 
 ## Performance
 - profile application to see where time is spent
@@ -61,6 +66,7 @@
 - Dont allow Declaration in Condition of if stmt?
 
 ## General
+- auto-resize StringPool
 - remove unused import
 - dont import local, (for single printf)
 - CHECK  all DeclList / StmtList etc to see if they are freed

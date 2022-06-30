@@ -4,15 +4,17 @@
 module source_mgr;
 
 import file_utils;
-import stdlib local;
-import string local;
+import stdlib;
+import string;
+import utils;
+import color;
 
 import stdio local; // for dump()
 
 const u32 InitialMaxFiles = 8;
 
 type File struct {
-    char* filename;   // malloc'ed
+    const char* filename;   // no ownership
     u32 offset;
     file_utils.Reader file;
 
@@ -24,63 +26,62 @@ public type SourceMgr struct {
     File* files;
     u32 num_files;
     u32 max_files;
-
-    char[256] error_msg;
 } @(opaque)
 
 public func SourceMgr* SourceMgr.create() {
-    SourceMgr* sm = calloc(1, sizeof(SourceMgr));
+    SourceMgr* sm = stdlib.calloc(1, sizeof(SourceMgr));
     sm.max_files = InitialMaxFiles;
-    sm.files = malloc(sizeof(File) * sm.max_files);
+    sm.files = stdlib.malloc(sizeof(File) * sm.max_files);
     return sm;
 }
 
 public func void SourceMgr.free(SourceMgr* sm) {
     for (u32 i=0; i<sm.num_files; i++) {
         File* f = &sm.files[i];
-        free(f.filename);
         f.file.close();
     }
-    free(sm.files);
-    free(sm);
+    stdlib.free(sm.files);
+    stdlib.free(sm);
 }
 
-public func i32 SourceMgr.open(SourceMgr* sm, const char* filename) {
+public func i32 SourceMgr.open(SourceMgr* sm, const char* filename, utils.SrcLoc loc) {
     file_utils.Reader file;
     if (!file.open(filename)) {
+        char[256] error_msg;
         if (file.errno == file_utils.Err_not_a_file) {
-            strcpy(sm.error_msg, "not a regular file");
+            sprintf(error_msg, "cannot open %s: %s", filename, "not a regular file");
         } else {
-            strcpy(sm.error_msg, strerror(file.errno));
+            sprintf(error_msg, "cannot open %s: %s", filename, string.strerror(file.errno));
+        }
+        if (loc) {
+            fprintf(stderr, "%s: %serror:%s %s", sm.loc2str(loc), color.Red, color.Normal, error_msg);
+        } else {
+            fprintf(stderr, "%serror%s: %s\n", color.Red, color.Normal, error_msg);
         }
         return -1;
     }
 
     if (sm.num_files == sm.max_files) {
         sm.max_files *= 2;
-        File* files2 = malloc(sizeof(File) * sm.max_files);
-        memcpy(files2, sm.files, sm.num_files * sizeof(File));
-        free(sm.files);
+        File* files2 = stdlib.malloc(sizeof(File) * sm.max_files);
+        string.memcpy(files2, sm.files, sm.num_files * sizeof(File));
+        stdlib.free(sm.files);
         sm.files = files2;
     }
 
     i32 file_id = cast<i32>(sm.num_files);
     File* f = &sm.files[sm.num_files];
-    memset(f, 0, sizeof(File));
+    string.memset(f, 0, sizeof(File));
 
     u32 offset = 1;
     if (sm.num_files) offset = sm.files[sm.num_files-1].offset + sm.files[sm.num_files-1].file.size;
-    f.filename = strdup(filename);
+    f.filename = filename;
     f.offset = offset;
     f.file = file;
 
     sm.num_files++;
     //sm.dump();
     return file_id;
-}
-
-public func const char* SourceMgr.get_error(SourceMgr* sm) {
-    return sm.error_msg;
 }
 
 public func const char* SourceMgr.get_content(SourceMgr* sm, i32 handle) {
@@ -153,7 +154,7 @@ func Location SourceMgr.locate(SourceMgr* sm, u32 loc) {
 public func const char* SourceMgr.loc2str(SourceMgr* sm, u32 src_loc) {
     local char[256] tmp;
     if (src_loc == 0) {
-        strcpy(tmp, "-");
+        string.strcpy(tmp, "-");
     } else {
         source_mgr.Location loc = sm.locate(src_loc);
         sprintf(tmp, "%s:%u:%u", loc.filename, loc.line, loc.column);

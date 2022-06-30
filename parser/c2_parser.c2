@@ -32,6 +32,7 @@ public type Parser struct {
 
     JmpBufTag jmpbuf;
     string_list.List* features;
+    // IDEA: dont have error_msg, but just ptr and alloc in pool? (less memory if ok)
     char[256] error_msg;
 } @(opaque)
 
