@@ -31,10 +31,10 @@ public type Pool struct {
     u16 node_capacity;
     u16 node_count;
     Node* root;
-#if StringPoolDebug
+
+    // statistics
     u32 num_adds;
     u32 total_size;
-#endif
 
 } @(opaque)
 
@@ -160,10 +160,9 @@ func u32 compare(const char* left, const char* right, usize rlen) @(inline) {
 
 public func const char* Pool.add(Pool* pool, const char* text, usize len, bool filter) {
     // NOTE: text is not 0-terminated!! len is strlen(text)
-#if StringPoolDebug
     pool.num_adds++;
     pool.total_size += len;
-#endif
+
     if (filter) {
         Node* parent;
         Node* n = pool.root;
@@ -248,10 +247,6 @@ public func void Pool.dump(const Pool* pool) {
     u32 index_size = pool.node_capacity * sizeof(Node);
     index_used = (index_used + 1023) / 1024;
     index_size = (index_size + 1023) / 1024;
-#if StringPoolDebug
-    stdio.printf("StringPool: %u/%u words, data %u/%u bytes, index %u/%u Kb\n", pool.node_count - 1, pool.num_adds, pool.size, pool.total_size, index_used, index_size);
-#else
-    stdio.printf("StringPool: %u words, data %u bytes, index %u/%u Kb\n", pool.node_count - 1, pool.size, index_used, index_size);
-#endif
+    stdio.printf("pool: %u/%u words, data %u/%u bytes, index %u/%u Kb\n", pool.node_count - 1, pool.num_adds, pool.size, pool.total_size, index_used, index_size);
 }
 

@@ -9,6 +9,7 @@ import string_list;
 import c2recipe;
 import constants;
 import ast_context local;
+import component;
 import string_pool;
 import ast;
 import utils;
@@ -63,6 +64,9 @@ public func i32 main(i32 argc, char** argv) {
 
         printf("building %s\n", target.getName());
 
+        // TODO store component somewhere
+        component.Component* comp = component.create();
+
         // TODO get from recipe/target
         string_list.List features;
         features.init(64);
@@ -80,12 +84,6 @@ public func i32 main(i32 argc, char** argv) {
             Parser* parser = c2_parser.create(sm, file_id, context, pool, &features, false);
             u64 t1 = utils.now();
             bool ok = parser.parse();
-/*
-    parser parses file
-    - builder get actOnModule()
-        -> it gets module
-        -> ast = module.createAST(filename, ..)
-*/
             u64 t2 = utils.now();
             total_time += (t2 - t1);
             //if (ok) parser.dump();
@@ -97,12 +95,13 @@ public func i32 main(i32 argc, char** argv) {
         printf("parsing took %lu usec\n", total_time);
 #if DumpTokens
 #else
-            context.dump();
-            pool.dump();
-            //if (ok) parser.dump();
+        context.dump();
+        pool.dump();
+        //if (ok) parser.dump();
 #endif
         pool.free();
         context.free();
+        comp.free();
         // TODO sm clear files upto recipe_id / build_file_id
     }
 

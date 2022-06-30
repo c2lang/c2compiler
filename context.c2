@@ -51,10 +51,7 @@ public type Context struct {
     Block* blk_head;
     Block* blk_tail;
     u32 blk_size;
-#if ContextDebug
     u32 num_allocs;
-#endif
-
 } @(opaque)
 
 public func Context* Context.create(u32 blk_size) {
@@ -85,13 +82,8 @@ public func void Context.clear(Context* c) {
 }
 
 public func void* Context.alloc(Context* c, u32 len) {
-#if ContextDebug
     c.num_allocs++;
-#endif
-    // assert(c.blk_head);
-    // TODO always align as ptr size!!
-    // assert(len * 0x3 == 0); // must be 8-byte multiple
-    // assert(len < blk_size)
+
     Block* last = c.blk_tail;
     if (last.size + len >= c.blk_size) {
         c.blk_tail = Block.create(c.blk_size);
@@ -108,13 +100,9 @@ public func void Context.dump(const Context* c) {
     u32 num = c.blk_head.count();
     u32 total = c.blk_head.get_total();
 
-#if ContextDebug
     u32 avg = 0;
     if (c.num_allocs) avg = total / c.num_allocs;
-    printf("Context: %u allocs (avg %u bytes), %u blocks (%u), total %u Kb\n",
+    printf("context: %u allocs (avg %u bytes), %u blocks (%u), total %u Kb\n",
         c.num_allocs, avg, num, c.blk_size, (total / 1024) + 1);
-#else
-    //printf("Context: blk size %u, %u blocks, total %u/%u\n", c.blk_size, num, total, num * c.blk_size);
-#endif
 }
 

@@ -1,0 +1,53 @@
+module component;
+
+import c2module local;
+import stdlib local;
+import string;
+
+/*
+    Represents a library or the main-component
+
+    Used to:
+    - create + store Modules
+*/
+public type Component struct {
+    Module** mods;
+    u32 num_mods;
+    u32 max_mods;
+} @(opaque)
+
+public func Component* create() {
+    Component* m = calloc(1, sizeof(Component));
+    m.resize(4);
+    return m;
+}
+
+public func void Component.free(Component* m) {
+    for (u32 i=0; i<m.num_mods; i++) {
+        m.mods[i].free();
+    }
+    free(cast<void*>(m.mods));
+    free(m);
+}
+
+func void Component.resize(Component* m, u32 cap) {
+    m.max_mods = cap;
+    void* buf = malloc(m.max_mods * sizeof(Module*));
+    if (m.mods) {
+        void* old = cast<void*>(m.mods);
+        string.memcpy(buf, old, m.num_mods * sizeof(Module*));
+        free(old);
+    }
+    m.mods = buf;
+}
+
+public func Module* Component.add(Component* c, const char* modname) {
+    Module* m = c2module.create(modname);
+
+    if (c.num_mods == c.max_mods) c.resize(c.max_mods * 2);
+
+    c.mods[c.num_mods] = m;
+    c.num_mods++;
+    return m;
+}
+

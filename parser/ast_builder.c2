@@ -97,9 +97,10 @@ public func void Builder.actOnAttr(Builder* b, const char* name, SrcLoc begin_lo
     //printf("ATTR  %s\n", name);
 }
 
+
 public func QualType Builder.actOnBuiltinType(Builder* b, tokens.Kind kind) {
     Type* t = nil;
-    // TODO optimize (table?) -> fill in init with correct width for usize/isize, fill with QualType
+    // TODO lookup table -> fill in init with correct width for usize/isize, fill with QualType
     switch (kind) {
     case Kind.KW_u8:
         t = cast<Type*>(g_u8);
