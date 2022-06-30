@@ -59,8 +59,18 @@ public func Module* Component.getModule(Component* c, const char* modname) {
     return m;
 }
 
-public func void Component.dump(const Component* c) {
+public func void Component.info(const Component* c) {
     string_buffer.Buf* out = string_buffer.create(64*1024);
+    out.print("Component\n");
+    for (u32 i=0; i<c.num_mods; i++) {
+        c.mods[i].info(out);
+    }
+    stdio.printf("%s\n", out.data());
+    out.free();
+}
+
+public func void Component.print(const Component* c) {
+    string_buffer.Buf* out = string_buffer.create(128*1024);
     out.print("Component\n");
     for (u32 i=0; i<c.num_mods; i++) {
         c.mods[i].print(out);

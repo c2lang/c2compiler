@@ -70,6 +70,7 @@ public func i32 main(i32 argc, char** argv) {
         ast_builder.Builder* builder = ast_builder.create(context, comp);
 
         // TODO get from recipe/target
+        // TODO dynamic sizing
         string_list.List features;
         features.init(64);
         features.add("feature_a");
@@ -92,7 +93,6 @@ public func i32 main(i32 argc, char** argv) {
             //printf("parsing %s took %lu usec\n", sm.getFileName(file_id), t2 - t1);
 
             parser.free();
-            // Q: stop if !ok (or just parse all files)
         }
         printf("parsing took %lu usec\n", total_time);
 #if DumpTokens
@@ -100,7 +100,8 @@ public func i32 main(i32 argc, char** argv) {
         context.dump();
         pool.dump();
 #endif
-        //comp.dump();
+        //comp.info();
+        comp.print();
         builder.free();
         comp.free();
         pool.free();

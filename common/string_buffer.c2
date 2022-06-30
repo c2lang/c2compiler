@@ -51,16 +51,11 @@ public func void Buf.add(Buf* buf, const char* text)
     buf.add2(text, len);
 }
 
+// len = strlen(text)
 public func void Buf.add2(Buf* buf, const char* text, u32 len)
 {
-    if ((len + 1) >= (buf.capacity - buf.size_)) {
-        u32 newcap = buf.capacity * 2;
-        if ((len + 1) >= (newcap - buf.size_)) newcap += buf.size_ + len + 1;
-        buf.capacity = newcap;
-        char* data2 = malloc(newcap);
-        memcpy(data2, buf.data_, buf.size_ + 1);
-        free(buf.data_);
-        buf.data_ = data2;
+    if (buf.size_ + len + 1 > buf.capacity) {
+        buf.resize(buf.capacity * 2);
     }
     strcpy(&buf.data_[buf.size_], text);
     buf.size_ += len;
@@ -68,20 +63,31 @@ public func void Buf.add2(Buf* buf, const char* text, u32 len)
 }
 
 public func void Buf.print(Buf* buf, const char* format, ...) {
+    char[256] tmp;
     // NOTE: no growing
     Va_list args;
     va_start(args, format);
-    i32 len = vsprintf(&buf.data_[buf.size_], format, args);
-    // TODO check size
-    buf.size_ += len;
+    i32 len = vsprintf(tmp, format, args);
+    buf.add2(tmp, cast<u32>(len));
     va_end(args);
 }
 
 public func void Buf.indent(Buf* buf, u32 indent) {
-    // NOTE: no growing/checking
-    for (u32 i=0; i<indent; i++) {
-        buf.data_[buf.size_++] = ' ';
+    if (buf.size_ + indent + 1 > buf.capacity) {
+        buf.resize(buf.capacity * 2);
     }
-    buf.data_[buf.size_] = 0;
+
+    char* cur = buf.data_ + buf.size_;
+    memset(cur, ' ', indent);
+    cur[indent] = 0;
+    buf.size_ += indent;
 }
 
+func void Buf.resize(Buf* buf, u32 capacity) {
+    buf.capacity = capacity;
+    //if ((len + 1) >= (newcap - buf.size_)) newcap += buf.size_ + len + 1;
+    char* data2 = malloc(buf.capacity);
+    memcpy(data2, buf.data_, buf.size_);
+    free(buf.data_);
+    buf.data_ = data2;
+}

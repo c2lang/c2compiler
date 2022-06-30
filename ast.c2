@@ -8,7 +8,6 @@ import string_buffer;
 import utils local;
 
 import stdlib;
-import stdio;
 
 /*
     Represents a single file with all its imports, decls, etc
@@ -64,14 +63,13 @@ public func void AST.addStaticAssert(AST* a, StaticAssertDecl* d) @(inline) {
     a.static_asserts.add(d.asDecl());
 }
 
-public func void AST.print(const AST* a, string_buffer.Buf* out) {
+public func void AST.info(const AST* a, string_buffer.Buf* out) {
     out.print("    %s\n", a.filename);
 }
 
-public func void AST.dump(const AST* a) {
-    string_buffer.Buf* out = string_buffer.create(4*1024*1024);
+public func void AST.print(const AST* a, string_buffer.Buf* out) {
+    out.print("------- AST %s ----\n", a.filename);
 
-    out.add("---- AST ----\n");
     ImportDecl** imports = a.imports.getDecls();
     for (u32 i=0; i<a.imports.size(); i++) {
         imports[i].print(out, 0);
@@ -104,8 +102,5 @@ public func void AST.dump(const AST* a) {
         asserts[i].print(out, 0);
         out.add("\n");
     }
-
-    stdio.printf("%s\n", out.data());
-    out.free();
 }
 

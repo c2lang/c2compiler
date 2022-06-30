@@ -56,7 +56,6 @@
 - Dont allow Declaration in Condition of if stmt?
 
 ## General
-- make string_buffer auto resizable
 - TypePtr
 -> If fixed size StringPool becomes an issues, users could increase it in the recipe/build file
 - convert files to relative path in findProjectDir(), to Vim understands errors
