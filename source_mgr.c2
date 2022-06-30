@@ -45,12 +45,12 @@ public func void SourceMgr.free(SourceMgr* sm) {
 }
 
 // Note closes all files above the handle (excluding the handle)
-public func void SourceMgr.clear(SourceMgr* sm, i32 handle = -1) {
-    for (i32 i=handle+1; i<sm.num_files; i++) {
+public func void SourceMgr.clear(SourceMgr* sm, u32 handle) {
+    for (u32 i=handle+1; i<sm.num_files; i++) {
         File* f = &sm.files[i];
         f.file.close();
     }
-    sm.num_files = cast<u32>(handle + 1);
+    sm.num_files = handle;
 }
 
 public func i32 SourceMgr.open(SourceMgr* sm, const char* filename, utils.SrcLoc loc) {
