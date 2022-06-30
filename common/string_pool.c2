@@ -239,6 +239,6 @@ public func void Pool.dump(const Pool* pool) {
     u32 index_size = pool.node_capacity * sizeof(Node);
     index_used = (index_used + 1023) / 1024;
     index_size = (index_size + 1023) / 1024;
-    stdio.printf("pool: %u/%u words, data %u/%u bytes, index %u/%u Kb\n", pool.node_count - 1, pool.num_adds, pool.size, pool.total_size, index_used, index_size);
+    stdio.printf("pool: %u(%u) words, data %u(%u)/%u bytes, index %u/%u Kb\n", pool.node_count - 1, pool.num_adds, pool.size, pool.total_size, pool.data_capacity, index_used, index_size);
 }
 
