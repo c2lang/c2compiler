@@ -93,7 +93,7 @@ func void FunctionDecl.printType(const FunctionDecl* d, string_buffer.Buf* out) 
     out.add(" ");
     out.add(d.parent.name);
     out.add("(");
-    bool num_params = d.parent.functionDeclBits.num_params;
+    u32 num_params = d.parent.functionDeclBits.num_params;
     i32 params_offset = d.parent.functionDeclBits.has_prefix ? 1 : 0;
     for (u32 i=0; i<num_params; i++) {
         if (i != 0) out.add(", ");

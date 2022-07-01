@@ -33,9 +33,18 @@ public func ImportDecl* ImportDecl.create(ast_context.Context* c,
     return d;
 }
 
+public func Decl* ImportDecl.asDecl(ImportDecl* d) { return &d.parent; }
+
 public func const char* ImportDecl.getAliasName(const ImportDecl* d) @(inline) { return d.alias_name; }
 
+public func const char* ImportDecl.getImportName(const ImportDecl* d) @(inline) {
+    if (d.alias_name) return d.alias_name;
+    return d.parent.name;
+}
+
 public func SrcLoc ImportDecl.getAliasLoc(const ImportDecl* d) @(inline) { return d.alias_loc; }
+
+public func void ImportDecl.setModule(ImportDecl* d, Module* mod) { d.parent.mod = mod; }
 
 func void ImportDecl.print(const ImportDecl* d, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
@@ -54,6 +63,12 @@ func void ImportDecl.print(const ImportDecl* d, string_buffer.Buf* out, u32 inde
         out.print("%s", d.alias_name);
     }
     d.parent.printUsed(out);
+    out.add(" module=");
+    if (d.parent.mod) {
+        out.add(d.parent.mod.getName());
+    } else {
+        out.add("<nil>");
+    }
     out.add("\n");
 }
 

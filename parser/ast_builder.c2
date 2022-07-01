@@ -31,7 +31,7 @@ public func void Builder.free(Builder* b) {
 }
 
 public func void Builder.actOnModule(Builder* b, const char* mod_name, SrcLoc mod_loc, const char* filename) {
-    b.mod = b.comp.getModule(mod_name);
+    b.mod = b.comp.getOrAddModule(mod_name);
     b.ast = b.mod.add(filename);
 
     // NOTE: make special ImportDecl to add own symbols

@@ -62,6 +62,15 @@ public func void AST.addStaticAssert(AST* a, StaticAssertDecl* d) @(inline) {
     a.static_asserts.add(d.asDecl());
 }
 
+public type ImportVisitor func void (void* arg, ImportDecl* d);
+
+public func void AST.visitImports(const AST* a, ImportVisitor visitor, void* arg) {
+    ImportDecl** imports = a.imports.getDecls();
+    for (u32 i=0; i<a.imports.size(); i++) {
+        visitor(arg, imports[i]);
+    }
+}
+
 public func void AST.info(const AST* a, string_buffer.Buf* out) {
     out.print("    %s\n", a.filename);
 }

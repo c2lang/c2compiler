@@ -32,6 +32,20 @@ public func void Component.free(Component* m) {
     free(m);
 }
 
+public func void Component.visitImports(const Component* c, ast.ImportVisitor visitor, void* arg) {
+    for (u32 i=0; i<c.num_mods; i++) {
+        c.mods[i].visitImports(visitor, arg);
+    }
+}
+
+public func ast.Module* Component.getModule(const Component* c, u32 idx) {
+    return c.mods[idx];
+}
+
+public func u32 Component.getNumModules(const Component* c) {
+    return c.num_mods;
+}
+
 func void Component.resize(Component* m, u32 cap) {
     m.max_mods = cap;
     void* buf = malloc(m.max_mods * sizeof(ast.Module*));
@@ -43,7 +57,7 @@ func void Component.resize(Component* m, u32 cap) {
     m.mods = buf;
 }
 
-public func ast.Module* Component.getModule(Component* c, const char* modname) {
+public func ast.Module* Component.getOrAddModule(Component* c, const char* modname) {
     for (u32 i=0; i<c.num_mods; i++) {
         ast.Module* m = c.mods[i];
         // Note: can do a pointer compare
@@ -58,6 +72,16 @@ public func ast.Module* Component.getModule(Component* c, const char* modname) {
     c.num_mods++;
     return m;
 }
+
+// TEMP, this should be in a big list
+public func ast.Module* Component.findModule(const Component* c, const char* name) {
+    for (u32 i=0; i<c.num_mods; i++) {
+        // Note: we can search by pointer compares
+        if (c.mods[i].getName() == name) return c.mods[i];
+    }
+    return nil;
+}
+
 
 public func void Component.info(const Component* c) {
     string_buffer.Buf* out = string_buffer.create(64*1024);

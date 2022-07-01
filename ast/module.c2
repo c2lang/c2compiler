@@ -32,6 +32,12 @@ public func void Module.free(Module* m) {
     free(m);
 }
 
+public func void Module.visitImports(const Module* m, ImportVisitor visitor, void* arg) {
+    for (u32 i=0; i<m.num_files; i++) {
+        m.files[i].visitImports(visitor, arg);
+    }
+}
+
 public func const char* Module.getName(const Module* m) @(inline) { return m.name; }
 
 func void Module.resize(Module* m, u32 cap) {

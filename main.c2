@@ -15,9 +15,78 @@ import string_pool;
 import ast;
 import utils;
 
+// for sort
+import linked_list;
+import stdlib;
+
 import stdio local;
 
+type ModElem struct {
+    linked_list.Element elem;
+    ast.Module* mod;
+}
+
 // TODO move somewhere
+
+/*
+type ImportResolver struct {
+    // TODO normally have list of all modules (of all Components)
+    component.Component* c;
+}
+*/
+
+func void handleImport(void* arg, ast.ImportDecl* d) {
+    // TODO normally have list of all modules (of all Components)
+    component.Component* c = arg;
+
+    const char* name = d.asDecl().getName();
+    ast.Module* m = c.findModule(name);
+    if (m) {
+        d.setModule(m);
+    } else {
+        // normally error, no external components yet
+    }
+}
+
+public func void resolve_imports(component.Component* c) {
+    c.visitImports(handleImport, c);
+}
+
+public func void sort_modules(component.Component* c) {
+    u32 count = c.getNumModules();
+
+    ModElem* elems = stdlib.calloc(count, sizeof(ModElem));
+
+    linked_list.Element all;
+    all.init();
+    linked_list.Element todo;
+    todo.init();
+    linked_list.Element done;
+    done.init();
+
+    /*
+        Algo:
+        - first rank all (bottom = 0, each above is higher)
+    */
+
+    // add all to todo list
+    for (u32 i=0; i<count; i++) {
+        ModElem* e = &elems[i];
+        e.mod = c.getModule(i);
+        todo.addTail(&e.elem);
+    }
+
+    // NOTE: need to have resolved imports!
+    linked_list.Element* node = todo.next;
+    while (node != &todo) {
+        ModElem* e = to_container(ModElem, elem, node);
+        // ..
+        node = node.next;
+    }
+
+    //public func ast.Module* Component.getModule(const Component* c, u32 idx) {
+    stdlib.free(elems);
+}
 
 public func i32 main(i32 argc, char** argv) {
     bool single_file = false; // TODO parse
@@ -104,7 +173,9 @@ public func i32 main(i32 argc, char** argv) {
         pool.dump();
 #endif
         //comp.info();
-        //comp.print();
+        resolve_imports(comp);
+        comp.print();
+        sort_modules(comp);
         builder.free();
         comp.free();
         pool.free();
