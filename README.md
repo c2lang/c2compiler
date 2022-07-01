@@ -23,10 +23,6 @@
 
 ## AST
 - add Decl.Module*
-    Decl -> Module
-    Module -> AST
-    AST -> Decls
-    -> nasty, then Module and AST need to be in AST module! otherwise circular dependency
     -> also ast_list must be in AST then!
     then most expr/stmt/decl/type.print() can be private
     only dump() functions need to be public

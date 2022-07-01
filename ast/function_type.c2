@@ -24,7 +24,7 @@ public func FunctionDecl* FunctionType.getDecl(const FunctionType* t) @(inline) 
 
 public func Type* FunctionType.asType(FunctionType* t) @(inline) { return &t.parent; }
 
-public func void FunctionType.print(const FunctionType* t, string_buffer.Buf* out) {
+func void FunctionType.print(const FunctionType* t, string_buffer.Buf* out) {
     t.decl.printType(out);
 }
 

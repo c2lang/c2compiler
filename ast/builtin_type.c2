@@ -61,7 +61,7 @@ public func BuiltinTypeKind BuiltinType.getKind(const BuiltinType* b) @(inline) 
     return cast<BuiltinTypeKind>(b.parent.builtinTypeBits.kind);
 }
 
-public func void BuiltinType.print(const BuiltinType* b, string_buffer.Buf* out) {
+func void BuiltinType.print(const BuiltinType* b, string_buffer.Buf* out) {
     out.add(builtinType_names[b.getKind()]);
 }
 

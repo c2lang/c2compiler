@@ -29,7 +29,7 @@ public func DefaultStmt* DefaultStmt.create(ast_context.Context* c, SrcLoc loc, 
     return s;
 }
 
-public func void DefaultStmt.print(const DefaultStmt* s, string_buffer.Buf* out, u32 indent) {
+func void DefaultStmt.print(const DefaultStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent, "DefaultStmt");
     out.add("\n");
 

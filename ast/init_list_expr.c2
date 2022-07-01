@@ -33,7 +33,7 @@ public func u32 InitListExpr.getNumValues(const InitListExpr* e) @(inline) {
     return e.parent.parent.initListExprBits.num_values;
 }
 
-public func void InitListExpr.print(const InitListExpr* e, string_buffer.Buf* out, u32 indent) {
+func void InitListExpr.print(const InitListExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent, "InitListExpr");
     e.parent.printTypeBits(out);
     out.add("\n");

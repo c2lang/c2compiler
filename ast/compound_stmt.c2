@@ -33,7 +33,7 @@ public func CompoundStmt* CompoundStmt.create(ast_context.Context* c, Stmt** stm
     return s;
 }
 
-public func void CompoundStmt.print(const CompoundStmt* s, string_buffer.Buf* out, u32 indent) {
+func void CompoundStmt.print(const CompoundStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent, "CompoundStmt");
     out.add("\n");
     const u32 count = s.parent.compoundStmtBits.count;

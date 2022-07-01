@@ -62,7 +62,7 @@ public func Decl* IdentifierExpr.getDecl(const IdentifierExpr* e) @(inline) {
     return e.decl;
 }
 
-public func void IdentifierExpr.print(const IdentifierExpr* e, string_buffer.Buf* out, u32 indent) {
+func void IdentifierExpr.print(const IdentifierExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent, "IdentifierExpr");
     e.parent.printTypeBits(out);
 
@@ -76,7 +76,6 @@ public func void IdentifierExpr.print(const IdentifierExpr* e, string_buffer.Buf
         out.add(" unresolved");
     }
     out.add("\n");
-
 }
 
 func void IdentifierExpr.printLiteral(const IdentifierExpr* e, string_buffer.Buf* out) {
@@ -86,3 +85,4 @@ func void IdentifierExpr.printLiteral(const IdentifierExpr* e, string_buffer.Buf
         out.add(e.name);
     }
 }
+

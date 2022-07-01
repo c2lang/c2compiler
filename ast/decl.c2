@@ -95,7 +95,7 @@ public func void Decl.dump(const Decl* d) {
     out.free();
 }
 
-public func void Decl.print(const Decl* d, string_buffer.Buf* out, u32 indent) {
+func void Decl.print(const Decl* d, string_buffer.Buf* out, u32 indent) {
     switch (d.getKind()) {
     case DeclKind.Function:
         FunctionDecl.print(cast<FunctionDecl*>(d), out, indent);

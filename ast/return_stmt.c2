@@ -33,7 +33,7 @@ public func ReturnStmt* ReturnStmt.create(ast_context.Context* c, SrcLoc loc, Ex
     return s;
 }
 
-public func void ReturnStmt.print(const ReturnStmt* s, string_buffer.Buf* out, u32 indent) {
+func void ReturnStmt.print(const ReturnStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent, "ReturnStmt");
     out.add("\n");
     if (s.parent.returnStmtBits.has_value) {

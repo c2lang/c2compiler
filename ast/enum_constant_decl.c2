@@ -33,7 +33,7 @@ public func EnumConstantDecl* EnumConstantDecl.create(ast_context.Context* c, co
 
 public func Decl* EnumConstantDecl.asDecl(EnumConstantDecl* d) @(inline) { return &d.parent; }
 
-public func void EnumConstantDecl.print(const EnumConstantDecl* d, string_buffer.Buf* out, u32 indent) {
+func void EnumConstantDecl.print(const EnumConstantDecl* d, string_buffer.Buf* out, u32 indent) {
     d.parent.printKind(out, indent, "EnumConstantDecl");
     d.parent.printBits(out);
     d.parent.printName(out);

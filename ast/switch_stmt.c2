@@ -29,7 +29,7 @@ public func SwitchStmt* SwitchStmt.create(ast_context.Context* c, Stmt* cond, St
     return s;
 }
 
-public func void SwitchStmt.print(const SwitchStmt* s, string_buffer.Buf* out, u32 indent) {
+func void SwitchStmt.print(const SwitchStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent, "SwitchStmt");
     out.add("\n");
 

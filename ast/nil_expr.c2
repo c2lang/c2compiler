@@ -17,13 +17,13 @@ public func NilExpr* NilExpr.create(ast_context.Context* c, SrcLoc loc) @(inline
     return e;
 }
 
-public func void NilExpr.print(const NilExpr* e, string_buffer.Buf* out, u32 indent) {
+func void NilExpr.print(const NilExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent, "NilExpr");
     e.parent.printTypeBits(out);
     out.add("\n");
 }
 
-public func void NilExpr.printLiteral(const NilExpr* e, string_buffer.Buf* out) {
+func void NilExpr.printLiteral(const NilExpr* e, string_buffer.Buf* out) {
     out.add("nil");
 }
 

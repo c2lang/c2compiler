@@ -26,7 +26,7 @@ public func ArrayDesignatedInitExpr* ArrayDesignatedInitExpr.create(ast_context.
     return e;
 }
 
-public func void ArrayDesignatedInitExpr.print(const ArrayDesignatedInitExpr* e, string_buffer.Buf* out, u32 indent) {
+func void ArrayDesignatedInitExpr.print(const ArrayDesignatedInitExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent, "ArrayDesignatedInitExpr\n");
     e.parent.printTypeBits(out);
     out.add("\n");

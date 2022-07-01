@@ -21,7 +21,7 @@ public func GotoStmt* GotoStmt.create(ast_context.Context* c, const char* name, 
     return s;
 }
 
-public func void GotoStmt.print(const GotoStmt* s, string_buffer.Buf* out, u32 indent) {
+func void GotoStmt.print(const GotoStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent, "GotoStmt");
     out.add("\n");
 }

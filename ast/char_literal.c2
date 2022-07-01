@@ -23,7 +23,7 @@ public func CharLiteral* CharLiteral.create(ast_context.Context* c, SrcLoc loc, 
     return e;
 }
 
-public func void CharLiteral.print(const CharLiteral* e, string_buffer.Buf* out, u32 indent) {
+func void CharLiteral.print(const CharLiteral* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent, "CharLiteral");
     e.parent.printTypeBits(out);
     out.add(" ");
@@ -32,7 +32,7 @@ public func void CharLiteral.print(const CharLiteral* e, string_buffer.Buf* out,
     out.add("\n");
 }
 
-public func void CharLiteral.printLiteral(const CharLiteral* e, string_buffer.Buf* out) {
+func void CharLiteral.printLiteral(const CharLiteral* e, string_buffer.Buf* out) {
     char c = cast<char>(e.parent.parent.charLiteralBits.value);
 
     switch (c) {

@@ -19,7 +19,7 @@ public func FallthroughStmt* FallthroughStmt.create(ast_context.Context* c, SrcL
     return s;
 }
 
-public func void FallthroughStmt.print(const FallthroughStmt* s, string_buffer.Buf* out, u32 indent) {
+func void FallthroughStmt.print(const FallthroughStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent, "FallthroughStmt");
     out.add("\n");
 }

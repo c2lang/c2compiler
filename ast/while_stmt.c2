@@ -21,7 +21,7 @@ public func WhileStmt* WhileStmt.create(ast_context.Context* c, Stmt* cond, Stmt
     return s;
 }
 
-public func void WhileStmt.print(const WhileStmt* s, string_buffer.Buf* out, u32 indent) {
+func void WhileStmt.print(const WhileStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent, "WhileStmt");
     out.add("\n");
 

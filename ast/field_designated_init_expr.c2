@@ -25,7 +25,7 @@ public func FieldDesignatedInitExpr* FieldDesignatedInitExpr.create(ast_context.
     return e;
 }
 
-public func void FieldDesignatedInitExpr.print(const FieldDesignatedInitExpr* e, string_buffer.Buf* out, u32 indent) {
+func void FieldDesignatedInitExpr.print(const FieldDesignatedInitExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent, "FieldDesignatedInitExpr");
     e.parent.printTypeBits(out);
     out.color(col_Value);

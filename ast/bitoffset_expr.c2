@@ -34,7 +34,7 @@ public func Expr** BitOffsetExpr.getLHS2(BitOffsetExpr* e) { return &e.lhs; }
 public func Expr* BitOffsetExpr.getRHS(BitOffsetExpr* e) { return e.rhs; }
 public func Expr** BitOffsetExpr.getRHS2(BitOffsetExpr* e) { return &e.rhs; }
 
-public func void BitOffsetExpr.print(const BitOffsetExpr* e, string_buffer.Buf* out, u32 indent) {
+func void BitOffsetExpr.print(const BitOffsetExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent, "BitOffsetExpr");
     e.parent.printTypeBits(out);
     out.add("\n");

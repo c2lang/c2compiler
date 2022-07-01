@@ -19,7 +19,7 @@ public func BreakStmt* BreakStmt.create(ast_context.Context* c, SrcLoc loc) @(in
     return s;
 }
 
-public func void BreakStmt.print(const BreakStmt* s, string_buffer.Buf* out, u32 indent) {
+func void BreakStmt.print(const BreakStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent, "BreakStmt");
     out.add("\n");
 }

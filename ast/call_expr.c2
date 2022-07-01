@@ -34,7 +34,7 @@ public func u32 CallExpr.getNumArgs(const CallExpr* e) @(inline) {
     return e.parent.parent.callExprBits.num_args;
 }
 
-public func void CallExpr.print(const CallExpr* e, string_buffer.Buf* out, u32 indent) {
+func void CallExpr.print(const CallExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent, "CallExpr");
     e.parent.printTypeBits(out);
     out.color(col_Value);

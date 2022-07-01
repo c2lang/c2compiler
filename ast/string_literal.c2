@@ -19,7 +19,7 @@ public func StringLiteral* StringLiteral.create(ast_context.Context* c, SrcLoc l
     return e;
 }
 
-public func void StringLiteral.print(const StringLiteral* e, string_buffer.Buf* out, u32 indent) {
+func void StringLiteral.print(const StringLiteral* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent, "StringLiteral");
     e.parent.printTypeBits(out);
     out.color(col_Value);

@@ -79,7 +79,7 @@ public func void Expr.dump(Expr* e) {
     out.free();
 }
 
-public func void Expr.print(const Expr* e, string_buffer.Buf* out, u32 indent) {
+func void Expr.print(const Expr* e, string_buffer.Buf* out, u32 indent) {
     switch (e.getKind()) {
     case ExprKind.IntegerLiteral:
         IntegerLiteral.print(cast<IntegerLiteral*>(e), out, indent);

@@ -82,7 +82,7 @@ public func BuiltinExprKind BuiltinExpr.getKind(const BuiltinExpr* e) {
     return cast<BuiltinExprKind>(e.parent.parent.builtinExprBits.kind);
 }
 
-public func void BuiltinExpr.print(const BuiltinExpr* e, string_buffer.Buf* out, u32 indent) {
+func void BuiltinExpr.print(const BuiltinExpr* e, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
     out.print("BuiltinExpr %s\n", builtin_names[e.getKind()]);
     switch (e.getKind()) {
@@ -104,7 +104,7 @@ public func void BuiltinExpr.print(const BuiltinExpr* e, string_buffer.Buf* out,
     }
 }
 
-public func void BuiltinExpr.printLiteral(const BuiltinExpr* e, string_buffer.Buf* out) {
+func void BuiltinExpr.printLiteral(const BuiltinExpr* e, string_buffer.Buf* out) {
     out.add(builtin_names[e.getKind()]);
     out.add("(");
     out.add(")");

@@ -3,7 +3,6 @@
 
 module ast;
 
-// TODO remove local
 import string local;
 import stdlib local;
 

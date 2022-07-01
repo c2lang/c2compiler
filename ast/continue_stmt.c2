@@ -19,7 +19,7 @@ public func ContinueStmt* ContinueStmt.create(ast_context.Context* c, SrcLoc loc
     return s;
 }
 
-public func void ContinueStmt.print(const ContinueStmt* s, string_buffer.Buf* out, u32 indent) {
+func void ContinueStmt.print(const ContinueStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent, "ContinueStmt");
     out.add("\n");
 }

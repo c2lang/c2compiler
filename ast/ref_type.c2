@@ -36,7 +36,7 @@ public func IdentifierExpr* RefType.getRef(const RefType* t) @(inline) { return 
 
 public func IdentifierExpr** RefType.getRef2(RefType* t) @(inline) { return &t.ref; }
 
-public func void RefType.print(const RefType* t, string_buffer.Buf* out) {
+func void RefType.print(const RefType* t, string_buffer.Buf* out) {
     const Decl* d = t.ref.getDecl();
     if (d) {
         out.add("TODO REFTYPE");

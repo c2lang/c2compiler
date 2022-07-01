@@ -31,7 +31,7 @@ public func CaseStmt* CaseStmt.create(ast_context.Context* c, SrcLoc loc, Expr* 
     return s;
 }
 
-public func void CaseStmt.print(const CaseStmt* s, string_buffer.Buf* out, u32 indent) {
+func void CaseStmt.print(const CaseStmt* s, string_buffer.Buf* out, u32 indent) {
     s.parent.printKind(out, indent, "CaseStmt");
     out.add("\n");
     s.cond.print(out, indent + 2);

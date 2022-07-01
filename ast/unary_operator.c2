@@ -73,7 +73,7 @@ func bool UnaryOperator.isBefore(const UnaryOperator* e) {
     return true;
 }
 
-public func void UnaryOperator.print(const UnaryOperator* e, string_buffer.Buf* out, u32 indent) {
+func void UnaryOperator.print(const UnaryOperator* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent, "ArraySubscriptExpr");
     e.parent.printTypeBits(out);
     out.add(" ");
@@ -83,7 +83,7 @@ public func void UnaryOperator.print(const UnaryOperator* e, string_buffer.Buf* 
     e.inner.print(out, indent + 2);
 }
 
-public func void UnaryOperator.printLiteral(const UnaryOperator* e, string_buffer.Buf* out) {
+func void UnaryOperator.printLiteral(const UnaryOperator* e, string_buffer.Buf* out) {
     const char* opcode = unaryOpcode_names[e.getKind()];
     if (e.isBefore()) {
         out.add(opcode);

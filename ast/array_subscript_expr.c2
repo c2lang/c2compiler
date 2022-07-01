@@ -27,7 +27,7 @@ public func Expr** ArraySubscriptExpr.getBase2(ArraySubscriptExpr* e) { return &
 public func Expr* ArraySubscriptExpr.getIndex(ArraySubscriptExpr* e) { return e.idx; }
 public func Expr** ArraySubscriptExpr.getIndex2(ArraySubscriptExpr* e) { return &e.idx; }
 
-public func void ArraySubscriptExpr.print(const ArraySubscriptExpr* e, string_buffer.Buf* out, u32 indent) {
+func void ArraySubscriptExpr.print(const ArraySubscriptExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent, "ArraySubscriptExpr");
     e.parent.printTypeBits(out);
     out.add("\n");

@@ -102,10 +102,10 @@ public func BinaryOpcode BinaryOperator.getKind(const BinaryOperator* e) {
 public func Expr* BinaryOperator.getLHS(BinaryOperator* e) { return e.lhs; }
 public func Expr** BinaryOperator.getLHS2(BinaryOperator* e) { return &e.lhs; }
 
-public func Expr* BinaryOperator.getRHS(BinaryOperator* e) { return e.rhs; }
+func Expr* BinaryOperator.getRHS(BinaryOperator* e) { return e.rhs; }
 public func Expr** BinaryOperator.getRHS2(BinaryOperator* e) { return &e.rhs; }
 
-public func void BinaryOperator.print(const BinaryOperator* e, string_buffer.Buf* out, u32 indent) {
+func void BinaryOperator.print(const BinaryOperator* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent, "BinaryOperator");
     e.parent.printTypeBits(out);
     out.color(col_Value);
@@ -124,7 +124,7 @@ public func void BinaryOperator.print(const BinaryOperator* e, string_buffer.Buf
     e.rhs.print(out, indent + 2);
 }
 
-public func void BinaryOperator.printLiteral(const BinaryOperator* e, string_buffer.Buf* out) {
+func void BinaryOperator.printLiteral(const BinaryOperator* e, string_buffer.Buf* out) {
     e.lhs.printLiteral(out);
     out.add(binaryOpcode_names[e.getKind()]);
     e.rhs.printLiteral(out);

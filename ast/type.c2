@@ -49,7 +49,7 @@ public func void Type.dump(const Type* t) {
     out.free();
 }
 
-public func void Type.print(const Type* t, string_buffer.Buf* out) {
+func void Type.print(const Type* t, string_buffer.Buf* out) {
     out.color(col_Type);
     switch (t.getKind()) {
     case TypeKind.Builtin:
