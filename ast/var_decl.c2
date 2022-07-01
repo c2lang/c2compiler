@@ -32,7 +32,6 @@ static_assert(elemsof(VarDeclKind), elemsof(varDeclNames));
 
 public type VarDecl struct {
     Decl parent;
-    QualType qt;
     Expr*[0] init;  // tail-allocated
 } @(opaque)
 
@@ -40,9 +39,8 @@ public func VarDecl* VarDecl.create(ast_context.Context* c, VarDeclKind kind, co
     u32 size = sizeof(VarDecl);
     if (initValue) size += sizeof(Expr*);
     VarDecl* d = c.alloc(size);
-    d.parent.init(DeclKind.Var, name, loc, is_public);
+    d.parent.init(DeclKind.Var, name, loc, is_public, qt);
     d.parent.varDeclBits.kind = kind;
-    d.qt = qt;
     if (initValue) {
         d.parent.varDeclBits.has_init_or_bitfield = 1;
         d.init[0] = initValue;
@@ -54,9 +52,9 @@ public func VarDecl* VarDecl.createStructMember(ast_context.Context* c, const ch
     u32 size = sizeof(VarDecl);
     if (bitfield) size += sizeof(Expr*);
     VarDecl* d = c.alloc(size);
-    d.parent.init(DeclKind.Var, name, loc, is_public);
+    d.parent.init(DeclKind.Var, name, loc, is_public, qt);
     d.parent.varDeclBits.kind = VarDeclKind.StructMember;
-    d.qt = qt;
+
     if (bitfield) {
         d.parent.varDeclBits.has_init_or_bitfield = 1;
         d.init[0] = bitfield;
@@ -75,7 +73,6 @@ public func void VarDecl.setLocal(VarDecl* d, bool has_local) {
 public func void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
     d.parent.printKind(out, indent, "VarDecl");
     out.add(" ");
-    d.qt.printQuoted(out);
     out.color(col_Attr);
     VarDeclKind k = d.getKind();
     out.add(varDeclNames[k]);

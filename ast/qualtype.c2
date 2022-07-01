@@ -25,6 +25,11 @@ public func QualType QualType.init2(Type* t) @(inline) {
     return qt;
 }
 
+public func QualType QualType.init3() @(inline) {
+    QualType qt = { 0 }
+    return qt;
+}
+
 public func Type* QualType.getType(QualType* qt) @(inline) {
     Type* t = qt.getTypeOrNil();
     // assert(t);

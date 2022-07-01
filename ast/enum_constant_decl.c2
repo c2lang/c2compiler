@@ -15,7 +15,6 @@ type EnumConstantDeclBits struct {
 public type EnumConstantDecl struct {
     Decl parent;
     u32 value;
-    QualType qt;
     Expr*[0] init;  // tail-allocated
 } @(opaque)
 
@@ -23,9 +22,8 @@ public func EnumConstantDecl* EnumConstantDecl.create(ast_context.Context* c, co
     u32 size = sizeof(EnumConstantDecl);
     if (initValue) size += sizeof(Expr*);
     EnumConstantDecl* d = c.alloc(size);
-    d.parent.init(DeclKind.EnumConstant, name, loc, is_public);
+    d.parent.init(DeclKind.EnumConstant, name, loc, is_public, qt);
     d.value = 0;
-    d.qt = qt;
     if (initValue) {
         d.parent.enumConstantDeclBits.has_init = 1;
         d.init[0] = initValue;
@@ -37,8 +35,6 @@ public func Decl* EnumConstantDecl.asDecl(EnumConstantDecl* d) @(inline) { retur
 
 public func void EnumConstantDecl.print(const EnumConstantDecl* d, string_buffer.Buf* out, u32 indent) {
     d.parent.printKind(out, indent, "EnumConstantDecl");
-    out.add(" ");
-    d.qt.print(out);
     d.parent.printBits(out);
     d.parent.printName(out);
 

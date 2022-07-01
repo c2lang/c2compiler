@@ -62,12 +62,13 @@ public type Decl struct {
     // Module* mod;
 } @(opaque)
 
-func void Decl.init(Decl* d, DeclKind k, const char* name, SrcLoc loc, bool is_public) @(inline) {
+func void Decl.init(Decl* d, DeclKind k, const char* name, SrcLoc loc, bool is_public, QualType qt) @(inline) {
     d.bits = 0;
     d.declBits.kind = k;
     d.declBits.is_public = is_public;
     d.name = name;
     d.loc = loc;
+    d.qt = qt;
 }
 
 // TEMP cast needed until Analyser fixed
@@ -78,6 +79,8 @@ public func DeclCheckState Decl.getCheckState(const Decl* d) @(inline) { return 
 public func const char* Decl.getName(const Decl* d) @(inline) { return d.name; }
 
 public func SrcLoc Decl.getLoc(const Decl* d) @(inline) { return d.loc; }
+
+public func QualType Decl.getType(const Decl* d) @(inline) { return d.qt; }
 
 public func bool Decl.isPublic(const Decl* d) @(inline) { return d.declBits.is_public; }
 
@@ -128,7 +131,8 @@ func void Decl.printKind(const Decl* d, string_buffer.Buf* out, u32 indent, cons
     out.indent(indent);
     out.color(col_Decl);
     out.add(kind_);
-    // TODO print type
+    out.add(" ");
+    d.qt.printQuoted(out);
 }
 
 func void Decl.printName(const Decl* d, string_buffer.Buf* out) {

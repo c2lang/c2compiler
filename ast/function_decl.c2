@@ -38,10 +38,10 @@ public func FunctionDecl* FunctionDecl.create(ast_context.Context* c,
     FunctionDecl* d = c.alloc(size);
     FunctionType* ftype = FunctionType.create(c, d);
     QualType qt = QualType.init2(ftype.asType());
-    // TODO pass qt to init()
-    d.parent.init(DeclKind.Function, name, loc, is_public);
+    d.parent.init(DeclKind.Function, name, loc, is_public, qt);
     d.parent.functionDeclBits.is_variadic = is_variadic;
     d.parent.functionDeclBits.num_params = num_params;
+    d.rtype = rtype;
     d.body = nil;
     u32 params_offset = 0;
     if (prefix) {
@@ -64,17 +64,13 @@ public func Decl* FunctionDecl.asDecl(FunctionDecl* d) @(inline) { return &d.par
 public func void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 indent) {
     d.parent.printKind(out, indent, "FunctionDecl");
     d.parent.printBits(out);
-    d.parent.printName(out);
 
-    if (d.parent.functionDeclBits.is_variadic) {
-        out.color(col_Attr);
-        out.add(" ...");
-    }
     if (d.parent.functionDeclBits.has_prefix) {
         out.color(col_Attr);
         // TODO static struct function
         out.add(" SF");
     }
+    d.parent.printName(out);
     out.add("\n");
 
     u32 params_offset = 0;
@@ -89,5 +85,22 @@ public func void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* ou
     if (d.body) {
         d.body.print(out, indent + 2);
     }
+}
+
+func void FunctionDecl.printType(const FunctionDecl* d, string_buffer.Buf* out) {
+    d.rtype.print(out);
+    out.add(" ");
+    out.add(d.parent.name);
+    out.add("(");
+    bool num_params = d.parent.functionDeclBits.num_params;
+    i32 params_offset = d.parent.functionDeclBits.has_prefix ? 1 : 0;
+    for (u32 i=0; i<num_params; i++) {
+        if (i != 0) out.add(", ");
+        d.params[params_offset + i].parent.qt.print(out);
+    }
+
+    if (d.parent.functionDeclBits.is_variadic) out.add(", ...");
+
+    out.add(")");
 }
 

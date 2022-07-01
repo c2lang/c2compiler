@@ -22,7 +22,6 @@
 - put all output through filter for coloring/not
 
 ## AST
-- nice Stmt prints
 - add Type to Decl
     2 prints:
         -> all types are printed on single line

@@ -58,7 +58,7 @@ public func Decl* Builder.actOnFunctionTypeDecl(Builder* b, const char* name, Sr
                                                 VarDecl** params, u32 num_params, bool is_variadic) {
     FunctionDecl* fn = FunctionDecl.create(b.context, name, loc, is_public, rtype, nil, params, num_params, is_variadic);
 
-    FunctionTypeDecl* d = FunctionTypeDecl.create(b.context, is_public, fn);
+    FunctionTypeDecl* d = FunctionTypeDecl.create(b.context, fn);
     b.ast.addTypeDecl(d.asDecl());
     return d.asDecl();
 }

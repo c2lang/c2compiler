@@ -27,8 +27,7 @@ public func StructTypeDecl* StructTypeDecl.create(ast_context.Context* c, const 
     StructTypeDecl* d = c.alloc(size);
     StructType* stype = StructType.create(c, d);
     QualType qt = QualType.init2(stype.asType());
-    // TODO pass qt to init()
-    d.parent.init(DeclKind.StructType, name, loc, is_public);
+    d.parent.init(DeclKind.StructType, name, loc, is_public, qt);
     d.parent.structTypeDeclBits.is_struct = is_struct;
     d.parent.structTypeDeclBits.is_global = is_global;
     d.parent.structTypeDeclBits.num_members = num_members;

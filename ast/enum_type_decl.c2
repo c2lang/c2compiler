@@ -33,8 +33,7 @@ public func EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
     EnumTypeDecl* d = c.alloc(size);
     EnumType* etype = EnumType.create(c, d);
     QualType qt = QualType.init2(etype.asType());
-    // TODO pass qt to init()
-    d.parent.init(DeclKind.EnumType, name, loc, is_public);
+    d.parent.init(DeclKind.EnumType, name, loc, is_public, qt);
     d.parent.enumTypeDeclBits.is_incr = is_incr;
     d.parent.enumTypeDeclBits.num_constants = num_constants;
     d.implType = implType;

@@ -20,7 +20,7 @@ public type ImportDecl struct {
 
 public func ImportDecl* ImportDecl.create(ast_context.Context* c, const char* name, SrcLoc loc, const char* alias_name, SrcLoc alias_loc, bool is_local) @(inline) {
     ImportDecl* d = c.alloc(sizeof(ImportDecl));
-    d.parent.init(DeclKind.Import, name, loc, true);
+    d.parent.init(DeclKind.Import, name, loc, true, QualType.init3());
     d.parent.importDeclBits.is_local = is_local;
     d.alias_name = alias_name;
     d.alias_loc = alias_loc;

@@ -39,6 +39,7 @@ public func IdentifierExpr** RefType.getRef2(RefType* t) @(inline) { return &t.r
 public func void RefType.print(const RefType* t, string_buffer.Buf* out) {
     const Decl* d = t.ref.getDecl();
     if (d) {
+        out.add("TODO REFTYPE");
     } else {
         out.color(col_Error);
         if (t.parent.refTypeBits.have_prefix) {
@@ -46,6 +47,7 @@ public func void RefType.print(const RefType* t, string_buffer.Buf* out) {
             out.add(".");
         }
         t.ref.printLiteral(out);
+        out.color(col_Type);
     }
 }
 
