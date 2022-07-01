@@ -57,6 +57,7 @@ public func i32 main(i32 argc, char** argv) {
     //recipe.dump();
 
     ast_context.Context* typeContext = ast_context.create(1024);
+    // TODO re-init for each target, since the pointers to these types change!!
     ast.init(typeContext);
 
     for (u32 i=0; i<recipe.numTargets(); i++) {

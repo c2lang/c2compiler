@@ -62,6 +62,7 @@ static_assert(16, sizeof(BuiltinType));
 static_assert(24, sizeof(PointerType));
 static_assert(24, sizeof(ArrayType));
 static_assert(24, sizeof(RefType));
+static_assert(24, sizeof(StructType));
 
 static_assert(8, sizeof(QualType));
 
