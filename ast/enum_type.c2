@@ -1,0 +1,36 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context;
+import string_buffer;
+import utils;
+
+public type EnumType struct {
+    Type parent;
+    EnumTypeDecl* decl;
+} @(opaque)
+
+public func EnumType* EnumType.create(ast_context.Context* c) @(inline) {
+    EnumType* t = c.alloc(sizeof(EnumType));
+    t.parent.init(TypeKind.Enum);
+    t.decl = nil;
+    return t;
+}
+
+public func void EnumType.setDecl(EnumType* t, EnumTypeDecl* decl) @(inline) {
+    t.decl = decl;
+}
+
+public func EnumTypeDecl* EnumType.getDecl(const EnumType* t) @(inline) { return t.decl; }
+
+public func void EnumType.print(const EnumType* t, string_buffer.Buf* out) {
+    out.add("(enum)");
+    out.add(t.decl.parent.name);
+}
+
+func void EnumType.debugPrint(const EnumType* t, string_buffer.Buf* out) {
+    // TODO
+}
+

@@ -13,7 +13,7 @@ type IfStmtBits struct {
 }
 
 public type IfStmt struct {
-    Stmt stmt;
+    Stmt parent;
     Stmt* cond;
     Stmt* then;
     Stmt*[0] else_stmt; // tail-allocated
@@ -24,12 +24,12 @@ public func IfStmt* IfStmt.create(ast_context.Context* c, Stmt* cond, Stmt* then
     if (else_stmt) size += sizeof(Stmt*);
 
     IfStmt* s = c.alloc(size);
-    s.stmt.init(StmtKind.If);
+    s.parent.init(StmtKind.If);
     s.cond = cond;
     s.then = then;
 
     if (else_stmt) {
-        s.stmt.ifStmtBits.has_else = 1;
+        s.parent.ifStmtBits.has_else = 1;
         s.else_stmt[0] = else_stmt;
     }
     return s;
@@ -40,7 +40,7 @@ public func Stmt* IfStmt.getCond(const IfStmt* s) @(inline) { return s.cond; }
 public func Stmt* IfStmt.getThen(const IfStmt* s) @(inline) { return s.then; }
 
 public func Stmt* IfStmt.getElse(const IfStmt* s) {
-    if (s.stmt.ifStmtBits.has_else) return s.else_stmt[0];
+    if (s.parent.ifStmtBits.has_else) return s.else_stmt[0];
     return nil;
 }
 
@@ -50,6 +50,6 @@ public func void IfStmt.print(const IfStmt* s, string_buffer.Buf* out, u32 inden
     out.add("IfStmt\n");
     s.cond.print(out, indent + 2);
     if (s.then) s.then.print(out, indent + 2);
-    if (s.stmt.ifStmtBits.has_else) s.else_stmt[0].print(out, indent + 2);
+    if (s.parent.ifStmtBits.has_else) s.else_stmt[0].print(out, indent + 2);
 }
 

@@ -8,13 +8,13 @@ import string_buffer;
 import utils local;
 
 public type BreakStmt struct {
-    Stmt stmt;
+    Stmt parent;
     SrcLoc loc;
 } @(opaque)
 
 public func BreakStmt* BreakStmt.create(ast_context.Context* c, SrcLoc loc) @(inline) {
     BreakStmt* s = c.alloc(sizeof(BreakStmt));
-    s.stmt.init(StmtKind.Break);
+    s.parent.init(StmtKind.Break);
     s.loc = loc;
     return s;
 }

@@ -13,22 +13,22 @@ public type BooleanLiteralBits struct {
 }
 
 public type BooleanLiteral struct {
-    Expr expr;
+    Expr parent;
 } @(opaque)
 
 public func BooleanLiteral* BooleanLiteral.create(ast_context.Context* c, SrcLoc loc, bool val) @(inline) {
     BooleanLiteral* e = c.alloc(sizeof(BooleanLiteral));
-    e.expr.init(ExprKind.BooleanLiteral, loc, 1, 1, 0);
-    e.expr.stmt.booleanLiteralBits.value = val;
+    e.parent.init(ExprKind.BooleanLiteral, loc, 1, 1, 0);
+    e.parent.parent.booleanLiteralBits.value = val;
     return e;
 }
 
 public func void BooleanLiteral.print(const BooleanLiteral* e, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
-    out.print("BooleanLiteral %d\n", e.expr.stmt.booleanLiteralBits.value);
+    out.print("BooleanLiteral %d\n", e.parent.parent.booleanLiteralBits.value);
 }
 
 func void BooleanLiteral.printLiteral(const BooleanLiteral* e, string_buffer.Buf* out) {
-    out.add(e.expr.stmt.booleanLiteralBits.value ? "true" : "false");
+    out.add(e.parent.parent.booleanLiteralBits.value ? "true" : "false");
 }
 

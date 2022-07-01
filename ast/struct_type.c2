@@ -27,7 +27,7 @@ public func StructTypeDecl* StructType.getDecl(const StructType* t) @(inline) { 
 
 public func void StructType.print(const StructType* t, string_buffer.Buf* out) {
     out.add("(struct)");
-    const char* name = t.decl.decl.name;
+    const char* name = t.decl.parent.name;
     if (name) out.add(name);
     else out.add("<anonymous>");
 }

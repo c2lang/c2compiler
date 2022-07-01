@@ -8,13 +8,13 @@ import string_buffer;
 import utils local;
 
 public type TypeExpr struct {
-    Expr expr;
+    Expr parent;
     QualType qt;
 } @(opaque)
 
 public func TypeExpr* TypeExpr.create(ast_context.Context* c, SrcLoc loc, QualType qt) @(inline) {
     TypeExpr* e = c.alloc(sizeof(TypeExpr));
-    e.expr.init(ExprKind.Type, loc, 0, 0, 0);
+    e.parent.init(ExprKind.Type, loc, 0, 0, 0);
     e.qt = qt;
     return e;
 }

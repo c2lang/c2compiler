@@ -8,13 +8,13 @@ import string_buffer;
 import utils local;
 
 public type ContinueStmt struct {
-    Stmt stmt;
+    Stmt parent;
     SrcLoc loc;
 } @(opaque)
 
 public func ContinueStmt* ContinueStmt.create(ast_context.Context* c, SrcLoc loc) @(inline) {
     ContinueStmt* s = c.alloc(sizeof(ContinueStmt));
-    s.stmt.init(StmtKind.Continue);
+    s.parent.init(StmtKind.Continue);
     s.loc = loc;
     return s;
 }

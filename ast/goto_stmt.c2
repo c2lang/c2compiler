@@ -8,14 +8,14 @@ import string_buffer;
 import utils local;
 
 public type GotoStmt struct {
-    Stmt stmt;
+    Stmt parent;
     SrcLoc loc;
     const char* name;
 } @(opaque)
 
 public func GotoStmt* GotoStmt.create(ast_context.Context* c, const char* name, SrcLoc loc) @(inline) {
     GotoStmt* s = c.alloc(sizeof(GotoStmt));
-    s.stmt.init(StmtKind.Goto);
+    s.parent.init(StmtKind.Goto);
     s.loc = loc;
     s.name = name;
     return s;

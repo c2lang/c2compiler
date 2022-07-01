@@ -8,14 +8,14 @@ import string_buffer;
 import utils local;
 
 public type WhileStmt struct {
-    Stmt stmt;
+    Stmt parent;
     Stmt* cond;
     Stmt* then;
 } @(opaque)
 
 public func WhileStmt* WhileStmt.create(ast_context.Context* c, Stmt* cond, Stmt* then) @(inline) {
     WhileStmt* s = c.alloc(sizeof(WhileStmt));
-    s.stmt.init(StmtKind.While);
+    s.parent.init(StmtKind.While);
     s.cond = cond;
     s.then = then;
     return s;

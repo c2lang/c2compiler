@@ -13,22 +13,22 @@ public type CharLiteralBits struct {
 }
 
 public type CharLiteral struct {
-    Expr expr;
+    Expr parent;
 } @(opaque)
 
 public func CharLiteral* CharLiteral.create(ast_context.Context* c, SrcLoc loc, u8 val) @(inline) {
     CharLiteral* b = c.alloc(sizeof(CharLiteral));
-    b.expr.init(ExprKind.CharLiteral, loc, 1, 1, 0);
-    b.expr.stmt.charLiteralBits.value = val;
+    b.parent.init(ExprKind.CharLiteral, loc, 1, 1, 0);
+    b.parent.parent.charLiteralBits.value = val;
     return b;
 }
 
 public func void CharLiteral.print(const CharLiteral* b, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
-    out.print("CharLiteral '%c'\n", b.expr.stmt.charLiteralBits.value);
+    out.print("CharLiteral '%c'\n", b.parent.parent.charLiteralBits.value);
 }
 
 public func void CharLiteral.printLiteral(const CharLiteral* b, string_buffer.Buf* out) {
-    out.print("'%c'", b.expr.stmt.charLiteralBits.value);
+    out.print("'%c'", b.parent.parent.charLiteralBits.value);
 }
 

@@ -13,6 +13,7 @@ public type TypeKind enum u8 {
     Array,
     Ref,
     Struct,
+    Enum,
 }
 
 public type TypeBits struct {
@@ -63,6 +64,9 @@ public func void Type.print(const Type* t, string_buffer.Buf* out) {
     case TypeKind.Struct:
         StructType.print(cast<StructType*>(t), out);
         break;
+    case TypeKind.Enum:
+        EnumType.print(cast<EnumType*>(t), out);
+        break;
     }
 }
 
@@ -82,6 +86,9 @@ func void Type.debugPrint(const Type* t, string_buffer.Buf* out) {
         break;
     case TypeKind.Struct:
         StructType.debugPrint(cast<StructType*>(t), out);
+        break;
+    case TypeKind.Enum:
+        EnumType.debugPrint(cast<EnumType*>(t), out);
         break;
     }
 }

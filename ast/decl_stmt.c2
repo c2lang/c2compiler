@@ -8,13 +8,13 @@ import string_buffer;
 import utils local;
 
 public type DeclStmt struct {
-    Stmt stmt;
+    Stmt parent;
     VarDecl* decl;
 } @(opaque)
 
 public func DeclStmt* DeclStmt.create(ast_context.Context* c, VarDecl* decl) @(inline) {
     DeclStmt* s = c.alloc(sizeof(DeclStmt));
-    s.stmt.init(StmtKind.Decl);
+    s.parent.init(StmtKind.Decl);
     s.decl = decl;
     return s;
 }

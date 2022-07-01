@@ -15,14 +15,14 @@ public type BitOffsetExprBits struct {
 */
 
 public type BitOffsetExpr struct {
-    Expr expr;
+    Expr parent;
     Expr* lhs;
     Expr* rhs;
 } @(opaque)
 
 public func BitOffsetExpr* BitOffsetExpr.create(ast_context.Context* c, SrcLoc loc, Expr* lhs, Expr* rhs) @(inline) {
     BitOffsetExpr* e = c.alloc(sizeof(BitOffsetExpr));
-    e.expr.init(ExprKind.BitOffset, loc, 0, 0, 0);
+    e.parent.init(ExprKind.BitOffset, loc, 0, 0, 0);
     e.lhs = lhs;
     e.rhs = rhs;
     return e;

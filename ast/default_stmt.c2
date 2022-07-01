@@ -15,17 +15,17 @@ type DefaultStmtBits struct {
 }
 
 public type DefaultStmt struct {
-    Stmt stmt;
+    Stmt parent;
     SrcLoc loc;
-    Stmt*[0] stmts; // tail-allocated
+    Stmt*[0] parents; // tail-allocated
 } @(opaque)
 
-public func DefaultStmt* DefaultStmt.create(ast_context.Context* c, SrcLoc loc, Stmt** stmts, u32 numStmts) @(inline) {
+public func DefaultStmt* DefaultStmt.create(ast_context.Context* c, SrcLoc loc, Stmt** parents, u32 numStmts) @(inline) {
     u32 size = sizeof(DefaultStmt) + numStmts * sizeof(Stmt*);
     DefaultStmt* s = c.alloc(size);
-    s.stmt.init(StmtKind.Default);
-    s.stmt.defaultStmtBits.num_stmts = numStmts;
-    string.memcpy(cast<void*>(s.stmts), cast<void*>(stmts), numStmts * sizeof(Stmt*));
+    s.parent.init(StmtKind.Default);
+    s.parent.defaultStmtBits.num_stmts = numStmts;
+    string.memcpy(cast<void*>(s.parents), cast<void*>(parents), numStmts * sizeof(Stmt*));
     return s;
 }
 
@@ -33,8 +33,8 @@ public func void DefaultStmt.print(const DefaultStmt* s, string_buffer.Buf* out,
     out.indent(indent);
     out.color(col_Stmt);
     out.add("DefaultStmt\n");
-    for (u32 i=0; i<s.stmt.defaultStmtBits.num_stmts; i++) {
-        s.stmts[i].print(out, indent + 2);
+    for (u32 i=0; i<s.parent.defaultStmtBits.num_stmts; i++) {
+        s.parents[i].print(out, indent + 2);
     }
 }
 

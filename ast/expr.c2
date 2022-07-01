@@ -46,29 +46,29 @@ public type ExprBits struct {
 public const u32 NumExprBits = NumStmtBits + 16;
 
 public type Expr struct {
-    Stmt stmt;
+    Stmt parent;
     SrcLoc loc;
     QualType qt;
 } @(opaque)
 
 public func void Expr.init(Expr* e, ExprKind k, SrcLoc loc, bool ctv, bool ctc, bool lvalue) @(inline) {
-    e.stmt.init(StmtKind.Expr);
-    e.stmt.exprBits.kind = k;
-    e.stmt.exprBits.is_ctv = ctv;
-    e.stmt.exprBits.is_ctc = ctc;
-    e.stmt.exprBits.is_lvalue = lvalue;
+    e.parent.init(StmtKind.Expr);
+    e.parent.exprBits.kind = k;
+    e.parent.exprBits.is_ctv = ctv;
+    e.parent.exprBits.is_ctc = ctc;
+    e.parent.exprBits.is_lvalue = lvalue;
     e.loc = loc;
     e.qt.ptr = 0;
 }
 
-public func Stmt* Expr.asStmt(Expr* e) @(inline) { return &e.stmt; }
+public func Stmt* Expr.asStmt(Expr* e) @(inline) { return &e.parent; }
 
 // TEMP cast needed until Analyser fixed
-public func ExprKind Expr.getKind(const Expr* e) @(inline) { return cast<ExprKind>(e.stmt.exprBits.kind); }
+public func ExprKind Expr.getKind(const Expr* e) @(inline) { return cast<ExprKind>(e.parent.exprBits.kind); }
 
-public func bool Expr.isCtv(const Expr* e) @(inline) { return e.stmt.exprBits.is_ctv; }
+public func bool Expr.isCtv(const Expr* e) @(inline) { return e.parent.exprBits.is_ctv; }
 
-public func bool Expr.isCtc(const Expr* e) @(inline) { return e.stmt.exprBits.is_ctc; }
+public func bool Expr.isCtc(const Expr* e) @(inline) { return e.parent.exprBits.is_ctc; }
 
 public func SrcLoc Expr.getLoc(const Expr* e) @(inline) { return e.loc; }
 
@@ -213,8 +213,8 @@ func void Expr.printTypeBits(const Expr* e, string_buffer.Buf* out) {
     out.add(" ");
     e.qt.printQuoted(out);
     out.color(col_Attr);
-    if (e.stmt.exprBits.is_ctv) out.add(" CTV");
-    if (e.stmt.exprBits.is_ctc) out.add(" CTC");
-    if (e.stmt.exprBits.is_lvalue) out.add(" lvalue");
+    if (e.parent.exprBits.is_ctv) out.add(" CTV");
+    if (e.parent.exprBits.is_ctc) out.add(" CTC");
+    if (e.parent.exprBits.is_lvalue) out.add(" lvalue");
 }
 

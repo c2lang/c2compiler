@@ -13,7 +13,7 @@ public type UnaryOperatorBits struct {
 }
 
 public type UnaryOperator struct {
-    Expr expr;
+    Expr parent;
     Expr* inner;
 } @(opaque)
 
@@ -31,14 +31,14 @@ public type UnaryOpcode enum u8 {
 
 public func UnaryOperator* UnaryOperator.create(ast_context.Context* c, SrcLoc loc, UnaryOpcode kind, Expr* inner) @(inline) {
     UnaryOperator* e = c.alloc(sizeof(UnaryOperator));
-    e.expr.init(ExprKind.UnaryOperator, loc, 0, 0, 0);
-    e.expr.stmt.unaryOperatorBits.kind = kind;
+    e.parent.init(ExprKind.UnaryOperator, loc, 0, 0, 0);
+    e.parent.parent.unaryOperatorBits.kind = kind;
     e.inner = inner;
     return e;
 }
 
 public func UnaryOpcode UnaryOperator.getKind(const UnaryOperator* e) {
-    return cast<UnaryOpcode>(e.expr.stmt.unaryOperatorBits.kind);
+    return cast<UnaryOpcode>(e.parent.parent.unaryOperatorBits.kind);
 }
 
 public func Expr* UnaryOperator.getExpr(UnaryOperator* e) { return e.inner; }

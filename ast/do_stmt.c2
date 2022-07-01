@@ -8,7 +8,7 @@ import string_buffer;
 import utils local;
 
 public type DoStmt struct {
-    Stmt stmt;
+    Stmt parent;
     Stmt* cond;
     Stmt* then;
 } @(opaque)
@@ -16,7 +16,7 @@ public type DoStmt struct {
 // NOTE: merge with while? (only need single bit to differentiate)
 public func DoStmt* DoStmt.create(ast_context.Context* c, Stmt* cond, Stmt* then) @(inline) {
     DoStmt* s = c.alloc(sizeof(DoStmt));
-    s.stmt.init(StmtKind.Do);
+    s.parent.init(StmtKind.Do);
     s.cond = cond;
     s.then = then;
     return s;

@@ -13,7 +13,7 @@ public type BinaryOperatorBits struct {
 }
 
 public type BinaryOperator struct {
-    Expr expr;
+    Expr parent;
     Expr* lhs;
     Expr* rhs;
 } @(opaque)
@@ -88,15 +88,15 @@ static_assert(elemsof(BinaryOpcode), elemsof(binaryOpcode_names));
 
 public func BinaryOperator* BinaryOperator.create(ast_context.Context* c, SrcLoc loc, BinaryOpcode kind, Expr* lhs, Expr* rhs) @(inline) {
     BinaryOperator* e = c.alloc(sizeof(BinaryOperator));
-    e.expr.init(ExprKind.BinaryOperator, loc, 0, 0, 0);
-    e.expr.stmt.binaryOperatorBits.kind = kind;
+    e.parent.init(ExprKind.BinaryOperator, loc, 0, 0, 0);
+    e.parent.parent.binaryOperatorBits.kind = kind;
     e.lhs = lhs;
     e.rhs = rhs;
     return e;
 }
 
 public func BinaryOpcode BinaryOperator.getKind(const BinaryOperator* e) {
-    return cast<BinaryOpcode>(e.expr.stmt.binaryOperatorBits.kind);
+    return cast<BinaryOpcode>(e.parent.parent.binaryOperatorBits.kind);
 }
 
 public func Expr* BinaryOperator.getLHS(BinaryOperator* e) { return e.lhs; }
@@ -106,8 +106,8 @@ public func Expr* BinaryOperator.getRHS(BinaryOperator* e) { return e.rhs; }
 public func Expr** BinaryOperator.getRHS2(BinaryOperator* e) { return &e.rhs; }
 
 public func void BinaryOperator.print(const BinaryOperator* e, string_buffer.Buf* out, u32 indent) {
-    e.expr.printKind(out, indent, "BinaryOperator");
-    e.expr.printTypeBits(out);
+    e.parent.printKind(out, indent, "BinaryOperator");
+    e.parent.printTypeBits(out);
     out.color(col_Value);
     out.add(" '");
     out.add(binaryOpcode_names[e.getKind()]);

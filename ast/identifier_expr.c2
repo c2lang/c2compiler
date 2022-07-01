@@ -41,7 +41,7 @@ public type IdentifierExprBits struct {
 }
 
 public type IdentifierExpr struct {
-    Expr expr;
+    Expr parent;
     union {
         const char* name;
         Decl* decl;     // set during analysis
@@ -50,24 +50,24 @@ public type IdentifierExpr struct {
 
 public func IdentifierExpr* IdentifierExpr.create(ast_context.Context* c, SrcLoc loc, const char* name) @(inline) {
     IdentifierExpr* e = c.alloc(sizeof(IdentifierExpr));
-    e.expr.init(ExprKind.Identifier, loc, 0, 0, 0);
+    e.parent.init(ExprKind.Identifier, loc, 0, 0, 0);
     e.name = name;
     return e;
 }
 
-public func Expr* IdentifierExpr.asExpr(IdentifierExpr* e) @(inline) { return &e.expr; }
+public func Expr* IdentifierExpr.asExpr(IdentifierExpr* e) @(inline) { return &e.parent; }
 
 public func Decl* IdentifierExpr.getDecl(const IdentifierExpr* e) @(inline) {
-    if (!e.expr.stmt.identifierExprBits.has_decl) return nil;
+    if (!e.parent.parent.identifierExprBits.has_decl) return nil;
     return e.decl;
 }
 
 public func void IdentifierExpr.print(const IdentifierExpr* e, string_buffer.Buf* out, u32 indent) {
-    e.expr.printKind(out, indent, "IdentifierExpr");
-    e.expr.printTypeBits(out);
+    e.parent.printKind(out, indent, "IdentifierExpr");
+    e.parent.printTypeBits(out);
 
     out.add(" ");
-    if (e.expr.stmt.identifierExprBits.has_decl) {
+    if (e.parent.parent.identifierExprBits.has_decl) {
         out.add(e.decl.getName());
     } else {
         out.color(col_Value);
@@ -80,7 +80,7 @@ public func void IdentifierExpr.print(const IdentifierExpr* e, string_buffer.Buf
 }
 
 func void IdentifierExpr.printLiteral(const IdentifierExpr* e, string_buffer.Buf* out) {
-    if (e.expr.stmt.identifierExprBits.has_decl) {
+    if (e.parent.parent.identifierExprBits.has_decl) {
         out.add(e.decl.getName());
     } else {
         out.add(e.name);

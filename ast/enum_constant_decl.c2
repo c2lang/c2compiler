@@ -13,7 +13,7 @@ type EnumConstantDeclBits struct {
 }
 
 public type EnumConstantDecl struct {
-    Decl decl;
+    Decl parent;
     u32 value;
     QualType qt;
     Expr*[0] init;  // tail-allocated
@@ -23,29 +23,29 @@ public func EnumConstantDecl* EnumConstantDecl.create(ast_context.Context* c, co
     u32 size = sizeof(EnumConstantDecl);
     if (initValue) size += sizeof(Expr*);
     EnumConstantDecl* d = c.alloc(size);
-    d.decl.init(DeclKind.EnumConstant, name, loc, is_public);
+    d.parent.init(DeclKind.EnumConstant, name, loc, is_public);
     d.value = 0;
     d.qt = qt;
     if (initValue) {
-        d.decl.enumConstantDeclBits.has_init = 1;
+        d.parent.enumConstantDeclBits.has_init = 1;
         d.init[0] = initValue;
     }
     return d;
 }
 
-public func Decl* EnumConstantDecl.asDecl(EnumConstantDecl* d) @(inline) { return &d.decl; }
+public func Decl* EnumConstantDecl.asDecl(EnumConstantDecl* d) @(inline) { return &d.parent; }
 
 public func void EnumConstantDecl.print(const EnumConstantDecl* d, string_buffer.Buf* out, u32 indent) {
-    d.decl.printKind(out, indent, "EnumConstantDecl");
+    d.parent.printKind(out, indent, "EnumConstantDecl");
     out.add(" ");
     d.qt.print(out);
-    d.decl.printBits(out);
-    d.decl.printName(out);
+    d.parent.printBits(out);
+    d.parent.printName(out);
 
     out.color(col_Value);
     out.print(" %u", d.value);
     out.print("\n");
 
-    if (d.decl.enumConstantDeclBits.has_init) d.init[0].print(out, indent + 2);
+    if (d.parent.enumConstantDeclBits.has_init) d.init[0].print(out, indent + 2);
 }
 

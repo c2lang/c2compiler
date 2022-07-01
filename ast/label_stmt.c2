@@ -8,14 +8,14 @@ import string_buffer;
 import utils local;
 
 public type LabelStmt struct {
-    Stmt stmt;
+    Stmt parent;
     SrcLoc loc;
     const char* name;
 } @(opaque)
 
 public func LabelStmt* LabelStmt.create(ast_context.Context* c, const char* name, SrcLoc loc) @(inline) {
     LabelStmt* s = c.alloc(sizeof(LabelStmt));
-    s.stmt.init(StmtKind.Label);
+    s.parent.init(StmtKind.Label);
     s.loc = loc;
     s.name = name;
     return s;

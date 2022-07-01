@@ -13,7 +13,7 @@ type ForStmtBits struct {
 }
 
 public type ForStmt struct {
-    Stmt stmt;
+    Stmt parent;
     Stmt* init;
     Stmt* cond;
     Expr* incr;
@@ -22,7 +22,7 @@ public type ForStmt struct {
 
 public func ForStmt* ForStmt.create(ast_context.Context* c, Stmt* init_, Stmt* cond, Expr* incr, Stmt* body) @(inline) {
     ForStmt* s = c.alloc(sizeof(ForStmt));
-    s.stmt.init(StmtKind.For);
+    s.parent.init(StmtKind.For);
     s.init = init_;
     s.cond = cond;
     s.incr = incr;

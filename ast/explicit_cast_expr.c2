@@ -8,14 +8,14 @@ import string_buffer;
 import utils local;
 
 public type ExplicitCastExpr struct {
-    Expr expr;
+    Expr parent;
     QualType dest;
     Expr* inner;
 } @(opaque)
 
 public func ExplicitCastExpr* ExplicitCastExpr.create(ast_context.Context* c, SrcLoc loc, QualType qt, Expr* inner) @(inline) {
     ExplicitCastExpr* e = c.alloc(sizeof(ExplicitCastExpr));
-    e.expr.init(ExprKind.ExplicitCast, loc, 0, 0, 0);
+    e.parent.init(ExprKind.ExplicitCast, loc, 0, 0, 0);
     e.dest = qt;
     e.inner = inner;
     return e;

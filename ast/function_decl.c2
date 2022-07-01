@@ -16,7 +16,7 @@ type FunctionDeclBits struct {
 }
 
 public type FunctionDecl struct {
-    Decl decl;
+    Decl parent;
     QualType rtype;
     CompoundStmt* body;
     IdentifierExpr* [0] prefix;
@@ -36,13 +36,13 @@ public func FunctionDecl* FunctionDecl.create(ast_context.Context* c,
     u32 size = sizeof(FunctionDecl) + num_params * sizeof(VarDecl*);
     if (prefix) size += sizeof(IdentifierExpr*);
     FunctionDecl* d = c.alloc(size);
-    d.decl.init(DeclKind.Function, name, loc, is_public);
-    d.decl.functionDeclBits.is_variadic = is_variadic;
-    d.decl.functionDeclBits.num_params = num_params;
+    d.parent.init(DeclKind.Function, name, loc, is_public);
+    d.parent.functionDeclBits.is_variadic = is_variadic;
+    d.parent.functionDeclBits.num_params = num_params;
     d.body = nil;
     u32 params_offset = 0;
     if (prefix) {
-        d.decl.functionDeclBits.has_prefix = 1;
+        d.parent.functionDeclBits.has_prefix = 1;
         d.prefix[0] = prefix;
         params_offset = 1;
     }
@@ -54,20 +54,20 @@ public func FunctionDecl* FunctionDecl.create(ast_context.Context* c,
 
 public func void FunctionDecl.setBody(FunctionDecl* d, CompoundStmt* body) @(inline) { d.body = body; }
 
-public func Decl* FunctionDecl.asDecl(FunctionDecl* d) @(inline) { return &d.decl; }
+public func Decl* FunctionDecl.asDecl(FunctionDecl* d) @(inline) { return &d.parent; }
 
 
 public func void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 indent) {
-    d.decl.printKind(out, indent, "FunctionDecl");
+    d.parent.printKind(out, indent, "FunctionDecl");
     // TODO print type (not rtype, that's shown in type)
-    d.decl.printBits(out);
-    d.decl.printName(out);
+    d.parent.printBits(out);
+    d.parent.printName(out);
 
-    if (d.decl.functionDeclBits.is_variadic) {
+    if (d.parent.functionDeclBits.is_variadic) {
         out.color(col_Attr);
         out.add(" ...");
     }
-    if (d.decl.functionDeclBits.has_prefix) {
+    if (d.parent.functionDeclBits.has_prefix) {
         out.color(col_Attr);
         out.add(" ");
         // TODO static struct function
@@ -76,12 +76,12 @@ public func void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* ou
     out.add("\n");
 
     u32 params_offset = 0;
-    if (d.decl.functionDeclBits.has_prefix) {
+    if (d.parent.functionDeclBits.has_prefix) {
         d.prefix[0].print(out, indent + 2);
         params_offset = 1;
     }
     //d.rtype.print(out, indent + 2);
-    for (u32 i=0; i<d.decl.functionDeclBits.num_params; i++) {
+    for (u32 i=0; i<d.parent.functionDeclBits.num_params; i++) {
         d.params[params_offset + i].print(out, indent + 2);
     }
     if (d.body) {

@@ -8,13 +8,13 @@ import string_buffer;
 import utils local;
 
 public type StringLiteral struct {
-    Expr expr;
+    Expr parent;
     const char* value;
 } @(opaque)
 
 public func StringLiteral* StringLiteral.create(ast_context.Context* c, SrcLoc loc, const char* value) @(inline) {
     StringLiteral* e = c.alloc(sizeof(StringLiteral));
-    e.expr.init(ExprKind.StringLiteral, loc, 1, 1, 0);
+    e.parent.init(ExprKind.StringLiteral, loc, 1, 1, 0);
     e.value = value;
     return e;
 }

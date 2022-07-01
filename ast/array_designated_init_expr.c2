@@ -8,7 +8,7 @@ import string_buffer;
 import utils local;
 
 public type ArrayDesignatedInitExpr struct {
-    Expr expr;
+    Expr parent;
     Expr* designator;
     Expr* initValue;
     // TODO value during analysis
@@ -20,7 +20,7 @@ public func ArrayDesignatedInitExpr* ArrayDesignatedInitExpr.create(ast_context.
                                                                     Expr* initValue) @(inline)
 {
     ArrayDesignatedInitExpr* e = c.alloc(sizeof(ArrayDesignatedInitExpr));
-    e.expr.init(ExprKind.ArrayDesignatedInit, loc, 0, 0, 0);
+    e.parent.init(ExprKind.ArrayDesignatedInit, loc, 0, 0, 0);
     e.designator = designator;
     e.initValue = initValue;
     return e;

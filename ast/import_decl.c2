@@ -13,15 +13,15 @@ type ImportDeclBits struct {
 }
 
 public type ImportDecl struct {
-    Decl decl;
+    Decl parent;
     const char* alias_name;
     SrcLoc alias_loc;
 } @(opaque)
 
 public func ImportDecl* ImportDecl.create(ast_context.Context* c, const char* name, SrcLoc loc, const char* alias_name, SrcLoc alias_loc, bool is_local) @(inline) {
     ImportDecl* d = c.alloc(sizeof(ImportDecl));
-    d.decl.init(DeclKind.Import, name, loc, true);
-    d.decl.importDeclBits.is_local = is_local;
+    d.parent.init(DeclKind.Import, name, loc, true);
+    d.parent.importDeclBits.is_local = is_local;
     d.alias_name = alias_name;
     d.alias_loc = alias_loc;
     return d;
@@ -37,10 +37,10 @@ public func SrcLoc ImportDecl.getAliasLoc(const ImportDecl* d) @(inline) {
 
 
 public func void ImportDecl.print(const ImportDecl* d, string_buffer.Buf* out, u32 indent) {
-    d.decl.printKind(out, indent, "ImportDecl");
-    d.decl.printName(out);
+    d.parent.printKind(out, indent, "ImportDecl");
+    d.parent.printName(out);
 
-    if (d.decl.importDeclBits.is_local) {
+    if (d.parent.importDeclBits.is_local) {
         out.color(col_Attr);
         out.add(" local");
     }
@@ -50,7 +50,7 @@ public func void ImportDecl.print(const ImportDecl* d, string_buffer.Buf* out, u
         out.color(col_Value);
         out.print("%s", d.alias_name);
     }
-    d.decl.printUsed(out);
+    d.parent.printUsed(out);
     out.add("\n");
 }
 

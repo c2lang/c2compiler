@@ -15,7 +15,7 @@ type CompoundStmtBits struct {
 }
 
 public type CompoundStmt struct {
-    Stmt stmt;
+    Stmt parent;
     Stmt*[0] stmts; // tail-allocated
 } @(opaque)
 
@@ -24,8 +24,8 @@ public func CompoundStmt* CompoundStmt.create(ast_context.Context* c, Stmt** stm
     u32 size = sizeof(CompoundStmt) + count * sizeof(Stmt**);
 
     CompoundStmt* s = c.alloc(size);
-    s.stmt.init(StmtKind.Compound);
-    s.stmt.compoundStmtBits.count = count;
+    s.parent.init(StmtKind.Compound);
+    s.parent.compoundStmtBits.count = count;
 
     if (count) {
         string.memcpy(cast<void*>(s.stmts), cast<void*>(stmts), count * sizeof(Stmt*));
@@ -37,7 +37,7 @@ public func void CompoundStmt.print(const CompoundStmt* s, string_buffer.Buf* ou
     out.indent(indent);
     out.color(col_Stmt);
     out.print("CompoundStmt\n");
-    const u32 count = s.stmt.compoundStmtBits.count;
+    const u32 count = s.parent.compoundStmtBits.count;
     for (u32 i=0; i<count; i++) {
         s.stmts[i].print(out, indent + 2);
     }

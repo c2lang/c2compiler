@@ -14,20 +14,20 @@ public type IntegerLiteralBits struct {
 }
 
 public type IntegerLiteral struct {
-    Expr expr;
+    Expr parent;
     u64 val;
 } @(opaque)
 
 public func IntegerLiteral* IntegerLiteral.create(ast_context.Context* c, SrcLoc loc, u64 val) @(inline) {
     IntegerLiteral* i = c.alloc(sizeof(IntegerLiteral));
-    i.expr.init(ExprKind.IntegerLiteral, loc, 1, 1, 0);
+    i.parent.init(ExprKind.IntegerLiteral, loc, 1, 1, 0);
     i.val = val;
     return i;
 }
 
 public func void IntegerLiteral.print(const IntegerLiteral* e, string_buffer.Buf* out, u32 indent) {
-    e.expr.printKind(out, indent, "IntegerLiteral");
-    e.expr.printTypeBits(out);
+    e.parent.printKind(out, indent, "IntegerLiteral");
+    e.parent.printTypeBits(out);
     out.color(col_Value);
     out.print(" %lu", e.val);
     out.add("\n");

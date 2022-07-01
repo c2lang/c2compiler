@@ -15,7 +15,7 @@ type EnumTypeDeclBits struct {
 }
 
 public type EnumTypeDecl struct {
-    Decl decl;
+    Decl parent;
     EnumConstantDecl*[0] constants; // tail-allocated
 } @(opaque)
 
@@ -29,9 +29,9 @@ public func EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
 {
     u32 size = sizeof(EnumTypeDecl) + num_constants * sizeof(EnumConstantDecl*);
     EnumTypeDecl* d = c.alloc(size);
-    d.decl.init(DeclKind.EnumType, name, loc, is_public);
-    d.decl.enumTypeDeclBits.is_incr = is_incr;
-    d.decl.enumTypeDeclBits.num_constants = num_constants;
+    d.parent.init(DeclKind.EnumType, name, loc, is_public);
+    d.parent.enumTypeDeclBits.is_incr = is_incr;
+    d.parent.enumTypeDeclBits.num_constants = num_constants;
     if (is_incr) {
         // TODO if (incr, alloc pointer to rest?
     } else {
@@ -41,21 +41,21 @@ public func EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
 }
 
 public func void EnumTypeDecl.setIncrMembers(EnumTypeDecl* d, Decl** constants, u32 count) {
-    d.decl.enumTypeDeclBits.num_constants = count;
+    d.parent.enumTypeDeclBits.num_constants = count;
     d.constants[0] = constants;
 }
 
-public func Decl* EnumTypeDecl.asDecl(EnumTypeDecl* d) @(inline) { return &d.decl; }
+public func Decl* EnumTypeDecl.asDecl(EnumTypeDecl* d) @(inline) { return &d.parent; }
 
 public func void EnumTypeDecl.print(const EnumTypeDecl* d, string_buffer.Buf* out, u32 indent) {
-    d.decl.printKind(out, indent, "EnumTypeDecl");
+    d.parent.printKind(out, indent, "EnumTypeDecl");
     // TODO print type
-    d.decl.printBits(out);
-    if (d.decl.enumTypeDeclBits.is_incr) out.add(" incremental");
-    d.decl.printName(out);
+    d.parent.printBits(out);
+    if (d.parent.enumTypeDeclBits.is_incr) out.add(" incremental");
+    d.parent.printName(out);
     out.add("\n");
 
-    for (u32 i=0; i<d.decl.enumTypeDeclBits.num_constants; i++) {
+    for (u32 i=0; i<d.parent.enumTypeDeclBits.num_constants; i++) {
         d.constants[i].print(out, indent + 2);
     }
 }

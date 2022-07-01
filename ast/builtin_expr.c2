@@ -43,7 +43,7 @@ public type OffsetOfData struct {
 }
 
 public type BuiltinExpr struct {
-    Expr expr;
+    Expr parent;
     Expr* inner;
     // TODO u32 value
 
@@ -53,16 +53,16 @@ public type BuiltinExpr struct {
 
 public func BuiltinExpr* BuiltinExpr.create(ast_context.Context* c, SrcLoc loc, Expr* inner, BuiltinExprKind kind) @(inline) {
     BuiltinExpr* e = c.alloc(sizeof(BuiltinExpr));
-    e.expr.init(ExprKind.Builtin, loc, 1, 1, 0);
-    e.expr.stmt.builtinExprBits.kind = kind;
+    e.parent.init(ExprKind.Builtin, loc, 1, 1, 0);
+    e.parent.parent.builtinExprBits.kind = kind;
     e.inner = inner;
     return e;
 }
 
 public func BuiltinExpr* BuiltinExpr.createOffsetOf(ast_context.Context* c, SrcLoc loc, Expr* typeExpr, Expr* member) @(inline) {
     BuiltinExpr* e = c.alloc(sizeof(BuiltinExpr) + sizeof(OffsetOfData));
-    e.expr.init(ExprKind.Builtin, loc, 1, 1, 0);
-    e.expr.stmt.builtinExprBits.kind = BuiltinExprKind.OffsetOf;
+    e.parent.init(ExprKind.Builtin, loc, 1, 1, 0);
+    e.parent.parent.builtinExprBits.kind = BuiltinExprKind.OffsetOf;
     e.inner = typeExpr;
     e.offset[0].member = member;
     return e;
@@ -70,8 +70,8 @@ public func BuiltinExpr* BuiltinExpr.createOffsetOf(ast_context.Context* c, SrcL
 
 public func BuiltinExpr* BuiltinExpr.createToContainer(ast_context.Context* c, SrcLoc loc, Expr* typeExpr, Expr* member, Expr* pointer) @(inline) {
     BuiltinExpr* e = c.alloc(sizeof(BuiltinExpr) + sizeof(ToContainerData));
-    e.expr.init(ExprKind.Builtin, loc, 1, 1, 0);
-    e.expr.stmt.builtinExprBits.kind = BuiltinExprKind.ToContainer;
+    e.parent.init(ExprKind.Builtin, loc, 1, 1, 0);
+    e.parent.parent.builtinExprBits.kind = BuiltinExprKind.ToContainer;
     e.inner = typeExpr;
     e.container[0].member = member;
     e.container[0].pointer = pointer;
@@ -79,7 +79,7 @@ public func BuiltinExpr* BuiltinExpr.createToContainer(ast_context.Context* c, S
 }
 
 public func BuiltinExprKind BuiltinExpr.getKind(const BuiltinExpr* e) {
-    return cast<BuiltinExprKind>(e.expr.stmt.builtinExprBits.kind);
+    return cast<BuiltinExprKind>(e.parent.parent.builtinExprBits.kind);
 }
 
 public func void BuiltinExpr.print(const BuiltinExpr* e, string_buffer.Buf* out, u32 indent) {

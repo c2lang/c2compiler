@@ -8,25 +8,25 @@ import string_buffer;
 import utils local;
 
 public type AliasTypeDecl struct {
-    Decl decl;
+    Decl parent;
     QualType refType;
 } @(opaque)
 
 public func AliasTypeDecl* AliasTypeDecl.create(ast_context.Context* c, const char* name, SrcLoc loc, bool is_public, QualType refType) @(inline)
 {
     AliasTypeDecl* d = c.alloc(sizeof(AliasTypeDecl));
-    d.decl.init(DeclKind.StructType, name, loc, is_public);
+    d.parent.init(DeclKind.StructType, name, loc, is_public);
     d.refType = refType;
     return d;
 }
 
 public func Decl* AliasTypeDecl.asDecl(AliasTypeDecl* d) @(inline) {
-    return &d.decl;
+    return &d.parent;
 }
 
 public func void AliasTypeDecl.print(const AliasTypeDecl* d, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
-    out.print("AliasTypeDecl %s\n", d.decl.name);
+    out.print("AliasTypeDecl %s\n", d.parent.name);
     d.refType.print(out);
 }
 

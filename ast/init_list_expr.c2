@@ -14,7 +14,7 @@ public type InitListExprBits struct {
 }
 
 public type InitListExpr struct {
-    Expr expr;
+    Expr parent;
     SrcLoc right;
     Expr*[0] values; // tail-allocated
 } @(opaque)
@@ -22,15 +22,15 @@ public type InitListExpr struct {
 public func InitListExpr* InitListExpr.create(ast_context.Context* c, SrcLoc left, SrcLoc right, Expr** values, u32 num_values) @(inline) {
     u32 size = sizeof(InitListExpr) + num_values * sizeof(Expr*);
     InitListExpr* e = c.alloc(size);
-    e.expr.init(ExprKind.InitList, left, 0, 0, 0);
-    e.expr.stmt.initListExprBits.num_values = num_values;
+    e.parent.init(ExprKind.InitList, left, 0, 0, 0);
+    e.parent.parent.initListExprBits.num_values = num_values;
     e.right = right;
     string.memcpy(cast<void*>(e.values), cast<void*>(values), num_values * sizeof(Expr*));
     return e;
 }
 
 public func u32 InitListExpr.getNumValues(const InitListExpr* e) @(inline) {
-    return e.expr.stmt.initListExprBits.num_values;
+    return e.parent.parent.initListExprBits.num_values;
 }
 
 public func void InitListExpr.print(const InitListExpr* e, string_buffer.Buf* out, u32 indent) {

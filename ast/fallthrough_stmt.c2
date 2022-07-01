@@ -8,13 +8,13 @@ import string_buffer;
 import utils local;
 
 public type FallthroughStmt struct {
-    Stmt stmt;
+    Stmt parent;
     SrcLoc loc;
 } @(opaque)
 
 public func FallthroughStmt* FallthroughStmt.create(ast_context.Context* c, SrcLoc loc) @(inline) {
     FallthroughStmt* s = c.alloc(sizeof(FallthroughStmt));
-    s.stmt.init(StmtKind.Fallthrough);
+    s.parent.init(StmtKind.Fallthrough);
     s.loc = loc;
     return s;
 }

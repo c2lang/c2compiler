@@ -31,7 +31,7 @@ const char*[] varDeclNames = {
 static_assert(elemsof(VarDeclKind), elemsof(varDeclNames));
 
 public type VarDecl struct {
-    Decl decl;
+    Decl parent;
     QualType qt;
     Expr*[0] init;  // tail-allocated
 } @(opaque)
@@ -40,11 +40,11 @@ public func VarDecl* VarDecl.create(ast_context.Context* c, VarDeclKind kind, co
     u32 size = sizeof(VarDecl);
     if (initValue) size += sizeof(Expr*);
     VarDecl* d = c.alloc(size);
-    d.decl.init(DeclKind.Var, name, loc, is_public);
-    d.decl.varDeclBits.kind = kind;
+    d.parent.init(DeclKind.Var, name, loc, is_public);
+    d.parent.varDeclBits.kind = kind;
     d.qt = qt;
     if (initValue) {
-        d.decl.varDeclBits.has_init_or_bitfield = 1;
+        d.parent.varDeclBits.has_init_or_bitfield = 1;
         d.init[0] = initValue;
     }
     return d;
@@ -54,38 +54,38 @@ public func VarDecl* VarDecl.createStructMember(ast_context.Context* c, const ch
     u32 size = sizeof(VarDecl);
     if (bitfield) size += sizeof(Expr*);
     VarDecl* d = c.alloc(size);
-    d.decl.init(DeclKind.Var, name, loc, is_public);
-    d.decl.varDeclBits.kind = VarDeclKind.StructMember;
+    d.parent.init(DeclKind.Var, name, loc, is_public);
+    d.parent.varDeclBits.kind = VarDeclKind.StructMember;
     d.qt = qt;
     if (bitfield) {
-        d.decl.varDeclBits.has_init_or_bitfield = 1;
+        d.parent.varDeclBits.has_init_or_bitfield = 1;
         d.init[0] = bitfield;
     }
     return d;
 }
 
-public func Decl* VarDecl.asDecl(VarDecl* d) @(inline) { return &d.decl; }
+public func Decl* VarDecl.asDecl(VarDecl* d) @(inline) { return &d.parent; }
 
-public func VarDeclKind VarDecl.getKind(const VarDecl* d) { return cast<VarDeclKind>(d.decl.varDeclBits.kind); }
+public func VarDeclKind VarDecl.getKind(const VarDecl* d) { return cast<VarDeclKind>(d.parent.varDeclBits.kind); }
 
 public func void VarDecl.setLocal(VarDecl* d, bool has_local) {
-    d.decl.varDeclBits.has_local = has_local;
+    d.parent.varDeclBits.has_local = has_local;
 }
 
 public func void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
-    d.decl.printKind(out, indent, "VarDecl");
+    d.parent.printKind(out, indent, "VarDecl");
     out.add(" ");
     d.qt.printQuoted(out);
     out.color(col_Attr);
     VarDeclKind k = d.getKind();
     out.add(varDeclNames[k]);
-    if (k == VarDeclKind.StructMember && d.decl.varDeclBits.has_init_or_bitfield) out.add(" bitfield");
-    d.decl.printBits(out);
+    if (k == VarDeclKind.StructMember && d.parent.varDeclBits.has_init_or_bitfield) out.add(" bitfield");
+    d.parent.printBits(out);
     out.color(col_Value);
-    d.decl.printName(out);
+    d.parent.printName(out);
     out.add("\n");
 
-    if (k != VarDeclKind.StructMember && d.decl.varDeclBits.has_init_or_bitfield) {
+    if (k != VarDeclKind.StructMember && d.parent.varDeclBits.has_init_or_bitfield) {
         d.init[0].print(out, indent + 2);
     }
 }

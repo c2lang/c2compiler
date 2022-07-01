@@ -8,13 +8,13 @@ import string_buffer;
 import utils local;
 
 public type ParenExpr struct {
-    Expr expr;
+    Expr parent;
     Expr* inner;
 } @(opaque)
 
 public func ParenExpr* ParenExpr.create(ast_context.Context* c, SrcLoc loc, Expr* inner) @(inline) {
     ParenExpr* e = c.alloc(sizeof(ParenExpr));
-    e.expr.init(ExprKind.Paren, loc, 0, 0, 0);
+    e.parent.init(ExprKind.Paren, loc, 0, 0, 0);
     e.inner = inner;
     return e;
 }

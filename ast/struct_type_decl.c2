@@ -16,7 +16,7 @@ type StructTypeDeclBits struct {
 }
 
 public type StructTypeDecl struct {
-    Decl decl;
+    Decl parent;
     Decl*[0] members;   // tail-allocated
 } @(opaque)
 
@@ -27,10 +27,10 @@ public func StructTypeDecl* StructTypeDecl.create(ast_context.Context* c, const 
     u32 size = sizeof(StructTypeDecl) + num_members * sizeof(VarDecl*);
     StructTypeDecl* d = c.alloc(size);
     // TODO pass qt
-    d.decl.init(DeclKind.StructType, name, loc, is_public);
-    d.decl.structTypeDeclBits.is_struct = is_struct;
-    d.decl.structTypeDeclBits.is_global = is_global;
-    d.decl.structTypeDeclBits.num_members = num_members;
+    d.parent.init(DeclKind.StructType, name, loc, is_public);
+    d.parent.structTypeDeclBits.is_struct = is_struct;
+    d.parent.structTypeDeclBits.is_global = is_global;
+    d.parent.structTypeDeclBits.num_members = num_members;
     if (num_members) {
         string.memcpy(cast<void*>(d.members), cast<void*>(members), num_members * sizeof(VarDecl*));
     }
@@ -38,18 +38,18 @@ public func StructTypeDecl* StructTypeDecl.create(ast_context.Context* c, const 
 }
 
 public func Decl* StructTypeDecl.asDecl(StructTypeDecl* d) @(inline) {
-    return &d.decl;
+    return &d.parent;
 }
 
 public func void StructTypeDecl.print(const StructTypeDecl* d, string_buffer.Buf* out, u32 indent) {
-    d.decl.printKind(out, indent, "StructTypeDecl");
-    d.decl.printBits(out);
-    if (d.decl.structTypeDeclBits.is_global) out.add(" global");
-    if (d.decl.structTypeDeclBits.is_struct) out.add(" struct");
+    d.parent.printKind(out, indent, "StructTypeDecl");
+    d.parent.printBits(out);
+    if (d.parent.structTypeDeclBits.is_global) out.add(" global");
+    if (d.parent.structTypeDeclBits.is_struct) out.add(" struct");
     else out.add(" union");
 
-    if (d.decl.name) {
-        d.decl.printName(out);
+    if (d.parent.name) {
+        d.parent.printName(out);
     } else {
         out.add(" ");
         out.color(col_Value);
@@ -57,7 +57,7 @@ public func void StructTypeDecl.print(const StructTypeDecl* d, string_buffer.Buf
     }
     out.add("\n");
 
-    for (u32 i=0; i<d.decl.structTypeDeclBits.num_members; i++) {
+    for (u32 i=0; i<d.parent.structTypeDeclBits.num_members; i++) {
         d.members[i].print(out, indent + 2);
     }
 }

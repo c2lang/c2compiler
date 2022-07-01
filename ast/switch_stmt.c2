@@ -14,7 +14,7 @@ type SwitchStmtBits struct {
 }
 
 public type SwitchStmt struct {
-    Stmt stmt;
+    Stmt parent;
     Stmt* cond;
     Stmt*[0] cases; // tail-allocated
 } @(opaque)
@@ -22,8 +22,8 @@ public type SwitchStmt struct {
 public func SwitchStmt* SwitchStmt.create(ast_context.Context* c, Stmt* cond, Stmt** cases, u32 numCases) @(inline) {
     u32 size = sizeof(SwitchStmt) + numCases * sizeof(Stmt*);
     SwitchStmt* s = c.alloc(size);
-    s.stmt.init(StmtKind.Switch);
-    s.stmt.switchStmtBits.num_cases = numCases;
+    s.parent.init(StmtKind.Switch);
+    s.parent.switchStmtBits.num_cases = numCases;
     s.cond = cond;
     string.memcpy(cast<void*>(s.cases), cast<void*>(cases), numCases * sizeof(Stmt*));
     return s;
@@ -34,7 +34,7 @@ public func void SwitchStmt.print(const SwitchStmt* s, string_buffer.Buf* out, u
     out.color(col_Stmt);
     out.add("SwitchStmt\n");
     s.cond.print(out, indent + 2);
-    for (u32 i=0; i<s.stmt.switchStmtBits.num_cases; i++) {
+    for (u32 i=0; i<s.parent.switchStmtBits.num_cases; i++) {
         s.cases[i].print(out, indent + 2);
     }
 }

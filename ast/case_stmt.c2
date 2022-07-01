@@ -15,19 +15,19 @@ type CaseStmtBits struct {
 }
 
 public type CaseStmt struct {
-    Stmt stmt;
+    Stmt parent;
     SrcLoc loc;
     Expr* cond;
-    Stmt*[0] stmts; // tail-allocated
+    Stmt*[0] parents; // tail-allocated
 } @(opaque)
 
-public func CaseStmt* CaseStmt.create(ast_context.Context* c, SrcLoc loc, Expr* cond, Stmt** stmts, u32 numStmts) @(inline) {
+public func CaseStmt* CaseStmt.create(ast_context.Context* c, SrcLoc loc, Expr* cond, Stmt** parents, u32 numStmts) @(inline) {
     u32 size = sizeof(CaseStmt) + numStmts * sizeof(Stmt*);
     CaseStmt* s = c.alloc(size);
-    s.stmt.init(StmtKind.Case);
-    s.stmt.caseStmtBits.num_stmts = numStmts;
+    s.parent.init(StmtKind.Case);
+    s.parent.caseStmtBits.num_stmts = numStmts;
     s.cond = cond;
-    string.memcpy(cast<void*>(s.stmts), cast<void*>(stmts), numStmts * sizeof(Stmt*));
+    string.memcpy(cast<void*>(s.parents), cast<void*>(parents), numStmts * sizeof(Stmt*));
     return s;
 }
 
@@ -36,8 +36,8 @@ public func void CaseStmt.print(const CaseStmt* s, string_buffer.Buf* out, u32 i
     out.color(col_Stmt);
     out.add("CaseStmt\n");
     s.cond.print(out, indent + 2);
-    for (u32 i=0; i<s.stmt.caseStmtBits.num_stmts; i++) {
-        s.stmts[i].print(out, indent + 2);
+    for (u32 i=0; i<s.parent.caseStmtBits.num_stmts; i++) {
+        s.parents[i].print(out, indent + 2);
     }
 }
 

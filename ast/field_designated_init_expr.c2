@@ -8,7 +8,7 @@ import string_buffer;
 import utils local;
 
 public type FieldDesignatedInitExpr struct {
-    Expr expr;
+    Expr parent;
     const char* field;
     Expr* initValue;
 } @(opaque)
@@ -19,7 +19,7 @@ public func FieldDesignatedInitExpr* FieldDesignatedInitExpr.create(ast_context.
                                                                     Expr* initValue) @(inline)
 {
     FieldDesignatedInitExpr* e = c.alloc(sizeof(FieldDesignatedInitExpr));
-    e.expr.init(ExprKind.FieldDesignatedInit, loc, 0, 0, 0);
+    e.parent.init(ExprKind.FieldDesignatedInit, loc, 0, 0, 0);
     e.field = field;
     e.initValue = initValue;
     return e;

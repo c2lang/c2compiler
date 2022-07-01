@@ -8,7 +8,7 @@ import string_buffer;
 import utils local;
 
 public type ConditionalOperator struct {
-    Expr expr;
+    Expr parent;
     SrcLoc colonLoc;
     Expr* cond;
     Expr* lhs;
@@ -23,7 +23,7 @@ public func ConditionalOperator* ConditionalOperator.create(ast_context.Context*
                                                             Expr* rhs) @(inline)
 {
     ConditionalOperator* e = c.alloc(sizeof(ConditionalOperator));
-    e.expr.init(ExprKind.ConditionalOperator, questionLoc, 0, 0, 0);
+    e.parent.init(ExprKind.ConditionalOperator, questionLoc, 0, 0, 0);
     e.colonLoc = colonLoc;
     e.cond = cond;
     e.lhs = lhs;

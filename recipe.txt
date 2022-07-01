@@ -83,6 +83,7 @@ executable c2c
     ast/pointer_type.c2
     ast/array_type.c2
     ast/struct_type.c2
+    ast/enum_type.c2
 
     ast.c2
     ast_list.c2
