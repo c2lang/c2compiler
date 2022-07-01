@@ -25,8 +25,12 @@ public func Decl* AliasTypeDecl.asDecl(AliasTypeDecl* d) @(inline) {
 }
 
 public func void AliasTypeDecl.print(const AliasTypeDecl* d, string_buffer.Buf* out, u32 indent) {
-    out.indent(indent);
-    out.print("AliasTypeDecl %s\n", d.parent.name);
+    d.parent.printKind(out, indent, "AliasTypeDecl");
+    d.parent.printBits(out);
+    d.parent.printName(out);
+
+    out.add(" ");
     d.refType.print(out);
+    out.add("\n");
 }
 
