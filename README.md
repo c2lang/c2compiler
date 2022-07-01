@@ -70,11 +70,11 @@
 - Give every Type a PtrType* ptr, since we can re-use efficiently. Since many types will have
     pointers to them, this is not so bad.
 
-## Builder
+## Compiler
+- load external components
+
 
 ## Analyser
-- check imports (need external Components)
-- order modules (per Component)
 - check if all files of module are in the same dir
     -> check if prefix is the same
 
