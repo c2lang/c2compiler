@@ -22,68 +22,21 @@
 - put all output through filter for coloring/not
 
 ## AST
-- improve AST print, like c2c
-    - types
-    QualType.diagName()
-            "NULL"
-                or
-            printQualifiers()
-            T->printName()
-                + (aka ..)
-            FooBar (aka u16)
-    QualType.printName()
-        -> does not print qualifiers!
-        "NULL" or T->printName()
-    QualType.print() -> does
-            'debugPrint() => debugPrint(canonical)'
-    QualType.debugPrint()
-        printQualifiers()
-        T->debugPrint()
-    Type:
-        printName
-            '(struct) Point'   '(struct) <anonymous>'
-            '(enum) Kind'
-            'u16 print(char*, i16, ...)'
-            'Point*'
-            RefType:
-                if (decl)  decl->getName()
-                else '(RefType) ' + printLiteral()
-        debugPrint (shortPrint?)
-            'u18'
-            'Point[a] '  <-- if size known print that, otherwise sizeExpr.printLiteral()
-            RefType
-                '(unresolved) foo'
-                or
-                printLiteral()
-            Function: same as printName
-                            debugPrint                      printName
-        BuiltinType         u16                             u16
-        PointerType         debugPrint() + *                debugPrint() + *
-        ArrayType           printName()                     debugPrint()
-        RefType             '(Unresolved' + declgetName()   decl->GetName()     '
-                            RED: literal                    or '(RefType)'+literal
-        AliasType           "alias" + decl->getName()       decl->getName()
-        StructType          (struct) + decl->getName()      (struct) + decl->getName()
-                                + <anonymous>
-        EnumType            'decl->getName()' + (enum)      (enum) + decl->getName()
-        FunctionType        same                            Q.printName, args.printName()
-        ModuleType          (module)                        module
-
-        2 prints:
-            -> all types are printed on single line
-            - one for AST print - print()
-                '(struct)Block*'
-                'u8[a]' -> after analysis 'u8[3]'
-                'Point => u8'
-                'u8[3] => u8*'
-            - one for diagnostics - diagPrint()
-                -> has (enum)/(struct) etc prepends
-                const Block*
-                'Point* => u8'
-                'u8[3] => u8*'
-            -> rename debugPrint -> diagPrint
-        -> ALSO need expr.printLiteral()
-            -> printLiteral does NOT print colors
+    2 prints:
+        -> all types are printed on single line
+        - one for AST print - print()
+            '(struct)Block*'
+            'u8[a]' -> after analysis 'u8[3]'
+            'Point => u8'
+            'u8[3] => u8*'
+        - one for diagnostics - diagPrint()
+            -> has (enum)/(struct) etc prepends
+            const Block*
+            'Point* => u8'
+            'u8[3] => u8*'
+        -> rename debugPrint -> diagPrint
+    -> ALSO need expr.printLiteral()
+        -> printLiteral does NOT print colors
 
 
     - expr

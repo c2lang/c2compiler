@@ -15,7 +15,8 @@ public type TypeKind enum u8 {
     Struct,
     Enum,
     Function,
-    // Alias
+    // Alias,
+    // Module,
 }
 
 public type TypeBits struct {

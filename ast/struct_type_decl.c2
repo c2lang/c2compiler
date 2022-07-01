@@ -49,13 +49,7 @@ public func void StructTypeDecl.print(const StructTypeDecl* d, string_buffer.Buf
     if (d.parent.structTypeDeclBits.is_struct) out.add(" struct");
     else out.add(" union");
 
-    if (d.parent.name) {
-        d.parent.printName(out);
-    } else {
-        out.add(" ");
-        out.color(col_Value);
-        out.add("<anonymous>");
-    }
+    d.parent.printName(out);
     out.add("\n");
 
     for (u32 i=0; i<d.parent.structTypeDeclBits.num_members; i++) {
