@@ -48,7 +48,7 @@ func void Parser.parseFunctionType(Parser* p, const char* name, u32 loc, bool is
     params.init(4);
 
     bool is_variadic = p.parseFunctionParams(&params, is_public, false);
-    Decl* f = p.builder.actOnFuncTypeDecl(name, loc, is_public, rtype, cast<VarDecl**>(params.getDecls()), params.size(), is_variadic);
+    Decl* f = p.builder.actOnFunctionTypeDecl(name, loc, is_public, rtype, cast<VarDecl**>(params.getDecls()), params.size(), is_variadic);
     p.parseOptionalAttributes(); // (f)
     params.free();
     p.expectAndConsume(Kind.Semicolon);
@@ -197,7 +197,7 @@ func void Parser.parseEnumType(Parser* p, const char* name, u32 loc, bool is_pub
 
     p.expectAndConsume(Kind.RBrace);
 
-    p.builder.actOnEnumTypeDecl(name, loc, is_public, is_incr, qt, cast<EnumConstantDecl**>(constants.getDecls()), constants.size());
+    p.builder.actOnEnumType(name, loc, is_public, is_incr, qt, cast<EnumConstantDecl**>(constants.getDecls()), constants.size());
 
     constants.free();
 }

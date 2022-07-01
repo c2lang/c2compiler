@@ -54,7 +54,7 @@ public func Decl* Builder.actOnAliasType(Builder* b, const char* name, SrcLoc lo
     return d.asDecl();
 }
 
-public func Decl* Builder.actOnFuncTypeDecl(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType rtype,
+public func Decl* Builder.actOnFunctionTypeDecl(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType rtype,
                                                 VarDecl** params, u32 num_params, bool is_variadic) {
     FunctionDecl* fn = FunctionDecl.create(b.context, name, loc, is_public, rtype, nil, params, num_params, is_variadic);
 
@@ -66,7 +66,8 @@ public func Decl* Builder.actOnFuncTypeDecl(Builder* b, const char* name, SrcLoc
 public func StructTypeDecl* Builder.actOnStructType(Builder* b, const char* name, SrcLoc loc, bool is_public, bool is_struct, bool is_global,
                                                     VarDecl** members, u32 num_members) {
     StructType* stype = StructType.create(b.context);
-    StructTypeDecl* d = StructTypeDecl.create(b.context, name, loc, is_public, QualType.init2(stype), is_struct, is_global, members, num_members);
+    QualType qt = QualType.init2(stype.asType());
+    StructTypeDecl* d = StructTypeDecl.create(b.context, name, loc, is_public, qt, is_struct, is_global, members, num_members);
     stype.setDecl(d);
     if (is_global) b.ast.addTypeDecl(d.asDecl());
     return d;
@@ -185,17 +186,20 @@ public func QualType Builder.actOnTypeQualifier(Builder* b, QualType qt, u32 qua
     return res;
 }
 
-public func FunctionDecl* Builder.actOnFuncDecl(Builder* b,
-                                                const char* name,
-                                                SrcLoc loc,
-                                                bool is_public,
-                                                QualType rtype,
-                                                IdentifierExpr* prefix,
-                                                VarDecl** params,
-                                                u32 num_params,
-                                                bool is_variadic)
+public func FunctionDecl* Builder.actOnFunctionDecl(Builder* b,
+                                                    const char* name,
+                                                    SrcLoc loc,
+                                                    bool is_public,
+                                                    QualType rtype,
+                                                    IdentifierExpr* prefix,
+                                                    VarDecl** params,
+                                                    u32 num_params,
+                                                    bool is_variadic)
 {
+    // TODO have FunctionDecl do this? (and convert to FunctionType.init(ptr))
+    FunctionType* ftype = FunctionType.create(b.context);
     FunctionDecl* f = FunctionDecl.create(b.context, name, loc, is_public, rtype, prefix, params, num_params, is_variadic);
+    ftype.setDecl(f);
     b.ast.addFunc(f);
     return f;
 }
@@ -208,16 +212,19 @@ public func EnumConstantDecl* Builder.actOnEnumConstant(Builder* b, const char* 
     return EnumConstantDecl.create(b.context, name, loc, is_public, qt, initial);
 }
 
-public func void Builder.actOnEnumTypeDecl(Builder* b,
-                                           const char* name,
-                                           SrcLoc loc,
-                                           bool is_public,
-                                           bool is_incr,
-                                           QualType qt,
-                                           EnumConstantDecl** constants,
-                                           u32 num_constants)
+public func void Builder.actOnEnumType(Builder* b,
+                                       const char* name,
+                                       SrcLoc loc,
+                                       bool is_public,
+                                       bool is_incr,
+                                       QualType implType,
+                                       EnumConstantDecl** constants,
+                                       u32 num_constants)
 {
-    EnumTypeDecl* d = EnumTypeDecl.create(b.context, name, loc, is_public, is_incr, constants, num_constants);
+    EnumType* etype = EnumType.create(b.context);
+    QualType qt = QualType.init2(etype.asType());
+    EnumTypeDecl* d = EnumTypeDecl.create(b.context, name, loc, is_public, implType, qt, is_incr, constants, num_constants);
+    etype.setDecl(d);
     b.ast.addTypeDecl(d.asDecl());
 }
 

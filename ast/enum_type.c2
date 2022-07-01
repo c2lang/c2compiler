@@ -19,11 +19,10 @@ public func EnumType* EnumType.create(ast_context.Context* c) @(inline) {
     return t;
 }
 
-public func void EnumType.setDecl(EnumType* t, EnumTypeDecl* decl) @(inline) {
-    t.decl = decl;
-}
-
+public func void EnumType.setDecl(EnumType* t, EnumTypeDecl* decl) @(inline) { t.decl = decl; }
 public func EnumTypeDecl* EnumType.getDecl(const EnumType* t) @(inline) { return t.decl; }
+
+public func Type* EnumType.asType(EnumType* t) @(inline) { return &t.parent; }
 
 public func void EnumType.print(const EnumType* t, string_buffer.Buf* out) {
     out.add("(enum)");

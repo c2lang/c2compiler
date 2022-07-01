@@ -1,0 +1,36 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context;
+import string_buffer;
+import utils;
+
+public type FunctionType struct {
+    Type parent;
+    FunctionDecl* decl;
+} @(opaque)
+
+public func FunctionType* FunctionType.create(ast_context.Context* c) @(inline) {
+    FunctionType* t = c.alloc(sizeof(FunctionType));
+    t.parent.init(TypeKind.Function);
+    t.decl = nil;
+    return t;
+}
+
+public func void FunctionType.setDecl(FunctionType* t, FunctionDecl* decl) @(inline) {
+    t.decl = decl;
+}
+
+public func FunctionDecl* FunctionType.getDecl(const FunctionType* t) @(inline) { return t.decl; }
+
+public func void FunctionType.print(const FunctionType* t, string_buffer.Buf* out) {
+    out.add("(function)");
+    out.add(t.decl.parent.name);
+}
+
+func void FunctionType.debugPrint(const FunctionType* t, string_buffer.Buf* out) {
+    // TODO
+}
+

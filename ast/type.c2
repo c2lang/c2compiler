@@ -14,6 +14,7 @@ public type TypeKind enum u8 {
     Ref,
     Struct,
     Enum,
+    Function,
 }
 
 public type TypeBits struct {
@@ -67,6 +68,9 @@ public func void Type.print(const Type* t, string_buffer.Buf* out) {
     case TypeKind.Enum:
         EnumType.print(cast<EnumType*>(t), out);
         break;
+    case TypeKind.Function:
+        FunctionType.print(cast<FunctionType*>(t), out);
+        break;
     }
 }
 
@@ -89,6 +93,9 @@ func void Type.debugPrint(const Type* t, string_buffer.Buf* out) {
         break;
     case TypeKind.Enum:
         EnumType.debugPrint(cast<EnumType*>(t), out);
+        break;
+    case TypeKind.Function:
+        FunctionType.debugPrint(cast<FunctionType*>(t), out);
         break;
     }
 }

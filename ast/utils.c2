@@ -11,7 +11,7 @@ static_assert(32, sizeof(Decl));
 static_assert(48, sizeof(FunctionDecl));
 static_assert(32, sizeof(StructTypeDecl));
 static_assert(48, sizeof(ImportDecl));
-static_assert(32, sizeof(EnumTypeDecl));
+static_assert(40, sizeof(EnumTypeDecl));
 static_assert(48, sizeof(EnumConstantDecl));
 static_assert(40, sizeof(VarDecl));
 static_assert(40, sizeof(AliasTypeDecl));
@@ -64,6 +64,7 @@ static_assert(24, sizeof(ArrayType));
 static_assert(24, sizeof(RefType));
 static_assert(24, sizeof(StructType));
 static_assert(24, sizeof(EnumType));
+static_assert(24, sizeof(FunctionType));
 
 static_assert(8, sizeof(QualType));
 

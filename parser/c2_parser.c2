@@ -248,7 +248,7 @@ func void Parser.parseFuncDef(Parser* p, bool is_public) {
     params.init(4);
 
     bool is_variadic = p.parseFunctionParams(&params, is_public, true);
-    FunctionDecl* f = p.builder.actOnFuncDecl(func_name, func_loc, is_public, rtype, prefix, cast<VarDecl**>(params.getDecls()), params.size(), is_variadic);
+    FunctionDecl* f = p.builder.actOnFunctionDecl(func_name, func_loc, is_public, rtype, prefix, cast<VarDecl**>(params.getDecls()), params.size(), is_variadic);
     params.free();
 
     p.parseOptionalAttributes(); // (f)
