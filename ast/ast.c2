@@ -66,7 +66,8 @@ public type ImportVisitor func void (void* arg, ImportDecl* d);
 
 public func void AST.visitImports(const AST* a, ImportVisitor visitor, void* arg) {
     ImportDecl** imports = a.imports.getDecls();
-    for (u32 i=0; i<a.imports.size(); i++) {
+    // Note: skip first 'Import' since it is really the module statement
+    for (u32 i=1; i<a.imports.size(); i++) {
         visitor(arg, imports[i]);
     }
 }

@@ -32,6 +32,14 @@ public func void Component.free(Component* m) {
     free(m);
 }
 
+public type ModuleVisitor func void (void* arg, ast.Module* m);
+
+public func void Component.visitModules(const Component* c, ModuleVisitor visitor, void* arg) {
+    for (u32 i=0; i<c.num_mods; i++) {
+        visitor(arg, c.mods[i]);
+    }
+}
+
 public func void Component.visitImports(const Component* c, ast.ImportVisitor visitor, void* arg) {
     for (u32 i=0; i<c.num_mods; i++) {
         c.mods[i].visitImports(visitor, arg);
@@ -40,6 +48,10 @@ public func void Component.visitImports(const Component* c, ast.ImportVisitor vi
 
 public func ast.Module* Component.getModule(const Component* c, u32 idx) {
     return c.mods[idx];
+}
+
+public func ast.Module** Component.getModules(Component* c) {
+    return c.mods;
 }
 
 public func u32 Component.getNumModules(const Component* c) {
