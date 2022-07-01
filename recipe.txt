@@ -86,8 +86,12 @@ executable c2c
     ast/enum_type.c2
     ast/function_type.c2
 
-    ast.c2
-    ast_list.c2
+    ast/ast.c2
+	ast/decl_list.c2
+	ast/expr_list.c2
+	ast/function_decl_list.c2
+	ast/import_decl_list.c2
+
     stmt_list.c2
     c2recipe.c2
     c2recipe_parser.c2

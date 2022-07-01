@@ -6,7 +6,6 @@ module c2_parser;
 import c2_tokenizer local;
 import ast_builder local;   // is used!!
 import ast local;
-import ast_list;
 import tokens local;
 import utils local;
 #if ParserDebug
@@ -312,7 +311,7 @@ func Expr* Parser.parseCallExpr(Parser* p, Expr* fn) {
 #endif
     p.consumeToken(); // '('
 
-    ast_list.ExprList args;
+    ExprList args;
     args.init(4);
 
     while (p.tok.kind != Kind.RParen) {
@@ -433,7 +432,7 @@ func Expr* Parser.parseInitList(Parser* p) {
     SrcLoc left = p.tok.loc;
     p.expectAndConsume(Kind.LBrace);
 
-    ast_list.ExprList values;
+    ExprList values;
     values.init(8);
 
     while (p.tok.kind != Kind.RBrace) {

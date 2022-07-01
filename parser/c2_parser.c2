@@ -6,7 +6,6 @@ module c2_parser;
 import source_mgr local;
 import c2_tokenizer local;
 import ast_builder local;
-import ast_list local;
 import ast local;
 import string_pool;
 import tokens local;

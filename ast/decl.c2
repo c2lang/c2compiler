@@ -59,7 +59,7 @@ public type Decl struct {
     SrcLoc loc;
     const char* name;
     QualType qt;
-    // Module* mod;
+    //c2module.Module* mod;
 } @(opaque)
 
 func void Decl.init(Decl* d, DeclKind k, const char* name, SrcLoc loc, bool is_public, QualType qt) @(inline) {

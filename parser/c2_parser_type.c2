@@ -4,7 +4,6 @@
 module c2_parser;
 
 import ast_builder local;
-import ast_list local;
 import ast local;
 import tokens local;
 import utils local;

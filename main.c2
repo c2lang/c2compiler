@@ -17,6 +17,8 @@ import utils;
 
 import stdio local;
 
+// TODO move somewhere
+
 public func i32 main(i32 argc, char** argv) {
     bool single_file = false; // TODO parse
 
@@ -102,7 +104,7 @@ public func i32 main(i32 argc, char** argv) {
         pool.dump();
 #endif
         //comp.info();
-        comp.print();
+        //comp.print();
         builder.free();
         comp.free();
         pool.free();

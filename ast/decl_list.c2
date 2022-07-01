@@ -1,0 +1,51 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+// TODO remove local
+import string local;
+import stdlib local;
+
+public type DeclList struct {
+    u32 count;
+    u32 capacity;
+    Decl** decls;
+}
+
+public func void DeclList.init(DeclList* l, u32 initial_size = 0) {
+    memset(l, 0, sizeof(DeclList));
+    if (initial_size) {
+        l.capacity = initial_size;
+        l.decls = malloc(l.capacity * sizeof(Decl*));
+    }
+}
+
+public func void DeclList.free(DeclList* l) {
+    if (l.decls) free(cast<void*>(l.decls));
+}
+
+public func void DeclList.add(DeclList* l, Decl* d) {
+    if (l.count >= l.capacity) {
+        l.capacity += 4;
+        void* decls2 = malloc(l.capacity * sizeof(Decl*));
+        void* old = cast<void*>(l.decls);
+        if (old) {
+            memcpy(decls2, old, l.count * sizeof(Decl*));
+            free(old);
+        }
+        l.decls = decls2;
+    }
+
+    l.decls[l.count] = d;
+    l.count++;
+}
+
+public func u32 DeclList.size(const DeclList* l) {
+    return l.count;
+}
+
+public func Decl** DeclList.getDecls(const DeclList* l) {
+    return l.decls;
+}
+

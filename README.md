@@ -22,6 +22,14 @@
 - put all output through filter for coloring/not
 
 ## AST
+- add Decl.Module*
+    Decl -> Module
+    Module -> AST
+    AST -> Decls
+    -> nasty, then Module and AST need to be in AST module! otherwise circular dependency
+    -> also ast_list must be in AST then!
+    then most expr/stmt/decl/type.print() can be private
+    only dump() functions need to be public
 - store Attributes
     2 prints:
         -> all types are printed on single line
@@ -56,6 +64,12 @@
 
 ## Builder
 
+## Analyser
+- check imports (need external Components)
+- order modules (per Component)
+- check if all files of module are in the same dir
+    -> check if prefix is the same
+
 ## Performance
 - profile application to see where time is spent
     add -pg to CFLAGS + LDFLAGS
@@ -86,3 +100,8 @@ cproc
 c2c
     NEW (without C cast)
 
+Builder
+    -> list of Modules (for lookup)
+  Component
+    Module
+      AST

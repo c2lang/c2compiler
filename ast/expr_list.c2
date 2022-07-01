@@ -1,0 +1,51 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+// TODO remove local
+import string local;
+import stdlib local;
+
+public type ExprList struct {
+    u32 count;
+    u32 capacity;
+    Expr** exprs;
+}
+
+public func void ExprList.init(ExprList* l, u32 initial_size) {
+    memset(l, 0, sizeof(ExprList));
+    if (initial_size) {
+        l.capacity = initial_size;
+        l.exprs = malloc(l.capacity * sizeof(Expr*));
+    }
+}
+
+public func void ExprList.free(ExprList* l) {
+    if (l.exprs) free(cast<void*>(l.exprs));
+}
+
+public func void ExprList.add(ExprList* l, Expr* d) {
+    if (l.count >= l.capacity) {
+        l.capacity += 4;
+        void* exprs2 = malloc(l.capacity * sizeof(Expr*));
+        void* old = cast<void*>(l.exprs);
+        if (old) {
+            memcpy(exprs2, old, l.count * sizeof(Expr*));
+            free(old);
+        }
+        l.exprs = exprs2;
+    }
+
+    l.exprs[l.count] = d;
+    l.count++;
+}
+
+public func u32 ExprList.size(const ExprList* l) {
+    return l.count;
+}
+
+public func Expr** ExprList.getExprs(const ExprList* l) {
+    return l.exprs;
+}
+

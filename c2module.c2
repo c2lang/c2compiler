@@ -1,6 +1,6 @@
 module c2module;
 
-import ast_list local;
+import ast;
 import string_buffer;
 import stdlib local;
 import string;
@@ -13,7 +13,7 @@ import string;
 public type Module struct {
     const char* name;       // no ownership
 
-    AST** files;
+    ast.AST** files;
     u32 num_files;
     u32 max_files;
 } @(opaque)
@@ -38,24 +38,24 @@ public func const char* Module.getName(const Module* m) @(inline) { return m.nam
 
 func void Module.resize(Module* m, u32 cap) {
     m.max_files = cap;
-    void* buf = malloc(m.max_files * sizeof(AST*));
+    void* buf = malloc(m.max_files * sizeof(ast.AST*));
     if (m.files) {
         void* old = cast<void*>(m.files);
-        string.memcpy(buf, old, m.num_files * sizeof(AST*));
+        string.memcpy(buf, old, m.num_files * sizeof(ast.AST*));
         free(old);
     }
     m.files = buf;
 }
 
 // Note: filename must be allocated in StringPool
-public func AST* Module.add(Module* m, const char* filename) {
-    AST* ast = AST.create(filename);
+public func ast.AST* Module.add(Module* m, const char* filename) {
+    ast.AST* a = ast.AST.create(filename);
 
     if (m.num_files == m.max_files) m.resize(m.max_files * 2);
 
-    m.files[m.num_files] = ast;
+    m.files[m.num_files] = a;
     m.num_files++;
-    return ast;
+    return a;
 }
 
 public func void Module.info(const Module* m, string_buffer.Buf* out) {

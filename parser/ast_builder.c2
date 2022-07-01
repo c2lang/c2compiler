@@ -5,7 +5,6 @@ module ast_builder;
 
 import ast local;
 import ast_context local;
-import ast_list;
 import component;
 import c2module;
 import tokens local;
@@ -17,7 +16,7 @@ public type Builder struct {
     Context* context;
     component.Component* comp;
     c2module.Module* mod;
-    ast_list.AST* ast;
+    AST* ast;
 } @(opaque)
 
 public func Builder* create(Context* context, component.Component* comp) {
