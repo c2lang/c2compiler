@@ -53,7 +53,6 @@ func void ModuleSorter.sort(component.Component* c) {
     s.num_mods = count;
     s.cur_mod_idx = 0;
 
-    u64 t1 = utils.now();
     // preparation
     ast.Module** orig = c.getModules();
     s.modules = stdlib.malloc(count * sizeof(ast.Module*));
@@ -64,46 +63,51 @@ func void ModuleSorter.sort(component.Component* c) {
     c.visitModules(ModuleSorter.handleModule, &s);
 
     // sort
-    u8* todo = &s.array[count*count];
-    string.memset(todo, 1, count);
-    u8* sorted = &s.array[count*(count+1)];
-    u32 num_sorted = 0;
     //s.print();
-    u32 left = count;
-    while (left) {
-        u32 start = left;
-        for (u32 i=0; i<count; i++) {
-            if (todo[i] == 0) continue;
-            u32 offset = i*count;
-            bool has_deps = false;
-            for (u32 j=0; j<count; j++) {
-                if (s.array[offset + j] != 0) {
-                    has_deps = true;
-                    break;
-                }
-            }
-            if (!has_deps) {
-                sorted[num_sorted] = cast<u8>(i);
-                todo[i] = 0;
-                num_sorted++;
-                left--;
-                for (u32 x=0; x<count; x++) s.array[x*count + i] = 0;
-                //s.print();
-            }
-        }
-        if (start == left) {
+    u8* sorted = &s.array[count*(count+1)];
+    // Note: max modules is 256 this way!
+    u8* ringbuf = &s.array[count*count];
+    u32 head = 0;
+    u32 size = count;
+    for (u8 i=0; i<count; i++) ringbuf[i] = i;
+
+    u32 iterations = 0;
+    while (size) {
+        if (iterations > size) {
             fprintf(stderr, "circular dependency detected\n");
+            //s.print();
             // TODO print dependency
             goto out;
         }
+
+        u8 idx = ringbuf[head];
+        head = (head + 1) % count;
+        // Note: dont change size yet
+
+        u32 offset = idx*count;
+        bool has_deps = false;
+        for (u32 j=0; j<count; j++) {
+            if (s.array[offset + j] != 0) {
+                has_deps = true;
+                break;
+            }
+        }
+        if (has_deps) {
+            // note: head already updated, so size - 1
+            ringbuf[(head + size -1) % count] = idx;
+            iterations++;
+        } else {
+            sorted[count-size] = cast<u8>(idx);
+            iterations = 0;
+            size--;
+            // clear this module's dependencies
+            for (u32 x=0; x<count; x++) s.array[x*count + idx] = 0;
+            //s.print();
+        }
     }
-    u64 t2 = utils.now();
-    printf("sorting %u modules took %lu usec\n", count, t2 - t1);
 
     // re-order results
-    for (u32 i=0; i<count; i++) {
-        orig[i] = s.modules[sorted[i]];
-    }
+    for (u32 i=0; i<count; i++) orig[i] = s.modules[sorted[i]];
 
 out:
     stdlib.free(cast<void*>(s.modules));
