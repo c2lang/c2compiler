@@ -7,16 +7,16 @@ import color;
 import ast_context local;
 
 // TODO fix values (sizeof bitfields)
-static_assert(40, sizeof(Decl));
-static_assert(56, sizeof(FunctionDecl));
-static_assert(40, sizeof(StructTypeDecl));
-static_assert(56, sizeof(ImportDecl));
-static_assert(48, sizeof(EnumTypeDecl));
-static_assert(48, sizeof(EnumConstantDecl));
-static_assert(40, sizeof(VarDecl));
-static_assert(48, sizeof(AliasTypeDecl));
-static_assert(48, sizeof(FunctionTypeDecl));
-static_assert(56, sizeof(StaticAssertDecl));
+static_assert(48, sizeof(Decl));
+static_assert(64, sizeof(FunctionDecl));
+static_assert(48, sizeof(StructTypeDecl));
+static_assert(64, sizeof(ImportDecl));
+static_assert(56, sizeof(EnumTypeDecl));
+static_assert(56, sizeof(EnumConstantDecl));
+static_assert(48, sizeof(VarDecl));
+static_assert(56, sizeof(AliasTypeDecl));
+static_assert(56, sizeof(FunctionTypeDecl));
+static_assert(64, sizeof(StaticAssertDecl));
 
 static_assert(20, sizeof(Stmt));
 static_assert(24, sizeof(CompoundStmt));

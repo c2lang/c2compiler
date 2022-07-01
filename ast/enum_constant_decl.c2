@@ -18,11 +18,18 @@ public type EnumConstantDecl struct {
     Expr*[0] init;  // tail-allocated
 } @(opaque)
 
-public func EnumConstantDecl* EnumConstantDecl.create(ast_context.Context* c, const char* name, SrcLoc loc, bool is_public, QualType qt, Expr* initValue) @(inline) {
+public func EnumConstantDecl* EnumConstantDecl.create(ast_context.Context* c,
+                                                      const char* name,
+                                                      SrcLoc loc,
+                                                      bool is_public,
+                                                      QualType qt,
+                                                      Module* mod,
+                                                      Expr* initValue) @(inline)
+{
     u32 size = sizeof(EnumConstantDecl);
     if (initValue) size += sizeof(Expr*);
     EnumConstantDecl* d = c.alloc(size);
-    d.parent.init(DeclKind.EnumConstant, name, loc, is_public, qt);
+    d.parent.init(DeclKind.EnumConstant, name, loc, is_public, qt, mod);
     d.value = 0;
     if (initValue) {
         d.parent.enumConstantDeclBits.has_init = 1;

@@ -22,10 +22,7 @@
 - put all output through filter for coloring/not
 
 ## AST
-- add Decl.Module*
-    -> also ast_list must be in AST then!
-    then most expr/stmt/decl/type.print() can be private
-    only dump() functions need to be public
+- add ImplicitCastExpr
 - store Attributes
     2 prints:
         -> all types are printed on single line

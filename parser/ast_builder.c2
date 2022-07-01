@@ -46,15 +46,15 @@ public func void Builder.actOnImport(Builder* b, const char* mod_name, SrcLoc mo
     b.ast.addImport(d);
 }
 
-public func Decl* Builder.actOnAliasType(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType qt) {
-    AliasTypeDecl* d = AliasTypeDecl.create(b.context, name, loc, is_public, qt);
+public func Decl* Builder.actOnAliasType(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType refType) {
+    AliasTypeDecl* d = AliasTypeDecl.create(b.context, name, loc, is_public, b.mod, refType);
     b.ast.addTypeDecl(d.asDecl());
     return d.asDecl();
 }
 
 public func Decl* Builder.actOnFunctionTypeDecl(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType rtype,
                                                 VarDecl** params, u32 num_params, bool is_variadic) {
-    FunctionDecl* fn = FunctionDecl.create(b.context, name, loc, is_public, rtype, nil, params, num_params, is_variadic);
+    FunctionDecl* fn = FunctionDecl.create(b.context, name, loc, is_public, b.mod, rtype, nil, params, num_params, is_variadic);
 
     FunctionTypeDecl* d = FunctionTypeDecl.create(b.context, fn);
     b.ast.addTypeDecl(d.asDecl());
@@ -63,30 +63,30 @@ public func Decl* Builder.actOnFunctionTypeDecl(Builder* b, const char* name, Sr
 
 public func StructTypeDecl* Builder.actOnStructType(Builder* b, const char* name, SrcLoc loc, bool is_public, bool is_struct, bool is_global,
                                                     VarDecl** members, u32 num_members) {
-    StructTypeDecl* d = StructTypeDecl.create(b.context, name, loc, is_public, is_struct, is_global, members, num_members);
+    StructTypeDecl* d = StructTypeDecl.create(b.context, name, loc, is_public, b.mod, is_struct, is_global, members, num_members);
     if (is_global) b.ast.addTypeDecl(d.asDecl());
     return d;
 }
 
 public func VarDecl* Builder.actOnStructMember(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType qt, Expr* bitfield) {
-    return VarDecl.createStructMember(b.context, name, loc, is_public, qt, bitfield);
+    return VarDecl.createStructMember(b.context, name, loc, is_public, qt, b.mod, bitfield);
 }
 
 public func VarDecl* Builder.actOnStructVar(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType qt, Expr* initValue) {
-    return VarDecl.create(b.context, VarDeclKind.StructMember, name, loc, is_public, qt, initValue);
+    return VarDecl.create(b.context, VarDeclKind.StructMember, name, loc, is_public, qt, b.mod, initValue);
 }
 
 public func void Builder.actOnGlobalVarDecl(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType qt, Expr* initValue) {
-    VarDecl* d = VarDecl.create(b.context, VarDeclKind.GlobalVar, name, loc, is_public, qt, initValue);
+    VarDecl* d = VarDecl.create(b.context, VarDeclKind.GlobalVar, name, loc, is_public, qt, b.mod, initValue);
     b.ast.addVarDecl(d.asDecl());
 }
 
 public func VarDecl* Builder.actOnFunctionParam(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType qt, Expr* initValue) {
-    return VarDecl.create(b.context, VarDeclKind.FunctionParam, name, loc, is_public, qt, initValue);
+    return VarDecl.create(b.context, VarDeclKind.FunctionParam, name, loc, is_public, qt, b.mod, initValue);
 }
 
 public func Stmt* Builder.actOnVarDeclStmt(Builder* b, const char* name, SrcLoc loc, QualType qt, Expr* initValue, bool has_local) {
-    VarDecl* d = VarDecl.create(b.context, VarDeclKind.LocalVar, name, loc, false, qt, initValue);
+    VarDecl* d = VarDecl.create(b.context, VarDeclKind.LocalVar, name, loc, false, qt, b.mod, initValue);
     d.setLocal(has_local);
 
     return cast<Stmt*>(DeclStmt.create(b.context, d));
@@ -191,7 +191,7 @@ public func FunctionDecl* Builder.actOnFunctionDecl(Builder* b,
                                                     u32 num_params,
                                                     bool is_variadic)
 {
-    FunctionDecl* f = FunctionDecl.create(b.context, name, loc, is_public, rtype, prefix, params, num_params, is_variadic);
+    FunctionDecl* f = FunctionDecl.create(b.context, name, loc, is_public, b.mod, rtype, prefix, params, num_params, is_variadic);
     b.ast.addFunc(f);
     return f;
 }
@@ -201,7 +201,7 @@ public func void Builder.actOnFunctionBody(Builder* b, FunctionDecl* f, Compound
 }
 
 public func EnumConstantDecl* Builder.actOnEnumConstant(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType qt, Expr* initial) {
-    return EnumConstantDecl.create(b.context, name, loc, is_public, qt, initial);
+    return EnumConstantDecl.create(b.context, name, loc, is_public, qt, b.mod, initial);
 }
 
 public func void Builder.actOnEnumType(Builder* b,
@@ -213,7 +213,7 @@ public func void Builder.actOnEnumType(Builder* b,
                                        EnumConstantDecl** constants,
                                        u32 num_constants)
 {
-    EnumTypeDecl* d = EnumTypeDecl.create(b.context, name, loc, is_public, implType, is_incr, constants, num_constants);
+    EnumTypeDecl* d = EnumTypeDecl.create(b.context, name, loc, is_public, b.mod, implType, is_incr, constants, num_constants);
     b.ast.addTypeDecl(d.asDecl());
 }
 
