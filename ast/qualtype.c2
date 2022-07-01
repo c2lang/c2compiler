@@ -71,6 +71,7 @@ public func void QualType.printQuoted(const QualType* qt, string_buffer.Buf* out
     out.color(col_Type);
     out.add("'");
     qt.print(out);
+    out.color(col_Type);
     out.add("'");
 }
 
@@ -86,6 +87,5 @@ public func void QualType.print(const QualType* qt, string_buffer.Buf* out) {
     } else {
         out.color(col_Error);
         out.add("??");
-        out.color(col_Type);
     }
 }

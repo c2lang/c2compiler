@@ -30,6 +30,7 @@ public func void IntegerLiteral.print(const IntegerLiteral* e, string_buffer.Buf
     e.expr.printTypeBits(out);
     out.color(col_Value);
     out.print(" %lu", e.val);
+    out.add("\n");
 }
 
 func void IntegerLiteral.printLiteral(const IntegerLiteral* e, string_buffer.Buf* out) {

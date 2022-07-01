@@ -46,7 +46,6 @@ public func void RefType.print(const RefType* t, string_buffer.Buf* out) {
             out.add(".");
         }
         t.ref.printLiteral(out);
-        out.add(" => ??");
     }
 }
 

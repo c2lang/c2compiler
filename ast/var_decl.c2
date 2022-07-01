@@ -24,8 +24,8 @@ public type VarDeclKind enum u8 {
 const char*[] varDeclNames = {
     " global",
     " local",
-    " function-param",
-    " struct-member",
+    " parameter",
+    " member",
 }
 
 static_assert(elemsof(VarDeclKind), elemsof(varDeclNames));

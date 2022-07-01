@@ -75,7 +75,7 @@ public func void Component.print(const Component* c) {
     for (u32 i=0; i<c.num_mods; i++) {
         c.mods[i].print(out);
     }
-    stdio.printf("%s\n", out.data());
+    stdio.puts(out.data());
     out.free();
 }
 

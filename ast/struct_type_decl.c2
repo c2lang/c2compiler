@@ -40,11 +40,19 @@ public func Decl* StructTypeDecl.asDecl(StructTypeDecl* d) @(inline) {
 }
 
 public func void StructTypeDecl.print(const StructTypeDecl* d, string_buffer.Buf* out, u32 indent) {
-    out.indent(indent);
-    out.print("StructTypeDecl %s", d.decl.name);
+    d.decl.printKind(out, indent, "StructTypeDecl");
+    d.decl.printBits(out);
     if (d.decl.structTypeDeclBits.is_global) out.add(" global");
     if (d.decl.structTypeDeclBits.is_struct) out.add(" struct");
     else out.add(" union");
+
+    if (d.decl.name) {
+        d.decl.printName(out);
+    } else {
+        out.add(" ");
+        out.color(col_Value);
+        out.add("<anonymous>");
+    }
     out.add("\n");
 
     for (u32 i=0; i<d.decl.structTypeDeclBits.num_members; i++) {

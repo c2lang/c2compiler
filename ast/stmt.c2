@@ -71,7 +71,7 @@ public func StmtKind Stmt.getKind(const Stmt* s) @(inline) { return cast<StmtKin
 public func void Stmt.dump(const Stmt* s) {
     string_buffer.Buf* out = string_buffer.create(10*4096);
     s.print(out, 0);
-    stdio.printf("%s\n", out.data());
+    stdio.puts(out.data());
     out.free();
 }
 

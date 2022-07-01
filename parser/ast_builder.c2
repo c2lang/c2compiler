@@ -66,7 +66,7 @@ public func Decl* Builder.actOnFuncTypeDecl(Builder* b, const char* name, SrcLoc
 public func StructTypeDecl* Builder.actOnStructType(Builder* b, const char* name, SrcLoc loc, bool is_public, bool is_struct, bool is_global,
                                                     VarDecl** members, u32 num_members) {
     StructTypeDecl* d = StructTypeDecl.create(b.context, name, loc, is_public, is_struct, is_global, members, num_members);
-    b.ast.addTypeDecl(d.asDecl());
+    if (is_global) b.ast.addTypeDecl(d.asDecl());
     return d;
 }
 

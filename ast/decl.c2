@@ -85,7 +85,7 @@ public func bool Decl.isUsedPublic(const Decl* d) @(inline) { return d.declBits.
 public func void Decl.dump(const Decl* d) {
     string_buffer.Buf* out = string_buffer.create(10*4096);
     d.print(out, 0);
-    stdio.printf("%s\n", out.data());
+    stdio.puts(out.data());
     out.free();
 }
 
@@ -128,8 +128,8 @@ func void Decl.printKind(const Decl* d, string_buffer.Buf* out, u32 indent, cons
 }
 
 func void Decl.printName(const Decl* d, string_buffer.Buf* out) {
-    out.color(col_Value);
     out.add(" ");
+    out.color(col_Value);
     out.add(d.name);
 }
 

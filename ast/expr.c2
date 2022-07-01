@@ -75,7 +75,7 @@ public func SrcLoc Expr.getLoc(const Expr* e) @(inline) { return e.loc; }
 public func void Expr.dump(Expr* e) {
     string_buffer.Buf* out = string_buffer.create(10*4096);
     e.print(out, 0);
-    stdio.printf("%s\n", out.data());
+    stdio.puts(out.data());
     out.free();
 }
 
