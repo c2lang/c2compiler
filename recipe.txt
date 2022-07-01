@@ -87,6 +87,7 @@ executable c2c
     ast/function_type.c2
 
     ast/ast.c2
+    ast/module.c2
 	ast/decl_list.c2
 	ast/expr_list.c2
 	ast/function_decl_list.c2
@@ -95,7 +96,6 @@ executable c2c
     stmt_list.c2
     c2recipe.c2
     c2recipe_parser.c2
-    c2module.c2
     component.c2
     constants.c2
     source_mgr.c2

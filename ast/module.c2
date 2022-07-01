@@ -1,6 +1,5 @@
-module c2module;
+module ast;
 
-import ast;
 import string_buffer;
 import stdlib local;
 import string;
@@ -12,14 +11,13 @@ import string;
 
 public type Module struct {
     const char* name;       // no ownership
-
     ast.AST** files;
     u32 num_files;
     u32 max_files;
 } @(opaque)
 
 // Note: name must be allocated in target StringPool
-public func Module* create(const char* name) {
+public func Module* Module.create(const char* name) {
     Module* m = calloc(1, sizeof(Module));
     m.name = name;
     m.resize(1);

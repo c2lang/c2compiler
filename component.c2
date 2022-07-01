@@ -1,6 +1,6 @@
 module component;
 
-import c2module local;
+import ast;
 import string_buffer;
 import stdlib local;
 import string;
@@ -13,7 +13,7 @@ import stdio local; // TEMP
     - create + store Modules
 */
 public type Component struct {
-    Module** mods;
+    ast.Module** mods;
     u32 num_mods;
     u32 max_mods;
 } @(opaque)
@@ -34,23 +34,23 @@ public func void Component.free(Component* m) {
 
 func void Component.resize(Component* m, u32 cap) {
     m.max_mods = cap;
-    void* buf = malloc(m.max_mods * sizeof(Module*));
+    void* buf = malloc(m.max_mods * sizeof(ast.Module*));
     if (m.mods) {
         void* old = cast<void*>(m.mods);
-        string.memcpy(buf, old, m.num_mods * sizeof(Module*));
+        string.memcpy(buf, old, m.num_mods * sizeof(ast.Module*));
         free(old);
     }
     m.mods = buf;
 }
 
-public func Module* Component.getModule(Component* c, const char* modname) {
+public func ast.Module* Component.getModule(Component* c, const char* modname) {
     for (u32 i=0; i<c.num_mods; i++) {
-        Module* m = c.mods[i];
+        ast.Module* m = c.mods[i];
         // Note: can do a pointer compare
         if (m.getName() == modname) return m;
     }
 
-    Module* m = c2module.create(modname);
+    ast.Module* m = ast.Module.create(modname);
 
     if (c.num_mods == c.max_mods) c.resize(c.max_mods * 2);
 

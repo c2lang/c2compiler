@@ -6,7 +6,6 @@ module ast_builder;
 import ast local;
 import ast_context local;
 import component;
-import c2module;
 import tokens local;
 import utils local;
 
@@ -15,7 +14,7 @@ import stdlib local;
 public type Builder struct {
     Context* context;
     component.Component* comp;
-    c2module.Module* mod;
+    Module* mod;
     AST* ast;
 } @(opaque)
 
