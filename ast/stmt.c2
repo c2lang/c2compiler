@@ -128,3 +128,9 @@ public func void Stmt.print(const Stmt* s, string_buffer.Buf* out, u32 indent) {
     }
 }
 
+func void Stmt.printKind(const Stmt* s, string_buffer.Buf* out, u32 indent, const char* kind_) {
+    out.indent(indent);
+    out.color(col_Stmt);
+    out.add(kind_);
+}
+

@@ -7,6 +7,7 @@ import utils local;
 import string_buffer;
 import stdio;
 
+// TODO better order
 public type DeclKind enum u8 {
     Function,
     Import,
@@ -16,6 +17,8 @@ public type DeclKind enum u8 {
     FunctionType,
     AliasType,
     Var,
+    // Label
+    // ArrayValue
     StaticAssert,
 }
 
@@ -55,7 +58,7 @@ public type Decl struct {
     }
     SrcLoc loc;
     const char* name;
-    // QualType q;
+    QualType qt;
     // Module* mod;
 } @(opaque)
 

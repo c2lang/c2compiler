@@ -20,8 +20,7 @@ public func BreakStmt* BreakStmt.create(ast_context.Context* c, SrcLoc loc) @(in
 }
 
 public func void BreakStmt.print(const BreakStmt* s, string_buffer.Buf* out, u32 indent) {
-    out.indent(indent);
-    out.color(col_Stmt);
-    out.add("BreakStmt\n");
+    s.parent.printKind(out, indent, "BreakStmt");
+    out.add("\n");
 }
 

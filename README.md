@@ -22,6 +22,8 @@
 - put all output through filter for coloring/not
 
 ## AST
+- nice Stmt prints
+- add Type to Decl
     2 prints:
         -> all types are printed on single line
         - one for AST print - print()
@@ -37,13 +39,6 @@
         -> rename debugPrint -> diagPrint
     -> ALSO need expr.printLiteral()
         -> printLiteral does NOT print colors
-
-
-    - expr
-        printLiteral
-    - stmts
-    - decls
-- add many missing Types (StructType, etc)
 - C2C: FIX object sizes (Stmt should be 4 bytes, not aligned yet)
     ast_Stmt = 4
     ast_IfStmt = 24

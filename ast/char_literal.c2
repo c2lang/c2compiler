@@ -26,11 +26,34 @@ public func CharLiteral* CharLiteral.create(ast_context.Context* c, SrcLoc loc, 
 public func void CharLiteral.print(const CharLiteral* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent, "CharLiteral");
     e.parent.printTypeBits(out);
+    out.add(" ");
     out.color(col_Value);
-    out.print(" '%c'\n", e.parent.parent.charLiteralBits.value);
+    e.printLiteral(out);
+    out.add("\n");
 }
 
 public func void CharLiteral.printLiteral(const CharLiteral* e, string_buffer.Buf* out) {
-    out.print("'%c'", e.parent.parent.charLiteralBits.value);
+    char c = cast<char>(e.parent.parent.charLiteralBits.value);
+
+    switch (c) {
+    case '\n':
+        out.add("'\\n'");
+        break;
+    case '\r':
+        out.add("'\\r'");
+        break;
+    case '\t':
+        out.add("'\\t'");
+        break;
+    case '\'':
+        out.add("'\\''");
+        break;
+    case '\\':
+        out.add("'\\'");
+        break;
+    default:
+        out.print("'%c'", c);
+        break;
+    }
 }
 

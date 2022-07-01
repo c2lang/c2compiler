@@ -22,33 +22,32 @@ public func ReturnStmt* ReturnStmt.create(ast_context.Context* c, SrcLoc loc, Ex
     u32 size = sizeof(ReturnStmt);
     if (value) size += sizeof(Expr*);
 
-    ReturnStmt* r = c.alloc(size);
-    r.parent.init(StmtKind.Return);
-    r.loc = loc;
+    ReturnStmt* s = c.alloc(size);
+    s.parent.init(StmtKind.Return);
+    s.loc = loc;
 
     if (value) {
-        r.parent.returnStmtBits.has_value = 1;
-        r.value[0] = value;
+        s.parent.returnStmtBits.has_value = 1;
+        s.value[0] = value;
     }
-    return r;
+    return s;
 }
 
-public func void ReturnStmt.print(const ReturnStmt* r, string_buffer.Buf* out, u32 indent) {
-    out.indent(indent);
-    out.color(col_Stmt);
-    out.add("ReturnStmt\n");
-    if (r.parent.returnStmtBits.has_value) {
-        r.value[0].print(out, indent + 2);
+public func void ReturnStmt.print(const ReturnStmt* s, string_buffer.Buf* out, u32 indent) {
+    s.parent.printKind(out, indent, "ReturnStmt");
+    out.add("\n");
+    if (s.parent.returnStmtBits.has_value) {
+        s.value[0].print(out, indent + 2);
     }
 }
 
-public func Expr* ReturnStmt.getValue(const ReturnStmt* r) {
-    if (r.parent.returnStmtBits.has_value) return r.value[0];
+public func Expr* ReturnStmt.getValue(const ReturnStmt* s) {
+    if (s.parent.returnStmtBits.has_value) return s.value[0];
     return nil;
 }
 
-public func Expr** ReturnStmt.getValue2(ReturnStmt* r) {
-    if (r.parent.returnStmtBits.has_value) return &r.value[0];
+public func Expr** ReturnStmt.getValue2(ReturnStmt* s) {
+    if (s.parent.returnStmtBits.has_value) return &s.value[0];
     return nil;
 }
 

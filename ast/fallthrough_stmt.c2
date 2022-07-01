@@ -20,8 +20,7 @@ public func FallthroughStmt* FallthroughStmt.create(ast_context.Context* c, SrcL
 }
 
 public func void FallthroughStmt.print(const FallthroughStmt* s, string_buffer.Buf* out, u32 indent) {
-    out.indent(indent);
-    out.color(col_Stmt);
-    out.add("FallthroughStmt\n");
+    s.parent.printKind(out, indent, "FallthroughStmt");
+    out.add("\n");
 }
 
