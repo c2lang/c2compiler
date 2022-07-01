@@ -85,7 +85,7 @@ public func void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 ind
     d.parent.printName(out);
     out.add("\n");
 
-    if (k != VarDeclKind.StructMember && d.parent.varDeclBits.has_init_or_bitfield) {
+    if (d.parent.varDeclBits.has_init_or_bitfield) {
         d.init[0].print(out, indent + 2);
     }
 }

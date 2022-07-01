@@ -18,9 +18,9 @@ public func NilExpr* NilExpr.create(ast_context.Context* c, SrcLoc loc) @(inline
 }
 
 public func void NilExpr.print(const NilExpr* e, string_buffer.Buf* out, u32 indent) {
-    out.indent(indent);
-    out.color(col_Expr);
-    out.add("NilExpr\n");
+    e.parent.printKind(out, indent, "NilExpr");
+    e.parent.printTypeBits(out);
+    out.add("\n");
 }
 
 public func void NilExpr.printLiteral(const NilExpr* e, string_buffer.Buf* out) {

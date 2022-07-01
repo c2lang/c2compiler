@@ -32,8 +32,9 @@ public func ConditionalOperator* ConditionalOperator.create(ast_context.Context*
 }
 
 public func void ConditionalOperator.print(const ConditionalOperator* e, string_buffer.Buf* out, u32 indent) {
-    out.indent(indent);
-    out.add("ConditionalOperator\n");
+    e.parent.printKind(out, indent, "ConditionalOperator");
+    e.parent.printTypeBits(out);
+    out.add("\n");
     e.cond.print(out, indent + 2);
     e.lhs.print(out, indent + 2);
     e.rhs.print(out, indent + 2);

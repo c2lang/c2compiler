@@ -22,8 +22,9 @@ public func ExplicitCastExpr* ExplicitCastExpr.create(ast_context.Context* c, Sr
 }
 
 public func void ExplicitCastExpr.print(const ExplicitCastExpr* e, string_buffer.Buf* out, u32 indent) {
-    out.indent(indent);
-    out.add("ExplicitCastExpr\n");
+    e.parent.printKind(out, indent, "ExplicitCastExpr");
+    e.parent.printTypeBits(out);
+    out.add("\n");
     e.dest.print(out);
     e.inner.print(out, indent + 2);
 }
