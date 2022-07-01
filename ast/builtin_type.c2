@@ -42,7 +42,7 @@ static_assert(elemsof(BuiltinTypeKind), elemsof(builtinType_names));
 
 public type BuiltinTypeBits struct {
     u32 : NumTypeBits;
-    u32 kind : 3;
+    u32 kind : 4;
 }
 
 public type BuiltinType struct {

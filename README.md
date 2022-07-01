@@ -22,7 +22,7 @@
 - put all output through filter for coloring/not
 
 ## AST
-- add Type to Decl
+- store Attributes
     2 prints:
         -> all types are printed on single line
         - one for AST print - print()
