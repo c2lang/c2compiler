@@ -144,14 +144,6 @@ public func void Expr.print(const Expr* e, string_buffer.Buf* out, u32 indent) {
     }
 }
 
-func void Expr.printCommon(const Expr* e, string_buffer.Buf* out) {
-    e.qt.print(out);
-    out.color(col_Attr);
-    if (e.stmt.exprBits.is_ctv) out.add(" CTV");
-    if (e.stmt.exprBits.is_ctc) out.add(" CTC");
-    if (e.stmt.exprBits.is_lvalue) out.add(" lvalue");
-}
-
 func void Expr.printLiteral(const Expr* e, string_buffer.Buf* out) {
     switch (e.getKind()) {
     case ExprKind.IntegerLiteral:
@@ -210,3 +202,19 @@ func void Expr.printLiteral(const Expr* e, string_buffer.Buf* out) {
     }
     out.print("?? kind=%u", e.getKind());
 }
+
+func void Expr.printKind(const Expr* e, string_buffer.Buf* out, u32 indent, const char* kind_) {
+    out.indent(indent);
+    out.color(col_Expr);
+    out.add(kind_);
+}
+
+func void Expr.printTypeBits(const Expr* e, string_buffer.Buf* out) {
+    out.add(" ");
+    e.qt.printQuoted(out);
+    out.color(col_Attr);
+    if (e.stmt.exprBits.is_ctv) out.add(" CTV");
+    if (e.stmt.exprBits.is_ctc) out.add(" CTC");
+    if (e.stmt.exprBits.is_lvalue) out.add(" lvalue");
+}
+

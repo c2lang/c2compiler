@@ -22,10 +22,10 @@ public type VarDeclKind enum u8 {
 }
 
 const char*[] varDeclNames = {
-    "global",
-    "local",
-    "function-param",
-    "struct-member",
+    " global",
+    " local",
+    " function-param",
+    " struct-member",
 }
 
 static_assert(elemsof(VarDeclKind), elemsof(varDeclNames));
@@ -73,18 +73,17 @@ public func void VarDecl.setLocal(VarDecl* d, bool has_local) {
 }
 
 public func void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
-    d.decl.printCommon(out, indent, "VarDecl");
-    d.qt.print(out);
+    d.decl.printKind(out, indent, "VarDecl");
+    out.add(" ");
+    d.qt.printQuoted(out);
     out.color(col_Attr);
     VarDeclKind k = d.getKind();
-    out.add(" ");
-    // TODO VarDeclNames for local variable is local, which is confusing
     out.add(varDeclNames[k]);
     if (k == VarDeclKind.StructMember && d.decl.varDeclBits.has_init_or_bitfield) out.add(" bitfield");
     d.decl.printBits(out);
     out.color(col_Value);
     d.decl.printName(out);
-    d.decl.printBits(out);
+    out.add("\n");
 
     if (k != VarDeclKind.StructMember && d.decl.varDeclBits.has_init_or_bitfield) {
         d.init[0].print(out, indent + 2);

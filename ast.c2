@@ -73,30 +73,27 @@ public func void AST.print(const AST* a, string_buffer.Buf* out) {
     ImportDecl** imports = a.imports.getDecls();
     for (u32 i=0; i<a.imports.size(); i++) {
         imports[i].print(out, 0);
+        out.add("\n");
     }
 
-    out.add("\n");
     Decl** types = a.types.getDecls();
     for (u32 i=0; i<a.types.size(); i++) {
         types[i].print(out, 0);
         out.add("\n");
     }
 
-    out.add("\n");
     Decl** variables = a.variables.getDecls();
     for (u32 i=0; i<a.variables.size(); i++) {
         variables[i].print(out, 0);
         out.add("\n");
     }
 
-    out.add("\n");
     FunctionDecl** functions = a.functions.getDecls();
     for (u32 i=0; i<a.functions.size(); i++) {
         functions[i].print(out, 0);
         out.add("\n");
     }
 
-    out.add("\n");
     Decl** asserts = a.static_asserts.getDecls();
     for (u32 i=0; i<a.static_asserts.size(); i++) {
         asserts[i].print(out, 0);

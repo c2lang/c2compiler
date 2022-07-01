@@ -35,7 +35,7 @@ static_assert(elemsof(IdentifierKind), elemsof(identifierKind_names));
 
 public type IdentifierExprBits struct {
     u32 : NumExprBits;
-    u32 got_decl : 1;
+    u32 has_decl : 1;
     u32 kind : 4;   // IdentifierKind
     // TODO add Type, Var, Module, etc
 }
@@ -58,25 +58,31 @@ public func IdentifierExpr* IdentifierExpr.create(ast_context.Context* c, SrcLoc
 public func Expr* IdentifierExpr.asExpr(IdentifierExpr* e) @(inline) { return &e.expr; }
 
 public func Decl* IdentifierExpr.getDecl(const IdentifierExpr* e) @(inline) {
-    if (!e.expr.stmt.identifierExprBits.got_decl) return nil;
+    if (!e.expr.stmt.identifierExprBits.has_decl) return nil;
     return e.decl;
 }
 
 public func void IdentifierExpr.print(const IdentifierExpr* e, string_buffer.Buf* out, u32 indent) {
-    out.indent(indent);
-    out.color(col_Expr);
-    out.add("IdentifierExpr");
-    if (e.expr.stmt.identifierExprBits.got_decl) {
-        out.print(" name: %s\n", e.name);
+    e.expr.printKind(out, indent, "IdentifierExpr");
+    e.expr.printTypeBits(out);
+
+    out.add(" ");
+    if (e.expr.stmt.identifierExprBits.has_decl) {
+        out.add(e.decl.getName());
     } else {
-        out.print(" ref: %s\n", e.decl.getName());
+        out.color(col_Value);
+        out.add(e.name);
+        out.color(col_Error);
+        out.add(" unresolved");
     }
+    out.add("\n");
+
 }
 
 func void IdentifierExpr.printLiteral(const IdentifierExpr* e, string_buffer.Buf* out) {
-    if (e.expr.stmt.identifierExprBits.got_decl) {
-        out.add(e.name);
-    } else {
+    if (e.expr.stmt.identifierExprBits.has_decl) {
         out.add(e.decl.getName());
+    } else {
+        out.add(e.name);
     }
 }

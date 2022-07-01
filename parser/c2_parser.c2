@@ -491,7 +491,7 @@ func QualType Parser.parseFullTypeIdentifier(Parser* p) {
         p.consumeToken();
         p.expectIdentifier();
         prefix = id;
-        id = p.builder.actOnIdentifier(p.tok.loc, p.tok.text_value).asExpr();
+        id = p.builder.actOnIdentifier(p.tok.loc, p.tok.text_value);
         p.consumeToken();
     }
     return p.builder.actOnRefType(id, prefix);

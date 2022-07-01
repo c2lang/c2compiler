@@ -27,15 +27,6 @@ public func ImportDecl* ImportDecl.create(ast_context.Context* c, const char* na
     return d;
 }
 
-public func void ImportDecl.print(const ImportDecl* d, string_buffer.Buf* out, u32 indent) {
-    out.indent(indent);
-    out.add("ImportDecl");
-    if (d.decl.importDeclBits.is_local) out.add(" local");
-    out.print(" %s ", d.decl.name);
-    if (d.alias_name) out.print(" alias %s", d.alias_name);
-    out.add("\n");
-}
-
 public func const char* ImportDecl.getAliasName(const ImportDecl* d) @(inline) {
     return d.alias_name;
 }
@@ -44,4 +35,22 @@ public func SrcLoc ImportDecl.getAliasLoc(const ImportDecl* d) @(inline) {
     return d.alias_loc;
 }
 
+
+public func void ImportDecl.print(const ImportDecl* d, string_buffer.Buf* out, u32 indent) {
+    d.decl.printKind(out, indent, "ImportDecl");
+    d.decl.printName(out);
+
+    if (d.decl.importDeclBits.is_local) {
+        out.color(col_Attr);
+        out.add(" local");
+    }
+    if (d.alias_name) {
+        out.color(col_Attr);
+        out.add(" as ");
+        out.color(col_Value);
+        out.print("%s", d.alias_name);
+    }
+    d.decl.printUsed(out);
+    out.add("\n");
+}
 

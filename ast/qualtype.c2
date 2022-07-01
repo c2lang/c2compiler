@@ -16,7 +16,7 @@ public type QualType struct {
 }
 
 public func QualType QualType.init(Type* t, u32 qualifiers) @(inline) {
-    QualType qt = { cast<usize>(t) | qualifiers & QualType_Mask }
+    QualType qt = { cast<usize>(t) | (qualifiers & QualType_Mask) }
     return qt;
 }
 
@@ -67,6 +67,13 @@ func void QualType.debugPrint(const QualType* qt, string_buffer.Buf* out) {
     }
 }
 
+public func void QualType.printQuoted(const QualType* qt, string_buffer.Buf* out) {
+    out.color(col_Type);
+    out.add("'");
+    qt.print(out);
+    out.add("'");
+}
+
 public func void QualType.print(const QualType* qt, string_buffer.Buf* out) {
     const Type* t = qt.getTypeOrNil();
     if (t) {
@@ -78,7 +85,7 @@ public func void QualType.print(const QualType* qt, string_buffer.Buf* out) {
         // TODO canonicalType '=> ..'
     } else {
         out.color(col_Error);
-        out.add("<NIL>");
-        out.color(col_Normal);
+        out.add("??");
+        out.color(col_Type);
     }
 }

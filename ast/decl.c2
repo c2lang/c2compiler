@@ -19,11 +19,28 @@ public type DeclKind enum u8 {
     StaticAssert,
 }
 
+public type DeclCheckState enum u8 {
+    Unchecked,
+    Checking,
+    Checked,
+}
+
+const char*[] declCheckState_names = {
+    "unchecked",
+    "checking",
+    "checked",
+}
+
+static_assert(elemsof(DeclCheckState), elemsof(declCheckState_names));
+
 public type DeclBits struct {
     u32 kind : 8;
     u32 is_public : 1;
+    u32 is_used : 1;
+    u32 is_used_public : 1;
+    u32 check_state : 2;
 }
-public const u32 NumDeclBits = 9;
+public const u32 NumDeclBits = 13;
 
 public type Decl struct {
     union {
@@ -53,17 +70,17 @@ func void Decl.init(Decl* d, DeclKind k, const char* name, SrcLoc loc, bool is_p
 // TEMP cast needed until Analyser fixed
 public func DeclKind Decl.getKind(const Decl* d) @(inline) { return cast<DeclKind>(d.declBits.kind); }
 
-public func const char* Decl.getName(const Decl* d) @(inline) {
-    return d.name;
-}
+public func DeclCheckState Decl.getCheckState(const Decl* d) @(inline) { return cast<DeclCheckState>(d.declBits.check_state); }
 
-public func SrcLoc Decl.getLoc(const Decl* d) @(inline) {
-    return d.loc;
-}
+public func const char* Decl.getName(const Decl* d) @(inline) { return d.name; }
 
-public func bool Decl.isPublic(const Decl* d) @(inline) {
-    return d.declBits.is_public;
-}
+public func SrcLoc Decl.getLoc(const Decl* d) @(inline) { return d.loc; }
+
+public func bool Decl.isPublic(const Decl* d) @(inline) { return d.declBits.is_public; }
+
+public func bool Decl.isUsed(const Decl* d) @(inline) { return d.declBits.is_used; }
+
+public func bool Decl.isUsedPublic(const Decl* d) @(inline) { return d.declBits.is_used_public; }
 
 public func void Decl.dump(const Decl* d) {
     string_buffer.Buf* out = string_buffer.create(10*4096);
@@ -104,22 +121,28 @@ public func void Decl.print(const Decl* d, string_buffer.Buf* out, u32 indent) {
     }
 }
 
-func void Decl.printCommon(const Decl* d, string_buffer.Buf* out, u32 indent, const char* name_) {
+func void Decl.printKind(const Decl* d, string_buffer.Buf* out, u32 indent, const char* kind_) {
     out.indent(indent);
     out.color(col_Decl);
-    out.add(name_);
-    out.add(" ");
-}
-func void Decl.printBits(const Decl* d, string_buffer.Buf* out) {
-    out.color(col_Attr);
-    if (d.declBits.is_public) out.add(" public");
-    // TODO is_external
-    // TODO check_state
+    out.add(kind_);
 }
 
 func void Decl.printName(const Decl* d, string_buffer.Buf* out) {
     out.color(col_Value);
     out.add(" ");
     out.add(d.name);
+}
+
+func void Decl.printBits(const Decl* d, string_buffer.Buf* out) {
+    out.color(col_Attr);
+    if (d.isPublic()) out.add(" public");
+    out.add(" ");
+    out.add(declCheckState_names[d.getCheckState()]);
+    // TODO is_external
+}
+
+func void Decl.printUsed(const Decl* d, string_buffer.Buf* out) {
+    out.color(col_Attributes);
+    out.print(" used=%d/%d", d.isUsed(), d.isUsedPublic());
 }
 

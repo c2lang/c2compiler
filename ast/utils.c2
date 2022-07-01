@@ -96,5 +96,6 @@ const char* col_Attr = color.Blue;
 const char* col_Type = color.Green;
 const char* col_Value = color.Bcyan;
 const char* col_Error = color.Red;
+const char* col_Attributes = color.Yellow;
 const char* col_Normal = color.Normal;
 

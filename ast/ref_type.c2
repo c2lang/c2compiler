@@ -32,13 +32,9 @@ public func RefType* RefType.create(ast_context.Context* c, IdentifierExpr* pref
     return t;
 }
 
-public func Expr* RefType.getRef(const RefType* t) @(inline) {
-    return t.ref;
-}
+public func IdentifierExpr* RefType.getRef(const RefType* t) @(inline) { return t.ref; }
 
-public func Expr** RefType.getRef2(RefType* t) @(inline) {
-    return &t.ref;
-}
+public func IdentifierExpr** RefType.getRef2(RefType* t) @(inline) { return &t.ref; }
 
 public func void RefType.print(const RefType* t, string_buffer.Buf* out) {
     const Decl* d = t.ref.getDecl();
