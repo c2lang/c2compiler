@@ -1,0 +1,55 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context;
+import string_buffer;
+import utils local;
+
+public type ImplicitCastKind enum u8 {
+    ArrayToPointerDecay,
+    FunctionToPointerDecay,
+    LValueToRValue,
+}
+
+public const char*[] implicitCastKind_names = {
+    "ArrayToPointerDecay",
+    "FunctionToPointerDecay",
+    "LValueToRValue",
+}
+
+static_assert(elemsof(ImplicitCastKind), elemsof(implicitCastKind_names));
+
+public type ImplicitCastBits struct {
+    u32 : NumExprBits;
+    u32 kind : 2;
+}
+
+public type ImplicitCastExpr struct {
+    Expr parent;
+    Expr* inner;
+} @(opaque)
+
+public func ImplicitCastExpr* ImplicitCastExpr.create(ast_context.Context* c, SrcLoc loc, ImplicitCastKind kind, Expr* inner) @(inline) {
+    ImplicitCastExpr* e = c.alloc(sizeof(ImplicitCastExpr));
+    e.parent.init(ExprKind.ImplicitCast, loc, 0, 0, 0);
+    e.parent.parent.implicitCastBits.kind = kind;
+    e.inner = inner;
+    return e;
+}
+
+public func ImplicitCastKind ImplicitCastExpr.getKind(const ImplicitCastExpr* e) {
+    return cast<ImplicitCastKind>(e.parent.parent.implicitCastBits.kind);
+}
+
+func void ImplicitCastExpr.print(const ImplicitCastExpr* e, string_buffer.Buf* out, u32 indent) {
+    e.parent.printKind(out, indent, "ImplicitCastExpr");
+    e.parent.printTypeBits(out);
+    out.add(" ");
+    out.color(col_Attr);
+    out.add(implicitCastKind_names[e.getKind()]);
+    out.add("\n");
+    e.inner.print(out, indent + 2);
+}
+

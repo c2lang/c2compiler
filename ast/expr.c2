@@ -31,9 +31,7 @@ public type ExprKind enum u8 {
     Paren,
     BitOffset,
     ExplicitCast,
-/*
     ImplicitCast,
-*/
 }
 
 public type ExprBits struct {
@@ -141,6 +139,9 @@ func void Expr.print(const Expr* e, string_buffer.Buf* out, u32 indent) {
     case ExprKind.ExplicitCast:
         ExplicitCastExpr.print(cast<ExplicitCastExpr*>(e), out, indent);
         break;
+    case ExprKind.ImplicitCast:
+        ImplicitCastExpr.print(cast<ImplicitCastExpr*>(e), out, indent);
+        break;
     }
 }
 
@@ -198,6 +199,8 @@ func void Expr.printLiteral(const Expr* e, string_buffer.Buf* out) {
     case ExprKind.BitOffset:
         break;
     case ExprKind.ExplicitCast:
+        break;
+    case ExprKind.ImplicitCast:
         break;
     }
     out.print("?? kind=%u", e.getKind());

@@ -74,6 +74,7 @@ executable c2c
     ast/array_subscript_expr.c2
     ast/member_expr.c2
     ast/explicit_cast_expr.c2
+    ast/implicit_cast_expr.c2
 
     ast/utils.c2
     ast/type.c2

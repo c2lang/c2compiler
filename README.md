@@ -22,7 +22,22 @@
 - put all output through filter for coloring/not
 
 ## AST
-- add ImplicitCastExpr
+- remove Module from Decl, move to sub-classes
+    make Decl.getModule() that switches
+    VarDecl -> local,param,member dont need Module! (only global)
+    Import -> yes for target
+    EnumConstant -> no
+    StaticAssert -> no
+
+    do need:
+    Function,
+    StructType,
+    EnumType,
+    FunctionType,
+    AliasType,
+    Var,        -> only if Global
+    -> LATER
+
 - store Attributes
     2 prints:
         -> all types are printed on single line

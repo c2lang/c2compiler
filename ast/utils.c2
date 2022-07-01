@@ -56,6 +56,7 @@ static_assert(40, sizeof(UnaryOperator));
 static_assert(64, sizeof(ConditionalOperator));
 static_assert(48, sizeof(BinaryOperator));
 static_assert(48, sizeof(ExplicitCastExpr));
+static_assert(40, sizeof(ImplicitCastExpr));
 
 static_assert(16, sizeof(Type));
 static_assert(16, sizeof(BuiltinType));
