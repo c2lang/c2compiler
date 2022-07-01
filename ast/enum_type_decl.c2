@@ -25,18 +25,20 @@ public func EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
                                               SrcLoc loc,
                                               bool is_public,
                                               QualType implType,
-                                              QualType qt,
                                               bool is_incr,
                                               EnumConstantDecl** constants,
                                               u32 num_constants) @(inline)
 {
     u32 size = sizeof(EnumTypeDecl) + num_constants * sizeof(EnumConstantDecl*);
     EnumTypeDecl* d = c.alloc(size);
-    // TODO pass qt
+    EnumType* etype = EnumType.create(c, d);
+    QualType qt = QualType.init2(etype.asType());
+    // TODO pass qt to init()
     d.parent.init(DeclKind.EnumType, name, loc, is_public);
     d.parent.enumTypeDeclBits.is_incr = is_incr;
     d.parent.enumTypeDeclBits.num_constants = num_constants;
     d.implType = implType;
+
     if (is_incr) {
         // TODO if (incr, alloc pointer to rest?
     } else {

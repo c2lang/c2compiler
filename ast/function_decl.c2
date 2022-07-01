@@ -36,6 +36,9 @@ public func FunctionDecl* FunctionDecl.create(ast_context.Context* c,
     u32 size = sizeof(FunctionDecl) + num_params * sizeof(VarDecl*);
     if (prefix) size += sizeof(IdentifierExpr*);
     FunctionDecl* d = c.alloc(size);
+    FunctionType* ftype = FunctionType.create(c, d);
+    QualType qt = QualType.init2(ftype.asType());
+    // TODO pass qt to init()
     d.parent.init(DeclKind.Function, name, loc, is_public);
     d.parent.functionDeclBits.is_variadic = is_variadic;
     d.parent.functionDeclBits.num_params = num_params;
@@ -49,6 +52,7 @@ public func FunctionDecl* FunctionDecl.create(ast_context.Context* c,
     if (num_params) {
         string.memcpy(cast<void*>(&d.params[params_offset]), cast<void*>(params), num_params * sizeof(VarDecl*));
     }
+
     return d;
 }
 

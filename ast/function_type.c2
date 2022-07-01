@@ -12,18 +12,17 @@ public type FunctionType struct {
     FunctionDecl* decl;
 } @(opaque)
 
-public func FunctionType* FunctionType.create(ast_context.Context* c) @(inline) {
+public func FunctionType* FunctionType.create(ast_context.Context* c, FunctionDecl* decl) @(inline) {
     FunctionType* t = c.alloc(sizeof(FunctionType));
     t.parent.init(TypeKind.Function);
     t.decl = nil;
+    t.decl = decl;
     return t;
 }
 
-public func void FunctionType.setDecl(FunctionType* t, FunctionDecl* decl) @(inline) {
-    t.decl = decl;
-}
-
 public func FunctionDecl* FunctionType.getDecl(const FunctionType* t) @(inline) { return t.decl; }
+
+public func Type* FunctionType.asType(FunctionType* t) @(inline) { return &t.parent; }
 
 public func void FunctionType.print(const FunctionType* t, string_buffer.Buf* out) {
     out.add("(function)");

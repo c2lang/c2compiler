@@ -65,10 +65,7 @@ public func Decl* Builder.actOnFunctionTypeDecl(Builder* b, const char* name, Sr
 
 public func StructTypeDecl* Builder.actOnStructType(Builder* b, const char* name, SrcLoc loc, bool is_public, bool is_struct, bool is_global,
                                                     VarDecl** members, u32 num_members) {
-    StructType* stype = StructType.create(b.context);
-    QualType qt = QualType.init2(stype.asType());
-    StructTypeDecl* d = StructTypeDecl.create(b.context, name, loc, is_public, qt, is_struct, is_global, members, num_members);
-    stype.setDecl(d);
+    StructTypeDecl* d = StructTypeDecl.create(b.context, name, loc, is_public, is_struct, is_global, members, num_members);
     if (is_global) b.ast.addTypeDecl(d.asDecl());
     return d;
 }
@@ -196,10 +193,7 @@ public func FunctionDecl* Builder.actOnFunctionDecl(Builder* b,
                                                     u32 num_params,
                                                     bool is_variadic)
 {
-    // TODO have FunctionDecl do this? (and convert to FunctionType.init(ptr))
-    FunctionType* ftype = FunctionType.create(b.context);
     FunctionDecl* f = FunctionDecl.create(b.context, name, loc, is_public, rtype, prefix, params, num_params, is_variadic);
-    ftype.setDecl(f);
     b.ast.addFunc(f);
     return f;
 }
@@ -221,10 +215,7 @@ public func void Builder.actOnEnumType(Builder* b,
                                        EnumConstantDecl** constants,
                                        u32 num_constants)
 {
-    EnumType* etype = EnumType.create(b.context);
-    QualType qt = QualType.init2(etype.asType());
-    EnumTypeDecl* d = EnumTypeDecl.create(b.context, name, loc, is_public, implType, qt, is_incr, constants, num_constants);
-    etype.setDecl(d);
+    EnumTypeDecl* d = EnumTypeDecl.create(b.context, name, loc, is_public, implType, is_incr, constants, num_constants);
     b.ast.addTypeDecl(d.asDecl());
 }
 

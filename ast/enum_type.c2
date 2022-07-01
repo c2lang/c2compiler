@@ -12,14 +12,13 @@ public type EnumType struct {
     EnumTypeDecl* decl;
 } @(opaque)
 
-public func EnumType* EnumType.create(ast_context.Context* c) @(inline) {
+public func EnumType* EnumType.create(ast_context.Context* c, EnumTypeDecl* decl) @(inline) {
     EnumType* t = c.alloc(sizeof(EnumType));
     t.parent.init(TypeKind.Enum);
-    t.decl = nil;
+    t.decl = decl;
     return t;
 }
 
-public func void EnumType.setDecl(EnumType* t, EnumTypeDecl* decl) @(inline) { t.decl = decl; }
 public func EnumTypeDecl* EnumType.getDecl(const EnumType* t) @(inline) { return t.decl; }
 
 public func Type* EnumType.asType(EnumType* t) @(inline) { return &t.parent; }

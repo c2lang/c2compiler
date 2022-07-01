@@ -12,14 +12,13 @@ public type StructType struct {
     StructTypeDecl* decl;
 } @(opaque)
 
-public func StructType* StructType.create(ast_context.Context* c) @(inline) {
+public func StructType* StructType.create(ast_context.Context* c, StructTypeDecl* decl) @(inline) {
     StructType* t = c.alloc(sizeof(StructType));
     t.parent.init(TypeKind.Struct);
-    t.decl = nil;
+    t.decl = decl;
     return t;
 }
 
-public func void StructType.setDecl(StructType* t, StructTypeDecl* decl) @(inline) { t.decl = decl; }
 public func StructTypeDecl* StructType.getDecl(const StructType* t) @(inline) { return t.decl; }
 
 public func Type* StructType.asType(StructType* t) @(inline) { return &t.parent; }
