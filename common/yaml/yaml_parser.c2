@@ -1,0 +1,321 @@
+module yaml;
+import stdlib local;
+import csetjmp local;
+import stdarg local;
+import stdio local;
+
+const u32 MaxDiag = 256;
+
+public type Parser struct {
+    Token token;
+    Tokenizer tokenizer;
+
+    i32 cur_indent;
+    bool doc_started;
+    bool in_document;
+    StackLevel[MaxDepth] stack;
+    u32 stack_size; // number of items on the stack
+
+    Data data;
+
+    JmpBufTag jmp_err;
+    char[MaxDiag] message;
+} @(opaque)
+
+public func Parser* Parser.create() {
+    Parser* p = calloc(1, sizeof(Parser));
+    p.data.init(1024, 32, p.stack);
+    return p;
+}
+
+public func void Parser.destroy(Parser* p) {
+    p.data.destroy();
+    free(p);
+}
+
+public func bool Parser.parse(Parser* p, const char* input) {
+    p.tokenizer.init(input, &p.data, p.message);
+
+    p.token.kind = TokenKind.None;
+
+    i32 res = setjmp(&p.jmp_err);
+    if (res == 0) {
+        p.consumeToken();
+
+        while (p.token.kind != TokenKind.Eof) p.parse_doc();
+    } else {
+        // got error, error_msg should be set
+        return false;
+    }
+
+    return true;
+}
+
+public func const char* Parser.getMessage(const Parser* p) {
+    return p.message;
+}
+
+func void Parser.error(Parser* p, const char* format, ...) {
+    Va_list args;
+    va_start(args, format);
+    char* cp = p.message;
+    cp += vsnprintf(cp, MaxDiag-1, format, args);
+    va_end(args);
+    sprintf(cp, " %s", p.token.loc.str());
+    longjmp(&p.jmp_err, 1);
+}
+
+func void Parser.consumeToken(Parser* p) {
+    p.tokenizer.lex(&p.token);
+#ifdef YAML_PRINT_TOKENS
+    printf("%s  %s  %d\n", p.token.str(), p.token.loc.str(), p.token.same_line);
+#endif
+    if (p.token.kind == TokenKind.Error) longjmp(&p.jmp_err, 1);
+}
+
+func void Parser.expectAndConsume(Parser* p, TokenKind kind) {
+    if (p.token.kind != kind) {
+        p.error("expected '%s', got '%s'", token_names[kind], p.token.str());
+    }
+    p.consumeToken();
+}
+
+func void Parser.parse_doc(Parser* p) {
+    while (1) {
+        switch (p.token.kind) {
+        case TokenKind.Doc_Start:
+            p.consumeToken();
+            if (p.doc_started) p.doc_end();
+            p.doc_start();
+            break;
+        case TokenKind.Doc_End:
+            if (!p.doc_started || !p.in_document) {
+                p.error("END document without start");
+            }
+            p.consumeToken();
+            p.doc_end();
+            return;
+        case TokenKind.Directive:
+            // ignore
+            p.consumeToken();
+            break;
+        case TokenKind.Eof:
+            return;
+        default:
+            if (!p.doc_started) p.doc_start();
+            p.parse_node();
+            break;
+        }
+    }
+}
+
+func void Parser.parse_node(Parser* p) {
+    switch (p.token.kind) {
+    case TokenKind.Plain_Scalar:  fallthrough;
+    case TokenKind.Single_Quoted_Scalar: fallthrough;
+    case TokenKind.Double_Quoted_Scalar:
+        Node* n = p.data.add_node(NodeKind.Unknown, p.token.text_idx);
+        p.push_node(n, NodeKind.Unknown, p.cur_indent);
+        p.consumeToken();
+        p.expectAndConsume(TokenKind.Colon);
+        p.parse_value();
+        break;
+    case TokenKind.Dash:
+        p.consumeToken();
+        Node* n = p.data.add_node(NodeKind.Unknown, 0);
+        p.push_node(n, NodeKind.Sequence, p.cur_indent + 1);
+        p.parse_node_or_value();
+        break;
+    case TokenKind.Indent:
+        p.cur_indent = p.token.indent;
+        p.consumeToken();
+        break;
+    case TokenKind.Dedent:
+        p.cur_indent = p.token.indent;
+        p.consumeToken();
+        p.pop();
+        break;
+    case TokenKind.Doc_Start: fallthrough;
+    case TokenKind.Doc_End:
+        break;
+    default:
+        //p.error("%s() unhandled token '%s'", __func__, p.token.str());
+        p.error("%s() unhandled token '%s'", "parse_node", p.token.str());
+        break;
+    }
+}
+
+func void Parser.parse_value(Parser* p) {
+    switch (p.token.kind) {
+    case TokenKind.Plain_Scalar:      fallthrough;
+    case TokenKind.Single_Quoted_Scalar: fallthrough;
+    case TokenKind.Double_Quoted_Scalar:
+        if (p.token.same_line) {
+            p.add_scalar_value(p.token.text_idx);
+            p.consumeToken();
+        } else {
+            //assert(0); // valid??
+        }
+        return;
+    case TokenKind.Dash:
+        p.consumeToken();
+        Node* n = p.data.add_node(NodeKind.Unknown, 0);
+        p.push_node(n, NodeKind.Sequence, p.cur_indent + 1);
+        p.parse_node_or_value();
+        return;
+    case TokenKind.Indent:
+        p.cur_indent = p.token.indent;
+        p.consumeToken();
+        p.parse_node();
+        return;
+    case TokenKind.Dedent:
+        p.cur_indent = p.token.indent;
+        p.consumeToken();
+        p.pop();
+        return;
+    case TokenKind.Doc_Start: fallthrough;
+    case TokenKind.Doc_End:
+        return;
+    case TokenKind.Eof:
+        p.add_scalar_value(0);
+        return;
+    default:
+        //p.error("%s() unhandled token '%s'", __func__, p.token.str());
+        p.error("%s() unhandled token '%s'", "parse_value", p.token.str());
+        break;
+    }
+}
+
+func void Parser.parse_node_or_value(Parser* p) {
+    switch (p.token.kind) {
+    case TokenKind.Plain_Scalar: fallthrough;
+    case TokenKind.Single_Quoted_Scalar: fallthrough;
+    case TokenKind.Double_Quoted_Scalar:
+        Token* next = p.tokenizer.lex_next();
+        if (next.kind == TokenKind.Colon) {
+            // NOTE: this doesn't work, because tokenizer doesn't know (and doesn't give DEDENT)
+            p.cur_indent += 2; // one for dash, one for node
+            // TEMP DIRTY HACK, how to do properly?
+            p.tokenizer.cur_indent += 2;
+            p.parse_node();
+            return;
+        }
+        break;
+    default:
+        break;
+    }
+    p.parse_value();
+}
+
+func void Parser.doc_start(Parser* p) {
+    p.push_root();
+    p.doc_started = true;
+    p.in_document = true;
+}
+
+func void Parser.doc_end(Parser* p) {
+    p.cur_indent = -1;
+    if (p.stack_size == 1 && p.stack[0].node.kind == NodeKind.Unknown) {
+        p.stack[0].node.kind = NodeKind.Map;
+    }
+    p.pop();
+    p.cur_indent = 0;
+    p.in_document = false;
+}
+
+func void Parser.add_scalar_value(Parser* p, u32 value_idx) {
+    StackLevel* top = &p.stack[p.stack_size-1];
+    Node* n = top.node;
+    if (n.kind != NodeKind.Unknown) {
+        //p.error("%s() cannot add scalar to node", __func__);
+        p.error("%s() cannot add scalar to node", "add_scalar_value");
+    }
+    n.kind = NodeKind.Scalar;
+    n.text_idx = value_idx;
+}
+
+func void Parser.pop(Parser* p) {
+    i32 indent = p.cur_indent;
+    while (1) {
+        StackLevel* top = &p.stack[p.stack_size-1];
+        if (top.indent <= indent) break;
+
+        if (p.stack_size >= 1) {
+            StackLevel* prev = &p.stack[p.stack_size-2];
+            prev.last_child = top.node;
+        }
+        if (top.node.kind == NodeKind.Unknown) top.node.kind = NodeKind.Scalar;
+
+        top.indent = 0;
+        top.node = nil;
+        top.last_child = nil;
+        p.stack_size--;
+    }
+}
+
+func void Parser.push_root(Parser* p) {
+    Node* root = p.data.add_node(NodeKind.Unknown, 0);
+    StackLevel* top = &p.stack[0];
+    if (p.stack_size) {
+        top.node.next_idx = p.data.node2idx(root);
+    }
+    top.node = root;
+    top.indent = -1;
+    top.last_child = nil;
+    p.stack_size = 1;
+}
+
+func void Parser.push_node(Parser* p, Node* n, NodeKind parent_kind, i32 indent) {
+    //assert(p.stack_size);
+    u32 n_idx = p.data.node2idx(n);
+    StackLevel* top = &p.stack[p.stack_size-1];
+
+    if (indent < top.indent) { // can happen at end of sequence (1 lower)
+        //assert(indent + 1 == top.indent);
+        p.pop();
+        top = &p.stack[p.stack_size-1];
+    }
+
+    if (top.indent == indent) { // same level
+        if (top.node) {
+            // close old node as SCALAR with empty data
+            if (top.node.kind == NodeKind.Unknown) top.node.kind = NodeKind.Scalar;
+            top.node.next_idx = n_idx;
+        }
+        top.last_child = nil;
+    } else {
+        //assert(p.stack_size + 1 < MAX_DEPTH);
+        //assert(indent > top.indent);
+        Node* parent = top.node;
+
+        if (parent.kind == NodeKind.Unknown) {
+            // just assign it
+            if (parent_kind == NodeKind.Unknown) parent_kind = NodeKind.Map;
+            parent.kind = parent_kind;
+        }
+        if (top.last_child) {
+            top.last_child.next_idx = n_idx;
+        } else {
+            //assert(parent.child_idx == 0);
+            parent.child_idx = n_idx;
+        }
+        top.last_child = n;    // set last_child on current level before adding level
+        p.stack_size++;
+        top = &p.stack[p.stack_size-1];
+    }
+    top.indent = indent;
+    top.node = n;
+
+    // add child info to parent
+    StackLevel* prev = &p.stack[p.stack_size-2];
+    Node* parent = prev.node;
+
+    if (parent.kind != parent_kind && !(parent.kind == NodeKind.Map && parent_kind == NodeKind.Unknown)) {
+        if (parent.kind == NodeKind.Sequence) {
+            p.error("invalid scalar after sequence");
+        } else {
+            p.error("invalid scalar after %s", node_names[parent.kind]);
+        }
+    }
+}
+

@@ -72,6 +72,13 @@
 
 ## Compiler
 - load external components
+    - handle nolibc
+    - handle use
+    Design:
+    - parse recipe
+    - load componets manifest
+        -> change to yaml (keep old for now, add manifest.yml)
+
 
 
 ## Analyser

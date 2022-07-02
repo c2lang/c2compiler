@@ -10,6 +10,12 @@ executable c2c
 #    $config DumpTokens
 
     common/file/reader.c2
+
+    common/yaml/yaml_data.c2
+    common/yaml/yaml_dump.c2
+    common/yaml/yaml_tokenizer.c2
+    common/yaml/yaml_parser.c2
+
     common/color.c2
     common/linked_list.c2
     common/string_list.c2
