@@ -1,0 +1,117 @@
+
+plugins.deps_generator:
+    path: plugins
+    options: all-targets files
+
+plugins.refs_generator:
+    path: plugins
+    options: all-targets
+
+executable.c2c:
+    warnings: no-unused
+    generate-c: single-module
+#    $config RecipeDebug
+#    $config ParserDebug
+#    $config DumpTokens
+    files:
+        - common/file/reader.c2
+
+        - common/yaml/yaml_data.c2
+        - common/yaml/yaml_dump.c2
+        - common/yaml/yaml_tokenizer.c2
+        - common/yaml/yaml_parser.c2
+
+        - common/color.c2
+        - common/linked_list.c2
+        - common/string_list.c2
+        - common/string_buffer.c2
+        - common/string_pool.c2
+        - common/pointer_map.c2
+        - common/utils.c2
+
+        - parser/tokens.c2
+        - parser/c2_tokenizer.c2
+        - parser/c2_parser.c2
+        - parser/c2_parser_type.c2
+        - parser/c2_parser_stmt.c2
+        - parser/c2_parser_expr.c2
+        - parser/ast_builder.c2
+
+        - ast/decl.c2
+        - ast/function_decl.c2
+        - ast/import_decl.c2
+        - ast/struct_type_decl.c2
+        - ast/var_decl.c2
+        - ast/enum_type_decl.c2
+        - ast/enum_constant_decl.c2
+        - ast/decl_stmt.c2
+        - ast/alias_type_decl.c2
+        - ast/static_assert_decl.c2
+        - ast/function_type_decl.c2
+
+        - ast/stmt.c2
+        - ast/compound_stmt.c2
+        - ast/do_stmt.c2
+        - ast/for_stmt.c2
+        - ast/if_stmt.c2
+        - ast/return_stmt.c2
+        - ast/switch_stmt.c2
+        - ast/case_stmt.c2
+        - ast/default_stmt.c2
+        - ast/break_stmt.c2
+        - ast/continue_stmt.c2
+        - ast/fallthrough_stmt.c2
+        - ast/while_stmt.c2
+        - ast/label_stmt.c2
+        - ast/goto_stmt.c2
+
+        - ast/expr.c2
+        - ast/builtin_expr.c2
+        - ast/boolean_literal.c2
+        - ast/char_literal.c2
+        - ast/string_literal.c2
+        - ast/integer_literal.c2
+        - ast/nil_expr.c2
+        - ast/identifier_expr.c2
+        - ast/call_expr.c2
+        - ast/init_list_expr.c2
+        - ast/field_designated_init_expr.c2
+        - ast/array_designated_init_expr.c2
+        - ast/paren_expr.c2
+        - ast/unary_operator.c2
+        - ast/conditional_operator.c2
+        - ast/binary_operator.c2
+        - ast/type_expr.c2
+        - ast/bitoffset_expr.c2
+        - ast/array_subscript_expr.c2
+        - ast/member_expr.c2
+        - ast/explicit_cast_expr.c2
+        - ast/implicit_cast_expr.c2
+
+        - ast/utils.c2
+        - ast/type.c2
+        - ast/qualtype.c2
+        - ast/builtin_type.c2
+        - ast/ref_type.c2
+        - ast/pointer_type.c2
+        - ast/array_type.c2
+        - ast/struct_type.c2
+        - ast/enum_type.c2
+        - ast/function_type.c2
+
+        - ast/ast.c2
+        - ast/module.c2
+        - ast/decl_list.c2
+        - ast/expr_list.c2
+        - ast/function_decl_list.c2
+        - ast/import_decl_list.c2
+
+        - stmt_list.c2
+        - c2recipe.c2
+        - c2recipe_parser.c2
+        - component.c2
+        - constants.c2
+        - source_mgr.c2
+        - context.c2
+        - main.c2
+

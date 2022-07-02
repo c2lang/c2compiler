@@ -70,14 +70,17 @@
 - Give every Type a PtrType* ptr, since we can re-use efficiently. Since many types will have
     pointers to them, this is not so bad.
 
+
 ## Compiler
 - load external components
     - handle nolibc
     - handle use
     Design:
     - parse recipe
-    - load componets manifest
+    - load components manifest
         -> change to yaml (keep old for now, add manifest.yml)
+        -> change Yaml parser to use SourceMgr, add locs
+            -> LATER, for now just use
 
 
 
