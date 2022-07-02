@@ -81,6 +81,7 @@
         -> change to yaml (keep old for now, add manifest.yml)
         -> change Yaml parser to use SourceMgr, add locs
             -> LATER, for now just use
+        - ADD iterators to YamlYarser. only in C version yet, bah!
 
 
 

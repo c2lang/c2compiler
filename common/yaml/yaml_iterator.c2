@@ -1,0 +1,109 @@
+module yaml;
+
+import string;
+
+public func bool Node.isMap(const Node* n) { return n.kind == NodeKind.Map; }
+
+public func bool Node.isSequence(const Node* n) { return n.kind == NodeKind.Sequence; }
+
+public func bool Node.isScalar(const Node* n) { return n.kind == NodeKind.Scalar; }
+
+// TODO only pass iterators? (that way we dont need Parser* anymore)
+public func const Node* Parser.getRoot(const Parser* p) {
+    u32 node_count = cast<u32>(p.data.nodes_cur - p.data.nodes) - 1;
+    if (node_count == 0) return nil;
+    return &p.data.nodes[1];
+}
+
+public func const Node* Parser.findNode(const Parser* p, const char* path) {
+    return p.data.findNode(path);
+}
+
+func const Node* Data.findNode(const Data* d, const char* path) {
+    u32 node_count = cast<u32>(d.nodes_cur - d.nodes) - 1;
+    if (node_count == 0) return nil;
+    const Node* root = &d.nodes[1];
+    if (root.kind == NodeKind.Sequence) return nil;
+    return d.findChildNode(path, root.child_idx);
+}
+
+func const Node* Data.findChildNode(const Data* d, const char* path, u32 next) {
+        // Note: path can be 'a.b.c' while node names are 'a.b' and 'c' so look for starts-with
+    while (next) {
+        const Node* node = d.idx2node(next);
+        if (node.name_idx) {
+            const char* name = &d.text[node.name_idx];
+            const char* rest = starts_with(path, name);
+            if (rest) { // match
+                path = rest;
+                if (path[0] == 0) return node; // found node
+                if (node.kind == NodeKind.Sequence) return nil;   // dont search in sequence
+                next = node.child_idx;
+                continue;
+            }
+        }
+
+        next = node.next_idx;
+    }
+    return nil;
+}
+
+public type Iter struct {
+    const void* data;
+    const Node* node;
+}
+
+public func Iter Parser.getNodeChildIter(Parser* p, const Node* n) {
+    Iter iter = { .data = &p.data, .node = nil }
+    if (n.kind != NodeKind.Scalar && n.child_idx) {
+        iter.node = p.data.idx2node(n.child_idx);
+    }
+    return iter;
+}
+
+public func void Iter.next(Iter* iter) {
+    const Data* d = cast<Data*>(iter.data);
+    if (iter.node) {
+        if (iter.node.next_idx) iter.node = d.idx2node(iter.node.next_idx);
+        else iter.node = nil;
+    }
+}
+
+public func bool Iter.done(const Iter* iter) {
+    return iter.node == nil;
+}
+
+public func const char* Iter.getName(const Iter* iter) {
+    const Data* d = cast<Data*>(iter.data);
+    if (iter.node) return &d.text[iter.node.name_idx];
+    return nil;
+}
+
+public func const char* Iter.getValue(const Iter* iter) {
+    const Data* d = cast<Data*>(iter.data);
+    if (iter.node && iter.node.kind == NodeKind.Scalar) return &d.text[iter.node.text_idx];
+    return nil;
+}
+
+public func Iter Iter.getChildIter(Iter* parent) {
+    Iter iter = { .data = parent.data, .node = nil }
+    if (parent.node == nil) return iter;
+
+    const Node* n = parent.node;
+    if (n.kind != NodeKind.Scalar && n.child_idx) {
+        const Data* d = cast<Data*>(iter.data);
+        iter.node = d.idx2node(n.child_idx);
+    }
+    return iter;
+}
+
+func const char* starts_with(const char* full, const char* start) {
+    u32 len = cast<u32>(string.strlen(start));
+    if (string.strncmp(full, start, len) == 0) {
+        full += len;
+        if (full[0] == '.') return full+1;
+        if (full[0] == 0) return full;
+    }
+    return nil;
+}
+
