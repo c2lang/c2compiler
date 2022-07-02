@@ -13,6 +13,65 @@ import source_mgr;
 import string;
 import stdio local;
 
+// TODO move
+func const char* get_prefix(const char* input, char* output, u32 maxlen) {
+    // gets everything up to . (dot)
+    maxlen--; // reserve space for 0-terminator
+    while (*input && maxlen) {
+        if (*input == '.') break;
+        *output++ = *input++;
+        maxlen--;
+    }
+    *output = 0;
+    if (maxlen == 0) return nil;
+    return input+1;
+}
+
+func bool Recipe.getYamlInfo(Recipe* r, const yaml.Parser* parser) {
+    // TEMP very basic implementation
+
+    const yaml.Node* root = parser.getRoot();
+    if (!root || !root.isMap()) {
+        fprintf(stderr, "empty recipe?\n");
+        return false;
+    }
+
+    yaml.Iter iter = parser.getNodeChildIter(root);
+    while (!iter.done()) {
+        const char* name = iter.getName();
+        //printf("ITER %s\n", name);
+        // TODO just get prefix (until '.')
+        char[32] prefix;
+        const char* after = get_prefix(name, prefix, sizeof(prefix));
+        if (!after) {
+            printf("invalid item %s\n", name);
+            return false;
+        }
+
+        char* p = prefix;
+        // TODO FIX C2c sswitch(prefix) doesn't work
+        //sswitch (prefix) {
+        sswitch (p) {
+        case "plugin":
+            printf("  PLUGIN %s\n", after);
+            //handle_plugin(p, iter, after);
+        case "executable":
+            printf("  EXECUTABLE %s\n", after);
+            //if (!handle_executable(iter, after)) return false;
+        default:
+            printf("unknown item %s\n", prefix);
+            return false;
+        }
+        iter.next();
+    }
+    printf("recipe ok\n");
+    return true;
+
+
+
+    return true;
+}
+
 public func bool Recipe.parseYaml(Recipe* r, i32 file_id) {
     const char* data = r.sm.get_content(file_id);
     u32 loc_start = r.sm.get_offset(file_id);
@@ -21,10 +80,9 @@ public func bool Recipe.parseYaml(Recipe* r, i32 file_id) {
 
     bool ok = parser.parse(cast<char*>(data));
     if (ok) {
-        parser.dump();
+        //parser.dump();
 
-        // TODO parse here
-
+        if (!r.getYamlInfo(parser)) return false;
     } else {
         fprintf(stderr, "Error: %s\n", parser.getMessage());
     }

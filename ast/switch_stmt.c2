@@ -10,7 +10,8 @@ import string;
 
 type SwitchStmtBits struct {
     u32 : NumStmtBits;
-    u32 num_cases : 10;
+    u32 is_sswitch : 1;
+    u32 num_cases : 31 - NumStmtBits;
 }
 
 public type SwitchStmt struct {
@@ -19,10 +20,11 @@ public type SwitchStmt struct {
     Stmt*[0] cases; // tail-allocated
 } @(opaque)
 
-public func SwitchStmt* SwitchStmt.create(ast_context.Context* c, Stmt* cond, Stmt** cases, u32 numCases) @(inline) {
+public func SwitchStmt* SwitchStmt.create(ast_context.Context* c, Stmt* cond, Stmt** cases, u32 numCases, bool is_sswitch) @(inline) {
     u32 size = sizeof(SwitchStmt) + numCases * sizeof(Stmt*);
     SwitchStmt* s = c.alloc(size);
     s.parent.init(StmtKind.Switch);
+    s.parent.switchStmtBits.is_sswitch = is_sswitch;
     s.parent.switchStmtBits.num_cases = numCases;
     s.cond = cond;
     string.memcpy(cast<void*>(s.cases), cast<void*>(cases), numCases * sizeof(Stmt*));
@@ -30,7 +32,8 @@ public func SwitchStmt* SwitchStmt.create(ast_context.Context* c, Stmt* cond, St
 }
 
 func void SwitchStmt.print(const SwitchStmt* s, string_buffer.Buf* out, u32 indent) {
-    s.parent.printKind(out, indent, "SwitchStmt");
+    bool is_sswitch = s.parent.switchStmtBits.is_sswitch;
+    s.parent.printKind(out, indent, is_sswitch ? "SSwitchStmt" : "SwitchStmt");
     out.add("\n");
 
     s.cond.print(out, indent + 2);
@@ -43,4 +46,7 @@ public func Stmt* SwitchStmt.getCond(const SwitchStmt* s) @(inline) { return s.c
 
 public func Stmt** SwitchStmt.getCond2(SwitchStmt* s) @(inline) { return s.cond ? &s.cond : nil; }
 
+public func bool SwitchStmt.isSSwitch(const SwitchStmt* s) @(inline) {
+    return s.parent.switchStmtBits.is_sswitch;
+}
 

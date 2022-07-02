@@ -241,8 +241,8 @@ public func Stmt* Builder.actOnForStmt(Builder* b, Stmt* init_, Stmt* cond, Expr
     return cast<Stmt*>(ForStmt.create(b.context, init_, cond, incr, body));
 }
 
-public func Stmt* Builder.actOnSwitchStmt(Builder* b, Stmt* cond, Stmt** cases, u32 num_cases) {
-    return cast<Stmt*>(SwitchStmt.create(b.context, cond, cases, num_cases));
+public func Stmt* Builder.actOnSwitchStmt(Builder* b, Stmt* cond, Stmt** cases, u32 num_cases, bool is_sswitch) {
+    return cast<Stmt*>(SwitchStmt.create(b.context, cond, cases, num_cases, is_sswitch));
 }
 
 public func Stmt* Builder.actOnDefaultStmt(Builder* b, SrcLoc loc, Stmt** stmts, u32 num_stmts) {

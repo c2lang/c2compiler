@@ -1,9 +1,9 @@
 
-plugins.deps_generator:
+plugin.deps_generator:
     path: plugins
     options: all-targets files
 
-plugins.refs_generator:
+plugin.refs_generator:
     path: plugins
     options: all-targets
 

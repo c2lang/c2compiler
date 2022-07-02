@@ -72,6 +72,7 @@
 
 
 ## Compiler
+- Parse sswitch
 - load external components
     - handle nolibc
     - handle use

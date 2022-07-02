@@ -40,7 +40,9 @@ func Stmt* Parser.parseStmt(Parser* p) {
     case Kind.KW_return:
         return p.parseReturnStmt();
     case Kind.KW_switch:
-        return p.parseSwitchStmt();
+        return p.parseSwitchStmt(false);
+    case Kind.KW_sswitch:
+        return p.parseSwitchStmt(true);
     case Kind.KW_bool:   fallthrough;
     case Kind.KW_char:   fallthrough;
     case Kind.KW_const:   fallthrough;
@@ -271,7 +273,7 @@ func Stmt* Parser.parseReturnStmt(Parser* p) {
     return p.builder.actOnReturnStmt(loc, ret);
 }
 
-func Stmt* Parser.parseSwitchStmt(Parser* p) {
+func Stmt* Parser.parseSwitchStmt(Parser* p, bool is_sswitch) {
     p.consumeToken();
     Stmt* cond = p.parseCondition();
 
@@ -298,7 +300,7 @@ func Stmt* Parser.parseSwitchStmt(Parser* p) {
 
     p.expectAndConsume(Kind.RBrace);
 
-    Stmt* s = p.builder.actOnSwitchStmt(cond, cases.getData(), cases.size());
+    Stmt* s = p.builder.actOnSwitchStmt(cond, cases.getData(), cases.size(), is_sswitch);
     cases.free();
     return s;
 }
