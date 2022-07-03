@@ -83,6 +83,7 @@
         DONT CHANGE RECIPE YET, FIRST JUST PARSE manifest.yml
     - re-use components between targets? (libc)
 
+    - give component names ("libc", "main")
     - check duplicate module names between components (on every new module)
         -> components get/add to list of all Modules
             -> if they create a new one, they check
