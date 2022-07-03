@@ -18,10 +18,9 @@ public type Builder struct {
     AST* ast;
 } @(opaque)
 
-public func Builder* create(Context* context, component.Component* comp) {
+public func Builder* create(Context* context) {
     Builder* b = calloc(1, sizeof(Builder));
     b.context = context;
-    b.comp = comp;
 
     return b;
 }
@@ -30,7 +29,14 @@ public func void Builder.free(Builder* b) {
     free(b);
 }
 
+public func void Builder.setComponent(Builder* b, component.Component* comp) {
+    b.comp = comp;
+    b.mod = nil;
+    b.ast = nil;
+}
+
 public func void Builder.actOnModule(Builder* b, const char* mod_name, SrcLoc mod_loc, const char* filename) {
+    // assert(b.comp);
     b.mod = b.comp.getOrAddModule(mod_name);
     b.ast = b.mod.add(filename);
 

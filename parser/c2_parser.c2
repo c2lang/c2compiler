@@ -54,6 +54,7 @@ public func bool Parser.parse(Parser* p) {
     p.error_msg[0] = 0;
 
 #if DumpTokens
+    u64 t1 = utils.now();
     p.tokenizer.init(p.pool, p.sm.get_content(p.file_id), p.sm.get_offset(p.file_id), p.features);
     p.tok.init();
     u32 token_count = 0;

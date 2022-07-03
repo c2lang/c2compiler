@@ -3,17 +3,18 @@
 
 module c2c_main;
 
-import source_mgr;
-import c2_parser;
-import string_list;
-import c2recipe;
-import constants;
-import ast_context;
-import ast_builder;
-import component;
-import string_pool;
-import module_sorter;
 import ast;
+import ast_builder;
+import ast_context;
+import c2_parser;
+import c2recipe;
+import component;
+import constants;
+import manifest;
+import module_sorter;
+import source_mgr;
+import string_list;
+import string_pool;
 import utils;
 
 // for sort
@@ -22,6 +23,30 @@ import stdlib;
 import string;
 
 import stdio local;
+
+// Q: put name in component?
+// TODO or return/add Component?
+func void parseLib(source_mgr.SourceMgr* sm,
+                   string_pool.Pool* auxPool,
+                   string_pool.Pool* astPool,
+                   component.Component* comp,
+                   const char* libname)
+{
+    const char* libdir = stdlib.getenv("C2_LIBDIR");
+    if (!libdir) printf("Warning: environment variable C2_LIBDIR not set!\n");
+
+    char[512] manifestFilename;
+    i32 len = stdio.sprintf(manifestFilename, "%s/%s/manifest.yml", libdir, libname);
+    const char* name = auxPool.add(manifestFilename, cast<usize>(len), 0);
+
+    i32 file_id = sm.open(name, 0);
+    if (file_id == -1) return;
+    // TODO fill component with stuff from manifest
+    //if (!recipe.parseYaml(file_id)) return;
+    // NOTE: dont parse modules (interface files) yet, only if needed
+    // TODO erro handling
+    manifest.parse(sm, file_id, astPool, comp);
+}
 
 func void handleImport(void* arg, ast.ImportDecl* d) {
     // TODO normally have list of all modules (of all Components)
@@ -50,7 +75,7 @@ public func i32 main(i32 argc, char** argv) {
 
     if (argc > 1) single_file = true;
 
-    // note: auxPool is used by recipe and build-file
+    // note: auxPool is used by recipe, build-file and manifests
     string_pool.Pool* auxPool = string_pool.create(64*1024, 0);
 
     source_mgr.SourceMgr* sm = source_mgr.create();
@@ -94,9 +119,19 @@ public func i32 main(i32 argc, char** argv) {
         printf("building %s\n", target.getName());
 
         ast_context.Context* context = ast_context.create(16*1024);
-        string_pool.Pool* pool = string_pool.create(1024*1024, 2048);
-        component.Component* comp = component.create();
-        ast_builder.Builder* builder = ast_builder.create(context, comp);
+        string_pool.Pool* astPool = string_pool.create(1024*1024, 2048);
+        ast_builder.Builder* builder = ast_builder.create(context);
+
+        component.Component* libcComponent = component.create();
+        builder.setComponent(libcComponent);
+        // TODO parse manifest
+        // NOTE: HMM manifest filename should go into auxPool, module-names into normal astPool
+        parseLib(sm, auxPool, astPool, libcComponent, "libc");
+
+        component.Component* mainComp = component.create();
+        builder.setComponent(mainComp);
+
+        // TODO also re-use builder between components
 
         // TODO get from recipe/target
         // TODO dynamic sizing
@@ -113,7 +148,7 @@ public func i32 main(i32 argc, char** argv) {
             //printf("parsing %s\n", filename);
 
 
-            c2_parser.Parser* parser = c2_parser.create(sm, file_id, builder, pool, &features, false);
+            c2_parser.Parser* parser = c2_parser.create(sm, file_id, builder, astPool, &features, false);
             u64 t1 = utils.now();
             bool ok = parser.parse();
             u64 t2 = utils.now();
@@ -127,15 +162,16 @@ public func i32 main(i32 argc, char** argv) {
 #if DumpTokens
 #else
         context.dump();
-        pool.dump();
+        astPool.dump();
 #endif
-        //comp.info();
-        resolve_imports(comp);
-        module_sorter.sort(comp);
-        //comp.print();
+        libcComponent.info();
+        mainComp.info();
+        resolve_imports(mainComp);
+        module_sorter.sort(mainComp);
+        //mainComp.print();
         builder.free();
-        comp.free();
-        pool.free();
+        mainComp.free();
+        astPool.free();
         context.free();
         if (recipe_id != -1) sm.clear(cast<u32>(recipe_id));
     }

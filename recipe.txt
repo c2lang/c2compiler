@@ -102,15 +102,16 @@ executable c2c
 	ast/function_decl_list.c2
 	ast/import_decl_list.c2
 
-    module_sorter.c2
-    stmt_list.c2
     c2recipe.c2
     c2recipe_parser.c2
     c2recipe_yaml.c2
     component.c2
     constants.c2
-    source_mgr.c2
     context.c2
+    manifest.c2
+    module_sorter.c2
+    source_mgr.c2
+    stmt_list.c2
 	main.c2
 end
 

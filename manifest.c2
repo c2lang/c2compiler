@@ -1,0 +1,77 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module manifest;
+
+import component;
+import source_mgr;
+import string_pool;
+import yaml;
+
+import stdlib;
+import string;
+
+import stdio local;
+
+func const yaml.Node* get_checked(yaml.Parser* parser, const char* path) {
+    const yaml.Node* node = parser.findNode(path);
+    if (!node) {
+        // TODO print manifest filename
+        fprintf(stderr, "missing node %s\n", path);
+        stdlib.exit(-1);
+    }
+    return node;
+}
+
+// TODO put everything in struct instead of passing around
+func bool getYamlInfoInfo(yaml.Parser* parser,
+                          string_pool.Pool* astPool,
+                          component.Component* comp)
+{
+    const yaml.Node* root = parser.getRoot();
+
+    const yaml.Node* lib_lang = get_checked(parser, "info.language");
+    const yaml.Node* lib_type = get_checked(parser, "info.type");
+    const yaml.Node* lib_kinds = get_checked(parser, "info.kinds");
+    const yaml.Node* modulesNode = get_checked(parser, "modules");
+    // TODO also check kinds
+
+    // TODO put info into Component (lang, type, kinds)
+
+    yaml.Iter iter = parser.getNodeChildIter(modulesNode);
+    while (!iter.done()) {
+        // NOTE: module names need to be put in normal pool, NOT auxPool!
+        const char* value = iter.getValue();
+        // assert(value)
+        usize len = string.strlen(value);
+        const char* modname = astPool.add(value, len, 1);
+        comp.getOrAddModule(modname);
+        iter.next();
+    }
+    return true;
+}
+
+public func void parse(source_mgr.SourceMgr* sm,
+                   i32 file_id,
+                   string_pool.Pool* astPool,
+                   component.Component* comp)
+{
+
+    const char* data = sm.get_content(file_id);
+    u32 loc_start = sm.get_offset(file_id);
+
+    yaml.Parser* parser = yaml.Parser.create();
+
+    bool ok = parser.parse(cast<char*>(data));
+    if (ok) {
+        //parser.dump();
+
+        getYamlInfoInfo(parser, astPool, comp);
+    } else {
+        fprintf(stderr, "Error: %s\n", parser.getMessage());
+    }
+
+    parser.destroy();
+}
+
+

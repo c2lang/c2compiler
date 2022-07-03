@@ -13,6 +13,8 @@ import string;
 import ctype local;
 import stdarg local;
 
+import stdio local; // TEMP
+
 public const u32 MaxLookahead = 16;  // must be multiple of 2
 
 type Keyword struct {
@@ -1212,9 +1214,11 @@ func bool Tokenizer.skip_feature(Tokenizer* t, Token* result) {
         case Action.DQUOTE:
             t.skip_string_literal();
             break;
-        case Action.SQUOTE:
-            t.skip_char_literal();
-            break;
+        // TODO handle block/line comments (could be weird stuff inside)
+        // NOTE: could be in comment!
+//        case Action.SQUOTE:
+//            t.skip_char_literal();
+//            break;
         case Action.POUND:
             if (t.lex_feature_cmd(result)) return true;
             if (t.is_enabled()) return false;

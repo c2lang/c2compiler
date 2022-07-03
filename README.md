@@ -81,6 +81,14 @@
         -> change Yaml parser to use SourceMgr, add locs
             -> LATER, for now just use
         DONT CHANGE RECIPE YET, FIRST JUST PARSE manifest.yml
+    - re-use components between targets? (libc)
+
+    - check duplicate module names between components (on every new module)
+        -> components get/add to list of all Modules
+            -> if they create a new one, they check
+    - fill in all imports
+        -> mark all external modules if used (later only parse those needed)
+    - update module sorting
 
 
 

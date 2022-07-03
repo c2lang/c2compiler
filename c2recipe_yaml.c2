@@ -66,10 +66,6 @@ func bool Recipe.getYamlInfo(Recipe* r, const yaml.Parser* parser) {
     }
     printf("recipe ok\n");
     return true;
-
-
-
-    return true;
 }
 
 public func bool Recipe.parseYaml(Recipe* r, i32 file_id) {
