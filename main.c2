@@ -12,6 +12,7 @@ import ast_context;
 import ast_builder;
 import component;
 import string_pool;
+import module_sorter;
 import ast;
 import utils;
 
@@ -21,122 +22,6 @@ import stdlib;
 import string;
 
 import stdio local;
-
-type ModuleSorter struct {
-    u32 num_mods;
-    ast.Module** modules;
-    u8* array;
-    u32 cur_mod_idx;
-}
-
-func void ModuleSorter.print(const ModuleSorter* s) {
-    printf("                     |");
-    for (u32 y=0; y<s.num_mods; y++) {
-        printf(" %2u", y);
-    }
-    printf("\n");
-    for (u32 y=0; y<s.num_mods; y++) {
-        printf("%16s  %2u |", s.modules[y].getName(), y);
-        for (u32 x=0; x<s.num_mods; x++) {
-            u8 value = s.array[y * s.num_mods + x];
-            printf("  %c", value ? 'X' : ' ');
-        }
-        printf("\n");
-    }
-}
-
-func void ModuleSorter.sort(component.Component* c) {
-    const u32 count = c.getNumModules();
-    if (count <= 1) return;
-
-    ModuleSorter s;
-    s.num_mods = count;
-    s.cur_mod_idx = 0;
-
-    // preparation
-    ast.Module** orig = c.getModules();
-    s.modules = stdlib.malloc(count * sizeof(ast.Module*));
-    string.memcpy(cast<void*>(s.modules), cast<void*>(orig), count*sizeof(ast.Module*));
-    s.array = stdlib.calloc(1, count * (count + 2));  // one extra line for todo, one for results
-
-    // fill deps
-    c.visitModules(ModuleSorter.handleModule, &s);
-
-    // sort
-    //s.print();
-    u8* sorted = &s.array[count*(count+1)];
-    // Note: max modules is 256 this way!
-    u8* ringbuf = &s.array[count*count];
-    u32 head = 0;
-    u32 size = count;
-    for (u8 i=0; i<count; i++) ringbuf[i] = i;
-
-    u32 iterations = 0;
-    while (size) {
-        if (iterations > size) {
-            fprintf(stderr, "circular dependency detected\n");
-            //s.print();
-            // TODO print dependency
-            goto out;
-        }
-
-        u8 idx = ringbuf[head];
-        head = (head + 1) % count;
-        // Note: dont change size yet
-
-        u32 offset = idx*count;
-        bool has_deps = false;
-        for (u32 j=0; j<count; j++) {
-            if (s.array[offset + j] != 0) {
-                has_deps = true;
-                break;
-            }
-        }
-        if (has_deps) {
-            // note: head already updated, so size - 1
-            ringbuf[(head + size -1) % count] = idx;
-            iterations++;
-        } else {
-            sorted[count-size] = cast<u8>(idx);
-            iterations = 0;
-            size--;
-            // clear this module's dependencies
-            for (u32 x=0; x<count; x++) s.array[x*count + idx] = 0;
-            //s.print();
-        }
-    }
-
-    // re-order results
-    for (u32 i=0; i<count; i++) orig[i] = s.modules[sorted[i]];
-
-out:
-    stdlib.free(cast<void*>(s.modules));
-    stdlib.free(s.array);
-}
-
-func void ModuleSorter.handleModule(void* arg, ast.Module* mod) {
-    ModuleSorter* s = arg;
-    mod.visitImports(ModuleSorter.handleImport, arg);
-    s.cur_mod_idx++;
-}
-
-func void ModuleSorter.handleImport(void* arg, ast.ImportDecl* d) {
-    ModuleSorter* s = arg;
-    ast.Module* dest = d.asDecl().getModule();
-    if (!dest) return;  // ignore for now, later, check if same Component
-
-    u32 dest_idx = s.mod2idx(dest);
-    u32 offset = s.cur_mod_idx * s.num_mods + dest_idx;
-    s.array[offset] = 1;
-}
-
-func u32 ModuleSorter.mod2idx(const ModuleSorter* s, const ast.Module* mod) {
-    for (u32 i=0; i<s.num_mods; i++) {
-        if (s.modules[i] == mod) return i;
-    }
-    //assert(0);
-    return 0;   // should not happen
-}
 
 func void handleImport(void* arg, ast.ImportDecl* d) {
     // TODO normally have list of all modules (of all Components)
@@ -246,7 +131,7 @@ public func i32 main(i32 argc, char** argv) {
 #endif
         //comp.info();
         resolve_imports(comp);
-        ModuleSorter.sort(comp);
+        module_sorter.sort(comp);
         //comp.print();
         builder.free();
         comp.free();

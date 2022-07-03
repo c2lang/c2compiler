@@ -106,6 +106,7 @@ executable.c2c:
         - ast/function_decl_list.c2
         - ast/import_decl_list.c2
 
+        - module_sorter.c2
         - stmt_list.c2
         - c2recipe.c2
         - c2recipe_parser.c2
