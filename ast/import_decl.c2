@@ -14,7 +14,7 @@ type ImportDeclBits struct {
 
 public type ImportDecl struct {
     Decl parent;
-    const char* alias_name;
+    const char* alias_name; // Note: may be nil
     SrcLoc alias_loc;
 } @(opaque)
 
@@ -39,7 +39,7 @@ public func const char* ImportDecl.getAliasName(const ImportDecl* d) @(inline) {
 
 public func const char* ImportDecl.getImportName(const ImportDecl* d) @(inline) {
     if (d.alias_name) return d.alias_name;
-    return d.parent.name;
+    return d.parent.getName();
 }
 
 public func SrcLoc ImportDecl.getAliasLoc(const ImportDecl* d) @(inline) { return d.alias_loc; }

@@ -25,7 +25,7 @@ public func Type* StructType.asType(StructType* t) @(inline) { return &t.parent;
 
 func void StructType.print(const StructType* t, string_buffer.Buf* out) {
     out.add("(struct)");
-    const char* name = t.decl.parent.name;
+    const char* name = t.decl.parent.getName();
     if (name) out.add(name);
     else out.add("<anonymous>");
 }

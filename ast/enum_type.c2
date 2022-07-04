@@ -25,7 +25,7 @@ public func Type* EnumType.asType(EnumType* t) @(inline) { return &t.parent; }
 
 func void EnumType.print(const EnumType* t, string_buffer.Buf* out) {
     out.add("(enum)");
-    out.add(t.decl.parent.name);
+    out.add(t.decl.parent.getName());
 }
 
 func void EnumType.debugPrint(const EnumType* t, string_buffer.Buf* out) {

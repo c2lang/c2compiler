@@ -394,7 +394,7 @@ func void Parser.parseVarDef(Parser* p, bool is_public) {
 
     if (need_semi) p.expectAndConsume(Kind.Semicolon);
 
-    p.builder.actOnGlobalVarDecl(p.tok.text_value, p.tok.loc, is_public, qt, initValue);
+    p.builder.actOnGlobalVarDecl(name, loc, is_public, qt, initValue);
 }
 
 func void Parser.parseStaticAssert(Parser* p) {

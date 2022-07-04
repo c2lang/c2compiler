@@ -27,9 +27,11 @@ public type Pool struct {
     u32 size; // rename dataSize
     u32 data_capacity;
     char* data;
+
     Node* nodes;
     u16 node_capacity;
     u16 node_count;
+
     Node* root;
 
     // statistics
@@ -42,6 +44,8 @@ public func Pool* create(u32 data_capacity, u16 node_capacity) {
     Pool* p = stdlib.calloc(1, sizeof(Pool));
     p.data_capacity = data_capacity;
     p.data = stdlib.malloc(p.data_capacity);
+    p.data[0] = 0;
+    p.size = 1; // skip 1
     p.resize_nodes(node_capacity);
     p.node_count = 1; // skip node 1
     return p;
@@ -52,6 +56,8 @@ public func void Pool.free(Pool* p) {
     stdlib.free(p.nodes);
     stdlib.free(p);
 }
+
+public func const char* Pool.getStart(const Pool* pool) { return pool.data; }
 
 func Node* Pool.getChild(Pool* pool, Node* x, Dir dir) @(inline) {
     // assert(x);

@@ -111,10 +111,6 @@ public func i32 main(i32 argc, char** argv) {
 
     //recipe.dump();
 
-    ast_context.Context* typeContext = ast_context.create(1024);
-    // TODO re-init for each target, since the pointers to these types change!!
-    ast.init(typeContext);
-
     for (u32 i=0; i<recipe.numTargets(); i++) {
         c2recipe.Target* target = recipe.getTarget(i);
 
@@ -123,6 +119,7 @@ public func i32 main(i32 argc, char** argv) {
         ast_context.Context* context = ast_context.create(16*1024);
         string_pool.Pool* astPool = string_pool.create(1024*1024, 2048);
         ast_builder.Builder* builder = ast_builder.create(context);
+        ast.init(context, astPool.getStart(), astPool);
 
         module_list.ModList* modlist = module_list.create(false);
 
@@ -172,6 +169,7 @@ public func i32 main(i32 argc, char** argv) {
         //module_sorter.sort(mainComp);
 
         //mainComp.print();
+
         modlist.free();
         builder.free();
         mainComp.free();
@@ -182,7 +180,6 @@ public func i32 main(i32 argc, char** argv) {
 
     recipe.free();
     auxPool.free();
-    typeContext.free();
     sm.free();
 
 	return 0;

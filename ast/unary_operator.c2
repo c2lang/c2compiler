@@ -38,7 +38,7 @@ public const char*[] unaryOpcode_names = {
     "*",
     "-",
     "~",
-    "",
+    "!",
 }
 
 static_assert(elemsof(UnaryOpcode), elemsof(unaryOpcode_names));

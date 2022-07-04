@@ -6,6 +6,8 @@ module ast;
 import color;
 import ast_context local;
 
+import string_pool; // TEMP
+
 static_assert(32, sizeof(Decl));
 static_assert(48, sizeof(FunctionDecl));
 static_assert(32, sizeof(StructTypeDecl));
@@ -78,7 +80,10 @@ public BuiltinType* g_i64;
 public BuiltinType* g_void;
 public BuiltinType* g_bool;
 
-public func void init(Context* c) {
+const char* g_names_start;
+string_pool.Pool* g_pool;
+
+public func void init(Context* c, const char* names_start, string_pool.Pool* pool) {
     g_u8 = BuiltinType.create(c, BuiltinTypeKind.UInt8);
     g_u16 = BuiltinType.create(c, BuiltinTypeKind.UInt16);
     g_u32 = BuiltinType.create(c, BuiltinTypeKind.UInt32);
@@ -89,6 +94,8 @@ public func void init(Context* c) {
     g_i64 = BuiltinType.create(c, BuiltinTypeKind.Int64);
     g_void = BuiltinType.create(c, BuiltinTypeKind.Void);
     g_bool = BuiltinType.create(c, BuiltinTypeKind.Bool);
+    g_names_start = names_start;
+    g_pool = pool;
 }
 
 const char* col_Stmt = color.Bmagenta;

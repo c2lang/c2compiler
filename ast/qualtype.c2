@@ -85,8 +85,8 @@ public func void QualType.print(const QualType* qt, string_buffer.Buf* out) {
     if (t) {
         u32 quals = qt.getQualifiers();
         if (quals) out.color(col_Type);
-        if (quals & QualType_Const) out.add(" const");
-        if (quals & QualType_Volatile) out.add(" volatile");
+        if (quals & QualType_Const) out.add("const ");
+        if (quals & QualType_Volatile) out.add("volatile ");
         t.print(out);
         // TODO canonicalType '=> ..'
     } else {
