@@ -43,6 +43,7 @@
     -> saves 4 bytes -> also needs AST -> u32 otherwise just padded back
 - Idea: dont save pointers, but save offsets into global Pool.
     OLD: 43798 allocs (avg 26 bytes), 73 blocks (16384), total 1155 Kb
+        takes between 3470 - 3580 usec
     NEW: ??
     -> Pool could be resized then
     -> if size is an issue, we could use offset*4. (QualType would have to be 8 bytes then
