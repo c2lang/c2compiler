@@ -141,3 +141,36 @@ Builder
   Component
     Module
       AST
+
+--------------------------------------------
+AST Sizes
+
+Name: char* -> u32
+mod:  Module* -> u32
+AST: Expr* -> u32
+
+                    Now     Name u32        AST u32
+Decl                32      32              20
+FunctionDecl        48      48              28
+VarDecl             same as Decl
+
+Stmt                 4      -               -
+IfStmt              24      -              12
+ReturnStmt           8      -               -
+
+Expr                16      -               12
+CharLiteral         same as Expr
+NilExpr
+IdentifierExpr      24      -               16
+CallExpr            24      -               20
+MemberExpr          32      -               24
+BinaryOperator      32      -               24
+
+Type                 4      -               -
+PointerType         16      -               8
+RefType             16/24   -               8/12
+
+QualType             8      -               4/8 (depending on offset granularity)
+
+
+
