@@ -44,6 +44,8 @@
 - Idea: dont save pointers, but save offsets into global Pool.
     OLD: 43798 allocs (avg 26 bytes), 73 blocks (16384), total 1155 Kb
         takes between 3470 - 3580 usec
+    ISSUE: cannot do getLHS2() { return &lhs; } -> need indirection. Would have to
+        return ExprIdx with u32* inside, then the whole type system is usefull
     NEW: ??
     -> Pool could be resized then
     -> if size is an issue, we could use offset*4. (QualType would have to be 8 bytes then
