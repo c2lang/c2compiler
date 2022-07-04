@@ -10,8 +10,7 @@
     - NAME=<value> -> value always treated as text
     - OR AND NOT in condition
     - () to indicate order
-- check AVL trees to have better performance than RB trees
-- in a skipFeatures part, still check syntax?
+- in a skipFeatures part, still check syntax? -> no
 
 ## SourceManager
 - close files after use (need indication)
@@ -41,14 +40,7 @@
 / name: dont store char* but u32 name_index
     have AST global name_offset that is set to main StringPool
     -> saves 4 bytes -> also needs AST -> u32 otherwise just padded back
-- Idea: dont save pointers, but save offsets into global Pool.
-    OLD: 43798 allocs (avg 26 bytes), 73 blocks (16384), total 1155 Kb
-        takes between 3470 - 3580 usec
-    ISSUE: cannot do getLHS2() { return &lhs; } -> need indirection. Would have to
-        return ExprIdx with u32* inside, then the whole type system is usefull
-    NEW: ??
-    -> Pool could be resized then
-    -> if size is an issue, we could use offset*4. (QualType would have to be 8 bytes then
+    -> but allows StringPool to resize! at very low cost
 - Idea: use same data dat build new tree for Scope?
     or make orderned copy then use flat trees to walk? Also instead of pointers, could be u32's
     comparing is just comparing/checking u32's
@@ -68,18 +60,6 @@
         -> rename debugPrint -> diagPrint
     -> ALSO need expr.printLiteral()
         -> printLiteral does NOT print colors
-- C2C: FIX object sizes (Stmt should be 4 bytes, not aligned yet)
-    ast_Stmt = 4
-    ast_IfStmt = 24
-    ast_Expr = 16
-    ast_ParenExpr = 24
-    -> type must be u32 or i32 (C99)
-    -> keep track of how many bits are left. If the field doesn't fit, a next one is created (no straddling)
-    -> if followed by a non-bitfield, left = 0;
-    -> add a lot of unit tests
-    -> ini combination with packed?
-    TEMP: try reverting c2c to generate sizeof(x) instead of number
-        -> big.c2 -> 309 ipv 488 blocks!
 - move SrcLoc to ast_helper?
 - Give every Type a PtrType* ptr, since we can re-use efficiently. Since many types will have
     pointers to them, this is not so bad.
@@ -126,7 +106,6 @@
 - Dont allow Declaration in Condition of if stmt?
 
 ## General
--> If fixed size StringPool becomes an issues, users could increase it in the recipe/build file
 - convert files to relative path in findProjectDir(), to Vim understands errors
 - add option to print all configs in code
 - CHECK all DeclList / StmtList etc to see if they are freed
@@ -142,14 +121,10 @@ cproc
 c2c
     NEW (without C cast)
 
-Builder
-    -> list of Modules (for lookup)
-  Component
-    Module
-      AST
-
 --------------------------------------------
 AST Sizes
+
+NOTE: NOT possible due to Expr** getLHS2() { ..}
 
 Name: char* -> u32
 mod:  Module* -> u32
