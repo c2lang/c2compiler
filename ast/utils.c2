@@ -81,9 +81,8 @@ public BuiltinType* g_void;
 public BuiltinType* g_bool;
 
 const char* g_names_start;
-string_pool.Pool* g_pool;
 
-public func void init(Context* c, const char* names_start, string_pool.Pool* pool) {
+public func void init(Context* c, const char* names_start) {
     g_u8 = BuiltinType.create(c, BuiltinTypeKind.UInt8);
     g_u16 = BuiltinType.create(c, BuiltinTypeKind.UInt16);
     g_u32 = BuiltinType.create(c, BuiltinTypeKind.UInt32);
@@ -95,7 +94,6 @@ public func void init(Context* c, const char* names_start, string_pool.Pool* poo
     g_void = BuiltinType.create(c, BuiltinTypeKind.Void);
     g_bool = BuiltinType.create(c, BuiltinTypeKind.Bool);
     g_names_start = names_start;
-    g_pool = pool;
 }
 
 const char* col_Stmt = color.Bmagenta;

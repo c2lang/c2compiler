@@ -140,7 +140,7 @@ public func i32 main(i32 argc, char** argv) {
         ast_context.Context* context = ast_context.create(16*1024);
         string_pool.Pool* astPool = string_pool.create(1024*1024, 2048);
         ast_builder.Builder* builder = ast_builder.create(context);
-        ast.init(context, astPool.getStart(), astPool);
+        ast.init(context, astPool.getStart());
 
         module_list.ModList* modlist = module_list.create(false);
 
