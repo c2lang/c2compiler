@@ -67,15 +67,37 @@ public func void resolve_imports(component.Component* c) {
     c.visitImports(handleImport, c);
 }
 
-public func i32 main(i32 argc, char** argv) {
-    bool single_file = false; // TODO parse
 
-    if (argc > 2) {
-        printf("usage: %s <file>\n", argv[0]);
-        return -1;
+type Options struct {
+    bool print_ast;
+    const char* single_file;
+}
+
+func void usage(const char* me) {
+    printf("Usage: %s <options> <filename>\n");
+    stdlib.exit(-1);
+}
+
+func void parse_opts(i32 argc, char** argv, Options* opts) {
+    for (i32 i=1; i<argc; i++) {
+        const char* arg = argv[i];
+        if (arg[0] == '-') {
+            switch (arg[1]) {
+            case 'a':
+                opts.print_ast = true;
+                break;
+            }
+        } else {
+            if (opts.single_file) usage(argv[0]);
+            opts.single_file = arg;
+        }
     }
+}
 
-    if (argc > 1) single_file = true;
+public func i32 main(i32 argc, char** argv) {
+    Options opts = { 0 }
+
+    parse_opts(argc, argv, &opts);
 
     // note: auxPool is used by recipe, build-file and manifests
     string_pool.Pool* auxPool = string_pool.create(64*1024, 0);
@@ -88,14 +110,13 @@ public func i32 main(i32 argc, char** argv) {
 
     i32 recipe_id = -1;
 
-    if (single_file) {
-        const char* filename = argv[1]; // TODO parse
-        recipe.addDummyTarget(filename);
+    if (opts.single_file) {
+        recipe.addDummyTarget(opts.single_file);
     } else {
         if (!utils.findProjectDir()) {
             fprintf(stderr, "c2c: error: cannot find C2 root dir\n");
             fprintf(stderr, "c2c requires a %s file in the project root\n", constants.recipe_name);
-            fprintf(stderr, "Use argument -h for a list of available options and usage of c2c\n");
+            fprintf(stderr, "Use argument -h for a list of available opts and usage of c2c\n");
             return -1;
         }
 
@@ -168,7 +189,7 @@ public func i32 main(i32 argc, char** argv) {
         //resolve_imports(mainComp);
         //module_sorter.sort(mainComp);
 
-        //mainComp.print();
+        if (opts.print_ast) mainComp.print();
 
         modlist.free();
         builder.free();
