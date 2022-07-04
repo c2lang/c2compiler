@@ -318,7 +318,7 @@ func VarDecl* Parser.parseParamDecl(Parser* p, bool is_public, bool allow_defaul
         name = p.tok.text_value;
         p.consumeToken();
     } else {
-        name = "";
+        name = nil;
     }
 
     Expr* initValue = nil;

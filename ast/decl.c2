@@ -57,7 +57,7 @@ public type Decl struct {
         u32 bits;
     }
     SrcLoc loc;
-#if 1
+#if DeclNamePtr
     const char* name; // Note: may be nil
 #else
     u32 name_idx;   // into g_names_start, 0 means nil
@@ -71,27 +71,17 @@ func void Decl.init(Decl* d, DeclKind k, const char* name, SrcLoc loc, bool is_p
     d.bits = 0;
     d.declBits.kind = k;
     d.declBits.is_public = is_public;
-#if 1
+#if DeclNamePtr
     d.name = name;
 #else
     if (name) {
+//        if (name[0] == 0) {
+//            stdio.printf("EMPTY STRING! (kind %u, public %d, loc %u)\n", k, is_public, loc);
+//        }
         d.name_idx = cast<u32>(name - g_names_start);
     } else {
         d.name_idx = 0;
     }
-#if 0
-    //stdio.printf("decl %s  (%u)\n", name,  d.name_idx);
-    if (name) {
-        if (name[0] == 0) {
-            stdio.printf("EMPTY STRING! (kind %u, public %d)\n", k, is_public);
-        }
-        const char* name2 = g_pool.add(name, string.strlen(name), true);
-        if (name != name2) {
-            stdio.printf("  name [%s] NOT in pool kind %u\n", name, k);
-            stdlib.exit(-1);
-        }
-    }
-#endif
 #endif
     d.loc = loc;
     d.qt = qt;
@@ -104,7 +94,7 @@ public func DeclKind Decl.getKind(const Decl* d) @(inline) { return cast<DeclKin
 public func DeclCheckState Decl.getCheckState(const Decl* d) @(inline) { return cast<DeclCheckState>(d.declBits.check_state); }
 
 public func const char* Decl.getName(const Decl* d) @(inline) {
-#if 1
+#if DeclNamePtr
     return d.name;
 #else
     if (d.name_idx) return &g_names_start[d.name_idx];
@@ -174,10 +164,13 @@ func void Decl.printKind(const Decl* d, string_buffer.Buf* out, u32 indent, cons
 func void Decl.printName(const Decl* d, string_buffer.Buf* out) {
     out.add(" ");
     out.color(col_Value);
-#if 1
+#if DeclNamePtr
     if (d.name) out.add(d.getName());
 #else
-    if (d.name_idx) out.add(d.getName());
+    if (d.name_idx) {
+        stdio.printf("PRINT %5u -> %p\n", d.name_idx, d.getName());
+        out.add(d.getName());
+    }
 #endif
     else out.add("(nil)");
 }
