@@ -42,6 +42,8 @@
     have AST global name_offset that is set to main StringPool
     -> saves 4 bytes -> also needs AST -> u32 otherwise just padded back
 - Idea: dont save pointers, but save offsets into global Pool.
+    OLD: 43798 allocs (avg 26 bytes), 73 blocks (16384), total 1155 Kb
+    NEW: ??
     -> Pool could be resized then
     -> if size is an issue, we could use offset*4. (QualType would have to be 8 bytes then
 - Idea: use same data dat build new tree for Scope?
