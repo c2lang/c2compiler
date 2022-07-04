@@ -38,14 +38,16 @@
     AliasType,
     Var,        -> only if Global
     -> LATER
-- name: dont store char* but u32 name_index
+/ name: dont store char* but u32 name_index
     have AST global name_offset that is set to main StringPool
-    -> saves 4 bytes
+    -> saves 4 bytes -> also needs AST -> u32 otherwise just padded back
 - Idea: dont save pointers, but save offsets into global Pool.
+    -> FIRST NEED CORRECT sizeof SIZES, otherwise cannot measure
     -> Pool could be resized then
     -> if size is an issue, we could use offset*4. (QualType would have to be 8 bytes then
 - Idea: use same data dat build new tree for Scope?
     or make orderned copy then use flat trees to walk? Also instead of pointers, could be u32's
+    comparing is just comparing/checking u32's
 - store Attributes
     2 prints:
         -> all types are printed on single line

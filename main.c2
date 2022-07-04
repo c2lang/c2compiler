@@ -150,7 +150,6 @@ public func i32 main(i32 argc, char** argv) {
             const char* filename = sm.getFileName(file_id);
             //printf("parsing %s\n", filename);
 
-
             c2_parser.Parser* parser = c2_parser.create(sm, file_id, builder, astPool, &features, false);
             u64 t1 = utils.now();
             bool ok = parser.parse();
