@@ -1,10 +1,12 @@
 module component;
 
 import ast;
+import module_list;
 import string_buffer;
 import stdlib local;
 import string;
 
+import color;// TEMP
 import stdio local; // TEMP
 /*
     Represents a library or the main-component
@@ -16,11 +18,13 @@ public type Component struct {
     ast.Module** mods;
     u32 num_mods;
     u32 max_mods;
+    module_list.ModList* globalList;
 } @(opaque)
 
-public func Component* create() {
+public func Component* create(module_list.ModList* globalList) {
     Component* m = calloc(1, sizeof(Component));
     m.resize(4);
+    m.globalList = globalList;
     return m;
 }
 
@@ -76,7 +80,15 @@ public func ast.Module* Component.getOrAddModule(Component* c, const char* modna
         if (m.getName() == modname) return m;
     }
 
-    ast.Module* m = ast.Module.create(modname);
+    ast.Module* m = c.globalList.find(modname);
+    if (m) {
+        fprintf(stderr, "%serror%s: module %s already defined in another component\n", color.Red, color.Normal, modname);
+        // TODO need dest component
+        // TODO need SourceMgr + SrcLoc here...nasty
+        stdlib.exit(-1);
+    }
+
+    m = ast.Module.create(modname);
 
     if (c.num_mods == c.max_mods) c.resize(c.max_mods * 2);
 

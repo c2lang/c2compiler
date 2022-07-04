@@ -11,6 +11,7 @@ import c2recipe;
 import component;
 import constants;
 import manifest;
+import module_list;
 import module_sorter;
 import source_mgr;
 import string_list;
@@ -18,9 +19,8 @@ import string_pool;
 import utils;
 
 // for sort
-import linked_list;
+import color;
 import stdlib;
-import string;
 
 import stdio local;
 
@@ -57,11 +57,13 @@ func void handleImport(void* arg, ast.ImportDecl* d) {
     if (m) {
         d.setModule(m);
     } else {
-        // normally error, no external components yet
+        fprintf(stderr, "Error: Unknown module '%s'\n", name);
+        stdlib.exit(-1);
     }
 }
 
 public func void resolve_imports(component.Component* c) {
+    printf("%schecking imports%s\n", color.Yellow, color.Normal);
     c.visitImports(handleImport, c);
 }
 
@@ -122,16 +124,16 @@ public func i32 main(i32 argc, char** argv) {
         string_pool.Pool* astPool = string_pool.create(1024*1024, 2048);
         ast_builder.Builder* builder = ast_builder.create(context);
 
-        component.Component* libcComponent = component.create();
+        module_list.ModList* modlist = module_list.create(false);
+
+        component.Component* libcComponent = component.create(modlist);
         builder.setComponent(libcComponent);
         // TODO parse manifest
         // NOTE: HMM manifest filename should go into auxPool, module-names into normal astPool
         parseLib(sm, auxPool, astPool, libcComponent, "libc");
 
-        component.Component* mainComp = component.create();
+        component.Component* mainComp = component.create(modlist);
         builder.setComponent(mainComp);
-
-        // TODO also re-use builder between components
 
         // TODO get from recipe/target
         // TODO dynamic sizing
@@ -139,6 +141,7 @@ public func i32 main(i32 argc, char** argv) {
         features.init(64);
         features.add("feature_a");
 
+        printf("%sparsing %s%s\n", color.Yellow, target.getName(), color.Normal);
         u64 total_time = 0;
         for (u32 j=0; j<target.numFiles(); j++) {
             i32 file_id = target.openFile(j);
@@ -164,11 +167,12 @@ public func i32 main(i32 argc, char** argv) {
         context.dump();
         astPool.dump();
 #endif
-        libcComponent.info();
-        mainComp.info();
+        //libcComponent.info();
+        //mainComp.info();
         resolve_imports(mainComp);
         module_sorter.sort(mainComp);
         //mainComp.print();
+        modlist.free();
         builder.free();
         mainComp.free();
         astPool.free();

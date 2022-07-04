@@ -112,6 +112,7 @@ executable.c2c:
         - constants.c2
         - context.c2
         - manifest.c2
+        - module_list.c2
         - module_sorter.c2
         - source_mgr.c2
         - stmt_list.c2

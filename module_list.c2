@@ -1,0 +1,53 @@
+module module_list;
+
+import ast;
+
+import stdlib;
+import string;
+
+public type ModList struct {
+    ast.Module** mods;              // modules in this Component
+    u32 num_mods;
+    u32 max_mods;
+    bool owns_modules;
+} @(opaque)
+
+public func ModList* create(bool owns_modules) {
+    ModList* l = stdlib.calloc(1, sizeof(ModList));
+    l.owns_modules = owns_modules;
+    l.resize(4);
+    return l;
+}
+
+public func void ModList.free(ModList* l) {
+    if (l.owns_modules) {
+        for (u32 i=0; i<l.num_mods; i++) {
+            l.mods[i].free();
+        }
+    }
+    stdlib.free(cast<void*>(l.mods));
+    stdlib.free(l);
+}
+
+public func ast.Module* ModList.find(const ModList* list, const char* modname) {
+    return nil;
+}
+
+public func void ModList.add(ModList* , ast.Module* m) {
+}
+
+//public func u32 Component.getNumModules(const Component* c) {
+//    return c.num_mods;
+//}
+
+func void ModList.resize(ModList* l, u32 cap) {
+    l.max_mods = cap;
+    void* buf = stdlib.malloc(l.max_mods * sizeof(ast.Module*));
+    if (l.mods) {
+        void* old = cast<void*>(l.mods);
+        string.memcpy(buf, old, l.num_mods * sizeof(ast.Module*));
+        stdlib.free(old);
+    }
+    l.mods = buf;
+}
+
