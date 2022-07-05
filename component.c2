@@ -23,22 +23,26 @@ public type Component struct {
     u32 num_mods;
     u32 max_mods;
     module_list.ModList* globalList;
+    const char* name;   // no ownership
 } @(opaque)
 
-public func Component* create(module_list.ModList* globalList) {
-    Component* m = calloc(1, sizeof(Component));
-    m.resize(4);
-    m.globalList = globalList;
-    return m;
+public func Component* create(module_list.ModList* globalList, const char* name) {
+    Component* c = calloc(1, sizeof(Component));
+    c.resize(4);
+    c.globalList = globalList;
+    c.name = name;
+    return c;
 }
 
-public func void Component.free(Component* m) {
-    for (u32 i=0; i<m.num_mods; i++) {
-        m.mods[i].free();
+public func void Component.free(Component* c) {
+    for (u32 i=0; i<c.num_mods; i++) {
+        c.mods[i].free();
     }
-    free(cast<void*>(m.mods));
-    free(m);
+    free(cast<void*>(c.mods));
+    free(c);
 }
+
+public func const char* Component.getName(const Component* c) { return c.name; }
 
 public type ModuleVisitor func void (void* arg, ast.Module* m);
 
@@ -66,15 +70,15 @@ public func u32 Component.getNumModules(const Component* c) {
     return c.num_mods;
 }
 
-func void Component.resize(Component* m, u32 cap) {
-    m.max_mods = cap;
-    void* buf = malloc(m.max_mods * sizeof(ast.Module*));
-    if (m.mods) {
-        void* old = cast<void*>(m.mods);
-        string.memcpy(buf, old, m.num_mods * sizeof(ast.Module*));
+func void Component.resize(Component* c, u32 cap) {
+    c.max_mods = cap;
+    void* buf = malloc(c.max_mods * sizeof(ast.Module*));
+    if (c.mods) {
+        void* old = cast<void*>(c.mods);
+        string.memcpy(buf, old, c.num_mods * sizeof(ast.Module*));
         free(old);
     }
-    m.mods = buf;
+    c.mods = buf;
 }
 
 public func ast.Module* Component.getOrAddModule(Component* c, const char* modname) {
@@ -109,7 +113,6 @@ public func ast.Module* Component.findModule(const Component* c, const char* nam
     }
     return nil;
 }
-
 
 public func void Component.info(const Component* c) {
     string_buffer.Buf* out = string_buffer.create(64*1024);
