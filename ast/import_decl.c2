@@ -10,6 +10,7 @@ import utils local;
 type ImportDeclBits struct {
     u32 : NumDeclBits;
     u32 is_local : 1;
+//    u32 own_component : 1;
 }
 
 public type ImportDecl struct {

@@ -106,13 +106,19 @@ public func ast.Module* Component.getOrAddModule(Component* c, const char* modna
     return m;
 }
 
-// TEMP, this should be in a big list
 public func ast.Module* Component.findModule(const Component* c, const char* name) {
     for (u32 i=0; i<c.num_mods; i++) {
         // Note: we can search by pointer compares
         if (c.mods[i].getName() == name) return c.mods[i];
     }
     return nil;
+}
+
+public func bool Component.hasModule(const Component* c, const ast.Module* mod) {
+    for (u32 i=0; i<c.num_mods; i++) {
+        if (c.mods[i] == mod) return true;
+    }
+    return false;
 }
 
 public func void Component.info(const Component* c) {

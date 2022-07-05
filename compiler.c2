@@ -154,14 +154,18 @@ func void Compiler.init(Compiler* c,
     c.context.dump();
     c.astPool.dump();
 #endif
+
+#if 0
     for (u32 i=0; i<c.num_components; i++) {
         c.components[i].info();
     }
+#endif
 
-    // resolve imports
+    // step 1: resolve imports
     printf("%sresolve imports%s\n", color.Yellow, color.Normal);
     c.mainComp.visitImports(Compiler.handleImport, c);
 
+    // step 2: sort modules inside main tcomponent
     module_sorter.sort(c.mainComp);
 
     if (c.opts.print_ast) c.mainComp.print();

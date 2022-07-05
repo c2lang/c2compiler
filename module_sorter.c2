@@ -14,6 +14,7 @@ import string;
 import stdio local;
 
 type ModuleSorter struct {
+    component.Component* comp;
     u32 num_mods;
     ast.Module** modules;
     u8* array;
@@ -43,6 +44,7 @@ public func void sort(component.Component* c) {
     ModuleSorter s;
     s.num_mods = count;
     s.cur_mod_idx = 0;
+    s.comp = c;
 
     // preparation
     ast.Module** orig = c.getModules();
@@ -66,7 +68,7 @@ public func void sort(component.Component* c) {
     while (size) {
         if (iterations > size) {
             fprintf(stderr, "circular dependency detected\n");
-            //s.print();
+            s.print();
             // TODO print dependency
             goto out;
         }
@@ -114,7 +116,10 @@ func void ModuleSorter.handleModule(void* arg, ast.Module* mod) {
 func void ModuleSorter.handleImport(void* arg, ast.ImportDecl* d) {
     ModuleSorter* s = arg;
     ast.Module* dest = d.asDecl().getModule();
-    if (!dest) return;  // ignore for now, later, check if same Component
+    //assert(dest);
+
+    // ignore imports from other components
+    if (!s.comp.hasModule(dest)) return;
 
     u32 dest_idx = s.mod2idx(dest);
     u32 offset = s.cur_mod_idx * s.num_mods + dest_idx;

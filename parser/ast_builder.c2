@@ -42,6 +42,7 @@ public func void Builder.actOnModule(Builder* b, const char* mod_name, SrcLoc mo
 
     // NOTE: make special ImportDecl to add own symbols
     ImportDecl* d = ImportDecl.create(b.context, mod_name, mod_loc, nil, 0, true);
+    d.setModule(b.mod);
     b.ast.addImport(d);
 }
 
