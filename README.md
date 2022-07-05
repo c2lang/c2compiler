@@ -1,4 +1,9 @@
 
+## TODO
+- check naming (lower/upper case) in ast-builder
+- use c2recipe.yml
+- load other external components (recursively)
+
 ## Tokenizer
 - parse floating points
 - replace __file__ and __line__ with string-literal / number?
@@ -88,8 +93,6 @@
 
 
 ## Analyser
-- check if all files of module are in the same dir
-    -> check if prefix is the same
 - remove check/errors from Component + Main, just do somewhere else?
 
 ## Performance

@@ -78,11 +78,14 @@ func void IdentifierExpr.print(const IdentifierExpr* e, string_buffer.Buf* out, 
     out.add("\n");
 }
 
-func void IdentifierExpr.printLiteral(const IdentifierExpr* e, string_buffer.Buf* out) {
+public func const char* IdentifierExpr.getName(const IdentifierExpr* e) {
     if (e.parent.parent.identifierExprBits.has_decl) {
-        out.add(e.decl.getName());
-    } else {
-        out.add(e.name);
+        return e.decl.getName();
     }
+    return e.name;
+}
+
+func void IdentifierExpr.printLiteral(const IdentifierExpr* e, string_buffer.Buf* out) {
+    out.add(e.getName());
 }
 

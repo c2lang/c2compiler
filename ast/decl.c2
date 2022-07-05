@@ -75,9 +75,6 @@ func void Decl.init(Decl* d, DeclKind k, const char* name, SrcLoc loc, bool is_p
     d.name = name;
 #else
     if (name) {
-//        if (name[0] == 0) {
-//            stdio.printf("EMPTY STRING! (kind %u, public %d, loc %u)\n", k, is_public, loc);
-//        }
         d.name_idx = cast<u32>(name - g_names_start);
     } else {
         d.name_idx = 0;
@@ -168,7 +165,6 @@ func void Decl.printName(const Decl* d, string_buffer.Buf* out) {
     if (d.name) out.add(d.getName());
 #else
     if (d.name_idx) {
-        stdio.printf("PRINT %5u -> %p\n", d.name_idx, d.getName());
         out.add(d.getName());
     }
 #endif

@@ -37,6 +37,7 @@ func void ModuleSorter.print(const ModuleSorter* s) {
     }
 }
 
+// Sort modules according to imports. Modules without dependencies (inside this component) come first
 public func void sort(component.Component* c) {
     const u32 count = c.getNumModules();
     if (count <= 1) return;
