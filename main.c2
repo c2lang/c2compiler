@@ -19,7 +19,7 @@ type Options struct {
 }
 
 func void usage(const char* me) {
-    printf("Usage: %s <options> <filename>\n");
+    printf("Usage: %s <options> <filename>\n", me);
     stdlib.exit(-1);
 }
 
