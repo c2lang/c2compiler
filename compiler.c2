@@ -47,12 +47,11 @@ func void parseLib(source_mgr.SourceMgr* sm,
     manifest.parse(sm, file_id, astPool, comp);
 }
 
-func void handleImport(void* arg, ast.ImportDecl* d) {
-    // TODO normally have list of all modules (of all Components)
-    component.Component* c = arg;
+func void Compiler.handleImport(void* arg, ast.ImportDecl* d) {
+    Compiler* c = arg;
 
     const char* name = d.asDecl().getName();
-    ast.Module* m = c.findModule(name);
+    ast.Module* m = c.globalList.find(name);
     if (m) {
         d.setModule(m);
     } else {
@@ -61,25 +60,19 @@ func void handleImport(void* arg, ast.ImportDecl* d) {
     }
 }
 
-func void resolve_imports(component.Component* c) {
-    printf("%schecking imports%s\n", color.Yellow, color.Normal);
-    c.visitImports(handleImport, c);
-}
-
-
 type Compiler struct {
     string_pool.Pool* auxPool;   // no ownership
     source_mgr.SourceMgr* sm;    // no ownership
-    // TODO const?
-    c2recipe.Target* target;     // no ownership
-    const Options* opts;
+    const c2recipe.Target* target;     // no ownership
+    const Options* opts;        // no ownership
 
     // TODO: extract this to a Context? and pass that around? (container only)
     ast_context.Context* context;
     string_pool.Pool* astPool;
     ast_builder.Builder* builder;
-    module_list.ModList* modlist;
+    module_list.ModList* globalList;
     component.Component* mainComp;  // no ownership
+
     component.Component** components;
     u32 num_components;
     u32 max_components;
@@ -115,19 +108,19 @@ func void Compiler.init(Compiler* c,
     c.context = ast_context.create(16*1024);
     c.astPool = string_pool.create(1024*1024, 2048);
     c.builder = ast_builder.create(c.context);
-    c.modlist = module_list.create(false);
+    c.globalList = module_list.create(false);
     c.resizeComponents(4);
 
     ast.init(c.context, c.astPool.getStart());
 
-    component.Component* libcComponent = component.create(c.modlist, "libc");
+    component.Component* libcComponent = component.create(c.globalList, "libc");
     c.addComponent(libcComponent);
     c.builder.setComponent(libcComponent);
     // TODO parse manifest
     // NOTE: HMM manifest filename should go into auxPool, module-names into normal astPool
     parseLib(sm, auxPool, c.astPool, libcComponent);
 
-    c.mainComp = component.create(c.modlist, "main");
+    c.mainComp = component.create(c.globalList, "main");
     c.addComponent(c.mainComp);
     c.builder.setComponent(c.mainComp);
 
@@ -161,11 +154,15 @@ func void Compiler.init(Compiler* c,
     c.context.dump();
     c.astPool.dump();
 #endif
-    //libcComponent.info();
-    //c.mainComp.info();
+    for (u32 i=0; i<c.num_components; i++) {
+        c.components[i].info();
+    }
 
-    //resolve_imports(c.mainComp);
-    //module_sorter.sort(c.mainComp);
+    // resolve imports
+    printf("%sresolve imports%s\n", color.Yellow, color.Normal);
+    c.mainComp.visitImports(Compiler.handleImport, c);
+
+    module_sorter.sort(c.mainComp);
 
     if (c.opts.print_ast) c.mainComp.print();
 
@@ -175,7 +172,7 @@ func void Compiler.free(Compiler* c) {
     for (u32 i=0; i<c.num_components; i++) {
         c.components[i].free();
     }
-    c.modlist.free();
+    c.globalList.free();
     c.builder.free();
     c.astPool.free();
     c.context.free();

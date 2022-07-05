@@ -7,6 +7,7 @@ import ast;
 
 import stdlib;
 import string;
+import stdio; // TEMP
 
 public type ModList struct {
     ast.Module** mods;              // modules in this Component
@@ -32,11 +33,19 @@ public func void ModList.free(ModList* l) {
     stdlib.free(l);
 }
 
-public func ast.Module* ModList.find(const ModList* list, const char* modname) {
+public func ast.Module* ModList.find(const ModList* l, const char* modname) {
+    for (u32 i=0; i<l.num_mods; i++) {
+        // Note: we can do pointer compare
+        if (l.mods[i].getName() == modname) return l.mods[i];
+    }
     return nil;
 }
 
-public func void ModList.add(ModList* , ast.Module* m) {
+public func void ModList.add(ModList* list, ast.Module* m) {
+    // Note: we dont check for duplicates here
+    if (list.num_mods == list.max_mods) list.resize(list.max_mods * 2);
+    list.mods[list.num_mods] = m;
+    list.num_mods++;
 }
 
 //public func u32 Component.getNumModules(const Component* c) {

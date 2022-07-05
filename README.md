@@ -119,7 +119,6 @@ cproc
     TODO
 
 c2c
-    NEW (without C cast)
 
 --------------------------------------------
 AST Sizes
