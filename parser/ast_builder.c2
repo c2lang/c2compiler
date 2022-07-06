@@ -220,6 +220,7 @@ public func void Builder.actOnEnumType(Builder* b,
                                        EnumConstantDecl** constants,
                                        u32 num_constants)
 {
+    // TODO give error if zero constans
     EnumTypeDecl* d = EnumTypeDecl.create(b.context, name, loc, is_public, b.mod, implType, is_incr, constants, num_constants);
     b.ast.addTypeDecl(d.asDecl());
 }

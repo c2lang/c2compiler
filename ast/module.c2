@@ -47,6 +47,12 @@ public func void Module.visitStructFunctions(const Module* m, StructFunctionVisi
     }
 }
 
+public func void Module.visitTypeDecls(const Module* m, StructFunctionVisitor visitor, void* arg) {
+    for (u32 i=0; i<m.num_files; i++) {
+        m.files[i].visitTypeDecls(visitor, arg);
+    }
+}
+
 public func Decl* Module.findType(const Module* m, const char* name) {
     Decl* result = nil;
     for (u32 i=0; i<m.num_files; i++) {

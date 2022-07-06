@@ -82,6 +82,15 @@ public func void AST.visitStructFunctions(const AST* a, StructFunctionVisitor vi
     }
 }
 
+public type TypeDeclVisitor func void (void* arg, Decl* d);
+
+public func void AST.visitTypeDecls(const AST* a, TypeDeclVisitor visitor, void* arg) {
+    Decl** types = a.types.getDecls();
+    for (u32 i=0; i<a.types.size(); i++) {
+        visitor(arg, types[i]);
+    }
+}
+
 public func Decl* AST.findType(const AST* a, const char* name) {
     Decl** types = a.types.getDecls();
     for (u32 i=0; i<a.types.size(); i++) {
