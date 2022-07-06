@@ -322,7 +322,9 @@ func Expr* Parser.parseCallExpr(Parser* p, Expr* fn) {
         p.expectAndConsume(Kind.Comma);
     }
     p.expectAndConsume(Kind.RParen);
-    return p.builder.actOnCallExpr(fn, args.getExprs(), args.size());
+    Expr* res = p.builder.actOnCallExpr(fn, args.getExprs(), args.size());
+    args.free();
+    return res;
 }
 
 

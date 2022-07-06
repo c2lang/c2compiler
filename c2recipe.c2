@@ -39,6 +39,7 @@ func Target* Target.create(Recipe* recipe, const char* name, SrcLoc loc) {
 }
 
 func void Target.free(Target* t) {
+    stdlib.free(t.files);
     stdlib.free(t);
 }
 

@@ -1,7 +1,5 @@
 
 ## TODO
-- fix memleaks: valgrind --leak-check=full -s ./output/c2c/c2c
-- check naming (lower/upper case) in ast-builder
 - use c2recipe.yml
 - load other external components (recursively)
 
@@ -97,6 +95,7 @@
 - remove check/errors from Component + Main, just do somewhere else?
 
 ## Performance
+- check memleaks: valgrind --leak-check=full -s ./output/c2c/c2c
 - profile application to see where time is spent
     add -pg to CFLAGS + LDFLAGS
     run c2c

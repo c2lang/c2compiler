@@ -184,6 +184,7 @@ func void Compiler.free(Compiler* c) {
     for (u32 i=0; i<c.num_components; i++) {
         c.components[i].free();
     }
+    stdlib.free(cast<void*>(c.components));
     c.globalList.free();
     c.builder.free();
     c.astPool.free();
