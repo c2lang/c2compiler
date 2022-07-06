@@ -12,6 +12,7 @@ import component;
 import constants;
 import manifest;
 import module_list;
+import module_analyser;
 import module_sorter;
 import source_mgr;
 import string_list;
@@ -207,52 +208,5 @@ func void Compiler.addComponent(Compiler* c, component.Component* comp) {
 }
 
 func void Compiler.analyseModule(void* arg, ast.Module* m) {
-    // TODO move this to ModuleAnalyser? (so Compiler doesn't have to know ast)
-
     Compiler* c = arg;
-    printf("analysing module %s\n", m.getName());
-    // TODO do we now which Component? (otherwise make small struct with Component and Compiler)
-
-    // NOTE: C2C ModuleAnalyser::step1()
-    // step 3a: collect incremental arrays
-    // TODO use visitIncrArrays()
-    // step 3b: collect struct functions
-    // TODO use visitStructFunctions();
-    m.visitStructFunctions(Compiler.handleStructFunc, c);
-
-    // NOTE: C2C ModuleAnalyser::step2()
-    // analyse types
-    // analyse vars
-    // analyse static asserts
-    // analyse function protos
-
-    // NOTE: C2C ModuleAnalyser::step3()
-    // analyse functionbodies
-}
-
-func void Compiler.handleStructFunc(void* arg, ast.FunctionDecl* d) {
-    Compiler* c = arg;
-    ast.IdentifierExpr* prefix = d.getPrefix();
-    const char* prefix_name = prefix.getName();
-    // assert(prefix)
-    printf("  %s %s\n", prefix_name, d.asDecl().getName());
-    //d.asDecl().dump();
-
-    /*
-        TODO we need to put this inside ModuleAnalyser, so it knows which Module we are working on
-        TODO also since we do symbol lookup, create Scope for Module?
-            -> could be duplicates with 'local imported' modules, so need smart Scope
-
-        search prefix_name in vector, compare by pointer
-        if (found) {
-            // TypeDecl already found, get it from 2nd vector
-        } else {
-            search Scope for prefix_name (not only TypeDecls!)
-            search TypeDecl, check if struct/union
-            add to data-structure.
-        }
-        add FunctionDecl in another vector with same index as name vector
-            check for duplicate names
-        set Decl inside (IdentifierExpr) prefix
-    */
-}
+    module_analyser.check(c.sm, m);

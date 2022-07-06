@@ -1,5 +1,9 @@
 
 ## TODO
+- collect struct functions
+    cache 1, first check if same as last
+    lookup prefix in own module Types first. If not found look elsewhere
+    scope name cache uses u32 not char*
 - check naming (lower/upper case) in ast-builder
 - use c2recipe.yml
 - load other external components (recursively)
