@@ -25,6 +25,8 @@ public func IntegerLiteral* IntegerLiteral.create(ast_context.Context* c, SrcLoc
     return i;
 }
 
+public func u64 IntegerLiteral.getValue(const IntegerLiteral* e) @(inline) { return e.val; }
+
 func void IntegerLiteral.print(const IntegerLiteral* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent, "IntegerLiteral");
     e.parent.printTypeBits(out);

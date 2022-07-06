@@ -106,6 +106,7 @@ executable c2c
     c2recipe.c2
     c2recipe_parser.c2
     c2recipe_yaml.c2
+    ctv_analyser.c2
     component.c2
     compiler.c2
     constants.c2

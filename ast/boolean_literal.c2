@@ -23,6 +23,10 @@ public func BooleanLiteral* BooleanLiteral.create(ast_context.Context* c, SrcLoc
     return e;
 }
 
+public func bool BooleanLiteral.getValue(const BooleanLiteral* e) @(inline) {
+    return e.parent.parent.booleanLiteralBits.value;
+}
+
 func void BooleanLiteral.print(const BooleanLiteral* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent, "BooleanLiteral");
     e.parent.printTypeBits(out);

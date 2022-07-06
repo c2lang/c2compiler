@@ -1,0 +1,84 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ctv_analyser;
+
+import ast local;
+
+import string;
+
+public type CTV_Analyser struct {
+}
+
+public func void CTV_Analyser.init(CTV_Analyser* ca) {
+    string.memset(ca, 0, sizeof(CTV_Analyser));
+}
+
+public type Value struct {
+    bool is_signed;
+    union {
+        u64 uvalue;
+        i64 svalue;
+    }
+}
+
+public func Value CTV_Analyser.get_value(const Expr* e) {
+    Value result = { 0 }
+
+    // assert(e.isCTV());
+
+    switch (e.getKind()) {
+    case ExprKind.IntegerLiteral:
+        const IntegerLiteral* i = cast<IntegerLiteral*>(e);
+        result.uvalue = i.getValue();
+        break;
+    case ExprKind.BooleanLiteral:
+        const BooleanLiteral* b = cast<BooleanLiteral*>(e);
+        result.uvalue = b.getValue();
+        break;
+    case ExprKind.CharLiteral:
+        const CharLiteral* c = cast<CharLiteral*>(e);
+        result.uvalue = c.getValue();
+        break;
+    case ExprKind.StringLiteral:
+        // assert(0);
+        break;
+    case ExprKind.Nil:
+        break;
+    case ExprKind.Identifier:
+        break;
+    case ExprKind.Type:
+        break;
+    case ExprKind.Call:
+        break;
+    case ExprKind.InitList:
+        break;
+    case ExprKind.FieldDesignatedInit:
+        break;
+    case ExprKind.ArrayDesignatedInit:
+        break;
+    case ExprKind.BinaryOperator:
+        break;
+    case ExprKind.UnaryOperator:
+        break;
+    case ExprKind.ConditionalOperator:
+        break;
+    case ExprKind.Builtin:
+        break;
+    case ExprKind.ArraySubscript:
+        break;
+    case ExprKind.Member:
+        break;
+    case ExprKind.Paren:
+        break;
+    case ExprKind.BitOffset:
+        break;
+    case ExprKind.ExplicitCast:
+        break;
+    case ExprKind.ImplicitCast:
+        break;
+    }
+
+    return result;
+}
+

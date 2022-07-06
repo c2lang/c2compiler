@@ -23,6 +23,10 @@ public func CharLiteral* CharLiteral.create(ast_context.Context* c, SrcLoc loc, 
     return e;
 }
 
+public func u8 CharLiteral.getValue(const CharLiteral* e) @(inline) {
+    return cast<u8>(e.parent.parent.charLiteralBits.value);
+}
+
 func void CharLiteral.print(const CharLiteral* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent, "CharLiteral");
     e.parent.printTypeBits(out);

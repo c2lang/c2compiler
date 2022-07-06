@@ -1,5 +1,9 @@
 
 ## TODO
+- analyse enums
+    -> need ctv_analyser.c2
+- Parser: try to merge tokens '-' and '<number>' as single IntegerLiteral
+    if parseExpr() starts with '-', check if next is IntegerLiteral, merge then.
 - use c2recipe.yml
 - load other external components (recursively)
 

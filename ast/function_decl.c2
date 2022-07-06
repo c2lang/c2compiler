@@ -85,7 +85,7 @@ func void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 
         out.add(d.prefix[0].getName());
         out.add(".");
     }
-    out.add(d.asDecl().getName());
+    out.add(d.parent.getName());
     out.add("\n");
 
     u32 params_offset = 0;

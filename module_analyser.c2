@@ -228,6 +228,7 @@ func void ModuleAnalyser.handleTypeDecl(void* arg, Decl* d) {
         ma.analyseStructType(cast<StructTypeDecl*>(d));
         break;
     case DeclKind.EnumType:
+        ma.analyseEnumType(cast<EnumTypeDecl*>(d));
         break;
     case DeclKind.EnumConstant:
         break;
@@ -267,5 +268,12 @@ func void ModuleAnalyser.popCheck(ModuleAnalyser* ma) {
 
 func void ModuleAnalyser.analyseStructType(ModuleAnalyser* ma, StructTypeDecl* d) {
     // TODO
+}
+
+func void ModuleAnalyser.analyseEnumType(ModuleAnalyser* ma, EnumTypeDecl* d) {
+    // TODO check for duplicates names
+    // TODO check if constants fit in impl type
+    // TODO assign values to constants
+    // TODO need CTVAnalyser
 }
 
