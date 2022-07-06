@@ -209,6 +209,6 @@ func void Compiler.addComponent(Compiler* c, component.Component* comp) {
 
 func void Compiler.analyseModule(void* arg, ast.Module* m) {
     Compiler* c = arg;
-    module_analyser.check(c.sm, m);
+    module_analyser.check(c.sm, c.context, m);
 }
 

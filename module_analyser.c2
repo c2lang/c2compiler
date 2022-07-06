@@ -5,6 +5,7 @@ module module_analyser;
 
 import source_mgr;
 import ast;
+import ast_context;
 
 import string;
 import stdlib;
@@ -109,6 +110,7 @@ func void StructDecls.addFunc(StructDecls* v, u32 index, ast.FunctionDecl* fn) {
 type ModuleAnalyser struct {
     ast.Module* mod;
     source_mgr.SourceMgr* sm;
+    ast_context.Context* context;
 
     // collect struct-functions
     // TODO use name idx
@@ -120,10 +122,11 @@ type ModuleAnalyser struct {
     StructDecls struct_decls;
 }
 
-public func void check(source_mgr.SourceMgr* sm, ast.Module* mod) {
+public func void check(source_mgr.SourceMgr* sm, ast_context.Context* context, ast.Module* mod) {
     ModuleAnalyser ma;
     string.memset(&ma, 0, sizeof(ma));
     ma.sm = sm;
+    ma.context = context;
     ma.mod = mod;
 
     //printf("analysing module %s\n", ma.mod.getName());
@@ -136,7 +139,8 @@ public func void check(source_mgr.SourceMgr* sm, ast.Module* mod) {
 
     for (u32 i=0; i<ma.struct_decls.count; i++) {
         const StructDeclInfo* info = &ma.struct_decls.data[i];
-        //info.decl.setStructFunctions(context, info.functions.getDecl(), info.functions.size());
+        ast.StructTypeDecl* fd = cast<ast.StructTypeDecl*>(info.decl);
+        fd.setStructFunctions(ma.context, info.functions.getDecls(), info.functions.size());
     }
 
     ma.prefixes.free();  // Note: free here already (safe to be freed twice)
