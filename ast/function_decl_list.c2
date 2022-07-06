@@ -3,31 +3,31 @@
 
 module ast;
 
-import string local;
-import stdlib local;
+import string;
+import stdlib;
 
-type FunctionDeclList struct {
+public type FunctionDeclList struct {
     u32 count;
     u32 capacity;
     FunctionDecl** decls;
 }
 
-func void FunctionDeclList.init(FunctionDeclList* l) {
-    memset(l, 0, sizeof(FunctionDeclList));
+public func void FunctionDeclList.init(FunctionDeclList* l) {
+    string.memset(l, 0, sizeof(FunctionDeclList));
 }
 
-func void FunctionDeclList.free(FunctionDeclList* l) {
-    if (l.decls) free(cast<void*>(l.decls));
+public func void FunctionDeclList.free(FunctionDeclList* l) {
+    if (l.decls) stdlib.free(cast<void*>(l.decls));
 }
 
-func void FunctionDeclList.add(FunctionDeclList* l, FunctionDecl* d) {
+public func void FunctionDeclList.add(FunctionDeclList* l, FunctionDecl* d) {
     if (l.count >= l.capacity) {
-        l.capacity += 4;
-        void* decls2 = malloc(l.capacity * sizeof(FunctionDecl*));
+        l.capacity = (l.capacity == 0) ? 4 : l.capacity * 2;
+        void* decls2 = stdlib.malloc(l.capacity * sizeof(FunctionDecl*));
         void* old = cast<void*>(l.decls);
         if (old) {
-            memcpy(decls2, old, l.count * sizeof(FunctionDecl*));
-            free(old);
+            string.memcpy(decls2, old, l.count * sizeof(FunctionDecl*));
+            stdlib.free(old);
         }
         l.decls = decls2;
     }
@@ -36,11 +36,11 @@ func void FunctionDeclList.add(FunctionDeclList* l, FunctionDecl* d) {
     l.count++;
 }
 
-func u32 FunctionDeclList.size(const FunctionDeclList* l) {
+public func u32 FunctionDeclList.size(const FunctionDeclList* l) {
     return l.count;
 }
 
-func FunctionDecl** FunctionDeclList.getDecls(const FunctionDeclList* l) {
+public func FunctionDecl** FunctionDeclList.getDecls(const FunctionDeclList* l) {
     return l.decls;
 }
 

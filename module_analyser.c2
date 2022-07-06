@@ -55,6 +55,56 @@ func bool StringVector.find(StringVector* v, const char* str, u32* index) {
 }
 
 
+type StructDeclInfo struct {
+    ast.Decl* decl;
+    ast.FunctionDeclList functions;
+}
+
+
+type StructDecls struct {
+    StructDeclInfo* data;
+    u32 count;
+    u32 capacity;
+}
+
+func void StructDecls.free(StructDecls* v) {
+    for (u32 i=0; i<v.count; i++) {
+        v.data[i].functions.free();
+    }
+    stdlib.free(v.data);
+    v.count = 0;
+    v.capacity = 0;
+    v.data = nil;
+}
+
+func void StructDecls.resize(StructDecls* v) {
+    v.capacity = v.capacity == 0 ? 4 : v.capacity * 2;
+    StructDeclInfo* data2 = stdlib.malloc(v.capacity * sizeof(StructDeclInfo));
+    if (v.data) {
+        string.memcpy(data2, v.data, v.count * sizeof(StructDeclInfo));
+        stdlib.free(v.data);
+    }
+    v.data = data2;
+}
+
+func void StructDecls.addDecl(StructDecls* v, ast.Decl* decl) {
+    if (v.count == v.capacity) v.resize();
+
+    StructDeclInfo* info = &v.data[v.count];
+    info.decl = decl;
+    info.functions.init();
+    v.count++;
+}
+
+func ast.Decl* StructDecls.getDecl(StructDecls* v, u32 index) {
+    return v.data[index].decl;
+}
+
+func void StructDecls.addFunc(StructDecls* v, u32 index, ast.FunctionDecl* fn) {
+    // assert(index < v.count);
+    StructDeclInfo* info = &v.data[index];
+    info.functions.add(fn);
+}
 
 type ModuleAnalyser struct {
     ast.Module* mod;
@@ -67,6 +117,7 @@ type ModuleAnalyser struct {
 
     // Vector<const char*> prefixes;
     StringVector prefixes;
+    StructDecls struct_decls;
 }
 
 public func void check(source_mgr.SourceMgr* sm, ast.Module* mod) {
@@ -75,6 +126,7 @@ public func void check(source_mgr.SourceMgr* sm, ast.Module* mod) {
     ma.sm = sm;
     ma.mod = mod;
 
+    //printf("analysing module %s\n", ma.mod.getName());
     // NOTE: C2C ModuleAnalyser::step1()
     // step 3a: collect incremental arrays
     // TODO use visitIncrArrays()
@@ -82,7 +134,19 @@ public func void check(source_mgr.SourceMgr* sm, ast.Module* mod) {
     // TODO use visitStructFunctions();
     mod.visitStructFunctions(ModuleAnalyser.handleStructFunc, &ma);
 
+    for (u32 i=0; i<ma.struct_decls.count; i++) {
+        printf("%s\n", ma.prefixes.data[i]);
+        const StructDeclInfo* info = &ma.struct_decls.data[i];
+        ast.FunctionDecl** funcs = info.functions.getDecls();
+        for (u32 j=0; j<info.functions.size(); j++) {
+            printf("  %s\n", funcs[j].asDecl().getName());
+        }
+        // TODO store in AST
+
+    }
+
     ma.prefixes.free();  // Note: free here already (safe to be freed twice)
+    ma.struct_decls.free();
 
     // NOTE: C2C ModuleAnalyser::step2()
     // analyse types
@@ -98,16 +162,15 @@ public func void check(source_mgr.SourceMgr* sm, ast.Module* mod) {
 
 func void ModuleAnalyser.free(ModuleAnalyser* ma) {
     ma.prefixes.free();
+    ma.struct_decls.free();
 }
 
 func void ModuleAnalyser.handleStructFunc(void* arg, ast.FunctionDecl* d) {
     ModuleAnalyser* ma = arg;
-    //printf("analysing module %s\n", ma.mod.getName());
     ast.IdentifierExpr* prefix = d.getPrefix();
     const char* prefix_name = prefix.getName();
     // assert(prefix)
-    printf("  %s %s\n", prefix_name, d.asDecl().getName());
-    //d.asDecl().dump();
+    //printf("  %s %s\n", prefix_name, d.asDecl().getName());
 
     u32 index = 0;
     if (prefix_name == ma.prefix_cache) {
@@ -116,31 +179,23 @@ func void ModuleAnalyser.handleStructFunc(void* arg, ast.FunctionDecl* d) {
         // search data structure
         bool found = false;
         found = ma.prefixes.find(prefix_name, &index);
+
         if (!found) {
-            ast.Decl* dest = ma.mod.findType(prefix_name);
-            if (!dest) {
+            ast.Decl* decl = ma.mod.findType(prefix_name);
+            if (!decl) {
                 // TODO search for all symbols for nice Diag
                 printf("   NOT FOUND\n");
                 return;
             }
             index = ma.prefixes.add(prefix_name);
+            ma.struct_decls.addDecl(decl);
         }
-/*
-        lookup prefix in own module Types first. If not found look elsewhere
-        search Scope for prefix_name (not only TypeDecls!)
-        search TypeDecl, check if struct/union
-        add to data-structure.
-*/
-            //.
         ma.prefix_cache = prefix_name;
         ma.prefix_cache_idx = index;
     }
 
-    /*
-        insert at index
-        add FunctionDecl in another vector with same index as name vector
-            check for duplicate names
-        set Decl inside (IdentifierExpr) prefix
-    */
+    // TODO check for duplicate names
+    ma.struct_decls.addFunc(index, d);
+    prefix.setDecl(ma.struct_decls.getDecl(index));
 }
 

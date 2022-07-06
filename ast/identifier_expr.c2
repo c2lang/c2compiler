@@ -62,6 +62,11 @@ public func Decl* IdentifierExpr.getDecl(const IdentifierExpr* e) @(inline) {
     return e.decl;
 }
 
+public func void IdentifierExpr.setDecl(IdentifierExpr* e, Decl* decl) @(inline) {
+    e.decl = decl;
+    e.parent.parent.identifierExprBits.has_decl = true;
+}
+
 func void IdentifierExpr.print(const IdentifierExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent, "IdentifierExpr");
     e.parent.printTypeBits(out);
