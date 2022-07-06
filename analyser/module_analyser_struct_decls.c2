@@ -1,0 +1,61 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module module_analyser;
+
+import ast;
+
+import string;
+import stdlib;
+
+type StructDeclInfo struct {
+    ast.Decl* decl;
+    ast.FunctionDeclList functions;
+}
+
+
+type StructDecls struct {
+    StructDeclInfo* data;
+    u32 count;
+    u32 capacity;
+}
+
+func void StructDecls.free(StructDecls* v) {
+    for (u32 i=0; i<v.count; i++) {
+        v.data[i].functions.free();
+    }
+    stdlib.free(v.data);
+    v.count = 0;
+    v.capacity = 0;
+    v.data = nil;
+}
+
+func void StructDecls.resize(StructDecls* v) {
+    v.capacity = v.capacity == 0 ? 4 : v.capacity * 2;
+    StructDeclInfo* data2 = stdlib.malloc(v.capacity * sizeof(StructDeclInfo));
+    if (v.data) {
+        string.memcpy(data2, v.data, v.count * sizeof(StructDeclInfo));
+        stdlib.free(v.data);
+    }
+    v.data = data2;
+}
+
+func void StructDecls.addDecl(StructDecls* v, ast.Decl* decl) {
+    if (v.count == v.capacity) v.resize();
+
+    StructDeclInfo* info = &v.data[v.count];
+    info.decl = decl;
+    info.functions.init();
+    v.count++;
+}
+
+func ast.Decl* StructDecls.getDecl(StructDecls* v, u32 index) {
+    return v.data[index].decl;
+}
+
+func void StructDecls.addFunc(StructDecls* v, u32 index, ast.FunctionDecl* fn) {
+    // assert(index < v.count);
+    StructDeclInfo* info = &v.data[index];
+    info.functions.add(fn);
+}
+

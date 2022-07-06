@@ -56,57 +56,6 @@ func bool StringVector.find(StringVector* v, const char* str, u32* index) {
 }
 
 
-type StructDeclInfo struct {
-    Decl* decl;
-    FunctionDeclList functions;
-}
-
-
-type StructDecls struct {
-    StructDeclInfo* data;
-    u32 count;
-    u32 capacity;
-}
-
-func void StructDecls.free(StructDecls* v) {
-    for (u32 i=0; i<v.count; i++) {
-        v.data[i].functions.free();
-    }
-    stdlib.free(v.data);
-    v.count = 0;
-    v.capacity = 0;
-    v.data = nil;
-}
-
-func void StructDecls.resize(StructDecls* v) {
-    v.capacity = v.capacity == 0 ? 4 : v.capacity * 2;
-    StructDeclInfo* data2 = stdlib.malloc(v.capacity * sizeof(StructDeclInfo));
-    if (v.data) {
-        string.memcpy(data2, v.data, v.count * sizeof(StructDeclInfo));
-        stdlib.free(v.data);
-    }
-    v.data = data2;
-}
-
-func void StructDecls.addDecl(StructDecls* v, Decl* decl) {
-    if (v.count == v.capacity) v.resize();
-
-    StructDeclInfo* info = &v.data[v.count];
-    info.decl = decl;
-    info.functions.init();
-    v.count++;
-}
-
-func Decl* StructDecls.getDecl(StructDecls* v, u32 index) {
-    return v.data[index].decl;
-}
-
-func void StructDecls.addFunc(StructDecls* v, u32 index, FunctionDecl* fn) {
-    // assert(index < v.count);
-    StructDeclInfo* info = &v.data[index];
-    info.functions.add(fn);
-}
-
 type ModuleAnalyser struct {
     Module* mod;
     source_mgr.SourceMgr* sm;
@@ -271,6 +220,7 @@ func void ModuleAnalyser.analyseStructType(ModuleAnalyser* ma, StructTypeDecl* d
 }
 
 func void ModuleAnalyser.analyseEnumType(ModuleAnalyser* ma, EnumTypeDecl* d) {
+    // NOTE: must be in order! (gaps allowed)
     // TODO check for duplicates names
     // TODO check if constants fit in impl type
     // TODO assign values to constants
