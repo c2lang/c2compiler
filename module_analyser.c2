@@ -8,7 +8,7 @@ import ast;
 
 import string;
 import stdlib;
-import stdio local; // TEMP
+import stdio; // TEMP
 
 // TEMP here until we have templates
 // TODO also use u32 indexes
@@ -130,19 +130,13 @@ public func void check(source_mgr.SourceMgr* sm, ast.Module* mod) {
     // NOTE: C2C ModuleAnalyser::step1()
     // step 3a: collect incremental arrays
     // TODO use visitIncrArrays()
+
     // step 3b: collect struct functions
-    // TODO use visitStructFunctions();
     mod.visitStructFunctions(ModuleAnalyser.handleStructFunc, &ma);
 
     for (u32 i=0; i<ma.struct_decls.count; i++) {
-        printf("%s\n", ma.prefixes.data[i]);
         const StructDeclInfo* info = &ma.struct_decls.data[i];
-        ast.FunctionDecl** funcs = info.functions.getDecls();
-        for (u32 j=0; j<info.functions.size(); j++) {
-            printf("  %s\n", funcs[j].asDecl().getName());
-        }
-        // TODO store in AST
-
+        //info.decl.setStructFunctions(context, info.functions.getDecl(), info.functions.size());
     }
 
     ma.prefixes.free();  // Note: free here already (safe to be freed twice)
@@ -184,7 +178,11 @@ func void ModuleAnalyser.handleStructFunc(void* arg, ast.FunctionDecl* d) {
             ast.Decl* decl = ma.mod.findType(prefix_name);
             if (!decl) {
                 // TODO search for all symbols for nice Diag
-                printf("   NOT FOUND\n");
+                stdio.printf("StructFunction prefix %s not found\n", prefix_name);
+                return;
+            }
+            if (decl.getKind() != ast.DeclKind.StructType) {
+                stdio.printf("StructFunction prefix %s is not a struct/union\n", prefix_name);
                 return;
             }
             index = ma.prefixes.add(prefix_name);
