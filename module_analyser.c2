@@ -7,11 +7,66 @@ import source_mgr;
 import ast;
 
 import string;
+import stdlib;
 import stdio local; // TEMP
+
+// TEMP here until we have templates
+// TODO also use u32 indexes
+type StringVector struct {
+    const char** data;
+    u32 count;
+    u32 capacity;
+}
+
+func void StringVector.free(StringVector* v) {
+    stdlib.free(cast<void*>(v.data));
+    v.count = 0;
+    v.capacity = 0;
+    v.data = nil;
+}
+
+func void StringVector.resize(StringVector* v) {
+    v.capacity = v.capacity == 0 ? 4 : v.capacity * 2;
+    void* data2 = stdlib.malloc(v.capacity * sizeof(char*));
+    if (v.data) {
+        string.memcpy(data2, cast<void*>(v.data), v.count * sizeof(char*));
+        stdlib.free(cast<void*>(v.data));
+    }
+    v.data = data2;
+}
+
+func u32 StringVector.add(StringVector* v, const char* str) {
+    if (v.count == v.capacity) v.resize();
+
+    u32 index = v.count;
+    v.data[index] = str;
+    v.count++;
+    return index;
+}
+
+func bool StringVector.find(StringVector* v, const char* str, u32* index) {
+    for (u32 i=0; i<v.count; i++) {
+        if (v.data[i] == str) {
+            *index = i;
+            return true;
+        }
+    }
+    return false;
+}
+
+
 
 type ModuleAnalyser struct {
     ast.Module* mod;
     source_mgr.SourceMgr* sm;
+
+    // collect struct-functions
+    // TODO use name idx
+    const char* prefix_cache;
+    u32 prefix_cache_idx;
+
+    // Vector<const char*> prefixes;
+    StringVector prefixes;
 }
 
 public func void check(source_mgr.SourceMgr* sm, ast.Module* mod) {
@@ -27,6 +82,8 @@ public func void check(source_mgr.SourceMgr* sm, ast.Module* mod) {
     // TODO use visitStructFunctions();
     mod.visitStructFunctions(ModuleAnalyser.handleStructFunc, &ma);
 
+    ma.prefixes.free();  // Note: free here already (safe to be freed twice)
+
     // NOTE: C2C ModuleAnalyser::step2()
     // analyse types
     // analyse vars
@@ -35,32 +92,55 @@ public func void check(source_mgr.SourceMgr* sm, ast.Module* mod) {
 
     // NOTE: C2C ModuleAnalyser::step3()
     // analyse functionbodies
+
+    ma.free();
+}
+
+func void ModuleAnalyser.free(ModuleAnalyser* ma) {
+    ma.prefixes.free();
 }
 
 func void ModuleAnalyser.handleStructFunc(void* arg, ast.FunctionDecl* d) {
     ModuleAnalyser* ma = arg;
-    printf("analysing module %s\n", ma.mod.getName());
+    //printf("analysing module %s\n", ma.mod.getName());
     ast.IdentifierExpr* prefix = d.getPrefix();
     const char* prefix_name = prefix.getName();
     // assert(prefix)
     printf("  %s %s\n", prefix_name, d.asDecl().getName());
     //d.asDecl().dump();
 
-    /*
-        TODO we need to put this inside ModuleAnalyser, so it knows which Module we are working on
-        TODO also since we do symbol lookup, create Scope for Module?
-            -> could be duplicates with 'local imported' modules, so need smart Scope
-
-        search prefix_name in vector, compare by pointer
-        if (found) {
-            // TypeDecl already found, get it from 2nd vector
-        } else {
-            search Scope for prefix_name (not only TypeDecls!)
-            search TypeDecl, check if struct/union
-            add to data-structure.
+    u32 index = 0;
+    if (prefix_name == ma.prefix_cache) {
+        index = ma.prefix_cache_idx;
+    } else {
+        // search data structure
+        bool found = false;
+        found = ma.prefixes.find(prefix_name, &index);
+        if (!found) {
+            ast.Decl* dest = ma.mod.findType(prefix_name);
+            if (!dest) {
+                // TODO search for all symbols for nice Diag
+                printf("   NOT FOUND\n");
+                return;
+            }
+            index = ma.prefixes.add(prefix_name);
         }
+/*
+        lookup prefix in own module Types first. If not found look elsewhere
+        search Scope for prefix_name (not only TypeDecls!)
+        search TypeDecl, check if struct/union
+        add to data-structure.
+*/
+            //.
+        ma.prefix_cache = prefix_name;
+        ma.prefix_cache_idx = index;
+    }
+
+    /*
+        insert at index
         add FunctionDecl in another vector with same index as name vector
             check for duplicate names
         set Decl inside (IdentifierExpr) prefix
     */
 }
+
