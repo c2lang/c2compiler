@@ -38,7 +38,7 @@ static_assert(16, sizeof(GotoStmt));
 
 static_assert(16, sizeof(Expr));
 static_assert(24, sizeof(TypeExpr));
-static_assert(24, sizeof(BuiltinExpr));
+static_assert(32, sizeof(BuiltinExpr));
 static_assert(16, sizeof(BooleanLiteral));
 static_assert(16, sizeof(CharLiteral));
 static_assert(24, sizeof(StringLiteral));

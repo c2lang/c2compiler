@@ -99,10 +99,10 @@ public func BinaryOpcode BinaryOperator.getKind(const BinaryOperator* e) {
     return cast<BinaryOpcode>(e.parent.parent.binaryOperatorBits.kind);
 }
 
-public func Expr* BinaryOperator.getLHS(BinaryOperator* e) { return e.lhs; }
+public func Expr* BinaryOperator.getLHS(const BinaryOperator* e) { return e.lhs; }
 public func Expr** BinaryOperator.getLHS2(BinaryOperator* e) { return &e.lhs; }
 
-func Expr* BinaryOperator.getRHS(BinaryOperator* e) { return e.rhs; }
+public func Expr* BinaryOperator.getRHS(const BinaryOperator* e) { return e.rhs; }
 public func Expr** BinaryOperator.getRHS2(BinaryOperator* e) { return &e.rhs; }
 
 func void BinaryOperator.print(const BinaryOperator* e, string_buffer.Buf* out, u32 indent) {

@@ -27,6 +27,8 @@ public func Expr** MemberExpr.getBase2(MemberExpr* e) { return &e.base; }
 public func IdentifierExpr* MemberExpr.getIndex(MemberExpr* e) { return e.member; }
 public func IdentifierExpr** MemberExpr.getIndex2(MemberExpr* e) { return &e.member; }
 
+public func Decl* MemberExpr.getDecl(const MemberExpr* e) { return e.member.getDecl(); }
+
 func void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent, "MemberExpr");
     e.parent.printTypeBits(out);

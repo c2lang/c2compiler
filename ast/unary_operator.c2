@@ -55,8 +55,8 @@ public func UnaryOpcode UnaryOperator.getKind(const UnaryOperator* e) {
     return cast<UnaryOpcode>(e.parent.parent.unaryOperatorBits.kind);
 }
 
-public func Expr* UnaryOperator.getExpr(UnaryOperator* e) { return e.inner; }
-public func Expr** UnaryOperator.getExpr2(UnaryOperator* e) { return &e.inner; }
+public func Expr* UnaryOperator.getInner(const UnaryOperator* e) { return e.inner; }
+public func Expr** UnaryOperator.getInner2(UnaryOperator* e) { return &e.inner; }
 
 func bool UnaryOperator.isBefore(const UnaryOperator* e) {
     switch (e.getKind()) {

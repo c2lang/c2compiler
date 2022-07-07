@@ -81,6 +81,11 @@ public func Decl* VarDecl.asDecl(VarDecl* d) @(inline) { return &d.parent; }
 
 public func VarDeclKind VarDecl.getKind(const VarDecl* d) { return cast<VarDeclKind>(d.parent.varDeclBits.kind); }
 
+public func Expr* VarDecl.getInit(const VarDecl* d) {
+    if (d.parent.varDeclBits.has_init_or_bitfield) return d.init[0];
+    return nil;
+}
+
 public func void VarDecl.setLocal(VarDecl* d, bool has_local) {
     d.parent.varDeclBits.has_local = has_local;
 }

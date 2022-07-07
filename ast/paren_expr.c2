@@ -19,6 +19,8 @@ public func ParenExpr* ParenExpr.create(ast_context.Context* c, SrcLoc loc, Expr
     return e;
 }
 
+public func Expr* ParenExpr.getInner(const ParenExpr* e) @(inline) { return e.inner; }
+
 func void ParenExpr.print(const ParenExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent, "ParenExpr");
     e.parent.printTypeBits(out);
