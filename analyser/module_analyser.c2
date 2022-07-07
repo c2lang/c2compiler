@@ -3,9 +3,10 @@
 
 module module_analyser;
 
-import source_mgr;
-import ast local;
 import ast_context;
+import ast local;
+import ctv_analyser;
+import source_mgr;
 
 import string;
 import stdlib;
@@ -191,7 +192,7 @@ func void ModuleAnalyser.handleTypeDecl(void* arg, Decl* d) {
         //assert(0);
         return;
     }
-    d.setCheckState(DeclCheckState.Checked);
+    d.setChecked();
     ma.popCheck();
 }
 
@@ -220,10 +221,37 @@ func void ModuleAnalyser.analyseStructType(ModuleAnalyser* ma, StructTypeDecl* d
 }
 
 func void ModuleAnalyser.analyseEnumType(ModuleAnalyser* ma, EnumTypeDecl* d) {
-    // NOTE: must be in order! (gaps allowed)
-    // TODO check for duplicates names
-    // TODO check if constants fit in impl type
-    // TODO assign values to constants
-    // TODO need CTVAnalyser
+    u32 num_constants = d.getNumConstants();
+    EnumConstantDecl** constants = d.getConstants();
+    u32 value = 0;
+    //stdio.printf("ENUM %s\n", d.asDecl().getName());
+    for (u32 i=0; i<num_constants; i++) {
+        EnumConstantDecl* c = constants[i];
+
+        // check for duplicate names
+        for (u32 j=0; j<i; j++) {
+            if (constants[j].asDecl().getName() == c.asDecl().getName()) {
+                stdio.fprintf(stdio.stderr, "error: duplicate enum constant name\n");
+                return;
+            }
+        }
+
+        Expr* initval = c.getInit();
+        if (initval) {
+            ma.analyseExpr(initval);
+            // TODO check if CTV
+            ctv_analyser.Value ctv = ctv_analyser.get_value(initval);
+            if (ctv.uvalue < value) {
+                stdio.fprintf(stdio.stderr, "error: enum constants need to increase\n");
+                return;
+            }
+            value = cast<u32>(ctv.uvalue);
+        }
+        // TODO check if constants fit in impl type
+        c.setValue(value);
+        c.asDecl().setChecked();
+        //stdio.printf("  %s value %u\n", c.asDecl().getName(), value);
+        value++;
+    }
 }
 

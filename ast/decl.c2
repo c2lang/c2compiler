@@ -91,8 +91,8 @@ public func DeclKind Decl.getKind(const Decl* d) @(inline) { return cast<DeclKin
 public func DeclCheckState Decl.getCheckState(const Decl* d) @(inline) { return cast<DeclCheckState>(d.declBits.check_state); }
 
 public func void Decl.setCheckState(Decl* d, DeclCheckState s) @(inline) { d.declBits.check_state = s; }
-
 public func bool Decl.isChecked(const Decl* d) @(inline) { return d.declBits.check_state == DeclCheckState.Checked; }
+public func void Decl.setChecked(Decl* d) @(inline) { d.declBits.check_state = DeclCheckState.Checked; }
 
 public func const char* Decl.getName(const Decl* d) @(inline) {
 #if DeclNamePtr

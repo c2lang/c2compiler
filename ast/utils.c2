@@ -69,6 +69,7 @@ static_assert(16, sizeof(StructType));
 static_assert(16, sizeof(EnumType));
 static_assert(16, sizeof(FunctionType));
 
+// TODO store as QualTypes?
 public BuiltinType* g_u8;
 public BuiltinType* g_u16;
 public BuiltinType* g_u32;

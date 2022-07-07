@@ -25,7 +25,7 @@ public func QualType QualType.init2(Type* t) @(inline) {
     return qt;
 }
 
-public func QualType QualType.init3() @(inline) {
+public func QualType QualType.init0() @(inline) {
     QualType qt = { 0 }
     return qt;
 }

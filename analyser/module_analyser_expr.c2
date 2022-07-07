@@ -1,0 +1,98 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module module_analyser;
+
+import ast_context;
+import ast local;
+import ctv_analyser;
+import source_mgr;
+
+import string;
+import stdlib;
+import stdio; // TEMP
+
+func QualType ModuleAnalyser.analyseExpr(ModuleAnalyser* ma, Expr* e) {
+    switch (e.getKind()) {
+    case ExprKind.IntegerLiteral:
+        // TODO determine kind based on value, for now just return u32
+        return QualType.init2(g_u32);
+    case ExprKind.BooleanLiteral:
+        return QualType.init2(g_bool);
+    case ExprKind.CharLiteral:
+        return QualType.init2(g_i8);
+    case ExprKind.StringLiteral:
+        // char* (const?)
+        break;
+    case ExprKind.Nil:
+        // void*
+        break;
+    case ExprKind.Identifier:
+        break;
+    case ExprKind.Type:
+        break;
+    case ExprKind.Call:
+        break;
+    case ExprKind.InitList:
+        break;
+    case ExprKind.FieldDesignatedInit:
+        break;
+    case ExprKind.ArrayDesignatedInit:
+        break;
+    case ExprKind.BinaryOperator:
+        break;
+    case ExprKind.UnaryOperator:
+        break;
+    case ExprKind.ConditionalOperator:
+        break;
+    case ExprKind.Builtin:
+        return ma.analyseBuiltin(cast<BuiltinExpr*>(e));
+    case ExprKind.ArraySubscript:
+        break;
+    case ExprKind.Member:
+        break;
+    case ExprKind.Paren:
+        ParenExpr* p = cast<ParenExpr*>(e);
+        return ma.analyseExpr(p.getInner());
+    case ExprKind.BitOffset:
+        break;
+    case ExprKind.ExplicitCast:
+        break;
+    case ExprKind.ImplicitCast:
+        break;
+    }
+    return QualType.init0();
+}
+
+func QualType ModuleAnalyser.analyseBuiltin(ModuleAnalyser* ma, BuiltinExpr* e) {
+    switch (e.getKind()) {
+    case BuiltinExprKind.Sizeof:
+        return ma.analyseSizeof(e);
+    case BuiltinExprKind.Elemsof:
+        break;
+    case BuiltinExprKind.EnumMin:
+        break;
+    case BuiltinExprKind.EnumMax:
+        break;
+    case BuiltinExprKind.OffsetOf:
+        break;
+    case BuiltinExprKind.ToContainer:
+        break;
+    }
+
+    return QualType.init0();
+}
+
+func QualType ModuleAnalyser.analyseSizeof(ModuleAnalyser* ma, BuiltinExpr* e) {
+    Expr* inner = e.getInner();
+    // assert(inner);
+    // TODO switch
+    if (inner.getKind() == ExprKind.Type) {
+        TypeExpr* te = cast<TypeExpr*>(inner);
+        QualType qt = te.getType();
+        // TODO
+        e.setValue(4);
+    }
+    return QualType.init0();
+}
+

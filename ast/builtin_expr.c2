@@ -88,6 +88,9 @@ public func void BuiltinExpr.setValue(BuiltinExpr* e, usize value ) {
     e.value = value;
 }
 
+public func Expr* BuiltinExpr.getInner(const BuiltinExpr* e) { return e.inner; }
+
+
 func void BuiltinExpr.print(const BuiltinExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent, "BuiltinExpr");
     e.parent.printTypeBits(out);

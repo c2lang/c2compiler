@@ -42,6 +42,13 @@ public func Decl* EnumConstantDecl.asDecl(EnumConstantDecl* d) @(inline) { retur
 
 public func u32 EnumConstantDecl.getValue(const EnumConstantDecl* d) @(inline) { return d.value; }
 
+public func void EnumConstantDecl.setValue(EnumConstantDecl* d, u32 value) @(inline) { d.value = value; }
+
+public func Expr* EnumConstantDecl.getInit(const EnumConstantDecl* d) {
+    if (d.parent.enumConstantDeclBits.has_init) return d.init[0];
+    return nil;
+}
+
 func void EnumConstantDecl.print(const EnumConstantDecl* d, string_buffer.Buf* out, u32 indent) {
     d.parent.printKind(out, indent, "EnumConstantDecl");
     d.parent.printBits(out);

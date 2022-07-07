@@ -7,10 +7,10 @@ import ast local;
 
 import string;
 
-public type CTV_Analyser struct {
+type CTV_Analyser struct {
 }
 
-public func void CTV_Analyser.init(CTV_Analyser* ca) {
+func void CTV_Analyser.init(CTV_Analyser* ca) {
     string.memset(ca, 0, sizeof(CTV_Analyser));
 }
 

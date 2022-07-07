@@ -9,6 +9,10 @@ import ast local;
 import tokens local;
 import utils local;
 
+#if ParserDebug
+import stdio local;
+#endif
+
 func Stmt* Parser.parseStmt(Parser* p) {
 #if ParserDebug
     printf("parseStmt\n");

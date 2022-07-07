@@ -54,6 +54,15 @@ public func void EnumTypeDecl.setIncrMembers(EnumTypeDecl* d, Decl** constants, 
 
 public func Decl* EnumTypeDecl.asDecl(EnumTypeDecl* d) @(inline) { return &d.parent; }
 
+public func u32 EnumTypeDecl.getNumConstants(const EnumTypeDecl* d) @(inline) {
+    return d.parent.enumTypeDeclBits.num_constants;
+}
+
+public func EnumConstantDecl** EnumTypeDecl.getConstants(const EnumTypeDecl* d) {
+    // assert(d.getNumConstants());
+    return d.constants;
+}
+
 func void EnumTypeDecl.print(const EnumTypeDecl* d, string_buffer.Buf* out, u32 indent) {
     d.parent.printKind(out, indent, "EnumTypeDecl");
     d.parent.printBits(out);
