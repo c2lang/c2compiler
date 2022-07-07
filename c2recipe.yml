@@ -106,6 +106,7 @@ executable.c2c:
         - ast/function_decl_list.c2
         - ast/import_decl_list.c2
 
+        - analyser/ctv_analyser.c2
         - analyser/module_analyser.c2
         - analyser/module_analyser_struct_decls.c2
         - analyser/module_sorter.c2
@@ -113,7 +114,6 @@ executable.c2c:
         - c2recipe.c2
         - c2recipe_parser.c2
         - c2recipe_yaml.c2
-        - ctv_analyser.c2
         - component.c2
         - compiler.c2
         - constants.c2
