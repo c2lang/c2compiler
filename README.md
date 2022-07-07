@@ -1,9 +1,10 @@
 
 ## TODO
-- create DiagnosticsEngine
+- create DiagnosticsEngine, return true if error, false if warning
 - try longjump in ModuleAnalyser
 - Parser: try to merge tokens '-' and '<number>' as single IntegerLiteral
     if parseExpr() starts with '-', check if next is IntegerLiteral, merge then.
+    -> on bb_combine.. branch
 - use c2recipe.yml
 - load other external components (recursively)
 

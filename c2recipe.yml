@@ -118,6 +118,7 @@ executable.c2c:
         - component.c2
         - compiler.c2
         - constants.c2
+        - diagnostics.c2
         - context.c2
         - manifest.c2
         - module_list.c2

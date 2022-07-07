@@ -1,0 +1,53 @@
+module diagnostics;
+
+import color;
+import source_mgr;
+import utils;
+
+import stdarg local;
+import stdio;
+import stdlib;
+
+public type Diags struct {
+    source_mgr.SourceMgr* sm;
+    bool use_color;
+} @(opaque)
+
+public func Diags* create(source_mgr.SourceMgr* sm, bool use_color) {
+    Diags* diags = stdlib.calloc(1, sizeof(Diags));
+    diags.sm = sm;
+    diags.use_color = use_color;
+    return diags;
+}
+
+public func void Diags.free(Diags* diags) {
+    stdlib.free(diags);
+}
+
+// return true if error, false if warning
+public func bool Diags.report(Diags* diags, utils.SrcLoc loc, const char* format, ...) {
+    char[256] temp;
+    char* cp = temp;
+
+    // or pass diags.Id? (= enum), coupled to format string
+    // check format? if error / warning?
+    bool is_error = true;
+
+    const char* category = is_error ? "error" : "warning";
+    if (diags.use_color) {
+        const char* col = is_error ? color.Red : color.Yellow;
+        cp += stdio.sprintf(cp, "%s: %s%s%s: ", diags.sm.loc2str(loc), col, category, color.Normal);
+    } else {
+        cp += stdio.sprintf(cp, "%s: %s: ", diags.sm.loc2str(loc), category);
+    }
+
+    Va_list args;
+    va_start(args, format);
+    cp += vsprintf(cp, format, args);
+    va_end(args);
+
+    stdio.printf("%s\n", temp);
+
+    return is_error;
+}
+

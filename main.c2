@@ -6,6 +6,7 @@ module c2c_main;
 import c2recipe;
 import compiler;
 import constants;
+import diagnostics;
 import source_mgr;
 import string_pool;
 import utils;
@@ -48,6 +49,7 @@ public func i32 main(i32 argc, char** argv) {
     string_pool.Pool* auxPool = string_pool.create(64*1024, 0);
 
     source_mgr.SourceMgr* sm = source_mgr.create();
+    diagnostics.Diags* diags = diagnostics.create(sm, true);
 
     c2recipe.Recipe* recipe = c2recipe.create(sm, auxPool);
 
@@ -82,13 +84,14 @@ public func i32 main(i32 argc, char** argv) {
         c2recipe.Target* target = recipe.getTarget(i);
         printf("building %s\n", target.getName());
 
-        compiler.build(auxPool, sm, target, &options);
+        compiler.build(auxPool, sm, diags, target, &options);
 
         if (recipe_id != -1) sm.clear(cast<u32>(recipe_id));
     }
 
     recipe.free();
     auxPool.free();
+    diags.free();
     sm.free();
 
 	return 0;

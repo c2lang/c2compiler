@@ -116,6 +116,7 @@ executable c2c
     compiler.c2
     constants.c2
     context.c2
+    diagnostics.c2
     manifest.c2
     module_list.c2
     source_mgr.c2

@@ -10,6 +10,7 @@ import c2_parser;
 import c2recipe;
 import component;
 import constants;
+import diagnostics;
 import manifest;
 import module_list;
 import module_analyser;
@@ -56,7 +57,8 @@ func void Compiler.handleImport(void* arg, ast.ImportDecl* d) {
     if (m) {
         d.setModule(m);
     } else {
-        fprintf(stderr, "Error: Unknown module '%s'\n", name);
+        c.diags.report(d.asDecl().getLoc(), "unknown module '%s'", name);
+        // TODO longjmp?
         stdlib.exit(-1);
     }
 }
@@ -64,6 +66,7 @@ func void Compiler.handleImport(void* arg, ast.ImportDecl* d) {
 type Compiler struct {
     string_pool.Pool* auxPool;   // no ownership
     source_mgr.SourceMgr* sm;    // no ownership
+    diagnostics.Diags* diags;    // no ownership
     const c2recipe.Target* target;     // no ownership
     const Options* opts;        // no ownership
 
@@ -85,11 +88,12 @@ public type Options struct {
 
 public func void build(string_pool.Pool* auxPool,
                        source_mgr.SourceMgr* sm,
+                       diagnostics.Diags* diags,
                        c2recipe.Target* target,
                        const Options* opts)
 {
     Compiler c;
-    c.init(auxPool, sm, target, opts);
+    c.init(auxPool, sm, diags, target, opts);
     //c.build();
     c.free();
 }
@@ -97,12 +101,14 @@ public func void build(string_pool.Pool* auxPool,
 func void Compiler.init(Compiler* c,
                         string_pool.Pool* auxPool,
                         source_mgr.SourceMgr* sm,
+                        diagnostics.Diags* diags,
                         c2recipe.Target* target,
                         const Options* opts)
 {
     string.memset(c, 0, sizeof(Compiler));
     c.auxPool = auxPool;
     c.sm = sm;
+    c.diags = diags;
     c.target = target;
     c.opts = opts;
 
