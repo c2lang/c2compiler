@@ -2,8 +2,10 @@
 ## TODO
 - create DiagnosticsEngine, return true if error, false if warning
     - user should still be able to use -Werror like
+    - add info() for 2nd info like 'older decl is here'
     - use enum with diags.id (must be short, so not two namespaces (diags.Id.Bla)
         -> only needed if we use same diag in multiple places
+    - print error location nicely (line indicating error)
 - try longjump in ModuleAnalyser
 - load other external components (recursively)
     parse used sources (only)

@@ -5,9 +5,9 @@ module module_sorter;
 
 import ast;
 import component;
-
-// for sort
+import diagnostics;
 import linked_list;
+
 import stdlib;
 import string;
 
@@ -38,7 +38,7 @@ func void ModuleSorter.print(const ModuleSorter* s) {
 }
 
 // Sort modules according to imports. Modules without dependencies (inside this component) come first
-public func void sort(component.Component* c) {
+public func void sort(component.Component* c, diagnostics.Diags* diags) {
     const u32 count = c.getNumModules();
     if (count <= 1) return;
 
@@ -68,7 +68,7 @@ public func void sort(component.Component* c) {
     u32 iterations = 0;
     while (size) {
         if (iterations > size) {
-            fprintf(stderr, "circular dependency detected\n");
+            diags.report(0, "circular dependency between modules");
             s.print();
             // TODO print dependency
             goto out;

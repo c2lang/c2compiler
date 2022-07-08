@@ -6,11 +6,11 @@ module module_analyser;
 import ast_context;
 import ast local;
 import ctv_analyser;
+import diagnostics;
 import source_mgr;
 
 import string;
 import stdlib;
-import stdio; // TEMP
 
 // TEMP here until we have templates
 // TODO also use u32 indexes
@@ -60,6 +60,7 @@ func bool StringVector.find(StringVector* v, const char* str, u32* index) {
 type ModuleAnalyser struct {
     Module* mod;
     source_mgr.SourceMgr* sm;
+    diagnostics.Diags* diags;
     ast_context.Context* context;
 
     // collect struct-functions
@@ -75,10 +76,11 @@ type ModuleAnalyser struct {
     u32 checkIndex;
 }
 
-public func void check(source_mgr.SourceMgr* sm, ast_context.Context* context, Module* mod) {
+public func void check(source_mgr.SourceMgr* sm, diagnostics.Diags* diags, ast_context.Context* context, Module* mod) {
     ModuleAnalyser ma;
     string.memset(&ma, 0, sizeof(ma));
     ma.sm = sm;
+    ma.diags = diags;
     ma.context = context;
     ma.mod = mod;
 
@@ -139,11 +141,11 @@ func void ModuleAnalyser.handleStructFunc(void* arg, FunctionDecl* d) {
             Decl* decl = ma.mod.findType(prefix_name);
             if (!decl) {
                 // TODO search for all symbols for nice Diag
-                stdio.printf("StructFunction prefix %s not found\n", prefix_name);
+                ma.diags.report(prefix.asExpr().getLoc(), "unknown type '%s'", prefix_name);
                 return;
             }
             if (decl.getKind() != DeclKind.StructType) {
-                stdio.printf("StructFunction prefix %s is not a struct/union\n", prefix_name);
+                ma.diags.report(prefix.asExpr().getLoc(), "struct-functions type must be a structs/union");
                 return;
             }
             index = ma.prefixes.add(prefix_name);
@@ -161,7 +163,7 @@ func void ModuleAnalyser.handleStructFunc(void* arg, FunctionDecl* d) {
 
 func void ModuleAnalyser.handleTypeDecl(void* arg, Decl* d) {
     ModuleAnalyser* ma = arg;
-    //stdio.printf("TYPE %s\n", d.getName());
+
     if (d.isChecked()) return;
     // TODO make exception for EnumConstants. Can happen if: B = State.A + 1,
 
@@ -200,7 +202,7 @@ func bool ModuleAnalyser.pushCheck(ModuleAnalyser* ma, Decl* d) {
     for (u32 i=0; i<ma.checkIndex; i++) {
         if (ma.checkStack[i] == d) {
             for (u32 j=i; j<ma.checkIndex; j++) {
-                stdio.fprintf(stdio.stderr, "Error: circular dependency %s\n", d.getName());
+                ma.diags.report(d.getLoc(), "circular declaration dependency %s", d.getName());
             }
             // TODO use longjmp here?
             return false;
@@ -224,14 +226,16 @@ func void ModuleAnalyser.analyseEnumType(ModuleAnalyser* ma, EnumTypeDecl* d) {
     u32 num_constants = d.getNumConstants();
     EnumConstantDecl** constants = d.getConstants();
     u32 value = 0;
-    //stdio.printf("ENUM %s\n", d.asDecl().getName());
+
     for (u32 i=0; i<num_constants; i++) {
         EnumConstantDecl* c = constants[i];
 
         // check for duplicate names
+        const char* name = c.asDecl().getName();
         for (u32 j=0; j<i; j++) {
-            if (constants[j].asDecl().getName() == c.asDecl().getName()) {
-                stdio.fprintf(stdio.stderr, "error: duplicate enum constant name\n");
+            if (constants[j].asDecl().getName() == name) {
+                ma.diags.report(c.asDecl().getLoc(), "duplicate enum constant name '%s'", name);
+                // TODO ma.diags.info(constants[j].asDecl().getLoc(), "other declaration is here");
                 return;
             }
         }
@@ -242,7 +246,7 @@ func void ModuleAnalyser.analyseEnumType(ModuleAnalyser* ma, EnumTypeDecl* d) {
             // TODO check if CTV
             ctv_analyser.Value ctv = ctv_analyser.get_value(initval);
             if (ctv.uvalue < value) {
-                stdio.fprintf(stdio.stderr, "error: enum constants need to increase\n");
+                ma.diags.report(initval.getLoc(), "enum constants need to increase (value %u, previous %u)", ctv.uvalue, value-1);
                 return;
             }
             value = cast<u32>(ctv.uvalue);
@@ -250,7 +254,6 @@ func void ModuleAnalyser.analyseEnumType(ModuleAnalyser* ma, EnumTypeDecl* d) {
         // TODO check if constants fit in impl type
         c.setValue(value);
         c.asDecl().setChecked();
-        //stdio.printf("  %s value %u\n", c.asDecl().getName(), value);
         value++;
     }
 }

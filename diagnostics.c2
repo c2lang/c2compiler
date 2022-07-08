@@ -34,11 +34,14 @@ public func bool Diags.report(Diags* diags, utils.SrcLoc loc, const char* format
     bool is_error = true;
 
     const char* category = is_error ? "error" : "warning";
+    if (loc) {
+        cp += stdio.printf(cp, "%s: ", diags.sm.loc2str(loc));
+    }
     if (diags.use_color) {
         const char* col = is_error ? color.Red : color.Yellow;
-        cp += stdio.sprintf(cp, "%s: %s%s%s: ", diags.sm.loc2str(loc), col, category, color.Normal);
+        cp += stdio.sprintf(cp, "%s%s%s: ", col, category, color.Normal);
     } else {
-        cp += stdio.sprintf(cp, "%s: %s: ", diags.sm.loc2str(loc), category);
+        cp += stdio.sprintf(cp, "%s: %s: ", category);
     }
 
     Va_list args;

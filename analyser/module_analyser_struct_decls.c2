@@ -13,7 +13,6 @@ type StructDeclInfo struct {
     ast.FunctionDeclList functions;
 }
 
-
 type StructDecls struct {
     StructDeclInfo* data;
     u32 count;
