@@ -3,15 +3,16 @@
 
 module c2_parser;
 
-import source_mgr local;
-import c2_tokenizer local;
 import ast_builder local;
 import ast local;
+import c2_tokenizer local;
+import color;
+import diagnostics;
+import source_mgr local;
+import string_list;
 import string_pool;
 import tokens local;
-import string_list;
 import utils local;
-import color;
 
 import stdarg local;
 import stdlib local;
@@ -23,6 +24,7 @@ public type Parser struct {
     Tokenizer tokenizer;
     Token tok;
     SourceMgr* sm;
+    diagnostics.Diags* diags;
     i32 file_id;
     Builder* builder;
     string_pool.Pool* pool;
@@ -31,15 +33,19 @@ public type Parser struct {
 
     JmpBufTag jmpbuf;
     string_list.List* features;
-    // IDEA: dont have error_msg, but just ptr and alloc in pool? (less memory if ok)
-    char[256] error_msg;
 } @(opaque)
 
-public func Parser* create(SourceMgr* sm, i32 file_id, ast_builder.Builder* builder, string_pool.Pool* pool, string_list.List* features, bool is_interface) {
+public func Parser* create(SourceMgr* sm,
+                           diagnostics.Diags* diags,
+                           ast_builder.Builder* builder,
+                           string_pool.Pool* pool,
+                           string_list.List* features,
+                           bool is_interface)
+{
     Parser* p = calloc(1, sizeof(Parser));
     p.sm = sm;
+    p.diags = diags;
     p.builder = builder;
-    p.file_id = file_id;
     p.pool = pool;
     p.is_interface = is_interface;
     p.features = features;
@@ -50,8 +56,8 @@ public func void Parser.free(Parser* p) {
     free(p);
 }
 
-public func bool Parser.parse(Parser* p) {
-    p.error_msg[0] = 0;
+public func bool Parser.parse(Parser* p, i32 file_id) {
+    p.file_id = file_id;
 
 #if DumpTokens
     u64 t1 = utils.now();
@@ -81,7 +87,6 @@ public func bool Parser.parse(Parser* p) {
             p.parseTopLevel();
         }
     } else {
-        printf("%s\n", p.error_msg);
         return false;
     }
 #endif
@@ -112,12 +117,14 @@ func void Parser.expectIdentifier(Parser* p) {
 }
 
 func void Parser.error(Parser* p, const char* format, ...) @(noreturn) {
-    char* cp = p.error_msg;
-    cp += sprintf(cp, "%s: %serror:%s ", p.sm.loc2str(p.tok.loc), color.Red, color.Normal);
+    char[256] msg;
+
     Va_list args;
     va_start(args, format);
-    vsnprintf(cp, sizeof(p.error_msg)-1, format, args);
+    vsnprintf(msg, sizeof(msg)-1, format, args);
     va_end(args);
+    p.diags.report(p.tok.loc, msg);
+
     longjmp(&p.jmpbuf, 1);
 }
 

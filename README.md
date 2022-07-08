@@ -1,17 +1,19 @@
 
 ## TODO
+- create DiagnosticsEngine, return true if error, false if warning
+    - user should still be able to use -Werror like
+    - use enum with diags.id (must be short, so not two namespaces (diags.Id.Bla)
+        -> only needed if we use same diag in multiple places
+- try longjump in ModuleAnalyser
+- load other external components (recursively)
+    parse used sources (only)
 - SourceMgr, close after use (and re-open)
     - takes 200 usec
     - try not mapping, but malloc + read file? -> measure
-- create DiagnosticsEngine, return true if error, false if warning
-    - user should still be able to use -Werror like
-    - use enum with diags.id (must be short, so now two namespaces
-- try longjump in ModuleAnalyser
 - Parser: try to merge tokens '-' and '<number>' as single IntegerLiteral
     if parseExpr() starts with '-', check if next is IntegerLiteral, merge then.
     -> on bb_combine.. branch
 - use c2recipe.yml
-- load other external components (recursively)
 
 ## Tokenizer
 - parse floating points
@@ -25,10 +27,6 @@
     - OR AND NOT in condition
     - () to indicate order
 - in a skipFeatures part, still check syntax? -> no
-
-## SourceManager
-- close files after use (need indication)
-- clear files up to certain index (all except recipe + build-file before each target)
 
 ## Parser
 - TEST many unterminated things (unexpected EOF)
