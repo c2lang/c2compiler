@@ -93,17 +93,16 @@ public func void build(string_pool.Pool* auxPool,
                        const Options* opts)
 {
     Compiler c;
-    c.init(auxPool, sm, diags, target, opts);
-    //c.build();
+    c.build(auxPool, sm, diags, target, opts);
     c.free();
 }
 
-func void Compiler.init(Compiler* c,
-                        string_pool.Pool* auxPool,
-                        source_mgr.SourceMgr* sm,
-                        diagnostics.Diags* diags,
-                        c2recipe.Target* target,
-                        const Options* opts)
+func void Compiler.build(Compiler* c,
+                         string_pool.Pool* auxPool,
+                         source_mgr.SourceMgr* sm,
+                         diagnostics.Diags* diags,
+                         c2recipe.Target* target,
+                         const Options* opts)
 {
     string.memset(c, 0, sizeof(Compiler));
     c.auxPool = auxPool;
@@ -143,13 +142,11 @@ func void Compiler.init(Compiler* c,
         i32 file_id = target.openFile(j);
         if (file_id == -1) return;   // note: error already printed
 
-        const char* filename = sm.getFileName(file_id);
-        //printf("parsing %s\n", filename);
-
         c2_parser.Parser* parser = c2_parser.create(sm, file_id, c.builder, c.astPool, &features, false);
-        bool ok = parser.parse();
+        /*bool ok = */ parser.parse();
 
         parser.free();
+        target.closeFile(file_id);
     }
     u64 t1_end = utils.now();
     printf("parsing took %lu usec\n", t1_end - t1_start);

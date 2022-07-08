@@ -16,10 +16,18 @@ const u32 InitialMaxFiles = 8;
 type File struct {
     const char* filename;   // no ownership
     u32 offset;
+    // TODO dont use fileReader here, since it has duplicate info and error msg are easier then
     file_utils.Reader file;
 
     u32 last_offset;
     Location last_loc;
+}
+
+func void File.close(File* f) {
+    // todo check state
+    // TODO first do file opening/closing here ourself
+    // ignore for now
+    //f.file.close();
 }
 
 public type SourceMgr struct {
@@ -37,8 +45,7 @@ public func SourceMgr* create() {
 
 public func void SourceMgr.free(SourceMgr* sm) {
     for (u32 i=0; i<sm.num_files; i++) {
-        File* f = &sm.files[i];
-        f.file.close();
+        sm.files[i].close();
     }
     stdlib.free(sm.files);
     stdlib.free(sm);
@@ -91,6 +98,10 @@ public func i32 SourceMgr.open(SourceMgr* sm, const char* filename, utils.SrcLoc
     sm.num_files++;
     //sm.dump();
     return file_id;
+}
+
+public func void SourceMgr.close(SourceMgr* sm, i32 file_id) {
+    sm.files[file_id].close();
 }
 
 public func const char* SourceMgr.get_content(SourceMgr* sm, i32 handle) {

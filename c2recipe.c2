@@ -65,6 +65,10 @@ public func i32 Target.openFile(Target* t, u32 idx) {
     return t.recipe.openFile(&t.files[idx]);
 }
 
+public func void Target.closeFile(Target* t, i32 file_id) {
+    t.recipe.closeFile(file_id);
+}
+
 public type Recipe struct {
     string_pool.Pool* pool;
     source_mgr.SourceMgr* sm;
@@ -136,7 +140,10 @@ public func void Recipe.dump(const Recipe* r) {
 }
 #endif
 
-public func i32 Recipe.openFile(Recipe* r, File* f) {
+func i32 Recipe.openFile(Recipe* r, File* f) {
     return r.sm.open(f.name, f.loc);
 }
 
+func void Recipe.closeFile(Recipe* r, i32 file_id) {
+    r.sm.close(file_id);
+}

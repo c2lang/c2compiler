@@ -1,6 +1,11 @@
 
 ## TODO
+- SourceMgr, close after use (and re-open)
+    - takes 200 usec
+    - try not mapping, but malloc + read file? -> measure
 - create DiagnosticsEngine, return true if error, false if warning
+    - user should still be able to use -Werror like
+    - use enum with diags.id (must be short, so now two namespaces
 - try longjump in ModuleAnalyser
 - Parser: try to merge tokens '-' and '<number>' as single IntegerLiteral
     if parseExpr() starts with '-', check if next is IntegerLiteral, merge then.
