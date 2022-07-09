@@ -97,6 +97,8 @@ public func void init(Context* c, const char* names_start) {
     g_names_start = names_start;
 }
 
+public func u32 name2idx(const char* name) { return cast<u32>(name - g_names_start); }
+
 const char* col_Stmt = color.Bmagenta;
 const char* col_Decl = color.Bgreen;
 const char* col_Expr = color.Bmagenta;

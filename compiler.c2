@@ -113,7 +113,7 @@ func void Compiler.build(Compiler* c,
 
     c.context = ast_context.create(16*1024);
     c.astPool = string_pool.create(1024*1024, 2048);
-    c.builder = ast_builder.create(c.context);
+    c.builder = ast_builder.create(c.context, diags);
     c.globalList = module_list.create(false);
     c.resizeComponents(4);
 

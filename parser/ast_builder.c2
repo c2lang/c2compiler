@@ -6,21 +6,25 @@ module ast_builder;
 import ast local;
 import ast_context local;
 import component;
+import diagnostics;
 import tokens local;
 import utils local;
 
 import stdlib local;
+import stdio local; // TEMP
 
 public type Builder struct {
     Context* context;
+    diagnostics.Diags* diags;
     component.Component* comp;
     Module* mod;
     AST* ast;
 } @(opaque)
 
-public func Builder* create(Context* context) {
+public func Builder* create(Context* context, diagnostics.Diags* diags) {
     Builder* b = calloc(1, sizeof(Builder));
     b.context = context;
+    b.diags = diags;
 
     return b;
 }
@@ -44,6 +48,7 @@ public func void Builder.actOnModule(Builder* b, const char* mod_name, SrcLoc mo
     ImportDecl* d = ImportDecl.create(b.context, mod_name, mod_loc, nil, 0, true);
     d.setModule(b.mod);
     b.ast.addImport(d);
+    b.addSymbol(mod_name, d.asDecl());
 }
 
 public func void Builder.actOnImport(Builder* b, const char* mod_name, SrcLoc mod_loc, const char* alias_name, SrcLoc alias_loc, bool islocal) {
@@ -51,12 +56,15 @@ public func void Builder.actOnImport(Builder* b, const char* mod_name, SrcLoc mo
 
     ImportDecl* d = ImportDecl.create(b.context, mod_name, mod_loc, alias_name, alias_loc, islocal);
     b.ast.addImport(d);
+    b.addSymbol(mod_name, d.asDecl());
 }
 
 public func Decl* Builder.actOnAliasType(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType refType) {
     AliasTypeDecl* d = AliasTypeDecl.create(b.context, name, loc, is_public, b.mod, refType);
     b.ast.addTypeDecl(d.asDecl());
-    return d.asDecl();
+    Decl* dd = d.asDecl();
+    b.addSymbol(name, dd);
+    return dd;
 }
 
 public func Decl* Builder.actOnFunctionTypeDecl(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType rtype,
@@ -65,13 +73,16 @@ public func Decl* Builder.actOnFunctionTypeDecl(Builder* b, const char* name, Sr
 
     FunctionTypeDecl* d = FunctionTypeDecl.create(b.context, fn);
     b.ast.addTypeDecl(d.asDecl());
-    return d.asDecl();
+    Decl* dd = d.asDecl();
+    b.addSymbol(name, dd);
+    return dd;
 }
 
 public func StructTypeDecl* Builder.actOnStructType(Builder* b, const char* name, SrcLoc loc, bool is_public, bool is_struct, bool is_global,
                                                     VarDecl** members, u32 num_members) {
     StructTypeDecl* d = StructTypeDecl.create(b.context, name, loc, is_public, b.mod, is_struct, is_global, members, num_members);
     if (is_global) b.ast.addTypeDecl(d.asDecl());
+    b.addSymbol(name, d.asDecl());
     return d;
 }
 
@@ -85,7 +96,9 @@ public func VarDecl* Builder.actOnStructVar(Builder* b, const char* name, SrcLoc
 
 public func void Builder.actOnGlobalVarDecl(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType qt, Expr* initValue) {
     VarDecl* d = VarDecl.create(b.context, VarDeclKind.GlobalVar, name, loc, is_public, qt, b.mod, initValue);
-    b.ast.addVarDecl(d.asDecl());
+    Decl* dd = d.asDecl();
+    b.ast.addVarDecl(dd);
+    b.addSymbol(name, dd);
 }
 
 public func VarDecl* Builder.actOnFunctionParam(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType qt, Expr* initValue) {
@@ -200,6 +213,7 @@ public func FunctionDecl* Builder.actOnFunctionDecl(Builder* b,
 {
     FunctionDecl* f = FunctionDecl.create(b.context, name, loc, is_public, b.mod, rtype, prefix, params, num_params, is_variadic);
     b.ast.addFunc(f);
+    b.addSymbol(name, f.asDecl());
     return f;
 }
 
@@ -223,6 +237,7 @@ public func void Builder.actOnEnumType(Builder* b,
     // TODO give error if zero constans
     EnumTypeDecl* d = EnumTypeDecl.create(b.context, name, loc, is_public, b.mod, implType, is_incr, constants, num_constants);
     b.ast.addTypeDecl(d.asDecl());
+    b.addSymbol(name, d.asDecl());
 }
 
 public func CompoundStmt* Builder.actOnCompoundStmt(Builder* b, Stmt** stmts, u32 count) {
@@ -443,5 +458,16 @@ public func Expr* Builder.actOnArrayDesignatedInit(Builder* b, SrcLoc loc, Expr*
 public func void Builder.actOnStaticAssert(Builder* b, SrcLoc loc, Expr* lhs, Expr* rhs) {
     StaticAssertDecl* d = StaticAssertDecl.create(b.context, loc, lhs, rhs);
     b.ast.addStaticAssert(d);
+}
+
+func void Builder.addSymbol(Builder* b, const char* name, Decl* d) {
+    u32 name_idx = ast.name2idx(name);
+    Decl* old = b.mod.findSymbol(name_idx);
+    if (old) {
+        b.diags.report(old.getLoc(), "redefinition of '%s'", name);
+    } else {
+        printf("add %s\n", name);
+        b.mod.addSymbol(name_idx, d);
+    }
 }
 
