@@ -57,11 +57,7 @@ public type Decl struct {
         u32 bits;
     }
     SrcLoc loc;
-#if DeclNamePtr
-    const char* name; // Note: may be nil
-#else
     u32 name_idx;   // into g_names_start, 0 means nil
-#endif
 
     QualType qt;
     Module* mod;
@@ -71,15 +67,13 @@ func void Decl.init(Decl* d, DeclKind k, const char* name, SrcLoc loc, bool is_p
     d.bits = 0;
     d.declBits.kind = k;
     d.declBits.is_public = is_public;
-#if DeclNamePtr
-    d.name = name;
-#else
+
     if (name) {
         d.name_idx = cast<u32>(name - g_names_start);
     } else {
         d.name_idx = 0;
     }
-#endif
+
     d.loc = loc;
     d.qt = qt;
     d.mod = mod;
@@ -95,12 +89,12 @@ public func bool Decl.isChecked(const Decl* d) @(inline) { return d.declBits.che
 public func void Decl.setChecked(Decl* d) @(inline) { d.declBits.check_state = DeclCheckState.Checked; }
 
 public func const char* Decl.getName(const Decl* d) @(inline) {
-#if DeclNamePtr
-    return d.name;
-#else
     if (d.name_idx) return &g_names_start[d.name_idx];
     return nil;
-#endif
+}
+
+public func u32 Decl.getNameIdx(const Decl* d) @(inline) {
+    return d.name_idx;
 }
 
 public func SrcLoc Decl.getLoc(const Decl* d) @(inline) { return d.loc; }
@@ -165,13 +159,9 @@ func void Decl.printKind(const Decl* d, string_buffer.Buf* out, u32 indent, cons
 func void Decl.printName(const Decl* d, string_buffer.Buf* out) {
     out.add(" ");
     out.color(col_Value);
-#if DeclNamePtr
-    if (d.name) out.add(d.getName());
-#else
     if (d.name_idx) {
         out.add(d.getName());
     }
-#endif
     else out.add("(nil)");
 }
 

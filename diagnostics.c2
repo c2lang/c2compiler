@@ -41,7 +41,7 @@ public func bool Diags.report(Diags* diags, utils.SrcLoc loc, const char* format
         const char* col = is_error ? color.Red : color.Yellow;
         cp += stdio.sprintf(cp, "%s%s%s: ", col, category, color.Normal);
     } else {
-        cp += stdio.sprintf(cp, "%s: %s: ", category);
+        cp += stdio.sprintf(cp, "%s: ", category);
     }
 
     Va_list args;

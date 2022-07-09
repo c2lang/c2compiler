@@ -8,7 +8,6 @@ executable c2c
 #    $config RecipeDebug
 #    $config ParserDebug
 #    $config DumpTokens
-#     $config DeclNamePtr
 
     common/file/reader.c2
 
@@ -108,6 +107,7 @@ executable c2c
     analyser/module_analyser_expr.c2
     analyser/module_analyser_struct_decls.c2
     analyser/module_sorter.c2
+    analyser/scope.c2
 
     c2recipe.c2
     c2recipe_parser.c2

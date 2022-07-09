@@ -4,7 +4,7 @@
 module ast;
 
 import string_buffer;
-import stdlib local;
+import stdlib;
 import string;
 
 /*
@@ -17,13 +17,23 @@ public type Module struct {
     ast.AST** files;
     u32 num_files;
     u32 max_files;
+
+
+    // symbol table (split vectors)
+    u32* symbols;
+    u32 num_symbols;
+    u32 max_symbols;
+    ast.DeclList decls;
 } @(opaque)
 
 // Note: name must be allocated in target StringPool
 public func Module* Module.create(const char* name) {
-    Module* m = calloc(1, sizeof(Module));
+    Module* m = stdlib.calloc(1, sizeof(Module));
     m.name = name;
-    m.resize(1);
+    m.resizeFiles(1);
+
+    m.resizeSymbols(16);
+    m.decls.init(16);
     return m;
 }
 
@@ -31,8 +41,10 @@ public func void Module.free(Module* m) {
     for (u32 i=0; i<m.num_files; i++) {
         m.files[i].free();
     }
-    free(cast<void*>(m.files));
-    free(m);
+    stdlib.free(cast<void*>(m.files));
+    stdlib.free(m.symbols);
+    m.decls.free();
+    stdlib.free(m);
 }
 
 public func void Module.visitImports(const Module* m, ImportVisitor visitor, void* arg) {
@@ -64,13 +76,13 @@ public func Decl* Module.findType(const Module* m, const char* name) {
 
 public func const char* Module.getName(const Module* m) @(inline) { return m.name; }
 
-func void Module.resize(Module* m, u32 cap) {
+func void Module.resizeFiles(Module* m, u32 cap) {
     m.max_files = cap;
-    void* buf = malloc(m.max_files * sizeof(ast.AST*));
+    void* buf = stdlib.malloc(m.max_files * sizeof(ast.AST*));
     if (m.files) {
         void* old = cast<void*>(m.files);
         string.memcpy(buf, old, m.num_files * sizeof(ast.AST*));
-        free(old);
+        stdlib.free(old);
     }
     m.files = buf;
 }
@@ -79,11 +91,36 @@ func void Module.resize(Module* m, u32 cap) {
 public func ast.AST* Module.add(Module* m, const char* filename) {
     ast.AST* a = ast.AST.create(filename);
 
-    if (m.num_files == m.max_files) m.resize(m.max_files * 2);
+    if (m.num_files == m.max_files) m.resizeFiles(m.max_files * 2);
 
     m.files[m.num_files] = a;
     m.num_files++;
     return a;
+}
+
+func void Module.resizeSymbols(Module* m, u32 capacity) {
+    u32* symbols = stdlib.malloc(capacity * sizeof(u32));
+    m.max_symbols = capacity;
+    if (m.symbols) {
+        string.memcpy(symbols, m.symbols, m.num_symbols * sizeof(u32));
+        stdlib.free(m.symbols);
+    }
+    m.symbols = symbols;
+}
+
+public func void Module.addSymbol(Module* m, u32 name_idx, ast.Decl* d) {
+    if (m.num_symbols == m.max_symbols) m.resizeSymbols(m.max_symbols * 2);
+
+    m.symbols[m.num_symbols] = name_idx;
+    m.num_symbols++;
+    m.decls.add(d);
+}
+
+public func ast.Decl* Module.findSymbol(const Module* m, u32 name_idx) {
+    for (u32 i=0; i<m.num_symbols; i++) {
+        if (m.symbols[i] == name_idx) return m.decls.get(i);
+    }
+    return nil;
 }
 
 public func void Module.info(const Module* m, string_buffer.Buf* out) {

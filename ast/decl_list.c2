@@ -44,7 +44,15 @@ public func u32 DeclList.size(const DeclList* l) {
     return l.count;
 }
 
+public func Decl* DeclList.get(const DeclList* l, u32 idx) {
+    return l.decls[idx];
+}
+
 public func Decl** DeclList.getDecls(const DeclList* l) {
     return l.decls;
 }
 
+// Note: must be lower than current size!
+public func void DeclList.setSize(DeclList* l, u32 size) {
+    l.count = size;
+}

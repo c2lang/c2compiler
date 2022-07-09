@@ -1,11 +1,16 @@
 
 ## TODO
+- add symbol list per module (u32's, same with Decls)
+    -> looks a lot like scope!
+    -> let it be filled by ast_builder
 - create DiagnosticsEngine, return true if error, false if warning
     - user should still be able to use -Werror like
     - add info() for 2nd info like 'older decl is here'
     - use enum with diags.id (must be short, so not two namespaces (diags.Id.Bla)
         -> only needed if we use same diag in multiple places
     - print error location nicely (line indicating error)
+- create FileAnalser (needs own scope)
+- automatically add feature _target_32bit_ (otherwise 32-bit)
 - try longjump in ModuleAnalyser
 - load other external components (recursively)
     parse used sources (only)

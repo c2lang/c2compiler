@@ -227,6 +227,7 @@ func void ModuleAnalyser.analyseEnumType(ModuleAnalyser* ma, EnumTypeDecl* d) {
     EnumConstantDecl** constants = d.getConstants();
     u32 value = 0;
 
+    // TODO we need a file-dependent lookup here, to see which imports we can use!
     for (u32 i=0; i<num_constants; i++) {
         EnumConstantDecl* c = constants[i];
 

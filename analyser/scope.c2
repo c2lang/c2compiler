@@ -1,0 +1,99 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module scope;
+
+import ast;
+
+import stdlib;
+import string;
+
+public const u32 MaxLevels = 16;
+
+public type Flags enum u8 {
+    Function  = 0x1,
+    Break     = 0x2,
+    Continue  = 0x4,
+    Decl      = 0x8,
+    Control   = 0x10,
+    Block     = 0x20,
+    Switch    = 0x40,
+    HasDecls  = 0x80,
+}
+
+public type Level struct {
+    u32 flags;              // combination of Flags
+    u32 first_index;
+}
+
+public type Scope struct {
+    u32* names;
+    u32 num_names;
+    u32 max_names;
+
+    ast.DeclList decls;
+
+    Level[MaxLevels] levels;
+    u32 lvl;
+}
+
+public func void Scope.init(Scope* s) {
+    string.memset(s, 0, sizeof(Scope));
+    s.decls.init(64);
+    s.resize(64);
+}
+
+public func void Scope.free(Scope* s) {
+    stdlib.free(s.names);
+    s.decls.free();
+}
+
+func void Scope.resize(Scope* s, u32 capacity) {
+    u32* names = stdlib.malloc(capacity * sizeof(u32));
+    s.max_names = capacity;
+    if (s.names) {
+        string.memcpy(names, s.names, s.num_names * sizeof(u32));
+        stdlib.free(s.names);
+    }
+    s.names = names;
+}
+
+func void Scope.enter(Scope* s, u32 flags) {
+    if (s.lvl == MaxLevels) {
+        // TODO give error
+        // assert(0);
+        return;
+    }
+    Level* top = &s.levels[s.lvl];
+    // TODO combine flags
+    top.flags = flags;
+    top.first_index = s.num_names;
+    s.lvl++;
+}
+
+func void Scope.exit(Scope* s) {
+    // assert(s.level != 0)
+    s.num_names = s.levels[s.lvl].first_index;
+    s.decls.setSize(s.num_names);
+    s.lvl--;
+}
+
+// return Decl if a clash, nil if ok
+func ast.Decl* Scope.add(Scope* s, u32 name_idx, ast.Decl* d) {
+    ast.Decl* old = s.find(name_idx);
+    if (old) return old;
+
+    if (s.num_names == s.max_names) s.resize(s.max_names * 2);
+    s.names[s.num_names] = name_idx;
+    s.num_names++;
+    s.decls.add(d);
+    return nil;
+}
+
+func ast.Decl* Scope.find(const Scope* s, u32 name_idx) {
+    for (u32 i=0; i<s.num_names; i++) {
+        if (s.names[i] == name_idx) return s.decls.get(i);
+    }
+    return nil;
+}
+
