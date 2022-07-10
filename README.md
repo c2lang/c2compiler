@@ -1,9 +1,5 @@
 
 ## TODO
-- add symbol list per module (u32's, same with Decls)
-    -> looks a lot like scope!
-    -> let it be filled by ast_builder
-    -> each AST should have it's own table (= module + imports)
 - create DiagnosticsEngine, return true if error, false if warning
     - user should still be able to use -Werror like
     - add info() for 2nd info like 'older decl is here'

@@ -128,6 +128,12 @@ public func void Module.info(const Module* m, string_buffer.Buf* out) {
     for (u32 i=0; i<m.num_files; i++) {
         m.files[i].info(out);
     }
+#if 0
+    out.print("    Symbol: (%u)\n", m.num_symbols);
+    for (u32 i=0; i<m.num_symbols; i++) {
+        out.print("      %s\n", idx2name(m.symbols[i]));
+    }
+#endif
 }
 
 public func void Module.print(const Module* m, string_buffer.Buf* out) {
