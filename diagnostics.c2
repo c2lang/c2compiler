@@ -5,7 +5,7 @@ import source_mgr;
 import utils;
 
 import stdarg local;
-import stdio;
+import stdio local;
 import stdlib;
 
 public type Diags struct {
@@ -26,7 +26,7 @@ public func void Diags.free(Diags* diags) {
 
 // return true if error, false if warning
 public func bool Diags.report(Diags* diags, utils.SrcLoc loc, const char* format, ...) {
-    char[256] temp;
+    char[512] temp;
     char* cp = temp;
 
     // or pass diags.Id? (= enum), coupled to format string
@@ -35,13 +35,13 @@ public func bool Diags.report(Diags* diags, utils.SrcLoc loc, const char* format
 
     const char* category = is_error ? "error" : "warning";
     if (loc) {
-        cp += stdio.printf(cp, "%s: ", diags.sm.loc2str(loc));
+        cp += sprintf(cp, "%s: ", diags.sm.loc2str(loc));
     }
     if (diags.use_color) {
         const char* col = is_error ? color.Red : color.Yellow;
-        cp += stdio.sprintf(cp, "%s%s%s: ", col, category, color.Normal);
+        cp += sprintf(cp, "%s%s%s: ", col, category, color.Normal);
     } else {
-        cp += stdio.sprintf(cp, "%s: ", category);
+        cp += sprintf(cp, "%s: ", category);
     }
 
     Va_list args;
@@ -49,8 +49,29 @@ public func bool Diags.report(Diags* diags, utils.SrcLoc loc, const char* format
     cp += vsprintf(cp, format, args);
     va_end(args);
 
-    stdio.printf("%s\n", temp);
+    printf("%s\n", temp);
 
     return is_error;
+}
+
+public func void Diags.note(Diags* diags, utils.SrcLoc loc, const char* format, ...) {
+    char[512] temp;
+    char* cp = temp;
+
+    if (loc) {
+        cp += sprintf(cp, "%s: ", diags.sm.loc2str(loc));
+    }
+    if (diags.use_color) {
+        cp += sprintf(cp, "%sinfo%s: ", color.Grey , color.Normal);
+    } else {
+        cp += sprintf(cp, "info: ");
+    }
+
+    Va_list args;
+    va_start(args, format);
+    cp += vsprintf(cp, format, args);
+    va_end(args);
+
+    printf("%s\n", temp);
 }
 
