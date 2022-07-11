@@ -55,6 +55,9 @@ public func Decl** StructTypeDecl.getMembers(StructTypeDecl* d) {
     return d.members;
 }
 
+public func bool StructTypeDecl.isStruct(const StructTypeDecl* d) {
+    return d.parent.structTypeDeclBits.is_struct;
+}
 
 public func void StructTypeDecl.setStructFunctions(StructTypeDecl* d, ast_context.Context* c, FunctionDecl** funcs, u32 count) {
     const u32 size = count * sizeof(FunctionDecl*);

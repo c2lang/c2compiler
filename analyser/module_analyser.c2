@@ -11,44 +11,56 @@ import source_mgr;
 
 import string;
 import stdlib;
+import stdio;
 
 // TEMP here until we have templates
-// TODO also use u32 indexes
-type StringVector struct {
-    const char** data;
+type NameVector struct {
+    u32* data;
     u32 count;
     u32 capacity;
 }
 
-func void StringVector.free(StringVector* v) {
-    stdlib.free(cast<void*>(v.data));
+func void NameVector.init(NameVector* v, u32 capacity) {
+    v.data = nil;
+    v.count = 0;
+    v.capacity = capacity / 2; // workaround resize
+    v.resize();
+}
+
+func void NameVector.free(NameVector* v) {
+    stdlib.free(v.data);
     v.count = 0;
     v.capacity = 0;
     v.data = nil;
 }
 
-func void StringVector.resize(StringVector* v) {
+func void NameVector.resize(NameVector* v) {
     v.capacity = v.capacity == 0 ? 4 : v.capacity * 2;
-    void* data2 = stdlib.malloc(v.capacity * sizeof(char*));
+    void* data2 = stdlib.malloc(v.capacity * sizeof(u32));
     if (v.data) {
-        string.memcpy(data2, cast<void*>(v.data), v.count * sizeof(char*));
-        stdlib.free(cast<void*>(v.data));
+        string.memcpy(data2, v.data, v.count * sizeof(u32));
+        stdlib.free(v.data);
     }
     v.data = data2;
 }
 
-func u32 StringVector.add(StringVector* v, const char* str) {
+func u32 NameVector.add(NameVector* v, u32 name_idx) {
     if (v.count == v.capacity) v.resize();
 
     u32 index = v.count;
-    v.data[index] = str;
+    v.data[index] = name_idx;
     v.count++;
     return index;
 }
 
-func bool StringVector.find(StringVector* v, const char* str, u32* index) {
+func u32 NameVector.get(const NameVector* v, u32 idx) {
+    return v.data[idx];
+}
+
+
+func bool NameVector.find(NameVector* v, u32 name_idx, u32* index) {
     for (u32 i=0; i<v.count; i++) {
-        if (v.data[i] == str) {
+        if (v.data[i] == name_idx) {
             *index = i;
             return true;
         }
@@ -64,11 +76,10 @@ type ModuleAnalyser struct {
     ast_context.Context* context;
 
     // collect struct-functions
-    // TODO use name idx
-    const char* prefix_cache;
+    u32 prefix_cache_name;
     u32 prefix_cache_idx;
     // Vector<const char*> prefixes;
-    StringVector prefixes;
+    NameVector prefixes;
     StructDecls struct_decls;
 
     // Type + Vars analysis
@@ -125,33 +136,32 @@ func void ModuleAnalyser.free(ModuleAnalyser* ma) {
 func void ModuleAnalyser.handleStructFunc(void* arg, FunctionDecl* d) {
     ModuleAnalyser* ma = arg;
     IdentifierExpr* prefix = d.getPrefix();
-    const char* prefix_name = prefix.getName();
+    u32 prefix_name_idx = prefix.getNameIdx();
     // assert(prefix)
-    //printf("  %s %s\n", prefix_name, d.asDecl().getName());
 
     u32 index = 0;
-    if (prefix_name == ma.prefix_cache) {
+    if (prefix_name_idx == ma.prefix_cache_name) {
         index = ma.prefix_cache_idx;
     } else {
         // search data structure
         bool found = false;
-        found = ma.prefixes.find(prefix_name, &index);
+        found = ma.prefixes.find(prefix_name_idx, &index);
 
         if (!found) {
-            Decl* decl = ma.mod.findType(prefix_name);
+            Decl* decl = ma.mod.findType(prefix_name_idx);
             if (!decl) {
                 // TODO search for all symbols for nice Diag
-                ma.diags.report(prefix.asExpr().getLoc(), "unknown type '%s'", prefix_name);
+                ma.diags.report(prefix.asExpr().getLoc(), "unknown type '%s'", prefix.getName());
                 return;
             }
             if (decl.getKind() != DeclKind.StructType) {
                 ma.diags.report(prefix.asExpr().getLoc(), "struct-functions type must be a structs/union");
                 return;
             }
-            index = ma.prefixes.add(prefix_name);
+            index = ma.prefixes.add(prefix_name_idx);
             ma.struct_decls.addDecl(decl);
         }
-        ma.prefix_cache = prefix_name;
+        ma.prefix_cache_name = prefix_name_idx;
         ma.prefix_cache_idx = index;
     }
 
@@ -219,12 +229,59 @@ func void ModuleAnalyser.popCheck(ModuleAnalyser* ma) {
 }
 
 func void ModuleAnalyser.analyseStructType(ModuleAnalyser* ma, StructTypeDecl* d) {
-    // TODO
-    // have vector of names, size of num-members initially
+    NameVector names;
+    names.init(d.getNumMembers());
+
+    NameVector locs;
+    locs.init(d.getNumMembers());
+
+    ma.analyseStructNames(d, &names, &locs);
+
+    names.free();
+    locs.free();
+
+    // TODO check rest
+}
+
+func void ModuleAnalyser.analyseStructNames(ModuleAnalyser* ma, StructTypeDecl* d, NameVector* names, NameVector* locs) {
+    // note: already checked that struct doesn't have 0 members
     u32 count = d.getNumMembers();
     Decl** members = d.getMembers();
 
-    // note: already checked for 0 members
+    for (u32 i=0; i<count; i++) {
+        // there can more members in anonymous sub-structs
+        Decl* member = members[i];
+        u32 name_idx = member.getNameIdx();
+        u32 old_index;
+
+        StructTypeDecl* sub = nil;
+        if (member.getKind() == DeclKind.StructType) sub = cast<StructTypeDecl*>(member);
+
+        if (name_idx == 0) {
+            // can be anonymous sub-struct/union or anonymous bit-field
+            if (member.getKind() == DeclKind.StructType) {
+                ma.analyseStructNames(sub, names, locs);
+            }
+        } else {
+            if (names.find(name_idx, &old_index)) {
+                ma.diags.report(member.getLoc(), "duplicate %s member '%s'", d.isStruct() ? "struct" : "union", member.getName());
+                ma.diags.note(locs.get(old_index), "previous declaration is here");
+                return;
+            }
+            names.add(name_idx);
+            locs.add(member.getLoc());
+
+            if (member.getKind() == DeclKind.StructType) {
+                NameVector sub_names;
+                sub_names.init(sub.getNumMembers());
+                NameVector sub_locs;
+                sub_locs.init(sub.getNumMembers());
+                ma.analyseStructNames(sub, &sub_names, &sub_locs);
+                sub_names.free();
+                sub_locs.free();
+            }
+        }
+    }
 }
 
 func void ModuleAnalyser.analyseEnumType(ModuleAnalyser* ma, EnumTypeDecl* d) {

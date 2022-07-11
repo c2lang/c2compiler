@@ -91,11 +91,11 @@ public func void AST.visitTypeDecls(const AST* a, TypeDeclVisitor visitor, void*
     }
 }
 
-public func Decl* AST.findType(const AST* a, const char* name) {
+public func Decl* AST.findType(const AST* a, u32 name_idx) {
     Decl** types = a.types.getDecls();
     for (u32 i=0; i<a.types.size(); i++) {
         Decl* d = types[i];
-        if (d.getName() == name) return d;
+        if (d.getNameIdx() == name_idx) return d;
     }
     return nil;
 }
