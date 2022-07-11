@@ -240,7 +240,30 @@ func void ModuleAnalyser.analyseStructType(ModuleAnalyser* ma, StructTypeDecl* d
     names.free();
     locs.free();
 
-    // TODO check rest
+    ma.analyseStructMembers(d);
+}
+
+func void ModuleAnalyser.analyseStructMembers(ModuleAnalyser* ma, StructTypeDecl* d) {
+    u32 count = d.getNumMembers();
+    Decl** members = d.getMembers();
+
+    for (u32 i=0; i<count; i++) {
+        Decl* member = members[i];
+        if (member.getKind() == DeclKind.Var) {
+            VarDecl* vd = cast<VarDecl*>(member);
+            // Note: dont push to stack, because can self-ref to StructType
+            member.setCheckState(DeclCheckState.InProgress);
+            ma.analyseVarDecl(vd);
+
+            // TODO optional BitField expr
+            member.setCheckState(DeclCheckState.Checked);
+        } else if (member.getKind() == DeclKind.StructType) {
+            StructTypeDecl* sub = cast<StructTypeDecl*>(member);
+            ma.analyseStructMembers(sub);
+        }
+    }
+
+    // TODO use ctv_analyser to get struct size, set it to struct
 }
 
 func void ModuleAnalyser.analyseStructNames(ModuleAnalyser* ma, StructTypeDecl* d, NameVector* names, NameVector* locs) {
@@ -321,3 +344,10 @@ func void ModuleAnalyser.analyseEnumType(ModuleAnalyser* ma, EnumTypeDecl* d) {
     }
 }
 
+func void ModuleAnalyser.analyseVarDecl(ModuleAnalyser* ma, VarDecl* d) {
+    // TODO analyseType
+
+    // TODO check attributes
+
+    // TODO check initValue
+}
