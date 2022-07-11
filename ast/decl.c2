@@ -68,12 +68,7 @@ func void Decl.init(Decl* d, DeclKind k, const char* name, SrcLoc loc, bool is_p
     d.declBits.kind = k;
     d.declBits.is_public = is_public;
 
-    if (name) {
-        d.name_idx = cast<u32>(name - g_names_start);
-    } else {
-        d.name_idx = 0;
-    }
-
+    d.name_idx = name2idx(name);
     d.loc = loc;
     d.qt = qt;
     d.mod = mod;

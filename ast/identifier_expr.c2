@@ -43,7 +43,8 @@ public type IdentifierExprBits struct {
 public type IdentifierExpr struct {
     Expr parent;
     union {
-        const char* name;
+        // TODO store as number
+        u32 name_idx;
         Decl* decl;     // set during analysis
     }
 } @(opaque)
@@ -51,7 +52,7 @@ public type IdentifierExpr struct {
 public func IdentifierExpr* IdentifierExpr.create(ast_context.Context* c, SrcLoc loc, const char* name) @(inline) {
     IdentifierExpr* e = c.alloc(sizeof(IdentifierExpr));
     e.parent.init(ExprKind.Identifier, loc, 0, 0, 0);
-    e.name = name;
+    e.name_idx = name2idx(name);
     return e;
 }
 
@@ -76,7 +77,7 @@ func void IdentifierExpr.print(const IdentifierExpr* e, string_buffer.Buf* out, 
         out.add(e.decl.getName());
     } else {
         out.color(col_Value);
-        out.add(e.name);
+        out.add(idx2name(e.name_idx));
         out.color(col_Error);
         out.add(" unresolved");
     }
@@ -87,7 +88,11 @@ public func const char* IdentifierExpr.getName(const IdentifierExpr* e) {
     if (e.parent.parent.identifierExprBits.has_decl) {
         return e.decl.getName();
     }
-    return e.name;
+    return idx2name(e.name_idx);
+}
+
+public func u32 IdentifierExpr.getNameIdx(const IdentifierExpr* e) @(inline) {
+    return e.name_idx;
 }
 
 func void IdentifierExpr.printLiteral(const IdentifierExpr* e, string_buffer.Buf* out) {

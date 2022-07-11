@@ -103,7 +103,7 @@ public func void check(source_mgr.SourceMgr* sm, diagnostics.Diags* diags, ast_c
 
     // NOTE: C2C ModuleAnalyser::step2()
     // analyse types
-    // TODO need stack of Decls, use check_state
+    // TODO need namespace per file, not per module! (different imports)
     mod.visitTypeDecls(ModuleAnalyser.handleTypeDecl, &ma);
 
 
@@ -220,6 +220,11 @@ func void ModuleAnalyser.popCheck(ModuleAnalyser* ma) {
 
 func void ModuleAnalyser.analyseStructType(ModuleAnalyser* ma, StructTypeDecl* d) {
     // TODO
+    // have vector of names, size of num-members initially
+    u32 count = d.getNumMembers();
+    Decl** members = d.getMembers();
+
+    // note: already checked for 0 members
 }
 
 func void ModuleAnalyser.analyseEnumType(ModuleAnalyser* ma, EnumTypeDecl* d) {

@@ -46,6 +46,16 @@ public func Decl* StructTypeDecl.asDecl(StructTypeDecl* d) @(inline) {
     return &d.parent;
 }
 
+public func u32 StructTypeDecl.getNumMembers(const StructTypeDecl* d) @(inline) {
+    return d.parent.structTypeDeclBits.num_members;
+}
+
+public func Decl** StructTypeDecl.getMembers(StructTypeDecl* d) {
+    // NOTE: doesn't check if present!
+    return d.members;
+}
+
+
 public func void StructTypeDecl.setStructFunctions(StructTypeDecl* d, ast_context.Context* c, FunctionDecl** funcs, u32 count) {
     const u32 size = count * sizeof(FunctionDecl*);
     void* dest = c.alloc(size);
