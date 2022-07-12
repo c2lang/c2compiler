@@ -52,12 +52,12 @@ func void parseLib(source_mgr.SourceMgr* sm,
 func void Compiler.handleImport(void* arg, ast.ImportDecl* d) {
     Compiler* c = arg;
 
-    const char* name = d.asDecl().getName();
-    ast.Module* m = c.globalList.find(name);
+    u32 name_idx = d.asDecl().getNameIdx();
+    ast.Module* m = c.globalList.find(name_idx);
     if (m) {
         d.setModule(m);
     } else {
-        c.diags.report(d.asDecl().getLoc(), "unknown module '%s'", name);
+        c.diags.report(d.asDecl().getLoc(), "unknown module '%s'", ast.idx2name(name_idx));
         // TODO longjmp?
         stdlib.exit(-1);
     }

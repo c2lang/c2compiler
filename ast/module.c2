@@ -8,7 +8,8 @@ import stdlib;
 import string;
 
 public type Module struct {
-    const char* name;       // no ownership
+    u32 name_idx;
+
     ast.AST** files;
     u32 num_files;
     u32 max_files;
@@ -19,7 +20,7 @@ public type Module struct {
 // Note: name must be allocated in target StringPool
 public func Module* Module.create(const char* name) {
     Module* m = stdlib.calloc(1, sizeof(Module));
-    m.name = name;
+    m.name_idx = name2idx(name);
     m.resizeFiles(1);
     m.symbols.init(16);
     return m;
@@ -61,7 +62,9 @@ public func Decl* Module.findType(const Module* m, u32 name_idx) {
     return result;
 }
 
-public func const char* Module.getName(const Module* m) @(inline) { return m.name; }
+public func const char* Module.getName(const Module* m) @(inline) { return idx2name(m.name_idx); }
+
+public func u32 Module.getNameIdx(const Module* m) @(inline) { return m.name_idx; }
 
 func void Module.resizeFiles(Module* m, u32 cap) {
     m.max_files = cap;
@@ -94,7 +97,7 @@ public func ast.Decl* Module.findSymbol(const Module* m, u32 name_idx) {
 }
 
 public func void Module.info(const Module* m, string_buffer.Buf* out) {
-    out.print("  module %s\n", m.name);
+    out.print("  module %s\n", idx2name(m.name_idx));
     for (u32 i=0; i<m.num_files; i++) {
         m.files[i].info(out);
     }
@@ -107,7 +110,7 @@ public func void Module.info(const Module* m, string_buffer.Buf* out) {
 }
 
 public func void Module.print(const Module* m, string_buffer.Buf* out) {
-    out.print("------ module %s ------\n", m.name);
+    out.print("------ module %s ------\n", idx2name(m.name_idx));
     for (u32 i=0; i<m.num_files; i++) {
         m.files[i].print(out);
     }

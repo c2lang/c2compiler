@@ -44,3 +44,18 @@ public func ImportDecl** ImportDeclList.getDecls(const ImportDeclList* l) {
     return l.decls;
 }
 
+public func ImportDecl* ImportDeclList.find(const ImportDeclList* l, u32 name_idx) {
+    for (u32 i=0; i<l.count; i++) {
+        ImportDecl* d = l.decls[i];
+        if (d.getImportNameIdx() == name_idx) return d;
+    }
+    return nil;
+}
+
+public func ImportDecl* ImportDeclList.findAny(const ImportDeclList* l, u32 name_idx) {
+    for (u32 i=0; i<l.count; i++) {
+        ImportDecl* d = l.decls[i];
+        if (d.asDecl().getNameIdx() == name_idx) return d;
+    }
+    return nil;
+}

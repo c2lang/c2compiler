@@ -33,10 +33,10 @@ public func void ModList.free(ModList* l) {
     stdlib.free(l);
 }
 
-public func ast.Module* ModList.find(const ModList* l, const char* modname) {
+public func ast.Module* ModList.find(const ModList* l, u32 modname_idx) {
     for (u32 i=0; i<l.num_mods; i++) {
         // Note: we can do pointer compare
-        if (l.mods[i].getName() == modname) return l.mods[i];
+        if (l.mods[i].getNameIdx() == modname_idx) return l.mods[i];
     }
     return nil;
 }

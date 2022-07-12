@@ -82,13 +82,13 @@ func void Component.resize(Component* c, u32 cap) {
 }
 
 public func ast.Module* Component.getOrAddModule(Component* c, const char* modname) {
+    u32 name_idx = ast.name2idx(modname);
     for (u32 i=0; i<c.num_mods; i++) {
         ast.Module* m = c.mods[i];
-        // Note: can do a pointer compare
-        if (m.getName() == modname) return m;
+        if (m.getNameIdx() == name_idx) return m;
     }
 
-    ast.Module* m = c.globalList.find(modname);
+    ast.Module* m = c.globalList.find(ast.name2idx(modname));
     if (m) {
         fprintf(stderr, "%serror%s: module %s already defined in another component\n", color.Red, color.Normal, modname);
         // TODO need dest component

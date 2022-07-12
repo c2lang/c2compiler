@@ -24,7 +24,6 @@ func void SymbolTable.init(SymbolTable* t, u32 initial) {
 func void SymbolTable.free(SymbolTable* t) {
     stdlib.free(t.symbols);
     t.decls.free();
-    stdlib.free(t);
 }
 
 func void SymbolTable.resize(SymbolTable* t, u32 capacity) {
