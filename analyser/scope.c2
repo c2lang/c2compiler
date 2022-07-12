@@ -4,6 +4,8 @@
 module scope;
 
 import ast;
+import diagnostics;
+import module_list;
 
 import stdlib;
 import string;
@@ -27,20 +29,39 @@ public type Level struct {
 }
 
 public type Scope struct {
+    // global scope
+    const module_list.ModList* allmodules;
+    diagnostics.Diags* diags;
+    const ast.ImportDeclList* imports;
+    const ast.SymbolTable* symbols;
+
+    // local scope
     u32* names;
     u32 num_names;
     u32 max_names;
-
-    ast.DeclList decls;
+    ast.DeclList decls; // same index as names
 
     Level[MaxLevels] levels;
     u32 lvl;
 }
 
-public func void Scope.init(Scope* s) {
+public func void Scope.init(Scope* s,
+                            module_list.ModList* allmodules,
+                            diagnostics.Diags* diags,
+                            const ast.ImportDeclList* imports,
+                            const ast.SymbolTable* symbols)
+{
     string.memset(s, 0, sizeof(Scope));
+    s.allmodules = allmodules;
+    s.diags = diags;
+    s.imports = imports;
+    s.symbols = symbols;
     s.decls.init(64);
     s.resize(64);
+}
+
+public func void Scope.addImport(Scope* s, ast.ImportDecl* d) {
+    // TODO add as alias or own
 }
 
 public func void Scope.free(Scope* s) {

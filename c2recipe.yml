@@ -105,6 +105,7 @@ executable.c2c:
         - ast/expr_list.c2
         - ast/function_decl_list.c2
         - ast/import_decl_list.c2
+        - ast/symbol_table.c2
 
         - analyser/ctv_analyser.c2
         - analyser/module_analyser.c2

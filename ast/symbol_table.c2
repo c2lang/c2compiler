@@ -1,0 +1,54 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import stdlib;
+import string;
+
+public type SymbolTable struct {
+    u32* symbols;
+    u32 num_symbols;
+    u32 max_symbols;
+    ast.DeclList decls;
+} @(opaque)
+
+// Note: name must be allocated in target StringPool
+func void SymbolTable.init(SymbolTable* t, u32 initial) {
+    t.num_symbols = 0;
+    t.max_symbols = 0;
+    t.resize(initial);
+    t.decls.init(initial);
+}
+
+func void SymbolTable.free(SymbolTable* t) {
+    stdlib.free(t.symbols);
+    t.decls.free();
+    stdlib.free(t);
+}
+
+func void SymbolTable.resize(SymbolTable* t, u32 capacity) {
+    u32* symbols = stdlib.malloc(capacity * sizeof(u32));
+    t.max_symbols = capacity;
+    if (t.symbols) {
+        string.memcpy(symbols, t.symbols, t.num_symbols * sizeof(u32));
+        stdlib.free(t.symbols);
+    }
+    t.symbols = symbols;
+}
+
+func void SymbolTable.add(SymbolTable* t, u32 name_idx, ast.Decl* d) {
+    if (t.num_symbols == t.max_symbols) t.resize(t.max_symbols * 2);
+
+    t.symbols[t.num_symbols] = name_idx;
+    t.num_symbols++;
+    t.decls.add(d);
+}
+
+public func ast.Decl* SymbolTable.find(const SymbolTable* t, u32 name_idx) {
+    for (u32 i=0; i<t.num_symbols; i++) {
+        if (t.symbols[i] == name_idx) return t.decls.get(i);
+    }
+    return nil;
+}
+

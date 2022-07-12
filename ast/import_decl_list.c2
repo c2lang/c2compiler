@@ -6,7 +6,7 @@ module ast;
 import string local;
 import stdlib local;
 
-type ImportDeclList struct {
+public type ImportDeclList struct {
     u32 count;
     u32 capacity;
     ImportDecl** decls;
@@ -36,11 +36,11 @@ func void ImportDeclList.add(ImportDeclList* l, ImportDecl* d) {
     l.count++;
 }
 
-func u32 ImportDeclList.size(const ImportDeclList* l) {
+public func u32 ImportDeclList.size(const ImportDeclList* l) {
     return l.count;
 }
 
-func ImportDecl** ImportDeclList.getDecls(const ImportDeclList* l) {
+public func ImportDecl** ImportDeclList.getDecls(const ImportDeclList* l) {
     return l.decls;
 }
 

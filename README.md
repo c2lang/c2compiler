@@ -1,5 +1,15 @@
 
 ## TODO
+- Scope: (per file)
+    Global:
+    - add: check if already in, add
+    - search: search cache, if found, get Decl
+        if not found, check all local imports as well, add to cache or local scope
+    Local:
+    - check scope, if not found, check GlobalScope
+    -> when adding, check localscope + globalscope (dont add to globalscope cache)
+
+
 - Idea: store AST* in Decl, then store Module* in AST)
     -> so we dont have to search for Decl file when resolving recursively
 - when resolving Decls (in stack), each decl must be analysed with

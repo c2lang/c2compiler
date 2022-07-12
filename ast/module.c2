@@ -7,23 +7,13 @@ import string_buffer;
 import stdlib;
 import string;
 
-/*
-    Used to:
-    - store ASTs
-*/
-
 public type Module struct {
     const char* name;       // no ownership
     ast.AST** files;
     u32 num_files;
     u32 max_files;
 
-
-    // symbol table (split vectors)
-    u32* symbols;
-    u32 num_symbols;
-    u32 max_symbols;
-    ast.DeclList decls;
+    SymbolTable symbols;
 } @(opaque)
 
 // Note: name must be allocated in target StringPool
@@ -31,9 +21,7 @@ public func Module* Module.create(const char* name) {
     Module* m = stdlib.calloc(1, sizeof(Module));
     m.name = name;
     m.resizeFiles(1);
-
-    m.resizeSymbols(16);
-    m.decls.init(16);
+    m.symbols.init(16);
     return m;
 }
 
@@ -42,8 +30,7 @@ public func void Module.free(Module* m) {
         m.files[i].free();
     }
     stdlib.free(cast<void*>(m.files));
-    stdlib.free(m.symbols);
-    m.decls.free();
+    m.symbols.free();
     stdlib.free(m);
 }
 
@@ -98,29 +85,12 @@ public func ast.AST* Module.add(Module* m, const char* filename) {
     return a;
 }
 
-func void Module.resizeSymbols(Module* m, u32 capacity) {
-    u32* symbols = stdlib.malloc(capacity * sizeof(u32));
-    m.max_symbols = capacity;
-    if (m.symbols) {
-        string.memcpy(symbols, m.symbols, m.num_symbols * sizeof(u32));
-        stdlib.free(m.symbols);
-    }
-    m.symbols = symbols;
-}
-
 public func void Module.addSymbol(Module* m, u32 name_idx, ast.Decl* d) {
-    if (m.num_symbols == m.max_symbols) m.resizeSymbols(m.max_symbols * 2);
-
-    m.symbols[m.num_symbols] = name_idx;
-    m.num_symbols++;
-    m.decls.add(d);
+    m.symbols.add(name_idx, d);
 }
 
 public func ast.Decl* Module.findSymbol(const Module* m, u32 name_idx) {
-    for (u32 i=0; i<m.num_symbols; i++) {
-        if (m.symbols[i] == name_idx) return m.decls.get(i);
-    }
-    return nil;
+    return m.symbols.find(name_idx);
 }
 
 public func void Module.info(const Module* m, string_buffer.Buf* out) {
