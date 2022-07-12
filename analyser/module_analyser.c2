@@ -71,7 +71,6 @@ func bool NameVector.find(NameVector* v, u32 name_idx, u32* index) {
 
 type ModuleAnalyser struct {
     Module* mod;
-    source_mgr.SourceMgr* sm;
     diagnostics.Diags* diags;
     ast_context.Context* context;
 
@@ -87,10 +86,9 @@ type ModuleAnalyser struct {
     u32 checkIndex;
 }
 
-public func void check(source_mgr.SourceMgr* sm, diagnostics.Diags* diags, ast_context.Context* context, Module* mod) {
+public func void check(diagnostics.Diags* diags, ast_context.Context* context, Module* mod) {
     ModuleAnalyser ma;
     string.memset(&ma, 0, sizeof(ma));
-    ma.sm = sm;
     ma.diags = diags;
     ma.context = context;
     ma.mod = mod;
