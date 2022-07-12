@@ -103,7 +103,8 @@ public func u32 name2idx(const char* name) {
 }
 
 public func const char* idx2name(u32 idx) {
-    return g_names_start + idx;
+    if (idx) return g_names_start + idx;
+    return nil;
 }
 
 const char* col_Stmt = color.Bmagenta;

@@ -253,7 +253,7 @@ func void ModuleAnalyser.analyseStructMembers(ModuleAnalyser* ma, StructTypeDecl
             VarDecl* vd = cast<VarDecl*>(member);
             // Note: dont push to stack, because can self-ref to StructType
             member.setCheckState(DeclCheckState.InProgress);
-            ma.analyseVarDecl(vd);
+            ma.analyseStructMember(vd);
 
             // TODO optional BitField expr
             member.setCheckState(DeclCheckState.Checked);
@@ -344,10 +344,61 @@ func void ModuleAnalyser.analyseEnumType(ModuleAnalyser* ma, EnumTypeDecl* d) {
     }
 }
 
-func void ModuleAnalyser.analyseVarDecl(ModuleAnalyser* ma, VarDecl* d) {
-    // TODO analyseType
+func void ModuleAnalyser.analyseStructMember(ModuleAnalyser* ma, VarDecl* d) {
+    QualType qt = d.asDecl().getType();
+
+    // TODO pass public, location
+    ma.analyseType(qt);
 
     // TODO check attributes
 
     // TODO check initValue
 }
+
+
+func void ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt) {
+    // TODO check if it has a canonical type
+
+    Type* t = qt.getType();
+    switch (t.getKind()) {
+    case TypeKind.Builtin:
+        break;
+    case TypeKind.Pointer:
+        PointerType* pt = cast<PointerType*>(t);
+        ma.analyseType(pt.getInner());
+        break;
+    case TypeKind.Array:
+        ArrayType* at = cast<ArrayType*>(t);
+        ma.analyseType(at.getElemType());
+        // TODO size Expr
+        break;
+    case TypeKind.Ref:
+        ma.analyseRefType(cast<RefType*>(t));
+        break;
+    case TypeKind.Struct:
+        // assert(0); // cannot happen
+        break;
+    case TypeKind.Enum:
+        // assert(0); // cannot happen
+        break;
+    case TypeKind.Function:
+        // assert(0); // cannot happen
+        break;
+    }
+}
+
+func void ModuleAnalyser.analyseRefType(ModuleAnalyser* ma, RefType* rt) {
+    IdentifierExpr* ref = rt.getRef();
+    IdentifierExpr* prefix = rt.getPrefix();
+
+    if (prefix) { // module.Type
+        stdio.printf("PREFIX %s\n", prefix.getName());
+        // TODO find module in used modules
+        // TODO find symbol in that module
+        //prefix.setKind(RefKind.Module);
+    } else {
+        // use correct scope to find symbol
+    }
+    stdio.printf("REF %s\n", ref.getName());
+}
+

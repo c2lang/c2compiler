@@ -1,5 +1,11 @@
 
 ## TODO
+- Idea: store AST* in Decl, then store Module* in AST)
+    -> so we dont have to search for Decl file when resolving recursively
+- when resolving Decls (in stack), each decl must be analysed with
+    its own FileScope, since the imports can differ!
+    -> we can get FileID from loc, check if same file
+    -> map file_id -> FileScope/AST
 - create DiagnosticsEngine, return true if error, false if warning
     - user should still be able to use -Werror like
     - add info() for 2nd info like 'older decl is here'
@@ -8,7 +14,7 @@
     - print error location nicely (line indicating error)
 - create FileAnalser (needs own scope)
 - automatically add feature _target_32bit_ (otherwise 32-bit)
-- try longjump in ModuleAnalyser
+- try longjump in ModuleAnalyser -> get memleaks, or register lists (make linked list)
 - load other external components (recursively)
     parse used sources (only)
 - SourceMgr, close after use (and re-open)

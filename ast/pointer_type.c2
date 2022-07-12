@@ -21,6 +21,8 @@ public func PointerType* PointerType.create(ast_context.Context* c, QualType inn
 
 public func Type* PointerType.asType(PointerType* t) @(inline) { return &t.parent; }
 
+public func QualType PointerType.getInner(const PointerType* t) { return t.inner; }
+
 func void PointerType.print(const PointerType* t, string_buffer.Buf* out) {
     t.inner.print(out);
     out.add("*");

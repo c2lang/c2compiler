@@ -19,7 +19,6 @@ public type AST struct {
     DeclList variables;
     FunctionDeclList functions;
     DeclList static_asserts;
-
 } @(opaque)
 
 public func AST* AST.create(const char* filename) {

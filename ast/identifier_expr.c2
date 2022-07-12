@@ -68,6 +68,17 @@ public func void IdentifierExpr.setDecl(IdentifierExpr* e, Decl* decl) @(inline)
     e.parent.parent.identifierExprBits.has_decl = true;
 }
 
+public func const char* IdentifierExpr.getName(const IdentifierExpr* e) {
+    if (e.parent.parent.identifierExprBits.has_decl) {
+        return e.decl.getName();
+    }
+    return idx2name(e.name_idx);
+}
+
+public func u32 IdentifierExpr.getNameIdx(const IdentifierExpr* e) @(inline) {
+    return e.name_idx;
+}
+
 func void IdentifierExpr.print(const IdentifierExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent, "IdentifierExpr");
     e.parent.printTypeBits(out);
@@ -82,17 +93,6 @@ func void IdentifierExpr.print(const IdentifierExpr* e, string_buffer.Buf* out, 
         out.add(" unresolved");
     }
     out.add("\n");
-}
-
-public func const char* IdentifierExpr.getName(const IdentifierExpr* e) {
-    if (e.parent.parent.identifierExprBits.has_decl) {
-        return e.decl.getName();
-    }
-    return idx2name(e.name_idx);
-}
-
-public func u32 IdentifierExpr.getNameIdx(const IdentifierExpr* e) @(inline) {
-    return e.name_idx;
 }
 
 func void IdentifierExpr.printLiteral(const IdentifierExpr* e, string_buffer.Buf* out) {

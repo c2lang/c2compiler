@@ -37,6 +37,8 @@ public func ArrayType* ArrayType.create(ast_context.Context* c, QualType elem, b
 
 public func Type* ArrayType.asType(ArrayType* t) @(inline) { return &t.parent; }
 
+public func QualType ArrayType.getElemType(const ArrayType* t) { return t.elem; }
+
 func void ArrayType.print(const ArrayType* t, string_buffer.Buf* out) {
     t.elem.print(out);
     out.add("[");
