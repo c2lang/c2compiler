@@ -76,6 +76,9 @@ public func const char* IdentifierExpr.getName(const IdentifierExpr* e) {
 }
 
 public func u32 IdentifierExpr.getNameIdx(const IdentifierExpr* e) @(inline) {
+    if (e.parent.parent.identifierExprBits.has_decl) {
+        return e.decl.getNameIdx();
+    }
     return e.name_idx;
 }
 

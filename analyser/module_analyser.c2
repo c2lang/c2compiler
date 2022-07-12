@@ -393,6 +393,7 @@ func void ModuleAnalyser.analyseRefType(ModuleAnalyser* ma, RefType* rt) {
 
     if (prefix) { // module.Type
         stdio.printf("PREFIX %s\n", prefix.getName());
+        //Module* mod = ma.scope.findModule(prefix.getNameIdx());
         // TODO find module in used modules
         // TODO find symbol in that module
         //prefix.setKind(RefKind.Module);
