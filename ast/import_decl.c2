@@ -17,6 +17,7 @@ public type ImportDecl struct {
     Decl parent;
     u32 alias_idx;
     SrcLoc alias_loc;
+    Module* dest;
 } @(opaque)
 
 public func ImportDecl* ImportDecl.create(ast_context.Context* c,
@@ -31,6 +32,7 @@ public func ImportDecl* ImportDecl.create(ast_context.Context* c,
     d.parent.importDeclBits.is_local = is_local;
     d.alias_idx = name2idx(alias_name);
     d.alias_loc = alias_loc;
+    d.dest = nil;
     return d;
 }
 
@@ -45,7 +47,9 @@ public func u32 ImportDecl.getImportNameIdx(const ImportDecl* d) @(inline) {
 
 public func SrcLoc ImportDecl.getAliasLoc(const ImportDecl* d) @(inline) { return d.alias_loc; }
 
-public func void ImportDecl.setModule(ImportDecl* d, Module* mod) { d.parent.mod = mod; }
+public func void ImportDecl.setDest(ImportDecl* d, Module* mod) { d.dest = mod; }
+
+public func Module* ImportDecl.getDest(const ImportDecl* d) { return d.dest; }
 
 func void ImportDecl.print(const ImportDecl* d, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
@@ -65,8 +69,8 @@ func void ImportDecl.print(const ImportDecl* d, string_buffer.Buf* out, u32 inde
     }
     d.parent.printUsed(out);
     out.add(" module=");
-    if (d.parent.mod) {
-        out.add(d.parent.mod.getName());
+    if (d.dest) {
+        out.add(d.dest.getName());
     } else {
         out.add("<nil>");
     }

@@ -58,20 +58,20 @@ public type Decl struct {
     }
     SrcLoc loc;
     u32 name_idx;   // into g_names_start, 0 means nil
+    AST* ast_;
 
     QualType qt;
-    Module* mod;
 } @(opaque)
 
-func void Decl.init(Decl* d, DeclKind k, const char* name, SrcLoc loc, bool is_public, QualType qt, Module* mod) @(inline) {
+func void Decl.init(Decl* d, DeclKind k, const char* name, SrcLoc loc, bool is_public, QualType qt, AST* ast_) @(inline) {
     d.bits = 0;
     d.declBits.kind = k;
     d.declBits.is_public = is_public;
 
     d.name_idx = name2idx(name);
     d.loc = loc;
+    d.ast_ = ast_;
     d.qt = qt;
-    d.mod = mod;
 }
 
 // TEMP cast needed until Analyser fixed
@@ -96,7 +96,9 @@ public func SrcLoc Decl.getLoc(const Decl* d) @(inline) { return d.loc; }
 
 public func QualType Decl.getType(const Decl* d) @(inline) { return d.qt; }
 
-public func Module* Decl.getModule(const Decl* d) @(inline) { return d.mod; }
+public func AST* Decl.getAST(const Decl* d) @(inline) { return d.ast_; }
+
+//public func Module* Decl.getModule(const Decl* d) @(inline) { return d.ast_.mod; }
 
 public func bool Decl.isPublic(const Decl* d) @(inline) { return d.declBits.is_public; }
 

@@ -1,7 +1,5 @@
 
 ## TODO
-- Idea: store AST* in Decl, then store Module* in AST)
-    -> so we dont have to search for Decl file when resolving recursively
 - Scope: (per file)
     Global:
     - add: check if already in, add

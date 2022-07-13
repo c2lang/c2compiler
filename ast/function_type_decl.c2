@@ -15,7 +15,7 @@ public type FunctionTypeDecl struct {
 public func FunctionTypeDecl* FunctionTypeDecl.create(ast_context.Context* c, FunctionDecl* fn) @(inline) {
     FunctionTypeDecl* d = c.alloc(sizeof(FunctionTypeDecl));
     Decl* dfn = fn.asDecl();
-    d.parent.init(DeclKind.FunctionType, dfn.getName(), dfn.getLoc(), dfn.isPublic(), dfn.getType(), dfn.getModule());
+    d.parent.init(DeclKind.FunctionType, dfn.getName(), dfn.getLoc(), dfn.isPublic(), dfn.getType(), dfn.getAST());
     d.fn = fn;
     return d;
 }

@@ -119,7 +119,7 @@ public func ast.Module* Scope.findModule(Scope* s, u32 name_idx) {
     ast.ImportDecl* d = s.imports.find(name_idx);
     if (d) {
         // TODO set-used
-        return d.asDecl().getModule();
+        return d.getDest();
     }
 
     d = s.imports.findAny(name_idx);

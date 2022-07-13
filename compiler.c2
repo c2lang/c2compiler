@@ -55,7 +55,7 @@ func void Compiler.handleImport(void* arg, ast.ImportDecl* d) {
     u32 name_idx = d.asDecl().getNameIdx();
     ast.Module* m = c.allmodules.find(name_idx);
     if (m) {
-        d.setModule(m);
+        d.setDest(m);
     } else {
         c.diags.report(d.asDecl().getLoc(), "unknown module '%s'", ast.idx2name(name_idx));
         // TODO longjmp?

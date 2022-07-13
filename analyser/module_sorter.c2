@@ -116,7 +116,7 @@ func void ModuleSorter.handleModule(void* arg, ast.Module* mod) {
 
 func void ModuleSorter.handleImport(void* arg, ast.ImportDecl* d) {
     ModuleSorter* s = arg;
-    ast.Module* dest = d.asDecl().getModule();
+    ast.Module* dest = d.getDest();
     //assert(dest);
 
     // ignore imports from other components
