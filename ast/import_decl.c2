@@ -39,6 +39,8 @@ public func ImportDecl* ImportDecl.create(ast_context.Context* c,
 
 public func Decl* ImportDecl.asDecl(ImportDecl* d) { return &d.parent; }
 
+public func const char* ImportDecl.getAliasName(const ImportDecl* d) @(inline) { return idx2name(d.alias_idx); }
+
 public func u32 ImportDecl.getAliasNameIdx(const ImportDecl* d) @(inline) { return d.alias_idx; }
 
 public func u32 ImportDecl.getImportNameIdx(const ImportDecl* d) @(inline) {

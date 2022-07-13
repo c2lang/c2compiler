@@ -6,6 +6,7 @@ module scope;
 import ast;
 import diagnostics;
 import module_list;
+import utils;
 
 import stdlib;
 import string;
@@ -33,6 +34,7 @@ public type Scope struct {
     const module_list.ModList* allmodules;
     diagnostics.Diags* diags;
     const ast.ImportDeclList* imports;
+    const ast.Module* mod;
     const ast.SymbolTable* symbols;
 
     // local scope
@@ -48,12 +50,14 @@ public type Scope struct {
 public func Scope* create(module_list.ModList* allmodules,
                           diagnostics.Diags* diags,
                           const ast.ImportDeclList* imports,
+                          ast.Module* mod,
                           const ast.SymbolTable* symbols)
 {
     Scope* s = stdlib.calloc(1, sizeof(Scope));
     s.allmodules = allmodules;
     s.diags = diags;
     s.imports = imports;
+    s.mod = mod;
     s.symbols = symbols;
     s.decls.init(64);
     s.resize(64);
@@ -115,7 +119,7 @@ public func ast.Decl* Scope.find(const Scope* s, u32 name_idx) {
     return nil;
 }
 
-public func ast.Module* Scope.findModule(Scope* s, u32 name_idx) {
+public func ast.Module* Scope.findModule(Scope* s, u32 name_idx, utils.SrcLoc loc) {
     ast.ImportDecl* d = s.imports.find(name_idx);
     if (d) {
         // TODO set-used
@@ -124,16 +128,35 @@ public func ast.Module* Scope.findModule(Scope* s, u32 name_idx) {
 
     d = s.imports.findAny(name_idx);
     if (d) {
-        // diags.report("module %s imported with alias %s");
+        s.diags.report(loc, "module %s imported with alias %s", d.asDecl().getName(), d.getAliasName());
         return nil;
     }
 
-    // TODO check all modules for better diag
     ast.Module* mod = s.allmodules.find(name_idx);
     if (mod) {
-        // diags.report("module not imported");
+        s.diags.report(loc, "module %s not imported", ast.idx2name(name_idx));
     } else {
-        // diags.report("unknown module");
+        s.diags.report(loc, "unknown module '%s'", ast.idx2name(name_idx));
     }
     return nil;
 }
+
+public func ast.Decl* Scope.findSymbolInModule(Scope* s, ast.Module* mod, u32 name_idx, utils.SrcLoc loc) {
+    ast.Decl* d = s.symbols.find(name_idx);
+    if (!d) {
+        s.diags.report(loc, "no symbol '%s' in module %s", ast.idx2name(name_idx), mod.getName());
+        return nil;
+    }
+
+    if (mod != s.mod) {
+        // TODO check public
+        if (!d.isPublic()) {
+            s.diags.report(loc, "symbol '%s' is not public", ast.idx2name(name_idx));
+            return nil;
+        }
+        // d.setUsedPublic();
+    }
+
+    return d;
+}
+

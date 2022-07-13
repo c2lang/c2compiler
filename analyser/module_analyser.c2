@@ -61,7 +61,6 @@ func u32 NameVector.get(const NameVector* v, u32 idx) {
     return v.data[idx];
 }
 
-
 func bool NameVector.find(NameVector* v, u32 name_idx, u32* index) {
     for (u32 i=0; i<v.count; i++) {
         if (v.data[i] == name_idx) {
@@ -93,6 +92,7 @@ type ModuleAnalyser struct {
     // Type + Vars analysis
     StackLayer[MaxDepth] checkStack;
     u32 checkIndex;
+    scope.Scope* scope; // points to top layer in stack
 }
 
 public func void check(diagnostics.Diags* diags, ast_context.Context* context, module_list.ModList* allmodules, Module* mod) {
@@ -148,6 +148,7 @@ func void ModuleAnalyser.createScope(void* arg, AST* a) {
     scope.Scope* s = scope.create(ma.allmodules,
                                   ma.diags,
                                   a.getImports(),
+                                  ma.mod,
                                   ma.mod.getSymbols());
     a.setPtr(s);
 }
@@ -243,8 +244,9 @@ func bool ModuleAnalyser.pushCheck(ModuleAnalyser* ma, Decl* d) {
             return false;
         }
     }
+    ma.scope = d.getAST().getPtr();
     ma.checkStack[ma.checkIndex].decl = d;
-    ma.checkStack[ma.checkIndex].scope = d.getAST().getPtr();
+    ma.checkStack[ma.checkIndex].scope = ma.scope;
     ma.checkIndex++;
     d.setCheckState(DeclCheckState.InProgress);
     return true;
@@ -252,6 +254,8 @@ func bool ModuleAnalyser.pushCheck(ModuleAnalyser* ma, Decl* d) {
 
 func void ModuleAnalyser.popCheck(ModuleAnalyser* ma) {
     ma.checkIndex--;
+    // assert(ma.checkIndex > 0);
+    ma.scope = ma.checkStack[ma.checkIndex].scope;
 }
 
 func void ModuleAnalyser.analyseStructType(ModuleAnalyser* ma, StructTypeDecl* d) {
@@ -374,7 +378,7 @@ func void ModuleAnalyser.analyseStructMember(ModuleAnalyser* ma, VarDecl* d) {
     QualType qt = d.asDecl().getType();
 
     // TODO pass public, location
-    ma.analyseType(qt);
+    QualType res = ma.analyseType(qt);
 
     // TODO check attributes
 
@@ -382,8 +386,9 @@ func void ModuleAnalyser.analyseStructMember(ModuleAnalyser* ma, VarDecl* d) {
 }
 
 
-func void ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt) {
+func QualType ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt) {
     // TODO check if it has a canonical type
+    QualType resolved = { 0 }
 
     Type* t = qt.getType();
     switch (t.getKind()) {
@@ -399,7 +404,7 @@ func void ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt) {
         // TODO size Expr
         break;
     case TypeKind.Ref:
-        ma.analyseRefType(cast<RefType*>(t));
+        resolved = ma.analyseRefType(cast<RefType*>(t));
         break;
     case TypeKind.Struct:
         // assert(0); // cannot happen
@@ -411,21 +416,33 @@ func void ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt) {
         // assert(0); // cannot happen
         break;
     }
+
+    // TODO more
+
+    return resolved;
 }
 
-func void ModuleAnalyser.analyseRefType(ModuleAnalyser* ma, RefType* rt) {
+func QualType ModuleAnalyser.analyseRefType(ModuleAnalyser* ma, RefType* rt) {
     IdentifierExpr* ref = rt.getRef();
     IdentifierExpr* prefix = rt.getPrefix();
 
+    Decl* d = nil;
+
     if (prefix) { // module.Type
-        stdio.printf("PREFIX %s\n", prefix.getName());
-        //Module* mod = ma.scope.findModule(prefix.getNameIdx());
-        // TODO find module in used modules
+        Module* mod = ma.scope.findModule(prefix.getNameIdx(), prefix.asExpr().getLoc());
+        if (!mod) return QualType.init0();
+
         // TODO find symbol in that module
+        d = ma.scope.findSymbolInModule(mod, ref.getNameIdx(), ref.asExpr().getLoc());
         //prefix.setKind(RefKind.Module);
     } else {
         // use correct scope to find symbol
     }
-    stdio.printf("REF %s\n", ref.getName());
+
+    if (!d) return QualType.init0();
+
+    // TODO return type of d
+
+    return QualType.init0();
 }
 

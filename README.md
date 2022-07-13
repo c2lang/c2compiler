@@ -9,6 +9,7 @@
     - check scope, if not found, check GlobalScope
     -> when adding, check localscope + globalscope (dont add to globalscope cache)
 - Store AST idx instead of AST*, -> makes Decl 32->24 bytes!
+- IDEA: have 2 symboltables: one all, one public only? (makes searching faster)
 - when resolving Decls (in stack), each decl must be analysed with
     its own FileScope, since the imports can differ!
     -> we can get FileID from loc, check if same file
