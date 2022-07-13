@@ -7,11 +7,15 @@ import ast_context;
 import ast local;
 import ctv_analyser;
 import diagnostics;
+import module_list;
+import scope;
 import source_mgr;
 
 import string;
 import stdlib;
 import stdio;
+
+const u32 MaxDepth = 8;
 
 // TEMP here until we have templates
 type NameVector struct {
@@ -68,11 +72,16 @@ func bool NameVector.find(NameVector* v, u32 name_idx, u32* index) {
     return false;
 }
 
+type StackLayer struct {
+    Decl* decl;
+    scope.Scope* scope;
+}
 
 type ModuleAnalyser struct {
     Module* mod;
     diagnostics.Diags* diags;
     ast_context.Context* context;
+    module_list.ModList* allmodules;
 
     // collect struct-functions
     u32 prefix_cache_name;
@@ -82,18 +91,22 @@ type ModuleAnalyser struct {
     StructDecls struct_decls;
 
     // Type + Vars analysis
-    Decl*[8] checkStack;
+    StackLayer[MaxDepth] checkStack;
     u32 checkIndex;
 }
 
-public func void check(diagnostics.Diags* diags, ast_context.Context* context, Module* mod) {
+public func void check(diagnostics.Diags* diags, ast_context.Context* context, module_list.ModList* allmodules, Module* mod) {
     ModuleAnalyser ma;
     string.memset(&ma, 0, sizeof(ma));
     ma.diags = diags;
     ma.context = context;
+    ma.allmodules = allmodules;
     ma.mod = mod;
 
     //printf("analysing module %s\n", ma.mod.getName());
+
+    mod.visitASTs(ModuleAnalyser.createScope, &ma);
+
     // NOTE: C2C ModuleAnalyser::step1()
     // step 3a: collect incremental arrays
     // TODO use visitIncrArrays()
@@ -112,9 +125,7 @@ public func void check(diagnostics.Diags* diags, ast_context.Context* context, M
 
     // NOTE: C2C ModuleAnalyser::step2()
     // analyse types
-    // TODO need namespace per file, not per module! (different imports)
     mod.visitTypeDecls(ModuleAnalyser.handleTypeDecl, &ma);
-
 
     // analyse vars
     // analyse static asserts
@@ -123,12 +134,27 @@ public func void check(diagnostics.Diags* diags, ast_context.Context* context, M
     // NOTE: C2C ModuleAnalyser::step3()
     // analyse functionbodies
 
+    mod.visitASTs(ModuleAnalyser.deleteScope, &ma);
     ma.free();
 }
 
 func void ModuleAnalyser.free(ModuleAnalyser* ma) {
     ma.prefixes.free();
     ma.struct_decls.free();
+}
+
+func void ModuleAnalyser.createScope(void* arg, AST* a) {
+    ModuleAnalyser* ma = arg;
+    scope.Scope* s = scope.create(ma.allmodules,
+                                  ma.diags,
+                                  a.getImports(),
+                                  ma.mod.getSymbols());
+    a.setPtr(s);
+}
+
+func void ModuleAnalyser.deleteScope(void* arg, AST* a) {
+    scope.Scope* s = a.getPtr();
+    s.free();
 }
 
 func void ModuleAnalyser.handleStructFunc(void* arg, FunctionDecl* d) {
@@ -208,7 +234,7 @@ func void ModuleAnalyser.handleTypeDecl(void* arg, Decl* d) {
 
 func bool ModuleAnalyser.pushCheck(ModuleAnalyser* ma, Decl* d) {
     for (u32 i=0; i<ma.checkIndex; i++) {
-        if (ma.checkStack[i] == d) {
+        if (ma.checkStack[i].decl == d) {
             for (u32 j=i; j<ma.checkIndex; j++) {
                 ma.diags.report(d.getLoc(), "circular declaration dependency %s", d.getName());
             }
@@ -216,7 +242,9 @@ func bool ModuleAnalyser.pushCheck(ModuleAnalyser* ma, Decl* d) {
             return false;
         }
     }
-    ma.checkStack[ma.checkIndex] = d;
+    ma.checkStack[ma.checkIndex].decl = d;
+    // TODO store scope
+    //ma.checkStack[ma.checkIndex].scope = d.getAST().getPtr();
     ma.checkIndex++;
     d.setCheckState(DeclCheckState.InProgress);
     return true;

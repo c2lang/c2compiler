@@ -35,6 +35,16 @@ public func void Module.free(Module* m) {
     stdlib.free(m);
 }
 
+public func const SymbolTable* Module.getSymbols(const Module* m) { return &m.symbols; }
+
+public type ASTVisitor func void (void* arg, AST* d);
+
+public func void Module.visitASTs(const Module* m, ASTVisitor visitor, void* arg) {
+    for (u32 i=0; i<m.num_files; i++) {
+        visitor(arg, m.files[i]);
+    }
+}
+
 public func void Module.visitImports(const Module* m, ImportVisitor visitor, void* arg) {
     for (u32 i=0; i<m.num_files; i++) {
         m.files[i].visitImports(visitor, arg);
@@ -79,7 +89,7 @@ func void Module.resizeFiles(Module* m, u32 cap) {
 
 // Note: filename must be allocated in StringPool
 public func ast.AST* Module.add(Module* m, const char* filename) {
-    ast.AST* a = ast.AST.create(filename);
+    ast.AST* a = ast.AST.create(filename, m);
 
     if (m.num_files == m.max_files) m.resizeFiles(m.max_files * 2);
 

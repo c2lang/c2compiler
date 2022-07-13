@@ -1,5 +1,7 @@
 
 ## TODO
+- Idea: store AST* in Decl, then store Module* in AST)
+    -> so we dont have to search for Decl file when resolving recursively
 - Scope: (per file)
     Global:
     - add: check if already in, add
@@ -8,10 +10,7 @@
     Local:
     - check scope, if not found, check GlobalScope
     -> when adding, check localscope + globalscope (dont add to globalscope cache)
-
-
-- Idea: store AST* in Decl, then store Module* in AST)
-    -> so we dont have to search for Decl file when resolving recursively
+- Store AST idx instead of AST*, -> makes Decl 32->24 bytes!
 - when resolving Decls (in stack), each decl must be analysed with
     its own FileScope, since the imports can differ!
     -> we can get FileID from loc, check if same file

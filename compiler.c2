@@ -53,7 +53,7 @@ func void Compiler.handleImport(void* arg, ast.ImportDecl* d) {
     Compiler* c = arg;
 
     u32 name_idx = d.asDecl().getNameIdx();
-    ast.Module* m = c.globalList.find(name_idx);
+    ast.Module* m = c.allmodules.find(name_idx);
     if (m) {
         d.setModule(m);
     } else {
@@ -74,7 +74,7 @@ type Compiler struct {
     ast_context.Context* context;
     string_pool.Pool* astPool;
     ast_builder.Builder* builder;
-    module_list.ModList* globalList;
+    module_list.ModList* allmodules;
     component.Component* mainComp;  // no ownership
 
     component.Component** components;
@@ -114,19 +114,19 @@ func void Compiler.build(Compiler* c,
     c.context = ast_context.create(16*1024);
     c.astPool = string_pool.create(1024*1024, 2048);
     c.builder = ast_builder.create(c.context, diags);
-    c.globalList = module_list.create(false);
+    c.allmodules = module_list.create(false);
     c.resizeComponents(4);
 
     ast.init(c.context, c.astPool.getStart());
 
-    component.Component* libcComponent = component.create(c.globalList, "libc");
+    component.Component* libcComponent = component.create(c.allmodules, "libc");
     c.addComponent(libcComponent);
     c.builder.setComponent(libcComponent);
     // TODO parse manifest
     // NOTE: HMM manifest filename should go into auxPool, module-names into normal astPool
     parseLib(sm, auxPool, c.astPool, libcComponent);
 
-    c.mainComp = component.create(c.globalList, "main");
+    c.mainComp = component.create(c.allmodules, "main");
     c.addComponent(c.mainComp);
     c.builder.setComponent(c.mainComp);
 
@@ -190,7 +190,7 @@ func void Compiler.free(Compiler* c) {
         c.components[i].free();
     }
     stdlib.free(cast<void*>(c.components));
-    c.globalList.free();
+    c.allmodules.free();
     c.builder.free();
     c.astPool.free();
     c.context.free();
@@ -215,6 +215,6 @@ func void Compiler.addComponent(Compiler* c, component.Component* comp) {
 
 func void Compiler.analyseModule(void* arg, ast.Module* m) {
     Compiler* c = arg;
-    module_analyser.check(c.diags, c.context, m);
+    module_analyser.check(c.diags, c.context, c.allmodules, m);
 }
 

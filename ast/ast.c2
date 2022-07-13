@@ -13,6 +13,8 @@ import stdlib;
 */
 public type AST struct {
     const char* filename;   // no ownership
+    Module* mod;
+    void* ptr;  // pointer used during analyser/generation (in analysis: Scope*)
 
     ImportDeclList imports;
     DeclList types;
@@ -21,9 +23,10 @@ public type AST struct {
     DeclList static_asserts;
 } @(opaque)
 
-public func AST* AST.create(const char* filename) {
+public func AST* AST.create(const char* filename, Module* mod) {
     AST* a = stdlib.calloc(1, sizeof(AST));
     a.filename = filename;
+    a.mod = mod;
     a.imports.init();
     a.types.init();
     a.variables.init();
@@ -40,6 +43,10 @@ public func void AST.free(AST* a) {
     a.static_asserts.free();
     stdlib.free(a);
 }
+
+public func void AST.setPtr(AST* a, void* ptr) @(inline) { a.ptr = ptr; }
+
+public func void* AST.getPtr(const AST* a) @(inline) { return a.ptr; }
 
 public func void AST.addImport(AST* a, ImportDecl* d) @(inline) {
     a.imports.add(d);
@@ -70,6 +77,8 @@ public func void AST.visitImports(const AST* a, ImportVisitor visitor, void* arg
         visitor(arg, imports[i]);
     }
 }
+
+public func const ImportDeclList* AST.getImports(const AST* a) { return &a.imports; }
 
 public type StructFunctionVisitor func void (void* arg, FunctionDecl* d);
 
