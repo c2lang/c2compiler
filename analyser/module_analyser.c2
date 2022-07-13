@@ -154,6 +154,7 @@ func void ModuleAnalyser.createScope(void* arg, AST* a) {
 
 func void ModuleAnalyser.deleteScope(void* arg, AST* a) {
     scope.Scope* s = a.getPtr();
+    a.setPtr(nil);
     s.free();
 }
 
