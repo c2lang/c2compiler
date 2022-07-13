@@ -27,7 +27,7 @@ public func FunctionDecl* FunctionDecl.create(ast_context.Context* c,
                                               const char* name,
                                               SrcLoc loc,
                                               bool is_public,
-                                              Module* mod,
+                                              AST* ast_,
                                               QualType rtype,
                                               IdentifierExpr* prefix,
                                               VarDecl** params,
@@ -39,7 +39,7 @@ public func FunctionDecl* FunctionDecl.create(ast_context.Context* c,
     FunctionDecl* d = c.alloc(size);
     FunctionType* ftype = FunctionType.create(c, d);
     QualType qt = QualType.init2(ftype.asType());
-    d.parent.init(DeclKind.Function, name, loc, is_public, qt, mod);
+    d.parent.init(DeclKind.Function, name, loc, is_public, qt, ast_);
     d.parent.functionDeclBits.is_variadic = is_variadic;
     d.parent.functionDeclBits.num_params = num_params;
     d.rtype = rtype;

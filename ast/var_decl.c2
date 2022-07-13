@@ -41,13 +41,13 @@ public func VarDecl* VarDecl.create(ast_context.Context* c,
                                     SrcLoc loc,
                                     bool is_public,
                                     QualType qt,
-                                    Module* mod,
+                                    AST* ast_,
                                     Expr* initValue) @(inline)
 {
     u32 size = sizeof(VarDecl);
     if (initValue) size += sizeof(Expr*);
     VarDecl* d = c.alloc(size);
-    d.parent.init(DeclKind.Var, name, loc, is_public, qt, mod);
+    d.parent.init(DeclKind.Var, name, loc, is_public, qt, ast_);
     d.parent.varDeclBits.kind = kind;
     if (initValue) {
         d.parent.varDeclBits.has_init_or_bitfield = 1;
@@ -61,13 +61,13 @@ public func VarDecl* VarDecl.createStructMember(ast_context.Context* c,
                                                 SrcLoc loc,
                                                 bool is_public,
                                                 QualType qt,
-                                                Module* mod,
+                                                AST* ast_,
                                                 Expr* bitfield) @(inline)
 {
     u32 size = sizeof(VarDecl);
     if (bitfield) size += sizeof(Expr*);
     VarDecl* d = c.alloc(size);
-    d.parent.init(DeclKind.Var, name, loc, is_public, qt, mod);
+    d.parent.init(DeclKind.Var, name, loc, is_public, qt, ast_);
     d.parent.varDeclBits.kind = VarDeclKind.StructMember;
 
     if (bitfield) {

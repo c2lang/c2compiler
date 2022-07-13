@@ -16,12 +16,12 @@ public func AliasTypeDecl* AliasTypeDecl.create(ast_context.Context* c,
                                                 const char* name,
                                                 SrcLoc loc,
                                                 bool is_public,
-                                                Module* mod,
+                                                AST* ast_,
                                                 QualType refType) @(inline)
 {
     AliasTypeDecl* d = c.alloc(sizeof(AliasTypeDecl));
     //HUH refType passed to both Decl.qt and AliasTypeDecl.refType
-    d.parent.init(DeclKind.StructType, name, loc, is_public, refType, mod);
+    d.parent.init(DeclKind.StructType, name, loc, is_public, refType, ast_);
     d.refType = refType;
     return d;
 }

@@ -23,14 +23,14 @@ public type StructTypeDecl struct {
 } @(opaque)
 
 public func StructTypeDecl* StructTypeDecl.create(ast_context.Context* c, const char* name, SrcLoc loc, bool is_public,
-                                                  Module* mod,
+                                                  AST* ast_,
                                                   bool is_struct, bool is_global, VarDecl** members, u32 num_members) @(inline)
 {
     u32 size = sizeof(StructTypeDecl) + num_members * sizeof(VarDecl*);
     StructTypeDecl* d = c.alloc(size);
     StructType* stype = StructType.create(c, d);
     QualType qt = QualType.init2(stype.asType());
-    d.parent.init(DeclKind.StructType, name, loc, is_public, qt, mod);
+    d.parent.init(DeclKind.StructType, name, loc, is_public, qt, ast_);
     d.parent.structTypeDeclBits.is_struct = is_struct;
     d.parent.structTypeDeclBits.is_global = is_global;
     d.parent.structTypeDeclBits.num_members = num_members;

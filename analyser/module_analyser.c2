@@ -243,8 +243,7 @@ func bool ModuleAnalyser.pushCheck(ModuleAnalyser* ma, Decl* d) {
         }
     }
     ma.checkStack[ma.checkIndex].decl = d;
-    // TODO store scope
-    //ma.checkStack[ma.checkIndex].scope = d.getAST().getPtr();
+    ma.checkStack[ma.checkIndex].scope = d.getAST().getPtr();
     ma.checkIndex++;
     d.setCheckState(DeclCheckState.InProgress);
     return true;
