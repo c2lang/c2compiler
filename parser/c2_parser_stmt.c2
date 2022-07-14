@@ -27,6 +27,8 @@ func Stmt* Parser.parseStmt(Parser* p) {
     case Kind.RBrace:
         p.error("expected stmt");
         break;
+    case Kind.KW_assert:
+        return p.parseAssertStmt();
     case Kind.KW_break:
         return p.parseBreakStmt();
     case Kind.KW_continue:
@@ -208,6 +210,15 @@ func CompoundStmt* Parser.parseCompoundStmt(Parser* p) {
     stmts.free();
 
     return s;
+}
+
+func Stmt* Parser.parseAssertStmt(Parser* p) {
+    p.consumeToken();
+    p.expectAndConsume(Kind.LParen);
+    Expr* inner = p.parseExpr();
+    p.expectAndConsume(Kind.RParen);
+    p.expectAndConsume(Kind.Semicolon);
+    return p.builder.actOnAssertStmt(inner);
 }
 
 func Stmt* Parser.parseBreakStmt(Parser* p) {

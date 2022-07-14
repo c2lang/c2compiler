@@ -20,6 +20,7 @@ static_assert(40, sizeof(FunctionTypeDecl));
 static_assert(48, sizeof(StaticAssertDecl));
 
 static_assert(4, sizeof(Stmt));
+static_assert(16, sizeof(AssertStmt));
 static_assert(8, sizeof(CompoundStmt));
 static_assert(24, sizeof(DoStmt));
 static_assert(40, sizeof(ForStmt));

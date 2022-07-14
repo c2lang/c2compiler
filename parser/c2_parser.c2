@@ -173,6 +173,9 @@ func void Parser.parseTopLevel(Parser* p) {
 
     bool is_public = p.parseOptionalAccessSpecifier();
     switch (p.tok.kind) {
+        case Kind.KW_assert:
+            p.error("assert can only be used inside a function");
+            break;
         case Kind.KW_func:
             p.parseFuncDef(is_public);
             break;

@@ -50,6 +50,7 @@ executable.c2c:
         - ast/function_type_decl.c2
 
         - ast/stmt.c2
+        - ast/assert_stmt.c2
         - ast/compound_stmt.c2
         - ast/do_stmt.c2
         - ast/for_stmt.c2

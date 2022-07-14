@@ -1,0 +1,31 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context;
+import string_buffer;
+import utils local;
+
+public type AssertStmt struct {
+    Stmt parent;
+    Expr* inner;
+} @(opaque)
+
+public func AssertStmt* AssertStmt.create(ast_context.Context* c, Expr* inner) @(inline) {
+    AssertStmt* s = c.alloc(sizeof(AssertStmt));
+    s.parent.init(StmtKind.Assert);
+    s.inner = inner;
+    return s;
+}
+
+func void AssertStmt.print(const AssertStmt* s, string_buffer.Buf* out, u32 indent) {
+    s.parent.printKind(out, indent, "AssertStmt");
+    out.add("\n");
+    s.inner.print(out, indent + 2);
+}
+
+public func Expr* AssertStmt.getInner(const AssertStmt* s) { return s.inner; }
+
+public func Expr** AssertStmt.getInner2(AssertStmt* s) { return &s.inner; }
+

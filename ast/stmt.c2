@@ -30,6 +30,7 @@ public type StmtKind enum u8 {
 /*
     Asm,
 */
+    Assert,
 }
 
 public type StmtBits struct {
@@ -125,6 +126,9 @@ func void Stmt.print(const Stmt* s, string_buffer.Buf* out, u32 indent) {
         break;
     case StmtKind.Decl:
         DeclStmt.print(cast<DeclStmt*>(s), out, indent);
+        break;
+    case StmtKind.Assert:
+        AssertStmt.print(cast<AssertStmt*>(s), out, indent);
         break;
     }
 }

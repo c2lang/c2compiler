@@ -276,6 +276,10 @@ public func Stmt* Builder.actOnCaseStmt(Builder* b, SrcLoc loc, Expr* cond, Stmt
     return cast<Stmt*>(CaseStmt.create(b.context, loc, cond, stmts, num_stmts));
 }
 
+public func Stmt* Builder.actOnAssertStmt(Builder* b, Expr* inner) {
+    return cast<Stmt*>(AssertStmt.create(b.context, inner));
+}
+
 public func Stmt* Builder.actOnBreakStmt(Builder* b, SrcLoc loc) {
     return cast<Stmt*>(BreakStmt.create(b.context, loc));
 }
