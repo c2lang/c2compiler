@@ -1,5 +1,6 @@
 
 ## TODO
+- add assert (first in C2C)
 - Store AST idx instead of AST*, -> makes Decl 32->24 bytes!
 - IDEA: have 2 symboltables: one all, one public only? (makes searching faster)
 - create DiagnosticsEngine, return true if error, false if warning

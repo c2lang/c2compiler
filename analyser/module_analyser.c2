@@ -290,6 +290,7 @@ func void ModuleAnalyser.analyseStructMembers(ModuleAnalyser* ma, StructTypeDecl
         } else if (member.getKind() == DeclKind.StructType) {
             StructTypeDecl* sub = cast<StructTypeDecl*>(member);
             ma.analyseStructMembers(sub);
+            member.setCheckState(DeclCheckState.Checked);
         }
     }
 
