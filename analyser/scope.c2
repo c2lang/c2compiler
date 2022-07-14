@@ -10,6 +10,7 @@ import utils;
 
 import stdlib;
 import string;
+import stdio local;
 
 public const u32 MaxLevels = 16;
 
@@ -142,9 +143,10 @@ public func ast.Module* Scope.findModule(Scope* s, u32 name_idx, utils.SrcLoc lo
 }
 
 public func ast.Decl* Scope.findSymbolInModule(Scope* s, ast.Module* mod, u32 name_idx, utils.SrcLoc loc) {
-    ast.Decl* d = s.symbols.find(name_idx);
+    ast.Decl* d = mod.getSymbols().find(name_idx);
     if (!d) {
         s.diags.report(loc, "no symbol '%s' in module %s", ast.idx2name(name_idx), mod.getName());
+        s.symbols.dump();
         return nil;
     }
 

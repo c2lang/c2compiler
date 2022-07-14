@@ -5,6 +5,7 @@ module ast;
 
 import stdlib;
 import string;
+import stdio local;
 
 public type SymbolTable struct {
     u32* symbols;
@@ -51,3 +52,8 @@ public func ast.Decl* SymbolTable.find(const SymbolTable* t, u32 name_idx) {
     return nil;
 }
 
+public func void SymbolTable.dump(const SymbolTable* t) {
+    for (u32 i=0; i<t.num_symbols; i++) {
+        printf("  %s\n", ast.idx2name(t.symbols[i]));
+    }
+}

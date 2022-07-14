@@ -44,6 +44,8 @@ public func void AST.free(AST* a) {
     stdlib.free(a);
 }
 
+public func const char*  AST.getFilename(const AST* a) @(inline) { return a.filename; }
+
 public func void AST.setPtr(AST* a, void* ptr) @(inline) { a.ptr = ptr; }
 
 public func void* AST.getPtr(const AST* a) @(inline) { return a.ptr; }
