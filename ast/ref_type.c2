@@ -43,8 +43,13 @@ public func IdentifierExpr* RefType.getPrefix(const RefType* t) {
 
 func void RefType.print(const RefType* t, string_buffer.Buf* out) {
     const Decl* d = t.ref.getDecl();
+        // TODO add const/volatile flags
     if (d) {
-        out.add("TODO REFTYPE");
+        if (t.parent.refTypeBits.have_prefix) {
+            t.prefix[0].printLiteral(out);
+            out.add(".");
+        }
+        out.add(d.getName());
     } else {
         out.color(col_Error);
         if (t.parent.refTypeBits.have_prefix) {

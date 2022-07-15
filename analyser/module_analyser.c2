@@ -439,20 +439,18 @@ func QualType ModuleAnalyser.analyseRefType(ModuleAnalyser* ma, RefType* rt, boo
         Module* mod = ma.scope.findModule(prefix.getNameIdx(), prefix.asExpr().getLoc());
         if (!mod) return QualType.init0();
 
-        d = ma.scope.findSymbolInModule(mod, ref.getNameIdx(), ref.asExpr().getLoc());
+        d = ma.scope.findGlobalSymbolInModule(mod, ref.getNameIdx(), ref.asExpr().getLoc());
         prefix.setKind(IdentifierKind.Module);
-    } else {
-        d = ma.scope.findSymbol(ref.getNameIdx(), ref.asExpr().getLoc());
+    } else {    // Type
+        d = ma.scope.findGlobalSymbol(ref.getNameIdx(), ref.asExpr().getLoc());
     }
     if (!d) return QualType.init0();
 
-    // check that D is a TypeDecl
     if (!d.isTypeDecl()) {
         ma.diags.report(prefix.asExpr().getLoc(), "%s is not a type", prefix.getName());
         return QualType.init0();
     }
 
-    // check public
     // TODO need used_public?
     bool external = (ma.mod != d.getModule());
     if (!d.isPublic() && external) {
@@ -474,8 +472,9 @@ func QualType ModuleAnalyser.analyseRefType(ModuleAnalyser* ma, RefType* rt, boo
 
     d.setUsed();
     if (/* used_public || */ external) d.setUsedPublic();
+
     ref.setDecl(d);
-    prefix.setKind(IdentifierKind.Type);
+    ref.setKind(IdentifierKind.Type);
 
     QualType result = d.getType();
     // TODO add const/volatile flags (copy in 1 step)

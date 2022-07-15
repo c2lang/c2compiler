@@ -142,7 +142,7 @@ public func ast.Module* Scope.findModule(Scope* s, u32 name_idx, utils.SrcLoc lo
     return nil;
 }
 
-public func ast.Decl* Scope.findSymbolInModule(Scope* s, ast.Module* mod, u32 name_idx, utils.SrcLoc loc) {
+public func ast.Decl* Scope.findGlobalSymbolInModule(Scope* s, ast.Module* mod, u32 name_idx, utils.SrcLoc loc) {
     ast.Decl* d = mod.getSymbols().find(name_idx);
     if (!d) {
         s.diags.report(loc, "no symbol '%s' in module %s", ast.idx2name(name_idx), mod.getName());
@@ -150,6 +150,7 @@ public func ast.Decl* Scope.findSymbolInModule(Scope* s, ast.Module* mod, u32 na
         return nil;
     }
 
+    // TODO use d.getMod()?
     if (mod != s.mod) {
         // TODO check public
         if (!d.isPublic()) {
@@ -162,7 +163,33 @@ public func ast.Decl* Scope.findSymbolInModule(Scope* s, ast.Module* mod, u32 na
     return d;
 }
 
-public func ast.Decl* Scope.findSymbol(Scope* s, u32 name_idx, utils.SrcLoc loc) {
-    return nil;
+public func ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, utils.SrcLoc loc) {
+    // look in cache
+    // TODO
+
+    ast.Decl* d = s.symbols.find(name_idx);
+
+    // TODO check if visible also, see C2C findSymbol()
+    // check if local imports also have symbol
+    const u32 count = s.imports.size();
+    ast.ImportDecl** decls = s.imports.getDecls();
+    for (u32 i=1; i<count; i++) {       // note: skip first one (=self)
+        ast.ImportDecl* id = decls[i];
+        if (id.isLocal()) {
+            ast.Module* dest = id.getDest();
+            ast.Decl* d2 = dest.findSymbol(name_idx);
+            if (d) {
+                s.diags.report(loc, "symbol %s is ambiguous", ast.idx2name(name_idx));
+                // TODO print uses
+                // TODO make prefix suggestion
+            } else {
+                d = d2;
+            }
+        }
+    }
+
+    // add to cache
+
+    return d;
 }
 
