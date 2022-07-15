@@ -379,7 +379,7 @@ func void ModuleAnalyser.analyseStructMember(ModuleAnalyser* ma, VarDecl* d) {
     QualType qt = d.asDecl().getType();
 
     // TODO pass public, location
-    QualType res = ma.analyseType(qt);
+    QualType res = ma.analyseType(qt, true);
 
     // TODO check attributes
 
@@ -387,7 +387,13 @@ func void ModuleAnalyser.analyseStructMember(ModuleAnalyser* ma, VarDecl* d) {
 }
 
 
-func QualType ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt) {
+func QualType ModuleAnalyser.analyseDecl(ModuleAnalyser* ma, Decl* d) {
+    QualType resolved = { 0 }
+    // TODO
+    return resolved;
+}
+
+func QualType ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt, bool full) {
     // TODO check if it has a canonical type
     QualType resolved = { 0 }
 
@@ -397,15 +403,15 @@ func QualType ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt) {
         break;
     case TypeKind.Pointer:
         PointerType* pt = cast<PointerType*>(t);
-        ma.analyseType(pt.getInner());
+        ma.analyseType(pt.getInner(), false);
         break;
     case TypeKind.Array:
         ArrayType* at = cast<ArrayType*>(t);
-        ma.analyseType(at.getElemType());
+        ma.analyseType(at.getElemType(), true);
         // TODO size Expr
         break;
     case TypeKind.Ref:
-        resolved = ma.analyseRefType(cast<RefType*>(t));
+        resolved = ma.analyseRefType(cast<RefType*>(t), full);
         break;
     case TypeKind.Struct:
         // assert(0); // cannot happen
@@ -423,9 +429,9 @@ func QualType ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt) {
     return resolved;
 }
 
-func QualType ModuleAnalyser.analyseRefType(ModuleAnalyser* ma, RefType* rt) {
-    IdentifierExpr* ref = rt.getRef();
+func QualType ModuleAnalyser.analyseRefType(ModuleAnalyser* ma, RefType* rt, bool full) {
     IdentifierExpr* prefix = rt.getPrefix();
+    IdentifierExpr* ref = rt.getRef();
 
     Decl* d = nil;
 
@@ -433,17 +439,46 @@ func QualType ModuleAnalyser.analyseRefType(ModuleAnalyser* ma, RefType* rt) {
         Module* mod = ma.scope.findModule(prefix.getNameIdx(), prefix.asExpr().getLoc());
         if (!mod) return QualType.init0();
 
-        // TODO find symbol in that module
         d = ma.scope.findSymbolInModule(mod, ref.getNameIdx(), ref.asExpr().getLoc());
-        //prefix.setKind(RefKind.Module);
+        prefix.setKind(IdentifierKind.Module);
     } else {
-        // use correct scope to find symbol
+        d = ma.scope.findSymbol(ref.getNameIdx(), ref.asExpr().getLoc());
     }
-
     if (!d) return QualType.init0();
 
-    // TODO return type of d
+    // check that D is a TypeDecl
+    if (!d.isTypeDecl()) {
+        ma.diags.report(prefix.asExpr().getLoc(), "%s is not a type", prefix.getName());
+        return QualType.init0();
+    }
 
-    return QualType.init0();
+    // check public
+    // TODO need used_public?
+    bool external = (ma.mod != d.getModule());
+    if (!d.isPublic() && external) {
+        ma.diags.report(prefix.asExpr().getLoc(), "%s is not a type", prefix.getName());
+        return QualType.init0();
+    }
+
+    DeclCheckState state = d.getCheckState();
+    if (full && state == DeclCheckState.InProgress) {
+        ma.diags.report(prefix.asExpr().getLoc(), "circular declaration");
+        return QualType.init0();
+    }
+
+    if (full && state != DeclCheckState.Checked) {
+        QualType q = ma.analyseDecl(d);
+        // TODO longjmp?
+        if (q.isInvalid()) return QualType.init0();
+    }
+
+    d.setUsed();
+    if (/* used_public || */ external) d.setUsedPublic();
+    ref.setDecl(d);
+    prefix.setKind(IdentifierKind.Type);
+
+    QualType result = d.getType();
+    // TODO add const/volatile flags (copy in 1 step)
+    return result;
 }
 

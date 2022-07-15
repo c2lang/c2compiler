@@ -78,10 +78,11 @@ func void Decl.init(Decl* d, DeclKind k, const char* name, SrcLoc loc, bool is_p
 public func DeclKind Decl.getKind(const Decl* d) @(inline) { return cast<DeclKind>(d.declBits.kind); }
 
 public func DeclCheckState Decl.getCheckState(const Decl* d) @(inline) { return cast<DeclCheckState>(d.declBits.check_state); }
-
 public func void Decl.setCheckState(Decl* d, DeclCheckState s) @(inline) { d.declBits.check_state = s; }
 public func bool Decl.isChecked(const Decl* d) @(inline) { return d.declBits.check_state == DeclCheckState.Checked; }
+public func bool Decl.checkInProgress(const Decl* d) @(inline) { return d.declBits.check_state == DeclCheckState.InProgress; }
 public func void Decl.setChecked(Decl* d) @(inline) { d.declBits.check_state = DeclCheckState.Checked; }
+
 
 public func const char* Decl.getName(const Decl* d) @(inline) {
     if (d.name_idx) return &g_names_start[d.name_idx];
@@ -98,7 +99,7 @@ public func QualType Decl.getType(const Decl* d) @(inline) { return d.qt; }
 
 public func AST* Decl.getAST(const Decl* d) @(inline) { return d.ast_; }
 
-//public func Module* Decl.getModule(const Decl* d) @(inline) { return d.ast_.mod; }
+public func Module* Decl.getModule(const Decl* d) @(inline) { return d.ast_.mod; }
 
 public func bool Decl.isPublic(const Decl* d) @(inline) { return d.declBits.is_public; }
 
@@ -106,11 +107,30 @@ public func bool Decl.isUsed(const Decl* d) @(inline) { return d.declBits.is_use
 
 public func bool Decl.isUsedPublic(const Decl* d) @(inline) { return d.declBits.is_used_public; }
 
+public func void Decl.setUsed(Decl* d) @(inline) { d.declBits.is_used = true; }
+
+public func void Decl.setUsedPublic(Decl* d) @(inline) { d.declBits.is_used_public = true; }
+
 public func void Decl.dump(const Decl* d) {
     string_buffer.Buf* out = string_buffer.create(10*4096);
     d.print(out, 0);
     stdio.puts(out.data());
     out.free();
+}
+
+public func bool Decl.isTypeDecl(const Decl* d) {
+    switch (d.getKind()) {
+    case DeclKind.Function:     break;
+    case DeclKind.Import:       break;
+    case DeclKind.StructType:   return true;
+    case DeclKind.EnumType:     return true;
+    case DeclKind.EnumConstant: break;
+    case DeclKind.FunctionType: return true;
+    case DeclKind.AliasType:    return true;
+    case DeclKind.Var:          break;
+    case DeclKind.StaticAssert: break;
+    }
+    return false;
 }
 
 func void Decl.print(const Decl* d, string_buffer.Buf* out, u32 indent) {

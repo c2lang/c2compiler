@@ -63,6 +63,11 @@ public func Decl* IdentifierExpr.getDecl(const IdentifierExpr* e) @(inline) {
     return e.decl;
 }
 
+public func void IdentifierExpr.setKind(IdentifierExpr* e, IdentifierKind kind) @(inline) {
+    e.parent.parent.identifierExprBits.kind = kind;
+}
+
+
 public func void IdentifierExpr.setDecl(IdentifierExpr* e, Decl* decl) @(inline) {
     e.decl = decl;
     e.parent.parent.identifierExprBits.has_decl = true;

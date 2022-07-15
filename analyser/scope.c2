@@ -162,3 +162,7 @@ public func ast.Decl* Scope.findSymbolInModule(Scope* s, ast.Module* mod, u32 na
     return d;
 }
 
+public func ast.Decl* Scope.findSymbol(Scope* s, u32 name_idx, utils.SrcLoc loc) {
+    return nil;
+}
+

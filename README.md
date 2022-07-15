@@ -1,6 +1,8 @@
 
 ## TODO
+- Diags: print error line where error occured
 - Store AST idx instead of AST*, -> makes Decl 32->24 bytes!
+    -> must be global idx
 - IDEA: have 2 symboltables: one all, one public only? (makes searching faster)
 - create DiagnosticsEngine, return true if error, false if warning
     - user should still be able to use -Werror like
@@ -40,6 +42,7 @@
 - put all output through filter for coloring/not
 
 ## AST
+- MemberExpr: dont store 2nd IdentifierExpr, but just name_idx + loc? (otherwise duplicate info)
 - remove Module from Decl, move to sub-classes
     make Decl.getModule() that switches
     VarDecl -> local,param,member dont need Module! (only global)
