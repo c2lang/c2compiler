@@ -178,12 +178,14 @@ public func ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, utils.SrcLo
         if (id.isLocal()) {
             ast.Module* dest = id.getDest();
             ast.Decl* d2 = dest.findSymbol(name_idx);
-            if (d) {
-                s.diags.report(loc, "symbol %s is ambiguous", ast.idx2name(name_idx));
-                // TODO print uses
-                // TODO make prefix suggestion
-            } else {
-                d = d2;
+            if (d2) {
+                if (d) {
+                    s.diags.report(loc, "symbol %s is ambiguous", ast.idx2name(name_idx));
+                    // TODO print uses
+                    // TODO make prefix suggestion
+                } else {
+                    d = d2;
+                }
             }
         }
     }
