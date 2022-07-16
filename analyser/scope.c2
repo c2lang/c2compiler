@@ -37,12 +37,11 @@ public type Scope struct {
     const ast.ImportDeclList* imports;
     const ast.Module* mod;
     const ast.SymbolTable* symbols;
+    // global cache
+    ast.SymbolTable global_cache;
 
     // local scope
-    u32* names;
-    u32 num_names;
-    u32 max_names;
-    ast.DeclList decls; // same index as names
+    ast.SymbolTable local_scope;
 
     Level[MaxLevels] levels;
     u32 lvl;
@@ -60,25 +59,15 @@ public func Scope* create(module_list.ModList* allmodules,
     s.imports = imports;
     s.mod = mod;
     s.symbols = symbols;
-    s.decls.init(64);
-    s.resize(64);
+    s.global_cache.init(64);
+    s.local_scope.init(64);
     return s;
 }
 
 public func void Scope.free(Scope* s) {
-    stdlib.free(s.names);
-    s.decls.free();
+    s.global_cache.free();
+    s.local_scope.free();
     stdlib.free(s);
-}
-
-func void Scope.resize(Scope* s, u32 capacity) {
-    u32* names = stdlib.malloc(capacity * sizeof(u32));
-    s.max_names = capacity;
-    if (s.names) {
-        string.memcpy(names, s.names, s.num_names * sizeof(u32));
-        stdlib.free(s.names);
-    }
-    s.names = names;
 }
 
 public func void Scope.enter(Scope* s, u32 flags) {
@@ -90,14 +79,13 @@ public func void Scope.enter(Scope* s, u32 flags) {
     Level* top = &s.levels[s.lvl];
     // TODO combine flags
     top.flags = flags;
-    top.first_index = s.num_names;
+    top.first_index = s.local_scope.size();
     s.lvl++;
 }
 
 public func void Scope.exit(Scope* s) {
     // assert(s.level != 0)
-    s.num_names = s.levels[s.lvl].first_index;
-    s.decls.setSize(s.num_names);
+    s.local_scope.crop(s.levels[s.lvl].first_index);
     s.lvl--;
 }
 
@@ -106,18 +94,12 @@ public func ast.Decl* Scope.add(Scope* s, u32 name_idx, ast.Decl* d) {
     ast.Decl* old = s.find(name_idx);
     if (old) return old;
 
-    if (s.num_names == s.max_names) s.resize(s.max_names * 2);
-    s.names[s.num_names] = name_idx;
-    s.num_names++;
-    s.decls.add(d);
+    s.local_scope.add(name_idx, d);
     return nil;
 }
 
 public func ast.Decl* Scope.find(const Scope* s, u32 name_idx) {
-    for (u32 i=0; i<s.num_names; i++) {
-        if (s.names[i] == name_idx) return s.decls.get(i);
-    }
-    return nil;
+    return s.local_scope.find(name_idx);
 }
 
 public func ast.Module* Scope.findModule(Scope* s, u32 name_idx, utils.SrcLoc loc) {
@@ -164,10 +146,13 @@ public func ast.Decl* Scope.findGlobalSymbolInModule(Scope* s, ast.Module* mod, 
 }
 
 public func ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, utils.SrcLoc loc) {
-    // look in cache
-    // TODO
+    ast.Decl* d = s.global_cache.find(name_idx);
+    if (d) {
+        // TODO update if used_public
+        return d;
+    }
 
-    ast.Decl* d = s.symbols.find(name_idx);
+    d = s.symbols.find(name_idx);
 
     // TODO check if visible also, see C2C findSymbol()
     // check if local imports also have symbol
@@ -190,7 +175,7 @@ public func ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, utils.SrcLo
         }
     }
 
-    // add to cache
+    s.global_cache.add(name_idx, d);
 
     return d;
 }

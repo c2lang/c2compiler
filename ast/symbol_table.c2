@@ -12,19 +12,28 @@ public type SymbolTable struct {
     u32 num_symbols;
     u32 max_symbols;
     ast.DeclList decls;
-} @(opaque)
+}
 
 // Note: name must be allocated in target StringPool
-func void SymbolTable.init(SymbolTable* t, u32 initial) {
+public func void SymbolTable.init(SymbolTable* t, u32 initial) {
     t.num_symbols = 0;
     t.max_symbols = 0;
     t.resize(initial);
     t.decls.init(initial);
 }
 
-func void SymbolTable.free(SymbolTable* t) {
+public func void SymbolTable.free(SymbolTable* t) {
     stdlib.free(t.symbols);
     t.decls.free();
+}
+
+public func u32 SymbolTable.size(SymbolTable* t) {
+    return t.num_symbols;
+}
+
+public func void SymbolTable.crop(SymbolTable* t, u32 size) {
+    t.num_symbols = size;
+    t.decls.setSize(size);
 }
 
 func void SymbolTable.resize(SymbolTable* t, u32 capacity) {
@@ -37,7 +46,7 @@ func void SymbolTable.resize(SymbolTable* t, u32 capacity) {
     t.symbols = symbols;
 }
 
-func void SymbolTable.add(SymbolTable* t, u32 name_idx, ast.Decl* d) {
+public func void SymbolTable.add(SymbolTable* t, u32 name_idx, ast.Decl* d) {
     if (t.num_symbols == t.max_symbols) t.resize(t.max_symbols * 2);
 
     t.symbols[t.num_symbols] = name_idx;
@@ -57,3 +66,4 @@ public func void SymbolTable.dump(const SymbolTable* t) {
         printf("  %s\n", ast.idx2name(t.symbols[i]));
     }
 }
+
