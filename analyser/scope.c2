@@ -38,7 +38,7 @@ public type Scope struct {
     const ast.Module* mod;
     const ast.SymbolTable* symbols;
     // global cache
-    ast.SymbolTable global_cache;
+    //ast.SymbolTable global_cache;
 
     // local scope
     ast.SymbolTable local_scope;
@@ -59,13 +59,13 @@ public func Scope* create(module_list.ModList* allmodules,
     s.imports = imports;
     s.mod = mod;
     s.symbols = symbols;
-    s.global_cache.init(64);
+    //s.global_cache.init(64);
     s.local_scope.init(64);
     return s;
 }
 
 public func void Scope.free(Scope* s) {
-    s.global_cache.free();
+    //s.global_cache.free();
     s.local_scope.free();
     stdlib.free(s);
 }
@@ -146,13 +146,16 @@ public func ast.Decl* Scope.findGlobalSymbolInModule(Scope* s, ast.Module* mod, 
 }
 
 public func ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, utils.SrcLoc loc) {
+/*
+    // Note: global cache seems to make it slower!
     ast.Decl* d = s.global_cache.find(name_idx);
     if (d) {
         // TODO update if used_public
         return d;
     }
+*/
 
-    d = s.symbols.find(name_idx);
+    ast.Decl* d = s.symbols.find(name_idx);
 
     // TODO check if visible also, see C2C findSymbol()
     // check if local imports also have symbol
@@ -175,7 +178,7 @@ public func ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, utils.SrcLo
         }
     }
 
-    s.global_cache.add(name_idx, d);
+    //s.global_cache.add(name_idx, d);
 
     return d;
 }
