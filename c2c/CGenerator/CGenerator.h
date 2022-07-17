@@ -32,13 +32,17 @@ class CGenerator {
 public:
     struct Options {
         Options(const std::string& outputDir_, const std::string& buildDir_)
-            : single_module(false), printC(false)
+            : single_module(false)
+            , printC(false)
+            , generateChecks(false)
+            , generateAsserts(false)
             , outputDir(outputDir_)
             , buildDir(buildDir_)
         {}
         bool single_module;
         bool printC;
         bool generateChecks;
+        bool generateAsserts;
         std::string outputDir;
         std::string buildDir;
     };

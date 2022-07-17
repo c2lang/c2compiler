@@ -82,7 +82,7 @@ PPKEYWORD(error)
 PPKEYWORD(warning)
 PPKEYWORD(ident)
 PPKEYWORD(sccs)
-PPKEYWORD(assert)
+//PPKEYWORD(assert)
 PPKEYWORD(unassert)
 
 
@@ -256,6 +256,7 @@ KEYWORD(true                        , KEYALL)
 KEYWORD(module                      , KEYALL)
 KEYWORD(import                      , KEYALL)
 KEYWORD(static_assert               , KEYALL)
+KEYWORD(assert                      , KEYALL)
 
 // For consideration:
 /*

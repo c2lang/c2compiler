@@ -63,20 +63,20 @@ void CGenerator::generate() {
 
     // generate code
     if (options.single_module) {
-        CCodeGenerator gen(component.getName(), CCodeGenerator::SINGLE_FILE, moduleMap, code_mods, includeNamer, targetInfo, options.generateChecks);
+        CCodeGenerator gen(component.getName(), CCodeGenerator::SINGLE_FILE, moduleMap, code_mods, includeNamer, targetInfo, options.generateChecks, options.generateAsserts);
         gen.generate(options.printC, outdir);
     } else {
         for (unsigned m=0; m<code_mods.size(); m++) {
             Module* M = code_mods[m];
             ModuleList single;
             single.push_back(M);
-            CCodeGenerator gen(M->getName(), CCodeGenerator::MULTI_FILE, moduleMap, single, includeNamer, targetInfo, options.generateChecks);
+            CCodeGenerator gen(M->getName(), CCodeGenerator::MULTI_FILE, moduleMap, single, includeNamer, targetInfo, options.generateChecks, options.generateAsserts);
             gen.generate(options.printC, outdir);
         }
     }
 
     // generate Makefile
-    MakefileGenerator makeGen(component, options.single_module, targetInfo, buildFile);
+    MakefileGenerator makeGen(component, options.single_module, options.generateAsserts, targetInfo, buildFile);
     makeGen.write(outdir);
 
     // generate exports.version
@@ -127,7 +127,7 @@ void CGenerator::generateExternalHeaders() {
         }
         ModuleList single;
         single.push_back(M);
-        CCodeGenerator gen(M->getName(), CCodeGenerator::MULTI_FILE, moduleMap, single, includeNamer, targetInfo, false);
+        CCodeGenerator gen(M->getName(), CCodeGenerator::MULTI_FILE, moduleMap, single, includeNamer, targetInfo, false, false);
         gen.createLibHeader(options.printC, options.outputDir + options.buildDir);
     }
 }
@@ -140,7 +140,7 @@ void CGenerator::generateInterfaceFiles() {
         if (!M->isExported()) continue;
         ModuleList single;
         single.push_back(M);
-        CCodeGenerator gen(M->getName(), CCodeGenerator::MULTI_FILE, moduleMap, single, includeNamer, targetInfo, false);
+        CCodeGenerator gen(M->getName(), CCodeGenerator::MULTI_FILE, moduleMap, single, includeNamer, targetInfo, false, false);
         gen.createLibHeader(options.printC, options.outputDir);
     }
 }

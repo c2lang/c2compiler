@@ -142,6 +142,7 @@ private:
     StmtResult ParseContinueStatement();
     StmtResult ParseFallthroughStatement();
     StmtResult ParseDeclOrStatement();
+    StmtResult ParseAssert();
     StmtResult ParseDeclaration(bool checkSemi, bool allowLocal);
     StmtResult ParseCaseStatement();
     StmtResult ParseDefaultStatement();

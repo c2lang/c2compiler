@@ -140,14 +140,14 @@ protected:
 
         unsigned Kind: 2;
         unsigned HasLocalQualifier : 1;
+        unsigned hasBitfield : 1;
     };
 
     class StructTypeDeclBits {
         friend class StructTypeDecl;
         unsigned : NumDeclBits;
 
-        unsigned numMembers : 8;
-        unsigned numStructFunctions : 6;
+        unsigned numMembers : 14;
         unsigned IsStruct : 1;
         unsigned IsGlobal : 1;
         unsigned IsPacked : 1;  // cached from Attributes
@@ -229,6 +229,18 @@ public:
     VarDeclKind getVarKind() const { return static_cast<VarDeclKind>(varDeclBits.Kind); }
     QualType getOrigType() const { return origType; }
 
+    // only for Struct Members
+    void setHasBitfield() { varDeclBits.hasBitfield = true; }
+    bool hasBitfield() const { return varDeclBits.hasBitfield; }
+    Expr* getBitfield() const {
+        if (!hasBitfield()) return 0;
+        return bitfield[0];
+    }
+    Expr** getBitfield2() {
+        if (!hasBitfield()) return 0;
+        return &bitfield[0];
+    }
+
     // for codegen
     llvm::Value* getIRValue() const { return IRValue; }
     void setIRValue(llvm::Value* v) const { IRValue = v; }
@@ -236,6 +248,7 @@ private:
     QualType origType;
     Expr* initValue;
     mutable llvm::Value* IRValue;
+    Expr* bitfield[0];      // tail-allocated if hasBitfield is set
 };
 
 
@@ -371,12 +384,12 @@ public:
     void setStructFuncs(FunctionDecl** funcs, unsigned numFuncs) {
         assert(structFunctions == 0);
         structFunctions = funcs;
-        structTypeDeclBits.numStructFunctions = numFuncs;
+        numStructFunctions_ = numFuncs;
     }
     FunctionDecl** getStructFuncs() const { return structFunctions; }
 
     unsigned numMembers() const { return structTypeDeclBits.numMembers; }
-    unsigned numStructFunctions() const { return structTypeDeclBits.numStructFunctions; }
+    unsigned numStructFunctions() const { return numStructFunctions_; }
     Decl* getMember(unsigned index) const { return members[index]; }
     Decl* find(const char* name_) const;
     Decl* findMember(const char* name_) const;
@@ -406,7 +419,8 @@ private:
         unsigned hasTypedef : 1;
     };
     ExtraBits extraBits;
-    uint64_t size;
+    uint32_t size;
+    uint32_t numStructFunctions_;
     uint32_t alignment; // NOT attribute alignment
 };
 

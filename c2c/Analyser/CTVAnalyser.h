@@ -35,13 +35,14 @@ public:
     CTVAnalyser(c2lang::DiagnosticsEngine& Diags_);
 
     void check(QualType TLeft, const Expr* Right);
+
     llvm::APSInt checkLiterals(const Expr* Right);
+
     void checkBitOffset(const Expr* BO, const Expr* Right);
     bool checkRange(QualType T, const Expr* Right, c2lang::SourceLocation Loc, llvm::APSInt Result);
 private:
     void checkWidth(int availableWidth, const Limit* L, const Expr* Right, const char* tname);
     bool calcWidth(QualType TLeft, const Expr* Right, int* availableWidth);
-    llvm::APSInt checkIntegerLiterals(const Expr* Right);
     llvm::APSInt checkUnaryLiterals(const Expr* Right);
     llvm::APSInt checkBinaryLiterals(const Expr* Right);
     llvm::APSInt checkArraySubscript(const Expr* Right);

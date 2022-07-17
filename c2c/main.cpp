@@ -46,7 +46,7 @@ static bool showPlugins;
 static const char* plugin_dir;
 
 static void create_project(const char* name) {
-    if (FileUtils::fileExists("main.c") || FileUtils::fileExists("recipe.txt")) {
+    if (FileUtils::fileExists("main.c2") || FileUtils::fileExists("recipe.txt")) {
         printf("main.c2 and/or recipe.txt already exist\n");
         exit(EXIT_FAILURE);
     }

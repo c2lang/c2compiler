@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+type A struct {
+    u8 : 3;
+    u16 : 2;
+    u8 : 1;
+}
+static_assert(1, sizeof(A));
+

@@ -29,6 +29,7 @@ class MakefileGenerator {
 public:
     MakefileGenerator(const Component& component_,
                       bool singleFile_,
+                      bool asserts_,
                       const TargetInfo& targetInfo_,
                       const BuildFile* buildFile_);
 
@@ -39,6 +40,7 @@ private:
     const TargetInfo& targetInfo;
     const BuildFile* buildFile;
     bool singleFile;
+    bool asserts;
 
     void addLinkFlags(const Component* dep, StringBuilder& out);
 

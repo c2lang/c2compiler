@@ -37,6 +37,7 @@ class StringLiteral;
 class Stmt;
 class CompoundStmt;
 class AsmStmt;
+class AssertStmt;
 class HeaderNamer;
 class TargetInfo;
 
@@ -50,7 +51,8 @@ public:
                    const ModuleList& mods_,
                    const HeaderNamer& namer_,
                    const TargetInfo& targetInfo_,
-                   bool genChecks_);
+                   bool genChecks_,
+                   bool genAsserts_);
     ~CCodeGenerator();
 
     void generate(bool printCode, const std::string& outputDir);
@@ -87,6 +89,7 @@ private:
     void EmitSSwitchStmt(const Stmt* S, unsigned indent);
     void EmitDeclStmt(const Stmt* S, unsigned indent);
     void EmitAsmStmt(const AsmStmt* S, unsigned indent);
+    void EmitAssertStmt(const AssertStmt* S, unsigned indent);
     void EmitAsmPart(bool multiline, unsigned indent);
     void EmitAsmOperand(const char* name, const StringLiteral* c, const Expr* e);
 
@@ -120,6 +123,7 @@ private:
     Mode mode;
     bool inInterface;
     bool generateChecks;
+    bool generateAsserts;
 
     const Modules& modules;
     const ModuleList& mods;

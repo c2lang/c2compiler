@@ -74,6 +74,8 @@ void Stmt::print(StringBuilder& buffer, unsigned indent) const {
         return cast<DeclStmt>(this)->print(buffer, indent);
     case STMT_ASM:
         return cast<AsmStmt>(this)->print(buffer, indent);
+    case STMT_ASSERT:
+        return cast<AssertStmt>(this)->print(buffer, indent);
     }
 }
 
@@ -115,6 +117,8 @@ SourceLocation Stmt::getLocation() const {
         return cast<DeclStmt>(this)->getLocation();
     case STMT_ASM:
         return cast<AsmStmt>(this)->getLocation();
+    case STMT_ASSERT:
+        return cast<AssertStmt>(this)->getLocation();
     }
 }
 
@@ -123,7 +127,6 @@ void Stmt::dump() const {
     print(buffer, 0);
     fprintf(stderr, "%s\n", buffer.c_str());
 }
-
 
 ReturnStmt::ReturnStmt(SourceLocation loc, Expr* value_)
     : Stmt(STMT_RETURN)
@@ -513,3 +516,17 @@ SourceLocation AsmStmt::getLocation() const {
 }
 
 
+AssertStmt::AssertStmt(SourceLocation loc_, Expr* value_)
+    : Stmt(STMT_ASSERT)
+    , loc(loc_)
+    , value(value_)
+{}
+
+void AssertStmt::print(StringBuilder& buffer, unsigned indent) const {
+    buffer.indent(indent);
+    buffer.setColor(COL_STMT);
+    buffer << "AssertStmt\n";
+    if (value) {
+        value->print(buffer, indent + INDENT);
+    }
+}

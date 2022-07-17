@@ -732,9 +732,6 @@ void Preprocessor::HandleDirective(Token &Result) {
                     return HandleIdentSCCSDirective(Result);
                 case tok::pp_sccs:
                     return HandleIdentSCCSDirective(Result);
-                case tok::pp_assert:
-                    //isExtension = true;  // FIXME: implement #assert
-                    break;
                 case tok::pp_unassert:
                     //isExtension = true;  // FIXME: implement #unassert
                     break;

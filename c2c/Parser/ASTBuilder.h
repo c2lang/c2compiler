@@ -84,10 +84,12 @@ public:
     // struct decls
     Decl* ActOnAliasType(const char* name, SourceLocation loc, Expr* typeExpr, bool is_public);
     StructTypeDecl* ActOnStructType(const char* name, SourceLocation loc, bool isStruct, bool is_public, bool is_global);
-    Decl* ActOnStructVar(StructTypeDecl* S, const char* name, SourceLocation loc, Expr* type, Expr* InitValue);
+    VarDecl* ActOnStructVar(StructTypeDecl* S, const char* name, SourceLocation loc, Expr* type, Expr* InitValue);
+    Expr** actOnTailAllocBitfield();
     void ActOnStructMembers(StructTypeDecl* S, DeclList& members);
 
     // statements
+    StmtResult ActOnAssert(SourceLocation loc, Expr* value);
     StmtResult ActOnReturnStmt(SourceLocation loc, Expr* value);
     StmtResult ActOnIfStmt(SourceLocation ifLoc,
                            Stmt* condition, StmtResult thenStmt,

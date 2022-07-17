@@ -193,7 +193,6 @@ tok::PPKeywordKind IdentifierInfo::getPPKeywordID() const {
   CASE( 5, 'i', 'd', ifdef);
   CASE( 5, 'u', 'd', undef);
 
-  CASE( 6, 'a', 's', assert);
   CASE( 6, 'd', 'f', define);
   CASE( 6, 'i', 'n', ifndef);
 

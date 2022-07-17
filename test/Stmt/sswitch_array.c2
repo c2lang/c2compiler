@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+func void test1() {
+    char[32] name;
+
+    sswitch (name) {
+    case "foo":
+    }
+}
+

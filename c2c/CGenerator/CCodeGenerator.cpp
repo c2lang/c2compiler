@@ -64,11 +64,13 @@ CCodeGenerator::CCodeGenerator(const std::string& filename_,
                                const ModuleList& mods_,
                                const HeaderNamer& namer_,
                                const TargetInfo& targetInfo_,
-                               bool genChecks_)
+                               bool genChecks_,
+                               bool genAsserts_)
     : filename(filename_)
     , mode(mode_)
     , inInterface(false)
     , generateChecks(genChecks_)
+    , generateAsserts(genAsserts_)
     , modules(modules_)
     , mods(mods_)
     , headerNamer(namer_)
@@ -377,7 +379,6 @@ void CCodeGenerator::EmitBuiltinExpr(const Expr* E, StringBuilder& output) {
     const BuiltinExpr* B = cast<BuiltinExpr>(E);
     switch (B->getBuiltinKind()) {
     case BuiltinExpr::BUILTIN_SIZEOF:
-        // TODO for now generate external sizeof() instead of number
         // We need to know the ARCH (32/64 bit to generate the sizeof correctly)
         if (B->getValue().getZExtValue() > 0) {
             output << B->getValue().toString(10);
@@ -650,6 +651,7 @@ void CCodeGenerator::EmitIncludes() {
         if (mode != MULTI_FILE) out = &cbuf;
         (*out) << "#include \"c2types.h\"\n";
     }
+    if (generateAsserts) cbuf << "#include <assert.h>\n";
 
     Includes includes;
 
@@ -1010,6 +1012,11 @@ void CCodeGenerator::EmitVarDecl(const VarDecl* D, StringBuilder& output, unsign
     if (D->isGlobal()) EmitDecl(D, output);
     else output << D->getName();
     EmitTypePostName(D->getType(), output);
+    const Expr* bitfield = D->getBitfield();
+    if (bitfield) {
+        output << " : ";
+        EmitExpr(bitfield, output);
+    }
     if (D->getInitValue()) {
         output << " = ";
         EmitExpr(D->getInitValue(), output);
@@ -1096,6 +1103,9 @@ void CCodeGenerator::EmitStmt(const Stmt* S, unsigned indent) {
         return;
     case STMT_ASM:
         EmitAsmStmt(cast<AsmStmt>(S), indent);
+        return;
+    case STMT_ASSERT:
+        EmitAssertStmt(cast<AssertStmt>(S), indent);
         return;
     }
 }
@@ -1430,6 +1440,15 @@ void CCodeGenerator::EmitAsmStmt(const AsmStmt* S, unsigned indent) {
             }
         }
     }
+    cbuf << ");\n";
+}
+
+void CCodeGenerator::EmitAssertStmt(const AssertStmt* S, unsigned indent) {
+    LOG_FUNC
+    if (!generateAsserts) return;
+    cbuf.indent(indent);
+    cbuf << "assert(";
+    EmitExpr(S->getExpr(), cbuf);
     cbuf << ");\n";
 }
 

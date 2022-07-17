@@ -329,7 +329,7 @@ func void aaa_board_add(const AaaOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         AaaField field = aaa_board_get(xx, yy);
-        // assert(field.status == FieldStatus.Free);
+        assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -715,7 +715,7 @@ func void bbb_board_add(const BbbOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         BbbField field = bbb_board_get(xx, yy);
-        // assert(field.status == FieldStatus.Free);
+        assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -1101,7 +1101,7 @@ func void ccc_board_add(const CccOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         CccField field = ccc_board_get(xx, yy);
-        // assert(field.status == FieldStatus.Free);
+        assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -1487,7 +1487,7 @@ func void ddd_board_add(const DddOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         DddField field = ddd_board_get(xx, yy);
-        // assert(field.status == FieldStatus.Free);
+        assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -1873,7 +1873,7 @@ func void eee_board_add(const EeeOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         EeeField field = eee_board_get(xx, yy);
-        // assert(field.status == FieldStatus.Free);
+        assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -2259,7 +2259,7 @@ func void fff_board_add(const FffOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         FffField field = fff_board_get(xx, yy);
-        // assert(field.status == FieldStatus.Free);
+        assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -2645,7 +2645,7 @@ func void ggg_board_add(const GggOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         GggField field = ggg_board_get(xx, yy);
-        // assert(field.status == FieldStatus.Free);
+        assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -3031,7 +3031,7 @@ func void hhh_board_add(const HhhOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         HhhField field = hhh_board_get(xx, yy);
-        // assert(field.status == FieldStatus.Free);
+        assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -3418,7 +3418,7 @@ func void iii_board_add(const IiiOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         IiiField field = iii_board_get(xx, yy);
-        // assert(field.status == FieldStatus.Free);
+        assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -3804,7 +3804,7 @@ func void jjj_board_add(const JjjOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         JjjField field = jjj_board_get(xx, yy);
-        // assert(field.status == FieldStatus.Free);
+        assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -4190,7 +4190,7 @@ func void kkk_board_add(const KkkOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         KkkField field = kkk_board_get(xx, yy);
-        // assert(field.status == FieldStatus.Free);
+        assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -4576,7 +4576,7 @@ func void lll_board_add(const LllOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         LllField field = lll_board_get(xx, yy);
-        // assert(field.status == FieldStatus.Free);
+        assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -4962,7 +4962,7 @@ func void mmm_board_add(const MmmOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         MmmField field = mmm_board_get(xx, yy);
-        // assert(field.status == FieldStatus.Free);
+        assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -5348,7 +5348,7 @@ func void nnn_board_add(const NnnOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         NnnField field = nnn_board_get(xx, yy);
-        // assert(field.status == FieldStatus.Free);
+        assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -5734,7 +5734,7 @@ func void ooo_board_add(const OooOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         OooField field = ooo_board_get(xx, yy);
-        // assert(field.status == FieldStatus.Free);
+        assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -6120,7 +6120,7 @@ func void ppp_board_add(const PppOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         PppField field = ppp_board_get(xx, yy);
-        // assert(field.status == FieldStatus.Free);
+        assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -6506,7 +6506,7 @@ func void qqq_board_add(const QqqOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         QqqField field = qqq_board_get(xx, yy);
-        // assert(field.status == FieldStatus.Free);
+        assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -6892,7 +6892,7 @@ func void rrr_board_add(const RrrOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         RrrField field = rrr_board_get(xx, yy);
-        // assert(field.status == FieldStatus.Free);
+        assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -7278,7 +7278,7 @@ func void sss_board_add(const SssOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         SssField field = sss_board_get(xx, yy);
-        // assert(field.status == FieldStatus.Free);
+        assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -7664,7 +7664,7 @@ func void ttt_board_add(const TttOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         TttField field = ttt_board_get(xx, yy);
-        // assert(field.status == FieldStatus.Free);
+        assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -8050,7 +8050,7 @@ func void uuu_board_add(const UuuOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         UuuField field = uuu_board_get(xx, yy);
-        // assert(field.status == FieldStatus.Free);
+        assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -8436,7 +8436,7 @@ func void vvv_board_add(const VvvOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         VvvField field = vvv_board_get(xx, yy);
-        // assert(field.status == FieldStatus.Free);
+        assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -8822,7 +8822,7 @@ func void www_board_add(const WwwOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         WwwField field = www_board_get(xx, yy);
-        // assert(field.status == FieldStatus.Free);
+        assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -9208,7 +9208,7 @@ func void xxx_board_add(const XxxOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         XxxField field = xxx_board_get(xx, yy);
-        // assert(field.status == FieldStatus.Free);
+        assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -9594,7 +9594,7 @@ func void yyy_board_add(const YyyOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         YyyField field = yyy_board_get(xx, yy);
-        // assert(field.status == FieldStatus.Free);
+        assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;
@@ -9980,7 +9980,7 @@ func void zzz_board_add(const ZzzOption* pp, i32 x, i32 y, u8 id) {
         i32 xx = x + c.x;
         i32 yy = y + c.y;
         ZzzField field = zzz_board_get(xx, yy);
-        // assert(field.status == FieldStatus.Free);
+        assert(field.status == FieldStatus.Free);
         field.status = FieldStatus.Taken;
         field.piece_id = id;
         field.flags = c.flags;

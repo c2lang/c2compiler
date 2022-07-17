@@ -565,6 +565,7 @@ void C2Builder::generateOptionalC() {
     cgen_options.single_module = recipe.CGenFlags.single_module;
     cgen_options.printC = options.printC;
     cgen_options.generateChecks = recipe.CGenFlags.gen_checks;
+    cgen_options.generateAsserts = recipe.enableAsserts;
     CGenerator cgen(*mainComponent, modules, libLoader, cgen_options, targetInfo, buildFile);
     for (unsigned i=0; i<components.size(); i++) {
         Component* c = components[i];

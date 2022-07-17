@@ -87,6 +87,7 @@ private:
     bool analyseReturnStmt(Stmt* stmt);
     void analyseDeclStmt(Stmt* stmt);
     void analyseAsmStmt(Stmt* stmt);
+    void analyseAssertStmt(Stmt* stmt);
     bool analyseCondition(Stmt* stmt);
     void analyseStmtExpr(Stmt* stmt);
 

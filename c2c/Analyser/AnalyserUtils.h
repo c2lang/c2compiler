@@ -26,6 +26,20 @@ class Decl;
 class StringBuilder;
 class TargetInfo;
 class ASTContext;
+class CTVAnalyser;
+
+struct TypeSize {
+/*
+    TypeSize(uint32_t size_, uint8_t align_, uint8_t bitfield_)
+        : size(size_, align(align_), bitfield(bitfield_)
+    {}
+*/
+
+    uint32_t size;
+    uint8_t align;
+    uint8_t bitfield_size;      // u8 field : 3; ->  size = 3    Node: size in bits
+    uint8_t bitfield_width;     // u8 field : 3; -> width = 8    Note: width in bits (8/16/32/64)
+};
 
 class AnalyserUtils {
 public:
@@ -41,9 +55,9 @@ public:
     static bool isConstantBitOffset(const Expr* E);
     static StringBuilder& quotedField(StringBuilder &builder, IdentifierExpr *field);
 
-    static uint64_t sizeOfStruct(StructTypeDecl* S, uint32_t* align);
-    static uint64_t sizeOfUnion(StructTypeDecl* S, uint32_t* align);
-    static uint64_t sizeOfType(QualType type, unsigned* alignment);
+    static TypeSize sizeOfStruct(StructTypeDecl* S, CTVAnalyser& ca);
+    static TypeSize sizeOfUnion(StructTypeDecl* S);
+    static TypeSize sizeOfType(QualType type);
 
     static uint64_t offsetOfStructMember(const StructTypeDecl* S, unsigned index);
 

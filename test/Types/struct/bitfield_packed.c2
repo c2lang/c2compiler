@@ -1,0 +1,11 @@
+// @skip
+// @warnings{no-unused}
+module test;
+
+type A struct {
+    u32 : 2;
+    u32 : 32;
+    u32 : 3;
+} @(packed)
+static_assert(5, sizeof(A));
+

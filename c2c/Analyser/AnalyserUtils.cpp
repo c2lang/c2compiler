@@ -17,6 +17,7 @@
 #include <ctype.h>
 
 #include "Analyser/AnalyserUtils.h"
+#include "Analyser/CTVAnalyser.h"
 #include "AST/Decl.h"
 #include "AST/ASTContext.h"
 #include "Utils/StringBuilder.h"
@@ -25,6 +26,7 @@
 using namespace C2;
 
 static const TargetInfo* target;
+// TODO make target dependent
 static unsigned POINTER_SIZE = 8;
 
 void AnalyserUtils::init(const TargetInfo& target_) {
@@ -210,153 +212,217 @@ StringBuilder& AnalyserUtils::quotedField(StringBuilder &builder, IdentifierExpr
     return builder << '\'' << field->getName() << '\'';
 }
 
-uint64_t AnalyserUtils::sizeOfUnion(StructTypeDecl* S, uint32_t* align) {
+TypeSize AnalyserUtils::sizeOfUnion(StructTypeDecl* S) {
+    TypeSize result = { 0, 1, 0, 0 };
     //bool packed = S->isPacked();
-    uint32_t alignment = S->getAttrAlignment();
-    *align = alignment;
+    result.align = S->getAttrAlignment();
     //printf("SIZEOF  UNION %s packed=%u  aligned=%u\n", S->getName(), packed, alignment);
-    uint64_t size = 0;
     // TODO handle packed
 
     unsigned num_members = S->numMembers();
     for (unsigned i=0; i<num_members; i++) {
         Decl* D = S->getMember(i);
-        unsigned m_align = 0;
-        uint64_t m_size = AnalyserUtils::sizeOfType(D->getType(), &m_align);
+        TypeSize m_size = AnalyserUtils::sizeOfType(D->getType());
         // TODO handle un-packed sub-structs
-        if (m_size > size) size = m_size;
-        if (m_align > *align) *align = m_align;
+        if (m_size.size > result.size) result.size = m_size.size;
+        if (m_size.align > result.align) result.align = m_size.align;
     }
-    return size;
+    return result;
 }
 
-uint64_t AnalyserUtils::sizeOfStruct(StructTypeDecl* S, uint32_t* align) {
-    if (!S->isStruct()) return AnalyserUtils::sizeOfUnion(S, align);
+TypeSize AnalyserUtils::sizeOfStruct(StructTypeDecl* S, CTVAnalyser& ca) {
+    if (!S->isStruct()) return AnalyserUtils::sizeOfUnion(S);
+
+    // TODO refactor to struct we can pass along and do operations on (like end-bitfield)
+    TypeSize result = { 0, 1, 0, 0 };
 
     bool packed = S->isPacked();
-    uint32_t alignment = S->getAttrAlignment();
-    *align = alignment;
-    //printf("SIZEOF STRUCT %s packed=%u  aligned=%u\n", S->getName(), packed, alignment);
-    uint64_t size = 0;
+    result.align = S->getAttrAlignment();
+    //printf("SIZEOF STRUCT %s packed=%u  aligned=%u\n", S->getName(), packed, result.align);
+    uint32_t bitfieldsLeft = 0;
     if (packed) {
         unsigned num_members = S->numMembers();
         for (unsigned i=0; i<num_members; i++) {
             Decl* D = S->getMember(i);
-            unsigned m_align = 0;
-            uint64_t m_size = AnalyserUtils::sizeOfType(D->getType(), &m_align);
-            // TODO handle un-packed sub-structs
-            size += m_size;
+            TypeSize member = AnalyserUtils::sizeOfType(D->getType());
+            // TODO handle un-packed sub-structs?
+            //printf("  @%03u member %s   size %u  align %u (bitfield %u/%u)\n", result.size, D->getName(), member.size, member.align, member.bitfield_size, member.bitfield_width);
+            result.size += member.size;
         }
     } else {
         unsigned num_members = S->numMembers();
         for (unsigned i=0; i<num_members; i++) {
             Decl* D = S->getMember(i);
-            unsigned m_align = 0;
-            uint64_t m_size = AnalyserUtils::sizeOfType(D->getType(), &m_align);
-            if (m_align != 1) {
-                if (m_align > alignment) alignment = m_align;
-                unsigned rest = size % m_align;
+            // Note: doesn't analyze the bit-field
+            TypeSize member = AnalyserUtils::sizeOfType(D->getType());
+            VarDecl* vd = dyncast<VarDecl>(D);
+            if (vd && vd->getBitfield()) {
+                const Expr* bitfield = vd->getBitfield();
+                llvm::APSInt value = ca.checkLiterals(bitfield);
+                member.bitfield_size = value.getZExtValue();
+                member.bitfield_width = member.size * 8;
+                member.size = 0;
+                member.align = 0;   // calculate at end
+/*
+                // NOTE: should already been checked!
+                if (member.bitfield_size > member.bitfield_width) {
+                    error: width of anonymous bit-field (11 bits) exceeds the width of its type (8 bits)
+                }
+*/
+            }
+            if (result.bitfield_width && member.align != 0) {   // no bitfield anymore, finalize last one
+                // TODO end last bitfield, add size etc
+                //printf("    end bitfield\n");
+                uint32_t bytesize = (result.bitfield_size + 7) / 8;
+                // TODO padding
+                result.size += bytesize;
+                if (bytesize > result.align) result.align = bytesize;
+                //printf("    setting bitfields size %u  align %u\n", result.size, result.align);
+                result.bitfield_width = 0;
+                result.bitfield_size = 0;
+            }
+            if (member.align > 1) {
+                if (member.align > result.align) result.align = member.align;
+                unsigned rest = result.size % member.align;
                 if (rest != 0) {
-                    unsigned pad = m_align - rest;
-                    //printf("  @%03lu pad %u\n", size, pad);
-                    size += pad;
+                    unsigned pad = member.align - rest;
+                    //printf("  @%03u pad %u\n", result.size, pad);
+                    result.size += pad;
                 }
             }
-            //printf("  @%03lu member %s   size %lu  align = %u\n", size, D->getName(), m_size, m_align);
-            size += m_size;
+            //printf("  @%03u member %s   size %u  align %u (bitfield %u/%u)\n", result.size, D->getName(), member.size, member.align, member.bitfield_size, member.bitfield_width);
+            if (member.bitfield_width) {
+                //printf("    bit-fields %u / %u\n", result.bitfield_size, result.bitfield_width);
+                uint32_t total_bitsize = result.bitfield_size + member.bitfield_size;
+                if (total_bitsize > member.bitfield_width) {
+                    //printf("    new field\n");
+                    uint32_t bytesize = (result.bitfield_size + 7) / 8;
+                    member.align = bytesize;
+                    if (bytesize > 1) {
+                        unsigned rest = result.size % bytesize;
+                        if (rest != 0) {
+                            unsigned pad = member.align - rest;
+                            //printf("  @%03u pad %u\n", result.size, pad);
+                            result.size += pad;
+                        }
+                    }
+                    result.size += bytesize;
+                    //if (bytesize > result.align) result.align = bytesize;
+                    result.bitfield_size = member.bitfield_size;
+                    result.bitfield_width = member.bitfield_width;
+                } else {
+                    result.bitfield_size = total_bitsize;
+                    result.bitfield_width = member.bitfield_width;
+                }
+            } else {
+                result.size += member.size;
+            }
+            //printf("  -> size %u  align %u bitfield (%u/%u)\n", result.size, result.align, result.bitfield_size, result.bitfield_width);
         }
-        unsigned rest = size % alignment;
+        if (result.bitfield_width) {
+            //printf("  done, bit-fields %u / %u\n", result.bitfield_size, result.bitfield_width);
+            uint32_t bytesize = (result.bitfield_size + 7) / 8;
+            // TODO padding before
+            result.size += bytesize;
+            //if (bytesize > result.align) result.align = bytesize;
+            //printf("    setting size %u  align %u\n", result.size, result.align);
+        }
+        unsigned rest = result.size % result.align;
         if (rest != 0) {
-            unsigned pad = alignment - rest;
-            //printf("  @%03lu pad %u\n", size, pad);
-            size += pad;
+            unsigned pad = result.align - rest;
+            //printf("  @%03u pad %u\n", result.size, pad);
+            result.size += pad;
         }
     }
-    //printf("  -> size %lu  align %u\n", size, alignment);
-    *align = alignment;
-    return size;
+    //printf("  -> FINAL size %u  align %u\n", result.size, result.align);
+    return result;
 }
 
-uint64_t AnalyserUtils::sizeOfType(QualType type, unsigned* alignment) {
+TypeSize AnalyserUtils::sizeOfType(QualType type) {
 
-    *alignment = 1;
+    TypeSize result = { 0, 1, 0, 0 };
 
-    if (type.isNull()) return 0;
+    if (type.isNull()) return result;
 
     type = type.getCanonicalType();
     switch (type->getTypeClass()) {
     case TC_REF:
     case TC_ALIAS:
         FATAL_ERROR("Should be resolved");
-        return 1;
+        break;
     case TC_BUILTIN:
     {
         const BuiltinType* BI = cast<BuiltinType>(type.getTypePtr());
         // NOTE: alignment is also size
-        unsigned size = BI->getAlignment();
-        *alignment = size;
-        return size;
+        result.size = BI->getAlignment();
+        result.align = result.size;
+        break;
     }
     case TC_POINTER:
-        *alignment = POINTER_SIZE;
-        return POINTER_SIZE;
+        result.size = POINTER_SIZE;
+        result.align = result.size;
+        break;
     case TC_ARRAY:
     {
         ArrayType *arrayType = cast<ArrayType>(type.getTypePtr());
-        return sizeOfType(arrayType->getElementType(), alignment) * arrayType->getSize().getZExtValue();
+        result = sizeOfType(arrayType->getElementType());
+        result.size *= arrayType->getSize().getZExtValue();
+        break;
     }
     case TC_STRUCT:
     {
         // NOTE: should already be filled in
         StructType* structType = cast<StructType>(type.getTypePtr());
         StructTypeDecl* D = structType->getDecl();
-        *alignment = D->getAlignment();
-        return D->getSize();
+        result.size = D->getSize();
+        result.align = D->getAlignment();
+        break;
     }
     case TC_ENUM:
         FATAL_ERROR("Cannot come here");
-        return 0;
+        break;
     case TC_FUNCTION:
-        *alignment = POINTER_SIZE;
-        return POINTER_SIZE;
+        result.size = POINTER_SIZE;
+        result.align = POINTER_SIZE;
+        break;
     case TC_MODULE:
         FATAL_ERROR("Cannot occur here");
+        break;
     }
+    return result;
 }
 
 uint64_t AnalyserUtils::offsetOfStructMember(const StructTypeDecl* S, unsigned index) {
     if (S->isUnion()) return 0;
     if (index == 0) return 0;
 
-    uint32_t alignment = S->getAttrAlignment();
-    uint64_t offset = 0;
+    TypeSize result = { 0, 1, 0, 0 };
+    result.align = S->getAttrAlignment();
 
     if (S->isPacked()) {
         for (unsigned i=0; i<index; i++) {
             const Decl* D = S->getMember(i);
-            unsigned m_align = 0;
-            uint64_t m_size = AnalyserUtils::sizeOfType(D->getType(), &m_align);
-            offset += m_size;
+            TypeSize member = AnalyserUtils::sizeOfType(D->getType());
+            result.size += member.size;
         }
     } else {
         for (unsigned i=0; i<=index; i++) {
             const Decl* D = S->getMember(i);
-            unsigned m_align = 0;
-            uint64_t m_size = AnalyserUtils::sizeOfType(D->getType(), &m_align);
-            if (m_align != 1) {
-                if (m_align > alignment) alignment = m_align;
-                unsigned rest = offset % m_align;
+            TypeSize member = AnalyserUtils::sizeOfType(D->getType());
+            if (member.align != 1) {
+                if (member.align > result.align) result.align = member.align;
+                unsigned rest = result.size % member.align;
                 if (rest != 0) {
-                    unsigned pad = m_align - rest;
-                    offset += pad;
+                    unsigned pad = member.align - rest;
+                    result.size += pad;
                 }
             }
-            //printf("  @%03lu member %s   size %lu  align = %u\n", offset, D->getName(), m_size, m_align);
-            if (i == index) return offset;
-            offset += m_size;
+            //printf("  @%03u member %s   size %u  align %u (bitfield %u/%u)\n", member.size, D->getName(), member.size, member.align, member.bitfield_size, member.bitfield_width);
+            if (i == index) return result.size;
+            result.size += member.size;
         }
     }
-    return offset;
+    return result.size;
 }
 
 Expr* AnalyserUtils::getInnerExprAddressOf(Expr* expr) {

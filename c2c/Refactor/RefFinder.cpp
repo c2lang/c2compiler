@@ -132,6 +132,11 @@ void RefFinder::searchStmt(const Stmt* S) {
     case STMT_ASM:
         searchAsmStmt(cast<AsmStmt>(S));
         break;
+    case STMT_ASSERT: {
+        const AssertStmt* A = cast<AssertStmt>(S);
+        searchExpr(A->getExpr());
+        break;
+    }
     }
 }
 

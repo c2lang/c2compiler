@@ -167,6 +167,9 @@ void CodeGenFunction::EmitStmt(const Stmt* S) {
         S->dump();
         TODO;
         break;
+    case STMT_ASSERT:
+        TODO;
+        break;
     }
 }
 

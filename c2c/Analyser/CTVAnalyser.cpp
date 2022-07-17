@@ -203,13 +203,15 @@ APSInt CTVAnalyser::checkLiterals(const Expr* Right) {
     APSInt result(64, false);
 
     switch (Right->getKind()) {
-    case EXPR_INTEGER_LITERAL:
-        return checkIntegerLiterals(Right);
+    case EXPR_INTEGER_LITERAL: {
+        const IntegerLiteral* I = cast<IntegerLiteral>(Right);
+        result = I->Value;
+        break;
+    }
     case EXPR_FLOAT_LITERAL:
         TODO;
         break;
-    case EXPR_BOOL_LITERAL:
-    {
+    case EXPR_BOOL_LITERAL: {
         const BooleanLiteral* B = cast<BooleanLiteral>(Right);
         result = B->getValue();
         break;
@@ -343,14 +345,6 @@ bool CTVAnalyser::checkRange(QualType TLeft, const Expr* Right, c2lang::SourceLo
     return true;
 }
 
-APSInt CTVAnalyser::checkIntegerLiterals(const Expr* Right) {
-    const IntegerLiteral* I = cast<IntegerLiteral>(Right);
-
-    APSInt Result(64, false);      // always take signed 64 as base for checking
-    Result = I->Value;
-    return Result;
-}
-
 APSInt CTVAnalyser::checkUnaryLiterals(const Expr* Right) {
     const UnaryOperator* unaryop = cast<UnaryOperator>(Right);
     QualType LType;
@@ -410,7 +404,6 @@ APSInt CTVAnalyser::checkBinaryLiterals(const Expr *Right) {
     Expr *rhs = binop->getRHS();
     APSInt L = checkLiterals(lhs);
     APSInt R = checkLiterals(rhs);
-    QualType LType;
 
     switch (binop->getOpcode()) {
 

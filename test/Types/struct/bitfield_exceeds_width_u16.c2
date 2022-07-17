@@ -1,0 +1,8 @@
+// @skip
+// @warnings{no-unused}
+module test;
+
+type A struct {
+    u16 first : 17;        // @error{width of bit-field 'i' (17 bits) exceeds the width of its type (16 bits)}
+}
+

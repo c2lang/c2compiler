@@ -213,6 +213,10 @@ bool Parser::ParseTopLevel() {
         }
         ParseStaticAssert();
         break;
+    case tok::kw_assert:
+        Diag(Tok, diag::err_assert_outside_function);
+        SkipUntil(tok::semi);
+        break;
     default:
         ParseVarDef(is_public);
         break;
@@ -314,14 +318,32 @@ void Parser::ParseStructBlock(StructTypeDecl* S) {
             ExprResult type = ParseTypeSpecifier(true);
             if (type.isInvalid()) return;
 
-            if (ExpectIdentifier()) return;
-            IdentifierInfo* id = Tok.getIdentifierInfo();
-            SourceLocation idLoc = ConsumeToken();
-            if (tooLong(id, idLoc)) return;
+            const char* name = NULL;
+            SourceLocation idLoc;
+            if (Tok.is(tok::colon)) {   // anonymous bit-field
+                idLoc = Tok.getLocation();
+            } else {
+                if (ExpectIdentifier()) return;
+                IdentifierInfo* id = Tok.getIdentifierInfo();
+                idLoc = ConsumeToken();
+                if (tooLong(id, idLoc)) return;
+                name = id->getNameStart();
+            }
 
-            if (ExpectAndConsume(tok::semi, diag::err_expected_after, "member")) return;
-            Decl* member = Actions.ActOnStructVar(S, id->getNameStart(), idLoc, type.get(), 0);
+            VarDecl* member = Actions.ActOnStructVar(S, name, idLoc, type.get(), 0);
             members.push_back(member);
+
+            if (Tok.is(tok::colon)) {
+                ConsumeToken();
+                // NOTE: just pointer-size space that's allocated, but not filled yet
+                Expr** bitField_ptr = Actions.actOnTailAllocBitfield();
+                ExprResult E = ParseConstantExpression();
+                if (E.isInvalid()) return;
+                Expr* b = E.get();
+                *bitField_ptr = E.get();
+                member->setHasBitfield();
+            }
+            if (ExpectAndConsume(tok::semi, diag::err_expected_after, "member")) return;
         }
     }
     Actions.ActOnStructMembers(S, members);
@@ -617,6 +639,7 @@ C2::ExprResult Parser::ParseAssignmentExpression(TypeCastState isTypeCast) {
     LOG_FUNC
     ExprResult LHS = ParseCastExpression(/*isUnaryExpression=*/false,
                      /*isAddressOfOperand=*/false,
+                     // NOTE: missing arg!! (NotCastExpr
                      isTypeCast);
     return ParseRHSOfBinaryExpression(LHS, prec::Assignment);
 }
@@ -1871,6 +1894,8 @@ C2::StmtResult Parser::ParseStatement() {
     case tok::kw_static_assert:
         Diag(Tok, diag::err_static_assert_in_function);
         return StmtError();
+    case tok::kw_assert:
+        return ParseAssert();
     default:
         if (Tok.is(tok::r_brace)) {
             Diag(Tok, diag::err_expected_statement);
@@ -2444,6 +2469,17 @@ C2::StmtResult Parser::ParseDeclOrStatement() {
         break;
     }
     return Res;
+}
+
+C2::StmtResult Parser::ParseAssert() {
+    LOG_FUNC
+    SourceLocation loc = ConsumeToken();
+
+    if (ExpectAndConsume(tok::l_paren)) return StmtError();
+    ExprResult inner = ParseExpression();
+    if (ExpectAndConsume(tok::r_paren)) return StmtError();
+    ExpectAndConsume(tok::semi, diag::err_expected_after, "assert");
+    return Actions.ActOnAssert(loc, inner.get());
 }
 
 //Syntax: declaration ::= [kw_local] type_qualifier type_specifier IDENTIFIER var_initialization.

@@ -26,6 +26,7 @@ using namespace C2;
 
 MakefileGenerator::MakefileGenerator(const Component& component_,
                                      bool singleFile_,
+                                     bool asserts_,
                                      const TargetInfo& targetInfo_,
                                      const BuildFile* buildFile_)
     : component(component_)
@@ -33,6 +34,7 @@ MakefileGenerator::MakefileGenerator(const Component& component_,
     , targetInfo(targetInfo_)
     , buildFile(buildFile_)
     , singleFile(singleFile_)
+    , asserts(asserts_)
 {}
 
 void MakefileGenerator::write(const std::string& path) {
@@ -98,12 +100,13 @@ void MakefileGenerator::write(const std::string& path) {
     if (buildFile && !buildFile->cflags.empty()) {
         cflags << buildFile->cflags;
     } else {
-        cflags << "-Wall -Wextra -Wno-unused -Wno-switch";
+        cflags << "-Wall -Wextra -Wno-unused -Wno-switch -Wno-char-subscripts -Wno-zero-length-bounds";
         //cflags << " -Werror";
     }
     if (component.isSharedLib()) cflags << " -fPIC";
     cflags << " -pipe -O2 -std=c99 -g";
     cflags << " -Wno-missing-field-initializers";
+    if (!asserts) cflags << " -DNDEBUG";
     out << "CFLAGS=" << cflags.c_str() << '\n';
 
     // LDFLAGS

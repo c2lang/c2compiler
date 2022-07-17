@@ -194,6 +194,9 @@ bool FunctionAnalyser::analyseStmt(Stmt* S, bool haveScope) {
     case STMT_ASM:
         analyseAsmStmt(S);
         break;
+    case STMT_ASSERT:
+        analyseAssertStmt(S);
+        break;
     }
     return true;
 }
@@ -344,8 +347,8 @@ void FunctionAnalyser::analyseSSwitchStmt(Stmt* stmt) {
     SSwitchStmt* S = cast<SSwitchStmt>(stmt);
 
     Expr** cond_ptr = S->getCond2();
-    Expr* cond = *cond_ptr;
     QualType Q = analyseExpr(cond_ptr, RHS, true);
+    Expr* cond = *cond_ptr;
     if (!Q.isValid()) return;
     if (!isCharPtr(cond->getType())) {
         StringBuilder buf1(MAX_LEN_TYPENAME);
@@ -648,6 +651,15 @@ void FunctionAnalyser::analyseAsmStmt(Stmt* stmt) {
         StringLiteral** c = A->getClobber2(i);
         analyseExpr((Expr**)c, 0, true);
     }
+}
+
+void FunctionAnalyser::analyseAssertStmt(Stmt* stmt) {
+    LOG_FUNC
+    AssertStmt* A = cast<AssertStmt>(stmt);
+    Expr** expr_ptr = A->getExpr2();
+    QualType Q = analyseExpr(expr_ptr, RHS, true);
+    if (!Q.isValid()) return;
+    EA.check(Type::Bool(), A->getExpr());  // BB Not valid
 }
 
 bool FunctionAnalyser::analyseCondition(Stmt* stmt) {
@@ -1088,8 +1100,8 @@ QualType FunctionAnalyser::analyseSizeOfExpr(BuiltinExpr* B) {
         // TODO here we want to use expr->getLocation()
         // But that does not properly find the right location!
         TR.checkOpaqueType(B->getLocation(), false, Q);
-        unsigned align;
-        width = AnalyserUtils::sizeOfType(Q, &align);
+        TypeSize result = AnalyserUtils::sizeOfType(Q);
+        width = result.size;
         break;
     }
     case EXPR_INTEGER_LITERAL:
@@ -1111,8 +1123,8 @@ QualType FunctionAnalyser::analyseSizeOfExpr(BuiltinExpr* B) {
             return QualType();
         }
         TR.checkOpaqueType(expr->getLocation(), true, type);
-        unsigned align;
-        width = AnalyserUtils::sizeOfType(type, &align);
+        TypeSize result = AnalyserUtils::sizeOfType(type);
+        width = result.size;
         break;
     }
     case EXPR_IMPLICIT_CAST:

@@ -265,8 +265,11 @@ VarDecl::VarDecl(VarDeclKind k_, const char* name_, SourceLocation loc_,
 void VarDecl::print(StringBuilder& buffer, unsigned indent) const {
     printCommon(buffer, indent, "VarDecl");
     type.print(buffer);
+
     buffer.setColor(COL_ATTR);
     buffer << ' ' << VarDeclKind2Str(getVarKind());
+    const Expr* bitField = getBitfield();
+    if (bitField) buffer << " bitfield";
     printPublic(buffer);
     printExternal(buffer);
     printChecked(buffer);
@@ -274,8 +277,9 @@ void VarDecl::print(StringBuilder& buffer, unsigned indent) const {
     buffer << ' ' << name << '\n';
     printAttributes(buffer, indent + INDENT);
 
-    indent += INDENT;
-    if (initValue) initValue->print(buffer, indent);
+    if (initValue) initValue->print(buffer, indent + INDENT);
+
+    if (bitField) bitField->print(buffer, indent + INDENT);
 }
 
 
@@ -331,6 +335,7 @@ StructTypeDecl::StructTypeDecl(const char* name_, SourceLocation loc_,
     , members(0)
     , structFunctions(0)
     , size(0)
+    , numStructFunctions_(0)
     , alignment(0)
 {
     structTypeDeclBits.IsStruct = is_struct;
@@ -344,10 +349,12 @@ Decl* StructTypeDecl::find(const char* name_) const {
         Decl* D = members[i];
         if (strcmp(D->getName(), name_) == 0) return D;
         if (D->hasEmptyName()) {      // empty string
-            assert(isa<StructTypeDecl>(D));
-            StructTypeDecl* sub = cast<StructTypeDecl>(D);
-            D = sub->find(name_);
-            if (D) return D;
+            // Can be StructTypeDecl or anonymous bitfield
+            StructTypeDecl* sub = dyncast<StructTypeDecl>(D);
+            if (sub) {
+                D = sub->find(name_);
+                if (D) return D;
+            }
         }
     }
 
@@ -360,10 +367,12 @@ Decl* StructTypeDecl::findMember(const char* name_) const {
         Decl* D = members[i];
         if (strcmp(D->getName(), name_) == 0) return D;
         if (D->hasEmptyName()) {      // empty string
-            assert(isa<StructTypeDecl>(D));
-            StructTypeDecl* sub = cast<StructTypeDecl>(D);
-            D = sub->find(name_);
-            if (D) return D;
+            // Can be StructTypeDecl or anonymous bitfield
+            StructTypeDecl* sub = dyncast<StructTypeDecl>(D);
+            if (sub) {
+                D = sub->find(name_);
+                if (D) return D;
+            }
         }
     }
     return nullptr;
@@ -375,10 +384,12 @@ int StructTypeDecl::findMemberIndex(const char* name_) const {
         Decl* D = members[i];
         if (strcmp(D->getName(), name_) == 0) return i;
         if (D->hasEmptyName()) {      // empty string
-            assert(isa<StructTypeDecl>(D));
-            StructTypeDecl* sub = cast<StructTypeDecl>(D);
-            D = sub->find(name_);
-            if (D) return i;
+            // Can be StructTypeDecl or anonymous bitfield
+            StructTypeDecl* sub = dyncast<StructTypeDecl>(D);
+            if (sub) {
+                D = sub->find(name_);
+                if (D) return i;
+            }
         }
     }
     return -1;
@@ -435,6 +446,7 @@ uint32_t StructTypeDecl::getAttrAlignment() const {
     }
     return 1;
 }
+
 void StructTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
     printCommon(buffer, indent, "StructTypeDecl");
     buffer.setColor(COL_ATTR);
@@ -453,7 +465,7 @@ void StructTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
     for (unsigned i=0; i<numMembers(); i++) {
         members[i]->print(buffer, indent + INDENT);
     }
-    for (unsigned i=0; i<structTypeDeclBits.numStructFunctions; i++) {
+    for (unsigned i=0; i<numStructFunctions_; i++) {
         buffer.indent(indent + INDENT);
         buffer << structFunctions[i]->getMemberName() << "()\n";
     }

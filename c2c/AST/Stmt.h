@@ -52,6 +52,7 @@ enum StmtKind {
     STMT_COMPOUND,
     STMT_DECL,
     STMT_ASM,
+    STMT_ASSERT,
 };
 
 
@@ -262,6 +263,7 @@ private:
 
 
 typedef std::vector<Stmt*> StmtList;
+
 
 class ReturnStmt : public Stmt {
 public:
@@ -638,6 +640,24 @@ private:
     StringLiteral** constraints;
     Expr** exprs;
     StringLiteral** clobbers;
+};
+
+
+class AssertStmt : public Stmt {
+public:
+    AssertStmt(SourceLocation loc_, Expr* value_);
+    static bool classof(const Stmt* S) {
+        return S->getKind() == STMT_ASSERT;
+    }
+
+    void print(StringBuilder& buffer, unsigned indent) const;
+    SourceLocation getLocation() const { return loc; }
+
+    Expr* getExpr() const { return value; }
+    Expr** getExpr2() { return value ? &value : NULL; }
+private:
+    SourceLocation loc;
+    Expr* value;
 };
 
 

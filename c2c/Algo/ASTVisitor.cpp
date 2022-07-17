@@ -235,6 +235,12 @@ void ASTVisitor::checkStmt(const Stmt* S) {
     case STMT_ASM:
         checkAsmStmt(cast<AsmStmt>(S));
         break;
+    case STMT_ASSERT: {
+        const AssertStmt* A = cast<AssertStmt>(S);
+        checkExpr(A->getExpr());
+        break;
+    }
+        break;
     }
 }
 

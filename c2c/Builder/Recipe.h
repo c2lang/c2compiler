@@ -32,9 +32,9 @@ public:
     Recipe(const std::string& name_, Component::Type type_)
         : name(name_)
         , type(type_)
-        , generateDeps(false)
         , generateIR(false)
         , generateCCode(false)
+        , enableAsserts(false)
         , writeAST(false)
         , noLibC(false)
     {
@@ -104,9 +104,9 @@ public:
     std::string name;
     Component::Type type;
 
-    bool generateDeps;
     bool generateIR;
     bool generateCCode;
+    bool enableAsserts;
     bool writeAST;
     bool noLibC;
 

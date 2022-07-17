@@ -79,6 +79,7 @@ void RecipeReader::startNewRecipe() {
         current->addConfig(globalConfigs[i]);
     }
     current->generateCCode = true;
+    current->enableAsserts = false;
     current->writeAST = false;
     current->CGenFlags.single_module = true;
     current->IrGenFlags.single_module = false;
@@ -183,6 +184,8 @@ if (line[0] == '#') return; // skip comments
                     handleCConfigs();
                 } else if (strcmp(tok, "generate-ir") == 0) {
                     handleIrGenFlags();
+                } else if (strcmp(tok, "enable-assert") == 0) {
+                    current->enableAsserts = true;
                 } else if (strcmp(tok, "write-AST") == 0) {
                     current->writeAST = true;
                 } else if (strcmp(tok, "warnings") == 0) {

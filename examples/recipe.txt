@@ -1,8 +1,8 @@
 # an example recipe with multiple executables
 
-plugin plugins/deps_generator [all-targets private]
-plugin plugins/refs_generator [all-targets]
-plugin plugins/git_version [git options go here]
+plugin deps_generator [all-targets private]
+plugin refs_generator [all-targets]
+plugin git_version [git options go here]
 
 executable asm_example
     $warnings no-unused
@@ -31,7 +31,7 @@ executable opaque_example
 end
 
 executable multi_mod
-    $plugin plugins/deps_generator [private files externals]
+    $plugin deps_generator [private files externals]
     $warnings no-unused
     multi_mod1.c2
     multi_mod2.c2
@@ -249,17 +249,17 @@ executable time
 end
 
 executable plugin_test
-    $plugin plugins/git_version [git options go here]
-    $plugin plugins/shell_cmd [shell_cmd.yml]
-    $plugin plugins/load_file [load_file.yml]
+    $plugin git_version [git options go here]
+    $plugin shell_cmd [shell_cmd.yml]
+    $plugin load_file [load_file.yml]
     $warnings no-unused
     $generate-c single-module
     plugin_test.c2
 end
 
 executable plugin_test2
-    $plugin plugins/git_version
-    $plugin plugins/load_file [load_file2.yml]
+    $plugin git_version
+    $plugin load_file [load_file2.yml]
     $warnings no-unused
     $generate-c single-module
     plugin_test2.c2
@@ -268,6 +268,7 @@ end
 executable big
     $warnings no-unused
     $generate-c single-module check
+    $enable-assert
     color.c2
     big.c2
 end

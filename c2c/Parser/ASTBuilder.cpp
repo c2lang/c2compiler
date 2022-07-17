@@ -155,7 +155,7 @@ ASTBuilder::ASTBuilder(SourceManager& sm_,
 
     checkSize(TypeDecl, 32);
     checkSize(AliasTypeDecl, 40);
-    checkSize(StructTypeDecl, 72);
+    checkSize(StructTypeDecl, 64);
     checkSize(EnumTypeDecl, 48);
     checkSize(FunctionTypeDecl, 40);
 
@@ -509,7 +509,12 @@ C2::VarDecl* ASTBuilder::createVarDecl(VarDeclKind k, const char* name_, SourceL
     // globals, function params, struct members
 
     MEM_DECL(DECL_VAR);
-    const char* name = Context.addIdentifier(name_, strlen(name_));
+    const char* name;
+    if (name_) {
+        name = Context.addIdentifier(name_, strlen(name_));
+    } else {
+        name = "";
+    }
     VarDecl* V = new (Context) VarDecl(k, name, loc, typeExpr->getType(), InitValue, is_public, k == VARDECL_GLOBAL ? module : 0);
     Context.freeTypeExpr(typeExpr);
     return V;
@@ -612,6 +617,15 @@ void ASTBuilder::ActOnArrayValue(const char* name_, SourceLocation loc, Expr* Va
     const char* name = Context.addIdentifier(name_, strlen(name_));
     ArrayValueDecl* decl = new (Context) ArrayValueDecl(name, loc, Value, module);
     ast.addArrayValue(decl);
+}
+
+C2::StmtResult ASTBuilder::ActOnAssert(SourceLocation loc, Expr* value) {
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA"SEMA: assert at ";
+    loc.dump(SourceMgr);
+    std::cerr << ANSI_NORMAL"\n";
+#endif
+    return StmtResult(new (Context) AssertStmt(loc, value));
 }
 
 C2::StmtResult ASTBuilder::ActOnReturnStmt(SourceLocation loc, Expr* value) {
@@ -1123,7 +1137,7 @@ StructTypeDecl* ASTBuilder::ActOnStructType(const char* name_, SourceLocation lo
     return S;
 }
 
-C2::Decl* ASTBuilder::ActOnStructVar(StructTypeDecl* S, const char* name_, SourceLocation loc, Expr* type, Expr* InitValue) {
+C2::VarDecl* ASTBuilder::ActOnStructVar(StructTypeDecl* S, const char* name_, SourceLocation loc, Expr* type, Expr* InitValue) {
 #ifdef SEMA_DEBUG
     std::cerr << COL_SEMA << "SEMA: struct var " << name_ << " at ";
     loc.dump(SourceMgr);
@@ -1131,6 +1145,15 @@ C2::Decl* ASTBuilder::ActOnStructVar(StructTypeDecl* S, const char* name_, Sourc
 #endif
     TypeExpr* typeExpr = cast<TypeExpr>(type);
     return createVarDecl(VARDECL_MEMBER, name_, loc, typeExpr, InitValue, S->isPublic());
+}
+
+C2::Expr** ASTBuilder::actOnTailAllocBitfield() {
+#ifdef SEMA_DEBUG
+    std::cerr << COL_SEMA << "SEMA: bitfield" << ANSI_NORMAL << '\n';
+#endif
+    Expr** e = (Expr**)Context.Allocate(sizeof(void*));
+    memset(e, 0, sizeof(void*));
+    return e;
 }
 
 void ASTBuilder::ActOnStructMembers(StructTypeDecl* S, DeclList& members_) {

@@ -922,8 +922,8 @@ QualType FileAnalyser::analyseSizeOfExpr(BuiltinExpr* B, bool usedPublic) {
         if (!Q.isValid()) return Q;
         TR->checkOpaqueType(B->getLocation(), usedPublic, Q);
         expr->setType(Q);
-        unsigned align;
-        width = AnalyserUtils::sizeOfType(Q, &align);
+        TypeSize result = AnalyserUtils::sizeOfType(Q);
+        width = result.size;
         break;
     }
     case EXPR_INTEGER_LITERAL:
@@ -943,8 +943,8 @@ QualType FileAnalyser::analyseSizeOfExpr(BuiltinExpr* B, bool usedPublic) {
         if (!Q.isValid()) return Q;
         QualType type = expr->getType();
         TR->checkOpaqueType(expr->getLocation(), usedPublic, type);
-        unsigned align;
-        width = AnalyserUtils::sizeOfType(type, &align);
+        TypeSize result = AnalyserUtils::sizeOfType(type);
+        width = result.size;
         break;
     }
     case EXPR_IMPLICIT_CAST:
@@ -1541,6 +1541,7 @@ QualType FileAnalyser::analyseRefType(QualType Q, bool usedPublic, bool full) {
     typeName->setDecl(TD, IdentifierExpr::REF_TYPE);
 
     QualType result = TD->getType();
+    // TODO just copy flags in one go
     if (Q.isConstQualified()) result.addConst();
     if (Q.isVolatileQualified()) result.addVolatile();
     return result;
@@ -1606,8 +1607,11 @@ bool FileAnalyser::analyseStructNames(const StructTypeDecl* S, Names& names, boo
         const Decl* member = S->getMember(i);
         const std::string& name = member->getName();
         if (name == "") {
-            assert(isa<StructTypeDecl>(member));
-            if (!analyseStructNames(cast<StructTypeDecl>(member), names, isStruct)) return false;
+            // Can be sub-struct/union or anonymous bitfield
+            const StructTypeDecl* sub = dyncast<StructTypeDecl>(member);
+            if (sub) {
+                if (!analyseStructNames(sub, names, isStruct)) return false;
+            }
         } else {
             NamesIter iter = names.find(name);
             if (iter != names.end()) {
@@ -1637,7 +1641,7 @@ bool FileAnalyser::analyseStructTypeDecl(StructTypeDecl* D) {
     }
 
     bool isPacked = D->isPacked();
-    if (isPacked) D->setIsPacked();
+    if (isPacked) D->setIsPacked(); // huh? first get, then set?
     for (unsigned i=0; i<D->numMembers(); i++) {
         Decl* M = D->getMember(i);
         if (isa<VarDecl>(M)) {
@@ -1646,6 +1650,16 @@ bool FileAnalyser::analyseStructTypeDecl(StructTypeDecl* D) {
             // NOTE: dont push to stack, because can self-ref to StructType
             V->setCheckState(CHECK_IN_PROGRESS);   // manually set
             if (!analyseVarDecl(V)) return false;
+
+            Expr** E = V->getBitfield2();
+            if (E) {
+                QualType Q = analyseExpr(E, D->isPublic(), true);
+                if (!V->getBitfield()->isCTV()) {
+                    Diag((*E)->getLocation(), diag::err_bitfield_size_non_const);
+                    return false;
+                }
+                if (!Q.isValid()) return false;
+            }
             V->setCheckState(CHECK_DONE);   // manually set
         } else if (isa<StructTypeDecl>(M)) {
             StructTypeDecl* sub = cast<StructTypeDecl>(M);
@@ -1654,9 +1668,9 @@ bool FileAnalyser::analyseStructTypeDecl(StructTypeDecl* D) {
         }
     }
 
-    unsigned alignment = 0;
-    uint64_t size = AnalyserUtils::sizeOfStruct(D, &alignment);
-    D->setInfo(size, alignment);
+    CTVAnalyser LA(Diags);
+    TypeSize size = AnalyserUtils::sizeOfStruct(D, LA);
+    D->setInfo(size.size, size.align);
     return true;
 }
 

@@ -44,6 +44,7 @@ StringBuilder::~StringBuilder() {
 }
 
 StringBuilder& StringBuilder::operator<<(const char* input) {
+    if (!input) input = "<NULL>";
     unsigned len = strlen(input);
 #ifdef SIZE_DEBUG
     assert(len < space_left() && "buffer overflow");

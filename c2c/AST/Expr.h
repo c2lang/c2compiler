@@ -725,7 +725,7 @@ public:
 private:
     Expr* Base;
     IdentifierExpr* member;
-    Decl* decl;
+    Decl* decl; // Remove?: already in IdentifierExpr member
 };
 
 
