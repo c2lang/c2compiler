@@ -135,9 +135,10 @@ protected:
         unsigned : NumStmtBits;
 
         unsigned eKind : 8;
-        unsigned ImpCast: 4;
-        unsigned IsCTC: 2;          // CTC_FULL -> value matters, CTC_NONE -> type matters
-        unsigned IsConstant : 1;    // const :"bla", test, 3. Not const: test(). Depends: a
+        unsigned ImpCast : 4;
+        unsigned IsCTV : 1;    // Compile-Time-Value
+        unsigned IsCTC : 1;    // Compile-Time-Constant
+        unsigned IsLValue : 1;
     };
     enum { NumExprBits = 16 + NumStmtBits };
 
@@ -223,6 +224,13 @@ protected:
         unsigned width : 8;
     };
 
+    class ImplicitCastExprBitField {
+        friend class ImplicitCastExpr;
+        unsigned : NumExprBits;
+
+        unsigned castkind : 4;
+    };
+
     union {
         StmtBitfields stmtBits;
         SwitchStmtBitfields switchStmtBits;
@@ -243,6 +251,7 @@ protected:
         InitListExprBitfields initListExprBits;
         DesignatedInitExprBitfields designatedInitExprBits;
         BitOffsetExprBitfields bitOffsetExprBits;
+        ImplicitCastExprBitField implicitCastExprBits;
 
         unsigned bits;
     };
@@ -265,6 +274,7 @@ public:
     SourceLocation getLocation() const { return RetLoc; }
 
     Expr* getExpr() const { return value; }
+    Expr** getExpr2() { return value ? &value : NULL; }
 
     // for parents
     Stmt** childAddr() { return (Stmt**)&value; }
@@ -364,11 +374,10 @@ public:
     Expr* getIncr() const { return Incr; }
     Stmt* getBody() const { return Body; }
 
-    // for parents
-    Stmt** initAddr() { return (Stmt**)&Init; }
-    Stmt** condAddr() { return (Stmt**)&Cond; }
-    Stmt** incrAddr() { return (Stmt**)&Incr; }
-    Stmt** bodyAddr() { return (Stmt**)&Body; }
+    Stmt** getInit2() { return Init ? &Init : NULL; }
+    Expr** getCond2() { return Cond ? &Cond : NULL; }
+    Expr** getIncr2() { return Incr ? &Incr : NULL; }
+    Stmt** getBody2() { return Body ? &Body : NULL; }
 private:
     SourceLocation Loc;
     Stmt* Init;
@@ -412,6 +421,7 @@ public:
     SourceLocation getLocation() const { return Loc; }
 
     Expr* getCond() const { return Cond; }
+    Expr** getCond2() { return Cond ? &Cond : NULL; }
     unsigned numCases() const { return switchStmtBits.numCases; }
     Stmt** getCases() const { return cases; }
 
@@ -435,6 +445,7 @@ public:
     SourceLocation getLocation() const { return Loc; }
 
     Expr* getCond() const { return Cond; }
+    Expr** getCond2() { return Cond ? &Cond : NULL; }
     unsigned numStmts() const { return caseStmtBits.numStmts; }
     Stmt** getStmts() const { return stmts; }
 
@@ -613,7 +624,10 @@ public:
     const StringLiteral* getInputConstraint(unsigned i) const { return constraints[numOutputs + i]; }
     Expr* getOutputExpr(unsigned i) const { return exprs[i]; }
     Expr* getInputExpr(unsigned i) const { return exprs[numOutputs + i]; }
+    Expr** getOutputExpr2(unsigned i) { return &exprs[i]; }
+    Expr** getInputExpr2(unsigned i) { return &exprs[numOutputs + i]; }
     StringLiteral* getClobber(unsigned i) const { return clobbers[i]; }
+    StringLiteral** getClobber2(unsigned i) { return &clobbers[i]; }
 private:
     SourceLocation asmloc;
     StringLiteral* asmString;

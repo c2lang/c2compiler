@@ -42,8 +42,12 @@ QualType ASTContext::getPointerType(QualType ref) {
 
 QualType ASTContext::getArrayType(QualType element, Expr* size, bool isIncremental) {
     Type* N = new (*this) ArrayType(element, size, isIncremental);
-    // TODO may setCanonical if size Expr is CTC_FULL? (like number)
-    //if (element->hasCanonicalType()) N->setCanonicalType(N);
+    return add(N);
+}
+
+QualType ASTContext::getArrayType(QualType element, unsigned size) {
+    ArrayType* N = new (*this) ArrayType(element, NULL, false);
+    N->setSize(llvm::APInt(32, size));
     return add(N);
 }
 

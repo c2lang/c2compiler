@@ -43,6 +43,7 @@ class PluginHandler {
 public:
     virtual ~PluginHandler() {}
 
+    virtual void beginTarget(C2Builder& builder) = 0;
     // TODO dont pass C2Builder, in-elegant
     virtual bool build(C2Builder& builder) = 0;
     virtual bool generate(C2Builder& builder, const c2lang::SourceManager& src_mgr__) = 0;

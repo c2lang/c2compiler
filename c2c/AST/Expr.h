@@ -53,19 +53,13 @@ enum ExprKind {
     EXPR_MEMBER,
     EXPR_PAREN,
     EXPR_BITOFFSET,
-    EXPR_EXPL_CAST
+    EXPR_EXPLICIT_CAST,
+    EXPR_IMPLICIT_CAST,
 };
-
-enum ExprCTC {
-    CTC_NONE = 0,
-    CTC_PARTIAL,
-    CTC_FULL,
-};
-
 
 class Expr : public Stmt {
 public:
-    Expr(ExprKind k, c2lang::SourceLocation loc_, bool isConstant_);
+    Expr(ExprKind k, c2lang::SourceLocation loc_, bool is_ctc);
     // from Stmt
     static bool classof(const Stmt* S) {
         return S->getKind() == STMT_EXPR;
@@ -74,17 +68,35 @@ public:
     void print(StringBuilder& buffer, unsigned indent) const;
     void printLiteral(StringBuilder& buffer) const;
 
-    ExprKind getKind() const {
+    ExprKind inline getKind() const {
         return static_cast<ExprKind>(exprBits.eKind);
     }
-    ExprCTC getCTC() const {
-        return static_cast<ExprCTC>(exprBits.IsCTC);
-    }
-    void setCTC(ExprCTC ctc) { exprBits.IsCTC = ctc; }
 
-    bool isCTC() const { return static_cast<ExprCTC>(exprBits.IsCTC) == CTC_FULL; }
-    bool isConstant() const { return exprBits.IsConstant; }
-    void setConstant() { exprBits.IsConstant = true; }
+    // CTV (Compile-Time-Value) means that the value can be computed at compile time
+    // so a combination of: IntegerLiteral + Operations + (enum)constants
+    void inline setCTV(bool ctv) { exprBits.IsCTV = ctv; }
+    bool inline isCTV() const { return exprBits.IsCTV; }
+
+    // CTC (Compile-Time-Constant) is known at compile time and can be eg used to initialize
+    // global variables
+    bool inline isCTC() const { return exprBits.IsCTC; }
+    void inline setCTC() { exprBits.IsCTC = true; }
+
+    void inline syncFlags(const Expr* E) {
+        exprBits.IsCTC = E->exprBits.IsCTC;
+        exprBits.IsCTV = E->exprBits.IsCTV;
+    }
+    void inline combineFlags(const Expr* L, const Expr* R) {
+        exprBits.IsCTC = L->exprBits.IsCTC && R->exprBits.IsCTC;
+        exprBits.IsCTV = L->exprBits.IsCTV && R->exprBits.IsCTV;
+    }
+    void inline syncLValue(const Expr* E) {
+        exprBits.IsLValue = E->exprBits.IsLValue;
+    }
+
+    bool inline isLValue() const { return exprBits.IsLValue; }
+    void inline setIsLValue() { exprBits.IsLValue = true; }
+    void inline setIsRValue() { exprBits.IsLValue = false; }
 
     c2lang::SourceRange getSourceRange() const {
         return c2lang::SourceRange(getLocStart(), getLocEnd());
@@ -135,7 +147,7 @@ public:
         : Expr(EXPR_INTEGER_LITERAL, loc_, true)
         , Value(V)
     {
-        setCTC(CTC_FULL);
+        setCTV(true);
         Radix r = RADIX_10;
         switch (radix) {
         case 2:
@@ -182,7 +194,7 @@ public:
         : Expr(EXPR_FLOAT_LITERAL, loc_, true)
         , Value(V)
     {
-        setCTC(CTC_FULL);
+        setCTV(true);
     }
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_FLOAT_LITERAL;
@@ -199,7 +211,7 @@ public:
         : Expr(EXPR_BOOL_LITERAL, loc_, true)
     {
         booleanLiteralBits.Value = val;
-        setCTC(CTC_FULL);
+        setCTV(true);
     }
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_BOOL_LITERAL;
@@ -215,7 +227,7 @@ public:
         : Expr(EXPR_CHAR_LITERAL, loc_, true)
         , value(val)
     {
-        setCTC(CTC_FULL);
+        setCTV(true);
     }
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_CHAR_LITERAL;
@@ -284,6 +296,7 @@ public:
         , name(name_)
     {
         identifierExprBits.refType = 0;
+        setIsLValue();
     }
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_IDENTIFIER;
@@ -356,6 +369,9 @@ public:
     Expr* getArg(unsigned i) const { return args[i]; }
     unsigned numArgs() const { return callExprBits.numArgs; }
 
+    Expr** getFn2() { return &Fn; }
+    Expr** getArg2(unsigned i) { return &args[i]; }
+
     void setIsStructFunction() { callExprBits.IsStructFunc = true; }
     bool isStructFunction() const { return callExprBits.IsStructFunc; }
 private:
@@ -427,11 +443,13 @@ public:
     SourceLocation getLocEnd() const { return initValue->getLocEnd(); }
 
     Expr* getInitValue() const { return initValue; }
+    Expr** getInitValue2() { return initValue ? &initValue : NULL; }
     DesignatorKind getDesignatorKind() const {
         return static_cast<DesignatorKind>(designatedInitExprBits.DesignatorKind);
     }
     // for Array designator
     Expr* getDesignator() const { return designator; }
+    Expr** getDesignator2() { return &designator; }
     llvm::APSInt getIndex() const { return index; }
     void setIndex(llvm::APSInt i) { index = i; }
     // for Field designator
@@ -462,6 +480,8 @@ public:
 
     Expr* getLHS() const { return lhs; }
     Expr* getRHS() const { return rhs; }
+    Expr** getLHS2() { return &lhs; }
+    Expr** getRHS2() { return &rhs; }
     Opcode getOpcode() const { return static_cast<Opcode>(binaryOperatorBits.opcode); }
 
     bool requiresParensForC() const;
@@ -490,6 +510,9 @@ public:
     Expr* getCond() const { return cond; }
     Expr* getLHS() const { return lhs; }
     Expr* getRHS() const { return rhs; }
+    Expr** getCond2() { return &cond; }
+    Expr** getLHS2() { return &lhs; }
+    Expr** getRHS2() { return &rhs; }
 
     // for parents
     Stmt** condAddr() { return (Stmt**)&cond; }
@@ -514,6 +537,7 @@ public:
         , val(val_)
     {
         unaryOperatorBits.opcode = opc_;
+        if (opc_ == c2lang::UO_Deref) setIsLValue();
     }
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_UNARYOP;
@@ -539,6 +563,7 @@ public:
     }
 
     Expr* getExpr() const { return val; }
+    Expr** getExpr2() { return &val; }
     Opcode getOpcode() const { return static_cast<Opcode>(unaryOperatorBits.opcode); }
     SourceLocation getOpLoc() const { return exprLoc; }
 
@@ -576,7 +601,7 @@ public:
         , value(64, false)
     {
         builtinExprBits.builtinKind = kind_;
-        setCTC(CTC_FULL);
+        setCTV(true);
     }
     BuiltinExpr(SourceLocation loc_, Expr* structExpr_, Expr* memberExpr_)
         : Expr(EXPR_BUILTIN, loc_, true)
@@ -585,7 +610,7 @@ public:
         , value(64, false)
     {
         builtinExprBits.builtinKind = BUILTIN_OFFSETOF;
-        setCTC(CTC_FULL);
+        setCTV(true);
     }
     BuiltinExpr(SourceLocation loc_, Expr* structExpr_, Expr* memberExpr_, Expr* ptrExpr_)
         : Expr(EXPR_BUILTIN, loc_, false)
@@ -595,7 +620,7 @@ public:
         , value(64, false)
     {
         builtinExprBits.builtinKind = BUILTIN_TO_CONTAINER;
-        //setCTC(CTC_FULL); // NOTE: not CTC!
+        //setCTV(true); // NOTE: not CTC!
     }
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_BUILTIN;
@@ -605,6 +630,9 @@ public:
     Expr* getExpr() const { return expr; }
     Expr* getMember() const { return member; }
     Expr* getPointer() const { return pointer; }
+
+    Expr** getExpr2() { return &expr; }
+    Expr** getPointer2() { return &pointer; }
 
     BuiltinKind getBuiltinKind() const {
         return static_cast<BuiltinKind>(builtinExprBits.builtinKind);
@@ -631,7 +659,9 @@ public:
         : Expr(EXPR_ARRAYSUBSCRIPT, RLoc_, false)
         , base(Base_)
         , idx(Idx_)
-    {}
+    {
+        setIsLValue();
+    }
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_ARRAYSUBSCRIPT;
     }
@@ -642,6 +672,9 @@ public:
 
     Expr* getBase() const { return base; }
     Expr* getIndex() const { return idx; }
+
+    Expr** getBase2() { return &base; }
+    Expr** getIndex2() { return idx ? &idx : NULL; }
 private:
     Expr* base;
     Expr* idx;
@@ -661,6 +694,7 @@ public:
         memberExprBits.IsStructFunction = 0;
         memberExprBits.IsStaticStructFunction = 0;
         memberExprBits.IsEnumConstant = 0;
+        setIsLValue();
     }
     static bool classof(const Expr* E) {
         return E->getKind() == EXPR_MEMBER;
@@ -671,6 +705,7 @@ public:
     SourceLocation getLocEnd() const { return member->getLocEnd(); }
 
     Expr* getBase() const { return Base; }
+    Expr** getBase2() { return &Base; }
     IdentifierExpr* getMember() const { return member; }
 
     Decl* getDecl() const { return decl; }
@@ -707,6 +742,7 @@ public:
     SourceLocation getLocation() const { return L; }
 
     Expr* getExpr() const { return Val; }
+    Expr** getExpr2() { return &Val; }
     SourceLocation getLParen() const { return L; }
     SourceLocation getRParen() const { return R; }
     SourceLocation getLocStart() const { return L; }
@@ -738,6 +774,8 @@ public:
 
     Expr* getLHS() const { return lhs; }
     Expr* getRHS() const { return rhs; }
+    Expr** getLHS2() { return &lhs; }
+    Expr** getRHS2() { return &rhs; }
     // NOTE: width is only valid if constant
     unsigned char getWidth() const { return bitOffsetExprBits.width; }
     void setWidth(unsigned char width_) { bitOffsetExprBits.width = width_; }
@@ -752,12 +790,12 @@ private:
 class ExplicitCastExpr : public Expr {
 public:
     ExplicitCastExpr(SourceLocation loc_, QualType type, Expr* expr_)
-        : Expr(EXPR_EXPL_CAST, loc_, false)
+        : Expr(EXPR_EXPLICIT_CAST, loc_, false)
         , destType(type)
         , inner(expr_)
     {}
     static bool classof(const Expr* E) {
-        return E->getKind() == EXPR_EXPL_CAST;
+        return E->getKind() == EXPR_EXPLICIT_CAST;
     }
     void print(StringBuilder& buffer, unsigned indent) const;
     SourceLocation getLocEnd() const { return inner->getLocEnd(); }
@@ -765,11 +803,31 @@ public:
     QualType getDestType() const { return destType; }
     void setDestType(QualType Q) { destType = Q; }
     Expr* getInner() const { return inner; }
+    Expr** getInner2() { return &inner; }
 private:
     QualType destType;
     Expr* inner;
 };
 
+
+class ImplicitCastExpr : public Expr {
+public:
+    ImplicitCastExpr(SourceLocation loc_, c2lang::CastKind ck, Expr* expr_);
+
+    static bool classof(const Expr* E) {
+        return E->getKind() == EXPR_IMPLICIT_CAST;
+    }
+    void print(StringBuilder& buffer, unsigned indent) const;
+    SourceLocation getLocEnd() const { return inner->getLocEnd(); }
+
+    c2lang::CastKind getCastKind() const {
+        return static_cast<c2lang::CastKind>(implicitCastExprBits.castkind);
+    }
+    Expr* getInner() const { return inner; }
+    Expr** getInner2() { return &inner; }
+private:
+    Expr* inner;
+};
 
 template <class T> static inline bool isa(const Expr* E) {
     return T::classof(E);

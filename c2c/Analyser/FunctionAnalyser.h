@@ -21,6 +21,7 @@
 #include <llvm/ADT/APSInt.h>
 #include "Clang/SourceLocation.h"
 #include "AST/Type.h"
+#include "AST/Expr.h"
 #include "Analyser/ExprAnalyser.h"
 
 namespace c2lang {
@@ -63,7 +64,6 @@ public:
                     const TargetInfo& target_,
                     bool isInterface_);
 
-    // TODO remove all functions used only by FileAnalyser
     void check(FunctionDecl* F);
 private:
     void checkFunction(FunctionDecl* F);
@@ -90,24 +90,28 @@ private:
     bool analyseCondition(Stmt* stmt);
     void analyseStmtExpr(Stmt* stmt);
 
-    QualType analyseExpr(Expr* expr, unsigned side);
+    QualType analyseExpr(Expr** expr_ptr, unsigned side, bool need_rvalue);
+    QualType inline analyseExprInner(Expr** expr, unsigned side);
     QualType analyseBinaryOperator(Expr* expr, unsigned side);
+    QualType checkCondionalOperatorTypes(QualType TLeft, QualType TRight);
     QualType analyseConditionalOperator(Expr* expr);
-    QualType analyseUnaryOperator(Expr* expr, unsigned side);
+    QualType analyseUnaryOperator(Expr** expr, unsigned side);
     QualType analyseBuiltinExpr(Expr* expr);
     QualType analyseArraySubscript(Expr* expr, unsigned side);
-    QualType analyseMemberExpr(Expr* expr, unsigned side);
-    QualType analyseStructMember(QualType T, MemberExpr* M, unsigned side, bool isStatic);
+    QualType analyseMemberExpr(Expr** expr_ptr, unsigned side);
+    QualType analyseStructMember(QualType T, Expr** expr_ptr, unsigned side, bool isStatic);
     bool exprIsType(const Expr* E) const;
     QualType analyseParenExpr(Expr* expr);
-    bool analyseBitOffsetIndex(Expr* expr, llvm::APSInt* Result, BuiltinType* BaseType);
+    bool analyseBitOffsetIndex(Expr** expr, llvm::APSInt* Result, BuiltinType* BaseType);
     QualType analyseBitOffsetExpr(Expr* expr, QualType BaseType, c2lang::SourceLocation base);
     QualType analyseExplicitCastExpr(Expr* expr);
+    QualType analyseImplicitCastExpr(Expr* expr);
     QualType analyseCall(Expr* expr);
+    QualType analyseIdentifierExpr(Expr** expr_ptr, unsigned side);
     bool checkCallArgs(FunctionDecl* func, CallExpr* call, Expr *structFunction);
     Decl* analyseIdentifier(IdentifierExpr* expr);
 
-    void analyseInitExpr(Expr* expr, QualType expectedType);
+    void analyseInitExpr(Expr** expr, QualType expectedType);
     void analyseInitList(InitListExpr* expr, QualType expectedType);
     void analyseInitListArray(InitListExpr* expr, QualType expectedType, unsigned numValues, Expr** values);
     void analyseInitListStruct(InitListExpr* expr, QualType expectedType, unsigned numValues, Expr** values);
@@ -124,7 +128,6 @@ private:
     QualType analyseSizeOfExpr(BuiltinExpr* expr);
     QualType analyseElemsOfExpr(BuiltinExpr* B);
     QualType analyseEnumMinMaxExpr(BuiltinExpr* B, bool isMin);
-    QualType findStructMember(QualType T, IdentifierExpr* I);
     StructTypeDecl* builtinExprToStructTypeDecl(BuiltinExpr* B);
     QualType analyseOffsetOf(BuiltinExpr* expr);
     QualType analyseToContainer(BuiltinExpr* expr);
@@ -137,31 +140,18 @@ private:
     void popMode();
     const Module* currentModule() const;
 
-    class ConstModeSetter {
-    public:
-        ConstModeSetter (FunctionAnalyser& analyser_, unsigned DiagID)
-            : analyser(analyser_)
-        {
-            analyser.pushMode(DiagID);
-        }
-        ~ConstModeSetter()
-        {
-            analyser.popMode();
-        }
-    private:
-        FunctionAnalyser& analyser;
-    };
-
     LabelDecl* LookupOrCreateLabel(const char* name, c2lang::SourceLocation loc);
 
-    void checkAssignment(Expr* assignee, QualType TLeft, const char* diag_msg, c2lang::SourceLocation loc);
+    bool checkAssignment(Expr* assignee, QualType TLeft, const char* diag_msg, c2lang::SourceLocation loc);
     void checkDeclAssignment(Decl* decl, Expr* expr);
     void checkArrayDesignators(InitListExpr* expr, int64_t* size);
     void checkEnumCases(const SwitchStmt* SS, const EnumType* ET) const;
     QualType getStructType(QualType T) const;
     QualType getConditionType(const Stmt* C) const;
 
-    QualType analyseStaticStructMember(QualType T, MemberExpr *M, const StructTypeDecl *S, unsigned side);
+    Expr* insertImplicitCast(c2lang::CastKind ck, Expr** inner, QualType Q);
+
+    QualType analyseStaticStructMember(QualType T, Expr** M, const StructTypeDecl *S, unsigned side);
 
     Scope& scope;
     TypeResolver& TR;
@@ -195,17 +185,6 @@ private:
     typedef std::vector<LabelDecl*> Labels;
     typedef Labels::iterator LabelsIter;
     Labels labels;
-
-    struct ParentStack {
-        Stmt** stack[MAX_EXPR_DEPTH];   // points to where parent stores child
-        unsigned depth;
-        void push(Stmt** s) { stack[depth++] = s; }
-        void pop() { depth--; }
-        bool hasParent() { return depth != 0; }
-        void replaceChild(Expr* child);
-        void dump();
-    };
-    ParentStack parents;
 
     FunctionAnalyser(const FunctionAnalyser&);
     FunctionAnalyser& operator= (const FunctionAnalyser&);

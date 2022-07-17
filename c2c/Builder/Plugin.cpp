@@ -20,5 +20,6 @@ using namespace std;
 
 Plugin::Plugin(const std::string& name_)
     : name(name_)
+    , allTargets_(false)
 {}
 

@@ -63,7 +63,7 @@ enum CheckState {
 class alignas(void*) Decl {
 public:
     Decl(DeclKind k, const char* name_, SourceLocation loc_,
-         QualType type_, bool is_public);
+         QualType type_, bool is_public, Module* mod_);
 
     void* operator new(size_t bytes, const ASTContext& C, unsigned alignment = 8);
 
@@ -98,8 +98,7 @@ public:
     bool hasCName() const { return declBits.hasCName; }
     void setHasCName() { declBits.hasCName = 1; }
 
-    void setModule(const Module* mod_) { mod = mod_; }
-    const Module* getModule() const { return mod; }
+    Module* getModule() const { return mod; }
 
     QualType getType() const { return type; }
     void setType(QualType t) { type = t; }
@@ -192,9 +191,8 @@ protected:
     SourceLocation loc;
     QualType type;
     const char* name;
+    Module* mod;
 private:
-    const Module* mod;
-
     Decl(const Decl&);
     Decl& operator= (const Decl&);
 };
@@ -210,13 +208,14 @@ enum VarDeclKind {
 class VarDecl : public Decl {
 public:
     VarDecl(VarDeclKind k_, const char* name_, SourceLocation loc_,
-            QualType type_, Expr* initValue_, bool is_public);
+            QualType type_, Expr* initValue_, bool is_public, Module* mod_);
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_VAR;
     }
     void print(StringBuilder& buffer, unsigned indent) const;
 
     Expr* getInitValue() const { return initValue; }
+    Expr** getInitValue2() { return initValue ? &initValue : NULL; }
     void setInitValue(Expr* v) {
         assert(initValue == 0);
         initValue = v;
@@ -243,7 +242,7 @@ private:
 class FunctionDecl : public Decl {
 public:
     FunctionDecl(const char* name_, SourceLocation loc_,
-                 bool is_public, QualType rtype_);
+                 bool is_public, QualType rtype_, Module* mod_);
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_FUNC;
     }
@@ -302,7 +301,7 @@ private:
 class EnumConstantDecl : public Decl {
 public:
     EnumConstantDecl(const char* name_, SourceLocation loc_, QualType type_, Expr* Init,
-                     bool is_public);
+                     bool is_public, Module* mod_);
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_ENUMVALUE;
     }
@@ -311,6 +310,7 @@ public:
     const EnumTypeDecl* getTypeDecl() const;
 
     Expr* getInitValue() const { return InitVal; } // static value, NOT incremental values
+    Expr** getInitValue2() { return &InitVal; } // static value, NOT incremental values
     llvm::APSInt getValue() const { return Val; }
     void setValue(llvm::APSInt v) { Val = v; }
 private:
@@ -322,7 +322,7 @@ private:
 class TypeDecl : public Decl {
 protected:
     TypeDecl(DeclKind kind, const char* name_, SourceLocation loc_,
-             QualType type_, bool is_public);
+             QualType type_, bool is_public, Module* mod_);
 public:
     static bool classof(const Decl* D) {
         switch (D->getKind()) {
@@ -340,8 +340,8 @@ public:
 
 class AliasTypeDecl : public TypeDecl {
 public:
-    AliasTypeDecl(const char* name_, SourceLocation loc_, QualType type_, bool is_public)
-        : TypeDecl(DECL_ALIASTYPE, name_, loc_, type_, is_public)
+    AliasTypeDecl(const char* name_, SourceLocation loc_, QualType type_, bool is_public, Module* mod_)
+        : TypeDecl(DECL_ALIASTYPE, name_, loc_, type_, is_public, mod_)
         , refType(type_)
     {}
     static bool classof(const Decl* D) {
@@ -357,7 +357,7 @@ private:
 class StructTypeDecl : public TypeDecl {
 public:
     StructTypeDecl(const char* name_, SourceLocation loc_, QualType type_,
-            bool is_struct, bool is_global, bool is_public);
+            bool is_struct, bool is_global, bool is_public, Module* mod_);
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_STRUCTTYPE;
     }
@@ -413,8 +413,8 @@ private:
 class EnumTypeDecl : public TypeDecl {
 public:
     EnumTypeDecl(const char* name_, SourceLocation loc_,
-            QualType implType_, QualType type_, bool is_incr, bool is_public)
-        : TypeDecl(DECL_ENUMTYPE, name_, loc_, type_, is_public)
+            QualType implType_, QualType type_, bool is_incr, bool is_public, Module* mod_)
+        : TypeDecl(DECL_ENUMTYPE, name_, loc_, type_, is_public, mod_)
         , constants(0)
         , implType(implType_)
     {
@@ -427,7 +427,6 @@ public:
     void print(StringBuilder& buffer, unsigned indent) const;
 
     void setConstants(EnumConstantDecl** constants_, unsigned numConstants_) {
-        assert(constants == 0);
         constants = constants_;
         enumTypeDeclBits.numConstants = numConstants_;
     }
@@ -452,7 +451,7 @@ private:
 
 class FunctionTypeDecl : public TypeDecl {
 public:
-    FunctionTypeDecl(FunctionDecl* func_);
+    FunctionTypeDecl(FunctionDecl* func_, Module* mod_);
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_FUNCTIONTYPE;
     }
@@ -466,7 +465,7 @@ private:
 
 class ArrayValueDecl : public Decl {
 public:
-    ArrayValueDecl(const char* name_, SourceLocation loc_, Expr* value_);
+    ArrayValueDecl(const char* name_, SourceLocation loc_, Expr* value_, Module* mod_);
     static bool classof(const Decl* D) {
         return D->getKind() == DECL_ARRAYVALUE;
     }
@@ -490,6 +489,8 @@ public:
     const char* getModuleName() const { return modName; }
     bool hasAlias() const {return aliasLoc.isValid(); }
     bool isLocal() const { return importDeclBits.IsLocal; }
+
+    void setModule(Module* mod_) { mod = mod_; }
 private:
     const char* modName;
     SourceLocation aliasLoc;
@@ -522,6 +523,8 @@ public:
 
     Expr* getLHS() const { return lhs; }
     Expr* getRHS() const { return rhs; }
+    Expr** getLHS2() { return &lhs; }
+    Expr** getRHS2() { return &rhs; }
 private:
     Expr* lhs;
     Expr* rhs;

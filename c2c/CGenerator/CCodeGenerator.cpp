@@ -40,6 +40,7 @@
 #include "Utils/Utils.h"
 
 //#define CCODE_DEBUG
+
 #ifdef CCODE_DEBUG
 #include "Utils/color.h"
 #include <iostream>
@@ -174,12 +175,9 @@ void CCodeGenerator::EmitAll() {
     // generate variables
     LOG_MSG("variables");
     for (unsigned m=0; m<mods.size(); m++) {
-        const AstList& files = mods[m]->getFiles();
-        for (unsigned a=0; a<files.size(); a++) {
-            const AST* ast = files[a];
-            for (unsigned i=0; i<ast->numVars(); i++) {
-                EmitGlobalVariable(ast->getVar(i));
-            }
+        const Module* M = mods[m];
+        for (unsigned i=0; i<M->numSortedVar(); i++) {
+            EmitGlobalVariable(M->getSortedVar(i));
         }
     }
     // TODO Arrayvalues
@@ -355,7 +353,7 @@ void CCodeGenerator::EmitExpr(const Expr* E, StringBuilder& output) {
     case EXPR_BITOFFSET:
         FATAL_ERROR("should not happen");
         break;
-    case EXPR_EXPL_CAST:
+    case EXPR_EXPLICIT_CAST:
     {
         const ExplicitCastExpr* ECE = cast<ExplicitCastExpr>(E);
         output << '(';
@@ -365,6 +363,11 @@ void CCodeGenerator::EmitExpr(const Expr* E, StringBuilder& output) {
         EmitExpr(ECE->getInner(), output);
         output << ')';
         return;
+    }
+    case EXPR_IMPLICIT_CAST: {
+        const ImplicitCastExpr* IC = cast<ImplicitCastExpr>(E);
+        EmitExpr(IC->getInner(), output);
+        break;
     }
     }
 }
@@ -478,8 +481,9 @@ void CCodeGenerator::EmitMemberExpr(const Expr* E, StringBuilder& output) {
 void CCodeGenerator::EmitCallExpr(const Expr* E, StringBuilder& output) {
     LOG_FUNC
     const CallExpr* C = cast<CallExpr>(E);
-    const Expr* F = C->getFn();
+    const Expr* F = stripImplicitCast(C->getFn());
     const bool isSF = C->isStructFunction();
+
     bool hasArg = false;
     if (isSF) {
         assert(isa<MemberExpr>(F));
@@ -534,8 +538,8 @@ void CCodeGenerator::EmitBitOffsetExpr(const Expr* Base, Expr* E, StringBuilder&
     // NOTE: only support RHS for now!
     // a[7:4] -> ((a >> 4) & 0xF);
     const BitOffsetExpr* B = cast<BitOffsetExpr>(E);
-    assert(B->getLHS()->isConstant() && "only support constant bitoffset for now");
-    assert(B->getRHS()->isConstant() && "only support constant bitoffset for now");
+    assert(B->getLHS()->isCTV() && "only support constant bitoffset for now");
+    assert(B->getRHS()->isCTV() && "only support constant bitoffset for now");
     assert(B->getWidth() != 0);
     output << "((";
     EmitExpr(Base, output);
@@ -758,6 +762,7 @@ void CCodeGenerator::EmitConstant(const VarDecl* V) {
 void CCodeGenerator::EmitGlobalVariable(const VarDecl* V) {
     LOG_DECL(V)
     if (EmitAsDefine(V)) return;    // already done in EmitConstant
+    const Expr* init = V->getInitValue();
 
     if (targetInfo.sys == TargetInfo::SYS_DARWIN && filename == "stdio") {
         // Darwing workaround, since it defines stdin/out/err as #define stdin __stdinp, etc
@@ -798,11 +803,11 @@ void CCodeGenerator::EmitGlobalVariable(const VarDecl* V) {
     EmitDecl(V, cbuf);
     EmitTypePostName(V->getType(), cbuf);
     EmitAttributes(V, cbuf, true);
+
     cbuf << " = ";
-    if (V->getInitValue()) {
-        EmitExpr(V->getInitValue(), cbuf);
+    if (init) {
+        EmitExpr(init, cbuf);
     } else {
-        // always generate initialization
         if (V->getType().isPointerType()) {
             cbuf << "NULL";
         } else if (V->getType().isStructType() || V->getType().isArrayType()) {
@@ -811,6 +816,7 @@ void CCodeGenerator::EmitGlobalVariable(const VarDecl* V) {
             cbuf << "0";
         }
     }
+
     cbuf << ";\n";
     cbuf << '\n';
 }
@@ -1624,5 +1630,11 @@ bool CCodeGenerator::EmitAsDefine(const VarDecl* V) const {
     }
 #endif
     return false;
+}
+
+const Expr* CCodeGenerator::stripImplicitCast(const Expr* E) {
+    const ImplicitCastExpr* ic = dyncast<ImplicitCastExpr>(E);
+    if (ic) return ic->getInner();
+    return E;
 }
 

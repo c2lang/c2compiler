@@ -1,0 +1,11 @@
+
+file.module: files
+
+file.files:
+    - file: files/data1.dat
+      variable: Data1
+
+    - file: files/file2.txt
+      variable: File2
+      null_terminate: true
+

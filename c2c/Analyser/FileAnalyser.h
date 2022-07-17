@@ -23,7 +23,6 @@
 #include "AST/Module.h"
 #include "AST/Expr.h"
 #include "Analyser/Scope.h"
-#include "Analyser/FunctionAnalyser.h"
 #include "Analyser/TypeResolver.h"
 #include "Analyser/ExprAnalyser.h"
 
@@ -33,17 +32,13 @@ class DiagnosticsEngine;
 
 namespace C2 {
 
-class IdentifierExpr;
-class Scope;
 class TypeDecl;
 class VarDecl;
 class FunctionDecl;
 class StructTypeDecl;
 class ArrayValueDecl;
 class AST;
-class TypeResolver;
 class TargetInfo;
-class RefType;
 
 typedef std::vector<FunctionDecl*> StructFunctionEntries;
 typedef std::map<StructTypeDecl*, StructFunctionEntries> StructFunctionList;
@@ -58,7 +53,7 @@ typedef IncrementalEnums::const_iterator IncrementalEnumsIter;
 
 class FileAnalyser {
 public:
-    FileAnalyser(const Module& module_,
+    FileAnalyser(Module& module_,
                  const Modules& allModules,
                  c2lang::DiagnosticsEngine& Diags_,
                  const TargetInfo& target_,
@@ -93,31 +88,33 @@ private:
     bool analyseVarDecl(VarDecl* D);
     bool analyseTypeDecl(TypeDecl* D);
     bool analyseStructTypeDecl(StructTypeDecl* D);
-    bool analyseStructMember(QualType T, MemberExpr* M, bool isStatic);
+    QualType analyseStructMember(QualType T, Expr** expr_ptr, bool isStatic);
     bool analyseFunctionDecl(FunctionDecl* D);
     bool checkIfStaticStructFunction(FunctionDecl* F) const;
     bool analyseEnumConstants(EnumTypeDecl* ETD);
     QualType analyseType(QualType Q, SourceLocation loc, bool usedPublic, bool full);
     QualType analyseRefType(QualType Q, bool usedPublic, bool full);
+    bool analyseArraySizeExpr(ArrayType* AT, bool usedPublic);
 
     // Expressions
-    bool analyseExpr(Expr* expr, bool usedPublic);
-    bool analyseArraySubscript(Expr* expr, bool usedPublic);
-    bool analyseBuiltinExpr(Expr* expr, bool usedPublic);
-    bool analyseToContainer(BuiltinExpr* B, bool usedPublic);
-    bool analyseOffsetOf(BuiltinExpr* B, bool usedPublic);
+    QualType analyseExpr(Expr** expr_ptr, bool usedPublic, bool need_rvalue);
+    QualType analyseExprInner(Expr** expr_ptr, bool usedPublic);
+    QualType analyseArraySubscript(Expr* expr, bool usedPublic);
+    QualType analyseBuiltinExpr(Expr* expr, bool usedPublic);
+    QualType analyseToContainer(BuiltinExpr* B, bool usedPublic);
+    QualType analyseOffsetOf(BuiltinExpr* B, bool usedPublic);
     StructTypeDecl* builtinExprToStructTypeDecl(BuiltinExpr* B, bool usedPublic);
-    bool analyseSizeOfExpr(BuiltinExpr* B, bool usedPublic);
-    bool analyseEnumMinMaxExpr(BuiltinExpr* B, bool isMin, bool usedPublic);
-    bool analyseElemsOfExpr(BuiltinExpr* B, bool usedPublic);
-    bool analyseBinaryOperator(Expr* expr, bool usedPublic);
-    bool analyseUnaryOperator(Expr* expr, bool usedPublic);
-    bool analyseParenExpr(Expr* expr, bool usedPublic);
-    bool analyseMemberExpr(Expr* expr, bool usedPublic);
-    Decl* analyseIdentifier(IdentifierExpr* id, bool usedPublic);
+    QualType analyseSizeOfExpr(BuiltinExpr* B, bool usedPublic);
+    QualType analyseEnumMinMaxExpr(BuiltinExpr* B, bool isMin, bool usedPublic);
+    QualType analyseElemsOfExpr(BuiltinExpr* B, bool usedPublic);
+    QualType analyseBinaryOperator(Expr* expr, bool usedPublic);
+    QualType analyseUnaryOperator(Expr** expr_ptr, bool usedPublic);
+    QualType analyseParenExpr(Expr* expr, bool usedPublic);
+    QualType analyseMemberExpr(Expr** expr_ptr, bool usedPublic);
+    Decl* analyseIdentifier(Expr** expr_ptr, bool usedPublic);
 
     // Init expressions
-    bool analyseInitExpr(Expr* expr, QualType expectedType, bool usedPublic);
+    bool analyseInitExpr(Expr** expr, QualType expectedType, bool usedPublic);
     bool analyseInitList(InitListExpr* expr, QualType Q, bool usedPublic);
     bool analyseInitListArray(InitListExpr* expr, QualType Q, unsigned numValues, Expr** values, bool usedPublic);
     bool analyseInitListStruct(InitListExpr* expr, QualType Q, unsigned numValues, Expr** values, bool usedPublic);
@@ -135,7 +132,7 @@ private:
     bool analyseStructNames(const StructTypeDecl* S, Names& names, bool isStruct);
     bool checkVarDeclAttributes(VarDecl* D);
     bool checkAttributes(Decl* D);
-    bool analyseStaticStructMember(QualType T, MemberExpr* M, const StructTypeDecl* S);
+    QualType analyseStaticStructMember(QualType T, Expr** expr_ptr, const StructTypeDecl* S);
 
     void checkStructMembersForUsed(const StructTypeDecl* S);
     bool checkAddressOfOperand(Expr* expr);
@@ -143,13 +140,16 @@ private:
     void error(SourceLocation loc, QualType left, QualType right) const;
     c2lang::DiagnosticBuilder Diag(SourceLocation Loc, unsigned DiagID) const;
 
+    Expr* insertImplicitCast(c2lang::CastKind ck, Expr** inner_ptr, QualType Q);
+
     AST& ast;
-    const Module& module;
+    Module& module;
     std::unique_ptr<Scope> scope;
     std::unique_ptr<TypeResolver> TR;
+    ASTContext& Context;
     c2lang::DiagnosticsEngine& Diags;
+    const TargetInfo& target;
     ExprAnalyser EA;
-    FunctionAnalyser functionAnalyser;
     // TEMP array with index
     Decl* checkStack[8];
     unsigned checkIndex;

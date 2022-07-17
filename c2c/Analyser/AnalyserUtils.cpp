@@ -18,6 +18,7 @@
 
 #include "Analyser/AnalyserUtils.h"
 #include "AST/Decl.h"
+#include "AST/ASTContext.h"
 #include "Utils/StringBuilder.h"
 #include "Utils/TargetInfo.h"
 
@@ -73,6 +74,45 @@ QualType AnalyserUtils::getStructType(QualType Q) {
     FATAL_ERROR("Unreachable");
 }
 
+QualType AnalyserUtils::getPointerFromArray(ASTContext& context, QualType Q) {
+    Q = Q.getCanonicalType();
+    const ArrayType* A = cast<ArrayType>(Q);
+    QualType ET = A->getElementType();
+    QualType ptr = context.getPointerType(A->getElementType());
+    if (Q.isConstant()) ptr.addConst();
+    return ptr;
+}
+
+QualType AnalyserUtils::getMinusType(QualType Q) {
+    Q = Q.getCanonicalType();
+    // TODO aliasTypes?
+
+    if (const BuiltinType* BI = dyncast<BuiltinType>(Q)) {
+        switch (BI->getKind()) {
+        case BuiltinType::Int8:
+        case BuiltinType::Int16:
+        case BuiltinType::Int32:
+        case BuiltinType::Int64:
+            return Q;
+        case BuiltinType::UInt8:
+        case BuiltinType::UInt16:
+        case BuiltinType::UInt32:
+            return Type::Int32();
+        case BuiltinType::UInt64:
+            return Type::Int64();
+        case BuiltinType::Float32:
+        case BuiltinType::Float64:
+            return Q;
+        case BuiltinType::Bool:
+            return Type::Int32();
+        case BuiltinType::Void:
+            break;
+        }
+    }
+
+    return QualType();
+}
+
 bool AnalyserUtils::exprIsType(const Expr* E) {
     // can be IdentifierExpr or MemberExpr
     switch (E->getKind()) {
@@ -97,7 +137,7 @@ bool AnalyserUtils::exprIsType(const Expr* E) {
 QualType AnalyserUtils::UsualUnaryConversions(Expr* expr) {
     const Type* canon = expr->getType().getCanonicalType();
 
-    if (const BuiltinType* BI = cast<BuiltinType>(canon)) {
+    if (const BuiltinType* BI = dyncast<BuiltinType>(canon)) {
         if (BI->isPromotableIntegerType()) {
             // TODO keep flags (const, etc)?
             expr->setImpCast(BuiltinType::Int32);
@@ -112,35 +152,40 @@ QualType AnalyserUtils::UsualUnaryConversions(Expr* expr) {
     return expr->getType();
 }
 
-void AnalyserUtils::SetConstantFlags(Decl* D, Expr* expr) {
+void AnalyserUtils::SetConstantFlags(const Decl* D, Expr* expr) {
     switch (D->getKind()) {
     case DECL_FUNC:
-        expr->setConstant();
-        break;
+        expr->setCTC();
+        expr->setIsRValue();
+        return;
     case DECL_VAR:
     {
-        VarDecl* VD = cast<VarDecl>(D);
+        const VarDecl* VD = cast<VarDecl>(D);
         QualType T = VD->getType();
-        if (T.isConstQualified()) {
-            Expr* Init = VD->getInitValue();
-            if (Init) {
-                // Copy CTC status of Init Expr
-                expr->setCTC(Init->getCTC());
-            }
-            expr->setConstant();
+        expr->setCTC();
+        Expr* Init = VD->getInitValue();
+        if (Init && T.isConstQualified()) {
+            expr->setCTV(Init->isCTV());
             return;
         }
-        break;
+        return;
     }
     case DECL_ENUMVALUE:
-        expr->setCTC(CTC_FULL);
-        expr->setConstant();
+        expr->setCTV(true);
+        expr->setCTC();
+        expr->setIsRValue();
         return;
     case DECL_ALIASTYPE:
+        break;
     case DECL_STRUCTTYPE:
+        expr->setIsRValue();
+        break;
     case DECL_ENUMTYPE:
+        expr->setCTC();
+        expr->setIsRValue();
+        break;
     case DECL_FUNCTIONTYPE:
-        expr->setConstant();
+        expr->setCTC();
         break;
     case DECL_ARRAYVALUE:
     case DECL_IMPORT:
@@ -149,33 +194,13 @@ void AnalyserUtils::SetConstantFlags(Decl* D, Expr* expr) {
         break;
     }
     // TODO needed?
-    expr->setCTC(CTC_NONE);
-}
-
-ExprCTC AnalyserUtils::combineCtc(Expr* Result, const Expr* L, const Expr* R) {
-    const ExprCTC left =  L->getCTC();
-    const ExprCTC right = R->getCTC();
-    switch (left + right) {
-    case 0:
-        Result->setCTC(CTC_NONE);
-        return CTC_NONE;
-    case 1:
-    case 2:
-    case 3:
-        Result->setCTC(CTC_PARTIAL);
-        return CTC_PARTIAL;
-    case 4:
-        Result->setCTC(CTC_FULL);
-        return CTC_FULL;
-    }
-    FATAL_ERROR("Unreachable");
-    return CTC_NONE;
+    expr->setCTV(false);
 }
 
 bool AnalyserUtils::isConstantBitOffset(const Expr* E) {
     if (const ArraySubscriptExpr* A = dyncast<ArraySubscriptExpr>(E)) {
         if (const BitOffsetExpr* B = dyncast<BitOffsetExpr>(A->getIndex())) {
-            return B->isConstant();
+            return B->isCTC();
         }
     }
     return false;
@@ -363,30 +388,39 @@ Expr* AnalyserUtils::getInnerExprAddressOf(Expr* expr) {
             return expr;
         case EXPR_BUILTIN:
             return expr;
-        case EXPR_ARRAYSUBSCRIPT:
-        {
+        case EXPR_ARRAYSUBSCRIPT: {
             ArraySubscriptExpr* sub = cast<ArraySubscriptExpr>(expr);
-            expr = sub->getBase();
-            break;
+            return getInnerExprAddressOf(sub->getBase());
         }
-        case EXPR_MEMBER:
-        {
+        case EXPR_MEMBER: {
             MemberExpr* member = cast<MemberExpr>(expr);
             return member->getMember();
         }
-        case EXPR_PAREN:
-        {
+        case EXPR_PAREN: {
             ParenExpr* paren = cast<ParenExpr>(expr);
-            expr = paren->getExpr();
-            break;
+            return getInnerExprAddressOf(paren->getExpr());
         }
         case EXPR_BITOFFSET:
-        case EXPR_EXPL_CAST:
-            TODO;
             return expr;
+        case EXPR_EXPLICIT_CAST: {
+            ExplicitCastExpr* ec = cast<ExplicitCastExpr>(expr);
+            return getInnerExprAddressOf(ec->getInner());
+        }
+        case EXPR_IMPLICIT_CAST: {
+            ImplicitCastExpr* ic = cast<ImplicitCastExpr>(expr);
+            return getInnerExprAddressOf(ic->getInner());
+        }
         }
     }
     return expr;
+}
+
+const Expr* AnalyserUtils::ignoreParenEpr(const Expr* expr) {
+    while (1) {
+        const ParenExpr* paren = dyncast<ParenExpr>(expr);
+        if (!paren) return expr;
+        expr = paren->getExpr();
+    }
 }
 
 // TODO refactor to remove duplicates

@@ -1,0 +1,9 @@
+DEPS_GENERATOR_1.0 {
+    global:
+        extern "C++" {
+            createPlugin;
+            deletePlugin;
+        };
+    local:
+        *;
+};

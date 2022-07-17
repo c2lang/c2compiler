@@ -19,6 +19,8 @@
 #include "Utils/StringList.h"
 #include "AST/Component.h"
 
+#include <vector>
+
 namespace C2 {
 
 typedef std::pair<std::string, std::string> Config;
@@ -68,9 +70,16 @@ public:
     bool hasLibrary(const std::string& lib_) const;
 
     unsigned size() const { return files.size(); }
+
     const std::string& get(int i) const;
     bool hasExported(const std::string& mod) const;
     const StringList& getExports() const { return exported; }
+
+    typedef std::pair<std::string, std::string> Plugin;
+    typedef std::vector<Plugin> Plugins;
+    const Plugins& getPlugins() const { return plugins; }
+    Plugins plugins;
+
     bool needsInterface() const {
         switch (type) {
         case Component::MAIN_EXECUTABLE:

@@ -78,12 +78,10 @@ add_executable(c2c
     Analyser/AnalyserUtils.cpp
     Analyser/Scope.cpp
     Analyser/TypeResolver.cpp
-    Analyser/LiteralAnalyser.cpp
+    Analyser/CTVAnalyser.cpp
     Analyser/FileAnalyser.cpp
     Analyser/FunctionAnalyser.cpp
-    Analyser/TypeFinder.cpp
     Analyser/ExprAnalyser.cpp
-    Analyser/ExprClassifier.cpp
     Analyser/ModuleAnalyser.cpp
     Analyser/ComponentAnalyser.cpp
     Algo/DepVisitor.cpp

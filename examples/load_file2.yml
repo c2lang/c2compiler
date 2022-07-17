@@ -1,0 +1,8 @@
+
+file.module: data
+
+file.files:
+    - file: files/data3.txt
+      variable: Data3
+      null_terminate: true
+

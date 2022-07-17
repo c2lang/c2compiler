@@ -47,9 +47,22 @@ ModuleAnalyser::~ModuleAnalyser() {
 }
 
 unsigned ModuleAnalyser::analyse(bool print1, bool print2, bool print3, bool printLib) {
-    const size_t count = analysers.size();
+    unsigned errors = analyseStep1();
+    if (print1) printASTs(printLib);
+    if (errors) return 1;
 
-    // analyse globals
+    errors = analyseStep2();
+    if (print2) printASTs(printLib);
+    if (errors) return 1;
+
+    errors = analyseStep3();
+    if (print3) printASTs(printLib);
+
+    return errors;
+}
+
+unsigned ModuleAnalyser::analyseStep1() {
+    const size_t count = analysers.size();
 
     // collect incremental arrays
     {
@@ -109,13 +122,15 @@ unsigned ModuleAnalyser::analyse(bool print1, bool print2, bool print3, bool pri
         }
         structFuncs.clear();
     }
+    return 0;
+}
 
-    // resolve types
+unsigned ModuleAnalyser::analyseStep2() {
+    const size_t count = analysers.size();
+
     for (unsigned i=0; i<count; i++) {
         if (!analysers[i]->analyseTypes()) return 1;
     }
-
-    if (print1) printASTs(printLib);
 
     for (unsigned i=0; i<count; i++) {
         if (!analysers[i]->analyseVars()) return 1;
@@ -128,15 +143,18 @@ unsigned ModuleAnalyser::analyse(bool print1, bool print2, bool print3, bool pri
     for (unsigned i=0; i<count; i++) {
         if (!analysers[i]->analyseFunctionProtos()) return 1;
     }
+    return 0;
+}
 
-    if (print2) printASTs(printLib);
+unsigned ModuleAnalyser::analyseStep3() {
+    const size_t count = analysers.size();
+    // TODO remove this check
     if (Diags.hasErrorOccurred()) return 1;
 
     // function bodies
     for (unsigned i=0; i<count; i++) {
         analysers[i]->analyseFunctionBodies();
     }
-    if (print3) printASTs(printLib);
     if (Diags.hasErrorOccurred()) return 1;
     return 0;
 }

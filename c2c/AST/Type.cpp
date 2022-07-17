@@ -50,9 +50,6 @@ bool QualType::isStructType() const {
 bool QualType::isFunctionType() const {
     return getTypePtr()->isFunctionType();
 }
-bool QualType::isSubscriptable() const {
-    return getTypePtr()->isSubscriptable();
-}
 bool QualType::isEnumType() const {
     return isa<EnumType>(getTypePtr());
 }
@@ -156,6 +153,7 @@ bool QualType::isConstant() const {
 }
 
 void QualType::DiagName(StringBuilder& buf, bool showQualifiers) const {
+    buf.clear();
     if (isNull()) {
         buf << "NULL";
     } else {

@@ -42,6 +42,9 @@ public:
     unsigned analyse(bool print1, bool print2, bool print3, bool printLib);
     void checkUnused();
 private:
+    unsigned analyseStep1();
+    unsigned analyseStep2();
+    unsigned analyseStep3();
     void printASTs(bool printLib) const;
 
     typedef std::vector<FileAnalyser*> Analysers;

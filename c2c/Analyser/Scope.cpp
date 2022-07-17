@@ -258,9 +258,8 @@ Decl* Scope::findSymbolInModule(const std::string& name, c2lang::SourceLocation 
 
 void Scope::checkAccess(Decl* D, c2lang::SourceLocation loc) const {
     const Module* mod = D->getModule();
-    assert(mod);
     // if external module, check visibility
-    if (isExternal(mod)) {
+    if (mod && isExternal(mod)) {
         if (!D->isPublic()) {
             Diags.Report(loc, diag::err_not_public) << AnalyserUtils::fullName(mod->getName(), D->getName());
             return;

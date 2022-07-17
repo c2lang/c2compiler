@@ -228,7 +228,7 @@ func void aaa_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, aaa_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, aaa_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -241,7 +241,7 @@ func void aaa_board_print() {
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, aaa_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, aaa_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -406,7 +406,7 @@ func void aaa_board_try_piece(u8 p) {
             for (u32 o=0; o<AaaNumOptions; o++) {
                 if (!aaa_board_try_option(&aaa_options[o][p], x, y)) {
                     aaa_board_add(&aaa_options[o][p], x, y, p);
-                    aaa_board_try_piece(p+1);
+                    aaa_board_try_piece(cast<u8>(p+1));
                     aaa_board_rem(&aaa_options[o][p], x, y);
                 }
                 aaa_tried++;
@@ -614,7 +614,7 @@ func void bbb_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, bbb_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, bbb_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -627,7 +627,7 @@ func void bbb_board_print() {
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, bbb_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, bbb_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -792,7 +792,7 @@ func void bbb_board_try_piece(u8 p) {
             for (u32 o=0; o<BbbNumOptions; o++) {
                 if (!bbb_board_try_option(&bbb_options[o][p], x, y)) {
                     bbb_board_add(&bbb_options[o][p], x, y, p);
-                    bbb_board_try_piece(p+1);
+                    bbb_board_try_piece(cast<u8>(p+1));
                     bbb_board_rem(&bbb_options[o][p], x, y);
                 }
                 bbb_tried++;
@@ -1000,7 +1000,7 @@ func void ccc_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, ccc_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, ccc_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -1013,7 +1013,7 @@ func void ccc_board_print() {
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, ccc_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, ccc_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -1178,7 +1178,7 @@ func void ccc_board_try_piece(u8 p) {
             for (u32 o=0; o<CccNumOptions; o++) {
                 if (!ccc_board_try_option(&ccc_options[o][p], x, y)) {
                     ccc_board_add(&ccc_options[o][p], x, y, p);
-                    ccc_board_try_piece(p+1);
+                    ccc_board_try_piece(cast<u8>(p+1));
                     ccc_board_rem(&ccc_options[o][p], x, y);
                 }
                 ccc_tried++;
@@ -1386,7 +1386,7 @@ func void ddd_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, ddd_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, ddd_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -1399,7 +1399,7 @@ func void ddd_board_print() {
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, ddd_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, ddd_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -1564,7 +1564,7 @@ func void ddd_board_try_piece(u8 p) {
             for (u32 o=0; o<DddNumOptions; o++) {
                 if (!ddd_board_try_option(&ddd_options[o][p], x, y)) {
                     ddd_board_add(&ddd_options[o][p], x, y, p);
-                    ddd_board_try_piece(p+1);
+                    ddd_board_try_piece(cast<u8>(p+1));
                     ddd_board_rem(&ddd_options[o][p], x, y);
                 }
                 ddd_tried++;
@@ -1772,7 +1772,7 @@ func void eee_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, eee_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, eee_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -1785,7 +1785,7 @@ func void eee_board_print() {
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, eee_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, eee_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -1950,7 +1950,7 @@ func void eee_board_try_piece(u8 p) {
             for (u32 o=0; o<EeeNumOptions; o++) {
                 if (!eee_board_try_option(&eee_options[o][p], x, y)) {
                     eee_board_add(&eee_options[o][p], x, y, p);
-                    eee_board_try_piece(p+1);
+                    eee_board_try_piece(cast<u8>(p+1));
                     eee_board_rem(&eee_options[o][p], x, y);
                 }
                 eee_tried++;
@@ -2158,7 +2158,7 @@ func void fff_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, fff_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, fff_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -2171,7 +2171,7 @@ func void fff_board_print() {
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, fff_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, fff_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -2336,7 +2336,7 @@ func void fff_board_try_piece(u8 p) {
             for (u32 o=0; o<FffNumOptions; o++) {
                 if (!fff_board_try_option(&fff_options[o][p], x, y)) {
                     fff_board_add(&fff_options[o][p], x, y, p);
-                    fff_board_try_piece(p+1);
+                    fff_board_try_piece(cast<u8>(p+1));
                     fff_board_rem(&fff_options[o][p], x, y);
                 }
                 fff_tried++;
@@ -2544,7 +2544,7 @@ func void ggg_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, ggg_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, ggg_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -2557,7 +2557,7 @@ func void ggg_board_print() {
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, ggg_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, ggg_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -2722,7 +2722,7 @@ func void ggg_board_try_piece(u8 p) {
             for (u32 o=0; o<GggNumOptions; o++) {
                 if (!ggg_board_try_option(&ggg_options[o][p], x, y)) {
                     ggg_board_add(&ggg_options[o][p], x, y, p);
-                    ggg_board_try_piece(p+1);
+                    ggg_board_try_piece(cast<u8>(p+1));
                     ggg_board_rem(&ggg_options[o][p], x, y);
                 }
                 ggg_tried++;
@@ -2930,7 +2930,7 @@ func void hhh_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, hhh_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, hhh_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -2943,7 +2943,7 @@ func void hhh_board_print() {
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, hhh_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, hhh_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -3108,7 +3108,7 @@ func void hhh_board_try_piece(u8 p) {
             for (u32 o=0; o<HhhNumOptions; o++) {
                 if (!hhh_board_try_option(&hhh_options[o][p], x, y)) {
                     hhh_board_add(&hhh_options[o][p], x, y, p);
-                    hhh_board_try_piece(p+1);
+                    hhh_board_try_piece(cast<u8>(p+1));
                     hhh_board_rem(&hhh_options[o][p], x, y);
                 }
                 hhh_tried++;
@@ -3317,7 +3317,7 @@ func void iii_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, iii_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, iii_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -3330,7 +3330,7 @@ func void iii_board_print() {
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, iii_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, iii_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -3495,7 +3495,7 @@ func void iii_board_try_piece(u8 p) {
             for (u32 o=0; o<IiiNumOptions; o++) {
                 if (!iii_board_try_option(&iii_options[o][p], x, y)) {
                     iii_board_add(&iii_options[o][p], x, y, p);
-                    iii_board_try_piece(p+1);
+                    iii_board_try_piece(cast<u8>(p+1));
                     iii_board_rem(&iii_options[o][p], x, y);
                 }
                 iii_tried++;
@@ -3703,7 +3703,7 @@ func void jjj_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, jjj_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, jjj_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -3716,7 +3716,7 @@ func void jjj_board_print() {
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, jjj_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, jjj_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -3881,7 +3881,7 @@ func void jjj_board_try_piece(u8 p) {
             for (u32 o=0; o<JjjNumOptions; o++) {
                 if (!jjj_board_try_option(&jjj_options[o][p], x, y)) {
                     jjj_board_add(&jjj_options[o][p], x, y, p);
-                    jjj_board_try_piece(p+1);
+                    jjj_board_try_piece(cast<u8>(p+1));
                     jjj_board_rem(&jjj_options[o][p], x, y);
                 }
                 jjj_tried++;
@@ -4089,7 +4089,7 @@ func void kkk_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, kkk_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, kkk_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -4102,7 +4102,7 @@ func void kkk_board_print() {
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, kkk_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, kkk_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -4267,7 +4267,7 @@ func void kkk_board_try_piece(u8 p) {
             for (u32 o=0; o<KkkNumOptions; o++) {
                 if (!kkk_board_try_option(&kkk_options[o][p], x, y)) {
                     kkk_board_add(&kkk_options[o][p], x, y, p);
-                    kkk_board_try_piece(p+1);
+                    kkk_board_try_piece(cast<u8>(p+1));
                     kkk_board_rem(&kkk_options[o][p], x, y);
                 }
                 kkk_tried++;
@@ -4475,7 +4475,7 @@ func void lll_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, lll_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, lll_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -4488,7 +4488,7 @@ func void lll_board_print() {
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, lll_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, lll_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -4653,7 +4653,7 @@ func void lll_board_try_piece(u8 p) {
             for (u32 o=0; o<LllNumOptions; o++) {
                 if (!lll_board_try_option(&lll_options[o][p], x, y)) {
                     lll_board_add(&lll_options[o][p], x, y, p);
-                    lll_board_try_piece(p+1);
+                    lll_board_try_piece(cast<u8>(p+1));
                     lll_board_rem(&lll_options[o][p], x, y);
                 }
                 lll_tried++;
@@ -4861,7 +4861,7 @@ func void mmm_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, mmm_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, mmm_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -4874,7 +4874,7 @@ func void mmm_board_print() {
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, mmm_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, mmm_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -5039,7 +5039,7 @@ func void mmm_board_try_piece(u8 p) {
             for (u32 o=0; o<MmmNumOptions; o++) {
                 if (!mmm_board_try_option(&mmm_options[o][p], x, y)) {
                     mmm_board_add(&mmm_options[o][p], x, y, p);
-                    mmm_board_try_piece(p+1);
+                    mmm_board_try_piece(cast<u8>(p+1));
                     mmm_board_rem(&mmm_options[o][p], x, y);
                 }
                 mmm_tried++;
@@ -5247,7 +5247,7 @@ func void nnn_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, nnn_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, nnn_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -5260,7 +5260,7 @@ func void nnn_board_print() {
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, nnn_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, nnn_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -5425,7 +5425,7 @@ func void nnn_board_try_piece(u8 p) {
             for (u32 o=0; o<NnnNumOptions; o++) {
                 if (!nnn_board_try_option(&nnn_options[o][p], x, y)) {
                     nnn_board_add(&nnn_options[o][p], x, y, p);
-                    nnn_board_try_piece(p+1);
+                    nnn_board_try_piece(cast<u8>(p+1));
                     nnn_board_rem(&nnn_options[o][p], x, y);
                 }
                 nnn_tried++;
@@ -5633,7 +5633,7 @@ func void ooo_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, ooo_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, ooo_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -5646,7 +5646,7 @@ func void ooo_board_print() {
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, ooo_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, ooo_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -5811,7 +5811,7 @@ func void ooo_board_try_piece(u8 p) {
             for (u32 o=0; o<OooNumOptions; o++) {
                 if (!ooo_board_try_option(&ooo_options[o][p], x, y)) {
                     ooo_board_add(&ooo_options[o][p], x, y, p);
-                    ooo_board_try_piece(p+1);
+                    ooo_board_try_piece(cast<u8>(p+1));
                     ooo_board_rem(&ooo_options[o][p], x, y);
                 }
                 ooo_tried++;
@@ -6019,7 +6019,7 @@ func void ppp_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, ppp_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, ppp_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -6032,7 +6032,7 @@ func void ppp_board_print() {
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, ppp_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, ppp_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -6197,7 +6197,7 @@ func void ppp_board_try_piece(u8 p) {
             for (u32 o=0; o<PppNumOptions; o++) {
                 if (!ppp_board_try_option(&ppp_options[o][p], x, y)) {
                     ppp_board_add(&ppp_options[o][p], x, y, p);
-                    ppp_board_try_piece(p+1);
+                    ppp_board_try_piece(cast<u8>(p+1));
                     ppp_board_rem(&ppp_options[o][p], x, y);
                 }
                 ppp_tried++;
@@ -6405,7 +6405,7 @@ func void qqq_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, qqq_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, qqq_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -6418,7 +6418,7 @@ func void qqq_board_print() {
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, qqq_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, qqq_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -6583,7 +6583,7 @@ func void qqq_board_try_piece(u8 p) {
             for (u32 o=0; o<QqqNumOptions; o++) {
                 if (!qqq_board_try_option(&qqq_options[o][p], x, y)) {
                     qqq_board_add(&qqq_options[o][p], x, y, p);
-                    qqq_board_try_piece(p+1);
+                    qqq_board_try_piece(cast<u8>(p+1));
                     qqq_board_rem(&qqq_options[o][p], x, y);
                 }
                 qqq_tried++;
@@ -6791,7 +6791,7 @@ func void rrr_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, rrr_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, rrr_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -6804,7 +6804,7 @@ func void rrr_board_print() {
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, rrr_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, rrr_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -6969,7 +6969,7 @@ func void rrr_board_try_piece(u8 p) {
             for (u32 o=0; o<RrrNumOptions; o++) {
                 if (!rrr_board_try_option(&rrr_options[o][p], x, y)) {
                     rrr_board_add(&rrr_options[o][p], x, y, p);
-                    rrr_board_try_piece(p+1);
+                    rrr_board_try_piece(cast<u8>(p+1));
                     rrr_board_rem(&rrr_options[o][p], x, y);
                 }
                 rrr_tried++;
@@ -7177,7 +7177,7 @@ func void sss_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, sss_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, sss_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -7190,7 +7190,7 @@ func void sss_board_print() {
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, sss_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, sss_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -7355,7 +7355,7 @@ func void sss_board_try_piece(u8 p) {
             for (u32 o=0; o<SssNumOptions; o++) {
                 if (!sss_board_try_option(&sss_options[o][p], x, y)) {
                     sss_board_add(&sss_options[o][p], x, y, p);
-                    sss_board_try_piece(p+1);
+                    sss_board_try_piece(cast<u8>(p+1));
                     sss_board_rem(&sss_options[o][p], x, y);
                 }
                 sss_tried++;
@@ -7563,7 +7563,7 @@ func void ttt_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, ttt_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, ttt_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -7576,7 +7576,7 @@ func void ttt_board_print() {
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, ttt_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, ttt_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -7741,7 +7741,7 @@ func void ttt_board_try_piece(u8 p) {
             for (u32 o=0; o<TttNumOptions; o++) {
                 if (!ttt_board_try_option(&ttt_options[o][p], x, y)) {
                     ttt_board_add(&ttt_options[o][p], x, y, p);
-                    ttt_board_try_piece(p+1);
+                    ttt_board_try_piece(cast<u8>(p+1));
                     ttt_board_rem(&ttt_options[o][p], x, y);
                 }
                 ttt_tried++;
@@ -7949,7 +7949,7 @@ func void uuu_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, uuu_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, uuu_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -7962,7 +7962,7 @@ func void uuu_board_print() {
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, uuu_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, uuu_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -8127,7 +8127,7 @@ func void uuu_board_try_piece(u8 p) {
             for (u32 o=0; o<UuuNumOptions; o++) {
                 if (!uuu_board_try_option(&uuu_options[o][p], x, y)) {
                     uuu_board_add(&uuu_options[o][p], x, y, p);
-                    uuu_board_try_piece(p+1);
+                    uuu_board_try_piece(cast<u8>(p+1));
                     uuu_board_rem(&uuu_options[o][p], x, y);
                 }
                 uuu_tried++;
@@ -8335,7 +8335,7 @@ func void vvv_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, vvv_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, vvv_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -8348,7 +8348,7 @@ func void vvv_board_print() {
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, vvv_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, vvv_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -8513,7 +8513,7 @@ func void vvv_board_try_piece(u8 p) {
             for (u32 o=0; o<VvvNumOptions; o++) {
                 if (!vvv_board_try_option(&vvv_options[o][p], x, y)) {
                     vvv_board_add(&vvv_options[o][p], x, y, p);
-                    vvv_board_try_piece(p+1);
+                    vvv_board_try_piece(cast<u8>(p+1));
                     vvv_board_rem(&vvv_options[o][p], x, y);
                 }
                 vvv_tried++;
@@ -8721,7 +8721,7 @@ func void www_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, www_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, www_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -8734,7 +8734,7 @@ func void www_board_print() {
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, www_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, www_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -8899,7 +8899,7 @@ func void www_board_try_piece(u8 p) {
             for (u32 o=0; o<WwwNumOptions; o++) {
                 if (!www_board_try_option(&www_options[o][p], x, y)) {
                     www_board_add(&www_options[o][p], x, y, p);
-                    www_board_try_piece(p+1);
+                    www_board_try_piece(cast<u8>(p+1));
                     www_board_rem(&www_options[o][p], x, y);
                 }
                 www_tried++;
@@ -9107,7 +9107,7 @@ func void xxx_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, xxx_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, xxx_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -9120,7 +9120,7 @@ func void xxx_board_print() {
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, xxx_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, xxx_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -9285,7 +9285,7 @@ func void xxx_board_try_piece(u8 p) {
             for (u32 o=0; o<XxxNumOptions; o++) {
                 if (!xxx_board_try_option(&xxx_options[o][p], x, y)) {
                     xxx_board_add(&xxx_options[o][p], x, y, p);
-                    xxx_board_try_piece(p+1);
+                    xxx_board_try_piece(cast<u8>(p+1));
                     xxx_board_rem(&xxx_options[o][p], x, y);
                 }
                 xxx_tried++;
@@ -9493,7 +9493,7 @@ func void yyy_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, yyy_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, yyy_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -9506,7 +9506,7 @@ func void yyy_board_print() {
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, yyy_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, yyy_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -9671,7 +9671,7 @@ func void yyy_board_try_piece(u8 p) {
             for (u32 o=0; o<YyyNumOptions; o++) {
                 if (!yyy_board_try_option(&yyy_options[o][p], x, y)) {
                     yyy_board_add(&yyy_options[o][p], x, y, p);
-                    yyy_board_try_piece(p+1);
+                    yyy_board_try_piece(cast<u8>(p+1));
                     yyy_board_rem(&yyy_options[o][p], x, y);
                 }
                 yyy_tried++;
@@ -9879,7 +9879,7 @@ func void zzz_board_print() {
             switch (field.status) {
             case FieldStatus.Free:
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, zzz_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, zzz_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -9892,7 +9892,7 @@ func void zzz_board_print() {
             default:
                 i32 flags = field.flags;
                 if (field.expected) {
-                    cp += io.sprintf(cp, "%s%s%s", color.Red, zzz_flags2char(field.expected), color.Normal);
+                    cp += io.sprintf(cp, "%s%c%s", color.Red, zzz_flags2char(field.expected), color.Normal);
                 } else {
                     *cp++ = ' ';
                 }
@@ -10057,7 +10057,7 @@ func void zzz_board_try_piece(u8 p) {
             for (u32 o=0; o<ZzzNumOptions; o++) {
                 if (!zzz_board_try_option(&zzz_options[o][p], x, y)) {
                     zzz_board_add(&zzz_options[o][p], x, y, p);
-                    zzz_board_try_piece(p+1);
+                    zzz_board_try_piece(cast<u8>(p+1));
                     zzz_board_rem(&zzz_options[o][p], x, y);
                 }
                 zzz_tried++;

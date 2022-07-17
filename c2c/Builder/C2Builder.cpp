@@ -189,6 +189,8 @@ C2Builder::C2Builder(Recipe& recipe_, const BuildFile* buildFile_, const BuildOp
     if (options.verbose) Log::log(COL_VERBOSE, "Target: %s", Str(targetInfo));
 
     AnalyserUtils::init(targetInfo);
+
+    if (pluginHandler) pluginHandler->beginTarget(*this);
 }
 
 C2Builder::~C2Builder()
@@ -352,7 +354,7 @@ void C2Builder::configDiagnostics(DiagnosticsEngine &Diags) {
     Diags.setSeverity(diag::warn_duplicate_attribute_exact, diag::Severity::Error, SourceLocation());
     Diags.setSeverity(diag::warn_not_in_enum, diag::Severity::Error, SourceLocation());
     Diags.setSeverity(diag::warn_missing_case, diag::Severity::Error, SourceLocation());
-    Diags.setSeverity(diag::warn_unreachable_default, diag::Severity::Warning, SourceLocation());
+    Diags.setSeverity(diag::warn_unreachable_default, diag::Severity::Error, SourceLocation());
     Diags.setSeverity(diag::warn_remainder_division_by_zero, diag::Severity::Error, SourceLocation());
     Diags.setSeverity(diag::warn_int_to_pointer_cast, diag::Severity::Error, SourceLocation());
     Diags.setSeverity(diag::warn_shift_lhs_negative, diag::Severity::Error, SourceLocation());

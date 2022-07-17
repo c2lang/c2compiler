@@ -1,4 +1,4 @@
-/* Copyright 2013-2022 Bas van den Berg
+/* Copyright 2022 Bas van den Berg
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,31 +13,20 @@
  * limitations under the License.
  */
 
-#ifndef ANALYSER_EXPR_CLASSIFIER_H
-#define ANALYSER_EXPR_CLASSIFIER_H
+#ifndef PROCESS_UTILS_H
+#define PROCESS_UTILS_H
 
-namespace C2 {
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-class Expr;
-class UnaryOperator;
+int process_run(const char* path, const char* cmd, const char* args, char* out);
 
-enum ExprValueKind {
-    VK_LValue,
-    VK_RValue,
-};
+void process_split_cmd(const char* full, char* cmd, char* args);
 
-class ExprClassifier {
-public:
-    // NOTE: expr must be otherwise analysed first (Type set, etc)
-    static ExprValueKind classifyExpr(const Expr* expr);
-private:
-    static ExprValueKind classifyUnaryOperator(const UnaryOperator* expr);
-
-    ExprClassifier(const ExprClassifier&);
-    ExprClassifier& operator= (const ExprClassifier&);
-};
-
+#ifdef __cplusplus
 }
+#endif
 
 #endif
 

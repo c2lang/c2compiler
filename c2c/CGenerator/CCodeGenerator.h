@@ -68,7 +68,7 @@ private:
     void EmitFunction(const FunctionDecl* F);
     void EmitFunctionArgs(const FunctionDecl* F, StringBuilder& output);
     void EmitConstant(const VarDecl* D);
-    void EmitGlobalVariable(const VarDecl* D);
+    void EmitGlobalVariable(const VarDecl* V);
     void EmitTypeDecl(const TypeDecl* D);
     void EmitForwardTypeDecl(const TypeDecl* D);
     void EmitStructType(const StructTypeDecl* S, StringBuilder& output, unsigned indent);
@@ -113,6 +113,8 @@ private:
 
     bool EmitAsStatic(const Decl* D) const;
     bool EmitAsDefine(const VarDecl* V) const;
+
+    const Expr* stripImplicitCast(const Expr* E);
 
     const std::string& filename;
     Mode mode;

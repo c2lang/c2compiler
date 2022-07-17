@@ -68,7 +68,7 @@ cmake -G "Unix Makefiles" \
     ../llvm-project/llvm
 
 make -j16
-make install
+make install DESTDIR=~/c2c
 ```
 
 Or if you want to build with Ninja replace 'Unix Makefiles' with 'Ninja'

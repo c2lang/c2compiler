@@ -38,3 +38,23 @@ void Log::log(const char* color, const char* format, ...) {
     else printf("%s\n", buffer);
 }
 
+void Log::info(const char* name, const char* format, ...) {
+    char buffer[256];
+    va_list(Args);
+    va_start(Args, format);
+    vsprintf(buffer, format, Args);
+    va_end(Args);
+
+    printf("%s: %s\n", name, buffer);
+}
+
+void Log::error(const char* name, const char* format, ...) {
+    char buffer[256];
+    va_list(Args);
+    va_start(Args, format);
+    vsprintf(buffer, format, Args);
+    va_end(Args);
+
+    printf("%s: error: %s\n", name, buffer);
+}
+

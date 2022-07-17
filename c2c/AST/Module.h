@@ -31,6 +31,7 @@ class SourceLocation;
 namespace C2 {
 
 class Decl;
+class VarDecl;
 class StringBuilder;
 class AST;
 
@@ -74,6 +75,11 @@ public:
     const AttrList& getAttributes(const Decl* d) const;
     void printAttributes(bool colors) const;
 
+    // VarDecls
+    void addSortedVar(const VarDecl* d) { sortedVarList.push_back(d); }
+    unsigned numSortedVar() const { return sortedVarList.size(); }
+    const VarDecl* getSortedVar(unsigned i) const { return sortedVarList[i]; }
+
     const AstList& getFiles() const { return files; }
 private:
     void printDecl(StringBuilder& out, const Decl* D, unsigned indent, bool printNonPublic) const;
@@ -91,6 +97,9 @@ private:
     AttrMap declAttrs;
     Symbols structFuncs;
     AstList files;
+
+    typedef std::vector<const VarDecl*> VarList;
+    VarList sortedVarList;
 
     Module(const Module&);
     Module& operator= (const Module&);

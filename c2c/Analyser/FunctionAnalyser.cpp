@@ -23,8 +23,7 @@
 
 #include "Analyser/FunctionAnalyser.h"
 #include "Analyser/TypeResolver.h"
-#include "Analyser/ExprClassifier.h"
-#include "Analyser/LiteralAnalyser.h"
+#include "Analyser/CTVAnalyser.h"
 #include "Analyser/Scope.h"
 #include "Analyser/AnalyserConstants.h"
 #include "Analyser/AnalyserUtils.h"
@@ -68,7 +67,7 @@ FunctionAnalyser::FunctionAnalyser(Scope& scope_,
     : scope(scope_)
     , TR(typeRes_)
     , Context(context_)
-    , EA(Diags_, target_)
+    , EA(Diags_, target_, context_)
     , Diags(Diags_)
     , target(target_)
     , CurrentFunction(0)
@@ -81,7 +80,6 @@ FunctionAnalyser::FunctionAnalyser(Scope& scope_,
     , allowStaticMember(false)
 {
     callStack.callDepth = 0;
-    parents.depth = 0;
 }
 
 void FunctionAnalyser::check(FunctionDecl* func) {
@@ -255,15 +253,19 @@ void FunctionAnalyser::analyseForStmt(Stmt* stmt) {
     ForStmt* F = cast<ForStmt>(stmt);
     scope.EnterScope(Scope::BreakScope | Scope::ContinueScope | Scope::DeclScope | Scope::ControlScope);
     if (F->getInit()) analyseStmt(F->getInit());
-    if (F->getCond()) {
-        QualType CT = analyseExpr(F->getCond(), RHS);
+
+    Expr** cond = F->getCond2();
+    if (cond) {
+        QualType CT = analyseExpr(cond, RHS, true);
         if (!CT.isScalarType()) {
             StringBuilder buf(64);
             CT.DiagName(buf);
             Diag(F->getCond()->getLocation(), diag::err_typecheck_statement_requires_scalar) << buf;
         }
     }
-    if (F->getIncr()) analyseExpr(F->getIncr(), RHS);
+
+    Expr** incr = F->getIncr2();
+    if (incr) analyseExpr(incr, RHS, true);
     analyseStmt(F->getBody(), true);
     scope.ExitScope();
 }
@@ -341,8 +343,10 @@ void FunctionAnalyser::analyseSSwitchStmt(Stmt* stmt) {
     LOG_FUNC
     SSwitchStmt* S = cast<SSwitchStmt>(stmt);
 
-    Expr* cond = S->getCond();
-    if (!analyseExpr(cond, RHS)) return;
+    Expr** cond_ptr = S->getCond2();
+    Expr* cond = *cond_ptr;
+    QualType Q = analyseExpr(cond_ptr, RHS, true);
+    if (!Q.isValid()) return;
     if (!isCharPtr(cond->getType())) {
         StringBuilder buf1(MAX_LEN_TYPENAME);
         cond->getType().DiagName(buf1);
@@ -483,7 +487,8 @@ void FunctionAnalyser::analyseCaseStmt(Stmt* stmt) {
     LOG_FUNC
     scope.EnterScope(Scope::DeclScope | Scope::SwitchScope);
     CaseStmt* C = cast<CaseStmt>(stmt);
-    analyseExpr(C->getCond(), RHS);
+    // TODO check return value?
+    analyseExpr(C->getCond2(), RHS, true);
     Stmt** stmts = C->getStmts();
     fallthrough = 0;
     for (unsigned i=0; i<C->numStmts(); i++) {
@@ -545,30 +550,19 @@ void FunctionAnalyser::analyseDefaultStmt(Stmt* stmt, bool isSwitch) {
 bool FunctionAnalyser::analyseReturnStmt(Stmt* stmt) {
     LOG_FUNC
     ReturnStmt* ret = cast<ReturnStmt>(stmt);
-    Expr* value = ret->getExpr();
+    Expr** value_ptr = ret->getExpr2();
     QualType rtype = CurrentFunction->getReturnType();
     bool no_rvalue = (rtype.getTypePtr() == Type::Void());
-    if (value) {
-        parents.push(ret->childAddr());
-        QualType type = analyseExpr(value, RHS);
-#if 0
-        // AST modification DEMO: always wrap value in ParenExpr
-        {
-            ParenExpr* P = new (Context) ParenExpr(SourceLocation(), SourceLocation(), value);
-            P->setCTC(value->getCTC());
-            if (value->isConstant()) P->setConstant();
-            P->setType(type);
-            parents.replaceChild(P);
-        }
-#endif
-        parents.pop();
+    if (value_ptr) {
+        Expr* value = *value_ptr;
+        QualType type = analyseExpr(value_ptr, RHS, true);
         if (no_rvalue) {
             Diag(ret->getLocation(), diag::ext_return_has_expr) << CurrentFunction->getName() << 0
                     << value->getSourceRange();
             return false;
         }
         if (type.isValid()) {
-            EA.check(rtype, value);
+            EA.check(rtype, *value_ptr);
             if (EA.hasError()) return false;
         }
     } else {
@@ -602,16 +596,9 @@ void FunctionAnalyser::analyseDeclStmt(Stmt* stmt) {
             // TODO use Helper-function to get ArrayType (might be AliasType)
             ArrayType* AT = cast<ArrayType>(Q.getTypePtr());
             Expr* sizeExpr = AT->getSizeExpr();
-            if (sizeExpr) {
-                if (sizeExpr->getCTC() != CTC_FULL && decl->getInitValue()) {
-                    Diag(decl->getLocation(), diag::err_vla_with_init_value) << decl->getInitValue()->getLocation();
-                    haveError = true;
-                }
-            } else {
-                if (!decl->getInitValue()) {
-                    Diag(decl->getLocation(), diag::err_typecheck_incomplete_array_needs_initializer);
-                    haveError = true;
-                }
+            if (!sizeExpr && !decl->getInitValue()) {
+                Diag(decl->getLocation(), diag::err_typecheck_incomplete_array_needs_initializer);
+                haveError = true;
             }
         }
         TR.checkOpaqueType(decl->getLocation(), false, Q);
@@ -630,7 +617,7 @@ void FunctionAnalyser::analyseDeclStmt(Stmt* stmt) {
     if (!scope.checkScopedSymbol(decl)) return;
 
     // check initial value
-    Expr* initialValue = decl->getInitValue();
+    Expr** initialValue = decl->getInitValue2();
     if (initialValue && !haveError) {
         CurrentVarDecl = decl;
         analyseInitExpr(initialValue, decl->getType());
@@ -648,18 +635,18 @@ void FunctionAnalyser::analyseAsmStmt(Stmt* stmt) {
     AsmStmt* A = cast<AsmStmt>(stmt);
     // outputs
     for (unsigned i=0; i<A->getNumOutputs(); ++i) {
-        Expr* e = A->getOutputExpr(i);
-        analyseExpr(e, LHS);
+        Expr** e = A->getOutputExpr2(i);
+        analyseExpr(e, LHS, true);
     }
     // inputs
     for (unsigned i=0; i<A->getNumInputs(); ++i) {
-        Expr* e = A->getInputExpr(i);
-        analyseExpr(e, RHS);
+        Expr** e = A->getInputExpr2(i);
+        analyseExpr(e, RHS, true);
     }
     // clobbers
     for (unsigned i=0; i<A->getNumClobbers(); ++i) {
-        StringLiteral* c = A->getClobber(i);
-        analyseExpr(c, 0);
+        StringLiteral** c = A->getClobber2(i);
+        analyseExpr((Expr**)c, 0, true);
     }
 }
 
@@ -671,9 +658,10 @@ bool FunctionAnalyser::analyseCondition(Stmt* stmt) {
     } else {
         assert(isa<Expr>(stmt));
         Expr* E = cast<Expr>(stmt);
-        QualType Q1 = analyseExpr(E, RHS);
+        // NOTE: cannot insert ImplicitCastExpr here!
+        QualType Q1 = analyseExpr(&E, RHS, true);
         if (!Q1.isValid()) return false;
-        EA.check(Type::Bool(), E);
+        EA.check(Type::Bool(), E);  // BB Not valid
     }
     return true;
 }
@@ -681,94 +669,67 @@ bool FunctionAnalyser::analyseCondition(Stmt* stmt) {
 void FunctionAnalyser::analyseStmtExpr(Stmt* stmt) {
     LOG_FUNC
     Expr* expr = cast<Expr>(stmt);
-    analyseExpr(expr, 0);
+    // NOTE: cannot insert ImplicitCastExpr here!
+    analyseExpr(&expr, 0, false);
 }
 
-C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
+C2::QualType FunctionAnalyser::analyseExpr(Expr** expr_ptr, unsigned side, bool need_rvalue) {
     LOG_FUNC
+    QualType Result = analyseExprInner(expr_ptr, side);
+    if (!Result.isValid()) return Result;
+    Expr* expr = *expr_ptr;
+    expr->setType(Result);
+
+    if (need_rvalue && expr->isLValue()) {
+        // TODO just Result?
+        QualType Q = expr->getType();
+        if (Q.isArrayType()) {
+            QualType Qptr = AnalyserUtils::getPointerFromArray(Context, Q);
+            insertImplicitCast(CK_ArrayToPointerDecay, expr_ptr, Qptr);
+            return Qptr;
+        } else {
+            insertImplicitCast(CK_LValueToRValue, expr_ptr, Q);
+        }
+    }
+
+    return Result;
+}
+
+C2::QualType inline FunctionAnalyser::analyseExprInner(Expr** expr_ptr, unsigned side) {
+    LOG_FUNC
+
+    Expr* expr = *expr_ptr;
 
     switch (expr->getKind()) {
     case EXPR_INTEGER_LITERAL:
         return EA.analyseIntegerLiteral(expr);
     case EXPR_FLOAT_LITERAL:
         // For now always return type float
-        expr->setType(Type::Float32());
         return Type::Float32();
     case EXPR_BOOL_LITERAL:
-        expr->setType(Type::Bool());
         return Type::Bool();
     case EXPR_CHAR_LITERAL:
-        expr->setType(Type::Int8());
         return Type::Int8();
     case EXPR_STRING_LITERAL:
     {
-        // return type: 'const i8*'
-        QualType Q = Context.getPointerType(Type::Int8());
+        StringLiteral* s = cast<StringLiteral>(expr);
+        int len = s->getByteLength();
+        QualType Q = Context.getArrayType(Type::Int8(), s->getByteLength());
         Q.addConst();
-        if (!Q->hasCanonicalType()) Q->setCanonicalType(Q);
-        expr->setType(Q);
+        QualType Ptr = Context.getPointerType(Type::Int8());
+        Q->setCanonicalType(Ptr);
         return Q;
     }
     case EXPR_NIL:
     {
         QualType Q = Context.getPointerType(Type::Void());
         if (!Q->hasCanonicalType()) Q->setCanonicalType(Q);
-        expr->setType(Q);
         return Q;
     }
     case EXPR_CALL:
         return analyseCall(expr);
     case EXPR_IDENTIFIER:
-    {
-        IdentifierExpr* id = cast<IdentifierExpr>(expr);
-        Decl* D = analyseIdentifier(id);
-        if (!D) break;
-        if (D == CurrentVarDecl) {
-            Diag(id->getLocation(), diag::err_var_self_init) << D->getName();
-            return QualType();
-        }
-        if (side & LHS) checkDeclAssignment(D, expr);
-        switch (D->getKind()) {
-        case DECL_FUNC:
-            expr->setConstant();
-            break;
-        case DECL_VAR:
-            break;
-        case DECL_ENUMVALUE:
-            expr->setCTC(CTC_FULL);
-            expr->setConstant();
-            break;
-        case DECL_STRUCTTYPE:
-            // Type.func is allowed as init
-            // TODO handle, mark that Type was specified, not just return StructType
-            break;
-        case DECL_ALIASTYPE:
-        case DECL_FUNCTIONTYPE:
-            Diag(id->getLocation(), diag::err_unexpected_typedef) << id->getName();
-            expr->setConstant();
-            break;
-        case DECL_ENUMTYPE:
-            expr->setConstant();
-            break;
-        case DECL_ARRAYVALUE:
-            break;
-        case DECL_IMPORT:
-            expr->setConstant();
-            break;
-        case DECL_LABEL:
-        case DECL_STATIC_ASSERT:
-            FATAL_ERROR("Unreachable");
-            break;
-        }
-        if (side & RHS) {
-            D->setUsed();
-            if (usedPublicly) D->setUsedPublic();
-        }
-        QualType T = D->getType();
-        expr->setType(T);
-        return T;
-    }
-    break;
+        return analyseIdentifierExpr(expr_ptr, side);
     case EXPR_INITLIST:
     case EXPR_DESIGNATOR_INIT:
     case EXPR_TYPE:
@@ -779,27 +740,32 @@ C2::QualType FunctionAnalyser::analyseExpr(Expr* expr, unsigned side) {
     case EXPR_CONDOP:
         return analyseConditionalOperator(expr);
     case EXPR_UNARYOP:
-        return analyseUnaryOperator(expr, side);
+        return analyseUnaryOperator(expr_ptr, side);
     case EXPR_BUILTIN:
         return analyseBuiltinExpr(expr);
     case EXPR_ARRAYSUBSCRIPT:
         return analyseArraySubscript(expr, side);
     case EXPR_MEMBER:
-        return analyseMemberExpr(expr, side);
+        return analyseMemberExpr(expr_ptr, side);
     case EXPR_PAREN:
         return analyseParenExpr(expr);
     case EXPR_BITOFFSET:
         FATAL_ERROR("Unreachable");
         break;
-    case EXPR_EXPL_CAST:
+    case EXPR_EXPLICIT_CAST:
         return analyseExplicitCastExpr(expr);
+    case EXPR_IMPLICIT_CAST:
+        return analyseImplicitCastExpr(expr);
     }
     return QualType();
 }
 
-void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
+void FunctionAnalyser::analyseInitExpr(Expr** expr_ptr, QualType expectedType) {
     LOG_FUNC
+
+    Expr* expr = *expr_ptr;
     InitListExpr* ILE = dyncast<InitListExpr>(expr);
+
     // FIXME: expectedType has no canonicalType yet!
     const ArrayType* AT = dyncast<ArrayType>(expectedType.getCanonicalType());
     if (AT) {
@@ -818,27 +784,29 @@ void FunctionAnalyser::analyseInitExpr(Expr* expr, QualType expectedType) {
             }
         }
     }
+
     if (ILE) {
         analyseInitList(ILE, expectedType);
     } else if (isa<DesignatedInitExpr>(expr)) {
         analyseDesignatorInitExpr(expr, expectedType);
     } else {
-        QualType Q = analyseExpr(expr, RHS);
-        if (Q.isValid()) {
-            if (inConstExpr && !expr->isConstant()) {
-                assert(constDiagID);
-                Diag(expr->getLocation(), constDiagID) << expr->getSourceRange();
-            } else {
-                EA.check(expectedType, expr);
-            }
-            if (AT && AT->getSizeExpr()) {
-                // it should be char array type already and expr is string literal
-                assert(isa<StringLiteral>(expr));
-                const StringLiteral* S = cast<StringLiteral>(expr);
-                if (S->getByteLength() > (int)AT->getSize().getZExtValue()) {
-                    Diag(S->getLocation(), diag::err_initializer_string_for_char_array_too_long) << S->getSourceRange();
-                    return;
-                }
+        QualType Q = analyseExpr(expr_ptr, RHS, true);
+        expr = *expr_ptr; // Can have changed
+        if (!Q.isValid()) return;
+
+        if (inConstExpr && !expr->isCTC()) {
+            assert(constDiagID);
+            Diag(expr->getLocation(), constDiagID) << expr->getSourceRange();
+        } else {
+            EA.check(expectedType, expr);
+        }
+        if (AT && AT->getSizeExpr()) {
+            // it should be char array type already and expr is string literal
+            assert(isa<StringLiteral>(expr));
+            const StringLiteral* S = cast<StringLiteral>(expr);
+            if (S->getByteLength() > (int)AT->getSize().getZExtValue()) {
+                Diag(S->getLocation(), diag::err_initializer_string_for_char_array_too_long) << S->getSourceRange();
+                return;
             }
         }
     }
@@ -853,7 +821,7 @@ void FunctionAnalyser::analyseInitListArray(InitListExpr* expr, QualType Q, unsi
     QualType ET = AT->getElementType();
     bool constant = true;
     for (unsigned i=0; i<numValues; i++) {
-        analyseInitExpr(values[i], ET);
+        analyseInitExpr(&values[i], ET);
         if (DesignatedInitExpr* D = dyncast<DesignatedInitExpr>(values[i])) {
             haveDesignators = true;
             if (D->getDesignatorKind() != DesignatedInitExpr::ARRAY_DESIGNATOR) {
@@ -864,10 +832,10 @@ void FunctionAnalyser::analyseInitListArray(InitListExpr* expr, QualType Q, unsi
                 continue;
             }
         }
-        if (!values[i]->isConstant()) constant = false;
+        if (!values[i]->isCTC()) constant = false;
     }
 
-    if (constant) expr->setConstant();
+    if (constant) expr->setCTC();
     if (haveDesignators) expr->setDesignators();
     // determine real array size
     llvm::APInt initSize(64, 0, false);
@@ -955,7 +923,8 @@ bool FunctionAnalyser::analyseFieldInDesignatedInitExpr(DesignatedInitExpr* D,
         assert(VD && "TEMP don't support sub-struct member inits");
     }
     field->setDecl(VD, AnalyserUtils::globalDecl2RefKind(VD));
-    analyseInitExpr(D->getInitValue(), VD->getType());
+    Expr** initValue = D->getInitValue2();
+    analyseInitExpr(initValue, VD->getType());
     if (anonUnionIndex < 0 && isa<DesignatedInitExpr>(value) != haveDesignators) {
         Diag(value->getLocation(), diag::err_mixed_field_designator);
         return false;
@@ -970,7 +939,6 @@ void FunctionAnalyser::analyseInitListStruct(InitListExpr* expr, QualType Q, uns
     // TODO use helper function
     StructType* TT = cast<StructType>(Q.getCanonicalType().getTypePtr());
     StructTypeDecl* STD = TT->getDecl();
-    assert(STD->isStruct() && "TEMP only support structs for now");
     bool constant = true;
     // ether init whole struct with field designators, or don't use any (no mixing allowed)
     // NOTE: using different type for anonymous sub-union is allowed
@@ -1000,8 +968,8 @@ void FunctionAnalyser::analyseInitListStruct(InitListExpr* expr, QualType Q, uns
             if (!VD) {
                 TODO;
             }
-            analyseInitExpr(values[i], VD->getType());
-            if (!values[i]->isConstant()) constant = false;
+            analyseInitExpr(&values[i], VD->getType());
+            if (!values[i]->isCTC()) constant = false;
             if (isa<DesignatedInitExpr>(values[i]) != haveDesignators) {
                 Diag(values[i]->getLocation(), diag::err_mixed_field_designator);
                 return;
@@ -1021,7 +989,7 @@ void FunctionAnalyser::analyseInitListStruct(InitListExpr* expr, QualType Q, uns
                 break;
         }
     }
-    if (constant) expr->setConstant();
+    if (constant) expr->setCTC();
 }
 
 void FunctionAnalyser::analyseInitList(InitListExpr* expr, QualType Q) {
@@ -1061,17 +1029,18 @@ void FunctionAnalyser::analyseDesignatorInitExpr(Expr* expr, QualType expectedTy
     LOG_FUNC
     DesignatedInitExpr* D = cast<DesignatedInitExpr>(expr);
     if (D->getDesignatorKind() == DesignatedInitExpr::ARRAY_DESIGNATOR) {
-        Expr* Desig = D->getDesignator();
-        QualType DT = analyseExpr(Desig, RHS);
+        Expr** Desig_ptr = D->getDesignator2();
+        Expr* Desig=  *Desig_ptr;
+        QualType DT = analyseExpr(Desig_ptr, RHS, true);
         if (DT.isValid()) {
-            if (!Desig->isConstant()) {
+            if (!Desig->isCTC()) {
                 assert(constDiagID);
                 Diag(Desig->getLocation(), constDiagID) << Desig->getSourceRange();
             } else {
                 if (!Desig->getType().isIntegerType()) {
                     Diag(Desig->getLocation(), diag::err_typecheck_subscript_not_integer) << Desig->getSourceRange();
                 } else {
-                    LiteralAnalyser LA(Diags);
+                    CTVAnalyser LA(Diags);
                     llvm::APSInt V = LA.checkLiterals(Desig);
                     if (V.isSigned() && V.isNegative()) {
                         Diag(Desig->getLocation(), diag::err_array_designator_negative) << V.toString(10) << Desig->getSourceRange();
@@ -1085,8 +1054,8 @@ void FunctionAnalyser::analyseDesignatorInitExpr(Expr* expr, QualType expectedTy
         // cannot check here, need structtype
     }
 
-    analyseInitExpr(D->getInitValue(), expectedType);
-    if (D->getInitValue()->isConstant()) D->setConstant();
+    analyseInitExpr(D->getInitValue2(), expectedType);
+    D->syncFlags(D->getInitValue());
 
     D->setType(expectedType);
 }
@@ -1095,12 +1064,12 @@ QualType FunctionAnalyser::analyseSizeOfExpr(BuiltinExpr* B) {
     LOG_FUNC
 
     static constexpr unsigned FLOAT_SIZE_DEFAULT = 8;
-    B->setType(Type::UInt32());
 
     uint64_t width;
     allowStaticMember = true;
 
-    Expr* expr = B->getExpr();
+    Expr** expr_ptr = B->getExpr2();
+    Expr* expr = *expr_ptr;
 
     switch (expr->getKind()) {
     case EXPR_FLOAT_LITERAL:
@@ -1116,11 +1085,9 @@ QualType FunctionAnalyser::analyseSizeOfExpr(BuiltinExpr* B) {
         // TODO can be public?
         QualType Q = analyseType(expr->getType(), expr->getLocation());
         if (!Q.isValid()) return QualType();
-        expr->setType(Q);
         // TODO here we want to use expr->getLocation()
         // But that does not properly find the right location!
         TR.checkOpaqueType(B->getLocation(), false, Q);
-        expr->setType(Q);
         unsigned align;
         width = AnalyserUtils::sizeOfType(Q, &align);
         break;
@@ -1137,8 +1104,8 @@ QualType FunctionAnalyser::analyseSizeOfExpr(BuiltinExpr* B) {
     case EXPR_ARRAYSUBSCRIPT:
     case EXPR_MEMBER:
     case EXPR_IDENTIFIER:
-    case EXPR_EXPL_CAST: {
-        QualType type = analyseExpr(expr, RHS);
+    case EXPR_EXPLICIT_CAST: {
+        QualType type = analyseExpr(expr_ptr, RHS, false);
         if (!type.isValid()) {
             allowStaticMember = false;
             return QualType();
@@ -1148,6 +1115,9 @@ QualType FunctionAnalyser::analyseSizeOfExpr(BuiltinExpr* B) {
         width = AnalyserUtils::sizeOfType(type, &align);
         break;
     }
+    case EXPR_IMPLICIT_CAST:
+        TODO;
+        break;
     case EXPR_BUILTIN:
         FATAL_ERROR("Unreachable");
         allowStaticMember = false;
@@ -1166,22 +1136,35 @@ QualType FunctionAnalyser::analyseSizeOfExpr(BuiltinExpr* B) {
 QualType FunctionAnalyser::analyseElemsOfExpr(BuiltinExpr* B) {
     LOG_FUNC
 
-    B->setType(Type::UInt32());
-    Expr* E = B->getExpr();
-    QualType T = analyseExpr(E, RHS);
+    Expr** E_ptr = B->getExpr2();
+    Expr* orig = B->getExpr();
+    QualType T = analyseExpr(E_ptr, RHS, false);
+    // use orig to skip ArrayToPointerDecay
+    T = orig->getType();
+
+    llvm::APSInt i(32, 1);
     const ArrayType* AT = dyncast<ArrayType>(T.getCanonicalType());
-    if (!AT) {
-        Diag(E->getLocation(), diag::err_elemsof_no_array) << E->getSourceRange();
-        return QualType();
+    if (AT) {
+        i = AT->getSize();
+        B->setValue(i);
+        return Type::UInt32();
     }
-    B->setValue(llvm::APSInt(AT->getSize()));
-    return Type::UInt32();
+    const EnumType* ET = dyncast<EnumType>(T);  // NOTE: dont use canonicalType!
+    if (ET) {
+        EnumTypeDecl* ETD = ET->getDecl();
+        i = ETD->numConstants();
+        B->setValue(i);
+        return Type::UInt32();
+    }
+    Expr* E = *E_ptr;
+    Diag(E->getLocation(), diag::err_elemsof_no_array) << E->getSourceRange();
+    return QualType();
 }
 
 QualType FunctionAnalyser::analyseEnumMinMaxExpr(BuiltinExpr* B, bool isMin) {
     LOG_FUNC
-    B->setType(Type::UInt32());
-    Expr* E = B->getExpr();
+    Expr** E_ptr = B->getExpr2();
+    Expr* E = *E_ptr;
     // TODO support memberExpr (module.Type)
     assert(isa<IdentifierExpr>(E));
     IdentifierExpr* I = cast<IdentifierExpr>(E);
@@ -1216,42 +1199,6 @@ QualType FunctionAnalyser::analyseEnumMinMaxExpr(BuiltinExpr* B, bool isMin) {
     return decl->getType();
 }
 
-QualType FunctionAnalyser::findStructMember(QualType T, IdentifierExpr* member) {
-    assert(T.isStructType());
-    LOG_FUNC;
-
-    const StructType* ST = cast<StructType>(T);
-    StructTypeDecl* S = ST->getDecl();
-
-    Decl* match = S->findMember(member->getName());
-    if (!match) {
-        char temp1[MAX_LEN_TYPENAME];
-        StringBuilder buf1(MAX_LEN_TYPENAME, temp1);
-        T.DiagName(buf1);
-
-        char temp2[MAX_LEN_VARNAME];
-        StringBuilder buf2(MAX_LEN_VARNAME, temp2);
-        buf2 << '\'' << member->getName() << '\'';
-        Diag(member->getLocation(), diag::err_no_member) << temp2 << temp1;
-        return QualType();
-
-    }
-
-    IdentifierExpr::RefKind ref = IdentifierExpr::REF_STRUCT_MEMBER;
-
-    // NOTE: access of struct-function is not a dereference
-    // TODO
-    //if (currentModule() != S->getModule() && S->hasAttribute(ATTR_OPAQUE)) {
-    //    Diag(S->getLocation(), diag::err_deref_opaque) << S->isStruct() << S->DiagName();
-    //   return QualType();
-    //}
-
-    match->setUsed();
-    member->setDecl(match, ref);
-    member->setType(match->getType());
-    return match->getType();
-}
-
 StructTypeDecl* FunctionAnalyser::builtinExprToStructTypeDecl(BuiltinExpr* B) {
     Expr* structExpr = B->getExpr();
     Decl* structDecl = 0;
@@ -1262,7 +1209,7 @@ StructTypeDecl* FunctionAnalyser::builtinExprToStructTypeDecl(BuiltinExpr* B) {
         structDecl = analyseIdentifier(I);
         if (!structDecl) return 0;
     } else {    // MemberExpr: module.StructType
-        assert(isa<memberExpr>(structExpr));
+        assert(isa<MemberExpr>(structExpr));
         MemberExpr* M = cast<MemberExpr>(structExpr);
         Expr* base = M->getBase();
         IdentifierExpr* B = dyncast<IdentifierExpr>(base);
@@ -1307,7 +1254,6 @@ StructTypeDecl* FunctionAnalyser::builtinExprToStructTypeDecl(BuiltinExpr* B) {
 QualType FunctionAnalyser::analyseOffsetOf(BuiltinExpr* B) {
     LOG_FUNC
 
-    B->setType(Type::UInt32());
     StructTypeDecl* std = builtinExprToStructTypeDecl(B);
     if (!std) return QualType();
 
@@ -1332,32 +1278,31 @@ QualType FunctionAnalyser::analyseToContainer(BuiltinExpr* B) {
 
     Decl* match = std->findMember(member->getName());
     if (!match) {
-        EA.outputStructDiagnostics(ST, member, diag::err_no_member);
-        return QualType();
+        return EA.outputStructDiagnostics(ST, member, diag::err_no_member);
     }
     member->setDecl(match, IdentifierExpr::REF_STRUCT_MEMBER);
     QualType MT = match->getType();
     member->setType(MT);
 
     // check ptr
-    Expr* ptrExpr = B->getPointer();
-    QualType ptrType = analyseExpr(ptrExpr, RHS);
+    Expr** ptrExpr_ptr = B->getPointer2();
+    Expr* ptrExpr = *ptrExpr_ptr;
+    QualType ptrType = analyseExpr(ptrExpr_ptr, RHS, false);
     if (!ptrType.isPointerType()) {
-        EA.error(ptrExpr->getLocation(), Context.getPointerType(member->getType()), ptrType);
+        EA.error(ptrExpr, Context.getPointerType(member->getType()), ptrType);
         return QualType();
     }
     QualType PT = cast<PointerType>(ptrType)->getPointeeType();
     // TODO BB allow conversion from void*
     // TODO BB use ExprAnalyser to do and insert casts etc
     if (PT != MT) {
-        EA.error(ptrExpr->getLocation(), Context.getPointerType(member->getType()), ptrType);
+        EA.error(ptrExpr, Context.getPointerType(member->getType()), ptrType);
         return QualType();
     }
 
     // if ptr is const qualified, tehn so should resulting Type (const Type*)
     if (PT.isConstQualified()) ST.addConst();
     QualType Q = Context.getPointerType(ST);
-    B->setType(Q);
     return Q;
 }
 
@@ -1400,7 +1345,9 @@ QualType FunctionAnalyser::analyseType(QualType Q, SourceLocation loc) {
         if (!ET.isValid()) return QualType();
 
         Expr* sizeExpr = AT->getSizeExpr();
-        if (!analyseArraySizeExpr(AT)) return QualType();
+        if (sizeExpr) {
+            if (!analyseArraySizeExpr(AT)) return QualType();
+        }
 
         if (ET == AT->getElementType()) {
             resolved = Q;
@@ -1489,35 +1436,40 @@ QualType FunctionAnalyser::analyseRefType(QualType Q) {
 
 bool FunctionAnalyser::analyseArraySizeExpr(ArrayType* AT) {
     LOG_FUNC
-    Expr* E = AT->getSizeExpr();
-    if (!E) return true;
 
-    QualType T = analyseExpr(E, RHS);
+    QualType T = analyseExpr(AT->getSizeExpr2(), RHS, false);
     if (!T.isValid()) return false;
+
+    Expr* sizeExpr = AT->getSizeExpr();
 
     // check if type is integer
     QualType CT = T.getCanonicalType();
     if (!CT.isBuiltinType() || !cast<BuiltinType>(CT)->isInteger()) {
         StringBuilder buf;
         T.DiagName(buf, false);
-        Diag(E->getLocation(), diag::err_array_size_non_int) << buf << E->getSourceRange();
+        Diag(sizeExpr->getLocation(), diag::err_array_size_non_int) << buf << sizeExpr->getSourceRange();
+        return false;
+    }
+
+    if (!sizeExpr->isCTV()) {
+        Diag(sizeExpr->getLocation(), diag::err_array_size_non_const);
         return false;
     }
 
     // check if negative
-    if (E->getCTC() == CTC_FULL) {
-        LiteralAnalyser LA(Diags);
-        llvm::APSInt Result = LA.checkLiterals(E);
-        if (Result == 0) {
-            Diag(E->getLocation(), diag::err_array_size_zero);
-            return false;
-        }
-        if (Result.isSigned() && Result.isNegative()) {
-            Diag(E->getLocation(), diag::err_typecheck_negative_array_size) << Result.toString(10) << E->getSourceRange();
-            return false;
-        }
-        AT->setSize(Result);
+    CTVAnalyser LA(Diags);
+    llvm::APSInt value = LA.checkLiterals(sizeExpr);
+
+    if (value == 0) {
+        Diag(sizeExpr->getLocation(), diag::err_array_size_zero);
+        return false;
     }
+
+    if (value.isSigned() && value.isNegative()) {
+        Diag(sizeExpr->getLocation(), diag::err_typecheck_negative_array_size) << value.toString(10) << sizeExpr->getSourceRange();
+        return false;
+    }
+    AT->setSize(value);
     return true;
 }
 
@@ -1525,8 +1477,11 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     LOG_FUNC
     BinaryOperator* binop = cast<BinaryOperator>(expr);
     QualType TLeft, TRight;
-    Expr* Left = binop->getLHS();
-    Expr* Right = binop->getRHS();
+    Expr** Left_ptr = binop->getLHS2();
+    // TODO dont read Left/Right here, can change due to inserted casts
+    Expr* Left = NULL;
+    Expr** Right_ptr = binop->getRHS2();
+    Expr* Right = NULL;
 
     switch (binop->getOpcode()) {
     case BINOP_Mul:
@@ -1537,10 +1492,11 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     case BINOP_Shl:
     case BINOP_Shr:
         // RHS, RHS
-        TLeft = analyseExpr(Left, RHS);
-        TRight = analyseExpr(Right, RHS);
-        AnalyserUtils::combineCtc(expr, Left, Right);
-        if (Left->isConstant() && Right->isConstant()) expr->setConstant();
+        TLeft = analyseExpr(Left_ptr, RHS, true);
+        TRight = analyseExpr(Right_ptr, RHS, true);
+        Left = binop->getLHS();
+        Right = binop->getRHS();
+        expr->combineFlags(Left, Right);
         break;
     case BINOP_LE:
     case BINOP_LT:
@@ -1549,10 +1505,12 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     case BINOP_NE:
     case BINOP_EQ:
         // RHS, RHS
-        TLeft = analyseExpr(Left, RHS);
-        TRight = analyseExpr(Right, RHS);
-        // NOTE: CTC is never full, because value is not interting, only type
-        if (Left->isConstant() && Right->isConstant()) expr->setConstant();
+        TLeft = analyseExpr(Left_ptr, RHS, true);
+        TRight = analyseExpr(Right_ptr, RHS, true);
+        // NOTE: CTC is never full, because value is not interesting, only type
+        Left = binop->getLHS();
+        Right = binop->getRHS();
+        expr->combineFlags(Left, Right);
         break;
     case BINOP_And:
     case BINOP_Xor:
@@ -1561,15 +1519,16 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     case BINOP_LOr:
         // TODO check if cast of SubExpr is ok
         // RHS, RHS
-        TLeft = analyseExpr(Left, RHS);
-        TRight = analyseExpr(Right, RHS);
-        AnalyserUtils::combineCtc(expr, Left, Right);
-        if (Left->isConstant() && Right->isConstant()) expr->setConstant();
+        TLeft = analyseExpr(Left_ptr, RHS, true);
+        TRight = analyseExpr(Right_ptr, RHS, true);
+        Left = binop->getLHS();
+        Right = binop->getRHS();
+        expr->combineFlags(Left, Right);
         break;
     case BINOP_Assign:
         // LHS, RHS
-        TLeft = analyseExpr(Left, side | LHS);
-        TRight = analyseExpr(Right, RHS);
+        TLeft = analyseExpr(Left_ptr, side | LHS, false);
+        TRight = analyseExpr(Right_ptr, RHS, true);
         break;
     case BINOP_MulAssign:
     case BINOP_DivAssign:
@@ -1582,84 +1541,34 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     case BINOP_XorAssign:
     case BINOP_OrAssign:
         // LHS|RHS, RHS
-        TLeft = analyseExpr(Left, LHS | RHS);
-        TRight = analyseExpr(Right, RHS);
+        TLeft = analyseExpr(Left_ptr, LHS | RHS, false);
+        TRight = analyseExpr(Right_ptr, RHS, true);
         break;
     case BINOP_Comma:
         FATAL_ERROR("unhandled binary operator type");
         break;
     }
+
+    // TODO remove this check?
     if (TLeft.isNull() || TRight.isNull()) return QualType();
 
-    // determine Result type
-    QualType Result;
+    Left = binop->getLHS();
+    Right = binop->getRHS();
+
     switch (binop->getOpcode()) {
-    case BINOP_Mul:
-    case BINOP_Div:
-    case BINOP_Rem:
-    case BINOP_Add:
-    case BINOP_Sub: {
-        bool left_is_ptr = TLeft->isPointerType();
-        bool right_is_ptr = TRight->isPointerType();
-        if (left_is_ptr || right_is_ptr) {
-            // Type remains the same for pointer arithmetic
-            if (left_is_ptr && right_is_ptr) {
-                StringBuilder buf1(MAX_LEN_TYPENAME);
-                TLeft.DiagName(buf1);
-                StringBuilder buf2(MAX_LEN_TYPENAME);
-                TRight.DiagName(buf2);
-                Diag(binop->getLocation(), diag::err_typecheck_invalid_operands) << buf1 << buf2;
-                return QualType();
-            }
-            if (left_is_ptr) {
-                Result = TLeft;
-            } else {
-                Result = TRight;
-            }
-        } else {
-            // TODO return largest witdth of left/right (long*short -> long)
-            // TODO apply UsualArithmeticConversions() to L + R
-            // TEMP for now just return Right side
-            // TEMP use UnaryConversion
-            Result = AnalyserUtils::UsualUnaryConversions(Left);
-            AnalyserUtils::UsualUnaryConversions(Right);
-        }
-        break;
-    }
-    case BINOP_Shl:
-    case BINOP_Shr:
-        Result = TLeft;
-        break;
-    case BINOP_LE:
-    case BINOP_LT:
-    case BINOP_GE:
-    case BINOP_GT:
-    case BINOP_NE:
-    case BINOP_EQ:
-        Result = Type::Bool();
-        break;
-    case BINOP_And:
-    case BINOP_Xor:
-    case BINOP_Or:
-        Result = TLeft;
-        break;
-    case BINOP_LAnd:
-    case BINOP_LOr:
-        Result = Type::Bool();
-        break;
     case BINOP_Assign:
     {
         assert(TRight.isValid());
-        // special case for a[4:2] = b
         checkAssignment(Left, TLeft, "left operand of assignment", binop->getLocation());
         if (scope.hasErrorOccurred()) return QualType();
-        if (AnalyserUtils::isConstantBitOffset(Left) && Right->isConstant()) {
-            LiteralAnalyser LA(Diags);
+        // special case for a[4:2] = b
+        if (AnalyserUtils::isConstantBitOffset(Left) && Right->isCTC()) {
+            CTVAnalyser LA(Diags);
             LA.checkBitOffset(Left, Right);
         } else {
-            EA.check(TLeft, Right);
+            EA.check(TLeft, *Right_ptr);
+            if (scope.hasErrorOccurred()) return QualType();
         }
-        Result = TLeft;
         break;
     }
     case BINOP_MulAssign:
@@ -1673,46 +1582,71 @@ QualType FunctionAnalyser::analyseBinaryOperator(Expr* expr, unsigned side) {
     case BINOP_XorAssign:
     case BINOP_OrAssign:
         checkAssignment(Left, TLeft, "left operand of assignment", binop->getLocation());
-        Result = TLeft;
         break;
-    case BINOP_Comma:
-        FATAL_ERROR("unhandled binary operator type");
+    default:
         break;
     }
-    expr->setType(Result);
-    return Result;
+
+    return EA.getBinOpType(binop);
+}
+
+QualType FunctionAnalyser::checkCondionalOperatorTypes(QualType TLeft, QualType TRight) {
+    if (TLeft.isNull() || TRight.isNull()) return QualType();
+
+    bool lptr = TLeft.isPointerType();
+    bool rptr = TRight.isPointerType();
+    if (lptr || rptr) {
+        if (!lptr || !rptr || !EA.arePointersCompatible(TLeft, TRight)) return QualType();
+        return TLeft;
+    }
+    bool lb = TLeft.isBuiltinType();
+    bool rb = TRight.isBuiltinType();
+    if (lb || rb) {
+        if (!rb || ! lb) return QualType();
+        return EA.LargestType(TLeft, TRight);
+    }
+    return TLeft;
 }
 
 QualType FunctionAnalyser::analyseConditionalOperator(Expr* expr) {
     LOG_FUNC
-    ConditionalOperator* condop = cast<ConditionalOperator>(expr);
-    QualType TCond = analyseExpr(condop->getCond(), RHS);
+    ConditionalOperator* C = cast<ConditionalOperator>(expr);
+    QualType TCond = analyseExpr(C->getCond2(), RHS, true);
     if (!TCond.isValid()) return QualType();
 
     // check if Condition can be casted to bool
-    EA.check(Type::Bool(), condop->getCond());
-    QualType TLeft = analyseExpr(condop->getLHS(), RHS);
+    EA.check(Type::Bool(), C->getCond());
+    QualType TLeft = analyseExpr(C->getLHS2(), RHS, true);
+    QualType TRight = analyseExpr(C->getRHS2(), RHS, true);
+    if (!TLeft.isValid() || !TRight.isValid()) return QualType();
 
-    QualType TRight = analyseExpr(condop->getRHS(), RHS);
-    if (!TRight.isValid()) return QualType();
+    if (C->getCond()->isCTV() && C->getLHS()->isCTV() && C->getRHS()->isCTV()) {
+        expr->setCTV(true);
+    }
 
-    expr->setCTC(CTC_PARTIAL);  // always set to Partial for ExprAnalyser
-    return TLeft;
+    QualType Res = checkCondionalOperatorTypes(TLeft, TRight);
+    if (!Res.isValid()) {
+        EA.Diag2(C->getLHS()->getLocation(), diag::err_typecheck_invalid_ternary_operands, TLeft, TRight) << C->getRHS()->getLocation();
+    }
+    return Res;
 }
 
-QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
+QualType FunctionAnalyser::analyseUnaryOperator(Expr** expr_ptr, unsigned side) {
     LOG_FUNC
+    Expr* expr = *expr_ptr;
     UnaryOperator* unaryop = cast<UnaryOperator>(expr);
-    Expr* SubExpr = unaryop->getExpr();
+    Expr** SubExpr_ptr = unaryop->getExpr2();
+    bool need_rvalue = true;
 
     switch (unaryop->getOpcode()) {
     case UO_PostInc:
     case UO_PostDec:
     case UO_PreInc:
     case UO_PreDec:
-        side |= LHS;
-        break;
     case UO_AddrOf:
+        need_rvalue = false; // these need lvalue
+        side |= LHS; // these need lvalue
+        break;
     case UO_Deref:
     case UO_Minus:
     case UO_Not:
@@ -1721,7 +1655,11 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
         break;
     }
 
-    QualType LType = analyseExpr(SubExpr, side);
+    QualType LType = analyseExpr(SubExpr_ptr, side, need_rvalue);
+    if (!LType.isValid()) return LType;
+    SubExpr_ptr = unaryop->getExpr2();  // re-read in case casts were inserted
+    Expr* SubExpr = *SubExpr_ptr; // TODO re-use expr?
+
     if (LType.isNull()) return QualType();
     if (LType.isVoidType()) {
         Diag(unaryop->getOpLoc(), diag::err_typecheck_unary_expr) << "'void'" << SubExpr->getSourceRange();
@@ -1731,60 +1669,59 @@ QualType FunctionAnalyser::analyseUnaryOperator(Expr* expr, unsigned side) {
     // TODO cleanup, always break and do common stuff at end
     switch (unaryop->getOpcode()) {
     case UO_PostInc:
-        checkAssignment(SubExpr, LType, "increment operand", unaryop->getLocation());
-        expr->setType(LType);
+        if (!checkAssignment(SubExpr, LType, "increment operand", unaryop->getLocation())) return QualType();
         break;
     case UO_PostDec:
-        checkAssignment(SubExpr, LType, "decrement operand", unaryop->getLocation());
-        expr->setType(LType);
+        if (!checkAssignment(SubExpr, LType, "decrement operand", unaryop->getLocation())) return QualType();
         break;
     case UO_PreInc:
-        checkAssignment(SubExpr, LType, "increment operand", unaryop->getLocation());
-        expr->setType(LType);
+        if (!checkAssignment(SubExpr, LType, "increment operand", unaryop->getLocation())) return QualType();
         break;
     case UO_PreDec:
-        checkAssignment(SubExpr, LType, "decrement operand", unaryop->getLocation());
-        expr->setType(LType);
+        if (!checkAssignment(SubExpr, LType, "decrement operand", unaryop->getLocation())) return QualType();
         break;
     case UO_AddrOf:
-    {
         if (!checkAddressOfOperand(SubExpr)) return QualType();
-        QualType Q = Context.getPointerType(LType.getCanonicalType());
-        expr->setType(Q);
-        expr->setConstant();
-        return Q;
-    }
+        LType = Context.getPointerType(LType.getCanonicalType());
+        expr->setCTC();
+        break;
     case UO_Deref:
         if (!LType.isPointerType()) {
             char typeName[MAX_LEN_TYPENAME];
             StringBuilder buf(MAX_LEN_TYPENAME, typeName);
             LType.DiagName(buf);
-            Diag(unaryop->getOpLoc(), diag::err_typecheck_indirection_requires_pointer)
-                    << buf;
+            Diag(unaryop->getOpLoc(), diag::err_typecheck_indirection_requires_pointer) << buf;
             return QualType();
         } else {
             // TEMP use CanonicalType to avoid Unresolved types etc
             QualType Q = LType.getCanonicalType();
             const PointerType* P = cast<PointerType>(Q);
-            expr->setType(P->getPointeeType());
             return P->getPointeeType();
         }
         break;
     case UO_Minus:
+        LType = AnalyserUtils::getMinusType(LType);
+        if (!LType.isValid()) {
+            char typeName[MAX_LEN_TYPENAME];
+            StringBuilder buf(MAX_LEN_TYPENAME, typeName);
+            SubExpr->getType().DiagName(buf);
+            Diag(unaryop->getOpLoc(), diag::err_typecheck_unary_expr) << buf << SubExpr->getSourceRange();
+            return QualType();
+        }
+        unaryop->syncFlags(SubExpr);
+        break;
     case UO_Not:
-        unaryop->setCTC(SubExpr->getCTC());
-        if (SubExpr->isConstant()) unaryop->setConstant();
-        expr->setType(AnalyserUtils::UsualUnaryConversions(SubExpr));
+        unaryop->syncFlags(SubExpr);
+        LType = AnalyserUtils::UsualUnaryConversions(SubExpr);
         break;
     case UO_LNot:
         // TODO first cast expr to bool, then invert here, return type bool
         // TODO extract to function
         // TODO check conversion to bool here!!
-        unaryop->setCTC(SubExpr->getCTC());
+        unaryop->setCTV(SubExpr->isCTV());
         // Also set type?
         //AnalyserUtils::UsualUnaryConversions(SubExpr);
         LType = Type::Bool();
-        expr->setType(LType);
         break;
     }
     return LType;
@@ -1859,7 +1796,7 @@ QualType FunctionAnalyser::analyseBuiltinExpr(Expr* expr) {
 QualType FunctionAnalyser::analyseArraySubscript(Expr* expr, unsigned side) {
     LOG_FUNC
     ArraySubscriptExpr* sub = cast<ArraySubscriptExpr>(expr);
-    QualType LType = analyseExpr(sub->getBase(), RHS);
+    QualType LType = analyseExpr(sub->getBase2(), RHS, true);
     if (LType.isNull()) return 0;
 
     if (BitOffsetExpr* BO = dyncast<BitOffsetExpr>(sub->getIndex())) {
@@ -1868,21 +1805,20 @@ QualType FunctionAnalyser::analyseArraySubscript(Expr* expr, unsigned side) {
             return 0;
         }
         QualType T = analyseBitOffsetExpr(sub->getIndex(), LType, sub->getLocation());
-        expr->setType(T);
-        AnalyserUtils::combineCtc(expr, sub->getBase(), sub->getIndex());
+        expr->combineFlags(sub->getBase(), sub->getIndex());
         // dont analyse partial BitOffset expressions per part
-        if (expr->getCTC() == CTC_PARTIAL) expr->setCTC(CTC_NONE);
         return T;
     }
 
-    analyseExpr(sub->getIndex(), RHS);
+    // TODO check return type??
+    analyseExpr(sub->getIndex2(), RHS, true);
 
     // Deference alias types
     if (isa<AliasType>(LType)) {
         LType = cast<AliasType>(LType)->getRefType();
     }
 
-    if (!LType.isSubscriptable()) {
+    if (!LType.isPointerType()) {
         Diag(expr->getLocation(), diag::err_typecheck_subscript);
         return 0;
     }
@@ -1893,12 +1829,13 @@ QualType FunctionAnalyser::analyseArraySubscript(Expr* expr, unsigned side) {
     } else if (isa<ArrayType>(LType)) {
         Result = cast<ArrayType>(LType)->getElementType();
     }
-    expr->setType(Result);
+    assert(Result.isValid());
     return Result;
 }
 
-QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
+QualType FunctionAnalyser::analyseMemberExpr(Expr** expr_ptr, unsigned side) {
     LOG_FUNC
+    Expr* expr = *expr_ptr;
     MemberExpr* M = cast<MemberExpr>(expr);
     IdentifierExpr* member = M->getMember();
 
@@ -1906,30 +1843,52 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
     // mod.Type
     // mod.var
     // mod.func
-    // var<Type=struct>.member
-    // var<Type=struct>.struct_function
+    // struct-var.member
+    // struct-var.struct_function
     // var[index].member
-    // var->member (= error)
+    // var->member (=> error)
     // Type.struct_function
     // Enum.Constant (eg. Color.Red)
 
-    QualType LType = analyseExpr(M->getBase(), RHS);
-    if (!LType.isValid()) return QualType();
+    // NOTE: since we dont know which one, we can't insert LValueToRValue casts in analyseExpr(RHS)
+    // Also optionally insert CK_ArrayToPointerDecay cast here
 
-    if (isa<ModuleType>(LType)) {
+    QualType LType = analyseExpr(M->getBase2(), RHS, false);
+    if (!LType.isValid()) return LType;
+
+    const ModuleType* MT = dyncast<ModuleType>(LType);
+    // module.X
+    if (MT) {
+        ImportDecl* ID = MT->getDecl();
+        ID->setUsed();
         M->setModulePrefix();
-        ModuleType* MT = cast<ModuleType>(LType.getTypePtr());
+        MT = cast<ModuleType>(LType.getTypePtr());
         Decl* D = scope.findSymbolInModule(member->getName(), member->getLocation(), MT->getModule());
-        if (D) {
-            if (side & RHS) D->setUsed();
-            M->setDecl(D);
-            AnalyserUtils::SetConstantFlags(D, M);
-            QualType Q = D->getType();
-            expr->setType(Q);
-            member->setType(Q);
-            member->setDecl(D, AnalyserUtils::globalDecl2RefKind(D));
-            return Q;
+        if (!D) return QualType();
+
+        if (side & RHS) D->setUsed();
+        M->setDecl(D);
+        AnalyserUtils::SetConstantFlags(D, M);
+        QualType Q = D->getType();
+        M->setType(Q);
+        member->setType(Q);
+        member->setDecl(D, AnalyserUtils::globalDecl2RefKind(D));
+
+        if (Q.isArrayType()) {
+            QualType Qptr = AnalyserUtils::getPointerFromArray(Context, Q);
+            insertImplicitCast(CK_ArrayToPointerDecay, expr_ptr, Qptr);
+            return Qptr;
         }
+        if (Q.isFunctionType()) {
+            M->setIsRValue();
+            member->setIsRValue();
+            insertImplicitCast(CK_FunctionToPointerDecay, expr_ptr, Q);
+        }
+
+        if (M->isCTV()) M->setIsRValue(); // points to const number
+
+        return Q;
+    // Enum.Constant
     } else if (isa<EnumType>(LType)) {
         EnumType* ET = cast<EnumType>(LType.getTypePtr());
         EnumTypeDecl* ETD = ET->getDecl();
@@ -1943,13 +1902,13 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
         }
         QualType Q = ETD->getType();
         M->setDecl(ECD);
-        M->setType(Q);
         M->setIsEnumConstant();
+        M->setIsRValue();
         AnalyserUtils::SetConstantFlags(ECD, M);
-        member->setCTC(CTC_FULL);
-        member->setConstant();
-        member->setType(Q);
+        member->setCTV(true);
+        member->setCTC();
         member->setDecl(ECD, AnalyserUtils::globalDecl2RefKind(ECD));
+        member->setIsRValue();
         return Q;
     } else {
         // dereference pointer
@@ -1958,6 +1917,7 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
             const PointerType* PT = cast<PointerType>(LType.getTypePtr());
             LType = PT->getPointeeType();
         }
+
         QualType S = AnalyserUtils::getStructType(LType);
         if (!S.isValid()) {
             StringBuilder buf(MAX_LEN_TYPENAME);
@@ -1966,16 +1926,26 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr* expr, unsigned side) {
                     << buf << M->getSourceRange() << member->getLocation();
             return QualType();
         }
-        return analyseStructMember(S, M, side, AnalyserUtils::exprIsType(M->getBase()));
+
+        return analyseStructMember(S, expr_ptr, side, AnalyserUtils::exprIsType(M->getBase()));
     }
     return QualType();
 }
 
 
+Expr* FunctionAnalyser::insertImplicitCast(CastKind ck, Expr** inner_ptr, QualType Q) {
+    Expr* inner = *inner_ptr;
+    ImplicitCastExpr* ic = new (Context) ImplicitCastExpr(inner->getLocation(), ck, inner);
+    ic->setType(Q);
+    *inner_ptr = ic;
+    return ic;
+}
 
-QualType FunctionAnalyser::analyseStaticStructMember(QualType T, MemberExpr* M, const StructTypeDecl* S, unsigned side)
+QualType FunctionAnalyser::analyseStaticStructMember(QualType T, Expr** expr_ptr, const StructTypeDecl* S, unsigned side)
 {
     LOG_FUNC
+    Expr* expr = *expr_ptr;
+    MemberExpr* M = cast<MemberExpr>(expr);
     IdentifierExpr* member = M->getMember();
 
     Decl *field = S->findMember(member->getName());
@@ -1983,21 +1953,21 @@ QualType FunctionAnalyser::analyseStaticStructMember(QualType T, MemberExpr* M, 
 
     Decl* d = field ? field : sfunc;
     if (!d) {
-        EA.outputStructDiagnostics(T, member, diag::err_no_member_struct_func);
-        return QualType();
+        return EA.outputStructDiagnostics(T, member, diag::err_no_member_struct_func);
     }
 
     scope.checkAccess(d, member->getLocation());
     if (side & RHS) d->setUsed();
+    QualType Q = d->getType();
     M->setDecl(d);
-    M->setType(d->getType());
+    M->setType(Q);
     if (field) member->setDecl(d, IdentifierExpr::REF_STRUCT_MEMBER);
     else {
         member->setDecl(d, IdentifierExpr::REF_STRUCT_FUNC);
         M->setIsStructFunction();
         if (sfunc->isStaticStructFunc()) M->setIsStaticStructFunction();
     }
-    member->setType(d->getType());
+    member->setType(Q);
     AnalyserUtils::SetConstantFlags(d, M);
 
     if (!allowStaticMember) {
@@ -2005,30 +1975,38 @@ QualType FunctionAnalyser::analyseStaticStructMember(QualType T, MemberExpr* M, 
             // TBD: allow non-static use of struct functions?
             //if (!sfunc->isStaticStructFunc()) return EA.outputStructDiagnostics(T, member, diag::err_invalid_use_nonstatic_struct_func);
         } else {
-            EA.outputStructDiagnostics(T, member, diag::err_static_use_nonstatic_member);
-            return QualType();
+            return EA.outputStructDiagnostics(T, member, diag::err_static_use_nonstatic_member);
         }
     }
-    return d->getType();
+
+    if (Q.isFunctionType()) {
+        M->setIsRValue();
+        M->setCTC();
+        member->setIsRValue();
+        insertImplicitCast(CK_FunctionToPointerDecay, expr_ptr, Q);
+    }
+
+    return Q;
 }
 
 // T is the type of the struct
 // M the whole expression
 // isStatic is true for Foo.myFunction(...)
-QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr* M, unsigned side, bool isStatic) {
+QualType FunctionAnalyser::analyseStructMember(QualType T, Expr** expr_ptr, unsigned side, bool isStatic) {
     LOG_FUNC
+    Expr* expr = *expr_ptr;
+    MemberExpr* M = cast<MemberExpr>(expr);
     assert(M && "Expression missing");
     const StructType* ST = cast<StructType>(T);
     const StructTypeDecl* S = ST->getDecl();
 
-    if (isStatic) return analyseStaticStructMember(T, M, S, side);
+    if (isStatic) return analyseStaticStructMember(T, expr_ptr, S, side);
 
     IdentifierExpr* member = M->getMember();
     Decl* match = S->find(member->getName());
 
     if (!match) {
-        EA.outputStructDiagnostics(T, member, diag::err_no_member_struct_func);
-        return QualType();
+        return EA.outputStructDiagnostics(T, member, diag::err_no_member_struct_func);
     }
 
     IdentifierExpr::RefKind ref = IdentifierExpr::REF_STRUCT_MEMBER;
@@ -2043,6 +2021,12 @@ QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr* M, unsign
         }
         M->setIsStructFunction();
         ref = IdentifierExpr::REF_STRUCT_FUNC;
+        M->setIsRValue();
+        member->setIsRValue();
+        QualType Q = func->getType();
+        M->setType(Q);
+        M->setCTC();
+        insertImplicitCast(CK_FunctionToPointerDecay, expr_ptr, Q);
 
         // Is this a simple member access? If so
         // disallow this (we don't have closures!)
@@ -2062,32 +2046,34 @@ QualType FunctionAnalyser::analyseStructMember(QualType T, MemberExpr* M, unsign
 
     if (side & RHS) match->setUsed();
     M->setDecl(match);
-    M->setType(match->getType());
     member->setDecl(match, ref);
     member->setType(match->getType());
     QualType result = match->getType();
     if (T.isConstQualified()) result.addConst();
+
     return result;
 }
 
 QualType FunctionAnalyser::analyseParenExpr(Expr* expr) {
     LOG_FUNC
     ParenExpr* P = cast<ParenExpr>(expr);
-    parents.push(P->childAddr());
-    QualType Q = analyseExpr(P->getExpr(), RHS);
-    parents.pop();
+    Expr** inner_ptr = P->getExpr2();
+    Expr* inner = *inner_ptr;
+    QualType Q = analyseExpr(inner_ptr, RHS, false);
 
-    expr->setCTC(P->getExpr()->getCTC());
-    if (P->getExpr()->isConstant()) expr->setConstant();
-    expr->setType(Q);
+    expr->syncFlags(inner);
+    expr->syncLValue(inner);
+    // TODO sync lvalue status
     return Q;
 }
 
 // return whether Result is valid
-bool FunctionAnalyser::analyseBitOffsetIndex(Expr* expr, llvm::APSInt* Result, BuiltinType* BaseType) {
+bool FunctionAnalyser::analyseBitOffsetIndex(Expr** expr_ptr, llvm::APSInt* Result, BuiltinType* BaseType) {
     LOG_FUNC
-    QualType T = analyseExpr(expr, RHS);
+    QualType T = analyseExpr(expr_ptr, RHS, true);
     if (!T.isValid()) return false;
+
+    Expr* expr = *expr_ptr;
 
     if (!T.getCanonicalType().isIntegerType()) {
         StringBuilder buf;
@@ -2096,9 +2082,9 @@ bool FunctionAnalyser::analyseBitOffsetIndex(Expr* expr, llvm::APSInt* Result, B
                 << buf << expr->getSourceRange();
         return false;
     }
-    if (!expr->isConstant()) return false;
+    if (!expr->isCTV()) return false;
 
-    LiteralAnalyser LA(Diags);
+    CTVAnalyser LA(Diags);
     llvm::APSInt Val = LA.checkLiterals(expr);
     if (Val.isSigned() && Val.isNegative()) {
         Diag(expr->getLocation(), diag::err_bitoffset_index_negative)
@@ -2127,10 +2113,11 @@ QualType FunctionAnalyser::analyseBitOffsetExpr(Expr* expr, QualType BaseType, S
     }
 
     llvm::APSInt VL;
-    bool VLvalid = analyseBitOffsetIndex(B->getLHS(), &VL, BI);
+    bool VLvalid = analyseBitOffsetIndex(B->getLHS2(), &VL, BI);
     llvm::APSInt VR;
-    bool VRvalid = analyseBitOffsetIndex(B->getRHS(), &VR, BI);
+    bool VRvalid = analyseBitOffsetIndex(B->getRHS2(), &VR, BI);
 
+    QualType Result;
     if (VLvalid && VRvalid) {
         if (VR > VL) {
             Diag(B->getLocation(), diag::err_bitoffset_invalid_order)
@@ -2140,29 +2127,25 @@ QualType FunctionAnalyser::analyseBitOffsetExpr(Expr* expr, QualType BaseType, S
             llvm::APInt width = VL - VR;
             ++width;
 
-            QualType T;
             if (width.ult(8+1)) {
-                T = Type::UInt8();
+                Result = Type::UInt8();
             } else if (width.ult(16+1)) {
-                T = Type::UInt16();
+                Result = Type::UInt16();
             } else if (width.ult(32+1)) {
-                T = Type::UInt32();
+                Result = Type::UInt32();
             } else if (width.ult(64+1)) {
-                T = Type::UInt64();
+                Result = Type::UInt64();
             } else {
                 FATAL_ERROR("Unreachable");
             }
-            B->setType(T);
             B->setWidth((unsigned char)width.getSExtValue());
         }
     } else {
-        B->setType(BaseType);
+        Result = BaseType;
     }
 
-    if (B->getLHS()->isConstant() && B->getRHS()->isConstant()) B->setConstant();
-    AnalyserUtils::combineCtc(B, B->getLHS(), B->getRHS());
-
-    return B->getType();
+    B->combineFlags(B->getLHS(), B->getRHS());
+    return Result;
 }
 
 QualType FunctionAnalyser::analyseExplicitCastExpr(Expr* expr) {
@@ -2170,11 +2153,10 @@ QualType FunctionAnalyser::analyseExplicitCastExpr(Expr* expr) {
     ExplicitCastExpr* E = cast<ExplicitCastExpr>(expr);
 
     QualType outerType = analyseType(E->getDestType(), expr->getLocation());
-    if (outerType.isValid()) E->setType(outerType);
 
-    QualType innerType = analyseExpr(E->getInner(), RHS);
+    QualType innerType = analyseExpr(E->getInner2(), RHS, true);
     if (innerType.isValid()) {
-        E->setCTC(E->getInner()->getCTC());
+        E->setCTV(E->getInner()->isCTV());
 
         if (outerType.isValid()) {
             if (!EA.checkExplicitCast(E, outerType, innerType))
@@ -2182,9 +2164,18 @@ QualType FunctionAnalyser::analyseExplicitCastExpr(Expr* expr) {
         }
     }
 
-    return outerType.isValid() ? outerType : QualType();
+    return outerType;
 }
 
+QualType FunctionAnalyser::analyseImplicitCastExpr(Expr* expr) {
+    LOG_FUNC
+    ImplicitCastExpr* E = cast<ImplicitCastExpr>(expr);
+
+    // TODO check castkind
+
+    QualType innerType = analyseExpr(E->getInner2(), RHS, true);
+    return innerType;
+}
 
 QualType FunctionAnalyser::analyseCall(Expr* expr) {
     LOG_FUNC
@@ -2201,7 +2192,7 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
     }
     // Push a null struct function on the callstack.
     callStack.push();
-    QualType LType = analyseExpr(call->getFn(), RHS);
+    QualType LType = analyseExpr(call->getFn2(), RHS, true);
     // Pop the null struct function off the callstack
     Expr* structFunction = callStack.pop();
     if (LType.isNull()) return QualType();      // already handled
@@ -2217,12 +2208,60 @@ QualType FunctionAnalyser::analyseCall(Expr* expr) {
     const FunctionType* FT = cast<FunctionType>(LType);
     FunctionDecl* func = FT->getDecl();
     func->setUsed();
-    call->setType(func->getReturnType());
     if (structFunction) call->setIsStructFunction();
     if (!checkCallArgs(func, call, structFunction)) return QualType();
     return func->getReturnType();
 }
 
+QualType FunctionAnalyser::analyseIdentifierExpr(Expr** expr_ptr, unsigned side) {
+    LOG_FUNC
+    Expr* expr = *expr_ptr;
+    IdentifierExpr* id = cast<IdentifierExpr>(expr);
+    Decl* D = analyseIdentifier(id);
+    if (!D) return QualType();
+    if (D == CurrentVarDecl) {
+        Diag(id->getLocation(), diag::err_var_self_init) << D->getName();
+        return QualType();
+    }
+
+    AnalyserUtils::SetConstantFlags(D, id);
+
+    switch (D->getKind()) {
+    case DECL_FUNC:
+        insertImplicitCast(CK_FunctionToPointerDecay, expr_ptr, D->getType());
+        break;
+    case DECL_VAR:
+    case DECL_ENUMVALUE:
+    case DECL_STRUCTTYPE:
+    case DECL_ENUMTYPE:
+        break;
+    case DECL_ALIASTYPE:
+    case DECL_FUNCTIONTYPE:
+        Diag(id->getLocation(), diag::err_unexpected_typedef) << id->getName();
+        expr->setCTC();
+        expr->setIsRValue();
+        break;
+    case DECL_ARRAYVALUE:
+        break;
+    case DECL_IMPORT:
+        expr->setCTC();
+        expr->setIsRValue();
+        break;
+    case DECL_LABEL:
+    case DECL_STATIC_ASSERT:
+        FATAL_ERROR("Unreachable");
+        break;
+    }
+    if (side & RHS) {
+        D->setUsed();
+        if (usedPublicly) D->setUsedPublic();
+    }
+
+    if (expr->isCTV()) expr->setIsRValue();
+
+    //QualType T = D->getType();
+    return (*expr_ptr)->getType();
+}
 
 bool FunctionAnalyser::checkCallArgs(FunctionDecl* func, CallExpr* call, Expr* structFunction) {
     LOG_FUNC
@@ -2247,13 +2286,14 @@ bool FunctionAnalyser::checkCallArgs(FunctionDecl* func, CallExpr* call, Expr* s
     unsigned minArgs = MIN(funcArgs, callArgs);
 
     for (unsigned i = 0; i < minArgs; i++) {
-        Expr* callArg = call->getArg(callIndex);
-        QualType callArgType = analyseExpr(callArg, RHS);
+        Expr** callArg = call->getArg2(callIndex);
+        QualType callArgType = analyseExpr(callArg, RHS, true);
+        // BB HUH no return on error?!? (maybe after checking all args)
         if (callArgType.isValid()) {
             VarDecl* funcArg = func->getArg(funcIndex);
             QualType funcArgType = funcArg->getType();
             assert(funcArgType.isValid());
-            EA.check(funcArgType, callArg);
+            EA.check(funcArgType, *callArg);
         }
         callIndex++;
         funcIndex++;
@@ -2268,8 +2308,8 @@ bool FunctionAnalyser::checkCallArgs(FunctionDecl* func, CallExpr* call, Expr* s
             return false;
         }
         for (unsigned i = minArgs; i < callArgs; i++) {
-            Expr* callArg = call->getArg(callIndex);
-            QualType callArgType = analyseExpr(callArg, RHS);
+            Expr** callArg = call->getArg2(callIndex);
+            QualType callArgType = analyseExpr(callArg, RHS, true);
             // TODO use canonical
             if (callArgType == Type::Void()) {
                 fprintf(stderr, "ERROR: (TODO) passing 'void' to parameter of incompatible type '...'\n");
@@ -2331,26 +2371,30 @@ LabelDecl* FunctionAnalyser::LookupOrCreateLabel(const char* name, SourceLocatio
     return LD;
 }
 
-void FunctionAnalyser::checkAssignment(Expr* assignee, QualType TLeft, const char* diag_msg, SourceLocation loc) {
-    ExprValueKind vk = ExprClassifier::classifyExpr(assignee);
-    if (vk != VK_LValue) {
+bool FunctionAnalyser::checkAssignment(Expr* assignee, QualType TLeft, const char* diag_msg, SourceLocation loc) {
+    if (!assignee->isLValue()) {
         Diag(loc, diag::err_expected_lvalue) << diag_msg << assignee->getSourceRange();
-        return;
+        return false;
+    }
+
+    if (TLeft.isConstQualified()) {
+        Diag(assignee->getLocation(), diag::err_typecheck_assign_const) << 5 << assignee->getSourceRange();
+        return false;
     }
 
     if (TLeft.isArrayType()) {
         ArrayType* AT = cast<ArrayType>(TLeft.getTypePtr());
         if (AT->isIncremental()) {
             Diag(assignee->getLocation(), diag::err_incremental_array_value_function_scope);
+            return false;
         } else {
             StringBuilder buf1(MAX_LEN_TYPENAME);
             TLeft.DiagName(buf1);
             Diag(assignee->getLocation(), diag::err_typecheck_array_not_modifiable_lvalue) << buf1;
+            return false;
         }
     }
-    if (TLeft.isConstQualified()) {
-        Diag(assignee->getLocation(), diag::err_typecheck_assign_const) << 5 << assignee->getSourceRange();
-    }
+    return true;
 }
 
 void FunctionAnalyser::checkDeclAssignment(Decl* decl, Expr* expr) {
@@ -2358,34 +2402,23 @@ void FunctionAnalyser::checkDeclAssignment(Decl* decl, Expr* expr) {
     assert(decl);
     switch (decl->getKind()) {
     case DECL_FUNC:
-        // error
-        fprintf(stderr, "TODO cannot assign to non-variable\n");
-        TODO;
         break;
     case DECL_VAR:
-    {
         //VarDecl* VD = cast<VarDecl>(decl);
         //checkAssignment(expr, VD->getType());
-        break;
-    }
+        return;
     case DECL_ENUMVALUE:
     case DECL_ALIASTYPE:
     case DECL_STRUCTTYPE:
     case DECL_ENUMTYPE:
     case DECL_FUNCTIONTYPE:
-        Diag(expr->getLocation(), diag::err_typecheck_expression_not_modifiable_lvalue);
-        break;
     case DECL_ARRAYVALUE:
-        // error
-        fprintf(stderr, "TODO cannot assign to non-variable\n");
-        TODO;
-        break;
     case DECL_IMPORT:
     case DECL_LABEL:
     case DECL_STATIC_ASSERT:
-        Diag(expr->getLocation(), diag::err_typecheck_expression_not_modifiable_lvalue);
         break;
     }
+    Diag(expr->getLocation(), diag::err_typecheck_expression_not_modifiable_lvalue);
 }
 
 void FunctionAnalyser::checkArrayDesignators(InitListExpr* expr, int64_t* size) {
@@ -2524,22 +2557,5 @@ const Module* FunctionAnalyser::currentModule() const {
     if (!mod && CurrentVarDecl) mod = CurrentVarDecl->getModule();
     assert(mod);
     return mod;
-}
-
-void FunctionAnalyser::ParentStack::dump() {
-    StringBuilder buffer;
-    buffer << "Parents:\n";
-    for (unsigned i=0; i<depth; i++) {
-        buffer << '[' << i << "] ";
-
-        (*stack[i])->print(buffer, 0);
-    }
-    fprintf(stderr, "%s\n", buffer.c_str());
-}
-
-void FunctionAnalyser::ParentStack::replaceChild(Expr* child) {
-    assert(depth > 0);
-    Stmt** parent = stack[depth-1];
-    *parent = child;
 }
 

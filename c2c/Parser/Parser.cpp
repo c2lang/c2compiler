@@ -2375,7 +2375,6 @@ C2::StmtResult Parser::ParseBreakStatement() {
 ///         'fallthrough' ';'
 C2::StmtResult Parser::ParseFallthroughStatement() {
     LOG_FUNC
-    assert(Tok.is(tok::kw_break) && "Not a fallthrough stmt!");
     SourceLocation Loc = ConsumeToken();
 
     StmtResult Res = Actions.ActOnFallthroughStmt(Loc);

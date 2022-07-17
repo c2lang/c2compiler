@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef ANALYSER_LITERAL_ANALYSER_H
-#define ANALYSER_LITERAL_ANALYSER_H
+#ifndef ANALYSER_CTV_ANALYSER_H
+#define ANALYSER_CTV_ANALYSER_H
 
 #include <llvm/ADT/APSInt.h>
 #include "Clang/SourceLocation.h"
@@ -30,9 +30,9 @@ class Decl;
 class QualType;
 struct Limit;
 
-class LiteralAnalyser {
+class CTVAnalyser {
 public:
-    LiteralAnalyser(c2lang::DiagnosticsEngine& Diags_);
+    CTVAnalyser(c2lang::DiagnosticsEngine& Diags_);
 
     void check(QualType TLeft, const Expr* Right);
     llvm::APSInt checkLiterals(const Expr* Right);
@@ -50,8 +50,8 @@ private:
 
     c2lang::DiagnosticsEngine& Diags;
 
-    LiteralAnalyser(const LiteralAnalyser&);
-    LiteralAnalyser& operator= (const LiteralAnalyser&);
+    CTVAnalyser(const CTVAnalyser&);
+    CTVAnalyser& operator= (const CTVAnalyser&);
 };
 
 }

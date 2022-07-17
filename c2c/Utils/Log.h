@@ -22,6 +22,10 @@ class Log {
 public:
     static void init(bool useColors_);
     static void log(const char* color, const char* format, ...);
+
+
+    static void info(const char* name, const char* format, ...);
+    static void error(const char* name, const char* format, ...);
 };
 
 }

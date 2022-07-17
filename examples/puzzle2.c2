@@ -5,14 +5,12 @@ i32[LIST_SIZE] activeList;
 i32 readIndex = 0;
 i32 writeIndex = 0;
 
-func i32 listSize() {
+func u32 listSize() {
     if (readIndex == writeIndex) return 0;
     if (writeIndex > readIndex) {
-        return writeIndex - readIndex;
-    } else {
-        return LIST_SIZE + writeIndex - readIndex;
+        return cast<u32>(writeIndex - readIndex);
     }
-    return 0;   // to satisfy C2 analyser
+    return cast<u32>(LIST_SIZE + writeIndex - readIndex);
 }
 
 func i32 listGet() {

@@ -25,6 +25,7 @@ namespace C2 {
 class Decl;
 class StringBuilder;
 class TargetInfo;
+class ASTContext;
 
 class AnalyserUtils {
 public:
@@ -32,10 +33,11 @@ public:
     static const char* fullName(const std::string& modName, const char* symname);
 
     static QualType getStructType(QualType Q);
+    static QualType getPointerFromArray(ASTContext& context, QualType Q);
+    static QualType getMinusType(QualType Q);
     static bool exprIsType(const Expr* E);
     static QualType UsualUnaryConversions(Expr* expr);
-    static void SetConstantFlags(Decl* D, Expr* expr);
-    static ExprCTC combineCtc(Expr* Result, const Expr* L, const Expr* R);
+    static void SetConstantFlags(const Decl* D, Expr* expr);
     static bool isConstantBitOffset(const Expr* E);
     static StringBuilder& quotedField(StringBuilder &builder, IdentifierExpr *field);
 
@@ -46,6 +48,8 @@ public:
     static uint64_t offsetOfStructMember(const StructTypeDecl* S, unsigned index);
 
     static Expr* getInnerExprAddressOf(Expr* expr);
+
+    static const Expr* ignoreParenEpr(const Expr* expr);
 
     static IdentifierExpr::RefKind globalDecl2RefKind(const Decl* D);
 };

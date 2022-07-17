@@ -50,8 +50,6 @@ const std::string& Module::getCName() const {
 void Module::addSymbol(Decl* decl, bool isStructFunction) {
     if (isStructFunction) structFuncs[decl->getName()] = decl;
     else symbols[decl->getName()] = decl;
-
-    decl->setModule(this);
 }
 
 Decl* Module::findSymbol(const std::string& name_) const {
@@ -197,3 +195,4 @@ void Module::printAttributes(bool colors) const {
     buffer << '\n';
     printf("%s", buffer.c_str());
 }
+

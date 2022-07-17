@@ -238,7 +238,10 @@ void RefFinder::searchExpr(const Expr* E) {
         break;
     }
     break;
-    case EXPR_EXPL_CAST:
+    case EXPR_EXPLICIT_CAST:
+        TODO;
+        break;
+    case EXPR_IMPLICIT_CAST:
         TODO;
         break;
     }

@@ -14,17 +14,14 @@
  */
 
 #include <assert.h>
-#include "Clang/ParseDiagnostic.h"
 #include "Clang/SemaDiagnostic.h"
 
 #include "Analyser/ExprAnalyser.h"
-#include "Analyser/LiteralAnalyser.h"
-#include "Analyser/TypeFinder.h"
+#include "Analyser/CTVAnalyser.h"
 #include "Analyser/AnalyserConstants.h"
 #include "Analyser/AnalyserUtils.h"
 #include "AST/Expr.h"
 #include "AST/Decl.h"
-#include "Utils/StringBuilder.h"
 #include "Utils/TargetInfo.h"
 #include "Utils/Errors.h"
 
@@ -70,76 +67,28 @@ static int type_conversions[14][14] = {
 // clang-format on
 
 
-ExprAnalyser::ExprAnalyser(c2lang::DiagnosticsEngine& Diags_, const TargetInfo& target_)
+ExprAnalyser::ExprAnalyser(c2lang::DiagnosticsEngine& Diags_,
+                           const TargetInfo& target_,
+                           ASTContext& context_)
     : Diags(Diags_)
     , target(target_)
+    , Context(context_)
     , m_hasError(false)
+    , buf1(MAX_LEN_TYPENAME)
+    , buf2(MAX_LEN_TYPENAME)
 {}
 
-void ExprAnalyser::check(QualType TLeft, const Expr* expr) {
+void ExprAnalyser::check(QualType TLeft, Expr* expr) {
     m_hasError = false;
-    switch (expr->getCTC()) {
-    case CTC_NONE:
-        checkCompatible(TLeft, expr);
-        return;
-    case CTC_PARTIAL:
-        break;
-    case CTC_FULL:
-        LiteralAnalyser LA(Diags);
+
+    if (expr->isCTV()) {
+        CTVAnalyser LA(Diags);
         LA.check(TLeft, expr);
         // TODO add if (!LA.hasError()) m_hasError = true;
         return;
     }
 
-    switch (expr->getKind()) {
-    case EXPR_INTEGER_LITERAL:
-    case EXPR_FLOAT_LITERAL:
-    case EXPR_BOOL_LITERAL:
-    case EXPR_CHAR_LITERAL:
-    case EXPR_STRING_LITERAL:
-    case EXPR_NIL:
-        // always CTC_FULL
-    case EXPR_IDENTIFIER:
-        // can be CTC_NONE or CTC_FULL
-    case EXPR_TYPE:
-    case EXPR_CALL:
-        // always CTC_NONE
-    case EXPR_INITLIST:
-    case EXPR_DESIGNATOR_INIT:
-        FATAL_ERROR("Unreachable");
-        break;
-    case EXPR_BINOP:
-        checkBinOp(TLeft, cast<BinaryOperator>(expr));
-        return;
-    case EXPR_CONDOP:
-    {
-        // NOTE: Cond -> Bool has already been checked
-        const ConditionalOperator* C = cast<ConditionalOperator>(expr);
-        check(TLeft, C->getLHS());
-        check(TLeft, C->getRHS());
-        return;
-    }
-    case EXPR_UNARYOP:
-        checkUnaryOp(TLeft, cast<UnaryOperator>(expr));
-        return;
-    case EXPR_BUILTIN:
-        // always CTC_FULL
-    case EXPR_ARRAYSUBSCRIPT:
-    case EXPR_MEMBER:
-        // can be CTC_NONE or CTC_FULL
-        FATAL_ERROR("Unreachable");
-        break;
-    case EXPR_PAREN:
-        check(TLeft, cast<ParenExpr>(expr)->getExpr());
-        return;
-    case EXPR_BITOFFSET:
-        TODO;
-        return;
-    case EXPR_EXPL_CAST:
-        //TODO;
-        return;
-    }
-    FATAL_ERROR("Unreachable");
+    checkCompatible(TLeft, expr);
 }
 
 bool ExprAnalyser::checkExplicitCast(const ExplicitCastExpr* expr, QualType DestType, QualType SrcType) {
@@ -148,8 +97,6 @@ bool ExprAnalyser::checkExplicitCast(const ExplicitCastExpr* expr, QualType Dest
 
     if (!DestType.isScalarType()) {
         // Dont allow any cast to non-scalar
-        StringBuilder buf1(MAX_LEN_TYPENAME);
-        StringBuilder buf2(MAX_LEN_TYPENAME);
         DestType.DiagName(buf1, true);
         SrcType.DiagName(buf2, true);
         Diags.Report(expr->getLocation(), diag::err_typecheck_cond_expect_scalar)
@@ -213,8 +160,6 @@ bool ExprAnalyser::checkNonPointerCast(const ExplicitCastExpr* expr, QualType De
     }
 
     // TODO refactor duplicate code (after completion)
-    StringBuilder buf1(MAX_LEN_TYPENAME);
-    StringBuilder buf2(MAX_LEN_TYPENAME);
     SrcType.DiagName(buf1, true);
     DestType.DiagName(buf2, true);
     Diags.Report(expr->getLocation(), diag::err_illegal_cast)
@@ -241,8 +186,6 @@ bool ExprAnalyser::checkBuiltinCast(const ExplicitCastExpr* expr, QualType DestT
             break;
         case 4: // incompatible
         {
-            StringBuilder buf1(MAX_LEN_TYPENAME);
-            StringBuilder buf2(MAX_LEN_TYPENAME);
             DestType.DiagName(buf1, true);
             SrcType.DiagName(buf2, true);
             Diags.Report(expr->getLocation(), diag::err_illegal_cast)
@@ -273,9 +216,7 @@ bool ExprAnalyser::checkBuiltinCast(const ExplicitCastExpr* expr, QualType DestT
         // only allow if uint32/64 (ptr size)
         if (((target.intWidth == 64) && (Right->getKind() != BuiltinType::UInt64)) ||
             ((target.intWidth == 32) && (Right->getKind() != BuiltinType::UInt32))) {
-            StringBuilder buf1(MAX_LEN_TYPENAME);
             SrcType.DiagName(buf1, true);
-            StringBuilder buf2(MAX_LEN_TYPENAME);
             DestType.DiagName(buf2, true);
             Diags.Report(expr->getLocation(), diag::warn_int_to_pointer_cast) << buf1 << buf2;
             m_hasError = true;
@@ -309,8 +250,6 @@ bool ExprAnalyser::checkEnumCast(const ExplicitCastExpr* expr, QualType DestType
         FATAL_ERROR("Unreachable");
         return false;
     }
-    StringBuilder buf1(MAX_LEN_TYPENAME);
-    StringBuilder buf2(MAX_LEN_TYPENAME);
     SrcType.DiagName(buf1, true);
     DestType.DiagName(buf2, true);
     Diags.Report(expr->getLocation(), diag::err_illegal_cast)
@@ -350,8 +289,6 @@ bool ExprAnalyser::checkFunctionCast(const ExplicitCastExpr* expr, QualType Dest
         FATAL_ERROR("Unreachable");
         return false;
     }
-    StringBuilder buf1(MAX_LEN_TYPENAME);
-    StringBuilder buf2(MAX_LEN_TYPENAME);
     SrcType.DiagName(buf1, true);
     DestType.DiagName(buf2, true);
     Diags.Report(expr->getLocation(), diag::err_illegal_cast)
@@ -376,7 +313,8 @@ void ExprAnalyser::checkUnaryOp(QualType TLeft, const UnaryOperator* op) {
         }
 }
 
-void ExprAnalyser::checkBinOp(QualType TLeft, const BinaryOperator* binop) {
+void ExprAnalyser::checkBinOp(QualType TLeft, Expr* binop_ptr) {
+    BinaryOperator* binop = cast<BinaryOperator>(binop_ptr);
     // NOTE we check Left / Right separately if CTC's are not the same
     switch (binop->getOpcode()) {
     case BINOP_Mul:
@@ -420,9 +358,8 @@ void ExprAnalyser::checkBinOp(QualType TLeft, const BinaryOperator* binop) {
 }
 
 // TODO change return type to void, it's never used
-bool ExprAnalyser::checkCompatible(QualType left, const Expr* expr) {
+bool ExprAnalyser::checkCompatible(QualType left, Expr* expr) {
     QualType right = expr->getType();
-    //right = TypeFinder::findType(expr);
     assert(left.isValid());
     const Type* canon = left.getCanonicalType();
     assert(canon);
@@ -453,6 +390,8 @@ bool ExprAnalyser::checkCompatible(QualType left, const Expr* expr) {
 bool ExprAnalyser::checkBuiltin(QualType left, QualType right, const Expr* expr, bool first) {
     const BuiltinType* Left = cast<BuiltinType>(left.getCanonicalType());
 
+    expr = AnalyserUtils::ignoreParenEpr(expr);
+
     // left is builtin
     bool showQualifiers = true;
     QualType C = right.getCanonicalType();
@@ -474,7 +413,9 @@ bool ExprAnalyser::checkBuiltin(QualType left, QualType right, const Expr* expr,
                 E->setImpCast(Left->getKind());
             }
             if (rule == 1) {
-                QualType Q = TypeFinder::findType(expr);
+                //QualType Q = TypeFinder::findType(expr);
+                // BB TEMP
+                QualType Q = expr->getType();
                 return checkBuiltin(left, Q, expr, false);
             }
         }
@@ -505,8 +446,6 @@ bool ExprAnalyser::checkBuiltin(QualType left, QualType right, const Expr* expr,
             FATAL_ERROR("Unreachable");
             break;
         }
-        StringBuilder buf1(MAX_LEN_TYPENAME);
-        StringBuilder buf2(MAX_LEN_TYPENAME);
         right.DiagName(buf1, showQualifiers);
         left.DiagName(buf2, showQualifiers);
         // TODO error msg depends on conv type (see clang errors)
@@ -534,7 +473,7 @@ bool ExprAnalyser::checkBuiltin(QualType left, QualType right, const Expr* expr,
     case TC_MODULE:
         break;
     }
-    error(expr->getLocation(), left, right);
+    error(expr, left, right);
     return false;
 }
 
@@ -555,11 +494,11 @@ bool ExprAnalyser::checkStruct(QualType left, QualType right, const Expr* expr) 
     case TC_MODULE:
         break;
     }
-    error(expr->getLocation(), left, right);
+    error(expr, left, right);
     return false;
 }
 
-bool ExprAnalyser::checkPointer(QualType left, QualType right, const Expr* expr) {
+bool ExprAnalyser::checkPointer(QualType left, QualType right, Expr* expr) {
     QualType LP = cast<PointerType>(left)->getPointeeType();
 
     if (right->isPointerType()) {
@@ -574,14 +513,19 @@ bool ExprAnalyser::checkPointer(QualType left, QualType right, const Expr* expr)
             return false;
         }
 
+        if (LP.isVoidType()) {
+            // dont allow implicit ptr-ptr to void*
+            if (RP->isPointerType()) {
+                error(expr, left, right);
+                return false;
+            }
+
+            return true;
+        }
         // TODO check if allowed (either same or to/from void* etc)
         return true;
     }
-    if (right->isArrayType()) {
-        // TODO
-        return true;
-    }
-    error(expr->getLocation(), left, right);
+    error(expr, left, right);
     return false;
 }
 
@@ -592,7 +536,7 @@ bool ExprAnalyser::checkFunction(QualType L, const Expr* expr) {
 
     // NOTE: for now only allow FunctionTypes
     if (!R->isFunctionType()) {
-        error(expr->getLocation(), L, R);
+        error(expr, L, R);
         return false;
     }
 #if 0
@@ -614,17 +558,18 @@ bool ExprAnalyser::checkWidth(QualType type, SourceLocation loc, int msg) {
     }
 
     QualType expected = target.intWidth == 64 ? Type::UInt64() : Type::UInt32();
-    StringBuilder buf1(MAX_LEN_TYPENAME);
     expected.DiagName(buf1, false);
     Diags.Report(loc, msg) << buf1;
     m_hasError = true;
     return false;
 }
 
-void ExprAnalyser::error(SourceLocation loc, QualType left, QualType right) {
-    StringBuilder buf1(MAX_LEN_TYPENAME);
-    StringBuilder buf2(MAX_LEN_TYPENAME);
-    right.DiagName(buf1);
+void ExprAnalyser::error(const Expr* expr, QualType left, QualType right) {
+    SourceLocation loc = expr->getLocation();
+
+    expr = stripImplicitCast(expr);
+
+    expr->getType().DiagName(buf1);
     left.DiagName(buf2);
 
     // TODO error msg depends on conv type (see clang errors)
@@ -633,21 +578,16 @@ void ExprAnalyser::error(SourceLocation loc, QualType left, QualType right) {
     m_hasError = true;
 }
 
-bool ExprAnalyser::outputStructDiagnostics(QualType T, IdentifierExpr* member, unsigned msg)
+QualType ExprAnalyser::outputStructDiagnostics(QualType T, IdentifierExpr* member, unsigned msg)
 {
-    char temp1[MAX_LEN_TYPENAME];
-    StringBuilder buf1(MAX_LEN_TYPENAME, temp1);
+    buf2.clear();
     T.DiagName(buf1);
-    char temp2[MAX_LEN_VARNAME];
-    StringBuilder buf2(MAX_LEN_VARNAME, temp2);
     buf2 << '\'' << member->getName() << '\'';
-    Diags.Report(member->getLocation(), msg) << temp2 << temp1;
-    return false;
+    Diags.Report(member->getLocation(), msg) << buf2 << buf1;
+    return QualType();
 }
 
 void ExprAnalyser::error2(SourceLocation loc, QualType left, QualType right, unsigned msg) {
-    StringBuilder buf1(MAX_LEN_TYPENAME);
-    StringBuilder buf2(MAX_LEN_TYPENAME);
     right.DiagName(buf1);
     left.DiagName(buf2);
 
@@ -699,11 +639,10 @@ Decl* ExprAnalyser::analyseOffsetOf(BuiltinExpr* expr, const StructTypeDecl* S, 
         }
 
         if (!sub) {
-            StringBuilder buf(MAX_LEN_TYPENAME);
             QualType LType = subStruct->getType();
-            LType.DiagName(buf);
+            LType.DiagName(buf1);
             Diags.Report(M->getLocation(), diag::err_typecheck_member_reference_struct_union)
-                        << buf << M->getSourceRange() << M->getMember()->getLocation();
+                        << buf1 << M->getSourceRange() << M->getMember()->getLocation();
             return 0;
         }
     }
@@ -733,5 +672,121 @@ QualType ExprAnalyser::analyseIntegerLiteral(Expr* expr) {
     if (numbits <= 32) return Type::Int32();
     expr->setType(Type::Int64());
     return Type::Int64();
+}
+
+QualType ExprAnalyser::getBinOpType(const BinaryOperator* binop) {
+    const Expr* lhs = binop->getLHS();
+    const Expr* rhs = binop->getRHS();
+    QualType TLeft = lhs->getType();
+    QualType TRight = rhs->getType();
+
+    if (TLeft.isVoidType() || TRight.isVoidType()) {
+        Diag2(binop->getLocation(), diag::err_typecheck_invalid_operands, TLeft, TRight);
+        return QualType();
+    }
+
+    switch (binop->getOpcode()) {
+    case BINOP_Mul:
+    case BINOP_Div:
+    case BINOP_Rem:
+    case BINOP_Add:
+    case BINOP_Sub: {
+        bool left_is_ptr = TLeft->isPointerType();
+        bool right_is_ptr = TRight->isPointerType();
+        if (left_is_ptr || right_is_ptr) {
+            if (left_is_ptr && right_is_ptr) {
+                if (binop->getOpcode() == BINOP_Sub) {
+                    switch (target.intWidth) {
+                    case 32:
+                        return Type::Int32();
+                    case 64:
+                        return Type::Int64();
+                    default:
+                        assert(0 && "should not come here");
+                        break;
+                    }
+                } else {
+                    Diag2(binop->getLocation(), diag::err_typecheck_invalid_operands, TLeft, TRight);
+                    return QualType();
+                }
+            } else {
+                if (left_is_ptr) {
+                    return TLeft;
+                } else {
+                    return TRight;
+                }
+            }
+        } else {
+            if (rhs->isCTV()) return TLeft;
+            if (lhs->isCTV()) return TRight;
+            return LargestType(TLeft, TRight);
+        }
+        break;
+    }
+    case BINOP_Shl:
+    case BINOP_Shr:
+        return TLeft;
+    case BINOP_LE:
+    case BINOP_LT:
+    case BINOP_GE:
+    case BINOP_GT:
+    case BINOP_NE:
+    case BINOP_EQ:
+    case BINOP_And:
+    case BINOP_Or:
+        return Type::Bool();
+    case BINOP_Xor:
+    case BINOP_LAnd:
+    case BINOP_LOr:
+        return TLeft;    // TODO valid?
+    case BINOP_Assign:
+    case BINOP_MulAssign:
+    case BINOP_DivAssign:
+    case BINOP_RemAssign:
+    case BINOP_AddAssign:
+    case BINOP_SubAssign:
+    case BINOP_ShlAssign:
+    case BINOP_ShrAssign:
+    case BINOP_AndAssign:
+    case BINOP_XorAssign:
+    case BINOP_OrAssign:
+        return TLeft;
+    case BINOP_Comma:
+        TODO;
+        break;
+    }
+
+    return binop->getType();
+}
+
+const Expr* ExprAnalyser::stripImplicitCast(const Expr* E) {
+    const ImplicitCastExpr* ic = dyncast<ImplicitCastExpr>(E);
+    if (ic) return ic->getInner();
+    return E;
+}
+
+QualType ExprAnalyser::LargestType(QualType TL, QualType TR) {
+    // TODO cleanup
+    QualType Lcanon = TL.getCanonicalType();
+    QualType Rcanon = TR.getCanonicalType();
+    assert(Lcanon.isBuiltinType());
+    assert(Rcanon.isBuiltinType());
+    const BuiltinType* Lbi = cast<BuiltinType>(Lcanon);
+    const BuiltinType* Rbi = cast<BuiltinType>(Rcanon);
+    if (Lbi->getWidth() > Rbi->getWidth()) {
+        return TL;
+    }
+    return TR;
+}
+
+bool ExprAnalyser::arePointersCompatible(QualType L, QualType R) {
+    // TODO
+    return true;
+}
+
+DiagnosticBuilder ExprAnalyser::Diag2(SourceLocation loc, int diag_id, QualType T1, QualType T2) {
+    T1.DiagName(buf1);
+    T2.DiagName(buf2);
+    return Diags.Report(loc, diag_id) << buf1 << buf2;
 }
 

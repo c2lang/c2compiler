@@ -51,9 +51,9 @@ static uint64_t stmtCounters[STMT_DECL+1];
 static uint32_t stmtSizes[STMT_DECL+1];
 static const char* stmtNames[STMT_DECL+1];
 
-static uint64_t exprCounters[EXPR_EXPL_CAST+1];
-static uint32_t exprSizes[EXPR_EXPL_CAST+1];
-static const char* exprNames[EXPR_EXPL_CAST+1];
+static uint64_t exprCounters[EXPR_IMPLICIT_CAST+1];
+static uint32_t exprSizes[EXPR_IMPLICIT_CAST_CAST+1];
+static const char* exprNames[EXPR_IMPLICIT_CAST+1];
 
 // TODO attributes
 // TODO types
@@ -207,6 +207,7 @@ ASTBuilder::ASTBuilder(SourceManager& sm_,
 	checkSize(ParenExpr, 32);
 	checkSize(BitOffsetExpr, 32);
 	checkSize(ExplicitCastExpr, 32);
+    checkSize(ImplicitCastExpr, 24);
 
 #ifdef SEMA_MEMSIZE
     memset(declCounters, 0, sizeof(declCounters));
@@ -272,7 +273,8 @@ ASTBuilder::ASTBuilder(SourceManager& sm_,
         EXPR_INIT(EXPR_MEMBER, MemberExpr);
         EXPR_INIT(EXPR_PAREN, ParenExpr);
         EXPR_INIT(EXPR_BITOFFSET, BitOffsetExpr);
-        EXPR_INIT(EXPR_EXPL_CAST, CastExpr);
+        EXPR_INIT(EXPR_EXPLICIT_CAST, ExplCastExpr);
+        EXPR_INIT(EXPR_IMPLICIT_CAST, ImplicitCastExpr);
     }
     counter++;
 #endif
@@ -382,7 +384,9 @@ void ASTBuilder::ActOnModule(const char* name_, SourceLocation loc) {
     module->addAST(&ast);
 
     MEM_DECL(DECL_IMPORT);
+    // Special added ImportDecl that adds own symbols
     ImportDecl* U = new (Context) ImportDecl(name, loc, true, name, SourceLocation());
+    U->setModule(module);
     U->setType(Context.getModuleType(U));
     U->setUsed();
     U->setPublic(true);
@@ -449,7 +453,7 @@ C2::Decl* ASTBuilder::ActOnAliasType(const char* name_, SourceLocation loc, Expr
     TypeExpr* typeExpr = cast<TypeExpr>(type);
     const char* name = Context.addIdentifier(name_, strlen(name_));
     MEM_DECL(DECL_ALIASTYPE);
-    AliasTypeDecl* T = new (Context) AliasTypeDecl(name, loc, typeExpr->getType(), is_public);
+    AliasTypeDecl* T = new (Context) AliasTypeDecl(name, loc, typeExpr->getType(), is_public, module);
     QualType A = Context.getAliasType(T, typeExpr->getType());
     T->setType(A);
     ast.addType(T);
@@ -492,7 +496,7 @@ C2::FunctionDecl* ASTBuilder::createFuncDecl(const char* name_, SourceLocation l
     TypeExpr* typeExpr = cast<TypeExpr>(rtype);
     MEM_DECL(DECL_FUNC);
     const char* name = Context.addIdentifier(name_, strlen(name_));
-    FunctionDecl* D = new (Context) FunctionDecl(name, loc, is_public, typeExpr->getType());
+    FunctionDecl* D = new (Context) FunctionDecl(name, loc, is_public, typeExpr->getType(), module);
     Context.freeTypeExpr(typeExpr);
     QualType qt =  Context.getFunctionType(D);
     D->setType(qt);
@@ -506,7 +510,7 @@ C2::VarDecl* ASTBuilder::createVarDecl(VarDeclKind k, const char* name_, SourceL
 
     MEM_DECL(DECL_VAR);
     const char* name = Context.addIdentifier(name_, strlen(name_));
-    VarDecl* V = new (Context) VarDecl(k, name, loc, typeExpr->getType(), InitValue, is_public);
+    VarDecl* V = new (Context) VarDecl(k, name, loc, typeExpr->getType(), InitValue, is_public, k == VARDECL_GLOBAL ? module : 0);
     Context.freeTypeExpr(typeExpr);
     return V;
 }
@@ -553,7 +557,7 @@ C2::FunctionTypeDecl* ASTBuilder::ActOnFuncTypeDecl(const char* name_, SourceLoc
     }
     FunctionDecl* D = createFuncDecl(name_, loc, is_public, rtype);
     MEM_DECL(DECL_FUNCTIONTYPE);
-    FunctionTypeDecl* FTD = new (Context) FunctionTypeDecl(D);
+    FunctionTypeDecl* FTD = new (Context) FunctionTypeDecl(D, module);
     ast.addType(FTD);
     addSymbol(FTD);
     return FTD;
@@ -606,8 +610,7 @@ void ASTBuilder::ActOnArrayValue(const char* name_, SourceLocation loc, Expr* Va
 #endif
     MEM_DECL(DECL_ARRAYVALUE);
     const char* name = Context.addIdentifier(name_, strlen(name_));
-    ArrayValueDecl* decl = new (Context) ArrayValueDecl(name, loc, Value);
-    decl->setModule(module);
+    ArrayValueDecl* decl = new (Context) ArrayValueDecl(name, loc, Value, module);
     ast.addArrayValue(decl);
 }
 
@@ -1110,7 +1113,7 @@ StructTypeDecl* ASTBuilder::ActOnStructType(const char* name_, SourceLocation lo
     QualType qt = Context.getStructType();
     MEM_DECL(DECL_STRUCTTYPE);
     const char* name = Context.addIdentifier(name_, strlen(name_));
-    StructTypeDecl* S = new (Context) StructTypeDecl(name, loc, qt, isStruct, is_global, is_public);
+    StructTypeDecl* S = new (Context) StructTypeDecl(name, loc, qt, isStruct, is_global, is_public, is_global ? module : 0);
     StructType* ST = cast<StructType>(qt.getTypePtr());
     ST->setDecl(S);
     if (is_global) {
@@ -1155,7 +1158,7 @@ EnumTypeDecl* ASTBuilder::ActOnEnumType(const char* name_, SourceLocation loc, E
     QualType qt = Context.getEnumType();
     MEM_DECL(DECL_ENUMTYPE);
     const char* name = Context.addIdentifier(name_, strlen(name_));
-    EnumTypeDecl* E = new (Context) EnumTypeDecl(name, loc, impl, qt, is_incr, is_public);
+    EnumTypeDecl* E = new (Context) EnumTypeDecl(name, loc, impl, qt, is_incr, is_public, module);
     EnumType* ET = cast<EnumType>(qt.getTypePtr());
     ET->setCanonicalType(impl);
     ET->setDecl(E);
@@ -1174,7 +1177,7 @@ C2::EnumConstantDecl* ASTBuilder::ActOnEnumConstant(EnumTypeDecl* Enum, Identifi
 
     const char* name = Context.addIdentifier(symII->getNameStart(), symII->getLength());
     EnumConstantDecl* D = new (Context) EnumConstantDecl(name, symLoc, Enum->getType(), Value,
-            Enum->isPublic());
+            Enum->isPublic(), module);
     if (D->isPublic() && module->isExported()) D->setExported();
 
     SymbolsConstIter iter = enumConstants.find(name);
@@ -1184,7 +1187,6 @@ C2::EnumConstantDecl* ASTBuilder::ActOnEnumConstant(EnumTypeDecl* Enum, Identifi
         Diag(Old->getLocation(), diag::note_previous_definition);
     } else {
         enumConstants[name] = D;
-        D->setModule(module);
     }
     if (!isupper(name[0]) && !ast.isInterface()) {
         Diag(symLoc, diag::err_lower_casing) << 1;
@@ -1338,7 +1340,7 @@ C2::ExprResult ASTBuilder::ActOnExplicitCast(SourceLocation castLoc, Expr* type,
     std::cerr << ANSI_NORMAL"\n";
 #endif
     TypeExpr* typeExpr = cast<TypeExpr>(type);
-    MEM_EXPR(EXPR_EXPL_CAST);
+    MEM_EXPR(EXPR_EXPLICIT_CAST);
     ExplicitCastExpr* E = new (Context) ExplicitCastExpr(castLoc, typeExpr->getType(), expr);
     Context.freeTypeExpr(typeExpr);
     return ExprResult(E);
@@ -1599,7 +1601,6 @@ void ASTBuilder::addSymbol(Decl* d, bool isStructFunction) {
     } else {
         if (isa<ImportDecl>(d)) {
             imports[d->getName()] = d;
-            d->setModule(module); // Will be changed if it points external
         } else {
             if (d->isPublic() && module->isExported()) d->setExported();
             module->addSymbol(d, isStructFunction);

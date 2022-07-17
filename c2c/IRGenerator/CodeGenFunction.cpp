@@ -561,10 +561,15 @@ llvm::Value* CodeGenFunction::EmitExprNoImpCast(const Expr* E) {
         E->dump();
         TODO;
         break;
-    case EXPR_EXPL_CAST:
+    case EXPR_EXPLICIT_CAST:
     E->dump();
         TODO;
         break;
+    case EXPR_IMPLICIT_CAST:
+    {
+        const ImplicitCastExpr* ic = cast<ImplicitCastExpr>(E);
+        return EmitExpr(ic->getInner());
+    }
     }
     TODO;
     return 0;
@@ -577,7 +582,7 @@ llvm::Value* CodeGenFunction::EmitCallExpr(const CallExpr* E) {
     // TODO only do below if direct call?
     // TODO for now assert IdentifierExpr;
 
-    const Expr* Fn = E->getFn();
+    const Expr* Fn = stripImplicitCast(E->getFn());
     const Decl* FD = 0;
     std::string FuncName;
     switch (Fn->getKind()) {
@@ -828,7 +833,6 @@ llvm::Value* CodeGenFunction::EmitUnaryOperator(const UnaryOperator* unaryOperat
         case UO_Not:
             return Builder.CreateNot(EmitExpr(expression), "not");
         case UO_Minus:
-            assert(!is_unsigned_int);
             return is_float
                 ? Builder.CreateFNeg(EmitExpr(expression), "fneg")
                 : Builder.CreateNeg(EmitExpr(expression), "neg");
@@ -883,6 +887,11 @@ llvm::AllocaInst *CodeGenFunction::CreateTempAlloca(llvm::Type *Ty, const Twine 
     return new llvm::AllocaInst(Ty, 0, Name, AllocaInsertPt);
 }
 
+const Expr* CodeGenFunction::stripImplicitCast(const Expr* E) {
+    const ImplicitCastExpr* ic = dyncast<ImplicitCastExpr>(E);
+    if (ic) return ic->getInner();
+    return E;
+}
 
 
 

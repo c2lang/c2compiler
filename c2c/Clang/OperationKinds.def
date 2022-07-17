@@ -61,6 +61,10 @@ CAST_OPERATION(Dependent)
 /// Vector coercions are bitcasts.
 CAST_OPERATION(BitCast)
 
+/// CK_LValueToRValue - A conversion which causes the extraction of
+/// an r-value from the operand gl-value.  The result of an r-value
+/// conversion is always unqualified.
+CAST_OPERATION(LValueToRValue)
 
 /// CK_NoOp - A conversion which does not affect the type other than
 /// (possibly) adding qualifiers.

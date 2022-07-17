@@ -29,12 +29,13 @@ using namespace C2;
 using namespace std;
 
 
-Decl::Decl(DeclKind k, const char* name_, SourceLocation loc_, QualType type_, bool is_public)
+Decl::Decl(DeclKind k, const char* name_, SourceLocation loc_,
+           QualType type_, bool is_public, Module* mod_)
     : bits(0)
     , loc(loc_)
     , type(type_)
     , name(name_)
-    , mod(0)
+    , mod(mod_)
 {
     declBits.dKind = k;
     declBits.cState = CHECK_UNCHECKED;
@@ -168,8 +169,8 @@ const AttrList& Decl::getAttributes() const {
 }
 
 FunctionDecl::FunctionDecl(const char* name_, SourceLocation loc_,
-                           bool is_public, QualType rtype_)
-    : Decl(DECL_FUNC, name_, loc_, QualType(), is_public)
+                           bool is_public, QualType rtype_, Module* mod_)
+    : Decl(DECL_FUNC, name_, loc_, QualType(), is_public, mod_)
     , rtype(rtype_)
     , origRType(rtype_)
     , structName(0)
@@ -207,7 +208,6 @@ void FunctionDecl::setStructInfo(IdentifierExpr* structName_) {
 
 bool FunctionDecl::hasNoReturnAttr() const {
     if (!hasAttributes()) return false;
-    assert(mod);
     const AttrList& AL = getModule()->getAttributes(this);
     for (AttrListConstIter iter = AL.begin(); iter != AL.end(); ++iter) {
         const Attr* A = *iter;
@@ -253,8 +253,8 @@ static const char* VarDeclKind2Str(VarDeclKind k) {
 
 
 VarDecl::VarDecl(VarDeclKind k_, const char* name_, SourceLocation loc_,
-                 QualType type_, Expr* initValue_, bool is_public)
-    : Decl(DECL_VAR, name_, loc_, type_, is_public)
+                 QualType type_, Expr* initValue_, bool is_public, Module* mod_)
+    : Decl(DECL_VAR, name_, loc_, type_, is_public, mod_)
     , origType(type_)
     , initValue(initValue_)
     , IRValue(0)
@@ -281,8 +281,8 @@ void VarDecl::print(StringBuilder& buffer, unsigned indent) const {
 
 EnumConstantDecl::EnumConstantDecl(const char* name_, SourceLocation loc_,
                                    QualType type_, Expr* Init,
-                                   bool is_public)
-    : Decl(DECL_ENUMVALUE, name_, loc_, type_, is_public)
+                                   bool is_public, Module* mod_)
+    : Decl(DECL_ENUMVALUE, name_, loc_, type_, is_public, mod_)
     , InitVal(Init)
     , Val(64, false)
 {}
@@ -305,8 +305,8 @@ const EnumTypeDecl* EnumConstantDecl::getTypeDecl() const {
 }
 
 TypeDecl::TypeDecl(DeclKind k, const char* name_, SourceLocation loc_, QualType type_,
-                   bool is_public)
-    : Decl(k, name_, loc_, type_, is_public)
+                   bool is_public, Module* mod_)
+    : Decl(k, name_, loc_, type_, is_public, mod_)
 {}
 
 
@@ -326,8 +326,8 @@ void AliasTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
 
 StructTypeDecl::StructTypeDecl(const char* name_, SourceLocation loc_,
                                QualType type_, bool is_struct, bool is_global,
-                               bool is_public)
-    : TypeDecl(DECL_STRUCTTYPE, name_, loc_, type_, is_public)
+                               bool is_public, Module* mod_)
+    : TypeDecl(DECL_STRUCTTYPE, name_, loc_, type_, is_public, mod_)
     , members(0)
     , structFunctions(0)
     , size(0)
@@ -521,8 +521,8 @@ llvm::APSInt EnumTypeDecl::getMaxValue() const {
 }
 
 
-FunctionTypeDecl::FunctionTypeDecl(FunctionDecl* F)
-    : TypeDecl(DECL_FUNCTIONTYPE, F->getName(), F->getLocation(), F->getType(), F->isPublic())
+FunctionTypeDecl::FunctionTypeDecl(FunctionDecl* F, Module* mod_)
+    : TypeDecl(DECL_FUNCTIONTYPE, F->getName(), F->getLocation(), F->getType(), F->isPublic(), mod_)
     , func(F)
 {}
 
@@ -535,8 +535,8 @@ void FunctionTypeDecl::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 
-ArrayValueDecl::ArrayValueDecl(const char* name_, SourceLocation loc_, Expr* value_)
-    : Decl(DECL_ARRAYVALUE, name_, loc_, QualType(), false)
+ArrayValueDecl::ArrayValueDecl(const char* name_, SourceLocation loc_, Expr* value_, Module* mod_)
+    : Decl(DECL_ARRAYVALUE, name_, loc_, QualType(), false, mod_)
     , value(value_)
 {}
 
@@ -552,7 +552,7 @@ void ArrayValueDecl::print(StringBuilder& buffer, unsigned indent) const {
 
 ImportDecl::ImportDecl(const char* name_, SourceLocation loc_, bool isLocal_,
                        const char* modName_, SourceLocation aliasLoc_)
-    : Decl(DECL_IMPORT, name_, loc_, QualType(), false)
+    : Decl(DECL_IMPORT, name_, loc_, QualType(), false, 0)
     , modName(modName_)
     , aliasLoc(aliasLoc_)
 {
@@ -578,7 +578,7 @@ void ImportDecl::print(StringBuilder& buffer, unsigned indent) const {
 
 
 LabelDecl::LabelDecl(const char* name_, SourceLocation loc_)
-    : Decl(DECL_LABEL, name_, loc_, QualType(), false)
+    : Decl(DECL_LABEL, name_, loc_, QualType(), false, 0)
     , TheStmt(0)
 {}
 
@@ -591,7 +591,7 @@ void LabelDecl::print(StringBuilder& buffer, unsigned indent) const {
 }
 
 StaticAssertDecl::StaticAssertDecl(SourceLocation loc_, Expr* lhs_, Expr* rhs_)
-    : Decl(DECL_STATIC_ASSERT, "", loc_, QualType(), false)
+    : Decl(DECL_STATIC_ASSERT, "", loc_, QualType(), false, 0)
     , lhs(lhs_)
     , rhs(rhs_)
 {}

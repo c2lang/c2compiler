@@ -113,6 +113,8 @@ private:
 
     llvm::AllocaInst* CreateTempAlloca(llvm::Type *Ty, const llvm::Twine &Name);
 
+    const Expr* stripImplicitCast(const Expr* E);
+
   /// An object to manage conditionally-evaluated expressions.
   class ConditionalEvaluation {
     llvm::BasicBlock *StartBB;

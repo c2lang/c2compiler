@@ -30,10 +30,18 @@ public:
     ~PluginManager();
 
     void print() const;
+    void show() const;
 
     void addPath(const std::string& path);
-    bool load(const std::string& plugin_name, const std::string& plugin_config, bool from_recipe);
 
+    // global config
+    bool loadGlobal(const std::string& plugin_name, const std::string& plugin_config, bool from_recipe);
+    // target-specific config
+    bool loadLocal(const std::string& plugin_name, const std::string& plugin_config);
+
+    void endTarget();
+
+    virtual void beginTarget(C2Builder& builder);
     virtual bool build(C2Builder& builder);
     virtual bool generate(C2Builder& builder, const c2lang::SourceManager& src_mgr);
 private:
@@ -41,10 +49,16 @@ private:
         Plugin* plugin;
         void* handle;
         std::string name;
+        bool is_global;;
+        bool active;
 
-        PluginWrapper(Plugin* p, void* h, const std::string& name_) : plugin(p), handle(h), name(name_) {}
+        PluginWrapper(Plugin* p, void* h, const std::string& name_)
+            : plugin(p), handle(h), name(name_)
+            , is_global(false), active(false)
+            {}
     };
 
+    PluginWrapper* loadPlugin(const std::string& plugin_name, bool from_recipe);
     void removePlugin(PluginWrapper& plugin);
     bool find_file(const std::string& filename, std::string& fullname);
 

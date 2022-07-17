@@ -94,7 +94,6 @@ public:
     bool isAliasType() const;
     bool isStructType() const;
     bool isFunctionType() const;
-    bool isSubscriptable() const;
     bool isEnumType() const;
     bool isIntegerType() const;
     bool isArithmeticType() const;
@@ -176,7 +175,6 @@ public:
     bool isAliasType() const;
     bool isStructType() const;
     bool isFunctionType() const;
-    bool isSubscriptable() const;
 
     static QualType Int8();
     static QualType Int16();
@@ -343,6 +341,7 @@ public:
     QualType getElementType() const { return ElementType; }
     bool isIncremental() const { return arrayTypeBits.incremental; }
     Expr* getSizeExpr() const { return sizeExpr; }
+    Expr** getSizeExpr2() { return sizeExpr ? &sizeExpr : NULL; }
     const llvm::APInt& getSize() const { return Size; }
     void setSize(const llvm::APInt& value);
 
@@ -551,11 +550,6 @@ inline bool Type::isStructType() const {
 inline bool Type::isFunctionType() const {
     assert(canonicalType.isValid());
     return isa<FunctionType>(canonicalType);
-}
-
-inline bool Type::isSubscriptable() const {
-    assert(canonicalType.isValid());
-    return isa<PointerType>(canonicalType) || isa<ArrayType>(canonicalType);
 }
 
 }

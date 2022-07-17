@@ -31,11 +31,19 @@ public:
     Plugin(const std::string& name_);
     virtual ~Plugin() {}
 
-    virtual bool init(bool verbose, const std::string& config)  = 0;
+    bool allTargets() const { return allTargets_; }
+
+    virtual bool setGlobalCfg(bool verbose, const std::string& config) = 0;
+    virtual bool setTargetCfg(bool verbose, const std::string& config) = 0;
+
+    virtual void beginTarget(C2Builder&) {}
     virtual void build(C2Builder&) = 0;
     virtual bool generate(C2Builder& builder, const c2lang::SourceManager& src_mgr) = 0;
+protected:
+    void setAllTargets() { allTargets_ = true; }
 private:
     std::string name;
+    bool allTargets_;
 };
 
 }

@@ -296,7 +296,7 @@ void InterfaceGenerator::EmitExpr(const Expr* E) {
     case EXPR_BITOFFSET:
         FATAL_ERROR("Unreachable");
         break;
-    case EXPR_EXPL_CAST:
+    case EXPR_EXPLICIT_CAST:
     {
         const ExplicitCastExpr* ECE = cast<ExplicitCastExpr>(E);
         iface << '(';
@@ -305,6 +305,12 @@ void InterfaceGenerator::EmitExpr(const Expr* E) {
         iface << ")(";
         EmitExpr(ECE->getInner());
         iface << ')';
+        return;
+    }
+    case EXPR_IMPLICIT_CAST:
+    {
+        const ImplicitCastExpr* ice = cast<ImplicitCastExpr>(E);
+        EmitExpr(ice->getInner());
         return;
     }
     }

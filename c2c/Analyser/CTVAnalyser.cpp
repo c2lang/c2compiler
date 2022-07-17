@@ -22,7 +22,7 @@
 #include "Clang/SemaDiagnostic.h"
 
 #include "AST/Type.h"
-#include "Analyser/LiteralAnalyser.h"
+#include "Analyser/CTVAnalyser.h"
 #include "AST/Expr.h"
 #include "AST/Decl.h"
 #include "Utils/StringBuilder.h"
@@ -83,13 +83,13 @@ static const Limit* getLimit(int width) {
     }
 }
 
-LiteralAnalyser::LiteralAnalyser(c2lang::DiagnosticsEngine& Diags_)
+CTVAnalyser::CTVAnalyser(c2lang::DiagnosticsEngine& Diags_)
     : Diags(Diags_)
 {
 }
 
-void LiteralAnalyser::check(QualType TLeft, const Expr* Right) {
-    if (Right->getCTC() == CTC_NONE) return;
+void CTVAnalyser::check(QualType TLeft, const Expr* Right) {
+    if (!Right->isCTV()) return;
     // TODO assert here instead of check?
 
 
@@ -126,7 +126,7 @@ void LiteralAnalyser::check(QualType TLeft, const Expr* Right) {
     checkWidth(availableWidth, L, Right, tname);
 }
 
-void LiteralAnalyser::checkWidth(int availableWidth, const Limit* L, const Expr* Right, const char* tname) {
+void CTVAnalyser::checkWidth(int availableWidth, const Limit* L, const Expr* Right, const char* tname) {
     APSInt Result = checkLiterals(Right);
 
     assert(Result.isSigned() && "TEMP FOR NOW");
@@ -153,7 +153,7 @@ void LiteralAnalyser::checkWidth(int availableWidth, const Limit* L, const Expr*
     }
 }
 
-bool LiteralAnalyser::calcWidth(QualType TLeft, const Expr* Right, int* availableWidth) {
+bool CTVAnalyser::calcWidth(QualType TLeft, const Expr* Right, int* availableWidth) {
     const QualType QT = TLeft.getCanonicalType();
     // TODO check if type is already ok?, then skip check?
     //if (QT == Right->getType().getCanonicalType()) return;
@@ -179,11 +179,15 @@ bool LiteralAnalyser::calcWidth(QualType TLeft, const Expr* Right, int* availabl
         *availableWidth = 32;    // only 32-bit for now
         // dont ask for pointer, replace with uint32 here.
     } else {
+        TLeft.dump();
+        Right->dump();
         StringBuilder t1name(128);
         Right->getType().DiagName(t1name, false);
         // Q: allow FuncPtr to return 0? (or nil?)
         StringBuilder t2name(128);
         TLeft.DiagName(t2name, false);
+        // TODO pass correct args (not returning .. from function with incompatible ..
+        // TODO this error cannot be generated here since we dont know the situation
         Diags.Report(Right->getLocation(), diag::err_typecheck_convert_incompatible) << t1name << t2name << 2 << 0 << 0;
         return false;
         //QT.dump();
@@ -193,8 +197,8 @@ bool LiteralAnalyser::calcWidth(QualType TLeft, const Expr* Right, int* availabl
     return true;
 }
 
-APSInt LiteralAnalyser::checkLiterals(const Expr* Right) {
-    if (Right->getCTC() == CTC_NONE) return APSInt(64, false);
+APSInt CTVAnalyser::checkLiterals(const Expr* Right) {
+    if (!Right->isCTV()) return APSInt(64, false);
 
     APSInt result(64, false);
 
@@ -256,20 +260,22 @@ APSInt LiteralAnalyser::checkLiterals(const Expr* Right) {
     case EXPR_BITOFFSET:
         TODO;
         break;
-    case EXPR_EXPL_CAST:
+    case EXPR_EXPLICIT_CAST:
     {
         // a cast may change the value without warning
         const ExplicitCastExpr* E = cast<ExplicitCastExpr>(Right);
         APSInt Result = checkLiterals(E->getInner());
-        SmallString<20> ss;
-        Result.toString(ss, 10, true);
         return truncateLiteral(E->getType(), Right, Result);
+    }
+    case EXPR_IMPLICIT_CAST: {
+        const ImplicitCastExpr* ic = cast<ImplicitCastExpr>(Right);
+        return checkLiterals(ic->getInner());
     }
     }
     return result;
 }
 
-void LiteralAnalyser::checkBitOffset(const Expr* Left, const Expr* Right) {
+void CTVAnalyser::checkBitOffset(const Expr* Left, const Expr* Right) {
     assert(isa<ArraySubscriptExpr>(Left));
     const ArraySubscriptExpr* A = cast<ArraySubscriptExpr>(Left);
     assert(isa<BitOffsetExpr>(A->getIndex()));
@@ -288,7 +294,7 @@ void LiteralAnalyser::checkBitOffset(const Expr* Left, const Expr* Right) {
     checkWidth(BO->getWidth(), &L, Right, tname);
 }
 
-bool LiteralAnalyser::checkRange(QualType TLeft, const Expr* Right, c2lang::SourceLocation Loc, llvm::APSInt Result) {
+bool CTVAnalyser::checkRange(QualType TLeft, const Expr* Right, c2lang::SourceLocation Loc, llvm::APSInt Result) {
     // TODO refactor with check()
     const QualType QT = TLeft.getCanonicalType();
     int availableWidth = 0;
@@ -337,7 +343,7 @@ bool LiteralAnalyser::checkRange(QualType TLeft, const Expr* Right, c2lang::Sour
     return true;
 }
 
-APSInt LiteralAnalyser::checkIntegerLiterals(const Expr* Right) {
+APSInt CTVAnalyser::checkIntegerLiterals(const Expr* Right) {
     const IntegerLiteral* I = cast<IntegerLiteral>(Right);
 
     APSInt Result(64, false);      // always take signed 64 as base for checking
@@ -345,7 +351,7 @@ APSInt LiteralAnalyser::checkIntegerLiterals(const Expr* Right) {
     return Result;
 }
 
-APSInt LiteralAnalyser::checkUnaryLiterals(const Expr* Right) {
+APSInt CTVAnalyser::checkUnaryLiterals(const Expr* Right) {
     const UnaryOperator* unaryop = cast<UnaryOperator>(Right);
     QualType LType;
     switch (unaryop->getOpcode()) {
@@ -398,7 +404,7 @@ static inline APSInt evaluateBinaryBitwiseOp(APSInt &lhs, APSInt &rhs, c2lang::B
 }
 
 
-APSInt LiteralAnalyser::checkBinaryLiterals(const Expr *Right) {
+APSInt CTVAnalyser::checkBinaryLiterals(const Expr *Right) {
     const BinaryOperator *binop = cast<BinaryOperator>(Right);
     Expr *lhs = binop->getLHS();
     Expr *rhs = binop->getRHS();
@@ -489,7 +495,7 @@ APSInt LiteralAnalyser::checkBinaryLiterals(const Expr *Right) {
     return APSInt();
 }
 
-APSInt LiteralAnalyser::checkArraySubscript(const Expr* Right) {
+APSInt CTVAnalyser::checkArraySubscript(const Expr* Right) {
     const ArraySubscriptExpr* AS = cast<ArraySubscriptExpr>(Right);
     assert(AS);
     assert(isa<BitOffsetExpr>(AS->getIndex()) && "TODO only bitoffsets for now");
@@ -510,7 +516,7 @@ APSInt LiteralAnalyser::checkArraySubscript(const Expr* Right) {
     return Result;
 }
 
-APSInt LiteralAnalyser::checkDecl(const Decl* D) {
+APSInt CTVAnalyser::checkDecl(const Decl* D) {
     assert(D);
     const EnumConstantDecl* ECD = dyncast<EnumConstantDecl>(D);
     if (ECD) return ECD->getValue();
@@ -526,7 +532,7 @@ APSInt LiteralAnalyser::checkDecl(const Decl* D) {
     return APSInt();
 }
 
-APSInt LiteralAnalyser::truncateLiteral(QualType TLeft, const Expr* Right, APSInt Orig) {
+APSInt CTVAnalyser::truncateLiteral(QualType TLeft, const Expr* Right, APSInt Orig) {
     int availableWidth = 0;
     // TODO needs cleanup (first check if conversions are ok, then check literal values?)
     if (!calcWidth(TLeft, Right, &availableWidth)) return APSInt(0);

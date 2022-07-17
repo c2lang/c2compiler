@@ -22,7 +22,8 @@
 #include "Analyser/FileAnalyser.h"
 #include "Analyser/AnalyserUtils.h"
 #include "Analyser/AnalyserConstants.h"
-#include "Analyser/LiteralAnalyser.h"
+#include "Analyser/FunctionAnalyser.h"
+#include "Analyser/CTVAnalyser.h"
 #include "AST/Decl.h"
 #include "AST/AST.h"
 #include "Utils/color.h"
@@ -42,7 +43,7 @@ using namespace llvm;
 #define LOG_FUNC
 #endif
 
-FileAnalyser::FileAnalyser(const Module& module_,
+FileAnalyser::FileAnalyser(Module& module_,
                            const Modules& allModules,
                            DiagnosticsEngine& Diags_,
                            const TargetInfo& target_,
@@ -50,11 +51,12 @@ FileAnalyser::FileAnalyser(const Module& module_,
                            bool verbose_)
     : ast(ast_)
     , module(module_)
-    , scope(new Scope(ast_.getModuleName(), allModules, Diags_))
+    , scope(new Scope(ast.getModuleName(), allModules, Diags_))
     , TR(new TypeResolver(*scope, Diags_))
+    , Context(ast.getContext())
     , Diags(Diags_)
-    , EA(Diags_, target_)
-    , functionAnalyser(*scope, *TR, ast.getContext(), Diags_, target_, ast.isInterface())
+    , target(target_)
+    , EA(Diags_, target_, Context)
     , checkIndex(0)
     , verbose(verbose_)
 {
@@ -87,7 +89,7 @@ bool FileAnalyser::collectIncremental(ArrayValueDecl* D, IncrementalArrayVals& v
             Diags.Report(incr->getLocation(), diag::err_expected_after) << "incremental enum" << tok::identifier;
             return false;
         }
-        EnumConstantDecl* ECD = new (ast.getContext()) EnumConstantDecl(IE->getName(), IE->getLocation(), ETD->getType(), 0, ETD->isPublic());
+        EnumConstantDecl* ECD = new (Context) EnumConstantDecl(IE->getName(), IE->getLocation(), ETD->getType(), 0, ETD->isPublic(), &module);
         if (ETD->isPublic() && module.isExported()) ECD->setExported();
         enums[ETD].push_back(ECD);
         return true;
@@ -112,7 +114,7 @@ bool FileAnalyser::collectIncremental(ArrayValueDecl* D, IncrementalArrayVals& v
                 Diags.Report(VD->getInitValue()->getLocation(),  diag::err_incremental_array_initlist);
                 return false;
             }
-            InitListExpr* ILE = new (ast.getContext()) InitListExpr(VD->getLocation(), VD->getLocation());
+            InitListExpr* ILE = new (Context) InitListExpr(VD->getLocation(), VD->getLocation());
             VD->setInitValue(ILE);
             VD->setCheckState(CHECK_IN_PROGRESS);
         }
@@ -204,6 +206,7 @@ void FileAnalyser::analyseFunctionBodies() {
     LOG_FUNC
     if (verbose) printf(COL_VERBOSE "%s %s" ANSI_NORMAL "\n", __func__, ast.getFileName().c_str());
 
+    FunctionAnalyser functionAnalyser(*scope, *TR, Context, Diags, target, ast.isInterface());
     for (unsigned i=0; i<ast.numFunctions(); i++) {
         functionAnalyser.check(ast.getFunction(i));
     }
@@ -241,7 +244,7 @@ void FileAnalyser::popCheck() {
 bool FileAnalyser::analyseStaticAssertInteger(const Expr* lhs, const Expr* rhs) {
     LOG_FUNC
 
-    LiteralAnalyser LA(Diags);
+    CTVAnalyser LA(Diags);
     llvm::APSInt L = LA.checkLiterals(lhs);
     llvm::APSInt R = LA.checkLiterals(rhs);
     if (L != R) {
@@ -276,16 +279,19 @@ bool FileAnalyser::analyseStaticAssert(StaticAssertDecl* D) {
     LOG_FUNC
 
     // TODO or use side=0 (not marked with used then)
+    QualType Q = analyseExpr(D->getLHS2(), false, false);
+    if (!Q.isValid()) return false;
+
     Expr* lhs = D->getLHS();
-    if (!analyseExpr(lhs, false)) return false;
-    if (lhs->getCTC() != CTC_FULL) {
+    if (!lhs->isCTV()) {
         Diag(lhs->getLocation(), diag::err_expr_not_ice) << 0 << lhs->getSourceRange();
         return false;
     }
 
+    Q = analyseExpr(D->getRHS2(), false, false);
+    if (!Q.isValid()) return false;
     Expr* rhs = D->getRHS();
-    if (!analyseExpr(rhs, false)) return false;
-    if (rhs->getCTC() != CTC_FULL) {
+    if (!rhs->isCTV()) {
         Diag(rhs->getLocation(), diag::err_expr_not_ice) << 0 << rhs->getSourceRange();
         return false;
     }
@@ -319,15 +325,17 @@ bool FileAnalyser::analyseEnumConstants(EnumTypeDecl* ETD) {
     typedef std::map<int64_t, EnumConstantDecl*> Values;
     typedef Values::iterator ValuesIter;
     Values values;
-    LiteralAnalyser LA(Diags);
+    CTVAnalyser LA(Diags);
     for (unsigned c=0; c<ETD->numConstants(); c++) {
         EnumConstantDecl* ECD = ETD->getConstant(c);
         Expr* init = ECD->getInitValue();
         if (init) {
             ECD->setCheckState(CHECK_IN_PROGRESS);
-            if (!analyseExpr(init, ETD->isPublic())) return false;
+            QualType Q = analyseExpr(ECD->getInitValue2(), ETD->isPublic(), true);
+            if (!Q.isValid()) return false;
+            init = ECD->getInitValue(); // re-read in case of ImplicitCast
 
-            if (init->getCTC() != CTC_FULL) {
+            if (!init->isCTV()) {
                 Diag(init->getLocation(), diag::err_expr_not_ice) << 0 << init->getSourceRange();
                 return false;
             }
@@ -375,9 +383,15 @@ bool FileAnalyser::analyseDecl(Decl* D) {
     case DECL_FUNC:
         ok = analyseFunctionDecl(cast<FunctionDecl>(D));
         break;
-    case DECL_VAR:
-        ok = analyseVarDecl(cast<VarDecl>(D));
+    case DECL_VAR: {
+        VarDecl* VD = cast<VarDecl>(D);
+        ok = analyseVarDecl(VD);
+        if (VD->isGlobal()) {
+            assert(D->getModule());
+            D->getModule()->addSortedVar(cast<VarDecl>(D));
+        }
         break;
+    }
     case DECL_ENUMVALUE:
         FATAL_ERROR("should not come here?");
         break;
@@ -417,8 +431,9 @@ bool FileAnalyser::analyseVarDecl(VarDecl* V) {
         uint32_t msg = diag::err_typecheck_decl_incomplete_type;
         if (V->isField()) msg = diag::err_field_incomplete;
         if (V->isParameter()) msg = diag::err_argument_incomplete;
+        //if (Q.isVoidType()) msg = diag::err_bla;
         Diags.Report(V->getLocation(), msg) << name;
-        return QualType();
+        return false;
     }
 
     V->setType(Q);
@@ -429,7 +444,7 @@ bool FileAnalyser::analyseVarDecl(VarDecl* V) {
     if (!checkVarDeclAttributes(V)) return false;
 
     // INIT
-    Expr* init = V->getInitValue();
+    Expr** init = V->getInitValue2();
     if (init) {
 #if 0
         // TODO FIX on collecting entries, a ILE is created! so this gives an error
@@ -443,12 +458,11 @@ bool FileAnalyser::analyseVarDecl(VarDecl* V) {
         // if VarDecl is not an array and not const, the init is not public
         bool usedPublicly = (V->isPublic() && (!V->isGlobal() || V->getType().isConstQualified()));
         if (!analyseInitExpr(init, Q, usedPublicly)) return false;
-
 /*
         // TODO move this inside analyseInitExpr
         QualType RT = analyseExpr(init);
         if (!RT.isValid()) return 1;
-        LiteralAnalyser LA(Diags);
+        CTVAnalyser LA(Diags);
         APSInt result = LA.checkLiterals(init);
 
         printf("INIT VALUE of %s is %ld\n", V->getName(), result.getSExtValue());
@@ -524,8 +538,10 @@ bool FileAnalyser::analyseVarDecl(VarDecl* V) {
     return true;
 }
 
-Decl* FileAnalyser::analyseIdentifier(IdentifierExpr* id, bool usedPublic) {
+Decl* FileAnalyser::analyseIdentifier(Expr** expr_ptr, bool usedPublic) {
     LOG_FUNC
+    Expr* expr = *expr_ptr;
+    IdentifierExpr* id = cast<IdentifierExpr>(expr);
     Decl* D = scope->findSymbol(id->getName(), id->getLocation(), false, usedPublic);
     if (D) {
         id->setDecl(D, AnalyserUtils::globalDecl2RefKind(D));
@@ -539,53 +555,79 @@ Decl* FileAnalyser::analyseIdentifier(IdentifierExpr* id, bool usedPublic) {
         if (usedPublic && !D->isPublic()) {
             Diag(id->getLocation(), diag::err_non_public_constant) << D->DiagName();
         }
+
+        if (D->getKind() == DECL_FUNC) {
+            expr->setCTC();
+            expr->setIsRValue();
+            insertImplicitCast(CK_FunctionToPointerDecay, expr_ptr, D->getType());
+        }
+
+        if (id->isCTV()) id->setIsRValue();
     }
     return D;
 }
 
-// Q: maybe pass r/lvalue usage?
-bool FileAnalyser::analyseExpr(Expr* expr, bool usedPublic) {
+QualType FileAnalyser::analyseExpr(Expr** expr_ptr, bool usedPublic, bool need_rvalue) {
     LOG_FUNC
+    QualType Result = analyseExprInner(expr_ptr, usedPublic);
+    if (!Result.isValid()) return Result;
+
+    Expr* expr = *expr_ptr;
+    expr->setType(Result);
+
+    if (need_rvalue && expr->isLValue()) {
+        // TODO just Result?
+        QualType Q = expr->getType();
+        if (Q.isArrayType()) {
+            QualType Qptr = AnalyserUtils::getPointerFromArray(Context, Q);
+            insertImplicitCast(CK_ArrayToPointerDecay, expr_ptr, Qptr);
+            return Qptr;
+        } else {
+            insertImplicitCast(CK_LValueToRValue, expr_ptr, Q);
+        }
+    }
+
+    return Result;
+}
+
+QualType FileAnalyser::analyseExprInner(Expr** expr_ptr, bool usedPublic) {
+    LOG_FUNC
+    Expr* expr = *expr_ptr;
+
+    QualType Q;
 
     switch (expr->getKind()) {
     case EXPR_INTEGER_LITERAL:
-        EA.analyseIntegerLiteral(expr);
-        return true;
+        return EA.analyseIntegerLiteral(expr);
     case EXPR_FLOAT_LITERAL:
         // For now always return type float
-        expr->setType(Type::Float32());
-        return true;
+        return Type::Float32();
     case EXPR_BOOL_LITERAL:
-        expr->setType(Type::Bool());
-        return true;
+        return Type::Bool();
     case EXPR_CHAR_LITERAL:
-        expr->setType(Type::Int8());
-        return true;
-    case EXPR_STRING_LITERAL:
-    {
-        // return type: 'const i8*'
-        QualType Q = ast.getContext().getPointerType(Type::Int8());
+        return Type::Int8();
+    case EXPR_STRING_LITERAL: {
+        StringLiteral* s = cast<StringLiteral>(expr);
+        int len = s->getByteLength();
+        Q = Context.getArrayType(Type::Int8(), s->getByteLength());
         Q.addConst();
-        if (!Q->hasCanonicalType()) Q->setCanonicalType(Q);
-        expr->setType(Q);
-        return true;
+        QualType Ptr = Context.getPointerType(Type::Int8());
+        Q->setCanonicalType(Ptr);
+        return Q;
     }
     case EXPR_NIL:
-    {
-        QualType Q = ast.getContext().getPointerType(Type::Void());
+        Q = Context.getPointerType(Type::Void());
         if (!Q->hasCanonicalType()) Q->setCanonicalType(Q);
-        expr->setType(Q);
-        return true;
-    }
+        return Q;
     case EXPR_CALL:
         Diag(expr->getLocation(), diag::err_init_element_not_constant) << expr->getSourceRange();
-        return false;
+        return QualType();
     case EXPR_IDENTIFIER:
     {
         IdentifierExpr* id = cast<IdentifierExpr>(expr);
-        Decl* D = analyseIdentifier(id, usedPublic);
-        if (!D) return false;
-#if 1
+        Decl* D = analyseIdentifier(expr_ptr, usedPublic);
+        if (!D) return QualType();
+
         // use checkStack()
 /*
         if (D == CurrentVarDecl) {
@@ -595,42 +637,32 @@ bool FileAnalyser::analyseExpr(Expr* expr, bool usedPublic) {
 */
         switch (D->getKind()) {
         case DECL_FUNC:
-            //expr->setConstant();
             break;
         case DECL_VAR:
-            // note: only if we need address!!
-            //if (cast<VarDecl>(D)->isGlobal()) expr->setCTC(CTC_FULL);
             break;
         case DECL_ENUMVALUE:
-            //expr->setCTC(CTC_FULL);
-            //expr->setConstant();
             break;
         case DECL_STRUCTTYPE:
-            // Type.func is allowed as init
-            // TODO handle, mark that Type was specified, not just return StructType
             break;
         case DECL_ALIASTYPE:
         case DECL_FUNCTIONTYPE:
             Diag(id->getLocation(), diag::err_unexpected_typedef) << id->getName();
-            //expr->setConstant();
-            break;
+            return QualType();
         case DECL_ENUMTYPE:
-            //expr->setConstant();
             break;
         case DECL_ARRAYVALUE:
             break;
         case DECL_IMPORT:
-            //expr->setConstant();
             break;
         case DECL_LABEL:
         case DECL_STATIC_ASSERT:
             TODO;
             break;
         }
-#endif
+
         D->setUsed();
         if (usedPublic) D->setUsedPublic();
-        return true;
+        return D->getType();
     }
     case EXPR_INITLIST:
     case EXPR_DESIGNATOR_INIT:
@@ -643,20 +675,23 @@ bool FileAnalyser::analyseExpr(Expr* expr, bool usedPublic) {
         //return analyseConditionalOperator(expr);
         break;
     case EXPR_UNARYOP:
-        return analyseUnaryOperator(expr, usedPublic);
+        return analyseUnaryOperator(expr_ptr, usedPublic);
     case EXPR_BUILTIN:
         return analyseBuiltinExpr(expr, usedPublic);
     case EXPR_ARRAYSUBSCRIPT:
         return analyseArraySubscript(expr, usedPublic);
     case EXPR_MEMBER:
-        return analyseMemberExpr(expr, usedPublic);
+        return analyseMemberExpr(expr_ptr, usedPublic);
     case EXPR_PAREN:
         return analyseParenExpr(expr, usedPublic);
     case EXPR_BITOFFSET:
         FATAL_ERROR("Should not come here");
         break;
-    case EXPR_EXPL_CAST:
+    case EXPR_EXPLICIT_CAST:
         //return analyseExplicitCastExpr(expr);
+        break;
+    case EXPR_IMPLICIT_CAST:
+        TODO;
         break;
     }
     expr->dump();
@@ -664,19 +699,19 @@ bool FileAnalyser::analyseExpr(Expr* expr, bool usedPublic) {
     return QualType();
 }
 
-bool FileAnalyser::analyseArraySubscript(Expr* expr, bool usedPublic) {
+QualType FileAnalyser::analyseArraySubscript(Expr* expr, bool usedPublic) {
     LOG_FUNC
     ArraySubscriptExpr* sub = cast<ArraySubscriptExpr>(expr);
-    if (!analyseExpr(sub->getBase(), usedPublic)) return false;
+    QualType Q = analyseExpr(sub->getBase2(), usedPublic, true);
+    if (!Q.isValid()) return Q;
     QualType LType = sub->getBase()->getType();
 
 #if 0
     if (BitOffsetExpr* BO = dyncast<BitOffsetExpr>(sub->getIndex())) {
         QualType T = analyseBitOffsetExpr(sub->getIndex(), LType, sub->getLocation());
         expr->setType(T);
-        AnalyserUtils::combineCtc(expr, sub->getBase(), sub->getIndex());
+        AnalyserUtils::combineCTV(expr, sub->getBase(), sub->getIndex());
         // dont analyse partial BitOffset expressions per part
-        if (expr->getCTC() == CTC_PARTIAL) expr->setCTC(CTC_NONE);
         return T;
     }
 #endif
@@ -686,37 +721,38 @@ bool FileAnalyser::analyseArraySubscript(Expr* expr, bool usedPublic) {
         LType = cast<AliasType>(LType)->getRefType();
     }
 
-    if (!LType.isSubscriptable()) {
+    if (!LType.isPointerType()) {
         Diag(expr->getLocation(), diag::err_typecheck_subscript);
-        return false;
+        return QualType();
     }
 
-    if (!analyseExpr(sub->getIndex(), usedPublic)) return false;
+    Q = analyseExpr(sub->getIndex2(), usedPublic, true);
+    if (!Q.isValid()) return Q;
 
+    // TODO BBB still needed?
     QualType Result;
     if (isa<PointerType>(LType)) {
         Result = cast<PointerType>(LType)->getPointeeType();
     } else if (isa<ArrayType>(LType)) {
         Result = cast<ArrayType>(LType)->getElementType();
     }
-    expr->setType(Result);
-    return true;
+    assert(Result.isValid());
+    return Result;
 }
 
-bool FileAnalyser::analyseParenExpr(Expr* expr, bool usedPublic) {
+QualType FileAnalyser::analyseParenExpr(Expr* expr, bool usedPublic) {
     LOG_FUNC
     ParenExpr* P = cast<ParenExpr>(expr);
-    Expr* inner = P->getExpr();
-    if (!analyseExpr(inner, usedPublic)) return false;
-    QualType Q = inner->getType();
+    Expr** inner_ptr = P->getExpr2();
+    Expr* inner = *inner_ptr;
+    QualType Q = analyseExpr(inner_ptr, usedPublic, false);
 
-    expr->setCTC(inner->getCTC());
-    if (inner->isConstant()) expr->setConstant();
-    expr->setType(Q);
-    return true;
+    expr->setCTV(inner->isCTV());
+    if (inner->isCTC()) expr->setCTC();
+    return Q;
 }
 
-bool FileAnalyser::analyseBuiltinExpr(Expr* expr, bool usedPublic) {
+QualType FileAnalyser::analyseBuiltinExpr(Expr* expr, bool usedPublic) {
     LOG_FUNC
     BuiltinExpr* B = cast<BuiltinExpr>(expr);
     switch (B->getBuiltinKind()) {
@@ -733,18 +769,21 @@ bool FileAnalyser::analyseBuiltinExpr(Expr* expr, bool usedPublic) {
     case BuiltinExpr::BUILTIN_TO_CONTAINER:
         return analyseToContainer(B, usedPublic);
     }
+    FATAL_ERROR("should not come here");
+    return QualType();
 }
 
-bool FileAnalyser::analyseOffsetOf(BuiltinExpr* B, bool usedPublic) {
+QualType FileAnalyser::analyseOffsetOf(BuiltinExpr* B, bool usedPublic) {
     LOG_FUNC
 
     B->setType(Type::UInt32());
     StructTypeDecl* std = builtinExprToStructTypeDecl(B, usedPublic);
-    if (!std) return false;
+    if (!std) return QualType();
 
 
     uint64_t off = 0;
-    return EA.analyseOffsetOf(B, std, B->getMember(), &off) != 0;
+    if (EA.analyseOffsetOf(B, std, B->getMember(), &off) != 0) return Type::UInt32();
+    return QualType();
 }
 
 StructTypeDecl* FileAnalyser::builtinExprToStructTypeDecl(BuiltinExpr* B, bool usedPublic) {
@@ -754,15 +793,15 @@ StructTypeDecl* FileAnalyser::builtinExprToStructTypeDecl(BuiltinExpr* B, bool u
 
     IdentifierExpr* I = dyncast<IdentifierExpr>(structExpr);
     if (I) {
-        structDecl = analyseIdentifier(I, usedPublic);
+        structDecl = analyseIdentifier(B->getExpr2(), usedPublic);
         if (!structDecl) return 0;
     } else {    // MemberExpr: module.StructType
-        assert(isa<memberExpr>(structExpr));
+        assert(isa<MemberExpr>(structExpr));
         MemberExpr* M = cast<MemberExpr>(structExpr);
         Expr* base = M->getBase();
         IdentifierExpr* B = dyncast<IdentifierExpr>(base);
-        assert(B);  // Don't allow substructs as type
-        Decl* D = analyseIdentifier(B, usedPublic);
+        assert(isa<IdentifierExpr>(base));  // Don't allow substructs as type
+        Decl* D = analyseIdentifier(M->getBase2(), usedPublic);
         if (!D) return 0;
 
         ImportDecl* ID = dyncast<ImportDecl>(D);
@@ -810,12 +849,12 @@ void FileAnalyser::error(SourceLocation loc, QualType left, QualType right) cons
             << buf1 << buf2;
 }
 
-bool FileAnalyser::analyseToContainer(BuiltinExpr* B, bool usedPublic) {
+QualType FileAnalyser::analyseToContainer(BuiltinExpr* B, bool usedPublic) {
     LOG_FUNC
 
     // check struct type
     StructTypeDecl* std = builtinExprToStructTypeDecl(B, usedPublic);
-    if (!std) return false;
+    if (!std) return QualType();
     QualType ST = std->getType();
 
     // check member
@@ -826,46 +865,46 @@ bool FileAnalyser::analyseToContainer(BuiltinExpr* B, bool usedPublic) {
 
     Decl* match = std->findMember(member->getName());
     if (!match) {
-        EA.outputStructDiagnostics(ST, member, diag::err_no_member);
-        return false;
+        return EA.outputStructDiagnostics(ST, member, diag::err_no_member);
     }
     member->setDecl(match, IdentifierExpr::REF_STRUCT_MEMBER);
     QualType MT = match->getType();
     member->setType(MT);
 
     // check ptr
-    Expr* ptrExpr = B->getPointer();
-    if (!analyseExpr(ptrExpr, usedPublic)) return false;
-    QualType ptrType = ptrExpr->getType();
+    Expr** ptrExpr_ptr = B->getPointer2();
+    Expr* ptrExpr = *ptrExpr_ptr;
+    QualType ptrType = analyseExpr(ptrExpr_ptr, usedPublic, false);
     if (!ptrType.isPointerType()) {
-        error(ptrExpr->getLocation(), ast.getContext().getPointerType(member->getType()), ptrType);
-        return false;
+        EA.error(ptrExpr, Context.getPointerType(member->getType()), ptrType);
+        return QualType();
     }
     QualType PT = cast<PointerType>(ptrType)->getPointeeType();
     // TODO BB allow conversion from void*
     // TODO BB use ExprAnalyser to do and insert casts etc
     if (PT != MT) {
-        error(ptrExpr->getLocation(), ast.getContext().getPointerType(member->getType()), ptrType);
-        return false;
+        error(ptrExpr->getLocation(), Context.getPointerType(member->getType()), ptrType);
+        return QualType();
     }
 
     // if ptr is const qualified, tehn so should resulting Type (const Type*)
     if (PT.isConstQualified()) ST.addConst();
-    QualType Q = ast.getContext().getPointerType(ST);
-    B->setType(Q);
-    return true;
+    QualType Q = Context.getPointerType(ST);
+    return Q;
 }
 
-bool FileAnalyser::analyseSizeOfExpr(BuiltinExpr* B, bool usedPublic) {
+QualType FileAnalyser::analyseSizeOfExpr(BuiltinExpr* B, bool usedPublic) {
     LOG_FUNC
 
     static constexpr unsigned FLOAT_SIZE_DEFAULT = 8;
-    B->setType(Type::UInt32());
 
     uint64_t width;
     //allowStaticMember = true;
 
-    Expr* expr = B->getExpr();
+    Expr** expr_ptr = B->getExpr2();
+    Expr* expr = *expr_ptr;
+
+    QualType Q;
 
     switch (expr->getKind()) {
     case EXPR_FLOAT_LITERAL:
@@ -875,12 +914,12 @@ bool FileAnalyser::analyseSizeOfExpr(BuiltinExpr* B, bool usedPublic) {
     case EXPR_DESIGNATOR_INIT:
         TODO; // Good error
         //allowStaticMember = false;
-        return false;
+        return QualType();
     case EXPR_TYPE:
     {
         // TODO use stack?
-        QualType Q = analyseType(expr->getType(), expr->getLocation(), usedPublic, true);
-        if (!Q.isValid()) return false;
+        Q = analyseType(expr->getType(), expr->getLocation(), usedPublic, true);
+        if (!Q.isValid()) return Q;
         TR->checkOpaqueType(B->getLocation(), usedPublic, Q);
         expr->setType(Q);
         unsigned align;
@@ -899,38 +938,40 @@ bool FileAnalyser::analyseSizeOfExpr(BuiltinExpr* B, bool usedPublic) {
     case EXPR_ARRAYSUBSCRIPT:
     case EXPR_MEMBER:
     case EXPR_IDENTIFIER:
-    case EXPR_EXPL_CAST: {
-        if (!analyseExpr(expr, usedPublic)) return false;
+    case EXPR_EXPLICIT_CAST: {
+        Q = analyseExpr(expr_ptr, usedPublic, false);
+        if (!Q.isValid()) return Q;
         QualType type = expr->getType();
         TR->checkOpaqueType(expr->getLocation(), usedPublic, type);
         unsigned align;
         width = AnalyserUtils::sizeOfType(type, &align);
         break;
     }
+    case EXPR_IMPLICIT_CAST:
+        TODO;
+        break;
     case EXPR_BUILTIN:
         FATAL_ERROR("Unreachable");
         //allowStaticMember = false;
-        return false;
+        break;
     case EXPR_PAREN:
     case EXPR_BITOFFSET:
         FATAL_ERROR("Unreachable");
         //allowStaticMember = false;
-        return false;
+        return QualType();
     }
     B->setValue(llvm::APSInt::getUnsigned(width));
     //allowStaticMember = false;
-    return true;
+    return Type::UInt32();
 }
 
-bool FileAnalyser::analyseEnumMinMaxExpr(BuiltinExpr* B, bool isMin, bool usedPublic) {
+QualType FileAnalyser::analyseEnumMinMaxExpr(BuiltinExpr* B, bool isMin, bool usedPublic) {
     LOG_FUNC
-    B->setType(Type::UInt32());
     Expr* E = B->getExpr();
     // TODO support memberExpr (module.Type)
     assert(isa<IdentifierExpr>(E));
-    IdentifierExpr* I = cast<IdentifierExpr>(E);
-    Decl* decl = analyseIdentifier(I, usedPublic);
-    if (!decl) return false;
+    Decl* decl = analyseIdentifier(B->getExpr2(), usedPublic);
+    if (!decl) return QualType();
 
     EnumTypeDecl* Enum = 0;
     decl->setUsed();
@@ -951,33 +992,43 @@ bool FileAnalyser::analyseEnumMinMaxExpr(BuiltinExpr* B, bool isMin, bool usedPu
 
     if (!Enum) {
         Diag(E->getLocation(), diag::err_enum_minmax_no_enum) << (isMin ? 0 : 1) << E->getSourceRange();
-        return false;
+        return QualType();
     }
 
     if (isMin) B->setValue(Enum->getMinValue());
     else B->setValue(Enum->getMaxValue());
 
-    return true;
+    return E->getType();
 }
 
-bool FileAnalyser::analyseElemsOfExpr(BuiltinExpr* B, bool usedPublic) {
+QualType FileAnalyser::analyseElemsOfExpr(BuiltinExpr* B, bool usedPublic) {
     LOG_FUNC
 
-    B->setType(Type::UInt32());
-    Expr* E = B->getExpr();
-    if (!analyseExpr(E, usedPublic)) return false;
-    QualType T = E->getType();
-    const ArrayType* AT = dyncast<ArrayType>(T.getCanonicalType());
-    if (!AT) {
-        Diag(E->getLocation(), diag::err_elemsof_no_array) << E->getSourceRange();
-        return false;
+    Expr** E_ptr = B->getExpr2();
+    QualType Q = analyseExpr(E_ptr, usedPublic, false);
+    if (!Q.isValid()) return Q;
+
+    llvm::APSInt i(32, 1);
+    const ArrayType* AT = dyncast<ArrayType>(Q.getCanonicalType());
+    if (AT) {
+        i = AT->getSize();
+        B->setValue(i);
+        return Type::UInt32();
     }
-    B->setValue(llvm::APSInt(AT->getSize()));
-    return true;
+    const EnumType* ET = dyncast<EnumType>(Q);  // NOTE: dont use canonicalType!
+    if (ET) {
+        EnumTypeDecl* ETD = ET->getDecl();
+        i = ETD->numConstants();
+        B->setValue(i);
+        return Type::UInt32();
+    }
+    Expr* E = *E_ptr;
+    Diag(E->getLocation(), diag::err_elemsof_no_array) << E->getSourceRange();
+    return QualType();
 }
 
 
-bool FileAnalyser::analyseBinaryOperator(Expr* expr, bool usedPublic) {
+QualType FileAnalyser::analyseBinaryOperator(Expr* expr, bool usedPublic) {
     LOG_FUNC
     BinaryOperator* binop = cast<BinaryOperator>(expr);
 
@@ -1019,12 +1070,16 @@ bool FileAnalyser::analyseBinaryOperator(Expr* expr, bool usedPublic) {
         break;
     }
 
+    QualType TLeft = analyseExpr(binop->getLHS2(), usedPublic, true);
+    if (!TLeft.isValid()) return TLeft;
+    QualType TRight = analyseExpr(binop->getRHS2(), usedPublic, true);
+    if (!TRight.isValid()) return TRight;
+
     Expr* Left = binop->getLHS();
     Expr* Right = binop->getRHS();
-    if (!analyseExpr(Left, usedPublic)) return false;
-    if (!analyseExpr(Right, usedPublic)) return false;
 
     QualType Result;
+    // TODO BBB remove the switch?
     // determine Result type
     switch (binop->getOpcode()) {
     case BINOP_Mul:
@@ -1032,16 +1087,12 @@ bool FileAnalyser::analyseBinaryOperator(Expr* expr, bool usedPublic) {
     case BINOP_Rem:
     case BINOP_Add:
     case BINOP_Sub:
-        // TODO return largest witdth of left/right (long*short -> long)
-        // TODO apply UsualArithmeticConversions() to L + R
-        // TEMP for now just return Right side
-        // TEMP use UnaryConversion
         Result = AnalyserUtils::UsualUnaryConversions(Left);
         AnalyserUtils::UsualUnaryConversions(Right);
         break;
     case BINOP_Shl:
     case BINOP_Shr:
-        Result = Left->getType();
+        Result = TLeft;
         break;
     case BINOP_LE:
     case BINOP_LT:
@@ -1054,12 +1105,11 @@ bool FileAnalyser::analyseBinaryOperator(Expr* expr, bool usedPublic) {
     case BINOP_And:
     case BINOP_Xor:
     case BINOP_Or:
-        Result = Left->getType();
+        Result = TLeft;
         break;
     case BINOP_LAnd:
     case BINOP_LOr:
         Result = Type::Bool();
-        break;
         break;
     case BINOP_Assign:
     case BINOP_MulAssign:
@@ -1079,16 +1129,18 @@ bool FileAnalyser::analyseBinaryOperator(Expr* expr, bool usedPublic) {
         break;
     }
 
-    expr->setConstant();
-    AnalyserUtils::combineCtc(expr, Left, Right);
-    expr->setType(Result);
-    return true;
+    Result = EA.getBinOpType(binop);
+
+    expr->combineFlags(Left, Right);
+    return Result;
 }
 
-bool FileAnalyser::analyseUnaryOperator(Expr* expr, bool usedPublic) {
+QualType FileAnalyser::analyseUnaryOperator(Expr** expr_ptr, bool usedPublic) {
     LOG_FUNC
+    Expr* expr = *expr_ptr;
     UnaryOperator* unaryop = cast<UnaryOperator>(expr);
-    Expr* SubExpr = unaryop->getExpr();
+    Expr** SubExpr_ptr = unaryop->getExpr2();
+    bool need_rvalue = true;
 
     switch (unaryop->getOpcode()) {
     case UO_PostInc:
@@ -1096,8 +1148,10 @@ bool FileAnalyser::analyseUnaryOperator(Expr* expr, bool usedPublic) {
     case UO_PreInc:
     case UO_PreDec:
         Diag(unaryop->getOpLoc(), diag::err_init_element_not_constant) << expr->getSourceRange();
-        return false;
+        return QualType();
     case UO_AddrOf:
+        need_rvalue = false;
+        break;
     case UO_Deref:
     case UO_Minus:
     case UO_Not:
@@ -1105,12 +1159,14 @@ bool FileAnalyser::analyseUnaryOperator(Expr* expr, bool usedPublic) {
         break;
     }
 
-    if (!analyseExpr(SubExpr, usedPublic)) return false;
-    QualType LType = SubExpr->getType();
-    //if (LType.isNull()) return false;
+    QualType LType = analyseExpr(SubExpr_ptr, usedPublic, need_rvalue);
+    if (!LType.isValid()) return LType;
+    SubExpr_ptr = unaryop->getExpr2();  // re-read in case casts were inserted
+    Expr* SubExpr = *SubExpr_ptr;
+
     if (LType.isVoidType()) {
         Diag(unaryop->getOpLoc(), diag::err_typecheck_unary_expr) << "'void'" << SubExpr->getSourceRange();
-        return false;
+        return QualType();
     }
 
     // TODO cleanup, always break and do common stuff at end
@@ -1122,46 +1178,40 @@ bool FileAnalyser::analyseUnaryOperator(Expr* expr, bool usedPublic) {
         FATAL_ERROR("cannot come here");
         break;
     case UO_AddrOf:
-    {
-        if (!checkAddressOfOperand(SubExpr)) return false;
-        QualType Q = ast.getContext().getPointerType(LType.getCanonicalType());
-        expr->setType(Q);
-        expr->setConstant();
+        if (!checkAddressOfOperand(SubExpr)) return QualType();
+        LType = Context.getPointerType(LType.getCanonicalType());
+        expr->setCTC();
         break;
-    }
     case UO_Deref:
         if (!LType.isPointerType()) {
             char typeName[MAX_LEN_TYPENAME];
             StringBuilder buf(MAX_LEN_TYPENAME, typeName);
             LType.DiagName(buf);
-            Diag(unaryop->getOpLoc(), diag::err_typecheck_indirection_requires_pointer)
-                    << buf;
-            return false;
+            Diag(unaryop->getOpLoc(), diag::err_typecheck_indirection_requires_pointer) << buf;
+            return QualType();
         } else {
             // TEMP use CanonicalType to avoid Unresolved types etc
-            QualType Q = LType.getCanonicalType();
-            const PointerType* P = cast<PointerType>(Q);
-            expr->setType(P->getPointeeType());
+            LType = LType.getCanonicalType();
+            const PointerType* P = cast<PointerType>(LType);
+            return P->getPointeeType();
         }
         break;
     case UO_Minus:
     case UO_Not:
-        unaryop->setCTC(SubExpr->getCTC());
-        if (SubExpr->isConstant()) unaryop->setConstant();
-        expr->setType(AnalyserUtils::UsualUnaryConversions(SubExpr));
+        unaryop->setCTV(SubExpr->isCTV());
+        if (SubExpr->isCTC()) unaryop->setCTC();
+        LType = AnalyserUtils::UsualUnaryConversions(SubExpr);
         break;
     case UO_LNot:
         // TODO first cast expr to bool, then invert here, return type bool
         // TODO extract to function
         // TODO check conversion to bool here!!
-        unaryop->setCTC(SubExpr->getCTC());
+        unaryop->setCTV(SubExpr->isCTV());
         // Also set type?
         //AnalyserUtils::UsualUnaryConversions(SubExpr);
-        LType = Type::Bool();
-        expr->setType(LType);
-        break;
+        return Type::Bool();
     }
-    return true;
+    return LType;
 }
 
 bool FileAnalyser::checkAddressOfOperand(Expr* expr) {
@@ -1211,8 +1261,9 @@ bool FileAnalyser::checkAddressOfOperand(Expr* expr) {
     return true;
 }
 
-bool FileAnalyser::analyseMemberExpr(Expr* expr, bool usedPublic) {
+QualType FileAnalyser::analyseMemberExpr(Expr** expr_ptr, bool usedPublic) {
     LOG_FUNC
+    Expr* expr = *expr_ptr;
     MemberExpr* M = cast<MemberExpr>(expr);
     IdentifierExpr* member = M->getMember();
 
@@ -1227,23 +1278,45 @@ bool FileAnalyser::analyseMemberExpr(Expr* expr, bool usedPublic) {
     // Type.struct_function
     // Enum.Constant (eg. Color.Red)
 
-    if (!analyseExpr(M->getBase(), usedPublic)) return false;
-    QualType LType = M->getBase()->getType();
+    // NOTE: since we dont know which one, we can't insert LValueToRValue casts in analyseExpr(RHS)
+    // Also optionally insert CK_ArrayToPointerDecay cast here
 
-    if (isa<ModuleType>(LType)) {
+    QualType LType = analyseExpr(M->getBase2(), usedPublic, false);
+    if (!LType.isValid()) return LType;
+
+    const ModuleType* MT = dyncast<ModuleType>(LType);
+    // module.X
+    if (MT) {
+        ImportDecl* ID = MT->getDecl();
+        ID->setUsed();
         M->setModulePrefix();
-        ModuleType* MT = cast<ModuleType>(LType.getTypePtr());
+        MT = cast<ModuleType>(LType.getTypePtr());
         Decl* D = scope->findSymbolInModule(member->getName(), member->getLocation(), MT->getModule());
-        if (D) {
-            D->setUsed();
-            M->setDecl(D);
-            AnalyserUtils::SetConstantFlags(D, M);
-            QualType Q = D->getType();
-            expr->setType(Q);
-            member->setType(Q);
-            member->setDecl(D, AnalyserUtils::globalDecl2RefKind(D));
-            return true;
+        if (!D) return QualType();
+
+        D->setUsed();
+        M->setDecl(D);
+        AnalyserUtils::SetConstantFlags(D, M);
+        QualType Q = D->getType();
+        M->setType(Q);
+        member->setType(Q);
+        member->setDecl(D, AnalyserUtils::globalDecl2RefKind(D));
+
+        if (Q.isArrayType()) {
+            QualType Qptr = AnalyserUtils::getPointerFromArray(Context, Q);
+            insertImplicitCast(CK_ArrayToPointerDecay, expr_ptr, Qptr);
+            return Qptr;
         }
+        if (Q.isFunctionType()) {
+            M->setIsRValue();
+            member->setIsRValue();
+            insertImplicitCast(CK_FunctionToPointerDecay, expr_ptr, Q);
+        }
+
+        if (M->isCTV()) M->setIsRValue(); // points to const number
+
+        return Q;
+    // Enum.Constant
     } else if (isa<EnumType>(LType)) {
         EnumType* ET = cast<EnumType>(LType.getTypePtr());
         EnumTypeDecl* ETD = ET->getDecl();
@@ -1254,7 +1327,7 @@ bool FileAnalyser::analyseMemberExpr(Expr* expr, bool usedPublic) {
             ETD->fullName(buf);
             Diag(member->getLocation(), diag::err_unknown_enum_constant)
                 << buf << member->getName();
-            return false;
+            return QualType();
         }
         if (isTop(ETD) && !ECD->isChecked()) {
             if (ECD->getCheckState() == CHECK_IN_PROGRESS) {
@@ -1264,20 +1337,20 @@ bool FileAnalyser::analyseMemberExpr(Expr* expr, bool usedPublic) {
                 printf("ERROR: using un-initialized enum constant\n");
                 // TEMP TODO correct error
                 Diag(member->getLocation(), diag::err_var_self_init) << ECD->getName();
-                return false;
+                return QualType();
             }
         }
 
         QualType Q = ETD->getType();
         M->setDecl(ECD);
-        M->setType(Q);
         M->setIsEnumConstant();
+        M->setIsRValue();
         AnalyserUtils::SetConstantFlags(ECD, M);
-        member->setCTC(CTC_FULL);
-        member->setConstant();
+        member->setCTV(true);
+        member->setCTC();
         member->setType(Q);
         member->setDecl(ECD, AnalyserUtils::globalDecl2RefKind(ECD));
-        return true;
+        return Q;
     } else {
         // dereference pointer
         if (LType.isPointerType()) {
@@ -1291,16 +1364,18 @@ bool FileAnalyser::analyseMemberExpr(Expr* expr, bool usedPublic) {
             LType.DiagName(buf);
             Diag(M->getLocation(), diag::err_typecheck_member_reference_struct_union)
                     << buf << M->getSourceRange() << member->getLocation();
-            return false;
+            return QualType();
         }
-        return analyseStructMember(S, M, AnalyserUtils::exprIsType(M->getBase()));
+        return analyseStructMember(S, expr_ptr, AnalyserUtils::exprIsType(M->getBase()));
     }
-    return false;
+    return QualType();
 }
 
-bool FileAnalyser::analyseStaticStructMember(QualType T, MemberExpr* M, const StructTypeDecl* S)
+QualType FileAnalyser::analyseStaticStructMember(QualType T, Expr** expr_ptr, const StructTypeDecl* S)
 {
     LOG_FUNC
+    Expr* expr = *expr_ptr;
+    MemberExpr* M = cast<MemberExpr>(expr);
     IdentifierExpr* member = M->getMember();
 
     Decl *field = S->findMember(member->getName());
@@ -1311,19 +1386,20 @@ bool FileAnalyser::analyseStaticStructMember(QualType T, MemberExpr* M, const St
 
     scope->checkAccess(d, member->getLocation());
     d->setUsed();
+    QualType Q = d->getType();
     M->setDecl(d);
-    M->setType(d->getType());
+    M->setType(Q);
     if (field) {
         assert(field->isChecked());
         member->setDecl(d, IdentifierExpr::REF_STRUCT_MEMBER);
     }
     else {
-        if (!analyseDecl(sfunc)) return false;
+        if (!analyseDecl(sfunc)) return QualType();
         member->setDecl(d, IdentifierExpr::REF_STRUCT_FUNC);
         M->setIsStructFunction();
         if (sfunc->isStaticStructFunc()) M->setIsStaticStructFunction();
     }
-    member->setType(d->getType());
+    member->setType(Q);
     AnalyserUtils::SetConstantFlags(d, M);
 
     // TEMP just declare here
@@ -1336,19 +1412,28 @@ bool FileAnalyser::analyseStaticStructMember(QualType T, MemberExpr* M, const St
             return EA.outputStructDiagnostics(T, member, diag::err_static_use_nonstatic_member);
         }
     }
-    return true;
+
+    if (Q.isFunctionType()) {
+        M->setIsRValue();
+        M->setCTC();
+        member->setIsRValue();
+        insertImplicitCast(CK_FunctionToPointerDecay, expr_ptr, Q);
+    }
+    return Q;
 }
 
 // T is the type of the struct
 // M the whole expression
 // isStatic is true for Foo.myFunction(...)
-bool FileAnalyser::analyseStructMember(QualType T, MemberExpr* M, bool isStatic) {
+QualType FileAnalyser::analyseStructMember(QualType T, Expr** expr_ptr, bool isStatic) {
     LOG_FUNC
+    Expr* expr = *expr_ptr;
+    MemberExpr* M = cast<MemberExpr>(expr);
     assert(M && "Expression missing");
     const StructType* ST = cast<StructType>(T);
     const StructTypeDecl* S = ST->getDecl();
 
-    if (isStatic) return analyseStaticStructMember(T, M, S);
+    if (isStatic) return analyseStaticStructMember(T, expr_ptr, S);
 
     IdentifierExpr* member = M->getMember();
     Decl* match = S->find(member->getName());
@@ -1367,10 +1452,15 @@ bool FileAnalyser::analyseStructMember(QualType T, MemberExpr* M, bool isStatic)
 
         if (func->isStaticStructFunc()) {
             Diag(member->getLocation(), diag::err_static_struct_func_notype);// << func->DiagName();
-            return false;
+            return QualType();
         }
         M->setIsStructFunction();
         ref = IdentifierExpr::REF_STRUCT_FUNC;
+        //M->setIsRValue();
+        QualType Q = func->getType();
+        M->setType(Q);
+        M->setCTC();
+        insertImplicitCast(CK_FunctionToPointerDecay, expr_ptr, Q);
 
 #if 0
         // Is this a simple member access? If so
@@ -1387,16 +1477,16 @@ bool FileAnalyser::analyseStructMember(QualType T, MemberExpr* M, bool isStatic)
         // NOTE: access of struct-function is not a dereference
         if (&module != S->getModule() && S->hasAttribute(ATTR_OPAQUE)) {
             Diag(M->getLocation(), diag::err_deref_opaque) << S->isStruct() << S->DiagName();
-            return false;
+            return QualType();
         }
     }
 
     match->setUsed();
     M->setDecl(match);
-    M->setType(match->getType());
+    QualType Q = match->getType();
     member->setDecl(match, ref);
-    member->setType(match->getType());
-    return true;
+    member->setType(Q);
+    return Q;
 }
 
 QualType FileAnalyser::analyseRefType(QualType Q, bool usedPublic, bool full) {
@@ -1495,7 +1585,6 @@ bool FileAnalyser::analyseTypeDecl(TypeDecl* D) {
     {
         const FunctionTypeDecl* FTD = cast<FunctionTypeDecl>(D);
         FunctionDecl* FD = FTD->getDecl();
-        FD->setModule(FTD->getModule());
         if (!analyseDecl(FD)) return false;
         break;
     }
@@ -1625,7 +1714,7 @@ bool FileAnalyser::analyseInitListArray(InitListExpr* expr, QualType Q, unsigned
     QualType ET = AT->getElementType();
     bool constant = true;
     for (unsigned i=0; i<numValues; i++) {
-        ok |= analyseInitExpr(values[i], ET, usedPublic);
+        ok |= analyseInitExpr(&values[i], ET, usedPublic);
         if (DesignatedInitExpr* D = dyncast<DesignatedInitExpr>(values[i])) {
             haveDesignators = true;
             if (D->getDesignatorKind() != DesignatedInitExpr::ARRAY_DESIGNATOR) {
@@ -1636,12 +1725,10 @@ bool FileAnalyser::analyseInitListArray(InitListExpr* expr, QualType Q, unsigned
                 continue;
             }
         }
-        // TODO BB remove, just give error if not constant (already given?)
-        if (!values[i]->isConstant()) constant = false;
     }
     if (!ok) return false;
 
-    if (constant) expr->setConstant();
+    if (constant) expr->setCTC();
     if (haveDesignators) expr->setDesignators();
     // determine real array size
     llvm::APInt initSize(64, 0, false);
@@ -1677,7 +1764,6 @@ bool FileAnalyser::analyseInitListStruct(InitListExpr* expr, QualType Q, unsigne
     // TODO use helper function
     StructType* TT = cast<StructType>(Q.getCanonicalType().getTypePtr());
     StructTypeDecl* STD = TT->getDecl();
-    assert(STD->isStruct() && "TEMP only support structs for now");
     bool constant = true;
     // ether init whole struct with field designators, or don't use any (no mixing allowed)
     // NOTE: using different type for anonymous sub-union is allowed
@@ -1707,8 +1793,8 @@ bool FileAnalyser::analyseInitListStruct(InitListExpr* expr, QualType Q, unsigne
                 TODO;
                 return false;
             }
-            analyseInitExpr(values[i], VD->getType(), usedPublic);
-            if (!values[i]->isConstant()) constant = false;
+            analyseInitExpr(&values[i], VD->getType(), usedPublic);
+            if (!values[i]->isCTC()) constant = false;
             if (isa<DesignatedInitExpr>(values[i]) != haveDesignators) {
                 Diag(values[i]->getLocation(), diag::err_mixed_field_designator);
                 return false;
@@ -1729,7 +1815,7 @@ bool FileAnalyser::analyseInitListStruct(InitListExpr* expr, QualType Q, unsigne
         }
     }
     // TODO BB should always be true?
-    if (constant) expr->setConstant();
+    if (constant) expr->setCTC();
     return true;
 }
 
@@ -1793,7 +1879,7 @@ bool FileAnalyser::analyseFieldInDesignatedInitExpr(DesignatedInitExpr* D,
         assert(VD && "TEMP don't support sub-struct member inits");
     }
     field->setDecl(VD, AnalyserUtils::globalDecl2RefKind(VD));
-    analyseInitExpr(D->getInitValue(), VD->getType(), usedPublic);
+    analyseInitExpr(D->getInitValue2(), VD->getType(), usedPublic);
     if (anonUnionIndex < 0 && isa<DesignatedInitExpr>(value) != haveDesignators) {
         Diag(value->getLocation(), diag::err_mixed_field_designator);
         return false;
@@ -1837,18 +1923,23 @@ bool FileAnalyser::analyseDesignatorInitExpr(Expr* expr, QualType expectedType, 
     LOG_FUNC
     DesignatedInitExpr* D = cast<DesignatedInitExpr>(expr);
     if (D->getDesignatorKind() == DesignatedInitExpr::ARRAY_DESIGNATOR) {
-        Expr* Desig = D->getDesignator();
-        if (!analyseExpr(Desig, usedPublic)) return false;;
+        Expr** Desig_ptr = D->getDesignator2();
+        QualType DT = analyseExpr(Desig_ptr, usedPublic, true);
+        if (!DT.isValid()) return false;
+        Expr* Desig = *Desig_ptr;
+        // TODO sync with FunctionAnalyser (it's different!)
 
-        if (!Desig->isConstant()) {
+        if (!Desig->isCTC()) {
             Diag(Desig->getLocation(), diag::err_init_element_not_constant) << Desig->getSourceRange();
             return false;
         }
+
         if (!Desig->getType().isIntegerType()) {
             Diag(Desig->getLocation(), diag::err_typecheck_subscript_not_integer) << Desig->getSourceRange();
             return false;
         }
-        LiteralAnalyser LA(Diags);
+
+        CTVAnalyser LA(Diags);
         llvm::APSInt V = LA.checkLiterals(Desig);
         if (V.isSigned() && V.isNegative()) {
             Diag(Desig->getLocation(), diag::err_array_designator_negative) << V.toString(10) << Desig->getSourceRange();
@@ -1860,12 +1951,14 @@ bool FileAnalyser::analyseDesignatorInitExpr(Expr* expr, QualType expectedType, 
     }
 
     D->setType(expectedType);
-    return analyseInitExpr(D->getInitValue(), expectedType, usedPublic);
-    //if (D->getInitValue()->isConstant()) D->setConstant();
+    return analyseInitExpr(D->getInitValue2(), expectedType, usedPublic);
+    //if (D->getInitValue()->isCTC()) D->setCTC();
 }
 
-bool FileAnalyser::analyseInitExpr(Expr* expr, QualType expectedType, bool usedPublic) {
+bool FileAnalyser::analyseInitExpr(Expr** expr_ptr, QualType expectedType, bool usedPublic) {
     LOG_FUNC
+
+    Expr* expr = *expr_ptr;
     InitListExpr* ILE = dyncast<InitListExpr>(expr);
     const ArrayType* AT = dyncast<ArrayType>(expectedType.getCanonicalType());
     if (AT) {
@@ -1888,9 +1981,12 @@ bool FileAnalyser::analyseInitExpr(Expr* expr, QualType expectedType, bool usedP
 
     if (isa<DesignatedInitExpr>(expr)) return analyseDesignatorInitExpr(expr, expectedType, usedPublic);
 
-    if (!analyseExpr(expr, usedPublic)) return false;
+    QualType Q = analyseExpr(expr_ptr, usedPublic, true);
+    if (!Q.isValid()) return false;
 
     if (AT) {
+         // if right is array and left is pointer, insert ArrayToPointerDecay
+
         if (AT->getSizeExpr()) {
             // it should be char array type already and expr is string literal
             assert(isa<StringLiteral>(expr));
@@ -1901,12 +1997,13 @@ bool FileAnalyser::analyseInitExpr(Expr* expr, QualType expectedType, bool usedP
             }
         }
     } else {
-        EA.check(expectedType, expr);
+        // TODO BB: add Implicit casts here?
+        EA.check(expectedType, *expr_ptr);
         if (EA.hasError()) return false;
     }
 
-    //if (!expr->isCTC()) {
-    if (!expr->isConstant()) {
+    expr = *expr_ptr;   // Need to re-read, since ImplicitCasts could have been inserted
+    if (!expr->isCTC()) {
         Diag(expr->getLocation(), diag::err_init_element_not_constant) << expr->getSourceRange();
         return false;
     }
@@ -1937,7 +2034,7 @@ QualType FileAnalyser::analyseType(QualType Q, SourceLocation loc, bool usedPubl
             resolved = Q;
             Q->setCanonicalType(Q);
         } else {
-            resolved = ast.getContext().getPointerType(Result);
+            resolved = Context.getPointerType(Result);
         }
         break;
     }
@@ -1949,25 +2046,14 @@ QualType FileAnalyser::analyseType(QualType Q, SourceLocation loc, bool usedPubl
 
         Expr* sizeExpr = AT->getSizeExpr();
         if (sizeExpr) {
-            if (!analyseExpr(sizeExpr, usedPublic)) return QualType();
-            LiteralAnalyser LA(Diags);
-            APSInt value = LA.checkLiterals(sizeExpr);
-            if (value.isSigned() && value.isNegative()) {
-                Diag(sizeExpr->getLocation(), diag::err_typecheck_negative_array_size) << value.toString(10) << sizeExpr->getSourceRange();
-                return QualType();
-            }
-            // TODO still needed?
-            if (sizeExpr->getCTC() != CTC_FULL) {
-                Diag(sizeExpr->getLocation(), diag::err_array_size_non_const);
-                return QualType();
-            }
-            AT->setSize(value);
+            if (!analyseArraySizeExpr(AT, usedPublic)) return QualType();
         }
+
         if (ET == AT->getElementType()) {
             resolved = Q;
             Q->setCanonicalType(Q);
         } else {
-            resolved = ast.getContext().getArrayType(ET, AT->getSizeExpr(), AT->isIncremental());
+            resolved = Context.getArrayType(ET, AT->getSizeExpr(), AT->isIncremental());
             resolved->setCanonicalType(resolved);
             if (sizeExpr) {
                 ArrayType* RA = cast<ArrayType>(resolved.getTypePtr());
@@ -2007,6 +2093,32 @@ QualType FileAnalyser::analyseType(QualType Q, SourceLocation loc, bool usedPubl
     }
 
     return resolved;
+}
+
+bool FileAnalyser::analyseArraySizeExpr(ArrayType* AT, bool usedPublic) {
+    LOG_FUNC
+
+    QualType T = analyseExpr(AT->getSizeExpr2(), usedPublic, false);
+    if (!T.isValid()) return false;
+
+    Expr* sizeExpr = AT->getSizeExpr();
+
+    if (!sizeExpr->isCTV()) {
+        Diag(sizeExpr->getLocation(), diag::err_array_size_non_const);
+        return false;
+    }
+
+    // check if negative
+    CTVAnalyser LA(Diags);
+    llvm::APSInt value = LA.checkLiterals(sizeExpr);
+
+    if (value.isSigned() && value.isNegative()) {
+        Diag(sizeExpr->getLocation(), diag::err_typecheck_negative_array_size) << value.toString(10) << sizeExpr->getSourceRange();
+        return false;
+    }
+
+    AT->setSize(value);
+    return true;
 }
 
 bool FileAnalyser::analyseFunctionDecl(FunctionDecl* F) {
@@ -2057,7 +2169,6 @@ bool FileAnalyser::checkIfStaticStructFunction(FunctionDecl* F) const {
 
     IdentifierExpr* i = F->getStructName();
     Decl* structDecl = i->getDecl();
-    assert(structDecl);
 
     return (argDecl != structDecl);
 }
@@ -2324,5 +2435,13 @@ void FileAnalyser::checkStructMembersForUsed(const StructTypeDecl* S) {
 
 DiagnosticBuilder FileAnalyser::Diag(SourceLocation Loc, unsigned DiagID) const {
     return Diags.Report(Loc, DiagID);
+}
+
+Expr* FileAnalyser::insertImplicitCast(CastKind ck, Expr** inner_ptr, QualType Q) {
+    Expr* inner = *inner_ptr;
+    ImplicitCastExpr* ic = new (Context) ImplicitCastExpr(inner->getLocation(), ck, inner);
+    ic->setType(Q);
+    *inner_ptr = ic;
+    return ic;
 }
 

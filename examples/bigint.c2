@@ -85,7 +85,7 @@ func void BigInt.addIgnoreSign(BigInt* a, BigInt* b, BigInt* result)
 
    for (i32 i = 0; i < length; i++) {
       if (i >= y.length) {
-         res[i] = carry + (i >= x.length ? 0 : x.number[i]);
+         res[i] = cast<i8>(carry + (i >= x.length ? 0 : x.number[i]));
       } else {
          res[i] = x.number[i] + y.number[i] + carry;
       }
@@ -166,8 +166,8 @@ func void BigInt.subIgnoreSign(BigInt* a, BigInt* b, BigInt* result)
 
    i8 borrow = 0;
    for (i32 i = 0; i < length; i++) {
-      i8 aValue = i >= x.length ? 0 : x.number[i];
-      i8 bValue = borrow + (i >= y.length ? 0 : y.number[i]);
+      i8 aValue = cast<i8>(i >= x.length ? 0 : x.number[i]);
+      i8 bValue = cast<i8>(borrow + (i >= y.length ? 0 : y.number[i]));
       if (bValue > aValue) {
          borrow = 1;
          aValue += 10;
@@ -202,7 +202,7 @@ public func void BigInt.add(BigInt* a, BigInt* b, BigInt* result)
 
 public func char* BigInt.toCharArray(BigInt* bigInt)
 {
-   u32 charLen = bigInt.length + 1 + (bigInt.sign < 0 ? 1 : 0);
+   u32 charLen = cast<u32>(bigInt.length + 1 + (bigInt.sign < 0 ? 1 : 0));
    char* out = malloc(charLen);
    out[charLen - 1] = '\0';
    char* start = out;
@@ -239,7 +239,6 @@ public func void BigInt.fprint(BigInt* bigInt, FILE* file)
 
 public func i32 main(i32 size, char** args)
 {
-
    BigInt minus2;
    BigInt minus1;
    BigInt current;

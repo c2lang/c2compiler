@@ -23,8 +23,6 @@
 
 namespace C2 {
 
-class Recipe;
-
 class RecipeReader {
 public:
     RecipeReader();
@@ -33,11 +31,8 @@ public:
     int count() const { return recipes.size(); }
     Recipe& get(int i) const;
 
-    typedef std::pair<std::string, std::string> Plugin;
-    typedef std::vector<Plugin> Plugins;
-    const Plugins& getPlugins() const { return plugins; }
-
     void print() const;
+    const Recipe::Plugins& getPlugins() const { return plugins; }
 
 private:
     void startNewRecipe();
@@ -58,8 +53,7 @@ private:
     Recipes recipes;
     Recipe* current;
     ConfigList globalConfigs;
-
-    Plugins plugins;
+    Recipe::Plugins plugins;
 
     int line_nr;
     enum State { START=0, INSIDE_TARGET };

@@ -39,9 +39,11 @@ using namespace C2;
 static const char* targetFilter;
 static const char* other_dir;
 static const char* build_file;
-static bool print_targets = false;
-static bool print_plugins = false;
+static bool print_targets;
+static bool print_plugins;
 static bool use_recipe = true;
+static bool showPlugins;
+static const char* plugin_dir;
 
 static void create_project(const char* name) {
     if (FileUtils::fileExists("main.c") || FileUtils::fileExists("recipe.txt")) {
@@ -59,8 +61,6 @@ static void create_project(const char* name) {
     s.clear();
     s.print("\nexecutable %s\n", name);
     s << "\t$warnings no-unused\n";
-    s << "\t$refs\n";
-    s << "#\t$deps\n";
     s << "\t$generate-c single-module\n";
     s << "\tmain.c2\n";
     s << "end\n";
@@ -102,6 +102,7 @@ static void usage(const char* name) {
     fprintf(stderr, "   --check          - only parse + analyse\n");
     fprintf(stderr, "   --create <name>  - create new project main.c2 + recipe.txt\n");
     fprintf(stderr, "   --showlibs       - print available libraries\n");
+    fprintf(stderr, "   --showplugins    - print available plugins\n");
     exit(EXIT_FAILURE);
 }
 
@@ -240,6 +241,10 @@ static void parse_arguments(int argc, const char* argv[], BuildOptions& opts) {
                     opts.showLibs = true;
                     continue;
                 }
+                if (strcmp(&arg[2], "showplugins") == 0) {
+                    showPlugins = true;
+                    continue;
+                }
                 usage(argv[0]);
                 break;
             default:
@@ -278,6 +283,8 @@ int main(int argc, const char *argv[])
     opts.libdir = getenv("C2_LIBDIR");
     if (!opts.libdir) printf("Warning: environment variable C2_LIBDIR not set!\n");
 
+    plugin_dir = getenv("C2_PLUGINDIR");
+
     if (other_dir) {
         if (chdir(other_dir)) {
             fprintf(stderr, "cannot chdir to %s: %s\n", other_dir, strerror(errno));
@@ -308,6 +315,7 @@ int main(int argc, const char *argv[])
     BuildFile* buildFilePtr = NULL;
     if (!build_file) build_file = finder.getBuildFile();
     if (build_file) {
+        plugin_dir = 0;
         BuildFileReader buildReader(buildFile);
         if (!buildReader.parse(build_file)) {
             fprintf(stderr, "Error reading %s: %s\n", build_file, buildReader.getErrorMsg());
@@ -317,23 +325,32 @@ int main(int argc, const char *argv[])
     }
 
     PluginManager pluginMgr(opts.verbose);
+    if (plugin_dir) pluginMgr.addPath(plugin_dir);
     if (buildFilePtr) {
         for (StringListConstIter iter = buildFilePtr->pluginDirs.begin();
                 iter != buildFilePtr->pluginDirs.end(); ++iter) {
             pluginMgr.addPath(*iter);
         }
 
-        for (BuildFile::PluginsConstIter iter = buildFilePtr->plugins.begin();
-                iter != buildFilePtr->plugins.end(); ++iter) {
-            if (!pluginMgr.load(iter->first, iter->second, false)) return EXIT_FAILURE;
+        if (!showPlugins) {
+            for (BuildFile::PluginsConstIter iter = buildFilePtr->plugins.begin();
+                    iter != buildFilePtr->plugins.end(); ++iter) {
+                if (!pluginMgr.loadGlobal(iter->first, iter->second, false)) return EXIT_FAILURE;
+            }
         }
     } else {
         pluginMgr.addPath(".");
     }
-    const RecipeReader::Plugins& plugins = reader.getPlugins();
+
+    if (showPlugins) {
+        pluginMgr.show();
+        return 0;
+    }
+
+    const Recipe::Plugins& plugins = reader.getPlugins();
     for (unsigned i=0; i<plugins.size(); i++) {
-        const RecipeReader::Plugin& p = plugins[i];
-        if (!pluginMgr.load(p.first, p.second, true)) return EXIT_FAILURE;
+        const Recipe::Plugin& p = plugins[i];
+        if (!pluginMgr.loadGlobal(p.first, p.second, true)) return EXIT_FAILURE;
     }
 
     if (print_plugins) {
@@ -347,8 +364,14 @@ int main(int argc, const char *argv[])
         Recipe& recipe = reader.get(i);
         if (targetFilter && recipe.name != targetFilter) continue;
         C2Builder builder(recipe, buildFilePtr, opts, &pluginMgr);
+        const Recipe::Plugins& local_plugins = recipe.getPlugins();
+        for (unsigned i=0; i<local_plugins.size(); i++) {
+            const Recipe::Plugin& p = local_plugins[i];
+            if (!pluginMgr.loadLocal(p.first, p.second)) return EXIT_FAILURE;
+        }
         int errors = builder.build();
         if (errors) hasErrors = true;
+        pluginMgr.endTarget();
         count++;
     }
     if (targetFilter && count == 0) {

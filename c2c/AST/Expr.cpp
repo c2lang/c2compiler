@@ -27,13 +27,13 @@ using namespace std;
 using namespace c2lang;
 
 
-Expr::Expr(ExprKind k, c2lang::SourceLocation loc_, bool isConstant_)
+Expr::Expr(ExprKind k, c2lang::SourceLocation loc_, bool is_ctc)
     : Stmt(STMT_EXPR)
     , exprLoc(loc_)
 {
     exprBits.eKind = k;
     exprBits.ImpCast = BuiltinType::Void;
-    exprBits.IsConstant = isConstant_;
+    exprBits.IsCTC = is_ctc;
 }
 
 static const char* ctc_strings[] = { "none", "partial", "full" };
@@ -42,11 +42,12 @@ void Expr::print(StringBuilder& buffer) const {
     QualType Q = getType();
     Q.print(buffer);
     buffer.setColor(COL_ATTR);
-    buffer << " ctc=" << ctc_strings[exprBits.IsCTC];
-    buffer << ", constant=" << isConstant();
+    if (isCTV()) buffer << " CTV";
+    if (isCTC()) buffer << " CTC";
     if (getImpCast() != BuiltinType::Void) {
-        buffer << ", cast=" << BuiltinType::kind2name(getImpCast());
+        buffer << " cast=" << BuiltinType::kind2name(getImpCast());
     }
+    if (exprBits.IsLValue) buffer << " lvalue";
 }
 
 void Expr::print(StringBuilder& buffer, unsigned indent) const {
@@ -89,8 +90,10 @@ void Expr::print(StringBuilder& buffer, unsigned indent) const {
         return cast<ParenExpr>(this)->print(buffer, indent);
     case EXPR_BITOFFSET:
         return cast<BitOffsetExpr>(this)->print(buffer, indent);
-    case EXPR_EXPL_CAST:
+    case EXPR_EXPLICIT_CAST:
         return cast<ExplicitCastExpr>(this)->print(buffer, indent);
+    case EXPR_IMPLICIT_CAST:
+        return cast<ImplicitCastExpr>(this)->print(buffer, indent);
     }
 }
 
@@ -128,7 +131,9 @@ void Expr::printLiteral(StringBuilder& buffer) const {
         break;
     case EXPR_BITOFFSET:
         return cast<BitOffsetExpr>(this)->printLiteral(buffer);
-    case EXPR_EXPL_CAST:
+    case EXPR_EXPLICIT_CAST:
+        break;
+    case EXPR_IMPLICIT_CAST:
         break;
     }
 }
@@ -164,7 +169,8 @@ SourceLocation Expr::getLocation() const {
     case EXPR_PAREN:
         return cast<ParenExpr>(this)->getLocation();
     case EXPR_BITOFFSET:
-    case EXPR_EXPL_CAST:
+    case EXPR_EXPLICIT_CAST:
+    case EXPR_IMPLICIT_CAST:
         return exprLoc;
     }
 }
@@ -202,7 +208,9 @@ SourceLocation Expr::getLocStart() const {
         return cast<ParenExpr>(this)->getLocStart();
     case EXPR_BITOFFSET:
         return cast<BitOffsetExpr>(this)->getLocStart();
-    case EXPR_EXPL_CAST:
+    case EXPR_EXPLICIT_CAST:
+        break;
+    case EXPR_IMPLICIT_CAST:
         break;
     }
     return getLocation();
@@ -241,8 +249,10 @@ SourceLocation Expr::getLocEnd() const {
         return cast<ParenExpr>(this)->getLocEnd();
     case EXPR_BITOFFSET:
         return cast<BitOffsetExpr>(this)->getLocEnd();
-    case EXPR_EXPL_CAST:
+    case EXPR_EXPLICIT_CAST:
         return cast<ExplicitCastExpr>(this)->getLocEnd();
+    case EXPR_IMPLICIT_CAST:
+        return cast<ImplicitCastExpr>(this)->getLocEnd();
     }
     return getLocation();
 }
@@ -788,6 +798,42 @@ void ExplicitCastExpr::print(StringBuilder& buffer, unsigned indent) const {
     buffer.indent(indent + INDENT);
     buffer << "DEST: ";
     destType.print(buffer);
+    buffer << '\n';
+    inner->print(buffer, indent + INDENT);
+}
+
+#define CASE_STR(x) case x: return #x;
+static const char* castkind2str(CastKind ck) {
+    switch (ck) {
+    CASE_STR(CK_ArrayToPointerDecay)
+    CASE_STR(CK_FunctionToPointerDecay)
+    CASE_STR(CK_LValueToRValue)
+    default:
+        assert(0);
+        break;
+    }
+    return NULL;
+}
+
+
+ImplicitCastExpr::ImplicitCastExpr(SourceLocation loc_, c2lang::CastKind ck, Expr* expr_)
+    : Expr(EXPR_IMPLICIT_CAST, loc_, false)
+    , inner(expr_)
+{
+    implicitCastExprBits.castkind = ck;
+
+    setCTV(inner->isCTV());
+    if (inner->isCTC() && ck != CK_LValueToRValue) setCTC();
+}
+
+void ImplicitCastExpr::print(StringBuilder& buffer, unsigned indent) const {
+    buffer.indent(indent);
+    buffer.setColor(COL_EXPR);
+    buffer << "ImplicitCastExpr ";
+    Expr::print(buffer);
+    buffer.setColor(COL_CAST);
+    buffer << ' ';
+    buffer << castkind2str(getCastKind());
     buffer << '\n';
     inner->print(buffer, indent + INDENT);
 }

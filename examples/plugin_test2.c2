@@ -1,0 +1,12 @@
+module test_main;
+import stdio local;
+import c2;
+
+import data;
+
+public func i32 main(i32 argc, char** argv) {
+    printf("DATA3: size %u\n", data.Data3.size);
+    printf("  [%s]\n", data.Data3.data);
+	return 0;
+}
+

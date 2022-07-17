@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.1)
 project(c2compiler CXX)
 
 if(CYGWIN OR WIN32)
@@ -19,6 +19,7 @@ set(CMAKE_VERBOSE_MAKEFILE false)
 
 add_subdirectory(c2c)
 add_subdirectory(tools)
+add_subdirectory(plugins)
 
 add_custom_target(tests
     COMMAND ${CMAKE_BINARY_DIR}/tools/tester test

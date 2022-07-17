@@ -22,6 +22,7 @@
 
 #include "Builder/RecipeReader.h"
 #include "Builder/BuilderConstants.h"
+#include "Builder/Plugin.h"
 
 #include "FileUtils/FileMap.h"
 #include "AST/Component.h"
@@ -93,6 +94,7 @@ if (line[0] == '#') return; // skip comments
         {
             // line should be 'executable/lib <name>'
             const char* kw = get_token();
+
             if (strcmp(kw, "plugin") == 0) {
                 const char* plugin_name = get_token();
                 if  (!plugin_name) error("expected plugin name");
@@ -107,7 +109,7 @@ if (line[0] == '#') return; // skip comments
                 }
 
                 const char* plugin_config = get_options();
-                plugins.push_back(Plugin(plugin_name, plugin_config ? plugin_config : ""));
+                plugins.push_back(Recipe::Plugin(plugin_name, plugin_config ? plugin_config : ""));
             } else if (strcmp(kw, "executable") == 0) {
                 const char* target_name = get_token();
                 if (target_name == 0) error("expected executable name");
@@ -152,7 +154,7 @@ if (line[0] == '#') return; // skip comments
         break;
     case INSIDE_TARGET:
         {
-            // line should be '<filename>' or 'end'
+            // line should be '<filename>' or 'end' or '$<option>
             const char* tok = get_token();
             if (tok[0] == '$') {
                 tok++;
@@ -211,6 +213,21 @@ if (line[0] == '#') return; // skip comments
                         error("duplicate dependency for %s", libname.c_str());
                     }
                     current->addLibrary(libname, libtype);
+                } else if (strcmp(tok, "plugin") == 0) {
+                        const char* plugin_name = get_token();
+                        if  (!plugin_name) error("expected plugin name");
+                        // TODO check for trailing  stuff? (plugin settings?)
+
+                        // search for duplicates
+                        for (unsigned i=0; i<current->plugins.size(); i++) {
+                            if (current->plugins[i].first == plugin_name) {
+                                warn("duplicate plugin %s", plugin_name);
+                                return;
+                            }
+                        }
+
+                        const char* plugin_config = get_options();
+                        current->plugins.push_back(Recipe::Plugin(plugin_name, plugin_config ? plugin_config : ""));
                 } else {
                     error("unknown option '%s'", tok);
                 }

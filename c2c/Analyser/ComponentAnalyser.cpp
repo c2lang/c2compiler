@@ -173,6 +173,7 @@ ComponentAnalyser::ComponentAnalyser(Component& C,
     int max_depth = 0;
     for (unsigned i=0; i<mods.size(); i++) {
         Module* mod = mods[i];
+
         if (mod->isLoaded()) {
             all.addTail(new ModElem(mod));
             max_depth++;
@@ -240,17 +241,20 @@ ComponentAnalyser::ComponentAnalyser(Component& C,
     ModuleList sorted_mods;
     cur = all.prev;
     while (cur != &all) {
-        if (cur->m->isLoaded()) {
-            ModuleAnalyser* ma = new ModuleAnalyser(*cur->m, allModules, Diags, target_, context_, verbose);
-            analysers.push_back(ma);
-            sorted_mods.push_back(cur->m);
-        }
+        assert(cur->m->isLoaded());
+        ModuleAnalyser* ma = new ModuleAnalyser(*cur->m, allModules, Diags, target_, context_, verbose);
+        analysers.push_back(ma);
+        sorted_mods.push_back(cur->m);
         cur = cur->prev;
     }
-    if (!sorted_mods.empty()) {
-        assert(mods.size() == sorted_mods.size());
-        component.updateModules(sorted_mods);
+
+    // re-add all non-loaded
+    for (unsigned i=0; i<mods.size(); i++) {
+        Module* mod = mods[i];
+        if (!mod->isLoaded()) sorted_mods.push_back(mod);
     }
+    assert(mods.size() == sorted_mods.size());
+    component.updateModules(sorted_mods);
 
     all.freeList();
 }

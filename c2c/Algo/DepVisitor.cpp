@@ -341,13 +341,18 @@ void DepVisitor::checkExpr(const Expr* E) {
         break;
     }
     break;
-    case EXPR_EXPL_CAST:
+    case EXPR_EXPLICIT_CAST:
     {
         const ExplicitCastExpr* ECE = cast<ExplicitCastExpr>(E);
         checkExpr(ECE->getInner());
         checkType(ECE->getDestType());
     }
     break;
+    case EXPR_IMPLICIT_CAST: {
+        const ImplicitCastExpr* ICE = cast<ImplicitCastExpr>(E);
+        checkExpr(ICE->getInner());
+        break;
+    }
     }
 }
 
