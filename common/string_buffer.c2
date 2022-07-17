@@ -73,6 +73,17 @@ public func void Buf.add2(Buf* buf, const char* text, u32 len) @(inline)
     buf.data_[buf.size_] = 0;
 }
 
+public func void Buf.add_line(Buf* buf, const char* text)
+{
+    const char* end = text;
+    // TODO prevent overrun
+    while (*end) {
+        if (*end == '\n' || *end == '\r') break;
+        end++;
+    }
+    u32 len = cast<u32>(end - text);
+    buf.add2(text, len);
+}
 public func void Buf.print(Buf* buf, const char* format, ...) {
     char[256] tmp;
     // NOTE: no growing

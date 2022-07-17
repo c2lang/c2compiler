@@ -25,16 +25,6 @@ public func void Diags.free(Diags* diags) {
     stdlib.free(diags);
 }
 
-// TODO move to string_utils
-func void copy_line(char* out, const char* in) {
-    // TODO prevent overrun
-    while (*in) {
-        if (*in == '\n' || *in == '\r') break;
-        *out++ = *in++;
-    }
-    *out = 0;
-}
-
 // return true if error, false if warning
 public func bool Diags.report(Diags* diags, utils.SrcLoc src_loc, const char* format, ...) {
     bool is_error = true;
@@ -74,10 +64,8 @@ func void Diags.internal(Diags* diags, const char* category, const char* col, ut
     out.add("\n");
 
     if (src_loc) {
-        char[80] line;
         // TODO if it's too long, just show relevant part
-        copy_line(line, loc.line_start);
-        out.add(line);
+        out.add_line(loc.line_start);
         out.add("\n");
 
         out.indent(loc.column - 1);
