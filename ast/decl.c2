@@ -58,7 +58,7 @@ public type Decl struct {
     }
     SrcLoc loc;
     u32 name_idx;   // into g_names_start, 0 means nil
-    u32 ast_idx;    // into g_ast_start, 0 is valid
+    u32 ast_idx;    // into g_ast_start, 0 means nil
     QualType qt;
 } @(opaque)
 

@@ -39,26 +39,6 @@
 - put all output through filter for coloring/not
 
 ## AST
-- split global VarDecl (has AST idx) with local varDecl? -> does this save something?
-- remove Module from Decl, move to sub-classes
-    make Decl.getModule() that switches
-    VarDecl -> local,param,member dont need Module! (only global)
-    Import -> yes for target
-    EnumConstant -> no
-    StaticAssert -> no
-
-    do need:
-    Function,
-    StructType,
-    EnumType,
-    FunctionType,
-    AliasType,
-    Var,        -> only if Global
-    -> LATER
-/ name: dont store char* but u32 name_index
-    have AST global name_offset that is set to main StringPool
-    -> saves 4 bytes -> also needs AST -> u32 otherwise just padded back
-    -> but allows StringPool to resize! at very low cost
 - Idea: use same data dat build new tree for Scope?
     or make orderned copy then use flat trees to walk? Also instead of pointers, could be u32's
     comparing is just comparing/checking u32's
