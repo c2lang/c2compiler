@@ -1,0 +1,15 @@
+// @file{input}
+module test;
+
+func void test1() {
+    char[256] buf;
+    buf[5]++;
+}
+
+// @expect{atleast, out.ast}
+
+    UnaryOperator 'i8' postfix '++'
+      ArraySubscriptExpr 'i8' lvalue
+        ImplicitCastExpr 'i8*' CTC CK_ArrayToPointerDecay
+          IdentifierExpr 'i8[256]' CTC lvalue buf var
+

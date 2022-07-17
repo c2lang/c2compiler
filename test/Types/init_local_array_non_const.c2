@@ -8,8 +8,14 @@ func void test1() {
     i32[constant] a;
 
     i32 non_constant = 10;
-    i32[non_constant] b;
+    i32[non_constant] b; // @error{non constant array size}
+}
 
-    i32[foo()] c;
+func void test2() {
+    i32[foo()] c; // @error{non constant array size}
+}
+
+func void test3(i32 x) {
+    i32[x] a = { 1, 2 } // @error{non constant array size}
 }
 

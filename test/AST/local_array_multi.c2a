@@ -1,0 +1,20 @@
+// @file{input}
+module test;
+
+func void test1() {
+    char[10][20] arr;
+    char c = arr[1][2];
+}
+
+// @expect{atleast, out.ast}
+
+      VarDecl 'i8' local unchecked c
+        ImplicitCastExpr 'i8' CK_LValueToRValue
+          ArraySubscriptExpr 'i8' lvalue
+            ImplicitCastExpr 'i8*' CK_ArrayToPointerDecay
+              ArraySubscriptExpr 'i8[20]' lvalue
+                ImplicitCastExpr 'i8[20]*' CTC CK_ArrayToPointerDecay
+                  IdentifierExpr 'i8[10][20]' CTC lvalue arr var
+                IntegerLiteral 'i32' CTV CTC 1
+            IntegerLiteral 'i32' CTV CTC 2
+

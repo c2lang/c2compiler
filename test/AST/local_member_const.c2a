@@ -1,0 +1,17 @@
+// @file{input}
+module test;
+
+public const i32 Num = 0;
+
+func void test1() {
+    i32 a = test.Num;
+}
+
+// @expect{atleast, out.ast}
+
+  VarDecl 'i32' local unchecked a
+    MemberExpr mod-prefix 'const i32' CTV CTC test Num
+      IdentifierExpr '(module)test' CTC test module
+      IdentifierExpr 'const i32' lvalue Num var
+      decl=Num
+

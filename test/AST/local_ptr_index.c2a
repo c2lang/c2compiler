@@ -1,0 +1,15 @@
+// @file{input}
+module test;
+
+func void test1(char* cp) {
+    char c = cp[4];
+}
+
+// @expect{atleast, out.ast}
+
+      VarDecl 'i8' local unchecked c
+        ImplicitCastExpr 'i8' CK_LValueToRValue
+          ArraySubscriptExpr 'i8' lvalue
+            ImplicitCastExpr 'i8*' CK_LValueToRValue
+              IdentifierExpr 'i8*' CTC lvalue cp var
+

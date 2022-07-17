@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+i32 a = 10;
+i32* b = &a;
+i32* c = b;     // @error{initializer element is not constant}
+

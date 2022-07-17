@@ -2,6 +2,6 @@
 module test;
 
 func void test2() {
-    i32 a = test2() + 1; // @error{invalid type conversion from 'void' to 'i32'}
+    i32 a = test2() + 1; // @error{invalid operands to binary expression ('void' and 'i32')}
 }
 

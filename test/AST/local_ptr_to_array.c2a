@@ -1,0 +1,14 @@
+// @file{input}
+module test;
+
+func void test1() {
+    char[256] buf;
+    char* cp = buf;
+}
+
+// @expect{atleast, out.ast}
+
+  VarDecl 'i8*' local unchecked cp
+    ImplicitCastExpr 'i8*' CTC CK_ArrayToPointerDecay
+      IdentifierExpr 'i8[256]' CTC lvalue buf var
+

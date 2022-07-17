@@ -1,0 +1,15 @@
+// @file{input}
+module test;
+
+public const i32 Num = 0;
+
+i32 a = test.Num;
+
+// @expect{atleast, out.ast}
+
+VarDecl 'i32' global checked a
+  MemberExpr mod-prefix 'const i32' CTV CTC test Num
+    IdentifierExpr '(module)test' lvalue test module
+    IdentifierExpr 'const i32' lvalue Num var
+    decl=Num
+

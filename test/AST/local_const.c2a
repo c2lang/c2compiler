@@ -1,0 +1,14 @@
+// @file{input}
+module test;
+
+public const i32 Num = 0;
+
+func void test1() {
+    i32 a = Num;
+}
+
+// @expect{atleast, out.ast}
+
+      VarDecl 'i32' local unchecked a
+        IdentifierExpr 'const i32' CTV CTC Num var
+

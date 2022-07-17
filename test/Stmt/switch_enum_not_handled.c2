@@ -62,7 +62,7 @@ func void test5() {
         break;
     case Foo.E:
         break;
-    default:    // @warning{default label in switch which covers all enumeration values}
+    default:    // @error{default label in switch which covers all enumeration values}
         break;
     }
 

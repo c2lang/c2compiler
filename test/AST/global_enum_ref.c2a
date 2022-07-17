@@ -1,0 +1,17 @@
+// @file{input}
+module test;
+
+type Foo enum i8 {
+    A,
+}
+
+char c = Foo.A;
+
+// @expect{atleast, out.ast}
+
+VarDecl 'i8' global checked c
+  MemberExpr ''Foo'(enum)'=>i8 CTV CTC Foo A
+    IdentifierExpr ''Foo'(enum)'=>i8 CTC Foo type
+    IdentifierExpr ''Foo'(enum)'=>i8 CTV CTC lvalue A enum-constant
+    decl=A
+

@@ -1,0 +1,15 @@
+// @file{input}
+module test;
+
+func void test1(char* cp) {
+    *cp++ = 10;
+}
+
+// @expect{atleast, out.ast}
+
+    BinaryOperator 'i8' '='
+      LHS=
+      UnaryOperator 'i8' lvalue '*'
+        UnaryOperator 'i8*' postfix '++'
+          IdentifierExpr 'i8*' CTC lvalue cp var
+

@@ -1,0 +1,19 @@
+// @file{input}
+module test;
+
+func void print(char* c) {
+}
+
+func void test1() {
+    char[256] buf = { 0 }
+    print(buf);
+}
+
+// @expect{atleast, out.ast}
+
+    CallExpr 'void'
+      ImplicitCastExpr 'void (i8*)' CTC CK_FunctionToPointerDecay
+        IdentifierExpr 'void (i8*)' CTC print func
+      ImplicitCastExpr 'i8*' CTC CK_ArrayToPointerDecay
+        IdentifierExpr 'i8[256]' CTC lvalue buf var
+

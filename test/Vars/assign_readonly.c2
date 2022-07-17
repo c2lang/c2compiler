@@ -3,15 +3,15 @@ module test;
 
 const i32 A = 0;
 func void test1() {
-    A = 1;          // @error{read-only variable is not assignable}
+    A = 1;          // @error{lvalue required as left operand of assignment}
 }
 
 func void test2() {
-    A++;            // @error{read-only variable is not assignable}
+    A++;            // @error{lvalue required as increment operand}
 }
 
 func void test3() {
-    A += 3;         // @error{read-only variable is not assignable}
+    A += 3;         // @error{lvalue required as left operand of assignment}
 }
 
 func void test4() {

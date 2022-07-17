@@ -1,5 +1,6 @@
 // @recipe bin
     $warnings no-unused-function no-unused-module
+    $generate-c skip
 
 // @file{file1}
 module foo;

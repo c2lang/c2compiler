@@ -1,0 +1,22 @@
+// @file{input}
+module test;
+
+type Point struct {
+    i32 x;
+}
+
+func void Point.func1(Point* p, char c) { }
+
+func void test1(Point* p) {
+    p.func1(1);
+}
+
+// @expect{atleast, out.ast}
+
+    CallExpr 'void'
+      ImplicitCastExpr 'void ((struct)Point*, i8)' CTC CK_FunctionToPointerDecay
+        MemberExpr struct-function 'void ((struct)Point*, i8)' CTC p Point.func1
+          IdentifierExpr '(struct)Point*' CTC lvalue p var
+          IdentifierExpr 'void ((struct)Point*, i8)' Point.func1 struct-func
+          decl=Point.func1
+

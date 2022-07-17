@@ -1,17 +1,12 @@
-// @skip
 // @warnings{no-unused}
 module test;
 
-func void test1(i32[] a) {
-    a[3] = 1;
-    *a = 2;
+func void test1(i32[] a) {  // @error{function parameter cannot be of type array}
 }
 
 
 type Array i32[];
 
-func void test2(Array b) {
-    b[3] = 1;
-    *b = 2;
+func void test2(Array a) {  // @error{function parameter cannot be of type array}
 }
 
