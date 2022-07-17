@@ -15,6 +15,7 @@ public type AST struct {
     const char* filename;   // no ownership
     Module* mod;
     void* ptr;  // pointer used during analyser/generation (in analysis: Scope*)
+    u32 idx;
 
     ImportDeclList imports;
     DeclList types;
@@ -27,6 +28,7 @@ public func AST* AST.create(const char* filename, Module* mod) {
     AST* a = stdlib.calloc(1, sizeof(AST));
     a.filename = filename;
     a.mod = mod;
+    a.idx = addAST(a);
     a.imports.init();
     a.types.init();
     a.variables.init();

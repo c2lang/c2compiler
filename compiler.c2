@@ -118,6 +118,8 @@ func void Compiler.build(Compiler* c,
     c.resizeComponents(4);
 
     ast.init(c.context, c.astPool.getStart());
+    // TODO set AST list
+    // TODO memleak on ast.deinit() on early returns
 
     component.Component* libcComponent = component.create(c.allmodules, "libc");
     c.addComponent(libcComponent);
@@ -183,6 +185,8 @@ func void Compiler.build(Compiler* c,
 #endif
 
     if (c.opts.print_ast) c.mainComp.print();
+
+    ast.deinit();
 }
 
 func void Compiler.free(Compiler* c) {

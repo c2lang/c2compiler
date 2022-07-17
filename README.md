@@ -1,7 +1,5 @@
 
 ## TODO
-- Store AST idx instead of AST*, -> makes Decl 32->24 bytes!
-    -> must be global idx
 - Diags: print error line where error occured
 ------------------
 - create DiagnosticsEngine, return true if error, false if warning
@@ -41,6 +39,7 @@
 - put all output through filter for coloring/not
 
 ## AST
+- split global VarDecl (has AST idx) with local varDecl? -> does this save something?
 - remove Module from Decl, move to sub-classes
     make Decl.getModule() that switches
     VarDecl -> local,param,member dont need Module! (only global)

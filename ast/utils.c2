@@ -5,19 +5,21 @@ module ast;
 
 import color;
 import ast_context local;
+//import string_pool; // TEMP
 
-import string_pool; // TEMP
+import stdlib;
+import string;
 
-static_assert(32, sizeof(Decl));
-static_assert(48, sizeof(FunctionDecl));
-static_assert(48, sizeof(StructTypeDecl));
-static_assert(48, sizeof(ImportDecl));
-static_assert(40, sizeof(EnumTypeDecl));
-static_assert(40, sizeof(EnumConstantDecl));
-static_assert(32, sizeof(VarDecl));
-static_assert(40, sizeof(AliasTypeDecl));
-static_assert(40, sizeof(FunctionTypeDecl));
-static_assert(48, sizeof(StaticAssertDecl));
+static_assert(24, sizeof(Decl));
+static_assert(40, sizeof(FunctionDecl));
+static_assert(40, sizeof(StructTypeDecl));
+static_assert(40, sizeof(ImportDecl));
+static_assert(32, sizeof(EnumTypeDecl));
+static_assert(32, sizeof(EnumConstantDecl));
+static_assert(24, sizeof(VarDecl));
+static_assert(32, sizeof(AliasTypeDecl));
+static_assert(32, sizeof(FunctionTypeDecl));
+static_assert(40, sizeof(StaticAssertDecl));
 
 static_assert(4, sizeof(Stmt));
 static_assert(16, sizeof(AssertStmt));
@@ -84,6 +86,11 @@ public BuiltinType* g_bool;
 
 const char* g_names_start;
 
+// TODO just use AST vector (also in modules, but modules has ownership)
+AST** g_ast_list;
+u32 ast_count;      // Note: first index used to indicate nil
+u32 ast_capacity;
+
 public func void init(Context* c, const char* names_start) {
     g_u8 = BuiltinType.create(c, BuiltinTypeKind.UInt8);
     g_u16 = BuiltinType.create(c, BuiltinTypeKind.UInt16);
@@ -96,6 +103,13 @@ public func void init(Context* c, const char* names_start) {
     g_void = BuiltinType.create(c, BuiltinTypeKind.Void);
     g_bool = BuiltinType.create(c, BuiltinTypeKind.Bool);
     g_names_start = names_start;
+    ast_count = 1;
+    ast_capacity = 0;
+    g_ast_list = nil;
+}
+
+public func void deinit() {
+    stdlib.free(cast<void*>(g_ast_list));
 }
 
 public func u32 name2idx(const char* name) {
@@ -106,6 +120,37 @@ public func u32 name2idx(const char* name) {
 public func const char* idx2name(u32 idx) {
     if (idx) return g_names_start + idx;
     return nil;
+}
+
+func u32 addAST(AST* ast_) {
+
+    if (ast_count >= ast_capacity) {
+        if (ast_capacity == 0) ast_capacity = 16;
+        else ast_capacity *= 2;
+
+        void* buf = stdlib.malloc(ast_capacity * sizeof(ast.AST*));
+        if (g_ast_list) {
+            void* old = cast<void*>(g_ast_list);
+            string.memcpy(buf, old, ast_count * sizeof(ast.AST*));
+            stdlib.free(old);
+        }
+        g_ast_list = buf;
+    }
+
+    u32 idx = ast_count;
+    g_ast_list[idx] = ast_;
+    ast_count++;
+    return idx;
+}
+
+public func u32 ast2idx(const AST* ast_) {
+    if (ast_) return ast_.idx;
+    return 0;
+}
+
+public func AST* idx2ast(u32 idx) {
+    if (idx == 0) return nil;
+    return g_ast_list[idx];
 }
 
 const char* col_Stmt = color.Bmagenta;
