@@ -4,12 +4,12 @@
 module source_mgr;
 
 import file_utils;
-import stdlib;
-import string;
 import utils;
 import color;
 
-import stdio local; // for dump()
+import stdio;
+import stdlib;
+import string;
 
 const u32 InitialMaxFiles = 8;
 
@@ -65,14 +65,14 @@ public func i32 SourceMgr.open(SourceMgr* sm, const char* filename, utils.SrcLoc
     if (!file.open(filename)) {
         char[256] error_msg;
         if (file.errno == file_utils.Err_not_a_file) {
-            sprintf(error_msg, "cannot open %s: %s\n", filename, "not a regular file");
+            stdio.sprintf(error_msg, "cannot open %s: %s\n", filename, "not a regular file");
         } else {
-            sprintf(error_msg, "cannot open %s: %s\n", filename, string.strerror(file.errno));
+            stdio.sprintf(error_msg, "cannot open %s: %s\n", filename, string.strerror(file.errno));
         }
         if (loc) {
-            fprintf(stderr, "%s: %serror:%s %s\n", sm.loc2str(loc), color.Red, color.Normal, error_msg);
+            stdio.fprintf(stdio.stderr, "%s: %serror:%s %s\n", sm.loc2str(loc), color.Red, color.Normal, error_msg);
         } else {
-            fprintf(stderr, "%serror%s: %s\n", color.Red, color.Normal, error_msg);
+            stdio.fprintf(stdio.stderr, "%serror%s: %s\n", color.Red, color.Normal, error_msg);
         }
         return -1;
     }
@@ -116,21 +116,24 @@ public func const char* SourceMgr.getFileName(SourceMgr* sm, i32 handle) {
     return sm.files[handle].filename;
 }
 
+#if 0
 func void SourceMgr.dump(const SourceMgr* sm) {
-    printf("SourceMgr  files %u\n", sm.num_files);
+    stdio.printf("SourceMgr  files %u\n", sm.num_files);
     u32 total_size = 0;
     for (u32 i=0; i<sm.num_files; i++) {
         File* f = &sm.files[i];
         total_size += f.file.size;
-        printf("  [%2u]  %7u  %7u %s\n", i, f.offset, f.file.size, f.filename);
+        stdio.printf("  [%2u]  %7u  %7u %s\n", i, f.offset, f.file.size, f.filename);
     }
-    printf("Total size %u\n", total_size);
+    stdio.printf("Total size %u\n", total_size);
 }
+#endif
 
-type Location struct {
+public type Location struct {
     u32 line;
     u32 column;
-    const char* filename;   // no ownership
+    const char* filename;
+    const char* line_start;
 }
 
 func File* find_file(const SourceMgr* sm, u32 loc) {
@@ -157,6 +160,7 @@ func void find_line_col(const char* data, u32 offset, Location* loc, u32 last_of
     }
     loc.line = line_nr;
     loc.column = cast<u32>(&data[offset] - line) + 1;
+    loc.line_start = line;
 }
 
 func Location SourceMgr.locate(SourceMgr* sm, u32 loc) {
@@ -178,13 +182,23 @@ func Location SourceMgr.locate(SourceMgr* sm, u32 loc) {
     return l;
 }
 
+public func Location SourceMgr.getLocation(SourceMgr* sm, u32 src_loc) {
+    Location loc = { 0 }
+    if (src_loc == 0) {
+        loc.filename = "-";
+    } else {
+        loc = sm.locate(src_loc);
+    }
+    return loc;
+}
+
 public func const char* SourceMgr.loc2str(SourceMgr* sm, u32 src_loc) {
     local char[256] tmp;
     if (src_loc == 0) {
         string.strcpy(tmp, "-");
     } else {
-        source_mgr.Location loc = sm.locate(src_loc);
-        sprintf(tmp, "%s:%u:%u", loc.filename, loc.line, loc.column);
+        Location loc = sm.locate(src_loc);
+        stdio.sprintf(tmp, "%s:%u:%u", loc.filename, loc.line, loc.column);
     }
     return tmp;
 }

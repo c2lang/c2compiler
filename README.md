@@ -1,7 +1,5 @@
 
 ## TODO
-- Diags: print error line where error occured
-------------------
 - create DiagnosticsEngine, return true if error, false if warning
     - user should still be able to use -Werror like
     - add info() for 2nd info like 'older decl is here'

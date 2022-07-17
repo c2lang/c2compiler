@@ -2,6 +2,7 @@ module diagnostics;
 
 import color;
 import source_mgr;
+import string_buffer;
 import utils;
 
 import stdarg local;
@@ -24,54 +25,66 @@ public func void Diags.free(Diags* diags) {
     stdlib.free(diags);
 }
 
+// TODO move to string_utils
+func void copy_line(char* out, const char* in) {
+    // TODO prevent overrun
+    while (*in) {
+        if (*in == '\n' || *in == '\r') break;
+        *out++ = *in++;
+    }
+    *out = 0;
+}
+
 // return true if error, false if warning
-public func bool Diags.report(Diags* diags, utils.SrcLoc loc, const char* format, ...) {
-    char[512] temp;
-    char* cp = temp;
-
-    // or pass diags.Id? (= enum), coupled to format string
-    // check format? if error / warning?
+public func bool Diags.report(Diags* diags, utils.SrcLoc src_loc, const char* format, ...) {
     bool is_error = true;
-
+    const char* col = is_error ? color.Red : color.Yellow;
     const char* category = is_error ? "error" : "warning";
-    if (loc) {
-        cp += sprintf(cp, "%s: ", diags.sm.loc2str(loc));
-    }
-    if (diags.use_color) {
-        const char* col = is_error ? color.Red : color.Yellow;
-        cp += sprintf(cp, "%s%s%s: ", col, category, color.Normal);
-    } else {
-        cp += sprintf(cp, "%s: ", category);
-    }
 
     Va_list args;
     va_start(args, format);
-    cp += vsprintf(cp, format, args);
+    diags.internal(category, col, src_loc, format, args);
     va_end(args);
-
-    printf("%s\n", temp);
-
     return is_error;
 }
 
-public func void Diags.note(Diags* diags, utils.SrcLoc loc, const char* format, ...) {
-    char[512] temp;
-    char* cp = temp;
-
-    if (loc) {
-        cp += sprintf(cp, "%s: ", diags.sm.loc2str(loc));
-    }
-    if (diags.use_color) {
-        cp += sprintf(cp, "%sinfo%s: ", color.Grey , color.Normal);
-    } else {
-        cp += sprintf(cp, "info: ");
-    }
-
+public func void Diags.note(Diags* diags, utils.SrcLoc src_loc, const char* format, ...) {
     Va_list args;
     va_start(args, format);
-    cp += vsprintf(cp, format, args);
+    diags.internal("info", color.Grey, src_loc, format, args);
     va_end(args);
+}
 
-    printf("%s\n", temp);
+func void Diags.internal(Diags* diags, const char* category, const char* col, utils.SrcLoc src_loc, const char* format, Va_list args) {
+    string_buffer.Buf* out = string_buffer.create(512, diags.use_color);
+
+    source_mgr.Location loc = diags.sm.getLocation(src_loc);
+    if (src_loc) {
+        out.print("%s:%u:%u: ", loc.filename, loc.line, loc.column);
+    }
+
+    out.color(col);
+    out.add(category);
+    out.add(": ");
+    out.color(color.Normal);
+
+    char[256] tmp;
+    vsprintf(tmp, format, args);
+    out.add(tmp);
+    out.add("\n");
+
+    if (src_loc) {
+        char[80] line;
+        // TODO if it's too long, just show relevant part
+        copy_line(line, loc.line_start);
+        out.add(line);
+        out.add("\n");
+
+        out.indent(loc.column - 1);
+        out.color(color.Bgreen);
+        out.add("^");
+        out.color(color.Normal);
+    }
+    printf("%s\n", out.data());
 }
 
