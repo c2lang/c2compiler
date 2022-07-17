@@ -443,8 +443,8 @@ public func Expr* Builder.actOnExplicitCast(Builder* b, SrcLoc loc, QualType qt,
     return cast<Expr*>(ExplicitCastExpr.create(b.context, loc, qt, inner));
 }
 
-public func Expr* Builder.actOnMemberExpr(Builder* b, SrcLoc loc, Expr* base, IdentifierExpr* member) {
-    return cast<Expr*>(MemberExpr.create(b.context, loc, base, member));
+public func Expr* Builder.actOnMemberExpr(Builder* b, Expr* base, SrcLoc loc, const char* member_name) {
+    return cast<Expr*>(MemberExpr.create(b.context, base, loc, member_name));
 }
 
 public func Expr* Builder.actOnInitList(Builder* b, SrcLoc left, SrcLoc right, Expr** values, u32 num_values) {

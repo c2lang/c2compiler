@@ -33,17 +33,16 @@ const char*[] identifierKind_names = {
 
 static_assert(elemsof(IdentifierKind), elemsof(identifierKind_names));
 
+// Note: also used by MemberExpr
 public type IdentifierExprBits struct {
     u32 : NumExprBits;
     u32 has_decl : 1;
     u32 kind : 4;   // IdentifierKind
-    // TODO add Type, Var, Module, etc
 }
 
 public type IdentifierExpr struct {
     Expr parent;
     union {
-        // TODO store as number
         u32 name_idx;
         Decl* decl;     // set during analysis
     }
@@ -74,16 +73,12 @@ public func void IdentifierExpr.setDecl(IdentifierExpr* e, Decl* decl) @(inline)
 }
 
 public func const char* IdentifierExpr.getName(const IdentifierExpr* e) {
-    if (e.parent.parent.identifierExprBits.has_decl) {
-        return e.decl.getName();
-    }
+    if (e.parent.parent.identifierExprBits.has_decl) return e.decl.getName();
     return idx2name(e.name_idx);
 }
 
 public func u32 IdentifierExpr.getNameIdx(const IdentifierExpr* e) @(inline) {
-    if (e.parent.parent.identifierExprBits.has_decl) {
-        return e.decl.getNameIdx();
-    }
+    if (e.parent.parent.identifierExprBits.has_decl) return e.decl.getNameIdx();
     return e.name_idx;
 }
 

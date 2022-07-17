@@ -286,11 +286,12 @@ func Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs) {
             lhs = p.builder.actOnArraySubscriptExpr(rloc, lhs, idx);
             break;
         case Kind.Dot:
-            SrcLoc dot_loc = p.tok.loc;
             p.consumeToken();
             p.expectIdentifier();
-            IdentifierExpr* rhs = p.parseIdentifier();
-            lhs = p.builder.actOnMemberExpr(dot_loc, lhs, rhs);
+            SrcLoc member_loc = p.tok.loc;
+            const char* member_name = p.tok.text_value;
+            p.consumeToken();
+            lhs = p.builder.actOnMemberExpr(lhs, member_loc, member_name);
             break;
         case Kind.PlusPlus: fallthrough;
         case Kind.MinusMinus:
@@ -555,12 +556,12 @@ func Expr* Parser.parseFullIdentifier(Parser* p) {
     Expr* res = p.parseIdentifier().asExpr();
 
     while (p.tok.kind == Kind.Dot) {
-        SrcLoc dot_loc = p.tok.loc;
         p.consumeToken();
         p.expectIdentifier();
-        IdentifierExpr* rhs = p.parseIdentifier();
-
-        res = p.builder.actOnMemberExpr(dot_loc, res, rhs);
+        SrcLoc member_loc = p.tok.loc;
+        const char* member_name = p.tok.text_value;
+        p.consumeToken();
+        res = p.builder.actOnMemberExpr(res, member_loc, member_name);
     }
     return res;
 }

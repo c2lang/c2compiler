@@ -7,39 +7,55 @@ import ast_context;
 import string_buffer;
 import utils local;
 
+
 public type MemberExpr struct {
+    // Note: uses IdentifierExprBits!
     Expr parent;
     Expr* base;
-    IdentifierExpr* member;
+    union {
+        u32 name_idx;
+        Decl* decl;     // set during analysis
+    }
 } @(opaque)
 
-public func MemberExpr* MemberExpr.create(ast_context.Context* c, SrcLoc loc, Expr* base, IdentifierExpr* member) @(inline) {
+public func MemberExpr* MemberExpr.create(ast_context.Context* c, Expr* base, SrcLoc member_loc, const char* member_name) @(inline) {
     MemberExpr* e = c.alloc(sizeof(MemberExpr));
-    e.parent.init(ExprKind.Member, loc, 0, 0, 0);
+    e.parent.init(ExprKind.Member, member_loc, 0, 0, 0);
     e.base = base;
-    e.member = member;
+    e.name_idx = name2idx(member_name);
     return e;
 }
 
 public func Expr* MemberExpr.getBase(MemberExpr* e) { return e.base; }
 public func Expr** MemberExpr.getBase2(MemberExpr* e) { return &e.base; }
 
-public func IdentifierExpr* MemberExpr.getIndex(MemberExpr* e) { return e.member; }
-public func IdentifierExpr** MemberExpr.getIndex2(MemberExpr* e) { return &e.member; }
+public func const char* MemberExpr.getName(const MemberExpr* e) {
+    if (e.parent.parent.identifierExprBits.has_decl) return e.decl.getName();
+    return idx2name(e.name_idx);
+}
 
-public func Decl* MemberExpr.getDecl(const MemberExpr* e) { return e.member.getDecl(); }
+public func u32 MemberExpr.getNameIdx(const MemberExpr* e) @(inline) {
+    if (e.parent.parent.identifierExprBits.has_decl) return e.decl.getNameIdx();
+    return e.name_idx;
+}
+
+public func Decl* MemberExpr.getDecl(const MemberExpr* e) {
+    if (!e.parent.parent.identifierExprBits.has_decl) return nil;
+    return e.decl;
+}
 
 func void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent, "MemberExpr");
     e.parent.printTypeBits(out);
+    out.color(col_Value);
+    out.add(e.getName());
     out.add("\n");
     e.base.print(out, indent + 2);
-    e.member.print(out, indent + 2);
 }
 
 func void MemberExpr.printLiteral(const MemberExpr* e, string_buffer.Buf* out) {
     e.base.printLiteral(out);
     out.add(".");
-    e.member.printLiteral(out);
+    out.add(e.getName());
 }
 

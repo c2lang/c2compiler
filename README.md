@@ -1,16 +1,15 @@
 
 ## TODO
-- Diags: print error line where error occured
 - Store AST idx instead of AST*, -> makes Decl 32->24 bytes!
     -> must be global idx
-- IDEA: have 2 symboltables: one all, one public only? (makes searching faster)
+- Diags: print error line where error occured
+------------------
 - create DiagnosticsEngine, return true if error, false if warning
     - user should still be able to use -Werror like
     - add info() for 2nd info like 'older decl is here'
     - use enum with diags.id (must be short, so not two namespaces (diags.Id.Bla)
         -> only needed if we use same diag in multiple places
     - print error location nicely (line indicating error)
-- create FileAnalser (needs own scope)
 - automatically add feature _target_32bit_ (otherwise 32-bit)
 - try longjump in ModuleAnalyser -> get memleaks, or register lists (make linked list)
 - load other external components (recursively)
@@ -42,7 +41,6 @@
 - put all output through filter for coloring/not
 
 ## AST
-- MemberExpr: dont store 2nd IdentifierExpr, but just name_idx + loc? (otherwise duplicate info)
 - remove Module from Decl, move to sub-classes
     make Decl.getModule() that switches
     VarDecl -> local,param,member dont need Module! (only global)
