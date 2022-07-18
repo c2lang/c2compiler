@@ -6,6 +6,7 @@ module string_buffer;
 import stdarg local;
 import stdlib local;
 import string local;
+import stdio local; //TEMP
 
 public type Buf struct {
     u32 capacity;
@@ -68,7 +69,7 @@ public func void Buf.add2(Buf* buf, const char* text, u32 len) @(inline)
         while (buf.size_ + len + 1 > new_cap) new_cap *= 2;
         buf.resize(new_cap);
     }
-    strcpy(&buf.data_[buf.size_], text);
+    memcpy(&buf.data_[buf.size_], text, len);
     buf.size_ += len;
     buf.data_[buf.size_] = 0;
 }
@@ -76,14 +77,15 @@ public func void Buf.add2(Buf* buf, const char* text, u32 len) @(inline)
 public func void Buf.add_line(Buf* buf, const char* text)
 {
     const char* end = text;
-    // TODO prevent overrun
     while (*end) {
         if (*end == '\n' || *end == '\r') break;
         end++;
+        if ((end - text) >= 100) break;
     }
     u32 len = cast<u32>(end - text);
     buf.add2(text, len);
 }
+
 public func void Buf.print(Buf* buf, const char* format, ...) {
     char[256] tmp;
     // NOTE: no growing
