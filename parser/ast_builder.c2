@@ -19,6 +19,7 @@ public type Builder struct {
     component.Component* comp;
     Module* mod;
     AST* ast;
+    bool is_interface;
 } @(opaque)
 
 public func Builder* create(Context* context, diagnostics.Diags* diags) {
@@ -36,12 +37,17 @@ public func void Builder.free(Builder* b) {
 public func void Builder.setComponent(Builder* b, component.Component* comp) {
     b.comp = comp;
     b.mod = nil;
-    b.ast = nil;
+    // TEMP
+    b.is_interface = comp.isExternal();
 }
 
 public func void Builder.actOnModule(Builder* b, const char* mod_name, SrcLoc mod_loc, const char* filename) {
     // assert(b.comp);
     b.mod = b.comp.getOrAddModule(mod_name);
+    if (!b.mod) {
+        b.diags.report(mod_loc, "module %s is already defined in another component", mod_name);
+        stdlib.exit(-1);
+    }
     b.ast = b.mod.add(filename);
 
     // NOTE: make special ImportDecl to add own symbols
@@ -58,6 +64,7 @@ public func void Builder.actOnImport(Builder* b, const char* mod_name, SrcLoc mo
 }
 
 public func Decl* Builder.actOnAliasType(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType refType) {
+    is_public |= b.is_interface;
     AliasTypeDecl* d = AliasTypeDecl.create(b.context, name, loc, is_public, b.ast, refType);
     b.ast.addTypeDecl(d.asDecl());
     Decl* dd = d.asDecl();
@@ -65,8 +72,16 @@ public func Decl* Builder.actOnAliasType(Builder* b, const char* name, SrcLoc lo
     return dd;
 }
 
-public func Decl* Builder.actOnFunctionTypeDecl(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType rtype,
-                                                VarDecl** params, u32 num_params, bool is_variadic) {
+public func Decl* Builder.actOnFunctionTypeDecl(Builder* b,
+                                                const char* name,
+                                                SrcLoc loc,
+                                                bool is_public,
+                                                QualType rtype,
+                                                VarDecl** params,
+                                                u32 num_params,
+                                                bool is_variadic)
+{
+    is_public |= b.is_interface;
     FunctionDecl* fn = FunctionDecl.create(b.context, name, loc, is_public, b.ast, rtype, nil, params, num_params, is_variadic);
 
     FunctionTypeDecl* d = FunctionTypeDecl.create(b.context, fn);
@@ -76,8 +91,16 @@ public func Decl* Builder.actOnFunctionTypeDecl(Builder* b, const char* name, Sr
     return dd;
 }
 
-public func StructTypeDecl* Builder.actOnStructType(Builder* b, const char* name, SrcLoc loc, bool is_public, bool is_struct, bool is_global,
-                                                    VarDecl** members, u32 num_members) {
+public func StructTypeDecl* Builder.actOnStructType(Builder* b,
+                                                    const char* name,
+                                                    SrcLoc loc,
+                                                    bool is_public,
+                                                    bool is_struct,
+                                                    bool is_global,
+                                                    VarDecl** members,
+                                                    u32 num_members)
+{
+    is_public |= b.is_interface;
     StructTypeDecl* d = StructTypeDecl.create(b.context, name, loc, is_public, b.ast, is_struct, is_global, members, num_members);
     if (is_global) {
         b.ast.addTypeDecl(d.asDecl());
@@ -87,14 +110,17 @@ public func StructTypeDecl* Builder.actOnStructType(Builder* b, const char* name
 }
 
 public func VarDecl* Builder.actOnStructMember(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType qt, Expr* bitfield) {
+    is_public |= b.is_interface;
     return VarDecl.createStructMember(b.context, name, loc, is_public, qt, b.ast, bitfield);
 }
 
 public func VarDecl* Builder.actOnStructVar(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType qt, Expr* initValue) {
+    is_public |= b.is_interface;
     return VarDecl.create(b.context, VarDeclKind.StructMember, name, loc, is_public, qt, b.ast, initValue);
 }
 
 public func void Builder.actOnGlobalVarDecl(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType qt, Expr* initValue) {
+    is_public |= b.is_interface;
     VarDecl* d = VarDecl.create(b.context, VarDeclKind.GlobalVar, name, loc, is_public, qt, b.ast, initValue);
     Decl* dd = d.asDecl();
     b.ast.addVarDecl(dd);
@@ -102,6 +128,7 @@ public func void Builder.actOnGlobalVarDecl(Builder* b, const char* name, SrcLoc
 }
 
 public func VarDecl* Builder.actOnFunctionParam(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType qt, Expr* initValue) {
+    is_public |= b.is_interface;
     return VarDecl.create(b.context, VarDeclKind.FunctionParam, name, loc, is_public, qt, b.ast, initValue);
 }
 

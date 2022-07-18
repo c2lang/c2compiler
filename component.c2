@@ -6,6 +6,7 @@ module component;
 import ast;
 import module_list;
 import string_buffer;
+
 import stdlib local;
 import string;
 
@@ -48,6 +49,8 @@ public func void Component.free(Component* c) {
 
 public func const char* Component.getName(const Component* c) { return c.name; }
 
+public func bool Component.isExternal(const Component* c) { return c.is_external; }
+
 public type ModuleVisitor func void (void* arg, ast.Module* m);
 
 public func void Component.visitModules(const Component* c, ModuleVisitor visitor, void* arg) {
@@ -87,12 +90,7 @@ public func ast.Module* Component.getOrAddModule(Component* c, const char* modna
     }
 
     ast.Module* m = c.globalList.find(ast.name2idx(modname));
-    if (m) {
-        fprintf(stderr, "%serror%s: module %s already defined in another component\n", color.Red, color.Normal, modname);
-        // TODO need dest component
-        // TODO need SourceMgr + SrcLoc here...nasty
-        stdlib.exit(-1);
-    }
+    if (m) return nil;
 
     m = ast.Module.create(modname);
 

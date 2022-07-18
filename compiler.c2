@@ -28,10 +28,10 @@ import stdlib;
 import stdio local;
 
 // TODO or return/add Component?
-func void parseLib(source_mgr.SourceMgr* sm,
-                   string_pool.Pool* auxPool,
-                   string_pool.Pool* astPool,
-                   component.Component* comp)
+func void openLib(source_mgr.SourceMgr* sm,
+                  string_pool.Pool* auxPool,
+                  string_pool.Pool* astPool,
+                  component.Component* comp)
 {
     const char* libdir = stdlib.getenv("C2_LIBDIR");
     if (!libdir) printf("Warning: environment variable C2_LIBDIR not set!\n");
@@ -47,6 +47,69 @@ func void parseLib(source_mgr.SourceMgr* sm,
     // NOTE: dont parse modules (interface files) yet, only if needed
     // TODO erro handling
     manifest.parse(sm, file_id, astPool, comp);
+}
+
+type LibLoader struct {
+    const char* libdir;
+    source_mgr.SourceMgr* sm;
+    c2_parser.Parser* parser;
+    string_pool.Pool* auxPool;
+    string_pool.Pool* astPool;
+    component.Component* c;
+}
+
+func void LibLoader.init(LibLoader* l,
+                         const char* libdir,
+                         source_mgr.SourceMgr* sm,
+                         c2_parser.Parser* parser,
+                         string_pool.Pool* auxPool,
+                         string_pool.Pool* astPool,
+                         component.Component* comp)
+{
+    l.libdir = libdir;
+    l.sm = sm;
+    l.parser = parser;
+    l.auxPool = auxPool;
+    l.astPool = astPool;
+    l.c = comp;
+}
+
+func void LibLoader.handleModule(void* arg, ast.Module* m) {
+    LibLoader* l = arg;
+    if (!m.isUsed()) return;
+
+    // TODO also use LibLoader for openLib
+    const char* libdir = stdlib.getenv("C2_LIBDIR");
+    if (!libdir) printf("Warning: environment variable C2_LIBDIR not set!\n");
+
+    char[512] filename;
+    i32 len = stdio.sprintf(filename, "%s/%s/%s.c2i", l.libdir, l.c.getName(), m.getName());
+    const char* name = l.auxPool.add(filename, cast<usize>(len), 0);
+
+    // TODO get location  from manifest?
+    i32 file_id = l.sm.open(name, 0);
+    if (file_id == -1) return;   // note: error already printed
+
+    bool ok = l.parser.parse(file_id, true);
+
+    l.sm.close(file_id);
+}
+
+func void loadLib(source_mgr.SourceMgr* sm,
+                  c2_parser.Parser* parser,
+                  ast_builder.Builder* builder,
+                  string_pool.Pool* auxPool,
+                  string_pool.Pool* astPool,
+                  component.Component* comp)
+{
+    const char* libdir = stdlib.getenv("C2_LIBDIR");
+    if (!libdir) printf("Warning: environment variable C2_LIBDIR not set!\n");
+
+    builder.setComponent(comp);
+
+    LibLoader loader;
+    loader.init(libdir, sm, parser, auxPool, astPool, comp);
+    comp.visitModules(LibLoader.handleModule, &loader);
 }
 
 func void Compiler.handleModuleImports(void* arg, ast.Module* m) {
@@ -81,6 +144,7 @@ type Compiler struct {
     string_pool.Pool* astPool;
     ast_builder.Builder* builder;
     module_list.ModList* allmodules;
+    c2_parser.Parser* parser;
     component.Component* mainComp;  // no ownership
 
     component.Component** components;
@@ -134,7 +198,7 @@ func void Compiler.build(Compiler* c,
     c.builder.setComponent(libcComponent);
     // TODO parse manifest
     // NOTE: HMM manifest filename should go into auxPool, module-names into normal astPool
-    parseLib(sm, auxPool, c.astPool, libcComponent);
+    openLib(sm, auxPool, c.astPool, libcComponent);
 
     c.mainComp = component.create(c.allmodules, "main", false);
     c.addComponent(c.mainComp);
@@ -145,21 +209,20 @@ func void Compiler.build(Compiler* c,
     string_list.List features;
     features.init(64);
     features.add("feature_a");
+    c.parser = c2_parser.create(sm, diags, c.builder, c.astPool, &features);
 
     printf("%sparsing %s%s\n", color.Yellow, target.getName(), color.Normal);
     u64 t1_start = utils.now();
-    c2_parser.Parser* parser = c2_parser.create(sm, diags, c.builder, c.astPool, &features, false);
     bool ok = true;
     for (u32 j=0; j<target.numFiles(); j++) {
         i32 file_id = target.openFile(j);
         if (file_id == -1) return;   // note: error already printed
 
-        ok != parser.parse(file_id);
+        ok != c.parser.parse(file_id, false);
 
         target.closeFile(file_id);
     }
     u64 t1_end = utils.now();
-    parser.free();
     printf("parsing took %lu usec\n", t1_end - t1_start);
 #if 0
     for (u32 i=0; i<c.num_components; i++) {
@@ -176,6 +239,11 @@ func void Compiler.build(Compiler* c,
     module_sorter.sort(c.mainComp, c.diags);
 
     // analyse each module, all files in it step by step
+    loadLib(c.sm, c.parser, c.builder, c.auxPool, c.astPool, libcComponent);
+    libcComponent.visitModules(Compiler.handleModuleImports, c);
+    libcComponent.visitModules(Compiler.analyseUsedModule, c);
+    module_sorter.sort(libcComponent, c.diags);
+
 
     c.mainComp.visitModules(Compiler.analyseModule, c);
 
@@ -210,6 +278,7 @@ func void Compiler.free(Compiler* c) {
         c.components[i].free();
     }
     stdlib.free(cast<void*>(c.components));
+    c.parser.free();
     c.allmodules.free();
     c.builder.free();
     c.astPool.free();
@@ -236,5 +305,12 @@ func void Compiler.addComponent(Compiler* c, component.Component* comp) {
 func void Compiler.analyseModule(void* arg, ast.Module* m) {
     Compiler* c = arg;
     module_analyser.check(c.diags, c.context, c.allmodules, m);
+}
+
+func void Compiler.analyseUsedModule(void* arg, ast.Module* m) {
+    Compiler* c = arg;
+    if (m.isUsed()) {
+        module_analyser.check(c.diags, c.context, c.allmodules, m);
+    }
 }
 

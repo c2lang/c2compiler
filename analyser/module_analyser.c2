@@ -450,14 +450,14 @@ func QualType ModuleAnalyser.analyseRefType(ModuleAnalyser* ma, RefType* rt, boo
     if (!d) return QualType.init0();
 
     if (!d.isTypeDecl()) {
-        ma.diags.report(prefix.asExpr().getLoc(), "%s is not a type", prefix.getName());
+        ma.diags.report(ref.asExpr().getLoc(), "%s is not a type", ref.getName());
         return QualType.init0();
     }
 
     // TODO need used_public?
     bool external = (ma.mod != d.getModule());
     if (!d.isPublic() && external) {
-        ma.diags.report(prefix.asExpr().getLoc(), "%s is not a type", prefix.getName());
+        ma.diags.report(ref.asExpr().getLoc(), "%s is not public", ref.getName());
         return QualType.init0();
     }
 

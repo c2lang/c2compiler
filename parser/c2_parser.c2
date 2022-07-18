@@ -29,7 +29,7 @@ public type Parser struct {
     Builder* builder;
     string_pool.Pool* pool;
 
-    bool is_interface; // TODO query component for this
+    bool is_interface;
 
     JmpBufTag jmpbuf;
     string_list.List* features;
@@ -39,15 +39,13 @@ public func Parser* create(SourceMgr* sm,
                            diagnostics.Diags* diags,
                            ast_builder.Builder* builder,
                            string_pool.Pool* pool,
-                           string_list.List* features,
-                           bool is_interface)
+                           string_list.List* features)
 {
     Parser* p = calloc(1, sizeof(Parser));
     p.sm = sm;
     p.diags = diags;
     p.builder = builder;
     p.pool = pool;
-    p.is_interface = is_interface;
     p.features = features;
     return p;
 }
@@ -56,8 +54,9 @@ public func void Parser.free(Parser* p) {
     free(p);
 }
 
-public func bool Parser.parse(Parser* p, i32 file_id) {
+public func bool Parser.parse(Parser* p, i32 file_id, bool is_interface) {
     p.file_id = file_id;
+    p.is_interface = is_interface;
 
 #if DumpTokens
     u64 t1 = utils.now();
@@ -214,6 +213,22 @@ func void Parser.parseOptionalAttributes(Parser* p) {
 
         u32 end_loc = attr_loc;
         if (p.tok.kind == Kind.Equal) {
+            p.consumeToken();
+            end_loc = attr_loc;
+            switch (p.tok.kind) {
+            case Kind.StringLiteral:
+                // TODO
+                p.consumeToken();
+                break;
+            case Kind.NumberLiteral:
+                // TODO
+                p.consumeToken();
+                break;
+            default:
+                p.error("expected attribute argument");
+                return;
+            }
+
         }
 
         p.builder.actOnAttr(/*D,*/ attr_id, attr_loc, end_loc /*, arg.get()*/);

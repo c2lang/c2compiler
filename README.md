@@ -1,5 +1,6 @@
 
 ## TODO
+- hardcode/create c2 module
 - load external components
     - for main component: walk imports
         - for all imports to external component, mark module as used
