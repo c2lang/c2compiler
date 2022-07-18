@@ -116,6 +116,7 @@ executable.c2c:
         - analyser/module_sorter.c2
         - analyser/scope.c2
 
+        - c2module_loader.c2
         - c2recipe.c2
         - c2recipe_parser.c2
         - c2recipe_yaml.c2

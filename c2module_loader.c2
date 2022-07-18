@@ -1,0 +1,16 @@
+module c2module_loader;
+
+import ast;
+import string_pool;
+
+public func ast.Module* load(string_pool.Pool* pool) {
+    const char* name = pool.add("c2", 2, true);
+    ast.Module* m = ast.Module.create(name);
+    m.setUsed();
+
+    // just add direct symbols, no AST
+    // TODO
+
+    return m;
+}
+

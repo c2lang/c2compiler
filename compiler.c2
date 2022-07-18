@@ -7,6 +7,7 @@ import ast;
 import ast_builder;
 import ast_context;
 import c2_parser;
+import c2module_loader;
 import c2recipe;
 import component;
 import constants;
@@ -192,6 +193,10 @@ func void Compiler.build(Compiler* c,
     ast.init(c.context, c.astPool.getStart());
     // TODO set AST list
     // TODO memleak on ast.deinit() on early returns
+
+    // create c2 module
+    ast.Module* c2mod = c2module_loader.load(c.astPool);
+    c.allmodules.add(c2mod);
 
     component.Component* libcComponent = component.create(c.allmodules, "libc", true);
     c.addComponent(libcComponent);
