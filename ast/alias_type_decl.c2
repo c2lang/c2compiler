@@ -21,7 +21,7 @@ public func AliasTypeDecl* AliasTypeDecl.create(ast_context.Context* c,
 {
     AliasTypeDecl* d = c.alloc(sizeof(AliasTypeDecl));
     //HUH refType passed to both Decl.qt and AliasTypeDecl.refType
-    d.parent.init(DeclKind.StructType, name, loc, is_public, refType, ast_);
+    d.parent.init(DeclKind.AliasType, name, loc, is_public, refType, ast_);
     d.refType = refType;
     return d;
 }
