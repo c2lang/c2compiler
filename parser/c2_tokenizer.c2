@@ -594,6 +594,11 @@ func  void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
                 result.kind = Kind.MinusEqual;
                 return;
             }
+            if (*t.cur == '>') {
+                t.cur--;
+                t.error(result, "use the dot operators instead of '->'");
+                return;
+            }
             result.kind = Kind.Minus;
             return;
         case Action.COMMA:
