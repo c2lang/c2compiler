@@ -52,9 +52,9 @@ func bool getYamlInfoInfo(yaml.Parser* parser,
 }
 
 public func void parse(source_mgr.SourceMgr* sm,
-                   i32 file_id,
-                   string_pool.Pool* astPool,
-                   component.Component* comp)
+                       i32 file_id,
+                       string_pool.Pool* astPool,
+                       component.Component* comp)
 {
     const char* data = sm.get_content(file_id);
     u32 loc_start = sm.get_offset(file_id);

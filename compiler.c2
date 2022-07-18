@@ -84,6 +84,7 @@ type Compiler struct {
 
 public type Options struct {
     bool print_ast;
+    bool print_symbols;
 }
 
 public func void build(string_pool.Pool* auxPool,
@@ -184,6 +185,11 @@ func void Compiler.build(Compiler* c,
     c.astPool.dump();
 #endif
 
+    if (c.opts.print_symbols) {
+        for (u32 i=0; i<c.num_components; i++) {
+            c.components[i].printSymbols();
+        }
+    }
     if (c.opts.print_ast) c.mainComp.print();
 
     ast.deinit();

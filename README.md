@@ -1,5 +1,27 @@
 
 ## TODO
+- load external components
+    - for main component: walk imports
+        - for all imports to external component, mark module as used
+    - for all external components:
+        - parse all used modules (recursively, since they can depend on other modules again)
+    - handle nolibc
+    - handle use
+    Design:
+    - load components manifest
+        -> change to yaml (keep old for now, add manifest.yml)
+        -> change Yaml parser to use SourceMgr, add locs
+            -> LATER, for now just use
+        DONT CHANGE RECIPE YET, FIRST JUST PARSE manifest.yml
+    - re-use components between targets? (libc)
+
+    - give component names ("libc", "main")
+    - check duplicate module names between components (on every new module)
+        -> components get/add to list of all Modules
+            -> if they create a new one, they check
+    - fill in all imports
+        -> mark all external modules if used (later only parse those needed)
+
 - create DiagnosticsEngine, return true if error, false if warning
     - user should still be able to use -Werror like
     - add info() for 2nd info like 'older decl is here'
@@ -66,25 +88,6 @@
     pointers to them, this is not so bad.
 
 ## Compiler
-- load external components
-    - handle nolibc
-    - handle use
-    Design:
-    - load components manifest
-        -> change to yaml (keep old for now, add manifest.yml)
-        -> change Yaml parser to use SourceMgr, add locs
-            -> LATER, for now just use
-        DONT CHANGE RECIPE YET, FIRST JUST PARSE manifest.yml
-    - re-use components between targets? (libc)
-
-    - give component names ("libc", "main")
-    - check duplicate module names between components (on every new module)
-        -> components get/add to list of all Modules
-            -> if they create a new one, they check
-    - fill in all imports
-        -> mark all external modules if used (later only parse those needed)
-    - update module sorting
-
 ## Performance
 - check memleaks: valgrind --leak-check=full -s ./output/c2c/c2c
 - profile application to see where time is spent
