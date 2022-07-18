@@ -195,7 +195,7 @@ func void Compiler.build(Compiler* c,
     // TODO memleak on ast.deinit() on early returns
 
     // create c2 module
-    ast.Module* c2mod = c2module_loader.load(c.astPool);
+    ast.Module* c2mod = c2module_loader.load(c.context, c.astPool);
     c.allmodules.add(c2mod);
 
     component.Component* libcComponent = component.create(c.allmodules, "libc", true);
