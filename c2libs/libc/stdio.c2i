@@ -12,7 +12,7 @@ const i8 EOF = -1;
 const u8 SEEK_SET = 0;   // Seek from beginning of file.
 const u8 SEEK_CUR = 1;   // Seek from current position.
 const u8 SEEK_END = 2;   // Seek from end of file.
-#ifdef __USE_GNU
+#if __USE_GNU
 const u8 SEEK_DATA = 3;  // Seek to next data.
 const u8 SEEK_HOLE = 4;  // Seek to next hole.
 #endif
@@ -102,7 +102,7 @@ func c_int ftrylockfile(FILE* __stream);
 func void funlockfile(FILE* __stream);
 
 // --- Linux only ---
-#ifdef __USE_LARGEFIE64
+#if __USE_LARGEFIE64
 func FILE* tmpfile64(void);
 #endif
 func c_char* tmpnam_r(c_char* __s);
