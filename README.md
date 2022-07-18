@@ -3,8 +3,10 @@
 - load external components
     - for main component: walk imports
         - for all imports to external component, mark module as used
+        - store component_idx in module? (fast way to find component for module)
     - for all external components:
-        - parse all used modules (recursively, since they can depend on other modules again)
+        - parse all used modules, check imports, add more module to queue
+    - analyse external components (bottom up)
     - handle nolibc
     - handle use
     Design:

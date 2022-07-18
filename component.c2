@@ -19,18 +19,22 @@ import stdio local; // TEMP
     - create + store Modules
 */
 public type Component struct {
+    const char* name;   // no ownership
+    bool is_external;
+
     ast.Module** mods;
     u32 num_mods;
     u32 max_mods;
     module_list.ModList* globalList;
-    const char* name;   // no ownership
 } @(opaque)
 
-public func Component* create(module_list.ModList* globalList, const char* name) {
+public func Component* create(module_list.ModList* globalList, const char* name, bool is_external) {
     Component* c = calloc(1, sizeof(Component));
+    c.name = name;
+    c.is_external = is_external;
+
     c.resize(4);
     c.globalList = globalList;
-    c.name = name;
     return c;
 }
 
@@ -49,12 +53,6 @@ public type ModuleVisitor func void (void* arg, ast.Module* m);
 public func void Component.visitModules(const Component* c, ModuleVisitor visitor, void* arg) {
     for (u32 i=0; i<c.num_mods; i++) {
         visitor(arg, c.mods[i]);
-    }
-}
-
-public func void Component.visitImports(const Component* c, ast.ImportVisitor visitor, void* arg) {
-    for (u32 i=0; i<c.num_mods; i++) {
-        c.mods[i].visitImports(visitor, arg);
     }
 }
 
@@ -139,6 +137,13 @@ public func void Component.print(const Component* c) {
 
     stdio.puts(out.data());
     out.free();
+}
+
+public func void Component.printModules(const Component* c) {
+    for (u32 i=0; i<c.num_mods; i++) {
+        const ast.Module* m = c.mods[i];
+        printf("module %s.%s (used %d)\n", c.name, m.getName(), m.isUsed());
+    }
 }
 
 public func void Component.printSymbols(const Component* c) {

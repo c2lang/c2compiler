@@ -16,6 +16,7 @@ import stdio local;
 
 type Options struct {
     bool print_ast;
+    bool print_modules;
     bool print_symbols;
     const char* single_file;
 }
@@ -24,7 +25,8 @@ func void usage(const char* me) {
     printf("Usage: %s <options> <filename>\n", me);
     printf("Options\n");
     printf("\t-a    print ASTs\n");
-    printf("\t-s    print Symbols\n");
+    printf("\t-m    print modules\n");
+    printf("\t-s    print symbols\n");
     stdlib.exit(-1);
 }
 
@@ -35,6 +37,9 @@ func void parse_opts(i32 argc, char** argv, Options* opts) {
             switch (arg[1]) {
             case 'a':
                 opts.print_ast = true;
+                break;
+            case 'm':
+                opts.print_modules = true;
                 break;
             case 's':
                 opts.print_symbols = true;
@@ -90,6 +95,7 @@ public func i32 main(i32 argc, char** argv) {
 
     compiler.Options options = { 0 }
     options.print_ast = opts.print_ast;
+    options.print_modules = opts.print_modules;
     options.print_symbols = opts.print_symbols;
 
     for (u32 i=0; i<recipe.numTargets(); i++) {

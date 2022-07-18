@@ -10,6 +10,7 @@ import stdio local;
 
 public type Module struct {
     u32 name_idx;
+    bool used;
 
     ast.AST** files;
     u32 num_files;
@@ -35,6 +36,9 @@ public func void Module.free(Module* m) {
     m.symbols.free();
     stdlib.free(m);
 }
+
+public func void Module.setUsed(Module* m) { m.used = true; }
+public func bool Module.isUsed(const Module* m) { return m.used; }
 
 public func const SymbolTable* Module.getSymbols(const Module* m) { return &m.symbols; }
 
@@ -121,7 +125,7 @@ public func void Module.info(const Module* m, string_buffer.Buf* out) {
 }
 
 public func void Module.print(const Module* m, string_buffer.Buf* out) {
-    out.print("------ module %s ------\n", idx2name(m.name_idx));
+    out.print("------ module %s (used %d) ------\n", idx2name(m.name_idx), m.used);
     for (u32 i=0; i<m.num_files; i++) {
         m.files[i].print(out);
     }
