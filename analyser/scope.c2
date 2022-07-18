@@ -145,7 +145,15 @@ public func ast.Decl* Scope.findGlobalSymbolInModule(Scope* s, ast.Module* mod, 
     return d;
 }
 
-public func ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, utils.SrcLoc loc) {
+public func ast.Decl* Scope.findType(Scope* s, u32 name_idx, utils.SrcLoc loc) {
+    ast.Decl* d = s.findGlobalSymbol(name_idx, loc);
+    if (!d) {
+        s.diags.report(loc, "unknown type %s", ast.idx2name(name_idx));
+    }
+    return d;
+}
+
+func ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, utils.SrcLoc loc) {
 /*
     // Note: global cache seems to make it slower!
     ast.Decl* d = s.global_cache.find(name_idx);
@@ -171,6 +179,7 @@ public func ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, utils.SrcLo
                     s.diags.report(loc, "symbol %s is ambiguous", ast.idx2name(name_idx));
                     // TODO print uses
                     // TODO make prefix suggestion
+                    break;
                 } else {
                     d = d2;
                 }

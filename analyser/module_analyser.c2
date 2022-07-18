@@ -350,8 +350,10 @@ func void ModuleAnalyser.analyseEnumType(ModuleAnalyser* ma, EnumTypeDecl* d) {
         // check for duplicate names
         const char* name = c.asDecl().getName();
         for (u32 j=0; j<i; j++) {
-            if (constants[j].asDecl().getName() == name) {
+            const Decl* other = constants[j].asDecl();
+            if (other.getName() == name) {
                 ma.diags.report(c.asDecl().getLoc(), "duplicate enum constant name '%s'", name);
+                ma.diags.note(other.getLoc(), "previous declaration is here");
                 // TODO ma.diags.info(constants[j].asDecl().getLoc(), "other declaration is here");
                 return;
             }
@@ -434,6 +436,7 @@ func QualType ModuleAnalyser.analyseRefType(ModuleAnalyser* ma, RefType* rt, boo
     IdentifierExpr* ref = rt.getRef();
 
     Decl* d = nil;
+    //stdio.printf("REF %s\n", ref.getName());
 
     if (prefix) { // module.Type
         Module* mod = ma.scope.findModule(prefix.getNameIdx(), prefix.asExpr().getLoc());
@@ -442,7 +445,7 @@ func QualType ModuleAnalyser.analyseRefType(ModuleAnalyser* ma, RefType* rt, boo
         d = ma.scope.findGlobalSymbolInModule(mod, ref.getNameIdx(), ref.asExpr().getLoc());
         prefix.setKind(IdentifierKind.Module);
     } else {    // Type
-        d = ma.scope.findGlobalSymbol(ref.getNameIdx(), ref.asExpr().getLoc());
+        d = ma.scope.findType(ref.getNameIdx(), ref.asExpr().getLoc());
     }
     if (!d) return QualType.init0();
 

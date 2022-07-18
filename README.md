@@ -36,6 +36,11 @@
 - move Lookahead feature from Tokenizer to Parser (on lookahead with error, just stop parser also)
 - put all output through filter for coloring/not
 
+## Analyser
+- remove check/errors from Component + Main, just do somewhere else?
+- analyser: allow enum switches without prefix (also fix in C2C)
+    -> need analyseStmt first
+
 ## AST
 - Idea: use same data dat build new tree for Scope?
     or make orderned copy then use flat trees to walk? Also instead of pointers, could be u32's
@@ -60,7 +65,6 @@
 - Give every Type a PtrType* ptr, since we can re-use efficiently. Since many types will have
     pointers to them, this is not so bad.
 
-
 ## Compiler
 - load external components
     - handle nolibc
@@ -80,11 +84,6 @@
     - fill in all imports
         -> mark all external modules if used (later only parse those needed)
     - update module sorting
-
-
-
-## Analyser
-- remove check/errors from Component + Main, just do somewhere else?
 
 ## Performance
 - check memleaks: valgrind --leak-check=full -s ./output/c2c/c2c
