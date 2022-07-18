@@ -99,6 +99,11 @@
 ## Language
 - Dont allow Declaration in Condition of if stmt?
 
+## Generate-C
+- assert:
+    generate original source location in assert (not generate C)
+    -> so generate own if stmt with source loc included
+
 ## General
 - convert files to relative path in findProjectDir(), to Vim understands errors
 - add option to print all configs in code

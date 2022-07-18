@@ -27,6 +27,7 @@ type Kind enum u8 {
     Warnings,
     GenerateC,
     GenerateIR,
+    EnableAssert,
     NoLibc,
     Config,
     Export,
@@ -45,6 +46,7 @@ const char*[] kind_names = {
     "$warnings",
     "$generate-c",
     "$generate-ir",
+    "$enable-assert",
     "$nolibc",
     "$config",
     "$export",
@@ -266,6 +268,11 @@ func void Parser.lex_option(Parser* p, Token* result) {
         p.cur += 10;
         return;
     }
+    if (string.strcmp(option, "enable-assert") == 0) {
+        result.kind = Kind.EnableAssert;
+        p.cur += 13;
+        return;
+    }
     if (string.strcmp(option, "nolibc") == 0) {
         result.kind = Kind.NoLibc;
         p.cur += 6;
@@ -327,12 +334,13 @@ func void Parser.parseTop(Parser* p) {
             break;
         case Kind.End:
             break;
-        case Kind.Warnings:    fallthrough;
-        case Kind.GenerateC:   fallthrough;
-        case Kind.GenerateIR:  fallthrough;
-        case Kind.NoLibc:      fallthrough;
-        case Kind.Config:      fallthrough;
-        case Kind.Export:      fallthrough;
+        case Kind.Warnings:     fallthrough;
+        case Kind.GenerateC:    fallthrough;
+        case Kind.GenerateIR:   fallthrough;
+        case Kind.EnableAssert: fallthrough;
+        case Kind.NoLibc:       fallthrough;
+        case Kind.Config:       fallthrough;
+        case Kind.Export:       fallthrough;
         case Kind.Use:
             p.error("must be inside target");
             break;
@@ -416,6 +424,11 @@ func void Parser.parseTarget(Parser* p) {
             if (files_started) p.error("$options must come before files");
             p.consumeToken();
             while (p.token.kind == Kind.Text) p.consumeToken();
+            break;
+        case Kind.EnableAssert:
+            if (files_started) p.error("$options must come before files");
+            p.consumeToken();
+            // TODO
             break;
         case Kind.NoLibc:
             if (files_started) p.error("$options must come before files");

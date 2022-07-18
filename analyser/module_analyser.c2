@@ -163,7 +163,7 @@ func void ModuleAnalyser.handleStructFunc(void* arg, FunctionDecl* d) {
     ModuleAnalyser* ma = arg;
     IdentifierExpr* prefix = d.getPrefix();
     u32 prefix_name_idx = prefix.getNameIdx();
-    // assert(prefix)
+    assert(prefix);
 
     u32 index = 0;
     if (prefix_name_idx == ma.prefix_cache_name) {
@@ -207,10 +207,10 @@ func void ModuleAnalyser.handleTypeDecl(void* arg, Decl* d) {
 
     switch (d.getKind()) {
     case DeclKind.Function:
-        //assert(0);
+        assert(0);
         return;
     case DeclKind.Import:
-        //assert(0);
+        assert(0);
         return;
     case DeclKind.StructType:
         ma.analyseStructType(cast<StructTypeDecl*>(d));
@@ -227,7 +227,7 @@ func void ModuleAnalyser.handleTypeDecl(void* arg, Decl* d) {
     case DeclKind.Var:
         break;
     case DeclKind.StaticAssert:
-        //assert(0);
+        assert(0);
         return;
     }
     d.setChecked();
@@ -253,8 +253,8 @@ func bool ModuleAnalyser.pushCheck(ModuleAnalyser* ma, Decl* d) {
 }
 
 func void ModuleAnalyser.popCheck(ModuleAnalyser* ma) {
+    assert(ma.checkIndex > 0);
     ma.checkIndex--;
-    // assert(ma.checkIndex > 0);
     ma.scope = ma.checkStack[ma.checkIndex].scope;
 }
 
@@ -416,13 +416,13 @@ func QualType ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt, bool f
         resolved = ma.analyseRefType(cast<RefType*>(t), full);
         break;
     case TypeKind.Struct:
-        // assert(0); // cannot happen
+        assert(0); // cannot happen
         break;
     case TypeKind.Enum:
-        // assert(0); // cannot happen
+        assert(0); // cannot happen
         break;
     case TypeKind.Function:
-        // assert(0); // cannot happen
+        assert(0); // cannot happen
         break;
     }
 
