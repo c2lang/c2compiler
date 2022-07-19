@@ -27,7 +27,6 @@ executable.c2c:
         - common/string_list.c2
         - common/string_buffer.c2
         - common/string_pool.c2
-        - common/pointer_map.c2
         - common/utils.c2
 
         - parser/tokens.c2

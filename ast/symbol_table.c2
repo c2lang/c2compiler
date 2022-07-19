@@ -3,6 +3,9 @@
 
 module ast;
 
+import string_buffer;
+import color;
+
 import stdlib;
 import string;
 import stdio local;
@@ -61,9 +64,11 @@ public func ast.Decl* SymbolTable.find(const SymbolTable* t, u32 name_idx) {
     return nil;
 }
 
-public func void SymbolTable.dump(const SymbolTable* t) {
+public func void SymbolTable.print(const SymbolTable* t, string_buffer.Buf* out) {
     for (u32 i=0; i<t.num_symbols; i++) {
-        printf("  %s\n", ast.idx2name(t.symbols[i]));
+        const char* col = t.decls.get(i).isUsed() ? color.Normal : color.Grey;
+        out.color(col);
+        out.print("    %s\n", ast.idx2name(t.symbols[i]));
     }
 }
 

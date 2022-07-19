@@ -62,6 +62,7 @@
 - put all output through filter for coloring/not
 
 ## Analyser
+- mark Module with main() as used
 - remove check/errors from Component + Main, just do somewhere else?
 - analyser: allow enum switches without prefix (also fix in C2C)
     -> need analyseStmt first

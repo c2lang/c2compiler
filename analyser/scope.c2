@@ -128,7 +128,6 @@ public func ast.Decl* Scope.findGlobalSymbolInModule(Scope* s, ast.Module* mod, 
     ast.Decl* d = mod.getSymbols().find(name_idx);
     if (!d) {
         s.diags.report(loc, "no symbol '%s' in module %s", ast.idx2name(name_idx), mod.getName());
-        s.symbols.dump();
         return nil;
     }
 
