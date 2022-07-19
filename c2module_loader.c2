@@ -83,10 +83,31 @@ public func Module* load(ast_context.Context* context, string_pool.Pool* pool) {
         AliasTypeDecl* t = AliasTypeDecl.create(context, type_name2, 0, true, a, QualType.init2(cast<Type*>(type_)));
         Decl* d = t.asDecl();
         d.setChecked();
+        a.addTypeDecl(d);
         m.addSymbol(ast.name2idx(type_name2), d);
     }
 
     // TODO add other symbols
+    // i8 min_i8
+    // i8 max_i8
+    // u8 min_u8
+    // u8 max_u8
+    // i16 min_i16
+    // i16 max_i16
+    // u16 min_u16
+    // u16 max_u16
+    // i32 min_i32
+    // i32 max_i32
+    // u32 min_u32
+    // u32 max_u32
+    // i64 min_i64
+    // i64 max_i64
+    // u64 min_u64
+    // u64 max_u64
+    // i32/i64 min_isize
+    // u32/u64 max_usize
+    // u32/u64 mun_usize
+    // i32/i64 max_isize
 
     return m;
 }

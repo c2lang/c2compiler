@@ -1,6 +1,13 @@
 
 ## TODO
-- hardcode/create c2 module
+- change ast/utils types to QualType
++ hardcode/create c2 module
+    - add extra symbols
+- Types:
+    - pointer types
+    - Array types
+    - Canonical types
+    - fully analyze types
 - load external components
     - for main component: walk imports
         - for all imports to external component, mark module as used
