@@ -405,14 +405,14 @@ func QualType ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt, bool f
         return qt;
     case TypeKind.Pointer:
         PointerType* pt = cast<PointerType*>(t);
-        ma.analyseType(pt.getInner(), false);
-        // TODO
+        QualType t1 = ma.analyseType(pt.getInner(), false);
+        // TODO create pointer type
         break;
     case TypeKind.Array:
         ArrayType* at = cast<ArrayType*>(t);
-        ma.analyseType(at.getElemType(), true);
+        QualType t1 = ma.analyseType(at.getElemType(), true);
         // TODO size Expr
-        // TODO
+        // TODO create array type
         break;
     case TypeKind.Ref:
         resolved = ma.analyseRefType(cast<RefType*>(t), full);
@@ -438,7 +438,6 @@ func QualType ModuleAnalyser.analyseRefType(ModuleAnalyser* ma, RefType* rt, boo
     IdentifierExpr* ref = rt.getRef();
 
     Decl* d = nil;
-    //stdio.printf("REF %s\n", ref.getName());
 
     if (prefix) { // module.Type
         Module* mod = ma.scope.findModule(prefix.getNameIdx(), prefix.asExpr().getLoc());

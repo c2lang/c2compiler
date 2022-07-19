@@ -37,6 +37,10 @@ public func Module* load(ast_context.Context* context, string_pool.Pool* pool) {
     Module* m = Module.create(name);
     m.setUsed();
 
+    // TODO AST name must be in pool?
+    // Note: add AST, since Decls have AST*
+    AST* a = m.add("<generated>");
+
     for (u32 i=0; i<elemsof(ctypes); i++) {
         const char* type_name = ctypes[i].name;
         const char* type_name2 = pool.add(type_name, string.strlen(type_name), true);
@@ -76,8 +80,10 @@ public func Module* load(ast_context.Context* context, string_pool.Pool* pool) {
         default:
             break;
         }
-        AliasTypeDecl* t = AliasTypeDecl.create(context, type_name2, 0, true, nil, QualType.init2(cast<Type*>(type_)));
-        m.addSymbol(ast.name2idx(type_name2), t.asDecl());
+        AliasTypeDecl* t = AliasTypeDecl.create(context, type_name2, 0, true, a, QualType.init2(cast<Type*>(type_)));
+        Decl* d = t.asDecl();
+        d.setChecked();
+        m.addSymbol(ast.name2idx(type_name2), d);
     }
 
     // TODO add other symbols
