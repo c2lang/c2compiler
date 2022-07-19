@@ -60,7 +60,7 @@ public func void Pool.free(Pool* p) {
 public func const char* Pool.getStart(const Pool* pool) { return pool.data; }
 
 func Node* Pool.getChild(Pool* pool, Node* x, Dir dir) @(inline) {
-    // assert(x);
+    assert(x);
     u16 idx = x.child[dir];
     if (idx) return pool.nodes + idx;
     return nil;
@@ -223,7 +223,7 @@ after_loop:
     string.memcpy(dest, text, len);
     dest[len] = 0;
     pool.size += len + 1;
-    //assert(pool.size < pool.data_capacity);
+    assert(pool.size < pool.data_capacity);
     return dest;
 }
 
@@ -231,7 +231,7 @@ public func void Pool.resize_nodes(Pool* p, u16 capacity) {
     p.node_capacity = capacity;
     Node* nodes = stdlib.malloc(p.node_capacity * sizeof(Node));
     if (p.nodes) {
-        //assert(p.root);
+        assert(p.root);
         u32 root_idx = cast<u32>(p.root - p.nodes);
         string.memcpy(nodes, p.nodes, p.node_count * sizeof(Node));
         stdlib.free(p.nodes);

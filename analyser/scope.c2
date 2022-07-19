@@ -73,7 +73,7 @@ public func void Scope.free(Scope* s) {
 public func void Scope.enter(Scope* s, u32 flags) {
     if (s.lvl == MaxLevels) {
         // TODO give error
-        // assert(0);
+        assert(0);
         return;
     }
     Level* top = &s.levels[s.lvl];
@@ -84,7 +84,7 @@ public func void Scope.enter(Scope* s, u32 flags) {
 }
 
 public func void Scope.exit(Scope* s) {
-    // assert(s.level != 0)
+    assert(s.lvl != 0);
     s.local_scope.crop(s.levels[s.lvl].first_index);
     s.lvl--;
 }

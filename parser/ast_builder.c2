@@ -42,7 +42,7 @@ public func void Builder.setComponent(Builder* b, component.Component* comp) {
 }
 
 public func void Builder.actOnModule(Builder* b, const char* mod_name, SrcLoc mod_loc, const char* filename) {
-    // assert(b.comp);
+    assert(b.comp);
     b.mod = b.comp.getOrAddModule(mod_name);
     if (!b.mod) {
         b.diags.report(mod_loc, "module %s is already defined in another component", mod_name);

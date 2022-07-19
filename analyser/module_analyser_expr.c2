@@ -85,7 +85,7 @@ func QualType ModuleAnalyser.analyseBuiltin(ModuleAnalyser* ma, BuiltinExpr* e) 
 
 func QualType ModuleAnalyser.analyseSizeof(ModuleAnalyser* ma, BuiltinExpr* e) {
     Expr* inner = e.getInner();
-    // assert(inner);
+    assert(inner);
     // TODO switch
     if (inner.getKind() == ExprKind.Type) {
         TypeExpr* te = cast<TypeExpr*>(inner);

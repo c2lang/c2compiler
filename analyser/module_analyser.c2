@@ -402,15 +402,17 @@ func QualType ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt, bool f
     Type* t = qt.getType();
     switch (t.getKind()) {
     case TypeKind.Builtin:
-        break;
+        return qt;
     case TypeKind.Pointer:
         PointerType* pt = cast<PointerType*>(t);
         ma.analyseType(pt.getInner(), false);
+        // TODO
         break;
     case TypeKind.Array:
         ArrayType* at = cast<ArrayType*>(t);
         ma.analyseType(at.getElemType(), true);
         // TODO size Expr
+        // TODO
         break;
     case TypeKind.Ref:
         resolved = ma.analyseRefType(cast<RefType*>(t), full);

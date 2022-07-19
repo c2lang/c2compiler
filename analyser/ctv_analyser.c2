@@ -25,7 +25,7 @@ public type Value struct {
 public func Value get_value(const Expr* e) {
     Value result = { 0 }
 
-    // assert(e.isCTV());
+    assert(e.isCtv());
 
     switch (e.getKind()) {
     case ExprKind.IntegerLiteral:
@@ -41,7 +41,7 @@ public func Value get_value(const Expr* e) {
         result.uvalue = c.getValue();
         break;
     case ExprKind.StringLiteral:
-        // assert(0);
+        assert(0);
         break;
     case ExprKind.Nil:
         break;
@@ -91,7 +91,7 @@ public func Value get_value(const Expr* e) {
 }
 
 func Value get_decl_value(const Decl* d) {
-    // assert(d);
+    assert(d);
     Value result = { 0 }
     switch (d.getKind()) {
     case DeclKind.EnumConstant:
@@ -101,10 +101,10 @@ func Value get_decl_value(const Decl* d) {
     case DeclKind.Var:
         const VarDecl* vd = cast<VarDecl*>(d);
         const Expr* initval = vd.getInit();
-        // assert(initval);
+        assert(initval);
         return get_value(initval);
     default:
-        // assert(0);
+        assert(0);
         break;
     }
     return result;
@@ -158,13 +158,13 @@ func Value get_binaryop_value(const BinaryOperator* e) {
         break;
     case BinaryOpcode.Divide:
         // Note: should already be checked!
-        //assert(right.svalue != 0);
+        assert(right.svalue != 0);
         if (left.is_signed) result.svalue = left.svalue / right.svalue;
         else result.uvalue = left.uvalue / right.uvalue;
         break;
     case BinaryOpcode.Reminder:
         // Note: should already be checked!
-        //assert(right.svalue != 0);
+        assert(right.svalue != 0);
         if (left.is_signed) result.svalue = left.svalue % right.svalue;
         else result.uvalue = left.uvalue % right.uvalue;
         break;
@@ -252,7 +252,7 @@ func Value get_binaryop_value(const BinaryOperator* e) {
     case BinaryOpcode.AndAssign: fallthrough;
     case BinaryOpcode.XorAssign: fallthrough;
     case BinaryOpcode.OrAssign:
-        // assert(0);
+        assert(0);
         break;
     }
     return result;

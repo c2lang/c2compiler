@@ -20,7 +20,7 @@ public type CompoundStmt struct {
 } @(opaque)
 
 public func CompoundStmt* CompoundStmt.create(ast_context.Context* c, Stmt** stmts, u32 count) @(inline) {
-    // assert(count < 65556);
+    assert(count < 65556);
     u32 size = sizeof(CompoundStmt) + count * sizeof(Stmt**);
 
     CompoundStmt* s = c.alloc(size);

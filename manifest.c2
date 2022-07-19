@@ -42,7 +42,7 @@ func bool getYamlInfoInfo(yaml.Parser* parser,
     while (!iter.done()) {
         // NOTE: module names need to be put in normal pool, NOT auxPool!
         const char* value = iter.getValue();
-        // assert(value)
+        assert(value);
         usize len = string.strlen(value);
         const char* modname = astPool.add(value, len, 1);
         // TODO pass loc

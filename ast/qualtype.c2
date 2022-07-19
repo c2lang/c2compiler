@@ -34,7 +34,7 @@ public func bool QualType.isInvalid(const QualType* qt) @(inline) { return qt.pt
 
 public func Type* QualType.getType(QualType* qt) @(inline) {
     Type* t = qt.getTypeOrNil();
-    // assert(t);
+    assert(t);
     return t;
 }
 

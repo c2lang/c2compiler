@@ -53,7 +53,7 @@ func ast.Decl* StructDecls.getDecl(StructDecls* v, u32 index) {
 }
 
 func void StructDecls.addFunc(StructDecls* v, u32 index, ast.FunctionDecl* fn) {
-    // assert(index < v.count);
+    assert(index < v.count);
     StructDeclInfo* info = &v.data[index];
     info.functions.add(fn);
 }

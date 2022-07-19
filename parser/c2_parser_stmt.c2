@@ -177,7 +177,7 @@ func u32 Parser.skipArray(Parser* p, u32 lookahead) {
     id:             // id = label
 */
 func Stmt* Parser.parseDeclOrStmt(Parser* p) {
-    // assert(p.tok.kind == Kind.Identifier);
+    assert(p.tok.kind == Kind.Identifier);
     bool isDecl = p.isTypeSpec();
 
     if (isDecl) return p.parseDeclStmt(true, true);

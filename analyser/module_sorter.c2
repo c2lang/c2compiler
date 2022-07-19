@@ -117,7 +117,7 @@ func void ModuleSorter.handleModule(void* arg, ast.Module* mod) {
 func void ModuleSorter.handleImport(void* arg, ast.ImportDecl* d) {
     ModuleSorter* s = arg;
     ast.Module* dest = d.getDest();
-    //assert(dest);
+    assert(dest);
 
     // ignore imports from other components
     if (!s.comp.hasModule(dest)) return;
@@ -131,7 +131,7 @@ func u32 ModuleSorter.mod2idx(const ModuleSorter* s, const ast.Module* mod) {
     for (u32 i=0; i<s.num_mods; i++) {
         if (s.modules[i] == mod) return i;
     }
-    //assert(0);
+    assert(0);
     return 0;   // should not happen
 }
 

@@ -59,7 +59,7 @@ public func u32 EnumTypeDecl.getNumConstants(const EnumTypeDecl* d) @(inline) {
 }
 
 public func EnumConstantDecl** EnumTypeDecl.getConstants(EnumTypeDecl* d) {
-    // assert(d.getNumConstants());
+    assert(d.getNumConstants());
     return d.constants;
 }
 

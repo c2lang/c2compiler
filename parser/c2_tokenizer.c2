@@ -785,8 +785,8 @@ func  void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
 }
 
 public func Token Tokenizer.lookahead(Tokenizer* t, u32 n) {
-    // assert(n > 0);
-    // assert(n <= MaxLookahead);
+    assert(n > 0);
+    assert(n <= MaxLookahead);
     while (t.next_count < n) {
         const u32 slot = (t.next_head + t.next_count) % MaxLookahead;
         t.lex_internal(&t.next[slot]);

@@ -157,7 +157,7 @@ func void Parser.parse_value(Parser* p) {
             p.add_scalar_value(p.token.text_idx);
             p.consumeToken();
         } else {
-            //assert(0); // valid??
+            assert(0); // valid??
         }
         return;
     case TokenKind.Dash:
@@ -269,12 +269,12 @@ func void Parser.push_root(Parser* p) {
 }
 
 func void Parser.push_node(Parser* p, Node* n, NodeKind parent_kind, i32 indent) {
-    //assert(p.stack_size);
+    assert(p.stack_size);
     u32 n_idx = p.data.node2idx(n);
     StackLevel* top = &p.stack[p.stack_size-1];
 
     if (indent < top.indent) { // can happen at end of sequence (1 lower)
-        //assert(indent + 1 == top.indent);
+        assert(indent + 1 == top.indent);
         p.pop();
         top = &p.stack[p.stack_size-1];
     }
@@ -287,8 +287,8 @@ func void Parser.push_node(Parser* p, Node* n, NodeKind parent_kind, i32 indent)
         }
         top.last_child = nil;
     } else {
-        //assert(p.stack_size + 1 < MAX_DEPTH);
-        //assert(indent > top.indent);
+        assert(p.stack_size + 1 < MaxDepth);
+        assert(indent > top.indent);
         Node* parent = top.node;
 
         if (parent.kind == NodeKind.Unknown) {
@@ -299,7 +299,7 @@ func void Parser.push_node(Parser* p, Node* n, NodeKind parent_kind, i32 indent)
         if (top.last_child) {
             top.last_child.next_idx = n_idx;
         } else {
-            //assert(parent.child_idx == 0);
+            assert(parent.child_idx == 0);
             parent.child_idx = n_idx;
         }
         top.last_child = n;    // set last_child on current level before adding level
