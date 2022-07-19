@@ -16,11 +16,11 @@ func QualType ModuleAnalyser.analyseExpr(ModuleAnalyser* ma, Expr* e) {
     switch (e.getKind()) {
     case ExprKind.IntegerLiteral:
         // TODO determine kind based on value, for now just return u32
-        return QualType.init2(cast<Type*>(g_u32));
+        return g_u32;
     case ExprKind.BooleanLiteral:
-        return QualType.init2(cast<Type*>(g_bool));
+        return g_bool;
     case ExprKind.CharLiteral:
-        return QualType.init2(cast<Type*>(g_i8));
+        return g_i8;
     case ExprKind.StringLiteral:
         // char* (const?)
         break;

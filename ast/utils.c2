@@ -72,19 +72,21 @@ static_assert(16, sizeof(StructType));
 static_assert(16, sizeof(EnumType));
 static_assert(16, sizeof(FunctionType));
 
-// TODO store as QualTypes?
-public BuiltinType* g_u8;
-public BuiltinType* g_u16;
-public BuiltinType* g_u32;
-public BuiltinType* g_u64;
-public BuiltinType* g_i8;
-public BuiltinType* g_i16;
-public BuiltinType* g_i32;
-public BuiltinType* g_i64;
-public BuiltinType* g_f32;
-public BuiltinType* g_f64;
-public BuiltinType* g_void;
-public BuiltinType* g_bool;
+// TODO use array with BuiltinTypeKind as index
+public QualType g_u8;
+public QualType g_u16;
+public QualType g_u32;
+public QualType g_u64;
+public QualType g_i8;
+public QualType g_i16;
+public QualType g_i32;
+public QualType g_i64;
+public QualType g_f32;
+public QualType g_f64;
+public QualType g_isize;
+public QualType g_usize;
+public QualType g_void;
+public QualType g_bool;
 
 const char* g_names_start;
 
@@ -94,18 +96,21 @@ u32 ast_count;      // Note: first index used to indicate nil
 u32 ast_capacity;
 
 public func void init(Context* c, const char* names_start) {
-    g_u8 = BuiltinType.create(c, BuiltinTypeKind.UInt8);
-    g_u16 = BuiltinType.create(c, BuiltinTypeKind.UInt16);
-    g_u32 = BuiltinType.create(c, BuiltinTypeKind.UInt32);
-    g_u64 = BuiltinType.create(c, BuiltinTypeKind.UInt64);
-    g_i8 = BuiltinType.create(c, BuiltinTypeKind.Int8);
-    g_i16 = BuiltinType.create(c, BuiltinTypeKind.Int16);
-    g_i32 = BuiltinType.create(c, BuiltinTypeKind.Int32);
-    g_i64 = BuiltinType.create(c, BuiltinTypeKind.Int64);
-    g_f32 = BuiltinType.create(c, BuiltinTypeKind.Float32);
-    g_f64 = BuiltinType.create(c, BuiltinTypeKind.Float64);
-    g_void = BuiltinType.create(c, BuiltinTypeKind.Void);
-    g_bool = BuiltinType.create(c, BuiltinTypeKind.Bool);
+    g_u8.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.UInt8)));
+    g_u16.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.UInt16)));
+    g_u32.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.UInt32)));
+    g_u64.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.UInt64)));
+    g_i8.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.Int8)));
+    g_i16.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.Int16)));
+    g_i32.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.Int32)));
+    g_i64.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.Int64)));
+    g_f32.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.Float32)));
+    g_f64.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.Float64)));
+    g_isize.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.Int64)));
+    g_usize.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.UInt64)));
+    g_void.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.Void)));
+    g_bool.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.Bool)));
+
     g_names_start = names_start;
     ast_count = 1;
     ast_capacity = 0;
