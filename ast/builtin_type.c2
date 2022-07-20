@@ -53,6 +53,7 @@ public func BuiltinType* BuiltinType.create(ast_context.Context* c, BuiltinTypeK
     BuiltinType* b = c.alloc(sizeof(BuiltinType));
     b.parent.init(TypeKind.Builtin);
     b.parent.builtinTypeBits.kind = kind;
+    b.parent.setCanonicalType(QualType.init2(&b.parent));
     return b;
 }
 

@@ -63,14 +63,14 @@ static_assert(32, sizeof(ExplicitCastExpr));
 static_assert(24, sizeof(ImplicitCastExpr));
 
 static_assert(8, sizeof(QualType));
-static_assert(4, sizeof(Type));
-static_assert(4, sizeof(BuiltinType));
-static_assert(16, sizeof(PointerType));
-static_assert(16, sizeof(ArrayType));
-static_assert(16, sizeof(RefType));
-static_assert(16, sizeof(StructType));
-static_assert(16, sizeof(EnumType));
-static_assert(16, sizeof(FunctionType));
+static_assert(16, sizeof(Type));
+static_assert(16, sizeof(BuiltinType));
+static_assert(24, sizeof(PointerType));
+static_assert(24, sizeof(ArrayType));
+static_assert(24, sizeof(RefType));
+static_assert(24, sizeof(StructType));
+static_assert(24, sizeof(EnumType));
+static_assert(24, sizeof(FunctionType));
 
 // TODO use array with BuiltinTypeKind as index
 public QualType g_u8;

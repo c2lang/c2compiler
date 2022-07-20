@@ -1,12 +1,17 @@
 
 ## TODO
-- change ast/utils types to QualType
-+ hardcode/create c2 module
-    - add extra symbols
 - Types:
+    - Canonical types
+        + enum
+        + struct
+        + builtin
+        - ref
+        - array
+        - pointer
+        - function
+        - alias? (does not exist yet)
     - pointer types
     - Array types
-    - Canonical types
     - fully analyze types
 - load external components
     - for main component: walk imports
@@ -31,7 +36,7 @@
             -> if they create a new one, they check
     - fill in all imports
         -> mark all external modules if used (later only parse those needed)
-
+- hardcode/create c2 module - add extra symbols
 - create DiagnosticsEngine, return true if error, false if warning
     - user should still be able to use -Werror like
     - add info() for 2nd info like 'older decl is here'

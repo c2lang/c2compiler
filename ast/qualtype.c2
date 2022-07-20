@@ -94,7 +94,12 @@ public func void QualType.print(const QualType* qt, string_buffer.Buf* out) {
         if (quals & QualType_Const) out.add("const ");
         if (quals & QualType_Volatile) out.add("volatile ");
         t.print(out);
-        // TODO canonicalType '=> ..'
+
+        const Type* canon = t.canonicalType.getTypeOrNil();
+        if (canon && canon != t) {
+            out.add(" => ");
+            t.canonicalType.print(out);
+        }
     } else {
         out.color(col_Error);
         out.add("??");
