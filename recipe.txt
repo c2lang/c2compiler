@@ -1,6 +1,6 @@
 
-plugin plugins/deps_generator [all-targets files]
-plugin plugins/refs_generator [all-targets]
+plugin deps_generator [all-targets files]
+plugin refs_generator [all-targets]
 
 executable c2c
 	$warnings no-unused

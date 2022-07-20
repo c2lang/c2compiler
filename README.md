@@ -8,6 +8,15 @@
         - ref
         - array
         - pointer
+            Enum*
+                Parse:
+                    PointerType -> RefType
+                Analysis:
+                    PointerType -> EnumType
+                      ------         u8
+                                     --
+                -> VarDecl has origType (used for getting refs)
+                -> TypeExpr also has an origType!
         - function
         - alias? (does not exist yet)
     - pointer types
