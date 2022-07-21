@@ -222,8 +222,8 @@ public func void Builder.actOnFunctionBody(Builder* b, FunctionDecl* f, Compound
     f.setBody(body);
 }
 
-public func EnumConstantDecl* Builder.actOnEnumConstant(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType qt, Expr* initial) {
-    return EnumConstantDecl.create(b.context, name, loc, is_public, qt, b.ast, initial);
+public func EnumConstantDecl* Builder.actOnEnumConstant(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType qt, Expr* init_expr) {
+    return EnumConstantDecl.create(b.context, name, loc, is_public, qt, b.ast, init_expr);
 }
 
 public func void Builder.actOnEnumType(Builder* b,

@@ -113,7 +113,10 @@ public func void QualType.fullPrint(const QualType* qt, string_buffer.Buf* out, 
     if (quals & QualType_Const) out.add(" const");
     if (quals & QualType_Volatile) out.add(" volatile");
     const Type* t = qt.getTypeOrNil();
-    if (t) t.fullPrint(out, indent + 2);
-    else out.add(" type=nil");
+    if (t) {
+        out.add("\n");
+        t.fullPrint(out, indent + 2);
+    }
+    else out.add(" type=nil\n");
 }
 

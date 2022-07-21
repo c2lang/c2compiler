@@ -11,6 +11,8 @@ import module_list;
 import scope;
 import source_mgr;
 
+import string_buffer; // TEMP
+
 import string;
 import stdlib;
 import stdio;
@@ -127,6 +129,8 @@ public func void check(diagnostics.Diags* diags, ast_context.Context* context, m
     // analyse types
     mod.visitTypeDecls(ModuleAnalyser.handleTypeDecl, &ma);
 
+    mod.visitVarDecls(ModuleAnalyser.handleVarDecl, &ma);
+
     // analyse vars
     // analyse static asserts
     // analyse function protos
@@ -230,6 +234,39 @@ func void ModuleAnalyser.handleTypeDecl(void* arg, Decl* d) {
         assert(0);
         return;
     }
+    d.setChecked();
+    ma.popCheck();
+}
+
+func void ModuleAnalyser.handleVarDecl(void* arg, VarDecl* v) {
+    ModuleAnalyser* ma = arg;
+    Decl* d = v.asDecl();
+    if (d.isChecked()) return;
+
+    if (!ma.pushCheck(d)) return;
+
+    QualType qt = d.getType();
+
+    stdio.printf("VAR %s\n", d.getName());
+    string_buffer.Buf* out = string_buffer.create(512);
+    qt.fullPrint(out, 2);
+    stdio.puts(out.data());
+
+    out.clear();
+    QualType res = ma.analyseType(qt, true);
+    res.fullPrint(out, 2);
+    stdio.puts(out.data());
+
+    out.free();
+
+    if (res.isInvalid()) return;
+    d.setType(res);
+
+    Expr* init_expr = v.getInit();
+    if (init_expr) {
+        // TODO
+    }
+
     d.setChecked();
     ma.popCheck();
 }

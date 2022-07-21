@@ -103,6 +103,15 @@ public func void AST.visitTypeDecls(const AST* a, TypeDeclVisitor visitor, void*
     }
 }
 
+public type VarDeclVisitor func void (void* arg, VarDecl* d);
+
+public func void AST.visitVarDecls(const AST* a, VarDeclVisitor visitor, void* arg) {
+    Decl** variables = a.variables.getDecls();
+    for (u32 i=0; i<a.variables.size(); i++) {
+        visitor(arg, cast<VarDecl*>(variables[i]));
+    }
+}
+
 public func Decl* AST.findType(const AST* a, u32 name_idx) {
     Decl** types = a.types.getDecls();
     for (u32 i=0; i<a.types.size(); i++) {

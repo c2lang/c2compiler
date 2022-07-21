@@ -181,13 +181,13 @@ func void Parser.parseEnumType(Parser* p, const char* name, u32 loc, bool is_pub
             SrcLoc const_loc = p.tok.loc;
             p.consumeToken();
 
-            Expr* initial = nil;
+            Expr* init_expr = nil;
             if (p.tok.kind == Kind.Equal) {
                 p.consumeToken();
-                initial = p.parseExpr(); // p.parseConstantExpr()
+                init_expr = p.parseExpr(); // p.parseConstantExpr()
             }
 
-            EnumConstantDecl* constant = p.builder.actOnEnumConstant(const_name, const_loc, is_public, qt, initial);
+            EnumConstantDecl* constant = p.builder.actOnEnumConstant(const_name, const_loc, is_public, qt, init_expr);
             constants.add(constant.asDecl());
 
             if (p.tok.kind != Kind.Comma) break;
