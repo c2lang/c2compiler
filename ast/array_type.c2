@@ -57,3 +57,8 @@ func void ArrayType.debugPrint(const ArrayType* t, string_buffer.Buf* out) {
     out.add("ArrayType TODO\n");
 }
 
+public func void ArrayType.fullPrint(const ArrayType* t, string_buffer.Buf* out, u32 indent) {
+    out.indent(indent);
+    out.add("ArrayType\n");
+    t.elem.fullPrint(out, indent + 2);
+}

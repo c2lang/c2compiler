@@ -107,3 +107,43 @@ func void Type.debugPrint(const Type* t, string_buffer.Buf* out) {
     }
 }
 
+public func void Type.fullPrint(const Type* t, string_buffer.Buf* out, u32 indent) {
+    switch (t.getKind()) {
+    case TypeKind.Builtin:
+        BuiltinType.fullPrint(cast<BuiltinType*>(t), out, indent);
+        break;
+    case TypeKind.Pointer:
+        PointerType.fullPrint(cast<PointerType*>(t), out, indent);
+        break;
+    case TypeKind.Array:
+        ArrayType.fullPrint(cast<ArrayType*>(t), out, indent);
+        break;
+    case TypeKind.Ref:
+        RefType.fullPrint(cast<RefType*>(t), out, indent);
+        break;
+    case TypeKind.Struct:
+        StructType.fullPrint(cast<StructType*>(t), out, indent);
+        break;
+    case TypeKind.Enum:
+        EnumType.fullPrint(cast<EnumType*>(t), out, indent);
+        break;
+    case TypeKind.Function:
+        FunctionType.fullPrint(cast<FunctionType*>(t), out, indent);
+        break;
+    }
+    out.indent(indent);
+    out.add("canonical=");
+    Type* canon = t.canonicalType.getTypeOrNil();
+    if (canon) {
+        if (canon == t) {
+            out.add("this\n");
+        } else {
+            out.add("\n");
+            canon.fullPrint(out, indent + 2);
+        }
+    } else {
+        out.add("NIL\n");
+    }
+
+}
+

@@ -33,3 +33,8 @@ func void PointerType.debugPrint(const PointerType* t, string_buffer.Buf* out) {
     out.add("*");
 }
 
+public func void PointerType.fullPrint(const PointerType* t, string_buffer.Buf* out, u32 indent) {
+    out.indent(indent);
+    out.add("PointerType\n");
+    t.inner.fullPrint(out, indent + 2);
+}
