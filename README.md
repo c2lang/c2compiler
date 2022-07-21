@@ -6,7 +6,6 @@
         + struct
         + builtin
         - ref
-        - array
         - pointer
             Enum*
                 Parse:
@@ -17,6 +16,12 @@
                                      --
                 -> VarDecl has origType (used for getting refs)
                 -> TypeExpr also has an origType!
+        - array
+            Parse:
+                ArrayType -> RefType
+            Analyses:
+                ArrayType -> StructType
+                ---------      ---
         - function
         - alias? (does not exist yet)
     - pointer types

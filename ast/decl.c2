@@ -95,6 +95,7 @@ public func u32 Decl.getNameIdx(const Decl* d) @(inline) {
 public func SrcLoc Decl.getLoc(const Decl* d) @(inline) { return d.loc; }
 
 public func QualType Decl.getType(const Decl* d) @(inline) { return d.qt; }
+public func void Decl.setType(Decl* d, QualType qt) @(inline) { d.qt = qt; }
 
 public func AST* Decl.getAST(const Decl* d) @(inline) { return idx2ast(d.ast_idx); }
 
