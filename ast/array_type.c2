@@ -39,6 +39,15 @@ public func Type* ArrayType.asType(ArrayType* t) @(inline) { return &t.parent; }
 
 public func QualType ArrayType.getElemType(const ArrayType* t) { return t.elem; }
 
+public func bool ArrayType.isIncremental(const ArrayType*t) {
+    return t.parent.arrayTypeBits.is_incremental;
+}
+
+public func Expr* ArrayType.getSizeExpr(const ArrayType*t) {
+    if (t.parent.arrayTypeBits.has_size) return t.sizeExpr;
+    return nil;
+}
+
 func void ArrayType.print(const ArrayType* t, string_buffer.Buf* out) {
     t.elem.print(out);
     out.add("[");

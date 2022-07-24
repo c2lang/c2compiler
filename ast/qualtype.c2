@@ -36,7 +36,7 @@ public func void QualType.set(QualType* qt, Type* t) @(inline) {
 
 public func bool QualType.isInvalid(const QualType* qt) @(inline) { return qt.ptr == 0; }
 
-public func Type* QualType.getType(QualType* qt) @(inline) {
+public func Type* QualType.getType(const QualType* qt) @(inline) {
     Type* t = qt.getTypeOrNil();
     assert(t);
     return t;
@@ -47,6 +47,11 @@ public func Type* QualType.getTypeOrNil(const QualType* qt) @(inline) {
     return cast<Type*>(temp);
     // TODO fix in C2C
     //return cast<Type*>(qt.ptr & ~QualType_Mask);
+}
+
+public func bool QualType.hasCanonicalType(const QualType* qt) @(inline) {
+    const Type* t = qt.getType();
+    return t.canonicalType.ptr != 0;
 }
 
 public func u32 QualType.getQualifiers(const QualType* qt) @(inline) {
@@ -60,6 +65,13 @@ public func void QualType.dump(const QualType* qt) {
     } else {
         stdio.printf("QualType(nil)\n");
     }
+}
+
+public func void QualType.dump_full(const QualType* qt) {
+    string_buffer.Buf* out = string_buffer.create(512);
+    qt.fullPrint(out, 0);
+    stdio.puts(out.data());
+    out.free();
 }
 
 // TODO remove
