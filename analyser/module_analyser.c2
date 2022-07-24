@@ -244,11 +244,10 @@ func void ModuleAnalyser.handleVarDecl(void* arg, VarDecl* v) {
     if (!ma.pushCheck(d)) return;
 
     QualType qt = d.getType();
-
-    qt.dump_full();
+    //qt.dump_full();
 
     QualType res = ma.analyseType(qt, true);
-    res.dump_full();
+    //res.dump_full();
 
     if (res.isInvalid()) return;
     d.setType(res);

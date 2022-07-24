@@ -203,6 +203,7 @@ after_loop:
         u16 parent_idx = cast<u16>(n ? cast<u16>(n - pool.nodes) : 0);
         if (pool.node_count == pool.node_capacity) {
             pool.resize_nodes(pool.node_capacity * 2);
+            parent = pool.nodes + parent_idx;
         }
         // fill new node
         n = pool.nodes + pool.node_count;
