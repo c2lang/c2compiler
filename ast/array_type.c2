@@ -44,7 +44,7 @@ public func bool ArrayType.isIncremental(const ArrayType*t) {
 }
 
 public func Expr* ArrayType.getSizeExpr(const ArrayType*t) {
-    if (t.parent.arrayTypeBits.has_size) return t.sizeExpr;
+    if (t.parent.arrayTypeBits.has_size) return t.sizeExpr[0];
     return nil;
 }
 

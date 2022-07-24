@@ -45,7 +45,7 @@ public func Module* load(ast_context.Context* context, string_pool.Pool* pool) {
         const char* type_name = ctypes[i].name;
         const char* type_name2 = pool.add(type_name, string.strlen(type_name), true);
         // TODO use table inside ast.utils
-        QualType qt;
+        QualType qt = { 0 }
         switch (ctypes[i].kind) {
         case BuiltinTypeKind.Int8:
             qt = g_i8;

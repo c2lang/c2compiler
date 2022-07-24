@@ -442,6 +442,9 @@ func QualType ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt, bool f
             resolved = qt;
             t.setCanonicalType(res);
         } else {
+//public func Type* Type.getPtrType(const Type* t) @(inline) { return t.ptr_type; }
+//public func void Type.setPtrType(Type* t, PointerType* pt) @(inline) { t.ptr_type = pt; }
+            // TODO check if pointertype already exists for that type!
             Type* t2 = cast<Type*>(PointerType.create(ma.context, res));
             resolved.set(t2);
             t2.setCanonicalType(resolved);
@@ -452,7 +455,13 @@ func QualType ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt, bool f
         QualType inner = at.getElemType();
         QualType res = ma.analyseType(inner, true);
         if (res.isInvalid()) break;
-        // TODO size Expr
+
+        Expr* size = at.getSizeExpr();
+        if (size) {
+            QualType res2 = ma.analyseExpr(size);
+            if (res2.isInvalid()) break;
+            // TODO check if ok / ctv
+        }
 
         if (inner.ptr == res.ptr) {
             resolved = qt;
@@ -476,8 +485,6 @@ func QualType ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt, bool f
         assert(0); // cannot happen
         break;
     }
-
-    // TODO more
 
     return resolved;
 }
