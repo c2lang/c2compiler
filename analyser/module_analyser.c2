@@ -198,22 +198,16 @@ func void ModuleAnalyser.handleStructFunc(void* arg, FunctionDecl* d) {
     prefix.setDecl(ma.struct_decls.getDecl(index));
 }
 
-
-func void ModuleAnalyser.handleTypeDecl(void* arg, Decl* d) {
-    ModuleAnalyser* ma = arg;
-
+func void ModuleAnalyser.analyseGlobalDecl(ModuleAnalyser* ma, Decl* d) {
     if (d.isChecked()) return;
-    // TODO make exception for EnumConstants. Can happen if: B = State.A + 1,
 
     if (!ma.pushCheck(d)) return;
 
     switch (d.getKind()) {
     case DeclKind.Function:
-        assert(0);
-        return;
+        break;
     case DeclKind.Import:
-        assert(0);
-        return;
+        break;
     case DeclKind.StructType:
         ma.analyseStructType(cast<StructTypeDecl*>(d));
         break;
@@ -221,27 +215,38 @@ func void ModuleAnalyser.handleTypeDecl(void* arg, Decl* d) {
         ma.analyseEnumType(cast<EnumTypeDecl*>(d));
         break;
     case DeclKind.EnumConstant:
+        // TODO
         break;
     case DeclKind.FunctionType:
+        // TODO
         break;
     case DeclKind.AliasType:
         break;
     case DeclKind.Var:
+        ma.analyseGlobalVarDecl(cast<VarDecl*>(d));
         break;
     case DeclKind.StaticAssert:
-        assert(0);
-        return;
+        break;
     }
+
     d.setChecked();
     ma.popCheck();
 }
 
+func void ModuleAnalyser.handleTypeDecl(void* arg, Decl* d) {
+    ModuleAnalyser* ma = arg;
+
+    ma.analyseGlobalDecl(d);
+}
+
 func void ModuleAnalyser.handleVarDecl(void* arg, VarDecl* v) {
     ModuleAnalyser* ma = arg;
-    Decl* d = v.asDecl();
-    if (d.isChecked()) return;
 
-    if (!ma.pushCheck(d)) return;
+    ma.analyseGlobalDecl(v.asDecl());
+}
+
+func void ModuleAnalyser.analyseGlobalVarDecl(ModuleAnalyser* ma, VarDecl* v) {
+    Decl* d = v.asDecl();
 
     QualType qt = d.getType();
     //qt.dump_full();
@@ -254,12 +259,14 @@ func void ModuleAnalyser.handleVarDecl(void* arg, VarDecl* v) {
 
     Expr* initval = v.getInit();
     if (initval) {
-        ma.analyseExpr(initval);
+        QualType res2 = ma.analyseExpr(initval);
+
+        if (!initval.isCtv()) {
+            ma.diags.report(initval.getLoc(), "initializer is not a compile-time value");
+            return;
+        }
         // TODO check type
     }
-
-    d.setChecked();
-    ma.popCheck();
 }
 
 func bool ModuleAnalyser.pushCheck(ModuleAnalyser* ma, Decl* d) {
@@ -389,8 +396,11 @@ func void ModuleAnalyser.analyseEnumType(ModuleAnalyser* ma, EnumTypeDecl* d) {
 
         Expr* initval = c.getInit();
         if (initval) {
-            ma.analyseExpr(initval);
-            // TODO check if CTV
+            QualType res = ma.analyseExpr(initval);
+            if (!initval.isCtv()) {
+                ma.diags.report(initval.getLoc(), "initializer is not a compile-time value");
+                return;
+            }
             ctv_analyser.Value ctv = ctv_analyser.get_value(initval);
             if (ctv.uvalue < value) {
                 ma.diags.report(initval.getLoc(), "enum constants need to increase (value %u, previous %u)", ctv.uvalue, value-1);

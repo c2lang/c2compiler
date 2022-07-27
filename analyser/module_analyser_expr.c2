@@ -28,7 +28,7 @@ func QualType ModuleAnalyser.analyseExpr(ModuleAnalyser* ma, Expr* e) {
         // void*
         break;
     case ExprKind.Identifier:
-        break;
+        return ma.analyseIdentifier(cast<IdentifierExpr*>(e));
     case ExprKind.Type:
         break;
     case ExprKind.Call:
@@ -42,7 +42,7 @@ func QualType ModuleAnalyser.analyseExpr(ModuleAnalyser* ma, Expr* e) {
     case ExprKind.BinaryOperator:
         break;
     case ExprKind.UnaryOperator:
-        break;
+        return ma.analyseUnaryOperator(cast<UnaryOperator*>(e));
     case ExprKind.ConditionalOperator:
         break;
     case ExprKind.Builtin:
@@ -59,6 +59,56 @@ func QualType ModuleAnalyser.analyseExpr(ModuleAnalyser* ma, Expr* e) {
     case ExprKind.ExplicitCast:
         break;
     case ExprKind.ImplicitCast:
+        break;
+    }
+    return QualType.init0();
+}
+
+func QualType ModuleAnalyser.analyseIdentifier(ModuleAnalyser* ma, IdentifierExpr* e) {
+    Decl* d = ma.scope.find(e.getNameIdx());
+    if (!d) return QualType.init0();
+
+    if (!d.isChecked()) {
+        // TODO need to have correct scope
+        ma.analyseGlobalDecl(d);
+        // TODO need result
+    }
+    // if function, mark is CTC / CTV
+
+    return QualType.init0();
+}
+
+func QualType ModuleAnalyser.analyseUnaryOperator(ModuleAnalyser* ma, UnaryOperator* e) {
+    QualType t = ma.analyseExpr(e.getInner());
+    if (t.isInvalid()) return QualType.init0();
+
+    // TODO need rvalue stuff
+    switch (e.getKind()) {
+    case UnaryOpcode.PostInc:
+        break;
+    case UnaryOpcode.PostDec:
+        break;
+    case UnaryOpcode.PreInc:
+        break;
+    case UnaryOpcode.PreDec:
+        break;
+    case UnaryOpcode.AddrOf:
+        // TODO check inner
+        e.asExpr().isCtc();
+        break;
+    case UnaryOpcode.Deref:
+        break;
+    case UnaryOpcode.Minus:
+        // TODO check inner
+        e.asExpr().copyConstantFlags(e.getInner());
+        break;
+    case UnaryOpcode.Not:
+        // TODO check inner
+        e.asExpr().copyConstantFlags(e.getInner());
+        break;
+    case UnaryOpcode.LNot:
+        // TODO check inner
+        e.asExpr().copyConstantFlags(e.getInner());
         break;
     }
     return QualType.init0();

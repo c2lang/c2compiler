@@ -1,14 +1,13 @@
 
 ## TODO
 - when parsing a file all Type* will be the same! So re-use pointers.
-    -> this is not the case for variable pointers!
+    -> only need to resolve once then
     -> the source location is not the same! (different TypeExpr, same QualType)
     -> between modules, re-use same QualType during analysis, so we can do ptr-compare on Type
     -> RefType is different, since it has a different IdentifierExpr (with loc)
     IDEA: or dont create more ptr-types, but just check if they point to the same decl!
         -> sames space + origType ptr
         -> canonicalType must be the same!
-- A functionType should not have the name, only the return type + args
 - Types:
     - Canonical types
         + enum

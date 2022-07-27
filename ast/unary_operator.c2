@@ -58,6 +58,8 @@ public func UnaryOpcode UnaryOperator.getKind(const UnaryOperator* e) {
 public func Expr* UnaryOperator.getInner(const UnaryOperator* e) { return e.inner; }
 public func Expr** UnaryOperator.getInner2(UnaryOperator* e) { return &e.inner; }
 
+public func Expr* UnaryOperator.asExpr(UnaryOperator* e) { return &e.parent; }
+
 func bool UnaryOperator.isBefore(const UnaryOperator* e) {
     switch (e.getKind()) {
     case UnaryOpcode.PostInc: return false;

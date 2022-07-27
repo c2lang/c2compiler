@@ -68,6 +68,11 @@ public func bool Expr.isCtv(const Expr* e) @(inline) { return e.parent.exprBits.
 
 public func bool Expr.isCtc(const Expr* e) @(inline) { return e.parent.exprBits.is_ctc; }
 
+public func void Expr.copyConstantFlags(Expr* e, const Expr* other) {
+    e.parent.exprBits.is_ctv = other.parent.exprBits.is_ctv;
+    e.parent.exprBits.is_ctc = other.parent.exprBits.is_ctc;
+}
+
 public func SrcLoc Expr.getLoc(const Expr* e) @(inline) { return e.loc; }
 
 public func void Expr.dump(Expr* e) {
