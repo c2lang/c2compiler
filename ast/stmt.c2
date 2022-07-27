@@ -71,7 +71,7 @@ func void Stmt.init(Stmt* s, StmtKind k) @(inline) {
 public func StmtKind Stmt.getKind(const Stmt* s) @(inline) { return cast<StmtKind>(s.stmtBits.kind); }
 
 public func void Stmt.dump(const Stmt* s) {
-    string_buffer.Buf* out = string_buffer.create(10*4096);
+    string_buffer.Buf* out = string_buffer.create(10*4096, utils.useColor());
     s.print(out, 0);
     stdio.puts(out.data());
     out.free();

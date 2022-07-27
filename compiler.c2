@@ -22,10 +22,7 @@ import string_pool;
 import utils;
 
 import string;
-// for sort
-import color;
 import stdlib;
-
 import stdio local;
 
 // TODO or return/add Component?
@@ -216,7 +213,7 @@ func void Compiler.build(Compiler* c,
     features.add("feature_a");
     c.parser = c2_parser.create(sm, diags, c.builder, c.astPool, &features);
 
-    printf("%sparsing %s%s\n", color.Yellow, target.getName(), color.Normal);
+    printf("parsing %s\n", target.getName());
     u64 t1_start = utils.now();
     bool ok = true;
     for (u32 j=0; j<target.numFiles(); j++) {

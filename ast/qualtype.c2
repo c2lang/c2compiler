@@ -68,7 +68,7 @@ public func void QualType.dump(const QualType* qt) {
 }
 
 public func void QualType.dump_full(const QualType* qt) {
-    string_buffer.Buf* out = string_buffer.create(512);
+    string_buffer.Buf* out = string_buffer.create(512, utils.useColor());
     qt.fullPrint(out, 0);
     stdio.puts(out.data());
     out.free();

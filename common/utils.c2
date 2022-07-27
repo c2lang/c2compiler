@@ -61,3 +61,7 @@ public func bool findProjectDir() {
     return true;
 }
 
+public func bool useColor() {
+    return unistd.isatty(1);
+}
+

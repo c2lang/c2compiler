@@ -17,7 +17,7 @@ public type Buf struct {
 
 static_assert(24, sizeof(Buf));
 
-public func Buf* create(u32 capacity, bool colors = true)
+public func Buf* create(u32 capacity, bool colors)
 {
     Buf* buf = malloc(sizeof(Buf));
     buf.capacity = capacity;

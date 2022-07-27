@@ -65,7 +65,7 @@ public func i32 main(i32 argc, char** argv) {
     string_pool.Pool* auxPool = string_pool.create(64*1024, 0);
 
     source_mgr.SourceMgr* sm = source_mgr.create();
-    diagnostics.Diags* diags = diagnostics.create(sm, true);
+    diagnostics.Diags* diags = diagnostics.create(sm, utils.useColor());
 
     c2recipe.Recipe* recipe = c2recipe.create(sm, auxPool);
 
