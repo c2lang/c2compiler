@@ -3,6 +3,7 @@
 
 module ast;
 
+import color;
 import utils local;
 import string_buffer;
 import stdio;
@@ -55,6 +56,7 @@ public func void Type.setPtrType(Type* t, Type* pt) @(inline) { t.ptr_type = pt;
 public func void Type.dump(const Type* t) {
     string_buffer.Buf* out = string_buffer.create(256);
     t.print(out);
+    out.color(color.Normal);
     stdio.printf("%s\n", out.data());
     out.free();
 }

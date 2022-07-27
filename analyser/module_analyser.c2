@@ -438,15 +438,18 @@ func QualType ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt, bool f
         QualType res = ma.analyseType(inner, false);
         if (res.isInvalid()) break;
         if (inner.ptr == res.ptr) {
+            // NOTE: only for builtin types
             resolved = qt;
             t.setCanonicalType(res);
         } else {
-//public func Type* Type.getPtrType(const Type* t) @(inline) { return t.ptr_type; }
-//public func void Type.setPtrType(Type* t, PointerType* pt) @(inline) { t.ptr_type = pt; }
-            // TODO check if pointertype already exists for that type!
-            Type* t2 = cast<Type*>(PointerType.create(ma.context, res));
-            resolved.set(t2);
-            t2.setCanonicalType(resolved);
+            Type* t2 = res.getTypeOrNil();
+            Type* ptrType = t2.getPtrType();
+            if (!ptrType) {
+                ptrType = cast<Type*>(PointerType.create(ma.context, res));
+                ptrType.setCanonicalType(resolved);
+                t2.setPtrType(ptrType);
+            }
+            resolved.set(ptrType);
         }
         break;
     case TypeKind.Array:

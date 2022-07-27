@@ -91,5 +91,5 @@ func void BuiltinType.debugPrint(const BuiltinType* b, string_buffer.Buf* out) {
 
 public func void BuiltinType.fullPrint(const BuiltinType* t, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
-    out.print("BuiltinType %s\n", t.kind2str());
+    out.print("BuiltinType [%p] %s\n", t, t.kind2str());
 }

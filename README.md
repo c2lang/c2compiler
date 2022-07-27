@@ -1,12 +1,21 @@
 
 ## TODO
+- when parsing a file all Type* will be the same! So re-use pointers.
+    -> this is not the case for variable pointers!
+    -> the source location is not the same! (different TypeExpr, same QualType)
+    -> between modules, re-use same QualType during analysis, so we can do ptr-compare on Type
+    -> RefType is different, since it has a different IdentifierExpr (with loc)
+    IDEA: or dont create more ptr-types, but just check if they point to the same decl!
+        -> sames space + origType ptr
+        -> canonicalType must be the same!
+- A functionType should not have the name, only the return type + args
 - Types:
     - Canonical types
         + enum
         + struct
         + builtin
-        - ref
-        - pointer
+        + ref
+        + pointer
             Enum*
                 Parse:
                     PointerType -> RefType
@@ -16,7 +25,7 @@
                                      --
                 -> VarDecl has origType (used for getting refs)
                 -> TypeExpr also has an origType!
-        - array
+        + array
             Parse:
                 ArrayType -> RefType
             Analyses:
@@ -24,9 +33,9 @@
                 ---------      ---
         - function
         - alias? (does not exist yet)
-    - pointer types
-    - Array types
-    - fully analyze types
+- analyse types:
+    - array size expr -> must be CTV, must be number
+    - init expr
 - load external components
     - for main component: walk imports
         - for all imports to external component, mark module as used
