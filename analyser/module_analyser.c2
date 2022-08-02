@@ -259,14 +259,26 @@ func void ModuleAnalyser.analyseGlobalVarDecl(ModuleAnalyser* ma, VarDecl* v) {
 
     Expr* initval = v.getInit();
     if (initval) {
-        QualType res2 = ma.analyseExpr(initval);
-
-        if (!initval.isCtv()) {
-            ma.diags.report(initval.getLoc(), "initializer is not a compile-time value");
-            return;
-        }
-        // TODO check type
+        ma.analyseInitExpr(initval, res);
     }
+}
+
+func void ModuleAnalyser.analyseInitExpr(ModuleAnalyser* ma, Expr* e, QualType expectedType) {
+    ArrayType* at = expectedType.getTypeOrNil().asArray();
+    if (at) {
+        // TODO
+    }
+    InitListExpr* ile = nil;
+    if (e.getKind() == ExprKind.InitList) {
+        // TODO
+    }
+    QualType res2 = ma.analyseExpr(e);
+
+    if (!e.isCtv()) {
+        ma.diags.report(e.getLoc(), "initializer is not a compile-time value");
+        return;
+    }
+    // TODO check type
 }
 
 func bool ModuleAnalyser.pushCheck(ModuleAnalyser* ma, Decl* d) {

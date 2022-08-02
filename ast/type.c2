@@ -53,6 +53,11 @@ public func void Type.setCanonicalType(Type* t, QualType canon) @(inline) { t.ca
 public func Type* Type.getPtrType(const Type* t) @(inline) { return t.ptr_type; }
 public func void Type.setPtrType(Type* t, Type* pt) @(inline) { t.ptr_type = pt; }
 
+public func ArrayType* Type.asArray(Type* t) {
+    if (t.getKind() == TypeKind.Array) return cast<ArrayType*>(t);
+    return nil;
+}
+
 public func void Type.dump(const Type* t) {
     string_buffer.Buf* out = string_buffer.create(256, utils.useColor());
     t.print(out);
