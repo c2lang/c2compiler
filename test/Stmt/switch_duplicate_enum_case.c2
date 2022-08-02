@@ -8,9 +8,9 @@ type Foo enum i8 {
 public func void foo() {
     Foo f = Foo.A;
     switch (f) {
-    case Foo.A:
+    case A:
         break;
-    case Foo.A:         // @error{duplicate case value 'A'}
+    case A:         // @error{duplicate case value 'A'}
         break;
     }
 }

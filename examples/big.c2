@@ -226,7 +226,7 @@ func void aaa_board_print() {
             *cp++ = '|';
             AaaField field = aaa_board.fields[x + y * 5];
             switch (field.status) {
-            case FieldStatus.Free:
+            case Free:
                 if (field.expected) {
                     cp += io.sprintf(cp, "%s%c%s", color.Red, aaa_flags2char(field.expected), color.Normal);
                 } else {
@@ -235,7 +235,7 @@ func void aaa_board_print() {
                 *cp++ = ' ';
                 *cp++ = ' ';
                 break;
-            case FieldStatus.Blocked:
+            case Blocked:
                 cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
@@ -262,12 +262,12 @@ func void aaa_board_print() {
 func i32 aaa_board_check_fault(i32 xx, i32 yy, i32 expect) {
     AaaField f = aaa_board_get(xx, yy);
     switch (f.status) {
-    case FieldStatus.Free:
+    case Free:
         if (f.expected && f.expected != expect) return 1;
         break;
-    case FieldStatus.Blocked:
+    case Blocked:
         return 1;
-    case FieldStatus.Taken:
+    case Taken:
         if (f.flags != expect) return 1;
         break;
     }
@@ -612,7 +612,7 @@ func void bbb_board_print() {
             *cp++ = '|';
             BbbField field = bbb_board.fields[x + y * 5];
             switch (field.status) {
-            case FieldStatus.Free:
+            case Free:
                 if (field.expected) {
                     cp += io.sprintf(cp, "%s%c%s", color.Red, bbb_flags2char(field.expected), color.Normal);
                 } else {
@@ -621,7 +621,7 @@ func void bbb_board_print() {
                 *cp++ = ' ';
                 *cp++ = ' ';
                 break;
-            case FieldStatus.Blocked:
+            case Blocked:
                 cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
@@ -648,12 +648,12 @@ func void bbb_board_print() {
 func i32 bbb_board_check_fault(i32 xx, i32 yy, i32 expect) {
     BbbField f = bbb_board_get(xx, yy);
     switch (f.status) {
-    case FieldStatus.Free:
+    case Free:
         if (f.expected && f.expected != expect) return 1;
         break;
-    case FieldStatus.Blocked:
+    case Blocked:
         return 1;
-    case FieldStatus.Taken:
+    case Taken:
         if (f.flags != expect) return 1;
         break;
     }
@@ -998,7 +998,7 @@ func void ccc_board_print() {
             *cp++ = '|';
             CccField field = ccc_board.fields[x + y * 5];
             switch (field.status) {
-            case FieldStatus.Free:
+            case Free:
                 if (field.expected) {
                     cp += io.sprintf(cp, "%s%c%s", color.Red, ccc_flags2char(field.expected), color.Normal);
                 } else {
@@ -1007,7 +1007,7 @@ func void ccc_board_print() {
                 *cp++ = ' ';
                 *cp++ = ' ';
                 break;
-            case FieldStatus.Blocked:
+            case Blocked:
                 cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
@@ -1034,12 +1034,12 @@ func void ccc_board_print() {
 func i32 ccc_board_check_fault(i32 xx, i32 yy, i32 expect) {
     CccField f = ccc_board_get(xx, yy);
     switch (f.status) {
-    case FieldStatus.Free:
+    case Free:
         if (f.expected && f.expected != expect) return 1;
         break;
-    case FieldStatus.Blocked:
+    case Blocked:
         return 1;
-    case FieldStatus.Taken:
+    case Taken:
         if (f.flags != expect) return 1;
         break;
     }
@@ -1384,7 +1384,7 @@ func void ddd_board_print() {
             *cp++ = '|';
             DddField field = ddd_board.fields[x + y * 5];
             switch (field.status) {
-            case FieldStatus.Free:
+            case Free:
                 if (field.expected) {
                     cp += io.sprintf(cp, "%s%c%s", color.Red, ddd_flags2char(field.expected), color.Normal);
                 } else {
@@ -1393,7 +1393,7 @@ func void ddd_board_print() {
                 *cp++ = ' ';
                 *cp++ = ' ';
                 break;
-            case FieldStatus.Blocked:
+            case Blocked:
                 cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
@@ -1420,12 +1420,12 @@ func void ddd_board_print() {
 func i32 ddd_board_check_fault(i32 xx, i32 yy, i32 expect) {
     DddField f = ddd_board_get(xx, yy);
     switch (f.status) {
-    case FieldStatus.Free:
+    case Free:
         if (f.expected && f.expected != expect) return 1;
         break;
-    case FieldStatus.Blocked:
+    case Blocked:
         return 1;
-    case FieldStatus.Taken:
+    case Taken:
         if (f.flags != expect) return 1;
         break;
     }
@@ -1770,7 +1770,7 @@ func void eee_board_print() {
             *cp++ = '|';
             EeeField field = eee_board.fields[x + y * 5];
             switch (field.status) {
-            case FieldStatus.Free:
+            case Free:
                 if (field.expected) {
                     cp += io.sprintf(cp, "%s%c%s", color.Red, eee_flags2char(field.expected), color.Normal);
                 } else {
@@ -1779,7 +1779,7 @@ func void eee_board_print() {
                 *cp++ = ' ';
                 *cp++ = ' ';
                 break;
-            case FieldStatus.Blocked:
+            case Blocked:
                 cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
@@ -1806,12 +1806,12 @@ func void eee_board_print() {
 func i32 eee_board_check_fault(i32 xx, i32 yy, i32 expect) {
     EeeField f = eee_board_get(xx, yy);
     switch (f.status) {
-    case FieldStatus.Free:
+    case Free:
         if (f.expected && f.expected != expect) return 1;
         break;
-    case FieldStatus.Blocked:
+    case Blocked:
         return 1;
-    case FieldStatus.Taken:
+    case Taken:
         if (f.flags != expect) return 1;
         break;
     }
@@ -2156,7 +2156,7 @@ func void fff_board_print() {
             *cp++ = '|';
             FffField field = fff_board.fields[x + y * 5];
             switch (field.status) {
-            case FieldStatus.Free:
+            case Free:
                 if (field.expected) {
                     cp += io.sprintf(cp, "%s%c%s", color.Red, fff_flags2char(field.expected), color.Normal);
                 } else {
@@ -2165,7 +2165,7 @@ func void fff_board_print() {
                 *cp++ = ' ';
                 *cp++ = ' ';
                 break;
-            case FieldStatus.Blocked:
+            case Blocked:
                 cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
@@ -2192,12 +2192,12 @@ func void fff_board_print() {
 func i32 fff_board_check_fault(i32 xx, i32 yy, i32 expect) {
     FffField f = fff_board_get(xx, yy);
     switch (f.status) {
-    case FieldStatus.Free:
+    case Free:
         if (f.expected && f.expected != expect) return 1;
         break;
-    case FieldStatus.Blocked:
+    case Blocked:
         return 1;
-    case FieldStatus.Taken:
+    case Taken:
         if (f.flags != expect) return 1;
         break;
     }
@@ -2542,7 +2542,7 @@ func void ggg_board_print() {
             *cp++ = '|';
             GggField field = ggg_board.fields[x + y * 5];
             switch (field.status) {
-            case FieldStatus.Free:
+            case Free:
                 if (field.expected) {
                     cp += io.sprintf(cp, "%s%c%s", color.Red, ggg_flags2char(field.expected), color.Normal);
                 } else {
@@ -2551,7 +2551,7 @@ func void ggg_board_print() {
                 *cp++ = ' ';
                 *cp++ = ' ';
                 break;
-            case FieldStatus.Blocked:
+            case Blocked:
                 cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
@@ -2578,12 +2578,12 @@ func void ggg_board_print() {
 func i32 ggg_board_check_fault(i32 xx, i32 yy, i32 expect) {
     GggField f = ggg_board_get(xx, yy);
     switch (f.status) {
-    case FieldStatus.Free:
+    case Free:
         if (f.expected && f.expected != expect) return 1;
         break;
-    case FieldStatus.Blocked:
+    case Blocked:
         return 1;
-    case FieldStatus.Taken:
+    case Taken:
         if (f.flags != expect) return 1;
         break;
     }
@@ -2928,7 +2928,7 @@ func void hhh_board_print() {
             *cp++ = '|';
             HhhField field = hhh_board.fields[x + y * 5];
             switch (field.status) {
-            case FieldStatus.Free:
+            case Free:
                 if (field.expected) {
                     cp += io.sprintf(cp, "%s%c%s", color.Red, hhh_flags2char(field.expected), color.Normal);
                 } else {
@@ -2937,7 +2937,7 @@ func void hhh_board_print() {
                 *cp++ = ' ';
                 *cp++ = ' ';
                 break;
-            case FieldStatus.Blocked:
+            case Blocked:
                 cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
@@ -2964,12 +2964,12 @@ func void hhh_board_print() {
 func i32 hhh_board_check_fault(i32 xx, i32 yy, i32 expect) {
     HhhField f = hhh_board_get(xx, yy);
     switch (f.status) {
-    case FieldStatus.Free:
+    case Free:
         if (f.expected && f.expected != expect) return 1;
         break;
-    case FieldStatus.Blocked:
+    case Blocked:
         return 1;
-    case FieldStatus.Taken:
+    case Taken:
         if (f.flags != expect) return 1;
         break;
     }
@@ -3315,7 +3315,7 @@ func void iii_board_print() {
             *cp++ = '|';
             IiiField field = iii_board.fields[x + y * 5];
             switch (field.status) {
-            case FieldStatus.Free:
+            case Free:
                 if (field.expected) {
                     cp += io.sprintf(cp, "%s%c%s", color.Red, iii_flags2char(field.expected), color.Normal);
                 } else {
@@ -3324,7 +3324,7 @@ func void iii_board_print() {
                 *cp++ = ' ';
                 *cp++ = ' ';
                 break;
-            case FieldStatus.Blocked:
+            case Blocked:
                 cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
@@ -3351,12 +3351,12 @@ func void iii_board_print() {
 func i32 iii_board_check_fault(i32 xx, i32 yy, i32 expect) {
     IiiField f = iii_board_get(xx, yy);
     switch (f.status) {
-    case FieldStatus.Free:
+    case Free:
         if (f.expected && f.expected != expect) return 1;
         break;
-    case FieldStatus.Blocked:
+    case Blocked:
         return 1;
-    case FieldStatus.Taken:
+    case Taken:
         if (f.flags != expect) return 1;
         break;
     }
@@ -3701,7 +3701,7 @@ func void jjj_board_print() {
             *cp++ = '|';
             JjjField field = jjj_board.fields[x + y * 5];
             switch (field.status) {
-            case FieldStatus.Free:
+            case Free:
                 if (field.expected) {
                     cp += io.sprintf(cp, "%s%c%s", color.Red, jjj_flags2char(field.expected), color.Normal);
                 } else {
@@ -3710,7 +3710,7 @@ func void jjj_board_print() {
                 *cp++ = ' ';
                 *cp++ = ' ';
                 break;
-            case FieldStatus.Blocked:
+            case Blocked:
                 cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
@@ -3737,12 +3737,12 @@ func void jjj_board_print() {
 func i32 jjj_board_check_fault(i32 xx, i32 yy, i32 expect) {
     JjjField f = jjj_board_get(xx, yy);
     switch (f.status) {
-    case FieldStatus.Free:
+    case Free:
         if (f.expected && f.expected != expect) return 1;
         break;
-    case FieldStatus.Blocked:
+    case Blocked:
         return 1;
-    case FieldStatus.Taken:
+    case Taken:
         if (f.flags != expect) return 1;
         break;
     }
@@ -4087,7 +4087,7 @@ func void kkk_board_print() {
             *cp++ = '|';
             KkkField field = kkk_board.fields[x + y * 5];
             switch (field.status) {
-            case FieldStatus.Free:
+            case Free:
                 if (field.expected) {
                     cp += io.sprintf(cp, "%s%c%s", color.Red, kkk_flags2char(field.expected), color.Normal);
                 } else {
@@ -4096,7 +4096,7 @@ func void kkk_board_print() {
                 *cp++ = ' ';
                 *cp++ = ' ';
                 break;
-            case FieldStatus.Blocked:
+            case Blocked:
                 cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
@@ -4123,12 +4123,12 @@ func void kkk_board_print() {
 func i32 kkk_board_check_fault(i32 xx, i32 yy, i32 expect) {
     KkkField f = kkk_board_get(xx, yy);
     switch (f.status) {
-    case FieldStatus.Free:
+    case Free:
         if (f.expected && f.expected != expect) return 1;
         break;
-    case FieldStatus.Blocked:
+    case Blocked:
         return 1;
-    case FieldStatus.Taken:
+    case Taken:
         if (f.flags != expect) return 1;
         break;
     }
@@ -4473,7 +4473,7 @@ func void lll_board_print() {
             *cp++ = '|';
             LllField field = lll_board.fields[x + y * 5];
             switch (field.status) {
-            case FieldStatus.Free:
+            case Free:
                 if (field.expected) {
                     cp += io.sprintf(cp, "%s%c%s", color.Red, lll_flags2char(field.expected), color.Normal);
                 } else {
@@ -4482,7 +4482,7 @@ func void lll_board_print() {
                 *cp++ = ' ';
                 *cp++ = ' ';
                 break;
-            case FieldStatus.Blocked:
+            case Blocked:
                 cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
@@ -4509,12 +4509,12 @@ func void lll_board_print() {
 func i32 lll_board_check_fault(i32 xx, i32 yy, i32 expect) {
     LllField f = lll_board_get(xx, yy);
     switch (f.status) {
-    case FieldStatus.Free:
+    case Free:
         if (f.expected && f.expected != expect) return 1;
         break;
-    case FieldStatus.Blocked:
+    case Blocked:
         return 1;
-    case FieldStatus.Taken:
+    case Taken:
         if (f.flags != expect) return 1;
         break;
     }
@@ -4859,7 +4859,7 @@ func void mmm_board_print() {
             *cp++ = '|';
             MmmField field = mmm_board.fields[x + y * 5];
             switch (field.status) {
-            case FieldStatus.Free:
+            case Free:
                 if (field.expected) {
                     cp += io.sprintf(cp, "%s%c%s", color.Red, mmm_flags2char(field.expected), color.Normal);
                 } else {
@@ -4868,7 +4868,7 @@ func void mmm_board_print() {
                 *cp++ = ' ';
                 *cp++ = ' ';
                 break;
-            case FieldStatus.Blocked:
+            case Blocked:
                 cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
@@ -4895,12 +4895,12 @@ func void mmm_board_print() {
 func i32 mmm_board_check_fault(i32 xx, i32 yy, i32 expect) {
     MmmField f = mmm_board_get(xx, yy);
     switch (f.status) {
-    case FieldStatus.Free:
+    case Free:
         if (f.expected && f.expected != expect) return 1;
         break;
-    case FieldStatus.Blocked:
+    case Blocked:
         return 1;
-    case FieldStatus.Taken:
+    case Taken:
         if (f.flags != expect) return 1;
         break;
     }
@@ -5245,7 +5245,7 @@ func void nnn_board_print() {
             *cp++ = '|';
             NnnField field = nnn_board.fields[x + y * 5];
             switch (field.status) {
-            case FieldStatus.Free:
+            case Free:
                 if (field.expected) {
                     cp += io.sprintf(cp, "%s%c%s", color.Red, nnn_flags2char(field.expected), color.Normal);
                 } else {
@@ -5254,7 +5254,7 @@ func void nnn_board_print() {
                 *cp++ = ' ';
                 *cp++ = ' ';
                 break;
-            case FieldStatus.Blocked:
+            case Blocked:
                 cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
@@ -5281,12 +5281,12 @@ func void nnn_board_print() {
 func i32 nnn_board_check_fault(i32 xx, i32 yy, i32 expect) {
     NnnField f = nnn_board_get(xx, yy);
     switch (f.status) {
-    case FieldStatus.Free:
+    case Free:
         if (f.expected && f.expected != expect) return 1;
         break;
-    case FieldStatus.Blocked:
+    case Blocked:
         return 1;
-    case FieldStatus.Taken:
+    case Taken:
         if (f.flags != expect) return 1;
         break;
     }
@@ -5631,7 +5631,7 @@ func void ooo_board_print() {
             *cp++ = '|';
             OooField field = ooo_board.fields[x + y * 5];
             switch (field.status) {
-            case FieldStatus.Free:
+            case Free:
                 if (field.expected) {
                     cp += io.sprintf(cp, "%s%c%s", color.Red, ooo_flags2char(field.expected), color.Normal);
                 } else {
@@ -5640,7 +5640,7 @@ func void ooo_board_print() {
                 *cp++ = ' ';
                 *cp++ = ' ';
                 break;
-            case FieldStatus.Blocked:
+            case Blocked:
                 cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
@@ -5667,12 +5667,12 @@ func void ooo_board_print() {
 func i32 ooo_board_check_fault(i32 xx, i32 yy, i32 expect) {
     OooField f = ooo_board_get(xx, yy);
     switch (f.status) {
-    case FieldStatus.Free:
+    case Free:
         if (f.expected && f.expected != expect) return 1;
         break;
-    case FieldStatus.Blocked:
+    case Blocked:
         return 1;
-    case FieldStatus.Taken:
+    case Taken:
         if (f.flags != expect) return 1;
         break;
     }
@@ -6017,7 +6017,7 @@ func void ppp_board_print() {
             *cp++ = '|';
             PppField field = ppp_board.fields[x + y * 5];
             switch (field.status) {
-            case FieldStatus.Free:
+            case Free:
                 if (field.expected) {
                     cp += io.sprintf(cp, "%s%c%s", color.Red, ppp_flags2char(field.expected), color.Normal);
                 } else {
@@ -6026,7 +6026,7 @@ func void ppp_board_print() {
                 *cp++ = ' ';
                 *cp++ = ' ';
                 break;
-            case FieldStatus.Blocked:
+            case Blocked:
                 cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
@@ -6053,12 +6053,12 @@ func void ppp_board_print() {
 func i32 ppp_board_check_fault(i32 xx, i32 yy, i32 expect) {
     PppField f = ppp_board_get(xx, yy);
     switch (f.status) {
-    case FieldStatus.Free:
+    case Free:
         if (f.expected && f.expected != expect) return 1;
         break;
-    case FieldStatus.Blocked:
+    case Blocked:
         return 1;
-    case FieldStatus.Taken:
+    case Taken:
         if (f.flags != expect) return 1;
         break;
     }
@@ -6403,7 +6403,7 @@ func void qqq_board_print() {
             *cp++ = '|';
             QqqField field = qqq_board.fields[x + y * 5];
             switch (field.status) {
-            case FieldStatus.Free:
+            case Free:
                 if (field.expected) {
                     cp += io.sprintf(cp, "%s%c%s", color.Red, qqq_flags2char(field.expected), color.Normal);
                 } else {
@@ -6412,7 +6412,7 @@ func void qqq_board_print() {
                 *cp++ = ' ';
                 *cp++ = ' ';
                 break;
-            case FieldStatus.Blocked:
+            case Blocked:
                 cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
@@ -6439,12 +6439,12 @@ func void qqq_board_print() {
 func i32 qqq_board_check_fault(i32 xx, i32 yy, i32 expect) {
     QqqField f = qqq_board_get(xx, yy);
     switch (f.status) {
-    case FieldStatus.Free:
+    case Free:
         if (f.expected && f.expected != expect) return 1;
         break;
-    case FieldStatus.Blocked:
+    case Blocked:
         return 1;
-    case FieldStatus.Taken:
+    case Taken:
         if (f.flags != expect) return 1;
         break;
     }
@@ -6789,7 +6789,7 @@ func void rrr_board_print() {
             *cp++ = '|';
             RrrField field = rrr_board.fields[x + y * 5];
             switch (field.status) {
-            case FieldStatus.Free:
+            case Free:
                 if (field.expected) {
                     cp += io.sprintf(cp, "%s%c%s", color.Red, rrr_flags2char(field.expected), color.Normal);
                 } else {
@@ -6798,7 +6798,7 @@ func void rrr_board_print() {
                 *cp++ = ' ';
                 *cp++ = ' ';
                 break;
-            case FieldStatus.Blocked:
+            case Blocked:
                 cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
@@ -6825,12 +6825,12 @@ func void rrr_board_print() {
 func i32 rrr_board_check_fault(i32 xx, i32 yy, i32 expect) {
     RrrField f = rrr_board_get(xx, yy);
     switch (f.status) {
-    case FieldStatus.Free:
+    case Free:
         if (f.expected && f.expected != expect) return 1;
         break;
-    case FieldStatus.Blocked:
+    case Blocked:
         return 1;
-    case FieldStatus.Taken:
+    case Taken:
         if (f.flags != expect) return 1;
         break;
     }
@@ -7175,7 +7175,7 @@ func void sss_board_print() {
             *cp++ = '|';
             SssField field = sss_board.fields[x + y * 5];
             switch (field.status) {
-            case FieldStatus.Free:
+            case Free:
                 if (field.expected) {
                     cp += io.sprintf(cp, "%s%c%s", color.Red, sss_flags2char(field.expected), color.Normal);
                 } else {
@@ -7184,7 +7184,7 @@ func void sss_board_print() {
                 *cp++ = ' ';
                 *cp++ = ' ';
                 break;
-            case FieldStatus.Blocked:
+            case Blocked:
                 cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
@@ -7211,12 +7211,12 @@ func void sss_board_print() {
 func i32 sss_board_check_fault(i32 xx, i32 yy, i32 expect) {
     SssField f = sss_board_get(xx, yy);
     switch (f.status) {
-    case FieldStatus.Free:
+    case Free:
         if (f.expected && f.expected != expect) return 1;
         break;
-    case FieldStatus.Blocked:
+    case Blocked:
         return 1;
-    case FieldStatus.Taken:
+    case Taken:
         if (f.flags != expect) return 1;
         break;
     }
@@ -7561,7 +7561,7 @@ func void ttt_board_print() {
             *cp++ = '|';
             TttField field = ttt_board.fields[x + y * 5];
             switch (field.status) {
-            case FieldStatus.Free:
+            case Free:
                 if (field.expected) {
                     cp += io.sprintf(cp, "%s%c%s", color.Red, ttt_flags2char(field.expected), color.Normal);
                 } else {
@@ -7570,7 +7570,7 @@ func void ttt_board_print() {
                 *cp++ = ' ';
                 *cp++ = ' ';
                 break;
-            case FieldStatus.Blocked:
+            case Blocked:
                 cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
@@ -7597,12 +7597,12 @@ func void ttt_board_print() {
 func i32 ttt_board_check_fault(i32 xx, i32 yy, i32 expect) {
     TttField f = ttt_board_get(xx, yy);
     switch (f.status) {
-    case FieldStatus.Free:
+    case Free:
         if (f.expected && f.expected != expect) return 1;
         break;
-    case FieldStatus.Blocked:
+    case Blocked:
         return 1;
-    case FieldStatus.Taken:
+    case Taken:
         if (f.flags != expect) return 1;
         break;
     }
@@ -7947,7 +7947,7 @@ func void uuu_board_print() {
             *cp++ = '|';
             UuuField field = uuu_board.fields[x + y * 5];
             switch (field.status) {
-            case FieldStatus.Free:
+            case Free:
                 if (field.expected) {
                     cp += io.sprintf(cp, "%s%c%s", color.Red, uuu_flags2char(field.expected), color.Normal);
                 } else {
@@ -7956,7 +7956,7 @@ func void uuu_board_print() {
                 *cp++ = ' ';
                 *cp++ = ' ';
                 break;
-            case FieldStatus.Blocked:
+            case Blocked:
                 cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
@@ -7983,12 +7983,12 @@ func void uuu_board_print() {
 func i32 uuu_board_check_fault(i32 xx, i32 yy, i32 expect) {
     UuuField f = uuu_board_get(xx, yy);
     switch (f.status) {
-    case FieldStatus.Free:
+    case Free:
         if (f.expected && f.expected != expect) return 1;
         break;
-    case FieldStatus.Blocked:
+    case Blocked:
         return 1;
-    case FieldStatus.Taken:
+    case Taken:
         if (f.flags != expect) return 1;
         break;
     }
@@ -8333,7 +8333,7 @@ func void vvv_board_print() {
             *cp++ = '|';
             VvvField field = vvv_board.fields[x + y * 5];
             switch (field.status) {
-            case FieldStatus.Free:
+            case Free:
                 if (field.expected) {
                     cp += io.sprintf(cp, "%s%c%s", color.Red, vvv_flags2char(field.expected), color.Normal);
                 } else {
@@ -8342,7 +8342,7 @@ func void vvv_board_print() {
                 *cp++ = ' ';
                 *cp++ = ' ';
                 break;
-            case FieldStatus.Blocked:
+            case Blocked:
                 cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
@@ -8369,12 +8369,12 @@ func void vvv_board_print() {
 func i32 vvv_board_check_fault(i32 xx, i32 yy, i32 expect) {
     VvvField f = vvv_board_get(xx, yy);
     switch (f.status) {
-    case FieldStatus.Free:
+    case Free:
         if (f.expected && f.expected != expect) return 1;
         break;
-    case FieldStatus.Blocked:
+    case Blocked:
         return 1;
-    case FieldStatus.Taken:
+    case Taken:
         if (f.flags != expect) return 1;
         break;
     }
@@ -8719,7 +8719,7 @@ func void www_board_print() {
             *cp++ = '|';
             WwwField field = www_board.fields[x + y * 5];
             switch (field.status) {
-            case FieldStatus.Free:
+            case Free:
                 if (field.expected) {
                     cp += io.sprintf(cp, "%s%c%s", color.Red, www_flags2char(field.expected), color.Normal);
                 } else {
@@ -8728,7 +8728,7 @@ func void www_board_print() {
                 *cp++ = ' ';
                 *cp++ = ' ';
                 break;
-            case FieldStatus.Blocked:
+            case Blocked:
                 cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
@@ -8755,12 +8755,12 @@ func void www_board_print() {
 func i32 www_board_check_fault(i32 xx, i32 yy, i32 expect) {
     WwwField f = www_board_get(xx, yy);
     switch (f.status) {
-    case FieldStatus.Free:
+    case Free:
         if (f.expected && f.expected != expect) return 1;
         break;
-    case FieldStatus.Blocked:
+    case Blocked:
         return 1;
-    case FieldStatus.Taken:
+    case Taken:
         if (f.flags != expect) return 1;
         break;
     }
@@ -9105,7 +9105,7 @@ func void xxx_board_print() {
             *cp++ = '|';
             XxxField field = xxx_board.fields[x + y * 5];
             switch (field.status) {
-            case FieldStatus.Free:
+            case Free:
                 if (field.expected) {
                     cp += io.sprintf(cp, "%s%c%s", color.Red, xxx_flags2char(field.expected), color.Normal);
                 } else {
@@ -9114,7 +9114,7 @@ func void xxx_board_print() {
                 *cp++ = ' ';
                 *cp++ = ' ';
                 break;
-            case FieldStatus.Blocked:
+            case Blocked:
                 cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
@@ -9141,12 +9141,12 @@ func void xxx_board_print() {
 func i32 xxx_board_check_fault(i32 xx, i32 yy, i32 expect) {
     XxxField f = xxx_board_get(xx, yy);
     switch (f.status) {
-    case FieldStatus.Free:
+    case Free:
         if (f.expected && f.expected != expect) return 1;
         break;
-    case FieldStatus.Blocked:
+    case Blocked:
         return 1;
-    case FieldStatus.Taken:
+    case Taken:
         if (f.flags != expect) return 1;
         break;
     }
@@ -9491,7 +9491,7 @@ func void yyy_board_print() {
             *cp++ = '|';
             YyyField field = yyy_board.fields[x + y * 5];
             switch (field.status) {
-            case FieldStatus.Free:
+            case Free:
                 if (field.expected) {
                     cp += io.sprintf(cp, "%s%c%s", color.Red, yyy_flags2char(field.expected), color.Normal);
                 } else {
@@ -9500,7 +9500,7 @@ func void yyy_board_print() {
                 *cp++ = ' ';
                 *cp++ = ' ';
                 break;
-            case FieldStatus.Blocked:
+            case Blocked:
                 cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
@@ -9527,12 +9527,12 @@ func void yyy_board_print() {
 func i32 yyy_board_check_fault(i32 xx, i32 yy, i32 expect) {
     YyyField f = yyy_board_get(xx, yy);
     switch (f.status) {
-    case FieldStatus.Free:
+    case Free:
         if (f.expected && f.expected != expect) return 1;
         break;
-    case FieldStatus.Blocked:
+    case Blocked:
         return 1;
-    case FieldStatus.Taken:
+    case Taken:
         if (f.flags != expect) return 1;
         break;
     }
@@ -9877,7 +9877,7 @@ func void zzz_board_print() {
             *cp++ = '|';
             ZzzField field = zzz_board.fields[x + y * 5];
             switch (field.status) {
-            case FieldStatus.Free:
+            case Free:
                 if (field.expected) {
                     cp += io.sprintf(cp, "%s%c%s", color.Red, zzz_flags2char(field.expected), color.Normal);
                 } else {
@@ -9886,7 +9886,7 @@ func void zzz_board_print() {
                 *cp++ = ' ';
                 *cp++ = ' ';
                 break;
-            case FieldStatus.Blocked:
+            case Blocked:
                 cp += io.sprintf(cp, "%sXXX%s", color.Darkgrey, color.Normal);
                 break;
             default:
@@ -9913,12 +9913,12 @@ func void zzz_board_print() {
 func i32 zzz_board_check_fault(i32 xx, i32 yy, i32 expect) {
     ZzzField f = zzz_board_get(xx, yy);
     switch (f.status) {
-    case FieldStatus.Free:
+    case Free:
         if (f.expected && f.expected != expect) return 1;
         break;
-    case FieldStatus.Blocked:
+    case Blocked:
         return 1;
-    case FieldStatus.Taken:
+    case Taken:
         if (f.flags != expect) return 1;
         break;
     }

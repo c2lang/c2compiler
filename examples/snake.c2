@@ -249,7 +249,7 @@ func void Board.print(Board* b) {
             *cp++ = '|';
             Field field = b.fields[x + y * 5];
             switch (field.status) {
-            case FieldStatus.Free:
+            case Free:
                 if (field.expected) {
                     cp += io.sprintf(cp, ANSI_RED"%c"ANSI_NORMAL, flags2char(field.expected));
                 } else {
@@ -258,7 +258,7 @@ func void Board.print(Board* b) {
                 *cp++ = ' ';
                 *cp++ = ' ';
                 break;
-            case FieldStatus.Blocked:
+            case Blocked:
                 cp += io.sprintf(cp, ANSI_DARKGREY"XXX"ANSI_NORMAL);
                 break;
             default:
@@ -285,12 +285,12 @@ func void Board.print(Board* b) {
 func i32 Board.check_fault(Board* b, i32 xx, i32 yy, i32 expect) {
     Field f = b.get(xx, yy);
     switch (f.status) {
-    case FieldStatus.Free:
+    case Free:
         if (f.expected && f.expected != expect) return 1;
         break;
-    case FieldStatus.Blocked:
+    case Blocked:
         return 1;
-    case FieldStatus.Taken:
+    case Taken:
         if (f.flags != expect) return 1;
         break;
     }

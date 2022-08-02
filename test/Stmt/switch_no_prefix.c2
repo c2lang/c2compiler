@@ -1,0 +1,37 @@
+// @warnings{no-unused}
+module test;
+
+type State enum u8 {
+    Begin,
+    Middle,
+    End,
+}
+
+type Time enum u8 {
+    Begin = 4,
+    Middle,
+    End,
+}
+
+func void test1(State s) {
+    switch (s) {
+    case Begin:
+        break;
+    case Middle:
+        break;
+    case End:
+        break;
+    }
+}
+
+func void test2(u8 s) {
+    switch (s) {
+    case State.Begin:
+        break;
+    case State.Middle:
+        break;
+    case State.End:
+        break;
+    }
+}
+

@@ -329,6 +329,8 @@ DIAG(err_unexpected_typedef_ident, CLASS_ERROR, (unsigned)diag::Severity::Error,
 DIAG(err_unexpected_unqualified_id, CLASS_ERROR, (unsigned)diag::Severity::Error, "type-id cannot have a name", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(err_uninitialized_const_var, CLASS_ERROR, (unsigned)diag::Severity::Error, "constant variable %0 must be initialized", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(err_unknown_enum_constant, CLASS_ERROR, (unsigned)diag::Severity::Error, "enum %0 has no constant %1", 0, SFINAE_SubstitutionFailure, false, true, 4)
+DIAG(err_prefixed_enum_constant, CLASS_ERROR, (unsigned)diag::Severity::Error, "enum constant may not be prefixed in case statement", 0, SFINAE_SubstitutionFailure, false, true, 4)
+DIAG(err_not_enum_constant, CLASS_ERROR, (unsigned)diag::Severity::Error, "condition must be an enum constant when using enum type in switch", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(err_unknown_module, CLASS_ERROR, (unsigned)diag::Severity::Error, "unknown module: %0", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(err_unknown_module_symbol, CLASS_ERROR, (unsigned)diag::Severity::Error, "module %0 has no symbol %1", 0, SFINAE_SubstitutionFailure, false, true, 4)
 DIAG(err_unknown_template_name, CLASS_ERROR, (unsigned)diag::Severity::Error, "unknown template name %0", 0, SFINAE_SubstitutionFailure, false, true, 4)

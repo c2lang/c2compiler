@@ -296,16 +296,19 @@ void FunctionAnalyser::analyseSwitchStmt(Stmt* stmt) {
         return;
     }
 
+    const EnumType* ET = dyncast<EnumType>(ct.getTypePtr());
     fallthrough = 0;
     unsigned numCases = S->numCases();
     Stmt** cases = S->getCases();
     Stmt* defaultStmt = 0;
     scope.EnterScope(Scope::BreakScope | Scope::SwitchScope);
+
+    bool ok = true;
     for (unsigned i=0; i<numCases; i++) {
         Stmt* C = cases[i];
         switch (C->getKind()) {
         case STMT_CASE:
-            analyseCaseStmt(C);
+            ok &= analyseCaseStmt(C, ET);
             break;
         case STMT_DEFAULT:
             if (defaultStmt) {
@@ -333,10 +336,7 @@ void FunctionAnalyser::analyseSwitchStmt(Stmt* stmt) {
     if (S->numCases() == 0) {
         Diag(S->getLocation(), diag::err_empty_switch);
     }
-    QualType QT = getConditionType(S->getCond());
-    if (const EnumType* ET = dyncast<EnumType>(QT)) {
-        checkEnumCases(S, ET);
-    }
+    if (ok && ET) checkEnumCases(S, ET);
 
     scope.ExitScope();
     scope.ExitScope();
@@ -486,12 +486,45 @@ static bool isCaseTerminator(const Stmt* S) {
     }
 }
 
-void FunctionAnalyser::analyseCaseStmt(Stmt* stmt) {
+bool FunctionAnalyser::analyseCaseStmt(Stmt* stmt, const EnumType* ET) {
     LOG_FUNC
     scope.EnterScope(Scope::DeclScope | Scope::SwitchScope);
     CaseStmt* C = cast<CaseStmt>(stmt);
     // TODO check return value?
-    analyseExpr(C->getCond2(), RHS, true);
+
+    Expr* cond = C->getCond();
+    bool ok = true;
+    if (ET) {
+        // only allow Identifier when switching on EnumType
+        IdentifierExpr* id = dyncast<IdentifierExpr>(cond);
+        if (id) {
+            EnumTypeDecl* ETD = ET->getDecl();
+            EnumConstantDecl* ECD = ETD->findConstant(id->getName());
+            if (ECD) {
+                id->setDecl(ECD, IdentifierExpr::REF_ENUM_CONSTANT);
+                id->setType(ECD->getType().getCanonicalType());
+                id->setCTC();
+                id->setCTV(true);
+                id->setIsRValue();
+            } else {
+                StringBuilder buf(MAX_LEN_TYPENAME);
+                ETD->fullName(buf);
+                Diag(id->getLocation(), diag::err_unknown_enum_constant)
+                    << buf << id->getName();
+                ok = false;
+            }
+        } else {
+            if (isa<MemberExpr>(cond)) {
+                Diag(cond->getLocation(), diag::err_prefixed_enum_constant);
+            } else {
+                Diag(cond->getLocation(), diag::err_not_enum_constant);
+            }
+            ok = false;
+        }
+    } else {
+        analyseExpr(C->getCond2(), RHS, true);
+    }
+
     Stmt** stmts = C->getStmts();
     fallthrough = 0;
     for (unsigned i=0; i<C->numStmts(); i++) {
@@ -506,6 +539,7 @@ void FunctionAnalyser::analyseCaseStmt(Stmt* stmt) {
     }
     C->setHasDecls(scope.hasDecls());
     scope.ExitScope();
+    return ok;
 }
 
 void FunctionAnalyser::analyseSSwitchCaseStmt(Stmt* stmt) {
@@ -2486,9 +2520,22 @@ void FunctionAnalyser::checkEnumCases(const SwitchStmt* SS, const EnumType* ET) 
             continue;
         }
         const CaseStmt* CS = cast<CaseStmt>(cases[i]);
-        // TODO add test cases!!
-        // only allow enum states as cases if switchin on enum (MemberExpr -> EnumConstantDecl)
         const Expr* cond = CS->getCond();
+
+        if (const IdentifierExpr* id = dyncast<IdentifierExpr>(cond)) {
+            const EnumConstantDecl* ECD = dyncast<EnumConstantDecl>(id->getDecl());
+            if (ECD) {
+                int index = ETD->getIndex(ECD);
+                if (index != -1) {
+                    if (enumHandled[index]) {
+                        Diag(cond->getLocation(), diag::err_duplicate_case) << ECD->getName() << cond->getSourceRange();
+                    }
+                    enumHandled[index] = true;
+                    continue;
+                }
+            }
+        }
+        // TODO dont allow this anymore? (only Identifier)
         if (const MemberExpr* M = dyncast<MemberExpr>(cond)) {
             if (M->isEnumConstant()) {
                 // check if it refers to right enumdecl
@@ -2507,6 +2554,7 @@ void FunctionAnalyser::checkEnumCases(const SwitchStmt* SS, const EnumType* ET) 
 
             }
         }
+        // TODO BB cannot happen anymore, remove
         StringBuilder buf(64);
         QualType Q((Type*)ET, 0);
         Q.DiagName(buf);

@@ -81,7 +81,7 @@ private:
     bool analyseContinueStmt(Stmt* S);
     bool analyseLabelStmt(Stmt* S);
     void analyseGotoStmt(Stmt* S);
-    void analyseCaseStmt(Stmt* stmt);
+    bool analyseCaseStmt(Stmt* stmt, const EnumType* ET);
     void analyseSSwitchCaseStmt(Stmt* stmt);
     void analyseDefaultStmt(Stmt* stmt, bool isSwitch);
     bool analyseReturnStmt(Stmt* stmt);

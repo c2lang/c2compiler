@@ -525,6 +525,12 @@ bool ExprAnalyser::checkPointer(QualType left, QualType right, Expr* expr) {
         // TODO check if allowed (either same or to/from void* etc)
         return true;
     }
+    if (right->isFunctionType()) {
+        // TODO check if correct one, for now allow all to void*
+        if (LP.isVoidType()) return true;
+
+        return true;
+    }
     error(expr, left, right);
     return false;
 }

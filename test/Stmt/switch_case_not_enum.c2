@@ -13,13 +13,13 @@ public func void foo() {
     i32 bar = 1;
     Foo f = Foo.A;
     switch (f) {
-    case Foo.A:
+    case Foo.A:     // @error{enum constant may not be prefixed in case statement}
         break;
-    case 1:         // @error{case value not in enumerated type '(enum)Foo' (aka 'i8')}
+    case 1:         // @error{condition must be an enum constant when using enum type in switch}
         break;
-    case bar:         // @error{case value not in enumerated type '(enum)Foo' (aka 'i8')}
+    case bar:       // @error{enum test.Foo has no constant bar}
         break;
-    case Bar.C:         // @error{case value not in enumerated type '(enum)Foo' (aka 'i8')}
+    case Bar.C:     // @error{enum constant may not be prefixed in case statement}
         break;
     }
 }

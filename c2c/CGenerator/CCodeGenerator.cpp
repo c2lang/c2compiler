@@ -577,6 +577,12 @@ void CCodeGenerator::EmitDecl(const Decl* D, StringBuilder& output) {
             const IdentifierExpr* structName = F->getStructName();
             cname << structName->getName() << '_' << F->getMemberName();
             GenUtils::addName(D->getModule()->getCName(), cname.c_str(), output);
+        } else if (isa<EnumConstantDecl>(D)) {
+            const EnumType* et = cast<EnumType>(D->getType());
+            const EnumTypeDecl* etd = et->getDecl();
+            StringBuilder cname(128);
+            cname << etd->getName() << '_' << D->getName();
+            GenUtils::addName(D->getModule()->getCName(), cname.c_str(), output);
         } else {
             const char* cname = getCName(D);
             GenUtils::addName(D->getModule()->getCName(), cname, output);
