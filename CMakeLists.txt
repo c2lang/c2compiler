@@ -12,10 +12,13 @@ endif(CYGWIN OR WIN32)
 set(CMAKE_BUILD_TYPE Release)
 #set(CMAKE_BUILD_TYPE Debug)
 
+set(CMAKE_INSTALL_PREFIX, "$ENV{HOME}/c2c")
+
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wshadow -Wno-overloaded-virtual -Wno-unused-parameter")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 
 set(CMAKE_VERBOSE_MAKEFILE false)
+
 
 add_subdirectory(c2c)
 add_subdirectory(tools)

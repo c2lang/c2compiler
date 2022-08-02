@@ -68,6 +68,7 @@ void C2ModuleLoader::load(C2::Module* c2Mod, bool is32bit) {
     ast->setName("c2", loc);
     c2Mod->addAST(ast);
 
+    // TODO remove buildtime, use plugin
     // uint64 buildtime
     {
         // make constant, CTC_NONE
