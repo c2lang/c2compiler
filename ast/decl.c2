@@ -120,46 +120,46 @@ public func void Decl.dump(const Decl* d) {
 
 public func bool Decl.isTypeDecl(const Decl* d) {
     switch (d.getKind()) {
-    case DeclKind.Function:     break;
-    case DeclKind.Import:       break;
-    case DeclKind.StructType:   return true;
-    case DeclKind.EnumType:     return true;
-    case DeclKind.EnumConstant: break;
-    case DeclKind.FunctionType: return true;
-    case DeclKind.AliasType:    return true;
-    case DeclKind.Var:          break;
-    case DeclKind.StaticAssert: break;
+    case Function:     break;
+    case Import:       break;
+    case StructType:   return true;
+    case EnumType:     return true;
+    case EnumConstant: break;
+    case FunctionType: return true;
+    case AliasType:    return true;
+    case Var:          break;
+    case StaticAssert: break;
     }
     return false;
 }
 
 func void Decl.print(const Decl* d, string_buffer.Buf* out, u32 indent) {
     switch (d.getKind()) {
-    case DeclKind.Function:
+    case Function:
         FunctionDecl.print(cast<FunctionDecl*>(d), out, indent);
         break;
-    case DeclKind.Import:
+    case Import:
         ImportDecl.print(cast<ImportDecl*>(d), out, indent);
         break;
-    case DeclKind.StructType:
+    case StructType:
         StructTypeDecl.print(cast<StructTypeDecl*>(d), out, indent);
         break;
-    case DeclKind.EnumType:
+    case EnumType:
         EnumTypeDecl.print(cast<EnumTypeDecl*>(d), out, indent);
         break;
-    case DeclKind.EnumConstant:
+    case EnumConstant:
         EnumConstantDecl.print(cast<EnumConstantDecl*>(d), out, indent);
         break;
-    case DeclKind.FunctionType:
+    case FunctionType:
         FunctionTypeDecl.print(cast<FunctionTypeDecl*>(d), out, indent);
         break;
-    case DeclKind.AliasType:
+    case AliasType:
         AliasTypeDecl.print(cast<AliasTypeDecl*>(d), out, indent);
         break;
-    case DeclKind.Var:
+    case Var:
         VarDecl.print(cast<VarDecl*>(d), out, indent);
         break;
-    case DeclKind.StaticAssert:
+    case StaticAssert:
         StaticAssertDecl.print(cast<StaticAssertDecl*>(d), out, indent);
         break;
     }

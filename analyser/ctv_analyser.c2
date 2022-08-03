@@ -28,61 +28,61 @@ public func Value get_value(const Expr* e) {
     assert(e.isCtv());
 
     switch (e.getKind()) {
-    case ExprKind.IntegerLiteral:
+    case IntegerLiteral:
         const IntegerLiteral* i = cast<IntegerLiteral*>(e);
         result.uvalue = i.getValue();
         break;
-    case ExprKind.BooleanLiteral:
+    case BooleanLiteral:
         const BooleanLiteral* b = cast<BooleanLiteral*>(e);
         result.uvalue = b.getValue();
         break;
-    case ExprKind.CharLiteral:
+    case CharLiteral:
         const CharLiteral* c = cast<CharLiteral*>(e);
         result.uvalue = c.getValue();
         break;
-    case ExprKind.StringLiteral:
+    case StringLiteral:
         assert(0);
         break;
-    case ExprKind.Nil:
+    case Nil:
         break;
-    case ExprKind.Identifier:
+    case Identifier:
         const IdentifierExpr* i = cast<IdentifierExpr*>(e);
         return get_decl_value(i.getDecl());
-    case ExprKind.Type: fallthrough;
-    case ExprKind.Call: fallthrough;
-    case ExprKind.InitList: fallthrough;
-    case ExprKind.FieldDesignatedInit: fallthrough;
-    case ExprKind.ArrayDesignatedInit:
+    case Type: fallthrough;
+    case Call: fallthrough;
+    case InitList: fallthrough;
+    case FieldDesignatedInit: fallthrough;
+    case ArrayDesignatedInit:
         // should not happen
         break;
-    case ExprKind.BinaryOperator:
+    case BinaryOperator:
         return get_binaryop_value(cast<BinaryOperator*>(e));
-    case ExprKind.UnaryOperator:
+    case UnaryOperator:
         return get_unaryop_value(cast<UnaryOperator*>(e));
-    case ExprKind.ConditionalOperator:
+    case ConditionalOperator:
         // should not happen
         break;
-    case ExprKind.Builtin:
+    case Builtin:
         const BuiltinExpr* bi = cast<BuiltinExpr*>(e);
         result.uvalue = bi.getValue();
         break;
-    case ExprKind.ArraySubscript:
+    case ArraySubscript:
         // TODO can be CTV?
         break;
-    case ExprKind.Member:
+    case Member:
         const MemberExpr* p = cast<MemberExpr*>(e);
         return get_decl_value(p.getDecl());
-    case ExprKind.Paren:
+    case Paren:
         const ParenExpr* p = cast<ParenExpr*>(e);
         return get_value(p.getInner());
-    case ExprKind.BitOffset:
+    case BitOffset:
         // TODO
         break;
-    case ExprKind.ExplicitCast:
+    case ExplicitCast:
         const ImplicitCastExpr* i = cast<ImplicitCastExpr*>(e);
         // TODO truncateLiteral()
         return get_value(i.getInner());
-    case ExprKind.ImplicitCast:
+    case ImplicitCast:
         const ImplicitCastExpr* i = cast<ImplicitCastExpr*>(e);
         return get_value(i.getInner());
     }
@@ -94,11 +94,11 @@ func Value get_decl_value(const Decl* d) {
     assert(d);
     Value result = { 0 }
     switch (d.getKind()) {
-    case DeclKind.EnumConstant:
+    case EnumConstant:
         const EnumConstantDecl* ecd = cast<EnumConstantDecl*>(d);
         result.uvalue = ecd.getValue();
         break;
-    case DeclKind.Var:
+    case Var:
         const VarDecl* vd = cast<VarDecl*>(d);
         const Expr* initval = vd.getInit();
         assert(initval);
@@ -116,25 +116,25 @@ func Value get_unaryop_value(const UnaryOperator* e) {
     Value res2 = get_value(inner);
 
     switch (e.getKind()) {
-    case UnaryOpcode.PostInc:  fallthrough;
-    case UnaryOpcode.PostDec:  fallthrough;
-    case UnaryOpcode.PreInc:   fallthrough;
-    case UnaryOpcode.PreDec:
+    case PostInc:  fallthrough;
+    case PostDec:  fallthrough;
+    case PreInc:   fallthrough;
+    case PreDec:
         // should not happen
         break;
-    case UnaryOpcode.AddrOf:   fallthrough;
-    case UnaryOpcode.Deref:
+    case AddrOf:   fallthrough;
+    case Deref:
         // Allowed?
         break;
-    case UnaryOpcode.Minus:
+    case Minus:
         result.is_signed = true;
         result.svalue = res2.is_signed ? - res2.svalue : cast<i64>(- res2.uvalue);
         break;
-    case UnaryOpcode.Not:
+    case Not:
         // Note: doesn't matter if we check svalue/uvalue
         result.svalue = (result.svalue == 0) ? 1 : 0;
         break;
-    case UnaryOpcode.LNot:
+    case LNot:
         // TODO cast to bool first?
         result.uvalue = res2.is_signed ? cast<u64>(~ res2.svalue) : ~ res2.uvalue;
         break;
@@ -152,106 +152,106 @@ func Value get_binaryop_value(const BinaryOperator* e) {
     // this is not completely correct
 
     switch (e.getKind()) {
-    case BinaryOpcode.Multiply:
+    case Multiply:
         if (left.is_signed) result.svalue = left.svalue * right.svalue;
         else result.uvalue = left.uvalue * right.uvalue;
         break;
-    case BinaryOpcode.Divide:
+    case Divide:
         // Note: should already be checked!
         assert(right.svalue != 0);
         if (left.is_signed) result.svalue = left.svalue / right.svalue;
         else result.uvalue = left.uvalue / right.uvalue;
         break;
-    case BinaryOpcode.Reminder:
+    case Reminder:
         // Note: should already be checked!
         assert(right.svalue != 0);
         if (left.is_signed) result.svalue = left.svalue % right.svalue;
         else result.uvalue = left.uvalue % right.uvalue;
         break;
-    case BinaryOpcode.Add:
+    case Add:
         if (left.is_signed) result.svalue = left.svalue + right.svalue;
         else result.uvalue = left.uvalue + right.uvalue;
         break;
-    case BinaryOpcode.Subtract:
+    case Subtract:
         if (left.is_signed) result.svalue = left.svalue - right.svalue;
         else result.uvalue = left.uvalue - right.uvalue;
         break;
-    case BinaryOpcode.ShiftLeft:
+    case ShiftLeft:
         // Note: neither may be negative, should already be checked
         // TODO warn about overflow
         result.uvalue = left.uvalue << right.uvalue;
         break;
-    case BinaryOpcode.ShiftRight:
+    case ShiftRight:
         // Note: neither may be negative, should already be checked
         // Note: rhs value should be less than bitwidth of lhs type, should already be checked
         result.uvalue = left.uvalue >> right.uvalue;
         break;
-    case BinaryOpcode.LessThan:
+    case LessThan:
         result.is_signed = false;
         if (left.is_signed) result.svalue = left.svalue < right.svalue;
         else result.uvalue = left.uvalue < right.uvalue;
         break;
-    case BinaryOpcode.GreaterThan:
+    case GreaterThan:
         result.is_signed = false;
         if (left.is_signed) result.svalue = left.svalue > right.svalue;
         else result.uvalue = left.uvalue > right.uvalue;
         break;
-    case BinaryOpcode.LessEqual:
+    case LessEqual:
         result.is_signed = false;
         if (left.is_signed) result.svalue = left.svalue <= right.svalue;
         else result.uvalue = left.uvalue <= right.uvalue;
         break;
-    case BinaryOpcode.GreaterEqual:
+    case GreaterEqual:
         result.is_signed = false;
         if (left.is_signed) result.svalue = left.svalue >= right.svalue;
         else result.uvalue = left.uvalue >= right.uvalue;
         break;
-    case BinaryOpcode.Equal:
+    case Equal:
         result.is_signed = false;
         if (left.is_signed) result.svalue = left.svalue == right.svalue;
         else result.uvalue = left.uvalue == right.uvalue;
         break;
-    case BinaryOpcode.NotEqual:
+    case NotEqual:
         result.is_signed = false;
         if (left.is_signed) result.svalue = left.svalue != right.svalue;
         else result.uvalue = left.uvalue != right.uvalue;
         break;
-    case BinaryOpcode.And:
+    case And:
         result.is_signed = false;
         if (left.is_signed) result.svalue = left.svalue & right.svalue;
         else result.uvalue = left.uvalue & right.uvalue;
         break;
-    case BinaryOpcode.Xor:
+    case Xor:
         result.is_signed = false;
         if (left.is_signed) result.svalue = left.svalue ^ right.svalue;
         else result.uvalue = left.uvalue ^ right.uvalue;
         break;
-    case BinaryOpcode.Or:
+    case Or:
         result.is_signed = false;
         if (left.is_signed) result.svalue = left.svalue | right.svalue;
         else result.uvalue = left.uvalue | right.uvalue;
         break;
-    case BinaryOpcode.LAnd:
+    case LAnd:
         result.is_signed = false;
         if (left.is_signed) result.svalue = left.svalue && right.svalue;
         else result.uvalue = left.uvalue && right.uvalue;
         break;
-    case BinaryOpcode.LOr:
+    case LOr:
         result.is_signed = false;
         if (left.is_signed) result.svalue = left.svalue || right.svalue;
         else result.uvalue = left.uvalue || right.uvalue;
         break;
-    case BinaryOpcode.Assign:    fallthrough;
-    case BinaryOpcode.MulAssign: fallthrough;
-    case BinaryOpcode.DivAssign: fallthrough;
-    case BinaryOpcode.RemAssign: fallthrough;
-    case BinaryOpcode.AddAssign: fallthrough;
-    case BinaryOpcode.SubASsign: fallthrough;
-    case BinaryOpcode.ShlAssign: fallthrough;
-    case BinaryOpcode.ShrASsign: fallthrough;
-    case BinaryOpcode.AndAssign: fallthrough;
-    case BinaryOpcode.XorAssign: fallthrough;
-    case BinaryOpcode.OrAssign:
+    case Assign:    fallthrough;
+    case MulAssign: fallthrough;
+    case DivAssign: fallthrough;
+    case RemAssign: fallthrough;
+    case AddAssign: fallthrough;
+    case SubASsign: fallthrough;
+    case ShlAssign: fallthrough;
+    case ShrASsign: fallthrough;
+    case AndAssign: fallthrough;
+    case XorAssign: fallthrough;
+    case OrAssign:
         assert(0);
         break;
     }

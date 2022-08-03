@@ -20,59 +20,59 @@ func Stmt* Parser.parseStmt(Parser* p) {
     // TODO use Jump Table (combined one for multiple purposes?)
     // TODO also jump to Expr part, since most entries use parseExprStmt (dont lookup again in Expr)
     switch (p.tok.kind) {
-    case Kind.Identifier:
+    case Identifier:
         return p.parseDeclOrStmt();
-    case Kind.LBrace:
+    case LBrace:
         return cast<Stmt*>(p.parseCompoundStmt());
-    case Kind.RBrace:
+    case RBrace:
         p.error("expected stmt");
         break;
-    case Kind.KW_assert:
+    case KW_assert:
         return p.parseAssertStmt();
-    case Kind.KW_break:
+    case KW_break:
         return p.parseBreakStmt();
-    case Kind.KW_continue:
+    case KW_continue:
         return p.parseContinueStmt();
-    case Kind.KW_do:
+    case KW_do:
         return p.parseDoStmt();
-    case Kind.KW_fallthrough:
+    case KW_fallthrough:
         return p.parseFallthroughStmt();
-    case Kind.KW_for:
+    case KW_for:
         return p.parseForStmt();
-    case Kind.KW_goto:
+    case KW_goto:
         return p.parseGotoStmt();
-    case Kind.KW_if:
+    case KW_if:
         return p.parseIfStmt();
-    case Kind.KW_return:
+    case KW_return:
         return p.parseReturnStmt();
-    case Kind.KW_switch:
+    case KW_switch:
         return p.parseSwitchStmt(false);
-    case Kind.KW_sswitch:
+    case KW_sswitch:
         return p.parseSwitchStmt(true);
-    case Kind.KW_bool:   fallthrough;
-    case Kind.KW_char:   fallthrough;
-    case Kind.KW_const:   fallthrough;
-    case Kind.KW_i8:    fallthrough;
-    case Kind.KW_i16:   fallthrough;
-    case Kind.KW_i32:   fallthrough;
-    case Kind.KW_i64:   fallthrough;
-    case Kind.KW_isize:   fallthrough;
-    case Kind.KW_f32:   fallthrough;
-    case Kind.KW_f64:   fallthrough;
-    case Kind.KW_local:   fallthrough;
-    case Kind.KW_reg8:    fallthrough;
-    case Kind.KW_reg16:   fallthrough;
-    case Kind.KW_reg32:   fallthrough;
-    case Kind.KW_reg64:   fallthrough;
-    case Kind.KW_u8:    fallthrough;
-    case Kind.KW_u16:   fallthrough;
-    case Kind.KW_u32:   fallthrough;
-    case Kind.KW_u64:   fallthrough;
-    case Kind.KW_usize:   fallthrough;
-    case Kind.KW_volatile:   fallthrough;
-    case Kind.KW_void:
+    case KW_bool:   fallthrough;
+    case KW_char:   fallthrough;
+    case KW_const:   fallthrough;
+    case KW_i8:    fallthrough;
+    case KW_i16:   fallthrough;
+    case KW_i32:   fallthrough;
+    case KW_i64:   fallthrough;
+    case KW_isize:   fallthrough;
+    case KW_f32:   fallthrough;
+    case KW_f64:   fallthrough;
+    case KW_local:   fallthrough;
+    case KW_reg8:    fallthrough;
+    case KW_reg16:   fallthrough;
+    case KW_reg32:   fallthrough;
+    case KW_reg64:   fallthrough;
+    case KW_u8:    fallthrough;
+    case KW_u16:   fallthrough;
+    case KW_u32:   fallthrough;
+    case KW_u64:   fallthrough;
+    case KW_usize:   fallthrough;
+    case KW_volatile:   fallthrough;
+    case KW_void:
         return p.parseDeclStmt(true, true);
-    case Kind.KW_while:
+    case KW_while:
         return p.parseWhileStmt();
     default:
         return p.parseExprStmt();
@@ -107,18 +107,18 @@ func bool Parser.isTypeSpec(Parser* p) {
     while (1) {
         Token t2 = p.tokenizer.lookahead(lookahead);
         switch (t2.kind) {
-        case Kind.Identifier:
+        case Identifier:
             goto type_done;
-        case Kind.LSquare:
+        case LSquare:
             lookahead = p.skipArray(lookahead);
             state = 3;
             break;
-        case Kind.Star:
+        case Star:
             if (state == 3) return false; // a[1] * ..
             state = 2;
             lookahead++;
             break;
-        case Kind.Dot:
+        case Dot:
             if (state == 0) {
                 Token t3 = p.tokenizer.lookahead(lookahead+1);
                 if (t3.kind != Kind.Identifier) {
@@ -148,13 +148,13 @@ func u32 Parser.skipArray(Parser* p, u32 lookahead) {
     while (depth) {
         Token next = p.tokenizer.lookahead(lookahead);
         switch (next.kind) {
-        case Kind.LSquare:
+        case LSquare:
             depth++;
             break;
-        case Kind.RSquare:
+        case RSquare:
             depth--;
             break;
-        case Kind.Eof:
+        case Eof:
             p.error("unexpected end-of-file");
             break;
         default:
@@ -300,10 +300,10 @@ func Stmt* Parser.parseSwitchStmt(Parser* p, bool is_sswitch) {
     while (p.tok.kind != Kind.RBrace) {
         Stmt* c = nil;
         switch (p.tok.kind) {
-        case Kind.KW_case:
+        case KW_case:
             c = p.parseCaseStmt();
             break;
-        case Kind.KW_default:
+        case KW_default:
             c = p.parseDefaultStmt();
             break;
         default:
@@ -334,9 +334,9 @@ func Stmt* Parser.parseCaseStmt(Parser* p) {
     bool more = true;
     while (more) {
         switch (p.tok.kind) {
-        case Kind.RBrace: fallthrough;
-        case Kind.KW_case:  fallthrough;
-        case Kind.KW_default:
+        case RBrace: fallthrough;
+        case KW_case:  fallthrough;
+        case KW_default:
             more = false;
             break;
         default:
@@ -362,9 +362,9 @@ func Stmt* Parser.parseDefaultStmt(Parser* p) {
     bool more = true;
     while (more) {
         switch (p.tok.kind) {
-        case Kind.RBrace: fallthrough;
-        case Kind.KW_case:  fallthrough;
-        case Kind.KW_default:
+        case RBrace: fallthrough;
+        case KW_case:  fallthrough;
+        case KW_default:
             more = false;
             break;
         default:
@@ -498,30 +498,30 @@ func Stmt* Parser.parseGotoStmt(Parser* p) {
 
 func bool Parser.isDeclaration(Parser* p) {
     switch (p.tok.kind) {
-    case Kind.Identifier:
+    case Identifier:
         return p.isTypeSpec();
-    case Kind.KW_bool:   fallthrough;
-    case Kind.KW_char:   fallthrough;
-    case Kind.KW_const:   fallthrough;
-    case Kind.KW_i8:    fallthrough;
-    case Kind.KW_i16:   fallthrough;
-    case Kind.KW_i32:   fallthrough;
-    case Kind.KW_i64:   fallthrough;
-    case Kind.KW_isize:   fallthrough;
-    case Kind.KW_f32:   fallthrough;
-    case Kind.KW_f64:   fallthrough;
-    case Kind.KW_local:   fallthrough;
-    case Kind.KW_reg8:    fallthrough;
-    case Kind.KW_reg16:   fallthrough;
-    case Kind.KW_reg32:   fallthrough;
-    case Kind.KW_reg64:   fallthrough;
-    case Kind.KW_u8:    fallthrough;
-    case Kind.KW_u16:   fallthrough;
-    case Kind.KW_u32:   fallthrough;
-    case Kind.KW_u64:   fallthrough;
-    case Kind.KW_usize:   fallthrough;
-    case Kind.KW_volatile:   fallthrough;
-    case Kind.KW_void:
+    case KW_bool:   fallthrough;
+    case KW_char:   fallthrough;
+    case KW_const:   fallthrough;
+    case KW_i8:    fallthrough;
+    case KW_i16:   fallthrough;
+    case KW_i32:   fallthrough;
+    case KW_i64:   fallthrough;
+    case KW_isize:   fallthrough;
+    case KW_f32:   fallthrough;
+    case KW_f64:   fallthrough;
+    case KW_local:   fallthrough;
+    case KW_reg8:    fallthrough;
+    case KW_reg16:   fallthrough;
+    case KW_reg32:   fallthrough;
+    case KW_reg64:   fallthrough;
+    case KW_u8:    fallthrough;
+    case KW_u16:   fallthrough;
+    case KW_u32:   fallthrough;
+    case KW_u64:   fallthrough;
+    case KW_usize:   fallthrough;
+    case KW_volatile:   fallthrough;
+    case KW_void:
         return true;
     default:
         break;

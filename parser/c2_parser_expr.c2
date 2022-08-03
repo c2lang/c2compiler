@@ -264,13 +264,13 @@ func Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs) {
 
     while (1) {
         switch (p.tok.kind) {
-        case Kind.Identifier:
+        case Identifier:
             return lhs;
-        case Kind.LParen:
+        case LParen:
             // C2: can only be call expr?
             lhs = p.parseCallExpr(lhs);
             break;
-        case Kind.LSquare:
+        case LSquare:
             p.consumeToken();
             Expr* idx = p.parseExpr();
             if (p.tok.kind  == Kind.Colon) {
@@ -285,7 +285,7 @@ func Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs) {
             p.expectAndConsume(Kind.RSquare);
             lhs = p.builder.actOnArraySubscriptExpr(rloc, lhs, idx);
             break;
-        case Kind.Dot:
+        case Dot:
             p.consumeToken();
             p.expectIdentifier();
             SrcLoc member_loc = p.tok.loc;
@@ -293,8 +293,8 @@ func Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs) {
             p.consumeToken();
             lhs = p.builder.actOnMemberExpr(lhs, member_loc, member_name);
             break;
-        case Kind.PlusPlus: fallthrough;
-        case Kind.MinusMinus:
+        case PlusPlus: fallthrough;
+        case MinusMinus:
             lhs = p.builder.actOnPostFixUnaryOperator(p.tok.loc, p.tok.kind, lhs);
             p.consumeToken();
             break;
@@ -360,7 +360,7 @@ func Expr* Parser.parseSizeof(Parser* p) {
     Expr* res = nil;
 
     switch (p.tok.kind) {
-    case Kind.Identifier:
+    case Identifier:
 /*
     if (canBeParsedAsStructType()) {
             Res = ParseTypeSpecifier(false);
@@ -369,24 +369,24 @@ func Expr* Parser.parseSizeof(Parser* p) {
     }
 */
         fallthrough;
-    case Kind.KW_char: fallthrough;
-    case Kind.KW_f32: fallthrough;
-    case Kind.KW_f64: fallthrough;
-    case Kind.KW_i8:  fallthrough;
-    case Kind.KW_i16: fallthrough;
-    case Kind.KW_i32: fallthrough;
-    case Kind.KW_i64: fallthrough;
-    case Kind.KW_isize: fallthrough;
-    case Kind.KW_reg8:  fallthrough;
-    case Kind.KW_reg16: fallthrough;
-    case Kind.KW_reg32: fallthrough;
-    case Kind.KW_reg64: fallthrough;
-    case Kind.KW_u8:  fallthrough;
-    case Kind.KW_u16: fallthrough;
-    case Kind.KW_u32: fallthrough;
-    case Kind.KW_u64: fallthrough;
-    case Kind.KW_usize: fallthrough;
-    case Kind.KW_void:
+    case KW_char: fallthrough;
+    case KW_f32: fallthrough;
+    case KW_f64: fallthrough;
+    case KW_i8:  fallthrough;
+    case KW_i16: fallthrough;
+    case KW_i32: fallthrough;
+    case KW_i64: fallthrough;
+    case KW_isize: fallthrough;
+    case KW_reg8:  fallthrough;
+    case KW_reg16: fallthrough;
+    case KW_reg32: fallthrough;
+    case KW_reg64: fallthrough;
+    case KW_u8:  fallthrough;
+    case KW_u16: fallthrough;
+    case KW_u32: fallthrough;
+    case KW_u64: fallthrough;
+    case KW_usize: fallthrough;
+    case KW_void:
         res = p.builder.actOnTypeExpr(p.tok.loc, p.parseTypeSpecifier(false));
         break;
     default:
@@ -415,13 +415,13 @@ func Expr* Parser.parseElemsof(Parser* p) {
 
 func Expr* Parser.parseInitValue(Parser* p, bool* need_semi, bool allow_designators) {
     switch (p.tok.kind) {
-    case Kind.LBrace:
+    case LBrace:
         *need_semi = false;
         return p.parseInitList();
-    case Kind.Dot:
+    case Dot:
         if (!allow_designators) p.error("designator not allowed here");
         return p.parseFieldDesignator(need_semi);
-    case Kind.LSquare:
+    case LSquare:
         if (!allow_designators) p.error("designator not allowed here");
         return p.parseArrayDesignator(need_semi);
     default:

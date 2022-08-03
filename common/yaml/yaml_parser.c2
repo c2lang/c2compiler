@@ -86,23 +86,23 @@ func void Parser.expectAndConsume(Parser* p, TokenKind kind) {
 func void Parser.parse_doc(Parser* p) {
     while (1) {
         switch (p.token.kind) {
-        case TokenKind.Doc_Start:
+        case Doc_Start:
             p.consumeToken();
             if (p.doc_started) p.doc_end();
             p.doc_start();
             break;
-        case TokenKind.Doc_End:
+        case Doc_End:
             if (!p.doc_started || !p.in_document) {
                 p.error("END document without start");
             }
             p.consumeToken();
             p.doc_end();
             return;
-        case TokenKind.Directive:
+        case Directive:
             // ignore
             p.consumeToken();
             break;
-        case TokenKind.Eof:
+        case Eof:
             return;
         default:
             if (!p.doc_started) p.doc_start();
@@ -114,32 +114,32 @@ func void Parser.parse_doc(Parser* p) {
 
 func void Parser.parse_node(Parser* p) {
     switch (p.token.kind) {
-    case TokenKind.Plain_Scalar:  fallthrough;
-    case TokenKind.Single_Quoted_Scalar: fallthrough;
-    case TokenKind.Double_Quoted_Scalar:
+    case Plain_Scalar:  fallthrough;
+    case Single_Quoted_Scalar: fallthrough;
+    case Double_Quoted_Scalar:
         Node* n = p.data.add_node(NodeKind.Unknown, p.token.text_idx);
         p.push_node(n, NodeKind.Unknown, p.cur_indent);
         p.consumeToken();
         p.expectAndConsume(TokenKind.Colon);
         p.parse_value();
         break;
-    case TokenKind.Dash:
+    case Dash:
         p.consumeToken();
         Node* n = p.data.add_node(NodeKind.Unknown, 0);
         p.push_node(n, NodeKind.Sequence, p.cur_indent + 1);
         p.parse_node_or_value();
         break;
-    case TokenKind.Indent:
+    case Indent:
         p.cur_indent = p.token.indent;
         p.consumeToken();
         break;
-    case TokenKind.Dedent:
+    case Dedent:
         p.cur_indent = p.token.indent;
         p.consumeToken();
         p.pop();
         break;
-    case TokenKind.Doc_Start: fallthrough;
-    case TokenKind.Doc_End:
+    case Doc_Start: fallthrough;
+    case Doc_End:
         break;
     default:
         //p.error("%s() unhandled token '%s'", __func__, p.token.str());
@@ -150,9 +150,9 @@ func void Parser.parse_node(Parser* p) {
 
 func void Parser.parse_value(Parser* p) {
     switch (p.token.kind) {
-    case TokenKind.Plain_Scalar:      fallthrough;
-    case TokenKind.Single_Quoted_Scalar: fallthrough;
-    case TokenKind.Double_Quoted_Scalar:
+    case Plain_Scalar:      fallthrough;
+    case Single_Quoted_Scalar: fallthrough;
+    case Double_Quoted_Scalar:
         if (p.token.same_line) {
             p.add_scalar_value(p.token.text_idx);
             p.consumeToken();
@@ -160,26 +160,26 @@ func void Parser.parse_value(Parser* p) {
             assert(0); // valid??
         }
         return;
-    case TokenKind.Dash:
+    case Dash:
         p.consumeToken();
         Node* n = p.data.add_node(NodeKind.Unknown, 0);
         p.push_node(n, NodeKind.Sequence, p.cur_indent + 1);
         p.parse_node_or_value();
         return;
-    case TokenKind.Indent:
+    case Indent:
         p.cur_indent = p.token.indent;
         p.consumeToken();
         p.parse_node();
         return;
-    case TokenKind.Dedent:
+    case Dedent:
         p.cur_indent = p.token.indent;
         p.consumeToken();
         p.pop();
         return;
-    case TokenKind.Doc_Start: fallthrough;
-    case TokenKind.Doc_End:
+    case Doc_Start: fallthrough;
+    case Doc_End:
         return;
-    case TokenKind.Eof:
+    case Eof:
         p.add_scalar_value(0);
         return;
     default:
@@ -191,9 +191,9 @@ func void Parser.parse_value(Parser* p) {
 
 func void Parser.parse_node_or_value(Parser* p) {
     switch (p.token.kind) {
-    case TokenKind.Plain_Scalar: fallthrough;
-    case TokenKind.Single_Quoted_Scalar: fallthrough;
-    case TokenKind.Double_Quoted_Scalar:
+    case Plain_Scalar: fallthrough;
+    case Single_Quoted_Scalar: fallthrough;
+    case Double_Quoted_Scalar:
         Token* next = p.tokenizer.lex_next();
         if (next.kind == TokenKind.Colon) {
             // NOTE: this doesn't work, because tokenizer doesn't know (and doesn't give DEDENT)

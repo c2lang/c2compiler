@@ -45,15 +45,15 @@ func void Data.dump_node(const Data* d, const Node* n, i32 indent) {
     else printf("-");
     printf("  value: ");
     switch (n.kind) {
-    case NodeKind.Unknown:
+    case Unknown:
         printf("-\n");
         break;
-    case NodeKind.Scalar:
+    case Scalar:
         if (n.text_idx) printf("%s", &d.text[n.text_idx]);
         printf("\n");
         break;
-    case NodeKind.Map: fallthrough;
-    case NodeKind.Sequence:
+    case Map: fallthrough;
+    case Sequence:
         printf("-\n");
         if (n.child_idx) d.dump_node(d.idx2node(n.child_idx), indent+1);
         break;

@@ -148,29 +148,29 @@ public func QualType Builder.actOnBuiltinType(Builder* b, tokens.Kind kind) {
     Type* t = nil;
     // TODO lookup table -> fill in init with correct width for usize/isize, fill with QualType
     switch (kind) {
-    case Kind.KW_u8:    return g_u8;
-    case Kind.KW_u16:   return g_u16;
-    case Kind.KW_u32:   return g_u32;
-    case Kind.KW_u64:   return g_u64;
-    case Kind.KW_usize:
+    case KW_u8:    return g_u8;
+    case KW_u16:   return g_u16;
+    case KW_u32:   return g_u32;
+    case KW_u64:   return g_u64;
+    case KW_usize:
         // TODO targetInfo.intWidth
         return g_usize;
-    case Kind.KW_i8:    return g_i8;
-    case Kind.KW_i16:   return g_i16;
-    case Kind.KW_i32:   return g_i32;
-    case Kind.KW_i64:   return g_i64;
-    case Kind.KW_isize: return g_isize;
+    case KW_i8:    return g_i8;
+    case KW_i16:   return g_i16;
+    case KW_i32:   return g_i32;
+    case KW_i64:   return g_i64;
+    case KW_isize: return g_isize;
 /*
-    case Kind.KW_f32:
-    case Kind.KW_f64:
-    case Kind.KW_reg8:
-    case Kind.KW_reg16:
-    case Kind.KW_reg32:
-    case Kind.KW_reg64:
+    case KW_f32:
+    case KW_f64:
+    case KW_reg8:
+    case KW_reg16:
+    case KW_reg32:
+    case KW_reg64:
 */
-    case Kind.KW_char:  return g_i8;
-    case Kind.KW_void:  return g_void;
-    case Kind.KW_bool:  return g_bool;
+    case KW_char:  return g_i8;
+    case KW_void:  return g_void;
+    case KW_bool:  return g_bool;
     default:
         // fatal error
         break;
@@ -334,13 +334,13 @@ public func Expr* Builder.actOnParenExpr(Builder* b, SrcLoc loc, Expr* inner) {
 
 func UnaryOpcode convertTokenToUnaryOpcode(Kind kind) {
     switch (kind) {
-    case Kind.Exclaim: return UnaryOpcode.LNot;
-    case Kind.Star: return UnaryOpcode.Deref;
-    case Kind.Amp: return UnaryOpcode.AddrOf;
-    case Kind.PlusPlus:   return UnaryOpcode.PreInc;
-    case Kind.Minus: return UnaryOpcode.Minus;
-    case Kind.MinusMinus: return UnaryOpcode.PreDec;
-    case Kind.Tilde: return UnaryOpcode.Not;
+    case Exclaim: return UnaryOpcode.LNot;
+    case Star: return UnaryOpcode.Deref;
+    case Amp: return UnaryOpcode.AddrOf;
+    case PlusPlus:   return UnaryOpcode.PreInc;
+    case Minus: return UnaryOpcode.Minus;
+    case MinusMinus: return UnaryOpcode.PreDec;
+    case Tilde: return UnaryOpcode.Not;
     default:
         break;
     }
@@ -362,36 +362,36 @@ public func Expr* Builder.actOnPostFixUnaryOperator(Builder* b, SrcLoc loc, Kind
 func BinaryOpcode convertTokenToBinaryOpcode(Kind kind) {
     // TODO use lookup table (or single table with multiple entries for conversions?)
     switch (kind) {
-    case Kind.Star: return BinaryOpcode.Multiply;
-    case Kind.Slash: return BinaryOpcode.Divide;
-    case Kind.Percent: return BinaryOpcode.Reminder;
-    case Kind.Plus: return BinaryOpcode.Add;
-    case Kind.Minus: return BinaryOpcode.Subtract;
-    case Kind.LessLess: return BinaryOpcode.ShiftLeft;
-    case Kind.GreaterGreater: return BinaryOpcode.ShiftRight;
-    case Kind.Less: return BinaryOpcode.LessThan;
-    case Kind.Greater: return BinaryOpcode.GreaterThan;
-    case Kind.LessEqual: return BinaryOpcode.LessEqual;
-    case Kind.GreaterEqual: return BinaryOpcode.GreaterEqual;
-    case Kind.EqualEqual: return BinaryOpcode.Equal;
-    case Kind.ExclaimEqual: return BinaryOpcode.NotEqual;
-    case Kind.Amp: return BinaryOpcode.And;
-    case Kind.Caret: return BinaryOpcode.Xor;
-    case Kind.Pipe: return BinaryOpcode.Or;
-    case Kind.AmpAmp: return BinaryOpcode.LAnd;
-    case Kind.PipePipe: return BinaryOpcode.LOr;
-    case Kind.Equal: return BinaryOpcode.Assign;
-    case Kind.StarEqual: return BinaryOpcode.MulAssign;
-    case Kind.SlashEqual: return BinaryOpcode.DivAssign;
-    case Kind.PercentEqual: return BinaryOpcode.RemAssign;
-    case Kind.PlusEqual: return BinaryOpcode.AddAssign;
-    case Kind.MinusEqual: return BinaryOpcode.SubASsign;
-    case Kind.LessLessEqual: return BinaryOpcode.ShlAssign;
-    case Kind.GreaterGreaterEqual: return BinaryOpcode.ShrASsign;
-    case Kind.AmpEqual: return BinaryOpcode.AndAssign;
-    case Kind.CaretEqual: return BinaryOpcode.XorAssign;
-    case Kind.PipeEqual: return BinaryOpcode.OrAssign;
-    //case Kind.Comma: return BinaryOpcode.Comma;
+    case Star: return BinaryOpcode.Multiply;
+    case Slash: return BinaryOpcode.Divide;
+    case Percent: return BinaryOpcode.Reminder;
+    case Plus: return BinaryOpcode.Add;
+    case Minus: return BinaryOpcode.Subtract;
+    case LessLess: return BinaryOpcode.ShiftLeft;
+    case GreaterGreater: return BinaryOpcode.ShiftRight;
+    case Less: return BinaryOpcode.LessThan;
+    case Greater: return BinaryOpcode.GreaterThan;
+    case LessEqual: return BinaryOpcode.LessEqual;
+    case GreaterEqual: return BinaryOpcode.GreaterEqual;
+    case EqualEqual: return BinaryOpcode.Equal;
+    case ExclaimEqual: return BinaryOpcode.NotEqual;
+    case Amp: return BinaryOpcode.And;
+    case Caret: return BinaryOpcode.Xor;
+    case Pipe: return BinaryOpcode.Or;
+    case AmpAmp: return BinaryOpcode.LAnd;
+    case PipePipe: return BinaryOpcode.LOr;
+    case Equal: return BinaryOpcode.Assign;
+    case StarEqual: return BinaryOpcode.MulAssign;
+    case SlashEqual: return BinaryOpcode.DivAssign;
+    case PercentEqual: return BinaryOpcode.RemAssign;
+    case PlusEqual: return BinaryOpcode.AddAssign;
+    case MinusEqual: return BinaryOpcode.SubASsign;
+    case LessLessEqual: return BinaryOpcode.ShlAssign;
+    case GreaterGreaterEqual: return BinaryOpcode.ShrASsign;
+    case AmpEqual: return BinaryOpcode.AndAssign;
+    case CaretEqual: return BinaryOpcode.XorAssign;
+    case PipeEqual: return BinaryOpcode.OrAssign;
+    //case Comma: return BinaryOpcode.Comma;
     default:
         break;
     }

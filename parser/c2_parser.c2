@@ -172,23 +172,23 @@ func void Parser.parseTopLevel(Parser* p) {
 
     bool is_public = p.parseOptionalAccessSpecifier();
     switch (p.tok.kind) {
-        case Kind.KW_assert:
+        case KW_assert:
             p.error("assert can only be used inside a function");
             break;
-        case Kind.KW_func:
+        case KW_func:
             p.parseFuncDef(is_public);
             break;
-        case Kind.KW_import:
+        case KW_import:
             p.error("import after decls");
             break;
-        case Kind.KW_static_assert:
+        case KW_static_assert:
             if (is_public) p.error("static_assert cannot be public");
             p.parseStaticAssert();
             break;
-        case Kind.KW_type:
+        case KW_type:
             p.parseTypeDef(is_public);
             break;
-        case Kind.Eof:
+        case Eof:
             break;
         default:
             p.parseVarDef(is_public);
@@ -216,11 +216,11 @@ func void Parser.parseOptionalAttributes(Parser* p) {
             p.consumeToken();
             end_loc = attr_loc;
             switch (p.tok.kind) {
-            case Kind.StringLiteral:
+            case StringLiteral:
                 // TODO
                 p.consumeToken();
                 break;
-            case Kind.NumberLiteral:
+            case NumberLiteral:
                 // TODO
                 p.consumeToken();
                 break;
@@ -464,29 +464,29 @@ func QualType Parser.parseSingleTypeSpecifier(Parser* p, bool allow_qualifier) {
     QualType base;
 
     switch (p.tok.kind) {
-    case Kind.KW_u8:   fallthrough;
-    case Kind.KW_u16:  fallthrough;
-    case Kind.KW_u32:  fallthrough;
-    case Kind.KW_u64:  fallthrough;
-    case Kind.KW_usize:  fallthrough;
-    case Kind.KW_i8:  fallthrough;
-    case Kind.KW_i16:  fallthrough;
-    case Kind.KW_i32:  fallthrough;
-    case Kind.KW_i64:  fallthrough;
-    case Kind.KW_isize:  fallthrough;
-    case Kind.KW_f32:  fallthrough;
-    case Kind.KW_f64:  fallthrough;
-    case Kind.KW_reg8:  fallthrough;
-    case Kind.KW_reg16:  fallthrough;
-    case Kind.KW_reg32:  fallthrough;
-    case Kind.KW_reg64:  fallthrough;
-    case Kind.KW_char:  fallthrough;
-    case Kind.KW_void:  fallthrough;
-    case Kind.KW_bool:
+    case KW_u8:   fallthrough;
+    case KW_u16:  fallthrough;
+    case KW_u32:  fallthrough;
+    case KW_u64:  fallthrough;
+    case KW_usize:  fallthrough;
+    case KW_i8:  fallthrough;
+    case KW_i16:  fallthrough;
+    case KW_i32:  fallthrough;
+    case KW_i64:  fallthrough;
+    case KW_isize:  fallthrough;
+    case KW_f32:  fallthrough;
+    case KW_f64:  fallthrough;
+    case KW_reg8:  fallthrough;
+    case KW_reg16:  fallthrough;
+    case KW_reg32:  fallthrough;
+    case KW_reg64:  fallthrough;
+    case KW_char:  fallthrough;
+    case KW_void:  fallthrough;
+    case KW_bool:
         base = p.builder.actOnBuiltinType(p.tok.kind);
         p.consumeToken();
         break;
-    case Kind.Identifier:
+    case Identifier:
         base = p.parseFullTypeIdentifier();
         break;
     default:
@@ -530,22 +530,22 @@ public func void dump_token(SourceMgr* sm, const Token* tok) {
     }
     printf("%10s  %s  ", kind2str(tok.kind), sm.loc2str(tok.loc));
     switch (tok.kind) {
-    case Kind.Identifier:
+    case Identifier:
         printf("  %s%s%s", color.Cyan, tok.text_value, color.Normal);
         break;
-    case Kind.NumberLiteral:
+    case NumberLiteral:
         printf("  (%u) %s%s%s", tok.radix, color.Cyan, tok.text_value, color.Normal);
         break;
-    case Kind.CharLiteral:
+    case CharLiteral:
         printf("  %s'%c'%s", color.Cyan, tok.char_value, color.Normal);
         break;
-    case Kind.StringLiteral:
+    case StringLiteral:
         printf("  %s\"%s\"%s", color.Cyan, tok.text_value, color.Normal);
         break;
-    case Kind.Warning:
+    case Warning:
         printf("  %s%s%s", color.Yellow, tok.error_msg, color.Normal);
         break;
-    case Kind.Error:
+    case Error:
         printf("  %s%s%s", color.Red, tok.error_msg, color.Normal);
         break;
     default:

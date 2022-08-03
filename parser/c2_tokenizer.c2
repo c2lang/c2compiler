@@ -488,13 +488,13 @@ func  void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
     while (1) {
         Action act = Char_lookup[*t.cur];
         switch (act) {
-        case Action.INVALID:
+        case INVALID:
             t.error(result, "invalid char '%c'", *t.cur);
             return;
-        case Action.TABSPACE:
+        case TABSPACE:
             t.cur++;
             continue;
-        case Action.IDENT_OR_KEYWORD:
+        case IDENT_OR_KEYWORD:
             result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             const Keyword* kw = check_keyword(t.cur);
             if (kw) {
@@ -504,37 +504,37 @@ func  void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
                 t.lex_identifier(result);
             }
             return;
-        case Action.IDENT:
+        case IDENT:
             t.lex_identifier(result);
             return;
-        case Action.DIGIT:
+        case DIGIT:
             t.lex_number(result);
             return;
-        case Action.LPAREN:
+        case LPAREN:
             result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             result.kind = Kind.LParen;
             t.cur++;
             return;
-        case Action.RPAREN:
+        case RPAREN:
             result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             result.kind = Kind.RParen;
             t.cur++;
             return;
-        case Action.LSQUARE:
+        case LSQUARE:
             result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             result.kind = Kind.LSquare;
             t.cur++;
             return;
-        case Action.RSQUARE:
+        case RSQUARE:
             result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             result.kind = Kind.RSquare;
             t.cur++;
             return;
-        case Action.NEWLINE:
+        case NEWLINE:
             t.cur++;
             t.line_start = t.cur;
             continue;
-        case Action.EXCLAIM:
+        case EXCLAIM:
             result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '=') {
@@ -544,19 +544,19 @@ func  void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
                 result.kind = Kind.Exclaim;
             }
             return;
-        case Action.DQUOTE:
+        case DQUOTE:
             t.lex_string_literal(result);
             return;
-        case Action.SQUOTE:
+        case SQUOTE:
             t.lex_char_literal(result);
             return;
-        case Action.POUND:
+        case POUND:
             if (t.lex_feature_cmd(result)) return;
             if (!t.is_enabled()) {
                 if (t.skip_feature(result)) return;
             }
             continue;
-        case Action.STAR:
+        case STAR:
             result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '=') {
@@ -566,7 +566,7 @@ func  void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
                 result.kind = Kind.Star;
             }
             return;
-        case Action.PLUS:
+        case PLUS:
             result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '+') {
@@ -581,7 +581,7 @@ func  void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             }
             result.kind = Kind.Plus;
             return;
-        case Action.MINUS:
+        case MINUS:
             result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '-') {
@@ -601,12 +601,12 @@ func  void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             }
             result.kind = Kind.Minus;
             return;
-        case Action.COMMA:
+        case COMMA:
             result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             result.kind = Kind.Comma;
             t.cur++;
             return;
-        case Action.DOT:
+        case DOT:
             result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             t.cur++;
             if (t.cur[0] == '.' && t.cur[1] == '.') {
@@ -616,7 +616,7 @@ func  void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
                 result.kind = Kind.Dot;
             }
             return;
-        case Action.PERCENT:
+        case PERCENT:
             result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '=') {
@@ -626,7 +626,7 @@ func  void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             }
             result.kind = Kind.Percent;
             return;
-        case Action.SLASH:
+        case SLASH:
             result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '=') {
@@ -644,17 +644,17 @@ func  void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             }
             result.kind = Kind.Slash;
             return;
-        case Action.COLON:
+        case COLON:
             result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             result.kind = Kind.Colon;
             t.cur++;
             return;
-        case Action.SEMI_COLON:
+        case SEMI_COLON:
             result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             result.kind = Kind.Semicolon;
             t.cur++;
             return;
-        case Action.LESS:
+        case LESS:
             result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '=') {
@@ -673,7 +673,7 @@ func  void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             }
             result.kind = Kind.Less;
             return;
-        case Action.EQUAL:
+        case EQUAL:
             result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '=') {
@@ -683,7 +683,7 @@ func  void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
                 result.kind = Kind.Equal;
             }
             return;
-        case Action.GREATER:
+        case GREATER:
             result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '=') {
@@ -702,17 +702,17 @@ func  void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             }
             result.kind = Kind.Greater;
             return;
-        case Action.QUESTION:
+        case QUESTION:
             result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             result.kind = Kind.Question;
             t.cur++;
             return;
-        case Action.AT:
+        case AT:
             result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             result.kind = Kind.At;
             t.cur++;
             return;
-        case Action.AMP:
+        case AMP:
             result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '&') {
@@ -727,7 +727,7 @@ func  void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             }
             result.kind = Kind.Amp;
             return;
-        case Action.CARET:
+        case CARET:
             result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '=') {
@@ -737,17 +737,17 @@ func  void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             }
             result.kind = Kind.Caret;
             return;
-        case Action.LBRACE:
+        case LBRACE:
             result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             result.kind = Kind.LBrace;
             t.cur++;
             return;
-        case Action.RBRACE:
+        case RBRACE:
             result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             result.kind = Kind.RBrace;
             t.cur++;
             return;
-        case Action.PIPE:
+        case PIPE:
             result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             t.cur++;
             if (*t.cur == '|') {
@@ -762,12 +762,12 @@ func  void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             }
             result.kind = Kind.Pipe;
             return;
-        case Action.TILDE:
+        case TILDE:
             result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             result.kind = Kind.Tilde;
             t.cur++;
             return;
-        case Action.CR:
+        case CR:
             t.cur++;
             if (*t.cur != '\n') {
                 t.error(result, "unexpected char 0x%02X", *t.cur);
@@ -775,7 +775,7 @@ func  void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             }
             t.cur++;
             return;
-        case Action.EOF:
+        case EOF:
             result.loc = 0; //t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
             result.kind = Kind.Eof;
             result.more = false;
@@ -1136,18 +1136,18 @@ func bool Tokenizer.handle_if(Tokenizer* t, Token* result) {
     bool enabled = false;
     Action act = Char_lookup[*t.cur];
     switch (act) {
-    case Action.INVALID:
+    case INVALID:
         t.error(result, "invalid char '%c'", *t.cur);
         return true;
-    case Action.IDENT_OR_KEYWORD: fallthrough;
-    case Action.IDENT:
+    case IDENT_OR_KEYWORD: fallthrough;
+    case IDENT:
         if (t.parse_feature(result, &enabled)) return true;
         break;
-    case Action.DIGIT:
+    case DIGIT:
         if (*t.cur != '0') enabled = true;
         t.cur++;
         break;
-    case Action.EOF:
+    case EOF:
         t.cur--;
         t.error(result, "expected feature");
         return true;
@@ -1210,26 +1210,26 @@ func bool Tokenizer.skip_feature(Tokenizer* t, Token* result) {
     while (1) {
         Action act = Char_lookup[*t.cur];
         switch (act) {
-        case Action.INVALID:
+        case INVALID:
             t.error(result, "invalid char [skip] '%c'", *t.cur);
             return true;
-        case Action.NEWLINE:
+        case NEWLINE:
             t.cur++;
             t.line_start = t.cur;
             break;
-        case Action.DQUOTE:
+        case DQUOTE:
             t.skip_string_literal();
             break;
         // TODO handle block/line comments (could be weird stuff inside)
         // NOTE: could be in comment!
-//        case Action.SQUOTE:
+//        case SQUOTE:
 //            t.skip_char_literal();
 //            break;
-        case Action.POUND:
+        case POUND:
             if (t.lex_feature_cmd(result)) return true;
             if (t.is_enabled()) return false;
             break;
-        case Action.EOF:
+        case EOF:
             t.cur--;
             Feature* top = &t.feature_stack[t.feature_count-1];
             t.error(result, "un-terminated #%s", top.is_if ? "if" : "else");

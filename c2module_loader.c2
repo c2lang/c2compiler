@@ -47,34 +47,34 @@ public func Module* load(ast_context.Context* context, string_pool.Pool* pool) {
         // TODO use table inside ast.utils
         QualType qt = { 0 }
         switch (ctypes[i].kind) {
-        case BuiltinTypeKind.Int8:
+        case Int8:
             qt = g_i8;
             break;
-        case BuiltinTypeKind.Int16:
+        case Int16:
             qt = g_i16;
             break;
-        case BuiltinTypeKind.Int32:
+        case Int32:
             qt = g_i32;
             break;
-        case BuiltinTypeKind.Int64:
+        case Int64:
             qt = g_i64;
             break;
-        case BuiltinTypeKind.UInt8:
+        case UInt8:
             qt = g_u8;
             break;
-        case BuiltinTypeKind.UInt16:
+        case UInt16:
             qt = g_u16;
             break;
-        case BuiltinTypeKind.UInt32:
+        case UInt32:
             qt = g_u32;
             break;
-        case BuiltinTypeKind.UInt64:
+        case UInt64:
             qt = g_u64;
             break;
-        case BuiltinTypeKind.Float32:
+        case Float32:
             qt = g_f32;
             break;
-        case BuiltinTypeKind.Float64:
+        case Float64:
             qt = g_f64;
             break;
         default:

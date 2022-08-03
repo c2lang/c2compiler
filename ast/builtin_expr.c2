@@ -101,18 +101,18 @@ func void BuiltinExpr.print(const BuiltinExpr* e, string_buffer.Buf* out, u32 in
     out.add("\n");
 
     switch (e.getKind()) {
-    case BuiltinExprKind.Sizeof:
+    case Sizeof:
         break;
-    case BuiltinExprKind.Elemsof:
+    case Elemsof:
         break;
-    case BuiltinExprKind.EnumMin:
+    case EnumMin:
         break;
-    case BuiltinExprKind.EnumMax:
+    case EnumMax:
         break;
-    case BuiltinExprKind.OffsetOf:
+    case OffsetOf:
         e.offset[0].member.print(out, indent + 2);
         break;
-    case BuiltinExprKind.ToContainer:
+    case ToContainer:
         e.container[0].member.print(out, indent + 2);
         e.container[0].pointer.print(out, indent + 2);
         break;
@@ -124,19 +124,19 @@ func void BuiltinExpr.printLiteral(const BuiltinExpr* e, string_buffer.Buf* out)
     out.add("(");
     out.add(")");
     switch (e.getKind()) {
-    case BuiltinExprKind.Sizeof:
+    case Sizeof:
         break;
-    case BuiltinExprKind.Elemsof:
+    case Elemsof:
         break;
-    case BuiltinExprKind.EnumMin:
+    case EnumMin:
         break;
-    case BuiltinExprKind.EnumMax:
+    case EnumMax:
         break;
-    case BuiltinExprKind.OffsetOf:
+    case OffsetOf:
         // TODO
         //e.offset[0].member.print(out, indent + 2);
         break;
-    case BuiltinExprKind.ToContainer:
+    case ToContainer:
         // TODO
         //e.container[0].member.print(out, indent + 2);
         //e.container[0].pointer.print(out, indent + 2);

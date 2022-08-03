@@ -69,25 +69,25 @@ public func void Type.dump(const Type* t) {
 func void Type.print(const Type* t, string_buffer.Buf* out) {
     out.color(col_Type);
     switch (t.getKind()) {
-    case TypeKind.Builtin:
+    case Builtin:
         BuiltinType.print(cast<BuiltinType*>(t), out);
         break;
-    case TypeKind.Pointer:
+    case Pointer:
         PointerType.print(cast<PointerType*>(t), out);
         break;
-    case TypeKind.Array:
+    case Array:
         ArrayType.print(cast<ArrayType*>(t), out);
         break;
-    case TypeKind.Ref:
+    case Ref:
         RefType.print(cast<RefType*>(t), out);
         break;
-    case TypeKind.Struct:
+    case Struct:
         StructType.print(cast<StructType*>(t), out);
         break;
-    case TypeKind.Enum:
+    case Enum:
         EnumType.print(cast<EnumType*>(t), out);
         break;
-    case TypeKind.Function:
+    case Function:
         FunctionType.print(cast<FunctionType*>(t), out);
         break;
     }
@@ -95,25 +95,25 @@ func void Type.print(const Type* t, string_buffer.Buf* out) {
 
 func void Type.debugPrint(const Type* t, string_buffer.Buf* out) {
     switch (t.getKind()) {
-    case TypeKind.Builtin:
+    case Builtin:
         BuiltinType.debugPrint(cast<BuiltinType*>(t), out);
         break;
-    case TypeKind.Pointer:
+    case Pointer:
         PointerType.debugPrint(cast<PointerType*>(t), out);
         break;
-    case TypeKind.Array:
+    case Array:
         ArrayType.debugPrint(cast<ArrayType*>(t), out);
         break;
-    case TypeKind.Ref:
+    case Ref:
         RefType.debugPrint(cast<RefType*>(t), out);
         break;
-    case TypeKind.Struct:
+    case Struct:
         StructType.debugPrint(cast<StructType*>(t), out);
         break;
-    case TypeKind.Enum:
+    case Enum:
         EnumType.debugPrint(cast<EnumType*>(t), out);
         break;
-    case TypeKind.Function:
+    case Function:
         FunctionType.debugPrint(cast<FunctionType*>(t), out);
         break;
     }
@@ -121,25 +121,25 @@ func void Type.debugPrint(const Type* t, string_buffer.Buf* out) {
 
 public func void Type.fullPrint(const Type* t, string_buffer.Buf* out, u32 indent) {
     switch (t.getKind()) {
-    case TypeKind.Builtin:
+    case Builtin:
         BuiltinType.fullPrint(cast<BuiltinType*>(t), out, indent);
         break;
-    case TypeKind.Pointer:
+    case Pointer:
         PointerType.fullPrint(cast<PointerType*>(t), out, indent);
         break;
-    case TypeKind.Array:
+    case Array:
         ArrayType.fullPrint(cast<ArrayType*>(t), out, indent);
         break;
-    case TypeKind.Ref:
+    case Ref:
         RefType.fullPrint(cast<RefType*>(t), out, indent);
         break;
-    case TypeKind.Struct:
+    case Struct:
         StructType.fullPrint(cast<StructType*>(t), out, indent);
         break;
-    case TypeKind.Enum:
+    case Enum:
         EnumType.fullPrint(cast<EnumType*>(t), out, indent);
         break;
-    case TypeKind.Function:
+    case Function:
         FunctionType.fullPrint(cast<FunctionType*>(t), out, indent);
         break;
     }

@@ -204,28 +204,28 @@ func void ModuleAnalyser.analyseGlobalDecl(ModuleAnalyser* ma, Decl* d) {
     if (!ma.pushCheck(d)) return;
 
     switch (d.getKind()) {
-    case DeclKind.Function:
+    case Function:
         break;
-    case DeclKind.Import:
+    case Import:
         break;
-    case DeclKind.StructType:
+    case StructType:
         ma.analyseStructType(cast<StructTypeDecl*>(d));
         break;
-    case DeclKind.EnumType:
+    case EnumType:
         ma.analyseEnumType(cast<EnumTypeDecl*>(d));
         break;
-    case DeclKind.EnumConstant:
+    case EnumConstant:
         // TODO
         break;
-    case DeclKind.FunctionType:
+    case FunctionType:
         // TODO
         break;
-    case DeclKind.AliasType:
+    case AliasType:
         break;
-    case DeclKind.Var:
+    case Var:
         ma.analyseGlobalVarDecl(cast<VarDecl*>(d));
         break;
-    case DeclKind.StaticAssert:
+    case StaticAssert:
         break;
     }
 
@@ -452,9 +452,9 @@ func QualType ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt, bool f
 
     Type* t = qt.getType();
     switch (t.getKind()) {
-    case TypeKind.Builtin:
+    case Builtin:
         return qt;
-    case TypeKind.Pointer:
+    case Pointer:
         PointerType* pt = cast<PointerType*>(t);
         QualType inner = pt.getInner();
         QualType res = ma.analyseType(inner, false);
@@ -474,7 +474,7 @@ func QualType ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt, bool f
             resolved.set(ptrType);
         }
         break;
-    case TypeKind.Array:
+    case Array:
         ArrayType* at = cast<ArrayType*>(t);
         QualType inner = at.getElemType();
         QualType res = ma.analyseType(inner, true);
@@ -496,16 +496,16 @@ func QualType ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt, bool f
             t2.setCanonicalType(resolved);
         }
         break;
-    case TypeKind.Ref:
+    case Ref:
         resolved = ma.analyseRefType(cast<RefType*>(t), full);
         break;
-    case TypeKind.Struct:
+    case Struct:
         assert(0); // cannot happen
         break;
-    case TypeKind.Enum:
+    case Enum:
         assert(0); // cannot happen
         break;
-    case TypeKind.Function:
+    case Function:
         assert(0); // cannot happen
         break;
     }

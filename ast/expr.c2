@@ -84,67 +84,67 @@ public func void Expr.dump(Expr* e) {
 
 func void Expr.print(const Expr* e, string_buffer.Buf* out, u32 indent) {
     switch (e.getKind()) {
-    case ExprKind.IntegerLiteral:
+    case IntegerLiteral:
         IntegerLiteral.print(cast<IntegerLiteral*>(e), out, indent);
         break;
-    case ExprKind.BooleanLiteral:
+    case BooleanLiteral:
         BooleanLiteral.print(cast<BooleanLiteral*>(e), out, indent);
         break;
-    case ExprKind.CharLiteral:
+    case CharLiteral:
         CharLiteral.print(cast<CharLiteral*>(e), out, indent);
         break;
-    case ExprKind.StringLiteral:
+    case StringLiteral:
         StringLiteral.print(cast<StringLiteral*>(e), out, indent);
         break;
-    case ExprKind.Nil:
+    case Nil:
         NilExpr.print(cast<NilExpr*>(e), out, indent);
         break;
-    case ExprKind.Identifier:
+    case Identifier:
         IdentifierExpr.print(cast<IdentifierExpr*>(e), out, indent);
         break;
-    case ExprKind.Type:
+    case Type:
         TypeExpr.print(cast<TypeExpr*>(e), out, indent);
         break;
-    case ExprKind.Call:
+    case Call:
         CallExpr.print(cast<CallExpr*>(e), out, indent);
         break;
-    case ExprKind.InitList:
+    case InitList:
         InitListExpr.print(cast<InitListExpr*>(e), out, indent);
         break;
-    case ExprKind.FieldDesignatedInit:
+    case FieldDesignatedInit:
         FieldDesignatedInitExpr.print(cast<FieldDesignatedInitExpr*>(e), out, indent);
         break;
-    case ExprKind.ArrayDesignatedInit:
+    case ArrayDesignatedInit:
         ArrayDesignatedInitExpr.print(cast<ArrayDesignatedInitExpr*>(e), out, indent);
         break;
-    case ExprKind.BinaryOperator:
+    case BinaryOperator:
         BinaryOperator.print(cast<BinaryOperator*>(e), out, indent);
         break;
-    case ExprKind.UnaryOperator:
+    case UnaryOperator:
         UnaryOperator.print(cast<UnaryOperator*>(e), out, indent);
         break;
-    case ExprKind.ConditionalOperator:
+    case ConditionalOperator:
         ConditionalOperator.print(cast<ConditionalOperator*>(e), out, indent);
         break;
-    case ExprKind.Builtin:
+    case Builtin:
         BuiltinExpr.print(cast<BuiltinExpr*>(e), out, indent);
         break;
-    case ExprKind.ArraySubscript:
+    case ArraySubscript:
         ArraySubscriptExpr.print(cast<ArraySubscriptExpr*>(e), out, indent);
         break;
-    case ExprKind.Member:
+    case Member:
         MemberExpr.print(cast<MemberExpr*>(e), out, indent);
         break;
-    case ExprKind.Paren:
+    case Paren:
         ParenExpr.print(cast<ParenExpr*>(e), out, indent);
         break;
-    case ExprKind.BitOffset:
+    case BitOffset:
         BitOffsetExpr.print(cast<BitOffsetExpr*>(e), out, indent);
         break;
-    case ExprKind.ExplicitCast:
+    case ExplicitCast:
         ExplicitCastExpr.print(cast<ExplicitCastExpr*>(e), out, indent);
         break;
-    case ExprKind.ImplicitCast:
+    case ImplicitCast:
         ImplicitCastExpr.print(cast<ImplicitCastExpr*>(e), out, indent);
         break;
     }
@@ -152,60 +152,60 @@ func void Expr.print(const Expr* e, string_buffer.Buf* out, u32 indent) {
 
 func void Expr.printLiteral(const Expr* e, string_buffer.Buf* out) {
     switch (e.getKind()) {
-    case ExprKind.IntegerLiteral:
+    case IntegerLiteral:
         IntegerLiteral.printLiteral(cast<IntegerLiteral*>(e), out);
         return;
-    case ExprKind.BooleanLiteral:
+    case BooleanLiteral:
         BooleanLiteral.printLiteral(cast<BooleanLiteral*>(e), out);
         return;
-    case ExprKind.CharLiteral:
+    case CharLiteral:
         CharLiteral.printLiteral(cast<CharLiteral*>(e), out);
         return;
-    case ExprKind.StringLiteral:
+    case StringLiteral:
         // can happen?
         break;
-    case ExprKind.Nil:
+    case Nil:
         NilExpr.printLiteral(cast<NilExpr*>(e), out);
         return;
-    case ExprKind.Identifier:
+    case Identifier:
         IdentifierExpr.printLiteral(cast<IdentifierExpr*>(e), out);
         return;
-    case ExprKind.Type:
+    case Type:
         // can happen? array[enum_max(Enum)} ?
         break;
-    case ExprKind.Call:
+    case Call:
         break;
-    case ExprKind.InitList:
+    case InitList:
         break;
-    case ExprKind.FieldDesignatedInit:
+    case FieldDesignatedInit:
         break;
-    case ExprKind.ArrayDesignatedInit:
+    case ArrayDesignatedInit:
         break;
-    case ExprKind.BinaryOperator:
+    case BinaryOperator:
         BinaryOperator.printLiteral(cast<BinaryOperator*>(e), out);
         return;
-    case ExprKind.UnaryOperator:
+    case UnaryOperator:
         UnaryOperator.printLiteral(cast<UnaryOperator*>(e), out);
         return;
-    case ExprKind.ConditionalOperator:
+    case ConditionalOperator:
         break;
-    case ExprKind.Builtin:
+    case Builtin:
         BuiltinExpr.printLiteral(cast<BuiltinExpr*>(e), out);
         return;
-    case ExprKind.ArraySubscript:
+    case ArraySubscript:
         // can happen?
         break;
-    case ExprKind.Member:
+    case Member:
         MemberExpr.printLiteral(cast<MemberExpr*>(e), out);
         return;
-    case ExprKind.Paren:
+    case Paren:
         ParenExpr.printLiteral(cast<ParenExpr*>(e), out);
         return;
-    case ExprKind.BitOffset:
+    case BitOffset:
         break;
-    case ExprKind.ExplicitCast:
+    case ExplicitCast:
         break;
-    case ExprKind.ImplicitCast:
+    case ImplicitCast:
         break;
     }
     out.print("?? kind=%u", e.getKind());

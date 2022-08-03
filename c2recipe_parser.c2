@@ -128,9 +128,9 @@ func void Parser.consumeToken(Parser* p) {
 #if 0
     printf("  %s   %s", p.sm.loc2str(p.token.loc), kind_names[p.token.kind]);
     switch (p.token.kind) {
-    case Kind.PluginOptions: fallthrough;
-    case Kind.Text: fallthrough;
-    case Kind.File:
+    case PluginOptions: fallthrough;
+    case Text: fallthrough;
+    case File:
         printf("  %s", p.token.value);
         break;
     default:
@@ -317,34 +317,34 @@ func void Parser.skip_comments(Parser* p) {
 func void Parser.parseTop(Parser* p) {
     while (1) {
         switch (p.token.kind) {
-        case Kind.Plugin:
+        case Plugin:
             p.parsePlugin();
             break;
-        case Kind.PluginOptions:
+        case PluginOptions:
             break;
-        case Kind.Text:
+        case Text:
             break;
-        case Kind.Executable:
+        case Executable:
             p.parseExecutable();
             break;
-        case Kind.Lib:
+        case Lib:
             p.parseLibrary();
             break;
-        case Kind.File:
+        case File:
             break;
-        case Kind.End:
+        case End:
             break;
-        case Kind.Warnings:     fallthrough;
-        case Kind.GenerateC:    fallthrough;
-        case Kind.GenerateIR:   fallthrough;
-        case Kind.EnableAssert: fallthrough;
-        case Kind.NoLibc:       fallthrough;
-        case Kind.Config:       fallthrough;
-        case Kind.Export:       fallthrough;
-        case Kind.Use:
+        case Warnings:     fallthrough;
+        case GenerateC:    fallthrough;
+        case GenerateIR:   fallthrough;
+        case EnableAssert: fallthrough;
+        case NoLibc:       fallthrough;
+        case Config:       fallthrough;
+        case Export:       fallthrough;
+        case Use:
             p.error("must be inside target");
             break;
-        case Kind.Eof:
+        case Eof:
             return;
         }
     }
@@ -389,69 +389,69 @@ func void Parser.parseTarget(Parser* p) {
     bool files_started = false;
     while (1) {
         switch (p.token.kind) {
-        case Kind.Plugin:
+        case Plugin:
             p.parsePlugin();
             break;
-        case Kind.PluginOptions: fallthrough;
-        case Kind.Text: fallthrough;
-        case Kind.Executable: fallthrough;
-        case Kind.Lib:
+        case PluginOptions: fallthrough;
+        case Text: fallthrough;
+        case Executable: fallthrough;
+        case Lib:
             p.error("syntax error");
             break;
-        case Kind.File:
+        case File:
             files_started = true;
             p.target.addFile(p.token.value, p.token.loc);
             p.consumeToken();
             break;
-        case Kind.End:
+        case End:
             p.consumeToken();
             p.target = nil;
             return;
-        case Kind.Warnings:
+        case Warnings:
             if (files_started) p.error("$options must come before files");
             p.consumeToken();
             p.expect(Kind.Text, "expect options");
             p.consumeToken();
             break;
-        case Kind.GenerateC:
+        case GenerateC:
             if (files_started) p.error("$options must come before files");
             p.consumeToken();
             while (p.token.kind == Kind.Text) {
                 p.consumeToken();
             }
             break;
-        case Kind.GenerateIR:
+        case GenerateIR:
             if (files_started) p.error("$options must come before files");
             p.consumeToken();
             while (p.token.kind == Kind.Text) p.consumeToken();
             break;
-        case Kind.EnableAssert:
+        case EnableAssert:
             if (files_started) p.error("$options must come before files");
             p.consumeToken();
             // TODO
             break;
-        case Kind.NoLibc:
+        case NoLibc:
             if (files_started) p.error("$options must come before files");
             p.consumeToken();
             while (p.token.kind == Kind.Text) p.consumeToken();
             break;
-        case Kind.Config:
+        case Config:
             if (files_started) p.error("$options must come before files");
             p.consumeToken();
             p.expect(Kind.Text, "expect config");
             p.consumeToken();
             break;
-        case Kind.Export:
+        case Export:
             if (files_started) p.error("$options must come before files");
             p.consumeToken();
             while (p.token.kind == Kind.Text) p.consumeToken();
             break;
-        case Kind.Use:
+        case Use:
             if (files_started) p.error("$options must come before files");
             p.consumeToken();
             while (p.token.kind == Kind.Text) p.consumeToken();
             break;
-        case Kind.Eof:
+        case Eof:
             p.error("un-terminated target");
             return;
         }

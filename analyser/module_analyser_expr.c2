@@ -14,52 +14,52 @@ import stdio; // TEMP
 
 func QualType ModuleAnalyser.analyseExpr(ModuleAnalyser* ma, Expr* e) {
     switch (e.getKind()) {
-    case ExprKind.IntegerLiteral:
+    case IntegerLiteral:
         // TODO determine kind based on value, for now just return u32
         return g_u32;
-    case ExprKind.BooleanLiteral:
+    case BooleanLiteral:
         return g_bool;
-    case ExprKind.CharLiteral:
+    case CharLiteral:
         return g_i8;
-    case ExprKind.StringLiteral:
+    case StringLiteral:
         // char* (const?)
         break;
-    case ExprKind.Nil:
+    case Nil:
         // void*
         break;
-    case ExprKind.Identifier:
+    case Identifier:
         return ma.analyseIdentifier(cast<IdentifierExpr*>(e));
-    case ExprKind.Type:
+    case Type:
         break;
-    case ExprKind.Call:
+    case Call:
         break;
-    case ExprKind.InitList:
+    case InitList:
         // TODO need to know type
         break;
-    case ExprKind.FieldDesignatedInit:
+    case FieldDesignatedInit:
         break;
-    case ExprKind.ArrayDesignatedInit:
+    case ArrayDesignatedInit:
         break;
-    case ExprKind.BinaryOperator:
+    case BinaryOperator:
         break;
-    case ExprKind.UnaryOperator:
+    case UnaryOperator:
         return ma.analyseUnaryOperator(cast<UnaryOperator*>(e));
-    case ExprKind.ConditionalOperator:
+    case ConditionalOperator:
         break;
-    case ExprKind.Builtin:
+    case Builtin:
         return ma.analyseBuiltin(cast<BuiltinExpr*>(e));
-    case ExprKind.ArraySubscript:
+    case ArraySubscript:
         break;
-    case ExprKind.Member:
+    case Member:
         break;
-    case ExprKind.Paren:
+    case Paren:
         ParenExpr* p = cast<ParenExpr*>(e);
         return ma.analyseExpr(p.getInner());
-    case ExprKind.BitOffset:
+    case BitOffset:
         break;
-    case ExprKind.ExplicitCast:
+    case ExplicitCast:
         break;
-    case ExprKind.ImplicitCast:
+    case ImplicitCast:
         break;
     }
     return QualType.init0();
@@ -85,29 +85,29 @@ func QualType ModuleAnalyser.analyseUnaryOperator(ModuleAnalyser* ma, UnaryOpera
 
     // TODO need rvalue stuff
     switch (e.getKind()) {
-    case UnaryOpcode.PostInc:
+    case PostInc:
         break;
-    case UnaryOpcode.PostDec:
+    case PostDec:
         break;
-    case UnaryOpcode.PreInc:
+    case PreInc:
         break;
-    case UnaryOpcode.PreDec:
+    case PreDec:
         break;
-    case UnaryOpcode.AddrOf:
+    case AddrOf:
         // TODO check inner
         e.asExpr().isCtc();
         break;
-    case UnaryOpcode.Deref:
+    case Deref:
         break;
-    case UnaryOpcode.Minus:
+    case Minus:
         // TODO check inner
         e.asExpr().copyConstantFlags(e.getInner());
         break;
-    case UnaryOpcode.Not:
+    case Not:
         // TODO check inner
         e.asExpr().copyConstantFlags(e.getInner());
         break;
-    case UnaryOpcode.LNot:
+    case LNot:
         // TODO check inner
         e.asExpr().copyConstantFlags(e.getInner());
         break;
@@ -117,17 +117,17 @@ func QualType ModuleAnalyser.analyseUnaryOperator(ModuleAnalyser* ma, UnaryOpera
 
 func QualType ModuleAnalyser.analyseBuiltin(ModuleAnalyser* ma, BuiltinExpr* e) {
     switch (e.getKind()) {
-    case BuiltinExprKind.Sizeof:
+    case Sizeof:
         return ma.analyseSizeof(e);
-    case BuiltinExprKind.Elemsof:
+    case Elemsof:
         break;
-    case BuiltinExprKind.EnumMin:
+    case EnumMin:
         break;
-    case BuiltinExprKind.EnumMax:
+    case EnumMax:
         break;
-    case BuiltinExprKind.OffsetOf:
+    case OffsetOf:
         break;
-    case BuiltinExprKind.ToContainer:
+    case ToContainer:
         break;
     }
 

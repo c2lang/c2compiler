@@ -62,15 +62,15 @@ public func Expr* UnaryOperator.asExpr(UnaryOperator* e) { return &e.parent; }
 
 func bool UnaryOperator.isBefore(const UnaryOperator* e) {
     switch (e.getKind()) {
-    case UnaryOpcode.PostInc: return false;
-    case UnaryOpcode.PostDec: return false;
-    case UnaryOpcode.PreInc:  return true;
-    case UnaryOpcode.PreDec:  return true;
-    case UnaryOpcode.AddrOf:  return true;
-    case UnaryOpcode.Deref:   return true;
-    case UnaryOpcode.Minus:   return true;
-    case UnaryOpcode.Not:     return true;
-    case UnaryOpcode.LNot:    return true;
+    case PostInc: return false;
+    case PostDec: return false;
+    case PreInc:  return true;
+    case PreDec:  return true;
+    case AddrOf:  return true;
+    case Deref:   return true;
+    case Minus:   return true;
+    case Not:     return true;
+    case LNot:    return true;
     }
     return true;
 }

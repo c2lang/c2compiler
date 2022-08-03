@@ -79,55 +79,55 @@ public func void Stmt.dump(const Stmt* s) {
 
 func void Stmt.print(const Stmt* s, string_buffer.Buf* out, u32 indent) {
     switch (s.getKind()) {
-    case StmtKind.Return:
+    case Return:
         ReturnStmt.print(cast<ReturnStmt*>(s), out, indent);
         break;
-    case StmtKind.Expr:
+    case Expr:
         Expr.print(cast<Expr*>(s), out, indent);
         break;
-    case StmtKind.If:
+    case If:
         IfStmt.print(cast<IfStmt*>(s), out, indent);
         break;
-    case StmtKind.While:
+    case While:
         WhileStmt.print(cast<WhileStmt*>(s), out, indent);
         break;
-    case StmtKind.Do:
+    case Do:
         DoStmt.print(cast<DoStmt*>(s), out, indent);
         break;
-    case StmtKind.For:
+    case For:
         ForStmt.print(cast<ForStmt*>(s), out, indent);
         break;
-    case StmtKind.Switch:
+    case Switch:
         SwitchStmt.print(cast<SwitchStmt*>(s), out, indent);
         break;
-    case StmtKind.Case:
+    case Case:
         CaseStmt.print(cast<CaseStmt*>(s), out, indent);
         break;
-    case StmtKind.Default:
+    case Default:
         DefaultStmt.print(cast<DefaultStmt*>(s), out, indent);
         break;
-    case StmtKind.Break:
+    case Break:
         BreakStmt.print(cast<BreakStmt*>(s), out, indent);
         break;
-    case StmtKind.Continue:
+    case Continue:
         ContinueStmt.print(cast<ContinueStmt*>(s), out, indent);
         break;
-    case StmtKind.Fallthrough:
+    case Fallthrough:
         FallthroughStmt.print(cast<FallthroughStmt*>(s), out, indent);
         break;
-    case StmtKind.Label:
+    case Label:
         LabelStmt.print(cast<LabelStmt*>(s), out, indent);
         break;
-    case StmtKind.Goto:
+    case Goto:
         GotoStmt.print(cast<GotoStmt*>(s), out, indent);
         break;
-    case StmtKind.Compound:
+    case Compound:
         CompoundStmt.print(cast<CompoundStmt*>(s), out, indent);
         break;
-    case StmtKind.Decl:
+    case Decl:
         DeclStmt.print(cast<DeclStmt*>(s), out, indent);
         break;
-    case StmtKind.Assert:
+    case Assert:
         AssertStmt.print(cast<AssertStmt*>(s), out, indent);
         break;
     }
