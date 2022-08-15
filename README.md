@@ -5,7 +5,10 @@
     - filters #ifdefs
     - stores types/funcs/vars + name + loc
 - 2nd pass: (in order of modules)
+    - also filters ifdefs (inside functions)
+        Note: global ifdefs already filtered out
     - parses all types (+ dependent vars), then vars, then funcs
+    - just parse a single TopLevel from offset
 -> no need to store module prefixes / func prefixes
 -> allows all RefTypes and IdentifierExpr to be resolved immediately
 -> allows caching of string -> Decl (no need to check/search every time)
