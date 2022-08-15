@@ -1,4 +1,18 @@
 
+## 2-phase parsing
+- 1st pass:
+    - reads module + imports
+    - filters #ifdefs
+    - stores types/funcs/vars + name + loc
+- 2nd pass: (in order of modules)
+    - parses all types (+ dependent vars), then vars, then funcs
+-> no need to store module prefixes / func prefixes
+-> allows all RefTypes and IdentifierExpr to be resolved immediately
+-> allows caching of string -> Decl (no need to check/search every time)
+-> this costs more parsing time, but saves a lot on resolving and AST
+- Q: how much AST would be saved?
+- Q: cannot tail-allocate struct members anymore? (or function params)
+
 ## TODO
 - when parsing a file all Type* will be the same! So re-use pointers.
     -> only need to resolve once then
