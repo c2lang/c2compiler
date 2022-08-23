@@ -16,7 +16,9 @@
 - Q: how much AST would be saved?
 - Q: cannot tail-allocate struct members anymore? (or function params)
 
+
 ## TODO
+- When analysing a file, cache symbol lookup, so we dont have to check stuff multiple times
 - when parsing a file all Type* will be the same! So re-use pointers.
     -> only need to resolve once then
     -> the source location is not the same! (different TypeExpr, same QualType)
