@@ -239,6 +239,8 @@ func void Compiler.build(Compiler* c,
 
     // step 2: sort modules inside main component
     module_sorter.sort(c.mainComp, c.diags);
+    // mark main module as used (for libs top level module (at least) should be exported)
+    c.mainComp.markTopModuleUsed();
 
     // analyse each module, all files in it step by step
     loadLib(c.sm, c.parser, c.builder, c.auxPool, c.astPool, libcComponent);
@@ -247,7 +249,8 @@ func void Compiler.build(Compiler* c,
     module_sorter.sort(libcComponent, c.diags);
 
 
-    c.mainComp.visitModules(Compiler.analyseModule, c);
+    //TODO finish analysing
+    //c.mainComp.visitModules(Compiler.analyseModule, c);
 
     // check unused
 

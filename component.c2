@@ -118,6 +118,13 @@ public func bool Component.hasModule(const Component* c, const ast.Module* mod) 
     return false;
 }
 
+public func void Component.markTopModuleUsed(Component* c) {
+    if (c.num_mods == 0) return;
+    ast.Module* top = c.mods[c.num_mods-1];
+    top.setUsed();
+    // TODO check that top contains main (if binary, exported if lib)
+}
+
 public func void Component.info(const Component* c) {
     string_buffer.Buf* out = string_buffer.create(64*1024, utils.useColor());
     out.print("component %s\n", c.name);
