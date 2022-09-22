@@ -10,7 +10,6 @@ import c2_parser;
 import c2module_loader;
 import c2recipe;
 import component;
-import constants;
 import diagnostics;
 import manifest;
 import module_list;

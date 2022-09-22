@@ -6,7 +6,6 @@ module string_buffer;
 import stdarg local;
 import stdlib local;
 import string local;
-import stdio local; //TEMP
 
 public type Buf struct {
     u32 capacity;

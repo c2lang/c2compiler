@@ -6,7 +6,6 @@ module ast;
 import string_buffer;
 import stdlib;
 import string;
-import stdio local;
 
 public type Module struct {
     u32 name_idx;

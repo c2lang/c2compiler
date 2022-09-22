@@ -5,7 +5,6 @@ module ast;
 
 import ast_context;
 import string_buffer;
-import utils local;
 import string;
 
 public type CallExprBits struct {

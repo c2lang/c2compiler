@@ -9,8 +9,6 @@ import module_list;
 import utils;
 
 import stdlib;
-import string;
-import stdio local;
 
 public const u32 MaxLevels = 16;
 

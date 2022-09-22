@@ -9,11 +9,9 @@ import ctv_analyser;
 import diagnostics;
 import module_list;
 import scope;
-import source_mgr;
 
 import string;
 import stdlib;
-import stdio;
 
 const u32 MaxDepth = 8;
 

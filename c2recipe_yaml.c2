@@ -3,14 +3,10 @@
 
 module c2recipe;
 
-//import string_pool;
-//import source_mgr;
-//import utils local;
 import yaml;
-import source_mgr;
+//import source_mgr;
 
 //import stdlib;
-import string;
 import stdio local;
 
 // TODO move

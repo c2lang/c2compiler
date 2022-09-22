@@ -13,8 +13,6 @@ import string;
 import ctype local;
 import stdarg local;
 
-import stdio local; // TEMP
-
 public const u32 MaxLookahead = 16;  // must be multiple of 2
 
 type Keyword struct {

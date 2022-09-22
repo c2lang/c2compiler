@@ -8,7 +8,6 @@ import color;
 
 import stdlib;
 import string;
-import stdio local;
 
 public type SymbolTable struct {
     u32* symbols;

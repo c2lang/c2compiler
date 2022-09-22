@@ -7,7 +7,6 @@ import ast;
 
 import stdlib;
 import string;
-import stdio; // TEMP
 
 public type ModList struct {
     ast.Module** mods;              // modules in this Component

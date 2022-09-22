@@ -3,14 +3,7 @@
 
 module module_analyser;
 
-import ast_context;
 import ast local;
-import ctv_analyser;
-import source_mgr;
-
-import string;
-import stdlib;
-import stdio; // TEMP
 
 func QualType ModuleAnalyser.analyseExpr(ModuleAnalyser* ma, Expr* e) {
     switch (e.getKind()) {

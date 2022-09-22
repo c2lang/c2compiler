@@ -9,7 +9,6 @@ import utils local;
 import ctype;
 import color;
 
-import stdlib;
 import stdarg local;
 import string;
 import stdio local;

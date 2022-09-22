@@ -6,7 +6,7 @@ module module_sorter;
 import ast;
 import component;
 import diagnostics;
-import linked_list;
+//import linked_list;
 
 import stdlib;
 import string;
