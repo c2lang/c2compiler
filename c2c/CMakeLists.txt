@@ -109,7 +109,6 @@ add_executable(c2c
     Builder/C2Builder.cpp
     FileUtils/FileMap.cpp
     FileUtils/FileUtils.cpp
-    FileUtils/TomlReader.cpp
     FileUtils/YamlParser.cpp
     Utils/StringBuilder.cpp
     Utils/Utils.cpp

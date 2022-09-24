@@ -15,7 +15,7 @@
 
 #include "Builder/BuildFileReader.h"
 #include "Utils/BuildFile.h"
-#include "FileUtils/TomlReader.h"
+#include "FileUtils/FileMap.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -35,60 +35,53 @@ bool BuildFileReader::findPlugin(const std::string& name) const {
     return false;
 }
 
-bool BuildFileReader::parse(const std::string& filename)
-{
-    TomlReader reader;
-    if (!reader.parse(filename.c_str())) {
-        strcpy(errorMsg, reader.getErrorMsg());
-        return false;
-    }
-
-    const char* target = reader.getValue("target");
+bool BuildFileReader::getInfo(YamlParser* parser, const std::string& filename) {
+    const char* target = yaml_get_scalar_value(parser, "target");
     build.target = expandEnvVar(filename, target);
 
-    const char* cc = reader.getValue("toolchain.cc");
+    const char* outputDir = yaml_get_scalar_value(parser, "output_dir");
+    build.outputDir = expandEnvVar(filename, outputDir);
+
+    const char* cc = yaml_get_scalar_value(parser, "toolchain.cc");
     build.cc = expandEnvVar(filename, cc);
 
-    const char* cflags = reader.getValue("toolchain.cflags");
+    const char* cflags = yaml_get_scalar_value(parser, "toolchain.cflags");
     build.cflags = expandEnvVar(filename, cflags);
 
-    const char* ldflags = reader.getValue("toolchain.ldflags");
+    const char* ldflags = yaml_get_scalar_value(parser, "toolchain.ldflags");
     build.ldflags = expandEnvVar(filename, ldflags);
 
-    const char* ldflags2 = reader.getValue("toolchain.ldflags2");
+    const char* ldflags2 = yaml_get_scalar_value(parser, "toolchain.ldflags2");
     build.ldflags2 = expandEnvVar(filename, ldflags2);
 
-    TomlReader::NodeIter iter = reader.getNodeIter("libdir");
-    while (!iter.done()) {
-        // dir is required
-        const char* dir = iter.getValue("dir");
-        if (!dir) {
-            sprintf(errorMsg, "%s: error: missing dir entry in [[libdir]]", filename.c_str());
-            return false;
-        }
+    const YamlNode* libs = yaml_find_node(parser, "libdir");
+    YamlIter iter = yaml_node_get_child_iter(parser, libs);
+    while (!yaml_iter_done(&iter)) {
+        const char* dir = yaml_iter_get_scalar_value(&iter);
         const char* expanded = expandEnvVar(filename, dir);
         if (expanded) build.libDirs.push_back(expanded);
-
-        iter.next();
+        yaml_iter_next(&iter);
     }
 
-    iter = reader.getNodeIter("plugindir");
-    while (!iter.done()) {
-        // dir is required
-        const char* dir = iter.getValue("dir");
-        if (!dir) {
-            sprintf(errorMsg, "%s: error: missing dir entry in [[plugindir]]", filename.c_str());
-            return false;
-        }
+    const YamlNode* plugin_dirs = yaml_find_node(parser, "plugindir");
+    iter = yaml_node_get_child_iter(parser, plugin_dirs);
+    while (!yaml_iter_done(&iter)) {
+        const char* dir = yaml_iter_get_scalar_value(&iter);
         const char* expanded = expandEnvVar(filename, dir);
         build.pluginDirs.push_back(expanded);
-
-        iter.next();
+        yaml_iter_next(&iter);
     }
 
+    const YamlNode* plugins = yaml_find_node(parser, "plugin");
+    iter = yaml_node_get_child_iter(parser, plugins);
+    while (!yaml_iter_done(&iter)) {
+        // TODO (see below, also determine exact format)
+        yaml_iter_next(&iter);
+    }
+
+#if 0
     iter = reader.getNodeIter("plugin");
     while (!iter.done()) {
-        // dir is required
         const char* name = iter.getValue("name");
         if (!name) {
             sprintf(errorMsg, "%s: error: missing name entry in [[plugin]]", filename.c_str());
@@ -104,11 +97,24 @@ bool BuildFileReader::parse(const std::string& filename)
 
         iter.next();
     }
-
-    const char* outputDir = reader.getValue("output.dir");
-    build.outputDir = expandEnvVar(filename, outputDir);
-
+#endif
     return true;
+}
+
+bool BuildFileReader::parse(const std::string& filename)
+{
+    FileMap file(filename.c_str());
+    file.open();
+    YamlParser* parser = yaml_create((const char*)file.region, file.size);
+    bool ok = yaml_parse(parser);
+    file.close();
+    if (ok) {
+        ok = getInfo(parser, filename);
+    } else {
+        strcpy(errorMsg, yaml_get_error(parser));
+    }
+    yaml_destroy(parser);
+    return ok;
 }
 
 const char* BuildFileReader::expandEnvVar(const std::string& filename, const char* raw) {

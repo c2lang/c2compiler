@@ -892,10 +892,10 @@ bool IssueDb::parse() {
 */
         if (target[0] != 0) {
             StringBuilder build;
-            build << "target = \"" << target << "\"\n";
-            build << "[[libdir]]\n";
-            build << "dir = \"$C2_LIBDIR\"\n";
-            writeFile("build.toml", build, build.size());
+            build << "target: \"" << target << "\"\n";
+            build << "libdir:\n";
+            build << "   - \"$C2_LIBDIR\"\n";
+            writeFile("build.yaml", build, build.size());
         }
         recipe << "end\n";
         writeFile("recipe.txt", recipe, recipe.size());

@@ -1078,7 +1078,7 @@ const char* yaml_node_get_scalar_value(const YamlParser* p, const YamlNode* node
 
 YamlIter yaml_node_get_child_iter(const YamlParser* p, const YamlNode* n) {
     YamlIter iter = { .data = &p->data, .node = NULL };
-    if (n->kind != NODE_SCALAR && n->child_idx) {
+    if (n && n->kind != NODE_SCALAR && n->child_idx) {
         iter.node = idx2node(&p->data, n->child_idx);
     }
     return iter;

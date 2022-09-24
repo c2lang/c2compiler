@@ -17,7 +17,7 @@
 #define BUILDER_CONSTANTS_H
 
 #define RECIPE_FILE "recipe.txt"
-#define BUILD_FILE "build.toml"
+#define BUILD_FILE "build.yaml"
 #define MANIFEST_FILE "manifest.yaml"
 
 #endif

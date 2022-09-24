@@ -17,6 +17,7 @@
 #define BUILDER_BUILDFILE_READER_H
 
 #include <string>
+#include "FileUtils/YamlParser.h"
 
 namespace C2 {
 
@@ -32,6 +33,7 @@ public:
 private:
     const char* expandEnvVar(const std::string& filename, const char* raw);
     bool findPlugin(const std::string& name) const;
+    bool getInfo(YamlParser* parser, const std::string& filename);
 
     BuildFile& build;
     char errorMsg[256];
