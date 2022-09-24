@@ -17,7 +17,7 @@
 #define LOAD_FILE_H
 
 #include <Builder/Plugin.h>
-#include "common/yaml_parser.h"
+#include <FileUtils/YamlParser.h>
 #include <vector>
 #include <stdint.h>
 
