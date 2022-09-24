@@ -66,7 +66,6 @@
     - handle use
     Design:
     - load components manifest
-        -> change to yaml (keep old for now, add manifest.yml)
         -> change Yaml parser to use SourceMgr, add locs
             -> LATER, for now just use
         DONT CHANGE RECIPE YET, FIRST JUST PARSE manifest.yml

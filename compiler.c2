@@ -34,7 +34,7 @@ func void openLib(source_mgr.SourceMgr* sm,
     if (!libdir) printf("Warning: environment variable C2_LIBDIR not set!\n");
 
     char[512] manifestFilename;
-    i32 len = stdio.sprintf(manifestFilename, "%s/%s/manifest.yml", libdir, comp.getName());
+    i32 len = stdio.sprintf(manifestFilename, "%s/%s/manifest.yaml", libdir, comp.getName());
     const char* name = auxPool.add(manifestFilename, cast<usize>(len), 0);
 
     i32 file_id = sm.open(name, 0);
