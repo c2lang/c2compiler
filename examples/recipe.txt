@@ -250,8 +250,8 @@ end
 
 executable plugin_test
     $plugin git_version [git options go here]
-    $plugin shell_cmd [shell_cmd.yml]
-    $plugin load_file [load_file.yml]
+    $plugin shell_cmd [shell_cmd.yaml]
+    $plugin load_file [load_file.yaml]
     $warnings no-unused
     $generate-c single-module
     plugin_test.c2
@@ -259,7 +259,7 @@ end
 
 executable plugin_test2
     $plugin git_version
-    $plugin load_file [load_file2.yml]
+    $plugin load_file [load_file2.yaml]
     $warnings no-unused
     $generate-c single-module
     plugin_test2.c2

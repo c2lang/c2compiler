@@ -1,0 +1,14 @@
+info:
+    language: c
+    type: library
+    linkname: curses
+    kinds:
+        - static
+        - dynamic
+
+dependencies:
+    libc: dynamic
+
+modules:
+    - curses
+

@@ -18,7 +18,7 @@
 
 #define RECIPE_FILE "recipe.txt"
 #define BUILD_FILE "build.toml"
-#define MANIFEST_FILE "manifest"
+#define MANIFEST_FILE "manifest.yaml"
 
 #endif
 

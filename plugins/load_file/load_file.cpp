@@ -51,7 +51,7 @@ bool LoadFile::setTargetCfg(bool verbose, const std::string& config) {
     free_files();
 
     const char* config_file = config.c_str();
-    if (config_file[0] == 0) config_file = "load_file.yml";
+    if (config_file[0] == 0) config_file = "load_file.yaml";
     if (verbose) Log::info(plugin_name, "target cfg [%s]", config_file);
 
     return parse_yaml(config_file);

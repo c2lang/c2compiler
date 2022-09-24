@@ -1,0 +1,16 @@
+# C2 wrapper for pthreads
+
+info:
+    language: c
+    type: library
+    linkname: pthread
+    kinds:
+        - static
+        - dynamic
+
+dependencies:
+    libc: dynamic
+
+modules:
+    - pthread
+

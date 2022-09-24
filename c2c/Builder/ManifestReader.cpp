@@ -15,7 +15,8 @@
 
 #include "Builder/ManifestReader.h"
 #include "Builder/Manifest.h"
-#include "FileUtils/TomlReader.h"
+#include "FileUtils/YamlParser.h"
+#include "FileUtils/FileMap.h"
 #include "AST/Component.h"
 
 using namespace C2;
@@ -31,27 +32,44 @@ static Component::Type str2dep(const char* type) {
 bool ManifestReader::parse()
 {
     errorMsg[0] = 0;
-    TomlReader reader;
-    if (!reader.parse(manifest.filename.c_str())) return false;
 
-    const char* lang = reader.getValue("library.language");
+    // TODO: fix error handling (not exit -1)
+    FileMap file(manifest.filename.c_str());
+    file.open();
+    YamlParser* parser = yaml_create((const char*)file.region, file.size);
+    bool ok = yaml_parse(parser);
+    file.close();
+    // TODO cleanup yaml_destroy() in destructor
+    if (!ok) {
+        printf("ERROR parsing %s: %s\n", manifest.filename.c_str(), yaml_get_error(parser));
+        return false;
+    }
+    //yaml_dump(parser, true);
+
+    // info.language (required)
+    const char* lang = yaml_get_scalar_value(parser, "info.language");
     if (!lang) {
         sprintf(errorMsg, "missing library.language");
         return false;
     }
     manifest.isNative = (strcmp(lang, "C2") == 0);
 
-    // optional
-    const char* linkname = reader.getValue("library.linkname");
+    // info.linkname (optional)
+    const char* linkname = yaml_get_scalar_value(parser, "info.linkname");
     if (linkname) manifest.linkName = linkname;
 
-    // required
-    TomlReader::ValueIter typeIter = reader.getValueIter("library.type");
-    while (!typeIter.done()) {
-        const char* typeStr = typeIter.getValue();
-        Component::Type type = str2dep(typeStr);
+    // info.kinds (required)
+    const YamlNode* kinds = yaml_find_node(parser, "info.kinds");
+    if (!kinds) {
+        sprintf(errorMsg, "missing info.kinds");
+        return false;
+    }
+    YamlIter kinds_iter = yaml_node_get_child_iter(parser, kinds);
+    while (!yaml_iter_done(&kinds_iter)) {
+        const char* kind = yaml_iter_get_scalar_value(&kinds_iter);
+        Component::Type type = str2dep(kind);
         if ((int)type == -1) {
-            sprintf(errorMsg, "invalid dep type '%s'", typeStr);
+            sprintf(errorMsg, "invalid dep type '%s'", kind);
             return false;
         }
         switch (type) {
@@ -81,43 +99,61 @@ bool ManifestReader::parse()
         case Component::PLUGIN:
             break;
         }
-        typeIter.next();
+
+        yaml_iter_next(&kinds_iter);
     }
 
-    TomlReader::NodeIter depsIter = reader.getNodeIter("deps");
-    while (!depsIter.done()) {
-        const char* depName = depsIter.getValue("name");
-        const char* depType = depsIter.getValue("type");
-        if (!depName || !depType) {
-            sprintf(errorMsg, "dependency needs name and type");
-            return false;
-        }
-        Component::Type type = str2dep(depType);
-        if ((int)type == -1) {
-            sprintf(errorMsg, "invalid dep type '%s'", depType);
-            return false;
-        }
-        for (unsigned i=0; i<manifest.deps.size(); i++) {
-            if (manifest.deps[i] == depName) {
-                sprintf(errorMsg, "duplicate dependency on '%s'", depName);
+
+    // dependencies (optional)
+    const YamlNode* deps = yaml_find_node(parser, "dependencies");
+    if (deps) {
+        YamlIter deps_iter = yaml_node_get_child_iter(parser, deps);
+        while (!yaml_iter_done(&deps_iter)) {
+            const char* name = yaml_iter_get_name(&deps_iter);
+            const char* kind = yaml_iter_get_scalar_value(&deps_iter);
+            if (!name || !name) {
+                sprintf(errorMsg, "a dependency needs name and kind");
                 return false;
             }
+            Component::Type type = str2dep(kind);
+            if ((int)type == -1) {
+                sprintf(errorMsg, "invalid dep kind '%s'", kind);
+                return false;
+            }
+            for (unsigned i=0; i<manifest.deps.size(); i++) {
+                if (manifest.deps[i] == name) {
+                    sprintf(errorMsg, "duplicate dependency on '%s'", name);
+                    return false;
+                }
+            }
+            // TODO check for self-dep
+
+            // TODO also store/use deps type
+            manifest.deps.push_back(name);
+            yaml_iter_next(&deps_iter);
         }
-        // TODO also store/use deps type
-        manifest.deps.push_back(depName);
-        depsIter.next();
     }
 
-    TomlReader::NodeIter moduleIter = reader.getNodeIter("module");
-    while (!moduleIter.done()) {
-        const char* name = moduleIter.getValue("name");
-        if (!name) {
-            sprintf(errorMsg, "missing module name");
-            return false;
-        }
-        manifest.modules.push_back(name);
-        moduleIter.next();
+    // modules (required)
+    const YamlNode* mods = yaml_find_node(parser, "modules");
+    if (!mods) {
+        sprintf(errorMsg, "missing modules");
+        return false;
     }
+    YamlIter mods_iter = yaml_node_get_child_iter(parser, mods);
+    bool got_modules = false;
+    while (!yaml_iter_done(&mods_iter)) {
+        const char* name = yaml_iter_get_scalar_value(&mods_iter);
+        manifest.modules.push_back(name);
+        yaml_iter_next(&mods_iter);
+        got_modules = true;
+    }
+    if (!got_modules) {
+        sprintf(errorMsg, "there must be at least one module");
+        return false;
+    }
+
+    yaml_destroy(parser);
     return true;
 }
 
