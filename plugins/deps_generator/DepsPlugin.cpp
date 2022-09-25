@@ -28,9 +28,6 @@ static const char* plugin_name = "DepsPlugin";
 
 DepsPlugin::DepsPlugin()
     : Plugin(std::string("DepsPlugin v1.0"))
-//    , showFiles(false)
-//    , showPrivate(false)
-//    , showExternals(false)
     , cur(&globalConfig)
 {}
 
