@@ -1,5 +1,5 @@
 
-plugin deps_generator [all-targets files]
+plugin deps_generator [all-targets files private]
 plugin refs_generator [all-targets]
 
 executable c2c
@@ -19,7 +19,6 @@ executable c2c
     common/yaml/yaml_parser.c2
 
     common/color.c2
-    common/linked_list.c2
     common/string_list.c2
     common/string_buffer.c2
     common/string_pool.c2

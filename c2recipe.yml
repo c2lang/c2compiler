@@ -23,7 +23,6 @@ executable.c2c:
         - common/yaml/yaml_parser.c2
 
         - common/color.c2
-        - common/linked_list.c2
         - common/string_list.c2
         - common/string_buffer.c2
         - common/string_pool.c2
