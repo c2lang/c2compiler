@@ -24,8 +24,6 @@ import string;
 import stdlib;
 import stdio local;
 
-import string_buffer;
-
 // TODO or return/add Component?
 func void openLib(source_mgr.SourceMgr* sm,
                   string_pool.Pool* auxPool,
@@ -195,10 +193,6 @@ func void Compiler.build(Compiler* c,
     // create c2 module
     ast.Module* c2mod = c2module_loader.load(c.context, c.astPool);
     c.allmodules.add(c2mod);
-
-    string_buffer.Buf* out = string_buffer.create(4096, utils.useColor());
-    c2mod.print(out);
-    printf("%s\n", out.data());
 
     component.Component* libcComponent = component.create(c.allmodules, "libc", true);
     c.addComponent(libcComponent);
