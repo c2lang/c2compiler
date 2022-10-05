@@ -1,0 +1,39 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module module_analyser;
+
+import ast_context;
+import ast local;
+import ctv_analyser;
+import diagnostics;
+import module_list;
+import scope;
+
+import string;
+import stdlib;
+import stdio;
+
+type UnusedChecker struct {
+    diagnostics.Diags* diags;
+}
+
+func void UnusedChecker.check(void* arg, Decl* d) {
+    UnusedChecker* c = arg;
+    if (!d.isUsed()) {
+        c.diags.report(d.getLoc(), "unused %s: %s", d.getKindName(), d.getName());
+        return;
+    }
+    if (d.isPublic() && !d.isUsedPublic()) {
+        c.diags.report(d.getLoc(), "unused public %s: %s", d.getKindName(), d.getName());
+    }
+    // TODO check struct fields, enum-constants and stuff inside functions (arg + vars)
+}
+
+public func void checkUnused(diagnostics.Diags* diags, Module* mod) {
+    UnusedChecker c = {
+        .diags = diags,
+    }
+    mod.visitDecls(UnusedChecker.check, &c);
+}
+

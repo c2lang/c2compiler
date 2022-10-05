@@ -133,6 +133,21 @@ public func bool Decl.isTypeDecl(const Decl* d) {
     return false;
 }
 
+public func const char* Decl.getKindName(const Decl* d) {
+    switch (d.getKind()) {
+    case Function:     return "function";
+    case Import:       return "import";
+    case StructType:   return "type";
+    case EnumType:     return "type";
+    case EnumConstant: return "enum constant";
+    case FunctionType: return "type";
+    case AliasType:    return "type";
+    case Var:          return "variable";
+    case StaticAssert: return "static-assert";
+    }
+    return "";
+}
+
 func void Decl.print(const Decl* d, string_buffer.Buf* out, u32 indent) {
     switch (d.getKind()) {
     case Function:

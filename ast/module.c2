@@ -73,6 +73,13 @@ public func void Module.visitVarDecls(const Module* m, VarDeclVisitor visitor, v
     }
 }
 
+public func void Module.visitDecls(const Module* m, DeclVisitor visitor, void* arg) {
+    for (u32 i=0; i<m.num_files; i++) {
+        m.files[i].visitDecls(visitor, arg);
+    }
+}
+
+
 public func Decl* Module.findType(const Module* m, u32 name_idx) {
     Decl* result = nil;
     for (u32 i=0; i<m.num_files; i++) {
