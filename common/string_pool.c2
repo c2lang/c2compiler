@@ -228,6 +228,10 @@ after_loop:
     return dest;
 }
 
+public func const char* Pool.addStr(Pool* pool, const char* text, bool filter) {
+    return pool.add(text, string.strlen(text), filter);
+}
+
 public func void Pool.resize_nodes(Pool* p, u16 capacity) {
     p.node_capacity = capacity;
     Node* nodes = stdlib.malloc(p.node_capacity * sizeof(Node));

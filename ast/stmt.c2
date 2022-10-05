@@ -53,6 +53,7 @@ public type Stmt struct {
         BooleanLiteralBits booleanLiteralBits;
         CharLiteralBits charLiteralBits;
         IdentifierExprBits identifierExprBits;
+        IntegerLiteralBits integerLiteralBits;
         UnaryOperatorBits unaryOperatorBits;
         BinaryOperatorBits binaryOperatorBits;
         CallExprBits callExprBits;

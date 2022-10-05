@@ -123,6 +123,8 @@ public func void Component.markTopModuleUsed(Component* c) {
     ast.Module* top = c.mods[c.num_mods-1];
     top.setUsed();
     // TODO check that top contains main (if binary, exported if lib)
+
+    //TODO also mark main function as used
 }
 
 public func void Component.info(const Component* c) {

@@ -51,6 +51,8 @@ public func void AST.setPtr(AST* a, void* ptr) @(inline) { a.ptr = ptr; }
 
 public func void* AST.getPtr(const AST* a) @(inline) { return a.ptr; }
 
+public func Module* AST.getMod(const AST* a) @(inline) { return a.mod; }
+
 public func void AST.addImport(AST* a, ImportDecl* d) @(inline) {
     a.imports.add(d);
 }

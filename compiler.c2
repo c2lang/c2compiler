@@ -24,6 +24,8 @@ import string;
 import stdlib;
 import stdio local;
 
+import string_buffer;
+
 // TODO or return/add Component?
 func void openLib(source_mgr.SourceMgr* sm,
                   string_pool.Pool* auxPool,
@@ -194,6 +196,10 @@ func void Compiler.build(Compiler* c,
     ast.Module* c2mod = c2module_loader.load(c.context, c.astPool);
     c.allmodules.add(c2mod);
 
+    string_buffer.Buf* out = string_buffer.create(4096, utils.useColor());
+    c2mod.print(out);
+    printf("%s\n", out.data());
+
     component.Component* libcComponent = component.create(c.allmodules, "libc", true);
     c.addComponent(libcComponent);
     c.builder.setComponent(libcComponent);
@@ -244,15 +250,15 @@ func void Compiler.build(Compiler* c,
     // analyse each module, all files in it step by step
     loadLib(c.sm, c.parser, c.builder, c.auxPool, c.astPool, libcComponent);
     libcComponent.visitModules(Compiler.handleModuleImports, c);
-    libcComponent.visitModules(Compiler.analyseUsedModule, c);
     module_sorter.sort(libcComponent, c.diags);
+    libcComponent.visitModules(Compiler.analyseUsedModule, c);
 
 
     //TODO finish analysing
     //c.mainComp.visitModules(Compiler.analyseModule, c);
 
     // check unused
-    c.mainComp.visitModules(Compiler.checkUnused, c);
+    //c.mainComp.visitModules(Compiler.checkUnused, c);
 
     u64 t2_end = utils.now();
     printf("analysis took %lu usec\n", t2_end - t2_start);

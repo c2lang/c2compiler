@@ -10,7 +10,7 @@ import utils local;
 public type IntegerLiteralBits struct {
     u32 : NumExprBits;
     //u32 radix : 4;
-    //u32 signed : 1;
+    u32 is_signed : 1;
 }
 
 public type IntegerLiteral struct {
@@ -25,13 +25,36 @@ public func IntegerLiteral* IntegerLiteral.create(ast_context.Context* c, SrcLoc
     return i;
 }
 
+public func IntegerLiteral* IntegerLiteral.createUnsignedConstant(ast_context.Context* c, SrcLoc loc, u64 val, QualType qt) @(inline) {
+    IntegerLiteral* i = IntegerLiteral.create(c, loc, val);
+    Expr* ie = cast<Expr*>(i);
+    ie.setCtv();
+    ie.setCtc();
+    ie.setType(qt);
+    return i;
+}
+
+public func IntegerLiteral* IntegerLiteral.createSignedConstant(ast_context.Context* c, SrcLoc loc, i64 val, QualType qt) @(inline) {
+    IntegerLiteral* i = IntegerLiteral.create(c, loc, cast<u64>(val));
+    i.parent.parent.integerLiteralBits.is_signed = 1;
+    Expr* ie = cast<Expr*>(i);
+    ie.setCtv();
+    ie.setCtc();
+    ie.setType(qt);
+    return i;
+}
+
 public func u64 IntegerLiteral.getValue(const IntegerLiteral* e) @(inline) { return e.val; }
 
 func void IntegerLiteral.print(const IntegerLiteral* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent, "IntegerLiteral");
     e.parent.printTypeBits(out);
     out.color(col_Value);
-    out.print(" %lu", e.val);
+    if (e.parent.parent.integerLiteralBits.is_signed) {
+        out.print(" %ld", cast<i64>(e.val));
+    } else {
+        out.print(" %lu", e.val);
+    }
     out.add("\n");
 }
 

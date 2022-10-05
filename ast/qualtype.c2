@@ -34,6 +34,10 @@ public func void QualType.set(QualType* qt, Type* t) @(inline) {
     qt.ptr = cast<usize>(t);
 }
 
+public func void QualType.setConst(QualType* qt) @(inline) {
+    qt.ptr |= QualType_Const;
+}
+
 public func bool QualType.isInvalid(const QualType* qt) @(inline) { return qt.ptr == 0; }
 
 public func Type* QualType.getType(const QualType* qt) @(inline) {
