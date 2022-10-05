@@ -265,12 +265,15 @@ func void ModuleAnalyser.analyseInitExpr(ModuleAnalyser* ma, Expr* e, QualType e
     ArrayType* at = expectedType.getTypeOrNil().asArray();
     if (at) {
         // TODO
+        return;
     }
     InitListExpr* ile = nil;
     if (e.getKind() == ExprKind.InitList) {
         // TODO
+        return;
     }
     QualType res2 = ma.analyseExpr(e);
+    if (res2.isInvalid()) return;
 
     if (!e.isCtv()) {
         ma.diags.report(e.getLoc(), "initializer is not a compile-time value");

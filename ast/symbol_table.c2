@@ -8,6 +8,7 @@ import color;
 
 import stdlib;
 import string;
+import stdio; // TEMP
 
 public type SymbolTable struct {
     u32* symbols;
@@ -58,8 +59,10 @@ public func void SymbolTable.add(SymbolTable* t, u32 name_idx, ast.Decl* d) {
 
 public func ast.Decl* SymbolTable.find(const SymbolTable* t, u32 name_idx) {
     for (u32 i=0; i<t.num_symbols; i++) {
+        //stdio.printf("  %u   %s\n", t.symbols[i], idx2name(t.symbols[i]));
         if (t.symbols[i] == name_idx) return t.decls.get(i);
     }
+    //stdio.printf("  NOT FOUND\n");
     return nil;
 }
 
