@@ -249,7 +249,7 @@ func void Compiler.build(Compiler* c,
 
 
     //TODO finish analysing
-    //c.mainComp.visitModules(Compiler.analyseModule, c);
+    c.mainComp.visitModules(Compiler.analyseModule, c);
 
     // check unused
     //c.mainComp.visitModules(Compiler.checkUnused, c);

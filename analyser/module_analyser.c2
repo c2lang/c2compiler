@@ -101,7 +101,7 @@ public func void check(diagnostics.Diags* diags, ast_context.Context* context, m
     ma.allmodules = allmodules;
     ma.mod = mod;
 
-    //printf("analysing module %s\n", ma.mod.getName());
+    //stdio.printf("analysing module %s\n", ma.mod.getName());
 
     mod.visitASTs(ModuleAnalyser.createGlobalScope, &ma);
 
@@ -303,7 +303,8 @@ func bool ModuleAnalyser.pushCheck(ModuleAnalyser* ma, Decl* d) {
 func void ModuleAnalyser.popCheck(ModuleAnalyser* ma) {
     assert(ma.checkIndex > 0);
     ma.checkIndex--;
-    ma.scope = ma.checkStack[ma.checkIndex].scope;
+    if (ma.checkIndex > 0) ma.scope = ma.checkStack[ma.checkIndex-1].scope;
+    else ma.scope = nil;
 }
 
 func void ModuleAnalyser.analyseStructType(ModuleAnalyser* ma, StructTypeDecl* d) {
