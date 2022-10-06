@@ -103,7 +103,7 @@ public func void check(diagnostics.Diags* diags, ast_context.Context* context, m
 
     //printf("analysing module %s\n", ma.mod.getName());
 
-    mod.visitASTs(ModuleAnalyser.createScope, &ma);
+    mod.visitASTs(ModuleAnalyser.createGlobalScope, &ma);
 
     // NOTE: C2C ModuleAnalyser::step1()
     // step 3a: collect incremental arrays
@@ -143,7 +143,7 @@ func void ModuleAnalyser.free(ModuleAnalyser* ma) {
     ma.struct_decls.free();
 }
 
-func void ModuleAnalyser.createScope(void* arg, AST* a) {
+func void ModuleAnalyser.createGlobalScope(void* arg, AST* a) {
     ModuleAnalyser* ma = arg;
     scope.Scope* s = scope.create(ma.allmodules,
                                   ma.diags,

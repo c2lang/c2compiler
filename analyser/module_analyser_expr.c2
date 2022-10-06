@@ -62,7 +62,7 @@ func QualType ModuleAnalyser.analyseExpr(ModuleAnalyser* ma, Expr* e) {
 
 func QualType ModuleAnalyser.analyseIdentifier(ModuleAnalyser* ma, IdentifierExpr* e) {
     //stdio.printf("FIND %s (%u) idx %u\n", e.getName(), e.getNameIdx(), ma.checkIndex);
-    Decl* d = ma.scope.find(e.getNameIdx());
+    Decl* d = ma.scope.find(e.getNameIdx(), e.asExpr().getLoc());
     //stdio.printf("D  %p\n", d);
     if (!d) return QualType.init0();
 
