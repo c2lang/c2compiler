@@ -159,10 +159,10 @@ public func void AST.print(const AST* a, string_buffer.Buf* out) {
     out.print("------- AST %s ----\n", a.filename);
 
     ImportDecl** imports = a.imports.getDecls();
-    for (u32 i=0; i<a.imports.size(); i++) {
+    for (u32 i=1; i<a.imports.size(); i++) {
         imports[i].print(out, 0);
     }
-    if (a.imports.size()) out.add("\n");
+    if (a.imports.size() > 1) out.add("\n");
 
     Decl** types = a.types.getDecls();
     for (u32 i=0; i<a.types.size(); i++) {
