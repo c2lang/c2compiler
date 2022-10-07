@@ -86,6 +86,7 @@ public func void Expr.setType(Expr* e, QualType qt_) {
 public func void Expr.dump(Expr* e) {
     string_buffer.Buf* out = string_buffer.create(10*4096, utils.useColor());
     e.print(out, 0);
+    out.color(col_Normal);
     stdio.puts(out.data());
     out.free();
 }

@@ -64,6 +64,15 @@ public func EnumConstantDecl** EnumTypeDecl.getConstants(EnumTypeDecl* d) {
     return d.constants;
 }
 
+public func EnumConstantDecl* EnumTypeDecl.findConstant(const EnumTypeDecl* d, u32 name_idx) {
+    for (u32 i=0; i<d.parent.enumTypeDeclBits.num_constants; i++) {
+        EnumConstantDecl* ecd = d.constants[i];
+        Decl* ed = cast<Decl*>(ecd);
+        if (ed.getNameIdx() == name_idx) return ecd;
+    }
+    return nil;
+}
+
 func void EnumTypeDecl.print(const EnumTypeDecl* d, string_buffer.Buf* out, u32 indent) {
     d.parent.printKind(out, indent, "EnumTypeDecl");
     d.parent.printBits(out);

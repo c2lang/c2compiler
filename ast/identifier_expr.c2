@@ -66,6 +66,9 @@ public func void IdentifierExpr.setKind(IdentifierExpr* e, IdentifierKind kind) 
     e.parent.parent.identifierExprBits.kind = kind;
 }
 
+public func IdentifierKind IdentifierExpr.getKind(const IdentifierExpr* e) @(inline) {
+    return cast<IdentifierKind>(e.parent.parent.identifierExprBits.kind);
+}
 
 public func void IdentifierExpr.setDecl(IdentifierExpr* e, Decl* decl) @(inline) {
     e.decl = decl;
@@ -88,13 +91,17 @@ func void IdentifierExpr.print(const IdentifierExpr* e, string_buffer.Buf* out, 
 
     out.add(" ");
     if (e.parent.parent.identifierExprBits.has_decl) {
+        out.color(col_Value);
         out.add(e.decl.getName());
     } else {
         out.color(col_Value);
         out.add(idx2name(e.name_idx));
-        out.color(col_Error);
-        out.add(" unresolved");
     }
+    out.add(" ");
+    IdentifierKind kind = e.getKind();
+    if (kind == IdentifierKind.Unresolved) out.color(col_Error);
+    else out.color(col_Attr);
+    out.add(identifierKind_names[kind]);
     out.add("\n");
 }
 

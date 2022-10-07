@@ -46,7 +46,7 @@ func QualType ModuleAnalyser.analyseExpr(ModuleAnalyser* ma, Expr* e) {
     case ArraySubscript:
         break;
     case Member:
-        break;
+        return ma.analyseMemberExpr(cast<MemberExpr*>(e));
     case Paren:
         ParenExpr* p = cast<ParenExpr*>(e);
         return ma.analyseExpr(p.getInner());
@@ -60,20 +60,56 @@ func QualType ModuleAnalyser.analyseExpr(ModuleAnalyser* ma, Expr* e) {
     return QualType.init0();
 }
 
-func QualType ModuleAnalyser.analyseIdentifier(ModuleAnalyser* ma, IdentifierExpr* e) {
+func QualType ModuleAnalyser.analyseIdentifier(ModuleAnalyser* ma, IdentifierExpr* i) {
+    Expr* e = cast<Expr*>(i);
     //stdio.printf("FIND %s (%u) idx %u\n", e.getName(), e.getNameIdx(), ma.checkIndex);
-    Decl* d = ma.scope.find(e.getNameIdx(), e.asExpr().getLoc());
+    Decl* d = ma.scope.find(i.getNameIdx(), e.getLoc());
     //stdio.printf("D  %p\n", d);
     if (!d) return QualType.init0();
 
     if (!d.isChecked()) {
-        // TODO need to have correct scope
         ma.analyseGlobalDecl(d);
         // TODO need result
     }
+    assert(d.getType().isValid());
+
+
+    QualType qt = d.getType();
+    e.setType(qt);
+    i.setDecl(d);
+    IdentifierKind kind = IdentifierKind.Unresolved;
+    switch(qt.getType().getKind()) {
+    case Builtin:
+        // cannot happen
+        break;
+    case Pointer:
+        // TODO can happen?
+        break;
+    case Array:
+        // TODO can happen?
+        break;
+    case Ref:
+        // IdentifierKind.Var or IdentifierKind.StructMember or IdentifierKind.EnumConstant
+        break;
+    case Struct:
+        kind = IdentifierKind.Type;
+        break;
+    case Enum:
+        kind = IdentifierKind.Type;
+        break;
+    case Function:
+        kind = IdentifierKind.Function;
+        // TODO could also be struct function
+        kind = IdentifierKind.StructFunction;
+        break;
+    //case Module:
+    }
+    i.setKind(kind);
+
+    d.setUsed();
     // if function, mark is CTC / CTV
 
-    return QualType.init0();
+    return d.getType();
 }
 
 func QualType ModuleAnalyser.analyseUnaryOperator(ModuleAnalyser* ma, UnaryOperator* e) {
@@ -109,6 +145,80 @@ func QualType ModuleAnalyser.analyseUnaryOperator(ModuleAnalyser* ma, UnaryOpera
         e.asExpr().copyConstantFlags(e.getInner());
         break;
     }
+    return QualType.init0();
+}
+
+func QualType ModuleAnalyser.analyseMemberExpr(ModuleAnalyser* ma, MemberExpr* m) {
+    Expr* e = cast<Expr*>(m);
+    Expr* base = m.getBase();
+    QualType lhs = ma.analyseExpr(base);
+    if (lhs.isInvalid()) return lhs;
+
+    // we dont know what we're looking at here, it could be:
+    // mod.Type
+    // mod.var
+    // mod.func
+    // var<Type=struct>.member
+    // var<Type=struct>.struct_function
+    // var[index].member
+    // var.member (= error)
+    // Type.struct_function
+    // Enum.Constant (eg. Color.Red)
+
+    u32 rhs_idx = m.getNameIdx();
+
+    Type* t = lhs.getType();
+    switch(t.getKind()) {
+    case Builtin:
+        // cannot happen?
+        break;
+    case Pointer:
+        // TODO can happen?
+        break;
+    case Array:
+        // TODO can happen?
+        break;
+    case Ref:
+        // IdentifierKind.Var or IdentifierKind.StructMember or IdentifierKind.EnumConstant
+        break;
+    case Struct:
+        // TODO
+        break;
+    case Enum:
+        EnumType* et = cast<EnumType*>(t);
+        EnumTypeDecl* etd = et.getDecl();
+        Decl* d = cast<Decl*>(etd);
+        d.setUsed();
+        EnumConstantDecl* ecd = etd.findConstant(rhs_idx);
+        if (!ecd) {
+            ma.diags.report(e.getLoc(), "enum %s has no constant %s", d.getName(), m.getName());
+            return QualType.init0();
+        }
+        // TODO do self-initialization checking
+
+        Decl* cd = cast<Decl*>(ecd);
+        cd.setUsed();
+        m.setDecl(cd);
+        // TODO set ref kind (like IdentifierExpr)
+        e.setCtv();
+        e.setCtc();
+        QualType rhs = cd.getType();
+        e.setType(rhs);
+
+
+        return rhs;
+    case Function:
+        // TODO
+        break;
+    //case Module:
+    }
+    // TODO check for ModuleType
+
+    // TODO check for EnumType
+
+    // TODO var/struct
+
+
     return QualType.init0();
 }
 

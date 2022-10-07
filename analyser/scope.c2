@@ -99,7 +99,7 @@ public func ast.Decl* Scope.add(Scope* s, u32 name_idx, ast.Decl* d) {
     return nil;
 }
 
-public func ast.Decl* Scope.find(const Scope* s, u32 name_idx, utils.SrcLoc loc) {
+public func ast.Decl* Scope.find(Scope* s, u32 name_idx, utils.SrcLoc loc) {
     ast.Decl* decl = s.local_scope.find(name_idx);
     if (decl) return decl;
 

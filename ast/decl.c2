@@ -114,6 +114,7 @@ public func void Decl.setUsedPublic(Decl* d) @(inline) { d.declBits.is_used_publ
 public func void Decl.dump(const Decl* d) {
     string_buffer.Buf* out = string_buffer.create(10*4096, utils.useColor());
     d.print(out, 0);
+    out.color(col_Normal);
     stdio.puts(out.data());
     out.free();
 }
