@@ -33,7 +33,7 @@ void AST::print(bool colors) const {
 void AST::print(StringBuilder& buffer) const {;
     buffer << "---- AST " << "(module=" << modName << ") " << filename << " ----\n";
     // ImportDecls
-    for (unsigned i=0; i<importList.size(); i++) {
+    for (unsigned i=1; i<importList.size(); i++) {
         importList[i]->print(buffer, 0);
         buffer << '\n';
     }
