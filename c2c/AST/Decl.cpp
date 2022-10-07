@@ -145,6 +145,9 @@ void Decl::printChecked(StringBuilder& buffer) const {
     buffer.setColor(COL_ATTR);
     if (isChecked()) buffer << " checked";
     else buffer << " unchecked";
+
+    // NOTE: also print unused here
+    if (!isUsed()) buffer << " unused";
 }
 
 void Decl::printCommon(StringBuilder& buffer, unsigned indent, const char* title) const {
