@@ -20,14 +20,50 @@ type UnusedChecker struct {
 
 func void UnusedChecker.check(void* arg, Decl* d) {
     UnusedChecker* c = arg;
-    if (!d.isUsed()) {
+    bool used = d.isUsed();
+    if (!used) {
         c.diags.report(d.getLoc(), "unused %s: %s", d.getKindName(), d.getName());
         return;
     }
     if (d.isPublic() && !d.isUsedPublic()) {
         c.diags.report(d.getLoc(), "unused public %s: %s", d.getKindName(), d.getName());
     }
-    // TODO check struct fields, enum-constants and stuff inside functions (arg + vars)
+
+    switch (d.getKind()) {
+    case Function:
+        // TODO args + vars
+        break;
+    case Import:
+        break;
+    case StructType:
+        // TODO fields
+        break;
+    case EnumType:
+        if (used) c.checkEnum(cast<EnumTypeDecl*>(d));
+        break;
+    case EnumConstant:
+        break;
+    case FunctionType:
+        break;
+    case AliasType:
+        break;
+    case Var:
+        break;
+    case StaticAssert:
+        break;
+    }
+}
+
+func void UnusedChecker.checkEnum(UnusedChecker* c, EnumTypeDecl* d) {
+    u32 num_consts = d.getNumConstants();
+    EnumConstantDecl** constants = d.getConstants();
+    for (u32 i=0; i<num_consts; i++) {
+        EnumConstantDecl** ecd = constants[i];
+        Decl* dd = cast<Decl*>(ecd);
+        if (!dd.isUsed()) {
+            c.diags.report(dd.getLoc(), "unused %s: %s", dd.getKindName(), dd.getName());
+        }
+    }
 }
 
 public func void checkUnused(diagnostics.Diags* diags, Module* mod) {

@@ -29,7 +29,7 @@ public func ImportDecl* ImportDecl.create(ast_context.Context* c,
                                           bool is_local) @(inline)
 {
     ImportDecl* d = c.alloc(sizeof(ImportDecl));
-    d.parent.init(DeclKind.Import, name, loc, true, QualType.init0(), ast_);
+    d.parent.init(DeclKind.Import, name, loc, false, QualType.init0(), ast_);
     d.parent.importDeclBits.is_local = is_local;
     d.alias_idx = name2idx(alias_name);
     d.alias_loc = alias_loc;

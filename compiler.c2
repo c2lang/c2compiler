@@ -252,7 +252,7 @@ func void Compiler.build(Compiler* c,
     c.mainComp.visitModules(Compiler.analyseModule, c);
 
     // check unused
-    //c.mainComp.visitModules(Compiler.checkUnused, c);
+    c.mainComp.visitModules(Compiler.checkUnused, c);
 
     u64 t2_end = utils.now();
     printf("analysis took %lu usec\n", t2_end - t2_start);
