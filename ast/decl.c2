@@ -200,8 +200,14 @@ func void Decl.printName(const Decl* d, string_buffer.Buf* out) {
 func void Decl.printBits(const Decl* d, string_buffer.Buf* out) {
     out.color(col_Attr);
     if (d.isPublic()) out.add(" public");
-    out.add(" ");
-    out.add(declCheckState_names[d.getCheckState()]);
+    DeclCheckState cs = d.getCheckState();
+    if (cs != DeclCheckState.Checked) {
+        out.add(" ");
+        out.add(declCheckState_names[cs]);
+    }
+    if (!d.isUsed()) {
+        out.add(" unused");
+    }
     // TODO is_external
 }
 
