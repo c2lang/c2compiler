@@ -188,8 +188,8 @@ func ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, utils.SrcLoc loc) 
                     const char* mod2_name = ast.idx2name(id.getImportNameIdx());
                     if (!ambiguous) {
                         s.diags.report(loc, "symbol %s is ambiguous", name);
-                        const char* mod1_name = ast.idx2name(id.getImportNameIdx());
-                        s.diags.report(loc, "did you mean %s.%s or %s.%s?", mod1_name, name, mod2_name, name);
+                        const char* mod1_name = ast.idx2name(used_import.getImportNameIdx());
+                        s.diags.note(loc, "did you mean %s.%s or %s.%s?", mod1_name, name, mod2_name, name);
                         ambiguous = true;
                     } else {
                         s.diags.report(loc, "did you mean %s.%s?", mod2_name, name);
