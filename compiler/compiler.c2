@@ -114,16 +114,20 @@ func void Compiler.handleModuleImports(void* arg, ast.Module* m) {
     m.visitImports(Compiler.handleImport, c);
 }
 
-func void Compiler.handleImport(void* arg, ast.ImportDecl* d) {
+// TODO move checking of Modules to own file
+func void Compiler.handleImport(void* arg, ast.ImportDecl* id) {
     Compiler* c = arg;
 
-    u32 name_idx = d.asDecl().getNameIdx();
+    ast.Decl* d = cast<ast.Decl*>(id);
+    u32 name_idx = d.getNameIdx();
     ast.Module* m = c.allmodules.find(name_idx);
     if (m) {
-        d.setDest(m);
+        id.setDest(m);
         m.setUsed();
+        d.setChecked();
+        d.setType(c.builder.actOnModuleType(id));
     } else {
-        c.diags.report(d.asDecl().getLoc(), "unknown module '%s'", ast.idx2name(name_idx));
+        c.diags.report(d.getLoc(), "unknown module '%s'", ast.idx2name(name_idx));
         // TODO longjmp?
         stdlib.exit(-1);
     }

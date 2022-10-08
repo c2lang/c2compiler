@@ -62,7 +62,7 @@ func QualType ModuleAnalyser.analyseExpr(ModuleAnalyser* ma, Expr* e) {
 
 func QualType ModuleAnalyser.analyseIdentifier(ModuleAnalyser* ma, IdentifierExpr* i) {
     Expr* e = cast<Expr*>(i);
-    //stdio.printf("FIND %s (%u) idx %u\n", e.getName(), e.getNameIdx(), ma.checkIndex);
+    //stdio.printf("FIND %s (%u) idx %u\n", i.getName(), i.getNameIdx(), ma.checkIndex);
     Decl* d = ma.scope.find(i.getNameIdx(), e.getLoc());
     //stdio.printf("D  %p\n", d);
     if (!d) return QualType.init0();
@@ -71,10 +71,9 @@ func QualType ModuleAnalyser.analyseIdentifier(ModuleAnalyser* ma, IdentifierExp
         ma.analyseGlobalDecl(d);
         // TODO need result
     }
-    assert(d.getType().isValid());
-
 
     QualType qt = d.getType();
+    assert(qt.isValid());
     e.setType(qt);
     i.setDecl(d);
     IdentifierKind kind = IdentifierKind.Unresolved;
@@ -102,7 +101,9 @@ func QualType ModuleAnalyser.analyseIdentifier(ModuleAnalyser* ma, IdentifierExp
         // TODO could also be struct function
         //kind = IdentifierKind.StructFunction;
         break;
-    //case Module:
+    case Module:
+        kind = IdentifierKind.Module;
+        break;
     }
     i.setKind(kind);
 
@@ -212,6 +213,7 @@ func QualType ModuleAnalyser.analyseUnaryOperator(ModuleAnalyser* ma, UnaryOpera
 
 func QualType ModuleAnalyser.analyseMemberExpr(ModuleAnalyser* ma, MemberExpr* m) {
     Expr* e = cast<Expr*>(m);
+
     Expr* base = m.getBase();
     QualType lhs = ma.analyseExpr(base);
     if (lhs.isInvalid()) return lhs;
@@ -272,7 +274,9 @@ func QualType ModuleAnalyser.analyseMemberExpr(ModuleAnalyser* ma, MemberExpr* m
     case Function:
         // TODO
         break;
-    //case Module:
+    case Module:
+        // TODO
+        break;
     }
     // TODO check for ModuleType
 

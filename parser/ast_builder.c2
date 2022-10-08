@@ -197,6 +197,11 @@ public func QualType Builder.actOnArrayType(Builder* b, QualType elem, bool is_i
     return QualType.init2(t.asType());
 }
 
+public func QualType Builder.actOnModuleType(Builder* b, ImportDecl* decl) {
+    ModuleType* t = ModuleType.create(b.context, decl);
+    return QualType.init2(t.asType());
+}
+
 public func QualType Builder.actOnTypeQualifier(Builder* b, QualType qt, u32 qualifier) {
     QualType res = { qt.ptr | (qualifier & QualType_Mask) }
     return res;

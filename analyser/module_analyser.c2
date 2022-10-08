@@ -257,6 +257,7 @@ func void ModuleAnalyser.analyseGlobalVarDecl(ModuleAnalyser* ma, VarDecl* v) {
     if (initval) {
         ma.analyseInitExpr(initval, res);
         // TODO possibly insert a cast (FunctionPtrDecay, etc)
+        // TODO check for other cast here as well
         initval.setType(res);
     }
 }
@@ -508,6 +509,9 @@ func QualType ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt, bool f
         assert(0); // cannot happen
         break;
     case Function:
+        assert(0); // cannot happen
+        break;
+    case Module:
         assert(0); // cannot happen
         break;
     }

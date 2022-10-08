@@ -94,6 +94,7 @@ executable c2c
     ast/struct_type.c2
     ast/enum_type.c2
     ast/function_type.c2
+    ast/module_type.c2
 
     ast/ast.c2
     ast/module.c2

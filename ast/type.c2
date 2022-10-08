@@ -17,7 +17,7 @@ public type TypeKind enum u8 {
     Enum,
     Function,
     // Alias,
-    // Module,
+    Module,
 }
 
 public type TypeBits struct {
@@ -90,6 +90,9 @@ func void Type.print(const Type* t, string_buffer.Buf* out) {
     case Function:
         FunctionType.print(cast<FunctionType*>(t), out);
         break;
+    case Module:
+        ModuleType.print(cast<ModuleType*>(t), out);
+        break;
     }
 }
 
@@ -116,6 +119,9 @@ func void Type.debugPrint(const Type* t, string_buffer.Buf* out) {
     case Function:
         FunctionType.debugPrint(cast<FunctionType*>(t), out);
         break;
+    case Module:
+        ModuleType.debugPrint(cast<ModuleType*>(t), out);
+        break;
     }
 }
 
@@ -141,6 +147,9 @@ public func void Type.fullPrint(const Type* t, string_buffer.Buf* out, u32 inden
         break;
     case Function:
         FunctionType.fullPrint(cast<FunctionType*>(t), out, indent);
+        break;
+    case Module:
+        ModuleType.fullPrint(cast<ModuleType*>(t), out, indent);
         break;
     }
     out.indent(indent);
