@@ -1979,12 +1979,11 @@ QualType FunctionAnalyser::analyseMemberExpr(Expr** expr_ptr, unsigned side) {
 }
 
 
-Expr* FunctionAnalyser::insertImplicitCast(CastKind ck, Expr** inner_ptr, QualType Q) {
+void FunctionAnalyser::insertImplicitCast(CastKind ck, Expr** inner_ptr, QualType Q) {
     Expr* inner = *inner_ptr;
     ImplicitCastExpr* ic = new (Context) ImplicitCastExpr(inner->getLocation(), ck, inner);
     ic->setType(Q);
     *inner_ptr = ic;
-    return ic;
 }
 
 QualType FunctionAnalyser::analyseStaticStructMember(QualType T, Expr** expr_ptr, const StructTypeDecl* S, unsigned side)

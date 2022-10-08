@@ -140,7 +140,7 @@ private:
     void error(SourceLocation loc, QualType left, QualType right) const;
     c2lang::DiagnosticBuilder Diag(SourceLocation Loc, unsigned DiagID) const;
 
-    Expr* insertImplicitCast(c2lang::CastKind ck, Expr** inner_ptr, QualType Q);
+    void insertImplicitCast(c2lang::CastKind ck, Expr** inner_ptr, QualType Q);
 
     AST& ast;
     Module& module;

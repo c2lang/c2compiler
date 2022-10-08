@@ -2451,11 +2451,10 @@ DiagnosticBuilder FileAnalyser::Diag(SourceLocation Loc, unsigned DiagID) const 
     return Diags.Report(Loc, DiagID);
 }
 
-Expr* FileAnalyser::insertImplicitCast(CastKind ck, Expr** inner_ptr, QualType Q) {
+void FileAnalyser::insertImplicitCast(CastKind ck, Expr** inner_ptr, QualType Q) {
     Expr* inner = *inner_ptr;
     ImplicitCastExpr* ic = new (Context) ImplicitCastExpr(inner->getLocation(), ck, inner);
     ic->setType(Q);
     *inner_ptr = ic;
-    return ic;
 }
 

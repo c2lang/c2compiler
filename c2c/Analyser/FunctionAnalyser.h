@@ -150,7 +150,7 @@ private:
     QualType getStructType(QualType T) const;
     QualType getConditionType(const Stmt* C) const;
 
-    Expr* insertImplicitCast(c2lang::CastKind ck, Expr** inner, QualType Q);
+    void insertImplicitCast(c2lang::CastKind ck, Expr** inner, QualType Q);
 
     QualType analyseStaticStructMember(QualType T, Expr** M, const StructTypeDecl *S, unsigned side);
 
