@@ -470,8 +470,16 @@ public func void Builder.actOnStaticAssert(Builder* b, SrcLoc loc, Expr* lhs, Ex
     b.ast.addStaticAssert(d);
 }
 
+
+public func void Builder.insertImplicitCast(Builder* b, ImplicitCastKind kind, Expr** e_ptr, QualType qt) {
+    Expr* inner = *e_ptr;
+    Expr* ic = cast<Expr*>(ImplicitCastExpr.create(b.context, inner.getLoc(), kind, inner));
+    ic.setType(qt);
+    *e_ptr = ic;
+}
+
 func void Builder.addSymbol(Builder* b, const char* name, Decl* d) {
-    u32 name_idx = ast.name2idx(name);
+    u32 name_idx = name2idx(name);
     Decl* old = b.mod.findSymbol(name_idx);
     if (old) {
         b.diags.report(d.getLoc(), "redefinition of '%s'", name);

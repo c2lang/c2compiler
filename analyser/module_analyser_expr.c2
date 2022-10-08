@@ -5,7 +5,7 @@ module module_analyser;
 
 import ast local;
 
-import stdio; // TEMP
+//import stdio; // TEMP
 
 func QualType ModuleAnalyser.analyseExpr(ModuleAnalyser* ma, Expr** e_ptr, bool need_rvalue) {
     QualType result = ma.analyseExprInner(e_ptr);
@@ -18,11 +18,10 @@ func QualType ModuleAnalyser.analyseExpr(ModuleAnalyser* ma, Expr** e_ptr, bool 
         QualType qt = e.getType();
 
         if (qt.isArrayType()) {
-            // TODO
-            //QualType Qptr = AnalyserUtils::getPointerFromArray(Context, Q);
-            //insertImplicitCast(CK_ArrayToPointerDecay, expr_ptr, Qptr);
+            QualType ptr_type; // = // usegetPointerFromArray(Context, Q);
+            ma.builder.insertImplicitCast(ImplicitCastKind.ArrayToPointerDecay, e_ptr, ptr_type);
         } else {
-            //insertImplicitCast(CK_LValueToRValue, expr_ptr, Q);
+            ma.builder.insertImplicitCast(ImplicitCastKind.LValueToRValue, e_ptr, qt);
         }
     }
 

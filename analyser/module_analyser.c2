@@ -4,6 +4,7 @@
 module module_analyser;
 
 import ast_context;
+import ast_builder;
 import ast local;
 import ctv_analyser;
 import diagnostics;
@@ -78,6 +79,7 @@ type ModuleAnalyser struct {
     Module* mod;
     diagnostics.Diags* diags;
     ast_context.Context* context;
+    ast_builder.Builder* builder;
     module_list.ModList* allmodules;
 
     // collect struct-functions
@@ -93,11 +95,17 @@ type ModuleAnalyser struct {
     scope.Scope* scope; // points to top layer in stack
 }
 
-public func void check(diagnostics.Diags* diags, ast_context.Context* context, module_list.ModList* allmodules, Module* mod) {
+public func void check(diagnostics.Diags* diags,
+                       ast_context.Context* context,
+                       ast_builder.Builder* builder,
+                       module_list.ModList* allmodules,
+                       Module* mod)
+{
     ModuleAnalyser ma;
     string.memset(&ma, 0, sizeof(ma));
     ma.diags = diags;
     ma.context = context;
+    ma.builder = builder;
     ma.allmodules = allmodules;
     ma.mod = mod;
 
@@ -473,6 +481,7 @@ func QualType ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt, bool f
             Type* t2 = res.getTypeOrNil();
             Type* ptrType = t2.getPtrType();
             if (!ptrType) {
+                // TODO do via Builder
                 ptrType = cast<Type*>(PointerType.create(ma.context, res));
                 ptrType.setCanonicalType(resolved);
                 t2.setPtrType(ptrType);
