@@ -20,6 +20,7 @@
 - Q: cannot tail-allocate struct members anymore? (or function params)
 
 ## TODO
+- add lvalue/rvalue, implicitCasts adding
 - add type to Component
 - When analysing a file, cache symbol lookup, so we dont have to check stuff multiple times
 - when parsing a file all Type* will be the same! So re-use pointers.

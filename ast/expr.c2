@@ -77,6 +77,11 @@ public func void Expr.copyConstantFlags(Expr* e, const Expr* other) {
     e.parent.exprBits.is_ctc = other.parent.exprBits.is_ctc;
 }
 
+public func void Expr.combineConstantFlags(Expr* e, const Expr* lhs, const Expr* rhs) {
+    e.parent.exprBits.is_ctv = lhs.parent.exprBits.is_ctv && rhs.parent.exprBits.is_ctv;
+    e.parent.exprBits.is_ctc = lhs.parent.exprBits.is_ctc && rhs.parent.exprBits.is_ctc;
+}
+
 public func SrcLoc Expr.getLoc(const Expr* e) @(inline) { return e.loc; }
 
 public func void Expr.setType(Expr* e, QualType qt_) {

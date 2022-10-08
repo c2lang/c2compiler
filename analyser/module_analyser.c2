@@ -233,13 +233,11 @@ func void ModuleAnalyser.analyseGlobalDecl(ModuleAnalyser* ma, Decl* d) {
 
 func void ModuleAnalyser.handleTypeDecl(void* arg, Decl* d) {
     ModuleAnalyser* ma = arg;
-
     ma.analyseGlobalDecl(d);
 }
 
 func void ModuleAnalyser.handleVarDecl(void* arg, VarDecl* v) {
     ModuleAnalyser* ma = arg;
-
     ma.analyseGlobalDecl(v.asDecl());
 }
 
@@ -258,6 +256,8 @@ func void ModuleAnalyser.analyseGlobalVarDecl(ModuleAnalyser* ma, VarDecl* v) {
     Expr* initval = v.getInit();
     if (initval) {
         ma.analyseInitExpr(initval, res);
+        // TODO possibly insert a cast (FunctionPtrDecay, etc)
+        initval.setType(res);
     }
 }
 

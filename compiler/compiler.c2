@@ -247,8 +247,6 @@ func void Compiler.build(Compiler* c,
     module_sorter.sort(libcComponent, c.diags);
     libcComponent.visitModules(Compiler.analyseUsedModule, c);
 
-
-    //TODO finish analysing
     c.mainComp.visitModules(Compiler.analyseModule, c);
 
     // check unused

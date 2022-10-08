@@ -36,7 +36,7 @@ func QualType ModuleAnalyser.analyseExpr(ModuleAnalyser* ma, Expr* e) {
     case ArrayDesignatedInit:
         break;
     case BinaryOperator:
-        break;
+        return ma.analyseBinaryOperator(e);
     case UnaryOperator:
         return ma.analyseUnaryOperator(cast<UnaryOperator*>(e));
     case ConditionalOperator:
@@ -100,7 +100,7 @@ func QualType ModuleAnalyser.analyseIdentifier(ModuleAnalyser* ma, IdentifierExp
     case Function:
         kind = IdentifierKind.Function;
         // TODO could also be struct function
-        kind = IdentifierKind.StructFunction;
+        //kind = IdentifierKind.StructFunction;
         break;
     //case Module:
     }
@@ -110,6 +110,68 @@ func QualType ModuleAnalyser.analyseIdentifier(ModuleAnalyser* ma, IdentifierExp
     // if function, mark is CTC / CTV
 
     return d.getType();
+}
+
+func QualType ModuleAnalyser.analyseBinaryOperator(ModuleAnalyser* ma, Expr* e) {
+    BinaryOperator* b = cast<BinaryOperator*>(e);
+    Expr* lhs = b.getLHS();
+    Expr* rhs = b.getRHS();
+
+    QualType ltype = ma.analyseExpr(lhs);
+    if (ltype.isInvalid()) return QualType.init0();
+
+    QualType rtype = ma.analyseExpr(rhs);
+    if (rtype.isInvalid()) return QualType.init0();
+
+    // TODO check if either type is void, give error
+
+    QualType result = QualType.init0();
+    switch (b.getKind()) {
+    case Multiply:  fallthrough;
+    case Divide:    fallthrough;
+    case Reminder:  fallthrough;
+    case Add:       fallthrough;
+    case Subtract:
+        break;
+    case ShiftLeft: fallthrough;
+    case ShiftRight:
+        result = ltype;
+        break;
+    case LessThan:      fallthrough;
+    case GreaterThan:   fallthrough;
+    case LessEqual:     fallthrough;
+    case GreaterEqual:  fallthrough;
+    case Equal:         fallthrough;
+    case NotEqual:
+        result = g_bool;
+        break;
+    case And:       fallthrough;
+    case Xor:       fallthrough;
+    case Or:
+        result = ltype;
+        break;
+    case LAnd:      fallthrough;
+    case LOr:
+        result = g_bool;
+        break;
+    case Assign:    fallthrough;
+    case MulAssign: fallthrough;
+    case DivAssign: fallthrough;
+    case RemAssign: fallthrough;
+    case AddAssign: fallthrough;
+    case SubASsign: fallthrough;
+    case ShlAssign: fallthrough;
+    case ShrASsign: fallthrough;
+    case AndAssign: fallthrough;
+    case XorAssign: fallthrough;
+    case OrAssign:
+        assert(0);
+        break;
+    }
+
+    e.combineConstantFlags(lhs, rhs);
+
+    return result;
 }
 
 func QualType ModuleAnalyser.analyseUnaryOperator(ModuleAnalyser* ma, UnaryOperator* e) {
