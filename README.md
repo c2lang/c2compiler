@@ -4,7 +4,8 @@
     - reads module + imports
     - filters #ifdefs
     - stores types/funcs/vars + name + loc
-    Q: store all tokens? (of all files in main module, around 1.3 Mb for c2c, sources are 396Kb)
+    - store all tokens? (of all files in main module, around 1.3 Mb for c2c, sources are 396Kb)
+        -> only need to parse and filter ifdefs once, but takes more memory
 - 2nd pass: (in order of modules)
     - also filters ifdefs (inside functions)
         Note: global ifdefs already filtered out
@@ -16,7 +17,6 @@
 -> this costs more parsing time, but saves a lot on resolving and AST
 - Q: how much AST would be saved?
 - Q: cannot tail-allocate struct members anymore? (or function params)
-
 
 ## TODO
 - add type to Component
