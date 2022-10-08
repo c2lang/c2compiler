@@ -115,18 +115,18 @@ executable.c2c:
         - analyser/module_sorter.c2
         - analyser/scope.c2
 
-        - c2module_loader.c2
-        - c2recipe.c2
-        - c2recipe_parser.c2
-        - c2recipe_yaml.c2
-        - component.c2
-        - compiler.c2
-        - constants.c2
-        - diagnostics.c2
-        - context.c2
-        - manifest.c2
-        - module_list.c2
-        - source_mgr.c2
-        - stmt_list.c2
-        - main.c2
+        - compiler/c2module_loader.c2
+        - compiler/c2recipe.c2
+        - compiler/c2recipe_parser.c2
+        - compiler/c2recipe_yaml.c2
+        - compiler/component.c2
+        - compiler/compiler.c2
+        - compiler/constants.c2
+        - compiler/diagnostics.c2
+        - compiler/context.c2
+        - compiler/manifest.c2
+        - compiler/module_list.c2
+        - compiler/source_mgr.c2
+        - compiler/stmt_list.c2
+        - compiler/main.c2
 
