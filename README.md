@@ -4,6 +4,7 @@
     - reads module + imports
     - filters #ifdefs
     - stores types/funcs/vars + name + loc
+    Q: store all tokens? (of all files in main module, around 1.3 Mb for c2c, sources are 396Kb)
 - 2nd pass: (in order of modules)
     - also filters ifdefs (inside functions)
         Note: global ifdefs already filtered out

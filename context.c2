@@ -96,7 +96,7 @@ public func void* Context.alloc(Context* c, u32 len) {
     return cur;
 }
 
-public func void Context.dump(const Context* c) {
+public func void Context.report(const Context* c) {
     u32 num = c.blk_head.count();
     u32 total = c.blk_head.get_total();
 

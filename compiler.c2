@@ -37,7 +37,7 @@ func void openLib(source_mgr.SourceMgr* sm,
     i32 len = stdio.sprintf(manifestFilename, "%s/%s/manifest.yaml", libdir, comp.getName());
     const char* name = auxPool.add(manifestFilename, cast<usize>(len), 0);
 
-    i32 file_id = sm.open(name, 0);
+    i32 file_id = sm.open(name, 0, false);
     if (file_id == -1) return;
     // TODO fill component with stuff from manifest
     //if (!recipe.parseYaml(file_id)) return;
@@ -84,7 +84,7 @@ func void LibLoader.handleModule(void* arg, ast.Module* m) {
     const char* name = l.auxPool.add(filename, cast<usize>(len), 0);
 
     // TODO get location  from manifest?
-    i32 file_id = l.sm.open(name, 0);
+    i32 file_id = l.sm.open(name, 0, false);
     if (file_id == -1) return;   // note: error already printed
 
     bool ok = l.parser.parse(file_id, true);
@@ -259,8 +259,9 @@ func void Compiler.build(Compiler* c,
 
 #if DumpTokens
 #else
-    c.context.dump();
-    c.astPool.dump();
+    c.sm.report();
+    c.context.report();
+    c.astPool.report();
 #endif
 
     if (c.opts.print_ast) c.mainComp.print();

@@ -81,12 +81,12 @@ public func i32 main(i32 argc, char** argv) {
             return -1;
         }
 
-        i32 yaml_id = sm.open(constants.recipe_name, 0);
+        i32 yaml_id = sm.open(constants.recipe_name, 0, false);
         if (yaml_id == -1) return -1;
         if (!recipe.parse(yaml_id)) return -1;
 
         // TEMP also parse yaml version
-        recipe_id = sm.open("c2recipe.yml", 0);
+        recipe_id = sm.open("c2recipe.yml", 0, false);
         if (recipe_id == -1) return -1;
         if (!recipe.parseYaml(recipe_id)) return -1;
     }

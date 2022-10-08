@@ -141,7 +141,7 @@ public func void Recipe.dump(const Recipe* r) {
 #endif
 
 func i32 Recipe.openFile(Recipe* r, File* f) {
-    return r.sm.open(f.name, f.loc);
+    return r.sm.open(f.name, f.loc, true);
 }
 
 func void Recipe.closeFile(Recipe* r, i32 file_id) {

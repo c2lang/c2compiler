@@ -245,7 +245,7 @@ public func void Pool.resize_nodes(Pool* p, u16 capacity) {
     p.nodes = nodes;
 }
 
-public func void Pool.dump(const Pool* pool) {
+public func void Pool.report(const Pool* pool) {
     u32 index_used = pool.node_count * sizeof(Node);
     u32 index_size = pool.node_capacity * sizeof(Node);
     index_used = (index_used + 1023) / 1024;

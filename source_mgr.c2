@@ -19,6 +19,7 @@ type File struct {
     // TODO dont use fileReader here, since it has duplicate info and error msg are easier then
     file_utils.Reader file;
 
+    // to find line-number
     u32 last_offset;
     Location last_loc;
 }
@@ -34,6 +35,12 @@ public type SourceMgr struct {
     File* files;
     u32 num_files;
     u32 max_files;
+
+    // for report
+    u32 other_count;
+    u32 other_size;
+    u32 sources_count;
+    u32 sources_size;
 } @(opaque)
 
 public func SourceMgr* create() {
@@ -60,7 +67,7 @@ public func void SourceMgr.clear(SourceMgr* sm, u32 handle) {
     sm.num_files = handle;
 }
 
-public func i32 SourceMgr.open(SourceMgr* sm, const char* filename, utils.SrcLoc loc) {
+public func i32 SourceMgr.open(SourceMgr* sm, const char* filename, utils.SrcLoc loc, bool is_source) {
     file_utils.Reader file;
     if (!file.open(filename)) {
         char[256] error_msg;
@@ -94,6 +101,13 @@ public func i32 SourceMgr.open(SourceMgr* sm, const char* filename, utils.SrcLoc
     f.filename = filename;
     f.offset = offset;
     f.file = file;
+    if (is_source) {
+        sm.sources_count++;
+        sm.sources_size += file.size;
+    } else {
+        sm.other_count++;
+        sm.other_size += file.size;
+    }
 
     sm.num_files++;
     //sm.dump();
@@ -201,5 +215,10 @@ public func const char* SourceMgr.loc2str(SourceMgr* sm, u32 src_loc) {
         stdio.sprintf(tmp, "%s:%u:%u", loc.filename, loc.line, loc.column);
     }
     return tmp;
+}
+
+public func void SourceMgr.report(const SourceMgr* sm) {
+    stdio.printf("files: %u sources (%u bytes), %u other (%u bytes)\n",
+        sm.sources_count, sm.sources_size, sm.other_count, sm.other_size);
 }
 
