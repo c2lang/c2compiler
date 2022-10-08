@@ -7,20 +7,29 @@ import ast local;
 
 import stdio; // TEMP
 
-/*
-func QualType ModuleAnalyser.analyseExpr(ModuleAnalyser* ma, Expr* e, bool need_rvalue) {
-    QualType result = ma.analyseExprInner(e);
-    if (res.isInvalid()) return res;
-    
+func QualType ModuleAnalyser.analyseExpr(ModuleAnalyser* ma, Expr** e_ptr, bool need_rvalue) {
+    QualType result = ma.analyseExprInner(e_ptr);
+    if (result.isInvalid()) return result;
+
+    Expr* e = *e_ptr;
+    e.setType(result);
+
+    if (need_rvalue && e.isLValue()) {
+        QualType qt = e.getType();
+
+        if (qt.isArrayType()) {
+            // TODO
+            //QualType Qptr = AnalyserUtils::getPointerFromArray(Context, Q);
+            //insertImplicitCast(CK_ArrayToPointerDecay, expr_ptr, Qptr);
+        } else {
+            //insertImplicitCast(CK_LValueToRValue, expr_ptr, Q);
+        }
+    }
+
+    return result;
 }
 
-func QualType ModuleAnalyser.analyseExprInner(ModuleAnalyser* ma, Expr* e) {
-
-    TODO:
-    - first add need rvalue arg + **
-*/
-
-func QualType ModuleAnalyser.analyseExpr(ModuleAnalyser* ma, Expr** e_ptr, bool need_rvalue) {
+func QualType ModuleAnalyser.analyseExprInner(ModuleAnalyser* ma, Expr** e_ptr) {
     assert(e_ptr);
     Expr* e = *e_ptr;
 
@@ -65,7 +74,9 @@ func QualType ModuleAnalyser.analyseExpr(ModuleAnalyser* ma, Expr** e_ptr, bool 
         return ma.analyseMemberExpr(cast<MemberExpr*>(e));
     case Paren:
         ParenExpr* p = cast<ParenExpr*>(e);
-        return ma.analyseExpr(p.getInner2(), need_rvalue);
+        QualType qt = ma.analyseExpr(p.getInner2(), false);
+        e.copyConstantFlags(p.getInner());
+        return qt;
     case BitOffset:
         break;
     case ExplicitCast:

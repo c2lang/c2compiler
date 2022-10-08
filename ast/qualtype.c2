@@ -64,6 +64,10 @@ public func u32 QualType.getQualifiers(const QualType* qt) @(inline) {
     return qt.ptr & QualType_Mask;
 }
 
+public func bool QualType.isArrayType(const QualType* qt) {
+    return qt.getTypeOrNil().isArrayType();
+}
+
 public func void QualType.dump(const QualType* qt) {
     Type* t = qt.getTypeOrNil();
     if (t) {

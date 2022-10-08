@@ -40,6 +40,7 @@ public type ExprBits struct {
     u32 is_ctv : 1;
     u32 is_ctc : 1;
     u32 is_lvalue : 1;
+    u32 is_rvalue : 1;
 }
 public const u32 NumExprBits = NumStmtBits + 16;
 
@@ -82,11 +83,23 @@ public func void Expr.combineConstantFlags(Expr* e, const Expr* lhs, const Expr*
     e.parent.exprBits.is_ctc = lhs.parent.exprBits.is_ctc && rhs.parent.exprBits.is_ctc;
 }
 
+public func bool Expr.isLValue(const Expr* e) { return e.parent.exprBits.is_lvalue; }
+
+public func bool Expr.isRValue(const Expr* e) { return !e.parent.exprBits.is_lvalue; }
+
+public func void Expr.setLValue(Expr* e) { e.parent.exprBits.is_lvalue = true; }
+
+public func void Expr.setRValue(Expr* e) { e.parent.exprBits.is_lvalue = false; }
+
+public func void Expr.syncLFValue(Expr* e, const Expr* other) {
+    e.parent.exprBits.is_lvalue = other.parent.exprBits.is_lvalue;
+}
+
 public func SrcLoc Expr.getLoc(const Expr* e) @(inline) { return e.loc; }
 
-public func void Expr.setType(Expr* e, QualType qt_) {
-    e.qt = qt_;
-}
+public func void Expr.setType(Expr* e, QualType qt_) @(inline) { e.qt = qt_; }
+
+public func QualType Expr.getType(const Expr* e) @(inline) { return e.qt; }
 
 public func void Expr.dump(Expr* e) {
     string_buffer.Buf* out = string_buffer.create(10*4096, utils.useColor());
@@ -238,5 +251,6 @@ func void Expr.printTypeBits(const Expr* e, string_buffer.Buf* out) {
     if (e.parent.exprBits.is_ctv) out.add(" CTV");
     if (e.parent.exprBits.is_ctc) out.add(" CTC");
     if (e.parent.exprBits.is_lvalue) out.add(" lvalue");
+    else out.add(" rvalue");
 }
 
