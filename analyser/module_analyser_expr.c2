@@ -7,7 +7,23 @@ import ast local;
 
 import stdio; // TEMP
 
-func QualType ModuleAnalyser.analyseExpr(ModuleAnalyser* ma, Expr* e) {
+/*
+func QualType ModuleAnalyser.analyseExpr(ModuleAnalyser* ma, Expr* e, bool need_rvalue) {
+    QualType result = ma.analyseExprInner(e);
+    if (res.isInvalid()) return res;
+    
+}
+
+func QualType ModuleAnalyser.analyseExprInner(ModuleAnalyser* ma, Expr* e) {
+
+    TODO:
+    - first add need rvalue arg + **
+*/
+
+func QualType ModuleAnalyser.analyseExpr(ModuleAnalyser* ma, Expr** e_ptr, bool need_rvalue) {
+    assert(e_ptr);
+    Expr* e = *e_ptr;
+
     switch (e.getKind()) {
     case IntegerLiteral:
         // TODO determine kind based on value, for now just return u32
@@ -49,7 +65,7 @@ func QualType ModuleAnalyser.analyseExpr(ModuleAnalyser* ma, Expr* e) {
         return ma.analyseMemberExpr(cast<MemberExpr*>(e));
     case Paren:
         ParenExpr* p = cast<ParenExpr*>(e);
-        return ma.analyseExpr(p.getInner());
+        return ma.analyseExpr(p.getInner2(), need_rvalue);
     case BitOffset:
         break;
     case ExplicitCast:
@@ -115,14 +131,14 @@ func QualType ModuleAnalyser.analyseIdentifier(ModuleAnalyser* ma, IdentifierExp
 
 func QualType ModuleAnalyser.analyseBinaryOperator(ModuleAnalyser* ma, Expr* e) {
     BinaryOperator* b = cast<BinaryOperator*>(e);
-    Expr* lhs = b.getLHS();
-    Expr* rhs = b.getRHS();
-
-    QualType ltype = ma.analyseExpr(lhs);
+    QualType ltype = ma.analyseExpr(b.getLHS2(), true);
     if (ltype.isInvalid()) return QualType.init0();
 
-    QualType rtype = ma.analyseExpr(rhs);
+    QualType rtype = ma.analyseExpr(b.getRHS2(), true);
     if (rtype.isInvalid()) return QualType.init0();
+
+    Expr* lhs = b.getLHS();
+    Expr* rhs = b.getRHS();
 
     // TODO check if either type is void, give error
 
@@ -176,7 +192,7 @@ func QualType ModuleAnalyser.analyseBinaryOperator(ModuleAnalyser* ma, Expr* e) 
 }
 
 func QualType ModuleAnalyser.analyseUnaryOperator(ModuleAnalyser* ma, UnaryOperator* e) {
-    QualType t = ma.analyseExpr(e.getInner());
+    QualType t = ma.analyseExpr(e.getInner2(), true);
     if (t.isInvalid()) return QualType.init0();
 
     // TODO need rvalue stuff
@@ -214,8 +230,7 @@ func QualType ModuleAnalyser.analyseUnaryOperator(ModuleAnalyser* ma, UnaryOpera
 func QualType ModuleAnalyser.analyseMemberExpr(ModuleAnalyser* ma, MemberExpr* m) {
     Expr* e = cast<Expr*>(m);
 
-    Expr* base = m.getBase();
-    QualType lhs = ma.analyseExpr(base);
+    QualType lhs = ma.analyseExpr(m.getBase2(), false);
     if (lhs.isInvalid()) return lhs;
 
     // we dont know what we're looking at here, it could be:

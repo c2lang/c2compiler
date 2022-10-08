@@ -253,16 +253,17 @@ func void ModuleAnalyser.analyseGlobalVarDecl(ModuleAnalyser* ma, VarDecl* v) {
     if (res.isInvalid()) return;
     d.setType(res);
 
-    Expr* initval = v.getInit();
-    if (initval) {
-        ma.analyseInitExpr(initval, res);
+    if (v.hasInit()) {
+        ma.analyseInitExpr(v.getInit2(), res);
         // TODO possibly insert a cast (FunctionPtrDecay, etc)
         // TODO check for other cast here as well
+        Expr* initval = v.getInit();
         initval.setType(res);
     }
 }
 
-func void ModuleAnalyser.analyseInitExpr(ModuleAnalyser* ma, Expr* e, QualType expectedType) {
+func void ModuleAnalyser.analyseInitExpr(ModuleAnalyser* ma, Expr** e_ptr, QualType expectedType) {
+    Expr* e = *e_ptr;
     ArrayType* at = expectedType.getTypeOrNil().asArray();
     if (at) {
         // TODO
@@ -273,9 +274,10 @@ func void ModuleAnalyser.analyseInitExpr(ModuleAnalyser* ma, Expr* e, QualType e
         // TODO
         return;
     }
-    QualType res2 = ma.analyseExpr(e);
+    QualType res2 = ma.analyseExpr(e_ptr, true);
     if (res2.isInvalid()) return;
 
+    e = *e_ptr; // re-read since ImplicitCasts could have been inserted
     if (!e.isCtv()) {
         ma.diags.report(e.getLoc(), "initializer is not a compile-time value");
         return;
@@ -412,7 +414,8 @@ func void ModuleAnalyser.analyseEnumType(ModuleAnalyser* ma, EnumTypeDecl* d) {
 
         Expr* initval = c.getInit();
         if (initval) {
-            QualType res = ma.analyseExpr(initval);
+            QualType res = ma.analyseExpr(c.getInit2(), true);
+            initval = c.getInit();  // re-read in case of ImplicitCast has been inserted
             if (!initval.isCtv()) {
                 ma.diags.report(initval.getLoc(), "initializer is not a compile-time value");
                 return;
@@ -485,9 +488,10 @@ func QualType ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt, bool f
 
         Expr* size = at.getSizeExpr();
         if (size) {
-            QualType res2 = ma.analyseExpr(size);
+            QualType res2 = ma.analyseExpr(at.getSizeExpr2(), false);
             if (res2.isInvalid()) break;
             // TODO check if ok / ctv
+            size = at.getSizeExpr();    // re-read in case of ImplicitCast insertion
         }
 
         if (inner.ptr == res.ptr) {

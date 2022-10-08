@@ -47,6 +47,11 @@ public func Expr* ArrayType.getSizeExpr(const ArrayType*t) {
     return nil;
 }
 
+public func Expr* ArrayType.getSizeExpr2(const ArrayType*t) {
+    if (t.parent.arrayTypeBits.has_size) return &t.sizeExpr[0];
+    return nil;
+}
+
 func void ArrayType.print(const ArrayType* t, string_buffer.Buf* out) {
     t.elem.print(out);
     out.add("[");

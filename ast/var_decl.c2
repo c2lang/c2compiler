@@ -85,8 +85,18 @@ public func VarDeclKind VarDecl.getKind(const VarDecl* d) { return cast<VarDeclK
 
 public func QualType VarDecl.getOrigType(const VarDecl* d) { return d.origType; }
 
+
+public func bool VarDecl.hasInit(const VarDecl* d) @(inline) {
+    return d.parent.varDeclBits.has_init_or_bitfield;
+}
+
 public func Expr* VarDecl.getInit(const VarDecl* d) {
     if (d.parent.varDeclBits.has_init_or_bitfield) return d.init[0];
+    return nil;
+}
+
+public func Expr* VarDecl.getInit2(const VarDecl* d) {
+    if (d.parent.varDeclBits.has_init_or_bitfield) return &d.init[0];
     return nil;
 }
 
