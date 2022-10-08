@@ -265,8 +265,8 @@ func void Parser.parseFuncDef(Parser* p, bool is_public) {
     }
 
     if (!checkName(func_name, p.is_interface)) {
-        // TODO pass loc along (current not correct)
-        p.error("TODO checkname");
+        p.tok.loc = func_loc;   // reset to correct value for error
+        p.error("a function name must start with a lower-case letter");
     }
 
     DeclList params;
@@ -309,7 +309,6 @@ func bool Parser.parseFunctionParams(Parser* p, DeclList* params, bool is_public
         VarDecl* decl = p.parseParamDecl(is_public, allow_defaults);
         params.add(decl.asDecl());
 
-        // TODO check for duplicate names here (if name not empty)
         if (p.tok.kind != Kind.Comma) break;
         p.consumeToken();
 

@@ -292,6 +292,7 @@ func bool ModuleAnalyser.pushCheck(ModuleAnalyser* ma, Decl* d) {
             return false;
         }
     }
+    // set correct scope for the current Decl (might be in different file than current Decl)
     ma.scope = d.getAST().getPtr();
     ma.checkStack[ma.checkIndex].decl = d;
     ma.checkStack[ma.checkIndex].scope = ma.scope;
@@ -462,9 +463,8 @@ func QualType ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt, bool f
         QualType res = ma.analyseType(inner, false);
         if (res.isInvalid()) break;
         if (inner.ptr == res.ptr) {
-            // NOTE: only for builtin types
             resolved = qt;
-            t.setCanonicalType(res);
+            t.setCanonicalType(qt);
         } else {
             Type* t2 = res.getTypeOrNil();
             Type* ptrType = t2.getPtrType();
