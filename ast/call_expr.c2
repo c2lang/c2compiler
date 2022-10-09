@@ -38,9 +38,9 @@ func void CallExpr.print(const CallExpr* e, string_buffer.Buf* out, u32 indent) 
     e.parent.printTypeBits(out);
     out.color(col_Value);
     out.add(" ");
-    // fn->printLiteral(out);
+    e.fn.printLiteral(out);
     out.add("\n");
-    //e.fn.print(out, indent + 2);
+    e.fn.print(out, indent + 2);
     for (u32 i=0; i<e.getNumArgs(); i++) {
         e.args[i].print(out, indent + 2);
     }

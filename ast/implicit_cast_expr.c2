@@ -36,6 +36,7 @@ public func ImplicitCastExpr* ImplicitCastExpr.create(ast_context.Context* c, Sr
     e.parent.init(ExprKind.ImplicitCast, loc, 0, 0, 0);
     e.parent.parent.implicitCastBits.kind = kind;
     e.inner = inner;
+    e.parent.copyConstantFlags(inner);
     return e;
 }
 

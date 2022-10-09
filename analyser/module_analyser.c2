@@ -286,8 +286,8 @@ func void ModuleAnalyser.analyseInitExpr(ModuleAnalyser* ma, Expr** e_ptr, QualT
     if (res2.isInvalid()) return;
 
     e = *e_ptr; // re-read since ImplicitCasts could have been inserted
-    if (!e.isCtv()) {
-        ma.diags.report(e.getLoc(), "initializer is not a compile-time value");
+    if (!e.isCtc()) {
+        ma.diags.report(e.getLoc(), "initializer is not a compile-time constant");
         return;
     }
     // TODO check type

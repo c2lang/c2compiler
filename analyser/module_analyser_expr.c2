@@ -47,17 +47,22 @@ func QualType ModuleAnalyser.analyseExprInner(ModuleAnalyser* ma, Expr** e_ptr) 
         // void*
         break;
     case Identifier:
-        return ma.analyseIdentifier(cast<IdentifierExpr*>(e));
+        Decl* d = ma.analyseIdentifier(e_ptr);
+        if (!d) break;
+        // TODO
+        return d.getType();
     case Type:
         break;
     case Call:
-        break;
+        return g_void; // to get CTC check in analyseInitExpr
     case InitList:
-        // TODO need to know type
+        assert(0);
         break;
     case FieldDesignatedInit:
+        assert(0);
         break;
     case ArrayDesignatedInit:
+        assert(0);
         break;
     case BinaryOperator:
         return ma.analyseBinaryOperator(e);
@@ -86,12 +91,13 @@ func QualType ModuleAnalyser.analyseExprInner(ModuleAnalyser* ma, Expr** e_ptr) 
     return QualType.init0();
 }
 
-func QualType ModuleAnalyser.analyseIdentifier(ModuleAnalyser* ma, IdentifierExpr* i) {
-    Expr* e = cast<Expr*>(i);
+func Decl* ModuleAnalyser.analyseIdentifier(ModuleAnalyser* ma, Expr** e_ptr) {
+    Expr* e = *e_ptr;
+    IdentifierExpr* i = cast<IdentifierExpr*>(e);
     //stdio.printf("FIND %s (%u) idx %u\n", i.getName(), i.getNameIdx(), ma.checkIndex);
     Decl* d = ma.scope.find(i.getNameIdx(), e.getLoc());
     //stdio.printf("D  %p\n", d);
-    if (!d) return QualType.init0();
+    if (!d) return nil;
 
     if (!d.isChecked()) {
         ma.analyseGlobalDecl(d);
@@ -102,41 +108,66 @@ func QualType ModuleAnalyser.analyseIdentifier(ModuleAnalyser* ma, IdentifierExp
     assert(qt.isValid());
     e.setType(qt);
     i.setDecl(d);
+    d.setUsed();
+
     IdentifierKind kind = IdentifierKind.Unresolved;
-    switch(qt.getType().getKind()) {
-    case Builtin:
-        // cannot happen
-        break;
-    case Pointer:
-        // TODO can happen?
-        break;
-    case Array:
-        // TODO can happen?
-        break;
-    case Ref:
-        // IdentifierKind.Var or IdentifierKind.StructMember or IdentifierKind.EnumConstant
-        break;
-    case Struct:
-        kind = IdentifierKind.Type;
-        break;
-    case Enum:
-        kind = IdentifierKind.Type;
-        break;
+    switch (d.getKind()) {
     case Function:
-        kind = IdentifierKind.Function;
-        // TODO could also be struct function
-        //kind = IdentifierKind.StructFunction;
+        e.setCtc();
+        e.setRValue();
+        ma.builder.insertImplicitCast(ImplicitCastKind.FunctionToPointerDecay, e_ptr, d.getType());
+        const FunctionDecl* fd = cast<FunctionDecl*>(d);
+        if (fd.hasPrefix()) kind = IdentifierKind.StructFunction;
+        else kind = IdentifierKind.Function;
         break;
-    case Module:
-        kind = IdentifierKind.Module;
+    case Import:
+        break;
+    case StructType:
+        e.setRValue();
+        kind = IdentifierKind.Type;
+        break;
+    case EnumType:
+        e.setCtc();
+        e.setRValue();
+        kind = IdentifierKind.Type;
+        break;
+    case EnumConstant:
+        e.setCtc();
+        e.setCtv();
+        kind = IdentifierKind.EnumConstant;
+        break;
+    case FunctionType:
+        e.setCtc();
+        kind = IdentifierKind.Type;
+        break;
+    case AliasType:
+        kind = IdentifierKind.Type;
+        break;
+    case Var:
+        const VarDecl* vd = cast<VarDecl*>(d);
+        QualType t = vd.asDecl().getType();
+        e.setCtc();
+        const Expr* init_ = vd.getInit();
+        if (init_ && t.isConst() && init_.isCtv()) e.setCtv();
+        switch (vd.getKind()) {
+        case GlobalVar: fallthrough;
+        case LocalVar:  fallthrough;
+        case FunctionParam:
+            kind = IdentifierKind.Var;
+            break;
+        case StructMember:
+            kind = IdentifierKind.StructMember;
+            break;
+        }
+        break;
+    case StaticAssert:
         break;
     }
     i.setKind(kind);
 
-    d.setUsed();
-    // if function, mark is CTC / CTV
+    if (e.isCtv()) e.setRValue();
 
-    return d.getType();
+    return d;
 }
 
 func QualType ModuleAnalyser.analyseBinaryOperator(ModuleAnalyser* ma, Expr* e) {
