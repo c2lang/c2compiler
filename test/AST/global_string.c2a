@@ -5,6 +5,6 @@ char* c = "hallo";
 
 // @expect{atleast, out.ast}
 
-VarDecl 'i8*' global checked c
+VarDecl 'i8*' global unused c
   StringLiteral 'const i8[5]'=>const i8* CTC len=5 "hallo"
 

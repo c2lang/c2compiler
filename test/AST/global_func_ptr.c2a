@@ -9,7 +9,7 @@ public Func f1 = test1;
 
 // @expect{atleast, out.ast}
 
-VarDecl 'void ()' global public checked f1
+VarDecl 'void ()' global public unused f1
   ImplicitCastExpr 'void ()' CTC CK_FunctionToPointerDecay
     IdentifierExpr 'void ()' CTC test1 func
 

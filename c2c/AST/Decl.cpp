@@ -143,8 +143,7 @@ void Decl::printExternal(StringBuilder& buffer) const {
 }
 void Decl::printChecked(StringBuilder& buffer) const {
     buffer.setColor(COL_ATTR);
-    if (isChecked()) buffer << " checked";
-    else buffer << " unchecked";
+    if (!isChecked()) buffer << " unchecked";
 
     // NOTE: also print unused here
     if (!isUsed()) buffer << " unused";

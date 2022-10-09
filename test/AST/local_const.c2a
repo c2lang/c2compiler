@@ -9,6 +9,6 @@ func void test1() {
 
 // @expect{atleast, out.ast}
 
-      VarDecl 'i32' local unchecked a
+      VarDecl 'i32' local unchecked unused a
         IdentifierExpr 'const i32' CTV CTC Num var
 

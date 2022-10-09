@@ -9,7 +9,7 @@ func void test1() {
 
 // @expect{atleast, out.ast}
 
-  VarDecl 'i32' local unchecked a
+  VarDecl 'i32' local unchecked unused a
     MemberExpr mod-prefix 'const i32' CTV CTC test Num
       IdentifierExpr '(module)test' CTC test module
       IdentifierExpr 'const i32' lvalue Num var

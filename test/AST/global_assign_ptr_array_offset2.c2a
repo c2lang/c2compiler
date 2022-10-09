@@ -6,7 +6,7 @@ char* cp = &buf[3];
 
 // @expect{atleast, out.ast}
 
-VarDecl 'i8*' global checked cp
+VarDecl 'i8*' global unused cp
   UnaryOperator 'i8*' CTC '&'
     ArraySubscriptExpr 'i8' lvalue
       ImplicitCastExpr 'i8*' CTC CK_ArrayToPointerDecay

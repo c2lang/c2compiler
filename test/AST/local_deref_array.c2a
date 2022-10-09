@@ -8,7 +8,7 @@ func void test1() {
 
 // @expect{atleast, out.ast}
 
-      VarDecl 'i8' local unchecked c
+      VarDecl 'i8' local unchecked unused c
         ImplicitCastExpr 'i8' CK_LValueToRValue
           UnaryOperator 'i8' lvalue '*'
             ImplicitCastExpr 'i8*' CTC CK_ArrayToPointerDecay

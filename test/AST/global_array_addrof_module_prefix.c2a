@@ -15,7 +15,7 @@ Point* pp = &test.points[0];
 
 // @expect{atleast, out.ast}
 
-VarDecl '(struct)Point*' global checked pp
+VarDecl '(struct)Point*' global unused pp
   UnaryOperator '(struct)Point*' CTC '&'
     ArraySubscriptExpr '(struct)Point' lvalue
       ImplicitCastExpr '(struct)Point*' CTC CK_ArrayToPointerDecay

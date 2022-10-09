@@ -7,7 +7,7 @@ i8 a = elemsof(array1);
 
 // @expect{atleast, out.ast}
 
-VarDecl 'i8' global checked a
+VarDecl 'i8' global unused a
   BuiltinExpr 'u32' CTV CTC cast=i8 elemsof value=4
     IdentifierExpr 'i32[4]' CTC lvalue array1 var
 

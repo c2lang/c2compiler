@@ -9,10 +9,10 @@ i32 b = test.Num;
 
 // @expect{atleast, out.ast}
 
-VarDecl 'i32' global checked a
+VarDecl 'i32' global unused a
   IdentifierExpr 'const i32' CTV CTC Num var
 
-VarDecl 'i32' global checked b
+VarDecl 'i32' global unused b
   MemberExpr mod-prefix 'const i32' CTV CTC test Num
     IdentifierExpr '(module)test' lvalue test module
     IdentifierExpr 'const i32' lvalue Num var

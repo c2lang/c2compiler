@@ -18,7 +18,7 @@ func void test1() {
 // @expect{atleast, out.ast}
 
     DeclStmt
-      VarDecl '(struct)Point*' local unchecked pp
+      VarDecl '(struct)Point*' local unchecked unused pp
         UnaryOperator '(struct)Point*' CTC '&'
           ArraySubscriptExpr '(struct)Point' lvalue
             ImplicitCastExpr '(struct)Point*' CTC CK_ArrayToPointerDecay

@@ -7,7 +7,7 @@ func void test1(char* cp) {
 
 // @expect{atleast, out.ast}
 
-      VarDecl 'i8' local unchecked c
+      VarDecl 'i8' local unchecked unused c
         UnaryOperator 'bool' cast=i8 '!'
           ImplicitCastExpr 'i8*' CK_LValueToRValue
             IdentifierExpr 'i8*' CTC lvalue cp var
