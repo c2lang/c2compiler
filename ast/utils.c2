@@ -171,6 +171,7 @@ const char* col_Stmt = color.Bmagenta;
 const char* col_Decl = color.Bgreen;
 const char* col_Expr = color.Bmagenta;
 const char* col_Attr = color.Blue;
+const char* col_Cast = color.Red;
 const char* col_Type = color.Green;
 const char* col_Value = color.Bcyan;
 const char* col_Error = color.Red;

@@ -37,6 +37,7 @@ public func ImplicitCastExpr* ImplicitCastExpr.create(ast_context.Context* c, Sr
     e.parent.parent.implicitCastBits.kind = kind;
     e.inner = inner;
     e.parent.copyConstantFlags(inner);
+    if (kind == ImplicitCastKind.LValueToRValue) e.parent.parent.exprBits.is_ctc = false;
     return e;
 }
 
@@ -50,7 +51,7 @@ func void ImplicitCastExpr.print(const ImplicitCastExpr* e, string_buffer.Buf* o
     e.parent.printKind(out, indent, "ImplicitCastExpr");
     e.parent.printTypeBits(out);
     out.add(" ");
-    out.color(col_Attr);
+    out.color(col_Cast);
     out.add(implicitCastKind_names[e.getKind()]);
     out.add("\n");
     e.inner.print(out, indent + 2);

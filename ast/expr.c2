@@ -74,13 +74,13 @@ public func void Expr.setCtv(Expr* e) @(inline) { e.parent.exprBits.is_ctv = tru
 public func void Expr.setCtc(Expr* e) @(inline) { e.parent.exprBits.is_ctc = true; }
 
 public func void Expr.copyConstantFlags(Expr* e, const Expr* other) {
-    e.parent.exprBits.is_ctv = other.parent.exprBits.is_ctv;
     e.parent.exprBits.is_ctc = other.parent.exprBits.is_ctc;
+    e.parent.exprBits.is_ctv = other.parent.exprBits.is_ctv;
 }
 
 public func void Expr.combineConstantFlags(Expr* e, const Expr* lhs, const Expr* rhs) {
-    e.parent.exprBits.is_ctv = lhs.parent.exprBits.is_ctv && rhs.parent.exprBits.is_ctv;
     e.parent.exprBits.is_ctc = lhs.parent.exprBits.is_ctc && rhs.parent.exprBits.is_ctc;
+    e.parent.exprBits.is_ctv = lhs.parent.exprBits.is_ctv && rhs.parent.exprBits.is_ctv;
 }
 
 public func bool Expr.isLValue(const Expr* e) { return e.parent.exprBits.is_lvalue; }
