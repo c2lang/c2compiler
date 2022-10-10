@@ -20,6 +20,8 @@
 - Q: cannot tail-allocate struct members anymore? (or function params)
 
 ## TODO
+- MemberExpr: setKind during analysis
+- PointerType: filter duplicates (set ptr in Type of inner)
 - FIX unit tests (global only, not functions)
 - add type to Component
 - When analysing a file, cache symbol lookup, so we dont have to check stuff multiple times

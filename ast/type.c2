@@ -62,6 +62,14 @@ public func bool Type.isArrayType(const Type* t) @(inline) {
     return (t.getKind() == TypeKind.Array);
 }
 
+public func bool Type.isPointerType(const Type* t) @(inline) {
+    return (t.getKind() == TypeKind.Pointer);
+}
+
+public func bool Type.isVoidType(const Type* t) @(inline) {
+    return t == g_void.getTypeOrNil();
+}
+
 public func void Type.dump(const Type* t) {
     string_buffer.Buf* out = string_buffer.create(256, utils.useColor());
     t.print(out);

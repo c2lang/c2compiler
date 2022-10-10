@@ -65,17 +65,17 @@ func QualType ModuleAnalyser.analyseExprInner(ModuleAnalyser* ma, Expr** e_ptr) 
         assert(0);
         break;
     case BinaryOperator:
-        return ma.analyseBinaryOperator(e);
+        return ma.analyseBinaryOperator(e_ptr);
     case UnaryOperator:
-        return ma.analyseUnaryOperator(cast<UnaryOperator*>(e));
+        return ma.analyseUnaryOperator(e_ptr);
     case ConditionalOperator:
         break;
     case Builtin:
-        return ma.analyseBuiltin(cast<BuiltinExpr*>(e));
+        return ma.analyseBuiltin(e_ptr);
     case ArraySubscript:
         break;
     case Member:
-        return ma.analyseMemberExpr(cast<MemberExpr*>(e));
+        return ma.analyseMemberExpr(e_ptr);
     case Paren:
         ParenExpr* p = cast<ParenExpr*>(e);
         QualType qt = ma.analyseExpr(p.getInner2(), false);
@@ -170,7 +170,8 @@ func Decl* ModuleAnalyser.analyseIdentifier(ModuleAnalyser* ma, Expr** e_ptr) {
     return d;
 }
 
-func QualType ModuleAnalyser.analyseBinaryOperator(ModuleAnalyser* ma, Expr* e) {
+func QualType ModuleAnalyser.analyseBinaryOperator(ModuleAnalyser* ma, Expr** e_ptr) {
+    Expr* e = *e_ptr;
     BinaryOperator* b = cast<BinaryOperator*>(e);
     QualType ltype = ma.analyseExpr(b.getLHS2(), true);
     if (ltype.isInvalid()) return QualType.init0();
@@ -232,44 +233,166 @@ func QualType ModuleAnalyser.analyseBinaryOperator(ModuleAnalyser* ma, Expr* e) 
     return result;
 }
 
-func QualType ModuleAnalyser.analyseUnaryOperator(ModuleAnalyser* ma, UnaryOperator* e) {
-    QualType t = ma.analyseExpr(e.getInner2(), true);
-    if (t.isInvalid()) return QualType.init0();
+func IdentifierKind getInnerExprAddressOf(Expr* e) {
+    // TODO change return type to IdentifierKind, use Unresolved for not-IdentifiersExpr/MemberExpr
 
-    // TODO need rvalue stuff
     switch (e.getKind()) {
-    case PostInc:
+    case IntegerLiteral:    fallthrough;
+    case BooleanLiteral:    fallthrough;
+    case CharLiteral:       fallthrough;
+    case StringLiteral:     fallthrough;
+    case Nil:               fallthrough;
+    case Identifier:        fallthrough;
+    case Type:              fallthrough;
+    case Call:              fallthrough;
+    case InitList:          fallthrough;
+    case FieldDesignatedInit:   fallthrough;
+    case ArrayDesignatedInit:
         break;
-    case PostDec:
+    case BinaryOperator:
+        // TODO
         break;
-    case PreInc:
+    case UnaryOperator:
+        // TODO
         break;
-    case PreDec:
+    case ConditionalOperator:
+        // TODO
         break;
-    case AddrOf:
-        // TODO check inner
-        e.asExpr().isCtc();
+    case Builtin:
         break;
-    case Deref:
-        break;
-    case Minus:
-        // TODO check inner
-        e.asExpr().copyConstantFlags(e.getInner());
-        break;
-    case Not:
-        // TODO check inner
-        e.asExpr().copyConstantFlags(e.getInner());
-        break;
-    case LNot:
-        // TODO check inner
-        e.asExpr().copyConstantFlags(e.getInner());
-        break;
+    case ArraySubscript:
+        ArraySubscriptExpr* a = cast<ArraySubscriptExpr*>(e);
+        return getInnerExprAddressOf(a.getBase());
+    case Member:
+        MemberExpr* m = cast<MemberExpr*>(e);
+        // TODO MemberExpr doesn't have an IdentifierExpr anymore!!
+        // Caller only needs RefKind, so return that from this function?
+        return m.getKind();
+    case Paren:
+        ParenExpr* p = cast<ParenExpr*>(e);
+        return getInnerExprAddressOf(p.getInner());
+    case BitOffset:
+        return IdentifierKind.Unresolved;
+    case ExplicitCast:
+        ExplicitCastExpr* c = cast<ExplicitCastExpr*>(e);
+        return getInnerExprAddressOf(c.getInner());
+    case ImplicitCast:
+        ImplicitCastExpr* c = cast<ImplicitCastExpr*>(e);
+        return getInnerExprAddressOf(c.getInner());
     }
-    return QualType.init0();
+
+    return IdentifierKind.Unresolved;
 }
 
-func QualType ModuleAnalyser.analyseMemberExpr(ModuleAnalyser* ma, MemberExpr* m) {
-    Expr* e = cast<Expr*>(m);
+func bool ModuleAnalyser.getIdentifierKind(ModuleAnalyser* ma, Expr* e) {
+    IdentifierKind kind = getInnerExprAddressOf(e);
+    const char* arg = "";
+    switch (kind) {
+    case Unresolved:
+        QualType qt = e.getType();
+        ma.diags.report(e.getLoc(), "cannot take the address of an rvalue of type %s", qt.diagName());
+        return false;
+    case Module:
+        arg = "a module";
+        break;
+    case Function:
+        // NOTE: C2 does not allow address of function like C
+        arg = "a function";
+        break;
+    case Type:
+        arg = "a type";
+        break;
+    case Var:
+        return true;
+    case EnumConstant:
+        arg = "an enum constant";
+        break;
+    case StructMember:
+        return true;
+    case StructFunction:
+        arg = "a function";
+        break;
+    case Label:
+        arg = "a label";
+        break;
+    }
+    ma.diags.report(e.getLoc(), "cannot takes the address of ", arg);
+    return false;
+}
+
+func QualType ModuleAnalyser.analyseUnaryOperator(ModuleAnalyser* ma, Expr** e_ptr) {
+    Expr* e = *e_ptr;
+    UnaryOperator* u = cast<UnaryOperator*>(e);
+
+    bool need_rvalue = true;
+
+    // TODO need rvalue stuff
+    switch (u.getKind()) {
+    case PostInc:   fallthrough;
+    case PostDec:   fallthrough;
+    case PreInc:    fallthrough;
+    case PreDec:
+        ma.diags.report(e.getLoc(), "initializer is not a compile-time constant");
+        return QualType.init0();
+    case AddrOf:
+        need_rvalue = false;
+        break;
+    case Deref:     fallthrough;
+    case Minus:     fallthrough;
+    case Not:       fallthrough;
+    case LNot:
+        break;
+    }
+
+    QualType t = ma.analyseExpr(u.getInner2(), need_rvalue);
+    if (t.isInvalid()) return QualType.init0();
+
+    e = *e_ptr; // re-read in case of ImplicitCast insertions
+    Expr* inner = u.getInner();
+
+    if (t.isVoidType()) {
+        ma.diags.report(e.getLoc(), "invalid argument type %s to unary expression", "'void'");
+        return QualType.init0();
+    }
+
+    switch (u.getKind()) {
+    case PostInc:   fallthrough;
+    case PostDec:   fallthrough;
+    case PreInc:    fallthrough;
+    case PreDec:
+        assert(0);
+        return QualType.init0();
+    case AddrOf:
+        if (!ma.getIdentifierKind(inner)) return QualType.init0();
+        t = ma.builder.actOnPointerType(t.getCanonicalType(), 0);
+        e.setCtc();
+        break;
+    case Deref:
+        if (!t.isPointerType()) {
+            ma.diags.report(e.getLoc(), "indirection requires pointer operand (%s invalid)", t.diagName());
+            return QualType.init0();
+        } else {
+            t = t.getCanonicalType();
+            const PointerType* p = t.getPointerType();
+            return p.getInner();
+        }
+        break;
+    case Minus:     fallthrough;
+    case Not:
+        e.copyConstantFlags(inner);
+        // t = UsualUnaryConversions(inner);
+        break;
+    case LNot:
+        e.copyConstantFlags(inner);
+        return g_bool;
+    }
+
+    return t;
+}
+
+func QualType ModuleAnalyser.analyseMemberExpr(ModuleAnalyser* ma, Expr** e_ptr) {
+    Expr* e = *e_ptr;
+    MemberExpr* m =cast<MemberExpr*>(e);
 
     QualType lhs = ma.analyseExpr(m.getBase2(), false);
     if (lhs.isInvalid()) return lhs;
@@ -344,10 +467,12 @@ func QualType ModuleAnalyser.analyseMemberExpr(ModuleAnalyser* ma, MemberExpr* m
     return QualType.init0();
 }
 
-func QualType ModuleAnalyser.analyseBuiltin(ModuleAnalyser* ma, BuiltinExpr* e) {
-    switch (e.getKind()) {
+func QualType ModuleAnalyser.analyseBuiltin(ModuleAnalyser* ma, Expr** e_ptr) {
+    Expr* e = *e_ptr;
+    BuiltinExpr* b = cast<BuiltinExpr*>(e);
+    switch (b.getKind()) {
     case Sizeof:
-        return ma.analyseSizeof(e);
+        return ma.analyseSizeof(b);
     case Elemsof:
         break;
     case EnumMin:

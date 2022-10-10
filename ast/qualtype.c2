@@ -5,7 +5,7 @@ module ast;
 
 import utils;
 import string_buffer;
-import stdio;
+import stdio local;
 
 public const u32 QualType_Const    = 0x1;
 public const u32 QualType_Volatile = 0x2;
@@ -64,12 +64,44 @@ public func bool QualType.hasCanonicalType(const QualType* qt) @(inline) {
     return t.canonicalType.ptr != 0;
 }
 
+public func QualType QualType.getCanonicalType(const QualType* qt) @(inline) {
+    const Type* t = qt.getType();
+    return t.canonicalType;
+}
+
 public func u32 QualType.getQualifiers(const QualType* qt) @(inline) {
     return qt.ptr & QualType_Mask;
 }
 
 public func bool QualType.isArrayType(const QualType* qt) {
     return qt.getTypeOrNil().isArrayType();
+}
+
+public func bool QualType.isPointerType(const QualType* qt) {
+    return qt.getTypeOrNil().isPointerType();
+}
+
+public func bool QualType.isVoidType(const QualType* qt) {
+    return qt.getTypeOrNil().isVoidType();
+}
+
+// NOTE: doesn't check if kind is ok
+public func PointerType* QualType.getPointerType(const QualType* qt) {
+    return cast<PointerType*>(qt.getTypeOrNil());
+}
+
+public func const char* QualType.diagName(const QualType* qt, bool showQualifiers = true) {
+    local char[4][128] msgs;
+    local u32 msg_id = 0;
+    char* msg = msgs[msg_id];
+    msg_id = (msg_id + 1) % elemsof(msgs);
+
+    string_buffer.Buf* buf = string_buffer.create_static(128, false, msg);
+    // TODO need to create another print?
+    qt.print(buf);
+    buf.free();
+
+    return msg;
 }
 
 public func void QualType.dump(const QualType* qt) {

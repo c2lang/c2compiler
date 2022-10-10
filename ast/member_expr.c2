@@ -40,6 +40,14 @@ public func u32 MemberExpr.getNameIdx(const MemberExpr* e) @(inline) {
     return e.name_idx;
 }
 
+public func void MemberExpr.setKind(MemberExpr* e, IdentifierKind kind) @(inline) {
+    e.parent.parent.identifierExprBits.kind = kind;
+}
+
+public func IdentifierKind MemberExpr.getKind(const MemberExpr* e) @(inline) {
+    return cast<IdentifierKind>(e.parent.parent.identifierExprBits.kind);
+}
+
 public func Decl* MemberExpr.getDecl(const MemberExpr* e) {
     if (!e.parent.parent.identifierExprBits.has_decl) return nil;
     return e.decl;

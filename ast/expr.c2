@@ -9,9 +9,7 @@ import stdio;
 
 public type ExprKind enum u8 {
     IntegerLiteral,
-/*
-    FloatLiteral,
-*/
+    //FloatLiteral,
     BooleanLiteral,
     CharLiteral,
     StringLiteral,

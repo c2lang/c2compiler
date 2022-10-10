@@ -12,6 +12,7 @@ public type Buf struct {
     u32 size_;
     char* data_;
     bool colors;
+    bool own;
 } @(opaque)
 
 static_assert(24, sizeof(Buf));
@@ -23,12 +24,24 @@ public func Buf* create(u32 capacity, bool colors)
     buf.size_ = 0;
     buf.data_ = malloc(capacity);
     buf.colors = colors;
+    buf.own = true;
+    return buf;
+}
+
+public func Buf* create_static(u32 capacity, bool colors, char* data)
+{
+    Buf* buf = malloc(sizeof(Buf));
+    buf.capacity = capacity;
+    buf.size_ = 0;
+    buf.data_ = data;
+    buf.colors = colors;
+    buf.own = false;
     return buf;
 }
 
 public func void Buf.free(Buf* buf)
 {
-    free(buf.data_);
+    if (buf.own) free(buf.data_);
     free(buf);
 }
 
