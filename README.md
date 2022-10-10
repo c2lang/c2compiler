@@ -20,7 +20,7 @@
 - Q: cannot tail-allocate struct members anymore? (or function params)
 
 ## TODO
-- MemberExpr: setKind during analysis
+- MemberExpr: setKind during analysis, also finish (for global)
 - PointerType: filter duplicates (set ptr in Type of inner)
 - FIX unit tests (global only, not functions)
 - add type to Component

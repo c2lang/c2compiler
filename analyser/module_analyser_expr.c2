@@ -410,6 +410,8 @@ func QualType ModuleAnalyser.analyseMemberExpr(ModuleAnalyser* ma, Expr** e_ptr)
 
     u32 rhs_idx = m.getNameIdx();
 
+    // TODO check rest
+    // TODO convert to d.getKind(), not type (see analyseIdentifier)
     Type* t = lhs.getType();
     switch(t.getKind()) {
     case Builtin:
