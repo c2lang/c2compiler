@@ -47,7 +47,7 @@ public func Expr* ArrayType.getSizeExpr(const ArrayType*t) {
     return nil;
 }
 
-public func Expr* ArrayType.getSizeExpr2(const ArrayType*t) {
+public func Expr** ArrayType.getSizeExpr2(ArrayType*t) {
     if (t.parent.arrayTypeBits.has_size) return &t.sizeExpr[0];
     return nil;
 }

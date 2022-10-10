@@ -58,7 +58,7 @@ func void UnusedChecker.checkEnum(UnusedChecker* c, EnumTypeDecl* d) {
     u32 num_consts = d.getNumConstants();
     EnumConstantDecl** constants = d.getConstants();
     for (u32 i=0; i<num_consts; i++) {
-        EnumConstantDecl** ecd = constants[i];
+        EnumConstantDecl* ecd = constants[i];
         Decl* dd = cast<Decl*>(ecd);
         if (!dd.isUsed()) {
             c.diags.report(dd.getLoc(), "unused %s: %s", dd.getKindName(), dd.getName());

@@ -95,7 +95,7 @@ public func Expr* VarDecl.getInit(const VarDecl* d) {
     return nil;
 }
 
-public func Expr* VarDecl.getInit2(const VarDecl* d) {
+public func Expr** VarDecl.getInit2(VarDecl* d) {
     if (d.parent.varDeclBits.has_init_or_bitfield) return &d.init[0];
     return nil;
 }

@@ -49,7 +49,7 @@ public func Expr* EnumConstantDecl.getInit(const EnumConstantDecl* d) {
     return nil;
 }
 
-public func Expr** EnumConstantDecl.getInit2(const EnumConstantDecl* d) {
+public func Expr** EnumConstantDecl.getInit2(EnumConstantDecl* d) {
     if (d.parent.enumConstantDeclBits.has_init) return &d.init[0];
     return nil;
 }

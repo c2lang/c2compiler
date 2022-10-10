@@ -144,7 +144,7 @@ func Decl* ModuleAnalyser.analyseIdentifier(ModuleAnalyser* ma, Expr** e_ptr) {
         kind = IdentifierKind.Type;
         break;
     case Var:
-        const VarDecl* vd = cast<VarDecl*>(d);
+        VarDecl* vd = cast<VarDecl*>(d);
         QualType t = vd.asDecl().getType();
         e.setCtc();
         const Expr* init_ = vd.getInit();
