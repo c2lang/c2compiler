@@ -71,6 +71,8 @@ public func i32 main(i32 argc, char** argv) {
 
     i32 recipe_id = -1;
 
+    bool hasError = false;
+
     if (opts.single_file) {
         recipe.addDummyTarget(opts.single_file);
     } else {
@@ -103,6 +105,8 @@ public func i32 main(i32 argc, char** argv) {
         printf("building %s\n", target.getName());
 
         compiler.build(auxPool, sm, diags, target, &options);
+        //diags.
+        hasError |= (diags.getNumErrors() != 0);
 
         if (recipe_id != -1) sm.clear(cast<u32>(recipe_id));
     }
@@ -112,6 +116,6 @@ public func i32 main(i32 argc, char** argv) {
     diags.free();
     sm.free();
 
-	return 0;
+	return hasError ? -1 : 0;
 }
 

@@ -12,6 +12,8 @@ import stdlib;
 public type Diags struct {
     source_mgr.SourceMgr* sm;
     bool use_color;
+    u32 num_errors;
+    u32 num_warnings;
 } @(opaque)
 
 public func Diags* create(source_mgr.SourceMgr* sm, bool use_color) {
@@ -25,27 +27,49 @@ public func void Diags.free(Diags* diags) {
     stdlib.free(diags);
 }
 
+type Category enum u8 {
+    Info,
+    Warning,
+    Error,
+}
+
+const char*[] category_names = {
+    "info",
+    "warning",
+    "error",
+}
+
+const char*[] category_colors = {
+    color.Grey,
+    color.Yellow,
+    color.Bred,
+}
+
 // return true if error, false if warning
 public func bool Diags.report(Diags* diags, utils.SrcLoc src_loc, const char* format, ...) {
-    bool is_error = true;
-    const char* col = is_error ? color.Bred : color.Yellow;
-    const char* category = is_error ? "error" : "warning";
+    Category category = Category.Error;
+
+    if (category == Category.Error) {
+        diags.num_errors++;
+    } else {
+        diags.num_warnings++;
+    }
 
     Va_list args;
     va_start(args, format);
-    diags.internal(category, col, src_loc, format, args);
+    diags.internal(category, src_loc, format, args);
     va_end(args);
-    return is_error;
+    return category == Category.Error;
 }
 
 public func void Diags.note(Diags* diags, utils.SrcLoc src_loc, const char* format, ...) {
     Va_list args;
     va_start(args, format);
-    diags.internal("info", color.Grey, src_loc, format, args);
+    diags.internal(Category.Info, src_loc, format, args);
     va_end(args);
 }
 
-func void Diags.internal(Diags* diags, const char* category, const char* col, utils.SrcLoc src_loc, const char* format, Va_list args) {
+func void Diags.internal(Diags* diags, Category category, utils.SrcLoc src_loc, const char* format, Va_list args) {
     string_buffer.Buf* out = string_buffer.create(512, diags.use_color);
 
     source_mgr.Location loc = diags.sm.getLocation(src_loc);
@@ -53,8 +77,8 @@ func void Diags.internal(Diags* diags, const char* category, const char* col, ut
         out.print("%s:%u:%u: ", loc.filename, loc.line, loc.column);
     }
 
-    out.color(col);
-    out.add(category);
+    out.color(category_colors[category]);
+    out.add(category_names[category]);
     out.add(": ");
     out.color(color.Normal);
 
@@ -73,6 +97,12 @@ func void Diags.internal(Diags* diags, const char* category, const char* col, ut
         out.add("^");
         out.color(color.Normal);
     }
-    printf("%s\n", out.data());
+
+    stdio.FILE* stream = (category == Category.Info) ? stdout : stderr;
+    fprintf(stream, "%s\n", out.data());
 }
+
+public func u32 Diags.getNumErrors(const Diags* diags) { return diags.num_errors; }
+
+public func u32 Diags.getNumWarnings(const Diags* diags) { return diags.num_warnings; }
 

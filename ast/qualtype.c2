@@ -98,7 +98,10 @@ public func const char* QualType.diagName(const QualType* qt, bool showQualifier
 
     string_buffer.Buf* buf = string_buffer.create_static(128, false, msg);
     // TODO need to create another print?
+
+    buf.add("'");
     qt.print(buf);
+    buf.add("'");
     buf.free();
 
     return msg;
