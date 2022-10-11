@@ -871,7 +871,6 @@ bool IssueDb::parse() {
         recipe << "executable test\n";
         recipe << "  $warnings no-unused-module\n";
         recipe << "  $generate-c skip\n";
-        recipe << "  " << current_file << '\n';
 
         bool hasSkip = (strncmp(cp, "// @skip", 8) == 0);
         if (runSkipped != hasSkip) return true;
@@ -890,6 +889,7 @@ bool IssueDb::parse() {
             }
         }
 */
+        recipe << "  " << current_file << '\n';
         if (target[0] != 0) {
             StringBuilder build;
             build << "target: \"" << target << "\"\n";
