@@ -12,6 +12,9 @@ import string_pool;
 import utils;
 
 import stdlib;
+import unistd;
+import string local;
+import c_errno local;
 import stdio local;
 
 type Options struct {
@@ -19,14 +22,16 @@ type Options struct {
     bool print_modules;
     bool print_symbols;
     const char* single_file;
+    const char* other_dir;
 }
 
 func void usage(const char* me) {
     printf("Usage: %s <options> <filename>\n", me);
     printf("Options\n");
-    printf("\t-a    print ASTs\n");
-    printf("\t-m    print modules\n");
-    printf("\t-s    print symbols\n");
+    printf("\t-a        print ASTs\n");
+    printf("\t-d [dir]  go to dir first\n");
+    printf("\t-m        print modules\n");
+    printf("\t-s        print symbols\n");
     stdlib.exit(-1);
 }
 
@@ -35,8 +40,17 @@ func void parse_opts(i32 argc, char** argv, Options* opts) {
         const char* arg = argv[i];
         if (arg[0] == '-') {
             switch (arg[1]) {
+            case '-':
+                // for now ignore all '--' options
+                break;
             case 'a':
                 opts.print_ast = true;
+                break;
+            case 'd':
+                if (i==argc-1) usage(argv[0]);
+                i++;
+                opts.other_dir = argv[i];
+                i++;
                 break;
             case 'm':
                 opts.print_modules = true;
@@ -60,6 +74,13 @@ public func i32 main(i32 argc, char** argv) {
     Options opts = { 0 }
 
     parse_opts(argc, argv, &opts);
+
+    if (opts.other_dir) {
+        if (unistd.chdir(opts.other_dir)) {
+            fprintf(stderr, "cannot chdir to %s: %s\n", opts.other_dir, strerror(*errno2()));
+            stdlib.exit(-1);
+        }
+    }
 
     // note: auxPool is used by recipe, build-file and manifests
     string_pool.Pool* auxPool = string_pool.create(64*1024, 0);

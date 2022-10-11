@@ -173,6 +173,17 @@ func void Parser.lex(Parser* p, Token* result) {
             p.lex_option(result);
             p.new_line = false;
             return;
+        case '/':
+            // filename
+            // lex until whitespace
+            const char* start = p.cur;
+            while (*p.cur && !ctype.isspace(*p.cur)) p.cur++;
+            // TODO check EOF
+            result.kind = p.new_line ? Kind.File : Kind.Text;
+            p.new_line = false;
+            u32 len = cast<u32>(p.cur - start);
+            result.value = p.pool.add(start, len, false);
+            return;
         default:
             if (ctype.isalpha(*p.cur)) {
                 result.loc = p.loc_start + cast<SrcLoc>(p.cur - p.input_start);
@@ -212,7 +223,7 @@ func void Parser.lex(Parser* p, Token* result) {
                 return;
             }
             result.loc = p.loc_start + cast<SrcLoc>(p.cur - p.input_start);
-            p.error("unexpected input");
+            p.error("unexpected input '%c'", *p.cur);
             return;
         }
     }
