@@ -20,8 +20,6 @@
 - Q: cannot tail-allocate struct members anymore? (or function params)
 
 ## TODO
-- support tester:
-    - tester: first generate options, then files
 - MemberExpr: setKind during analysis, also finish (for global)
 - PointerType: filter duplicates (set ptr in Type of inner)
 - FIX unit tests (global only, not functions)

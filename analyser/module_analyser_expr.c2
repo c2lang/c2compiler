@@ -319,7 +319,7 @@ func bool ModuleAnalyser.getIdentifierKind(ModuleAnalyser* ma, Expr* e) {
         arg = "a label";
         break;
     }
-    ma.diags.report(e.getLoc(), "cannot takes the address of ", arg);
+    ma.diags.report(e.getLoc(), "cannot take the address of %s", arg);
     return false;
 }
 
