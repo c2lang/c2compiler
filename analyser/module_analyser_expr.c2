@@ -4,8 +4,17 @@
 module module_analyser;
 
 import ast local;
+import ast_builder;
 
 //import stdio; // TEMP
+
+// TODO move to AnalyserUtils
+func QualType getPointerFromArray(ast_builder.Builder* builder, QualType q) {
+    // TODO
+    //q = q.getCanonicalType();
+    const ArrayType* a = cast<ArrayType*>(q.getTypeOrNil());
+    return builder.actOnPointerType(a.getElemType(), q.getQualifiers());
+}
 
 func QualType ModuleAnalyser.analyseExpr(ModuleAnalyser* ma, Expr** e_ptr, bool need_rvalue) {
     QualType result = ma.analyseExprInner(e_ptr);
@@ -18,8 +27,8 @@ func QualType ModuleAnalyser.analyseExpr(ModuleAnalyser* ma, Expr** e_ptr, bool 
         QualType qt = e.getType();
 
         if (qt.isArrayType()) {
-            QualType ptr_type; // = // usegetPointerFromArray(Context, Q);
-            ma.builder.insertImplicitCast(ImplicitCastKind.ArrayToPointerDecay, e_ptr, ptr_type);
+            result = getPointerFromArray(ma.builder, qt);
+            ma.builder.insertImplicitCast(ImplicitCastKind.ArrayToPointerDecay, e_ptr, result);
         } else {
             ma.builder.insertImplicitCast(ImplicitCastKind.LValueToRValue, e_ptr, qt);
         }
@@ -72,7 +81,7 @@ func QualType ModuleAnalyser.analyseExprInner(ModuleAnalyser* ma, Expr** e_ptr) 
     case Builtin:
         return ma.analyseBuiltin(e_ptr);
     case ArraySubscript:
-        break;
+        return ma.analyseArraySubscriptExpr(e_ptr);
     case Member:
         return ma.analyseMemberExpr(e_ptr);
     case Paren:
@@ -494,6 +503,27 @@ func QualType ModuleAnalyser.analyseBuiltin(ModuleAnalyser* ma, Expr** e_ptr) {
     case ToContainer:
         break;
     }
+
+    return QualType.init0();
+}
+
+func QualType ModuleAnalyser.analyseArraySubscriptExpr(ModuleAnalyser* ma, Expr** e_ptr) {
+    Expr* e = *e_ptr;
+    ArraySubscriptExpr* sub = cast<ArraySubscriptExpr*>(e);
+
+    QualType q = ma.analyseExpr(sub.getBase2(), true);
+    if (q.isInvalid()) return q;
+
+    // Deference alias types
+    // TODO
+
+
+    if (!q.isPointerType()) {
+        ma.diags.report(e.getLoc(), "subscripted value is not an array or pointer");
+        return QualType.init0();
+    }
+
+    //Expr** index = sub.getIndex2();
 
     return QualType.init0();
 }

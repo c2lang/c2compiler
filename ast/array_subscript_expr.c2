@@ -18,6 +18,8 @@ public func ArraySubscriptExpr* ArraySubscriptExpr.create(ast_context.Context* c
     e.parent.init(ExprKind.ArraySubscript, loc, 0, 0, 0);
     e.base = base;
     e.idx = idx;
+
+    e.parent.setLValue();
     return e;
 }
 

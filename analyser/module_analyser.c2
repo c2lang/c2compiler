@@ -13,6 +13,7 @@ import scope;
 
 import string;
 import stdlib;
+import stdio; // TEMP
 
 const u32 MaxDepth = 8;
 
@@ -509,8 +510,8 @@ func QualType ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt, bool f
         }
 
         if (inner.ptr == res.ptr) {
+            t.setCanonicalType(qt);
             resolved = qt;
-            t.setCanonicalType(res);
         } else {
             Type* t2 = cast<Type*>(ArrayType.create(ma.context, res, at.isIncremental(), at.getSizeExpr()));
             resolved.set(t2);
