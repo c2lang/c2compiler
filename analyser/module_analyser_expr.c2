@@ -10,8 +10,7 @@ import ast_builder;
 
 // TODO move to AnalyserUtils
 func QualType getPointerFromArray(ast_builder.Builder* builder, QualType q) {
-    // TODO
-    //q = q.getCanonicalType();
+    q = q.getCanonicalType();
     const ArrayType* a = cast<ArrayType*>(q.getTypeOrNil());
     return builder.actOnPointerType(a.getElemType(), q.getQualifiers());
 }
@@ -525,7 +524,7 @@ func QualType ModuleAnalyser.analyseArraySubscriptExpr(ModuleAnalyser* ma, Expr*
 
     //Expr** index = sub.getIndex2();
 
-    return QualType.init0();
+    return q;
 }
 
 func QualType ModuleAnalyser.analyseSizeof(ModuleAnalyser* ma, BuiltinExpr* e) {
