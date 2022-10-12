@@ -20,6 +20,8 @@
 - Q: cannot tail-allocate struct members anymore? (or function params)
 
 ## TODO
+- set ModuleType to all Imports (when resolving)
+- Fix State s = State; (without .A)
 - MemberExpr: setKind during analysis, also finish (for global)
 - PointerType: filter duplicates (set ptr in Type of inner)
 - FIX unit tests (global only, not functions)

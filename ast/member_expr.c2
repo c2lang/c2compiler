@@ -62,6 +62,11 @@ func void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 inde
     e.parent.printKind(out, indent, "MemberExpr");
     e.parent.printTypeBits(out);
     out.add(" ");
+    IdentifierKind kind = e.getKind();
+    if (kind == IdentifierKind.Unresolved) out.color(col_Error);
+    else out.color(col_Attr);
+    out.add(identifierKind_names[kind]);
+    out.add(" ");
     out.color(col_Value);
     out.add(e.getName());
     out.add("\n");

@@ -90,6 +90,22 @@ public func PointerType* QualType.getPointerType(const QualType* qt) {
     return cast<PointerType*>(qt.getTypeOrNil());
 }
 
+public func bool QualType.needsCtvInit(const QualType* qt) {
+    const Type* t = qt.getTypeOrNil();
+
+    switch (t.getKind()) {
+    case Builtin:   return true;
+    case Pointer:   return false;
+    case Array:     return true;
+    case Ref:       return true;
+    case Struct:    return true;
+    case Enum:      return true;
+    case Function:  return false;
+    case Module:    return false;
+    }
+    return false;
+}
+
 public func const char* QualType.diagName(const QualType* qt, bool showQualifiers = true) {
     local char[4][128] msgs;
     local u32 msg_id = 0;

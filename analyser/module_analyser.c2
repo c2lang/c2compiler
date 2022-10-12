@@ -263,8 +263,6 @@ func void ModuleAnalyser.analyseGlobalVarDecl(ModuleAnalyser* ma, VarDecl* v) {
 
     if (v.hasInit()) {
         ma.analyseInitExpr(v.getInit2(), res);
-        // TODO possibly insert a cast (FunctionPtrDecay, etc)
-        // TODO check for other cast here as well
         Expr* initval = v.getInit();
         initval.setType(res);
     }
@@ -291,6 +289,12 @@ func void ModuleAnalyser.analyseInitExpr(ModuleAnalyser* ma, Expr** e_ptr, QualT
         ma.diags.report(e.getLoc(), "initializer element is not a compile-time constant");
         return;
     }
+
+    if (!e.isCtv() && expectedType.needsCtvInit()) {
+        ma.diags.report(e.getLoc(), "initializer element is not a compile-time value");
+        return;
+    }
+
     // TODO check type
 }
 

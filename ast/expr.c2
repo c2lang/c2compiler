@@ -246,8 +246,8 @@ func void Expr.printTypeBits(const Expr* e, string_buffer.Buf* out) {
     out.add(" ");
     e.qt.printQuoted(out);
     out.color(col_Attr);
-    if (e.parent.exprBits.is_ctv) out.add(" CTV");
     if (e.parent.exprBits.is_ctc) out.add(" CTC");
+    if (e.parent.exprBits.is_ctv) out.add(" CTV");
     if (e.parent.exprBits.is_lvalue) out.add(" lvalue");
     else out.add(" rvalue");
 }

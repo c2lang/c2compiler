@@ -49,7 +49,6 @@ func QualType ModuleAnalyser.analyseExprInner(ModuleAnalyser* ma, Expr** e_ptr) 
     case Identifier:
         Decl* d = ma.analyseIdentifier(e_ptr);
         if (!d) break;
-        // TODO
         return d.getType();
     case Type:
         break;
@@ -121,6 +120,9 @@ func Decl* ModuleAnalyser.analyseIdentifier(ModuleAnalyser* ma, Expr** e_ptr) {
         else kind = IdentifierKind.Function;
         break;
     case Import:
+        e.setCtc();
+        e.setRValue();
+        kind = IdentifierKind.Module;
         break;
     case StructType:
         e.setRValue();
@@ -454,14 +456,14 @@ func QualType ModuleAnalyser.analyseMemberExpr(ModuleAnalyser* ma, Expr** e_ptr)
         e.setCtc();
         QualType rhs = cd.getType();
         e.setType(rhs);
-
-
+        m.setKind(IdentifierKind.EnumConstant);
         return rhs;
     case Function:
         // TODO
         break;
     case Module:
         // TODO
+        m.setKind(IdentifierKind.Module);
         break;
     }
     // TODO check for ModuleType
