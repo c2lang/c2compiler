@@ -20,7 +20,7 @@
 - Q: cannot tail-allocate struct members anymore? (or function params)
 
 ## TODO
-- FIX canonical type of i32[] -> should be the same
+- Fix ArrayType index size, type should be i8[3], not i8[]
 - Fix SourceRange (how?)
 - set ModuleType to all Imports (when resolving)
 - Fix State s = State; (without .A)
