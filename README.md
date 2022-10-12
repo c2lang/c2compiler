@@ -21,6 +21,7 @@
 
 ## TODO
 - FIX canonical type of i32[] -> should be the same
+- Fix SourceRange (how?)
 - set ModuleType to all Imports (when resolving)
 - Fix State s = State; (without .A)
 - MemberExpr: setKind during analysis, also finish (for global)

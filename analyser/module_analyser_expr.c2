@@ -516,13 +516,13 @@ func QualType ModuleAnalyser.analyseArraySubscriptExpr(ModuleAnalyser* ma, Expr*
     // Deference alias types
     // TODO
 
-
     if (!q.isPointerType()) {
         ma.diags.report(e.getLoc(), "subscripted value is not an array or pointer");
         return QualType.init0();
     }
 
-    //Expr** index = sub.getIndex2();
+    QualType qidx = ma.analyseExpr(sub.getIndex2(), true);
+    if (qidx.isInvalid()) return qidx;
 
     return q;
 }
