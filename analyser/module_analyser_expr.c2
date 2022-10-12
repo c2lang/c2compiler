@@ -524,7 +524,8 @@ func QualType ModuleAnalyser.analyseArraySubscriptExpr(ModuleAnalyser* ma, Expr*
     QualType qidx = ma.analyseExpr(sub.getIndex2(), true);
     if (qidx.isInvalid()) return qidx;
 
-    return q;
+    PointerType* pt = q.getPointerType();
+    return pt.getInner();
 }
 
 func QualType ModuleAnalyser.analyseSizeof(ModuleAnalyser* ma, BuiltinExpr* e) {
