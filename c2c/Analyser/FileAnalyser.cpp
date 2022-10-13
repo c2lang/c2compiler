@@ -1729,6 +1729,9 @@ bool FileAnalyser::analyseInitListArray(InitListExpr* expr, QualType Q, unsigned
     bool constant = true;
     for (unsigned i=0; i<numValues; i++) {
         ok |= analyseInitExpr(&values[i], ET, usedPublic);
+        // TODO set constant here (now always true)
+
+        // TODO values[i] can be an ImplicitCastExpr?
         if (DesignatedInitExpr* D = dyncast<DesignatedInitExpr>(values[i])) {
             haveDesignators = true;
             if (D->getDesignatorKind() != DesignatedInitExpr::ARRAY_DESIGNATOR) {
@@ -1746,7 +1749,7 @@ bool FileAnalyser::analyseInitListArray(InitListExpr* expr, QualType Q, unsigned
     if (haveDesignators) expr->setDesignators();
     // determine real array size
     llvm::APInt initSize(64, 0, false);
-    if (haveDesignators && ok) {
+    if (haveDesignators) {
         int64_t arraySize = -1;
         if (AT->getSizeExpr()) {    // size determined by expr
             arraySize = AT->getSize().getZExtValue();
