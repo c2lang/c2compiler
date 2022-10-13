@@ -47,8 +47,8 @@ public type BuiltinExpr struct {
     Expr* inner;
     usize value;
 
-    OffsetOfData[0] offset;
-    ToContainerData[0] container;
+    OffsetOfData[0] offset;     // tail-allocated
+    ToContainerData[0] container;   // tail-allocated
 } @(opaque)
 
 public func BuiltinExpr* BuiltinExpr.create(ast_context.Context* c, SrcLoc loc, Expr* inner, BuiltinExprKind kind) @(inline) {
@@ -90,6 +90,20 @@ public func void BuiltinExpr.setValue(BuiltinExpr* e, usize value ) {
 
 public func Expr* BuiltinExpr.getInner(const BuiltinExpr* e) { return e.inner; }
 
+public func SrcLoc BuiltinExpr.getEndLoc(const BuiltinExpr* e) @(inline) {
+    switch (e.getKind()) {
+    case Sizeof:    fallthrough;
+    case Elemsof:   fallthrough;
+    case EnumMin:   fallthrough;
+    case EnumMax:
+        break;
+    case OffsetOf:
+        return e.offset[0].member.getEndLoc() + 1;  // add closing )
+    case ToContainer:
+        return e.container[0].pointer.getEndLoc() + 1;  // add closing )
+    }
+    return e.inner.getEndLoc();
+}
 
 func void BuiltinExpr.print(const BuiltinExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent, "BuiltinExpr");

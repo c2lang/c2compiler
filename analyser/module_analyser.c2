@@ -372,7 +372,6 @@ func bool ModuleAnalyser.analyseInitListArray(ModuleAnalyser* ma, InitListExpr* 
     if (sizeExpr) {
         u32 arraySize = at.getSize();
         if (numValues > arraySize) {
-            stdio.printf("ARRAY SIZE %u  ELEMS %u\n", arraySize, numValues);
             ma.diags.report(values[arraySize].getLoc(), "excess elements in array initializer");
             return false;
         }
@@ -580,7 +579,7 @@ func QualType ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt, bool f
 
             ctv_analyser.Value value = ctv_analyser.get_value(sizeExpr);
             if (value.isNegative()) {
-                ma.diags.report(sizeExpr.getLoc(), "array size has negative value %d", value.svalue);
+                ma.diags.reportRange(sizeExpr.getLoc(), sizeExpr.getStartLoc(), sizeExpr.getEndLoc(), "array size has negative value %d", value.svalue);
                 break;
             }
             at.setSize(cast<u32>(value.uvalue));

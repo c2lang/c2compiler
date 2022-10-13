@@ -8,6 +8,7 @@ import string_buffer;
 import utils local;
 
 public type ArraySubscriptExpr struct {
+    // Note: loc is that of right bracket
     Expr parent;
     Expr* base;
     Expr* idx;

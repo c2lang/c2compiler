@@ -31,6 +31,18 @@ public func ConditionalOperator* ConditionalOperator.create(ast_context.Context*
     return e;
 }
 
+public func Expr* ConditionalOperator.getCond(const ConditionalOperator* e) {
+    return e.cond;
+}
+
+public func Expr* ConditionalOperator.getLHS(const ConditionalOperator* e) {
+    return e.lhs;
+}
+
+public func Expr* ConditionalOperator.getRHS(const ConditionalOperator* e) {
+    return e.rhs;
+}
+
 func void ConditionalOperator.print(const ConditionalOperator* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent, "ConditionalOperator");
     e.parent.printTypeBits(out);

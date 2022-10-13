@@ -20,7 +20,7 @@
 - Q: cannot tail-allocate struct members anymore? (or function params)
 
 ## TODO
-- Fix SourceRange (how?)
+- change some diags.report -> diags.reportRange
 - FIX type of integer literals + integer promotion etc,
     maybe a literal should be signed by default?
 - Fix type of -3, should be signed (UnaryOperator)

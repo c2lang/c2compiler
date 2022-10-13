@@ -67,6 +67,7 @@ public func void SourceMgr.clear(SourceMgr* sm, u32 handle) {
     sm.num_files = handle;
 }
 
+// TODO split in create and open?
 public func i32 SourceMgr.open(SourceMgr* sm, const char* filename, utils.SrcLoc loc, bool is_source) {
     file_utils.Reader file;
     if (!file.open(filename)) {
@@ -122,6 +123,18 @@ public func const char* SourceMgr.get_content(SourceMgr* sm, i32 handle) {
     return cast<char*>(sm.files[handle].file.data());
 }
 
+public func const char* SourceMgr.get_token_source(SourceMgr* sm, utils.SrcLoc loc) {
+    File* f = sm.find_file(loc);
+    if (!f) return "";
+
+    u32 offset = loc - f.offset;
+    // TODO check if open, otherwise re-open
+    char* data = f.file.region;
+    data += offset;
+
+    return data;
+}
+
 public func u32 SourceMgr.get_offset(SourceMgr* sm, i32 handle) {
     return sm.files[handle].offset;
 }
@@ -150,7 +163,7 @@ public type Location struct {
     const char* line_start;
 }
 
-func File* find_file(const SourceMgr* sm, u32 loc) {
+func File* SourceMgr.find_file(const SourceMgr* sm, u32 loc) {
     for (u32 i=0; i<sm.num_files; i++) {
         File* f = &sm.files[i];
         if (loc >= f.offset && loc < f.offset + f.file.size) return f;
@@ -179,7 +192,7 @@ func void find_line_col(const char* data, u32 offset, Location* loc, u32 last_of
 
 func Location SourceMgr.locate(SourceMgr* sm, u32 loc) {
     Location l = { 1, 1, nil }
-    File* f = find_file(sm, loc);
+    File* f = sm.find_file(loc);
     if (f) {
         l.filename = f.filename;
         u32 offset = loc - f.offset;

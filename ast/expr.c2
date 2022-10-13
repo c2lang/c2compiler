@@ -95,6 +95,118 @@ public func void Expr.syncLFValue(Expr* e, const Expr* other) {
 
 public func SrcLoc Expr.getLoc(const Expr* e) @(inline) { return e.loc; }
 
+public func SrcLoc Expr.getStartLoc(const Expr* e) @(inline) {
+    switch (e.getKind()) {
+    case IntegerLiteral:    fallthrough;
+    case BooleanLiteral:    fallthrough;
+    case CharLiteral:       fallthrough;
+    case StringLiteral:     fallthrough;
+    case Nil:               fallthrough;
+    case Identifier:
+        break;
+    case Type:
+        // TODO correct?
+        break;
+    case Call:
+        // TODO
+        break;
+    case InitList:
+        // TODO
+        break;
+    case FieldDesignatedInit:
+        // TODO
+        break;
+    case ArrayDesignatedInit:
+        // TODO
+        break;
+    case BinaryOperator:
+        const BinaryOperator* b = cast<BinaryOperator*>(e);
+        return b.getLHS().getStartLoc();
+    case UnaryOperator:
+        const UnaryOperator* u = cast<UnaryOperator*>(e);
+        return u.getStartLoc();
+    case ConditionalOperator:
+        const ConditionalOperator* c = cast<ConditionalOperator*>(e);
+        return c.getCond().getStartLoc();
+    case Builtin:
+        break;
+    case ArraySubscript:
+        const ArraySubscriptExpr* a = cast<ArraySubscriptExpr*>(e);
+        return a.getBase().getStartLoc();
+    case Member:
+        const MemberExpr* m = cast<MemberExpr*>(e);
+        return m.getBase().getStartLoc();
+    case Paren:
+        break;
+    case BitOffset:
+        // TODO
+        break;
+    case ExplicitCast:
+        break;
+    case ImplicitCast:
+        const ImplicitCastExpr* c = cast<ImplicitCastExpr*>(e);
+        return c.getInner().getStartLoc();
+    }
+    return e.loc;
+}
+
+public func SrcLoc Expr.getEndLoc(const Expr* e) @(inline) {
+    switch (e.getKind()) {
+    case IntegerLiteral:    fallthrough;
+    case BooleanLiteral:    fallthrough;
+    case CharLiteral:       fallthrough;
+    case StringLiteral:     fallthrough;
+    case Nil:               fallthrough;
+    case Identifier:
+        break;
+    case Type:
+        // TODO correct?
+        break;
+    case Call:
+        // TODO
+        break;
+    case InitList:
+        const InitListExpr* ile = cast<InitListExpr*>(e);
+        // TODO
+        break;
+    case FieldDesignatedInit:
+        // TODO
+        break;
+    case ArrayDesignatedInit:
+        // TODO
+        break;
+    case BinaryOperator:
+        const BinaryOperator* b = cast<BinaryOperator*>(e);
+        return b.getRHS().getEndLoc();
+    case UnaryOperator:
+        const UnaryOperator* u = cast<UnaryOperator*>(e);
+        return u.getEndLoc();
+    case ConditionalOperator:
+        const ConditionalOperator* c = cast<ConditionalOperator*>(e);
+        return c.getRHS().getEndLoc();
+    case Builtin:
+        const BuiltinExpr* bi = cast<BuiltinExpr*>(e);
+        return bi.getEndLoc();
+    case ArraySubscript:
+        break;
+    case Member:
+        break;
+    case Paren:
+        const ParenExpr* p = cast<ParenExpr*>(e);
+        return p.getInner().getEndLoc() + 1;    // add trailing )
+    case BitOffset:
+        // TODO
+        break;
+    case ExplicitCast:
+        const ExplicitCastExpr* c = cast<ExplicitCastExpr*>(e);
+        return c.getInner().getEndLoc() + 1;    // add trailing )
+    case ImplicitCast:
+        const ImplicitCastExpr* c = cast<ImplicitCastExpr*>(e);
+        return c.getInner().getEndLoc();
+    }
+    return e.loc;
+}
+
 public func void Expr.setType(Expr* e, QualType qt_) @(inline) { e.qt = qt_; }
 
 public func QualType Expr.getType(const Expr* e) @(inline) { return e.qt; }

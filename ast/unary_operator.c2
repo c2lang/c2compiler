@@ -75,6 +75,16 @@ func bool UnaryOperator.isBefore(const UnaryOperator* e) {
     return true;
 }
 
+public func SrcLoc UnaryOperator.getStartLoc(const UnaryOperator* e) @(inline) {
+    if (e.isBefore()) return e.parent.getLoc();
+    return e.inner.getStartLoc();
+}
+
+public func SrcLoc UnaryOperator.getEndLoc(const UnaryOperator* e) @(inline) {
+    if (e.isBefore()) return e.inner.getStartLoc();
+    return e.parent.getLoc();
+}
+
 func void UnaryOperator.print(const UnaryOperator* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent, "UnaryOperator");
     e.parent.printTypeBits(out);
