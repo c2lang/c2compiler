@@ -7,12 +7,6 @@ import ast local;
 
 import string;
 
-type CTV_Analyser struct {
-}
-
-func void CTV_Analyser.init(CTV_Analyser* ca) {
-    string.memset(ca, 0, sizeof(CTV_Analyser));
-}
 
 public type Value struct {
     bool is_signed;
@@ -20,6 +14,18 @@ public type Value struct {
         u64 uvalue;
         i64 svalue;
     }
+}
+
+public func bool Value.isNegative(const Value* v) {
+    if (v.is_signed && v.svalue < 0) return true;
+    return false;
+}
+
+type CTV_Analyser struct {
+}
+
+func void CTV_Analyser.init(CTV_Analyser* ca) {
+    string.memset(ca, 0, sizeof(CTV_Analyser));
 }
 
 public func Value get_value(const Expr* e) {
@@ -115,7 +121,7 @@ func Value get_unaryop_value(const UnaryOperator* e) {
     const Expr* inner = e.getInner();
     Value res2 = get_value(inner);
 
-    switch (e.getKind()) {
+    switch (e.getOpcode()) {
     case PostInc:  fallthrough;
     case PostDec:  fallthrough;
     case PreInc:   fallthrough;
@@ -151,16 +157,30 @@ func Value get_binaryop_value(const BinaryOperator* e) {
     // Note: we take the signed/unsigned rvalue depending on whether the lhs value is sigend.
     // this is not completely correct
 
-    switch (e.getKind()) {
+    switch (e.getOpcode()) {
     case Multiply:
-        if (left.is_signed) result.svalue = left.svalue * right.svalue;
-        else result.uvalue = left.uvalue * right.uvalue;
+        if (left.is_signed || right.is_signed) {
+            // convert both values to signed
+            i64 lval = (left.is_signed) ? left.svalue : cast<i64>(left.uvalue);
+            i64 rval = (right.is_signed) ? right.svalue : cast<i64>(right.uvalue);
+            result.svalue = lval * rval;
+            result.is_signed = true;
+        } else {
+            result.uvalue = left.uvalue * right.uvalue;
+        }
         break;
     case Divide:
         // Note: should already be checked!
         assert(right.svalue != 0);
-        if (left.is_signed) result.svalue = left.svalue / right.svalue;
-        else result.uvalue = left.uvalue / right.uvalue;
+        if (left.is_signed || right.is_signed) {
+            // convert both values to signed
+            i64 lval = (left.is_signed) ? left.svalue : cast<i64>(left.uvalue);
+            i64 rval = (right.is_signed) ? right.svalue : cast<i64>(right.uvalue);
+            result.svalue = lval / rval;
+            result.is_signed = true;
+        } else {
+            result.uvalue = left.uvalue / right.uvalue;
+        }
         break;
     case Reminder:
         // Note: should already be checked!
@@ -169,12 +189,22 @@ func Value get_binaryop_value(const BinaryOperator* e) {
         else result.uvalue = left.uvalue % right.uvalue;
         break;
     case Add:
-        if (left.is_signed) result.svalue = left.svalue + right.svalue;
-        else result.uvalue = left.uvalue + right.uvalue;
+        if (left.is_signed || right.is_signed) {
+            // convert both values to signed
+            i64 lval = (left.is_signed) ? left.svalue : cast<i64>(left.uvalue);
+            i64 rval = (right.is_signed) ? right.svalue : cast<i64>(right.uvalue);
+            result.svalue = lval + rval;
+            result.is_signed = true;
+        } else {
+            result.uvalue = left.uvalue + right.uvalue;
+        }
         break;
     case Subtract:
-        if (left.is_signed) result.svalue = left.svalue - right.svalue;
-        else result.uvalue = left.uvalue - right.uvalue;
+        // convert both values to signed
+        i64 lval = (left.is_signed) ? left.svalue : cast<i64>(left.uvalue);
+        i64 rval = (right.is_signed) ? right.svalue : cast<i64>(right.uvalue);
+        result.svalue = lval - rval;
+        result.is_signed = true;
         break;
     case ShiftLeft:
         // Note: neither may be negative, should already be checked

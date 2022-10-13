@@ -95,7 +95,7 @@ public func BinaryOperator* BinaryOperator.create(ast_context.Context* c, SrcLoc
     return e;
 }
 
-public func BinaryOpcode BinaryOperator.getKind(const BinaryOperator* e) {
+public func BinaryOpcode BinaryOperator.getOpcode(const BinaryOperator* e) {
     return cast<BinaryOpcode>(e.parent.parent.binaryOperatorBits.kind);
 }
 
@@ -110,7 +110,7 @@ func void BinaryOperator.print(const BinaryOperator* e, string_buffer.Buf* out, 
     e.parent.printTypeBits(out);
     out.color(col_Value);
     out.add(" ");
-    out.add(binaryOpcode_names[e.getKind()]);
+    out.add(binaryOpcode_names[e.getOpcode()]);
     out.add("\n");
 
     out.indent(indent + 2);
@@ -126,7 +126,7 @@ func void BinaryOperator.print(const BinaryOperator* e, string_buffer.Buf* out, 
 
 func void BinaryOperator.printLiteral(const BinaryOperator* e, string_buffer.Buf* out) {
     e.lhs.printLiteral(out);
-    out.add(binaryOpcode_names[e.getKind()]);
+    out.add(binaryOpcode_names[e.getOpcode()]);
     e.rhs.printLiteral(out);
 }
 

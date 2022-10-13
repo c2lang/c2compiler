@@ -269,34 +269,39 @@ func void ModuleAnalyser.analyseGlobalVarDecl(ModuleAnalyser* ma, VarDecl* v) {
     }
 }
 
-func void ModuleAnalyser.analyseInitExpr(ModuleAnalyser* ma, Expr** e_ptr, QualType expectedType) {
+func bool ModuleAnalyser.analyseInitExpr(ModuleAnalyser* ma, Expr** e_ptr, QualType expectedType) {
     Expr* e = *e_ptr;
+
+    InitListExpr* ile = (e.getKind() == ExprKind.InitList) ? cast<InitListExpr*>(e) : nil;
+
     ArrayType* at = expectedType.getTypeOrNil().asArray();
     if (at) {
         // TODO
-        return;
     }
-    InitListExpr* ile = nil;
-    if (e.getKind() == ExprKind.InitList) {
-        // TODO
-        return;
+
+    if (ile) {
+        return ma.analyseInitListExpr(ile, expectedType);
     }
+
+    // TODO DesignatedInitExpr
+
     QualType res2 = ma.analyseExpr(e_ptr, true);
-    if (res2.isInvalid()) return;
+    if (res2.isInvalid()) return false;
 
     e = *e_ptr; // re-read since ImplicitCasts could have been inserted
 
     if (!e.isCtc()) {
         ma.diags.report(e.getLoc(), "initializer element is not a compile-time constant");
-        return;
+        return false;
     }
 
     if (!e.isCtv() && expectedType.needsCtvInit()) {
         ma.diags.report(e.getLoc(), "initializer element is not a compile-time value");
-        return;
+        return false;
     }
 
     // TODO check type
+    return true;
 }
 
 func bool ModuleAnalyser.pushCheck(ModuleAnalyser* ma, Decl* d) {
@@ -323,6 +328,68 @@ func void ModuleAnalyser.popCheck(ModuleAnalyser* ma) {
     ma.checkIndex--;
     if (ma.checkIndex > 0) ma.scope = ma.checkStack[ma.checkIndex-1].scope;
     else ma.scope = nil;
+}
+
+func bool ModuleAnalyser.analyseInitListExpr(ModuleAnalyser* ma, InitListExpr* ile, QualType expectedType) {
+    // Note: expectedType can be struct or array type
+
+    if (expectedType.isArrayType()) {
+        return ma.analyseInitListArray(ile, expectedType);
+    }
+
+    if (expectedType.isStructType()) {
+        return ma.analyseInitListStruct(ile, expectedType);
+    }
+
+    Expr* e = cast<Expr*>(ile);
+    ma.diags.report(e.getLoc(), "cannot initialize variable of type %s with initializer list", expectedType.diagName());
+    return false;
+}
+
+func bool ModuleAnalyser.analyseInitListArray(ModuleAnalyser* ma, InitListExpr* ile, QualType expectedType) {
+    Expr* e = cast<Expr*>(ile);
+    u32 numValues = ile.getNumValues();
+    Expr** values = ile.getValues();
+
+    ArrayType* at = expectedType.getArrayType();
+    QualType et = at.getElemType();
+
+    bool ok = true;
+    bool ctc = true;
+    for (u32 i=0; i<numValues; i++) {
+        ok |= ma.analyseInitExpr(&values[i], et);
+        ctc |= values[i].isCtc();
+        // TODO DesignatedInitExpr
+    }
+
+    if (ctc) e.setCtc();
+    if (!ok) return false;
+
+    // determine real array size
+    // TODO handle designators
+
+    Expr* sizeExpr = at.getSizeExpr();
+    if (sizeExpr) {
+        u32 arraySize = at.getSize();
+        if (numValues > arraySize) {
+            stdio.printf("ARRAY SIZE %u  ELEMS %u\n", arraySize, numValues);
+            ma.diags.report(values[arraySize].getLoc(), "excess elements in array initializer");
+            return false;
+        }
+    } else {
+        // TODO
+    }
+
+    return ok;
+}
+
+func bool ModuleAnalyser.analyseInitListStruct(ModuleAnalyser* ma, InitListExpr* ile, QualType expectedType) {
+    // NOTE: expectedType is StructType
+    //u32 numValues = ile.getNumValues();
+    //Expr** values = ile.getValues();
+
+    // TODO
+    return true;
 }
 
 func void ModuleAnalyser.analyseStructType(ModuleAnalyser* ma, StructTypeDecl* d) {
@@ -501,12 +568,22 @@ func QualType ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt, bool f
         QualType res = ma.analyseType(inner, true);
         if (res.isInvalid()) break;
 
-        Expr* size = at.getSizeExpr();
-        if (size) {
+        if (at.hasSizeExpr()) {
             QualType res2 = ma.analyseExpr(at.getSizeExpr2(), false);
             if (res2.isInvalid()) break;
-            // TODO check if ok / ctv
-            size = at.getSizeExpr();    // re-read in case of ImplicitCast insertion
+
+            Expr* sizeExpr = at.getSizeExpr();
+            if (!sizeExpr.isCtv()) {
+                ma.diags.report(sizeExpr.getLoc(), "array size is not a compile-time value");
+                break;
+            }
+
+            ctv_analyser.Value value = ctv_analyser.get_value(sizeExpr);
+            if (value.isNegative()) {
+                ma.diags.report(sizeExpr.getLoc(), "array size has negative value %d", value.svalue);
+                break;
+            }
+            at.setSize(cast<u32>(value.uvalue));
         }
 
         if (inner.ptr == res.ptr) {

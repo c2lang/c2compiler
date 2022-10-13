@@ -20,6 +20,7 @@ public type InitListExpr struct {
 } @(opaque)
 
 public func InitListExpr* InitListExpr.create(ast_context.Context* c, SrcLoc left, SrcLoc right, Expr** values, u32 num_values) @(inline) {
+    assert(num_values != 0);
     u32 size = sizeof(InitListExpr) + num_values * sizeof(Expr*);
     InitListExpr* e = c.alloc(size);
     e.parent.init(ExprKind.InitList, left, 0, 0, 0);
@@ -31,6 +32,10 @@ public func InitListExpr* InitListExpr.create(ast_context.Context* c, SrcLoc lef
 
 public func u32 InitListExpr.getNumValues(const InitListExpr* e) @(inline) {
     return e.parent.parent.initListExprBits.num_values;
+}
+
+public func Expr** InitListExpr.getValues(InitListExpr* e) {
+    return e.values;
 }
 
 func void InitListExpr.print(const InitListExpr* e, string_buffer.Buf* out, u32 indent) {

@@ -58,8 +58,16 @@ public func ArrayType* Type.asArray(Type* t) {
     return nil;
 }
 
+public func bool Type.isBuiltinType(const Type* t) @(inline) {
+    return (t.getKind() == TypeKind.Builtin);
+}
+
 public func bool Type.isArrayType(const Type* t) @(inline) {
     return (t.getKind() == TypeKind.Array);
+}
+
+public func bool Type.isStructType(const Type* t) @(inline) {
+    return (t.getKind() == TypeKind.Struct);
 }
 
 public func bool Type.isPointerType(const Type* t) @(inline) {

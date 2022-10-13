@@ -20,13 +20,14 @@
 - Q: cannot tail-allocate struct members anymore? (or function params)
 
 ## TODO
-- Fix ArrayType index size, type should be i8[3], not i8[]
 - Fix SourceRange (how?)
+- FIX type of integer literals + integer promotion etc,
+    maybe a literal should be signed by default?
+- Fix type of -3, should be signed (UnaryOperator)
 - set ModuleType to all Imports (when resolving)
-- Fix State s = State; (without .A)
-- MemberExpr: setKind during analysis, also finish (for global)
 - PointerType: filter duplicates (set ptr in Type of inner)
 - FIX unit tests (global only, not functions)
+
 - add type to Component
 - When analysing a file, cache symbol lookup, so we dont have to check stuff multiple times
 - when parsing a file all Type* will be the same! So re-use pointers.

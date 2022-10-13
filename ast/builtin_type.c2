@@ -36,8 +36,24 @@ const char*[] builtinType_names = {
     "void",
 }
 
-
 static_assert(elemsof(BuiltinTypeKind), elemsof(builtinType_names));
+
+const bool[] BuiltinType_promotable = {
+    true,
+    true,
+    false,
+    false,
+    true,
+    true,
+    false,
+    false,
+    false,
+    false,
+    true,
+    false,
+}
+
+static_assert(elemsof(BuiltinTypeKind), elemsof(BuiltinType_promotable));
 
 public type BuiltinTypeBits struct {
     u32 : NumTypeBits;
@@ -78,6 +94,10 @@ func const char* BuiltinType.kind2str(const BuiltinType* b) {
     case Void:      return "void";
     }
     return "?";
+}
+
+public func bool BuiltinType.isPromotableIntegerType(const BuiltinType* b) {
+    return BuiltinType_promotable[b.getKind()];
 }
 
 func void BuiltinType.print(const BuiltinType* b, string_buffer.Buf* out) {

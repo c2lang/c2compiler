@@ -180,6 +180,19 @@ func Decl* ModuleAnalyser.analyseIdentifier(ModuleAnalyser* ma, Expr** e_ptr) {
     return d;
 }
 
+func QualType getBinOpType(BinaryOperator* b) {
+    const Expr* lhs = b.getLHS();
+    const Expr* rhs = b.getRHS();
+    QualType tleft = lhs.getType();
+    QualType tright = rhs.getType();
+
+    // TODO
+
+    if (b.getOpcode() == BinaryOpcode.Subtract) return g_i32; // TEMP
+
+    return tleft;
+}
+
 func QualType ModuleAnalyser.analyseBinaryOperator(ModuleAnalyser* ma, Expr** e_ptr) {
     Expr* e = *e_ptr;
     BinaryOperator* b = cast<BinaryOperator*>(e);
@@ -195,7 +208,7 @@ func QualType ModuleAnalyser.analyseBinaryOperator(ModuleAnalyser* ma, Expr** e_
     // TODO check if either type is void, give error
 
     QualType result = QualType.init0();
-    switch (b.getKind()) {
+    switch (b.getOpcode()) {
     case Multiply:  fallthrough;
     case Divide:    fallthrough;
     case Reminder:  fallthrough;
@@ -239,6 +252,7 @@ func QualType ModuleAnalyser.analyseBinaryOperator(ModuleAnalyser* ma, Expr** e_
     }
 
     e.combineConstantFlags(lhs, rhs);
+    result = getBinOpType(b);
 
     return result;
 }
@@ -340,7 +354,7 @@ func QualType ModuleAnalyser.analyseUnaryOperator(ModuleAnalyser* ma, Expr** e_p
     bool need_rvalue = true;
 
     // TODO need rvalue stuff
-    switch (u.getKind()) {
+    switch (u.getOpcode()) {
     case PostInc:   fallthrough;
     case PostDec:   fallthrough;
     case PreInc:    fallthrough;
@@ -370,7 +384,7 @@ func QualType ModuleAnalyser.analyseUnaryOperator(ModuleAnalyser* ma, Expr** e_p
         return QualType.init0();
     }
 
-    switch (u.getKind()) {
+    switch (u.getOpcode()) {
     case PostInc:   fallthrough;
     case PostDec:   fallthrough;
     case PreInc:    fallthrough;
@@ -395,7 +409,7 @@ func QualType ModuleAnalyser.analyseUnaryOperator(ModuleAnalyser* ma, Expr** e_p
     case Minus:     fallthrough;
     case Not:
         e.copyConstantFlags(inner);
-        // t = UsualUnaryConversions(inner);
+        t = usualUnaryConversions(inner);
         break;
     case LNot:
         e.copyConstantFlags(inner);
@@ -403,6 +417,22 @@ func QualType ModuleAnalyser.analyseUnaryOperator(ModuleAnalyser* ma, Expr** e_p
     }
 
     return t;
+}
+
+// TODO move
+func QualType usualUnaryConversions(Expr* e) {
+    QualType qt = e.getType();
+    QualType canon = qt.getCanonicalType();
+
+    if (canon.isBuiltinType()) {
+        BuiltinType* bi = canon.getBuiltinType();
+        if (bi.isPromotableIntegerType()) return g_i32;
+    } else if (canon.isPointerType()) {
+        // TODO depend on arch width
+        return g_u64;
+    }
+
+    return qt;
 }
 
 func QualType ModuleAnalyser.analyseMemberExpr(ModuleAnalyser* ma, Expr** e_ptr) {

@@ -51,7 +51,7 @@ public func UnaryOperator* UnaryOperator.create(ast_context.Context* c, SrcLoc l
     return e;
 }
 
-public func UnaryOpcode UnaryOperator.getKind(const UnaryOperator* e) {
+public func UnaryOpcode UnaryOperator.getOpcode(const UnaryOperator* e) {
     return cast<UnaryOpcode>(e.parent.parent.unaryOperatorBits.kind);
 }
 
@@ -61,7 +61,7 @@ public func Expr** UnaryOperator.getInner2(UnaryOperator* e) { return &e.inner; 
 public func Expr* UnaryOperator.asExpr(UnaryOperator* e) { return &e.parent; }
 
 func bool UnaryOperator.isBefore(const UnaryOperator* e) {
-    switch (e.getKind()) {
+    switch (e.getOpcode()) {
     case PostInc: return false;
     case PostDec: return false;
     case PreInc:  return true;
@@ -80,13 +80,13 @@ func void UnaryOperator.print(const UnaryOperator* e, string_buffer.Buf* out, u3
     e.parent.printTypeBits(out);
     out.add(" ");
     out.color(col_Value);
-    out.add(unaryOpcode_names[e.getKind()]);
+    out.add(unaryOpcode_names[e.getOpcode()]);
     out.add("\n");
     e.inner.print(out, indent + 2);
 }
 
 func void UnaryOperator.printLiteral(const UnaryOperator* e, string_buffer.Buf* out) {
-    const char* opcode = unaryOpcode_names[e.getKind()];
+    const char* opcode = unaryOpcode_names[e.getOpcode()];
     if (e.isBefore()) {
         out.add(opcode);
         e.inner.printLiteral(out);
