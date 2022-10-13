@@ -28,6 +28,7 @@
 - PointerType: filter duplicates (set ptr in Type of inner)
 - FIX unit tests (global only, not functions)
 
+- Diags: allow dropping of unused warnings (need type of warning, not just string)
 - add type to Component
 - When analysing a file, cache symbol lookup, so we dont have to check stuff multiple times
 - when parsing a file all Type* will be the same! So re-use pointers.
