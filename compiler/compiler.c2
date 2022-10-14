@@ -155,6 +155,7 @@ type Compiler struct {
 
 public type Options struct {
     bool print_ast;
+    bool print_lib_ast;
     bool print_modules;
     bool print_symbols;
 }
@@ -250,6 +251,7 @@ func void Compiler.build(Compiler* c,
     libcComponent.visitModules(Compiler.handleModuleImports, c);
     module_sorter.sort(libcComponent, c.diags);
     libcComponent.visitModules(Compiler.analyseUsedModule, c);
+    if (c.opts.print_lib_ast) libcComponent.print();
 
     c.mainComp.visitModules(Compiler.analyseModule, c);
 

@@ -20,8 +20,8 @@ public func AliasTypeDecl* AliasTypeDecl.create(ast_context.Context* c,
                                                 QualType refType) @(inline)
 {
     AliasTypeDecl* d = c.alloc(sizeof(AliasTypeDecl));
-    //HUH refType passed to both Decl.qt and AliasTypeDecl.refType
-    d.parent.init(DeclKind.AliasType, name, loc, is_public, refType, ast_);
+    AliasType* at = AliasType.create(c, d);
+    d.parent.init(DeclKind.AliasType, name, loc, is_public, QualType.init2(cast<Type*>(at)), ast_);
     d.refType = refType;
     return d;
 }
@@ -29,6 +29,8 @@ public func AliasTypeDecl* AliasTypeDecl.create(ast_context.Context* c,
 public func Decl* AliasTypeDecl.asDecl(AliasTypeDecl* d) @(inline) {
     return &d.parent;
 }
+
+public func QualType AliasTypeDecl.getRefType(const AliasTypeDecl* d) { return d.refType; }
 
 func void AliasTypeDecl.print(const AliasTypeDecl* d, string_buffer.Buf* out, u32 indent) {
     d.parent.printKind(out, indent, "AliasTypeDecl");

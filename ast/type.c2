@@ -16,7 +16,7 @@ public type TypeKind enum u8 {
     Struct,
     Enum,
     Function,
-    // Alias,
+    Alias,
     Module,
 }
 
@@ -34,7 +34,7 @@ public type Type struct {
         u32 bits;
     }
     QualType canonicalType;
-    Type* ptr_type;
+    Type* ptr_type;     // the PointerType that points to this type (set during analysis)
 } @(opaque)
 
 func void Type.init(Type* t, TypeKind k) @(inline) {
@@ -110,6 +110,9 @@ func void Type.print(const Type* t, string_buffer.Buf* out) {
     case Function:
         FunctionType.print(cast<FunctionType*>(t), out);
         break;
+    case Alias:
+        AliasType.print(cast<AliasType*>(t), out);
+        break;
     case Module:
         ModuleType.print(cast<ModuleType*>(t), out);
         break;
@@ -138,6 +141,9 @@ func void Type.debugPrint(const Type* t, string_buffer.Buf* out) {
         break;
     case Function:
         FunctionType.debugPrint(cast<FunctionType*>(t), out);
+        break;
+    case Alias:
+        AliasType.debugPrint(cast<AliasType*>(t), out);
         break;
     case Module:
         ModuleType.debugPrint(cast<ModuleType*>(t), out);
@@ -168,6 +174,9 @@ public func void Type.fullPrint(const Type* t, string_buffer.Buf* out, u32 inden
     case Function:
         FunctionType.fullPrint(cast<FunctionType*>(t), out, indent);
         break;
+    case Alias:
+        AliasType.fullPrint(cast<AliasType*>(t), out, indent);
+        break;
     case Module:
         ModuleType.fullPrint(cast<ModuleType*>(t), out, indent);
         break;
@@ -185,6 +194,5 @@ public func void Type.fullPrint(const Type* t, string_buffer.Buf* out, u32 inden
     } else {
         out.add("NIL\n");
     }
-
 }
 

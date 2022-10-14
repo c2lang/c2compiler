@@ -228,6 +228,7 @@ func void ModuleAnalyser.analyseGlobalDecl(ModuleAnalyser* ma, Decl* d) {
         // TODO
         break;
     case AliasType:
+        ma.analyseAliasType(cast<AliasTypeDecl*>(d));
         break;
     case Var:
         ma.analyseGlobalVarDecl(cast<VarDecl*>(d));
@@ -255,9 +256,9 @@ func void ModuleAnalyser.analyseGlobalVarDecl(ModuleAnalyser* ma, VarDecl* v) {
 
     QualType qt = d.getType();
 
-    qt.dump_full();
+    //qt.dump_full();
     QualType res = ma.analyseType(qt, true);
-    res.dump_full();
+    //res.dump_full();
 
     if (res.isInvalid()) return;
     d.setType(res);
@@ -471,6 +472,16 @@ func void ModuleAnalyser.analyseStructNames(ModuleAnalyser* ma, StructTypeDecl* 
     }
 }
 
+func void ModuleAnalyser.analyseAliasType(ModuleAnalyser* ma, AliasTypeDecl* d) {
+    QualType res = ma.analyseType(d.getRefType(), true);
+    QualType qt = d.asDecl().getType();
+    // Note: type is always AliasType
+    Type* at = qt.getTypeOrNil();
+    QualType canon = res.getCanonicalType();
+    canon.copyFlags(d.getRefType());
+    at.setCanonicalType(canon);
+}
+
 func void ModuleAnalyser.analyseEnumType(ModuleAnalyser* ma, EnumTypeDecl* d) {
     u32 num_constants = d.getNumConstants();
     EnumConstantDecl** constants = d.getConstants();
@@ -546,6 +557,13 @@ func QualType ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt, bool f
         QualType inner = pt.getInner();
         QualType res = ma.analyseType(inner, false);
         if (res.isInvalid()) break;
+
+        if (!res.hasCanonicalType()) {
+            stdio.printf("PTR MISSING CANONICAL\n");
+            res.dump_full();
+        }
+        assert(res.hasCanonicalType());
+
         if (inner.ptr == res.ptr) {
             resolved = qt;
             t.setCanonicalType(qt);
@@ -555,7 +573,7 @@ func QualType ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt, bool f
             if (!ptrType) {
                 // TODO do via Builder
                 ptrType = cast<Type*>(PointerType.create(ma.context, res));
-                ptrType.setCanonicalType(resolved);
+                ptrType.setCanonicalType(QualType.init2(ptrType));
                 t2.setPtrType(ptrType);
             }
             resolved.set(ptrType);
@@ -566,6 +584,12 @@ func QualType ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt, bool f
         QualType inner = at.getElemType();
         QualType res = ma.analyseType(inner, true);
         if (res.isInvalid()) break;
+
+        if (!res.hasCanonicalType()) {
+            stdio.printf("ARRAY MISSING CANONICAL\n");
+            res.dump_full();
+        }
+        assert(res.hasCanonicalType());
 
         if (at.hasSizeExpr()) {
             QualType res2 = ma.analyseExpr(at.getSizeExpr2(), false);
@@ -606,6 +630,9 @@ func QualType ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt, bool f
         break;
     case Function:
         assert(0); // cannot happen
+        break;
+    case Alias:
+        assert(0); // cannot happen?
         break;
     case Module:
         assert(0); // cannot happen

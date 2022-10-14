@@ -21,6 +21,7 @@ type Keyword struct {
     u8 len;
 }
 
+// Note: index is alphabet
 const Keyword*[] keywords = {
     Keywords_a,
     Keywords_b,
@@ -51,120 +52,120 @@ const Keyword*[] keywords = {
 }
 
 const Keyword[] Keywords_a = {
-    { "as", Kind.KW_as, 2 },
-    { "asm", Kind.KW_asm, 3 },
-    { "assert", Kind.KW_assert, 6 },
-    { "auto", Kind.KW_auto, 4, },
-    { nil, Kind.None, 0 },
+    { "as",         Kind.KW_as,         2 },
+    { "asm",        Kind.KW_asm,        3 },
+    { "assert",     Kind.KW_assert,     6 },
+    { "auto",       Kind.KW_auto,       4, },
+    { nil,          Kind.None,          0 },
 }
 const Keyword[] Keywords_b = {
-    { "bool", Kind.KW_bool, 4 },
-    { "break", Kind.KW_break, 5 },
-    { nil, Kind.None, 0 },
+    { "bool",       Kind.KW_bool,       4 },
+    { "break",      Kind.KW_break,      5 },
+    { nil,          Kind.None,          0 },
 }
 const Keyword[] Keywords_c = {
-    { "case", Kind.KW_case, 4 },
-    { "cast", Kind.KW_cast, 4 },
-    { "char", Kind.KW_char, 4 },
-    { "const", Kind.KW_const, 5 },
-    { "continue", Kind.KW_continue, 8 },
-    { nil, Kind.None, 0 },
+    { "case",       Kind.KW_case,       4 },
+    { "cast",       Kind.KW_cast,       4 },
+    { "char",       Kind.KW_char,       4 },
+    { "const",      Kind.KW_const,      5 },
+    { "continue",   Kind.KW_continue,   8 },
+    { nil,          Kind.None,          0 },
 }
 const Keyword[] Keywords_d = {
-    { "default", Kind.KW_default, 7 },
-    { "do", Kind.KW_do, 2 },
-    { nil, Kind.None, 0 },
+    { "default",    Kind.KW_default,    7 },
+    { "do",         Kind.KW_do,         2 },
+    { nil,          Kind.None,          0 },
 }
 const Keyword[] Keywords_e = {
-    { "elemsof", Kind.KW_elemsof, 7 },
-    { "else", Kind.KW_else, 4 },
-    { "enum", Kind.KW_enum, 4 },
-    { "enum_max", Kind.KW_enum_max, 8 },
-    { "enum_min", Kind.KW_enum_min, 8 },
-    { nil, Kind.None, 0 },
+    { "elemsof",    Kind.KW_elemsof,    7 },
+    { "else",       Kind.KW_else,       4 },
+    { "enum",       Kind.KW_enum,       4 },
+    { "enum_max",   Kind.KW_enum_max,   8 },
+    { "enum_min",   Kind.KW_enum_min,   8 },
+    { nil,          Kind.None,          0 },
 }
 const Keyword[] Keywords_f = {
-    { "f32", Kind.KW_f32, 3 },
-    { "f64", Kind.KW_f64, 3 },
+    { "f32",        Kind.KW_f32,        3 },
+    { "f64",        Kind.KW_f64,        3 },
     { "fallthrough", Kind.KW_fallthrough, 11 },
-    { "false", Kind.KW_false, 5 },
-    { "for", Kind.KW_for, 3 },
-    { "func", Kind.KW_func, 4 },
-    { nil, Kind.None, 0 },
+    { "false",      Kind.KW_false,      5 },
+    { "for",        Kind.KW_for,        3 },
+    { "func",       Kind.KW_func,       4 },
+    { nil,          Kind.None,          0 },
 }
 const Keyword[] Keywords_g = {
-    { "goto", Kind.KW_goto, 4 },
-    { nil, Kind.None, 0 },
+    { "goto",       Kind.KW_goto,       4 },
+    { nil,          Kind.None,          0 },
 }
 const Keyword[] Keywords_i = {
-    { "i16", Kind.KW_i16, 3 },
-    { "i32", Kind.KW_i32, 3 },
-    { "i64", Kind.KW_i64, 3 },
-    { "i8", Kind.KW_i8, 2 },
-    { "if", Kind.KW_if, 2 },
-    { "import", Kind.KW_import, 6 },
-    { "isize", Kind.KW_isize, 5 },
-    { nil, Kind.None, 0 },
+    { "i16",        Kind.KW_i16,        3 },
+    { "i32",        Kind.KW_i32,        3 },
+    { "i64",        Kind.KW_i64,        3 },
+    { "i8",         Kind.KW_i8,         2 },
+    { "if",         Kind.KW_if,         2 },
+    { "import",     Kind.KW_import,     6 },
+    { "isize",      Kind.KW_isize,      5 },
+    { nil,          Kind.None,          0 },
 }
 const Keyword[] Keywords_l = {
-    { "local", Kind.KW_local, 5 },
-    { nil, Kind.None, 0 },
+    { "local",      Kind.KW_local,      5 },
+    { nil,          Kind.None,          0 },
 }
 const Keyword[] Keywords_m = {
-    { "module", Kind.KW_module, 6 },
-    { nil, Kind.None, 0 },
+    { "module",     Kind.KW_module,     6 },
+    { nil,          Kind.None,          0 },
 }
 const Keyword[] Keywords_n = {
-    { "nil", Kind.KW_nil, 3 },
-    { nil, Kind.None, 0 },
+    { "nil",        Kind.KW_nil,        3 },
+    { nil,          Kind.None,          0 },
 }
 const Keyword[] Keywords_o = {
-    { "offsetof", Kind.KW_offsetof, 8 },
-    { nil, Kind.None, 0 },
+    { "offsetof",   Kind.KW_offsetof,   8 },
+    { nil,          Kind.None,          0 },
 }
 const Keyword[] Keywords_p = {
-    { "public", Kind.KW_public, 6 },
-    { nil, Kind.None, 0 },
+    { "public",     Kind.KW_public,     6 },
+    { nil,          Kind.None,          0 },
 }
 const Keyword[] Keywords_r = {
-    { "reg16", Kind.KW_reg16, 5 },
-    { "reg32", Kind.KW_reg32, 5 },
-    { "reg64", Kind.KW_reg64, 5 },
-    { "reg8", Kind.KW_reg8, 4 },
-    { "return", Kind.KW_return, 6 },
-    { nil, Kind.None, 0 },
+    { "reg16",      Kind.KW_reg16,      5 },
+    { "reg32",      Kind.KW_reg32,      5 },
+    { "reg64",      Kind.KW_reg64,      5 },
+    { "reg8",       Kind.KW_reg8,       4 },
+    { "return",     Kind.KW_return,     6 },
+    { nil,          Kind.None,          0 },
 }
 const Keyword[] Keywords_s = {
-    { "sizeof", Kind.KW_sizeof, 6 },
-    { "sswitch", Kind.KW_sswitch, 7 },
+    { "sizeof",     Kind.KW_sizeof,     6 },
+    { "sswitch",    Kind.KW_sswitch,    7 },
     { "static_assert", Kind.KW_static_assert, 13 },
-    { "struct", Kind.KW_struct, 6 },
-    { "switch", Kind.KW_switch, 6 },
-    { nil, Kind.None, 0 },
+    { "struct",     Kind.KW_struct,     6 },
+    { "switch",     Kind.KW_switch,     6 },
+    { nil,          Kind.None,          0 },
 }
 const Keyword[] Keywords_t = {
     { "to_container", Kind.KW_to_container, 12 },
-    { "true", Kind.KW_true, 4 },
-    { "type", Kind.KW_type, 4 },
-    { nil, Kind.None, 0 },
+    { "true",       Kind.KW_true,       4 },
+    { "type",       Kind.KW_type,       4 },
+    { nil,          Kind.None,          0 },
 }
 const Keyword[] Keywords_u = {
-    { "u16", Kind.KW_u16, 3 },
-    { "u32", Kind.KW_u32, 3 },
-    { "u64", Kind.KW_u64, 3 },
-    { "u8", Kind.KW_u8, 2 },
-    { "union", Kind.KW_union, 5 },
-    { "usize", Kind.KW_usize, 5 },
-    { nil, Kind.None, 0 },
+    { "u16",        Kind.KW_u16,        3 },
+    { "u32",        Kind.KW_u32,        3 },
+    { "u64",        Kind.KW_u64,        3 },
+    { "u8",         Kind.KW_u8,         2 },
+    { "union",      Kind.KW_union,      5 },
+    { "usize",      Kind.KW_usize,      5 },
+    { nil,          Kind.None,          0 },
 }
 const Keyword[] Keywords_v = {
-    { "void", Kind.KW_void, 4 },
-    { "volatile", Kind.KW_volatile, 8 },
-    { nil, Kind.None, 0 },
+    { "void",       Kind.KW_void,       4 },
+    { "volatile",   Kind.KW_volatile,   8 },
+    { nil,          Kind.None,          0 },
 }
 const Keyword[] Keywords_w = {
-    { "while", Kind.KW_while, 5 },
-    { nil, Kind.None, 0 },
+    { "while",      Kind.KW_while,      5 },
+    { nil,          Kind.None,          0 },
 }
 
 // TODO order by frequency

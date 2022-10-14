@@ -98,6 +98,8 @@ executable.c2c:
         - ast/array_type.c2
         - ast/struct_type.c2
         - ast/enum_type.c2
+        - ast/module_type.c2
+        - ast/alias_type.c2
         - ast/function_type.c2
 
         - ast/ast.c2

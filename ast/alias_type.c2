@@ -1,0 +1,37 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import ast_context;
+import string_buffer;
+
+public type AliasType struct {
+    Type parent;
+    AliasTypeDecl* decl;
+    // TODO get refType from decl?
+} @(opaque)
+
+public func AliasType* AliasType.create(ast_context.Context* c, AliasTypeDecl* decl) @(inline) {
+    AliasType* t = c.alloc(sizeof(AliasType));
+    t.parent.init(TypeKind.Alias);
+    t.decl = decl;
+    return t;
+}
+
+public func AliasTypeDecl* AliasType.getDecl(const AliasType* t) @(inline) { return t.decl; }
+
+func void AliasType.print(const AliasType* t, string_buffer.Buf* out) {
+    out.print("(alias)%s", t.decl.asDecl().getName());
+}
+
+func void AliasType.debugPrint(const AliasType* t, string_buffer.Buf* out) {
+    out.print("AliasType [%p] %s\n", t, t.decl.asDecl().getName());
+}
+
+public func void AliasType.fullPrint(const AliasType* t, string_buffer.Buf* out, u32 indent) {
+    out.indent(indent);
+    out.print("AliasType [%p] %s\n", t, t.decl.asDecl().getName());
+    //IdentifierExpr*[0] prefix; // tail-allocated
+}
+

@@ -20,9 +20,8 @@
 - Q: cannot tail-allocate struct members anymore? (or function params)
 
 ## TODO
-- fix dd.c2
-    -> const c_int -> i32 (NOT const), const i32 does work
-    -> need AliasType (now only have AliasTypeDecl)
+- FIX bb -> need to resolve Array Types i32[] -> i32[4]
+- check Type/Constant names start with Upper case
 - change some diags.report -> diags.reportRange
 - FIX type of integer literals + integer promotion etc,
     maybe a literal should be signed by default?

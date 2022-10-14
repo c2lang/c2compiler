@@ -69,9 +69,16 @@ public func bool QualType.hasCanonicalType(const QualType* qt) @(inline) {
     return t.canonicalType.ptr != 0;
 }
 
-public func QualType QualType.getCanonicalType(const QualType* qt) @(inline) {
+public func QualType QualType.getCanonicalType(QualType* qt) @(inline) {
     const Type* t = qt.getType();
-    return t.canonicalType;
+    QualType canon = t.canonicalType;
+    canon.copyFlags(*qt);
+    return canon;
+}
+
+public func void QualType.setCanonicalType(QualType* qt, QualType canon) @(inline) {
+    Type* t = qt.getType();
+    t.setCanonicalType(canon);
 }
 
 public func u32 QualType.getQualifiers(const QualType* qt) @(inline) {
@@ -113,16 +120,25 @@ public func ArrayType* QualType.getArrayType(const QualType* qt) {
     return cast<ArrayType*>(qt.getTypeOrNil());
 }
 public func bool QualType.needsCtvInit(const QualType* qt) {
-    const Type* t = qt.getTypeOrNil();
+    QualType canon = qt.getCanonicalType();
+    const Type* t = canon.getTypeOrNil();
+
+    if (!t) {
+        stdio.printf("MISSING CANONICAL\n");
+        qt.dump_full();
+        return false;
+    }
+    assert(t);
 
     switch (t.getKind()) {
     case Builtin:   return true;
     case Pointer:   return false;
     case Array:     return true;
-    case Ref:       return true;
+    case Ref:       return true;    // is never a canonical type
     case Struct:    return true;
     case Enum:      return true;
     case Function:  return false;
+    case Alias:     return false;   // is never a canonical type
     case Module:    return false;
     }
     return false;
@@ -194,10 +210,11 @@ public func void QualType.print(const QualType* qt, string_buffer.Buf* out) {
         if (quals & QualType_Volatile) out.add("volatile ");
         t.print(out);
 
-        const Type* canon = t.canonicalType.getTypeOrNil();
+        QualType qt2 = qt.getCanonicalType();
+        const Type* canon = qt2.getTypeOrNil();
         if (canon && canon != t) {
             out.add(" => ");
-            t.canonicalType.print(out);
+            qt2.print(out);
         }
     } else {
         out.color(col_Error);
