@@ -14,6 +14,7 @@
  */
 
 #include <assert.h>
+#include <unistd.h>
 
 #include "Analyser/ModuleAnalyser.h"
 #include "Analyser/FileAnalyser.h"
@@ -171,7 +172,7 @@ void ModuleAnalyser::printASTs(bool printLib) const {
         const AST* ast = files[f];
         // TODO invert logic, remove continue
         if (ast->isInterface() && !printLib) continue;
-        ast->print(true);
+        ast->print(isatty(1));
     }
 }
 
