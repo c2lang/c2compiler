@@ -42,6 +42,11 @@ public func bool QualType.isConst(QualType* qt) @(inline) {
     return (qt.ptr & QualType_Const) != 0;
 }
 
+public func void QualType.copyFlags(QualType* qt, QualType other) @(inline) {
+    qt.ptr &= ~QualType_Mask;   // clear old flags
+    qt.ptr |= (other.ptr & QualType_Mask);
+}
+
 public func bool QualType.isValid(const QualType* qt) @(inline) { return qt.ptr != 0; }
 
 public func bool QualType.isInvalid(const QualType* qt) @(inline) { return qt.ptr == 0; }

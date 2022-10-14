@@ -254,10 +254,10 @@ func void ModuleAnalyser.analyseGlobalVarDecl(ModuleAnalyser* ma, VarDecl* v) {
     Decl* d = v.asDecl();
 
     QualType qt = d.getType();
-    //qt.dump_full();
 
+    qt.dump_full();
     QualType res = ma.analyseType(qt, true);
-    //res.dump_full();
+    res.dump_full();
 
     if (res.isInvalid()) return;
     d.setType(res);
@@ -596,6 +596,7 @@ func QualType ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt, bool f
         break;
     case Ref:
         resolved = ma.analyseRefType(cast<RefType*>(t), full);
+        resolved.copyFlags(qt);
         break;
     case Struct:
         assert(0); // cannot happen
@@ -661,8 +662,6 @@ func QualType ModuleAnalyser.analyseRefType(ModuleAnalyser* ma, RefType* rt, boo
     ref.setDecl(d);
     ref.setKind(IdentifierKind.Type);
 
-    QualType result = d.getType();
-    // TODO add const/volatile flags (copy in 1 step)
-    return result;
+    return d.getType();
 }
 

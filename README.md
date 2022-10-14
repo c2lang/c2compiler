@@ -20,9 +20,13 @@
 - Q: cannot tail-allocate struct members anymore? (or function params)
 
 ## TODO
+- fix dd.c2
+    -> const c_int -> i32 (NOT const), const i32 does work
+    -> need AliasType (now only have AliasTypeDecl)
 - change some diags.report -> diags.reportRange
 - FIX type of integer literals + integer promotion etc,
     maybe a literal should be signed by default?
+- DSM: allow creating dirs + modules as structure only (only scan components, modules, includes)
 - Fix type of -3, should be signed (UnaryOperator)
 - set ModuleType to all Imports (when resolving)
 - PointerType: filter duplicates (set ptr in Type of inner)
