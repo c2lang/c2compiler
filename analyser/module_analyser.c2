@@ -13,6 +13,7 @@ import scope;
 
 import string;
 import stdlib;
+import ctype;
 import stdio; // TEMP
 
 const u32 MaxDepth = 8;
@@ -262,6 +263,16 @@ func void ModuleAnalyser.analyseGlobalVarDecl(ModuleAnalyser* ma, VarDecl* v) {
 
     if (res.isInvalid()) return;
     d.setType(res);
+
+    // /check name
+    {
+        const char* name = d.getName();
+        // TODO if const
+        if (!ctype.isupper(name[0])) {
+            ma.diags.report(d.getLoc(), "a global constant name must start with an upper case character");
+            // Note: dont return
+        }
+    }
 
     if (v.hasInit()) {
         ma.analyseInitExpr(v.getInit2(), res);
