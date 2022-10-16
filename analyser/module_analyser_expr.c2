@@ -27,6 +27,7 @@ func QualType getPointerFromArray(ast_builder.Builder* builder, QualType q) {
 }
 
 func QualType ModuleAnalyser.analyseExpr(ModuleAnalyser* ma, Expr** e_ptr, bool need_rvalue) {
+    assert(e_ptr);
     QualType result = ma.analyseExprInner(e_ptr);
     if (result.isInvalid()) return result;
 
@@ -48,7 +49,6 @@ func QualType ModuleAnalyser.analyseExpr(ModuleAnalyser* ma, Expr** e_ptr, bool 
 }
 
 func QualType ModuleAnalyser.analyseExprInner(ModuleAnalyser* ma, Expr** e_ptr) {
-    assert(e_ptr);
     Expr* e = *e_ptr;
 
     switch (e.getKind()) {
@@ -74,14 +74,15 @@ func QualType ModuleAnalyser.analyseExprInner(ModuleAnalyser* ma, Expr** e_ptr) 
     case Call:
         return g_void; // to get CTC check in analyseInitExpr
     case InitList:
+        (*e_ptr).dump();
         assert(0);
         break;
     case FieldDesignatedInit:
+        (*e_ptr).dump();
         assert(0);
         break;
     case ArrayDesignatedInit:
-        assert(0);
-        break;
+        return ma.analyseArrayDesignatedInit(e_ptr);
     case BinaryOperator:
         return ma.analyseBinaryOperator(e_ptr);
     case UnaryOperator:
@@ -202,6 +203,25 @@ func QualType getBinOpType(BinaryOperator* b) {
     if (b.getOpcode() == BinaryOpcode.Subtract) return g_i32; // TEMP
 
     return tleft;
+}
+
+func QualType ModuleAnalyser.analyseArrayDesignatedInit(ModuleAnalyser* ma, Expr** e_ptr) {
+    // TODO this function should only be called from analyseInitListExpr directly! (so we know the type)
+    Expr* e = *e_ptr;
+    ArrayDesignatedInitExpr* ad = cast<ArrayDesignatedInitExpr*>(e);
+
+    ma.analyseExpr(ad.getDesignator2(), true);
+
+    Expr* de = ad.getDesignator(); // re-read in case of ImplicitCast insertion
+    if (!de.isCtv()) {
+        ma.diags.report(de.getLoc(), "array index is not a compile-time value");
+        return QualType.init0();
+    }
+
+    // TODO set CTC/CTV flags
+    QualType qt = ma.analyseExpr(ad.getInit2(), true);
+    e.copyConstantFlags(ad.getInit());
+    return qt;
 }
 
 func QualType ModuleAnalyser.analyseBinaryOperator(ModuleAnalyser* ma, Expr** e_ptr) {

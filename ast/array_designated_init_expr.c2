@@ -26,6 +26,22 @@ public func ArrayDesignatedInitExpr* ArrayDesignatedInitExpr.create(ast_context.
     return e;
 }
 
+public func Expr* ArrayDesignatedInitExpr.getDesignator(const ArrayDesignatedInitExpr* e) {
+    return e.designator;
+}
+
+public func Expr** ArrayDesignatedInitExpr.getDesignator2(ArrayDesignatedInitExpr* e) {
+    return &e.designator;
+}
+
+public func Expr* ArrayDesignatedInitExpr.getInit(const ArrayDesignatedInitExpr* e) {
+    return e.initValue;
+}
+
+public func Expr** ArrayDesignatedInitExpr.getInit2(ArrayDesignatedInitExpr* e) {
+    return &e.initValue;
+}
+
 func void ArrayDesignatedInitExpr.print(const ArrayDesignatedInitExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent, "ArrayDesignatedInitExpr\n");
     e.parent.printTypeBits(out);

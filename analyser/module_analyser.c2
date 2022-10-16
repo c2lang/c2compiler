@@ -284,6 +284,7 @@ func bool ModuleAnalyser.analyseInitExpr(ModuleAnalyser* ma, Expr** e_ptr, QualT
         return ma.analyseInitListExpr(ile, expectedType);
     }
 
+    //if (e.getKind() == ExprKind.ArrayDesignatedInit) ..
     // TODO DesignatedInitExpr
 
     QualType res2 = ma.analyseExpr(e_ptr, true);
