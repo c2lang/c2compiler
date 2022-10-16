@@ -20,7 +20,6 @@
 - Q: cannot tail-allocate struct members anymore? (or function params)
 
 ## TODO
-- FIX bb -> need to resolve Array Types i32[] -> i32[4]
 - check Type/Constant names start with Upper case
 - change some diags.report -> diags.reportRange
 - FIX type of integer literals + integer promotion etc,

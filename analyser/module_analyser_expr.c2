@@ -214,7 +214,7 @@ func QualType ModuleAnalyser.analyseArrayDesignatedInit(ModuleAnalyser* ma, Expr
 
     Expr* de = ad.getDesignator(); // re-read in case of ImplicitCast insertion
     if (!de.isCtv()) {
-        ma.diags.report(de.getLoc(), "array index is not a compile-time value");
+        ma.diags.reportRange(de.getLoc(), de.getRange(), "array index is not a compile-time value");
         return QualType.init0();
     }
 

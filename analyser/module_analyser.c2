@@ -598,13 +598,13 @@ func QualType ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt, bool f
 
             Expr* sizeExpr = at.getSizeExpr();
             if (!sizeExpr.isCtv()) {
-                ma.diags.report(sizeExpr.getLoc(), "array size is not a compile-time value");
+                ma.diags.reportRange(sizeExpr.getLoc(), sizeExpr.getRange(), "array size is not a compile-time value");
                 break;
             }
 
             ctv_analyser.Value value = ctv_analyser.get_value(sizeExpr);
             if (value.isNegative()) {
-                ma.diags.reportRange(sizeExpr.getLoc(), sizeExpr.getStartLoc(), sizeExpr.getEndLoc(), "array size has negative value %d", value.svalue);
+                ma.diags.reportRange(sizeExpr.getLoc(), sizeExpr.getRange(), "array size has negative value %d", value.svalue);
                 break;
             }
             at.setSize(cast<u32>(value.uvalue));

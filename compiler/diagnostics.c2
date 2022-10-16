@@ -47,12 +47,12 @@ const char*[] category_colors = {
 }
 
 // return true if error, false if warning
-public func bool Diags.reportRange(Diags* diags, utils.SrcLoc loc, utils.SrcLoc start, utils.SrcLoc end, const char* format, ...) {
+public func bool Diags.reportRange(Diags* diags, utils.SrcLoc loc, utils.SrcRange range, const char* format, ...) {
     Category category = Category.Error; // TODO determine
 
     Va_list args;
     va_start(args, format);
-    diags.internal(category, loc, start, end, format, args);
+    diags.internal(category, loc, range, format, args);
     va_end(args);
     return category == Category.Error;
 }
@@ -63,7 +63,8 @@ public func bool Diags.report(Diags* diags, utils.SrcLoc loc, const char* format
 
     Va_list args;
     va_start(args, format);
-    diags.internal(category, loc, 0, 0, format, args);
+    utils.SrcRange range = { 0, 0 }
+    diags.internal(category, loc, range, format, args);
     va_end(args);
     return category == Category.Error;
 }
@@ -71,11 +72,12 @@ public func bool Diags.report(Diags* diags, utils.SrcLoc loc, const char* format
 public func void Diags.note(Diags* diags, utils.SrcLoc loc, const char* format, ...) {
     Va_list args;
     va_start(args, format);
-    diags.internal(Category.Info, loc, 0, 0, format, args);
+    utils.SrcRange range = { 0, 0 }
+    diags.internal(Category.Info, loc, range, format, args);
     va_end(args);
 }
 
-func void Diags.internal(Diags* diags, Category category, utils.SrcLoc src_loc, utils.SrcLoc start, utils.SrcLoc end, const char* format, Va_list args) {
+func void Diags.internal(Diags* diags, Category category, utils.SrcLoc src_loc, utils.SrcRange range, const char* format, Va_list args) {
     if (category == Category.Error) {
         diags.num_errors++;
     } else {
@@ -84,14 +86,14 @@ func void Diags.internal(Diags* diags, Category category, utils.SrcLoc src_loc, 
 
     string_buffer.Buf* out = string_buffer.create(512, diags.use_color);
 
-    source_mgr.Location startLoc = diags.sm.getLocation(start);
+    source_mgr.Location startLoc = diags.sm.getLocation(range.start);
     source_mgr.Location loc = diags.sm.getLocation(src_loc);
     // get end of last token
-    if (end) {
-        const char* src = diags.sm.get_token_source(end);
-        end = c2_tokenizer.getTokenEnd(src, end);
+    if (range.end) {
+        const char* src = diags.sm.get_token_source(range.end);
+        range.end = c2_tokenizer.getTokenEnd(src, range.end);
     }
-    source_mgr.Location endLoc = diags.sm.getLocation(end);
+    source_mgr.Location endLoc = diags.sm.getLocation(range.end);
 
     if (src_loc) {
         out.print("%s:%u:%u: ", loc.filename, loc.line, loc.column);
@@ -112,7 +114,7 @@ func void Diags.internal(Diags* diags, Category category, utils.SrcLoc src_loc, 
         out.add_line(loc.line_start);
         out.add("\n");
 
-        if (start && end) {
+        if (range.start && range.end) {
             // TODO handle case where a Range is spread over multiple lines
             assert(endLoc.column >= startLoc.column);
             out.indent(startLoc.column - 1);

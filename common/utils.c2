@@ -22,6 +22,11 @@ public func u64 now() {
 
 public type SrcLoc u32;
 
+public type SrcRange struct {
+    SrcLoc start;
+    SrcLoc end;
+}
+
 public func bool findProjectDir() {
     char[constants.Max_path] base_path;
     char[constants.Max_path] rel_path;

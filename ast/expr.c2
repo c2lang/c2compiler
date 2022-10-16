@@ -207,6 +207,11 @@ public func SrcLoc Expr.getEndLoc(const Expr* e) @(inline) {
     return e.loc;
 }
 
+public func SrcRange Expr.getRange(const Expr* e) @(inline) {
+    SrcRange range = { e.getStartLoc(), e.getEndLoc() }
+    return range;
+}
+
 public func void Expr.setType(Expr* e, QualType qt_) @(inline) { e.qt = qt_; }
 
 public func QualType Expr.getType(const Expr* e) @(inline) { return e.qt; }
