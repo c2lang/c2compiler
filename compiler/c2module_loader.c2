@@ -115,6 +115,8 @@ public func Module* load(ast_context.Context* context, string_pool.Pool* pool) {
         }
         AliasTypeDecl* t = AliasTypeDecl.create(context, type_name, 0, true, a, qt);
         Decl* d = t.asDecl();
+        QualType qt2 = d.getType();
+        qt2.setCanonicalType(qt);
         d.setChecked();
         a.addTypeDecl(d);
         m.addSymbol(ast.name2idx(type_name), d);
