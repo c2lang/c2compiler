@@ -267,10 +267,16 @@ func void ModuleAnalyser.analyseGlobalVarDecl(ModuleAnalyser* ma, VarDecl* v) {
     // /check name
     {
         const char* name = d.getName();
-        // TODO if const
-        if (!ctype.isupper(name[0])) {
-            ma.diags.report(d.getLoc(), "a global constant name must start with an upper case character");
-            // Note: dont return
+        if (res.isConstant()) {
+            if (ctype.islower(name[0])) {
+                ma.diags.report(d.getLoc(), "a global constant name must start with an upper case character");
+                // Note: dont return
+            }
+        } else {
+            if (ctype.isupper(name[0])) {
+                ma.diags.report(d.getLoc(), "a global variable name must start with an lower case character");
+                // Note: dont return
+            }
         }
     }
 

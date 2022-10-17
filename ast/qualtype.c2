@@ -47,6 +47,39 @@ public func void QualType.copyFlags(QualType* qt, QualType other) @(inline) {
     qt.ptr |= (other.ptr & QualType_Mask);
 }
 
+public func bool QualType.isConstant(const QualType* qt) {
+    QualType canon = qt.getCanonicalType();
+    const Type* t = canon.getTypeOrNil();
+    switch (t.getKind()) {
+    case Builtin:
+        return canon.isConst();
+    case Pointer:
+        const PointerType* pt = cast<PointerType*>(t);
+        canon = pt.getInner();
+        return canon.isConstant();
+    case Array:
+        const ArrayType* at = cast<ArrayType*>(t);
+        canon = at.getElemType();
+        return canon.isConstant();
+    case Ref:
+        assert(0);
+        break;
+    case Struct:
+        return canon.isConst();
+    case Enum:
+        assert(0);
+        break;
+    case Function:
+        return canon.isConst();
+    case Alias:
+        assert(0);
+        break;
+    case Module:
+        break;
+    }
+    return false;
+}
+
 public func bool QualType.isValid(const QualType* qt) @(inline) { return qt.ptr != 0; }
 
 public func bool QualType.isInvalid(const QualType* qt) @(inline) { return qt.ptr == 0; }
