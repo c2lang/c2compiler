@@ -26,13 +26,12 @@
     - .. Types
 - Type: change Type.type_ptr -> u32 (Type 24 -> 16 bytes)
     -> need way to convert idx2ptr, since Context is not a single pool, use TypePool (registered in AST.init())
-    -> Could also store each's Pointer in TypePool (use index as offset?)
     Option A
         - each Type is registered in TypePool
         - Type has u32 ptr_idx (idx into TypePool)
             -> TypePool can only be used for PtrTypes then? A Type Pool doesn't know its own index
         Q: dont register RefTypes? (will not have pointer anyway?)
-    Option B
+    Option B <-- MORE FLEXIBLE
         - each Type knows its own TypePool index (u32)
         - ask TypePool for ptr
         - we can extend TypePool for other things as well then
