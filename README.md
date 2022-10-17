@@ -8,7 +8,7 @@
         -> only need to parse and filter ifdefs once, but takes more memory
         -> would this work for a Big project (ie Linux kernel)?
 - 2nd pass: (in order of modules)
-    - also filters ifdefs (inside functions)
+    - also filters ifdefs (inside functions) (or just replay token stream)
         Note: global ifdefs already filtered out
     - parses all types (+ dependent vars), then vars, then funcs
     - just parse a single TopLevel from offset
@@ -19,8 +19,44 @@
 - Q: how much AST would be saved?
 - Q: cannot tail-allocate struct members anymore? (or function params)
 
-## TODO
+## Types refactor:
+-> statistics:
+    - 3481 Pointer Types
+    - 4070 Ref Types
+    - .. Types
+- Type: change Type.type_ptr -> u32 (Type 24 -> 16 bytes)
+    -> need way to convert idx2ptr, since Context is not a single pool, use TypePool (registered in AST.init())
+    -> Could also store each's Pointer in TypePool (use index as offset?)
+    Option A
+        - each Type is registered in TypePool
+        - Type has u32 ptr_idx (idx into TypePool)
+            -> TypePool can only be used for PtrTypes then? A Type Pool doesn't know its own index
+        Q: dont register RefTypes? (will not have pointer anyway?)
+    Option B
+        - each Type knows its own TypePool index (u32)
+        - ask TypePool for ptr
+        - we can extend TypePool for other things as well then
+            (maybe QualType could use the idx, only be 4 bytes! 30 bits idx + 2 bits flags)
+            (maybe CanonicalType could also be set in TypePool?)
+- Filter RefTypes within same AST, only need to resolve once
+    Foo bar;
+        RefType 'Foo'
+        -> AliasType 'Foo' (single?)
+    -> Many RefTypes are also a PointerType
+        -> if we make RefTypes unique, these also fold automatically
+    -> RefType has IdentifierExpr with SrcLocs...
+    -> We also need different refs because of filtering on References during AST walks?
+    -> can be allowed in function, but not in public struct
+        -> have a loc + public loc? (only 1 needed)
+        -> RefType is a Type which has a canonical type + type-ptr, both are not used in RefType? re-use in RefType?
+    -> filter dups during parsing
+    -> how to handle with/without prefix?
 - PointerType: filter duplicates (set ptr in Type of inner)
+    -> RefTypes are the most, solve in 2-phase parsing?
+    -> within same-file, Type refs will be the same (without prefix), so filter then?
+
+## TODO
+- convert ast/ mallocs to Context allocs?
 - FIX type of integer literals + integer promotion etc,
     maybe a literal should be signed by default?
 - DSM: allow creating dirs + modules as structure only (only scan components, modules, includes)

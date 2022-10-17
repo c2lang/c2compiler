@@ -109,6 +109,7 @@ executable.c2c:
         - ast/function_decl_list.c2
         - ast/import_decl_list.c2
         - ast/symbol_table.c2
+        - ast/type_pool.c2
 
         - analyser/ctv_analyser.c2
         - analyser/module_analyser.c2
@@ -118,6 +119,9 @@ executable.c2c:
         - analyser/module_sorter.c2
         - analyser/scope.c2
 
+        - utils/context.c2
+        - utils/stmt_list.c2
+
         - compiler/c2module_loader.c2
         - compiler/c2recipe.c2
         - compiler/c2recipe_parser.c2
@@ -126,10 +130,8 @@ executable.c2c:
         - compiler/compiler.c2
         - compiler/constants.c2
         - compiler/diagnostics.c2
-        - compiler/context.c2
         - compiler/manifest.c2
         - compiler/module_list.c2
         - compiler/source_mgr.c2
-        - compiler/stmt_list.c2
         - compiler/main.c2
 

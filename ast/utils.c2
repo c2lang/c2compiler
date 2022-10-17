@@ -5,7 +5,6 @@ module ast;
 
 import color;
 import ast_context local;
-//import string_pool; // TEMP
 
 import stdlib;
 import string;
@@ -63,14 +62,14 @@ static_assert(32, sizeof(TypeExpr));
 static_assert(48, sizeof(ConditionalOperator));
 
 static_assert(8, sizeof(QualType));
-static_assert(24, sizeof(Type));
-static_assert(24, sizeof(BuiltinType));
-static_assert(32, sizeof(PointerType));
-static_assert(40, sizeof(ArrayType));
-static_assert(32, sizeof(RefType));
-static_assert(32, sizeof(StructType));
-static_assert(32, sizeof(EnumType));
-static_assert(32, sizeof(FunctionType));
+static_assert(16, sizeof(Type));
+static_assert(16, sizeof(BuiltinType));
+static_assert(24, sizeof(PointerType));
+static_assert(32, sizeof(ArrayType));
+static_assert(24, sizeof(RefType));
+static_assert(24, sizeof(StructType));
+static_assert(24, sizeof(EnumType));
+static_assert(24, sizeof(FunctionType));
 
 // TODO use array with BuiltinTypeKind as index
 public QualType g_u8;
@@ -91,12 +90,16 @@ public QualType g_void_ptr; //used to init NilExpr
 
 const char* g_names_start;
 
+TypePool g_types;
+
 // TODO just use AST vector (also in modules, but modules has ownership)
 AST** g_ast_list;
 u32 ast_count;      // Note: first index used to indicate nil
 u32 ast_capacity;
 
 public func void init(Context* c, const char* names_start) {
+   g_types.clear();
+
     g_u8.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.UInt8)));
     g_u16.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.UInt16)));
     g_u32.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.UInt32)));

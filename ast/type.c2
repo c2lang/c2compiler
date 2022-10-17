@@ -33,15 +33,15 @@ public type Type struct {
         RefTypeBits refTypeBits;
         u32 bits;
     }
+    u32 idx;            // index into TypePool
     QualType canonicalType;
-    Type* ptr_type;     // the PointerType that points to this type (set during analysis)
 } @(opaque)
 
 func void Type.init(Type* t, TypeKind k) @(inline) {
     t.bits = 0;
     t.typeBits.kind = k;
     t.canonicalType.ptr = 0;
-    t.ptr_type = nil;
+    t.idx = g_types.add(t);
 }
 
 // TEMP cast needed until Analyser fixed
@@ -49,9 +49,6 @@ public func TypeKind Type.getKind(const Type* t) @(inline) { return cast<TypeKin
 
 public func QualType Type.getCanonicalType(const Type* t) @(inline) { return t.canonicalType; }
 public func void Type.setCanonicalType(Type* t, QualType canon) @(inline) { t.canonicalType = canon; }
-
-public func Type* Type.getPtrType(const Type* t) @(inline) { return t.ptr_type; }
-public func void Type.setPtrType(Type* t, Type* pt) @(inline) { t.ptr_type = pt; }
 
 public func ArrayType* Type.asArray(Type* t) {
     if (t.getKind() == TypeKind.Array) return cast<ArrayType*>(t);

@@ -6,6 +6,8 @@ module ast;
 import ast_context;
 import string_buffer;
 
+import stdio; // TEMP
+
 public type RefTypeBits struct {
     u32 : NumTypeBits;
     u32 have_prefix : 1;
@@ -16,6 +18,8 @@ public type RefType struct {
     IdentifierExpr* ref;
     IdentifierExpr*[0] prefix; // tail-allocated
 } @(opaque)
+
+u32 ref_count;
 
 public func RefType* RefType.create(ast_context.Context* c, IdentifierExpr* prefix, IdentifierExpr* ref) @(inline) {
     u32 size = sizeof(RefType);
@@ -28,6 +32,10 @@ public func RefType* RefType.create(ast_context.Context* c, IdentifierExpr* pref
         t.parent.refTypeBits.have_prefix = true;
         t.prefix[0] = prefix;
     }
+#if 0
+    ref_count++;
+    stdio.printf("REF %u\n", ref_count);
+#endif
     return t;
 }
 

@@ -1,0 +1,56 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import string local;
+import stdlib local;
+
+/*
+    This pool is used to lookup pointers to a certain type
+*/
+
+public type TypePool struct {
+    u32 count;
+    u32 capacity;
+    Type** types;
+
+    // TODO pointer types (same index+count+cap)
+}
+
+public func void TypePool.init(TypePool* p) {
+    memset(p, 0, sizeof(TypePool));
+    p.resize(64);
+}
+
+func void TypePool.resize(TypePool* p, u32 cap) {
+    p.capacity = cap;
+    void* types2 = malloc(p.capacity * sizeof(Type*));
+    if (p.count) {
+        memcpy(types2, cast<void*>(p.types), p.count * sizeof(Type*));
+        free(cast<void*>(p.types));
+    }
+    p.types = cast<Type**>(types2);
+}
+
+public func u32 TypePool.add(TypePool* p, Type* t) {
+    if (p.count == p.capacity) p.resize(p.capacity * 2);
+
+    u32 idx = p.count;
+    p.types[idx] = t;
+    p.count++;
+    return idx;
+}
+
+#if 0
+public func PointerType* TypePool.getPtr(TypePool* p, const Type* t) {
+    u32 idx = t.ptr_idx;
+    // TODO lookup, otherwise create
+}
+#endif
+
+public func void TypePool.clear(TypePool* p) {
+    free(cast<void*>(p.types));
+    p.init();
+}
+

@@ -587,12 +587,13 @@ func QualType ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt, bool f
             t.setCanonicalType(qt);
         } else {
             Type* t2 = res.getTypeOrNil();
-            Type* ptrType = t2.getPtrType();
+            // TODO use TypePool (indirectly)
+            Type* ptrType = nil; //t2.getPtrType();
             if (!ptrType) {
                 // TODO do via Builder
                 ptrType = cast<Type*>(PointerType.create(ma.context, res));
                 ptrType.setCanonicalType(QualType.init2(ptrType));
-                t2.setPtrType(ptrType);
+                //t2.setPtrType(ptrType);
             }
             resolved.set(ptrType);
         }

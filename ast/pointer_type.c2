@@ -6,15 +6,35 @@ module ast;
 import ast_context;
 import string_buffer;
 
+import stdio;
+
+u32 bb_count;
+u32 bb_reuse;
+
 public type PointerType struct {
     Type parent;
     QualType inner;
 } @(opaque)
 
 public func PointerType* PointerType.create(ast_context.Context* c, QualType inner) @(inline) {
+#if 0
+    Type* i = inner.getTypeOrNil();
+    Type* ptr = i.getPtrType();
+    if (ptr) {
+        bb_reuse++;
+        stdio.printf("PTR OLD %p  %u | %u\n", i, bb_reuse, bb_count);
+        return cast<PointerType*>(ptr);
+    }
+#endif
     PointerType* t = c.alloc(sizeof(PointerType));
     t.parent.init(TypeKind.Pointer);
     t.inner = inner;
+#if 0
+    i.setPtrType(t);
+    bb_count++;
+    stdio.printf("PTR NEW %p  %u | %u\n", i, bb_reuse, bb_count);
+    i.dump();
+#endif
     return t;
 }
 
