@@ -20,14 +20,11 @@
 - Q: cannot tail-allocate struct members anymore? (or function params)
 
 ## TODO
-- check Type/Constant names start with Upper case
-- change some diags.report -> diags.reportRange
+- PointerType: filter duplicates (set ptr in Type of inner)
 - FIX type of integer literals + integer promotion etc,
     maybe a literal should be signed by default?
 - DSM: allow creating dirs + modules as structure only (only scan components, modules, includes)
 - Fix type of -3, should be signed (UnaryOperator)
-- set ModuleType to all Imports (when resolving)
-- PointerType: filter duplicates (set ptr in Type of inner)
 - FIX unit tests (global only, not functions)
 
 - Diags: allow dropping of unused warnings (need type of warning, not just string)

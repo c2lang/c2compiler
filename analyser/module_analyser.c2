@@ -310,12 +310,12 @@ func bool ModuleAnalyser.analyseInitExpr(ModuleAnalyser* ma, Expr** e_ptr, QualT
     e = *e_ptr; // re-read since ImplicitCasts could have been inserted
 
     if (!e.isCtc()) {
-        ma.diags.report(e.getLoc(), "initializer element is not a compile-time constant");
+        ma.diags.reportRange(e.getLoc(), e.getRange(), "initializer element is not a compile-time constant");
         return false;
     }
 
     if (!e.isCtv() && expectedType.needsCtvInit()) {
-        ma.diags.report(e.getLoc(), "initializer element is not a compile-time value");
+        ma.diags.reportRange(e.getLoc(), e.getRange(), "initializer element is not a compile-time value");
         return false;
     }
 
@@ -526,7 +526,7 @@ func void ModuleAnalyser.analyseEnumType(ModuleAnalyser* ma, EnumTypeDecl* d) {
             QualType res = ma.analyseExpr(c.getInit2(), true);
             initval = c.getInit();  // re-read in case of ImplicitCast has been inserted
             if (!initval.isCtv()) {
-                ma.diags.report(initval.getLoc(), "initializer is not a compile-time value");
+                ma.diags.reportRange(initval.getLoc(), initval.getRange(), "initializer is not a compile-time value");
                 return;
             }
             ctv_analyser.Value ctv = ctv_analyser.get_value(initval);

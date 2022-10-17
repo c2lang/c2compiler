@@ -390,7 +390,7 @@ func QualType ModuleAnalyser.analyseUnaryOperator(ModuleAnalyser* ma, Expr** e_p
     case PostDec:   fallthrough;
     case PreInc:    fallthrough;
     case PreDec:
-        ma.diags.report(e.getLoc(), "initializer element is not a compile-time constant");
+        ma.diags.reportRange(e.getLoc(), e.getRange(), "initializer element is not a compile-time constant");
         return QualType.init0();
     case AddrOf:
         need_rvalue = false;
@@ -581,7 +581,7 @@ func QualType ModuleAnalyser.analyseArraySubscriptExpr(ModuleAnalyser* ma, Expr*
     // TODO
 
     if (!q.isPointerType()) {
-        ma.diags.report(e.getLoc(), "subscripted value is not an array or pointer");
+        ma.diags.reportRange(e.getLoc(), e.getRange(), "subscripted value is not an array or pointer");
         return QualType.init0();
     }
 
