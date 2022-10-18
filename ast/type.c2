@@ -42,6 +42,9 @@ func void Type.init(Type* t, TypeKind k) @(inline) {
     t.typeBits.kind = k;
     t.canonicalType.ptr = 0;
     t.idx = g_types.add(t);
+#if AstStatistics
+    stats.typeCount++;
+#endif
 }
 
 // TEMP cast needed until Analyser fixed

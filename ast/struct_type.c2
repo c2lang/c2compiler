@@ -15,6 +15,9 @@ public func StructType* StructType.create(ast_context.Context* c, StructTypeDecl
     StructType* t = c.alloc(sizeof(StructType));
     t.parent.init(TypeKind.Struct);
     t.decl = decl;
+#if AstStatistics
+    stats.structCount++;
+#endif
     return t;
 }
 

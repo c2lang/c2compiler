@@ -69,6 +69,9 @@ public func BuiltinType* BuiltinType.create(ast_context.Context* c, BuiltinTypeK
     b.parent.init(TypeKind.Builtin);
     b.parent.builtinTypeBits.kind = kind;
     b.parent.setCanonicalType(QualType.init2(&b.parent));
+#if AstStatistics
+    stats.builtinCount++;
+#endif
     return b;
 }
 

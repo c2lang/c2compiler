@@ -14,6 +14,7 @@ executable.c2c:
 #    $config RecipeDebug
 #    $config ParserDebug
 #    $config DumpTokens
+#    $config AstStatistics
     files:
         - common/file/reader.c2
 

@@ -32,9 +32,8 @@ public func RefType* RefType.create(ast_context.Context* c, IdentifierExpr* pref
         t.parent.refTypeBits.have_prefix = true;
         t.prefix[0] = prefix;
     }
-#if 0
-    ref_count++;
-    stdio.printf("REF %u\n", ref_count);
+#if AstStatistics
+    stats.refCount++;
 #endif
     return t;
 }

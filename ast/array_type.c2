@@ -37,6 +37,9 @@ public func ArrayType* ArrayType.create(ast_context.Context* c,
         t.parent.arrayTypeBits.has_size = 1;
         t.sizeExpr[0] = sizeExpr;
     }
+#if AstStatistics
+    stats.arrayCount++;
+#endif
     return t;
 }
 

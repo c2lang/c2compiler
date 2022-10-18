@@ -35,6 +35,9 @@ public func PointerType* PointerType.create(ast_context.Context* c, QualType inn
     stdio.printf("PTR NEW %p  %u | %u\n", i, bb_reuse, bb_count);
     i.dump();
 #endif
+#if AstStatistics
+    stats.pointerCount++;
+#endif
     return t;
 }
 
