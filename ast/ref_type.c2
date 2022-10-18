@@ -34,6 +34,7 @@ public func RefType* RefType.create(ast_context.Context* c, IdentifierExpr* pref
     }
 #if AstStatistics
     stats.refCount++;
+    stats.refSize += size;
 #endif
     return t;
 }

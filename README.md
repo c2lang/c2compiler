@@ -17,13 +17,8 @@
 -> allows caching of string -> Decl (no need to check/search every time)
 -> this costs more parsing time, but saves a lot on resolving and AST
 - Q: how much AST would be saved?
-- Q: cannot tail-allocate struct members anymore? (or function params)
 
 ## Types refactor:
--> statistics:
-    - 3481 Pointer Types
-    - 4070 Ref Types
-    - .. Types
 - Type: change Type.type_ptr -> u32 (Type 24 -> 16 bytes)
     -> need way to convert idx2ptr, since Context is not a single pool, use TypePool (registered in AST.init())
     Option A
