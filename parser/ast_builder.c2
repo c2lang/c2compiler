@@ -185,9 +185,7 @@ public func QualType Builder.actOnRefType(Builder* b, IdentifierExpr* id, Identi
 }
 
 public func QualType Builder.actOnPointerType(Builder* b, QualType inner, u32 qualifiers) {
-    // TODO lookup if already exsts in TypeContext -> (not a normal Context)
-    PointerType* t = PointerType.create(b.context, inner);
-    return QualType.init(t.asType(), qualifiers);
+    return QualType.init(ast.getPointerType(inner), qualifiers);
 }
 
 public func QualType Builder.actOnArrayType(Builder* b, QualType elem, bool is_incremental, Expr* sizeExpr) {

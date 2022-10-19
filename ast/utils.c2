@@ -101,7 +101,7 @@ u32 ast_count;      // Note: first index used to indicate nil
 u32 ast_capacity;
 
 public func void init(Context* c, const char* names_start) {
-   g_types.clear();
+   g_types.init(c);
 
     g_u8.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.UInt8)));
     g_u16.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.UInt16)));
@@ -118,7 +118,7 @@ public func void init(Context* c, const char* names_start) {
     g_void.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.Void)));
     g_bool.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.Bool)));
 
-    Type* void_ptr = cast<Type*>(PointerType.create(c, g_void));
+    Type* void_ptr = ast.getPointerType(g_void);
     g_void_ptr.set(void_ptr);
     void_ptr.setCanonicalType(g_void_ptr);
 
@@ -154,6 +154,7 @@ public func void deinit() {
     stdio.printf("   builtins   %5u   %6u\n", stats.builtinCount, stats.builtinCount * sizeof(BuiltinType));
 #endif
     stdlib.free(cast<void*>(g_ast_list));
+    g_types.clear();
 }
 
 public func u32 name2idx(const char* name) {
@@ -164,6 +165,10 @@ public func u32 name2idx(const char* name) {
 public func const char* idx2name(u32 idx) {
     if (idx) return g_names_start + idx;
     return nil;
+}
+
+public func Type* getPointerType(QualType inner) {
+    return g_types.getPointerType(inner);
 }
 
 func u32 addAST(AST* ast_) {

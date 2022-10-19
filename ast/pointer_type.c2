@@ -16,7 +16,8 @@ public type PointerType struct {
     QualType inner;
 } @(opaque)
 
-public func PointerType* PointerType.create(ast_context.Context* c, QualType inner) @(inline) {
+// Note: non-public, since all pointers should be created via ast.getPointerType()
+func PointerType* PointerType.create(ast_context.Context* c, QualType inner) @(inline) {
 #if 0
     Type* i = inner.getTypeOrNil();
     Type* ptr = i.getPtrType();

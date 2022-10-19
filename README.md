@@ -19,6 +19,7 @@
 - Q: how much AST would be saved?
 
 ## Types refactor:
+-> Even in 2-phase parsing, we need to keep the SrcLoc of a type, for Refs building, etc
 - Type: change Type.type_ptr -> u32 (Type 24 -> 16 bytes)
     -> need way to convert idx2ptr, since Context is not a single pool, use TypePool (registered in AST.init())
     Option A

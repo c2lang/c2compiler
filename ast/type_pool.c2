@@ -3,8 +3,12 @@
 
 module ast;
 
+import ast_context;
+
 import string local;
 import stdlib local;
+
+import stdio; // TEMP
 
 /*
     This pool is used to lookup pointers to a certain type
@@ -14,23 +18,31 @@ public type TypePool struct {
     u32 count;
     u32 capacity;
     Type** types;
+    Type** pointers;
 
-    // TODO pointer types (same index+count+cap)
+    ast_context.Context* context;
 }
 
-public func void TypePool.init(TypePool* p) {
+public func void TypePool.init(TypePool* p, ast_context.Context* c) {
+    // TODO memleak? (after clear)
     memset(p, 0, sizeof(TypePool));
+    p.context = c;
     p.resize(64);
 }
 
 func void TypePool.resize(TypePool* p, u32 cap) {
     p.capacity = cap;
     void* types2 = malloc(p.capacity * sizeof(Type*));
+    void* pointers2 = malloc(p.capacity * sizeof(Type*));
+    // TODO memset upper half
     if (p.count) {
         memcpy(types2, cast<void*>(p.types), p.count * sizeof(Type*));
         free(cast<void*>(p.types));
+        memcpy(pointers2, cast<void*>(p.pointers), p.count * sizeof(Type*));
+        free(cast<void*>(p.pointers));
     }
     p.types = cast<Type**>(types2);
+    p.pointers = cast<Type**>(pointers2);
 }
 
 public func u32 TypePool.add(TypePool* p, Type* t) {
@@ -38,8 +50,25 @@ public func u32 TypePool.add(TypePool* p, Type* t) {
 
     u32 idx = p.count;
     p.types[idx] = t;
+    // TODO dont nil here, just memset at malloc
+    p.pointers[idx] = nil;
     p.count++;
     return idx;
+}
+
+public func Type* TypePool.getPointerType(TypePool* p, QualType qt) {
+    Type* t = qt.getTypeOrNil();
+    assert(t);
+
+    // TODO if idx == 0, just create a new pointer
+    Type* ptr = p.pointers[t.idx];
+    if (ptr == nil) {
+        ptr = PointerType.create(p.context, qt);
+        p.pointers[t.idx] = ptr;
+
+        // TODO also set canonical if inner has canonical (self?)
+    }
+    return ptr;
 }
 
 #if 0
@@ -51,6 +80,10 @@ public func PointerType* TypePool.getPtr(TypePool* p, const Type* t) {
 
 public func void TypePool.clear(TypePool* p) {
     free(cast<void*>(p.types));
-    p.init();
+    free(cast<void*>(p.pointers));
+    p.capacity = 0;
+    p.count = 0;
+    p.types = nil;
+    p.pointers = nil;
 }
 
