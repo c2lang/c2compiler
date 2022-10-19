@@ -21,25 +21,13 @@
 ## Types refactor:
 -> Even in 2-phase parsing, we need to keep the SrcLoc of a type, for Refs building, etc
 - Type: change Type.type_ptr -> u32 (Type 24 -> 16 bytes)
-    -> need way to convert idx2ptr, since Context is not a single pool, use TypePool (registered in AST.init())
-    Option A
-        - each Type is registered in TypePool
-        - Type has u32 ptr_idx (idx into TypePool)
-            -> TypePool can only be used for PtrTypes then? A Type Pool doesn't know its own index
-        Q: dont register RefTypes? (will not have pointer anyway?)
-    Option B <-- MORE FLEXIBLE
-        - each Type knows its own TypePool index (u32)
-        - ask TypePool for ptr
-        - we can extend TypePool for other things as well then
-            (maybe QualType could use the idx, only be 4 bytes! 30 bits idx + 2 bits flags)
-            (maybe CanonicalType could also be set in TypePool?)
 - Filter RefTypes within same AST, only need to resolve once
     Foo bar;
         RefType 'Foo'
         -> AliasType 'Foo' (single?)
     -> Many RefTypes are also a PointerType
         -> if we make RefTypes unique, these also fold automatically
-    -> RefType has IdentifierExpr with SrcLocs...
+    -> RefType has IdentifierExpr with SrcLocs (needed for Refs building, etc)
     -> We also need different refs because of filtering on References during AST walks?
     -> can be allowed in function, but not in public struct
         -> have a loc + public loc? (only 1 needed)

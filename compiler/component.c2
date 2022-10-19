@@ -143,6 +143,7 @@ public func void Component.print(const Component* c) {
         c.mods[i].print(out);
     }
 
+    out.color(color.Normal);
     stdio.puts(out.data());
     out.free();
 }

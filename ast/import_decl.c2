@@ -60,24 +60,24 @@ func void ImportDecl.print(const ImportDecl* d, string_buffer.Buf* out, u32 inde
     out.indent(indent);
     out.color(col_Decl);
     out.add("ImportDecl");
-    d.parent.printName(out);
 
-    if (d.parent.importDeclBits.is_local) {
-        out.color(col_Attr);
-        out.add(" local");
-    }
-    if (d.alias_idx) {
-        out.color(col_Attr);
-        out.add(" as ");
-        out.color(col_Value);
-        out.print("%s", idx2name(d.alias_idx));
-    }
     d.parent.printUsed(out);
     out.add(" module=");
     if (d.dest) {
         out.add(d.dest.getName());
     } else {
         out.add("<nil>");
+    }
+    if (d.parent.importDeclBits.is_local) {
+        out.color(col_Attr);
+        out.add(" local");
+    }
+    d.parent.printName(out);
+    if (d.alias_idx) {
+        out.color(col_Attr);
+        out.add(" as ");
+        out.color(col_Value);
+        out.print("%s", idx2name(d.alias_idx));
     }
     out.add("\n");
 }
