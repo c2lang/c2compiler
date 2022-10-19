@@ -7,7 +7,7 @@ import ast local;
 import ast_context local;
 import component;
 import diagnostics;
-import tokens local;
+import token local;
 import utils local;
 
 import stdlib local;
@@ -144,7 +144,7 @@ public func void Builder.actOnAttr(Builder* b, const char* name, SrcLoc begin_lo
 }
 
 
-public func QualType Builder.actOnBuiltinType(Builder* b, tokens.Kind kind) {
+public func QualType Builder.actOnBuiltinType(Builder* b, token.Kind kind) {
     Type* t = nil;
     // TODO lookup table -> fill in init with correct width for usize/isize, fill with QualType
     switch (kind) {

@@ -11,7 +11,7 @@ import diagnostics;
 import source_mgr local;
 import string_list;
 import string_pool;
-import tokens local;
+import token local;
 import utils local;
 
 import stdarg local;

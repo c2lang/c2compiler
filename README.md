@@ -7,6 +7,8 @@
     - store all tokens? (of all files in main module, around 1.3 Mb for c2c, sources are 396Kb)
         -> only need to parse and filter ifdefs once, but takes more memory
         -> would this work for a Big project (ie Linux kernel)?
+        -> where? (in module?)
+        -> also need to know file (know from loc), since we need the correct imports
 - 2nd pass: (in order of modules)
     - also filters ifdefs (inside functions) (or just replay token stream)
         Note: global ifdefs already filtered out
@@ -17,6 +19,52 @@
 -> allows caching of string -> Decl (no need to check/search every time)
 -> this costs more parsing time, but saves a lot on resolving and AST
 - Q: how much AST would be saved?
+
+---- EXAMPLE ----
+    module test;
+    import string as str;
+
+    i8* ptr1;
+    i8* ptr2 = value;
+    i8* ptr3;
+    const u32 Value = 10;
+
+    func void Point.init() { .. }
+    type Point struct { .. }
+---- EXAMPLE ----
+
+    --- Pass 1A ---
+    Name        Kind    StreamIdx
+    ----        ----    ---------
+    ptr1        VAR     9
+    ptr2        VAR     13
+    ptr3        VAR     20
+    Value       VAR     24
+    Point       PREFIX  33  <- Store member as next entry, May occur multiple times in SymbolTable
+    init        SFUNC   31  <- store as SFunc, previous entry is a PREFIX
+    Point       TYPE    ..  <- 'Point' may occur once as TYPE, multiple times as PREFIX
+
+    Entry:
+        - u32 name
+        - type (3 bits)
+            Type
+            Var
+            Func
+            Prefix      -> next entry is member
+            SFunc       -> also has a previous Prefix entry
+            Assert
+        - checked (1 bit)
+        - u32 stream idx (combine this with flags), points to start of global decl (not name, but first token)
+        (u32 loc, only needed for name clashes!)
+
+    --- Pass 1B ---
+    parse + analyse ptr1
+    parse + analyse ptr2
+        parse + analyse Value
+        -> when encountering an Identifier, do lookup
+            - check local names, if found check if checked, otherwise analyse (push)
+            - if external, it must be already checked
+            -> have GlobalCache
 
 ## Types refactor:
 -> Even in 2-phase parsing, we need to keep the SrcLoc of a type, for Refs building, etc

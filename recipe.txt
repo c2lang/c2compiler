@@ -25,7 +25,7 @@ executable c2c
     common/string_pool.c2
     common/utils.c2
 
-    parser/tokens.c2
+    parser/token.c2
     parser/c2_tokenizer.c2
     parser/c2_parser.c2
     parser/c2_parser_type.c2

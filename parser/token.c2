@@ -1,7 +1,10 @@
 /* Copyright 2022 Bas van den Berg
 */
 
-module tokens;
+module token;
+
+import utils local;
+import string;
 
 public type Kind enum u8 {
     None,
@@ -240,5 +243,22 @@ static_assert(elemsof(Kind), elemsof(token_names));
 
 public func const char* kind2str(Kind kind) @(inline) {
     return token_names[kind];
+}
+
+public type Token struct {
+    SrcLoc loc;
+    Kind kind;
+    bool more;
+    u8 radix;   // for NumberLiteral
+    union {
+        const char* error_msg;  // ERROR
+        const char* text_value; // Identifier, NumberLiteral
+        u8 char_value;          // CharLiteral
+    }
+}
+
+public func void Token.init(Token* tok) {
+    string.memset(tok, 0, sizeof(Token));
+    tok.more = true;
 }
 

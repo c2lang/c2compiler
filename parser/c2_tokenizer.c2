@@ -6,7 +6,7 @@ module c2_tokenizer;
 import string_pool;
 import constants;
 import string_list;
-import tokens local;
+import token local;
 import utils local;
 
 import string;
@@ -406,23 +406,6 @@ func const Keyword* check_keyword(const char* cp) {
     }
 
     return nil;
-}
-
-public type Token struct {
-    SrcLoc loc;
-    Kind kind;
-    bool more;
-    u8 radix;   // for NumberLiteral
-    union {
-        const char* error_msg;  // ERROR
-        const char* text_value; // Identifier, NumberLiteral
-        u8 char_value; // CharLiteral
-    }
-}
-
-public func void Token.init(Token* tok) {
-    string.memset(tok, 0, sizeof(Token));
-    tok.more = true;
 }
 
 public type Feature struct {
