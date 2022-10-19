@@ -278,7 +278,7 @@ const u8[128] Char_lookup = {
     ['Y'] = Action.IDENT,
     ['Z'] = Action.IDENT,
     ['['] = Action.LSQUARE,
-    // '\'
+    ['\\'] = Action.TABSPACE, // only in skipped parts, treat as whitespace
     [']'] = Action.RSQUARE,
     ['^'] = Action.CARET,
     ['_'] = Action.IDENT,   // for parsing libs
@@ -496,7 +496,7 @@ public func void Tokenizer.lex(Tokenizer* t, Token* result) {
 }
 
 
-func  void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
+func void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
     // TODO if end/error stop (dont retry) (t.done = 1)
 
     while (1) {
