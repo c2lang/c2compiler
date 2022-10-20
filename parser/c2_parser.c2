@@ -20,33 +20,41 @@ import csetjmp local;
 import ctype local;
 import stdio local;
 
+public type Info struct {
+    SourceMgr* sm;
+    diagnostics.Diags* diags;
+    string_pool.Pool* pool;
+    const string_list.List* features;
+}
+
+public func void Info.init(Info* info,
+                           SourceMgr* sm,
+                           diagnostics.Diags* diags,
+                           string_pool.Pool* pool,
+                           const string_list.List* features)
+{
+    info.sm = sm;
+    info.diags = diags;
+    info.pool = pool;
+    info.features = features;
+}
+
 public type Parser struct {
     Tokenizer tokenizer;
     Token tok;
-    SourceMgr* sm;
-    diagnostics.Diags* diags;
     i32 file_id;
     Builder* builder;
-    string_pool.Pool* pool;
-
     bool is_interface;
 
+    Info* info;
     JmpBufTag jmpbuf;
-    string_list.List* features;
 } @(opaque)
 
-public func Parser* create(SourceMgr* sm,
-                           diagnostics.Diags* diags,
-                           ast_builder.Builder* builder,
-                           string_pool.Pool* pool,
-                           string_list.List* features)
+public func Parser* create(Info* info, ast_builder.Builder* builder)
 {
     Parser* p = calloc(1, sizeof(Parser));
-    p.sm = sm;
-    p.diags = diags;
+    p.info = info;
     p.builder = builder;
-    p.pool = pool;
-    p.features = features;
     return p;
 }
 
@@ -60,12 +68,12 @@ public func bool Parser.parse(Parser* p, i32 file_id, bool is_interface) {
 
 #if DumpTokens
     u64 t1 = utils.now();
-    p.tokenizer.init(p.pool, p.sm.get_content(p.file_id), p.sm.get_offset(p.file_id), p.features);
+    p.tokenizer.init(p.info.pool, p.info.sm.get_content(p.file_id), p.info.sm.get_offset(p.file_id), p.info.features);
     p.tok.init();
     u32 token_count = 0;
     while (p.tok.more) {
         p.tokenizer.lex(&p.tok);
-        dump_token(p.sm, &p.tok);
+        dump_token(p.info.sm, &p.tok);
         token_count++;
     }
     u64 t2 = utils.now();
@@ -74,7 +82,7 @@ public func bool Parser.parse(Parser* p, i32 file_id, bool is_interface) {
     i32 res = setjmp(&p.jmpbuf);
     if (res == 0) {
 
-        p.tokenizer.init(p.pool, p.sm.get_content(p.file_id), p.sm.get_offset(p.file_id), p.features);
+        p.tokenizer.init(p.info.pool, p.info.sm.get_content(p.file_id), p.info.sm.get_offset(p.file_id), p.info.features);
         p.tok.init();
 
         p.consumeToken();
@@ -95,7 +103,7 @@ public func bool Parser.parse(Parser* p, i32 file_id, bool is_interface) {
 func void Parser.consumeToken(Parser* p) {
     p.tokenizer.lex(&p.tok);
 
-    //dump_token(p.sm, &p.tok);
+    //dump_token(p.info.sm, &p.tok);
 
     if (p.tok.kind == Kind.Error) p.error(p.tok.error_msg);
 }
@@ -122,7 +130,7 @@ func void Parser.error(Parser* p, const char* format, ...) @(noreturn) {
     va_start(args, format);
     vsnprintf(msg, sizeof(msg)-1, format, args);
     va_end(args);
-    p.diags.report(p.tok.loc, msg);
+    p.info.diags.report(p.tok.loc, msg);
 
     longjmp(&p.jmpbuf, 1);
 }
@@ -131,7 +139,7 @@ func void Parser.parseModule(Parser* p) {
     p.expectAndConsume(Kind.KW_module);
     p.expectIdentifier();
 
-    p.builder.actOnModule(p.tok.text_value, p.tok.loc, p.sm.getFileName(p.file_id));
+    p.builder.actOnModule(p.tok.text_value, p.tok.loc, p.info.sm.getFileName(p.file_id));
     p.consumeToken();
     p.expectAndConsume(Kind.Semicolon);
 }

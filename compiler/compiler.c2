@@ -215,7 +215,9 @@ func void Compiler.build(Compiler* c,
     string_list.List features;
     features.init(64);
     features.add("feature_a");
-    c.parser = c2_parser.create(sm, diags, c.builder, c.astPool, &features);
+    c2_parser.Info info;
+    info.init(sm, diags, c.astPool, &features);
+    c.parser = c2_parser.create(&info, c.builder);
 
     printf("parsing %s\n", target.getName());
     u64 t1_start = utils.now();
