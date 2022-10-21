@@ -126,6 +126,7 @@ struct TagFile {
 TagWriter::TagWriter(const c2lang::SourceManager& SM_, const Components& components)
     : SM(SM_)
     , currentFile(0)
+    , refs(refs_create())
 {
     for (unsigned c=0; c<components.size(); c++) {
         const ModuleList& mods = components[c]->getModules();
@@ -141,6 +142,7 @@ TagWriter::TagWriter(const c2lang::SourceManager& SM_, const Components& compone
 }
 
 TagWriter::~TagWriter() {
+    refs_free(refs);
     for (unsigned i=0; i<files.size(); i++) {
         delete files[i];
     }
@@ -148,6 +150,7 @@ TagWriter::~TagWriter() {
 
 void TagWriter::analyse(const AST& ast) {
     currentFile = getFile(ast.getFileName());
+    refs_add_file(refs, ast.getFileName().c_str());
 
     for (unsigned i=0; i<ast.numTypes(); i++) {
         TagVisitor visitor(*this, ast.getType(i), SM);
@@ -181,6 +184,10 @@ void TagWriter::addRef(unsigned src_line, unsigned src_col, const std::string& s
     tag.dst_column = dst_col;
     tag.symbol = symbol;
     currentFile->addTag(tag);
+
+    RefSrc src = { src_line, (uint16_t)src_col, (uint16_t)strlen(symbol.c_str()) };
+    RefDest dest = { dst_file.c_str(), dst_line, (uint16_t)dst_col };
+    refs_add_tag(refs, &src, &dest);
 }
 
 TagFile* TagWriter::getFile(const std::string& filename) {
@@ -219,5 +226,9 @@ void TagWriter::write(const std::string& title, const std::string& path) const {
     }
 
     FileUtils::writeFile(path.c_str(), path + "refs", buffer);
+
+    std::string refs2 = path + "refs2";
+    refs_trim(refs);
+    refs_write(refs, refs2.c_str());
 }
 

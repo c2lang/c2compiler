@@ -22,6 +22,7 @@
 
 
 #include "AST/Component.h"
+#include "Refs.h"
 
 namespace c2lang {
 class SourceManager;
@@ -59,6 +60,8 @@ private:
     TagFiles files;
 
     TagFile* currentFile;
+
+    Refs* refs;
 
     TagWriter(const TagWriter&);
     TagWriter& operator= (const TagWriter&);

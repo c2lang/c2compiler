@@ -1,5 +1,7 @@
 
 add_library (refs_generator MODULE
+    QuickSort.cpp
+    Refs.cpp
     TagWriter.cpp
     TagsPlugin.cpp
 )
