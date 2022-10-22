@@ -432,6 +432,8 @@ void refs_add_file(Refs* r, const char* filename) {
 }
 
 void refs_add_tag(Refs* r, const RefSrc* src, const RefDest* dest) {
+    // Caching dest.fileName ptr + idx does not work:
+    // C2C native does have same ptr for each string, but C2C C++ does not.
     u32 dst_idx = files_add(&r->files, dest->filename, NOT_FOUND);
     tags_add(&r->tags, src, dst_idx, dest->line, dest->col);
 }
@@ -439,7 +441,6 @@ void refs_add_tag(Refs* r, const RefSrc* src, const RefDest* dest) {
 void refs_trim(Refs* r) {
     r->files = files_trim(r->files);
     r->tags = tags_trim(r->tags);
-
     files_visitTags(r->files, tags_sort, r->tags);
 }
 
@@ -472,4 +473,17 @@ void refs_dump(const Refs* r, bool verbose) {
     files_dump(r->files, verbose);
     tags_dump(r->tags, verbose);
 }
+
+/*
+    Idea:
+    - IDEA: we could filter all duplicate refs to same location (=Def) and put that in another section as well
+        then the Names section could also reference to that as well.
+        Big.c2: 16086 tags, to 2834 different Defs, would save about 50 Kb
+        -> Measure how long it takes to generate then (need to filter each tag)
+            -> BEFORE big took 800-900 usec, 257556 bytes (Performance mode)
+            -> AFTER ..
+        -> this is a section called Locations (Locs)
+    - add a new section: names -> Decls
+    - To see all references of the name, simply search all Tags for usage (using Files_visitor)
+*/
 
