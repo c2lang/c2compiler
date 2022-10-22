@@ -169,7 +169,7 @@ static RefFiles* files_resize(RefFiles* f, u32 max_idx, u32 max_data) {
     return f2;
 }
 
-typedef void (*FileTagsVisitor)(void* arg, u32 start, u32 count);
+typedef void (*FileTagsVisitor)(void* arg, u32 file_idx, u32 start, u32 count);
 
 static void files_visitTags(const RefFiles* f, FileTagsVisitor visitor, void* arg) {
     const u32* indexes = FILES_TAGS(f);
@@ -180,7 +180,7 @@ static void files_visitTags(const RefFiles* f, FileTagsVisitor visitor, void* ar
         if (i+1 != count) end = indexes[i+1];
         // NOTE: for the last one, we dont know the end, pass NOT_FOUND
         if (end > start) {
-            visitor(arg, start, end);
+            visitor(arg, i, start, end);
         }
     }
 }
@@ -242,7 +242,7 @@ static RefFiles* files_trim(RefFiles* f) {
 }
 
 static void files_dump(const RefFiles* f, bool verbose) {
-    printf("Files: %u bytes  %u/%u entries  %u/%u data\n",
+    printf("  files:   %5u bytes  %u/%u entries  %u/%u data\n",
         f->total_size,
         f->idx_count, f->idx_cap,
         f->names_len, f->names_cap);
@@ -305,7 +305,7 @@ static bool tag_compare(void* arg, const void* left, const void* right) {
     return l->src.col < r->src.col;
 }
 
-static void tags_sort(void* arg, u32 start, u32 end) {
+static void tags_sort(void* arg, u32 file_idx, u32 start, u32 end) {
     Tags* t = (Tags*)arg;
     if (end > t->count) end = t->count;
     if (end - start <= 1) return;
@@ -371,7 +371,7 @@ static u32 tags_find(const Tags* t, const RefDest* origin, u32 start, u32 last) 
 }
 
 static void tags_dump(const Tags* t, bool verbose) {
-    printf("Tags: %u bytes  %u/%u tags\n", t->total_size, t->count, t->capacity);
+    printf("  tags:   %5u bytes  %u/%u tags\n", t->total_size, t->count, t->capacity);
     if (verbose) {
         for (u32 i=0; i<t->count; i++) {
             const Tag* tt = &t->tags[i];
@@ -450,10 +450,10 @@ static u32 locs_add(Locs** t_ptr, u32 file_id, u32 line, u16 col) {
     return idx;
 }
 
-const Loc* loc_idx2loc(const Locs* t, u32 idx) { return &t->locs[idx]; }
+static const Loc* loc_idx2loc(const Locs* t, u32 idx) { return &t->locs[idx]; }
 
 static void locs_dump(const Locs* t, bool verbose) {
-    printf("Locs: %u bytes  %u/%u locs\n", t->total_size, t->count, t->capacity);
+    printf("  locs:    %5u bytes  %u/%u locs\n", t->total_size, t->count, t->capacity);
     if (verbose) {
         for (u32 i=0; i<t->count; i++) {
             const Loc* d = &t->locs[i];
@@ -508,17 +508,18 @@ static Symbols* symbols_resize(Symbols* f, u32 max_idx, u32 max_data) {
     return f2;
 }
 
-/*
 // NOTE: return NOT_FOUND if not found
 static u32 symbols_name2idx(const Symbols* f, const char* filename) {
     const char* names = SYMBOLS_NAMES(f);
     for (u32 i=0; i<f->idx_count; i++) {
         const char* name = names + f->name_indexes[i];
-        if (strcmp(name, filename) == 0) return i;
+        if (strcmp(name, filename) == 0) {
+            const u32* locs = SYMBOLS_LOCS(f);
+            return locs[i];
+        }
     }
     return NOT_FOUND;
 }
-*/
 
 static void symbols_add(Symbols** f_ptr, const char* symbol_name, u32 loc_idx) {
     Symbols* f = *f_ptr;
@@ -547,7 +548,7 @@ static Symbols* symbols_trim(Symbols* f) {
 }
 
 static void symbols_dump(const Symbols* f, bool verbose) {
-    printf("Symbols: %u bytes  %u/%u entries  %u/%u data\n",
+    printf("  symbols: %5u bytes  %u/%u entries  %u/%u data\n",
         f->total_size,
         f->idx_count, f->idx_cap,
         f->names_len, f->names_cap);
@@ -690,16 +691,56 @@ RefDest refs_findRef(const Refs* r, const RefDest* origin) {
     return result;
 }
 
+RefDest refs_findSymbol(const Refs* r, const char* symbol_name) {
+    RefDest result = { NULL, 0, 0 };
+
+    u32 loc_idx = symbols_name2idx(r->symbols, symbol_name);
+    if (loc_idx == NOT_FOUND) return result;
+
+    const Loc* loc = loc_idx2loc(r->locs, loc_idx);
+    result.filename = files_idx2name(r->files, loc->file_id);
+    result.line = loc->line;
+    result.col = loc->col;
+
+    return result;
+}
+
+typedef struct {
+    const Refs* r;
+    RefUsesFn fn;
+    void* arg;
+    u32 loc_idx;
+} UsesInfo;
+
+static void refs_search_tags(void* arg, u32 file_idx, u32 start, u32 end) {
+    const UsesInfo* info = (UsesInfo*)arg;
+    const u32 loc_idx = info->loc_idx;
+    const Tag* tags = info->r->tags->tags;
+
+    u32 max = tags_getCount(info->r->tags);
+    if (end > max) end = max;
+
+    for (u32 i=start; i<end; i++) {
+        const Tag* tt = &tags[i];
+        if (tt->loc_idx == loc_idx) {
+            info->fn(info->arg, files_idx2name(info->r->files, file_idx), tt->src.line, tt->src.col);
+        }
+    }
+}
+
+void refs_findSymbolUses(const Refs* r, const char* symbol_name, RefUsesFn fn, void* arg) {
+    u32 loc_idx = symbols_name2idx(r->symbols, symbol_name);
+    if (loc_idx == NOT_FOUND) return;
+
+    UsesInfo info = { r, fn, arg, loc_idx };
+    files_visitTags(r->files, refs_search_tags, &info);
+}
+
 void refs_dump(const Refs* r, bool verbose) {
+    printf("Refs:\n");
     files_dump(r->files, verbose);
     tags_dump(r->tags, verbose);
     locs_dump(r->locs, verbose);
     symbols_dump(r->symbols, verbose);
 }
-
-/*
-    - To see all references of the symbol-name:
-        - lookup name in Symbols, get loc_id
-        - using files_visitor, scan all Locs for that loc_id
-*/
 
