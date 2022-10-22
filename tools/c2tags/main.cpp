@@ -41,6 +41,13 @@ static int column;
 typedef std::vector<std::string> Strings;
 Strings refFiles;
 
+struct Result {
+    std::string filename;
+    unsigned line;
+    unsigned column;
+};
+typedef std::vector<Result> Results;
+
 static void usage(const char* me) {
     printf("%s <args> <file> <line> <col>\n", me);
     printf("    -h          show this help\n");
@@ -126,49 +133,32 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-
-    // TEMP only 1 ref file
-    const char* refFile = refFiles[0].c_str();
-    Refs* refs = refs_load(refFile);
-
-    if (!refs) {
-        fprintf(stderr, "c2tags: error: invalid refs %s\n", refFile);
-        return -1;
-    }
-    // TODO support multiple ref files, merge results
-
     std::string fullname = root.orig2Root(filename);
     RefDest origin = { fullname.c_str(), (uint32_t)line, (uint16_t)column };
-    RefDest result = refs_findRef(refs, &origin);
-    if (!result.filename) {
-        printf("no result found\n");
-    } else {
-        fullname = root.root2Orig(result.filename);
-        printf("found %s %u %u\n", fullname.c_str(), result.line, result.col);
-    }
 
-#if 0
-    TagReader tags(target);
+    Results results;
 
-    std::string fullname = root.orig2Root(filename);
-    unsigned numResults;
-    if (reverse) {
-        numResults = tags.findReverse(fullname.c_str(), line, column);
-    } else {
-        numResults = tags.find(fullname.c_str(), line, column);
-    }
+    for (unsigned i=0; i<refFiles.size(); i++) {
+        const char* refFile = refFiles[i].c_str();
+        Refs* refs = refs_load(refFile);
+        if (!refs) {
+            fprintf(stderr, "c2tags: error: invalid refs %s\n", refFile);
+            return -1;
+        }
 
-    if (numResults == 0) {
-        printf("no result found\n");
-        return 0;
+        RefDest result = refs_findRef(refs, &origin);
+        if (result.filename) {
+            fullname = root.root2Orig(result.filename);
+            results.push_back({fullname, result.line, result.col});
+        }
+
     }
-    if (numResults > 1) printf("multiple matches:\n");
-    for (unsigned i=0; i<numResults; i++) {
-        TagReader::Result R = tags.getResult(i);
-        fullname = root.root2Orig(R.filename);
-        printf("found %s %d %d\n", fullname.c_str(), R.line, R.column);
+    if (results.size() ==  0) printf("no result found\n");
+    if (results.size() > 1) printf("multiple matches:\n");
+    for (unsigned i=0; i<results.size(); i++) {
+        const Result& res = results[i];
+        printf("found %s %u %u\n", res.filename.c_str(), res.line, res.column);
     }
-#endif
     return 0;
 }
 
