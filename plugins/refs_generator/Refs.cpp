@@ -19,6 +19,13 @@ typedef uint16_t u16;
 #define ROUND4(x) ((x + 3) & ~0x3)
 #define NOT_FOUND ((u32)-1)
 
+/*
+    Design:
+    - the files consists of sections (Files, Tags, ..)
+    - each section starts with a 32-bit section-size
+    - to load/store, read/write the whole section
+*/
+
 // ------ MMap ------
 
 typedef struct {
@@ -55,6 +62,35 @@ static void close_file(MapFile f) {
     munmap(f.map, (size_t)f.size);
 }
 
+static u32 section_size(const void* section) { return *((u32*)section); }
+
+static void* section_load(const uint8_t* input, u32 size, u32 minSize) {
+    if (size < minSize) return NULL;
+
+    u32 load_size = section_size(input);
+    if (load_size > size) return NULL;
+
+    void* section = malloc(load_size);
+    memcpy(section, input, load_size);
+
+    return section;
+}
+
+static bool section_write(int fd, void* section) {
+    const u32 size = section_size(section);
+    ssize_t written = write(fd, section, size);
+    if (size != written) {
+        int err = errno;
+        close(fd);
+        errno = err;
+        return false;
+    }
+    return true;
+}
+
+static void section_free(void* t) {
+    free(t);
+}
 
 // ------ Files ------
 
@@ -85,30 +121,6 @@ static RefFiles* files_create(u32 max_idx, u32 max_data) {
     return f;
 }
 
-static RefFiles* files_load(void* input, u32 size) {
-    if (size < sizeof(RefFiles)) return NULL;
-
-    RefFiles* src = (RefFiles*)input;
-    if (src->total_size > size) return NULL;
-
-    void* files = malloc(src->total_size);
-    memcpy(files, input, src->total_size);
-
-    return (RefFiles*)files;
-}
-
-static void files_free(RefFiles* f) {
-    free(f);
-}
-
-static u32 files_getSize(const RefFiles* f) { return f->total_size; }
-
-static u32 files_getCount(const RefFiles* f) { return f->idx_count; }
-
-static const u32* files_getTagStarts(const RefFiles* f) {
-    return FILES_TAGS(f);
-}
-
 static u32 files_getTagStart(const RefFiles* f, u32 idx) {
     const u32* tags = FILES_TAGS(f);
     return tags[idx];
@@ -136,6 +148,22 @@ static RefFiles* files_resize(RefFiles* f, u32 max_idx, u32 max_data) {
     return f2;
 }
 
+typedef void (*FileTagsVisitor)(void* arg, u32 start, u32 count);
+
+static void files_visitTags(const RefFiles* f, FileTagsVisitor visitor, void* arg) {
+    const u32* indexes = FILES_TAGS(f);
+    u32 count = f->idx_count;
+    for (u32 i=0; i<count; i++) {
+        u32 start = indexes[i];
+        u32 end = NOT_FOUND;
+        if (i+1 != count) end = indexes[i+1];
+        // NOTE: for the last one, we dont know the end, pass NOT_FOUND
+        if (end > start) {
+            visitor(arg, start, end);
+        }
+    }
+}
+
 static const char* files_idx2name(const RefFiles* f, u32 file_id) {
     if (file_id >= f->idx_count) return NULL;
     const char* names = FILES_NAMES(f);
@@ -144,7 +172,6 @@ static const char* files_idx2name(const RefFiles* f, u32 file_id) {
 
 // NOTE: return (-1) if not found
 static u32 files_name2idx(const RefFiles* f, const char* filename) {
-    // TODO use fast lookup index? (put after normal name_indexes)
     const char* names = FILES_NAMES(f);
     for (u32 i=0; i<f->idx_count; i++) {
         const char* name = names + f->name_indexes[i];
@@ -186,7 +213,6 @@ static u32 files_add(RefFiles** f_ptr, const char* filename, u32 tag_start) {
 
     return idx;
 }
-
 
 static RefFiles* files_trim(RefFiles* f) {
     if (f->idx_count == f->idx_cap && f->names_len == f->names_cap) return f;
@@ -240,24 +266,6 @@ static Tags* tags_create(u32 capacity) {
     return t;
 }
 
-static Tags* tags_load(void* input, u32 size) {
-    if (size < sizeof(Tags)) return NULL;
-
-    Tags* src = (Tags*)input;
-    if (src->total_size > size) return NULL;
-
-    void* files = malloc(src->total_size);
-    memcpy(files, input, src->total_size);
-
-    return (Tags*)files;
-}
-
-static void tags_free(Tags* t) {
-    free(t);
-}
-
-static u32 tags_getSize(const Tags* t) { return t->total_size; }
-
 static u32 tags_getCount(const Tags* t) { return t->count; }
 
 static Tags* tags_resize(Tags* t, u32 capacity) {
@@ -269,6 +277,7 @@ static Tags* tags_resize(Tags* t, u32 capacity) {
     free(t);
     return t2;
 }
+
 
 static bool tag_compare(void* arg, const void* left, const void* right) {
     const Tag* l = (Tag*)left;
@@ -282,15 +291,11 @@ static bool tag_compare(void* arg, const void* left, const void* right) {
     return l->src.col < r->src.col;
 }
 
-static void tags_sort(Tags* t, const u32* indexes, u32 count) {
-    for (u32 i=0; i<count; i++) {
-        u32 start = indexes[i];
-        u32 end = t->count;
-        if (i+1 != count) end = indexes[i+1];
-        if (end > start) {
-            quicksort(t->tags + start, end - start, sizeof(Tag), tag_compare, NULL);
-        }
-    }
+static void tags_sort(void* arg, u32 start, u32 end) {
+    Tags* t = (Tags*)arg;
+    if (end > t->count) end = t->count;
+    if (end - start <= 1) return;
+    quicksort(t->tags + start, end - start, sizeof(Tag), tag_compare, NULL);
 }
 
 static Tags* tags_trim(Tags* t) {
@@ -306,7 +311,6 @@ static void tags_add(Tags** t_ptr, const RefSrc* src, u32 dst_file, u32 dst_line
         *t_ptr = t;
     }
 
-    // TODO convert src.len -> src.max_col (faster check)
     Tag* cur = &t->tags[t->count];
     cur->src = *src;
 
@@ -316,16 +320,40 @@ static void tags_add(Tags** t_ptr, const RefSrc* src, u32 dst_file, u32 dst_line
     t->count++;
 }
 
+static bool tags_find_line(const Tag* tags, u32* left, u32* right, const u32 line) {
+    while (*left != *right) {
+        const u32 middle = (*left + *right) / 2;
+        const u32 mline = tags[middle].src.line;
+        if (line < mline) {
+            *right = middle;
+        } else if (line > mline) {
+            *left = middle;
+        } else {
+            u32 l = middle;
+            u32 r = middle;
+            while (tags[l].src.line == line && l >= *left) l--;
+            while (tags[r].src.line == line && r < *right) r++;
+            *left = l;
+            *right = r;
+            return true;
+        }
+    }
+    return false;
+}
+
+// Note: including last
 const Dest* tags_find(const Tags* t, const RefDest* origin, u32 start, u32 last) {
     if (last > t->count) last = t->count -1;
-    // TODO we can do binary search for line here! (between start/last tag
+
+    last++;  // must be outside for binary search to work
+    if (!tags_find_line(t->tags, &start, &last, origin->line)) return NULL;
+
+    // first entry for column
     for (u32 i=start; i<=last; i++) {
         const Tag* tag = &t->tags[i];
         const RefSrc* src = &tag->src;
-        if (src->line == origin->line) {
-            if (src->col <= origin->col && (src->col + src->len) >= origin->col) {
-                return &tag->dest;
-            }
+        if (src->col <= origin->col && (src->col + src->len) >= origin->col) {
+            return &tag->dest;
         }
     }
     return NULL;
@@ -359,17 +387,17 @@ Refs* refs_create(void) {
     return w;
 }
 
-static Refs* refs_load_internal(void* data, u32 size) {
-    RefFiles* files = files_load(data, size);
+static Refs* refs_load_internal(const uint8_t* data, u32 size) {
+    RefFiles* files = (RefFiles*)section_load(data, size, sizeof(RefFiles));
     if (!files) return NULL;
 
-    u32 files_size = files_getSize(files);
-    data = (char*) data + files_size;
+    u32 files_size = section_size(files);
+    data += files_size; // void* arithmetic
     size -= files_size;
 
-    Tags* tags = tags_load(data, size);
+    Tags* tags = (Tags*)section_load(data, size, sizeof(Tags));
     if (!tags) {
-        files_free(files);
+        section_free(files);
         return NULL;
     }
 
@@ -383,28 +411,17 @@ Refs* refs_load(const char* filename) {
     MapFile f = open_file(filename);
     if (!f.map) return NULL;
 
-    Refs* r = refs_load_internal(f.map, f.size);
+    Refs* r = refs_load_internal((uint8_t*)f.map, f.size);
     close_file(f);
     return r;
-}
-
-static bool write_checked(int fd, void* data, u32 size) {
-    ssize_t written = write(fd, data, size);
-    if (size != written) {
-        int err = errno;
-        close(fd);
-        errno = err;
-        return false;
-    }
-    return true;
 }
 
 bool refs_write(const Refs* r, const char* filename) {
     int fd = open(filename, O_CREAT | O_WRONLY | O_CLOEXEC | O_TRUNC, 0660);
     if (fd == -1) return false;
 
-    if (!write_checked(fd, r->files, files_getSize(r->files))) return false;
-    if (!write_checked(fd, r->tags, tags_getSize(r->tags))) return false;
+    if (!section_write(fd, r->files)) return false;
+    if (!section_write(fd, r->tags)) return false;
 
     close(fd);
     return true;
@@ -425,12 +442,12 @@ void refs_trim(Refs* w) {
     w->files = files_trim(w->files);
     w->tags = tags_trim(w->tags);
 
-    tags_sort(w->tags, files_getTagStarts(w->files), files_getCount(w->files));
+    files_visitTags(w->files, tags_sort, w->tags);
 }
 
 void refs_free(Refs* w) {
-    files_free(w->files);
-    tags_free(w->tags);
+    section_free(w->files);
+    section_free(w->tags);
     free(w);
 }
 
