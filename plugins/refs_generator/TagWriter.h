@@ -13,13 +13,10 @@
  * limitations under the License.
  */
 
-#ifndef ALGO_TAG_WRITER_H
-#define ALGO_TAG_WRITER_H
+#ifndef TAG_WRITER_H
+#define TAG_WRITER_H
 
 #include <string>
-#include <map>
-#include <vector>
-
 
 #include "AST/Component.h"
 #include "common/Refs.h"
@@ -33,7 +30,6 @@ namespace C2 {
 class AST;
 class Decl;
 class StringBuilder;
-struct TagFile;
 
 class TagWriter {
 public:
@@ -47,20 +43,8 @@ private:
     void analyse(const AST& ast);
     void addRef(unsigned src_line, unsigned src_col, const std::string&  symbol,
                 const std::string& dest_file, unsigned dst_line, unsigned dst_col);
-    TagFile* getFile(const std::string& filename);
 
     const c2lang::SourceManager& SM;
-
-    typedef std::map<std::string, unsigned> FileMap;
-    typedef FileMap::iterator FileMapIter;
-    FileMap filemap;
-
-    typedef std::vector<TagFile*> TagFiles;
-    typedef TagFiles::iterator FilesIter;
-    TagFiles files;
-
-    TagFile* currentFile;
-
     Refs* refs;
 
     TagWriter(const TagWriter&);

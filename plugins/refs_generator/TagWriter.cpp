@@ -20,18 +20,12 @@
 #include "AST/Decl.h"
 #include "AST/Type.h"
 #include "AST/Expr.h"
-#include "Utils/StringBuilder.h"
-#include "Utils/UtilsConstants.h"
-#include "FileUtils/FileUtils.h"
-#include "Analyser/AnalyserConstants.h"
-#include "Analyser/AnalyserUtils.h"
 
 #include "Clang/SourceLocation.h"
 #include "Clang/SourceManager.h"
 
 #include <string.h>
 #include <assert.h>
-#include <stdio.h>
 
 using namespace C2;
 using namespace std;
@@ -70,62 +64,8 @@ private:
     const c2lang::SourceManager& SM;
 };
 
-
-struct TagEntry {
-    uint32_t src_line;
-    uint32_t src_column;
-    uint32_t dst_fileid;
-    uint32_t dst_line;
-    uint32_t dst_column;
-    std::string symbol;
-
-    static bool compare(const TagEntry& lhs, const TagEntry& rhs) {
-        uint64_t left = lhs.src_line;
-        left <<= 32;
-        left |= lhs.src_column;
-        uint64_t right = rhs.src_line;
-        right <<= 32;
-        right |= rhs.src_column;
-        return left < right;
-    }
-};
-
-
-struct TagFile {
-    TagFile(const std::string& filename_, int id_) : filename(filename_), id(id_) {}
-
-    void addTag(const TagEntry& tag) {
-        tags.push_back(tag);
-    }
-    void sort() {
-        std::sort(tags.begin(), tags.end(), TagEntry::compare);
-    }
-    void write(StringBuilder& out) const {
-        // syntax: file 0 foo.c2 {
-        out << "file " << id << " {\n";
-        for (TagsConstIter iter = tags.begin(); iter != tags.end(); ++iter) {
-            // syntax: 9:5 a -> 0:5:7
-            const TagEntry& T = (*iter);
-            out << '\t' << T.src_line << ':' << T.src_column << ' ' << T.symbol;
-            out << " -> ";
-            out << T.dst_fileid << ':' << T.dst_line << ':' << T.dst_column << '\n';
-        }
-        out << "}\n";
-    }
-
-    std::string filename;
-    int id;
-    typedef std::vector<TagEntry> Tags;
-    typedef Tags::const_iterator TagsConstIter;
-    Tags tags;
-};
-
-}
-
-
 TagWriter::TagWriter(const c2lang::SourceManager& SM_, const Components& components)
     : SM(SM_)
-    , currentFile(0)
     , refs(refs_create())
 {
     for (unsigned c=0; c<components.size(); c++) {
@@ -143,13 +83,9 @@ TagWriter::TagWriter(const c2lang::SourceManager& SM_, const Components& compone
 
 TagWriter::~TagWriter() {
     refs_free(refs);
-    for (unsigned i=0; i<files.size(); i++) {
-        delete files[i];
-    }
 }
 
 void TagWriter::analyse(const AST& ast) {
-    currentFile = getFile(ast.getFileName());
     refs_add_file(refs, ast.getFileName().c_str());
 
     for (unsigned i=0; i<ast.numTypes(); i++) {
@@ -174,61 +110,15 @@ void TagWriter::analyse(const AST& ast) {
 void TagWriter::addRef(unsigned src_line, unsigned src_col, const std::string& symbol,
                        const std::string& dst_file, unsigned dst_line, unsigned dst_col)
 {
-    TagFile* destFile = getFile(dst_file);
-
-    TagEntry tag;
-    tag.src_line = src_line;
-    tag.src_column = src_col;
-    tag.dst_fileid = destFile->id;
-    tag.dst_line = dst_line;
-    tag.dst_column = dst_col;
-    tag.symbol = symbol;
-    currentFile->addTag(tag);
-
     RefSrc src = { src_line, (uint16_t)src_col, (uint16_t)strlen(symbol.c_str()) };
     RefDest dest = { dst_file.c_str(), dst_line, (uint16_t)dst_col };
     refs_add_tag(refs, &src, &dest);
 }
 
-TagFile* TagWriter::getFile(const std::string& filename) {
-    FileMapIter iter = filemap.find(filename);
-    if (iter != filemap.end()) {
-        unsigned file_id = iter->second;
-        return files[file_id];
-    }
-
-    unsigned file_id = files.size();
-    TagFile* tf = new TagFile(filename, file_id);
-    filemap[filename] = file_id;
-    files.push_back(tf);
-    return tf;
-}
-
 void TagWriter::write(const std::string& title, const std::string& path) const {
-    char data[4*1024*1024];
-    StringBuilder buffer(sizeof(data), data);
-    char* offsets[files.size()];
-    memset(offsets, 0, sizeof(offsets));
-    buffer << "files {\n";
-    for (unsigned index = 0; index < files.size(); ++index) {
-        buffer << '\t' << files[index]->id << ' ' << files[index]->filename << ' ';
-        offsets[index] = &data[buffer.size()];
-        buffer << "        \n";
-    }
-    buffer << "}\n";
-    for (unsigned index = 0; index < files.size(); ++index) {
-        char* cp = offsets[index];
-        sprintf(cp, "%d", buffer.size());
-        while (*cp != 0) cp++;
-        *cp = ' ';
-        files[index]->sort();
-        files[index]->write(buffer);
-    }
-
-    FileUtils::writeFile(path.c_str(), path + "refs", buffer);
-
-    std::string refs2 = path + "refs2";
+    std::string refs2 = path + "refs";
     refs_trim(refs);
     refs_write(refs, refs2.c_str());
 }
 
+}

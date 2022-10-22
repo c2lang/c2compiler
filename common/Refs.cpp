@@ -381,10 +381,10 @@ struct Refs_ {
 };
 
 Refs* refs_create(void) {
-    Refs* w = (Refs*)calloc(1, sizeof(Refs));
-    w->files = files_create(32, 2048);
-    w->tags = tags_create(128);
-    return w;
+    Refs* r = (Refs*)calloc(1, sizeof(Refs));
+    r->files = files_create(32, 2048);
+    r->tags = tags_create(128);
+    return r;
 }
 
 static Refs* refs_load_internal(const uint8_t* data, u32 size) {
@@ -427,42 +427,42 @@ bool refs_write(const Refs* r, const char* filename) {
     return true;
 }
 
-void refs_add_file(Refs* w, const char* filename) {
-    w->cur_file = files_add(&w->files, filename, tags_getCount(w->tags));
+void refs_add_file(Refs* r, const char* filename) {
+    r->cur_file = files_add(&r->files, filename, tags_getCount(r->tags));
 }
 
-void refs_add_tag(Refs* w, const RefSrc* src, const RefDest* dest) {
+void refs_add_tag(Refs* r, const RefSrc* src, const RefDest* dest) {
     // TODO cache last dest_filename, if same (ptr) return last entry
     // Note: filename might already be added, but files_add checks for dups
-    u32 dst_idx = files_add(&w->files, dest->filename, NOT_FOUND);
-    tags_add(&w->tags, src, dst_idx, dest->line, dest->col);
+    u32 dst_idx = files_add(&r->files, dest->filename, NOT_FOUND);
+    tags_add(&r->tags, src, dst_idx, dest->line, dest->col);
 }
 
-void refs_trim(Refs* w) {
-    w->files = files_trim(w->files);
-    w->tags = tags_trim(w->tags);
+void refs_trim(Refs* r) {
+    r->files = files_trim(r->files);
+    r->tags = tags_trim(r->tags);
 
-    files_visitTags(w->files, tags_sort, w->tags);
+    files_visitTags(r->files, tags_sort, r->tags);
 }
 
-void refs_free(Refs* w) {
-    section_free(w->files);
-    section_free(w->tags);
-    free(w);
+void refs_free(Refs* r) {
+    section_free(r->files);
+    section_free(r->tags);
+    free(r);
 }
 
-RefDest refs_findRef(const Refs* w, const RefDest* origin) {
+RefDest refs_findRef(const Refs* r, const RefDest* origin) {
     RefDest result = { NULL, 0, 0 };
-    u32 file_id = files_name2idx(w->files, origin->filename);
+    u32 file_id = files_name2idx(r->files, origin->filename);
     if (file_id == NOT_FOUND) return result;
 
-    u32 start_tag = files_getTagStart(w->files, file_id);
+    u32 start_tag = files_getTagStart(r->files, file_id);
     if (start_tag == NOT_FOUND) return result;
 
-    u32 end_tag = files_getTagEnd(w->files, file_id);
-    const Dest* dest = tags_find(w->tags, origin, start_tag, end_tag);
+    u32 end_tag = files_getTagEnd(r->files, file_id);
+    const Dest* dest = tags_find(r->tags, origin, start_tag, end_tag);
     if (dest) {
-        result.filename = files_idx2name(w->files, dest->file_id);
+        result.filename = files_idx2name(r->files, dest->file_id);
         result.line = dest->line;
         result.col = dest->col;
     }
@@ -470,8 +470,8 @@ RefDest refs_findRef(const Refs* w, const RefDest* origin) {
     return result;
 }
 
-void refs_dump(const Refs* w, bool verbose) {
-    files_dump(w->files, verbose);
-    tags_dump(w->tags, verbose);
+void refs_dump(const Refs* r, bool verbose) {
+    files_dump(r->files, verbose);
+    tags_dump(r->tags, verbose);
 }
 

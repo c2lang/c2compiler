@@ -31,19 +31,19 @@ Refs* refs_load(const char* filename);
 
 bool refs_write(const Refs* r, const char* filename);
 
-void refs_free(Refs* w);
+void refs_free(Refs* r);
 
-void refs_add_file(Refs* w, const char* filename);
+void refs_add_file(Refs* r, const char* filename);
 
 // note: source file must already be set by add_file()
-void refs_add_tag(Refs* w, const RefSrc* src, const RefDest* dest);
+void refs_add_tag(Refs* r, const RefSrc* src, const RefDest* dest);
 
-void refs_trim(Refs* w);
+void refs_trim(Refs* r);
 
 // Returns NULL as filename if not found
-RefDest refs_findRef(const Refs* w, const RefDest* origin);
+RefDest refs_findRef(const Refs* r, const RefDest* origin);
 
-void refs_dump(const Refs* w, bool verbose);
+void refs_dump(const Refs* r, bool verbose);
 
 #ifdef   __cplusplus
 }
