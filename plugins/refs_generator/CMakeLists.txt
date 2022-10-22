@@ -1,7 +1,9 @@
 
+include_directories(${CMAKE_SOURCE_DIR})
+
 add_library (refs_generator MODULE
-    QuickSort.cpp
-    Refs.cpp
+    ${CMAKE_SOURCE_DIR}/common/QuickSort.cpp
+    ${CMAKE_SOURCE_DIR}/common/Refs.cpp
     TagWriter.cpp
     TagsPlugin.cpp
 )

@@ -22,7 +22,7 @@
 
 
 #include "AST/Component.h"
-#include "Refs.h"
+#include "common/Refs.h"
 
 namespace c2lang {
 class SourceManager;

@@ -1,6 +1,6 @@
 /* Copyright Bas van den Berg 2022 */
 
-#include "QuickSort.h"
+#include "common/QuickSort.h"
 
 #include <stdint.h>
 

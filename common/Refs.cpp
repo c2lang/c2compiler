@@ -1,7 +1,7 @@
 /* Copyright Bas van den Berg (2022) */
 
-#include "Refs.h"
-#include "QuickSort.h"
+#include "common/Refs.h"
+#include "common/QuickSort.h"
 
 #include <stdio.h>
 #include <stdlib.h>
