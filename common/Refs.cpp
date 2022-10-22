@@ -1,4 +1,17 @@
-/* Copyright Bas van den Berg (2022) */
+/* Copyright 2013-2022 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #include "common/Refs.h"
 #include "common/QuickSort.h"
@@ -21,9 +34,12 @@ typedef uint16_t u16;
 
 /*
     Design:
-    - the files consists of sections (Files, Tags, ..)
+    - the files consists of sections (Files, Tags, Locations, ..)
     - each section starts with a 32-bit section-size
     - to load/store, read/write the whole section
+    - Files contain the filenames and start-tags
+    - Tags contain the original source locations + length, points to Location idx
+    - Locations contain the symbol locations
 */
 
 // ------ MMap ------
@@ -64,14 +80,18 @@ static void close_file(MapFile f) {
 
 static u32 section_size(const void* section) { return *((u32*)section); }
 
-static void* section_load(const uint8_t* input, u32 size, u32 minSize) {
+static void* section_load(MapFile* f, u32 minSize) {
+    u32 size = (u32)f->size;
     if (size < minSize) return NULL;
 
-    u32 load_size = section_size(input);
+    u32 load_size = section_size(f->map);
     if (load_size > size) return NULL;
 
     void* section = malloc(load_size);
-    memcpy(section, input, load_size);
+    memcpy(section, f->map, load_size);
+
+    f->map = ((uint8_t*)f->map) + load_size;
+    f->size -= load_size;
 
     return section;
 }
@@ -239,14 +259,8 @@ static void files_dump(const RefFiles* f, bool verbose) {
 // ------ TAGS ------
 
 typedef struct {
-    u32 line;
-    u16 file_id;
-    u16 col;
-} __attribute__((packed)) Dest;
-
-typedef struct {
     RefSrc src;
-    Dest dest;
+    u32 loc_idx;
 } __attribute__((packed)) Tag;
 
 typedef struct {
@@ -278,7 +292,6 @@ static Tags* tags_resize(Tags* t, u32 capacity) {
     return t2;
 }
 
-
 static bool tag_compare(void* arg, const void* left, const void* right) {
     const Tag* l = (Tag*)left;
     const Tag* r = (Tag*)right;
@@ -304,7 +317,7 @@ static Tags* tags_trim(Tags* t) {
     return tags_resize(t, t->count);
 }
 
-static void tags_add(Tags** t_ptr, const RefSrc* src, u32 dst_file, u32 dst_line, u16 dst_col) {
+static void tags_add(Tags** t_ptr, const RefSrc* src, u32 loc_idx) {
     Tags* t = *t_ptr;
     if (t->count == t->capacity) {
         t = tags_resize(t, t->count * 2);
@@ -313,10 +326,7 @@ static void tags_add(Tags** t_ptr, const RefSrc* src, u32 dst_file, u32 dst_line
 
     Tag* cur = &t->tags[t->count];
     cur->src = *src;
-
-    cur->dest.line = dst_line;
-    cur->dest.file_id = dst_file;
-    cur->dest.col = dst_col;
+    cur->loc_idx = loc_idx;
     t->count++;
 }
 
@@ -342,21 +352,21 @@ static bool tags_find_line(const Tag* tags, u32* left, u32* right, const u32 lin
 }
 
 // Note: including last
-const Dest* tags_find(const Tags* t, const RefDest* origin, u32 start, u32 last) {
+static u32 tags_find(const Tags* t, const RefDest* origin, u32 start, u32 last) {
     if (last > t->count) last = t->count -1;
 
     last++;  // must be outside for binary search to work
-    if (!tags_find_line(t->tags, &start, &last, origin->line)) return NULL;
+    if (!tags_find_line(t->tags, &start, &last, origin->line)) return NOT_FOUND;
 
     // first entry for column
     for (u32 i=start; i<=last; i++) {
         const Tag* tag = &t->tags[i];
         const RefSrc* src = &tag->src;
         if (src->col <= origin->col && (src->col + src->len) >= origin->col) {
-            return &tag->dest;
+            return tag->loc_idx;
         }
     }
-    return NULL;
+    return NOT_FOUND;
 }
 
 static void tags_dump(const Tags* t, bool verbose) {
@@ -364,9 +374,91 @@ static void tags_dump(const Tags* t, bool verbose) {
     if (verbose) {
         for (u32 i=0; i<t->count; i++) {
             const Tag* tt = &t->tags[i];
-            printf("  %u:%u:%u -> %u:%u:%u\n",
-                tt->src.line, tt->src.col, tt->src.len,
-                tt->dest.file_id, tt->dest.line, tt->dest.col);
+            printf("  %u:%u:%u -> %u\n", tt->src.line, tt->src.col, tt->src.len, tt->loc_idx);
+        }
+    }
+}
+
+
+// ------ LOCATIONS ------
+
+typedef struct {
+    u32 line;
+    u16 file_id;
+    u16 col;
+} __attribute__((packed)) Loc;
+
+typedef struct {
+    u32 total_size;
+    u32 count;
+    u32 capacity;
+    Loc locs[0];    // caps times
+} Locs;
+
+static Locs* locs_create(u32 capacity) {
+    u32 size = sizeof(Locs) + capacity * sizeof(Loc);
+    size = ROUND4(size);
+    Locs* t = (Locs*)malloc(size);
+    t->total_size = size;
+    t->count = 0;
+    t->capacity = capacity;
+    return t;
+}
+
+//static u32 locs_getCount(const Locs* t) { return t->count; }
+
+static Locs* locs_resize(Locs* t, u32 capacity) {
+    Locs* t2 = locs_create(capacity);
+    if (t->count) {
+        t2->count = t->count;
+        memcpy(t2->locs, t->locs, t->count * sizeof(Loc));
+    }
+    free(t);
+    return t2;
+}
+
+static Locs* locs_trim(Locs* l) {
+    if (l->count == l->capacity) return l;
+
+    return locs_resize(l, l->count);
+}
+
+static u32 locs_add(Locs** t_ptr, u32 file_id, u32 line, u16 col) {
+    Locs* t = *t_ptr;
+
+    // Filter duplicate entries
+    u32 idx = NOT_FOUND;
+    for (u32 i=0; i<t->count; i++) {
+        const Loc* loc = &t->locs[i];
+        if (loc->line == line && loc->file_id == file_id && loc->col == col) {
+            idx = i;
+            break;
+        }
+    }
+    if (idx != NOT_FOUND) return idx;
+
+    if (t->count == t->capacity) {
+        t = locs_resize(t, t->count * 2);
+        *t_ptr = t;
+    }
+
+    idx = t->count;
+    Loc* loc = &t->locs[idx];
+    loc->line = line;
+    loc->file_id = file_id;
+    loc->col = col;
+    t->count++;
+    return idx;
+}
+
+const Loc* loc_idx2loc(const Locs* t, u32 idx) { return &t->locs[idx]; }
+
+static void locs_dump(const Locs* t, bool verbose) {
+    printf("Locs: %u bytes  %u/%u locs\n", t->total_size, t->count, t->capacity);
+    if (verbose) {
+        for (u32 i=0; i<t->count; i++) {
+            const Loc* d = &t->locs[i];
+            printf("  [%5u] %u:%u:%u\n", i, d->file_id, d->line, d->col);
         }
     }
 }
@@ -377,33 +469,38 @@ static void tags_dump(const Tags* t, bool verbose) {
 struct Refs_ {
     RefFiles* files;
     Tags* tags;
-    u32 cur_file;
+    Locs* locs;
 };
 
 Refs* refs_create(void) {
     Refs* r = (Refs*)calloc(1, sizeof(Refs));
     r->files = files_create(32, 2048);
     r->tags = tags_create(128);
+    r->locs = locs_create(64);
     return r;
 }
 
-static Refs* refs_load_internal(const uint8_t* data, u32 size) {
-    RefFiles* files = (RefFiles*)section_load(data, size, sizeof(RefFiles));
+static Refs* refs_load_internal(MapFile f) {
+    RefFiles* files = (RefFiles*)section_load(&f, sizeof(RefFiles));
     if (!files) return NULL;
 
-    u32 files_size = section_size(files);
-    data += files_size; // void* arithmetic
-    size -= files_size;
-
-    Tags* tags = (Tags*)section_load(data, size, sizeof(Tags));
+    Tags* tags = (Tags*)section_load(&f, sizeof(Tags));
     if (!tags) {
         section_free(files);
+        return NULL;
+    }
+
+    Locs* locs = (Locs*)section_load(&f, sizeof(Locs));
+    if (!locs) {
+        section_free(files);
+        section_free(tags);
         return NULL;
     }
 
     Refs* r = (Refs*)calloc(1, sizeof(Refs));
     r->files = files;
     r->tags = tags;
+    r->locs = locs;
     return r;
 }
 
@@ -411,7 +508,7 @@ Refs* refs_load(const char* filename) {
     MapFile f = open_file(filename);
     if (!f.map) return NULL;
 
-    Refs* r = refs_load_internal((uint8_t*)f.map, f.size);
+    Refs* r = refs_load_internal(f);    // NOTE: must be copy, since it will be modified
     close_file(f);
     return r;
 }
@@ -422,25 +519,28 @@ bool refs_write(const Refs* r, const char* filename) {
 
     if (!section_write(fd, r->files)) return false;
     if (!section_write(fd, r->tags)) return false;
+    if (!section_write(fd, r->locs)) return false;
 
     close(fd);
     return true;
 }
 
 void refs_add_file(Refs* r, const char* filename) {
-    r->cur_file = files_add(&r->files, filename, tags_getCount(r->tags));
+    files_add(&r->files, filename, tags_getCount(r->tags));
 }
 
 void refs_add_tag(Refs* r, const RefSrc* src, const RefDest* dest) {
     // Caching dest.fileName ptr + idx does not work:
     // C2C native does have same ptr for each string, but C2C C++ does not.
-    u32 dst_idx = files_add(&r->files, dest->filename, NOT_FOUND);
-    tags_add(&r->tags, src, dst_idx, dest->line, dest->col);
+    u32 file_idx = files_add(&r->files, dest->filename, NOT_FOUND);
+    u32 loc_idx = locs_add(&r->locs, file_idx, dest->line, dest->col);
+    tags_add(&r->tags, src, loc_idx);
 }
 
 void refs_trim(Refs* r) {
     r->files = files_trim(r->files);
     r->tags = tags_trim(r->tags);
+    r->locs = locs_trim(r->locs);
     files_visitTags(r->files, tags_sort, r->tags);
 }
 
@@ -459,12 +559,13 @@ RefDest refs_findRef(const Refs* r, const RefDest* origin) {
     if (start_tag == NOT_FOUND) return result;
 
     u32 end_tag = files_getTagEnd(r->files, file_id);
-    const Dest* dest = tags_find(r->tags, origin, start_tag, end_tag);
-    if (dest) {
-        result.filename = files_idx2name(r->files, dest->file_id);
-        result.line = dest->line;
-        result.col = dest->col;
-    }
+    u32 loc_idx = tags_find(r->tags, origin, start_tag, end_tag);
+    if (loc_idx == NOT_FOUND) return result;
+
+    const Loc* loc = loc_idx2loc(r->locs, loc_idx);
+    result.filename = files_idx2name(r->files, loc->file_id);
+    result.line = loc->line;
+    result.col = loc->col;
 
     return result;
 }
@@ -472,18 +573,14 @@ RefDest refs_findRef(const Refs* r, const RefDest* origin) {
 void refs_dump(const Refs* r, bool verbose) {
     files_dump(r->files, verbose);
     tags_dump(r->tags, verbose);
+    locs_dump(r->locs, verbose);
 }
 
 /*
-    Idea:
-    - IDEA: we could filter all duplicate refs to same location (=Def) and put that in another section as well
-        then the Names section could also reference to that as well.
-        Big.c2: 16086 tags, to 2834 different Defs, would save about 50 Kb
-        -> Measure how long it takes to generate then (need to filter each tag)
-            -> BEFORE big took 800-900 usec, 257556 bytes (Performance mode)
-            -> AFTER ..
-        -> this is a section called Locations (Locs)
-    - add a new section: names -> Decls
+    - remove NOT_FOUND, just use 0 (skip first Tag/Loc entry to allow this?)
+    - add a new section: names, used to search by Name, get either Loc or All refs
+        Name -> strings (like FileIndex) + u32 array (like indexes)
+            how to handle duplicates?
     - To see all references of the name, simply search all Tags for usage (using Files_visitor)
 */
 
