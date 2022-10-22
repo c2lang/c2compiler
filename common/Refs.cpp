@@ -432,8 +432,6 @@ void refs_add_file(Refs* r, const char* filename) {
 }
 
 void refs_add_tag(Refs* r, const RefSrc* src, const RefDest* dest) {
-    // TODO cache last dest_filename, if same (ptr) return last entry
-    // Note: filename might already be added, but files_add checks for dups
     u32 dst_idx = files_add(&r->files, dest->filename, NOT_FOUND);
     tags_add(&r->tags, src, dst_idx, dest->line, dest->col);
 }

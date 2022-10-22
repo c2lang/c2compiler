@@ -324,7 +324,7 @@ int main(int argc, const char *argv[])
         buildFilePtr = &buildFile;
     }
 
-    PluginManager pluginMgr(opts.verbose);
+    PluginManager pluginMgr(opts.verbose, opts.printTiming);
     if (plugin_dir) pluginMgr.addPath(plugin_dir);
     if (buildFilePtr) {
         for (StringListConstIter iter = buildFilePtr->pluginDirs.begin();

@@ -26,7 +26,7 @@ class Plugin;
 
 class PluginManager : public PluginHandler {
 public:
-    PluginManager(bool verbose_);
+    PluginManager(bool verbose_, bool printTiming_);
     ~PluginManager();
 
     void print() const;
@@ -67,6 +67,7 @@ private:
     typedef std::vector<std::string> Paths;
     Paths paths;
     bool verbose;
+    bool printTiming;
 };
 
 }

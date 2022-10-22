@@ -49,8 +49,9 @@ private:
 }
 
 
-PluginManager::PluginManager(bool verbose_)
+PluginManager::PluginManager(bool verbose_, bool printTiming_)
     : verbose(verbose_)
+    , printTiming(printTiming_)
 {}
 
 PluginManager::~PluginManager() {
@@ -229,7 +230,10 @@ bool PluginManager::generate(C2Builder& builder, const c2lang::SourceManager& sr
         PluginWrapper& wrapper = plugins[i];
         if (wrapper.active) {
             if (verbose) Log::log(COL_VERBOSE, "plugin %s generate()", wrapper.name.c_str());
+            uint64_t t1 = Utils::getCurrentTime();
             if (!wrapper.plugin->generate(builder, src_mgr)) return false;
+            uint64_t t2 = Utils::getCurrentTime();
+            if (printTiming) Log::log(COL_TIME, "plugin %s generate() took %lu usec", wrapper.name.c_str(), t2 - t1);
         }
     }
     return true;
