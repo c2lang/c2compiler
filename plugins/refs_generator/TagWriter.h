@@ -41,8 +41,6 @@ private:
     friend class TagVisitor;
 
     void analyse(const AST& ast);
-    void addRef(unsigned src_line, unsigned src_col, const std::string&  symbol,
-                const std::string& dest_file, unsigned dst_line, unsigned dst_col);
 
     const c2lang::SourceManager& SM;
     Refs* refs;

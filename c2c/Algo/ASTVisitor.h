@@ -45,6 +45,8 @@ public:
     void run();
 
     virtual void visitIdentifierExpr(const IdentifierExpr* I) = 0;
+
+    virtual void visitDecl(const Decl* d) = 0;
 private:
     // Decl
     void checkDecl(const Decl* D);

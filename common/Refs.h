@@ -40,18 +40,20 @@ typedef struct Refs_ Refs;
 
 Refs* refs_create(void);
 
+void refs_free(Refs* r);
+
 Refs* refs_load(const char* filename);
 
 bool refs_write(const Refs* r, const char* filename);
 
-void refs_free(Refs* r);
+void refs_trim(Refs* r);
 
 void refs_add_file(Refs* r, const char* filename);
 
 // note: source file must already be set by add_file()
 void refs_add_tag(Refs* r, const RefSrc* src, const RefDest* dest);
 
-void refs_trim(Refs* r);
+void refs_add_symbol(Refs* r, const char* symbolname, RefDest* dest);
 
 // Returns NULL as filename if not found
 RefDest refs_findRef(const Refs* r, const RefDest* origin);

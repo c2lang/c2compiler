@@ -30,6 +30,7 @@ void ASTVisitor::run() {
 }
 
 void ASTVisitor::checkDecl(const Decl* D) {
+    visitDecl(D);
     switch (D->getKind()) {
     case DECL_FUNC:
         checkFunctionDecl(cast<FunctionDecl>(D));

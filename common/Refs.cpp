@@ -34,12 +34,13 @@ typedef uint16_t u16;
 
 /*
     Design:
-    - the files consists of sections (Files, Tags, Locations, ..)
+    - the files consists of sections (Files, Tags, Locations, Symbols)
     - each section starts with a 32-bit section-size
     - to load/store, read/write the whole section
     - Files contain the filenames and start-tags
     - Tags contain the original source locations + length, points to Location idx
     - Locations contain the symbol locations
+    - Symbols contains symbol names with their location idx
 */
 
 // ------ MMap ------
@@ -190,14 +191,14 @@ static const char* files_idx2name(const RefFiles* f, u32 file_id) {
     return names + f->name_indexes[file_id];
 }
 
-// NOTE: return (-1) if not found
+// NOTE: return NOT_FOUND if not found
 static u32 files_name2idx(const RefFiles* f, const char* filename) {
     const char* names = FILES_NAMES(f);
     for (u32 i=0; i<f->idx_count; i++) {
         const char* name = names + f->name_indexes[i];
         if (strcmp(name, filename) == 0) return i;
     }
-    return (u32)-1;
+    return NOT_FOUND;
 }
 
 // Note: if tag_start == NOT_FOUND, dont set
@@ -210,7 +211,7 @@ static u32 files_add(RefFiles** f_ptr, const char* filename, u32 tag_start) {
     if (idx == NOT_FOUND) {
 
         u32 len = strlen(filename) + 1;
-        if (f->idx_count == f->idx_cap || f->names_len + len == f->names_cap) {
+        if (f->idx_count == f->idx_cap || f->names_len + len > f->names_cap) {
             // For now just resize both name_indexes and names
             f = files_resize(f, f->idx_count * 2, f->names_len * 2);
             *f_ptr = f;
@@ -405,8 +406,6 @@ static Locs* locs_create(u32 capacity) {
     return t;
 }
 
-//static u32 locs_getCount(const Locs* t) { return t->count; }
-
 static Locs* locs_resize(Locs* t, u32 capacity) {
     Locs* t2 = locs_create(capacity);
     if (t->count) {
@@ -464,12 +463,112 @@ static void locs_dump(const Locs* t, bool verbose) {
 }
 
 
+// ------ Symbols ------
+
+#define SYMBOLS_LOCS(x) ((u32*)(((char*) x->name_indexes) +  x->idx_cap * sizeof(u32)))
+#define SYMBOLS_NAMES(x) (((char*) x->name_indexes) +  x->idx_cap * sizeof(u32) * 2)
+
+// NOTE: same struct members as RefFiles, create/resize the same, only add() is a bit different
+typedef struct {
+    u32 total_size;     // of whole Symbols
+    u32 idx_count;      // current number of entries
+    u32 idx_cap;        // max number of entries
+    u32 names_len;      // total len of 0-terminated names
+    u32 names_cap;
+    u32 loc_indexes[0];  // offsets in Locations
+    u32 name_indexes[0]; // offsets in names, names_cap long
+    // names (each 0-terminated)
+} Symbols;
+
+static Symbols* symbols_create(u32 max_idx, u32 max_data) {
+    u32 size = (u32)(sizeof(Symbols) + (max_idx * sizeof(u32) * 2) + max_data);
+    size = ROUND4(size);
+
+    Symbols* f = (Symbols*)malloc(size);
+    f->total_size = size;
+    f->idx_count = 0;
+    f->idx_cap = max_idx;
+    f->names_len = 0;
+    f->names_cap = max_data;
+    return f;
+}
+
+static Symbols* symbols_resize(Symbols* f, u32 max_idx, u32 max_data) {
+    Symbols* f2 = symbols_create(max_idx, max_data);
+    if (f->idx_count) {
+        f2->idx_count = f->idx_count;
+        memcpy(f2->name_indexes, f->name_indexes, f->idx_count * sizeof(u32));
+        memcpy(SYMBOLS_LOCS(f2), SYMBOLS_LOCS(f), f->idx_count * sizeof(u32));
+    }
+    if (f->names_len) {
+        f2->names_len = f->names_len;
+        memcpy(SYMBOLS_NAMES(f2), SYMBOLS_NAMES(f), f->names_len);
+    }
+    free(f);
+    return f2;
+}
+
+/*
+// NOTE: return NOT_FOUND if not found
+static u32 symbols_name2idx(const Symbols* f, const char* filename) {
+    const char* names = SYMBOLS_NAMES(f);
+    for (u32 i=0; i<f->idx_count; i++) {
+        const char* name = names + f->name_indexes[i];
+        if (strcmp(name, filename) == 0) return i;
+    }
+    return NOT_FOUND;
+}
+*/
+
+static void symbols_add(Symbols** f_ptr, const char* symbol_name, u32 loc_idx) {
+    Symbols* f = *f_ptr;
+
+    u32 len = strlen(symbol_name) + 1;
+    if (f->idx_count == f->idx_cap || f->names_len + len > f->names_cap) {
+        // For now just resize both name_indexes and names
+        f = symbols_resize(f, f->idx_count * 2, f->names_len * 2);
+        *f_ptr = f;
+    }
+
+    f->name_indexes[f->idx_count] = f->names_len;
+    u32* locs = SYMBOLS_LOCS(f);
+    locs[f->idx_count] = loc_idx;
+    f->idx_count++;
+
+    char* names = SYMBOLS_NAMES(f);
+    memcpy(names + f->names_len, symbol_name, len);
+    f->names_len += len;
+}
+
+static Symbols* symbols_trim(Symbols* f) {
+    if (f->idx_count == f->idx_cap && f->names_len == f->names_cap) return f;
+
+    return symbols_resize(f, f->idx_count, f->names_len);
+}
+
+static void symbols_dump(const Symbols* f, bool verbose) {
+    printf("Symbols: %u bytes  %u/%u entries  %u/%u data\n",
+        f->total_size,
+        f->idx_count, f->idx_cap,
+        f->names_len, f->names_cap);
+    if (verbose) {
+        const u32* locs = SYMBOLS_LOCS(f);
+        const char* names = SYMBOLS_NAMES(f);
+        for (u32 i=0; i<f->idx_count; i++) {
+            u32 idx = f->name_indexes[i];
+            printf("  [%5u] %5u %s\n", idx, locs[i], names+idx);
+        }
+    }
+}
+
+
 // ------ Refs ------
 
 struct Refs_ {
     RefFiles* files;
     Tags* tags;
     Locs* locs;
+    Symbols* symbols;
 };
 
 Refs* refs_create(void) {
@@ -477,7 +576,16 @@ Refs* refs_create(void) {
     r->files = files_create(32, 2048);
     r->tags = tags_create(128);
     r->locs = locs_create(64);
+    r->symbols = symbols_create(64, 512);
     return r;
+}
+
+void refs_free(Refs* r) {
+    section_free(r->files);
+    section_free(r->tags);
+    section_free(r->locs);
+    section_free(r->symbols);
+    free(r);
 }
 
 static Refs* refs_load_internal(MapFile f) {
@@ -497,10 +605,19 @@ static Refs* refs_load_internal(MapFile f) {
         return NULL;
     }
 
+    Symbols* symbols = (Symbols*)section_load(&f, sizeof(Symbols));
+    if (!symbols) {
+        section_free(files);
+        section_free(tags);
+        section_free(locs);
+        return NULL;
+    }
+
     Refs* r = (Refs*)calloc(1, sizeof(Refs));
     r->files = files;
     r->tags = tags;
     r->locs = locs;
+    r->symbols = symbols;
     return r;
 }
 
@@ -520,9 +637,18 @@ bool refs_write(const Refs* r, const char* filename) {
     if (!section_write(fd, r->files)) return false;
     if (!section_write(fd, r->tags)) return false;
     if (!section_write(fd, r->locs)) return false;
+    if (!section_write(fd, r->symbols)) return false;
 
     close(fd);
     return true;
+}
+
+void refs_trim(Refs* r) {
+    r->files = files_trim(r->files);
+    r->tags = tags_trim(r->tags);
+    r->locs = locs_trim(r->locs);
+    r->symbols = symbols_trim(r->symbols);
+    files_visitTags(r->files, tags_sort, r->tags);
 }
 
 void refs_add_file(Refs* r, const char* filename) {
@@ -537,17 +663,11 @@ void refs_add_tag(Refs* r, const RefSrc* src, const RefDest* dest) {
     tags_add(&r->tags, src, loc_idx);
 }
 
-void refs_trim(Refs* r) {
-    r->files = files_trim(r->files);
-    r->tags = tags_trim(r->tags);
-    r->locs = locs_trim(r->locs);
-    files_visitTags(r->files, tags_sort, r->tags);
-}
-
-void refs_free(Refs* r) {
-    section_free(r->files);
-    section_free(r->tags);
-    free(r);
+void refs_add_symbol(Refs* r, const char* symbol_name, RefDest* dest) {
+    // TODO have file-cache here, now on strcmp, later on PTR
+    u32 file_idx = files_add(&r->files, dest->filename, NOT_FOUND);
+    u32 loc_idx = locs_add(&r->locs, file_idx, dest->line, dest->col);
+    symbols_add(&r->symbols, symbol_name, loc_idx);
 }
 
 RefDest refs_findRef(const Refs* r, const RefDest* origin) {
@@ -574,13 +694,12 @@ void refs_dump(const Refs* r, bool verbose) {
     files_dump(r->files, verbose);
     tags_dump(r->tags, verbose);
     locs_dump(r->locs, verbose);
+    symbols_dump(r->symbols, verbose);
 }
 
 /*
-    - remove NOT_FOUND, just use 0 (skip first Tag/Loc entry to allow this?)
-    - add a new section: names, used to search by Name, get either Loc or All refs
-        Name -> strings (like FileIndex) + u32 array (like indexes)
-            how to handle duplicates?
-    - To see all references of the name, simply search all Tags for usage (using Files_visitor)
+    - To see all references of the symbol-name:
+        - lookup name in Symbols, get loc_id
+        - using files_visitor, scan all Locs for that loc_id
 */
 
