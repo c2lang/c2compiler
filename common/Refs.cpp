@@ -342,8 +342,8 @@ static bool tags_find_line(const Tag* tags, u32* left, u32* right, const u32 lin
         } else {
             u32 l = middle;
             u32 r = middle;
-            while (tags[l].src.line == line && l >= *left) l--;
-            while (tags[r].src.line == line && r < *right) r++;
+            while (tags[l-1].src.line == line && l-1 >= *left) l--;
+            while (tags[r+1].src.line == line && r+1 < *right) r++;
             *left = l;
             *right = r;
             return true;
@@ -363,7 +363,7 @@ static u32 tags_find(const Tags* t, const RefDest* origin, u32 start, u32 last) 
     for (u32 i=start; i<=last; i++) {
         const Tag* tag = &t->tags[i];
         const RefSrc* src = &tag->src;
-        if (src->col <= origin->col && (src->col + src->len) >= origin->col) {
+        if (src->col <= origin->col && origin->col < (src->col + src->len)) {
             return tag->loc_idx;
         }
     }
@@ -375,7 +375,7 @@ static void tags_dump(const Tags* t, bool verbose) {
     if (verbose) {
         for (u32 i=0; i<t->count; i++) {
             const Tag* tt = &t->tags[i];
-            printf("  %u:%u:%u -> %u\n", tt->src.line, tt->src.col, tt->src.len, tt->loc_idx);
+            printf("  [%5u] %u:%u:%u -> %u\n", i, tt->src.line, tt->src.col, tt->src.len, tt->loc_idx);
         }
     }
 }
