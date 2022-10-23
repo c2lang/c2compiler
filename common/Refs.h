@@ -42,9 +42,11 @@ Refs* refs_create(void);
 
 void refs_free(Refs* r);
 
+
 Refs* refs_load(const char* filename);
 
 bool refs_write(const Refs* r, const char* filename);
+
 
 void refs_trim(Refs* r);
 
@@ -55,14 +57,19 @@ void refs_add_tag(Refs* r, const RefSrc* src, const RefDest* dest);
 
 void refs_add_symbol(Refs* r, const char* symbolname, RefDest* dest);
 
+
 // Returns NULL as RefDest.filename if not found
 RefDest refs_findRef(const Refs* r, const RefDest* origin);
 
 // Returns NULL as RefDest.filename if not found
 RefDest refs_findSymbol(const Refs* r, const char* symbol_name);
 
-typedef void (*RefUsesFn)(void* arg, const char* filename, uint32_t line, uint16_t col);
+typedef void (*RefUsesFn)(void* arg, const RefDest* res);
+
+void refs_findRefUses(const Refs* r, const RefDest* origin, RefUsesFn fn, void* arg);
+
 void refs_findSymbolUses(const Refs* r, const char* symbol_name, RefUsesFn fn, void* arg);
+
 
 void refs_dump(const Refs* r, bool verbose);
 

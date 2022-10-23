@@ -40,7 +40,7 @@ typedef uint16_t u16;
     - Files contain the filenames and start-tags
     - Tags contain the original source locations + length, points to Location idx
     - Locations contain the symbol locations
-    - Symbols contains symbol names with their location idx
+    - Symbols contains global symbol names with their location idx (not locals/struct-members/params)
 */
 
 // ------ MMap ------
@@ -671,16 +671,20 @@ void refs_add_symbol(Refs* r, const char* symbol_name, RefDest* dest) {
     symbols_add(&r->symbols, symbol_name, loc_idx);
 }
 
-RefDest refs_findRef(const Refs* r, const RefDest* origin) {
-    RefDest result = { NULL, 0, 0 };
+static u32 refs_ref2loc(const Refs* r, const RefDest* origin) {
     u32 file_id = files_name2idx(r->files, origin->filename);
-    if (file_id == NOT_FOUND) return result;
+    if (file_id == NOT_FOUND) return NOT_FOUND;
 
     u32 start_tag = files_getTagStart(r->files, file_id);
-    if (start_tag == NOT_FOUND) return result;
+    if (start_tag == NOT_FOUND) return NOT_FOUND;
 
     u32 end_tag = files_getTagEnd(r->files, file_id);
     u32 loc_idx = tags_find(r->tags, origin, start_tag, end_tag);
+    return loc_idx;
+}
+
+static RefDest refs_loc2ref(const Refs* r, u32 loc_idx) {
+    RefDest result = { NULL, 0, 0 };
     if (loc_idx == NOT_FOUND) return result;
 
     const Loc* loc = loc_idx2loc(r->locs, loc_idx);
@@ -691,18 +695,14 @@ RefDest refs_findRef(const Refs* r, const RefDest* origin) {
     return result;
 }
 
+RefDest refs_findRef(const Refs* r, const RefDest* origin) {
+    u32 loc_idx = refs_ref2loc(r, origin);
+    return refs_loc2ref(r, loc_idx);
+}
+
 RefDest refs_findSymbol(const Refs* r, const char* symbol_name) {
-    RefDest result = { NULL, 0, 0 };
-
     u32 loc_idx = symbols_name2idx(r->symbols, symbol_name);
-    if (loc_idx == NOT_FOUND) return result;
-
-    const Loc* loc = loc_idx2loc(r->locs, loc_idx);
-    result.filename = files_idx2name(r->files, loc->file_id);
-    result.line = loc->line;
-    result.col = loc->col;
-
-    return result;
+    return refs_loc2ref(r, loc_idx);
 }
 
 typedef struct {
@@ -723,17 +723,27 @@ static void refs_search_tags(void* arg, u32 file_idx, u32 start, u32 end) {
     for (u32 i=start; i<end; i++) {
         const Tag* tt = &tags[i];
         if (tt->loc_idx == loc_idx) {
-            info->fn(info->arg, files_idx2name(info->r->files, file_idx), tt->src.line, tt->src.col);
+            RefDest result = { files_idx2name(info->r->files, file_idx), tt->src.line, tt->src.col };
+            info->fn(info->arg, &result);
         }
     }
 }
 
-void refs_findSymbolUses(const Refs* r, const char* symbol_name, RefUsesFn fn, void* arg) {
-    u32 loc_idx = symbols_name2idx(r->symbols, symbol_name);
+static void refs_loc2uses(const Refs* r, u32 loc_idx, RefUsesFn fn, void* arg) {
     if (loc_idx == NOT_FOUND) return;
 
     UsesInfo info = { r, fn, arg, loc_idx };
     files_visitTags(r->files, refs_search_tags, &info);
+}
+
+void refs_findRefUses(const Refs* r, const RefDest* origin, RefUsesFn fn, void* arg) {
+    u32 loc_idx = refs_ref2loc(r, origin);
+    refs_loc2uses(r, loc_idx, fn, arg);
+}
+
+void refs_findSymbolUses(const Refs* r, const char* symbol_name, RefUsesFn fn, void* arg) {
+    u32 loc_idx = symbols_name2idx(r->symbols, symbol_name);
+    refs_loc2uses(r, loc_idx, fn, arg);
 }
 
 void refs_dump(const Refs* r, bool verbose) {
