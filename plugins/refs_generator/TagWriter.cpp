@@ -40,6 +40,43 @@ public:
     virtual ~TagVisitor() {}
 
     virtual void visitDecl(const Decl* d) {
+        switch (d->getKind()) {
+        case DECL_FUNC:
+            break;
+        case DECL_VAR: {
+            const VarDecl* vd = cast<VarDecl>(d);
+            if (!vd->isGlobal()) return;
+            break;
+        }
+        case DECL_ENUMVALUE:
+            return; // should not come here
+        case DECL_ALIASTYPE:
+            break;
+        case DECL_STRUCTTYPE:
+            break;
+        case DECL_ENUMTYPE: {
+            const EnumTypeDecl* e = cast<EnumTypeDecl>(d);
+            for (unsigned i=0; i<e->numConstants(); i++) {
+                const EnumConstantDecl* ecd = e->getConstant(i);
+                {
+                    c2lang::PresumedLoc loc = SM.getPresumedLoc(ecd->getLocation());
+                    if (loc.isInvalid()) return;
+                    RefDest dest = { loc.getFilename(), loc.getLine(), (uint16_t)loc.getColumn() };
+                    refs_add_symbol(refs, ecd->getName(), &dest);
+                }
+            }
+            // TODO get Constants
+            break;
+        }
+        case DECL_FUNCTIONTYPE:
+        case DECL_ARRAYVALUE:
+            return;
+        case DECL_IMPORT:
+        case DECL_LABEL:
+        case DECL_STATIC_ASSERT:
+            return;
+        }
+
         c2lang::PresumedLoc loc = SM.getPresumedLoc(d->getLocation());
         if (loc.isInvalid()) return;
         RefDest dest = { loc.getFilename(), loc.getLine(), (uint16_t)loc.getColumn() };
