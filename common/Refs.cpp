@@ -425,13 +425,22 @@ static u32 locs_add(Locs** t_ptr, u32 file_id, u32 line, u16 col) {
 
     // Filter duplicate entries
     u32 idx = NOT_FOUND;
+
+    // Compare locs as u64, faster
+    typedef union {
+        Loc loc;
+        uint64_t num;
+    } U64Loc;
+    U64Loc l2 = { { line, (uint16_t)file_id, col } };
+    const uint64_t wanted = l2.num;
+    const uint64_t* locs = (uint64_t*)t->locs;
     for (u32 i=0; i<t->count; i++) {
-        const Loc* loc = &t->locs[i];
-        if (loc->line == line && loc->file_id == file_id && loc->col == col) {
+        if (wanted == locs[i]) {
             idx = i;
             break;
         }
     }
+
     if (idx != NOT_FOUND) return idx;
 
     if (t->count == t->capacity) {
@@ -574,6 +583,10 @@ struct Refs_ {
     u32 cur_file_idx;
     // in read-mode file.map will be non-NULL, in write mode NULL
     MapFile file;
+
+    // dest-file cache for refs_add_tag
+    const char* dest_file_ptr;
+    u32 dest_file_idx;
 };
 
 Refs* refs_create(void) {
@@ -662,17 +675,27 @@ void refs_add_file(Refs* r, const char* filename) {
     r->cur_file_idx = files_add(&r->files, filename, tags_getCount(r->tags));
 }
 
+static u32 refs_add_file_cached(Refs* r, const char* filename) {
+    // Note: we filter by ptr, this is not perfect, but much faster than by string
+    u32 file_idx;
+    if (r->dest_file_ptr == filename) {
+        file_idx = r->dest_file_idx;
+    } else {
+        file_idx = files_add(&r->files, filename, NOT_FOUND);
+        r->dest_file_ptr = filename;
+        r->dest_file_idx = file_idx;
+    }
+    return file_idx;
+}
+
 void refs_add_tag(Refs* r, const RefSrc* src, const RefDest* dest) {
-    // Caching dest.fileName ptr + idx does not work:
-    // C2C native does have same ptr for each string, but C2C C++ does not.
-    u32 file_idx = files_add(&r->files, dest->filename, NOT_FOUND);
+    u32 file_idx = refs_add_file_cached(r, dest->filename);
     u32 loc_idx = locs_add(&r->locs, file_idx, dest->line, dest->col);
     tags_add(&r->tags, src, loc_idx);
 }
 
 void refs_add_symbol(Refs* r, const char* symbol_name, RefDest* dest) {
-    // TODO have file-cache here, now on strcmp, later on PTR
-    u32 file_idx = files_add(&r->files, dest->filename, NOT_FOUND);
+    u32 file_idx = refs_add_file_cached(r, dest->filename);
     u32 loc_idx = locs_add(&r->locs, file_idx, dest->line, dest->col);
     symbols_add(&r->symbols, symbol_name, loc_idx);
 }
