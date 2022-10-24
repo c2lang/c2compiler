@@ -63,7 +63,7 @@ public func Type* TypePool.getPointerType(TypePool* p, QualType qt) {
     // TODO if idx == 0, just create a new pointer
     Type* ptr = p.pointers[t.idx];
     if (ptr == nil) {
-        ptr = PointerType.create(p.context, qt);
+        ptr = cast<Type*>(PointerType.create(p.context, qt));
         p.pointers[t.idx] = ptr;
 
         // TODO also set canonical if inner has canonical (self?)

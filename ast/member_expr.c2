@@ -27,7 +27,7 @@ public func MemberExpr* MemberExpr.create(ast_context.Context* c, Expr* base, Sr
     return e;
 }
 
-public func Expr* MemberExpr.getBase(MemberExpr* e) { return e.base; }
+public func Expr* MemberExpr.getBase(const MemberExpr* e) { return e.base; }
 
 public func Expr** MemberExpr.getBase2(MemberExpr* e) { return &e.base; }
 

@@ -102,7 +102,7 @@ public func bool QualType.hasCanonicalType(const QualType* qt) @(inline) {
     return t.canonicalType.ptr != 0;
 }
 
-public func QualType QualType.getCanonicalType(QualType* qt) @(inline) {
+public func QualType QualType.getCanonicalType(const QualType* qt) @(inline) {
     const Type* t = qt.getType();
     QualType canon = t.canonicalType;
     canon.copyFlags(*qt);

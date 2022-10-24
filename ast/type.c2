@@ -51,7 +51,7 @@ func void Type.init(Type* t, TypeKind k) @(inline) {
 public func TypeKind Type.getKind(const Type* t) @(inline) { return cast<TypeKind>(t.typeBits.kind); }
 
 public func bool Type.hasCanonicalType(const Type* t) @(inline) {
-    return t.canonicalType.ptr != nil;
+    return t.canonicalType.ptr != 0;
 }
 
 public func QualType Type.getCanonicalType(const Type* t) @(inline) { return t.canonicalType; }

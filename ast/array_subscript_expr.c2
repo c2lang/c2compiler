@@ -24,10 +24,10 @@ public func ArraySubscriptExpr* ArraySubscriptExpr.create(ast_context.Context* c
     return e;
 }
 
-public func Expr* ArraySubscriptExpr.getBase(ArraySubscriptExpr* e) { return e.base; }
+public func Expr* ArraySubscriptExpr.getBase(const ArraySubscriptExpr* e) { return e.base; }
 public func Expr** ArraySubscriptExpr.getBase2(ArraySubscriptExpr* e) { return &e.base; }
 
-public func Expr* ArraySubscriptExpr.getIndex(ArraySubscriptExpr* e) { return e.idx; }
+public func Expr* ArraySubscriptExpr.getIndex(const ArraySubscriptExpr* e) { return e.idx; }
 public func Expr** ArraySubscriptExpr.getIndex2(ArraySubscriptExpr* e) { return &e.idx; }
 
 func void ArraySubscriptExpr.print(const ArraySubscriptExpr* e, string_buffer.Buf* out, u32 indent) {
