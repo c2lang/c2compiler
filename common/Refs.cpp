@@ -26,8 +26,9 @@
 #include <errno.h>
 #include <sys/mman.h>
 
-typedef uint32_t u32;
 typedef uint16_t u16;
+typedef uint32_t u32;
+typedef uint64_t u64;
 
 #define ROUND4(x) ((x + 3) & ~0x3)
 #define NOT_FOUND ((u32)-1)
@@ -306,7 +307,6 @@ static bool tag_compare(void* arg, const void* left, const void* right) {
 
 static void tags_sort(void* arg, u32 file_idx, u32 start, u32 end) {
     Tags* t = (Tags*)arg;
-    //if (end > t->count) end = t->count;
     if (end - start <= 1) return;
     quicksort(t->tags + start, end - start, sizeof(Tag), tag_compare, NULL);
 }
@@ -353,7 +353,6 @@ static bool tags_find_line(const Tag* tags, u32* left, u32* right, const u32 lin
 
 // Note: excluding last
 static u32 tags_find(const Tags* t, const RefDest* origin, u32 start, u32 last) {
-    //if (last > t->count) last = t->count -1;
 
     if (!tags_find_line(t->tags, &start, &last, origin->line)) return NOT_FOUND;
 
@@ -423,32 +422,12 @@ static Locs* locs_trim(Locs* l) {
 static u32 locs_add(Locs** t_ptr, u32 file_id, u32 line, u16 col) {
     Locs* t = *t_ptr;
 
-    // Filter duplicate entries
-    u32 idx = NOT_FOUND;
-
-    // Compare locs as u64, faster
-    typedef union {
-        Loc loc;
-        uint64_t num;
-    } U64Loc;
-    U64Loc l2 = { { line, (uint16_t)file_id, col } };
-    const uint64_t wanted = l2.num;
-    const uint64_t* locs = (uint64_t*)t->locs;
-    for (u32 i=0; i<t->count; i++) {
-        if (wanted == locs[i]) {
-            idx = i;
-            break;
-        }
-    }
-
-    if (idx != NOT_FOUND) return idx;
-
     if (t->count == t->capacity) {
         t = locs_resize(t, t->count * 2);
         *t_ptr = t;
     }
 
-    idx = t->count;
+    u32 idx = t->count;
     Loc* loc = &t->locs[idx];
     loc->line = line;
     loc->file_id = file_id;
@@ -570,6 +549,97 @@ static void symbols_dump(const Symbols* f, bool verbose) {
 }
 
 
+// ------ LOCATIONS CACHE (not saved in file )------
+
+typedef union {
+    Loc loc;
+    u64 num;
+} U64Loc;
+
+typedef struct {
+    u64 loc;
+    u32 idx;
+} CacheLoc;
+
+typedef struct {
+    u32 total_size;
+    u32 count;
+    u32 capacity;
+    CacheLoc locs[0];    // caps times
+} LocsCache;
+
+static LocsCache* locs_cache_create(u32 capacity) {
+    u32 size = sizeof(LocsCache) + capacity * sizeof(CacheLoc);
+    size = ROUND4(size);
+    LocsCache* t = (LocsCache*)malloc(size);
+    t->total_size = size;
+    t->count = 0;
+    t->capacity = capacity;
+    return t;
+}
+
+static LocsCache* locs_cache_resize(LocsCache* t, u32 capacity) {
+    LocsCache* t2 = locs_cache_create(capacity);
+    if (t->count) {
+        t2->count = t->count;
+        memcpy(t2->locs, t->locs, t->count * sizeof(CacheLoc));
+    }
+    free(t);
+    return t2;
+}
+
+static u32 locs_cache_add(LocsCache** t_ptr, u32 file_id, u32 line, u16 col) {
+    LocsCache* t = *t_ptr;
+
+    const U64Loc l2 = { { line, (uint16_t)file_id, col } };
+    const u64 loc = l2.num;
+
+    u32 left = 0;
+    u32 right = t->count;
+
+    if (t->count == 0) {
+        CacheLoc* c = &t->locs[0];
+        c->loc = loc;
+        c->idx = 0;       // Note: locs will assign the same index
+        t->count = 1;
+        return NOT_FOUND;
+    }
+
+    u32 middle = (left + right) / 2;
+    while (left != right) {
+        middle = (left + right) / 2;
+        const CacheLoc* cur = &t->locs[middle];
+        if (loc > cur->loc) {
+            if (left == middle) break;  // why is this needed?
+            left = middle;
+        } else if (loc < cur->loc) {
+            if (right == middle) break; // why is this needed
+            right = middle;
+        } else {
+            return cur->idx;
+        }
+    }
+
+    if (t->count == t->capacity) {
+        t = locs_cache_resize(t, t->count * 2);
+        *t_ptr = t;
+    }
+
+    if (loc > t->locs[middle].loc) middle++;    // insert after current
+
+    // keep everything the same up to middle, shift the rest 1 index to the right
+    for (u32 i=t->count; i>middle; i--) {
+        t->locs[i] = t->locs[i-1];
+    }
+
+    CacheLoc* c = &t->locs[middle];
+    c->loc = loc;
+    c->idx = t->count;       // Note: locs will assign the same index
+
+    t->count++;
+    return NOT_FOUND;   // needs to be added to locs
+}
+
 // ------ Refs ------
 
 struct Refs_ {
@@ -579,14 +649,15 @@ struct Refs_ {
     Locs* locs;
     Symbols* symbols;
 
-    // runtime
+    // runtime (not saved to files
     u32 cur_file_idx;
-    // in read-mode file.map will be non-NULL, in write mode NULL
-    MapFile file;
+    MapFile file; // in read-mode file.map will be non-NULL, in write mode NULL
 
-    // dest-file cache for refs_add_tag
     const char* dest_file_ptr;
     u32 dest_file_idx;
+
+    // locations cache
+    LocsCache* locs_cache; // only in write mode, not saved to file
 };
 
 Refs* refs_create(void) {
@@ -595,6 +666,8 @@ Refs* refs_create(void) {
     r->tags = tags_create(128);
     r->locs = locs_create(64);
     r->symbols = symbols_create(64, 512);
+
+    r->locs_cache = locs_cache_create(64);
     // note: maps + size will be NULL/0
     return r;
 }
@@ -607,6 +680,7 @@ void refs_free(Refs* r) {
         section_free(r->tags);
         section_free(r->locs);
         section_free(r->symbols);
+        section_free(r->locs_cache);
     }
     free(r);
 }
@@ -675,28 +749,31 @@ void refs_add_file(Refs* r, const char* filename) {
     r->cur_file_idx = files_add(&r->files, filename, tags_getCount(r->tags));
 }
 
-static u32 refs_add_file_cached(Refs* r, const char* filename) {
+static u32 refs_add_dest(Refs* r, const RefDest* dest) {
     // Note: we filter by ptr, this is not perfect, but much faster than by string
     u32 file_idx;
-    if (r->dest_file_ptr == filename) {
+    if (r->dest_file_ptr == dest->filename) {
         file_idx = r->dest_file_idx;
     } else {
-        file_idx = files_add(&r->files, filename, NOT_FOUND);
-        r->dest_file_ptr = filename;
+        file_idx = files_add(&r->files, dest->filename, NOT_FOUND);
+        r->dest_file_ptr = dest->filename;
         r->dest_file_idx = file_idx;
     }
-    return file_idx;
+
+    u32 loc_idx = locs_cache_add(&r->locs_cache, file_idx, dest->line, dest->col);
+    if (loc_idx == NOT_FOUND) {
+        loc_idx = locs_add(&r->locs, file_idx, dest->line, dest->col);
+    }
+    return loc_idx;
 }
 
 void refs_add_tag(Refs* r, const RefSrc* src, const RefDest* dest) {
-    u32 file_idx = refs_add_file_cached(r, dest->filename);
-    u32 loc_idx = locs_add(&r->locs, file_idx, dest->line, dest->col);
+    u32 loc_idx = refs_add_dest(r, dest);
     tags_add(&r->tags, src, loc_idx);
 }
 
 void refs_add_symbol(Refs* r, const char* symbol_name, RefDest* dest) {
-    u32 file_idx = refs_add_file_cached(r, dest->filename);
-    u32 loc_idx = locs_add(&r->locs, file_idx, dest->line, dest->col);
+    u32 loc_idx = refs_add_dest(r, dest);
     symbols_add(&r->symbols, symbol_name, loc_idx);
 }
 
@@ -745,9 +822,6 @@ static void refs_search_tags(void* arg, u32 file_idx, u32 start, u32 end) {
     const u32 loc_idx = info->loc_idx;
     const Tag* tags = info->r->tags->tags;
 
-    //u32 max = tags_getCount(info->r->tags);
-    //if (end > max) end = max;
-
     for (u32 i=start; i<end; i++) {
         const Tag* tt = &tags[i];
         if (tt->loc_idx == loc_idx) {
@@ -782,6 +856,3 @@ void refs_dump(const Refs* r, bool verbose) {
     symbols_dump(r->symbols, verbose);
 }
 
-/*
- *  FIX: files are not added in order of analysing. So the end tag is not always the start-tag of the next file!
- */
