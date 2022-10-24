@@ -85,11 +85,9 @@ static void* section_load(MapFile* f, u32 minSize) {
     u32 size = (u32)f->size;
     if (size < minSize) return NULL;
 
-    u32 load_size = section_size(f->map);
+    void* section = f->map;
+    u32 load_size = section_size(section);
     if (load_size > size) return NULL;
-
-    void* section = malloc(load_size);
-    memcpy(section, f->map, load_size);
 
     f->map = ((uint8_t*)f->map) + load_size;
     f->size -= load_size;
@@ -342,8 +340,8 @@ static bool tags_find_line(const Tag* tags, u32* left, u32* right, const u32 lin
         } else {
             u32 l = middle;
             u32 r = middle;
-            while (tags[l-1].src.line == line && l-1 >= *left) l--;
-            while (tags[r+1].src.line == line && r+1 < *right) r++;
+            while (l-1 >= *left && l >= 1 && tags[l-1].src.line == line) l--;
+            while (r+1 < *right && tags[r+1].src.line == line) r++;
             *left = l;
             *right = r;
             return true;
@@ -566,10 +564,13 @@ static void symbols_dump(const Symbols* f, bool verbose) {
 // ------ Refs ------
 
 struct Refs_ {
+    // Sections
     RefFiles* files;
     Tags* tags;
     Locs* locs;
     Symbols* symbols;
+    // in read-mode file.map will be non-NULL, in write mode NULL
+    MapFile file;
 };
 
 Refs* refs_create(void) {
@@ -578,14 +579,19 @@ Refs* refs_create(void) {
     r->tags = tags_create(128);
     r->locs = locs_create(64);
     r->symbols = symbols_create(64, 512);
+    // note: maps + size will be NULL/0
     return r;
 }
 
 void refs_free(Refs* r) {
-    section_free(r->files);
-    section_free(r->tags);
-    section_free(r->locs);
-    section_free(r->symbols);
+    if (r->file.map) {
+        close_file(r->file);
+    } else {
+        section_free(r->files);
+        section_free(r->tags);
+        section_free(r->locs);
+        section_free(r->symbols);
+    }
     free(r);
 }
 
@@ -594,31 +600,20 @@ static Refs* refs_load_internal(MapFile f) {
     if (!files) return NULL;
 
     Tags* tags = (Tags*)section_load(&f, sizeof(Tags));
-    if (!tags) {
-        section_free(files);
-        return NULL;
-    }
+    if (!tags) return NULL;
 
     Locs* locs = (Locs*)section_load(&f, sizeof(Locs));
-    if (!locs) {
-        section_free(files);
-        section_free(tags);
-        return NULL;
-    }
+    if (!locs) return NULL;
 
     Symbols* symbols = (Symbols*)section_load(&f, sizeof(Symbols));
-    if (!symbols) {
-        section_free(files);
-        section_free(tags);
-        section_free(locs);
-        return NULL;
-    }
+    if (!symbols) return NULL;
 
     Refs* r = (Refs*)calloc(1, sizeof(Refs));
     r->files = files;
     r->tags = tags;
     r->locs = locs;
     r->symbols = symbols;
+    // Note: dont store MapFile here, since it has been changed
     return r;
 }
 
@@ -627,7 +622,11 @@ Refs* refs_load(const char* filename) {
     if (!f.map) return NULL;
 
     Refs* r = refs_load_internal(f);    // NOTE: must be copy, since it will be modified
-    close_file(f);
+    if (r) {
+        r->file = f;
+    } else {
+        close_file(f);
+    }
     return r;
 }
 
