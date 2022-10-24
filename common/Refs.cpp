@@ -33,14 +33,14 @@ typedef uint16_t u16;
 #define NOT_FOUND ((u32)-1)
 
 /*
-    Design:
-    - the files consists of sections (Files, Tags, Locations, Symbols)
-    - each section starts with a 32-bit section-size
-    - to load/store, read/write the whole section
-    - Files contain the filenames and start-tags
-    - Tags contain the original source locations + length, points to Location idx
-    - Locations contain the symbol locations
-    - Symbols contains global symbol names with their location idx (not locals/struct-members/params)
+Design:
+- the files consists of sections (Files, Tags, Locations, Symbols)
+- each section starts with a 32-bit section-size
+- to load/store, read/write the whole section
+- Files contain the filenames and start-tags
+- Tags contain the original source locations + length, points to Location idx
+- Locations contain the symbol locations
+- Symbols contains global symbol names with their location idx (not locals/struct-members/params)
 */
 
 // ------ MMap ------
@@ -60,7 +60,7 @@ static MapFile open_file(const char* filename) {
     if (err) return result;
 
     int size = (int)statbuf.st_size;
-    int prot = PROT_READ | PROT_WRITE;
+    int prot = PROT_READ;
     int flags = MAP_PRIVATE;
     void* map = mmap(NULL, (size_t)size, prot, flags, fd, 0);
     if (map == (void*)-1) {
