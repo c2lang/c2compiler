@@ -25,6 +25,8 @@ executable c2c
     common/string_pool.c2
     common/utils.c2
 
+    common/quicksort.c2
+
     parser/token.c2
     parser/c2_tokenizer.c2
     parser/c2_parser.c2
@@ -130,5 +132,8 @@ executable c2c
     compiler/module_list.c2
     compiler/source_mgr.c2
 	compiler/main.c2
+
+    generator/refs.c2
+    generator/refs_generator.c2
 end
 

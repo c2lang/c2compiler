@@ -19,6 +19,7 @@ import source_mgr;
 import string_list;
 import string_pool;
 import utils;
+import refs_generator;
 
 import string;
 import stdlib;
@@ -262,6 +263,13 @@ func void Compiler.build(Compiler* c,
 
     u64 t2_end = utils.now();
     printf("analysis took %lu usec\n", t2_end - t2_start);
+
+    // Temp here (TODO move to plugin)
+    u64 gen1 = utils.now();
+    refs_generator.generate(c.sm, c.components, c.num_components);
+    u64 gen2 = utils.now();
+    printf("refs generation took %lu usec\n", gen2 - gen1);
+
 
 #if DumpTokens
 #else

@@ -1,0 +1,69 @@
+module refs_generator;
+
+import ast;
+import component;
+import refs;
+import source_mgr;
+import utils;
+
+type Generator struct {
+    source_mgr.SourceMgr* sm;
+    refs.Refs* refs;
+    const char* curfile;
+}
+
+func void Generator.on_decl(void* arg, const ast.Decl* d) {
+    Generator* gen = arg;
+    switch (d.getKind()) {
+    case Function:
+        break;
+    case Import:
+        return;
+    case StructType:
+        break;
+    case EnumType:
+        ast.EnumTypeDecl* etd = cast<ast.EnumTypeDecl*>(d);
+        const ast.EnumConstantDecl** constants = etd.getConstants();
+        for (u32 i=0; i<etd.getNumConstants(); i++) {
+            Generator.on_decl(arg, constants[i]);
+        }
+        break;
+    case EnumConstant:
+        break;
+    case FunctionType:
+        break;
+    case AliasType:
+        break;
+    case Var:
+        break;
+    case StaticAssert:
+        return;
+    }
+
+    source_mgr.Location loc = gen.sm.getLocation(d.getLoc());
+    refs.RefDest dest = { gen.curfile, loc.line, cast<u16>(loc.column) }
+    gen.refs.add_symbol(d.getName(), & dest);
+}
+
+func void Generator.on_ast(void* arg, const ast.AST* a) {
+    Generator* gen = arg;
+    gen.curfile = a.getFilename();
+    gen.refs.add_file(a.getFilename());
+    a.visitDecls(Generator.on_decl, arg);
+}
+
+func void Generator.on_module(void* arg, const ast.Module* m) {
+    m.visitASTs(Generator.on_ast, arg);
+}
+
+public func void generate(source_mgr.SourceMgr* sm, const component.Component** c, u32 count) {
+    Generator gen = { sm, refs.Refs.create(), nil }
+
+    for (u32 i=0; i<count; i++) {
+        c[i].visitModules(Generator.on_module, &gen);
+    }
+
+    gen.refs.write("refs");
+    gen.refs.free();
+}
+
