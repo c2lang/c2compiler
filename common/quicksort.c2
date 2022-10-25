@@ -1,0 +1,85 @@
+/* Copyright Bas van den Berg 2022 */
+
+module quicksort;
+
+func void swap(u8* item, u8* other, usize size) {
+    const u8* end = item + size;
+    while (item < end) {
+        u8 tmp = *other;
+        *other = *item;
+        *item = tmp;
+        other++;
+        item++;
+    }
+}
+
+public type CompareFn func bool(void* arg, const void* left, const void* right);
+
+// Not the fastest solution, code is simple though
+public func void sort(void* items, usize count, usize item_size, CompareFn is_less, void* arg)
+{
+    if (count <= 1) return;
+
+    u8* begin = items;
+    u8* end = begin + count * item_size;
+
+    u8* left = begin;
+    u8* pivot = begin + (count / 2) * item_size;
+    u8* right = end - item_size;
+
+    /**
+     * To see that these inner while loops do not run out bounds, notice that:
+     *
+     *  - initially left < pivot < right by address
+     *  - is_less is not reflexive, not even partially  (ie. is_less(x, x) == false)
+     *  - is_less is transitive                         (ie. is_less(x, y) && is_less(y, z) => is_less(x, z))
+     *  - is_less satisfies connex relation             (ie. is_less(x, y) || is_less(y, x))
+     *  - if is_less(x, y) => !is_less(y, x)            (by transitivity is_less(x, y) && is_less(y, x) ==> is_less(x, x))
+     *
+     * So at least in the first run: the left pointer can increase upto but not beyond pivot pointer.
+     * A Similar condition holds for the right pointer.
+     *
+     * Also the right pointer cannot advance not more then one position to the left of the left pointer.
+     * Each element x to the left of the left pointer was either swapped in, or it was not.
+     * If it was swapped in it, then x satisfies the swap condition: !is_less(pivot, x), In the second case no swap
+     * occurred so is_less(x, pivot) must hold, which also implies !is_less(pivot, x).
+     *
+     * A similar argument follows for the right pointer.
+     *
+     *  begin                 pivot
+     *  | x left        right |   end
+     *  | | |           |     |   |
+     *  O O O O O O O O O O O O O
+     *  ~~~               ~~~~~~~
+     *  <= pivot          >= pivot
+     */
+    do {
+        while (is_less(arg, left, pivot)) left += item_size;
+        while (is_less(arg, pivot, right)) right -= item_size;
+
+        if (left < right) {
+            swap(left, right, item_size);
+            if (left == pivot) {
+                pivot = right;
+            } else if (right == pivot) {
+                pivot = left;
+            }
+        }
+
+        if (left <= right) {
+            left += item_size;
+            right -= item_size;
+        }
+    } while (left <= right);
+
+    if (right > begin) {
+        usize part_items = (right - begin + item_size) / item_size;
+        sort(begin, part_items, item_size, is_less, arg);
+    }
+
+    if (left < end) {
+        usize part_items = (end - left) / item_size;
+        sort(left, part_items, item_size, is_less, arg);
+    }
+}
+
