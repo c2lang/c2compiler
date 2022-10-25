@@ -52,8 +52,11 @@ public:
             return; // should not come here
         case DECL_ALIASTYPE:
             break;
-        case DECL_STRUCTTYPE:
+        case DECL_STRUCTTYPE: {
+            const StructTypeDecl* sd = cast<StructTypeDecl>(d);
+            if (!sd->isGlobal()) return;
             break;
+        }
         case DECL_ENUMTYPE: {
             const EnumTypeDecl* e = cast<EnumTypeDecl>(d);
             for (unsigned i=0; i<e->numConstants(); i++) {
