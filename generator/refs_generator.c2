@@ -6,6 +6,8 @@ import refs;
 import source_mgr;
 import utils;
 
+import stdio;
+
 type Generator struct {
     source_mgr.SourceMgr* sm;
     refs.Refs* refs;
@@ -56,14 +58,16 @@ func void Generator.on_module(void* arg, const ast.Module* m) {
     m.visitASTs(Generator.on_ast, arg);
 }
 
-public func void generate(source_mgr.SourceMgr* sm, const component.Component** c, u32 count) {
+public func void generate(source_mgr.SourceMgr* sm, const char* output_dir, const component.Component** c, u32 count) {
     Generator gen = { sm, refs.Refs.create(), nil }
 
     for (u32 i=0; i<count; i++) {
         c[i].visitModules(Generator.on_module, &gen);
     }
 
-    gen.refs.write("refs");
+    char[128] outfile;
+    stdio.sprintf(outfile, "%s/%s", output_dir, "refs");
+    gen.refs.write(outfile);
     gen.refs.free();
 }
 

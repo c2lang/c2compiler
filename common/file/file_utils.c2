@@ -1,0 +1,70 @@
+module file_utils;
+
+import string;
+import stdio; // TEMP
+import sys_stat local;
+import libc_fcntl local;
+import c_errno local;
+import unistd local;
+
+func const char* find_char(const char* full, char delim) {
+    while (1) {
+        char c = *full;
+        if (c == delim) return full;
+        if (c == 0) break;
+        full++;
+    }
+    return nil;
+}
+
+
+// return 0 on succes, -1 otherwise
+func i32 create_dir(const char* path, bool follow) {
+    i32 err = mkdir(path, 0777);
+    if (err && *errno2() != EEXIST) return -1;
+
+    if (!follow) return 0;
+
+    i32 fd = openat(AT_FDCWD, path, O_RDONLY|O_NOCTTY|O_NONBLOCK|O_NOFOLLOW|O_DIRECTORY);
+    if (fd == -1) return *errno2();
+
+    err = fchdir(fd);
+    if (err == -1) return -1;
+
+    close(fd);
+    return 0;
+}
+
+// returns 0 on success, errno on failure
+public func i32 create_directory(const char* path) {
+    i32 fd = openat(AT_FDCWD, ".", O_RDONLY);
+    if (fd == -1) return *errno2();
+
+    // TODO handle . / .., empty path
+    char[128] tmp;
+    const char* cp = path;
+    i32 err = 0;
+    while (*cp) {
+        const char* slash = find_char(cp, '/');
+        // TODO check for empty string (//)
+        if (slash) {
+            u32 len = cast<u32>(slash - cp);
+            string.memcpy(tmp, cp, len);
+            tmp[len] = 0;
+            cp = slash + 1;
+            err = create_dir(tmp, true);
+            if (err != 0) break;
+        } else {
+            err = create_dir(cp, false);
+            break;
+        }
+    }
+    i32 errno_ = 0;
+    if (err) errno_ = *errno2();
+
+    fchdir(fd);
+    close(fd);
+    return errno_;
+}
+
+

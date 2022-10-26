@@ -12,7 +12,10 @@ public const u32 Max_path = 512;
 
 public const u32 Max_open_files = 200;
 
+public const char* output_dir = "output2";
+
 public const char* recipe_name = "recipe.txt";
+
 public const char* manifest_name = "manifest.yaml";
 
 

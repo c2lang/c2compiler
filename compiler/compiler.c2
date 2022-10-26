@@ -6,21 +6,22 @@ module compiler;
 import ast;
 import ast_builder;
 import ast_context;
-import c2_parser;
 import c2module_loader;
+import c2_parser;
 import c2recipe;
 import component;
 import constants;
 import diagnostics;
+import file_utils;
 import manifest;
-import module_list;
 import module_analyser;
+import module_list;
 import module_sorter;
+import refs_generator;
 import source_mgr;
 import string_list;
 import string_pool;
 import utils;
-import refs_generator;
 
 import string;
 import stdlib;
@@ -266,9 +267,18 @@ func void Compiler.build(Compiler* c,
     u64 t2_end = utils.now();
     printf("analysis took %lu usec\n", t2_end - t2_start);
 
+    // create output directory
+    char[256] output_dir;
+    sprintf(output_dir, "%s/%s", constants.output_dir, target.getName());
+    i32 err = file_utils.create_directory(output_dir);
+    if (err) {
+        fprintf(stderr, "Error creating %s\n", output_dir);
+        stdlib.exit(-1);
+    }
+
     // Temp here (TODO move to plugin)
     u64 gen1 = utils.now();
-    refs_generator.generate(c.sm, c.components, c.num_components);
+    refs_generator.generate(c.sm, output_dir, c.components, c.num_components);
     u64 gen2 = utils.now();
     printf("refs generation took %lu usec\n", gen2 - gen1);
 

@@ -17,6 +17,7 @@ executable.c2c:
 #    $config AstStatistics
     files:
         - common/file/reader.c2
+        - common/file/file_utils.c2
         - common/constants.c2
         - common/source_mgr.c2
 
