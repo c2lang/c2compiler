@@ -10,6 +10,7 @@ import c2_parser;
 import c2module_loader;
 import c2recipe;
 import component;
+import constants;
 import diagnostics;
 import manifest;
 import module_list;
@@ -35,7 +36,7 @@ func void openLib(source_mgr.SourceMgr* sm,
     if (!libdir) printf("Warning: environment variable C2_LIBDIR not set!\n");
 
     char[512] manifestFilename;
-    i32 len = stdio.sprintf(manifestFilename, "%s/%s/manifest.yaml", libdir, comp.getName());
+    i32 len = stdio.sprintf(manifestFilename, "%s/%s/%s", libdir, comp.getName(), constants.manifest_name);
     const char* name = auxPool.add(manifestFilename, cast<usize>(len), 0);
 
     i32 file_id = sm.open(name, 0, false);
@@ -45,6 +46,7 @@ func void openLib(source_mgr.SourceMgr* sm,
     // NOTE: dont parse modules (interface files) yet, only if needed
     // TODO erro handling
     manifest.parse(sm, file_id, astPool, comp);
+    sm.close(file_id);
 }
 
 type LibLoader struct {

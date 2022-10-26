@@ -20,6 +20,9 @@ public type Reader struct {
 }
 
 public func bool Reader.open(Reader* file, const char* filename) {
+    file.region = nil;
+    file.size = 0;
+
     i32 fd = open(filename, O_RDONLY);
     if (fd == -1) {
         file.errno = *errno2();
@@ -55,7 +58,14 @@ public func bool Reader.open(Reader* file, const char* filename) {
 }
 
 public func void Reader.close(Reader* file) {
-    munmap(file.region, file.size);
+    if (file.region) {
+        munmap(file.region, file.size);
+        file.region = nil;
+    }
+}
+
+public func bool Reader.isOpen(const Reader* file) {
+    return file.region != nil;
 }
 
 public func const u8* Reader.data(Reader* file) {

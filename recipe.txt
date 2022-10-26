@@ -5,13 +5,15 @@ plugin refs_generator [all-targets]
 executable c2c
 	$warnings no-unused
 	$generate-c single-module
-    $enable-assert
+#    $enable-assert
 #    $config RecipeDebug
 #    $config ParserDebug
 #    $config DumpTokens
     $config AstStatistics
 
     common/file/reader.c2
+    common/constants.c2
+    common/source_mgr.c2
 
     common/yaml/yaml_data.c2
     common/yaml/yaml_dump.c2
@@ -126,14 +128,20 @@ executable c2c
     compiler/c2recipe_yaml.c2
     compiler/component.c2
     compiler/compiler.c2
-    compiler/constants.c2
     compiler/diagnostics.c2
     compiler/manifest.c2
     compiler/module_list.c2
-    compiler/source_mgr.c2
 	compiler/main.c2
 
     generator/refs.c2
     generator/refs_generator.c2
+end
+
+executable c2tags
+    $warnings no-unused
+    $generate-c single-module
+    common/quicksort.c2
+    generator/refs.c2
+    tools/c2tags.c2
 end
 

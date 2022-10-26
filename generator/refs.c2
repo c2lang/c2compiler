@@ -350,7 +350,7 @@ func bool Tags.find_line(const Tag* tags, u32* left, u32* right, const u32 line)
 }
 
 // Note: excluding last
-func u32 Tags.find(const Tags* t, const RefDest* origin, u32 start, u32 last) {
+func u32 Tags.find(const Tags* t, const Dest* origin, u32 start, u32 last) {
 
     if (!Tags.find_line(t.tags, &start, &last, origin.line)) return NOT_FOUND;
 
@@ -658,7 +658,7 @@ public type RefSrc struct {
     u16 len;
 } @(packed)
 
-public type RefDest struct {
+public type Dest struct {
     const char* filename;
     u32 line;
     u16 col;
@@ -773,7 +773,7 @@ public func void Refs.add_file(Refs* r, const char* filename) {
     r.cur_file_idx = Files.add(&r.files, filename, r.tags.getCount());
 }
 
-func u32 Refs.add_dest(Refs* r, const RefDest* dest) {
+func u32 Refs.add_dest(Refs* r, const Dest* dest) {
     // Note: we filter by ptr, this is not perfect, but much faster than by string
     u16 file_idx;
     if (r.dest_file_ptr == dest.filename) {
@@ -791,17 +791,17 @@ func u32 Refs.add_dest(Refs* r, const RefDest* dest) {
     return loc_idx;
 }
 
-public func void Refs.add_tag(Refs* r, const RefSrc* src, const RefDest* dest) {
+public func void Refs.add_tag(Refs* r, const RefSrc* src, const Dest* dest) {
     u32 loc_idx = r.add_dest(dest);
     Tags.add(&r.tags, src, loc_idx);
 }
 
-public func void Refs.add_symbol(Refs* r, const char* symbol_name, const RefDest* dest) {
+public func void Refs.add_symbol(Refs* r, const char* symbol_name, const Dest* dest) {
     u32 loc_idx = r.add_dest(dest);
     Symbols.add(&r.symbols, symbol_name, loc_idx);
 }
 
-func u32 Refs.ref2loc(const Refs* r, const RefDest* origin) {
+func u32 Refs.ref2loc(const Refs* r, const Dest* origin) {
     u32 file_id = r.files.name2idx(origin.filename);
     if (file_id == NOT_FOUND) return NOT_FOUND;
 
@@ -812,8 +812,8 @@ func u32 Refs.ref2loc(const Refs* r, const RefDest* origin) {
     return loc_idx;
 }
 
-func RefDest Refs.loc2ref(const Refs* r, u32 loc_idx) {
-    RefDest result = { nil, 0, 0 }
+func Dest Refs.loc2ref(const Refs* r, u32 loc_idx) {
+    Dest result = { nil, 0, 0 }
     if (loc_idx == NOT_FOUND) return result;
 
     const Loc* loc = r.locs.idx2loc(loc_idx);
@@ -824,17 +824,17 @@ func RefDest Refs.loc2ref(const Refs* r, u32 loc_idx) {
     return result;
 }
 
-public func RefDest Refs.findRef(const Refs* r, const RefDest* origin) {
+public func Dest Refs.findRef(const Refs* r, const Dest* origin) {
     u32 loc_idx = r.ref2loc(origin);
     return r.loc2ref(loc_idx);
 }
 
-public func RefDest Refs.findSymbol(const Refs* r, const char* symbol_name) {
+public func Dest Refs.findSymbol(const Refs* r, const char* symbol_name) {
     u32 loc_idx = r.symbols.name2idx(symbol_name);
     return r.loc2ref(loc_idx);
 }
 
-public type RefUsesFn func void (void* arg, const RefDest* res);
+public type RefUsesFn func void (void* arg, const Dest* res);
 
 type UsesInfo struct {
     const Refs* r;
@@ -851,7 +851,7 @@ func void Refs.search_tags(void* arg, u32 file_idx, u32 start, u32 end) {
     for (u32 i=start; i<end; i++) {
         const Tag* tt = &tags[i];
         if (tt.loc_idx == loc_idx) {
-            RefDest result = { info.r.files.idx2name(file_idx), tt.src.line, tt.src.col }
+            Dest result = { info.r.files.idx2name(file_idx), tt.src.line, tt.src.col }
             info.fn(info.arg, &result);
         }
     }
@@ -864,7 +864,7 @@ func void Refs.loc2uses(const Refs* r, u32 loc_idx, RefUsesFn fn, void* arg) {
     r.files.visitTags(Refs.search_tags, &info);
 }
 
-public func void Refs.findRefUses(const Refs* r, const RefDest* origin, RefUsesFn fn, void* arg) {
+public func void Refs.findRefUses(const Refs* r, const Dest* origin, RefUsesFn fn, void* arg) {
     u32 loc_idx = r.ref2loc(origin);
     r.loc2uses(loc_idx, fn, arg);
 }

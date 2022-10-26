@@ -41,7 +41,7 @@ func void Generator.on_decl(void* arg, const ast.Decl* d) {
     }
 
     source_mgr.Location loc = gen.sm.getLocation(d.getLoc());
-    refs.RefDest dest = { gen.curfile, loc.line, cast<u16>(loc.column) }
+    refs.Dest dest = { gen.curfile, loc.line, cast<u16>(loc.column) }
     gen.refs.add_symbol(d.getName(), & dest);
 }
 

@@ -90,7 +90,7 @@ public func i32 main(i32 argc, char** argv) {
     // note: auxPool is used by recipe, build-file and manifests
     string_pool.Pool* auxPool = string_pool.create(64*1024, 0);
 
-    source_mgr.SourceMgr* sm = source_mgr.create();
+    source_mgr.SourceMgr* sm = source_mgr.create(constants.Max_open_files);
     diagnostics.Diags* diags = diagnostics.create(sm, utils.useColor());
 
     c2recipe.Recipe* recipe = c2recipe.create(sm, auxPool);
@@ -114,6 +114,7 @@ public func i32 main(i32 argc, char** argv) {
         if (!recipe.parse(yaml_id)) return -1;
 
         // TEMP also parse yaml version
+        recipe_id = yaml_id;
         //recipe_id = sm.open("c2recipe.yml", 0, false);
         //if (recipe_id == -1) return -1;
         //if (!recipe.parseYaml(recipe_id)) return -1;
@@ -132,7 +133,6 @@ public func i32 main(i32 argc, char** argv) {
         printf("building %s\n", target.getName());
 
         compiler.build(auxPool, sm, diags, target, &options);
-        //diags.
         hasError |= (diags.getNumErrors() != 0);
 
         if (recipe_id != -1) sm.clear(cast<u32>(recipe_id));

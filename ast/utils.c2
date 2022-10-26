@@ -101,7 +101,8 @@ u32 ast_count;      // Note: first index used to indicate nil
 u32 ast_capacity;
 
 public func void init(Context* c, const char* names_start) {
-   g_types.init(c);
+    stats.reset();
+    g_types.init(c);
 
     g_u8.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.UInt8)));
     g_u16.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.UInt16)));
@@ -229,6 +230,10 @@ type AstStats struct {
 
     u32 refSize;
     u32 arraySize;
+}
+
+func void AstStats.reset(AstStats* s) {
+    string.memset(s, 0, sizeof(AstStats));
 }
 
 AstStats stats;
