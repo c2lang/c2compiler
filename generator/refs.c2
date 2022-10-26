@@ -333,8 +333,10 @@ func bool Tags.find_line(const Tag* tags, u32* left, u32* right, const u32 line)
         const u32 middle = (*left + *right) / 2;
         const u32 mline = tags[middle].src.line;
         if (line < mline) {
+            if (*right == middle) break;
             *right = middle;
         } else if (line > mline) {
+            if (*left == middle) break;
             *left = middle;
         } else {
             u32 l = middle;
