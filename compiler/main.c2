@@ -22,6 +22,7 @@ type Options struct {
     bool print_lib_ast;
     bool print_modules;
     bool print_symbols;
+    const char* target;
     const char* single_file;
     const char* other_dir;
 }
@@ -32,6 +33,7 @@ func void usage(const char* me) {
     printf("\t-a        print ASTs\n");
     printf("\t-A        print Library ASTs\n");
     printf("\t-d [dir]  go to dir first\n");
+    printf("\t-f        only parse single file\n");
     printf("\t-m        print modules\n");
     printf("\t-s        print symbols\n");
     stdlib.exit(-1);
@@ -55,7 +57,11 @@ func void parse_opts(i32 argc, char** argv, Options* opts) {
                 if (i==argc-1) usage(argv[0]);
                 i++;
                 opts.other_dir = argv[i];
+                break;
+            case 'f':
+                if (i==argc-1) usage(argv[0]);
                 i++;
+                opts.single_file = argv[i];
                 break;
             case 'm':
                 opts.print_modules = true;
@@ -69,8 +75,8 @@ func void parse_opts(i32 argc, char** argv, Options* opts) {
                 break;
             }
         } else {
-            if (opts.single_file) usage(argv[0]);
-            opts.single_file = arg;
+            if (opts.target) usage(argv[0]);
+            opts.target = arg;
         }
     }
 }
@@ -128,14 +134,21 @@ public func i32 main(i32 argc, char** argv) {
     options.print_modules = opts.print_modules;
     options.print_symbols = opts.print_symbols;
 
+    u32 num_build = 0;
     for (u32 i=0; i<recipe.numTargets(); i++) {
         c2recipe.Target* target = recipe.getTarget(i);
+        if (opts.target && strcmp(opts.target, target.getName()) != 0) continue;
         printf("building %s\n", target.getName());
+        num_build++;
 
         compiler.build(auxPool, sm, diags, target, &options);
         hasError |= (diags.getNumErrors() != 0);
 
         if (recipe_id != -1) sm.clear(cast<u32>(recipe_id));
+    }
+
+    if (opts.target && num_build == 0)  {
+        fprintf(stderr, "No such target\n");
     }
 
     recipe.free();
