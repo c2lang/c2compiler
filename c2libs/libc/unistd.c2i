@@ -8,6 +8,7 @@ func i32 usleep(c_ulonglong __useconds);
 func c_uint sleep(c_uint __seconds);
 func c_char* getcwd(char* buf, c_size size);
 func c_int chdir(const c_char* path);
+func c_int fchdir(c_int fd);
 
 func c_int close(c_int fd);
 
