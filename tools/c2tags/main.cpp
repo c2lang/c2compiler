@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
         RefDest result = refs_findRef(refs, &origin);
         if (result.filename) {
             fullname = root.root2Orig(result.filename);
-            results.push_back({fullname, result.line, result.col});
+            results.push_back({ fullname, result.line, result.col });
         }
 
     }
