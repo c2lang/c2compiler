@@ -51,9 +51,12 @@ public func void Builder.actOnModule(Builder* b, const char* mod_name, SrcLoc mo
     b.ast = b.mod.add(filename);
 
     // NOTE: make special ImportDecl to add own symbols
-    ImportDecl* d = ImportDecl.create(b.context, mod_name, mod_loc, nil, 0, b.ast, true);
-    d.asDecl().setUsed();
-    d.setDest(b.mod);
+    ImportDecl* i = ImportDecl.create(b.context, mod_name, mod_loc, nil, 0, b.ast, true);
+    Decl* d = cast<Decl*>(i);
+    d.setUsed();
+    d.setChecked();
+    i.setDest(b.mod);
+    d.setType(b.actOnModuleType(i));
     b.ast.addImport(d);
 }
 
@@ -203,7 +206,7 @@ public func QualType Builder.actOnArrayType(Builder* b, QualType elem, bool has_
 
 public func QualType Builder.actOnModuleType(Builder* b, ImportDecl* decl) {
     ModuleType* t = ModuleType.create(b.context, decl);
-    return QualType.init2(t.asType());
+    return QualType.init2(cast<Type*>(t));
 }
 
 public func FunctionDecl* Builder.actOnFunctionDecl(Builder* b,

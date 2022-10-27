@@ -137,12 +137,11 @@ public func void check(diagnostics.Diags* diags,
 
     mod.visitVarDecls(ModuleAnalyser.handleVarDecl, &ma);
 
-    // analyse vars
-    // analyse static asserts
-    // analyse function protos
+    // TODO analyse static asserts
+    mod.visitFunctions(ModuleAnalyser.analyseFunctionProto, &ma);
 
     // NOTE: C2C ModuleAnalyser::step3()
-    // analyse functionbodies
+    mod.visitFunctions(ModuleAnalyser.analyseFunctionBodies, &ma);
 
     mod.visitASTs(ModuleAnalyser.deleteScope, &ma);
     ma.free();
@@ -206,6 +205,18 @@ func void ModuleAnalyser.handleStructFunc(void* arg, FunctionDecl* d) {
     prefix.setDecl(ma.struct_decls.getDecl(index));
 }
 
+func void ModuleAnalyser.analyseFunctionProto(void* arg, FunctionDecl* d) {
+    ModuleAnalyser* ma = arg;
+
+    ma.analyseGlobalDecl(cast<Decl*>(d));
+}
+
+func void ModuleAnalyser.analyseFunctionBodies(void* arg, FunctionDecl* d) {
+    ModuleAnalyser* ma = arg;
+
+    // TODO (dont use analyseGlobalDecl)
+}
+
 func void ModuleAnalyser.analyseGlobalDecl(ModuleAnalyser* ma, Decl* d) {
     if (d.isChecked()) return;
 
@@ -213,6 +224,7 @@ func void ModuleAnalyser.analyseGlobalDecl(ModuleAnalyser* ma, Decl* d) {
 
     switch (d.getKind()) {
     case Function:
+        ma.analyseFunction(cast<FunctionDecl*>(d));
         break;
     case Import:
         break;
@@ -493,6 +505,10 @@ func void ModuleAnalyser.analyseFunctionType(ModuleAnalyser* ma, Decl* d) {
     FunctionTypeDecl* ftd = cast<FunctionTypeDecl*>(d);
     FunctionDecl* fd = ftd.getFunction();
 
+    ma.analyseFunction(fd);
+}
+
+func void ModuleAnalyser.analyseFunction(ModuleAnalyser* ma, FunctionDecl* fd) {
     // return type
     QualType qt = ma.analyseTypeRef(fd.getTypeRef());
     if (qt.isInvalid()) return;

@@ -87,13 +87,21 @@ public func void AST.visitImports(const AST* a, ImportVisitor visitor, void* arg
 
 public func const ImportDeclList* AST.getImports(const AST* a) { return &a.imports; }
 
-public type StructFunctionVisitor func void (void* arg, FunctionDecl* d);
+public type FunctionVisitor func void (void* arg, FunctionDecl* d);
 
-public func void AST.visitStructFunctions(const AST* a, StructFunctionVisitor visitor, void* arg) {
+public func void AST.visitStructFunctions(const AST* a, FunctionVisitor visitor, void* arg) {
     FunctionDecl** functions = a.functions.getDecls();
     for (u32 i=0; i<a.functions.size(); i++) {
         FunctionDecl* d = functions[i];
         if (d.hasPrefix()) visitor(arg, d);
+    }
+}
+
+public func void AST.visitFunctions(const AST* a, FunctionVisitor visitor, void* arg) {
+    FunctionDecl** functions = a.functions.getDecls();
+    for (u32 i=0; i<a.functions.size(); i++) {
+        FunctionDecl* d = functions[i];
+        visitor(arg, d);
     }
 }
 
