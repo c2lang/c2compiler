@@ -144,8 +144,8 @@ public func void deinit() {
     total += stats.builtinCount * sizeof(BuiltinType);
     // TODO count tail-allocators as wel (need total count in create functions)
     stdio.printf("   types      %5u   %6u\n", stats.typeCount, total);
-    stdio.printf("   pointers   %5u   %6u\n", stats.pointerCount, stats.pointerCount * sizeof(PointerType));
     stdio.printf("   function   %5u   %6u\n", stats.functionTypeCount, stats.functionTypeCount * sizeof(FunctionType));
+    stdio.printf("   pointers   %5u   %6u\n", stats.pointerCount, stats.pointerCount * sizeof(PointerType));
     stdio.printf("   modules    %5u   %6u\n", stats.moduleCount, stats.moduleCount * sizeof(ModuleType));
     stdio.printf("   structs    %5u   %6u\n", stats.structCount, stats.structCount * sizeof(StructType));
     stdio.printf("   array      %5u   %6u\n", stats.arrayCount, stats.arraySize);

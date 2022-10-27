@@ -230,7 +230,7 @@ public type Location struct {
     const char* line_start;
 }
 
-func File* SourceMgr.find_file(const SourceMgr* sm, u32 loc) {
+func File* SourceMgr.find_file(SourceMgr* sm, u32 loc) {
     for (u32 i=0; i<sm.num_files; i++) {
         File* f = &sm.files[i];
         if (loc >= f.offset && loc < f.offset + f.file.size) {

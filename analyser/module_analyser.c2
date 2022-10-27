@@ -598,7 +598,7 @@ func void ModuleAnalyser.analyseStructMember(ModuleAnalyser* ma, VarDecl* v) {
     // TODO check initValue
 }
 
-func QualType ModuleAnalyser.analyseUserTypeRef(ModuleAnalyser* ma, const TypeRef* ref) {
+func QualType ModuleAnalyser.analyseUserTypeRef(ModuleAnalyser* ma, TypeRef* ref) {
     const Ref* prefix = ref.getPrefix();
     const Ref* user = ref.getUser();
 

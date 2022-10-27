@@ -56,8 +56,8 @@ public func void Builder.actOnModule(Builder* b, const char* mod_name, SrcLoc mo
     d.setUsed();
     d.setChecked();
     i.setDest(b.mod);
-    d.setType(QualType.init2(b.mod.getType()));
-    b.ast.addImport(d);
+    d.setType(QualType.init2(cast<Type*>(b.mod.getType())));
+    b.ast.addImport(i);
 }
 
 public func void Builder.actOnImport(Builder* b, const char* mod_name, SrcLoc mod_loc, const char* alias_name, SrcLoc alias_loc, bool islocal) {

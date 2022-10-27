@@ -49,7 +49,7 @@ func MapFile open_file(const char* filename) {
     c_int prot = PROT_READ;
     c_int flags = MAP_PRIVATE;
     void* map = mmap(nil, cast<usize>(size), prot, flags, fd, 0);
-    if (cast<usize>(map) == -1) {
+    if (cast<usize>(map) == cast<usize>(-1)) {
         err = *errno2();
         close(fd);
         //errno = err;  // TODO

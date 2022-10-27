@@ -14,7 +14,7 @@ type Generator struct {
     const char* curfile;
 }
 
-func void Generator.on_decl(void* arg, const ast.Decl* d) {
+func void Generator.on_decl(void* arg, ast.Decl* d) {
     Generator* gen = arg;
     switch (d.getKind()) {
     case Function:
@@ -25,9 +25,9 @@ func void Generator.on_decl(void* arg, const ast.Decl* d) {
         break;
     case EnumType:
         ast.EnumTypeDecl* etd = cast<ast.EnumTypeDecl*>(d);
-        const ast.EnumConstantDecl** constants = etd.getConstants();
+        ast.EnumConstantDecl** constants = etd.getConstants();
         for (u32 i=0; i<etd.getNumConstants(); i++) {
-            Generator.on_decl(arg, constants[i]);
+            Generator.on_decl(arg, cast<ast.Decl*>(constants[i]));
         }
         break;
     case EnumConstant:
@@ -47,18 +47,18 @@ func void Generator.on_decl(void* arg, const ast.Decl* d) {
     gen.refs.add_symbol(d.getName(), & dest);
 }
 
-func void Generator.on_ast(void* arg, const ast.AST* a) {
+func void Generator.on_ast(void* arg, ast.AST* a) {
     Generator* gen = arg;
     gen.curfile = a.getFilename();
     gen.refs.add_file(a.getFilename());
     a.visitDecls(Generator.on_decl, arg);
 }
 
-func void Generator.on_module(void* arg, const ast.Module* m) {
+func void Generator.on_module(void* arg, ast.Module* m) {
     m.visitASTs(Generator.on_ast, arg);
 }
 
-public func void generate(source_mgr.SourceMgr* sm, const char* output_dir, const component.Component** c, u32 count) {
+public func void generate(source_mgr.SourceMgr* sm, const char* output_dir, component.Component** c, u32 count) {
     Generator gen = { sm, refs.Refs.create(), nil }
 
     for (u32 i=0; i<count; i++) {
