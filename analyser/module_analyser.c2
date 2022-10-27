@@ -137,7 +137,8 @@ public func void check(diagnostics.Diags* diags,
 
     mod.visitVarDecls(ModuleAnalyser.handleVarDecl, &ma);
 
-    // TODO analyse static asserts
+    mod.visitStaticAsserts(ModuleAnalyser.handleStaticAssert, &ma);
+
     mod.visitFunctions(ModuleAnalyser.analyseFunctionProto, &ma);
 
     // NOTE: C2C ModuleAnalyser::step3()
@@ -257,6 +258,24 @@ func void ModuleAnalyser.analyseGlobalDecl(ModuleAnalyser* ma, Decl* d) {
 func void ModuleAnalyser.handleTypeDecl(void* arg, Decl* d) {
     ModuleAnalyser* ma = arg;
     ma.analyseGlobalDecl(d);
+}
+
+func void ModuleAnalyser.handleStaticAssert(void* arg, Decl* d) {
+    ModuleAnalyser* ma = arg;
+    StaticAssertDecl* sa = cast<StaticAssertDecl*>(d);
+    Expr* lhs = sa.getLhs();
+    Expr* rhs = sa.getRhs();
+
+    ma.analyseExpr(&lhs, false);
+    ma.analyseExpr(&rhs, false);
+
+    if (!lhs.isCtv()) {
+        ma.diags.reportRange(lhs.getLoc(), lhs.getRange(), "static_assert element is not a compile-time value");
+    }
+    if (!rhs.isCtv()) {
+        ma.diags.reportRange(rhs.getLoc(), rhs.getRange(), "static_assert element is not a compile-time value");
+    }
+    // TODO check
 }
 
 func void ModuleAnalyser.handleVarDecl(void* arg, VarDecl* v) {

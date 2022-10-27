@@ -132,26 +132,7 @@ public func void init(Context* c, const char* names_start) {
 
 public func void deinit() {
 #if AstStatistics
-    stdio.printf("AST: Types\n");
-    u32 total = 0;
-    total += stats.pointerCount * sizeof(PointerType);
-    total += stats.functionTypeCount * sizeof(FunctionType);
-    total += stats.moduleCount * sizeof(ModuleType);
-    total += stats.structCount * sizeof(StructType);
-    total += stats.arraySize;
-    total += stats.enumCount * sizeof(EnumType);
-    total += stats.aliasCount * sizeof(AliasType);
-    total += stats.builtinCount * sizeof(BuiltinType);
-    // TODO count tail-allocators as wel (need total count in create functions)
-    stdio.printf("   types      %5u   %6u\n", stats.typeCount, total);
-    stdio.printf("   function   %5u   %6u\n", stats.functionTypeCount, stats.functionTypeCount * sizeof(FunctionType));
-    stdio.printf("   pointers   %5u   %6u\n", stats.pointerCount, stats.pointerCount * sizeof(PointerType));
-    stdio.printf("   modules    %5u   %6u\n", stats.moduleCount, stats.moduleCount * sizeof(ModuleType));
-    stdio.printf("   structs    %5u   %6u\n", stats.structCount, stats.structCount * sizeof(StructType));
-    stdio.printf("   array      %5u   %6u\n", stats.arrayCount, stats.arraySize);
-    stdio.printf("   enum       %5u   %6u\n", stats.enumCount, stats.enumCount * sizeof(EnumType));
-    stdio.printf("   alias      %5u   %6u\n", stats.aliasCount, stats.aliasCount * sizeof(AliasType));
-    stdio.printf("   builtins   %5u   %6u\n", stats.builtinCount, stats.builtinCount * sizeof(BuiltinType));
+    stats.dump();
 #endif
     stdlib.free(cast<void*>(g_ast_list));
     g_types.clear();
@@ -231,6 +212,29 @@ type AstStats struct {
 
 func void AstStats.reset(AstStats* s) {
     string.memset(s, 0, sizeof(AstStats));
+}
+
+func void AstStats.dump(const AstStats* s) {
+    stdio.printf("AST: Types\n");
+    u32 total = 0;
+    total += stats.pointerCount * sizeof(PointerType);
+    total += stats.functionTypeCount * sizeof(FunctionType);
+    total += stats.moduleCount * sizeof(ModuleType);
+    total += stats.structCount * sizeof(StructType);
+    total += stats.arraySize;
+    total += stats.enumCount * sizeof(EnumType);
+    total += stats.aliasCount * sizeof(AliasType);
+    total += stats.builtinCount * sizeof(BuiltinType);
+    // TODO count tail-allocators as wel (need total count in create functions)
+    stdio.printf("   types      %5u   %6u\n", stats.typeCount, total);
+    stdio.printf("   function   %5u   %6u\n", stats.functionTypeCount, stats.functionTypeCount * sizeof(FunctionType));
+    stdio.printf("   pointers   %5u   %6u\n", stats.pointerCount, stats.pointerCount * sizeof(PointerType));
+    stdio.printf("   modules    %5u   %6u\n", stats.moduleCount, stats.moduleCount * sizeof(ModuleType));
+    stdio.printf("   structs    %5u   %6u\n", stats.structCount, stats.structCount * sizeof(StructType));
+    stdio.printf("   array      %5u   %6u\n", stats.arrayCount, stats.arraySize);
+    stdio.printf("   enum       %5u   %6u\n", stats.enumCount, stats.enumCount * sizeof(EnumType));
+    stdio.printf("   alias      %5u   %6u\n", stats.aliasCount, stats.aliasCount * sizeof(AliasType));
+    stdio.printf("   builtins   %5u   %6u\n", stats.builtinCount, stats.builtinCount * sizeof(BuiltinType));
 }
 
 AstStats stats;

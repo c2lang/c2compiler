@@ -125,6 +125,13 @@ public func void AST.visitVarDecls(const AST* a, VarDeclVisitor visitor, void* a
 
 public type DeclVisitor func void (void* arg, Decl* d);
 
+public func void AST.visitStaticAsserts(const AST* a, DeclVisitor visitor, void* arg) {
+    Decl** asserts = a.static_asserts.getDecls();
+    for (u32 i=0; i<a.static_asserts.size(); i++) {
+        visitor(arg, asserts[i]);
+    }
+}
+
 public func void AST.visitDecls(const AST* a, DeclVisitor visitor, void* arg) {
     // imports
     ImportDecl** imports = a.imports.getDecls();
@@ -166,7 +173,7 @@ public func void AST.info(const AST* a, string_buffer.Buf* out) {
 }
 
 public func void AST.print(const AST* a, string_buffer.Buf* out) {
-    out.print("------- AST %s ----\n", a.filename);
+    out.print("---- AST %s ----\n", a.filename);
 
     ImportDecl** imports = a.imports.getDecls();
     for (u32 i=1; i<a.imports.size(); i++) {
@@ -186,7 +193,7 @@ public func void AST.print(const AST* a, string_buffer.Buf* out) {
         out.add("\n");
     }
 
-#if 1
+#if 0
     FunctionDecl** functions = a.functions.getDecls();
     for (u32 i=0; i<a.functions.size(); i++) {
         functions[i].print(out, 0);
