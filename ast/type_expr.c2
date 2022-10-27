@@ -9,27 +9,26 @@ import utils local;
 
 public type TypeExpr struct {
     Expr parent;
-    QualType qt;
-    QualType origType;
+    TypeRef typeRef;
 } @(opaque)
 
-public func TypeExpr* TypeExpr.create(ast_context.Context* c, SrcLoc loc, QualType qt) @(inline) {
-    TypeExpr* e = c.alloc(sizeof(TypeExpr));
+public func TypeExpr* TypeExpr.create(ast_context.Context* c, SrcLoc loc, const TypeRefHolder* ref) @(inline) {
+    u32 size = sizeof(TypeExpr) + ref.getExtraSize();
+    TypeExpr* e = c.alloc(size);
     e.parent.init(ExprKind.Type, loc, 0, 0, 0);
-    e.qt = qt;
-    e.origType = qt;
+    ref.fill(&e.typeRef);
     return e;
 }
 
-public func QualType TypeExpr.getType(const TypeExpr* e) @(inline) { return e.qt; }
-
-public func QualType TypeExpr.getOrigType(const TypeExpr* e) @(inline) { return e.origType; }
+public func const TypeRef* TypeExpr.getTypeRef(const TypeExpr* e) @(inline) {
+    return &e.typeRef;
+}
 
 func void TypeExpr.print(const TypeExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent, "TypeExpr");
     e.parent.printTypeBits(out);
     out.add("\n");
 
-    e.qt.print(out);
+    e.typeRef.print(out, true);
 }
 

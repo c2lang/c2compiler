@@ -359,6 +359,9 @@ func Expr* Parser.parseSizeof(Parser* p) {
 
     Expr* res = nil;
 
+    TypeRefHolder ref;
+    ref.init();
+
     switch (p.tok.kind) {
     case Identifier:
 /*
@@ -387,7 +390,8 @@ func Expr* Parser.parseSizeof(Parser* p) {
     case KW_u64: fallthrough;
     case KW_usize: fallthrough;
     case KW_void:
-        res = p.builder.actOnTypeExpr(p.tok.loc, p.parseTypeSpecifier(false));
+        p.parseTypeSpecifier(&ref, false);
+        res = p.builder.actOnTypeExpr(p.tok.loc, &ref);
         break;
     default:
         res = p.parseExpr();
@@ -486,14 +490,16 @@ func Expr* Parser.parseExplicitCastExpr(Parser* p) {
     p.consumeToken();
 
     p.expectAndConsume(Kind.Less);
-    QualType qt = p.parseTypeSpecifier(true);
+    TypeRefHolder ref;
+    ref.init();
+    p.parseTypeSpecifier(&ref, true);
     p.expectAndConsume(Kind.Greater);
 
     p.expectAndConsume(Kind.LParen);
     Expr* expr = p.parseExpr();
     p.expectAndConsume(Kind.RParen);
 
-    return p.builder.actOnExplicitCast(loc, qt, expr);
+    return p.builder.actOnExplicitCast(loc, &ref, expr);
 }
 
 // Syntax:

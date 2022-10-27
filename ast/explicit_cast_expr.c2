@@ -9,25 +9,29 @@ import utils local;
 
 public type ExplicitCastExpr struct {
     Expr parent;
-    QualType dest;
     Expr* inner;
+    TypeRef dest;    // note: variable length!
 } @(opaque)
 
-public func ExplicitCastExpr* ExplicitCastExpr.create(ast_context.Context* c, SrcLoc loc, QualType qt, Expr* inner) @(inline) {
-    ExplicitCastExpr* e = c.alloc(sizeof(ExplicitCastExpr));
+public func ExplicitCastExpr* ExplicitCastExpr.create(ast_context.Context* c, SrcLoc loc, const TypeRefHolder* ref, Expr* inner) @(inline) {
+    ExplicitCastExpr* e = c.alloc(sizeof(ExplicitCastExpr) + ref.getExtraSize());
     e.parent.init(ExprKind.ExplicitCast, loc, 0, 0, 0);
-    e.dest = qt;
     e.inner = inner;
+    ref.fill(&e.dest);
     return e;
 }
 
 public func Expr* ExplicitCastExpr.getInner(const ExplicitCastExpr* e) @(inline) { return e.inner; }
 
+public func const TypeRef* ExplicitCastExpr.getTypeRef(const ExplicitCastExpr* e) {
+    return &e.dest;
+}
+
 func void ExplicitCastExpr.print(const ExplicitCastExpr* e, string_buffer.Buf* out, u32 indent) {
     e.parent.printKind(out, indent, "ExplicitCastExpr");
     e.parent.printTypeBits(out);
     out.add(" -> ");
-    e.dest.printQuoted(out);
+    e.dest.print(out, true);
     out.add("\n");
     e.inner.print(out, indent + 2);
 }

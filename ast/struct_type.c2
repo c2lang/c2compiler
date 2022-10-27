@@ -11,7 +11,9 @@ public type StructType struct {
     StructTypeDecl* decl;
 } @(opaque)
 
-public func StructType* StructType.create(ast_context.Context* c, StructTypeDecl* decl) @(inline) {
+
+// Note: not public, since only called by StructTypeDecl
+func StructType* StructType.create(ast_context.Context* c, StructTypeDecl* decl) @(inline) {
     StructType* t = c.alloc(sizeof(StructType));
     t.parent.init(TypeKind.Struct);
     t.decl = decl;

@@ -3,6 +3,7 @@
 
 module ast;
 
+import color;
 import utils;
 import string_buffer;
 import stdio local;
@@ -42,6 +43,14 @@ public func bool QualType.isConst(QualType* qt) @(inline) {
     return (qt.ptr & QualType_Const) != 0;
 }
 
+public func bool QualType.isVolatile(QualType* qt) @(inline) {
+    return (qt.ptr & QualType_Volatile) != 0;
+}
+
+public func void QualType.setVolatile(QualType* qt) @(inline) {
+    qt.ptr |= QualType_Volatile;
+}
+
 public func void QualType.copyFlags(QualType* qt, QualType other) @(inline) {
     qt.ptr &= ~QualType_Mask;   // clear old flags
     qt.ptr |= (other.ptr & QualType_Mask);
@@ -54,16 +63,12 @@ public func bool QualType.isConstant(const QualType* qt) {
     case Builtin:
         return canon.isConst();
     case Pointer:
-        const PointerType* pt = cast<PointerType*>(t);
-        canon = pt.getInner();
-        return canon.isConstant();
+        // Note: we keep the flags at every QualType, since we re-use PointerTypes
+        return false;
     case Array:
         const ArrayType* at = cast<ArrayType*>(t);
         canon = at.getElemType();
         return canon.isConstant();
-    case Ref:
-        assert(0);
-        break;
     case Struct:
         return canon.isConst();
     case Enum:
@@ -105,6 +110,7 @@ public func bool QualType.hasCanonicalType(const QualType* qt) @(inline) {
 public func QualType QualType.getCanonicalType(const QualType* qt) @(inline) {
     const Type* t = qt.getType();
     QualType canon = t.canonicalType;
+    // TODO BB why is this needeD?
     canon.copyFlags(*qt);
     return canon;
 }
@@ -116,6 +122,11 @@ public func void QualType.setCanonicalType(QualType* qt, QualType canon) @(inlin
 
 public func u32 QualType.getQualifiers(const QualType* qt) @(inline) {
     return qt.ptr & QualType_Mask;
+}
+
+public func u32 QualType.getIndex(const QualType* qt) {
+    const Type* t = qt.getType();
+    return t.getIndex();
 }
 
 public func bool QualType.isBuiltinType(const QualType* qt) {
@@ -167,7 +178,6 @@ public func bool QualType.needsCtvInit(const QualType* qt) {
     case Builtin:   return true;
     case Pointer:   return false;
     case Array:     return true;
-    case Ref:       return true;    // is never a canonical type
     case Struct:    return true;
     case Enum:      return true;
     case Function:  return false;
@@ -195,12 +205,20 @@ public func const char* QualType.diagName(const QualType* qt, bool showQualifier
 }
 
 public func void QualType.dump(const QualType* qt) {
+    string_buffer.Buf* out = string_buffer.create(512, utils.useColor());
     Type* t = qt.getTypeOrNil();
     if (t) {
-        t.dump();
+        u32 quals = qt.getQualifiers();
+        if (quals) out.color(col_Type);
+        if (quals & QualType_Const) out.add("const ");
+        if (quals & QualType_Volatile) out.add("volatile ");
+        t.print(out);
     } else {
-        stdio.printf("QualType(nil)\n");
+        out.add("QualType(nil)\n");
     }
+    out.color(color.Normal);
+    stdio.puts(out.data());
+    out.free();
 }
 
 public func void QualType.dump_full(const QualType* qt) {

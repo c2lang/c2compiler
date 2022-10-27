@@ -61,7 +61,7 @@ static_assert(32, sizeof(BuiltinExpr));
 static_assert(32, sizeof(ExplicitCastExpr));
 static_assert(32, sizeof(FieldDesignatedInitExpr));
 static_assert(32, sizeof(MemberExpr));
-static_assert(32, sizeof(TypeExpr));
+static_assert(24, sizeof(TypeExpr));
 static_assert(48, sizeof(ConditionalOperator));
 
 static_assert(8, sizeof(QualType));
@@ -69,12 +69,13 @@ static_assert(16, sizeof(Type));
 static_assert(16, sizeof(BuiltinType));
 static_assert(24, sizeof(PointerType));
 static_assert(32, sizeof(ArrayType));
-static_assert(24, sizeof(RefType));
 static_assert(24, sizeof(StructType));
 static_assert(24, sizeof(EnumType));
 static_assert(24, sizeof(FunctionType));
 
-// TODO use array with BuiltinTypeKind as index
+static_assert(8, sizeof(TypeRef));
+
+// TODO use array with BuiltinTypeKind as index (less globals)
 public QualType g_u8;
 public QualType g_u16;
 public QualType g_u32;
@@ -133,7 +134,6 @@ public func void deinit() {
 #if AstStatistics
     stdio.printf("AST: Types\n");
     u32 total = 0;
-    total += stats.refSize;
     total += stats.pointerCount * sizeof(PointerType);
     total += stats.functionTypeCount * sizeof(FunctionType);
     total += stats.moduleCount * sizeof(ModuleType);
@@ -144,7 +144,6 @@ public func void deinit() {
     total += stats.builtinCount * sizeof(BuiltinType);
     // TODO count tail-allocators as wel (need total count in create functions)
     stdio.printf("   types      %5u   %6u\n", stats.typeCount, total);
-    stdio.printf("   refs       %5u   %6u\n", stats.refCount, stats.refSize);
     stdio.printf("   pointers   %5u   %6u\n", stats.pointerCount, stats.pointerCount * sizeof(PointerType));
     stdio.printf("   function   %5u   %6u\n", stats.functionTypeCount, stats.functionTypeCount * sizeof(FunctionType));
     stdio.printf("   modules    %5u   %6u\n", stats.moduleCount, stats.moduleCount * sizeof(ModuleType));
@@ -219,7 +218,6 @@ type AstStats struct {
     // Types
     u32 typeCount;
     u32 pointerCount;
-    u32 refCount;
     u32 aliasCount;
     u32 builtinCount;
     u32 enumCount;
@@ -228,7 +226,6 @@ type AstStats struct {
     u32 structCount;
     u32 moduleCount;
 
-    u32 refSize;
     u32 arraySize;
 }
 

@@ -9,7 +9,7 @@ import utils local;
 
 public type AliasTypeDecl struct {
     Decl parent;
-    QualType refType;
+    TypeRef typeRef;
 } @(opaque)
 
 public func AliasTypeDecl* AliasTypeDecl.create(ast_context.Context* c,
@@ -17,12 +17,13 @@ public func AliasTypeDecl* AliasTypeDecl.create(ast_context.Context* c,
                                                 SrcLoc loc,
                                                 bool is_public,
                                                 AST* ast_,
-                                                QualType refType) @(inline)
+                                                const TypeRefHolder* ref)
 {
-    AliasTypeDecl* d = c.alloc(sizeof(AliasTypeDecl));
+    u32 size = sizeof(AliasTypeDecl) + ref.getExtraSize();
+    AliasTypeDecl* d = c.alloc(size);
     AliasType* at = AliasType.create(c, d);
     d.parent.init(DeclKind.AliasType, name, loc, is_public, QualType.init2(cast<Type*>(at)), ast_);
-    d.refType = refType;
+    ref.fill(&d.typeRef);
     return d;
 }
 
@@ -30,15 +31,19 @@ public func Decl* AliasTypeDecl.asDecl(AliasTypeDecl* d) @(inline) {
     return &d.parent;
 }
 
-public func QualType AliasTypeDecl.getRefType(const AliasTypeDecl* d) { return d.refType; }
+public func TypeRef* AliasTypeDecl.getTypeRef(AliasTypeDecl* d) {
+    return &d.typeRef;
+}
 
 func void AliasTypeDecl.print(const AliasTypeDecl* d, string_buffer.Buf* out, u32 indent) {
-    d.parent.printKind(out, indent, "AliasTypeDecl");
+    d.parent.printKind(out, indent, "AliasTypeDecl", true);
     d.parent.printBits(out);
     d.parent.printName(out);
 
-    out.add(" ");
-    d.refType.print(out);
-    out.add("\n");
+    if (d.parent.qt.isInvalid()) {
+        out.add(" ");
+        d.typeRef.print(out, true);
+        out.add("\n");
+    }
 }
 

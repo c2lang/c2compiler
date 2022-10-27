@@ -42,13 +42,15 @@ func void Parser.parseTypeDef(Parser* p, bool is_public) {
 func void Parser.parseFunctionType(Parser* p, const char* name, u32 loc, bool is_public) {
     p.consumeToken(); // func
 
-    QualType rtype = p.parseSingleTypeSpecifier(true);
+    TypeRefHolder rtype;
+    rtype.init();
+    p.parseSingleTypeSpecifier(&rtype, true);
 
     DeclList params;
     params.init(4);
 
     bool is_variadic = p.parseFunctionParams(&params, is_public, false);
-    Decl* f = p.builder.actOnFunctionTypeDecl(name, loc, is_public, rtype, cast<VarDecl**>(params.getDecls()), params.size(), is_variadic);
+    Decl* f = p.builder.actOnFunctionTypeDecl(name, loc, is_public, &rtype, cast<VarDecl**>(params.getDecls()), params.size(), is_variadic);
     p.parseOptionalAttributes(); // (f)
     params.free();
     p.expectAndConsume(Kind.Semicolon);
@@ -96,7 +98,9 @@ func void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) 
             sub_members.free();
             members.add(member.asDecl());
         } else {
-            QualType qt = p.parseTypeSpecifier(true);
+            TypeRefHolder ref;
+            ref.init();
+            p.parseTypeSpecifier(&ref, true);
 
             const char* name = nil;
             SrcLoc loc;
@@ -114,7 +118,7 @@ func void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) 
                 p.consumeToken();
                 bitfield = p.parseExpr();
             }
-            VarDecl* member = p.builder.actOnStructMember(name, loc, is_public, qt, bitfield);
+            VarDecl* member = p.builder.actOnStructMember(name, loc, is_public, &ref, bitfield);
             members.add(member.asDecl());
 
             p.expectAndConsume(Kind.Semicolon);
@@ -160,7 +164,7 @@ func void Parser.parseEnumType(Parser* p, const char* name, u32 loc, bool is_pub
         p.error("expected enum type");
         break;
     }
-    QualType qt = p.builder.actOnBuiltinType(p.tok.kind);
+    QualType qt = p.builder.actOnBuiltinType(tokKindToBuiltinKind(p.tok.kind));
     p.consumeToken();
 
     p.expectAndConsume(Kind.LBrace);
@@ -203,9 +207,11 @@ func void Parser.parseEnumType(Parser* p, const char* name, u32 loc, bool is_pub
 }
 
 func void Parser.parseAliasType(Parser* p, const char* name, u32 loc, bool is_public) {
-    QualType qt = p.parseTypeSpecifier(true);
+    TypeRefHolder ref;
+    ref.init();
+    p.parseTypeSpecifier(&ref, true);
 
-    Decl* d = p.builder.actOnAliasType(name, loc, is_public, qt);
+    Decl* d = p.builder.actOnAliasType(name, loc, is_public, &ref);
     p.parseOptionalAttributes();
     p.expectAndConsume(Kind.Semicolon);
 }

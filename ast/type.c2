@@ -12,7 +12,6 @@ public type TypeKind enum u8 {
     Builtin,
     Pointer,
     Array,
-    Ref,
     Struct,
     Enum,
     Function,
@@ -30,7 +29,6 @@ public type Type struct {
         TypeBits typeBits;
         BuiltinTypeBits builtinTypeBits;
         ArrayTypeBits arrayTypeBits;
-        RefTypeBits refTypeBits;
         u32 bits;
     }
     u32 idx;            // index into TypePool
@@ -57,6 +55,8 @@ public func bool Type.hasCanonicalType(const Type* t) @(inline) {
 public func QualType Type.getCanonicalType(const Type* t) @(inline) { return t.canonicalType; }
 
 public func void Type.setCanonicalType(Type* t, QualType canon) @(inline) { t.canonicalType = canon; }
+
+public func u32 Type.getIndex(const Type* t) { return t.idx; }
 
 public func ArrayType* Type.asArray(Type* t) {
     if (t.getKind() == TypeKind.Array) return cast<ArrayType*>(t);
@@ -103,9 +103,6 @@ func void Type.print(const Type* t, string_buffer.Buf* out) {
     case Array:
         ArrayType.print(cast<ArrayType*>(t), out);
         break;
-    case Ref:
-        RefType.print(cast<RefType*>(t), out);
-        break;
     case Struct:
         StructType.print(cast<StructType*>(t), out);
         break;
@@ -135,9 +132,6 @@ func void Type.debugPrint(const Type* t, string_buffer.Buf* out) {
     case Array:
         ArrayType.debugPrint(cast<ArrayType*>(t), out);
         break;
-    case Ref:
-        RefType.debugPrint(cast<RefType*>(t), out);
-        break;
     case Struct:
         StructType.debugPrint(cast<StructType*>(t), out);
         break;
@@ -166,9 +160,6 @@ public func void Type.fullPrint(const Type* t, string_buffer.Buf* out, u32 inden
         break;
     case Array:
         ArrayType.fullPrint(cast<ArrayType*>(t), out, indent);
-        break;
-    case Ref:
-        RefType.fullPrint(cast<RefType*>(t), out, indent);
         break;
     case Struct:
         StructType.fullPrint(cast<StructType*>(t), out, indent);

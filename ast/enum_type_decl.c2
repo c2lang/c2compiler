@@ -74,7 +74,7 @@ public func EnumConstantDecl* EnumTypeDecl.findConstant(const EnumTypeDecl* d, u
 }
 
 func void EnumTypeDecl.print(const EnumTypeDecl* d, string_buffer.Buf* out, u32 indent) {
-    d.parent.printKind(out, indent, "EnumTypeDecl");
+    d.parent.printKind(out, indent, "EnumTypeDecl", true);
     d.parent.printBits(out);
     if (d.parent.enumTypeDeclBits.is_incr) out.add(" incremental");
     d.parent.printName(out);

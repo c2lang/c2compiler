@@ -444,7 +444,9 @@ func Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal) {
         p.consumeToken();
     }
 
-    QualType qt = p.parseTypeSpecifier(true);
+    TypeRefHolder ref;
+    ref.init();
+    p.parseTypeSpecifier(&ref, true);
 
     p.expectIdentifier();
 
@@ -460,7 +462,7 @@ func Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal) {
         initValue = p.parseInitValue(&need_semi, false);
     }
 
-    Stmt* s = p.builder.actOnVarDeclStmt(name, loc, qt, initValue, has_local);
+    Stmt* s = p.builder.actOnVarDeclStmt(name, loc, &ref, initValue, has_local);
     if (checkSemi && need_semi) {
         p.expectAndConsume(Kind.Semicolon);
     }

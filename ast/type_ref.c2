@@ -1,0 +1,258 @@
+/* Copyright 2022 Bas van den Berg
+*/
+
+module ast;
+
+import utils;
+import string_buffer;
+import stdio;
+
+public type TypeRefBits struct {
+    u32 is_const : 1;
+    u32 is_volatile : 1;
+    u32 num_ptrs : 2;   // 0 = Foo, 1 = Foo*, 2 = Foo**
+    u32 num_arrays : 2; // limit to 3-dimensional arrays
+    u32 incr_array : 1;
+    u32 is_user : 1;    // otherwise builtin
+    u32 has_prefix : 1;
+    u32 builtin_kind : 4;   // only if builtin (!is_user)
+}
+
+public type Ref struct {
+    utils.SrcLoc loc;
+    u32 name_idx;
+}
+
+// Member of VarDecl,Sizeof and ExplicitCast; is NOT a Type!
+public type TypeRef struct {
+    union {
+        TypeRefBits flags;
+        u32 flagBits;
+    }
+    u32 dest;       // index into TypePool. only used by user type, but must be 8-byte aligned anyways, so put here
+    Ref[0] refs;    // tail-allocated. [1] if is_user, [2] if also has_prefix
+    Expr*[0] arrays; // tail-allocated. [1] if Foo[..], [2] if Foo[..][..], etc
+} @(opaque)
+
+public type TypeRefHolder struct {
+    u64 ref;    // to make TypeRef opaque
+    Ref user;
+    Ref prefix;
+    Expr*[3] arrays;
+}
+
+public func void TypeRefHolder.init(TypeRefHolder* h) {
+    TypeRef* r = cast<TypeRef*>(&h.ref);
+    r.flagBits = 0;
+    r.dest = 0;
+}
+
+// note: returns dynamic size only!
+public func u32 TypeRefHolder.getExtraSize(const TypeRefHolder* h) {
+    TypeRef* r = cast<TypeRef*>(&h.ref);
+    return r.getExtraSize();
+}
+
+public func void TypeRefHolder.setQualifiers(TypeRefHolder* h, u32 qualifiers) {
+    TypeRef* r = cast<TypeRef*>(&h.ref);
+    if (qualifiers & QualType_Volatile) r.flags.is_volatile = 1;
+    if (qualifiers & QualType_Const) r.flags.is_const = 1;
+}
+
+public func void TypeRefHolder.addPointer(TypeRefHolder* h) {
+    TypeRef* r = cast<TypeRef*>(&h.ref);
+    assert(r.flags.num_ptrs != 3);
+    r.flags.num_ptrs++;
+}
+
+public func void TypeRefHolder.setIncrArray(TypeRefHolder* h) {
+    TypeRef* r = cast<TypeRef*>(&h.ref);
+    r.flags.incr_array = 1;
+}
+
+public func u32 TypeRefHolder.getNumArrays(const TypeRefHolder* h) {
+    TypeRef* r = cast<TypeRef*>(&h.ref);
+    return r.getNumArrays();
+}
+
+public func void TypeRefHolder.addArray(TypeRefHolder* h, Expr* array) {
+    TypeRef* r = cast<TypeRef*>(&h.ref);
+    assert(r.flags.num_arrays != 3);
+    h.arrays[r.flags.num_arrays] = array;
+    r.flags.num_arrays++;
+}
+
+public func void TypeRefHolder.setBuiltin(TypeRefHolder* h, BuiltinTypeKind kind) {
+    TypeRef* r = cast<TypeRef*>(&h.ref);
+    r.flags.builtin_kind = kind;
+}
+
+public func void TypeRefHolder.setUser(TypeRefHolder* h, u32 loc, u32 name_idx) {
+    TypeRef* r = cast<TypeRef*>(&h.ref);
+    r.flags.is_user = 1;
+    h.user.loc = loc;
+    h.user.name_idx = name_idx;
+}
+
+public func void TypeRefHolder.setPrefix(TypeRefHolder* h, u32 loc, u32 name_idx) {
+    TypeRef* r = cast<TypeRef*>(&h.ref);
+    // Note: moves previous user to prefix and makes this the user
+    h.prefix = h.user;
+    r.flags.has_prefix = 1;
+    h.user.loc = loc;
+    h.user.name_idx = name_idx;
+}
+
+public func void TypeRefHolder.fill(const TypeRefHolder* h, TypeRef* dest) {
+    const TypeRef* r = cast<TypeRef*>(&h.ref);
+    *dest = *r;
+    if (r.isUser()) {
+        dest.refs[0] = r.refs[0];
+        if (r.hasPrefix()) {
+            dest.refs[1] = r.refs[1];
+        }
+    }
+    for (u32 i=0; i<r.flags.num_arrays; i++) {
+        Expr** a = dest.getArray2(i);
+        *a = h.arrays[i];
+    }
+}
+
+public func void TypeRefHolder.dump(const TypeRefHolder* h) {
+    const TypeRef* r = cast<TypeRef*>(&h.ref);
+    string_buffer.Buf* out = string_buffer.create(128, utils.useColor());
+    r.print(out, false);
+    for (u32 i=0; i<r.getNumArrays(); i++) {
+        out.add("[");
+        h.arrays[i].printLiteral(out);
+        out.add("]");
+    }
+    out.color(col_Normal);
+    stdio.puts(out.data());
+    out.free();
+}
+
+
+public func void TypeRef.setDest(TypeRef* r, u32 dest) {
+    r.dest = dest;
+}
+
+public func u32 TypeRef.getDest(const TypeRef* r) {
+    return r.dest;
+}
+
+public func u32 TypeRef.getExtraSize(const TypeRef* r) {
+    u32 numrefs = r.flags.is_user + r.flags.has_prefix;
+    u32 extra = numrefs * sizeof(Ref);
+    extra += r.flags.num_arrays * sizeof(Expr*);
+    return extra;
+}
+
+public func void* TypeRef.getPointerAfter(const TypeRef* r) {
+    u8* ptr = cast<u8*>(r) + sizeof(TypeRef) + r.getExtraSize();
+    return ptr;
+}
+
+public func bool TypeRef.isConst(const TypeRef* r) {
+    return r.flags.is_const;
+}
+
+public func bool TypeRef.isVolatile(const TypeRef* r) {
+    return r.flags.is_volatile;
+}
+
+public func bool TypeRef.isUser(const TypeRef* r) {
+    return r.flags.is_user;
+}
+
+public func bool TypeRef.hasPrefix(const TypeRef* r) {
+    return r.flags.has_prefix;
+}
+
+public func bool TypeRef.isIncrArray(const TypeRef* r) {
+    return r.flags.incr_array;
+}
+
+public func BuiltinTypeKind TypeRef.getBuiltinKind(const TypeRef* r) {
+    return cast<BuiltinTypeKind>(r.flags.builtin_kind);
+}
+
+public func u32 TypeRef.getNumPointers(const TypeRef* r) {
+    return r.flags.num_ptrs;
+}
+
+public func const Ref* TypeRef.getUser(const TypeRef* r) {
+    if (r.flags.is_user) return &r.refs[0];
+    return nil;
+}
+
+public func const Ref* TypeRef.getPrefix(const TypeRef* r) {
+    if (r.flags.has_prefix) return &r.refs[1];
+    return nil;
+}
+
+public func u32 TypeRef.getNumArrays(const TypeRef* r) {
+    return r.flags.num_arrays;
+}
+
+public func Expr* TypeRef.getArray(const TypeRef* r, u32 idx) {
+    const u32 numrefs = r.flags.is_user + r.flags.has_prefix;
+    const u8* ptr = cast<u8*>(r.refs) + numrefs * sizeof(Ref);
+    Expr** arrays = cast<Expr**>(ptr);
+    return arrays[idx];
+}
+
+public func Expr** TypeRef.getArray2(TypeRef* r, u32 idx) {
+    const u32 numrefs = r.flags.is_user + r.flags.has_prefix;
+    const u8* ptr = cast<u8*>(r.refs) + numrefs * sizeof(Ref);
+    Expr** arrays = cast<Expr**>(ptr);
+    return &arrays[idx];
+}
+
+func void TypeRef.print(const TypeRef* r, string_buffer.Buf* out, bool filled) {
+    // eg. const test.Foo*[10]
+
+    out.color(col_Error);
+    if (r.isConst()) out.add("const ");
+    if (r.isVolatile()) out.add("volatile ");
+
+    if (r.flags.is_user) {
+        if (r.flags.has_prefix) {
+            out.add(idx2name(r.refs[1].name_idx));
+            out.add(".");
+        }
+        out.add(idx2name(r.refs[0].name_idx));
+    } else {
+        out.add(builtinType_names[r.flags.builtin_kind]);
+    }
+
+    for (u32 i=0; i<r.flags.num_ptrs; i++) out.add("*");
+
+    if (r.flags.incr_array) {
+        out.add("[+]");
+    }
+
+    if (filled) {
+        for (u32 i=0; i<r.flags.num_arrays; i++) {
+            const Expr* a = r.getArray(i);
+            out.add("[");
+            // note: a can be nil, when[]
+            if (a) a.printLiteral(out);
+            out.add("]");
+        }
+    }
+}
+
+func void TypeRef.debugPrint(const TypeRef* t, string_buffer.Buf* out) {
+    // TODO
+}
+
+// Note: only use of filled TypeRef
+public func void TypeRef.dump(const TypeRef* r) {
+    string_buffer.Buf* out = string_buffer.create(128, utils.useColor());
+    r.print(out, true);
+    out.color(col_Normal);
+    stdio.puts(out.data());
+    out.free();
+}
+

@@ -14,6 +14,8 @@ func QualType getPointerFromArray(ast_builder.Builder* builder, QualType q) {
     const ArrayType* a = cast<ArrayType*>(q.getTypeOrNil());
     QualType elem = a.getElemType();
     QualType res = builder.actOnPointerType(elem, q.getQualifiers());
+    //TODO:  canonical is already done in actOnPointerType now
+/*
     // canonical can be either self or a pointer to elem's canonical type
     QualType canon = elem.getCanonicalType();
     if (elem.getTypeOrNil() == canon.getTypeOrNil()) {
@@ -23,6 +25,7 @@ func QualType getPointerFromArray(ast_builder.Builder* builder, QualType q) {
         QualType c = builder.actOnPointerType(canon, q.getQualifiers());
         res.setCanonicalType(c);
     }
+*/
     return res;
 }
 
@@ -424,7 +427,8 @@ func QualType ModuleAnalyser.analyseUnaryOperator(ModuleAnalyser* ma, Expr** e_p
         return QualType.init0();
     case AddrOf:
         if (!ma.getIdentifierKind(inner)) return QualType.init0();
-        t = ma.builder.actOnPointerType(t.getCanonicalType(), 0);
+        QualType canon = t.getCanonicalType();
+        t = ma.builder.actOnPointerType(canon, canon.getQualifiers());
         e.setCtc();
         break;
     case Deref:
@@ -434,6 +438,7 @@ func QualType ModuleAnalyser.analyseUnaryOperator(ModuleAnalyser* ma, Expr** e_p
         } else {
             t = t.getCanonicalType();
             const PointerType* p = t.getPointerType();
+            // TODO copy flags from outer
             return p.getInner();
         }
         break;
@@ -498,9 +503,6 @@ func QualType ModuleAnalyser.analyseMemberExpr(ModuleAnalyser* ma, Expr** e_ptr)
         break;
     case Array:
         // TODO can happen?
-        break;
-    case Ref:
-        // IdentifierKind.Var or IdentifierKind.StructMember or IdentifierKind.EnumConstant
         break;
     case Struct:
         // TODO
@@ -598,7 +600,6 @@ func QualType ModuleAnalyser.analyseSizeof(ModuleAnalyser* ma, BuiltinExpr* e) {
     // TODO switch
     if (inner.getKind() == ExprKind.Type) {
         TypeExpr* te = cast<TypeExpr*>(inner);
-        QualType qt = te.getType();
         // TODO
         e.setValue(4);
     }

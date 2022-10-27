@@ -69,7 +69,7 @@ public func void StructTypeDecl.setStructFunctions(StructTypeDecl* d, ast_contex
 }
 
 func void StructTypeDecl.print(const StructTypeDecl* d, string_buffer.Buf* out, u32 indent) {
-    d.parent.printKind(out, indent, "StructTypeDecl");
+    d.parent.printKind(out, indent, "StructTypeDecl", true);
     d.parent.printBits(out);
     if (d.parent.structTypeDeclBits.is_global) out.add(" global");
     if (d.parent.structTypeDeclBits.is_struct) out.add(" struct");

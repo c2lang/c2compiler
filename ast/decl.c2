@@ -181,12 +181,14 @@ func void Decl.print(const Decl* d, string_buffer.Buf* out, u32 indent) {
     }
 }
 
-func void Decl.printKind(const Decl* d, string_buffer.Buf* out, u32 indent, const char* kind_) {
+func void Decl.printKind(const Decl* d, string_buffer.Buf* out, u32 indent, const char* kind_, bool print_type) {
     out.indent(indent);
     out.color(col_Decl);
     out.add(kind_);
-    out.add(" ");
-    d.qt.printQuoted(out);
+    if (print_type) {
+        out.add(" ");
+        d.qt.printQuoted(out);
+    }
 }
 
 func void Decl.printName(const Decl* d, string_buffer.Buf* out) {

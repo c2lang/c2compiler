@@ -11,6 +11,7 @@ import token local;
 import utils local;
 
 import stdlib local;
+import stdio;
 
 public type Builder struct {
     Context* context;
@@ -63,9 +64,9 @@ public func void Builder.actOnImport(Builder* b, const char* mod_name, SrcLoc mo
     b.ast.addImport(d);
 }
 
-public func Decl* Builder.actOnAliasType(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType refType) {
+public func Decl* Builder.actOnAliasType(Builder* b, const char* name, SrcLoc loc, bool is_public, const TypeRefHolder* ref) {
     is_public |= b.is_interface;
-    AliasTypeDecl* d = AliasTypeDecl.create(b.context, name, loc, is_public, b.ast, refType);
+    AliasTypeDecl* d = AliasTypeDecl.create(b.context, name, loc, is_public, b.ast, ref);
     b.ast.addTypeDecl(d.asDecl());
     Decl* dd = d.asDecl();
     b.addSymbol(name, dd);
@@ -76,7 +77,7 @@ public func Decl* Builder.actOnFunctionTypeDecl(Builder* b,
                                                 const char* name,
                                                 SrcLoc loc,
                                                 bool is_public,
-                                                QualType rtype,
+                                                const TypeRefHolder* rtype,
                                                 VarDecl** params,
                                                 u32 num_params,
                                                 bool is_variadic)
@@ -84,6 +85,7 @@ public func Decl* Builder.actOnFunctionTypeDecl(Builder* b,
     is_public |= b.is_interface;
     FunctionDecl* fn = FunctionDecl.create(b.context, name, loc, is_public, b.ast, rtype, nil, params, num_params, is_variadic);
 
+    // TODO do this in FunctionDecl? (like struct?)
     FunctionTypeDecl* d = FunctionTypeDecl.create(b.context, fn);
     b.ast.addTypeDecl(d.asDecl());
     Decl* dd = d.asDecl();
@@ -109,31 +111,34 @@ public func StructTypeDecl* Builder.actOnStructType(Builder* b,
     return d;
 }
 
-public func VarDecl* Builder.actOnStructMember(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType qt, Expr* bitfield) {
+public func VarDecl* Builder.actOnStructMember(Builder* b, const char* name, SrcLoc loc, bool is_public, const TypeRefHolder* ref, Expr* bitfield) {
     is_public |= b.is_interface;
-    return VarDecl.createStructMember(b.context, name, loc, is_public, qt, b.ast, bitfield);
+    return VarDecl.createStructMember(b.context, name, loc, is_public, ref, b.ast, bitfield);
 }
 
 public func VarDecl* Builder.actOnStructVar(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType qt, Expr* initValue) {
     is_public |= b.is_interface;
-    return VarDecl.create(b.context, VarDeclKind.StructMember, name, loc, is_public, qt, b.ast, initValue);
+    // BB TEMP
+    TypeRefHolder ref;
+    ref.init();
+    return VarDecl.create(b.context, VarDeclKind.StructMember, name, loc, is_public, &ref, b.ast, initValue);
 }
 
-public func void Builder.actOnGlobalVarDecl(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType qt, Expr* initValue) {
+public func void Builder.actOnGlobalVarDecl(Builder* b, const char* name, SrcLoc loc, bool is_public, TypeRefHolder* ref, Expr* initValue) {
     is_public |= b.is_interface;
-    VarDecl* d = VarDecl.create(b.context, VarDeclKind.GlobalVar, name, loc, is_public, qt, b.ast, initValue);
+    VarDecl* d = VarDecl.create(b.context, VarDeclKind.GlobalVar, name, loc, is_public, ref, b.ast, initValue);
     Decl* dd = d.asDecl();
     b.ast.addVarDecl(dd);
     b.addSymbol(name, dd);
 }
 
-public func VarDecl* Builder.actOnFunctionParam(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType qt, Expr* initValue) {
+public func VarDecl* Builder.actOnFunctionParam(Builder* b, const char* name, SrcLoc loc, bool is_public, const TypeRefHolder* ref, Expr* initValue) {
     is_public |= b.is_interface;
-    return VarDecl.create(b.context, VarDeclKind.FunctionParam, name, loc, is_public, qt, b.ast, initValue);
+    return VarDecl.create(b.context, VarDeclKind.FunctionParam, name, loc, is_public, ref, b.ast, initValue);
 }
 
-public func Stmt* Builder.actOnVarDeclStmt(Builder* b, const char* name, SrcLoc loc, QualType qt, Expr* initValue, bool has_local) {
-    VarDecl* d = VarDecl.create(b.context, VarDeclKind.LocalVar, name, loc, false, qt, b.ast, initValue);
+public func Stmt* Builder.actOnVarDeclStmt(Builder* b, const char* name, SrcLoc loc, const TypeRefHolder* ref, Expr* initValue, bool has_local) {
+    VarDecl* d = VarDecl.create(b.context, VarDeclKind.LocalVar, name, loc, false, ref, b.ast, initValue);
     d.setLocal(has_local);
 
     return cast<Stmt*>(DeclStmt.create(b.context, d));
@@ -143,56 +148,58 @@ public func void Builder.actOnAttr(Builder* b, const char* name, SrcLoc begin_lo
     //printf("ATTR  %s\n", name);
 }
 
-
-public func QualType Builder.actOnBuiltinType(Builder* b, token.Kind kind) {
-    Type* t = nil;
-    // TODO lookup table -> fill in init with correct width for usize/isize, fill with QualType
+public func QualType Builder.actOnBuiltinType(Builder* b, BuiltinTypeKind kind) {
     switch (kind) {
-    case KW_u8:    return g_u8;
-    case KW_u16:   return g_u16;
-    case KW_u32:   return g_u32;
-    case KW_u64:   return g_u64;
-    case KW_usize:
-        // TODO targetInfo.intWidth
-        return g_usize;
-    case KW_i8:    return g_i8;
-    case KW_i16:   return g_i16;
-    case KW_i32:   return g_i32;
-    case KW_i64:   return g_i64;
-    case KW_isize: return g_isize;
-/*
-    case KW_f32:
-    case KW_f64:
-    case KW_reg8:
-    case KW_reg16:
-    case KW_reg32:
-    case KW_reg64:
-*/
-    case KW_char:  return g_i8;
-    case KW_void:  return g_void;
-    case KW_bool:  return g_bool;
-    default:
-        // fatal error
-        break;
+    case Int8:      return g_i8;
+    case Int16:     return g_i16;
+    case Int32:     return g_i32;
+    case Int64:     return g_i64;
+    case UInt8:     return g_u8;
+    case UInt16:    return g_u16;
+    case UInt32:    return g_u32;
+    case UInt64:    return g_u64;
+    case Float32:   break;
+    case Float64:   break;
+    case Bool:      return g_bool;
+    case Void:      return g_void;
     }
     assert(0);
     return QualType.init2(nil);
 }
 
-public func QualType Builder.actOnRefType(Builder* b, IdentifierExpr* id, IdentifierExpr* prefix) {
-    RefType* t = RefType.create(b.context, prefix, id);
-    return QualType.init2(cast<Type*>(t));
-}
-
 public func QualType Builder.actOnPointerType(Builder* b, QualType inner, u32 qualifiers) {
-    return QualType.init(ast.getPointerType(inner), qualifiers);
+    QualType ptr = QualType.init(ast.getPointerType(inner), qualifiers);
+    // Note: since we re-use pointertype, the flags cannot be mixed.
+    // So i8* and const i8* use the same PointerType (and thus Inner)
+    // So we keep the flags on each QualType in the stack
+
+    // canonical can be either self or a pointer to elem's canonical type
+    QualType canon = inner.getCanonicalType();
+    if (inner.getTypeOrNil() == canon.getTypeOrNil()) {
+        canon = ptr;
+    } else {
+        canon = QualType.init(ast.getPointerType(canon), qualifiers);
+    }
+    ptr.setCanonicalType(canon);
+
+    return ptr;
 }
 
-public func QualType Builder.actOnArrayType(Builder* b, QualType elem, bool is_incremental, Expr* sizeExpr) {
-    // TODO get from TypeContext?
-    ArrayType* t = ArrayType.create(b.context, elem, is_incremental, sizeExpr);
-    // NOTE: Context doesn't know AST/Types, just allocates!
-    return QualType.init2(t.asType());
+public func QualType Builder.actOnArrayType(Builder* b, QualType elem, bool has_size, u32 size) {
+    ArrayType* t = ArrayType.create(b.context, elem, has_size, size);
+    QualType a = QualType.init(cast<Type*>(t), elem.getQualifiers());
+
+    // canonical can be either self or a pointer to elem's canonical type
+    QualType canon = elem.getCanonicalType();
+    if (elem.getTypeOrNil() == canon.getTypeOrNil()) {
+        canon = a;
+    } else {
+        ArrayType* t2 = ArrayType.create(b.context, canon, has_size, size);
+        canon = QualType.init(cast<Type*>(t2), elem.getQualifiers());
+    }
+    a.setCanonicalType(canon);
+
+    return a;
 }
 
 public func QualType Builder.actOnModuleType(Builder* b, ImportDecl* decl) {
@@ -200,16 +207,11 @@ public func QualType Builder.actOnModuleType(Builder* b, ImportDecl* decl) {
     return QualType.init2(t.asType());
 }
 
-public func QualType Builder.actOnTypeQualifier(Builder* b, QualType qt, u32 qualifier) {
-    QualType res = { qt.ptr | (qualifier & QualType_Mask) }
-    return res;
-}
-
 public func FunctionDecl* Builder.actOnFunctionDecl(Builder* b,
                                                     const char* name,
                                                     SrcLoc loc,
                                                     bool is_public,
-                                                    QualType rtype,
+                                                    const TypeRefHolder* rtype,
                                                     IdentifierExpr* prefix,
                                                     VarDecl** params,
                                                     u32 num_params,
@@ -427,8 +429,8 @@ public func Expr* Builder.actOnToContainerExpr(Builder* b, SrcLoc loc, Expr* str
     return cast<Expr*>(BuiltinExpr.createToContainer(b.context, loc, structExpr, member, pointer));
 }
 
-public func Expr* Builder.actOnTypeExpr(Builder* b, SrcLoc loc, QualType qt) {
-    return cast<Expr*>(TypeExpr.create(b.context, loc, qt));
+public func Expr* Builder.actOnTypeExpr(Builder* b, SrcLoc loc, const TypeRefHolder* ref) {
+    return cast<Expr*>(TypeExpr.create(b.context, loc, ref));
 }
 
 public func Expr* Builder.actOnBitOffsetExpr(Builder* b, SrcLoc loc, Expr* lhs, Expr* rhs) {
@@ -443,8 +445,8 @@ public func Expr* Builder.actOnCallExpr(Builder* b, Expr* fn, Expr** args, u32 n
     return cast<Expr*>(CallExpr.create(b.context, fn, args, num_args));
 }
 
-public func Expr* Builder.actOnExplicitCast(Builder* b, SrcLoc loc, QualType qt, Expr* inner) {
-    return cast<Expr*>(ExplicitCastExpr.create(b.context, loc, qt, inner));
+public func Expr* Builder.actOnExplicitCast(Builder* b, SrcLoc loc, const TypeRefHolder* ref, Expr* inner) {
+    return cast<Expr*>(ExplicitCastExpr.create(b.context, loc, ref, inner));
 }
 
 public func Expr* Builder.actOnMemberExpr(Builder* b, Expr* base, SrcLoc loc, const char* member_name) {

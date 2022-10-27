@@ -35,13 +35,18 @@ func void create_signed(ast_context.Context* context,
                         string_pool.Pool* pool,
                         const char* name,
                         i64 value,
-                        QualType qt)
+                        QualType qt,
+                        BuiltinTypeKind kind)
 {
-    qt.setConst();
     Expr* ie = cast<Expr*>(IntegerLiteral.createSignedConstant(context, 0, value, qt));
     const char* name2 = pool.addStr(name, true);
-    VarDecl* var = VarDecl.create(context, VarDeclKind.GlobalVar, name2, 0, true, qt, a, ie);
+    TypeRefHolder ref;
+    ref.init();
+    ref.setBuiltin(kind);
+    VarDecl* var = VarDecl.create(context, VarDeclKind.GlobalVar, name2, 0, true, &ref, a, ie);
     Decl* d = cast<Decl*>(var);
+    qt.setConst();
+    d.setType(qt);
     d.setChecked();
     a.addVarDecl(d);
     a.getMod().addSymbol(ast.name2idx(name2), d);
@@ -52,13 +57,18 @@ func void create_unsigned(ast_context.Context* context,
                           string_pool.Pool* pool,
                           const char* name,
                           u64 value,
-                          QualType qt)
+                          QualType qt,
+                          BuiltinTypeKind kind)
 {
-    qt.setConst();
     Expr* ie = cast<Expr*>(IntegerLiteral.createUnsignedConstant(context, 0, value, qt));
     const char* name2 = pool.addStr(name, true);
-    VarDecl* var = VarDecl.create(context, VarDeclKind.GlobalVar, name2, 0, true, qt, a, ie);
+    TypeRefHolder ref;
+    ref.init();
+    ref.setBuiltin(kind);
+    VarDecl* var = VarDecl.create(context, VarDeclKind.GlobalVar, name2, 0, true, &ref, a, ie);
     Decl* d = cast<Decl*>(var);
+    qt.setConst();
+    d.setType(qt);
     d.setChecked();
     a.addVarDecl(d);
     a.getMod().addSymbol(ast.name2idx(name2), d);
@@ -113,8 +123,12 @@ public func Module* load(ast_context.Context* context, string_pool.Pool* pool) {
         default:
             break;
         }
-        AliasTypeDecl* t = AliasTypeDecl.create(context, type_name, 0, true, a, qt);
+        TypeRefHolder ref;
+        ref.init();
+        ref.setBuiltin(ctypes[i].kind);
+        AliasTypeDecl* t = AliasTypeDecl.create(context, type_name, 0, true, a, &ref);
         Decl* d = t.asDecl();
+        d.setType(qt);
         QualType qt2 = d.getType();
         qt2.setCanonicalType(qt);
         d.setChecked();
@@ -122,37 +136,37 @@ public func Module* load(ast_context.Context* context, string_pool.Pool* pool) {
         m.addSymbol(ast.name2idx(type_name), d);
     }
 
-    create_signed(context, a, pool, "min_i8", -128, g_i8);
-    create_signed(context, a, pool, "max_i8", 127, g_i8);
+    create_signed(context, a, pool, "min_i8", -128, g_i8, BuiltinTypeKind.Int8);
+    create_signed(context, a, pool, "max_i8", 127, g_i8, BuiltinTypeKind.Int8);
 
-    create_unsigned(context, a, pool, "min_u8", 0, g_u8);
-    create_unsigned(context, a, pool, "max_u8", 255, g_u8);
+    create_unsigned(context, a, pool, "min_u8", 0, g_u8, BuiltinTypeKind.UInt8);
+    create_unsigned(context, a, pool, "max_u8", 255, g_u8, BuiltinTypeKind.UInt8);
 
-    create_signed(context, a, pool, "min_i16", -32768, g_i16);
-    create_signed(context, a, pool, "max_i16", 32767, g_i16);
+    create_signed(context, a, pool, "min_i16", -32768, g_i16, BuiltinTypeKind.Int16);
+    create_signed(context, a, pool, "max_i16", 32767, g_i16, BuiltinTypeKind.Int16);
 
-    create_unsigned(context, a, pool, "min_u16", 0, g_u16);
-    create_unsigned(context, a, pool, "max_u16", 65535, g_u16);
+    create_unsigned(context, a, pool, "min_u16", 0, g_u16, BuiltinTypeKind.UInt16);
+    create_unsigned(context, a, pool, "max_u16", 65535, g_u16, BuiltinTypeKind.UInt16);
 
-    create_signed(context, a, pool, "min_i32", -2147483648, g_i32);
-    create_signed(context, a, pool, "max_i32", 2147483647, g_i32);
+    create_signed(context, a, pool, "min_i32", -2147483648, g_i32, BuiltinTypeKind.Int32);
+    create_signed(context, a, pool, "max_i32", 2147483647, g_i32, BuiltinTypeKind.Int32);
 
-    create_unsigned(context, a, pool, "min_u32", 0, g_u32);
-    create_unsigned(context, a, pool, "max_u32", 4294967295, g_u32);
+    create_unsigned(context, a, pool, "min_u32", 0, g_u32, BuiltinTypeKind.UInt32);
+    create_unsigned(context, a, pool, "max_u32", 4294967295, g_u32, BuiltinTypeKind.UInt32);
 
     // NOTE: minimum should be -..808, but clang complains about it..
-    create_signed(context, a, pool, "min_i64", -9223372036854775807, g_i64);
-    create_signed(context, a, pool, "max_i64", 9223372036854775807, g_i64);
+    create_signed(context, a, pool, "min_i64", -9223372036854775807, g_i64, BuiltinTypeKind.Int64);
+    create_signed(context, a, pool, "max_i64", 9223372036854775807, g_i64, BuiltinTypeKind.Int64);
 
-    create_unsigned(context, a, pool, "min_u64", 0, g_u64);
-    create_unsigned(context, a, pool, "max_u64", 9223372036854775807, g_u64);
+    create_unsigned(context, a, pool, "min_u64", 0, g_u64, BuiltinTypeKind.UInt64);
+    create_unsigned(context, a, pool, "max_u64", 9223372036854775807, g_u64, BuiltinTypeKind.UInt64);
 
     // TODO currently only 64-bit version!
-    create_signed(context, a, pool, "min_isize", -9223372036854775807, g_i64);
-    create_signed(context, a, pool, "max_isize", 9223372036854775807, g_i64);
+    create_signed(context, a, pool, "min_isize", -9223372036854775807, g_i64, BuiltinTypeKind.Int64);
+    create_signed(context, a, pool, "max_isize", 9223372036854775807, g_i64, BuiltinTypeKind.Int64);
 
-    create_unsigned(context, a, pool, "min_usize", 0, g_u64);
-    create_unsigned(context, a, pool, "max_usize", 9223372036854775807, g_u64);
+    create_unsigned(context, a, pool, "min_usize", 0, g_u64, BuiltinTypeKind.UInt64);
+    create_unsigned(context, a, pool, "max_usize", 9223372036854775807, g_u64, BuiltinTypeKind.UInt64);
 
     return m;
 }

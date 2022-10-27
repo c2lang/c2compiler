@@ -254,7 +254,9 @@ func void Parser.parseFuncDef(Parser* p, bool is_public) {
 #endif
     p.consumeToken();
 
-    QualType rtype = p.parseSingleTypeSpecifier(true);
+    TypeRefHolder rtype;
+    rtype.init();
+    p.parseSingleTypeSpecifier(&rtype, true);
 
     p.expectIdentifier();
     const char* func_name = p.tok.text_value;
@@ -281,7 +283,7 @@ func void Parser.parseFuncDef(Parser* p, bool is_public) {
     params.init(4);
 
     bool is_variadic = p.parseFunctionParams(&params, is_public, true);
-    FunctionDecl* f = p.builder.actOnFunctionDecl(func_name, func_loc, is_public, rtype, prefix, cast<VarDecl**>(params.getDecls()), params.size(), is_variadic);
+    FunctionDecl* f = p.builder.actOnFunctionDecl(func_name, func_loc, is_public, &rtype, prefix, cast<VarDecl**>(params.getDecls()), params.size(), is_variadic);
     params.free();
 
     p.parseOptionalAttributes(); // (f)
@@ -342,7 +344,9 @@ func VarDecl* Parser.parseParamDecl(Parser* p, bool is_public, bool allow_defaul
 #endif
     if (p.tok.kind == Kind.KW_local) p.error("invalid local");
 
-    QualType qt = p.parseTypeSpecifier(true);
+    TypeRefHolder ref;
+    ref.init();
+    p.parseTypeSpecifier(&ref, true);
 
     const char* name;
     SrcLoc loc = p.tok.loc;
@@ -360,22 +364,26 @@ func VarDecl* Parser.parseParamDecl(Parser* p, bool is_public, bool allow_defaul
         initValue = p.parseExpr();
     }
 
-    return p.builder.actOnFunctionParam(name, loc, is_public, qt, initValue);
+    return p.builder.actOnFunctionParam(name, loc, is_public, &ref, initValue);
 }
 
-func QualType Parser.parseTypeSpecifier(Parser* p, bool allow_qualifier) {
+func void Parser.parseTypeSpecifier(Parser* p, TypeRefHolder* ref, bool allow_qualifier) {
 #if ParserDebug
     printf("parseTypeSpecifier\n");
 #endif
-    QualType qt = p.parseSingleTypeSpecifier(allow_qualifier);
-    return p.parseOptionalArray(qt);
+    QualType qt = { 0 }
+    p.parseSingleTypeSpecifier(ref, allow_qualifier);
+    p.parseOptionalArray(ref, qt);
 }
 
-func QualType Parser.parseOptionalArray(Parser* p, QualType base) {
+func void Parser.parseOptionalArray(Parser* p, TypeRefHolder* ref, QualType base) {
 #if ParserDebug
     printf("parseOptionalArray\n");
 #endif
-    if (p.tok.kind != Kind.LSquare) return base;
+    if (p.tok.kind != Kind.LSquare) return;
+    if (ref.getNumArrays() == 3) {
+        p.error("arrays cannot have more than 3 dimensions");
+    }
     p.consumeToken();
 
     bool is_incremental = false;
@@ -385,20 +393,23 @@ func QualType Parser.parseOptionalArray(Parser* p, QualType base) {
     Expr* size = nil;
     if (p.tok.kind == Kind.RSquare) {
         // "[]"
+        ref.addArray(nil);
         p.consumeToken();
     }
     // TODO fastpath for number + ] (need NextToken)
     else if (p.tok.kind == Kind.Plus) {
         p.consumeToken();
+        ref.setIncrArray();
         is_incremental = true;
         p.expectAndConsume(Kind.RSquare);
     } else {
         size = p.parseExpr();
+        ref.addArray(size);
         p.expectAndConsume(Kind.RSquare);
     }
 
-    base = p.parseOptionalArray(base);
-    return p.builder.actOnArrayType(base, is_incremental, size);
+    p.parseOptionalArray(ref, base);
+    //return p.builder.actOnArrayType(base, is_incremental, size);
 }
 
 func void Parser.parseVarDef(Parser* p, bool is_public) {
@@ -407,7 +418,9 @@ func void Parser.parseVarDef(Parser* p, bool is_public) {
 #endif
     if (p.tok.kind == Kind.KW_local) p.error("local cannot be used at file scope");
 
-    QualType qt = p.parseTypeSpecifier(true);
+    TypeRefHolder ref;
+    ref.init();
+    p.parseTypeSpecifier(&ref, true);
     p.expectIdentifier();
 
     const char* name = p.tok.text_value;
@@ -426,7 +439,7 @@ func void Parser.parseVarDef(Parser* p, bool is_public) {
 
     if (need_semi) p.expectAndConsume(Kind.Semicolon);
 
-    p.builder.actOnGlobalVarDecl(name, loc, is_public, qt, initValue);
+    p.builder.actOnGlobalVarDecl(name, loc, is_public, &ref, initValue);
 }
 
 func void Parser.parseStaticAssert(Parser* p) {
@@ -463,12 +476,43 @@ func u32 Parser.parseOptionalTypeQualifier(Parser* p) {
     return qualifiers;
 }
 
-func QualType Parser.parseSingleTypeSpecifier(Parser* p, bool allow_qualifier) {
+func BuiltinTypeKind tokKindToBuiltinKind(token.Kind kind) {
+    // TODO use lookup table (modified for arch)
+    switch (kind) {
+    case KW_u8:     return BuiltinTypeKind.UInt8;
+    case KW_u16:    return BuiltinTypeKind.UInt16;
+    case KW_u32:    return BuiltinTypeKind.UInt32;
+    case KW_u64:    return BuiltinTypeKind.UInt64;
+    // TODO depends on arch
+    case KW_usize:  return BuiltinTypeKind.UInt64;
+    case KW_i8:     return BuiltinTypeKind.Int8;
+    case KW_i16:    return BuiltinTypeKind.Int16;
+    case KW_i32:    return BuiltinTypeKind.Int32;
+    case KW_i64:    return BuiltinTypeKind.Int64;
+    // TODO depends on arch
+    case KW_isize:  return BuiltinTypeKind.Int64;
+    case KW_f32:    return BuiltinTypeKind.Float32;
+    case KW_f64:    return BuiltinTypeKind.Float64;
+    case KW_reg8:   return BuiltinTypeKind.UInt8;
+    case KW_reg16:  return BuiltinTypeKind.UInt16;
+    case KW_reg32:  return BuiltinTypeKind.UInt32;
+    case KW_reg64:  return BuiltinTypeKind.UInt64;
+    case KW_char:   return BuiltinTypeKind.Int8;
+    case KW_void:   return BuiltinTypeKind.Void;
+    case KW_bool:   return BuiltinTypeKind.Bool;
+    default:
+        break;
+    }
+    return BuiltinTypeKind.Void;
+}
+
+func void Parser.parseSingleTypeSpecifier(Parser* p, TypeRefHolder* ref, bool allow_qualifier) {
     u32 type_qualifier = 0;
 
-    if (allow_qualifier) type_qualifier = p.parseOptionalTypeQualifier();
-
-    QualType base;
+    if (allow_qualifier) {
+        type_qualifier = p.parseOptionalTypeQualifier();
+        ref.setQualifiers(type_qualifier);
+    }
 
     switch (p.tok.kind) {
     case KW_u8:   fallthrough;
@@ -490,43 +534,39 @@ func QualType Parser.parseSingleTypeSpecifier(Parser* p, bool allow_qualifier) {
     case KW_char:  fallthrough;
     case KW_void:  fallthrough;
     case KW_bool:
-        base = p.builder.actOnBuiltinType(p.tok.kind);
+        ref.setBuiltin(tokKindToBuiltinKind(p.tok.kind));
         p.consumeToken();
         break;
     case Identifier:
-        base = p.parseFullTypeIdentifier();
+        p.parseFullTypeIdentifier(ref);
         break;
     default:
         p.error("expected type specifier");
         break;
     }
 
+    u32 depth = 0;
     while (p.tok.kind == Kind.Star) {
-        base = p.builder.actOnPointerType(base, type_qualifier);
-        type_qualifier = 0;
+        depth++;
+        if (depth > 3) p.error("pointers have a maximum nesting of 3");
+        ref.addPointer();
         p.consumeToken();
     }
-    return p.builder.actOnTypeQualifier(base, type_qualifier);
 }
 
 // Syntax:
 //   identifier
 //   identifier.identifier
-func QualType Parser.parseFullTypeIdentifier(Parser* p) {
-
-    IdentifierExpr* id = p.builder.actOnIdentifier(p.tok.loc, p.tok.text_value);
+func void Parser.parseFullTypeIdentifier(Parser* p, TypeRefHolder* ref) {
+    ref.setUser(p.tok.loc, name2idx(p.tok.text_value));
     p.consumeToken();
-
-    IdentifierExpr* prefix = nil;
 
     if (p.tok.kind == Kind.Dot) {
         p.consumeToken();
         p.expectIdentifier();
-        prefix = id;
-        id = p.builder.actOnIdentifier(p.tok.loc, p.tok.text_value);
+        ref.setPrefix(p.tok.loc, name2idx(p.tok.text_value));
         p.consumeToken();
     }
-    return p.builder.actOnRefType(id, prefix);
 }
 
 // TEMP here

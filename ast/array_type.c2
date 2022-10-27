@@ -9,8 +9,8 @@ import string_buffer;
 public type ArrayTypeBits struct {
     u32 : NumTypeBits;
     u32 has_size : 1;       // if it has an sizeExpr
-    u32 value_set : 1;
-    u32 is_incremental : 1;
+    //u32 value_set : 1;
+    //u32 is_incremental : 1;
 }
 
 public type ArrayType struct {
@@ -18,28 +18,29 @@ public type ArrayType struct {
     QualType elem;
     u32 size;       // set during analysis
     // NOTE: 4 bytes padding here on 64-bit systems
-    Expr*[0] sizeExpr; // tail-allocated
 } @(opaque)
 
 public func ArrayType* ArrayType.create(ast_context.Context* c,
                                         QualType elem,
-                                        bool is_incremental,
-                                        Expr* sizeExpr) @(inline)
+                                        bool has_size,
+                                        u32 size)
 {
-    u32 size = sizeof(ArrayType);
-    if (sizeExpr) size += sizeof(Expr*);
-    ArrayType* t = c.alloc(size);
+    ArrayType* t = c.alloc(sizeof(ArrayType));
     t.parent.init(TypeKind.Array);
-    t.parent.arrayTypeBits.is_incremental = is_incremental;
+    //t.parent.arrayTypeBits.is_incremental = is_incremental;
+    t.parent.arrayTypeBits.has_size = has_size;
     t.elem = elem;
+    t.size = size;
 
+/*
     if (sizeExpr) {
         t.parent.arrayTypeBits.has_size = 1;
         t.sizeExpr[0] = sizeExpr;
     }
+*/
 #if AstStatistics
     stats.arrayCount++;
-    stats.arraySize += size;
+    stats.arraySize += sizeof(ArrayType);
 #endif
     return t;
 }
@@ -48,6 +49,7 @@ public func Type* ArrayType.asType(ArrayType* t) @(inline) { return &t.parent; }
 
 public func QualType ArrayType.getElemType(const ArrayType* t) { return t.elem; }
 
+/*
 public func bool ArrayType.isIncremental(const ArrayType* t) {
     return t.parent.arrayTypeBits.is_incremental;
 }
@@ -70,12 +72,18 @@ public func void ArrayType.setSize(ArrayType* t, u32 sizeValue) {
     t.parent.arrayTypeBits.value_set = true;
     t.size = sizeValue;
 }
+*/
+
+public func u32 ArrayType.hasSize(const ArrayType* t) {
+    return t.parent.arrayTypeBits.has_size;
+}
 
 public func u32 ArrayType.getSize(const ArrayType* t) { return t.size; }
 
 func void ArrayType.print(const ArrayType* t, string_buffer.Buf* out) {
     t.elem.print(out);
     out.add("[");
+/*
     if (t.parent.arrayTypeBits.value_set) {
         out.print("%u", t.size);
     } else if (t.parent.arrayTypeBits.is_incremental) {
@@ -83,6 +91,8 @@ func void ArrayType.print(const ArrayType* t, string_buffer.Buf* out) {
     } else if (t.parent.arrayTypeBits.has_size) {
         t.sizeExpr[0].printLiteral(out);
     }
+*/
+    out.print("%u", t.size);
     out.add("]");
     // TODO use printPost()  printPre()
 }
@@ -94,7 +104,8 @@ func void ArrayType.debugPrint(const ArrayType* t, string_buffer.Buf* out) {
 public func void ArrayType.fullPrint(const ArrayType* t, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
     out.print("ArrayType [%p]", t);
-    if (t.parent.arrayTypeBits.value_set) out.print(" size=%u", t.size);
+    //if (t.parent.arrayTypeBits.value_set) out.print(" size=%u", t.size);
+    out.print(" size=%u", t.size);
     out.add("\n");
     t.elem.fullPrint(out, indent + 2);
 }

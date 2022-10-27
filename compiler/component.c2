@@ -170,6 +170,7 @@ public func void Component.printSymbols(const Component* c) {
         const ast.SymbolTable* table = c.mods[i].getSymbols();
         table.print(out);
     }
+    out.color(color.Normal);
     stdio.puts(out.data());
     out.free();
 }

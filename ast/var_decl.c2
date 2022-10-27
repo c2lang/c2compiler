@@ -32,8 +32,8 @@ static_assert(elemsof(VarDeclKind), elemsof(varDeclNames));
 
 public type VarDecl struct {
     Decl parent;
-    QualType origType;  // needed for ast-walking
-    Expr*[0] init;  // tail-allocated
+    TypeRef typeRef;    // Note: variable size due to tail allocs!
+    //Expr*[0] init;      // tail-allocated, position changes
 } @(opaque)
 
 public func VarDecl* VarDecl.create(ast_context.Context* c,
@@ -41,19 +41,22 @@ public func VarDecl* VarDecl.create(ast_context.Context* c,
                                     const char* name,
                                     SrcLoc loc,
                                     bool is_public,
-                                    QualType qt,
+                                    const TypeRefHolder* ref,
                                     AST* ast_,
                                     Expr* initValue) @(inline)
 {
-    u32 size = sizeof(VarDecl);
+    u32 size = sizeof(VarDecl) + ref.getExtraSize();
     if (initValue) size += sizeof(Expr*);
+
     VarDecl* d = c.alloc(size);
+    QualType qt = { 0 } // BB TODO create separate init
     d.parent.init(DeclKind.Var, name, loc, is_public, qt, ast_);
     d.parent.varDeclBits.kind = kind;
-    d.origType = qt;
+    ref.fill(&d.typeRef);
     if (initValue) {
         d.parent.varDeclBits.has_init_or_bitfield = 1;
-        d.init[0] = initValue;
+        Expr** i = d.getInit2();
+        *i = initValue;
     }
     return d;
 }
@@ -62,19 +65,23 @@ public func VarDecl* VarDecl.createStructMember(ast_context.Context* c,
                                                 const char* name,
                                                 SrcLoc loc,
                                                 bool is_public,
-                                                QualType qt,
+                                                const TypeRefHolder* ref,
                                                 AST* ast_,
                                                 Expr* bitfield) @(inline)
 {
-    u32 size = sizeof(VarDecl);
+    u32 size = sizeof(VarDecl) + ref.getExtraSize();
     if (bitfield) size += sizeof(Expr*);
+
     VarDecl* d = c.alloc(size);
+    QualType qt = { 0 }
     d.parent.init(DeclKind.Var, name, loc, is_public, qt, ast_);
     d.parent.varDeclBits.kind = VarDeclKind.StructMember;
 
+    ref.fill(&d.typeRef);
     if (bitfield) {
         d.parent.varDeclBits.has_init_or_bitfield = 1;
-        d.init[0] = bitfield;
+        Expr** i = d.getInit2();
+        *i = bitfield;
     }
     return d;
 }
@@ -83,20 +90,24 @@ public func Decl* VarDecl.asDecl(VarDecl* d) @(inline) { return &d.parent; }
 
 public func VarDeclKind VarDecl.getKind(const VarDecl* d) { return cast<VarDeclKind>(d.parent.varDeclBits.kind); }
 
-public func QualType VarDecl.getOrigType(const VarDecl* d) { return d.origType; }
-
+public func TypeRef* VarDecl.getTypeRef(VarDecl* d) { return &d.typeRef; }
 
 public func bool VarDecl.hasInit(const VarDecl* d) @(inline) {
     return d.parent.varDeclBits.has_init_or_bitfield;
 }
 
 public func Expr* VarDecl.getInit(const VarDecl* d) {
-    if (d.parent.varDeclBits.has_init_or_bitfield) return d.init[0];
+    if (d.parent.varDeclBits.has_init_or_bitfield) {
+        Expr** init_ = d.typeRef.getPointerAfter();
+        return init_[0];
+    }
     return nil;
 }
 
 public func Expr** VarDecl.getInit2(VarDecl* d) {
-    if (d.parent.varDeclBits.has_init_or_bitfield) return &d.init[0];
+    if (d.parent.varDeclBits.has_init_or_bitfield) {
+        return d.typeRef.getPointerAfter();
+    }
     return nil;
 }
 
@@ -105,7 +116,12 @@ public func void VarDecl.setLocal(VarDecl* d, bool has_local) {
 }
 
 func void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
-    d.parent.printKind(out, indent, "VarDecl");
+    bool valid_type = d.parent.qt.isValid();
+    d.parent.printKind(out, indent, "VarDecl", valid_type);
+    if (!valid_type) {
+        out.add(" ");
+        d.typeRef.print(out, true);
+    }
     out.color(col_Attr);
     VarDeclKind k = d.getKind();
     out.add(varDeclNames[k]);
@@ -116,7 +132,8 @@ func void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
     out.add("\n");
 
     if (d.parent.varDeclBits.has_init_or_bitfield) {
-        d.init[0].print(out, indent + 2);
+        Expr* i = d.getInit();
+        i.print(out, indent + 2);
     }
 }
 

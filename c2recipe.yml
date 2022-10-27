@@ -99,7 +99,6 @@ executable.c2c:
         - ast/type.c2
         - ast/qualtype.c2
         - ast/builtin_type.c2
-        - ast/ref_type.c2
         - ast/pointer_type.c2
         - ast/array_type.c2
         - ast/struct_type.c2
@@ -107,6 +106,7 @@ executable.c2c:
         - ast/module_type.c2
         - ast/alias_type.c2
         - ast/function_type.c2
+        - ast/type_ref.c2
 
         - ast/ast.c2
         - ast/module.c2

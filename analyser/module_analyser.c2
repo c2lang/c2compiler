@@ -255,11 +255,10 @@ func void ModuleAnalyser.handleVarDecl(void* arg, VarDecl* v) {
 func void ModuleAnalyser.analyseGlobalVarDecl(ModuleAnalyser* ma, VarDecl* v) {
     Decl* d = v.asDecl();
 
-    QualType qt = d.getType();
+    // Note: d.getType() is 0 here! (use refType)
+    TypeRef* ref = v.getTypeRef();
 
-    //qt.dump_full();
-    QualType res = ma.analyseType(qt, true);
-    //res.dump_full();
+    QualType res = ma.analyseTypeRef(ref);
 
     if (res.isInvalid()) return;
     d.setType(res);
@@ -281,9 +280,10 @@ func void ModuleAnalyser.analyseGlobalVarDecl(ModuleAnalyser* ma, VarDecl* v) {
     }
 
     if (v.hasInit()) {
-        ma.analyseInitExpr(v.getInit2(), res);
+        QualType qt_noflags = QualType.init2(res.getType());
+        ma.analyseInitExpr(v.getInit2(), qt_noflags);
         Expr* initval = v.getInit();
-        initval.setType(res);
+        initval.setType(qt_noflags);
     }
 }
 
@@ -387,8 +387,7 @@ func bool ModuleAnalyser.analyseInitListArray(ModuleAnalyser* ma, InitListExpr* 
     // determine real array size
     // TODO handle designators
 
-    Expr* sizeExpr = at.getSizeExpr();
-    if (sizeExpr) {
+    if (at.hasSize()) {
         u32 arraySize = at.getSize();
         if (numValues > arraySize) {
             ma.diags.report(values[arraySize].getLoc(), "excess elements in array initializer");
@@ -491,12 +490,13 @@ func void ModuleAnalyser.analyseStructNames(ModuleAnalyser* ma, StructTypeDecl* 
 }
 
 func void ModuleAnalyser.analyseAliasType(ModuleAnalyser* ma, AliasTypeDecl* d) {
-    QualType res = ma.analyseType(d.getRefType(), true);
+    TypeRef* ref = d.getTypeRef();
+    QualType res = ma.analyseTypeRef(ref);
     QualType qt = d.asDecl().getType();
     // Note: type is always AliasType
     Type* at = qt.getTypeOrNil();
     QualType canon = res.getCanonicalType();
-    canon.copyFlags(d.getRefType());
+    canon.copyFlags(res);
     at.setCanonicalType(canon);
 }
 
@@ -543,24 +543,117 @@ func void ModuleAnalyser.analyseEnumType(ModuleAnalyser* ma, EnumTypeDecl* d) {
     }
 }
 
-func void ModuleAnalyser.analyseStructMember(ModuleAnalyser* ma, VarDecl* d) {
-    QualType qt = d.asDecl().getType();
+func void ModuleAnalyser.analyseStructMember(ModuleAnalyser* ma, VarDecl* v) {
+    Decl* d = v.asDecl();
 
-    // TODO pass public, location
-    QualType res = ma.analyseType(qt, true);
+    TypeRef* ref = v.getTypeRef();
+
+    // TODO pass public
+    QualType res = ma.analyseTypeRef(ref);
+    if (res.isInvalid()) return;
+    d.setType(res);
 
     // TODO check attributes
 
     // TODO check initValue
 }
 
+func QualType ModuleAnalyser.analyseUserTypeRef(ModuleAnalyser* ma, const TypeRef* ref) {
+    const Ref* prefix = ref.getPrefix();
+    const Ref* user = ref.getUser();
 
-func QualType ModuleAnalyser.analyseDecl(ModuleAnalyser* ma, Decl* d) {
+    Decl* d = nil;
+    if (prefix) {
+        Module* mod = ma.scope.findModule(prefix.name_idx, prefix.loc);
+        if (!mod) return QualType.init0();
+
+        d = ma.scope.findGlobalSymbolInModule(mod, user.name_idx, user.loc);
+    } else {
+        d = ma.scope.findType(user.name_idx, user.loc);
+    }
+    if (!d) return QualType.init0();
+
+    if (!d.isTypeDecl()) {
+        ma.diags.report(user.loc, "%s is not a type", ast.idx2name(user.name_idx));
+        return QualType.init0();
+    }
+
+    // TODO need used_public?
+    bool external = (ma.mod != d.getModule());
+    if (!d.isPublic() && external) {
+        ma.diags.report(user.loc, "%s is not public", ast.idx2name(user.name_idx));
+        return QualType.init0();
+    }
+
+    bool full = (ref.getNumPointers() == 0);
+    DeclCheckState state = d.getCheckState();
+
+    if (full && state == DeclCheckState.InProgress) {
+        ma.diags.report(user.loc, "circular declaration");
+        return QualType.init0();
+    }
+
+    if (full && state != DeclCheckState.Checked) {
+        ma.analyseGlobalDecl(d);
+    }
+
+    d.setUsed();
+    if (/* used_public || */ external) d.setUsedPublic();
+
+    QualType qt = d.getType();
+    // TODO longjmp?
+    if (qt.isValid()) ref.setDest(qt.getIndex());
+
+    return qt;
+}
+
+func QualType ModuleAnalyser.analyseTypeRef(ModuleAnalyser* ma, TypeRef* ref) {
+    ref.dump();
     QualType resolved = { 0 }
-    // TODO
+    if (ref.isUser()) {
+        resolved = ma.analyseUserTypeRef(ref);
+        if (resolved.isInvalid()) return resolved;
+        assert(resolved.hasCanonicalType());
+    } else {
+        BuiltinTypeKind kind = ref.getBuiltinKind();
+        resolved = ma.builder.actOnBuiltinType(kind);
+    }
+
+    if (ref.isConst()) resolved.setConst();
+    if (ref.isVolatile()) resolved.setVolatile();
+
+    u32 num_ptrs = ref.getNumPointers();
+    for (u32 i=0; i<num_ptrs; i++) {
+        resolved = ma.builder.actOnPointerType(resolved, resolved.getQualifiers());
+    }
+
+    u32 num_arrays = ref.getNumArrays();
+    for (u32 i=0; i<num_arrays; i++) {
+        Expr* sizeExpr = ref.getArray(i);  // note: ImplicitCast could have been inserted
+        u32 size = 0;
+        if (sizeExpr) {
+            ma.analyseExpr(ref.getArray2(i), true);
+            sizeExpr = ref.getArray(i);  // note: ImplicitCast could have been inserted
+
+            if (!sizeExpr.isCtv()) {
+                ma.diags.reportRange(sizeExpr.getLoc(), sizeExpr.getRange(), "array size is not a compile-time value");
+            } else {
+                ctv_analyser.Value value = ctv_analyser.get_value(sizeExpr);
+                if (value.isNegative()) {
+                    ma.diags.reportRange(sizeExpr.getLoc(), sizeExpr.getRange(), "array size has negative value %d", value.svalue);
+                }
+                size = cast<u32>(value.uvalue);
+            }
+        }
+        //NOTE: we dont store ref.isIncrArray() (yet)
+        resolved = ma.builder.actOnArrayType(resolved, sizeExpr != nil, size);
+    }
+
+    resolved.dump_full();
     return resolved;
 }
 
+#if 0
 func QualType ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt, bool full) {
     if (qt.hasCanonicalType()) return qt;
 
@@ -627,14 +720,12 @@ func QualType ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt, bool f
             t.setCanonicalType(qt);
             resolved = qt;
         } else {
-            Type* t2 = cast<Type*>(ArrayType.create(ma.context, res, at.isIncremental(), at.getSizeExpr()));
+            // TODo use builder
+            Type* t2 = cast<Type*>(ArrayType.create(ma.context, res, at.hasSize(), at.getSize()));
+            //Type* t2 = cast<Type*>(ArrayType.create(ma.context, res, at.isIncremental(), at.getSizeExpr()));
             resolved.set(t2);
             t2.setCanonicalType(resolved);
         }
-        break;
-    case Ref:
-        resolved = ma.analyseRefType(cast<RefType*>(t), full);
-        resolved.copyFlags(qt);
         break;
     case Struct:
         assert(0); // cannot happen
@@ -655,54 +746,5 @@ func QualType ModuleAnalyser.analyseType(ModuleAnalyser* ma, QualType qt, bool f
 
     return resolved;
 }
-
-func QualType ModuleAnalyser.analyseRefType(ModuleAnalyser* ma, RefType* rt, bool full) {
-    IdentifierExpr* prefix = rt.getPrefix();
-    IdentifierExpr* ref = rt.getRef();
-
-    Decl* d = nil;
-
-    if (prefix) { // module.Type
-        Module* mod = ma.scope.findModule(prefix.getNameIdx(), prefix.asExpr().getLoc());
-        if (!mod) return QualType.init0();
-
-        d = ma.scope.findGlobalSymbolInModule(mod, ref.getNameIdx(), ref.asExpr().getLoc());
-        prefix.setKind(IdentifierKind.Module);
-    } else {    // Type
-        d = ma.scope.findType(ref.getNameIdx(), ref.asExpr().getLoc());
-    }
-    if (!d) return QualType.init0();
-
-    if (!d.isTypeDecl()) {
-        ma.diags.report(ref.asExpr().getLoc(), "%s is not a type", ref.getName());
-        return QualType.init0();
-    }
-
-    // TODO need used_public?
-    bool external = (ma.mod != d.getModule());
-    if (!d.isPublic() && external) {
-        ma.diags.report(ref.asExpr().getLoc(), "%s is not public", ref.getName());
-        return QualType.init0();
-    }
-
-    DeclCheckState state = d.getCheckState();
-    if (full && state == DeclCheckState.InProgress) {
-        ma.diags.report(prefix.asExpr().getLoc(), "circular declaration");
-        return QualType.init0();
-    }
-
-    if (full && state != DeclCheckState.Checked) {
-        QualType q = ma.analyseDecl(d);
-        // TODO longjmp?
-        if (q.isInvalid()) return QualType.init0();
-    }
-
-    d.setUsed();
-    if (/* used_public || */ external) d.setUsedPublic();
-
-    ref.setDecl(d);
-    ref.setKind(IdentifierKind.Type);
-
-    return d.getType();
-}
+#endif
 
