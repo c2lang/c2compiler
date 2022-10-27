@@ -523,8 +523,8 @@ func void ModuleAnalyser.analyseFunction(ModuleAnalyser* ma, FunctionDecl* fd) {
 
         QualType res = ma.analyseTypeRef(ref);
         if (res.isInvalid()) continue;
-        v.asDecl().setType(res);
 
+        v.asDecl().setType(res);
         // TODO analyse default value
     }
 }

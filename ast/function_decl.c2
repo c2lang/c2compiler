@@ -97,6 +97,7 @@ public func u32 FunctionDecl.getNumParams(const FunctionDecl* d) {
 }
 
 public func VarDecl* FunctionDecl.getParam(const FunctionDecl* d, u32 idx) {
+    if (d.hasPrefix()) idx++;
     VarDecl** tail = d.rtype.getPointerAfter();
     return tail[idx];
 }
