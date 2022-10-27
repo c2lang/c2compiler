@@ -8,13 +8,14 @@ import string_buffer;
 
 public type ModuleType struct {
     Type parent;
-    ImportDecl* decl;
+    Module* mod;
 } @(opaque)
 
-public func ModuleType* ModuleType.create(ast_context.Context* c, ImportDecl* decl) @(inline) {
+// Note: non-public since only Module.create will create a ModuleType
+func ModuleType* ModuleType.create(ast_context.Context* c, Module* mod) @(inline) {
     ModuleType* t = c.alloc(sizeof(ModuleType));
     t.parent.init(TypeKind.Module);
-    t.decl = decl;
+    t.mod = mod;
     t.parent.setCanonicalType(QualType.init2(&t.parent));
 #if AstStatistics
     stats.moduleCount++;
@@ -24,24 +25,20 @@ public func ModuleType* ModuleType.create(ast_context.Context* c, ImportDecl* de
 
 public func Type* ModuleType.asType(ModuleType* t) @(inline) { return &t.parent; }
 
-public func ImportDecl* ModuleType.getImport(const ModuleType* t) {
-    return t.decl;
-}
-
 public func Module* ModuleType.getModule(const ModuleType* t) {
-    return t.decl.getDest();
+    return t.mod;
 }
 
 func void ModuleType.print(const ModuleType* t, string_buffer.Buf* out) {
-    out.print("Module %s", t.decl.asDecl().getName());
+    out.print("Module %s", t.mod.getName());
 }
 
 func void ModuleType.debugPrint(const ModuleType* t, string_buffer.Buf* out) {
-    out.print("ModuleType %s\n", t.decl.asDecl().getName());
+    out.print("ModuleType %s\n", t.mod.getName());
 }
 
 public func void ModuleType.fullPrint(const ModuleType* t, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
-    out.print("ModuleType %s\n", t.decl.asDecl().getName());
+    out.print("ModuleType %s\n", t.mod.getName());
 }
 

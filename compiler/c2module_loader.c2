@@ -78,7 +78,7 @@ public func Module* load(ast_context.Context* context, string_pool.Pool* pool) {
     // TODO if 32 bit change some kinds
 
     const char* name = pool.add("c2", 2, true);
-    Module* m = Module.create(name);
+    Module* m = Module.create(context, name);
     m.setUsed();
 
     // TODO AST name must be in pool?

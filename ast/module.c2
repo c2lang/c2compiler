@@ -3,13 +3,16 @@
 
 module ast;
 
+import ast_context;
 import string_buffer;
+
 import stdlib;
 import string;
 
 public type Module struct {
     u32 name_idx;
     bool used;
+    ModuleType* mt;
 
     ast.AST** files;
     u32 num_files;
@@ -19,8 +22,9 @@ public type Module struct {
 } @(opaque)
 
 // Note: name must be allocated in target StringPool
-public func Module* Module.create(const char* name) {
+public func Module* Module.create(ast_context.Context* c, const char* name) {
     Module* m = stdlib.calloc(1, sizeof(Module));
+    m.mt = ModuleType.create(c, m);
     m.name_idx = name2idx(name);
     m.resizeFiles(1);
     m.symbols.init(16);
@@ -40,6 +44,8 @@ public func void Module.setUsed(Module* m) { m.used = true; }
 public func bool Module.isUsed(const Module* m) { return m.used; }
 
 public func const SymbolTable* Module.getSymbols(const Module* m) { return &m.symbols; }
+
+public func ModuleType* Module.getType(const Module* m) { return m.mt; }
 
 public type ASTVisitor func void (void* arg, AST* d);
 

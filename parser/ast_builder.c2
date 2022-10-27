@@ -56,13 +56,12 @@ public func void Builder.actOnModule(Builder* b, const char* mod_name, SrcLoc mo
     d.setUsed();
     d.setChecked();
     i.setDest(b.mod);
-    d.setType(b.actOnModuleType(i));
+    d.setType(QualType.init2(b.mod.getType()));
     b.ast.addImport(d);
 }
 
 public func void Builder.actOnImport(Builder* b, const char* mod_name, SrcLoc mod_loc, const char* alias_name, SrcLoc alias_loc, bool islocal) {
     // TODO check for duplicates
-
     ImportDecl* d = ImportDecl.create(b.context, mod_name, mod_loc, alias_name, alias_loc, b.ast, islocal);
     b.ast.addImport(d);
 }
@@ -202,11 +201,6 @@ public func QualType Builder.actOnArrayType(Builder* b, QualType elem, bool has_
     a.setCanonicalType(canon);
 
     return a;
-}
-
-public func QualType Builder.actOnModuleType(Builder* b, ImportDecl* decl) {
-    ModuleType* t = ModuleType.create(b.context, decl);
-    return QualType.init2(cast<Type*>(t));
 }
 
 public func FunctionDecl* Builder.actOnFunctionDecl(Builder* b,

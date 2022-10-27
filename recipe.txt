@@ -5,7 +5,7 @@ plugin refs_generator [all-targets]
 executable c2c
 	$warnings no-unused
 	$generate-c single-module
-    $enable-assert
+#    $enable-assert
 #    $config RecipeDebug
 #    $config ParserDebug
 #    $config DumpTokens

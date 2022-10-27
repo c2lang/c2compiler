@@ -559,12 +559,6 @@ func QualType ModuleAnalyser.analyseMemberExpr(ModuleAnalyser* ma, Expr** e_ptr)
         m.setKind(kind);
         return rhs;
     }
-    // TODO check for ModuleType
-
-    // TODO check for EnumType
-
-    // TODO var/struct
-
 
     return QualType.init0();
 }

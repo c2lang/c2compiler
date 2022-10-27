@@ -4,6 +4,7 @@
 module component;
 
 import ast;
+import ast_context;
 import module_list;
 import string_buffer;
 import utils;
@@ -24,16 +25,18 @@ public type Component struct {
     const char* name;   // no ownership
     bool is_external;
 
+    ast_context.Context* context;
     ast.Module** mods;
     u32 num_mods;
     u32 max_mods;
     module_list.ModList* globalList;
 } @(opaque)
 
-public func Component* create(module_list.ModList* globalList, const char* name, bool is_external) {
+public func Component* create(ast_context.Context* context, module_list.ModList* globalList, const char* name, bool is_external) {
     Component* c = calloc(1, sizeof(Component));
     c.name = name;
     c.is_external = is_external;
+    c.context = context;
 
     c.resize(4);
     c.globalList = globalList;
@@ -93,7 +96,7 @@ public func ast.Module* Component.getOrAddModule(Component* c, const char* modna
     ast.Module* m = c.globalList.find(ast.name2idx(modname));
     if (m) return nil;
 
-    m = ast.Module.create(modname);
+    m = ast.Module.create(c.context, modname);
 
     if (c.num_mods == c.max_mods) c.resize(c.max_mods * 2);
 
