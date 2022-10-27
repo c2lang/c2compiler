@@ -132,6 +132,16 @@ func Decl* ModuleAnalyser.analyseIdentifier(ModuleAnalyser* ma, Expr** e_ptr) {
     i.setDecl(d);
     d.setUsed();
 
+    IdentifierKind kind = ma.setExprFlags(e_ptr, d);
+    i.setKind(kind);
+
+    if (e.isCtv()) e.setRValue();
+
+    return d;
+}
+
+func IdentifierKind ModuleAnalyser.setExprFlags(ModuleAnalyser* ma, Expr** e_ptr, Decl* d) {
+    Expr* e = *e_ptr;
     IdentifierKind kind = IdentifierKind.Unresolved;
     switch (d.getKind()) {
     case Function:
@@ -188,11 +198,7 @@ func Decl* ModuleAnalyser.analyseIdentifier(ModuleAnalyser* ma, Expr** e_ptr) {
     case StaticAssert:
         break;
     }
-    i.setKind(kind);
-
-    if (e.isCtv()) e.setRValue();
-
-    return d;
+    return kind;
 }
 
 func QualType getBinOpType(BinaryOperator* b) {
@@ -536,9 +542,22 @@ func QualType ModuleAnalyser.analyseMemberExpr(ModuleAnalyser* ma, Expr** e_ptr)
         // TODO
         break;
     case Module:
-        // TODO
-        m.setKind(IdentifierKind.Module);
-        break;
+        ModuleType* mt = cast<ModuleType*>(t);
+        Module* mod = mt.getModule();
+        assert(mod);
+
+        Decl* d = ma.scope.findGlobalSymbolInModule(mod, rhs_idx, e.getLoc());
+        if (!d.isChecked()) {
+            ma.analyseGlobalDecl(d);
+            // TODO need result
+        }
+
+        m.setDecl(d);
+        QualType rhs = d.getType();
+        e.setType(rhs);
+        IdentifierKind kind = ma.setExprFlags(e_ptr, d);
+        m.setKind(kind);
+        return rhs;
     }
     // TODO check for ModuleType
 

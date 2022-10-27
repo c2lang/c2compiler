@@ -24,8 +24,12 @@ public func ModuleType* ModuleType.create(ast_context.Context* c, ImportDecl* de
 
 public func Type* ModuleType.asType(ModuleType* t) @(inline) { return &t.parent; }
 
-public func ImportDecl* ModuleType.getImport(const ModuleType*t) {
+public func ImportDecl* ModuleType.getImport(const ModuleType* t) {
     return t.decl;
+}
+
+public func Module* ModuleType.getModule(const ModuleType* t) {
+    return t.decl.getDest();
 }
 
 func void ModuleType.print(const ModuleType* t, string_buffer.Buf* out) {
