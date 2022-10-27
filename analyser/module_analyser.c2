@@ -226,7 +226,7 @@ func void ModuleAnalyser.analyseGlobalDecl(ModuleAnalyser* ma, Decl* d) {
         // TODO
         break;
     case FunctionType:
-        // TODO
+        ma.analyseFunctionType(d);
         break;
     case AliasType:
         ma.analyseAliasType(cast<AliasTypeDecl*>(d));
@@ -486,6 +486,32 @@ func void ModuleAnalyser.analyseStructNames(ModuleAnalyser* ma, StructTypeDecl* 
                 sub_locs.free();
             }
         }
+    }
+}
+
+func void ModuleAnalyser.analyseFunctionType(ModuleAnalyser* ma, Decl* d) {
+    FunctionTypeDecl* ftd = cast<FunctionTypeDecl*>(d);
+    FunctionDecl* fd = ftd.getFunction();
+
+    fd.asDecl().dump();
+
+    // return type
+    QualType qt = ma.analyseTypeRef(fd.getTypeRef());
+    if (qt.isInvalid()) return;
+
+    fd.setRType(qt);
+
+    // analyse params
+    u32 num_params = fd.getNumParams();
+    for (u32 i=0; i<num_params; i++) {
+        VarDecl* v = fd.getParam(i);
+        TypeRef* ref = v.getTypeRef();
+
+        QualType res = ma.analyseTypeRef(ref);
+        if (res.isInvalid()) continue;
+        v.asDecl().setType(res);
+
+        // TODO analyse default value
     }
 }
 

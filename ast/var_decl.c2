@@ -137,3 +137,10 @@ func void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
     }
 }
 
+func void VarDecl.printType(const VarDecl* d, string_buffer.Buf* out) {
+    if (d.parent.qt.isValid()) {
+        d.parent.qt.printQuoted(out);
+    } else {
+        d.typeRef.print(out, true);
+    }
+}
