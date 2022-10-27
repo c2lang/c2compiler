@@ -493,8 +493,6 @@ func void ModuleAnalyser.analyseFunctionType(ModuleAnalyser* ma, Decl* d) {
     FunctionTypeDecl* ftd = cast<FunctionTypeDecl*>(d);
     FunctionDecl* fd = ftd.getFunction();
 
-    fd.asDecl().dump();
-
     // return type
     QualType qt = ma.analyseTypeRef(fd.getTypeRef());
     if (qt.isInvalid()) return;
@@ -634,7 +632,7 @@ func QualType ModuleAnalyser.analyseUserTypeRef(ModuleAnalyser* ma, const TypeRe
 }
 
 func QualType ModuleAnalyser.analyseTypeRef(ModuleAnalyser* ma, TypeRef* ref) {
-    ref.dump();
+    //ref.dump();
     QualType resolved = { 0 }
     if (ref.isUser()) {
         resolved = ma.analyseUserTypeRef(ref);
@@ -675,7 +673,7 @@ func QualType ModuleAnalyser.analyseTypeRef(ModuleAnalyser* ma, TypeRef* ref) {
         resolved = ma.builder.actOnArrayType(resolved, sizeExpr != nil, size);
     }
 
-    resolved.dump_full();
+    //resolved.dump_full();
     return resolved;
 }
 

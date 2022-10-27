@@ -16,6 +16,8 @@ public func FunctionType* FunctionType.create(ast_context.Context* c, FunctionDe
     t.parent.init(TypeKind.Function);
     t.decl = nil;
     t.decl = decl;
+
+    t.parent.setCanonicalType(QualType.init2(&t.parent));
 #if AstStatistics
     stats.functionTypeCount++;
 #endif

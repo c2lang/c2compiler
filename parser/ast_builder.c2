@@ -85,7 +85,6 @@ public func Decl* Builder.actOnFunctionTypeDecl(Builder* b,
     is_public |= b.is_interface;
     FunctionDecl* fn = FunctionDecl.create(b.context, name, loc, is_public, b.ast, rtype, nil, params, num_params, is_variadic);
 
-    // TODO do this in FunctionDecl? (like struct?)
     FunctionTypeDecl* d = FunctionTypeDecl.create(b.context, fn);
     b.ast.addTypeDecl(d.asDecl());
     Decl* dd = d.asDecl();
