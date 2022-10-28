@@ -123,14 +123,6 @@ public func VarDecl* Builder.actOnStructMember(Builder* b,
     return VarDecl.createStructMember(b.context, name, loc, is_public, ref, b.ast, bitfield);
 }
 
-public func VarDecl* Builder.actOnStructVar(Builder* b, u32 name, SrcLoc loc, bool is_public, QualType qt, Expr* initValue) {
-    is_public |= b.is_interface;
-    // BB TEMP
-    TypeRefHolder ref;
-    ref.init();
-    return VarDecl.create(b.context, VarDeclKind.StructMember, name, loc, is_public, &ref, b.ast, initValue);
-}
-
 public func void Builder.actOnGlobalVarDecl(Builder* b, u32 name, SrcLoc loc, bool is_public, TypeRefHolder* ref, Expr* initValue) {
     is_public |= b.is_interface;
     VarDecl* d = VarDecl.create(b.context, VarDeclKind.GlobalVar, name, loc, is_public, ref, b.ast, initValue);

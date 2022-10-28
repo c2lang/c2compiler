@@ -118,7 +118,7 @@ public func bool QualType.hasCanonicalType(const QualType* qt) @(inline) {
 public func QualType QualType.getCanonicalType(const QualType* qt) @(inline) {
     const Type* t = qt.getType();
     QualType canon = t.canonicalType;
-    // TODO BB why is this needeD?
+    // TODO BB why is this needed?
     canon.copyQuals(*qt);
     return canon;
 }
