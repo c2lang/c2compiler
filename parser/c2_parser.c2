@@ -73,7 +73,7 @@ public func bool Parser.parse(Parser* p, i32 file_id, bool is_interface) {
     u32 token_count = 0;
     while (p.tok.more) {
         p.tokenizer.lex(&p.tok);
-        dump_token(p.info.sm, &p.tok);
+        p.dump_token(&p.tok);
         token_count++;
     }
     u64 t2 = utils.now();
@@ -103,7 +103,7 @@ public func bool Parser.parse(Parser* p, i32 file_id, bool is_interface) {
 func void Parser.consumeToken(Parser* p) {
     p.tokenizer.lex(&p.tok);
 
-    //dump_token(p.info.sm, &p.tok);
+    //p.dump_token(&p.tok);
 
     if (p.tok.kind == Kind.Error) p.error(p.tok.error_msg);
 }
@@ -567,24 +567,24 @@ func void Parser.parseFullTypeIdentifier(Parser* p, TypeRefHolder* ref) {
 }
 
 // TEMP here
-public func void dump_token(SourceMgr* sm, const Token* tok) {
+func void Parser.dump_token(Parser* p, const Token* tok) {
     if (tok.kind >= Kind.KW_as && tok.kind <= Kind.KW_while) {
-        printf("%s%10s%s  %s\n", color.Green, kind2str(tok.kind), color.Normal, sm.loc2str(tok.loc));
+        printf("%s%10s%s  %s\n", color.Green, kind2str(tok.kind), color.Normal, p.info.sm.loc2str(tok.loc));
         return;
     }
-    printf("%10s  %s  ", kind2str(tok.kind), sm.loc2str(tok.loc));
+    printf("%10s  %s  ", kind2str(tok.kind), p.info.sm.loc2str(tok.loc));
     switch (tok.kind) {
     case Identifier:
-        printf("  %s%s%s", color.Cyan, tok.text_idx, color.Normal);
+        printf("  %s%s%s", color.Cyan, p.info.pool.idx2str(tok.text_idx), color.Normal);
         break;
     case NumberLiteral:
-        printf("  (%u) %s%s%s", tok.radix, color.Cyan, tok.text_idx, color.Normal);
+        printf("  (%u) %s%s%s", tok.radix, color.Cyan, p.info.pool.idx2str(tok.text_idx), color.Normal);
         break;
     case CharLiteral:
         printf("  %s'%c'%s", color.Cyan, tok.char_value, color.Normal);
         break;
     case StringLiteral:
-        printf("  %s\"%s\"%s", color.Cyan, tok.text_idx, color.Normal);
+        printf("  %s\"%s\"%s", color.Cyan, p.info.pool.idx2str(tok.text_idx), color.Normal);
         break;
     case Warning:
         printf("  %s%s%s", color.Yellow, tok.error_msg, color.Normal);
