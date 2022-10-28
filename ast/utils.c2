@@ -129,9 +129,9 @@ public func void init(Context* c, const char* names_start) {
     g_ast_list = nil;
 }
 
-public func void deinit() {
+public func void deinit(bool print_stats) {
 #if AstStatistics
-    stats.dump();
+    if (print_stats) stats.dump();
 #endif
     stdlib.free(cast<void*>(g_ast_list));
     g_types.clear();

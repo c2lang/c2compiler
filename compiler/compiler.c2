@@ -164,6 +164,7 @@ public type Options struct {
     bool print_lib_ast;
     bool print_modules;
     bool print_symbols;
+    bool print_ast_stats;
 }
 
 public func void build(string_pool.Pool* auxPool,
@@ -304,7 +305,7 @@ func void Compiler.build(Compiler* c,
         }
     }
 
-    ast.deinit();
+    ast.deinit(c.opts.print_ast_stats);
 }
 
 func void Compiler.free(Compiler* c) {
