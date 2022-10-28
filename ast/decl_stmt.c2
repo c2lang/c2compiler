@@ -15,6 +15,9 @@ public func DeclStmt* DeclStmt.create(ast_context.Context* c, VarDecl* decl) @(i
     DeclStmt* s = c.alloc(sizeof(DeclStmt));
     s.parent.init(StmtKind.Decl);
     s.decl = decl;
+#if AstStatistics
+    Stats.addStmt(StmtKind.Decl, sizeof(DeclStmt));
+#endif
     return s;
 }
 

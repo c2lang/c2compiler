@@ -39,7 +39,7 @@ const char*[] exprKind_names = {
     "StringLiteral",
     "Nil",
     "Identifier",
-    "Type",
+    "TypeExpr",
     "Call",
     "InitList",
     "FieldDesignatedInit",
