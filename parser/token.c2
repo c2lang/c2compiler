@@ -253,7 +253,7 @@ public type Token struct {
     union {
         const char* error_msg;  // ERROR
         // TODO replace tex_value with u32 index
-        const char* text_value; // Identifier, NumberLiteral
+        u32 text_idx;           // Identifier, NumberLiteral
         u8 char_value;          // CharLiteral
     }
 }

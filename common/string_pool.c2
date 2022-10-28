@@ -59,6 +59,10 @@ public func void Pool.free(Pool* p) {
 
 public func const char* Pool.getStart(const Pool* pool) { return pool.data; }
 
+public func const char* Pool.idx2str(const Pool* pool, u32 idx) {
+    return pool.data + idx;
+}
+
 func Node* Pool.getChild(Pool* pool, Node* x, Dir dir) @(inline) {
     assert(x);
     u16 idx = x.child[dir];
@@ -165,8 +169,8 @@ func u32 compare(const char* left, const char* right, usize rlen) @(inline) {
 }
 
 
-public func const char* Pool.add(Pool* pool, const char* text, usize len, bool filter) {
-    // NOTE: text is not 0-terminated!! len is strlen(text)
+// NOTE: text is not 0-terminated!! len is strlen(text)
+public func u32 Pool.add(Pool* pool, const char* text, usize len, bool filter) {
     pool.num_adds++;
     pool.total_size += len;
 
@@ -195,7 +199,7 @@ public func const char* Pool.add(Pool* pool, const char* text, usize len, bool f
                 }
                 break;
             case 2: // ==
-                return word;
+                return n.word_idx;
             }
         }
 after_loop:
@@ -217,18 +221,20 @@ after_loop:
     }
 
     if (pool.size + len + 1 > pool.data_capacity) {
+        // TODO allow resize, since we only store indexes outside!
         stdio.fprintf(stdio.stderr, "pool: overflow (%u bytes)\n", pool.data_capacity);
         stdlib.abort();
     }
+    u32 idx = pool.size;
     char* dest = pool.data + pool.size;
     string.memcpy(dest, text, len);
     dest[len] = 0;
     pool.size += len + 1;
     assert(pool.size < pool.data_capacity);
-    return dest;
+    return idx;
 }
 
-public func const char* Pool.addStr(Pool* pool, const char* text, bool filter) {
+public func u32 Pool.addStr(Pool* pool, const char* text, bool filter) {
     return pool.add(text, string.strlen(text), filter);
 }
 

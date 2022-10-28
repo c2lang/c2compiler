@@ -48,10 +48,10 @@ public type IdentifierExpr struct {
     }
 } @(opaque)
 
-public func IdentifierExpr* IdentifierExpr.create(ast_context.Context* c, SrcLoc loc, const char* name) @(inline) {
+public func IdentifierExpr* IdentifierExpr.create(ast_context.Context* c, SrcLoc loc, u32 name) @(inline) {
     IdentifierExpr* e = c.alloc(sizeof(IdentifierExpr));
     e.parent.init(ExprKind.Identifier, loc, 0, 0, 0);
-    e.name_idx = name2idx(name);
+    e.name_idx = name;
     e.parent.setLValue();
     return e;
 }

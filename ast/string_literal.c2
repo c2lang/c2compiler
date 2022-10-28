@@ -9,10 +9,10 @@ import utils local;
 
 public type StringLiteral struct {
     Expr parent;
-    const char* value;
+    u32 value;
 } @(opaque)
 
-public func StringLiteral* StringLiteral.create(ast_context.Context* c, SrcLoc loc, const char* value) @(inline) {
+public func StringLiteral* StringLiteral.create(ast_context.Context* c, SrcLoc loc, u32 value) @(inline) {
     StringLiteral* e = c.alloc(sizeof(StringLiteral));
     e.parent.init(ExprKind.StringLiteral, loc, 1, 1, 0);
     e.value = value;
@@ -23,6 +23,6 @@ func void StringLiteral.print(const StringLiteral* e, string_buffer.Buf* out, u3
     e.parent.printKind(out, indent, "StringLiteral");
     e.parent.printTypeBits(out);
     out.color(col_Value);
-    out.print(" \"%s\"\n", e.value);
+    out.print(" \"%s\"\n", idx2name(e.value));
 }
 

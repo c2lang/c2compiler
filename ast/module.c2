@@ -22,10 +22,10 @@ public type Module struct {
 } @(opaque)
 
 // Note: name must be allocated in target StringPool
-public func Module* Module.create(ast_context.Context* c, const char* name) {
+public func Module* Module.create(ast_context.Context* c, u32 name_idx) {
     Module* m = stdlib.calloc(1, sizeof(Module));
     m.mt = ModuleType.create(c, m);
-    m.name_idx = name2idx(name);
+    m.name_idx = name_idx;
     m.resizeFiles(1);
     m.symbols.init(16);
     return m;

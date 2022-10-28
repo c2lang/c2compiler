@@ -82,6 +82,8 @@ public func void Context.clear(Context* c) {
 }
 
 public func void* Context.alloc(Context* c, u32 len) {
+    // always round to 8-byte boundaries
+    len = (len + 7) & ~0x7;
     c.num_allocs++;
 
     Block* last = c.blk_tail;

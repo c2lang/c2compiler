@@ -200,7 +200,7 @@ func Expr* Parser.parseCastExpr(Parser* p, bool isUnaryExpr, bool isAddrOfOp) {
         break;
     case 2:
         // TODO pass radix, base, etc
-        res = p.builder.actOnIntegerLiteral(p.tok.loc, p.tok.text_value);
+        res = p.builder.actOnIntegerLiteral(p.tok.loc, p.info.pool.idx2str(p.tok.text_idx));
         p.consumeToken();
         break;
     case 3:
@@ -289,7 +289,7 @@ func Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs) {
             p.consumeToken();
             p.expectIdentifier();
             SrcLoc member_loc = p.tok.loc;
-            const char* member_name = p.tok.text_value;
+            u32 member_name = p.tok.text_idx;
             p.consumeToken();
             lhs = p.builder.actOnMemberExpr(lhs, member_loc, member_name);
             break;
@@ -330,13 +330,13 @@ func Expr* Parser.parseCallExpr(Parser* p, Expr* fn) {
 
 
 func IdentifierExpr* Parser.parseIdentifier(Parser* p) {
-    IdentifierExpr* e = p.builder.actOnIdentifier(p.tok.loc, p.tok.text_value);
+    IdentifierExpr* e = p.builder.actOnIdentifier(p.tok.loc, p.tok.text_idx);
     p.consumeToken();
     return e;
 }
 
 func Expr* Parser.parseStringLiteral(Parser* p) {
-    Expr* e = p.builder.actOnStringLiteral(p.tok.loc, p.tok.text_value);
+    Expr* e = p.builder.actOnStringLiteral(p.tok.loc, p.tok.text_idx);
     p.consumeToken();
     return e;
 }
@@ -463,7 +463,7 @@ func Expr* Parser.parseInitList(Parser* p) {
 func Expr* Parser.parseFieldDesignator(Parser* p, bool* need_semi) {
     p.consumeToken();   // .
     p.expectIdentifier();
-    const char* field = p.tok.text_value;
+    u32 field = p.tok.text_idx;
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
@@ -565,7 +565,7 @@ func Expr* Parser.parseFullIdentifier(Parser* p) {
         p.consumeToken();
         p.expectIdentifier();
         SrcLoc member_loc = p.tok.loc;
-        const char* member_name = p.tok.text_value;
+        u32 member_name = p.tok.text_idx;
         p.consumeToken();
         res = p.builder.actOnMemberExpr(res, member_loc, member_name);
     }

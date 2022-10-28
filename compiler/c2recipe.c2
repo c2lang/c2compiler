@@ -14,13 +14,13 @@ import stdio local;
 #endif
 
 public type File struct {
-    const char* name;       // no ownership
+    u32 name;       // index into pool
     SrcLoc loc;
 } @(opaque)
 
 public type Target struct {
     Recipe* recipe;
-    const char* name;       // no ownership
+    u32 name_idx;           // into aux pool
     SrcLoc loc;
 
     File* files;
@@ -28,10 +28,10 @@ public type Target struct {
     u32 max_files;
 } @(opaque)
 
-func Target* Target.create(Recipe* recipe, const char* name, SrcLoc loc) {
+func Target* Target.create(Recipe* recipe, u32 name_idx, SrcLoc loc) {
     Target* t = stdlib.calloc(1, sizeof(Target));
     t.recipe = recipe;
-    t.name = name;
+    t.name_idx = name_idx;
     t.loc = loc;
     t.max_files = 8;
     t.files = stdlib.malloc(t.max_files * sizeof(File));
@@ -43,11 +43,11 @@ func void Target.free(Target* t) {
     stdlib.free(t);
 }
 
-public func const char* Target.getName(const Target* t) { return t.name; }
+public func u32 Target.getNameIdx(const Target* t) { return t.name_idx; }
 
 public func u32 Target.numFiles(const Target* t) { return t.num_files; }
 
-public func void Target.addFile(Target* t, const char* filename, SrcLoc loc) {
+public func void Target.addFile(Target* t, u32 filename, SrcLoc loc) {
     if (t.num_files == t.max_files) {
         t.max_files *= 2;
         File* files2 = stdlib.malloc(t.max_files * sizeof(File));
@@ -96,7 +96,7 @@ public func void Recipe.free(Recipe* r) {
     stdlib.free(r);
 }
 
-func Target* Recipe.addTarget(Recipe* r, const char* name, SrcLoc loc) {
+func Target* Recipe.addTarget(Recipe* r, u32 name, SrcLoc loc) {
     // TODO just use Target.create() and store pointers
     if (r.num_targets == r.max_targets) {
         r.max_targets *= 2;
@@ -112,8 +112,11 @@ func Target* Recipe.addTarget(Recipe* r, const char* name, SrcLoc loc) {
 }
 
 public func void Recipe.addDummyTarget(Recipe* r, const char* filename) {
-    Target* t = r.addTarget("dummy", 0);
-    t.addFile(filename, 0);
+    u32 target_name = r.pool.addStr("dummy", true);
+    u32 file_idx = r.pool.addStr(filename, false);
+
+    Target* t = r.addTarget(target_name, 0);
+    t.addFile(file_idx, 0);
 }
 
 public func bool Recipe.parse(Recipe* r, i32 file_id) {

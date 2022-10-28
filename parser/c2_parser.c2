@@ -139,7 +139,7 @@ func void Parser.parseModule(Parser* p) {
     p.expectAndConsume(Kind.KW_module);
     p.expectIdentifier();
 
-    p.builder.actOnModule(p.tok.text_value, p.tok.loc, p.info.sm.getFileName(p.file_id));
+    p.builder.actOnModule(p.tok.text_idx, p.tok.loc, p.info.sm.getFileName(p.file_id));
     p.consumeToken();
     p.expectAndConsume(Kind.Semicolon);
 }
@@ -148,16 +148,16 @@ func void Parser.parseImports(Parser* p) {
     while (p.tok.kind == Kind.KW_import) {
         p.consumeToken();
         p.expectIdentifier();
-        const char* mod_name = p.tok.text_value;
+        u32 mod_name = p.tok.text_idx;
         u32 mod_loc = p.tok.loc;
 
-        const char* alias_name = nil;
+        u32 alias_name = 0;
         u32 alias_loc = 0;
         p.consumeToken();
         if (p.tok.kind == Kind.KW_as) {
             p.consumeToken();
             p.expectIdentifier();
-            alias_name = p.tok.text_value;
+            alias_name = p.tok.text_idx;
             alias_loc = p.tok.loc;
             p.consumeToken();
         }
@@ -215,7 +215,7 @@ func void Parser.parseOptionalAttributes(Parser* p) {
 
     while (1) {
         p.expectIdentifier();
-        const char* attr_id = p.tok.text_value;
+        u32 attr_id = p.tok.text_idx;
         u32 attr_loc = p.tok.loc;
         p.consumeToken();
 
@@ -259,7 +259,7 @@ func void Parser.parseFuncDef(Parser* p, bool is_public) {
     p.parseSingleTypeSpecifier(&rtype, true);
 
     p.expectIdentifier();
-    const char* func_name = p.tok.text_value;
+    u32 func_name = p.tok.text_idx;
     u32 func_loc = p.tok.loc;
     p.consumeToken();
 
@@ -269,12 +269,12 @@ func void Parser.parseFuncDef(Parser* p, bool is_public) {
         p.expectIdentifier();
 
         prefix = p.builder.actOnIdentifier(func_loc, func_name);
-        func_name = p.tok.text_value;
+        func_name = p.tok.text_idx;
         func_loc = p.tok.loc;
         p.consumeToken();
     }
 
-    if (!checkName(func_name, p.is_interface)) {
+    if (!checkName(p.info.pool.idx2str(func_name), p.is_interface)) {
         p.tok.loc = func_loc;   // reset to correct value for error
         p.error("a function name must start with a lower-case letter");
     }
@@ -348,13 +348,11 @@ func VarDecl* Parser.parseParamDecl(Parser* p, bool is_public, bool allow_defaul
     ref.init();
     p.parseTypeSpecifier(&ref, true);
 
-    const char* name;
+    u32 name = 0;
     SrcLoc loc = p.tok.loc;
     if (p.tok.kind == Kind.Identifier) {
-        name = p.tok.text_value;
+        name = p.tok.text_idx;
         p.consumeToken();
-    } else {
-        name = nil;
     }
 
     Expr* initValue = nil;
@@ -422,7 +420,7 @@ func void Parser.parseVarDef(Parser* p, bool is_public) {
     p.parseTypeSpecifier(&ref, true);
     p.expectIdentifier();
 
-    const char* name = p.tok.text_value;
+    u32 name = p.tok.text_idx;
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
@@ -557,13 +555,13 @@ func void Parser.parseSingleTypeSpecifier(Parser* p, TypeRefHolder* ref, bool al
 //   identifier
 //   identifier.identifier
 func void Parser.parseFullTypeIdentifier(Parser* p, TypeRefHolder* ref) {
-    ref.setUser(p.tok.loc, name2idx(p.tok.text_value));
+    ref.setUser(p.tok.loc, p.tok.text_idx);
     p.consumeToken();
 
     if (p.tok.kind == Kind.Dot) {
         p.consumeToken();
         p.expectIdentifier();
-        ref.setPrefix(p.tok.loc, name2idx(p.tok.text_value));
+        ref.setPrefix(p.tok.loc, p.tok.text_idx);
         p.consumeToken();
     }
 }
@@ -577,16 +575,16 @@ public func void dump_token(SourceMgr* sm, const Token* tok) {
     printf("%10s  %s  ", kind2str(tok.kind), sm.loc2str(tok.loc));
     switch (tok.kind) {
     case Identifier:
-        printf("  %s%s%s", color.Cyan, tok.text_value, color.Normal);
+        printf("  %s%s%s", color.Cyan, tok.text_idx, color.Normal);
         break;
     case NumberLiteral:
-        printf("  (%u) %s%s%s", tok.radix, color.Cyan, tok.text_value, color.Normal);
+        printf("  (%u) %s%s%s", tok.radix, color.Cyan, tok.text_idx, color.Normal);
         break;
     case CharLiteral:
         printf("  %s'%c'%s", color.Cyan, tok.char_value, color.Normal);
         break;
     case StringLiteral:
-        printf("  %s\"%s\"%s", color.Cyan, tok.text_value, color.Normal);
+        printf("  %s\"%s\"%s", color.Cyan, tok.text_idx, color.Normal);
         break;
     case Warning:
         printf("  %s%s%s", color.Yellow, tok.error_msg, color.Normal);

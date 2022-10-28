@@ -3,9 +3,10 @@
 
 module source_mgr;
 
-import file_utils;
-import utils;
 import color;
+import file_utils;
+import string_pool;
+import utils;
 
 import stdio;
 import stdlib;
@@ -14,7 +15,7 @@ import string;
 const u32 InitialMaxFiles = 8;
 
 type File struct {
-    const char* filename;   // no ownership
+    u32 filename;
     u32 offset;
     file_utils.Reader file;
     bool needed; // they are closed by user, but may still be open
@@ -36,6 +37,8 @@ func void File.close(File* f) {
 }
 
 public type SourceMgr struct {
+    const string_pool.Pool* pool;
+
     File* files;
     u32 num_files;
     u32 max_files;
@@ -49,8 +52,9 @@ public type SourceMgr struct {
     u32 sources_size;
 } @(opaque)
 
-public func SourceMgr* create(u32 max_open) {
+public func SourceMgr* create(const string_pool.Pool* pool, u32 max_open) {
     SourceMgr* sm = stdlib.calloc(1, sizeof(SourceMgr));
+    sm.pool = pool;
     sm.max_files = InitialMaxFiles;
     sm.files = stdlib.malloc(sizeof(File) * sm.max_files);
     sm.max_open = max_open;
@@ -71,7 +75,7 @@ public func void SourceMgr.clear(SourceMgr* sm, u32 handle) {
     for (u32 i=handle; i<sm.num_files; i++) {
         File* f = &sm.files[i];
         if (f.needed) {
-            stdio.printf("WARN %s still not closed\n", f.filename);
+            stdio.printf("WARN %s still not closed\n", sm.pool.idx2str(f.filename));
         }
         f.file.close();
     }
@@ -121,7 +125,8 @@ func bool SourceMgr.close_oldest(SourceMgr* sm) {
     return false;
 }
 
-public func i32 SourceMgr.open(SourceMgr* sm, const char* filename, utils.SrcLoc loc, bool is_source) {
+// Note: filename must be allocated in pool passed to SourceMgr
+public func i32 SourceMgr.open(SourceMgr* sm, u32 filename, utils.SrcLoc loc, bool is_source) {
     if (sm.num_open == sm.max_open) {
         if (!sm.close_oldest()) {
             // TODO use diags (color)
@@ -130,7 +135,7 @@ public func i32 SourceMgr.open(SourceMgr* sm, const char* filename, utils.SrcLoc
         }
     }
 
-    file_utils.Reader file = sm.openInternal(filename, loc);
+    file_utils.Reader file = sm.openInternal(sm.pool.idx2str(filename), loc);
     if (!file.isOpen()) return -1;
 
     if (sm.num_files == sm.max_files) {
@@ -181,7 +186,7 @@ func void SourceMgr.checkOpen(SourceMgr* sm, i32 handle) {
         }
     }
 
-    f.file = sm.openInternal(f.filename, 0);
+    f.file = sm.openInternal(sm.pool.idx2str(f.filename), 0);
     if (!f.file.isOpen()) stdlib.exit(-1);   // if we cannot re-open file, just exit
 }
 
@@ -207,7 +212,8 @@ public func u32 SourceMgr.get_offset(SourceMgr* sm, i32 handle) {
 }
 
 public func const char* SourceMgr.getFileName(SourceMgr* sm, i32 handle) {
-    return sm.files[handle].filename;
+    u32 idx = sm.files[handle].filename;
+    return sm.pool.idx2str(idx);
 }
 
 #if 0
@@ -264,7 +270,7 @@ func Location SourceMgr.locate(SourceMgr* sm, u32 loc) {
     Location l = { 1, 1, nil }
     File* f = sm.find_file(loc);
     if (f) {
-        l.filename = f.filename;
+        l.filename = sm.pool.idx2str(f.filename);
         u32 offset = loc - f.offset;
         u32 last_offset = 0;
         if (f.last_offset != 0 && offset > f.last_offset) {

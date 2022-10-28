@@ -41,7 +41,7 @@ public func void Builder.setComponent(Builder* b, component.Component* comp) {
     b.is_interface = comp.isExternal();
 }
 
-public func void Builder.actOnModule(Builder* b, const char* mod_name, SrcLoc mod_loc, const char* filename) {
+public func void Builder.actOnModule(Builder* b, u32 mod_name, SrcLoc mod_loc, const char* filename) {
     assert(b.comp);
     b.mod = b.comp.getOrAddModule(mod_name);
     if (!b.mod) {
@@ -51,7 +51,7 @@ public func void Builder.actOnModule(Builder* b, const char* mod_name, SrcLoc mo
     b.ast = b.mod.add(filename);
 
     // NOTE: make special ImportDecl to add own symbols
-    ImportDecl* i = ImportDecl.create(b.context, mod_name, mod_loc, nil, 0, b.ast, true);
+    ImportDecl* i = ImportDecl.create(b.context, mod_name, mod_loc, 0, 0, b.ast, true);
     Decl* d = cast<Decl*>(i);
     d.setUsed();
     d.setChecked();
@@ -60,13 +60,13 @@ public func void Builder.actOnModule(Builder* b, const char* mod_name, SrcLoc mo
     b.ast.addImport(i);
 }
 
-public func void Builder.actOnImport(Builder* b, const char* mod_name, SrcLoc mod_loc, const char* alias_name, SrcLoc alias_loc, bool islocal) {
+public func void Builder.actOnImport(Builder* b, u32 mod_name, SrcLoc mod_loc, u32 alias_name, SrcLoc alias_loc, bool islocal) {
     // TODO check for duplicates
     ImportDecl* d = ImportDecl.create(b.context, mod_name, mod_loc, alias_name, alias_loc, b.ast, islocal);
     b.ast.addImport(d);
 }
 
-public func Decl* Builder.actOnAliasType(Builder* b, const char* name, SrcLoc loc, bool is_public, const TypeRefHolder* ref) {
+public func Decl* Builder.actOnAliasType(Builder* b, u32 name, SrcLoc loc, bool is_public, const TypeRefHolder* ref) {
     is_public |= b.is_interface;
     AliasTypeDecl* d = AliasTypeDecl.create(b.context, name, loc, is_public, b.ast, ref);
     b.ast.addTypeDecl(d.asDecl());
@@ -76,7 +76,7 @@ public func Decl* Builder.actOnAliasType(Builder* b, const char* name, SrcLoc lo
 }
 
 public func Decl* Builder.actOnFunctionTypeDecl(Builder* b,
-                                                const char* name,
+                                                u32 name,
                                                 SrcLoc loc,
                                                 bool is_public,
                                                 const TypeRefHolder* rtype,
@@ -95,7 +95,7 @@ public func Decl* Builder.actOnFunctionTypeDecl(Builder* b,
 }
 
 public func StructTypeDecl* Builder.actOnStructType(Builder* b,
-                                                    const char* name,
+                                                    u32 name,
                                                     SrcLoc loc,
                                                     bool is_public,
                                                     bool is_struct,
@@ -112,12 +112,18 @@ public func StructTypeDecl* Builder.actOnStructType(Builder* b,
     return d;
 }
 
-public func VarDecl* Builder.actOnStructMember(Builder* b, const char* name, SrcLoc loc, bool is_public, const TypeRefHolder* ref, Expr* bitfield) {
+public func VarDecl* Builder.actOnStructMember(Builder* b,
+                                               u32 name,
+                                               SrcLoc loc,
+                                               bool is_public,
+                                               const TypeRefHolder* ref,
+                                               Expr* bitfield)
+{
     is_public |= b.is_interface;
     return VarDecl.createStructMember(b.context, name, loc, is_public, ref, b.ast, bitfield);
 }
 
-public func VarDecl* Builder.actOnStructVar(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType qt, Expr* initValue) {
+public func VarDecl* Builder.actOnStructVar(Builder* b, u32 name, SrcLoc loc, bool is_public, QualType qt, Expr* initValue) {
     is_public |= b.is_interface;
     // BB TEMP
     TypeRefHolder ref;
@@ -125,7 +131,7 @@ public func VarDecl* Builder.actOnStructVar(Builder* b, const char* name, SrcLoc
     return VarDecl.create(b.context, VarDeclKind.StructMember, name, loc, is_public, &ref, b.ast, initValue);
 }
 
-public func void Builder.actOnGlobalVarDecl(Builder* b, const char* name, SrcLoc loc, bool is_public, TypeRefHolder* ref, Expr* initValue) {
+public func void Builder.actOnGlobalVarDecl(Builder* b, u32 name, SrcLoc loc, bool is_public, TypeRefHolder* ref, Expr* initValue) {
     is_public |= b.is_interface;
     VarDecl* d = VarDecl.create(b.context, VarDeclKind.GlobalVar, name, loc, is_public, ref, b.ast, initValue);
     Decl* dd = d.asDecl();
@@ -133,19 +139,19 @@ public func void Builder.actOnGlobalVarDecl(Builder* b, const char* name, SrcLoc
     b.addSymbol(name, dd);
 }
 
-public func VarDecl* Builder.actOnFunctionParam(Builder* b, const char* name, SrcLoc loc, bool is_public, const TypeRefHolder* ref, Expr* initValue) {
+public func VarDecl* Builder.actOnFunctionParam(Builder* b, u32 name, SrcLoc loc, bool is_public, const TypeRefHolder* ref, Expr* initValue) {
     is_public |= b.is_interface;
     return VarDecl.create(b.context, VarDeclKind.FunctionParam, name, loc, is_public, ref, b.ast, initValue);
 }
 
-public func Stmt* Builder.actOnVarDeclStmt(Builder* b, const char* name, SrcLoc loc, const TypeRefHolder* ref, Expr* initValue, bool has_local) {
+public func Stmt* Builder.actOnVarDeclStmt(Builder* b, u32 name, SrcLoc loc, const TypeRefHolder* ref, Expr* initValue, bool has_local) {
     VarDecl* d = VarDecl.create(b.context, VarDeclKind.LocalVar, name, loc, false, ref, b.ast, initValue);
     d.setLocal(has_local);
 
     return cast<Stmt*>(DeclStmt.create(b.context, d));
 }
 
-public func void Builder.actOnAttr(Builder* b, const char* name, SrcLoc begin_loc, SrcLoc end_loc) {
+public func void Builder.actOnAttr(Builder* b, u32 name, SrcLoc begin_loc, SrcLoc end_loc) {
     //printf("ATTR  %s\n", name);
 }
 
@@ -215,7 +221,7 @@ public func QualType Builder.actOnArrayType(Builder* b, QualType elem, bool has_
 }
 
 public func FunctionDecl* Builder.actOnFunctionDecl(Builder* b,
-                                                    const char* name,
+                                                    u32 name,
                                                     SrcLoc loc,
                                                     bool is_public,
                                                     const TypeRefHolder* rtype,
@@ -234,12 +240,12 @@ public func void Builder.actOnFunctionBody(Builder* b, FunctionDecl* f, Compound
     f.setBody(body);
 }
 
-public func EnumConstantDecl* Builder.actOnEnumConstant(Builder* b, const char* name, SrcLoc loc, bool is_public, QualType qt, Expr* init_expr) {
+public func EnumConstantDecl* Builder.actOnEnumConstant(Builder* b, u32 name, SrcLoc loc, bool is_public, QualType qt, Expr* init_expr) {
     return EnumConstantDecl.create(b.context, name, loc, is_public, qt, b.ast, init_expr);
 }
 
 public func void Builder.actOnEnumType(Builder* b,
-                                       const char* name,
+                                       u32 name,
                                        SrcLoc loc,
                                        bool is_public,
                                        bool is_incr,
@@ -305,15 +311,15 @@ public func Stmt* Builder.actOnFallthroughStmt(Builder* b, SrcLoc loc) {
     return cast<Stmt*>(FallthroughStmt.create(b.context, loc));
 }
 
-public func Stmt* Builder.actOnLabelStmt(Builder* b, const char* name, SrcLoc loc) {
+public func Stmt* Builder.actOnLabelStmt(Builder* b, u32 name, SrcLoc loc) {
     return cast<Stmt*>(LabelStmt.create(b.context, name, loc));
 }
 
-public func Stmt* Builder.actOnGotoStmt(Builder* b, const char* name, SrcLoc loc) {
+public func Stmt* Builder.actOnGotoStmt(Builder* b, u32 name, SrcLoc loc) {
     return cast<Stmt*>(GotoStmt.create(b.context, name, loc));
 }
 
-public func IdentifierExpr* Builder.actOnIdentifier(Builder* b, SrcLoc loc, const char* name) {
+public func IdentifierExpr* Builder.actOnIdentifier(Builder* b, SrcLoc loc, u32 name) {
     return IdentifierExpr.create(b.context, loc, name);
 }
 
@@ -332,7 +338,7 @@ public func Expr* Builder.actOnCharLiteral(Builder* b, SrcLoc loc, u8 value) {
     return cast<Expr*>(CharLiteral.create(b.context, loc, value));
 }
 
-public func Expr* Builder.actOnStringLiteral(Builder* b, SrcLoc loc, const char* value) {
+public func Expr* Builder.actOnStringLiteral(Builder* b, SrcLoc loc, u32 value) {
     return cast<Expr*>(StringLiteral.create(b.context, loc, value));
 }
 
@@ -456,7 +462,7 @@ public func Expr* Builder.actOnExplicitCast(Builder* b, SrcLoc loc, const TypeRe
     return cast<Expr*>(ExplicitCastExpr.create(b.context, loc, ref, inner));
 }
 
-public func Expr* Builder.actOnMemberExpr(Builder* b, Expr* base, SrcLoc loc, const char* member_name) {
+public func Expr* Builder.actOnMemberExpr(Builder* b, Expr* base, SrcLoc loc, u32 member_name) {
     return cast<Expr*>(MemberExpr.create(b.context, base, loc, member_name));
 }
 
@@ -464,7 +470,7 @@ public func Expr* Builder.actOnInitList(Builder* b, SrcLoc left, SrcLoc right, E
     return cast<Expr*>(InitListExpr.create(b.context, left, right, values, num_values));
 }
 
-public func Expr* Builder.actOnFieldDesignatedInit(Builder* b, const char* field, SrcLoc loc, Expr* initValue) {
+public func Expr* Builder.actOnFieldDesignatedInit(Builder* b, u32 field, SrcLoc loc, Expr* initValue) {
     return cast<Expr*>(FieldDesignatedInitExpr.create(b.context, field, loc, initValue));
 }
 
@@ -485,11 +491,10 @@ public func void Builder.insertImplicitCast(Builder* b, ImplicitCastKind kind, E
     *e_ptr = ic;
 }
 
-func void Builder.addSymbol(Builder* b, const char* name, Decl* d) {
-    u32 name_idx = name2idx(name);
+func void Builder.addSymbol(Builder* b, u32 name_idx, Decl* d) {
     Decl* old = b.mod.findSymbol(name_idx);
     if (old) {
-        b.diags.report(d.getLoc(), "redefinition of '%s'", name);
+        b.diags.report(d.getLoc(), "redefinition of '%s'", idx2name(name_idx));
         b.diags.note(old.getLoc(), "previous definition is here");
     } else {
         b.mod.addSymbol(name_idx, d);

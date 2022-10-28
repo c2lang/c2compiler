@@ -38,9 +38,9 @@ func void openLib(source_mgr.SourceMgr* sm,
 
     char[512] manifestFilename;
     i32 len = stdio.sprintf(manifestFilename, "%s/%s/%s", libdir, comp.getName(), constants.manifest_name);
-    const char* name = auxPool.add(manifestFilename, cast<usize>(len), 0);
+    u32 name_idx = auxPool.add(manifestFilename, cast<usize>(len), 0);
 
-    i32 file_id = sm.open(name, 0, false);
+    i32 file_id = sm.open(name_idx, 0, false);
     if (file_id == -1) return;
     // TODO fill component with stuff from manifest
     //if (!recipe.parseYaml(file_id)) return;
@@ -85,7 +85,7 @@ func void LibLoader.handleModule(void* arg, ast.Module* m) {
 
     char[512] filename;
     i32 len = stdio.sprintf(filename, "%s/%s/%s.c2i", l.libdir, l.c.getName(), m.getName());
-    const char* name = l.auxPool.add(filename, cast<usize>(len), 0);
+    u32 name = l.auxPool.add(filename, cast<usize>(len), 0);
 
     // TODO get location  from manifest?
     i32 file_id = l.sm.open(name, 0, false);
@@ -225,7 +225,7 @@ func void Compiler.build(Compiler* c,
     info.init(sm, diags, c.astPool, &features);
     c.parser = c2_parser.create(&info, c.builder);
 
-    printf("parsing %s\n", target.getName());
+    printf("parsing %s\n", c.auxPool.idx2str(target.getNameIdx()));
     u64 t1_start = utils.now();
     bool ok = true;
     for (u32 j=0; j<target.numFiles(); j++) {
@@ -271,7 +271,7 @@ func void Compiler.build(Compiler* c,
 
     // create output directory
     char[256] output_dir;
-    sprintf(output_dir, "%s/%s", constants.output_dir, target.getName());
+    sprintf(output_dir, "%s/%s", constants.output_dir, c.auxPool.idx2str(target.getNameIdx()));
     i32 err = file_utils.create_directory(output_dir);
     if (err) {
         fprintf(stderr, "Error creating %s\n", output_dir);

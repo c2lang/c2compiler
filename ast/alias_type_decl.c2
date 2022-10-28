@@ -13,7 +13,7 @@ public type AliasTypeDecl struct {
 } @(opaque)
 
 public func AliasTypeDecl* AliasTypeDecl.create(ast_context.Context* c,
-                                                const char* name,
+                                                u32 name,
                                                 SrcLoc loc,
                                                 bool is_public,
                                                 AST* ast_,

@@ -11,7 +11,8 @@ import stdlib;
     Represents a single file with all its imports, decls, etc
 */
 public type AST struct {
-    const char* filename;   // no ownership
+    // Note: filename is stored in auxPool, so cannot use ast.idx2name()
+    const char* filename;   // no ownership, TODO change to u32, since auxPool might resize!
     Module* mod;
     void* ptr;  // pointer used during analyser/generation (in analysis: Scope*)
     u32 idx;

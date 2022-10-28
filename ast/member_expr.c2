@@ -19,11 +19,11 @@ public type MemberExpr struct {
     }
 } @(opaque)
 
-public func MemberExpr* MemberExpr.create(ast_context.Context* c, Expr* base, SrcLoc member_loc, const char* member_name) @(inline) {
+public func MemberExpr* MemberExpr.create(ast_context.Context* c, Expr* base, SrcLoc member_loc, u32 member_name) @(inline) {
     MemberExpr* e = c.alloc(sizeof(MemberExpr));
     e.parent.init(ExprKind.Member, member_loc, 0, 0, 0);
     e.base = base;
-    e.name_idx = name2idx(member_name);
+    e.name_idx = member_name;
     return e;
 }
 

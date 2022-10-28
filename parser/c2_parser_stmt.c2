@@ -450,7 +450,7 @@ func Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal) {
 
     p.expectIdentifier();
 
-    const char* name = p.tok.text_value;
+    u32 name = p.tok.text_idx;
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
@@ -480,7 +480,7 @@ func Stmt* Parser.parseLabelStmt(Parser* p) {
 #if ParserDebug
     printf("parseLabelStmt\n");
 #endif
-    const char* name =  p.tok.text_value;
+    u32 name =  p.tok.text_idx;
     SrcLoc loc = p.tok.loc;
     p.consumeToken(); // identifier
     p.expectAndConsume(Kind.Colon);
@@ -493,7 +493,7 @@ func Stmt* Parser.parseGotoStmt(Parser* p) {
 #endif
     p.consumeToken();
     p.expectIdentifier();
-    const char* name =  p.tok.text_value;
+    u32 name =  p.tok.text_idx;
     SrcLoc loc = p.tok.loc;
     return p.builder.actOnGotoStmt(name, loc);
 }

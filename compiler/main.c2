@@ -96,7 +96,7 @@ public func i32 main(i32 argc, char** argv) {
     // note: auxPool is used by recipe, build-file and manifests
     string_pool.Pool* auxPool = string_pool.create(64*1024, 0);
 
-    source_mgr.SourceMgr* sm = source_mgr.create(constants.Max_open_files);
+    source_mgr.SourceMgr* sm = source_mgr.create(auxPool, constants.Max_open_files);
     diagnostics.Diags* diags = diagnostics.create(sm, utils.useColor());
 
     c2recipe.Recipe* recipe = c2recipe.create(sm, auxPool);
@@ -114,14 +114,16 @@ public func i32 main(i32 argc, char** argv) {
             fprintf(stderr, "Use argument -h for a list of available opts and usage of c2c\n");
             return -1;
         }
+        u32 recipe_idx = auxPool.addStr(constants.recipe_name, false);
 
-        i32 yaml_id = sm.open(constants.recipe_name, 0, false);
+        i32 yaml_id = sm.open(recipe_idx, 0, false);
         if (yaml_id == -1) return -1;
         if (!recipe.parse(yaml_id)) return -1;
 
         // TEMP also parse yaml version
         recipe_id = yaml_id;
-        //recipe_id = sm.open("c2recipe.yml", 0, false);
+        //u32 recipe2_idx = auxPool.addStr("c2recipe.yaml", false);
+        //recipe_id = sm.open(recipe2_idx, 0, false);
         //if (recipe_id == -1) return -1;
         //if (!recipe.parseYaml(recipe_id)) return -1;
     }
@@ -137,8 +139,9 @@ public func i32 main(i32 argc, char** argv) {
     u32 num_build = 0;
     for (u32 i=0; i<recipe.numTargets(); i++) {
         c2recipe.Target* target = recipe.getTarget(i);
-        if (opts.target && strcmp(opts.target, target.getName()) != 0) continue;
-        printf("building %s\n", target.getName());
+        const char* target_name = auxPool.idx2str(target.getNameIdx());
+        if (opts.target && strcmp(opts.target, target_name) != 0) continue;
+        printf("building %s\n", target_name);
         num_build++;
 
         compiler.build(auxPool, sm, diags, target, &options);

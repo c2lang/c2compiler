@@ -38,7 +38,7 @@ public type VarDecl struct {
 
 public func VarDecl* VarDecl.create(ast_context.Context* c,
                                     VarDeclKind kind,
-                                    const char* name,
+                                    u32 name,
                                     SrcLoc loc,
                                     bool is_public,
                                     const TypeRefHolder* ref,
@@ -62,7 +62,7 @@ public func VarDecl* VarDecl.create(ast_context.Context* c,
 }
 
 public func VarDecl* VarDecl.createStructMember(ast_context.Context* c,
-                                                const char* name,
+                                                u32 name,
                                                 SrcLoc loc,
                                                 bool is_public,
                                                 const TypeRefHolder* ref,

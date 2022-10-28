@@ -62,13 +62,13 @@ public type Decl struct {
     QualType qt;
 } @(opaque)
 
-func void Decl.init(Decl* d, DeclKind k, const char* name, SrcLoc loc, bool is_public, QualType qt, AST* ast_) @(inline) {
+func void Decl.init(Decl* d, DeclKind k, u32 name_idx, SrcLoc loc, bool is_public, QualType qt, AST* ast_) @(inline) {
     d.bits = 0;
     d.declBits.kind = k;
     d.declBits.is_public = is_public;
 
     d.loc = loc;
-    d.name_idx = name2idx(name);
+    d.name_idx = name_idx;
     d.ast_idx = ast2idx(ast_);
     d.qt = qt;
 }

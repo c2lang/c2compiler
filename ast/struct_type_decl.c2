@@ -22,9 +22,16 @@ public type StructTypeDecl struct {
     Decl*[0] members;   // tail-allocated
 } @(opaque)
 
-public func StructTypeDecl* StructTypeDecl.create(ast_context.Context* c, const char* name, SrcLoc loc, bool is_public,
+public func StructTypeDecl* StructTypeDecl.create(ast_context.Context* c,
+                                                  u32 name,
+                                                  SrcLoc loc,
+                                                  bool is_public,
                                                   AST* ast_,
-                                                  bool is_struct, bool is_global, VarDecl** members, u32 num_members) @(inline)
+                                                  bool is_struct,
+                                                  bool is_global,
+                                                  VarDecl** members,
+                                                  u32 num_members)
+@(inline)
 {
     u32 size = sizeof(StructTypeDecl) + num_members * sizeof(VarDecl*);
     StructTypeDecl* d = c.alloc(size);

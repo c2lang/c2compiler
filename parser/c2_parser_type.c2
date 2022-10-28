@@ -13,9 +13,10 @@ import ctype local;
 func void Parser.parseTypeDef(Parser* p, bool is_public) {
     p.consumeToken();
     p.expectIdentifier();
-    const char* type_name = p.tok.text_value;
+    u32 type_name = p.tok.text_idx;
     u32 type_loc = p.tok.loc;
-    if (!isupper(type_name[0])) p.error("type name must start with upper-case character");
+    const char* name = p.info.pool.idx2str(type_name);
+    if (!isupper(name[0])) p.error("type name must start with upper-case character");
 
     p.consumeToken();
 
@@ -39,7 +40,7 @@ func void Parser.parseTypeDef(Parser* p, bool is_public) {
     }
 }
 
-func void Parser.parseFunctionType(Parser* p, const char* name, u32 loc, bool is_public) {
+func void Parser.parseFunctionType(Parser* p, u32 name, u32 loc, bool is_public) {
     p.consumeToken(); // func
 
     TypeRefHolder rtype;
@@ -56,7 +57,7 @@ func void Parser.parseFunctionType(Parser* p, const char* name, u32 loc, bool is
     p.expectAndConsume(Kind.Semicolon);
 }
 
-func void Parser.parseStructType(Parser* p, bool is_struct, const char* name, u32 loc, bool is_public) {
+func void Parser.parseStructType(Parser* p, bool is_struct, u32 name, u32 loc, bool is_public) {
     p.consumeToken();
 
     DeclList members;
@@ -82,10 +83,10 @@ func void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) 
             bool is_struct = p.tok.kind == Kind.KW_struct;
             p.consumeToken();
             // name is optional
-            const char* name = nil;
+            u32 name = 0;
             u32 loc = 0;
             if (p.tok.kind == Kind.Identifier) {
-                name = p.tok.text_value;
+                name = p.tok.text_idx;
                 loc = p.tok.loc;
                 p.consumeToken();
             }
@@ -102,13 +103,13 @@ func void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) 
             ref.init();
             p.parseTypeSpecifier(&ref, true);
 
-            const char* name = nil;
+            u32 name = 0;
             SrcLoc loc;
             if (p.tok.kind == Kind.Colon) { // anonymous bit-field
                 loc = p.tok.loc;
             } else {
                 p.expectIdentifier();
-                name = p.tok.text_value;
+                name = p.tok.text_idx;
                 loc = p.tok.loc;
                 p.consumeToken();
             }
@@ -128,7 +129,7 @@ func void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) 
     p.expectAndConsume(Kind.RBrace);
 }
 
-func void Parser.parseEnumType(Parser* p, const char* name, u32 loc, bool is_public) {
+func void Parser.parseEnumType(Parser* p, u32 name, u32 loc, bool is_public) {
     p.consumeToken();
 
     // TODO lookup table (is_type?)
@@ -181,7 +182,7 @@ func void Parser.parseEnumType(Parser* p, const char* name, u32 loc, bool is_pub
     } else {
 
         while (p.tok.kind == Kind.Identifier) {
-            const char* const_name = p.tok.text_value;
+            u32 const_name = p.tok.text_idx;
             SrcLoc const_loc = p.tok.loc;
             p.consumeToken();
 
@@ -206,7 +207,7 @@ func void Parser.parseEnumType(Parser* p, const char* name, u32 loc, bool is_pub
     constants.free();
 }
 
-func void Parser.parseAliasType(Parser* p, const char* name, u32 loc, bool is_public) {
+func void Parser.parseAliasType(Parser* p, u32 name, u32 loc, bool is_public) {
     TypeRefHolder ref;
     ref.init();
     p.parseTypeSpecifier(&ref, true);

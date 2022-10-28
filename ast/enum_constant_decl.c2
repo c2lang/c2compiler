@@ -19,7 +19,7 @@ public type EnumConstantDecl struct {
 } @(opaque)
 
 public func EnumConstantDecl* EnumConstantDecl.create(ast_context.Context* c,
-                                                      const char* name,
+                                                      u32 name,
                                                       SrcLoc loc,
                                                       bool is_public,
                                                       QualType qt,

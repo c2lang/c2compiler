@@ -59,7 +59,7 @@ type Token struct {
     Kind kind;
     SrcLoc loc;
     bool more;
-    const char* value;  // allocated in StringPool
+    u32 value;  // allocated in StringPool
 }
 
 func void Token.init(Token* t) {
@@ -385,7 +385,7 @@ func void Parser.parseLibrary(Parser* p) {
     p.consumeToken();
     p.expect(Kind.Text, "expect target name");
     // TODO set kind lib (combine with option below)
-    const char* name = p.token.value;
+    u32 name = p.token.value;
     SrcLoc loc = p.token.loc;
     p.consumeToken();
     p.expect(Kind.Text, "expect lib type");

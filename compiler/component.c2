@@ -86,17 +86,16 @@ func void Component.resize(Component* c, u32 cap) {
     c.mods = buf;
 }
 
-public func ast.Module* Component.getOrAddModule(Component* c, const char* modname) {
-    u32 name_idx = ast.name2idx(modname);
+public func ast.Module* Component.getOrAddModule(Component* c, u32 name_idx) {
     for (u32 i=0; i<c.num_mods; i++) {
         ast.Module* m = c.mods[i];
         if (m.getNameIdx() == name_idx) return m;
     }
 
-    ast.Module* m = c.globalList.find(ast.name2idx(modname));
+    ast.Module* m = c.globalList.find(name_idx);
     if (m) return nil;
 
-    m = ast.Module.create(c.context, modname);
+    m = ast.Module.create(c.context, name_idx);
 
     if (c.num_mods == c.max_mods) c.resize(c.max_mods * 2);
 
@@ -106,6 +105,7 @@ public func ast.Module* Component.getOrAddModule(Component* c, const char* modna
     return m;
 }
 
+// TODO why not compare name_idx, instead of converting both to ptr?
 public func ast.Module* Component.findModule(const Component* c, const char* name) {
     for (u32 i=0; i<c.num_mods; i++) {
         // Note: we can search by pointer compares

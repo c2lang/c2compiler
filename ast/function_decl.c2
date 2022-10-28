@@ -25,7 +25,7 @@ public type FunctionDecl struct {
 } @(opaque)
 
 public func FunctionDecl* FunctionDecl.create(ast_context.Context* c,
-                                              const char* name,
+                                              u32 name,
                                               SrcLoc loc,
                                               bool is_public,
                                               AST* ast_,

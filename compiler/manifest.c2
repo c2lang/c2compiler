@@ -44,7 +44,7 @@ func bool getYamlInfoInfo(yaml.Parser* parser,
         const char* value = iter.getValue();
         assert(value);
         usize len = string.strlen(value);
-        const char* modname = astPool.add(value, len, 1);
+        u32 modname = astPool.add(value, len, 1);
         // TODO pass loc
         comp.getOrAddModule(modname);
         iter.next();

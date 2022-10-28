@@ -39,7 +39,7 @@ func void create_signed(ast_context.Context* context,
                         BuiltinTypeKind kind)
 {
     Expr* ie = cast<Expr*>(IntegerLiteral.createSignedConstant(context, 0, value, qt));
-    const char* name2 = pool.addStr(name, true);
+    u32 name2 = pool.addStr(name, true);
     TypeRefHolder ref;
     ref.init();
     ref.setBuiltin(kind);
@@ -49,7 +49,7 @@ func void create_signed(ast_context.Context* context,
     d.setType(qt);
     d.setChecked();
     a.addVarDecl(d);
-    a.getMod().addSymbol(ast.name2idx(name2), d);
+    a.getMod().addSymbol(name2, d);
 }
 
 func void create_unsigned(ast_context.Context* context,
@@ -61,7 +61,7 @@ func void create_unsigned(ast_context.Context* context,
                           BuiltinTypeKind kind)
 {
     Expr* ie = cast<Expr*>(IntegerLiteral.createUnsignedConstant(context, 0, value, qt));
-    const char* name2 = pool.addStr(name, true);
+    u32 name2 = pool.addStr(name, true);
     TypeRefHolder ref;
     ref.init();
     ref.setBuiltin(kind);
@@ -71,13 +71,13 @@ func void create_unsigned(ast_context.Context* context,
     d.setType(qt);
     d.setChecked();
     a.addVarDecl(d);
-    a.getMod().addSymbol(ast.name2idx(name2), d);
+    a.getMod().addSymbol(name2, d);
 }
 
 public func Module* load(ast_context.Context* context, string_pool.Pool* pool) {
     // TODO if 32 bit change some kinds
 
-    const char* name = pool.add("c2", 2, true);
+    u32 name = pool.add("c2", 2, true);
     Module* m = Module.create(context, name);
     m.setUsed();
 
@@ -86,7 +86,7 @@ public func Module* load(ast_context.Context* context, string_pool.Pool* pool) {
     AST* a = m.add("<generated>");
 
     for (u32 i=0; i<elemsof(ctypes); i++) {
-        const char* type_name = pool.addStr(ctypes[i].name, true);
+        u32 type_name = pool.addStr(ctypes[i].name, true);
         // TODO use table inside ast.utils
         QualType qt = { 0 }
         switch (ctypes[i].kind) {
@@ -133,7 +133,7 @@ public func Module* load(ast_context.Context* context, string_pool.Pool* pool) {
         qt2.setCanonicalType(qt);
         d.setChecked();
         a.addTypeDecl(d);
-        m.addSymbol(ast.name2idx(type_name), d);
+        m.addSymbol(type_name, d);
     }
 
     create_signed(context, a, pool, "min_i8", -128, g_i8, BuiltinTypeKind.Int8);

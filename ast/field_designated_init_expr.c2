@@ -9,12 +9,12 @@ import utils local;
 
 public type FieldDesignatedInitExpr struct {
     Expr parent;
-    const char* field;
+    u32 field;
     Expr* initValue;
 } @(opaque)
 
 public func FieldDesignatedInitExpr* FieldDesignatedInitExpr.create(ast_context.Context* c,
-                                                                    const char* field,
+                                                                    u32 field,
                                                                     SrcLoc loc,
                                                                     Expr* initValue) @(inline)
 {
@@ -29,7 +29,7 @@ func void FieldDesignatedInitExpr.print(const FieldDesignatedInitExpr* e, string
     e.parent.printKind(out, indent, "FieldDesignatedInitExpr");
     e.parent.printTypeBits(out);
     out.color(col_Value);
-    out.print(" %s\n", e.field);
+    out.print(" %s\n", idx2name(e.field));
     e.initValue.print(out, indent + 2);
 }
 
