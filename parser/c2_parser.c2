@@ -409,7 +409,6 @@ func void Parser.parseOptionalArray(Parser* p, TypeRefHolder* ref, QualType base
     }
 
     p.parseOptionalArray(ref, base);
-    //return p.builder.actOnArrayType(base, is_incremental, size);
 }
 
 func void Parser.parseVarDef(Parser* p, bool is_public) {

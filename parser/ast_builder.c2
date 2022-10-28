@@ -168,18 +168,21 @@ public func QualType Builder.actOnBuiltinType(Builder* b, BuiltinTypeKind kind) 
     return QualType.init2(nil);
 }
 
-public func QualType Builder.actOnPointerType(Builder* b, QualType inner, u32 qualifiers) {
-    QualType ptr = QualType.init(ast.getPointerType(inner), qualifiers);
+public func QualType Builder.actOnPointerType(Builder* b, QualType inner) {
     // Note: since we re-use pointertype, the flags cannot be mixed.
     // So i8* and const i8* use the same PointerType (and thus Inner)
-    // So we keep the flags on each QualType in the stack
+    // So we ONLY keep the flags on the OUTER QualType and clear on inner
+
+    u32 quals = inner.getQuals();
+
+    QualType ptr = QualType.init(ast.getPointerType(inner), quals);
 
     // canonical can be either self or a pointer to elem's canonical type
     QualType canon = inner.getCanonicalType();
     if (inner.getTypeOrNil() == canon.getTypeOrNil()) {
         canon = ptr;
     } else {
-        canon = QualType.init(ast.getPointerType(canon), qualifiers);
+        canon = QualType.init(ast.getPointerType(canon), 0);
     }
     ptr.setCanonicalType(canon);
 
@@ -187,8 +190,15 @@ public func QualType Builder.actOnPointerType(Builder* b, QualType inner, u32 qu
 }
 
 public func QualType Builder.actOnArrayType(Builder* b, QualType elem, bool has_size, u32 size) {
+    // Note: if the element is a pointer, the const flag is for the INNER type.
+    // So if inner is a pointer-type: dont copy the const flag (so 'const X*[]' is NOT const)
+    // otherwise for do copy it (so 'const X[]' is const as a whole)
+
+    u32 quals = elem.getQuals();
+    if (elem.isPointerType()) quals = 0;
+
     ArrayType* t = ArrayType.create(b.context, elem, has_size, size);
-    QualType a = QualType.init(cast<Type*>(t), elem.getQualifiers());
+    QualType a = QualType.init(cast<Type*>(t), quals);
 
     // canonical can be either self or a pointer to elem's canonical type
     QualType canon = elem.getCanonicalType();
@@ -196,7 +206,8 @@ public func QualType Builder.actOnArrayType(Builder* b, QualType elem, bool has_
         canon = a;
     } else {
         ArrayType* t2 = ArrayType.create(b.context, canon, has_size, size);
-        canon = QualType.init(cast<Type*>(t2), elem.getQualifiers());
+        // Note: keep same quals here, even if canonical type may be a PointerType!
+        canon = QualType.init(cast<Type*>(t2), quals);
     }
     a.setCanonicalType(canon);
 

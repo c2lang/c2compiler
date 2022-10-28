@@ -555,7 +555,7 @@ func void ModuleAnalyser.analyseAliasType(ModuleAnalyser* ma, AliasTypeDecl* d) 
     // Note: type is always AliasType
     Type* at = qt.getTypeOrNil();
     QualType canon = res.getCanonicalType();
-    canon.copyFlags(res);
+    canon.copyQuals(res);
     at.setCanonicalType(canon);
 }
 
@@ -683,7 +683,7 @@ func QualType ModuleAnalyser.analyseTypeRef(ModuleAnalyser* ma, TypeRef* ref) {
 
     u32 num_ptrs = ref.getNumPointers();
     for (u32 i=0; i<num_ptrs; i++) {
-        resolved = ma.builder.actOnPointerType(resolved, resolved.getQualifiers());
+        resolved = ma.builder.actOnPointerType(resolved) ;
     }
 
     u32 num_arrays = ref.getNumArrays();
@@ -708,6 +708,7 @@ func QualType ModuleAnalyser.analyseTypeRef(ModuleAnalyser* ma, TypeRef* ref) {
         resolved = ma.builder.actOnArrayType(resolved, sizeExpr != nil, size);
     }
 
+    //resolved.dump();
     //resolved.dump_full();
     return resolved;
 }

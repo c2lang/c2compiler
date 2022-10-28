@@ -13,19 +13,7 @@ func QualType getPointerFromArray(ast_builder.Builder* builder, QualType q) {
     q = q.getCanonicalType();
     const ArrayType* a = cast<ArrayType*>(q.getTypeOrNil());
     QualType elem = a.getElemType();
-    QualType res = builder.actOnPointerType(elem, q.getQualifiers());
-    //TODO:  canonical is already done in actOnPointerType now
-/*
-    // canonical can be either self or a pointer to elem's canonical type
-    QualType canon = elem.getCanonicalType();
-    if (elem.getTypeOrNil() == canon.getTypeOrNil()) {
-        res.setCanonicalType(res);
-    } else {
-        // TODO use type.getPointerType()!
-        QualType c = builder.actOnPointerType(canon, q.getQualifiers());
-        res.setCanonicalType(c);
-    }
-*/
+    QualType res = builder.actOnPointerType(elem);
     return res;
 }
 
@@ -434,7 +422,7 @@ func QualType ModuleAnalyser.analyseUnaryOperator(ModuleAnalyser* ma, Expr** e_p
     case AddrOf:
         if (!ma.getIdentifierKind(inner)) return QualType.init0();
         QualType canon = t.getCanonicalType();
-        t = ma.builder.actOnPointerType(canon, canon.getQualifiers());
+        t = ma.builder.actOnPointerType(canon);
         e.setCtc();
         break;
     case Deref:
