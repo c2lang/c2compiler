@@ -102,7 +102,9 @@ u32 ast_count;      // Note: first index used to indicate nil
 u32 ast_capacity;
 
 public func void init(Context* c, const char* names_start) {
+#if AstStatistics
     stats.reset();
+#endif
     g_types.init(c);
 
     g_u8.set(cast<Type*>(BuiltinType.create(c, BuiltinTypeKind.UInt8)));
