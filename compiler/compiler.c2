@@ -232,7 +232,7 @@ func void Compiler.build(Compiler* c,
         i32 file_id = target.openFile(j);
         if (file_id == -1) return;   // note: error already printed
 
-        ok != c.parser.parse(file_id, false);
+        ok &= c.parser.parse(file_id, false);
 
         target.closeFile(file_id);
     }
