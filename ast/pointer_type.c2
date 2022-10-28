@@ -18,24 +18,9 @@ public type PointerType struct {
 
 // Note: non-public, since all pointers should be created via ast.getPointerType()
 func PointerType* PointerType.create(ast_context.Context* c, QualType inner) @(inline) {
-#if 0
-    Type* i = inner.getTypeOrNil();
-    Type* ptr = i.getPtrType();
-    if (ptr) {
-        bb_reuse++;
-        stdio.printf("PTR OLD %p  %u | %u\n", i, bb_reuse, bb_count);
-        return cast<PointerType*>(ptr);
-    }
-#endif
     PointerType* t = c.alloc(sizeof(PointerType));
     t.parent.init(TypeKind.Pointer);
     t.inner = inner;
-#if 0
-    i.setPtrType(t);
-    bb_count++;
-    stdio.printf("PTR NEW %p  %u | %u\n", i, bb_reuse, bb_count);
-    i.dump();
-#endif
 #if AstStatistics
     stats.pointerCount++;
 #endif

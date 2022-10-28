@@ -9,6 +9,7 @@ import ast local;
 import token local;
 import utils local;
 
+import stdio local;
 #if ParserDebug
 import stdio local;
 #endif
@@ -27,6 +28,8 @@ func Stmt* Parser.parseStmt(Parser* p) {
     case RBrace:
         p.error("expected stmt");
         break;
+    case KW_asm:
+        return p.parseAsmStmt();
     case KW_assert:
         return p.parseAssertStmt();
     case KW_break:
@@ -197,11 +200,8 @@ func CompoundStmt* Parser.parseCompoundStmt(Parser* p) {
     StmtList stmts;
     stmts.init();   // TODO register somewhere to free memory on error (register handler?)
 
-    while (1) {
-        if (p.tok.kind == Kind.RBrace) break;
-
-        Stmt* s = p.parseStmt();
-        stmts.add(s);
+    while (p.tok.kind != Kind.RBrace) {
+        stmts.add(p.parseStmt());
     }
 
     p.expectAndConsume(Kind.RBrace);
@@ -210,6 +210,28 @@ func CompoundStmt* Parser.parseCompoundStmt(Parser* p) {
     stmts.free();
 
     return s;
+}
+
+func Stmt* Parser.parseAsmStmt(Parser* p) {
+    p.consumeToken();
+    u32 quals = p.parseOptionalTypeQualifier();
+
+    p.expectAndConsume(Kind.LParen);
+
+    // TEMP skip until matching paren
+    u32 depth = 1;
+    while (1) {
+        if (p.tok.kind == Kind.Eof) break;
+        if (p.tok.kind == Kind.LParen) depth++;
+        if (p.tok.kind == Kind.RParen) depth--;
+        if (depth == 0) break;
+        p.consumeToken();
+    }
+
+    p.expectAndConsume(Kind.RParen);
+    p.expectAndConsume(Kind.Semicolon);
+
+    return nil;
 }
 
 func Stmt* Parser.parseAssertStmt(Parser* p) {

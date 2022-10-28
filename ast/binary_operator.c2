@@ -48,7 +48,6 @@ public type BinaryOpcode enum u8 {
     AndAssign,
     XorAssign,
     OrAssign,
-//    Comma, // Q: used?
 }
 
 const char*[] binaryOpcode_names = {
@@ -81,7 +80,6 @@ const char*[] binaryOpcode_names = {
     "&=",
     "^=",
     "|=",
-    //",",
 }
 
 static_assert(elemsof(BinaryOpcode), elemsof(binaryOpcode_names));
