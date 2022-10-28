@@ -53,30 +53,45 @@ public type BuiltinExpr struct {
 } @(opaque)
 
 public func BuiltinExpr* BuiltinExpr.create(ast_context.Context* c, SrcLoc loc, Expr* inner, BuiltinExprKind kind) @(inline) {
-    BuiltinExpr* e = c.alloc(sizeof(BuiltinExpr));
+    const u32 size = sizeof(BuiltinExpr);
+    BuiltinExpr* e = c.alloc(size);
     e.parent.init(ExprKind.Builtin, loc, 1, 1, 0);
     e.parent.parent.builtinExprBits.kind = kind;
     e.inner = inner;
     e.value = 0;
+#if AstStatistics
+    stats.builtinExprCount++;
+    stats.builtinExprSize += size;
+#endif
     return e;
 }
 
 public func BuiltinExpr* BuiltinExpr.createOffsetOf(ast_context.Context* c, SrcLoc loc, Expr* typeExpr, Expr* member) @(inline) {
-    BuiltinExpr* e = c.alloc(sizeof(BuiltinExpr) + sizeof(OffsetOfData));
+    const u32 size  =sizeof(BuiltinExpr) + sizeof(OffsetOfData);
+    BuiltinExpr* e = c.alloc(size);
     e.parent.init(ExprKind.Builtin, loc, 1, 1, 0);
     e.parent.parent.builtinExprBits.kind = BuiltinExprKind.OffsetOf;
     e.inner = typeExpr;
     e.offset[0].member = member;
+#if AstStatistics
+    stats.builtinExprCount++;
+    stats.builtinExprSize += size;
+#endif
     return e;
 }
 
 public func BuiltinExpr* BuiltinExpr.createToContainer(ast_context.Context* c, SrcLoc loc, Expr* typeExpr, Expr* member, Expr* pointer) @(inline) {
-    BuiltinExpr* e = c.alloc(sizeof(BuiltinExpr) + sizeof(ToContainerData));
+    const u32 size = sizeof(BuiltinExpr) + sizeof(ToContainerData);
+    BuiltinExpr* e = c.alloc(size);
     e.parent.init(ExprKind.Builtin, loc, 1, 1, 0);
     e.parent.parent.builtinExprBits.kind = BuiltinExprKind.ToContainer;
     e.inner = typeExpr;
     e.container[0].member = member;
     e.container[0].pointer = pointer;
+#if AstStatistics
+    stats.builtinExprCount++;
+    stats.builtinExprSize += size;
+#endif
     return e;
 }
 

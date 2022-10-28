@@ -71,6 +71,9 @@ func void Decl.init(Decl* d, DeclKind k, u32 name_idx, SrcLoc loc, bool is_publi
     d.name_idx = name_idx;
     d.ast_idx = ast2idx(ast_);
     d.qt = qt;
+#if AstStatistics
+    stats.declCount++;
+#endif
 }
 
 // TEMP cast needed until Analyser fixed

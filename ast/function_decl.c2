@@ -57,6 +57,10 @@ public func FunctionDecl* FunctionDecl.create(ast_context.Context* c,
         string.memcpy(cast<void*>(&tail[params_offset]), cast<void*>(params), num_params * sizeof(VarDecl*));
     }
 
+#if AstStatistics
+    stats.functionDeclCount++;
+    stats.functionDeclSize += size;
+#endif
     return d;
 }
 

@@ -48,6 +48,9 @@ public func UnaryOperator* UnaryOperator.create(ast_context.Context* c, SrcLoc l
     e.parent.init(ExprKind.UnaryOperator, loc, 0, 0, 0);
     e.parent.parent.unaryOperatorBits.kind = kind;
     e.inner = inner;
+#if AstStatistics
+    stats.unaryOpCount++;
+#endif
     return e;
 }
 

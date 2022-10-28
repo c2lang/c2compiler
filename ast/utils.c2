@@ -8,9 +8,6 @@ import ast_context local;
 
 import stdlib;
 import string;
-#if AstStatistics
-import stdio;
-#endif
 
 static_assert(24, sizeof(Decl));
 static_assert(32, sizeof(AliasTypeDecl));
@@ -192,48 +189,3 @@ const char* col_Error = color.Red;
 const char* col_Attributes = color.Yellow;
 const char* col_Normal = color.Normal;
 
-#if AstStatistics
-type AstStats struct {
-    // Types
-    u32 typeCount;
-    u32 pointerCount;
-    u32 aliasCount;
-    u32 builtinCount;
-    u32 enumCount;
-    u32 arrayCount;
-    u32 functionTypeCount;
-    u32 structCount;
-    u32 moduleCount;
-
-    u32 arraySize;
-}
-
-func void AstStats.reset(AstStats* s) {
-    string.memset(s, 0, sizeof(AstStats));
-}
-
-func void AstStats.dump(const AstStats* s) {
-    stdio.printf("AST: Types\n");
-    u32 total = 0;
-    total += stats.pointerCount * sizeof(PointerType);
-    total += stats.functionTypeCount * sizeof(FunctionType);
-    total += stats.moduleCount * sizeof(ModuleType);
-    total += stats.structCount * sizeof(StructType);
-    total += stats.arraySize;
-    total += stats.enumCount * sizeof(EnumType);
-    total += stats.aliasCount * sizeof(AliasType);
-    total += stats.builtinCount * sizeof(BuiltinType);
-    // TODO count tail-allocators as wel (need total count in create functions)
-    stdio.printf("   types      %5u   %6u\n", stats.typeCount, total);
-    stdio.printf("   function   %5u   %6u\n", stats.functionTypeCount, stats.functionTypeCount * sizeof(FunctionType));
-    stdio.printf("   pointers   %5u   %6u\n", stats.pointerCount, stats.pointerCount * sizeof(PointerType));
-    stdio.printf("   modules    %5u   %6u\n", stats.moduleCount, stats.moduleCount * sizeof(ModuleType));
-    stdio.printf("   structs    %5u   %6u\n", stats.structCount, stats.structCount * sizeof(StructType));
-    stdio.printf("   array      %5u   %6u\n", stats.arrayCount, stats.arraySize);
-    stdio.printf("   enum       %5u   %6u\n", stats.enumCount, stats.enumCount * sizeof(EnumType));
-    stdio.printf("   alias      %5u   %6u\n", stats.aliasCount, stats.aliasCount * sizeof(AliasType));
-    stdio.printf("   builtins   %5u   %6u\n", stats.builtinCount, stats.builtinCount * sizeof(BuiltinType));
-}
-
-AstStats stats;
-#endif

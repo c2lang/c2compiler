@@ -56,6 +56,9 @@ public func void Expr.init(Expr* e, ExprKind k, SrcLoc loc, bool ctv, bool ctc, 
     e.parent.exprBits.is_lvalue = lvalue;
     e.loc = loc;
     e.qt.ptr = 0;
+#if AstStatistics
+    stats.exprCount++;
+#endif
 }
 
 public func Stmt* Expr.asStmt(Expr* e) @(inline) { return &e.parent; }

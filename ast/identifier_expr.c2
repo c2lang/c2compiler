@@ -53,6 +53,9 @@ public func IdentifierExpr* IdentifierExpr.create(ast_context.Context* c, SrcLoc
     e.parent.init(ExprKind.Identifier, loc, 0, 0, 0);
     e.name_idx = name;
     e.parent.setLValue();
+#if AstStatistics
+    stats.identifierCount++;
+#endif
     return e;
 }
 

@@ -20,6 +20,9 @@ public func CharLiteral* CharLiteral.create(ast_context.Context* c, SrcLoc loc, 
     CharLiteral* e = c.alloc(sizeof(CharLiteral));
     e.parent.init(ExprKind.CharLiteral, loc, 1, 1, 0);
     e.parent.parent.charLiteralBits.value = val;
+#if AstStatistics
+    stats.charLitCount++;
+#endif
     return e;
 }
 

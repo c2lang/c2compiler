@@ -26,6 +26,10 @@ public func CallExpr* CallExpr.create(ast_context.Context* c, Expr* fn, Expr** a
     e.parent.parent.callExprBits.num_args = num_args;
     e.fn = fn;
     string.memcpy(cast<void*>(e.args), cast<void*>(args), num_args * sizeof(Expr*));
+#if AstStatistics
+    stats.callCount++;
+    stats.callSize += size;
+#endif
     return e;
 }
 

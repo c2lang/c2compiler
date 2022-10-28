@@ -9,7 +9,7 @@ executable c2c
 #    $config RecipeDebug
 #    $config ParserDebug
 #    $config DumpTokens
-#    $config AstStatistics
+    $config AstStatistics
 
     common/file/reader.c2
     common/file/file_utils.c2
@@ -91,6 +91,7 @@ executable c2c
     ast/implicit_cast_expr.c2
 
     ast/utils.c2
+    ast/statistics.c2
     ast/type.c2
     ast/qualtype.c2
     ast/builtin_type.c2

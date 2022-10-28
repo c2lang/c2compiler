@@ -35,6 +35,10 @@ public func EnumConstantDecl* EnumConstantDecl.create(ast_context.Context* c,
         d.parent.enumConstantDeclBits.has_init = 1;
         d.init[0] = initValue;
     }
+#if AstStatistics
+    stats.enumConstantCount++;
+    stats.enumConstantSize += size;
+#endif
     return d;
 }
 

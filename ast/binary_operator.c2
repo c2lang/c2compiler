@@ -90,6 +90,9 @@ public func BinaryOperator* BinaryOperator.create(ast_context.Context* c, SrcLoc
     e.parent.parent.binaryOperatorBits.kind = kind;
     e.lhs = lhs;
     e.rhs = rhs;
+#if AstStatistics
+    stats.binaryOpCount++;
+#endif
     return e;
 }
 

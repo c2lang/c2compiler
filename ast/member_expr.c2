@@ -24,6 +24,9 @@ public func MemberExpr* MemberExpr.create(ast_context.Context* c, Expr* base, Sr
     e.parent.init(ExprKind.Member, member_loc, 0, 0, 0);
     e.base = base;
     e.name_idx = member_name;
+#if AstStatistics
+    stats.memberCount++;
+#endif
     return e;
 }
 

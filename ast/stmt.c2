@@ -66,6 +66,9 @@ public type Stmt struct {
 func void Stmt.init(Stmt* s, StmtKind k) @(inline) {
     s.bits = 0;
     s.stmtBits.kind = k;
+#if AstStatistics
+    stats.stmtCount++;
+#endif
 }
 
 // TEMP cast needed until Analyser fixed

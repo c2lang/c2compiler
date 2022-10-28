@@ -21,6 +21,9 @@ public func ArraySubscriptExpr* ArraySubscriptExpr.create(ast_context.Context* c
     e.idx = idx;
 
     e.parent.setLValue();
+#if AstStatistics
+    stats.arraySubCount++;
+#endif
     return e;
 }
 
